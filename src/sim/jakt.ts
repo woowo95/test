@@ -1,3 +1,5 @@
+import { farorNu } from './kult';
+import { heligtAvstar } from './kultlatt';
 import { stridBild } from './kartstrid';
 import { grundvarde } from './varde';
 import { utanforByn } from './omrade';
@@ -150,9 +152,10 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   // (steg 6.6.2) fälls bara med spjutet och syns på längre håll; fåglarna (steg 6.6.3) och kaninerna inom räckhåll
   const spjut = !!tk.tool && tk.tool in VAPEN && !!(VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast;
   let bv = 0;
+  const svalt = farorNu(s).svalt;
   const prova = (d: NonNullable<typeof m>, r: number) => {
     const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty);
-    if (dd >= r) return;
+    if (dd >= r || heligtAvstar(s, p, d.art, svalt)) return; // det heliga djuret jagas inte, utom i svält (steg 10.3.15)
     const v = grundvarde(BYTE[d.art] ?? 'vilt') / (1 + dd / JAKT.bytesNara);
     if (v > bv) { bv = v; m = d; }
   };

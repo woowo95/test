@@ -2,6 +2,7 @@
 // rätterna som blir av dem. Bara register och tal här, utan andra filer i spelet, så att saker.ts kan lägga rätterna bland
 // sakerna; matlagningen (koka i lerkrukan, grilla) står i matlagning.ts och det man äter i behov.ts.
 import type { SakDef } from './saker';
+import { KOTTSLAG } from './recept';
 import { balans } from './balans';
 
 // ---------- ingrediensgrupperna (steg 9.6.1) ----------
@@ -41,6 +42,7 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   saltfisk: { grupper: ['protein'], huvud: 'fisk' }, saltkott: { grupper: ['protein', 'fett'], huvud: 'kott' },
   talg: { grupper: ['fett'] },
 };
+for (const k of KOTTSLAG) INGREDIENSER[k] ??= { grupper: ['protein', 'fett'], huvud: 'kott' }; // varje köttslag (steg 10.3.14)
 export const grupperAv = (k: string): Matgrupp[] => INGREDIENSER[k]?.grupper ?? [];
 
 // ---------- måltidernas nivåer (steg 9.6.2) ----------

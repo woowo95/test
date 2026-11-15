@@ -1,6 +1,10 @@
 import { balans } from './balans';
 import type { TidSlag } from './tider';
 
+// köttslagen (steg 10.3.14): det råa köttet av varje art som DJUR (redskap.ts) ger; grillen, torken, röken, saltet, ingredienserna,
+// hundens foder och det vargen stjäl läser listan, och scenariot styckning kontrollerar att varje arts kött står här
+export const KOTTSLAG: readonly string[] = ['kott', 'vargkott', 'radjurkott', 'farkott', 'getkott', 'fagelkott', 'bjornkott'];
+
 // ---------- recepten (steg 6.10.2) ----------
 // Allt som görs av något annat har sitt recept här, i ett register som de andra registren frågar: sakerna (saker.ts),
 // stationerna och möblerna och deras tillbehör (stationer.ts), dörrarna (byggnad.ts) och plaggen (klader.ts). Då syns och
@@ -105,6 +109,9 @@ const DEF = {
   kniv: { var: 'sak', av: { flinta: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'kniv' },
   skinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
   vargkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
+  radjurkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, farkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, getkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, // steg 10.3.14
+  fagelkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, bjornkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
+  farskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, getskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
   vargskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
   fjadrar: { var: 'sak', min: 2, slag: 'bearbeta', tek: 'kniv' },
   radjursskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },

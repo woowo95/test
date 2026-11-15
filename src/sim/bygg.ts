@@ -10,10 +10,10 @@ import { kunnighet } from './ekonomi';
 import { sparas } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
-import { amountOf, changed, enPerRuta, ownMove, ownsAmount, put, use, zonesOf } from './lager';
+import { amountOf, changed, enPerRuta, ownMove, ownsAmount, ownsId, put, use, zonesOf } from './lager';
 import { freeTools, nTools, tingOf } from './agande';
 import { getable, Recept, takeMaterial } from './behov';
-import { Del } from './egendom';
+import { Del, kyrkaId, sumOf } from './egendom';
 import { fellingTiles, kronaOver } from './skog';
 import { stubbeOn } from './stubbar';
 import { FOREST } from './vag';
@@ -62,12 +62,16 @@ export function bedFor(s: State, p: Person) {
 interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean; hugg?: number } // hugg = stocken som ligger inne i huset (steg 8.1.13)
 // det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas.
 // Den som får ta av andra (getable = allt i byn) har redan familjens med: aldrig mer än allt
-export const avail = (s: State, k: string, p?: Person, hus?: number) => (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus)) : amountOf(s, k)) - sparas(s, k);
+export const avail = (s: State, k: string, p?: Person, hus?: number) => husTro(s, hus) !== undefined ? Math.floor(ownsId(s, kyrkaId(husTro(s, hus)!), k) + 1e-9) : (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus)) : amountOf(s, k)) - sparas(s, k);
+// trons hus (steg 10.3.19): byggs bara av det kyrkan äger
+const husTro = (s: State, hus?: number) => hus === undefined ? undefined : husById(s, hus)?.tro;
 const famHus = (s: State, hus?: number) => { const h = husById(s, hus); return h?.ag !== undefined ? h : undefined; };
 const famOwn = (s: State, p: Person, k: string, hus?: number) => { const h = famHus(s, hus); return h ? familjOf(s, h.ag).filter(q => q !== p).reduce((a, q) => a + ownsAmount(s, q, k), 0) : 0; };
 // p tar n av slaget k till ett hus. Till byns hus tas byns först; till ett familjehus familjens eget först (ägaren, partnern,
 // barnen), sedan efter behovsstegen som till ett eget arbete. Ger vems det var
 export function takeForHouse(s: State, p: Person, hus: number | undefined, k: string, n: number, kom: Record<string, number>): Del {
+  const tro = husTro(s, hus);
+  if (tro !== undefined) { const ag = use(s, p, k, n, true, kyrkaId(tro)), v = sumOf(ag); if (v > 0) kom[`kyrka:${tro}:${k}`] = (kom[`kyrka:${tro}:${k}`] ?? 0) + v; return ag; }
   const h = famHus(s, hus);
   if (!h) return takeMaterial(s, p, k, n, true, kom);
   const ag: Del = {};
@@ -119,7 +123,9 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= BYGG.laga) continue;
     if (M.tek && !knows(p, M.tek)) continue;
-    const need = needOf(b);
+    const need = needOf(b), tro = husTro(s, b.hus);
+    // trons hus (steg 10.3.19): bara de troende bygger, och en bit vars material kyrkan inte äger väntar (det hämtas inte)
+    if (tro !== undefined && (p.tro !== tro || need > 0 && avail(s, M.item!, p, b.hus) < need)) continue;
     const sc = (repair ? 0 : b.k === 'golv' ? (M.item ? BYGG.prioTra : BYGG.prioJord) : BYGG.prioVagg) + Math.hypot(b.x - p.x, b.y - p.y);
     if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p, b.hus) < need }; }
   }
@@ -150,7 +156,7 @@ export function deliver(b: Bit, n: number, repair: boolean) { if (repair) b.lm =
 // Varje hus minns var materialet till det kom ifrån, så att det kan visas när man trycker på huset. Nycklarna är
 // `hur:vem:slag`: byn (byns förråd), eget (byggarens), familj (familjens, som man får ta), gava (skänkt av vem),
 // stold (taget utan lov av vem), fallt (stockar från träd som vem fällde eller högg för bygget). Ändrar inget i spelet
-export const KOM = ['byn', 'eget', 'familj', 'gava', 'fallt', 'stold'] as const;
+export const KOM = ['byn', 'eget', 'familj', 'gava', 'fallt', 'stold', 'kyrka'] as const;
 export function noteKom(s: State, husId: number | undefined, kom: Record<string, number>) {
   const h = husById(s, husId);
   if (!h) return;
@@ -163,7 +169,7 @@ export function komOf(h: Hus) {
 // stockar till ett hus som byggs läggs direkt i väggarna: från träd som stod där huset ska stå, eller som fälldes
 // för bygget (hus = husets id). Ger hur mycket som gick åt
 export function toWalls(s: State, x: number, y: number, n: number, hus?: number, by?: Person) {
-  const h = housesOf(s).find(q => !q.klar && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
+  const h = housesOf(s).find(q => !q.klar && q.tro === undefined && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
   n = Math.floor(n + 1e-9); // bara hela stockar går till väggarna; resten ligger kvar på stammen
   if (!h || n <= 0) return 0;
   let used = 0;
@@ -252,7 +258,7 @@ function flyttKlar(s: State, h: Hus) {
   const g = husById(s, h.flyttFran);
   h.flyttFran = undefined;
   if (!g) return;
-  h.fn = g.fn; h.slag = g.slag; h.ag = g.ag;
+  h.fn = g.fn; h.slag = g.slag; h.ag = g.ag; h.tro = g.tro;
   const ved = rivHus(s, g);
   count(s, 'husFlyttat');
   log(s, `${h.namn} står klart närmare byns mitt, och ${g.namn.toLowerCase()} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');

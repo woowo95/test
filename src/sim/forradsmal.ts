@@ -9,6 +9,7 @@
 // det som projekten och bygget väntar på. Taket är materialMatt gånger bufferten, aldrig mer än lagerplatserna rymmer. Under
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
+import { trosMobelBrist } from './troshus';
 import { balans } from './balans';
 import { ELD, eldarOf, hearthOf, woodDays } from './eld';
 import { foodDaysAll } from './ekonomi';
@@ -234,8 +235,9 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   snoskor: s => Math.ceil(living(s).length / VILLTAL.snoskorPer), // några par till dem som går ut i snön
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
   // ledarens mantel (steg 8.3.14): byn gör en åt den som suttit en tidsålder med mer än hälften av legitimiteten
-  prastdrakt: s => (s.tron ?? []).filter(t => t.prast !== undefined).length, tecken: s => s.tron?.some(t => t.slut === undefined && (t.niva ?? 0) >= 2) ? Math.ceil(living(s).filter(p => p.tro !== undefined).length / 3) : 0, // system 8.5
-  mask: s => (s.tron ?? []).filter(t => t.prast !== undefined && (t.sk?.prast ?? 100) < 34).length,
+  // prästens dräkt med budet om den (steg 10.3.11)
+  prastdrakt: s => (s.tron ?? []).filter(t => t.prast !== undefined && t.bud?.some(b => b.id === 'drakt') && (t.sk?.prast ?? 100) >= 34).length, tecken: s => s.tron?.some(t => t.slut === undefined && t.bud?.some(b => b.id === 'tecken')) ? Math.ceil(living(s).filter(p => p.tro !== undefined).length / 3) : 0, // system 8.5
+  mask: s => (s.tron ?? []).filter(t => t.prast !== undefined && t.bud?.some(b => b.id === 'drakt') && (t.sk?.prast ?? 100) < 34).length,
   mantel: s => s.styre?.sedan !== undefined && s.now - s.styre.sedan >= WEEK && legitimitet(s).v > 0.5 ? 1 : 0,
   tunika: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ylle sedan steg 9.8.14
   kappa: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, sjal: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ullens plagg (steg 9.8.15)
@@ -273,6 +275,7 @@ function langhusBrist(s: State, k: StationSlag) {
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
+  if (d.tro) return Math.max(0, ...(s.tron ?? []).map(tr => trosMobelBrist(s, tr, k))); // trons möbler i trons hus (steg 10.3.19)
   if (d.hard) return harBrist(s); // härden: ett hus där folk sover utan en härd (steg 7.5.3)
   if (d.langhus) return langhusBrist(s, k); // högsätet och bänkarna i långhuset (steg 10.2.68)
   if (d.fahus) { const n = fahusHus(s).length; return n ? fahusUtanKrubba(s).length / n : 0; } // en krubba i varje fähus (steg 10.2.88)

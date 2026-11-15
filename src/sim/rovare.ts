@@ -26,7 +26,7 @@ import { grundvarde, rikedom } from './varde';
 import { husPlats, iHus, kanterna, setHotVilja, setRovarVal, skyddVidElden, vargIStrid, vargStrid } from './varg';
 import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
-import { gastAv, gastGar, gastTillbaka, nyGast, nyttGastId } from './gast';
+import { gastAv, gastGar, gastTillbaka, gastTingOf, nyGast, nyttGastId } from './gast';
 import { notis } from './notiser';
 import type { TalkEvent } from './samtal';
 import { groundOf, tileOf } from './mark';
@@ -742,9 +742,12 @@ gastKrok.spara = (s, r, t) => spara(s, r, t ?? s.now);
 FAROR.push(s => flockar(s).some(f => f.folk.length > 0 && (!!f.anfaller || (f.sedd !== undefined && !f.klar) || rovarna(s, f).some(r => living(s).some(q => kanNa(avst(q, r), GANG.fart, GANG.fart))))));
 // den fallne ligger kvar med det hen hade, tills någon avrustar hen (steg 8.7.5)
 function fallenFiende(s: State, r: Person, x: number, y: number) {
-  const g = gr(r), saker: Record<string, number> = { ...g.bar };
+  const g = gr(r), saker: Record<string, number> | undefined = g.bar && Object.keys(g.bar).length ? { ...g.bar } : undefined;
   g.bar = undefined;
-  kvarlevor(s).push({ id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k: 'fiende', x: Math.floor(x), y: Math.floor(y), t: s.now, vem: -1, namn: r.name, text: r.name, saker });
+  // fiendens egna vapen och plagg ligger kvar på kroppen med kvalitet och slitage tills någon avrustar hen (steg 10.3.6); bytet ligger för sig
+  const ting = gastTingOf(s, r).map(t => ({ k: t.k, c: t.c, ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}) })); // ett heligt ting de tagit behåller kvalitet och berättelse (steg 10.3.20)
+  s.gastTing = (s.gastTing ?? []).filter(t => t.agare !== r.id);
+  kvarlevor(s).push({ id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k: 'fiende', x: Math.floor(x), y: Math.floor(y), t: s.now, vem: -1, namn: r.name, text: r.name, ...(saker ? { saker } : {}), ...(ting.length ? { ting } : {}) });
 }
 // rövaren som faller tappar det hen bär där hen ligger; det är byns igen
 export function tappar(s: State, r: Person) {

@@ -1,3 +1,4 @@
+import { heligtAvstar } from './kultlatt';
 // Björnen möter folk (steg 6.6.5). Björnen själv och ungarna går sin väg ur kartan och klockan (bjornarOf i djur.ts); här
 // avgörs vad som händer när någon kommer nära den. Den anfaller sällan: oftast blir man rädd och går därifrån. Men den som
 // överraskar den på nära håll, och mest den som kommer nära ungarna, kan bli anfallen, och en björn slår hårt.
@@ -24,6 +25,7 @@ import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
 import { ledareOf } from './styre';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { upplev } from './uppvaxt';
+import { tecken } from './religion';
 import { H, HOUR, MIN, Person, SEC, State, Task, W } from './typer';
 import { bynsMitt } from './omrade';
 
@@ -88,6 +90,7 @@ export function bjornSteg(s: State) {
     // den ser björnen, blir rädd och går därifrån
     think(p, ungar.length ? 'Såg en björn med ungar' : 'Såg en björn', -BJORNMOTE.rädd, s.now, BJORNMOTE.räddTim * HOUR);
     avbryt(s, p);
+    tecken(s, p, 'bjornVande'); // björnen som vände om (steg 10.3.7)
     log(s, `${p.name} kom nära en björn${ungar.length ? ' med ungar' : ''} och drog sig försiktigt undan.`, 'world', [p.id]);
   }
   const j = s.bjornJakt;
@@ -130,6 +133,7 @@ function jaktSlut(s: State) { s.bjornJakt = undefined; }
 
 // nivån Tillfälle (val.ts): den som ska följa med på björnjakten och ännu inte gått
 export function bjornjaktVal(s: State, p: Person) {
+  if (heligtAvstar(s, p, 'bjorn')) return undefined; // det heliga djuret jagas inte (steg 10.3.15)
   const j = s.bjornJakt;
   if (!j?.jagare?.includes(p.id) || p.task?.act === 'bjornjakt' || s.now >= (j.kallTill ?? 0) || s.now >= (j.jaktTill ?? 0)) return undefined;
   const b = bjornarOf(s).find(d => d.art === 'bjorn');

@@ -130,7 +130,6 @@ const DEF = {
   // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och den som inte kan gå bärs hem eller får vatten där hen ligger
   varda: { namn: 'Vårdar', tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true, fortsatter: ['brand', 'tornado', 'varg'] as const },
   // tron och graven (system 8.5, kult.ts och kvarlevor.ts)
-  hovbygge: { namn: 'Bygger hovet', slag: 'bygga', tungt: true, framme: true, stilla: true }, // steg 8.6.14
   be: { namn: 'Ber', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true },
   ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, tyst: true, dygn: true },
   begrava: { namn: 'Går för att ta hand om en död', tecken: '✨', ikon: 'a_be', framme: true, stilla: true },
@@ -161,7 +160,7 @@ const DEF = {
   klyva_plank: { namn: 'Klyver plankor', slag: 'hantverk', hantverk: true, verb: 'klyver', plats: 'station' }, // vid klyvplatsen
   koka_vatten: { namn: 'Kokar vatten', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // i en lerkruka vid elden eller i örtköket (steg 9.5.25)
   salta_fisk: { namn: 'Saltar in fisk', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, // steg 9.6.19
-  salta_kott: { namn: 'Saltar in kött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' },
+  salta_kott: { namn: 'Saltar in kött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_vargkott: { namn: 'Saltar in vargkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_radjurkott: { namn: 'Saltar in rådjurskött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_farkott: { namn: 'Saltar in fårkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_getkott: { namn: 'Saltar in getkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_fagelkott: { namn: 'Saltar in fågelkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_bjornkott: { namn: 'Saltar in björnkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, // steg 10.3.14
   krossa_saft: { namn: 'Gör saft', slag: 'hantverk', hantverk: true, verb: 'krossar bär', plats: 'elden' }, // bär till saft i en lerkruka (steg 9.6.9)
   koka_te: { namn: 'Kokar örtte', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket, annars vid elden (steg 9.5.8)
   koka_salva: { namn: 'Kokar salva', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket (steg 7.6)

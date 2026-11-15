@@ -1,3 +1,4 @@
+import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
@@ -86,9 +87,8 @@ import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './sm
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { avrustaKlar, gravKlar, kroppUpp, rustaKlar } from './grav';
-import { bonKlar, kultTimme } from './kult';
-import { hovArbete, kyrkProjekt, kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
-import { laggTillProjekt } from './projekt';
+import { bonKlar, farorNu, kultTimme } from './kult';
+import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
 import { lagRegister } from './lagar';
 import { oppnaSed } from './rost';
 import { handelse } from './rykten';
@@ -218,7 +218,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
   avrusta: avrustaKlar, rusta: rustaKlar,
-  hovbygge: (s, p, t) => hovArbete(s, p, 60 * (1 + 0 * t.carry)), be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, // tron och graven (system 8.5)
+  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
@@ -235,7 +235,7 @@ for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
   // fångstgropen (steg 10.2.84) grävdes där den ska ligga; mjärden och snaran görs vid fångstbänken och sätts ut
   if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
 };
-lagRegister(); kyrkaRegister(); laggTillProjekt(kyrkProjekt()); satOffrad((s, p) => die(s, p, 'offrad'));
+lagRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
@@ -254,7 +254,12 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
-for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => bearbeta(s, p, DJURARTER.find(a => a.act === art.act && djurKvar(s, a) > 0) ?? art, dtSec / HOUR_S);
+// det heliga djuret slaktas inte, utom i svält (steg 10.3.15): finns bara det kvar är arbetet slut
+for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => {
+  const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === art.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt));
+  if (!a) { if (p.task) p.task.until = s.now; return; }
+  bearbeta(s, p, a, dtSec / HOUR_S);
+};
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
 KLAR.koka_mat = (s, p) => kokaKlar(s, p);
 KLAR.sopor = (s, p) => soporKlar(s, p);

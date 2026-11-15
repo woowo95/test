@@ -1,3 +1,6 @@
+import { troOf } from './religion';
+import { helig } from './kult';
+import { planDel } from './troshus';
 import { fuelStock, hearthOf } from './eld';
 import { TROSKEL } from './forradsmal';
 import { husNytt } from './byggnad';
@@ -35,6 +38,8 @@ import { strandNu } from './sjo';
 // ---------- balanstal (regel 8) ----------
 // Byggplanen (Byggsystemet: det som ska byggas). Husreglerna står i HUS (byggnader.ts) och BYGG (bygg.ts)
 export const PLAN = balans('byggplan', {
+  heligNara: 0.4, // trons hus (steg 10.3.19): en plats räknas så här många rutor längre bort per ruta från trons heliga plats
+  avlang: 3, // ... och för ett avlångt trons hus så många rutor per steg från formen två gånger så lång som bred
   sistaLager: 2, // en vedbod som tar byns sista vanliga lagerplats kostar så här mycket mer (steg 10.2.42)
   behovTim: 2, // ett behov måste finnas så här många timmar innan det byggs för (en fara väntar inte)
   varTim: 3, // planen görs var tredje timme i spelet
@@ -99,7 +104,7 @@ const husNara = (s: State, x: number, y: number, w: number, h: number, m: number
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
 // som står ute, helst en bit från elden, och inte så att väggarna stänger in mark. Träden där
 // huset ska stå fälls först
-function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
+function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean, nara?: { x: number; y: number }) {
   const f = eldPlats(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, M = Math.max(PLATS.husMellan + ((s.byplan?.tat ?? 0) < -0.5 ? 1 : 0), PLATS.uteFri);
   const platser: { x: number; y: number; sc: number }[] = [], o = omrade(s), r = Math.ceil(R) + w + h;
   for (let y = Math.max(1, o.y0 - r); y + h < H && y <= o.y1 + r; y++) for (let x = Math.max(1, o.x0 - r); x + w < W && x <= o.x1 + r; x++) {
@@ -120,7 +125,7 @@ function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean) {
     const eld = rektAvstand(f.x, f.y, x - 1, y - 1, w + 2, h + 2) === 0 ? ELDFLYTT.husStraff : 0; // där elden står bara om ingen annan plats finns: elden flyttas först
     const form = s.byplan?.form ?? 'ring', rad = form === 'rader' && strakNara(s, x, y, w, h) ? PLAN.raderVikt : 0;
     const riv = PLAN.rivStation * stationerI(s, x, y, w, h).length; // det som står ute där huset ska stå rivs (steg 10.2.77)
-    const sc = riv + Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + eld - rad; // träden spelar ingen roll: de fälls som en del av bygget (steg 8.1.14)
+    const sc = (nara ? PLAN.heligNara * Math.hypot(cx - nara.x, cy - nara.y) : 0) + riv + Math.max(0, BYGG.husAvst - near) + BYGG.utomVikt * Math.max(0, ut - Math.min(w, h) / 2) + (BYGG.mittVikt + (form === 'ring' ? PLAN.ringVikt : 0)) * Math.hypot(cx - m.x - 0.5, cy - m.y - 0.5) + eld - rad; // träden spelar ingen roll: de fälls som en del av bygget (steg 8.1.14)
     platser.push({ x, y, sc });
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
@@ -162,7 +167,7 @@ export function byggbehov(s: State): ByggBehov[] {
   }
   return ut.sort((x, y) => y.sc - x.sc);
 }
-const behovNyckel = (b: ByggBehov) => `${b.fn}:${b.a.ag ?? ''}:${b.a.hus ?? ''}`;
+const behovNyckel = (b: ByggBehov) => `${b.fn}:${b.a.ag ?? ''}:${b.a.hus ?? ''}${b.a.tro !== undefined ? `:t${b.a.tro}` : ''}`;
 // en gång i timmen: minns när behoven kom
 export function stepBehov(s: State) {
   const fore = s.byggBehov ?? {}, nu: Record<string, number> = {};
@@ -197,6 +202,7 @@ const rutorFor = (b: ByggBehov, plats: number) => sover(b) ? sovRutorFor(plats) 
 const platsAv = (b: ByggBehov, rutor: number) => sover(b) ? sovPersoner(rutor) : rutor;
 // önskad storlek (steg 7.2.6): efter behovet nu, lite större med seden Förutseende, mindre med Dagens behov, större för den rika
 export function onskadPlats(s: State, b: ByggBehov) {
+  if (b.a.tro !== undefined) return Math.min(BYGG.maxInne, Math.max(1, b.a.plats)); // trons hus: det planen säger (steg 10.3.19)
   const sed = s.seder?.v?.forsiktighet ?? 0, rik = b.a.ag !== undefined && rikOf(s, b.a.ag) ? PLAN.rikExtra : 0;
   // Dagens behov tar bort marginalen när seden är tydlig, men bygger aldrig för få
   const f = sed > 0 ? 1 + PLAN.sedStorlek * sed : 1 + PLAN.sedStorlek * Math.min(0, sed + PLAN.sedMarg);
@@ -215,9 +221,13 @@ const nyttHus: AtgardDef = {
     // både bredare än djupt och djupare än brett (steg 9.2.133), så att en smal men djup lucka i en trång by går att bygga i
     for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) { sizes.push({ w, h }); if (w !== h) sizes.push({ w: h, h: w }); }
     const want = onskadPlats(s, b), wantR = rutorFor(b, want);
-    sizes.sort((a, c) => (a.w * a.h < wantR ? 1000 - a.w * a.h : 0) - (c.w * c.h < wantR ? 1000 - c.w * c.h : 0) || a.w * a.h - c.w * c.h || Math.abs(a.w - a.h) - Math.abs(c.w - c.h) || +(a.h > a.w) - +(c.h > c.w)); // liggande före stående i samma form (steg 9.2.133)
+    // trons hus (steg 10.3.19): formen och väggarna efter planen, och helst nära trons heliga plats
+    const tr = b.a.tro !== undefined ? troOf(s, b.a.tro) : undefined, avlang = !!tr && tr.plan?.form === 'avlang';
+    const vagg = tr ? planDel(s, tr, 'vagg') ?? 'timmer' : 'timmer', hp = tr && helig(s, tr), nara = hp ? { x: hp.x, y: hp.y } : undefined;
+    const formAv = (a: { w: number; h: number }) => avlang ? PLAN.avlang * Math.abs(Math.max(a.w, a.h) / Math.min(a.w, a.h) - 2) : 0;
+    sizes.sort((a, c) => (a.w * a.h < wantR ? 1000 - a.w * a.h : 0) - (c.w * c.h < wantR ? 1000 - c.w * c.h : 0) || a.w * a.h + formAv(a) - c.w * c.h - formAv(c) || Math.abs(a.w - a.h) - Math.abs(c.w - c.h) || +(a.h > a.w) - +(c.h > c.w)); // liggande före stående i samma form (steg 9.2.133)
     for (const { w, h } of sizes) {
-      const at = siteFor(s, w + 2, h + 2, okAt);
+      const at = siteFor(s, w + 2, h + 2, okAt, nara);
       if (!at) continue;
       // står huset där elden står, flyttas elden till närmaste lediga plats, och dörren vetter mot den nya platsen
       const e = eldPlats(s), paElden = rektAvstand(e.x, e.y, at.x - 1, at.y - 1, w + 4, h + 4) === 0;
@@ -228,7 +238,7 @@ const nyttHus: AtgardDef = {
       const ritning: Andring[] = [];
       for (let y = at.y; y < at.y + h + 2; y++) for (let x = at.x; x < at.x + w + 2; x++) {
         const edge = x === at.x || y === at.y || x === at.x + w + 1 || y === at.y + h + 1;
-        ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? 'timmer' : golvNu(s) });
+        ritning.push({ x, y, m: x === dorr.x && y === dorr.y ? 'oppning' : edge ? vagg : golvNu(s) });
       }
       return [{ at: 'nyttHus', x: at.x, y: at.y, w: w + 2, h: h + 2, ritning, oppnas: [], kostnad: ritningKostnad(ritning), varde: Math.min(1, platsAv(b, w * h) / Math.max(1, want)), plats: platsAv(b, w * h), ny }];
     }
@@ -254,7 +264,7 @@ function dorrPlats(s: State, x0: number, y0: number, W2: number, H2: number, f: 
 const byggaUt: AtgardDef = {
   namn: 'Bygga ut', steg: 1,
   foresla: (s, b, okAt) => {
-    const hs = housesOf(s).filter(h => h.klar && !h.ut && !fnOf(h).omkring && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.ag !== undefined ? h.ag === b.a.ag : h.ag === undefined && fnId(h) === b.fn && !fnOf(h).lager));
+    const hs = housesOf(s).filter(h => h.klar && !h.ut && !fnOf(h).omkring && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.tro !== undefined ? h.tro === b.a.tro : b.a.ag !== undefined ? h.ag === b.a.ag : h.ag === undefined && h.tro === undefined && fnId(h) === b.fn && !fnOf(h).lager));
     const ut: Forslag[] = [], want = onskadPlats(s, b);
     for (const h of hs) for (const side of ['v', 'o', 'n', 's'] as const) {
       const lodrat = side === 'n' || side === 's', iw = h.w - 2, ih = h.h - 2;
@@ -288,9 +298,10 @@ function utbyggnad(s: State, h: Hus, side: 'v' | 'o' | 'n' | 's', k: number, okA
   let dorrFlyttas: { x: number; y: number } | undefined;
   for (const b of bitsOf(s)) if (b.hus === h.id && gammal(b.x, b.y)) { oppnas.push({ x: b.x, y: b.y, m: golvNu(s) }); if (b.k === 'oppning') dorrFlyttas = { x: b.x, y: b.y }; }
   const dorr = dorrFlyttas ? { x: side === 'v' ? x : side === 'o' ? x + w - 1 : dorrFlyttas.x, y: side === 'n' ? y : side === 's' ? y + hh - 1 : dorrFlyttas.y } : undefined;
+  const tr = h.tro !== undefined ? troOf(s, h.tro) : undefined, vagg = (tr && planDel(s, tr, 'vagg')) || 'timmer'; // trons hus byggs ut med planens vägg (steg 10.3.21)
   for (let yy = y; yy < y + hh; yy++) for (let xx = x; xx < x + w; xx++) {
     if (!nyRuta(xx, yy)) continue;
-    ritning.push({ x: xx, y: yy, m: dorr && dorr.x === xx && dorr.y === yy ? 'oppning' : kant(xx, yy) ? 'timmer' : golvNu(s) });
+    ritning.push({ x: xx, y: yy, m: dorr && dorr.x === xx && dorr.y === yy ? 'oppning' : kant(xx, yy) ? vagg : golvNu(s) });
   }
   if (dorr) {
     const e = eldPlats(s), ux = dorr.x + (side === 'v' ? -1 : side === 'o' ? 1 : 0), uy = dorr.y + (side === 'n' ? -1 : side === 's' ? 1 : 0);
@@ -732,7 +743,8 @@ export function planLager(s: State) {
   if (f?.at === 'lagerNyA') { if (!lagerNy(s)) lagerStorre(s); } else if (!lagerStorre(s)) lagerNy(s);
 }
 // vems en ändring är (steg 7.2.17): byn eller en familj. Var och en har en pågående ändring i taget
-const agareAv = (h: Hus) => h.ag ?? -1;
+// trons hus är trons (steg 10.3.19): ett halvbyggt trons hus hindrar inte byns byggen
+const TRO_AG = -1000, agareAv = (h: Hus) => h.tro !== undefined ? TRO_AG - h.tro : h.ag ?? -1;
 const upptagen = (s: State, ag: number) => housesOf(s).some(h => agareAv(h) === ag && (!h.klar || h.ut));
 // den som planerar (by, namnet i loggen): ett familjehus av den skickligaste byggaren i familjen, annars av familjens ägare (finns
 // hen inte kvar: byns skickligaste byggare); andra hus av byns skickligaste byggare. Det måste finnas en byggare i byn, men
@@ -754,7 +766,7 @@ export function planBuild(s: State) {
   const klara = new Set<number>();
   let provat = false, funnit = false; // det som väntar på ett bygge eller ett köp prövas inte
   for (const u of behov) {
-    const ag = u.a.ag ?? -1;
+    const ag = u.a.tro !== undefined ? TRO_AG - u.a.tro : u.a.ag ?? -1;
     if (klara.has(ag) || upptagen(s, ag) || s.husAffar?.ag === ag) continue; // den som väntar på att köpa ett hus bygger inget under tiden
     const bast = valj(s, u, okAt);
     provat = true;
@@ -765,7 +777,7 @@ export function planBuild(s: State) {
     okMinne.fill(-1);
   }
   if (provat && !funnit) s.byggSok = s.now + BYGG.omforsok * HOUR; // ingen plats nu: försök igen om ett tag
-  if (!byggbehov(s).some(b => b.a.ag === undefined) && !upptagen(s, -1) && !bitsOf(s).some(b => b.forb) && !klara.has(-1)) {
+  if (!byggbehov(s).some(b => b.a.ag === undefined && b.a.tro === undefined) && !upptagen(s, -1) && !bitsOf(s).some(b => b.forb) && !klara.has(-1)) {
     const u: ByggBehov = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 }, f = valj(s, u, okAt);
     if (f) utfor(s, f, u, byggare, ppl);
   }
@@ -774,6 +786,7 @@ export function planBuild(s: State) {
 function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
   let bast: Forslag | undefined, bs = -Infinity;
   for (const k of Object.keys(ATGARDER)) {
+    if (u.a.tro !== undefined && k !== 'nyttHus' && k !== 'byggaUt') continue; // trons hus byggs nytt eller byggs ut (steg 10.3.19)
     const d = ATGARDER[k];
     for (const f of d.foresla(s, u, okAt).slice(0, PLAN.perBehov)) {
       if (!ritningOk(s, f, okAt) || u.fn === 'forbattra' && !vedRacker(s, f)) continue;
@@ -814,7 +827,7 @@ const stationerI = (s: State, x: number, y: number, w: number, h: number) => sta
 // ett nytt hus: ritningen blir bitar
 function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   const row: Byggnad = BYGGNADER[u.fn as Fn], iw = f.w - 2, ih = f.h - 2, same = antalLika(s, u.fn as Fn, iw, ih);
-  const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, iw, ih, same, u.a), x: f.x, y: f.y, w: f.w, h: f.h, fn: u.fn, slag: u.a.slag, ag: u.a.ag, };
+  const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, iw, ih, same, u.a), x: f.x, y: f.y, w: f.w, h: f.h, fn: u.fn, slag: u.a.slag, ag: u.a.ag, ...(u.a.tro !== undefined ? { tro: u.a.tro } : {}) };
   s.nextBit++;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: hus.id });
   housesOf(s).push(hus); touch(s);

@@ -2293,7 +2293,7 @@ SCENARIER.radjur = {
     s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
     setMat(s, {}); for (const k of ['kott', 'ben', 'radjursskinn', 'talg']) setAmount(s, k, 0); setAmount(s, 'radjur', 1);
     SIM.bearbeta(s, q, SIM.DJUR.radjur, 1);
-    const fick = ['kott', 'ben', 'radjursskinn', 'talg'].map(k => `${k} ${amountOf(s, k)}`).join(', ');
+    const fick = ['radjurkott', 'ben', 'radjursskinn', 'talg'].map(k => `${k} ${amountOf(s, k)}`).join(', ');
     return [
       [`rådjursgrupper på kartan (${g.length}, ${g.reduce((a, x) => a + x.n, 0)} djur)`, g.length >= 1 && g.every(x => x.n >= SIM.RADJUR.storlek[0])],
       [`grupperna står på mark, inte i vattnet (${kant} av ${g.length})`, kant === g.length],
@@ -2304,7 +2304,7 @@ SCENARIER.radjur = {
       [`med stenar jagas inga rådjur (${sten.radmal})`, sten.radmal === 0],
       [`den som inte orkar bära det helt styckar det (${svagDel} delar i händerna)`, svagDel > 0],
       [`den starka bär hem rådjuret helt (${stark.hel} hela, ${stark.del} styckade)`, stark.hel > 0],
-      [`slakten gav ${fick}`, amountOf(s, 'kott') >= 4 && amountOf(s, 'ben') === 2 && amountOf(s, 'radjursskinn') === 1 && amountOf(s, 'talg') === 2],
+      [`slakten gav ${fick}`, amountOf(s, 'radjurkott') >= 4 && amountOf(s, 'ben') === 2 && amountOf(s, 'radjursskinn') === 1 && amountOf(s, 'talg') === 2],
     ];
   },
 };
@@ -2364,7 +2364,7 @@ SCENARIER.faglar = {
       ['och kommer tillbaka efter en stund', tillbaka],
       [`jägaren går mot fåglarna när inget annat vilt är nära (${ut.fagel} av ${ut.forsok})`, !!mal && ut.fagel > 0],
       [`fåglar fälls, men sällan (${ut.fallt} av ${ut.forsok})`, ut.fallt > 0 && ut.fallt < ut.forsok / 2],
-      [`slakten gav kött ${amountOf(s, 'kott')} och fjädrar ${amountOf(s, 'fjadrar')}`, amountOf(s, 'kott') === 1 && amountOf(s, 'fjadrar') === 1],
+      [`slakten gav fågelkött ${amountOf(s, 'fagelkott')} och fjädrar ${amountOf(s, 'fjadrar')}`, amountOf(s, 'fagelkott') === 1 && amountOf(s, 'fjadrar') === 1],
       [`samlarna hittar ägg på våren (${agg}${varen ? '' : ', byn startade inte på våren'})`, agg > 0],
     ];
   },

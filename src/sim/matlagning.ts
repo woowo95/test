@@ -1,3 +1,4 @@
+import { matAvstar } from './kultlatt';
 import { DAY, HOUR, MIN, Person, State } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
@@ -7,7 +8,7 @@ import { grundvarde } from './varde';
 import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
 import { matPerDygn } from './ekonomi';
 import { ageIndex, kallTid } from './tid';
-import { SAKER } from './saker';
+import { KOTTSLAG, SAKER } from './saker';
 import { loggBer } from './berattelser';
 import { balans } from './balans';
 import { SJUK, insjukna } from './sjukdom';
@@ -52,15 +53,15 @@ export const RATTER: readonly Ratt[] = [
   { ra: 'abborre', blir: 'grillfisk', per: 1 }, // den hela abborren grillas som den är när den inte rensats
   { ra: 'gaddkott', blir: 'grillgadda', per: 1 }, { ra: 'gadda', blir: 'grillgadda', per: 1 }, { ra: 'mortkott', blir: 'grillmort', per: 1 }, // grillad fisk behåller artens näring (steg 7.4.3)
   { ra: 'braxkott', blir: 'grillfisk', per: 1 }, { ra: 'sikkott', blir: 'grillfisk', per: 1 }, // steg 9.6.17
-  { ra: 'kott', blir: 'grillkott', per: 1 },
-  { ra: 'vargkott', blir: 'grillkott', per: 1 }, // köttet är eget per art men blir samma grillade kött (steg 3.7.14)
+  ...KOTTSLAG.map(k => ({ ra: k, blir: 'grillkott', per: 1 })), // köttet är eget per art men blir samma grillade kött (steg 3.7.14, 10.3.14)
 ];
 // råvaran som lagas först (steg 10.2.37): den som byn har mest av i värde, och mer av det som håller på att ruttna
 export const ravaraPoang = (s: State, k: string, n = amountOf(s, k)) => n * grundvarde(k) * (1 + MATLAG.ruttna * (1 - skickAv(s, k)));
 // det som grillas nu: råvaran med högst poäng av dem det finns tillräckligt av (gränssnittet visar den på spettet)
-export const grillVara = (s: State) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if (amountOf(s, r.ra) < MATLAG.min) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
+// den troende kocken grillar inte det tron förbjuder (steg 10.3.16)
+export const grillVara = (s: State, p?: Person) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if (amountOf(s, r.ra) < MATLAG.min || p && matAvstar(s, p, r.ra)) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
-export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
+export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s, p) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
 // hur länge ett pass vid grillen varar
 export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(MATLAG.maxTim * HOUR, (r ? amountOf(s, r.ra) / MATLAG.timme : 0) * HOUR + MATLAG.passExtra * MIN); };
 // så stor del av maten p bränner
@@ -69,7 +70,7 @@ export const brannDel = (p: Person) => MATLAG.brann * clamp(1 - (p.skill.matlagn
 // grilla i hours timmar. Arbetet går mot nästa hela bit (p.delar), och varje hel bit bränns eller inte (steg 9.6.4): chansen
 // sjunker med färdigheten Matlagning. Rätten är deras som ägde råvaran; det som bränns är förstört
 export function grilla(s: State, p: Person, hours: number) {
-  const r = grillVara(s);
+  const r = grillVara(s, p);
   if (!r || !s.fire.lit || !kanGoras(s, 'grilla')) { if (p.task) p.task.until = s.now; return; }
   const d = (p.delar ??= {}), t = (d[GRILL] ?? 0) + hours * MATLAG.timme, hela = Math.min(Math.floor(t + 1e-9), Math.floor(amountOf(s, r.ra) + 1e-9));
   d[GRILL] = Math.min(t - Math.floor(t + 1e-9), 0.999);
@@ -140,8 +141,7 @@ export const TORKAS: readonly Ratt[] = [
   { ra: 'gaddkott', blir: 'torrgadda', per: 1 }, { ra: 'mortkott', blir: 'torrmort', per: 1 },
   { ra: 'braxkott', blir: 'torrfisk', per: 1 }, { ra: 'sikkott', blir: 'torrfisk', per: 1 }, // steg 9.6.17
   { ra: 'ratlin', blir: 'lin', per: 1 }, // linet rötas som köttet på torkställningen (steg 7.7.7)
-  { ra: 'kott', blir: 'torrkott', per: 1 },
-  { ra: 'vargkott', blir: 'torrkott', per: 1 },
+  ...KOTTSLAG.map(k => ({ ra: k, blir: 'torrkott', per: 1 })),
 ];
 // rökeriet (steg 9.6.8): en station som torkställningen, där köttet och fisken röks på ROK.dygn dygn, också i regn och på
 // vintern (handlingen roka har inget krav på vädret), och blir rökt mat som håller som den torkade och smakar lite bättre
@@ -151,7 +151,7 @@ export const ROK = balans('rokeri', {
 });
 export const ROKAS: readonly Ratt[] = [
   { ra: 'fisk', blir: 'rokfisk', per: 1 }, { ra: 'abborre', blir: 'rokfisk', per: 1 }, { ra: 'gaddkott', blir: 'rokfisk', per: 1 }, { ra: 'mortkott', blir: 'rokfisk', per: 1 }, { ra: 'braxkott', blir: 'rokfisk', per: 1 }, { ra: 'sikkott', blir: 'rokfisk', per: 1 },
-  { ra: 'kott', blir: 'rokkott', per: 1 }, { ra: 'vargkott', blir: 'rokkott', per: 1 },
+  ...KOTTSLAG.map(k => ({ ra: k, blir: 'rokkott', per: 1 })),
 ];
 export type TorkSlag = 'tork' | 'rokeri';
 const TORK_RAD = { tork: () => TORKAS, rokeri: () => ROKAS };
@@ -264,7 +264,7 @@ export interface KokRecept { id: string; huvud: string; andra: string; smak?: st
 // råvara ur en annan grupp (helst stärkelse), och smaken om den finns
 export function kokRecept(s: State, p?: Person): KokRecept | undefined {
   const tar = (k: string) => (p ? getable(s, p, k) : amountOf(s, k)) - utsadeKrok.av(s, k), har = (k: string, n: number) => tar(k) >= n;
-  const huvuden = Object.keys(INGREDIENSER).filter(k => INGREDIENSER[k].huvud && iKrukan(k) && har(k, RATT.huvud) && (RATT_HUVUD_LIST as string[]).includes(INGREDIENSER[k].huvud!))
+  const huvuden = Object.keys(INGREDIENSER).filter(k => INGREDIENSER[k].huvud && iKrukan(k) && har(k, RATT.huvud) && !(p && matAvstar(s, p, k)) /* den troende kocken lagar inte det tron förbjuder (steg 10.3.16) */ && (RATT_HUVUD_LIST as string[]).includes(INGREDIENSER[k].huvud!))
     .map(k => ({ k, v: ravaraPoang(s, k, tar(k)) })).sort((a, b) => b.v - a.v);
   for (const { k: huvud } of huvuden) {
     const hh = INGREDIENSER[huvud].huvud as RattHuvud;

@@ -29,6 +29,7 @@ const HITTAS: Record<string, string> = {
   kott: 'Slaktas ur fällt vilt', ben: 'Slaktas ur fällt vilt', skinn: 'Slaktas ur fällt vilt', talg: 'Slaktas ur fällt vilt och vargar',
   vargkott: 'Slaktas ur en fälld varg', vargskinn: 'Slaktas ur en fälld varg', vargdel: 'Styckas där en varg föll, när den är för tung att bära hel',
   radjur: 'Fälls med spjut i skogskanten', fagel: 'Fälls med spjut eller sten, sällan', fjadrar: 'Slaktas ur en fälld fågel', agg: 'Hittas ibland på våren när man samlar', radjursskinn: 'Slaktas ur ett fällt rådjur', radjurdel: 'Styckas där ett rådjur föll, när det är för tungt att bära helt',
+  radjurkott: 'Slaktas ur ett fällt rådjur', farkott: 'Slaktas ur ett får', getkott: 'Slaktas ur en get', fagelkott: 'Slaktas ur en fälld fågel', bjornkott: 'Slaktas ur en fälld björn', farskinn: 'Slaktas ur ett får', getskinn: 'Slaktas ur en get',
   bjorn: 'Fälls på björnjakt av en stor grupp med spjut', bjorndel: 'Styckas där björnen föll', bjornskinn: 'Slaktas ur en fälld björn',
 };
 // det den används till som inte är ett recept

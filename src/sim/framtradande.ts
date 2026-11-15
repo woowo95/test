@@ -6,14 +6,16 @@ import { blocked, freeNear } from './byggnad';
 // ger publiken glädje (mer ju skickligare och mer karismatisk den som uppträder är) och får en kort text som beskriver det.
 // Ett framträdande i taget, i s.fram; de senaste står i s.framtradanden.
 import { honom } from './ord';
-import { ALDER, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, ovning, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, ovning, relKey, stat, think } from './folk';
+import { budHindrar } from './kyrka';
 import { avbryt } from './lager';
 import { eldPlats } from './karta';
 import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm } from './rykten';
 import { ledareOf, legitimitet, pabud } from './styre';
 import { Ting, tingOf } from './agande';
 import { tingVarde } from './varde';
-import { predika, troOf } from './religion';
+import { predika, troende, troNamn, troOf } from './religion';
+import type { Tro } from './religion';
 import { clamp } from './slump';
 import { share } from './minne';
 import { SAMTALSSLAG } from './samtal';
@@ -88,12 +90,13 @@ export const FRAM = balans('framtradande', {
   // framträdandet hyllar hen. Chansen är bestall × (1 − legitimiteten); den som uppträder tackar ja om hen tycker minst
   // bestallOp om ledaren, och tycker sedan bestallTack bättre om hen
   bestall: 0.5, bestallOp: -20, bestallTack: 3,
+  hanTro: 8, // ... hånar gudarna (steg 10.3.22): en troende som hör får så här mycket svagare tro, gånger kvaliteten, och tycker styre gånger kvaliteten sämre om den som hånar
   tro: 40, // ... om tron: framträdandet övertygar som så här många samtal, gånger kvaliteten (predika i religion.ts)
 });
 
 // framträdandet som pågår: formen, den som uppträder, när det började (task.ref) och slutar, publiken som varit där och texten
-export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; da?: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string } // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
-export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string; scen?: number // scen = stationen (steg 9.2.67)
+export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; da?: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string; gud?: number } // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
+export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string; hanad?: string[]; scen?: number // scen = stationen (steg 9.2.67)
   // redogörelsen (steg 5.4.7.1), sparad när det händer: numret (raden i loggen och notisen pekar hit), publiken med vad var och
   // en tyckte om den som uppträdde före och efter (r0, r1) och om ledaren (l0, l1, efter en hyllning eller ett hån), glädjen
   // (tanken i humöret), de som fick höra ryktet, de som tron övertygade, ledaren (namnet när budskapet gällde ledaren) och
@@ -129,9 +132,9 @@ function minneAmne(s: State, p: Person) {
 // vad framträdandet vill säga, när ingen beställt något: den som uppträder väljer efter sina egna intryck och sin tro. vikt = hur
 // gärna (0 = inte), amne = texten till {amne}, verkan = vad det gör med var och en som lyssnade (q = kvaliteten, med karisman)
 const liten = (t: string) => t[0]!.toLowerCase() + t.slice(1);
-export type Bud = 'person' | 'hylla' | 'hana' | 'tro';
+export type Bud = 'person' | 'hylla' | 'hana' | 'tro' | 'hanaGud';
 interface BudDef { namn: string; vikt: (s: State, p: Person, x: BudLage) => number; amne: (s: State, p: Person, x: BudLage) => string; verkan: (s: State, p: Person, b: Person, q: number, f: Fram) => boolean | void } // verkan: sant när ryktet spreds
-interface BudLage { e?: Intryck; ev: number; l?: Person; op: number }
+interface BudLage { e?: Intryck; ev: number; l?: Person; op: number; gud?: Tro; gudOp?: number } // gud = tron p tycker sämst om (inte p:s egen), gudOp = vad p i snitt tycker om dess troende
 // det tillåtna hånet: 1 = fritt, 0 = förbjudet av ledaren (påbudet Hån, styre.ts)
 export const hanTillat = (s: State) => s.styre?.hanForbud ? 0 : (1 + pabud(s, 'han')) / 2; // ett förbud är ett förbud (steg 8.3.13)
 // publikens relation till ledaren ändras med d
@@ -149,18 +152,29 @@ export const BUDSKAP: Record<Bud, BudDef> = {
     verkan: (s, _p, b, q, f) => stod(s, b, byId(s, f.om!), -FRAM.styre * q) },
   tro: { namn: 'Om tron', vikt: (s, p) => troOf(s, p.tro) ? (p.troStyrka ?? 0) / 100 * FRAM.budTro : 0, amne: (s, p) => { const tr = troOf(s, p.tro)!; return `${liten(tr.bakom)}, som vill ${tr.vill}`; },
     verkan: (s, p, b, q) => predika(s, p, b, getRel(s, p, b), 'berättelse', FRAM.tro * q) },
+  // hånar gudarna (steg 10.3.22): den som inte delar en tro och tycker illa om dess troende. Den som följer budet ingen hånar gudarna väljer det inte
+  hanaGud: { namn: 'Hånar gudarna', vikt: (s, p, x) => x.gud && (x.gudOp ?? 0) < 0 && !budHindrar(s, p, 'ingenHan') ? -(x.gudOp ?? 0) / 100 * FRAM.budTro : 0,
+    amne: (_s, _p, x) => `gudarna i ${liten(troNamn(x.gud!))}`,
+    verkan: (s, p, b, q, f) => { if (b.tro === undefined || b.tro !== f.gud) return; b.troStyrka = Math.max(0, (b.troStyrka ?? 0) - FRAM.hanTro * q); stod(s, b, p, -FRAM.styre * q); return true; } },
 };
 const BUD_LIST = Object.keys(BUDSKAP) as Bud[];
 // budskapet p väljer till formen d, eller inget (formen bär inget, eller p har inget att säga)
 function budVal(s: State, p: Person, d: FramDef) {
   if (!d.bud) return undefined;
   const b = starkast(s, p), l = ledareOf(s), x: BudLage = { e: b?.e, ev: b?.v ?? 0, l: l && l !== p ? l : undefined, op: l && l !== p ? getRel(s, p, l).op : 0 };
+  for (const tr of s.tron ?? []) { // tron p tycker sämst om: snittet av vad p tycker om dess troende
+    if (tr.id === p.tro) continue;
+    const t = troende(s, tr).filter(q => q !== p);
+    if (!t.length) continue;
+    const op = t.reduce((a, q) => a + (s.rels[relKey(p.id, q.id)]?.op ?? 0), 0) / t.length;
+    if (op < (x.gudOp ?? 0)) { x.gud = tr; x.gudOp = op; }
+  }
   const w = BUD_LIST.map(k => Math.max(0, BUDSKAP[k].vikt(s, p, x))), sum = w.reduce((a, v) => a + v, 0);
   if (sum <= 0) return undefined;
   let r = rnd(s, 'fram', p) * sum, i = 0;
   while (i < w.length - 1 && r >= w[i]!) { r -= w[i]!; i++; }
   const k = BUD_LIST[i]!;
-  return { k, amne: BUDSKAP[k].amne(s, p, x), om: k === 'person' ? x.e!.om : k === 'tro' ? undefined : x.l!.id, ik: k === 'person' ? x.e!.k : undefined };
+  return { k, amne: BUDSKAP[k].amne(s, p, x), om: k === 'person' ? x.e!.om : k === 'tro' || k === 'hanaGud' ? undefined : x.l!.id, ik: k === 'person' ? x.e!.k : undefined, gud: k === 'hanaGud' ? x.gud!.id : undefined };
 }
 // ---------- beställda framträdanden (steg 4.3.2.4) ----------
 // saken ledaren l kan betala med: hel, ledig (ingen har den i handen eller bär den, den står inte vid en station) och den
@@ -234,7 +248,7 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
   const amne = bud?.amne ?? AMNE[d.amne](s, p);
   const fyll = (x: string) => x.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', amne).replace('{inst}', i ? INSTRUMENT[i].ord : '');
   const text = fyll(d.text);
-  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
+  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('gud' in bud && bud.gud !== undefined ? { gud: bud.gud } : {}), ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
   s.framKvall = kvall(start);
   count(s, 'framtradanden');
   for (const q of pub) {
@@ -283,7 +297,8 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
     const lyss: FramLyss = { id: b.id, namn: b.name, r0: Math.round(r0), r1: Math.round(getRel(s, b, p).op) };
     if (l0 !== undefined) { lyss.l0 = Math.round(l0); lyss.l1 = Math.round(getRel(s, b, ledd!).op); }
     m.publik!.push(lyss);
-    if (spred) (m.rykte ??= []).push(b.name);
+    if (spred && f.bud === 'hanaGud') (m.hanad ??= []).push(b.name);
+    else if (spred) (m.rykte ??= []).push(b.name);
     if (f.bud === 'tro' && b.tro !== tro0 && b.tro === p.tro) (m.tro ??= []).push(b.name);
   }
   // den som hånar ledaren får sämre relation med ledaren (steg 4.3.2.3)

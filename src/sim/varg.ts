@@ -1,3 +1,4 @@
+import { heligtAvstar } from './kultlatt';
 import { lista, stor, tal } from './ord';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
@@ -19,7 +20,7 @@ import { groundOf, punktIRuta } from './mark';
 import { findPath } from './vag';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { handelse, larma, larmNu, ryktbarhet } from './rykten';
-import { SAKER } from './saker';
+import { KOTTSLAG, SAKER } from './saker';
 import { vattenNu } from './sjo';
 import { clamp, rnd, chansPer } from './slump';
 import { SLAGSMAL, VAPEN, Avsikt, djurKampe, personKampe, slitKastat, svartSkadad } from './strid';
@@ -492,7 +493,7 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
 
 // flocken tar mat ur förrådet: köttet först, hela saker. Listan går art för art (hela kroppar, kött, fisk, det lagade);
 // en fälld varg i förrådet kan också tas (det är avsiktligt, kodgenomgången 3.10.25)
-const STJALS = ['vilt', 'fagel', 'varg', 'vargdel', 'radjur', 'radjurdel', 'bjorn', 'bjorndel', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
+const STJALS = ['vilt', 'fagel', 'varg', 'vargdel', 'radjur', 'radjurdel', 'bjorn', 'bjorndel', ...KOTTSLAG, 'fisk', 'abborre', 'grillkott', 'torrkott'];
 function stjal(s: State, f: Vargflock) {
   let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
   for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; }
@@ -553,6 +554,7 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
 
 // nivån Tillfälle (val.ts, steg 6.1.14): den som ska följa med på vargjakten och ännu inte gått
 export function vargjaktVal(s: State, p: Person) {
+  if (heligtAvstar(s, p, 'varg')) return undefined; // det heliga djuret jagas inte; den som blir anfallen försvarar sig (steg 10.3.15)
   const f = flockarna(s).find(x => x.jagare?.includes(p.id));
   if (!f || f.gor === 'flyr' || p.task?.act === 'vargjakt' || s.now >= (f.kallTill ?? 0) || s.now >= (f.jaktTill ?? 0)) return undefined;
   const sp = jaktPlats(s, f), k = f.kallare === undefined ? undefined : byId(s, f.kallare);

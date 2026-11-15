@@ -42,7 +42,7 @@ function punkt(s: State, i: number) {
 // vakten (och den som försvarar byn mot vargarna, varg.ts) tar sitt eget bästa vapen eller byns, som ingen annan har i handen eller bär
 export function taVapen(s: State, p: Person) {
   const ok = (MANNISKOVAPEN as readonly string[]).filter(v => v !== 'hand');
-  const t = tingOf(s).filter(t => ok.includes(t.k) && !t.halv && (t.agare === p.id || t.agare === BYN) && (t.hos === undefined || t.hos === p.id) && (t.krok === undefined || t.krok === p.id) && t.lass === undefined && (t.bar === undefined || t.bar === p.id))
+  const t = tingOf(s).filter(t => ok.includes(t.k) && !t.halv && t.helig === undefined && (t.agare === p.id || t.agare === BYN) && (t.hos === undefined || t.hos === p.id) && (t.krok === undefined || t.krok === p.id) && t.lass === undefined && (t.bar === undefined || t.bar === p.id))
     .sort((a, b) => (VAPEN as Record<string, { skada: number }>)[b.k].skada - (VAPEN as Record<string, { skada: number }>)[a.k].skada || b.c - a.c)[0];
   if (!t) return false;
   if (t.hos === p.id) return true;

@@ -15,6 +15,8 @@ import { getable, takeMaterial } from './behov';
 import { fyllVatska, karRymmer, ledigFor, vatskaAv, VatskaId } from './vatskor';
 import { knows } from './teknik';
 import { Ting, fylldSack } from './agande';
+import { olTillKyrkan } from './kyrka';
+import { kyrkaId } from './egendom';
 
 export const BRYGG = balans('brygg', {
   prepMin: 3, // så många minuter tar det att lägga en sats i karet
@@ -83,7 +85,11 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
   if (!kar) return;
   if (kar.sats?.klar) {
     let n = kar.sats.n;
-    for (let t = ledigFor(s, kar.sats.v); t && n > 0; t = ledigFor(s, kar.sats.v)) { const m = Math.min(n, karRymmer(t)); fyllVatska(s, kar.sats.v, m, t); n -= m; }
+    for (let t = ledigFor(s, kar.sats.v); t && n > 0; t = ledigFor(s, kar.sats.v)) {
+      const m = Math.min(n, karRymmer(t)); fyllVatska(s, kar.sats.v, m, t); n -= m;
+      const tr = kar.sats.v === 'ol' ? olTillKyrkan(s, p) : undefined; // öl vid högtiden (steg 10.3.23): den som följer budet ger kyrkan krukan
+      if (tr) { t.agare = kyrkaId(tr.id); count(s, 'ol_kyrkan'); }
+    }
     count(s, 'tappat_' + kar.sats.v, kar.sats.n - n);
     if (n > 0) kar.sats.n = n; else kar.sats = undefined;
     return;

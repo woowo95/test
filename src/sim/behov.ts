@@ -1,3 +1,4 @@
+import { SAK_ART, heligtBrutet, matBrutet } from './kultlatt';
 import { utsadeKrok } from './ratter';
 import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
@@ -26,6 +27,7 @@ import { handelse, smakMat } from './rykten';
 import { VED } from './eld';
 import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 import { SJUK, insjukna } from './sjukdom';
+import { budHindrar } from './kyrka';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -93,6 +95,7 @@ function eat(s: State, p: Person, fran?: Person) {
   // maten fyller näringsvärdena, och mättnaden är en sammanfattning av dem (steg 2.6.1, naring.ts)
   ratt(s, p, per, full); // rått kött och rå fisk (matlagning.ts, steg 2.8.1), av det som åts innan det skalas till mättnad
   for (const k in per) per[k] *= f;
+  for (const k in per) { heligtBrutet(s, p, SAK_ART[k]); matBrutet(s, p, k); } // den svältande åt det heliga djurets kött (steg 10.3.15)
   ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
   if (portion > 0 && vidBordet(p)) {
@@ -189,7 +192,7 @@ export function needLadder(s: State, p: Person, dtSec: number) {
 // det tycker att hen är våldsam, och en tjuv
 function ran(s: State, p: Person, b: Behov, dtSec: number) {
   if (stat(p, 'aggression', s.now) < DELA.ranAgg || ageOf(p, s.now) < ALDER.vaktFran || p.task?.act === 'strid' || !kanGa(p)) return false;
-  if (!chance(s, DELA.ranTakt, dtSec, 'dela', p)) return false;
+  if (!chance(s, DELA.ranTakt, dtSec, 'dela', p) || budHindrar(s, p, 'ingenStrid')) return false; // ingen strid på den heliga dagen (steg 10.3.22)
   const op = (q: Person) => s.rels[relKey(p.id, q.id)]?.op ?? 0;
   const offer = living(s).filter(q => q !== p && q.task?.act !== 'sova' && q.task?.act !== 'strid' && !isFamily(p, q) && ageOf(q, s.now) >= ALDER.smabarn
     && Math.hypot(q.x - p.x, q.y - p.y) <= DELA.ranNara && ownFor(s, q, b) >= b.minst).sort((a, c) => op(a) - op(c) || a.id - c.id)[0];

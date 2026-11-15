@@ -1,11 +1,12 @@
-import { GUD_OMR, Gud, NIVAER, Person, formNamn, gudarOf, SKALA_IDS, SKALOR, Tro, UPPV, skalaSyns, skalaV, troNiva, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, tolkning, troNamn, troende, upplevelseText } from '../../sim';
+const kortTyngd = (v: number) => (Math.round(v * 10) / 10).toLocaleString('sv-SE');
+import { GUD_OMR, Gud, Person, troEtikett, tyngd, tyngdDelar, formNamn, gudarOf, SKALA_IDS, SKALOR, Tro, UPPV, skalaSyns, skalaV, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, tolkning, troNamn, troende, upplevelseText } from '../../sim';
 import { tecknet } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
 import { sedBar } from './seder';
 import { omrostningar } from './styre';
 import type { Flik } from '../panel';
-import { BUD, HELIGA_PLATSER, RITUALER, budNamn, forradSum, hogtider, prastOf, prastSort } from '../../sim';
+import { BUD, HELIGA_PLATSER, RITUALER, budNamn, forradSum, hogtider, kyrkansForrad, planKlar, planText, troshusAv, troshusKlart, troshusNamn, prastOf, prastSort } from '../../sim';
 
 // det tron har: prästen, de heliga platserna och högtiderna (system 8.5)
 function kultHtml(tr: Tro) {
@@ -16,8 +17,8 @@ function kultHtml(tr: Tro) {
   if (hg || har) rad.push(`<li title="Skalan Fest – Försakelse avgör hur många högtider tron föreslår">${har} av ${Math.max(hg, har)} ${hg === 1 ? 'högtid' : 'högtider'} om året</li>`);
   // varje bud: namnet, och för ritualbuden när, vilka, var och vad som går åt; varför står sist (steg 10.3.3)
   for (const b of tr.bud ?? []) { const d = BUD[b.id] as { text: string; om?(s: unknown, tr: Tro, b: unknown): string }; rad.push(`<li title="${esc(`${d.om ? d.om(s, tr, b) + ' ' : ''}Varför: ${d.text.toLowerCase()}.`)}">📜 ${esc(budNamn(s, b))}</li>`); }
-  if (tr.hov) rad.push(`<li>📜 ${tr.hov.klar ? 'Hovet står klart' : 'Hovet byggs'}</li>`);
-  if (forradSum(tr)) rad.push(`<li title="${esc(Object.entries(tr.forrad!).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(tr)}</li>`);
+  if (tr.plan) rad.push(`<li title="${esc(planKlar(s, tr) ? 'Planen är klar' : 'Planen bestäms del för del i trons krets')}">📜 Trons hus${planKlar(s, tr) ? ` (${esc(troshusNamn(s, tr))})` : ''}: ${esc(planText(s, tr))}${planKlar(s, tr) ? ` · ${troshusKlart(s, tr) ? 'står klart' : troshusAv(s, tr).length ? 'byggs' : 'väntar på kyrkans egendom'}` : ''}</li>`); // planen (steg 10.3.18)
+  if (forradSum(s, tr)) rad.push(`<li title="${esc(Object.entries(kyrkansForrad(s, tr)).filter(([, n]) => n >= 1).map(([k, n]) => `${Math.floor(n + 1e-9)} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(s, tr)}</li>`);
   for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">✨ Helgonet ${esc(h.namn)}</li>`);
   if (tr.kvade) rad.push(`<li title="${esc(tr.kvade.text)}">📜 Heliga kväden</li>`);
   if (s.ritual?.tro === tr.id) rad.push(`<li>Just nu: ${esc(s.ritual.namn ?? RITUALER[s.ritual.k].namn)}</li>`);
@@ -53,7 +54,7 @@ function troHtml(tr: Tro) {
   const folk = troende(s, tr).sort((a, b) => (b.troStyrka ?? 0) - (a.troStyrka ?? 0)), g = byId(s, tr.grundare), id = `tro-${tr.id}`;
   const grundare = g && alive(g) ? pLink(g) : `${esc(tr.gnamn)} <small class="muted">(lever inte längre)</small>`;
   return `<div class="tekhead">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">👥 ${folk.length}</span> ${hjalpKnapp(id, 'Berättelsen om tron')}</div>
-    <p class="small" title="${esc(NIVAER[troNiva(tr)].text + (NIVAER[troNiva(tr) + 1] ? ` Nästa nivå, ${NIVAER[troNiva(tr) + 1].namn.toLowerCase()}: ${NIVAER[troNiva(tr) + 1].text}` : ''))}">Nivå: <b>${esc(NIVAER[troNiva(tr)].namn)}</b></p>
+    <p class="small" title="${esc(`${troEtikett(s, tr).text} Tyngd ${kortTyngd(tyngd(s, tr))}: ` + tyngdDelar(s, tr).map(d => `${d.namn} ${kortTyngd(d.v)}`).join(', ') + '.')}"><b>${esc(troEtikett(s, tr).namn)}</b> · tyngd ${kortTyngd(tyngd(s, tr))}</p>
     ${hjalpText(id, `<p class="muted">${esc(tr.ber ?? tolkning(tr))}</p>`)}
     <p class="small">Grundare: ${grundare}, år ${tr.ar}</p>
     ${skalaHtml(tr)}

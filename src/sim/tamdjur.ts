@@ -7,7 +7,7 @@
 // båda lägena, med byns följd 'tamdjur'.
 import { balans } from './balans';
 import { farorNu } from './kult';
-import { isFood } from './saker';
+import { KOTTSLAG, isFood } from './saker';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable, takeMaterial } from './behov';
 import { hash3, rnd } from './slump';
@@ -21,7 +21,7 @@ import { blocked } from './byggnad';
 // silver (byns rikedom och arvet); ger = vad det ger (steg 9.8.5, 9.8.8, 9.8.14); id0 = djurens id börjar här (skilda från de vilda)
 export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; mattar: number; ikon: string }
 export const TAMDJUR = {
-  hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', 'kott', 'vargkott', 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'varg' },
+  hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', ...KOTTSLAG, 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'varg' },
   far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
   get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: ['lovkarve', 'torrgras'], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur' },
 } as const satisfies Record<string, TamArt>;

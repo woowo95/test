@@ -11,7 +11,8 @@ import { freeTools, newTing, take } from './agande';
 import { GA_TID } from './paborjat';
 import { KULT } from './kult';
 import { nyRitual } from './kultlatt';
-import { Grav, GravStil, gravAt, kvarById, nara } from './kvarlevor';
+import { Grav, GravStil, Kvarleva, gravAt, kvarById, nara } from './kvarlevor';
+import { KYRKA, budIn, foljer, harBud } from './kyrka';
 import { Tro, skalaV, troOf } from './religion';
 import { amountOf, put } from './lager';
 import { SAKER } from './saker';
@@ -60,7 +61,9 @@ function gravStil(tr: Tro | undefined): GravStil {
 }
 // en rad i arbetsordningen: någon bär en död till graven, helst någon nära (steg 8.5.1)
 export function begravaVal(s: State, p: Person) {
-  const q = s.kvarlevor?.find(k => k.k === 'kropp' && k.bars === undefined && !living(s).some(o => o !== p && (o.task?.act === 'begrava' || o.task?.act === 'grava') && o.task.ref === k.id));
+  const ledig = (k: Kvarleva) => k.bars === undefined && !living(s).some(o => o !== p && (o.task?.act === 'begrava' || o.task?.act === 'grava') && o.task.ref === k.id);
+  // den fallne fienden begravs (steg 10.3.23): av den som följer budet, när fienden är avrustad
+  const q = s.kvarlevor?.find(k => k.k === 'kropp' && ledig(k)) ?? (harBud(s, p, 'begravFiende') ? s.kvarlevor?.find(k => k.k === 'fiende' && ledig(k) && !avrustbart(s, p, k)) : undefined);
   if (!q || rnd(s, 'val', p) >= (nara(s, p, q.vem) ? GRAV.nara : GRAV.annan)) return undefined;
   return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, why: `Bär ${q.namn} till graven` };
 }
@@ -69,7 +72,7 @@ export function kroppUpp(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);
   if (!q) return;
   q.bars = p.id;
-  const d = byId(s, q.vem), tr = d?.brottsling ? undefined : troOf(s, d?.tro), at = gravPlats(s, tr), spade = freeTools(s, p, 'benspade') > 0;
+  const d = q.k === 'fiende' ? undefined : byId(s, q.vem), tr = q.k === 'fiende' ? troOf(s, p.tro) : d?.brottsling ? undefined : troOf(s, d?.tro), at = gravPlats(s, tr), spade = freeTools(s, p, 'benspade') > 0;
   t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Gräver en grav åt ${q.namn}`;
   t.until = s.now + (spade ? GRAV.spadeTim : GRAV.handTim) * HOUR + GA_TID; t.arbTid = (spade ? GRAV.spadeTim : GRAV.handTim) * HOUR;
   t.tool = spade ? 'benspade' : undefined; if (spade) take(s, p, 'benspade');
@@ -79,6 +82,15 @@ export function gravKlar(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);
   if (!q) return;
   s.kvarlevor = s.kvarlevor!.filter(k => k !== q);
+  if (q.k === 'fiende') { // fienden får en grav på trons gravplats, utan samling (steg 10.3.23)
+    const tr = troOf(s, p.tro), x = Math.floor(p.x), y = Math.floor(p.y);
+    gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil: 'jord', ...(tr ? { tro: tr.id } : {}) });
+    count(s, 'grav'); count(s, 'grav_fiende'); groundOf(s).cover[y * W + x] = 0;
+    if (tr) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kravTro);
+    think(p, `Begravde fienden ${q.namn}`, 0, s.now, 6 * HOUR);
+    log(s, `${p.name} begravde fienden ${q.namn}.`, 'rel', [p.id]);
+    return;
+  }
   const d = byId(s, q.vem), ovardig = !!d?.brottsling, tr = ovardig ? undefined : troOf(s, d?.tro), stil = gravStil(tr), x = Math.floor(p.x), y = Math.floor(p.y);
   if (stil === 'bal' && amountOf(s, 'ved') >= KULT.bal) takeMaterial(s, p, 'ved', KULT.bal);
   if (stil !== 'vatten') gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}), ...(q.med ? { med: q.med } : {}) });
@@ -87,23 +99,27 @@ export function gravKlar(s: State, p: Person, t: Task) {
   if (tr && !ovardig) { nyRitual(s, 'begravning', { tro: tr.id, x, y, om: [q.vem], namn: `Begravningen av ${q.namn}` }); (s.troSkalor?.includes('livet') ? 0 : count(s, 'livet_oppen')); if (tr.gravSlag === undefined) tr.gravSlag = trosGrav(s, tr); }
   else if (stil === 'jord' && !ovardig) log(s, `${p.name} begravde ${q.namn}.`, 'rel', [p.id]);
 }
-// avrusta den fallne (steg 8.7.5): en vuxen tar det fienden hade, 2 minuter per sak, och bär hem det. Sakerna blir byns
+// avrusta den fallne (steg 8.7.5 och 10.3.6): en vuxen tar det fienden hade, 2 minuter per sak, och bär hem det. Bytet hen tagit från byn
+// (saker) tar vem som helst. Fiendens egna vapen och plagg (ting, med kvalitet och slitage) rör inte den som följer budet om orena saker
+const orena = (s: State, p: Person) => { const tr = troOf(s, p.tro); return budIn(tr, 'orena') && foljer(p, 'orena'); };
+const avrustbart = (s: State, p: Person, k: Kvarleva) => (k.saker ? Object.values(k.saker).reduce((a, b) => a + b, 0) : 0) + (k.ting && !orena(s, p) ? k.ting.length : 0);
 export function avrustaVal(s: State, p: Person) {
-  const q = s.kvarlevor?.find(k => k.k === 'fiende' && k.saker && !living(s).some(o => o !== p && o.task?.act === 'avrusta' && o.task.ref === k.id));
+  const q = s.kvarlevor?.find(k => k.k === 'fiende' && avrustbart(s, p, k) > 0 && !living(s).some(o => o !== p && o.task?.act === 'avrusta' && o.task.ref === k.id));
   if (!q) return undefined;
-  return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, min: 2 * Object.values(q.saker!).reduce((a, b) => a + b, 0), why: `Tar hand om det ${q.namn} bar` };
+  return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, min: 2 * avrustbart(s, p, q), why: `Tar hand om det ${q.namn} bar` };
 }
 export function avrustaKlar(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);
-  if (!q?.saker) return;
-  for (const [k, n] of Object.entries(q.saker)) { if (SAKER[k]?.redskap) for (let i = 0; i < n; i++) newTing(s, k, 1, -1); else put(s, k, n); }
+  if (!q || !avrustbart(s, p, q)) return;
+  for (const [k, n] of Object.entries(q.saker ?? {})) { if (SAKER[k]?.redskap) for (let i = 0; i < n; i++) newTing(s, k, 1, -1); else put(s, k, n); }
+  if (q.ting && !orena(s, p)) { for (const g of q.ting) { const ny = newTing(s, g.k, g.c, -1); if (g.q !== undefined) ny.q = g.q; if (g.ber) ny.ber = g.ber; } q.ting = undefined; }
   q.saker = undefined; count(s, 'avrustad');
   think(p, 'Tog det en fallen fiende bar', -0.02, s.now, 6 * HOUR);
 }
 // byta om inför strid (steg 8.7.8): när larmet går hämtar var och en sin rustning. Vid en överraskning hinner man inte
 export function rustaVal(s: State, p: Person) {
   if (!p.larm || s.now - p.larm.t > HOUR || p.task?.act === 'strid' || [s.rovare, ...(s.rovareFler ?? [])].some(f => f && Math.hypot(f.x - p.x, f.y - p.y) < 6)) return undefined;
-  const t = (s.ting ?? []).find(q => { const pl = kladAv(q.k)?.plagg; return (pl === 'rustning' || pl === 'hjalm') && q.bar === undefined && q.hos === undefined && q.lass === undefined && (q.agare === p.id || q.agare === undefined || q.agare < 0) && q.x !== undefined; });
+  const t = (s.ting ?? []).find(q => { const pl = kladAv(q.k)?.plagg; return (pl === 'rustning' || pl === 'hjalm') && q.helig === undefined && q.bar === undefined && q.hos === undefined && q.lass === undefined && (q.agare === p.id || q.agare === undefined || q.agare < 0) && q.x !== undefined; });
   return t ? { spot: { x: t.x! + 0.5, y: t.y! + 0.5 }, ref: t.id, why: 'Hämtar sin rustning inför striden' } : undefined;
 }
 export function rustaKlar(s: State, p: Person, t: Task) {

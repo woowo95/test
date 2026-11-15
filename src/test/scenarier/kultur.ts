@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
+import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -813,11 +813,15 @@ SCENARIER.sederfas8 = {
   },
 };
 
-const medTro = (seed = 6, niva = 2) => {
+// en by med en tro som har tyngd för bud av storleken `storlek` (steg 10.3.8): en gammal tro med ivriga troende, och fler vuxna
+// troende när byns egna inte räcker
+const medTro = (seed = 6, storlek = 2) => {
   const x = medLedare(seed), { s, v } = x;
-  const tr: SIM.Tro = { id: 1, grundare: v[0].id, gnamn: v[0].name, t: s.now, ar: 1, k: 'drom', bakom: 'Rösten', vill: 'att man lyssnar', svek: 'det blir tyst', natur: 60, manga: 40, bekr: s.now, x: Math.floor(v[0].x), y: Math.floor(v[0].y), niva, namn: 'Rösternas väg' };
+  const tr: SIM.Tro = { id: 1, grundare: v[0].id, gnamn: v[0].name, t: s.now - SIM.TYNGD.alderDygn * SIM.DAY, ar: 1, k: 'drom', bakom: 'Rösten', vill: 'att man lyssnar', svek: 'det blir tyst', natur: 60, manga: 40, bekr: s.now, x: Math.floor(v[0].x), y: Math.floor(v[0].y), namn: 'Rösternas väg' };
   s.tron = [tr];
-  for (const p of v) { p.tro = 1; p.troStyrka = 60; p.andlig = 80; p.pot.karisma = 14; }
+  if (storlek >= 2) tr.bud = [{ id: 'prast', t: s.now }]; // en tro som rymmer budet har en präst (steg 10.3.12)
+  while (v.length < SIM.tyngdFor(storlek)) { const p = nyInvanare(s, v.length % 2 ? 'k' : 'm', 30); (p.tek ??= {}).ledarskap = 1; p.tek.lag = 1; v.push(p); }
+  for (const p of v) { p.tro = 1; p.troStyrka = 100; p.andlig = 80; p.pot.karisma = 14; }
   return { ...x, tr };
 };
 SCENARIER.graven = {
@@ -872,8 +876,9 @@ SCENARIER.ritualer = {
   text: 'Steg 8.5.5–8.5.14 och 10.3.3: en plats blir helig ur en händelse och där fälls och byggs inget, prästen utses efter skalan, och ritualerna är bud: ingen högtid utan bud, högtiden i sin tidsålder, gillets mat, fastan, offret av den som följer budet, och bröllopet med och utan trons välsignelse',
   kor: () => {
     const { s, v, tr } = medTro(6, 3);
-    tr.bud = [];
+    tr.bud = [{ id: 'prast', t: s.now }];
     SIM.kultTimme(s);
+    const k = SIM.heligaKandidater(s, tr)[0]; SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'helig', v: SIM.heligVarde(k.x, k.y) }, undefined);
     const h = s.heliga?.[0], ingen = !!h && !SIM.usable(s, h.x, h.y);
     const pr = SIM.prastOf(s, tr);
     // ritualen körs till slut: alla i v är med
@@ -887,13 +892,13 @@ SCENARIER.ritualer = {
     tom(); tr.bud = [{ id: 'hogtid', v: SIM.hogtidVarde((ai + 1) % 4, 'gille'), t: s.now }]; SIM.kultTimme(s); const fel = !hogtidNu();
     tom(); tr.bud = [{ id: 'hogtid', v: SIM.hogtidVarde(ai, 'gille'), t: s.now }, { id: 'offer', t: s.now }]; SIM.kultTimme(s); const ratt = hogtidNu();
     // gillet: maten ur kyrkans egendom först; offret av den som följer budet (stark tro), inte av den svagt troende
-    tr.forrad = { bar: 20 };
+    satKyrka(s, tr, { bar: 20 });
     const [q, svag] = v.filter(p => p !== pr); q.troStyrka = 60; svag.troStyrka = 5;
     for (const p of v) SIM.put(s, 'bar', 5, { [p.id]: 5 });
     const egen0 = SIM.ownedStock(s, q).bar ?? 0, svag0 = SIM.ownedStock(s, svag).bar ?? 0, gille0 = s.stat?.gille_mat ?? 0, mat0 = q.hunger;
     q.hunger = 0.2; const h0 = q.hunger;
     const rg = korRitual();
-    const gille = (s.stat?.gille_mat ?? 0) - gille0, kyrkanTom = 20 - (tr.forrad.bar ?? 0) === gille;
+    const gille = (s.stat?.gille_mat ?? 0) - gille0, kyrkanTom = 20 - SIM.kyrkansAv(s, tr, 'bar') === gille;
     const offrat = egen0 - (SIM.ownedStock(s, q).bar ?? 0), svagOffrat = svag0 - (SIM.ownedStock(s, svag).bar ?? 0);
     // fastan: ett dygn utan mat, och tron 4
     tom(); tr.bud = [{ id: 'hogtid', v: SIM.hogtidVarde(ai, 'fasta'), t: s.now }]; const t0 = q.troStyrka!;
@@ -902,10 +907,10 @@ SCENARIER.ritualer = {
     // bröllopet: byns fest utan bud, vid den heliga platsen och med tro när tron välsignar det
     tom(); tr.bud = []; SIM.nyRitual(s, 'brollop', { om: [v[0].id, v[1].id], namn: 'Bröllopet' }); s.ritual = undefined; SIM.ritualTimme(s);
     const utan = s.ritual as SIM.Ritual | undefined, val = SIM.ritualVal(s, v[2]);
-    tom(); tr.bud = [{ id: 'valsigna', t: s.now }]; SIM.nyRitual(s, 'brollop', { om: [v[0].id, v[1].id], namn: 'Bröllopet' }); s.ritual = undefined; SIM.ritualTimme(s);
+    tom(); tr.bud = [{ id: 'valsigna', t: s.now }, ...(tr.bud ?? []).filter(b => b.id === 'helig')]; SIM.nyRitual(s, 'brollop', { om: [v[0].id, v[1].id], namn: 'Bröllopet' }); s.ritual = undefined; SIM.ritualTimme(s);
     const med = s.ritual as SIM.Ritual | undefined, hp = SIM.helig(s, tr);
     return [
-      [`platsen där tron föddes blir helig (${h ? SIM.HELIGA_PLATSER[h.k].namn : 'ingen'}), och där byggs inget`, ingen],
+      [`platsen där tron föddes blir helig när budet antas (${h ? SIM.HELIGA_PLATSER[h.k].namn : 'ingen'}), och där byggs inget`, ingen],
       [`prästen utses (${pr?.name}), ${pr ? SIM.prastSort(tr, pr.sex) : ''}`, !!pr],
       ['ingen högtid utan bud', utanBud],
       [`högtiden firas i sin tidsålder (${ratt?.namn}), inte i en annan`, fel && !!ratt && ratt.namn === SIM.hogtidNamn(SIM.hogtidVarde(ai, 'gille'))],
@@ -915,6 +920,173 @@ SCENARIER.ritualer = {
       [`bröllopet utan bud är byns fest vid elden utan tron (${utan?.namn})`, utan?.k === 'brollop' && utan.tro === undefined && !!val],
       ['bröllopet med budet hålls vid trons heliga plats', med?.k === 'brollop' && med.tro === tr.id && !!hp && Math.abs(med.x - hp.x) < 3 && Math.abs(med.y - hp.y) < 3],
       [`högtiderna följer skalan Fest – Försakelse (${(() => { const sk = tr.sk; tr.sk = { ...sk, fest: 10 }; const f = SIM.hogtider(tr); tr.sk = { ...sk, fest: 90 }; const g = SIM.hogtider(tr); tr.sk = sk; return `${f} vid fest, ${g} vid försakelse`; })()})`, (() => { const sk = tr.sk; tr.sk = { ...sk, fest: 10 }; const f = SIM.hogtider(tr); tr.sk = { ...sk, fest: 90 }; const g = SIM.hogtider(tr); tr.sk = sk; return f >= 2 && g === 0; })()],
+    ];
+  },
+};
+
+SCENARIER.heligplats = {
+  text: 'Steg 10.3.10: den heliga platsen är ett bud. Ingen plats blir helig utan omröstning, bönen hålls vid elden före och vid den närmaste platsen inom 15 rutor efter, de troende vill ha platsen nära hemmet, bönen i nöd som fick svar ger en kandidat också utan präst, ingen fjärde plats föreslås, platsen räknar bönerna och en sparad by behåller sina platser som bud',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 1);
+    tr.bud = []; tr.prast = undefined; const p = v[1];
+    for (let i = 0; i < 24; i++) { s.now += SIM.HOUR; tr.prast = undefined; SIM.kultTimme(s); }
+    const ingen = !(s.heliga ?? []).some(h => h.tro === tr.id), kand = SIM.heligaKandidater(s, tr);
+    const eld = SIM.eldPlats(s), fore = SIM.bonFritid(s, p)?.spot, vidElden = !!fore && Math.hypot(fore.x - eld.x, fore.y - eld.y) < 5;
+    // budet antas: platsen blir helig och bönen hålls där
+    const val = SIM.heligVarde(kand[0].x, kand[0].y);
+    const nara = SIM.budRost(s, v[0], tr, 'helig', val).delar.find(d => d.k === 'intresse')!.v;
+    SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'helig', v: val }, undefined);
+    const h = s.heliga!.find(q => q.tro === tr.id)!, helgad = !!h && tr.bud!.some(b => b.id === 'helig' && b.v === val);
+    p.x = h.x + 3.5; p.y = h.y + 3.5; p.bonD = undefined;
+    const efter = SIM.bonFritid(s, p)?.spot, vidPlatsen = !!efter && Math.abs(efter.x - (h.x + 0.5)) < 1 && Math.abs(efter.y - (h.y + 1.5)) < 1;
+    p.x = h.x + 30; p.y = h.y; const langt = SIM.bonFritid(s, p)?.spot, langtElden = !!langt && Math.hypot(langt.x - eld.x, langt.y - eld.y) < 5;
+    // bönen räknas där den hålls
+    p.x = h.x + 0.5; p.y = h.y + 1.5; p.task = { act: 'ritual', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task;
+    SIM.bonKlar(s, p, { tool: 'vardag' }); const boner = h.boner ?? 0;
+    // bönen i nöd som fick svar ger en kandidat också utan präst
+    const q = v[2]; q.bonVan = { t: s.now, o: 'svalt', x: h.x + 6, y: h.y + 2 }; setFood(s, 500); tr.prast = undefined; const utanPrast = !SIM.prastOf(s, tr); SIM.kultTimme(s);
+    const svar = tr.heligKand?.some(k => k.x === h.x + 6 && k.y === h.y + 2) && SIM.heligaKandidater(s, tr).some(k => k.x === h.x + 6);
+    // ingen fjärde plats
+    SIM.helga(s, tr, h.x + 6, h.y + 2, 'här'); SIM.helga(s, tr, h.x - 8, h.y, 'där');
+    const tal = SIM.trosTalare(s, tr) ?? v[0], tre = !SIM.TROS_UPP.flatMap(r => r.lista(s, tr, tal)).some(f => f.fr.f === 'nyttBud' && f.fr.d.id === 'helig');
+    // en vanhelgad plats förlorar sitt bud men visas kvar
+    SIM.vanhelgaPlats(s, h); const vanh = !tr.bud!.some(b => b.id === 'helig' && b.v === val) && s.heliga!.includes(h);
+    // en sparad by behåller sina platser som bud
+    const g = JSON.parse(SIM.serialize(s)); g.v = 43; for (const t of g.tron) t.bud = [];
+    const ny = SIM.migrate(g), ntr = SIM.troOf(ny, tr.id)!, sparad = (ntr.bud ?? []).filter(b => b.id === 'helig').length === 2;
+    return [
+      [`ingen plats blir helig utan omröstning (${kand.length} kandidat, först ${kand[0]?.om})`, ingen && kand[0]?.om === 'där tron föddes'],
+      ['bönen hålls vid elden innan tron har en plats', vidElden],
+      [`den som bor nära vill ha platsen (${nara.toFixed(2)})`, nara > 0],
+      ['budet gör platsen helig', helgad],
+      ['bönen hålls vid platsen inom 15 rutor, och vid elden längre bort', vidPlatsen && langtElden],
+      [`platsen räknar bönerna (${boner})`, boner === 1],
+      ['bönen i nöd som fick svar ger en kandidat utan präst', !!svar && utanPrast],
+      ['ingen fjärde plats föreslås, bara ett byte', tre],
+      ['en vanhelgad plats förlorar sitt bud och visas kvar', vanh],
+      ['en sparad by behåller sina platser som bud', sparad],
+    ];
+  },
+};
+
+SCENARIER.prastregel = {
+  text: 'Steg 10.3.11: prästens bud. Utan bud blir den bästa präst oavsett kön, med budet Bara män bara en man, den som redan är präst sitter kvar, den som stängs ute röstar emot, dräkten sys först med budet, och ritualen prästen leder ger mindre tro när dräkten saknas',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    tr.bud = [{ id: 'prast', t: s.now }]; tr.prast = undefined;
+    const k = v.find(p => p.sex === 'k')!, m = v.find(p => p.sex === 'm')!;
+    for (const p of v) p.andlig = 30;
+    k.andlig = 100; k.pot.karisma = 20; m.andlig = 90;
+    SIM.kultTimme(s); const utanBud = tr.prast === k.id;
+    // den sittande sitter kvar när budet antas
+    tr.bud = [{ id: 'prast', t: s.now }, { id: 'prastMan', t: s.now }]; SIM.kultTimme(s); const kvar = tr.prast === k.id;
+    // en ny präst utses: bara en man
+    tr.prast = undefined; SIM.kultTimme(s); const man = tr.prast === m.id;
+    // den som stängs ute röstar emot
+    tr.bud = []; const emot = SIM.budRost(s, k, tr, 'prastMan').delar.find(d => d.k === 'intresse')!.v;
+    const grupp = (() => { const fore = SIM.budForslag(s, tr, 'prastMan').length; tr.bud = [{ id: 'prastKvinna', t: s.now }]; return fore === 1 && SIM.ersatter(s, tr, { id: 'prastMan' })?.id === 'prastKvinna'; })();
+    // dräkten sys först med budet
+    tr.bud = []; tr.prast = m.id; const utanDrakt = SIM.REDSKAPMAL.prastdrakt(s) + SIM.REDSKAPMAL.mask(s);
+    tr.bud = [{ id: 'drakt', t: s.now }]; const medDrakt = SIM.REDSKAPMAL.prastdrakt(s) + SIM.REDSKAPMAL.mask(s);
+    // ritualen: tro med och utan dräkt
+    const ritual = (bar: boolean) => {
+      for (const t of SIM.tingOf(s)) if (t.bar === m.id) t.bar = undefined;
+      if (bar) { const d = SIM.addTool(s, 'prastdrakt_kaninskinn', m); d.bar = m.id; d.x = d.y = undefined; }
+      const q = v.find(p => p !== m && p !== k)!; q.troStyrka = 50;
+      q.task = { act: 'ritual', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+      s.ritual = { k: 'leddBon', tro: tr.id, start: s.now - SIM.HOUR, slut: s.now, x: q.x, y: q.y }; SIM.ritualTimme(s);
+      return q.troStyrka - 50;
+    };
+    const med = ritual(true), utan = ritual(false);
+    const g = JSON.parse(SIM.serialize(s)); g.v = 44; g.tron[0].bud = []; g.tron[0].prastRegel = 'k'; g.tron[0].prast = m.id;
+    const ntr = SIM.migrate(g).tron![0], sparad = SIM.budIn(ntr, 'prastKvinna') && SIM.budIn(ntr, 'drakt') && !('prastRegel' in ntr);
+    return [
+      ['utan bud blir den bästa präst oavsett kön', utanBud],
+      ['den sittande prästen sitter kvar när budet antas', kvar],
+      ['med budet Bara män blir bara en man präst', man],
+      [`den som stängs ute röstar emot (${emot.toFixed(2)})`, emot < 0],
+      ['bara ett bud om vem som får bli präst: det andra är ett byte', grupp],
+      [`dräkten sys först med budet (${utanDrakt} → ${medDrakt})`, utanDrakt === 0 && medDrakt === 1],
+      ['i en sparad by blir regeln ett bud och en tro med präst har dräkten', sparad],
+      [`ritualen ger mindre tro när dräkten saknas (${med.toFixed(2)} med, ${utan.toFixed(2)} utan)`, med > 0 && Math.abs(utan * 3 - med) < 0.01],
+    ];
+  },
+};
+
+SCENARIER.prastbud = {
+  text: 'Steg 10.3.12: prästen är ett bud. Ingen präst utan budet Tron ska ha en präst, den främsta bland de troende lägger fram det när tron varken har präst eller profet, en präst utses efter ett ja, en ny väljs när prästen dör, och en sparad by med en levande präst har budet',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    tr.bud = []; tr.prast = undefined;
+    for (const p of v) p.profet = undefined;
+    SIM.kultTimme(s); const ingen = !SIM.prastOf(s, tr);
+    const tal = SIM.trosTalare(s, tr)!, forslag = SIM.TROS_UPP.flatMap(r => r.lista(s, tr, tal)).filter(f => f.prio > 0).sort((a, b) => b.prio - a.prio);
+    const fram = forslag.some(f => f.fr.d.id === 'prast');
+    SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'prast' }, tal); SIM.kultTimme(s);
+    const pr = SIM.prastOf(s, tr), utsedd = !!pr && pr === tal;
+    if (pr) SIM.die(s, pr, 'alderdom');
+    SIM.kultTimme(s); const ny = SIM.prastOf(s, tr), nyVald = !!ny && ny !== pr;
+    const g = JSON.parse(SIM.serialize(s)); g.v = 45; g.tron[0].bud = [];
+    const sparad = SIM.budIn(SIM.migrate(g).tron![0], 'prast');
+    return [
+      ['ingen präst utan budet', ingen],
+      [`den främsta bland de troende lägger fram budet (${tal?.name}: ${forslag.slice(0, 3).map(f => f.fr.d.id).join(', ')})`, fram],
+      [`en präst utses efter ett ja (${pr?.name})`, utsedd],
+      [`en ny väljs när prästen dör (${ny?.name})`, nyVald],
+      ['en sparad by med en levande präst har budet', sparad],
+    ];
+  },
+};
+
+SCENARIER.budbort = {
+  text: 'Steg 10.3.13: buden ändras och tas bort. Ett bud som den som talar ogillar röstas bort, spärren håller, Bara män ersätter Bara kvinnor, en närmare plats ersätter den minst använda, ett bud tas bort mitt i en ritual utan fel, och lagen ur ett borttaget bud tas upp i lagarna',
+  kor: () => {
+    const { s, v, l, tr } = medTro(6, 4);
+    SIM.kultTimme(s);
+    const pr = SIM.prastOf(s, tr)!;
+    for (const p of v) p.troStyrka = 10;
+    // prästen ogillar att präster lever ogifta
+    tr.bud = [{ id: 'prast', t: s.now - 5 * SIM.DAY }, { id: 'ogifta', t: s.now - 5 * SIM.DAY }, { id: 'lunden', t: s.now }];
+    const lista = SIM.TROS_UPP.flatMap(r => r.lista(s, tr, pr)).filter(f => f.fr.f === 'taBortBud' && f.prio > 0);
+    const foreslar = lista.some(f => f.fr.d.id === 'ogifta');
+    const gick = SIM.rostaOm(s, { f: 'taBortBud', d: { tro: tr.id, id: 'ogifta' }, fram: pr.id });
+    const borta = gick && !SIM.budIn(tr, 'ogifta') && SIM.budIn(tr, 'prast');
+    // spärren: ett bud som just antagits föreslås inte bort
+    const sparr = !lista.some(f => f.fr.d.id === 'lunden');
+    // ett byte: Bara män i stället för Bara kvinnor
+    tr.bud.push({ id: 'prastKvinna', t: s.now });
+    const man = v.find(p => p.sex === 'm' && p !== pr) ?? v[0];
+    const byte = SIM.TROS_UPP.flatMap(r => r.lista(s, tr, man)).find(f => f.fr.f === 'bytBud' && f.fr.d.id === 'prastMan');
+    SIM.FRAGOR.bytBud.gor(s, { tro: tr.id, id: 'prastMan', gid: 'prastKvinna' }, man);
+    const bytt = !!byte && byte.fr.d.gid === 'prastKvinna' && SIM.budIn(tr, 'prastMan') && !SIM.budIn(tr, 'prastKvinna');
+    // en ny plats när tron har tre: den minst använda byts ut
+    const x0 = Math.floor(v[0].x), y0 = Math.floor(v[0].y);
+    for (const [dx, n] of [[0, 5], [4, 0], [-4, 3]] as const) { SIM.FRAGOR.nyttBud.gor(s, { tro: tr.id, id: 'helig', v: SIM.heligVarde(x0 + dx, y0 + 6) }, undefined); const h = s.heliga!.find(q => q.x === x0 + dx && q.y === y0 + 6); if (h) h.boner = n; }
+    tr.heligKand = [{ x: x0 + 1, y: y0 - 4, t: s.now - 100 * SIM.DAY, om: 'där bönen fick svar' }];
+    const g = SIM.ersatter(s, tr, { id: 'helig', v: SIM.heligVarde(x0 + 1, y0 - 4) });
+    if (g) SIM.FRAGOR.bytBud.gor(s, { tro: tr.id, id: 'helig', v: SIM.heligVarde(x0 + 1, y0 - 4), gid: g.id, gv: g.v }, undefined);
+    const platser = SIM.heligaFor(s, tr), plats = g?.v === SIM.heligVarde(x0 + 4, y0 + 6) && platser.length === 3 && platser.some(h => h.x === x0 + 1) && !platser.some(h => h.x === x0 + 4);
+    // mitt i en ritual
+    const ai = SIM.ageIndex(s), hv = SIM.hogtidVarde(ai, 'gille');
+    tr.bud.push({ id: 'hogtid', v: hv, t: s.now }); s.ritual = undefined; s.ritualKo = [];
+    SIM.nyRitual(s, 'hogtid', { tro: tr.id, namn: SIM.hogtidNamn(hv), form: 'gille' }); SIM.nyRitual(s, 'hogtid', { tro: tr.id, namn: SIM.hogtidNamn(hv), form: 'gille' });
+    SIM.ritualTimme(s); const igang = !!s.ritual;
+    SIM.taBortBud(s, tr, { id: 'hogtid', v: hv });
+    let fel = '';
+    try { s.now = ((s.ritual as SIM.Ritual | undefined)?.slut ?? s.now) + 1; SIM.ritualTimme(s); } catch (e) { fel = String(e); }
+    const ritual = igang && !fel && !SIM.budIn(tr, 'hogtid') && !s.ritualKo?.some(r => r.k === 'hogtid');
+    // lagen ur ett borttaget bud
+    const st = SIM.styreAv(s); st.lagar = [{ id: 'bud_ingetKott', t: s.now, straff: 4, av: -1, om: '' }];
+    tr.bud.push({ id: 'ingetKott', t: s.now }); SIM.taBortBud(s, tr, { id: 'ingetKott' });
+    const lag = SIM.lagarNu(s).some(x => x.id === 'bud_ingetKott') && SIM.TAS_UPP.flatMap(r => r.lista(s, l)).some(f => f.fr.f === 'bortlag' && f.fr.d.id === 'bud_ingetKott');
+    return [
+      [`den som talar föreslår att ta bort ett bud hen ogillar (${lista.map(f => f.fr.d.id).join(', ')})`, foreslar],
+      ['de troende röstar bort budet', borta],
+      ['spärren: ett nytt bud föreslås inte bort', sparr],
+      ['Bara män ersätter Bara kvinnor', bytt],
+      [`en närmare plats ersätter den minst använda (${g?.v})`, plats],
+      [`ett bud tas bort mitt i en ritual utan fel${fel ? ` (${fel})` : ''}`, ritual],
+      ['lagen ur budet står kvar och tas upp i lagarna', lag],
     ];
   },
 };
@@ -973,8 +1145,32 @@ SCENARIER.dodessaker = {
   },
 };
 
+SCENARIER.orena = {
+  text: 'Steg 10.3.6: fiendens saker är orena. Utan bud tas vapen och plagg hem med sin kvalitet, med budet tar den troende bara bytet och en som inte tror tar resten',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    const fiende = () => { const k = { id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k: 'fiende' as const, x: Math.floor(v[0].x) + 2, y: Math.floor(v[0].y), t: s.now, vem: -1, namn: 'Rövaren', text: 'Rövaren', saker: { bar: 2 }, ting: [{ k: 'yxa', c: 0.6, q: 3 }, { k: 'rock_vargskinn', c: 0.4 }] }; (s.kvarlevor ??= []).push(k); return k; };
+    const avrusta = (p: SIM.Person) => { const val = SIM.avrustaVal(s, p); if (!val) return false; SIM.avrustaKlar(s, p, { act: 'avrusta', ref: val.ref } as SIM.Task); return true; };
+    const ting0 = (s.ting ?? []).length;
+    // utan bud: allt tas hem, med kvalitet och slitage
+    tr.bud = []; const a = fiende(); avrusta(v[1]);
+    const nya = (s.ting ?? []).slice(ting0), yxa = nya.find(t => t.k === 'yxa');
+    const allt = !a.ting && !a.saker && !!yxa && yxa.q === 3 && Math.abs(yxa.c - 0.6) < 1e-9 && nya.some(t => t.k === 'rock_vargskinn');
+    // med budet: den troende tar bara bytet, en som inte tror tar resten
+    tr.bud = [{ id: 'orena', t: s.now }]; const q = v[1]; q.troStyrka = 60;
+    const b = fiende(); avrusta(q);
+    const bara = !b.saker && b.ting?.length === 2, igen = !SIM.avrustaVal(s, q);
+    const annan = v[2]; annan.tro = undefined; avrusta(annan);
+    return [
+      [`utan bud tas vapen och plagg hem med sin kvalitet (${nya.map(t => `${t.k} ${t.c.toFixed(1)}`).join(', ')})`, allt],
+      ['med budet tar den troende bara bytet och rör inte fiendens saker', bara && igen],
+      ['en som inte tror tar resten', !b.ting],
+    ];
+  },
+};
+
 SCENARIER.kyrkan = {
-  text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, hovet och templet av sten som projekt, buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
+  text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, trons hus (steg 10.3.19), buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
   kor: () => {
     const { s, v, l, tr } = medTro(6, 4);
     SIM.kultTimme(s);
@@ -993,32 +1189,106 @@ SCENARIER.kyrkan = {
     const q = v.find(p => p !== pr)!; q.troStyrka = 60; const forb = SIM.budForbjuder(s, q, 'jakt');
     q.troStyrka = 5; const inte = SIM.budForbjuder(s, q, 'jakt');
     q.troStyrka = 60; const t0 = q.troStyrka; SIM.budBrutet(s, q, 'ingetKott');
-    // hovet
-    tr.forrad = { ved: 20 }; const ut = SIM.utgiftNu(s, tr);
-    SIM.rostaOm(s, { f: 'kyrkutgift', d: { tro: tr.id, vad: 'hov' }, fram: pr.id });
-    for (const p of v) p.tro = tr.id;
-    const fara = { kyla: false, gras: 0 }, projHov = !!tr.hov && SIM.PROJEKT.hov.brist(s) > 0 && SIM.PROJEKT.hov.kan(s, q, fara) && SIM.PROJEKT.hov.uppgift(s, q)?.act === 'hovbygge';
-    if (tr.hov) SIM.hovArbete(s, pr, SIM.KYRKA.hovMin + 1);
-    SIM.kyrkaTimme(s);
-    // templet av sten där hovet står
-    tr.forrad = { sten: SIM.KYRKA.templeSten + 5 }; const ut2 = SIM.utgiftNu(s, tr);
-    SIM.rostaOm(s, { f: 'kyrkutgift', d: { tro: tr.id, vad: 'tempel' }, fram: pr.id });
-    const projTempel = !!tr.tempel && SIM.PROJEKT.tempel.kan(s, q, fara) && !SIM.PROJEKT.hov.kan(s, q, fara);
-    if (tr.tempel) SIM.hovArbete(s, pr, SIM.KYRKA.tempelMin + 1);
+    // trons hus (steg 10.3.19): planen ger ett behov, byggplanen ritar huset, bara de troende bygger av det kyrkan äger
+    const ej = v.find(p => p !== pr && p !== q)!; ej.tro = undefined;
+    satKyrka(s, tr, {}); tr.plan = { storlek: 'lagom', form: 'avlang', altare: 'ja', gudabild: 'ja', bank: 'nej' };
+    if (SIM.TROSHUS_DELAR.vagg.fragas?.(s, tr)) tr.plan.vagg = SIM.vaggSorter(s)[0];
+    tr.planRutor = 10;
+    const behov = SIM.byggbehov(s).find(b => b.fn === 'troshus'), behovOk = behov?.a.tro === tr.id && behov.a.plats === 10;
+    const bc = structuredClone(s);
+    const th = medTroshus(bc, bc.tron!.find(x => x.id === tr.id)!, false);
+    const btr = bc.tron!.find(x => x.id === tr.id)!;
+    // ett halvbyggt trons hus hindrar inte byns byggen: en sovsal planeras samtidigt
+    const andra = SIM.housesOf(bc).some(h => h.tro === undefined);
+    const byggs = structuredClone(s), ytr = byggs.tron!.find(x => x.id === tr.id)!;
+    { byggare(byggs); byggs.byggSok = undefined; SIM.stepBehov(byggs); for (const k in byggs.byggBehov ?? {}) byggs.byggBehov![k] -= 24 * SIM.HOUR; SIM.planBuild(byggs); }
+    const yh = SIM.housesOf(byggs).find(h => h.tro === ytr.id), yq = byggs.people.find(p => p.id === q.id)!, yej = byggs.people.find(p => p.id === ej.id)!;
+    // bara trons hus står kvar att bygga, och golvet är lagt: väggarna väntar på kyrkans virke
+    if (yh) { byggs.byggen = SIM.bitsOf(byggs).filter(b => b.hus === yh.id); byggs.hus = SIM.housesOf(byggs).filter(h => h === yh); for (const b of SIM.bitsOf(byggs)) if (b.k !== 'vagg') { b.b = 1; b.mat = SIM.MATERIAL[b.m].n; } for (const i of SIM.kronaOver(byggs, yh)) SIM.groundOf(byggs).trees[i] = 0; for (const b of SIM.bitsOf(byggs)) SIM.groundOf(byggs).trees[b.y * SIM.W + b.x] = 0; SIM.touch(byggs); }
+    const vaggM = yh ? SIM.MATERIAL[SIM.bitsOf(byggs).find(b => b.k === 'vagg')!.m].item! : 'virke';
+    const stannar = SIM.buildJob(byggs, yq) === undefined, saknas = SIM.troshusSaknar(byggs, ytr)[vaggM] > 0;
+    satKyrka(byggs, ytr, { [vaggM]: 200, sten: 2 });
+    const jq = SIM.buildJob(byggs, yq), jej = SIM.buildJob(byggs, yej);
+    const fortsatter = !!jq && jq.bit.hus === yh?.id && !jq.missing, ejBygger = jej === undefined;
+    // klart: väggarna står, altaret byggs av kyrkans virke och sten, och då är huset klart och högtiden hålls där
+    if (yh) byggKlart(byggs, yh);
+    satKyrka(byggs, ytr, { virke: 10, sten: 2 });
+    const altBrist = SIM.trosMobelBrist(byggs, ytr, 'altare') === 1, kanAlt = SIM.kanBygga(byggs, yq, 'altare'), ejAlt = !SIM.kanBygga(byggs, yej, 'altare');
+    const fore = SIM.troshusKlart(byggs, ytr), virke0 = SIM.kyrkansAv(byggs, ytr, 'virke');
+    const tk = { act: 'station', tool: 'altare', until: byggs.now } as SIM.Task; SIM.startStation(byggs, yq, tk);
+    const alt = SIM.stationerOf(byggs).find(x => x.k === 'altare' && x.tro === ytr.id);
+    if (alt) { alt.kvar = 0; tk.ref = alt.id; SIM.finishStation(byggs, yq, tk); }
+    const klart = !fore && SIM.troshusKlart(byggs, ytr) && SIM.kyrkansAv(byggs, ytr, 'virke') === virke0 - 2 && SIM.kyrkansAv(byggs, ytr, 'sten') === 1;
+    const hogtidVid = SIM.RITUALER.hogtid.plats(byggs, { k: 'hogtid', tro: ytr.id } as unknown as Parameters<typeof SIM.RITUALER.hogtid.plats>[1]);
+    const vidAltaret = !!alt && !!hogtidVid && Math.abs(hogtidVid.x - SIM.vidStation(alt).x) < 1e-9 && Math.abs(hogtidVid.y - SIM.vidStation(alt).y) < 1e-9;
+    const namn = yh?.namn ?? '', ratt = namn === SIM.troshusBestamd(byggs, ytr);
+    // en sparad by med ett hov får en klar plan som byggs från början
+    const gh = structuredClone(s), gtr = gh.tron!.find(x => x.id === tr.id)!; gh.v = 48; gtr.plan = undefined; gtr.planRutor = undefined; gtr.hov = { x: 3, y: 3, prog: 1, klar: s.now }; gtr.gudabild = s.now;
+    const gm = SIM.migrate(gh), gmtr = gm.tron!.find(x => x.id === tr.id)!, hovPlan = SIM.planKlar(gm, gmtr) && gmtr.hov === undefined && gmtr.plan?.gudabild === 'ja' && (gmtr.planRutor ?? 0) >= SIM.TROSHUS.minRutor;
+    ej.tro = tr.id;
+    // kyrkans förråd som egendom (steg 10.3.17): den troende får inte ta av det, bara kyrkans egna utgifter
+    satKyrka(s, tr, { bar: 5 }); SIM.put(s, 'bar', 3);
+    const egenBar = SIM.mayTake(s, q, 'bar') === SIM.amountOf(s, 'bar') - 5 && SIM.takeLimit(s, 'bar') === SIM.amountOf(s, 'bar') - 5;
+    SIM.use(s, q, 'bar', SIM.amountOf(s, 'bar')); SIM.use(s, undefined, 'bar', SIM.amountOf(s, 'bar'), true);
+    const kyrkansKvar = SIM.kyrkansAv(s, tr, 'bar');
+    const dod = structuredClone(s), dtr = dod.tron!.find(x => x.id === tr.id)!;
+    for (const p of dod.people) if (p.tro === tr.id) p.tro = undefined;
+    SIM.stepReligion(dod);
+    const utdod = dtr.slut !== undefined && SIM.kyrkansAv(dod, dtr, 'bar') === 0 && SIM.amountOf(dod, 'bar') === 5;
+    const gammal = structuredClone(s); gammal.v = 47; satKyrka(gammal, gammal.tron!.find(x => x.id === tr.id)!, {}); gammal.tron!.find(x => x.id === tr.id)!.forrad = { ved: 7.4 };
+    const mig = SIM.migrate(gammal), gammalVed = SIM.kyrkansAv(mig, mig.tron!.find(x => x.id === tr.id)!, 'ved');
     return [
       [`skalan låses upp och Godevälde är en form (${form})`, oppen && form === 'Godevälde'],
       [`vid full Andlig väger prästen mycket (${(prastAndel * 100).toFixed(0)} %)`, prastAndel > 0.3],
       [`budet avgörs av de troende (${gick})`, bara],
       ['den starkt troende följer budet, den svagt troende inte', forb === 'ingetKott' && inte === undefined],
       [`ett brutet bud ger skuld och svagare tro (${q.skuld})`, (q.skuld ?? 0) > 0 && q.troStyrka! < t0],
-      [`kyrkans förråd går först till hovet (${ut}), och hovet byggs (${!!tr.hov?.klar})`, ut === 'hov' && !!tr.hov?.klar],
-      ['hovet är ett projekt som bara de troende bygger', projHov],
-      [`sedan ett tempel av sten (${ut2}) där hovet stod, också ett projekt (${!!tr.tempel?.klar})`, ut2 === 'tempel' && projTempel && !!tr.tempel?.klar && tr.tempel.x === tr.hov!.x],
+      [`den klara planen ger trons behov av golvrutor i byggplanen (${behov?.a.plats})`, behovOk],
+      [`byggplanen ritar trons hus (${th?.namn}), avlångt (${th ? `${th.w - 2}×${th.h - 2}` : ''}), och det halvbyggda huset hindrar inte en sovsal (${andra})`, !!th && th.tro === btr.id && Math.max(th.w, th.h) > Math.min(th.w, th.h) && andra],
+      [`utan kyrkans material står bygget still och huset saknar ${vaggM} (${stannar}, ${saknas})`, stannar && saknas],
+      [`efter en gåva bygger den troende vidare, den som inte tror bygger inte (${fortsatter}, ${ejBygger})`, fortsatter && ejBygger],
+      [`altaret saknas, och bara den troende kan bygga det (${altBrist}, ${kanAlt}, ${ejAlt})`, altBrist && kanAlt && ejAlt],
+      [`huset är klart när altaret står, av kyrkans virke och sten (${klart})`, klart],
+      [`högtiden hålls vid altaret (${vidAltaret})`, vidAltaret],
+      [`huset heter ${namn} efter tron`, ratt && namn.length > 0],
+      [`en sparad by med ett hov får en klar plan att bygga (${hovPlan})`, hovPlan],
       ['översteprästen finns', SIM.overstePrast(s) === pr && !!l],
+      [`kyrkans förråd är saker i lagret som tron äger, och ingen annan tar av dem (${egenBar}, kvar ${kyrkansKvar})`, egenBar && kyrkansKvar === 5],
+      [`när tron dör ut blir kyrkans del byns (${utdod})`, utdod],
+      [`en sparad by får kyrkans tal som saker som tron äger (${gammalVed})`, gammalVed === 7],
     ];
   },
 };
 
+SCENARIER.budrost = {
+  text: 'Steg 10.3.9: rösten om ett bud är summan av raderna i BUDROST: tron mot hårdheten, vad budet kostar hen själv, sederna, andligheten, trons skalor och humöret gånger budets storlek. Skälet är den rad som väger tyngst åt det håll hen röstade',
+  kor: () => {
+    const { s, tr } = medTro(6, 3);
+    const ny = (troStyrka = 60) => { const p = nyInvanare(s, 'm', 30); p.tro = tr.id; p.troStyrka = troStyrka; p.andlig = 50; p.pot = { ...ref.pot }; p.habit = {}; p.hunger = 0.7; p.rest = 0.8; p.social = 0.6; return p; };
+    const ref = nyInvanare(s, 'm', 30);
+    const rost = (p: Person, id: SIM.BudId) => SIM.budRost(s, p, tr, id);
+    // jägaren och samlaren med lika stark tro
+    const jagare = ny(), samlare = ny(); jagare.habit = { jakt: 10, samla: 2 } as Person['habit']; samlare.habit = { samla: 10 } as Person['habit'];
+    const rj = rost(jagare, 'ingetKott'), rs = rost(samlare, 'ingetKott');
+    // den rike och den fattige om tiondet
+    const rik = ny(), fattig = ny(); SIM.put(s, 'bar', 40, { [rik.id]: 40 });
+    const rr = rost(rik, 'tionde'), rf = rost(fattig, 'tionde');
+    // den som mår dåligt: nej till ett stort bud, ja till ett litet
+    const ledsen = ny(); ledsen.hunger = 0; ledsen.rest = 0; ledsen.social = 0; const glad = ny();
+    const stor = rost(ledsen, 'ogifta'), liten = rost(ledsen, 'tacka'), gladStor = rost(glad, 'ogifta');
+    // omröstningen frågar samma röst
+    const fr = SIM.FRAGOR.nyttBud.rost(s, jagare, { tro: tr.id, id: 'ingetKott' });
+    const f = (x: number) => x.toFixed(2);
+    return [
+      [`jägaren röstar emot Inte döda djur (${f(rj.v)}: ${rj.why})`, rj.v < 0 && rj.why === 'Gör själv det budet förbjuder'],
+      [`samlaren med lika stark tro röstar för (${f(rs.v)}: ${rs.why})`, rs.v > 0],
+      [`den rike röstar emot tiondet (${f(rr.v)}: ${rr.why}) och den fattige för (${f(rf.v)})`, rr.v < 0 && rr.why === 'Äger mycket mat' && rf.v > 0],
+      [`den som mår dåligt röstar nej till ett stort bud (${f(stor.v)}: ${stor.why}) men ja till ett litet (${f(liten.v)})`, stor.v < 0 && stor.why === 'Mår dåligt och vill inte ha fler bördor' && liten.v > 0 && gladStor.v > 0],
+      [`skälet är den tyngsta raden åt det hållet (${rs.why})`, rs.why === 'Tror att budet är rätt'],
+      ['omröstningen räknar med samma röst', fr.v === rj.v && fr.why === rj.why],
+    ];
+  },
+};
 SCENARIER.troskrets = {
   text: 'Steg 10.3.2: trons krets tar upp sina egna frågor. En by utan ledarskap röstar om ett bud och har fortfarande inget styre efteråt, den främsta bland de troende lägger fram utan präst och profet, ett nedröstat bud kommer inte tillbaka på tre dygn (tre år i spelet), och två trosriktningar tar upp var sin fråga samma kväll',
   env: { BALANS: 'kyrka.fram=1' }, // varje kväll tas något upp, så att scenariot inte väntar på chansen
@@ -1030,7 +1300,7 @@ SCENARIER.troskrets = {
     kvall(1);
     const o1 = tr.roster?.[0], baraTroende = !!o1 && o1.roster.every(r => SIM.byId(s, r.id)?.tro === tr.id);
     // ett nedröstat bud: bara den som talar tror starkt, de andra tycker att budet är för hårt
-    for (const p of v) p.troStyrka = p === frams ? 60 : 0;
+    for (const p of v) p.troStyrka = p === frams ? 100 : 0; // den som talar bär ensam tyngden för ett litet bud (steg 10.3.8)
     for (const p of v) for (const q of v) if (p !== q) SIM.getRel(s, p, q).op = 0;
     const n0 = tr.roster?.length ?? 0;
     kvall(2);
@@ -1056,7 +1326,7 @@ SCENARIER.troskrets = {
 };
 
 SCENARIER.buden = {
-  text: 'Steg 8.6.6–8.6.10 och 10.3.3: buden verkar, och en by utan ledare röstar in en högtid. Fastan en dag av sju, den första fångsten till tron, tionde till prästen, djuroffret, att tacka före maten; främlingar får mat, man gifter sig inom tron, hämnd är en plikt, de döda talar man inte illa om och lunden fälls inte',
+  text: 'Steg 8.6.6–8.6.10, 10.3.3, 10.3.22 och 10.3.23: buden verkar, och en by utan ledare röstar in en högtid. Fastan en dag av sju, den första fångsten till tron, tionde till prästen, djuroffret, att tacka före maten; främlingar får mat, man gifter sig inom tron, hämnd är en plikt, de döda talar man inte illa om och lunden fälls inte',
   kor: () => {
     const { s, v, tr } = medTro(6, 4);
     for (const p of v) p.troStyrka = 90;
@@ -1069,7 +1339,7 @@ SCENARIER.buden = {
     const kott0 = SIM.amountOf(s, 'kott'), t0 = q.troStyrka!, prast0 = SIM.ownedStock(s, pr).bar ?? 0;
     const dag0 = s.now - (s.now % 86400000);
     for (let d = 1; d <= 7; d++) { s.now = dag0 + d * 86400000 + 12 * 3600000; SIM.kyrkaTimme(s); fastade ||= (q.fasta ?? 0) > s.now; djur = s.stat?.djuroffer ?? 0; }
-    const forst = SIM.forradSum(tr) > 0, tiond = (SIM.ownedStock(s, pr).bar ?? 0) > prast0;
+    const forst = SIM.forradSum(s, tr) > 0, tiond = (SIM.ownedStock(s, pr).bar ?? 0) > prast0;
     // främlingen, giftermålet, hämnden, de döda och lunden
     const ny = nyInvanare(s, 'm', 25); ny.hunger = 0.3; const mat0 = SIM.FOOD.reduce((a, k) => a + SIM.amountOf(s, k), 0); SIM.budTillfalle(s, 'framling', ny); const matEfter = SIM.FOOD.reduce((a, k) => a + SIM.amountOf(s, k), 0);
     const annan = nyInvanare(s, 'k', 25); annan.tro = undefined;
@@ -1078,7 +1348,7 @@ SCENARIER.buden = {
     // en sparad by från före steg 10.3.1 har buden som namn: de blir antagna bud utan värde
     const gammal = structuredClone(s); gammal.v = 39;
     for (const t of gammal.tron ?? []) (t as { bud?: unknown[] }).bud = t.bud?.map(b => b.id);
-    const ny2 = (SIM.migrate(gammal).tron?.find(t => t.id === tr.id)?.bud ?? []).filter(b => b.id !== 'hogtid'); // högtiderna läggs till av steg 10.3.3
+    const ny2 = (SIM.migrate(gammal).tron?.find(t => t.id === tr.id)?.bud ?? []).filter(b => !['hogtid', 'helig', 'drakt', 'prastKvinna', 'prastMan', 'prast'].includes(b.id)); // högtiderna, platserna och prästens bud läggs till av senare uppgraderingar
     const omgjord = ny2.length === tr.bud.length && ny2.every((b, i) => b.id === tr.bud![i].id && b.v === undefined && b.t === tr.t);
     // en by utan ledare: tidsålderns högtid läggs fram före de andra buden och röstas in i trons krets (steg 10.3.3)
     const b2 = medTro(7, 2); b2.s.styre = undefined; b2.tr.bud = []; b2.tr.sk = { ...b2.tr.sk, fest: 10 };
@@ -1086,11 +1356,85 @@ SCENARIER.buden = {
     const dag2 = b2.s.now - (b2.s.now % 86400000);
     for (let d = 1; d <= 60 && !b2.tr.roster?.length; d++) { b2.s.now = dag2 + d * 86400000 + 20 * 3600000; SIM.kyrkaKvall(b2.s); }
     const forstaBud = b2.tr.roster?.[0];
+    // de nya förbuden (steg 10.3.22), i en egen by
+    const b3 = medTro(6, 4), s3 = b3.s, tr3 = b3.tr;
+    for (const p of b3.v) p.troStyrka = 90;
+    tr3.bud = (['ingetRus', 'djurVilar', 'ingenHandel', 'ingenStrid', 'ingenHan'] as const).map(id => ({ id, t: s3.now }));
+    const f3 = b3.v[0], o3 = nyInvanare(s3, 'm', 25); o3.tro = undefined;
+    const dagen = (helig: boolean) => { for (let i = 0; i < 14 && SIM.heligDag(s3, tr3) !== helig; i++) s3.now += 86400000; };
+    // inget rus
+    const kr3 = SIM.addTool(s3, 'lerkruka_stor', o3); kr3.hos = undefined; SIM.fyllVatska(s3, 'vin', 10, kr3);
+    klockan(s3, 22);
+    const rusF = SIM.kvallsDryck(s3, f3, true), rusO = SIM.kvallsDryck(s3, o3, true);
+    const brutet0 = s3.stat?.bud_brutet ?? 0; SIM.supa(s3, f3); const supBrott = (s3.stat?.bud_brutet ?? 0) > brutet0 && (f3.skuld ?? 0) > 0;
+    // djuren vilar på den heliga dagen
+    dagen(true); const avlHelg = SIM.budForbjuder(s3, f3, 'avliva'), klHelg = SIM.budForbjuder(s3, f3, 'klippa');
+    dagen(false); const avlVardag = SIM.budForbjuder(s3, f3, 'avliva');
+    // inte handla med främlingar
+    const handla3 = SIM.budForbjuder(s3, f3, 'handla'), koa3 = SIM.budForbjuder(s3, f3, 'koa'), handlaO = SIM.budForbjuder(s3, o3, 'handla');
+    // ingen strid på heliga dagar: gräl blir inget slagsmål
+    dagen(true);
+    const q3 = b3.v[1]; for (let i = 0; i < 300; i++) SIM.gralBlirSlagsmal(s3, f3, q3);
+    const stridHelg = SIM.kartStrider(s3).length, stoppad = s3.stat?.bud_ingenStrid ?? 0;
+    // ingen hånar gudarna
+    const x3 = { ev: 0, op: 0, gud: tr3, gudOp: -50 };
+    const hanO = SIM.BUDSKAP.hanaGud.vikt(s3, o3, x3), hanF = SIM.BUDSKAP.hanaGud.vikt(s3, q3, x3);
+    const t3 = q3.troStyrka!, r3 = SIM.getRel(s3, q3, o3).op;
+    SIM.BUDSKAP.hanaGud.verkan(s3, o3, q3, 1, { gud: tr3.id } as SIM.Fram);
+    // de nya kraven och offren (steg 10.3.23), i en egen by
+    const b4 = medTro(6, 4), s4 = b4.s, tr4 = b4.tr, kid = SIM.kyrkaId(tr4.id);
+    for (const p of b4.v) p.troStyrka = 90;
+    tr4.bud = (['hogtid', 'olHogtid', 'kvade', 'forstaSkord', 'valkomna', 'begravFiende'] as const).map(id => ({ id, t: s4.now }));
+    const vux4 = b4.v.filter(p => SIM.ageOf(p, s4.now) >= SIM.ALDER.vuxen), f4 = vux4[0];
+    // öl vid högtiden: kyrkans kruka, som byn inte dricker ur
+    const olTr = SIM.olTillKyrkan(s4, f4)?.id;
+    const kr4 = SIM.addTool(s4, 'lerkruka_stor', f4); kr4.hos = undefined; SIM.fyllVatska(s4, 'ol', 10, kr4); kr4.agare = kid;
+    const byOl = SIM.medVatska(s4, 'ol'), ol0 = kr4.inne!.n;
+    for (const p of vux4) p.skill.skaldskap = 0;
+    SIM.hogtidOlKvade(s4, tr4, vux4);
+    const drack = ol0 - (kr4.inne?.n ?? 0), utanKvade = vux4.some(p => p.thoughts?.some(t => t.text === 'Ingen kvad om tron vid högtiden'));
+    kr4.inne = undefined; SIM.hogtidOlKvade(s4, tr4, vux4);
+    const saknas = vux4.some(p => p.thoughts?.some(t => t.text === 'Ölet saknades vid högtiden'));
+    // kväden vid högtiden
+    vux4[1].skill.skaldskap = 12; const kt0 = vux4[0].troStyrka!; vux4[0].troStyrka = 50;
+    SIM.hogtidOlKvade(s4, tr4, vux4);
+    const kvad = (s4.stat?.hogtid_kvade ?? 0) === 1 && vux4[0].troStyrka! > 50; void kt0;
+    // den första skörden offras
+    const falt: { offrat?: number } = {}; SIM.put(s4, 'korn', 5, { [f4.id]: 5 });
+    const k0 = SIM.kyrkansAv(s4, tr4, 'korn');
+    SIM.forstaSkorden(s4, f4, falt, 'korn', s4.now); SIM.forstaSkorden(s4, f4, falt, 'korn', s4.now + 3600000);
+    const k1 = SIM.kyrkansAv(s4, tr4, 'korn');
+    SIM.forstaSkorden(s4, f4, falt, 'korn', s4.now + 3 * 86400000);
+    const k2 = SIM.kyrkansAv(s4, tr4, 'korn');
+    // handlaren ska välkomnas
+    klockan(s4, 10); const hs4 = SIM.skickaHandlare(s4), h4 = s4.handlare;
+    const rel0 = h4 ? SIM.gastRel(s4, h4, f4)?.op ?? 0 : 0;
+    if (h4) SIM.valkomnaHandlare(s4, h4);
+    const valk = !!h4 && (SIM.gastRel(s4, h4, f4)?.op ?? 0) > rel0 && (s4.stat?.handlare_valkommen ?? 0) === 1;
+    // den fallne fienden begravs, av den som följer budet
+    s4.kvarlevor = [{ id: 901, k: 'fiende', x: Math.floor(f4.x) + 2, y: Math.floor(f4.y), t: s4.now, vem: -1, namn: 'Rövaren Ulf', text: 'Rövaren Ulf' }];
+    const utanTro = nyInvanare(s4, 'm', 25); utanTro.tro = undefined;
+    let valt: ReturnType<typeof SIM.begravaVal>, annanV = false;
+    for (let i = 0; i < 200 && !valt; i++) { s4.now += 60000; valt = SIM.begravaVal(s4, f4); annanV ||= !!SIM.begravaVal(s4, utanTro); }
+    if (valt) { const t = { act: 'begrava', phase: 'do', ref: valt.ref, until: s4.now, carry: 0, dark: false, why: '' } as SIM.Task; SIM.kroppUpp(s4, f4, t); SIM.gravKlar(s4, f4, t); }
+    const gravd = SIM.gravarOf(s4).find(g => g.namn === 'Rövaren Ulf');
     return [
+      [`öl vid högtiden: den som följer budet tappar ölet åt kyrkan (${olTr === tr4.id}), byn dricker inte ur kyrkans kruka (${!byOl}), de ${vux4.length} vuxna drack ${drack}, och utan öl saknas det (${saknas})`, olTr === tr4.id && !byOl && drack === Math.min(vux4.length, ol0) && saknas],
+      [`kväden vid högtiden: utan skald saknas kvädet (${utanKvade}), med en skald får de troende starkare tro (50 → ${vux4[0].troStyrka!.toFixed(1)})`, utanKvade && kvad],
+      [`den första skörden offras: en hel sak per skörd (kyrkans korn ${k0} → ${k1} → ${k2})`, k1 === k0 + 1 && k2 === k1 + 1],
+      [`handlaren välkomnas med mat och bättre relation (${hs4.text})`, valk],
+      [`den fallne fienden begravs på trons gravplats (${gravd ? `grav, tro ${gravd.tro}` : 'ingen grav'}), men inte av den utan budet (${annanV ? 'valde' : 'valde inte'})`, !!gravd && gravd.tro === tr4.id && !annanV && !s4.kvarlevor.length],
+
+      [`inget rus: den som följer budet tar inget till kvällen (${rusF ?? 'inget'}), den utan tro tar (${rusO ?? 'inget'}), och den som super bryter budet (${supBrott})`, rusF === undefined && rusO === 'vin' && supBrott],
+      [`djuren vilar på den heliga dagen (${avlHelg}, ${klHelg}), men inte andra dagar (${avlVardag ?? 'tillåtet'})`, avlHelg === 'djurVilar' && klHelg === 'djurVilar' && avlVardag === undefined],
+      [`inte handla med främlingar (${handla3}, ${koa3}), den utan tro handlar (${handlaO ?? 'tillåtet'})`, handla3 === 'ingenHandel' && koa3 === 'ingenHandel' && handlaO === undefined],
+      [`ingen strid på heliga dagar: ${stoppad} gräl blev inget slagsmål (${stridHelg} strider)`, stridHelg === 0 && stoppad > 0],
+      [`ingen hånar gudarna: den utan tro kan (${hanO.toFixed(2)}), den som följer budet inte (${hanF}), och den troende som hör får svagare tro (${t3} → ${q3.troStyrka!.toFixed(0)}) och tycker sämre om hånaren (${r3.toFixed(0)} → ${SIM.getRel(s3, q3, o3).op.toFixed(0)})`, hanO > 0 && hanF === 0 && q3.troStyrka! < t3 && SIM.getRel(s3, q3, o3).op < r3],
+
       [`en by utan ledare röstar in tidsålderns högtid först (${forstaBud?.namn ?? 'ingen omröstning'}: ${forstaBud?.gick ? 'ja' : 'nej'})`, !!forstaBud?.gick && b2.tr.bud?.[0]?.id === 'hogtid' && b2.s.styre === undefined],
       [`en sparad by får buden i den nya formen (${ny2.map(b => SIM.budNamn(s, b)).slice(0, 3).join(', ')} …)`, omgjord],
       [`fastan en dag i veckan (${fastade})`, fastade],
-      [`den första fångsten går till tron (${JSON.stringify(tr.forrad)})`, forst],
+      [`den första fångsten går till tron (${JSON.stringify(SIM.kyrkansForrad(s, tr))})`, forst],
       ['tionde till prästen ur den egna maten', tiond],
       [`djuroffret en gång i veckan (${djur}, kött ${kott0} → ${SIM.amountOf(s, 'kott')})`, djur === 1 && SIM.amountOf(s, 'kott') < kott0],
       [`att tacka före maten stärker tron (${t0} → ${q.troStyrka})`, q.troStyrka! > t0 || t0 >= 100],
@@ -1158,12 +1502,12 @@ SCENARIER.rader = {
     const hamnd = SIM.radSeger(s, f), dod = !!v[1].died, glomt = !k.doda?.length;
     s.rovare = undefined;
     // heligt krig
-    tr.hov = { x: 3, y: 3, prog: 0, klar: s.now }; const q = v[2]; q.troStyrka = 60;
+    (s.stationer ??= []).push({ id: 9001, k: 'altare', x: 3, y: 3, kvar: 0, klar: s.now, tro: tr.id }); const q = v[2]; q.troStyrka = 60;
     (s.heliga ??= []).push({ x: 3, y: 4, k: 'sten', tro: tr.id, t: s.now, om: 'här' });
     SIM.radDygn(s, 'heligt', k);
     const g = s.rovare!;
     SIM.radSeger(s, g);
-    const hov = !tr.hov, skandad = !!s.heliga[0].skandad;
+    const hov = !SIM.stationerOf(s).some(x => x.k === 'altare' && x.tro === tr.id), skandad = !!s.heliga[0].skandad;
     SIM.svarTrohet(s, g, q);
     s.rovare = undefined;
     // dörren är bommad när någon är inne i huset, och då tar det längre tid att hugga sönder den
@@ -1184,7 +1528,7 @@ SCENARIER.rader = {
       [`en räd med minst fyra är en stor strid (${stor})`, stor],
       [`är hen inte där letar de hus för hus (${letar}), och hittar de inte hen ger de sig av (${miste})`, letar && miste],
       [`hämnden tas (${dod}), och klanen glömmer skälet (${glomt})`, hamnd && dod && glomt],
-      ['det heliga kriget river hovet och skändar platsen', hov && skandad],
+      ['det heliga kriget slår sönder altaret och skändar platsen', hov && skandad],
       [`den som ger upp svär trohet (${q.drag?.v})`, !!q.drag],
       [`en dörr är bommad när någon är inne (${bom}), annars inte (${obom})`, bom && obom],
     ];
@@ -1283,6 +1627,242 @@ SCENARIER.kruka = {
       [`utan vattensäck bär man vatten i den mellanstora krukan (${vattenKarl(s, p) ?? 'inget'})`, vatten],
       [`ägarens kruka ställs i rummet där hen sover (${hemma ? 'där' : 'inte där'}) och är pynt: hen trivs (${trivs ? 'ja' : 'nej'})`, hemma && trivs],
       [`byn vill ha ${vill} krukor (${pyntare} som pynt och en att bära vatten i), och lerkrukan är en av smakerna (${pyntSort(s, p)})`, vill === pyntare + 1 && SIM.PYNT_SMAK.includes('kruka')],
+    ];
+  },
+};
+
+SCENARIER.heligting = {
+  text: 'Steg 10.3.20: heliga föremål är bud. Ett mästerverk som grundaren gjort föreslås först, ett som en troende äger bara när ägaren vill, budet ställer tinget på altaret i trons hus, ingen tar det till arbete eller på sig, bönen i huset ger 1,5 gånger mer, ett heligt krig tar tinget och budet faller, och en fälld anfallare lämnar tinget kvar med kvalitet och berättelse',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    klockan(s, 12);
+    const h = medTroshus(s, tr), alt = SIM.altaret(s, tr);
+    // tre mästerverk: byns yxa, grundarens yxa och en troendes perfekta kniv. Inga andra yxor
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'yxa');
+    const ny = (k: string, ag: number, q: number, av?: number) => { const t = SIM.newTing(s, k, 1, ag); t.q = q; if (av !== undefined) t.av = av; return t; };
+    const byns = ny('yxa', SIM.BYN, 4, v[4].id), grund = ny('yxa', SIM.BYN, 4, v[0].id), kniv = ny('kniv', v[3].id, 5, v[3].id);
+    kniv.ber = { namn: 'Ljungtand' } as SIM.SakMinne;
+    const forst = SIM.heligtTingKandidat(s, tr) === grund;
+    grund.q = 3; v[3].troStyrka = 0; v[3].andlig = 0;
+    const agarenNej = SIM.heligtTingKandidat(s, tr) === byns;
+    v[3].troStyrka = 100; v[3].andlig = 100;
+    const agarenJa = SIM.heligtTingKandidat(s, tr) === kniv;
+    // budet antas: byns yxa ställs på altaret
+    const b: SIM.AntagetBud = { id: 'heligtTing', v: byns.id, t: s.now }; (tr.bud ??= []).push(b); (SIM.BUD.heligtTing as SIM.BudDef).antas!(s, tr, b);
+    const paAltaret = !!alt && byns.helig === tr.id && byns.vid === alt.id && byns.agare === SIM.BYN && byns.x === alt.x;
+    // ingen tar den till arbete: grundarens yxa är den enda andra, och tas den bort finns ingen yxa att ta
+    const p = v[1]; s.ting = s.ting!.filter(t => t !== grund);
+    const ingenYxa = SIM.take(s, p, 'yxa') === undefined;
+    // ... eller på sig: ett plagg som inte värmer tas på när det är fritt, men inte när det är heligt
+    const pl = SIM.KLAD_SLAG.find(k => !SIM.SAKER[k]!.klad!.varme && !['mantel', 'prastdrakt', 'mask', 'tecken'].includes(SIM.kladAv(k)?.plagg ?? ''))!;
+    s.ting = s.ting!.filter(t => !(t.k === pl || SIM.SAKER[t.k]?.klad?.plats === SIM.SAKER[pl]!.klad!.plats));
+    const plagg = ny(pl, SIM.BYN, 4); plagg.helig = tr.id; plagg.vid = alt?.id;
+    SIM.stepKlader(s); const barsInte = s.ting!.every(t => t.k !== pl || t.bar === undefined);
+    plagg.helig = undefined; plagg.vid = undefined; SIM.stepKlader(s); const barsFritt = plagg.bar !== undefined;
+    s.ting = s.ting!.filter(t => t !== plagg);
+    // bönen i trons hus: 1,5 gånger mer med det heliga tinget
+    const rum = h && SIM.gridOf(s).rooms.find(r => r.hus === h.id), ruta = rum?.tiles[0] ?? 0;
+    p.x = ruta % SIM.W + 0.5; p.y = Math.floor(ruta / SIM.W) + 0.5;
+    const bon = () => { p.troStyrka = 10; SIM.bonKlar(s, p, { tool: 'vardag' }); return p.troStyrka - 10; };
+    const med = bon(); byns.helig = undefined; const utan = bon(); byns.helig = tr.id;
+    const starkare = Math.abs(med / utan - 1.5) < 0.01;
+    // det heliga kriget: anfallarna tar tinget först, och budet faller vid nästa timme
+    const k = SIM.nyKlan(s, 8, -40); (s.klaner ??= []).push(k); k.styrka = 8; k.krigisk = 90;
+    SIM.radDygn(s, 'heligt', k);
+    const g = s.rovare!; SIM.radSeger(s, g);
+    const tagen = !s.ting!.includes(byns) && (s.gastTing ?? []).some(t => t.k === 'yxa' && t.q === 4 && g.folk.includes(t.agare));
+    SIM.kyrkaTimme(s);
+    const fallit = !tr.bud!.some(q => q.id === 'heligtTing'), sorjer = SIM.troende(s, tr).every(q => q.thoughts.some(t => t.text === 'Vårt heliga ting är borta'));
+    // tinget med kvalitet och berättelse: anfallaren som bär det fälls, och den som avrustar hen får ett vanligt mästerverk
+    const gt = (s.gastTing ?? []).find(t => t.k === 'yxa' && t.q === 4)!; gt.ber = { namn: 'Bergsklyv' } as SIM.SakMinne;
+    const r = SIM.gastAv(s, gt.agare)!; r.died = s.now; SIM.gastKrok.dod!(s, r, v[2]);
+    const kv = s.kvarlevor?.find(q => q.k === 'fiende' && q.ting?.some(t => t.k === 'yxa'));
+    if (kv) SIM.avrustaKlar(s, v[2], { act: 'avrusta', ref: kv.id } as SIM.Task);
+    const tillbaka = s.ting!.find(t => t.k === 'yxa' && t.ber?.namn === 'Bergsklyv');
+    return [
+      [`ett mästerverk som grundaren gjort föreslås först`, forst],
+      [`en troendes ting föreslås inte när ägaren skulle rösta nej (${agarenNej})`, agarenNej],
+      [`men när ägaren vill, och då det med högst kvalitet (${agarenJa})`, agarenJa],
+      [`budet ställer tinget på altaret, och byn äger det`, paAltaret],
+      [`ingen tar det heliga tinget till arbete`, ingenYxa],
+      [`ingen tar det heliga plagget på sig (${pl}), men väl när det är fritt`, barsInte && barsFritt],
+      [`bönen i trons hus ger 1,5 gånger mer med tinget (${med.toFixed(2)} mot ${utan.toFixed(2)})`, starkare],
+      [`det heliga kriget tar tinget med kvaliteten`, tagen],
+      [`budet faller och de troende sörjer`, fallit && sorjer],
+      [`en fälld anfallare lämnar tinget kvar med kvalitet och berättelse, och det är inte heligt`, !!tillbaka && tillbaka.q === 4 && tillbaka.helig === undefined],
+    ];
+  },
+};
+
+SCENARIER.heligtdjur = {
+  text: 'Steg 10.3.15: heliga djur är bud. Arten kommer ur trons gudar och storleken ur köttet byn slaktat; den troende avlivar inte arten, går förbi dess kött och tar av plagget av dess skinn, den svältande äter och får skuld, den anfallne försvarar sig, och vid högtiden offras ett tamdjur av arten',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    klockan(s, 12);
+    tr.gudar = [{ omr: ['jakt'], namn: 'Skog', form: 'ande', t: s.now, ar: 1, bekr: s.now, ber: '' }, { omr: ['skord'], namn: 'Ax', form: 'ande', t: s.now, ar: 1, bekr: s.now, ber: '' }] as SIM.Gud[];
+    (s.stat ??= {}).slaktatFar = 10; s.stat.slaktat = 2;
+    const varden = (SIM.BUD.heligtDjur as SIM.BudDef).varden!(s, tr).map(String);
+    const far = varden.find(x => x.startsWith('far:')), radjur = varden.find(x => x.startsWith('radjur:'));
+    const fyra = far === 'far:4' && radjur === 'radjur:2';
+    tr.bud = [...(tr.bud ?? []), { id: 'heligtDjur', v: 'far:3', t: s.now }];
+    const p = v[1], q = v[2];
+    q.tro = undefined;
+    // avlivningen: det gamla fåret avlivas inte av den troende, men av den som inte tror
+    SIM.nyttTamdjur(s, 'far', p.x + 1, p.y, undefined, s.now - 30 * SIM.DAY);
+    for (const r of [p, q]) SIM.addTool(s, 'kniv', r);
+    const avstar = SIM.heligtAvstar(s, p, 'far') && !SIM.heligtAvstar(s, q, 'far');
+    // maten: den troende går förbi fårköttet, den svältande äter det och får skuld
+    setFood(s, 0); SIM.setAmount(s, 'farkott', 6); SIM.setAmount(s, 'bar', 6);
+    p.hunger = 0.6; const m1 = SIM.takeFood(s, 3, p).per;
+    const forbi = !m1.farkott && (m1.bar ?? 0) > 0;
+    SIM.setAmount(s, 'bar', 0); p.hunger = 0.05; const skuld0 = p.skuld ?? 0;
+    const m2 = SIM.takeFood(s, 1, p).per; for (const k in m2) SIM.heligtBrutet(s, p, SIM.SAK_ART[k]);
+    const svalt = (m2.farkott ?? 0) > 0 && (p.skuld ?? 0) > skuld0;
+    // kläderna: plagget av fårskinn tas av och ligger kvar
+    const rock = SIM.addTool(s, 'rock_farskinn', p); rock.bar = p.id;
+    SIM.stepKlader(s);
+    const av = rock.bar !== p.id && SIM.allaTing(s).includes(rock), tog = rock.bar === q.id;
+    // den anfallne försvarar sig: budet förbjuder inte försvaret
+    const forsvar = !SIM.budForbjuder(s, p, 'forsvar') && !SIM.budForbjuder(s, p, 'strid');
+    // djuroffret vid högtiden: ett tamdjur av arten
+    tr.bud.push({ id: 'djuroffer', t: s.now });
+    const n0 = SIM.tamdjurOf(s).filter(d => d.art === 'far').length;
+    SIM.hogtidSlut(s, tr, { k: 'hogtid', start: s.now, slut: s.now, x: 0, y: 0, tro: tr.id, form: 'gille' }, SIM.troende(s, tr));
+    const offrat = n0 >= 1 && SIM.tamdjurOf(s).filter(d => d.art === 'far').length === n0 - 1;
+    return [
+      [`arten kommer ur gudarna och storleken ur köttet (${varden.join(', ')})`, fyra],
+      ['den troende avlivar inte fåret, den som inte tror gör det', avstar],
+      [`den troende går förbi fårköttet (${JSON.stringify(m1)})`, forbi],
+      [`den svältande äter det och får skuld (${JSON.stringify(m2)}, skuld ${skuld0} → ${p.skuld ?? 0})`, svalt],
+      [`plagget av fårskinn tas av och ligger kvar${tog ? ', och den som inte tror tar det' : ''}`, av],
+      ['den anfallne försvarar sig', forsvar],
+      [`vid högtiden offras ett får (${n0} → ${SIM.tamdjurOf(s).filter(d => d.art === 'far').length})`, offrat],
+    ];
+  },
+};
+
+SCENARIER.matbud = {
+  text: 'Steg 10.3.16: maten är bud. Ingrediensen kommer ur trons gudar, den troende går förbi fiskgrytan och den råa fisken, den svältande äter och får skuld, den troende kocken lagar annat, högtiden tar budets ingrediens först, och Inget kött på heliga dagar gäller bara den heliga dagen',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    klockan(s, 12);
+    tr.gudar = [{ omr: ['sjon'], namn: 'Djup', form: 'ande', t: s.now, ar: 1, bekr: s.now, ber: '' }, { omr: ['solen'], namn: 'Sol', form: 'ande', t: s.now, ar: 1, bekr: s.now, ber: '' }] as SIM.Gud[];
+    const varden = (SIM.BUD.matForbud as SIM.BudDef).varden!(s, tr).map(String);
+    tr.bud = [...(tr.bud ?? []), { id: 'matForbud', v: 'fisk', t: s.now }];
+    const p = v[1], q = v[2]; q.tro = undefined;
+    const gryta = Object.keys(SIM.SAKER).find(k => /^r_fisk_\w+_lagad$/.test(k))!;
+    setFood(s, 0); SIM.setAmount(s, 'abborre', 30); SIM.setAmount(s, gryta, 30); SIM.setAmount(s, 'bar', 30);
+    const m1 = SIM.takeFood(s, 3, p).per, forbi = !m1.abborre && !m1[gryta] && (m1.bar ?? 0) > 0;
+    const m0 = SIM.takeFood(s, 3, q).per, annan = (m0.abborre ?? 0) + (m0[gryta] ?? 0) > 0 || (m0.bar ?? 0) > 0;
+    // den svältande: byn har nästan ingen mat
+    setFood(s, 0); SIM.setAmount(s, 'abborre', 1); const skuld0 = p.skuld ?? 0;
+    const svalt = SIM.farorNu(s).svalt, m2 = SIM.takeFood(s, 1, p).per; for (const k in m2) SIM.matBrutet(s, p, k);
+    const at = svalt && (m2.abborre ?? 0) > 0 && (p.skuld ?? 0) > skuld0;
+    // kocken: den troende lagar inte fisken
+    setFood(s, 0); SIM.setAmount(s, 'abborre', 20); SIM.setAmount(s, 'rotter', 20);
+    const annat = SIM.kokRecept(s, p), ickeTroende = SIM.kokRecept(s, q);
+    const kock = ickeTroende?.hh === 'fisk' && !!annat && annat.hh !== 'fisk';
+    // högtiden: budets ingrediens först
+    tr.bud.push({ id: 'matKrav', v: 'bar', t: s.now });
+    satKyrka(s, tr, { kott: 20, bar: 20 });
+    const n0 = s.stat?.hogtid_ratt ?? 0;
+    SIM.hogtidSlut(s, tr, { k: 'hogtid', start: s.now, slut: s.now, x: 0, y: 0, tro: tr.id, form: 'gille' }, SIM.troende(s, tr));
+    const hogtid = (s.stat?.hogtid_ratt ?? 0) > n0 && SIM.kyrkansAv(s, tr, 'kott') === 20 && SIM.kyrkansAv(s, tr, 'bar') < 20;
+    // Inget kött på heliga dagar: bara den heliga dagen
+    tr.bud = [{ id: 'prast', t: s.now }, { id: 'kottHelg', t: s.now }];
+    setFood(s, 0); SIM.setAmount(s, 'kott', 30); SIM.setAmount(s, 'bar', 30);
+    const dag = Math.floor(s.now / SIM.DAY), helg = (dag + 7 - (dag % 7) + (tr.id % 7)) * SIM.DAY + 12 * SIM.HOUR;
+    s.now = helg; const h1 = SIM.heligDag(s, tr), k1 = SIM.takeFood(s, 2, p).per;
+    s.now = helg + SIM.DAY; const h2 = SIM.heligDag(s, tr), k2 = SIM.takeFood(s, 30, p).per;
+    const kottHelg = h1 && !h2 && !k1.kott && (k2.kott ?? 0) > 0 && !SIM.budForbjuder(s, p, 'slakta');
+    return [
+      [`ingrediensen kommer ur gudarna (${varden.join(', ')})`, varden.includes('fisk') && varden.includes('bar') && varden.length === 2],
+      [`den troende går förbi fiskgrytan och den råa fisken (${JSON.stringify(m1)})`, forbi && annan],
+      [`den svältande äter och får skuld (${JSON.stringify(m2)}, skuld ${skuld0} → ${p.skuld ?? 0})`, at],
+      [`den troende kocken lagar annat (${annat?.hh ?? '–'}, den som inte tror ${ickeTroende?.hh ?? '–'})`, kock],
+      [`högtiden tar budets ingrediens först (${JSON.stringify(SIM.kyrkansForrad(s, tr))})`, hogtid],
+      [`Inget kött på heliga dagar gäller bara den dagen och förbjuder inte slakten (${JSON.stringify(k1)} / ${JSON.stringify(k2)})`, kottHelg],
+    ];
+  },
+};
+SCENARIER.troshusut = {
+  text: 'Steg 10.3.21: trons hus växer. När de vuxna troende blivit fler än husets golvrutor tas storleken upp igen, ett ja gör planen större och byggplanen bygger ut huset eller bygger ett till, som bara de troende bygger ur kyrkans egendom, och en möbel som fått nej tas upp igen när skalan bytt sida och ställs efter ett ja',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    klockan(s, 12);
+    tr.plan = { bank: 'nej' }; tr.sk = { ...tr.sk, prast: 20 }; // prästerna talar inte: ingen bänk
+    const h = medTroshus(s, tr)!;
+    (tr.planNej ??= {}).bank = { pa: Math.sign(SIM.TROSHUS_DELAR.bank.passar(s, tr, 'ja')), golv: SIM.troshusGolv(s, tr) };
+    tr.planVuxna = SIM.vuxnaTroende(s, tr).length;
+    const golv = SIM.troshusGolv(s, tr), inget = !SIM.igenDelar(s, tr).includes('storlek');
+    // fler troende än golvrutor: storleken tas upp igen
+    while (SIM.vuxnaTroende(s, tr).length <= golv) { const p = nyInvanare(s, 'm', 30); p.tro = tr.id; p.troStyrka = 100; }
+    const fragas = SIM.troshusForslag(s, tr).some(d => d.del === 'storlek');
+    SIM.FRAGOR.troshus.gor(s, { tro: tr.id, del: 'storlek', v: 'lagom' }, undefined);
+    const storre = (tr.planRutor ?? 0) > golv, intelIgen = !SIM.igenDelar(s, tr).includes('storlek');
+    const behov = SIM.byggbehov(s).find(b => b.fn === 'troshus'), behovOk = behov?.a.tro === tr.id && behov.a.plats === (tr.planRutor ?? 0) - golv;
+    // byggplanen bygger ut huset eller bygger ett till
+    const husFore = new Set(SIM.housesOf(s).map(x => x.id));
+    byggare(s); s.byggSok = undefined; SIM.stepBehov(s); for (const k in s.byggBehov ?? {}) s.byggBehov![k] -= 24 * SIM.HOUR; SIM.planBuild(s);
+    const nyttTro = SIM.housesOf(s).find(x => !husFore.has(x.id) && x.tro === tr.id), ut = !!h.ut;
+    const vaxer = ut || !!nyttTro, trosBit = SIM.bitsOf(s).find(b => b.b < 1 && b.k === 'vagg' && (b.hus === h.id || b.hus === nyttTro?.id));
+    const vaggOk = !!trosBit && trosBit.m === SIM.planDel(s, tr, 'vagg');
+    // bara de troende bygger, ur kyrkans egendom
+    const trosHus = new Set([h.id, nyttTro?.id]);
+    s.byggen = SIM.bitsOf(s).filter(b => trosHus.has(b.hus)); s.hus = SIM.housesOf(s).filter(x => trosHus.has(x.id)); SIM.touch(s);
+    const ej = nyInvanare(s, 'k', 30); ej.tro = undefined; byggare(s);
+    for (const b of SIM.bitsOf(s)) if (b.k !== 'vagg') { b.b = 1; b.mat = SIM.MATERIAL[b.m].n; }
+    for (const b of SIM.bitsOf(s)) SIM.groundOf(s).trees[b.y * SIM.W + b.x] = 0; SIM.touch(s);
+    satKyrka(s, tr, { [SIM.MATERIAL[trosBit?.m ?? 'timmer'].item!]: 300 });
+    const q = v[1], jq = SIM.buildJob(s, q), jej = SIM.buildJob(s, ej);
+    const troendeBygger = !!jq && trosHus.has(jq.bit.hus) && jej === undefined;
+    // möbeln som fick nej: skalan byter sida, frågan kommer igen, och ett ja ger en bänk att bygga
+    const fore = SIM.igenDelar(s, tr).includes('bank');
+    tr.sk = { ...tr.sk, prast: 80 }; const sidaBytt = SIM.igenDelar(s, tr).includes('bank'), bankFraga = SIM.troshusForslag(s, tr).some(d => d.del === 'bank' && d.v === 'ja');
+    SIM.FRAGOR.troshus.gor(s, { tro: tr.id, del: 'bank', v: 'ja' }, undefined);
+    const bankBrist = SIM.trosMobelBrist(s, tr, 'trosbank') > 0 && tr.planNej?.bank === undefined;
+    return [
+      [`storleken tas inte upp så länge huset räcker`, inget],
+      [`fler vuxna troende än husets ${golv} golvrutor tar upp storleken igen`, fragas],
+      [`ett ja gör planen större (${tr.planRutor} golvrutor) och frågan vilar sedan`, storre && intelIgen],
+      [`raden troshus svarar med det som fattas (${behov?.a.plats})`, behovOk],
+      [`byggplanen bygger ut huset eller bygger ett till (${ut ? 'utbyggnad' : nyttTro ? 'nytt hus' : 'inget'})`, vaxer],
+      [`med planens vägg (${trosBit?.m})`, vaggOk],
+      [`bara de troende bygger, ur kyrkans egendom`, troendeBygger],
+      [`bänken som fick nej tas upp igen när skalan bytt sida (${fore} → ${sidaBytt})`, !fore && sidaBytt && bankFraga],
+      [`ett ja ställer en ny bänk`, bankBrist],
+    ];
+  },
+};
+
+SCENARIER.troshusplan = {
+  text: 'Steg 10.3.18: planen för trons hus bestäms del för del i trons krets ur TROSHUS_DELAR (storleken, formen, väggarna när byn kan bygga flera slags, och en fråga per möbel). Skalorna avgör vilket val som läggs fram, ett nej ger ett annat val en annan kväll, och namnet är den första raden i TROSHUSNAMN som passar',
+  kor: () => {
+    const { s, tr } = medTro(6, 3);
+    tr.bud = [{ id: 'prast', t: s.now }]; tr.sk = { ...tr.sk, fest: 10, prast: 80 }; tr.manga = 80; tr.natur = 60;
+    const pr = SIM.trosTalare(s, tr)!;
+    const basta = () => { const l = SIM.TROS_UPP.find(r => r.id === 'troshus')!.lista(s, tr, pr).filter(f => f.prio > 0 && (tr.nedrostat?.[f.fr.f + ':' + JSON.stringify(f.fr.d)] ?? 0) <= s.now); return l.sort((a, b) => b.prio - a.prio)[0]?.fr.d; };
+    const forst = basta();
+    // ett nej: samma val vilar, och nästa gång läggs ett annat fram
+    (tr.nedrostat ??= {})['troshus:' + JSON.stringify(forst)] = s.now + 3 * SIM.DAY;
+    const sedan = basta();
+    tr.nedrostat = {};
+    // kvällarna tills planen är klar; frågorna om planen kommer i registrets ordning
+    const dag0 = s.now - (s.now % SIM.DAY), ordning: string[] = [];
+    for (let d = 1; d <= 400 && !SIM.planKlar(s, tr); d++) {
+      s.now = dag0 + d * SIM.DAY + 20 * SIM.HOUR;
+      SIM.kyrkaKvall(s);
+      for (const k of Object.keys(tr.plan ?? {})) if (!ordning.includes(k)) ordning.push(k);
+    }
+    const iOrdning = ordning.join(',') === 'storlek,form,altare,gudabild,bank';
+    const namn = SIM.troshusNamn(s, tr);
+    tr.manga = 20; tr.natur = 20; const helgedom = SIM.troshusNamn(s, tr);
+    tr.natur = 60; tr.plan = { ...tr.plan, storlek: 'trangt' }; const ve = SIM.troshusNamn(s, tr);
+    return [
+      [`Fest lägger fram rymligt först (${forst?.v}), och efter ett nej något annat (${sedan?.v})`, forst?.del === 'storlek' && forst.v === 'rymligt' && sedan?.del === 'storlek' && sedan.v !== 'rymligt'],
+      [`frågorna kommer i ordning, och väggarna frågas inte när byn bara kan bygga ett slags (${ordning.join(', ')})`, iOrdning],
+      [`planen blir klar och sparas på tron (${SIM.planText(s, tr)})`, SIM.planKlar(s, tr) && tr.plan?.form === 'avlang'],
+      [`namnet följer skalorna: en enda gud och präster ger ${namn}, naturens andar ${helgedom}, ett trångt hus ${ve}`, namn === 'Kyrka' && helgedom === 'Helgedom' && ve === 'Vé'],
     ];
   },
 };

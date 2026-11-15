@@ -1,13 +1,17 @@
 import { clamp, gauss, pick, rnd } from './slump';
+import { troshusKlart } from './troshus';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
-import { ageOf, alive, count, isParent, living, log, relKey, stat } from './folk';
+import { ALDER, ageOf, alive, count, isParent, living, log, relKey, stat } from './folk';
 import { UPPV, formas, upplev } from './uppvaxt';
 import { yearNo } from './tid';
 import { kronika } from './historik';
-import { bytaChans } from './kultlatt';
+import { bytaChans, egendomIVed } from './kultlatt';
 import type { IntryckTyp } from './rykten';
 import { isSick } from './sjukdom';
+import { kyrkansForrad } from './kyrka';
+import { releaseOwner } from './lager';
+import { kyrkaId } from './egendom';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
 // hur viktigt det heliga är för hen, inte vad hen tror på. Den ärvs delvis och flyttas av upplevelserna (uppvaxt.ts, steg
@@ -45,15 +49,15 @@ export const TRO = balans('tro', {
   styrkaNy: 40, // så stark är tron hos den som just börjat tro
   samtalStyrka: 2, // ett samtal mellan två som tror likadant gör lyssnarens tro så här mycket starkare
 });
-// trons nivåer (steg 4.1.4, "Villkoren för nivåerna" i designdokumentet; startvärden)
-export const NIVA = balans('troniva', {
-  delad: 3, // delad tro: så här många tror (som när tron får sitt namn)
-  seder: 5, // seder: så här många tror ...
-  sederAndel: 0.5, // ... eller så här stor del av byn (men minst så många som en delad tro)
-  prast: 8, // präst: så här många tror, och en av dem är andlig och karismatisk:
-  prastAnde: 70, // andligheten hos den som kan bli präst ...
-  prastKarisma: 14, // ... och karisman (1–20)
-  kyrka: 15, // kyrka: så här många tror, en präst och en helig byggnad (hov, steg 7.2.10)
+// trons tyngd (steg 10.3.8, "Tyngdens delar" i designdokumentet; startvärden)
+export const TYNGD = balans('tyngd', {
+  alderFran: 0.25, // en ny tro väger så här mycket per troende ...
+  alderDygn: 28, // ... och full vikt efter så här många dygn, sedan inte mer
+  prast: 4, // en präst
+  egendom: 2, // kyrkans egendom ger upp till så här mycket ...
+  egendomVed: 20, // ... fullt vid värdet av så här mycket ved
+  hus: 3, // varje färdigt hus
+  s1: 1, s2: 3, s3: 8, s4: 16, // tyngden ett bud av storlek 1, 2, 3 och 4 kräver
 });
 // gudarna (steg 4.1.5, "Gudarna" i designdokumentet; startvärden)
 export const GUD = balans('gudar', {
@@ -90,22 +94,31 @@ export function andeRiktning(s: State, p: Person, vuxen: boolean) {
 // andligheten syns i gränssnittet först när den första tron finns (steg 4.1.2.1)
 export const andligSyns = (s: State) => !!s.tron?.length;
 
-// ---------- nivåerna (registret, steg 4.1.4) ----------
-// en tro växer en nivå i taget och faller en nivå när villkoret inte längre uppfylls. Religionen är ingen teknik. Prästen,
-// buden och kyrkan i 10.1 väntar på nivåerna. krav: villkoret (n = antalet som tror, folk = de som tror); varje nivå kräver
-// också den förra
-interface NivaDef { namn: string; text: string; krav: (s: State, n: number, folk: Person[]) => boolean }
-export const NIVAER: NivaDef[] = [
-  { namn: 'Personlig tro', text: 'Bara några få tror.', krav: () => true },
-  { namn: 'Delad tro', text: `Minst ${NIVA.delad} tror.`, krav: (_s, n) => n >= NIVA.delad },
-  { namn: 'Seder', text: `Minst ${NIVA.seder} tror, eller hälften av byn. Bön, heliga platser och begravning kommer med 10.1.`, krav: (s, n) => n >= NIVA.delad && (n >= NIVA.seder || n >= living(s).length * NIVA.sederAndel) },
-  { namn: 'Präst', text: `Minst ${NIVA.prast} tror, och en av dem är andlig och karismatisk nog att bli präst. Prästen och de svaga buden kommer med 10.1.`,
-    krav: (s, n, folk) => n >= NIVA.prast && folk.some(p => andlighet(s, p) >= NIVA.prastAnde && stat(p, 'karisma', s.now) >= NIVA.prastKarisma) },
-  { namn: 'Kyrka', text: `Minst ${NIVA.kyrka} tror, en präst och en helig byggnad (hov, steg 7.2.10). Starka bud, kyrkskatt och makt över styret kommer med 10.1.`,
-    krav: (s, n, folk) => n >= NIVA.kyrka && folk.some(p => s.tron?.some(t => t.prast === p.id && t.id === p.tro && t.hov?.klar)) },
+// ---------- trons tyngd (registret, steg 10.3.8) ----------
+// vad en tro kan bestämma kommer ur dess tyngd: summan av raderna i TYNGDDELAR, räknad när någon frågar och aldrig sparad.
+// Varje bud kräver tyngden för sin storlek (TYNGD.s1–s4). Ett antaget bud står kvar när tyngden sjunker
+interface TyngdDel { namn: string; v: (s: State, tr: Tro) => number }
+const tyngdAlder = (s: State, tr: Tro) => TYNGD.alderFran + (1 - TYNGD.alderFran) * clamp((s.now - tr.t) / (TYNGD.alderDygn * DAY), 0, 1);
+export const TYNGDDELAR: Record<string, TyngdDel> = {
+  troende: { namn: 'De troende', v: (s, tr) => living(s).filter(p => p.tro === tr.id && ageOf(p, s.now) >= ALDER.vuxen).reduce((a, p) => a + (p.troStyrka ?? 0) / 100, 0) * tyngdAlder(s, tr) },
+  prast: { namn: 'Prästen', v: (s, tr) => { const q = tr.prast !== undefined ? s.people.find(p => p.id === tr.prast) : undefined; return q && alive(q) && q.tro === tr.id ? TYNGD.prast : 0; } },
+  egendom: { namn: 'Kyrkans egendom', v: (s, tr) => { const f = kyrkansForrad(s, tr); return TYNGD.egendom * clamp(egendomIVed(f) / TYNGD.egendomVed, 0, 1); } },
+  hus: { namn: 'Trons hus', v: (s, tr) => troshusKlart(s, tr) ? TYNGD.hus : 0 },
+};
+export const tyngdDelar = (s: State, tr: Tro) => Object.entries(TYNGDDELAR).map(([id, d]) => ({ id, namn: d.namn, v: d.v(s, tr) }));
+export const tyngd = (s: State, tr: Tro) => tyngdDelar(s, tr).reduce((a, d) => a + d.v, 0);
+export const tyngdFor = (storlek: number) => [0, TYNGD.s1, TYNGD.s2, TYNGD.s3, TYNGD.s4][storlek] ?? Infinity;
+// räcker trons tyngd till ett bud av den här storleken?
+export const rymsBud = (s: State, tr: Tro, storlek: number) => tyngd(s, tr) >= tyngdFor(storlek);
+// etiketten (steg 10.3.8): den första som stämmer. Inga gränser, bara vad tron har
+export const ETIKETTER: { namn: string; text: string; har: (s: State, tr: Tro) => boolean }[] = [
+  { namn: 'Kyrka', text: 'Trons hus står klart.', har: (s, tr) => troshusKlart(s, tr) },
+  { namn: 'Präst', text: 'Tron har en präst.', har: (s, tr) => TYNGDDELAR.prast.v(s, tr) > 0 },
+  { namn: 'Seder', text: 'Tron har en helig plats.', har: (s, tr) => !!s.heliga?.some(h => h.tro === tr.id && h.skandad === undefined) },
+  { namn: 'Delad tro', text: 'Tron har fått sitt namn.', har: (_s, tr) => !!tr.namn },
+  { namn: 'Personlig tro', text: 'Bara några få tror.', har: () => true },
 ];
-export const PRAST_NIVA = 3; // nivån Präst: den första tron som når den ger den första schamanen (skalan Var och en – Präster)
-export const troNiva = (tr: Tro) => tr.niva ?? 0;
+export const troEtikett = (s: State, tr: Tro) => ETIKETTER.find(e => e.har(s, tr))!;
 
 // ---------- skalorna (registret) ----------
 // de nio skalorna ("Nio skalor" i designdokumentet), 0–100 från den ena sidan till den andra. En tro börjar med de två första
@@ -115,13 +128,13 @@ interface SkalaDef { namn: [string, string]; text: [string, string]; oppnas?: (s
 export const SKALOR = {
   natur: { namn: ['Natur', 'Människa'], text: ['Andar i djur, träd, väder och platser', 'Förfäder, hjältar och helgon'] },
   manga: { namn: ['Många', 'En'], text: ['Många andar eller gudar', 'En enda gud'] },
-  prast: { namn: ['Var och en', 'Präster'], text: ['Var och en möter det heliga själv', 'Präster förmedlar, regler och ordning'], oppnas: s => !!s.tron?.some(t => troNiva(t) >= PRAST_NIVA) },
+  prast: { namn: ['Var och en', 'Präster'], text: ['Var och en möter det heliga själv', 'Präster förmedlar, regler och ordning'], oppnas: s => !!s.tron?.some(t => t.prast !== undefined) },
   livet: { namn: ['Nuet', 'Livet efter'], text: ['Hjälp nu: jaktlycka, hälsa, väder', 'Ett liv efter döden, lön eller straff där'], oppnas: s => (s.stat?.ritual_forsta_begravning ?? 0) > 0, steg: '10.1 (den första begravningsritualen)' },
-  forlat: { namn: ['Förlåtande', 'Straffande'], text: ['Bikt, bot och förlåtelse', 'Vrede, stränga bud, syndabockar'], oppnas: s => !!s.tron?.some(t => troNiva(t) >= 2) },
-  fest: { namn: ['Fest', 'Försakelse'], text: ['Fest, dans och rus', 'Fasta, askes, avstå'], oppnas: s => !!s.tron?.some(t => troNiva(t) >= 2) },
-  krig: { namn: ['Fridsam', 'Krigisk'], text: ['Inget våld, inga blodsoffer', 'Offer och heligt krig'], oppnas: s => !!s.tron?.some(t => troNiva(t) >= 3) || (s.stat?.drap ?? 0) > 0 },
+  forlat: { namn: ['Förlåtande', 'Straffande'], text: ['Bikt, bot och förlåtelse', 'Vrede, stränga bud, syndabockar'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
+  fest: { namn: ['Fest', 'Försakelse'], text: ['Fest, dans och rus', 'Fasta, askes, avstå'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
+  krig: { namn: ['Fridsam', 'Krigisk'], text: ['Inget våld, inga blodsoffer', 'Offer och heligt krig'], oppnas: s => !!s.tron?.some(t => t.prast !== undefined) || (s.stat?.drap ?? 0) > 0 },
   oppen: { namn: ['Öppen', 'Sluten'], text: ['Välkomnar andra trosriktningar', 'Omvänder eller fördriver andra'], oppnas: s => (s.tron ?? []).filter(t => t.slut === undefined).length >= 2 },
-  sprid: { namn: ['Sprider sig', 'Ärvs'], text: ['Försöker vinna nya följare', 'Ärvs bara inom släkten eller hålls hemlig'], oppnas: s => !!s.tron?.some(t => troNiva(t) >= 2) },
+  sprid: { namn: ['Sprider sig', 'Ärvs'], text: ['Försöker vinna nya följare', 'Ärvs bara inom släkten eller hålls hemlig'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
 } satisfies Record<string, SkalaDef>;
 export type SkalaId = keyof typeof SKALOR;
 const SDEF: Record<SkalaId, SkalaDef> = SKALOR;
@@ -139,19 +152,20 @@ export function satSkala(s: State, tr: Tro, k: SkalaId) {
 // ett område som en gud råder över: namn (i listor och fliken), om (i meningar: "råder över åskan och himlen"), forled: ordleden
 // som namnet börjar med (Is-grim, Eld-vald), i: var anden bor på Natur-sidan, heder: hedersnamnen (rykten.ts) som knyter en död
 // bybo till området, och symbolen (ikoner.ts). Händelserna som föder området står där de händer (gudHandelse)
-interface GudDef { namn: string; om: string; forled: string[]; i: string[]; heder: IntryckTyp[]; sym: string }
+// djur: arterna guden kan göra heliga (steg 10.3.15); mat: huvudingredienserna i gudens matbud (steg 10.3.16)
+interface GudDef { namn: string; om: string; forled: string[]; i: string[]; heder: IntryckTyp[]; djur: string[]; mat: string[]; sym: string }
 export const GUDAR = {
-  aska: { namn: 'Åska och himmel', om: 'åskan och himlen', forled: ['Dun', 'Blix', 'Sky', 'Ås'], i: ['åskmolnen', 'den stora örnen', 'den höga eken'], heder: [], sym: 'gud_aska' },
-  sjon: { namn: 'Sjön och vattnet', om: 'sjön och vattnet', forled: ['Djup', 'Våg', 'Sjö', 'Strand'], i: ['den stora gäddan', 'djupet', 'forsen'], heder: [], sym: 'gud_sjon' },
-  skord: { namn: 'Skörd och jord', om: 'skörden och jorden', forled: ['Ax', 'Korn', 'Mull', 'Fröd'], i: ['den första tuvan', 'det gamla äppelträdet', 'åkerns sten'], heder: ['generos', 'flitig', 'rattvis'], sym: 'gud_skord' },
-  doden: { namn: 'Döden', om: 'döden', forled: ['Grav', 'Mörk', 'Natt', 'Skugg'], i: ['korpen', 'den döda granen', 'mossen'], heder: [], sym: 'gud_doden' },
-  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare', 'bjorndodare'], sym: 'gud_jakt' },
-  elden: { namn: 'Elden', om: 'elden', forled: ['Eld', 'Glöd', 'Brand', 'Bål'], i: ['glöden', 'den svarta stenen vid elden', 'röken'], heder: [], sym: 'gud_elden' },
-  vintern: { namn: 'Vintern och isen', om: 'vintern och isen', forled: ['Is', 'Frost', 'Snö', 'Rim'], i: ['isen på sjön', 'snöugglan', 'den frusna forsen'], heder: [], sym: 'gud_vintern' },
-  solen: { namn: 'Solen', om: 'solen', forled: ['Sol', 'Ljus', 'Dag', 'Glans'], i: ['solstenen', 'lärkan', 'kullen i öster'], heder: [], sym: 'gud_solen' },
-  atten: { namn: 'Ätten', om: 'ätten och barnen', forled: ['Ätt', 'Ung', 'Barn', 'Stam'], i: ['den gamla linden', 'källan', 'björnmodern'], heder: ['hjalpsam'], sym: 'gud_atten' },
-  kriget: { namn: 'Kriget', om: 'kriget och striden', forled: ['Sköld', 'Spjut', 'Strid', 'Hugg'], i: ['vildsvinet', 'den kluvna stenen', 'korpen'], heder: ['stark'], sym: 'gud_kriget' },
-  hantverk: { namn: 'Hantverket', om: 'hantverket', forled: ['Smid', 'Sten', 'Hamr', 'Tälj'], i: ['flintberget', 'bävern', 'den gamla stubben'], heder: ['skicklig', 'rik'], sym: 'gud_hantverk' },
+  aska: { namn: 'Åska och himmel', om: 'åskan och himlen', forled: ['Dun', 'Blix', 'Sky', 'Ås'], i: ['åskmolnen', 'den stora örnen', 'den höga eken'], heder: [], djur: [], mat: [], sym: 'gud_aska' },
+  sjon: { namn: 'Sjön och vattnet', om: 'sjön och vattnet', forled: ['Djup', 'Våg', 'Sjö', 'Strand'], i: ['den stora gäddan', 'djupet', 'forsen'], heder: [], djur: [], mat: ['fisk'], sym: 'gud_sjon' },
+  skord: { namn: 'Skörd och jord', om: 'skörden och jorden', forled: ['Ax', 'Korn', 'Mull', 'Fröd'], i: ['den första tuvan', 'det gamla äppelträdet', 'åkerns sten'], heder: ['generos', 'flitig', 'rattvis'], djur: ['far', 'get'], mat: ['sad'], sym: 'gud_skord' },
+  doden: { namn: 'Döden', om: 'döden', forled: ['Grav', 'Mörk', 'Natt', 'Skugg'], i: ['korpen', 'den döda granen', 'mossen'], heder: [], djur: ['fagel'], mat: [], sym: 'gud_doden' },
+  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare', 'bjorndodare'], djur: ['varg', 'radjur', 'kanin'], mat: ['kott'], sym: 'gud_jakt' },
+  elden: { namn: 'Elden', om: 'elden', forled: ['Eld', 'Glöd', 'Brand', 'Bål'], i: ['glöden', 'den svarta stenen vid elden', 'röken'], heder: [], djur: [], mat: [], sym: 'gud_elden' },
+  vintern: { namn: 'Vintern och isen', om: 'vintern och isen', forled: ['Is', 'Frost', 'Snö', 'Rim'], i: ['isen på sjön', 'snöugglan', 'den frusna forsen'], heder: [], djur: [], mat: [], sym: 'gud_vintern' },
+  solen: { namn: 'Solen', om: 'solen', forled: ['Sol', 'Ljus', 'Dag', 'Glans'], i: ['solstenen', 'lärkan', 'kullen i öster'], heder: [], djur: [], mat: ['bar'], sym: 'gud_solen' },
+  atten: { namn: 'Ätten', om: 'ätten och barnen', forled: ['Ätt', 'Ung', 'Barn', 'Stam'], i: ['den gamla linden', 'källan', 'björnmodern'], heder: ['hjalpsam'], djur: ['bjorn'], mat: [], sym: 'gud_atten' },
+  kriget: { namn: 'Kriget', om: 'kriget och striden', forled: ['Sköld', 'Spjut', 'Strid', 'Hugg'], i: ['vildsvinet', 'den kluvna stenen', 'korpen'], heder: ['stark'], djur: ['fagel'], mat: [], sym: 'gud_kriget' },
+  hantverk: { namn: 'Hantverket', om: 'hantverket', forled: ['Smid', 'Sten', 'Hamr', 'Tälj'], i: ['flintberget', 'bävern', 'den gamla stubben'], heder: ['skicklig', 'rik'], djur: [], mat: [], sym: 'gud_hantverk' },
 } satisfies Record<string, GudDef>;
 export type GudOmr = keyof typeof GUDAR;
 export const GUD_OMR: Record<GudOmr, GudDef> = GUDAR;
@@ -232,6 +246,11 @@ export const TECKEN = {
     bakom: ["Den som lägger locket på", "Isens herre", "Vattnets vinterande"], vill: ["att man inte går först på isen", "att man bryter en vak och lämnar en fisk", "att man är tyst vid isen"], svek: ["isen brister", "fisken dör", "vattnet kommer aldrig tillbaka"] },
   bonSvar: { text: "bönen som fick svar", natur: 55, omr: 'atten', sym: 'tro_drom', namn: ["Svarets tro", "De hörda folk", "Bönens väg"],
     bakom: ["Den som lyssnar", "Den hörande", "Rösten som svarar"], vill: ["att man ber varje kväll", "att man tackar högt", "att man ber för andra"], svek: ["ingen svarar mer", "man blir ensam i sin nöd", "bönen vänds mot en"] },
+  // tvillingarna och björnen som vände om (steg 10.3.7)
+  tvillingar: { text: "tvillingarna {om} som föddes levande", natur: 60, omr: 'atten', sym: 'tro_barn', namn: ["Tvillingarnas tro", "De dubbla folk", "Det delade blodets väg"],
+    bakom: ["Den som gav två i stället för ett", "Moderns moder", "De två i mörkret"], vill: ["att tvillingar aldrig skiljs åt", "att man delar allt i två lika delar", "att man tackar vid varje födsel"], svek: ["den ena tvillingen tas tillbaka", "det blir inga fler barn", "syskon blir ovänner"] },
+  bjornVande: { text: "björnen som vände om", natur: 20, omr: 'jakt', sym: 'tro_hare', namn: ["Björnens tro", "Den skonades folk", "Ramens väg"],
+    bakom: ["Skogens gamle", "Den som går på fyra och på två", "Björnmodern"], vill: ["att ingen säger björnens namn högt", "att man lämnar honung i skogen", "att man går tyst förbi idet"], svek: ["björnen kommer tillbaka och vänder inte", "ramen tar boskapen", "man möter den ensam i mörkret"] },
 } satisfies Record<string, TeckenDef>;
 export type TeckenTyp = keyof typeof TECKEN;
 const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
@@ -239,6 +258,7 @@ const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
 export const TECKENTAL = balans('tecken', {
   blixt: 0.3, brand: 0.3, vinterSlut: 0.3, torkaSlut: 0.3, flodSlut: 0.3, jakt: 0.3, barnFrisk: 0.3, drom: 0.3,
   tornado: 0.25, brandStopp: 0.2, overlevde: 0.2, barnAska: 0.2, ingenDog: 0.1, skord: 0.1, dubbelt: 0.15, fynd: 0.1, svampsyn: 0.25, dodDrom: 0.15, frosjo: 0.1, bonSvar: 0.2,
+  tvillingar: 0.2, bjornVande: 0.1,
 } satisfies Record<TeckenTyp, number>);
 export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{om}', om ?? '');
 
@@ -246,9 +266,10 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // en tro (steg 4.1.2): vem som grundade den (id och namn), när, tecknet den kom ur och tolkningen. natur och manga är de två
 // första skalorna (0–100: Natur – Människa och Många – En). bekr: när ett tecken senast bekräftade den. slut: när den sista
 // som trodde dog. ar: året den kom. namn, sym och ber (berättelsen om hur den började) får den när TRO.namn tror (steg 4.1.2.3).
-// niva: index i NIVAER (steg 4.1.4), sk: värdet på de skalor som låsts upp efter de två första, gudar: trons gudar (steg 4.1.5)
-export interface Tro { bud?: import('./kyrka').AntagetBud[]; roster?: import('./rost').Omrostning[]; nedrostat?: Record<string, number>; // trons omröstningar, och det som röstats ned och vilar (steg 10.3.2)
-  forrad?: Record<string, number>; hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; prastRegel?: 'k' | 'm' | 'bada'; hogtid?: number; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; niva?: number; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
+// sk: värdet på de skalor som låsts upp efter de två första, gudar: trons gudar (steg 4.1.5)
+export interface Tro { hogtidDag?: number; // dygnet då högtiden hölls: också en helig dag (steg 10.3.16)
+  bud?: import('./kyrka').AntagetBud[]; plan?: import('./troshus').TrosPlan; planRutor?: number; /* planen för trons hus och dess golvrutor (steg 10.3.18) */ planVuxna?: number; planNej?: Record<string, { pa: number; golv: number }>; /* de vuxna troende när storleken avgjordes, och en möbel som fick nej: skalans sida och husets golvrutor då (steg 10.3.21) */ roster?: import('./rost').Omrostning[]; nedrostat?: Record<string, number>; // trons omröstningar, och det som röstats ned och vilar (steg 10.3.2)
+  forrad?: Record<string, number>; /* bara i äldre sparfiler (före steg 10.3.17) */ hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; /* hov, tempel och gudabild bara i äldre sparfiler (före steg 10.3.19) */ fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; hogtid?: number; heligKand?: { x: number; y: number; t: number; om: string }[]; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
 // tolkningen som meningar: "Den som bor i åskmolnen vill att man tystnar när det mullrar. Om man sviker: blixten slår ner i ens hus."
@@ -436,9 +457,8 @@ export function stepReligion(s: State) {
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined) continue;
     const folk = troende(s, tr);
-    if (!folk.length) { tr.slut = s.now; count(s, 'tro_slut'); continue; }
+    if (!folk.length) { tr.slut = s.now; releaseOwner(s, kyrkaId(tr.id)); count(s, 'tro_slut'); continue; } // kyrkans del blir byns (steg 10.3.17)
     if (!tr.namn && folk.length >= TRO.namn) namnge(s, tr, folk);
-    nivaSteg(s, tr, folk);
     gudSteg(s, tr);
   }
   // skalorna som låses upp när det de styr dyker upp
@@ -447,17 +467,5 @@ export function stepReligion(s: State) {
     for (const tr of s.tron ?? []) if (tr.slut === undefined) satSkala(s, tr, k);
     count(s, 'tro_skala');
     log(s, `Tron i byn har fått en ny sida: ${SDEF[k].namn[0]} – ${SDEF[k].namn[1]}.`, 'rel', []);
-  }
-}
-// nivån (steg 4.1.4): faller en nivå om villkoret inte längre uppfylls, annars växer den en nivå om nästa villkor uppfylls
-function nivaSteg(s: State, tr: Tro, folk: Person[]) {
-  const n = troNiva(tr), namn = troNamn(tr);
-  if (n > 0 && !NIVAER[n].krav(s, folk.length, folk)) {
-    tr.niva = n - 1; count(s, 'tro_fall');
-    log(s, `${namn} har förlorat troende och är nu ${NIVAER[n - 1].namn.toLowerCase()}.`, 'rel', []);
-  } else if (n + 1 < NIVAER.length && NIVAER[n + 1].krav(s, folk.length, folk)) {
-    tr.niva = n + 1; count(s, 'tro_niva' + (n + 1));
-    log(s, `${namn} har vuxit och är nu ${NIVAER[n + 1].namn.toLowerCase()}.`, 'rel', folk.map(p => p.id));
-    if (n + 1 >= 2) kronika(s, `År ${yearNo(s)}: ${namn} blev ${NIVAER[n + 1].namn.toLowerCase()}.`, 'tro');
   }
 }

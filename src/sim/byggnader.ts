@@ -1,5 +1,6 @@
 import { husNytt } from './byggnad';
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
+import { planKlar, planRutor, troshusBestamd, troshusGolv, vuxnaTroende } from './troshus';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
 import { ageIndex, kallTid } from './tid';
 import { heatAt } from './eld';
@@ -64,7 +65,7 @@ export const HUS = balans('hus', {
 // En ny sorts byggnad blir en rad.
 // v = hur akut (0 = behövs inte, 1 = mycket), plats = rutor under tak som behövs, slag = vad ett förrådshus ska rymma,
 // ag = vem som ska äga huset (ett familjehus)
-export interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number; kop?: boolean } // hus = just det här huset behöver mer plats (familjen har vuxit); kop = familjen har bara råd att köpa ett hus (steg 9.2.109)
+export interface Akut { tro?: number; v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number; kop?: boolean } // hus = just det här huset behöver mer plats (familjen har vuxit); kop = familjen har bara råd att köpa ett hus (steg 9.2.109)
 export interface Byggnad {
   namn: string; ikon: string;
   behov: string; // vilket behov den fyller (förklaringen i gränssnittet)
@@ -142,6 +143,22 @@ export const BYGGNADER = {
       return { v: HUS.verkstadAkut, plats: w * (h + 1) + HUS.verkstadExtra };
     },
     namnFor: (_s, _w, _h, same) => same ? `Verkstad ${same + 1}` : 'Verkstaden',
+  },
+  // trons hus (steg 10.3.19, troshus.ts): när trons plan är klar, så många golvrutor som planen vill ha och trons hus inte har.
+  // Behovet är trons (Akut.tro): bara de troende bygger, av det kyrkan äger, och det hindrar inte byns andra byggen (byggplan.ts)
+  troshus: {
+    namn: 'Trons hus', ikon: 'hov', behov: 'Tron har bestämt hur dess hus ska se ut', fara: false, vikt: 1,
+    akut: s => {
+      let bast: Akut = { v: 0, plats: 0 };
+      const n = living(s).length;
+      for (const tr of s.tron ?? []) {
+        if (tr.slut !== undefined || !planKlar(s, tr)) continue;
+        const plats = (tr.planRutor ?? planRutor(s, tr, tr.plan?.storlek ?? 'lagom')) - troshusGolv(s, tr), v = n ? vuxnaTroende(s, tr).length / n : 0;
+        if (plats > 0 && v > bast.v) bast = { v, plats, tro: tr.id };
+      }
+      return bast;
+    },
+    namnFor: (s, _w, _h, _same, a) => { const tr = (s.tron ?? []).find(q => q.id === a.tro); return tr ? troshusBestamd(s, tr) : 'Trons hus'; },
   },
 } satisfies Record<string, Byggnad>;
 // torkställningarna ute utan tak, och vedhögarna ute i lagret utan tak

@@ -11,12 +11,15 @@ import { Klan, klanById, klanerOf } from './klaner';
 import { rikedom } from './varde';
 import { Rovarflock, forsvaret, rovarnaKommer } from './rovare';
 import { gastAv } from './gast';
-import { andlighet, troende } from './religion';
+import { vanhelgaPlats } from './kultlatt';
+import { andlighet, troNamn, troende } from './religion';
+import { rivStation, stationerOf } from './stationer';
 import { larma } from './rykten';
 import { die } from './liv';
 import { amountOf, addTo, ownsAmount } from './lager';
 import { SAKER, SAK_LIST } from './saker';
 import { tingOf } from './agande';
+import { heligtTingNamn } from './kyrka';
 import { grundvarde } from './varde';
 import { vaderNu } from './vader';
 import { Bit, bitsOf, housesOf, roomAt } from './byggnad';
@@ -103,7 +106,7 @@ export function radSeger(s: State, f: Rovarflock): boolean {
     hamndKlar(s, f, m, true);
     return true;
   }
-  if (f.skal === 'heligt') { riverHeligt(s, k); taMedSaker(s, f); return true; }
+  if (f.skal === 'heligt') { const tagna = taHeligaTing(s, f, k); riverHeligt(s, k); taMedSaker(s, f, undefined, tagna); return true; }
   return false;
 }
 // hämndens gång (steg 8.8.5): är den de söker inte på slagfältet letar flocken hus för hus, närmast först (letaSteg i rovare.ts)
@@ -120,25 +123,43 @@ export function hamndKlar(s: State, f: Rovarflock, m: Person | undefined, hittad
   if (k && (!m || !alive(m))) k.doda = k.doda?.filter(q => q.av !== f.mal); // klanen glömmer den döde när hämnden är tagen
   taMedSaker(s, f, m);
 }
-function taMedSaker(s: State, f: Rovarflock, m?: Person) {
+function taMedSaker(s: State, f: Rovarflock, m?: Person, tagna?: Map<number, number>) {
   const familj = m ? living(s).filter(p => isKin(p, m) || p.partner === m.id) : [];
   for (const r of f.folk.map(id => gastAv(s, id)).filter(q => !!q) as Person[]) {
-    let n = RADER.hamndSaker;
+    let n = RADER.hamndSaker - (tagna?.get(r.id) ?? 0); // det heliga tinget räknas som en av sakerna
+
     for (const k of SAK_LIST.filter(q => !SAKER[q]!.redskap).sort((a, b) => grundvarde(b) - grundvarde(a))) {
       while (n > 0 && amountOf(s, k) >= 1 && (familj.length === 0 || familj.some(p => ownsAmount(s, p, k) >= 1) || n === 1)) { addTo(s, k, -1); (r.gast!.bar ??= {})[k] = (r.gast!.bar![k] ?? 0) + 1; n--; }
       if (n <= 0) break;
     }
   }
 }
-// heligt krig river det heliga (steg 8.8.7): hovet rivs till rester, heliga platser märks som skändade och de troende tappar i tro
+// i ett heligt krig tar anfallarna de heliga tingen först (steg 10.3.20): en var, och tinget behåller kvalitet och berättelse hos den
+// som tog det (s.gastTing). Budet faller när tinget inte finns kvar i byn (kyrka.ts); fälls hen ligger tinget kvar som ett vanligt mästerverk
+function taHeligaTing(s: State, f: Rovarflock, k: Klan | undefined) {
+  const tagna = new Map<number, number>(), folk = f.folk.map(id => gastAv(s, id)).filter(q => !!q && q.died === undefined) as Person[];
+  const heliga = tingOf(s).filter(t => t.helig !== undefined);
+  for (let i = 0; i < heliga.length && folk.length; i++) {
+    const t = heliga[i], r = folk[i % folk.length];
+    if ((tagna.get(r.id) ?? 0) >= RADER.hamndSaker) break;
+    s.ting = tingOf(s).filter(q => q !== t);
+    (s.gastTing ??= []).push({ id: -(s.gastTingNr = (s.gastTingNr ?? 0) + 1), k: t.k, c: t.c, agare: r.id, ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}) });
+    tagna.set(r.id, (tagna.get(r.id) ?? 0) + 1);
+    count(s, 'heligtTingTaget');
+    const tx = `${k?.namn ?? 'Anfallarna'} tog ${heligtTingNamn(t).toLowerCase()} från altaret.`;
+    log(s, tx, 'world'); kronika(s, tx, 'rovare');
+  }
+  return tagna;
+}
+// heligt krig river det heliga (steg 8.8.7): altaret och gudabilden slås sönder, heliga platser märks som skändade och de troende tappar i tro
 function riverHeligt(s: State, k: Klan | undefined) {
   count(s, 'heligt_krig');
   for (const tr of s.tron ?? []) {
-    if (tr.hov) { tr.hov = undefined; log(s, `${k?.namn ?? 'Anfallarna'} rev hovet.`, 'world'); kronika(s, `${k?.namn ?? 'Anfallarna'} rev hovet.`, 'rovare'); }
-    tr.gudabild = undefined;
+    // altaret och gudabilden i trons hus förstörs, och huset är inte klart förrän altaret står igen (steg 10.3.19)
+    for (const st of stationerOf(s).filter(q => q.tro === tr.id && (q.k === 'altare' || q.k === 'gudabild'))) { const tx = `${k?.namn ?? 'Anfallarna'} slog sönder ${st.k === 'altare' ? 'altaret' : 'gudabilden'} i ${troNamn(tr).toLowerCase()}s hus.`; rivStation(s, st, tx); kronika(s, tx, 'rovare'); }
     for (const p of troende(s, tr)) p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - RADER.skandad);
   }
-  for (const h of s.heliga ?? []) h.skandad = s.now;
+  for (const h of s.heliga ?? []) if (!h.skandad) vanhelgaPlats(s, h);
 }
 // den som ger upp i ett heligt krig svär trohet till anfallarnas gud (steg 8.8.6, 8.8.8)
 export function svarTrohet(s: State, f: Rovarflock, p: Person) {

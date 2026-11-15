@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { TROSHUS_DELAR, planRutor, vaggSorter, vuxnaTroende } from './troshus';
 import { delarIRad } from './stationer';
 import { nyaKlaner } from './klaner';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
@@ -6,6 +7,7 @@ import { gastNyckel } from './gastliv';
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
 import { put, setStock, storeFromSums } from './lager';
+import { kyrkaId } from './egendom';
 import { isTool } from './saker';
 import { migrateTools, newTing, toolsFromItems } from './agande';
 import { MATERIAL } from './byggnad';
@@ -18,7 +20,7 @@ import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { Act, DAY, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
-import { nyAndlighet, troNiva } from './religion';
+import { nyAndlighet } from './religion';
 import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
 import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
@@ -336,13 +338,58 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [41, 'v528: ritualerna är bud (steg 10.3.3): trons högtider blir bud som redan antagits, med formen efter skalan Fest – Försakelse', s => {
     for (const tr of s.tron ?? []) {
-      if (tr.slut !== undefined || troNiva(tr) < 2 || tr.bud?.some(b => b.id === 'hogtid')) continue;
+      if (tr.slut !== undefined || ((tr as { niva?: number }).niva ?? 0) < 2 || tr.bud?.some(b => b.id === 'hogtid')) continue;
       const n = hogtider(tr);
       for (let ai = 0; ai < 4; ai++) if ((tr.id + ai) % 4 < n) (tr.bud ??= []).push({ id: 'hogtid', v: hogtidVarde(ai, hogtidForm(tr)), t: tr.t });
     }
   }],
   [42, 'v528: den dödes saker är bud (steg 10.3.5): en tro långt åt Livet efter, som redan gav gravgåvor, får budet Gravgåvor', s => {
     for (const tr of s.tron ?? []) if (tr.slut === undefined && (tr.sk?.livet ?? 0) >= 60 && !tr.bud?.some(b => b.id === 'gravgava')) (tr.bud ??= []).push({ id: 'gravgava', t: tr.t });
+  }],
+  [43, 'v528: trons tyngd (steg 10.3.8): den sparade nivån tas bort, tyngden räknas när någon frågar', s => {
+    for (const tr of s.tron ?? []) delete (tr as { niva?: number }).niva;
+  }],
+  [44, 'v528: den heliga platsen är ett bud (steg 10.3.10): trons platser blir antagna bud oavsett tyngd', s => {
+    for (const h of s.heliga ?? []) {
+      const tr = s.tron?.find(q => q.id === h.tro), v = `${h.x},${h.y}`;
+      if (tr && !h.skandad && !tr.bud?.some(b => b.id === 'helig' && b.v === v)) (tr.bud ??= []).push({ id: 'helig', v, t: h.t });
+    }
+  }],
+  [45, 'v528: prästens bud (steg 10.3.11): den slumpade regeln om vem som får bli präst blir ett antaget bud, och en tro med präst har budet om dräkten', s => {
+    for (const tr of s.tron ?? []) {
+      const r = (tr as { prastRegel?: string }).prastRegel; delete (tr as { prastRegel?: string }).prastRegel;
+      if (tr.slut !== undefined) continue;
+      if (r === 'k' || r === 'm') (tr.bud ??= []).push({ id: r === 'k' ? 'prastKvinna' : 'prastMan', t: tr.t });
+      if (tr.prast !== undefined && !tr.bud?.some(b => b.id === 'drakt')) (tr.bud ??= []).push({ id: 'drakt', t: tr.t });
+    }
+  }],
+  [46, 'v528: prästen är ett bud (steg 10.3.12): en tro med levande präst har budet Tron ska ha en präst', s => {
+    for (const tr of s.tron ?? []) {
+      const pr = tr.prast !== undefined ? s.people.find(p => p.id === tr.prast) : undefined;
+      if (tr.slut === undefined && pr && pr.died === undefined && pr.tro === tr.id && !tr.bud?.some(b => b.id === 'prast')) (tr.bud ??= []).push({ id: 'prast', t: tr.t });
+    }
+  }],
+  [47, 'v528: Inget kött på heliga dagar förbjuder inte längre slakten (steg 10.3.16), så lagen ur budet finns inte', s => {
+    if (s.styre?.lagar) s.styre.lagar = s.styre.lagar.filter(l => l.id !== 'bud_kottHelg');
+  }],
+  [48, 'v528: kyrkans förråd är saker i lagret som tron äger (steg 10.3.17); talen läggs ut som hela saker, och en död tros blir byns', s => {
+    for (const tr of s.tron ?? []) {
+      for (const [k, v] of Object.entries(tr.forrad ?? {})) { const n = Math.floor(v + 1e-9); if (n >= 1) put(s, k, n, tr.slut === undefined ? { [kyrkaId(tr.id)]: n } : undefined); }
+      delete tr.forrad;
+    }
+  }],
+  [49, 'v528: trons hus byggs (steg 10.3.19): ett gammalt hov eller tempel blir en klar plan som byggs från början, och ingen bygger längre hovet', s => {
+    for (const tr of s.tron ?? []) {
+      if ((tr.hov || tr.tempel) && tr.slut === undefined) {
+        const pl = (tr.plan ??= {});
+        pl.storlek ??= 'lagom'; pl.form ??= 'kvadrat'; pl.altare ??= 'ja'; pl.gudabild ??= tr.gudabild ? 'ja' : 'nej'; pl.bank ??= 'nej';
+        if (TROSHUS_DELAR.vagg.fragas?.(s, tr)) pl.vagg ??= vaggSorter(s)[0];
+        tr.planRutor ??= planRutor(s, tr, pl.storlek); tr.planVuxna ??= vuxnaTroende(s, tr).length;
+        for (const d of ['gudabild', 'bank'] as const) if (pl[d] === 'nej') (tr.planNej ??= {})[d] ??= { pa: Math.sign(TROSHUS_DELAR[d].passar(s, tr, 'ja')), golv: 0 }; // tas upp igen när huset står (steg 10.3.21)
+      }
+      delete tr.hov; delete tr.tempel; delete tr.gudabild;
+    }
+    for (const p of s.people) if ((p.task?.act as string | undefined) === 'hovbygge') p.task = undefined;
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
