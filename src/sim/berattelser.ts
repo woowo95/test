@@ -1724,7 +1724,7 @@ const MDEF = {
     { t: '{Namn} tog fram {inst} och spelade för de andra.', om: f => f.form === 'musik' },
     { t: 'Tonerna från {inst} hördes över byn när {namn} spelade.', om: f => f.form === 'musik' },
   ],
-  // budskapet (bara när det fanns ett): bud = person, hylla, hana eller tro; betalt = ledaren betalade
+  // budskapet (bara när det fanns ett): bud = person, hylla, hana eller tro; betalt = ledaren betalade, eller {kyrka} betalade med {betalt} (steg 10.7.18)
   f_bud: [
     { t: 'Det handlade egentligen om {om}, och alla förstod vad {namn} menade.', om: f => f.bud === 'person' },
     { t: 'Alla visste vem det gällde: {om}.', om: f => f.bud === 'person' },
@@ -1738,8 +1738,11 @@ const MDEF = {
     { t: '{Namn} gjorde narr av {ledare}, som tror sig vara förmer än de andra.', om: f => f.bud === 'hana' },
     { t: '{Namn} drev med {amne} och sade att de inte fanns.', om: f => f.bud === 'hanaGud' },
     { t: 'Det var gudarna som fick höra det, och de troende teg.', om: f => f.bud === 'hanaGud' },
-    { t: 'Det var tron som låg {namn} varmast om hjärtat.', om: f => f.bud === 'tro' },
-    { t: '{Namn} ville att de andra skulle tro som {namn} själv.', om: f => f.bud === 'tro' },
+    { t: '{Kyrka} hade betalat {namn} med {betalt} för att tala om tron.', om: f => !!f.kyrka && f.bud === 'tro' },
+    { t: '{Kyrka} hade betalat {namn} med {betalt} för att minnet av {om} skulle leva.', om: f => !!f.kyrka && f.bud === 'person' },
+    { t: '{Namn} hade fått {betalt} av kyrkan för framträdandet, och det hördes.', om: f => !!f.kyrka },
+    { t: 'Det var tron som låg {namn} varmast om hjärtat.', om: f => f.bud === 'tro' && !f.kyrka },
+    { t: '{Namn} ville att de andra skulle tro som {namn} själv.', om: f => f.bud === 'tro' && !f.kyrka },
   ],
   // publiken: {n} = hur många i ord, nTal = talet
   f_publik: [

@@ -532,6 +532,43 @@ SCENARIER.bestalld = {
     ];
   },
 };
+SCENARIER.kyrkfram = {
+  text: 'Kyrkans framträdanden (steg 10.7.18): en tro som står åt Sprider sig röstar om att betala ett framträdande, kyrkan lägger undan två hela saker av det den har mest av, och den troende som nästa gång uppträder med ett budskap får dem som sin egendom och talar om tron. Redogörelsen säger vem som betalade och med vad',
+  kor: () => {
+    const tro = (s: State, u: Person, sprid: number) => {
+      s.tron = [{ id: 1, grundare: u.id, gnamn: u.name, t: s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: s.now, ar: 0, sk: { sprid, prast: 50, oppen: 50 } } as SIM.Tro];
+      for (const q of vuxna(s)) { q.tro = 1; q.troStyrka = 80; q.andlig = 90; }
+      const tr = s.tron[0]!, k = SIM.kyrkaId(1);
+      SIM.put(s, 'bar', 5, { [k]: 5 }); SIM.put(s, 'sten', 3, { [k]: 3 });
+      return tr;
+    };
+    // omröstningen: med Sprider sig är framträdandet det som väger tyngst, med Ärvs finns det inte
+    const a = kvall(3), tA = tro(a.s, a.v[0]!, 15), vad = SIM.utgiftNu(a.s, tA);
+    const b = kvall(3), tB = tro(b.s, b.v[0]!, 85), vadArvs = SIM.utgiftNu(b.s, tB);
+    const gick = SIM.rostaOm(a.s, { f: 'kyrkutgift', d: { tro: 1, vad: 'fram' }, fram: a.v[0]!.id });
+    const lagt = tA.framPris;
+    // utbetalningen: den troende som uppträder med ett budskap
+    let fick = '', bud: string | undefined, kvar = -1, eget = 0, minne: SIM.FramMinne | undefined, ber = '', forsok = 0;
+    for (let i = 0; i < 20 && !fick; i++) {
+      const k = kvall(3 + i), tr = tro(k.s, k.v[0]!, 15), u = k.v[1]!;
+      for (const q of k.v) for (const r of k.v) if (q !== r) SIM.getRel(k.s, q, r).op = 100; // alla vill lyssna
+      tr.framPris = 'bar'; forsok++;
+      const fore = SIM.ownsAmount(k.s, u, 'bar');
+      if (!upptrad(k.s, u) || !k.s.fram?.kyrka) continue;
+      fick = k.s.fram.betalt ?? ''; bud = k.s.fram.bud; kvar = SIM.kyrkansAv(k.s, tr, 'bar'); eget = SIM.ownsAmount(k.s, u, 'bar') - fore;
+      kor(k.s, 1.5);
+      minne = k.s.framtradanden?.at(-1); ber = minne ? SIM.framBerattelse(k.s, minne) : '';
+      if (tr.framPris) fick = 'kvar';
+    }
+    return [
+      [`kyrkans utgift med Sprider sig: ${vad}, med Ärvs: ${vadArvs ?? 'ingen'}`, vad === 'fram' && vadArvs !== 'fram'],
+      [`de troende röstade ${gick ? 'ja' : 'nej'}, och kyrkan lade undan ${lagt ?? 'inget'} (det den har mest av)`, !!gick && lagt === 'bar'],
+      [`den som uppträdde fick ${fick || 'inget'} (${forsok} försök): ${eget} bär till sin egendom, kyrkan har ${kvar} kvar`, eget === SIM.KYRKA.framPris && kvar === 5 - SIM.KYRKA.framPris],
+      [`budskapet handlar om tron eller en död troende (${bud})`, bud === 'tro' || bud === 'person'],
+      [`redogörelsen säger vem som betalade: ${minne?.kyrka ?? 'ingen'} med ${minne?.betalt ?? 'inget'}. ${ber}`, !!minne?.kyrka && /två/.test(minne.betalt ?? '') && !/\{|undefined/.test(ber)],
+    ];
+  },
+};
 SCENARIER.skaldskap = {
   text: 'Skaldskapen (steg 4.3.2.5): färdigheten för att uppträda. Den börjar av berättandet, växer när man uppträder och när man berättar i samtalen, och gör framträdandet bättre och fler former möjliga',
   lang: true,
