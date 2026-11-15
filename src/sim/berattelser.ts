@@ -1328,6 +1328,16 @@ const MDEF = {
     '{med} fick höra vad {namn} tycker om {om}.',
     '{namn} och {med} pratade om {om}, som man gör.',
   ],
+  p_special: [
+    '{namn} berättade för {med} om {om}.',
+    '{namn} och {med} pratade om {om}.',
+    '{namn} sa till {med} att ingen lagar något som {om}.',
+    '{namn} och {med} längtade efter {om}.',
+    '{namn} lärde {med} vad som gör {om} så god.',
+    '{namn} och {med} mindes när de senast fick {om}.',
+    '{med} fick höra hur {namn} tycker att {om} ska lagas.',
+    '{namn} och {med} grälade lite om vad som hör hemma i {om}.',
+  ],
   p_mat: [
     '{namn} och {med} pratade om maten.',
     '{namn} klagade för {med} att {namn} är hungrig.',
@@ -2685,6 +2695,7 @@ const ADEF = {
   dod: { prio: 20, namn: 'En död', ikon: 's_dod' },
   vader: { prio: 10, namn: 'Vädret' },
   mat: { prio: 10, namn: 'Maten', ikon: 's_mat' },
+  special: { prio: 35, namn: 'Byns egen rätt', ikon: 's_mat' }, // steg 10.7.29
   arbete: { prio: 10, namn: 'Arbetet' },
   barn: { prio: 10, namn: 'Barnen', ikon: 's_barn' },
   vardag: { prio: 0, namn: 'Lite av varje' },

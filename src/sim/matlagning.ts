@@ -303,6 +303,7 @@ export function kokaKlar(s: State, p: Person) {
   count(s, 'brant', RATT.portioner - n);
   t.kok = { r: r.id, n, kvar: KATEGORIER[r.kat].passiv * MIN, ag, h: clamp((p.skill.matlagning ?? 0) / MATLAG.brannFull, 0, 1) };
   count(s, 'kokat'); gjort(s, p, 'kokat', 1);
+  if (r.niva === 'fin') specialSats(s, p, r.id, [r.huvud, r.andra, ...(r.smak ? [r.smak] : [])], ageIndex(s)); // byns egen rätt (steg 10.7.29)
   ovning(p, 'matlagning', KOK.prepMin / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'kokForsta')) log(s, `${p.name} lagade byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} i en lerkruka över elden.`, 'world', [p.id]);
 }
@@ -440,6 +441,7 @@ export function gropKlar(s: State, p: Person, ref?: number) {
   count(s, 'brant', alla - n);
   t.grop = { r: r.id, n, kvar: KATEGORIER.grop.passiv * MIN, ag, h: clamp((p.skill.matlagning ?? 0) / MATLAG.brannFull, 0, 1) };
   count(s, 'gropat'); gjort(s, p, 'gropat', 1);
+  specialSats(s, p, r.id, r.av.map(([k]) => k), ageIndex(s)); // byns egen rätt (steg 10.7.29)
   ovning(p, 'matlagning', GROP.prepMin / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'gropForsta')) log(s, `${p.name} lade byns första festmåltid i kokgropen bland de heta stenarna.`, 'world', [p.id]);
 }
@@ -474,3 +476,4 @@ festKrok.servera = (s, med) => {
 };
 import { ataPortion } from './behov';
 import { festKrok } from './ratter';
+import { specialSats } from './special';

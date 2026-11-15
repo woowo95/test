@@ -3530,6 +3530,41 @@ SCENARIER.festmaltid = {
     ] as [string, boolean][];
   },
 };
+SCENARIER.special = {
+  text: 'Specialrecept och egna drycker (steg 10.7.29): en skicklig kock som lagar en fin rätt eller lägger en sats i karet kan ge sorten ett eget namn, byggt som mästerverkens (Runas höstgryta, Runas höstvin). Efter tio satser är den en tradition i krönikan som ger den som äter den en tanke; i samtalen får den som lyssnar tycke för den, och budet om högtidens rätt visar namnet',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,special.chans=4' }, // chansen är säker också för det andra namnet (halverad)
+  kor: () => {
+    const s = rikDag(3), [p, q, o] = vuxna(s);
+    p.skill.matlagning = 8; q.skill.matlagning = 2;
+    const gryta = SIM.rattId('kott', 'gryta', 'fin'), grytaH = SIM.rattId('kott', 'gryta', 'fin', 6);
+    SIM.specialSats(s, q, gryta, ['kott', 'rotter', 'salt'], SIM.HOST);
+    const oskicklig = !s.special?.length;
+    SIM.specialSats(s, p, gryta, ['kott', 'rotter', 'salt'], SIM.HOST);
+    const namn = SIM.egetNamn(s, grytaH) ?? '';
+    SIM.specialSats(s, p, 'vin', ['bar'], SIM.SOMMAR, 'Vin');
+    const vin = SIM.egetNamn(s, 'vin') ?? '';
+    // traditionen: tio satser
+    for (let i = 1; i < SIM.SPECIAL.tradition; i++) SIM.specialSats(s, q, grytaH, ['kott'], SIM.HOST);
+    const x = SIM.specialAv(s, gryta);
+    const krok = (s.hist?.kronika ?? []).some(k => k[1].includes(namn) && k[1].includes('tradition'));
+    SIM.ataPortion(s, o!, grytaH);
+    const tanke = o!.thoughts.some(t => t.text === 'Åt byns egen rätt');
+    // samtalet: den som tycker om rätten berättar, och den som lyssnar får tycke för den
+    const fore = SIM.smakAv(o!, 'm:kott');
+    SIM.berattaSpecial(s, p, o!, 50);
+    const efter = SIM.smakAv(o!, 'm:kott');
+    const bud = SIM.specialHuvud(s, 'kott');
+    return [
+      ['den som inte är skicklig ger inget namn', oskicklig],
+      [`den skickliga kocken gav grytan ett namn: ${namn}, som gäller oavsett hur länge den håller`, new RegExp(`^${p.name}s? höstgryta$`).test(namn)],
+      [`och vinet: ${vin}`, new RegExp(`^${p.name}s? sommarvin$`).test(vin)],
+      [`efter ${x?.n} satser är grytan en tradition i krönikan`, !!x?.trad && x.n === SIM.SPECIAL.tradition && krok],
+      ['den som äter den får tanken Åt byns egen rätt', tanke],
+      [`i samtalet får den som lyssnar tycke för den (${fore.toFixed(2)} → ${efter.toFixed(2)})`, efter > fore],
+      [`budet om högtidens rätt visar namnet (${bud})`, bud === namn],
+    ] as [string, boolean][];
+  },
+};
 SCENARIER.mjod = {
   text: 'Honung och mjöd (steg 10.7.25): honungskakor finns i vildbinas bon i skogen på sommaren och hösten, ett lager på kartan, och är söt mat. Mjödet bryggs i karet av 3 honungskakor och vatten, jäser 4 dygn och ger 5 mjöd i en stor lerkruka; tekniken kommer när byn har honung och har gjort vin två gånger',
   kor: () => {

@@ -158,6 +158,7 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
   kar.sats = { v, n: d.ger, jas: 0, dygn: d.dygn * (malt && forsta ? 2 : 1), ...(malt && forsta && rnd(s, 'mat', p) < BRYGG.surForsta ? { sur: 1 as const } : {}) };
   kar.brygt = (kar.brygt ?? 0) + 1;
   count(s, 'brygt_' + v);
+  specialSats(s, p, v, Object.keys(d.av), ageIndex(s), VATSKOR[v].namn); // byns egen dryck (steg 10.7.29)
   if (forstaGang(s, 'brygd_' + v)) log(s, `${p.name} lade byns första sats ${d.namn.toLowerCase()} i bryggkaret.`, 'world', [p.id]);
 }
 // en gång i timmen (steg.ts): satserna jäser när det är varmt nog eller karet står inne, och blir klara
@@ -179,3 +180,5 @@ import { TEK, learn } from './teknik';
 import { rnd } from './slump';
 import { amountOf } from './lager';
 import { brannKrok, eldKan, stationBrinner } from './stationseld';
+import { specialSats } from './special';
+import { ageIndex } from './tid';

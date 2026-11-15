@@ -26,7 +26,7 @@ const HITTAS: Record<string, string> = {
   slaktfar: 'Ett får som avlivats', slaktget: 'En get som avlivats', djurhorn: 'Slaktas ur ett får eller en get', fiskrens: 'Blir kvar när fisk rensas', // djuren (system 9.8)
   ull: 'Klipps av fåren', levfar: 'Köps av handlaren', levget: 'Köps av handlaren', levhons: 'Köps av handlaren', lovkarve: 'Skärs av en hamlad björk vart tredje dygn',
   korn: 'Köps av handlaren, och odlas sedan på fältet', salt: 'Köps av handlaren från byarna vid havet', // steg 9.6.11 och 9.6.19
-  ...Object.fromEntries(RATT_SAKER.map(k => [k, rattInfo(k)?.kat === 'stek' ? 'Steks på stekhällen vid grillen' : 'Kokas i en lerkruka över elden'])), // rätterna (steg 9.6.3 och 9.6.21)
+  ...Object.fromEntries(RATT_SAKER.map(k => [k, rattInfo(k)?.kat === 'stek' ? 'Steks på stekhällen vid grillen' : rattInfo(k)?.kat === 'grop' ? 'Bakas i kokgropen inför en högtid eller ett bröllop' : 'Kokas i en lerkruka över elden'])), // rätterna (steg 9.6.3 och 9.6.21)
   kott: 'Slaktas ur fällt vilt', ben: 'Slaktas ur fällt vilt', skinn: 'Slaktas ur fällt vilt', vitskinn: 'Slaktas ur en hare under istiden, när pälsen är vit', talg: 'Slaktas ur fällt vilt och vargar',
   vargkott: 'Slaktas ur en fälld varg', vargskinn: 'Slaktas ur en fälld varg', vargdel: 'Styckas där en varg föll, när den är för tung att bära hel',
   radjur: 'Fälls med spjut i skogskanten', fagel: 'Fälls med spjut eller sten, sällan', fjadrar: 'Slaktas ur en fälld fågel', agg: 'Hittas ibland på våren när man samlar', radjursskinn: 'Slaktas ur ett fällt rådjur', radjurdel: 'Styckas där ett rådjur föll, när det är för tungt att bära helt',

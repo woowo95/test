@@ -1,6 +1,6 @@
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel } from '../sim';
+import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -127,7 +127,9 @@ export const kvOrd = (t: { q?: number }) => t.q === undefined || kvOf(t) === NOR
 export const kvOrdning = <T extends { k: string; q?: number }>(a: T, b: T) => ui.kvSort ? kvOf(b) - kvOf(a) : 0;
 export const kvRubrik = (rubrik: string) => `<h3 class="tryck" data-kvsort="1" title="Sortera efter ${ui.kvSort ? 'namnet' : 'kvaliteten'}">${rubrik}${ui.kvSort ? ' ↓ kvalitet' : ''}</h3>`;
 export const kvMark = (t: { q?: number }, size = 10) => { const m = kvSvg(t.q, size); return m && `<span class="kvm" title="${esc(kvText(t))}">${m}</span>`; };
-export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number; q?: number; blot?: 1 }) => p.blot ? `💧 ${iconImg(p.k)}${sakNamn(p.k)} ${fmtN(p.n)} st (blöt)` : p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}${kvOrd(p) ? ' ' + kvOrd(p) : ''}`;
+// byns egna namn på rätter och drycker står först (steg 10.7.29)
+const listNamn = (k: string) => (n => n ? `${n} (${sakNamn(k)})` : sakNamn(k))(egetNamn(s, k));
+export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number; q?: number; blot?: 1 }) => p.blot ? `💧 ${iconImg(p.k)}${listNamn(p.k)} ${fmtN(p.n)} st (blöt)` : p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${listNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}${kvOrd(p) ? ' ' + kvOrd(p) : ''}`;
 // vad en person bär, vad det väger och hur mycket hen orkar (steg 2.3.1)
 // det p bär vid tiden som visas (uppgiftVid, steg 6.1.1), som kartan
 export function carryTxt(p: Person) {

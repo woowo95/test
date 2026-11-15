@@ -133,6 +133,7 @@ function maltidTanke(s: State, p: Person, per: Record<string, number>) {
   if ((per.jordgubbar ?? 0) > 0) think(p, 'Åt jordgubbar', ROK.glad * 3, s.now, RATT.tankeTim * HOUR); // jordgubbarna gör folk glada (steg 9.7.9)
   if (Object.keys(per).some(x => x.startsWith('rok') && per[x] > 0)) think(p, 'Åt rökt mat', ROK.glad, s.now, RATT.tankeTim * HOUR); // det rökta smakar lite bättre (steg 9.6.8)
   const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
+  specialTanke(s, p, per); // byns egen rätt som blivit en tradition (steg 10.7.29)
 }
 // p sitter vid bordet och äter (handlingen maltid, framme: val.ts och stationer.ts, steg 2.2.15)
 const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
@@ -800,3 +801,4 @@ import { foodDays } from './ekonomi';
 import { MALTIDSNIVA, RATT, VARIATION, basta, maltidsNiva, proteinAv, rattInfo, smakSak } from './ratter';
 import { ROK, STEK, kockGlad } from './matlagning';
 import { smakFinMaltid } from './rykten';
+import { specialTanke } from './special';

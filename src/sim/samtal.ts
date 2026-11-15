@@ -228,6 +228,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     if (lonTankbar(s, a)) tankePa(s, a, 'lon', SAMTAL.ledTanke * SAMTAL.lagTanke); // och på lön, när byn tagit in nog i skatt (steg 10.5.9)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaSmak(a, b, r.op); // och om sin favoritmat eller det man avskyr (steg 9.6.6)
+    berattaSpecial(s, a, b, r.op); // och om byns egen rätt (steg 10.7.29)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     samtalAmne(s, a, b, kind);
     if (kind !== 'flirt' && out + like > SAMTAL.gavaMin) askForGift(s, a, b); // den som saknar något frågar efter det (mat, ved, redskap: behov.ts)
@@ -256,3 +257,4 @@ export function skiljas(s: State, a: Person, b: Person, r: Rel) {
 }
 import { berattaSmak } from './rykten';
 import { RUS, rusAv } from './rus';
+import { berattaSpecial } from './special';

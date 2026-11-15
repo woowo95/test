@@ -138,7 +138,7 @@ export function drickHemma(s: State, p: Person, k?: string) {
   const v = (k ?? dryckFor(s, p)) as VatskaId | undefined, d = v && dryckAv(v);
   if (!v || !d) return;
   if (v === 'te') return drickTe(s, p); // teet hjälper också den sjuke (TE)
-  if (d.alkohol) { if (drickAlkohol(s, p, v)) p.torst = Math.min(1, p.torst + d.slacker); return; }
+  if (d.alkohol) { if (drickAlkohol(s, p, v)) { p.torst = Math.min(1, p.torst + d.slacker); specialTanke(s, p, { [v]: 1 }); } return; }
   const t = dryckKarl(s, v);
   if (!t?.inne) return;
   if (v === 'vatten') { t.inne.n -= 1; if (t.inne.n <= 0) t.inne = undefined; } else taVatska(s, v, 1);
@@ -150,7 +150,7 @@ function drack(s: State, p: Person, v: VatskaId, d: DryckDef) {
   if (d.varm && p.warm < KROPP.fryser) p.warm = Math.min(1, p.warm + d.varm);
   if (d.mat) { const n = naringOf(p); n.protein = Math.min(1, n.protein + (d.mat.protein ?? 0)); n.fett = Math.min(1, n.fett + (d.mat.fett ?? 0)); p.hunger = mattnad(n); }
   if (d.tanke) think(p, d.tanke[0], d.tanke[1], s.now, d.tanke[2] * HOUR);
-  count(s, d.stat);
+  count(s, d.stat); specialTanke(s, p, { [v]: 1 }); // byns egen dryck (steg 10.7.29)
   if (d.forsta && forstaGang(s, v + 'Forsta')) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }
 // den dryck p helst vill ha mot törsten av det byn har: värdet i raden och smaken (smakOf) avgör, aldrig radernas ordning. Den
@@ -204,3 +204,4 @@ alkoholKrok.namn = v => VATSKOR[v].namn;
 alkoholKrok.drycker = () => DRYCKER.filter(k => dryckAv(k)!.alkohol);
 alkoholKrok.kvall = kvallsVal;
 import { alkoholKrok, drickAlkohol, ingetRus } from './rus';
+import { specialTanke } from './special';
