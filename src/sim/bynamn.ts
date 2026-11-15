@@ -38,6 +38,8 @@ export const BYNT = balans('bynamn', {
   eget: 0.25, egetEnvalde: 0.4, // det egna namnet: eget + så här mycket gånger dragningen mot Envälde (−1 till 1)
   heligt: 0.4, heligtAndlig: 0.6, // tron: heligt + heligtAndlig × andligheten / 100
   annan: 0, annanRel: 0.6, // en annans namn: annan + annanRel × relationen / 100 (högst 1, lägst 0)
+  avsatt: 0.5, // en avsatt eller störtad ledares namn stämmer så här mycket (steg 10.9.4)
+  vana: 0.3, vanaDygn: 20, // vanan: den som levt vanaDygn dygn med namnet drar av vana från hur gärna hen byter (steg 10.9.4)
 });
 
 export type BynamnSlag = 'nybygget' | 'natur' | 'minne' | 'person' | 'tro';
@@ -88,10 +90,13 @@ export function slagitSigNer(s: State) {
   return k.ai === ISTID && s.now >= k.slut;
 }
 // en person: helt sant medan hen lever i byn, därefter efter hur känd hen är bland de levande
+// (steg 10.9.4: en avsatt eller störtad ledares namn stämmer hälften så bra)
+const AVSATT = new Set(['avsattes', 'störtades', 'drevs ut']);
 function personSant(s: State, om?: number) {
   const p = byId(s, om);
   if (!p) return 0;
-  return alive(p) ? 1 : Math.min(1, (s.kanda?.[p.id] ?? 0) / RYKTE.legend);
+  const v = alive(p) ? 1 : Math.min(1, (s.kanda?.[p.id] ?? 0) / RYKTE.legend);
+  return s.styre?.historia.some(h => h.id === p.id && AVSATT.has(h.slut ?? '')) ? v * BYNT.avsatt : v;
 }
 // tron: byns största tro och hur stor del av byn som hör till den
 function storstaTro(s: State) {
@@ -195,7 +200,10 @@ export const BYNAMN_FRAGA = {
 };
 export const nuvarande = (s: State): { rad: string; om?: number } => s.bynamn ?? { rad: 'nybygget' };
 // hur mycket bättre p tycker om namnet k än det byn heter
-export const battre = (s: State, p: Person, k: { rad: string; om?: number }) => gilla(s, p, k) - gilla(s, p, nuvarande(s));
+export const battre = (s: State, p: Person, k: { rad: string; om?: number }) => gilla(s, p, k) - gilla(s, p, nuvarande(s)) - namnVana(s, p);
+// vanan (steg 10.9.4): var och en håller på namnet efter hur länge hen har levt med det, fullt efter BYNT.vanaDygn dygn. Vanan
+// vid Nybygget är ingen
+export const namnVana = (s: State, p: Person) => s.bynamn ? BYNT.vana * Math.min(1, (s.now - Math.max(s.bynamn.t, p.born)) / (BYNT.vanaDygn * DAY)) : 0;
 // det namn p vill lägga fram, med prioriteten
 export function namnForslag(s: State, p: Person) {
   if (!slagitSigNer(s) && !s.bynamn) return undefined;
