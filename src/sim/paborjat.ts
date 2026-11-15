@@ -66,7 +66,7 @@ function startWork0(s: State, p: Person, tk: Task) {
   tk.hamtat = undefined; // materialet som bars hit ligger redan i det påbörjade (steg 9.2.43)
   let t = halvOf(s, p, ger);
   if (!t) {
-    const k = borjaTool(s, p, tk.act, tk.handel ? tk.tool : undefined); // till handlaren: slaget hen ska ha (steg 6.2.11)
+    const k = borjaTool(s, p, tk.act, tk.tool); // slaget hen ska göra, när arbetet säger det (handelsvarorna, steg 10.5.13)
     if (!k) { tk.ref = undefined; tk.until = s.now; return; }
     t = newTing(s, 'paborjat', 1, p.id);
     t.halv = { gor: k, av: takeRecipe(s, p, k), kvar: minOf(k) * MIN, ag: p.id };
@@ -110,7 +110,7 @@ export function stepPaborjat(s: State) {
 export function hamtaForst(s: State, p: Person, tk: Task) {
   const ger = GORS[tk.act];
   if (!ger || tk.site || halvOf(s, p, ger)) return false;
-  const k = borjaTool(s, p, tk.act, tk.handel ? tk.tool : undefined);
+  const k = borjaTool(s, p, tk.act, tk.tool);
   if (!k) return false;
   const av = Object.keys(SAKER[k]?.skaffa?.av ?? {});
   if (!av.length) return false;
@@ -126,7 +126,7 @@ export function hamtaForst(s: State, p: Person, tk: Task) {
 export function hamtat(s: State, p: Person, tk: Task) {
   const ger = GORS[tk.act]!, site = tk.site!;
   tk.site = undefined; tk.hamta = undefined;
-  const k = borjaTool(s, p, tk.act, tk.handel ? tk.tool : undefined);
+  const k = borjaTool(s, p, tk.act, tk.tool);
   if (!k) { tk.until = s.now; return; }
   const t = newTing(s, 'paborjat', 1, p.id);
   t.halv = { gor: k, av: takeRecipe(s, p, k), kvar: minOf(k) * MIN, ag: p.id };

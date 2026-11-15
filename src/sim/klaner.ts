@@ -4,6 +4,8 @@ import { clamp, pick, rnd } from './slump';
 import { ALDER, ageOf, count, log, makeName } from './folk';
 import { kronika } from './historik';
 import { notis } from './notiser';
+import { SAK_LIST } from './saker';
+import { grundvarde } from './varde';
 
 // ---------- grannklanerna (steg 4.4.3) ----------
 // Byn är inte ensam i världen. Grannklanerna finns ännu inte på någon karta (den utzoomade världskartan är steg 11.1.3): de är
@@ -42,6 +44,12 @@ export const KLAN = balans('klan', {
   taEmotMat: 0.3, // ... och minus så mycket när maten är knapp (0 till 1)
   stannarInst: 3, // klanen blir så mycket vänligare när byn tar emot en av dem ...
   nejInst: 6, // ... och så mycket mindre vänlig när byn visar bort hen
+  // priserna (steg 10.5.14): ett påslag per slag, gånger grundvärdet
+  prisSallsynt: 0.5, // det som är sällsynt på klanens hemort börjar så här mycket över 1
+  prisDrift: 0.1, // varje pris flyttas slumpvis högst så mycket per dygn (ett år i spelet) ...
+  prisDrag: 0.03, // ... och dras så stor del av vägen mot startvärdet
+  prisMin: 0.5, prisMax: 2.5, // priset håller sig mellan de här
+  prisSalt: 0.01, // det handlaren köper sänker klanens pris så mycket per silver i värde, och det hen säljer höjer det lika mycket
 });
 
 // klanernas namn: ett register, så att fler är en rad till
@@ -55,8 +63,17 @@ export const KLAN_ROLLER: Record<string, { namn: string }> = {
   grundare: { namn: 'Grundare' },
   barn: { namn: 'Barn' },
 };
-// var klanerna bor (handel.ts har vad som är sällsynt där, och gästernas liv i gastliv.ts reser dit)
-export const KLAN_HEM = ['kusten i söder', 'fjällen i norr', 'skogarna i öster', 'sjöarna i väster', 'älvdalen', 'byarna vid havet'] as const;
+// var klanerna bor, och vad som är sällsynt där (det börjar dyrare hos klanen, KLAN.prisSallsynt). Gästernas liv i gastliv.ts
+// reser dit
+export const KLAN_HEM: readonly { namn: string; sallsynt: readonly string[] }[] = [
+  { namn: 'kusten i söder', sallsynt: ['skinn', 'vargskinn', 'ved'] },
+  { namn: 'fjällen i norr', sallsynt: ['rovfron', 'artfron', 'bar'] },
+  { namn: 'skogarna i öster', sallsynt: ['fisk', 'torrfisk', 'flinta'] },
+  { namn: 'sjöarna i väster', sallsynt: ['flinta', 'sten', 'kott'] },
+  { namn: 'älvdalen', sallsynt: ['skinn', 'ben', 'torrkott'] },
+  { namn: 'byarna vid havet', sallsynt: ['ved', 'rep', 'torrkott'] },
+];
+export const KLAN_HEM_NAMN = KLAN_HEM.map(h => h.namn);
 
 export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string; id?: number; fodd?: number; rel?: Record<number, import('./gastrel').GastRel>; kropp?: Omit<Person, 'id' | 'x' | 'y' | 'task' | 'gast'>; borta?: number } // id = personens id i byn, för den som kom därifrån; fodd = när hen föddes (gästens liv, steg 4.5.7.7, gastliv.ts); rel = handlarens relationer till byborna (steg 4.5.7.11, gastrel.ts); kropp = hela personen medan hen är hemma, borta = sedan när (steg 9.2.114, gast.ts)
 export interface Klan {
@@ -67,6 +84,7 @@ export interface Klan {
   personer: KlanPerson[];
   utbrytare?: true; // klanen grundades av några som lämnade byn (steg 4.4.4.1)
   grundad?: number; // när, om den grundades efter byn
+  pris?: Record<string, number>; // påslaget per slag (steg 10.5.14); saknas i en sparad by från före v533: startvärdena
 }
 export const klanerOf = (s: State) => s.klaner ?? [];
 export const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : s.klaner?.find(k => k.id === id);
@@ -81,7 +99,7 @@ export function nyKlan(s: State, folk: number, inst: number, personer?: KlanPers
   const per = (r: string): KlanPerson => { const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k'; return { namn: makeName(s, sex, 'klan'), sex, roll: r }; };
   const k: Klan = {
     krigisk: Math.round(rnd(s, 'klan') * 100), // klanens tro får sina skalor när den grundas (steg 8.8.6)
-    id, namn, hem: pick(s, KLAN_HEM, 'klan'), folk: Math.round(folk), styrka: 0, resurser: 0, inst: Math.round(inst),
+    id, namn, hem: pick(s, KLAN_HEM_NAMN, 'klan'), folk: Math.round(folk), styrka: 0, resurser: 0, inst: Math.round(inst),
     personer: personer ?? [per('hovding'), per('aldste'), ...(rnd(s, 'klan') < 0.5 ? [per('jagare')] : [])],
   };
   k.styrka = Math.round(k.folk * mellan(s, KLAN.styrka));
@@ -96,7 +114,9 @@ export function nyaKlaner(s: State) {
 
 // en gång om dygnet (ett år i spelet): klanerna växer eller krymper, och inställningen glöms mot det neutrala
 export function klanSteg(s: State, dtSec: number) {
-  if (!s.klaner?.length || Math.floor(s.now / DAY) === Math.floor((s.now - dtSec * SEC) / DAY)) return;
+  const dygn = Math.floor(s.now / DAY) - Math.floor((s.now - dtSec * SEC) / DAY);
+  if (!s.klaner?.length || dygn < 1) return;
+  for (let i = 0; i < dygn; i++) for (const k of s.klaner) prisDrift(s, k); // driften räknas per dygn som gått
   for (const k of s.klaner) {
     const f = KLAN.vaxt + (rnd(s, 'klan') * 2 - 1) * KLAN.vaxtSpann;
     k.folk = Math.max(3, Math.round(k.folk * (1 + f) + (rnd(s, 'klan') < 0.5 ? 0 : f > 0 ? 1 : -1)));
@@ -135,4 +155,27 @@ export function utbrytning(s: State, grupp: Person[], pop: number) {
   log(s, text, 'world', grupp.map(p => p.id)); notis(s, 'utflytt', text, grupp.map(p => p.id));
   kronika(s, text, 'utbrytning');
   return k;
+}
+
+// ---------- priserna (steg 10.5.14, "Ekonomi och handel (Priserna hos grannklanerna)" i designdokumentet) ----------
+// Varje klan har ett pris per slag (allt med grundvärde utom silvret): ett påslag på grundvärdet som börjar på 1, och på
+// 1 + KLAN.prisSallsynt för det som är sällsynt på klanens hemort. En gång om dygnet (ett år i spelet) flyttas varje pris
+// slumpvis högst KLAN.prisDrift och dras KLAN.prisDrag av vägen mot startvärdet, inom KLAN.prisMin–prisMax. Det handlaren köper
+// sänker klanens pris och det hen säljer höjer det (prisHandel, handel.ts). Handlaren värderar efter sin klans pris
+let prisSlag: string[] | undefined;
+const slagMedPris = () => prisSlag ??= SAK_LIST.filter(k => k !== 'silver' && grundvarde(k) > 0);
+export const prisStart = (k: Klan, slag: string) => 1 + (KLAN_HEM.find(h => h.namn === k.hem)?.sallsynt.includes(slag) ? KLAN.prisSallsynt : 0);
+export const klanPris = (k: Klan | undefined, slag: string) => !k ? 1 : k.pris?.[slag] ?? prisStart(k, slag);
+const avrunda = (x: number) => Math.round(clamp(x, KLAN.prisMin, KLAN.prisMax) * 1000) / 1000;
+function prisDrift(s: State, k: Klan) {
+  const p = (k.pris ??= {});
+  for (const slag of slagMedPris()) {
+    const v = p[slag] ?? prisStart(k, slag), mal = prisStart(k, slag);
+    p[slag] = avrunda(v + (rnd(s, 'pris') * 2 - 1) * KLAN.prisDrift + KLAN.prisDrag * (mal - v));
+  }
+}
+// handlaren köpte (upp = −1) eller sålde (upp = 1) varor värda varde silver av slaget
+export function prisAndras(k: Klan, slag: string, varde: number, upp: 1 | -1) {
+  if (slag === 'silver' || !(grundvarde(slag) > 0)) return;
+  (k.pris ??= {})[slag] = avrunda(klanPris(k, slag) + upp * KLAN.prisSalt * varde);
 }

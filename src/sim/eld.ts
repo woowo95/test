@@ -466,7 +466,9 @@ function tandTa(s: State, p: Person, got: Record<string, number>, k: Tand, v: nu
   if (n) got[k] = n;
 }
 // så många dygn bränslet i förrådet räcker
-export function woodDays(s: State) { return fuelStock(s) / (hearthOf(s.fire).burn * 24); }
+export function woodDays(s: State) { return fuelStock(s) / vedPerDygn(s); }
+// så mycket ved elden bränner på ett dygn
+export const vedPerDygn = (s: State) => hearthOf(s.fire).burn * 24;
 
 // ---------- ved till elden ----------
 // Den enkla eldstaden ägs av hela byn, men veden följer det vanliga ägandet: man eldar med byns ved och sin egen

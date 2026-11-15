@@ -1649,6 +1649,80 @@ SCENARIER.lon = {
   },
 };
 
+SCENARIER.forsorjning = {
+  text: 'Steg 10.5.10: föräldrarna försörjer barnen tills de når åldern i skattelagen (18 år, också innan lagen finns): föräldern ger sitt barn också det sista, och hela barnets lön betalas till föräldern. Efter åldern, eller med egen partner, är barnet släkt som annan släkt',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s);
+    const ppl = living(s), g = ppl.find(q => ageOf(q, s.now) >= 20)!, c = ppl.find(q => q !== g && q.id !== g.partner && ageOf(q, s.now) >= 20)!;
+    c.mother = g.id; c.father = undefined; c.partner = undefined;
+    c.born = s.now - 10 * DAY; // tio år
+    for (const k of SIM.FOOD) setAmount(s, k, 0);
+    put(s, 'bar', 3, { [g.id]: 3 }); // föräldern har lite mat
+    const lite = SIM.ownFor(s, g, SIM.MAT), barnOver = SIM.overOf(s, g, SIM.MAT, c), barnVill = SIM.willing(s, g, c);
+    // samma barn över åldern: som en släkting
+    c.born = s.now - 25 * DAY;
+    const vuxenOver = SIM.overOf(s, g, SIM.MAT, c), vuxenVill = SIM.willing(s, g, c);
+    // med egen partner försörjs barnet inte
+    c.born = s.now - 10 * DAY; c.partner = ppl.find(q => q !== g && q !== c)!.id;
+    const medPartner = SIM.overOf(s, g, SIM.MAT, c) < barnOver;
+    c.partner = undefined;
+    // barnets lön hamnar hos föräldern
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: g.id, om: '' }, { id: 'lon', t: s.now, straff: 0, av: g.id, om: '' }] } as unknown as State['styre'];
+    s.budget = { delar: [{ id: 'forradet', vikt: 1 }] };
+    setAmount(s, 'silver', 0); put(s, 'silver', 20);
+    c.lonTim = { forradet: 10 };
+    const g0 = SIM.ownsAmount(s, g, 'silver');
+    SIM.budgetDygn(s); SIM.lonDygn(s);
+    const tillForalder = SIM.ownsAmount(s, g, 'silver') - g0, tillBarn = SIM.ownsAmount(s, c, 'silver');
+    return [
+      [`föräldern ger barnet också det sista (har ${lite.toFixed(1)}, över för barnet ${barnOver.toFixed(1)}, vilja ${barnVill.toFixed(2)})`, barnOver >= lite - 1e-9 && barnVill >= 0.9],
+      [`samma barn över åldern får som en släkting (över ${vuxenOver.toFixed(1)}, vilja ${vuxenVill.toFixed(2)})`, vuxenOver < barnOver && vuxenVill < barnVill],
+      ['ett barn med egen partner försörjs inte', medPartner],
+      [`barnets lön hamnar hos föräldern (${tillForalder} silver, barnet ${tillBarn})`, tillForalder === 5 && tillBarn === 0],
+    ];
+  },
+};
+
+SCENARIER.forradsoverflod = {
+  text: 'Steg 10.5.12: det byn bjuder handlaren och betalar med är det byn äger över bufferten i förrådsmålen, i hela saker: mat och ved över bufferten, material över bufferten och redskap utom det gruppen behöver. En bybo bjuder den mat hen äger över familjens buffert',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s);
+    s.delning = { andel: 1 }; // byn delar allt: byns buffert är hela bufferten
+    const by = SIM.bynPart(s, 30, 30);
+    const matOver = () => by.over([]).filter(w => SIM.FOOD.includes(w.k)).reduce((a, w) => a + w.n, 0);
+    for (const k of SIM.FOOD) setAmount(s, k, 0);
+    const buf = Math.ceil(SIM.buffert(s, 'mat') * SIM.matPerDygn(s));
+    put(s, 'bar', Math.max(1, buf - 5)); const under = matOver(), vardeUnder = SIM.bynBehov(s, 'bar');
+    setAmount(s, 'bar', 0); put(s, 'bar', buf + 20); const over = matOver(), vardeOver = SIM.bynBehov(s, 'bar');
+    // redskapen: byn bjuder en yxa över det gruppen behöver, men inte den sista
+    s.ting = (s.ting ?? []).filter(q => SIM.gruppOf(q.k) !== SIM.gruppOf('yxa'));
+    const vill = SIM.REDSKAPMAL[SIM.gruppOf('yxa')](s);
+    for (let i = 0; i < vill + 1; i++) SIM.newTing(s, 'yxa', 1, BYN);
+    const yxOver = by.over([]).filter(w => w.k === 'yxa').length;
+    s.ting = s.ting!.filter((q, _i, l) => q.k !== 'yxa' || l.filter(r => r.k === 'yxa').indexOf(q) > 0);
+    const yxSista = by.over([]).filter(w => w.k === 'yxa').length;
+    // en bybo i en rik by håller inne maten upp till familjens buffert
+    s.delning = { andel: 0 };
+    const p = living(s).find(q => ageOf(q, s.now) >= 20)!;
+    const fam = SIM.familjOf(s, p.id);
+    for (const k of SIM.FOOD) setAmount(s, k, 0);
+    const famBuf = SIM.buffert(s, 'mat') * fam.reduce((a, q) => a + SIM.kroppensMat(q, s.now), 0);
+    put(s, 'bar', Math.max(1, Math.floor(famBuf) - 2), { [p.id]: Math.max(1, Math.floor(famBuf) - 2) });
+    const haller = SIM.payable(s, p, []).filter(w => SIM.FOOD.includes(w.k)).length === 0;
+    put(s, 'bar', 20, { [p.id]: 20 });
+    const bjuder = SIM.payable(s, p, []).filter(w => SIM.FOOD.includes(w.k)).reduce((a, w) => a + w.n, 0);
+    return [
+      [`byn bjuder ingen mat under bufferten (${under}), och den är värd 1 för byn (${vardeUnder})`, under === 0 && vardeUnder === 1],
+      [`byn bjuder hela saker över bufferten (${over} bär), och de är värda mindre (${vardeOver})`, over >= 1 && Number.isInteger(over) && vardeOver < 1],
+      [`byn bjuder en yxa över de ${vill} gruppen behöver (${yxOver}), men inte den sista (${yxSista})`, yxOver === 1 && (vill >= 1 ? yxSista === 0 : true)],
+      ['en bybo håller inne maten upp till familjens buffert', haller],
+      [`och bjuder det som är över, i hela saker (${bjuder})`, bjuder >= 1 && Number.isInteger(bjuder)],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {
@@ -2176,6 +2250,7 @@ SCENARIER.koket = {
     for (let k = 0; k < 12 * 12; k++) step(s, 300); // (ett behov ska ha funnits en stund innan Byggplanen bygger)
     s.byggSok = undefined; medHus(s); // två hus
     for (const h of SIM.housesOf(s)) h.ag = undefined; // (byns hus: byns stationer ställs inte i en familjs hus)
+    for (let i = 0; i < 3 && !SIM.gridOf(s).rooms.some(r => SIM.husById(s, r.hus)?.klar && SIM.sovKvar(s, r) >= 2); i++) { s.byggSok = undefined; medHus(s); for (const h of SIM.housesOf(s)) h.ag = undefined; } // (lediga sovplatser, hur många byn än blivit)
     const inne = ['ortkok', 'bakugn', 'kvarnsten'].every(k => !!SIM.stationDef(k)?.inne) && !SIM.stationDef('rokeri')?.inne;
     const rumAv = (at?: { x: number; y: number }) => at && SIM.roomAt(s, at.x + 0.5, at.y + 0.5);
     // utan härd: kvarnstenen ställs i ett rum; härden läggs i ett annat rum, som då blir ett kök

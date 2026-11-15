@@ -413,6 +413,11 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     delete (s as State & { skattLedare?: number }).skattLedare;
     if (s.delning) s.delning = { andel: s.delning.andel };
   }],
+  [53, 'v532: minnet av vad handlarna köpt och flaggan handel tas bort; handelsmålet räknas en gång i timmen (steg 10.5.13)', s => {
+    delete (s as State & { handlarKopt?: unknown }).handlarKopt;
+    if (s.handlare) delete (s.handlare as { kopt?: unknown }).kopt;
+    for (const p of s.people) if (p.task) delete (p.task as { handel?: unknown }).handel;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

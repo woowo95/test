@@ -12,7 +12,7 @@ SCENARIER.historik = {
   text: 'Byns historik: nyckeltalen varje timme den senaste veckan, sedan ett värde per dygn, och viktiga händelser i krönikan. Den sparas i en del per vecka och ändrar inget i byn',
   kor: () => {
     // en by från npm test (steg 10.2.106), och samma by utan historik, ett dygn framåt
-    const s = testBy(10), t = cloneState(s); t.hist = undefined;
+    const s = cloneState(testBy(10)), t = cloneState(s); t.hist = undefined; // båda från samma sparade (avrundade) by
     for (let i = 0; i < STEG_DYGN; i++) { step(s, BEAT); step(t, BEAT); t.hist = undefined; } // t: utan historik
     const veckor = Math.floor((s.now - s.founded) / WEEK) + 1;
     const h = s.hist!, i = (id: string) => h.tal.indexOf(id) + 1;

@@ -31,8 +31,8 @@ import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, underBuffert, materialTak, sparas, villHaAv } from './forradsmal';
-import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, toolGroups, underhallGrupp } from './redskap';
+import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, onskatDygn, underBuffert, materialTak, sparas, villHaAv } from './forradsmal';
+import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, bastaProjekt, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
 import { lonNu } from './lon';
@@ -55,7 +55,7 @@ import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
 import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
-import { SAKER, gruppOf, isFood, sakNamn, viktOf } from './saker';
+import { SAKER, isFood, sakNamn, viktOf } from './saker';
 import { TILLVERKA } from './tillverka';
 import { materialBuffert } from './forradsmal';
 import { balans } from './balans';
@@ -66,7 +66,7 @@ import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationFor, sta
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportVal, sportVikt } from './sport';
-import { handlaVal, handlarMal } from './handel';
+import { handlaVal } from './handel';
 import { framVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
@@ -474,7 +474,7 @@ const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && needTinder(s
 const BALTE_FORBAND = new Set<Act>(['jakt', 'vargjakt', 'bjornjakt', 'forsvar', 'forsvarRovare', 'strid']);
 // den som ska i strid eller på jakt tar en remsa i bältet (steg 9.5.16)
 export function balteForband(s: State, p: Person, act: Act) { if (BALTE_FORBAND.has(act) && !p.forbandMed && getable(s, p, 'remsa') >= 1) { takeMaterial(s, p, 'remsa', 1); p.forbandMed = 1; } }
-export interface Val { stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true; hamtar?: string; handel?: true; lon?: string }
+export interface Val { stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true; hamtar?: string; lon?: string }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
 
 // Registret ARBETEN (steg 6.1.11, "Arbetsordningen" i designdokumentet): en rad per uppgift, i den ordning valet prövar dem.
@@ -567,8 +567,8 @@ export const FORBATTRA: readonly ForbRad[] = [
     if (!ta) return undefined;
     return { sc: VAL.forbTek * brus(c), gor: () => arbeta(c, ta.act, `Byn har det den behöver. Kanske kommer ${han(p)} på ${ta.t.namn.toLowerCase()}`) };
   } },
-  // varor att byta med handlaren (steg 4.5.4.16)
-  { id: 'handelVara', kand: c => { const h = handlarVaraVal(c.s, c.p); if (!h) return undefined; return { sc: VAL.forbHandel * brus(c), gor: () => h(c.v) }; } },
+  // varor att byta med handlaren (steg 10.5.13)
+  { id: 'handelVara', kand: c => { const h = handlarVaraVal(c.s, c.p); if (!h) return undefined; return { sc: VAL.forbHandel * c.s.handelsMal!.kvar * brus(c), gor: () => h(c.v) }; } }, // vägd efter den del av silvret som är kvar att fylla
   // underhållet (steg 6.2.12): ett nytt i stället för ett slitet, samma projekt som när byn saknar redskapet (steg 6.2.17)
   { id: 'underhall', kand: c => {
     const ug = underhallGrupp(c.s, c.p), uu = ug && PROJEKT[ug].uppgift(c.s, c.p);
@@ -909,7 +909,7 @@ export function chooseTask(s: State, p: Person) {
     if (l) { v.spot = { x: l.x + 0.5, y: l.y + 0.5 }; v.ref = l.id; v.why += '. Går till latrinen'; }
   }
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, falt: v.falt, hamtar: v.hamtar, handel: v.handel, lon: v.lon, stanna: v.stanna, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, falt: v.falt, hamtar: v.hamtar, lon: v.lon, stanna: v.stanna, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, v.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
@@ -1041,26 +1041,20 @@ function projektArbete(c: Ctx) {
 // att göra, och tiden blir fritid (undefined)
 // maten har nått taket när den räcker så länge, eller när all mat, också den som ruttnar först, skulle räcka så länge: då ger
 // mer mat bara mer som ruttnar
-// varor till handlaren (steg 6.2.11): det handlarna brukar köpa (handlarMal i handel.ts), så många byn har över det den själv
-// vill ha. Redskapen görs som andra redskap (handelTask i redskap.ts), repet tvinnas av hö
-// en vara att byta med handlaren som p kan göra (steg 4.5.4.16): svarar det som sätter valet, eller inget
+// varor att byta med handlaren (steg 10.5.13): handelsmålet (handelsMalRakna i handel.ts) säger slaget och hur många; p gör
+// det om hen kan. Repet tvinnas till bufferten plus målet, redskapet görs som andra redskap (handelTask i redskap.ts). Svarar
+// det som sätter valet, eller inget
 export function handlarVaraVal(s: State, p: Person): ((v: Val) => void) | undefined {
-  for (const k in s.handlarKopt ?? {}) {
-    const mal = handlarMal(s, k);
-    if (!mal) continue;
-    if (k === 'rep') {
-      if (!knows(p, 'rep') || amountOf(s, 'rep') >= villHaAv(s, 'rep') + mal || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + sparas(s, 'torrgras') || !enTill(s, 'tvinna', p)) continue;
-      return v => { set(v, 'tvinna', 'Byn har det den behöver. Tvinnar rep att byta med handlaren.'); v.handel = true; };
-    }
-    const g = gruppOf(k);
-    if (!GORS[g]?.includes(k) || harAv(s, g) - villAv(s, g) >= mal) continue;
-    const u = handelTask(s, p, k);
-    if (!u) continue;
-    return v => { projektVal(v, u, `Byn har det den behöver. Gör ${sakNamn(k).toLowerCase()} att byta med handlaren`); v.handel = true; };
+  const m = s.handelsMal;
+  if (!m) return undefined;
+  if (m.k === 'rep') {
+    if (!knows(p, 'rep') || amountOf(s, 'rep') >= villHaAv(s, 'rep') + m.till || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + sparas(s, 'torrgras') || !enTill(s, 'tvinna', p)) return undefined;
+    return v => set(v, 'tvinna', 'Byn har det den behöver. Tvinnar rep att byta med handlaren.');
   }
-  return undefined;
+  const u = handelTask(s, p, m.k);
+  if (!u) return undefined;
+  return v => projektVal(v, u, `Byn har det den behöver. Gör ${sakNamn(m.k).toLowerCase()} att byta med handlaren`);
 }
-export function handlarVara(s: State, p: Person, v: Val) { const h = handlarVaraVal(s, p); if (h) h(v); return !!h; }
 // egen lust att arbeta med färdigheten skill: färdigheten och egenskapen som hjälper, gånger vanan (acts: handlingarna som räknas)
 const lust = (s: State, p: Person, skill: Skill, egenskap: Stat, acts: Act[], tot: number) => (VAL.lustBas + p.skill[skill] + stat(p, egenskap, s.now) / VAL.lustEgenskap) * (1 + VAL.lustVana * habitShare(p, acts, tot)) * smakDrag(p, acts); // och smaken (steg 3.3.5)
 // så mycket ledarens påbud om torkat ändrar chansen att torka (1 = som utan påbud; styre.ts visar det i procent)

@@ -7,7 +7,7 @@
 import { hash3 } from './slump';
 import { DAY } from './typer';
 import { N1, N2, NK, NM } from './folk';
-import { KLAN_HEM } from './klaner';
+import { KLAN_HEM_NAMN } from './klaner';
 
 export type Roll = 'handlare' | 'rovare' | 'gast';
 export interface Slakting { roll: 'mor' | 'far' | 'syskon' | 'partner' | 'barn'; namn: string; sex: 'm' | 'k'; ar: number; dog?: number } // ar = gästens ålder när hen föddes eller kom in i livet (föräldrarna: 0), dog = gästens ålder när hen dog
@@ -17,7 +17,7 @@ export interface GastLiv { alder: number; familj: Slakting[]; liv: LivRad[]; hum
 // åldern när gästen först kommer, efter rollen (år, ett dygn = ett år i spelet)
 const ALDRAR: Record<Roll, [number, number]> = { handlare: [24, 56], rovare: [18, 42], gast: [18, 60] };
 const HANTVERK = ['garva skinn', 'fläta korgar', 'tälja i trä', 'sy kläder', 'fiska med nät', 'spåra vilt', 'göra rep', 'slå flinta'];
-const PLATSER = KLAN_HEM; // man reser till där klanerna bor (klaner.ts)
+const PLATSER = KLAN_HEM_NAMN; // man reser till där klanerna bor (klaner.ts)
 const DELAR = ['armen', 'benet', 'handen', 'axeln', 'foten'];
 
 // sammanhanget medan livet räknas fram, år för år
