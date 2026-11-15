@@ -77,13 +77,13 @@ function fattig(s: State, p: Person) {
 }
 export const BUDGET: Record<string, BudgetDef> = {
   svaga: {
-    namn: 'Mat till barn, gamla och sjuka', sym: '🍼', text: 'Mat ur byns förråd till barnen, de gamla och de sjuka som ligger',
+    namn: 'Mat till barn, gamla och sjuka', sym: '🧒', text: 'Mat ur byns förråd till barnen, de gamla och de sjuka som ligger',
     finns: s => living(s).some(p => !p.gast && svag(s, p)), saknar: () => ({}),
     mat: { vem: svag, behov: s => ater(s, p => svag(s, p)) },
     vill: (s, p) => narSvag(s, p) ? 1 : fjardedel(0.25 + 0.5 * Math.max(0, lutning(s, p))),
   },
   alla: {
-    namn: 'Mat till alla', sym: '🍲', text: 'Mat ur byns förråd till alla i byn',
+    namn: 'Mat till alla', sym: '🍽️', text: 'Mat ur byns förråd till alla i byn',
     finns: () => true, saknar: () => ({}),
     mat: { vem: () => true, behov: s => ater(s, () => true) },
     vill: (s, p) => fjardedel(0.5 + 0.5 * lutning(s, p)),
@@ -95,7 +95,7 @@ export const BUDGET: Record<string, BudgetDef> = {
     vill: (s, p) => fjardedel(0.25 + 0.25 * lutning(s, p) + (p === ledareOf(s) ? 0.25 : 0)),
   },
   fattiga: {
-    namn: 'Stöd till fattiga', sym: '🥣', text: 'Mat ur byns förråd till dem som äger mycket mindre än de andra i byn',
+    namn: 'Stöd till fattiga', sym: '🤲', text: 'Mat ur byns förråd till dem som äger mycket mindre än de andra i byn',
     finns: s => living(s).some(p => fattig(s, p)), saknar: () => ({}),
     mat: { vem: fattig, behov: s => ater(s, p => fattig(s, p)) },
     vill: (s, p) => fattig(s, p) ? 1 : fjardedel(0.25 + 0.5 * Math.max(0, lutning(s, p))),
@@ -111,7 +111,7 @@ export const BUDGET: Record<string, BudgetDef> = {
     vill: (s, p) => fjardedel(0.25 + 0.25 * lutning(s, p)),
   },
   kyrkan: {
-    namn: 'Kyrkan', sym: '⛪', text: 'Det trons hus saknar, som lämnas över till kyrkan och blir kyrkans',
+    namn: 'Kyrkan', sym: '📜', text: 'Det trons hus saknar, som lämnas över till kyrkan och blir kyrkans',
     finns: s => tronMedHus(s).length > 0,
     saknar: s => { const m: Record<string, number> = {}; for (const tr of tronMedHus(s)) for (const [k, n] of Object.entries(troshusSaknar(s, tr))) lagg(m, k, Math.floor(n)); return m; },
     // till den tro som saknar mest av materialet först
@@ -147,6 +147,8 @@ export const budgetFor = (s: State, b?: Bit) => b && budgetNu(s).find(d => BUDGE
 export const budgetAv = (s: State, b: Bit | undefined, k: string) => { const d = budgetFor(s, b); return d ? Math.floor(ownsId(s, budgetId(d), k) + 1e-9) : 0; };
 // det ingen längre ska ha: delarna släpper det de fått, och det blir byns
 const KVAR = -1000000 - 999; // maten ingen matdel fått ligger kvar till nästa år
+// budgetens ägare: delarna och det som ligger kvar (vakten i kor.ts)
+export const budgetAgare = () => [...BUDGET_LIST.map(budgetId), KVAR];
 export const budgetSlapp = (s: State) => { for (const id of BUDGET_LIST) releaseOwner(s, budgetId(id)); releaseOwner(s, KVAR); };
 // matdelarna p får äta ur (budgetMatKrok i lager.ts)
 const matFor = (s: State, p: Person) => budgetNu(s).filter(d => BUDGET[d.id].mat?.vem(s, p)).map(d => budgetId(d.id));

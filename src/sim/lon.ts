@@ -107,7 +107,7 @@ export function lonDygn(s: State) {
 }
 
 const TIM: LagTalDef = {
-  namn: 'lönen per timme', sym: '🪙', stege: [0.25, 0.5, 1, 2], start: LON.start, visa: v => `${v} silver`,
+  namn: 'lönen per timme', sym: '💰', stege: [0.25, 0.5, 1, 2], start: LON.start, visa: v => `${v} silver`,
   // den som arbetar mycket för byn vill ha mer, och lutningen mot Sammanhållning drar uppåt
   vill: (s, p) => LON.start * (1 + LON.lutar * lutning(s, p) + Object.values(p.lonTim ?? {}).reduce((a, x) => a + x, 0) / 100),
 };
@@ -118,7 +118,7 @@ const DELAR: Record<string, BudgetDef> = {
     vill: (s, p) => fjardedel(0.25 + 0.25 * lutning(s, p) + (p.task?.act === 'vakt' ? 0.25 : 0)),
   },
   forradet: {
-    namn: 'Förrådet', sym: '🧺', text: 'Silver till lönen för dem som bär mat, ved och tändmaterial till byns förråd',
+    namn: 'Förrådet', sym: '📦', text: 'Silver till lönen för dem som bär mat, ved och tändmaterial till byns förråd',
     finns: lonNu, saknar: () => ({}),
     vill: (s, p) => fjardedel(0.5 + 0.25 * lutning(s, p)),
   },
@@ -139,7 +139,7 @@ export function lonRegister() {
   for (const id in DELAR) { BUDGET[id] = DELAR[id]; if (!BUDGET_LIST.includes(id)) BUDGET_LIST.push(id); }
   budgetLonKrok.f = skuldFor;
   LAGAR.lon = {
-    namn: 'Lön', sym: '🪙', text: 'Byn betalar den som arbetar för byn per timme, ur budgeten', straff: 0, om: 'att arbetet för byn inte gav något', tek: 'lon',
+    namn: 'Lön', sym: '💰', text: 'Byn betalar den som arbetar för byn per timme, ur budgeten', straff: 0, om: 'att arbetet för byn inte gav något', tek: 'lon',
     kan: s => lagGaller(s, 'skatt'),
     prio: s => LON.prio * clamp(living(s).length / 20, 0, 1),
     rost: (s, p) => ({ v: 0.2 + LON.lutar * lutning(s, p), why: 'Vill att arbetet för byn ska löna sig' }),

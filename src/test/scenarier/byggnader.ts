@@ -2250,6 +2250,7 @@ SCENARIER.koket = {
     for (let k = 0; k < 12 * 12; k++) step(s, 300); // (ett behov ska ha funnits en stund innan Byggplanen bygger)
     s.byggSok = undefined; medHus(s); // två hus
     for (const h of SIM.housesOf(s)) h.ag = undefined; // (byns hus: byns stationer ställs inte i en familjs hus)
+    for (let i = 0; i < 3 && !SIM.gridOf(s).rooms.some(r => SIM.husById(s, r.hus)?.klar && SIM.sovKvar(s, r) >= 2); i++) { s.byggSok = undefined; medHus(s); for (const h of SIM.housesOf(s)) h.ag = undefined; } // (lediga sovplatser, hur många byn än blivit)
     const inne = ['ortkok', 'bakugn', 'kvarnsten'].every(k => !!SIM.stationDef(k)?.inne) && !SIM.stationDef('rokeri')?.inne;
     const rumAv = (at?: { x: number; y: number }) => at && SIM.roomAt(s, at.x + 0.5, at.y + 0.5);
     // utan härd: kvarnstenen ställs i ett rum; härden läggs i ett annat rum, som då blir ett kök

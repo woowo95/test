@@ -110,7 +110,7 @@ const IDEF = {
   klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
   lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
   fattig: { namn: 'fattig', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
-  tigger: { namn: 'tiggare', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🥣', som: 'en tiggare', betyder: 'Har fått mat av någon utanför familjen det senaste året, för att hen inte hade någon.' }, // steg 10.5.11
+  tigger: { namn: 'tiggare', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🤲', som: 'en tiggare', betyder: 'Har fått mat av någon utanför familjen det senaste året, för att hen inte hade någon.' }, // steg 10.5.11
   generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', sed: { gemenskap: 1 }, betyder: 'Ger bort saker till andra.' },
   hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', sed: { gemenskap: 2 }, betyder: 'Har gett något till någon som höll på att dö.' },
   skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', sed: { arbete: 1 }, betyder: 'Har gjort ett mästerverk.' },
