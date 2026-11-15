@@ -10,7 +10,7 @@ import { klenod } from './kvalitet';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { tystFaktor } from './styre';
-import { oppnaSed } from './rost';
+import { lognOmLedaren, oppnaSed } from './rost';
 import type { Sed } from './seder';
 import { vanaSumma } from './vanor';
 import { ACTS, Act } from './handlingar';
@@ -337,7 +337,7 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel, vFas
   delade('rykte', 'i_' + e.k, e.namn); // samtalets ämne (steg 3.9.5)
   if (d.tecken < 0 && vFast === undefined) pratadeIlla(s, a, b, e); // skvallerbyttan (steg 10.8.6); inte det som framförs på en scen
   // påhittat om b själv, eller om något b var med om: b vet bättre (steg 3.3.3)
-  if (ex?.falsk && ex.mot === b.id) { ertappad(s, b, a, e, 'logn'); return; }
+  if (ex?.falsk && ex.mot === b.id) { ertappad(s, b, a, e, 'logn'); lognOmLedaren(s, b, a, e.om); return; } // fulspelet (steg 10.8.7)
   const egen = intryckOm(b, e.om, e.k);
   if (egen && !egen.led && egen.src === undefined && egen.c >= RYKTE.ertappaSaker && v - egen.v > RYKTE.ertappa && v > egen.v * (1 + RYKTE.ertappa)) { ertappad(s, b, a, e, 'overdrev'); return; }
   if (egen && !egen.src && !egen.led) return; // det man såg själv väger tyngre
@@ -383,12 +383,17 @@ export function skitsnackOm(s: State, p: Person, lyss: Person) {
 export function skitsnack(s: State, p: Person, lyss: Person) {
   const om = skitsnackOm(s, p, lyss);
   if (!om) return;
+  count(s, 'rykte_skitsnack');
+  ljugOm(s, p, lyss, om);
+}
+// p hittar på något om om och berättar det för lyss: en stöld, något elakt eller ett slag mot en annan i byn (skitsnacket och
+// fulspelet, steg 10.8.7 i rost.ts)
+export function ljugOm(s: State, p: Person, lyss: Person, om: Person) {
   const slag: HandelseTyp[] = ['stold', 'elak', 'sla'], h = slag[Math.floor(rnd(s, 'rykte', p) * slag.length)];
   const andra = living(s).filter(q => q !== p && q !== om && q !== lyss);
   const mot = andra.length ? andra[Math.floor(rnd(s, 'rykte', p) * andra.length)] : p;
   const d = HANDELSER[h];
   const e: Intryck = { om: om.id, namn: om.name, k: d.i, v: d.vikt * RYKTE.skitsnack, c: 1, t: s.now, bev: [{ h, t: s.now, mot: mot.id, motNamn: mot.name, falsk: true, ...(h === 'stold' ? { sak: 'mat' } : {}) }] };
-  count(s, 'rykte_skitsnack');
   beratta(s, p, lyss, e, getRel(s, p, lyss));
 }
 

@@ -3096,3 +3096,44 @@ SCENARIER.skvaller = {
     ];
   },
 };
+SCENARIER.fulspel = {
+  text: 'Fulspel (steg 10.8.7): en medlem i fraktionen hittar på något om ledaren när hen pratar med någon utanför den, med chansen 0,3 gånger (10 − empatin) / 10, så att den med empati 10 inte gör det. Den som lyssnar tycker sämre om ledaren. När lögnen når den det sägs ha hänt blir berättaren ertappad, och är den som ertappar lojal mot ledaren avslöjas fraktionen, med en rad i krönikan och en notis',
+  kor: () => {
+    const by = (seed: number, emp: number) => {
+      const t = createState(seed, START);
+      klockan(t, 11);
+      const l = nyInvanare(t, 'm', 40), a = nyInvanare(t, 'm', 30), b = nyInvanare(t, 'k', 30), m = nyInvanare(t, 'k', 30);
+      a.pot.empati = emp; if (a.anlag) a.anlag.empati = emp;
+      const st = SIM.styreAv(t); st.ledare = l.id; st.frak = { led: a.id, med: [a.id] };
+      getRel(t, a, b).op = 0; getRel(t, b, l).op = 30; getRel(t, m, l).op = 60;
+      return { t, l, a, b, m };
+    };
+    // chansen: 200 samtal var
+    const andel = (emp: number) => { let n = 0; for (let i = 0; i < 200; i++) { const x = by(300 + i, emp); SIM.fraktionSamtal(x.t, x.a, x.b); if (x.t.stat?.fulspel) n++; } return n / 200; };
+    const a0 = andel(0), a5 = andel(5), a10 = andel(10);
+    // en lögn: b tycker sämre om ledaren
+    let x: ReturnType<typeof by> | undefined;
+    for (let i = 0; i < 100 && !x; i++) { const y = by(600 + i, 0); SIM.fraktionSamtal(y.t, y.a, y.b); if (y.t.stat?.fulspel) x = y; }
+    const op = getRel(x!.t, x!.b, x!.l).op, e = x!.b.intryck?.find(q => q.om === x!.l.id && q.bev?.[0]?.falsk);
+    // lögnen når den det sägs ha hänt: a ertappas av en lojal, fraktionen avslöjas
+    const mot = byId(x!.t, e?.bev?.[0]?.mot ?? -1)!;
+    getRel(x!.t, mot, x!.l).op = 60;
+    SIM.beratta(x!.t, x!.a, mot, e!, getRel(x!.t, x!.a, mot));
+    const logn = !!SIM.intryckOm(mot, x!.a.id, 'logn'), frak = x!.t.styre?.frak;
+    const kron = x!.t.hist?.kronika?.some(r => r[1] === `${x!.a.name} spred lögner om ${x!.l.name} och blev avslöjad.`) ?? false;
+    const not = (x!.t.notiser?.lista ?? []).some(n => n.rader.some(r => /spred lögner om/.test(r)));
+    // den som ertappar är inte lojal: fraktionen står kvar
+    let z: ReturnType<typeof by> | undefined;
+    for (let i = 0; i < 100 && !z; i++) { const y = by(800 + i, 0); SIM.fraktionSamtal(y.t, y.a, y.b); if (y.t.stat?.fulspel) z = y; }
+    const ez = z!.b.intryck!.find(q => q.om === z!.l.id && q.bev?.[0]?.falsk)!, motz = byId(z!.t, ez.bev![0]!.mot!)!;
+    getRel(z!.t, motz, z!.l).op = 0;
+    SIM.beratta(z!.t, z!.a, motz, ez, getRel(z!.t, z!.a, motz));
+    return [
+      [`chansen i ett samtal: empati 0 ${pct(a0)}, empati 5 ${pct(a5)}, empati 10 ${pct(a10)}`, Math.abs(a0 - 0.3) < 0.08 && Math.abs(a5 - 0.15) < 0.07 && a10 === 0],
+      [`den som lyssnar tycker sämre om ledaren (${op.toFixed(0)}, var 30) och tror något påhittat om hen`, op < 30 && !!e],
+      [`lögnen når ${mot?.name ?? '?'}: berättaren är en lögnare (${logn}) och fraktionen avslöjas (${frak ? 'finns kvar' : 'borta'})`, logn && !frak],
+      [`raden i krönikan (${kron}) och notisen (${not})`, kron && not],
+      [`den som ertappar är inte lojal: fraktionen finns kvar (${!!z!.t.styre?.frak})`, !!z!.t.styre?.frak],
+    ];
+  },
+};
