@@ -72,7 +72,7 @@ function drawPile(pl: Pile, t: number) {
   const kruka = pl.k.startsWith('lerkruka_') && pl.id !== undefined ? tingOf(s).find(q => q.id === pl.id) : undefined;
   if (kruka) {
     const b = krukaBild(kruka), ik = hasIcon(b.ikon) ? b.ikon : pl.k; ensam(ik);
-    if (b.vaxt) vaxtIKruka(x0 + 8, y0 - 3 + (KRUKKANT[ik] ?? 3), b.vaxt.v);
+    if (b.vaxt) vaxtIKruka(x0 + 8, y0 - 3 + (KRUKKANT[ik] ?? 3), b.vaxt.v, b.vaxt.g === 'blomma', !!b.vaxt.blommar);
     if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
     return;
   }
@@ -92,10 +92,17 @@ function drawPile(pl: Pile, t: number) {
 // växten i krukan (steg 10.7.2, platshållare): stjälkar upp från kanten och, när den vuxit, röllekans vita blomkorgar.
 // KRUKKANT = raden i krukans bild där kanten är
 const KRUKKANT: Record<string, number> = { lerkruka_hog: 1, lerkruka_skal: 7 };
-function vaxtIKruka(cx: number, kant: number, v: number) {
+// blomman (steg 10.7.3) har gröna knoppar tills den blommar, och då gula och vita kronor
+function vaxtIKruka(cx: number, kant: number, v: number, blomma = false, blommar = false) {
   const h = 2 + Math.round(5 * v), g = overG;
   g.beginFill(0x647025).drawRect(cx - 2, kant - h + 1, 1, h).drawRect(cx, kant - h, 1, h + 1).drawRect(cx + 2, kant - h + 2, 1, h - 1).endFill();
   g.beginFill(0x898b4c).drawRect(cx - 3, kant - 2, 2, 1).drawRect(cx + 1, kant - 3, 2, 1).endFill(); // bladen
+  if (blomma) {
+    if (!blommar) return;
+    g.beginFill(0xd8b25f).drawRect(cx - 3, kant - h - 1, 2, 2).drawRect(cx + 2, kant - h, 2, 2).endFill().beginFill(0xdad0bb).drawRect(cx - 1, kant - h - 2, 2, 2).endFill();
+    g.beginFill(0xbd753e).drawRect(cx - 2, kant - h, 1, 1).drawRect(cx, kant - h - 1, 1, 1).drawRect(cx + 3, kant - h + 1, 1, 1).endFill();
+    return;
+  }
   if (v >= 0.6) g.beginFill(0xdad0bb).drawRect(cx - 3, kant - h, 3, 1).drawRect(cx - 1, kant - h - 1, 3, 1).drawRect(cx + 1, kant - h + 1, 3, 1).endFill();
 }
 // mästerverken glänser (steg 2.2.2, platshållare): en liten ljus gnista som blinkar till ibland, var och en i sin takt.

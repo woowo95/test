@@ -4,6 +4,7 @@ import { balans } from './balans';
 import { roomAt } from './byggnad';
 import { handelse } from './rykten';
 import { kvOf } from './kvalitet';
+import { krukaPyntQ } from './kruka';
 import { isKlar, krukaHemma, sovrum, stationDef, stationRum, stationerOf } from './stationer';
 
 // ---------- pyntet i hemmen (steg 4.3.4) ----------
@@ -34,7 +35,7 @@ export function stepPynt(s: State) {
     const o = byId(s, t.ag), rum = stationRum(s, t);
     if (o && alive(o) && rum) pynt.push({ o, rum, q: kvOf(t), namn: d.namn.toLowerCase() });
   }
-  for (const o of living(s)) { const k = krukaHemma(s, o); if (k) pynt.push({ o, rum: sovrum(s, o), q: kvOf(k), namn: 'lerkruka' }); }
+  for (const o of living(s)) { const k = krukaHemma(s, o); if (k) pynt.push({ o, rum: sovrum(s, o), q: krukaPyntQ(k), namn: 'lerkruka' }); } // en blommande kruka är ett steg finare (steg 10.7.3)
   // ägaren trivs av det finaste pyntet i rummet där hen är (en tanke, inte en per pynt)
   const glad = new Map<Person, number>();
   for (const { o, rum, q } of pynt) if (PYNT.glad[q] > 0 && iRum(s, o, rum)) glad.set(o, Math.max(glad.get(o) ?? 0, PYNT.glad[q]));

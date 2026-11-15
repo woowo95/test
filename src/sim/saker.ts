@@ -144,6 +144,7 @@ const DEF = {
   mjarde: { namn: 'Mjärde', skaffa: RECEPT.mjarde, stack: 1, ruta: 1, mapp: 'Redskap' }, // en flätad korg som sätts ut i vattnet (steg 7.4.2)
   huggen_sten: { namn: 'Huggen sten', skaffa: RECEPT.huggen_sten, stack: 20, vikt: 4, mapp: 'Material' }, // steg 7.5.1
   plankor: { namn: 'Plankor', skaffa: RECEPT.plankor, stack: 20, vikt: 2, mapp: 'Material' },
+  blomma: { namn: 'Blomma', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' }, // ängsblommor till krukorna (steg 10.7.3): ger inget att skörda, bara pynt
   rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true }, // den första örten (steg 7.6.3): går inte att äta och håller länge
   salva: { namn: 'Salva', skaffa: RECEPT.salva, stack: 10, vikt: 0.2, mapp: 'Material' }, // steg 7.6.4–7.6.6: ingen funktion än
   tjara: { namn: 'Tjära', skaffa: RECEPT.tjara, stack: 10, vikt: 0.5, mapp: 'Material' },
