@@ -1315,8 +1315,8 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   if (dr.ut < -RUNDA.hem || tk.until <= s.now + 2 * MIN) { tk.until = s.now; return 1e-3; }
   let n = nastaPaStrackan(s, tk, x, y);
   // utan något hen vet eller ser går hen vidare ut i det okända bara så länge draget drar utåt (nyfikenheten och modet, minus
-  // bördan, behoven, mörkret och kylan); annars hem
-  if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla, dr.ut > 0); }
+  // bördan, behoven, mörkret och kylan); annars hem. Drar det hemåt kostar varje ruta längre bort från byn lika mycket
+  if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla, dr.ut > 0, Math.max(0, -dr.ut)); }
   if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; } else tk.until = s.now;
   return 1e-3;
 }
@@ -1401,7 +1401,9 @@ function ringen(inre: number, yttre: number) {
   }
   return r;
 }
-export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, radsla: (x: number, y: number) => number, vidare = true) {
+// hemat: hur mycket draget drar hemåt (draget, bara hemåt); så mycket kostar varje ruta som målet ligger längre från byn än hen står nu,
+// så att den som bär mycket eller är hungrig väljer det som ligger hemåt, och den nyfikne och modige går längre (steg 4.5.6.2)
+export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, radsla: (x: number, y: number) => number, vidare = true, hemat = 0) {
   // det hen ser räknas som det är, i saker på rutan; längre bort det hen tror, räknat i saker (rikedomen delad med toppen, gånger
   // sakerna på en full ruta), så att en plats som ser rik ut men är tom inte lockar
   const res = ACTS[tk.act].resurs, sikt = sightOf(s, p);
@@ -1409,7 +1411,7 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   const andra = living(s).filter(q => q !== p && q.task?.act === tk.act).map(q => ({ x: q.task!.tx, y: q.task!.ty }));
   const vt = vattenNu(s), R = RUNDA.malR, saker = sakerLasare(s, tk);
   let bast: { x: number; y: number } | undefined, bv = 0;
-  const ring = ringen(RUNDA.syn, R);
+  const ring = ringen(RUNDA.syn, R), bm = bynsMitt(s), bort0 = Math.hypot(x0 + 0.5 - bm.x, y0 + 0.5 - bm.y);
   // blocked och sees för varje ruta, med kartan, väggarna och sikten hämtade en gång. Synen avgörs av avståndet i kvadrat när det
   // är klart innanför eller utanför sikten (med en marginal långt över avrundningen), och annars som sees räknar
   const tiles = getMap(s.seed).tiles, grid = gridOf(s), flod = !!s.flod, sikt2 = sikt * sikt, inom = sikt >= 0 ? sikt2 * (1 - 1e-9) : -1, utom = sikt >= 0 ? sikt2 * (1 + 1e-9) : Infinity;
@@ -1423,14 +1425,14 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
     const ser = !tror0 || (a2 < inom ? true : a2 > utom ? false : sees(s, p, x, y, sikt)), tror = ser ? saker(x, y) : tror0!(x, y) * iSaker;
     // vägen dit räknas i samma enhet som det hen tror finns där: bortom synvidden i saker (iSaker). Förut vägde avståndet femtio
     // gånger tyngre än det hen hört, så att inget mål längre bort vann och rundan gick åt ett slumpat håll (steg 9.9.5)
-    const v = (tror - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut * (ser ? 1 : iSaker);
+    const v = (tror - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut * (ser ? 1 : iSaker) - (hemat > 0 ? hemat * Math.max(0, Math.hypot(x + 0.5 - bm.x, y + 0.5 - bm.y) - bort0) : 0);
     if (v > bv + 1e-9) { bv = v; bast = { x, y }; }
   }
   if (bast) { count(s, 'nyttMal'); return bast; }
   // inget hen vet eller ser: en riktning bort från byn, mot mark som ser lovande ut (skog, snår, bryn), RUNDA.malR rutor bort,
   // om det drar utåt (vidare)
   if (!vidare) return undefined;
-  const m = bynsMitt(s), v0 = Math.atan2(y0 - m.y, x0 - m.x), g = groundOf(s);
+  const m = bm, v0 = Math.atan2(y0 - m.y, x0 - m.x), g = groundOf(s);
   for (let k = 0; k < 8; k++) {
     const v = v0 + (hash3(p.id, k, Math.floor(s.now / HOUR)) - 0.5) * Math.PI, x = Math.round(x0 + Math.cos(v) * R), y = Math.round(y0 + Math.sin(v) * R);
     if (!inMap(x, y) || vt[y * W + x] === T.Vatten || blocked(s, x + 0.5, y + 0.5)) continue;
