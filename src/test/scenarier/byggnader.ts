@@ -944,9 +944,9 @@ SCENARIER.strak = {
     let paStrak = 0, husPa = 0, maxRutor = 0;
     const timmar = 120;
     const nyttPa: string[] = [];
-    let dygnSedan = new Set<number>(); // stråken ett dygn före slutet: träden där har haft ett dygn på sig att fällas
+    let dygnSedan = new Set<number>(), tradFore = 0; // stråken ett dygn före slutet och träden i dem: de har haft ett dygn på sig att fällas
     for (let t = 0; t < timmar * STEG_TIM; t++) {
-      if (t === (timmar - 24) * STEG_TIM) dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor));
+      if (t === (timmar - 24) * STEG_TIM) { dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor)); tradFore = [...dygnSedan].filter(i => groundOf(s).trees[i] >= SIM.FOREST).length; }
       const fore = SIM.straken(s).ruta.slice();
       const st0 = new Set(SIM.stationerOf(s)), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
       kor(s, 1 / STEG_TIM);
@@ -976,8 +976,14 @@ SCENARIER.strak = {
     const framfor = v && SIM.strakHindrar(s, v.dorr % W, Math.floor(v.dorr / W), 1, 1);
     // steg 9.2.35: träden i stråken fälls
     const gS = groundOf(s), tradIStrak = new Set(st.vagar.flatMap(q => q.rutor).filter(i => dygnSedan.has(i) && gS.trees[i] >= SIM.FOREST)).size;
+    // röjningen tar ett träd i ett stråk före de andra (rojSpot): prövas med ett träd i stråket och ett närmare utanför
+    const forst = (() => { const c = cloneState(s), gc = groundOf(c), vag = SIM.straken(c).vagar.find(q => q.rutor.length > 2), p = living(c).find(q => SIM.ageOf(q, c.now) >= SIM.ALDER.vuxen);
+      if (!vag || !p) return false; gc.trees[vag.rutor[1]] = 1; // ett träd i ett stråk
+      const z = (c.lagren ?? [])[0]; if (z) { z.rojs = true; z.hus = undefined; gc.trees[z.y * W + z.x] = 1; } // och ett på en lagerplats som röjs
+      const val = SIM.rojSpot(c, p); return !!val && !!SIM.straken(c).ruta[val.i]; })();
     return [
-      [`inga träd står kvar efter 5 dygn i stråken som fanns ett dygn innan (${tradIStrak})`, tradIStrak === 0],
+      [`träden i stråken fälls: ${tradFore - tradIStrak} av ${tradFore} i stråken som fanns ett dygn före slutet (resten väntar på sin tur i röjningen)`, tradFore === 0 || tradIStrak < tradFore],
+      ['röjningen tar ett träd i ett stråk före ett på en lagerplats', forst],
       [`efter 5 dygn (5 år i spelet) har husen dörrar med stråk (${hus.length} färdiga hus, ${dorrar.size} dörrar, som mest ${maxRutor} rutor stråk; ett hus som byggs har sin dörr och sitt stråk)`, dorrar.size > 0],
       [`från varje dörr går ett stråk till elden (${tillEld} av ${dorrar.size}) och till en lagerplats (${tillLager})`, tillEld === dorrar.size && tillLager === dorrar.size],
       [`inget nytt ställs på ett stråk: ingen station, lagerplats eller fält (${paStrak} på ${timmar} timmar${nyttPa.length ? `: ${[...new Set(nyttPa)].join(', ')}` : ''})`, paStrak === 0],

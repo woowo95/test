@@ -630,6 +630,7 @@ SCENARIER.axelrem = {
     const s = createState(2, START); tandEld(s);
     medBank(s, 'flatarbank');
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, rep: 1, bensyl: 1, skinnklader: 1, axelrem: 1 };
+    for (const r of s.people) for (const k of ['rock_kaninskinn', 'skor_kaninskinn', 'byxor_kaninskinn', 'mossa_kaninskinn', 'snoskor_kaninskinn']) if (SAKER[k]) addTool(s, k, r).bar = r.id; // plaggen har alla redan, så att skinnen inte går till dem först
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12);
     (s.stat ??= {}).fiskeForsok = 1; // byn fiskar, så den vill ha spjut och axelremmar
     const tek = SIM.TEKNIK.find(t => t.id === 'axelrem');

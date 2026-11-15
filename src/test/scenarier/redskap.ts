@@ -109,6 +109,7 @@ SCENARIER.stenring = {
 };
 
 SCENARIER.fiskespjut = {
+  lang: true,
   text: 'Ett fiskespjut täljs av en pinne med flinta eller yxa, ger mer fisk än händerna och slits fort',
   kor: () => {
     const s = createState(4, START);

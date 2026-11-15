@@ -2173,6 +2173,7 @@ SCENARIER.merliv = {
 };
 
 SCENARIER.gjort = {
+  lang: true,
   text: 'Steg 3.10.6: det var och en gjort räknas per färdighet (SKILL_STAT), det senaste dygnet och totalt (fisk av försöken, träd fällda, saker gjorda), och fältets rutor minns vad som växte där innan, när de bereddes och när de sist sköttes',
   kor: () => {
     // räknaren: timme för timme det senaste dygnet (24 timmar), och totalt
@@ -2360,6 +2361,7 @@ SCENARIER.utbrytning = {
 };
 
 SCENARIER.framling = {
+  lang: true,
   text: 'Invandring (steg 4.4.4.2 och 9.2.115, framling i liv.ts): en sällsynt främling kommer från en grannklan som inte tycker illa om byn. Hen är en gäst som går in på kartan från kanten, går fram till ledaren och pratar med hen en stund, och stannar sedan som bybo (samma person) eller går igen. Hen kan ofta en teknik som ingen i byn kan, men vars krav byn kan. Byn (ledaren, annars de vuxna) avgör; klanen blir vänligare om hen får stanna och mindre vänlig om hen visas bort. En fientlig klan skickar ingen.',
   kor: () => {
     const s = createState(6, START); rikBy(s); setFood(s, 300);
