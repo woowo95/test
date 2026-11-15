@@ -36,6 +36,7 @@ export * from './sim/religion';
 export * from './sim/val';
 export * from './sim/samtal';
 export * from './sim/humor';
+export * from './sim/skuld';
 export * from './sim/rykten';
 export * from './sim/styre';
 export * from './sim/forradsmal';

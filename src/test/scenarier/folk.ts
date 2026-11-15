@@ -514,6 +514,50 @@ SCENARIER.anger = {
     ];
   },
 };
+SCENARIER.bot = {
+  text: 'Be om förlåtelse (steg 10.8.2): den som bär en skuld väljer hellre den hen gjort illa att samtala med, och i ett samtal som inte är ett gräl ber hen om förlåtelse med en botgåva i hela saker ur det hen har över, värd minst 12 gånger allvaret för den som ger: den billigaste sak som räcker, annars de dyraste först, och den som har för lite ger allt. Den som inget har över ber inte, och en död kan ingen be',
+  kor: () => {
+    const by = (silver: number, knivar: number) => {
+      const t = createState(9, START);
+      klockan(t, 11);
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), o = nyInvanare(t, 'k', 30);
+      p.x += 12; q.x = p.x + 1; q.y = p.y; o.x = p.x - 1; o.y = p.y;
+      p.pot.empati = 15; getRel(t, p, q).op = 30; getRel(t, p, o).op = 30;
+      for (const x of SIM.tingOf(t)) if (x.agare === p.id) x.agare = SIM.BYN;
+      for (const k of SIM.SAK_LIST) { const n = SIM.ownsAmount(t, p, k); if (n > 0) SIM.ownMove(t, k, n, p.id, SIM.BYN); }
+      if (silver) SIM.put(t, 'silver', silver, { [p.id]: silver });
+      for (let i = 0; i < knivar; i++) SIM.newTing(t, 'kniv', 1, p.id);
+      SIM.utbrottBorjar(t, p, 'sla', q);
+      return { t, p, q, o };
+    };
+    const samtal = (x: ReturnType<typeof by>, n: number) => { for (let i = 0; i < n && x.p.angr?.length; i++) { SIM.converse(x.t, x.p, [x.q]); } };
+    // valet: q väljs oftare än o
+    const v = by(10, 2), wq = SIM.skuldVal(v.p, v.q), wo = SIM.skuldVal(v.p, v.o);
+    // bönen: kniven (3,4) räcker inte ensam för slaget (4,8), så kniven och silver tills kravet är nått
+    const a = by(10, 2), silver0 = SIM.ownsAmount(a.t, a.q, 'silver');
+    samtal(a, 40);
+    const fickSilver = SIM.ownsAmount(a.t, a.q, 'silver') - silver0, fickKniv = SIM.tingOf(a.t).filter(x => x.k === 'kniv' && x.agare === a.q.id).length;
+    const tanke = a.q.thoughts.find(x => /som bot$/.test(x.text))?.text ?? '';
+    const generos = a.q.intryck?.some(e => e.om === a.p.id && e.k === 'generos') ?? false;
+    const varde = fickKniv * SIM.grundvarde('kniv') * SIM.DELA.over + fickSilver * SIM.DELA.over;
+    // för lite: allt hen har över
+    const b = by(3, 0); samtal(b, 40);
+    const alltB = SIM.ownsAmount(b.t, b.p, 'silver'), fickB = SIM.ownsAmount(b.t, b.q, 'silver');
+    // inget över: ber inte
+    const c = by(0, 0); samtal(c, 40);
+    // den drabbade är död
+    const d = by(10, 0); SIM.die(d.t, d.q, 'svalt'); samtal(d, 40);
+    return [
+      [`den som bär skulden väljer hellre den hen slog att samtala med (vikt +${wq} mot +${wo})`, wq > 0 && wo === 0],
+      [`botgåvan: ${fickKniv} kniv och ${fickSilver} silver, värt ${varde.toFixed(1)} för den som gav, minst ${(SIM.SKULD.krav * 0.4).toFixed(1)}`, fickKniv === 1 && fickSilver >= 1 && varde >= SIM.SKULD.krav * 0.4 - 1e-9 && varde - SIM.DELA.over < SIM.SKULD.krav * 0.4],
+      [`den drabbade tänker "${tanke}", och skulden är borta (${a.p.angr?.length ?? 0})`, new RegExp(`^Fick en ${SIM.SAKER.kniv!.namn.toLowerCase()} och `).test(tanke) && !a.p.angr],
+      [`en botgåva ger inte ryktet generös (${generos})`, !generos],
+      [`den som har för lite ger allt hen har över (${fickB} silver, ${alltB} kvar)`, fickB === 3 && alltB === 0 && !b.p.angr],
+      [`den som inget har över ber inte (skulden finns kvar: ${c.p.angr?.length ?? 0})`, c.p.angr?.length === 1 && !c.p.angr[0]!.bad],
+      [`en död kan ingen be (${d.p.angr?.[0]?.bad === undefined ? 'bad inte' : 'bad'})`, d.p.angr?.[0]?.bad === undefined],
+    ];
+  },
+};
 SCENARIER.vald = {
   text: 'De allvarliga utbrotten (steg 3.2.3): ligga kvar i bädden, göra slut, slå (ett barn minns det alltid), misshandel, flytta ut och dråp, och de som ser det ogillar den som slår (steg 3.3.1)',
   kor: () => {

@@ -113,7 +113,7 @@ export const SAMTALSSLAG: Record<Samtalsslag, SamtalDef> = SLAG;
 // ---------- samtal ----------
 // vikten för att välja b att samtala med: relationen, kemin, partnern, bästa vännen och mentorn
 const valVikt = (s: State, a: Person, b: Person) => { const r = getRel(s, a, b); return Math.max(SAMTAL.valMin, 1 + r.op / SAMTAL.valOp + r.chem * SAMTAL.valKemi + (b.partner === a.id ? SAMTAL.valPartner : 0)
-  + (arBast(a, b) ? RELT.valBast : 0) + (arMentor(a, b) || arMentor(b, a) ? RELT.valMentor : 0)); };
+  + (arBast(a, b) ? RELT.valBast : 0) + (arMentor(a, b) || arMentor(b, a) ? RELT.valMentor : 0) + skuldVal(a, b)); }; // den man gjort illa (steg 10.8.2)
 // den som väljer att samtala (handlingen samtal, val.ts) går fram till någon och ställer sig bredvid hen, ungefär en ruta
 // isär (steg 4.5.6.7): bland dem som redan gör något socialt nära platsen, viktat som samtalen. Den andra blir kvar där
 // hen är (den som tvinnar, rensar eller vaktar flyttar sig inte), och samtalar hen också vänder hen sig mot den som kom.
@@ -229,6 +229,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaSmak(a, b, r.op); // och om sin favoritmat eller det man avskyr (steg 9.6.6)
     berattaSpecial(s, a, b, r.op); // och om byns egen rätt (steg 10.7.29)
+    beOmForlatelse(s, a, b); // och den som gjort den andra illa ber om förlåtelse (steg 10.8.2)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     samtalAmne(s, a, b, kind);
     if (kind !== 'flirt' && out + like > SAMTAL.gavaMin) askForGift(s, a, b); // den som saknar något frågar efter det (mat, ved, redskap: behov.ts)
@@ -258,3 +259,4 @@ export function skiljas(s: State, a: Person, b: Person, r: Rel) {
 import { berattaSmak } from './rykten';
 import { RUS, rusAv } from './rus';
 import { berattaSpecial } from './special';
+import { beOmForlatelse, skuldVal } from './skuld';
