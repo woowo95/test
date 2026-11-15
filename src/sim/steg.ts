@@ -521,16 +521,17 @@ function vantar(p: Person, tk: Task, now: number, dt: number) {
 }
 // tiden (sekunder) sedan raden t räknades, om den ska räknas i slaget som slutar vid now, annars undefined. Sist räknad står i
 // s.takter; en by som saknar den (en ny eller äldre sparning) räknar raden som om den räknats när slaget började
+const TAKT_OFF: number[] = [];
 function taktDt(s: State, t: Takt, i: number, now: number, dtSec: number) {
   if (t.sek <= 0) return dtSec;
   // (det som räknas i hela timmar går vid timmens början, som klockan i spelet: motgångarna, vädret och dygnets händelser följer
   // timmen; det som räknas oftare sprids över perioden)
-  const tk = s.takter ??= {}, P = t.sek * SEC, off = (t.fas ?? (t.sek % 3600 === 0 ? 0 : (i * 0.618) % 1)) * P;
+  const tk = s.takter ??= {}, P = t.sek * SEC, off = TAKT_OFF[i] ??= (t.fas ?? (t.sek % 3600 === 0 ? 0 : (i * 0.618) % 1)) * P; // radens förskjutning räknas en gång
   const sist = tk[t.namn];
   // första gången (en ny by eller en äldre sparning), eller när klockan har flyttats (ett prov): systemet räknas direkt, så att
   // det som räknas sällan (timmens behov, byggplanen) finns från början
   if (sist === undefined || sist > now || now - sist > P + dtSec * SEC) { tk[t.namn] = now; return dtSec; }
-  if (Math.floor((now - off) / P) === Math.floor((sist - off) / P)) { tk[t.namn] = sist; return undefined; }
+  if (Math.floor((now - off) / P) === Math.floor((sist - off) / P)) return undefined; // (sist står redan där)
   tk[t.namn] = now;
   return (now - sist) / SEC;
 }
@@ -778,10 +779,15 @@ function malFor(s: State, p: Person, tk: Task): { x: number; y: number } {
   }
   return bast ?? { x: tk.tx, y: tk.ty };
 }
+const vagNycklar = new WeakMap<Task, { x: number; y: number; v: number; key: string }>();
 function walk(s: State, p: Person, tk: Task, left: number) {
   const g = groundOf(s);
   if (g.brand && tk.path?.some(i => g.brand![i] === 1)) tk.pk = undefined; // en ruta på vägen började brinna: vägen söks om (steg 9.2.136)
-  const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${s.byggV ?? 0}`; // en ny vägg kan stänga vägen
+  // (nyckeln byggs bara om när målet eller byggversionen har ändrats: den frågas i varje steg av varje som går)
+  const bv = s.byggV ?? 0;
+  let nk = vagNycklar.get(tk);
+  if (!nk || nk.x !== tk.tx || nk.y !== tk.ty || nk.v !== bv) vagNycklar.set(tk, nk = { x: tk.tx, y: tk.ty, v: bv, key: `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${bv}` }); // en ny vägg kan stänga vägen
+  const key = nk.key;
   if (tk.pk !== key) {
     tk.pk = key;
     const m = malFor(s, p, tk); tk.mx = m.x; tk.my = m.y;
