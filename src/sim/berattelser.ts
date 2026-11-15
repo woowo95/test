@@ -1832,9 +1832,9 @@ const MDEF = {
   ],
   // efteråt
   m_slut: [
-    { t: 'Efteråt var alla på gott humör.', om: f => f.glad === true },
-    { t: 'De som spelat skrattade länge åt det efteråt.', om: f => f.glad === true },
-    { t: 'De gick därifrån glada och svettiga.', om: f => f.glad === true },
+    { t: 'Efteråt var vinnarna på gott humör, medan de andra surade en stund.', om: f => f.glad === true },
+    { t: 'Vinnarna skrattade länge efteråt, och de som förlorat var tysta.', om: f => f.glad === true },
+    { t: 'De gick därifrån svettiga, några glada och några sura.', om: f => f.glad === true },
     { t: 'Det pratades om matchen resten av dagen.', om: f => f.glad === true },
     { t: 'Efteråt satte de sig och vilade.', om: f => f.lang === true },
     { t: 'Sedan gick var och en tillbaka till sitt.', om: f => f.glad !== true },

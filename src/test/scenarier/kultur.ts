@@ -47,7 +47,7 @@ SCENARIER.sport = {
     const sport0 = g.sport ? SIM.SPORT_AV[g.sport.k]!.namn : 'ingen', ilista = med.slice(1).filter(q => g.sport?.lista?.includes(q.id)).length, avbrot = hugg.task?.act !== 'hugga';
     let sett = 0, kom = 0;
     kor(g, 2, () => { sett = Math.max(sett, med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length); if (hugg.task?.act === 'sport') kom = 1; });
-    const glad = med.filter(q => q.thoughts.some(t => t.text.startsWith('Spelade'))).length;
+    const glad = med.filter(q => q.thoughts.some(t => /^(Vann|Förlorade) /.test(t.text))).length;
     const battre = med.filter((q, i) => q.skill.narstrid > fore[i]!).length;
     // den som fryser farligt värmer sig först
     const h = rikDag(3, { rep: 4 }); tandEld(h);
@@ -80,7 +80,7 @@ SCENARIER.sport = {
       [`när maten är knapp vill man spela mycket mindre (${lust(f).toFixed(2)} mot ${lust(s).toFixed(2)}, ${vf} vill alls)`, lust(f) < lust(s) * 0.5],
       [`${ilista} av två vill vara med i ${sport0.toLowerCase()}en, och vedhuggaren ${avbrot ? 'avbröt arbetet' : 'högg vidare'} och ${kom ? 'kom' : 'kom inte'}`, ilista === 2 && avbrot && kom === 1],
       [`${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, (g.stat?.sportTim ?? 0) >= 0.4 && sett >= 2],
-      [`${glad} av tre är glada efter att ha spelat, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
+      [`${glad} av tre är glada eller ledsna efter matchen, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
       [`den som fryser farligt ${frLista ? 'ville vara med' : 'ville inte'} men ${frAkt === 'varma' ? 'värmer sig först' : 'gör ' + frAkt}`, frLista && frAkt === 'varma'],
       [`när ingen vill blir det ingen match och ingen avbryts; den som ropade ${ledsen ? 'är ledsen' : 'är inte ledsen'} (${e.stat?.sportIngen ?? 0} gånger ingen)`, ensam && ledsen && (e.stat?.sportIngen ?? 0) === 1],
       [`platserna: ${platser.join('; ')}`, platser.every(x => / öppet, längst/.test(x) && Number(x.match(/längst ([\d.]+) av (\d)/)![1]) <= Number(x.match(/av (\d)/)![1]) + 0.5)],
@@ -760,15 +760,25 @@ SCENARIER.matchrapport = {
     const s = rikDag(3, { rep: 4 }), v = vuxna(s), a = v[0]!, b = v[1]!;
     a.skill.traff = 18; b.skill.traff = 2;
     SIM.newTing(s, 'mal', 1, a.id);
-    match(s, 'kast', [a, b]); kor(s, 2);
+    match(s, 'kast', [a, b]);
+    const tanke = (q: Person, r: RegExp) => q.thoughts.find(x => r.test(x.text) && x.until > s.now);
+    korTills(s, () => !!s.matcher?.some(x => !x.installd), 3 * 3600);
+    const m0 = s.matcher?.find(x => !x.installd), vq = m0?.vinnare === a.id ? a : b, fq = vq === a ? b : a;
+    const vt = tanke(vq, /^Vann kast/), ft = tanke(fq, /^Förlorade kast/);
+    kor(s, 1.2);
+    const borta = !tanke(vq, /^Vann/) && !tanke(fq, /^Förlorade/);
+    kor(s, 1);
     const m = s.matcher?.find(x => !x.installd), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
     const n = s.notiser?.lista.find(x => x.id === 'match'), nIdx = n?.match?.indexOf(m?.nr ?? -1) ?? -1;
     const fa = m?.spelare.find(x => x.id === a.id);
+    // glad eller ledsen (steg 10.7.15): tanken hos vinnaren och förloraren, borta efter en timme
+
     // det kommer för få: ensam
     const e = rikDag(5), ep = vuxna(e)[0]!;
     match(e, 'dragkamp', [ep]);
     for (const q of SIM.living(e)) if (q !== ep) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.now + 3 * SIM.HOUR, carry: 0, dark: true };
     kor(e, 1.5);
+    const ingenTanke = !ep.thoughts.some(x => /^(Vann|Förlorade) /.test(x.text));
     const im = e.matcher?.at(-1), ilog = e.log.find(l => l.match === im?.nr);
     // berättelsen högst upp (steg 5.4.8.2): skriven ur minnet, stabil, med vinnaren; en skräll när den svagare vinner
     const hel = (x: string) => x.length > 0 && !/\{|undefined|NaN/.test(x);
@@ -777,9 +787,10 @@ SCENARIER.matchrapport = {
     return [
       [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length >= 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
       [`matchen varade ${m ? ((m.slut - m.t) / SIM.MIN).toFixed(0) : '?'} minuter från att den började (steg 10.7.13)`, !!m && m.slut - m.t >= 10 * SIM.MIN - 1 && m.slut - m.t <= 20 * SIM.MIN + 1],
+      [`${vq.name} tänker ${vt?.text ?? 'inget'} (${vt?.v}), ${fq.name} ${ft?.text ?? 'inget'} (${ft?.v}), och båda är borta en timme efter matchen`, !!vt && vt.v > 0 && !!ft && ft.v < 0 && ft.v > -vt.v && borta],
       [`raden i Händelser pekar på matchen: ${rad?.text ?? 'ingen'}`, !!rad],
       [`notisen (Folket) pekar på den på rad ${nIdx + 1}`, !!n && nIdx >= 0 && n.match!.length === n.rader.length],
-      [`för få: ${ilog?.text ?? 'ingen rad'}`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog],
+      [`för få: ${ilog?.text ?? 'ingen rad'}, och ingen blev glad eller ledsen`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog && ingenTanke],
       [`berättelsen: ${ber}`, hel(ber) && ber.includes(a.name) && ber === SIM.matchBerattelse(s, m!)],
       [`när den svagare vinner jämnt: ${sber}`, hel(sber) && sber.includes(b.name) && sber.includes(a.name)],
       [`när det kom för få: ${iber}`, hel(iber) && iber.includes(ep.name) || /ingen|för få|tom/.test(iber)],

@@ -77,8 +77,8 @@ export const SPORT = balans('sport', {
   folj: 0.8, nara: 20, foljTycke: 0.5, foljPlikt: 0.5, ingen: 0.05, ingenTim: 1,
   utanfor: 10, // platsen ligger i byn eller högst så här många rutor utanför byns område
   ovning: 0.15, // övning i sportens färdighet per timme man spelar
-  gladje: 0.08, gladjeTim: 8, // tanken efter en match (minst gladjeMin timmar spelat): så här glad i så här många timmar
-  gladjeMin: 0.1,
+  // när matchen avgörs (steg 10.7.15): vinnarna blir så här glada och förlorarna så här ledsna, i gladjeTim timmar
+  gladje: 0.08, forlust: 0.04, gladjeTim: 1,
   slit: 0.05, // föremålen som är redskap (bollen, slagträet, målet) slits så här mycket per match (steg 4.3.1.2)
   vinnSkill: 10, // den som vinner en match: färdigheten i sporten (0–20) plus en slump upp till så här mycket
   snoVal: 0.5, // när en sport som bara går i snön kan spelas (nar) väljs den så här ofta (steg 4.3.1.3)
@@ -98,11 +98,12 @@ export interface Match { k: string; x: number; y: number; start: number; slut: n
 // matchens sammanställning (steg 5.4.8.1, Sporten i designdokumentet): sparas när matchen avgörs eller ställs in, inte ur
 // loggen. Raden i Händelser och notisen pekar dit med numret (LogEntry.match), och fliken Matchen (ui/flikar/match.ts) visar
 // den. spelare: var och en med färdigheten i sportens färdighet (0–20) och resultatet (färdigheten plus slumpen, vinnare()),
-// glad: glädjen efter matchen i hundradelar (SPORT.gladje), installd: det kom för få. Lagen och publiken kommer med 10.3.6
+// glad: vinnarnas glädje och ledsen förlorarnas sorg efter matchen i hundradelar (SPORT.gladje, SPORT.forlust), installd: det kom för få.
+// Lagen (steg 10.7.14) står hos var och en; publiken kommer med 10.7.16
 export interface MatchSpelare { id: number; namn: string; f: number; v: number; l?: 0 | 1 } // l: laget (steg 10.7.14)
-export interface MatchMinne { nr: number; k: string; t: number; slut: number; spelare: MatchSpelare[]; vinnare?: number; vnamn?: string; glad: number; installd?: true; vinnLag?: 0 | 1 }
+export interface MatchMinne { nr: number; k: string; t: number; slut: number; spelare: MatchSpelare[]; vinnare?: number; vnamn?: string; glad: number; ledsen?: number; installd?: true; vinnLag?: 0 | 1 }
 function matchMinne(s: State, d: SportDef, m: Match, har: Person[], v: Map<Person, number>, vinn?: Person, vinnLag?: 0 | 1) {
-  const mm: MatchMinne = { nr: s.matchNr = (s.matchNr ?? 0) + 1, k: d.id, t: m.borjar ?? m.start, slut: s.now, glad: vinn ? Math.round(SPORT.gladje * 100) : 0,
+  const mm: MatchMinne = { nr: s.matchNr = (s.matchNr ?? 0) + 1, k: d.id, t: m.borjar ?? m.start, slut: s.now, glad: vinn ? Math.round(SPORT.gladje * 100) : 0, ...(vinn && har.length > 1 ? { ledsen: Math.round(SPORT.forlust * 100) } : {}),
     spelare: har.map(q => ({ id: q.id, namn: q.name, f: Math.round(q.skill[d.skill]), v: Math.round((v.get(q) ?? q.skill[d.skill]) * 10) / 10, ...(m.lag?.[q.id] !== undefined ? { l: m.lag[q.id] } : {}) })) };
   if (vinn) { mm.vinnare = vinn.id; mm.vnamn = vinn.name; } else mm.installd = true;
   if (vinnLag !== undefined) mm.vinnLag = vinnLag;
@@ -260,12 +261,10 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
   t.prog = (t.prog ?? 0) + h;
   count(s, 'sportTim', h);
 }
-// efter matchen (KLAR i steg.ts): glädjen hos den som spelade en stund
+// efter matchen (KLAR i steg.ts): den som är kvar när tiden är slut avgör den
 export function sportKlar(s: State, p: Person, t: Task) {
-  const d = t.tool ? SPORT_AV[t.tool] : undefined;
   const m = s.sport;
   if (m && m.start === t.ref && s.now >= m.slut) avgor(s, m, p);
-  if (d && (t.prog ?? 0) >= SPORT.gladjeMin) think(p, `Spelade ${d.namn.toLowerCase()}`, SPORT.gladje, s.now, SPORT.gladjeTim * HOUR);
 }
 // lagen (steg 10.7.14): när matchen börjar blandas de som är framme och delas varannan till två lag. I dragkampen och
 // snöbollskriget går var och en till sin sida, och matchen fortsätter medan de går
@@ -305,6 +304,9 @@ function avgor(s: State, m: Match, p: Person) {
   matchMinne(s, d, m, har, res, vinnare.reduce((a, q) => res.get(q)! > res.get(a)! ? q : a), lag);
   count(s, 'sportVinster');
   for (const q of vinnare) bastI(s, d, q);
+  // glad eller ledsen (steg 10.7.15): vinnarna och förlorarna bland dem som var med i slutet
+  const namn = d.namn.toLowerCase();
+  for (const q of har) if (vinnare.includes(q)) think(q, `Vann ${namn}`, SPORT.gladje, s.now, SPORT.gladjeTim * HOUR); else think(q, `Förlorade ${namn}`, -SPORT.forlust, s.now, SPORT.gladjeTim * HOUR);
 }
 function bastI(s: State, d: SportDef, bast: Person) {
   const n = (bast.sportVinst ??= {})[d.id] = (bast.sportVinst[d.id] ?? 0) + 1;

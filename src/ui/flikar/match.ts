@@ -30,7 +30,8 @@ export function matchHtml(m?: MatchMinne) {
     `<li title="Platsen">${iconImg('a_leka', 16)} I byn</li>`,
     `<li title="${esc(`Matchen varade i ${minuter(m.t, m.slut)} minuter`)}">{sym_klocka} ${minuter(m.t, m.slut)} min</li>`,
     m.vinnLag !== undefined ? `<li title="Laget som vann">{sym_medalj} Lag ${m.vinnLag + 1}</li>` : m.vnamn ? `<li title="Den som vann">{sym_medalj} ${vemLank(m.vinnare!, m.vnamn)}</li>` : '',
-    m.glad ? `<li title="${esc(`De som spelade blev gladare: +${m.glad} i humöret (av 100) i några timmar`)}">{sym_pil_upp} Glädje +${m.glad}</li>` : '',
+    m.glad ? `<li title="${esc(`De som vann blev gladare: +${m.glad} i humöret (av 100) i en timme`)}">{sym_pil_upp} +${m.glad}</li>` : '',
+    m.ledsen ? `<li title="${esc(`De som förlorade blev ledsna: -${m.ledsen} i humöret (av 100) i en timme`)}">{sym_pil_ned} -${m.ledsen}</li>` : '',
   ].join('');
   const grupp = (sp: MatchMinne['spelare'], rubrik: string, vann: boolean) => {
     const sum = sp.reduce((a, x) => a + x.f, 0);
