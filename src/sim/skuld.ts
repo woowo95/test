@@ -1,7 +1,10 @@
 // ---------- skulden och förlåtelsen (steg 10.8.1–10.8.3, Kunskap och lärdomar: Skuld och förlåtelse) ----------
 // Den som i ett utbrott gjort någon illa bär en skuld (humor.ts skapar den). Den tynger humöret och bleknar. Den som bär en
 // skuld väljer hellre den hen gjort illa att samtala med och ber om förlåtelse med en botgåva ur det hen har över
-import { ALDER, REL, ageOf, alive, count, getRel, isParent, living, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, count, getRel, isParent, living, log, stat, think } from './folk';
+import { HANDELSER, vittnen } from './rykten';
+import { personHand } from './personlogg';
+import { kronika } from './historik';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
 import { Anger, DAY, HOUR, Person, State } from './typer';
@@ -22,6 +25,10 @@ export const SKULD = balans('skuld', {
   be: 0.5, // chansen att be om förlåtelse i ett samtal som inte är ett gräl ...
   beDygn: 2, // ... som efter ett försök växer tillbaka med den här tidskonstanten (dygn, år i spelet)
   krav: 12, // botgåvans krav: så här mycket gånger allvaret, räknat i vad sakerna är värda för den som ger
+  // svaret (steg 10.8.3): chansen att förlåta är ja + jaEmp × (empatin − 10) / 10 + jaOp × relationen innan / 100
+  // − jaAllv × allvaret − jaIgen × gångerna förut, mellan jaMin och jaMax
+  ja: 0.7, jaEmp: 0.3, jaOp: 0.3, jaAllv: 0.4, jaIgen: 0.15, jaMin: 0.02, jaMax: 0.98,
+  kronika: 0.7, // förlåtelsen står i krönikan när det gällde så här allvarligt eller värre (misshandel, dråp)
 });
 // hur mycket p bryr sig om q: fullt om partnern, bästa vännen, en förälder och sitt eget barn, annars efter relationen innan
 const bryr = (p: Person, q: Person | undefined, op0: number) => q && (q.id === p.partner || q.id === p.bast || isParent(q, p) || isParent(p, q)) ? 1
@@ -106,13 +113,45 @@ export function beOmForlatelse(s: State, a: Person, b: Person) {
     return;
   }
 }
-// q tar emot botgåvan från p och förlåter
-function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
+// svaret (steg 10.8.3): q svarar direkt, innan gåvan byter ägare, efter sin empati, relationen innan, allvaret och hur
+// många gånger p gjort hen illa förut
+export function forlatChans(s: State, p: Person, q: Person, x: Anger) {
+  const igen = Math.max(0, (getRel(s, p, q).minns?.illa ?? 1) - 1);
+  return clamp(SKULD.ja + SKULD.jaEmp * (stat(q, 'empati', s.now) - 10) / 10 + SKULD.jaOp * x.op0 / 100 - SKULD.jaAllv * x.allv - SKULD.jaIgen * igen, SKULD.jaMin, SKULD.jaMax);
+}
+const hen = (p: Person) => p.sex === 'k' ? 'henne' : 'honom';
+export function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
+  if (rnd(s, 'skuld', q) >= forlatChans(s, p, q, x)) { // nej: inget byter ägare, skulden sitter kvar och bleknar
+    think(p, `${q.name} förlät mig inte`, -0.03, s.now, 12 * HOUR);
+    count(s, 'skuldNej');
+    return;
+  }
   const g = personPart(s, p), m = personPart(s, q);
   for (const w of gava) flytta(s, w, g, m);
   gavaKlar(s, g, m, gava, false);
-  think(q, `Fick ${varorNamn(gava)} av ${p.name} som bot`, 0.05, s.now, 12 * HOUR);
+  const vad = varorNamn(gava);
+  think(q, `Fick ${vad} av ${p.name} som bot`, 0.05, s.now, 12 * HOUR);
+  think(p, `${q.name} förlät mig`, 0.05, s.now, 12 * HOUR);
+  // relationen lagas halva vägen tillbaka till där den var innan
+  const r = getRel(s, p, q);
+  if (x.op0 > r.op) r.op = clamp(r.op + (x.op0 - r.op) / 2, -100, 100);
+  // ryktet om händelsen blir svagare hos den drabbade och hos dem som ser förlåtelsen
+  for (const w of vittnen(s, p, q)) for (const e of w.intryck ?? []) {
+    if (e.om !== p.id) continue;
+    const b = e.bev?.find(b => b.mot === q.id && Math.abs(b.t - x.t) < HOUR);
+    if (b) e.v = Math.max(0, e.v - HANDELSER[b.h].vikt / 2);
+  }
   p.angr = p.angr!.filter(e => e !== x);
   if (!p.angr.length) p.angr = undefined;
   count(s, 'skuldForlaten');
+  const text = `${q.name} förlät ${p.name}, som ${x.text} ${hen(q)}, och fick ${vad} som bot.`;
+  log(s, text, 'rel', [p.id, q.id]);
+  personHand(s, p, 'relation', `Bad ${q.name} om förlåtelse och blev förlåten.`);
+  personHand(s, q, 'relation', `Förlät ${p.name} och fick ${vad} som bot.`);
+  if (x.allv >= SKULD.kronika) kronika(s, text, 'forlat');
+}
+// q svarar på p:s bön om skulden x med den botgåva p har (scenarierna och gränssnittet)
+export function forlatSvar(s: State, p: Person, q: Person, x: Anger) {
+  const g = botGava(s, p, x.allv);
+  if (g) forlat(s, p, q, x, g);
 }

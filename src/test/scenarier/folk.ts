@@ -522,7 +522,7 @@ SCENARIER.bot = {
       klockan(t, 11);
       const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), o = nyInvanare(t, 'k', 30);
       p.x += 12; q.x = p.x + 1; q.y = p.y; o.x = p.x - 1; o.y = p.y;
-      p.pot.empati = 15; getRel(t, p, q).op = 30; getRel(t, p, o).op = 30;
+      p.pot.empati = 15; q.pot.empati = 20; getRel(t, p, q).op = 30; getRel(t, p, o).op = 30;
       for (const x of SIM.tingOf(t)) if (x.agare === p.id) x.agare = SIM.BYN;
       for (const k of SIM.SAK_LIST) { const n = SIM.ownsAmount(t, p, k); if (n > 0) SIM.ownMove(t, k, n, p.id, SIM.BYN); }
       if (silver) SIM.put(t, 'silver', silver, { [p.id]: silver });
@@ -530,7 +530,7 @@ SCENARIER.bot = {
       SIM.utbrottBorjar(t, p, 'sla', q);
       return { t, p, q, o };
     };
-    const samtal = (x: ReturnType<typeof by>, n: number) => { for (let i = 0; i < n && x.p.angr?.length; i++) { SIM.converse(x.t, x.p, [x.q]); } };
+    const samtal = (x: ReturnType<typeof by>, n: number) => { for (let i = 0; i < n && x.p.angr?.length; i++) { SIM.converse(x.t, x.p, [x.q]); x.t.now += 12 * SIM.HOUR; } };
     // valet: q väljs oftare än o
     const v = by(10, 2), wq = SIM.skuldVal(v.p, v.q), wo = SIM.skuldVal(v.p, v.o);
     // bönen: kniven (3,4) räcker inte ensam för slaget (4,8), så kniven och silver tills kravet är nått
@@ -555,6 +555,62 @@ SCENARIER.bot = {
       [`den som har för lite ger allt hen har över (${fickB} silver, ${alltB} kvar)`, fickB === 3 && alltB === 0 && !b.p.angr],
       [`den som inget har över ber inte (skulden finns kvar: ${c.p.angr?.length ?? 0})`, c.p.angr?.length === 1 && !c.p.angr[0]!.bad],
       [`en död kan ingen be (${d.p.angr?.[0]?.bad === undefined ? 'bad inte' : 'bad'})`, d.p.angr?.[0]?.bad === undefined],
+    ];
+  },
+};
+SCENARIER.forlatelse = {
+  text: 'Förlåtelsen (steg 10.8.3): den som blir ombedd svarar direkt efter sin empati, relationen innan, allvaret och hur många gånger det hänt förut. Vid ja tar hen emot gåvan, relationen lagas halva vägen tillbaka, skulden försvinner och ryktet om händelsen blir svagare hos hen och hos dem som ser det; misshandel står i krönikan. Vid nej byter inget ägare och skulden sitter kvar',
+  kor: () => {
+    // q har empatin emp och tyckte op om p innan; p gjorde k mot q, ganger gånger. w står bredvid och ser det
+    const by = (seed: number, emp: number, op: number, k: string, ganger = 1) => {
+      const t = createState(seed, START);
+      klockan(t, 11);
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), w = nyInvanare(t, 'k', 40);
+      p.x += 12; q.x = p.x + 1; q.y = p.y; w.x = p.x + 2; w.y = p.y + 1;
+      p.pot.empati = 15; q.pot.empati = emp; if (q.anlag) q.anlag.empati = emp;
+      for (let i = 0; i < ganger; i++) { getRel(t, p, q).op = op; SIM.utbrottBorjar(t, p, k as SIM.Utbrott, q); if (i < ganger - 1) p.angr = undefined; }
+      SIM.put(t, 'silver', 20, { [p.id]: 20 });
+      return { t, p, q, w };
+    };
+    // andelarna: många byar, en bön var
+    const andel = (emp: number, op: number, k: string, ganger = 1) => {
+      let ja = 0, n = 0;
+      for (let i = 0; i < 60; i++) {
+        const x = by(100 + i, emp, op, k, ganger);
+        if (!x.p.angr?.length) continue;
+        n++; SIM.forlatSvar(x.t, x.p, x.q, x.p.angr[0]!);
+        if (!x.p.angr) ja++;
+      }
+      return n ? ja / n : 0;
+    };
+    const snall = andel(18, 60, 'elak'), hard = andel(3, -20, 'misshandel'), mitt = andel(10, 20, 'sla'), igen = andel(10, 20, 'sla', 3);
+    // ett ja: relationen, ryktet, loggen och krönikan
+    let jaX: ReturnType<typeof by> | undefined, op1 = 0, op2 = 0, v1 = 0, v2 = 0, silverQ = 0;
+    for (let i = 0; i < 40 && !jaX; i++) {
+      const x = by(200 + i, 20, 60, 'misshandel'), a = x.p.angr?.[0];
+      if (!a) continue;
+      op1 = getRel(x.t, x.p, x.q).op; v1 = x.w.intryck?.find(e => e.om === x.p.id)?.v ?? 0;
+      SIM.forlatSvar(x.t, x.p, x.q, a);
+      if (!x.p.angr) { jaX = x; op2 = getRel(x.t, x.p, x.q).op; v2 = x.w.intryck?.find(e => e.om === x.p.id)?.v ?? 0; silverQ = SIM.ownsAmount(x.t, x.q, 'silver'); }
+    }
+    const kron = jaX?.t.hist?.kronika?.some(r => /förlät/.test(r[1])) ?? false;
+    const plogg = jaX?.p.hand?.some(r => /förlåten/.test(r[2])) ?? false;
+    // ett nej
+    let nejX: ReturnType<typeof by> | undefined, silverNej = -1;
+    for (let i = 0; i < 60 && !nejX; i++) {
+      const x = by(300 + i, 2, -40, 'misshandel'), a = x.p.angr?.[0];
+      if (!a) continue;
+      SIM.forlatSvar(x.t, x.p, x.q, a);
+      if (x.p.angr) { nejX = x; silverNej = SIM.ownsAmount(x.t, x.q, 'silver'); }
+    }
+    const nejTanke = nejX?.p.thoughts.some(t => /förlät mig inte/.test(t.text)) ?? false;
+    return [
+      [`den empatiska vännen förlåter oftare (${pct(snall)}) än den hårda efter misshandel (${pct(hard)})`, snall > 0.8 && hard < 0.3],
+      [`tredje gången förlåts mer sällan (${pct(igen)}) än första (${pct(mitt)})`, igen < mitt],
+      [`ett ja lagar relationen halva vägen (${op1.toFixed(0)} → ${op2.toFixed(0)}, innan 60), och den drabbade fick silver (${silverQ})`, !!jaX && Math.abs(op2 - (op1 + (60 - op1) / 2)) < 1 && silverQ > 0],
+      [`ryktet blir svagare hos den som såg det (${v1.toFixed(2)} → ${v2.toFixed(2)})`, v1 > 0 && v2 < v1],
+      [`misshandel står i krönikan (${kron}) och i personloggen (${plogg})`, kron && plogg],
+      [`ett nej: inget byter ägare (${silverNej}), skulden sitter kvar och den som bad tänker på det (${nejTanke})`, !!nejX && silverNej === 0 && nejTanke],
     ];
   },
 };
