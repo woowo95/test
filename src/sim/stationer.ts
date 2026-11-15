@@ -572,19 +572,19 @@ export interface Rekt { x: number; y: number; w: number; h: number }
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
 // borden och scenen står hellre i samlingssalen när den har plats (steg 7.2.7 och 7.2.8)
 const siteSal = (s: State, k: string) => { const sal = stationDef(k)?.fahus ? fahusUtanKrubba(s)[0] : stationDef(k)?.langhus ? langhusRum(s) : (k === 'scen' || stationDef(k)?.platser) ? samlingRum(s) : undefined; return sal && siteInne(s, k, sal); }; // långhusets möbler i långhuset (steg 10.2.68)
-export const stationSite = (s: State, k: string, p?: Person) => {
-  if (!platsMinne) return sokSite(s, k, p);
-  const q = `${k}|${p?.id ?? ''}`;
-  if (!platsMinne.has(q)) platsMinne.set(q, sokSite(s, k, p));
-  return platsMinne.get(q);
-};
-// medan f körs ger samma fråga om platsen samma svar utan att söka igen: för projektvalet, som frågar om p kan bygga
-// (kanBygga) och sedan var (stationSpot) utan att något i byn ändras emellan (bastaProjekt i projekt.ts)
-let platsMinne: Map<string, ReturnType<typeof sokSite>> | undefined;
+export const stationSite = (s: State, k: string, p?: Person) => iPlatsMinne(`${k}|${p?.id ?? ''}`, () => sokSite(s, k, p));
+// medan f körs ger samma fråga om en plats (q) samma svar utan att söka igen: för projektvalet, som frågar om p kan göra
+// projektet (kan) och sedan var (uppgift) utan att något i byn ändras emellan (bastaProjekt i projekt.ts). Utanför söks det varje gång
+let platsMinne: Map<string, unknown> | undefined;
 export function medPlatsMinne<T>(f: () => T): T {
   if (platsMinne) return f();
   platsMinne = new Map();
   try { return f(); } finally { platsMinne = undefined; }
+}
+export function iPlatsMinne<T>(q: string, f: () => T): T {
+  if (!platsMinne) return f();
+  if (!platsMinne.has(q)) platsMinne.set(q, f());
+  return platsMinne.get(q) as T;
 }
 const sokSite = (s: State, k: string, p?: Person) => stationDef(k)?.tro ? siteTro(s, k, p) : siteSal(s, k) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUtkant(s, k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
 // trons möbler (steg 10.3.19): i rummet i trons hus, för den troende p

@@ -25,7 +25,8 @@ export const LERA = balans('lera', {
 export const leraBrist = (s: State) => { const n = materialBuffert(s, 'lera'); return n > 0 ? clamp(1 - amountOf(s, 'lera') / n, 0, 1) : 0; };
 // den rikaste platsen nära byn, och närmast vid lika
 const LERLAGER = ['lera'] as const;
-export function leraPlats(s: State) {
+export const leraPlats = (s: State) => iPlatsMinne('lera', () => sokLera(s)); // en gång i projektvalet (medPlatsMinne i stationer.ts)
+function sokLera(s: State) {
   const m = bynsMitt(s), o = omrade(s), R = LERA.sokR + Math.ceil(Math.sqrt(o.n / Math.PI));
   let bast: { x: number; y: number } | undefined, bv = LERA.minst;
   const rik = richnessFor(s, LERLAGER); // richness för många rutor på en gång (fynd.ts): samma tal
@@ -48,5 +49,6 @@ export function leraGravd(s: State, p: Person, t: Task) {
   if (forstaGang(s, 'leraForsta')) log(s, `${p.name} grävde lera vid stranden.`, 'world', [p.id]);
 }
 import { NARA } from './nara';
+import { iPlatsMinne } from './stationer';
 // (teknikernas krav frågar ofta; platsen räknas om en gång i timmen, steg 10.2.21)
 NARA.lera = s => !!leraPlats(s); // leran att gräva nära byn räknas som till hands (naraByn i fynd.ts, steg 10.2.40)
