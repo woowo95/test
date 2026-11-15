@@ -1122,7 +1122,7 @@ SCENARIER.latrin = {
     // i en by som lever: med benspaden och tekniken gräver byn en latrin och går dit, och spaden slits
     const b = createState(1, START); klockan(b); tandEld(b);
     for (const r of b.people) r.tek = { ...r.tek, benspade: 1, latrin: 1 };
-    setAmount(b, 'benspade', 1); tidyTools(b); setMat(b, { bar: 100 }); setAmount(b, 'ved', 40);
+    setAmount(b, 'benspade', 3); tidyTools(b); setMat(b, { bar: 100 }); setAmount(b, 'ved', 40); // (tre spadar: den som samlar rötter sliter ut en spade på 40 saker, och en ska finnas kvar till latrinen)
     let h = 0; while (!stationerOf(b).some(t => t.k === 'latrin' && isKlar(t)) && h < 48) { kor(b, 1); h++; }
     const byggd = stationerOf(b).some(t => t.k === 'latrin' && isKlar(t));
     kor(b, 24);

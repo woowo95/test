@@ -2295,6 +2295,7 @@ SCENARIER.koket = {
   kor: () => {
     const s = createState(1, START); klockan(s); // (en by som bygger ett andra hus i stället för att bygga ut det första)
     medHus(s); for (let j = 0; j < 6; j++) nyInvanare(s, j % 2 ? 'm' : 'k', 25);
+    setFood(s, 800); // (mat i förrådet, så att Byggplanen bygger fler hus hur det än går med samlandet)
     for (let k = 0; k < 12 * 12; k++) step(s, 300); // (ett behov ska ha funnits en stund innan Byggplanen bygger)
     s.byggSok = undefined; medHus(s); // två hus
     for (const h of SIM.housesOf(s)) h.ag = undefined; // (byns hus: byns stationer ställs inte i en familjs hus)
