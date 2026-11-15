@@ -196,6 +196,11 @@ export function villHaMer(s: State, k: string) {
 export const villHaAv = (s: State, k: Materialslag) => Math.ceil(materialBuffert(s, k) - 1e-9);
 export const underBuffert = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra < materialBuffert(s, k);
 export const overTak = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra >= materialTak(s, k);
+// båda svaren på en gång (overTak och underBuffert), med bufferten räknad en gång: för den som frågar båda i varje steg (forageItems i eld.ts)
+export function overOchUnder(s: State, k: Materialslag, extra = 0) {
+  const m = s.arbBehov?.mal?.[k], b = materialBuffert(s, k, m), har = amountOf(s, k) + extra;
+  return { over: har >= Math.max(b, Math.min(FORRAD.materialMatt * b, m?.t ?? Infinity)), under: har < b };
+}
 
 // ---------- redskapen och stationerna (steg 6.2.17) ----------
 // Bufferten för ett redskap är hur många byn vill ha av gruppen (GORS i redskap.ts). Under den är redskapet ett projekt

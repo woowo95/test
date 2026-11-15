@@ -4,7 +4,7 @@ import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
-import { Materialslag, forbrukat, overTak, underBuffert } from './forradsmal';
+import { Materialslag, forbrukat, overOchUnder, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
@@ -409,7 +409,7 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   const sk = kunnighet(p.skill.samla);
   const got: Record<string, number> = {};
   // under bufferten plockas materialet, och den som hämtar det plockar till taket men aldrig över (FORRADSMAL, steg 6.2.14)
-  const plocka = (k: Materialslag) => !overTak(s, k, p.task?.items?.[k] ?? 0) && (underBuffert(s, k, p.task?.items?.[k] ?? 0) || p.task?.hamtar === k);
+  const plocka = (k: Materialslag) => { const q = overOchUnder(s, k, p.task?.items?.[k] ?? 0); return !q.over && (q.under || p.task?.hamtar === k); };
   // tändmaterialet är hela saker på rutan (steg 9.3.4): arbetet mot nästa sak ligger hos personen, och en hel sak tas från rutan
   // där hen är när arbetet räcker. Finns inget kvar där blir det inget, och arbetet väntar (högst en sak)
   if (plocka('torrgras')) tandTa(s, p, got, 'torrgras', ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer);
