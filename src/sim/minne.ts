@@ -19,6 +19,8 @@ import { forSmutsigt, vattenSmuts } from './smuts';
 import { bitAt } from './byggnad';
 import { lognFaktor, skvaller } from './rykten';
 import { delaVarsel } from './motgang';
+import { klanById, klanPris } from './klaner';
+import { sakNamn } from './saker';
 
 // ---------- balanstal (regel 8) ----------
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
@@ -83,6 +85,12 @@ export const MINNE = balans('minne', {
   kunskapBas: 0.5,
   kunskapMinne: 10,
   kunskapBort: 0.03, // en kunskap som bleknat under detta är glömd
+  // priserna hos grannklanerna som lärdomar (steg 10.5.15): a = klanens id, sl = slaget, v = påslaget (klanens pris)
+  prisPrat: 0.6, // handlarens småprat när det går bra, och främlingen som pratat med ledaren, ger ett pris så här säkert ...
+  prisGranne: 0.3, // ... med den här chansen om en annan klan, och då ett led längre bort (säkerheten gånger prisPrat en gång till)
+  prisFel: 0.25, // ett nytt pris som skiljer så här mycket från det man trodde är en nyhet
+  prisGlom: 6, // priser glöms så här många gånger så långsamt som platser
+  prisMax: 8, // så många priser minns man högst (utöver max); det minst säkra trängs undan
 });
 
 // Kunskap och lärdomar.
@@ -116,6 +124,7 @@ const LDEF = {
   fara: { vad: '', namn: 'farliga platser', ikon: 'l_fara', tecken: '⚠️', kat: 'tro' },
   vatten: { vad: 'vatten', namn: 'rent och smutsigt vatten', ikon: 'a_vatten', tecken: '💧' },
   flod: { vad: 'högvattnet', namn: 'högvattnet', ikon: 'm_oversvamning', tecken: '🌊' }, // hur högt en översvämning nådde (steg 3.8.7, flod.ts): v = rutor upp på land
+  pris: { vad: 'priser', namn: 'priser hos grannklanerna', ikon: 'silver', tecken: '💰' }, // vad en grannklan betalar (steg 10.5.15): a = klanens id, sl = slaget, v = påslaget på grundvärdet
 } satisfies Record<string, LardomDef>;
 export type LKind = keyof typeof LDEF;
 export const LARDOMAR: Record<LKind, LardomDef> = LDEF;
@@ -148,7 +157,7 @@ function iTopp(v: number) {
 function areaCalc(s: State, k: LKind, a: number, mode: Mode) {
   const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA, x1 = Math.min(W, x0 + AREA), y1 = Math.min(H, y0 + AREA);
   if (k === 'flinta') { const sd = stoneDist(s.seed); let v = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sd[y * W + x] <= FANGST.stenNara) v = 1; return v; }
-  if (k === 'fara' || k === 'flod') return 0;
+  if (k === 'fara' || k === 'flod' || k === 'pris') return 0;
   if (k === 'vatten') { const sh = shoreOf(s.seed); let v = 0, n = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sh[y * W + x]) { v += vattenSmuts(s, y * W + x); n++; } return n ? v / n : 0; } // snittet längs stranden, med toa-smutsen (steg 2.7.2)
   const fn = mode === 'nu' ? undefined : mode === 'vaxer' ? (i: number) => vaxerAt(s, k, i) : (i: number) => synsOf(s, k, i);
   nTopp = 0;
@@ -159,16 +168,24 @@ function areaCalc(s: State, k: LKind, a: number, mode: Mode) {
 }
 
 // ---------- lärdomar ----------
-export const findL = (p: Person, k: LKind, a: number) => p.lardomar?.find(l => l.k === k && l.a === a);
+export const findL = (p: Person, k: LKind, a: number, sl?: string) => p.lardomar?.find(l => l.k === k && l.a === a && l.sl === sl);
 function trim(s: State, p: Person) {
   const L = p.lardomar!;
-  if (L.length <= MINNE.max) return;
+  const np = L.reduce((n, l) => n + (l.k === 'pris' ? 1 : 0), 0);
+  if (np > MINNE.prisMax) { // priserna har ett eget tak (steg 10.5.15): det minst säkra, och av lika säkra det äldsta, trängs undan
+    const P = L.filter(l => l.k === 'pris').sort((x, y) => y.c - x.c || y.t - x.t), bort = new Set(P.slice(MINNE.prisMax));
+    count(s, 'glomt', bort.size);
+    p.lardomar = L.filter(l => !bort.has(l));
+    return trim(s, p);
+  }
+  if (L.length - np <= MINNE.max) return;
   // det som är värt mest behålls (steg 10.2.42): säkerheten gånger vikten för slaget, där rädslorna, högvattnet (steg 3.8.7) och
   // vattnet väger mer, och av lika värda den nyaste
   const vikt = (l: Lardom) => l.c * (l.k === 'fara' || l.k === 'flod' ? MINNE.faraVikt : l.k === 'vatten' ? MINNE.vattenVikt : 1);
-  L.sort((x, y) => vikt(y) - vikt(x) || y.t - x.t);
-  count(s, 'glomt', L.length - MINNE.max); // det minst säkra trängs undan
-  L.length = MINNE.max;
+  const P = L.filter(l => l.k === 'pris'), A = L.filter(l => l.k !== 'pris').sort((x, y) => vikt(y) - vikt(x) || y.t - x.t);
+  count(s, 'glomt', A.length - MINNE.max); // det minst säkra trängs undan
+  A.length = MINNE.max;
+  p.lardomar = [...A, ...P];
 }
 // hur mycket ett värde är jämfört med en rik plats av samma slag (1 ≈ gott om)
 const relOf = (k: LKind, v: number) => arFynd(k) ? v / (toppOf(k) * MINNE.rik) : v;
@@ -344,7 +361,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   const talk = (MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (slag.dela ? MINNE[slag.dela] : 0)) * (arBast(a, b) ? RELT.bastBerattar : 1);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
-    const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'flinta' || l.k === 'vatten' || l.k === 'flod' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
+    const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'pris' ? (nyhet(s, l) ? 2 : 1) : l.k === 'flinta' || l.k === 'vatten' || l.k === 'flod' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
     tell(s, a, b, pickViktat(s, a.lardomar, w, 'minne', a), r);
   }
   skvaller(s, a, b, r, slag.dela === 'delaBerattelse'); // och om vad hen tycker om andra (steg 3.3, rykten.ts)
@@ -364,15 +381,16 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
 }
 // en rättelse är en nyhet i två dygn
 const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINNE.nyhetDygn * DAY;
-function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
+export function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
-  delade(l.k === 'fara' ? 'fara' : 'plats', LARDOMAR[l.k].ikon, l.k === 'fara' ? 'en farlig plats' : LARDOMAR[l.k].vad); // samtalets ämne (steg 3.9.5)
+  if (l.k === 'pris') delade('pris', 'silver', prisOm(s, l)); // samtalets ämne (steg 3.9.5, 10.5.15)
+  else delade(l.k === 'fara' ? 'fara' : 'plats', LARDOMAR[l.k].ikon, l.k === 'fara' ? 'en farlig plats' : LARDOMAR[l.k].vad); // samtalets ämne (steg 3.9.5)
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a); // mindre på en lögnare (steg 3.3.3)
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt
-  const v = l.k === 'flod' ? l.v : clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - MINNE.overFara) * MINNE.overFaraSpann : 1 + (rnd(s, 'minne', a) - MINNE.over) * MINNE.overSpann), 0, l.k === 'fara' ? MINNE.vMaxFara : l.k === 'vatten' ? 1 : MINNE.vMax);
-  const e = findL(b, l.k, l.a);
+  const v = l.k === 'flod' || l.k === 'pris' ? l.v : clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - MINNE.overFara) * MINNE.overFaraSpann : 1 + (rnd(s, 'minne', a) - MINNE.over) * MINNE.overSpann), 0, l.k === 'fara' ? MINNE.vMaxFara : l.k === 'vatten' ? 1 : MINNE.vMax);
+  const e = findL(b, l.k, l.a, l.sl);
   if (e && l.k === 'flod') { e.v = Math.max(e.v, v); e.c = Math.max(e.c, c); return; } // hur högt vattnet nådde: det högsta gäller
   if (e) {
     if (e.src === undefined && e.led === 0 && e.c >= c && !nyhet(s, l)) return; // egen upplevelse väger tyngre, utom mot en nyhet
@@ -385,7 +403,7 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
     if (l.om && !e.om) e.om = l.om;
     return;
   }
-  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: l.t, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
+  (b.lardomar ??= []).push({ k: l.k, a: l.a, ...(l.sl !== undefined ? { sl: l.sl } : {}), v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: l.t, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   trim(s, b);
   count(s, 'berattat'); gjort(s, a, 'berattat');
   if (l.k === 'fara' && l.om && forstaGang(s, 'rykte' + l.a + ':' + l.om)) log(s, `Berättelsen om hur ${l.om.replace(' där', '')} sprids i byn. Fler blir rädda för ${placeName(s, l.a)}.`, 'world', [a.id, b.id]);
@@ -401,7 +419,7 @@ export function forget(s: State, hours: number) {
     if (p.lardomar) {
       const tau = 24 * (MINNE.glomBas + m / MINNE.glomMinne); // 3–13 dygn
       p.lardomar = p.lardomar.filter(l => {
-        l.c *= Math.exp(-hours / (tau * (l.k === 'fara' ? MINNE.glomFara : l.k === 'flod' ? MINNE.glomFlod : 1)));
+        l.c *= Math.exp(-hours / (tau * (l.k === 'fara' ? MINNE.glomFara : l.k === 'flod' ? MINNE.glomFlod : l.k === 'pris' ? MINNE.prisGlom : 1)));
         if (l.c >= MINNE.glomGrans) return true;
         count(s, 'glomt'); return false;
       });
@@ -435,6 +453,7 @@ const vattenOrd = (v: number) => v < 0.2 ? 'Rent vatten' : v < 0.5 ? 'Lite gruml
 const amount = (v: number) => v >= 0.7 ? 'Gott om' : v >= 0.35 ? 'En del' : v >= 0.1 ? 'Lite' : 'Nästan inga';
 // en lärdom i ord, med hur säker personen är, varifrån den kommer och om den stämmer. what är texten utan platsen.
 export function describe(s: State, l: Lardom) {
+  if (l.k === 'pris') return describePris(s, l);
   const place = placeName(s, l.a);
   const rel = (v: number) => relOf(l.k, v);
   const what0 = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns' : l.k === 'vatten' ? vattenOrd(l.v)
@@ -456,4 +475,34 @@ export function describe(s: State, l: Lardom) {
     else if (rel(real) > rel(l.v) + 0.35) wrong = 'det finns mer än så';
   }
   return { text, what, place, src, sure, wrong };
+}
+
+// ---------- priserna som lärdomar (steg 10.5.15, "Ekonomi och handel (Priser som lärdomar)" i designdokumentet) ----------
+// Byn minns vad en grannklan betalar för ett slag: klanen (a) och slaget (sl) är nyckeln, påslaget på grundvärdet (v, klanens
+// pris) värdet. Den som handlat med klanens handlare vet priset på det som byttes; småpratet med handlaren och främlingen som
+// pratat med ledaren ger ett osäkrare pris. Priserna sprids i samtal oförändrade, glöms långsamt och har ett eget tak
+const klanNamn = (s: State, id: number) => klanById(s, id)?.namn ?? 'en grannklan';
+const prisOm = (s: State, l: Lardom) => `vad ${klanNamn(s, l.a)} betalar för ${sakNamn(l.sl!).toLowerCase()}`;
+// p lär sig klanens pris på slaget med säkerheten c (1 = egen affär), av src (den som berättade) eller själv
+export function larPris(s: State, p: Person, klan: number, sl: string, c: number, src?: number) {
+  const v = klanPris(klanById(s, klan), sl), e = findL(p, 'pris', klan, sl), fel = !!e && Math.abs(e.v - v) >= MINNE.prisFel - 1e-9;
+  if (e) {
+    if (c < e.c && !fel) { e.c = Math.min(1, e.c + MINNE.berattaStark * (1 - e.c)); return; } // det man redan tror säkrare stärks bara
+    e.v = v; e.c = c; e.t = s.now; e.src = src; e.led = src === undefined ? 0 : 1;
+    if (fel) { e.ny = s.now; count(s, 'prisRattat'); } else delete e.ny;
+    return;
+  }
+  (p.lardomar ??= []).push({ k: 'pris', a: klan, sl, v, c, t: s.now, ...(src !== undefined ? { src } : {}), led: src === undefined ? 0 : 1 });
+  count(s, 'prisLart');
+  trim(s, p);
+}
+// det p tror att klanen betalar för slaget, gånger grundvärdet: lärdomen vägd med säkerheten, annars 1
+export const trorPris = (p: Person | undefined, klan: number, sl: string) => { const l = p && findL(p, 'pris', klan, sl); return l ? l.c * l.v + (1 - l.c) : 1; };
+function describePris(s: State, l: Lardom) {
+  const place = klanNamn(s, l.a), namn = sakNamn(l.sl!).toLowerCase();
+  const what = (l.v >= 1.15 ? `Betalar bra för ${namn}` : l.v <= 0.85 ? `Betalar dåligt för ${namn}` : `Vanligt pris för ${namn}`) + ` (${Math.round(l.v * 100)} %)` + (nyhet(s, l) ? ', ett annat pris än man trott' : '');
+  const src = l.src === undefined ? (l.led ? 'fick höra om det' : 'egen affär') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som visste` : ''}`;
+  const sure = l.c >= 0.75 ? 'säker' : l.c >= 0.4 ? 'ganska säker' : 'osäker';
+  const wrong = Math.abs(klanPris(klanById(s, l.a), l.sl!) - l.v) >= MINNE.prisFel - 1e-9 ? 'stämmer inte längre' : '';
+  return { text: `${what} hos ${place}`, what, place, src, sure, wrong };
 }

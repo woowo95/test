@@ -562,11 +562,11 @@ function knowledgeHtml(p: Person) {
 function lardomHtml(p: Person, ls: Lardom[]) {
   const slag = [...new Set(ls.map(l => l.k))], id = (k: LKind) => `ld-${p.id}-${k}`;
   const sym = slag.map(k => {
-    const d = LARDOMAR[k], n = ls.filter(l => l.k === k), fel = n.some(l => describe(s, l).wrong), title = k === 'flod' ? `${cap(d.namn)}: ${describe(s, n[0]).what.toLowerCase()}` : `${cap(d.namn)}: ${n.length} ${n.length === 1 ? 'plats' : 'platser'}${fel ? ', något stämmer inte' : ''}`; // högvattnet: hur högt det nådde (steg 3.8.7)
+    const d = LARDOMAR[k], n = ls.filter(l => l.k === k), fel = n.some(l => describe(s, l).wrong), title = k === 'flod' ? `${cap(d.namn)}: ${describe(s, n[0]).what.toLowerCase()}` : `${cap(d.namn)}: ${n.length} ${k === 'pris' ? (n.length === 1 ? 'pris' : 'priser') : n.length === 1 ? 'plats' : 'platser'}${fel ? ', något stämmer inte' : ''}`; // högvattnet: hur högt det nådde (steg 3.8.7)
     return `<button type="button" class="tnod liten kan${hjalpOppen(id(k)) ? ' sel' : ''}" data-hjalp="${id(k)}" data-hjalp-grupp="ld-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${tecknet(d.ikon, d.tecken)}<span class="antal">${n.length}</span>${fel ? '<span class="brist">!</span>' : ''}</button>`;
   }).join('');
   const k = slag.find(x => hjalpOppen(id(x)));
-  const lista = k ? `<ul class="lard">${groups(ls.filter(l => l.k === k)).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, g[0]).place))}</b>${g[0].k === 'flod' ? '' : `<button type="button" class="lnal${ui.nal?.a === g[0].a ? ' sel' : ''}" data-lnal="${g[0].a}" title="Visa platsen på kartan" aria-label="Visa platsen på kartan">{sym_oga}</button>`}${g.map(l => { const d = describe(s, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '';
+  const lista = k ? `<ul class="lard">${groups(ls.filter(l => l.k === k)).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, g[0]).place))}</b>${g[0].k === 'flod' || g[0].k === 'pris' ? '' : `<button type="button" class="lnal${ui.nal?.a === g[0].a ? ' sel' : ''}" data-lnal="${g[0].a}" title="Visa platsen på kartan" aria-label="Visa platsen på kartan">{sym_oga}</button>`}${g.map(l => { const d = describe(s, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '';
   return `<div class="tekrad">${sym}</div>${lista}`;
 }
 // vad personen brukar ägna sin vakna tid åt, i grupper efter slaget av arbete (SLAG); en handling utan slag står för sig.

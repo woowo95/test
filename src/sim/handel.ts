@@ -9,7 +9,7 @@ import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
 import { bitAt, blocked, freeNear } from './byggnad';
 import { ledig } from './stationer';
-import { clamp, rnd } from './slump';
+import { clamp, pick, rnd } from './slump';
 import { iIstiden, ageIndex, hourOf } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
@@ -25,7 +25,8 @@ import { dropSpot, put, stacksOf, use } from './lager';
 import { sumOf } from './egendom';
 import { ledareOf } from './styre';
 import { kanterna } from './varg';
-import { KLAN, andraInst, basstaPris, handlarKlan, klanById, klanPris, klanerOf, prisAndras } from './klaner';
+import { larPris, MINNE, trorPris } from './minne';
+import { KLAN, andraInst, handlarKlan, klanById, klanPris, klanerOf, prisAndras } from './klaner';
 import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
 import { handelsArg } from './handelsber';
@@ -98,8 +99,22 @@ export const HANDLAR_UTR: Record<string, { namn: string; vikt: number }> = {
 // (TAKTER). Det som görs är tillverkarens och säljs i hens tur som annat överflöd (saljaAv); saken har ingen märkning
 export const HANDELSVAROR: readonly string[] = ['rep', 'kniv', 'yxa', 'spjut', 'metspo', 'korg']; // ett material eller en grupp av redskap (GORS)
 const slagAv = (g: string) => GORS[g] ?? [g];
-// priset hos den grannklan som betalar bäst bland dem som skickar handlare, gånger grundvärdet (steg 10.5.14)
-export const handelsPris = (s: State, k: string) => basstaPris(s, k);
+// priset hos den grannklan som betalar bäst bland dem som skickar handlare, gånger grundvärdet (steg 10.5.14), så som den som
+// handlar för byn tror att det är (trorPris, steg 10.5.15)
+export const handelsPris = (s: State, k: string) => { const p = forByn(s); let b = 0, n = 0; for (const kl of klanerOf(s)) if (kl.inst > KLAN.handelMin) { b = Math.max(b, trorPris(p, kl.id, k)); n++; } return n ? b : 1; };
+// slagen ett pris i samtal kan handla om: byns handelsvaror och det handlaren har med sig
+let prisSlagen: string[] | undefined;
+const handelsSlag = () => prisSlagen ??= HANDELSVAROR.flatMap(slagAv).filter(k => grundvarde(k) > 0);
+// gästen g från en grannklan berättar för p vad ett slag kostar hos sin klan, eller med chansen MINNE.prisGranne hos en annan
+// klan och då ett led längre bort (steg 10.5.15)
+export function prisIPrat(s: State, p: Person, g: Person, extra: string[] = []) {
+  const hem = g.gast?.klan, kl = klanerOf(s);
+  if (hem === undefined || !kl.length || p.gast) return;
+  const slag = [...new Set([...handelsSlag(), ...extra.filter(k => k !== 'silver' && grundvarde(k) > 0)])];
+  const sl = pick(s, slag, 'handel'), annan = kl.length > 1 && rnd(s, 'handel', p) < MINNE.prisGranne;
+  const k = annan ? pick(s, kl.filter(x => x.id !== hem), 'handel') : klanById(s, hem);
+  if (k) larPris(s, p, k.id, sl, annan ? MINNE.prisPrat * MINNE.prisPrat : MINNE.prisPrat, g.id);
+}
 // arbetstimmarna för saken och dess material (materialet räknat i sitt grundvärde, som är arbetstimmar)
 const timmarFor = (k: string) => { let t = (SAKER[k]?.skaffa?.min ?? 60) / 60; for (const [m, n] of Object.entries(SAKER[k]?.skaffa?.av ?? {})) t += n * grundvarde(m) / ARBETE; return t; };
 export const silverPerTimme = (s: State, k: string) => grundvarde(k) * handelsPris(s, k) / Math.max(1e-9, timmarFor(k));
@@ -435,6 +450,7 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
     const out = (stat(p, 'empati', s.now) + hp(s, h).skill.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
     think(p, out > 0 ? `Småpratade med ${hp(s, h).name}` : `Småpratet med ${hp(s, h).name} gick trögt`, out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, s.now, HANDEL.pratTim * HOUR);
     events?.push({ a: p.id, b: h.id, kind: 'småprat', good: out > 0, t: s.now });
+    if (out > 0) prisIPrat(s, p, hp(s, h), h.varor.map(w => w.k)); // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15)
     count(s, 'handlarPrat');
   }
 }
@@ -512,6 +528,9 @@ vidByte.push((s, m, g, fatt, betal, minne) => {
   if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
   const k = klanById(s, hp(s, h).gast!.klan); // ett byte gör klanen lite vänligare (steg 4.4.3)
   if (k) andraInst(k, KLAN.handel);
+  // den som handlade lär sig klanens pris på det som byttes (steg 10.5.15), före prisets ändring: det var det priset som gällde
+  const kund = kop ? g : m, kp = kund.p ?? (h.affar?.vem !== undefined ? byId(s, h.affar.vem) : undefined);
+  if (k && kp) for (const w of [...fatt, ...betal]) if (w.k !== 'silver' && grundvarde(w.k) > 0) larPris(s, kp, k.id, w.k, 1);
   // det handlaren köpte blir billigare hos klanen och det hen sålde dyrare (steg 10.5.14)
   if (k) for (const [v, upp] of [[kop ? fatt : betal, -1], [kop ? betal : fatt, 1]] as const) for (const w of v) prisAndras(k, w.k, (w.t ? 1 : w.n) * vardeOf(w), upp);
 });

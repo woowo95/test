@@ -1257,6 +1257,12 @@ const MDEF = {
     '{namn} sa till {med} att det finns {om} på ett ställe {hen} vet.',
     '{namn} och {med} pratade om {om} och var det brukar finnas.',
   ],
+  p_pris: [
+    '{namn} berättade för {med} {om}.',
+    '{namn} och {med} pratade om {om}.',
+    '{med} fick veta av {namn} {om}.',
+    '{namn} och {med} undrade {om}.',
+  ],
   p_langtan: [
     '{namn} sa till {med} att {hen} längtar efter {om}.',
     '{namn} och {med} pratade om hur gott det vore med {om}.',
@@ -2628,6 +2634,7 @@ const ADEF = {
   teknik: { prio: 60, namn: 'En teknik' },
   kunskap: { prio: 55, namn: 'Något man kan' },
   plats: { prio: 50, namn: 'En plats' },
+  pris: { prio: 45, namn: 'Ett pris', ikon: 'silver' },
   langtan: { prio: 40, namn: 'Det man längtar efter', ikon: 's_mat' },
   karlek: { prio: 30, namn: 'Kärlek' },
   trost: { prio: 25, namn: 'Tröst', ikon: 's_trost' },

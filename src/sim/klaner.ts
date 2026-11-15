@@ -179,5 +179,3 @@ export function prisAndras(k: Klan, slag: string, varde: number, upp: 1 | -1) {
   if (slag === 'silver' || !(grundvarde(slag) > 0)) return;
   (k.pris ??= {})[slag] = avrunda(klanPris(k, slag) + upp * KLAN.prisSalt * varde);
 }
-// det högsta priset bland klanerna som skickar handlare (valet av handelsvaror, steg 10.5.13)
-export const basstaPris = (s: State, slag: string) => { const kan = klanerOf(s).filter(k => k.inst > KLAN.handelMin); return kan.length ? Math.max(...kan.map(k => klanPris(k, slag))) : 1; };
