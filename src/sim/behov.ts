@@ -620,6 +620,7 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
       grupper.set(g, over);
       continue;
     }
+    if (amountOf(s, k) < 1 - 2e-6) continue; // inte en hel sak i förrådet: byns del blir ingen hel sak (bynsDel), och då behöver ingen räknas
     let n = bynsDel(s, k) - (s.projektSaknar?.[k]?.beh ?? 0); // det projekten behöver säljs inte (steg 10.5.17)
     if (n < 1) continue;
     const b = behovMed(k);
