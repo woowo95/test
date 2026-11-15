@@ -1002,7 +1002,8 @@ SCENARIER.strakprov = {
   text: 'Provet med gångstråken (steg 6.2.6): samma by i 12 dygn (12 år i spelet, knappt två veckor i verkligheten) med och utan stråken. Med stråken står husen inte mer än lite längre från byns mitt, och utan stråken räknas inga hus som fick sämre plats för ett stråk',
   lang: true,
   kor: () => {
-    // samma körning som npm run prov, för en by: utan stråken med BALANS="strak.pa=0" (balanstalen går inte att ändra i en körning)
+    // samma körning som npm run prov, för en by: utan stråken med BALANS="strak.pa=0" (balanstalen går inte att ändra i en körning).
+    // By 1004 sedan 10.9: i by 1002 utan stråken dog den enda som kunde bygga timmerhus i barnsäng, och då blev inget hus klart
     const fil = fileURLToPath(new URL('../prov-en.ts', import.meta.url));
     const by = (env: Record<string, string>) => {
       const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1002', '12'], { env: { ...process.env, ...env }, encoding: 'utf8' });

@@ -1116,9 +1116,20 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
     if (h.n <= 0) continue;
     if (SAKER[k]?.i) { hide(s, SAKER[k]!.i!, h.n, { x: tx, y: ty }); continue; }
     const c = t.cond?.[k] ?? 1;
-    let g = st.find(q => q.x === tx && q.y === ty && q.k === k);
-    if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c });
-    addToStack(s, g, h.n, c, h.ag);
+    // en ruta rymmer så mycket av slaget som den rymmer (rymd): det som inte får plats läggs på rutorna närmast runt omkring,
+    // där inget annat ligger. Ägarnas hela delar delas som i förrådet (delAv)
+    let n = h.n, ag = h.ag;
+    for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
+      if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y)) continue;
+      if (r > 0 && (!usable(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y) || st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6))) continue;
+      let g = st.find(q => q.x === x && q.y === y && q.k === k);
+      const v = Math.min(n, Math.max(0, helt(rymd(s, x, y, k)) - (g?.n ?? 0)));
+      if (v <= 0) continue;
+      const del = delAv(ag, v, n); ag = minus(ag, del);
+      if (!g) st.push(g = { x, y, k, n: 0, c });
+      addToStack(s, g, v, c, del); n -= v;
+    }
+    if (n > 1e-9) { let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); } // runt omkring är fullt
   }
   for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = tx; g.y = ty; } }
   t.ting = undefined;
