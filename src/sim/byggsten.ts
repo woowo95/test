@@ -11,11 +11,14 @@ import { dropLoad } from './lager';
 import { groundOf } from './mark';
 import { bynsMitt, omrade } from './omrade';
 import { viktOf } from './saker';
-import { H, Person, State, T, Task, W, inMap } from './typer';
+import { H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { iPlatsMinne } from './stationer';
 import { FORDON, lassAv } from './fordon';
 import { tingOf } from './agande';
 import { tamdjurOf, tamArt } from './tamdjur';
+import { GANG } from './gang';
+import { ARBETE } from './varde';
+import { MATERIAL, bitsOf } from './byggnad';
 
 export const BYGGSTEN = balans('byggsten', {
   min: 5, // en sten bryts och huggs till på så här många minuter (efter arbetstiderna: en stor sak)
@@ -62,6 +65,10 @@ export function stenFrakt(s: State) {
   const m = bynsMitt(s);
   return viktOf('byggsten') * Math.hypot(b.x - m.x, b.y - m.y) / lass;
 }
+// frakten som arbete (värdet i varde.ts): turerna fram och tillbaka till berget, i gångfart, för en sten
+export const stenFraktKostnad = (s: State) => { const f = stenFrakt(s); return f === Infinity ? Infinity : 2 * f / (GANG.fart * HOUR_S) * ARBETE; };
+// det Byggplanen planerat av sten och inte byggt än: vägrutorna (stenbron, steg 10.10.6)
+STENBEHOV.vag = s => bitsOf(s).filter(b => MATERIAL[b.m]?.item === 'byggsten' && MATERIAL[b.m].vag && b.b < 1).reduce((a, b) => a + Math.max(0, MATERIAL[b.m].n - (b.mat ?? 0)), 0);
 // stenen är bruten: den läggs i högen där den bröts
 export function stenBruten(s: State, p: Person, t: Task) {
   t.items = { ...(t.items ?? {}), byggsten: (t.items?.byggsten ?? 0) + 1 };

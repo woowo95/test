@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medBank, setMat } from './hjalp';
+import { SCENARIER, byggKlart, byggare, kor, klockan, medBank, setMat } from './hjalp';
 
 // en landruta i byns närhet, d rutor öster om mitten (eller närmast efter)
 const landVid = (s: SIM.State, d: number) => {
@@ -207,6 +207,56 @@ SCENARIER.byggsten = {
       [`kälken tar en sten, släden fyra med hästen (${hast}) och sex med oxen (${oxe})`, kalke === 1 && hast === 4 && oxe === 6],
       [`med kälken bröts ${med.bruten} och ${med.hemma} kördes hem på ${med.turer} turer (${med.tim} h)`, med.bruten >= 1 && med.hemma >= 1 && med.turer >= 1],
       [`utan kälke bröts ${utan.bruten}, och ${utan.liggande} ligger kvar vid berget (${utan.hemma} hemma); frakten går inte (${utan.frakt})`, utan.bruten >= 1 && utan.hemma === 0 && utan.liggande >= 1 && utan.frakt === Infinity && med.frakt < Infinity],
+    ];
+  },
+};
+
+SCENARIER.stenvag = {
+  text: 'Steg 10.10.6: stenbron. Vägen av byggsten (Stenlagd väg) föreslås när byn kan bryta och köra sten, och väger dubbelt mot stockvägen mot kostnaden med stenens frakt. En by som inte kan köra hem stenen lägger stock, och frakten kostar mer från ett berg längre bort. En sliten stockväg får sten i stället för att lagas. Stenen brinner inte, och ett hus kan byggas på en vägruta',
+  kor: () => {
+    const { BYGGATGARDER, MATERIAL, BYGG, newTing, BYN, living, bitsOf, bitAt } = SIM;
+    const behov = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 } as SIM.ByggBehov;
+    const by = () => {
+      const s = createState(3, START); klockan(s); byggare(s);
+      for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, byggsten: 1 });
+      SIM.planBuild(s); byggKlart(s);
+      SIM.setAmount(s, 'virke', 6);
+      const m = SIM.bynsMitt(s), g = newTing(s, 'kalke', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y);
+      return s;
+    };
+    const s = by(), f = BYGGATGARDER.stockvagA.foresla(s, behov, () => true);
+    const forst = f[0], stenForst = forst?.ritning.every(a => a.m === 'sten'), stockOcksa = f.some(q => q.ritning.every(a => a.m === 'stockvag'));
+    const st = SIM.straken(s), paStrak = !!forst && forst.ritning.some(a => st.ruta[a.y * SIM.W + a.x] > 0);
+    // utan kälke går stenen inte att köra hem: byn lägger stock. Och frakten kostar mer ju längre bort berget är
+    const s2 = by(); s2.ting = SIM.tingOf(s2).filter(q => q.k !== 'kalke');
+    const langt = BYGGATGARDER.stockvagA.foresla(s2, behov, () => true);
+    const nara = SIM.stenFraktKostnad(s), fjarr = (() => { const q = createState(5, START); const g = newTing(q, 'kalke', 1, BYN); g.x = 1; g.y = 1; return SIM.stenFraktKostnad(q); })();
+    const langtStock = langt.length > 0 && langt.every(q => q.ritning.every(a => a.m === 'stockvag'));
+    // en sliten stockväg får sten
+    const s3 = by(), r = forst?.ritning[0] ?? { x: 1, y: 1 };
+    bitsOf(s3).push({ id: s3.nextBit!++, x: r.x, y: r.y, k: 'golv', m: 'stockvag', b: 1, mat: 1, c: BYGG.laga / 2 }); SIM.touch(s3);
+    const f3 = BYGGATGARDER.stockvagA.foresla(s3, behov, () => true), sten3 = f3.find(q => q.ritning[0]?.m === 'sten');
+    const sliten = !!sten3?.ritning.some(a => a.x === r.x && a.y === r.y);
+    // en hel stockväg byts inte
+    bitAt(s3, r.x, r.y)!.c = 1; SIM.touch(s3);
+    const hel = !BYGGATGARDER.stockvagA.foresla(s3, behov, () => true).some(q => q.ritning.some(a => a.x === r.x && a.y === r.y));
+    // stenen brinner inte, stockvägen gör det
+    const brinner = !MATERIAL.sten.brinner && !!MATERIAL.stockvag.brinner && MATERIAL.sten.slit * 5 <= MATERIAL.stockvag.slit + 1e-12;
+    // ett hus kan stå på en vägruta
+    const s4 = by(), v = bitsOf(s4).length;
+    let x4 = -1, y4 = -1;
+    for (let y = 5; y < SIM.H - 5 && x4 < 0; y++) for (let x = 5; x < SIM.W - 5; x++) if (SIM.usable(s4, x, y, false, true)) { x4 = x; y4 = y; break; }
+    bitsOf(s4).push({ id: s4.nextBit!++, x: x4, y: y4, k: 'golv', m: 'sten', b: 1, mat: 1, c: 1 }); SIM.touch(s4);
+    const husPa = !SIM.usable(s4, x4, y4, false, true) && SIM.usable(s4, x4, y4, false, true, true) && bitsOf(s4).length === v + 1;
+    return [
+      [`byn nära berget med kälke föreslår sten först (${forst?.ritning.length} rutor ${forst?.ritning[0]?.m}), och stocken som ett förslag till`, !!stenForst && stockOcksa],
+      ['stenen läggs på det mest trampade stråket', paStrak],
+      [`en by utan kälke lägger stock (${langt.length} förslag)`, langtStock],
+      [`frakten kostar mer från ett berg längre bort (${nara.toFixed(2)} mot ${fjarr.toFixed(2)})`, fjarr > nara],
+      ['en sliten stockväg får sten i stället för att lagas', sliten],
+      ['en hel stockväg byts inte', hel],
+      ['stenen brinner inte och slits fem gånger långsammare', brinner],
+      ['ett hus kan byggas på en vägruta', husPa],
     ];
   },
 };

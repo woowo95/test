@@ -37,6 +37,7 @@ export interface Material { namn: string; k: BitK; item?: string; n: number; tim
 export const MATERIAL: Record<string, Material> = {
   timmer: { namn: 'Timmervägg', k: 'vagg', item: 'virke', n: 2, /* av virke, de kluvna stockarna (steg 10.2.70): 2 virke är 10 ved */ tim: 20 / 60, slit: 0.0005, isol: 0.7, storm: 0.6, brinner: 1, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' },
   stockvag: { namn: 'Stockväg', k: 'golv', item: 'virke', n: 1, tim: 10 / 60, slit: 1 / (50 * 24), brinner: 1, tek: 'stockvag', vag: true, farg: 0x8a6a3a, ikon: 'stockvag' }, // en väg (steg 7.3.7): utslitet efter ungefär 50 dygn (50 år i spelet)
+  sten: { namn: 'Stenlagd väg', k: 'golv', item: 'byggsten', n: 1, tim: 10 / 60, slit: 1 / (250 * 24), tek: 'byggsten', vag: true, farg: 0x8a9c9e, ikon: 'stenvag' }, // stenbron (steg 10.10.6): brinner inte, och slits fem gånger långsammare än stockvägen (utslitet efter ungefär 250 dygn, 250 år i spelet)
   brygga: { namn: 'Brygga', k: 'golv', item: 'virke', n: 1, tim: 10 / 60, slit: 1 / (50 * 24), brinner: 1, tek: 'brygga', vag: true, brygga: true, farg: 0x8a6a3a, ikon: 'brygga' }, // över vatten (steg 7.3.9): man kan gå och stå på den
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 20 / 60, slit: 0.002, isol: 0.55, storm: 1.5, brinner: 1.5, farg: 0x6b4a2a, ikon: 'risvagg', gammal: true }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x7a5a3a },
