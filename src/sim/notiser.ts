@@ -50,6 +50,7 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   hus: { slag: 'framsteg', rubrik: 'Ett nytt hus', vikt: 2 },
   masterverk: { slag: 'framsteg', rubrik: 'Ett mästerverk', vikt: 1 },
   runsten: { slag: 'folk', rubrik: 'En runsten', vikt: 2 }, // steg 10.6.1
+  skrift: { slag: 'folk', rubrik: 'En ny bok', vikt: 2 }, // bokens första del (steg 10.6.8)
   byte: { slag: 'handel', rubrik: 'Byte med handlaren', vikt: 1 },
   gast: { slag: 'handel', rubrik: 'En gäst', vikt: 1 },
   sjuk: { slag: 'folk', rubrik: 'Sjukdom', vikt: 2 }, // någon insjuknar, blir sämre eller frisk (steg 9.5.4, sjukdom.ts)

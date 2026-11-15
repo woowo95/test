@@ -9,6 +9,7 @@
 // det som projekten och bygget väntar på. Taket är materialMatt gånger bufferten, aldrig mer än lagerplatserna rymmer. Under
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
+import { SKRIFT } from './skriftTal';
 import { trosMobelBrist } from './troshus';
 import { balans } from './balans';
 import { ELD, eldarOf, hearthOf, woodDays } from './eld';
@@ -257,6 +258,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   slanda: () => VILLTAL.slandor, // till dem som spinner, och en i vävstolen (steg 7.7.8)
   vattensack: () => VILLTAL.vattensackar, // till den som inte kan gå (steg 2.10.1)
   boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2)
+  bok: s => (s.ting ?? []).filter(t => t.k === 'bok' && (t.delar?.length ?? 0) >= SKRIFT.bokDelar).length + 1, // en bok med lediga delar till den som skriver (steg 10.6.6)
   trumma: s => tommaPlatser(s, 'trumma'), benflojt: s => tommaPlatser(s, 'benflojt'), lyra: s => tommaPlatser(s, 'lyra'), // ett av varje till scenen (steg 4.3.2.2)
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
   yxa: s => perVuxna(s, VILLTAL.yxaPerVuxna, VILLTAL.yxaMin, VILLTAL.yxaMax, VILLTAL.yxaFran) + (s.hus?.some(h => !h.klar) ? VILLTAL.yxaBygge : 0),

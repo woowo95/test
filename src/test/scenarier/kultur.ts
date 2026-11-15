@@ -194,6 +194,82 @@ function medScen(seed: number, ks: string[]) {
   for (const i of ks) SIM.nyttVid(k.s, SIM.newTing(k.s, i, 1, SIM.BYN));
   return { ...k, sc };
 }
+SCENARIER.forelasning = {
+  text: 'Steg 10.6.9: föreläsningens ämne. Föreläsningen handlar om en sak som föreläsaren kan och andra i byn saknar, en teknik på nivå 1 eller 2 eller en färdighet, och alla som lyssnar kommer säkert framåt i just den, mer ju längre och bättre föreläsningen är. Den som inte kan något som någon annan saknar kan inte föreläsa',
+  kor: () => {
+    const { s, v } = kvall(), p = v[0]!, pub = v.slice(1, 5);
+    const lika = (x: Person) => { for (const k of SIM.SKILLS) x.skill[k] = 5; };
+    for (const q of s.people) lika(q);
+    // en teknik på nivå 2 som bara p kan, och vars krav alla kan
+    const t2 = TEKNIK.find(t => t.niva === 2 && t.krav.length > 0)!, t3 = TEKNIK.find(t => t.niva === 3)!;
+    for (const q of s.people) { q.tek ??= {}; for (const k of [...t2.krav, ...t3.krav]) q.tek[k] = 1; delete q.tek[t2.id]; delete q.tek[t3.id]; }
+    p.tek![t2.id] = 1;
+    const amne = SIM.forelasAmne(s, p);
+    const fore = pub.map(q => JSON.stringify({ tek: { ...q.tek, [t2.id]: 0 }, skill: q.skill }));
+    s.fram = { lar: amne, k: 'forelasning', p: p.id, start: s.now, slut: s.now + SIM.HOUR, publik: pub.map(q => q.id), text: 'x', da: 'x', amne: 'x' };
+    p.task = { act: 'upptrada', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: s.now, tool: 'forelasning' };
+    SIM.upptradaKlar(s, p, p.task);
+    const fram = pub.map(q => q.tek?.[t2.id] ?? 0), efter = pub.map(q => JSON.stringify({ tek: { ...q.tek, [t2.id]: 0 }, skill: q.skill }));
+    // texten i ett riktigt framträdande nämner ämnet
+    let text = '';
+    for (let i = 0; i < 40 && !text; i++) { const k = kvall(3 + i), a = k.v[0]!; for (const q of k.s.people) { lika(q); q.tek ??= {}; for (const x of t2.krav) q.tek[x] = 1; delete q.tek[t2.id]; } a.tek![t2.id] = 1; a.skill[SIM.FRAM_SKILL] = 8; if (upptrad(k.s, a) && k.s.fram!.k === 'forelasning') text = k.s.fram!.text; }
+    // bara nivå 3: inget ämne, och då ingen föreläsning
+    delete p.tek![t2.id]; p.tek![t3.id] = 1;
+    const tre = SIM.forelasAmne(s, p);
+    let aldrig = true;
+    for (let i = 0; i < 40; i++) { const k = kvall(3 + i), a = k.v[0]!; for (const q of k.s.people) { lika(q); q.skill[SIM.FRAM_SKILL] = 8; } for (const q of k.s.people) if (q !== a) { q.tek ??= {}; for (const x of Object.keys(a.tek ?? {})) q.tek[x] = 1; } if (upptrad(k.s, a) && k.s.fram!.k === 'forelasning') aldrig = false; }
+    const fr = SIM.TEKNIK.find(t => t.id === t2.id)!.namn.toLowerCase();
+    return [
+      [`ämnet är tekniken på nivå 2 som bara föreläsaren kan (${amne && 'tek' in amne ? amne.tek : 'inget'})`, !!amne && 'tek' in amne && amne.tek === t2.id],
+      [`fyra åhörare får samma framsteg i ${fr} (${fram.map(x => x.toFixed(2)).join(', ')})`, fram.every(x => x > 0 && Math.abs(x - fram[0]!) < 1e-9)],
+      ['och i inget annat', efter.every((x, i) => x === fore[i])],
+      [`texten nämner ämnet (${text || 'ingen föreläsning'})`, text.includes(O.goraUtan(t2))],
+      [`en teknik på nivå 3 väljs aldrig (${tre ? 'ett ämne' : 'inget ämne'})`, !tre],
+      ['den som inte kan något andra saknar föreläser aldrig', aldrig],
+    ];
+  },
+};
+
+SCENARIER.lagskrift = {
+  text: 'Steg 10.6.10: skrivna lagar. En lag som står skriven på en runsten, ett blad eller i en lagbok behöver byn inte hålla i minnet, så varje skriven lag höjer taket för antalet lagar med ett, upp till 12. Ändras straffet eller tas lagen bort räknas skriften inte, och påbudet Skriv ner lagarna styr hur gärna det görs',
+  kor: () => {
+    const s = createState(6, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen), p = v[0]!;
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.tro = undefined; }
+    p.tek = { ...(p.tek ?? {}), stenhuggarplats: 1 };
+    const ids = Object.keys(SIM.LAGAR), lag = (id: string) => ({ id, t: s.now, straff: SIM.LAGAR[id]!.straff, av: p.id, om: 'x' });
+    s.styre = { historia: [], oppna: [] } as NonNullable<State['styre']>;
+    s.styre!.lagar = ids.slice(0, 6).map(lag);
+    const tak0 = SIM.lagTak(s);
+    const rista = () => { const l = SIM.runstenLust(s, p), at = SIM.runstenPlats(s)!; if (l?.slag !== 'lag') return; SIM.runstenKlar(s, p, { act: 'runsten', phase: 'do', tx: at.x + 0.5, ty: at.y + 0.5, until: s.now, carry: 0, why: '', tool: 'lag', ref: l.om.id }); };
+    rista(); rista();
+    const stenar = (s.runstenar ?? []).filter(r => r.lag).length, tak2 = SIM.lagTak(s);
+    s.runstenar = s.runstenar!.slice(1);
+    const tak1 = SIM.lagTak(s);
+    const kvar = s.runstenar![0]!.lag!, l = s.styre!.lagar!.find(x => x.id === kvar.id)!;
+    l.straff = (l.straff + 1) % SIM.STRAFF_NAMN.length;
+    const takStraff = SIM.lagTak(s);
+    l.straff = kvar.straff;
+    s.styre!.lagar = s.styre!.lagar!.filter(x => x !== l);
+    const takBort = SIM.lagTak(s), skrivenBort = SIM.skrivenLag(s, { ...l });
+    // tretton skrivna lagar: taket blir aldrig över 12
+    const t = createState(6, START); t.styre = { historia: [], oppna: [] } as NonNullable<State['styre']>; t.styre!.lagar = ids.slice(0, 13).map(lag);
+    t.runstenar = t.styre!.lagar!.map((x, i) => ({ id: i + 1, x: i, y: 0, t: t.now, slag: 'lag' as const, av: { id: p.id, namn: p.name }, om: { id: i, namn: x.id }, text: '', runor: '', lag: { id: x.id, straff: x.straff } }));
+    const takMax = SIM.lagTak(t);
+    // påbudet på lägsta: ingen vill skriva
+    const ledare = v[1]!;
+    s.styre = { historia: [{ id: ledare.id, namn: ledare.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: ledare.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0, lagskrift: -1 } as never, lagar: ids.slice(0, 6).map(lag) } as NonNullable<State['styre']>;
+    const lagst = SIM.lagSkrivVikt(s), lustLagst = SIM.runstenLust(s, p)?.slag;
+    return [
+      [`med sex lagar och taket ${tak0} ristas två lagar, och taket blir ${tak2}`, tak0 === 6 && stenar === 2 && tak2 === 8],
+      [`en sten rivs och taket blir ${tak1}`, tak1 === 7],
+      [`ett ändrat straff gör att skriften inte räknas (taket ${takStraff})`, takStraff === 6],
+      [`en borttagen lag räknas inte heller (taket ${takBort}, men stenen står kvar)`, takBort === 6 && (s.runstenar?.length ?? 0) === 1 && skrivenBort],
+      [`taket går aldrig över 12 (${takMax} med 13 skrivna lagar)`, takMax === 12],
+      [`med påbudet på lägsta skriver ingen (vikten ${lagst}, ${lustLagst ?? 'ingen lust'})`, lagst === 0 && lustLagst !== 'lag'],
+    ];
+  },
+};
+
 SCENARIER.scen = {
   text: 'Scenen och instrumenten (steg 4.3.2.2): byn vill ha en trumma, en benflöjt och en lyra till scenen när den finns. Med ett instrument vid scenen blir det sång och musik där, lyran ger mest glädje, och utan scen bara kväden, tal, föreläsningar och teater',
   kor: () => {
@@ -1092,6 +1168,151 @@ SCENARIER.heligsten = {
     ];
   },
 };
+SCENARIER.pergament = {
+  text: 'Steg 10.6.4: pergament och bläck. Tekniken kräver garvning och stenhuggning och kommer man på vid garvningsställningen; där, och bara där, blir 1 skinn 4 blad pergament (5 min). Bläck är sot av 1 kol gnidet med vatten (2 min) i en liten lerkruka, som rymmer bläck till 2 blad. Ett tomt blad är lätt, slits dubbelt så fort som skinn och brinner',
+  kor: () => {
+    const { KLAR_FOR, TILLVERKA, TEK, SAKER, STATIONER, VATSKOR, setAmount, amountOf, addTool, vatskaAv } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const tek = TEK.pergament!;
+    p.tek = { ...(p.tek ?? {}), pergament: 1, garvning: 1, stenhuggarplats: 1 };
+    setAmount(s, 'skinn', 3);
+    const uppgift = (act: string) => ({ act, phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' }) as any;
+    KLAR_FOR[TILLVERKA.gora_pergament!.act]!(s, p, uppgift('gora_pergament'), 0);
+    const blad = amountOf(s, 'pergament'), skinn = amountOf(s, 'skinn');
+    const st = STATIONER.garvning!;
+    setAmount(s, 'kol', 2);
+    addTool(s, 'vattensack', p).inne = { v: 'vatten', n: 1 };
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined;
+    KLAR_FOR[TILLVERKA.riva_black!.act]!(s, p, uppgift('riva_black'), 0);
+    const black = vatskaAv(s, 'black'), kol = amountOf(s, 'kol');
+    const kvot = SAKER.pergament!.slits! / SAKER.skinn!.slits!;
+    return [
+      [`tekniken kräver garvning och stenhuggning och kommer man på vid garvningsställningen (${tek.krav.join(', ')}; ${tek.forsok?.vid.join(', ')})`, tek.krav.includes('garvning') && tek.krav.includes('stenhuggarplats') && !!tek.forsok?.vid.includes('garvning')],
+      [`vid garvningsställningen, och bara där, blir 1 skinn 4 blad (${blad} blad, ${3 - skinn} skinn åtgick, ${TILLVERKA.gora_pergament!.min} min)`, blad === 4 && skinn === 2 && st.bara!.includes('gora_pergament') && Object.entries(STATIONER).every(([id, d]) => id === 'garvning' || !(d.gor as string[] | undefined)?.includes('gora_pergament'))],
+      [`1 kol och vatten ger bläck till 2 blad i den lilla krukan (${black} bläck i ${kr.inne?.v ?? 'ingen'}, ${2 - kol} kol åtgick, ${TILLVERKA.riva_black!.min} min)`, black === 2 && kol === 1 && kr.inne?.v === 'black' && VATSKOR.black.i.includes('lerkruka_liten')],
+      [`ett blad är lätt (${SAKER.pergament!.vikt}), slits ute dubbelt så fort som skinn (${kvot.toFixed(2)} gånger) och brinner`, (SAKER.pergament!.vikt ?? 1) < 0.2 && Math.abs(kvot - 2) < 0.01 && !SAKER.pergament!.brinnerInte],
+    ];
+  },
+};
+
+SCENARIER.skriva = {
+  text: 'Steg 10.6.5: att skriva och läsa. Den som kommer åt ett blad och bläck skriver på fritiden, på dagen och i ljuset vid elden (3 minuter, 1 blad och 1 dos bläck), oftare ju högre färdigheten är. Det skrivna bladet är skrivarens, och andra läser det där det ligger (2 minuter) när det har något nytt för dem',
+  kor: () => {
+    const { skrivVal, lasVal, skrivKlar, lasKlar, setAmount, amountOf, addTool, fyllVatska, vatskaAv, tingOf, lightLevel, findL, SKRIFT } = SIM;
+    const s = createState(1, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q, o] = v as [Person, Person, Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    const lar = { k: 'fara' as const, a: 3, v: 1, c: 0.9, t: s.now, om: 'Ulv dog där' };
+    p.lardomar = [{ ...lar }]; o.lardomar = [{ ...lar }];
+    p.skill.berattande = 15; o.skill.berattande = 0;
+    while (lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const at = { x: p.x, y: p.y };
+    setAmount(s, 'pergament', 2);
+    const utanBlack = skrivVal(s, p, at);
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined; fyllVatska(s, 'black', 2, kr);
+    const med = skrivVal(s, p, at)?.w ?? 0, utanSkill = skrivVal(s, o, at)?.w ?? 0;
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+    skrivKlar(s, p);
+    SIM.placeTools(s);
+    const blad = tingOf(s).find(t => t.k === 'blad');
+    const vill = lasVal(s, q);
+    lasKlar(s, q, { act: 'lasa', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: blad?.id });
+    const l = findL(q, 'fara', 3);
+    const igen = lasVal(s, q), vet = lasVal(s, o);
+    // utan ljus: mitt i natten, långt från elden
+    while (lightLevel(s.now) > 0) s.now += SIM.HOUR;
+    if (blad) { blad.x = 1; blad.y = 1; }
+    const r = v[3]!; r.lardomar = []; r.intryck = [];
+    const morkSkriv = skrivVal(s, p, { x: 1.5, y: 1.5 }), morkLas = lasVal(s, r);
+    return [
+      [`utan bläck skriver ingen (${utanBlack ? 'skriver' : 'ingen'})`, !utanBlack],
+      [`en berättare med blad och bläck vill skriva mer än en utan färdighet (${med.toFixed(2)} mot ${utanSkill.toFixed(2)})`, med > 0 && med > utanSkill],
+      [`bladet är skrivarens, och ett blad och en dos bläck gick åt (${blad?.agare === p.id ? 'skrivarens' : 'inte'}: ${blad?.skrift?.titel}; ${amountOf(s, 'pergament')} blad och ${vatskaAv(s, 'black')} bläck kvar, ${SKRIFT.skrivMin} min)`, blad?.agare === p.id && amountOf(s, 'pergament') === 1 && vatskaAv(s, 'black') === 1],
+      [`en annan vill läsa bladet och får lärdomen med skrivaren som källa (${vill ? vill.why : 'vill inte'}; ${l ? `källa ${l.src === p.id ? p.name : l.src}, säkerhet ${l.c}` : 'ingen lärdom'})`, !!vill && l?.src === p.id && l.c === lar.c],
+      [`den som redan vet det läser inte (${igen || vet ? 'läser' : 'läser inte'})`, !igen && !vet],
+      [`utan ljus varken skrivs eller läses det (${morkSkriv ? 'skriver' : 'skriver inte'}, ${morkLas ? 'läser' : 'läser inte'})`, !morkSkriv && !morkLas],
+    ];
+  },
+};
+
+SCENARIER.bok = {
+  text: 'Steg 10.6.6: böcker. Vid snickarbänken, och bara där, binds 8 blad mellan 2 plankor till en tom bok (5 minuter), som fylls del för del, högst 8 delar av samma slag. Den som kan en teknik skriver en handbok, helst om det få i byn kan, och den som läser den lär sig tekniken utan lärare, så att konsten inte dör med den sista som kunde den',
+  kor: () => {
+    const { skrivKlar, lasKlar, skrivLust, bokPlats, runstenTimme, setAmount, amountOf, addTool, fyllVatska, tingOf, lightLevel, knows, STATIONER, SKRIFT } = SIM;
+    const s = createState(1, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q] = v as [Person, Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    while (lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    for (const r of v) if (r.tek) delete r.tek.garvning;
+    p.tek = { ...(p.tek ?? {}), bok: 1, garvning: 1, kniv: 1, skinnklader: 1 }; q.tek = { ...(q.tek ?? {}), kniv: 1, skinnklader: 1 };
+    p.skill.berattande = 15;
+    setAmount(s, 'pergament', 8); setAmount(s, 'plankor', 2);
+    SIM.makeTool(s, p, 'bok'); delete p.tek.bok; // bara garvningen kan hen ensam
+    SIM.placeTools(s);
+    const bok = tingOf(s).find(t => t.k === 'bok');
+    const bara = (STATIONER.snickarbank!.bara as string[]).includes('bok');
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined; fyllVatska(s, 'black', 2, kr);
+    const lust = skrivLust(s, p);
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+    skrivKlar(s, p);
+    const del = bok?.delar?.[0];
+    const annat = bokPlats(s, 'poesi');
+    p.died = s.now; runstenTimme(s);
+    const kr2 = !!s.hist?.kronika.some(k => String(k[1]).includes('konsten står kvar'));
+    let n = 0;
+    while (!knows(q, 'garvning') && n < 100) { lasKlar(s, q, { act: 'lasa', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: bok?.id }); n++; }
+    return [
+      [`8 blad och 2 plankor ger boken vid snickarbänken, och bara där (${bok ? 'en bok' : 'ingen bok'}, ${amountOf(s, 'pergament')} blad och ${amountOf(s, 'plankor')} plankor kvar)`, !!bok && amountOf(s, 'pergament') === 0 && amountOf(s, 'plankor') === 0 && bara],
+      [`den som ensam kan garvning skriver en del om tekniken i boken (${lust?.slag ?? 'ingen lust'}: ${del?.titel ?? 'ingen del'})`, del?.slag === 'kunskap' && del.tek === 'garvning' && (bok?.delar?.length ?? 0) <= SKRIFT.bokDelar],
+      [`en del av ett annat slag tas inte emot (${annat ? 'tas emot' : 'tas inte emot'})`, !annat],
+      [`hen dör, och krönikan säger att konsten står kvar i boken (${kr2 ? 'ja' : 'nej'})`, kr2],
+      [`en annan läser och kan tekniken (${knows(q, 'garvning') ? `efter ${n} läsningar` : 'kan den inte'}), långsammare än i ett samtal (${SKRIFT.bokLar} mot ${SIM.TEKTAL.larFramsteg} per gång)`, knows(q, 'garvning') && n > 1 && SKRIFT.bokLar < SIM.TEKTAL.larFramsteg],
+    ];
+  },
+};
+
+SCENARIER.skriftkvalitet = {
+  text: 'Steg 10.6.7: skriftens kvalitet, rullad på slagets färdighet när skriften skrivs, avgör hur mycket av innehållet som når läsaren. En dålig skrift ger lärdomen med lägre säkerhet och bara en del av en teknik, och ibland en överdrift eller underdrift som slås en gång när den skrivs och står kvar i texten för alla läsare',
+  kor: () => {
+    const { skrivKlar, lasKlar, setAmount, addTool, fyllVatska, tingOf, lightLevel, findL, SKRIFT } = SIM;
+    const s = createState(1, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q, o, r2] = v as [Person, Person, Person, Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    while (lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const lar = { k: 'fara' as const, a: 3, v: 1, c: 0.9, t: s.now, om: 'Ulv dog där' };
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined;
+    const skrivEtt = () => { p.lardomar = [{ ...lar }]; setAmount(s, 'pergament', 1); fyllVatska(s, 'black', 2, kr); p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' }; skrivKlar(s, p); SIM.placeTools(s); return tingOf(s).filter(t => t.k === 'blad').at(-1); };
+    const las = (r: Person, id?: number) => lasKlar(s, r, { act: 'lasa', phase: 'do', tx: r.x, ty: r.y, until: s.now, carry: 0, why: '', ref: id });
+    // samma innehåll i usel och fin kvalitet
+    p.skill.berattande = 15;
+    const a = skrivEtt()!, b = SIM.newTing(s, 'blad', 1, p.id); b.skrift = { ...a.skrift! }; SIM.placeTools(s);
+    a.skrift!.q = 0; delete a.skrift!.fel; a.skrift!.lar = { ...lar }; b.skrift!.q = 4; delete b.skrift!.fel; b.skrift!.lar = { ...lar };
+    las(q, a.id); las(o, b.id);
+    const cU = findL(q, 'fara', 3)?.c ?? 0, cF = findL(o, 'fara', 3)?.c ?? 0;
+    for (const t of [a, b]) s.ting = s.ting!.filter(x => x !== t);
+    // en usel skrift med fel: två läsare får samma fel
+    p.skill.berattande = 0; q.lardomar = []; o.lardomar = [];
+    let fel: typeof a | undefined, n = 0;
+    while (!fel && n < 80) { const t = skrivEtt(); n++; if (t?.skrift?.fel && t.skrift.lar) fel = t; else if (t) s.ting = s.ting!.filter(x => x !== t); }
+    las(q, fel?.id); las(o, fel?.id);
+    const vq = findL(q, 'fara', 3)?.v, vo = findL(o, 'fara', 3)?.v;
+    // en usel handbok
+    for (const r of v) if (r.tek) delete r.tek.garvning;
+    r2.tek = { ...(r2.tek ?? {}), kniv: 1, skinnklader: 1 };
+    const hb = SIM.newTing(s, 'blad', 1, p.id);
+    hb.skrift = { slag: 'kunskap', av: { id: p.id, namn: p.name }, t: s.now, titel: 'Om garvning', text: '', tek: 'garvning', q: 0 };
+    SIM.placeTools(s);
+    let m = 0; while (SIM.lasNytta(r2, hb.skrift) > 0 && m < 100) { las(r2, hb.id); m++; }
+    const del = r2.tek?.garvning ?? 0;
+    return [
+      [`en usel skrift ger lärdomen med lägre säkerhet än en fin (${cU.toFixed(2)} mot ${cF.toFixed(2)})`, cU > 0 && cU < cF && Math.abs(cU - lar.c * SKRIFT.nar[0]!) < 1e-9],
+      [`en usel skrift får ibland ett fel när den skrivs (${fel ? `efter ${n} skrifter, gånger ${fel.skrift!.fel}` : 'inget fel'})`, !!fel],
+      [`två läsare av den dåliga texten får samma fel (${vq} och ${vo}, rätt är ${lar.v})`, vq !== undefined && vq === vo && vq !== lar.v],
+      [`en usel handbok tar läsaren bara en del av vägen (${del.toFixed(2)} efter ${m} läsningar, kan ${SIM.knows(r2, 'garvning') ? 'den' : 'den inte'})`, del > 0 && del <= SKRIFT.nar[0]! + 1e-9 && !SIM.knows(r2, 'garvning') && m < 100],
+    ];
+  },
+};
+
 SCENARIER.heligverkan = {
   text: 'Steg 10.6.3: de heliga skrifternas verkan. Samma tro med och utan helig sten: chansen att sprida tron i ett samtal, hur mycket en profets syn flyttar skalorna, rösterna för att ta bort ett bud och chansen till en ny tro, och verkan försvinner när stenen är borta',
   kor: () => {

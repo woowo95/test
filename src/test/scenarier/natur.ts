@@ -1292,6 +1292,49 @@ SCENARIER.tork = {
     ];
   },
 };
+SCENARIER.eldbrand = {
+  text: 'Steg 10.6.12: eld från en eld som brinner. Den som ska tända en eldstad och når en eld som brinner tänder 1 gren där och bär branden till eldstaden, som tar fyr direkt utan försök och utan hö. Valet följer tiden: branden när vägen dit och tillbaka väntas gå fortare än försöken med byns bästa tänddon. Med alla eldar släckta tänds elden med tänddonet',
+  kor: () => {
+    const { tandSatt, kanTanda, nyEld, eldById, eldPlats, vidEld, iVattnetNu } = SIM;
+    const s = createState(1, START); klockan(s, 10); tandEld(s, 6);
+    setAmount(s, 'ved', 60); setAmount(s, 'grenar', 6); setAmount(s, 'torrgras', 10); setAmount(s, 'flinta', 1);
+    s.rovarVila = s.now;
+    // en lägereld tio rutor från den första elden, släckt
+    const e = eldPlats(s);
+    let at: { x: number; y: number } | undefined;
+    for (let k = 0; k < 64 && !at; k++) { const x = Math.round(e.x + Math.cos(k / 64 * 6.283) * 10), y = Math.round(e.y + Math.sin(k / 64 * 6.283) * 10); if (SIM.inMap(x, y) && !iVattnetNu(s, tileOf(x, y)) && !SIM.gridOf(s).at.has(tileOf(x, y))) at = { x, y }; }
+    nyEld(s, { id: 950, k: 'brasa', x: at!.x, y: at!.y, kvar: 0 } as SIM.Station);
+    const f = eldById(s, 950)!;
+    const p = living(s).find(q => ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    p.x = f.at!.x + 0.5; p.y = f.at!.y + 1.5;
+    const sa = tandSatt(s, p, f);
+    // hen går efter branden, som stepFire ger uppgiften
+    const v = vidEld(s, s.fire, 0, 1.3);
+    p.task = { act: 'tanda', phase: 'go', tx: v.x, ty: v.y, until: s.now + 3 * HOUR, carry: 0, why: '', ref: 950, brand: 'hamta', kalla: -1 };
+    s.people = [p]; // bara hen, så att ingen annan samlar eller tar grenar och hö medan hen går
+    const g0 = amountOf(s, 'grenar'), h0 = amountOf(s, 'torrgras'), fl0 = amountOf(s, 'flinta');
+    let n = 0, vid: [number, number, number] | undefined; // förrådet i det slag elden tog fyr
+    while (!f.lit && n < 4000) { step(s, 5); n++; } // korta slag, så att förrådet läses när elden tar fyr
+    if (f.lit) vid = [amountOf(s, 'grenar'), amountOf(s, 'torrgras'), amountOf(s, 'flinta')];
+    const tand = f.lit && f.tryTotal === 0 && ((s.stat?.brandTand as number) ?? 0) >= 1, grenar = g0 - (vid?.[0] ?? g0), ho = h0 - (vid?.[1] ?? h0);
+    // alla eldar släckta: tänddonet
+    Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined }); Object.assign(f, { lit: false, fuel: 0, emberUntil: undefined });
+    const utan = tandSatt(s, p, f), kan = kanTanda(s, p, f);
+    // elden brinner men vägen dit och tillbaka tar längre tid än försöken: med ett tänddon som tar några sekunder väljs det
+    // (flintans försök tar timmar, så i byn är en eld som brinner nästan alltid närmare)
+    s.fire.lit = true; s.fire.fuel = 6;
+    const ig = SIM.igniterOf(s)!, ig0 = { chance: ig.chance, minutes: ig.minutes };
+    Object.assign(ig, { chance: 1, minutes: 0.05 }); const langt = tandSatt(s, p, f), kort = SIM.forsokTid(s, p, f); Object.assign(ig, ig0);
+    return [
+      [`den som når en eld som brinner väljer branden (${sa?.kalla ? 'branden' : sa ? 'tänddonet' : 'ingenting'}, försöken väntas ta ${Math.round(SIM.forsokTid(s, p, f) / 60)} minuter)`, sa?.kalla === s.fire],
+      [`lägereld tio rutor bort tänds med en brand, utan försök (${tand ? `efter ${Math.round(n * 5 / 60)} min` : f.lit ? `med ${f.tryTotal} försök` : 'inte tänd'})`, tand],
+      [`1 gren gick åt och inget hö eller flinta (${grenar} gren, ${ho} hö, ${fl0 - (vid?.[2] ?? fl0)} flinta)`, grenar === 1 && ho === 0 && vid?.[2] === fl0],
+      [`med alla eldar släckta tänds elden med tänddonet (${utan && !utan.kalla && !utan.fackla ? 'tänddonet' : 'annat'})`, !!utan && !utan.kalla && !utan.fackla && kan],
+      [`med elden längre bort än försöken, räknat i tid, väljs tänddonet (${langt?.kalla ? 'branden' : langt ? 'tänddonet' : 'ingenting'}, försöken ${Math.round(kort)} s mot vägen ${Math.round(20 / SIM.GANG.fart)} s)`, !!langt && !langt.kalla],
+    ];
+  },
+};
+
 SCENARIER.brasa = {
   text: 'Flera lägereldar (steg 2.9.1, 4.5.6.8): när två eller fler sover långt från elden och det är kallt vill byn ha en lägereld till nära dem. Fattas stenarna letar en i taget efter dem vid stenarna; sedan läggs ringen av sex stenar. När den är klar är den en lägereld som den första: den tänds med flintan, värmer dem som sover nära och glöder. En släckt lägereld som ingen sover nära tas isär, och stenarna läggs i en hög som används igen',
   env: { BALANS: 'brasa.langt=0,brasa.kyla=-99' }, // alla sovplatser räknas som långt från elden, och det är alltid kallt nog

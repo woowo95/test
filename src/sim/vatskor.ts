@@ -51,6 +51,7 @@ export const VATSKOR = {
   ol: { namn: 'Öl', farg: 0x906f0f, i: ['lerkruka_stor'], haller: 6 }, // ölet (steg 9.6.13, brygg.ts): i stora krukor, håller sex dygn
   saft: { namn: 'Saft', farg: 0x742a01, i: ['lerkruka_mellan'], haller: 2 }, // bär krossade i en mellanstor kruka (steg 9.6.9): den första drycken, håller två dygn
   mjolk: { namn: 'Mjölk', farg: 0xbdb39b, i: ['lerkruka_liten', 'lerkruka_mellan'], haller: 1 }, // getmjölken (steg 9.8.8, boskap.ts): håller ett dygn
+  black: { namn: 'Bläck', farg: 0x24201d, i: ['lerkruka_liten'] }, // sot av kol och vatten (steg 10.6.4): en liten kruka räcker till 2 blad
   te: { namn: 'Örtte', farg: 0x906f0f, i: ['lerkruka_liten'] },
   sno: { namn: 'Snö', farg: 0xdad0bb, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] }, // snön som smälts i en kruka vid elden (steg 10.2.50, torst.ts): blir vatten // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
 } satisfies Record<string, VatskaDef>;

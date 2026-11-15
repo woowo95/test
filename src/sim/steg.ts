@@ -42,7 +42,7 @@ import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, type Tand, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
+import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
@@ -92,7 +92,7 @@ import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
 import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
-import { runstenBorja, runstenKlar, runstenTimme } from './skrift';
+import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
 import { avrustaKlar, gravDygn, gravKlar, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
@@ -203,7 +203,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   tanda: (s, p, t, dtSec) => {
     const f = eldById(s, t.ref); // lägerelden eller en lägereld till (task.ref, brasor.ts)
     if (!f) { p.task = undefined; return; }
-    if (!canLight(s, p, f)) return;
+    if (t.brand || !canLight(s, p, f)) return; // med en brand tänds elden när hen kommer fram (steg 10.6.12)
     f.tryProg += dtSec;
     const per = igniterOf(s)!.minutes * 60;
     while (f.tryProg >= per && canLight(s, p, f) && !f.lit) { f.tryProg -= per; if (tryLight(s, p, f)) { p.task = undefined; break; } }
@@ -227,7 +227,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
   avrusta: avrustaKlar, rusta: rustaKlar,
-  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, runsten: runstenKlar, // tron och graven (system 8.5)
+  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, runsten: runstenKlar, skriva: (s, p) => skrivKlar(s, p), lasa: lasKlar, // skriva och läsa (steg 10.6.5) // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
@@ -707,7 +707,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const now = s.now, light = isLight(now), t = p.task;
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) KLAR[t.act]?.(s, p, t, 0); // ett träd som fällts färdigt, en yxa som gjorts klar
-    const tf = t?.act === 'tanda' ? eldById(s, t.ref) : undefined, lightDone = t?.act === 'tanda' && (!tf || tf.lit || !canLight(s, p, tf));
+    const tf = t?.act === 'tanda' ? eldById(s, t.ref) : undefined, lightDone = t?.act === 'tanda' && (!tf || tf.lit || !t.brand && !canLight(s, p, tf));
     const mustGo = t && p.toa < KROPP.toaAvbryt && !ACTS[t.act].nodFri && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
@@ -888,6 +888,17 @@ function vidElden(s: State, p: Person, at: { x: number; y: number }) {
 // framme vid målet: vid förrådet, vid bygget, hemma med bördan eller på platsen där arbetet görs
 function arrive(s: State, p: Person, tk: Task, light: boolean) {
   const now = s.now;
+  if (tk.act === 'tanda' && tk.brand && tk.phase === 'go') {
+    // eld från en eld som brinner (steg 10.6.12): vid elden som brinner tänds 1 gren, och vid eldstaden tar den fyr direkt
+    const f = eldById(s, tk.ref);
+    if (tk.brand === 'hamta') {
+      const e = tk.kalla === -1 ? s.fire : eldById(s, tk.kalla);
+      if (!f || f.lit || !e?.lit || getable(s, p, 'grenar') < 1) { p.task = undefined; return; }
+      takeMaterial(s, p, 'grenar', 1, true);
+      tk.brand = 'bar'; const at = vidEld(s, f, sida(p, 0.6), 1.3); tk.tx = at.x; tk.ty = at.y;
+    } else { if (f) brandTand(s, p, f, tk.kalla === undefined ? undefined : tk.kalla === -1 ? s.fire : eldById(s, tk.kalla)); p.task = undefined; }
+    return;
+  }
   if (tk.act === 'elda') {
     if (tk.phase === 'go') {
       // vid förrådet: ta en famn ved och gå till elden. Byns och sin egen, eller den andras (stöld i yttersta nöd, behov.ts)

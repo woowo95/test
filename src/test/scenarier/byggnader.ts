@@ -2077,6 +2077,44 @@ SCENARIER.snickarbank = {
   },
 };
 
+SCENARIER.skrivpulpet = {
+  text: 'Steg 10.6.11: skrivpulpeten är en station inne med en sittplats, av 2 plankor och 1 virke och 15 minuters arbete, med en teknik som kräver pergamentet och snickarbänken. Pulpeten byggs inne av den som kan tekniken, ett blad skrivs fortare där och får stationens tillägg för kvaliteten, och utan pulpet skrivs bladet för hand',
+  kor: () => {
+    const { stationDef, stationerOf, stationRum, isKlar, RECEPT, TEKNIK, skrivPlats, skrivKlar, fyllVatska, lightLevel, kvVid } = SIM;
+    const d = stationDef('skrivpulpet'), r = RECEPT.skrivpulpet, tek = TEKNIK.find(t => t.id === 'skrivpulpet');
+    const s = createState(1, START); klockan(s); tandEld(s);
+    byggare(s); planBuild(s); const A = byggKlart(s);
+    for (const q of s.people) q.tek = { ...q.tek, skrivpulpet: 1, pergament: 1, snickarbank: 1, klyvplats: 1, timmervagg: 1, yxa: 1 };
+    setFood(s, 400); setAmount(s, 'ved', 80); setAmount(s, 'virke', 4); setAmount(s, 'plankor', 4);
+    s.rovarVila = s.now; // inga rövare som tar plankorna (provet gäller pulpeten)
+    const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!, hand = { x: p.x, y: p.y };
+    const utan = skrivPlats(s, p, hand);
+    let h = 0;
+    const pulpet = () => stationerOf(s).find(t => t.k === 'skrivpulpet' && isKlar(t));
+    while (!pulpet() && h < 96) { kor(s, 1); h++; }
+    const t = pulpet(), inne = !!t && !!A && stationRum(s, t)?.hus !== undefined;
+    const med = skrivPlats(s, p, hand);
+    // samma skrivare skriver många blad vid pulpeten och för hand: medelkvaliteten
+    while (lightLevel(s.now) < 1) s.now += HOUR;
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined;
+    p.skill.berattande = 6;
+    const lar = { k: 'fara' as const, a: 3, v: 1, c: 0.9, t: s.now, om: 'Ulv dog där' };
+    const skriv = (at: { x: number; y: number }) => { p.x = at.x; p.y = at.y; p.lardomar = [{ ...lar }]; setAmount(s, 'pergament', 1); fyllVatska(s, 'black', 2, kr); p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' }; skrivKlar(s, p); const b = tingOf(s).filter(x => x.k === 'blad').at(-1); s.ting = s.ting!.filter(x => x !== b); return b?.skrift?.q ?? -1; };
+    const kvP = med.st ? kvVid(s, med.spot, 'skriva') : 0, kvH = kvVid(s, hand, 'skriva');
+    let qP = 0, qH = 0; const N = 60;
+    for (let i = 0; i < N; i++) { qP += med.st ? skriv(med.spot) : -1; qH += skriv(hand); }
+    return [
+      [`receptet är 2 plankor och 1 virke och 15 minuter (${JSON.stringify(r.av)}, ${r.min} min)`, r.av.plankor === 2 && r.av.virke === 1 && r.min === 15],
+      [`tekniken kräver pergamentet och snickarbänken (${tek?.krav.join(', ')})`, !!tek && tek.krav.includes('pergament') && tek.krav.includes('snickarbank')],
+      ['pulpeten står inne och har en sittplats', !!d?.inne && !!d?.sitt],
+      [`utan pulpet skrivs bladet för hand där hen är (${utan.st ? 'vid en station' : 'för hand'}, ${utan.dur / MIN} min)`, !utan.st && utan.spot === hand],
+      [`byn bygger en skrivpulpet när den kan (${t ? `efter ${h} timmar` : 'aldrig'}) och den står inne`, !!t && inne],
+      [`vid pulpeten skrivs bladet fortare (${(med.dur / MIN).toFixed(1)} mot ${(utan.dur / MIN).toFixed(1)} min)`, !!med.st && med.dur < utan.dur],
+      [`och med stationens tillägg för kvaliteten (${kvP} mot ${kvH}; medel ${(qP / N).toFixed(2)} mot ${(qH / N).toFixed(2)})`, kvP === d?.kv && kvH === 0 && qP > qH],
+    ];
+  },
+};
+
 // dragningen mot mitten (steg 9.4.6–9.4.8): det skadade huset, lagerplatserna och stationerna ute
 SCENARIER.mitten = {
   text: 'Steg 9.4.6: ett hus som skadats byggs upp där det står eller på en ny plats närmare mitten, efter vad som är mest värt per kostnad. Med en rasad vägg lagas det där det står; när allt rasat i ett hus långt från mitten byggs ett nytt närmare, och när det är klart rivs det gamla',

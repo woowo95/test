@@ -11,7 +11,8 @@ import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
 import { isWall, roomAt } from './byggnad';
 import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, isSick, living, log, stat, think } from './folk';
-import { nTools } from './agande';
+import { allaTing, nTools } from './agande';
+import { kroppFart } from './gang';
 import { SAKER } from './saker';
 import { halsa } from './halsa';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
@@ -205,14 +206,15 @@ export function needTinder(s: State) {
   return amountOf(s, 'flinta') < 1 || needStones(s) || tinderShort(s);
 }
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
-function lightFire(s: State, p: Person, f: Fire) {
+function lightFire(s: State, p: Person, f: Fire, brand?: string) {
   const start = takeFuel(s, ELD.tandBransle, p), onCoal = (f.ash ?? 0) >= 1;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
   f.lightings++;
   if (!f.ring) { takeMaterial(s, p, 'sten', ELD.ring, true); f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
   if (onCoal) { f.ash = 0; f.ashUntil = undefined; } // kolet i den gamla högen tar fyr och blir en del av den nya elden
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries }, f);
-  log(s, `${p.name} lyckades tända ${eldOrd(s, f)}${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${tal(f.tries, true)} försök` : ''}.`, 'world', [p.id]);
+  if (brand) log(s, `${p.name} tände ${eldOrd(s, f)} med en brand från ${brand}.`, 'world', [p.id]); // steg 10.6.12
+  else log(s, `${p.name} lyckades tända ${eldOrd(s, f)}${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${tal(f.tries, true)} försök` : ''}.`, 'world', [p.id]);
   think(p, 'Tände elden', ELD.tandGlad, s.now, ELD.tandGladDygn * DAY);
   if (f !== s.fire) count(s, 'brasaTand'); // en lägereld till (brasor.ts)
   if (f === s.fire && f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronikaBer(s, 'k_forstaEld', p.id, personFalt(p)); }
@@ -220,6 +222,49 @@ function lightFire(s: State, p: Person, f: Fire) {
 }
 // Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir
 // varmt och torrt. Efter ELD.forsokLara försök är chansen dubbelt så stor, så att otur inte kan hålla elden släckt i dygn
+// chansen för ett försök med byns bästa tänddon, före lärandet av försöken. Eldandet är ingen egen färdighet (steg 3.10.8):
+// chansen räknas ur hantverket, och ingen övar av att tända eller fylla på
+function tandChans(s: State, p: Person, f: Fire, naver: boolean) {
+  return igniterOf(s)!.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (amountOf(s, 'ved') > 0 && torrVed(s) <= 0 ? BLOTVED.tand : 1) // en gammal kolhög tar lättare fyr
+    * (naver ? ELD.naverChans : 1); // nävern tar lättare eld än höet
+}
+// ---------- eld från en eld som brinner (steg 10.6.12) ----------
+// Den som når en eld som brinner tänder 1 gren där och bär branden till eldstaden, som tar fyr direkt utan försök och utan hö.
+// En tänd fackla i handen tänder på samma sätt. Valet följer tiden: branden när vägen dit och tillbaka väntas gå fortare än försöken
+const facklaHos = (s: State, p: Person) => allaTing(s).some(t => t.tand === p.id);
+// eldstaden kan ta fyr av en brand: stenarna till ringen och bränslet finns (som för tänddonet)
+const brandBar = (s: State, p: Person | undefined, f: Fire) => (!!f.ring || (p ? getable(s, p, 'sten') : amountOf(s, 'sten')) >= ELD.ring) && (p ? fuelFor(s, p) : fuelStock(s)) >= ELD.tandVedMin;
+const brandKallor = (s: State, f: Fire) => eldarOf(s).filter(e => e !== f && e.lit && !eldIVatten(s, e));
+// kan elden tändas, med tänddonet eller med en brand från en annan eld (eller p:s fackla)
+export const kanTanda = (s: State, p: Person | undefined, f: Fire) => canLight(s, p, f) || brandBar(s, p, f) && (!!p && facklaHos(s, p) || brandKallor(s, f).length > 0 && (p ? getable(s, p, 'grenar') : amountOf(s, 'grenar')) >= 1);
+// väntad tid (sekunder) för försöken med byns bästa tänddon: summan av chansen att inte ha lyckats före varje försök
+export function forsokTid(s: State, p: Person, f: Fire) {
+  if (!canLight(s, p, f)) return Infinity;
+  const naver = getable(s, p, 'naver') >= 1 || kanTalja(s) && getable(s, p, 'ved') >= 1, c0 = tandChans(s, p, f, naver);
+  let kvar = 1, n = 0;
+  for (let k = 0; k < 2000 && kvar > 1e-4; k++) { n += kvar; kvar *= 1 - Math.min(1, c0 * (1 + k / ELD.forsokLara)); }
+  return n * igniterOf(s)!.minutes * 60;
+}
+// hur p tänder f: med facklan, med en brand från elden kalla, med tänddonet ({}), eller inte alls (undefined)
+export function tandSatt(s: State, p: Person, f: Fire): { kalla?: Fire; fackla?: true } | undefined {
+  if (brandBar(s, p, f) && facklaHos(s, p)) return { fackla: true };
+  const v = kroppFart(p, s.now), at = eldXY(s, f);
+  let best: Fire | undefined, bt = Infinity;
+  if (brandBar(s, p, f) && getable(s, p, 'grenar') >= 1) for (const e of brandKallor(s, f)) {
+    const k = eldXY(s, e), tid = (Math.hypot(p.x - k.x - 0.5, p.y - k.y - 0.5) + Math.hypot(k.x - at.x, k.y - at.y)) / v;
+    if (tid < bt) { bt = tid; best = e; }
+  }
+  const ft = forsokTid(s, p, f);
+  if (best && bt < ft) return { kalla: best };
+  return ft < Infinity ? {} : undefined;
+}
+// framme med branden (eller facklan): elden tar fyr direkt
+export function brandTand(s: State, p: Person, f: Fire, fran?: Fire) {
+  if (f.lit || !brandBar(s, p, f)) return false;
+  lightFire(s, p, f, fran ? eldOrd(s, fran, 'elden') : 'facklan');
+  count(s, 'brandTand');
+  return true;
+}
 // ett försök att tända med det bästa tänddonet i förrådet
 export function tryLight(s: State, p: Person, f = s.fire) {
   const ig = igniterOf(s)!;
@@ -232,10 +277,7 @@ export function tryLight(s: State, p: Person, f = s.fire) {
   else takeMaterial(s, p, 'kol', 1, true); // lite kol kan ersätta grenarna
 
   f.tries++; f.tryTotal++; gjort(s, p, 'tandForsok');
-  // eldandet är ingen egen färdighet (steg 3.10.8): chansen räknas ur hantverket, och ingen övar av att tända eller fylla på
-  const c = ig.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (amountOf(s, 'ved') > 0 && torrVed(s) <= 0 ? BLOTVED.tand : 1) // en gammal kolhög tar lättare fyr
-    * (1 + (f.tries - 1) / ELD.forsokLara) // varje misslyckat försök sedan elden brann gör nästa lättare
-    * (naver ? ELD.naverChans : 1); // nävern tar lättare eld än höet
+  const c = tandChans(s, p, f, naver) * (1 + (f.tries - 1) / ELD.forsokLara); // varje misslyckat försök sedan elden brann gör nästa lättare
   if (rnd(s, 'eld', p) < c) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
     use(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id }, f);
@@ -347,7 +389,7 @@ function tandare(s: State, f: Fire, cands: Kand[]) {
   const h = hearthOf(f);
   let c: Kand | undefined, ck = -Infinity;
   for (const o of cands) {
-    if (iNod(o.p) || ageOf(o.p, s.now) < ALDER.ansvar || o.w.v < h.maxFuel * ELD.tandKandidat || !canLight(s, o.p, f)) continue;
+    if (iNod(o.p) || ageOf(o.p, s.now) < ALDER.ansvar || o.w.v < h.maxFuel * ELD.tandKandidat || !kanTanda(s, o.p, f)) continue;
     const k = o.p.skill.hantverk + stat(o.p, 'flit', s.now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus;
     if (k > ck) { ck = k; c = o; }
   }
@@ -397,9 +439,14 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   }
   // tändning: när en eld är släckt och någon som använder den vill ha eld försöker en person i taget vid varje eld (steg 10.2.5)
   for (const f of skots) {
-    if (ppl.some(p => p.task?.act === 'tanda' && (p.task.ref ?? s.fire.id) === f.id) || f.lit || emberOn(s, f) || !canLight(s, undefined, f) || (f.want ?? 0) < hearthOf(f).maxFuel * ELD.tandVill || eldIVatten(s, f)) continue;
-    const c = tandare(s, f, per.get(f)!);
-    if (c && c.p.task?.act !== 'tanda') { const at = tandPlats(s, f); assign(s, c.p, 'tanda', at.x, at.y, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`); if (f.id !== undefined) c.p.task!.ref = f.id; }
+    if (ppl.some(p => p.task?.act === 'tanda' && (p.task.ref ?? s.fire.id) === f.id) || f.lit || emberOn(s, f) || (f.want ?? 0) < hearthOf(f).maxFuel * ELD.tandVill || eldIVatten(s, f) || !kanTanda(s, undefined, f)) continue;
+    const c = tandare(s, f, per.get(f)!), sa = c && tandSatt(s, c.p, f);
+    if (c && sa && c.p.task?.act !== 'tanda') {
+      // med en brand går hen först till elden som brinner (steg 10.6.12), annars direkt till eldstaden
+      const at = sa.kalla ? vidEld(s, sa.kalla, (rnd(s, 'eld') - 0.5) * 1.2, 1.3) : tandPlats(s, f);
+      assign(s, c.p, 'tanda', at.x, at.y, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`); if (f.id !== undefined) c.p.task!.ref = f.id;
+      if (sa.kalla) { c.p.task!.brand = 'hamta'; c.p.task!.kalla = sa.kalla.id ?? -1; } else if (sa.fackla) c.p.task!.brand = 'bar';
+    }
   }
 }
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det

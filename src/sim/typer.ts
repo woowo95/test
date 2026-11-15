@@ -124,6 +124,7 @@ export interface Task {
   mortBete?: 0 | 1; // fiske: en mört används som bete (steg 7.4.4)
   blotVed?: number; // så stor del av veden som bärs som är blöt (steg 7.3.4)
   act: Act; // handlingen (handlingar.ts)
+  brand?: 'hamta' | 'bar'; kalla?: number; // tända: på väg efter en brand till elden kalla (-1 = lägerelden), eller bär den till eldstaden (steg 10.6.12)
   phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
   tx: number; ty: number; // platsen man går till och arbetar på
   until: number; // tiden då uppgiften är slut (ms)
@@ -344,6 +345,7 @@ export interface State {
   stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
   aktOm?: Record<string, string>; // vad byn minns om olyckan bakom rädslan för en handling
   runstenar?: import('./skrift').Runsten[]; // runstenarna (steg 10.6.1, skrift.ts)
+  skriftSedda?: [string, string][]; // stenarna och böckerna vid förra timmen, id och titel, så att krönikan säger när en är borta (steg 10.6.8)
   gravar?: import('./kvarlevor').Grav[]; gravplatser?: Record<string, { x: number; y: number }>; heliga?: import('./kult').HeligPlats[]; ritual?: import('./kult').Ritual; ritualKo?: import('./kult').Ritual[]; // graven, de heliga platserna och ritualerna (system 8.5)
   kvarlevor?: import('./kvarlevor').Kvarleva[]; nextKvar?: number; // det som blir kvar av en människa (steg 8.2.3, kvarlevor.ts)
   lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor

@@ -60,6 +60,7 @@ export const STATION = balans('station', {
   bankPer: 4, // långhuset vill ha en bänk per så här många sovplatser (steg 10.2.68)
   pyntAvtar: 0.3, // lusten efter ett pynt till är så här stor del av lusten efter det förra (steg 10.2.43)
   kvLite: 0.1, kvMer: 0.2, // hur mycket bättre det som görs vid stationen blir (steg 9.4.9, kv i STATIONER): slöjdbänken, örtköket och fångstbänken lite, snickarbänken mer
+  skrivFart: 1.5, // så många gånger fortare ett blad eller en del i en bok skrivs vid skrivpulpeten (steg 10.6.11)
   // dragningen mot mitten (steg 9.4.8): hur mycket en station ute används glöms på brukatDygn dygn; att flytta den är värt det
   // gånger hur många rutor närmare dem som använder den, delat med flyttFull, och den nya platsen ligger minst flyttMinste närmare
   brukatDygn: 3, flyttFull: 60, flyttMin: 15, flyttMinste: 3,
@@ -124,7 +125,7 @@ export interface StationDef { kv?: number; delar?: StationDel[]; hard?: true; na
 const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus', 'naverask', 'ogonlapp', 'nal'];
 // träsakerna vid snickarbänken (steg 9.4.5): receptets kolumn bank säger var det görs fortare och bättre, bara att det bara görs
 // där och kniv att det täljs med kniven på bänken. Handlingen som gör varje recept
-const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra', krycka: 'krycka', traben: 'traben', krok: 'krok' };
+const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra', bok: 'bok', krycka: 'krycka', traben: 'traben', krok: 'krok' };
 const traVid = (b: string, f: (r: ReceptRad) => boolean = () => true) => [...new Set((Object.keys(TRA_ACT) as (keyof typeof RECEPT)[]).filter(k => { const r: ReceptRad = RECEPT[k]; return r.bank === b && f(r); }).map(k => TRA_ACT[k]!))];
 const SNICKAR = traVid('snickarbank');
 export const STATIONER = {
@@ -166,8 +167,13 @@ export const STATIONER = {
     kv: STATION.kvMer, namn: 'Snickarbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['snickarbank'], av: RECEPT.snickarbank.av, min: RECEPT.snickarbank.min, gor: SNICKAR, fart: Object.fromEntries(SNICKAR.map(a => [a, STATION.redskapFart])), bara: traVid('snickarbank', r => !!r.bara), vid: { kniv: 1 }, kraver: Object.fromEntries(traVid('snickarbank', r => !!r.kniv).map(a => [a, 'kniv'])), inne: true, sitt: true, // bilden är slöjdbänkens tills Björn valt i bildstilen
     bygger: 'Bygger en snickarbänk av virke och plankor.', forsta: '{namn} byggde byns första snickarbänk. Där görs träsakerna fortare och bättre.',
   },
+  // skrivpulpeten (steg 10.6.11): står inne med en sittplats. Där skrivs bladen fortare och bättre; utan den skrivs de för hand vid elden
+  skrivpulpet: {
+    kv: STATION.kvMer, namn: 'Skrivpulpet', ikon: 'skrivpulpet', w: 1, h: 1, tek: ['skrivpulpet'], av: RECEPT.skrivpulpet.av, min: RECEPT.skrivpulpet.min, gor: ['skriva'], fart: { skriva: STATION.skrivFart }, inne: true, sitt: true,
+    bygger: 'Bygger en skrivpulpet av plankor.', forsta: '{namn} byggde byns första skrivpulpet. Där skrivs bladen fortare och bättre.',
+  },
   garvning: {
-    namn: 'Garvningsställning', ikon: 'garvning', w: 2, h: 2, tek: ['garvning'], av: RECEPT.garvning.av, min: RECEPT.garvning.min, gor: ['garva'], bara: ['garva'],
+    namn: 'Garvningsställning', ikon: 'garvning', w: 2, h: 2, tek: ['garvning'], av: RECEPT.garvning.av, min: RECEPT.garvning.min, gor: ['garva', 'gora_pergament'], bara: ['garva', 'gora_pergament'],
     bygger: 'Sätter upp en garvningsställning.', forsta: '{namn} satte upp byns första garvningsställning. Där blir skinn till läder.',
   },
   vavstol: {

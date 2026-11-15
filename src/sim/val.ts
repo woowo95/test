@@ -10,6 +10,7 @@ import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
 import { facklaVal, ljusAt } from './ljus';
 import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, platsIByn, utanforByn } from './omrade';
+import { SKRIFT, lasVal, skrivPlats, skrivVal } from './skrift';
 import { GANG } from './gang';
 import { iVattnetNu, sjoNamn, sjoVid, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
@@ -1298,6 +1299,8 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
     const b = bonFritid(s, p);
     if (b) { set(v, 'be', BONER[b.id].text(s, p, b.o)); v.tool = b.id; v.spot = b.spot ?? { x: p.x, y: p.y }; v.dur = BONER[b.id].min * MIN; return; }
   }
+  // att skriva och att läsa (steg 10.6.5, skrift.ts): bredvid bönen och berättandet, där det finns blad, bläck och ljus
+  if (skrift(s, p, v, platsIByn(s, p, 'val'), wv + wh + wsoc + wp)) return;
   let r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws + wsp);
   if (r >= wv + wh + wsoc + wp + wb + ws) {
     const sp = sportVal(s, p);
@@ -1322,6 +1325,17 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   }
 }
 
+// skriva eller läsa ett blad: skrivvikten och läsvikten mot resten av fritiden (annan), där at är platsen hen skulle skriva på
+function skrift(s: State, p: Person, v: Val, at: { x: number; y: number }, annan: number) {
+  if (!s.ting?.some(t => t.k === 'blad' || t.inne?.v === 'black')) return false;
+  const sk = skrivVal(s, p, at), la = lasVal(s, p), w = (sk?.w ?? 0) + (la?.w ?? 0);
+  if (w <= 0) return false;
+  const r = rnd(s, 'val', p) * (w + annan);
+  if (r >= w) return false;
+  if (sk && r < sk.w) { const pl = skrivPlats(s, p, at); set(v, 'skriva', sk.why); v.spot = pl.spot; v.dur = pl.dur; } // vid en ledig skrivpulpet, annars för hand där hen är (steg 10.6.11)
+  else { set(v, 'lasa', la!.why); v.spot = la!.spot; v.ref = la!.ref; v.dur = SKRIFT.lasMin * MIN; }
+  return true;
+}
 // hotet byn känner i natt (steg 10.1.20): grunden, vargar som någon sett, rövare som nyss varit här (klingar av som deras vila),
 // ett varsel om en motgång, och påbudet om nattvakten. Så många håller vakt (avrundat), aldrig fler än hälften av de vuxna som orkar
 export function vaktHot(s: State) {
@@ -1363,6 +1377,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   else if (a >= ALDER.hjalper && p.rest < VAL.nattVila) set(v, 'vila', 'Mörkt och trött efter dagen, vilar ut vid elden');
   else if (a < ALDER.hjalper) { if (r < VAL.nattBarnSamtal) set(v, 'samtal', 'Mörkt, sitter med de vuxna vid elden'); else set(v, 'sova', 'Barn sover på natten'); }
   else if (r < story) set(v, 'beratta', 'Mörkt, berättar för de andra vid elden');
+  else if (skrift(s, p, v, { x: e.x + 0.5, y: e.y + 0.5 }, 1)) return; // i ljuset vid elden (steg 10.6.5)
   else if (r < story + craftW) craft(s, p, v, 'Mörkt, gör handarbete vid elden');
   else if (r < VAL.nattSamtal) { set(v, 'samtal', 'Mörkt, umgås vid elden'); v.dur = (VAL.nattPrat + rnd(s, 'val', p) * VAL.nattPratSpann) * MIN; } // en stund, sedan går man en bit till nästa samtal
   else set(v, 'vila', 'Mörkt, vilar vid elden');

@@ -134,6 +134,8 @@ const DEF = {
   gravbesok: { namn: 'Står vid graven', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true }, // besöket vid graven (steg 10.4.8)
   ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, tyst: true, dygn: true },
   begrava: { namn: 'Går för att ta hand om en död', tecken: '✨', ikon: 'a_be', framme: true, stilla: true },
+  skriva: { namn: 'Skriver', tecken: '📜', ikon: 'pergament', framme: true, stilla: true }, // ett blad på fritiden (steg 10.6.5, skrift.ts)
+  lasa: { namn: 'Läser', tecken: '📜', ikon: 'blad', framme: true, stilla: true }, // ett skrivet blad där det ligger
   runsten: { namn: 'Reser en runsten', slag: 'bygga', framme: true, stilla: true }, // steg 10.6.1 (skrift.ts)
   gravvard: { namn: 'Gör vården på en grav', slag: 'bygga', framme: true, stilla: true }, // steg 10.4.2
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' } },
@@ -170,6 +172,8 @@ const DEF = {
   koka_tjara: { namn: 'Kokar tjära', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
   koka_lim: { namn: 'Kokar benlim', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
   koka_tval: { namn: 'Kokar tvål', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
+  gora_pergament: { namn: 'Gör pergament', slag: 'hantverk', hantverk: true, verb: 'skrapar', plats: 'station' }, // vid garvningsställningen (steg 10.6.4)
+  riva_black: { namn: 'Gör bläck', slag: 'hantverk', hantverk: true, verb: 'gnider', plats: 'elden' }, // sot och vatten i en liten lerkruka
   garva: { namn: 'Garvar ett skinn', slag: 'hantverk', hantverk: true, verb: 'garvar', plats: 'station' }, // vid garvningsställningen (steg 7.7.6)
   spinna: { namn: 'Spinner lintråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // med sländan, var som helst (steg 7.7.8)
   vava: { namn: 'Väver lintyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' }, // vid vävstolen (steg 7.7.9)
@@ -213,6 +217,7 @@ const DEF = {
   fackla: { namn: 'Gör en fackla', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' }, // steg 6.3.6 (ljus.ts)
   trumma: { namn: 'Gör en trumma', slag: 'hantverk', hantverk: true, verb: 'spänner', plats: 'station' },
   benflojt: { namn: 'Skär en benflöjt', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'station' },
+  bok: { namn: 'Binder en bok', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' }, // vid snickarbänken (steg 10.6.6)
   lyra: { namn: 'Gör en lyra', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
   mal: { namn: 'Binder ett mål', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' },
   skara: { namn: 'Gör en skära', slag: 'hantverk', hantverk: true, plats: 'station' }, // till slåttern (steg 9.8.9)

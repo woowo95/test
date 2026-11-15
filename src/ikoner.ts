@@ -144,6 +144,10 @@ export const PAL: Record<string, Record<string, string>> = {
   tradorr_karta: { o: '#24201d', J: '#7d5b40', j: '#5e3c24', W: '#987e62', k: '#24201d' },
   skinndorr_karta: { e: '#bdb39b', E: '#dad0bb', o: '#5e3c24', O: '#7e7362', S: '#987e62', s: '#7d5b40', Z: '#2f261d', z: '#474138', d: '#372f25' },
   skinn: { b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
+  pergament: { w: '#dad0bb', k: '#bdb39b' },
+  blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
+  skrivpulpet: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', w: '#dad0bb', d: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 10.6.11, platshållare
+  bok: { h: '#7d5b40', w: '#dad0bb', d: '#24201d' }, // steg 10.6.6, platshållare // steg 10.6.5, platshållare // steg 10.6.4, platshållare
   // vargen (steg 3.7.14, platshållare): grå päls
   varg: { o: '#24201d', G: '#61767a', H: '#8a9c9e', g: '#3e5156', W: '#dad0bb', k: '#24201d' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   vargkott: { o: '#24201d', R: '#a14808', r: '#742a01', q: '#521100', w: '#dad0bb', W: '#dad0bb' },
@@ -2677,6 +2681,57 @@ export const PIX: Record<string, string[]> = {
     '.......oGo......',
     '........oo......',
   ],
+  // boken (steg 10.6.6, platshållare): bladen mellan två plankor, ryggen till vänster
+  skrivpulpet: [ // platshållare (steg 10.6.11): en lutande skiva med ett blad, och en pall framför
+    '................',
+    '................',
+    '...oooooooooo...',
+    '..occcccccccco..',
+    '..ocwwwwwwwcco..',
+    '.occwddwdwwccco.',
+    '.occwwwwwwwccco.',
+    '.ocbbbbbbbbbbco.',
+    '.oooooooooooooo.',
+    '..oa.......ao...',
+    '..oa..ooo..ao...',
+    '..oa.obbbo.ao...',
+    '..oa.oaaao.ao...',
+    '..oo.oa.ao.oo...',
+    '.....oo.oo......',
+    '..zz..zz.zz.zz..',
+  ],
+  bok: [
+    '........',
+    '.hhhhhh.',
+    '.hwwwwh.',
+    '.hwddwh.',
+    '.hwwwwh.',
+    '.hwddwh.',
+    '.hhhhhh.',
+    '........',
+  ],
+  // ett skrivet blad (steg 10.6.5, platshållare): pergamentet med rader av bläck
+  blad: [
+    '........',
+    '.wwwwwk.',
+    '.wddwkk.',
+    '.wwwwww.',
+    '.wdddww.',
+    '.wwwwww.',
+    '.kdddwk.',
+    '........',
+  ],
+  // ett tomt blad pergament (steg 10.6.4, platshållare): ett ljust, lite ojämnt blad med hörnet uppvikt
+  pergament: [
+    '........',
+    '.wwwwwk.',
+    '.wwwwkk.',
+    '.wwwwww.',
+    '.wwwwww.',
+    '.wwwwww.',
+    '.kwwwwk.',
+    '........',
+  ],
   skinn: [
     '...dd...',
     'b..BB..b',
@@ -4176,6 +4231,7 @@ PIX.kk_liv = ['................', '....kkk.........', '...kXXXk........', '...kX
 PIX.kk_motgang = ['................', '.......kkkkk....', '......kwqqqk....', '......kqqqk.....', '.....kqqqk......', '.....kqqqkkkk...', '....kqqqqqqqk...', '....kkkkkqqk....', '........kqqk....', '.......kqqk.....', '.......kqk......', '......kqk.......', '......kk........', '.....k..........', '................', '................']; PAL.kk_motgang = {k: '#24201d',w: '#d8b25f',q: '#b2921b'};
 PIX.kk_styre = ['................', '................', '................', '..k....k....k...', '.kwk..kwk..kqk..', '.kqqk.kqqk.kqqk.', '.kqqqkkqqqkkqqk.', '.kqqqqqqqqqqqqk.', '.kqqqqGHGqqqqpk.', '.kqqqqGGGqqqqpk.', '.kwwwwwwwwwwwpk.', '.kppppppppppppk.', '..kkkkkkkkkkkk..', '................', '................', '................']; PAL.kk_styre = {k: '#24201d',w: '#d8b25f',q: '#b2921b',G: '#a14808',H: '#bd753e',p: '#906f0f'};
 PIX.kk_bygge = ['......k..k......', '.......kk.......', '......ktsk......', '.....ktutsk.....', '....ktuttssk....', '...ktuttssssk...', '..ktuttssssssk..', '.ktuttssssssssk.', 'kkkkkkkkkkkkkkkk', '.kuuuuuuuuuuuuk.', '.kssssskkkksssk.', '.kuuuuukllkuuuk.', '.kssssskllksssk.', '.kuuuuukllkuuuk.', '.kssssskllksssk.', '.kkkkkkkkkkkkkk.']; PAL.kk_bygge = {k: '#24201d',t: '#7d5b40',s: '#5e3c24',u: '#987e62',l: '#2f261d'};
+PIX.kk_skrift = PIX.bok!; PAL.kk_skrift = PAL.bok!; // platshållare (steg 10.6.8)
 PIX.kk_fritid = ['..kuk......ktk..', '..kuk......ktk..', '.kuukkkkkkkkttk.', '.kttttttttttttk.', '.kukkkwkwkwkktk.', '.kuuk.w.w.wkttk.', '.kutk.w.w.wkttk.', '.kttk.w.w.wktsk.', '..ktk.w.w.wksk..', '..kttkw.w.wssk..', '...ktkwkwkwsk...', '...kttutttssk...', '....kuptptpk....', '....ktttttsk....', '.....ktttsk.....', '......kkkk......']; PAL.kk_fritid = {k: '#24201d',u: '#987e62',t: '#7d5b40',w: '#d8b25f',s: '#5e3c24',p: '#906f0f'};
 PIX.kk_grannar = ['................', '................', '...kk.......kk..', '..kttk.....kttk.', '.ktsstk...ktsstk', 'kkkkkkkk.kkkkkkk', '.kussuk...kussuk', '.kmkkuk...kukkmk', '.kmkkuk...kukkmk', 'kkkkkkkKLKkkkkkk', 'kKuuLKLKKKKKuuKk', 'kKuuuututuuttuKk', 'kKKKKuutuutKKKKk', 'kKKKKKKLKLKKLKKk', 'kkkkkkkkkkkkkkkk', '................']; PAL.kk_grannar = {k: '#24201d',t: '#7d5b40',s: '#5e3c24',u: '#987e62',m: '#372f25',K: '#647025',L: '#898b4c'};
 PIX.kk_strid = ['..kk............', '.kSSk.....kkk...', '.kSSSk...kTTSk..', '.kSSk....kTSSSk.', '.kSktk....kSSRk.', '..k.ktk..ktSRRRk', '....Gttkkttkkkk.', '....Gkttttk.....', '...FF.kttk..G...', '.....kttttk.....', '....kttkkttk....', '...kttk..kttk...', '..kttk.G..kttk..', '.kttk..F...ktk..', '.ktk........ktk.', '..k..........k..']; PAL.kk_strid = {k: '#24201d',S: '#61767a',T: '#8a9c9e',t: '#7d5b40',R: '#3e5156',G: '#a14808',F: '#742a01'};

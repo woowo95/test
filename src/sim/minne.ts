@@ -379,6 +379,13 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
     }
   }
 }
+// den som läser en lärdom på ett blad (steg 10.6.5, skrift.ts) får den med skrivarens säkerhet och skrivaren som källa, ett led
+// längre bort; lärdomen står som den var när den skrevs, så den kan ha blivit gammal och osann
+export function lasLardom(s: State, q: Person, l: Lardom, av: number) {
+  if (findL(q, l.k, l.a, l.sl)) return;
+  (q.lardomar ??= []).push({ k: l.k, a: l.a, ...(l.sl !== undefined ? { sl: l.sl } : {}), v: l.v, ...(l.g !== undefined ? { g: l.g } : {}), c: l.c, t: l.t, src: av, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}) });
+  trim(s, q);
+}
 // en rättelse är en nyhet i två dygn
 const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINNE.nyhetDygn * DAY;
 export function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {

@@ -60,6 +60,7 @@ const DEF = {
   klyvplats: { var: 'station', av: { virke: 1, ved: 2 }, min: 15, slag: 'stor', tek: 'klyvplats' },
   ortkok: { var: 'station', av: { virke: 2, sten: 4 }, min: 20, slag: 'stor', tek: 'ortkok' },
   snickarbank: { var: 'station', av: { virke: 2, plankor: 2 }, min: 15, slag: 'stor', tek: 'snickarbank' }, // steg 9.4.4
+  skrivpulpet: { var: 'station', av: { plankor: 2, virke: 1 }, min: 15, slag: 'stor', tek: 'skrivpulpet' }, // steg 10.6.11
   garvning: { var: 'station', av: { grenar: 4, rep: 2 }, min: 15, slag: 'stor', tek: 'garvning' },
   vavstol: { var: 'station', av: { virke: 2, sten: 4, rep: 1 }, min: 20, slag: 'stor', tek: 'vavstol' },
   harden: { var: 'station', av: { huggen_sten: 6 }, min: 20, slag: 'stor', tek: 'harden' },
@@ -70,6 +71,8 @@ const DEF = {
   benlim: { var: 'sak', av: { ben: 2 }, min: 5, slag: 'stor', tek: 'ortkok' },
   tval: { var: 'sak', av: { kol: 1, talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' },
   lader: { var: 'sak', av: { skinn: 1, talg: 1 }, min: 5, slag: 'stor', tek: 'garvning' },
+  bok: { var: 'sak', av: { pergament: 8, plankor: 2 }, min: 5, slag: 'stor', tek: 'bok', bank: 'snickarbank', bara: true }, // steg 10.6.6: 8 blad mellan 2 plankor
+  pergament: { var: 'sak', av: { skinn: 1 }, min: 5, slag: 'stor', tek: 'pergament' }, // steg 10.6.4: ett skinn blir 4 blad vid garvningsställningen
   lin: { var: 'sak', av: { ratlin: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
   trad: { var: 'sak', av: { lin: 2 }, min: 3, slag: 'liten', tek: 'slanda' },
   lintyg: { var: 'sak', av: { trad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' },
