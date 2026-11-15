@@ -96,6 +96,7 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   klapare: { namn: [['Klåparen', 'Klåparen'], ['Tummen', 'Tummen'], ['den klumpige', 'den klumpiga'], ['Spillan', 'Spillan']] },
   lat: { namn: [['den late', 'den lata'], ['Sömntuta', 'Sömntuta'], ['Solsittaren', 'Solsitterskan'], ['den tröge', 'den tröga']] },
   fattig: { namn: [['den fattige', 'den fattiga'], ['Tomhand', 'Tomhand'], ['Barfota', 'Barfota'], ['den arme', 'den arma']] },
+  tigger: { namn: [['tiggaren', 'tiggerskan'], ['Skålen', 'Skålen'], ['Tomskål', 'Tomskål']] }, // steg 10.5.11
   generos: { namn: [['den givmilde', 'den givmilda'], ['Öppenhand', 'Öppenhand'], ['den gode', 'den goda'], ['Gåvogivaren', 'Gåvogiverskan']] },
   hjalpsam: { namn: [['Hjälparen', 'Hjälperskan'], ['den gode', 'den goda'], ['Räddaren', 'Räddarinnan'], ['den trofaste', 'den trofasta']] },
   skicklig: { namn: [['Mästaren', 'Mästarinnan'], ['den skicklige', 'den skickliga'], ['Guldhand', 'Guldhand'], ['den kloke', 'den kloka']] },
@@ -738,7 +739,7 @@ const MDEF = {
     { t: '{namn} hann bli {aldern} år innan {hen} dog {orsak}, {arstid} år {ar}.', om: f => f.gammal === true },
     { t: '{Arstid} år {ar} dog {namn} {orsak}. {Hen} blev {aldern} år.', om: f => !f.spad },
     { t: '{namn} dog {orsak} när {hen} var {aldern} år, {arstid} år {ar}.', om: f => !f.spad },
-    { t: '{namn} lever inte längre. {Hen} dog {orsak} {arstid} år {ar}, {aldern} år gammal.', om: f => !f.spad },
+    { t: '{namn} lever inte längre: {hen} dog {orsak} {arstid} år {ar}, {aldern} år gammal.', om: f => !f.spad },
     { t: '{namn} levde ett långt liv och dog {orsak} {arstid} år {ar}, {aldern} år gammal.', om: f => f.gammal === true },
     { t: '{Arstid} år {ar} tog döden {namn}: {hen} dog {orsak}, {aldern} år gammal.', om: f => !f.spad },
     { t: '{namn} dog {orsak} {arstid} år {ar}, innan {hen} hunnit fylla ett år.', om: f => f.spad === true },
@@ -1255,6 +1256,12 @@ const MDEF = {
     '{namn} beskrev för {med} vägen till {om}.',
     '{namn} sa till {med} att det finns {om} på ett ställe {hen} vet.',
     '{namn} och {med} pratade om {om} och var det brukar finnas.',
+  ],
+  p_pris: [
+    '{namn} berättade för {med} {om}.',
+    '{namn} och {med} pratade om {om}.',
+    '{med} fick veta av {namn} {om}.',
+    '{namn} och {med} undrade {om}.',
   ],
   p_langtan: [
     '{namn} sa till {med} att {hen} längtar efter {om}.',
@@ -2627,6 +2634,7 @@ const ADEF = {
   teknik: { prio: 60, namn: 'En teknik' },
   kunskap: { prio: 55, namn: 'Något man kan' },
   plats: { prio: 50, namn: 'En plats' },
+  pris: { prio: 45, namn: 'Ett pris', ikon: 'silver' },
   langtan: { prio: 40, namn: 'Det man längtar efter', ikon: 's_mat' },
   karlek: { prio: 30, namn: 'Kärlek' },
   trost: { prio: 25, namn: 'Tröst', ikon: 's_trost' },

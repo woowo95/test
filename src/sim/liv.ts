@@ -19,6 +19,7 @@ import { rykteDod, startSmak } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, andraInst, klanById, klanerOf, utbrytning } from './klaner';
+import { prisIPrat } from './handel';
 import { gaMot } from './rovare';
 import { kanterna } from './varg';
 import { eldPlats, getMap } from './karta';
@@ -266,7 +267,7 @@ export function framlingSteg(s: State, dtSec: number) {
       if (kvar <= KLAN.framlingNara) {
         g.fas = 'pratar'; g.till = s.now + KLAN.framlingPrat * MIN; g.path = undefined; g.pk = undefined;
         log(s, `${p.name} från ${klanById(s, g.klan)?.namn ?? 'en grannklan'} pratar med ${l ? l.name : 'byn'}.`, 'move', [p.id, ...(l ? [l.id] : [])]);
-        if (l) think(l, 'Pratade med en främling', 0.05, s.now, 6 * HOUR);
+        if (l) { think(l, 'Pratade med en främling', 0.05, s.now, 6 * HOUR); prisIPrat(s, l, p); } // främlingen berättar vad något kostar (steg 10.5.15)
       }
     } else if (g.fas === 'pratar') {
       if (s.now >= (g.till ?? 0)) framlingBeslut(s, p);

@@ -69,7 +69,7 @@ import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
-import { handelSteg, handlaKlar, handlarMal, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
+import { handelSteg, handlaKlar, handelsMalRakna, handelsTill, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
 import { JAKT, jaktBar, jaktFallt, jaktForsok, jaktKlar } from './jakt';
@@ -195,7 +195,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   kol: (s, p, t) => { const e = eldById(s, t.ref); if (e) takeCoal(s, p, 'hämtade', e); },
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
   gravvard: (s, p, t) => gravvardBorja(s, p, t), // materialet tas när arbetet börjar (steg 10.4.2)
-  tvinna: (s, p, t, dtSec) => twineRope(s, p, dtSec / HOUR_S, t.handel ? villHaAv(s, 'rep') + handlarMal(s, 'rep') : undefined), // rep till handlaren (steg 6.2.11)
+  tvinna: (s, p, _t, dtSec) => twineRope(s, p, dtSec / HOUR_S, villHaAv(s, 'rep') + handelsTill(s, 'rep')), // till bufferten plus handelsmålet (steg 10.5.13)
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); }, // äldre sparfiler: rep tvinnades i handarbetet
   tanda: (s, p, t, dtSec) => {
     const f = eldById(s, t.ref); // lägerelden eller en lägereld till (task.ref, brasor.ts)
@@ -377,6 +377,7 @@ export const TAKTER: Takt[] = [
   { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
   { namn: 'omtanken', sek: 3600, fn: s => { omtankeTimme(s); lonOmtanke(s); } },
+  { namn: 'handelsmålet', sek: 3600, fn: s => handelsMalRakna(s) }, // varorna att byta med handlaren (handel.ts, steg 10.5.13)
   { namn: 'lönen', sek: 60, fn: (s, dt) => lonRakna(s, dt) }, // timmarna för byn och missnöjet med lönen (lon.ts, steg 10.5.9) // omtanken om byn (projekt.ts, steg 10.5.2)
   { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },
   { namn: 'forbrukTimme', sek: 3600, fn: s => { forbrukTimme(s); } },

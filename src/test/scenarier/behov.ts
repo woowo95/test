@@ -26,7 +26,7 @@ SCENARIER.behov = {
     needLadder(s, a, 1); const byns = a.hunger > 0.3 && ownFor(s, b, MAT) === 5;
     // ett barn ber sin förälder, som delar också det sista
     ({ s, a, b, c } = ny());
-    a.mother = b.id; gain(s, b, 'bar', 1); b.task = { act: 'sova' } as any;
+    a.mother = b.id; a.partner = undefined; a.born = s.now - 10 * SIM.DAY; gain(s, b, 'bar', 1); b.task = { act: 'sova' } as any;
     needLadder(s, a, 1e6); const foralder = a.hunger > 0.3 && ownFor(s, b, MAT) < 0.5;
     // en vän ger det hen har över
     ({ s, a, b, c } = ny());
@@ -1022,3 +1022,47 @@ for (const n of ['kropp', 'halsoflik']) {
   const kor0 = SCENARIER[n]?.kor;
   if (kor0) SCENARIER[n].kor = () => { SIM.HALSA_PROV.grov = true; try { return kor0(); } finally { SIM.HALSA_PROV.grov = false; } };
 }
+
+SCENARIER.tiggare = {
+  text: 'Steg 10.5.11: den som varken har egen mat eller rätt till mat ur byns förråd ber dem hen möter, och nu ger också en främling: viljan har ett golv (DELA.geFrammande) gånger empatin, seden och överflödet, och är noll för ovänner. Den som fått mat så blir en tiggare i byns ögon. Med budgetens stöd till fattiga äter den fattiga ur förrådet. Golvet gäller den som ber av nöd, inte material',
+  kor: () => {
+    const ny = () => {
+      const s = createState(6, START);
+      rikBy(s); setMat(s, {});
+      const [a, b, c] = treVuxna(s, 0.3);
+      s.people = [a, b, c]; c.x = 90;
+      a.bast = b.bast = undefined; getRel(s, a, b).op = 0; // a och b är främlingar
+      b.pot.empati = 20; gain(s, b, 'bar', 20);
+      return { s, a, b, c };
+    };
+    // en empatisk främling med överflöd ger
+    let { s, a, b, c } = ny();
+    let fick = false;
+    for (let i = 0; i < 40 && !fick; i++) { a.hunger = 0.3; needLadder(s, a, 1e6); fick = a.hunger > 0.3 && ownFor(s, b, MAT) < 20; }
+    const tigger = fick && a.tiggde !== undefined && (s.stat?.tiggare ?? 0) === 1;
+    // en ovän ger inget
+    ({ s, a, b } = ny()); getRel(s, b, a).op = -10;
+    let ovan = false;
+    for (let i = 0; i < 40 && !ovan; i++) { a.hunger = 0.3; needLadder(s, a, 1e6); ovan = ownFor(s, b, MAT) < 20; }
+    // mer sällan i en by med Självförsörjning
+    ({ s, a, b, c } = ny());
+    s.seder.v.gemenskap = 1; const samman = SIM.willing(s, b, a, 3, true);
+    s.seder.v.gemenskap = -1; const sjalv = SIM.willing(s, b, a, 3, true);
+    s.seder.v.gemenskap = 0;
+    // inget material: utan nöd ger en främling inget
+    const material = SIM.willing(s, b, a, 3);
+    // med stöd till fattiga äter den fattiga ur byns förråd, men inte en som inte är fattig
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now, straff: 4, av: b.id, om: '' }] } as unknown as SIM.State['styre'];
+    s.people.forEach(q => { q.forv = { w: q === a ? 1 : 200 } as never; });
+    s.budget = { delar: [{ id: 'fattiga', vikt: 1 }] };
+    SIM.put(s, 'bar', 50); SIM.budgetDygn(s);
+    const fattigAt = SIM.takeFood(s, 0.5, a).n > 0, rikAt = SIM.takeFood(s, 0.5, c).n > 0;
+    return [
+      ['en empatisk främling med överflöd ger den hungriga mat, och hen blir en tiggare', tigger],
+      ['en ovän ger inget', !ovan],
+      [`viljan är lägre i en by med Självförsörjning (${samman.toFixed(2)} → ${sjalv.toFixed(2)})`, sjalv < samman && sjalv > 0],
+      [`en främling ger inget utan nöd, som material (${material})`, material === 0],
+      ['med stöd till fattiga äter den fattiga ur byns förråd', fattigAt && !rikAt],
+    ];
+  },
+};

@@ -37,6 +37,8 @@ export const SKATT = balans('skatt', {
   arvLutar: 0.6, // så mycket lutningen mot Sammanhållning väger i rösten om arvsskatten för andra
 });
 
+// åldern då föräldrarna slutar försörja barnen (steg 10.5.10): åldern i skattelagen, samma tal också innan lagen finns
+export const forsorjAlder = (s: State) => lagGaller(s, 'skatt') ? lagTal(s, 'skatt', 'alder') : SKATT.alder;
 // en sak man kan betala med: värdet per styck, hur många och hur de lämnas till byn
 interface Betalning { v: number; n: number; ta: (m: number) => number }
 const avStack = (s: State, p: Person, k: string, n: number): Betalning => ({ v: grundvarde(k), n: Math.floor(n + 1e-9), ta: m => ownMove(s, k, m, p.id, BYN) });
@@ -108,7 +110,7 @@ const OVRE: LagTalDef = {
   vill: (s, p) => { const { w, m } = egen(s, p); return w < m ? 2 * m : Infinity; },
 };
 const ALDERN: LagTalDef = {
-  namn: 'åldern', sym: '⌛', stege: [14, 16, 18, 20], start: SKATT.alder, visa: v => `${v} år`,
+  namn: 'åldern', sym: '🕓', stege: [14, 16, 18, 20], start: SKATT.alder, visa: v => `${v} år`,
   vill: (s, p) => ageOf(p, s.now) < 20 || living(s).some(c => isParent(p, c) && ageOf(c, s.now) >= 14 && ageOf(c, s.now) < 20) ? 20 : 18,
 };
 
@@ -194,7 +196,7 @@ export function arvsskattVidDoden(s: State, p: Person) {
 export function skattRegister() {
   LAGAR.skatt.tal = { procent: PROCENT, alder: ALDERN, undre: UNDRE, ovre: OVRE };
   LAGAR.arvsskatt = {
-    namn: 'Arvsskatt', sym: '⚱️', text: 'När någon dör går en del av det hen ägde till byns förråd före arvingarna', straff: 0, om: 'att rikedomen samlades hos några',
+    namn: 'Arvsskatt', sym: '💀', text: 'När någon dör går en del av det hen ägde till byns förråd före arvingarna', straff: 0, om: 'att rikedomen samlades hos några',
     prio: s => clamp(living(s).length / SKATT.arvByn, 0, 1) * ojamnhet(s),
     rost: (s, p) => rikMedArvingar(s, p) ? { v: -SKATT.arvEmot, why: 'Vill lämna sitt åt de sina' } : { v: lutning(s, p) * SKATT.arvLutar, why: lutning(s, p) > 0 ? 'Tycker att rikedomen ska komma byn till del' : 'Tycker att arvet är familjens' },
     tal: { andel: ANDEL },

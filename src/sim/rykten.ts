@@ -111,6 +111,7 @@ const IDEF = {
   klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
   lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
   fattig: { namn: 'fattig', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
+  tigger: { namn: 'tiggare', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🤲', som: 'en tiggare', betyder: 'Har fått mat av någon utanför familjen det senaste året, för att hen inte hade någon.' }, // steg 10.5.11
   generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', sed: { gemenskap: 1 }, betyder: 'Ger bort saker till andra.' },
   hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', sed: { gemenskap: 2 }, betyder: 'Har gett något till någon som höll på att dö.' },
   skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', sed: { arbete: 1 }, betyder: 'Har gjort ett mästerverk.' },
@@ -368,11 +369,12 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
   for (let i = 0; i < folk.length; i++) {
     const p = folk[i];
     const flit = hm > 0 ? (h[i] > hm * RYKTE.flitig ? 'flitig' : h[i] < hm * RYKTE.lat ? 'lat' : undefined) : undefined;
+    const tig = p.tiggde !== undefined && s.now - p.tiggde < DAY ? 'tigger' : undefined; // fick mat av en främling det senaste året (steg 10.5.11, behov.ts)
     const rik = wm >= RYKTE.rikMin ? (w[i] > mitt * RYKTE.rik ? 'rik' : w[i] > mitt * RYKTE.valbargad ? 'valbargad' : w[i] < mitt * RYKTE.fattig ? 'fattig' : undefined) : undefined;
     for (const q of folk) {
       if (q === p || Math.hypot(q.x - p.x, q.y - p.y) >= RYKTE.syn) continue;
-      for (const grupp of [['flitig', 'lat'], ['valbargad', 'rik', 'fattig']] as IntryckTyp[][]) {
-        const mal = grupp[0] === 'flitig' ? flit : rik;
+      for (const grupp of [['flitig', 'lat'], ['valbargad', 'rik', 'fattig'], ['tigger']] as IntryckTyp[][]) {
+        const mal = grupp[0] === 'flitig' ? flit : grupp[0] === 'tigger' ? tig : rik;
         for (const k of grupp) {
           const e = intryckOm(q, p.id, k);
           if (k === mal) intryck(s, q, p, k, RYKTE.vardagTakt * (1 - (e?.v ?? 0)), 1);
