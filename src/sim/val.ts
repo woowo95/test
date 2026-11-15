@@ -44,7 +44,7 @@ import { eldPlats, getMap } from './karta';
 import { ryggsack, ryms } from './utrustning';
 // p orkar bära en av saken k (virket lyfts med båda händerna, steg 10.2.89)
 const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, p)({ [k]: viktOf(k) });
-import { amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar } from './lager';
+import { allows, amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
@@ -744,7 +744,7 @@ export const ARBETEN: readonly Arbete[] = [
     if (!(s.stackar?.length && (gt = haulJob(s, undefined, f.svalt)))) return false;
     if (!kanLyfta(s, p, gt.k)) return false; // virket bär bara den som orkar lyfta det (steg 10.2.89): annars valdes samma jobb om och om igen
     const fara = f.kyla || (f.svalt && !isFood(gt.k));
-    if (!radda(s, p, a => !isStored(s, a.x, a.y), fara ? VAL.baraKyla : 1, (vardeUte(s) + vardeIFel(s, gt)) / VAL.baraVarde)) return false;
+    if (!radda(s, p, a => !isStored(s, a.x, a.y), fara ? VAL.baraKyla : 1, (vardeUte(s) + vardeIFel(s)) / VAL.baraVarde)) return false;
     set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return true;
   } },
   // fältet (steg 2.10.3): den mogna grödan skördas innan den blir övermogen eller fryser, och den som börjat på sitt fält arbetar vidare
@@ -1089,11 +1089,11 @@ function radda(s: State, p: Person, pass: (a: { k: string; x: number; y: number 
 }
 // värdet av det som ligger ute och inte är i lagret (steg 10.2.6): det som inte ruttnar bärs in efter vad det är värt
 function vardeUte(s: State) { let v = 0; for (const a of s.stackar ?? []) if (a.n > 0 && !isStored(s, a.x, a.y)) v += grundvarde(a.k) * a.n; return v; }
-// det jobbet flyttar inom lagret (sorterar, närmare elden) är också värt att bära: värdet av stacken på rutan
-function vardeIFel(s: State, gt: { x: number; y: number; k: string }) {
-  const x = Math.floor(gt.x), y = Math.floor(gt.y);
-  if (!isStored(s, x, y)) return 0;
-  let v = 0; for (const a of s.stackar ?? []) if (a.x === x && a.y === y && a.k === gt.k) v += grundvarde(a.k) * a.n;
+// det som ligger på fel lagerplats (maten bland materialet) är också värt att bära, fast det ligger i ett lager: värdet av
+// det i hela byn. Det som ligger bredvid lagret eller bara kan flyttas närmare elden räknas som lagrat
+function vardeIFel(s: State) {
+  const zs = zonesOf(s); let v = 0;
+  for (const a of s.stackar ?? []) { if (a.n <= 0) continue; const zi = zoneAt(s, a.x, a.y); if (zi >= 0 && !allows(zs[zi], a.k)) v += grundvarde(a.k) * a.n; }
   return v;
 }
 // det som ligger i lagret och är av en sort som k godtar
