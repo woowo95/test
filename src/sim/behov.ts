@@ -440,7 +440,8 @@ function ownedKind(s: State, p: Person, k: string) {
 // p saknar redskapet: hen arbetar med det och äger inget, eller byn har inget av slaget och det behövs i ett arbete som inte
 // går utan det (yxan för att fälla träd, steg 4.5.4.16), så att man vill köpa det av handlaren
 const needsTool = (s: State, p: Person, k: string, tot = habitTotal(p)) => ownedKind(s, p, k) === 0 && (habitShare(p, actsOf(k), tot) > 0.1 || kravs(k) && !tingOf(s).some(t => t.k === k));
-const kravs = (k: string) => actsOf(k).some(a => ACTS[a].redskap?.[k]?.kravs);
+const KRAVS: Record<string, boolean> = {}; // ur registret, en gång per slag
+const kravs = (k: string) => KRAVS[k] ??= actsOf(k).some(a => ACTS[a].redskap?.[k]?.kravs);
 const ensam = (s: State, k: string) => kravs(k) && tingOf(s).filter(t => t.k === k).length <= 1;
 // ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det och det är inte byns enda av ett slag som ett
 // arbete inte går utan (steg 4.5.4.16). Inte det hen arbetar med just nu eller har på sig.
@@ -462,8 +463,12 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
   for (const [m, g] of [[a, b], [b, a]]) {
     const totM = habitTotal(m);
     let totG: number | undefined; // räknas först när m saknar något
+    // slagen m äger räknas i ett svep över byns ting (needsTool går igenom tingen en gång per slag); inget byter ägare förrän
+    // en gåva eller ett byte blir av, och då är frågan klar
+    const ager = new Set<string>();
+    for (const t of tingOf(s)) if (t.agare === m.id) ager.add(t.k);
     for (const k of REDSKAP_SLAG) {
-      if (!needsTool(s, m, k, totM)) continue;
+      if (ager.has(k) || !(habitShare(m, actsOf(k), totM) > 0.1 || kravs(k) && !tingOf(s).some(t => t.k === k))) continue; // needsTool, med det ägda redan räknat
       const t = spare(s, g, k, totG ??= habitTotal(g));
       if (!t) continue;
       if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: DELA.saknar, minst: 1, fara: 0, typ: 'redskap', utom: [k] })) return 'byte';
