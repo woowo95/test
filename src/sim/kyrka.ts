@@ -10,7 +10,7 @@ import { clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
 import { type Sed, drar, habitShare } from './seder';
 import { ALDER, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat, think } from './folk';
-import { beratta, paminn } from './rykten';
+import { INTRYCK, beratta, paminn, ryktbarhet, samlatIntryck } from './rykten';
 import { FOOD, KOTTSLAG, sakNamn } from './saker';
 import { type Ting, tingOf } from './agande';
 import { MASTERVERK, kvNamn } from './kvalitet';
@@ -46,6 +46,7 @@ export const KYRKA = balans('kyrka', {
   skuldTro: 2, // ... och så här mycket svagare tro
   stotaUt: 5, // så mycket skuld innan en sträng och mäktig kyrka stöter ut någon
   helgonDygn: 28, // ett helgon blir det tidigast så här många dygn (år i spelet) efter döden, en generation
+  helgonRykte: 1, // så ryktbar bland de levande, med gott anseende, måste den döda vara för att bli helgon (steg 10.7.4); sätts efter räknaren helgon i balansen
   fram: 0.12, // chansen per kväll att den som talar för tron lägger fram något (steg 10.3.2)
   tillfalle: 2, // ett bröllop eller en födsel bland de troende lyfter fram budet i så här många dygn (år i spelet)
   nu: 0.5, // ... så här mycket före de andra förslagen
@@ -415,13 +416,23 @@ export function kyrkaKvall(s: State) {
   }
 }
 // ---------- helgonen (steg 8.6.5) ----------
-function helgonDygn(s: State) {
+export function helgonDygn(s: State) {
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined) continue;
-    const kand = s.people.find(p => p.died !== undefined && s.now - p.died >= KYRKA.helgonDygn * DAY && p.tro === tr.id && p.fame.length >= 3 && !tr.helgon?.some(h => h.id === p.id) && !living(s).some(q => s.rels[relKey(p.id, q.id)]));
+    // den döda som byn fortfarande berättar om (steg 10.7.4): ryktbar bland de levande med gott anseende, den ryktbaraste först.
+    // Framträdanden, kväden, bilder och stenar om hen håller ryktbarheten uppe (glomRykten i rykten.ts)
+    let kand: Person | undefined, bast = KYRKA.helgonRykte;
+    for (const p of s.people) {
+      if (p.died === undefined || s.now - p.died < KYRKA.helgonDygn * DAY || p.tro !== tr.id || tr.helgon?.some(h => h.id === p.id)) continue;
+      if (living(s).some(q => s.rels[relKey(p.id, q.id)])) continue;
+      const { r, a } = ryktbarhet(s, p.id);
+      if (r >= bast && a > 0) { bast = r; kand = p; }
+    }
     if (!kand) continue;
-    (tr.helgon ??= []).push({ id: kand.id, namn: kand.name, t: s.now, krönika: kand.fame.slice(0, 3).join('. ') + '.', myt: `${kand.fame[0]}. Så berättar de, och varje gång blir det större.` });
-    count(s, 'helgon'); const gh = s.gravar?.find(g => g.vem === kand.id); if (gh) gh.stor = true; // helgonet är stort och får de storas vård (steg 10.4.2)
+    const om = samlatIntryck(s, kand.id).slice(0, 3).map(([k]) => `${kand!.name} var ${INTRYCK[k].namn}`);
+    const fame = kand.fame.length ? kand.fame : om;
+    (tr.helgon ??= []).push({ id: kand.id, namn: kand.name, t: s.now, krönika: fame.slice(0, 3).join('. ') + '.', myt: `${fame[0] ?? kand.name}. Så berättar de, och varje gång blir det större.` });
+    count(s, 'helgon'); const gh = s.gravar?.find(g => g.vem === kand!.id); if (gh) gh.stor = true; // helgonet är stort och får de storas vård (steg 10.4.2)
     const t = `${kand.name} har blivit ett helgon i ${troNamn(tr).toLowerCase()}.`;
     log(s, t, 'rel', []); kronika(s, t, 'tro');
   }

@@ -1751,6 +1751,43 @@ SCENARIER.orena = {
   },
 };
 
+SCENARIER.helgonminne = {
+  text: 'Steg 10.7.4: helgon ur minnet. Helgon blir den döda som byn fortfarande berättar om: ryktbar bland de levande (KYRKA.helgonRykte) med gott anseende, och av flera den ryktbaraste. Ett kväde, ett framträdande, en bild eller en sten om den döda håller minnet uppe',
+  kor: () => {
+    const s = rikDag(3), v = vuxna(s);
+    const [u, d1, d2] = v;
+    s.tron = [{ id: 1, grundare: u.id, gnamn: u.name, t: s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: s.now, ar: 0 } as SIM.Tro];
+    for (const d of [d1, d2]) { d.tro = 1; d.died = s.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; delete d.intryck; }
+    for (const k of Object.keys(s.rels)) { const [a, b] = k.split('-').map(Number); if ([d1.id, d2.id].includes(a) || [d1.id, d2.id].includes(b)) delete s.rels[k]; }
+    const levande = SIM.living(s);
+    for (const p of levande) p.intryck = [d1, d2].map(d => ({ om: d.id, namn: d.name, k: 'generos' as SIM.IntryckTyp, v: 1, c: 1, t: s.now }));
+    const r0 = [SIM.ryktbarhet(s, d1.id).r, SIM.ryktbarhet(s, d2.id).r];
+    // fyrtio dygn: om d1 kväds det varje dygn, d2 glöms
+    for (let h = 0; h < 24 * 40; h += 4) {
+      s.now += 4 * SIM.HOUR;
+      if (h % 24 === 0) for (const p of SIM.living(s)) SIM.paminn(s, p, d1.id);
+      SIM.glomRykten(s, 4);
+    }
+    const r1 = [SIM.ryktbarhet(s, d1.id).r, SIM.ryktbarhet(s, d2.id).r];
+    SIM.helgonDygn(s);
+    const h = s.tron![0].helgon ?? [];
+    // av två som båda är ryktbara blir den ryktbaraste helgon
+    const s2 = rikDag(3), w = vuxna(s2), [u2, e1, e2] = w;
+    s2.tron = [{ ...s.tron![0], grundare: u2.id, gnamn: u2.name, helgon: undefined }];
+    for (const d of [e1, e2]) { d.tro = 1; d.died = s2.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; delete d.intryck; }
+    for (const k of Object.keys(s2.rels)) { const [a, b] = k.split('-').map(Number); if ([e1.id, e2.id].includes(a) || [e1.id, e2.id].includes(b)) delete s2.rels[k]; }
+    for (const p of SIM.living(s2)) p.intryck = [{ om: e1.id, namn: e1.name, k: 'generos' as SIM.IntryckTyp, v: 0.5, c: 1, t: s2.now }, { om: e2.id, namn: e2.name, k: 'generos' as SIM.IntryckTyp, v: 1, c: 1, t: s2.now }];
+    SIM.helgonDygn(s2);
+    const h2 = s2.tron![0].helgon ?? [];
+    return [
+      [`båda var lika kända (${r0.map(x => x.toFixed(1)).join(' och ')}), och efter 40 dygn (40 år i spelet) är den som det kväds om ryktbarare (${r1.map(x => x.toFixed(2)).join(' mot ')})`, Math.abs(r0[0] - r0[1]) < 1e-9 && r1[0] > r1[1]],
+      [`den som det kväds om blir helgon, den som glömts inte (${h.map(x => x.namn).join(', ') || 'ingen'})`, h.length === 1 && h[0].id === d1.id && r1[1] < SIM.KYRKA.helgonRykte],
+      [`helgonet behöver inga rader i eftermälet, och berättelsen kommer ur det byn minns (${h[0]?.krönika ?? ''})`, d1.fame.length === 0 && (h[0]?.krönika ?? '').includes('generös')],
+      [`av två ryktbara blir den ryktbaraste helgon (${h2.map(x => x.namn).join(', ')})`, h2.length === 1 && h2[0].id === e2.id],
+    ];
+  },
+};
+
 SCENARIER.kyrkan = {
   text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, trons hus (steg 10.3.19), buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
   kor: () => {
