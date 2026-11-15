@@ -2014,3 +2014,33 @@ SCENARIER.troshusplan = {
     ];
   },
 };
+SCENARIER.gravplats = {
+  text: 'Steg 10.4.6: gravplatsen efter tron. Raderna i GRAVPLATSER (nära byn, i skogsbrynet, nära sjön, djupt i skogen, långt från byn, vid den heliga platsen) är bud som blir trons sed när den första troende dör, så att också hen hamnar där; avståndet märks bara som gångtid',
+  kor: () => {
+    const plats = (natur: number, sk: Partial<Record<SIM.SkalaId, number>>) => {
+      const a = medTro(6, 2); a.tr.natur = natur; a.tr.sk = { ...a.tr.sk, ...sk };
+      const b = begravHela(a.s, a.v[0], a.v[1]), bud = a.tr.bud?.find(x => /^grav(Nara|Bryn|Sjo|Djup|Langt|Helig)$/.test(x.id))?.id;
+      // platsen, också när kroppen sänktes eller brändes (då ligger trons gravplats där nästa grav hamnar)
+      const k = bud && (Object.keys(SIM.GRAVPLATSER) as SIM.PlatsId[]).find(q => SIM.GRAVPLATSER[q].bud === bud);
+      const c = b.g ?? (k ? SIM.gravPlats(a.s, a.tr, [bud!]) : undefined);
+      return { a, b, bud, c, ut: c ? SIM.utanforByn(a.s, c.x, c.y) : -1, tid: b.tid };
+    };
+    const nara = plats(85, { livet: 50 }), bryn = plats(20, { livet: 50 }), djup = plats(10, { oppen: 100, livet: 50 }), langt = plats(50, { forlat: 95, livet: 50 });
+    const skog = (() => { const g = djup.c; if (!g) return 0; let n = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.isForest(djup.a.s, (g.y + dy) * SIM.W + g.x + dx)) n++; return n; })();
+    // den heliga platsen går före
+    const h = medTro(6, 2); h.tr.natur = 85;
+    const k = SIM.heligaKandidater(h.s, h.tr)[0]; SIM.FRAGOR.nyttBud.gor(h.s, { tro: h.tr.id, id: 'helig', v: SIM.heligVarde(k.x, k.y) }, undefined);
+    const hp = h.s.heliga?.find(q => q.tro === h.tr.id), bh = begravHela(h.s, h.v[0], h.v[1]);
+    // ett andra dödsfall hamnar på samma plats
+    const b2 = begravHela(langt.a.s, langt.a.v[0], langt.a.v[2]);
+    return [
+      [`nära byn för Människa (${nara.bud}, ${nara.ut.toFixed(1)} rutor utanför)`, nara.bud === 'gravNara' && Math.abs(nara.ut - SIM.GRAV.avst) <= 2],
+      [`i skogsbrynet för Natur (${bryn.bud}, ${bryn.ut.toFixed(1)} rutor utanför)`, bryn.bud === 'gravBryn' && bryn.ut <= SIM.GRAV.avst + 4],
+      [`djupt i skogen för Natur och Sluten (${djup.bud}, ${djup.ut.toFixed(1)} rutor utanför, ${skog} av 25 skog runt graven)`, djup.bud === 'gravDjup' && djup.ut >= 6 && skog >= 12],
+      [`långt från byn för Straffande (${langt.bud}, ${langt.ut.toFixed(1)} rutor utanför)`, langt.bud === 'gravLangt' && langt.ut >= 11],
+      [`längre bort är längre att bära: gångtiden syns bara i vägen (grävtiden ${Math.round(langt.tid / SIM.MIN)} mot ${Math.round(nara.tid / SIM.MIN)} min)`, langt.tid === nara.tid || !langt.b.g || !nara.b.g],
+      [`vid den heliga platsen när tron har en (${h.tr.bud?.find(x => x.id.startsWith('grav'))?.id})`, !!hp && h.tr.bud!.some(x => x.id === 'gravHelig') && !!bh.g && Math.hypot(bh.g.x - hp.x, bh.g.y - hp.y) <= 4],
+      [`nästa grav hamnar på samma plats (${b2.g ? Math.round(Math.hypot(b2.g.x - langt.b.g!.x, b2.g.y - langt.b.g!.y)) : '–'} rutor från den första)`, !!b2.g && !!langt.b.g && Math.hypot(b2.g.x - langt.b.g.x, b2.g.y - langt.b.g.y) <= 4],
+    ];
+  },
+};

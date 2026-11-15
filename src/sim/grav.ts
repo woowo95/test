@@ -1,11 +1,11 @@
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
-import { GRANNAR4, H, HOUR, Person, State, T, Task, W, inMap } from './typer';
+import { H, HOUR, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { byId, count, isParent, living, log, relKey, think } from './folk';
 import { rnd } from './slump';
 import { getMap } from './karta';
 import { sjoVid } from './sjo';
-import { groundOf } from './mark';
+import { groundOf, isForest } from './mark';
 import { ledig } from './stationer';
 import { omrade, utanforByn } from './omrade';
 import { freeTools, newTing, take } from './agande';
@@ -34,12 +34,31 @@ export const GRAV = balans('grav', {
   vard: 0.4, vardAnnan: 0.5, // vikten för att göra vården på en grav när byn har det den behöver, och för den som minns hen utan att ha stått hen nära (steg 10.4.2)
 });
 export const gravarOf = (s: State): Grav[] => (s.gravar ??= []);
-// var graven hamnar: byns gravplats, samlad lite utanför byn, eller trons eget ställe (steg 8.5.7): vid den heliga platsen, vid vattnet eller i skogsbrynet
-export function gravPlats(s: State, tr: Tro | undefined): { x: number; y: number } {
-  const pl = (s.gravplatser ??= {}), key = tr && tr.gravSlag ? `t${tr.id}` : 'by';
+// ---------- gravplatsen (steg 10.4.6) ----------
+// var graven hamnar: en rad i GRAVPLATSER, ett bud i gruppen gravplats. Varje rad säger vad som drar, vad kartan måste ha och en kostnad
+// per ruta, och sökningen tar rutan med lägst kostnad. Utan tro (eller utan bud) byns egen gravplats nära byn. Avståndet märks bara som gångtid
+export type PlatsId = 'nara' | 'bryn' | 'sjo' | 'djup' | 'langt' | 'helig';
+export interface PlatsRad { namn: string; bud: BudId; skalor: [SkalaId, 0 | 1][]; avst: number; minAvst?: number; vatten?: true; skog?: [number, number]; helig?: true }
+export const GRAVPLATSER: Record<PlatsId, PlatsRad> = {
+  nara: { namn: 'Nära byn', bud: 'gravNara', skalor: [['natur', 1]], avst: GRAV.avst },
+  bryn: { namn: 'I skogsbrynet', bud: 'gravBryn', skalor: [['natur', 0]], avst: GRAV.avst, skog: [4, 12] }, // av de 25 rutorna runt
+  sjo: { namn: 'Nära sjön', bud: 'gravSjo', skalor: [['natur', 0]], minAvst: 20, avst: GRAV.avst, vatten: true }, // vatten inom 2 rutor
+  djup: { namn: 'Djupt i skogen', bud: 'gravDjup', skalor: [['natur', 0], ['oppen', 1]], avst: 10, skog: [20, 25] },
+  langt: { namn: 'Långt från byn', bud: 'gravLangt', skalor: [['forlat', 1]], avst: 15 },
+  helig: { namn: 'Vid den heliga platsen', bud: 'gravHelig', skalor: [], avst: 0, helig: true }, // bredvid den; går före de andra när tron har en
+};
+const PLATSER = Object.keys(GRAVPLATSER) as PlatsId[];
+// trons gravplats: budet som sparades på kroppen, annars trons bud nu
+const platsAv = (tr: Tro | undefined, bud?: string[]): PlatsId | undefined => {
+  const ids = bud ?? tr?.bud?.map(b => b.id) ?? [];
+  return tr ? PLATSER.find(k => ids.includes(GRAVPLATSER[k].bud)) : undefined;
+};
+const heligFor = (s: State, tr: Tro) => s.heliga?.find(h => h.tro === tr.id);
+export function gravPlats(s: State, tr: Tro | undefined, bud?: string[]): { x: number; y: number } {
+  const k = platsAv(tr, bud), pl = (s.gravplatser ??= {}), key = !k || k === 'nara' ? 'by' : `t${tr!.id}${k}`;
   if (!pl[key]) {
-    const hp = tr?.gravSlag === 'helig' ? s.heliga?.find(h => h.tro === tr.id) : undefined;
-    pl[key] = hp ? { x: hp.x + 1, y: hp.y + 1 } : sokPlats(s, tr?.gravSlag === 'vatten');
+    const hp = k === 'helig' ? heligFor(s, tr!) : undefined;
+    const { x, y } = hp ? { x: hp.x + 1, y: hp.y + 1 } : sokPlats(s, GRAVPLATSER[k && k !== 'helig' ? k : 'nara']); pl[key] = { x, y };
   }
   const c = pl[key];
   for (let r = 0; r < 8; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
@@ -48,14 +67,26 @@ export function gravPlats(s: State, tr: Tro | undefined): { x: number; y: number
   }
   return c;
 }
-function sokPlats(s: State, vatten: boolean) {
-  const o = omrade(s), m = getMap(s.seed); let best = { x: o.x1 + GRAV.avst, y: o.y1 }, bs = Infinity;
-  for (let y = Math.max(1, o.y0 - 10); y < Math.min(H - 1, o.y1 + 10); y += 2) for (let x = Math.max(1, o.x0 - 10); x < Math.min(W - 1, o.x1 + 10); x += 2) {
-    if (!ledig(s, x, y)) continue;
-    const d = Math.abs(utanforByn(s, x, y) - GRAV.avst) + (vatten && !GRANNAR4.some(([a, b]) => m.tiles[(y + b * 2) * W + x + a * 2] === T.Vatten) ? 6 : 0);
-    if (d < bs) { bs = d; best = { x, y }; }
+// de 25 rutorna runt: hur många som är skog, och om det finns vatten inom 2 rutor
+function runt(s: State, x: number, y: number) {
+  const m = getMap(s.seed); let skog = 0, vatten = false;
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const xx = x + dx, yy = y + dy; if (!inMap(xx, yy)) continue;
+    const i = yy * W + xx; if (isForest(s, i)) skog++; if (m.tiles[i] === T.Vatten) vatten = true;
   }
-  return best;
+  return { skog, vatten };
+}
+// rutan med lägst kostnad för raden; ok när den har det kartan måste ha
+function sokPlats(s: State, r: PlatsRad) {
+  const o = omrade(s), ut = r.avst + 5; let best = { x: Math.min(W - 2, o.x1 + r.avst), y: o.y1 }, bs = Infinity, ok = false;
+  for (let y = Math.max(1, o.y0 - ut); y < Math.min(H - 1, o.y1 + ut); y += 2) for (let x = Math.max(1, o.x0 - ut); x < Math.min(W - 1, o.x1 + ut); x += 2) {
+    if (!ledig(s, x, y)) continue;
+    const kr = r.vatten || r.skog ? runt(s, x, y) : undefined;
+    const fel = (r.vatten && !kr!.vatten ? 6 : 0) + (r.skog ? Math.max(0, r.skog[0] - kr!.skog, kr!.skog - r.skog[1]) : 0);
+    const d = Math.abs(utanforByn(s, x, y) - r.avst) + fel;
+    if (d < bs) { bs = d; best = { x, y }; ok = !fel; }
+  }
+  return { ...best, ok };
 }
 // en rad i arbetsordningen: någon bär en död till graven, helst någon nära (steg 8.5.1)
 export function begravaVal(s: State, p: Person) {
@@ -79,7 +110,7 @@ export function kroppUpp(s: State, p: Person, t: Task) {
     t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Bär ${q.namn} till vattnet`;
     const tid = BEGRAVNINGAR.vatten.tim! * HOUR; t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
   }
-  const at = gravPlats(s, tr), spade = freeTools(s, p, 'benspade') > 0, bal = vag === 'bal' && amountOf(s, 'ved') >= BEGRAVNINGAR.bal.ved! ? BEGRAVNINGAR.bal.tim! : 0;
+  const at = gravPlats(s, tr, q.k === 'fiende' ? undefined : kroppBud(s, q, tr)), spade = freeTools(s, p, 'benspade') > 0, bal = vag === 'bal' && amountOf(s, 'ved') >= BEGRAVNINGAR.bal.ved! ? BEGRAVNINGAR.bal.tim! : 0;
   t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Gräver en grav åt ${q.namn}`;
   const tid = ((spade ? GRAV.spadeTim : GRAV.handTim) + bal) * HOUR;
   t.until = s.now + tid + GA_TID; t.arbTid = tid;
@@ -111,7 +142,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
   else { gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}), ...(q.med ? { med: q.med } : {}), ...(stor ? { stor: true as const } : {}) }); groundOf(s).cover[y * W + x] = 0; }
   count(s, 'grav'); count(s, 'grav_' + stil);
   think(p, `Begravde ${q.namn}`, -0.02, s.now, 6 * HOUR);
-  if (tr && !ovardig) { count(s, 'begravd_troende'); if (tr.gravSlag === undefined) tr.gravSlag = trosGrav(s, tr); }
+  if (tr && !ovardig) { count(s, 'begravd_troende'); }
   // samlingen (steg 10.4.5): den vanliga med trosfränderna, den tysta med familjen, och den enkla utan samling
   const samling = ovardig || !tr ? undefined : bud.includes('vanligBegr') ? 'vanlig' : bud.includes('tystBegr') ? 'tyst' : undefined;
   if (samling) nyRitual(s, 'begravning', { tro: tr!.id, x, y, om: [q.vem], namn: `Begravningen av ${q.namn}`, ...(samling === 'tyst' ? { tyst: true as const } : {}) });
@@ -151,8 +182,6 @@ export function rustaKlar(s: State, p: Person, t: Task) {
   const q = (s.ting ?? []).find(o => o.id === t.ref);
   if (q && q.bar === undefined) { q.bar = p.id; q.x = q.y = q.vid = undefined; count(s, 'rustad'); }
 }
-// trons gravplats bestäms när den första begravs (steg 8.5.7), efter skalorna
-const trosGrav = (s: State, tr: Tro): Tro['gravSlag'] => s.heliga?.some(h => h.tro === tr.id) ? 'helig' : tr.natur < 30 ? 'vatten' : tr.natur < 50 ? 'bryn' : 'by';
 
 // ---------- gravarnas utseende (steg 10.4.2) ----------
 // graven är först en jordhög. Sedan gör någon som minns den döda vården: en rad i GRAVAR. Vilken är ett bud i den dödas tro (BUD, grupperna
@@ -181,12 +210,13 @@ function storDod(s: State, d: Person, tr: Tro | undefined) {
 }
 // när en troende dör (steg 10.4.2 och 10.4.5): har tron inget bud i en grupp blir den möjliga raden som drar mest dess sed, utan omröstning.
 // Lika: den som kräver mest, sedan det större budet. En rad utan skalor drar inget men är möjlig när ingen annan drar
-interface SedRad { grupp: string; bud: BudId; namn: string; skalor: [SkalaId, 0 | 1][]; mat: Record<string, number>; minAvst?: number; vatten?: true }
+interface SedRad { grupp: string; bud: BudId; namn: string; skalor: [SkalaId, 0 | 1][]; mat: Record<string, number>; minAvst?: number; vatten?: true; plats?: PlatsId }
 const SED_RADER = (): SedRad[] => [
   ...VARDER.map(k => ({ grupp: grupp(k), bud: GRAVAR[k].bud, namn: GRAVAR[k].namn, skalor: GRAVAR[k].skalor, mat: GRAVAR[k].mat })),
   ...(Object.keys(BEGRAVNINGAR) as BegrId[]).map(k => { const b = BEGRAVNINGAR[k]; return { grupp: b.led, bud: b.bud, namn: b.namn, skalor: b.skalor, mat: (b.ved ? { ved: b.ved } : {}) as Record<string, number>, minAvst: b.minAvst, vatten: b.vatten }; }),
+  ...PLATSER.map(k => { const r = GRAVPLATSER[k]; return { grupp: 'gravplats', bud: r.bud, namn: r.namn, skalor: r.skalor, mat: {}, minAvst: r.minAvst, vatten: r.vatten, plats: k }; }),
 ];
-const SED_GRUPPER = ['gravvard', 'storagrav', 'vag', 'samling'];
+const SED_GRUPPER = ['gravplats', 'gravvard', 'storagrav', 'vag', 'samling'];
 const radDrag = (tr: Tro, r: SedRad) => {
   if (!r.skalor.length) return 0;
   let sum = 0, n = 0;
@@ -199,8 +229,11 @@ export function sederVidDod(s: State, tr: Tro, stor: boolean) {
     if (tr.bud?.some(b => (BUD as Record<string, { grupp?: string }>)[b.id]?.grupp === g)) continue;
     let best: SedRad | undefined, bd = 0;
     const mat = (r: SedRad) => Object.values(r.mat).reduce((a, b) => a + b, 0), stl = (r: SedRad) => BUD[r.bud].storlek;
-    for (const r of SED_RADER()) {
-      if (r.grupp !== g || !Object.entries(r.mat).every(([m, n]) => kanSkaffa(s, m, n)) || !rymsBud(s, tr, stl(r)) || (r.vatten && !vattenNara(s))) continue;
+    // kartan har det platsen behöver (vatten, eller skogen runt en ruta); den heliga platsen går före de andra när tron har en
+    const kartan = (r: SedRad) => !r.plats || (GRAVPLATSER[r.plats].helig ? !!heligFor(s, tr) : !GRAVPLATSER[r.plats].skog || sokPlats(s, GRAVPLATSER[r.plats]).ok);
+    if (g === 'gravplats' && heligFor(s, tr) && rymsBud(s, tr, BUD.gravHelig.storlek)) best = SED_RADER().find(r => r.plats === 'helig');
+    for (const r of best ? [] : SED_RADER()) {
+      if (r.grupp !== g || !kartan(r) || !Object.entries(r.mat).every(([m, n]) => kanSkaffa(s, m, n)) || !rymsBud(s, tr, stl(r)) || (r.vatten && !vattenNara(s))) continue;
       const dr = radDrag(tr, r); if (dr === undefined || dr < 0 || (dr === 0 && r.skalor.length)) continue;
       const battre = !best || dr > bd + 1e-9 || (Math.abs(dr - bd) <= 1e-9 && (mat(r) > mat(best) || (mat(r) === mat(best) && stl(r) > stl(best))));
       if (battre) { best = r; bd = dr; }
@@ -278,7 +311,7 @@ export const BEGRAVNINGAR: Record<BegrId, { namn: string; led: 'vag' | 'samling'
 };
 // den enkla begravningen, utan samling: humöret för familjen och för de andra som stod hen nära
 export const BEGRAVNINGAR_ENKEL = balans('begravning', { familj: 0.05, andra: 0.03 });
-const GRAVBUD = new Set<string>([...VARDER.map(k => GRAVAR[k].bud), ...Object.values(BEGRAVNINGAR).map(b => b.bud)]);
+const GRAVBUD = new Set<string>([...VARDER.map(k => GRAVAR[k].bud), ...Object.values(BEGRAVNINGAR).map(b => b.bud), ...PLATSER.map(k => GRAVPLATSER[k].bud)]);
 // buden som gällde i den dödas tro när hen dog, sparade på kroppen (äldre sparfiler: trons bud nu)
 const kroppBud = (_s: State, q: Kvarleva, tr: Tro | undefined): string[] => q.bud ?? (tr?.bud ?? []).map(b => b.id).filter(id => GRAVBUD.has(id));
 // kartan har vatten inom räckhåll från byn
@@ -288,7 +321,7 @@ function vattenNara(s: State) {
   return false;
 }
 // trons plats vid stranden, där de döda sänks
-function vattenPlats(s: State, tr: Tro) { const pl = (s.gravplatser ??= {}), key = `v${tr.id}`; return (pl[key] ??= sokPlats(s, true)); }
+function vattenPlats(s: State, tr: Tro) { const pl = (s.gravplatser ??= {}), key = `v${tr.id}`; if (!pl[key]) { const { x, y } = sokPlats(s, GRAVPLATSER.sjo); pl[key] = { x, y }; } return pl[key]; }
 // när en kropp blir kvar: trons seder sätts när en troende dör, buden som gäller sparas på kroppen, och när byn vill bära hen dras
 kroppKrok.f = (s, q, d) => {
   const tr = d.brottsling ? undefined : troOf(s, d.tro);

@@ -150,6 +150,15 @@ export const BUD = {
     om: () => 'Förälder, barn och partner samlas en timme vid graven. De får lite humör och tro.' },
   vanligBegr: { namn: 'Begravningen', sort: 'krav', storlek: 2, grupp: 'samling', text: 'Trosfränderna samlas vid graven',
     om: () => 'Trosfränderna och familjen samlas en timme vid graven, och prästen leder när tron har en. De får humör och tro.' },
+  // gravplatsen (steg 10.4.6): en rad i GRAVPLATSER (grav.ts) per bud. Den blir sed när den första troende dör, så att också hen hamnar där
+  gravNara: { namn: 'Gravplatsen nära byn', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravplats', text: 'De döda vilar strax utanför byn' },
+  gravBryn: { namn: 'Gravplatsen i skogsbrynet', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravplats', text: 'De döda vilar där skogen börjar' },
+  gravSjo: { namn: 'Gravplatsen vid sjön', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravplats', text: 'De döda vilar nära vattnet' },
+  gravDjup: { namn: 'Gravplatsen djupt i skogen', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravplats', text: 'De döda vilar inne i den täta skogen',
+    om: () => 'Tio rutor utanför byn där skogen är tät. Långt att bära kroppen och långt till vården och besöken.' },
+  gravLangt: { namn: 'Gravplatsen långt från byn', sort: 'krav', storlek: 1, skala: 'forlat', sida: 1, grupp: 'gravplats', text: 'De döda hålls långt från de levande',
+    om: () => 'Femton rutor utanför byn. Långt att bära kroppen och långt till vården och besöken.' },
+  gravHelig: { namn: 'Gravplatsen vid den heliga platsen', sort: 'krav', storlek: 1, grupp: 'gravplats', text: 'De döda vilar vid trons heliga plats' },
   gravsten: { namn: 'En gravsten med runor', sort: 'krav', storlek: 2, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en sten med runor' }, // stengravarna (steg 10.4.3)
   stensattning: { namn: 'En stensättning kring graven', sort: 'krav', storlek: 2, skala: 'oppen', sida: 1, grupp: 'gravvard', text: 'Graven får en ring av stenar' },
   skeppssattning: { namn: 'De stora får en skeppssättning', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'storagrav', text: 'Ledare, helgon och legender får stenar i form av ett skepp',
