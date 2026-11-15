@@ -329,6 +329,7 @@ export interface State {
   seder: Seder;
   tron?: import('./religion').Tro[]; // trosriktningarna i byn (steg 4.1.2, religion.ts)
   troSkalor?: import('./religion').SkalaId[]; // skalorna som låsts upp efter de två första (steg 4.1.4, religion.ts)
+  budget?: import('./budget').Budget; // styrets budget (steg 10.5.7, budget.ts)
   delning?: import('./delning').Delning; // byns rikedom och hur mycket av det nya som ges till byn (delning.ts)
   mark?: string; // markens grästäcke per ruta (stigar), packat
   skog?: string; // trädens tillväxt per ruta, packat

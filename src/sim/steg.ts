@@ -1,4 +1,5 @@
 import { SKATT, skattDygn, skattRegister } from './skatt';
+import { budgetDygn, budgetRegister } from './budget';
 import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
 import { GASTVARD, gastVardag } from './gastvardag';
@@ -238,7 +239,7 @@ for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
   // fångstgropen (steg 10.2.84) grävdes där den ska ligga; mjärden och snaran görs vid fångstbänken och sätts ut
   if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
 };
-lagRegister(); skattRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
+lagRegister(); skattRegister(); budgetRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
@@ -397,6 +398,7 @@ export const TAKTER: Takt[] = [
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
+  { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },
@@ -888,11 +890,11 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
     // vid lagret: ta materialet och gå till bygget
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, har = (k && tk.items?.[k]) || 0, n = b ? needOf(b) - har : 0;
-    if (!b || !k || avail(s, k, p, b.hus) < n) avbryt(s, p); // det man redan bar läggs i lagret där man står
+    if (!b || !k || avail(s, k, p, b.hus, b) < n) avbryt(s, p); // det man redan bar läggs i lagret där man står
     else { // det som togs, inte mer, till det man redan har i händerna. Byggaren tar också till nästa bitar av samma material i
       // samma hus, så mycket hen orkar bära (steg 10.2.21 C), så att hen inte går till lagret för varje bit
-      const mer = Math.max(0, Math.min(byggMer(s, b, k), Math.floor(capacity(s, p) / viktOf(k)) - har - n, Math.floor(avail(s, k, p, b.hus) - n)));
-      tk.kom ??= {}; const ag = takeForHouse(s, p, b.hus, k, n + mer, tk.kom), mitt = (tk.ag ??= {})[k] ??= {};
+      const mer = Math.max(0, Math.min(byggMer(s, b, k), Math.floor(capacity(s, p) / viktOf(k)) - har - n, Math.floor(avail(s, k, p, b.hus, b) - n)));
+      tk.kom ??= {}; const ag = takeForHouse(s, p, b.hus, k, n + mer, tk.kom, b), mitt = (tk.ag ??= {})[k] ??= {};
       for (const id in ag) mitt[id] = (mitt[id] ?? 0) + ag[id];
       tk.items = { ...tk.items, [k]: har + sumOf(ag) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
     }

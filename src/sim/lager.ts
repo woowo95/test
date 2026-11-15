@@ -231,6 +231,19 @@ export function ownMove(s: State, k: string, n: number, from: number, to: number
   changed(s);
   return v;
 }
+// n hela av slaget k som är byns (ingen äger dem) får ägaren to, utan att flyttas (budgeten, steg 10.5.7). Ger hur många
+export function fromByn(s: State, k: string, n: number, to: number) {
+  let v = 0;
+  n = Math.floor(n + HEL);
+  for (const a of stored(s, k)) {
+    if (n - v < 1) break;
+    const m = Math.min(n - v, Math.floor(a.n - sumOf(a.ag) + HEL));
+    if (m < 1) continue;
+    (a.ag ??= {})[to] = (a.ag[to] ?? 0) + m; v += m;
+  }
+  if (v) changed(s);
+  return v;
+}
 // den som dött eller flyttat äger inget längre: delen blir byns
 export function releaseOwner(s: State, id: number) {
   if (s.delar) delete s.delar[id]; // det påbörjade försvinner med hen

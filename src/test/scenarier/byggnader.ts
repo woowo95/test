@@ -1492,6 +1492,78 @@ SCENARIER.arvsskatt = {
   },
 };
 
+SCENARIER.budget = {
+  text: 'Steg 10.5.7: styrets budget delar byns material en gång per år mellan delarna vars arbeten saknar det, efter vikterna och i hela saker, aldrig mer än delen saknar. Det en del fått tar bara dess arbeten, inget sparas till nästa år, och utan delar är allt som förut',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s); byggare(s);
+    for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, brygga: 1, lag: 1 });
+    planBuild(s); byggKlart(s);
+    const h0 = housesOf(s).find(h => h.ag === undefined && h.tro === undefined)!;
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }] } as unknown as State['styre'];
+    const virkeByn = (n: number) => { setAmount(s, 'virke', 0); put(s, 'virke', n); };
+    const del = (id: string) => Math.floor(SIM.ownsId(s, SIM.budgetId(id), 'virke') + 1e-9);
+    // utan delar är allt som förut
+    s.budget = { delar: [] }; virkeByn(12);
+    SIM.budgetDygn(s);
+    const utan = del('byggen') === 0 && del('vagar') === 0 && SIM.mayTake(s, living(s)[0], 'virke') >= 12;
+    // en fråga om en ny del väcks när det den gäller finns, och den röstas in
+    const fr = SIM.TAS_UPP.find(r => r.id === 'budget')!.lista(s, living(s)[0]).find(f => f.fr.d.id === 'byggen');
+    const in1 = !!fr && SIM.rostaOm(s, fr.fr) && !!SIM.delAv(s, 'byggen');
+    // två delar delar virket efter vikterna (1 och ½: två tredjedelar och en tredjedel)
+    const fake: SIM.Bit[] = [];
+    for (let i = 0; i < 10; i++) fake.push({ id: s.nextBit!++, x: 1 + i, y: 1, k: 'vagg', m: 'timmer', b: 0, mat: 0, c: 1, hus: h0.id });
+    for (let i = 0; i < 20; i++) fake.push({ id: s.nextBit!++, x: 1 + i, y: 2, k: 'golv', m: 'stockvag', b: 0, mat: 0, c: 1, forb: 1 });
+    bitsOf(s).push(...fake);
+    s.budget = { delar: [{ id: 'byggen', vikt: 1 }, { id: 'vagar', vikt: 0.5 }] };
+    SIM.budgetDygn(s);
+    const tva = [del('byggen'), del('vagar')];
+    // en ensam del får det den saknar och inte mer, fast vikten är låg
+    const bort = new Set(fake.map(b => b.id));
+    const kvarVag = fake.filter(b => b.m === 'stockvag').slice(0, 3);
+    s.byggen = bitsOf(s).filter(b => !bort.has(b.id) || kvarVag.includes(b)); touch(s);
+    s.budget = { delar: [{ id: 'vagar', vikt: 0.25 }] };
+    virkeByn(12); SIM.budgetDygn(s);
+    const ensam = del('vagar');
+    // ett privat arbete tar inte det delen fått
+    const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    const far = SIM.mayTake(s, p, 'virke');
+    SIM.takeMaterial(s, p, 'virke', 12);
+    const privat = far === ownsAmount(s, p, 'virke') + 9 && del('vagar') === 3;
+    s.byggen = bitsOf(s).filter(b => !kvarVag.includes(b)); touch(s);
+    // en brygga byggs halv ett år och klar nästa: två rutor, och byn har virke till en om året
+    const m = SIM.getMap(s.seed).tiles;
+    let x = -1, y = -1;
+    for (let i = SIM.W; i < SIM.W * SIM.H && x < 0; i++) if (m[i] === SIM.T.Vatten && m[i + 1] !== SIM.T.Vatten && m[i - 1] === SIM.T.Vatten && m[i - 2] === SIM.T.Vatten) { x = i % SIM.W; y = Math.floor(i / SIM.W); }
+    const br: SIM.Bit[] = [{ id: s.nextBit!++, x, y, k: 'golv', m: 'brygga', b: 0, mat: 0, c: 1, forb: 1 }, { id: s.nextBit!++, x: x - 1, y, k: 'golv', m: 'brygga', b: 0, mat: 0, c: 1, forb: 1 }];
+    bitsOf(s).push(...br); touch(s);
+    s.budget = { delar: [{ id: 'vagar', vikt: 1 }] };
+    for (const q of living(s)) for (const k of Object.keys(SIM.ownedAll(s, q.id))) if (k === 'virke') SIM.ownMove(s, k, SIM.ownedAll(s, q.id)[k], q.id, BYN);
+    // varje år: budgeten delar, och byggaren bygger det materialet räcker till (som i steg.ts: avail och takeForHouse)
+    const byggaren = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    const ettAr = () => {
+      SIM.budgetDygn(s);
+      for (const b of br) if (b.b < 1 && SIM.avail(s, 'virke', byggaren, b.hus, b) >= 1) {
+        const ag = SIM.takeForHouse(s, byggaren, b.hus, 'virke', 1, {}, b);
+        b.mat += SIM.sumOf(ag); byggaren.x = b.x + 1.5; byggaren.y = b.y + 0.5; SIM.workOn(s, byggaren, b, 36000);
+      }
+      return br.filter(b => b.b >= 1).length;
+    };
+    virkeByn(1);
+    const ar1 = ettAr();
+    put(s, 'virke', 1);
+    const ar2 = ettAr();
+    return [
+      ['utan delar äger ingen del något, och allt kan tas som förut', utan],
+      ['en ny del föreslås när det den gäller finns, och röstas in', in1],
+      [`två delar delar 12 virke efter vikterna 1 och ½ (${tva.join(' och ')})`, tva[0] === 8 && tva[1] === 4],
+      [`en ensam del med låg vikt får de 3 den saknar, inte mer (${ensam})`, ensam === 3],
+      ['ett privat arbete tar inte det delen fått', privat],
+      [`en brygga byggs halv ett år och klar nästa (${ar1} av 2, sedan ${ar2} av 2)`, ar1 === 1 && ar2 === 2],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {

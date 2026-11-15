@@ -1,4 +1,4 @@
-import { type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -40,7 +40,7 @@ function styretHtml() {
 interface Del { id: string; tecken: string; namn: string; html(): string }
 const DELAR: Del[] = [
   { id: 'styre', tecken: '👑', namn: 'Styret', html: styretHtml },
-  { id: 'pabud', tecken: '📜', namn: 'Lagar', html: () => `${lagarDel() || '<p class="muted">Byn har inga lagar än.</p>'}<h3>Påbud</h3>${pabudDel()}` }, // lagarna och påbuden (steg 10.2.58)
+  { id: 'pabud', tecken: '📜', namn: 'Lagar', html: () => `${lagarDel() || '<p class="muted">Byn har inga lagar än.</p>'}${budgetDelar()}<h3>Påbud</h3>${pabudDel()}` }, // lagarna och påbuden (steg 10.2.58)
 ];
 const oppen = () => DELAR.find(d => d.id === ui.styreDel) ?? DELAR[0];
 export const styre: Flik = {
@@ -92,6 +92,16 @@ function lagarDel() {
   const lagar = lagarNu(s);
   if (!lagar.length) return '';
   return `<p class="muted small">${lagar.length} av ${lagTak(s)} lagar · efterlevs ${Math.round(efterlevs(s) * 100)} %</p><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span>${lagTalHtml(l)}</li>`; }).join('')}</ul>`;
+}
+// budgeten (steg 10.5.7): en symbol per del med sin procent, ritade som påbuden; texten och det delen fick i år vid ett tryck
+function budgetDelar() {
+  const delar = budgetNu(s);
+  if (!delar.length) return '';
+  const fick = s.budget?.fick ?? {};
+  return `<h3>Budget</h3><div class="rutor">${delar.map(d => {
+    const def = BUDGET[d.id], f = Object.entries(fick[d.id] ?? {}).map(([k, n]) => `${n} ${sakNamn(k).toLowerCase()}`).join(', '), pr = Math.round(budgetAndel(s, d.id) * 100);
+    return `<div class="ruta" title="${esc(`${def.namn}: ${def.text}. ${f ? `Fick i år ${f}.` : 'Fick inget i år.'}`)}"><div class="rutnamn">${def.sym} ${pr} %</div><div class="rutbar">${bar(pr / 100)}</div></div>`;
+  }).join('')}</div>`;
 }
 // ministrarna (steg 8.3.8): en rad per post
 function ministrar() {

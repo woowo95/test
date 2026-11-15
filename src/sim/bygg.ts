@@ -14,7 +14,8 @@ import { knows } from './teknik';
 import { amountOf, changed, enPerRuta, ownMove, ownsAmount, ownsId, put, use, zonesOf } from './lager';
 import { freeTools, nTools, tingOf } from './agande';
 import { getable, Recept, takeMaterial } from './behov';
-import { Del, kyrkaId, sumOf } from './egendom';
+import { BYN, Del, kyrkaId, sumOf } from './egendom';
+import { budgetAv, budgetFor, budgetId } from './budget';
 import { fellingTiles, kronaOver } from './skog';
 import { stubbeOn } from './stubbar';
 import { FOREST } from './vag';
@@ -63,16 +64,26 @@ export function bedFor(s: State, p: Person) {
 interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean; hugg?: number } // hugg = stocken som ligger inne i huset (steg 8.1.13)
 // det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas.
 // Den som får ta av andra (getable = allt i byn) har redan familjens med: aldrig mer än allt
-export const avail = (s: State, k: string, p?: Person, hus?: number) => husTro(s, hus) !== undefined ? Math.floor(ownsId(s, kyrkaId(husTro(s, hus)!), k) + 1e-9) : (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus)) : amountOf(s, k)) - sparas(s, k);
+// Ett bygge i en del av budgeten (steg 10.5.7) får också det delen fått
+export const avail = (s: State, k: string, p?: Person, hus?: number, b?: Bit) => husTro(s, hus) !== undefined ? Math.floor(ownsId(s, kyrkaId(husTro(s, hus)!), k) + 1e-9) : (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus) + budgetAv(s, b, k)) : amountOf(s, k)) - sparas(s, k);
 // trons hus (steg 10.3.19): byggs bara av det kyrkan äger
 const husTro = (s: State, hus?: number) => hus === undefined ? undefined : husById(s, hus)?.tro;
 const famHus = (s: State, hus?: number) => { const h = husById(s, hus); return h?.ag !== undefined ? h : undefined; };
 const famOwn = (s: State, p: Person, k: string, hus?: number) => { const h = famHus(s, hus); return h ? familjOf(s, h.ag).filter(q => q !== p).reduce((a, q) => a + ownsAmount(s, q, k), 0) : 0; };
 // p tar n av slaget k till ett hus. Till byns hus tas byns först; till ett familjehus familjens eget först (ägaren, partnern,
 // barnen), sedan efter behovsstegen som till ett eget arbete. Ger vems det var
-export function takeForHouse(s: State, p: Person, hus: number | undefined, k: string, n: number, kom: Record<string, number>): Del {
+export function takeForHouse(s: State, p: Person, hus: number | undefined, k: string, n: number, kom: Record<string, number>, b?: Bit): Del {
   const tro = husTro(s, hus);
   if (tro !== undefined) { const ag = use(s, p, k, n, true, kyrkaId(tro)), v = sumOf(ag); if (v > 0) kom[`kyrka:${tro}:${k}`] = (kom[`kyrka:${tro}:${k}`] ?? 0) + v; return ag; }
+  // det budgetens del fått först (steg 10.5.7); det räknas som byns
+  const del = budgetFor(s, b), bd = del ? Math.min(n, budgetAv(s, b, k)) : 0;
+  if (bd >= 1) {
+    const v = sumOf(use(s, p, k, bd, true, budgetId(del!)));
+    if (v > 0) { kom[`byn:${BYN}:${k}`] = (kom[`byn:${BYN}:${k}`] ?? 0) + v; n -= v; }
+    const rest = n > 1e-9 ? takeForHouse(s, p, hus, k, n, kom) : {};
+    rest[BYN] = (rest[BYN] ?? 0) + v;
+    return rest;
+  }
   const h = famHus(s, hus);
   if (!h) return takeMaterial(s, p, k, n, true, kom);
   const ag: Del = {};
@@ -126,12 +137,12 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
     if (M.tek && !knows(p, M.tek)) continue;
     const need = needOf(b), tro = husTro(s, b.hus);
     // trons hus (steg 10.3.19): bara de troende bygger, och en bit vars material kyrkan inte äger väntar (det hämtas inte)
-    if (tro !== undefined && (p.tro !== tro || need > 0 && avail(s, M.item!, p, b.hus) < need)) continue;
+    if (tro !== undefined && (p.tro !== tro || need > 0 && avail(s, M.item!, p, b.hus, b) < need)) continue;
     // omtanken (steg 10.5.2): man bygger hellre på det egna och en väns hus än på en oväns; byns hus efter omtanken om byn
     const om = omtankeOm(s, p, b.hus !== undefined ? husById(s, b.hus)?.ag : undefined);
     if (om <= 0) continue;
     const sc = ((repair ? 0 : b.k === 'golv' ? (M.item ? BYGG.prioTra : BYGG.prioJord) : BYGG.prioVagg) + Math.hypot(b.x - p.x, b.y - p.y)) / om;
-    if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p, b.hus) < need }; }
+    if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p, b.hus, b) < need }; }
   }
   return best;
 }
