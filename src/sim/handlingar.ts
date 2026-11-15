@@ -134,6 +134,8 @@ const DEF = {
   gravbesok: { namn: 'Står vid graven', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true }, // besöket vid graven (steg 10.4.8)
   ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, tyst: true, dygn: true },
   begrava: { namn: 'Går för att ta hand om en död', tecken: '✨', ikon: 'a_be', framme: true, stilla: true },
+  skriva: { namn: 'Skriver', tecken: '📜', ikon: 'pergament', framme: true, stilla: true }, // ett blad på fritiden (steg 10.6.5, skrift.ts)
+  lasa: { namn: 'Läser', tecken: '📜', ikon: 'blad', framme: true, stilla: true }, // ett skrivet blad där det ligger
   runsten: { namn: 'Reser en runsten', slag: 'bygga', framme: true, stilla: true }, // steg 10.6.1 (skrift.ts)
   gravvard: { namn: 'Gör vården på en grav', slag: 'bygga', framme: true, stilla: true }, // steg 10.4.2
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' } },

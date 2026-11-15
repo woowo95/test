@@ -92,7 +92,7 @@ import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
 import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
-import { runstenBorja, runstenKlar, runstenTimme } from './skrift';
+import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
 import { avrustaKlar, gravDygn, gravKlar, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
@@ -227,7 +227,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
   avrusta: avrustaKlar, rusta: rustaKlar,
-  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, runsten: runstenKlar, // tron och graven (system 8.5)
+  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, runsten: runstenKlar, skriva: (s, p) => skrivKlar(s, p), lasa: lasKlar, // skriva och läsa (steg 10.6.5) // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)

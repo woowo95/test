@@ -1,12 +1,17 @@
-import { DAY, H, HOUR, Person, State, Task, W } from './typer';
+import { DAY, H, HOUR, Lardom, Person, Skill, State, Task, W } from './typer';
 import { SKRIFT } from './skriftTal';
-import { ALDER, ageOf, alive, byId, count, living, log, relKey, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, relKey, stat, think } from './folk';
 import { knows } from './teknik';
 import { getable, takeMaterial } from './behov';
 import { usable } from './lager';
 import { bitAt, roomAt } from './byggnad';
 import { omrade } from './omrade';
-import { Bevis, HANDELSER, bevisText, lasIntryck, paminn } from './rykten';
+import { Bevis, HANDELSER, Intryck, bevisText, lasIntryck, paminn } from './rykten';
+import { Ting, newTing, tingOf } from './agande';
+import { taVatska, vatskaAv } from './vatskor';
+import { LARDOMAR, describe, findL, lasLardom } from './minne';
+import { lightLevel } from './tid';
+import { ljusAt } from './ljus';
 import { gen, han, slaktOrd } from './ord';
 import { notis } from './notiser';
 import { kronika } from './historik';
@@ -24,12 +29,16 @@ import { troshusAv } from './troshus';
 // efter en bedrift, och räknas in i projektens värde som lusten efter pynt (projektraden runsten). De som går förbi läser stenen
 // en gång i timmen och får intrycket i andra hand, och den som står på en sten glöms långsammare (rykten.ts). Stenen brinner
 // inte, flyttas inte och rivs inte för ett hus: den är ingen station, och rutan är upptagen för allt annat (usable i lager.ts)
-export type SkriftSlag = 'minne' | 'handelse' | 'helig';
+export type SkriftSlag = 'minne' | 'handelse' | 'helig' | 'lardom' | 'poesi' | 'berattelse';
 export type SkriftStadium = 'sten' | 'pergament' | 'bok';
-export const SKRIFTER: Record<SkriftSlag, { namn: string; stadier: SkriftStadium[] }> = {
-  minne: { namn: 'Minne', stadier: ['sten', 'pergament', 'bok'] }, // en död, ur ristarens minne av hen
-  handelse: { namn: 'Händelse', stadier: ['sten', 'pergament', 'bok'] }, // en bedrift som ristaren minns
-  helig: { namn: 'Heligt', stadier: ['sten', 'bok'] }, // trons heliga kväden, som prästen eller lärjungen kan utantill (steg 10.6.2)
+// skill = färdigheten som gör att man skriver slaget oftare (steg 10.6.5)
+export const SKRIFTER: Record<SkriftSlag, { namn: string; stadier: SkriftStadium[]; skill: Skill }> = {
+  minne: { namn: 'Minne', stadier: ['sten', 'pergament', 'bok'], skill: 'berattande' }, // en död, ur ristarens minne av hen
+  handelse: { namn: 'Händelse', stadier: ['sten', 'pergament', 'bok'], skill: 'berattande' }, // en bedrift som ristaren minns
+  helig: { namn: 'Heligt', stadier: ['sten', 'bok'], skill: 'skaldskap' }, // trons heliga kväden, som prästen eller lärjungen kan utantill (steg 10.6.2)
+  lardom: { namn: 'Lärdom', stadier: ['pergament', 'bok'], skill: 'berattande' }, // priser, platser och faror (steg 10.6.5)
+  poesi: { namn: 'Poesi', stadier: ['sten', 'pergament', 'bok'], skill: 'skaldskap' }, // skaldens kväde om någon
+  berattelse: { namn: 'Berättelse', stadier: ['pergament', 'bok'], skill: 'berattande' }, // en historia om någon skrivaren minns
 };
 export { SKRIFT } from './skriftTal';
 export interface Runsten { id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number } // tro = den heliga stenens tro (om = tron)
@@ -180,3 +189,122 @@ export function runstenTimme(s: State) {
 export const runstenRubrik = (r: Runsten) => r.slag === 'minne' ? `Stenen efter ${r.om.namn}` : r.slag === 'helig' ? `Den heliga stenen (${r.om.namn.toLowerCase()})` : `${gen(r.av.namn)} sten`;
 // trons heliga stenar (fliken Religion)
 export const heligaStenar = (s: State, tr: Tro) => (s.runstenar ?? []).filter(r => r.slag === 'helig' && r.tro === tr.id);
+
+// ---------- att skriva och läsa (steg 10.6.5) ----------
+// Den som kommer åt ett blad pergament och bläck (10.6.4) skriver på fritiden, på dagen och i ljuset vid elden: ett blad tar 3
+// minuter, 1 blad och 1 dos bläck. Hen skriver det hen själv vet: minnet av en död, sin bedrift, en lärdom, ett kväde eller en
+// berättelse om den hen har det starkaste intrycket av, oftare ju högre färdigheten för slaget (SKRIFTER.skill). Det skrivna
+// bladet är ett eget ting (blad) med skriften, som skrivaren äger och som ligger i förrådet. Andra läser det där det ligger
+// (2 minuter) när det har något nytt för dem: en lärdom de inte har, eller ett intryck de inte hört; nyttan är noll när de redan
+// vet det, så ingen lista över det lästa behövs
+export interface Skrift { slag: SkriftSlag; av: { id: number; namn: string }; t: number; titel: string; text: string; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom }
+interface SkrivLust { w: number; slag: SkriftSlag; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom }
+export const bladen = (s: State) => tingOf(s).filter(t => t.skrift);
+const harBlad = (s: State, f: (k: Skrift) => boolean) => tingOf(s).some(t => !!t.skrift && f(t.skrift));
+const sammaLar = (a: Lardom, b: Lardom) => a.k === b.k && a.a === b.a && a.sl === b.sl;
+// det starkaste intrycket p har av en annan, med ett bevis att berätta om (som i framträdandet, helst en död)
+function starkastBev(s: State, p: Person) {
+  let bast: { e: Intryck; v: number } | undefined;
+  for (const e of p.intryck ?? []) {
+    if (e.om === p.id || !e.bev?.length) continue;
+    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1);
+    if (!bast || v > bast.v) bast = { e, v };
+  }
+  return bast;
+}
+// p:s lust att skriva ett blad av varje slag, den starkaste gånger slagets färdighet; halveras för varje blad p redan skrivit
+export function skrivLust(s: State, p: Person): SkrivLust | undefined {
+  if (p.gast || ageOf(p, s.now) < ALDER.vuxen) return undefined;
+  const c: SkrivLust[] = [];
+  for (const g of p.sorg ?? []) {
+    const d = g.vem !== undefined ? byId(s, g.vem) : s.people.find(q => q.name === g.namn && q.died !== undefined);
+    if (!d || alive(d) || harBlad(s, k => k.slag === 'minne' && k.om?.id === d.id)) continue;
+    c.push({ w: SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner), slag: 'minne', om: { id: d.id, namn: d.name } });
+  }
+  const b = p.bedrift;
+  if (b && HANDELSER[b.h].vikt >= SKRIFT.bedriftMin && !harBlad(s, k => k.slag === 'handelse' && k.om?.id === p.id && k.bev?.[0]?.t === b.t)) {
+    const kvar = 1 - (s.now - b.t) / (SKRIFT.stolthetDygn * DAY), egen = 0.5 + Math.max(0, 20 - stat(p, 'empati', s.now)) / 20;
+    if (kvar > 0) c.push({ w: SKRIFT.stolthet * HANDELSER[b.h].vikt * egen * kvar, slag: 'handelse', om: { id: p.id, namn: p.name }, bev: [{ ...b, sett: undefined }] });
+  }
+  let lar: Lardom | undefined, lw = 0;
+  for (const l of p.lardomar ?? []) {
+    if (l.k === 'flod') continue;
+    const w = SKRIFT.lardom * l.c * (l.k === 'fara' ? SKRIFT.lardomFara : Math.min(1, l.v));
+    if (w > lw && !harBlad(s, k => !!k.lar && sammaLar(k.lar, l))) { lw = w; lar = l; }
+  }
+  if (lar) c.push({ w: lw, slag: 'lardom', lar: { ...lar } });
+  const e = starkastBev(s, p);
+  if (e) {
+    const om = { id: e.e.om, namn: e.e.namn }, bev = [...e.e.bev!].sort((x, y) => HANDELSER[y.h].vikt - HANDELSER[x.h].vikt).slice(0, 1).map(x => ({ ...x, sett: undefined }));
+    for (const slag of ['poesi', 'berattelse'] as const)
+      if (!harBlad(s, k => k.slag === slag && k.om?.id === om.id)) c.push({ w: SKRIFT[slag] * Math.min(1, e.v), slag, om, bev });
+  }
+  const avtar = SKRIFT.avtar ** bladen(s).filter(t => t.skrift!.av.id === p.id).length;
+  let best: SkrivLust | undefined;
+  for (const l of c) { l.w *= avtar * p.skill[SKRIFTER[l.slag].skill] / SKRIFT.skrivDiv; if (!best || l.w > best.w) best = l; }
+  return best;
+}
+// ljuset att skriva och läsa i på (x, y): dagsljuset, annars elden, facklan och ljusen (ljus.ts)
+export const skrivLjus = (s: State, x: number, y: number) => Math.max(lightLevel(s.now), Math.min(1, ljusAt(s, x, y)));
+const harAtt = (s: State, p: Person) => getable(s, p, 'pergament') >= 1 && vatskaAv(s, 'black') >= 1;
+// skrivvikten i valet av fritid (val.ts): lusten gånger färdigheten, gånger ljuset där hen skulle skriva
+export function skrivVal(s: State, p: Person, at: { x: number; y: number }) {
+  const ljus = skrivLjus(s, at.x, at.y);
+  if (ljus < SKRIFT.ljusMin || !harAtt(s, p)) return undefined;
+  const l = skrivLust(s, p);
+  return l && l.w > 0 ? { w: l.w * ljus * SKRIFT.fritid, why: l.slag === 'lardom' ? 'Vill skriva ner det hen vet' : l.om ? `Vill skriva om ${l.om.namn}` : 'Vill skriva' } : undefined;
+}
+const tingXY = (s: State, t: Ting) => { const q = t.hos !== undefined ? byId(s, t.hos) : undefined; return q ? { x: q.x, y: q.y } : t.x !== undefined ? { x: t.x + 0.5, y: t.y! + 0.5 } : undefined; };
+const kanBev = (q: Person, om: number, b: Bevis) => !!q.intryck?.some(e => e.om === om && e.bev?.some(x => x.h === b.h && x.t === b.t));
+// nyttan för q av att läsa skriften: noll när q skrev den eller redan vet det som står
+export function lasNytta(q: Person, k: Skrift) {
+  if (k.av.id === q.id) return 0;
+  if (k.lar) return findL(q, k.lar.k, k.lar.a, k.lar.sl) ? 0 : SKRIFT.lasLardom;
+  const b = k.bev?.[0];
+  if (!b || !k.om || kanBev(q, k.om.id, b)) return 0;
+  return SKRIFT.lasHandelse * HANDELSER[b.h].vikt + (k.slag === 'poesi' || k.slag === 'berattelse' ? SKRIFT.lasGladje : 0);
+}
+// läsvikten i valet av fritid: den högsta nyttan bland bladen q kommer åt, gånger ljuset där bladet ligger
+export function lasVal(s: State, q: Person) {
+  if (q.gast || ageOf(q, s.now) < ALDER.vuxen) return undefined;
+  let best: { w: number; t: Ting; spot: { x: number; y: number } } | undefined;
+  for (const t of bladen(s)) {
+    if (t.lass !== undefined) continue;
+    const at = tingXY(s, t), n = at ? lasNytta(q, t.skrift!) : 0;
+    if (!at || n <= 0) continue;
+    const ljus = skrivLjus(s, at.x, at.y), w = n * ljus * SKRIFT.fritid;
+    if (ljus >= SKRIFT.ljusMin && (!best || w > best.w)) best = { w, t, spot: at };
+  }
+  return best && { w: best.w, ref: best.t.id, spot: best.spot, why: `Vill läsa ${best.t.skrift!.titel.charAt(0).toLowerCase() + best.t.skrift!.titel.slice(1)}` };
+}
+// rubriken och texten på bladet
+function skriv(s: State, p: Person, l: SkrivLust): { titel: string; text: string } {
+  const om = l.om?.namn ?? '', vad = l.bev?.[0] ? bevisText(l.bev[0], '').trim() : '';
+  if (l.slag === 'minne') return { titel: `Minnet av ${om}`, text: `${p.name} skrev om ${om}, som inte längre lever.` };
+  if (l.slag === 'handelse') return { titel: `${gen(p.name)} bedrift`, text: `${p.name} skrev: ${han(p)} ${vad}.` };
+  if (l.slag === 'lardom') return { titel: `Om ${LARDOMAR[l.lar!.k].namn}`, text: describe(s, l.lar!).text };
+  if (l.slag === 'poesi') return { titel: `Kvädet om ${om}`, text: `Hör om ${om}, som ${vad}.` };
+  return { titel: `Berättelsen om ${om}`, text: `${om} ${vad}.` };
+}
+// när bladet är skrivet: 1 blad pergament och 1 dos bläck går åt, och bladet ligger i förrådet och är skrivarens
+export function skrivKlar(s: State, p: Person) {
+  const l = skrivLust(s, p);
+  if (!l || !harAtt(s, p) || skrivLjus(s, p.x, p.y) < SKRIFT.ljusMin) return;
+  takeMaterial(s, p, 'pergament', 1, true, {}); taVatska(s, 'black', 1);
+  const t = newTing(s, 'blad', 1, p.id), tx = skriv(s, p, l);
+  t.skrift = { slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}) };
+  t.av = p.id; t.gjord = s.now;
+  count(s, 'skrivet'); count(s, 'skrivet_' + l.slag);
+  think(p, `Skrev ${tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1)}`, 0.02, s.now, 6 * HOUR);
+  if (forstaGang(s, 'skrivet')) log(s, `${p.name} skrev byns första blad: ${tx.titel.toLowerCase()}.`, 'skill', [p.id]);
+}
+// när bladet är läst: lärdomen med skrivaren som källa, intrycket i andra hand och glädjen av kvädet och berättelsen
+export function lasKlar(s: State, q: Person, t: Task) {
+  const b = tingOf(s).find(x => x.id === t.ref), k = b?.skrift, at = b && tingXY(s, b);
+  if (!k || !at || lasNytta(q, k) <= 0 || skrivLjus(s, at.x, at.y) < SKRIFT.ljusMin) return;
+  if (k.lar) lasLardom(s, q, k.lar, k.av.id);
+  if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt);
+  if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id);
+  if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer, s.now, SKRIFT.gladjeTim * HOUR);
+  count(s, 'last'); count(s, 'last_' + k.slag);
+}

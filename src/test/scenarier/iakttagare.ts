@@ -197,6 +197,7 @@ for (const [ks, why] of [
   [['tomma_latrin'], 'latrinen töms (steg 9.7.6) bara när byn har en kompost och latrinen är nästan full; scenariot kompost prövar det'],
   [['krossa_saft'], 'saften (steg 9.6.9) kräver lerkrukan; scenariot saft prövar den'],
   [['pergament', 'gora_pergament', 'riva_black', 'black'], 'pergamentet och bläcket (steg 10.6.4) är en sen teknik på nivå 6 efter garvningen; scenariot pergament prövar dem'],
+  [['skriva', 'lasa', 'blad'], 'att skriva och läsa (steg 10.6.5) kräver pergamentet och bläcket, en sen teknik; scenariot skriva prövar det'],
   [['korn', 'sadesodling', 'malt', 'malta', 'mjol', 'mala_korn', 'kvarnsten', 'brod', 'baka', 'bakugn'], 'kornet (steg 9.6.11) kommer bara med handlarna, och mjölet, maltet och brödet efter det; scenarierna sad, kvarn och brod prövar dem'],
   [['bryggkar', 'tappa', 'ol'], 'vinet och ölet (steg 9.6.12–9.6.13) är tekniker på nivå 4–5; scenarierna vin och ol prövar dem'],
   [['supa'], 'supandet (steg 9.6.15) kräver vin eller öl i byn; scenariot bakfylla prövar det'],

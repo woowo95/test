@@ -1119,6 +1119,46 @@ SCENARIER.pergament = {
   },
 };
 
+SCENARIER.skriva = {
+  text: 'Steg 10.6.5: att skriva och läsa. Den som kommer åt ett blad och bläck skriver på fritiden, på dagen och i ljuset vid elden (3 minuter, 1 blad och 1 dos bläck), oftare ju högre färdigheten är. Det skrivna bladet är skrivarens, och andra läser det där det ligger (2 minuter) när det har något nytt för dem',
+  kor: () => {
+    const { skrivVal, lasVal, skrivKlar, lasKlar, setAmount, amountOf, addTool, fyllVatska, vatskaAv, tingOf, lightLevel, findL, SKRIFT } = SIM;
+    const s = createState(1, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q, o] = v as [Person, Person, Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    const lar = { k: 'fara' as const, a: 3, v: 1, c: 0.9, t: s.now, om: 'Ulv dog där' };
+    p.lardomar = [{ ...lar }]; o.lardomar = [{ ...lar }];
+    p.skill.berattande = 15; o.skill.berattande = 0;
+    while (lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const at = { x: p.x, y: p.y };
+    setAmount(s, 'pergament', 2);
+    const utanBlack = skrivVal(s, p, at);
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined; fyllVatska(s, 'black', 2, kr);
+    const med = skrivVal(s, p, at)?.w ?? 0, utanSkill = skrivVal(s, o, at)?.w ?? 0;
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+    skrivKlar(s, p);
+    SIM.placeTools(s);
+    const blad = tingOf(s).find(t => t.k === 'blad');
+    const vill = lasVal(s, q);
+    lasKlar(s, q, { act: 'lasa', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: blad?.id });
+    const l = findL(q, 'fara', 3);
+    const igen = lasVal(s, q), vet = lasVal(s, o);
+    // utan ljus: mitt i natten, långt från elden
+    while (lightLevel(s.now) > 0) s.now += SIM.HOUR;
+    if (blad) { blad.x = 1; blad.y = 1; }
+    const r = v[3]!; r.lardomar = []; r.intryck = [];
+    const morkSkriv = skrivVal(s, p, { x: 1.5, y: 1.5 }), morkLas = lasVal(s, r);
+    return [
+      [`utan bläck skriver ingen (${utanBlack ? 'skriver' : 'ingen'})`, !utanBlack],
+      [`en berättare med blad och bläck vill skriva mer än en utan färdighet (${med.toFixed(2)} mot ${utanSkill.toFixed(2)})`, med > 0 && med > utanSkill],
+      [`bladet är skrivarens, och ett blad och en dos bläck gick åt (${blad?.agare === p.id ? 'skrivarens' : 'inte'}: ${blad?.skrift?.titel}; ${amountOf(s, 'pergament')} blad och ${vatskaAv(s, 'black')} bläck kvar, ${SKRIFT.skrivMin} min)`, blad?.agare === p.id && amountOf(s, 'pergament') === 1 && vatskaAv(s, 'black') === 1],
+      [`en annan vill läsa bladet och får lärdomen med skrivaren som källa (${vill ? vill.why : 'vill inte'}; ${l ? `källa ${l.src === p.id ? p.name : l.src}, säkerhet ${l.c}` : 'ingen lärdom'})`, !!vill && l?.src === p.id && l.c === lar.c],
+      [`den som redan vet det läser inte (${igen || vet ? 'läser' : 'läser inte'})`, !igen && !vet],
+      [`utan ljus varken skrivs eller läses det (${morkSkriv ? 'skriver' : 'skriver inte'}, ${morkLas ? 'läser' : 'läser inte'})`, !morkSkriv && !morkLas],
+    ];
+  },
+};
+
 SCENARIER.heligverkan = {
   text: 'Steg 10.6.3: de heliga skrifternas verkan. Samma tro med och utan helig sten: chansen att sprida tron i ett samtal, hur mycket en profets syn flyttar skalorna, rösterna för att ta bort ett bud och chansen till en ny tro, och verkan försvinner när stenen är borta',
   kor: () => {

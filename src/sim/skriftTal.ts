@@ -18,4 +18,14 @@ export const SKRIFT = balans('skrift', {
   // en tro med minst en helig skrift (steg 10.6.3): chansen att sprida tron i ett samtal, hur mycket en profets syn flyttar skalorna
   // och rösterna för att ta bort ett bud, och chansen att profeten grundar en ny tro
   heligSprid: 1.3, heligTrog: 0.5, heligNyTro: 1.5,
+  // att skriva och läsa (steg 10.6.5): minuterna, lusten för varje slag på bladet, vikten bredvid vilan och umgänget och glädjen
+  skrivMin: 3, lasMin: 2,
+  lardom: 0.6, lardomFara: 1.5, // lusten att skriva en lärdom: säkerheten gånger värdet (högst 1) gånger detta, och en fara gånger lardomFara
+  berattelse: 0.4, poesi: 0.5, // lusten att skriva om det starkaste intrycket av någon: intryckets styrka (högst 1) gånger detta
+  skrivDiv: 20, // skrivvikten är lusten gånger slagets färdighet delat med detta, gånger ljuset
+  fritid: 1, // skrivvikten och läsvikten gånger detta, bredvid vilan, handarbetet och umgänget
+  lasLardom: 1, lasHandelse: 1, // läsvikten: nyttan av en ny lärdom, och av ett nytt intryck gånger händelsens vikt
+  lasGladje: 0.6, // ... och för poesin och berättelsen dessutom detta
+  gladjePoesi: 0.04, gladjeBer: 0.02, gladjeTim: 10, // läsarens glädje och hur länge den varar
+  ljusMin: 0.3, // i mindre ljus än så här varken skrivs eller läses det
 });
