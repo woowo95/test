@@ -38,6 +38,7 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   rotter: { grupper: ['starkelse'], huvud: 'rot' }, rovor: { grupper: ['starkelse'], huvud: 'rot' },
   svamp: { grupper: ['gront'], huvud: 'svamp' },
   bar: { grupper: ['sott'], huvud: 'bar' },
+  honung: { grupper: ['sott'] }, // steg 10.7.25
   rolleka: { grupper: ['smak'] }, salt: { grupper: ['smak'] }, lok: { grupper: ['smak'] }, // löken (steg 9.6.20) // saltet (steg 9.6.19)
   saltfisk: { grupper: ['protein'], huvud: 'fisk' }, saltkott: { grupper: ['protein', 'fett'], huvud: 'kott' },
   talg: { grupper: ['fett'] },

@@ -3413,3 +3413,45 @@ SCENARIER.drycker = {
     ];
   },
 };
+
+SCENARIER.mjod = {
+  text: 'Honung och mjöd (steg 10.7.25): honungskakor finns i vildbinas bon i skogen på sommaren och hösten, ett lager på kartan, och är söt mat. Mjödet bryggs i karet av 3 honungskakor och vatten, jäser 4 dygn och ger 5 mjöd i en stor lerkruka; tekniken kommer när byn har honung och har gjort vin två gånger',
+  kor: () => {
+    const s = rikDag(3);
+    const bon = (ai: number) => { s.kal = SIM.nyKalender(s.now, ai); let n = 0; for (let i = 0; i < SIM.W * SIM.H; i++) if (SIM.richness(s, 'honung', i % SIM.W + 0.5, Math.floor(i / SIM.W) + 0.5) > 0) n++; return n; };
+    const sommar = bon(SIM.SOMMAR), var_ = bon(SIM.VAR);
+    // i skogen: varje ruta med honung har träd
+    s.kal = SIM.nyKalender(s.now, SIM.SOMMAR);
+    let iSkog = true; const g = SIM.groundOf(s);
+    for (let i = 0; i < SIM.W * SIM.H; i++) if (SIM.richness(s, 'honung', i % SIM.W + 0.5, Math.floor(i / SIM.W) + 0.5) > 0 && g.trees[i] < SIM.FOREST) iSkog = false;
+    const mat = SIM.isFood('honung') && SIM.INGREDIENSER.honung?.grupper.includes('sott') && SIM.SAKER.honung?.haller === undefined;
+    // tekniken och bryggningen, i en by på våren där maten räcker (honungen är mat och bryggs bara av när maten räcker)
+    { const s = rikDag(3), p = vuxna(s)[0]!;
+    p.tek = { ...(p.tek ?? {}), bryggkar: 1, kruka: 1 };
+    SIM.setAmount(s, 'honung', 0); s.stat = { ...(s.stat ?? {}), brygt_vin: 2 };
+    SIM.mjodUpptackt(s); const utan = SIM.knows(p, 'mjod');
+    SIM.setAmount(s, 'honung', 3); SIM.mjodUpptackt(s); const med = SIM.knows(p, 'mjod');
+    // bryggningen
+    const kar = { id: 996, k: 'bryggkar', x: 3, y: 3, kvar: 0, inne: 1, brygt: 1 } as SIM.Station;
+    s.stationer = [...(s.stationer ?? []), kar];
+    SIM.setAmount(s, 'honung', 3);
+    const vin = SIM.addTool(s, 'lerkruka_stor', p); vin.hos = undefined; SIM.fyllVatska(s, 'vin', 4, vin); // vinet finns redan
+    const sack = SIM.addTool(s, 'vattensack', p); sack.hos = undefined; SIM.fyllVatska(s, 'vatten', 1, sack);
+    const val = SIM.bryggVal(s, p); SIM.bryggKlar(s, p, kar.id);
+    const sats = kar.sats?.v === 'mjod' && kar.sats.n === 5 && kar.sats.dygn === 4 && SIM.amountOf(s, 'honung') === 0;
+    for (let i = 0; i < 4 * 24 + 1; i++) { s.now += SIM.HOUR; SIM.stepBrygg(s); }
+    const k = SIM.addTool(s, 'lerkruka_stor', p); k.hos = undefined;
+    SIM.bryggKlar(s, p, kar.id);
+    const mjod = SIM.vatskaAv(s, 'mjod');
+    klockan(s, 21);
+    const kv = SIM.kvallsVal(s, p);
+    return [
+      [`vildbina har bon på sommaren (${sommar} rutor) men inte på våren (${var_})`, sommar > 0 && var_ === 0],
+      ['bara i skogen', iSkog],
+      ['honungskakan är söt mat som inte ruttnar', !!mat],
+      [`tekniken kommer med honung (${med ? 'ja' : 'nej'}), inte utan (${utan ? 'ja' : 'nej'})`, med && !utan],
+      [`karet brygger mjöd av 3 honungskakor och vatten (${val?.v}), 5 på 4 dygn`, val?.v === 'mjod' && sats],
+      [`${mjod} mjöd i en stor lerkruka, som tas på kvällen (${kv})`, mjod === 5 && kv === 'mjod'],
+    ] as [string, boolean][]; }
+  },
+};

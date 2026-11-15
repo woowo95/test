@@ -147,6 +147,7 @@ export const PAL: Record<string, Record<string, string>> = {
   pergament: { w: '#dad0bb', k: '#bdb39b' },
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
+  honung: { o: '#24201d', h: '#b2921b', H: '#d8b25f', d: '#906f0f', v: '#694902', z: 'rgba(36,32,29,.30)' }, // steg 10.7.25, platshållare
   blomma: { o: '#24201d', g: '#647025', l: '#898b4c', y: '#d8b25f', c: '#bd753e', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.7.3, platshållare
   bildsten: { o: '#24201d', g: '#8a9c9e', m: '#61767a', r: '#a14808', b: '#3f2415', d: '#474138', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // steg 10.7.1, platshållare
   bokhylla: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', r: '#742a01', g: '#4b4f00', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.6.16, platshållare
@@ -2739,6 +2740,24 @@ export const PIX: Record<string, string[]> = {
     '.......oaaaaaao.',
     '.......oooooooo.',
     '........zzzzzz..',
+  ],
+  honung: [ // platshållare (steg 10.7.25): en bit vaxkaka med sexkantiga celler fulla av honung
+    '................',
+    '................',
+    '....oooooooo....',
+    '...ohHhHhHhHo...',
+    '..ohdhdhdhdhdo..',
+    '..oHhHhHhHhHho..',
+    '.ohdhdhdhdhdhdo.',
+    '.oHhHhHhHhHhHho.',
+    '.ohdhdhdhdhdhdo.',
+    '..oHhHhHhHhHho..',
+    '..ohdhdhdhdhdo..',
+    '...ovhvhvhvho...',
+    '....oooooooo....',
+    '.....zzzzzz.....',
+    '................',
+    '................',
   ],
   blomma: [ // platshållare (steg 10.7.3): en liten bukett ängsblommor med gula och vita kronor
     '................',

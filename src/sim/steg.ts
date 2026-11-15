@@ -1031,6 +1031,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
     { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
+    { const r = vildNara(s, 'honung', tk.tx, tk.ty, HONUNG_AR); if (r) { const g = r.v * dt / HOUR_S * HONUNG; takeFrom(s, 'honung', r.x, r.y, g); bar('honung', g); } } // honungskakorna i vildbinas bon (steg 10.7.25)
     if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
@@ -1091,6 +1092,7 @@ function stepNaken(s: State) {
     else if (saknas.length) think(p, `Har inget på ${och(saknas.map(d => NAKEN_DELAR[d]!))}`, KLADER.nakenDel * saknas.length, s.now, 2 * HOUR);
   }
 }
+const HONUNG = 0.4; // så många honungskakor per timmes samlande intill ett rikt bo (steg 10.7.25)
 const ROLLEKA = 0.6; // så mycket rölleka per timmes samlande på en rik röllekaruta (steg 9.7.15)
 export const RUNDA = balans('runda', {
   sett: 12, // så många rutor minns man att man nyss plockat på ...
@@ -1591,9 +1593,9 @@ import { skrammaKlar, staketKlar } from './odling';
 // den rikaste röllekan (eller ängsblomman, steg 10.7.3) på rutan eller bredvid den som samlar (steg 9.7.15): den plockas på
 // vägen. Bara på våren och sommaren, när de växer, så att de andra tidsåldrarna inte frågar kartan i onödan
 const ROLLEKA_GRANNAR = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]] as const;
-function vildNara(s: State, k: 'rolleka' | 'blomma', x: number, y: number) {
-  const ai = ageIndex(s);
-  if (ai !== 1 && ai !== 2) return undefined;
+const VAXTAR = [1, 2], HONUNG_AR = [2, 3]; // vår och sommar; honungen på sommaren och hösten
+function vildNara(s: State, k: 'rolleka' | 'blomma' | 'honung', x: number, y: number, ar = VAXTAR) {
+  if (!ar.includes(ageIndex(s))) return undefined;
   let best: { x: number; y: number; v: number } | undefined;
   for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, k, x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
   return best;

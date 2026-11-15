@@ -243,6 +243,13 @@ const DEF = {
     bas: (s, i, m) => { if (!land(s, i)) return 0; const t = getMap(s.seed).tiles[i]; return (t === T.Sand && djupOf(s.seed).land[i] <= 2 || markslag(groundOf(s), i) === 'hog') ? m * orortOf(s)[i] : 0; },
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
+  // vildbina (steg 10.7.25): bon i skogen med honungskakor på sommaren och hösten, glest, och de växer igen långsamt
+  honung: {
+    namn: 'Vildbin', grupp: 'vaxter', ikon: 'honung', farg: 0xe8b830, topp: 1, arstid: [0, 0, 1, 1], torka: 0.6,
+    monster: { salt: 127, skala: 6, period: 84, troskel: 0.7, gles: 0.3 },
+    bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? m * orortOf(s)[i] : 0,
+    uttag: { full: 1, reach: 1, regrow: [0, 0, 1 / 400, 1 / 400] },
+  },
 } satisfies Record<string, FyndDef>;
 // bärbuskarna (buskar.ts): bär växer på rutan i dag där bärens mönster ligger, och bärbuskarna sås ut där när byn grundas
 // (inte på bar jord, i lägret eller där något är byggt)

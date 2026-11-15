@@ -28,13 +28,15 @@ export const BRYGG = balans('brygg', {
   vinBra: 5, // vinet i krukan är bättre (kvalitet 3) efter så här många dygn ...
   vinBast: 15, // ... och bäst (kvalitet 4) efter så här många
   olVin: 2, // byn kommer på ölet när den har korn och gjort vin så här många gånger
+  mjodVin: 2, // och på mjödet när den har honung och gjort vin så här många gånger (steg 10.7.25)
 });
 // dryckerna som bryggs: det som läggs i karet, hur många dygn satsen jäser och hur mycket den ger. tek = tekniken
-export interface BrygdDef { namn: string; tek: string; av: Record<string, number>; vatten: boolean; dygn: number; ger: number }
+export interface BrygdDef { namn: string; tek: string; av: Record<string, number>; vatten: boolean; dygn: number; ger: number; gor: string } // gor = uppgiftens text
 export const BRYGD: Record<string, BrygdDef> = {
-  vin: { namn: 'Vin', tek: 'bryggkar', av: { bar: 10 }, vatten: true, dygn: 3, ger: 5 }, // 10 bär krossas med vatten och jäser i 3 dygn
-  ol: { namn: 'Öl', tek: 'ol', av: { malt: 4, rolleka: 1 }, vatten: true, dygn: 2, ger: 8 }, // maltet, vatten och rölleka (steg 9.6.13)
-  svagdricka: { namn: 'Svagdricka', tek: 'ol', av: { malt: 2 }, vatten: true, dygn: 1, ger: 8 }, // lite malt och vatten (steg 10.7.24)
+  vin: { namn: 'Vin', tek: 'bryggkar', av: { bar: 10 }, vatten: true, dygn: 3, ger: 5, gor: 'Krossar bär med vatten i bryggkaret.' }, // 10 bär krossas med vatten och jäser i 3 dygn
+  ol: { namn: 'Öl', tek: 'ol', av: { malt: 4, rolleka: 1 }, vatten: true, dygn: 2, ger: 8, gor: 'Lägger malt, vatten och rölleka i bryggkaret.' }, // maltet, vatten och rölleka (steg 9.6.13)
+  svagdricka: { namn: 'Svagdricka', tek: 'ol', av: { malt: 2 }, vatten: true, dygn: 1, ger: 8, gor: 'Lägger lite malt och vatten i bryggkaret till svagdricka.' }, // lite malt och vatten (steg 10.7.24)
+  mjod: { namn: 'Mjöd', tek: 'mjod', av: { honung: 3 }, vatten: true, dygn: 4, ger: 5, gor: 'Löser honungskakor i vatten i bryggkaret.' }, // honungen jäser till mjöd (steg 10.7.25)
 };
 export type BrygdId = VatskaId;
 export const BRYGD_LIST = Object.keys(BRYGD) as BrygdId[];
@@ -84,6 +86,13 @@ export function olUpptackt(s: State) {
   for (const p of nya) learn(s, p, TEK.ol);
   if (nya.length && forstaGang(s, 'olForsta')) log(s, `${nya[0].name} förstår att kornet kan jäsa till öl som bären till vin.`, 'world', [nya[0].id]);
 }
+// mjödet (steg 10.7.25): byn kommer på det när den har honung och har gjort vin några gånger
+export function mjodUpptackt(s: State) {
+  if ((s.stat?.brygt_vin ?? 0) < BRYGG.mjodVin || amountOf(s, 'honung') < 1 || living(s).some(p => knows(p, 'mjod'))) return;
+  const nya = living(s).filter(p => knows(p, 'bryggkar'));
+  for (const p of nya) learn(s, p, TEK.mjod);
+  if (nya.length && forstaGang(s, 'mjodForsta')) log(s, `${nya[0].name} förstår att honungen kan jäsa i vatten som bären till vin.`, 'world', [nya[0].id]);
+}
 // arbetet är klart (KLAR i steg.ts): en ny sats i karet, eller den klara satsen upphälld i krukorna
 export function bryggKlar(s: State, p: Person, ref?: number) {
   const kar = karen(s).find(t => t.id === ref) ?? karen(s)[0];
@@ -115,7 +124,7 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
 }
 // en gång i timmen (steg.ts): satserna jäser när det är varmt nog eller karet står inne, och blir klara
 export function stepBrygg(s: State) {
-  olUpptackt(s);
+  olUpptackt(s); mjodUpptackt(s);
   const varmt = temperature(s) >= BRYGG.kall;
   for (const kar of karen(s)) {
     const sats = kar.sats;
@@ -130,3 +139,4 @@ import { TORK, torkarna } from './matlagning';
 import { utsadeKrok } from './ratter';
 import { TEK, learn } from './teknik';
 import { rnd } from './slump';
+import { amountOf } from './lager';

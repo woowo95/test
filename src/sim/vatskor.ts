@@ -46,6 +46,7 @@ export const DRYCK = balans('dryck', {
   mjolkProtein: 0.15, mjolkFett: 0.1, // mjölken (steg 9.8.8) fyller protein och fett så här mycket per del
   mjolkVarde: 1.2, saftVarde: 1.1, koktVarde: 1, vattenVarde: 0.9, smak: 0.5, // hur gärna man dricker mjölk, saft och kokt vatten, och hur mycket smaken (−1 till 1) drar (steg 10.2.34)
   vinKvall: 1.1, olKvall: 1, // hur gärna man tar vin och öl på kvällen (steg 10.7.23)
+  mjodKvall: 1.1, // mjödet är på kvällen lika eftertraktat som vinet (steg 10.7.25)
   svagVarde: 1.05, buljongVarde: 0.95, buljongSlacker: 0.5, // svagdrickan och buljongen (steg 10.7.24)
   varmDrar: 0.3, // så mycket mer man vill ha en dryck som värmer när man fryser
 });
@@ -69,6 +70,7 @@ export const VATSKOR = {
   te: { namn: 'Örtte', farg: 0x906f0f, i: ['lerkruka_liten'], dryck: { slacker: 0, varm: TE.varm, stat: 'teDrucket', forsta: '{namn} drack ett örtte av rölleka.' } }, // dricks av den som är sjuk eller fryser (villTe), inte mot törsten
   buljong: { namn: 'Buljong', farg: 0x7d5b40, i: ['lerkruka_mellan'], haller: 2, dryck: { slacker: DRYCK.buljongSlacker, ren: true, varm: TE.varm, torst: DRYCK.buljongVarde, stat: 'buljongDrucken', forsta: '{namn} drack byns första buljong.' } }, // ben och svamp eller kål som sjudit i krukan på elden (steg 10.7.24, tillverka.ts)
   svagdricka: { namn: 'Svagdricka', farg: 0xb2921b, i: ['lerkruka_stor'], haller: 4, dryck: { slacker: 1, ren: true, torst: DRYCK.svagVarde, alkohol: 0.05, stat: 'drack_svagdricka' } }, // bryggs av malt i karet (steg 10.7.24, brygg.ts): mot törsten på dagen
+  mjod: { namn: 'Mjöd', farg: 0xd8b25f, i: ['lerkruka_stor'], haller: 20, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.mjodKvall, alkohol: 0.3, stat: 'drack_mjod' } }, // honungen som jäst i karet (steg 10.7.25, brygg.ts)
   sno: { namn: 'Snö', farg: 0xdad0bb, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] }, // snön som smälts i en kruka vid elden (steg 10.2.50, torst.ts): blir vatten // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
 } satisfies Record<string, VatskaDef>;
 export type VatskaId = keyof typeof VATSKOR;
