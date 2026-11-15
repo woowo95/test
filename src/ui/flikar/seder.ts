@@ -37,7 +37,7 @@ export function sedBar(v: number) {
 // det som format seden k (steg 9.2.5): de upplevelser invånarna minns som drar den, under vågen. Symbolen, en till tre pilar åt
 // det håll den drar (fler drar mer) och hur många som minns; texten när musen är över. Symbolerna är de som redan finns
 const UPP_IKON: Partial<Record<string, string>> = {
-  skadad: 's_skarsar', svalt: 's_mat', frys: 's_kall', svamp: 'spindling', sjuk: 's_inf', foralder: 's_dod', syskon: 's_dod', sagDod: 'dodkropp',
+  skadad: 's_skarsar', svalt: 's_mat', frys: 's_kall', svamp: 'spindling', sjuk: 's_inf', foralder: 's_dod', syskon: 's_dod', sagDod: 'dodkropp', sagSkandad: 'skandad',
   foraldralos: 's_dod', skilsmassa: 'b_skam', gral: 'r_rival', syskonFodd: 's_barn', bestulen: 'i_tjuv', tjuv: 'i_tjuv', hardVinter: 'm_hardVinter',
   torka: 'm_torka', tornado: 'm_tornado', brand: 'tro_brand', oversvamning: 'm_oversvamning', lek: 'a_leka', bastaVan: 'r_bast', mentor: 'r_mentor',
   uppfinning: 'i_skicklig', trygg: 'r_naravan', slagen: 's_krossar', slagenIgen: 's_krossar', barnDod: 's_dod', ledFramgang: 'ledarskap',

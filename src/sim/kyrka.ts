@@ -9,7 +9,8 @@ import { balans } from './balans';
 import { clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
 import { type Sed, drar, habitShare } from './seder';
-import { ALDER, type BudTillfalle, ageOf, byId, count, living, log, relKey, satBudTillfalle, stat, think } from './folk';
+import { ALDER, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat, think } from './folk';
+import { beratta } from './rykten';
 import { FOOD, KOTTSLAG, sakNamn } from './saker';
 import { type Ting, tingOf } from './agande';
 import { MASTERVERK, kvNamn } from './kvalitet';
@@ -88,6 +89,7 @@ export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storl
   kraver?: string; // budet kan bara föreslås när tron har det här (offret vid högtiden kräver en högtid)
   nu?(s: State, tr: Tro): boolean; // budets tillfälle är nu: det lyfts fram bland trons förslag (steg 10.3.3)
   om?(s: State, tr: Tro, b: AntagetBud): string // ritualbuden: när, vilka, var, vad som går åt (fliken Religion)
+  och?: [NonNullable<BudDef['skala']>, 0 | 1]; // en andra skala som också ska stå på budets sida (skändningen: Krigisk och Sluten, steg 10.4.13)
   grupp?: string; // bud i samma grupp utesluter varandra: tron har högst ett av dem (steg 10.3.11)
   sed?: [Sed, 1 | -1]; // sederna som hör till budet: sedens sida som drar mot budet (steg 10.3.9)
   intresse?(s: State, p: Person, tr: Tro, v?: BudVarde): { v: number; why: string } // radens eget intresse, -1 till 1, för budets värde (steg 10.3.9)
@@ -136,6 +138,14 @@ export const BUD = {
     om: () => 'När handlaren kommer får hen en hel mat ur byns förråd, en gång per besök, och de som följer budet får en bättre relation med hen.' }, // handel.ts frågar valkomnaHandlare
   begravFiende: { namn: 'Den fallne fienden begravs', sort: 'krav', storlek: 2, skala: 'forlat', sida: 0, text: 'En fallen fiende får en grav',
     om: () => 'De som följer budet begraver en avrustad fiende på trons gravplats, med vanlig grävtid, i stället för att hen ligger kvar.' }, // grav.ts
+  // vem som får en grav och vem som skändas (steg 10.4.13): den som tar hand om kroppen följer sin egen tros bud (grav.ts odeVal)
+  egnaGrav: { namn: 'Bara byns egna får en grav', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'En främling som dör bärs ut i skogen',
+    om: () => 'En gäst som dör får ingen grav av den som följer budet, utan bärs ut i skogen som en fallen fiende.' },
+  gottNamn: { namn: 'Bara den med gott namn får en grav', sort: 'forbud', storlek: 3, skala: 'oppen', sida: 1, text: 'Den som byn talar illa om bärs ut i skogen',
+    om: () => 'En bybo vars anseende i byn är under noll får ingen grav av den som följer budet, utan bärs ut i skogen.' },
+  skanda: { namn: 'De ovärdiga skändas', sort: 'krav', storlek: 4, skala: 'krig', sida: 1, och: ['oppen', 1], text: 'Brottslingen, den ökända och fienden skändas',
+    antas: (s, tr, b) => { b.v = skandVal(s, tr); }, vardeNamn: (_s, v) => skandNamn(v),
+    om: (_s, _tr, b) => `Den som följer budet ger brottslingen, den ökända och den fallne fienden trons skändning: ${skandNamn(b.v ?? '').toLowerCase()}. Att se en skändad kropp är värre än att se en död, och en gäst som ser den gör sin klan ovänligare.` },
   // gravens vård (steg 10.4.2): en rad i GRAVAR (grav.ts) per bud. Det som drar mest blir sed vid trons första begravning
   gravStolpe: { namn: 'En gravstolpe på graven', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravvard', text: 'Graven får en stolpe av trä' },
   gravBrada: { namn: 'En gravbräda på graven', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en bräda med den dödas namn' },
@@ -150,6 +160,13 @@ export const BUD = {
     om: () => 'Förälder, barn och partner samlas en timme vid graven. De får lite humör och tro.' },
   vanligBegr: { namn: 'Begravningen', sort: 'krav', storlek: 2, grupp: 'samling', text: 'Trosfränderna samlas vid graven',
     om: () => 'Trosfränderna och familjen samlas en timme vid graven, och prästen leder när tron har en. De får humör och tro.' },
+  // tilläggen till begravningen (steg 10.4.12): egna bud, en rad i BEGRAVNINGAR (grav.ts) var, som kan läggas till de andra formerna
+  vaka: { namn: 'Vakan', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, text: 'De nära sitter hos den döda kvällen efter',
+    om: () => 'De som stod den döda nära sitter hos kroppen från kl. 20 kvällen efter dödsfallet till midnatt. Den som följer budet bär inte kroppen till graven före vakan.' },
+  sorgkvade: { namn: 'Sorgkvädet', sort: 'krav', storlek: 2, text: 'Trons skald kväder om den döda vid begravningen',
+    om: () => 'När trosfränderna samlas vid graven och en troende skald som minns den döda är med, sprids hens minne till alla som är där.' },
+  gravol: { namn: 'Gravöl', sort: 'krav', storlek: 3, skala: 'fest', sida: 0, text: 'Byns vuxna äter och dricker öl efter begravningen',
+    om: () => 'Efter begravningen samlas byns vuxna två timmar vid elden. En hel mat per två och en öl var tas ur kyrkans egendom. Räcker det inte hålls inget gravöl.' },
   // gravplatsen (steg 10.4.6): en rad i GRAVPLATSER (grav.ts) per bud. Den blir sed när den första troende dör, så att också hen hamnar där
   gravNara: { namn: 'Gravplatsen nära byn', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravplats', text: 'De döda vilar strax utanför byn' },
   gravBryn: { namn: 'Gravplatsen i skogsbrynet', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravplats', text: 'De döda vilar där skogen börjar' },
@@ -355,7 +372,8 @@ export function utgiftNu(s: State, tr: Tro): 'prast' | 'fattig' | undefined {
   return undefined;
 }
 // bud som fråga i trons krets (steg 8.6.7)
-const passar = (tr: Tro, b: BudDef) => { if (!b.skala) return true; const v = skalaV(tr, b.skala); if (v === undefined) return false; return b.sida === 0 ? v < 50 : v >= 50; };
+const sidan = (tr: Tro, sk: NonNullable<BudDef['skala']>, sida: 0 | 1 | undefined) => { const v = skalaV(tr, sk); return v !== undefined && (sida === 0 ? v < 50 : v >= 50); };
+const passar = (tr: Tro, b: BudDef) => (!b.skala || sidan(tr, b.skala, b.sida)) && (!b.och || sidan(tr, b.och[0], b.och[1]));
 // ---------- trons krets tar upp sina egna frågor (steg 10.3.2) ----------
 // den som talar för tron: prästen, annars en profet, annars den främsta bland de vuxna troende (den som själv skulle bli präst)
 export function trosTalare(s: State, tr: Tro): Person | undefined {
@@ -625,6 +643,34 @@ export function hogtidOlKvade(s: State, tr: Tro, med: Person[]) {
   for (const p of med) if (p !== skald && p.tro === tr.id) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kvadeTro * q); think(p, `Hörde ${skald.name}s kväde om tron`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
   count(s, 'hogtid_kvade');
   log(s, `${skald.name} kvad om ${troNamn(tr)} vid högtiden.`, 'rel', [skald.id]);
+}
+// skändningen trons skalor väljer när budet antas, och vad den heter (sätts av grav.ts, som har registret ODEN, steg 10.4.13)
+let skandVal: (s: State, tr: Tro) => string = () => 'djuren', skandNamn: (v: BudVarde) => string = v => String(v);
+export const satSkand = (val: typeof skandVal, namn: typeof skandNamn) => { skandVal = val; skandNamn = namn; };
+// sorgkvädet (steg 10.4.12): när begravningens samling slutar och trons bud finns, sprider den bästa troende skalden som minns den döda
+// sitt starkaste minne av hen till alla som var där, som ett kväde om en person. Utan skald blir det inget kväde
+export function sorgkvade(s: State, tr: Tro, om: number, med: Person[]) {
+  if (!budIn(tr, 'sorgkvade')) return;
+  const minne = (p: Person) => (p.intryck ?? []).filter(e => e.om === om).sort((a, b) => Math.abs(b.v) * b.c - Math.abs(a.v) * a.c)[0];
+  const skald = med.filter(p => p.tro === tr.id && (p.skill[FRAM_SKILL] ?? 0) >= KYRKA.skald && minne(p)).sort((a, b) => (b.skill[FRAM_SKILL] ?? 0) - (a.skill[FRAM_SKILL] ?? 0) || a.id - b.id)[0];
+  if (!skald) return;
+  const e = minne(skald)!, q = framKval(s, skald), d = byId(s, om);
+  for (const p of med) if (p !== skald) { beratta(s, skald, p, e, getRel(s, skald, p)); think(p, `Hörde ${skald.name}s sorgkväde om ${e.namn}`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+  count(s, 'sorgkvade');
+  log(s, `${skald.name} kvad om ${d?.name ?? e.namn} vid graven.`, 'rel', [skald.id]);
+}
+// gravölet (steg 10.4.12): byns vuxna vid elden efter begravningen. En hel mat per två och en öl var ur kyrkans egendom; räcker det inte
+// hålls inget gravöl. kan = det räcker för de vuxna som finns, slut = maten och ölet för dem som var med
+const gravolMat = (s: State, tr: Tro) => FOOD.reduce((a, k) => a + kyrkansAv(s, tr, k), 0);
+export const gravolKan = (s: State, tr: Tro | undefined) => { const n = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length; return !!tr && n > 0 && gravolMat(s, tr) >= Math.ceil(n / 2) && olAntal(s, tr) >= n; };
+export function gravolSlut(s: State, tr: Tro, med: Person[]) {
+  let n = Math.ceil(med.length / 2);
+  while (n > 0) { const k = FOOD.filter(q => kyrkansAv(s, tr, q) >= 1).sort((a, b) => kyrkansAv(s, tr, b) - kyrkansAv(s, tr, a))[0]; if (!k) break; const m = Math.min(n, kyrkansAv(s, tr, k)); kyrkanTar(s, tr, k, m); n -= m; }
+  for (const p of med) {
+    p.hunger = Math.min(1, p.hunger + KULT.festMat);
+    const t = budHindrar(s, p, 'ingetRus') ? undefined : kyrkansOl(s, tr)[0];
+    if (t) { t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined; drickAlkohol(s, p, 'ol', true); count(s, 'gravol_ol'); } // den tomma krukan blir kvar
+  }
 }
 // den första skörden (odling.ts): den första hela saken k ur en ny skörd på fältet f går till kyrkan. m = när rutan mognade; en ruta
 // som mognat mer än ett dygn efter den som offrades hör till en ny skörd

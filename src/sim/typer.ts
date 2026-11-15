@@ -224,7 +224,7 @@ export interface Person {
   arr?: { d: import('./halsa').Kroppsdel; n: number }[]; // ärren (steg 8.2.4)
   sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)
   svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
-  bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
+  bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; sedSkand?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
   drag?: { namn: string; v: number; t: number }; // anfallarnas tro som en dragning efter att ha svurit trohet (steg 8.8.6)
   missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)
   straffad?: boolean; utanRost?: boolean; utanVard?: number; tjanst?: number; brottsling?: boolean; // straffen (steg 8.4.8): straffad, förlorad röst, utan vård till (steg 9.5.30), samhällstjänsten till, avrättad

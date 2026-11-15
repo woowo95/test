@@ -62,6 +62,7 @@ export const UPPLEVELSER = {
   foralder: { text: 'Miste sin {om}', kort: 'Miste en förälder', chans: 0.9, e: [{ empati: 2 }, { empati: -2 }, { flit: 2 }], vem: 'bada', sed: { gemenskap: 1 }, ande: true },
   syskon: { text: 'Miste {om}', chans: 0.7, e: [{ empati: 2 }, { karisma: -2 }], vem: 'bada', sed: { gemenskap: 1 }, kort: 'Miste någon nära', ande: true },
   sagDod: { text: 'Såg {om} dö', chans: 0.4, e: [{ mod: -2 }, { mod: -1, empati: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, kort: 'Såg någon dö' },
+  sagSkandad: { text: 'Såg {om}s skändade kropp', chans: 0.5, e: [{ mod: -2 }, { empati: 1, mod: -1 }, { mod: 1, empati: -1 }], vem: 'bada', sed: { forsiktighet: 1 }, kort: 'Såg en skändad kropp' }, // steg 10.4.13
   foraldralos: { text: 'Blev föräldralös och växte upp hos andra', chans: 0.9, e: [{ flit: 2, karisma: -1 }, { mod: 2, empati: -1 }], tidig: true, vem: 'barn', sed: { gemenskap: 2 } },
   skilsmassa: { text: 'Föräldrarna gick isär', chans: 0.7, e: [{ karisma: -2 }, { empati: -1, flit: 1 }], vem: 'barn', sed: { barn: -1 } },
   gral: { text: 'Föräldrarna grälade ofta', chans: 0.04, e: [{ empati: -2 }, { karisma: -1 }, { aggression: 2 }], vem: 'barn', sed: { barn: -1 } },

@@ -10,24 +10,27 @@ export const KVAR = balans('kvar', {
   seR: 4, // så många rutor bort ser man det
   seTim: 6, // så länge sitter tanken i (timmar i spelet)
   nara: 2.5, // ... och så mycket mer för den som stod den döda nära
+  klan: 5, // så mycket ovänligare blir klanen vars gäst ser en skändad kropp (steg 10.4.13)
 });
 export interface KvarDef { namn: string; ikon: string; haller: number; se: number; tanke: string }
 export const KVARLEVOR = {
   del: { namn: 'Kroppsdel', ikon: 'kroppsdel', haller: 4, se: -0.04, tanke: 'Såg en avhuggen kroppsdel' },
   fiende: { namn: 'Fallen fiende', ikon: 'dodkropp', haller: 6, se: -0.03, tanke: 'Såg en fallen fiende' }, // steg 8.7.5
   kropp: { namn: 'Död kropp', ikon: 'dodkropp', haller: 8, se: -0.1, tanke: 'Såg en död kropp' },
+  framling: { namn: 'Död främling', ikon: 'dodkropp', haller: 8, se: -0.05, tanke: 'Såg en död främling' }, // en gäst som dött (steg 10.4.13)
+  skandad: { namn: 'Skändad kropp', ikon: 'skandad', haller: 8, se: -0.2, tanke: 'Såg en skändad kropp' }, // lagd åt djuren eller vid stigen (steg 10.4.13)
 } satisfies Record<string, KvarDef>;
 export type KvarSlag = keyof typeof KVARLEVOR;
 export const gravAt = (s: State, x: number, y: number) => s.gravar?.find(g => g.x === x && g.y === y);
 export type GravStil = 'jord' | 'bal' | 'vatten'; // gravhögen är en vård (steg 10.4.2)
 export type GravVard = 'gravstolpe' | 'gravbrada' | 'stockram' | 'gravhus' | 'gravhog' | 'gravsten' | 'stensattning' | 'skeppssattning';
 export interface Grav { x: number; y: number; t: number; vem: number; namn: string; stil: GravStil; tro?: number; ovardig?: true; med?: string[]; vard?: GravVard; stor?: true; fiende?: true; text?: string; textAv?: { id: number; namn: string }; textBev?: import('./rykten').Bevis[]; gavor?: number; lagad?: number } // gavor = gåvorna som lagts på graven, lagad = när den senast lagades (steg 10.4.8); med = sakerna som följde den döde (steg 10.3.5); vard = det som står på graven, stor = ledare, helgon eller legend (steg 10.4.2); text = gravtexten, vem som ristade och händelserna (steg 10.4.4)
-export interface Kvarleva { id: number; k: KvarSlag; x: number; y: number; t: number; vem: number; namn: string; text: string; bars?: number; saker?: Record<string, number>; med?: string[]; ting?: { k: string; c: number; q?: number; ber?: import('./berattelser').SakMinne }[]; bud?: string[]; naraT?: number; annanT?: number; vag?: 'bal' | 'vatten' | 'jord'; ode?: 'grav' | 'ovardig' | 'skogen'; utburen?: true } // ode = vad som görs med kroppen och utburen = lagd i skogen (steg 10.4.7); ting = fiendens egna vapen och plagg (steg 10.3.6)
+export interface Kvarleva { id: number; k: KvarSlag; x: number; y: number; t: number; vem: number; namn: string; text: string; bars?: number; saker?: Record<string, number>; med?: string[]; ting?: { k: string; c: number; q?: number; ber?: import('./berattelser').SakMinne }[]; bud?: string[]; naraT?: number; annanT?: number; vag?: 'bal' | 'vatten' | 'jord'; ode?: import('./grav').OdeId; utburen?: true; vaka?: number; klaner?: number[] } // klaner = de klaner vars gäster sett den skändade kroppen (steg 10.4.13) // ode = vad som görs med kroppen och utburen = lagd i skogen (steg 10.4.7); ting = fiendens egna vapen och plagg (steg 10.3.6)
 export const kvarlevor = (s: State) => (s.kvarlevor ??= []);
 export function nyKvarleva(s: State, k: KvarSlag, p: Person, text: string) {
   const q: Kvarleva = { id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k, x: Math.floor(p.x), y: Math.floor(p.y), t: s.now, vem: p.id, namn: p.name, text };
   kvarlevor(s).push(q);
-  if (k === 'kropp') kroppKrok.f?.(s, q, p);
+  if (k === 'kropp' || k === 'framling') kroppKrok.f?.(s, q, p);
   return q;
 }
 // det som görs när en kropp blir kvar (grav.ts, steg 10.4.5): trons seder, buden som gällde och när byn vill begrava hen
@@ -42,15 +45,27 @@ export function kvarTimme(s: State) {
   for (const q of s.kvarlevor) {
     const d: KvarDef = KVARLEVOR[q.k];
     if (q.bars !== undefined) continue;
+    if (q.k === 'skandad') { for (const p of s.people) if (p.died === undefined && p.id !== q.vem && Math.hypot(p.x - q.x, p.y - q.y) <= KVAR.seR) sagSkandad(s, p, q); continue; }
     for (const p of living(s)) if (p.id !== q.vem && Math.hypot(p.x - q.x, p.y - q.y) <= KVAR.seR) {
       const nar = nara(s, p, q.vem); // mer för den som stod den döda nära (steg 8.5.1)
       think(p, nar ? `Såg ${q.namn} ligga där` : d.tanke, d.se * (nar ? KVAR.nara : 1), s.now, KVAR.seTim * HOUR);
-      if (q.k === 'kropp' && !p.sedDod?.includes(q.vem)) { (p.sedDod ??= []).push(q.vem); upplev(s, p, 'sagDod', q.namn); } // en av upplevelserna som flyttar andligheten (steg 8.5.4)
+      if ((q.k === 'kropp' || q.k === 'framling') && !p.sedDod?.includes(q.vem)) { (p.sedDod ??= []).push(q.vem); upplev(s, p, 'sagDod', q.namn); } // en av upplevelserna som flyttar andligheten (steg 8.5.4)
     }
   }
 }
 
 
+// att se en skändad kropp eller skändningen (steg 10.4.13): tanken, en gång upplevelsen, och en gäst gör sin klan ovänligare, en gång per kropp och klan
+export function sagSkandad(s: State, p: Person, q: Kvarleva) {
+  if (p.gast) {
+    const k = s.klaner?.find(c => c.id === p.gast!.klan);
+    if (k && !q.klaner?.includes(k.id)) { (q.klaner ??= []).push(k.id); k.inst = Math.max(-100, Math.min(100, Math.round(k.inst - KVAR.klan))); }
+    return;
+  }
+  const nar = nara(s, p, q.vem);
+  think(p, nar ? `Såg ${q.namn} skändas` : KVARLEVOR.skandad.tanke, KVARLEVOR.skandad.se * (nar ? KVAR.nara : 1), s.now, KVAR.seTim * HOUR);
+  if (!p.sedSkand?.includes(q.id)) { (p.sedSkand ??= []).push(q.id); upplev(s, p, 'sagSkandad', q.namn); }
+}
 export const nara = (s: State, p: Person, id: number) => { const d = byId(s, id); return !!d && (p.partner === id || isParent(p, d) || isParent(d, p) || (s.rels[relKey(p.id, id)]?.op ?? 0) > 40); };
 // bäraren avbröts: kroppen läggs ner där hen är
 export function kroppTappad(s: State) {

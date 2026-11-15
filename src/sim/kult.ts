@@ -18,7 +18,8 @@ import { freeNear, roomAt } from './byggnad';
 import { eldPlats } from './karta';
 import { addTo, amountOf, ownedStock, use } from './lager';
 import { ata } from './naring';
-import { budIn, foljer, hogtidKrav, hogtidMat, hogtidOlKvade, kyrkansAv, kyrkanTar } from './kyrka';
+import { budIn, foljer, gravolKan, gravolSlut, hogtidKrav, hogtidMat, hogtidOlKvade, kyrkansAv, kyrkanTar, sorgkvade } from './kyrka';
+import { kvarById, nara } from './kvarlevor';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
@@ -219,8 +220,8 @@ function vanhelga(s: State) {
 }
 
 // ---------- ritualerna (steg 8.5.6, 8.5.13, 8.5.14) ----------
-export interface RitualDef { namn: string; tim: number; humor: number; tro: number; huvud?: number; vem(s: State, r: Ritual): Person[]; plats(s: State, r: Ritual): { x: number; y: number } }
-export interface Ritual { k: RitualId; start: number; slut: number; x: number; y: number; tro?: number; namn?: string; om?: number[]; gick?: number; form?: HogtidForm; tyst?: true }
+export interface RitualDef { namn: string; tim: number; humor: number; tro: number; huvud?: number; vem(s: State, r: Ritual): Person[]; plats(s: State, r: Ritual): { x: number; y: number }; kan?(s: State, r: Ritual): boolean } // kan: hålls bara när det som går åt finns
+export interface Ritual { k: RitualId; start: number; slut: number; x: number; y: number; tro?: number; namn?: string; om?: number[]; gick?: number; form?: HogtidForm; tyst?: true; fran?: number; kropp?: number } // fran = ritualen börjar tidigast då (vakan), kropp = den döda vakan sitter hos
 const vuxna = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.smabarn);
 const vidElden = (s: State) => { const f = eldPlats(s), q = freeNear(s, f.x + 0.5, f.y + 2); return q; };
 export const RITUALER = {
@@ -229,6 +230,11 @@ export const RITUALER = {
   hogtid: { namn: 'Högtid', tim: 3, humor: 0.1, tro: 3, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && (troshusPlats(s, tr) ?? helig(s, tr))) ?? vidElden(s); } },
   dop: { namn: 'Dop', tim: 1, humor: 0.05, huvud: 0.1, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // steg 10.3.4: huvud = föräldrarna
   vuxen: { namn: 'Vuxenblivande', tim: 1, humor: 0.05, huvud: 0.15, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // huvud = den unga
+  // vakan och gravölet (steg 10.4.12): de nära sitter hos kroppen (eller vid graven, om den redan begravts) kvällen efter dödsfallet,
+  // och byns vuxna dricker gravöl vid elden efter begravningen
+  vaka: { namn: 'Vaka', tim: 4, humor: 0.05, tro: 1, vem: (s, r) => living(s).filter(p => r.om?.some(id => nara(s, p, id))),
+    plats: (s, r) => { const q = r.kropp !== undefined ? kvarById(s, r.kropp) : undefined, g = q ? undefined : (s.gravar ?? []).find(h => r.om?.includes(h.vem)); return q ?? g ?? { x: r.x, y: r.y }; } },
+  gravol: { namn: 'Gravöl', tim: 2, humor: 0.08, tro: 1, vem: s => living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), plats: s => vidElden(s), kan: (s, r) => gravolKan(s, troOf(s, r.tro)) },
   leddBon: { namn: 'Ledd bön', tim: 1, humor: 0.06, tro: 1.5, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && (troshusPlats(s, tr) ?? helig(s, tr))) ?? vidElden(s); } },
 } satisfies Record<string, RitualDef>;
 export type RitualId = keyof typeof RITUALER;
@@ -255,11 +261,17 @@ export function ritualTimme(s: State) {
       p.task!.until = s.now;
     }
     if (r.k === 'hogtid' && tr) hogtidSlut(s, tr, r, med);
+    if (r.k === 'begravning' && tr && r.om?.length) sorgkvade(s, tr, r.om[0]!, med);
+    if (r.k === 'gravol' && tr) gravolSlut(s, tr, med);
     count(s, 'ritual_' + r.k);
     s.ritual = undefined;
   }
   if (s.ritual || !s.ritualKo?.length) return;
-  const n = s.ritualKo.shift()!, d = RDEF[n.k];
+  // den första i kön vars tid har kommit (vakan väntar till kvällen efter dödsfallet); en ritual utan det som går åt hålls inte
+  const i = s.ritualKo.findIndex(r => (r.fran ?? 0) <= s.now);
+  if (i < 0) return;
+  const n = s.ritualKo.splice(i, 1)[0]!, d = RDEF[n.k];
+  if (d.kan && !d.kan(s, n)) { count(s, 'ritual_inte_' + n.k); return; }
   if (n.k === 'brollop') valsigna(s, n);
   const at = d.plats(s, n);
   s.ritual = { ...n, start: s.now, slut: s.now + d.tim * HOUR, x: at.x, y: at.y };

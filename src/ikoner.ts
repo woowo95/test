@@ -167,6 +167,7 @@ export const PAL: Record<string, Record<string, string>> = {
   helig_trad: { o: '#372f25', g: '#647025', j: '#5e3c24', y: '#d8b25f' },
   kroppsdel: { o: '#372f25', H: '#bd753e', r: '#a14808', R: '#742a01' },
   dodkropp: { o: '#372f25', H: '#a0947d', w: '#7e7362' },
+  skandad: { o: '#372f25', H: '#a0947d', w: '#7e7362', r: '#742a01' },
   zzz: { w: '#dad0bb' },
   a_odla: AKT,
   a_jaga: AKT,
@@ -300,6 +301,12 @@ export const PIX: Record<string, string[]> = {
     '................','......HHH.......','....oHHHHHo.....','...oHHHHHHHrr...',
     '...oHHHHHHHrR...','....ooooooorr...','................','................',
     '................','................','................','................',
+  ],
+  skandad: [ // platshållare (steg 10.4.13): en skändad kropp, slängd snett med fläckar
+    '................','................','................','.....r..........',
+    '...oo.....r.....','..oHHo.....oo...','..oHHoooooowwo..','...owwwwwwwwwo.r',
+    '..r.owwwwwwwwwo.','.....oHHoooowwo.','.....oHHo...oo..','......oo....r...',
+    '................','...r............','................','................',
   ],
   dodkropp: [ // platshållare (steg 8.5.1): en död kropp på marken
     '................','................','................','................',

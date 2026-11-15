@@ -117,7 +117,7 @@ export function gastVardag(s: State, dtSec: number, varme: (p: Person) => number
 export function gastDor(s: State, p: Person, orsak: string) {
   p.died = s.now; p.cause = orsak; p.task = undefined;
   count(s, 'gaster doda');
-  nyKvarleva(s, 'kropp', p, p.name);
+  nyKvarleva(s, 'framling', p, p.name); // en egen rad i KVARLEVOR (steg 10.4.13)
   if (p.gast!.sort === 'handlare' && s.handlare?.id === p.id) handlarenDog(s, s.handlare);
   for (const f of [s.rovare, ...s.rovareFler ?? []]) if (f) f.folk = f.folk.filter(id => id !== p.id);
   const t = `${p.name}${p.gast!.hem ? ' från ' + p.gast!.hem : ''} dog ${orsak}.`;

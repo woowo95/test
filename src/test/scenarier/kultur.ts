@@ -2230,3 +2230,126 @@ SCENARIER.overdrift = {
     ];
   },
 };
+SCENARIER.gravol = {
+  text: 'Steg 10.4.12: vaka, sorgkväde och gravöl, tre bud som läggs till begravningen. Vid vakan sitter de nära hos kroppen från kl. 20 kvällen efter dödsfallet, och den som följer budet bär inte kroppen före vakan; den troende som gör det ändå bryter budet. Vid sorgkvädet sprider trons skald sitt minne av den döda till alla i samlingen, och gravölet är en fest för byns vuxna med mat och öl ur kyrkans egendom, som inte hålls när det inte räcker',
+  kor: () => {
+    const a = medTro(6, 4), s = a.s, tr = a.tr, kid = SIM.kyrkaId(tr.id);
+    tr.bud = (['prast', 'vanligBegr', 'vaka', 'sorgkvade', 'gravol'] as const).map(id => ({ id, t: s.now }));
+    const vux = a.v.filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), d = vux[1], skald = vux[2], barare = vux[0], van = vux[3];
+    for (const p of a.v) p.skill.skaldskap = 0;
+    skald.skill.skaldskap = 12; SIM.getRel(s, van, d).op = 60;
+    SIM.handelse(s, d, 'bjorndodare', undefined, undefined, skald, 2);
+    klockan(s, 10); SIM.die(s, d, 'alderdom');
+    const kr = s.kvarlevor!.find(k => k.k === 'kropp' && k.vem === d.id)!;
+    const vk = s.ritualKo?.find(r => r.k === 'vaka'), kl = vk?.fran !== undefined ? new Date(vk.fran).getHours() : -1;
+    // den som följer budet väntar med graven
+    s.now += 3 * SIM.HOUR; kr.naraT = kr.annanT = s.now - 1;
+    const fore = SIM.begravaVal(s, barare);
+    // den troende som inte följer budet (svag tro) bär hen ändå och bryter budet
+    const svag = vux[4] ?? nyInvanare(s, 'm', 30); svag.tro = tr.id; svag.troStyrka = 0;
+    const svagV = SIM.begravaVal(s, svag), b0 = s.stat?.bud_brutet ?? 0;
+    const tk0 = { act: 'begrava', phase: 'do', tx: kr.x, ty: kr.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task;
+    svag.task = tk0; SIM.kroppUpp(s, svag, tk0); const brot = (s.stat?.bud_brutet ?? 0) > b0;
+    kr.bars = undefined; kr.ode = undefined; svag.task = undefined;
+    // vakan kl. 20: de nära samlas hos kroppen
+    klockan(s, 20); s.ritual = undefined; SIM.ritualTimme(s);
+    const vr = s.ritual as SIM.Ritual | undefined, vem = vr ? SIM.RITUALER.vaka.vem(s, vr) : [];
+    for (const p of vem) p.task = { act: 'ritual', phase: 'do', until: s.now + 9 * SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+    s.now = (vr?.slut ?? s.now); SIM.ritualTimme(s);
+    const vakat = vem.some(p => p.thoughts.some(t => t.text === `Vakan för ${d.name}`));
+    for (const p of a.v) p.task = undefined;
+    const efter = SIM.begravaVal(s, barare);
+    // begravningen: samlingen och gravölet i kön
+    const tk = { act: 'begrava', phase: 'do', tx: kr.x, ty: kr.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task;
+    barare.task = tk; SIM.kroppUpp(s, barare, tk); barare.x = tk.tx!; barare.y = tk.ty!; s.ritualKo = []; SIM.gravKlar(s, barare, tk); barare.task = undefined;
+    const ko = (s.ritualKo ?? []).map(r => r.k).join(', ');
+    // sorgkvädet: skaldens minne till alla i samlingen
+    const lyss = vux.filter(p => p !== skald && p !== d && p.died === undefined), visste = lyss.filter(p => p.intryck?.some(e => e.om === d.id)).length;
+    s.ritual = undefined; SIM.ritualTimme(s); const br = s.ritual as SIM.Ritual | undefined, inte0 = s.stat?.ritual_inte_gravol ?? 0;
+    for (const p of [skald, ...lyss]) p.task = { act: 'ritual', phase: 'do', until: s.now + 9 * SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+    s.now = br?.slut ?? s.now; SIM.ritualTimme(s); // gravölet står näst i kön och börjar direkt, men kyrkan har ingen mat eller öl
+    const utan = !s.ritual && (s.stat?.ritual_inte_gravol ?? 0) === inte0 + 1;
+    const hordes = lyss.filter(p => p.intryck?.some(e => e.om === d.id)).length;
+    for (const p of a.v) p.task = undefined;
+    // med mat och öl: en hel mat per två och en öl var
+    const n = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen).length;
+    satKyrka(s, tr, { bar: n });
+    const krukor = [0, 1].map(() => { const k = SIM.addTool(s, 'lerkruka_stor', barare); k.hos = undefined; SIM.fyllVatska(s, 'ol', 10, k); k.agare = kid; return k; });
+    const olNu = () => krukor.reduce((x, k) => x + (k.inne?.n ?? 0), 0);
+    SIM.nyRitual(s, 'gravol', { tro: tr.id, om: [d.id], namn: `Gravölet efter ${d.name}` }); SIM.ritualTimme(s);
+    const gr = s.ritual as SIM.Ritual | undefined, med = gr ? SIM.RITUALER.gravol.vem(s) : [];
+    for (const p of SIM.living(s)) p.task = undefined;
+    for (const p of med) p.task = { act: 'ritual', phase: 'do', until: s.now + 9 * SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+    const bar0 = SIM.kyrkansAv(s, tr, 'bar'), ol0 = olNu();
+    s.now = gr?.slut ?? s.now; SIM.ritualTimme(s);
+    const at = bar0 - SIM.kyrkansAv(s, tr, 'bar'), drack = ol0 - olNu();
+    return [
+      [`vakan väntar i kön till kl. 20 (${kl})`, kl === 20 && kr.vaka === vk?.fran],
+      ['den som följer budet bär inte kroppen före vakan', !fore],
+      [`den troende som bär hen ändå bryter budet (${svagV ? 'bär' : 'bär inte'})`, !!svagV && brot],
+      [`de nära sitter hos kroppen (${vem.map(p => p.name).join(', ')}, ${vr?.x},${vr?.y})`, !!vr && vr.k === 'vaka' && vem.includes(van) && vr.x === kr.x && vr.y === kr.y && vakat],
+      ['efter vakan bärs hen till graven', !!efter],
+      [`samlingen och gravölet står i kön (${ko})`, ko === 'begravning, gravol'],
+      [`sorgkvädet sprider skaldens minne till samlingen (${visste} → ${hordes} av ${lyss.length})`, hordes === lyss.length && hordes > visste && (s.stat?.sorgkvade ?? 0) === 1],
+      ['gravölet hålls inte utan kyrkans mat och öl', utan],
+      [`gravölet: byns vuxna vid elden, en mat per två och en öl var (${med.length} vuxna, ${at} mat, ${drack} öl)`, gr?.k === 'gravol' && med.length === n && at === Math.ceil(n / 2) && drack === n],
+    ];
+  },
+};
+SCENARIER.skandning = {
+  text: 'Steg 10.4.13: vem som får en grav och vem som skändas. Buden Bara byns egna och Bara den med gott namn bär främlingen och den illa ansedda ut i skogen, och budet De ovärdiga skändas ger brottslingen, den ökända och fienden trons skändning, vald efter skalorna (åt djuren, bål utan rit, vattnet eller vid stigen). Den som tar hand om kroppen följer sin egen tros bud; den som stod den döda nära räknar det en storlek större och bryter det oftare. En skändad kropp är värre att se, och en gäst som ser den gör sin klan ovänligare',
+  kor: () => {
+    const a = medTro(6, 4), s = a.s, tr = a.tr;
+    tr.natur = 40; tr.sk = { ...tr.sk, krig: 80, oppen: 80 };
+    const sk: SIM.AntagetBud = { id: 'skanda', t: s.now }; SIM.BUD.skanda.antas!(s, tr, sk);
+    tr.bud = [{ id: 'prast', t: s.now }, sk, { id: 'egnaGrav', t: s.now }, { id: 'gottNamn', t: s.now }];
+    // en annan tro, Natur: åt djuren
+    const tr2 = { ...tr, id: 2, natur: 10, sk: { ...tr.sk, krig: 20, oppen: 30 } }, sk2: SIM.AntagetBud = { id: 'skanda', t: s.now }; SIM.BUD.skanda.antas!(s, tr2, sk2);
+    const vux = a.v.filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), p = vux[0], w = vux[2], q2 = vux[3];
+    const utan = nyInvanare(s, 'm', 30); utan.tro = undefined;
+    const begrav = (vem: Person, k: SIM.Kvarleva) => { const tk = { act: 'begrava', phase: 'do', tx: k.x, ty: k.y, until: s.now, carry: 0, ref: k.id, why: '' } as SIM.Task; vem.task = tk; SIM.kroppUpp(s, vem, tk); return tk; };
+    // brottslingen skändas vid stigen; den som ser det och gästen som ser det
+    const d1 = vux[1]; d1.brottsling = true; SIM.die(s, d1, 'alderdom');
+    const k1 = s.kvarlevor!.find(k => k.vem === d1.id)!; k1.naraT = k1.annanT = s.now - 1;
+    const tk1 = begrav(p, k1), dit = { x: Math.floor(tk1.tx!), y: Math.floor(tk1.ty!) }, ut = SIM.utanforByn(s, dit.x, dit.y);
+    const klan = SIM.nyKlan(s, 20, 10), g = SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: 'Gäst', sex: 'm', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare', klan: klan.id }, x: dit.x + 1.5, y: dit.y + 0.5, nyckel: 4243 }); s.people.push(g);
+    w.x = dit.x + 0.5; w.y = dit.y + 1.5; p.x = tk1.tx!; p.y = tk1.ty!; const inst0 = klan.inst;
+    SIM.gravKlar(s, p, tk1); p.task = undefined;
+    const kvar = s.kvarlevor!.find(k => k.vem === d1.id), sag = !!w.sedSkand?.includes(k1.id) && w.thoughts.some(t => /skänd/.test(t.text));
+    const inst1 = klan.inst; SIM.sagSkandad(s, g, kvar!); const inst2 = klan.inst;
+    // den som går förbi ser den
+    q2.x = dit.x + 0.5; q2.y = dit.y - 1.5; SIM.kvarTimme(s); const forbi = q2.thoughts.find(t => /skänd/.test(t.text));
+    // den som följer budet tar inte upp den, den utan tro ger hen en grav
+    const foljaren = SIM.begravaVal(s, p), utanVal = SIM.begravaVal(s, utan);
+    // fienden: bål utan rit i en tro som drar mot Människa
+    tr.natur = 80; tr.sk = { ...tr.sk, krig: 60, oppen: 60 }; const sk3: SIM.AntagetBud = { id: 'skanda', t: s.now }; SIM.BUD.skanda.antas!(s, tr, sk3); sk.v = sk3.v;
+    SIM.setAmount(s, 'ved', 10); const ved0 = SIM.amountOf(s, 'ved');
+    s.kvarlevor!.push({ id: 991, k: 'fiende', x: Math.floor(p.x) + 2, y: Math.floor(p.y), t: s.now, vem: -1, namn: 'Rövaren Ulf', text: 'Rövaren Ulf' });
+    const tk3 = begrav(p, s.kvarlevor!.find(k => k.id === 991)!); p.x = tk3.tx!; p.y = tk3.ty!; SIM.gravKlar(s, p, tk3); p.task = undefined;
+    const bal = !s.kvarlevor!.some(k => k.id === 991) && ved0 - SIM.amountOf(s, 'ved') === 4 && !s.gravar?.some(x => x.namn === 'Rövaren Ulf');
+    // främlingen: bara byns egna får en grav
+    const g2 = SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: 'Främling', sex: 'k', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare', klan: klan.id }, x: p.x, y: p.y, nyckel: 4244 }); s.people.push(g2);
+    SIM.gastDor(s, g2, 'av kyla'); const kg = s.kvarlevor!.find(k => k.vem === g2.id);
+    const gastF = kg && SIM.odeFor(s, p, kg), gastU = kg && SIM.odeFor(s, utan, kg);
+    // den illa ansedda: bara den med gott namn får en grav; partnern räknar budet en storlek större
+    tr.bud = tr.bud.filter(b => b.id !== 'skanda'); // utan budet om de ovärdiga: den illa ansedda är ingen skändning
+    const e = vux[4], f = vux[5];
+    if (f.partner !== undefined) { const o = SIM.byId(s, f.partner); if (o) o.partner = undefined; f.partner = undefined; }
+    if (e.partner !== undefined) { const o = SIM.byId(s, e.partner); if (o) o.partner = undefined; e.partner = undefined; }
+    SIM.pair(s, f, e, true); f.troStyrka = 60;
+    for (const q of SIM.living(s)) if (q !== e) (q.intryck ??= []).push({ om: e.id, namn: e.name, k: 'elak', v: 1, c: 1, t: s.now });
+    const an = SIM.ryktbarhet(s, e.id).a; SIM.die(s, e, 'alderdom'); const ke = s.kvarlevor!.find(k => k.vem === e.id)!;
+    const illaF = SIM.odeVal(s, p, ke), illaP = SIM.odeVal(s, f, ke);
+    return [
+      [`skändningen väljs efter skalorna när budet antas (${sk2.v}, ${SIM.ODEN[sk.v as SIM.OdeId]?.namn ?? sk.v})`, sk2.v === 'djuren' && sk3.v === 'balRit'],
+      [`brottslingen skändas vid stigen, strax utanför byns område (${ut.toFixed(1)} rutor ut)`, !!kvar && kvar.k === 'skandad' && ut >= 1 && ut < 3 && !s.gravar?.some(x => x.vem === d1.id)],
+      ['den som ser skändningen minns den', sag],
+      [`gästen som ser den gör sin klan ovänligare, en gång per kropp (${inst0} → ${inst1} → ${inst2})`, inst1 === inst0 - 5 && inst2 === inst1],
+      [`den som går förbi mår sämre än av en död (${forbi?.v})`, !!forbi && (forbi.v ?? 0) <= -0.2 + 1e-9],
+      [`den som följer budet tar inte upp den skändade, den utan tro ger hen en grav (${foljaren ? 'tar' : 'tar inte'}, ${utanVal ? 'tar' : 'tar inte'})`, !foljaren && !!utanVal],
+      ['fienden: bål utan rit tar fyra ved och inget blir kvar', bal],
+      [`främlingen bärs ut av den som följer budet och begravs av den utan tro (${kg?.k}, ${gastF}, ${gastU})`, kg?.k === 'framling' && gastF === 'skogen' && gastU === 'grav'],
+      [`den illa ansedda (${an.toFixed(1)}) bärs ut av den som följer budet, och partnern begraver hen och bryter budet (${illaF.ode}, ${illaP.ode}/${illaP.brot})`, an < 0 && illaF.ode === 'skogen' && illaP.ode === 'grav' && illaP.brot === 'gottNamn'],
+    ];
+  },
+};
