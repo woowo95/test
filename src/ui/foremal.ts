@@ -357,6 +357,9 @@ function drawBuild() {
 // graven som platshållare (steg 10.4.2): jordhögen, och gravstolpen, gravbrädan, stockramen, gravhuset eller gravhögen
 function gravPlats(g: { x: number; y: number; vard?: string }) {
   const X = g.x * TS, Y = g.y * TS, gr = structG;
+  if (g.vard === 'gravsten') { const id = 'grav_' + (1 + (g.x * 7 + g.y * 13) % 3), b = KARTBILDER[id]!; stubbIkoner.add('kb_' + id, X + ((TS - b.w) >> 1), Y + TS - 2 - b.h, 1); return; } // en av de tre valda gravstenarna (steg 9.9.1)
+  if (g.vard === 'stensattning') { gr.beginFill(0x5e3c24).drawEllipse(X + TS / 2, Y + TS - 5, 4, 2).endFill(); for (let i = 0; i < 6; i++) { const v = i * Math.PI / 3; gr.beginFill(0x8a9c9e).drawCircle(X + TS / 2 + Math.cos(v) * 6, Y + TS - 6 + Math.sin(v) * 4, 1.5).endFill(); } return; }
+  if (g.vard === 'skeppssattning') { for (let i = 0; i < 12; i++) { const v = i * Math.PI / 6, r = Math.abs(Math.sin(v)) ** 0.5; gr.beginFill(0x8a9c9e).drawCircle(X + TS / 2 + Math.cos(v) * 9, Y + TS - 6 + Math.sin(v) * 4 * r, 1.4).endFill(); } return; }
   if (g.vard === 'gravhog') { gr.beginFill(0x5e3c24).drawEllipse(X + TS / 2, Y + TS - 5, TS / 2, 5).endFill().beginFill(0x7d5b40).drawEllipse(X + TS / 2, Y + TS - 6, TS / 2 - 2, 3).endFill(); return; }
   gr.beginFill(0x5e3c24).drawEllipse(X + TS / 2, Y + TS - 4, 5, 3).endFill();
   if (g.vard === 'gravstolpe') gr.beginFill(0x3f2415).drawRect(X + TS / 2 - 1, Y + 3, 2, TS - 7).endFill();

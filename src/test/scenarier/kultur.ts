@@ -898,6 +898,33 @@ SCENARIER.gravvard = {
     ];
   },
 };
+SCENARIER.stengrav = {
+  text: 'Steg 10.4.3: stengravarna. Utan tro blir det en gravsten när byn har en huggen sten, och stenen tas när ristningen börjar; en tro går från trä till sten när tyngden räcker, och de stora får en skeppssättning',
+  kor: () => {
+    const a = medLedare(), s = a.s, d = a.v[1];
+    klockan(s, 9); tandEld(s); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'huggen_sten', 2);
+    for (const q of SIM.living(s)) if (q !== d) SIM.handelse(s, d, 'bjorndodare', undefined, undefined, q, 2);
+    const g = begrav(s, a.v[0], d), forst = SIM.vardFor(s, g);
+    let h = 0; while (!g.vard && h < 48 * 12) { kor(s, 1 / 12); h++; }
+    const sten = SIM.amountOf(s, 'huggen_sten');
+    // en tro med tyngd för bud av storlek 2 som kan hugga sten: stensättningen går före stockramen, skeppssättningen före gravhögen
+    const c = medTro(6, 2); c.tr.natur = 50; c.tr.sk = { ...c.tr.sk, oppen: 90, livet: 90, fest: 20 };
+    SIM.setAmount(c.s, 'sten', 20); SIM.setAmount(c.s, 'huggen_sten', 4); SIM.setAmount(c.s, 'virke', 4);
+    const led = c.v[1]; led.ledde = true;
+    const gc = begrav(c.s, c.v[0], led), budC = (c.tr.bud ?? []).map(x => x.id), vardC = SIM.vardFor(c.s, gc);
+    // en by som inte kan hugga sten stannar vid trä
+    const e = medTro(6, 2); e.tr.natur = 50; e.tr.sk = { ...e.tr.sk, oppen: 90 }; SIM.setAmount(e.s, 'sten', 20); SIM.setAmount(e.s, 'huggen_sten', 0); SIM.setAmount(e.s, 'virke', 4);
+    for (const p of e.s.people) if (p.tek) delete p.tek.stenhuggarplats;
+    begrav(e.s, e.v[0], e.v[1]); const budE = (e.tr.bud ?? []).map(x => x.id);
+    return [
+      [`utan tro och med en huggen sten blir det en gravsten (${forst})`, forst === 'gravsten'],
+      [`stenen ristas vid graven (${g.vard}, ${h * 5} minuter, huggen sten ${sten} av 2)`, g.vard === 'gravsten' && sten === 1],
+      [`en tro med tyngd väljer sten (${budC.filter(x => /grav|sattning|stock/.test(x)).join(', ')})`, budC.includes('stensattning') && budC.includes('skeppssattning') && !budC.includes('stockram')],
+      [`ledaren får en skeppssättning (${vardC})`, vardC === 'skeppssattning'],
+      [`en by som inte kan hugga sten stannar vid trä (${budE.filter(x => /grav|sattning|stock/.test(x)).join(', ')})`, budE.includes('stockram') && !budE.includes('stensattning')],
+    ];
+  },
+};
 SCENARIER.bonen = {
   text: 'Steg 8.5.2–8.5.4: bönen är fritid för den troende och ger humör och tro, bönen i nöd låses upp av andligheten och tron, och en bön som hjälpte eller inte hjälpte blir en upplevelse',
   kor: () => {

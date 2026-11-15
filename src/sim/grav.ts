@@ -146,6 +146,10 @@ export const GRAVAR: Record<GravVard, GravRad> = {
   stockram: { namn: 'Stockram', mat: { virke: 2 }, min: 5, bud: 'stockram', skalor: [['oppen', 1]] },
   gravhus: { namn: 'Gravhus', mat: { virke: 2, plankor: 2 }, min: 12, bud: 'gravhus', skalor: [['livet', 1]] },
   gravhog: { namn: 'Gravhög', mat: {}, min: 20, bud: 'gravhog', skalor: [['livet', 1], ['fest', 0]], stora: true },
+  // stengravarna (steg 10.4.3): med stenhuggarplatsen. Stenen tas när arbetet börjar, och arbetet vid graven är ristningen
+  gravsten: { namn: 'Gravsten', mat: { huggen_sten: 1 }, min: 5, bud: 'gravsten', skalor: [['natur', 1]] },
+  stensattning: { namn: 'Stensättning', mat: { sten: 6, huggen_sten: 1 }, min: 12, bud: 'stensattning', skalor: [['oppen', 1]] },
+  skeppssattning: { namn: 'Skeppssättning', mat: { sten: 12, huggen_sten: 2 }, min: 20, bud: 'skeppssattning', skalor: [['livet', 1], ['fest', 0]], stora: true },
 };
 const VARDER = Object.keys(GRAVAR) as GravVard[];
 const grupp = (k: GravVard) => GRAVAR[k].stora ? 'storagrav' : 'gravvard';
@@ -180,11 +184,11 @@ function vardSed(s: State, tr: Tro, stor: boolean) {
     log(s, `${GRAVAR[best].namn} blev sed i tron när den första begravdes.`, 'world', []);
   }
 }
-// vården graven ska få: trons bud, och utan tro (eller utan bud) en gravbräda, eller en gravstolpe innan byn har plankor. En ovärdig grav och fiendens får ingen
+// vården graven ska få: trons bud, och utan tro (eller utan bud) en gravsten när byn har en huggen sten (steg 10.4.3), annars en gravbräda, eller en gravstolpe innan byn har plankor. En ovärdig grav och fiendens får ingen
 export function vardFor(s: State, g: Grav): GravVard | undefined {
   if (g.vard || g.ovardig || g.fiende || g.stil === 'bal') return undefined;
   const tr = g.tro !== undefined ? troOf(s, g.tro) : undefined, ur = (gr: string) => { const b = tr?.bud?.find(q => (BUD as Record<string, { grupp?: string }>)[q.id]?.grupp === gr); return b && VARDER.find(k => GRAVAR[k].bud === b.id); };
-  return (g.stor ? ur('storagrav') : undefined) ?? ur('gravvard') ?? (kanGora(s, 'gravbrada') ? 'gravbrada' : 'gravstolpe');
+  return (g.stor ? ur('storagrav') : undefined) ?? ur('gravvard') ?? (amountOf(s, 'huggen_sten') >= 1 ? 'gravsten' : kanGora(s, 'gravbrada') ? 'gravbrada' : 'gravstolpe');
 }
 // den som minns den döda (ett intryck av hen, eller stod hen nära)
 const minns = (s: State, p: Person, vem: number) => nara(s, p, vem) ? 1 : p.intryck?.some(e => e.om === vem) ? GRAV.vardAnnan : 0;

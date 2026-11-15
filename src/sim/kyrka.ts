@@ -141,6 +141,10 @@ export const BUD = {
   gravBrada: { namn: 'En gravbräda på graven', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en bräda med den dödas namn' },
   stockram: { namn: 'En stockram kring graven', sort: 'krav', storlek: 1, skala: 'oppen', sida: 1, grupp: 'gravvard', text: 'Graven ramas in med stockar' },
   gravhus: { namn: 'Ett gravhus över graven', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'gravvard', text: 'Graven får ett litet hus' },
+  gravsten: { namn: 'En gravsten med runor', sort: 'krav', storlek: 2, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en sten med runor' }, // stengravarna (steg 10.4.3)
+  stensattning: { namn: 'En stensättning kring graven', sort: 'krav', storlek: 2, skala: 'oppen', sida: 1, grupp: 'gravvard', text: 'Graven får en ring av stenar' },
+  skeppssattning: { namn: 'De stora får en skeppssättning', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'storagrav', text: 'Ledare, helgon och legender får stenar i form av ett skepp',
+    om: () => 'Den som varit ledare, är trons helgon eller var en legend med gott anseende när hen begravdes får stenar resta i form av ett skepp i stället för den vanliga vården.' },
   gravhog: { namn: 'De stora får en gravhög', sort: 'krav', storlek: 1, skala: 'livet', sida: 1, grupp: 'storagrav', text: 'Ledare, helgon och legender får en gravhög',
     om: () => 'Den som varit ledare, är trons helgon eller var en legend med gott anseende när hen begravdes får en gravhög av jord och torv i stället för den vanliga vården.' },
   kvade: { namn: 'Kväden vid högtiden', sort: 'krav', storlek: 1, skala: 'fest', sida: 0, kraver: 'hogtid', text: 'Den bästa skalden kväder om tron vid högtiden',
@@ -380,7 +384,7 @@ function helgonDygn(s: State) {
     const kand = s.people.find(p => p.died !== undefined && s.now - p.died >= KYRKA.helgonDygn * DAY && p.tro === tr.id && p.fame.length >= 3 && !tr.helgon?.some(h => h.id === p.id) && !living(s).some(q => s.rels[relKey(p.id, q.id)]));
     if (!kand) continue;
     (tr.helgon ??= []).push({ id: kand.id, namn: kand.name, t: s.now, krönika: kand.fame.slice(0, 3).join('. ') + '.', myt: `${kand.fame[0]}. Så berättar de, och varje gång blir det större.` });
-    count(s, 'helgon');
+    count(s, 'helgon'); const gh = s.gravar?.find(g => g.vem === kand.id); if (gh) gh.stor = true; // helgonet är stort och får de storas vård (steg 10.4.2)
     const t = `${kand.name} har blivit ett helgon i ${troNamn(tr).toLowerCase()}.`;
     log(s, t, 'rel', []); kronika(s, t, 'tro');
   }
