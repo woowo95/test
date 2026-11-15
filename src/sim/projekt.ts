@@ -12,7 +12,7 @@ import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
 import { GORS, ersattAv, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
-import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
+import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
@@ -413,8 +413,10 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
     // skyddar mot kylan (steg 10.2.71)
     const d = PROJEKT[k], v = (egen ? (d.egen ? d.vikt * kylFaktor(s, d) * d.egen(s, fam, p) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()) : 0) : personVarde(s, k, fam, om, p)) * (f.kyla && !d.motKyla ? PROJEKT_TAL.kyla : 1);
     if (v <= 0 || best && v <= best.varde) continue;
-    if (d.kan(s, p, f)) {
-      const u = d.uppgift(s, p), vf = u?.act === 'falla' ? v * fallVilja(s) : v; // färre fällningar när stammar ligger kvar (steg 9.2.87)
+    // kan och uppgift frågar ofta om samma plats (stationerna): den söks en gång (medPlatsMinne)
+    const u = medPlatsMinne(() => d.kan(s, p, f) ? d.uppgift(s, p) ?? null : undefined);
+    if (u !== undefined) {
+      const vf = u?.act === 'falla' ? v * fallVilja(s) : v; // färre fällningar när stammar ligger kvar (steg 9.2.87)
       if (u && !(best && vf <= best.varde)) best = { k, varde: vf, u };
       continue;
     }
