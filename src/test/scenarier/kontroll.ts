@@ -289,6 +289,25 @@ SCENARIER.tatuering = {
   },
 };
 
+SCENARIER.fjaderband = {
+  text: 'Halsband av fjädrar (steg 10.7.7): fjädrarna är ett tredje material för halsbandet och trons tecken, en fågels fjädrar och ett rep på 5 minuter, finare än ben och enklare än vargtänder. Halsbandet eller tecknet som bärs syns i porträttet med materialets bild, och halssmycket slumpas inte längre',
+  kor: () => {
+    const M = SIM.KLADMATERIAL, r = SIM.receptAv('halsband', 'fjaderband'), fagel = DJUR.fagel;
+    const finhet = M.benband.finhet < M.fjaderband.finhet && M.fjaderband.finhet < M.tandband.finhet;
+    const s = createState(3, START), p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    const bar = (k?: string) => { s.ting = (s.ting ?? []).filter(t => t.bar !== p.id); if (k) { const t = SIM.addTool(s, k, p); t.bar = p.id; } return skapad(s, p).del.smycke ?? null; };
+    const utan = bar(), fj = bar('halsband_fjaderband'), tand = bar('halsband_tandband'), ben = bar('halsband_benband'), tecken = bar('tecken_fjaderband');
+    // ingen får ett halssmycke av slumpen: bland hundra porträtt utan halsband är inget smycke ett halsband
+    const slump = Array.from({ length: 100 }, (_, i) => { const q = { ...p, id: 1000 + i }; return skapad(s, q).del.smycke; }).filter(id => id && KARNA.DEL[id]?.plats === 'hals').length;
+    return [
+      [`halsbandet av fjädrar tar ${JSON.stringify(r)} på ${SAKER.halsband_fjaderband?.skaffa?.min ?? SIM.PLAGG.halsband.min} minuter`, r.fjadrar === 1 && r.rep === 1 && Object.keys(r).length === 2 && SIM.PLAGG.halsband.min === 5],
+      [`fjädrarna är finare än ben och enklare än vargtänder (${M.benband.finhet}, ${M.fjaderband.finhet}, ${M.tandband.finhet}), och trons tecken kan göras av dem`, finhet && !!SAKER.tecken_fjaderband],
+      ...(fagel ? [[`en fågel ger fjädrar till ett halsband (${(fagel.slakt as Record<string, number>).fjadrar})`, ((fagel.slakt as Record<string, number>).fjadrar ?? 0) >= r.fjadrar] as [string, boolean]] : []),
+      [`porträttet visar det som bärs: inget ${utan ?? '–'}, fjädrar ${fj}, vargtänder ${tand}, ben ${ben}, trons tecken av fjädrar ${tecken}`, (!utan || KARNA.DEL[utan]?.plats !== 'hals') && fj === 'smycke-9' && tand === 'smycke-3' && ben === 'smycke-2' && tecken === 'smycke-9'],
+      [`halssmycket slumpas inte (${slump} av 100)`, slump === 0],
+    ];
+  },
+};
 SCENARIER.portratt = {
   text: 'Porträtten (steg 5.2.3.1, 5.2.3.3–5.2.3.5): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; humöret, sömnen, sjukdomen, kylan, förbandet och blodet följer spelet, och kläderna och redskapet utrustningen; porträttet och kartfiguren har bara färger ur paletten',
   kor: () => {

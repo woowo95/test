@@ -299,6 +299,7 @@
     {"id": "smycke-6", "sort": "smycke", "namn": "Benpinne i håret", "plats": "har", "maskbar": true, "ritad": 3, "kon": "bada"},
     {"id": "smycke-7", "sort": "smycke", "namn": "Örhänge av ben", "plats": "ora", "maskbar": true, "ritad": 1, "kon": "bada"},
     {"id": "smycke-8", "sort": "smycke", "namn": "Pärlörhänge", "plats": "ora", "maskbar": true, "ritad": 1, "kon": "kvinna"},
+    {"id": "smycke-9", "sort": "smycke", "namn": "Fjäderhalsband", "plats": "hals", "ritad": 1, "kon": "bada", "bars": true},
     {"id": "skon-fransar", "sort": "skonhet", "namn": "Ögonfransar", "niva": 1, "lager": "ogonfransar", "maskbar": true, "ritad": 1, "plats": "oga", "kon": "kvinna"},
     {"id": "skon-kinder", "sort": "skonhet", "namn": "Rosiga kinder", "niva": 1, "lager": "rynkor", "ritad": 5, "plats": "huvud", "vad": "rosa rouge på kindknotorna: en mjuk, jämn rosa ton i kindtonerna (A–D), glesare ut mot kanten, utan prickar, fläckar eller skarp kant (Björn: inte som skador)", "forra": "mycket bättre! Flytta in dom lite närmre näsan och gör dem mer rosa och mindre oranga"},
     {"id": "skon-varta", "sort": "skonhet", "namn": "Vårta", "niva": -1, "lager": "arr", "ritad": 1, "plats": "huvud"},
