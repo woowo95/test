@@ -39,7 +39,7 @@ export interface SakDef {
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
 // många dygn (år i spelet) det håller på kroppen
 // krok = så många redskap hänger i plagget (bältet, steg 2.3.3 och 7.1.1): de tar inga händer och väger inget för bördan
-interface Klad { plats: string; varme: number; dygn: number; krok?: number; axel?: number; rygg?: number; snoTar?: number }
+interface Klad { plats: string; varme: number; dygn: number; krok?: number; axel?: number; rygg?: number; snoTar?: number; dolj?: number }
 // ett redskap som görs: text = vad den som gör det gör, stat = räknas varje gång ett blir klart, forsta = loggen första
 // gången, fame = det den som gjorde det blir ihågkommen för, igen = loggen de andra gångerna
 // {namn} = den som gjorde det, {verktyg} = verktyget (skaffa.verktyg)
@@ -118,6 +118,7 @@ const DEF = {
   bjornkott: { namn: 'Björnkött', ett: true, skaffa: RECEPT.bjornkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.6, energi: 0.9, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   farskinn: { namn: 'Fårskinn', ett: true, skaffa: RECEPT.farskinn, stack: 10, mapp: 'Material', slits: 0.0006 }, // fårets och getens egna skinn (steg 10.3.14)
   getskinn: { namn: 'Getskinn', ett: true, skaffa: RECEPT.getskinn, stack: 10, mapp: 'Material', slits: 0.0006 },
+  vitskinn: { namn: 'Vitt harskinn', ett: true, skaffa: RECEPT.vitskinn, stack: 30, mapp: 'Material', slits: 0.0006 }, // harens vinterpäls (steg 10.7.22): en hare som slaktas under istiden
   vargkott: { namn: 'Vargkött', ett: true, skaffa: RECEPT.vargkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', ett: true, skaffa: RECEPT.vargskinn, stack: 5, mapp: 'Material', slits: 0.0006 },
   slaktfar: { vikt: 12, namn: 'Slaktat får', ett: true, varde: 20, stack: 1, mapp: 'Material', haller: 3 }, slaktget: { vikt: 12, namn: 'Slaktad get', varde: 20, stack: 1, mapp: 'Material', haller: 3 }, // steg 9.8.7: ett tamdjur som avlivats, slaktas vid slaktbänken som viltet

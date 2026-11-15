@@ -1,3 +1,4 @@
+import { doljISno } from './utrustning';
 import { heligtAvstar } from './kultlatt';
 import { lista, stor, tal } from './ord';
 import { utanforByn } from './omrade';
@@ -66,7 +67,8 @@ export const VARG = balans('varg', {
   eldHunger: 0.8, // ... utom när hungern är minst så här stor
   grupp: 6, // den som har någon annan inom så här många rutor är inte ensam
   undvik: 10, // flocken går undan från en grupp (minst två) som kommer så här nära
-  ser: 14, // flocken ser en ensam människa inom så här många rutor
+  ser: 14, // flocken ser en ensam människa inom så här många rutor ...
+  vit: 0.4, // ... och så stor del kortare den som är klädd vitt i snön (steg 10.7.22: ser × (1 − vit × doljISno))
   anfall: 0.7, // en flock (minst två) anfaller när hunger × (0,5 + modet) är över detta ...
   anfallChans: 0.3, // ... med den här chansen på en minut (chansPer, steg 10.2.15: förr per slag om fem minuter, men flocken som såg den ensamma hann gå därifrån innan den anföll)
   flockMod: 0.15, // modet gånger 1 + flockMod × (vargarna − 1): större flock, modigare
@@ -394,7 +396,9 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   }
   if (ga(s, f, VARG.gaFart, dtSec) < 1) nyttMal(s, f);
 }
-const bytet = (s: State, f: Vargflock, folk: Person[]) => folk.filter(q => avst(q, f) < VARG.ser && ensam(s, q, folk)).sort((a, b) => avst(a, f) - avst(b, f))[0];
+// flocken ser q (steg 10.7.22): den som är klädd vitt i snön syns på kortare håll
+export const vargSer = (s: State, q: Person, d: number) => d < VARG.ser && (d < VARG.ser * (1 - VARG.vit) || d < VARG.ser * (1 - VARG.vit * doljISno(s, q)));
+const bytet = (s: State, f: Vargflock, folk: Person[]) => folk.filter(q => vargSer(s, q, avst(q, f)) && ensam(s, q, folk)).sort((a, b) => avst(a, f) - avst(b, f))[0];
 
 // ---------- dörren och vargen (steg 3.7.21) ----------
 // En dörr som stängs (stanger i DORRAR, byggnad.ts: trädörren) stängs när någon gömmer sig i huset (3.7.15), och vargarna kommer
@@ -443,7 +447,7 @@ function vagIn(s: State, f: Vargflock, p: Person): { x: number; y: number } {
 }
 // dörren till det närmaste stängda huset där någon gömmer sig, inom synhåll
 function stangdDorr(s: State, f: Vargflock, folk: Person[]) {
-  const q = folk.filter(p => p.task?.act === 'gomma' && avst(p, f) < VARG.ser && iStangt(s, p)).sort((a, b) => avst(a, f) - avst(b, f))[0];
+  const q = folk.filter(p => p.task?.act === 'gomma' && vargSer(s, p, avst(p, f)) && iStangt(s, p)).sort((a, b) => avst(a, f) - avst(b, f))[0];
   const r = q && roomAt(s, q.x, q.y);
   if (!r) return undefined;
   // dörren ut ur huset: i ett hus med flera rum (steg 10.2.69) är rummets egen öppning kanske en inre dörr

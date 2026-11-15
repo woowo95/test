@@ -13,7 +13,7 @@ const rad = (namn: string, andel: number, varde: string, text: string, cls = '',
 // porträttet på kortet (steg 9.2.51): det levande djuret från sidan, helt och i sina egna proportioner (bilden på kartan), aldrig
 // den döda bilden, som bara är kadavret på kartan. Gånger två, högst 64 punkter brett
 function levande(d: { art: string; id: number }) {
-  const art = d.art as 'varg' | 'kanin' | 'radjur' | 'bjorn' | 'bjornunge', k = ['varg', 'kanin', 'radjur', 'bjorn', 'bjornunge'].includes(art) ? djurBild(art, d.id, 'sida') : undefined;
+  const art = d.art as 'varg' | 'kanin' | 'radjur' | 'bjorn' | 'bjornunge', k = ['varg', 'kanin', 'radjur', 'bjorn', 'bjornunge'].includes(art) ? djurBild(art, d.id, 'sida', iIstiden(kalender(s, ui.nu).ai)) : undefined;
   if (!k || !hasIcon(k)) return iconImg(d.art, 32);
   const c = iconCanvas(k), sk = Math.max(1, Math.min(4, Math.floor(64 / Math.max(c.width, c.height))));
   return `<img class="ikon" src="${c.toDataURL()}" width="${c.width * sk}" height="${c.height * sk}" alt="" style="image-rendering: pixelated">`;

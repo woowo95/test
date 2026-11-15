@@ -3286,3 +3286,41 @@ SCENARIER.minnesdetaljer = {
     ];
   },
 };
+
+SCENARIER.vinterpals = {
+  text: 'Vit vinterpäls (steg 10.7.22): en hare som slaktas under istiden ger ett vitt harskinn i stället för ett vanligt. Det syr kläder som är lite varmare, så kylan väljer det. I snön syns den som har vit rock och mössa mindre för bytet på jakten och för vargarna; på bar mark ingen skillnad',
+  kor: () => {
+    const slakta = (istid: boolean) => {
+      const s = createState(1, START); klockan(s, 10);
+      for (let t = s.now; t < s.now + 400 * SIM.DAY; t += SIM.HOUR) if (SIM.iIstiden(SIM.ageIndex(s, t)) === istid) { s.now = t; break; }
+      const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+      SIM.setAmount(s, 'vilt', 2); SIM.setAmount(s, 'kniv', 1); SIM.setAmount(s, 'skinn', 0); (p.tek ??= {}).kniv = 1;
+      s.stationer = [...(s.stationer ?? []), { id: 991, k: 'slaktbank', x: 3, y: 3, kvar: 0 } as SIM.Station];
+      SIM.bearbeta(s, p, SIM.DJUR.kanin, 1);
+      return { s, p, vit: SIM.amountOf(s, 'vitskinn'), brun: SIM.amountOf(s, 'skinn') };
+    };
+    const vinter = slakta(true), sommar = slakta(false);
+    // plaggen av vitt harskinn: varmare än av harskinn, och kylan väljer det
+    const rv = SIM.SAKER.rock_vitskinn?.klad, rk = SIM.SAKER.rock_kaninskinn?.klad;
+    const lage = (k: string, varme: number): SIM.MaterialLage => ({ k, varme, skydd: 1, kvar: 5, behovs: 0, till: 4, finhet: 0, varde: 10 });
+    const valt = SIM.valMaterial([lage('kaninskinn', rk?.varme ?? 0), lage('vitskinn', rv?.varme ?? 0)], { kyla: true, hot: false, fin: false });
+    // klädd i vitt i snön
+    const { s, p } = vinter;
+    const pa = (k: string) => { const t = SIM.newTing(s, k, 1, p.id); t.bar = p.id; return t; };
+    (s.vader ??= { fukt: 0, sno: 0 } as never).sno = 0;
+    const barMark = SIM.doljISno(s, p);
+    s.vader!.sno = 1;
+    const utan = SIM.doljISno(s, p), serUtan = SIM.vargSer(s, p, SIM.VARG.ser * 0.7);
+    pa('rock_vitskinn'); const rock = SIM.doljISno(s, p);
+    pa('mossa_vitskinn'); const bada = SIM.doljISno(s, p), serVit = SIM.vargSer(s, p, SIM.VARG.ser * 0.7), serNara = SIM.vargSer(s, p, SIM.VARG.ser * 0.5);
+    s.vader!.sno = 0; const barVit = SIM.doljISno(s, p);
+    return [
+      [`en hare som slaktas under istiden ger ett vitt harskinn (${vinter.vit} vita, ${vinter.brun} vanliga)`, vinter.vit >= 1 && vinter.brun === 0],
+      [`resten av året ett vanligt (${sommar.vit} vita, ${sommar.brun} vanliga)`, sommar.vit === 0 && sommar.brun >= 1],
+      [`rocken av vitt harskinn är varmare (${rv?.varme} mot ${rk?.varme}) och kylan väljer den (${valt})`, !!rv && !!rk && rv.varme > rk.varme && valt === 'vitskinn'],
+      [`i snön döljer den vita rocken ${rock.toFixed(1)} och med mössan ${bada.toFixed(1)}; utan vitt ${utan}`, Math.abs(rock - SIM.UTRUSTNING.doljYttre) < 1e-9 && Math.abs(bada - 1) < 1e-9 && utan === 0],
+      [`på bar mark döljer inget (${barMark}, ${barVit})`, barMark === 0 && barVit === 0],
+      [`vargarna ser den som är klädd i vitt i snön på kortare håll (${(SIM.VARG.ser * 0.7).toFixed(1)} rutor: ${serUtan} utan vitt, ${serVit} i vitt; ${SIM.VARG.ser * 0.5} rutor: ${serNara})`, serUtan && !serVit && serNara],
+    ];
+  },
+};

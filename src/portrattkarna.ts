@@ -372,6 +372,16 @@ const PORTRATT = {
         "ben2",
         "ben3"
       ]
+    },
+    {
+      "id": "vitt harskinn",
+      "namn": "Vitt harskinn",
+      "toner": [
+        "skiffer3",
+        "ben1",
+        "ben2",
+        "ben3"
+      ]
     }
   ],
   "mallar": [

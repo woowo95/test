@@ -114,7 +114,7 @@ const DEF = {
   vargkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
   radjurkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, farkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, getkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, // steg 10.3.14
   fagelkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, bjornkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
-  farskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, getskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
+  farskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, getskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, vitskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
   vargskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
   fjadrar: { var: 'sak', min: 2, slag: 'bearbeta', tek: 'kniv' },
   radjursskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },

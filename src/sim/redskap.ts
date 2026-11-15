@@ -11,7 +11,7 @@ import { addDel } from './egendom';
 import { sparas, villAv, villHaAv } from './forradsmal';
 import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
 import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
-import { ageIndex, kallTid } from './tid';
+import { ageIndex, iIstiden, kallTid } from './tid';
 import { grundvarde } from './varde';
 import { anseendeSym } from './rykten';
 import { DORRAR, DORR_LIST } from './byggnad';
@@ -111,10 +111,10 @@ export function twineRope(s: State, p: Person, hours: number, vill: number = vil
 // vargen slaktas): arbetet tar den första arten i registret som finns i förrådet. Allt är hela saker (steg 3.6.13). Kött, ben och skinn har inget recept i saker.ts och är värda
 // golvet för sin nivå (varde.ts); där receptet finns (skaffa.av, som fisken av en abborre) kontrollerar scenariot "djur" att
 // det stämmer med raden här.
-export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; del?: string; skinn?: Record<string, number>; art?: string } // del = styckdelen när djuret är för tungt att bära och skinn = det som dras av när det styckas (styckning.ts, steg 6.6.1); strid = hur djuret slåss (strid.ts, steg 3.7.5)
+export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; del?: string; skinn?: Record<string, number>; art?: string; vinter?: Record<string, string> } // del = styckdelen när djuret är för tungt att bära och skinn = det som dras av när det styckas (styckning.ts, steg 6.6.1); strid = hur djuret slåss (strid.ts, steg 3.7.5)
 export const DJUR = {
   kanin: { art: 'kanin', sak: 'vilt', kott: 'kott', mat: 2, // en kanin är två fällt vilt (4 kg styck sedan steg 4.5.5.1)
-    slakt: { kott: 3, ben: 1, skinn: 1, talg: 1 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' },
+    slakt: { kott: 3, ben: 1, skinn: 1, talg: 1 }, vinter: { skinn: 'vitskinn' }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
   gadda: { sak: 'gadda', mat: 1, slakt: { gaddkott: 2 }, rep: 0, timme: 20, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatGadda', forsta: '{namn} rensade byns första gädda. Den gav två bitar kött.' },
   braxen: { sak: 'braxen', mat: 1, slakt: { braxkott: 2 }, rep: 0, timme: 20, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatBraxen', forsta: '{namn} rensade byns första braxen.' }, // steg 9.6.17
@@ -138,7 +138,7 @@ export const DJUR = {
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
 // det råa köttet och skinnet som bara arten ger (steg 10.3.15): kultlatt.ts frågar om det är heligt
-for (const d of DJURARTER as Djurart[]) if (d.art) for (const k of Object.keys(d.slakt)) if (k === d.kott || k in (d.skinn ?? {}) || /skinn$/.test(k)) SAK_ART[k] = d.art;
+for (const d of DJURARTER as Djurart[]) if (d.art) for (const k of [...Object.keys(d.slakt), ...Object.values(d.vinter ?? {})]) if (k === d.kott || k in (d.skinn ?? {}) || /skinn$/.test(k)) SAK_ART[k] = d.art;
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: två fällt vilt (saker.ts)
 export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 const knives = (s: State) => nTools(s, 'kniv');
@@ -172,7 +172,8 @@ export const kottFaktor = (p: Person) => REDSKAP.kottMin + (REDSKAP.kottMax - RE
 // det som fångats delas upp: köttet och resten är deras som ägde fångsten
 function stycka(s: State, p: Person, art: Djurart, n: number) {
   const vems = use(s, p, art.sak, n * art.mat);
-  for (const [k, m0] of Object.entries(art.slakt)) { const m = k === art.kott ? kottAv(p, m0) : m0; put(s, k, n * m, addDel({}, vems, m / art.mat)); }
+  const vinter = art.vinter && iIstiden(ageIndex(s)) ? art.vinter : undefined; // haren är vit under istiden (steg 10.7.22)
+  for (const [k, m0] of Object.entries(art.slakt)) { const m = k === art.kott ? kottAv(p, m0) : m0; put(s, vinter?.[k] ?? k, n * m, addDel({}, vems, m / art.mat)); }
   put(s, art.act === 'rensa' ? 'fiskrens' : 'slaktrens', n, addDel({}, vems, 1 / art.mat)); // slaktrensen (steg 9.7.5); fiskrensen blir agn (steg 9.8.7)
   return vems;
 }

@@ -95,9 +95,10 @@ export const PLAGG_LIST = Object.keys(PLAGG_DEF) as Plagg[];
 // ett material. sak = saken i förrådet, namn = i plaggets namn ("av vargskinn"), bit = hur många bitar en sak räcker till,
 // varme/hallbar/vikt/skydd = gånger kaninskinnets, finhet = hur fint det är (den ansedda tar det finaste, punkt 6). Värdet
 // är sakens (varde.ts)
-interface MaterialDef { sak: string; namn: string; slag: MaterialSlag; bit: number; varme: number; hallbar: number; vikt: number; skydd: number; finhet: number }
+interface MaterialDef { sak: string; namn: string; slag: MaterialSlag; bit: number; varme: number; hallbar: number; vikt: number; skydd: number; finhet: number; dolj?: number } // dolj = hur väl materialet döljer bäraren i snön (steg 10.7.22; doljISno i utrustning.ts)
 const KLADMATERIAL_DEF = {
   kaninskinn: { sak: 'skinn', namn: 'harskinn', slag: 'skinn', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
+  vitskinn: { sak: 'vitskinn', namn: 'vitt harskinn', slag: 'skinn', bit: 1, varme: 1.2, hallbar: 1, vikt: 1, skydd: 1, finhet: 0, dolj: 1 }, // harens vinterpäls (steg 10.7.22): lite varmare och vit
   vargskinn: { sak: 'vargskinn', namn: 'vargskinn', slag: 'skinn', bit: 2, varme: 1.8, hallbar: 1, vikt: 1.5, skydd: 1.2, finhet: 1 }, // tjockare än kaninens (steg 3.7.14): varmare, tyngre och skyddar mer
   bjornskinn: { sak: 'bjornskinn', namn: 'björnskinn', slag: 'skinn', bit: 2, varme: 2.6, hallbar: 1.3, vikt: 2, skydd: 1.5, finhet: 2 }, // steg 6.6.6: det tjockaste skinnet, den varmaste klädern och skyddar mer än vargskinnet
   farskinn: { sak: 'farskinn', namn: 'fårskinn', slag: 'skinn', bit: 1, varme: 1.4, hallbar: 1, vikt: 1.2, skydd: 1, finhet: 0 }, // fårets och getens skinn (steg 10.3.14): fårskinnet med ullen är varmare än harens
@@ -147,7 +148,7 @@ export function kladSaker() {
     const P: PlaggDef = PLAGG[pl], M = KLADMATERIAL[m], namn = kladNamn(pl, m), iMening = `${P.namn.toLowerCase()} av ${M.namn}`;
     r[k] = {
       namn, skaffa: { av: receptAv(pl, m), min: P.min, slag: 'stor', tek: P.tek }, vikt: +(P.vikt * M.vikt).toFixed(3), stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, grupp: pl, ...(P.ord === `ett ${P.namn.toLowerCase()}` ? { ett: true as const } : {}),
-      klad: { plats: P.plats, varme: +(P.varme * M.varme).toFixed(4), dygn: P.dygn * M.hallbar, ...(P.krok ? { krok: P.krok } : {}), ...(P.axel ? { axel: P.axel } : {}), ...(P.rygg ? { rygg: P.rygg } : {}), ...(P.snoTar ? { snoTar: P.snoTar } : {}) },
+      klad: { plats: P.plats, varme: +(P.varme * M.varme).toFixed(4), dygn: P.dygn * M.hallbar, ...(P.krok ? { krok: P.krok } : {}), ...(P.axel ? { axel: P.axel } : {}), ...(P.rygg ? { rygg: P.rygg } : {}), ...(P.snoTar ? { snoTar: P.snoTar } : {}), ...((M as MaterialDef).dolj ? { dolj: (M as MaterialDef).dolj } : {}) },
       gors: { text: `${P.verb} ${P.ord} av ${M.namn}.`, stat: k, forsta: P.forsta.replace('{plagg}', iMening), ...(P.fame ? { fame: P.fame.replace('{plagg}', iMening) } : {}) },
     };
   }
