@@ -147,6 +147,7 @@ export const PAL: Record<string, Record<string, string>> = {
   pergament: { w: '#dad0bb', k: '#bdb39b' },
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
   kalke: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.2, platshållare
+  slade: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.3, platshållare (också tekniken Släde)
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
   honung: { o: '#24201d', h: '#b2921b', H: '#d8b25f', d: '#906f0f', v: '#694902', z: 'rgba(36,32,29,.30)' }, // steg 10.7.25, platshållare
   blomma: { o: '#24201d', g: '#647025', l: '#898b4c', y: '#d8b25f', c: '#bd753e', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.7.3, platshållare
@@ -2743,6 +2744,24 @@ export const PIX: Record<string, string[]> = {
     '.....zzzzzzzzzz.',
     '................',
   ],
+  slade: [ // platshållare (steg 10.10.3): ett långt flak på två medar, och två skaklar framåt
+    '................',
+    '................',
+    'r...............',
+    '.rr.............',
+    '...rr...........',
+    '....rroooooooooo',
+    '....oaaaaaaaaaao',
+    '....obbbbbbbbbbo',
+    '....oaaaaaaaaaao',
+    '....oooooooooooo',
+    '.....o.o...o.o..',
+    '..oo.o.o...o.o..',
+    '...ooooooooooooo',
+    '....oooooooooooo',
+    '.....zzzzzzzzzzz',
+    '................',
+  ],
   bagborr: [ // platshållare (steg 10.6.13): en böjd båge med ett snöre runt en stående pinne på en skiva
     '................',
     '.......oo.......',
@@ -4160,7 +4179,6 @@ for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_kart
 PIX.vildrova = PIX.rovor; PAL.vildrova = PAL.rovor;
 PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka;
 PIX.snickarbank = PIX.flatarbank; PAL.snickarbank = PAL.flatarbank;
-PIX.slade = PIX.kalke; PAL.slade = PAL.kalke; // tekniken Släde (steg 10.10.2), platshållare
 PIX.naverask = PIX.korg; PAL.naverask = PAL.korg;
 PIX.orte = PIX.kruka; PAL.orte = PAL.kruka;
 PIX.s_spala = PIX.grenar ?? PIX.s_forb; PAL.s_spala = PAL.grenar ?? PAL.s_forb; // platshållare för spjälan (steg 9.5.28) tills Björn valt i bildstilen
@@ -4449,9 +4467,9 @@ for (const k of ['naver', 'talg', 'fackla', 'talgljus', 'vargdel', 'radjurdel', 
 PIX.slaktfar = PIX.radjur; PAL.slaktfar = PAL.radjur; PIX.slaktget = PIX.radjur; PAL.slaktget = PAL.radjur; PIX.djurhorn = PIX.horn ?? PIX.ben; PAL.djurhorn = PAL.horn ?? PAL.ben; PIX.fiskrens = PIX.ben; PAL.fiskrens = PAL.ben; // platshållare (steg 9.8.7)
 for (const k of ['radjurkott', 'farkott', 'getkott', 'kokott', 'fagelkott', 'bjornkott']) { PIX[k] = PIX.vargkott; PAL[k] = PAL.vargkott; } for (const k of ['farskinn', 'getskinn', 'kohud']) { PIX[k] = PIX.radjursskinn; PAL[k] = PAL.radjursskinn; } // platshållare (steg 10.3.14)
 PIX.ull = PIX.skinn; PAL.ull = PAL.skinn; PIX.vitskinn = PIX.skinn; PAL.vitskinn = { b: '#bdb39b', B: '#dad0bb', d: '#a0947d' }; // harens vinterpäls (steg 10.7.22), platshållare
- PIX.levfar = PIX.radjur; PAL.levfar = PAL.radjur; PIX.levget = PIX.radjur; PAL.levget = PAL.radjur; PIX.levko = PIX.radjur; PAL.levko = PAL.radjur; PIX.slaktko = PIX.radjur; PAL.slaktko = PAL.radjur; PIX.levhons = PIX.fagel; PAL.levhons = PAL.fagel; // platshållare (steg 9.8.5, 9.8.10)
+ PIX.levfar = PIX.radjur; PAL.levfar = PAL.radjur; PIX.levget = PIX.radjur; PAL.levget = PAL.radjur; PIX.levko = PIX.radjur; PAL.levko = PAL.radjur; PIX.levoxe = PIX.radjur; PAL.levoxe = PAL.radjur; PIX.levhast = PIX.radjur; PAL.levhast = PAL.radjur; PIX.slaktko = PIX.radjur; PAL.slaktko = PAL.radjur; PIX.levhons = PIX.fagel; PAL.levhons = PAL.fagel; // platshållare (steg 9.8.5, 9.8.10)
 PIX.skara = PIX.kniv; PAL.skara = PAL.kniv; PIX.fahus = PIX.hogolv; PAL.fahus = PAL.hogolv; // platshållare (steg 9.8.9)
-PIX.far = PIX.radjur; PAL.far = PAL.radjur; PIX.get = PIX.radjur; PAL.get = PAL.radjur; PIX.ko = PIX.radjur; PAL.ko = PAL.radjur; // platshållare för djuren som slaktas (steg 9.8.7)
+PIX.far = PIX.radjur; PAL.far = PAL.radjur; PIX.get = PIX.radjur; PAL.get = PAL.radjur; PIX.ko = PIX.radjur; PAL.ko = PAL.radjur; PIX.oxe = PIX.radjur; PAL.oxe = PAL.radjur; PIX.hast = PIX.radjur; PAL.hast = PAL.radjur; // platshållare för djuren som slaktas (steg 9.8.7)
 // djuren på kartan (steg 5.1.11, ritade i bildstilen i 5.2.4.6): varje art har en eller flera ritningar (vargen en, haren två)
 // och fyra pälsar, och varje ritning tre håll; västerut är sidan speglad. Bilden heter djur_<art>_<ritning>_<päls>_<håll>,
 // där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)

@@ -9,6 +9,7 @@
 // det som projekten och bygget väntar på. Taket är materialMatt gånger bufferten, aldrig mer än lagerplatserna rymmer. Under
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
+import { tamArt, tamdjurOf } from './tamdjur';
 import { SKRIFT } from './skriftTal';
 import { trosMobelBrist } from './troshus';
 import { balans } from './balans';
@@ -255,6 +256,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
   bagborr: () => 1, // ett tänddon till elden (steg 10.6.13)
   kalke: () => 1, // en kälke till det tunga (steg 10.10.2)
+  slade: s => tamdjurOf(s).some(d => tamArt(d.art).styrka) ? 1 : 0, // en släde när byn har ett dragdjur att spänna för (steg 10.10.3)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
   slanda: () => VILLTAL.slandor, // till dem som spinner, och en i vävstolen (steg 7.7.8)

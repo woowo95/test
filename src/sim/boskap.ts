@@ -6,6 +6,7 @@
 // Getterna mjölkas (steg 9.8.8), och slakten med kött, skinn, horn och talg (steg 9.8.7) byggs i sina steg. Allt stegas en gång i timmen
 // (stepBoskap, steg.ts), likadant i båda lägena, med byns följd 'tamdjur'.
 import { balans } from './balans';
+import { spand } from './agande';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { desperatMat, getable } from './behov';
 import { rnd } from './slump';
@@ -72,7 +73,7 @@ function foda(s: State) {
   const alla = tamdjurOf(s);
   for (const d of alla) {
     const a = tamArt(d.art);
-    if (!a.bete || !hona(d) || !vuxen(s, d) || d.hunger >= BOSKAP.hungrig) continue;
+    if (!a.bete || !a.unge || !hona(d) || !vuxen(s, d) || d.hunger >= BOSKAP.hungrig) continue; // oxen får inga ungar (steg 10.10.3)
     if (!alla.some(q => q.art === d.art && !hona(q) && vuxen(s, q))) continue;
     if (!rymsEnTill(s, d.art)) continue; // flocken växer bara så länge betet och höet räcker (steg 10.2.33)
     if (rnd(s, 'tamdjur') >= BOSKAP.fodd) continue;
@@ -144,7 +145,7 @@ export const SLAKTDJUR = balans('slaktdjur', {
   kvarLiv: 0.2, // ett djur slaktas när mindre än så här stor del av livet är kvar (steg 10.2.33; förr vid 75 %)
   min: 15, // minuter det tar att avliva djuret och bära det till slaktbänken
 });
-export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget', ko: 'slaktko' };
+export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget', ko: 'slaktko', oxe: 'slaktko' }; // oxen slaktas som kon, hästen inte (steg 10.10.3)
 // betet och höet räcker för ett djur till: någon hage har bete för det i BOSKAP.beteDygn dygn, och höet räcker över istiden (steg 10.2.33)
 export const rymsEnTill = (s: State, art: TamArtId = 'far') => { const at = tamArt(art).ater; return hagarOf(s).some(h => hageDygn(s, h, at) >= BOSKAP.beteDygn) && hoAv(s) >= (betesTal(s) + at) * VINTER.hoPerDjur; };
 // värdet av att behålla djuret: honan och den vuxna mer, det sista av sitt kön mycket mer (så att ett par blir kvar så länge
@@ -159,7 +160,7 @@ export function behallVarde(s: State, d: Tamdjur) {
 // p = den som slaktar: någon annans djur slaktar bara den som är så hungrig att hen stjäl (boskapsstöld, steg 9.8.12)
 export function slaktOrsak(s: State, d: Tamdjur, p?: Person): string | undefined {
   const a = tamArt(d.art);
-  if (!SLAKTAD[d.art]) return undefined;
+  if (!SLAKTAD[d.art] || spand(s, d.id)) return undefined; // inte dragdjuret som drar släden (steg 10.10.3)
   if (p && d.agare !== undefined && d.agare !== p.id) return desperatMat(s, p) ? 'stold' : undefined;
   if (tamAlder(s, d) > a.liv * (1 - SLAKTDJUR.kvarLiv)) return 'gammal';
   const arten = tamdjurOf(s).filter(q => q.art === d.art && SLAKTAD[q.art]);

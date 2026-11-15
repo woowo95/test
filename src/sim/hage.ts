@@ -1,6 +1,7 @@
 // ---------- hagen (steg 9.8.4–9.8.6, Djuren i detalj: Hagen) ----------
 // En egen fil för hagen och betet, så att tamdjur.ts (som varg.ts och arv.ts läser tidigt) inte drar in marken och odlingen.
 import { balans } from './balans';
+import { spand } from './agande';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable, takeMaterial } from './behov';
 import { rnd } from './slump';
@@ -163,7 +164,9 @@ function betesRuta(s: State, d: Tamdjur, rs: number[]) {
 // en timme för ett betesdjur: rymmer genom ett hål, äter i hagen (eller där det strövar) och flyttar sig
 function stepBete(s: State, d: Tamdjur) {
   if (d.fahus !== undefined) return; // i fähuset i istiden betar djuret inte utan äter hö (steg 9.8.9, slatter.ts)
+  if (spand(s, d.id)) return; // dragdjuret drar släden (steg 10.10.3)
   let h = hageById(s, d.hage);
+  if (h && !(d.x >= h.x && d.x < h.x + h.w && d.y >= h.y && d.y < h.y + h.h)) { d.x = h.x + h.w / 2; d.y = h.y + h.h / 2; } // efter turen går dragdjuret tillbaka in i sin hage
   if (h && !hageHel(s, h) && rnd(s, 'tamdjur') < HAGE.rymma) {
     const hal = hageKant(s, h).find(i => !harStaket(s, i))!, hx = hal % W, hy = Math.floor(hal / W);
     const ux = Math.sign(hx - (h.x + h.w / 2)), uy = Math.sign(hy - (h.y + h.h / 2));

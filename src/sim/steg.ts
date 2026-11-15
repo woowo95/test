@@ -104,7 +104,7 @@ import { oppnaSed } from './rost';
 import { handelse } from './rykten';
 import { tal, horsel, barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
-import { fordonFart, fordonI, fordonRyms } from './fordon';
+import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, PLAGG, kladAv } from './klader';
 import { allaTing } from './agande';
 import { och } from './ord';
@@ -825,12 +825,12 @@ function walk(s: State, p: Person, tk: Task, left: number) {
   for (;;) {
     const sist = !tk.path?.length, i = sist ? 0 : tk.path![0];
     const wx = sist ? tk.mx ?? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.my ?? tk.ty : Math.floor(i / W) + 0.5 - off;
-    const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm) * morkFart(s, p) * (snoF < 1 && !roofed(s, p.x, p.y) ? 1 - (1 - snoF) * (1 - snoSmalt(s, p.x, p.y)) : 1) * (fo ? fordonFart(s, fo, p.x, p.y) : 1); // i totalmörker går man långsammare (ljus.ts), och ute i snön utom där den smält runt en eld (steg 10.2.51, som snoPaRutan i gang.ts); kälken på barmark (fordon.ts)
+    const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm) * morkFart(s, p) * (snoF < 1 && !roofed(s, p.x, p.y) ? 1 - (1 - snoF) * (1 - snoSmalt(s, p.x, p.y)) : 1) * (fo ? fartI(s, fo, p.x, p.y) : 1); // i totalmörker går man långsammare (ljus.ts), och ute i snön utom där den smält runt en eld (steg 10.2.51, som snoPaRutan i gang.ts); kälken på barmark (fordon.ts)
     if (gangVakt.lyss) gangVakt.lyss(s, p, fart * sp, morkFart(s, p) < 1); // vakten i testerna (steg 9.2.101)
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
-    if (d > can) { p.x += dx / d * can; p.y += dy / d * can; return { used: left, framme: false }; } // tiden räckte inte hela vägen
-    p.x = wx; p.y = wy; budget -= d / sp;
+    if (d > can) { p.x += dx / d * can; p.y += dy / d * can; if (fo) dragdjurBredvid(p, fo); return { used: left, framme: false }; } // tiden räckte inte hela vägen; dragdjuret går bredvid (steg 10.10.3)
+    p.x = wx; p.y = wy; budget -= d / sp; if (fo) dragdjurBredvid(p, fo);
     if (sist) { tk.path = undefined; tk.pk = undefined; spara(s, p, klocka()); return { used: left - budget / fart, framme: true }; }
     tk.path!.shift(); spara(s, p, klocka());
     if (budget <= 0) return { used: left, framme: false };
@@ -943,7 +943,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     else p.task = undefined;
   } else {
     if (hamtaForst(s, p, tk)) return; // materialet hämtas först (steg 9.2.43)
-    tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { const fo = fordonI(s, tk); pickUp(s, p, tk, fo ? fordonRyms(fo) : ryms(s, p)); tk.until = now; }
+    tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { const fo = fordonI(s, tk); pickUp(s, p, tk, fo ? rymsI(fo) : ryms(s, p)); tk.until = now; }
     if (tk.act === 'flyttaeld') tk.until = now + eldFlyttKvar(s, p); // vid elden: släcka den och bära de stenar som är kvar (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
   }

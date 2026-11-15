@@ -20,7 +20,7 @@ import { tingOf } from './agande';
 import { snoPaMarken } from './vader';
 import { snoSmalt } from './brand';
 import { roofed } from './byggnad';
-import { fordonFart, fordonI } from './fordon';
+import { fartI, fordonI } from './fordon';
 
 // Balanstalen (regel 8): farten för en frisk vuxen och det som gör den långsammare
 export const GANG = balans('gang', {
@@ -71,7 +71,7 @@ export const GANGFART = {
     return l.g.trees[l.i] >= FOREST ? 'Skog' : l.g.trees[l.i] >= VAG.ungskog ? 'Ungskog' : busksort(l.g, l.i)?.namn ?? (l.g.cover[l.i] >= HIGH ? 'Högt gräs' : 'Marken');
   } },
   sno: { namn: 'Snö på marken', tecken: '❄', varde: l => snoPaRutan(l.s, l.p, l.p.x, l.p.y) },
-  fordon: { namn: 'Drar kälken på barmark', tecken: '📦', varde: l => { const fo = fordonI(l.s, l.p.task); return fo ? fordonFart(l.s, fo, l.p.x, l.p.y) : 1; } }, // steg 10.10.2 (fordon.ts; steg.ts räknar den i gången)
+  fordon: { namn: 'Kälken eller släden på barmark', tecken: '📦', varde: l => { const fo = fordonI(l.s, l.p.task); return fo ? fartI(l.s, fo, l.p.x, l.p.y) : 1; } }, // steg 10.10.2–10.10.3 (fordon.ts; steg.ts räknar den i gången)
   saker: { namn: 'Saker på golvet', tecken: '📦', varde: l => kanGa(l.p) && l.g.lost?.[l.i] ? GANG.fartSaker : 1 },
   smidig: { namn: 'Smidigheten i skog och snår', tecken: '🤸', varde: l => { const sp0 = medSaker(l); return markFaktor(sp0, l.sm) / sp0; },
     text: l => l.sm > 0 ? 'Smidig: tar igen en del i skog och snår' : 'Klumpig: ännu långsammare i skog och snår' },
