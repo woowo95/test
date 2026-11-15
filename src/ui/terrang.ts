@@ -43,7 +43,7 @@ const STAD = Object.fromEntries(STADIER.map((d, k) => [d.id, k]));
 // bärbusken har mogna bär att plocka just nu (steg 6.5.4): då ritas bären på busken
 const mognaBar = (i: number) => (sakerPaMarken(s, 'samla', i % W, Math.floor(i / W)).find(q => q.k === 'bar')?.n ?? 0) > 0; // bär som går att plocka (steg 9.2.53)
 function treeLevel(g: ReturnType<typeof groundOf>, i: number) {
-  const st = stadium(g, i);
+  const st0 = stadium(g, i), st = st0 === 'planta' && busksort(g, i) ? null : st0; // en buske med en liten planta ritas som buske (steg 10.10.8)
   return st === null ? (busksort(g, i) ? 20 + (mognaBar(i) ? 1 : 0) : 0) : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
 }
 function coverSig() {
@@ -90,7 +90,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
   const kol = new Set(s.kolnad ?? []); // de kolnade stammarna (steg 9.2.26)
   const ham = new Set((s.hamlade ?? []).map(h => h.i));
   stallTrad(figurLayer, W, H, i => {
-    const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
+    const x = i % W, y = (i / W) | 0, st0 = jord(g.tiles[i]) ? stadium(g, i) : null, st = st0 === 'planta' && busksort(g, i) ? null : st0; // en buske med en liten planta ritas som buske (steg 10.10.8)
     const b = st ? tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork')
       : jord(g.tiles[i]) && busksort(g, i) ? buskBild(x, y, mognaBar(i)) // busken (steg 6.5.3), en av tre former efter rutan, med bären på när de är mogna (steg 6.5.4)
       // ett ungt träd i skogskanten, med den sort som skulle slå rot där (steg 5.1.6)

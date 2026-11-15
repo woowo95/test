@@ -12,7 +12,7 @@ import { underBuffert } from './forradsmal';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
 import { nTools } from './agande';
 import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
-import { FOREST, Ground, HIGH, isSoil } from './vag';
+import { FOREST, Ground, HIGH, VAG, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
 import { BARBUSKE, BUSKE, BUSKTAL, barKrok, busksort } from './buskar';
@@ -256,7 +256,7 @@ const DEF = {
 barKrok.vaxer = (s, i) => monsterOf(s, 'bar').m[i] > 0;
 barKrok.saUt = (s, g) => {
   const m = monsterOf(s, 'bar').m;
-  for (let i = 0; i < W * H; i++) if (m[i] > 0 && isSoil(g.tiles[i]) && !g.built?.[i] && BAR_PASSAR[markslag(g, i)] > 0) g.buske![i] = BUSKE + BARBUSKE;
+  for (let i = 0; i < W * H; i++) if (m[i] > 0 && isSoil(g.tiles[i]) && !g.built?.[i] && g.trees[i] < VAG.ungskog && BAR_PASSAR[markslag(g, i)] > 0) g.buske![i] = BUSKE + BARBUSKE;
 };
 export type FyndId = keyof typeof DEF;
 export const FYND: Record<FyndId, FyndDef> = DEF;

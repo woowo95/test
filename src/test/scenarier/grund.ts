@@ -2103,24 +2103,25 @@ SCENARIER.buskar = {
 };
 
 SCENARIER.barbuskar = {
-  text: 'Steg 6.5.4: bärbuskarna. De sås ut där bären växer när byn grundas, en buske som växer upp där bären växer blir en bärbuske, och bären i fyndkartan finns bara på bärbuskarna. De ger bär efter årstiden men inga grenar, och står kvar när skogen växer upp',
+  text: 'Steg 6.5.4: bärbuskarna. De sås ut där bären växer när byn grundas, en buske som växer upp där bären växer blir en bärbuske, och bären i fyndkartan finns bara på bärbuskarna. De ger bär efter årstiden men inga grenar. Steg 10.10.8: en ruta har ett träd eller en buske, så busken försvinner när ungskog vuxit upp, inga bärbuskar sås på skogsrutor och ingen ruta med ungskog eller skog har bär',
   kor: () => {
     const s = createState(3, START), g = groundOf(s), N = W * W;
     const bar = (i: number) => g.buske![i] === SIM.BUSKE + SIM.BARBUSKE;
     const fran = SIM.antalBuskar(g, SIM.BARBUSKE);
     // bären finns bara på bärbuskarna
     let utan = 0, med = 0;
-    for (let i = 0; i < N; i++) { const v = SIM.vaxerAt(s, 'bar', i); if (v > 0 && !bar(i)) utan++; if (v > 0 && bar(i)) med++; }
+    let paSkog = 0, barISkog = 0;
+    for (let i = 0; i < N; i++) { const v = SIM.vaxerAt(s, 'bar', i); if (v > 0 && !bar(i)) utan++; if (v > 0 && bar(i)) med++; if (bar(i) && g.trees[i] >= SIM.VAG.ungskog) paSkog++; if (v > 0 && g.trees[i] >= SIM.VAG.ungskog) barISkog++; }
     const b = Array.from({ length: N }, (_, i) => i).find(i => bar(i) && g.trees[i] === 0 && SIM.vaxerAt(s, 'bar', i) > 0) ?? -1;
     const sort = b >= 0 ? SIM.busksort(g, b) : undefined;
     // en buske som växer upp där bären växer blir en bärbuske: all mark utanför byn står orörd i 40 dygn
     for (let i = 0; i < N; i++) if (isSoil(g.tiles[i]) && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= 6 && !SIM.arBuske(g, i)) g.cover[i] = 1;
     for (let h = 0; h < 40 * 24; h++) { s.now += HOUR; growGround(s, 1, 2); }
     const sedan = SIM.antalBuskar(g, SIM.BARBUSKE), vanliga = SIM.antalBuskar(g, SIM.VANLIG);
-    // bärbusken står kvar när skogen växer upp, och utan busken finns inga bär
-    let iSkog = false, borta = false;
+    // bärbusken försvinner när ungskog vuxit upp, och utan busken finns inga bär
+    let iSkog = true, borta = false;
     if (b >= 0 && bar(b)) {
-      const t0 = g.trees[b]; g.trees[b] = SIM.FOREST; growGround(s, 1, 2); iSkog = bar(b); g.trees[b] = t0;
+      const t0 = g.trees[b]; g.trees[b] = SIM.VAG.ungskog; growGround(s, 1, 2); iSkog = bar(b); g.trees[b] = t0; g.buske![b] = SIM.BUSKE + SIM.BARBUSKE;
       SIM.tabortBuske(g, b); borta = SIM.vaxerAt(s, 'bar', b) === 0;
     }
     // en sparfil från före steg 6.5.4 får bärbuskarna utsådda
@@ -2133,7 +2134,8 @@ SCENARIER.barbuskar = {
       [`bärbusken heter ${sort?.namn} och ger bär men inga grenar`, !!sort?.bar && !sort.grenar],
       [`nya bärbuskar där bären växer (${fran} blev ${sedan}, och ${vanliga} vanliga)`, sedan > fran && vanliga > sedan - fran],
       ['inga bär i istiden', SIM.FYND.bar.arstid![0] === 0],
-      ['bärbusken står kvar när skogen växer upp', iSkog],
+      ['bärbusken försvinner när ungskog vuxit upp på rutan', !iSkog],
+      [`inga bärbuskar sås på skogsrutor (${paSkog}), och ingen ruta med ungskog eller skog har bär (${barISkog})`, paSkog === 0 && barISkog === 0],
       ['där busken tas bort finns inga bär', borta],
       [`en äldre sparfil får bärbuskar (${gamla})`, gamla > 20],
       ['bärbuskarna sparas med byn', sparad],

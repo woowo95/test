@@ -248,13 +248,13 @@ SCENARIER.rotter = {
 // rundan (steg 4.5.6.1): samlaren går i full fart från ruta till ruta och stannar 2–5 sekunder där det finns något
 SCENARIER.samlarrunda = {
   lang: true,
-  text: 'Steg 4.5.6.1–4.5.6.2: samlaren går hela tiden i full gångfart från ruta till ruta och stannar 2–5 sekunder där det finns något att plocka. Hen står aldrig still längre än så medan hen samlar (mindre än en tiondel av arbetstiden), och Gör just nu säger Letar efter bär och Plockar bär. Rundan når längre bort än lägerzonen, och den nyfikne och modige går längre än den försiktige när maten nära byn är slut',
+  text: 'Steg 4.5.6.1–4.5.6.2: samlaren går hela tiden i full gångfart från ruta till ruta och stannar 2–5 sekunder för varje sak hen plockar. Hen står aldrig still längre än så utan att plocka något medan hen samlar (mindre än en tiondel av arbetstiden), och Gör just nu säger Letar efter bär och Plockar bär. Rundan når längre bort än lägerzonen, och den nyfikne och modige går längre än den försiktige när maten nära byn är slut',
   kor: () => {
     // två byar utan mat följs sekund för sekund i sex timmar: var samlarna står och hur fort de går
     let arbete = 0, langeStill = 0, gang = 0, sekGang = 0, stopp = 0, langstStopp = 0;
     const texter = new Set<string>();
     for (const seed of [42, 7]) {
-      const s = createState(seed, START), forra = new Map<number, { x: number; y: number; still: number; hopp: boolean }>();
+      const s = createState(seed, START), forra = new Map<number, { x: number; y: number; still: number; hopp: boolean; bar: number }>();
       setMat(s, {}); setAmount(s, 'ved', 300);
       for (let i = 0; i < 6 * 3600; i++) {
         step(s, 1);
@@ -263,11 +263,12 @@ SCENARIER.samlarrunda = {
           if (t?.act !== 'samla' || t.phase !== 'do' || t.sok) { if (f && f.still > 0) { stopp++; langstStopp = Math.max(langstStopp, f.still); } forra.delete(p.id); continue; }
           texter.add(SIM.taskText(t));
           arbete++;
-          const d = f ? Math.hypot(p.x - f.x, p.y - f.y) : 0, still = f && d < 1e-6 ? f.still + 1 : 0;
+          // den som plockar en sak till står inte still: en rik bärbuske plockas sak för sak (steg 10.10.8)
+          const bar = Object.values(t.items ?? {}).reduce((a, n) => a + n, 0), d = f ? Math.hypot(p.x - f.x, p.y - f.y) : 0, still = f && d < 1e-6 && bar <= f.bar ? f.still + 1 : 0;
           if (f && d >= 1e-6 && f.hopp && t.hopp) { gang += d; sekGang++; } // farten bara under hela sekunder på väg mellan två rutor
           if (f && d >= 1e-6) { if (f.still > 0) { stopp++; langstStopp = Math.max(langstStopp, f.still); } }
           if (still > 5) langeStill++;
-          forra.set(p.id, { x: p.x, y: p.y, still, hopp: !!t.hopp });
+          forra.set(p.id, { x: p.x, y: p.y, still, hopp: !!t.hopp, bar });
         }
       }
     }

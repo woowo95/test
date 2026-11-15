@@ -56,15 +56,13 @@ export function drawPlants(force = false) {
   if (!force && (key === ritad || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
   ritad = key; ritadNar = nu;
   plantG.clear();
-  const g = groundOf(s);
   for (let ry = v.y0; ry <= v.y1; ry++) for (let rx = v.x0; rx <= v.x1; rx++) {
     const i = ry * W + rx, x = rx * TS, y = ry * TS;
     let j = 0; // varje sak får en fast plats i rutan, så att bilden inte hoppar runt när kartan ritas om
     for (const q of sakerPaMarken(s, 'samla', rx, ry)) {
       const n = Math.min(3, q.n);
       if (n <= 0) continue;
-      // bären syns på bärbuskarna (steg 6.5.4, terrang.ts); där ett träd står syns inte busken, och där ritas tuvan under trädet
-      if (q.k === 'bar') { if (g.trees[i] > 0) ritaRad('bar', n, x, y); continue; }
+      if (q.k === 'bar') continue; // bären syns på bärbuskarna (steg 6.5.4, terrang.ts), och under träd växer inga (steg 10.10.8)
       ritaRad(q.k, n, x, y); j += n;
     }
     if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5)); // röllekan växer vild (steg 9.7.15)

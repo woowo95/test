@@ -1,6 +1,6 @@
 import { HOUR, W, H, State } from './typer';
 import { balans } from './balans';
-import { BUSKE, Ground, BAR, FOREST, VAG, isSoil } from './vag';
+import { BUSKE, Ground, BAR, VAG, isSoil } from './vag';
 import { hash } from './karta';
 
 // ---------- buskarna (steg 6.5.3, "Skogen som byn sköter" i designdokumentet, stycket Buskar) ----------
@@ -23,7 +23,7 @@ export const BUSKTAL = balans('buskar', {
 export interface Busksort { id: string; namn: string; text: string; grenar: boolean; bar?: boolean }
 export const BUSKAR: Busksort[] = [
   { id: 'vanlig', namn: 'Buske', text: 'En snårig buske. Den ger grenar, gör det tyngre att gå och brinner lätt.', grenar: true },
-  // bärbusken (steg 6.5.4): växer som de andra, men ger bär efter årstiden i stället för grenar och står kvar när skogen växer upp runt den
+  // bärbusken (steg 6.5.4): växer som de andra, men ger bär efter årstiden i stället för grenar; den står på öppen mark och försvinner som de andra när ungskog växer upp (steg 10.10.8)
   { id: 'bar', namn: 'Bärbuske', text: 'En buske med blåbär. Bären mognar på sommaren och hösten och växer tillbaka när de plockats.', grenar: false, bar: true },
 ];
 export const VANLIG = 0, BARBUSKE = 1; // raderna i BUSKAR
@@ -37,7 +37,7 @@ export const arBuske = (g: Ground, i: number) => (g.buske?.[i] ?? 0) >= BUSKE;
 // stig trampats upp. trang = trängseln (mark.ts), räknas bara när en buske kan växa
 export function vaxBuske(s: State, g: Ground, i: number, hours: number, ts: number, trang: (g: Ground, i: number) => number) {
   const b = g.buske!, v = b[i];
-  if (v >= BUSKE) { if (g.cover[i] < BAR || (g.trees[i] >= FOREST && !BUSKAR[v - BUSKE]?.bar)) b[i] = 0; return; } // bärbusken står kvar i skogen
+  if (v >= BUSKE) { if (g.cover[i] < BAR || g.trees[i] >= VAG.ungskog) b[i] = 0; return; } // en ruta har ett träd eller en buske: busken (också bärbusken) försvinner när ungskog vuxit upp (steg 10.10.8)
   if (g.cover[i] < 1 || g.trees[i] >= VAG.ungskog) { b[i] = 0; return; } // någon har gått här (gräset är inte helt uppvuxet), eller ungskog står här
   if (v < ORORD) { b[i] = Math.min(ORORD, v + hours); return; }
   if (!ts) return;
