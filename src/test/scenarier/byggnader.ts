@@ -2284,7 +2284,7 @@ SCENARIER.koket = {
   lang: true,
   text: 'Steg 10.2.91–10.2.92: kökets stationer står inne och samlas i köket. Örtköket, bakugnen och kvarnstenen står inne i ett hus som härden (rökeriet ute), ett rum med en av dem är ett kök, och en ny köksstation ställs helst i ett rum som redan är ett kök',
   kor: () => {
-    const s = createState(6, START); klockan(s);
+    const s = createState(1, START); klockan(s); // (en by som bygger ett andra hus i stället för att bygga ut det första)
     medHus(s); for (let j = 0; j < 6; j++) nyInvanare(s, j % 2 ? 'm' : 'k', 25);
     for (let k = 0; k < 12 * 12; k++) step(s, 300); // (ett behov ska ha funnits en stund innan Byggplanen bygger)
     s.byggSok = undefined; medHus(s); // två hus

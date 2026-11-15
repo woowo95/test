@@ -39,6 +39,8 @@ export const SALLSYNT: Record<string, string> = {
   snoskor_bjornskinn: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   halsband_tandband: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   halsband_benband: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
+  halsband_fjaderband: 'fjädrarna kommer bara från fåglarna, som få byar fångar, och halsbanden är få; scenariot fjaderband prövar det',
+  tatuera: 'märket görs med en bennål och kol, och kolet finns bara när en eld slocknat med aska kvar; scenariot tatuering prövar det',
   tunika_lintyg: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   skjorta_lintyg: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   byxor_lader: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',

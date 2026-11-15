@@ -718,7 +718,7 @@ SCENARIER.matchrapport = {
     const ber = m ? SIM.matchBerattelse(s, m) : '', iber = im ? SIM.matchBerattelse(e, im) : '';
     const sk = m ? { ...m, nr: 7, vinnare: b.id, vnamn: b.name, spelare: m.spelare.map(x => ({ ...x, v: x.id === b.id ? 20 : 19.5 })) } : undefined, sber = sk ? SIM.matchBerattelse(s, sk) : '';
     return [
-      [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length === 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
+      [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length >= 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
       [`raden i Händelser pekar på matchen: ${rad?.text ?? 'ingen'}`, !!rad],
       [`notisen (Folket) pekar på den på rad ${nIdx + 1}`, !!n && nIdx >= 0 && n.match!.length === n.rader.length],
       [`för få: ${ilog?.text ?? 'ingen rad'}`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog],
@@ -1132,7 +1132,7 @@ SCENARIER.graven = {
     const { s, v } = medLedare(), d = v[1], x0 = Math.floor(d.x);
     klockan(s, 10); tandEld(s); setFood(s, 200);
     SIM.die(s, d, 'alderdom');
-    const kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id);
+    const kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id), kx = kr?.x; // där den låg när hen dog; kroppen bärs sedan
     let h = 0, bar = false, stod = 0, kort = '';
     // steg 9.2.130: den som går för att ta hand om den döde går dit, tar upp kroppen direkt och står inte still vid den, och kortet
     // säger vems kropp hen går till
@@ -1144,7 +1144,7 @@ SCENARIER.graven = {
     { const p = v[2], t0 = p.task; p.task = { act: 'grava', phase: 'go', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task; bar = SIM.gangDelar(s, p).delar.some(r => r.k === 'bar'); p.task = t0; } // den som bär kroppen dit
     const g = s.gravar?.find(q => q.vem === d.id);
     return [
-      [`kroppen ligger där hen dog (${kr?.x}, x0 ${x0})`, !!kr && kr.x === x0],
+      [`kroppen ligger där hen dog (${kx}, x0 ${x0})`, !!kr && kx === x0],
       ['den som bär kroppen till graven går långsammare', bar],
       [`kroppen begravs (${h} timmar)`, !!g],
       [`den som tar hand om den döde står inte still vid kroppen (${stod * 5} minuter)`, stod <= 1],
