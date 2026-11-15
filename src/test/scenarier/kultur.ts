@@ -3324,3 +3324,44 @@ SCENARIER.vinterpals = {
     ];
   },
 };
+
+SCENARIER.dryckval = {
+  text: 'Dryckernas register (steg 10.7.23): varje dryck är en rad i VATSKOR med hur mycket den släcker, om den värmer, hur gärna den dricks mot törsten och på kvällen och hur stark den är. Mot törsten dricker man det med högst värde plus smaken, på kvällen det med högst kvällsvärde, och kvällsdrycken är en chans per tid',
+  kor: () => {
+    const s = rikDag(3), p = vuxna(s)[0]!;
+    const kruka = (v: SIM.VatskaId, k = 'lerkruka_stor') => { const t = SIM.addTool(s, k, p); t.hos = undefined; SIM.fyllVatska(s, v, 4, t); return t; };
+    kruka('kokt'); kruka('saft', 'lerkruka_mellan');
+    const forst = SIM.dryckFor(s, p); // saften är värd mer än det kokta
+    (p.smak ??= {})['m:saft'] = -1; const avsmak = SIM.dryckFor(s, p); // med avsmak för saft tar hen det kokta
+    delete p.smak['m:saft'];
+    // dricka: törsten och tanken ur raden
+    p.torst = 0.2; const saft0 = SIM.vatskaAv(s, 'saft'); SIM.drickHemma(s, p, 'saft');
+    const slackt = Math.abs(p.torst - (0.2 + SIM.DRYCK.slacker)) < 1e-9 && SIM.vatskaAv(s, 'saft') === saft0 - 1 && p.thoughts.some(t => t.text === 'Drack saft');
+    // på kvällen: vinet är värt mer än ölet, och med smak för öl tar hen ölet
+    kruka('ol'); kruka('vin');
+    klockan(s, 21);
+    const kv = SIM.kvallsDryck(s, p, true);
+    p.smak['m:ol'] = 1; const kvOl = SIM.kvallsDryck(s, p, true);
+    // registret: alla drycker har en rad, och bara de med alkohol tas på kvällen
+    const rader = SIM.DRYCKER.every(k => !!SIM.dryckAv(k)?.stat) && SIM.DRYCKER.filter(k => SIM.dryckAv(k)!.kvall !== undefined).every(k => (SIM.dryckAv(k)!.alkohol ?? 0) > 0);
+    // chansen per tid: lika många drycker per natt med frågor var 10:e och var 30:e minut
+    const perNatt = (min: number) => {
+      let n = 0;
+      for (let natt = 0; natt < 400; natt++) { s.now += SIM.DAY; klockan(s, 19); for (let t = 0; t < 2 * 60; t += min) { s.now += min * SIM.MIN; if (SIM.kvallsChans(s, p)) { n++; break; } } }
+      return n / 400;
+    };
+    const tio = perNatt(10), trettio = perNatt(30);
+    // ölet släcker lite törst och ger rus
+    p.torst = 0.2; p.rus = 0; SIM.drickHemma(s, p, 'ol');
+    const ol = p.torst > 0.2 && (p.rus ?? 0) > 0;
+    return [
+      [`mot törsten tar man saften före det kokta vattnet (${forst})`, forst === 'saft'],
+      [`med avsmak för saft tar man det kokta (${avsmak})`, avsmak === 'kokt'],
+      ['saften släcker törsten och ger sin tanke, ur raden', slackt],
+      [`på kvällen vinet före ölet (${kv}), med smak för öl ölet (${kvOl})`, kv === 'vin' && kvOl === 'ol'],
+      ['varje dryck har en rad, och bara de med alkohol tas på kvällen', rader],
+      [`kvällsdrycken är en chans per tid (${(tio * 100).toFixed(0)} % med frågor var 10:e minut, ${(trettio * 100).toFixed(0)} % var 30:e)`, Math.abs(tio - trettio) < 0.1 && Math.abs(tio - (1 - (1 - SIM.RUS.kvall) ** 2)) < 0.1],
+      ['ölet släcker lite törst och ger rus', ol],
+    ];
+  },
+};

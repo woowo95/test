@@ -4,20 +4,24 @@
 // mycket under lång tid (p.supit, ett minne som bleknar) får sämre hälsa. Man dricker på kvällen vid elden när byn har vin eller öl.
 import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, log, think } from './folk';
-import { clamp } from './slump';
+import { chansPer, clamp } from './slump';
 import { HOUR, HOUR_S, Person, State } from './typer';
-import { isLight } from './tid';
+import { hourOf, isLight } from './tid';
 import { budBrutet, budHindrar } from './kyrka';
 type VatskaId = import('./vatskor').VatskaId;
 // vätskorna i krukorna (vatskor.ts sätter kroken, så att den här filen inte laddar vatskor.ts och halsa.ts i en ring)
-export const alkoholKrok = { finns: (_s: State, _v: VatskaId) => false, ta: (_s: State, _v: VatskaId) => false };
+// alkohol = hur mycket rus en del ger, drycker = dryckerna med alkohol och kvall = den p helst tar på kvällen (raderna i VATSKOR, steg 10.7.23)
+export const alkoholKrok = {
+  finns: (_s: State, _v: VatskaId) => false, ta: (_s: State, _v: VatskaId) => false, alkohol: (_v: VatskaId) => 0, namn: (_v: VatskaId) => '',
+  drycker: (): VatskaId[] => [], kvall: (_s: State, _p: Person): VatskaId | undefined => undefined,
+};
 
 export const RUS = balans('rus', {
   sjunker: 0.15, // så mycket av ruset går över i timmen
   fart: 0.35, // gången och händigheten sjunker så här mycket per hel rus (1 = mycket full) ...
   smid: 6, traff: 4, // ... smidigheten och träffsäkerheten i striden så här många poäng per hel rus
   golv: 0.4, // aldrig under så här stor del av förmågan
-  kvall: 0.3, // chansen att den vuxne som är hemma på kvällen väljer att ta en dryck när hen väljer fritid och byn har ...
+  kvall: 0.3, // chansen per timme att den vuxne som är hemma på kvällen tar en dryck när byn har (steg 10.7.23: per tid, kvallsChans) ...
   mest: 0.8, // ... och inte redan är så här full
   supit: 0.02, // så mycket av det man supit glöms i timmen ...
   skadligt: 3, // ... och över så här mycket blir hälsan sämre ...
@@ -31,8 +35,6 @@ export const RUS = balans('rus', {
   bakTim: 8, bak: -0.08, bakFaktor: 0.85, // ... i så många timmar: tanken, och förmågorna gånger bakFaktor
   supa: 3, // så många drycker dricker den som super (utbrottet supa)
 });
-// dryckerna med alkohol och hur mycket rus en del ger
-export const ALKOHOL: Partial<Record<VatskaId, number>> = { ol: 0.25, vin: 0.35 };
 export const rusAv = (p: Person) => p.rus ?? 0;
 // förmågan gånger detta (gången och händigheten)
 export const rusFaktor = (p: Person) => Math.max(RUS.golv, 1 - RUS.fart * rusAv(p)) * (p.bak ? RUS.bakFaktor : 1); // och bakfyllan (steg 9.6.15)
@@ -41,11 +43,11 @@ export const rusTraff = (p: Person) => RUS.traff * rusAv(p);
 // p dricker en dryck med alkohol
 export function drickAlkohol(s: State, p: Person, v: VatskaId, tagen = false) { // tagen: drycken är redan tagen ur sin kruka (kyrkans öl, steg 10.3.23)
   if (!tagen && !alkoholKrok.ta(s, v)) return false;
-  const a = ALKOHOL[v] ?? 0;
+  const a = alkoholKrok.alkohol(v), namn = alkoholKrok.namn(v).toLowerCase();
   p.rus = clamp(rusAv(p) + a, 0, 2); p.supit = (p.supit ?? 0) + a;
-  think(p, v === 'vin' ? 'Drack vin' : 'Drack öl', RUS.glad, s.now, RUS.gladTim * HOUR);
+  think(p, 'Drack ' + namn, RUS.glad, s.now, RUS.gladTim * HOUR);
   count(s, 'drack_' + v);
-  if (forstaGang(s, 'alkohol')) log(s, `${p.name} drack byns första ${v === 'vin' ? 'vin' : 'öl'} vid elden.`, 'world', [p.id]);
+  if (forstaGang(s, 'alkohol')) log(s, `${p.name} drack byns första ${namn} vid elden.`, 'world', [p.id]);
   return true;
 }
 // i hälsans takt (steg.ts): ruset går över och det man supit glöms
@@ -63,14 +65,21 @@ export function rusSteg(s: State, p: Person, dtSec: number) {
   }
 }
 // vill p ta en dryck med alkohol i kväll (steg 10.2.34: ett val, raden kvallsdryck i val.ts): en vuxen som är hemma när det är
-// mörkt och inte druckit för mycket, när byn har vin eller öl. Svarar med drycken
+// mörkt och inte druckit för mycket, när byn har en dryck med alkohol. Svarar med den hen helst tar (kvällens värde och smaken)
 export function kvallsDryck(s: State, p: Person, hemma: boolean): VatskaId | undefined {
   if (!hemma || isLight(s.now) || ageOf(p, s.now) < ALDER.vuxen || rusAv(p) >= RUS.mest || budHindrar(s, p, 'ingetRus')) return undefined; // budet inget rus (steg 10.3.22)
-  return (Object.keys(ALKOHOL) as VatskaId[]).find(k => alkoholKrok.finns(s, k));
+  return alkoholKrok.kvall(s, p);
 }
-// supandet (utbrottet supa i humor.ts): den som mår dåligt super sig full när byn har något att dricka
-export const kanSupa = (s: State) => (Object.keys(ALKOHOL) as VatskaId[]).some(k => alkoholKrok.finns(s, k));
+// tar p en dryck nu (steg 10.7.23): chansen RUS.kvall per timme av kvällen sedan hen sist frågade sig (mörkret kommer klockan 19)
+export function kvallsChans(s: State, p: Person) {
+  const dt = Math.min(s.now - (p.kvallT ?? -Infinity), ((hourOf(s.now) - 19 + 24) % 24) * HOUR);
+  p.kvallT = s.now;
+  return dt > 0 && chansPer(s, RUS.kvall, HOUR_S, dt / 1000, 'val', p);
+}
+// supandet (utbrottet supa i humor.ts): den som mår dåligt super sig full när byn har något att dricka, det starkaste först
+const starkast = (s: State) => alkoholKrok.drycker().filter(k => alkoholKrok.finns(s, k)).sort((a, b) => alkoholKrok.alkohol(b) - alkoholKrok.alkohol(a))[0];
+export const kanSupa = (s: State) => !!starkast(s);
 export function supa(s: State, p: Person) {
   if (budHindrar(s, p, 'ingetRus') && kanSupa(s)) budBrutet(s, p, 'ingetRus'); // utbrottet går före budet (steg 10.3.22)
-  for (let i = 0; i < RUS.supa; i++) { const v = (Object.keys(ALKOHOL) as VatskaId[]).find(k => alkoholKrok.finns(s, k)); if (!v) break; drickAlkohol(s, p, v); }
+  for (let i = 0; i < RUS.supa; i++) { const v = starkast(s); if (!v) break; drickAlkohol(s, p, v); }
 }

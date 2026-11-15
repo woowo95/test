@@ -4,8 +4,8 @@ import { han } from './ord';
 import { mossaKrok } from './halsa';
 import { flintaKrok } from './forradsmal';
 import { flintaTillVerktyg } from './redskap';
-import { vatskaKrok, villTe } from './vatskor';
-import { RUS, kvallsDryck } from './rus';
+import { VATSKOR, vatskaKrok, villTe } from './vatskor';
+import { kvallsChans, kvallsDryck } from './rus';
 import { forbrukat } from './forradsmal';
 import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
@@ -862,8 +862,8 @@ export const ARBETEN: readonly Arbete[] = [
   // 9 Fritid: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden
   { id: 'fritid', niva: 9, nar: 'dag', kort: true, prova: c => { leisure(c.s, c.p, c.v, dag(c).u, c.lazy); return true; } },
   // på natten håller man sig vid elden och berättar, gör handarbete, umgås eller sover
-  // en dryck med alkohol på kvällen (steg 9.6.14 och 10.2.34): ett val på fritiden, med chansen RUS.kvall när byn har vin eller öl
-  { id: 'kvallsdryck', niva: 9, nar: 'natt', prova: ({ s, p, v }) => { const d = kvallsDryck(s, p, hemma(s, p)); if (!d || rnd(s, 'val', p) >= RUS.kvall) return false; v.spot = { x: p.x, y: p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', d === 'vin' ? 'Dricker vin vid elden' : 'Dricker öl vid elden'); } },
+  // en dryck med alkohol på kvällen (steg 9.6.14, 10.2.34 och 10.7.23): ett val på fritiden, med chansen RUS.kvall per timme när byn har en
+  { id: 'kvallsdryck', niva: 9, nar: 'natt', prova: ({ s, p, v }) => { const d = kvallsDryck(s, p, hemma(s, p)); if (!d || !kvallsChans(s, p)) return false; v.spot = { x: p.x, y: p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', `Dricker ${VATSKOR[d].namn.toLowerCase()} vid elden`); } },
   { id: 'kvall', niva: 9, nar: 'natt', prova: ({ s, p, v, a }) => { night(s, p, v, a); return true; } },
 ];
 
