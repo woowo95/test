@@ -3,6 +3,7 @@
 // instrumentet, budskapet och om ledaren betalade, publiken och mottagningen. Symbolerna först; texten kommer fram när man
 // håller över raden
 import { BUDSKAP, FRAM_AV, FramMinne, SPORT_AV, framBerattelse, framMinneAv, sakNamn, timeLabel } from '../../sim';
+import { och } from '../../sim/ord';
 import { iconImg } from '../../ikoner';
 import { clockTxt, esc, framKnapp, matchKnapp, vemLank } from '../hjalp';
 import { s, ui } from '../lage';
@@ -57,7 +58,7 @@ export function fritidLista(o: { person?: number; scen?: number; matcher?: boole
   const fr = (s.framtradanden ?? []).filter(m => m.nr !== undefined && (o.person === undefined || m.p === o.person || !!m.grupp?.some(g => g.id === o.person)) && (o.scen === undefined || m.scen === o.scen))
     .map(m => ({ t: m.t, html: `${iconImg('scen', 12)} ${esc(FRAM_AV[m.k]?.namn ?? m.k)}: ${esc([m.namn, ...(m.grupp ?? []).map(g => g.namn)].join(', '))}${framKnapp(m.nr!)}` }));
   const ma = o.matcher === false || o.scen !== undefined ? [] : (s.matcher ?? []).filter(m => !m.installd && (o.person === undefined || m.spelare.some(q => q.id === o.person)))
-    .map(m => ({ t: m.t, html: `${iconImg('boll', 12)} ${esc(SPORT_AV[m.k]?.namn ?? m.k)}: ${esc(m.spelare.map(q => q.namn).join(', '))}${m.vnamn ? `, ${esc(m.vnamn)} vann` : ''}${matchKnapp(m.nr)}` }));
+    .map(m => ({ t: m.t, html: `${iconImg('boll', 12)} ${esc(SPORT_AV[m.k]?.namn ?? m.k)}: ${esc(m.spelare.map(q => q.namn).join(', '))}${m.vinnLag !== undefined ? `, laget med ${esc(och(m.spelare.filter(q => q.l === m.vinnLag).map(q => q.namn)))} vann` : m.vnamn ? `, ${esc(m.vnamn)} vann` : ''}${matchKnapp(m.nr)}` }));
   const nu = s.fram && (o.scen === undefined || s.fram.scen === o.scen) && (o.person === undefined || s.fram.p === o.person)
     ? `<li><span class="when">Pågår</span>${iconImg('scen', 12)} ${esc(FRAM_AV[s.fram.k]?.namn ?? s.fram.k)}: ${esc(s.people.find(p => p.id === s.fram!.p)?.name ?? '')}</li>` : '';
   const rader = [...fr, ...ma].sort((a, b) => b.t - a.t).slice(0, o.antal ?? 20);

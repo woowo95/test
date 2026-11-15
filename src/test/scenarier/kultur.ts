@@ -114,6 +114,35 @@ SCENARIER.sportplats = {
     return rader;
   },
 };
+SCENARIER.lag = {
+  text: 'Lagen och vinnaren (steg 10.7.14): i dragkampen slumpas två lag när matchen börjar, och när tiden är slut vinner laget med högst summa av färdighet och slump. Det starkare laget vinner oftast men inte alltid, och alla i laget får vinsten',
+  kor: () => {
+    let ber = '', starkVann = 0, avgjorda = 0, skillnad = 0, vinster = 0, vinnare = 0, gar = 0, klara = 0;
+    for (let i = 0; i < 20; i++) {
+      const s = rikDag(3 + i, { rep: 4 }), med = vuxna(s).slice(0, 4), fard = [12, 10, 8, 6];
+      med.forEach((q, j) => { q.skill.narstrid = fard[j]!; q.pot.styrka = q.pot.smidighet = 20; });
+      match(s, 'dragkamp', med);
+      let sett = false;
+      korTills(s, () => !!s.matcher?.length, 3600, () => { const m = s.sport; if (m?.igang && !m.avgjord && med.some(q => q.task?.act === 'sport' && q.task.phase === 'go' && m.lag?.[q.id] !== undefined)) sett = true; });
+      const mm = s.matcher?.find(x => !x.installd && x.vinnLag !== undefined);
+      if (!mm) continue;
+      klara++; if (sett) gar++; ber = SIM.matchBerattelse(s, mm);
+      const lag = ([0, 1] as const).map(l => mm.spelare.filter(x => x.l === l));
+      skillnad = Math.max(skillnad, Math.abs(lag[0]!.length - lag[1]!.length));
+      const f = lag.map(l => l.reduce((a, x) => a + x.f, 0));
+      if (f[0] !== f[1]) { avgjorda++; if ((f[0]! > f[1]!) === (mm.vinnLag === 0)) starkVann++; }
+      vinnare += lag[mm.vinnLag!]!.length;
+      vinster += med.reduce((a, q) => a + (q.sportVinst?.dragkamp ?? 0), 0);
+    }
+    return [
+      [`${klara} av 20 matcher avgjordes mellan två lag, som skilde sig med högst ${skillnad} spelare`, klara >= 15 && skillnad <= 1],
+      [`det starkare laget vann ${starkVann} av ${avgjorda}`, starkVann > avgjorda * 0.55 && starkVann < avgjorda],
+      [`alla i vinnarlaget fick vinsten (${vinster} vinster, ${vinnare} i vinnarlagen)`, vinster === vinnare && vinnare > 0],
+      [`matchen fortsatte medan spelarna gick till sin sida (i ${gar} av ${klara})`, gar >= 1],
+      [`berättelsen nämner laget: ${ber}`, /aget med/.test(ber) && !/\{|undefined/.test(ber)],
+    ];
+  },
+};
 SCENARIER.sportsaker = {
   text: 'Sportens föremål (steg 4.3.1.2): byn gör ett mål, en boll och ett slagträ när den har vuxna nog, föremålen slits när man spelar, och den som vunnit flest matcher i en sport får det i sitt eftermäle',
   kor: () => {

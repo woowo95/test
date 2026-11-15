@@ -22,11 +22,20 @@ export function matchBerattelse(s: State, m: MatchMinne): string {
   const bast = sp.reduce<typeof sp[number] | undefined>((a, x) => !a || x.f > a.f ? x : a, undefined);
   const res = sp.map(x => x.v).sort((a, b) => b - a), gap = res.length > 1 ? res[0]! - res[1]! : 0;
   const vinn = sp.find(x => x.id === m.vinnare), min = (m.slut - m.t) / MIN;
+  // i en lagsport (steg 10.7.14) jämförs lagen: summan av färdigheten och av resultaten, och vinnaren är hela laget
+  const lag = m.vinnLag !== undefined ? ([0, 1] as const).map(l => sp.filter(x => x.l === l)) : undefined;
+  const sum = (l: typeof sp, k: 'f' | 'v') => l.reduce((a, x) => a + x[k], 0), laget = (l: typeof sp) => `laget med ${och(l.map(x => x.namn))}`;
+  const vl = lag?.[m.vinnLag!], fl = lag?.[1 - m.vinnLag!];
   const f = {
     sport: m.k, sportnamn: (d?.namn ?? 'match').toLowerCase(), spelare: och(sp.map(x => x.namn)), n: talOrd(sp.length), nTal: sp.length,
-    vinnare: m.vnamn ?? '', bast: bast?.namn ?? '',
-    jamnt: res.length > 1 && gap <= MATCHBER.jamnt, overlagset: gap >= MATCHBER.overlagset,
-    skrall: !!vinn && !!bast && bast.f - vinn.f >= MATCHBER.skrall, favorit: !!vinn && vinn.id === bast?.id,
+    ...(vl && fl ? {
+      vinnare: laget(vl), bast: laget(fl), jamnt: Math.abs(sum(vl, 'v') - sum(fl, 'v')) <= MATCHBER.jamnt, overlagset: sum(vl, 'v') - sum(fl, 'v') >= MATCHBER.overlagset,
+      skrall: sum(fl, 'f') - sum(vl, 'f') >= MATCHBER.skrall, favorit: sum(vl, 'f') >= sum(fl, 'f'),
+    } : {
+      vinnare: m.vnamn ?? '', bast: bast?.namn ?? '',
+      jamnt: res.length > 1 && gap <= MATCHBER.jamnt, overlagset: gap >= MATCHBER.overlagset,
+      skrall: !!vinn && !!bast && bast.f - vinn.f >= MATCHBER.skrall, favorit: !!vinn && vinn.id === bast?.id,
+    }),
     lang: min >= MATCHBER.lang, kort: min < MATCHBER.kort, glad: m.glad > 0,
   };
   const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
