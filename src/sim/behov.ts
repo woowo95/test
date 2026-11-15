@@ -113,6 +113,11 @@ function eat(s: State, p: Person, fran?: Person) {
   }
   return portion;
 }
+// p äter en portion av k som en vanlig måltid (festmåltiden, steg 10.7.28): näringen, smaken, nivåns tanke och kockens hand
+export function ataPortion(s: State, p: Person, k: string) {
+  const per = { [k]: KROPP.mattar };
+  ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); count(s, 'atit', 1);
+}
 // måltidens nivå (steg 9.6.2, ratter.ts): en lagad eller fin måltid ger en tanke som höjer humöret
 function maltidTanke(s: State, p: Person, per: Record<string, number>) {
   const n = MALTIDSNIVA[basta(per)];

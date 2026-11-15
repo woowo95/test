@@ -3487,6 +3487,49 @@ SCENARIER.spritvard = {
     ] as [string, boolean][];
   },
 };
+SCENARIER.festmaltid = {
+  text: 'Festmåltid i kokgropen (steg 10.7.28): kokgropen lagar en stor sats med minst fyra grupper, tre gånger krukans mängder till 12 portioner, när en ritual med mat väntar. Bröllopet utlyses två timmar i förväg; satsen ligger i gropen tills bröllopet börjar och äts då av alla som en måltid på nivån Fest. Blir ingen ritual av läggs satsen i förrådet',
+  kor: () => {
+    const sats = (s: SIM.State) => {
+      const p = vuxna(s)[0]!;
+      p.tek = { ...(p.tek ?? {}), kruka: 1, kokgrop: 1 };
+      const t = { id: 994, k: 'kokgrop', x: 4, y: 4, kvar: 0 } as SIM.Station;
+      s.stationer = [...(s.stationer ?? []), t];
+      for (const k of Object.keys(SIM.INGREDIENSER)) if (SIM.amountOf(s, k) > 0) SIM.setAmount(s, k, 0);
+      SIM.setAmount(s, 'kott', 6); SIM.setAmount(s, 'rotter', 6); SIM.setAmount(s, 'kal', 6); SIM.setAmount(s, 'salt', 3);
+      s.ritualKo = []; s.ritual = undefined;
+      return { p, t };
+    };
+    // bröllopet: gropen laddas när det utlyses, och alla äter vid festen
+    const s = rikDag(3), { p, t } = sats(s);
+    const utan = SIM.kanGropa(s, p);
+    SIM.nyRitual(s, 'brollop', { om: [], namn: 'Bröllopet', fran: s.now + SIM.FEST.brollopFore * SIM.HOUR });
+    const med = SIM.kanGropa(s, p), r = SIM.festRecept(s, p);
+    const grupper = new Set(r?.av.flatMap(([k]) => SIM.grupperAv(k)) ?? []);
+    SIM.gropKlar(s, p, t.id);
+    const laddad = !!t.grop && t.grop.n >= 1 && t.grop.n <= 12 && SIM.rattInfo(t.grop.r)?.niva === 'fest' && r?.av.reduce((a, [, n]) => a + n, 0) === 21;
+    const id = t.grop?.r ?? '', namn = SIM.SAKER[id]?.namn ?? '', n1 = t.grop?.n ?? 0;
+    let kvarFore = false;
+    for (let h = 0; h < 3; h++) { s.now += SIM.HOUR; SIM.stepKok(s); if (h === 0) kvarFore = !!t.grop && t.grop.kvar <= 0; SIM.ritualTimme(s); }
+    const folk = SIM.living(s), atit = folk.filter(q => q.thoughts.some(x => x.text === 'Åt en festmåltid')).length;
+    const tom = !t.grop;
+    // ingen ritual: satsen läggs i förrådet när den är klar
+    const s2 = rikDag(3), b = sats(s2);
+    SIM.nyRitual(s2, 'brollop', { om: [], namn: 'Bröllopet', fran: s2.now + 2 * SIM.HOUR });
+    SIM.gropKlar(s2, b.p, b.t.id);
+    const id2 = b.t.grop?.r ?? '', n2 = b.t.grop?.n ?? 0, fore2 = SIM.amountOf(s2, id2);
+    s2.ritualKo = [];
+    s2.now += SIM.HOUR; SIM.stepKok(s2);
+    const forrad = !b.t.grop && SIM.amountOf(s2, id2) === fore2 + n2;
+    return [
+      [`gropen laddas bara när en ritual med mat väntar (utan ${utan ? 'ja' : 'nej'}, med ${med ? 'ja' : 'nej'})`, !utan && med],
+      [`${namn}: ${grupper.size} grupper (${r?.av.map(([k, n]) => n + ' ' + k).join(', ')}), ${n1} portioner`, grupper.size >= 4 && grupper.has('smak') && !!laddad && /^Gropbakat kött · Fest$/.test(namn)],
+      ['satsen ligger kvar i gropen när den är klar, tills bröllopet', kvarFore],
+      [`${atit} av ${folk.length} åt en festmåltid vid bröllopet, och gropen är tom`, atit >= Math.min(folk.length, 3) && tom],
+      ['blir ingen ritual av läggs satsen i förrådet', forrad],
+    ] as [string, boolean][];
+  },
+};
 SCENARIER.mjod = {
   text: 'Honung och mjöd (steg 10.7.25): honungskakor finns i vildbinas bon i skogen på sommaren och hösten, ett lager på kartan, och är söt mat. Mjödet bryggs i karet av 3 honungskakor och vatten, jäser 4 dygn och ger 5 mjöd i en stor lerkruka; tekniken kommer när byn har honung och har gjort vin två gånger',
   kor: () => {

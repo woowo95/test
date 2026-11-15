@@ -227,7 +227,7 @@ function vanhelga(s: State) {
 }
 
 // ---------- ritualerna (steg 8.5.6, 8.5.13, 8.5.14) ----------
-export interface RitualDef { namn: string; tim: number; humor: number; tro: number; huvud?: number; vem(s: State, r: Ritual): Person[]; plats(s: State, r: Ritual): { x: number; y: number }; kan?(s: State, r: Ritual): boolean } // kan: hålls bara när det som går åt finns
+export interface RitualDef { namn: string; tim: number; humor: number; tro: number; huvud?: number; mat?(r: Ritual): boolean; /* ritualen har en måltid: festmåltiden ur kokgropen lagas inför den (steg 10.7.28) */ vem(s: State, r: Ritual): Person[]; plats(s: State, r: Ritual): { x: number; y: number }; kan?(s: State, r: Ritual): boolean } // kan: hålls bara när det som går åt finns
 export interface Ritual { k: RitualId; start: number; slut: number; x: number; y: number; tro?: number; namn?: string; om?: number[]; gick?: number; form?: HogtidForm; tyst?: true; fran?: number; kropp?: number } // fran = ritualen börjar tidigast då (vakan), kropp = den döda vakan sitter hos
 const vuxna = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.smabarn);
 // p har en annan tro än tro, och den är sluten (Öppen – Sluten)
@@ -235,9 +235,9 @@ const slutenAnnan = (s: State, p: Person, tro?: number) => { const t = p.tro !==
 const vidElden = (s: State) => { const f = eldPlats(s), q = freeNear(s, f.x + 0.5, f.y + 2); return q; };
 export const RITUALER = {
   begravning: { namn: 'Begravning', tim: 1, humor: 0.05, tro: 2, vem: (s, r) => living(s).filter(p => (!r.tyst && p.tro === r.tro) || r.om?.some(id => { const d = byId(s, id); return d && (isParent(p, d) || isParent(d, p) || p.partner === id || d.partner === p.id); })), /* den tysta: bara familjen (steg 10.4.5) */ plats: (_s, r) => ({ x: r.x, y: r.y }) },
-  brollop: { namn: 'Bröllop', tim: 2, humor: 0.08, huvud: 0.15, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // välsignat (tron har budet, steg 10.3.3) vid trons heliga plats
+  brollop: { namn: 'Bröllop', tim: 2, humor: 0.08, huvud: 0.15, tro: 1, mat: () => true, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // välsignat (tron har budet, steg 10.3.3) vid trons heliga plats
   // gillet är en fest för hela byn (steg 10.7.19): alla kommer utom de vars egen tro är en annan och sluten; fastan håller bara de troende
-  hogtid: { namn: 'Högtid', tim: 3, humor: 0.1, tro: 3, vem: (s, r) => living(s).filter(p => p.tro === r.tro || r.form !== 'fasta' && !p.gast && !slutenAnnan(s, p, r.tro)), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && (troshusPlats(s, tr) ?? helig(s, tr))) ?? vidElden(s); } },
+  hogtid: { namn: 'Högtid', tim: 3, humor: 0.1, tro: 3, mat: r => r.form !== 'fasta', vem: (s, r) => living(s).filter(p => p.tro === r.tro || r.form !== 'fasta' && !p.gast && !slutenAnnan(s, p, r.tro)), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && (troshusPlats(s, tr) ?? helig(s, tr))) ?? vidElden(s); } },
   dop: { namn: 'Dop', tim: 1, humor: 0.05, huvud: 0.1, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // steg 10.3.4: huvud = föräldrarna
   vuxen: { namn: 'Vuxenblivande', tim: 1, humor: 0.05, huvud: 0.15, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // huvud = den unga
   // vakan och gravölet (steg 10.4.12): de nära sitter hos kroppen (eller vid graven, om den redan begravts) kvällen efter dödsfallet,
@@ -249,6 +249,8 @@ export const RITUALER = {
 } satisfies Record<string, RitualDef>;
 export type RitualId = keyof typeof RITUALER;
 const RDEF: Record<RitualId, RitualDef> = RITUALER;
+// en ritual med mat pågår, eller väntar i kön och börjar inom inom ms (steg 10.7.28): högtidens tid och bröllopets är kända i förväg
+festKrok.vantar = (s, inom = Infinity) => (!!s.ritual && !!RDEF[s.ritual.k].mat?.(s.ritual)) || (s.ritualKo ?? []).some(r => !!RDEF[r.k].mat?.(r) && (r.fran ?? s.now) - s.now <= inom);
 // en rad i arbetsordningen (Tillfälle): den som ska vara med går dit medan ritualen pågår
 export function ritualVal(s: State, p: Person) {
   const r = s.ritual;
@@ -294,6 +296,7 @@ export function ritualTimme(s: State) {
 }
 // bröllopets fest (steg 8.5.13): en hel sak mat per två i byn ur förrådet, av det byn har mest av, och alla blir mättare
 function festMat(s: State) {
+  if (festKrok.servera(s, living(s)).size) return; // festmåltiden ur kokgropen (steg 10.7.28)
   const folk = living(s), n = Math.ceil(folk.length / 2), k = FOOD.filter(q => amountOf(s, q) >= n).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0];
   if (!k) return;
   addTo(s, k, -n); count(s, 'festmat');
@@ -372,8 +375,10 @@ export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
     const d = tamdjurOf(s).find(q => q.art === heligtDjurAv(b.v).art);
     if (d) { d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d); count(s, 'heligtOffer'); for (const p of med) if (p.tro === tr.id) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KULT.offerTro); }
   }
+  const grop = r.form === 'fasta' ? new Set<number>() : festKrok.servera(s, med.filter(p => !(p.tro === tr.id && budIn(tr, 'matKrav') && foljer(p, 'matKrav')))); // festmåltiden ur kokgropen (steg 10.7.28); den som följer budet om högtidens mat äter den
   for (const p of med) {
     if (r.form === 'fasta') { if (p.tro === tr.id) p.fasta = s.now + DAY; }
+    else if (grop.has(p.id)) { count(s, 'gille_mat'); if (s.fest?.tro === tr.id) s.fest.at++; }
     else { // gillet: en hel mat, ur kyrkans egendom först och annars ur den egna maten; den som inget har äter inte. Med budet
       // Högtidens mat tas budets ingrediens först, och ingen äter det tron förbjuder hen (steg 10.3.16)
       const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = ord.find(q => kyrkansAv(s, tr, q) >= 1);
@@ -422,3 +427,4 @@ export function kultTimme(s: State) {
   if (s.fest && Math.floor(s.now / DAY) > s.fest.dag) festSlut(s); // festdagen är slut
   ritualTimme(s);
 }
+import { festKrok } from './ratter';

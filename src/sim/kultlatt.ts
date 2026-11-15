@@ -18,7 +18,7 @@ export const arPrast = (s: State, p: Person) => !!s.tron?.some(t => t.prast === 
 // morgonen till midnatt; x, y är festplatsen. at = så många som åt vid gillet, fram = de som uppträdde och vann = hur många matcher var och en vann
 // gillet börjar klockan tim, och hela festdagen är lusten att samla till en match och att uppträda lust gånger större. Den som
 // hör musik eller sång den dagen dansar, och glädjen blir dans gånger större
-export const FEST = balans('fest', { tim: 16, lust: 3, dans: 1.3 });
+export const FEST = balans('fest', { tim: 16, lust: 3, dans: 1.3, brollopFore: 2 }); // brollopFore: bröllopet utlyses så många timmar innan det börjar (en månad i spelet), så att festmåltiden hinner lagas (steg 10.7.28)
 export interface Fest { tro: number; namn: string; dag: number; x: number; y: number; at: number; fram: string[]; vann: Record<string, number> }
 export const festNu = (s: State) => !!s.fest && Math.floor(s.now / DAY) === s.fest.dag;
 export function festFram(s: State, namn: string) { if (festNu(s) && !s.fest!.fram.includes(namn)) s.fest!.fram.push(namn); }

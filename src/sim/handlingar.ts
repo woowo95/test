@@ -254,6 +254,7 @@ const DEF = {
   staket: { namn: 'Sätter staket runt fältet', slag: 'odla', verb: 'sätter staket', tungt: true }, // odling.ts (steg 9.7.10)
   sopor: { namn: 'Bär resterna till sophögen', slag: 'hantverk', verb: 'bär bort resterna' }, // rester.ts (steg 9.7.5)
   tomma_latrin: { namn: 'Tömmer latrinen i komposten', slag: 'hantverk', verb: 'tömmer latrinen', tungt: true }, // rester.ts (steg 9.7.6)
+  gropa: { namn: 'Lagar festmåltid', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, verb: 'lagar festmåltid', plats: 'station' }, // laddar kokgropen inför en högtid eller ett bröllop (matlagning.ts, steg 10.7.28)
   koka_mat: { namn: 'Lagar mat i krukan', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, stilla: true, verb: 'lagar mat', plats: 'elden' }, // en rätt i lerkrukan, som sedan står på elden (matlagning.ts, steg 9.6.3)
   grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, verb: 'grillar', plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)
   torka: { namn: 'Hänger upp mat på torkställningen', slag: 'hantverk', hantverk: true, stilla: true, verb: 'hänger upp', plats: 'station' }, // och tar ner det som torkat (matlagning.ts, steg 2.8.2)

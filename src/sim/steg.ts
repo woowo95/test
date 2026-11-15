@@ -276,7 +276,7 @@ for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => {
   bearbeta(s, p, a, dtSec / HOUR_S);
 };
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
-KLAR.koka_mat = (s, p) => kokaKlar(s, p);
+KLAR.koka_mat = (s, p) => kokaKlar(s, p); KLAR.gropa = (s, p, t) => gropKlar(s, p, t.ref); // kokgropen (steg 10.7.28)
 KLAR.sopor = (s, p) => soporKlar(s, p);
 KLAR.mata = (s, p, t) => mataKlar(s, p, t.ref); // de tama djuren (tamdjur.ts, steg 9.8.1)
 KLAR.hage = (s, p, t) => hageKlar(s, p, t.ref); // hagen (steg 9.8.4), eller att märka ut den (ref −1, steg 10.2.36)
@@ -1583,7 +1583,7 @@ function compact(s: State) {
   const ids = new Set(s.people.filter(p => !borta(p)).map(p => p.id));
   for (const k in s.rels) { const m = /^(-?\d+)-(-?\d+)$/.exec(k), a = Number(m?.[1]), b = Number(m?.[2]); /* gästernas id är negativa */ if (!ids.has(a) && !ids.has(b)) delete s.rels[k]; }
 }
-import { bakaKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
+import { bakaKlar, gropKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
 import { stepStationsEld } from './stationseld';
 import { vatskorTimme } from './vatskor';
 import { brannKlar, bryggKlar, maltaKlar, stepBrygg } from './brygg';

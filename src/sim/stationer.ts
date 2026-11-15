@@ -288,6 +288,11 @@ export const STATIONER = {
     bygger: 'Hugger ur ett bryggkar av virke med yxan.',
     forsta: '{namn} högg ur byns första bryggkar. Där jäser bären till vin.',
   },
+  kokgrop: { // steg 10.7.28 (matlagning.ts): en grop med heta stenar ute, där festmåltiden bakas inför en högtid eller ett bröllop
+    namn: 'Kokgrop', ikon: 'kokgrop', w: 1, h: 1, tek: ['kokgrop'], av: RECEPT.kokgrop.av, min: RECEPT.kokgrop.min, gor: ['gropa'], bara: ['gropa'],
+    bygger: 'Gräver en kokgrop och lägger den full med sten.',
+    forsta: '{namn} grävde byns första kokgrop. Där bakas festmåltiden bland heta stenar.',
+  },
   rokeri: { // steg 9.6.8 (matlagning.ts): som torkställningen, men på ett dygn och i alla väder
     namn: 'Rökeri', ikon: 'rokeri', w: 2, h: 2, tek: ['rokeri'], av: RECEPT.rokeri.av, min: RECEPT.rokeri.min, gor: ['roka'], bara: ['roka'],
     bygger: 'Bygger ett rökeri av sten, grenar och lera.',
@@ -367,7 +372,7 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
+export interface Station { grop?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; /* festmåltiden i kokgropen (steg 10.7.28) */ tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 // finns det en möbel bara för slaget k (bokhyllan för blad och böcker, steg 10.6.16)?

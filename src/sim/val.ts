@@ -763,6 +763,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'tomma_latrin', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const l = latrinAttTomma(s); if (!l || !enTill(s, 'tomma_latrin', p)) return false; projektVal(v, { act: 'tomma_latrin', text: 'Tömmer latrinen i komposten, så att ingen ny grop behöver grävas.', min: REST.tomMin, ref: l.id, spot: { x: l.x + 0.5, y: l.y + 0.5 } }, 'Latrinen är nästan full'); return true; } }, // steg 9.7.6: när byn har en kompost
   { id: 'baka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (!(a >= ALDER.grillar && kanBaka(s, p))) return false; const t = SIM_bakugn(s)!; projektVal(v, { act: 'baka', text: 'Gör en deg av mjöl och vatten och sätter in den i bakugnen.', min: BAK.min, spot: vidStation(t), ref: t.id }, 'Byn behöver bröd'); return true; } }, // steg 9.6.23
   { id: 'steka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanSteka(s, p) && radda(s, p, lagrat(s, k => !!SAKER[k]?.ra)) && (projektVal(v, { act: 'steka', text: 'Steker kött eller fisk i talg på stekhällen.', min: STEK.min }, 'Det finns mat att steka'), true) }, // steg 9.6.21
+  { id: 'gropa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (!(a >= ALDER.grillar && kanGropa(s, p))) return false; const t = tomGrop(s)!; projektVal(v, { act: 'gropa', text: 'Lägger en festmåltid i kokgropen bland heta stenar.', min: GROP.prepMin, spot: vidStation(t), ref: t.id }, 'En fest väntar'); return true; } }, // steg 10.7.28
   { id: 'koka_mat', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanKoka(s, p) && radda(s, p, lagrat(s, k => !!INGREDIENSER[k] && SAKER[k]?.haller !== undefined)) && (projektVal(v, { act: 'koka_mat', text: 'Lagar en rätt i lerkrukan över elden.', min: KOK.prepMin }, 'Det finns mat att laga'), true) }, // steg 9.6.3
   { id: 'grilla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanGrilla(s, p) && radda(s, p, lagrat(s, k => RATTER.some(r => r.ra === k))) && (grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'), true) },
   // 6 Försörjning (steg 6.2.18): kolet i en utbrunnen lägereld (den första först, steg 4.5.6.8), barnen leker eller hjälper till,
@@ -1401,7 +1402,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   else if (r < VAL.nattSamtal) { set(v, 'samtal', 'Mörkt, umgås vid elden'); v.dur = (VAL.nattPrat + rnd(s, 'val', p) * VAL.nattPratSpann) * MIN; } // en stund, sedan går man en bit till nästa samtal
   else set(v, 'vila', 'Mörkt, vilar vid elden');
 }
-import { BAK, KOK, ROKAS, STEK, bakugnen as SIM_bakugn, kanBaka, kanKoka, kanSteka } from './matlagning';
+import { BAK, GROP, KOK, ROKAS, STEK, bakugnen as SIM_bakugn, kanBaka, kanGropa, kanKoka, kanSteka, tomGrop } from './matlagning';
 import { INGREDIENSER } from './ratter';
 import { BRYGD, BRYGG, bryggVal } from './brygg';
 import { REST, komposten, latrinAttTomma, resterIByn, sophog } from './rester';
