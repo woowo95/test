@@ -170,6 +170,8 @@ const DEF = {
   koka_tjara: { namn: 'Kokar tjära', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
   koka_lim: { namn: 'Kokar benlim', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
   koka_tval: { namn: 'Kokar tvål', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
+  gora_pergament: { namn: 'Gör pergament', slag: 'hantverk', hantverk: true, verb: 'skrapar', plats: 'station' }, // vid garvningsställningen (steg 10.6.4)
+  riva_black: { namn: 'Gör bläck', slag: 'hantverk', hantverk: true, verb: 'gnider', plats: 'elden' }, // sot och vatten i en liten lerkruka
   garva: { namn: 'Garvar ett skinn', slag: 'hantverk', hantverk: true, verb: 'garvar', plats: 'station' }, // vid garvningsställningen (steg 7.7.6)
   spinna: { namn: 'Spinner lintråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // med sländan, var som helst (steg 7.7.8)
   vava: { namn: 'Väver lintyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' }, // vid vävstolen (steg 7.7.9)

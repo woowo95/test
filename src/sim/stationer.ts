@@ -167,7 +167,7 @@ export const STATIONER = {
     bygger: 'Bygger en snickarbänk av virke och plankor.', forsta: '{namn} byggde byns första snickarbänk. Där görs träsakerna fortare och bättre.',
   },
   garvning: {
-    namn: 'Garvningsställning', ikon: 'garvning', w: 2, h: 2, tek: ['garvning'], av: RECEPT.garvning.av, min: RECEPT.garvning.min, gor: ['garva'], bara: ['garva'],
+    namn: 'Garvningsställning', ikon: 'garvning', w: 2, h: 2, tek: ['garvning'], av: RECEPT.garvning.av, min: RECEPT.garvning.min, gor: ['garva', 'gora_pergament'], bara: ['garva', 'gora_pergament'],
     bygger: 'Sätter upp en garvningsställning.', forsta: '{namn} satte upp byns första garvningsställning. Där blir skinn till läder.',
   },
   vavstol: {

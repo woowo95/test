@@ -70,6 +70,7 @@ const DEF = {
   benlim: { var: 'sak', av: { ben: 2 }, min: 5, slag: 'stor', tek: 'ortkok' },
   tval: { var: 'sak', av: { kol: 1, talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' },
   lader: { var: 'sak', av: { skinn: 1, talg: 1 }, min: 5, slag: 'stor', tek: 'garvning' },
+  pergament: { var: 'sak', av: { skinn: 1 }, min: 5, slag: 'stor', tek: 'pergament' }, // steg 10.6.4: ett skinn blir 4 blad vid garvningsställningen
   lin: { var: 'sak', av: { ratlin: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
   trad: { var: 'sak', av: { lin: 2 }, min: 3, slag: 'liten', tek: 'slanda' },
   lintyg: { var: 'sak', av: { trad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' },

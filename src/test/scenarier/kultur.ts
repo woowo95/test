@@ -1092,6 +1092,33 @@ SCENARIER.heligsten = {
     ];
   },
 };
+SCENARIER.pergament = {
+  text: 'Steg 10.6.4: pergament och bläck. Tekniken kräver garvning och stenhuggning och kommer man på vid garvningsställningen; där, och bara där, blir 1 skinn 4 blad pergament (5 min). Bläck är sot av 1 kol gnidet med vatten (2 min) i en liten lerkruka, som rymmer bläck till 2 blad. Ett tomt blad är lätt, slits dubbelt så fort som skinn och brinner',
+  kor: () => {
+    const { KLAR_FOR, TILLVERKA, TEK, SAKER, STATIONER, VATSKOR, setAmount, amountOf, addTool, vatskaAv } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const tek = TEK.pergament!;
+    p.tek = { ...(p.tek ?? {}), pergament: 1, garvning: 1, stenhuggarplats: 1 };
+    setAmount(s, 'skinn', 3);
+    const uppgift = (act: string) => ({ act, phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' }) as any;
+    KLAR_FOR[TILLVERKA.gora_pergament!.act]!(s, p, uppgift('gora_pergament'), 0);
+    const blad = amountOf(s, 'pergament'), skinn = amountOf(s, 'skinn');
+    const st = STATIONER.garvning!;
+    setAmount(s, 'kol', 2);
+    addTool(s, 'vattensack', p).inne = { v: 'vatten', n: 1 };
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined;
+    KLAR_FOR[TILLVERKA.riva_black!.act]!(s, p, uppgift('riva_black'), 0);
+    const black = vatskaAv(s, 'black'), kol = amountOf(s, 'kol');
+    const kvot = SAKER.pergament!.slits! / SAKER.skinn!.slits!;
+    return [
+      [`tekniken kräver garvning och stenhuggning och kommer man på vid garvningsställningen (${tek.krav.join(', ')}; ${tek.forsok?.vid.join(', ')})`, tek.krav.includes('garvning') && tek.krav.includes('stenhuggarplats') && !!tek.forsok?.vid.includes('garvning')],
+      [`vid garvningsställningen, och bara där, blir 1 skinn 4 blad (${blad} blad, ${3 - skinn} skinn åtgick, ${TILLVERKA.gora_pergament!.min} min)`, blad === 4 && skinn === 2 && st.bara!.includes('gora_pergament') && Object.entries(STATIONER).every(([id, d]) => id === 'garvning' || !(d.gor as string[] | undefined)?.includes('gora_pergament'))],
+      [`1 kol och vatten ger bläck till 2 blad i den lilla krukan (${black} bläck i ${kr.inne?.v ?? 'ingen'}, ${2 - kol} kol åtgick, ${TILLVERKA.riva_black!.min} min)`, black === 2 && kol === 1 && kr.inne?.v === 'black' && VATSKOR.black.i.includes('lerkruka_liten')],
+      [`ett blad är lätt (${SAKER.pergament!.vikt}), slits ute dubbelt så fort som skinn (${kvot.toFixed(2)} gånger) och brinner`, (SAKER.pergament!.vikt ?? 1) < 0.2 && Math.abs(kvot - 2) < 0.01 && !SAKER.pergament!.brinnerInte],
+    ];
+  },
+};
+
 SCENARIER.heligverkan = {
   text: 'Steg 10.6.3: de heliga skrifternas verkan. Samma tro med och utan helig sten: chansen att sprida tron i ett samtal, hur mycket en profets syn flyttar skalorna, rösterna för att ta bort ett bud och chansen till en ny tro, och verkan försvinner när stenen är borta',
   kor: () => {
