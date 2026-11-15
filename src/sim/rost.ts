@@ -6,7 +6,9 @@
 import { DAY, Person, State } from './typer';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, stat, think } from './folk';
+import { kronika } from './historik';
+import { ljugOm } from './rykten';
 import { SED_LIST, drar, influence } from './seder';
 import type { Sed } from './seder';
 import { PABUD, Pabud, ledareOf, ledarVikt, legitimitet, slutarStyre, styreAv, utvisa } from './styre';
@@ -52,6 +54,7 @@ export const MISS = balans('missnoje', {
   uppror: 0.5, // är fraktionen minst den här delen av de vuxna blir det ett uppror vid Fejd
   fejd: 0.2, // vid mer än så här Fejd blir det strid i stället för en fredlig avsättning
   hard: 1.4, // så hård ska ledaren vara för att straffa fraktionens ledare när den avslöjas
+  fulspel: 0.3, // fulspel (steg 10.8.7): chansen i ett samtal med någon utanför fraktionen, gånger (10 − empatin) / 10
 });
 
 // ---------- vikten (steg 8.3.2) ----------
@@ -214,7 +217,7 @@ export function oppnaSed(s: State, k: Sed) {
   s.seder.v[k] = clamp(v, -1, 1);
   log(s, `Byn börjar fundera på ${SED_NAMN[k] ?? k}.`, 'world');
 }
-const SED_NAMN: Partial<Record<Sed, string>> = { fortjanst: 'om det är dugligheten eller släkten som ska räknas', fejd: 'om konflikter ska lösas med ord eller med styrka' };
+const SED_NAMN: Partial<Record<Sed, string>> = { fortjanst: 'om det är dugligheten eller släkten som ska räknas', fejd: 'om konflikter ska lösas med ord eller med styrka', prat: 'om det är rätt att tala om andra' };
 
 // ---------- missnöjet (steg 8.3.10) ----------
 export function missnojeTimme(s: State) {
@@ -258,10 +261,29 @@ function fraktionTimme(s: State) {
 export function fraktionSamtal(s: State, a: Person, b: Person) {
   const f = s.styre?.frak;
   if (!f || !f.med.includes(a.id) || f.med.includes(b.id) || !vuxenRost(s, b) || b.id === s.styre?.ledare) return;
+  fulspel(s, a, b);
   if ((s.rels[relKey(a.id, b.id)]?.op ?? 0) < MISS.litar || rnd(s, 'samtal', a) >= MISS.sprid) return;
   const l = ledareOf(s);
   if ((b.missnoje ?? 0) >= MISS.ta) { f.med.push(b.id); count(s, 'fraktion_med'); return; }
   if (l && (s.rels[relKey(b.id, l.id)]?.op ?? 0) >= MISS.lojal && rnd(s, 'samtal', b) < MISS.avslojar) avslojad(s, l, f, b);
+}
+// Fulspel (steg 10.8.7): en medlem i fraktionen som pratar med någon utanför den hittar på något om ledaren med chansen
+// MISS.fulspel × (10 − empatin) / 10, så att den med empati 10 eller mer inte gör det. Lögnen är ett påhittat rykte som
+// skitsnacket (rykten.ts): den som lyssnar tycker sämre om ledaren, och stödet räknas ur relationerna
+function fulspel(s: State, a: Person, b: Person) {
+  const l = ledareOf(s), emp = stat(a, 'empati', s.now);
+  if (!l || emp >= 10 || rnd(s, 'samtal', a) >= MISS.fulspel * (10 - emp) / 10) return;
+  count(s, 'fulspel');
+  ljugOm(s, a, b, l);
+}
+// när lögnen når den det sägs ha hänt blir berättaren ertappad som lögnare (rykten.ts). Är berättaren med i fraktionen och den
+// som ertappar lojal mot ledaren avslöjas fraktionen, med en rad i krönikan och en notis
+export function lognOmLedaren(s: State, ertappare: Person, berattare: Person, om: number) {
+  const f = s.styre?.frak, l = ledareOf(s);
+  if (!f || !l || l.id !== om || !f.med.includes(berattare.id) || ertappare === l || (s.rels[relKey(ertappare.id, l.id)]?.op ?? 0) < MISS.lojal) return;
+  const t = `${berattare.name} spred lögner om ${l.name} och blev avslöjad.`;
+  kronika(s, t, 'ledare'); notis(s, 'ledare', t, [berattare.id, l.id]); count(s, 'fulspel_avslojat');
+  avslojad(s, l, f, ertappare);
 }
 function avslojad(s: State, l: Person, f: Fraktion, ang: Person) {
   const q = byId(s, f.led), st = styreAv(s);

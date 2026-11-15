@@ -4,8 +4,8 @@ import { han } from './ord';
 import { mossaKrok } from './halsa';
 import { flintaKrok } from './forradsmal';
 import { flintaTillVerktyg } from './redskap';
-import { vatskaKrok, villTe } from './vatskor';
-import { RUS, kvallsDryck } from './rus';
+import { VATSKOR, vatskaKrok, villTe } from './vatskor';
+import { kvallsChans, kvallsDryck } from './rus';
 import { forbrukat } from './forradsmal';
 import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
@@ -763,6 +763,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'tomma_latrin', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const l = latrinAttTomma(s); if (!l || !enTill(s, 'tomma_latrin', p)) return false; projektVal(v, { act: 'tomma_latrin', text: 'Tömmer latrinen i komposten, så att ingen ny grop behöver grävas.', min: REST.tomMin, ref: l.id, spot: { x: l.x + 0.5, y: l.y + 0.5 } }, 'Latrinen är nästan full'); return true; } }, // steg 9.7.6: när byn har en kompost
   { id: 'baka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (!(a >= ALDER.grillar && kanBaka(s, p))) return false; const t = SIM_bakugn(s)!; projektVal(v, { act: 'baka', text: 'Gör en deg av mjöl och vatten och sätter in den i bakugnen.', min: BAK.min, spot: vidStation(t), ref: t.id }, 'Byn behöver bröd'); return true; } }, // steg 9.6.23
   { id: 'steka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanSteka(s, p) && radda(s, p, lagrat(s, k => !!SAKER[k]?.ra)) && (projektVal(v, { act: 'steka', text: 'Steker kött eller fisk i talg på stekhällen.', min: STEK.min }, 'Det finns mat att steka'), true) }, // steg 9.6.21
+  { id: 'gropa', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => { if (!(a >= ALDER.grillar && kanGropa(s, p))) return false; const t = tomGrop(s)!; projektVal(v, { act: 'gropa', text: 'Lägger en festmåltid i kokgropen bland heta stenar.', min: GROP.prepMin, spot: vidStation(t), ref: t.id }, 'En fest väntar'); return true; } }, // steg 10.7.28
   { id: 'koka_mat', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanKoka(s, p) && radda(s, p, lagrat(s, k => !!INGREDIENSER[k] && SAKER[k]?.haller !== undefined)) && (projektVal(v, { act: 'koka_mat', text: 'Lagar en rätt i lerkrukan över elden.', min: KOK.prepMin }, 'Det finns mat att laga'), true) }, // steg 9.6.3
   { id: 'grilla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanGrilla(s, p) && radda(s, p, lagrat(s, k => RATTER.some(r => r.ra === k))) && (grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'), true) },
   // 6 Försörjning (steg 6.2.18): kolet i en utbrunnen lägereld (den första först, steg 4.5.6.8), barnen leker eller hjälper till,
@@ -831,7 +832,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'projekt', niva: 8, nar: 'dag', kort: true, prova: c => { const f = faror(c); return dag(c).works && c.a >= ALDER.vuxen && (!(f.kyla || f.svalt) || rnd(c.s, 'val', c.p) < VAL.projFara) && projektArbete(c); } },
   // 8 Förbättra (steg 10.2.1): bryggningen, ullen, hamlingen, hagen, staketen och fågelskrämman gör byn bättre men räddar
   // inget, så de prövas när Försörjningen har det den behöver, som projekten
-  { id: 'brygga', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v, a } = c; if (!dag(c).works || faror(c).kyla || faror(c).svalt) return false; if (a < ALDER.vuxen) return false; const b = bryggVal(s, p); if (!b) return false; projektVal(v, { act: b.act, text: b.act === 'tappa' ? 'Silar satsen och häller upp den i lerkrukor.' : b.act === 'malta' ? 'Blöter korn och hänger upp det på torkställningen till malt.' : b.v === 'ol' ? 'Lägger malt, vatten och rölleka i bryggkaret.' : 'Krossar bär med vatten i bryggkaret.', min: b.act === 'tappa' ? BRYGG.tappMin : b.act === 'malta' ? BRYGG.maltMin : BRYGG.prepMin, spot: vidStation(b.kar), ref: b.kar.id }, b.act === 'tappa' ? 'Satsen i bryggkaret har jäst klart' : 'Byn vill ha mer att dricka'); return true; } }, // steg 9.6.12–9.6.13
+  { id: 'brygga', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v, a } = c; if (!dag(c).works || faror(c).kyla || faror(c).svalt) return false; if (a < ALDER.vuxen) return false; const b = bryggVal(s, p); if (!b) return false; projektVal(v, { act: b.act, text: b.act === 'tappa' ? (b.v === 'sprit' ? 'Häller upp spriten ur brännpannan i en liten lerkruka.' : 'Silar satsen och häller upp den i lerkrukor.') : b.act === 'branna' ? 'Häller vin eller öl i brännpannan och eldar under den.' : b.act === 'malta' ? 'Blöter korn och hänger upp det på torkställningen till malt.' : BRYGD[b.v].gor, min: b.act === 'tappa' ? BRYGG.tappMin : b.act === 'branna' ? BRYGG.brannMin : b.act === 'malta' ? BRYGG.maltMin : BRYGG.prepMin, spot: vidStation(b.kar), ref: b.kar.id }, b.act === 'tappa' ? 'Satsen i bryggkaret har jäst klart' : 'Byn vill ha mer att dricka'); return true; } }, // steg 9.6.12–9.6.13
   { id: 'tatuera', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || faror(c).kyla || faror(c).svalt) return false; const d = tatVal(s, p); if (!d) return false; projektVal(v, { act: 'tatuera', text: `Gör ett märke i huden på ${d.q.name} med bennålen och kol.`, min: TATU.min, tool: 'nal', spot: { x: d.q.x, y: d.q.y }, ref: d.q.id }, `${d.q.name} vill minnas att hen ${TATUERINGAR[d.m].text}`); return true; } }, // steg 10.7.5
   { id: 'klippa', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || faror(c).kyla || faror(c).svalt) return false; const d = klippVal(s, p); if (!d) return false; projektVal(v, { act: 'klippa', text: 'Klipper ullen av fåret med kniven.', min: BOSKAP.klippMin, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, 'Fårets ull har vuxit ut'); return true; } }, // steg 9.8.5
   { id: 'hamla', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || faror(c).kyla || faror(c).svalt) return false; const i = hamlaVal(s, p); if (i === undefined) return false; const ny = !hamlatPa(s, i); projektVal(v, { act: 'hamla', text: ny ? 'Kapar grenarna på en björk, så att den skjuter nya skott med löv åt djuren.' : 'Skär skotten med lövet på den hamlade björken till lövkärvar.', min: VINTER.hamlaMin, spot: { x: i % W + 0.5, y: Math.floor(i / W) + 1.2 }, ref: i }, ny ? 'Höet räcker inte åt djuren' : 'Den hamlade björken har nya skott'); return true; } }, // lövtäkten (steg 9.8.16)
@@ -862,8 +863,8 @@ export const ARBETEN: readonly Arbete[] = [
   // 9 Fritid: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden
   { id: 'fritid', niva: 9, nar: 'dag', kort: true, prova: c => { leisure(c.s, c.p, c.v, dag(c).u, c.lazy); return true; } },
   // på natten håller man sig vid elden och berättar, gör handarbete, umgås eller sover
-  // en dryck med alkohol på kvällen (steg 9.6.14 och 10.2.34): ett val på fritiden, med chansen RUS.kvall när byn har vin eller öl
-  { id: 'kvallsdryck', niva: 9, nar: 'natt', prova: ({ s, p, v }) => { const d = kvallsDryck(s, p, hemma(s, p)); if (!d || rnd(s, 'val', p) >= RUS.kvall) return false; v.spot = { x: p.x, y: p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', d === 'vin' ? 'Dricker vin vid elden' : 'Dricker öl vid elden'); } },
+  // en dryck med alkohol på kvällen (steg 9.6.14, 10.2.34 och 10.7.23): ett val på fritiden, med chansen RUS.kvall per timme när byn har en
+  { id: 'kvallsdryck', niva: 9, nar: 'natt', prova: ({ s, p, v }) => { const d = kvallsDryck(s, p, hemma(s, p)); if (!d || !kvallsChans(s, p)) return false; v.spot = { x: p.x, y: p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', `Dricker ${VATSKOR[d].namn.toLowerCase()} vid elden`); } },
   { id: 'kvall', niva: 9, nar: 'natt', prova: ({ s, p, v, a }) => { night(s, p, v, a); return true; } },
 ];
 
@@ -1401,9 +1402,9 @@ function night(s: State, p: Person, v: Val, a: number) {
   else if (r < VAL.nattSamtal) { set(v, 'samtal', 'Mörkt, umgås vid elden'); v.dur = (VAL.nattPrat + rnd(s, 'val', p) * VAL.nattPratSpann) * MIN; } // en stund, sedan går man en bit till nästa samtal
   else set(v, 'vila', 'Mörkt, vilar vid elden');
 }
-import { BAK, KOK, ROKAS, STEK, bakugnen as SIM_bakugn, kanBaka, kanKoka, kanSteka } from './matlagning';
+import { BAK, GROP, KOK, ROKAS, STEK, bakugnen as SIM_bakugn, kanBaka, kanGropa, kanKoka, kanSteka, tomGrop } from './matlagning';
 import { INGREDIENSER } from './ratter';
-import { BRYGG, bryggVal } from './brygg';
+import { BRYGD, BRYGG, bryggVal } from './brygg';
 import { REST, komposten, latrinAttTomma, resterIByn, sophog } from './rester';
 import { SKADEDJUR, STAKET, skrammaVal, staketVal } from './odling';
 import { TAM, mataVal, tamArt } from './tamdjur';

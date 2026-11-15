@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { tidKvar, HALSA, ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart, festNu } from '../sim';
+import { tidKvar, HALSA, ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart, festNu, SPORT_AV, type SportDef } from '../sim';
 // lågorna på den som brinner (steg 6.4.16, Björns val f6_brinner i steg 8.10.1): en låga med foten i (x, y) och längden l i
 // bilden f (0–3): ljus kärna, gul mitt och röd spets, en tunga vid sidan som byter sida, och ibland en lös flamma överst
 const BRAND_TAKT = 140, HOJD = [0, 2, 1, -1], SVAJ = [0, 1, 0, -1];
@@ -88,19 +88,22 @@ const dragGlid = (m: Match, t: number) => m.spelat ? DRAG.glid * Math.sin(t / SE
 // var spelaren syns (steg 4.5.6.11), med de rörelser som redan finns: i dragkampen lutar de och glider med repet, brottarna
 // i mitten trycker mot varandra och ringen runt om hejar, i kast och snöbollskriget står de på sina platser, och i bollspelet
 // står den som slår still medan de andra springer på planen (vandra i ACTS, undefined här). Ingen hamnar på marken
+// SPORTBILD (steg 10.7.21): rörelserna och det som ritas runt matchen är rader, och sporten säger i SPORTER (bild) vilka den har
+type Fig = (m: Match, p: Person, x: number, y: number, t: number) => { x: number; y: number } | undefined;
+const FIGUR: Record<SportDef['bild']['figur'], Fig> = {
+  drag: (m, _p, x, y, t) => ({ x: x + dragGlid(m, t) + dragLag(m, x) * DRAG.luta, y }), // lutar och glider med repet
+  ring: (m, p, x, y, t) => { // två i mitten trycker mot varandra, ringen runt om hejar
+    const k = t / SEC;
+    if (Math.abs(x - m.x) < 0.7 && Math.abs(y - m.y) < 0.7) { const tryck = Math.sin(k * 0.9 + m.start % 5) * 0.15; return { x: m.x + Math.sign(x - m.x || 1) * (0.22 + Math.abs(Math.sin(k * 2.1)) * 0.08) + tryck, y: y + Math.sin(k * 1.7 + p.id) * 0.06 }; }
+    return { x, y: y + Math.abs(Math.sin(k * 3 + p.id)) * -0.06 };
+  },
+  still: (_m, _p, x, y) => ({ x, y }), // står på sin plats
+  sno: (m, p, x, y, t) => { const c = snoCykel(p.id, m, t); return { x: x + c.dx, y: y + c.dy }; },
+  slag: (m, _p, x, y) => x < m.x - 1.5 ? { x, y } : undefined, // den som slår står still, de andra springer på planen
+};
 function sportPlats(m: Match, p: Person, x: number, y: number, t: number): { x: number; y: number } | undefined {
-  const k = t / SEC;
-  switch (m.k) {
-    case 'dragkamp': return { x: x + dragGlid(m, t) + dragLag(m, x) * DRAG.luta, y };
-    case 'brottning': {
-      if (Math.abs(x - m.x) < 0.7 && Math.abs(y - m.y) < 0.7) { const tryck = Math.sin(k * 0.9 + m.start % 5) * 0.15; return { x: m.x + Math.sign(x - m.x || 1) * (0.22 + Math.abs(Math.sin(k * 2.1)) * 0.08) + tryck, y: y + Math.sin(k * 1.7 + p.id) * 0.06 }; }
-      return { x, y: y + Math.abs(Math.sin(k * 3 + p.id)) * -0.06 }; // hejar
-    }
-    case 'kast': return { x, y };
-    case 'snoboll': { const c = snoCykel(p.id, m, t); return { x: x + c.dx, y: y + c.dy }; }
-    case 'bollspel': return x < m.x - 1.5 ? { x, y } : undefined;
-  }
-  return undefined;
+  const d = SPORT_AV[m.k];
+  return d ? FIGUR[d.bild.figur](m, p, x, y, t) : undefined;
 }
 // snöbollskriget (steg 9.2.129), bara i bilden: var och en i sin egen takt (P sekunder): böjer sig ner och gör en boll, kastar,
 // och flyttar sig sedan och duckar tills nästa boll. f = var i cykeln, n = vilken boll i ordningen, dx/dy = hur figuren flyttas
@@ -132,19 +135,27 @@ function snoStank(x: number, y: number, g: number) {
 function ritaSport(t: number) {
   const m = s.sport;
   if (!m || s.now >= m.slut) return;
-  if (m.k === 'dragkamp') { ritaDragkamp(m, t); return; }
+  const d = SPORT_AV[m.k], rita = d?.bild.rita;
+  if (!rita) return;
+  if (rita === 'rep') { ritaDragkamp(m, t); return; }
   const k = t / SEC, med: { x: number; y: number }[] = [];
   for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) med.push({ x: q.x * TS, y: q.y * TS }); } } // (platsen i bilden: synlig)
   const mx = m.x * TS, my = m.y * TS;
-  if (m.k === 'kast') {
+  if (rita === 'mal') { // målet, och det som kastas eller skjuts mot det i tur och ordning (bild.skott)
     const mal = kastMal(m), ax = mal.x * TS, ay = mal.y * TS;
     markIcons.add('mal', ax - 4, ay - 6, 8 / iconCanvas('mal').width);
     if (!m.spelat || !med.length) return;
     med.sort((a, b) => a.y - b.y);
-    const P = 2.2, n = Math.floor(k / P), f = k / P - n, v = med[n % med.length], miss = hash(n + m.start % 97) < 0.4;
-    for (const d of [-12, 8]) pt(ax + d, ay + 5, SP.skiffer[2], 2, 1); // stenar som missat ligger i gräset
-    if (f < 0.6) flyg(v.x + 3, v.y - 3, ax + (miss ? (hash(n) - 0.5) * 18 : 0), ay + (miss ? 5 : -2), f / 0.6, SP.skiffer, 3, 10); // i tur och ordning: träff eller miss
-  } else if (m.k === 'snoboll') {
+    const pil = d.bild.skott === 'pil', P = pil ? 1.8 : 2.2, n = Math.floor(k / P), f = k / P - n, v = med[n % med.length], miss = hash(n + m.start % 97) < 0.4;
+    if (pil) { // pilarna som träffat sitter kvar i målet, och de som missat ligger i gräset bakom
+      for (const j of [0, 1, 2]) if (n > j) pt(ax - 2 + j * 2, ay - 4 + (j % 2) * 2, SP.jord[1], 2, 1);
+      pt(ax + 10, ay + 6, SP.jord[2], 3, 1);
+      if (f < 0.35) pilFlyg(v.x + 4, v.y - 5, ax + (miss ? (hash(n) - 0.5) * 22 : 0), ay + (miss ? 7 : -3), f / 0.35);
+    } else {
+      for (const x of [-12, 8]) pt(ax + x, ay + 5, SP.skiffer[2], 2, 1); // stenar som missat ligger i gräset
+      if (f < 0.6) flyg(v.x + 3, v.y - 3, ax + (miss ? (hash(n) - 0.5) * 18 : 0), ay + (miss ? 5 : -2), f / 0.6, SP.skiffer, 3, 10); // i tur och ordning: träff eller miss
+    }
+  } else if (rita === 'sno') {
     // inga vallar (steg 9.2.129): var och en kastar i sin egen takt mot någon i andra laget, så att flera bollar är i luften i olika
     // bågar, och en träff ger ett litet stänk av snö (platshållare i paletten tills ett stänk valts i bildstilen)
     if (!m.spelat) return;
@@ -158,7 +169,7 @@ function ritaSport(t: number) {
       if (ff >= 0 && ff < 1) flyg(a.x + 2, a.y - 5, b.x, b.y - 4, ff, SP.ben, 3, 6 + hash(p.id + c.n * 11) * 12);
       else if (ff >= 1 && ff < 1.5 && hash(p.id * 3 + c.n) < 0.6) snoStank(b.x, b.y - 4, ff - 1); // träff
     }
-  } else if (m.k === 'bollspel') {
+  } else if (rita === 'boll') {
     const slag = med.length ? med.reduce((a, b) => (a.x < b.x ? a : b)) : { x: mx - SPORT.slagAvst * TS, y: my };
     markIcons.add('slagtra', Math.round(slag.x + 1), Math.round(slag.y - 16), 1); // i sina egna 16 punkter som i bildstilen (steg 5.5.1: hel skala)
     const P = 4, n = Math.floor(k / P), f = k / P - n, bx = mx + (hash(n) * 3) * TS, by = my + (hash(n + 3) - 0.5) * 4 * TS;
@@ -166,6 +177,12 @@ function ritaSport(t: number) {
     if (f < 0.5) flyg(slag.x + 3, slag.y - 3, bx, by, f / 0.5, SP.jord, 2, 14); // slaget flyger ut på planen ...
     else markIcons.add('boll_liten', Math.round(bx - 3), Math.round(by - 3), 1); // ... och ligger där tills någon hinner fram
   }
+}
+// en pil i flykten, f = 0–1 av vägen (platshållare i paletten): ett skaft i trä med en mörk spets, i en låg båge
+function pilFlyg(ax: number, ay: number, bx: number, by: number, f: number) {
+  const x = ax + (bx - ax) * f, y = ay + (by - ay) * f - 6 * 4 * f * (1 - f), dx = Math.sign(bx - ax) || 1;
+  for (let i = 0; i < 4; i++) pt(x - dx * i, y + (f < 0.5 ? i * 0.25 : -i * 0.25), SP.jord[i === 3 ? 3 : 1]);
+  pt(x + dx, y, SP.kol);
 }
 function ritaDragkamp(m: Match, t: number) {
   const mx = Math.round(m.x * TS), my = Math.round(m.y * TS);

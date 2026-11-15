@@ -20,7 +20,7 @@ export function framBerattelse(s: State, m: FramMinne): string {
   const ledd = pub.filter(x => x.l0 !== undefined), ld = ledd.reduce((a, x) => a + x.l1! - x.l0!, 0);
   const f = { // gruppen står som den som uppträdde (steg 10.7.11)
     namn: m.grupp?.length ? och([m.namn, ...m.grupp.map(g => g.namn)]) : m.namn, form: m.k, amne: m.amne ?? 'det som hänt', inst: m.inst ? INSTRUMENT[m.inst]?.ord ?? m.inst : '', bud: m.bud ?? '',
-    om: m.om ?? '', ledare: m.ledare ?? '', betalt: m.betalt ?? '', kyrka: m.kyrka ?? '', n: talOrd(m.n), nTal: m.n,
+    om: m.om ?? '', ledare: m.ledare ?? '', betalt: m.betalt ?? '', kyrka: m.kyrka ?? '', bestallt: m.bestallt ?? '', n: talOrd(m.n), nTal: m.n,
     bra: m.q >= FRAMBER.bra, dalig: m.q < FRAMBER.dalig, upp: d > 0, ner: d < 0,
     rykte: och(m.rykte ?? []), tro: och(m.tro ?? []), hanad: och(m.hanad ?? []),
   };

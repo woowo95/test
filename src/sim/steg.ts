@@ -11,7 +11,8 @@ import { lagerIStraket } from './strak';
 import { rumVila } from './rum';
 import { PLAN, planBuild, stepByggplan } from './byggplan';
 import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, sattVid, stepMjardar, valjFisk, vittja } from './fisk';
-import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
+import { TILLVERKA, TILLVERKA_LIST, tillverkAv } from './tillverka';
+import { addDel } from './egendom';
 import { RECEPT } from './recept';
 import { stepBlotVed } from './blotved';
 import { stepUppvaxt, upplev } from './uppvaxt';
@@ -251,7 +252,9 @@ satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
 // det som görs vid en station är klart: materialet tas och saken läggs i förrådet, och är hens som gjorde den (tillverka.ts)
 for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) => {
-  for (const [q, n] of Object.entries(d.av)) { if (getable(s, p, q) < n) return; }
+  const av = tillverkAv(d, q => getable(s, p, q)); // svampen eller kålen (steg 10.7.24)
+  if (!av) return;
+  for (const [q, n] of Object.entries(av)) { if (getable(s, p, q) < n) return; }
   const sack = d.vatten ? fylldSack(s) : undefined;
   if (d.vatten && !sack) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
   if (d.eld && !stationFor(s, d.act) && !s.fire.lit) return; // teet kokas vid en eld som brinner om byn inte har örtköket (steg 9.5.8)
@@ -259,8 +262,10 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   if (ar_vatska(d.ger) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
   if (sack) sack.inne = undefined; // säcken töms men finns kvar (steg 7.6.6)
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
-  for (const [q, n] of Object.entries(d.av)) takeMaterial(s, p, q, n);
-  if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
+  const ag: Record<string, number> = {};
+  for (const [q, n] of Object.entries(av)) addDel(ag, takeMaterial(s, p, q, n), 1);
+  if (kar && d.sjud) { kar.kok = { r: d.ger, n: d.n, kvar: d.sjud * MIN, ag, vatska: 1, q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // buljongen sjuder i krukan på elden (stepKok)
+  else if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
@@ -271,7 +276,7 @@ for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => {
   bearbeta(s, p, a, dtSec / HOUR_S);
 };
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
-KLAR.koka_mat = (s, p) => kokaKlar(s, p);
+KLAR.koka_mat = (s, p) => kokaKlar(s, p); KLAR.gropa = (s, p, t) => gropKlar(s, p, t.ref); // kokgropen (steg 10.7.28)
 KLAR.sopor = (s, p) => soporKlar(s, p);
 KLAR.mata = (s, p, t) => mataKlar(s, p, t.ref); // de tama djuren (tamdjur.ts, steg 9.8.1)
 KLAR.hage = (s, p, t) => hageKlar(s, p, t.ref); // hagen (steg 9.8.4), eller att märka ut den (ref −1, steg 10.2.36)
@@ -288,7 +293,7 @@ KLAR.staket = (s, p, t) => staketKlar(s, p, t.ref);
 KLAR.skramma = (s, p, t) => skrammaKlar(s, p, t.ref); // fågelskrämman (odling.ts, steg 9.7.11) // staketet (odling.ts, steg 9.7.10) // sophögen (rester.ts, steg 9.7.5)
 KLAR.steka = (s, p) => stekaKlar(s, p);
 KLAR.baka = (s, p) => bakaKlar(s, p); // bakugnen (matlagning.ts, steg 9.6.23) // stekhällen (matlagning.ts, steg 9.6.21)
-KLAR.malta = (s, p, t) => maltaKlar(s, p, t.ref); KLAR.brygga = (s, p, t) => bryggKlar(s, p, t.ref); KLAR.tappa = (s, p, t) => bryggKlar(s, p, t.ref); // bryggkaret (brygg.ts, steg 9.6.12) // rätten ställs på elden i lerkrukan (matlagning.ts, steg 9.6.3)
+KLAR.malta = (s, p, t) => maltaKlar(s, p, t.ref); KLAR.brygga = (s, p, t) => bryggKlar(s, p, t.ref); KLAR.tappa = (s, p, t) => bryggKlar(s, p, t.ref); KLAR.branna = (s, p, t) => brannKlar(s, p, t.ref); // bryggkaret (brygg.ts, steg 9.6.12) // rätten ställs på elden i lerkrukan (matlagning.ts, steg 9.6.3)
 MEDAN.torka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S); // torkställningen (matlagning.ts)
 MEDAN.roka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S, 'rokeri'); // rökeriet (matlagning.ts, steg 9.6.8)
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
@@ -1026,6 +1031,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
     { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
+    { const r = vildNara(s, 'honung', tk.tx, tk.ty, HONUNG_AR); if (r) { const g = r.v * dt / HOUR_S * HONUNG; takeFrom(s, 'honung', r.x, r.y, g); bar('honung', g); } } // honungskakorna i vildbinas bon (steg 10.7.25)
     if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
@@ -1086,6 +1092,7 @@ function stepNaken(s: State) {
     else if (saknas.length) think(p, `Har inget på ${och(saknas.map(d => NAKEN_DELAR[d]!))}`, KLADER.nakenDel * saknas.length, s.now, 2 * HOUR);
   }
 }
+const HONUNG = 0.4; // så många honungskakor per timmes samlande intill ett rikt bo (steg 10.7.25)
 const ROLLEKA = 0.6; // så mycket rölleka per timmes samlande på en rik röllekaruta (steg 9.7.15)
 export const RUNDA = balans('runda', {
   sett: 12, // så många rutor minns man att man nyss plockat på ...
@@ -1579,19 +1586,19 @@ function compact(s: State) {
   const ids = new Set(s.people.filter(p => !borta(p)).map(p => p.id));
   for (const k in s.rels) { const m = /^(-?\d+)-(-?\d+)$/.exec(k), a = Number(m?.[1]), b = Number(m?.[2]); /* gästernas id är negativa */ if (!ids.has(a) && !ids.has(b)) delete s.rels[k]; }
 }
-import { bakaKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
+import { bakaKlar, gropKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
 import { stepStationsEld } from './stationseld';
 import { vatskorTimme } from './vatskor';
-import { bryggKlar, maltaKlar, stepBrygg } from './brygg';
+import { brannKlar, bryggKlar, maltaKlar, stepBrygg } from './brygg';
 import { rusSteg } from './rus';
 import { latrinTomKlar, soporKlar, stepKompost, stepSophog } from './rester';
 import { skrammaKlar, staketKlar } from './odling';
 // den rikaste röllekan (eller ängsblomman, steg 10.7.3) på rutan eller bredvid den som samlar (steg 9.7.15): den plockas på
 // vägen. Bara på våren och sommaren, när de växer, så att de andra tidsåldrarna inte frågar kartan i onödan
 const ROLLEKA_GRANNAR = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]] as const;
-function vildNara(s: State, k: 'rolleka' | 'blomma', x: number, y: number) {
-  const ai = ageIndex(s);
-  if (ai !== 1 && ai !== 2) return undefined;
+const VAXTAR = [1, 2], HONUNG_AR = [2, 3]; // vår och sommar; honungen på sommaren och hösten
+function vildNara(s: State, k: 'rolleka' | 'blomma' | 'honung', x: number, y: number, ar = VAXTAR) {
+  if (!ar.includes(ageIndex(s))) return undefined;
   let best: { x: number; y: number; v: number } | undefined;
   for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, k, x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
   return best;

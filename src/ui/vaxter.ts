@@ -1,5 +1,5 @@
 import { richness } from '../sim';
-import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, tandPaRutan, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf } from '../sim';
+import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, tandPaRutan, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
@@ -102,7 +102,7 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
   let h: DjurHall = e?.h ?? 'sida';
   if (Math.hypot(dx, dy) > 0.01) h = Math.abs(dx) >= Math.abs(dy) * 0.8 ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
   hallar.set(id, { x, y, h }); sedd.add(id);
-  const k = art === 'fagel' ? fagelBild(u, h) : djurBild(art, id, h), c = iconCanvas(k); // fågeln i platsens utseende (steg 6.6.3) // foten nära rutans punkt, mitt under djuret
+  const k = art === 'fagel' ? fagelBild(u, h) : djurBild(art, id, h, art === 'kanin' && iIstiden(ageIndex(s, ui.nu))), c = iconCanvas(k); // fågeln i platsens utseende (steg 6.6.3) // foten nära rutans punkt, mitt under djuret
   djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' || art === 'bjornunge' ? 4 : 3) - c.height), 1);
 }
 // djuren där de syns just nu (det man trycker på, interaktion.ts, och djurfliken)

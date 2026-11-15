@@ -23,7 +23,7 @@ import { UPPV, upplev } from './uppvaxt';
 import { kronika } from './historik';
 import { Sed, drar, influence } from './seder';
 import { knows } from './teknik';
-import { Bevis, HANDELSER, HandelseTyp, allmant, asiktOm, handelse, ryktbarhet, vittnen } from './rykten';
+import { Bevis, HANDELSER, HandelseTyp, allmant, anseende, asiktOm, handelse, ryktbarhet, vittnen } from './rykten';
 import { ISTID, ageIndex, hourOf, isLight, kallTid } from './tid';
 import { temperature, vaderNu } from './vader';
 import { notis } from './notiser';
@@ -246,7 +246,7 @@ export const styreAv = styreOf;
 export const ledareOf = (s: State) => { const id = s.styre?.ledare; const p = id === undefined ? undefined : byId(s, id); return p && alive(p) ? p : undefined; };
 // makt-sederna (Skalor som låses upp) syns i Styre och är låsta tills det de styr finns i byn
 export const MAKT_SEDER: readonly Sed[] = ['rang', 'fortjanst', 'fejd', 'andlig'];
-const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'natur'];
+const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'natur', 'prat'];
 export const sedOppen = (s: State, k: Sed) => !LASTA_SEDER.includes(k) || !!s.styre?.oppna.includes(k);
 
 // ---------- legitimiteten ----------
@@ -303,7 +303,7 @@ export function tronfoljd(s: State): Tronfoljd {
   return b[1] >= 0 ? b[0] : 'val';
 }
 export const TRONFOLJD_TEXT: Record<Tronfoljd, string> = { arv: 'Ledarens barn eller närmaste släkting ärver makten', utse: 'Ledaren har utsett sin efterträdare', strid: 'De som vill slåss om makten', val: 'De vuxna väljer en ny', prast: 'Översteprästen utser den nya' };
-const kanLeda = (s: State, c: Person) => knows(c, 'ledarskap') && ryktbarhet(s, c.id).a >= LED.anseende;
+const kanLeda = (s: State, c: Person) => knows(c, 'ledarskap') && anseende(s, c.id).a >= LED.anseende; // med arvet från föräldrarna (steg 10.8.5)
 // kandidaterna enligt ett sätt
 function arvinge(s: State, vuxna: Person[]) {
   const forra = byId(s, s.styre?.historia[s.styre.historia.length - 1]?.id);

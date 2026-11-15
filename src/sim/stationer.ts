@@ -284,9 +284,14 @@ export const STATIONER = {
     forsta: '{namn} lade byns första kvarnsten. Där mals kornet till mjöl som går att spara.',
   },
   bryggkar: { // steg 9.6.12 (brygg.ts): ett urholkat stockkar med lock, där vinet och ölet jäser
-    namn: 'Bryggkar', ikon: 'bryggkar', w: 1, h: 1, tek: ['bryggkar'], av: RECEPT.bryggkar.av, min: RECEPT.bryggkar.min, gor: ['brygga', 'tappa'], bara: ['brygga', 'tappa'],
+    namn: 'Bryggkar', ikon: 'bryggkar', w: 1, h: 1, tek: ['bryggkar'], av: RECEPT.bryggkar.av, min: RECEPT.bryggkar.min, gor: ['brygga', 'tappa', 'branna'], bara: ['brygga', 'tappa', 'branna'],
     bygger: 'Hugger ur ett bryggkar av virke med yxan.',
     forsta: '{namn} högg ur byns första bryggkar. Där jäser bären till vin.',
+  },
+  kokgrop: { // steg 10.7.28 (matlagning.ts): en grop med heta stenar ute, där festmåltiden bakas inför en högtid eller ett bröllop
+    namn: 'Kokgrop', ikon: 'kokgrop', w: 1, h: 1, tek: ['kokgrop'], av: RECEPT.kokgrop.av, min: RECEPT.kokgrop.min, gor: ['gropa'], bara: ['gropa'],
+    bygger: 'Gräver en kokgrop och lägger den full med sten.',
+    forsta: '{namn} grävde byns första kokgrop. Där bakas festmåltiden bland heta stenar.',
   },
   rokeri: { // steg 9.6.8 (matlagning.ts): som torkställningen, men på ett dygn och i alla väder
     namn: 'Rökeri', ikon: 'rokeri', w: 2, h: 2, tek: ['rokeri'], av: RECEPT.rokeri.av, min: RECEPT.rokeri.min, gor: ['roka'], bara: ['roka'],
@@ -367,7 +372,7 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: 'vin' | 'ol'; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
+export interface Station { grop?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; /* festmåltiden i kokgropen (steg 10.7.28) */ tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 // finns det en möbel bara för slaget k (bokhyllan för blad och böcker, steg 10.6.16)?
@@ -1171,7 +1176,7 @@ export function bordBrist(s: State, k: string) {
 // när arbetet är klart, så att inget går förlorat om det avbryts. Rivs huset försvinner tillbehöret med möbeln.
 // texten om byns första: namnet och pronomenen efter den som gjorde det (ordlagret, steg 6.7.2)
 const forstaText = (t: string, p: Person) => t.replace('{namn}', p.name).replace(/{hans}/g, hans(p)).replace(/{han}/g, han(p));
-export interface TillbehorDef { namn: string; ikon: string; till: string; tek: string[]; av: Record<string, number>; min: number; varme?: number; gor: string; forsta: string }
+export interface TillbehorDef { namn: string; ikon: string; till: string; tek: string[]; av: Record<string, number>; min: number; varme?: number; gor: string; forsta: string; kar?: string } // kar = en tom behållare av den sorten byggs in (brännpannans stora lerkruka)
 export const TILLBEHOR = {
   stekhall: { // steg 9.6.21 (matlagning.ts): kött och fisk steks med talg på hällen, som ligger på härden inne (steg 10.2.87)
     namn: 'Stekhäll', ikon: 'stekhall', till: 'hard', tek: ['stekhall'], av: RECEPT.stekhall.av, min: RECEPT.stekhall.min,
@@ -1182,6 +1187,11 @@ export const TILLBEHOR = {
     namn: 'Skinnfäll', ikon: 'skinnfall', till: 'halmbadd', tek: ['skinnfall'], av: RECEPT.skinnfall.av, min: RECEPT.skinnfall.min, varme: STATION.fallVarme,
     gor: 'Lägger en skinnfäll i halmbädden.',
     forsta: '{namn} lade byns första skinnfäll i en halmbädd. Den som sover under den fryser mindre.',
+  },
+  brannpanna: { // steg 10.7.26 (brygg.ts): en liten härd av sten under en stor lerkruka med lock och rör av lera, på bryggkaret
+    namn: 'Brännpanna', ikon: 'brannpanna', till: 'bryggkar', tek: ['sprit'], av: RECEPT.brannpanna.av, min: RECEPT.brannpanna.min, kar: 'lerkruka_stor',
+    gor: 'Bygger en brännpanna med lock och rör på bryggkaret.',
+    forsta: '{namn} byggde byns första brännpanna på bryggkaret. Där bränns vin och öl till sprit.',
   },
 } satisfies Record<string, TillbehorDef>;
 export type TillbehorSlag = keyof typeof TILLBEHOR;
@@ -1215,8 +1225,10 @@ export function kanGoraTillbehor(s: State, p: Person, k: TillbehorSlag) {
   const d: TillbehorDef = TILLBEHOR[k];
   if (!d.tek.some(t => knows(p, t))) return false;
   const gor = andraGor(s, 'tillbehor', p), utan = utanTillbehor(s, k).length;
-  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m));
+  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m)) && (!d.kar || !!tomtKar(s, d.kar));
 }
+// en tom och ledig behållare av sorten k som ingen bär (brännpannans kruka)
+const tomtKar = (s: State, k: string) => tingOf(s).find(t => t.k === k && !t.inne && !t.kok && !t.vaxt && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.c > 0);
 // platsen dit den som gör tillbehöret går: framför den första stationen som saknar det
 export function tillbehorSpot(s: State, k: TillbehorSlag) {
   const t = utanTillbehor(s, k)[0];
@@ -1228,8 +1240,10 @@ export function finishTillbehor(s: State, p: Person, tk: Task) {
   const k = tk.tool as TillbehorSlag, d = tillbehorDef(k);
   if (!d) return;
   const t = utanTillbehor(s, k)[0];
-  if (!t || !Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n)) return;
+  const kar = d.kar ? tomtKar(s, d.kar) : undefined;
+  if (!t || !Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n) || (d.kar && !kar)) return;
   for (const [m, n] of Object.entries(d.av)) takeMaterial(s, p, m, n);
+  if (kar) s.ting = tingOf(s).filter(q => q !== kar); // krukan blir pannan
   (t.med ??= []).push(k);
   // byns statistik räknar dem (tillbehor_ + sorten), och den första står i loggen
   if (forstaGang(s, 'tillbehor_' + k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Gjorde byns första ${d.namn.toLowerCase()}`); }

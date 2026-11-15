@@ -1,4 +1,4 @@
-import { nyttSlag, nastaSteg, stridBild, testSlagsmal, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
+import { bynsNamn, nyttSlag, nastaSteg, stridBild, testSlagsmal, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -35,6 +35,7 @@ function renderClock() {
   const d = new Date(t);
   const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
   $('calYear').textContent = `År ${yearNo(s, t)}`;
+  { const n = bynsNamn(s); if ($('bynamn').textContent !== n) { $('bynamn').textContent = n; document.title = n; } } // byns namn (steg 10.9.1)
   renderRaden(t); // årstiden, tidsstaven och nyckeltalen (ui/raden.ts, steg 5.3.1.2)
   { // motgången som pågår, eller som någon i byn anar (steg 3.8.1, motgang.ts): symbolen, och vad den gör när musen är över den
     const nu = motgangNu(s, t), na = nu ? undefined : motgangNasta(s, t), n = na ? varslade(s, na.start) : 0, el = $('calMotgang');

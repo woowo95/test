@@ -2,12 +2,13 @@ import { honom } from './ord';
 import { personHand, personNara } from './personlogg';
 import { upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think } from './folk';
-import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
+import { DAY, HOUR, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
 import { ACTS } from './handlingar';
 import { notis } from './notiser';
 import { kronikaBer, loggBer } from './berattelser';
-import { nyRitual } from './kultlatt';
+import { FEST, nyRitual } from './kultlatt';
+import { dampning } from './rykten';
 
 // ---------- balanstal (regel 8) ----------
 // Relationstyperna (steg 3.1.1, "Relationstyper" i designdokumentet). Relationen (op) går från -100 till 100; vän, nära vän,
@@ -143,7 +144,7 @@ export function stepRelationer(s: State) {
       log(s, `${p.name} och ${q.name} har gift sig.`, 'rel', [p.id, q.id]); notis(s, 'par', `${p.name} och ${q.name} har gift sig.`, [p.id, q.id]);
       personNara(s, p, `${p.name} och ${q.name} har gift sig.`, [q.id]); personNara(s, q, `${p.name} och ${q.name} har gift sig.`, [p.id]); // steg 9.2.107
       kronikaBer(s, 'k_gift', p.id, { a: p.name, b: q.name }); // till berättelsen om tiden borta (steg 5.4.4)
-      nyRitual(s, 'brollop', { om: [p.id, q.id], namn: `Bröllopet mellan ${p.name} och ${q.name}` }); // steg 8.5.13
+      nyRitual(s, 'brollop', { om: [p.id, q.id], namn: `Bröllopet mellan ${p.name} och ${q.name}`, fran: s.now + FEST.brollopFore * HOUR }); // steg 8.5.13; utlyst i förväg (steg 10.7.28)
       think(p, `Gifte sig med ${q.name}`, 0.15, s.now, DAY); think(q, `Gifte sig med ${p.name}`, 0.15, s.now, DAY);
     }
   }
@@ -175,10 +176,11 @@ export function stepRelationer(s: State) {
     let best: Person | undefined, bl = 0, bsk: Skill | undefined;
     for (const q of ppl) {
       if (q === ung || ageOf(q, s.now) < RELT.mentorAlder) continue;
-      const r = rel(q, ung); if (!r || (r.lart ?? 0) < RELT.mentorLart || r.op <= REL.van || (r.lart ?? 0) <= bl) continue;
+      const r = rel(q, ung); if (!r || (r.lart ?? 0) < RELT.mentorLart || r.op <= REL.van) continue;
+      const l = r.lart! * dampning(s, ung, q.id, 'mentor'); if (l <= bl) continue; // den man tror är en lögnare väljer man ogärna (steg 10.8.4)
       let sk: Skill | undefined, d = RELT.mentorSkill;
       for (const k of SKILLS) if (k !== 'narstrid' && k !== 'traff' && q.skill[k] - ung.skill[k] >= d) { d = q.skill[k] - ung.skill[k]; sk = k; }
-      if (sk) { best = q; bl = r.lart!; bsk = sk; }
+      if (sk) { best = q; bl = l; bsk = sk; }
     }
     if (best && bsk) {
       ung.mentor = best.id; ung.mentorSk = bsk; count(s, 'mentor');

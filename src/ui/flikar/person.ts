@@ -1,6 +1,6 @@
 import { areaCenter, larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { vana, pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
+import { vana, pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, arvAnseende, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
 import { figurSvg, portrattImg } from '../folkbild';
 import { FARGER, farg } from '../../palett';
@@ -441,6 +441,9 @@ function anseende(p: Person) {
 function ryktenHtml(p: Person) {
   const byn = samlatIntryck(s, p.id).slice(0, 6), sam = anseendeText(s, p.id), hid = `ans-${p.id}`;
   const huvud = `<div class="anshuvud klick" data-hjalp="${hid}" title="${esc(sam)}" tabindex="0" role="button">${ansStapel(p.id)}<span class="ansskala"><span>Dåligt</span><span>Neutralt</span><span>Gott</span></span></div>${hjalpText(hid, `<p class="muted small">${esc(sam)}</p>`)}`;
+  // arvet (steg 10.8.5): en del av det byn tycker om mor och far räknas i anseendet
+  const arv = arvAnseende(s, p.id).a, fo = [p.father, p.mother].map(id => id !== undefined ? byId(s, id) : undefined).filter((q): q is Person => !!q);
+  const arvRad = Math.abs(arv) >= 0.05 ? `<p class="muted small ansarv" title="${esc(`En del av det byn tycker om ${fo.map(q => q.name).join(' och ')} räknas i ${p.name}s anseende`)}"><span class="riktn${arv > 0 ? '' : ' ned'}">${arv > 0 ? '▲' : '▼'}</span> Ärvt från föräldrarna: ${fo.map(q => pLink(q)).join(' och ')}</p>` : '';
   const bid = (k: IntryckTyp) => `by-${p.id}-${k}`, upp = (k: IntryckTyp) => INTRYCK[k].tecken > 0;
   const vem = (k: IntryckTyp) => living(s).flatMap(q => { const e = intryckOm(q, p.id, k); return e ? [{ q, e }] : []; }).sort((a, b) => b.e.v * b.e.c - a.e.v * a.e.c);
   const syms = byn.map(([k]) => {
@@ -451,9 +454,9 @@ function ryktenHtml(p: Person) {
   const forkl = vald ? (() => {
     const L = vem(vald), MAX = 10;
     const namn = L.slice(0, MAX).map(({ q, e }) => `${pLink(q)} <span class="muted">(${intryckText(s, e).sure}${e.src === undefined && !e.led ? ', såg det själv' : ''})</span>`).join(', ');
-    return `<p class="muted small relfork"><b>${esc(cap(INTRYCK[vald].namn))}</b>, drar anseendet ${upp(vald) ? 'uppåt' : 'nedåt'}. ${esc(INTRYCK[vald].betyder)}<br>Tycker så: ${namn}${L.length > MAX ? ` och ${L.length - MAX} till` : ''}.</p>`;
+    return `<p class="muted small relfork"><b>${esc(cap(INTRYCK[vald].namn))}</b>, drar anseendet ${upp(vald) ? 'uppåt' : 'nedåt'}. ${esc(INTRYCK[vald].betyder)}${INTRYCK[vald].beteende ? ' ' + esc(INTRYCK[vald].beteende!) : ''}<br>Tycker så: ${namn}${L.length > MAX ? ` och ${L.length - MAX} till` : ''}.</p>`;
   })() : '';
-  const omHen = byn.length ? `${huvud}<div class="tekrad">${syms.join('')}</div>${forkl}` : '<p class="muted">Byn har ingen särskild bild av hen.</p>';
+  const omHen = byn.length || arvRad ? `${huvud}${arvRad}<div class="tekrad">${syms.join('')}</div>${forkl}` : '<p class="muted">Byn har ingen särskild bild av hen.</p>';
   const per = new Map<number, Intryck[]>();
   for (const e of p.intryck ?? []) (per.get(e.om) ?? per.set(e.om, []).get(e.om)!).push(e);
   const rader = [...per.values()].sort((a, b) => sum(b) - sum(a)).slice(0, 12).map(L => {

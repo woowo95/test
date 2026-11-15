@@ -36,6 +36,7 @@ export const STROMMAR = {
   rovare: 'rövarflocken: när den kommer, vilka rövarna är, vad de bär och vad vakten gissar (steg 4.4.5, rovare.ts)',
   tamdjur: 'de tama djuren: när de dör av ålder, valpen och hunden, får och getter (fas 9.8, tamdjur.ts)',
   fram: 'framträdandena: vem som uppträder, vilken form och hur länge (steg 4.3.2, framtradande.ts)',
+  skuld: 'skulden: när man ber om förlåtelse och svaret (steg 10.8.2, skuld.ts)',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

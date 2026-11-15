@@ -114,7 +114,7 @@ const DEF = {
   vargkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
   radjurkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, farkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, getkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, // steg 10.3.14
   fagelkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, bjornkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
-  farskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, getskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
+  farskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, getskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, vitskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
   vargskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
   fjadrar: { var: 'sak', min: 2, slag: 'bearbeta', tek: 'kniv' },
   radjursskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
@@ -156,6 +156,7 @@ const DEF = {
   tork: { var: 'station', av: { grenar: RT.torkGrenar, rep: RT.torkRep }, min: RT.torkMin },
   bakugn: { var: 'station', av: { huggen_sten: 4, lera: 4 }, min: 20, tek: 'bakugn' }, // bakugnen (steg 9.6.23): ett valv av huggen sten tätat med lera (steg 10.2.66)
   kvarnsten: { var: 'station', av: { huggen_sten: 2 }, min: 20, tek: 'kvarnsten' }, // kvarnstenen (steg 9.6.22): två huggna stenar som kornet mals mellan
+  kokgrop: { var: 'station', av: { sten: 8 }, min: 10, tek: 'kokgrop' }, // kokgropen (steg 10.7.28)
   bryggkar: { var: 'station', av: { virke: 1 }, min: 15, tek: 'bryggkar', verktyg: { yxa: 'yxan' } }, // bryggkaret (steg 9.6.12)
   rokeri: { var: 'station', av: { huggen_sten: 3, grenar: 4, lera: 2 }, min: 20, tek: 'rokeri' }, // rökeriet (steg 9.6.8): en låg ugn av huggen sten med ett tak av grenar och lera (steg 10.2.66)
   brasa: { var: 'station', av: { sten: RT.brasaSten }, min: RT.brasaMin },
@@ -174,6 +175,7 @@ const DEF = {
   bank: { var: 'station', av: { virke: RT.bankVirke }, min: RT.bankMin },
   krubba: { var: 'station', av: { virke: RT.krubbaVirke }, min: RT.krubbaMin }, // foderhäcken i fähuset (steg 10.2.88)
   // tillbehören (stationer.ts) och dörrarna (byggnad.ts)
+  brannpanna: { var: 'tillbehor', av: { sten: 4, lera: 2 }, min: 15, tek: 'sprit' }, // brännpannan (steg 10.7.26): härden och röret; den stora lerkrukan tas också (TILLBEHOR.brannpanna.kar)
   stekhall: { var: 'tillbehor', av: { huggen_sten: 1 }, min: 10, tek: 'stekhall' }, // stekhällen (steg 9.6.21): en flat huggen sten över elden vid grillen (steg 10.2.66)
   skinnfall: { var: 'tillbehor', av: { skinn: RT.fallSkinn }, min: RT.fallMin },
   skinndorr: { var: 'dorr', av: { skinn: RT.skinndorrSkinn }, min: RT.skinndorrMin },

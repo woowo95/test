@@ -73,6 +73,8 @@ const DEF = {
   natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
   andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: q => dev(q.minne) * 0.05 }, // steg 8.6.1
   rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
+  // steg 10.8.6: låst tills byn berättat RYKTE.pratOppna dåliga rykten (rykten.ts). Den nyfikna och karismatiska drar åt Pratsamhet, den empatiska åt Förtegenhet
+  prat: { pos: 'Pratsamhet', neg: 'Förtegenhet', effect: 'Hur fritt man talar om andra: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen by tvärtom.', dra: q => (dev(q.nyfikenhet) + dev(q.karisma)) * 0.5 - dev(q.empati) * 0.5 },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
 export const SEDER: Record<Sed, SedDef> = DEF;
@@ -200,7 +202,7 @@ const YRKEN: Record<string, number> = {
 // de snävare yrkenas handlingar (steg 7.5.5–7.5.8). En rad med ett yrke vars handling inte finns ännu räknas inte
 const YRKE_AV: Partial<Record<string, string[]>> = {
   Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg', 'nat'], Snickare: ['station', 'tillbehor', 'klyva_plank', 'gor_leksak', 'slagtra', 'mal', 'trumma', 'metspo', 'slanda', 'gor_pilar', 'skold', 'bage', 'lyra', 'krycka', 'traben', 'krok', 'bagborr'], /* och träsakerna vid snickarbänken (steg 9.4.5) */ Spjutmakare: ['spjut'], Skinnsömmare: ['rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: ['garva'],
-  Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'baka', 'torka', 'roka', 'brygga', 'tappa', 'malta'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
+  Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'gropa', 'koka_buljong', 'baka', 'torka', 'roka', 'brygga', 'tappa', 'malta', 'branna'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
 };
 export const TAGS = Object.entries(YRKEN).map(([tag, min]) => ({ tag, min, acts: ACT_LIST.filter(a => ACTS[a].yrke === tag || YRKE_AV[tag]?.includes(a)) }));
 // taggen går till den som gör något klart mer än andra i byn; den som redan har en tagg behåller den lättare

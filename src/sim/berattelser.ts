@@ -5,7 +5,7 @@ import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, 
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
-import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, kandVikt, samlatIntryck } from './rykten';
+import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, foralderRykte, kandVikt, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
 import { Hus, housesOf, husById, roomAt } from './byggnad';
@@ -113,6 +113,7 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   vargdodare: { namn: [['Vargdödaren', 'Vargdödaren'], ['Vargbane', 'Vargbane'], ['den modige', 'den modiga'], ['Ulvspjutet', 'Ulvspjutet']] },
   bjorndodare: { namn: [['Björndödaren', 'Björndödaren'], ['Björnbane', 'Björnbane'], ['den orädde', 'den orädda'], ['Björnfällen', 'Björnfällen']] }, // steg 6.6.6
   pahittig: { namn: [['den kloke', 'den kloka'], ['Finurlig', 'Finurlig'], ['den listige', 'den listiga'], ['Hittaren', 'Hittaren']] }, // steg 10.4.9
+  skvaller: { namn: [['Skvallret', 'Skvallerbyttan'], ['Pratmakaren', 'Pratmakerskan'], ['Sladdertacka', 'Sladdertacka'], ['den lösmynte', 'den lösmynta']] }, // steg 10.8.6
   forutseende: { namn: [['den framsynte', 'den framsynta'], ['Förrådsvakt', 'Förrådsvakt'], ['den vise', 'den visa'], ['Vinterhövding', 'Vinterhövding']] },
 };
 export const BINAMN: Record<IntryckTyp, BinamnDef> = BDEF;
@@ -293,6 +294,17 @@ const MDEF = {
     '{van} och {hen} är som syskon.',
     '{Hen} litar mest av alla på {van}.',
     'Var {van} är, där är ofta {hen} också.',
+  ],
+  // vems barn hen är, när förälderns rykte är starkt (steg 10.8.5): {barnet} son eller dotter, {vem} föräldern, {vad} vad byn kallar föräldern
+  besk_foralder: [
+    '{Hen} är {barnet} till {vem}, som byn kallar {vad}.',
+    'Byn minns att {hen} är {barnet} till {vem}, som byn kallar {vad}.',
+    'Som {barnet} till {vem}, som byn kallar {vad}, får {hen} ofta höra om det.',
+    'Många ser {honom} först som {barnet} till {vem}, som byn kallar {vad}.',
+    '{Hen} kommer inte undan att vara {barnet} till {vem}, som byn kallar {vad}.',
+    'Det sägs om {honom} att {hen} är {barnet} till {vem}, som byn kallar {vad}.',
+    'Vart {hen} går följer namnet med: {barnet} till {vem}, som byn kallar {vad}.',
+    'I byn är {hen} {barnet} till {vem}, som byn kallar {vad}.',
   ],
   besk_fiende: [
     '{fiende} kan {hen} inte med.',
@@ -1328,6 +1340,16 @@ const MDEF = {
     '{med} fick höra vad {namn} tycker om {om}.',
     '{namn} och {med} pratade om {om}, som man gör.',
   ],
+  p_special: [
+    '{namn} berättade för {med} om {om}.',
+    '{namn} och {med} pratade om {om}.',
+    '{namn} sa till {med} att ingen lagar något som {om}.',
+    '{namn} och {med} längtade efter {om}.',
+    '{namn} lärde {med} vad som gör {om} så god.',
+    '{namn} och {med} mindes när de senast fick {om}.',
+    '{med} fick höra hur {namn} tycker att {om} ska lagas.',
+    '{namn} och {med} grälade lite om vad som hör hemma i {om}.',
+  ],
   p_mat: [
     '{namn} och {med} pratade om maten.',
     '{namn} klagade för {med} att {namn} är hungrig.',
@@ -1729,6 +1751,8 @@ const MDEF = {
     { t: 'Det handlade egentligen om {om}, och alla förstod vad {namn} menade.', om: f => f.bud === 'person' },
     { t: 'Alla visste vem det gällde: {om}.', om: f => f.bud === 'person' },
     { t: '{Namn} lade inte fingrarna emellan när det gällde {om}.', om: f => f.bud === 'person' },
+    { t: '{Bestallt} hade gett {namn} en {betalt} för att det skulle handla om {om}.', om: f => f.bud === 'person' && !!f.bestallt && !f.kyrka },
+    { t: 'Framträdandet var beställt: {bestallt} ville att byn skulle höra om {om}.', om: f => f.bud === 'person' && !!f.bestallt },
     { t: 'Det var en hyllning till {ledare}, som leder byn.', om: f => f.bud === 'hylla' && !f.betalt },
     { t: '{Namn} lovordade {ledare} inför hela publiken.', om: f => f.bud === 'hylla' && !f.betalt },
     { t: '{Ledare} hade betalat med en {betalt} för att bli hyllad, och det blev {ledare} också.', om: f => f.bud === 'hylla' && !!f.betalt },
@@ -1803,6 +1827,8 @@ const MDEF = {
     { t: 'Det blev dragkamp i byn: {n} drog i repet.', om: f => f.sport === 'dragkamp' },
     { t: '{Spelare} kastade mot målet i tur och ordning.', om: f => f.sport === 'kast' },
     { t: 'Det blev kast mot mål i byn, och {n} ställde upp.', om: f => f.sport === 'kast' },
+    { t: '{Spelare} ställde sig på en rad med var sin båge och sköt mot målet.', om: f => f.sport === 'bagskytte' }, // steg 10.7.21
+    { t: 'Det blev bågskytte i byn, och {n} skyttar spände sina bågar.', om: f => f.sport === 'bagskytte' },
     { t: '{Spelare} gjorde snöbollar och kastade dem på varandra.', om: f => f.sport === 'snoboll' },
     { t: 'Det blev snöbollskrig i byn, med {n} som kastade.', om: f => f.sport === 'snoboll' },
     { t: '{Spelare} spelade boll i byn.', om: f => f.sport === 'bollspel' },
@@ -1852,6 +1878,9 @@ const MDEF = {
     { t: '{Fick} gick hem med {givare}s {pris}, priset i tävlingen.', om: f => !!f.prisKvar && !f.sjalv },
     { t: '{Givare}s {pris} var priset, och {givare} vann själv.', om: f => !!f.prisKvar && !!f.sjalv },
     { t: 'Priset skulle ha varit {givare}s {pris}, men när matchen var slut fanns det inte kvar.', om: f => !f.prisKvar },
+    { t: '{Fick} vann tävlingen och fick {givare}s {pris} att ta med sig.', om: f => !!f.prisKvar && !f.sjalv },
+    { t: '{Givare} hade satt upp sin {pris} som pris, och {givare} tog tillbaka den själv.', om: f => !!f.prisKvar && !!f.sjalv },
+    { t: '{Givare} hade lovat sin {pris} till vinnaren, men den var borta när det var dags.', om: f => !f.prisKvar },
   ],
   m_publik: [
     { t: 'Publiken hejade: {publik} stod runt om och tittade.', om: f => Number(f.nPub) > 1 },
@@ -1860,6 +1889,8 @@ const MDEF = {
     { t: '{Publik} stod en bit bort och hejade på dem.', om: f => Number(f.nPub) === 1 },
     { t: '{Publik} kom och tittade och hejade högt.', om: f => Number(f.nPub) === 1 },
     { t: 'Det var bara {publik} som tittade, men hen hejade för flera.', om: f => Number(f.nPub) === 1 },
+    { t: '{Publik} samlades runt platsen för att se på.', om: f => Number(f.nPub) > 1 },
+    { t: '{Publik} satt i gräset och tittade på hela matchen.', om: f => Number(f.nPub) === 1 },
   ],
   // matchen som inte blev av: {sport} = sporten, {spelare} = de som kom
   m_installd: [
@@ -2324,6 +2355,11 @@ export const BESK_DELAR: BeskDel[] = [
   { id: 'rel', vikt: b => b.f.partner || b.f.van ? 0.6 : 0, text: b => mening(b, b.f.partner && b.f.van ? 'besk_partnerVan' : b.f.partner ? 'besk_partner' : 'besk_van', 2) },
   { id: 'langtan', vikt: b => langtar(b.s, b.p) ? 0.55 : 0, text: b => { b.f.vem = langtar(b.s, b.p)!.name; return mening(b, 'besk_langtan', 25); } },
   { id: 'fiende', vikt: b => b.f.fiende ? 0.65 : 0, text: b => mening(b, 'besk_fiende', 3) },
+  { id: 'foralder', vikt: b => alive(b.p) && foralderRykte(b.s, b.p, BERATT.rykte) ? 0.6 : 0, text: b => { // vems barn hen är (steg 10.8.5)
+    const r = foralderRykte(b.s, b.p, BERATT.rykte)!;
+    b.f.barnet = b.p.sex === 'm' ? 'son' : 'dotter'; b.f.vem = r.q.name; b.f.vad = INTRYCK[r.k].som ?? INTRYCK[r.k].namn;
+    return mening(b, 'besk_foralder', 26);
+  } },
   // hur hen bor (steg 10.2.52): i utkanten, mitt emot verkstaden, länge i sitt hus
   { id: 'utkant', vikt: b => borUtkant(b.s, b.p) ? 0.35 : 0, text: b => mening(b, 'besk_utkant', 32) },
   { id: 'verkstad', vikt: b => borVidVerkstad(b.s, b.p) ? 0.3 : 0, text: b => mening(b, 'besk_verkstad', 33) },
@@ -2683,6 +2719,7 @@ const ADEF = {
   dod: { prio: 20, namn: 'En död', ikon: 's_dod' },
   vader: { prio: 10, namn: 'Vädret' },
   mat: { prio: 10, namn: 'Maten', ikon: 's_mat' },
+  special: { prio: 35, namn: 'Byns egen rätt', ikon: 's_mat' }, // steg 10.7.29
   arbete: { prio: 10, namn: 'Arbetet' },
   barn: { prio: 10, namn: 'Barnen', ikon: 's_barn' },
   vardag: { prio: 0, namn: 'Lite av varje' },

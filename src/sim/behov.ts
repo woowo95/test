@@ -26,7 +26,7 @@ import { EKONOMI, kroppensMat, matPerDygn } from './ekonomi';
 import { REDSKAPMAL, arMaterial, buffert, sparas, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
-import { handelse, smakMat } from './rykten';
+import { dampning, handelse, smakMat } from './rykten';
 import { VED, vedPerDygn } from './eld';
 import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 import { SJUK, insjukna } from './sjukdom';
@@ -113,6 +113,11 @@ function eat(s: State, p: Person, fran?: Person) {
   }
   return portion;
 }
+// p äter en portion av k som en vanlig måltid (festmåltiden, steg 10.7.28): näringen, smaken, nivåns tanke och kockens hand
+export function ataPortion(s: State, p: Person, k: string) {
+  const per = { [k]: KROPP.mattar };
+  ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); count(s, 'atit', 1);
+}
 // måltidens nivå (steg 9.6.2, ratter.ts): en lagad eller fin måltid ger en tanke som höjer humöret
 function maltidTanke(s: State, p: Person, per: Record<string, number>) {
   const n = MALTIDSNIVA[basta(per)];
@@ -128,6 +133,7 @@ function maltidTanke(s: State, p: Person, per: Record<string, number>) {
   if ((per.jordgubbar ?? 0) > 0) think(p, 'Åt jordgubbar', ROK.glad * 3, s.now, RATT.tankeTim * HOUR); // jordgubbarna gör folk glada (steg 9.7.9)
   if (Object.keys(per).some(x => x.startsWith('rok') && per[x] > 0)) think(p, 'Åt rökt mat', ROK.glad, s.now, RATT.tankeTim * HOUR); // det rökta smakar lite bättre (steg 9.6.8)
   const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
+  specialTanke(s, p, per); // byns egen rätt som blivit en tradition (steg 10.7.29)
 }
 // p sitter vid bordet och äter (handlingen maltid, framme: val.ts och stationer.ts, steg 2.2.15)
 const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
@@ -456,7 +462,8 @@ export function willing(s: State, g: Person, m: Person, overflod = 1, nod = fals
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;
   const base = (nara ? DELA.gePartner : isKin(g, m) || arBast(g, m) ? DELA.geFamilj : Math.max(clamp(r.op / DELA.geVanOp, 0, DELA.geVanMax), nod && r.op >= 0 ? DELA.geFrammande : 0)) * (arRivaler(g, m) ? RELT.rivalGe : 1); // rivaler ger varandra mindre
   const rik = nara ? 1 : DELA.rikGe + (1 - DELA.rikGe) * (s.delning?.andel ?? 1);
-  return clamp(base * (DELA.geEmpati + emp) * over * sed * rik, 0, 1);
+  const tro = isParent(g, m) ? 1 : dampning(s, g, m.id, 'ge'); // till den man tror är en tjuv ger man ogärna, utom till sitt eget barn (steg 10.8.4)
+  return clamp(base * (DELA.geEmpati + emp) * over * sed * rik * tro, 0, 1);
 }
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte
@@ -795,3 +802,4 @@ import { foodDays } from './ekonomi';
 import { MALTIDSNIVA, RATT, VARIATION, basta, maltidsNiva, proteinAv, rattInfo, smakSak } from './ratter';
 import { ROK, STEK, kockGlad } from './matlagning';
 import { smakFinMaltid } from './rykten';
+import { specialTanke } from './special';

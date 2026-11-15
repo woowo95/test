@@ -22,7 +22,7 @@ import { kvEffekt, kvHaller } from './kvalitet';
 import { ACTS } from './handlingar';
 import { BYN, lends } from './egendom';
 import { KROPP, count, living } from './folk';
-import { temperature } from './vader';
+import { snoPaMarken, temperature } from './vader';
 import { bordSlag, carryKind, handOrkar } from './lager';
 import { balans } from './balans';
 import { SAK_ART, arPrast, heligtAvstar, heligtBrutet } from './kultlatt';
@@ -32,6 +32,7 @@ import { KLADMATERIAL, kladAv } from './klader';
 export const UTRUSTNING = balans('utrustning', {
   kropp: 5, // det man har på sig väger lätt mot vad händerna orkar: i strid är man tung av kläder som väger så här många gånger det händerna orkar (strid.ts)
   maxVarme: 0.95, // ett plagg tar högst bort så stor del av kylan (kladVarme)
+  doljYttre: 0.7, doljHuvud: 0.3, // steg 10.7.22: så mycket det yttre plaggets och huvudets material döljer i snön (doljISno)
 });
 
 // platserna, i den ordning personrutan visar dem. hand = en hand att hålla saker och bördan i
@@ -236,6 +237,14 @@ export function kladVarme(s: State, p: Person) {
   let kvar = 1;
   for (const t of allaTing(s)) if (t.bar === p.id) kvar *= 1 - kladSkydd(t.k, t);
   return 1 - kvar;
+}
+// hur väl p syns mindre i snön (steg 10.7.22, 0 till 1): det yttre plaggets och huvudbonadens dolj (KLADMATERIAL), vägda med
+// doljYttre och doljHuvud. Bara när snö ligger på marken; på bar mark döljer inget
+export function doljISno(s: State, p: Person) {
+  if (snoPaMarken(s) <= 0) return 0;
+  let v = 0;
+  for (const t of allaTing(s)) if (t.bar === p.id) { const k = SAKER[t.k]?.klad; if (k?.dolj) v += k.dolj * (k.plats === 'yttre' ? UTRUSTNING.doljYttre : k.plats === 'huvud' ? UTRUSTNING.doljHuvud : 0); }
+  return Math.min(1, v);
 }
 // i vilken ordning p tar ett plagg: sitt eget, byns, ett lånat. Inom det: bäst skick, och sedan det första bland tingen
 const rang = (p: Person, t: Ting) => t.agare === p.id ? 0 : t.agare === BYN ? 1 : 2;

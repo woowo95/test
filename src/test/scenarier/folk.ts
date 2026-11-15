@@ -470,6 +470,150 @@ SCENARIER.utbrott = {
   },
 };
 
+SCENARIER.anger = {
+  text: 'Skulden (steg 10.8.1): den som i ett utbrott varit elak mot, gjort slut med, slagit, misshandlat eller dräpt någon bär en skuld. Den tynger humöret mer ju högre empatin är, ju närmare den drabbade står och ju fler i byn som vet, syns i humörlistan och bleknar på några dygn. Gråt ger ingen skuld',
+  kor: () => {
+    // p och q långt från de andra; w ser det när se är sant
+    const by = (emp: number, nara: boolean, se: boolean) => {
+      const t = createState(9, START);
+      klockan(t, 11);
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), w = nyInvanare(t, 'k', 40);
+      p.x += 12; q.x = p.x + 1; q.y = p.y; w.x = se ? p.x + 4 : p.x + 40; w.y = p.y;
+      p.pot.empati = emp; if (p.anlag) p.anlag.empati = emp;
+      getRel(t, p, q).op = 0;
+      if (nara) { p.partner = q.id; q.partner = p.id; }
+      return { t, p, q, w };
+    };
+    const utbrott = (t: State, p: Person, k: string, q?: Person) => { SIM.utbrottBorjar(t, p, k as SIM.Utbrott, q); };
+    const v = (x: { p: Person }) => x.p.angr?.[0]?.v ?? 0;
+    const a = by(15, false, false); utbrott(a.t, a.p, 'sla', a.q);
+    const rad: { namn: string; v: number }[] = []; SIM.moodOf(a.p, a.t.now, rad);
+    const text = rad.find(x => /^Ångrar/.test(x.namn))?.namn ?? '';
+    const lag = by(3, false, false); utbrott(lag.t, lag.p, 'sla', lag.q);
+    const nar = by(15, true, false); utbrott(nar.t, nar.p, 'sla', nar.q);
+    const sett = by(15, false, true); utbrott(sett.t, sett.p, 'sla', sett.q);
+    const elak = by(15, false, false); utbrott(elak.t, elak.p, 'elak', elak.q);
+    const grat = by(15, false, false); utbrott(grat.t, grat.p, 'grata');
+    // bleknar: efter ett dygn och efter tre veckor (tre dygn är tre år i spelet)
+    const v0 = v(a);
+    a.t.now += SIM.DAY; SIM.stepHumor(a.t); const v1 = v(a);
+    a.t.now += 20 * SIM.DAY; SIM.stepHumor(a.t); const borta = !a.p.angr;
+    // högst tre skulder, och relationen minns hur många gånger
+    const m = by(15, false, false);
+    for (let i = 0; i < 5; i++) utbrott(m.t, m.p, i % 2 ? 'elak' : 'sla', m.q);
+    const illa = getRel(m.t, m.p, m.q).minns?.illa ?? 0;
+    return [
+      [`den som slog bär en skuld (${v(a).toFixed(3)} före bleknandet ${v0.toFixed(3)}), och humörlistan säger "${text}"`, v0 > 0 && /^Ångrar att han slog /.test(text)],
+      [`låg empati ger en lättare skuld (${v(lag).toFixed(3)} mot ${v0.toFixed(3)})`, v(lag) < v0],
+      [`mot partnern tyngre (${v(nar).toFixed(3)}) än mot en bekant (${v0.toFixed(3)})`, v(nar) > v0],
+      [`när någon såg det tyngre (${v(sett).toFixed(3)}), skammen`, v(sett) > v0],
+      [`elakhet är lättare än slag (${v(elak).toFixed(3)})`, v(elak) > 0 && v(elak) < v0],
+      [`gråt ger ingen skuld (${grat.p.angr?.length ?? 0})`, !grat.p.angr],
+      [`skulden bleknar (${v1.toFixed(3)} efter ett dygn) och är borta efter tre veckor (${borta})`, v1 < v0 && v1 > v0 * 0.6 && borta],
+      [`högst tre skulder (${m.p.angr?.length}), och relationen minns ${illa} gånger`, m.p.angr?.length === 3 && illa === 5],
+    ];
+  },
+};
+SCENARIER.bot = {
+  text: 'Be om förlåtelse (steg 10.8.2): den som bär en skuld väljer hellre den hen gjort illa att samtala med, och i ett samtal som inte är ett gräl ber hen om förlåtelse med en botgåva i hela saker ur det hen har över, värd minst 12 gånger allvaret för den som ger: den billigaste sak som räcker, annars de dyraste först, och den som har för lite ger allt. Den som inget har över ber inte, och en död kan ingen be',
+  kor: () => {
+    const by = (silver: number, knivar: number) => {
+      const t = createState(9, START);
+      klockan(t, 11);
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), o = nyInvanare(t, 'k', 30);
+      p.x += 12; q.x = p.x + 1; q.y = p.y; o.x = p.x - 1; o.y = p.y;
+      p.pot.empati = 15; q.pot.empati = 20; getRel(t, p, q).op = 30; getRel(t, p, o).op = 30;
+      for (const x of SIM.tingOf(t)) if (x.agare === p.id) x.agare = SIM.BYN;
+      for (const k of SIM.SAK_LIST) { const n = SIM.ownsAmount(t, p, k); if (n > 0) SIM.ownMove(t, k, n, p.id, SIM.BYN); }
+      if (silver) SIM.put(t, 'silver', silver, { [p.id]: silver });
+      for (let i = 0; i < knivar; i++) SIM.newTing(t, 'kniv', 1, p.id);
+      SIM.utbrottBorjar(t, p, 'sla', q);
+      return { t, p, q, o };
+    };
+    const samtal = (x: ReturnType<typeof by>, n: number) => { for (let i = 0; i < n && x.p.angr?.length; i++) { SIM.converse(x.t, x.p, [x.q]); x.t.now += 12 * SIM.HOUR; } };
+    // valet: q väljs oftare än o
+    const v = by(10, 2), wq = SIM.skuldVal(v.p, v.q), wo = SIM.skuldVal(v.p, v.o);
+    // bönen: kniven (3,4) räcker inte ensam för slaget (4,8), så kniven och silver tills kravet är nått
+    const a = by(10, 2), silver0 = SIM.ownsAmount(a.t, a.q, 'silver');
+    samtal(a, 40);
+    const fickSilver = SIM.ownsAmount(a.t, a.q, 'silver') - silver0, fickKniv = SIM.tingOf(a.t).filter(x => x.k === 'kniv' && x.agare === a.q.id).length;
+    const tanke = a.q.thoughts.find(x => /som bot$/.test(x.text))?.text ?? '';
+    const generos = a.q.intryck?.some(e => e.om === a.p.id && e.k === 'generos') ?? false;
+    const varde = fickKniv * SIM.grundvarde('kniv') * SIM.DELA.over + fickSilver * SIM.DELA.over;
+    // för lite: allt hen har över
+    const b = by(3, 0); samtal(b, 40);
+    const alltB = SIM.ownsAmount(b.t, b.p, 'silver'), fickB = SIM.ownsAmount(b.t, b.q, 'silver');
+    // inget över: ber inte
+    const c = by(0, 0); samtal(c, 40);
+    // den drabbade är död
+    const d = by(10, 0); SIM.die(d.t, d.q, 'svalt'); samtal(d, 40);
+    return [
+      [`den som bär skulden väljer hellre den hen slog att samtala med (vikt +${wq} mot +${wo})`, wq > 0 && wo === 0],
+      [`botgåvan: ${fickKniv} kniv och ${fickSilver} silver, värt ${varde.toFixed(1)} för den som gav, minst ${(SIM.SKULD.krav * 0.4).toFixed(1)}`, fickKniv === 1 && fickSilver >= 1 && varde >= SIM.SKULD.krav * 0.4 - 1e-9 && varde - SIM.DELA.over < SIM.SKULD.krav * 0.4],
+      [`den drabbade tänker "${tanke}", och skulden är borta (${a.p.angr?.length ?? 0})`, new RegExp(`^Fick en ${SIM.SAKER.kniv!.namn.toLowerCase()} och `).test(tanke) && !a.p.angr],
+      [`en botgåva ger inte ryktet generös (${generos})`, !generos],
+      [`den som har för lite ger allt hen har över (${fickB} silver, ${alltB} kvar)`, fickB === 3 && alltB === 0 && !b.p.angr],
+      [`den som inget har över ber inte (skulden finns kvar: ${c.p.angr?.length ?? 0})`, c.p.angr?.length === 1 && !c.p.angr[0]!.bad],
+      [`en död kan ingen be (${d.p.angr?.[0]?.bad === undefined ? 'bad inte' : 'bad'})`, d.p.angr?.[0]?.bad === undefined],
+    ];
+  },
+};
+SCENARIER.forlatelse = {
+  text: 'Förlåtelsen (steg 10.8.3): den som blir ombedd svarar direkt efter sin empati, relationen innan, allvaret och hur många gånger det hänt förut. Vid ja tar hen emot gåvan, relationen lagas halva vägen tillbaka, skulden försvinner och ryktet om händelsen blir svagare hos hen och hos dem som ser det; misshandel står i krönikan. Vid nej byter inget ägare och skulden sitter kvar',
+  kor: () => {
+    // q har empatin emp och tyckte op om p innan; p gjorde k mot q, ganger gånger. w står bredvid och ser det
+    const by = (seed: number, emp: number, op: number, k: string, ganger = 1) => {
+      const t = createState(seed, START);
+      klockan(t, 11);
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), w = nyInvanare(t, 'k', 40);
+      p.x += 12; q.x = p.x + 1; q.y = p.y; w.x = p.x + 2; w.y = p.y + 1;
+      p.pot.empati = 15; q.pot.empati = emp; if (q.anlag) q.anlag.empati = emp;
+      for (let i = 0; i < ganger; i++) { getRel(t, p, q).op = op; SIM.utbrottBorjar(t, p, k as SIM.Utbrott, q); if (i < ganger - 1) p.angr = undefined; }
+      SIM.put(t, 'silver', 20, { [p.id]: 20 });
+      return { t, p, q, w };
+    };
+    // andelarna: många byar, en bön var
+    const andel = (emp: number, op: number, k: string, ganger = 1) => {
+      let ja = 0, n = 0;
+      for (let i = 0; i < 60; i++) {
+        const x = by(100 + i, emp, op, k, ganger);
+        if (!x.p.angr?.length) continue;
+        n++; SIM.forlatSvar(x.t, x.p, x.q, x.p.angr[0]!);
+        if (!x.p.angr) ja++;
+      }
+      return n ? ja / n : 0;
+    };
+    const snall = andel(18, 60, 'elak'), hard = andel(3, -20, 'misshandel'), mitt = andel(10, 20, 'sla'), igen = andel(10, 20, 'sla', 3);
+    // ett ja: relationen, ryktet, loggen och krönikan
+    let jaX: ReturnType<typeof by> | undefined, op1 = 0, op2 = 0, v1 = 0, v2 = 0, silverQ = 0;
+    for (let i = 0; i < 40 && !jaX; i++) {
+      const x = by(200 + i, 20, 60, 'misshandel'), a = x.p.angr?.[0];
+      if (!a) continue;
+      op1 = getRel(x.t, x.p, x.q).op; v1 = x.w.intryck?.find(e => e.om === x.p.id)?.v ?? 0;
+      SIM.forlatSvar(x.t, x.p, x.q, a);
+      if (!x.p.angr) { jaX = x; op2 = getRel(x.t, x.p, x.q).op; v2 = x.w.intryck?.find(e => e.om === x.p.id)?.v ?? 0; silverQ = SIM.ownsAmount(x.t, x.q, 'silver'); }
+    }
+    const kron = jaX?.t.hist?.kronika?.some(r => /förlät/.test(r[1])) ?? false;
+    const plogg = jaX?.p.hand?.some(r => /förlåten/.test(r[2])) ?? false;
+    // ett nej
+    let nejX: ReturnType<typeof by> | undefined, silverNej = -1;
+    for (let i = 0; i < 60 && !nejX; i++) {
+      const x = by(300 + i, 2, -40, 'misshandel'), a = x.p.angr?.[0];
+      if (!a) continue;
+      SIM.forlatSvar(x.t, x.p, x.q, a);
+      if (x.p.angr) { nejX = x; silverNej = SIM.ownsAmount(x.t, x.q, 'silver'); }
+    }
+    const nejTanke = nejX?.p.thoughts.some(t => /förlät mig inte/.test(t.text)) ?? false;
+    return [
+      [`den empatiska vännen förlåter oftare (${pct(snall)}) än den hårda efter misshandel (${pct(hard)})`, snall > 0.8 && hard < 0.3],
+      [`tredje gången förlåts mer sällan (${pct(igen)}) än första (${pct(mitt)})`, igen < mitt],
+      [`ett ja lagar relationen halva vägen (${op1.toFixed(0)} → ${op2.toFixed(0)}, innan 60), och den drabbade fick silver (${silverQ})`, !!jaX && Math.abs(op2 - (op1 + (60 - op1) / 2)) < 1 && silverQ > 0],
+      [`ryktet blir svagare hos den som såg det (${v1.toFixed(2)} → ${v2.toFixed(2)})`, v1 > 0 && v2 < v1],
+      [`misshandel står i krönikan (${kron}) och i personloggen (${plogg})`, kron && plogg],
+      [`ett nej: inget byter ägare (${silverNej}), skulden sitter kvar och den som bad tänker på det (${nejTanke})`, !!nejX && silverNej === 0 && nejTanke],
+    ];
+  },
+};
 SCENARIER.vald = {
   text: 'De allvarliga utbrotten (steg 3.2.3): ligga kvar i bädden, göra slut, slå (ett barn minns det alltid), misshandel, flytta ut och dråp, och de som ser det ogillar den som slår (steg 3.3.1)',
   kor: () => {
@@ -2847,6 +2991,149 @@ SCENARIER.uppkallad = {
       [`två levande bär aldrig samma namn`, new Set(levande).size === levande.length],
       [`ett slumpat namn är aldrig namnet på någon byn har kvar, levande eller död`, !slump.some(n => upptagna.has(n))],
       [`byn räknar de uppkallade (${s.stat?.uppkallade ?? 0})`, (s.stat?.uppkallade ?? 0) === s.people.filter(b => b.uppkallad !== undefined).length],
+    ];
+  },
+};
+SCENARIER.ryktesval = {
+  text: 'Ryktet ändrar beteendet (steg 10.8.4): tjuv dämpar viljan att ge, lögnare valet av mentor och förälskelsen, våldsam förälskelsen och barnens val av vem de pratar med. Dämpningen är talet gånger intryckets styrka och säkerhet, minst en tiondel blir kvar; till sitt eget barn ger man som förut, och föräldrarnas intryck räknas för barnet',
+  kor: () => {
+    const t = createState(9, START);
+    klockan(t, 11);
+    const g = nyInvanare(t, 'm', 40), m = nyInvanare(t, 'k', 30), barn = nyInvanare(t, 'm', 25), liten = nyInvanare(t, 'k', 8);
+    barn.father = g.id; liten.father = g.id;
+    getRel(t, g, m).op = 40; getRel(t, g, barn).op = 40; getRel(t, liten, m).op = 20;
+    const tror = (p: Person, om: Person, k: SIM.IntryckTyp, v: number, c: number) => { p.intryck = (p.intryck ?? []).filter(e => !(e.om === om.id && e.k === k)); p.intryck.push({ om: om.id, namn: om.name, k, v, c, t: t.now }); };
+    const ge0 = SIM.willing(t, g, m, 2), barn0 = SIM.willing(t, g, barn, 2), valj0 = SIM.valVikt(t, liten, m), vuxen0 = SIM.valVikt(t, barn, m);
+    tror(g, m, 'tjuv', 1, 1); const geSett = SIM.willing(t, g, m, 2);
+    tror(g, m, 'tjuv', 1, 0.3); const geHort = SIM.willing(t, g, m, 2);
+    tror(g, barn, 'tjuv', 1.5, 1); const barn1 = SIM.willing(t, g, barn, 2);
+    // föräldern tror att m är våldsam: barnet väljer m mer sällan
+    tror(g, m, 'valdsam', 1, 1); const valj1 = SIM.valVikt(t, liten, m), vuxen = SIM.valVikt(t, barn, m);
+    // förälskelsen: lögnare och våldsam, som mest en tiondel kvar
+    const k1 = SIM.dampning(t, g, m.id, 'karlek'); tror(g, m, 'valdsam', 1.5, 1); tror(g, m, 'logn', 1.5, 1); const k2 = SIM.dampning(t, g, m.id, 'karlek');
+    // mentorn: a har lärt den unga mer men är en lögnare, b lite mindre
+    const u = createState(10, START); klockan(u, 11);
+    const ung = nyInvanare(u, 'k', 14), a = nyInvanare(u, 'm', 40), b = nyInvanare(u, 'm', 40);
+    for (const q of [a, b]) { q.skill.hantverk = 15; const r = getRel(u, q, ung); r.op = 60; }
+    ung.skill.hantverk = 2; getRel(u, a, ung).lart = 12; getRel(u, b, ung).lart = 9;
+    SIM.stepRelationer(u); const utan = ung.mentor;
+    ung.intryck = [{ om: a.id, namn: a.name, k: 'logn', v: 1.2, c: 1, t: u.now }]; ung.mentor = undefined;
+    SIM.stepRelationer(u); const med = ung.mentor;
+    return [
+      [`tjuv: viljan att ge ${ge0.toFixed(2)} → ${geSett.toFixed(2)} (sett själv, väntat ${(ge0 * 0.4).toFixed(2)})`, Math.abs(geSett - ge0 * 0.4) < 1e-9 || (ge0 >= 1 && geSett < ge0)],
+      [`det man hört med låg säkerhet dämpar mindre (${geHort.toFixed(2)} mot ${geSett.toFixed(2)})`, geHort > geSett && geHort < ge0],
+      [`till sitt eget barn ger man som förut (${barn0.toFixed(2)} → ${barn1.toFixed(2)})`, barn1 === barn0],
+      [`barnet väljer den som föräldern tror är våldsam mer sällan (vikt ${valj0.toFixed(2)} → ${valj1.toFixed(2)}), en vuxen påverkas inte (${vuxen0.toFixed(2)} → ${vuxen.toFixed(2)})`, valj1 < valj0 * 0.3 && vuxen === vuxen0],
+      [`förälskelsen dämpas (${k1.toFixed(2)}), och som mest blir en tiondel kvar (${k2.toFixed(2)})`, Math.abs(k1 - 0.4) < 1e-9 && k2 === SIM.RYKTE.dampMin],
+      [`mentorn: ${utan === a.id ? 'den som lärt mest' : '?'} utan ryktet, ${med === b.id ? 'den andra' : '?'} när den unga tror att hen är en lögnare`, utan === a.id && med === b.id],
+      [`förklaringen säger det: "${SIM.INTRYCK.tjuv.beteende}"`, SIM.INTRYCK.tjuv.beteende === 'Man ger ogärna till en tjuv.'],
+    ];
+  },
+};
+SCENARIER.ryktesarv = {
+  text: 'Ryktet går i arv (steg 10.8.5): i barnets anseende räknas en fjärdedel av de intryck av föräldern som har en händelse bakom sig, också när föräldern är död, hälften vid full Härkomst och inget vid full Förtjänst. Det föräldern bär på sig räknas inte, och det går bara ett led. Anseendet med arvet avgör vem som får leda, och beskrivningen säger vems barn någon är när förälderns rykte är starkt',
+  kor: () => {
+    const t = createState(9, START);
+    klockan(t, 11);
+    const far = nyInvanare(t, 'm', 50), son = nyInvanare(t, 'm', 25), barnbarn = nyInvanare(t, 'k', 3);
+    const byn = [0, 1, 2, 3].map(() => nyInvanare(t, 'k', 35));
+    son.father = far.id; barnbarn.father = son.id;
+    for (const q of byn) q.intryck = [{ om: far.id, namn: far.name, k: 'tjuv', v: 1, c: 1, t: t.now, bev: [{ h: 'stold', t: t.now, sett: true }] }, { om: far.id, namn: far.name, k: 'rik', v: 1, c: 1, t: t.now }];
+    t.seder.v.fortjanst = 0;
+    const tjuv = SIM.INTRYCK.tjuv.tecken * 4, mitt = SIM.arvAnseende(t, son.id).a, egen = SIM.ryktbarhet(t, son.id).a, med = SIM.anseende(t, son.id).a;
+    const bb = SIM.arvAnseende(t, barnbarn.id).a;
+    t.seder.v.fortjanst = 1; const hark = SIM.arvAnseende(t, son.id).a;
+    t.seder.v.fortjanst = -1; const fort = SIM.arvAnseende(t, son.id).a;
+    t.seder.v.fortjanst = 0;
+    // delarna som inte är viktigast skiftar från dygn till dygn: inom tio dygn står det med
+    let besk = '';
+    for (let d = 0; d < 10 && !besk.includes(`till ${far.name}, som byn kallar`); d++) { besk = SIM.beskrivning(t, son); t.now += SIM.DAY; }
+    SIM.die(t, far, 'alderdom'); const dod = SIM.arvAnseende(t, son.id).a;
+    return [
+      [`en fjärdedel av tjuvryktet (${mitt.toFixed(2)}, väntat ${(tjuv / 4).toFixed(2)}); ryktet rik har ingen händelse bakom sig och räknas inte`, Math.abs(mitt - tjuv / 4) < 1e-9],
+      [`anseendet med arvet (${med.toFixed(2)}) = det egna (${egen.toFixed(2)}) + arvet`, Math.abs(med - egen - mitt) < 1e-9],
+      [`hälften vid full Härkomst (${hark.toFixed(2)}), inget vid full Förtjänst (${fort.toFixed(2)})`, Math.abs(hark - tjuv / 2) < 1e-9 && fort === 0],
+      [`bara ett led: barnbarnet ärver inget (${bb})`, bb === 0],
+      [`också när föräldern är död (${dod.toFixed(2)})`, Math.abs(dod - mitt) < 1e-9],
+      [`beskrivningen: "${besk}"`, besk.includes(`son till ${far.name}, som byn kallar en tjuv`)],
+    ];
+  },
+};
+SCENARIER.skvaller = {
+  text: 'Skvallerbyttor (steg 10.8.6): den som berättar ett dåligt rykte om en annan får lite av intrycket skvallerbytta hos den som lyssnar (händelsen pratade illa om, 0,08), en enstaka gång är glömd efter några dygn, den som gör det ofta bygger upp intrycket, och goda rykten och det som framförs på en scen ger inget. Seden Pratsamhet och Förtegenhet låses upp efter 20 dåliga rykten: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen tvärtom',
+  kor: () => {
+    const by = () => {
+      const t = createState(9, START);
+      klockan(t, 11);
+      const a = nyInvanare(t, 'm', 30), b = nyInvanare(t, 'k', 30), c = nyInvanare(t, 'm', 30);
+      a.intryck = [{ om: c.id, namn: c.name, k: 'tjuv', v: 1, c: 1, t: t.now, bev: [{ h: 'stold', t: t.now, sett: true }] }, { om: c.id, namn: c.name, k: 'skicklig', v: 1, c: 1, t: t.now, bev: [{ h: 'masterverk', t: t.now, sett: true }] }];
+      return { t, a, b, c };
+    };
+    const skv = (x: ReturnType<typeof by>) => SIM.intryckOm(x.b, x.a.id, 'skvaller');
+    const ber = (x: ReturnType<typeof by>, k: SIM.IntryckTyp) => SIM.beratta(x.t, x.a, x.b, x.a.intryck!.find(e => e.k === k)!, getRel(x.t, x.a, x.b));
+    const en = by(); ber(en, 'tjuv'); const v1 = skv(en)?.v ?? 0, bev = skv(en)?.bev?.[0]?.h;
+    SIM.glomRykten(en.t, 96); const glomt = !skv(en);
+    const gott = by(); ber(gott, 'skicklig'); const gottSkv = !!skv(gott);
+    const scen = by(); SIM.beratta(scen.t, scen.a, scen.b, scen.a.intryck![0]!, getRel(scen.t, scen.a, scen.b), 1); const scenSkv = !!skv(scen);
+    const ofta = by(); for (let i = 0; i < 12; i++) { ber(ofta, 'tjuv'); SIM.glomRykten(ofta.t, 2); ofta.t.now += 2 * SIM.HOUR; }
+    const vOfta = skv(ofta)?.v ?? 0, oppen = SIM.sedOppen(ofta.t, 'prat');
+    // 20 dåliga rykten låser upp seden
+    const tjugo = by(); for (let i = 0; i < 19; i++) ber(tjugo, 'tjuv'); const fore = SIM.sedOppen(tjugo.t, 'prat'); ber(tjugo, 'tjuv'); const efter = SIM.sedOppen(tjugo.t, 'prat');
+    const pratsam = by(); pratsam.t.seder.v.prat = 1; ber(pratsam, 'tjuv');
+    const forteg = by(); forteg.t.seder.v.prat = -1; ber(forteg, 'tjuv');
+    // hur ofta: samma samtal många gånger i en pratsam och en förtegen by
+    const antal = (prat: number) => { const x = by(); x.t.seder.v.prat = prat; for (let i = 0; i < 400; i++) SIM.skvaller(x.t, x.a, x.b, getRel(x.t, x.a, x.b), false); return x.t.stat?.rykte_berattat ?? 0; };
+    const nP = antal(1), nM = antal(0), nF = antal(-1);
+    return [
+      [`ett dåligt rykte: lyssnaren tycker lite att berättaren är en skvallerbytta (${v1.toFixed(2)}, ${bev})`, Math.abs(v1 - 0.08) < 1e-9 && bev === 'pratadeIlla'],
+      [`en enstaka gång är glömd efter fyra dygn (fyra år i spelet): ${glomt}`, glomt],
+      [`ett gott rykte ger inget (${gottSkv}), inte heller det som framförs på en scen (${scenSkv})`, !gottSkv && !scenSkv],
+      [`den som gör det ofta bygger upp intrycket (${vOfta.toFixed(2)} efter 12 gånger)`, vOfta > 0.4],
+      [`seden låses upp vid det tjugonde dåliga ryktet (före ${fore}, efter ${efter}; 12 räckte inte: ${oppen})`, !fore && efter && !oppen],
+      [`full Pratsamhet: skvallret väger inget (${!!skv(pratsam)}); full Förtegenhet: dubbelt (${(skv(forteg)?.v ?? 0).toFixed(2)})`, !skv(pratsam) && Math.abs((skv(forteg)?.v ?? 0) - 0.16) < 1e-9],
+      [`rykten berättas oftare i en pratsam by (${nP}) än i mitten (${nM}) och i en förtegen (${nF})`, nP > nM * 1.3 && nF < nM * 0.7],
+      [`intrycket har ett binamn och en symbol`, SIM.BINAMN.skvaller.namn.length >= 4 && SIM.INTRYCK.skvaller.som === 'en skvallerbytta'],
+    ];
+  },
+};
+SCENARIER.fulspel = {
+  text: 'Fulspel (steg 10.8.7): en medlem i fraktionen hittar på något om ledaren när hen pratar med någon utanför den, med chansen 0,3 gånger (10 − empatin) / 10, så att den med empati 10 inte gör det. Den som lyssnar tycker sämre om ledaren. När lögnen når den det sägs ha hänt blir berättaren ertappad, och är den som ertappar lojal mot ledaren avslöjas fraktionen, med en rad i krönikan och en notis',
+  kor: () => {
+    const by = (seed: number, emp: number) => {
+      const t = createState(seed, START);
+      klockan(t, 11);
+      const l = nyInvanare(t, 'm', 40), a = nyInvanare(t, 'm', 30), b = nyInvanare(t, 'k', 30), m = nyInvanare(t, 'k', 30);
+      a.pot.empati = emp; if (a.anlag) a.anlag.empati = emp;
+      const st = SIM.styreAv(t); st.ledare = l.id; st.frak = { led: a.id, med: [a.id] };
+      getRel(t, a, b).op = 0; getRel(t, b, l).op = 30; getRel(t, m, l).op = 60;
+      return { t, l, a, b, m };
+    };
+    // chansen: 200 samtal var
+    const andel = (emp: number) => { let n = 0; for (let i = 0; i < 200; i++) { const x = by(300 + i, emp); SIM.fraktionSamtal(x.t, x.a, x.b); if (x.t.stat?.fulspel) n++; } return n / 200; };
+    const a0 = andel(0), a5 = andel(5), a10 = andel(10);
+    // en lögn: b tycker sämre om ledaren
+    let x: ReturnType<typeof by> | undefined;
+    for (let i = 0; i < 100 && !x; i++) { const y = by(600 + i, 0); SIM.fraktionSamtal(y.t, y.a, y.b); if (y.t.stat?.fulspel) x = y; }
+    const op = getRel(x!.t, x!.b, x!.l).op, e = x!.b.intryck?.find(q => q.om === x!.l.id && q.bev?.[0]?.falsk);
+    // lögnen når den det sägs ha hänt: a ertappas av en lojal, fraktionen avslöjas
+    const mot = byId(x!.t, e?.bev?.[0]?.mot ?? -1)!;
+    getRel(x!.t, mot, x!.l).op = 60;
+    SIM.beratta(x!.t, x!.a, mot, e!, getRel(x!.t, x!.a, mot));
+    const logn = !!SIM.intryckOm(mot, x!.a.id, 'logn'), frak = x!.t.styre?.frak;
+    const kron = x!.t.hist?.kronika?.some(r => r[1] === `${x!.a.name} spred lögner om ${x!.l.name} och blev avslöjad.`) ?? false;
+    const not = (x!.t.notiser?.lista ?? []).some(n => n.rader.some(r => /spred lögner om/.test(r)));
+    // den som ertappar är inte lojal: fraktionen står kvar
+    let z: ReturnType<typeof by> | undefined;
+    for (let i = 0; i < 100 && !z; i++) { const y = by(800 + i, 0); SIM.fraktionSamtal(y.t, y.a, y.b); if (y.t.stat?.fulspel) z = y; }
+    const ez = z!.b.intryck!.find(q => q.om === z!.l.id && q.bev?.[0]?.falsk)!, motz = byId(z!.t, ez.bev![0]!.mot!)!;
+    getRel(z!.t, motz, z!.l).op = 0;
+    SIM.beratta(z!.t, z!.a, motz, ez, getRel(z!.t, z!.a, motz));
+    return [
+      [`chansen i ett samtal: empati 0 ${pct(a0)}, empati 5 ${pct(a5)}, empati 10 ${pct(a10)}`, Math.abs(a0 - 0.3) < 0.08 && Math.abs(a5 - 0.15) < 0.07 && a10 === 0],
+      [`den som lyssnar tycker sämre om ledaren (${op.toFixed(0)}, var 30) och tror något påhittat om hen`, op < 30 && !!e],
+      [`lögnen når ${mot?.name ?? '?'}: berättaren är en lögnare (${logn}) och fraktionen avslöjas (${frak ? 'finns kvar' : 'borta'})`, logn && !frak],
+      [`raden i krönikan (${kron}) och notisen (${not})`, kron && not],
+      [`den som ertappar är inte lojal: fraktionen finns kvar (${!!z!.t.styre?.frak})`, !!z!.t.styre?.frak],
     ];
   },
 };

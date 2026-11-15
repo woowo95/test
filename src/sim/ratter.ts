@@ -38,6 +38,7 @@ export const INGREDIENSER: Record<string, { grupper: Matgrupp[]; huvud?: RattHuv
   rotter: { grupper: ['starkelse'], huvud: 'rot' }, rovor: { grupper: ['starkelse'], huvud: 'rot' },
   svamp: { grupper: ['gront'], huvud: 'svamp' },
   bar: { grupper: ['sott'], huvud: 'bar' },
+  honung: { grupper: ['sott'] }, // steg 10.7.25
   rolleka: { grupper: ['smak'] }, salt: { grupper: ['smak'] }, lok: { grupper: ['smak'] }, // löken (steg 9.6.20) // saltet (steg 9.6.19)
   saltfisk: { grupper: ['protein'], huvud: 'fisk' }, saltkott: { grupper: ['protein', 'fett'], huvud: 'kott' },
   talg: { grupper: ['fett'] },
@@ -51,19 +52,21 @@ export const grupperAv = (k: string): Matgrupp[] => INGREDIENSER[k]?.grupper ?? 
 const MALTID = balans('maltidsniva', {
   lagad: 0.03, // humöret efter en lagad måltid
   fin: 0.06, // och efter en fin måltid
+  fest: 0.12, // och efter en festmåltid ur kokgropen (steg 10.7.28)
 });
 export const MALTIDSNIVA = {
   ratt: { namn: 'Rått', humor: 0, tanke: '' },
   enkel: { namn: 'Enkel', humor: 0, tanke: '' },
   lagad: { namn: 'Lagad', humor: MALTID.lagad, tanke: 'Åt en lagad måltid' },
   fin: { namn: 'Fin', humor: MALTID.fin, tanke: 'Åt en fin måltid' },
+  fest: { namn: 'Fest', humor: MALTID.fest, tanke: 'Åt en festmåltid' }, // bara ur kokgropen (steg 10.7.28, matlagning.ts)
 } satisfies Record<string, { namn: string; humor: number; tanke: string }>;
 export type Maltidsniva = keyof typeof MALTIDSNIVA;
 export const MALTIDSNIVA_LIST = Object.keys(MALTIDSNIVA) as Maltidsniva[];
 // nivån för en lagad rätt med de här grupperna: två grupper är lagad, tre med smak bland dem är fin
 // nivån på en sak man äter: rätten i krukan har sin, det grillade och torkade är enkelt, annars är det rått
 export const maltidsNiva = (k: string): Maltidsniva => rattInfo(k)?.niva ?? (/^(grill|torr|rok|salt|brod)/.test(k) ? 'enkel' : 'ratt');
-const NIVA_ORDNING: Maltidsniva[] = ['ratt', 'enkel', 'lagad', 'fin'];
+const NIVA_ORDNING: Maltidsniva[] = ['ratt', 'enkel', 'lagad', 'fin', 'fest'];
 // den högsta nivån i det som ätits (per = av varje slag, behov.ts)
 export function basta(per: Record<string, number>): Maltidsniva {
   let b: Maltidsniva = 'ratt';
@@ -93,6 +96,7 @@ export const TILLAGNING = {
   grilla: { namn: 'Grilla', behover: 'Grillställningen och elden', tek: 'grill', kategorier: ['grillat'], gor: 'En råvara i taget över elden. Rätten blir enkel' },
   baka: { namn: 'Baka', behover: 'Bakugnen, mjöl och vatten', tek: 'bakugn', kategorier: ['brod'], gor: 'Degen jäser och gräddas i ugnen utan bagaren. Brödet håller sex dygn' }, // steg 9.6.23
   steka: { namn: 'Steka', behover: 'Stekhällen på härden, och talg', tek: 'stekhall', kategorier: ['stek'], gor: 'Kött eller fisk med talg på den heta stenen. Steken smakar bättre' }, // steg 9.6.21
+  grop: { namn: 'Gropbaka', behover: 'Kokgropen och heta stenar', tek: 'kokgrop', kategorier: ['grop'], gor: 'En stor sats med fyra grupper inför en högtid eller ett bröllop, som ligger i gropen utan kocken. Festmåltiden' }, // steg 10.7.28
   koka: { namn: 'Koka', behover: 'En mellanstor lerkruka i elden', tek: 'kruka', kategorier: ['gryta', 'soppa', 'grot'], gor: 'Två eller tre grupper i krukan, som står på elden utan kocken. Kokningen dödar smitta' },
 } satisfies Record<string, { namn: string; behover: string; tek: string; kategorier: string[]; gor: string }>;
 // kategorierna: namnet efter huvudingrediensen, symbolen och hur länge rätten står på elden (minuter, passiv tid)
@@ -102,19 +106,20 @@ export const KATEGORIER = {
   soppa: { namn: 'soppa', tecken: '🍽', passiv: 15 },
   grot: { namn: 'gröt', tecken: '🍽', passiv: 5 },
   stek: { namn: 'stek', tecken: '🔥', passiv: 0 }, // på stekhällen (steg 9.6.21)
-  brod: { namn: 'bröd', tecken: '🍽', passiv: 25 }, // degen jäser 20 minuter och gräddas 5 i bakugnen (steg 9.6.23)
+  brod: { namn: 'bröd', tecken: '🍽', passiv: 25 },
+  grop: { namn: 'gropbakat', tecken: '🔥', passiv: 30 }, // i kokgropen med heta stenar (steg 10.7.28): bara på nivån Fest // degen jäser 20 minuter och gräddas 5 i bakugnen (steg 9.6.23)
 } satisfies Record<string, { namn: string; tecken: string; passiv: number }>;
 export type Kategori = keyof typeof KATEGORIER;
 // huvudingredienserna (den som byn har mest av i värde väljs först, ravaraPoang i matlagning.ts, steg 10.2.37) och kategorierna de kan bli i krukan (den första när rätten har stärkelse,
 // annars den sista)
 export const RATT_HUVUD = {
-  kott: { namn: 'Kött', kat: ['gryta', 'soppa'] },
-  fisk: { namn: 'Fisk', kat: ['gryta', 'soppa'] },
-  sad: { namn: 'Korn', kat: ['grot'] }, // steg 9.6.11
-  rot: { namn: 'Rot', kat: ['grot'] },
-  svamp: { namn: 'Svamp', kat: ['soppa'] },
-  bar: { namn: 'Bär', kat: ['grot'] },
-} satisfies Record<string, { namn: string; kat: Kategori[] }>;
+  kott: { namn: 'Kött', kat: ['gryta', 'soppa'], grop: 'Gropbakat kött' },
+  fisk: { namn: 'Fisk', kat: ['gryta', 'soppa'], grop: 'Gropbakad fisk' },
+  sad: { namn: 'Korn', kat: ['grot'], grop: 'Gropbakat korn' }, // steg 9.6.11
+  rot: { namn: 'Rot', kat: ['grot'], grop: 'Gropbakade rötter' },
+  svamp: { namn: 'Svamp', kat: ['soppa'], grop: 'Gropbakad svamp' },
+  bar: { namn: 'Bär', kat: ['grot'], grop: 'Gropbakade bär' },
+} satisfies Record<string, { namn: string; kat: Kategori[]; grop: string }>; // grop = festmåltidens namn (steg 10.7.28)
 export type RattHuvud = keyof typeof RATT_HUVUD;
 export const RATT_HUVUD_LIST = Object.keys(RATT_HUVUD) as RattHuvud[];
 
@@ -125,11 +130,11 @@ export const hallerSteg = (d: number) => HALLER_STEG.reduce((b, h) => Math.abs(h
 export const rattId = (h: RattHuvud, k: Kategori, n: Maltidsniva, haller: number = RATT.haller) => `r_${h}_${k}_${n}${haller !== RATT.haller ? '_h' + haller : ''}`;
 export interface RattInfo { huvud: RattHuvud; kat: Kategori; niva: Maltidsniva; haller: number }
 export function rattInfo(id: string): RattInfo | undefined {
-  const m = /^r_(\w+?)_(\w+?)_(lagad|fin)(?:_h(\d+))?$/.exec(id);
+  const m = /^r_(\w+?)_(\w+?)_(lagad|fin|fest)(?:_h(\d+))?$/.exec(id);
   return m ? { huvud: m[1] as RattHuvud, kat: m[2] as Kategori, niva: m[3] as Maltidsniva, haller: m[4] ? +m[4] : RATT.haller } : undefined;
 }
 // rättens namn: huvudingrediensen och kategorin, med nivån efter (Fiskgryta · Fin)
-export const rattNamn = (h: RattHuvud, k: Kategori, n: Maltidsniva) => `${RATT_HUVUD[h].namn}${KATEGORIER[k].namn} · ${MALTIDSNIVA[n].namn}`;
+export const rattNamn = (h: RattHuvud, k: Kategori, n: Maltidsniva) => `${k === 'grop' ? RATT_HUVUD[h].grop : RATT_HUVUD[h].namn + KATEGORIER[k].namn} · ${MALTIDSNIVA[n].namn}`;
 export const RATT = {
   ...balans('ratt', {
     tankeTim: 6, // tanken efter en lagad eller fin måltid varar så många timmar (steg 9.6.2)
@@ -156,8 +161,15 @@ export function rattSaker(): Record<string, SakDef> {
     for (const h of ['kott', 'fisk'] as RattHuvud[]) rad(h, 'stek', n, haller); // steken (steg 9.6.21)
     for (const h of RATT_HUVUD_LIST) for (const k of RATT_HUVUD[h].kat) rad(h, k, n, haller);
   }
+  for (const haller of HALLER_STEG) for (const h of RATT_HUVUD_LIST) rad(h, 'grop', 'fest', haller); // festmåltiden ur kokgropen (steg 10.7.28)
   return ut;
 }
 export const RATT_SAKER = Object.keys(rattSaker());
 // utsädet som sparas av fröet k (steg 10.2.32): det fälten byn har och planerar behöver (utsade i odling.ts, satt där)
 export const utsadeKrok = { av: (_s: import('./typer').State, _k: string) => 0 };
+// festmåltiden (steg 10.7.28): kult.ts säger om en ritual med mat väntar (eller pågår), och matlagning.ts öppnar kokgropen vid
+// ritualens måltid och ger var och en som är med en portion. servera svarar med dem som åt ur gropen
+export const festKrok = {
+  vantar: (_s: import('./typer').State, _inom?: number) => false,
+  servera: (_s: import('./typer').State, _med: import('./typer').Person[]): Set<number> => new Set(),
+};

@@ -99,9 +99,10 @@ const DEF = {
   ved: { namn: 'Samlar grenar', yrke: 'Trähuggare', slag: 'tra', arbete: 'ved', behov: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 60, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, runda: { stopp: [3, 6], r: 3, leta: 'letar efter grenar', plock: 'plockar grenar', hel: true }, tungt: true, dygn: true, plats: 'skog' },
   leka: { namn: 'Leker', slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   // sporten (steg 4.3.1, sport.ts): på en plats i byn under fritiden; task.tool är sporten och task.ref matchens start
-  sport: { namn: 'Spelar', verktyg: { brottning: 'Brottas', dragkamp: 'Drar i dragkampen', kast: 'Kastar mot målet', bollspel: 'Spelar bollspel', snoboll: 'Kastar snöboll' }, slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
+  // verktyg: namnen per sport står i SPORTER (sport.ts)
+  sport: { namn: 'Spelar', verktyg: {} as Record<string, string>, slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   // publiken (steg 10.7.16, sport.ts): står i en ring runt matchen och hejar; task.tool är sporten och task.ref matchens start
-  titta: { namn: 'Tittar på matchen', verktyg: { brottning: 'Tittar på brottningen', dragkamp: 'Tittar på dragkampen', kast: 'Tittar på kastandet', bollspel: 'Tittar på bollspelet', snoboll: 'Tittar på snöbollskriget' }, slag: 'prata', vila: true, social: true, dygn: true, stilla: true, plats: 'lek' },
+  titta: { namn: 'Tittar på matchen', verktyg: {} as Record<string, string>, slag: 'prata', vila: true, social: true, dygn: true, stilla: true, plats: 'lek' },
   vila: { namn: 'Vilar', yrke: 'Dagdrivare', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
   samtal: { namn: 'Samtalar vid elden', slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden' },
   maltid: { namn: 'Äter vid bordet', tecken: '🍽️', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
@@ -170,6 +171,7 @@ const DEF = {
   salta_fisk: { namn: 'Saltar in fisk', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, // steg 9.6.19
   salta_kott: { namn: 'Saltar in kött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_vargkott: { namn: 'Saltar in vargkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_radjurkott: { namn: 'Saltar in rådjurskött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_farkott: { namn: 'Saltar in fårkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_getkott: { namn: 'Saltar in getkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_fagelkott: { namn: 'Saltar in fågelkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, salta_bjornkott: { namn: 'Saltar in björnkött', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, // steg 10.3.14
   krossa_saft: { namn: 'Gör saft', slag: 'hantverk', hantverk: true, verb: 'krossar bär', plats: 'elden' }, // bär till saft i en lerkruka (steg 9.6.9)
+  koka_buljong: { namn: 'Kokar buljong', slag: 'hantverk', hantverk: true, verb: 'kokar buljong', plats: 'elden' }, // ben och svamp eller kål sjuder i en lerkruka (steg 10.7.24)
   koka_te: { namn: 'Kokar örtte', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket, annars vid elden (steg 9.5.8)
   koka_salva: { namn: 'Kokar salva', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket (steg 7.6)
   koka_tjara: { namn: 'Kokar tjära', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
@@ -234,6 +236,7 @@ const DEF = {
   rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, tyst: true, stilla: true, verb: 'rensar', plats: 'station' },
   brygga: { namn: 'Lägger en sats i bryggkaret', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'brygger', plats: 'station' }, // brygg.ts (steg 9.6.12)
   malta: { namn: 'Blöter korn till malt', slag: 'hantverk', hantverk: true, verb: 'blöter korn', plats: 'station' }, // kornet hängs på torkställningen (brygg.ts, steg 9.6.13)
+  branna: { namn: 'Bränner sprit', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'bränner', plats: 'station' }, // vin eller öl i brännpannan (brygg.ts, steg 10.7.26)
   tappa: { namn: 'Häller upp ur bryggkaret', slag: 'hantverk', hantverk: true, verb: 'häller upp', plats: 'station' },
   roka: { namn: 'Röker kött och fisk', slag: 'hantverk', hantverk: true, ovar: 'matlagning', stilla: true, verb: 'röker', plats: 'station' }, // rökeriet (matlagning.ts, steg 9.6.8)
   baka: { namn: 'Bakar bröd', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'bakar', plats: 'station' }, // vid bakugnen (matlagning.ts, steg 9.6.23)
@@ -252,6 +255,7 @@ const DEF = {
   staket: { namn: 'Sätter staket runt fältet', slag: 'odla', verb: 'sätter staket', tungt: true }, // odling.ts (steg 9.7.10)
   sopor: { namn: 'Bär resterna till sophögen', slag: 'hantverk', verb: 'bär bort resterna' }, // rester.ts (steg 9.7.5)
   tomma_latrin: { namn: 'Tömmer latrinen i komposten', slag: 'hantverk', verb: 'tömmer latrinen', tungt: true }, // rester.ts (steg 9.7.6)
+  gropa: { namn: 'Lagar festmåltid', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, verb: 'lagar festmåltid', plats: 'station' }, // laddar kokgropen inför en högtid eller ett bröllop (matlagning.ts, steg 10.7.28)
   koka_mat: { namn: 'Lagar mat i krukan', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, stilla: true, verb: 'lagar mat', plats: 'elden' }, // en rätt i lerkrukan, som sedan står på elden (matlagning.ts, steg 9.6.3)
   grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, verb: 'grillar', plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)
   torka: { namn: 'Hänger upp mat på torkställningen', slag: 'hantverk', hantverk: true, stilla: true, verb: 'hänger upp', plats: 'station' }, // och tar ner det som torkat (matlagning.ts, steg 2.8.2)

@@ -289,7 +289,7 @@ export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_me
 // krukorna som står på elden
 export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
 // rätterna i förrådet och i krukorna, i mat (steg 10.2.11): mot det byn äter
-const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + t.kok!.n, 0);
+const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + (t.kok!.vatska ? 0 : t.kok!.n), 0);
 const ratterBehovs = (s: State) => rattMat(s) < matPerDygn(s) * KOK.dygn;
 // p kan laga mat: kan krukan, elden brinner, en ledig kruka, något att koka, byn har för få rätter och ingen annan lagar mat
 export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && s.fire.lit && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
@@ -303,14 +303,17 @@ export function kokaKlar(s: State, p: Person) {
   count(s, 'brant', RATT.portioner - n);
   t.kok = { r: r.id, n, kvar: KATEGORIER[r.kat].passiv * MIN, ag, h: clamp((p.skill.matlagning ?? 0) / MATLAG.brannFull, 0, 1) };
   count(s, 'kokat'); gjort(s, p, 'kokat', 1);
+  if (r.niva === 'fin') specialSats(s, p, r.id, [r.huvud, r.andra, ...(r.smak ? [r.smak] : [])], ageIndex(s)); // byns egen rätt (steg 10.7.29)
   ovning(p, 'matlagning', KOK.prepMin / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'kokForsta')) log(s, `${p.name} lagade byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} i en lerkruka över elden.`, 'world', [p.id]);
 }
 // en gång i timmen (steg.ts): krukorna på elden kokar medan elden brinner, och den färdiga rätten läggs i förrådet
 export function stepKok(s: State) {
+  stepGrop(s); // kokgropen (steg 10.7.28)
   for (const t of kokarNu(s)) {
     if (s.fire.lit) t.kok!.kvar -= HOUR;
     if (t.kok!.kvar > 0) continue;
+    if (t.kok!.vatska) { t.inne = { v: t.kok!.r as import('./vatskor').VatskaId, n: t.kok!.n, q: t.kok!.q, t: s.now }; count(s, 'kokt_' + t.kok!.r, t.kok!.n); t.kok = undefined; continue; } // buljongen står kvar i krukan (steg 10.7.24)
     const tot = Object.values(t.kok!.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {};
     for (const o in t.kok!.ag) { const q = byId(s, Number(o)); if (q && alive(q)) ag[o] = t.kok!.ag[o] / tot * t.kok!.n; }
     if (t.kok!.n > 0) { const h = (s.kockHand ??= {}), har = amountOf(s, t.kok!.r); h[t.kok!.r] = har > 0 ? ((h[t.kok!.r] ?? 0) * har + (t.kok!.h ?? 0) * t.kok!.n) / (har + t.kok!.n) : t.kok!.h ?? 0; put(s, t.kok!.r, t.kok!.n, ag); }
@@ -388,3 +391,89 @@ export function stepBak(s: State) {
   }
 }
 import { fylldSack } from './agande';
+
+// ---------- festmåltiden i kokgropen (steg 10.7.28, Mat, matlagning och dryck: Festmåltiden) ----------
+// Kokgropen är en station ute med heta stenar. Inför en högtid med gille eller ett bröllop (festKrok.vantar, kult.ts) laddar en kock
+// gropen med en stor sats: huvudingrediensen och råvaror ur nya grupper tills fyra grupper är med, smaken bland dem, i GROP.ganger
+// gånger krukans mängder. Satsen ligger GROP-kategorins passiva tid i gropen utan kocken och sedan kvar tills ritualens måltid,
+// då var och en som är med äter en portion. Det som blir över, och hela satsen om ritualen inte blir av, läggs i förrådet
+export const GROP = balans('kokgrop', {
+  prepMin: 4, // så många minuters arbete tar det att ladda gropen (Arbetstider: en stor sak)
+  ganger: 3, // satsen är så många gånger krukans mängder och portioner
+  grupper: 4, // så många grupper har en festmåltid
+  fore: 1, // gropen laddas när en ritual med mat börjar inom så här många dygn (år i spelet)
+});
+export const kokgropar = (s: State) => stationerOf(s).filter(t => t.k === 'kokgrop' && isKlar(t));
+export const tomGrop = (s: State) => kokgropar(s).find(t => !t.grop);
+export interface FestRecept { id: string; av: [string, number][] }
+// festmåltiden som kan lagas av det p kan ta: huvudingrediensen med högst poäng, smaken och två råvaror ur nya grupper
+export function festRecept(s: State, p?: Person): FestRecept | undefined {
+  const g = GROP.ganger, tar = (k: string) => (p ? getable(s, p, k) : amountOf(s, k)) - utsadeKrok.av(s, k), har = (k: string, n: number) => tar(k) >= n;
+  const smak = RATT_SMAK.find(k => har(k, RATT.smak * g));
+  if (!smak) return undefined;
+  const huvuden = Object.keys(INGREDIENSER).filter(k => INGREDIENSER[k].huvud && iKrukan(k) && har(k, RATT.huvud * g) && !(p && matAvstar(s, p, k)) && (RATT_HUVUD_LIST as string[]).includes(INGREDIENSER[k].huvud!))
+    .map(k => ({ k, v: ravaraPoang(s, k, tar(k)) })).sort((a, b) => b.v - a.v);
+  for (const { k: huvud } of huvuden) {
+    const grupper = new Set([...grupperAv(huvud), ...grupperAv(smak)]), andra: string[] = [];
+    while (andra.length < 2) {
+      const ny = (k: string) => grupperAv(k).filter(x => !grupper.has(x)).length;
+      const k = Object.keys(INGREDIENSER).filter(k => k !== huvud && !andra.includes(k) && iKrukan(k) && ny(k) > 0 && har(k, RATT.andra * g) && !(p && matAvstar(s, p, k)))
+        .sort((a, b) => ny(b) - ny(a) || ravaraPoang(s, b, tar(b)) - ravaraPoang(s, a, tar(a)))[0];
+      if (!k) break;
+      andra.push(k); for (const x of grupperAv(k)) grupper.add(x);
+    }
+    if (andra.length < 2 || grupper.size < GROP.grupper) continue;
+    const av: [string, number][] = [[huvud, RATT.huvud * g], ...andra.map(k => [k, RATT.andra * g] as [string, number]), [smak, RATT.smak * g]];
+    return { id: rattId(INGREDIENSER[huvud].huvud as RattHuvud, 'grop', 'fest', hallerMedel(av)), av };
+  }
+  return undefined;
+}
+// p kan ladda gropen: kan kokgropen, en tom grop, en ritual med mat väntar, ingen annan laddar den och det finns råvaror
+export const kanGropa = (s: State, p: Person) => knows(p, 'kokgrop') && !!tomGrop(s) && festKrok.vantar(s, GROP.fore * DAY) && !kokgropar(s).some(t => t.grop) && enTill(s, 'gropa', p) && !!festRecept(s, p);
+// förberedelsen är klar (KLAR i steg.ts): råvarorna tas och satsen läggs i gropen
+export function gropKlar(s: State, p: Person, ref?: number) {
+  const t = kokgropar(s).find(q => q.id === ref && !q.grop) ?? tomGrop(s), r = festRecept(s, p);
+  if (!t || !r) return;
+  const ag: Record<string, number> = {};
+  for (const [k, n] of r.av) addDel(ag, takeMaterial(s, p, k, n), 1);
+  const alla = RATT.portioner * GROP.ganger;
+  let n = 0; for (let i = 0; i < alla; i++) if (rnd(s, 'mat', p) >= brannDel(p)) n++;
+  count(s, 'brant', alla - n);
+  t.grop = { r: r.id, n, kvar: KATEGORIER.grop.passiv * MIN, ag, h: clamp((p.skill.matlagning ?? 0) / MATLAG.brannFull, 0, 1) };
+  count(s, 'gropat'); gjort(s, p, 'gropat', 1);
+  specialSats(s, p, r.id, r.av.map(([k]) => k), ageIndex(s)); // byns egen rätt (steg 10.7.29)
+  ovning(p, 'matlagning', GROP.prepMin / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
+  if (forstaGang(s, 'gropForsta')) log(s, `${p.name} lade byns första festmåltid i kokgropen bland de heta stenarna.`, 'world', [p.id]);
+}
+// satsen läggs i förrådet som en vanlig rätt, med kockens hand och ägarna efter råvarorna
+function gropUpp(s: State, t: Station) {
+  const g = t.grop!, tot = Object.values(g.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {};
+  for (const o in g.ag) { const q = byId(s, Number(o)); if (q && alive(q)) ag[o] = g.ag[o] / tot * g.n; }
+  if (g.n > 0) { const h = (s.kockHand ??= {}), har = amountOf(s, g.r); h[g.r] = har > 0 ? ((h[g.r] ?? 0) * har + (g.h ?? 0) * g.n) / (har + g.n) : g.h ?? 0; put(s, g.r, g.n, ag); }
+  count(s, 'ratter', g.n);
+  t.grop = undefined;
+}
+// en gång i timmen (stepKok): satsen bakas i gropen, och när den är klar och ingen ritual med mat väntar läggs den i förrådet
+function stepGrop(s: State) {
+  for (const t of kokgropar(s)) {
+    if (!t.grop) continue;
+    if (t.grop.kvar > 0) t.grop.kvar -= HOUR;
+    if (t.grop.kvar <= 0 && !festKrok.vantar(s)) { gropUpp(s, t); count(s, 'gropUtanFest'); }
+  }
+}
+// ritualens måltid: gropen öppnas, och var och en som är med äter en portion som en vanlig måltid. Svarar med dem som åt
+festKrok.servera = (s, med) => {
+  const t = kokgropar(s).find(q => q.grop && q.grop.kvar <= 0), at = new Set<number>();
+  if (!t) return at;
+  const k = t.grop!.r;
+  gropUpp(s, t);
+  for (const p of med) {
+    if (amountOf(s, k) < 1) break;
+    use(s, p, k, 1); ataPortion(s, p, k); at.add(p.id);
+  }
+  count(s, 'festmaltid', at.size);
+  return at;
+};
+import { ataPortion } from './behov';
+import { festKrok } from './ratter';
+import { specialSats } from './special';

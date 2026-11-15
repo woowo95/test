@@ -18,6 +18,7 @@ const HITTAS: Record<string, string> = {
   torrgras: 'Hittas när man samlar', sten: 'Hittas när man samlar, mest vid stenarna och i sanden',
   flinta: 'Hittas ibland när man samlar, mest vid stenarna', lera: 'Grävs vid stranden, fortare med benspaden', kol: 'Blir kvar när en eld brunnit ut',
   rovor: 'Odlas på fältet', arter: 'Odlas på fältet', silver: 'Fås av handlaren',
+  honung: 'Tas ur vildbinas bon i skogen på sommaren och hösten', // steg 10.7.25
   appel: 'Plockas från äppelträden på fältet', appelplanta: 'Köps av handlaren', notter: 'Plockas av den vilda hasseln på hösten, och av hassel som satts', // steg 9.7.13–9.7.14
   jordgubbar: 'Odlas på fältet, och skördas flera gånger', jordgubbsplanta: 'Köps av handlaren', // steg 9.7.9
   kal: 'Odlas på fältet', bonor: 'Köps av handlaren och odlas på fältet', kalfron: 'Köps av handlaren, och kommer tillbaka vid skörden', // steg 9.7.8
@@ -25,8 +26,8 @@ const HITTAS: Record<string, string> = {
   slaktfar: 'Ett får som avlivats', slaktget: 'En get som avlivats', djurhorn: 'Slaktas ur ett får eller en get', fiskrens: 'Blir kvar när fisk rensas', // djuren (system 9.8)
   ull: 'Klipps av fåren', levfar: 'Köps av handlaren', levget: 'Köps av handlaren', levhons: 'Köps av handlaren', lovkarve: 'Skärs av en hamlad björk vart tredje dygn',
   korn: 'Köps av handlaren, och odlas sedan på fältet', salt: 'Köps av handlaren från byarna vid havet', // steg 9.6.11 och 9.6.19
-  ...Object.fromEntries(RATT_SAKER.map(k => [k, rattInfo(k)?.kat === 'stek' ? 'Steks på stekhällen vid grillen' : 'Kokas i en lerkruka över elden'])), // rätterna (steg 9.6.3 och 9.6.21)
-  kott: 'Slaktas ur fällt vilt', ben: 'Slaktas ur fällt vilt', skinn: 'Slaktas ur fällt vilt', talg: 'Slaktas ur fällt vilt och vargar',
+  ...Object.fromEntries(RATT_SAKER.map(k => [k, rattInfo(k)?.kat === 'stek' ? 'Steks på stekhällen vid grillen' : rattInfo(k)?.kat === 'grop' ? 'Bakas i kokgropen inför en högtid eller ett bröllop' : 'Kokas i en lerkruka över elden'])), // rätterna (steg 9.6.3 och 9.6.21)
+  kott: 'Slaktas ur fällt vilt', ben: 'Slaktas ur fällt vilt', skinn: 'Slaktas ur fällt vilt', vitskinn: 'Slaktas ur en hare under istiden, när pälsen är vit', talg: 'Slaktas ur fällt vilt och vargar',
   vargkott: 'Slaktas ur en fälld varg', vargskinn: 'Slaktas ur en fälld varg', vargdel: 'Styckas där en varg föll, när den är för tung att bära hel',
   radjur: 'Fälls med spjut i skogskanten', fagel: 'Fälls med spjut eller sten, sällan', fjadrar: 'Slaktas ur en fälld fågel', agg: 'Hittas ibland på våren när man samlar', radjursskinn: 'Slaktas ur ett fällt rådjur', radjurdel: 'Styckas där ett rådjur föll, när det är för tungt att bära helt',
   radjurkott: 'Slaktas ur ett fällt rådjur', farkott: 'Slaktas ur ett får', getkott: 'Slaktas ur en get', fagelkott: 'Slaktas ur en fälld fågel', bjornkott: 'Slaktas ur en fälld björn', farskinn: 'Slaktas ur ett får', getskinn: 'Slaktas ur en get',
