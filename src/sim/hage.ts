@@ -60,6 +60,9 @@ export function hageKant(s: State, h: Hage) {
 }
 export const hageHel = (s: State, h: Hage) => hageKant(s, h).every(i => harStaket(s, i));
 export const betesdjurOf = (s: State) => tamdjurOf(s).filter(d => tamArt(d.art).bete);
+// hur många får betesdjuren äter som (steg 10.10.1): kon räknas som två
+export const atarSom = (ds: Tamdjur[]) => ds.reduce((n, d) => n + tamArt(d.art).ater, 0);
+export const betesTal = (s: State) => atarSom(betesdjurOf(s));
 export const djurIHagen = (s: State, h: Hage) => tamdjurOf(s).filter(d => d.hage === h.id && d.fahus === undefined); // de som står i fähuset betar inte (steg 9.9.3)
 // betet som är kvar i hagen: gräs (summan av täcket över bar jord), buskar och ungträd
 export function hageBete(s: State, h: Hage) {
@@ -69,7 +72,7 @@ export function hageBete(s: State, h: Hage) {
 }
 // hur många dygn betet räcker för djuren som går där (utan återväxt)
 export function hageDygn(s: State, h: Hage, extra = 0) {
-  const n = djurIHagen(s, h).length + extra;
+  const n = atarSom(djurIHagen(s, h)) + extra;
   if (!n) return Infinity;
   return hageMat(s, h) / (n * TAM.hungerTim * 24);
 }
@@ -89,7 +92,7 @@ export function malHage(s: State, n: number, fran?: Hage) {
 }
 
 // hagens sida för byns betesdjur (steg 10.2.36)
-export const hageSida = (s: State) => Math.min(HAGE.maxSida, Math.max(HAGE.minSida, Math.ceil(Math.sqrt(Math.max(1, betesdjurOf(s).length) * HAGE.perDjur))));
+export const hageSida = (s: State) => Math.min(HAGE.maxSida, Math.max(HAGE.minSida, Math.ceil(Math.sqrt(Math.max(1, betesTal(s)) * HAGE.perDjur))));
 // behöver djuren en ny hage? När det inte finns någon, eller en hage är nedbetad och ingen annan har bete (steg 9.8.6); en
 // nedbetad hage står kvar och växer igen. En hage som inte har staket runt om än blir färdig först
 export function nyHageBehov(s: State) {
@@ -186,9 +189,11 @@ function stepBete(s: State, d: Tamdjur) {
     }
     return;
   }
+  // ett större djur blir hungrigt fortare och tar större tuggor av gräset (ater, steg 10.10.1): kon betar av hagen dubbelt så fort
+  const at = tamArt(d.art).ater;
   if (b.slag === 'buske') { tabortBuske(g, b.i); d.hunger = Math.max(0, d.hunger - HAGE.buskMat); count(s, 'betadeBuskar'); }
   else if (b.slag === 'trad') { g.trees[b.i] = 0; d.hunger = Math.max(0, d.hunger - HAGE.tradMat); count(s, 'betadeTrad'); }
-  else { g.cover[b.i] = Math.max(0, g.cover[b.i] - HAGE.bett); d.hunger = Math.max(0, d.hunger - HAGE.grasMat); count(s, 'betadeGras'); }
+  else { g.cover[b.i] = Math.max(0, g.cover[b.i] - HAGE.bett * at); d.hunger = Math.max(0, d.hunger - HAGE.grasMat * at); count(s, 'betadeGras'); }
   d.x = b.i % W + 0.5; d.y = Math.floor(b.i / W) + 0.5;
 }
 

@@ -21,7 +21,7 @@ import { getMap } from './karta';
 import { gridOf, housesOf, Hus } from './byggnad';
 import { rumTaggar } from './rum';
 import { komposten } from './rester';
-import { betesdjurOf, hagarOf } from './hage';
+import { betesTal, betesdjurOf, hagarOf } from './hage';
 import { Tamdjur, tamDor, tamdjurOf } from './tamdjur';
 import { faltRiktning, faltSite } from './odling';
 
@@ -53,7 +53,7 @@ export const angAt = (s: State, x: number, y: number) => angarOf(s).find(a => x 
 export function angRutor(a: Ang) { const r: number[] = []; for (let y = a.y; y < a.y + a.h; y++) for (let x = a.x; x < a.x + a.w; x++) r.push(y * W + x); return r; }
 // Ängen är ett projekt (raden ang i PROJEKT, projekt.ts, steg 10.2.36): när byn har betesdjur och en hage men ängarna är för
 // små för höet djuren behöver i istiden märker någon ut en ny, så stor som det som saknas, på samma sorts plats som ett fält
-const angBehov = (s: State) => Math.ceil(betesdjurOf(s).length * VINTER.hoPerDjur / VINTER.ho * VINTER.angMarg); // rutorna djuren behöver
+const angBehov = (s: State) => Math.ceil(betesTal(s) * VINTER.hoPerDjur / VINTER.ho * VINTER.angMarg); // rutorna djuren behöver
 const angHar = (s: State) => angarOf(s).reduce((n, a) => n + a.w * a.h, 0);
 export const angBrist = (s: State) => betesdjurOf(s).length && hagarOf(s).length && angHar(s) * VINTER.angMarg < angBehov(s) ? 1 : 0;
 const angSida = (s: State) => Math.min(VINTER.angMax, Math.max(VINTER.angMin, Math.ceil(Math.sqrt(Math.max(1, angBehov(s) - angHar(s))))));
@@ -143,7 +143,7 @@ export function stepVinter(s: State) {
 }
 // hö som räcker åt djuren över istiden? Lövkärvarna räknas som hö (steg 9.8.16). Annars slaktar byn på hösten (slaktOrsak i boskap.ts)
 export const hoAv = (s: State) => amountOf(s, 'torrgras') + amountOf(s, 'lovkarve');
-export const hoRacker = (s: State) => hoAv(s) >= betesdjurOf(s).length * VINTER.hoPerDjur;
+export const hoRacker = (s: State) => hoAv(s) >= betesTal(s) * VINTER.hoPerDjur; // kon äter som två får (steg 10.10.1)
 
 // ---------- lövtäkten: de hamlade träden (steg 9.8.16) ----------
 // I handlingen hamla kapas grenarna på en björk nära byn en bit upp på stammen, och trädet skjuter nya skott. Vart tredje
@@ -161,7 +161,7 @@ export function hamlaVal(s: State, p: Person): number | undefined {
   if (ageOf(p, s.now) < ALDER.vuxen || !isLight(s.now) || !lovtid(s) || !betesdjurOf(s).length) return undefined;
   for (const h of hamladeOf(s)) if (moget(s, h) && !upptagen(s, p, h.i)) return h.i;
   // en ny björk när höet och lövet som de hamlade träden ger nästa gång inte räcker åt djuren: antalet följer höbristen (steg 10.2.44)
-  if (hoAv(s) + hamladeOf(s).length * VINTER.lov >= betesdjurOf(s).length * VINTER.hoPerDjur) return undefined;
+  if (hoAv(s) + hamladeOf(s).length * VINTER.lov >= betesTal(s) * VINTER.hoPerDjur) return undefined;
   const i = nyBjork(s);
   return i !== undefined && !upptagen(s, p, i) ? i : undefined;
 }

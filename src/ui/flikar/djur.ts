@@ -1,4 +1,4 @@
-import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, radjurGrupper, radjurOf, vargarOf } from '../../sim';
+import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, tamArt, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, radjurGrupper, radjurOf, vargarOf } from '../../sim';
 import { djurBild, hasIcon, iconCanvas, iconImg } from '../../ikoner';
 import { bar, condBar, esc, pLink } from '../hjalp';
 import { HONS_ID0, arHona, arTamt, djurSynliga } from '../vaxter';
@@ -34,8 +34,8 @@ function tamHtml() {
       ${rad('🍖', d.hunger, pr(d.hunger), d.hunger >= 1 ? 'Svälter' : d.hunger >= 0.5 ? 'Hungrig: behöver mat' : 'Mätt', d.hunger > 0.6 ? 'low' : '')}
       ${rd('🧑', d.agare !== undefined ? 'Ägaren. Djuret ärvs och matas av hen' : 'Byn äger djuret', q ? pLink(q) : d.agare !== undefined ? '–' : 'Byn')}
       ${d.art === 'hund' && d.lojal !== undefined ? rad('❤', d.lojal, pr(d.lojal), 'Lojalitet mot ägaren: växer när ägaren matar och är nära, sjunker när hen är långt borta och när hunden är hungrig', 'skill') : ''}
-      ${d.art === 'far' ? rad(iconImg('ull', 14), d.ull ?? 0, pr(d.ull ?? 0), (d.ull ?? 0) >= 1 ? 'Ullen är full och kan klippas' : 'Ullen växer ut och klipps med kniven', 'skill', true) : ''}
-      ${d.art === 'get' ? rad('💧', d.mjolk ?? 0, pr(d.mjolk ?? 0), (d.mjolk ?? 0) >= 1 ? 'Full av mjölk och kan mjölkas' : 'Mjölken växer till, och geten mjölkas två gånger om dygnet', 'skill') : ''}
+      ${tamArt(d.art).ull ? rad(iconImg('ull', 14), d.ull ?? 0, pr(d.ull ?? 0), (d.ull ?? 0) >= 1 ? 'Ullen är full och kan klippas' : 'Ullen växer ut och klipps med kniven', 'skill', true) : ''}
+      ${tamArt(d.art).mjolk ? rad('💧', d.mjolk ?? 0, pr(d.mjolk ?? 0), (d.mjolk ?? 0) >= 1 ? 'Full av mjölk och kan mjölkas' : 'Mjölken växer till, och geten mjölkas två gånger om dygnet', 'skill') : ''}
       ${d.art !== 'hund' ? plats : ''}
     </dl>`;
 }
