@@ -74,7 +74,7 @@ SCENARIER.yxa = {
   lang: true,
   text: 'Byn har en yxa: träd fälls, stammarna huggs till ved och det växer gräs där träden stod',
   kor: () => {
-    const s = createState(14, START); // by 14 sedan v146: i by 13 gick stigarna rakt över fällplatserna, så mest bar jord
+    const s = createState(15, START); // by 15 sedan 10.9: i by 13 och 14 gick stigarna rakt över de första fällplatserna nära lägret, så mest bar jord
     setAmount(s, 'yxa', 1);
     tandEld(s); // elden brinner: annars hänger provet på när flintan råkar lyckas (ungefär vart femtionde försök)
     s.byggSok = Infinity; // inget hus: träden på en husplats fälls för bygget, inte för ved
