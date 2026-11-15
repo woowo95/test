@@ -2,12 +2,13 @@ import { fraktionSamtal } from './rost';
 import { personHand } from './personlogg';
 import { barnTill, upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
-import { blocked, isWall } from './byggnad';
+import { blocked, gridOf } from './byggnad';
+import { tileOf } from './mark';
 import { sittAt, stationAt } from './stationer';
 import { berattaBrist } from './naring';
 import { moodOf } from './humor';
 import { clamp, pickViktat, rnd } from './slump';
-import { DAY, HOUR, Person, Rel, SEC, State } from './typer';
+import { DAY, HOUR, Person, Rel, SEC, State, inMap } from './typer';
 import { pair } from './varld';
 import { share } from './minne';
 import { askForGift } from './behov';
@@ -160,7 +161,9 @@ export const PRATAR_SEK = 20;
 // står en hel vägg mellan a och b (steg 10.2.16)? En dörr eller en öppning gör det inte (isWall: bara väggens rutor)
 export function vaggMellan(s: State, a: { x: number; y: number }, b: { x: number; y: number }) {
   const d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.ceil(d / 0.25);
-  for (let i = 1; i < n; i++) { const f = i / n; if (isWall(s, a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f)) return true; }
+  if (n <= 1) return false;
+  const solid = gridOf(s).solid; // väggarna hämtas en gång för hela sträckan (isWall frågar dem för varje punkt)
+  for (let i = 1; i < n; i++) { const f = i / n, x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f; if (inMap(x, y) && solid[tileOf(x, y)] === 1) return true; }
   return false;
 }
 // två som kan höra varandra: nära (SAMTAL.radie) och utan vägg emellan
