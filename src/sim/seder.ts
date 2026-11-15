@@ -4,7 +4,7 @@ import { think } from './folk';
 import { HOUR } from './typer';
 import { ALDER, ageOf, living, log } from './folk';
 import { clamp } from './slump';
-import { Act, DAY, Person, Seder, State } from './typer';
+import { DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
 import { ACTS, ACT_LIST } from './handlingar';
@@ -185,33 +185,9 @@ export function naturTanke(s: State, text: string) {
 }
 // tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
 export const HABIT_FADE = SED.vanaDygn * DAY;
-// Vanornas slag i den ordning de lades till, som for-in ger dem. Med fler än ett tiotal slag blir vanobjektet ett
-// uppslagsverk i V8, och då är for-in långsamt, så listan sparas per vanobjekt. Bara addHabit lägger till slag
-const vanSlag = new WeakMap<Record<string, number>, string[]>();
-function habitKeys(h: Record<string, number>) {
-  let ks = vanSlag.get(h);
-  if (!ks) vanSlag.set(h, ks = Object.keys(h));
-  return ks;
-}
-export function habitTotal(p: Person) {
-  const h = p.habit;
-  let t = 0;
-  for (const k of habitKeys(h)) t += h[k];
-  return t;
-}
-// alla vanor bleknar med faktorn hf, och tim timmar läggs till act
-export function addHabit(p: Person, act: Act, hf: number, tim: number) {
-  const h = p.habit, ks = habitKeys(h);
-  for (const k of ks) h[k] *= hf;
-  if (!(act in h)) ks.push(act);
-  h[act] = (h[act] ?? 0) + tim;
-}
-export function habitShare(p: Person, acts: readonly Act[], tot = habitTotal(p)) {
-  if (!(tot > 0)) return 0;
-  let a = 0;
-  for (const k of acts) a += p.habit[k] ?? 0;
-  return a / tot;
-}
+// vanornas timmar (vanor.ts): listan bredvid vanobjektet, och funktionerna som läser och skriver den
+import { habitShare, habitTotal } from './vanor';
+export { addHabit, habitShare, habitTotal, skrivVanor, vana, vanaSumma } from './vanor';
 // yrkestaggarna, i den ordning de prövas, med den minsta andel av tiden som ger taggen. Vilka handlingar som räknas till ett
 // yrke står i handlingens rad (yrke i handlingar.ts). Ett nytt yrke blir en rad här och ett yrke på handlingarna
 const YRKEN: Record<string, number> = {

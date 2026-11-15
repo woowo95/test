@@ -1,6 +1,6 @@
 import { areaCenter, larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
+import { vana, pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
 import { figurSvg, portrattImg } from '../folkbild';
 import { FARGER, farg } from '../../palett';
@@ -117,7 +117,7 @@ function egenKort(p: Person) {
   return k ? `Bäst: ${STAT_NAMES[k].toLowerCase()}` : '';
 }
 function tidKort(p: Person) {
-  const tot = habitTotal(p) - (p.habit.sova ?? 0);
+  const tot = habitTotal(p) - vana(p, 'sova');
   if (!(tot > 0)) return '';
   const g = HABIT_GROUPS().map(g => ({ g, v: habitShare(p, g.acts, tot) })).sort((a, b) => b.v - a.v)[0];
   return g && g.v > 0 ? `mest ${esc(g.g.name.toLowerCase())}` : '';
@@ -595,7 +595,7 @@ function handHtml(p: Person) {
   return `<ul class="fame phand">${r.map(x => `<li${x.alla.length > 1 ? ` title="${esc(x.alla.join(' '))}"` : ''}><span title="${esc(PERSONLOGG[x.k].namn)}">${PERSONLOGG[x.k].ikon}</span> <span class="muted">${esc(clockTxt(x.t))}</span> ${esc(x.text)}</li>`).join('')}</ul>`;
 }
 function tidHtml(p: Person) {
-  const tot = habitTotal(p) - (p.habit.sova ?? 0);
+  const tot = habitTotal(p) - vana(p, 'sova');
   if (!(tot > 0)) return '<p class="muted">Hen har inte hunnit göra något ännu.</p>';
   const all = HABIT_GROUPS().map(g => ({ g, v: habitShare(p, g.acts, tot) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v);
   const stora = all.filter(x => x.v >= SMA), annat = all.filter(x => x.v < SMA).reduce((a, x) => a + x.v, 0);

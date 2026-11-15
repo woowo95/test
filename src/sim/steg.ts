@@ -53,6 +53,7 @@ import { MARK, groundOf, growGround, markslag, packGround, tileOf } from './mark
 import { bynsMitt } from './omrade';
 import { SAMTAL, TalkEvent, converse, horHar, kanPrata, skiljsAt } from './samtal';
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
+import { skrivVanor } from './vanor';
 import { RELT, stepRelationer } from './relationer';
 import { MINNE, areaOf, fearPlace, forget, lookAround, observe, radslaVid, sees, sightOf, trorOm } from './minne';
 import { PLATS } from './plats';
@@ -1373,11 +1374,12 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   // blocked och sees för varje ruta, med kartan, väggarna och sikten hämtade en gång. Synen avgörs av avståndet i kvadrat när det
   // är klart innanför eller utanför sikten (med en marginal långt över avrundningen), och annars som sees räknar
   const tiles = getMap(s.seed).tiles, grid = gridOf(s), flod = !!s.flod, sikt2 = sikt * sikt, inom = sikt >= 0 ? sikt2 * (1 - 1e-9) : -1, utom = sikt >= 0 ? sikt2 * (1 + 1e-9) : Infinity;
+  const syn2 = RUNDA.syn * RUNDA.syn, trangInom = RUNDA.syn >= 0 ? syn2 * (1 - 1e-9) : -1, trangUtom = RUNDA.syn >= 0 ? syn2 * (1 + 1e-9) : Infinity;
   for (let k = 0; k < ring.d.length; k++) {
     const x = x0 + ring.dx[k], y = y0 + ring.dy[k], d = ring.d[k], i = y * W + x;
     if (!inMap(x, y) || vt[i] === T.Vatten || tiles[i] === T.Vatten && !grid.brygga[i] || flod && iVattnetNu(s, i) || grid.solid[i] === 1) continue; // (inte i en vägg)
     let trangt = 0;
-    for (const q of andra) if (Math.hypot(q.x - x, q.y - y) < RUNDA.syn) trangt++;
+    for (const q of andra) { const bx = q.x - x, by = q.y - y, b2 = bx * bx + by * by; if (b2 < trangInom ? true : b2 > trangUtom ? false : Math.hypot(bx, by) < RUNDA.syn) trangt++; } // som synen ovan
     const ax = x + 0.5 - p.x, ay = y + 0.5 - p.y, a2 = ax * ax + ay * ay;
     const ser = !tror0 || (a2 < inom ? true : a2 > utom ? false : sees(s, p, x, y, sikt)), tror = ser ? saker(x, y) : tror0!(x, y) * iSaker;
     // vägen dit räknas i samma enhet som det hen tror finns där: bortom synvidden i saker (iSaker). Förut vägde avståndet femtio
@@ -1498,7 +1500,7 @@ function avrunda(this: unknown, k: string, v: unknown) {
   return v;
 }
 export function serialize(s: State) {
-  packGround(s); packFynd(s);
+  packGround(s); packFynd(s); skrivVanor();
   return JSON.stringify(s, avrunda);
 }
 // en kopia av byn, som en sparad och inläst by (cacherna i WeakMap följer inte med, regel 4)
@@ -1508,7 +1510,7 @@ export const cloneState = (s: State) => migrate(JSON.parse(serialize(s)));
 // Varje del skrivs direkt med samma avrundning, så texten blir densamma som om hela byn skrivits och delats upp efteråt
 export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['mark', 'skog', 'tradAlder', 'tradSort', 'buskar', 'barbuskar', 'stubbar'], fynden: ['fynd'], loggen: ['log'], notiser: ['notiser'] };
 export function serializeParts(s: State): Record<string, string> {
-  packGround(s); packFynd(s);
+  packGround(s); packFynd(s); skrivVanor();
   const o = s as unknown as Record<string, unknown>, ut: Record<string, string> = {}, bort = new Set<string>();
   for (const [d, keys] of Object.entries(DELAR)) {
     const del: Record<string, unknown> = {};
