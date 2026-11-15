@@ -544,7 +544,7 @@ export function personPart(s: State, p: Person, silver = true): Part {
 // x, y = där den som handlar för byn står
 // det byn behåller av materialet k när den byter: bufferten i förrådsmålen (villHaAv), och utsädet (steg 10.2.32)
 const behalla = (s: State, k: string) => Math.max(arMaterial(k) ? villHaAv(s, k) : 0, utsadeKrok.av(s, k));
-const bynsDel = (s: State, k: string) => { let n = amountOf(s, k); for (const p of living(s)) n -= ownsAmount(s, p, k); return Math.max(0, helt(n)); };
+export const bynsDel = (s: State, k: string) => { let n = amountOf(s, k); for (const p of living(s)) n -= ownsAmount(s, p, k); return Math.max(0, helt(n)); };
 function bynNod(s: State, b: Behov) { let n = 0; for (const j of b.slag) n += amountOf(s, j) * perOf(b, j); return { har: n, behover: living(s).length * b.kvar }; }
 // byns del av mat eller ved, och bufferten för den, i behovets enheter
 function bynBuffert(s: State, b: Behov) {
@@ -558,6 +558,12 @@ const iGruppen = (s: State, g: string) => tingOf(s).filter(t => gruppOf(t.k) ===
 export const villGrupp = (s: State, g: string) => REDSKAPMAL[g]?.(s) ?? 1;
 export function bynBehov(s: State, k: string) {
   if (k === 'silver') return 1;
+  // det byns projekt saknar (steg 10.5.17, projekt.ts): från grundvärdet upp till DELA.saknar efter projektets brist
+  const ps = s.projektSaknar?.[k];
+  if (ps && ps.n >= 1) return Math.max(bynBehovUtan(s, k), 1 + (DELA.saknar - 1) * ps.b);
+  return bynBehovUtan(s, k);
+}
+function bynBehovUtan(s: State, k: string) {
   if (isTool(k)) { const g = gruppOf(k), n = iGruppen(s, g).length; return n < 1 ? DELA.saknar : n < villGrupp(s, g) ? 1 : DELA.over; }
   const b = behovMed(k);
   if (!b) { const n = amountOf(s, k); return n < 1 ? DELA.saknar : n < behalla(s, k) ? 1 : DELA.over; }
@@ -578,7 +584,7 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
       grupper.set(g, over);
       continue;
     }
-    let n = bynsDel(s, k);
+    let n = bynsDel(s, k) - (s.projektSaknar?.[k]?.beh ?? 0); // det projekten behöver säljs inte (steg 10.5.17)
     if (n < 1) continue;
     const b = behovMed(k);
     if (b) {

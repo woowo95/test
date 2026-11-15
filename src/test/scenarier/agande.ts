@@ -5,7 +5,7 @@ import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, 
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { lasBy } from '../delby';
-import { rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader } from './hjalp';
+import { testBy, rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
@@ -1061,7 +1061,7 @@ SCENARIER.handelsvaror = {
   },
 };
 SCENARIER.handlare = {
-  text: 'Handlare som kommer oftare ju rikare byn är (steg 4.4.1.2 och 10.2.45, handel.ts): en fattig by får vänta länge, och i en rik by kommer den första snart. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen.',
+  text: 'Handlare som kommer oftare ju rikare byn är (steg 4.4.1.2 och 10.2.45, handel.ts): en fattig by får vänta länge, och i en rik by kommer den första snart. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen. Byn köper det projekten saknar och säljer sedan sitt överflöd i samma besök, men inte det projekten behöver (steg 10.5.17).',
   kor: () => {
     const timmar = (s: State, n: number) => { for (let i = 0; i < n * 3600 / BEAT; i++) step(s, BEAT); };
     // en fattig by: handlaren kommer sällan (steg 10.2.45: ingen fast gräns, tiden följer rikedomen)
@@ -1109,9 +1109,45 @@ SCENARIER.handlare = {
       [`på kvällen går en vuxen till filten för att handla för byn (${kvVal.join(', ')})`, kvVal.includes('handla')],
       ['handlaren går hem efter några timmar och nästa besök bestäms', gick],
       ['under istiden kommer ingen handlare', istid],
+      ...byHandel(),
     ];
   },
 };
+// byn handlar för projekten (steg 10.5.17): det projekten saknar köps, och efter köpet säljer byn sitt överflöd i samma besök
+function byHandel(): [string, boolean][] {
+  const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); s.nastaHandlare = s.now; for (let i = 0; i < 2000 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
+  const vuxen = (s: State) => SIM.ledareOf(s) ?? living(s).find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)!;
+  const bas = cloneState(testBy(10));
+  // byn saknar knivar och flinta: kniven är ett projekt med brist, och flintan står i listan
+  const s = cloneState(bas), h = fram(s);
+  s.ting = tingOf(s).filter(t => !SIM.GORS.kniv.includes(t.k));
+  setAmount(s, 'flinta', 0); setAmount(s, 'torrfisk', 120); setAmount(s, 'silver', 10); // (silver att betala flintan med)
+  SIM.projektSaknarRakna(s);
+  const behov = s.projektSaknar?.flinta?.n ?? 0;
+  h.varor = [{ k: 'flinta', n: behov + 5 }]; h.silver = 40;
+  const b0 = s.stat?.handelByten ?? 0;
+  vuxen(s).skill.handel = 20; // (en skicklig som handlar för byn: affären går igenom)
+  helAffar(s, vuxen(s), true);
+  const flinta = Math.round(amountOf(s, 'flinta')), silver = Math.round(amountOf(s, 'silver')), salt = h.varor.filter(w => w.k !== 'flinta');
+  const bada = behov >= 1 && flinta >= 1 && flinta <= behov && salt.length > 0 && (s.stat?.handelByten ?? 0) - b0 === 2 && !!h.bynKlar;
+  // skinnen som plaggen väntar på säljs inte, och utan något att köpa säljer byn direkt för silver
+  const t = cloneState(bas), g = fram(t);
+  SIM.projektSaknarRakna(t);
+  const skinn = t.projektSaknar?.skinn?.beh ?? 0;
+  setAmount(t, 'skinn', skinn); setAmount(t, 'torrfisk', 120); setAmount(t, 'silver', 0);
+  SIM.projektSaknarRakna(t);
+  const utan = cloneState(t); utan.projektSaknar = undefined;
+  const annars = SIM.bynPart(utan, 30, 30).over([]).some(w => w.k === 'skinn'); // utan projekten hade byn sålt skinnen
+  g.varor = []; g.silver = 40;
+  helAffar(t, vuxen(t), true);
+  const behollSkinn = skinn >= 1 && Math.round(amountOf(t, 'skinn')) === skinn && !g.varor.some(w => w.k === 'skinn');
+  const direkt = Math.round(amountOf(t, 'silver')) >= 1 && g.varor.length > 0;
+  return [
+    [`byn köper flintan projekten saknar (${flinta} av ${behov}) och säljer sedan sitt överflöd för silver i samma besök (${silver} silver, handlaren fick ${salt.map(w => `${w.n} ${w.k}`).join(', ')})`, bada],
+    [`byn säljer inte skinnen ett plagg väntar på (${Math.round(amountOf(t, 'skinn'))} av ${skinn} kvar; utan projekten hade byn sålt dem: ${annars ? 'ja' : 'nej'})`, behollSkinn && annars],
+    [`utan något att köpa säljer byn direkt för silver (${Math.round(amountOf(t, 'silver'))} silver, handlaren fick ${g.varor.map(w => `${w.n} ${w.k}`).join(', ')})`, direkt],
+  ];
+}
 
 SCENARIER.silver = {
   text: 'Handeln med silver (steg 4.4.1.3, handel.ts): byn handlar med handlaren genom ledaren eller den äldsta vuxna, som går till filten. Byn säljer det den har gott om och köper det den saknar, i samma byte som alla andra (bytaMed), och silvret jämnar ut skillnaden. Handlaren går aldrig med på ett byte till sin nackdel och köper aldrig mer än hen kan bära: är ryggsäcken full blir det vara mot vara eller silver.',

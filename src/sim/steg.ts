@@ -69,6 +69,7 @@ import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
+import { projektSaknarRakna } from './projekt';
 import { handelSteg, handlaKlar, handelsMalRakna, handelsTill, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
@@ -377,6 +378,7 @@ export const TAKTER: Takt[] = [
   { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
   { namn: 'omtanken', sek: 3600, fn: s => { omtankeTimme(s); lonOmtanke(s); } },
+  { namn: 'projektens brist', sek: 3600, fn: s => projektSaknarRakna(s) }, // det byns projekt saknar, till handeln (projekt.ts, steg 10.5.17)
   { namn: 'handelsmålet', sek: 3600, fn: s => handelsMalRakna(s) }, // varorna att byta med handlaren (handel.ts, steg 10.5.13)
   { namn: 'lönen', sek: 60, fn: (s, dt) => lonRakna(s, dt) }, // timmarna för byn och missnöjet med lönen (lon.ts, steg 10.5.9) // omtanken om byn (projekt.ts, steg 10.5.2)
   { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },

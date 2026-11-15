@@ -23,7 +23,8 @@ import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVil
 import { fylldSack, freeTools, tingOf } from './agande';
 import { ACTS } from './handlingar';
 import { tileOf } from './mark';
-import { Recept, getable, saknatAv } from './behov';
+import { Recept, bynsDel, getable, saknatAv } from './behov';
+import { BUDGET, budgetAndel, budgetNu } from './budget';
 import { FALLOR, fallPlats, fallorAv, mjardarVill } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { RECEPT } from './recept';
@@ -32,7 +33,7 @@ import { STATION, kanGoras, stationDef, stationFlyttVal, stationFor, verktygVid,
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
 import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
-import { ALDER, ageOf, enTill } from './folk';
+import { ALDER, ageOf, enTill, living } from './folk';
 import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
 import { VATSKOR, ar_vatska, ledigFor, vatskaAv } from './vatskor';
 
@@ -332,6 +333,28 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
 };
 export const PROJEKT_LIST = Object.keys(PROJEKT);
+// det byns projekt saknar (steg 10.5.17), en gång i timmen (TAKTER): per material det projekten behöver (beh: receptets
+// material för varje projekt med brist, som någon vuxen kan göra nu, och det byggena i budgetens delar med procent över 0
+// saknar), det som saknas av det när det byn har dragits av (n) och den största bristen bland projekten som behöver det (b,
+// byggena 1). Byn säljer inte det projekten behöver (bynOver i behov.ts), och det som saknas är värt mer för byn hos handlaren
+export interface ProjektSaknar { beh: number; n: number; b: number }
+export function projektSaknarRakna(s: State) {
+  const m: Record<string, ProjektSaknar> = {};
+  const lagg = (k: string, n: number, b: number) => { if (k === 'silver' || n < 1 || !grundvarde(k)) return; const x = m[k] ??= { beh: 0, n: 0, b: 0 }; x.beh += n; x.b = Math.max(x.b, b); };
+  const vuxna = living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vuxen), f = { kyla: false, gras: 0 };
+  for (const k of PROJEKT_LIST) {
+    const d = PROJEKT[k], b = d.recept ? d.brist(s) : 0;
+    if (b <= 0) continue;
+    for (const p of vuxna) { const r = d.recept!(s, p, f); if (r) { for (const [q, n] of Object.entries(r.av)) lagg(q, Math.ceil(n - 1e-9), b); break; } }
+  }
+  for (const del of budgetNu(s)) {
+    const B = BUDGET[del.id];
+    if (B.mat || budgetAndel(s, del.id) <= 0) continue;
+    for (const [q, n] of Object.entries(B.saknar(s))) lagg(q, Math.floor(n + 1e-9), 1);
+  }
+  for (const k in m) m[k].n = Math.max(0, m[k].beh - bynsDel(s, k));
+  s.projektSaknar = Object.keys(m).length ? m : undefined;
+}
 // rader som läggs till när allt är laddat (hovet och templet, kyrka.ts via steg.ts) kommer med i listan också
 export function laggTillProjekt(rader: Record<string, ProjektDef>) { for (const k in rader) { PROJEKT[k] = rader[k]; if (!PROJEKT_LIST.includes(k)) PROJEKT_LIST.push(k); } }
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden

@@ -211,7 +211,7 @@ export interface Handlare {
 export interface Affar {
   vem: number; namn: string; byn?: true;
   fas: 'fraga' | 'hamta' | 'bud' | 'plocka' | 'hem';
-  kop: HVara[]; bud: Vara[]; salj?: true;
+  kop: HVara[]; bud: Vara[]; salj?: true; andra?: true; // andra: byns andra affär under besöket, försäljningen efter köpet (steg 10.5.17)
   hamta: { x: number; y: number; k: string[] }[]; framme: string[];
   nej: number; f: number; t: number; dur?: number; byt?: number; hem?: { x: number; y: number };
   forsok?: ByteForsok[]; rel0?: number; arg?: string[]; // buden, relationen före affären och argumenten (steg 5.4.6.1–5.4.6.2), för redogörelsen
@@ -461,7 +461,7 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
 // värderar sina egna varor högre än grundvärdet (HANDEL.vinst), det byn har gott om lägre, och det som är sällsynt där hen
 // kommer ifrån högre (klanens pris, steg 10.5.14). Silvret är värt sitt grundvärde för alla. Hen köper aldrig mer än hen kan bära: när ryggsäcken är
 // full tar hen bara emot silver, och då blir det vara mot vara eller silver. Byn handlar med det gemensamma förrådet genom
-// ledaren (eller den äldsta vuxna), en gång per besök: först säljer byn det den har gott om, sedan köper den det den saknar.
+// ledaren (eller den äldsta vuxna), i två affärer per besök (steg 10.5.17): först köper byn det den och projekten saknar, sedan säljer den det den kan avvara.
 // Byborna handlar med sina egna saker i steg 4.4.1.5, färdigheten Handel kommer i steg 4.4.1.4
 const klanAv = (s: State, h: Handlare) => klanById(s, hp(s, h).gast!.klan);
 export const ledigt = (h: Handlare) => rymmer(h) - kgOf(h.varor);
@@ -571,7 +571,9 @@ const salja = (s: State, h: Handlare, p: Person) => saljaAv(s, h, bybonPart(s, p
 function saljaAv(s: State, h: Handlare, M: Part, tro: Person) {
   const ut: Vara[] = [];
   let plats = ledigt(h);
-  for (const w of M.over(['silver'])) {
+  // det som ger mest silver per vikt först (steg 10.5.17)
+  const per = (k: string) => grundvarde(k) * handlarVarde(s, h, k, tro) / Math.max(1e-9, viktOf(k));
+  for (const w of M.over(['silver']).sort((a, b) => per(b.k) - per(a.k))) {
     const v = handlarVarde(s, h, w.k, tro), n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9)); // det kunden tror handlaren ger (steg 10.5.16)
     if (v <= 0 || n < 1 || n * grundvarde(w.k) * v < 1) continue; // det som är värt minst ett helt silver (steg 10.5.12)
     ut.push({ ...w, n }); plats -= n * viktOf(w.k);
@@ -633,9 +635,11 @@ function budNu(s: State, h: Handlare, a: Affar, M: Part) {
 }
 // kunden väljer: byn det den saknar, en bybo det hen har mest nytta av (högst HANDEL.egnaMax slag); annars säljer hen
 function valj(s: State, h: Handlare, a: Affar, M: Part, p: Person) {
-  a.kop = (a.byn ? h.varor.filter(w => M.varde(w.k) >= DELA.saknar) : vill(s, h, p).slice(0, HANDEL.egnaMax))
-    .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? w.n : Math.min(w.n, 2), q: w.q }));
-  if (budNu(s, h, a, M)) return true;
+  // byn köper det den saknar och det projekten saknar (steg 10.5.17), det mest värda först, och av projektens material så många som saknas
+  const lista = s.projektSaknar;
+  a.kop = a.andra ? [] : (a.byn ? h.varor.filter(w => M.varde(w.k) >= DELA.saknar || (lista?.[w.k]?.n ?? 0) >= 1).sort((x, y) => M.varde(y.k) - M.varde(x.k)) : vill(s, h, p).slice(0, HANDEL.egnaMax))
+    .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? Math.min(w.n, lista?.[w.k]?.n || w.n) : Math.min(w.n, 2), q: w.q }));
+  if (a.kop.length && budNu(s, h, a, M)) return true;
   const sal = saljaAv(s, h, M, p);
   if (!sal.length) return false;
   a.salj = true; a.bud = sal;
@@ -715,7 +719,17 @@ function slut(s: State, h: Handlare, a: Affar, p: Person | undefined) {
   // de blev inte överens: kunden har ändå hört handlarens priser på slagen i affären (ett byte lär ut dem i vidByte, steg 10.5.16)
   const kl = klanAv(s, h);
   if (p && kl && !bytt) for (const k of new Set((a.forsok ?? []).flatMap(f => [...f.vill, ...f.bud].map(w => w.k)))) if (k !== 'silver' && grundvarde(k) > 0) larPris(s, p, kl.id, k, 1);
-  if (a.byn) { h.bynKlar = true; count(s, 'handelBesok'); if (bytt) count(s, 'handelByten'); return; }
+  if (a.byn) {
+    if (bytt) count(s, 'handelByten');
+    // byns andra affär (steg 10.5.17): efter köpet säljer den som handlar för byn det byn kan avvara
+    if (p && alive(p) && !a.salj && !a.andra && h.fas === 'handlar') {
+      const b: Affar = { ...nyAffar(p, true, s.now), andra: true };
+      h.affar = b;
+      if (valj(s, h, b, kundPart(s, b, p), p)) { nastaBud(s, h, b, p); return; }
+      h.affar = undefined;
+    }
+    h.bynKlar = true; count(s, 'handelBesok'); return;
+  }
   if (p) (h.handlat ??= []).push(p.id);
   count(s, 'egenHandel');
   if (bytt) { count(s, 'egnaByten'); if (a.salj) count(s, 'saltOver'); }
