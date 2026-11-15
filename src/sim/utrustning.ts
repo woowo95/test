@@ -28,6 +28,7 @@ import { balans } from './balans';
 import { SAK_ART, arPrast, heligtAvstar, heligtBrutet } from './kultlatt';
 import { farorNu } from './kult';
 import { KLADMATERIAL, kladAv } from './klader';
+import { fordonI, fordonRyms } from './fordon';
 
 export const UTRUSTNING = balans('utrustning', {
   kropp: 5, // det man har på sig väger lätt mot vad händerna orkar: i strid är man tung av kläder som väger så här många gånger det händerna orkar (strid.ts)
@@ -179,7 +180,8 @@ export function slitRygg(s: State, t: Ting, y: number, haller: number) {
 export const ryms = (s: State, p: Person) => { const pl = handPlatser(s, p); return (b: Record<string, number>) => !!fordela(pl, b); };
 // är bördan full: ryms inte en sak till av det arbetet ger (steg 6.1.8)?
 export function fullBorda(s: State, p: Person, t: Task) {
-  const b = bordSlag(t), k = carryKind(t.act);
+  const b = bordSlag(t), k = carryKind(t.act), fo = fordonI(s, t);
+  if (fo) return !fordonRyms(fo)({ ...b, [k]: (b[k] ?? 0) + viktOf(k) }); // kälken (steg 10.10.2)
   return !fordela(handPlatser(s, p), { ...b, [k]: (b[k] ?? 0) + viktOf(k) });
 }
 // hur mycket p kan bära i de fria händerna, i vikt (för texterna och testerna)

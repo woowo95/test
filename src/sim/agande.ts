@@ -68,6 +68,8 @@ function usable(s: State, p: Person, t: Ting) {
 const rank = (p: Person, t: Ting) => harMed(p, t) ? 0 : t.agare === p.id ? 1 : t.agare === BYN ? 2 : t.hos === undefined ? 3 : 4;
 const freeOf = (s: State, p: Person, k: string) => toolsOf(s, k).filter(t => usable(s, p, t));
 export const freeTools = (s: State, p: Person, k: string) => freeOf(s, p, k).length;
+// det lediga tinget av slaget k som p helst tar (sitt eget, byns, sist lånat), eller undefined (kälken, fordon.ts)
+export const ledigtTing = (s: State, p: Person, k: string) => freeOf(s, p, k).sort((a, b) => rank(p, a) - rank(p, b) || b.c - a.c)[0];
 export const ownsFree = (s: State, p: Person, k: string) => freeOf(s, p, k).some(t => t.agare === p.id);
 // p tar ett redskap av slaget k i handen, ur bältet om det hänger där. Det hen hade i handen hängs i bältet om det får
 // plats där (steg 7.1.1), annars läggs det i förrådet

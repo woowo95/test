@@ -42,8 +42,12 @@ import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
 import { ryggsack, ryms } from './utrustning';
+import { taFordon, valjFordon } from './fordon';
 // p orkar bära en av saken k (virket lyfts med båda händerna, steg 10.2.89)
 const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, p)({ [k]: viktOf(k) });
+// hur många av saken k p bär i händerna på en tur (det tunga: så många som ryms, steg 10.10.2)
+const iHandenAv = (s: State, p: Person, k: string) => { const r = ryms(s, p), w = viktOf(k); let n = 0; while (n < 20 && r({ [k]: (n + 1) * w })) n++; return n; };
+const stackPa = (s: State, x: number, y: number, k: string) => Math.floor((s.stackar ?? []).filter(q => q.x === Math.floor(x) && q.y === Math.floor(y) && q.k === k).reduce((a, q) => a + q.n, 0) + 1e-9);
 import { allows, amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { MJARDE, kanVittja } from './fisk';
@@ -476,7 +480,7 @@ const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && needTinder(s
 const BALTE_FORBAND = new Set<Act>(['jakt', 'vargjakt', 'bjornjakt', 'forsvar', 'forsvarRovare', 'strid']);
 // den som ska i strid eller på jakt tar en remsa i bältet (steg 9.5.16)
 export function balteForband(s: State, p: Person, act: Act) { if (BALTE_FORBAND.has(act) && !p.forbandMed && getable(s, p, 'remsa') >= 1) { takeMaterial(s, p, 'remsa', 1); p.forbandMed = 1; } }
-export interface Val { stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true; hamtar?: string; lon?: string }
+export interface Val { fordon?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true; hamtar?: string; lon?: string }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
 
 // Registret ARBETEN (steg 6.1.11, "Arbetsordningen" i designdokumentet): en rad per uppgift, i den ordning valet prövar dem.
@@ -740,10 +744,13 @@ export const ARBETEN: readonly Arbete[] = [
     // vid svält bärs maten först, och det andra är mindre värt så länge byn svälter (VAL.baraKyla gäller också då)
     const f = faror(c);
     if (!(s.stackar?.length && (gt = haulJob(s, undefined, f.svalt)))) return false;
-    if (!kanLyfta(s, p, gt.k)) return false; // virket bär bara den som orkar lyfta det (steg 10.2.89): annars valdes samma jobb om och om igen
+    // virket bär bara den som orkar lyfta det (steg 10.2.89): annars valdes samma jobb om och om igen. Det tunga körs på kälken när
+    // turen ger mer per tid så (steg 10.10.2, fordon.ts), och det ingen orkar bära bara på den
+    const iHand = iHandenAv(s, p, gt.k), fo = valjFordon(s, p, gt.k, gt.x, gt.y, iHand, stackPa(s, gt.x, gt.y, gt.k));
+    if (!iHand && !fo) return false;
     const fara = f.kyla || (f.svalt && !isFood(gt.k));
     if (!radda(s, p, a => !isStored(s, a.x, a.y), fara ? VAL.baraKyla : 1, (vardeUte(s) + vardeIFel(s, gt)) / VAL.baraVarde)) return false;
-    set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return true;
+    set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; v.fordon = fo?.id; return true;
   } },
   // fältet (steg 2.10.3): den mogna grödan skördas innan den blir övermogen eller fryser, och den som börjat på sitt fält arbetar vidare
   { id: 'falt', niva: 5, nar: 'dag', kort: true, prova: c => {
@@ -935,6 +942,10 @@ export function chooseTask(s: State, p: Person) {
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
+  // den som hämtar något tungt (virket som klyvs) tar händerna eller kälken efter vad turen ger per tid (steg 10.10.2, fordon.ts)
+  const ger = ACTS[v.act].ger;
+  if (v.fordon === undefined && ger && SAKER[ger]?.lyft) v.fordon = valjFordon(s, p, ger, sp.x, sp.y, iHandenAv(s, p, ger))?.id;
+  if (v.fordon !== undefined) taFordon(s, p, p.task, v.fordon); // kälken följer med i bördan
   facklaVal(s, p); // facklan tänds för den som går ut i mörkret, och släcks när den inte behövs (ljus.ts)
 }
 

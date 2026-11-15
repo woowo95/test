@@ -254,6 +254,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   skara: s => (s.angar?.length ?? 0) > 0 ? 1 : 0, // en skära när byn har en slåtteräng (steg 9.8.9)
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
   bagborr: () => 1, // ett tänddon till elden (steg 10.6.13)
+  kalke: () => 1, // en kälke till det tunga (steg 10.10.2)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
   slanda: () => VILLTAL.slandor, // till dem som spinner, och en i vävstolen (steg 7.7.8)

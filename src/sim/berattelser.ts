@@ -756,7 +756,7 @@ const MDEF = {
     { t: '{namn} levde ett långt liv och dog {orsak} {arstid} år {ar}, {aldern} år gammal.', om: f => f.gammal === true },
     { t: '{Arstid} år {ar} tog döden {namn}: {hen} dog {orsak}, {aldern} år gammal.', om: f => !f.spad },
     { t: '{namn} dog {orsak} {arstid} år {ar}, innan {hen} hunnit fylla ett år.', om: f => f.spad === true },
-    { t: '{namn} blev inte ens ett år. {Hen} dog {orsak} {arstid} år {ar}.', om: f => f.spad === true },
+    { t: '{namn} dog {orsak} {arstid} år {ar}, innan {hen} ens blivit ett år.', om: f => f.spad === true },
   ],
   // vem hen var: {alder} = 'ung kvinna', 'gammal man' (med det som syns framför), {drag1}, {drag2}, {bind} som i besk_drag2
   e_drag2: [

@@ -1101,6 +1101,8 @@ const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items 
 // det som bärs mellan lagerplatser har alltid sina ägare med sig
 export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN) {
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
+  if ((all.virke ?? 0) > 1e-9) count(s, 'virkeBuret', all.virke); // virket som burits hem: släden prövas fram av den som ofta bär virke (steg 10.10.2)
+  if (t.ting?.some(id => SAKER[tingOf(s).find(g => g.id === id)?.k ?? '']?.fordon)) { count(s, 'fordonTur'); count(s, 'fordonSaker', Object.values(all).reduce((n, v) => n + v, 0)); } // turerna med kälken och det den drog (steg 10.10.2)
   for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner, s, k), at);
   storeTings(s, t, at);
   tomBorda(t);

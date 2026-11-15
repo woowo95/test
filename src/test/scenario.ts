@@ -20,6 +20,7 @@ import './scenarier/religion';
 import './scenarier/mastare';
 import './scenarier/kultur';
 import './scenarier/fas9';
+import './scenarier/fas10';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';

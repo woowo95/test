@@ -33,6 +33,7 @@ import './scenarier/religion';
 import './scenarier/mastare';
 import './scenarier/kultur';
 import './scenarier/fas9';
+import './scenarier/fas10';
 import { SCENARIER } from './scenarier/hjalp';
 
 const ROT = fileURLToPath(new URL('../../', import.meta.url));

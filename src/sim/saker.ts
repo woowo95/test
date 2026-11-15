@@ -11,6 +11,7 @@ export interface SakDef {
   stack?: number; // en full börda: vad en normalstark vuxen bär. Saknas = ingen egen stack
   vikt?: number; // hur mycket en styck tar av en hand (steg 6.1.8; en vanlig hand orkar 10, utrustning.ts). Saknas = VIKT_STACK delat med stacken
   lyft?: true; // bärs med båda händerna, en i taget, av den som orkar den, aldrig i korgen eller ryggsäcken (virket, steg 10.2.89)
+  fordon?: true; // ett fordon i registret FORDON (fordon.ts): följer med i bördan och drar det tunga (kälken, steg 10.10.2)
   hander?: 1 | 2; // låst till så många händer (som pilbågen); annars räknas det fram ur vikten och styrkan (utrustning.ts)
   rymmer?: number; // det som hålls i en hand rymmer så mycket vikt, av vilka slag som helst (korgen)
   ruta?: number; // hur mycket som ryms i en stack på en ruta i lagret; saknas = en börda
@@ -76,6 +77,7 @@ const DEF = {
   // proteserna (steg 9.5.11, protes.ts): den som förlorat en del får en när byn har en ledig, och har den på sig
   krycka: { namn: 'Krycka', skaffa: RECEPT.krycka, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krycka gick sönder.' }, gors: { text: 'Täljer en krycka.', stat: 'kryckorGjorda', forsta: '{namn} täljde byns första krycka. Med den kan den som förlorat ett ben gå igen.' } },
   traben: { namn: 'Träben', skaffa: RECEPT.traben, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s träben gick sönder.' }, gors: { text: 'Täljer ett träben och binder fast remmar av rep.', stat: 'trabenGjorda', forsta: '{namn} täljde byns första träben.' } },
+  kalke: { fordon: true, namn: 'Kälke', skaffa: RECEPT.kalke, vikt: 8, hander: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'kalkarTrasiga', text: '{namn}s kälke gick sönder.' } }, // steg 10.10.2: dras med båda händerna (FORDON, fordon.ts)
   bagborr: { namn: 'Bågborr', skaffa: RECEPT.bagborr, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'bagborrarTrasiga', text: '{namn}s bågborr gick sönder.' }, gors: { text: 'Gör en bågborr: en båge av gren och rep som snurrar en pinne mot en träskiva.', stat: 'bagborrarGjorda', forsta: '{namn} gjorde byns första bågborr.' } }, // steg 10.6.13: tänddonet, slits per försök (eld.ts)
   krok: { namn: 'Krok', skaffa: RECEPT.krok, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krok gick sönder.' }, gors: { text: 'Gör en krok av trä som sätts på armen.', stat: 'krokarGjorda', forsta: '{namn} gjorde byns första krok åt den som förlorat en hand.' } },
   ogonlapp: { namn: 'Ögonlapp', skaffa: RECEPT.ogonlapp, vikt: 0.1, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s ögonlapp gick sönder.' }, gors: { text: 'Skär en ögonlapp av skinn.', stat: 'ogonlapparGjorda', forsta: '{namn} skar byns första ögonlapp.' } },

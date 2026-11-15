@@ -146,6 +146,7 @@ export const PAL: Record<string, Record<string, string>> = {
   skinn: { b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
   pergament: { w: '#dad0bb', k: '#bdb39b' },
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
+  kalke: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.2, platshållare
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
   honung: { o: '#24201d', h: '#b2921b', H: '#d8b25f', d: '#906f0f', v: '#694902', z: 'rgba(36,32,29,.30)' }, // steg 10.7.25, platshållare
   blomma: { o: '#24201d', g: '#647025', l: '#898b4c', y: '#d8b25f', c: '#bd753e', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.7.3, platshållare
@@ -2724,6 +2725,24 @@ export const PIX: Record<string, string[]> = {
     '........oo......',
   ],
   // boken (steg 10.6.6, platshållare): bladen mellan två plankor, ryggen till vänster
+  kalke: [ // platshållare (steg 10.10.2): ett flak av bräder på två medar som böjer upp framtill, och ett rep att dra i
+    '................',
+    '................',
+    '..rr............',
+    '...rr...........',
+    '....rro.........',
+    '.....oaoooooooo.',
+    '.....obbbbbbbbo.',
+    '.....oaaaaaaaao.',
+    '.....obbbbbbbbo.',
+    '.....oooooooooo.',
+    '......o.o..o.o..',
+    '..oo..o.o..o.o..',
+    '...ooooooooooooo',
+    '....ooooooooooo.',
+    '.....zzzzzzzzzz.',
+    '................',
+  ],
   bagborr: [ // platshållare (steg 10.6.13): en böjd båge med ett snöre runt en stående pinne på en skiva
     '................',
     '.......oo.......',
@@ -4141,6 +4160,7 @@ for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_kart
 PIX.vildrova = PIX.rovor; PAL.vildrova = PAL.rovor;
 PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka;
 PIX.snickarbank = PIX.flatarbank; PAL.snickarbank = PAL.flatarbank;
+PIX.slade = PIX.kalke; PAL.slade = PAL.kalke; // tekniken Släde (steg 10.10.2), platshållare
 PIX.naverask = PIX.korg; PAL.naverask = PAL.korg;
 PIX.orte = PIX.kruka; PAL.orte = PAL.kruka;
 PIX.s_spala = PIX.grenar ?? PIX.s_forb; PAL.s_spala = PAL.grenar ?? PAL.s_forb; // platshållare för spjälan (steg 9.5.28) tills Björn valt i bildstilen
