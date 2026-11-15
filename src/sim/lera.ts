@@ -4,7 +4,7 @@
 // nära byn, med händerna eller dubbelt så fort med benspaden. Det som grävts läggs i en hög där och bärs in som annat
 import { amountOf, dropLoad } from './lager';
 import { materialBuffert } from './forradsmal';
-import { richness, takeFrom } from './fynd';
+import { richness, richnessFor, takeFrom } from './fynd';
 import { bynsMitt, omrade } from './omrade';
 import { balans } from './balans';
 import { count, forstaGang, log } from './folk';
@@ -24,12 +24,14 @@ export const LERA = balans('lera', {
 // bristen: hur stor del av bufferten som saknas
 export const leraBrist = (s: State) => { const n = materialBuffert(s, 'lera'); return n > 0 ? clamp(1 - amountOf(s, 'lera') / n, 0, 1) : 0; };
 // den rikaste platsen nära byn, och närmast vid lika
+const LERLAGER = ['lera'] as const;
 export function leraPlats(s: State) {
   const m = bynsMitt(s), o = omrade(s), R = LERA.sokR + Math.ceil(Math.sqrt(o.n / Math.PI));
   let bast: { x: number; y: number } | undefined, bv = LERA.minst;
+  const rik = richnessFor(s, LERLAGER); // richness för många rutor på en gång (fynd.ts): samma tal
   for (let y = Math.max(0, m.y - R); y < Math.min(H, m.y + R + 1); y++) for (let x = Math.max(0, m.x - R); x < Math.min(W, m.x + R + 1); x++) {
     if (!inMap(x, y)) continue;
-    const v = richness(s, 'lera', x + 0.5, y + 0.5) - Math.hypot(x - m.x, y - m.y) * LERA.avstand;
+    const v = (Number.isInteger(x) && Number.isInteger(y) ? rik(0, y * W + x) : richness(s, 'lera', x + 0.5, y + 0.5)) - Math.hypot(x - m.x, y - m.y) * LERA.avstand;
     if (v > bv) { bv = v; bast = { x: x + 0.5, y: y + 0.5 }; }
   }
   return bast;
