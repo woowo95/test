@@ -1,4 +1,5 @@
 // Scenarier. Kulturen (fas 4.3): sporten, framträdandena, konsten i sakerna och pyntet i hemmen.
+import { readFileSync } from 'node:fs';
 import { createState, Person, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
@@ -3656,5 +3657,21 @@ SCENARIER.mjod = {
       [`karet brygger mjöd av 3 honungskakor och vatten (${val?.v}), 5 på 4 dygn`, val?.v === 'mjod' && sats],
       [`${mjod} mjöd i en stor lerkruka, som tas på kvällen (${kv})`, mjod === 5 && kv === 'mjod'],
     ] as [string, boolean][]; }
+  },
+};
+SCENARIER.bynamn = {
+  text: 'Byns namn (steg 10.9.1–10.9.5): rubriken överst och flikens titel visar byns namn, och innan byn döpt sig heter den Nybygget. Byn minns namnet, raden i namnregistret, personen och när det togs, och allt som visar namnet frågar på ett ställe',
+  kor: () => {
+    const ny = createState(9, START);
+    const med = createState(9, START); med.bynamn = { namn: 'Granåsen', rad: 'gran', t: med.now };
+    const sparad = SIM.migrate(JSON.parse(SIM.serialize(ny)));
+    const medSparad = SIM.migrate(JSON.parse(SIM.serialize(med)));
+    const mall = readFileSync('src/template.html', 'utf8'), main = readFileSync('src/main.ts', 'utf8');
+    return [
+      [`en ny by heter ${SIM.bynsNamn(ny)}`, SIM.bynsNamn(ny) === 'Nybygget'],
+      [`en by med ett namn visar det (${SIM.bynsNamn(med)}), och det finns kvar efter sparningen (${SIM.bynsNamn(medSparad)}, rad ${medSparad.bynamn?.rad})`, SIM.bynsNamn(med) === 'Granåsen' && SIM.bynsNamn(medSparad) === 'Granåsen' && medSparad.bynamn?.rad === 'gran'],
+      [`en sparad by utan namn heter ${SIM.bynsNamn(sparad)}`, SIM.bynsNamn(sparad) === 'Nybygget'],
+      ['rubriken och flikens titel frågar bynsNamn, och laddningskortet behåller spelets namn', /<h1 id="bynamn">/.test(mall) && /document\.title = n/.test(main) && /bynsNamn\(s\)/.test(main) && /<h2>Samhällssimulatorn<\/h2>/.test(mall)],
+    ];
   },
 };
