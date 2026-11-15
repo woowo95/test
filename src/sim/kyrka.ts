@@ -15,6 +15,7 @@ import { FOOD, KOTTSLAG, sakNamn } from './saker';
 import { type Ting, tingOf } from './agande';
 import { MASTERVERK, kvNamn } from './kvalitet';
 import { kronika } from './historik';
+import { SKRIFT } from './skriftTal';
 import { GUDAR, Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
 import { farorNu, KULT, RITUALER, type RitualId, farBliPrast, heligaFor, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
 import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
@@ -596,7 +597,7 @@ FRAGOR.kyrkutgift = {
 };
 FRAGOR.taBortBud = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ta bort ${budNamn(s, { id: d.id as BudId, v: d.v }).toLowerCase()}`, krets: 'tro',
-  rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined); return { v: -r.v, why: r.why }; },
+  rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined); return { v: -r.v > 0 && tr.skrift ? -r.v * SKRIFT.heligTrog : -r.v, why: r.why }; }, // en helig skrift gör budet svårare att rösta bort (steg 10.6.3)
   gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b = { id: d.id as BudId, v: d.v as BudVarde | undefined }; taBortBud(s, tr, b); count(s, 'bud_bort'); const t = `${troNamn(tr)} tog bort budet ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
 FRAGOR.bytBud = {

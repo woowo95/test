@@ -1,5 +1,5 @@
 import { DAY, H, HOUR, Person, State, Task, W } from './typer';
-import { balans } from './balans';
+import { SKRIFT } from './skriftTal';
 import { ALDER, ageOf, alive, byId, count, living, log, relKey, stat, think } from './folk';
 import { knows } from './teknik';
 import { getable, takeMaterial } from './behov';
@@ -31,20 +31,7 @@ export const SKRIFTER: Record<SkriftSlag, { namn: string; stadier: SkriftStadium
   handelse: { namn: 'Händelse', stadier: ['sten', 'pergament', 'bok'] }, // en bedrift som ristaren minns
   helig: { namn: 'Heligt', stadier: ['sten', 'bok'] }, // trons heliga kväden, som prästen eller lärjungen kan utantill (steg 10.6.2)
 };
-export const SKRIFT = balans('skrift', {
-  vikt: 0.4, // projektets vikt (som stenhuggarplatsen)
-  stenar: 3, min: 15, // huggna stenar och minuter för en runsten
-  sorg: 1, // lusten efter den dödas sten är sorgens tyngd delat med partnerns, gånger detta
-  stolthet: 0.6, // lusten efter en sten om en bedrift: bedriftens vikt gånger detta, gånger egenintresset ...
-  bedriftMin: 0.5, // ... när bedriften väger minst så här (en björn, en varg, en uppfinning, ett perfekt mästerverk)
-  stolthetDygn: 3, // ... och lusten avtar till noll på så här många dygn
-  avtar: 0.5, // lusten halveras för varje sten personen redan rest
-  las: 3, // rutor från stenen där den som går förbi läser den
-  lasVikt: 1, // intrycket den som läser får är så här stor del av det ristaren hade
-  helig: 0.6, // lusten att rista trons heliga kväden för prästen och lärjungen, halverad för varje helig sten tron redan har (steg 10.6.2)
-  heligTanke: 0.02, heligTim: 6, // den troende som läser den heliga stenen: tanken och hur länge den varar
-  heligR: 8, // så här långt från den heliga platsen eller trons hus får den heliga stenen stå
-});
+export { SKRIFT } from './skriftTal';
 export interface Runsten { id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number } // tro = den heliga stenens tro (om = tron)
 export const runstenarOf = (s: State): Runsten[] => (s.runstenar ??= []);
 export const runstenAt = (s: State, x: number, y: number) => s.runstenar?.find(r => r.x === x && r.y === y);
@@ -175,9 +162,10 @@ export function runstenKlar(s: State, p: Person, t: Task) {
 }
 
 // ---------- att läsa stenen ----------
-// en gång i timmen (TAKTER): den som är vaken nära en sten läser den och får intrycket i andra hand, med ristaren som källa;
+// en gång i timmen (TAKTER): om varje tro har en helig skrift, och den som är vaken nära en sten läser den och får intrycket i andra hand, med ristaren som källa;
 // en sten efter en död påminner om hen, så att minnet bleknar långsammare (paminn)
 export function runstenTimme(s: State) {
+  for (const tr of s.tron ?? []) { const har = heligaStenar(s, tr).length > 0; if (har) tr.skrift = true; else delete tr.skrift; } // om tron har en helig skrift (steg 10.6.3)
   if (!s.runstenar?.length) return;
   const folk = living(s).filter(q => q.task?.act !== 'sova');
   for (const r of s.runstenar) for (const q of folk) {

@@ -230,7 +230,7 @@ SCENARIER.omtanke = {
     if (h1 && h2) { h1.ag = bo.id; h2.ag = bv.id; SIM.getRel(b, bp, bv).op = 80; SIM.getRel(b, bp, bo).op = -80; }
     const jobb = SIM.buildJob(b, bp), paVan = !!jobb && jobb.bit.hus === h2?.id;
     // byns ved: samma by med Sammanhållning och med Självförsörjning, ett dygn
-    const ved = (g: number) => { const v = SIM.cloneState(s); for (const q of SIM.living(v)) for (const r of SIM.living(v)) if (q !== r) { const x = v.rels[SIM.relKey(q.id, r.id)]; if (x) x.op = 0; } setAmount(v, 'ved', 20); let n = 0; kor(v, 24, w => { w.seder.v.gemenskap = g; for (const q of SIM.living(w)) if (q.task?.act === 'ved') n++; }); return n / STEG_TIM; };
+    const ved = (g: number) => { const v = SIM.cloneState(s); for (const q of SIM.living(v)) for (const r of SIM.living(v)) if (q !== r) { const x = v.rels[SIM.relKey(q.id, r.id)]; if (x) x.op = 0; } setAmount(v, 'ved', 20); let n = 0; kor(v, 24, w => { w.seder.v.gemenskap = g; for (const q of SIM.living(w)) if (q.task?.act === 'ved' && q.task.why?.startsWith('Byn behöver ved')) n++; }); return n / STEG_TIM; }; // bara veden för byn: ett försök att komma på något hugger också ved
     const vedSam = ved(1), vedSjalv = ved(-1);
     return [
       [`en vanlig person med neutrala relationer i en by utan sed har omtanken 1 (${vanlig.toFixed(2)})`, Math.abs(vanlig - 1) < 1e-9],

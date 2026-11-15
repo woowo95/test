@@ -1262,6 +1262,10 @@ const MDEF = {
     '{namn} och {med} pratade om {om}.',
     '{med} fick veta av {namn} {om}.',
     '{namn} och {med} undrade {om}.',
+    '{med} frågade {namn} {om}.',
+    '{namn} mindes {om} och berättade det för {med}.',
+    '{namn} och {med} räknade på {om}.',
+    '{namn} visste {om}, och {med} lyssnade noga.',
   ],
   p_langtan: [
     '{namn} sa till {med} att {hen} längtar efter {om}.',
