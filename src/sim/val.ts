@@ -35,7 +35,7 @@ const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' 
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, onskatDygn, underBuffert, materialTak, sparas, villHaAv } from './forradsmal';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
-import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, bastaProjekt, hamtas, projektNu } from './projekt';
+import { PROJEKT, PROJEKT_TAL, Uppgift, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
 import { lonNu } from './lon';
 import { faltNu, vildFronPlats } from './odling';
@@ -509,9 +509,7 @@ export function arbetsTimme(s: State) {
   };
   // och materialens buffert och tak (forradsmal.ts, steg 6.2.14) och byns del av projektens värde (steg 6.2.21: hur mycket
   // byn saknar av varje projekt, frågat en gång i timmen i stället för av varje person i varje val)
-  const brist: Record<string, number> = {};
-  for (const k of PROJEKT_LIST) { const b = r3(PROJEKT[k].brist(s)); if (b > 0) brist[k] = b; }
-  s.arbBehov = { mat, ved, arb, mal: materialTimme(s), brist, bv: s.byggV ?? 0 };
+  s.arbBehov = { mat, ved, arb, mal: materialTimme(s), brist: bristAlla(s), bv: s.byggV ?? 0 };
 }
 // raderna som har arbetare (steg 6.1.13). Maten är flera arbeten (samla, jaga, fiska, fältet) som delar på samma arbetare
 export type ArbRad = 'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol';
