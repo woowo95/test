@@ -93,6 +93,13 @@
       const lista = [typeof BILDFILER !== 'undefined' && BILDFILER.sym_kruka?.rader, FORSLAG.f9_naverask?.versioner?.[2]?.bilder?.[0]?.rader].filter(Boolean);
       return this.png({ bilder: lista.map((rader, i) => ({ namn: 'behållare ' + (i + 1), rader })) }, skala, ['ingen']);
     },
+    // vargen som den står på kartan i spelet (sidan, framifrån och bakifrån), underlaget för hunden och valpen (Björn efter bildstil v238)
+    vargPng(skala = 4) {
+      const D = window.DJURBILD; if (!D) return null; const L = { ...D.PALS.varg[0][1], ...D.FAST }, T = PORTRATT.tecken, inv = {};
+      for (const [ch, t] of Object.entries(T)) if (!(t in inv)) inv[t] = ch;
+      const rader = r => r.map(rad => [...rad].map(c => L[c] ? (inv[L[c][0] + L[c][1]] || '.') : '.').join(''));
+      return this.png({ bilder: ['sida', 'fram', 'bak'].map(h => ({ namn: 'vargen ' + h, rader: rader(D.VARG[0][h]) })) }, skala, ['ingen']);
+    },
     // kolonisten framifrån, från sidan och bakifrån och porträttet, utan något, som PNG (underlaget för det som bärs)
     underlagPng(skala = 4) { return this.png({ fram: {}, sida: {}, bak: {}, portratt: {} }, skala); },
     // ett kort i valdelen som PNG (det nuvarande kortet, när det ska ändras)
