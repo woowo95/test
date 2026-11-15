@@ -76,6 +76,7 @@ export const SALLSYNT: Record<string, string> = {
   vargtand: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   garvning: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   vavstol: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
+  matta: 'vävs vid vävstolen, som är sen och sällsynt; scenariot pynt prövar mattan', blomma: 'plockas bara till en lerkruka med blommor (steg 10.7.3), och krukorna är sällsynta; scenariot blommor prövar den',
   slanda: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   torkhus: 'sen teknik i fas 7, hinner inte alltid komma på 35 dygn; scenariot hantverk7 prövar den',
   vedbod: 'kräver mycket ved ute, hinner inte alltid komma på 35 dygn; scenariot skjul prövar den',
