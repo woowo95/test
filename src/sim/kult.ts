@@ -50,7 +50,7 @@ export const KULT = balans('kult', {
   slutenFran: 70, // Öppen – Sluten: så sluten ska tron vara
   festMat: 0.15, // bröllopets fest gör alla så här mycket mättare (steg 8.5.13)
   fest: 50, forsakelse: 50, // Fest – Försakelse: över så här mycket på respektive sida (0 = Fest, 100 = Försakelse)
-  bal: 4, // så mycket ved ett bål tar
+  tystTro: 1, // tron den tysta begravningen ger (steg 10.4.5)
   vattenR: 20, // ... och så här nära ska vattnet vara för att den döde läggs i vatten
   vuxenTro: 3, // den unga får så här mycket tro av sitt vuxenblivande, de andra ritualens vanliga (steg 10.3.4)
   fastaTro: 4, // fastan ger tron så här mycket i stället för högtidens 3 (steg 10.3.3)
@@ -220,11 +220,11 @@ function vanhelga(s: State) {
 
 // ---------- ritualerna (steg 8.5.6, 8.5.13, 8.5.14) ----------
 export interface RitualDef { namn: string; tim: number; humor: number; tro: number; huvud?: number; vem(s: State, r: Ritual): Person[]; plats(s: State, r: Ritual): { x: number; y: number } }
-export interface Ritual { k: RitualId; start: number; slut: number; x: number; y: number; tro?: number; namn?: string; om?: number[]; gick?: number; form?: HogtidForm }
+export interface Ritual { k: RitualId; start: number; slut: number; x: number; y: number; tro?: number; namn?: string; om?: number[]; gick?: number; form?: HogtidForm; tyst?: true }
 const vuxna = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.smabarn);
 const vidElden = (s: State) => { const f = eldPlats(s), q = freeNear(s, f.x + 0.5, f.y + 2); return q; };
 export const RITUALER = {
-  begravning: { namn: 'Begravning', tim: 1, humor: 0.05, tro: 2, vem: (s, r) => living(s).filter(p => p.tro === r.tro || r.om?.some(id => { const d = byId(s, id); return d && (isParent(p, d) || isParent(d, p) || p.partner === id); })), plats: (_s, r) => ({ x: r.x, y: r.y }) },
+  begravning: { namn: 'Begravning', tim: 1, humor: 0.05, tro: 2, vem: (s, r) => living(s).filter(p => (!r.tyst && p.tro === r.tro) || r.om?.some(id => { const d = byId(s, id); return d && (isParent(p, d) || isParent(d, p) || p.partner === id || d.partner === p.id); })), /* den tysta: bara familjen (steg 10.4.5) */ plats: (_s, r) => ({ x: r.x, y: r.y }) },
   brollop: { namn: 'Bröllop', tim: 2, humor: 0.08, huvud: 0.15, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // välsignat (tron har budet, steg 10.3.3) vid trons heliga plats
   hogtid: { namn: 'Högtid', tim: 3, humor: 0.1, tro: 3, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && (troshusPlats(s, tr) ?? helig(s, tr))) ?? vidElden(s); } },
   dop: { namn: 'Dop', tim: 1, humor: 0.05, huvud: 0.1, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // steg 10.3.4: huvud = föräldrarna
@@ -251,7 +251,7 @@ export function ritualTimme(s: State) {
     for (const p of med) {
       think(p, r.namn ?? d.namn, (r.om?.includes(p.id) ? d.huvud ?? d.humor : d.humor) * ledd, s.now, 12 * HOUR);
       // en ritual ger tro bara till dem som har ritualens tro (steg 10.3.3); fastan ger mer
-      if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : r.k === 'vuxen' && r.om?.includes(p.id) ? KULT.vuxenTro : d.tro) * troF);
+      if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : r.k === 'vuxen' && r.om?.includes(p.id) ? KULT.vuxenTro : r.tyst ? KULT.tystTro : d.tro) * troF);
       p.task!.until = s.now;
     }
     if (r.k === 'hogtid' && tr) hogtidSlut(s, tr, r, med);

@@ -22,13 +22,16 @@ export const gravAt = (s: State, x: number, y: number) => s.gravar?.find(g => g.
 export type GravStil = 'jord' | 'bal' | 'vatten'; // gravhögen är en vård (steg 10.4.2)
 export type GravVard = 'gravstolpe' | 'gravbrada' | 'stockram' | 'gravhus' | 'gravhog' | 'gravsten' | 'stensattning' | 'skeppssattning';
 export interface Grav { x: number; y: number; t: number; vem: number; namn: string; stil: GravStil; tro?: number; ovardig?: true; med?: string[]; vard?: GravVard; stor?: true; fiende?: true; text?: string; textAv?: { id: number; namn: string }; textBev?: import('./rykten').Bevis[] } // med = sakerna som följde den döde (steg 10.3.5); vard = det som står på graven, stor = ledare, helgon eller legend (steg 10.4.2); text = gravtexten, vem som ristade och händelserna (steg 10.4.4)
-export interface Kvarleva { id: number; k: KvarSlag; x: number; y: number; t: number; vem: number; namn: string; text: string; bars?: number; saker?: Record<string, number>; med?: string[]; ting?: { k: string; c: number; q?: number; ber?: import('./berattelser').SakMinne }[] } // ting = fiendens egna vapen och plagg (steg 10.3.6)
+export interface Kvarleva { id: number; k: KvarSlag; x: number; y: number; t: number; vem: number; namn: string; text: string; bars?: number; saker?: Record<string, number>; med?: string[]; ting?: { k: string; c: number; q?: number; ber?: import('./berattelser').SakMinne }[]; bud?: string[]; naraT?: number; annanT?: number; vag?: 'bal' | 'vatten' | 'jord' } // ting = fiendens egna vapen och plagg (steg 10.3.6)
 export const kvarlevor = (s: State) => (s.kvarlevor ??= []);
 export function nyKvarleva(s: State, k: KvarSlag, p: Person, text: string) {
   const q: Kvarleva = { id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k, x: Math.floor(p.x), y: Math.floor(p.y), t: s.now, vem: p.id, namn: p.name, text };
   kvarlevor(s).push(q);
+  if (k === 'kropp') kroppKrok.f?.(s, q, p);
   return q;
 }
+// det som görs när en kropp blir kvar (grav.ts, steg 10.4.5): trons seder, buden som gällde och när byn vill begrava hen
+export const kroppKrok: { f?: (s: State, q: Kvarleva, p: Person) => void } = {};
 export const kvarAt = (s: State, x: number, y: number) => s.kvarlevor?.find(q => q.x === x && q.y === y);
 export const kvarById = (s: State, id: number) => s.kvarlevor?.find(q => q.id === id);
 // varje timme: det som ruttnat bort försvinner, och den som ser det får en tanke

@@ -141,6 +141,15 @@ export const BUD = {
   gravBrada: { namn: 'En gravbräda på graven', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en bräda med den dödas namn' },
   stockram: { namn: 'En stockram kring graven', sort: 'krav', storlek: 1, skala: 'oppen', sida: 1, grupp: 'gravvard', text: 'Graven ramas in med stockar' },
   gravhus: { namn: 'Ett gravhus över graven', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'gravvard', text: 'Graven får ett litet hus' },
+  // begravningens former (steg 10.4.5): kroppens väg och samlingen, en rad i BEGRAVNINGAR (grav.ts) per bud
+  bal: { namn: 'Bål', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'vag', text: 'De döda bränns på ett bål',
+    om: () => 'Fyra ved tas vid graven och bålet lägger en timme till arbetet. Askan får en grav och en vård som andra. Saknas veden begravs hen i jorden.' },
+  vattenGrav: { namn: 'Vattnet', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'vag', text: 'De döda sänks i sjön',
+    om: () => 'Kroppen bärs till trons plats vid stranden och sänks där på en halv timme. Sjön minns de sänkta.' },
+  tystBegr: { namn: 'Den tysta begravningen', sort: 'krav', storlek: 1, skala: 'fest', sida: 1, grupp: 'samling', text: 'Bara familjen samlas vid graven',
+    om: () => 'Förälder, barn och partner samlas en timme vid graven. De får lite humör och tro.' },
+  vanligBegr: { namn: 'Begravningen', sort: 'krav', storlek: 2, grupp: 'samling', text: 'Trosfränderna samlas vid graven',
+    om: () => 'Trosfränderna och familjen samlas en timme vid graven, och prästen leder när tron har en. De får humör och tro.' },
   gravsten: { namn: 'En gravsten med runor', sort: 'krav', storlek: 2, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en sten med runor' }, // stengravarna (steg 10.4.3)
   stensattning: { namn: 'En stensättning kring graven', sort: 'krav', storlek: 2, skala: 'oppen', sida: 1, grupp: 'gravvard', text: 'Graven får en ring av stenar' },
   skeppssattning: { namn: 'De stora får en skeppssättning', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'storagrav', text: 'Ledare, helgon och legender får stenar i form av ett skepp',

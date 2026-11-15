@@ -1,6 +1,6 @@
 import { ACTS, FYND, ISHAL, SjoLogg, ageIndex, byId, fyndAt, isCm, living, sjoNamn, sjoVid, sjoarna, temperature, vattenGrader } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { bar, clockTxt, esc, fmtN, pLink, times } from '../hjalp';
+import { bar, clockTxt, durTxt, esc, fmtN, pLink, times } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -33,6 +33,7 @@ function sjoHtml() {
   const kvar = fisk / rutor.length / FYND.fiske.topp;
   const har = (act: string) => living(s).filter(p => p.task?.act === act && sjoVid(s, p.task.tx, p.task.ty) === n);
   const fiskar = har('fiske'), badar = har('bada');
+  const sankta = (s.sankta ?? []).filter(q => q.sjo === n).slice().reverse(); // de döda som sänkts här (steg 10.4.5)
   return `
     <div class="phead"><span class="dot big" style="background:var(--g-skiffer)"></span><div><h2>${esc(sjoNamn(s, n))}</h2>
     <p class="muted">${rutor.length} rutor vatten. Man fiskar och badar från stranden.</p></div></div>
@@ -50,6 +51,7 @@ function sjoHtml() {
       <dt>Napp</dt><dd>${fmtN(st.napp)}${andel(st.napp, st.forsok)}</dd>
       <dt>Fångade fiskar</dt><dd>${fmtN(st.fisk)}${andel(st.fisk, st.napp)}</dd>
       <dt>Bad</dt><dd>${times(st.bad)}</dd></dl>` : '<p class="muted">Ingen har fiskat eller badat här.</p>'}
+    ${sankta.length ? `<h3>De sänkta</h3><ul class="small">${sankta.map(q => `<li>${esc(q.namn)}, för ${durTxt(s.now - q.t)} sedan</li>`).join('')}</ul>` : ''}
     ${st && st.fisk ? `<h3>Fiskar oftast</h3>${topp(st.fiskare)}` : ''}
     ${st && st.bad ? `<h3>Badar oftast</h3>${topp(st.badare)}` : ''}
     ${st?.log.length ? `<h3>Historik</h3><ol class="logg">${st.log.slice().reverse().slice(0, 40).map(sjoEntry).join('')}</ol>` : ''}`;

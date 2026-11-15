@@ -953,6 +953,52 @@ SCENARIER.gravtext = {
     ];
   },
 };
+// d dör, och p bär hen och begraver: kroppens väg och samlingen ur buden som gällde när hen dog (steg 10.4.5)
+function begravHela(s: State, p: Person, d: Person) {
+  SIM.die(s, d, 'alderdom');
+  const kr = s.kvarlevor!.find(k => k.k === 'kropp' && k.vem === d.id)!;
+  const tk = { act: 'begrava', phase: 'do', tx: kr.x, ty: kr.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task;
+  p.task = tk; SIM.kroppUpp(s, p, tk); p.x = tk.tx; p.y = tk.ty;
+  const tid = tk.arbTid ?? 0; s.ritualKo = [];
+  SIM.gravKlar(s, p, tk); p.task = undefined;
+  return { kr, tid, g: s.gravar?.find(g => g.vem === d.id), r: s.ritualKo[0] };
+}
+SCENARIER.begravning = {
+  text: 'Steg 10.4.5: begravningens former. Kroppens väg (jorden, bålet med fyra ved och en timme till, vattnet där kroppen sänks) och samlingen (den enkla, den tysta med familjen, den vanliga med trosfränderna) blir trons seder när en troende dör och sparas på kroppen; en kropp väntar en stund innan någon bär den',
+  kor: () => {
+    // bålet: natur och fest
+    const a = medTro(6, 2); a.tr.natur = 15; a.tr.sk = { ...a.tr.sk, fest: 15, livet: 50 }; SIM.setAmount(a.s, 'ved', 20);
+    const d1 = a.v[1], ved0 = SIM.amountOf(a.s, 'ved');
+    const b1 = begravHela(a.s, a.v[0], d1), ved1 = SIM.amountOf(a.s, 'ved');
+    const vantar = (b1.kr.naraT ?? 0) >= a.s.now - 1 || (b1.kr.annanT ?? 0) > b1.kr.t;
+    // utan ved blir det jorden, och den troende som begraver bryter budet
+    SIM.setAmount(a.s, 'ved', 0); const brutna = a.s.stat?.bud_brutet ?? 0;
+    const b2 = begravHela(a.s, a.v[0], a.v[2]);
+    // den tysta: försakelse
+    const c = medTro(6, 2); c.tr.natur = 60; c.tr.sk = { ...c.tr.sk, fest: 85 };
+    const b3 = begravHela(c.s, c.v[0], c.v[1]), tyst = !!b3.r?.tyst;
+    const vemTyst = b3.r ? SIM.RITUALER.begravning.vem(c.s, { ...b3.r, start: 0, slut: 0 }) : [];
+    // den vanliga
+    const e = medTro(6, 2); e.tr.natur = 60; e.tr.sk = { ...e.tr.sk, fest: 45 };
+    const b4 = begravHela(e.s, e.v[0], e.v[1]);
+    // vattnet (byn 6 har vatten inom räckhåll)
+    const w = medTro(6, 2); w.tr.natur = 5; w.tr.sk = { ...w.tr.sk, fest: 90 };
+    const b5 = begravHela(w.s, w.v[0], w.v[1]), sankt = w.s.sankta?.find(q => q.vem === w.v[1].id);
+    // utan tro: den enkla, utan samling
+    const u = medLedare(), du = u.v[1], barn = u.v.find(q => SIM.isParent(q, du) || SIM.isParent(du, q) || q.partner === du.id);
+    const b6 = begravHela(u.s, u.v[0], du);
+    return [
+      [`bålet blir sed och sparas på kroppen (${b1.kr.bud?.join(', ')})`, !!b1.kr.bud?.includes('bal')],
+      [`bålet tar fyra ved och en timme till (${ved0 - ved1} ved, ${Math.round(b1.tid / SIM.HOUR * 10) / 10} timmar, ${b1.g?.stil})`, ved0 - ved1 === 4 && b1.g?.stil === 'bal' && b1.tid >= 2 * SIM.HOUR],
+      ['kroppen väntar en stund innan någon bär den', vantar],
+      [`utan ved blir det jorden och budet bryts (${b2.g?.stil})`, b2.g?.stil === 'jord' && (a.s.stat?.bud_brutet ?? 0) > brutna],
+      [`den tysta samlar bara familjen (${vemTyst.length} av ${SIM.living(c.s).length})`, tyst && c.tr.bud!.some(x => x.id === 'tystBegr') && vemTyst.every(q => SIM.isParent(q, c.v[1]) || SIM.isParent(c.v[1], q) || q.partner === c.v[1].id || c.v[1].partner === q.id)],
+      [`den vanliga samlar trosfränderna (${e.tr.bud!.filter(x => /Begr/.test(x.id)).map(x => x.id).join(', ')})`, !!b4.r && !b4.r.tyst && e.tr.bud!.some(x => x.id === 'vanligBegr')],
+      [`vattnet: kroppen sänks och sjön minns hen (${w.tr.bud!.filter(x => /vatten|bal/.test(x.id)).map(x => x.id).join(', ')}, ${b5.g ? 'en grav' : 'ingen grav'})`, w.tr.bud!.some(x => x.id === 'vattenGrav') && !b5.g && !!sankt && Math.round(b5.tid / SIM.MIN) === 30],
+      [`utan tro: ingen samling, och familjen får humör (${b6.g?.stil})`, !b6.r && !!b6.g && (!barn || barn.thoughts.some(x => x.text.includes('begravdes')))],
+    ];
+  },
+};
 SCENARIER.bonen = {
   text: 'Steg 8.5.2–8.5.4: bönen är fritid för den troende och ger humör och tro, bönen i nöd låses upp av andligheten och tron, och en bön som hjälpte eller inte hjälpte blir en upplevelse',
   kor: () => {

@@ -129,7 +129,7 @@ export const SKALOR = {
   natur: { namn: ['Natur', 'Människa'], text: ['Andar i djur, träd, väder och platser', 'Förfäder, hjältar och helgon'] },
   manga: { namn: ['Många', 'En'], text: ['Många andar eller gudar', 'En enda gud'] },
   prast: { namn: ['Var och en', 'Präster'], text: ['Var och en möter det heliga själv', 'Präster förmedlar, regler och ordning'], oppnas: s => !!s.tron?.some(t => t.prast !== undefined) },
-  livet: { namn: ['Nuet', 'Livet efter'], text: ['Hjälp nu: jaktlycka, hälsa, väder', 'Ett liv efter döden, lön eller straff där'], oppnas: s => (s.stat?.ritual_forsta_begravning ?? 0) > 0, steg: '10.1 (den första begravningsritualen)' },
+  livet: { namn: ['Nuet', 'Livet efter'], text: ['Hjälp nu: jaktlycka, hälsa, väder', 'Ett liv efter döden, lön eller straff där'], oppnas: s => (s.stat?.begravd_troende ?? 0) > 0 || (s.stat?.ritual_forsta_begravning ?? 0) > 0, /* första gången en troende begravs, vilken form det än blir (steg 10.4.5) */ steg: '10.1 (den första begravningsritualen)' },
   forlat: { namn: ['Förlåtande', 'Straffande'], text: ['Bikt, bot och förlåtelse', 'Vrede, stränga bud, syndabockar'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
   fest: { namn: ['Fest', 'Försakelse'], text: ['Fest, dans och rus', 'Fasta, askes, avstå'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
   krig: { namn: ['Fridsam', 'Krigisk'], text: ['Inget våld, inga blodsoffer', 'Offer och heligt krig'], oppnas: s => !!s.tron?.some(t => t.prast !== undefined) || (s.stat?.drap ?? 0) > 0 },
