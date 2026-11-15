@@ -2827,6 +2827,47 @@ SCENARIER.kronikakat = {
   },
 };
 
+SCENARIER.skriftlista = {
+  text: 'Steg 10.6.8: krönikans kategori Skrifter. En lista överst över alla stenar, blad och böcker som finns i byn, nyast först, med stadiets symbol, kvalitetsmärket, titeln och var de finns. Ett tryck på raden visar texten, tre knappar väljer stadium, och en skrift som brunnit försvinner ur listan; för en sten eller en bok skrivs då en rad i krönikan',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START), p = living(s)[0];
+    SIM.runstenarOf(s).push({ id: 1, x: 10, y: 10, t: s.now, slag: 'minne', av: { id: p.id, namn: p.name }, om: { id: 999, namn: 'Ulv' }, text: 'Här ligger Ulv.', runor: SIM.runor('Här ligger Ulv.') });
+    const b = SIM.newTing(s, 'blad', 1, p.id); b.skrift = { slag: 'lardom', av: { id: p.id, namn: p.name }, t: s.now + 1, titel: 'Om faror', text: 'Ulvar vid ån.', q: 1 };
+    const bok = SIM.newTing(s, 'bok', 1, p.id); bok.gjord = s.now + 2;
+    bok.delar = [{ slag: 'kunskap', av: { id: p.id, namn: p.name }, t: s.now + 2, titel: 'Om garvning', text: 'Skinn blir läder.', tek: 'garvning', q: 3 }];
+    SIM.placeTools(s);
+    SIM.runstenTimme(s);
+    setByn(s);
+    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined, kat: 'skrift', stad: undefined, skrift: undefined });
+    const h = kronikaFlik.html(), rader = (x: string) => (x.match(/data-kskrift="/g) ?? []).length;
+    const ordning = [...h.matchAll(/data-kskrift="([^"]+)"/g)].map(m => m[1]);
+    kronikaVal.stad = 'bok';
+    const hBok = kronikaFlik.html();
+    kronikaVal.skrift = `ting-${bok.id}`;
+    const hOppen = kronikaFlik.html();
+    kronikaVal.stad = undefined; kronikaVal.skrift = `sten-1`;
+    const hSten = kronikaFlik.html();
+    kronikaVal.skrift = undefined;
+    // bladet och boken brinner
+    s.ting = SIM.tingOf(s).filter(t => t !== b && t !== bok);
+    SIM.runstenTimme(s);
+    const hEfter = kronikaFlik.html(), K = s.hist?.kronika ?? [];
+    const bortRad = K.some(k => k[2] === 'skrift' && String(k[1]).includes('finns inte längre'));
+    const forsta = K.some(k => k[2] === 'skrift' && String(k[1]).includes('första delen'));
+    Object.assign(kronikaVal, { kat: undefined, stad: undefined, skrift: undefined });
+    return [
+      [`en sten, ett blad och en bok ger tre rader, nyast först (${ordning.join(', ')})`, rader(h) === 3 && ordning[0] === `ting-${bok.id}` && ordning[2] === 'sten-1'],
+      ['tre knappar väljer stadium, och knappen för böckerna visar bara boken', (h.match(/data-kstad="/g) ?? []).length === 3 && rader(hBok) === 1 && hBok.includes(`data-kskrift="ting-${bok.id}"`)],
+      ['boken visar sina delar', /class="bokdelar"[\s\S]*Om garvning/.test(hOppen)],
+      ['stenen visar runorna överst och platsen går att trycka på', /class="runor"[\s\S]*Här ligger Ulv/.test(hSten) && h.includes('data-kplats="10,10"')],
+      ['kvalitetsmärket står på bladet', /data-kskrift="ting-\d+"[^>]*>[^]*?class="kvm"/.test(h)],
+      [`det brända bladet och boken försvinner ur listan (${rader(hEfter)} kvar), och krönikan säger att boken är borta`, rader(hEfter) === 1 && bortRad],
+      [`kategorin finns med sina slag (runsten och skrift under ${SIM.kronikaKat('skrift')})`, SIM.kronikaKat('runsten') === 'skrift' && SIM.kronikaKat('skrift') === 'skrift' && !forsta],
+    ];
+  },
+};
+
 SCENARIER.kronikalista = {
   text: 'Krönikan och händelserna i en lista (steg 5.4.2, ui/flikar/kronika.ts): Stort visar krönikan, Allt händelseloggen, senast först under en rubrik per år, och stenen Byns tal alla byns grafer (steg 9.3.2). Man bläddrar år för år och kan välja en person: bara raderna där hen står med. Bara panelen.',
   kor: () => {

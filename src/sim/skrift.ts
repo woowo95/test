@@ -178,6 +178,7 @@ export function runstenKlar(s: State, p: Person, t: Task) {
 // en gång i timmen (TAKTER): om varje tro har en helig skrift, och den som är vaken nära en sten läser den och får intrycket i andra hand, med ristaren som källa;
 // en sten efter en död påminner om hen, så att minnet bleknar långsammare (paminn)
 export function runstenTimme(s: State) {
+  skriftBorta(s);
   for (const tr of s.tron ?? []) { const har = heligaStenar(s, tr).length > 0; if (har) tr.skrift = true; else delete tr.skrift; } // om tron har en helig skrift (steg 10.6.3)
   // handböckerna (steg 10.6.6): när den sista som kunde en teknik är borta säger krönikan att konsten står kvar i boken
   for (const b of bockerna(s)) for (const k of b.delar ?? []) {
@@ -195,6 +196,30 @@ export function runstenTimme(s: State) {
     if (r.slag === 'helig' && q.tro === r.tro) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR); // bara den som tror
     count(s, 'runstenLast');
   }
+}
+// ---------- listan i krönikan (steg 10.6.8) ----------
+// Krönikans kategori Skrifter läser stenarna, bladen och böckerna själva, aldrig händelseloggen: det som brunnit, ruttnat eller
+// rivits försvinner ur listan. En gång i timmen jämförs stenarna och böckerna med förra timmen, och för den som är borta skrivs en
+// rad i krönikan
+export interface SkriftRad { id: string; stadium: SkriftStadium; t: number; q?: number; titel: string; text: string; runor?: string; delar?: { titel: string; text: string; q?: number }[]; plats: string; x?: number; y?: number }
+export const bokTitel = (t: Ting) => { const d = t.delar ?? [], g = d[0]?.slag; return !g ? 'En tom bok' : g === 'kunskap' ? (d.length === 1 ? d[0]!.titel : 'Handboken') : g === 'helig' ? 'De heliga kvädena' : `Boken med ${SKRIFTER[g].namn.toLowerCase()}`; };
+function tingPlats(s: State, t: Ting) {
+  const q = t.hos !== undefined ? byId(s, t.hos) : undefined, at = tingXY(s, t);
+  return { plats: q ? `Bärs av ${q.name}` : t.vid !== undefined ? 'Vid en station' : at ? 'I byn' : 'Okänd plats', ...(at ? { x: Math.floor(at.x), y: Math.floor(at.y) } : {}) };
+}
+export function skriftLista(s: State): SkriftRad[] {
+  const r: SkriftRad[] = (s.runstenar ?? []).map(x => ({ id: `sten-${x.id}`, stadium: 'sten' as const, t: x.t, titel: runstenRubrik(x), text: x.text, runor: x.runor, plats: 'Står ute i byn', x: x.x, y: x.y }));
+  for (const t of tingOf(s)) {
+    if (t.k === 'blad' && t.skrift) r.push({ id: `ting-${t.id}`, stadium: 'pergament', t: t.skrift.t, ...(t.skrift.q !== undefined ? { q: t.skrift.q } : {}), titel: t.skrift.titel, text: t.skrift.text, ...tingPlats(s, t) });
+    else if (t.k === 'bok') r.push({ id: `ting-${t.id}`, stadium: 'bok', t: t.gjord ?? 0, ...(t.q !== undefined ? { q: t.q } : {}), titel: bokTitel(t), text: `${t.delar?.length ?? 0} av ${SKRIFT.bokDelar} delar skrivna.`, delar: (t.delar ?? []).map(k => ({ titel: k.titel, text: k.text, ...(k.q !== undefined ? { q: k.q } : {}) })), ...tingPlats(s, t) });
+  }
+  return r.sort((a, b) => b.t - a.t);
+}
+function skriftBorta(s: State) {
+  const nu: [string, string][] = [...(s.runstenar ?? []).map(x => [`sten-${x.id}`, runstenRubrik(x)] as [string, string]), ...bockerna(s).map(t => [`ting-${t.id}`, bokTitel(t)] as [string, string])];
+  const forr = s.skriftSedda ?? [], har = new Set(nu.map(x => x[0]));
+  for (const [id, titel] of forr) if (!har.has(id)) { kronika(s, `${titel} finns inte längre${id.startsWith('sten') ? '' : ': boken är förlorad'}.`, 'skrift'); count(s, 'skriftBorta'); }
+  if (nu.length || forr.length) s.skriftSedda = nu;
 }
 // i rutan som visas vid ett tryck: runorna överst och texten på svenska under
 export const runstenRubrik = (r: Runsten) => r.slag === 'minne' ? `Stenen efter ${r.om.namn}` : r.slag === 'helig' ? `Den heliga stenen (${r.om.namn.toLowerCase()})` : `${gen(r.av.namn)} sten`;
@@ -361,7 +386,10 @@ export function skrivKlar(s: State, p: Person) {
   if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, l.lar.k === 'fara' ? MINNE.vMaxFara : l.lar.k === 'vatten' ? 1 : l.lar.k === 'pris' ? Infinity : MINNE.vMax) };
   if (fel && l.lar) tx.text = describe(s, l.lar).text;
   const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}) };
-  if (l.bok) { (l.bok.delar ??= []).push(k); count(s, 'bokdel'); }
+  if (l.bok) {
+    (l.bok.delar ??= []).push(k); count(s, 'bokdel');
+    if (l.bok.delar.length === 1) { const rad = `${p.name} skrev den första delen i en bok: ${tx.titel.toLowerCase()}.`, at = tingXY(s, l.bok); log(s, rad, 'skill', [p.id]); notis(s, 'skrift', rad, [p.id], at ? { x: Math.floor(at.x), y: Math.floor(at.y) } : undefined); kronika(s, rad, 'skrift'); } // steg 10.6.8
+  }
   else { takeMaterial(s, p, 'pergament', 1, true, {}); const t = newTing(s, 'blad', 1, p.id); t.skrift = k; t.av = p.id; t.gjord = s.now; }
   count(s, 'skrivet'); count(s, 'skrivet_' + l.slag);
   think(p, `Skrev ${tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1)}`, 0.02, s.now, 6 * HOUR);

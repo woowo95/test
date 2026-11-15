@@ -3,10 +3,11 @@
 // vilken ordning: bara det viktiga (krönikan) eller allt, kategorin (steg 9.2.73), året, personen och nyast eller äldst först.
 // Den förklarande texten kommer fram när man trycker på en symbol. Kartan över tid står i stenen Byns tal (steg 9.2.126), och
 // graferna också (steg 9.3.2). Öppnas med runstenen Krönika.
-import { AGES, KRONIKA_KAT, type LogEntry, type Person, kalender, kronikaKat } from '../../sim';
+import { AGES, KRONIKA_KAT, type LogEntry, type Person, type SkriftStadium, kalender, kronikaKat, skriftLista } from '../../sim';
+import { visaPaKartan } from '../notiser';
 import { tecknet } from '../../ikoner';
 import { fritidLista } from './fram';
-import { clockTxt, esc, linkify, namnI } from '../hjalp';
+import { clockTxt, esc, kvMark, linkify, namnI } from '../hjalp';
 import { ritaOm, s } from '../lage';
 import type { Flik } from '../panel';
 
@@ -14,7 +15,7 @@ interface Rad { t: number; text: string; slag?: string; kind?: LogEntry['kind'];
 // var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet
 const iText = (text: string, folk: Person[]) => folk.filter(p => namnI(text, p.name) >= 0).map(p => p.id);
 // viktigt: bara krönikan (annars krönikan och händelseloggen); nyast: senast först; forkl: symbolen vars förklaring visas
-export const val: { viktigt: boolean; nyast: boolean; ar?: number; person?: number; kat?: string; forkl?: string } = { viktigt: true, nyast: true }; // (exporterat för scenarierna)
+export const val: { viktigt: boolean; nyast: boolean; ar?: number; person?: number; kat?: string; forkl?: string; stad?: SkriftStadium; skrift?: string } = { viktigt: true, nyast: true }; // stad = stadiet i listan över skrifterna, skrift = raden som är öppen (steg 10.6.8) // (exporterat för scenarierna)
 function rader(): Rad[] {
   const krona: Rad[] = (s.hist?.kronika ?? []).map(([t, text, slag]) => ({ t, text, slag, viktig: true, ids: iText(text, s.people) }))
     .filter(r => val.kat === undefined || kronikaKat(r.slag) === val.kat).sort((a, b) => a.t - b.t);
@@ -48,6 +49,21 @@ function symbolRad(folk: Person[], aren: number[]) {
       <span title="Person">${tecknet('sym_person', '🧑', 16)}</span><select data-kperson aria-label="Person" title="Visa bara det en person var med om"><option value="">Alla</option>${folk.map(p => `<option value="${p.id}"${p.id === val.person ? ' selected' : ''}>${esc(p.name)}${p.died !== undefined ? ' †' : ''}</option>`).join('')}</select></div>
     ${forkl ? `<p class="muted small kforkl">${esc(forkl)}</p>` : ''}`;
 }
+// Skrifter (steg 10.6.8): alla stenar, blad och böcker som finns i byn, nyast först, med stadiets symbol, kvalitetsmärket, titeln
+// och var de finns. Ett tryck på raden visar texten, ett tryck på platsen flyttar kartan dit, och tre knappar väljer stadium
+const STADIER: { id: SkriftStadium; namn: string; ikon: string; tecken: string }[] = [
+  { id: 'sten', namn: 'Runstenar', ikon: 'huggen_sten', tecken: '🪨' }, { id: 'pergament', namn: 'Blad', ikon: 'blad', tecken: '📜' }, { id: 'bok', namn: 'Böcker', ikon: 'bok', tecken: '📖' }];
+function skriftHtml() {
+  const alla = skriftLista(s), lista = val.stad ? alla.filter(r => r.stadium === val.stad) : alla;
+  const knappar = STADIER.map(d => `<button type="button" data-kstad="${d.id}" aria-pressed="${d.id === val.stad}" title="${d.namn}" aria-label="${d.namn}">${tecknet(d.ikon, d.tecken, 16)}</button>`).join('');
+  const rad = (r: ReturnType<typeof skriftLista>[number]) => {
+    const d = STADIER.find(x => x.id === r.stadium)!, oppen = val.skrift === r.id;
+    const plats = r.x !== undefined ? `<button type="button" class="lank" data-kplats="${r.x},${r.y}" title="Visa platsen på kartan">${esc(r.plats)}</button>` : esc(r.plats);
+    const text = !oppen ? '' : `<div class="skrifttext">${r.runor ? `<p class="runor">${esc(r.runor)}</p>` : ''}<p>${esc(r.text)}</p>${r.delar?.length ? `<ol class="bokdelar">${r.delar.map(k => `<li>${kvMark(k) ?? ''}<b>${esc(k.titel)}</b>: ${esc(k.text)}</li>`).join('')}</ol>` : ''}</div>`;
+    return `<li class="skriftrad"><button type="button" data-kskrift="${r.id}" aria-expanded="${oppen}" title="${esc(r.titel)}">${tecknet(d.ikon, d.tecken, 16)}${kvMark(r) ?? ''} ${esc(r.titel)}</button> <span class="muted small">${plats}</span>${text}</li>`;
+  };
+  return `<div class="pdelar kstad" role="toolbar" aria-label="Stadium">${knappar}</div><h4 class="kar">Skrifter i byn</h4>${lista.length ? `<ul class="skriftlista">${lista.map(rad).join('')}</ul>` : '<p class="muted">Inga skrifter här än.</p>'}`;
+}
 export const kronika: Flik = {
   namn: 'Krönika',
   html() {
@@ -66,11 +82,18 @@ export const kronika: Flik = {
       const k = kalender(s, r.t), cls = [r.kind ? `k-${r.kind}` : '', r.viktig && !val.viktigt ? 'viktig' : ''].filter(Boolean).join(' ');
       html += `<li${cls ? ` class="${cls}"` : ''}><span class="when">${r.kind ? clockTxt(r.t) : AGES[k.ai]}</span>${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids, byte: r.byte, bnr: r.bnr, fram: r.fram, match: r.match })}</li>`;
     }
+    const skrifter = val.kat === 'skrift' ? skriftHtml() : '';
     // Fritid (steg 9.2.67): de senaste framträdandena och matcherna överst, med knappen till redogörelsen
     const fritid = val.kat === 'fritid' ? fritidLista() : '';
-    return symbolRad(folk, aren) + (fritid ? `<h4 class="kar">Framträdanden och matcher</h4>${fritid}` : '') + (html ? html + '</ol>' : fritid ? '' : '<p class="muted">Inget har hänt här än.</p>');
+    return symbolRad(folk, aren) + skrifter + (fritid ? `<h4 class="kar">Framträdanden och matcher</h4>${fritid}` : '') + (html ? html + '</ol>' : fritid ? '' : '<p class="muted">Inget har hänt här än.</p>');
   },
   klick(el) {
+    const st = el.closest<HTMLElement>('[data-kstad]');
+    if (st) { const v = st.dataset.kstad as SkriftStadium; val.stad = val.stad === v ? undefined : v; return true; }
+    const pl = el.closest<HTMLElement>('[data-kplats]');
+    if (pl) { const [x, y] = pl.dataset.kplats!.split(',').map(Number); visaPaKartan(x! + 0.5, y! + 0.5, 6); return true; }
+    const sk = el.closest<HTMLElement>('[data-kskrift]');
+    if (sk) { val.skrift = val.skrift === sk.dataset.kskrift ? undefined : sk.dataset.kskrift; return true; }
     const kk = el.closest<HTMLElement>('[data-kkat]');
     if (kk) { val.kat = val.kat === kk.dataset.kkat ? undefined : kk.dataset.kkat; val.forkl = kk.dataset.kkat; return true; }
     const o = el.closest<HTMLElement>('[data-kordning]');
