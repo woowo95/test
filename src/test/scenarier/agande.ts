@@ -441,7 +441,7 @@ SCENARIER.arv = {
     const far = s.people[s.people.length - 1].father === d.id;
     // viljan att ge
     ({ s, d, a, b, c, e } = ny());
-    getRel(s, a, b).op = 60; d.mother = a.id; a.partner = c.id; c.partner = a.id;
+    getRel(s, a, b).op = 60; d.mother = a.id; d.partner = undefined; d.born = s.now - 10 * SIM.DAY; a.partner = c.id; c.partner = a.id; // d är ett barn a försörjer (steg 10.5.10)
     s.delning = { andel: 1 };
     const lite = willing(s, a, b, 1), mycket = willing(s, a, b, 3);
     s.seder.v.gemenskap = 1; const gem = willing(s, a, b, 1); s.seder.v.gemenskap = -1; const egen = willing(s, a, b, 1); s.seder.v.gemenskap = 0;
