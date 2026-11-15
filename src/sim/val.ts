@@ -67,7 +67,7 @@ import { forSmutsigt, latrinFor } from './smuts';
 import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
-import { sportVal, sportVikt } from './sport';
+import { sportListaVal, sportVal, sportVikt } from './sport';
 import { handlaVal } from './handel';
 import { framVal, lyssnaBradska, lyssnaVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
@@ -655,6 +655,12 @@ export const ARBETEN: readonly Arbete[] = [
     const j = bjornjaktVal(s, p);
     if (!j) return false;
     set(v, 'bjornjakt', j.why); v.spot = j.spot; v.dur = j.dur; return true;
+  } },
+  // ... och den som ville vara med när någon samlade till en match (sport.ts, steg 10.7.12)
+  { id: 'sport', niva: 3, prova: ({ s, p, v }) => {
+    const sp = sportListaVal(s, p);
+    if (!sp) return false;
+    set(v, 'sport', sp.why); v.spot = sp.spot; v.dur = sp.dur; v.ref = sp.ref; v.tool = sp.tool; return true;
   } },
   // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts); på kvällen ligger filten ute (steg 4.5.4.11). Behovet
   // stiger under handlarens besök; den som står i kön eller handlar fortsätter

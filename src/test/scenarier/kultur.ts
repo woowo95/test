@@ -34,28 +34,56 @@ export const fritid = (s: State, q: Person) => { q.pot.styrka = q.pot.smidighet 
 const vuxna = (s: State) => SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
 
 SCENARIER.sport = {
-  text: 'Sporten (steg 4.3.1.1): när byn har ett överskott spelar de vuxna brottning och dragkamp i byn under fritiden. Det tränar närstrid och gör dem glada',
+  text: 'Sporten (steg 4.3.1.1 och 10.7.12): när byn har ett överskott spelar de vuxna brottning och dragkamp. Den som vill spela ropar, och de inom hörhåll som vill avbryter det de gör och kommer, men faror går före. Platsen är öppen mark som räcker för sporten. Det tränar närstrid och gör dem glada',
   kor: () => {
     const s = rikDag(3, { rep: 4 }), vill = vuxna(s).filter(q => SIM.sportVikt(s, q, 1) > 0).length;
     const f = rikDag(3, { rep: 4 }); setFood(f, 1);
     const vf = vuxna(f).filter(q => SIM.sportVikt(f, q, 1) > 0).length, lust = (x: State) => vuxna(x).reduce((a, q) => a + SIM.sportVikt(x, q, 1), 0); // (överskottet är en faktor, steg 10.2.43)
-    // två samtalar när den tredje börjar en match, och följer med
-    const g = rikDag(3, { rep: 4 }), med = vuxna(g).slice(0, 3), fore = med.map(q => q.skill.narstrid);
-    fritid(g, med[1]!); fritid(g, med[2]!);
+    // en samtalar och en hugger ved när den tredje ropar: båda kommer, och vedhuggaren avbryter arbetet
+    const g = rikDag(3, { rep: 4 }), med = vuxna(g).slice(0, 3), fore = med.map(q => q.skill.narstrid), hugg = med[2]!;
+    fritid(g, med[1]!); hugg.pot.styrka = hugg.pot.smidighet = 20;
+    hugg.task = { act: 'hugga', phase: 'do', tx: hugg.x, ty: hugg.y, until: g.now + SIM.HOUR, carry: 0, dark: false };
     spela(g, med[0]!);
-    const sport0 = SIM.SPORT_AV[g.sport!.k]!.namn, foljer = med.filter(q => q.task?.act === 'sport').length;
-    let sett = 0;
-    kor(g, 2, () => { sett = Math.max(sett, med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length); });
+    const sport0 = g.sport ? SIM.SPORT_AV[g.sport.k]!.namn : 'ingen', ilista = med.slice(1).filter(q => g.sport?.lista?.includes(q.id)).length, avbrot = hugg.task?.act !== 'hugga';
+    let sett = 0, kom = 0;
+    kor(g, 2, () => { sett = Math.max(sett, med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length); if (hugg.task?.act === 'sport') kom = 1; });
     const glad = med.filter(q => q.thoughts.some(t => t.text.startsWith('Spelade'))).length;
     const battre = med.filter((q, i) => q.skill.narstrid > fore[i]!).length;
-    // när ingen har fritid följer ingen med, och det blir ingen match
-    const e = rikDag(3, { rep: 4 }), ensam = !spela(e, vuxna(e)[0]!) && !e.sport;
+    // den som fryser farligt värmer sig först
+    const h = rikDag(3, { rep: 4 }); tandEld(h);
+    const hv = vuxna(h), fr = hv[1]!; for (const q of hv) q.pot.styrka = q.pot.smidighet = 20;
+    fr.warm = SIM.KROPP.farligt - 0.1;
+    spela(h, hv[0]!);
+    const frLista = !!h.sport?.lista?.includes(fr.id); fr.task = undefined; SIM.chooseTask(h, fr);
+    const frAkt = ((q: Person) => q.task?.act)(fr);
+    // ingen vill: den som ropade blir ledsen, ingen avbryts och det blir ingen match
+    const e = rikDag(3, { rep: 4 }), ev = vuxna(e);
+    for (const q of ev.slice(1)) { q.pot.styrka = q.pot.smidighet = 0; fritid(e, q); q.pot.styrka = q.pot.smidighet = 0; }
+    const ensam = !spela(e, ev[0]!) && !e.sport && ev.slice(1).every(q => q.task?.act === 'samtal');
+    const ledsen = ev[0]!.thoughts.some(t => t.text === 'Ingen ville spela' && t.v < 0);
+    // platsen: öppen mark i hela ytan, och alla platser för de flesta spelarna inom ytan
+    const p = rikDag(3); medHus(p); const pv = vuxna(p), tr = SIM.groundOf(p).trees;
+    const platser = SIM.SPORTER.map(d => {
+      const at = SIM.sportPlats(p, pv[0]!, d);
+      if (!at) return `${d.id}: ingen`;
+      let oppet = true;
+      for (let j = at.y - d.yta; j <= at.y + d.yta; j++) for (let i = at.x - d.yta; i <= at.x + d.yta; i++) {
+        if ((i - at.x) ** 2 + (j - at.y) ** 2 > d.yta * d.yta + d.yta) continue;
+        if (SIM.roomAt(p, i + 0.5, j + 0.5) || SIM.bitAt(p, i, j) || tr[j * SIM.W + i]! >= 0.5) oppet = false;
+      }
+      const m: SIM.Match = { k: d.id, x: at.x + 0.5, y: at.y + 0.5, start: p.now, slut: p.now + SIM.HOUR };
+      const d0 = Math.max(...Array.from({ length: d.max }, (_, i) => { const u = SIM.platsFor(p, { ...pv[0]!, id: 9000 + i }, m); return Math.hypot(u.x - m.x, u.y - m.y); }));
+      return `${d.id}: ${oppet ? 'öppet' : 'STÄNGT'}, längst ${d0.toFixed(1)} av ${d.yta}`;
+    });
     return [
       [`i en rik by vill ${vill} av ${vuxna(s).length} vuxna spela på fritiden`, vill === vuxna(s).length],
       [`när maten är knapp vill man spela mycket mindre (${lust(f).toFixed(2)} mot ${lust(s).toFixed(2)}, ${vf} vill alls)`, lust(f) < lust(s) * 0.5],
-      [`${foljer} går till ${sport0.toLowerCase()}en; ${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, foljer === 3 && (g.stat?.sportTim ?? 0) >= 1 && sett >= 2],
+      [`${ilista} av två vill vara med i ${sport0.toLowerCase()}en, och vedhuggaren ${avbrot ? 'avbröt arbetet' : 'högg vidare'} och ${kom ? 'kom' : 'kom inte'}`, ilista === 2 && avbrot && kom === 1],
+      [`${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, (g.stat?.sportTim ?? 0) >= 1 && sett >= 2],
       [`${glad} av tre är glada efter att ha spelat, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
-      ['när ingen har fritid följer ingen med, och det blir ingen match', ensam],
+      [`den som fryser farligt ${frLista ? 'ville vara med' : 'ville inte'} men ${frAkt === 'varma' ? 'värmer sig först' : 'gör ' + frAkt}`, frLista && frAkt === 'varma'],
+      [`när ingen vill blir det ingen match och ingen avbryts; den som ropade ${ledsen ? 'är ledsen' : 'är inte ledsen'} (${e.stat?.sportIngen ?? 0} gånger ingen)`, ensam && ledsen && (e.stat?.sportIngen ?? 0) === 1],
+      [`platserna: ${platser.join('; ')}`, platser.every(x => / öppet, längst/.test(x) && Number(x.match(/längst ([\d.]+) av (\d)/)![1]) <= Number(x.match(/av (\d)/)![1]) + 0.5)],
       ...brottning(),
     ];
   },
