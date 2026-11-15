@@ -67,8 +67,8 @@ export function stenFrakt(s: State) {
 }
 // frakten som arbete (värdet i varde.ts): turerna fram och tillbaka till berget, i gångfart, för en sten
 export const stenFraktKostnad = (s: State) => { const f = stenFrakt(s); return f === Infinity ? Infinity : 2 * f / (GANG.fart * HOUR_S) * ARBETE; };
-// det Byggplanen planerat av sten och inte byggt än: vägrutorna (stenbron, steg 10.10.6)
-STENBEHOV.vag = s => bitsOf(s).filter(b => MATERIAL[b.m]?.item === 'byggsten' && MATERIAL[b.m].vag && b.b < 1).reduce((a, b) => a + Math.max(0, MATERIAL[b.m].n - (b.mat ?? 0)), 0);
+// det Byggplanen planerat av sten och inte byggt än: vägrutorna och väggarna (stenbron och stenväggen, steg 10.10.6 och 10.10.7)
+STENBEHOV.bygg = s => bitsOf(s).filter(b => MATERIAL[b.m]?.item === 'byggsten' && b.b < 1).reduce((a, b) => a + Math.max(0, MATERIAL[b.m].n - (b.mat ?? 0)), 0);
 // stenen är bruten: den läggs i högen där den bröts
 export function stenBruten(s: State, p: Person, t: Task) {
   t.items = { ...(t.items ?? {}), byggsten: (t.items?.byggsten ?? 0) + 1 };

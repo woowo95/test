@@ -225,7 +225,7 @@ SCENARIER.stenvag = {
       return s;
     };
     const s = by(), f = BYGGATGARDER.stockvagA.foresla(s, behov, () => true);
-    const forst = f[0], stenForst = forst?.ritning.every(a => a.m === 'sten'), stockOcksa = f.some(q => q.ritning.every(a => a.m === 'stockvag'));
+    const forst = f[0], stenForst = forst?.ritning.every(a => a.m === 'stenvag'), stockOcksa = f.some(q => q.ritning.every(a => a.m === 'stockvag'));
     const st = SIM.straken(s), paStrak = !!forst && forst.ritning.some(a => st.ruta[a.y * SIM.W + a.x] > 0);
     // utan kälke går stenen inte att köra hem: byn lägger stock. Och frakten kostar mer ju längre bort berget är
     const s2 = by(); s2.ting = SIM.tingOf(s2).filter(q => q.k !== 'kalke');
@@ -235,18 +235,18 @@ SCENARIER.stenvag = {
     // en sliten stockväg får sten
     const s3 = by(), r = forst?.ritning[0] ?? { x: 1, y: 1 };
     bitsOf(s3).push({ id: s3.nextBit!++, x: r.x, y: r.y, k: 'golv', m: 'stockvag', b: 1, mat: 1, c: BYGG.laga / 2 }); SIM.touch(s3);
-    const f3 = BYGGATGARDER.stockvagA.foresla(s3, behov, () => true), sten3 = f3.find(q => q.ritning[0]?.m === 'sten');
+    const f3 = BYGGATGARDER.stockvagA.foresla(s3, behov, () => true), sten3 = f3.find(q => q.ritning[0]?.m === 'stenvag');
     const sliten = !!sten3?.ritning.some(a => a.x === r.x && a.y === r.y);
     // en hel stockväg byts inte
     bitAt(s3, r.x, r.y)!.c = 1; SIM.touch(s3);
     const hel = !BYGGATGARDER.stockvagA.foresla(s3, behov, () => true).some(q => q.ritning.some(a => a.x === r.x && a.y === r.y));
     // stenen brinner inte, stockvägen gör det
-    const brinner = !MATERIAL.sten.brinner && !!MATERIAL.stockvag.brinner && MATERIAL.sten.slit * 5 <= MATERIAL.stockvag.slit + 1e-12;
+    const brinner = !MATERIAL.stenvag.brinner && !!MATERIAL.stockvag.brinner && MATERIAL.stenvag.slit * 5 <= MATERIAL.stockvag.slit + 1e-12;
     // ett hus kan stå på en vägruta
     const s4 = by(), v = bitsOf(s4).length;
     let x4 = -1, y4 = -1;
     for (let y = 5; y < SIM.H - 5 && x4 < 0; y++) for (let x = 5; x < SIM.W - 5; x++) if (SIM.usable(s4, x, y, false, true)) { x4 = x; y4 = y; break; }
-    bitsOf(s4).push({ id: s4.nextBit!++, x: x4, y: y4, k: 'golv', m: 'sten', b: 1, mat: 1, c: 1 }); SIM.touch(s4);
+    bitsOf(s4).push({ id: s4.nextBit!++, x: x4, y: y4, k: 'golv', m: 'stenvag', b: 1, mat: 1, c: 1 }); SIM.touch(s4);
     const husPa = !SIM.usable(s4, x4, y4, false, true) && SIM.usable(s4, x4, y4, false, true, true) && bitsOf(s4).length === v + 1;
     return [
       [`byn nära berget med kälke föreslår sten först (${forst?.ritning.length} rutor ${forst?.ritning[0]?.m}), och stocken som ett förslag till`, !!stenForst && stockOcksa],
@@ -257,6 +257,43 @@ SCENARIER.stenvag = {
       ['en hel stockväg byts inte', hel],
       ['stenen brinner inte och slits fem gånger långsammare', brinner],
       ['ett hus kan byggas på en vägruta', husPa],
+    ];
+  },
+};
+
+SCENARIER.stenvagg = {
+  text: 'Steg 10.10.7: väggar av staplad sten. En by med berg nära, seden Förutseende och bränder bakom sig bygger sten; en by med Dagens behov eller utan något att köra stenen på bygger timmer. Stenen brinner inte och rummet är varmare. En timmervägg som rasat byggs upp i sten, och ett timmerhus byter vägg en ruta i taget',
+  kor: () => {
+    const { MATERIAL, newTing, BYN, living, bitsOf, BYGGATGARDER, vaggVal } = SIM;
+    const behov = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 } as SIM.ByggBehov;
+    const by = (sed: number, brann: number, kalke = true) => {
+      const s = createState(3, START); klockan(s); byggare(s);
+      for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, byggsten: 1 });
+      s.seder = { ...(s.seder ?? {}), v: { ...(s.seder?.v ?? {}), forsiktighet: sed } } as typeof s.seder;
+      (s.stat ??= {})['brand vagg'] = brann;
+      if (kalke) { const m = SIM.bynsMitt(s), g = newTing(s, 'kalke', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y); }
+      return s;
+    };
+    const s = by(1, 20); SIM.planBuild(s);
+    const vaggar = bitsOf(s).filter(b => b.k === 'vagg'), stenHus = vaggar.length > 0 && vaggar.every(b => b.m === 'sten');
+    const dagens = vaggVal(by(-1, 20)), utanKalke = vaggVal(by(1, 20, false)), utanBrand = vaggVal(by(1, 0));
+    // ett timmerhus: en rasad vägg byggs upp i sten, och väggarna byts en ruta i taget
+    const t = by(-1, 0); SIM.planBuild(t); byggKlart(t);
+    const timmerHus = bitsOf(t).filter(b => b.k === 'vagg').every(b => b.m === 'timmer');
+    t.seder!.v.forsiktighet = 1; t.stat!['brand vagg'] = 20;
+    const f = BYGGATGARDER.stenVaggA.foresla(t, behov, () => true), en = f.length === 1 && f[0].ritning.length === 1;
+    const w = bitsOf(t).find(b => b.k === 'vagg' && b.x === f[0]?.ritning[0].x && b.y === f[0]?.ritning[0].y)!;
+    SIM.rasar(t, w); const uppISten = w?.m === 'sten';
+    const medan = BYGGATGARDER.stenVaggA.foresla(t, behov, () => true).length === 0;
+    return [
+      [`Förutseende, berg nära och bränder bakom sig: huset får stenväggar (${vaggar.length} väggrutor)`, stenHus],
+      [`Dagens behov bygger timmer (${dagens}), och utan kälke blir det timmer (${utanKalke})`, dagens === 'timmer' && utanKalke === 'timmer'],
+      [`utan bränder bakom sig väljer också den förutseende byn timmer (${utanBrand})`, utanBrand === 'timmer'],
+      ['stenväggen brinner inte, är varmare än timmer och slits en femtedel så fort', !MATERIAL.sten.brinner && (MATERIAL.sten.isol ?? 0) > (MATERIAL.timmer.isol ?? 0) && Math.abs(MATERIAL.sten.slit * 5 - MATERIAL.timmer.slit) < 1e-12],
+      ['timmerhuset byggdes av timmer', timmerHus],
+      ['ett timmerhus byter en väggruta i taget till sten', en],
+      ['en vägg som rasat byggs upp i sten', uppISten],
+      ['medan en vägg står öppen byts ingen annan', medan],
     ];
   },
 };

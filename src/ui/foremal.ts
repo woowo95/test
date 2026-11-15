@@ -369,7 +369,12 @@ function drawBuild() {
       if (b.b >= 1) structG.beginFill(col).drawRect(x, y, TS, TS).endFill(); else structG.lineStyle(1, col).drawRect(x + 0.5, y + 0.5, TS - 1, TS - 1).lineStyle(0);
     } else if (b.k === 'vagg') {
       if (b.b <= 0 && b.mat <= 0) { structG.lineStyle(1, 0x5e3c24).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
-      // timmerväggarna ritar ritaHus; här ritas risväggarna
+      // timmerväggarna ritar ritaHus; här ritas stenväggarna (platshållare, steg 10.10.7) och risväggarna
+      if (b.m === 'sten') { // staplade stenar i rader, förskjutna som i en mur
+        structG.beginFill(0x3e5156).drawRect(x, y, TS, TS).endFill();
+        for (let r = 0; r < 4; r++) for (let k = -1; k < 3; k++) { const sx = x + k * 6 + (r % 2 ? 3 : 0) + 1, sy = y + r * 4 + 1; const x0 = Math.max(x + 1, sx), x1 = Math.min(x + TS - 1, sx + 5); if (x1 > x0) structG.beginFill(r % 2 ? 0x8a9c9e : 0x61767a).drawRect(x0, sy, x1 - x0, 3).endFill(); }
+        continue;
+      }
       structG.beginFill(palTal(MATERIAL.ris.farg)).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
       // flätningen: vågiga streck, färre ju mer slitet
       const n = b.b >= 1 ? Math.max(1, Math.round(3 * b.c)) : Math.ceil(3 * b.b);

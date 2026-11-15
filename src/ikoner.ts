@@ -4198,6 +4198,7 @@ PIX.kvarnsten = PIX.huggen_sten ?? PIX.sten; PAL.kvarnsten = PAL.huggen_sten ?? 
 PIX.bakugn = PIX.ortkok ?? PIX.sten; PAL.bakugn = PAL.ortkok ?? PAL.sten; PIX.brod = PIX.rotter; PAL.brod = PAL.rotter; // platshållare för bakugnen och brödet (steg 9.6.23) tills Björn valt i bildstilen
 PIX.byggsten = PIX.huggen_sten ?? PIX.sten; PAL.byggsten = PAL.huggen_sten ?? PAL.sten; // platshållare för byggstenen (steg 10.10.5) tills Björn valt i bildstilen
 PIX.stenvag = PIX.huggen_sten ?? PIX.sten; PAL.stenvag = PAL.huggen_sten ?? PAL.sten; // platshållare för den stenlagda vägen (steg 10.10.6) tills Björn valt i bildstilen
+PIX.stenvagg = PIX.huggen_sten ?? PIX.sten; PAL.stenvagg = PAL.huggen_sten ?? PAL.sten; // platshållare för stenväggen (steg 10.10.7) tills Björn valt i bildstilen
 PIX.kokgrop = PIX.sten; PAL.kokgrop = PAL.sten; // platshållare för kokgropen (steg 10.7.28) tills Björn valt i bildstilen
 PIX.sprit = PIX.lerkruka_liten ?? PIX.kruka; PAL.sprit = PAL.lerkruka_liten ?? PAL.kruka; PIX.mjod = PIX.honung; PAL.mjod = PAL.honung; // teknikerna Sprit och Mjöd (steg 10.7.25–10.7.26), platshållare
 PIX.brannpanna = PIX.ortkok ?? PIX.sten; PAL.brannpanna = PAL.ortkok ?? PAL.sten; // platshållare för brännpannan (steg 10.7.26) tills Björn valt i bildstilen

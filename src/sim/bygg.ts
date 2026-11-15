@@ -353,10 +353,13 @@ export function wearBuild(s: State, hours: number, ai: number) {
     touch(s);
   }
 }
+// väggens material när den byggs upp igen: Byggplanen sätter det (vaggFor i byggplan.ts, steg 10.10.7)
+export const VAGGVAL: { f: (s: State, h?: Hus) => string | undefined } = { f: () => undefined };
 // väggen b rasar (sliten, eller riven av tornadon i tornado.ts) och måste byggas om; huset är inte klart längre. Ger huset
 export function rasar(s: State, b: Bit) {
   const h = husById(s, b.hus);
   if (h && MATERIAL[b.m].item) glomKom(h, MATERIAL[b.m].item!, b.mat);
+  if (b.k === 'vagg') b.m = VAGGVAL.f(s, h) ?? b.m; // väggen byggs upp i det material byn valt (steg 10.10.7)
   b.b = 0; b.mat = 0; b.c = 1; b.lp = b.lm = undefined; count(s, 'rasat');
   if (h) { h.varKlar ??= h.klar; h.klar = undefined; }
   return h;
