@@ -11,7 +11,7 @@ import { BAR, FOREST } from './vag';
 import { tabortBuske } from './buskar';
 import { knows } from './teknik';
 import { isLight } from './tid';
-import { STAKET, faltRiktning, faltSite, harStaket } from './odling';
+import { STAKET, faltOf, faltRiktning, faltSite, harStaket, staketRutor } from './odling';
 import { getMap } from './karta';
 import { blocked } from './byggnad';
 import { bynsMitt } from './omrade';
@@ -20,7 +20,8 @@ import { TAM, Tamdjur, tamArt, tamdjurOf } from './tamdjur';
 // en timme för hagarna och betesdjuren (efter stepTamdjur): djuren betar, staketet slits
 export function stepHagar(s: State) {
   for (const d of betesdjurOf(s)) stepBete(s, d);
-  for (const h of hagarOf(s)) slitHage(s, h);
+  for (const h of hagarOf(s)) slitStaket(s, hageKant(s, h), HAGE.slit * (1 + djurIHagen(s, h).length * HAGE.slitDjur));
+  for (const f of faltOf(s)) slitStaket(s, staketRutor(s, f), HAGE.slit); // fältets staket slits av vädret som hagens (steg 10.10.10)
 }
 // En inhägnad av staketet (steg 9.7.10) på gräs nära byn, en kvadrat med staket runt om, så stor som djuren behöver (hageSida).
 // Hagen är ett projekt (raden hage i PROJEKT, projekt.ts, steg 10.2.36): någon märker ut den och sätter staketet.
@@ -141,11 +142,11 @@ export function hageKlar(s: State, p: Person, i?: number) {
   (s.staket ??= []).push(i); count(s, 'hageStaket');
   if (hageHel(s, h) && forstaGang(s, 'hageKlar')) log(s, `${p.name} satte den sista pinnen i byns första hage.`, 'world', [p.id]);
 }
-// staketet slits av vädret och djuren: ibland går en ruta sönder
-function slitHage(s: State, h: Hage) {
-  const n = djurIHagen(s, h).length;
-  if (rnd(s, 'tamdjur') >= HAGE.slit * (1 + n * HAGE.slitDjur)) return;
-  const k = hageKant(s, h).filter(i => harStaket(s, i));
+// staketet slits av vädret (och djuren i hagen): ibland går en ruta av rutorna rs sönder, med chansen c i timmen (stepHagar
+// räknas en gång i timmen i registret TAKTER, så slitaget är detsamma med korta som med långa slag)
+function slitStaket(s: State, rs: number[], c: number) {
+  if (!rs.some(i => harStaket(s, i)) || rnd(s, 'tamdjur') >= c) return;
+  const k = rs.filter(i => harStaket(s, i));
   if (!k.length) return;
   const i = k[Math.floor(rnd(s, 'tamdjur') * k.length)];
   s.staket = (s.staket ?? []).filter(j => j !== i); count(s, 'staketSonder');

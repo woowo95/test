@@ -23,6 +23,13 @@ export const HONS = balans('hons', {
 });
 export interface Hons { n: number; x: number; y: number; agare?: number; agg: number }
 export const honsOf = (s: State) => (s.hons && s.hons.n > 0 ? s.hons : undefined);
+// hela hönor i flocken dör (i tornadon eller elden, steg 10.10.10); orsak är slutet på meningen, t.ex. 'i tornadon'
+export function honsDor(s: State, n: number, orsak: string) {
+  const h = honsOf(s);
+  if (!h || n < 1) return;
+  n = Math.min(h.n, n); h.n -= n; count(s, 'honsDog', n);
+  log(s, `${n === h.n + n ? 'Alla' : n} ${n === 1 ? 'höna' : 'hönor'} i byns flock dog ${orsak}.`, 'world', h.agare !== undefined ? [h.agare] : []);
+}
 
 export function stepHons(s: State) {
   kopta(s);

@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, byggKlart, byggare, kor, klockan, medBank, setMat } from './hjalp';
+import { SCENARIER, byggKlart, byggare, kor, klockan, medBank, setMat, tandEld } from './hjalp';
 
 // en landruta i byns närhet, d rutor öster om mitten (eller närmast efter)
 const landVid = (s: SIM.State, d: number) => {
@@ -330,5 +330,94 @@ SCENARIER.ho = {
       [`inget hö under träd (${trad}), på en buske (${buske}), i hagen (${hage}) eller på ängen (${ang})`, trad + buske + hage + ang === 0],
       ['en sparad by rensas från de gamla hötuvorna', gammal],
     ];
+  },
+};
+
+SCENARIER.djurmotgang = {
+  text: 'Steg 10.10.10: djuren i motgångarna. Ett får i tornadons kärna dör, en hönsflock nära mister hela hönor, staketet i kärnan är borta och djuren rymmer genom hålet, ett får på en brinnande ruta dör och staketet där brinner upp, fähusets vägg rasar som en annan vägg, och fältets staket går sönder lika fort med korta som med långa slag',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,hage.slit=1' },
+  kor: () => {
+    let W = SIM.W; const ut: [string, boolean][] = [];
+    // tornadon
+    {
+      const s = createState(5, START); W = SIM.W;
+      tandEld(s);
+      SIM.skickaTornado(s, 'medel');
+      const t = s.tornado!, L = t.L, e = SIM.eldPlats(s);
+      const ledig = (x: number, y: number) => SIM.inMap(x, y) && SIM.vattenNu(s)[y * W + x] !== SIM.T.Vatten && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8;
+      const pl: { x: number; y: number; u: number }[] = [];
+      for (let u = 0.3; u < 0.9 && pl.length < 3; u += 2.5 / L) {
+        const p = SIM.tornadoPos(t, u), x = Math.floor(p.x), y = Math.floor(p.y);
+        if (ledig(x, y) && !pl.some(q => Math.abs(q.x - x) < 3 && Math.abs(q.y - y) < 3)) pl.push({ x, y, u });
+      }
+      if (pl.length < 3) return [['tre lediga rutor mitt på banan', false]];
+      const [pf, ph, pv] = pl;
+      // fåret i kärnan, hönsen 2,5 rutor vid sidan av banan (nära), staketet på en ruta i kärnan och en vägg av fähuset
+      const far = SIM.nyttTamdjur(s, 'far', pf.x + 0.5, pf.y + 0.5);
+      const a = SIM.tornadoPos(t, ph.u), b = SIM.tornadoPos(t, ph.u + 1 / L), dl = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const hx = a.x - (b.y - a.y) / dl * 2.5, hy = a.y + (b.x - a.x) / dl * 2.5;
+      s.hons = { n: 10, x: hx, y: hy, agg: 0 };
+      const hage = { id: 77, x: pv.x + 1, y: pv.y - 3, w: 6, h: 6 };
+      (s.hagar ??= []).push(hage);
+      s.staket = [...(s.staket ?? []), ...SIM.hageKant(s, hage)];
+      const hal = pv.y * W + pv.x, harFore = SIM.harStaket(s, hal);
+      const bits = SIM.bitsOf(s), id = Math.max(0, ...bits.map(q => q.id)) + 1;
+      bits.push({ id, x: ph.x, y: ph.y, k: 'vagg', m: 'timmer', b: 1, mat: 5, c: 1 }); // en vägg i fähuset rasar som alla väggar (rasar i bygg.ts)
+      SIM.touch(s);
+      for (let k = 0; k < 900 && s.tornado; k++) {
+        if (s.tamdjur?.includes(far)) { far.x = pf.x + 0.5; far.y = pf.y + 0.5; }
+        if (s.hons && s.hons.n > 0) { s.hons.x = hx; s.hons.y = hy; }
+        SIM.step(s, 5);
+      }
+      const vagg = SIM.bitAt(s, ph.x, ph.y), hon = s.hons?.n ?? 0, staketBorta = harFore && !SIM.harStaket(s, hal);
+      ut.push([`fåret i kärnan dog (${s.tamdjur?.includes(far) ? 'lever' : 'dött'})`, !s.tamdjur?.includes(far)]);
+      ut.push([`hönsflocken nära mister hela hönor men inte alla (${hon} av 10 kvar)`, hon > 0 && hon < 10 && Number.isInteger(hon)]);
+      ut.push([`staketet i kärnan är borta (${staketBorta ? 'borta' : 'kvar'})`, staketBorta]);
+      ut.push([`fähusets vägg i kärnan rasade (${vagg && vagg.b >= 1 ? 'står' : 'rasad'})`, !vagg || vagg.b < 1]);
+      // ett får i hagen rymmer genom hålet (gräset i hagen har vuxit igen efter tornadon)
+      for (const i of SIM.hageRutor(hage)) SIM.groundOf(s).cover[i] = 1;
+      const in2 = SIM.nyttTamdjur(s, 'far', hage.x + 1.5, hage.y + 1.5); in2.hage = hage.id;
+      const r0 = s.stat?.tamRymde ?? 0;
+      for (let k = 0; k < 96 && in2.hage !== undefined; k++) SIM.stepHagar(s); // hagens timmar, utan resten av byn
+      ut.push([`fåret i hagen rymde genom hålet (${(s.stat?.tamRymde ?? 0) - r0} rymde)`, in2.hage === undefined]);
+    }
+    // eldsvådan: fyra får på var sin skogsruta som brinner, och ett staket på en gräsruta
+    {
+      const s = createState(5, START); W = SIM.W; const g = SIM.groundOf(s), m = SIM.bynsMitt(s);
+      const rutor: number[] = [];
+      for (let y = 5; y < SIM.H - 5 && rutor.length < 5; y++) for (let x = 5; x < W - 5 && rutor.length < 5; x++) {
+        const i = y * W + x;
+        if (Math.hypot(x - m.x, y - m.y) < 30 || g.trees[i] < SIM.FOREST || SIM.bitAt(s, x, y) || rutor.some(j => Math.abs(j % W - x) + Math.abs(Math.floor(j / W) - y) < 3)) continue;
+        rutor.push(i);
+      }
+      if (rutor.length < 5) return [...ut, ['fem skogsrutor långt från byn', false]];
+      const stk = rutor[4];
+      s.staket = [...(s.staket ?? []), stk];
+      const fa = rutor.slice(0, 4).map(i => SIM.nyttTamdjur(s, 'far', i % W + 0.5, Math.floor(i / W) + 0.5));
+      for (const i of rutor) SIM.tand(s, i, 'blixt', 0);
+      const d0 = s.stat?.['brand djur'] ?? 0;
+      for (let k = 0; k < 6 * 720 && s.brand; k++) {
+        for (const [j, d] of fa.entries()) if (s.tamdjur?.includes(d)) { d.x = rutor[j] % W + 0.5; d.y = Math.floor(rutor[j] / W) + 0.5; }
+        SIM.step(s, 5);
+      }
+      const doda = fa.filter(d => !s.tamdjur?.includes(d)).length;
+      ut.push([`fåren på de brinnande rutorna dog (${doda} av 4, ${(s.stat?.['brand djur'] ?? 0) - d0} i elden)`, doda >= 3]);
+      ut.push([`staketet på rutan som brann är borta (${SIM.harStaket(s, stk) ? 'kvar' : 'brunnit'}, ${s.stat?.['brand staket'] ?? 0} brunna)`, !SIM.harStaket(s, stk) && (s.stat?.['brand staket'] ?? 0) >= 1]);
+    }
+    // fältets staket slits per timme: lika många hål med korta som med långa slag (hage.slit=1: ett hål i timmen)
+    const hal = (slag: number) => {
+      const s = createState(5, START);
+      const p = SIM.living(s)[0];
+      const f: SIM.Falt = { id: 991, x: Math.floor(p.x) - 8, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'bereda', klara: 0, kvar: 0, rord: s.now };
+      f.r = Array.from({ length: 8 }, () => ({ st: 'bereda' as const }));
+      s.falt = [...(s.falt ?? []), f]; SIM.sammanfatta(f);
+      s.staket = [...(s.staket ?? []), ...SIM.staketRutor(s, f)];
+      const s0 = s.stat?.staketSonder ?? 0;
+      for (let k = 0; k < 6 * 3600 / slag; k++) SIM.step(s, slag);
+      return (s.stat?.staketSonder ?? 0) - s0;
+    };
+    const kort = hal(10), lang = hal(120);
+    ut.push([`fältets staket går sönder lika fort med korta som med långa slag (${kort} och ${lang} hål på sex timmar)`, kort === lang && kort >= 5]);
+    return ut;
   },
 };

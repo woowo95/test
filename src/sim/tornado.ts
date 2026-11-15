@@ -22,7 +22,9 @@ import { vattenNu } from './sjo';
 import { FOREST, isSoil } from './vag';
 import { tingOf } from './agande';
 import { FYND, UTTAG_IDS, tagits, takenOf } from './fynd';
-import { faltTornado } from './odling';
+import { faltTornado, harStaket } from './odling';
+import { tamDor, tamdjurOf } from './tamdjur';
+import { honsDor, honsOf } from './hons';
 import { bjornarOf, djurOf, dodaDjur, faglarOf, flockdjurOf } from './djur';
 import { isLight } from './tid';
 import { H, HOUR, MIN, SEC, Person, State, T, W, inMap } from './typer';
@@ -263,6 +265,21 @@ function svep(s: State, t: Tornado, a: number, b: number, gaster?: TornadoGaster
     const zon = zonVid(d.x, d.y);
     if (zon === 0 || zon === 1 && ur(s, t, d.id, 3846) < TORNADO.djurNara) { dodaDjur(s, d.id); t.djur = (t.djur ?? 0) + 1; count(s, 'tornado djur'); }
   }
+  // tamdjuren dör som de vilda (steg 10.10.10), och hönsen prövas höna för höna en gång, så att flocken mister hela hönor
+  for (const d of [...tamdjurOf(s)]) {
+    const zon = zonVid(d.x, d.y);
+    if (zon === 0 || zon === 1 && ur(s, t, d.id, 3846) < TORNADO.djurNara) { tamDor(s, d, 'i tornadon'); t.djur = (t.djur ?? 0) + 1; count(s, 'tornado djur'); }
+  }
+  const hn = honsOf(s);
+  if (hn) {
+    const zon = zonVid(hn.x, hn.y), hk = -3e6;
+    if (zon === 0) { t.djur = (t.djur ?? 0) + hn.n; count(s, 'tornado djur', hn.n); honsDor(s, hn.n, 'i tornadon'); }
+    else if (zon === 1 && !t.traff?.includes(hk)) {
+      (t.traff ??= []).push(hk);
+      let n = 0; for (let j = 0; j < hn.n; j++) if (ur(s, t, hk - j, 3863) < TORNADO.djurNara) n++;
+      if (n) { t.djur = (t.djur ?? 0) + n; count(s, 'tornado djur', n); honsDor(s, n, 'i tornadon'); }
+    }
+  }
   if (gaster) gasterna(s, t, zonVid, L, gaster);
   stormen(s, t, b);
 }
@@ -327,6 +344,7 @@ function naraZon(s: State, t: Tornado, rutor: number[]) {
       if (v.c <= 0) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); }
       rev = true;
     } else if (v?.k === 'oppning' && v.dorr && ur(s, t, i, 3847) < TORNADO.trasig) { delete v.dorr; t.forstort = (t.forstort ?? 0) + 1; count(s, 'tornado forstort'); rev = true; }
+    if (harStaket(s, i) && ur(s, t, i, 3864) < TORNADO.trasig) { s.staket = s.staket!.filter(j => j !== i); t.forstort = (t.forstort ?? 0) + 1; count(s, 'tornado staket'); } // staketet rivs som dörrarna (steg 10.10.10)
     const st = s.stationer?.length ? stationAt(s, x, y) : undefined;
     if (st && ur(s, t, st.id, 3848) < TORNADO.trasig) {
       // redskapen som låg i den blir liggande på rutan
@@ -444,6 +462,7 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
     if (v?.k === 'vagg' && v.b >= 1) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); rev = true; }
     else if (v?.k === 'golv' && v.m !== 'jord') { if (MATERIAL[v.m].vag) vagBort(s, v); else v.m = 'jord'; borta(); rev = true; }
     else if (v?.k === 'oppning' && v.dorr) { delete v.dorr; borta(); rev = true; }
+    if (harStaket(s, i)) { s.staket = s.staket!.filter(j => j !== i); borta(); count(s, 'tornado staket'); } // staketet (steg 10.10.10)
     const st = s.stationer?.length ? stationAt(s, x, y) : undefined;
     if (st) { s.ting = tingOf(s).filter(q => !(q.vid === st.id && q.hos === undefined && q.lass === undefined)); taBort(s, st); borta(); flytt = true; }
   }

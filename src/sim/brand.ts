@@ -21,7 +21,9 @@ import { die } from './liv';
 import { groundOf, markslag } from './mark';
 import { TORR } from './trad';
 import { nyStubbe } from './skog';
-import { faltAt, faltBrann, faltIndex, faltOf, faltRutor, grodaPa } from './odling';
+import { faltAt, faltBrann, faltIndex, faltOf, faltRutor, grodaPa, harStaket } from './odling';
+import { tamDor, tamdjurOf } from './tamdjur';
+import { honsDor, honsOf } from './hons';
 import { wearUsed } from './redskap';
 import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
@@ -59,6 +61,7 @@ const DELSTEG = 5;
 
 // Balanstal (regel 8)
 export const BRAND = balans('brand', {
+  djurDor: 1, // ett tamdjur eller en höna på en ruta som brinner dör med den här takten (per timme, räknat per tid; steg 10.10.10)
   gnista: 0.0002, // (0,001 före steg 9.9.4: det brann i nästan varje by) // chansen per steg (5 minuter) att en gnista från en brinnande eld når marken, gånger eldstadens spread ...
   gnistaR: 2, // ... så här många rutor bort (slumpas)
   blixt: 0.5, // chansen att blixten slår ner nära byn när den slår ner (blixtNu i vader.ts) ...
@@ -163,6 +166,7 @@ function bransleAv(s: State) {
     const b = bitBrinner(v);
     if (b) lagg(BRAND.vagg, b);
     if (s.stationer?.length && stationBrinner(stationAt(s, x, y))) lagg(BRAND.sak);
+    if (s.staket?.length && harStaket(s, i)) lagg(BRAND.sak); // staketet brinner som en station (steg 10.10.10)
     saker ??= new Set([...stacksOf(s).filter(st => st.n >= 1 && !SAKER[st.k]?.brinnerInte).map(st => st.y * W + st.x), ...tingPaMarken(s).map(t => Math.floor(t.y!) * W + Math.floor(t.x!))]);
     if (saker.has(i)) lagg(BRAND.sak);
     return f > 0 ? [f, tim, sl] : undefined;
@@ -359,6 +363,7 @@ export function brandSteg(s: State, dtSec: number) {
   const regn = v.nb * BRAND.regn * dtSec / HOUR_S;
   for (const r of b.r) { r[1] += dtSec / HOUR_S; r[3] += regn; }
   slocknar(s, b);
+  djurIElden(s, b, dtSec);
   // de som ser elden ropar, de som är nära byn släcker och de andra går undan
   const hot = hotar(s, b);
   if (hot && !b.hot) { b.hot = 1; log(s, 'Elden närmar sig byn!', 'world'); count(s, 'brand hot'); }
@@ -442,6 +447,7 @@ function slocknar(s: State, b: Brand) {
       for (const k of tingOf(s).filter(q => q.vid === st.id && q.hos === undefined && q.lass === undefined && !SAKER[q.k]?.brinnerInte)) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); }
       brann(b, stationDef(st.k)?.namn ?? st.k); count(s, 'brand station'); taBort(s, st); flytt = true;
     }
+    if (upp && s.staket?.length && harStaket(s, i)) { s.staket = s.staket.filter(j => j !== i); brann(b, 'Staket'); count(s, 'brand staket'); }
     if (upp) for (const k of tingPaMarken(s)) if (Math.floor(k.x!) === x && Math.floor(k.y!) === y) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); count(s, 'brand redskap'); }
     // sakerna brinner upp, och grödan
     for (const st of stacksOf(s)) {
@@ -457,6 +463,18 @@ function slocknar(s: State, b: Brand) {
   if (flytt) tidy(s);
 }
 
+// tamdjuren och hönsen som står på en ruta som brinner dör, med takten BRAND.djurDor räknad per tid (steg 10.10.10). Djuren
+// flyr inte elden; hönsen prövas höna för höna
+function djurIElden(s: State, b: Brand, dtSec: number) {
+  if (!b.r.length) return;
+  const k = kartaOf(b), c = 1 - Math.exp(-BRAND.djurDor * dtSec / HOUR_S), pa = (x: number, y: number) => inMap(Math.floor(x), Math.floor(y)) && k[Math.floor(y) * W + Math.floor(x)] === 1;
+  for (const d of [...tamdjurOf(s)]) if (pa(d.x, d.y) && ur(s, d.id, 3865) < c) { tamDor(s, d, 'i elden'); count(s, 'brand djur'); }
+  const h = honsOf(s);
+  if (h && pa(h.x, h.y)) {
+    let n = 0; for (let j = 0; j < h.n; j++) if (ur(s, -1 - j, 3866) < c) n++;
+    if (n) { count(s, 'brand djur', n); honsDor(s, n, 'i elden'); }
+  }
+}
 // det som brann upp skrivs i branden (namnet och hur många)
 function brann(b: Brand, namn: string) { (b.brann ??= {})[namn] = (b.brann[namn] ?? 0) + 1; }
 // det som brann upp, i ord: "Kista, Trägolv ×3"
