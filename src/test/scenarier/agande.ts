@@ -1136,6 +1136,9 @@ SCENARIER.handlare = {
 function byHandel(): [string, boolean][] {
   const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); s.nastaHandlare = s.now; for (let i = 0; i < 2000 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
   const vuxen = (s: State) => SIM.ledareOf(s) ?? living(s).find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)!;
+  // klanen tar vanligt pris för allt och den som handlar tror inget annat: vad den sparade byns ledare råkar tro om klanens priser
+  // (steg 10.5.16) prövas inte här
+  const kannerPriser = (s: State, h: SIM.Handlare) => { const kl = SIM.klanById(s, SIM.hp(s, h).gast?.klan ?? -1); if (kl) kl.pris = Object.fromEntries(SAK_LIST.map(k => [k, 1])); const p = vuxen(s); p.lardomar = p.lardomar?.filter(l => l.k !== 'pris'); };
   const bas = cloneState(testBy(10));
   // byn saknar knivar och flinta: kniven är ett projekt med brist, och flintan står i listan
   const s = cloneState(bas), h = fram(s);
@@ -1146,6 +1149,7 @@ function byHandel(): [string, boolean][] {
   h.varor = [{ k: 'flinta', n: behov + 5 }]; h.silver = 40;
   const b0 = s.stat?.handelByten ?? 0;
   vuxen(s).skill.handel = 20; // (en skicklig som handlar för byn: affären går igenom)
+  kannerPriser(s, h);
   helAffar(s, vuxen(s), true);
   const flinta = Math.round(amountOf(s, 'flinta')), silver = Math.round(amountOf(s, 'silver')), salt = h.varor.filter(w => w.k !== 'flinta');
   const bada = behov >= 1 && flinta >= 1 && flinta <= behov && salt.length > 0 && (s.stat?.handelByten ?? 0) - b0 === 2 && !!h.bynKlar;
@@ -1158,6 +1162,7 @@ function byHandel(): [string, boolean][] {
   const utan = cloneState(t); utan.projektSaknar = undefined;
   const annars = SIM.bynPart(utan, 30, 30).over([]).some(w => w.k === 'skinn'); // utan projekten hade byn sålt skinnen
   g.varor = []; g.silver = 40;
+  kannerPriser(t, g);
   helAffar(t, vuxen(t), true);
   const behollSkinn = skinn >= 1 && Math.round(amountOf(t, 'skinn')) === skinn && !g.varor.some(w => w.k === 'skinn');
   const direkt = Math.round(amountOf(t, 'silver')) >= 1 && g.varor.length > 0;
