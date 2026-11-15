@@ -279,10 +279,11 @@ export function learn(s: State, p: Person, t: Tek, from?: Person) {
 const OMR = new Set(TEKNIK.flatMap(t => t.omr));
 const HANTVERK = new Set(ACT_LIST.filter(a => ACTS[a].slag === 'hantverk'));
 const omrAv = (act: Act): Act => HANTVERK.has(act) ? 'hantverk' : act;
+const TANK_OMR: Record<string, Tek[]> = {};
 export function thinkWhileWorking(s: State, p: Person, act0: Act, dtSec: number) {
   const act = OMR.has(act0) ? act0 : omrAv(act0);
   if (!OMR.has(act) || ageOf(p, s.now) < ALDER.uppfinner) return;
-  for (const t of TEKNIK) if (!t.nar && !t.forsok && t.omr.includes(act)) framat(s, p, t, dtSec); // nivå 4–5 bara genom försök (steg 4.2.1.1)
+  for (const t of TANK_OMR[act] ??= TEKNIK.filter(q => !q.nar && !q.forsok && q.omr.includes(act))) framat(s, p, t, dtSec); // nivå 4–5 bara genom försök (steg 4.2.1.1); områdets tekniker räknas ut en gång
 }
 // tillfället i nar (raden i TEKNIK): p tänker på tekniken id i dtSec sekunder
 export function tankePa(s: State, p: Person, id: string, dtSec: number) {
@@ -369,13 +370,14 @@ export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) 
 // tekniken (den som kom på den är den första) har en lärling i taget. Lärlingen lär sig i sitt arbete med det tekniken hör till
 // så länge mästaren lever i byn, och går till mästaren och arbetar bredvid när hen arbetar med det (laraVal)
 const BREDVID = TEKNIK.filter(t => t.niva >= 3 && !t.nar);
+const BREDVID_OMR: Record<string, Tek[]> = {};
 const arbetarMed = (q: Person, t: Tek) => q.task?.phase === 'do' && t.omr.includes(omrAv(q.task.act));
 const nara = (p: Person, q: Person) => Math.hypot(p.x - q.x, p.y - q.y) <= TEKTAL.bredvidAvst;
 export function arbetaBredvid(s: State, p: Person, tk: Task, dtSec: number) {
   if (tk.phase !== 'do' || ageOf(p, s.now) < ALDER.lar) return;
   const act = OMR.has(tk.act) ? tk.act : omrAv(tk.act);
-  for (const t of BREDVID) {
-    if (!t.omr.includes(act) || !canThink(p, t)) continue;
+  for (const t of BREDVID_OMR[act] ??= BREDVID.filter(q => q.omr.includes(act))) { // teknikerna i området, uträknade en gång per område
+    if (!canThink(p, t)) continue;
     const mastare = t.niva >= 4;
     if (mastare && p.lar?.tek !== t.id) continue;
     const m = mastare ? byId(s, p.lar!.av) : undefined;
