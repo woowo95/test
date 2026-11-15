@@ -1159,6 +1159,42 @@ SCENARIER.skriva = {
   },
 };
 
+SCENARIER.bok = {
+  text: 'Steg 10.6.6: böcker. Vid snickarbänken, och bara där, binds 8 blad mellan 2 plankor till en tom bok (5 minuter), som fylls del för del, högst 8 delar av samma slag. Den som kan en teknik skriver en handbok, helst om det få i byn kan, och den som läser den lär sig tekniken utan lärare, så att konsten inte dör med den sista som kunde den',
+  kor: () => {
+    const { skrivKlar, lasKlar, skrivLust, bokPlats, runstenTimme, setAmount, amountOf, addTool, fyllVatska, tingOf, lightLevel, knows, STATIONER, SKRIFT } = SIM;
+    const s = createState(1, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q] = v as [Person, Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    while (lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    for (const r of v) if (r.tek) delete r.tek.garvning;
+    p.tek = { ...(p.tek ?? {}), bok: 1, garvning: 1, kniv: 1, skinnklader: 1 }; q.tek = { ...(q.tek ?? {}), kniv: 1, skinnklader: 1 };
+    p.skill.berattande = 15;
+    setAmount(s, 'pergament', 8); setAmount(s, 'plankor', 2);
+    SIM.makeTool(s, p, 'bok'); delete p.tek.bok; // bara garvningen kan hen ensam
+    SIM.placeTools(s);
+    const bok = tingOf(s).find(t => t.k === 'bok');
+    const bara = (STATIONER.snickarbank!.bara as string[]).includes('bok');
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined; fyllVatska(s, 'black', 2, kr);
+    const lust = skrivLust(s, p);
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+    skrivKlar(s, p);
+    const del = bok?.delar?.[0];
+    const annat = bokPlats(s, 'poesi');
+    p.died = s.now; runstenTimme(s);
+    const kr2 = !!s.hist?.kronika.some(k => String(k[1]).includes('konsten står kvar'));
+    let n = 0;
+    while (!knows(q, 'garvning') && n < 100) { lasKlar(s, q, { act: 'lasa', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: bok?.id }); n++; }
+    return [
+      [`8 blad och 2 plankor ger boken vid snickarbänken, och bara där (${bok ? 'en bok' : 'ingen bok'}, ${amountOf(s, 'pergament')} blad och ${amountOf(s, 'plankor')} plankor kvar)`, !!bok && amountOf(s, 'pergament') === 0 && amountOf(s, 'plankor') === 0 && bara],
+      [`den som ensam kan garvning skriver en del om tekniken i boken (${lust?.slag ?? 'ingen lust'}: ${del?.titel ?? 'ingen del'})`, del?.slag === 'kunskap' && del.tek === 'garvning' && (bok?.delar?.length ?? 0) <= SKRIFT.bokDelar],
+      [`en del av ett annat slag tas inte emot (${annat ? 'tas emot' : 'tas inte emot'})`, !annat],
+      [`hen dör, och krönikan säger att konsten står kvar i boken (${kr2 ? 'ja' : 'nej'})`, kr2],
+      [`en annan läser och kan tekniken (${knows(q, 'garvning') ? `efter ${n} läsningar` : 'kan den inte'}), långsammare än i ett samtal (${SKRIFT.bokLar} mot ${SIM.TEKTAL.larFramsteg} per gång)`, knows(q, 'garvning') && n > 1 && SKRIFT.bokLar < SIM.TEKTAL.larFramsteg],
+    ];
+  },
+};
+
 SCENARIER.heligverkan = {
   text: 'Steg 10.6.3: de heliga skrifternas verkan. Samma tro med och utan helig sten: chansen att sprida tron i ett samtal, hur mycket en profets syn flyttar skalorna, rösterna för att ta bort ett bud och chansen till en ny tro, och verkan försvinner när stenen är borta',
   kor: () => {

@@ -27,5 +27,9 @@ export const SKRIFT = balans('skrift', {
   lasLardom: 1, lasHandelse: 1, // läsvikten: nyttan av en ny lärdom, och av ett nytt intryck gånger händelsens vikt
   lasGladje: 0.6, // ... och för poesin och berättelsen dessutom detta
   gladjePoesi: 0.04, gladjeBer: 0.02, gladjeTim: 10, // läsarens glädje och hur länge den varar
+  // böckerna (steg 10.6.6): delarna i en bok, den lägsta nivån på en teknik som får en handbok, lusten att skriva den (kunskap gånger
+  // andelen som inte kan tekniken, plus kunskapBas), läsvikten för en handbok och de heliga kvädena, och hur mycket av tekniken en
+  // läsning ger (gånger larBas + intelligens / 20, som i samtalen)
+  bokDelar: 8, bokNiva: 2, kunskap: 0.6, kunskapBas: 0.1, lasKunskap: 1, lasHelig: 0.5, bokLar: 0.1,
   ljusMin: 0.3, // i mindre ljus än så här varken skrivs eller läses det
 });

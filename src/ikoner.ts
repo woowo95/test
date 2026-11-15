@@ -145,7 +145,8 @@ export const PAL: Record<string, Record<string, string>> = {
   skinndorr_karta: { e: '#bdb39b', E: '#dad0bb', o: '#5e3c24', O: '#7e7362', S: '#987e62', s: '#7d5b40', Z: '#2f261d', z: '#474138', d: '#372f25' },
   skinn: { b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
   pergament: { w: '#dad0bb', k: '#bdb39b' },
-  blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' }, // steg 10.6.5, platshållare // steg 10.6.4, platshållare
+  blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
+  bok: { h: '#7d5b40', w: '#dad0bb', d: '#24201d' }, // steg 10.6.6, platshållare // steg 10.6.5, platshållare // steg 10.6.4, platshållare
   // vargen (steg 3.7.14, platshållare): grå päls
   varg: { o: '#24201d', G: '#61767a', H: '#8a9c9e', g: '#3e5156', W: '#dad0bb', k: '#24201d' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   vargkott: { o: '#24201d', R: '#a14808', r: '#742a01', q: '#521100', w: '#dad0bb', W: '#dad0bb' },
@@ -2678,6 +2679,17 @@ export const PIX: Record<string, string[]> = {
     'oo....oGGo....oo',
     '.......oGo......',
     '........oo......',
+  ],
+  // boken (steg 10.6.6, platshållare): bladen mellan två plankor, ryggen till vänster
+  bok: [
+    '........',
+    '.hhhhhh.',
+    '.hwwwwh.',
+    '.hwddwh.',
+    '.hwwwwh.',
+    '.hwddwh.',
+    '.hhhhhh.',
+    '........',
   ],
   // ett skrivet blad (steg 10.6.5, platshållare): pergamentet med rader av bläck
   blad: [

@@ -148,6 +148,8 @@ const DEF = {
   benlim: { namn: 'Benlim', skaffa: RECEPT.benlim, stack: 10, vikt: 0.3, mapp: 'Material' },
   rokelse: { namn: 'Rökelse', skaffa: RECEPT.rokelse, stack: 10, vikt: 0.2, mapp: 'Material' }, brannolja: { namn: 'Brännolja', skaffa: RECEPT.brannolja, stack: 10, vikt: 0.5, mapp: 'Material' }, // steg 8.5.16
   tval: { namn: 'Tvål', skaffa: RECEPT.tval, stack: 10, vikt: 0.2, mapp: 'Material' },
+  bok: { namn: 'Bok', skaffa: RECEPT.bok, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'bockerTrasiga', text: '{namn}s bok föll sönder.' }, // steg 10.6.6 (skrift.ts): fylls del för del
+    gors: { text: 'Binder 8 blad mellan 2 plankor till en bok.', stat: 'bockerBundna', forsta: '{namn} band byns första bok. Där kan det som annars glöms skrivas ner.' } },
   blad: { namn: 'Skrivet blad', ett: true, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.0012, redskap: true }, // ett blad med en skrift (steg 10.6.5, skrift.ts): skrivarens, slits och brinner som pergamentet
   pergament: { namn: 'Pergament', ett: true, skaffa: RECEPT.pergament, stack: 20, vikt: 0.05, mapp: 'Material', slits: 0.0012 }, // ett tomt blad (steg 10.6.4): lätt, slits dubbelt så fort som skinn och brinner
   lader: { namn: 'Läder', skaffa: RECEPT.lader, stack: 10, vikt: 1, mapp: 'Material' }, // steg 7.7.6
