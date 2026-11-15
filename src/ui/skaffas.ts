@@ -43,7 +43,7 @@ const ANVANDS: Record<string, string[]> = {
   vilt: ['Slaktas'], varg: ['Slaktas'], vargdel: ['Slaktas'], radjur: ['Slaktas'], fagel: ['Slaktas'], fjadrar: ['Pilar och prydnader senare'], radjurdel: ['Slaktas'], radjursskinn: ['Handel'], bjorn: ['Slaktas'], bjorndel: ['Slaktas'], abborre: ['Rensas'],
   slaktfar: ['Slaktas'], slaktget: ['Slaktas'], djurhorn: ['Handel'], fiskrens: ['Agn och mat åt hunden'], skara: ['Slår ängen till hö'], // djuren (system 9.8)
   levfar: ['Blir byns får'], levget: ['Blir byns get'], levhons: ['Blir byns höns'],
-  blad: ['Läses av den som har något nytt att lära där'], bok: ['Skrivs i del för del och läses'], // steg 10.6.5–10.6.6
+  blomma: ['Sätts i en lerkruka'], blad: ['Läses av den som har något nytt att lära där'], bok: ['Skrivs i del för del och läses'], // steg 10.6.5–10.6.6
   bensyl: ['Syr kläder vid slöjdbänken'], boll: ['Sport'], slagtra: ['Sport'], mal: ['Sport'],
   slanda: ['Spinner lin till tråd'], fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'],
   trumma: ['Spelas på scenen'], benflojt: ['Spelas på scenen'], lyra: ['Spelas på scenen'], rovfron: ['Sås på fältet'], artfron: ['Sås på fältet'], malt: ['Ölet i bryggkaret'], kalfron: ['Sås på fältet'], kompost: ['Gödslar fältet'], jordgubbsplanta: ['Planteras på fältet'], appelplanta: ['Planteras på fältet'], slaktrens: ['Bärs till sophögen'], vaxtrest: ['Bärs till sophögen'], // steg 9.6.13

@@ -34,28 +34,55 @@ export const fritid = (s: State, q: Person) => { q.pot.styrka = q.pot.smidighet 
 const vuxna = (s: State) => SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
 
 SCENARIER.sport = {
-  text: 'Sporten (steg 4.3.1.1): när byn har ett överskott spelar de vuxna brottning och dragkamp i byn under fritiden. Det tränar närstrid och gör dem glada',
+  text: 'Sporten (steg 4.3.1.1 och 10.7.12): när byn har ett överskott spelar de vuxna brottning och dragkamp. Den som vill spela ropar, och de inom hörhåll som vill avbryter det de gör och kommer, men faror går före. Platsen är öppen mark som räcker för sporten. Det tränar närstrid och gör dem glada',
   kor: () => {
     const s = rikDag(3, { rep: 4 }), vill = vuxna(s).filter(q => SIM.sportVikt(s, q, 1) > 0).length;
     const f = rikDag(3, { rep: 4 }); setFood(f, 1);
     const vf = vuxna(f).filter(q => SIM.sportVikt(f, q, 1) > 0).length, lust = (x: State) => vuxna(x).reduce((a, q) => a + SIM.sportVikt(x, q, 1), 0); // (överskottet är en faktor, steg 10.2.43)
-    // två samtalar när den tredje börjar en match, och följer med
-    const g = rikDag(3, { rep: 4 }), med = vuxna(g).slice(0, 3), fore = med.map(q => q.skill.narstrid);
-    fritid(g, med[1]!); fritid(g, med[2]!);
+    // en samtalar och en hugger ved när den tredje ropar: båda kommer, och vedhuggaren avbryter arbetet
+    const g = rikDag(3, { rep: 4 }), med = vuxna(g).slice(0, 3), fore = med.map(q => q.skill.narstrid), hugg = med[2]!;
+    fritid(g, med[1]!); hugg.pot.styrka = hugg.pot.smidighet = 20;
+    hugg.task = { act: 'hugga', phase: 'do', tx: hugg.x, ty: hugg.y, until: g.now + SIM.HOUR, carry: 0, dark: false };
     spela(g, med[0]!);
-    const sport0 = SIM.SPORT_AV[g.sport!.k]!.namn, foljer = med.filter(q => q.task?.act === 'sport').length;
-    let sett = 0;
-    kor(g, 2, () => { sett = Math.max(sett, med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length); });
-    const glad = med.filter(q => q.thoughts.some(t => t.text.startsWith('Spelade'))).length;
+    const sport0 = g.sport ? SIM.SPORT_AV[g.sport.k]!.namn : 'ingen', ilista = med.slice(1).filter(q => g.sport?.lista?.includes(q.id)).length, avbrot = hugg.task?.act !== 'hugga';
+    let sett = 0, kom = 0, glad = 0; // (glädjen varar en timme: den räknas medan det körs)
+    kor(g, 2, () => { sett = Math.max(sett, med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length); if (hugg.task?.act === 'sport') kom = 1; glad = Math.max(glad, med.filter(q => q.thoughts.some(t => /^(Vann|Förlorade) /.test(t.text))).length); });
     const battre = med.filter((q, i) => q.skill.narstrid > fore[i]!).length;
-    // när ingen har fritid följer ingen med, och det blir ingen match
-    const e = rikDag(3, { rep: 4 }), ensam = !spela(e, vuxna(e)[0]!) && !e.sport;
+    // den som fryser farligt värmer sig först
+    const h = rikDag(3, { rep: 4 }); tandEld(h);
+    const hv = vuxna(h), fr = hv[1]!; for (const q of hv) q.pot.styrka = q.pot.smidighet = 20;
+    fr.warm = SIM.KROPP.farligt - 0.1;
+    spela(h, hv[0]!);
+    const frLista = !!h.sport?.lista?.includes(fr.id); fr.task = undefined; SIM.chooseTask(h, fr);
+    const frAkt = ((q: Person) => q.task?.act)(fr);
+    // ingen vill: den som ropade blir ledsen, ingen avbryts och det blir ingen match
+    const e = rikDag(3, { rep: 4 }), ev = vuxna(e);
+    for (const q of ev.slice(1)) { q.pot.styrka = q.pot.smidighet = 0; fritid(e, q); q.pot.styrka = q.pot.smidighet = 0; }
+    const ensam = !spela(e, ev[0]!) && !e.sport && ev.slice(1).every(q => q.task?.act === 'samtal');
+    const ledsen = ev[0]!.thoughts.some(t => t.text === 'Ingen ville spela' && t.v < 0);
+    // platsen: öppen mark i hela ytan, och alla platser för de flesta spelarna inom ytan
+    const p = rikDag(3); medHus(p); const pv = vuxna(p), tr = SIM.groundOf(p).trees;
+    const platser = SIM.SPORTER.map(d => {
+      const at = SIM.sportPlats(p, pv[0]!, d);
+      if (!at) return `${d.id}: ingen`;
+      let oppet = true;
+      for (let j = at.y - d.yta; j <= at.y + d.yta; j++) for (let i = at.x - d.yta; i <= at.x + d.yta; i++) {
+        if ((i - at.x) ** 2 + (j - at.y) ** 2 > d.yta * d.yta + d.yta) continue;
+        if (SIM.roomAt(p, i + 0.5, j + 0.5) || SIM.bitAt(p, i, j) || tr[j * SIM.W + i]! >= 0.5) oppet = false;
+      }
+      const m: SIM.Match = { k: d.id, x: at.x + 0.5, y: at.y + 0.5, start: p.now, slut: p.now + SIM.HOUR };
+      const d0 = Math.max(...Array.from({ length: d.max }, (_, i) => { const u = SIM.platsFor(p, { ...pv[0]!, id: 9000 + i }, m); return Math.hypot(u.x - m.x, u.y - m.y); }));
+      return `${d.id}: ${oppet ? 'öppet' : 'STÄNGT'}, längst ${d0.toFixed(1)} av ${d.yta}`;
+    });
     return [
       [`i en rik by vill ${vill} av ${vuxna(s).length} vuxna spela på fritiden`, vill === vuxna(s).length],
       [`när maten är knapp vill man spela mycket mindre (${lust(f).toFixed(2)} mot ${lust(s).toFixed(2)}, ${vf} vill alls)`, lust(f) < lust(s) * 0.5],
-      [`${foljer} går till ${sport0.toLowerCase()}en; ${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, foljer === 3 && (g.stat?.sportTim ?? 0) >= 1 && sett >= 2],
-      [`${glad} av tre är glada efter att ha spelat, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
-      ['när ingen har fritid följer ingen med, och det blir ingen match', ensam],
+      [`${ilista} av två vill vara med i ${sport0.toLowerCase()}en, och vedhuggaren ${avbrot ? 'avbröt arbetet' : 'högg vidare'} och ${kom ? 'kom' : 'kom inte'}`, ilista === 2 && avbrot && kom === 1],
+      [`${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, (g.stat?.sportTim ?? 0) >= 0.4 && sett >= 2],
+      [`${glad} av tre är glada eller ledsna efter matchen, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
+      [`den som fryser farligt ${frLista ? 'ville vara med' : 'ville inte'} men ${frAkt === 'varma' ? 'värmer sig först' : 'gör ' + frAkt}`, frLista && frAkt === 'varma'],
+      [`när ingen vill blir det ingen match och ingen avbryts; den som ropade ${ledsen ? 'är ledsen' : 'är inte ledsen'} (${e.stat?.sportIngen ?? 0} gånger ingen)`, ensam && ledsen && (e.stat?.sportIngen ?? 0) === 1],
+      [`platserna: ${platser.join('; ')}`, platser.every(x => / öppet, längst/.test(x) && Number(x.match(/längst ([\d.]+) av (\d)/)![1]) <= Number(x.match(/av (\d)/)![1]) + 0.5)],
       ...brottning(),
     ];
   },
@@ -67,6 +94,45 @@ function match(s: State, k: string, med: Person[]) {
   s.sport = { k, x: l.x + 0.5, y: l.y + 0.5, start: s.now, slut: s.now + SIM.HOUR };
   for (const q of med) spela(s, q);
 }
+SCENARIER.tavling = {
+  text: 'Tävlingen med pris (steg 10.7.20): en ledare med svagt stöd sätter upp sin minst värda lediga sak som pris när någon samlar till en match. Vinnaren äger saken, spelarna tycker bättre om ledaren, vinnaren får titeln och en rad i krönikan, och redogörelsen säger priset och givaren. Utan ledig sak blir det en vanlig match, och finns saken inte kvar delas inget ut',
+  kor: () => {
+    const by = (seed: number) => {
+      const s = rikDag(seed, { rep: 4 }), v = vuxna(s), l = v[0]!;
+      s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never };
+      for (const t of s.ting ?? []) if (t.agare === l.id) t.agare = SIM.BYN;
+      const kniv = SIM.newTing(s, 'kniv', 1, l.id);
+      for (const q of v) fritid(s, q);
+      return { s, v, l, kniv };
+    };
+    // samla tills ledaren sätter upp kniven (chansen 0,3 gånger 1 - legitimiteten)
+    const samla = (s: State, p: Person, ggr = 60) => { for (let i = 0; i < ggr; i++) { s.sport = undefined; if (spela(s, p) && (s.sport as SIM.Match | undefined)?.pris) return true; } return false; };
+    const a = by(3), leg = SIM.legitimitet(a.s).v, p = a.v[1]!;
+    const fick = samla(a.s, p);
+    const med = SIM.living(a.s).filter(q => q.task?.act === 'sport' && q !== a.l);
+    const op0 = med.reduce((x, q) => x + SIM.getRel(a.s, q, a.l).op, 0);
+    korTills(a.s, () => !!a.s.matcher?.length, 3 * 3600);
+    const mm = a.s.matcher?.at(-1), op1 = med.reduce((x, q) => x + SIM.getRel(a.s, q, a.l).op, 0);
+    const vinn = a.s.people.find(q => q.id === a.kniv.agare), ber = mm ? SIM.matchBerattelse(a.s, mm) : '';
+    const titel = vinn?.fame.find(f => f.startsWith('Vann tävlingen')), kron = (a.s.hist?.kronika ?? []).some(k => /tävlingen/.test(k[1]));
+    // utan ledig sak: ingen tävling
+    const b = by(4); b.kniv.agare = b.v[2]!.id;
+    const utan = samla(b.s, b.v[1]!, 40);
+    // saken finns inte kvar när matchen är slut
+    const c = by(5); samla(c.s, c.v[1]!); const harPris = !!(c.s.sport as SIM.Match | undefined)?.pris; c.kniv.agare = c.v[3]!.id;
+    korTills(c.s, () => !!c.s.matcher?.length, 3 * 3600);
+    const mc = c.s.matcher?.at(-1);
+    return [
+      [`ledaren (legitimitet ${leg.toFixed(2)}) satte upp ${a.s.matcher?.at(-1)?.pris?.sak ?? 'inget'} som pris`, fick && mm?.pris?.k === 'kniv'],
+      [`vinnaren äger kniven: ${vinn?.name ?? 'ingen'} (${mm?.vnamn ?? mm?.vinnLag ?? '-'} vann)`, !!vinn && mm?.pris?.fick === vinn.id && (mm.vinnare === vinn.id)],
+      [`spelarna tycker bättre om ledaren (${op0.toFixed(0)} → ${op1.toFixed(0)} för ${med.length})`, med.length > 0 && op1 - op0 >= med.length * SIM.SPORT.tavlingTack * 0.5],
+      [`titeln ${titel ?? 'ingen'} och en rad i krönikan`, (!!titel || vinn === a.l) && kron],
+      [`redogörelsen säger priset och givaren: ${ber}`, ber.includes('kniv') && ber.includes(a.l.name) && !/\{|undefined/.test(ber)],
+      ['utan ledig sak blir det en vanlig match', !utan && (b.s.stat?.tavlingar ?? 0) === 0],
+      [`saken fanns inte kvar: ingen fick den (${mc ? SIM.matchBerattelse(c.s, mc) : '-'})`, harPris && !!mc?.pris && mc.pris.fick === undefined && c.kniv.agare === c.v[3]!.id],
+    ];
+  },
+};
 SCENARIER.sportplats = {
   text: 'Platserna i sporterna (steg 4.5.6.10–11): i dragkampen och snöbollskriget två lag på var sin sida om mitten, i brottningen två i mitten och de andra i en ring, i kast på en rad framför målet och i bollspelet den som slår i ena änden',
   kor: () => {
@@ -84,6 +150,67 @@ SCENARIER.sportplats = {
       rader.push([`${SIM.SPORT_AV[k]!.namn}: ${p.map(f).join('  ')} (rutor från mitten)`, ok]);
     }
     return rader;
+  },
+};
+SCENARIER.lag = {
+  text: 'Lagen och vinnaren (steg 10.7.14): i dragkampen slumpas två lag när matchen börjar, och när tiden är slut vinner laget med högst summa av färdighet och slump. Det starkare laget vinner oftast men inte alltid, och alla i laget får vinsten',
+  kor: () => {
+    let ber = '', starkVann = 0, avgjorda = 0, skillnad = 0, vinster = 0, vinnare = 0, gar = 0, klara = 0;
+    for (let i = 0; i < 20; i++) {
+      const s = rikDag(3 + i, { rep: 4 }), med = vuxna(s).slice(0, 4), fard = [12, 10, 8, 6];
+      med.forEach((q, j) => { q.skill.narstrid = fard[j]!; q.pot.styrka = q.pot.smidighet = 20; });
+      match(s, 'dragkamp', med);
+      let sett = false;
+      korTills(s, () => !!s.matcher?.length, 3600, () => { const m = s.sport; if (m?.igang && !m.avgjord && med.some(q => q.task?.act === 'sport' && q.task.phase === 'go' && m.lag?.[q.id] !== undefined)) sett = true; });
+      const mm = s.matcher?.find(x => !x.installd && x.vinnLag !== undefined);
+      if (!mm) continue;
+      klara++; if (sett) gar++; ber = SIM.matchBerattelse(s, mm);
+      const lag = ([0, 1] as const).map(l => mm.spelare.filter(x => x.l === l));
+      skillnad = Math.max(skillnad, Math.abs(lag[0]!.length - lag[1]!.length));
+      const f = lag.map(l => l.reduce((a, x) => a + x.f, 0));
+      if (f[0] !== f[1]) { avgjorda++; if ((f[0]! > f[1]!) === (mm.vinnLag === 0)) starkVann++; }
+      vinnare += lag[mm.vinnLag!]!.length;
+      vinster += med.reduce((a, q) => a + (q.sportVinst?.dragkamp ?? 0), 0);
+    }
+    return [
+      [`${klara} av 20 matcher avgjordes mellan två lag, som skilde sig med högst ${skillnad} spelare`, klara >= 15 && skillnad <= 1],
+      [`det starkare laget vann ${starkVann} av ${avgjorda}`, starkVann > avgjorda * 0.55 && starkVann < avgjorda],
+      [`alla i vinnarlaget fick vinsten (${vinster} vinster, ${vinnare} i vinnarlagen)`, vinster === vinnare && vinnare > 0],
+      [`matchen fortsatte medan spelarna gick till sin sida (i ${gar} av ${klara})`, gar >= 1],
+      [`berättelsen nämner laget: ${ber}`, /aget med/.test(ber) && !/\{|undefined/.test(ber)],
+    ];
+  },
+};
+SCENARIER.matchpublik = {
+  text: 'Publiken (steg 10.7.16): den som har fritid när en match pågår kan gå dit och titta, också den som är för gammal för att spela. Publiken står i en ring utanför spelarnas yta, blir glad när matchen avgörs, står i redogörelsen och berättelsen och går när matchen är slut',
+  kor: () => {
+    const s = rikDag(3), v = vuxna(s), med = v.slice(0, 2), w = v[2]!, gammal = v[3]!;
+    gammal.born = s.now - 60 * SIM.DAY;
+    for (const q of [w, gammal]) q.task = undefined;
+    const vikt = [SIM.tittaVikt(s, w, 1)]; // ingen match: ingen vikt
+    match(s, 'brottning', med);
+    vikt.push(SIM.tittaVikt(s, w, 1), SIM.tittaVikt(s, med[0]!, 1), SIM.tittaVikt(s, gammal, 1), SIM.sportVikt(s, gammal, 1));
+    const titta = (q: Person) => { const t = SIM.tittaVal(s, q); if (t) q.task = { act: 'titta', phase: 'go', tx: t.spot.x, ty: t.spot.y, until: s.now + t.dur, carry: 0, ref: t.ref, tool: t.tool, dark: false, why: t.why }; return !!t; };
+    const valde = titta(w) && titta(gammal);
+    const m = s.sport!, d = SIM.SPORT_AV.brottning!;
+    let utanfor = true, sag = 0, medIMatchen = false;
+    korTills(s, () => !!s.matcher?.length, 3600, () => {
+      for (const q of [w, gammal]) if (q.task?.act === 'titta' && q.task.phase === 'do') { sag++; if (Math.hypot(q.x - m.x, q.y - m.y) < d.yta + 0.4 || Object.values(m.platser ?? {}).some(u => Math.hypot(u.x - q.x, u.y - q.y) < 0.4)) utanfor = false; }
+      if ([w, gammal].some(q => q.task?.act === 'sport' || m.lista?.includes(q.id) || m.platser?.[q.id])) medIMatchen = true;
+    });
+    const mm = s.matcher?.[0], ber = mm ? SIM.matchBerattelse(s, mm) : '';
+    const glad = [w, gammal].filter(q => q.thoughts.some(t => t.text === 'Såg brottning' && t.v > 0)).length;
+    kor(s, 0.25);
+    const kvar = [w, gammal].filter(q => q.task?.act === 'titta').length;
+    return [
+      [`vikten att titta: ${vikt.map(x => x.toFixed(2)).join(', ')} (utan match, under en match, för en spelare, för en över ${SIM.SPORT.alderTill} som inte får spela: titta och spela)`, vikt[0] === 0 && vikt[1]! > 0 && vikt[2] === 0 && vikt[3]! > 0 && vikt[4] === 0],
+      [`två går och tittar (${valde ? 'ja' : 'nej'}) och står där i ${sag} steg, utanför spelarnas yta och platser`, valde && sag > 0 && utanfor],
+      [`ingen i publiken går med i matchen`, !medIMatchen],
+      [`publiken i redogörelsen: ${mm?.publik?.map(x => x.namn).join(', ') ?? 'ingen'}`, !!mm && !mm.installd && mm.publik?.length === 2],
+      [`${glad} av 2 i publiken blev glada när matchen avgjordes`, glad === 2],
+      [`berättelsen nämner publiken: ${ber}`, ber.includes(w.name) && /hejade|hejade på/.test(ber) && !/\{|undefined/.test(ber)],
+      [`publiken går när matchen är slut (${kvar} kvar)`, kvar === 0],
+    ];
   },
 };
 SCENARIER.sportsaker = {
@@ -152,36 +279,57 @@ export function kvall(seed = 3, timme = 20) {
   v.slice(1).forEach((q, i) => { q.x = f.x + 0.5 + Math.cos(i) * 2; q.y = f.y + 0.5 + Math.sin(i) * 2; q.task = { act: 'samtal', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, dark: true }; });
   return { s, v };
 }
-// p försöker uppträda tills hen gör det (eller det inte går): som om hen valt vad hen gör på kvällen många gånger
+// p försöker uppträda tills hen gör det (eller det inte går): som om hen prövat många kvällar klockan 18 till nu
 export function upptrad(s: State, p: Person, ganger = 300) {
   for (let i = 0; i < ganger; i++) {
-    const fr = SIM.framVal(s, p, q => ({ x: q.x, y: q.y }));
+    delete p.framProv;
+    const fr = SIM.framVal(s, p);
     if (fr?.act === 'upptrada') { p.task = { act: 'upptrada', phase: 'go', tx: fr.spot?.x ?? p.x, ty: fr.spot?.y ?? p.y, until: s.now + fr.dur, carry: 0, ref: fr.ref, tool: fr.tool, dark: true, why: fr.why }; return true; }
   }
   return false;
 }
 SCENARIER.framtradande = {
-  text: 'Framträdandena (steg 4.3.2.1): på kvällen uppträder någon vid elden för dem som sitter där, högst en gång per kväll. Ett kväde går från början; publiken blir glad, framträdandet får en kort text, och den som uppträder övar',
+  text: 'Framträdandena (steg 4.3.2.1 och 10.7.9): på kvällen kallar den som vill uppträda, högst en gång per kväll, och väntar 15 minuter vid scenen eller elden. De som vill lyssna avbryter det de gör och går dit, också den som arbetar långt bort; den som sover väcks inte, och den som fryser farligt värmer sig först. Publiken sitter vid scenen. Publiken blir glad, framträdandet får en kort text, och den som uppträder övar',
   kor: () => {
     const { s, v } = kvall(), p = v[0]!, fore = p.skill[SIM.FRAM_SKILL];
-    const borjar = upptrad(s, p), d = s.fram ? SIM.FRAM_AV[s.fram.k]!.namn : 'inget';
-    const lyss = v.slice(1).filter(q => q.task?.act === 'lyssna').length;
+    for (const q of s.people) for (const r of s.people) if (q !== r) SIM.getRel(s, q, r).op = 100; // alla vill lyssna
+    // en som arbetar långt bort, en som sover och en som fryser farligt
+    const [, borta, sover, fryser] = v as [Person, Person, Person, Person];
+    const f0 = SIM.eldPlats(s);
+    borta.x = Math.max(1, f0.x - 25); borta.y = f0.y + 0.5; borta.task = { act: 'hantverk', phase: 'do', tx: borta.x, ty: borta.y, until: s.now + 3 * SIM.HOUR, carry: 0, dark: !SIM.isLight(s.now) };
+    sover.task = { act: 'vila', phase: 'do', tx: sover.x, ty: sover.y, until: s.now + 8 * SIM.HOUR, carry: 0, dark: !SIM.isLight(s.now), why: 'Är trött' }; sover.rest = 0.05; sover.toa = 1; // sover hela framträdandet
+    fryser.warm = SIM.KROPP.farligt - 0.05;
+    const borjar = upptrad(s, p), d = s.fram ? SIM.FRAM_AV[s.fram.k]!.namn : 'inget', lista = s.fram?.lista ?? [];
+    const avbrot = !borta.task, sov = sover.task?.act === 'vila';
+    SIM.chooseTask(s, fryser); const varmer = fryser.task?.act === 'varma';
+    kor(s, 0.25);
+    const lyss = v.slice(1).filter(q => q.task?.act === 'lyssna').length, bortaKom = borta.task?.act === 'lyssna', sovKom = sover.task?.act === 'lyssna';
     kor(s, 1.5);
     const glad = v.slice(1).filter(q => q.thoughts.some(t => t.text.startsWith('Lyssnade på'))).length;
-    const minne = s.framtradanden?.[0];
-    // samma kväll blir det inget till, och inte heller på dagen eller utan publik
+    const minne = s.framtradanden?.at(-1);
+    // samma kväll blir det inget till, och inte heller på dagen
     const igen = !upptrad(s, v[1]!);
     const dag = kvall(3, 11), pDag = !upptrad(dag.s, dag.v[0]!);
-    const ensam = rikDag(3); klockan(ensam, 20); const pEnsam = !upptrad(ensam, vuxna(ensam)[0]!);
+    // publiken sitter vid scenen: framför den, inte bakom en vägg
+    const m = medScen(3, []), mp = m.v[0]!;
+    for (const q of m.s.people) for (const r of m.s.people) if (q !== r) SIM.getRel(m.s, q, r).op = 100;
+    upptrad(m.s, mp); kor(m.s, 0.3);
+    const vid = SIM.vidStation(m.sc), pub = m.v.slice(1).filter(q => q.task?.act === 'lyssna');
+    const nara = pub.filter(q => Math.hypot(q.task!.tx - vid.x, q.task!.ty - vid.y) <= 6 && q.task!.ty > vid.y && !SIM.blocked(m.s, q.task!.tx, q.task!.ty)).length;
     // en ny by kan bara kväda: ingen behöver något mer
     const ny = createState(9, START), kan = SIM.FRAMTRADANDEN.filter(x => !x.instrument && !(x.min ?? 0)).map(x => x.id);
     return [
-      [`${p.name} börjar ett framträdande (${d}), och ${lyss} av ${v.length - 1} vid elden lyssnar`, borjar && lyss === v.length - 1],
+      [`${p.name} kallar till ett framträdande (${d}), och ${lista.length} av ${v.length - 1} vill lyssna`, borjar && lista.length >= v.length - 2],
+      [`efter väntan lyssnar ${lyss} av ${v.length - 1}`, lyss >= 1],
+      [`den som arbetar långt bort avbryter (${avbrot ? 'ja' : 'nej'}) och kommer (${bortaKom ? 'ja' : 'nej'})`, avbrot && bortaKom],
+      [`den som sover väcks inte (${sov ? 'sover' : 'vaknade'}) och sover vidare medan hen är trött (${sovKom ? 'gick dit' : 'sover'})`, sov && !sovKom],
+      [`den som fryser farligt värmer sig först (${fryser.task?.act})`, varmer],
       [`${glad} i publiken är glada efteråt`, glad >= 2],
       [`texten: ${minne?.text ?? 'ingen'}`, !!minne && minne.n >= 2 && minne.text.includes(p.name)],
       [`${p.name} övade ${SIM.FRAM_SKILL} (${fore.toFixed(2)} → ${p.skill[SIM.FRAM_SKILL].toFixed(2)})`, p.skill[SIM.FRAM_SKILL] > fore],
       ['samma kväll blir det inget framträdande till', igen],
-      ['på dagen och utan publik blir det inget', pDag && pEnsam],
+      ['på dagen blir det inget', pDag],
+      [`vid scenen sitter ${nara} av ${pub.length} i publiken framför den`, pub.length >= 2 && nara === pub.length],
       [`från början finns ${kan.join(', ')} (${ny.people.length} invånare)`, kan.includes('kvade')],
     ];
   },
@@ -289,7 +437,7 @@ SCENARIER.scen = {
     let n = 0, q = 0, kval = 0, slits = 1, text = '';
     for (let i = 0; i < 30 && !n; i++) {
       const b = medScen(3 + i, ['lyra']), p = b.v[0]!; p.skill[SIM.FRAM_SKILL] = 8;
-      if (!upptrad(b.s, p) || b.s.fram!.inst !== 'lyra') continue;
+      if (!upptrad(b.s, p) || b.s.fram!.inst !== 'lyra' || b.s.fram!.grupp) continue; // ensam (gruppen prövas i framgrupp)
       kval = SIM.framKval(b.s, p);
       kor(b.s, 1.5);
       const m = b.s.framtradanden?.[0];
@@ -308,6 +456,47 @@ SCENARIER.scen = {
   },
 };
 
+SCENARIER.framgrupp = {
+  text: 'Steg 10.7.11: flera uppträder tillsammans. När den som kallar valt sång, musik eller teater kan andra som vill stå på scenen med hen, och kvaliteten blir den bästas plus en fjärdedel av de andras, gånger det bästa instrumentet. Alla i gruppen övar och står i minnet, och varje instrument som spelats slits. Tal, föreläsning och kväde görs bara ensam',
+  kor: () => {
+    let m: SIM.FramMinne | undefined, bast = 0, ovat = 0, n = 0, slitna = 0, ensam = 0, ensamGrupp = 0;
+    for (let i = 0; i < 60 && !m; i++) {
+      const x = medScen(3 + i, ['lyra', 'trumma']), [p, q] = x.v as [Person, Person];
+      for (const a of x.s.people) for (const b of x.s.people) if (a !== b) SIM.getRel(x.s, a, b).op = 100;
+      p.skill[SIM.FRAM_SKILL] = 8; q.skill[SIM.FRAM_SKILL] = 7; q.pot.karisma = 20;
+      if (!upptrad(x.s, p)) continue;
+      const f = x.s.fram!;
+      if (!SIM.FRAM_AV[f.k]!.grupp) { ensam++; if (f.grupp?.length) ensamGrupp++; continue; }
+      if (!f.grupp?.length || !f.inst) continue;
+      const folk = [p, ...f.grupp.map(g => SIM.byId(x.s, g.id)!)], fore = folk.map(z => z.skill[SIM.FRAM_SKILL]);
+      kor(x.s, 1.5);
+      const mm = x.s.framtradanden?.at(-1);
+      if (!mm || mm.inget || !mm.grupp?.length) continue;
+      m = mm; n = folk.length;
+      const inst = [f.inst, ...f.grupp.map(g => g.inst)].filter((k): k is string => !!k);
+      bast = Math.max(...folk.map(z => SIM.framKval(x.s, z))) * Math.max(...inst.map(k => SIM.INSTRUMENT[k]!.kval));
+      ovat = folk.filter((z, j) => z.skill[SIM.FRAM_SKILL] > fore[j]!).length;
+      slitna = (x.s.ting ?? []).filter(t => (t.k === 'lyra' || t.k === 'trumma') && t.c < 1).length;
+    }
+    // tal, föreläsning och kväde görs alltid ensam
+    for (let i = 0; i < 40; i++) {
+      const x = kvall(3 + i), p = x.v[0]!;
+      for (const a of x.s.people) for (const b of x.s.people) if (a !== b) SIM.getRel(x.s, a, b).op = 100;
+      p.skill[SIM.FRAM_SKILL] = 8; for (const q of x.v.slice(1)) q.pot.karisma = 20;
+      if (!upptrad(x.s, p)) continue;
+      if (SIM.FRAM_AV[x.s.fram!.k]!.grupp) continue; // teatern kan göras i grupp
+      ensam++; if (x.s.fram!.grupp?.length) ensamGrupp++;
+    }
+    return [
+      [`en grupp på ${n} uppträdde (${m?.k ?? 'ingen'}): ${m?.text ?? ''}`, !!m && n >= 2 && !!m.grupp?.length],
+      [`kvaliteten ${m?.q ?? 0} är högre än den bästa ensam med det bästa instrumentet (${bast.toFixed(2)})`, !!m && m.q > bast + 0.01],
+      [`${ovat} av ${n} i gruppen övade`, n >= 2 && ovat === n],
+      [`gruppen står i minnet (${m?.grupp?.map(g => g.namn).join(', ') ?? 'ingen'}) och i berättelsen`, !!m?.grupp?.length && m.grupp.every(g => m!.text.includes(g.namn))],
+      [`${slitna} av två instrument slits`, slitna === 2 || (m?.grupp?.length ?? 0) > 0 && m!.k === 'sang' && slitna >= 1],
+      [`ett tal, en föreläsning eller ett kväde görs ensam (${ensamGrupp} i grupp av ${ensam})`, ensam >= 5 && ensamGrupp === 0],
+    ];
+  },
+};
 // p uppträder (med budskapet hen väljer) och framträdandet går till slut: texten och budskapet
 function framfor(s: State, p: Person) {
   if (!upptrad(s, p)) return undefined;
@@ -326,9 +515,9 @@ SCENARIER.budskap = {
     const pa = framfor(a.s, p), hort = a.v.slice(1).filter(b => b !== q && SIM.intryckOm(b, q.id, 'tjuv')).length;
     // om ledaren: hyllning och hån
     const styr = (op: number, ban = false) => {
-      const k = kvall(5), u = k.v[0]!, l = k.v[1]!, andra = k.v.slice(2);
+      const k = kvall(8), u = k.v[0]!, l = k.v[1]!, andra = k.v.slice(2);
       k.s.styre = { ledare: l.id, historia: [], oppna: [], ...(ban ? { pabud: { matlager: 0, vedlager: 0, torkat: 0, han: -1 } } : {}) } as unknown as typeof k.s.styre;
-      SIM.getRel(k.s, u, l).op = op;
+      SIM.getRel(k.s, u, l).op = op; for (const q of andra) SIM.getRel(k.s, q, u).op = 50; // publiken vill lyssna (steg 10.7.9)
       const tillat = SIM.hanTillat(k.s), fore = snitt(k.s, l, andra), r = framfor(k.s, u);
       return { bud: r?.bud, text: r?.text ?? '', d: snitt(k.s, l, andra) - fore, led: SIM.getRel(k.s, u, l).op, tillat };
     };
@@ -379,6 +568,43 @@ SCENARIER.bestalld = {
       [`ledaren betalar med kniven, den minst värda, och behåller yxan (minnet säger ${ja?.minne})`, !!ja?.kniv && !ja.yxa && ja.minne === 'kniv'],
       [`en ledare utan egendom beställer inget (${tomt} gånger)`, tomt === 0],
       [`den som avskyr ledaren tackar nej (${nej} gånger)`, nej === 0],
+    ];
+  },
+};
+SCENARIER.kyrkfram = {
+  text: 'Kyrkans framträdanden (steg 10.7.18): en tro som står åt Sprider sig röstar om att betala ett framträdande, kyrkan lägger undan två hela saker av det den har mest av, och den troende som nästa gång uppträder med ett budskap får dem som sin egendom och talar om tron. Redogörelsen säger vem som betalade och med vad',
+  kor: () => {
+    const tro = (s: State, u: Person, sprid: number) => {
+      s.tron = [{ id: 1, grundare: u.id, gnamn: u.name, t: s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: s.now, ar: 0, sk: { sprid, prast: 50, oppen: 50 } } as SIM.Tro];
+      for (const q of vuxna(s)) { q.tro = 1; q.troStyrka = 80; q.andlig = 90; }
+      const tr = s.tron[0]!, k = SIM.kyrkaId(1);
+      SIM.put(s, 'bar', 5, { [k]: 5 }); SIM.put(s, 'sten', 3, { [k]: 3 });
+      return tr;
+    };
+    // omröstningen: med Sprider sig är framträdandet det som väger tyngst, med Ärvs finns det inte
+    const a = kvall(3), tA = tro(a.s, a.v[0]!, 15), vad = SIM.utgiftNu(a.s, tA);
+    const b = kvall(3), tB = tro(b.s, b.v[0]!, 85), vadArvs = SIM.utgiftNu(b.s, tB);
+    const gick = SIM.rostaOm(a.s, { f: 'kyrkutgift', d: { tro: 1, vad: 'fram' }, fram: a.v[0]!.id });
+    const lagt = tA.framPris;
+    // utbetalningen: den troende som uppträder med ett budskap
+    let fick = '', bud: string | undefined, kvar = -1, eget = 0, minne: SIM.FramMinne | undefined, ber = '', forsok = 0;
+    for (let i = 0; i < 20 && !fick; i++) {
+      const k = kvall(3 + i), tr = tro(k.s, k.v[0]!, 15), u = k.v[1]!;
+      for (const q of k.v) for (const r of k.v) if (q !== r) SIM.getRel(k.s, q, r).op = 100; // alla vill lyssna
+      tr.framPris = 'bar'; forsok++;
+      const fore = SIM.ownsAmount(k.s, u, 'bar');
+      if (!upptrad(k.s, u) || !k.s.fram?.kyrka) continue;
+      fick = k.s.fram.betalt ?? ''; bud = k.s.fram.bud; kvar = SIM.kyrkansAv(k.s, tr, 'bar'); eget = SIM.ownsAmount(k.s, u, 'bar') - fore;
+      kor(k.s, 1.5);
+      minne = k.s.framtradanden?.at(-1); ber = minne ? SIM.framBerattelse(k.s, minne) : '';
+      if (tr.framPris) fick = 'kvar';
+    }
+    return [
+      [`kyrkans utgift med Sprider sig: ${vad}, med Ärvs: ${vadArvs ?? 'ingen'}`, vad === 'fram' && vadArvs !== 'fram'],
+      [`de troende röstade ${gick ? 'ja' : 'nej'}, och kyrkan lade undan ${lagt ?? 'inget'} (det den har mest av)`, !!gick && lagt === 'bar'],
+      [`den som uppträdde fick ${fick || 'inget'} (${forsok} försök): ${eget} bär till sin egendom, kyrkan har ${kvar} kvar`, eget === SIM.KYRKA.framPris && kvar === 5 - SIM.KYRKA.framPris],
+      [`budskapet handlar om tron eller en död troende (${bud})`, bud === 'tro' || bud === 'person'],
+      [`redogörelsen säger vem som betalade: ${minne?.kyrka ?? 'ingen'} med ${minne?.betalt ?? 'inget'}. ${ber}`, !!minne?.kyrka && /två/.test(minne.betalt ?? '') && !/\{|undefined/.test(ber)],
     ];
   },
 };
@@ -611,11 +837,11 @@ SCENARIER.framrapport = {
       const tm = t.s.framtradanden?.at(-1);
       if (tm?.bud === 'tro' && tm.tro?.length) { tro = tm.tro.filter(x => t.v.find(b => b.name === x)?.tro === 1); troM = tm; troS = t.s; }
     }
-    // ingen kom: publiken går därifrån innan framträdandet börjar
+    // ingen kom: alla sover, och efter 15 minuters väntan ställs det in (steg 10.7.9)
     const e = kvall(7), ep = e.v[0]!;
-    let inget: SIM.FramMinne | undefined;
-    if (upptrad(e.s, ep)) { for (const q of e.v.slice(1)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.s.now + 3 * SIM.HOUR, carry: 0, dark: true }; kor(e.s, 1.5); inget = e.s.framtradanden?.at(-1); }
-    const inglog = e.s.log.find(x => x.fram === inget?.nr);
+    let inget: SIM.FramMinne | undefined, vantat = 0;
+    if (upptrad(e.s, ep)) { for (const q of e.s.people) if (q !== ep) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.s.now + 3 * SIM.HOUR, carry: 0, dark: true }; const t0 = e.s.now; for (let i = 0; i < 400 && e.s.fram; i++) SIM.step(e.s, 10); vantat = (e.s.now - t0) / SIM.MIN; inget = e.s.framtradanden?.at(-1); }
+    const inglog = e.s.log.find(x => x.fram === inget?.nr), ledsen = ep.thoughts.some(t => t.text === 'Ingen kom och lyssnade' && t.v < 0);
     // berättelsen högst upp (steg 5.4.7.2): skriven ur minnet, stabil, med den som uppträdde, ledaren och den som övertygades
     const b0 = m ? SIM.framBerattelse(s, m) : '', bh = hy ? SIM.framBerattelse(k.s, hy) : '', bt = troM ? SIM.framBerattelse(troS, troM) : '', bi = inget ? SIM.framBerattelse(e.s, inget) : '';
     const hel = (x: string) => x.length > 0 && !/\{|undefined|NaN/.test(x);
@@ -626,6 +852,7 @@ SCENARIER.framrapport = {
       [`hyllningen: ledaren ${hy?.ledare ?? 'ingen'}, ${hyl.length} i publiken med före och efter (${hyl.map(x => `${x.l0}→${x.l1}`).join(', ')})`, hy?.bud === 'hylla' && hy.ledare === l.name && hyl.length >= 1 && hyl.every(x => x.l1! >= x.l0!) && hyl.some(x => x.l1! > x.l0!)],
       [`tron övertygade ${tro.join(', ') || 'ingen'}`, tro.length >= 1],
       [`ingen kom: ${inglog?.text ?? 'ingen rad'}`, !!inget?.inget && inget.n === 0 && !!inglog],
+      [`det ställdes in efter ${vantat.toFixed(0)} minuters väntan, och ${ep.name} ${ledsen ? 'har' : 'saknar'} tanken`, vantat >= 14 && vantat <= 17 && ledsen && (e.s.stat?.framInstallt ?? 0) === 1],
       [`berättelsen: ${b0}`, hel(b0) && b0.includes(p.name) && b0 === SIM.framBerattelse(s, m!)],
       [`berättelsen om hyllningen: ${bh}`, hel(bh) && bh.includes(l.name)],
       [`berättelsen om tron: ${bt}`, hel(bt) && tro.some(x => bt.includes(x))],
@@ -640,25 +867,37 @@ SCENARIER.matchrapport = {
     const s = rikDag(3, { rep: 4 }), v = vuxna(s), a = v[0]!, b = v[1]!;
     a.skill.traff = 18; b.skill.traff = 2;
     SIM.newTing(s, 'mal', 1, a.id);
-    match(s, 'kast', [a, b]); kor(s, 2);
-    const m = s.matcher?.at(-1), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
+    match(s, 'kast', [a, b]);
+    const tanke = (q: Person, r: RegExp) => q.thoughts.find(x => r.test(x.text) && x.until > s.now);
+    korTills(s, () => !!s.matcher?.some(x => !x.installd), 3 * 3600);
+    const m0 = s.matcher?.find(x => !x.installd), vq = m0?.vinnare === a.id ? a : b, fq = vq === a ? b : a;
+    const vt = tanke(vq, /^Vann kast/), ft = tanke(fq, /^Förlorade kast/);
+    kor(s, 1.2);
+    const borta = !tanke(vq, /^Vann/) && !tanke(fq, /^Förlorade/);
+    kor(s, 1);
+    const m = s.matcher?.find(x => !x.installd), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
     const n = s.notiser?.lista.find(x => x.id === 'match'), nIdx = n?.match?.indexOf(m?.nr ?? -1) ?? -1;
     const fa = m?.spelare.find(x => x.id === a.id);
+    // glad eller ledsen (steg 10.7.15): tanken hos vinnaren och förloraren, borta efter en timme
+
     // det kommer för få: ensam
     const e = rikDag(5), ep = vuxna(e)[0]!;
     match(e, 'dragkamp', [ep]);
     for (const q of SIM.living(e)) if (q !== ep) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.now + 3 * SIM.HOUR, carry: 0, dark: true };
     kor(e, 1.5);
+    const ingenTanke = !ep.thoughts.some(x => /^(Vann|Förlorade) /.test(x.text));
     const im = e.matcher?.at(-1), ilog = e.log.find(l => l.match === im?.nr);
     // berättelsen högst upp (steg 5.4.8.2): skriven ur minnet, stabil, med vinnaren; en skräll när den svagare vinner
     const hel = (x: string) => x.length > 0 && !/\{|undefined|NaN/.test(x);
     const ber = m ? SIM.matchBerattelse(s, m) : '', iber = im ? SIM.matchBerattelse(e, im) : '';
     const sk = m ? { ...m, nr: 7, vinnare: b.id, vnamn: b.name, spelare: m.spelare.map(x => ({ ...x, v: x.id === b.id ? 20 : 19.5 })) } : undefined, sber = sk ? SIM.matchBerattelse(s, sk) : '';
     return [
-      [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length === 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
+      [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length >= 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
+      [`matchen varade ${m ? ((m.slut - m.t) / SIM.MIN).toFixed(0) : '?'} minuter från att den började (steg 10.7.13)`, !!m && m.slut - m.t >= 10 * SIM.MIN - 1 && m.slut - m.t <= 20 * SIM.MIN + 1],
+      [`${vq.name} tänker ${vt?.text ?? 'inget'} (${vt?.v}), ${fq.name} ${ft?.text ?? 'inget'} (${ft?.v}), och båda är borta en timme efter matchen`, !!vt && vt.v > 0 && !!ft && ft.v < 0 && ft.v > -vt.v && borta],
       [`raden i Händelser pekar på matchen: ${rad?.text ?? 'ingen'}`, !!rad],
       [`notisen (Folket) pekar på den på rad ${nIdx + 1}`, !!n && nIdx >= 0 && n.match!.length === n.rader.length],
-      [`för få: ${ilog?.text ?? 'ingen rad'}`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog],
+      [`för få: ${ilog?.text ?? 'ingen rad'}, och ingen blev glad eller ledsen`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog && ingenTanke],
       [`berättelsen: ${ber}`, hel(ber) && ber.includes(a.name) && ber === SIM.matchBerattelse(s, m!)],
       [`när den svagare vinner jämnt: ${sber}`, hel(sber) && sber.includes(b.name) && sber.includes(a.name)],
       [`när det kom för få: ${iber}`, hel(iber) && iber.includes(ep.name) || /ingen|för få|tom/.test(iber)],
@@ -1069,7 +1308,7 @@ SCENARIER.graven = {
     const { s, v } = medLedare(), d = v[1], x0 = Math.floor(d.x);
     klockan(s, 10); tandEld(s); setFood(s, 200);
     SIM.die(s, d, 'alderdom');
-    const kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id);
+    const kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id), kx = kr?.x; // där den låg när hen dog; kroppen bärs sedan
     let h = 0, bar = false, stod = 0, kort = '';
     // steg 9.2.130: den som går för att ta hand om den döde går dit, tar upp kroppen direkt och står inte still vid den, och kortet
     // säger vems kropp hen går till
@@ -1081,7 +1320,7 @@ SCENARIER.graven = {
     { const p = v[2], t0 = p.task; p.task = { act: 'grava', phase: 'go', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task; bar = SIM.gangDelar(s, p).delar.some(r => r.k === 'bar'); p.task = t0; } // den som bär kroppen dit
     const g = s.gravar?.find(q => q.vem === d.id);
     return [
-      [`kroppen ligger där hen dog (${kr?.x}, x0 ${x0})`, !!kr && kr.x === x0],
+      [`kroppen ligger där hen dog (${kx}, x0 ${x0})`, !!kr && kx === x0],
       ['den som bär kroppen till graven går långsammare', bar],
       [`kroppen begravs (${h} timmar)`, !!g],
       [`den som tar hand om den döde står inte still vid kroppen (${stod * 5} minuter)`, stod <= 1],
@@ -1513,7 +1752,7 @@ SCENARIER.ritualer = {
     const pr = SIM.prastOf(s, tr);
     // ritualen körs till slut: alla i v är med
     const hogtidNu = () => [s.ritual, ...(s.ritualKo ?? [])].find(r => r?.k === 'hogtid');
-    const korRitual = () => { const r = s.ritual as SIM.Ritual | undefined; if (r?.k !== 'hogtid') return undefined; for (const p of SIM.living(s)) if (p.tro === r.tro) p.task = { act: 'ritual', phase: 'do', tx: r.x, ty: r.y, until: r.slut, carry: 0, why: '' } as SIM.Task; s.now = r.slut; SIM.ritualTimme(s); return r; };
+    const korRitual = () => { if (!s.ritual) { const k = s.ritualKo?.find(r => r.k === 'hogtid'); if (k?.fran) { s.now = Math.max(s.now, k.fran); SIM.ritualTimme(s); } } const r = s.ritual as SIM.Ritual | undefined; if (r?.k !== 'hogtid') return undefined; for (const p of SIM.living(s)) if (p.tro === r.tro) p.task = { act: 'ritual', phase: 'do', tx: r.x, ty: r.y, until: r.slut, carry: 0, why: '' } as SIM.Task; s.now = r.slut; SIM.ritualTimme(s); return r; };
     const tom = () => { s.ritualKo = []; s.ritual = undefined; tr.hogtid = undefined; };
     // ingen högtid utan bud
     tom(); SIM.kultTimme(s); const utanBud = !hogtidNu();
@@ -1554,6 +1793,60 @@ SCENARIER.ritualer = {
   },
 };
 
+SCENARIER.fest = {
+  text: 'Festen vid högtiden (steg 10.7.19): en högtid med gille blir en fest för hela byn. Gillet börjar klockan 16, alla kommer utom de vars egen tro är sluten, och festdagen ger fler matcher och framträdanden; den som hör musik dansar. Maten dras i hela saker och räknas som måltider, och notisen fest säger hur många som åt, vem som uppträdde och vem som vann. Fastan hålls som förut',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'rep', 4); klockan(s, 7); tandEld(s);
+    medBank(s, 'scen'); SIM.nyttVid(s, SIM.newTing(s, 'trumma', 1, SIM.BYN)); SIM.newTing(s, 'boll', 1, SIM.BYN); SIM.newTing(s, 'slagtra', 1, SIM.BYN);
+    for (const q of s.people) { q.pot.styrka = q.pot.smidighet = 16; q.skill[SIM.FRAM_SKILL] = Math.max(q.skill[SIM.FRAM_SKILL], 6); for (const r of s.people) if (q !== r) SIM.getRel(s, q, r).op = 60; }
+    // en utan tro och en med en annan, sluten tro
+    const [, utanTro, sluten] = v.filter(q => q !== SIM.prastOf(s, tr));
+    utanTro.tro = undefined; utanTro.troStyrka = 0;
+    const tr2: SIM.Tro = { ...tr, id: 2, namn: 'Den stängda dörren', bud: [], sk: { oppen: 95 } }; s.tron!.push(tr2); sluten.tro = 2;
+    const ai = SIM.ageIndex(s);
+    s.ritualKo = []; s.ritual = undefined; tr.hogtid = undefined;
+    tr.bud = [...(tr.bud ?? []), { id: 'hogtid', v: SIM.hogtidVarde(ai, 'gille'), t: s.now }];
+    satKyrka(s, tr, { bar: 30 });
+    SIM.kultTimme(s);
+    const ko = s.ritualKo?.find(r => r.k === 'hogtid'), fest = s.fest, dag = Math.floor(s.now / SIM.DAY);
+    const vem = ko ? SIM.RITUALER.hogtid.vem(s, ko as SIM.Ritual) : [];
+    const kyrka0 = SIM.kyrkansAv(s, tr, 'bar'), atit0 = s.stat?.atit ?? 0, gille0 = s.stat?.gille_mat ?? 0, match0 = s.stat?.sportMatcher ?? 0, fram0 = s.framNr ?? 0;
+    let festFram = 0, festMatch = 0, startTim = -1, dans = 0;
+    kor(s, 18, x => {
+      if (SIM.festNu(x)) { festFram = (x.framNr ?? 0) - fram0; festMatch = (x.stat?.sportMatcher ?? 0) - match0; dans = x.stat?.festDans ?? 0; }
+      if (startTim < 0 && x.ritual?.k === 'hogtid') startTim = Math.floor(SIM.hourOf(x.now));
+    });
+    const gille = (s.stat?.gille_mat ?? 0) - gille0, atit = (s.stat?.atit ?? 0) - atit0, kyrka = kyrka0 - SIM.kyrkansAv(s, tr, 'bar');
+    const n = s.notiser?.lista.find(x => x.id === 'fest'), text = n?.rader.at(-1) ?? '';
+    // dansen: på festdagen dansar de som hör musik eller sång
+    let dansade = '';
+    for (let i = 0; i < 20 && !dansade; i++) {
+      const m = medScen(3 + i, ['trumma']), u = m.v[0]!;
+      for (const q of m.s.people) for (const r of m.s.people) if (q !== r) SIM.getRel(m.s, q, r).op = 100;
+      u.skill[SIM.FRAM_SKILL] = 12;
+      m.s.fest = { tro: 1, namn: 'Festen', dag: Math.floor(m.s.now / SIM.DAY), x: u.x, y: u.y, at: 0, fram: [], vann: {} };
+      if (!upptrad(m.s, u) || !m.s.fram?.inst) continue;
+      kor(m.s, 1.5, x => { for (const q of SIM.living(x)) { const t = q.thoughts?.find(h => h.text.startsWith('Dansade')); if (t) dansade = `${q.name}: ${t.text}`; } });
+    }
+    // fastan: bara de troende, ingen fest
+    const f = medTro(7, 3); f.s.ritualKo = []; f.s.ritual = undefined; f.tr.hogtid = undefined;
+    f.tr.bud = [...(f.tr.bud ?? []), { id: 'hogtid', v: SIM.hogtidVarde(SIM.ageIndex(f.s), 'fasta'), t: f.s.now }];
+    const annan = f.v[1]!; annan.tro = undefined;
+    SIM.kultTimme(f.s);
+    const r0 = f.s.ritual as SIM.Ritual | undefined, fr = r0?.k === 'hogtid' ? r0 : f.s.ritualKo?.find(r => r.k === 'hogtid');
+    const fvem = fr ? SIM.RITUALER.hogtid.vem(f.s, fr as SIM.Ritual) : [];
+    return [
+      [`gillet köas till klockan ${ko?.fran !== undefined ? SIM.hourOf(ko.fran) : '-'} och började ${startTim}, och festdagen är i dag`, !!ko && SIM.hourOf(ko.fran ?? 0) === 16 && startTim === 16 && fest?.dag === dag],
+      [`alla kommer utom den med en sluten tro (${vem.length} av ${SIM.living(s).length}, ${utanTro.name} utan tro ${vem.includes(utanTro) ? 'med' : 'inte med'}, ${sluten.name} ${vem.includes(sluten) ? 'med' : 'inte med'})`, vem.includes(utanTro) && !vem.includes(sluten) && vem.length === SIM.living(s).filter(q => !q.gast).length - 1],
+      [`maten i hela saker: ${gille} mat vid gillet, kyrkan gav ${kyrka} och resten åt sin egen, och måltiderna räknas (${atit.toFixed(1)} portioner)`, gille >= 4 && kyrka >= 1 && kyrka <= gille && Number.isInteger(kyrka) && atit >= gille],
+      [`under festdagen ${festMatch} matcher och ${festFram} framträdanden, ${dans} dansade`, festMatch >= 1 && festFram >= 1],
+      [`notisen fest: ${text}`, !!n && text.startsWith(SIM.hogtidNamn(SIM.hogtidVarde(ai, 'gille'))) && /åt vid gillet/.test(text) && /vann/.test(text) && !s.fest],
+      [`den som hör musik dansar (${dansade || 'ingen'})`, !!dansade],
+      [`fastan hålls bara av de troende, utan fest (${fvem.length} av ${SIM.living(f.s).length})`, !!fr && fr.form === 'fasta' && !fvem.includes(annan) && !f.s.fest],
+    ];
+  },
+};
 SCENARIER.heligplats = {
   text: 'Steg 10.3.10: den heliga platsen är ett bud. Ingen plats blir helig utan omröstning, bönen hålls vid elden före och vid den närmaste platsen inom 15 rutor efter, de troende vill ha platsen nära hemmet, bönen i nöd som fick svar ger en kandidat också utan präst, ingen fjärde plats föreslås, platsen räknar bönerna och en sparad by behåller sina platser som bud',
   kor: () => {
@@ -2233,12 +2526,12 @@ SCENARIER.fritidlista = {
 };
 // steg 9.2.92: brottningen går två och två med stridens system, utan vapen och med svaga slag. Ingen dör, en skada är ovanlig
 function brottning(): [string, boolean][] {
-  let kampar = 0, doda = 0, skadade = 0, kvar = 0, sedda = 0, vapen = 0, pratIKampen = 0, kampTid = 0, pratRingen = 0;
+  let kampar = 0, matt = 0, minst = Infinity, doda = 0, skadade = 0, kvar = 0, sedda = 0, vapen = 0, pratIKampen = 0, kampTid = 0, pratRingen = 0;
   for (const fro of [3, 5, 7, 11]) {
     const s = rikDag(fro), med = vuxna(s).slice(0, 4), skador0 = med.map(q => q.skador?.length ?? 0);
     match(s, 'brottning', med);
     // steg 9.2.100: de två som kämpar pratar inte; de andra i ringen gör det
-    let kamp: number[] | undefined, start = 0;
+    let kamp: number[] | undefined, start = 0, efter = false;
     const sett = new Map<number, number>();
     kor(s, 1, () => {
       for (const g of s.kartStrider ?? []) if (g.st.avsikt === 'brottning') vapen += g.st.kampar.filter(k => k.vapen !== 'hand').length; // kampen sker på kartan (steg 10.1.7)
@@ -2247,23 +2540,23 @@ function brottning(): [string, boolean][] {
       if (m?.brottare && m.brottare !== kamp) { kamp = m.brottare; start = s.now; }
       const pagar = !!m && !!kamp && s.now < (m.brott ?? 0);
       if (pagar) kampTid++;
+      else if (kamp && !efter && m && s.now < m.slut) { efter = true; matt += med.length; kvar += med.filter(q => q.task?.act === 'sport').length; } // den första kampen är slut
       for (const q of med) {
         const t = q.prat?.t; if (t === undefined || sett.get(q.id) === t) continue;
         sett.set(q.id, t);
         if (pagar && kamp!.includes(q.id) && t >= start) pratIKampen++; else if (q.task?.act === 'sport') pratRingen++;
       }
     });
-    kampar += s.stat?.brottningar ?? 0;
+    kampar += s.stat?.brottningar ?? 0; minst = Math.min(minst, s.stat?.brottningar ?? 0);
     doda += med.filter(q => q.health <= 0 || q.died !== undefined).length;
     skadade += med.filter((q, i) => (q.skador?.length ?? 0) > skador0[i]!).length;
-    kvar += med.filter(q => q.task?.act === 'sport').length;
   }
   return [
-    [`brottarna kämpar två och två med stridens system (${kampar} kamper)`, kampar >= 4],
+    [`brottarna kämpar två och två med stridens system (${kampar} kamper, minst ${minst} i en match)`, kampar >= 4 && minst >= 1],
     [`utan vapen (${vapen} med vapen)`, vapen === 0],
     [`ingen dör i brottningen (${doda})`, doda === 0],
     [`en skada är ovanlig (${skadade} av 16 brottare skadades)`, skadade <= 4],
-    [`brottarna är kvar i matchen efter en kamp (${kvar} av 16)`, kvar >= 12 && sedda > 0],
+    [`brottarna är kvar i matchen efter en kamp (${kvar} av ${matt} medan matchen pågår)`, matt >= 8 && kvar >= matt * 0.75 && sedda > 0],
     [`ingen av de två som brottas börjar ett samtal under kampen (${pratIKampen} samtal på ${kampTid} steg med kamp)`, pratIKampen === 0 && kampTid > 0],
     [`de andra i ringen pratar (${pratRingen} samtal)`, pratRingen > 0],
   ];

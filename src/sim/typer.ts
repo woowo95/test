@@ -199,6 +199,7 @@ export interface Person {
   bedrift?: import('./rykten').Bevis; // den senaste stora bedriften (steg 10.6.1): stoltheten ger lust att resa en runsten
   sorg?: { namn: string; vem?: number; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
   tat?: { m: import('./tatuering').TatMotiv; p: import('./tatuering').TatPlats; stil: import('./tatuering').TatStil; t: number; av: number }[]; tatV?: { m: import('./tatuering').TatMotiv; t: number }[]; // tatueringarna och händelserna hen vill märka (steg 10.7.5)
+  framProv?: number; // när hen senast prövade om hen ville uppträda (steg 10.7.9)
   gravBesok?: number; paminnd?: Record<number, number>; // när hen senast stod vid en grav, och när hen påmindes om en död (steg 10.4.8)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
@@ -444,6 +445,7 @@ export interface State {
   handelsMal?: import('./handel').HandelsMal; // varorna byn gör att byta med handlaren, räknat en gång i timmen (steg 10.5.13, handel.ts)
   epidemi?: { k: import('./sjukdom').SjukId; ids: number[]; skriven?: 1 }; // utbrottet som pågår (steg 9.5.5, sjukdom.ts)
   handlare?: import('./handel').Handlare; nastaHandlare?: number; handlarNr?: number; gastNr?: number; // handlaren som är på besök, när nästa kommer och hur många som kommit (steg 4.4.1.2, handel.ts) // det som syns gå från hand till hand och filtarna med det som byts (bara för bilden), och det som nyss bytts bort (steg 4.4.1.1, byte.ts)
+  fest?: import('./kultlatt').Fest; // festen vid högtiden (steg 10.7.19, kult.ts)
   sport?: import('./sport').Match; // matchen som pågår eller väntar på spelare (steg 4.3.1, sport.ts)
   borta?: Borta; // sammanfattningen efter bortavaron som spelaren inte stängt än (steg 3.10.22, ui/spara.ts); simuleringen rör den inte
 }

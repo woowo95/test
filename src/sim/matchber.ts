@@ -2,7 +2,7 @@
 // (ui/flikar/match.ts). Allt läses ur minnet som sparades när matchen avgjordes (MatchMinne i sport.ts), så att texten stämmer
 // med sammanställningen: sporten och spelarna, hur jämnt det var (resultaten, färdigheten plus slumpen), om den svagare vann
 // (färdigheten) och glädjen efteråt. Spelets mallar m_* i BERATTELSER skriver texten; varianten väljs ur matchens nummer,
-// så att samma match alltid berättas likadant och ingen slump dras. Lagen och publiken kommer med 10.3.6
+// så att samma match alltid berättas likadant och ingen slump dras. Lagen (steg 10.7.14) och publiken (steg 10.7.16, en mening när någon tittade) står med
 import type { State } from './typer';
 import type { MatchMinne } from './sport';
 import { SPORT_AV } from './sport';
@@ -14,7 +14,7 @@ export const MATCHBER = balans('matchber', {
   jamnt: 1.5, // skilde resultaten (färdigheten plus slumpen, 0 till ungefär 30) mellan de två bästa högst så här mycket var det jämnt ...
   overlagset: 6, // ... och minst så här mycket var det överlägset
   skrall: 3, // vann någon som hade minst så här mycket lägre färdighet (0–20) än den skickligaste var det oväntat
-  lang: 70, kort: 35, // minuter: en lång och en kort match
+  lang: 17, kort: 12, // minuter: en lång och en kort match
 });
 
 export function matchBerattelse(s: State, m: MatchMinne): string {
@@ -22,14 +22,25 @@ export function matchBerattelse(s: State, m: MatchMinne): string {
   const bast = sp.reduce<typeof sp[number] | undefined>((a, x) => !a || x.f > a.f ? x : a, undefined);
   const res = sp.map(x => x.v).sort((a, b) => b - a), gap = res.length > 1 ? res[0]! - res[1]! : 0;
   const vinn = sp.find(x => x.id === m.vinnare), min = (m.slut - m.t) / MIN;
+  // i en lagsport (steg 10.7.14) jämförs lagen: summan av färdigheten och av resultaten, och vinnaren är hela laget
+  const lag = m.vinnLag !== undefined ? ([0, 1] as const).map(l => sp.filter(x => x.l === l)) : undefined;
+  const sum = (l: typeof sp, k: 'f' | 'v') => l.reduce((a, x) => a + x[k], 0), laget = (l: typeof sp) => `laget med ${och(l.map(x => x.namn))}`;
+  const vl = lag?.[m.vinnLag!], fl = lag?.[1 - m.vinnLag!];
   const f = {
     sport: m.k, sportnamn: (d?.namn ?? 'match').toLowerCase(), spelare: och(sp.map(x => x.namn)), n: talOrd(sp.length), nTal: sp.length,
-    vinnare: m.vnamn ?? '', bast: bast?.namn ?? '',
-    jamnt: res.length > 1 && gap <= MATCHBER.jamnt, overlagset: gap >= MATCHBER.overlagset,
-    skrall: !!vinn && !!bast && bast.f - vinn.f >= MATCHBER.skrall, favorit: !!vinn && vinn.id === bast?.id,
+    ...(vl && fl ? {
+      vinnare: laget(vl), bast: laget(fl), jamnt: Math.abs(sum(vl, 'v') - sum(fl, 'v')) <= MATCHBER.jamnt, overlagset: sum(vl, 'v') - sum(fl, 'v') >= MATCHBER.overlagset,
+      skrall: sum(fl, 'f') - sum(vl, 'f') >= MATCHBER.skrall, favorit: sum(vl, 'f') >= sum(fl, 'f'),
+    } : {
+      vinnare: m.vnamn ?? '', bast: bast?.namn ?? '',
+      jamnt: res.length > 1 && gap <= MATCHBER.jamnt, overlagset: gap >= MATCHBER.overlagset,
+      skrall: !!vinn && !!bast && bast.f - vinn.f >= MATCHBER.skrall, favorit: !!vinn && vinn.id === bast?.id,
+    }),
+    publik: och((m.publik ?? []).map(x => x.namn)), nPub: m.publik?.length ?? 0,
+    pris: m.pris?.sak ?? '', givare: m.pris?.avNamn ?? '', fick: m.pris?.fickNamn ?? '', prisKvar: m.pris?.fick !== undefined, sjalv: m.pris?.fick === m.pris?.av,
     lang: min >= MATCHBER.lang, kort: min < MATCHBER.kort, glad: m.glad > 0,
   };
-  const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
+  const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd' | 'm_publik' | 'm_pris', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
   if (m.installd) return mening('m_installd', 0);
-  return [mening('m_start', 0), mening('m_lopp', 1), mening('m_vinst', 2), mening('m_slut', 3)].join(' ');
+  return [mening('m_start', 0), mening('m_lopp', 1), ...(m.publik?.length ? [mening('m_publik', 4)] : []), mening('m_vinst', 2), ...(m.pris ? [mening('m_pris', 5)] : []), mening('m_slut', 3)].join(' ');
 }

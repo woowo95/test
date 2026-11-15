@@ -893,7 +893,7 @@
   const valj = (r, a) => a[Math.floor(r() * a.length)];
   const viktat = (r, par) => { const sum = par.reduce((s, [, v]) => s + v, 0); let x = r() * sum; for (const [k, v] of par) { x -= v; if (x < 0) return k; } return par[par.length - 1][0]; };
   const radAv = (r, sort, mall, kon, skon = null) => {
-    let a = alternativ(sort, mall, kon).filter(Boolean).filter(id => !DEL[id]?.rovare); // rövarens delar bärs bara av rövarna
+    let a = alternativ(sort, mall, kon).filter(Boolean).filter(id => !DEL[id]?.rovare && !DEL[id]?.bars); // rövarens delar bärs bara av rövarna, och det som bara syns när det bärs slumpas aldrig (steg 10.7.7)
     // skönheten styr de fula delarna (ful i registret, Björn efter 5.2.2.3): de vanliga och vackra får aldrig en ful del, de
     // fula får en ibland och de fulaste ofta
     // de vackra delarna (vacker i registret, Björn 2026-11-08) bärs bara av de vackra

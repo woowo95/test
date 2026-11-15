@@ -67,9 +67,9 @@ import { forSmutsigt, latrinFor } from './smuts';
 import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
-import { sportVal, sportVikt } from './sport';
+import { sportListaVal, sportVal, sportVikt, tittaVal, tittaVikt } from './sport';
 import { handlaVal } from './handel';
-import { framVal } from './framtradande';
+import { framVal, lyssnaBradska, lyssnaVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
@@ -656,6 +656,12 @@ export const ARBETEN: readonly Arbete[] = [
     if (!j) return false;
     set(v, 'bjornjakt', j.why); v.spot = j.spot; v.dur = j.dur; return true;
   } },
+  // ... och den som ville vara med när någon samlade till en match (sport.ts, steg 10.7.12)
+  { id: 'sport', niva: 3, prova: ({ s, p, v }) => {
+    const sp = sportListaVal(s, p);
+    if (!sp) return false;
+    set(v, 'sport', sp.why); v.spot = sp.spot; v.dur = sp.dur; v.ref = sp.ref; v.tool = sp.tool; return true;
+  } },
   // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts); på kvällen ligger filten ute (steg 4.5.4.11). Behovet
   // stiger under handlarens besök; den som står i kön eller handlar fortsätter
   { id: 'ritual', niva: 3, prova: ({ s, p, v }) => { const r = ritualVal(s, p); if (!r) return false; v.spot = r.spot; v.dur = r.dur; return set(v, 'ritual', r.why); } }, // ritualerna (steg 8.5.6)
@@ -667,6 +673,12 @@ export const ARBETEN: readonly Arbete[] = [
     const hv = !light && skams(p, s.now) ? undefined : handlaVal(s, p);
     if (!hv) return false;
     set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return true;
+  } },
+  // ett framträdande (steg 10.7.9, framtradande.ts): den som ville lyssna vid kallelsen går dit. Brådskan stiger under väntan
+  { id: 'lyssna', niva: 3, bradska: ({ s }) => { const b = lyssnaBradska(s); return b ? tillfalle(b.fran, b.till, s.now) : 1; }, prova: ({ s, p, v }) => {
+    const l = skams(p, s.now) ? undefined : lyssnaVal(s, p, q => spotFor(s, 'beratta', q));
+    if (!l) return false;
+    set(v, 'lyssna', l.why); v.spot = l.spot; v.dur = l.dur; v.ref = l.ref; v.tool = l.tool; return true;
   } },
   { id: 'rusta', niva: 3, prova: ({ s, p, v }) => { const r = rustaVal(s, p); if (!r) return false; v.spot = r.spot; v.ref = r.ref; v.dur = 2 * MIN; return set(v, 'rusta', r.why); } }, // byta om inför strid (steg 8.7.8), på sin nivå bland tillfällena (steg 10.2.2)
   // 4 Grundbehov (toa, värme, vatten, vila, mat). En lat person tillgodoser dem tidigare än en flitig
@@ -707,7 +719,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'vakt', niva: 6, nar: 'natt', prova: ({ s, p, v, a }) => vaktVal(s, p, v, a) },
   // barnen leker; de lite större hjälper till (raden arbete)
   { id: 'leka', niva: 9, nar: 'dag', kort: true, prova: ({ s, v, a }) => a < ALDER.hjalper && set(v, 'leka', lekText(s)) },
-  // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
+  // ett framträdande vid scenen eller elden (steg 4.3.2 och 10.7.9, framtradande.ts): den som vill uppträda kallar
   { id: 'framtradande', niva: 9, nar: 'natt', prova: ({ s, p, v }) => {
     const fr = skams(p, s.now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
     if (!fr) return false;
@@ -1292,6 +1304,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
   if (gaILara(s, p, v, 'Har tid över')) return; // lärlingen går hellre till mästaren än vilar eller umgås
   const wsp = sportVikt(s, p, calm); // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
+  const wt = tittaVikt(s, p, calm); // att titta på matchen (steg 10.7.16)
   // besöket vid graven (steg 10.4.8): lusten är bandet till den döda, bredvid vilan och umgänget
   const gb = gravbesokVal(s, p);
   if (gb && rnd(s, 'val', p) < gb.w / (gb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'gravbesok', gb.why); v.spot = gb.spot; v.ref = gb.vem; v.tool = gb.laga ? 'laga' : undefined; v.dur = gb.min * MIN; return; }
@@ -1303,8 +1316,12 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   }
   // att skriva och att läsa (steg 10.6.5, skrift.ts): bredvid bönen och berättandet, där det finns blad, bläck och ljus
   if (skrift(s, p, v, platsIByn(s, p, 'val'), wv + wh + wsoc + wp)) return;
-  let r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws + wsp);
-  if (r >= wv + wh + wsoc + wp + wb + ws) {
+  let r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws + wsp + wt);
+  if (r >= wv + wh + wsoc + wp + wb + ws + wsp) {
+    const ti = tittaVal(s, p);
+    if (ti) { set(v, 'titta', ti.why); v.spot = ti.spot; v.dur = ti.dur; v.ref = ti.ref; v.tool = ti.tool; return; }
+    r = (r - wv - wh - wsoc - wp - wb - ws - wsp) / wt * (wv + wh + wsoc + wp + wb + ws);
+  } else if (r >= wv + wh + wsoc + wp + wb + ws) {
     const sp = sportVal(s, p);
     if (sp) { set(v, 'sport', sp.why); v.spot = sp.spot; v.dur = sp.dur; v.ref = sp.ref; v.tool = sp.tool; return; }
     r = (r - wv - wh - wsoc - wp - wb - ws) / wsp * (wv + wh + wsoc + wp + wb + ws); // följer ingen med: något annat på fritiden

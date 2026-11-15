@@ -107,6 +107,7 @@ const KLADMATERIAL_DEF = {
   ylle: { sak: 'ylle', namn: 'ylle', slag: 'ull', bit: 1, varme: 2, hallbar: 1.2, vikt: 1.2, skydd: 1.1, finhet: 2 }, // steg 9.8.14: varmare än linet
   benband: { sak: 'ben', namn: 'ben', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 0 }, // halsbandet (steg 7.7.5)
   tandband: { sak: 'vargtand', namn: 'vargtänder', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 2 },
+  fjaderband: { sak: 'fjadrar', namn: 'fjädrar', slag: 'smycke', bit: 3, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 1 }, // steg 10.7.7: en fågels fjädrar räcker till ett halsband
   rep: { sak: 'rep', namn: 'rep', slag: 'flatat', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
 } satisfies Record<string, MaterialDef>;
 export type KladMaterial = keyof typeof KLADMATERIAL_DEF;

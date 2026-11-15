@@ -103,12 +103,16 @@ export function skapad(s: State, p: Person): Skapad {
 // bältet) och redskapet i handen eller i bältet, som delen i PORTRATT med samma sak. Huvudbonaden väntar på huvudbonader i
 // spelet (Kläder)
 const REDSKAP = new Map<string, string>(KARNA.PR.delar.filter((d: { sort: string; sak?: string }) => d.sort === 'redskap' && d.sak).map((d: { id: string; sak: string }) => [d.sak, d.id]));
+const HALSSMYCKE: Partial<Record<string, string>> = { benband: 'smycke-2', tandband: 'smycke-3', fjaderband: 'smycke-9' };
 function utrustad(s: State, p: Person, u: Skapad) {
   const t = s === visad ? uppgiftVid(p) : p.task, r = utrustning(s, p, !!t && load(t, s) > 0); // vid tiden som visas, som kartan (steg 6.1.1); en by som inte visas (texterna i testerna): nu
   u.klader = { rock: null, skor: false, balte: false, axelrem: false, ryggsack: false, krokar: 0 };
+  // halssmycket är det halsband eller trons tecken som bärs, med materialets bild (steg 10.7.7); det slumpas inte längre
+  if (u.del.smycke && KARNA.DEL[u.del.smycke]?.plats === 'hals') u.del.smycke = null;
   for (const pl of Object.values(r)) {
     const a = pl.ting && kladAv(pl.ting.k);
     if (!a) continue;
+    if ((a.plagg === 'halsband' || a.plagg === 'tecken') && HALSSMYCKE[a.mat]) u.del.smycke = HALSSMYCKE[a.mat]!;
     if (a.plagg === 'rock' || a.plagg === 'mantel') u.klader.rock = KLADMATERIAL[a.mat].namn; // manteln syns som en rock tills Björn valt (steg 8.3.14)
     else if (a.plagg === 'skor') u.klader.skor = true;
     else if (a.plagg === 'byxor') u.klader.byxor = KLADMATERIAL[a.mat].namn; // byxorna och skjortan syns på kartfiguren (steg 9.2.58)

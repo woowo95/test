@@ -1724,7 +1724,7 @@ const MDEF = {
     { t: '{Namn} tog fram {inst} och spelade för de andra.', om: f => f.form === 'musik' },
     { t: 'Tonerna från {inst} hördes över byn när {namn} spelade.', om: f => f.form === 'musik' },
   ],
-  // budskapet (bara när det fanns ett): bud = person, hylla, hana eller tro; betalt = ledaren betalade
+  // budskapet (bara när det fanns ett): bud = person, hylla, hana eller tro; betalt = ledaren betalade, eller {kyrka} betalade med {betalt} (steg 10.7.18)
   f_bud: [
     { t: 'Det handlade egentligen om {om}, och alla förstod vad {namn} menade.', om: f => f.bud === 'person' },
     { t: 'Alla visste vem det gällde: {om}.', om: f => f.bud === 'person' },
@@ -1738,8 +1738,11 @@ const MDEF = {
     { t: '{Namn} gjorde narr av {ledare}, som tror sig vara förmer än de andra.', om: f => f.bud === 'hana' },
     { t: '{Namn} drev med {amne} och sade att de inte fanns.', om: f => f.bud === 'hanaGud' },
     { t: 'Det var gudarna som fick höra det, och de troende teg.', om: f => f.bud === 'hanaGud' },
-    { t: 'Det var tron som låg {namn} varmast om hjärtat.', om: f => f.bud === 'tro' },
-    { t: '{Namn} ville att de andra skulle tro som {namn} själv.', om: f => f.bud === 'tro' },
+    { t: '{Kyrka} hade betalat {namn} med {betalt} för att tala om tron.', om: f => !!f.kyrka && f.bud === 'tro' },
+    { t: '{Kyrka} hade betalat {namn} med {betalt} för att minnet av {om} skulle leva.', om: f => !!f.kyrka && f.bud === 'person' },
+    { t: '{Namn} hade fått {betalt} av kyrkan för framträdandet, och det hördes.', om: f => !!f.kyrka },
+    { t: 'Det var tron som låg {namn} varmast om hjärtat.', om: f => f.bud === 'tro' && !f.kyrka },
+    { t: '{Namn} ville att de andra skulle tro som {namn} själv.', om: f => f.bud === 'tro' && !f.kyrka },
   ],
   // publiken: {n} = hur många i ord, nTal = talet
   f_publik: [
@@ -1832,14 +1835,31 @@ const MDEF = {
   ],
   // efteråt
   m_slut: [
-    { t: 'Efteråt var alla på gott humör.', om: f => f.glad === true },
-    { t: 'De som spelat skrattade länge åt det efteråt.', om: f => f.glad === true },
-    { t: 'De gick därifrån glada och svettiga.', om: f => f.glad === true },
+    { t: 'Efteråt var vinnarna på gott humör, medan de andra surade en stund.', om: f => f.glad === true },
+    { t: 'Vinnarna skrattade länge efteråt, och de som förlorat var tysta.', om: f => f.glad === true },
+    { t: 'De gick därifrån svettiga, några glada och några sura.', om: f => f.glad === true },
     { t: 'Det pratades om matchen resten av dagen.', om: f => f.glad === true },
     { t: 'Efteråt satte de sig och vilade.', om: f => f.lang === true },
     { t: 'Sedan gick var och en tillbaka till sitt.', om: f => f.glad !== true },
     { t: 'Sedan gick de tillbaka till arbetet.', om: f => f.glad !== true },
     { t: 'Det var en dag som andra.', om: f => f.glad !== true },
+  ],
+  // publiken runt matchen (steg 10.7.16): {publik} = de som stod och tittade, nPub = hur många
+  // tävlingens pris (steg 10.7.20): {pris} = saken, {givare} = ledaren, {fick} = den som fick den
+  m_pris: [
+    { t: 'Det var en tävling om {givare}s {pris}, och {fick} vann.', om: f => !!f.prisKvar && !f.sjalv },
+    { t: 'Priset var {givare}s {pris}, och nu är det {fick}s.', om: f => !!f.prisKvar && !f.sjalv },
+    { t: '{Fick} gick hem med {givare}s {pris}, priset i tävlingen.', om: f => !!f.prisKvar && !f.sjalv },
+    { t: '{Givare}s {pris} var priset, och {givare} vann själv.', om: f => !!f.prisKvar && !!f.sjalv },
+    { t: 'Priset skulle ha varit {givare}s {pris}, men när matchen var slut fanns det inte kvar.', om: f => !f.prisKvar },
+  ],
+  m_publik: [
+    { t: 'Publiken hejade: {publik} stod runt om och tittade.', om: f => Number(f.nPub) > 1 },
+    { t: 'Runt om stod {publik} och hejade på.', om: f => Number(f.nPub) > 1 },
+    { t: '{Publik} stod runt dem och ropade och hejade.', om: f => Number(f.nPub) > 1 },
+    { t: '{Publik} stod en bit bort och hejade på dem.', om: f => Number(f.nPub) === 1 },
+    { t: '{Publik} kom och tittade och hejade högt.', om: f => Number(f.nPub) === 1 },
+    { t: 'Det var bara {publik} som tittade, men hen hejade för flera.', om: f => Number(f.nPub) === 1 },
   ],
   // matchen som inte blev av: {sport} = sporten, {spelare} = de som kom
   m_installd: [

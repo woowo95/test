@@ -1,0 +1,25 @@
+{
+ "id": "smycke-9",
+ "ritad": 1,
+ "av": "platshållare (steg 10.7.7)",
+ "om": "Fjäderhalsband, platshållare: samma snodd som tandhalsbandet, med tre fjädrar i skiffer och oliv som hänger ner, den mittersta längst.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": -4,
+   "rader": [
+    "FF....................EE",
+    "..F..................E..",
+    "...FF..............EE...",
+    ".....FFF........EEE.....",
+    "........FFFFEEEE........",
+    "........R..SR..S........",
+    ".......RS.RST.RS........",
+    ".......RS.RST.RS........",
+    "........S.RST.S.........",
+    "...........ST...........",
+    "...........T............"
+   ]
+  }
+ }
+}

@@ -29,6 +29,7 @@ import { stepStyre } from './styre';
 import { bildKrok, gralBlirSlagsmal, lekSteg, kartStridSteg, nastaSteg, serStriden } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
+import { tittaSteg } from './sport';
 import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
@@ -299,7 +300,7 @@ MEDAN.vakt = (s, p, t) => vaktSteg(s, p, t); // vakten går runt byn (vakt.ts, s
 MEDAN.leka = (s, p, _t, dtSec) => lekSteg(s, p, dtSec); // kastlek och brottning (strid.ts, steg 3.7.2)
 MEDAN.sport = sportSteg; KLAR.sport = sportKlar; // sporten (sport.ts, steg 4.3.1)
 KLAR.handla = handlaKlar; // byns handel med handlaren (handel.ts, steg 4.4.1.3)
-MEDAN.upptrada = upptradaSteg; KLAR.upptrada = upptradaKlar; MEDAN.lyssna = lyssnaSteg; // framträdandena (framtradande.ts, steg 4.3.2)
+MEDAN.upptrada = upptradaSteg; KLAR.upptrada = upptradaKlar; MEDAN.lyssna = lyssnaSteg; MEDAN.titta = tittaSteg; // framträdandena (framtradande.ts, steg 4.3.2)
 MEDAN.station = workStation; KLAR.station = finishStation; // en station som byggs (stationer.ts)
 KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts)
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
