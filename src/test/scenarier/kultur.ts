@@ -1063,6 +1063,35 @@ SCENARIER.runsten = {
     ];
   },
 };
+SCENARIER.heligsten = {
+  text: 'Steg 10.6.2: den heliga stenen. Prästen som kan stenhuggning ristar trons heliga kväden på en runsten med 3 huggna stenar, stenen hamnar vid den heliga platsen och bär kvädet som det löd, en troende som går förbi får tanken och en otroende ingen, och lusten sjunker när stenen står',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2), pr = v[0];
+    klockan(s, 8); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'huggen_sten', 3);
+    tr.prast = pr.id; (pr.tek ??= {}).stenhuggarplats = 1;
+    tr.kvade = { t: s.now, text: 'Rösten vill att man lyssnar.', av: pr.id };
+    const hx = Math.floor(pr.x) + 5, hy = Math.floor(pr.y) + 3;
+    (s.heliga ??= []).push({ x: hx, y: hy, k: 'fodd' as SIM.HeligPlats['k'], tro: tr.id, t: s.now, om: 'där tron föddes' });
+    const fore = SIM.runstenLust(s, pr), kvade = tr.kvade.text;
+    const ingenBedrift = () => { for (const p of SIM.living(s)) { p.bedrift = undefined; p.sorg = undefined; } tr.prast = pr.id; };
+    korTills(s, () => !!s.runstenar?.length, 48 * 3600, ingenBedrift);
+    const r = s.runstenar?.[0], sten = SIM.amountOf(s, 'huggen_sten'), avst = r ? Math.hypot(r.x - hx, r.y - hy) : Infinity;
+    // en troende och en otroende går förbi
+    const tro = v[1], otro = nyInvanare(s, 'k', 30); otro.tro = undefined;
+    for (const q of [tro, otro]) { q.thoughts = []; q.task = undefined; if (r) { q.x = r.x + 1.5; q.y = r.y + 0.5; } }
+    SIM.runstenTimme(s);
+    const las = (q: SIM.Person) => !!q.thoughts?.some(x => x.text === 'Läste de heliga kvädena');
+    const efter = SIM.runstenLust(s, pr);
+    return [
+      [`prästen vill rista kvädet (${fore?.slag} ${Math.round((fore?.w ?? 0) * 100) / 100})`, fore?.slag === 'helig' && fore.om.id === tr.id],
+      [`prästen ristar kvädet med 3 huggna stenar ("${r?.text}", ${r?.runor}, sten kvar ${sten})`, !!r && r.slag === 'helig' && r.tro === tr.id && r.av.id === pr.id && r.text === kvade && sten === 0 && /[ᚠ-ᛪ]/.test(r.runor)],
+      [`stenen står vid den heliga platsen (${Math.round(avst * 10) / 10} rutor)`, avst <= SIM.SKRIFT.heligR],
+      ['en troende som går förbi får tanken', las(tro)],
+      ['en otroende får ingen', !las(otro)],
+      [`lusten sjunker när stenen står (${Math.round((fore?.w ?? 0) * 100) / 100} → ${Math.round((efter?.w ?? 0) * 100) / 100})`, (efter?.w ?? 0) < (fore?.w ?? 0)],
+    ];
+  },
+};
 // d dör, och p bär hen och begraver: kroppens väg och samlingen ur buden som gällde när hen dog (steg 10.4.5)
 function begravHela(s: State, p: Person, d: Person) {
   SIM.die(s, d, 'alderdom');
