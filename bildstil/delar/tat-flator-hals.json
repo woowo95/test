@@ -1,0 +1,16 @@
+{
+ "id": "tat-flator-hals",
+ "ritad": 1,
+ "av": "Platshållare (steg 10.7.5), ritad i programmeringschatten",
+ "om": "Platshållare i skiffer: mönstret ligger platt i huden.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".R.R.R.R.",
+    "R.R.R.R.R"
+   ]
+  }
+ }
+}

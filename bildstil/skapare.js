@@ -28,7 +28,7 @@
   // delens nummer i sin sort: talet i id:t (har-5 är nummer 5), så att ordningen i registret kan ändras
   const nr = d => { const m = /-(\d+)$/.exec(d.id); return m ? +m[1] - 1 : delarAv(d.sort).indexOf(d); };
   const mallAv = p => p.alder === 'barn' ? 'barn' : p.kon;
-  const VALJ = ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr', 'skagg', 'huvudbonad', 'smycke', 'arr', 'blamarke', 'redskap'];
+  const VALJ = ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr', 'skagg', 'huvudbonad', 'smycke', 'arr', 'blamarke', 'redskap', 'tatPanna', 'tatKind', 'tatHals'];
   const alternativ = (sort, mall, kon) => [...(SORT[sort].valfri ? [null] : []), ...delarAv(sort).filter(d => passar(d, mall, kon)).map(d => d.id)];
   const lagra = { las(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, skriv(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* utan lagring går det ändå */ } } };
 
@@ -477,6 +477,7 @@
     if (p.klader.axelrem || p.klader.ryggsack) lagg('klader', dk => RITA.remmar(dk, G, p));
     lagg('oron', dk => delen(dk, G, D('ora'), p, 'ora'), { maskbar: true });
     const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => DELAR['rynkor-' + rs] ? delen(dk, G, DEL['rynkor-' + rs], p, 'rynkor') : RITA.rynkor(dk, G, rs));
+    for (const t of ['tatPanna', 'tatKind', 'tatHals']) if (D(t)) lagg('tatuering', dk => delen(dk, G, D(t), p, t)); // tatueringarna (steg 10.7.5)
     if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
     if (D('blamarke')) lagg('blamarke', dk => delen(dk, G, D('blamarke'), p, 'blamarke'));
     if (p.blod) lagg('blod', dk => RITA.blod(dk, G));
