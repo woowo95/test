@@ -933,33 +933,64 @@ SCENARIER.bytessystem = {
 };
 
 SCENARIER.handelsvaror = {
-  text: 'Varor till handlaren (steg 6.2.11): byn minns vad handlarna köpt av den, och på nivån Förbättra gör man det när inget annat finns att göra, högst så många som handlaren köpte och orkar bära',
+  text: 'Handelsvarorna (steg 10.5.13): byn gör varor att byta med handlaren sist på Förbättra, av det slag som ger mest silver per arbetstimme, så många som ryms i handlarens silver och packning när det byn redan har över bufferten dragits av. Målet räknas en gång i timmen; varan är tillverkarens och säljs som annat överflöd',
   kor: () => {
-    // handlaren köper två rep av en bybo; när hen gått hem minns byn det
+    const vuxen = (v: State) => living(v).find(x => SIM.ageOf(x, v.now) >= SIM.ALDER.vuxen)!;
+    const silverMitt = (SIM.HANDEL.silver[0] + SIM.HANDEL.silver[1]) / 2;
+    // en by där alla kan tvinna rep och inget annat av handelsvarorna, med gott om hö
+    const t = createState(4, START), q = vuxen(t); rikBy(t); // (ingen delning: det man gör är ens eget)
+    for (const x of t.people) x.tek = { rep: 1 };
+    setItems(t, { torrgras: 200, rep: 0 }); SIM.handelsMalRakna(t);
+    const m = t.handelsMal, mal = m ? { ...m } : undefined;
+    const varde = (mal?.n ?? 0) * SIM.grundvarde('rep') * SIM.handelsPris('rep');
+    const forst = SIM.handlarVaraVal(t, q);
+    SIM.twineRope(t, q, 50, SIM.villHaAv(t, 'rep') + SIM.handelsTill(t, 'rep'));
+    const repN = amountOf(t, 'rep'), egna = SIM.ownsAmount(t, q, 'rep');
+    SIM.handelsMalRakna(t); const sedan = t.handelsMal, efter = SIM.handlarVaraVal(t, q);
+    // en by som redan har yxor över bufferten, värda mer än silvret
+    const u = createState(4, START);
+    for (const x of u.people) x.tek = { rep: 1 };
+    setItems(u, { torrgras: 200, rep: 0 });
+    for (let i = 0; i < 12; i++) SIM.newTing(u, 'yxa', 1, BYN);
+    SIM.handelsMalRakna(u);
+    // av två slag med lika arbetstid (kniven och yxan) väljs det med påslag
+    const w = createState(4, START);
+    for (const x of w.people) x.tek = { kniv: 1, yxa: 1 };
+    setItems(w, { flinta: 60, grenar: 60, torrgras: 60, rep: 0 });
+    SIM.handelsMalRakna(w); const utanPaslag = w.handelsMal?.k;
+    const hem = SIM.HANDLARHEM[0].sallsynt; hem.push('yxa');
+    try { SIM.handelsMalRakna(w); } finally { hem.pop(); }
+    const medPaslag = w.handelsMal?.k;
+    // repet säljs i tillverkarens tur, och silvret blir hens
     const s = createState(6, START); rikBy(s); s.nastaHandlare = s.now;
     for (let i = 0; i < 60 && !s.handlare; i++) step(s, BEAT);
-    const h = s.handlare, p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
-    if (h) { SIM.put(s, 'rep', 2, { [p.id]: 2 }); SIM.byteKlart(s, SIM.handlarPart(s, h), SIM.personPart(s, p, true), [{ k: 'rep', n: 2 }], [{ k: 'silver', n: 4 }]); }
-    const kopt = h?.kopt?.rep ?? 0;
-    for (let i = 0; i < 48 * 3600 / BEAT && s.handlare; i++) step(s, BEAT);
-    const minns = s.handlarKopt?.rep ?? 0;
-    // en by som vet att handlarna brukar köpa rep och yxor
-    const t = createState(4, START), q = living(t).find(x => SIM.ageOf(x, t.now) >= SIM.ALDER.vuxen)!;
-    q.tek = { ...q.tek, rep: 1, yxa: 1 }; setItems(t, { flinta: 6, torrgras: 30, grenar: 30, rep: 0 });
-    const val = () => { const v: SIM.Val = { act: 'vila', why: '', dur: 0 }; return SIM.handlarVara(t, q, v) ? v : undefined; };
-    const utan = val();
-    t.handlarKopt = { rep: 3, yxa: 9 };
-    const yxMal = SIM.handlarMal(t, 'yxa'), yxBar = Math.floor(SIM.HANDLAR_UTR.ryggsack.vikt * (1 - SIM.HANDEL.fylla) / viktOf('yxa'));
-    const rep = val();
-    SIM.twineRope(t, q, 20, SIM.villHaAv(t, 'rep') + SIM.handlarMal(t, 'rep'));
-    const repN = amountOf(t, 'rep'), yxa = val();
+    const h = s.handlare, p = vuxen(s);
+    let bjuds = false, silver = 0;
+    if (h) {
+      SIM.put(s, 'rep', SIM.villHaAv(s, 'rep') + 3, { [p.id]: SIM.villHaAv(s, 'rep') + 3 });
+      bjuds = SIM.personPart(s, p, true).over(['silver']).some(x => x.k === 'rep' && x.n >= 1);
+      const fore = SIM.ownsAmount(s, p, 'silver');
+      SIM.genomfor(s, SIM.handlarPart(s, h), SIM.personPart(s, p, true), [{ k: 'rep', n: 2 }], [{ k: 'silver', n: 3 }], 'handel');
+      silver = SIM.ownsAmount(s, p, 'silver') - fore;
+    }
+    // en sparad by med det gamla minnet laddas
+    const g = createState(3, START);
+    (g as State & { handlarKopt?: Record<string, number> }).handlarKopt = { rep: 3 };
+    for (const x of g.people) if (x.task) (x.task as SIM.Task & { handel?: true }).handel = true;
+    g.v = 52; SIM.migrate(g);
+    const laddad = !('handlarKopt' in g) && g.people.every(x => !x.task || !('handel' in x.task)) && g.v === SIM.SPARVERSION;
+    const hela = (x: number) => Math.abs(x - Math.round(x)) < 1e-9;
     return [
-      [`handlaren minns vad hen köpt på besöket (${kopt} rep), och byn minns det när hen gått hem (${minns} rep)`, kopt === 2 && minns >= 2],
-      [`utan något handlarna köpt görs inga varor till dem (${utan?.act ?? 'inget'})`, !utan],
-      [`yxorna görs högst så många som ryggsäcken rymmer (${yxMal} av 9, plats för ${yxBar})`, yxMal === Math.min(9, yxBar) && yxMal < 9],
-      [`den som kan tvinna rep gör det åt handlaren (${rep?.act}, ${rep?.why})`, rep?.act === 'tvinna' && !!rep.handel],
-      [`repet tvinnas inte över det byn vill ha plus det handlaren köper (${repN.toFixed(0)} av ${SIM.villHaAv(t, 'rep')} + 3)`, Math.round(repN) === SIM.villHaAv(t, 'rep') + 3],
-      [`när repen räcker gör man en yxa att byta med (${yxa?.act}, ${yxa?.tool})`, yxa?.act === 'yxa' && yxa.tool === 'yxa' && !!yxa.handel],
+      [`målet är rep, så många som ryms i silvret (${mal?.n ?? 0} rep värda ${varde.toFixed(1)} av ${silverMitt} silver)`, mal?.k === 'rep' && (mal?.n ?? 0) >= 1 && varde <= silverMitt + 1e-9 && varde + SIM.grundvarde('rep') * SIM.handelsPris('rep') > silverMitt],
+      [`raden tvinnar rep att byta med handlaren (${forst ? 'ja' : 'nej'})`, !!forst],
+      [`repet tvinnas till bufferten plus målet (${repN.toFixed(1)} av ${SIM.villHaAv(t, 'rep')} + ${mal?.till ?? 0})`, Math.abs(repN - SIM.villHaAv(t, 'rep') - (mal?.till ?? 0)) < 1e-6],
+      [`repet är tillverkarens (${egna.toFixed(1)} av ${repN.toFixed(1)})`, Math.abs(egna - repN) < 1e-6],
+      [`när målet är fyllt finns inget mål och raden ger fritiden (${sedan ? sedan.n + ' ' + sedan.k : 'inget mål'}, ${efter ? 'raden' : 'ingen rad'})`, !sedan && !efter],
+      [`en by med yxor över bufferten värda mer än silvret får inget mål (${u.handelsMal ? u.handelsMal.n + ' ' + u.handelsMal.k : 'inget'})`, !u.handelsMal],
+      [`av kniven och yxan väljs den med påslag (utan: ${utanPaslag}, med påslag på yxan: ${medPaslag})`, utanPaslag === 'kniv' && medPaslag === 'yxa'],
+      [`repet bjuds av tillverkaren och silvret blir hens (${bjuds ? 'bjuds' : 'bjuds inte'}, ${silver} silver)`, !!h && bjuds && silver === 3],
+      [`allt i hela saker (mål ${mal?.n}, ${mal?.till})`, !!mal && hela(mal.n) && hela(mal.till)],
+      ['en sparad by med det gamla minnet laddas', laddad],
     ];
   },
 };

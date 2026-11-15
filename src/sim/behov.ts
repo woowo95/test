@@ -555,7 +555,7 @@ function bynBuffert(s: State, b: Behov) {
 }
 // redskapen i gruppen g som byn har, och hur många den vill ha
 const iGruppen = (s: State, g: string) => tingOf(s).filter(t => gruppOf(t.k) === g && t.halv === undefined);
-const villGrupp = (s: State, g: string) => REDSKAPMAL[g]?.(s) ?? 1;
+export const villGrupp = (s: State, g: string) => REDSKAPMAL[g]?.(s) ?? 1;
 export function bynBehov(s: State, k: string) {
   if (k === 'silver') return 1;
   if (isTool(k)) { const g = gruppOf(k), n = iGruppen(s, g).length; return n < 1 ? DELA.saknar : n < villGrupp(s, g) ? 1 : DELA.over; }
