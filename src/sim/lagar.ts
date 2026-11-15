@@ -45,7 +45,20 @@ const STEGEN = [0, 1, 4, 5, 2, 7, 8, 3, 6]; // ordningen från mildast till hår
 
 // lagarna: en rad per lag. prio = hur väl det som hänt väcker den (0–1). rost = åsikten och intresset, −1 till 1. brott = händelserna som bryter
 // mot den. kan = systemet den kräver finns
-export interface LagDef { namn: string; sym: string; text: string; straff: number; brott?: HandelseTyp[]; prio(s: State): number; rost(s: State, p: Person): { v: number; why: string }; kan?(s: State): boolean; om?: string }
+export interface LagDef { namn: string; sym: string; text: string; straff: number; brott?: HandelseTyp[]; prio(s: State): number; rost(s: State, p: Person): { v: number; why: string }; kan?(s: State): boolean; om?: string; tal?: Record<string, LagTalDef> }
+// ett tal i en lag (steg 10.5.4): stegen av tillåtna värden, värdet från början och det var och en vill ha. 0 i stegen kan betyda
+// ingen, och ingen är då värt `ingen` (0 för en undre gräns, Infinity för en övre)
+export interface LagTalDef { namn: string; sym: string; stege: number[]; start: number; ingen?: number; vill(s: State, p: Person): number; visa(v: number): string }
+const talEff = (d: LagTalDef, v: number) => v === 0 && d.ingen !== undefined ? d.ingen : v;
+// platsen i stegen som ligger närmast värdet x
+export function talPlats(d: LagTalDef, x: number) {
+  let b = 0, bd = Infinity;
+  d.stege.forEach((v, i) => { const e = talEff(d, v), dd = e === x ? 0 : Math.abs(e - x); if (dd < bd) { bd = dd; b = i; } });
+  return b;
+}
+// talet k i lagen id som det gäller nu
+export const lagTal = (s: State, id: string, k: string) => { const d = LAGAR[id].tal![k]; return talEff(d, s.styre?.lagar?.find(l => l.id === id)?.tal?.[k] ?? d.start); };
+const lagTalRa = (s: State, id: string, k: string) => s.styre?.lagar?.find(l => l.id === id)?.tal?.[k] ?? LAGAR[id].tal![k].start;
 const dev = (v: number) => (v - 10) / 10;
 const antal = (s: State, k: string) => s.stat?.[k] ?? 0;
 // äger p mycket mer mat än sin del av byns (lagen om att förrådet delas lika)
@@ -75,7 +88,7 @@ export const LAGAR: Record<string, LagDef> = {
 };
 const agerNagot = (s: State, p: Person) => (s.ting ?? []).some(t => t.agare === p.id);
 
-export interface Lag { id: string; t: number; straff: number; av: number; om: string }
+export interface Lag { id: string; t: number; straff: number; av: number; om: string; tal?: Record<string, number> } // tal = lagens tal som ändrats (steg 10.5.4)
 export const lagarNu = (s: State): Lag[] => s.styre?.lagar ?? [];
 export const lagGaller = (s: State, id: string) => !!s.styre?.lagar?.some(l => l.id === id);
 export const lagTak = (s: State) => LAG.tak + LAG.takMinister * Object.keys(s.styre?.ministrar ?? {}).length;
@@ -126,6 +139,11 @@ export const TAS_UPP: { id: string; lista(s: State, p: Person): LagForslag[] }[]
     const full = lagarNu(s).length >= lagTak(s) ? 0.5 : 1;
     return [{ fr: { f: 'nylag', d: { id }, fram: p.id }, prio: LAGAR[id].prio(s) * full, varfor: `${LAGAR[id].om ? `Efter ${LAGAR[id].om}` : 'Det behövs'} vill ${p.name} ha en lag` }];
   }) : [] },
+  // ett tal i en lag som gäller (steg 10.5.4): den som får lägga fram föreslår platsen i stegen närmast sitt eget
+  { id: 'lagtal', lista: (s, p) => lagarNu(s).flatMap(l => Object.entries(LAGAR[l.id].tal ?? {}).flatMap(([k, d]) => {
+    const iE = talPlats(d, d.vill(s, p)), iO = d.stege.indexOf(lagTalRa(s, l.id, k));
+    return iE !== iO ? [{ fr: { f: 'lagtal', d: { id: l.id, k, v: d.stege[iE] }, fram: p.id }, prio: clamp(Math.abs(iE - iO) / 3, 0, 1), varfor: `${p.name} vill ändra ${d.namn} i lagen ${LAGAR[l.id].namn.toLowerCase()}` }] : [];
+  })) },
   { id: 'bortlag', lista: (s, p) => lagarNu(s).flatMap(l => {
     const v = LAGAR[l.id].rost(s, p).v, nara = lagarNu(s).length >= lagTak(s) - 1 ? 0.3 : 0;
     return v < 0 ? [{ fr: { f: 'bortlag', d: { id: l.id }, fram: p.id }, prio: -v * 0.4 + nara, varfor: `${p.name} tycker illa om lagen` }] : [];
@@ -223,6 +241,25 @@ FRAGOR.bortlag = {
   namn: (_s, d) => `Ta bort lagen: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
   rost: (s, p, d) => { const r = LAGAR[d.id as string].rost(s, p); return { v: -r.v, why: r.v < 0 ? r.why : 'Vill behålla lagen' }; },
   gor: (s, d) => { const st = styreAv(s); st.lagar = st.lagar?.filter(l => l.id !== d.id); count(s, 'lag_bort'); log(s, `Byn tog bort lagen: ${LAGAR[d.id as string].namn.toLowerCase()}.`, 'world'); },
+};
+// ett tal i en lag (steg 10.5.4): var och en röstar efter om det nya ligger närmare det hen vill än det gamla
+FRAGOR.lagtal = {
+  namn: (_s, d) => { const td = LAGAR[d.id as string].tal![d.k as string]; return `${LAGAR[d.id as string].namn}: ${td.namn} ${td.visa(d.v as number)}`; }, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
+  rost: (s, p, d) => {
+    const td = LAGAR[d.id as string].tal![d.k as string], iE = talPlats(td, td.vill(s, p)), iO = td.stege.indexOf(lagTalRa(s, d.id as string, d.k as string)), iN = td.stege.indexOf(d.v as number);
+    const v = Math.abs(iE - iO) > Math.abs(iE - iN) ? 0.5 : Math.abs(iE - iO) < Math.abs(iE - iN) ? -0.5 : -0.05;
+    return { v, why: v > 0 ? `Vill ha ${td.namn} ${td.visa(td.stege[iE])}` : 'Tycker att det är bra som det är' };
+  },
+  gor: (s, d, fram) => {
+    const l = s.styre?.lagar?.find(x => x.id === d.id), td = LAGAR[d.id as string].tal![d.k as string];
+    if (!l) return;
+    const fore = lagTalRa(s, l.id, d.k as string);
+    (l.tal ??= {})[d.k as string] = d.v as number;
+    count(s, 'lag_tal');
+    const led = ledareOf(s), ensam = !!led && (vikter(s).find(x => x.p === led)?.andel ?? 0) > 0.5;
+    const t = `${ensam ? `${led!.name} påbjöd en ändring av` : 'Byn ändrade'} lagen ${LAGAR[l.id].namn}: ${td.namn} från ${td.visa(fore)} till ${td.visa(d.v as number)}.`;
+    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
+  },
 };
 FRAGOR.lagstraff = {
   namn: (_s, d) => `Ändra straffet: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',

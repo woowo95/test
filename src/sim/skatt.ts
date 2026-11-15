@@ -7,8 +7,10 @@
 // det hen skaffar till byn (delning.ts).
 import { DAY, Person, State } from './typer';
 import { balans } from './balans';
-import { ageOf, count, living, log } from './folk';
-import { efterlevs, lagGaller } from './lagar';
+import { ageOf, count, isParent, living, log } from './folk';
+import { LAGAR, LagTalDef, efterlevs, lagGaller, lagTal, talPlats } from './lagar';
+import { drar } from './seder';
+import { clamp } from './slump';
 import { formogenhetDelar, grundvarde, tingVarde } from './varde';
 import { payable } from './behov';
 import { ownMove, ownedStock } from './lager';
@@ -19,6 +21,9 @@ export const SKATT = balans('skatt', {
   procent: 0.05, // så stor del av förmögenheten betalas per dygn (år i spelet)
   alder: 18, // från den här åldern (år) betalar man
   timme: 20, // klockan då skatten tas
+  hogGanger: 2, // över den övre ribban är procenten så många gånger högre (steg 10.5.4)
+  miss: 0.05, // den som betalar en högre procent än hen tycker är rätt blir så här mycket missnöjd per dygn, gånger den del som ligger över
+  lutar: 0.5, // så mycket lutningen mot Sammanhållning flyttar den procent var och en vill ha
 });
 
 // en sak man kan betala med: värdet per styck, hur många och hur de lämnas till byn
@@ -59,9 +64,51 @@ export function betala(s: State, p: Person, belopp: number) {
   }
   return gav;
 }
-// vad p ska betala för tiden dt (i spelets tid)
-export const skattAv = (s: State, p: Person, dt: number) => SKATT.procent * formogenhetDelar(s, p.id).sum * dt / DAY * efterlevs(s);
-export const betalarSkatt = (s: State, p: Person) => !p.gast && ageOf(p, s.now) >= SKATT.alder;
+// förmögenheten hos var och en och snittet bland dem i skatteåldern, en gång per läge (talen frågar det för var och en)
+const snittCache = new WeakMap<State, { t: number; n: number; w: Map<number, number>; m: number }>();
+function formogenhet(s: State) {
+  const c = snittCache.get(s), n = s.people.length;
+  if (c && c.t === s.now && c.n === n) return c;
+  const w = new Map<number, number>(), alder = lagGaller(s, 'skatt') ? lagTal(s, 'skatt', 'alder') : SKATT.alder;
+  let sum = 0, k = 0;
+  for (const p of living(s)) { if (p.gast) continue; const v = formogenhetDelar(s, p.id).sum; w.set(p.id, v); if (ageOf(p, s.now) >= alder) { sum += v; k++; } }
+  const r = { t: s.now, n, w, m: k ? sum / k : 0 };
+  snittCache.set(s, r);
+  return r;
+}
+const egen = (s: State, p: Person) => { const f = formogenhet(s); return { w: f.w.get(p.id) ?? formogenhetDelar(s, p.id).sum, m: f.m }; };
+const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
+// skattelagens tal (steg 10.5.4): procenten, åldern och de två ribborna, med det var och en vill ha
+const PROCENT: LagTalDef = {
+  namn: 'procenten', sym: '%', stege: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1, 0.12, 0.15, 0.2], start: SKATT.procent, visa: v => `${Math.round(v * 100)} %`,
+  vill: (s, p) => {
+    const { w, m } = egen(s, p);
+    let i = talPlats(PROCENT, SKATT.procent * (1 + SKATT.lutar * lutning(s, p)));
+    if (w < m) i++; else if (w > 1.5 * m) i--;
+    return PROCENT.stege[clamp(i, 0, PROCENT.stege.length - 1)];
+  },
+};
+const UNDRE: LagTalDef = {
+  namn: 'den undre ribban', sym: '⤓', stege: [0, 20, 40, 60, 80, 100, 150, 200], start: 0, ingen: 0, visa: v => v ? `${v}` : 'ingen',
+  vill: (s, p) => { const { w, m } = egen(s, p); return w < m / 2 ? UNDRE.stege.find(v => v > w) ?? 200 : lutning(s, p) > 0.3 ? m / 4 : 0; },
+};
+const OVRE: LagTalDef = {
+  namn: 'den övre ribban', sym: '⤒', stege: [0, 1000, 800, 600, 400, 300, 200], start: 0, ingen: Infinity, visa: v => v ? `${v}` : 'ingen',
+  vill: (s, p) => { const { w, m } = egen(s, p); return w < m ? 2 * m : Infinity; },
+};
+const ALDERN: LagTalDef = {
+  namn: 'åldern', sym: '⌛', stege: [14, 16, 18, 20], start: SKATT.alder, visa: v => `${v} år`,
+  vill: (s, p) => ageOf(p, s.now) < 20 || living(s).some(c => isParent(p, c) && ageOf(c, s.now) >= 14 && ageOf(c, s.now) < 20) ? 20 : 18,
+};
+LAGAR.skatt.tal = { procent: PROCENT, alder: ALDERN, undre: UNDRE, ovre: OVRE };
+
+// vad p ska betala för tiden dt (i spelets tid): procenten av det över den undre ribban, och den dubbla över den övre
+export function skattAv(s: State, p: Person, dt: number) {
+  const w = formogenhetDelar(s, p.id).sum, pr = lagTal(s, 'skatt', 'procent'), u = lagTal(s, 'skatt', 'undre'), o = Math.max(u, lagTal(s, 'skatt', 'ovre'));
+  const v = pr * Math.max(0, Math.min(w, o) - u) + pr * SKATT.hogGanger * Math.max(0, w - o);
+  return v * dt / DAY * efterlevs(s);
+}
+export const betalarSkatt = (s: State, p: Person) => !p.gast && ageOf(p, s.now) >= lagTal(s, 'skatt', 'alder');
 
 // en gång per dygn (TAKTER, klockan SKATT.timme), också i en by utan ledare; dt = tiden sedan sist i spelets tid
 export function skattDygn(s: State, dt: number) {
@@ -70,7 +117,12 @@ export function skattDygn(s: State, dt: number) {
   const tid = Math.min(dt, s.now - lag.t);
   if (tid <= 0) return;
   let sum = 0;
-  for (const p of living(s)) if (betalarSkatt(s, p)) sum += betala(s, p, skattAv(s, p, tid));
+  const pr = lagTal(s, 'skatt', 'procent');
+  for (const p of living(s)) if (betalarSkatt(s, p)) {
+    sum += betala(s, p, skattAv(s, p, tid));
+    const vill = PROCENT.vill(s, p); // den som betalar mer än hen tycker är rätt blir missnöjd (steg 10.5.4)
+    if (pr > vill) p.missnoje = clamp((p.missnoje ?? 0) + SKATT.miss * (pr - vill) / pr * tid / DAY, 0, 1);
+  }
   if (sum <= 0) return;
   count(s, 'skattVarde', sum);
   log(s, `Skatten gav byns förråd saker värda ${Math.round(sum)}.`, 'world');

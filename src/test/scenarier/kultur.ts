@@ -812,6 +812,49 @@ SCENARIER.skatt = {
     ];
   },
 };
+SCENARIER.skattetal = {
+  text: 'Steg 10.5.4: skattelagens tal (procenten, åldern och två ribbor) ändras var för sig med en omröstning. Var och en vill ha ett eget värde efter vad hen äger och hur hen lutar mot Sammanhållning; under Envälde går ledarens förslag igenom. Över den övre ribban är procenten den dubbla, och den som betalar mer än hen tycker är rätt blir missnöjd',
+  kor: () => {
+    const { s } = medLedare();
+    tomtForrad(s); s.ting = [];
+    const folk = SIM.living(s).slice(0, 5), [rik, ...fattiga] = folk;
+    s.people = folk;
+    for (const p of folk) { p.mother = p.father = p.partner = undefined; p.born = s.now - 30 * SIM.DAY; p.missnoje = 0; (p.tek ??= {}).ledarskap = 1; p.tek.lag = 1; }
+    s.styre!.ledare = fattiga[0].id; s.seder.v.rang = -0.5; s.delning = { andel: 0 };
+    SIM.put(s, 'silver', 500, { [rik.id]: 500 });
+    [5, 10, 10, 10].forEach((n, i) => SIM.put(s, 'silver', n, { [fattiga[i].id]: n }));
+    s.styre!.lagar = [{ id: 'skatt', t: s.now - 2 * SIM.DAY, straff: 4, av: rik.id, om: '' }];
+    const lag = () => s.styre!.lagar!.find(l => l.id === 'skatt')!;
+    const fattigast = fattiga[0], fore = SIM.skattAv(s, fattigast, SIM.DAY);
+    // en fattig majoritet röstar fram en undre ribba, och den fattigaste slipper skatt
+    const forslag = SIM.TAS_UPP.find(r => r.id === 'lagtal')!.lista(s, fattigast).find(f => f.fr.d.k === 'undre');
+    const gickUndre = !!forslag && SIM.rostaOm(s, forslag.fr);
+    const undre = lag().tal?.undre ?? 0, efter = SIM.skattAv(s, fattigast, SIM.DAY);
+    // under Envälde går ledarens förslag igenom
+    s.styre!.ledare = rik.id; s.seder.v.rang = 1; rik.pot.empati = 2; rik.upp = []; // (en rik som lutar mot Självförsörjning vill ha lägre procent)
+    const fram = SIM.framlaggare(s), rikF = SIM.TAS_UPP.find(r => r.id === 'lagtal')!.lista(s, rik).find(f => f.fr.d.k === 'procent');
+    const gickRik = !!rikF && SIM.rostaOm(s, rikF.fr), procent = lag().tal?.procent ?? 0.05;
+    const pabjod = s.log.some(e => e.text.startsWith(`${rik.name} påbjöd`));
+    // den rika betalar dubbel procent över den övre ribban
+    lag().tal = { procent: 0.05, undre: 0, ovre: 200 };
+    const e = SIM.efterlevs(s), dubbel = SIM.skattAv(s, rik, SIM.DAY) / e, vantat = 0.05 * 200 + 0.05 * SIM.SKATT.hogGanger * 300;
+    // en ändrad procent ändrar beloppet
+    lag().tal = { procent: 0.1, undre: 0, ovre: 200 };
+    const dubbelt = SIM.skattAv(s, rik, SIM.DAY) / e;
+    // den som vill ha lägre procent blir missnöjd
+    lag().tal = { procent: 0.2 };
+    SIM.skattDygn(s, SIM.DAY);
+    return [
+      [`en fattig majoritet röstar fram en undre ribba (${undre})`, gickUndre && undre > 0],
+      [`och den fattigaste slipper skatt (${fore.toFixed(2)} → ${efter.toFixed(2)})`, fore > 0 && efter === 0],
+      [`under Envälde lägger bara ledaren fram (${fram.length}) och hens förslag går igenom (procenten ${Math.round(procent * 100)} %)`, fram.length === 1 && fram[0] === rik && gickRik && procent < 0.05],
+      ['och loggen säger att ledaren påbjöd den', pabjod],
+      [`den rika betalar dubbel procent över den övre ribban (${dubbel.toFixed(1)}, väntat ${vantat.toFixed(1)})`, Math.abs(dubbel - vantat) < 1e-6],
+      [`en ändrad procent ändrar beloppet (${dubbel.toFixed(1)} → ${dubbelt.toFixed(1)})`, Math.abs(dubbelt - 2 * dubbel) < 1e-6],
+      [`den som vill ha lägre procent blir missnöjd (${(rik.missnoje ?? 0).toFixed(3)})`, (rik.missnoje ?? 0) > 0],
+    ];
+  },
+};
 SCENARIER.sederfas8 = {
   text: 'Steg 8.4.11–8.4.15: sederna Krig och fred och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
   kor: () => {

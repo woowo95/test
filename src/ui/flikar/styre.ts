@@ -1,4 +1,4 @@
-import { type Omrostning, titelOm, LAG, LAGAR, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -85,11 +85,13 @@ export function pabudDel() {
       : `<div class="ruta bred"><div class="rutnamn">${esc(namn)}</div><dl class="kv smal">${ks.map(k => rad(k, false)).join('')}</dl></div>`).join('')}</div>`;
 }
 
+// lagens tal som symboler, och texten när man trycker (steg 10.5.4)
+const lagTalHtml = (l: Lag) => Object.entries(LAGAR[l.id].tal ?? {}).map(([k, d]) => { const v = l.tal?.[k] ?? d.start; return ` <span class="muted" title="${esc(`${d.namn[0].toUpperCase()}${d.namn.slice(1)}: ${d.visa(v)}`)}">${d.sym}${esc(d.visa(v).replace(' %', '%').replace(' år', ''))}</span>`; }).join('');
 // lagarna (steg 8.4.1): en symbol per lag och en för straffet; texten kommer fram vid hovring. Hur väl de efterlevs och taket (steg 8.4.3, 8.4.9)
 function lagarDel() {
   const lagar = lagarNu(s);
   if (!lagar.length) return '';
-  return `<p class="muted small">${lagar.length} av ${lagTak(s)} lagar · efterlevs ${Math.round(efterlevs(s) * 100)} %</p><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span></li>`; }).join('')}</ul>`;
+  return `<p class="muted small">${lagar.length} av ${lagTak(s)} lagar · efterlevs ${Math.round(efterlevs(s) * 100)} %</p><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span>${lagTalHtml(l)}</li>`; }).join('')}</ul>`;
 }
 // ministrarna (steg 8.3.8): en rad per post
 function ministrar() {
