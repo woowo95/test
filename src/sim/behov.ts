@@ -7,6 +7,7 @@ import { loggBer } from './berattelser';
 import { State, Person, HOUR, DAY, MIN } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, gruppOf, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
+import { ledareOf } from './styre';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, familjOf, livet, living, log, ovning, relKey, stat, think } from './folk';
 import { forsorjAlder } from './skatt';
 import { VARDRATT, kanGa, mindreMat } from './halsa';
@@ -290,11 +291,34 @@ function gift(s: State, m: Person, g: Person, n: Behov) {
   if (n.id === 'mat' && !isFamily(g, m)) { if (m.tiggde === undefined || s.now - m.tiggde >= DAY) count(s, 'tiggare'); m.tiggde = s.now; } // fick mat av en som inte är familj: en tiggare (steg 10.5.11)
   return true;
 }
+// den som handlar för byn: ledaren, annars den vuxna som är skickligast i Handel (steg 4.4.1.4)
+export function forByn(s: State): Person | undefined {
+  const l = ledareOf(s);
+  if (l) return l;
+  let b: Person | undefined;
+  for (const q of living(s)) if (ageOf(q, s.now) >= ALDER.vuxen && (!b || q.skill.handel > b.skill.handel)) b = q;
+  return b;
+}
+// den som handlar för byn byter till sig det byns projekt saknar av en bybo som har det över (steg 10.5.18), sist i
+// samtalens kedja: byn betalar med det den kan avvara och silver, och båda ska tjäna på bytet (delad)
+function bynByte(s: State, a: Person, b: Person) {
+  const L = s.projektSaknar, f = L && forByn(s);
+  if (!L || !f || (a !== f && b !== f)) return false;
+  const g = a === f ? b : a;
+  if (g.gast || osams(s, g, f)) return false;
+  for (const w of payable(s, g, ['silver'])) {
+    const ps = L[w.k];
+    if (w.t || !ps || ps.n < 1) continue;
+    const n = bytaMed(s, bynPart(s, f.x, f.y, f), personPart(s, g), [{ k: w.k, n: Math.min(w.n, ps.n) }], { behov: bynBehov(s, w.k), minst: 1, fara: 0, typ: 'byn', utom: [w.k], delad: true });
+    if (n > 0) { ps.n = Math.max(0, ps.n - n); count(s, 'bynByte'); return true; }
+  }
+  return false;
+}
 // a och b talar. Saknar någon av dem något som den andra har över? Då byter de, eller så ger den andra det. Ger true om
 // något bytte ägare
 export function askForGift(s: State, a: Person, b: Person) {
   for (const n of BEHOV()) for (const [m, g] of [[a, b], [b, a]]) if (lacksFor(s, m, n) && ((!osams(s, g, m) && tradeFor(s, m, g, n)) || gift(s, m, g, n))) return true;
-  return !!askForTool(s, a, b) || eveningTrade(s, a, b);
+  return !!askForTool(s, a, b) || eveningTrade(s, a, b) || bynByte(s, a, b);
 }
 // a och b talar, och ingen av dem saknar något just nu (steg 1.4.3). Har den ena mindre mat eller ved än hen vill ha kvar
 // (b.kvar) och den andra mer, byter de när båda tjänar på det: vinsten delas (delad i byte). Samtalen hålls mest vid

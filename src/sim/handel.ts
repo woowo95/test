@@ -17,13 +17,12 @@ import { GORS, canMake } from './redskap';
 import { amountOf } from './lager';
 import { arMaterial, villHaAv } from './forradsmal';
 import { ARBETE } from './varde';
-import { DELA, villGrupp, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
+import { DELA, forByn, villGrupp, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
 import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, loggaByte, nyttPar, satPersonFlytt, vardeOf, vidByte, vidLura, varorText } from './byte';
 import { newTing, tingOf } from './agande';
 import { knows } from './teknik';
 import { dropSpot, put, stacksOf, use } from './lager';
 import { sumOf } from './egendom';
-import { ledareOf } from './styre';
 import { kanterna } from './varg';
 import { larPris, MINNE, trorPris } from './minne';
 import { KLAN, andraInst, handlarKlan, klanById, klanPris, klanerOf, prisAndras } from './klaner';
@@ -495,14 +494,6 @@ export function handlarPart(s: State, h: Handlare): Part {
     },
     rymmer: () => ledigt(h),
   };
-}
-// den som handlar för byn: ledaren, annars den vuxna som är skickligast i Handel (steg 4.4.1.4)
-function forByn(s: State): Person | undefined {
-  const l = ledareOf(s);
-  if (l) return l;
-  let b: Person | undefined;
-  for (const q of living(s)) if (ageOf(q, s.now) >= ALDER.vuxen && (!b || q.skill.handel > b.skill.handel)) b = q;
-  return b;
 }
 // ---------- byborna vid filten (steg 4.4.1.5) ----------
 // Byn handlar först, genom den som handlar för byn. Sedan får byborna byta med sina egna saker: den som saknar något

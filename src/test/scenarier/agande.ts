@@ -883,7 +883,7 @@ SCENARIER.plagg = {
 };
 
 SCENARIER.bytessystem = {
-  text: 'Ett bytessystem för alla byten (steg 4.4.1.1): ett byte mellan bybor går genom samma kod som handeln med handlaren sedan gör (parter i byte.ts). Ett stort byte (ett redskap) görs på en filt där sakerna ligger en stund och skrivs i krönikan; ett litet vardagsbyte är en överlämning från hand till hand och skrivs bara i loggen. En gåva av ett redskap till ett barn och mat till den som höll på att dö skrivs i krönikan.',
+  text: 'Ett bytessystem för alla byten (steg 4.4.1.1): ett byte mellan bybor går genom samma kod som handeln med handlaren sedan gör (parter i byte.ts). Ett stort byte (ett redskap) görs på en filt där sakerna ligger en stund och skrivs i krönikan; ett litet vardagsbyte är en överlämning från hand till hand och skrivs bara i loggen. En gåva av ett redskap till ett barn och mat till den som höll på att dö skrivs i krönikan. Den som handlar för byn byter till sig det projekten saknar av bybor som har det över (steg 10.5.18).',
   kor: () => {
     const ny = () => {
       const s = createState(6, START);
@@ -921,6 +921,20 @@ SCENARIER.bytessystem = {
     ({ s, a, b } = ny());
     a.hunger = 0; a.health = 0.5; gain(s, b, 'bar', 6); getRel(s, b, a).op = 80; getRel(s, a, b).op = 80; b.pot.empati = 20;
     let dor = 0; for (let i = 0; i < 20 && !dor; i++) { askForGift(s, a, b); dor = (s.hist?.kronika ?? []).filter(k => k[2] === 'gava' && k[1].includes('höll på att dö')).length; }
+    // byn byter med invånarna (steg 10.5.18): den som handlar för byn byter till sig rep, som projekten saknar, av en bybo som har det över
+    const medRep = (ledare: boolean, rep: number) => {
+      const v = ny();
+      if (ledare) v.s.styre = { historia: [], oppna: [], sedan: v.s.now, titel: '', satt: 0, pabud: {} as never, lagar: [], ledare: v.a.id } as unknown as State['styre'];
+      else { v.a.skill.handel = 2; v.b.skill.handel = 1; v.c.skill.handel = 12; }
+      v.s.projektSaknar = { rep: { beh: 3, n: 3, b: 1 } };
+      SIM.put(v.s, 'silver', 10); if (rep) gain(v.s, v.b, 'rep', rep);
+      const f = ledare ? v.a : v.c; f.x = v.b.x; f.y = v.b.y;
+      const bybo0 = ownsAmount(v.s, v.b, 'silver');
+      askForGift(v.s, f, v.b);
+      const byn = Math.round(amountOf(v.s, 'rep') - ownsAmount(v.s, v.b, 'rep'));
+      return { byn, rep: Math.round(ownsAmount(v.s, v.b, 'rep')), fick: Math.round(ownsAmount(v.s, v.b, 'silver') - bybo0) + SIM.payable(v.s, v.b, ['rep', 'silver']).length };
+    };
+    const led = medRep(true, 5), utanLed = medRep(false, 5), utan = medRep(false, 0);
     return [
       [`ett redskap byts på en filt med sakerna från båda (${korg ? 'bytte' : 'inget byte'})`, korg && filt],
       ['det stora bytet står i loggen och i krönikan', stort],
@@ -928,6 +942,9 @@ SCENARIER.bytessystem = {
       ['ett litet byte är en överlämning från hand till hand, i loggen men inte i krönikan', litet],
       ['ett redskap som ges till ett barn står i krönikan', barnGava],
       [`mat till den som håller på att dö står i krönikan (${dor})`, dor > 0],
+      [`ledaren byter till sig rep av en bybo åt byn (byn äger ${led.byn}, bybon har ${led.rep} kvar och fick betalt)`, led.byn >= 1 && led.byn <= 3 && led.rep === 5 - led.byn && led.fick > 0],
+      [`i en by utan ledare gör den skickligaste i Handel detsamma (byn äger ${utanLed.byn})`, utanLed.byn >= 1],
+      [`en bybo utan överflöd byter inte (byn äger ${utan.byn})`, utan.byn === 0],
     ];
   },
 };
