@@ -622,6 +622,7 @@ SCENARIER.slaktbank = {
 };
 
 SCENARIER.flatarbank = {
+  lang: true,
   text: 'Slöjdbänken (steg 2.2.4) byggs av virke och grenar av den som kommit på den (steg 2.2.11). Vid den tvinnas rep fortare än för hand vid elden, de enkla redskapen görs där lite fortare (Björn, efter v90), och korgen flätas bara där. Handarbetet är alltid något bestämt som tar material och ger en sak',
   kor: () => {
     const { STATIONER, stationerOf, stationFor, isKlar, vidStation, spotFor, twineRope, wantsTool, thinkWhileWorking, startWork, MIN } = SIM;

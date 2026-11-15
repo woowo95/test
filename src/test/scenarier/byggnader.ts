@@ -896,6 +896,7 @@ SCENARIER.stackar = {
 };
 
 SCENARIER.omrade = {
+  lang: true,
   text: 'Byns område (steg 6.2.1–6.2.2): det husen, stationerna, lagren och eldarna omsluter, plus 2 rutor runt om; latrinen och slaktbänken räknas inte',
   kor: () => {
     const s = createState(9, START), f = SIM.eldPlats(s), o0 = SIM.omrade(s), k = SIM.OMRADE.kant;

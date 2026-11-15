@@ -3252,7 +3252,7 @@ SCENARIER.kanda = {
     for (let i = 0; i < 3000; i++) {
       b.intryck = [];
       SIM.skvaller(s, a, b, SIM.getRel(s, a, b), true);
-      const e = b.intryck?.[0]; if (e) { ggr[e.om] = (ggr[e.om] ?? 0) + 1; n++; }
+      const e = b.intryck?.find(x => x.om === 9001 || x.om === 9002); if (e) { ggr[e.om] = (ggr[e.om] ?? 0) + 1; n++; }
     }
     const andel = n ? (ggr[9001] ?? 0) / n : 0;
     // prästen efter en ledd bön: alla som är med och saknade intrycket får det

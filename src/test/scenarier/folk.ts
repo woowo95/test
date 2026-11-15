@@ -3099,6 +3099,7 @@ SCENARIER.skvaller = {
   },
 };
 SCENARIER.fulspel = {
+  lang: true,
   text: 'Fulspel (steg 10.8.7): en medlem i fraktionen hittar på något om ledaren när hen pratar med någon utanför den, med chansen 0,3 gånger (10 − empatin) / 10, så att den med empati 10 inte gör det. Den som lyssnar tycker sämre om ledaren. När lögnen når den det sägs ha hänt blir berättaren ertappad, och är den som ertappar lojal mot ledaren avslöjas fraktionen, med en rad i krönikan och en notis',
   kor: () => {
     const by = (seed: number, emp: number) => {
