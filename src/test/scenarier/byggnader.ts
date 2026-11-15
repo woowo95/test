@@ -1684,6 +1684,45 @@ SCENARIER.forsorjning = {
   },
 };
 
+SCENARIER.forradsoverflod = {
+  text: 'Steg 10.5.12: det byn bjuder handlaren och betalar med är det byn äger över bufferten i förrådsmålen, i hela saker: mat och ved över bufferten, material över bufferten och redskap utom det gruppen behöver. En bybo bjuder den mat hen äger över familjens buffert',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s);
+    s.delning = { andel: 1 }; // byn delar allt: byns buffert är hela bufferten
+    const by = SIM.bynPart(s, 30, 30);
+    const matOver = () => by.over([]).filter(w => SIM.FOOD.includes(w.k)).reduce((a, w) => a + w.n, 0);
+    for (const k of SIM.FOOD) setAmount(s, k, 0);
+    const buf = Math.ceil(SIM.buffert(s, 'mat') * SIM.matPerDygn(s));
+    put(s, 'bar', Math.max(1, buf - 5)); const under = matOver(), vardeUnder = SIM.bynBehov(s, 'bar');
+    setAmount(s, 'bar', 0); put(s, 'bar', buf + 20); const over = matOver(), vardeOver = SIM.bynBehov(s, 'bar');
+    // redskapen: byn bjuder en yxa över det gruppen behöver, men inte den sista
+    s.ting = (s.ting ?? []).filter(q => SIM.gruppOf(q.k) !== SIM.gruppOf('yxa'));
+    const vill = SIM.REDSKAPMAL[SIM.gruppOf('yxa')](s);
+    for (let i = 0; i < vill + 1; i++) SIM.newTing(s, 'yxa', 1, BYN);
+    const yxOver = by.over([]).filter(w => w.k === 'yxa').length;
+    s.ting = s.ting!.filter((q, _i, l) => q.k !== 'yxa' || l.filter(r => r.k === 'yxa').indexOf(q) > 0);
+    const yxSista = by.over([]).filter(w => w.k === 'yxa').length;
+    // en bybo i en rik by håller inne maten upp till familjens buffert
+    s.delning = { andel: 0 };
+    const p = living(s).find(q => ageOf(q, s.now) >= 20)!;
+    const fam = SIM.familjOf(s, p.id);
+    for (const k of SIM.FOOD) setAmount(s, k, 0);
+    const famBuf = SIM.buffert(s, 'mat') * fam.reduce((a, q) => a + SIM.kroppensMat(q, s.now), 0);
+    put(s, 'bar', Math.max(1, Math.floor(famBuf) - 2), { [p.id]: Math.max(1, Math.floor(famBuf) - 2) });
+    const haller = SIM.payable(s, p, []).filter(w => SIM.FOOD.includes(w.k)).length === 0;
+    put(s, 'bar', 20, { [p.id]: 20 });
+    const bjuder = SIM.payable(s, p, []).filter(w => SIM.FOOD.includes(w.k)).reduce((a, w) => a + w.n, 0);
+    return [
+      [`byn bjuder ingen mat under bufferten (${under}), och den är värd 1 för byn (${vardeUnder})`, under === 0 && vardeUnder === 1],
+      [`byn bjuder hela saker över bufferten (${over} bär), och de är värda mindre (${vardeOver})`, over >= 1 && Number.isInteger(over) && vardeOver < 1],
+      [`byn bjuder en yxa över de ${vill} gruppen behöver (${yxOver}), men inte den sista (${yxSista})`, yxOver === 1 && (vill >= 1 ? yxSista === 0 : true)],
+      ['en bybo håller inne maten upp till familjens buffert', haller],
+      [`och bjuder det som är över, i hela saker (${bjuder})`, bjuder >= 1 && Number.isInteger(bjuder)],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {

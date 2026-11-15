@@ -5,9 +5,9 @@ import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
 import { loggBer } from './berattelser';
 import { State, Person, HOUR, DAY, MIN } from './typer';
-import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
+import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, gruppOf, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, livet, living, log, ovning, relKey, stat, think } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, familjOf, livet, living, log, ovning, relKey, stat, think } from './folk';
 import { forsorjAlder } from './skatt';
 import { VARDRATT, kanGa, mindreMat } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
@@ -21,12 +21,12 @@ import { ata } from './naring';
 import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
-import { EKONOMI } from './ekonomi';
-import { arMaterial, sparas, villHaAv } from './forradsmal';
+import { EKONOMI, kroppensMat, matPerDygn } from './ekonomi';
+import { REDSKAPMAL, arMaterial, buffert, sparas, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
-import { VED } from './eld';
+import { VED, vedPerDygn } from './eld';
 import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 import { SJUK, insjukna } from './sjukdom';
 import { budHindrar } from './kyrka';
@@ -508,7 +508,16 @@ export function behovAv(s: State, p: Person, k: string) {
   if (b.behover(s, p) && own < b.minst) return DELA.saknar * (1 + b.fara(s, p));
   return own <= b.kvar ? 1 : DELA.over;
 }
-// det p kan byta bort: mat och ved utöver det hen själv behöver (b.kvar), material och redskap hen har över. Inte slagen i utom
+// det p har över av behovet b: det hen själv behöver (b.kvar), och för maten det familjen behöver till sin buffert (steg 10.5.12):
+// så stor del av bufferten i FORRADSMAL som byn inte delar, gånger det familjen äter på ett dygn, mot det familjen äger
+function overEget(s: State, p: Person, b: Behov) {
+  const egen = ownFor(s, p, b) - b.kvar;
+  if (b.id !== 'mat') return egen;
+  const fam = familjOf(s, p.id), fp = fam.length ? fam : [p];
+  const har = fp.reduce((a, q) => a + ownFor(s, q, b), 0), buf = buffert(s, 'mat') * (1 - (s.delning?.andel ?? 1)) * fp.reduce((a, q) => a + kroppensMat(q, s.now), 0);
+  return Math.min(egen, har - buf);
+}
+// det p kan byta bort: mat och ved utöver det hen och familjen behöver (overEget), material och redskap hen har över. Inte slagen i utom
 export function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   // den som inte äger något redskap har inget att avvara (spare), och de flesta som betalar äger inget
   const ut: Vara[] = [], over = new Map<Behov, number>(), harRedskap = tingOf(s).some(t => t.agare === p.id);
@@ -518,7 +527,7 @@ export function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
     const own = ownsAmount(s, p, k), b = behovMed(k);
     if (own <= 1e-9) continue;
     if (!b) { ut.push({ k, n: own }); continue; }
-    const kvar = over.get(b) ?? ownFor(s, p, b) - b.kvar, n = Math.min(own, helt(kvar / perOf(b, k))); // hela saker (steg 2.10.7)
+    const kvar = over.get(b) ?? overEget(s, p, b), n = Math.min(own, helt(kvar / perOf(b, k))); // hela saker (steg 2.10.7)
     if (n > 1e-9) { ut.push({ k, n }); over.set(b, kvar - n * perOf(b, k)); }
   }
   return ut;
@@ -527,35 +536,56 @@ export function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
 export function personPart(s: State, p: Person, silver = true): Part {
   return { id: p.id, namn: p.name, p, x: p.x, y: p.y, handel: p.skill.handel ?? 0, varde: k => behovAv(s, p, k), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };
 }
-// byn (det gemensamma förrådet) som part i ett byte med handlaren (steg 4.4.1.3). Byn värderar efter knappheten i hela byn:
-// mat och ved som inte räcker till alla (b.kvar var) saknas, det som räcker gånger BYTE_BYN.gott är över; ett redskap som byn
-// inte har något av och ett material som är slut saknas. Byn byter bara bort sin egen del (inte det byborna äger): maten och
-// veden över det som räcker gånger gott, materialet över bufferten i förrådsmålen (behalla, steg 10.2.32), och silvret. Redskapen byts inte bort: de används.
+// byn (det gemensamma förrådet) som part i ett byte med handlaren (steg 4.4.1.3). Byn värderar och bjuder efter förrådsmålen
+// (steg 10.5.12): mat och ved efter bufferten i FORRADSMAL (för den mat byn äger: så stor del av bufferten som byn delar),
+// material efter bufferten i MATERIALMAL och redskap per grupp efter REDSKAPMAL. Värdet har tre steg: det som saknas
+// (DELA.saknar), det under bufferten (1) och det över (DELA.over). Byn bjuder bara sin egen del (inte det byborna äger) och bara
+// det över bufferten, i hela saker: maten, veden, materialen, redskapen utom det som behövs i gruppen, och silvret.
 // x, y = där den som handlar för byn står
 // det byn behåller av materialet k när den byter: bufferten i förrådsmålen (villHaAv), och utsädet (steg 10.2.32)
 const behalla = (s: State, k: string) => Math.max(arMaterial(k) ? villHaAv(s, k) : 0, utsadeKrok.av(s, k));
-export const BYTE_BYN = balans('bytebyn', {
-  gott: 3, // så många gånger det alla behöver behålla (b.kvar) har byn gott om, och kan byta bort det som är över
-});
 const bynsDel = (s: State, k: string) => { let n = amountOf(s, k); for (const p of living(s)) n -= ownsAmount(s, p, k); return Math.max(0, helt(n)); };
 function bynNod(s: State, b: Behov) { let n = 0; for (const j of b.slag) n += amountOf(s, j) * perOf(b, j); return { har: n, behover: living(s).length * b.kvar }; }
+// byns del av mat eller ved, och bufferten för den, i behovets enheter
+function bynBuffert(s: State, b: Behov) {
+  let har = 0;
+  for (const j of b.slag) har += bynsDel(s, j) * perOf(b, j);
+  const buf = b.id === 'mat' ? buffert(s, 'mat') * (s.delning?.andel ?? 1) * matPerDygn(s) : buffert(s, 'ved') * vedPerDygn(s);
+  return { har, buf };
+}
+// redskapen i gruppen g som byn har, och hur många den vill ha
+const iGruppen = (s: State, g: string) => tingOf(s).filter(t => gruppOf(t.k) === g && t.halv === undefined);
+const villGrupp = (s: State, g: string) => REDSKAPMAL[g]?.(s) ?? 1;
 export function bynBehov(s: State, k: string) {
   if (k === 'silver') return 1;
-  if (isTool(k)) return amountOf(s, k) < 1 ? DELA.saknar : DELA.over;
+  if (isTool(k)) { const g = gruppOf(k), n = iGruppen(s, g).length; return n < 1 ? DELA.saknar : n < villGrupp(s, g) ? 1 : DELA.over; }
   const b = behovMed(k);
   if (!b) { const n = amountOf(s, k); return n < 1 ? DELA.saknar : n < behalla(s, k) ? 1 : DELA.over; }
   const { har, behover } = bynNod(s, b);
-  return har < behover ? DELA.saknar : har < behover * BYTE_BYN.gott ? 1 : DELA.over;
+  if (har < behover) return DELA.saknar;
+  const { har: hb, buf } = bynBuffert(s, b);
+  return hb < buf ? 1 : DELA.over;
 }
 function bynOver(s: State, utom: readonly string[]): Vara[] {
-  const ut: Vara[] = [];
+  const ut: Vara[] = [], rest = new Map<Behov, number>(), grupper = new Map<string, number>();
   for (const k of SAK_LIST) {
-    if (utom.includes(k) || isTool(k) || !grundvarde(k)) continue;
+    if (utom.includes(k) || !grundvarde(k)) continue;
+    if (isTool(k)) {
+      // byns redskap av slaget, så länge gruppen har fler än den behöver; det sista behålls
+      const g = gruppOf(k), egna = tingOf(s).filter(t => t.k === k && t.agare === BYN && t.halv === undefined && t.hos === undefined && t.bar === undefined && t.krok === undefined);
+      let over = grupper.get(g) ?? iGruppen(s, g).length - villGrupp(s, g);
+      for (const t of egna) { if (over < 1) break; ut.push({ k, n: 1, t }); over--; }
+      grupper.set(g, over);
+      continue;
+    }
     let n = bynsDel(s, k);
     if (n < 1) continue;
     const b = behovMed(k);
-    if (b) { const { har, behover } = bynNod(s, b); n = Math.min(n, helt((har - behover * BYTE_BYN.gott) / perOf(b, k))); }
-    else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - behalla(s, k)));
+    if (b) {
+      const r = rest.get(b) ?? (() => { const { har, buf } = bynBuffert(s, b); return har - buf; })();
+      n = Math.min(n, helt(r / perOf(b, k)));
+      rest.set(b, r - Math.max(0, n) * perOf(b, k));
+    } else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - behalla(s, k)));
     if (n >= 1) ut.push({ k, n });
   }
   return ut;

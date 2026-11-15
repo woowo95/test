@@ -69,7 +69,6 @@ export const HANDEL = balans('handel', {
   koMin: 10, // den som står i kö tittar efter så här många minuter om det är hens tur
   koAvstand: 0.7, // rutor mellan dem som står i kön
   nytta: 1, // en bybo vill köpa det hen värderar så här högt (behovAv: 1 = har nytta av, DELA.saknar = saknar) eller mer
-  salja: 6, // en bybo går till handlaren för att sälja det hen har över av ett slag om det är värt så mycket silver för handlaren (steg 4.5.4.14)
   // småpratet med handlaren (steg 4.5.4.15): den som är nära (SAMTAL.radie) och gör något socialt eller handlar pratar med hen
   // ungefär en gång per pratSek sekunder. Det går bra (samma uträkning som för ett samtal med en bybo, med hens Handel som
   // charm) och ger en glad tanke på pratTanke i pratTim timmar, eller går dåligt och ger en lika ledsen. Inget annat
@@ -512,7 +511,7 @@ const bybonPart = (s: State, p: Person): Part => ({ ...personPart(s, p, true), v
 // det p har nytta av av det handlaren har, det hen saknar först
 const vill = (s: State, h: Handlare, p: Person) => h.varor.map(w => ({ w, v: behovAv(s, p, w.k) })).filter(x => x.v >= HANDEL.nytta).sort((a, b) => b.v - a.v).map(x => x.w);
 // det p har mycket mer av än hen behöver och handlaren vill ha, för silver (steg 4.5.4.14): det p har över av ett slag (det hen
-// inte behöver själv, payable i behov.ts) som är värt minst HANDEL.salja silver för handlaren, så mycket som hen kan bära.
+// inte behöver själv, payable i behov.ts) som är värt minst ett helt silver för handlaren, så mycket som hen kan bära.
 // Samma för byn (det byn har gott om), när den handlar (steg 4.5.7.4)
 const salja = (s: State, h: Handlare, p: Person) => saljaAv(s, h, bybonPart(s, p));
 function saljaAv(s: State, h: Handlare, M: Part) {
@@ -520,7 +519,7 @@ function saljaAv(s: State, h: Handlare, M: Part) {
   let plats = ledigt(h);
   for (const w of M.over(['silver'])) {
     const v = handlarVarde(s, h, w.k), n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9));
-    if (v <= 0 || n < 1 || n * grundvarde(w.k) * v < HANDEL.salja) continue;
+    if (v <= 0 || n < 1 || n * grundvarde(w.k) * v < 1) continue; // det som är värt minst ett helt silver (steg 10.5.12)
     ut.push({ ...w, n }); plats -= n * viktOf(w.k);
   }
   return ut;
