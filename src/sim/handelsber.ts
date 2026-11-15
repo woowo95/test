@@ -12,6 +12,7 @@ import { balans } from './balans';
 import { sakNamn } from './saker';
 import { NORMAL } from './kvalitet';
 import { fyll, talOrd, valjVariant } from './berattelser';
+import { bynsNamn } from './bynamn';
 
 // det argumenten frågar efter: kunden, handlarens skicklighet, det kunden vill ha (q = kvaliteten), hur mycket kunden
 // behöver ett slag (som Part.varde), relationen och hur mycket handlaren gillar kunden (−1 till 1)
@@ -52,7 +53,7 @@ export function handelBerattelse(s: State, b: ByteMinne): string {
   if (!f0) return '';
   const salj = f0.vill[0]?.k === 'silver', vara = sakNamn((salj ? f0.bud : f0.vill)[0]?.k ?? '').toLowerCase();
   const nej = b.forsok!.filter(f => !f.ja).length, d = b.rel ? b.rel[1] - b.rel[0] : 0;
-  const f = { kund: b.an, handlare: b.bn, vara, salj, byn: b.arg?.includes('byn') ?? false, bud: talOrd(b.forsok!.length), nej: talOrd(nej), nejTal: nej, upp: d > 0, ner: d < 0, avbruten: !!b.avbruten };
+  const f = { kund: b.an, handlare: b.bn, vara, salj, byn: b.arg?.includes('byn') ?? false, bud: talOrd(b.forsok!.length), nej: talOrd(nej), nejTal: nej, upp: d > 0, ner: d < 0, avbruten: !!b.avbruten, bynamn: bynsNamn(s) }; // handlaren säger byns namn, byborna säger byn (steg 10.9.5)
   let arg = (b.arg ?? []).filter(a => a !== 'langt');
   if (arg.length > ARG.max) arg = [...arg.slice(0, ARG.max - (arg.includes('irriterad') ? 1 : 0)), ...arg.includes('irriterad') ? ['irriterad'] : []];
   if (!arg.length && b.arg?.includes('langt')) arg = ['langt'];

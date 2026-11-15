@@ -3673,10 +3673,31 @@ SCENARIER.bynamn = {
       [`en sparad by utan namn heter ${SIM.bynsNamn(sparad)}`, SIM.bynsNamn(sparad) === 'Nybygget'],
       ['rubriken och flikens titel frågar bynsNamn, och laddningskortet behåller spelets namn', /<h1 id="bynamn">/.test(mall) && /document\.title = n/.test(main) && /bynsNamn\(s\)/.test(main) && /<h2>Samhällssimulatorn<\/h2>/.test(mall)],
       ...namnmallar(),
+      ...utifran(),
     ];
   },
 };
 // steg 10.9.2: namnmallarna i registret BYNAMN, hur sant varje namn är och vem som tycker om vad
+// steg 10.9.5: handlaren och grannklanen säger byns namn, byborna säger byn
+function utifran(): [string, boolean][] {
+  const s = createState(9, START);
+  s.bynamn = { namn: 'Granåsen', rad: 'gran', t: s.now };
+  const minne = (nr: number, arg: string[]): SIM.ByteMinne => ({ nr, t: s.now, a: 1, an: 'Ulf', b: 2, bn: 'Orm', ag: [], bg: [], arg, forsok: [{ vill: [{ k: 'yxa', n: 1 }], bud: [{ k: 'skinn', n: 2 }], krav: 2, bjod: 2, ja: true }] });
+  const texter = Array.from({ length: 24 }, (_, nr) => SIM.handelBerattelse(s, minne(nr, ['behov', 'fint', 'irriterad'])));
+  const med = texter.filter(x => x.includes('Granåsen'));
+  const repliker = med.every(x => !x.replace(/"[^"]*"/g, '').includes('Granåsen')); // namnet står bara i det handlaren säger
+  const k = SIM.nyKlan(s, 8, -40); (s.klaner ??= []).push(k); k.styrka = 4;
+  SIM.radDygn(s, 'plundra', k);
+  const anfall = s.log.map(l => l.text).find(x => x.includes('plundra')) ?? '';
+  const n = createState(9, START), kn = SIM.nyKlan(n, 8, -40); (n.klaner ??= []).push(kn); kn.styrka = 4;
+  SIM.radDygn(n, 'plundra', kn);
+  const anfallN = n.log.map(l => l.text).find(x => x.includes('plundra')) ?? '';
+  return [
+    [`handlaren säger byns namn i ${med.length} av 24 berättelser om en affär, alltid i det handlaren säger: ${med[0] ?? ''}`, med.length > 0 && repliker],
+    [`grannklanen säger byns namn: ${anfall}`, anfall.includes(`plundra Granåsen`)],
+    [`före dopet heter byn Nybygget även för grannarna: ${anfallN}`, anfallN.includes('plundra Nybygget')],
+  ];
+}
 function namnmallar(): [string, boolean][] {
   const s = createState(9, START), vux = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), p = vux[0];
   const k1 = SIM.kandidater(s, p).map(k => k.namn).join(', '), k2 = SIM.kandidater(createState(9, START), p).map(k => k.namn).join(', ');

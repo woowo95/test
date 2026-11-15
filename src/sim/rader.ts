@@ -25,6 +25,7 @@ import { vaderNu } from './vader';
 import { Bit, bitsOf, housesOf, roomAt } from './byggnad';
 import { DORRAR } from './byggnad';
 import { tand } from './brand';
+import { bynsNamn } from './bynamn';
 
 export const RADER = balans('rader', {
   forsvar: 0.2, // lockelsen är rikedomen minus så här stor del av försvaret
@@ -76,7 +77,8 @@ export function radDygn(s: State, tvingaSkal?: RadSkal, tvingaKlan?: Klan) {
     f.skal = val; f.rad = true; k.radT = s.now;
     if (val === 'hamnd') hamndForbered(s, f, k);
     count(s, 'rad'); count(s, 'rad_' + val);
-    const text = { plundra: `${k.namn} kommer för att plundra byn.`, hamnd: `${k.namn} kommer för att hämnas.`, heligt: `${k.namn} kommer i sin guds namn.` }[val];
+    const text = { plundra: `${k.namn} kommer för att plundra ${bynsNamn(s)}.`, // grannklanen säger byns namn (steg 10.9.5)
+      hamnd: `${k.namn} kommer för att hämnas.`, heligt: `${k.namn} kommer i sin guds namn.` }[val];
     log(s, text, 'world'); notis(s, 'anfall', text, []);
     return;
   }
