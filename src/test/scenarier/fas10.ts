@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, byggKlart, byggare, kor, klockan, medBank, setMat, tandEld } from './hjalp';
+import { SCENARIER, byggKlart, byggare, kor, klockan, medBank, setMat, tandEld, testBy } from './hjalp';
 
 // en landruta i byns närhet, d rutor öster om mitten (eller närmast efter)
 const landVid = (s: SIM.State, d: number) => {
@@ -487,6 +487,69 @@ SCENARIER.gris = {
       [`den unga grisen slaktas på hösten när fodret inte räcker (${host ?? '–'}), inte när det räcker (${mett ?? '–'}) eller på våren (${var_ ?? '–'})`, host === 'host' && !mett && !var_],
       [`den gamla grisen slaktas fast den är ensam (${gammal ?? '–'})`, gammal === 'gammal'],
       [`slakten ger hela saker: ${fick.k} fläsk, ${fick.b} ben, ${fick.sk} skinn, ${fick.t} talg`, kropp === 1 && hela && fick.k === SIM.kottAv(p, 10) && fick.b === 2 && fick.sk === 1 && fick.t === 5],
+    ];
+  },
+};
+
+SCENARIER.drag = {
+  text: 'Steg 10.10.14: binas drag. Ängsblommor, bärbuskar och ett bönfält inom räckhåll höjer draget var för sig, utom räckhåll gör de det inte, rovor ger inget, hösten och istiden ger noll, torkan sänker och talet stannar vid 1. Scenariot skriver ut draget i utkanten av de sparade testbyarna',
+  kor: () => {
+    const { DRAGKALLOR, BIN, drag, dragDelar, takenOf, groundOf, BUSKE, BARBUSKE, nyKalender, VAR, SOMMAR, HOST, ISTID, inMap } = SIM;
+    const s = createState(4, START); let W = SIM.W; W = SIM.W;
+    s.kal = nyKalender(s.now, VAR);
+    // en ruta där ängsblommor växer, med land 15 rutor åt väster: punkten P ligger 5 rutor väster om den
+    takenOf(s).blomma!.fill(0);
+    let bi = -1; for (let i = 0; i < W * SIM.H && bi < 0; i++) if (i % W >= 25 && i % W < W - 25 && SIM.fyndAt(s, 'blomma', i) > 0.5) bi = i;
+    const px = bi % W - 5, py = Math.floor(bi / W);
+    // inga blommor och inga buskar någonstans till att börja med
+    takenOf(s).blomma!.fill(1);
+    const g = groundOf(s); const b0 = g.buske ? g.buske.slice() : undefined; if (g.buske) g.buske.fill(0); else g.buske = new Uint8Array(W * SIM.H);
+    s.falt = [];
+    const tom = drag(s, px, py);
+    // ängsblommorna 5 rutor bort, och samma ruta sedd från 15 rutor bort
+    const vid = (dx: number) => (py * W + px + dx);
+    takenOf(s).blomma![vid(5)] = 0;
+    const blomVid = SIM.fyndAt(s, 'blomma', vid(5)), blomNara = DRAGKALLOR.blomma.summa(s, px, py, VAR, false), blomLangt = DRAGKALLOR.blomma.summa(s, px - 10, py, VAR, false);
+    takenOf(s).blomma![vid(5)] = 1;
+    // en bärbuske 4 rutor bort och en 14 rutor bort
+    g.buske![vid(4)] = BUSKE + BARBUSKE;
+    const buskVar = DRAGKALLOR.barbuske.summa(s, px, py, VAR, false), buskSommar = DRAGKALLOR.barbuske.summa(s, px, py, SOMMAR, false), buskTorr = DRAGKALLOR.barbuske.summa(s, px, py, VAR, true);
+    g.buske![vid(4)] = 0; g.buske![vid(14)] = BUSKE + BARBUSKE;
+    const buskLangt = DRAGKALLOR.barbuske.summa(s, px, py, VAR, false); g.buske![vid(14)] = 0;
+    // ett bönfält med fyra rutor som växer, 3 rutor bort; samma fält med rovor; och bönfältet 14 rutor bort
+    const falt = (x: number, gr: SIM.GrodaSlag): SIM.Falt => ({ id: 992, x, y: py, w: 4, dir: 1, n: 4, agare: 0, steg: 'vaxer', klara: 4, kvar: 0, rord: s.now, groda: gr, r: [0, 1, 2, 3].map(() => ({ st: 'vaxer' as const, g: gr, v: 0.5 })) });
+    s.falt = [falt(px + 3, 'bonor')];
+    const bonor = DRAGKALLOR.grodor.summa(s, px, py, VAR, false), bonorHost = dragDelar(s, px, py).grodor;
+    s.falt = [falt(px + 3, 'rovor')]; const rovor = DRAGKALLOR.grodor.summa(s, px, py, VAR, false);
+    s.falt = [falt(px + 14, 'bonor')]; const bonLangt = DRAGKALLOR.grodor.summa(s, px, py, VAR, false);
+    // årstiderna och taket
+    s.falt = [falt(px + 3, 'bonor')];
+    const iVar = drag(s, px, py);
+    s.kal = nyKalender(s.now, HOST); const iHost = drag(s, px, py);
+    s.kal = nyKalender(s.now, ISTID); const iIstid = drag(s, px, py);
+    s.kal = nyKalender(s.now, VAR);
+    takenOf(s).blomma!.fill(0); for (let i = 0; i < W * SIM.H; i++) if (inMap(i % W, Math.floor(i / W))) g.buske![i] = BUSKE + BARBUSKE;
+    const fullt = drag(s, px, py);
+    if (b0) g.buske!.set(b0);
+    // draget i utkanten av de sparade testbyarna, på våren och sommaren (för att kunna sätta BIN.dragFullt)
+    const ut: string[] = [];
+    for (const dygn of [10, 30]) {
+      const t = SIM.cloneState(testBy(dygn)); W = SIM.W;
+      const m = SIM.bynsMitt(t), R = Math.ceil(Math.sqrt(SIM.omrade(t).n / Math.PI)) + 3;
+      for (const ai of [VAR, SOMMAR]) {
+        t.kal = nyKalender(t.now, ai);
+        const v = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => { const x = Math.floor(m.x + dx * R), y = Math.floor(m.y + dy * R); return inMap(x, y) ? drag(t, x, y) : 0; });
+        ut.push(`${dygn} dygn ${ai === VAR ? 'vår' : 'sommar'}: ${v.map(x => x.toFixed(2)).join(' ')}`);
+      }
+    }
+    console.log(`     draget i utkanten (BIN.dragFullt ${BIN.dragFullt}): ${ut.join('; ')}`);
+    return [
+      [`utan blommor, buskar och fält är draget noll (${tom})`, tom === 0],
+      [`en ruta ängsblommor inom räckhåll ger det den har (${blomNara.toFixed(2)}), utom räckhåll inget (${blomLangt})`, blomNara > 0 && Math.abs(blomNara - blomVid) < 1e-9 && blomLangt === 0],
+      [`en bärbuske ger 0,5 på våren (${buskVar}), 0,25 på sommaren (${buskSommar}), 0,3 i torkan (${buskTorr.toFixed(2)}) och inget utom räckhåll (${buskLangt})`, buskVar === 0.5 && buskSommar === 0.25 && Math.abs(buskTorr - 0.3) < 1e-9 && buskLangt === 0],
+      [`fyra rutor bönor ger 4 (${bonor}), rovor inget (${rovor}), och bönorna utom räckhåll inget (${bonLangt})`, bonor === 4 && rovor === 0 && bonLangt === 0 && bonorHost === 4],
+      [`draget är summan delad med ${BIN.dragFullt} på våren (${iVar}), och noll på hösten (${iHost}) och i istiden (${iIstid})`, Math.abs(iVar - 4 / BIN.dragFullt) < 1e-9 && iHost === 0 && iIstid === 0],
+      [`talet stannar vid 1 (${fullt})`, fullt === 1],
     ];
   },
 };
