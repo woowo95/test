@@ -336,6 +336,17 @@
     const g = t.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, t.width, t.height); return t.toDataURL('image/png').split(',')[1];
   }
 
+  // en animation (versioner med rutor): varje version på en rad, bild för bild, som PNG för Claude att titta på
+  function rutorPng(id, skala = 4) {
+    const s = VAL.find(x => x.id === id); if (!s) return null;
+    const P = P0(), G = 4, rader = s.versioner.map(v => Array.from({ length: v.rutor || 1 }, (_, r) => { const B = markBild(v.w, v.h, P); try { v.rita(B, P, r); } catch (e) {} return B; }));
+    const W = Math.max(...rader.map(r => r.reduce((n, B) => n + B.w + G, 0))), H = rader.reduce((n, r) => n + Math.max(...r.map(B => B.h)) + G, 0), A = Bild(W, H, P);
+    for (let i = 0; i < A.px.length; i++) A.px[i] = P.i('kol', 0);
+    let y = 0; for (const r of rader) { let x = 0; for (const B of r) { klistra(A, B, x, y); x += B.w + G; } y += Math.max(...r.map(B => B.h)) + G; }
+    const c = document.createElement('canvas'); tillCanvas(A, c, 0); const t = document.createElement('canvas'); t.width = A.w * skala; t.height = A.h * skala;
+    const g = t.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, t.width, t.height); return t.toDataURL('image/png').split(',')[1];
+  }
+
   // en API-ritning (rader) i sitt sammanhang som PNG: på gräset bredvid en kolonist och godkända saker (bilder.mjs granskning)
   function iSpeletPng(rader, skala = 4, slag = []) {
     const M = iSpelet(bildAvRader(rader), P0(), slag), c = document.createElement('canvas'); tillCanvas(M, c, 0);
@@ -352,5 +363,5 @@
       versioner: d.versioner.map(v => ({ text: v.ide || '', w: Math.max(...v.rader.map(r => r.length)) + 4, h: v.rader.length + 4, rita: B => klistra(B, bildAvRader(v.rader), 2, 2) })) });
   }
 
-  window.KONTROLL = { SLAG, KONTROLLNAMN, GRANS, slagAv, symmetri, perspektiv, likhet, olika, bildAvRader, kort, rader, olikaRader, sammanhang, storsta, iSpelet, iSpeletPng, visa, allt, kortPng };
+  window.KONTROLL = { SLAG, KONTROLLNAMN, GRANS, slagAv, symmetri, perspektiv, likhet, olika, bildAvRader, kort, rader, olikaRader, sammanhang, storsta, iSpelet, iSpeletPng, visa, allt, kortPng, rutorPng };
 })();
