@@ -9,6 +9,7 @@ import { clamp, rnd } from './slump';
 import { ALDER, KROPP, ageOf, alive, byId, count, isParent, living, log, stat, think } from './folk';
 import { kronika } from './historik';
 import { upplev } from './uppvaxt';
+import { SKRIFT } from './skriftTal';
 import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, troOf, troende } from './religion';
 import { ageIndex, ageStart } from './tid';
 import { getMap } from './karta';
@@ -188,17 +189,20 @@ function prastSteg(s: State, tr: Tro, folk: Person[]) {
 }
 
 // ---------- profeten (steg 8.5.10) ----------
+// chansen att profetens syn grundar en ny tro och hur mycket den annars flyttar en skala
+export const profetTal = (tr: Tro) => ({ nyTro: KULT.nyTro * (tr.skrift ? SKRIFT.heligNyTro : 1), skala: KULT.profetSkala * (tr.skrift ? SKRIFT.heligTrog : 1) });
 function profetSteg(s: State, p: Person) {
   if (p.profet || p.tro === undefined || andlighet(s, p) < KULT.profetAnde || stat(p, 'karisma', s.now) < KULT.profetKarisma || rnd(s, 'tro', p) >= KULT.profetChans) return;
   const tr = troOf(s, p.tro);
   if (!tr) return;
   p.profet = true; count(s, 'profet'); p.fame.push('Fick en syn');
-  if (rnd(s, 'tro', p) < KULT.nyTro && levande(s).length < TRO.takTro) {
+  // en tro med en helig skrift (steg 10.6.3): profeten grundar oftare en ny tro, på en ny tolkning av kvädena, och synen flyttar skalorna mindre
+  if (rnd(s, 'tro', p) < profetTal(tr).nyTro && levande(s).length < TRO.takTro) {
     const t = `${p.name} fick en syn och lämnade ${troNamn(tr).toLowerCase()} för något nytt.`;
     log(s, t, 'rel', [p.id]); kronika(s, t, 'tro');
-    p.tro = undefined; grunda(s, p, 'drom'); return;
+    p.tro = undefined; grunda(s, p, tr.skrift ? 'tolkning' : 'drom'); return;
   }
-  const skala = (['natur', 'manga'] as const)[Math.floor(rnd(s, 'tro', p) * 2)], d = (rnd(s, 'tro', p) < 0.5 ? -1 : 1) * KULT.profetSkala;
+  const skala = (['natur', 'manga'] as const)[Math.floor(rnd(s, 'tro', p) * 2)], d = (rnd(s, 'tro', p) < 0.5 ? -1 : 1) * profetTal(tr).skala;
   tr[skala] = clamp(tr[skala] + d, 0, 100);
   const t = `${p.name} fick en syn, och ${troNamn(tr).toLowerCase()} blev inte sig lik.`;
   log(s, t, 'rel', [p.id]); kronika(s, t, 'tro');

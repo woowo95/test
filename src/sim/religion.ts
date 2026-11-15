@@ -1,4 +1,5 @@
 import { clamp, gauss, pick, rnd } from './slump';
+import { SKRIFT } from './skriftTal';
 import { troshusKlart } from './troshus';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
@@ -221,6 +222,11 @@ export const TECKEN = {
     bakom: ['Den som talar i sömnen', 'Förfäderna', 'Rösten i mörkret'],
     vill: ['att man berättar sina drömmar', 'att man sover med huvudet mot elden', 'att man lyssnar på de gamla'],
     svek: ['drömmarna blir mardrömmar', 'man går vilse i skogen', 'de döda kommer tillbaka'] },
+  // en ny tolkning av de heliga kvädena (steg 10.6.3): profeten i en tro med en helig skrift grundar en ny tro på den
+  tolkning: { text: 'en ny tolkning av de heliga kvädena', natur: 60, omr: 'doden', sym: 'tro_drom', namn: ['De nya ordens tro', 'Tolkarnas folk', 'Den andra läsningens väg'],
+    bakom: ['Den som talar genom kvädena', 'Rösten bakom orden', 'De gamla orden'],
+    vill: ['att man läser kvädena på nytt', 'att man lyssnar på det som inte sägs', 'att man ifrågasätter de gamla prästerna'],
+    svek: ['orden tystnar', 'kvädena glöms', 'de gamla prästerna får rätt'] },
   // fler tecken (steg 8.5.18)
   tornado: { text: "tornadon som gick förbi", natur: 20, omr: 'aska', sym: 'tro_blixt', namn: ["Stormens tro", "Virvelns folk", "Vindens väg"],
     bakom: ["Den som går på himlen", "Vindens moder", "Den vridna"], vill: ["att man binder fast det man äger", "att man lämnar en bit åt vinden", "att ingen ropar i blåsten"], svek: ["vinden tar huset", "stormen kommer tillbaka", "taket lyfter i natten"] },
@@ -258,7 +264,7 @@ const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
 export const TECKENTAL = balans('tecken', {
   blixt: 0.3, brand: 0.3, vinterSlut: 0.3, torkaSlut: 0.3, flodSlut: 0.3, jakt: 0.3, barnFrisk: 0.3, drom: 0.3,
   tornado: 0.25, brandStopp: 0.2, overlevde: 0.2, barnAska: 0.2, ingenDog: 0.1, skord: 0.1, dubbelt: 0.15, fynd: 0.1, svampsyn: 0.25, dodDrom: 0.15, frosjo: 0.1, bonSvar: 0.2,
-  tvillingar: 0.2, bjornVande: 0.1,
+  tvillingar: 0.2, bjornVande: 0.1, tolkning: 0, // tolkningen tolkas inte ur ett tecken: profeten grundar tron direkt (kult.ts)
 } satisfies Record<TeckenTyp, number>);
 export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{om}', om ?? '');
 
@@ -269,7 +275,7 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // sk: värdet på de skalor som låsts upp efter de två första, gudar: trons gudar (steg 4.1.5)
 export interface Tro { hogtidDag?: number; // dygnet då högtiden hölls: också en helig dag (steg 10.3.16)
   bud?: import('./kyrka').AntagetBud[]; plan?: import('./troshus').TrosPlan; planRutor?: number; /* planen för trons hus och dess golvrutor (steg 10.3.18) */ planVuxna?: number; planNej?: Record<string, { pa: number; golv: number }>; /* de vuxna troende när storleken avgjordes, och en möbel som fick nej: skalans sida och husets golvrutor då (steg 10.3.21) */ roster?: import('./rost').Omrostning[]; nedrostat?: Record<string, number>; // trons omröstningar, och det som röstats ned och vilar (steg 10.3.2)
-  forrad?: Record<string, number>; /* bara i äldre sparfiler (före steg 10.3.17) */ hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; /* hov, tempel och gudabild bara i äldre sparfiler (före steg 10.3.19) */ fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; hogtid?: number; heligKand?: { x: number; y: number; t: number; om: string }[]; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; /* bara i äldre sparfiler (före steg 10.4.6) */ id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
+  skrift?: boolean; /* tron har en helig skrift (steg 10.6.3, skrift.ts), räknat en gång i timmen */ forrad?: Record<string, number>; /* bara i äldre sparfiler (före steg 10.3.17) */ hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; /* hov, tempel och gudabild bara i äldre sparfiler (före steg 10.3.19) */ fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; hogtid?: number; heligKand?: { x: number; y: number; t: number; om: string }[]; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; /* bara i äldre sparfiler (före steg 10.4.6) */ id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
 // tolkningen som meningar: "Den som bor i åskmolnen vill att man tystnar när det mullrar. Om man sviker: blixten slår ner i ens hus."
@@ -426,16 +432,17 @@ const SPRID_SLAG: Record<string, number> = { 'djupt samtal': 2, 'berättelse': 1
 // a talar med b (steg 4.1.2.2): den som tror försöker övertyga den som inte tror på något. Chansen beror på talarens karisma och
 // andlighet, lyssnarens andlighet, hur mycket de tycker om varandra och om ett tecken nyss bekräftat tron. Två som tror
 // likadant stärker varandra. Byta tro kommer med steg 10.1.2.4. Drar ur talarens följd 'tro'
+// chansen att a får b, som inte tror på något, att tro på tr i ett samtal som väger f
+export const spridChans = (s: State, tr: Tro, a: Person, b: Person, r: Rel, f: number) => TRO.sprid * f * (stat(a, 'karisma', s.now) / TRO.spridKarisma) * (andlighet(s, a) / TRO.spridAnde) * (andlighet(s, b) / TRO.spridAnde) ** 2
+  * Math.max(0, 1 + r.op / TRO.spridRel) * (s.now - tr.bekr < TRO.bekrTid * DAY ? TRO.bekrFaktor : 1) * (tr.skrift ? SKRIFT.heligSprid : 1); // en tro med en helig skrift sprids lättare (steg 10.6.3)
 export function predika(s: State, a: Person, b: Person, r: Rel, kind: string, ganger = 1) { // ganger: ett framträdande väger som så många samtal (framtradande.ts)
   const tr = troOf(s, a.tro), f = SPRID_SLAG[kind];
   if (!tr || !f || !alive(b) || ageOf(b, s.now) < UPPV.fran) return;
   if (b.tro === tr.id) { b.troStyrka = Math.min(100, (b.troStyrka ?? 0) + TRO.samtalStyrka); return; }
   // byta tro (steg 8.5.12): den som har en annan tro lyssnar när tron svikit hen
-  if (b.tro !== undefined) { const annan = troOf(s, b.tro); if (annan && rnd(s, 'tro', a) < bytaChans(b, skalaV(tr, 'oppen') ?? 50) * TRO.spridBy * f * ganger) { b.tro = tr.id; b.troStyrka = TRO.styrkaNy; b.tvivel = undefined; count(s, 'tro_byte'); log(s, `${b.name} lämnade ${troNamn(annan).toLowerCase()} för ${troNamn(tr).toLowerCase()}.`, 'rel', [a.id, b.id]); } return; }
+  if (b.tro !== undefined) { const annan = troOf(s, b.tro); if (annan && rnd(s, 'tro', a) < bytaChans(b, skalaV(tr, 'oppen') ?? 50) * TRO.spridBy * f * ganger * (tr.skrift ? SKRIFT.heligSprid : 1)) { b.tro = tr.id; b.troStyrka = TRO.styrkaNy; b.tvivel = undefined; count(s, 'tro_byte'); log(s, `${b.name} lämnade ${troNamn(annan).toLowerCase()} för ${troNamn(tr).toLowerCase()}.`, 'rel', [a.id, b.id]); } return; }
   if (andlighet(s, b) < TRO.spridMin) return;
-  const chans = TRO.sprid * f * ganger * (stat(a, 'karisma', s.now) / TRO.spridKarisma) * (andlighet(s, a) / TRO.spridAnde) * (andlighet(s, b) / TRO.spridAnde) ** 2
-    * Math.max(0, 1 + r.op / TRO.spridRel) * (s.now - tr.bekr < TRO.bekrTid * DAY ? TRO.bekrFaktor : 1);
-  if (rnd(s, 'tro', a) >= chans) return;
+  if (rnd(s, 'tro', a) >= spridChans(s, tr, a, b, r, f * ganger)) return;
   b.tro = tr.id; b.troStyrka = TRO.styrkaNy;
   count(s, 'tro_sprid');
   log(s, `${a.name} har övertygat ${b.name}: ${tr.bakom} vill ${tr.vill}.`, 'rel', [a.id, b.id]);

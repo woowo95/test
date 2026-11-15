@@ -1092,6 +1092,28 @@ SCENARIER.heligsten = {
     ];
   },
 };
+SCENARIER.heligverkan = {
+  text: 'Steg 10.6.3: de heliga skrifternas verkan. Samma tro med och utan helig sten: chansen att sprida tron i ett samtal, hur mycket en profets syn flyttar skalorna, rösterna för att ta bort ett bud och chansen till en ny tro, och verkan försvinner när stenen är borta',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2), a = v[0], b = nyInvanare(s, 'k', 30);
+    b.tro = undefined; b.andlig = 90;
+    const r = SIM.getRel(s, a, b), bud = { tro: tr.id, id: 'prast' };
+    const motstandare = nyInvanare(s, 'm', 30); motstandare.tro = undefined; motstandare.andlig = 0;
+    const mat = () => ({ sprid: SIM.spridChans(s, tr, a, b, r, 1), ...SIM.profetTal(tr), bort: SIM.FRAGOR.taBortBud.rost(s, motstandare, bud).v });
+    SIM.runstenTimme(s); const utan = mat();
+    SIM.runstenarOf(s).push({ id: 1, x: 2, y: 2, t: s.now, slag: 'helig', av: { id: a.id, namn: a.name }, om: { id: tr.id, namn: 'Rösternas väg' }, tro: tr.id, text: 'Rösten vill att man lyssnar.', runor: SIM.runor('Rösten vill att man lyssnar.') });
+    SIM.runstenTimme(s); const med = mat();
+    s.runstenar = []; SIM.runstenTimme(s); const borta = mat();
+    const f = (x: number) => Math.round(x * 1e6) / 1e6, g = (x: number) => Math.round(x * 100) / 100;
+    return [
+      [`tron sprids lättare (${f(utan.sprid)} → ${f(med.sprid)})`, Math.abs(med.sprid / utan.sprid - SIM.SKRIFT.heligSprid) < 1e-9],
+      [`synen flyttar skalorna mindre (${utan.skala} → ${med.skala})`, med.skala === utan.skala * SIM.SKRIFT.heligTrog],
+      [`buden är svårare att rösta bort (${g(utan.bort)} → ${g(med.bort)})`, utan.bort > 0 && Math.abs(med.bort - utan.bort * SIM.SKRIFT.heligTrog) < 1e-9],
+      [`profeten grundar oftare en ny tro (${utan.nyTro} → ${g(med.nyTro)})`, Math.abs(med.nyTro - utan.nyTro * SIM.SKRIFT.heligNyTro) < 1e-9],
+      ['verkan försvinner när skriften är borta', JSON.stringify(borta) === JSON.stringify(utan)],
+    ];
+  },
+};
 // d dör, och p bär hen och begraver: kroppens väg och samlingen ur buden som gällde när hen dog (steg 10.4.5)
 function begravHela(s: State, p: Person, d: Person) {
   SIM.die(s, d, 'alderdom');
