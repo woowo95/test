@@ -1564,6 +1564,42 @@ SCENARIER.budget = {
   },
 };
 
+SCENARIER.matbudget = {
+  text: 'Steg 10.5.8: med en matdel i budgeten delas all mat i byns förråd mellan matdelarna efter vikterna, högst det delens folk äter på ett år, och man äter ur byns förråd bara ur en del som ger en mat; det ingen del fått ligger kvar. Gästabudet hålls det år delen fått nog med mat, och utan matdelar äter alla som förut',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s);
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }] } as unknown as State['styre'];
+    const ppl = living(s), barn = ppl.find(q => ageOf(q, s.now) < 14)!, vuxen = ppl.find(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 60 && !SIM.ligger(q, s.now))!;
+    const maten = (n: number) => { for (const k of SIM.FOOD) setAmount(s, k, 0); put(s, 'bar', n); };
+    const tot = (id: string) => Object.values(s.budget?.fick?.[id] ?? {}).reduce((a, n) => a + n, 0);
+    // utan matdelar äter alla som förut
+    s.budget = { delar: [{ id: 'byggen', vikt: 1 }] }; maten(100); SIM.budgetDygn(s);
+    const somForut = SIM.takeFood(s, 0.5, vuxen).n > 0 && SIM.takeFood(s, 0.5, barn).n > 0;
+    // bara delen för barn, gamla och sjuka: barnet äter ur förrådet, men inte en frisk vuxen utan egen mat
+    s.budget = { delar: [{ id: 'svaga', vikt: 1 }] }; maten(100); SIM.budgetDygn(s);
+    const svagaFick = tot('svaga'), behov = Math.ceil(SIM.BUDGET.svaga.mat!.behov(s) - 1e-9);
+    const barnAt = SIM.takeFood(s, 0.5, barn).n > 0, vuxenAt = SIM.takeFood(s, 0.5, vuxen).n;
+    // med lite mat lämnar ett gästabud med stor vikt de svaga med mindre
+    const lite = Math.max(1, Math.floor(behov / 2));
+    s.budget = { delar: [{ id: 'svaga', vikt: 1 }] }; maten(lite); SIM.budgetDygn(s);
+    const ensam = tot('svaga');
+    s.budget = { delar: [{ id: 'svaga', vikt: 0.25 }, { id: 'gastabud', vikt: 1 }] }; maten(lite); SIM.budgetDygn(s);
+    const medFest = tot('svaga');
+    // med nog med mat hålls gästabudet: alla äter ur det och missnöjet sjunker
+    for (const p of ppl) p.missnoje = 0.5;
+    maten(1000); SIM.budgetDygn(s);
+    const fest = !!s.budget?.fest && vuxen.missnoje! < 0.5 && SIM.takeFood(s, 0.5, vuxen).n > 0;
+    return [
+      ['utan matdelar äter alla ur byns förråd som förut', somForut],
+      [`delen får högst det dess folk äter på ett år (${svagaFick} av ${behov})`, svagaFick === behov && behov > 0],
+      [`med bara delen för de svaga äter barnet ur förrådet men inte en frisk vuxen (${vuxenAt})`, barnAt && vuxenAt === 0],
+      [`ett gästabud med stor vikt lämnar de svaga med mindre (${ensam} → ${medFest})`, medFest < ensam],
+      ['med nog med mat hålls gästabudet: alla äter ur det och missnöjet sjunker', fest],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {

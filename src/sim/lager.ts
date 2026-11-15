@@ -675,6 +675,8 @@ export function setStock(s: State, m: Record<string, number>) { for (const k in 
 export const SKAMD = balans('skamd', { matt: 0.3 }); // under en fjärdedel i skick kan maten ge magsjuka (eat i behov.ts)
 export function skickAv(s: State, k: string) { let n = 0, c = 0; for (const a of stored(s, k)) { n += a.n; c += a.n * a.c; } return n > 0 ? c / n : 1; }
 export const skickKrav = (p: Person) => SKAMD.matt * clamp(p.hunger / KROPP.hungrig, 0, 1);
+// budgetens matdelar (steg 10.5.8): ägarna i förrådet som p får äta ur, utöver sitt eget och byns (budget.ts)
+export const budgetMatKrok: { f?: (s: State, p: Person) => number[] } = {};
 export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
   let got = 0, cw = 0; const per: Record<string, number> = {};
   const krav = p ? skickKrav(p) : 0;
@@ -684,9 +686,13 @@ export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
     if (p && SAK_ART[k] && heligtAvstar(s, p, SAK_ART[k], p.hunger <= HELIGTDJUR.hunger)) continue; // det heliga djurets kött, utom i svält (steg 10.3.15)
     if (p && matAvstar(s, p, k)) continue; // maten tron förbjuder, utom i svält (steg 10.3.16)
     const v = Math.min(n - got, amountOf(s, k), takeLimit(s, k, p, fran));
-    if (v <= 1e-12) continue;
-    const r = takeOwn(s, k, v, p, false, fran?.id);
-    got += r.n; cw += r.n * r.c; per[k] = (per[k] ?? 0) + r.n;
+    if (v > 1e-12) { const r = takeOwn(s, k, v, p, false, fran?.id); got += r.n; cw += r.n * r.c; per[k] = (per[k] ?? 0) + r.n; }
+    if (p && !fran && budgetMatKrok.f) for (const o of budgetMatKrok.f(s, p)) { // sedan ur en matdel som ger p mat
+      if (n - got <= 1e-12) break;
+      const m = Math.min(n - got, ownsId(s, o, k));
+      if (m <= 1e-12) continue;
+      const r = takeOwn(s, k, m, p, true, o); got += r.n; cw += r.n * r.c; per[k] = (per[k] ?? 0) + r.n;
+    }
   }
   return { n: got, c: got > 0 ? cw / got : 1, per };
 }
