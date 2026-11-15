@@ -3059,3 +3059,40 @@ SCENARIER.ryktesarv = {
     ];
   },
 };
+SCENARIER.skvaller = {
+  text: 'Skvallerbyttor (steg 10.8.6): den som berättar ett dåligt rykte om en annan får lite av intrycket skvallerbytta hos den som lyssnar (händelsen pratade illa om, 0,08), en enstaka gång är glömd efter några dygn, den som gör det ofta bygger upp intrycket, och goda rykten och det som framförs på en scen ger inget. Seden Pratsamhet och Förtegenhet låses upp efter 20 dåliga rykten: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen tvärtom',
+  kor: () => {
+    const by = () => {
+      const t = createState(9, START);
+      klockan(t, 11);
+      const a = nyInvanare(t, 'm', 30), b = nyInvanare(t, 'k', 30), c = nyInvanare(t, 'm', 30);
+      a.intryck = [{ om: c.id, namn: c.name, k: 'tjuv', v: 1, c: 1, t: t.now, bev: [{ h: 'stold', t: t.now, sett: true }] }, { om: c.id, namn: c.name, k: 'skicklig', v: 1, c: 1, t: t.now, bev: [{ h: 'masterverk', t: t.now, sett: true }] }];
+      return { t, a, b, c };
+    };
+    const skv = (x: ReturnType<typeof by>) => SIM.intryckOm(x.b, x.a.id, 'skvaller');
+    const ber = (x: ReturnType<typeof by>, k: SIM.IntryckTyp) => SIM.beratta(x.t, x.a, x.b, x.a.intryck!.find(e => e.k === k)!, getRel(x.t, x.a, x.b));
+    const en = by(); ber(en, 'tjuv'); const v1 = skv(en)?.v ?? 0, bev = skv(en)?.bev?.[0]?.h;
+    SIM.glomRykten(en.t, 96); const glomt = !skv(en);
+    const gott = by(); ber(gott, 'skicklig'); const gottSkv = !!skv(gott);
+    const scen = by(); SIM.beratta(scen.t, scen.a, scen.b, scen.a.intryck![0]!, getRel(scen.t, scen.a, scen.b), 1); const scenSkv = !!skv(scen);
+    const ofta = by(); for (let i = 0; i < 12; i++) { ber(ofta, 'tjuv'); SIM.glomRykten(ofta.t, 2); ofta.t.now += 2 * SIM.HOUR; }
+    const vOfta = skv(ofta)?.v ?? 0, oppen = SIM.sedOppen(ofta.t, 'prat');
+    // 20 dåliga rykten låser upp seden
+    const tjugo = by(); for (let i = 0; i < 19; i++) ber(tjugo, 'tjuv'); const fore = SIM.sedOppen(tjugo.t, 'prat'); ber(tjugo, 'tjuv'); const efter = SIM.sedOppen(tjugo.t, 'prat');
+    const pratsam = by(); pratsam.t.seder.v.prat = 1; ber(pratsam, 'tjuv');
+    const forteg = by(); forteg.t.seder.v.prat = -1; ber(forteg, 'tjuv');
+    // hur ofta: samma samtal många gånger i en pratsam och en förtegen by
+    const antal = (prat: number) => { const x = by(); x.t.seder.v.prat = prat; for (let i = 0; i < 400; i++) SIM.skvaller(x.t, x.a, x.b, getRel(x.t, x.a, x.b), false); return x.t.stat?.rykte_berattat ?? 0; };
+    const nP = antal(1), nM = antal(0), nF = antal(-1);
+    return [
+      [`ett dåligt rykte: lyssnaren tycker lite att berättaren är en skvallerbytta (${v1.toFixed(2)}, ${bev})`, Math.abs(v1 - 0.08) < 1e-9 && bev === 'pratadeIlla'],
+      [`en enstaka gång är glömd efter fyra dygn (fyra år i spelet): ${glomt}`, glomt],
+      [`ett gott rykte ger inget (${gottSkv}), inte heller det som framförs på en scen (${scenSkv})`, !gottSkv && !scenSkv],
+      [`den som gör det ofta bygger upp intrycket (${vOfta.toFixed(2)} efter 12 gånger)`, vOfta > 0.4],
+      [`seden låses upp vid det tjugonde dåliga ryktet (före ${fore}, efter ${efter}; 12 räckte inte: ${oppen})`, !fore && efter && !oppen],
+      [`full Pratsamhet: skvallret väger inget (${!!skv(pratsam)}); full Förtegenhet: dubbelt (${(skv(forteg)?.v ?? 0).toFixed(2)})`, !skv(pratsam) && Math.abs((skv(forteg)?.v ?? 0) - 0.16) < 1e-9],
+      [`rykten berättas oftare i en pratsam by (${nP}) än i mitten (${nM}) och i en förtegen (${nF})`, nP > nM * 1.3 && nF < nM * 0.7],
+      [`intrycket har ett binamn och en symbol`, SIM.BINAMN.skvaller.namn.length >= 4 && SIM.INTRYCK.skvaller.som === 'en skvallerbytta'],
+    ];
+  },
+};

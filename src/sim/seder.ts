@@ -73,6 +73,8 @@ const DEF = {
   natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
   andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: q => dev(q.minne) * 0.05 }, // steg 8.6.1
   rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
+  // steg 10.8.6: låst tills byn berättat RYKTE.pratOppna dåliga rykten (rykten.ts). Den nyfikna och karismatiska drar åt Pratsamhet, den empatiska åt Förtegenhet
+  prat: { pos: 'Pratsamhet', neg: 'Förtegenhet', effect: 'Hur fritt man talar om andra: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen by tvärtom.', dra: q => (dev(q.nyfikenhet) + dev(q.karisma)) * 0.5 - dev(q.empati) * 0.5 },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
 export const SEDER: Record<Sed, SedDef> = DEF;

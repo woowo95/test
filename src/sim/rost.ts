@@ -214,7 +214,7 @@ export function oppnaSed(s: State, k: Sed) {
   s.seder.v[k] = clamp(v, -1, 1);
   log(s, `Byn börjar fundera på ${SED_NAMN[k] ?? k}.`, 'world');
 }
-const SED_NAMN: Partial<Record<Sed, string>> = { fortjanst: 'om det är dugligheten eller släkten som ska räknas', fejd: 'om konflikter ska lösas med ord eller med styrka' };
+const SED_NAMN: Partial<Record<Sed, string>> = { fortjanst: 'om det är dugligheten eller släkten som ska räknas', fejd: 'om konflikter ska lösas med ord eller med styrka', prat: 'om det är rätt att tala om andra' };
 
 // ---------- missnöjet (steg 8.3.10) ----------
 export function missnojeTimme(s: State) {

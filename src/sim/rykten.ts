@@ -10,6 +10,7 @@ import { klenod } from './kvalitet';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { tystFaktor } from './styre';
+import { oppnaSed } from './rost';
 import type { Sed } from './seder';
 import { vanaSumma } from './vanor';
 import { ACTS, Act } from './handlingar';
@@ -35,7 +36,9 @@ export const RYKTE = balans('rykte', {
   paminnStark: 0.15, // en påminnelse om en död gör minnet så här mycket säkrare, gånger tiden sedan förra påminnelsen delat med paminnDygn (högst 1)
   vMax: 1.5, // ett intryck är som starkast så här
   arv: 0.25, // så stor del av förälderns anseende räknas i barnets, gånger 1 + seden Härkomst och Förtjänst (steg 10.8.5)
-  dampMin: 0.1, // så mycket blir som minst kvar av ett val som ett intryck dämpar (steg 10.8.4)
+  dampMin: 0.1,
+  pratOfta: 0.5, // i en pratsam by berättas rykten upp till så här mycket oftare, i en förtegen så här mycket mer sällan (steg 10.8.6)
+  pratOppna: 20, // seden Pratsamhet och Förtegenhet låses upp när så här många dåliga rykten berättats i byn // så mycket blir som minst kvar av ett val som ett intryck dämpar (steg 10.8.4)
   syn: 10, // de som var närmare än så här många rutor (och vakna) såg det som hände ...
   synDimma: 0.6, // ... och så här mycket kortare i den tätaste dimman (steg 3.7.11)
   sjalvSaker: 1, // den som såg det själv är så här säker ...
@@ -136,6 +139,7 @@ const IDEF = {
   vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺', sed: { krig: 1 }, som: 'en vargdödare', betyder: 'Har dödat en varg.' }, // dödade en varg (steg 3.7.1, varg.ts)
   bjorndodare: { namn: 'björndödare', tecken: 1, op: 10, sym: '🐾', sed: { fejd: 1, krig: 1 }, som: 'en björndödare', betyder: 'Har dödat en björn.' }, // dödade en björn (steg 6.6.6, bjorn.ts)
   pahittig: { namn: 'påhittig', tecken: 1, op: 8, sym: '{sym_hjarna}', sed: { nyfikenhet: 2 }, betyder: 'Har kommit på något nytt.' }, // steg 10.4.9 (symbolen är en platshållare)
+  skvaller: { namn: 'skvallerbytta', tecken: -1, op: -6, sym: '🗣️', som: 'en skvallerbytta', betyder: 'Berättar dåliga rykten om andra.' }, // steg 10.8.6 (symbolen är en platshållare)
   forutseende: { namn: 'förutseende', tecken: 1, op: 8, sym: '{sym_oga}', sed: { forsiktighet: 2 }, betyder: 'Har som ledare tagit byn väl genom vintern.' }, // steg 10.4.9 (symbolen är en platshållare)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
@@ -174,6 +178,7 @@ const HDEF = {
   misshandel: { i: 'valdsam', vikt: 0.5, text: 'misshandlade {om}' },
   drap: { i: 'valdsam', vikt: 1, text: 'slog ihjäl {om}' },
   gava: { i: 'generos', vikt: 0.04, text: 'gav {sak} till {om}' },
+  pratadeIlla: { i: 'skvaller', vikt: 0.08, text: 'pratade illa om {om}' }, // steg 10.8.6
   hjalp: { i: 'hjalpsam', vikt: 0.5, text: 'gav {sak} till {om}, som höll på att dö' },
   tavling: { i: 'skicklig', vikt: 0.3, text: 'vann tävlingen i {sak}', prestation: true }, // steg 10.7.20
   masterverk: { i: 'skicklig', vikt: 0.4, text: 'gjorde ett mästerverk: {sak}', prestation: true },
@@ -307,7 +312,7 @@ function skyddar(s: State, a: Person, om: number) {
 const dodTiger = (s: State, a: Person, om: number) => { const q = byId(s, om); return !!q && !alive(q) && budTillfalle(s, 'talaIlla', a); };
 export function skvaller(s: State, a: Person, b: Person, r: Rel, berattelse: boolean) {
   if (!a.intryck?.length) return;
-  const chans = RYKTE.delaBas + stat(a, 'karisma', s.now) / RYKTE.delaDiv + (berattelse ? RYKTE.delaBerattelse : 0);
+  const chans = (RYKTE.delaBas + stat(a, 'karisma', s.now) / RYKTE.delaDiv + (berattelse ? RYKTE.delaBerattelse : 0)) * (1 + RYKTE.pratOfta * (s.seder.v.prat ?? 0)); // Pratsamhet och Förtegenhet (steg 10.8.6)
   if (rnd(s, 'rykte', a) >= chans) return;
   const val = a.intryck.filter(e => e.om !== b.id && !(INTRYCK[e.k].tecken < 0 && (skyddar(s, a, e.om) || dodTiger(s, a, e.om))));
   if (!val.length) return;
@@ -330,6 +335,7 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel, vFas
   const v = vFast ?? scenVersion(s, a, e), c = e.c * troPa(s, b, a, r) * RYKTE.led;
   count(s, 'rykte_berattat');
   delade('rykte', 'i_' + e.k, e.namn); // samtalets ämne (steg 3.9.5)
+  if (d.tecken < 0 && vFast === undefined) pratadeIlla(s, a, b, e); // skvallerbyttan (steg 10.8.6); inte det som framförs på en scen
   // påhittat om b själv, eller om något b var med om: b vet bättre (steg 3.3.3)
   if (ex?.falsk && ex.mot === b.id) { ertappad(s, b, a, e, 'logn'); return; }
   const egen = intryckOm(b, e.om, e.k);
@@ -344,6 +350,15 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel, vFas
   if (vFast !== undefined && ny && ny.v > vb) ny.v -= (ny.v - vb) * RYKTE.scenNed; // scenens mindre version drar ner
   if (ny && ex) for (const x of e.bev!.slice(1)) addBevis(ny, { ...x, sett: undefined } as Bevis);
   if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) loggBer(s, 'l_rykte', e.om * 31 + e.k.length, { namn: e.namn, hen: q.sex === 'm' ? 'han' : 'hon', rykte: d.som ?? d.namn, heder: d.tecken > 0 }, 'rel', [e.om]);
+}
+// Skvallerbyttor (steg 10.8.6): den som berättar ett dåligt rykte om en annan, sant eller påhittat, får lite av intrycket
+// skvallerbytta hos den som lyssnar. Det väger mindre i en pratsam by (inget vid full Pratsamhet) och upp till dubbelt i en
+// förtegen. Seden Pratsamhet och Förtegenhet låses upp när RYKTE.pratOppna dåliga rykten berättats i byn
+function pratadeIlla(s: State, a: Person, b: Person, e: Intryck) {
+  count(s, 'rykte_daligt');
+  if ((s.stat?.rykte_daligt ?? 0) >= RYKTE.pratOppna) oppnaSed(s, 'prat');
+  const v = HANDELSER.pratadeIlla.vikt * (1 - (s.seder.v.prat ?? 0));
+  if (v > 0) intryck(s, b, a, 'skvaller', v, 1, { h: 'pratadeIlla', t: s.now, mot: e.om, motNamn: e.namn, sett: true });
 }
 // b märker att a ljög eller överdrev om personen i e
 function ertappad(s: State, b: Person, a: Person, e: Intryck, h: 'logn' | 'overdrev') {

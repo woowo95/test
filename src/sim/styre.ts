@@ -246,7 +246,7 @@ export const styreAv = styreOf;
 export const ledareOf = (s: State) => { const id = s.styre?.ledare; const p = id === undefined ? undefined : byId(s, id); return p && alive(p) ? p : undefined; };
 // makt-sederna (Skalor som låses upp) syns i Styre och är låsta tills det de styr finns i byn
 export const MAKT_SEDER: readonly Sed[] = ['rang', 'fortjanst', 'fejd', 'andlig'];
-const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'natur'];
+const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'natur', 'prat'];
 export const sedOppen = (s: State, k: Sed) => !LASTA_SEDER.includes(k) || !!s.styre?.oppna.includes(k);
 
 // ---------- legitimiteten ----------

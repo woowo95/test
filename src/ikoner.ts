@@ -248,6 +248,7 @@ export const PAL: Record<string, Record<string, string>> = {
   i_feg: { c: '#7d5b40', o: '#24201d', v: '#bdb39b', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
   i_bjorndodare: { a: '#7d5b40', b: '#5e3c24', k: '#24201d', o: '#24201d', w: '#a0947d', z: 'rgba(36,32,29,.30)' }, // steg 6.6.6: platshållare, björnens huvud
   i_pahittig: { a: '#d8b25f', b: '#b2921b', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.4.9: platshållare, en gnista
+  i_skvaller: { a: '#dad0bb', b: '#a0947d', m: '#9c4a3a', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 10.8.6: platshållare, en pratbubbla med en mun
   i_forutseende: { a: '#7d5b40', b: '#b2921b', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.4.9: platshållare, en fylld korg
   i_vargdodare: { a: '#8a9c9e', b: '#61767a', k: '#24201d', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
   l_fara: { a: '#b2921b', b: '#906f0f', k: '#24201d', o: '#24201d', z: 'rgba(36,32,29,.30)' },
@@ -3738,6 +3739,24 @@ export const PIX: Record<string, string[]> = {
     '..o...oao...o...',
     '......oao.z.....',
     '.......ozz......',
+    '................',
+    '................',
+  ],
+  i_skvaller: [ // steg 10.8.6: platshållare
+    '................',
+    '..oooooooooo....',
+    '.oaaaaaaaaaao...',
+    'oaaaaaaaaaaaao..',
+    'oaaommmmmmoaao..',
+    'oaaommoommoaao..',
+    'oaaaommmmoaaabo.',
+    'oaaaaooooaaaabo.',
+    '.oaaaaaaaaaabbo.',
+    '..oooaaaaoooobz.',
+    '.....oaaoz..zz..',
+    '......oaoz......',
+    '.......ooz......',
+    '........z.......',
     '................',
     '................',
   ],
