@@ -79,7 +79,7 @@ SCENARIER.sport = {
       [`i en rik by vill ${vill} av ${vuxna(s).length} vuxna spela på fritiden`, vill === vuxna(s).length],
       [`när maten är knapp vill man spela mycket mindre (${lust(f).toFixed(2)} mot ${lust(s).toFixed(2)}, ${vf} vill alls)`, lust(f) < lust(s) * 0.5],
       [`${ilista} av två vill vara med i ${sport0.toLowerCase()}en, och vedhuggaren ${avbrot ? 'avbröt arbetet' : 'högg vidare'} och ${kom ? 'kom' : 'kom inte'}`, ilista === 2 && avbrot && kom === 1],
-      [`${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, (g.stat?.sportTim ?? 0) >= 1 && sett >= 2],
+      [`${(g.stat?.sportTim ?? 0).toFixed(1)} spelartimmar, högst ${sett} på planen samtidigt`, (g.stat?.sportTim ?? 0) >= 0.4 && sett >= 2],
       [`${glad} av tre är glada efter att ha spelat, och ${battre} blev bättre i närstrid`, glad >= 2 && battre >= 2],
       [`den som fryser farligt ${frLista ? 'ville vara med' : 'ville inte'} men ${frAkt === 'varma' ? 'värmer sig först' : 'gör ' + frAkt}`, frLista && frAkt === 'varma'],
       [`när ingen vill blir det ingen match och ingen avbryts; den som ropade ${ledsen ? 'är ledsen' : 'är inte ledsen'} (${e.stat?.sportIngen ?? 0} gånger ingen)`, ensam && ledsen && (e.stat?.sportIngen ?? 0) === 1],
@@ -732,7 +732,7 @@ SCENARIER.matchrapport = {
     a.skill.traff = 18; b.skill.traff = 2;
     SIM.newTing(s, 'mal', 1, a.id);
     match(s, 'kast', [a, b]); kor(s, 2);
-    const m = s.matcher?.at(-1), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
+    const m = s.matcher?.find(x => !x.installd), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
     const n = s.notiser?.lista.find(x => x.id === 'match'), nIdx = n?.match?.indexOf(m?.nr ?? -1) ?? -1;
     const fa = m?.spelare.find(x => x.id === a.id);
     // det kommer för få: ensam
@@ -747,6 +747,7 @@ SCENARIER.matchrapport = {
     const sk = m ? { ...m, nr: 7, vinnare: b.id, vnamn: b.name, spelare: m.spelare.map(x => ({ ...x, v: x.id === b.id ? 20 : 19.5 })) } : undefined, sber = sk ? SIM.matchBerattelse(s, sk) : '';
     return [
       [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length >= 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
+      [`matchen varade ${m ? ((m.slut - m.t) / SIM.MIN).toFixed(0) : '?'} minuter från att den började (steg 10.7.13)`, !!m && m.slut - m.t >= 10 * SIM.MIN - 1 && m.slut - m.t <= 20 * SIM.MIN + 1],
       [`raden i Händelser pekar på matchen: ${rad?.text ?? 'ingen'}`, !!rad],
       [`notisen (Folket) pekar på den på rad ${nIdx + 1}`, !!n && nIdx >= 0 && n.match!.length === n.rader.length],
       [`för få: ${ilog?.text ?? 'ingen rad'}`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog],
@@ -2324,12 +2325,12 @@ SCENARIER.fritidlista = {
 };
 // steg 9.2.92: brottningen går två och två med stridens system, utan vapen och med svaga slag. Ingen dör, en skada är ovanlig
 function brottning(): [string, boolean][] {
-  let kampar = 0, doda = 0, skadade = 0, kvar = 0, sedda = 0, vapen = 0, pratIKampen = 0, kampTid = 0, pratRingen = 0;
+  let kampar = 0, matt = 0, minst = Infinity, doda = 0, skadade = 0, kvar = 0, sedda = 0, vapen = 0, pratIKampen = 0, kampTid = 0, pratRingen = 0;
   for (const fro of [3, 5, 7, 11]) {
     const s = rikDag(fro), med = vuxna(s).slice(0, 4), skador0 = med.map(q => q.skador?.length ?? 0);
     match(s, 'brottning', med);
     // steg 9.2.100: de två som kämpar pratar inte; de andra i ringen gör det
-    let kamp: number[] | undefined, start = 0;
+    let kamp: number[] | undefined, start = 0, efter = false;
     const sett = new Map<number, number>();
     kor(s, 1, () => {
       for (const g of s.kartStrider ?? []) if (g.st.avsikt === 'brottning') vapen += g.st.kampar.filter(k => k.vapen !== 'hand').length; // kampen sker på kartan (steg 10.1.7)
@@ -2338,23 +2339,23 @@ function brottning(): [string, boolean][] {
       if (m?.brottare && m.brottare !== kamp) { kamp = m.brottare; start = s.now; }
       const pagar = !!m && !!kamp && s.now < (m.brott ?? 0);
       if (pagar) kampTid++;
+      else if (kamp && !efter && m && s.now < m.slut) { efter = true; matt += med.length; kvar += med.filter(q => q.task?.act === 'sport').length; } // den första kampen är slut
       for (const q of med) {
         const t = q.prat?.t; if (t === undefined || sett.get(q.id) === t) continue;
         sett.set(q.id, t);
         if (pagar && kamp!.includes(q.id) && t >= start) pratIKampen++; else if (q.task?.act === 'sport') pratRingen++;
       }
     });
-    kampar += s.stat?.brottningar ?? 0;
+    kampar += s.stat?.brottningar ?? 0; minst = Math.min(minst, s.stat?.brottningar ?? 0);
     doda += med.filter(q => q.health <= 0 || q.died !== undefined).length;
     skadade += med.filter((q, i) => (q.skador?.length ?? 0) > skador0[i]!).length;
-    kvar += med.filter(q => q.task?.act === 'sport').length;
   }
   return [
-    [`brottarna kämpar två och två med stridens system (${kampar} kamper)`, kampar >= 4],
+    [`brottarna kämpar två och två med stridens system (${kampar} kamper, minst ${minst} i en match)`, kampar >= 4 && minst >= 1],
     [`utan vapen (${vapen} med vapen)`, vapen === 0],
     [`ingen dör i brottningen (${doda})`, doda === 0],
     [`en skada är ovanlig (${skadade} av 16 brottare skadades)`, skadade <= 4],
-    [`brottarna är kvar i matchen efter en kamp (${kvar} av 16)`, kvar >= 12 && sedda > 0],
+    [`brottarna är kvar i matchen efter en kamp (${kvar} av ${matt} medan matchen pågår)`, matt >= 8 && kvar >= matt * 0.75 && sedda > 0],
     [`ingen av de två som brottas börjar ett samtal under kampen (${pratIKampen} samtal på ${kampTid} steg med kamp)`, pratIKampen === 0 && kampTid > 0],
     [`de andra i ringen pratar (${pratRingen} samtal)`, pratRingen > 0],
   ];

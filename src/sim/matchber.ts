@@ -14,7 +14,7 @@ export const MATCHBER = balans('matchber', {
   jamnt: 1.5, // skilde resultaten (färdigheten plus slumpen, 0 till ungefär 30) mellan de två bästa högst så här mycket var det jämnt ...
   overlagset: 6, // ... och minst så här mycket var det överlägset
   skrall: 3, // vann någon som hade minst så här mycket lägre färdighet (0–20) än den skickligaste var det oväntat
-  lang: 70, kort: 35, // minuter: en lång och en kort match
+  lang: 17, kort: 12, // minuter: en lång och en kort match
 });
 
 export function matchBerattelse(s: State, m: MatchMinne): string {

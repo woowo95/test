@@ -68,9 +68,8 @@ export const SPORT = balans('sport', {
   med: 12, // ... och gånger så här mycket när en match väntar på spelare
   mat: 1.1, ved: 2, // fullt ut när maten räcker så här många dygn och veden så här många, mindre med mindre (overskott i teknik.ts, steg 10.2.43)
   alderTill: 50, // över detta spelar man inte
-  minuter: 50, spann: 40, // en match varar så här många minuter, plus upp till spann
-  vanta: 30, // minuter: har inte tillräckligt många kommit fram så här länge efter starten, blir det ingen match
-  sent: 15, // minuter: så här nära slutet går ingen ny med
+  minuter: 10, spann: 10, // en match varar så här många minuter från att den börjar, plus upp till spann (steg 10.7.13)
+  vanta: 10, // minuter: så länge väntar man på spelare; matchen börjar senast då, om det kommit nog
   // samlingen (steg 10.7.12): den som ropar hörs nara rutor. Var och en som hör vill vara med med chansen folj gånger överskottet
   // gånger (styrka + smidighet) / 20, gånger (1 + foljTycke × tycket om den som samlar / 100), och för den som arbetar gånger
   // (1 - foljPlikt × pliktkänslan). Vill ingen blir den som samlade ledsen (ingen i ingenTim timmar)
@@ -78,7 +77,7 @@ export const SPORT = balans('sport', {
   utanfor: 10, // platsen ligger i byn eller högst så här många rutor utanför byns område
   ovning: 0.15, // övning i sportens färdighet per timme man spelar
   gladje: 0.08, gladjeTim: 8, // tanken efter en match (minst gladjeMin timmar spelat): så här glad i så här många timmar
-  gladjeMin: 0.25,
+  gladjeMin: 0.1,
   slit: 0.05, // föremålen som är redskap (bollen, slagträet, målet) slits så här mycket per match (steg 4.3.1.2)
   vinnSkill: 10, // den som vinner en match: färdigheten i sporten (0–20) plus en slump upp till så här mycket
   snoVal: 0.5, // när en sport som bara går i snön kan spelas (nar) väljs den så här ofta (steg 4.3.1.3)
@@ -87,14 +86,13 @@ export const SPORT = balans('sport', {
   // lagen i snöbollskriget, den som slår i bollspelet, och avståndet mellan de som står på rad
   ring: 1.8, kastAvst: 3, snoAvst: 2.5, slagAvst: 3, rad: 0.8,
   sparas: 20, // så här många matcher sparas i s.matcher (steg 5.4.8.1)
-  brottTakt: 4, // brottningen (steg 9.2.92): så många gånger i timmen varje brottare i en ledig ring börjar en kamp med en annan spelare
   bastMin: 5, // den som har vunnit så här många matcher i en sport, och fler än någon annan, är den bästa i den (eftermälet)
 });
 
 // matchen som pågår eller väntar på spelare: sporten, platsen, när den började (spelarnas task.ref) och slutar
 // p: den som samlade, lista: de som ville vara med vid ropet (raden sport i val.ts för dem dit), platser: var och ens plats,
 // igang: alla som var på väg har kommit fram (eller väntan är slut) och matchen har börjat
-export interface Match { k: string; x: number; y: number; start: number; slut: number; p?: number; lista?: number[]; platser?: Record<number, { x: number; y: number }>; igang?: true; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[] } // brott: när kampen i brottningen (steg 9.2.92) är slut // n: så många som gått med (platsen i laget)
+export interface Match { k: string; x: number; y: number; start: number; slut: number; p?: number; lista?: number[]; platser?: Record<number, { x: number; y: number }>; igang?: true; borjar?: number; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[] } // brott: när kampen i brottningen (steg 9.2.92) är slut // n: så många som gått med (platsen i laget)
 
 // matchens sammanställning (steg 5.4.8.1, Sporten i designdokumentet): sparas när matchen avgörs eller ställs in, inte ur
 // loggen. Raden i Händelser och notisen pekar dit med numret (LogEntry.match), och fliken Matchen (ui/flikar/match.ts) visar
@@ -103,7 +101,7 @@ export interface Match { k: string; x: number; y: number; start: number; slut: n
 export interface MatchSpelare { id: number; namn: string; f: number; v: number }
 export interface MatchMinne { nr: number; k: string; t: number; slut: number; spelare: MatchSpelare[]; vinnare?: number; vnamn?: string; glad: number; installd?: true }
 function matchMinne(s: State, d: SportDef, m: Match, har: Person[], v: Map<Person, number>, vinn?: Person) {
-  const mm: MatchMinne = { nr: s.matchNr = (s.matchNr ?? 0) + 1, k: d.id, t: m.start, slut: s.now, glad: vinn ? Math.round(SPORT.gladje * 100) : 0,
+  const mm: MatchMinne = { nr: s.matchNr = (s.matchNr ?? 0) + 1, k: d.id, t: m.borjar ?? m.start, slut: s.now, glad: vinn ? Math.round(SPORT.gladje * 100) : 0,
     spelare: har.map(q => ({ id: q.id, namn: q.name, f: Math.round(q.skill[d.skill]), v: Math.round((v.get(q) ?? q.skill[d.skill]) * 10) / 10 })) };
   if (vinn) { mm.vinnare = vinn.id; mm.vnamn = vinn.name; } else mm.installd = true;
   const text = vinn ? `${vinn.name} vann ${d.best}.` : `Det blev ingen ${d.namn.toLowerCase()}: det kom för få.`, ids = har.map(q => q.id);
@@ -123,7 +121,7 @@ const kanSpela = (s: State, d: SportDef, vuxna: number) => vuxna >= d.min && (!d
 function oppen(s: State) {
   const m = s.sport;
   if (m && s.now >= m.slut) { s.sport = undefined; return undefined; }
-  return m && !m.igang && s.now < m.slut - SPORT.sent * MIN && spelare(s, m, false).length < SPORT_AV[m.k].max ? m : undefined;
+  return m && !m.igang && spelare(s, m, false).length < SPORT_AV[m.k].max ? m : undefined;
 }
 // hur många av föremålet k (ett redskap) byn vill ha: ett, när byn har vuxna nog till en sport som behöver det (VILL i redskap.ts)
 export const sportFor = (s: State, k: string) => SPORTER.some(d => d.foremal.includes(k) && vuxna(s) >= d.min) ? 1 : 0;
@@ -143,7 +141,7 @@ export function sportVal(s: State, p: Person): { why: string; spot: { x: number;
   const ny = !m;
   if (!m) {
     const morkt = s.now + (19 - hourOf(s.now)) * HOUR; // sporten spelas på dagen (isLight i tid.ts): matchen slutar när det blir mörkt
-    if (morkt - s.now < SPORT.minuter * MIN) return undefined;
+    if (morkt - s.now < (SPORT.vanta + SPORT.minuter + SPORT.spann) * MIN) return undefined; // väntan och den längsta matchen ryms före mörkret
     // den som samlar ropar, och var och en som hör avgör en gång om hen vill vara med
     const vill = living(s).filter(q => q !== p && horRopet(s, p, q) && rnd(s, 'sport', q) < foljChans(s, p, q)), n = vuxna(s);
     const kan = SPORTER.filter(d => d.min <= vill.length + 1 && kanSpela(s, d, n));
@@ -152,7 +150,7 @@ export function sportVal(s: State, p: Person): { why: string; spot: { x: number;
     const d = val[Math.floor(rnd(s, 'sport', p) * val.length)];
     const at = sportPlats(s, p, d);
     if (!at) { count(s, 'sportIngenPlats'); return undefined; }
-    m = s.sport = { k: d.id, x: at.x + 0.5, y: at.y + 0.5, start: s.now, slut: Math.min(morkt, s.now + (SPORT.minuter + rnd(s, 'sport', p) * SPORT.spann) * MIN), p: p.id, lista: vill.slice(0, d.max - 1).map(q => q.id) };
+    m = s.sport = { k: d.id, x: at.x + 0.5, y: at.y + 0.5, start: s.now, slut: s.now + (SPORT.vanta + SPORT.minuter + SPORT.spann) * MIN, p: p.id, lista: vill.slice(0, d.max - 1).map(q => q.id) };
     count(s, 'sportMatcher');
     // de som vill avbryter det de gör och väljer igen, där matchen är ett Tillfälle (sportListaVal)
     for (const id of m.lista!) { const q = byId(s, id); if (q?.task) avbryt(s, q); }
@@ -232,13 +230,16 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
       m.k = annan.id; d = annan;
       for (const q of spelare(s, m, false)) q.task!.tool = annan.id;
     }
-    m.igang = true;
+    // tiden räknas från att matchen börjar, och mörkret kapar den
+    m.igang = true; m.borjar = s.now;
+    m.slut = Math.min(s.now + (19 - hourOf(s.now)) * HOUR, s.now + (SPORT.minuter + rnd(s, 'sport', p) * SPORT.spann) * MIN);
+    for (const q of spelare(s, m, false)) q.task!.until = m.slut;
   } else if (har.length < d.min) { s.sport = undefined; t.until = s.now; return; } // de andra har gått: matchen är slut
   const h = dtSec / HOUR_S;
   if (!m.spelat) for (const k of d.foremal) if (isTool(k) && wearTool(s, p, k, SPORT.slit)) { const tr = SAKER[k]?.trasig; if (tr) { count(s, tr.stat); if (tr.text) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]); } } // föremålen slits en gång per match
   m.spelat = true;
   // brottningen (steg 9.2.92): två och två med stridens system, utan vapen och med svaga slag. En kamp i taget i ringen
-  if (m.k === 'brottning' && s.now >= (m.brott ?? 0) && rnd(s, 'sport', p) < SPORT.brottTakt * h) {
+  if (m.k === 'brottning' && s.now >= (m.brott ?? 0)) { // en kamp börjar så fort ringen är ledig
     const mot = har.filter(q => q !== p && q.health > 0);
     if (mot.length) {
       // kampen sker på kartan och tar tid (steg 10.1.7): ringen är upptagen tills den är slut (EFTER.brottning)
