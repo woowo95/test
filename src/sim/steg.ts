@@ -81,7 +81,7 @@ import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
-import { sjoRakna, vattenNu } from './sjo';
+import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
 import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
@@ -1344,12 +1344,16 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   const vt = vattenNu(s), R = RUNDA.malR, saker = sakerLasare(s, tk);
   let bast: { x: number; y: number } | undefined, bv = 0;
   const ring = ringen(RUNDA.syn, R);
+  // blocked och sees för varje ruta, med kartan, väggarna och sikten hämtade en gång. Synen avgörs av avståndet i kvadrat när det
+  // är klart innanför eller utanför sikten (med en marginal långt över avrundningen), och annars som sees räknar
+  const tiles = getMap(s.seed).tiles, grid = gridOf(s), flod = !!s.flod, sikt2 = sikt * sikt, inom = sikt >= 0 ? sikt2 * (1 - 1e-9) : -1, utom = sikt >= 0 ? sikt2 * (1 + 1e-9) : Infinity;
   for (let k = 0; k < ring.d.length; k++) {
-    const x = x0 + ring.dx[k], y = y0 + ring.dy[k], d = ring.d[k];
-    if (!inMap(x, y) || vt[y * W + x] === T.Vatten || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
+    const x = x0 + ring.dx[k], y = y0 + ring.dy[k], d = ring.d[k], i = y * W + x;
+    if (!inMap(x, y) || vt[i] === T.Vatten || tiles[i] === T.Vatten && !grid.brygga[i] || flod && iVattnetNu(s, i) || grid.solid[i] === 1) continue; // (inte i en vägg)
     let trangt = 0;
     for (const q of andra) if (Math.hypot(q.x - x, q.y - y) < RUNDA.syn) trangt++;
-    const ser = !tror0 || sees(s, p, x, y, sikt), tror = ser ? saker(x, y) : tror0!(x, y) * iSaker;
+    const ax = x + 0.5 - p.x, ay = y + 0.5 - p.y, a2 = ax * ax + ay * ay;
+    const ser = !tror0 || (a2 < inom ? true : a2 > utom ? false : sees(s, p, x, y, sikt)), tror = ser ? saker(x, y) : tror0!(x, y) * iSaker;
     // vägen dit räknas i samma enhet som det hen tror finns där: bortom synvidden i saker (iSaker). Förut vägde avståndet femtio
     // gånger tyngre än det hen hört, så att inget mål längre bort vann och rundan gick åt ett slumpat håll (steg 9.9.5)
     const v = (tror - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut * (ser ? 1 : iSaker);
