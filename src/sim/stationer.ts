@@ -500,12 +500,16 @@ export function uteStation(s: State, x: number, y: number) {
 }
 // står inget annat (ett hus, en lagerplats, en station eller en stubbe ute) inom PLATS.uteFri rutor från rutorna? Då finns plats
 // för en stig runt det som ska stå där. motVagg: husen räknas inte, för en station får stå mot en vägg (Björn efter v101)
-export function friRunt(s: State, rutor: { x: number; y: number }[], motVagg = false) {
+// minne: för en sökning som prövar många platser utan att något i byn ändras emellan (sokUte). Om något står på en ruta beror bara
+// på rutan, så svaret sparas första gången rutan frågas (alltid med samma motVagg)
+export function friRunt(s: State, rutor: { x: number; y: number }[], motVagg = false, minne?: Map<number, boolean>) {
   const r = PLATS.uteFri, egna = new Set(rutor.map(q => q.y * W + q.x)), g = gridOf(s), zs = zonesOf(s);
   for (const q of rutor) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = q.x + dx, y = q.y + dy, i = y * W + x;
     if (!inMap(x, y) || egna.has(i)) continue;
-    if (!motVagg && g.at.has(i) || uteStation(s, x, y) || zs.some(z => (!somTomt || z.hus !== undefined) && x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
+    let star = minne?.get(i);
+    if (star === undefined) { star = !motVagg && g.at.has(i) || uteStation(s, x, y) || zs.some(z => (!somTomt || z.hus !== undefined) && x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h); minne?.set(i, star); }
+    if (star) return false;
   }
   return true;
 }
@@ -630,6 +634,7 @@ function sokUte(s: State, k: string) {
     return v;
   };
   // rutorna med en hög utanför lagret, räknade en gång när de först frågas (förut gicks alla stackar igenom för varje ruta som prövades)
+  const runtMinne = new Map<number, boolean>(); // det som står på rutorna runt om (friRunt)
   let hogar: Set<number> | undefined;
   const hogUte = () => {
     if (!hogar) { hogar = new Set(); for (const q of s.stackar ?? []) if (Number.isInteger(q.x) && Number.isInteger(q.y) && !iLagret(s, q.x, q.y)) hogar.add(q.y * W + q.x); }
@@ -643,7 +648,7 @@ function sokUte(s: State, k: string) {
       for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = lediga(x + i, y + j);
       if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => lediga(q.x, q.y)); // stubbarna runt bordet
       const rutor = fri ? [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])] : []; // stationens rutor och bordets platser, en gång för båda frågorna
-      if (fri) fri = friRunt(s, rutor, true); // plats för en stig runt (steg 2.10.8)
+      if (fri) fri = friRunt(s, rutor, true, runtMinne); // plats för en stig runt (steg 2.10.8)
       for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h) && !hogUte().has((y + h) * W + x + i); // man står framför den, inte i en vägg, en annan station eller på en hög
       if (fri) fri = gangFri(s, rutor);
       if (fri && arbetar(stationDef(k))) fri = framLand(s, x, y, w, h); // och inte i vattnet (steg 4.5.4.3)
