@@ -223,7 +223,7 @@ export function runstenTimme(s: State) {
   for (const r of s.runstenar) for (const q of folk) {
     if (Math.hypot(q.x - r.x - 0.5, q.y - r.y - 0.5) > SKRIFT.las) continue;
     for (const b of r.bev ?? []) lasIntryck(s, q, r.om, b, r.av.id, SKRIFT.lasVikt);
-    if (r.slag === 'minne') paminn(s, q, r.om.id);
+    if (r.slag === 'minne') paminn(s, q, r.om.id, r.bev);
     if (r.slag === 'helig' && q.tro === r.tro) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR); // bara den som tror
     count(s, 'runstenLast');
   }
@@ -447,7 +447,7 @@ export function lasKlar(s: State, q: Person, t: Task) {
   if (k.tro !== undefined) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR);
   if (k.lar) lasLardom(s, q, { ...k.lar, c: k.lar.c * nar }, k.av.id);
   if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt * nar * (k.fel ?? 1));
-  if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id);
+  if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id, k.bev);
   if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, (k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer) * nar, s.now, SKRIFT.gladjeTim * HOUR);
   count(s, 'last'); count(s, 'last_' + k.slag);
 }

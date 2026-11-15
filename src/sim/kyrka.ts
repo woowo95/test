@@ -10,7 +10,7 @@ import { clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
 import { type Sed, drar, habitShare } from './seder';
 import { ALDER, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat, think } from './folk';
-import { beratta } from './rykten';
+import { beratta, paminn } from './rykten';
 import { FOOD, KOTTSLAG, sakNamn } from './saker';
 import { type Ting, tingOf } from './agande';
 import { MASTERVERK, kvNamn } from './kvalitet';
@@ -656,7 +656,8 @@ export function sorgkvade(s: State, tr: Tro, om: number, med: Person[]) {
   const skald = med.filter(p => p.tro === tr.id && (p.skill[FRAM_SKILL] ?? 0) >= KYRKA.skald && minne(p)).sort((a, b) => (b.skill[FRAM_SKILL] ?? 0) - (a.skill[FRAM_SKILL] ?? 0) || a.id - b.id)[0];
   if (!skald) return;
   const e = minne(skald)!, q = framKval(s, skald), d = byId(s, om);
-  for (const p of med) if (p !== skald) { beratta(s, skald, p, e, getRel(s, skald, p)); think(p, `Hörde ${skald.name}s sorgkväde om ${e.namn}`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+  for (const p of med) if (p !== skald) { beratta(s, skald, p, e, getRel(s, skald, p)); paminn(s, p, e.om, e.bev); // kvädet påminner (steg 10.6.15)
+    think(p, `Hörde ${skald.name}s sorgkväde om ${e.namn}`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
   count(s, 'sorgkvade');
   log(s, `${skald.name} kvad om ${d?.name ?? e.namn} vid graven.`, 'rel', [skald.id]);
 }

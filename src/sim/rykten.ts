@@ -6,6 +6,7 @@ import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
+import { klenod } from './kvalitet';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { tystFaktor } from './styre';
@@ -30,7 +31,8 @@ import { vaderNu } from './vader';
 export const RYKTE = balans('rykte', {
   max: 14, // så många intryck om andra minns man högst; det svagaste trängs undan
   bevMax: 3, // så många händelser sparas som bevis för ett intryck ...
-  dodBev: 2, // ... och så många när personen är död (de viktigaste)
+  detalj: 0.4, // minnet av en död (steg 10.6.15): en händelse per så här mycket av intryckets styrka (styrka × säkerhet), minst 1 och högst bevMax; när minnet bleknar faller den minst viktiga först
+  paminnStark: 0.15, // en påminnelse om en död gör minnet så här mycket säkrare, gånger tiden sedan förra påminnelsen delat med paminnDygn (högst 1)
   vMax: 1.5, // ett intryck är som starkast så här
   syn: 10, // de som var närmare än så här många rutor (och vakna) såg det som hände ...
   synDimma: 0.6, // ... och så här mycket kortare i den tätaste dimman (steg 3.7.11)
@@ -418,7 +420,7 @@ export function samlatIntryck(s: State, om: number) {
 // när någon dör: de som minns hen behåller de viktigaste händelserna, och byn minns hen som det hen var känd för
 export function rykteDod(s: State, p: Person) {
   const { r, a } = ryktbarhet(s, p.id);
-  for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === p.id && e.bev && e.bev.length > RYKTE.dodBev) e.bev.length = RYKTE.dodBev;
+  for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === p.id) trimDetaljer(e);
   if (r >= RYKTE.dodLog) {
     const top = samlatIntryck(s, p.id)[0];
     if (top) { log(s, `Byn minns ${p.name} som ${INTRYCK[top[0]].namn}.`, 'death', [p.id]); count(s, 'rykte_minns'); }
@@ -434,6 +436,8 @@ export function glomRykten(s: State, hours: number) {
   for (const t of s.ting ?? []) if (t.ber?.mo) avbildad.add(t.ber.mo.om);
   for (const t of s.stationer ?? []) if (t.ber?.mo) avbildad.add(t.ber.mo.om);
   for (const r of s.runstenar ?? []) if (r.slag === 'minne') avbildad.add(r.om.id); // den som står på en runsten glöms långsammare (steg 10.6.1)
+  // en klenod i byn, eller en sak gjord i sorg efter en död, gör att minnet av hen bleknar långsammare (steg 10.6.15)
+  for (const t of [...(s.ting ?? []), ...(s.stationer ?? [])]) { const k = klenod(s, t); if (k) avbildad.add(k.id); if (t.ber?.l === 'sorg' && t.ber.lo !== undefined) avbildad.add(t.ber.lo); }
   for (const p of s.people) {
     if (!p.intryck) continue;
     if (!alive(p)) { delete p.intryck; continue; }
@@ -447,6 +451,7 @@ export function glomRykten(s: State, hours: number) {
       if (dod && avbildad.has(e.om)) t *= RYKTE.konstGlom;
       if (dod && (p.paminnd?.[e.om] ?? -Infinity) > s.now - RYKTE.paminnDygn * DAY) t *= RYKTE.paminnGlom;
       e.c *= Math.exp(-hours / t);
+      if (dod) trimDetaljer(e);
       return styrka(e) >= RYKTE.glomGrans;
     });
     if (!p.intryck.length) delete p.intryck;
@@ -478,7 +483,32 @@ export function lasIntryck(s: State, q: Person, om: { id: number; namn: string }
   const d = HANDELSER[b.h];
   intryck(s, q, { id: om.id, name: om.namn }, d.i, d.vikt * del, RYKTE.sjalvSaker, { ...b, sett: undefined } as Bevis, src, 1, false, !!d.prestation);
 }
-export function paminn(s: State, p: Person, vem: number) { (p.paminnd ??= {})[vem] = s.now; }
+// Minnets detaljer (steg 10.6.15): påminnelsen gör också minnet säkrare, mer ju längre sedan förra påminnelsen, och lägger tillbaka
+// en händelse som påminnelsen själv bär (bev: runstenens, bokens, gravtextens, kvädets) när minnet är starkt nog att rymma den
+export function paminn(s: State, p: Person, vem: number, bev?: Bevis[]) {
+  const q = byId(s, vem);
+  if (q && alive(q)) return;
+  const forra = p.paminnd?.[vem];
+  (p.paminnd ??= {})[vem] = s.now;
+  const stark = RYKTE.paminnStark * Math.min(1, forra === undefined ? 1 : (s.now - forra) / (RYKTE.paminnDygn * DAY));
+  for (const e of p.intryck ?? []) {
+    if (e.om !== vem) continue;
+    e.c = Math.min(1, e.c + stark);
+    for (const b of bev ?? []) {
+      if (HANDELSER[b.h].i !== e.k || e.bev?.some(x => x.h === b.h && x.t === b.t) || (e.bev?.length ?? 0) >= detaljer(e)) continue;
+      (e.bev ??= []).push({ ...b, sett: undefined } as Bevis);
+      count(s, 'detaljTillbaka');
+    }
+  }
+}
+// hur många händelser man minns om en död: efter hur starkt minnet är, minst 1 och högst bevMax
+export const detaljer = (e: Intryck) => Math.max(1, Math.min(RYKTE.bevMax, Math.ceil(styrka(e) / RYKTE.detalj - 1e-9)));
+// ... och när minnet bleknar faller den minst viktiga först (den äldsta av två lika viktiga)
+function trimDetaljer(e: Intryck) {
+  const n = detaljer(e);
+  if (!e.bev || e.bev.length <= n) return;
+  e.bev = e.bev.map((b, i) => ({ b, i })).sort((x, y) => bevVikt(y.b) - bevVikt(x.b) || y.b.t - x.b.t || x.i - y.i).slice(0, n).sort((x, y) => x.i - y.i).map(x => x.b);
+}
 export const intryckStyrka = (e: Intryck) => styrka(e);
 
 // ---------- tycke och smak (steg 3.3.5) ----------

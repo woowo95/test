@@ -2790,3 +2790,55 @@ SCENARIER.kanda = {
     ];
   },
 };
+
+SCENARIER.minnesdetaljer = {
+  text: 'Steg 10.6.15: minnets detaljer. Hur många händelser man minns om en död följer hur starkt minnet är, minst 1 och högst 3 per sak hen var känd för, och när minnet bleknar faller de en i taget, den minst viktiga först. En påminnelse (graven, runstenen, boken, kvädet) gör minnet säkrare och kan lägga tillbaka en händelse som den själv bär, och en klenod i byn gör att minnet bleknar långsammare',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    const b = (h: string, t: number) => ({ h, t: s.now - t * SIM.HOUR, sett: true }) as SIM.Bevis;
+    const ny = (om: number, vv: number, bev: SIM.Bevis[]): SIM.Intryck => ({ om, namn: 'Ulv', k: 'valdsam', v: vv, c: 1, t: s.now, bev });
+    for (const p of v) p.intryck = [];
+    const w = v[1];
+    const stark = ny(9001, 1.5, [b('sla', 4), b('drap', 3), b('misshandel', 2), b('sla', 1)]), svag = ny(9002, 0.3, [b('sla', 4), b('misshandel', 2)]);
+    w.intryck = [stark, svag];
+    SIM.glomRykten(s, 0.01);
+    const n0 = [stark.bev!.length, svag.bev!.length];
+    // med tiden: en i taget, den minst viktiga först
+    const vikt = (x: SIM.Bevis) => SIM.HANDELSER[x.h].vikt;
+    let enITaget = true, minstForst = true; const foll: string[] = [];
+    for (let i = 0; i < 400 && w.intryck?.includes(stark); i++) {
+      const fore = stark.bev!.slice();
+      SIM.glomRykten(s, 24);
+      const kvar = stark.bev!;
+      if (kvar.length === fore.length) continue;
+      if (fore.length - kvar.length !== 1) enITaget = false;
+      const borta = fore.filter(x => !kvar.includes(x));
+      for (const x of borta) { foll.push(x.h); if (kvar.some(y => vikt(y) < vikt(x))) minstForst = false; }
+    }
+    // kvädet ger tillbaka en händelse som skalden minns
+    for (const p of v) p.intryck = [];
+    const skald = v[2];
+    tr.bud = [...(tr.bud ?? []), { id: 'sorgkvade', t: s.now }];
+    skald.skill[SIM.FRAM_SKILL] = 20;
+    const egen = ny(9003, 1, [b('sla', 4), b('misshandel', 2)]);
+    w.intryck = [egen]; skald.intryck = [ny(9003, 1, [b('drap', 3)])];
+    SIM.sorgkvade(s, tr, 9003, [skald, w]);
+    const tillbaka = egen.bev!.some(x => x.h === 'drap');
+    // en klenod i byn: minnet av göraren bleknar långsammare
+    const d = nyInvanare(s, 'm', 40); SIM.die(s, d, 'forkylning');
+    const blekna = (klenod: boolean) => {
+      s.ting = (s.ting ?? []).filter(t => t.av !== d.id);
+      if (klenod) { const t = SIM.addTool(s, 'yxa', v[3]); t.q = 5; t.av = d.id; }
+      const e = ny(d.id, 1, [b('sla', 4)]); w.intryck = [e]; w.paminnd = undefined;
+      SIM.glomRykten(s, 24 * 5);
+      return e.c;
+    };
+    const med = blekna(true), utan = blekna(false);
+    return [
+      [`ett starkt minne behåller 3 händelser och ett svagt 1 (${n0.join(' och ')})`, n0[0] === 3 && n0[1] === 1],
+      [`med tiden faller händelserna en i taget, den minst viktiga först (${foll.join(', ')})`, enITaget && minstForst && foll.length >= 2],
+      [`ett kväde ger tillbaka en händelse som skalden minns (${egen.bev!.map(x => x.h).join(', ')})`, tillbaka],
+      [`med en klenod i byn bleknar minnet långsammare (${med.toFixed(2)} mot ${utan.toFixed(2)} efter fem dygn)`, med > utan],
+    ];
+  },
+};

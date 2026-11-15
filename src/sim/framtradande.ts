@@ -10,7 +10,7 @@ import { ALDER, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, o
 import { budHindrar } from './kyrka';
 import { avbryt } from './lager';
 import { eldPlats } from './karta';
-import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm, kandVikt, scenVersion } from './rykten';
+import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm, kandVikt, paminn, scenVersion } from './rykten';
 import { ledareOf, legitimitet, pabud } from './styre';
 import { Ting, tingOf } from './agande';
 import { tingVarde } from './varde';
@@ -178,7 +178,7 @@ function stod(s: State, b: Person, l: Person | undefined, d: number) {
 }
 export const BUDSKAP: Record<Bud, BudDef> = {
   person: { namn: 'Om en person', vikt: (_s, _p, x) => x.e ? x.ev * FRAM.budPerson : 0, amne: (s, p, x) => intryckAmne(s, p, x.e!),
-    verkan: (s, p, b, q, f) => { const e = intryckOm(p, f.om!, f.ik); if (e && e.om !== b.id && rnd(s, 'fram', b) < FRAM.rykte * q) { beratta(s, p, b, e, getRel(s, p, b), f.ver); return true; } } },
+    verkan: (s, p, b, q, f) => { const e = intryckOm(p, f.om!, f.ik); if (e && e.om !== b.id && rnd(s, 'fram', b) < FRAM.rykte * q) { beratta(s, p, b, e, getRel(s, p, b), f.ver); paminn(s, b, e.om, e.bev); return true; } } },
   hylla: { namn: 'Hyllar ledaren', vikt: (_s, _p, x) => x.l && x.op > 0 ? x.op / 100 * FRAM.budStyre : 0, amne: (_s, _p, x) => `${x.l!.name}, som leder byn väl`,
     verkan: (s, _p, b, q, f) => stod(s, b, byId(s, f.om!), FRAM.styre * q) },
   hana: { namn: 'Hånar ledaren', vikt: (s, _p, x) => x.l && x.op < 0 ? -x.op / 100 * FRAM.budStyre * hanTillat(s) : 0, amne: (_s, _p, x) => `${x.l!.name}, som tror sig vara förmer än de andra`,
