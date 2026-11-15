@@ -14,11 +14,13 @@ import { knows } from './teknik';
 import type { HandelseTyp } from './rykten';
 import { amountOf, ownedStock } from './lager';
 import { FOOD } from './saker';
+import type { SkriftLag } from './skrift';
 
 export const LAG = balans('lag', {
   tak: 6, // så många lagar klarar byn utan skrift (steg 8.4.3) ...
   takMinister: 1, // ... och så många fler per minister
-  takVisas: 12, // fliken Styre visar högst så många
+  takVisas: 12, // fliken Styre visar högst så många, och taket blir aldrig högre (steg 10.6.10)
+  takSkrift: 1, // varje gällande lag som står skriven med samma straff och tal som nu höjer taket så här mycket (steg 10.6.10)
   overTak: 0.15, // över taket efterlevs alla lagar så här mycket sämre per lag
   envalde: 0.5, // över den här Envälde-seden får bara ledaren lägga fram (steg 8.4.4)
   allmoge: -0.1, // under den här får vem som helst med inflytande över inflytande
@@ -91,7 +93,15 @@ const agerNagot = (s: State, p: Person) => (s.ting ?? []).some(t => t.agare === 
 export interface Lag { id: string; t: number; straff: number; av: number; om: string; tal?: Record<string, number> } // tal = lagens tal som ändrats (steg 10.5.4)
 export const lagarNu = (s: State): Lag[] => s.styre?.lagar ?? [];
 export const lagGaller = (s: State, id: string) => !!s.styre?.lagar?.some(l => l.id === id);
-export const lagTak = (s: State) => LAG.tak + LAG.takMinister * Object.keys(s.styre?.ministrar ?? {}).length;
+// står lagen skriven (steg 10.6.10): på en sten, ett blad eller i en bok, med samma straff och tal som nu
+const sammaTal = (a?: Record<string, number>, b?: Record<string, number>) => JSON.stringify(a ?? {}) === JSON.stringify(b ?? {});
+const passar = (k: SkriftLag | undefined, l: Lag) => !!k && k.id === l.id && k.straff === l.straff && sammaTal(k.tal, l.tal);
+// var lagen står skriven: på en sten, på ett blad, i en bok (fliken Styre)
+export const skrivenVar = (s: State, l: Lag) => [...(s.runstenar?.some(r => passar(r.lag, l)) ? ['på en sten'] : []), ...(s.ting?.some(t => passar(t.skrift?.lag, l)) ? ['på ett blad'] : []), ...(s.ting?.some(t => !!t.delar?.some(k => passar(k.lag, l))) ? ['i en bok'] : [])];
+export const skrivenLag = (s: State, l: Lag) => !!s.runstenar?.some(r => passar(r.lag, l)) || !!s.ting?.some(t => passar(t.skrift?.lag, l) || !!t.delar?.some(k => passar(k.lag, l)));
+// taket (steg 8.4.3): minnet, ministrarna och de skrivna lagarna (steg 10.6.10), aldrig över takVisas
+export const lagTakDelar = (s: State) => ({ minne: LAG.tak, ministrar: LAG.takMinister * Object.keys(s.styre?.ministrar ?? {}).length, skrivna: LAG.takSkrift * lagarNu(s).filter(l => skrivenLag(s, l)).length });
+export const lagTak = (s: State) => { const d = lagTakDelar(s); return Math.min(LAG.takVisas, d.minne + d.ministrar + d.skrivna); };
 export const lagForBrott = (s: State, h: HandelseTyp) => lagarNu(s).find(l => (LAGAR[l.id].brott ?? []).includes(h));
 // den som inte får rösta (steg 8.4.6)
 export function utanRost(s: State, p: Person) {

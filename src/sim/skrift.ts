@@ -24,6 +24,9 @@ import { LIV } from './liv';
 import { helig, prastOf } from './kult';
 import { Tro, troNamn, troOf } from './religion';
 import { troshusAv } from './troshus';
+import { LAGAR, type Lag, lagTak, lagarNu, skrivenLag } from './lagar';
+import { pabud } from './styre';
+import { STRAFF_NAMN } from './styre';
 
 // ---------- skriften (system 10.6) ----------
 // Skriften i tre stadier: runstenen, pergamentet och boken. Registret SKRIFTER har en rad per slag av innehåll, med de stadier
@@ -32,7 +35,7 @@ import { troshusAv } from './troshus';
 // efter en bedrift, och räknas in i projektens värde som lusten efter pynt (projektraden runsten). De som går förbi läser stenen
 // en gång i timmen och får intrycket i andra hand, och den som står på en sten glöms långsammare (rykten.ts). Stenen brinner
 // inte, flyttas inte och rivs inte för ett hus: den är ingen station, och rutan är upptagen för allt annat (usable i lager.ts)
-export type SkriftSlag = 'minne' | 'handelse' | 'helig' | 'lardom' | 'poesi' | 'berattelse' | 'kunskap';
+export type SkriftSlag = 'minne' | 'handelse' | 'helig' | 'lardom' | 'poesi' | 'berattelse' | 'kunskap' | 'lag';
 export type SkriftStadium = 'sten' | 'pergament' | 'bok';
 // skill = färdigheten som gör att man skriver slaget oftare (steg 10.6.5)
 export const SKRIFTER: Record<SkriftSlag, { namn: string; stadier: SkriftStadium[]; skill: Skill }> = {
@@ -43,9 +46,11 @@ export const SKRIFTER: Record<SkriftSlag, { namn: string; stadier: SkriftStadium
   poesi: { namn: 'Poesi', stadier: ['sten', 'pergament', 'bok'], skill: 'skaldskap' }, // skaldens kväde om någon
   berattelse: { namn: 'Berättelse', stadier: ['pergament', 'bok'], skill: 'berattande' }, // en historia om någon skrivaren minns
   kunskap: { namn: 'Kunskap', stadier: ['bok'], skill: 'berattande' }, // en handbok om en teknik (steg 10.6.6)
+  lag: { namn: 'Lag', stadier: ['sten', 'pergament', 'bok'], skill: 'berattande' }, // en lag med sitt straff, så att byn klarar fler (steg 10.6.10)
 };
 export { SKRIFT } from './skriftTal';
-export interface Runsten { id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number } // tro = den heliga stenens tro (om = tron)
+export interface SkriftLag { id: string; straff: number; tal?: Record<string, number> }
+export interface Runsten { lag?: SkriftLag; id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number } // tro = den heliga stenens tro (om = tron)
 export const runstenarOf = (s: State): Runsten[] => (s.runstenar ??= []);
 export const runstenAt = (s: State, x: number, y: number) => s.runstenar?.find(r => r.x === x && r.y === y);
 
@@ -61,7 +66,7 @@ export function runor(text: string) {
 // p:s starkaste lust att resa en sten: sorgen efter en nära anhörig (sorgen i stadier, liv.ts; borta när den döda redan har en sten
 // eller en gravtext) eller stoltheten efter en egen stor bedrift (p.bedrift, rykten.ts), som avtar till noll på stolthetDygn, och
 // halveras för varje sten p redan rest; eller, för prästen och lärjungen, trons heliga kväden
-interface Lust { w: number; slag: SkriftSlag; om: { id: number; namn: string }; bev?: Bevis[] }
+interface Lust { w: number; slag: SkriftSlag; om: { id: number; namn: string }; bev?: Bevis[]; lag?: SkriftLag }
 const harSten = (s: State, slag: SkriftSlag, om: number, t?: number) => !!s.runstenar?.some(r => r.slag === slag && r.om.id === om && (t === undefined || r.bev?.[0]?.t === t));
 export function runstenLust(s: State, p: Person): Lust | undefined {
   if (p.gast || ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'stenhuggarplats')) return undefined;
@@ -85,8 +90,31 @@ export function runstenLust(s: State, p: Person): Lust | undefined {
     const w = SKRIFT.helig * SKRIFT.avtar ** (s.runstenar ?? []).filter(r => r.slag === 'helig' && r.tro === tr.id).length;
     if (!best || w > best.w) best = { w, slag: 'helig', om: { id: tr.id, namn: troNamn(tr) } };
   }
+  const lg = lagLust(s, p);
+  if (lg && (!best || lg.w > best.w)) best = { w: lg.w, slag: 'lag', om: { id: LAG_ID.indexOf(lg.lag.id), namn: LAGAR[lg.lag.id]!.namn }, lag: lg.lag };
   return best;
 }
+
+// ---------- de skrivna lagarna (steg 10.6.10) ----------
+// En lag som står skriven behöver byn inte hålla i minnet: varje gällande lag som finns i minst en skrift av slaget lag med samma
+// straff och tal som nu höjer taket (lagTak i lagar.ts). Lusten att skriva en lag är andelen lagar som är oskrivna, gånger hur nära
+// taket byn är, gånger påbudet Skriv ner lagarna: fullt påbud hela, inget halva och ett påbud emot ingen. Den som skriver väljer den
+// oskrivna lag hen själv röstar starkast för
+const LAG_ID = Object.keys(LAGAR);
+export function lagSkrivVikt(s: State) {
+  const lag = lagarNu(s);
+  if (!lag.length) return 0;
+  const v = pabud(s, 'lagskrift'), f = v < 0 ? 0 : 0.5 + 0.5 * v;
+  return lag.filter(l => !skrivenLag(s, l)).length / lag.length * Math.min(1, lag.length / Math.max(1, lagTak(s))) * f;
+}
+function lagLust(s: State, p: Person): { w: number; lag: SkriftLag } | undefined {
+  const w = SKRIFT.lag * lagSkrivVikt(s);
+  if (w <= 0 || living(s).some(q => q !== p && q.task?.act === 'runsten' && q.task.tool === 'lag')) return undefined; // en lag i taget
+  let bast: Lag | undefined, bv = -Infinity;
+  for (const l of lagarNu(s)) { if (skrivenLag(s, l)) continue; const v = LAGAR[l.id]!.rost(s, p).v; if (v > bv) { bv = v; bast = l; } }
+  return bast && { w, lag: { id: bast.id, straff: bast.straff, ...(bast.tal ? { tal: { ...bast.tal } } : {}) } };
+}
+const lagText = (k: SkriftLag) => `${LAGAR[k.id]!.text}. Straffet: ${STRAFF_NAMN[k.straff]!.toLowerCase()}.`;
 
 // ---------- platsen ----------
 // en ruta ute i byn: på byns kant, närmast mitten av kanten, där inget står och inget hus är
@@ -125,7 +153,7 @@ const platsFor = (s: State, l: Lust) => { const tr = l.slag === 'helig' ? troOf(
 function uppgift(s: State, p: Person) {
   const l = runstenLust(s, p), at = l && platsFor(s, l);
   if (!l || !at) return undefined;
-  return { act: 'runsten' as const, text: l.slag === 'minne' ? `Reser en runsten efter ${l.om.namn}.` : l.slag === 'helig' ? 'Ristar de heliga kvädena på en sten.' : 'Reser en runsten om sin bedrift.', min: SKRIFT.min, tool: l.slag, spot: { x: at.x + 0.5, y: at.y + 0.5 }, ref: l.om.id };
+  return { act: 'runsten' as const, text: l.slag === 'minne' ? `Reser en runsten efter ${l.om.namn}.` : l.lag ? `Ristar lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? 'Ristar de heliga kvädena på en sten.' : 'Reser en runsten om sin bedrift.', min: SKRIFT.min, tool: l.slag, spot: { x: at.x + 0.5, y: at.y + 0.5 }, ref: l.om.id };
 }
 const radStenar = { huggen_sten: SKRIFT.stenar };
 laggTillProjekt({
@@ -162,15 +190,17 @@ export function runstenKlar(s: State, p: Person, t: Task) {
     text = `${p.name} reste stenen efter ${l.om.namn}${rel ? `, sin ${rel}` : ''}${vad.length ? `, som ${vad.join(' och ')}` : ''}.`;
   } else if (l.slag === 'helig') {
     text = troOf(s, l.om.id)?.kvade?.text ?? ''; // kvädet som det löd när det ristades
+  } else if (l.lag) {
+    text = `${l.om.namn}: ${lagText(l.lag)}`;
   } else {
     text = `${p.name} reste stenen. ${han(p)[0].toUpperCase() + han(p).slice(1)} ${bevisText(bev![0], '').trim()}.`;
   }
   const id = (s.runstenar?.reduce((m, r) => Math.max(m, r.id), 0) ?? 0) + 1;
-  runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), text, runor: runor(text) });
+  runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), text, runor: runor(text) });
   s.byggV = (s.byggV ?? 0) + 1;
   count(s, 'runsten'); count(s, 'runsten_' + l.slag);
-  think(p, l.slag === 'minne' ? `Reste en sten efter ${l.om.namn}` : l.slag === 'helig' ? 'Ristade de heliga kvädena' : 'Reste en sten om sin bedrift', 0.03, s.now, 12 * HOUR);
-  const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en runsten om sin bedrift.`;
+  think(p, l.slag === 'minne' ? `Reste en sten efter ${l.om.namn}` : l.slag === 'helig' ? 'Ristade de heliga kvädena' : l.lag ? 'Ristade en lag' : 'Reste en sten om sin bedrift', 0.03, s.now, 12 * HOUR);
+  const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en runsten om sin bedrift.`;
   log(s, rad, 'rel', [p.id]); notis(s, 'runsten', rad, [p.id], { x, y }); kronika(s, rad, 'runsten');
 }
 
@@ -222,7 +252,7 @@ function skriftBorta(s: State) {
   if (nu.length || forr.length) s.skriftSedda = nu;
 }
 // i rutan som visas vid ett tryck: runorna överst och texten på svenska under
-export const runstenRubrik = (r: Runsten) => r.slag === 'minne' ? `Stenen efter ${r.om.namn}` : r.slag === 'helig' ? `Den heliga stenen (${r.om.namn.toLowerCase()})` : `${gen(r.av.namn)} sten`;
+export const runstenRubrik = (r: Runsten) => r.lag ? `Lagstenen (${LAGAR[r.lag.id]?.namn.toLowerCase() ?? 'lagen'})` : r.slag === 'minne' ? `Stenen efter ${r.om.namn}` : r.slag === 'helig' ? `Den heliga stenen (${r.om.namn.toLowerCase()})` : `${gen(r.av.namn)} sten`;
 // trons heliga stenar (fliken Religion)
 export const heligaStenar = (s: State, tr: Tro) => (s.runstenar ?? []).filter(r => r.slag === 'helig' && r.tro === tr.id);
 
@@ -234,8 +264,8 @@ export const heligaStenar = (s: State, tr: Tro) => (s.runstenar ?? []).filter(r 
 // (2 minuter) när det har något nytt för dem: en lärdom de inte har, eller ett intryck de inte hört; nyttan är noll när de redan
 // vet det, så ingen lista över det lästa behövs
 // tek = handbokens teknik och tro = de heliga kvädenas tro (i boken, steg 10.6.6); ensam = krönikan har sagt att ingen längre kan tekniken
-export interface Skrift { slag: SkriftSlag; av: { id: number; namn: string }; t: number; titel: string; text: string; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; ensam?: true; q?: number; fel?: number } // q = kvaliteten (steg 10.6.7), fel = överdriften eller underdriften gånger värdet
-interface SkrivLust { w: number; slag: SkriftSlag; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; bok?: Ting }
+export interface Skrift { lag?: SkriftLag; slag: SkriftSlag; av: { id: number; namn: string }; t: number; titel: string; text: string; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; ensam?: true; q?: number; fel?: number } // q = kvaliteten (steg 10.6.7), fel = överdriften eller underdriften gånger värdet
+interface SkrivLust { lag?: SkriftLag; w: number; slag: SkriftSlag; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; bok?: Ting }
 export const bladen = (s: State) => tingOf(s).filter(t => t.skrift);
 // böckerna (steg 10.6.6): 8 blad mellan 2 plankor, som fylls del för del, högst SKRIFT.bokDelar delar av samma slag (bokens genre)
 export const bockerna = (s: State) => tingOf(s).filter(t => t.k === 'bok');
@@ -308,6 +338,8 @@ export function skrivLust(s: State, p: Person): SkrivLust | undefined {
   const tr = troOf(s, p.tro);
   if (tr && tr.slut === undefined && tr.kvade && (prastOf(s, tr) === p || tr.kvade.larjunge === p.id) && bokPlats(s, 'helig') && !harBlad(s, k => k.slag === 'helig' && k.tro === tr.id))
     c.push({ w: SKRIFT.helig, slag: 'helig', om: { id: tr.id, namn: troNamn(tr) }, tro: tr.id });
+  const lg = lagLust(s, p);
+  if (lg) c.push({ w: lg.w, slag: 'lag', lag: lg.lag });
   const avtar = SKRIFT.avtar ** skrifter(s).filter(k => k.av.id === p.id).length, blad = getable(s, p, 'pergament') >= 1;
   let best: SkrivLust | undefined;
   for (const l of c) {
@@ -327,7 +359,7 @@ export function skrivVal(s: State, p: Person, at: { x: number; y: number }) {
   const ljus = skrivLjus(s, at.x, at.y);
   if (ljus < SKRIFT.ljusMin || !harAtt(s)) return undefined;
   const l = skrivLust(s, p);
-  return l && l.w > 0 ? { w: l.w * ljus * SKRIFT.fritid, why: l.slag === 'lardom' ? 'Vill skriva ner det hen vet' : l.om ? `Vill skriva om ${l.om.namn}` : 'Vill skriva' } : undefined;
+  return l && l.w > 0 ? { w: l.w * ljus * SKRIFT.fritid, why: l.slag === 'lardom' ? 'Vill skriva ner det hen vet' : l.lag ? `Vill skriva ner lagen ${LAGAR[l.lag.id]!.namn.toLowerCase()}` : l.om ? `Vill skriva om ${l.om.namn}` : 'Vill skriva' } : undefined;
 }
 const tingXY = (s: State, t: Ting) => { const q = t.hos !== undefined ? byId(s, t.hos) : undefined; return q ? { x: q.x, y: q.y } : t.x !== undefined ? { x: t.x + 0.5, y: t.y! + 0.5 } : undefined; };
 const kanBev = (q: Person, om: number, b: Bevis) => !!q.intryck?.some(e => e.om === om && e.bev?.some(x => x.h === b.h && x.t === b.t));
@@ -370,6 +402,7 @@ function skriv(s: State, p: Person, l: SkrivLust): { titel: string; text: string
   if (l.slag === 'handelse') return { titel: `${gen(p.name)} bedrift`, text: `${p.name} skrev: ${han(p)} ${vad}.` };
   if (l.slag === 'lardom') return { titel: `Om ${LARDOMAR[l.lar!.k].namn}`, text: describe(s, l.lar!).text };
   if (l.slag === 'poesi') return { titel: `Kvädet om ${om}`, text: `Hör om ${om}, som ${vad}.` };
+  if (l.slag === 'lag' && l.lag) return { titel: LAGAR[l.lag.id]!.namn, text: lagText(l.lag) };
   if (l.slag === 'kunskap') { const t = TEK[l.tek!]!; return { titel: `Om ${t.namn.toLowerCase()}`, text: `${t.text} ${t.effekt}` }; }
   if (l.slag === 'helig') return { titel: `De heliga kvädena (${om.toLowerCase()})`, text: troOf(s, l.tro!)?.kvade?.text ?? '' };
   return { titel: `Berättelsen om ${om}`, text: `${om} ${vad}.` };
@@ -385,7 +418,7 @@ export function skrivKlar(s: State, p: Person) {
   const fel = fc > 0 && rnd(s, 'kunskap', p) < fc ? (rnd(s, 'kunskap', p) < 0.5 ? SKRIFT.felOver : SKRIFT.felUnder) : undefined; // slås en gång och står kvar i texten
   if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, l.lar.k === 'fara' ? MINNE.vMaxFara : l.lar.k === 'vatten' ? 1 : l.lar.k === 'pris' ? Infinity : MINNE.vMax) };
   if (fel && l.lar) tx.text = describe(s, l.lar).text;
-  const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}) };
+  const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}), ...(l.lag ? { lag: l.lag } : {}) };
   if (l.bok) {
     (l.bok.delar ??= []).push(k); count(s, 'bokdel');
     if (l.bok.delar.length === 1) { const rad = `${p.name} skrev den första delen i en bok: ${tx.titel.toLowerCase()}.`, at = tingXY(s, l.bok); log(s, rad, 'skill', [p.id]); notis(s, 'skrift', rad, [p.id], at ? { x: Math.floor(at.x), y: Math.floor(at.y) } : undefined); kronika(s, rad, 'skrift'); } // steg 10.6.8

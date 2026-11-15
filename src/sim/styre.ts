@@ -1,6 +1,6 @@
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think } from './folk';
-import { efterlevs, lagDygn, lagForBrott, tasUppKvall } from './lagar';
+import { efterlevs, lagDygn, lagForBrott, lagTak, lagarNu, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
@@ -175,6 +175,8 @@ const PDEF = {
   vinter: { ruta: 'Arbetet', namn: 'Samla för vintern', text: 'Hur många fler som arbetar med maten och veden', asikt: (s, l) => lagerAsikt(s, l) },
   // nattvakten (steg 10.1.20, vaktHot i val.ts): en försiktig ledare vill ha fler som vaktar
   vakt: { ruta: 'Arbetet', namn: 'Nattvakten', text: 'Hur många som håller vakt om natten', sed: 'forsiktighet', asikt: (s, l) => clamp(drar(s, l).forsiktighet, -1, 1) },
+  // de skrivna lagarna (steg 10.6.10, skrift.ts): ledaren vill ha mer ju närmare taket byn är
+  lagskrift: { ruta: 'Arbetet', namn: 'Skriv ner lagarna', text: 'Hur gärna lagarna skrivs ner, så att byn klarar fler', asikt: s => clamp(lagarNu(s).length / Math.max(1, lagTak(s)), 0, 1) }, // 0 utan lagar, 1 vid taket
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån', text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
   // tystnaden (steg 10.4.10): en person, levande eller död, som inte ska nämnas

@@ -1,4 +1,4 @@
-import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagarNu, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -91,7 +91,10 @@ const lagTalHtml = (l: Lag) => Object.entries(LAGAR[l.id].tal ?? {}).map(([k, d]
 function lagarDel() {
   const lagar = lagarNu(s);
   if (!lagar.length) return '';
-  return `<p class="muted small">${lagar.length} av ${lagTak(s)} lagar · efterlevs ${Math.round(efterlevs(s) * 100)} %</p><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span>${lagTalHtml(l)}</li>`; }).join('')}</ul>`;
+  const td = lagTakDelar(s), takText = `Taket: ${td.minne} som byn minns, ${td.ministrar} för ministrarna och ${td.skrivna} för de skrivna lagarna${td.minne + td.ministrar + td.skrivna > LAG.takVisas ? `, aldrig fler än ${LAG.takVisas}` : ''}.`;
+  // skriftens symbol vid en skriven lag (steg 10.6.10): ett tryck säger var den står och hur taket är sammansatt
+  const skrift = (l: Lag) => { const v = skrivenVar(s, l); return v.length ? ` <span class="lagskrift" title="${esc(`Står skriven ${v.join(' och ')}, så byn behöver inte minnas den. ${takText}`)}">${iconImg('pergament', 12)}</span>` : ''; };
+  return `<p class="muted small" title="${esc(takText)}">${lagar.length} av ${lagTak(s)} lagar · efterlevs ${Math.round(efterlevs(s) * 100)} %</p><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span>${lagTalHtml(l)}${skrift(l)}</li>`; }).join('')}</ul>`;
 }
 // budgeten (steg 10.5.7): en symbol per del med sin procent, ritade som påbuden; texten och det delen fick i år vid ett tryck
 function budgetDelar() {

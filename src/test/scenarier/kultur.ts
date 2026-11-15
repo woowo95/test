@@ -230,6 +230,46 @@ SCENARIER.forelasning = {
   },
 };
 
+SCENARIER.lagskrift = {
+  text: 'Steg 10.6.10: skrivna lagar. En lag som står skriven på en runsten, ett blad eller i en lagbok behöver byn inte hålla i minnet, så varje skriven lag höjer taket för antalet lagar med ett, upp till 12. Ändras straffet eller tas lagen bort räknas skriften inte, och påbudet Skriv ner lagarna styr hur gärna det görs',
+  kor: () => {
+    const s = createState(6, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen), p = v[0]!;
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.tro = undefined; }
+    p.tek = { ...(p.tek ?? {}), stenhuggarplats: 1 };
+    const ids = Object.keys(SIM.LAGAR), lag = (id: string) => ({ id, t: s.now, straff: SIM.LAGAR[id]!.straff, av: p.id, om: 'x' });
+    s.styre = { historia: [], oppna: [] } as NonNullable<State['styre']>;
+    s.styre!.lagar = ids.slice(0, 6).map(lag);
+    const tak0 = SIM.lagTak(s);
+    const rista = () => { const l = SIM.runstenLust(s, p), at = SIM.runstenPlats(s)!; if (l?.slag !== 'lag') return; SIM.runstenKlar(s, p, { act: 'runsten', phase: 'do', tx: at.x + 0.5, ty: at.y + 0.5, until: s.now, carry: 0, why: '', tool: 'lag', ref: l.om.id }); };
+    rista(); rista();
+    const stenar = (s.runstenar ?? []).filter(r => r.lag).length, tak2 = SIM.lagTak(s);
+    s.runstenar = s.runstenar!.slice(1);
+    const tak1 = SIM.lagTak(s);
+    const kvar = s.runstenar![0]!.lag!, l = s.styre!.lagar!.find(x => x.id === kvar.id)!;
+    l.straff = (l.straff + 1) % SIM.STRAFF_NAMN.length;
+    const takStraff = SIM.lagTak(s);
+    l.straff = kvar.straff;
+    s.styre!.lagar = s.styre!.lagar!.filter(x => x !== l);
+    const takBort = SIM.lagTak(s), skrivenBort = SIM.skrivenLag(s, { ...l });
+    // tretton skrivna lagar: taket blir aldrig över 12
+    const t = createState(6, START); t.styre = { historia: [], oppna: [] } as NonNullable<State['styre']>; t.styre!.lagar = ids.slice(0, 13).map(lag);
+    t.runstenar = t.styre!.lagar!.map((x, i) => ({ id: i + 1, x: i, y: 0, t: t.now, slag: 'lag' as const, av: { id: p.id, namn: p.name }, om: { id: i, namn: x.id }, text: '', runor: '', lag: { id: x.id, straff: x.straff } }));
+    const takMax = SIM.lagTak(t);
+    // påbudet på lägsta: ingen vill skriva
+    const ledare = v[1]!;
+    s.styre = { historia: [{ id: ledare.id, namn: ledare.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: ledare.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0, lagskrift: -1 } as never, lagar: ids.slice(0, 6).map(lag) } as NonNullable<State['styre']>;
+    const lagst = SIM.lagSkrivVikt(s), lustLagst = SIM.runstenLust(s, p)?.slag;
+    return [
+      [`med sex lagar och taket ${tak0} ristas två lagar, och taket blir ${tak2}`, tak0 === 6 && stenar === 2 && tak2 === 8],
+      [`en sten rivs och taket blir ${tak1}`, tak1 === 7],
+      [`ett ändrat straff gör att skriften inte räknas (taket ${takStraff})`, takStraff === 6],
+      [`en borttagen lag räknas inte heller (taket ${takBort}, men stenen står kvar)`, takBort === 6 && (s.runstenar?.length ?? 0) === 1 && skrivenBort],
+      [`taket går aldrig över 12 (${takMax} med 13 skrivna lagar)`, takMax === 12],
+      [`med påbudet på lägsta skriver ingen (vikten ${lagst}, ${lustLagst ?? 'ingen lust'})`, lagst === 0 && lustLagst !== 'lag'],
+    ];
+  },
+};
+
 SCENARIER.scen = {
   text: 'Scenen och instrumenten (steg 4.3.2.2): byn vill ha en trumma, en benflöjt och en lyra till scenen när den finns. Med ett instrument vid scenen blir det sång och musik där, lyran ger mest glädje, och utan scen bara kväden, tal, föreläsningar och teater',
   kor: () => {

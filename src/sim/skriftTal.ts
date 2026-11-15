@@ -34,5 +34,6 @@ export const SKRIFT = balans('skrift', {
   // kvaliteten (steg 10.6.7, kvalitet.ts): så stor del av innehållet når läsaren per nivå (usel, slarvig, normal ...), chansen att en
   // usel och en slarvig skrift får ett fel när den skrivs, och felet: värdet gånger felOver eller felUnder (lika ofta)
   nar: [0.3, 0.6, 1, 1, 1, 1], felChans: [0.5, 0.25], felOver: 2, felUnder: 0.5,
+  lag: 0.8, // lusten att skriva ner en lag, gånger andelen oskrivna, hur nära taket byn är och påbudet (steg 10.6.10)
   ljusMin: 0.3, // i mindre ljus än så här varken skrivs eller läses det
 });
