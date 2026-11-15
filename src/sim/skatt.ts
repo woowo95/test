@@ -37,6 +37,8 @@ export const SKATT = balans('skatt', {
   arvLutar: 0.6, // så mycket lutningen mot Sammanhållning väger i rösten om arvsskatten för andra
 });
 
+// åldern då föräldrarna slutar försörja barnen (steg 10.5.10): åldern i skattelagen, samma tal också innan lagen finns
+export const forsorjAlder = (s: State) => lagGaller(s, 'skatt') ? lagTal(s, 'skatt', 'alder') : SKATT.alder;
 // en sak man kan betala med: värdet per styck, hur många och hur de lämnas till byn
 interface Betalning { v: number; n: number; ta: (m: number) => number }
 const avStack = (s: State, p: Person, k: string, n: number): Betalning => ({ v: grundvarde(k), n: Math.floor(n + 1e-9), ta: m => ownMove(s, k, m, p.id, BYN) });

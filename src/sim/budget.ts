@@ -20,12 +20,13 @@ import { budgetMatKrok, fromByn, ownsId, releaseOwner } from './lager';
 import { FOOD } from './saker';
 import { kroppensMat } from './ekonomi';
 import { ligger } from './sjukdom';
-import { lagGaller, lagTal } from './lagar';
+import { lagGaller } from './lagar';
 import { ledareOf } from './styre';
 import { drar } from './seder';
 import { FRAGOR, vikter } from './rost';
 import { TAS_UPP, budgetBortKrok } from './lagar';
 import { knows } from './teknik';
+import { forsorjAlder } from './skatt';
 import { sakNamn } from './saker';
 import type { Tro } from './religion';
 
@@ -62,7 +63,7 @@ const tronMedHus = (s: State): Tro[] => (s.tron ?? []).filter(tr => tr.slut === 
 const stodjer = (s: State) => { const l = ledareOf(s); return l ? living(s).filter(p => p !== l && !p.gast && ageOf(p, s.now) >= ALDER.vuxen && (s.rels[relKey(p.id, l.id)]?.op ?? 0) > BUDG.stod) : []; };
 
 // matdelarna (steg 10.5.8): så mycket delens folk äter på ett dygn (ett år i spelet)
-const svag = (s: State, p: Person) => ageOf(p, s.now) < (lagGaller(s, 'skatt') ? lagTal(s, 'skatt', 'alder') : ALDER.vuxen) || ageOf(p, s.now) >= BUDG.gamla || ligger(p, s.now);
+const svag = (s: State, p: Person) => (ageOf(p, s.now) < forsorjAlder(s) && !p.partner) || ageOf(p, s.now) >= BUDG.gamla || ligger(p, s.now);
 const ater = (s: State, f: (p: Person) => boolean) => living(s).filter(p => !p.gast && f(p)).reduce((a, p) => a + kroppensMat(p, s.now), 0);
 const narSvag = (s: State, p: Person) => svag(s, p) || living(s).some(q => svag(s, q) && (isParent(p, q) || isParent(q, p) || q.id === p.partner));
 export const BUDGET: Record<string, BudgetDef> = {

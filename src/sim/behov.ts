@@ -8,6 +8,7 @@ import { State, Person, HOUR, DAY, MIN } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, livet, living, log, ovning, relKey, stat, think } from './folk';
+import { forsorjAlder } from './skatt';
 import { VARDRATT, kanGa, mindreMat } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, newTing, tingOf } from './agande';
@@ -224,10 +225,13 @@ export const desperatMat = (s: State, p: Person) => desperat(s, p, MAT);
 export const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m) || arBast(g, m); // den bästa vännen delar man med som med släkt (steg 3.1.1)
 // g är vaken (familjen kan man väcka) och så nära m att m kan be g om något (familjen längre bort)
 const narvarande = (g: Person, m: Person) => { const fam = isFamily(g, m); return (g.task?.act !== 'sova' || fam) && Math.hypot(g.x - m.x, g.y - m.y) <= (fam ? DELA.fragaFamilj : DELA.fragaR); };
-// det g har över att ge m. En förälder delar med sitt barn också det sista, partner och släkt behåller en portion
+// föräldrarna försörjer barnen (steg 10.5.10, "Ägande", Familjen) tills de når åldern i skattelagen (forsorjAlder i skatt.ts);
+// den som har egen partner försörjs inte. Efter åldern är barnet släkt som annan släkt
+export const forsorjer = (s: State, g: Person, m: Person) => isParent(g, m) && !m.partner && ageOf(m, s.now) < forsorjAlder(s);
+// det g har över att ge m. En förälder delar med sitt barn som hen försörjer också det sista, partner och släkt behåller en portion
 // åt sig själva, andra så mycket de själva behöver (b.kvar)
-const overOf = (s: State, g: Person, b: Behov, m: Person) =>
-  ownFor(s, g, b) - (isParent(g, m) ? 0 : isFamily(g, m) ? b.mangd(g, s.now) : b.kvar);
+export const overOf = (s: State, g: Person, b: Behov, m: Person) =>
+  ownFor(s, g, b) - (forsorjer(s, g, m) ? 0 : isFamily(g, m) ? b.mangd(g, s.now) : b.kvar);
 // kretsen m frågar: de i närheten som har det m behöver (har), de som helst ger (w) först. Familjen kan man väcka. En gåva
 // ger bara den som vill ge (w > 0), ett byte gör man med alla man inte är osams med
 const osams = (s: State, g: Person, m: Person) => getRel(s, g, m).op < REL.osams;
@@ -419,7 +423,7 @@ function tradeMaterial(s: State, p: Person, k: string, n: number) {
 // rikare byn är desto mindre ger man (delning.ts). Till sina barn och sin partner ger man lika gärna i en rik by
 export function willing(s: State, g: Person, m: Person, overflod = 1) {
   const over = clamp(DELA.overflodBas + DELA.overflodSteg * overflod, DELA.overflodMin, DELA.overflodMax), sed = 1 + DELA.gemenskapGe * s.seder.v.gemenskap;
-  if (isParent(g, m)) return clamp(DELA.geBarn * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
+  if (forsorjer(s, g, m)) return clamp(DELA.geBarn * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista, så länge man försörjer det
   const r = getRel(s, g, m);
   if (r.op < REL.osams || g.arke === m.id) return 0; // sin ärkefiende ger man aldrig något (steg 3.1.1)
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;

@@ -26,7 +26,7 @@ SCENARIER.behov = {
     needLadder(s, a, 1); const byns = a.hunger > 0.3 && ownFor(s, b, MAT) === 5;
     // ett barn ber sin förälder, som delar också det sista
     ({ s, a, b, c } = ny());
-    a.mother = b.id; gain(s, b, 'bar', 1); b.task = { act: 'sova' } as any;
+    a.mother = b.id; a.partner = undefined; a.born = s.now - 10 * SIM.DAY; gain(s, b, 'bar', 1); b.task = { act: 'sova' } as any;
     needLadder(s, a, 1e6); const foralder = a.hunger > 0.3 && ownFor(s, b, MAT) < 0.5;
     // en vän ger det hen har över
     ({ s, a, b, c } = ny());

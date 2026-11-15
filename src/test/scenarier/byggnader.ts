@@ -1649,6 +1649,41 @@ SCENARIER.lon = {
   },
 };
 
+SCENARIER.forsorjning = {
+  text: 'Steg 10.5.10: föräldrarna försörjer barnen tills de når åldern i skattelagen (18 år, också innan lagen finns): föräldern ger sitt barn också det sista, och hela barnets lön betalas till föräldern. Efter åldern, eller med egen partner, är barnet släkt som annan släkt',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s);
+    const ppl = living(s), g = ppl.find(q => ageOf(q, s.now) >= 20)!, c = ppl.find(q => q !== g && q.id !== g.partner && ageOf(q, s.now) >= 20)!;
+    c.mother = g.id; c.father = undefined; c.partner = undefined;
+    c.born = s.now - 10 * DAY; // tio år
+    for (const k of SIM.FOOD) setAmount(s, k, 0);
+    put(s, 'bar', 3, { [g.id]: 3 }); // föräldern har lite mat
+    const lite = SIM.ownFor(s, g, SIM.MAT), barnOver = SIM.overOf(s, g, SIM.MAT, c), barnVill = SIM.willing(s, g, c);
+    // samma barn över åldern: som en släkting
+    c.born = s.now - 25 * DAY;
+    const vuxenOver = SIM.overOf(s, g, SIM.MAT, c), vuxenVill = SIM.willing(s, g, c);
+    // med egen partner försörjs barnet inte
+    c.born = s.now - 10 * DAY; c.partner = ppl.find(q => q !== g && q !== c)!.id;
+    const medPartner = SIM.overOf(s, g, SIM.MAT, c) < barnOver;
+    c.partner = undefined;
+    // barnets lön hamnar hos föräldern
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: g.id, om: '' }, { id: 'lon', t: s.now, straff: 0, av: g.id, om: '' }] } as unknown as State['styre'];
+    s.budget = { delar: [{ id: 'forradet', vikt: 1 }] };
+    setAmount(s, 'silver', 0); put(s, 'silver', 20);
+    c.lonTim = { forradet: 10 };
+    const g0 = SIM.ownsAmount(s, g, 'silver');
+    SIM.budgetDygn(s); SIM.lonDygn(s);
+    const tillForalder = SIM.ownsAmount(s, g, 'silver') - g0, tillBarn = SIM.ownsAmount(s, c, 'silver');
+    return [
+      [`föräldern ger barnet också det sista (har ${lite.toFixed(1)}, över för barnet ${barnOver.toFixed(1)}, vilja ${barnVill.toFixed(2)})`, barnOver >= lite - 1e-9 && barnVill >= 0.9],
+      [`samma barn över åldern får som en släkting (över ${vuxenOver.toFixed(1)}, vilja ${vuxenVill.toFixed(2)})`, vuxenOver < barnOver && vuxenVill < barnVill],
+      ['ett barn med egen partner försörjs inte', medPartner],
+      [`barnets lön hamnar hos föräldern (${tillForalder} silver, barnet ${tillBarn})`, tillForalder === 5 && tillBarn === 0],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {

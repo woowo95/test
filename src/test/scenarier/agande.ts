@@ -118,14 +118,14 @@ SCENARIER.gava = {
     const ge = (g: Person, k: string, n: number) => { for (let i = 0; i < n; i++) { addTool(s, k, g); } };
     const har = (p: Person, k: string) => ownedBy(s, p).filter(t => t.k === k).length;
     // förälder och barn: a har två spjut, b (barnet) inget
-    ge(a, 'fiskespjut', 2); b.mother = a.id;
+    ge(a, 'fiskespjut', 2); b.mother = a.id; const bFodd = b.born; b.born = s.now - 10 * SIM.DAY; // ett barn som a försörjer (steg 10.5.10)
     let barn = 0;
     for (let i = 0; i < 20; i++) { if (askForTool(s, a, b) === 'gåva') barn++; if (har(b, 'fiskespjut')) ownedBy(s, b).forEach(t => { if (t.k === 'fiskespjut') t.agare = a.id; }); }
     // tankarna efter gåvan finns kvar efter en timme (12 och 6 timmar)
     const tanke = (p: Person, t: string) => p.thoughts.some(q => q.text.startsWith(t) && q.until > s.now + HOUR);
     const tankar = barn > 0 && tanke(b, 'Fick ett träspjut') && tanke(a, 'Gav ett träspjut');
     // ovän: c och a är osams
-    b.mother = undefined; getRel(s, a, c).op = -40;
+    b.mother = undefined; b.born = bFodd; getRel(s, a, c).op = -40;
     let ovan = 0; for (let i = 0; i < 20; i++) if (askForTool(s, a, c)) ovan++;
     // en vän ger
     getRel(s, a, d).op = 40;

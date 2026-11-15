@@ -8,6 +8,7 @@
 // omtanken om byn, gånger den del av lönen man verkligen fått de senaste åren.
 import { DAY, HOUR_S, Person, State } from './typer';
 import { knows } from './teknik';
+import { forsorjer } from './behov';
 import { balans } from './balans';
 import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, think } from './folk';
@@ -37,6 +38,8 @@ export const LON = balans('lon', {
 const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
 export const lonNu = (s: State) => lagGaller(s, 'lon') && lagGaller(s, 'skatt');
 const vuxna = (s: State) => living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vuxen);
+// föräldern som försörjer p, modern först
+const forsorjare = (s: State, p: Person) => [p.mother, p.father].map(id => living(s).find(q => q.id === id)).find(g => !!g && forsorjer(s, g, p));
 const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 
 // budgetdelen som p:s arbete just nu betalas ur, om det är arbete för byn
@@ -74,20 +77,21 @@ export function lonDygn(s: State) {
     const tim = p.lonTim;
     if (!tim) { p.lonObetald = undefined; continue; }
     p.lonTim = undefined;
+    const till = forsorjare(s, p) ?? p; // hela barnets lön betalas till föräldern som försörjer det (steg 10.5.10)
     let skuld = 0, fick = 0;
     for (const d of Object.keys(tim).sort()) {
       const x = tim[d] * w, n = Math.floor(x + 1e-9);
       if (x - n > 1e-9) (p.lonTim ??= {})[d] = (x - n) / w; // timmarna mot nästa silver räknas till nästa år
       if (n < 1) continue;
       skuld += n;
-      const silver = Math.floor(Math.min(n, ownsId(s, budgetId(d), 'silver')) + 1e-9), m = silver >= 1 ? ownMove(s, 'silver', silver, budgetId(d), p.id) : 0;
+      const silver = Math.floor(Math.min(n, ownsId(s, budgetId(d), 'silver')) + 1e-9), m = silver >= 1 ? ownMove(s, 'silver', silver, budgetId(d), till.id) : 0;
       let kvar = n - m;
       if (m >= 1) count(s, 'lonSilver', m);
       // resten i hela saker av den mat byn har över bufferten, så länge en sak inte är värd mer än det som är kvar
       for (const k of FOOD) {
         const v = grundvarde(k);
         while (kvar >= v - 1e-9 && v > 0 && bynsAv(s, k) >= 1 && foodDaysAll(s) > buffert(s, 'mat')) {
-          if (fromByn(s, k, 1, p.id) < 1) break;
+          if (fromByn(s, k, 1, till.id) < 1) break;
           kvar -= v; count(s, 'lonVaror', 1);
         }
       }
