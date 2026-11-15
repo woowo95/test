@@ -100,6 +100,7 @@ export * from './sim/kyrka';
 export * from './sim/troshus';
 export * from './sim/kultlatt';
 export * from './sim/grav';
+export * from './sim/skrift';
 export * from './sim/rost';
 export * from './sim/lagar';
 export * from './sim/byggnad';

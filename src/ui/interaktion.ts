@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { bordighet, fuktAv, husVisas, rutorAv } from '../sim';
-import { gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel, hageAt , nyttSlag } from '../sim';
+import { runstenAt, gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel, hageAt , nyttSlag } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -110,6 +110,7 @@ app.stage.on('pointertap', e => {
   else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
   else if (filtAt(gx, gy)) { ui.filtAt = filtAt(gx, gy)!; ui.byteNr = -1; if (valdFilt()) visa('filt'); }
   else if (fireAt(gx, gy) !== undefined) { const id = fireAt(gx, gy)!; ui.eld = id ? id - 1 : undefined; visa('eld'); }
+  else if (runstenAt(s, c.x, c.y)) { ui.sak = `R:${runstenAt(s, c.x, c.y)!.id}`; visa('sak'); } // runstenen (steg 10.6.1)
   else if (gravAt(s, c.x, c.y)) { ui.sak = `g:${c.y * W + c.x}`; visa('sak'); } // graven (steg 8.5.1)
   else if (heligAt(s, c.x, c.y)) { ui.sak = `h:${c.y * W + c.x}`; visa('sak'); } // den heliga platsen (steg 8.5.5)
   else if (kvarAt(s, c.x, c.y)) { ui.sak = `q:${kvarAt(s, c.x, c.y)!.id}`; visa('sak'); } // det som blivit kvar av en människa (steg 8.2.3)

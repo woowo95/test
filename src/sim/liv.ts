@@ -370,7 +370,7 @@ function emigrate(s: State) {
 // sorgen i stadier (steg 9.2.33): q förlorade p. Först förlusten, och sorgTimme byter till sorgen och saknaden
 function sorj(s: State, q: Person, p: Person, ord: string, v: number, dygn: number) {
   think(q, `Förlorade ${ord}, ${p.name}`, v * LIV.forlust, s.now, LIV.forlustDygn * DAY);
-  (q.sorg ??= []).push({ namn: p.name, ord, v, dygn, t0: s.now });
+  (q.sorg ??= []).push({ namn: p.name, vem: p.id, ord, v, dygn, t0: s.now });
 }
 // en gång i timmen (steg.ts): den som sörjer går från förlusten till sorgen och sedan till saknaden
 export function sorgTimme(s: State) {
