@@ -15,6 +15,7 @@ import { ACTS } from './handlingar';
 import { balans } from './balans';
 import { RELT, arArke, arBast, arMentor, arRivaler, minnsRel, skiljGrans } from './relationer';
 import { tankePa } from './teknik';
+import { lonTankbar } from './lon';
 import { loggBer, samtalAmne, samtalBorjar } from './berattelser';
 import { predika } from './religion';
 import { tystISporten } from './sport';
@@ -221,6 +222,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
     predika(s, a, b, r, kind); // och den som tror försöker övertyga (steg 4.1.2.2, religion.ts)
     if (a.tek?.ledarskap) tankePa(s, a, 'lag', SAMTAL.ledTanke * SAMTAL.lagTanke); // och sedan på lag (steg 8.4.1)
+    if (lonTankbar(s, a)) tankePa(s, a, 'lon', SAMTAL.ledTanke * SAMTAL.lagTanke); // och på lön, när byn tagit in nog i skatt (steg 10.5.9)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaSmak(a, b, r.op); // och om sin favoritmat eller det man avskyr (steg 9.6.6)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)

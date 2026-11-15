@@ -117,6 +117,8 @@ export const BUDGET: Record<string, BudgetDef> = {
   },
 };
 export const BUDGET_LIST = Object.keys(BUDGET);
+// lönen en del är skyldig, i hela silver (lon.ts sätter den)
+export const budgetLonKrok: { f: (s: State, del: string) => number } = { f: () => 0 };
 // varje del äger det den fått som en egen ägare i förrådet, långt under kyrkornas (kyrkaId)
 export const budgetId = (id: string) => -1000000 - BUDGET_LIST.indexOf(id);
 export const budgetNu = (s: State): BudgetDel[] => (lagGaller(s, 'skatt') && s.budget?.delar) || [];
@@ -148,7 +150,8 @@ export function delaBudget(n: number, w: number[], tak: number[]) {
 export function budgetDygn(s: State) {
   budgetSlapp(s);
   const delar = budgetNu(s).filter(d => d.vikt > 0 && !BUDGET[d.id].mat);
-  const saknar = delar.map(d => BUDGET[d.id].saknar(s)), fick: Record<string, Record<string, number>> = {};
+  // lönen delen är skyldig för årets timmar (steg 10.5.9, lon.ts) är silver den saknar
+  const saknar = delar.map(d => { const m = BUDGET[d.id].saknar(s), l = budgetLonKrok.f(s, d.id); if (l >= 1) m.silver = (m.silver ?? 0) + l; return m; }), fick: Record<string, Record<string, number>> = {};
   const slag = [...new Set(saknar.flatMap(m => Object.keys(m)))].sort();
   for (const k of slag) {
     const byn = Math.floor(bynsAv(s, k) + 1e-9);
@@ -187,7 +190,7 @@ function matDygn(s: State, fick: Record<string, Record<string, number>>) {
     const t = 'Byn höll gästabud.'; log(s, t, 'world'); kronika(s, t, 'ledare');
   }
 }
-const bynsAv = (s: State, k: string) => { let n = 0; for (const a of s.stackar ?? []) if (a.k === k) { let o = 0; for (const id in a.ag ?? {}) o += a.ag![id]; n += Math.max(0, a.n - o); } return n; };
+export const bynsAv = (s: State, k: string) => { let n = 0; for (const a of s.stackar ?? []) if (a.k === k) { let o = 0; for (const id in a.ag ?? {}) o += a.ag![id]; n += Math.max(0, a.n - o); } return n; };
 
 // ---------- frågorna ----------
 // den som får lägga fram föreslår en ny del när det den gäller finns i byn, eller en annan vikt, efter det hen själv vill

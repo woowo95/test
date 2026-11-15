@@ -74,13 +74,14 @@ import { vaktSteg } from './vakt';
 import { JAKT, jaktBar, jaktFallt, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
-import { sumOf } from './egendom';
+import { BYN, sumOf } from './egendom';
 import { vaggRensa, husKlart, avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, siteOf, toWalls, wearBuild, workOn } from './bygg';
 import { Bit, bitAt, bitsOf, husById, MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, roofed, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { omtankeTimme } from './omtanke';
+import { lonDygn, lonOmtanke, lonRakna, lonRegister } from './lon';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -239,7 +240,7 @@ for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
   // fångstgropen (steg 10.2.84) grävdes där den ska ligga; mjärden och snaran görs vid fångstbänken och sätts ut
   if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
 };
-lagRegister(); skattRegister(); budgetRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
+lagRegister(); skattRegister(); budgetRegister(); lonRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
@@ -374,7 +375,8 @@ export const TAKTER: Takt[] = [
   { namn: 'facklorTimme', sek: 3600, fn: s => { facklorTimme(s); } },
   { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
-  { namn: 'omtanken', sek: 3600, fn: s => { omtankeTimme(s); } }, // omtanken om byn (projekt.ts, steg 10.5.2)
+  { namn: 'omtanken', sek: 3600, fn: s => { omtankeTimme(s); lonOmtanke(s); } },
+  { namn: 'lönen', sek: 60, fn: (s, dt) => lonRakna(s, dt) }, // timmarna för byn och missnöjet med lönen (lon.ts, steg 10.5.9) // omtanken om byn (projekt.ts, steg 10.5.2)
   { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },
   { namn: 'forbrukTimme', sek: 3600, fn: s => { forbrukTimme(s); } },
   { namn: 'arbetsTimme', sek: 3600, fn: s => { arbetsTimme(s); } },
@@ -398,7 +400,7 @@ export const TAKTER: Takt[] = [
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
-  { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
+  { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },
@@ -901,7 +903,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   } else if (tk.hamta && tk.site && tk.phase === 'go') hamtat(s, p, tk); // vid lagret: materialet till hantverket (steg 9.2.43)
   else if (tk.phase === 'back' && LAMNA[tk.act]) LAMNA[tk.act]!(s, p, tk); // framme hos den man bär till (LAMNA)
   else if (tk.phase === 'back') {
-    storeLoad(s, tk, p.x, p.y, p.id);
+    storeLoad(s, tk, p.x, p.y, tk.lon === 'forradet' ? BYN : p.id); // det som bärs hem i arbete för byns förråd mot lön blir byns (steg 10.5.9)
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
     const r = tk.res;
     if (r && r.until > now + 2 * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }

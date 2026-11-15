@@ -168,6 +168,7 @@ export interface Task {
   pass?: number; // när ett pass med redskap som görs är slut (ms): blir ett klart före det görs ett till om byn vill ha fler (steg 2.3.8)
   handel?: true; // görs att byta med handlaren (steg 6.2.11): redskapet är slaget i tool, repet tvinnas över det byn vill ha
   hamtar?: string; // materialet uppgiften hämtar till ett projekt eller bygge (steg 6.1.17): samlandet ger det, också när förrådet har tändmaterial nog
+  lon?: string; // arbetet för byn betalas ur den här budgetdelen, och det som bärs hem blir byns (steg 10.5.9, lon.ts)
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
   bar?: number; // vården: den skadade som bärs hem (halsa.ts, steg 2.5.2)
   falt?: true; // vattensäcken bärs till fältet ref i stället för till en människa (torka.ts, steg 3.8.2)
@@ -225,6 +226,7 @@ export interface Person {
   sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)
   svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
   omt?: number; // omtanken om byn, räknad en gång i timmen (projekt.ts, steg 10.5.2)
+  lonTim?: Record<string, number>; lonFick?: number; lonObetald?: number; // lönen (steg 10.5.9, lon.ts): timmarna för byn i år per budgetdel, den del av lönen man fått de senaste åren, och den del man inte fick i fjol
   bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; sedSkand?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
   drag?: { namn: string; v: number; t: number }; // anfallarnas tro som en dragning efter att ha svurit trohet (steg 8.8.6)
   missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)

@@ -45,7 +45,7 @@ const STEGEN = [0, 1, 4, 5, 2, 7, 8, 3, 6]; // ordningen från mildast till hår
 
 // lagarna: en rad per lag. prio = hur väl det som hänt väcker den (0–1). rost = åsikten och intresset, −1 till 1. brott = händelserna som bryter
 // mot den. kan = systemet den kräver finns
-export interface LagDef { namn: string; sym: string; text: string; straff: number; brott?: HandelseTyp[]; prio(s: State): number; rost(s: State, p: Person): { v: number; why: string }; kan?(s: State): boolean; om?: string; tal?: Record<string, LagTalDef> }
+export interface LagDef { namn: string; sym: string; text: string; straff: number; brott?: HandelseTyp[]; prio(s: State): number; rost(s: State, p: Person): { v: number; why: string }; kan?(s: State): boolean; tek?: string; om?: string; tal?: Record<string, LagTalDef> }
 // ett tal i en lag (steg 10.5.4): stegen av tillåtna värden, värdet från början och det var och en vill ha. 0 i stegen kan betyda
 // ingen, och ingen är då värt `ingen` (0 för en undre gräns, Infinity för en övre)
 export interface LagTalDef { namn: string; sym: string; stege: number[]; start: number; ingen?: number; vill(s: State, p: Person): number; visa(v: number): string }
@@ -135,7 +135,7 @@ export const TAS_UPP: { id: string; lista(s: State, p: Person): LagForslag[] }[]
     return d >= ROST.skillnad ? [{ fr: { f: 'pabud', d: { k, v: Math.round(ny * 100) / 100, ...pd }, fram: p.id }, prio: d, varfor: `${p.name} vill ändra påbudet om ${PABUD[k].namn.toLowerCase()}${om !== undefined ? ` om ${pd.namn}` : ''}` }] : [];
   }) },
   { id: 'nylag', lista: (s, p) => knows(p, 'lag') ? Object.keys(LAGAR).flatMap(id => {
-    if (lagGaller(s, id) || LAGAR[id].kan?.(s) === false || LAGAR[id].rost(s, p).v <= 0) return [];
+    if (lagGaller(s, id) || LAGAR[id].kan?.(s) === false || (LAGAR[id].tek && !knows(p, LAGAR[id].tek!)) || LAGAR[id].rost(s, p).v <= 0) return [];
     const full = lagarNu(s).length >= lagTak(s) ? 0.5 : 1;
     return [{ fr: { f: 'nylag', d: { id }, fram: p.id }, prio: LAGAR[id].prio(s) * full, varfor: `${LAGAR[id].om ? `Efter ${LAGAR[id].om}` : 'Det behövs'} vill ${p.name} ha en lag` }];
   }) : [] },

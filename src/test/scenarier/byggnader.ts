@@ -1600,6 +1600,55 @@ SCENARIER.matbudget = {
   },
 };
 
+SCENARIER.lon = {
+  text: 'Steg 10.5.9: med lönelagen ger arbete för byn lön per timme ur budgetdelen arbetet hör till: vakten ur delen för vakterna och den som bär till förrådet ur förrådets del, silver först och sedan mat över bufferten. Det som inte kan betalas stryks, och den som inte fick sin lön blir missnöjd och bryr sig mindre om byns arbete. Före lagen ger inget arbete lön',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s);
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }] } as unknown as State['styre'];
+    const [vakt, barare] = living(s).filter(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 60);
+    const arbeta = () => {
+      vakt.task = { act: 'vakt', phase: 'do', tx: vakt.x, ty: vakt.y, until: s.now + DAY, carry: 0 };
+      barare.task = { act: 'samla', phase: 'go', tx: barare.x, ty: barare.y, until: s.now + DAY, carry: 0, lon: 'forradet' };
+      SIM.lonRakna(s, 10 * 3600); // tio timmar
+    };
+    const silver = (p: typeof vakt) => SIM.ownsAmount(s, p, 'silver');
+    const maten = (n: number) => { for (const k of SIM.FOOD) setAmount(s, k, 0); if (n) put(s, 'bar', n); };
+    // före lagen: ingen lön
+    arbeta();
+    const fore = !vakt.lonTim && !barare.lonTim && SIM.lonDel(s, vakt.task) === undefined;
+    // lagen gäller: tio timmar à ½ silver ger 5 silver var, ur var sin del
+    s.styre!.lagar!.push({ id: 'lon', t: s.now, straff: 0, av: vakt.id, om: '' } as never);
+    s.budget = { delar: [{ id: 'vakter', vikt: 1 }, { id: 'forradet', vikt: 1 }] };
+    setAmount(s, 'silver', 0); put(s, 'silver', 20); maten(0);
+    arbeta();
+    const v0 = silver(vakt), b0 = silver(barare);
+    SIM.budgetDygn(s); SIM.lonDygn(s);
+    const betalt = [silver(vakt) - v0, silver(barare) - b0];
+    // utan silver betalas lönen med mat över bufferten
+    setAmount(s, 'silver', 0); maten(2000);
+    arbeta();
+    const bar0 = SIM.ownsAmount(s, barare, 'bar');
+    SIM.budgetDygn(s); SIM.lonDygn(s);
+    const medMat = SIM.ownsAmount(s, barare, 'bar') - bar0;
+    // en tom del: lönen stryks, missnöjet stiger och omtanken om byns arbete sjunker
+    SIM.omtankeTimme(s); SIM.lonOmtanke(s);
+    const omt0 = barare.omt!;
+    maten(0); setAmount(s, 'silver', 0);
+    arbeta();
+    SIM.budgetDygn(s); SIM.lonDygn(s);
+    barare.missnoje = 0;
+    SIM.lonRakna(s, 3600);
+    SIM.omtankeTimme(s); SIM.lonOmtanke(s);
+    return [
+      ['före lönelagen ger inget arbete lön', fore],
+      [`vakten och den som bär till förrådet får 5 silver var för tio timmar (${betalt.join(' och ')})`, betalt[0] === 5 && betalt[1] === 5],
+      [`utan silver betalas lönen med mat (${Math.round(medMat)} bär)`, medMat >= 1],
+      [`en tom del ger missnöje (${(barare.missnoje ?? 0).toFixed(3)}) och mindre omtanke om byns arbete (${omt0.toFixed(2)} → ${barare.omt!.toFixed(2)})`, (barare.missnoje ?? 0) > 0 && barare.omt! < omt0],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {
