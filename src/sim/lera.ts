@@ -45,6 +45,6 @@ export function leraGravd(s: State, p: Person, t: Task) {
   count(s, 'leraGravd', n);
   if (forstaGang(s, 'leraForsta')) log(s, `${p.name} grävde lera vid stranden.`, 'world', [p.id]);
 }
-import { NARA } from './fynd';
+import { NARA } from './nara';
 // (teknikernas krav frågar ofta; platsen räknas om en gång i timmen, steg 10.2.21)
 NARA.lera = s => !!leraPlats(s); // leran att gräva nära byn räknas som till hands (naraByn i fynd.ts, steg 10.2.40)

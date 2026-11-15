@@ -136,6 +136,35 @@ export const BUD = {
     om: () => 'När handlaren kommer får hen en hel mat ur byns förråd, en gång per besök, och de som följer budet får en bättre relation med hen.' }, // handel.ts frågar valkomnaHandlare
   begravFiende: { namn: 'Den fallne fienden begravs', sort: 'krav', storlek: 2, skala: 'forlat', sida: 0, text: 'En fallen fiende får en grav',
     om: () => 'De som följer budet begraver en avrustad fiende på trons gravplats, med vanlig grävtid, i stället för att hen ligger kvar.' }, // grav.ts
+  // gravens vård (steg 10.4.2): en rad i GRAVAR (grav.ts) per bud. Det som drar mest blir sed vid trons första begravning
+  gravStolpe: { namn: 'En gravstolpe på graven', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravvard', text: 'Graven får en stolpe av trä' },
+  gravBrada: { namn: 'En gravbräda på graven', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en bräda med den dödas namn' },
+  stockram: { namn: 'En stockram kring graven', sort: 'krav', storlek: 1, skala: 'oppen', sida: 1, grupp: 'gravvard', text: 'Graven ramas in med stockar' },
+  gravhus: { namn: 'Ett gravhus över graven', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'gravvard', text: 'Graven får ett litet hus' },
+  // begravningens former (steg 10.4.5): kroppens väg och samlingen, en rad i BEGRAVNINGAR (grav.ts) per bud
+  bal: { namn: 'Bål', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'vag', text: 'De döda bränns på ett bål',
+    om: () => 'Fyra ved tas vid graven och bålet lägger en timme till arbetet. Askan får en grav och en vård som andra. Saknas veden begravs hen i jorden.' },
+  vattenGrav: { namn: 'Vattnet', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'vag', text: 'De döda sänks i sjön',
+    om: () => 'Kroppen bärs till trons plats vid stranden och sänks där på en halv timme. Sjön minns de sänkta.' },
+  tystBegr: { namn: 'Den tysta begravningen', sort: 'krav', storlek: 1, skala: 'fest', sida: 1, grupp: 'samling', text: 'Bara familjen samlas vid graven',
+    om: () => 'Förälder, barn och partner samlas en timme vid graven. De får lite humör och tro.' },
+  vanligBegr: { namn: 'Begravningen', sort: 'krav', storlek: 2, grupp: 'samling', text: 'Trosfränderna samlas vid graven',
+    om: () => 'Trosfränderna och familjen samlas en timme vid graven, och prästen leder när tron har en. De får humör och tro.' },
+  // gravplatsen (steg 10.4.6): en rad i GRAVPLATSER (grav.ts) per bud. Den blir sed när den första troende dör, så att också hen hamnar där
+  gravNara: { namn: 'Gravplatsen nära byn', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravplats', text: 'De döda vilar strax utanför byn' },
+  gravBryn: { namn: 'Gravplatsen i skogsbrynet', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravplats', text: 'De döda vilar där skogen börjar' },
+  gravSjo: { namn: 'Gravplatsen vid sjön', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravplats', text: 'De döda vilar nära vattnet' },
+  gravDjup: { namn: 'Gravplatsen djupt i skogen', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravplats', text: 'De döda vilar inne i den täta skogen',
+    om: () => 'Tio rutor utanför byn där skogen är tät. Långt att bära kroppen och långt till vården och besöken.' },
+  gravLangt: { namn: 'Gravplatsen långt från byn', sort: 'krav', storlek: 1, skala: 'forlat', sida: 1, grupp: 'gravplats', text: 'De döda hålls långt från de levande',
+    om: () => 'Femton rutor utanför byn. Långt att bära kroppen och långt till vården och besöken.' },
+  gravHelig: { namn: 'Gravplatsen vid den heliga platsen', sort: 'krav', storlek: 1, grupp: 'gravplats', text: 'De döda vilar vid trons heliga plats' },
+  gravsten: { namn: 'En gravsten med runor', sort: 'krav', storlek: 2, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en sten med runor' }, // stengravarna (steg 10.4.3)
+  stensattning: { namn: 'En stensättning kring graven', sort: 'krav', storlek: 2, skala: 'oppen', sida: 1, grupp: 'gravvard', text: 'Graven får en ring av stenar' },
+  skeppssattning: { namn: 'De stora får en skeppssättning', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'storagrav', text: 'Ledare, helgon och legender får stenar i form av ett skepp',
+    om: () => 'Den som varit ledare, är trons helgon eller var en legend med gott anseende när hen begravdes får stenar resta i form av ett skepp i stället för den vanliga vården.' },
+  gravhog: { namn: 'De stora får en gravhög', sort: 'krav', storlek: 1, skala: 'livet', sida: 1, grupp: 'storagrav', text: 'Ledare, helgon och legender får en gravhög',
+    om: () => 'Den som varit ledare, är trons helgon eller var en legend med gott anseende när hen begravdes får en gravhög av jord och torv i stället för den vanliga vården.' },
   kvade: { namn: 'Kväden vid högtiden', sort: 'krav', storlek: 1, skala: 'fest', sida: 0, kraver: 'hogtid', text: 'Den bästa skalden kväder om tron vid högtiden',
     om: () => 'Den som är bäst i skaldskap bland dem som är med framför ett kväde om tron för de samlade. Saknas skalden mår de som följer budet lite sämre.' },
   framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta', sed: ['gemenskap', 1] },
@@ -373,7 +402,7 @@ function helgonDygn(s: State) {
     const kand = s.people.find(p => p.died !== undefined && s.now - p.died >= KYRKA.helgonDygn * DAY && p.tro === tr.id && p.fame.length >= 3 && !tr.helgon?.some(h => h.id === p.id) && !living(s).some(q => s.rels[relKey(p.id, q.id)]));
     if (!kand) continue;
     (tr.helgon ??= []).push({ id: kand.id, namn: kand.name, t: s.now, krönika: kand.fame.slice(0, 3).join('. ') + '.', myt: `${kand.fame[0]}. Så berättar de, och varje gång blir det större.` });
-    count(s, 'helgon');
+    count(s, 'helgon'); const gh = s.gravar?.find(g => g.vem === kand.id); if (gh) gh.stor = true; // helgonet är stort och får de storas vård (steg 10.4.2)
     const t = `${kand.name} har blivit ett helgon i ${troNamn(tr).toLowerCase()}.`;
     log(s, t, 'rel', []); kronika(s, t, 'tro');
   }

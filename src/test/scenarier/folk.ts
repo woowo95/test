@@ -2819,3 +2819,34 @@ SCENARIER.rovarkon = {
     return [[`${k} av ${n} rövare är kvinnor (${Math.round(100 * k / Math.max(1, n))} %)`, n >= 150 && k / n > 0.38 && k / n < 0.62]];
   },
 };
+
+SCENARIER.uppkallad = {
+  env: { BALANS: 'namn.uppkalla=1' }, // varje barn som kan uppkallas blir det
+  text: 'Steg 10.4.1: ett barn uppkallas ibland efter en förfader eller någon föräldrarna minns och byn minns väl, med "den yngre" om förebilden lever och "den andre" om hen är död. Ingen får mer än ett barn uppkallat efter sig, och ett slumpat namn är aldrig namnet på någon byn har kvar',
+  kor: () => {
+    const s = createState(14, START);
+    klockan(s, 12);
+    const farfar = nyInvanare(s, 'm', 60), far = nyInvanare(s, 'm', 30), mor = nyInvanare(s, 'k', 28), hjalte = nyInvanare(s, 'm', 40), skurk = nyInvanare(s, 'm', 40);
+    far.father = farfar.id;
+    // modern minns en hjälte som byn minns väl, och en skurk som byn minns illa
+    for (const q of living(s)) { SIM.handelse(s, hjalte, 'bjorndodare', undefined, undefined, q, 2); SIM.handelse(s, skurk, 'drap', far, undefined, q, 2); }
+    hjalte.died = s.now; skurk.died = s.now;
+    const fod = (sex: 'm' | 'k') => { const b = SIM.newPerson(s, sex, s.now, mor, far); s.people.push(b); return b; };
+    const b1 = fod('m'), b2 = fod('m'), b3 = fod('m'), b4 = fod('m'), dotter = fod('k');
+    const forebild = (b: Person) => SIM.byId(s, b.uppkallad);
+    const tillagg = (b: Person) => { const q = forebild(b); return !!q && b.name === `${q.name} ${SIM.alive(q) ? 'den yngre' : 'den andre'}`; };
+    const tre = [b1, b2, b3].map(b => b.uppkallad);
+    const levande = living(s).map(q => q.name);
+    const slump = Array.from({ length: 200 }, (_, i) => SIM.makeName(s, i % 2 ? 'k' : 'm'));
+    const upptagna = new Set(s.people.map(q => q.name));
+    return [
+      [`tre söner uppkallas efter farfadern, fadern och hjälten (${[b1, b2, b3].map(b => b.name).join(', ')})`, [farfar.id, far.id, hjalte.id].every(id => tre.includes(id)) && [b1, b2, b3].every(tillagg)],
+      [`"den yngre" efter en levande och "den andre" efter en död (${[b1, b2, b3].find(b => b.uppkallad === hjalte.id)?.name})`, [b1, b2, b3].find(b => b.uppkallad === hjalte.id)?.name === `${hjalte.name} den andre` && [b1, b2, b3].find(b => b.uppkallad === far.id)?.name === `${far.name} den yngre`],
+      [`ingen uppkallas efter skurken eller två gånger efter samma (${b4.name})`, b4.uppkallad === undefined && !b4.name.includes(' den ')],
+      [`en dotter uppkallas bara efter en kvinna (${dotter.name}${forebild(dotter) ? ', efter ' + forebild(dotter)!.name : ''})`, !forebild(dotter) || (forebild(dotter)!.sex === 'k' && tillagg(dotter))],
+      [`två levande bär aldrig samma namn`, new Set(levande).size === levande.length],
+      [`ett slumpat namn är aldrig namnet på någon byn har kvar, levande eller död`, !slump.some(n => upptagna.has(n))],
+      [`byn räknar de uppkallade (${s.stat?.uppkallade ?? 0})`, (s.stat?.uppkallade ?? 0) === s.people.filter(b => b.uppkallad !== undefined).length],
+    ];
+  },
+};

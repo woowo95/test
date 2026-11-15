@@ -391,6 +391,20 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
     for (const p of s.people) if ((p.task?.act as string | undefined) === 'hovbygge') p.task = undefined;
   }],
+  [50, 'v529: gravarna blir jordhögar som får sin vård av den som minns den döda (steg 10.4.2), ledaren nu har varit ledare, och trons gravplats blir ett bud (steg 10.4.6)', s => {
+    for (const g of s.gravar ?? []) if ((g.stil as string) === 'hog') g.stil = 'jord';
+    const l = s.styre?.ledare !== undefined ? s.people.find(p => p.id === s.styre!.ledare) : undefined; if (l) l.ledde = true;
+    // trons gravplats blir ett bud (steg 10.4.6), och platsen den redan har behåller sina gravar
+    const BUDET = { helig: ['gravHelig', 'helig'], vatten: ['gravSjo', 'sjo'], bryn: ['gravBryn', 'bryn'], by: ['gravNara', 'nara'] } as const;
+    for (const tr of s.tron ?? []) {
+      if (!tr.gravSlag) continue;
+      const [bud, k] = BUDET[tr.gravSlag];
+      if (!tr.bud?.some(b => b.id === bud)) (tr.bud ??= []).push({ id: bud, t: s.now });
+      const pl = s.gravplatser, gl = pl?.[`t${tr.id}`];
+      if (pl && gl) { if (k !== 'nara') pl[`t${tr.id}${k}`] ??= gl; delete pl[`t${tr.id}`]; }
+      delete tr.gravSlag;
+    }
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

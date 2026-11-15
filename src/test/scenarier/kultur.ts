@@ -543,7 +543,7 @@ SCENARIER.rostlista = {
     const o = s.styre.roster![0];
     setByn(s); ui.styreDel = 'styre';
     const tryck = (id: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: id.slice(0, id.indexOf('-') + 1) } }) } as unknown as HTMLElement);
-    tryck(`rost-${o.t}-${o.f}`);
+    tryck(`rost-${o.t}-${o.f}-${o.fram}`);
     const h = styreFlik.html();
     const lista = h.match(/<ul class="roster">([\s\S]*?)<\/ul>/)?.[1] ?? '';
     const rader = lista.match(/data-hjalp="rr-[^"]*"/g) ?? [];
@@ -848,6 +848,154 @@ SCENARIER.graven = {
       [`den som tar hand om den döde står inte still vid kroppen (${stod * 5} minuter)`, stod <= 1],
       [`kortet säger vems kropp hen går till ("${kort || SIM.taskName({ act: 'begrava', phase: 'go', tx: 0, ty: 0, until: 0, carry: 0, why: `Bär ${d.name} till graven` })}")`, (kort || SIM.taskName({ act: 'begrava', phase: 'go', tx: 0, ty: 0, until: 0, carry: 0, why: `Bär ${d.name} till graven` })) === `Går till ${/[sxz]$/i.test(d.name) ? d.name : d.name + 's'} kropp`],
       ['graven är en ruta som man kan fråga efter', !!g && SIM.gravAt(s, g.x, g.y) === g],
+    ];
+  },
+};
+// begraver d direkt: kroppen blir en grav där p står (steg 10.4.2)
+function begrav(s: State, p: Person, d: Person) {
+  SIM.die(s, d, 'alderdom');
+  const kr = s.kvarlevor!.find(k => k.k === 'kropp' && k.vem === d.id)!;
+  SIM.gravKlar(s, p, { act: 'grava', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task);
+  return s.gravar!.find(g => g.vem === d.id)!;
+}
+SCENARIER.gravvard = {
+  text: 'Steg 10.4.2: graven är först en jordhög, och den som minns den döda gör vården. Utan tro en gravstolpe innan byn har plankor och sedan en gravbräda; med tro blir raden som drar mest sed vid den första begravningen, de stora får en gravhög, den ovärdiga ingen, och utan material står jordhögen kvar',
+  kor: () => {
+    // utan tro: en gravstolpe, gjord av någon som minns den döda
+    const a = medLedare(), s = a.s, d = a.v[1];
+    klockan(s, 9); tandEld(s); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'plankor', 0);
+    for (const p of s.people) if (p.tek) delete p.tek.klyvplats;
+    for (const q of SIM.living(s)) if (q !== d) SIM.handelse(s, d, 'bjorndodare', undefined, undefined, q, 2);
+    const g = begrav(s, a.v[0], d), hog = !g.vard, forst = SIM.vardFor(s, g);
+    let h = 0; while (!g.vard && h < 48 * 12) { kor(s, 1 / 12); h++; }
+    const virke = SIM.amountOf(s, 'virke');
+    SIM.setAmount(s, 'plankor', 3);
+    const g2 = begrav(s, a.v[0], a.v[2]), brada = SIM.vardFor(s, g2);
+    // utan material står jordhögen kvar
+    SIM.setAmount(s, 'plankor', 0); SIM.setAmount(s, 'virke', 0);
+    const p = a.v[0], tk = { act: 'gravvard', phase: 'do', tx: g2.x, ty: g2.y, until: s.now + SIM.HOUR, carry: 0, tool: 'gravbrada', ref: g2.vem, why: '' } as SIM.Task;
+    p.task = tk; SIM.gravvardBorja(s, p, tk); const utan = !p.task && !g2.vard;
+    // en ovärdig grav får ingen vård
+    const bov = a.v[3]; bov.brottsling = true as never; const g3 = bov ? begrav(s, a.v[0], bov) : undefined;
+    // med tro: naturen ger gravstolpen som sed
+    const b = medTro(6, 1); b.tr.natur = 20; SIM.setAmount(b.s, 'virke', 4);
+    const gb = begrav(b.s, b.v[0], b.v[1]), sedB = b.tr.bud?.find(x => x.id === 'gravStolpe'), vardB = SIM.vardFor(b.s, gb);
+    // livet efter och festen: gravhuset som sed, och ledaren får en gravhög
+    const c = medTro(6, 2); c.tr.sk = { ...c.tr.sk, livet: 90, fest: 20 }; SIM.setAmount(c.s, 'virke', 4); SIM.setAmount(c.s, 'plankor', 4);
+    const led = c.v[1]; led.ledde = true;
+    const gc = begrav(c.s, c.v[0], led), budC = (c.tr.bud ?? []).map(x => x.id), vardC = SIM.vardFor(c.s, gc);
+    const gd = begrav(c.s, c.v[0], c.v[2]), vardD = SIM.vardFor(c.s, gd);
+    return [
+      ['graven är först en jordhög', hog && !!g],
+      [`utan tro och plankor blir det en gravstolpe (${forst})`, forst === 'gravstolpe'],
+      [`den som minns den döda gör vården (${g.vard}, ${h * 5} minuter, virke ${virke} av 6)`, g.vard === 'gravstolpe' && virke === 5],
+      [`när byn har plankor blir det en gravbräda (${brada})`, brada === 'gravbrada'],
+      ['utan material står jordhögen kvar', utan],
+      [`den ovärdiga får ingen vård (${g3 && SIM.vardFor(s, g3)})`, !!g3 && SIM.vardFor(s, g3) === undefined],
+      [`en tro nära naturen får gravstolpen som sed vid första begravningen (${vardB})`, !!sedB && vardB === 'gravstolpe'],
+      [`en tro som ser mot livet efter får gravhuset och gravhögen som seder (${budC.filter(x => x.startsWith('grav')).join(', ')})`, budC.includes('gravhus') && budC.includes('gravhog')],
+      [`ledaren är stor och får en gravhög (${vardC}), de andra gravhuset (${vardD})`, !!gc.stor && vardC === 'gravhog' && !gd.stor && vardD === 'gravhus'],
+    ];
+  },
+};
+SCENARIER.stengrav = {
+  text: 'Steg 10.4.3: stengravarna. Utan tro blir det en gravsten när byn har en huggen sten, och stenen tas när ristningen börjar; en tro går från trä till sten när tyngden räcker, och de stora får en skeppssättning',
+  kor: () => {
+    const a = medLedare(), s = a.s, d = a.v[1];
+    klockan(s, 9); tandEld(s); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'huggen_sten', 2);
+    for (const q of SIM.living(s)) if (q !== d) SIM.handelse(s, d, 'bjorndodare', undefined, undefined, q, 2);
+    const g = begrav(s, a.v[0], d), forst = SIM.vardFor(s, g);
+    let h = 0; while (!g.vard && h < 48 * 12) { kor(s, 1 / 12); h++; }
+    const sten = SIM.amountOf(s, 'huggen_sten');
+    // en tro med tyngd för bud av storlek 2 som kan hugga sten: stensättningen går före stockramen, skeppssättningen före gravhögen
+    const c = medTro(6, 2); c.tr.natur = 50; c.tr.sk = { ...c.tr.sk, oppen: 90, livet: 90, fest: 20 };
+    SIM.setAmount(c.s, 'sten', 20); SIM.setAmount(c.s, 'huggen_sten', 4); SIM.setAmount(c.s, 'virke', 4);
+    const led = c.v[1]; led.ledde = true;
+    const gc = begrav(c.s, c.v[0], led), budC = (c.tr.bud ?? []).map(x => x.id), vardC = SIM.vardFor(c.s, gc);
+    // en by som inte kan hugga sten stannar vid trä
+    const e = medTro(6, 2); e.tr.natur = 50; e.tr.sk = { ...e.tr.sk, oppen: 90 }; SIM.setAmount(e.s, 'sten', 20); SIM.setAmount(e.s, 'huggen_sten', 0); SIM.setAmount(e.s, 'virke', 4);
+    for (const p of e.s.people) if (p.tek) delete p.tek.stenhuggarplats;
+    begrav(e.s, e.v[0], e.v[1]); const budE = (e.tr.bud ?? []).map(x => x.id);
+    return [
+      [`utan tro och med en huggen sten blir det en gravsten (${forst})`, forst === 'gravsten'],
+      [`stenen ristas vid graven (${g.vard}, ${h * 5} minuter, huggen sten ${sten} av 2)`, g.vard === 'gravsten' && sten === 1],
+      [`en tro med tyngd väljer sten (${budC.filter(x => /grav|sattning|stock/.test(x)).join(', ')})`, budC.includes('stensattning') && budC.includes('skeppssattning') && !budC.includes('stockram')],
+      [`ledaren får en skeppssättning (${vardC})`, vardC === 'skeppssattning'],
+      [`en by som inte kan hugga sten stannar vid trä (${budE.filter(x => /grav|sattning|stock/.test(x)).join(', ')})`, budE.includes('stockram') && !budE.includes('stensattning')],
+    ];
+  },
+};
+SCENARIER.gravtext = {
+  text: 'Steg 10.4.4: när vården är klar ristar den som gjorde den en text ur sitt minne: namnet, relationen och de två händelser som väger tyngst, eller bara namnet från den som inte kände hen. En jordhög har ingen text',
+  kor: () => {
+    const a = medLedare(), s = a.s, d = a.v[1], w = a.v[2], fram = a.v[3];
+    klockan(s, 9); SIM.setAmount(s, 'virke', 6);
+    if (w.partner !== undefined) { const o = SIM.byId(s, w.partner); if (o) o.partner = undefined; w.partner = undefined; }
+    if (d.partner !== undefined) { const o = SIM.byId(s, d.partner); if (o) o.partner = undefined; d.partner = undefined; }
+    SIM.pair(s, w, d, true);
+    SIM.handelse(s, d, 'bjorndodare', undefined, undefined, w, 2); SIM.handelse(s, d, 'vargdodare', undefined, undefined, w, 2); SIM.handelse(s, d, 'gava', w, 'en fisk', w, 2);
+    const g = begrav(s, a.v[0], d), jord = g.text;
+    const tk = { act: 'gravvard', phase: 'do', tx: g.x, ty: g.y, until: s.now, carry: 0, tool: 'gravstolpe', ref: g.vem, why: '' } as SIM.Task;
+    w.task = tk; SIM.gravvardBorja(s, w, tk); SIM.gravvardKlar(s, w, tk);
+    const forst = g.text;
+    // den som inte kände hen ristar bara namnet
+    const e = a.v[4] ?? nyInvanare(s, 'm', 30), g2 = begrav(s, a.v[0], e);
+    fram.intryck = (fram.intryck ?? []).filter(x => x.om !== e.id);
+    const tk2 = { ...tk, ref: g2.vem } as SIM.Task; fram.task = tk2; SIM.gravvardBorja(s, fram, tk2); SIM.gravvardKlar(s, fram, tk2);
+    // texten ändras inte när minnet bleknar
+    w.intryck = []; const sen = g.text;
+    return [
+      ['en jordhög har ingen text', jord === undefined],
+      [`texten har namnet, relationen och två händelser ("${forst}")`, !!forst && forst.startsWith(d.name + ', ' + O.gen(w.name) + ' ' + (d.sex === 'k' ? 'hustru' : 'man')) && forst.includes('dödade en björn') && forst.includes(' och ') && (g.textBev?.length ?? 0) === 2],
+      [`skribenten sparas (${g.textAv?.namn})`, g.textAv?.id === w.id],
+      [`den som inte kände hen ristar bara namnet ("${g2.text}")`, g2.text === e.name],
+      ['texten ändras inte när minnet bleknar', sen === forst],
+    ];
+  },
+};
+// d dör, och p bär hen och begraver: kroppens väg och samlingen ur buden som gällde när hen dog (steg 10.4.5)
+function begravHela(s: State, p: Person, d: Person) {
+  SIM.die(s, d, 'alderdom');
+  const kr = s.kvarlevor!.find(k => k.k === 'kropp' && k.vem === d.id)!;
+  const tk = { act: 'begrava', phase: 'do', tx: kr.x, ty: kr.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task;
+  p.task = tk; SIM.kroppUpp(s, p, tk); p.x = tk.tx; p.y = tk.ty;
+  const tid = tk.arbTid ?? 0; s.ritualKo = [];
+  SIM.gravKlar(s, p, tk); p.task = undefined;
+  return { kr, tid, g: s.gravar?.find(g => g.vem === d.id), r: s.ritualKo[0] };
+}
+SCENARIER.begravning = {
+  text: 'Steg 10.4.5: begravningens former. Kroppens väg (jorden, bålet med fyra ved och en timme till, vattnet där kroppen sänks) och samlingen (den enkla, den tysta med familjen, den vanliga med trosfränderna) blir trons seder när en troende dör och sparas på kroppen; en kropp väntar en stund innan någon bär den',
+  kor: () => {
+    // bålet: natur och fest
+    const a = medTro(6, 2); a.tr.natur = 15; a.tr.sk = { ...a.tr.sk, fest: 15, livet: 50 }; SIM.setAmount(a.s, 'ved', 20);
+    const d1 = a.v[1], ved0 = SIM.amountOf(a.s, 'ved');
+    const b1 = begravHela(a.s, a.v[0], d1), ved1 = SIM.amountOf(a.s, 'ved');
+    const vantar = (b1.kr.naraT ?? 0) >= a.s.now - 1 || (b1.kr.annanT ?? 0) > b1.kr.t;
+    // utan ved blir det jorden, och den troende som begraver bryter budet
+    SIM.setAmount(a.s, 'ved', 0); const brutna = a.s.stat?.bud_brutet ?? 0;
+    const b2 = begravHela(a.s, a.v[0], a.v[2]);
+    // den tysta: försakelse
+    const c = medTro(6, 2); c.tr.natur = 60; c.tr.sk = { ...c.tr.sk, fest: 85 };
+    const b3 = begravHela(c.s, c.v[0], c.v[1]), tyst = !!b3.r?.tyst;
+    const vemTyst = b3.r ? SIM.RITUALER.begravning.vem(c.s, { ...b3.r, start: 0, slut: 0 }) : [];
+    // den vanliga
+    const e = medTro(6, 2); e.tr.natur = 60; e.tr.sk = { ...e.tr.sk, fest: 45 };
+    const b4 = begravHela(e.s, e.v[0], e.v[1]);
+    // vattnet (byn 6 har vatten inom räckhåll)
+    const w = medTro(6, 2); w.tr.natur = 5; w.tr.sk = { ...w.tr.sk, fest: 90 };
+    const b5 = begravHela(w.s, w.v[0], w.v[1]), sankt = w.s.sankta?.find(q => q.vem === w.v[1].id);
+    // utan tro: den enkla, utan samling
+    const u = medLedare(), du = u.v[1], barn = u.v.find(q => SIM.isParent(q, du) || SIM.isParent(du, q) || q.partner === du.id);
+    const b6 = begravHela(u.s, u.v[0], du);
+    return [
+      [`bålet blir sed och sparas på kroppen (${b1.kr.bud?.join(', ')})`, !!b1.kr.bud?.includes('bal')],
+      [`bålet tar fyra ved och en timme till (${ved0 - ved1} ved, ${Math.round(b1.tid / SIM.HOUR * 10) / 10} timmar, ${b1.g?.stil})`, ved0 - ved1 === 4 && b1.g?.stil === 'bal' && b1.tid >= 2 * SIM.HOUR],
+      ['kroppen väntar en stund innan någon bär den', vantar],
+      [`utan ved blir det jorden och budet bryts (${b2.g?.stil})`, b2.g?.stil === 'jord' && (a.s.stat?.bud_brutet ?? 0) > brutna],
+      [`den tysta samlar bara familjen (${vemTyst.length} av ${SIM.living(c.s).length})`, tyst && c.tr.bud!.some(x => x.id === 'tystBegr') && vemTyst.every(q => SIM.isParent(q, c.v[1]) || SIM.isParent(c.v[1], q) || q.partner === c.v[1].id || c.v[1].partner === q.id)],
+      [`den vanliga samlar trosfränderna (${e.tr.bud!.filter(x => /Begr/.test(x.id)).map(x => x.id).join(', ')})`, !!b4.r && !b4.r.tyst && e.tr.bud!.some(x => x.id === 'vanligBegr')],
+      [`vattnet: kroppen sänks och sjön minns hen (${w.tr.bud!.filter(x => /vatten|bal/.test(x.id)).map(x => x.id).join(', ')}, ${b5.g ? 'en grav' : 'ingen grav'})`, w.tr.bud!.some(x => x.id === 'vattenGrav') && !b5.g && !!sankt && Math.round(b5.tid / SIM.MIN) === 30],
+      [`utan tro: ingen samling, och familjen får humör (${b6.g?.stil})`, !b6.r && !!b6.g && (!barn || barn.thoughts.some(x => x.text.includes('begravdes')))],
     ];
   },
 };
@@ -1414,8 +1562,9 @@ SCENARIER.buden = {
     // den fallne fienden begravs, av den som följer budet
     s4.kvarlevor = [{ id: 901, k: 'fiende', x: Math.floor(f4.x) + 2, y: Math.floor(f4.y), t: s4.now, vem: -1, namn: 'Rövaren Ulf', text: 'Rövaren Ulf' }];
     const utanTro = nyInvanare(s4, 'm', 25); utanTro.tro = undefined;
-    let valt: ReturnType<typeof SIM.begravaVal>, annanV = false;
-    for (let i = 0; i < 200 && !valt; i++) { s4.now += 60000; valt = SIM.begravaVal(s4, f4); annanV ||= !!SIM.begravaVal(s4, utanTro); }
+    let valt: ReturnType<typeof SIM.begravaVal>;
+    const annanV = SIM.odeFor(s4, utanTro, s4.kvarlevor[0]) === 'skogen'; // den utan budet bär ut hen i skogen (steg 10.4.7)
+    for (let i = 0; i < 200 && !valt; i++) { s4.now += 60000; valt = SIM.begravaVal(s4, f4); }
     if (valt) { const t = { act: 'begrava', phase: 'do', ref: valt.ref, until: s4.now, carry: 0, dark: false, why: '' } as SIM.Task; SIM.kroppUpp(s4, f4, t); SIM.gravKlar(s4, f4, t); }
     const gravd = SIM.gravarOf(s4).find(g => g.namn === 'Rövaren Ulf');
     return [
@@ -1423,7 +1572,7 @@ SCENARIER.buden = {
       [`kväden vid högtiden: utan skald saknas kvädet (${utanKvade}), med en skald får de troende starkare tro (50 → ${vux4[0].troStyrka!.toFixed(1)})`, utanKvade && kvad],
       [`den första skörden offras: en hel sak per skörd (kyrkans korn ${k0} → ${k1} → ${k2})`, k1 === k0 + 1 && k2 === k1 + 1],
       [`handlaren välkomnas med mat och bättre relation (${hs4.text})`, valk],
-      [`den fallne fienden begravs på trons gravplats (${gravd ? `grav, tro ${gravd.tro}` : 'ingen grav'}), men inte av den utan budet (${annanV ? 'valde' : 'valde inte'})`, !!gravd && gravd.tro === tr4.id && !annanV && !s4.kvarlevor.length],
+      [`den fallne fienden begravs på trons gravplats (${gravd ? `grav, tro ${gravd.tro}` : 'ingen grav'}), och den utan budet bär ut hen i skogen (${annanV})`, !!gravd && gravd.tro === tr4.id && annanV && !s4.kvarlevor.length],
 
       [`inget rus: den som följer budet tar inget till kvällen (${rusF ?? 'inget'}), den utan tro tar (${rusO ?? 'inget'}), och den som super bryter budet (${supBrott})`, rusF === undefined && rusO === 'vin' && supBrott],
       [`djuren vilar på den heliga dagen (${avlHelg}, ${klHelg}), men inte andra dagar (${avlVardag ?? 'tillåtet'})`, avlHelg === 'djurVilar' && klHelg === 'djurVilar' && avlVardag === undefined],
@@ -1863,6 +2012,66 @@ SCENARIER.troshusplan = {
       [`frågorna kommer i ordning, och väggarna frågas inte när byn bara kan bygga ett slags (${ordning.join(', ')})`, iOrdning],
       [`planen blir klar och sparas på tron (${SIM.planText(s, tr)})`, SIM.planKlar(s, tr) && tr.plan?.form === 'avlang'],
       [`namnet följer skalorna: en enda gud och präster ger ${namn}, naturens andar ${helgedom}, ett trångt hus ${ve}`, namn === 'Kyrka' && helgedom === 'Helgedom' && ve === 'Vé'],
+    ];
+  },
+};
+SCENARIER.gravplats = {
+  text: 'Steg 10.4.6: gravplatsen efter tron. Raderna i GRAVPLATSER (nära byn, i skogsbrynet, nära sjön, djupt i skogen, långt från byn, vid den heliga platsen) är bud som blir trons sed när den första troende dör, så att också hen hamnar där; avståndet märks bara som gångtid',
+  kor: () => {
+    const plats = (natur: number, sk: Partial<Record<SIM.SkalaId, number>>) => {
+      const a = medTro(6, 2); a.tr.natur = natur; a.tr.sk = { ...a.tr.sk, ...sk };
+      const b = begravHela(a.s, a.v[0], a.v[1]), bud = a.tr.bud?.find(x => /^grav(Nara|Bryn|Sjo|Djup|Langt|Helig)$/.test(x.id))?.id;
+      // platsen, också när kroppen sänktes eller brändes (då ligger trons gravplats där nästa grav hamnar)
+      const k = bud && (Object.keys(SIM.GRAVPLATSER) as SIM.PlatsId[]).find(q => SIM.GRAVPLATSER[q].bud === bud);
+      const c = b.g ?? (k ? SIM.gravPlats(a.s, a.tr, [bud!]) : undefined);
+      return { a, b, bud, c, ut: c ? SIM.utanforByn(a.s, c.x, c.y) : -1, tid: b.tid };
+    };
+    const nara = plats(85, { livet: 50 }), bryn = plats(20, { livet: 50 }), djup = plats(10, { oppen: 100, livet: 50 }), langt = plats(50, { forlat: 95, livet: 50 });
+    const skog = (() => { const g = djup.c; if (!g) return 0; let n = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.isForest(djup.a.s, (g.y + dy) * SIM.W + g.x + dx)) n++; return n; })();
+    // den heliga platsen går före
+    const h = medTro(6, 2); h.tr.natur = 85;
+    const k = SIM.heligaKandidater(h.s, h.tr)[0]; SIM.FRAGOR.nyttBud.gor(h.s, { tro: h.tr.id, id: 'helig', v: SIM.heligVarde(k.x, k.y) }, undefined);
+    const hp = h.s.heliga?.find(q => q.tro === h.tr.id), bh = begravHela(h.s, h.v[0], h.v[1]);
+    // ett andra dödsfall hamnar på samma plats
+    const b2 = begravHela(langt.a.s, langt.a.v[0], langt.a.v[2]);
+    return [
+      [`nära byn för Människa (${nara.bud}, ${nara.ut.toFixed(1)} rutor utanför)`, nara.bud === 'gravNara' && Math.abs(nara.ut - SIM.GRAV.avst) <= 2],
+      [`i skogsbrynet för Natur (${bryn.bud}, ${bryn.ut.toFixed(1)} rutor utanför)`, bryn.bud === 'gravBryn' && bryn.ut <= SIM.GRAV.avst + 4],
+      [`djupt i skogen för Natur och Sluten (${djup.bud}, ${djup.ut.toFixed(1)} rutor utanför, ${skog} av 25 skog runt graven)`, djup.bud === 'gravDjup' && djup.ut >= 6 && skog >= 12],
+      [`långt från byn för Straffande (${langt.bud}, ${langt.ut.toFixed(1)} rutor utanför)`, langt.bud === 'gravLangt' && langt.ut >= 11],
+      [`längre bort är längre att bära: gångtiden syns bara i vägen (grävtiden ${Math.round(langt.tid / SIM.MIN)} mot ${Math.round(nara.tid / SIM.MIN)} min)`, langt.tid === nara.tid || !langt.b.g || !nara.b.g],
+      [`vid den heliga platsen när tron har en (${h.tr.bud?.find(x => x.id.startsWith('grav'))?.id})`, !!hp && h.tr.bud!.some(x => x.id === 'gravHelig') && !!bh.g && Math.hypot(bh.g.x - hp.x, bh.g.y - hp.y) <= 4],
+      [`nästa grav hamnar på samma plats (${b2.g ? Math.round(Math.hypot(b2.g.x - langt.b.g!.x, b2.g.y - langt.b.g!.y)) : '–'} rutor från den första)`, !!b2.g && !!langt.b.g && Math.hypot(b2.g.x - langt.b.g.x, b2.g.y - langt.b.g.y) <= 4],
+    ];
+  },
+};
+SCENARIER.utburen = {
+  text: 'Steg 10.4.7: registret ODEN. Utan tro får byns egna en grav, brottslingen en ovärdig grav på en egen plats dubbelt så långt ut, och den fallne fienden bärs ut i skogen (minst 8 rutor utanför byns område) och läggs ner där på 2 minuter; kroppen ligger kvar och ruttnar som förut och tas inte upp igen',
+  kor: () => {
+    const a = medLedare(), s = a.s, p = a.v[0];
+    klockan(s, 10);
+    // fienden: sakerna först, sedan ut i skogen
+    s.kvarlevor = [{ id: 901, k: 'fiende', x: Math.floor(p.x) + 2, y: Math.floor(p.y), t: s.now - SIM.DAY, vem: -1, namn: 'Rövaren Ulf', text: 'Rövaren Ulf', saker: { bar: 2 } }];
+    const forst = SIM.begravaVal(s, p);
+    SIM.avrustaKlar(s, p, { act: 'avrusta', ref: 901 } as SIM.Task);
+    const valt = SIM.begravaVal(s, p);
+    const t = { act: 'begrava', phase: 'do', ref: 901, until: s.now, carry: 0, why: '' } as SIM.Task;
+    p.task = t; SIM.kroppUpp(s, p, t); const min = Math.round((t.arbTid ?? 0) / SIM.MIN), dit = { x: Math.floor(t.tx!), y: Math.floor(t.ty!) };
+    p.x = t.tx!; p.y = t.ty!; SIM.gravKlar(s, p, t); p.task = undefined;
+    const k = s.kvarlevor!.find(q => q.id === 901), ut = k ? SIM.utanforByn(s, k.x, k.y) : -1, skog = k ? SIM.isForest(s, k.y * SIM.W + k.x) : false;
+    const igen = SIM.begravaVal(s, a.v[1]);
+    // den ruttnar bort som förut
+    s.now = k!.t + 6 * SIM.DAY + SIM.HOUR; SIM.kvarTimme(s); const borta = !s.kvarlevor?.some(q => q.id === 901);
+    // brottslingen: en ovärdig grav dubbelt så långt ut
+    const b = medLedare(), d = b.v[1]; d.brottsling = true as never;
+    const ov = begravHela(b.s, b.v[0], d), van = begravHela(b.s, b.v[0], b.v[2]);
+    const utOv = ov.g ? SIM.utanforByn(b.s, ov.g.x, ov.g.y) : -1, utVan = van.g ? SIM.utanforByn(b.s, van.g.x, van.g.y) : -1;
+    return [
+      ['sakerna fienden bar tas om hand först', !forst && !!valt],
+      [`fienden bärs ut i skogen och läggs ner på ${min} minuter (${ut.toFixed(1)} rutor utanför byn, ${skog ? 'skog' : 'ingen skog'}, ${dit.x},${dit.y})`, min === 2 && !!k?.utburen && ut >= 8 && !s.gravar?.some(g => g.namn === 'Rövaren Ulf')],
+      ['kroppen i skogen tas inte upp igen', !igen],
+      ['och ruttnar bort efter 6 dygn som förut', borta],
+      [`brottslingen får en ovärdig grav dubbelt så långt ut (${utOv.toFixed(1)} mot ${utVan.toFixed(1)} rutor)`, !!ov.g?.ovardig && !ov.r && utOv >= 2 * SIM.GRAV.avst - 2 && utVan <= SIM.GRAV.avst + 2],
     ];
   },
 };

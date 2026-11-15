@@ -1,4 +1,4 @@
-import { tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, GRAVAR, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvOrd, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -54,11 +54,11 @@ function toaHog(i: number) {
       <dt>Gör</dt><dd>${gor.length ? gor.join('<br>') : 'Inget längre, den har nästan bleknat bort'}</dd>
     </dl>`;
 }
-const GRAVSTIL: Record<GravStil, string> = { jord: 'Begravd i jorden', hog: 'En gravhög med gåvor', bal: 'En minnessten efter bålet', vatten: 'Lämnad åt vattnet' };
+const GRAVSTIL: Record<GravStil, string> = { jord: 'Begravd i jorden', bal: 'En minnessten efter bålet', vatten: 'Lämnad åt vattnet' };
 function grav(i: number) {
   const g = gravAt(s, i % W, Math.floor(i / W));
   if (!g) return '<p class="muted">Graven finns inte längre.</p>';
-  return `<div class="phead">${iconImg('grav', 32)}<div><h2>${esc(g.namn)}s grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}. Begravd för ${durTxt(s.now - g.t)} sedan.</p>${g.med?.length ? `<p class="small">${g.stil === 'bal' ? 'Brändes med' : 'I graven'}: ${esc(g.med.map(k => sakNamn(k)).join(', '))}</p>` : ''}`;
+  return `<div class="phead">${iconImg('grav', 32)}<div><h2>${esc(g.namn)}s grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}${g.stil === 'bal' ? '' : g.vard ? `, med ${GRAVAR[g.vard].namn.toLowerCase()}` : ', en jordhög'}. Begravd för ${durTxt(s.now - g.t)} sedan.</p>${g.text ? `<p><i>”${esc(g.text)}”</i></p><p class="small muted">Ristat av ${esc(g.textAv?.namn ?? 'någon')}.</p>` : ''}${g.med?.length ? `<p class="small">${g.stil === 'bal' ? 'Brändes med' : 'I graven'}: ${esc(g.med.map(k => sakNamn(k)).join(', '))}</p>` : ''}`;
 }
 function heligPlats(i: number) {
   const h = heligAt(s, i % W, Math.floor(i / W));

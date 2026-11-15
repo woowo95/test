@@ -20,6 +20,7 @@ import { djupOf, iVattnetNu, sjoRakna, sjoarna, strandAv, vattenNu } from './sjo
 import { smakGift } from './rykten';
 import { tecken } from './religion';
 import { insjukna } from './sjukdom';
+import { NARA } from './nara';
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -620,10 +621,9 @@ export function prospect(s: State, k: Kind) {
 // det som ligger runt byn och plockas eller görs först när någon behöver det: skogen ger grenarna och det höga gräset höet, och
 // system med en egen källa sätter sin rad i NARA (leran att gräva i lera.ts, virket ur de fällda stammarna i skog.ts). Det som är
 // sällsynt (flintan) räknas inte: det måste finnas i byn. Räknas en gång i timmen per sak
-export const NARA: Record<string, (s: State) => boolean> = {
-  grenar: s => naraMark(s, (g, i) => g.trees[i] >= FOREST),
-  torrgras: s => naraMark(s, (g, i) => g.cover[i] >= HIGH),
-};
+NARA.grenar = s => naraMark(s, (g, i) => g.trees[i] >= FOREST);
+NARA.torrgras = s => naraMark(s, (g, i) => g.cover[i] >= HIGH);
+export { NARA };
 const naraCache = tvaDelar<{ h: number; v: Record<string, boolean> }>(); // (två delar: gränssnittet fyller inte simuleringens, regel 4)
 export function naraByn(s: State, k: string) {
   const h = Math.floor(s.now / HOUR), m = egen(naraCache);

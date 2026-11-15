@@ -71,7 +71,7 @@ import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
 import { efterAnfall } from './rovare';
 import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
-import { avrustaVal, begravaVal, rustaVal } from './grav';
+import { GRAV, avrustaVal, begravaVal, gravvardVal, rustaVal } from './grav';
 import { budBrutet, budForbjuder, viltBikta, vilodagNu } from './kyrka';
 import { LAG, lagGaller, raddFor } from './lagar';
 import { ligger } from './sjukdom';
@@ -573,6 +573,8 @@ export const FORBATTRA: readonly ForbRad[] = [
     if (!uu) return undefined;
     return { sc: VAL.forbUnderhall * brus(c), gor: () => projektVal(c.v, uu, 'Byn har det den behöver. Ett av byns är slitet och ett nytt görs i tid') };
   } },
+  // vården på en grav (steg 10.4.2): den som minns den döda, mest den som stod hen nära
+  { id: 'gravvard', kand: c => { const g = gravvardVal(c.s, c.p); if (!g) return undefined; return { sc: GRAV.vard * g.w * brus(c), gor: () => projektVal(c.v, g.uppgift, 'Byn har det den behöver') }; } },
   { id: 'lara', kand: c => { const lv = laraVal(c.s, c.p); if (!lv) return undefined; return { sc: VAL.forbLara * brus(c), gor: () => { set(c.v, 'lara', `Byn har det den behöver. Går i lära hos ${lv.m.name}.`); c.v.spot = lv.spot; c.v.dur = lv.min * MIN; } }; } },
   // förråden mot taket: behovet över bufferten (dag: wBy och wWood sjunker mot taket) gånger lusten för det bästa arbetet
   { id: 'fyllaMat', fylla: true, kand: (c, d) => {

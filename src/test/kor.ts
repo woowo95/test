@@ -1,7 +1,9 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
+import '../sim'; // först: hela simuleringen i samma ordning som spelet, så att registren finns när systemen sätter sina rader
 import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
 import { forLangtArbete } from '../sim/tider';
+import { kyrkaId } from '../sim/egendom';
 import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
@@ -114,6 +116,7 @@ const fin = (v: number | undefined) => v === undefined || Number.isFinite(v);
 function vakta(s: State, larm: Larm, timme: boolean) {
   const lever = new Set<number>(), finns = new Map<number, Person>();
   for (const p of s.people) { finns.set(p.id, p); if (alive(p)) lever.add(p.id); }
+  for (const tr of s.tron ?? []) if (tr.slut === undefined) lever.add(kyrkaId(tr.id)); // en levande tro äger som en person (steg 10.3.17)
   for (const p of s.people) {
     if (!alive(p)) {
       if (gastLever(p)) continue; // gästerna har egna handlingar (steg 9.2.113)

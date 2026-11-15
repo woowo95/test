@@ -3,7 +3,7 @@ import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, newPerson, raddAkt, relKey, startSkills, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, newPerson, raddAkt, relKey, startSkills, think, uppkalladLogg } from './folk';
 import { pair } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, rnd } from './slump';
@@ -178,13 +178,13 @@ export function birth(s: State, mother: Person) {
   const ft = kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
   log(s, ft + (risk.f.namn !== 'Vanlig' ? ' ' + risk.f.text : ''), 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft + (risk.f.namn !== 'Vanlig' ? ' ' + risk.f.text : ''), [ch.id, mother.id, ...(father ? [father.id] : [])]); // texten om förloppet (steg 9.5.29)
   count(s, 'fodda'); personNara(s, ch, ft, [mother.id, ...(father ? [father.id] : [])]); // syskonen (steg 9.2.107)
-  uppvaxtFodd(s, ch); startSmak(s, ch);
+  uppvaxtFodd(s, ch); startSmak(s, ch); uppkalladLogg(s, ch);
   gudHandelse(s, 'atten', `barnet ${ch.name} som föddes`); // steg 4.1.5
   think(mother, `Fick barnet ${ch.name}`, LIV.fodMor, s.now, LIV.fodDygn * DAY);
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, LIV.fodFar, s.now, LIV.fodDygn * DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;
   if (kids === 6) mother.fame.push('Mor till många barn');
-  if (risk.tva && s.people.filter(q => q.mother === mother.id && q.born === s.now).length < 2) { const tv = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father); tv.x = mother.x; tv.y = mother.y; s.people.push(tv); const ft2 = kronikaBer(s, 'k_fodd', tv.id, { namn: tv.name, barnet: tv.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== tv && q.mother === mother.id).length }); log(s, ft2, 'birth', [tv.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft2, [tv.id, mother.id, ...(father ? [father.id] : [])]); /* tvillingen får sin rad i loggen, notiserna och krönikan (steg 9.9.3) */ count(s, 'fodda'); count(s, 'tvillingar'); uppvaxtFodd(s, tv); startSmak(s, tv); } // tvillingar (steg 9.5.29)
+  if (risk.tva && s.people.filter(q => q.mother === mother.id && q.born === s.now).length < 2) { const tv = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father); tv.x = mother.x; tv.y = mother.y; s.people.push(tv); const ft2 = kronikaBer(s, 'k_fodd', tv.id, { namn: tv.name, barnet: tv.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== tv && q.mother === mother.id).length }); log(s, ft2, 'birth', [tv.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft2, [tv.id, mother.id, ...(father ? [father.id] : [])]); /* tvillingen får sin rad i loggen, notiserna och krönikan (steg 9.9.3) */ count(s, 'fodda'); count(s, 'tvillingar'); uppvaxtFodd(s, tv); startSmak(s, tv); uppkalladLogg(s, tv); } // tvillingar (steg 9.5.29)
   if (rnd(s, 'halsa', mother) < risk.mor) die(s, mother, 'barnsang');
   const tv = s.people.filter(q => q.mother === mother.id && q.born === s.now && alive(q));
   if (tv.length >= 2) for (const q of [mother, father]) if (q) tecken(s, q, 'tvillingar', tv.map(b => b.name).join(' och ')); // tvillingar som föds levande (steg 10.3.7)
