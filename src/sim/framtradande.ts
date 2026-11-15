@@ -37,7 +37,7 @@ export interface FramDef {
   min?: number; // så här mycket i färdigheten (FRAM_SKILL) behövs
   instrument?: true; // behöver ett instrument (steg 4.3.2.2)
   bud?: true; // kan bära ett budskap (steg 4.3.2.3, BUDSKAP)
-  kval: number; // hur mycket glädje formen ger jämfört med ett kväde
+  kval: number; // hur mycket glädje formen ger (steg 10.7.10): formerna som kräver mer ger mer, 1 är ett vanligt framträdande
   amne: keyof typeof AMNE; // vad det handlar om
   vrid?: number; // hur mycket mer än ett samtal formen ändrar gärningen i ett minne om en person (steg 10.4.11), 1 om inget står
 }
@@ -49,9 +49,9 @@ const AMNE = {
   handelse: (s: State, p: Person) => minneAmne(s, p) ?? 'när byn kom till sjön',
 };
 export const FRAMTRADANDEN: FramDef[] = [
-  { id: 'kvade', namn: 'Kväde', text: '{namn} kväder vid elden om {amne}, och de andra lyssnar.', da: '{namn} kvad vid elden om {amne}, och de andra lyssnade.', bud: true, kval: 1, amne: 'minne', vrid: 2 },
+  { id: 'kvade', namn: 'Kväde', text: '{namn} kväder vid elden om {amne}, och de andra lyssnar.', da: '{namn} kvad vid elden om {amne}, och de andra lyssnade.', bud: true, kval: 0.6, amne: 'minne', vrid: 2 },
   { id: 'tal', namn: 'Tal', text: '{namn} håller ett tal om {amne}.', da: '{namn} höll ett tal om {amne}.', bud: true, min: 2, kval: 0.8, amne: 'byn' },
-  { id: 'forelasning', namn: 'Föreläsning', text: '{namn} lär de andra vad {hen} vet om {amne}.', da: '{namn} lärde de andra vad {hen} visste om {amne}.', min: 4, kval: 0.6, amne: 'kunskap' },
+  { id: 'forelasning', namn: 'Föreläsning', text: '{namn} lär de andra vad {hen} vet om {amne}.', da: '{namn} lärde de andra vad {hen} visste om {amne}.', min: 4, kval: 0.8, amne: 'kunskap' },
   { id: 'teater', namn: 'Teater', text: '{namn} spelar upp en berättelse för de andra om {amne}, med röster och rörelser.', da: '{namn} spelade upp en berättelse för de andra om {amne}, med röster och rörelser.', bud: true, min: 6, kval: 1.3, amne: 'handelse', vrid: 2.5 },
   { id: 'sang', namn: 'Sång', text: '{namn} sjunger om {amne} till {inst}.', da: '{namn} sjöng om {amne} till {inst}.', instrument: true, bud: true, kval: 1.2, amne: 'minne', vrid: 2 },
   { id: 'musik', namn: 'Musik', text: '{namn} spelar på {inst} för de andra.', da: '{namn} spelade på {inst} för de andra.', instrument: true, kval: 1.2, amne: 'minne' },
