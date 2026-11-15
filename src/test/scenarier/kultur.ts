@@ -505,9 +505,10 @@ SCENARIER.pynt = {
     const mer = PYNT_LIST.some(j => villPynt(s, p, j)) ? SIM.pyntLust(s, p) : 0; // lusten efter ett pynt till avtar (steg 10.2.43)
     // i rummet: ägaren trivs, och den som är vaken där får ett bättre intryck av ägaren. Ett uselt pynt ger inget
     const v = SIM.living(s).find(q => q !== p)!, ruta = rum?.tiles[0] ?? 0;
-    const prova = (q: number) => {
+    const prova = (q: number, extra?: number) => {
       const k2 = SIM.cloneState(s), p2 = k2.people.find(r => r.id === p.id)!, v2 = k2.people.find(r => r.id === v.id)!, t2 = pyntSt(k2)!;
       t2.q = q; p2.thoughts = []; v2.intryck = [];
+      if (extra !== undefined) k2.stationer!.push({ ...t2, id: 1e6, q: extra }); // ett pynt till i samma rum (steg 10.7.2)
       for (const x of SIM.stationerOf(k2)) if (x.ag === p2.id && SIM.stationDef(x.k)?.pynt) x.q = q; // lusten efter ett till kan ha gett ett pynt till (steg 10.2.43)
       k2.ting = (k2.ting ?? []).filter(x => !(x.k.startsWith('lerkruka_') && x.agare === p2.id)); // bara pyntet som prövas (en kruka hemma är också ett pynt)
       for (const r of [p2, v2]) { r.x = ruta % SIM.W + 0.5; r.y = Math.floor(ruta / SIM.W) + 0.5; r.task = undefined; } // SIM.W: W sätts när kartan skapas
@@ -515,7 +516,12 @@ SCENARIER.pynt = {
       const e = intryckOm(v2, p2.id, 'smakfull');
       return { glad: p2.thoughts.find(x => x.text === SIM.PYNT_TANKE)?.v ?? 0, syn: e ? e.v * e.c : 0 };
     };
-    const fin = prova(4), normal = prova(2), usel = prova(0);
+    const fin = prova(4), normal = prova(2), usel = prova(0), tva = prova(4, 3);
+    // lerkrukans utseenden (steg 10.7.2): två krukor ritas olika, och en kruka med rölleka ritas med växten
+    const k1 = SIM.newTing(s, 'lerkruka_liten', 1, p.id), k2 = SIM.newTing(s, 'lerkruka_liten', 1, p.id), k3 = SIM.newTing(s, 'lerkruka_liten', 1, p.id);
+    k3.vaxt = { g: 'rolleka', v: 1 };
+    const b1 = SIM.krukaBild(k1), b2 = SIM.krukaBild(k2), b3 = SIM.krukaBild(k3);
+    const v1 = SIM.tingVarde(k1), v2 = SIM.tingVarde(k2);
     return [
       [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} sorter hos tolv)`, vill && bara === 1 && brist > 0 && sorter === SIM.PYNT_SMAK.length],
       [`p bygger sitt pynt på ${h} timmar (ungefär ${h / 2} månader i spelet), inne i rummet där p sover, med en kvalitet`, byggd],
@@ -523,6 +529,9 @@ SCENARIER.pynt = {
       [`ägaren trivs i rummet: humör +${(fin.glad * 100).toFixed(0)} % med ett mästerverk, +${(normal.glad * 100).toFixed(0)} % med ett normalt`, fin.glad > normal.glad && normal.glad > 0],
       [`den som ser det får intrycket smakfull: ${fin.syn.toFixed(3)} med ett mästerverk, ${normal.syn.toFixed(3)} med ett normalt`, fin.syn > normal.syn && normal.syn > 0],
       [`ett uselt pynt ger ingenting (${usel.glad}, ${usel.syn})`, usel.glad === 0 && usel.syn === 0],
+      [`det finaste pyntet i rummet räknas: med ett fint pynt till är intrycket ${tva.syn.toFixed(3)} som med mästerverket ensamt (${fin.syn.toFixed(3)})`, Math.abs(tva.syn - fin.syn) < 1e-9 && tva.glad === fin.glad],
+      [`två krukor ritas olika (${b1.ikon}, ${b2.ikon}) och har samma värde (${v1.toFixed(1)}, ${v2.toFixed(1)})`, b1.ikon !== b2.ikon && v1 === v2],
+      [`krukan med rölleka ritas med växten (${b3.vaxt?.g}, vuxen ${b3.vaxt?.v})`, b3.vaxt?.g === 'rolleka' && b3.vaxt.v === 1 && !b1.vaxt],
     ];
   },
 };

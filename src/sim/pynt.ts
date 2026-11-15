@@ -39,7 +39,10 @@ export function stepPynt(s: State) {
   const glad = new Map<Person, number>();
   for (const { o, rum, q } of pynt) if (PYNT.glad[q] > 0 && iRum(s, o, rum)) glad.set(o, Math.max(glad.get(o) ?? 0, PYNT.glad[q]));
   for (const [o, v] of glad) { think(o, PYNT_TANKE, v, s.now, PYNT.gladTim * HOUR); count(s, 'pyntGlad'); }
-  for (const { o, rum, q, namn } of pynt) {
+  // de som ser det får intrycket av det finaste pyntet ägaren har i rummet, inte ett per pynt (steg 10.7.2)
+  const finast: typeof pynt = [];
+  for (const x of pynt) { const i = finast.findIndex(f => f.o === x.o && f.rum === x.rum); if (i < 0) finast.push(x); else if (x.q > finast[i].q) finast[i] = x; }
+  for (const { o, rum, q, namn } of finast) {
     if (PYNT.syn[q] <= 0) continue;
     for (const v of living(s)) {
       if (v === o || v.task?.act === 'sova' || !iRum(s, v, rum)) continue;

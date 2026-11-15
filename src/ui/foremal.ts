@@ -1,4 +1,4 @@
-import { rutorAv } from '../sim';
+import { krukaBild, rutorAv } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -68,6 +68,14 @@ function drawPile(pl: Pile, t: number) {
   const yta = () => { if (inne) overG.beginFill(VATSKOR[inne.v].farg).drawRect(x0 + 6, y0 + 4, 4, 2).endFill(); };
   const ensam = (k: string) => { const w = iconCanvas(k).width || 8; if (w > 8) pileIcons.add(k, x0, y0 - 3, 1); else pileIcons.add(k, x0 + 4, y0 + 3, 1); yta(); };
   if (pl.gor) { ensam(pl.gor); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
+  // lerkrukan (steg 10.7.2): ett av tre utseenden efter krukan själv, och växten i den
+  const kruka = pl.k.startsWith('lerkruka_') && pl.id !== undefined ? tingOf(s).find(q => q.id === pl.id) : undefined;
+  if (kruka) {
+    const b = krukaBild(kruka), ik = hasIcon(b.ikon) ? b.ikon : pl.k; ensam(ik);
+    if (b.vaxt) vaxtIKruka(x0 + 8, y0 - 3 + (KRUKKANT[ik] ?? 3), b.vaxt.v);
+    if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
+    return;
+  }
   const n = clamp(Math.ceil(f * 4), 1, 4);
   // en, några eller många (steg 9.2.40): har saken en egen bild för några eller många i bildstilen ritas den en gång, annars som förut
   const mangd = pl.max === 1 || kartbildEnsam(pl.k) ? '' : f > 2 / 3 ? '_manga' : f > 1 / 3 ? '_nagra' : '';
@@ -80,6 +88,15 @@ function drawPile(pl: Pile, t: number) {
   }
   if (pl.max === 1 || iconCanvas(pl.k).width > 8) { ensam(pl.k); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
+}
+// växten i krukan (steg 10.7.2, platshållare): stjälkar upp från kanten och, när den vuxit, röllekans vita blomkorgar.
+// KRUKKANT = raden i krukans bild där kanten är
+const KRUKKANT: Record<string, number> = { lerkruka_hog: 1, lerkruka_skal: 7 };
+function vaxtIKruka(cx: number, kant: number, v: number) {
+  const h = 2 + Math.round(5 * v), g = overG;
+  g.beginFill(0x647025).drawRect(cx - 2, kant - h + 1, 1, h).drawRect(cx, kant - h, 1, h + 1).drawRect(cx + 2, kant - h + 2, 1, h - 1).endFill();
+  g.beginFill(0x898b4c).drawRect(cx - 3, kant - 2, 2, 1).drawRect(cx + 1, kant - 3, 2, 1).endFill(); // bladen
+  if (v >= 0.6) g.beginFill(0xdad0bb).drawRect(cx - 3, kant - h, 3, 1).drawRect(cx - 1, kant - h - 1, 3, 1).drawRect(cx + 1, kant - h + 1, 3, 1).endFill();
 }
 // mästerverken glänser (steg 2.2.2, platshållare): en liten ljus gnista som blinkar till ibland, var och en i sin takt.
 // Kvaliteten syns annars inte på kartan
