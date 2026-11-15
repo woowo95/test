@@ -363,8 +363,19 @@ const kylFaktor = (s: State, d: ProjektDef) => d.motKyla ? 1 + KLADER.kylaVikt *
 export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * kylFaktor(s, d) * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
 // det projektet är värt för den som har familjen fam och omtanken om byn om: byns brist gånger omtanken och det egna (vad p och familjen saknar)
 // Byns brist kommer från timräkningen (arbetsTimme i val.ts, steg 6.2.21), så länge den finns
-// byns brist ur timmens räkning (val.ts), men räknas fram igen när något byggts eller satts upp sedan dess (s.byggV), så att ingen börjar ett andra bord samma timme
-export const bristNu = (s: State, k: string) => s.arbBehov?.brist && s.arbBehov.bv === (s.byggV ?? 0) ? s.arbBehov.brist[k] ?? 0 : PROJEKT[k].brist(s);
+// byns brist ur timmens räkning (val.ts), men räknas fram igen en gång när något byggts eller satts upp sedan dess (s.byggV), så
+// att ingen börjar ett andra bord samma timme. Den räknas om för alla projekt på en gång och gäller tills nästa bygge eller timme
+export const bristAlla = (s: State) => {
+  const brist: Record<string, number> = {};
+  for (const k of PROJEKT_LIST) { const b = Math.round(PROJEKT[k].brist(s) * 1000) / 1000; if (b > 0) brist[k] = b; } // tre decimaler som i sparfilen
+  return brist;
+};
+export const bristNu = (s: State, k: string) => {
+  const a = s.arbBehov;
+  if (!a?.brist) return PROJEKT[k].brist(s);
+  if (a.bv !== (s.byggV ?? 0)) { a.brist = bristAlla(s); a.bv = s.byggV ?? 0; }
+  return a.brist[k] ?? 0;
+};
 export function personVarde(s: State, k: string, fam: readonly Person[], om: number, p?: Person) {
   const d = PROJEKT[k], e = d.egen ? d.egen(s, fam, p) : 0;
   return d.vikt * kylFaktor(s, d) * (bristNu(s, k) * om + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
