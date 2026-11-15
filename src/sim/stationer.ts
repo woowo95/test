@@ -588,17 +588,31 @@ function siteUtkant(s: State, k: string) {
   const falt = u.faltNara ? faltOf(s).flatMap(faltRutor) : [], faltAv = (x: number, y: number) => Math.min(...falt.map(i => Math.hypot(i % W - x, Math.floor(i / W) - y)));
   const yxa = nTools(s, 'yxa') > 0; // träden på platsen fälls som en del av bygget (steg 8.1.14), men utan yxa kan ingen fälla dem
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
+  // varje ruta prövas en gång per sökning, inte en gång för varje plats den ingår i: avståndet från byn om stationen får stå
+  // där, annars NaN. Det som står runt om sparas på samma sätt (friRunt). Inget i byn ändras under sökningen, så svaret är detsamma
+  const rutMinne = new Map<number, number>(), runtMinne = new Map<number, boolean>();
+  const rutan = (x: number, y: number) => {
+    const i = y * W + x;
+    let v = rutMinne.get(i);
+    if (v === undefined) {
+      const t = m.tiles[i];
+      v = t !== T.Gras && t !== T.Sand && t !== T.Skog || (u.tradFri || !yxa) && g.trees[i] >= FOREST || !ledig(s, x, y, upp) ? NaN : utanforByn(s, x, y);
+      rutMinne.set(i, v);
+    }
+    return v;
+  };
   for (const rot of (stationDef(k)!.w === stationDef(k)!.h ? [0] : [0, 1]) as (0 | 1)[]) {
     const { w, h } = storlek(k, rot);
     for (let y = Math.max(0, y0 - R); y <= Math.min(H - h, y1 + R); y++) for (let x = Math.max(0, x0 - R); x <= Math.min(W - w, x1 + R); x++) {
-      const rutor = rutorAv(x, y, w, h);
       let d = Infinity, ok = true;
-      for (const q of rutor) {
-        const t = m.tiles[q.y * W + q.x];
-        if (t !== T.Gras && t !== T.Sand && t !== T.Skog || (u.tradFri || !yxa) && g.trees[q.y * W + q.x] >= FOREST || !ledig(s, q.x, q.y, upp)) { ok = false; break; }
-        d = Math.min(d, utanforByn(s, q.x, q.y));
+      for (let j = 0; j < w * h; j++) {
+        const v = rutan(x + j % w, y + Math.floor(j / w));
+        if (Number.isNaN(v)) { ok = false; break; }
+        d = Math.min(d, v);
       }
-      if (!ok || d < STATION.utkantMin || d > u.till || !friRunt(s, rutor) || arbetar(stationDef(k)) && (!framLand(s, x, y, w, h) || Array.from({ length: w }, (_, i) => g.trees[(y + h) * W + x + i] >= FOREST).some(Boolean))) continue;
+      if (!ok || d < STATION.utkantMin || d > u.till) continue;
+      const rutor = rutorAv(x, y, w, h);
+      if (!friRunt(s, rutor, false, runtMinne) || arbetar(stationDef(k)) && (!framLand(s, x, y, w, h) || Array.from({ length: w }, (_, i) => g.trees[(y + h) * W + x + i] >= FOREST).some(Boolean))) continue;
       const vatten = u.vatten && s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
       // komposten (steg 10.2.93): så nära ett fält som möjligt, så att den som bär ut komposten går kort
       if (falt.length) { const sc = faltAv(x, y) + vatten + rot * STATION.vriden; if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; } continue; }
