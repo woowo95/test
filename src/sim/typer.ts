@@ -344,6 +344,7 @@ export interface State {
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
   aktOm?: Record<string, string>; // vad byn minns om olyckan bakom rädslan för en handling
+  kanda?: Record<number, number>; // byns samlade minne (ryktbarheten) av varje person som någon minns, räknat var fjärde timme (steg 10.6.14, rykten.ts)
   runstenar?: import('./skrift').Runsten[]; // runstenarna (steg 10.6.1, skrift.ts)
   skriftSedda?: [string, string][]; // stenarna och böckerna vid förra timmen, id och titel, så att krönikan säger när en är borta (steg 10.6.8)
   gravar?: import('./kvarlevor').Grav[]; gravplatser?: Record<string, { x: number; y: number }>; heliga?: import('./kult').HeligPlats[]; ritual?: import('./kult').Ritual; ritualKo?: import('./kult').Ritual[]; // graven, de heliga platserna och ritualerna (system 8.5)

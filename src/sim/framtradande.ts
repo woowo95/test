@@ -10,7 +10,7 @@ import { ALDER, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, o
 import { budHindrar } from './kyrka';
 import { avbryt } from './lager';
 import { eldPlats } from './karta';
-import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm, scenVersion } from './rykten';
+import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm, kandVikt, scenVersion } from './rykten';
 import { ledareOf, legitimitet, pabud } from './styre';
 import { Ting, tingOf } from './agande';
 import { tingVarde } from './varde';
@@ -145,7 +145,7 @@ export const framKval = (s: State, p: Person) => (p.skill[FRAM_SKILL] * (p.sinne
 function starkast(s: State, p: Person) {
   let bast: Intryck | undefined, b = 0;
   for (const e of p.intryck ?? []) {
-    const q = s.people.find(x => x.id === e.om), dod = !q || !alive(q), v = e.v * (dod ? 2 : 1);
+    const q = s.people.find(x => x.id === e.om), dod = !q || !alive(q), v = e.v * (dod ? 2 : 1) * kandVikt(s, e.om); // den byn minns väljs oftare (steg 10.6.14)
     if (e.om === p.id || v <= b) continue;
     b = v; bast = e;
   }

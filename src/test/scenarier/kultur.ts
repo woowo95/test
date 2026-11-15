@@ -2737,3 +2737,56 @@ SCENARIER.skandning = {
     ];
   },
 };
+
+SCENARIER.kanda = {
+  text: 'Steg 10.6.14: kända och ökända. Byns samlade minne av en person väger in när någon väljer vem hen pratar, kväder, avbildar, ristar eller skriver om. När en högtid eller en ledd bön slutar berättar prästen för alla som är med om en död hen minns, och om de ökända bara när trons bud tillåter det. En sak gjord i sorg får inskriptionen "Till minne av" och den dödas namn',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    const ny = (om: number, namn: string, k: SIM.IntryckTyp): SIM.Intryck => ({ om, namn, k, v: 1, c: 1, t: s.now });
+    // två döda som berättaren minns lika starkt: den ena minns hela byn (ökänd), den andra bara berättaren
+    const a = v[1], b = v[2];
+    for (const p of v) p.intryck = [];
+    a.intryck = [ny(9001, 'Ulv', 'valdsam'), ny(9002, 'Grim', 'valdsam')];
+    for (const p of v.slice(3)) p.intryck = [ny(9001, 'Ulv', 'valdsam')];
+    SIM.kandaRakna(s);
+    const vUlv = SIM.kandVikt(s, 9001), vGrim = SIM.kandVikt(s, 9002);
+    const ggr: Record<number, number> = {};
+    let n = 0;
+    for (let i = 0; i < 3000; i++) {
+      b.intryck = [];
+      SIM.skvaller(s, a, b, SIM.getRel(s, a, b), true);
+      const e = b.intryck?.[0]; if (e) { ggr[e.om] = (ggr[e.om] ?? 0) + 1; n++; }
+    }
+    const andel = n ? (ggr[9001] ?? 0) / n : 0;
+    // prästen efter en ledd bön: alla som är med och saknade intrycket får det
+    SIM.kultTimme(s);
+    const pr = SIM.prastOf(s, tr)!;
+    const med = v.filter(p => p !== pr).slice(0, 3);
+    const bon = (intryck: SIM.Intryck[]) => {
+      pr.intryck = intryck;
+      for (const q of med) q.intryck = [];
+      for (const q of [pr, ...med]) q.task = { act: 'ritual', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+      s.ritual = { k: 'leddBon', tro: tr.id, start: s.now - SIM.HOUR, slut: s.now, x: pr.x, y: pr.y }; SIM.ritualTimme(s);
+      return med.filter(q => SIM.intryckOm(q, intryck[0].om)).length;
+    };
+    const gott = bon([ny(9003, 'Sigrun', 'hjalpsam')]);
+    const varnar = bon([ny(9004, 'Ulv', 'valdsam')]);
+    tr.bud = [...(tr.bud ?? []), { id: 'deDoda', t: s.now }];
+    const tiger = bon([ny(9004, 'Ulv', 'valdsam')]);
+    // en sak gjord i sorg
+    const g = v[3], d = nyInvanare(s, g.sex === 'm' ? 'k' : 'm', 30);
+    g.partner = d.id; d.partner = g.id;
+    SIM.die(s, d, 'forkylning');
+    const t = { id: 777, k: 'yxa', q: 4 } as { id: number; k: string; q?: number; ber?: SIM.SakMinne };
+    SIM.sakMinne(s, g, t);
+    const text = SIM.sakBerattelse(s, t, 'yxa');
+    return [
+      [`byns minne väger in (Ulv ${vUlv.toFixed(2)}, Grim ${vGrim.toFixed(2)})`, vUlv > vGrim && vGrim > 1],
+      [`en ökänd död väljs oftare i skvallret än en som bara berättaren minns lika starkt (Ulv ${ggr[9001] ?? 0}, Grim ${ggr[9002] ?? 0} av ${n}; den mest omtalade tar ${Math.round(andel * 100)} % av ämnena)`, (ggr[9001] ?? 0) > (ggr[9002] ?? 0)],
+      [`efter en ledd bön med präst har de som var med fått prästens minne av en död (${gott} av ${med.length})`, gott === med.length],
+      [`utan budet varnar prästen för de ökända (${varnar} av ${med.length})`, varnar === med.length],
+      [`med budet att inte tala illa om de döda varnar prästen inte (${tiger})`, tiger === 0],
+      [`en sak gjord i sorg bär texten "Till minne av ${d.name}" (${text})`, text.includes('Till minne av ' + d.name)],
+    ];
+  },
+};

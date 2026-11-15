@@ -70,6 +70,7 @@ export const RYKTE = balans('rykte', {
   rikMin: 2, // ... och bara när snittet är så här stort (den mittersta räknas som minst så här mycket)
   fattigVikt: 0.1, // fattigdom väger så här mycket i anseendet och ryktbarheten mot andra intryck (steg 4.5.3.7)
   berattelseLed: 3, legendLed: 6, // ett minne av en död som berättats i så här många led är en berättelse och till sist en legend
+  kand: 1, kandMax: 2, // den som byn minns väljs oftare som ämne (steg 10.6.14): vikten 1 + kand × ryktbarheten / legend, högst kandMax
   legend: 2, // en död med så här stor ryktbarhet är en legend (stjärna) med gott anseende eller ökänd (dödskalle) med ont
   dodLog: 1.5, // när någon med så här stor ryktbarhet dör står det i loggen hur byn minns hen
   smakStart: 0.3, // chansen att en ny människa har en smak från början ...
@@ -287,7 +288,7 @@ export function skvaller(s: State, a: Person, b: Person, r: Rel, berattelse: boo
   if (rnd(s, 'rykte', a) >= chans) return;
   const val = a.intryck.filter(e => e.om !== b.id && !(INTRYCK[e.k].tecken < 0 && (skyddar(s, a, e.om) || dodTiger(s, a, e.om))));
   if (!val.length) return;
-  const e = pickViktat(s, val, val.map(x => styrka(x) * (INTRYCK[x.k].tecken < 0 ? RYKTE.delaNeg : 1) * tystFaktor(s, a, x.om)), 'rykte', a); // påbudet om tystnad (steg 10.4.10)
+  const e = pickViktat(s, val, val.map(x => styrka(x) * (INTRYCK[x.k].tecken < 0 ? RYKTE.delaNeg : 1) * tystFaktor(s, a, x.om) * kandVikt(s, x.om)), 'rykte', a); // påbudet om tystnad (steg 10.4.10)
   beratta(s, a, b, e, r);
 }
 // a berättar om intrycket e för b: b blir mindre säker, och a överdriver efter vad hen tycker om personen
@@ -451,6 +452,25 @@ export function glomRykten(s: State, hours: number) {
     if (!p.intryck.length) delete p.intryck;
     if (p.paminnd) { for (const k in p.paminnd) if (p.paminnd[k] <= s.now - RYKTE.paminnDygn * DAY) delete p.paminnd[k]; if (!Object.keys(p.paminnd).length) delete p.paminnd; }
   }
+  kandaRakna(s);
+}
+// kända och ökända (steg 10.6.14): byns samlade minne av varje person, levande eller död, som ryktbarheten utan prydnaderna.
+// Räknas när intrycken bleknat (var fjärde timme) och väger in när någon väljer vem hen pratar, kväder, avbildar, ristar eller skriver om
+export function kandaRakna(s: State) {
+  const k: Record<number, number> = {};
+  for (const q of living(s)) for (const e of q.intryck ?? []) k[e.om] = (k[e.om] ?? 0) + vikt(e);
+  s.kanda = k;
+}
+export const kandVikt = (s: State, om: number) => Math.min(RYKTE.kandMax, 1 + RYKTE.kand * (s.kanda?.[om] ?? 0) / RYKTE.legend);
+// när en högtid eller en ledd bön slutar (kult.ts) berättar prästen för alla som är med om en död hen själv minns, den som
+// byn minns mest helst; om de ökända bara om trons bud tillåter att man talar illa om de döda
+export function prastMinns(s: State, pr: Person, med: Person[]) {
+  const tiger = budTillfalle(s, 'talaIlla', pr);
+  const val = (pr.intryck ?? []).filter(e => { const q = byId(s, e.om); return e.om !== pr.id && (!q || !alive(q)) && !(tiger && INTRYCK[e.k].tecken < 0); });
+  if (!val.length) return;
+  const e = pickViktat(s, val, val.map(x => styrka(x) * (INTRYCK[x.k].tecken < 0 ? RYKTE.delaNeg : 1) * tystFaktor(s, pr, x.om) * kandVikt(s, x.om)), 'rykte', pr); // samma vikter som skvallret
+  for (const q of med) if (q !== pr && q.id !== e.om) beratta(s, pr, q, e, getRel(s, pr, q));
+  count(s, INTRYCK[e.k].tecken < 0 ? 'prastVarnar' : 'prastMinns');
 }
 // en påminnelse om en död (steg 10.4.8): minnet bleknar långsammare en tid (RYKTE.paminnGlom). Gravtexten, runstenen och boken använder den med 10.6.15
 // den som läser en skrift (steg 10.6.1, skrift.ts) får intrycket i andra hand: beviset b om personen om, med skrivaren som källa

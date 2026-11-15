@@ -5,7 +5,7 @@ import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, 
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
-import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, samlatIntryck } from './rykten';
+import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, kandVikt, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
 import { Hus, housesOf, husById, roomAt } from './byggnad';
@@ -1132,6 +1132,16 @@ const MDEF = {
     'Den som vänder på {saken} ser {namn}s märke och orden "Åt {at}{som}."',
     'Det var åt {at} som {saken} gjordes, och det står där: "Åt {at}{som}."',
     'Inristat finns {namn}s tecken och en tillägnan: "Åt {at}{som}."',
+  ],
+  m_minne: [
+    'I {den} har {namn} ristat sitt märke och orden "Till minne av {om}."',
+    'Inristat står det "Till minne av {om}."',
+    '{namn} ristade in: "Till minne av {om}."',
+    'Längs kanten står det, bredvid {namn}s märke: "Till minne av {om}."',
+    'Under {namn}s tecken står det "Till minne av {om}."',
+    'Den som vänder på {saken} ser orden "Till minne av {om}."',
+    'Det var i sorgen efter {om} som {saken} gjordes, och det står där: "Till minne av {om}."',
+    'Inristat finns {namn}s tecken och orden "Till minne av {om}."',
   ],
   m_konst: [
     '{Den} är smyckad med {konst} som visar {motiv}.',
@@ -2517,7 +2527,7 @@ export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNa
 // inforuta), med tiden 0 så att den står kvar. Ett perfekt mästerverk (★) får ett eget namn, och ett vapen som fäller en
 // varg minns det (vargdöden i varg.ts); ett perfekt vapen heter sedan Vargdräparen.
 export type SakLiv = 'barn' | 'sorg' | 'sjuk' | 'gravid' | 'ledare';
-export interface SakMinne { g: number; h: number; ai: number; v?: string; natt?: 1; nara?: number; at?: number; l?: SakLiv; lo?: number; namn?: string; varg?: number; mo?: Motiv } // mo = konsten på saken (steg 4.3.3)
+export interface SakMinne { g: number; h: number; ai: number; v?: string; natt?: 1; nara?: number; at?: number; l?: SakLiv; lo?: number; mn?: string; namn?: string; varg?: number; mo?: Motiv } // mo = konsten på saken (steg 4.3.3)
 // motivet på ett mästerverk (steg 4.3.3): personen (om, namnet, intrycket) och händelsen (b), om det fanns en; mal = målat
 export interface Motiv { om: number; namn: string; k: IntryckTyp; b?: Bevis; mal?: 1 }
 type SakGrupp = 'egg' | 'vapen' | 'klad' | 'mobel' | 'redskap';
@@ -2566,6 +2576,7 @@ export function sakMinne(s: State, p: Person, t: { id: number; k: string; q?: nu
   const liv: [SakLiv, number?] | undefined = sorg ? ['sorg', sorg.id] : nytt ? ['barn', nytt.id] : isSick(p, s.now) ? ['sjuk']
     : p.pregnantSince !== undefined ? ['gravid'] : s.styre?.ledare === p.id ? ['ledare'] : undefined;
   if (liv) { m.l = liv[0]; if (liv[1] !== undefined) m.lo = liv[1]; }
+  if (sorg) m.mn = sorg.name; // inskriptionen "Till minne av" (steg 10.6.14): namnet står kvar när den döda är borta ur folket
   const mo = (t.q ?? 0) >= 4 && sakGrupp(t.k) !== 'klad' && hash(s.seed, t.id, 6) < BERATT.konst ? motiv(s, p) : undefined;
   if (mo) { if (hash(s.seed, t.id, 7) < BERATT.malning) mo.mal = 1; m.mo = mo; }
   if ((t.q ?? 0) >= 5) {
@@ -2580,7 +2591,7 @@ function motiv(s: State, p: Person): Motiv | undefined {
   let bast, b = BERATT.konstMin;
   for (const e of p.intryck ?? []) {
     if (e.om === p.id) continue;
-    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1);
+    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1) * kandVikt(s, e.om); // den byn minns väljs oftare (steg 10.6.14)
     if (v > b) { b = v; bast = e; }
   }
   if (!bast) return undefined;
@@ -2616,7 +2627,8 @@ export function sakBerattelse(s: State, t: { id: number; k: string; q?: number; 
   const ut = [del(usel ? 'u_gjord' : 'm_gjord', 0)];
   if (!usel && m.l && (lo || m.lo === undefined)) ut.push(del('m_liv', 1, { om: lo?.name }));
   if (nara) ut.push(del(usel ? 'u_nara' : 'm_nara', 2, { nara: nara.name }));
-  if (!usel && at) ut.push(del('m_inskr', 3, { at: at.name, som: SOM[Math.floor(hash(s.seed, t.id, 5) * SOM.length)] }));
+  if (!usel && m.mn) ut.push(del('m_minne', 7, { om: m.mn })); // en sak gjord i sorg (steg 10.6.14)
+  else if (!usel && at) ut.push(del('m_inskr', 3, { at: at.name, som: SOM[Math.floor(hash(s.seed, t.id, 5) * SOM.length)] }));
   if (!usel && m.mo) ut.push(del('m_konst', 6, { konst: m.mo.mal ? 'en målning' : 'ristningar', konst2: m.mo.mal ? 'Målningen' : 'Ristningarna', gjort: m.mo.mal ? 'målat' : 'ristat', motiv: motivText(s, m.mo) }));
   if (vem) ut.push(del('m_varg', 4, { vem: vem === p ? p.name : vem.name, hen2: hen(vem) }));
   if (q >= 5 && m.namn) ut.push(del('m_perfekt', 5));

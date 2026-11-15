@@ -30,6 +30,7 @@ import { grundvarde, tingVarde, varuVarde } from './varde';
 satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
 satEgendomVarde(o => varuVarde(o) / grundvarde('ved')); // kyrkans egendom i trons tyngd (steg 10.3.8)
 import { isSick } from './sjukdom';
+import { prastMinns } from './rykten';
 
 // farorna över byn (dangers i val.ts, som sätter den här när den laddas: val.ts läser det mesta i spelet)
 let dangers: (s: State) => { kyla: boolean; svalt: boolean } = () => ({ kyla: false, svalt: false });
@@ -265,6 +266,7 @@ export function ritualTimme(s: State) {
       p.task!.until = s.now;
     }
     if (r.k === 'hogtid' && tr) hogtidSlut(s, tr, r, med);
+    if ((r.k === 'hogtid' || r.k === 'leddBon') && pr && med.includes(pr)) prastMinns(s, pr, med); // prästen berättar om en död (steg 10.6.14)
     if (r.k === 'begravning' && tr && r.om?.length) sorgkvade(s, tr, r.om[0]!, med);
     if (r.k === 'gravol' && tr) gravolSlut(s, tr, med);
     count(s, 'ritual_' + r.k);

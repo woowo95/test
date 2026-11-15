@@ -6,7 +6,7 @@ import { getable, takeMaterial } from './behov';
 import { usable } from './lager';
 import { bitAt, roomAt } from './byggnad';
 import { omrade } from './omrade';
-import { Bevis, HANDELSER, Intryck, bevisText, lasIntryck, paminn } from './rykten';
+import { Bevis, HANDELSER, Intryck, bevisText, kandVikt, lasIntryck, paminn } from './rykten';
 import { Ting, newTing, tingOf } from './agande';
 import { taVatska, vatskaAv } from './vatskor';
 import { LARDOMAR, describe, findL, lasLardom } from './minne';
@@ -75,7 +75,7 @@ export function runstenLust(s: State, p: Person): Lust | undefined {
   for (const g of p.sorg ?? []) {
     const d = g.vem !== undefined ? byId(s, g.vem) : s.people.find(q => q.name === g.namn && q.died !== undefined);
     if (!d || alive(d) || harSten(s, 'minne', d.id) || s.gravar?.some(q => q.vem === d.id && q.text)) continue;
-    const w = SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner);
+    const w = SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner) * kandVikt(s, d.id); // den byn minns väljs oftare (steg 10.6.14)
     if (!best || w > best.w) best = { w, slag: 'minne', om: { id: d.id, namn: d.name } };
   }
   const b = p.bedrift;
@@ -292,7 +292,7 @@ function starkastBev(s: State, p: Person) {
   let bast: { e: Intryck; v: number } | undefined;
   for (const e of p.intryck ?? []) {
     if (e.om === p.id || !e.bev?.length) continue;
-    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1);
+    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1) * kandVikt(s, e.om); // den byn minns väljs oftare (steg 10.6.14)
     if (!bast || v > bast.v) bast = { e, v };
   }
   return bast;
