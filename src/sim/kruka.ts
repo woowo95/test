@@ -8,7 +8,7 @@ import { tingOf, Ting } from './agande';
 import { villAv } from './forradsmal';
 import { pyntLust, pyntOf, sittAt, sovrum, stationAt } from './stationer';
 import { temperature, vaderNu } from './vader';
-import { ALDER, ageOf, count, forstaGang, living, log } from './folk';
+import { ALDER, ageOf, count, forstaGang, living, log, ovning } from './folk';
 import { clamp, rnd } from './slump';
 import { PERFEKT, kvOf } from './kvalitet';
 import { HOUR, Person, State, W } from './typer';
@@ -95,12 +95,19 @@ export const ORTKRUKA = balans('ortkruka', {
   // till pynt gånger blomVikt, och den högsta sätts
   ortMal: 10, // så många av varje ört vill byn ha i förrådet
   blomVikt: 0.6,
+  plockMin: 2, // att plocka den mogna örten tar så här många minuter (en liten sak; steg 10.10.11) ...
+  sattMin: 1, // ... och att sätta ett frö i en ledig kruka så här många
+  ovning: 0.01, // odlingen växer så mycket för varje plock eller sådd
 });
 // blomman (steg 10.7.3): en växt i krukan med blom (GRODOR) blommar när den vuxit upp, och då är krukan ett kvalitetssteg finare pynt
 export const krukaBlommar = (t: Ting) => !!t.vaxt && !!(GRODOR[t.vaxt.g as GrodaSlag] as GrodaDef).blom && t.vaxt.v >= 1;
 export const krukaPyntQ = (t: Ting) => Math.min(PERFEKT, kvOf(t) + (krukaBlommar(t) ? 1 : 0));
+// krukan står på en ruta (inte i någons händer, på en kälke eller i en möbel): bara där sätts och plockas något (steg 10.10.11)
+const paRuta = (q: Ting) => q.hos === undefined && q.lass === undefined && q.vid === undefined && q.x !== undefined && q.y !== undefined;
+// någon annan arbetar redan vid krukan
+const upptagen = (s: State, p: Person, t: Ting) => living(s).some(q => q !== p && (q.task?.act === 'ortPlocka' || q.task?.act === 'ortSatta') && q.task.ref === t.id);
 // p:s lediga kruka, där en växt kan sättas
-const ledigKruka = (s: State, p: Person) => tingOf(s).find(q => q.agare === p.id && (q.k === 'lerkruka_liten' || q.k === 'lerkruka_mellan') && q.ler === undefined && !q.inne && !q.vaxt && !q.kok && q.hos === undefined);
+const ledigKruka = (s: State, p: Person) => tingOf(s).find(q => q.agare === p.id && (q.k === 'lerkruka_liten' || q.k === 'lerkruka_mellan') && q.ler === undefined && !q.inne && !q.vaxt && !q.kok && paRuta(q) && !upptagen(s, p, q));
 // poängen för växten g i p:s kruka
 export function krukPoang(s: State, p: Person, g: GrodaSlag) {
   const d = GRODOR[g] as GrodaDef;
@@ -122,31 +129,46 @@ export function blommaVill(s: State) {
   return n;
 }
 const ortKrukor = () => (Object.keys(GRODOR) as GrodaSlag[]).filter(g => (GRODOR[g] as GrodaDef).plats === 'kruka');
+// växterna i krukorna växer med tiden sedan sist (inne året om, ute när det är varmt). Örten väntar mogen i krukan tills ägaren
+// plockar den och vissnar inte; blomman blommar, vissnar ner och kommer igen
 export function stepOrtKrukor(s: State, dt = 3600) {
-  const temp = temperature(s), tim = dt / 3600; // växten räknas med tiden sedan sist
+  const temp = temperature(s), tim = dt / 3600;
   for (const t of tingOf(s)) {
     if (!t.vaxt) continue;
     const inne = t.x !== undefined && !!roomAt(s, t.x + 0.5, t.y! + 0.5);
     if (!inne && temp <= ODLING.vaxGrad) continue;
     const d = GRODOR[t.vaxt.g as GrodaSlag] as GrodaDef;
-    t.vaxt.v += tim / (d.dygn * 24);
-    if (d.blom) { if (t.vaxt.v >= 1 + d.blom / d.dygn) { t.vaxt.v = 0; count(s, 'blommaVissnar'); } continue; } // blomman blommar, vissnar ner och kommer igen
-    if (t.vaxt.v < 1) continue;
-    const p = living(s).find(q => q.id === t.agare);
-    if (!p) continue;
-    put(s, GRODOR[t.vaxt.g as GrodaSlag].sak, ORTKRUKA.plock, { [p.id]: ORTKRUKA.plock });
-    t.vaxt.v = ORTKRUKA.ater; count(s, 'ortKruka');
-    if (forstaGang(s, 'ortKruka')) log(s, `${p.name} plockade röllekan som växer i hens lerkruka.`, 'world', [p.id]);
+    if (d.blom) { t.vaxt.v += tim / (d.dygn * 24); if (t.vaxt.v >= 1 + d.blom / d.dygn) { t.vaxt.v = 0; count(s, 'blommaVissnar'); } continue; }
+    t.vaxt.v = Math.min(1, t.vaxt.v + tim / (d.dygn * 24));
   }
-  for (const p of living(s)) {
-    if (ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'odling')) continue;
-    const t = ledigKruka(s, p);
-    const g = t && krukVal(s, p, x => getable(s, p, GRODOR[x].fro) >= 1); // den växt som väger mest av dem p har (steg 10.7.3)
-    if (!t || !g) continue;
-    takeMaterial(s, p, GRODOR[g].fro, 1);
-    t.vaxt = { g, v: 0 }; count(s, g === 'blomma' ? 'blommaSatt' : 'ortSatt');
-    if (g === 'blomma' ? forstaGang(s, 'blommaSatt') : forstaGang(s, 'ortSatt')) log(s, `${p.name} satte ${g === 'blomma' ? 'en blomma' : 'en rölleka'} i en lerkruka vid huset.`, 'world', [p.id]);
-  }
+}
+// ---------- krukan som arbete (steg 10.10.11, Odlingen i detalj: Örtkrukan som arbete) ----------
+// ägaren plockar den mogna örten (Försörjning i valet av aktivitet, bredvid mjölkningen) ...
+export function ortPlockaVal(s: State, p: Person) {
+  if (ageOf(p, s.now) < ALDER.vuxen) return undefined;
+  return tingOf(s).find(t => t.agare === p.id && t.vaxt && !(GRODOR[t.vaxt.g as GrodaSlag] as GrodaDef).blom && t.vaxt.v >= 1 && paRuta(t) && !upptagen(s, p, t));
+}
+export function ortPlockaKlar(s: State, p: Person, ref?: number) {
+  const t = tingOf(s).find(q => q.id === ref);
+  if (!t || !t.vaxt || t.vaxt.v < 1 || !paRuta(t)) return;
+  const g = t.vaxt.g as GrodaSlag;
+  put(s, GRODOR[g].sak, ORTKRUKA.plock, { [p.id]: ORTKRUKA.plock });
+  t.vaxt.v = ORTKRUKA.ater; count(s, 'ortKruka'); ovning(p, 'odling', ORTKRUKA.ovning);
+  if (forstaGang(s, 'ortKruka')) log(s, `${p.name} plockade röllekan som växer i hens lerkruka.`, 'world', [p.id]);
+}
+// ... och sätter ett frö i en ledig kruka (Förbättra, bredvid staketet): den växt som väger mest av dem hen har frö till (steg 10.7.3)
+export function ortSattaVal(s: State, p: Person) {
+  if (ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'odling')) return undefined;
+  const t = ledigKruka(s, p), g = t && krukVal(s, p, x => getable(s, p, GRODOR[x].fro) >= 1);
+  return t && g ? { t, g } : undefined;
+}
+export function ortSattaKlar(s: State, p: Person, ref?: number) {
+  const v = ortSattaVal(s, p);
+  if (!v || v.t.id !== ref) return;
+  const { t, g } = v;
+  takeMaterial(s, p, GRODOR[g].fro, 1);
+  t.vaxt = { g, v: 0 }; count(s, g === 'blomma' ? 'blommaSatt' : 'ortSatt'); ovning(p, 'odling', ORTKRUKA.ovning);
+  if (g === 'blomma' ? forstaGang(s, 'blommaSatt') : forstaGang(s, 'ortSatt')) log(s, `${p.name} satte ${g === 'blomma' ? 'en blomma' : 'en rölleka'} i en lerkruka vid huset.`, 'world', [p.id]);
 }
 import { GRODOR, GrodaDef, GrodaSlag, ODLING } from './odling';
 import { roomAt } from './byggnad';

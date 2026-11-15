@@ -246,6 +246,8 @@ const DEF = {
   steka: { namn: 'Steker på stekhällen', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, verb: 'steker', plats: 'hard', med: 'stekhall' }, // stekhällen på härden (steg 10.2.87) (matlagning.ts, steg 9.6.21)
   skramma: { namn: 'Sätter upp en fågelskrämma', slag: 'odla', verb: 'sätter upp en fågelskrämma' }, // odling.ts (steg 9.7.11)
   avliva: { namn: 'Slaktar ett djur', slag: 'odla', verb: 'avlivar', tungt: true }, // boskap.ts (steg 9.8.7)
+  ortPlocka: { namn: 'Plockar örten i krukan', slag: 'odla', verb: 'plockar örten' }, // kruka.ts (steg 10.10.11)
+  ortSatta: { namn: 'Sätter en växt i krukan', slag: 'odla', verb: 'sätter en växt i krukan' }, // kruka.ts (steg 10.10.11)
   mjolka: { namn: 'Mjölkar getterna', slag: 'odla', verb: 'mjölkar', yrke: 'Herde' }, // boskap.ts (steg 9.8.8)
   tatuera: { namn: 'Tatuerar', slag: 'hantverk', verb: 'tatuerar', framme: true, stilla: true }, // tatuering.ts (steg 10.7.5)
   klippa: { namn: 'Klipper fåren', slag: 'odla', verb: 'klipper', yrke: 'Herde' }, // boskap.ts (steg 9.8.5)

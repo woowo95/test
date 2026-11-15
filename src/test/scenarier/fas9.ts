@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medHus } from './hjalp';
+import { SCENARIER, kor, klockan, medHus, setFood, tandEld } from './hjalp';
 
 SCENARIER.andrade = {
   lang: true,
@@ -1533,12 +1533,13 @@ SCENARIER.blommor = {
     // ont om rölleka: örten väger mest
     const k1 = ny(); setAmount(s, 'rolleka', 1); setAmount(s, 'blomma', 1);
     const pOrt = SIM.krukPoang(s, p, 'rolleka'), pBlom = SIM.krukPoang(s, p, 'blomma');
-    stepOrtKrukor(s);
+    const satt = () => SIM.ortSattaKlar(s, p, SIM.ortSattaVal(s, p)?.t.id); // ägaren sätter växten (steg 10.10.11)
+    satt();
     const forst = k1.vaxt?.g;
     // gott om rölleka: blomman väger mest, och byn vill ha en blomma till den lediga krukan
     setAmount(s, 'rolleka', SIM.ORTKRUKA.ortMal); s.now += SIM.HOUR;
     const k2 = ny(); const vill = SIM.blommaVill(s);
-    stepOrtKrukor(s);
+    satt();
     const sedan = k2.vaxt?.g, blomKvar = amountOf(s, 'blomma');
     // blomman växer upp på 3 dygn, blommar i 3 och vissnar
     const q0 = SIM.krukaPyntQ(k2);
@@ -1560,20 +1561,51 @@ SCENARIER.blommor = {
 };
 
 SCENARIER.ortkruka = {
-  text: 'Steg 9.7.16: örter i krukor. Örterna odlas inte på fälten utan i lerkrukor vid husen (kolumnen plats i GRODOR), och krukorna är också pynt',
+  text: 'Steg 9.7.16 och 10.10.11: örter i krukor. Örterna odlas inte på fälten utan i lerkrukor vid husen (kolumnen plats i GRODOR), och krukorna är också pynt. Ägaren sätter fröet och plockar den mogna örten som arbeten; inget flyttas utan att någon står vid krukan, örten växer lika mycket med korta som med långa slag, en kruka som bärs sås inte, och två tar aldrig samma kruka',
   kor: () => {
-    const { stepOrtKrukor, addTool, setAmount, amountOf, GRODOR, grodorNu } = SIM;
+    const { stepOrtKrukor, addTool, setAmount, amountOf, GRODOR, grodorNu, ortSattaVal, ortSattaKlar, ortPlockaVal, ortPlockaKlar, ORTKRUKA } = SIM;
     const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 2);
-    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    for (const r of [p, q]) r.tek = { ...(r.tek ?? {}), odling: 1 };
     const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined; kr.x = Math.floor(p.x); kr.y = Math.floor(p.y);
     setAmount(s, 'rolleka', 1);
-    stepOrtKrukor(s);
-    const satt = kr.vaxt?.g === 'rolleka' && amountOf(s, 'rolleka') === 0;
-    for (let h = 0; h < 24 * 4 && amountOf(s, 'rolleka') < 1; h++) { s.now += SIM.HOUR; stepOrtKrukor(s); }
+    // ingen står vid krukan: inget sätts av sig självt
+    for (let h = 0; h < 24; h++) { s.now += SIM.HOUR; stepOrtKrukor(s); }
+    const ingetSatt = !kr.vaxt && amountOf(s, 'rolleka') === 1;
+    // den som bär krukan sår inte i den
+    kr.hos = p.id; const buren = ortSattaVal(s, p); kr.hos = undefined;
+    // en annan arbetar vid krukan: ägaren tar den inte
+    q.task = { act: 'ortSatta', ref: kr.id } as never; const tagen = ortSattaVal(s, p); q.task = undefined;
+    const v = ortSattaVal(s, p), od0 = p.skill.odling;
+    ortSattaKlar(s, p, v?.t.id);
+    const satt = v?.t === kr && kr.vaxt?.g === 'rolleka' && amountOf(s, 'rolleka') === 0;
+    // örten växer och väntar mogen: ingen plockar den av sig själv
+    for (let h = 0; h < 24 * 6; h++) { s.now += SIM.HOUR; stepOrtKrukor(s); }
+    const vantar = kr.vaxt?.v === 1 && amountOf(s, 'rolleka') === 0;
+    const pv = ortPlockaVal(s, p), qv = ortPlockaVal(s, q);
+    ortPlockaKlar(s, p, pv?.id);
+    const plockad = amountOf(s, 'rolleka') === ORTKRUKA.plock && kr.vaxt?.v === ORTKRUKA.ater && Number.isInteger(amountOf(s, 'rolleka'));
+    // lika mycket med korta som med långa slag
+    const v0 = kr.vaxt!.v;
+    for (let k = 0; k < 60; k++) stepOrtKrukor(s, 60);
+    const kort = kr.vaxt!.v - v0; kr.vaxt!.v = v0;
+    stepOrtKrukor(s, 3600);
+    const lang = kr.vaxt!.v - v0;
+    // i byn: ägaren väljer att plocka den mogna örten
+    kr.vaxt!.v = 1; const st0 = s.stat?.ortKruka ?? 0;
+    tandEld(s, 20);
+    setFood(s, 400); setAmount(s, 'ved', 60); // byn har mat och ved, så att Försörjningen kommer i tur
+    for (const r of SIM.living(s)) SIM.put(s, 'torrkott', 60, { [r.id]: 60 }); // var och en har egen mat
+    kor(s, 24);
     return [
       [`röllekan odlas i kruka (${GRODOR.rolleka.plats}) och sås aldrig på fältet (${grodorNu(s).includes('rolleka') ? 'på fältet' : 'inte på fältet'})`, GRODOR.rolleka.plats === 'kruka' && !grodorNu(s).includes('rolleka')],
-      [`den som kan odla sätter röllekan i sin lediga kruka (${satt ? 'ja' : 'nej'})`, satt],
-      [`den växer och plockas, och växer igen (${amountOf(s, 'rolleka')} rölleka, ${(kr.vaxt?.v ?? 0).toFixed(2)} vuxen)`, amountOf(s, 'rolleka') >= 1 && !!kr.vaxt],
+      [`inget sätts utan att någon står vid krukan (${ingetSatt ? 'ja' : 'nej'})`, ingetSatt],
+      [`en kruka som bärs sås inte (${buren ? 'sås' : 'nej'}), och den som en annan arbetar vid tas inte (${tagen ? 'tas' : 'nej'})`, !buren && !tagen],
+      [`ägaren sätter röllekan i sin lediga kruka, och odlingen växer (${satt ? 'ja' : 'nej'}, ${od0.toFixed(3)} → ${p.skill.odling.toFixed(3)})`, satt && p.skill.odling > od0],
+      [`den mogna örten väntar i krukan (${(kr.vaxt?.v ?? 0).toFixed(2)})`, vantar],
+      [`ägaren plockar den (${pv === kr ? 'ja' : 'nej'}), inte en annan (${qv ? 'ja' : 'nej'}), och får ${ORTKRUKA.plock} hela örter och örten växer igen (${plockad ? 'ja' : 'nej'})`, pv === kr && !qv && plockad],
+      [`örten växer lika mycket med korta som med långa slag (${kort.toFixed(4)} och ${lang.toFixed(4)})`, Math.abs(kort - lang) < 1e-9 && kort > 0],
+      [`i byn plockar ägaren den mogna örten (${(s.stat?.ortKruka ?? 0) - st0} plock)`, (s.stat?.ortKruka ?? 0) > st0],
     ];
   },
 };

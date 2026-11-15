@@ -288,6 +288,8 @@ KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => klippKlar(s, p, t.ref);
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
+KLAR.ortPlocka = (s, p, t) => ortPlockaKlar(s, p, t.ref); // örtkrukan (kruka.ts, steg 10.10.11)
+KLAR.ortSatta = (s, p, t) => ortSattaKlar(s, p, t.ref);
 KLAR.slatter = (s, p, t) => slaKlar(s, p, t.ref);
 KLAR.hamla = (s, p, t) => hamlaKlar(s, p, t.ref);
 KLAR.avliva = (s, p, t) => avlivaKlar(s, p, t.ref);
@@ -1607,7 +1609,7 @@ function vildNara(s: State, k: 'rolleka' | 'blomma' | 'honung', x: number, y: nu
   for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, k, x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
   return best;
 }
-import { blommaVill, stepOrtKrukor } from './kruka';
+import { blommaVill, ortPlockaKlar, ortSattaKlar, stepOrtKrukor } from './kruka';
 import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
 import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
