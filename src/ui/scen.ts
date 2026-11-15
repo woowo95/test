@@ -22,6 +22,7 @@ export const djurMarkLayer = new PIXI.Container(); // utropstecknet över kanine
 export const husLayer = new PIXI.Container(); // timmerväggarna och trägolven, som pixelbilder (husbild.ts)
 export const structG = new PIXI.Graphics();
 export const pileLayer = new PIXI.Container();
+export const mattLayer = new PIXI.Container(); // mattorna på golvet, under allt som står och ligger (steg 10.7.6)
 export const overG = new PIXI.Graphics(); // det som ritas ovanpå stackarna och stationerna: framstegscirkeln
 export const peopleG = new PIXI.Graphics();
 // röken (steg 5.1.9.1): från branden bakom allt som står upp, så att den hamnar bakom alla lågorna, och från elden överst
@@ -39,7 +40,7 @@ export const labels = new PIXI.Container();
 // och värmekartan ovanpå syns som på dagen. Den som lägger till ett lager bredvid ett av dem lägger det i samma behållare
 // (lagerEfter)
 export const mork = new PIXI.Container();
-mork.addChild(terrainG, plantG, flackG, husLayer, structG, pileLayer, overG, djurFx, rokBakLayer, figurLayer, peopleG, rokLayer);
+mork.addChild(terrainG, plantG, flackG, husLayer, mattLayer, structG, pileLayer, overG, djurFx, rokBakLayer, figurLayer, peopleG, rokLayer);
 world.addChild(mork, filterG, bubbleG, symbolLayer, djurMarkLayer, labels);
 // lägg ett lager direkt ovanför ett annat, i samma behållare
 export const lagerEfter = (nytt: PIXI.DisplayObject, fore: PIXI.DisplayObject) => fore.parent!.addChildAt(nytt, fore.parent!.getChildIndex(fore) + 1);

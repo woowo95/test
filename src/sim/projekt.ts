@@ -72,7 +72,7 @@ export const PROJEKT_TAL = balans('projekt', {
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
   hylla: 0.4, kista: 0.3, stall: 0.3, bokhylla: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
-  lerkruka: 0.3, naverask: 0.3, nal: 0.4, krycka: 0.6, traben: 0.6, krok: 0.5, ogonlapp: 0.2, bonad: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
+  lerkruka: 0.3, naverask: 0.3, nal: 0.4, krycka: 0.6, traben: 0.6, krok: 0.5, ogonlapp: 0.2, bonad: 0.2, matta: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
   tillverka: 0.35, // ... det som görs vid stationerna, när byn vill ha mer av det (tillverka.ts)
@@ -142,7 +142,7 @@ const redskap = (g: string): ProjektDef => {
 const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
-    namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1,
+    namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? (d.smak ? (PROJEKT_TAL as Record<string, number>)[d.smak] : undefined) ?? 1, // alla mattor väger som en (steg 10.7.6)
     // någon i familjen sover under tak utan en bädd, eller p vill ha en egen kista (steg 2.10.18): den byggs också som pyssel på fritiden
     egen: d.sover ? (s, fam) => utanEgenBadd(s, fam) : d.forvar?.privat ? (s, _fam, p) => p && villKista(s, p) ? 1 : 0 : undefined,
     brist: s => stationBrist(s, k), // bufferten står i forradsmal.ts (steg 6.2.17)

@@ -6,7 +6,7 @@ import { STUBBILDER } from '../stubbilder';
 import { ritaHus } from './husbild';
 import { smutsGrad, smutsIkon } from './slitbild';
 import { outPilesAt, piles, s, sakVar, ui, uppgiftVid } from './lage';
-import { Ikoner, TS, figurLayer, overG, pileLayer, rokLayer, structG } from './scen';
+import { Ikoner, TS, figurLayer, mattLayer, overG, pileLayer, rokLayer, structG } from './scen';
 import { eldBild, gnistBild, rokBild } from './animation';
 import { ANIMTAKT } from '../animbilder';
 import { iBruk } from './ibruk';
@@ -17,6 +17,7 @@ import * as PIXI from 'pixi.js';
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer, true); // med skuggor på marken (steg 5.1.8)
 const stubbIkoner = new Ikoner(figurLayer, true);
+const mattIkoner = new Ikoner(mattLayer); // mattorna (steg 10.7.6)
 const rokIkoner = new Ikoner(rokLayer); // gnistorna och röken över elden (steg 5.1.9.1)
 // skicket som färg: grönt, gult, rött
 // en färg i talform till närmaste färg i paletten
@@ -224,7 +225,7 @@ export function drawStructures(t: number) {
     if (on) structG.lineStyle(1, 0xdad0bb).drawRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1).lineStyle(0); // bara den valda platsen får en hel ram
   });
   drawBuild();
-  pileIcons.start(); rokIkoner.start();
+  pileIcons.start(); rokIkoner.start(); mattIkoner.start();
   drawFalt();
   drawKarra();
   for (const f of eldarOf(s)) lagereld(f); // den första och lägereldarna till (steg 4.5.6.8)
@@ -234,6 +235,7 @@ export function drawStructures(t: number) {
   for (const st of stationerOf(s)) {
     // den som står vriden har en egen bild (_v, steg 3.10.7): ingenting ritas genom att bilden vrids
     const d = stationDef(st.k), v = vriden(st);
+    if (d?.golv) { mattIkoner.add(d.ikon + (st.rot ? '_karta_v' : ''), st.x * TS, st.y * TS, 1); if (!isKlar(st)) framsteg(st.x * TS + storlekAv(st).w * TS / 2, st.y * TS + 3, stationKlar(st)); continue; } // mattan ligger på golvet, under det som står på den (steg 10.7.6)
     if (d?.brasa) { pileIcons.add('kb_lagereld_ring', st.x * TS + TS / 2 - ELD.x, st.y * TS + TS / 2 - ELD.y, 1); framsteg(st.x * TS + TS / 2, st.y * TS - 6, stationKlar(st)); continue; } // ringen till en lägereld till medan den läggs
     if (st.delar?.length && d?.delar) { // en station i flera delar (steg 9.4.1): varje del där den står, platshållare tills delarna har bilder (9.4.3)
       for (const q of delarAv(st)) {
@@ -281,7 +283,7 @@ export function drawStructures(t: number) {
     const k = 'kb_talgljus' + (1 + st.id % 2) + (l.tand ? '_tand' : ''), c = iconCanvas(k), w = storlekAv(st).w * TS;
     pileIcons.add(k, st.x * TS + ((w - c.width) >> 1), st.y * TS + 6 - c.height, 1);
   }
-  rokIkoner.end();
+  rokIkoner.end(); mattIkoner.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;
   if (tab === 'hog' && outPilesAt(h.x, h.y).length) structG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(h.x * TS + 0.5, h.y * TS + 0.5, TS - 1, TS - 1, 3).lineStyle(0);

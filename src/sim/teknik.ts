@@ -161,6 +161,9 @@ export const TEKNIK: Tek[] = [
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
   { id: 'bonad', namn: 'Bonad', text: 'Ett skinn som hängs på väggen, med mönster och fransar av rep.', effekt: 'Den som tycker om bonader hänger en där den sover, trivs där, och de som ser den tycker bättre om ägaren.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
+  // mattan (steg 10.7.6): vävs av lintyg eller ylle och läggs på golvet där man sover (MATTOR i stationer.ts)
+  { id: 'matta', namn: 'Matta', text: 'Tyg som vävs tätt till en matta och läggs på golvet.', effekt: 'Den som tycker om mattor lägger en på golvet där den sover, trivs där, och de som ser den tycker bättre om ägaren. Den stora och den runda är finare.',
+    omr: ['hantverk', 'bygga'], krav: ['vavstol'], niva: 5, tid: 4 },
   // latrinen och benspaden (steg 2.7.2): spaden görs av ben, rep och en gren vid slöjdbänken, och med den grävs latrinen
   // (LATRIN i STATIONER, samma id) och rötterna fortare
   { id: 'benspade', namn: 'Benspade', text: 'Tre ben bredvid varandra som ett blad, surrade med rep vid en gren som skaft.', effekt: 'Med spaden gräver man fram rötter fortare, och gropar.',

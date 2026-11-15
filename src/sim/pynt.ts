@@ -33,7 +33,7 @@ export function stepPynt(s: State) {
     const d = stationDef(t.k);
     if (!d?.pynt || !isKlar(t) || t.ag === undefined) continue;
     const o = byId(s, t.ag), rum = stationRum(s, t);
-    if (o && alive(o) && rum) pynt.push({ o, rum, q: kvOf(t), namn: d.namn.toLowerCase() });
+    if (o && alive(o) && rum) pynt.push({ o, rum, q: Math.min(kvOf(t) + (d.pyntQ ?? 0), PYNT.glad.length - 1), namn: d.namn.toLowerCase() }); // den stora och den runda mattan är ett steg finare (steg 10.7.6)
   }
   for (const o of living(s)) { const k = krukaHemma(s, o); if (k) pynt.push({ o, rum: sovrum(s, o), q: krukaPyntQ(k), namn: 'lerkruka' }); } // en blommande kruka är ett steg finare (steg 10.7.3)
   // ägaren trivs av det finaste pyntet i rummet där hen är (en tanke, inte en per pynt)

@@ -692,7 +692,7 @@ SCENARIER.stationsteknik = {
   kor: () => {
     const { STATIONER, STATION_LIST, TEK, kanBygga, thinkWhileWorking, knows, migrate, SPARVERSION } = SIM;
     // en storlek av en annan station (de större borden, steg 2.2.15) har den stationens teknik
-    const register = STATION_LIST.every(k => { if ((STATIONER[k] as SIM.StationDef).brasa || (STATIONER[k] as SIM.StationDef).tro) return !STATIONER[k].tek.length; const tk = STATIONER[k].tek[0]; return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk); });
+    const register = STATION_LIST.every(k => { if ((STATIONER[k] as SIM.StationDef).brasa || (STATIONER[k] as SIM.StationDef).tro) return !STATIONER[k].tek.length; const tk = STATIONER[k].tek[0]; if ((STATIONER[k] as SIM.StationDef).smak) return STATIONER[k].tek.length === 1 && tk === (STATIONER[k] as SIM.StationDef).smak && !!TEK[tk]; /* mattorna: en teknik för alla storlekar (steg 10.7.6) */ return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk); });
     const ordning = TEK.slaktbank.krav.includes('kniv') && TEK.flatarbank.krav.includes('rep') && TEK.korg.krav.includes('flatarbank');
     // den som kan kniven men inte slaktbänken bygger ingen; när hen kommit på den kan hen
     const s = createState(1, START); klockan(s); tandEld(s); medHus(s);

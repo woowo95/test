@@ -4412,6 +4412,28 @@ export function djurBild(art: 'varg' | 'kanin' | 'radjur' | 'bjorn' | 'bjornunge
 export const kartbild = (k: string) => KARTBILDER[k] ? 'kb_' + k : undefined;
 export const kartbildEnsam = (k: string) => !!KARTBILDER[k]?.ensam;
 
+// den vävda mattan (steg 10.7.6, platshållare tills Björn valt i bildstilen): 16 punkter per ruta, en kant, ränder i tvären och
+// fransar på kortsidorna. Den runda har golvet synligt i hörnen. Lintyget ljust med röda ränder, yllet ockra med bruna
+{
+  const MATTA_PAL: Record<string, Record<string, string>> = {
+    lin: { o: '#a0947d', a: '#dad0bb', b: '#742a01', c: '#521100', f: '#bdb39b' },
+    ylle: { o: '#5e3c24', a: '#906f0f', b: '#5e3c24', c: '#3f2415', f: '#b2921b' },
+  };
+  const rita = (w: number, h: number, rund: boolean) => Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_, x) => {
+    const cx = (w - 1) / 2, cy = (h - 1) / 2, e = ((x - cx) / (w / 2)) ** 2 + ((y - cy) / (h / 2)) ** 2;
+    if (rund) { if (e > 1) return '.'; if (e > 0.78) return 'o'; return e < 0.12 ? 'c' : Math.abs(Math.sqrt(e) - 0.6) < 0.08 ? 'b' : 'a'; }
+    if (x < 2) return y % 2 === 0 && y > 0 && y < h - 1 ? 'f' : '.'; if (x >= w - 2) return y % 2 === 0 && y > 0 && y < h - 1 ? 'f' : '.'; // fransarna
+    if (y === 0 || y === h - 1 || x === 2 || x === w - 3) return 'o';
+    const r = (x - 3) % 8; return r === 2 || r === 3 ? 'b' : r === 6 && y % 3 === 1 ? 'c' : 'a';
+  }).join(''));
+  const STORL: Record<string, [number, number, boolean]> = { liten: [16, 16, false], lang: [32, 16, false], stor: [32, 32, false], rund: [32, 32, true] };
+  for (const [k, [w, h, rund]] of Object.entries(STORL)) for (const tyg of ['lin', 'ylle']) {
+    const id = `matta_${k}_${tyg}`, rader = rita(w, h, rund);
+    PIX[id] = rader; PAL[id] = MATTA_PAL[tyg];
+    if (w !== h) { PIX[id + '_karta_v'] = Array.from({ length: w }, (_, x) => Array.from({ length: h }, (_, y) => rader[h - 1 - y][x]).join('')); PAL[id + '_karta_v'] = MATTA_PAL[tyg]; } // den långa vriden
+  }
+  PIX.matta = PIX.matta_liten_lin; PAL.matta = MATTA_PAL.lin; // tekniken
+}
 const canvases: Record<string, HTMLCanvasElement> = {};
 const urls: Record<string, string> = {};
 
