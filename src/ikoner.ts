@@ -4393,7 +4393,7 @@ for (const m of ['lader', 'lintyg', 'ylle']) for (const pl of ['rock', 'skor']) 
 for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
 for (const k of ['torrgadda', 'torrmort']) { PIX[k] = PIX.torrfisk; PAL[k] = PAL.torrfisk; }
 for (const st of ['fangstbank', 'stenhuggarplats', 'klyvplats', 'ortkok', 'garvning', 'harden', 'vavstol']) for (const k of [st, st + '_karta', st + '_karta_v']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
-for (const k of ['rokelse', 'brannolja', 'vittja', 'snara', 'grop', 'leksak', 'rolleka', 'salva', 'tjara', 'benlim', 'tval', 'lin', 'ratlin', 'linfron', 'slanda', 'ulltrad', 'ylle', 'lovkarve']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
+for (const k of ['rokelse', 'brannolja', 'vittja', 'snara', 'bur', 'grop', 'leksak', 'rolleka', 'salva', 'tjara', 'benlim', 'tval', 'lin', 'ratlin', 'linfron', 'slanda', 'ulltrad', 'ylle', 'lovkarve']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
 // fas 7:s bilder ur Björns val (steg 7.8.1): symbolen i listorna är bilden mitt i rutan på 16 × 16 punkter, förminskad om den är större
 // och steg 8.10.1: tvålen, linfröna, sländan, röllekan, läderrustningen och ryggsäcken
 for (const k of ['stockvag', 'brygga', 'gadda', 'mort', 'gaddkott', 'mortkott', 'mjarde', 'lader', 'trad', 'vargtand', 'huggen_sten', 'plankor', 'vavstol', 'tunika_lintyg', 'i_bjorndodare', 'tval', 'linfron', 'slanda', 'rolleka', 'rustning_lader', 'lintyg', 'mossa_kaninskinn', 'hjalm_lader', 'skold', 'mantel_kaninskinn', 'mantel_ylle', 'halsband_tandband', 'garvning', 'klyvplats', 'ryggsack_kaninskinn', 'tjara', 'benlim', 'balte_rep', 'byxor_lader', 'skjorta_lintyg']) {
@@ -4507,6 +4507,7 @@ VS_PALS.forEach((pals, pi) => {
   for (const h of DJUR_HALL) { const k = `djur_vildsvin_0_${pi}_${h}`, rader = r[(h === 'vast' ? 'sida' : h) as Hall]; PIX[k] = h === 'vast' ? rader.map(rad => [...rad].reverse().join('')) : rader; PAL[k] = pal; }
 });
 PIX.vildsvin = PIX.djur_vildsvin_0_0_sida; PAL.vildsvin = PAL.djur_vildsvin_0_0_sida; // det fällda vildsvinet och djuret i texterna
+PIX.kulting = PIX.vildsvin; PAL.kulting = PAL.vildsvin; PIX.slaktgris = PIX.vildsvin; PAL.slaktgris = PAL.vildsvin; // platshållare (steg 10.10.13)
 // djurets bild: ritningen och pälsen ur id:t (som djurets andra egenskaper, steg 3.7.13) och hållet det rör sig åt
 const idTal = (id: number, salt: number) => { let h = Math.imul(id ^ salt, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return (h ^ (h >>> 13)) >>> 0; };
 // fågeln (steg 6.6.3): utseendet (orre, ripa, skogsduva) kommer från platsen, inte från id:t

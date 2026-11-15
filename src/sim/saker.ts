@@ -173,6 +173,7 @@ const DEF = {
   vargtand: { namn: 'Vargtand', skaffa: { tid: 0.1 }, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5
   leksak: { namn: 'Leksak', skaffa: RECEPT.leksak, stack: 10, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.4
   snara: { namn: 'Snara', skaffa: RECEPT.snara, stack: 5, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.10
+  bur: { namn: 'Bur', skaffa: RECEPT.bur, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 10.10.13
   grop: { namn: 'Fångstgrop', skaffa: RECEPT.grop, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 7.5.11
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)
   // ett redskap som någon har börjat göra men inte gjort klart (paborjat.ts). Det slits och värderas där, inte här
@@ -284,7 +285,7 @@ const DEF = {
   appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
   ull: { namn: 'Ull', ett: true, varde: 3, stack: 20, vikt: 0.2, mapp: 'Material' }, // klipps av fåren (steg 9.8.5, boskap.ts)
   levfar: { namn: 'Levande får', ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levko: { namn: 'Levande ko', varde: 60, stack: 1, vikt: 0, mapp: 'Material' }, // kon (steg 10.10.1)
-  levoxe: { namn: 'Levande oxe', varde: 50, stack: 1, vikt: 0, mapp: 'Material' }, levhast: { namn: 'Levande häst', varde: 80, stack: 1, vikt: 0, mapp: 'Material' }, // dragdjuren (steg 10.10.3)
+  levoxe: { namn: 'Levande oxe', varde: 50, stack: 1, vikt: 0, mapp: 'Material' }, levhast: { namn: 'Levande häst', varde: 80, stack: 1, vikt: 0, mapp: 'Material' }, kulting: { namn: 'Kulting', varde: 10, stack: 1, vikt: 0, mapp: 'Material' }, slaktgris: { vikt: 15, namn: 'Slaktad gris', varde: 25, stack: 1, mapp: 'Material', haller: 3 }, // grisen (steg 10.10.13) // dragdjuren (steg 10.10.3)
   levhons: { namn: 'Höna', varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
   appelplanta: { namn: 'Äppelplanta', ett: true, varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },
   honung: { namn: 'Honungskaka', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, naring: { energi: 2.2, vitamin: 0.2, mineral: 0.2 } }, // steg 10.7.25: vaxkakan med honungen i, från vildbin i skogen; ruttnar inte

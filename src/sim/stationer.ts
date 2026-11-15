@@ -168,7 +168,7 @@ export const STATIONER = {
   },
   // fångstbänken (steg 7.4.1): 3×2 rutor. Mjärdar och snaror görs bara här; fångstgropen grävs på plats i skogen (steg 10.2.84)
   fangstbank: {
-    kv: STATION.kvLite, namn: 'Fångstbänk', ikon: 'fangstbank', w: 3, h: 2, tek: ['fangstbank'], av: RECEPT.fangstbank.av, min: RECEPT.fangstbank.min, gor: ['mjarde', 'snara'], bara: ['mjarde', 'snara'],
+    kv: STATION.kvLite, namn: 'Fångstbänk', ikon: 'fangstbank', w: 3, h: 2, tek: ['fangstbank'], av: RECEPT.fangstbank.av, min: RECEPT.fangstbank.min, gor: ['mjarde', 'snara', 'bur'], bara: ['mjarde', 'snara', 'bur'],
     bygger: 'Bygger en fångstbänk av virke och grenar.',
     forsta: '{namn} byggde byns första fångstbänk. Där görs mjärdar och andra fällor.',
   },

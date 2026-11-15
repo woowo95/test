@@ -79,6 +79,7 @@ const DEF = {
   ulltrad: { var: 'sak', av: { ull: 2 }, min: 3, slag: 'liten', tek: 'slanda' }, ylle: { var: 'sak', av: { ulltrad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' }, // ullen (steg 9.8.14): som linet
   leksak: { var: 'sak', av: { grenar: 1 }, min: 3, slag: 'liten', tek: 'leksak', bank: 'snickarbank' },
   snara: { var: 'sak', av: { rep: 1, grenar: 2, ben: 1 }, min: 4, slag: 'liten', tek: 'snara' },
+  bur: { var: 'sak', av: { grenar: 4, rep: 2 }, min: 4, slag: 'liten', tek: 'bur' }, // buren (steg 10.10.13)
   grop: { var: 'sak', av: {}, min: 5, slag: 'stor', tek: 'grop', verktyg: { benspade: 'benspaden' } }, // grävs på plats i skogen och täcks med grenar som bryts där (steg 10.2.84)
   byxor: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 },
   mossa: { var: 'plagg', mangd: 1, av: {}, min: 4 },

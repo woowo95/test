@@ -20,8 +20,9 @@ import { blocked } from './byggnad';
 // och betet det helst äter; liv = hur många dygn (år i spelet) det lever, vuxen = när det är fullvuxet, varde = vad det är värt i
 // silver (byns rikedom och arvet); ater = hur mycket det äter mot ett får (hungern, betet, höet och hagen räknar det, steg 10.10.1);
 // mjolk = mjölk per mjölkning, ull = ull per klippning, unge = vad ungen heter (en, ord; utan unge får arten inga ungar), lev = varan handlaren säljer det som;
-// styrka och snabb = dragdjurets styrka (lasset för släden är styrkan gånger FORDON_TAL.lassPerStyrka) och fart mot människans (steg 10.10.3)
-export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; mattar: number; ikon: string; ater: number; mjolk?: number; ull?: number; unge?: string; lev?: string; styrka?: number; snabb?: number }
+// styrka och snabb = dragdjurets styrka (lasset för släden är styrkan gånger FORDON_TAL.lassPerStyrka) och fart mot människans (steg 10.10.3);
+// ute = går lös i byn utan hage och fähus, så att vargen och rövarna kan ta det; fangas = det levande bytet ur en fälla som blir ett ungt djur av arten (grisen, steg 10.10.13)
+export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; mattar: number; ikon: string; ater: number; mjolk?: number; ull?: number; unge?: string; lev?: string; styrka?: number; snabb?: number; ute?: true; fangas?: string }
 export const TAMDJUR = {
   hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', ...KOTTSLAG, 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'varg', ater: 1 },
   far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur', ater: 1, ull: 2, unge: 'ett lamm', lev: 'levfar' },
@@ -30,6 +31,8 @@ export const TAMDJUR = {
   ko: { namn: 'Ko', ord: ['en', 'ko', 'kor', 'kon'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 60, mattar: 0.5, ikon: 'radjur', ater: 2, mjolk: 4, unge: 'en kalv', lev: 'levko' },
   // dragdjuren (steg 10.10.3): oxen är billigare, starkare och långsammare och får inga ungar; hästen är dyrare och snabbare, får föl och slaktas inte
   oxe: { namn: 'Oxe', ord: ['en', 'oxe', 'oxar', 'oxen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 50, mattar: 0.5, ikon: 'radjur', ater: 2, lev: 'levoxe', styrka: 4, snabb: 0.7 },
+  // grisen (steg 10.10.13): kultingen fångas i buren och går lös i byn; ägaren ger den rester från slakten och skörden, och rötter när de inte räcker. Inga ungar
+  gris: { namn: 'Gris', ord: ['en', 'gris', 'grisar', 'grisen'], foder: ['slaktrens', 'vaxtrest', 'rotter'], liv: 10, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'vildsvin', ater: 1, ute: true, fangas: 'kulting' },
   hast: { namn: 'Häst', ord: ['en', 'häst', 'hästar', 'hästen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 20, vuxen: 3, varde: 80, mattar: 0.5, ikon: 'radjur', ater: 2, unge: 'ett föl', lev: 'levhast', styrka: 3, snabb: 1 },
 } as const satisfies Record<string, TamArt>;
 export type TamArtId = keyof typeof TAMDJUR;
@@ -225,7 +228,7 @@ export function hundSkaller(s: State, avst: (d: Tamdjur) => number) {
 
 // ---------- djuren i fara (steg 9.8.12) ----------
 // betesdjuren som står ute (inte i fähuset): dem kan vargarna ta och rövarna driva bort
-export const tamUte = (s: State) => tamdjurOf(s).filter(d => tamArt(d.art).bete && d.fahus === undefined);
+export const tamUte = (s: State) => tamdjurOf(s).filter(d => (tamArt(d.art).bete || tamArt(d.art).ute) && d.fahus === undefined); // betesdjuren utanför fähuset och de som går lösa (grisen, steg 10.10.13)
 // rövarna driver bort djuret: det är borta ur byn
 export function tamStulen(s: State, d: Tamdjur) {
   s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);

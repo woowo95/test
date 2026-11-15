@@ -11,6 +11,7 @@ import { DAY, H, HOUR, Person, State, T, W, inMap } from './typer';
 import type { Station } from './stationer';
 import { STATION } from './stationer';
 import { getMap } from './karta';
+import { tamArt, tamdjurOf } from './tamdjur';
 
 export const RESTER = ['slaktrens', 'vaxtrest'] as const;
 export const REST = balans('rester', {
@@ -30,8 +31,14 @@ export const REST = balans('rester', {
   varm: 5, // över så många grader mognar komposten i full takt ...
   kylaTakt: 0.3, // ... annars i så här stor del av takten
   godsla: 0.3, // en färdig kompost höjer bördigheten på en ruta så här mycket
+  malDygn: 3, // byn sparar så här många dygns foder av resterna åt djuren som äter dem (grisen och hunden, steg 10.10.13)
 });
 export const resterIByn = (s: State) => RESTER.reduce((n, k) => n + amountOf(s, k), 0);
+// förrådsmålet för resterna (steg 10.10.13): djuren som äter dem (raderna i TAMDJUR med en rest i fodret) äter en sak om dygnet
+// gånger ater, och så många dygns foder bärs inte till sophögen
+export const resterMal = (s: State) => Math.ceil(tamdjurOf(s).reduce((n, d) => n + (tamArt(d.art).foder.some(k => (RESTER as readonly string[]).includes(k)) ? tamArt(d.art).ater : 0), 0) * REST.malDygn);
+// resterna i byn utöver det djuren behöver: det som bärs bort
+export const resterOver = (s: State) => Math.max(0, resterIByn(s) - resterMal(s));
 // sophögen: nära latrinen om byn har en, annars i utkanten av byns område, på land
 export function sophog(s: State) {
   if (s.sophog) return s.sophog;
@@ -47,9 +54,10 @@ export function sophog(s: State) {
 export function soporKlar(s: State, p: Person) {
   const ko = komposten(s);
   const h = ko ? { n: 0 } : sophog(s);
-  let kvar = REST.bar;
+  let kvar = Math.min(REST.bar, Math.floor(resterOver(s)));
+  const bar0 = kvar;
   for (const k of RESTER) { const n = Math.min(kvar, Math.floor(amountOf(s, k))); if (n <= 0) continue; use(s, p, k, n, true); if (ko) ko.kompost = { rest: (ko.kompost?.rest ?? 0) + n, mogna: ko.kompost?.mogna ?? 0 }; else h.n += n; kvar -= n; } // till komposten när byn har en (steg 9.7.6)
-  if (kvar < REST.bar) { count(s, 'soporBurna', REST.bar - kvar); if (forstaGang(s, 'sophog')) log(s, `${p.name} bar resterna från slakten och skörden till en sophög i utkanten av byn.`, 'world', [p.id]); }
+  if (kvar < bar0) { count(s, 'soporBurna', bar0 - kvar); if (forstaGang(s, 'sophog')) log(s, `${p.name} bar resterna från slakten och skörden till en sophög i utkanten av byn.`, 'world', [p.id]); }
 }
 // en gång i timmen (steg.ts): resterna på sophögen ruttnar bort
 export function stepSophog(s: State) {

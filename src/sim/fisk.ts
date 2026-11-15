@@ -25,6 +25,7 @@ const FISK_LIST = Object.keys(FISKAR);
 export const MJARDE = balans('mjarde', {
   snaraFangst: 0.03, snaraFagel: 0.3, snaraSlit: 0.25, // snaran: chansen per timme, hur ofta det blir en fågel, och hur mycket den slits per fångst (steg 7.5.10)
   gropFangst: 0.01, // fångstgropen (steg 7.5.11)
+  burFangst: 0.005, // buren (steg 10.10.13): chansen per timme att en kulting går in, gånger hur mycket vilt det finns där
   sattUtR: 40, // så långt bort letar man högst efter en plats för fällan
   skogUt: 8, // snaror och gropar sätts minst så här många rutor från den som gjort dem, utanför byn
   vittjaMin: 2, // så många fiskar i mjärden innan någon går dit
@@ -51,6 +52,7 @@ export interface FallaDef { namn: string; plats: 'strand' | 'skog'; lager: strin
 export const FALLOR: Record<string, FallaDef> = {
   mjarde: { namn: 'Mjärde', plats: 'strand', lager: 'fiske', fangst: MJARDE.fangst, ger: (s, p) => valjFisk(s, p, true), slits: 0 },
   snara: { namn: 'Snara', plats: 'skog', lager: 'jakt', fangst: MJARDE.snaraFangst, ger: (s, p) => rnd(s, 'arbete', p) < MJARDE.snaraFagel ? 'fagel' : 'vilt', slits: MJARDE.snaraSlit },
+  bur: { namn: 'Bur', plats: 'skog', lager: 'jakt', fangst: MJARDE.burFangst, ger: () => 'kulting', slits: MJARDE.snaraSlit }, // kultingen bärs hem levande och blir byns gris (steg 10.10.13)
   grop: { namn: 'Fångstgrop', plats: 'skog', lager: 'jakt', fangst: MJARDE.gropFangst, ger: () => 'radjur', slits: 0, gravs: true },
 };
 export interface Mjarde { id: number; k?: string; x: number; y: number; ag: number; fisk: Record<string, number>; n: number; c?: number }

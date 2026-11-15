@@ -421,3 +421,72 @@ SCENARIER.djurmotgang = {
     return ut;
   },
 };
+
+SCENARIER.bur = {
+  text: 'Steg 10.10.13: buren. Den görs vid fångstbänken av fyra grenar och två rep, sätts ut i skogen utanför byn och fångar en kulting med chansen 0,005 i timmen gånger viltet där. Den som vittjar bär hem kultingen levande, och den blir en ung gris som hen äger och som går lös i byn',
+  kor: () => {
+    const { RECEPT, FALLOR, STATIONER, TEK, sattUt, vittja, stepBoskap, tamdjurOf, tamUte, tamAlder, tamArt, living, ageOf, ALDER, iByn } = SIM;
+    const s = createState(6, START); klockan(s, 10);
+    const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    const r = RECEPT.bur, recept = r.av.grenar === 4 && r.av.rep === 2 && r.min === 4;
+    const tek = TEK.bur, krav = !!tek && tek.krav.includes('fangstbank') && tek.krav.includes('snara');
+    const bank = STATIONER.fangstbank.gor.includes('bur') && STATIONER.fangstbank.bara.includes('bur');
+    const f = FALLOR.bur, fall = f.fangst === 0.005 && f.plats === 'skog' && f.ger(s, p) === 'kulting' && f.slits > 0;
+    const m = sattUt(s, p, 'bur')!, ute = !!m && !iByn(s, m.x, m.y);
+    m.fisk = { kulting: 1 }; m.n = 1; vittja(s, p, m); stepBoskap(s);
+    const g = tamdjurOf(s).find(d => d.art === 'gris');
+    const ung = !!g && tamAlder(s, g) < tamArt('gris').vuxen, agd = g?.agare === p.id, los = !!g && tamUte(s).includes(g);
+    const kvar = SIM.amountOf(s, 'kulting');
+    return [
+      ['buren görs av fyra grenar och två rep på fyra minuter', recept],
+      ['tekniken Bur kräver fångstbänken och snaran, och buren görs bara vid fångstbänken', krav && bank],
+      ['buren står i skogen, fångar 0,005 i timmen och ger en kulting, och den slits', fall],
+      ['buren sätts utanför byn', ute],
+      [`kultingen blir en ung gris (${g ? tamAlder(s, g).toFixed(2) : '–'} dygn gammal), ägd av den som vittjade`, ung && agd && kvar === 0],
+      ['grisen går lös, så att vargen och rövarna kan ta den', los],
+    ];
+  },
+};
+
+SCENARIER.gris = {
+  text: 'Steg 10.10.13: grisen. Ägaren ger den resterna från slakten och skörden före rötterna; de rester grisarna behöver bärs inte till sophögen. Den slaktas när den blir gammal och på hösten när fodret inte räcker över istiden, och slakten ger hela saker',
+  kor: () => {
+    const { nyttTamdjur, foderFor, mataVal, setAmount, amountOf, slaktOrsak, avlivaKlar, canProcess, bearbeta, DJUR, resterMal, resterOver, soporKlar, DAY, living, ageOf, ALDER } = SIM;
+    const s = createState(3, START); klockan(s, 10);
+    const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    for (const k of ['slaktrens', 'vaxtrest', 'rotter']) setAmount(s, k, 0);
+    const g = nyttTamdjur(s, 'gris', p.x + 1, p.y, p.id, s.now - 2 * DAY); g.hunger = 0.9;
+    setAmount(s, 'rotter', 10); setAmount(s, 'vaxtrest', 2); setAmount(s, 'slaktrens', 2);
+    const f1 = foderFor(s, p, g); setAmount(s, 'slaktrens', 0);
+    const f2 = foderFor(s, p, g); setAmount(s, 'vaxtrest', 0);
+    const f3 = foderFor(s, p, g), vald = mataVal(s, p) === g;
+    // förrådsmålet för resterna
+    const mal = resterMal(s);
+    setAmount(s, 'slaktrens', mal + 5); soporKlar(s, p);
+    const kvarEfter = amountOf(s, 'slaktrens');
+    setAmount(s, 'slaktrens', mal); const inget = resterOver(s) === 0;
+    // slakten: den unga grisen bara på hösten utan foder, den gamla alltid
+    setAmount(s, 'slaktrens', 0); setAmount(s, 'rotter', 0);
+    s.kal = SIM.nyKalender(s.now, SIM.HOST);
+    const host = slaktOrsak(s, g);
+    setAmount(s, 'rotter', 50); const mett = slaktOrsak(s, g);
+    s.kal = SIM.nyKalender(s.now, SIM.VAR); setAmount(s, 'rotter', 0); const var_ = slaktOrsak(s, g);
+    g.born = s.now - 9 * DAY; const gammal = slaktOrsak(s, g);
+    (s.stationer ??= []).push({ id: 9902, k: 'slaktbank', x: Math.floor(p.x) + 2, y: Math.floor(p.y), kvar: 0 }); SIM.touch(s);
+    (p.tek ??= {}).kniv = 1; setAmount(s, 'kniv', 1); setAmount(s, 'kott', 200); p.skill.jakt = 100; // köttet efter skickligheten (kottAv): den skickliga får allt
+    const fore = { k: amountOf(s, 'svinkott'), b: amountOf(s, 'ben'), sk: amountOf(s, 'svinskinn'), t: amountOf(s, 'talg') };
+    avlivaKlar(s, p, g.id);
+    const kropp = amountOf(s, 'slaktgris');
+    if (canProcess(s, p, DJUR.gris)) bearbeta(s, p, DJUR.gris, 2);
+    const fick = { k: amountOf(s, 'svinkott') - fore.k, b: amountOf(s, 'ben') - fore.b, sk: amountOf(s, 'svinskinn') - fore.sk, t: amountOf(s, 'talg') - fore.t };
+    const hela = Object.values(fick).every(n => Number.isInteger(n));
+    return [
+      [`grisen får slaktrensen, sedan växtresterna och sist rötterna (${f1}, ${f2}, ${f3})`, f1 === 'slaktrens' && f2 === 'vaxtrest' && f3 === 'rotter'],
+      ['ägaren väljer att mata den hungriga grisen', vald],
+      [`resterna grisen behöver (${mal}) bärs inte till sophögen (${kvarEfter} kvar)`, mal >= 1 && kvarEfter === mal && inget],
+      [`den unga grisen slaktas på hösten när fodret inte räcker (${host ?? '–'}), inte när det räcker (${mett ?? '–'}) eller på våren (${var_ ?? '–'})`, host === 'host' && !mett && !var_],
+      [`den gamla grisen slaktas fast den är ensam (${gammal ?? '–'})`, gammal === 'gammal'],
+      [`slakten ger hela saker: ${fick.k} fläsk, ${fick.b} ben, ${fick.sk} skinn, ${fick.t} talg`, kropp === 1 && hela && fick.k === SIM.kottAv(p, 10) && fick.b === 2 && fick.sk === 1 && fick.t === 5],
+    ];
+  },
+};
