@@ -126,7 +126,7 @@ function sorjer(s: State, p: Person) {
   const lev = (id?: number) => { const q = id !== undefined ? byId(s, id) : undefined; return q && alive(q) ? q.name : undefined; };
   return lev(p.partner) ?? lev(p.bast) ?? lev(p.mother) ?? lev(p.father);
 }
-// skatteskulden betalas efter gravgåvan och före arvet (skatt.ts, steg 10.5.5)
+// skatteskulden och arvsskatten betalas efter gravgåvan och före arvet (skatt.ts, steg 10.5.5–10.5.6)
 export const skuldKrok: { f?: (s: State, p: Person) => void } = {};
 export function die(s: State, p: Person, orsak: Dodsorsak) {
   nyttILarmet(s); // en död: rollerna vid larmet väljs om (steg 9.5.19)

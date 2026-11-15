@@ -23,7 +23,7 @@ import { tamArt, tamdjurOf } from './tamdjur';
 import { honsVarde } from './hons';
 
 // arvingarna, i tur och ordning: partnern, barnen, föräldrarna, syskonen
-function heirsOf(s: State, p: Person): Person[] {
+export function heirsOf(s: State, p: Person): Person[] {
   const lev = living(s).filter(q => q !== p);
   const partner = lev.find(q => q.id === p.partner);
   if (partner) return [partner];

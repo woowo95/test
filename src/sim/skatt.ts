@@ -8,6 +8,8 @@
 import { DAY, Person, State } from './typer';
 import { balans } from './balans';
 import { ageOf, count, isParent, living, log } from './folk';
+import { kronika } from './historik';
+import { heirsOf } from './arv';
 import { LAGAR, LagTalDef, efterlevs, lagGaller, lagTal, talPlats } from './lagar';
 import { drar } from './seder';
 import { clamp } from './slump';
@@ -16,6 +18,8 @@ import { payable } from './behov';
 import { ownMove, ownedStock } from './lager';
 import { Ting, tingOf } from './agande';
 import { BYN } from './egendom';
+import { djurVarde } from './tamdjur';
+const djurAv = (s: State, p: Person) => djurVarde(s, p.id);
 import { skuldKrok } from './liv';
 
 export const SKATT = balans('skatt', {
@@ -27,6 +31,10 @@ export const SKATT = balans('skatt', {
   lutar: 0.5, // så mycket lutningen mot Sammanhållning flyttar den procent var och en vill ha
   skuldMiss: 0.05, // skulden gör så här missnöjd per dygn, gånger skulden delat med förmögenheten (högst 1) (steg 10.5.5)
   skuldMax: 2, // silvret blir högst så här mycket mer värt för den som har en skuld, efter skulden mot det lösa hen äger
+  arvAndel: 0.1, // arvsskattens del från början (steg 10.5.6)
+  arvByn: 30, // arvsskatten väcks fullt i en by med så här många invånare, gånger hur ojämn rikedomen är
+  arvEmot: 0.6, // så mycket den rika med partner eller barn röstar emot arvsskatten
+  arvLutar: 0.6, // så mycket lutningen mot Sammanhållning väger i rösten om arvsskatten för andra
 });
 
 // en sak man kan betala med: värdet per styck, hur många och hur de lämnas till byn
@@ -153,8 +161,43 @@ export function skattDygn(s: State, dt: number) {
   log(s, `Skatten gav byns förråd saker värda ${Math.round(sum)}.`, 'world');
 }
 
+// ---------- arvsskatten (steg 10.5.6) ----------
+// en egen lag: när någon med arvingar dör går arvsdelen av det hen ägde till byns förråd före arvingarna, i hela saker och silver
+// som kommer närmast. Hus och djur tas aldrig (betala tar dem inte); det som fattas stryks, och den som flyttar betalar inget
+const egnaArvingar = (s: State, p: Person) => p.partner !== undefined && living(s).some(q => q.id === p.partner) || living(s).some(q => isParent(p, q));
+// hur ojämnt rikedomen är fördelad bland de vuxna (0 = lika, 1 = en äger allt)
+function ojamnhet(s: State) {
+  const f = formogenhet(s), v = [...f.w.values()].sort((a, b) => a - b), n = v.length, sum = v.reduce((a, b) => a + b, 0);
+  if (n < 2 || sum <= 0) return 0;
+  let g = 0; v.forEach((x, i) => { g += (2 * (i + 1) - n - 1) * x; });
+  return clamp(g / (n * sum), 0, 1);
+}
+const rikMedArvingar = (s: State, p: Person) => { const { w, m } = egen(s, p); return w > m && egnaArvingar(s, p); };
+const ANDEL: LagTalDef = {
+  namn: 'arvsdelen', sym: '%', stege: [0.1, 0.2, 0.3, 0.4, 0.5], start: SKATT.arvAndel, visa: v => `${Math.round(v * 100)} %`,
+  vill: (s, p) => rikMedArvingar(s, p) ? ANDEL.stege[0] : ANDEL.stege[0] + (ANDEL.stege[ANDEL.stege.length - 1] - ANDEL.stege[0]) * Math.max(0, lutning(s, p)),
+};
+export function arvsskattVidDoden(s: State, p: Person) {
+  if (!lagGaller(s, 'arvsskatt') || !heirsOf(s, p).length) return;
+  const f = formogenhetDelar(s, p.id), losa = f.redskap - djurAv(s, p) + f.klader + f.forrad;
+  if (losa <= 0) return;
+  const dog = p.died; p.died = undefined; // (som för skulden: andelarna i förrådet är ännu hens)
+  const v = betala(s, p, lagTal(s, 'arvsskatt', 'andel') * losa);
+  p.died = dog;
+  if (v <= 0) return;
+  count(s, 'arvsskattVarde', v);
+  const text = `Byn tog saker värda ${Math.round(v)} i arvsskatt efter ${p.name}.`;
+  log(s, text, 'death', [p.id]); kronika(s, text, 'arv');
+}
+
 // lagens tal och skulden vid döden läggs till när allt är laddat (steg.ts)
 export function skattRegister() {
   LAGAR.skatt.tal = { procent: PROCENT, alder: ALDERN, undre: UNDRE, ovre: OVRE };
-  skuldKrok.f = skuldVidDoden;
+  LAGAR.arvsskatt = {
+    namn: 'Arvsskatt', sym: '⚱️', text: 'När någon dör går en del av det hen ägde till byns förråd före arvingarna', straff: 0, om: 'att rikedomen samlades hos några',
+    prio: s => clamp(living(s).length / SKATT.arvByn, 0, 1) * ojamnhet(s),
+    rost: (s, p) => rikMedArvingar(s, p) ? { v: -SKATT.arvEmot, why: 'Vill lämna sitt åt de sina' } : { v: lutning(s, p) * SKATT.arvLutar, why: lutning(s, p) > 0 ? 'Tycker att rikedomen ska komma byn till del' : 'Tycker att arvet är familjens' },
+    tal: { andel: ANDEL },
+  };
+  skuldKrok.f = (s, p) => { skuldVidDoden(s, p); arvsskattVidDoden(s, p); }; // skulden först, sedan arvsskatten (liv.ts)
 }
