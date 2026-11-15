@@ -2,7 +2,7 @@ import { balans } from './balans';
 import { alive, byId, count, franMitt, livet, log, think } from './folk';
 import { UPPV, upplev } from './uppvaxt';
 import { gauss } from './slump';
-import { HOUR, Person, State } from './typer';
+import { HOUR, Person, Skill, State } from './typer';
 import { handelse } from './rykten';
 import { SakMinne, sakMinne } from './berattelser';
 import { gudHandelse } from './religion';
@@ -55,15 +55,16 @@ export const kvNamn = (t?: { q?: number }) => KVALITET[kvOf(t)].namn;
 
 // hur bra det blir som p gör nu: färdigheten, slumpen (kvalitetens egen följd) och stationen (dess tal kv i STATIONER, steg
 // 9.4.9: för hand och vid elden 0, en bättre station mer)
-export function rullaKvalitet(s: State, p: Person, station: number) {
-  const v = p.skill.hantverk / KV.kunnig + gauss(s, 'kvalitet', p) * KV.brus + station + KV.smid * franMitt(p, 'smidighet', s.now);
+// skill = färdigheten som gör det (skriften, steg 10.6.7: berättandet eller skaldskapet), annars hantverket
+export function rullaKvalitet(s: State, p: Person, station: number, skill: Skill = 'hantverk') {
+  const v = p.skill[skill] / KV.kunnig + gauss(s, 'kvalitet', p) * KV.brus + station + KV.smid * franMitt(p, 'smidighet', s.now);
   let q = 0;
   while (q < KV.grans.length && v >= KV.grans[q]) q++;
   return q;
 }
 // saken t blev klar och fick sin kvalitet: görarens humör, byns statistik, loggen för mästerverken och berättelsen
-export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }, station: number, namn: string) {
-  const q = t.q = rullaKvalitet(s, p, station), k = KVALITET[q];
+export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }, station: number, namn: string, skill: Skill = 'hantverk') {
+  const q = t.q = rullaKvalitet(s, p, station, skill), k = KVALITET[q];
   if (q >= MASTERVERK || q === 0) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4)
   count(s, 'kv_' + q);
   if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);

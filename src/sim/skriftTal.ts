@@ -31,5 +31,8 @@ export const SKRIFT = balans('skrift', {
   // andelen som inte kan tekniken, plus kunskapBas), läsvikten för en handbok och de heliga kvädena, och hur mycket av tekniken en
   // läsning ger (gånger larBas + intelligens / 20, som i samtalen)
   bokDelar: 8, bokNiva: 2, kunskap: 0.6, kunskapBas: 0.1, lasKunskap: 1, lasHelig: 0.5, bokLar: 0.1,
+  // kvaliteten (steg 10.6.7, kvalitet.ts): så stor del av innehållet når läsaren per nivå (usel, slarvig, normal ...), chansen att en
+  // usel och en slarvig skrift får ett fel när den skrivs, och felet: värdet gånger felOver eller felUnder (lika ofta)
+  nar: [0.3, 0.6, 1, 1, 1, 1], felChans: [0.5, 0.25], felOver: 2, felUnder: 0.5,
   ljusMin: 0.3, // i mindre ljus än så här varken skrivs eller läses det
 });

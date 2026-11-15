@@ -11,6 +11,9 @@ import { Ting, newTing, tingOf } from './agande';
 import { taVatska, vatskaAv } from './vatskor';
 import { LARDOMAR, describe, findL, lasLardom } from './minne';
 import { lightLevel } from './tid';
+import { NORMAL, nyKvalitet } from './kvalitet';
+import { clamp, rnd } from './slump';
+import { MINNE } from './minne';
 import { ljusAt } from './ljus';
 import { gen, han, slaktOrd } from './ord';
 import { notis } from './notiser';
@@ -206,7 +209,7 @@ export const heligaStenar = (s: State, tr: Tro) => (s.runstenar ?? []).filter(r 
 // (2 minuter) när det har något nytt för dem: en lärdom de inte har, eller ett intryck de inte hört; nyttan är noll när de redan
 // vet det, så ingen lista över det lästa behövs
 // tek = handbokens teknik och tro = de heliga kvädenas tro (i boken, steg 10.6.6); ensam = krönikan har sagt att ingen längre kan tekniken
-export interface Skrift { slag: SkriftSlag; av: { id: number; namn: string }; t: number; titel: string; text: string; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; ensam?: true }
+export interface Skrift { slag: SkriftSlag; av: { id: number; namn: string }; t: number; titel: string; text: string; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; ensam?: true; q?: number; fel?: number } // q = kvaliteten (steg 10.6.7), fel = överdriften eller underdriften gånger värdet
 interface SkrivLust { w: number; slag: SkriftSlag; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; bok?: Ting }
 export const bladen = (s: State) => tingOf(s).filter(t => t.skrift);
 // böckerna (steg 10.6.6): 8 blad mellan 2 plankor, som fylls del för del, högst SKRIFT.bokDelar delar av samma slag (bokens genre)
@@ -303,10 +306,12 @@ export function skrivVal(s: State, p: Person, at: { x: number; y: number }) {
 }
 const tingXY = (s: State, t: Ting) => { const q = t.hos !== undefined ? byId(s, t.hos) : undefined; return q ? { x: q.x, y: q.y } : t.x !== undefined ? { x: t.x + 0.5, y: t.y! + 0.5 } : undefined; };
 const kanBev = (q: Person, om: number, b: Bevis) => !!q.intryck?.some(e => e.om === om && e.bev?.some(x => x.h === b.h && x.t === b.t));
+// så stor del av innehållet som når läsaren (steg 10.6.7): en dålig skrift ger lägre säkerhet, mindre glädje och en del av en teknik
+export const narAv = (k: Skrift) => SKRIFT.nar[k.q ?? NORMAL] ?? 1;
 // nyttan för q av att läsa skriften: noll när q skrev den eller redan vet det som står
 export function lasNytta(q: Person, k: Skrift) {
   if (k.av.id === q.id) return 0;
-  if (k.tek) { const t = TEK[k.tek]; return t && !knows(q, t.id) && t.krav.every(x => knows(q, x)) ? SKRIFT.lasKunskap : 0; } // en handbok: den som inte kan tekniken men kan det den kräver
+  if (k.tek) { const t = TEK[k.tek]; return t && (q.tek?.[t.id] ?? 0) < narAv(k) - 1e-9 && !knows(q, t.id) && t.krav.every(x => knows(q, x)) ? SKRIFT.lasKunskap : 0; } // ur en dålig handbok bara en del av vägen (steg 10.6.7) // en handbok: den som inte kan tekniken men kan det den kräver
   if (k.tro !== undefined) return q.tro === k.tro && !q.thoughts?.some(x => x.text === 'Läste de heliga kvädena') ? SKRIFT.lasHelig : 0;
   if (k.lar) return findL(q, k.lar.k, k.lar.a, k.lar.sl) ? 0 : SKRIFT.lasLardom;
   const b = k.bev?.[0];
@@ -349,7 +354,13 @@ export function skrivKlar(s: State, p: Person) {
   const l = skrivLust(s, p);
   if (!l || !harAtt(s) || skrivLjus(s, p.x, p.y) < SKRIFT.ljusMin) return;
   taVatska(s, 'black', 1);
-  const tx = skriv(s, p, l), k: Skrift = { slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}) };
+  const tx = skriv(s, p, l), kv = { id: l.bok?.id ?? 0, k: l.bok ? 'bok' : 'blad', q: undefined as number | undefined };
+  nyKvalitet(s, p, kv, 0, tx.titel, SKRIFTER[l.slag].skill); // kvaliteten ligger på skriften och rör inte bladets eller bokens hållbarhet (steg 10.6.7)
+  const q = kv.q ?? NORMAL, fc = SKRIFT.felChans[q] ?? 0;
+  const fel = fc > 0 && rnd(s, 'kunskap', p) < fc ? (rnd(s, 'kunskap', p) < 0.5 ? SKRIFT.felOver : SKRIFT.felUnder) : undefined; // slås en gång och står kvar i texten
+  if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, l.lar.k === 'fara' ? MINNE.vMaxFara : l.lar.k === 'vatten' ? 1 : l.lar.k === 'pris' ? Infinity : MINNE.vMax) };
+  if (fel && l.lar) tx.text = describe(s, l.lar).text;
+  const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}) };
   if (l.bok) { (l.bok.delar ??= []).push(k); count(s, 'bokdel'); }
   else { takeMaterial(s, p, 'pergament', 1, true, {}); const t = newTing(s, 'blad', 1, p.id); t.skrift = k; t.av = p.id; t.gjord = s.now; }
   count(s, 'skrivet'); count(s, 'skrivet_' + l.slag);
@@ -360,15 +371,16 @@ export function skrivKlar(s: State, p: Person) {
 export function lasKlar(s: State, q: Person, t: Task) {
   const b = tingOf(s).find(x => x.id === t.ref), k = b && basta(q, b)?.k, at = b && tingXY(s, b);
   if (!k || !at || skrivLjus(s, at.x, at.y) < SKRIFT.ljusMin) return;
-  if (k.tek) { // handboken: tekniken lärs utan lärare, långsammare än av en mästare
+  const nar = narAv(k);
+  if (k.tek) { // handboken: tekniken lärs utan lärare, långsammare än av en mästare, och ur en dålig bara en del av vägen
     const tk = TEK[k.tek]!, d = SKRIFT.bokLar * (TEKTAL.larBas + stat(q, 'intelligens', s.now) / 20);
-    q.tek ??= {}; q.tek[tk.id] = Math.min(1, (q.tek[tk.id] ?? 0) + d);
+    q.tek ??= {}; q.tek[tk.id] = Math.max(q.tek[tk.id] ?? 0, Math.min(nar, (q.tek[tk.id] ?? 0) + d));
     if (q.tek[tk.id]! >= 1) { q.tek[tk.id] = 0; learn(s, q, tk, s.people.find(x => x.id === k.av.id)); log(s, `${q.name} lärde sig ${tk.namn.toLowerCase()} ur ${gen(k.av.namn)} bok.`, 'skill', [q.id]); count(s, 'bokLart'); }
   }
   if (k.tro !== undefined) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR);
-  if (k.lar) lasLardom(s, q, k.lar, k.av.id);
-  if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt);
+  if (k.lar) lasLardom(s, q, { ...k.lar, c: k.lar.c * nar }, k.av.id);
+  if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt * nar * (k.fel ?? 1));
   if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id);
-  if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer, s.now, SKRIFT.gladjeTim * HOUR);
+  if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, (k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer) * nar, s.now, SKRIFT.gladjeTim * HOUR);
   count(s, 'last'); count(s, 'last_' + k.slag);
 }

@@ -1195,6 +1195,48 @@ SCENARIER.bok = {
   },
 };
 
+SCENARIER.skriftkvalitet = {
+  text: 'Steg 10.6.7: skriftens kvalitet, rullad på slagets färdighet när skriften skrivs, avgör hur mycket av innehållet som når läsaren. En dålig skrift ger lärdomen med lägre säkerhet och bara en del av en teknik, och ibland en överdrift eller underdrift som slås en gång när den skrivs och står kvar i texten för alla läsare',
+  kor: () => {
+    const { skrivKlar, lasKlar, setAmount, addTool, fyllVatska, tingOf, lightLevel, findL, SKRIFT } = SIM;
+    const s = createState(1, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q, o, r2] = v as [Person, Person, Person, Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    while (lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const lar = { k: 'fara' as const, a: 3, v: 1, c: 0.9, t: s.now, om: 'Ulv dog där' };
+    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined;
+    const skrivEtt = () => { p.lardomar = [{ ...lar }]; setAmount(s, 'pergament', 1); fyllVatska(s, 'black', 2, kr); p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' }; skrivKlar(s, p); SIM.placeTools(s); return tingOf(s).filter(t => t.k === 'blad').at(-1); };
+    const las = (r: Person, id?: number) => lasKlar(s, r, { act: 'lasa', phase: 'do', tx: r.x, ty: r.y, until: s.now, carry: 0, why: '', ref: id });
+    // samma innehåll i usel och fin kvalitet
+    p.skill.berattande = 15;
+    const a = skrivEtt()!, b = SIM.newTing(s, 'blad', 1, p.id); b.skrift = { ...a.skrift! }; SIM.placeTools(s);
+    a.skrift!.q = 0; delete a.skrift!.fel; a.skrift!.lar = { ...lar }; b.skrift!.q = 4; delete b.skrift!.fel; b.skrift!.lar = { ...lar };
+    las(q, a.id); las(o, b.id);
+    const cU = findL(q, 'fara', 3)?.c ?? 0, cF = findL(o, 'fara', 3)?.c ?? 0;
+    for (const t of [a, b]) s.ting = s.ting!.filter(x => x !== t);
+    // en usel skrift med fel: två läsare får samma fel
+    p.skill.berattande = 0; q.lardomar = []; o.lardomar = [];
+    let fel: typeof a | undefined, n = 0;
+    while (!fel && n < 80) { const t = skrivEtt(); n++; if (t?.skrift?.fel && t.skrift.lar) fel = t; else if (t) s.ting = s.ting!.filter(x => x !== t); }
+    las(q, fel?.id); las(o, fel?.id);
+    const vq = findL(q, 'fara', 3)?.v, vo = findL(o, 'fara', 3)?.v;
+    // en usel handbok
+    for (const r of v) if (r.tek) delete r.tek.garvning;
+    r2.tek = { ...(r2.tek ?? {}), kniv: 1, skinnklader: 1 };
+    const hb = SIM.newTing(s, 'blad', 1, p.id);
+    hb.skrift = { slag: 'kunskap', av: { id: p.id, namn: p.name }, t: s.now, titel: 'Om garvning', text: '', tek: 'garvning', q: 0 };
+    SIM.placeTools(s);
+    let m = 0; while (SIM.lasNytta(r2, hb.skrift) > 0 && m < 100) { las(r2, hb.id); m++; }
+    const del = r2.tek?.garvning ?? 0;
+    return [
+      [`en usel skrift ger lärdomen med lägre säkerhet än en fin (${cU.toFixed(2)} mot ${cF.toFixed(2)})`, cU > 0 && cU < cF && Math.abs(cU - lar.c * SKRIFT.nar[0]!) < 1e-9],
+      [`en usel skrift får ibland ett fel när den skrivs (${fel ? `efter ${n} skrifter, gånger ${fel.skrift!.fel}` : 'inget fel'})`, !!fel],
+      [`två läsare av den dåliga texten får samma fel (${vq} och ${vo}, rätt är ${lar.v})`, vq !== undefined && vq === vo && vq !== lar.v],
+      [`en usel handbok tar läsaren bara en del av vägen (${del.toFixed(2)} efter ${m} läsningar, kan ${SIM.knows(r2, 'garvning') ? 'den' : 'den inte'})`, del > 0 && del <= SKRIFT.nar[0]! + 1e-9 && !SIM.knows(r2, 'garvning') && m < 100],
+    ];
+  },
+};
+
 SCENARIER.heligverkan = {
   text: 'Steg 10.6.3: de heliga skrifternas verkan. Samma tro med och utan helig sten: chansen att sprida tron i ett samtal, hur mycket en profets syn flyttar skalorna, rösterna för att ta bort ett bud och chansen till en ny tro, och verkan försvinner när stenen är borta',
   kor: () => {
