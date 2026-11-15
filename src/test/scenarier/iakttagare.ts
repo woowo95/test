@@ -210,6 +210,10 @@ for (const [ks, why] of [
   [['rokeri', 'roka', 'rokfisk', 'rokkott'], 'rökeriet (steg 9.6.8) är en teknik på nivå 5; scenariot rokeri prövar det'],
   [['fagelkott'], 'fågelkött ger bara en fågel som fångas eller en slaktad höna; scenarierna faglar och hons prövar det'],
   [['stekhall'], 'stekhällen (steg 9.6.21) är en teknik på nivå 4; scenariot stek prövar den'],
+  [['koka_buljong'], 'buljongen (steg 10.7.24) kokas i en mellanstor lerkruka, som kräver tekniken Lerkruka; scenariot drycker prövar den'],
+  [['branna', 'sprit'], 'spriten (steg 10.7.26) bränns i brännpannan på bryggkaret, som kommer efter vinet och ölet; scenariot sprit prövar den'],
+  [['mjod'], 'mjödet (steg 10.7.25) kräver honung från vildbin och bryggkaret; scenariot mjod prövar det'],
+  [['rock_vitskinn', 'skor_vitskinn', 'axelrem_vitskinn', 'ryggsack_vitskinn'], 'vitskinnet (steg 10.7.22) kommer bara från harar som slaktas under istiden, och plaggen som tar mycket skinn görs sällan av det; scenariot vinterpals prövar det'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 
 // aldrig: allt i registren används, i minst en av testbyarna

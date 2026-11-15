@@ -3727,3 +3727,34 @@ function namnmallar(): [string, boolean][] {
     [`den som föreslår tar det hen tycker bäst om (${bast?.namn}, ${bast?.v.toFixed(2)})`, !!bast && bast.v >= Math.max(...SIM.kandidater(s, p).map(k => SIM.gilla(s, p, k)))],
   ];
 }
+SCENARIER.dopet = {
+  text: 'Dopet (steg 10.9.3): när byn slagit sig ner (ett färdigt hus eller den första vintern) röstar den om ett namn vid elden klockan 20. Utan ledare föreslår den vuxna med mest karisma, och namnet är det enda som tas upp; med ledare är det en rad i det som tas upp. Ett ja blir en rad i krönikan under Styre och en notis, och ett nej gör att namnet inte tas upp igen på tre dygn',
+  kor: () => {
+    const s = createState(9, START);
+    klockan(s, 20); SIM.dopKvall(s);
+    const forNer = SIM.bynsNamn(s);
+    (s.hus ??= []).push({ klar: s.now } as never);
+    SIM.dopKvall(s);
+    const namn = SIM.bynsNamn(s), krona = s.hist?.kronika.find(k => k[2] === 'bynamn'), not = s.notiser?.lista.find(n => n.id === 'bynamn');
+    const miss = SIM.living(s).some(p => (p.missnoje ?? 0) > 0);
+    // samma by med en ledare: frågan är en rad i det som tas upp
+    const m = createState(9, START); (m.hus ??= []).push({ klar: m.now } as never);
+    const v = SIM.living(m).filter(p => SIM.ageOf(p, m.now) >= SIM.ALDER.vuxen), l = v[0];
+    const rad = SIM.TAS_UPP.find(r => r.id === 'bynamn'), forslag = rad?.lista(m, l) ?? [];
+    // ett nej: namnet tas inte upp igen på tre dygn
+    const n = createState(9, START); (n.hus ??= []).push({ klar: n.now } as never);
+    SIM.FRAGOR.bynamn.nej!(n, { namn: forslag[0]?.fr.d.namn as string });
+    const nv = SIM.living(n).filter(p => SIM.ageOf(p, n.now) >= SIM.ALDER.vuxen);
+    const blockerad = nv.every(p => SIM.namnForslag(n, p)?.b.namn !== forslag[0]?.fr.d.namn);
+    n.now += 3 * SIM.DAY + 1;
+    const igen = nv.some(p => SIM.namnForslag(n, p)?.b.namn === forslag[0]?.fr.d.namn);
+    return [
+      [`innan byn slagit sig ner tas inget namn upp (${forNer})`, forNer === 'Nybygget'],
+      [`med ett färdigt hus döper byn sig utan ledare: ${namn}`, namn !== 'Nybygget' && !!s.bynamn],
+      [`en rad i krönikan under Styre (${krona?.[1]}) och en notis (${not?.rader[0]})`, !!krona && /^Byn kallar sig nu /.test(krona[1]) && !!not && SIM.KRONIKA_KAT.find(k => k.id === 'styre')!.slag.includes('bynamn')],
+      [`utan ledare skapas inget styre (${!!s.styre}) och ingen blir missnöjd (${miss})`, !s.styre && !miss],
+      [`med ledare lägger ledaren fram ett namn (${forslag[0]?.varfor}, prioritet ${forslag[0]?.prio.toFixed(2)})`, forslag.length === 1 && forslag[0].prio >= SIM.LAG.troskel],
+      [`ett nej: namnet tas inte upp på tre dygn (${blockerad}), men sedan (${igen})`, blockerad && igen],
+    ] as [string, boolean][];
+  },
+};

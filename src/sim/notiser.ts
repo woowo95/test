@@ -42,6 +42,7 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   inflytt: { slag: 'folk', rubrik: 'Ny i byn', vikt: 2 },
   utflytt: { slag: 'folk', rubrik: 'Lämnade byn', vikt: 2 },
   ledare: { slag: 'folk', rubrik: 'Ny ledare', vikt: 3 },
+  bynamn: { slag: 'folk', rubrik: 'Byns namn', vikt: 2 }, // dopet och namnbytet (steg 10.9.3)
   par: { slag: 'folk', rubrik: 'Ett nytt par', vikt: 1 },
   fram: { slag: 'folk', rubrik: 'Ett framträdande', vikt: 1 },
   match: { slag: 'folk', rubrik: 'En match', vikt: 1 },
