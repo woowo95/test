@@ -1143,11 +1143,20 @@ export function haulJob(s: State, near?: number, baraMat = false) {
   // finns det slaget på rutan ännu? Frågas bara för de rader som klarat de andra villkoren (stackarna, sedan redskapen)
   const finns = (x: number, y: number, k: string) => stacksOf(s).some(q => q.x === x && q.y === y && q.k === k) || tingOf(s).some(t => ligger(t) && t.x === x && t.y === y && t.k === k);
   let best: { x: number; y: number; why: string; k: string } | undefined, bs = Infinity;
+  // ryms slaget i förrådet just nu (i en lagerplats eller ringen runt)? Frågas bara för det som annars skulle väljas
+  let occ: Occ | undefined;
+  const ryms = new Map<string, boolean>(), rymsNu = (k: string) => {
+    let v = ryms.get(k);
+    if (v === undefined) { occ ??= occupancy(s); ryms.set(k, v = !!(zoneSpot(s, k, -Infinity, occ) ?? ringSpot(s, k, occ))); }
+    return v;
+  };
   for (const a of barLista(s)) {
     const sc = a.sc + (baraMat && !isFood(a.k) ? LAGER.svaltOmvag : 0); // vid svält bärs maten först (steg 10.2.6)
     if (sc >= bs || taken.has(key(a.x, a.y)) || near !== undefined && a.d > near) continue;
     if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
     if (!finns(a.x, a.y, a.k)) continue; // det har burits sedan listan räknades
+    // förrådet har blivit fullt sedan listan räknades: annars bärs samma hög in och läggs bredvid igen, om och om igen resten av timmen
+    if (a.nara && !rymsNu(a.k) || a.iZon !== undefined && !zoneSpot(s, a.k, a.iZon, occ ??= occupancy(s))) continue;
     bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why: a.why, k: a.k };
   }
   return best;
@@ -1155,7 +1164,7 @@ export function haulJob(s: State, near?: number, baraMat = false) {
 // bärlistan (steg 6.2.21): det som borde bäras och varför, med poängen (avståndet från byn och tillägget för slaget av
 // bärande). Den räknas en gång i timmen och när något byggs, så att alla som väljer att bära (och alla lägen) frågar samma
 // lista; haulJob tar bort det som någon redan är på väg till och det som burits sedan dess
-interface Bara { x: number; y: number; k: string; d: number; sc: number; why: string }
+interface Bara { x: number; y: number; k: string; d: number; sc: number; why: string; nara?: true; iZon?: number }
 const barCache = new WeakMap<State, { key: string; l: Bara[] }>();
 function barLista(s: State) {
   const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${zonesOf(s).length}`, c = barCache.get(s);
@@ -1178,11 +1187,15 @@ function barLista(s: State) {
     const d = utanforByn(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d;
-    if (!isStored(s, a.x, a.y)) { if (d * clamp(grundvarde(a.k) / LAGER.barVarde, LAGER.barVardeMin, LAGER.barVardeMax) > LAGER.barFullt || rymsIn(a.k)) why = 'Det ligger saker på marken som ska in i lagret'; }
-    else if (zi < 0) { if (spot(a.k, -Infinity)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; } }
-    else if (!allows(zs[zi], a.k)) { if (spot(a.k, -Infinity)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; } }
-    else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; }
-    if (why) l.push({ x: a.x, y: a.y, k: a.k, d, sc, why });
+    let nara: true | undefined; // bärs bara för att det ryms i förrådet (inte för att det ligger långt bort)
+    if (!isStored(s, a.x, a.y)) { const langt = d * clamp(grundvarde(a.k) / LAGER.barVarde, LAGER.barVardeMin, LAGER.barVardeMax) > LAGER.barFullt; if (langt || rymsIn(a.k)) { why = 'Det ligger saker på marken som ska in i lagret'; if (!langt) nara = true; } }
+    let iZon: number | undefined; // bärs för att det finns plats i en lagerplats med högre prioritet än så här
+    if (isStored(s, a.x, a.y)) {
+      if (zi < 0) { if (spot(a.k, -Infinity)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; iZon = -Infinity; } }
+      else if (!allows(zs[zi], a.k)) { if (spot(a.k, -Infinity)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; iZon = -Infinity; } }
+      else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; iZon = zs[zi].prio ?? 0; }
+    }
+    if (why) l.push({ x: a.x, y: a.y, k: a.k, d, sc, why, ...(nara ? { nara } : {}), ...(iZon !== undefined ? { iZon } : {}) });
   }
   barCache.set(s, { key, l });
   return l;
