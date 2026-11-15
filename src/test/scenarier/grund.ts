@@ -56,7 +56,7 @@ SCENARIER['ingen-yxa'] = {
   lang: true,
   text: 'Byn har bara en flinta, som behövs till elden: ingen yxa görs, inga träd fälls och elden hålls vid liv med grenar',
   kor: () => {
-    const s = createState(14, START); // by 13 och 15 har någon som fryser ihjäl under den första vintern efter system 10.1 (byarna utan yxa står nära gränsen); by 12 dör ut tidigt av svält sedan kaninerna håller sig längre från byn (1.5.5), och saknar sedan torrt gräs att tända med
+    const s = createState(16, START); // by 14 har någon som fryser ihjäl efter system 10.3, by 13 och 15 har någon som fryser ihjäl under den första vintern efter system 10.1 (byarna utan yxa står nära gränsen); by 12 dör ut tidigt av svält sedan kaninerna håller sig längre från byn (1.5.5), och saknar sedan torrt gräs att tända med
     setAmount(s, 'flinta', 1);
     // flintan i en påbörjad yxa räknas inte i förrådet (materialet tas när arbetet börjar, 1.5.14), så den tas bort också
     // handlaren säljer ingen yxa här: sedan steg 4.5.4.16 köper byn ett redskap den saknar
@@ -699,6 +699,7 @@ SCENARIER.tider = {
 };
 
 SCENARIER.hardvinter = {
+  env: { BALANS: 'uppvaxt.max=99' },
   lang: true,
   text: 'Steg 3.8.1: motgångarna (registret MOTGANGAR) räknas ur byns frö och tiden. En hård vinter kommer ungefär var femte istid, aldrig under byns första tio dygn: istiden är 5–8 grader kallare, det snöar mer, elden äter mer ved och vargarna kommer oftare. Den äldsta i byn anar den ett par dygn innan och berättar om det i samtal, och den som vet samlar mer. Den hårda vintern hamnar i byns krönika och barnen minns den',
   kor: () => {
@@ -732,15 +733,15 @@ SCENARIER.hardvinter = {
     const e2 = cloneState(v); e2.now = mitt; e2.fire.lit = true; e2.fire.fuel = 100; utan(() => stepFire(e2, 3600, []));
     const ved = 100 - e.fire.fuel, vedUtan = 100 - e2.fire.fuel;
     // byn går in i den hårda vintern: en gammal, ett barn och de vanliga
-    const gammal = nyInvanare(v, 'k', 55), barn = nyInvanare(v, 'm', 8);
+    const gammal = nyInvanare(v, 'k', 55), barnen = [nyInvanare(v, 'm', 8), nyInvanare(v, 'k', 7), nyInvanare(v, 'm', 9)];
     tandEld(v); setMat(v, { bar: 20, torkat: 20 });
-    const ch = SIM.UPPLEVELSER.hardVinter.chans; SIM.UPPLEVELSER.hardVinter.chans = 1; // så att barnet säkert minns den
+    const ch = SIM.UPPLEVELSER.hardVinter.chans; SIM.UPPLEVELSER.hardVinter.chans = 1; // så att barnet säkert minns den (och uppvaxt.max ovan: också när det redan minns fem andra saker)
     let anadeFore = false, visste = 0;
     kor(v, (start - v.now) / HOUR + 30, b => { if (b.now < start && gammal.varsel?.t === start) anadeFore = true; if (b.now < start) visste = Math.max(visste, living(b).filter(p => p.varsel?.t === start).length); });
     SIM.UPPLEVELSER.hardVinter.chans = ch;
     const kron = v.hist?.kronika.some(([, t]) => /hård vinter/.test(t)) ?? false;
-    // barnet kan ha dött före vintern (svampen); då mäts de som levde när den kom, barn först
-    const levde = living(v).filter(q => q.born < start), unga = levde.filter(q => SIM.formas(v!, q)), matta = SIM.alive(barn) ? [barn] : unga.length ? unga : levde;
+    // ett barn kan dö före vintern (svampen); då mäts de andra barnen, och de som levde när den kom om alla dött
+    const levde = living(v).filter(q => q.born < start), unga = levde.filter(q => SIM.formas(v!, q) && SIM.ageOf(q, start) >= SIM.UPPV.fran), barn = barnen.find(q => SIM.alive(q)), matta = barn ? barnen.filter(q => SIM.alive(q)) : unga.length ? unga : levde;
     const minns = matta.some(q => q.upp?.some(u => u.k === 'hardVinter'));
     const varselet = living(v).find(q => q.varsel)?.varsel; // den äldsta kan ha dött i den hårda vintern
     const fs = (q: Person) => varselet ? SIM.varselSamla(v!, { ...q, varsel: { ...varselet, t: v!.now + DAY } }) : 0;
@@ -755,7 +756,7 @@ SCENARIER.hardvinter = {
       [`varslet sprids i samtal (${visste} visste innan, ${(v.stat?.varselBerattat ?? 0)} gånger berättat)`, visste >= 2],
       ['en förutseende by vill samla mer när den vet', merForsiktig],
       [`den hårda vintern kom (${(v.stat?.motgang_hardVinter ?? 0)}) och står i byns krönika`, (v.stat?.motgang_hardVinter ?? 0) === 1 && kron],
-      [`${SIM.alive(barn) ? 'barnet' : unga.length ? 'barnen som levde då' : 'de som levde då'} minns den (${matta.map(q => q.upp?.map(u => u.k).join(', ') || 'inget').join('; ')})`, minns],
+      [`${barn ? 'barnen' : unga.length ? 'barnen som levde då' : 'de som levde då'} minns den (${matta.map(q => q.upp?.map(u => u.k).join(', ') || 'inget').join('; ')})`, minns],
     ];
   },
 };

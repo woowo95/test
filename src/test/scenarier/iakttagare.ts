@@ -104,6 +104,7 @@ export const SALLSYNT: Record<string, string> = {
   bjorn: 'björnen finns i få byar och fälls sällan (steg 6.6.4–6.6.6); scenarierna bjorn och bjornjakt prövar den',
   bjornjakt: 'björnen jagas bara när den finns nära och jägarna är många nog (steg 6.6.6); scenariot bjornjakt prövar det',
   bjornskinn: 'björnskinn blir det bara av en fälld björn (se bjorn); scenariot bjornjakt prövar slakten',
+  bjornkott: 'björnkött blir det bara av en fälld björn (se bjorn); scenariot bjornjakt prövar slakten',
   bjorndel: 'ett björnstycke blir det bara av en fälld björn (se bjorn); scenariot bjornjakt prövar det',
   rock_bjornskinn: 'en rock av björnskinn behöver ett björnskinn (se bjorn); scenariot plagg prövar plaggen',
   skor_bjornskinn: 'skor av björnskinn behöver ett björnskinn (se bjorn); scenariot plagg prövar plaggen',
@@ -190,7 +191,7 @@ for (const k of SIM.KLAD_SLAG) if (/^(mantel|prastdrakt|tecken|mask|rustning|hja
 for (const [ks, why] of [
   [[...SIM.RATT_SAKER, 'koka_mat', 'steka'], 'rätterna (steg 9.6.3 och 9.6.21) kräver lerkrukan och stekhällen; scenarierna kokning och stek prövar dem'],
   [['ulltrad', 'ylle', 'spinna_ull', 'vava_ull', 'tunika_ylle', 'skjorta_ylle', 'kappa', 'sjal', 'kappa_ylle', 'sjal_ylle', 'mantel_ylle'], 'ullen (steg 9.8.14) kräver får, vävstolen och sländan; scenariot ylle prövar den'],
-  [['mata', 'hage', 'valla', 'klippa', 'mjolka', 'avliva', 'slatter', 'skara', 'ull', 'slaktfar', 'slaktget', 'djurhorn', 'levget', 'levhons', 'far', 'get', 'fahus'], 'de tama djuren (system 9.8) kommer först när byn köpt får, getter eller höns av handlaren, och djuren är dyra; scenarierna boskap, hage, hagflytt, mjolk, tamslakt, slatter och hons prövar dem'],
+  [['mata', 'hage', 'valla', 'klippa', 'mjolka', 'avliva', 'slatter', 'skara', 'ull', 'slaktfar', 'slaktget', 'djurhorn', 'levget', 'levhons', 'far', 'get', 'fahus', 'farkott', 'getkott', 'farskinn', 'getskinn', 'rock_farskinn', 'rock_getskinn', 'skor_farskinn', 'skor_getskinn', 'axelrem_farskinn', 'axelrem_getskinn', 'byxor_farskinn', 'byxor_getskinn', 'mossa_farskinn', 'mossa_getskinn', 'snoskor_farskinn', 'snoskor_getskinn', 'ryggsack_farskinn', 'ryggsack_getskinn'], 'de tama djuren (system 9.8) kommer först när byn köpt får, getter eller höns av handlaren, och djuren är dyra; scenarierna boskap, hage, hagflytt, mjolk, tamslakt, slatter och hons prövar dem'],
   [['kal', 'bonor', 'kalfron', 'appel', 'appelplanta', 'levfar'], 'kålen, bönorna, äppelträdet och fåren (steg 9.7.8, 9.7.13 och 9.8.5) kommer med handlaren, och byn köper dem inte alltid inom 35 dygn; scenarierna grodor, flerarig och boskap prövar dem'],
   [['hamla', 'lovkarve'], 'lövtäkten (steg 9.8.16) kräver betesdjur och för lite hö; scenariot hamla prövar den'],
   [['tomma_latrin'], 'latrinen töms (steg 9.7.6) bara när byn har en kompost och latrinen är nästan full; scenariot kompost prövar det'],
@@ -201,6 +202,7 @@ for (const [ks, why] of [
   [['nat', 'braxen', 'sik', 'braxkott', 'sikkott'], 'nätet (steg 9.6.16) är en teknik på nivå 4, och braxen och sik fångas mest i nätet; scenarierna nat och braxen prövar dem'],
   [['salt', 'saltfisk', 'saltkott', 'salta_fisk', 'salta_kott', 'salta_vargkott', 'salta_radjurkott', 'salta_farkott', 'salta_getkott', 'salta_fagelkott', 'salta_bjornkott'], 'saltet (steg 9.6.19) kommer bara med handlarna; scenariot salt prövar det'],
   [['rokeri', 'roka', 'rokfisk', 'rokkott'], 'rökeriet (steg 9.6.8) är en teknik på nivå 5; scenariot rokeri prövar det'],
+  [['fagelkott'], 'fågelkött ger bara en fågel som fångas eller en slaktad höna; scenarierna faglar och hons prövar det'],
   [['stekhall'], 'stekhällen (steg 9.6.21) är en teknik på nivå 4; scenariot stek prövar den'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 
