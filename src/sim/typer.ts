@@ -275,6 +275,7 @@ export interface Person {
   forv?: { f: number; w: number }; // förväntan och rikedom (humor.ts, steg 3.2.1)
   // utbrotten (steg 3.2.2, humor.ts): hur många nyss (klingar av), och det som väntar på att brista ut (slaget och när)
   utb?: number; ubr?: { k: string; t: number };
+  angr?: Anger[]; // skulden efter ett utbrott som gick ut över någon (steg 10.8.1, humor.ts)
   lekt?: number; // när ett barn senast lekte (färre utbrott efteråt, steg 3.2.4)
   morkT?: number; // när hen senast var vaken i mörkret (lite sämre humör en stund, steg 6.3.4, ljus.ts)
   larm?: import('./rykten').Larm; // det senaste larmet man hört (steg 3.7.11, rykten.ts)
@@ -301,7 +302,9 @@ export interface Lardom { k: import('./minne').LKind; a: number; sl?: string; v:
 export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number; par?: number; gift?: number; lart?: number; minns?: RelMinne }
 // det två har varit med om tillsammans (steg 3.9.6): gräl, slagsmål, lekslagsmål, strider sida vid sida och gåvor åt båda
 // hållen (gav[0] är gåvorna från den med lägst id)
-export interface RelMinne { gral?: number; slag?: number; lek?: number; sida?: number; gav?: [number, number] }
+export interface RelMinne { gral?: number; slag?: number; lek?: number; sida?: number; gav?: [number, number]; illa?: number } // illa = gånger den ena gjort den andra illa i ett utbrott (steg 10.8.1)
+// skulden (steg 10.8.1): vem det gällde, allvaret, när, relationen innan, texten ("slog") och styrkan nu (räknas om varje timme)
+export interface Anger { om: number; namn: string; allv: number; t: number; op0: number; text: string; v: number }
 
 export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[]; byte?: ByteMinne; bnr?: number; fram?: number; match?: number; sam?: { slag: 'lar' | 'byte'; k: number; n: string; d: string[] }; m?: string } // byte = bytet raden handlar om (steg 4.5.4.17), bnr = bara dess nummer när en bybo minns bytet (p.byten), så att det inte sparas två gånger (steg 5.5.6), fram = framträdandets nummer (steg 5.4.7.1), match = matchens (steg 5.4.8.1), sam = raden samlar flera händelser av samma slag (SAMLA i folk.ts, steg 6.7.5), m = mallen raden skrevs ur (loggBer i berattelser.ts, steg 6.7.7)
 // ett byte som det minns (steg 4.5.4.17): med raden i loggen, hos bybor som var med (p.byten) och hos handlaren. a köpte (m i

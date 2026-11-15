@@ -470,6 +470,50 @@ SCENARIER.utbrott = {
   },
 };
 
+SCENARIER.anger = {
+  text: 'Skulden (steg 10.8.1): den som i ett utbrott varit elak mot, gjort slut med, slagit, misshandlat eller dräpt någon bär en skuld. Den tynger humöret mer ju högre empatin är, ju närmare den drabbade står och ju fler i byn som vet, syns i humörlistan och bleknar på några dygn. Gråt ger ingen skuld',
+  kor: () => {
+    // p och q långt från de andra; w ser det när se är sant
+    const by = (emp: number, nara: boolean, se: boolean) => {
+      const t = createState(9, START);
+      klockan(t, 11);
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), w = nyInvanare(t, 'k', 40);
+      p.x += 12; q.x = p.x + 1; q.y = p.y; w.x = se ? p.x + 4 : p.x + 40; w.y = p.y;
+      p.pot.empati = emp; if (p.anlag) p.anlag.empati = emp;
+      getRel(t, p, q).op = 0;
+      if (nara) { p.partner = q.id; q.partner = p.id; }
+      return { t, p, q, w };
+    };
+    const utbrott = (t: State, p: Person, k: string, q?: Person) => { SIM.utbrottBorjar(t, p, k as SIM.Utbrott, q); };
+    const v = (x: { p: Person }) => x.p.angr?.[0]?.v ?? 0;
+    const a = by(15, false, false); utbrott(a.t, a.p, 'sla', a.q);
+    const rad: { namn: string; v: number }[] = []; SIM.moodOf(a.p, a.t.now, rad);
+    const text = rad.find(x => /^Ångrar/.test(x.namn))?.namn ?? '';
+    const lag = by(3, false, false); utbrott(lag.t, lag.p, 'sla', lag.q);
+    const nar = by(15, true, false); utbrott(nar.t, nar.p, 'sla', nar.q);
+    const sett = by(15, false, true); utbrott(sett.t, sett.p, 'sla', sett.q);
+    const elak = by(15, false, false); utbrott(elak.t, elak.p, 'elak', elak.q);
+    const grat = by(15, false, false); utbrott(grat.t, grat.p, 'grata');
+    // bleknar: efter ett dygn och efter tre veckor (tre dygn är tre år i spelet)
+    const v0 = v(a);
+    a.t.now += SIM.DAY; SIM.stepHumor(a.t); const v1 = v(a);
+    a.t.now += 20 * SIM.DAY; SIM.stepHumor(a.t); const borta = !a.p.angr;
+    // högst tre skulder, och relationen minns hur många gånger
+    const m = by(15, false, false);
+    for (let i = 0; i < 5; i++) utbrott(m.t, m.p, i % 2 ? 'elak' : 'sla', m.q);
+    const illa = getRel(m.t, m.p, m.q).minns?.illa ?? 0;
+    return [
+      [`den som slog bär en skuld (${v(a).toFixed(3)} före bleknandet ${v0.toFixed(3)}), och humörlistan säger "${text}"`, v0 > 0 && /^Ångrar att han slog /.test(text)],
+      [`låg empati ger en lättare skuld (${v(lag).toFixed(3)} mot ${v0.toFixed(3)})`, v(lag) < v0],
+      [`mot partnern tyngre (${v(nar).toFixed(3)}) än mot en bekant (${v0.toFixed(3)})`, v(nar) > v0],
+      [`när någon såg det tyngre (${v(sett).toFixed(3)}), skammen`, v(sett) > v0],
+      [`elakhet är lättare än slag (${v(elak).toFixed(3)})`, v(elak) > 0 && v(elak) < v0],
+      [`gråt ger ingen skuld (${grat.p.angr?.length ?? 0})`, !grat.p.angr],
+      [`skulden bleknar (${v1.toFixed(3)} efter ett dygn) och är borta efter tre veckor (${borta})`, v1 < v0 && v1 > v0 * 0.6 && borta],
+      [`högst tre skulder (${m.p.angr?.length}), och relationen minns ${illa} gånger`, m.p.angr?.length === 3 && illa === 5],
+    ];
+  },
+};
 SCENARIER.vald = {
   text: 'De allvarliga utbrotten (steg 3.2.3): ligga kvar i bädden, göra slut, slå (ett barn minns det alltid), misshandel, flytta ut och dråp, och de som ser det ogillar den som slår (steg 3.3.1)',
   kor: () => {

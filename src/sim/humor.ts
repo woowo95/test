@@ -1,6 +1,6 @@
 import { amountOf } from './lager';
 import { personHand, satHumor } from './personlogg';
-import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat, think } from './folk';
+import { ALDER, REL, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat, think } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
 import { skiljas } from './samtal';
@@ -11,7 +11,7 @@ import { isLight } from './tid';
 import { Ting, tingOf } from './agande';
 import { Act } from './handlingar';
 import { SAKER } from './saker';
-import { DAY, HOUR, MIN, Person, State, Task } from './typer';
+import { Anger, DAY, HOUR, MIN, Person, State, Task } from './typer';
 import { formogenheter } from './varde';
 import { balans } from './balans';
 import { LARM, handelse, larma, skitsnack, skitsnackOm } from './rykten';
@@ -89,21 +89,21 @@ export const HUMOR = balans('humor', {
 // med, om det finns någon man ogillar. Att flytta ut händer direkt (utbrottRisk)
 type Mal = 'nast' | 'nara' | 'arke' | 'syskon' | 'skvaller';
 interface Vald { g: [number, number]; n: number; typer: SkadaTyp[]; delar: Kroppsdel[]; op: number; tanke: number; dygn: number }
-interface UtbDef { grad: number; act: Act; min: number; spann: number; text: string; mal?: Mal; ting?: true; annars?: string; vald?: Vald; barn?: true; hard?: true }
+interface UtbDef { skuld?: number; angrar?: string; grad: number; act: Act; min: number; spann: number; text: string; mal?: Mal; ting?: true; annars?: string; vald?: Vald; barn?: true; hard?: true }
 export const UTBROTT = {
   grata: { grad: 1, act: 'grata', min: 20, spann: 20, text: 'brister i gråt' },
   tjura: { grad: 1, act: 'tjura', min: 60, spann: 60, text: 'går undan och tjurar' },
   supa: { grad: 2, act: 'supa', min: 60, spann: 60, text: 'super sig full' }, // när byn har vin eller öl (steg 9.6.15, rus.ts)
-  elak: { grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: 'nast', hard: true },
+  elak: { skuld: 0.2, angrar: 'var elak mot', grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: 'nast', hard: true },
   skitsnack: { grad: 2, act: 'skvallra', min: 10, spann: 10, text: 'snackar skit med', mal: 'skvaller', annars: 'elak' }, // steg 3.3.3 (rykten.ts)
   krossa: { grad: 2, act: 'krossa', min: 10, spann: 10, text: 'slår sönder', ting: true, hard: true },
   fly: { grad: 2, act: 'fly', min: 90, spann: 90, text: 'flyr ut i skogen' },
   badd: { grad: 3, act: 'badd', min: 240, spann: 240, text: 'lägger sig och orkar inte gå upp' },
-  slut: { grad: 3, act: 'slut', min: 10, spann: 10, text: 'gör slut med', mal: 'nara', annars: 'elak' },
-  sla: { grad: 3, act: 'sla', min: 5, spann: 5, text: 'slår', mal: 'nast', hard: true, vald: { g: [0.1, 0.3], n: 1, typer: ['blamarke'], delar: ['huvud', 'bal', 'armV', 'armH'], op: 15, tanke: 0.15, dygn: 2 } },
-  misshandel: { grad: 4, act: 'sla', min: 10, spann: 10, text: 'misshandlar', mal: 'nast', hard: true, vald: { g: [0.3, 0.7], n: 2, typer: ['blamarke', 'krossar', 'benbrott'], delar: ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'], op: 35, tanke: 0.3, dygn: 5 } },
+  slut: { skuld: 0.4, angrar: 'gjorde slut med', grad: 3, act: 'slut', min: 10, spann: 10, text: 'gör slut med', mal: 'nara', annars: 'elak' },
+  sla: { skuld: 0.4, angrar: 'slog', grad: 3, act: 'sla', min: 5, spann: 5, text: 'slår', mal: 'nast', hard: true, vald: { g: [0.1, 0.3], n: 1, typer: ['blamarke'], delar: ['huvud', 'bal', 'armV', 'armH'], op: 15, tanke: 0.15, dygn: 2 } },
+  misshandel: { skuld: 0.7, angrar: 'misshandlade', grad: 4, act: 'sla', min: 10, spann: 10, text: 'misshandlar', mal: 'nast', hard: true, vald: { g: [0.3, 0.7], n: 2, typer: ['blamarke', 'krossar', 'benbrott'], delar: ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'], op: 35, tanke: 0.3, dygn: 5 } },
   flytta: { grad: 4, act: 'fly', min: 0, spann: 0, text: 'står inte ut längre och lämnar byn', annars: 'fly' },
-  drap: { grad: 5, act: 'sla', min: 10, spann: 10, text: 'slår ihjäl', mal: 'arke', annars: 'misshandel', vald: { g: [1, 1], n: 0, typer: [], delar: [], op: 0, tanke: 0, dygn: 0 } },
+  drap: { skuld: 1, angrar: 'dräpte', grad: 5, act: 'sla', min: 10, spann: 10, text: 'slår ihjäl', mal: 'arke', annars: 'misshandel', vald: { g: [1, 1], n: 0, typer: [], delar: [], op: 0, tanke: 0, dygn: 0 } },
   // barnens (steg 3.2.4): bara de, och de har bara dessa
   skrika: { grad: 1, act: 'skrika', min: 10, spann: 20, text: 'skriker och gråter', barn: true },
   trotsa: { grad: 2, act: 'krossa', min: 5, spann: 5, text: 'trotsar och slår sönder', ting: true, hard: true, annars: 'puttas', barn: true },
@@ -198,6 +198,7 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
   if (!rad.barn && rad.grad >= 2 && rnd(s, 'humor', p) < LARM.falskt) larma(s, 'fara', 1 + Math.floor(rnd(s, 'humor', p) * 5), [p], true); // ett falskt larm (steg 3.7.11)
   if (mal) {
     const van = k === 'slut' && p.partner !== mal.id;
+    const op0 = getRel(s, p, mal).op; // relationen innan, till skulden
     log(s, `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);
     if (van) { personHand(s, p, 'relation', `Bröt vänskapen med ${mal.name}.`); personHand(s, mal, 'relation', `${p.name} bröt vänskapen.`); } // steg 9.2.107
     if (k === 'elak') {
@@ -214,8 +215,52 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
       if (!van) skiljas(s, p, mal, r);
       else { r.op = clamp(r.op - HUMOR.brytOp, -100, 100); think(mal, `${p.name} bröt vänskapen`, -HUMOR.brytTanke, s.now, HUMOR.brytDygn * DAY); }
     } else if (rad.vald) slar(s, p, mal, k, rad.vald);
+    if (rad.skuld) angra(s, p, mal, rad.skuld, van ? 'bröt vänskapen med' : rad.angrar ?? rad.text, op0); // efter det, så att skammen räknar dem som såg
   } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? ' sin egen ' : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
 }
+
+// ---------- skulden (steg 10.8.1, Kunskap och lärdomar: Skuld och förlåtelse) ----------
+export const SKULD = balans('skuld', {
+  bas: 0.15, // styrkan: bas × allvaret × empatin / 10 × hur mycket man bryr sig × (1 + andelen vuxna som vet), ...
+  max: 0.3, // ... högst så här mycket
+  dygn: 3, // bleknar med den här tidskonstanten (dygn, år i spelet)
+  min: 0.01, // under detta är skulden borta
+  antal: 3, // så många skulder bär en person; den svagaste trängs undan
+  bryrMin: 0.3, // hur mycket man bryr sig om någon som inte står nära: från bryrMin (relationen 0 eller sämre) till 1 vid nära vän
+});
+// hur mycket p bryr sig om q: fullt om partnern, bästa vännen, en förälder och sitt eget barn, annars efter relationen innan
+const bryr = (p: Person, q: Person | undefined, op0: number) => q && (q.id === p.partner || q.id === p.bast || isParent(q, p) || isParent(p, q)) ? 1
+  : clamp(SKULD.bryrMin + (1 - SKULD.bryrMin) * op0 / REL.naraVan, SKULD.bryrMin, 1);
+// andelen av byns andra vuxna som vet om händelsen (har ett intryck av p med beviset mot den drabbade från den tiden)
+function skam(s: State, p: Person, a: Anger) {
+  const v = living(s).filter(q => q !== p && q.id !== a.om && ageOf(q, s.now) >= ALDER.vuxen);
+  if (!v.length) return 0;
+  return v.filter(q => q.intryck?.some(e => e.om === p.id && e.bev?.some(b => b.mot === a.om && Math.abs(b.t - a.t) < HOUR))).length / v.length;
+}
+function angerV(s: State, p: Person, a: Anger) {
+  const q = s.people.find(x => x.id === a.om); // också den döda
+  const bas = Math.min(SKULD.max, SKULD.bas * a.allv * stat(p, 'empati', s.now) / 10 * bryr(p, q, a.op0) * (1 + skam(s, p, a)));
+  return bas * Math.exp(-(s.now - a.t) / (SKULD.dygn * DAY));
+}
+// p gjorde q illa i ett utbrott med allvaret allv: skulden, och relationen minns det
+function angra(s: State, p: Person, q: Person, allv: number, text: string, op0: number) {
+  const r = getRel(s, p, q), m = (r.minns ??= {});
+  m.illa = (m.illa ?? 0) + 1;
+  const a: Anger = { om: q.id, namn: q.name, allv, t: s.now, op0, text, v: 0 };
+  a.v = angerV(s, p, a);
+  const l = [...(p.angr ?? []), a].sort((x, y) => y.v - x.v).slice(0, SKULD.antal);
+  p.angr = l;
+  count(s, 'skuld');
+}
+// en gång i timmen: styrkan räknas om ur tiden sedan utbrottet; den som bleknat bort försvinner
+function angerTim(s: State, p: Person) {
+  if (!p.angr) return;
+  for (const a of p.angr) a.v = angerV(s, p, a);
+  p.angr = p.angr.filter(a => a.v >= SKULD.min);
+  if (!p.angr.length) p.angr = undefined;
+}
+// raden i humörlistan: "Ångrar att han slog Ulf"
+export const angerText = (p: Person, a: Anger) => `Ångrar att ${p.sex === 'k' ? 'hon' : 'han'} ${a.text} ${a.namn}`;
 
 // symbolen för utbrottets grad (steg 3.10.13): utbrottet är uppgiftens task.tool (val.ts)
 export const utbIkon = (t: Task) => t.tool && t.tool in UTBROTT ? 'utb' + UTB[t.tool as Utbrott].grad : undefined;
@@ -300,6 +345,7 @@ export function moodOf(p: Person, now: number, ut?: { namn: string; v: number; t
     if (Math.abs(v) >= HUMOR.visa) del(v < 0 ? 'Van vid mer' : 'Van vid lite', v);
   }
   for (const t of p.thoughts) if (t.until > now) del(t.text, t.v, t.until);
+  for (const a of p.angr ?? []) del(angerText(p, a), -a.v); // skulden (steg 10.8.1)
   return clamp(m, 0, 1);
 }
 
@@ -324,6 +370,7 @@ export function stepHumor(s: State) {
     }
     if (!p.forv) p.forv = { f: w, w };
     else { p.forv.w = w; p.forv.f += (w - p.forv.f) * k; }
+    angerTim(s, p);
     utbrottRisk(s, p, ljust);
   }
 }
