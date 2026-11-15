@@ -10,6 +10,7 @@ import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { tystFaktor } from './styre';
 import type { Sed } from './seder';
+import { vanaSumma } from './vanor';
 import { ACTS, Act } from './handlingar';
 import { isLight } from './tid';
 import { vaderNu } from './vader';
@@ -351,9 +352,7 @@ export function skitsnack(s: State, p: Person, lyss: Person) {
 // arbete är en handling med en färdighet eller ett slag av arbete (handlingar.ts), inte att sova, äta eller prata
 const arArbete = (a: string) => { const d = ACTS[a as Act]; return !!d && !d.social && !d.vila && d.slag !== 'leka' && (d.arbete !== undefined || d.slag !== undefined); };
 function arbetstimmar(p: Person) {
-  let t = 0;
-  for (const k in p.habit) if (arArbete(k)) t += p.habit[k];
-  return t;
+  return vanaSumma(p, arArbete);
 }
 // en gång i timmen: de som är nära varandra ser om den andra är flitig eller lat och välbärgad, rik eller fattig. Intrycket närmar sig
 // det man ser; det som inte stämmer längre bleknar bort

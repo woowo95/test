@@ -53,6 +53,7 @@ import { MARK, groundOf, growGround, markslag, packGround, tileOf } from './mark
 import { bynsMitt } from './omrade';
 import { SAMTAL, TalkEvent, converse, horHar, kanPrata, skiljsAt } from './samtal';
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
+import { skrivVanor } from './vanor';
 import { RELT, stepRelationer } from './relationer';
 import { MINNE, areaOf, fearPlace, forget, lookAround, observe, radslaVid, sees, sightOf, trorOm } from './minne';
 import { PLATS } from './plats';
@@ -1497,7 +1498,7 @@ function avrunda(this: unknown, k: string, v: unknown) {
   return v;
 }
 export function serialize(s: State) {
-  packGround(s); packFynd(s);
+  packGround(s); packFynd(s); skrivVanor();
   return JSON.stringify(s, avrunda);
 }
 // en kopia av byn, som en sparad och inläst by (cacherna i WeakMap följer inte med, regel 4)
@@ -1507,7 +1508,7 @@ export const cloneState = (s: State) => migrate(JSON.parse(serialize(s)));
 // Varje del skrivs direkt med samma avrundning, så texten blir densamma som om hela byn skrivits och delats upp efteråt
 export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['mark', 'skog', 'tradAlder', 'tradSort', 'buskar', 'barbuskar', 'stubbar'], fynden: ['fynd'], loggen: ['log'], notiser: ['notiser'] };
 export function serializeParts(s: State): Record<string, string> {
-  packGround(s); packFynd(s);
+  packGround(s); packFynd(s); skrivVanor();
   const o = s as unknown as Record<string, unknown>, ut: Record<string, string> = {}, bort = new Set<string>();
   for (const [d, keys] of Object.entries(DELAR)) {
     const del: Record<string, unknown> = {};

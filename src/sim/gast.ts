@@ -1,3 +1,4 @@
+import { skrivVanor } from './vanor';
 import { KLOCKA, SLAGHINDER } from './klocka';
 // Gästerna är personer (steg 9.2.111, "Ekonomi och handel: Gästerna är personer" i designdokumentet): handlaren, rövarna,
 // främlingarna och de andra som kommer till byn är människor av samma slag som byborna. En gäst ligger bland folket
@@ -131,6 +132,7 @@ export function gastHem(s: State, p: Person) {
   if (!k || p.died !== undefined) return;
   let kp = k.personer.find(q => q.namn === p.name && q.sex === p.sex);
   if (!kp) { if (p.gast!.sort === 'handlare') return; kp = { namn: p.name, sex: p.sex, roll: p.gast!.sort }; k.personer.push(kp); } // en rövare som flydde hem, en främling som visades bort
+  skrivVanor(); // vanornas tal skrivs till vanobjektet innan personen kopieras (seder.ts)
   const kropp = JSON.parse(JSON.stringify(p)) as Record<string, unknown>;
   for (const f of BESOKET) delete kropp[f];
   kp.kropp = kropp as KlanPerson['kropp']; kp.borta = s.now; kp.fodd ??= p.born;
