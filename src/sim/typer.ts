@@ -124,6 +124,7 @@ export interface Task {
   mortBete?: 0 | 1; // fiske: en mört används som bete (steg 7.4.4)
   blotVed?: number; // så stor del av veden som bärs som är blöt (steg 7.3.4)
   act: Act; // handlingen (handlingar.ts)
+  brand?: 'hamta' | 'bar'; kalla?: number; // tända: på väg efter en brand till elden kalla (-1 = lägerelden), eller bär den till eldstaden (steg 10.6.12)
   phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
   tx: number; ty: number; // platsen man går till och arbetar på
   until: number; // tiden då uppgiften är slut (ms)
