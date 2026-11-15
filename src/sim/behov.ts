@@ -26,7 +26,7 @@ import { EKONOMI, kroppensMat, matPerDygn } from './ekonomi';
 import { REDSKAPMAL, arMaterial, buffert, sparas, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
-import { handelse, smakMat } from './rykten';
+import { dampning, handelse, smakMat } from './rykten';
 import { VED, vedPerDygn } from './eld';
 import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 import { SJUK, insjukna } from './sjukdom';
@@ -462,7 +462,8 @@ export function willing(s: State, g: Person, m: Person, overflod = 1, nod = fals
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;
   const base = (nara ? DELA.gePartner : isKin(g, m) || arBast(g, m) ? DELA.geFamilj : Math.max(clamp(r.op / DELA.geVanOp, 0, DELA.geVanMax), nod && r.op >= 0 ? DELA.geFrammande : 0)) * (arRivaler(g, m) ? RELT.rivalGe : 1); // rivaler ger varandra mindre
   const rik = nara ? 1 : DELA.rikGe + (1 - DELA.rikGe) * (s.delning?.andel ?? 1);
-  return clamp(base * (DELA.geEmpati + emp) * over * sed * rik, 0, 1);
+  const tro = isParent(g, m) ? 1 : dampning(s, g, m.id, 'ge'); // till den man tror är en tjuv ger man ogärna, utom till sitt eget barn (steg 10.8.4)
+  return clamp(base * (DELA.geEmpati + emp) * over * sed * rik * tro, 0, 1);
 }
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte

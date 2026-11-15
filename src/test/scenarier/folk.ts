@@ -2994,3 +2994,39 @@ SCENARIER.uppkallad = {
     ];
   },
 };
+SCENARIER.ryktesval = {
+  text: 'Ryktet ändrar beteendet (steg 10.8.4): tjuv dämpar viljan att ge, lögnare valet av mentor och förälskelsen, våldsam förälskelsen och barnens val av vem de pratar med. Dämpningen är talet gånger intryckets styrka och säkerhet, minst en tiondel blir kvar; till sitt eget barn ger man som förut, och föräldrarnas intryck räknas för barnet',
+  kor: () => {
+    const t = createState(9, START);
+    klockan(t, 11);
+    const g = nyInvanare(t, 'm', 40), m = nyInvanare(t, 'k', 30), barn = nyInvanare(t, 'm', 25), liten = nyInvanare(t, 'k', 8);
+    barn.father = g.id; liten.father = g.id;
+    getRel(t, g, m).op = 40; getRel(t, g, barn).op = 40; getRel(t, liten, m).op = 20;
+    const tror = (p: Person, om: Person, k: SIM.IntryckTyp, v: number, c: number) => { p.intryck = (p.intryck ?? []).filter(e => !(e.om === om.id && e.k === k)); p.intryck.push({ om: om.id, namn: om.name, k, v, c, t: t.now }); };
+    const ge0 = SIM.willing(t, g, m, 2), barn0 = SIM.willing(t, g, barn, 2), valj0 = SIM.valVikt(t, liten, m), vuxen0 = SIM.valVikt(t, barn, m);
+    tror(g, m, 'tjuv', 1, 1); const geSett = SIM.willing(t, g, m, 2);
+    tror(g, m, 'tjuv', 1, 0.3); const geHort = SIM.willing(t, g, m, 2);
+    tror(g, barn, 'tjuv', 1.5, 1); const barn1 = SIM.willing(t, g, barn, 2);
+    // föräldern tror att m är våldsam: barnet väljer m mer sällan
+    tror(g, m, 'valdsam', 1, 1); const valj1 = SIM.valVikt(t, liten, m), vuxen = SIM.valVikt(t, barn, m);
+    // förälskelsen: lögnare och våldsam, som mest en tiondel kvar
+    const k1 = SIM.dampning(t, g, m.id, 'karlek'); tror(g, m, 'valdsam', 1.5, 1); tror(g, m, 'logn', 1.5, 1); const k2 = SIM.dampning(t, g, m.id, 'karlek');
+    // mentorn: a har lärt den unga mer men är en lögnare, b lite mindre
+    const u = createState(10, START); klockan(u, 11);
+    const ung = nyInvanare(u, 'k', 14), a = nyInvanare(u, 'm', 40), b = nyInvanare(u, 'm', 40);
+    for (const q of [a, b]) { q.skill.hantverk = 15; const r = getRel(u, q, ung); r.op = 60; }
+    ung.skill.hantverk = 2; getRel(u, a, ung).lart = 12; getRel(u, b, ung).lart = 9;
+    SIM.stepRelationer(u); const utan = ung.mentor;
+    ung.intryck = [{ om: a.id, namn: a.name, k: 'logn', v: 1.2, c: 1, t: u.now }]; ung.mentor = undefined;
+    SIM.stepRelationer(u); const med = ung.mentor;
+    return [
+      [`tjuv: viljan att ge ${ge0.toFixed(2)} → ${geSett.toFixed(2)} (sett själv, väntat ${(ge0 * 0.4).toFixed(2)})`, Math.abs(geSett - ge0 * 0.4) < 1e-9 || (ge0 >= 1 && geSett < ge0)],
+      [`det man hört med låg säkerhet dämpar mindre (${geHort.toFixed(2)} mot ${geSett.toFixed(2)})`, geHort > geSett && geHort < ge0],
+      [`till sitt eget barn ger man som förut (${barn0.toFixed(2)} → ${barn1.toFixed(2)})`, barn1 === barn0],
+      [`barnet väljer den som föräldern tror är våldsam mer sällan (vikt ${valj0.toFixed(2)} → ${valj1.toFixed(2)}), en vuxen påverkas inte (${vuxen0.toFixed(2)} → ${vuxen.toFixed(2)})`, valj1 < valj0 * 0.3 && vuxen === vuxen0],
+      [`förälskelsen dämpas (${k1.toFixed(2)}), och som mest blir en tiondel kvar (${k2.toFixed(2)})`, Math.abs(k1 - 0.4) < 1e-9 && k2 === SIM.RYKTE.dampMin],
+      [`mentorn: ${utan === a.id ? 'den som lärt mest' : '?'} utan ryktet, ${med === b.id ? 'den andra' : '?'} när den unga tror att hen är en lögnare`, utan === a.id && med === b.id],
+      [`förklaringen säger det: "${SIM.INTRYCK.tjuv.beteende}"`, SIM.INTRYCK.tjuv.beteende === 'Man ger ogärna till en tjuv.'],
+    ];
+  },
+};

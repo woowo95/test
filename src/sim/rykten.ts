@@ -34,6 +34,7 @@ export const RYKTE = balans('rykte', {
   detalj: 0.4, // minnet av en död (steg 10.6.15): en händelse per så här mycket av intryckets styrka (styrka × säkerhet), minst 1 och högst bevMax; när minnet bleknar faller den minst viktiga först
   paminnStark: 0.15, // en påminnelse om en död gör minnet så här mycket säkrare, gånger tiden sedan förra påminnelsen delat med paminnDygn (högst 1)
   vMax: 1.5, // ett intryck är som starkast så här
+  dampMin: 0.1, // så mycket blir som minst kvar av ett val som ett intryck dämpar (steg 10.8.4)
   syn: 10, // de som var närmare än så här många rutor (och vakna) såg det som hände ...
   synDimma: 0.6, // ... och så här mycket kortare i den tätaste dimman (steg 3.7.11)
   sjalvSaker: 1, // den som såg det själv är så här säker ...
@@ -106,12 +107,15 @@ export const RYKTE = balans('rykte', {
 // Det som visas (steg 3.10.5): som = ordet i en mening när det är ett substantiv ("en tjuv"), och betyder = vad intrycket betyder
 // vikt = hur mycket intrycket väger i anseendet och ryktbarheten (steg 4.5.3.7), 1 om inget står
 // sed = vilken sed minnet av en död drar mot (steg 10.4.9), med upplevelsernas skala: 1 lite, 2 tydligt, minus är sedens andra sida
-interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string; vikt?: number; sed?: Partial<Record<Sed, number>> }
+// dampar = de val intrycket dämpar och hur mycket (steg 10.8.4): talet gånger intryckets styrka, och beteende = vad det betyder
+interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string; vikt?: number; sed?: Partial<Record<Sed, number>>; dampar?: Partial<Record<Dampval, number>>; beteende?: string }
+// valen som ett intryck kan dämpa: viljan att ge, valet av mentor, förälskelsen och barnens val av vem de pratar med
+export type Dampval = 'ge' | 'mentor' | 'karlek' | 'barnSamtal';
 const IDEF = {
-  valdsam: { namn: 'våldsam', tecken: -1, op: -40, sym: '👊', sed: { fejd: -1, krig: -1 }, betyder: 'Har slagit, misshandlat eller dödat någon, eller gått på någon för att ta något.' },
-  tjuv: { namn: 'tjuv', tecken: -1, op: -30, sym: '🦝', som: 'en tjuv', betyder: 'Har tagit saker som var någon annans, i smyg eller med våld.' },
+  valdsam: { namn: 'våldsam', tecken: -1, op: -40, sym: '👊', sed: { fejd: -1, krig: -1 }, betyder: 'Har slagit, misshandlat eller dödat någon, eller gått på någon för att ta något.', dampar: { karlek: 0.6, barnSamtal: 0.8 }, beteende: 'Man blir ogärna förälskad i den som är våldsam, och barnen pratar ogärna med hen.' },
+  tjuv: { namn: 'tjuv', tecken: -1, op: -30, sym: '🦝', som: 'en tjuv', betyder: 'Har tagit saker som var någon annans, i smyg eller med våld.', dampar: { ge: 0.6 }, beteende: 'Man ger ogärna till en tjuv.' },
   elak: { namn: 'elak', tecken: -1, op: -20, sym: '😠', betyder: 'Har varit elak mot någon.' },
-  logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥', som: 'en lögnare', betyder: 'Har ljugit eller överdrivit om någon. Man tror mindre på det lögnaren berättar.' },
+  logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥', som: 'en lögnare', betyder: 'Har ljugit eller överdrivit om någon. Man tror mindre på det lögnaren berättar.', dampar: { mentor: 0.6, karlek: 0.4 }, beteende: 'Man väljer ogärna en lögnare till mentor, och blir ogärna förälskad i en.' },
   klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
   lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
   fattig: { namn: 'fattig', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
@@ -137,6 +141,21 @@ export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
 // hur mycket ett intryck väger i det samlade (anseendet, ryktbarheten och det byn tycker)
 const vikt = (e: Intryck) => styrka(e) * (INTRYCK[e.k].vikt ?? 1);
+const DAMP_K = (Object.keys(IDEF) as IntryckTyp[]).filter(k => INTRYCK[k].dampar);
+// hur mycket det p tror om om dämpar valet (steg 10.8.4): 1 − talet × intryckets styrka och säkerhet för varje intryck som
+// dämpar valet, som mest ner till RYKTE.dampMin. Barnets val räknar också föräldrarnas intryck, som om de vore barnets egna
+export function dampning(s: State, p: Person, om: number, val: Dampval) {
+  if (!p.intryck?.length && val !== 'barnSamtal') return 1;
+  const vem = val === 'barnSamtal' ? [p, byId(s, p.mother ?? -1), byId(s, p.father ?? -1)] : [p];
+  let f = 1;
+  for (const k of DAMP_K) {
+    const d = INTRYCK[k].dampar?.[val]; if (!d) continue;
+    let st = 0;
+    for (const x of vem) { const e = x && intryckOm(x, om, k); if (e) st = Math.max(st, styrka(e)); }
+    if (st > 0) f *= 1 - Math.min(1, d * st);
+  }
+  return Math.max(RYKTE.dampMin, f);
+}
 
 // händelserna: intrycket de ger och hur mycket (vikt), och texten i beviset ({om} = den det gällde, {sak} = saken).
 // `prestation` = man blir imponerad, eller avundsjuk (3.3.2)

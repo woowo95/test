@@ -451,7 +451,7 @@ function ryktenHtml(p: Person) {
   const forkl = vald ? (() => {
     const L = vem(vald), MAX = 10;
     const namn = L.slice(0, MAX).map(({ q, e }) => `${pLink(q)} <span class="muted">(${intryckText(s, e).sure}${e.src === undefined && !e.led ? ', såg det själv' : ''})</span>`).join(', ');
-    return `<p class="muted small relfork"><b>${esc(cap(INTRYCK[vald].namn))}</b>, drar anseendet ${upp(vald) ? 'uppåt' : 'nedåt'}. ${esc(INTRYCK[vald].betyder)}<br>Tycker så: ${namn}${L.length > MAX ? ` och ${L.length - MAX} till` : ''}.</p>`;
+    return `<p class="muted small relfork"><b>${esc(cap(INTRYCK[vald].namn))}</b>, drar anseendet ${upp(vald) ? 'uppåt' : 'nedåt'}. ${esc(INTRYCK[vald].betyder)}${INTRYCK[vald].beteende ? ' ' + esc(INTRYCK[vald].beteende!) : ''}<br>Tycker så: ${namn}${L.length > MAX ? ` och ${L.length - MAX} till` : ''}.</p>`;
   })() : '';
   const omHen = byn.length ? `${huvud}<div class="tekrad">${syms.join('')}</div>${forkl}` : '<p class="muted">Byn har ingen särskild bild av hen.</p>';
   const per = new Map<number, Intryck[]>();

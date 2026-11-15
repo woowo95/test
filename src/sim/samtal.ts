@@ -112,8 +112,10 @@ export const SAMTALSSLAG: Record<Samtalsslag, SamtalDef> = SLAG;
 
 // ---------- samtal ----------
 // vikten för att välja b att samtala med: relationen, kemin, partnern, bästa vännen och mentorn
-const valVikt = (s: State, a: Person, b: Person) => { const r = getRel(s, a, b); return Math.max(SAMTAL.valMin, 1 + r.op / SAMTAL.valOp + r.chem * SAMTAL.valKemi + (b.partner === a.id ? SAMTAL.valPartner : 0)
-  + (arBast(a, b) ? RELT.valBast : 0) + (arMentor(a, b) || arMentor(b, a) ? RELT.valMentor : 0) + skuldVal(a, b)); }; // den man gjort illa (steg 10.8.2)
+// Ett barn väljer mer sällan den som barnet eller föräldrarna tror är våldsam (steg 10.8.4)
+export const valVikt = (s: State, a: Person, b: Person) => { const r = getRel(s, a, b); return Math.max(SAMTAL.valMin, 1 + r.op / SAMTAL.valOp + r.chem * SAMTAL.valKemi + (b.partner === a.id ? SAMTAL.valPartner : 0)
+  + (arBast(a, b) ? RELT.valBast : 0) + (arMentor(a, b) || arMentor(b, a) ? RELT.valMentor : 0) + skuldVal(a, b)) // den man gjort illa (steg 10.8.2)
+  * (ageOf(a, s.now) < ALDER.vuxen ? dampning(s, a, b.id, 'barnSamtal') : 1); };
 // den som väljer att samtala (handlingen samtal, val.ts) går fram till någon och ställer sig bredvid hen, ungefär en ruta
 // isär (steg 4.5.6.7): bland dem som redan gör något socialt nära platsen, viktat som samtalen. Den andra blir kvar där
 // hen är (den som tvinnar, rensar eller vaktar flyttar sig inte), och samtalar hen också vänder hen sig mot den som kom.
@@ -219,7 +221,8 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     if (kind === 'berättelse') { a.skill.berattande = clamp(a.skill.berattande + SAMTAL.berattaLar * (SAMTAL.berattaInt + a.pot.intelligens / SAMTAL.berattaDiv), 0, 20); a.skill.skaldskap = clamp(a.skill.skaldskap + SAMTAL.skaldLar * SAMTAL.berattaLar * (SAMTAL.berattaInt + a.pot.intelligens / SAMTAL.berattaDiv), 0, 20); }
     if (kind === 'flirt') {
       const att = (stat(b, 'skonhet', now) + stat(b, 'karisma', now)) / SAMTAL.flirtAtt;
-      r.rom = clamp(r.rom + (out + att) * SAMTAL.flirtRomOk, 0, 100);
+      const d = out + att > 0 ? dampning(s, a, b.id, 'karlek') * dampning(s, b, a.id, 'karlek') : 1; // långsammare mot lögnaren och den våldsamma (steg 10.8.4)
+      r.rom = clamp(r.rom + (out + att) * SAMTAL.flirtRomOk * d, 0, 100);
     }
     samtalBorjar(); // det som delas nu blir samtalets ämne (steg 3.9.5, berattelser.ts)
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
@@ -256,7 +259,7 @@ export function skiljas(s: State, a: Person, b: Person, r: Rel) {
   upplev(s, b, 'lamnad', a.name); // den som blev lämnad (steg 4.1.1.2)
   think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
 }
-import { berattaSmak } from './rykten';
+import { berattaSmak, dampning } from './rykten';
 import { RUS, rusAv } from './rus';
 import { berattaSpecial } from './special';
 import { beOmForlatelse, skuldVal } from './skuld';
