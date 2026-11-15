@@ -1,7 +1,7 @@
 // Raden överst (steg 5.3.1.2): namnet, tidsstaven med årstiden och nyckeltalen i enkla, platta rutor med en pixelsymbol och
 // ett tal, och vågbandet längst ner mot kartan. Björn valde nyckeltalen (2026-11-04): temperaturen och vädret, rikedomen och
 // antalet kolonister i byn. Ett nytt nyckeltal är en rad i RUTOR och en ruta med samma id i template.html.
-import { AGES, ALDER, VADERLAGE, ageOf, kalender, living, rikedomDelar, temperature, vaderNu, vindFran } from '../sim';
+import { AGES, ALDER, SKATT, VADERLAGE, ageOf, kalender, lagGaller, living, rikedomDelar, temperature, vaderNu, vindFran } from '../sim';
 import { tecknet } from '../ikoner';
 import { GUI } from '../guibilder';
 import { $ } from './hjalp';
@@ -34,7 +34,7 @@ export const RUTOR: Record<string, Ruta> = {
     html: () => { const r = rikedomDelar(s); return `${tecknet('sym_vag', '⚖', 16)} ${Math.round(r.forrad + r.redskap + r.hus)}`; },
     title: () => {
       const r = rikedomDelar(s), sum = r.forrad + r.redskap + r.hus, a = s.delning?.andel ?? 0;
-      return `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar). Tryck för att öppna förrådet\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
+      return `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar). Tryck för att öppna förrådet\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${lagGaller(s, 'skatt') ? `Skatten fyller byns förråd: ${Math.round(SKATT.procent * 100)} % av det var och en äger varje år` : a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
     },
   },
   // kolonisterna i byn; porträttraden längst ner är listan över folket (steg 6.9.15), och ett tryck här öppnar graferna i Byns tal

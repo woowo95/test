@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
+import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -768,27 +768,47 @@ SCENARIER.tinget = {
   },
 };
 SCENARIER.skatt = {
-  text: 'Steg 8.4.17: med en lag om skatt går en del av fångsten till byns förråd, eller till ledarens under Envälde. Den som betalar till ledaren blir missnöjd, och när ledarens förråd är fullt bjuder hen byn på gästabud',
+  text: 'Steg 10.5.3: skattelagen tar en procent av det varje vuxen över 18 år äger, en gång per dygn (ett år i spelet), till byns förråd. Man betalar med hela saker och silver, först det man har över. Medan lagen gäller ger ingen en del av det hen skaffar till byn, men gåvor till den i nöd finns kvar',
   kor: () => {
-    const { s, v, l } = medLedare(), q = v[1];
-    s.styre!.lagar = [{ id: 'skatt', t: s.now, straff: 4, av: l.id, om: '' }];
-    s.seder.v.rang = -0.5; SIM.stepDelning(s);
-    const tillByn = !s.delning?.ledare;
-    s.seder.v.rang = 1; SIM.stepDelning(s);
-    const tillLedaren = s.delning?.ledare?.id === l.id;
-    s.delning = { andel: 0.2, ledare: { id: l.id, andel: 0.3 } };
-    const fore = SIM.ownedStock(s, l).bar ?? 0;
-    SIM.storeLoad(s, { act: 'samla', phase: 'do', tx: 0, ty: 0, until: s.now, carry: 0, why: '', items: { bar: 20 } } as SIM.Task, undefined, undefined, q.id);
-    const fick = (SIM.ownedStock(s, l).bar ?? 0) - fore, egen = SIM.ownedStock(s, q).bar ?? 0;
-    SIM.put(s, 'bar', 60, { [l.id]: 60 });
-    const miss0 = q.missnoje ?? 0, mat0 = SIM.ownedStock(s, l).bar ?? 0;
-    SIM.lagDygn(s);
+    const { s } = medLedare();
+    tomtForrad(s); s.ting = [];
+    const [a, b, c] = treVuxna(s, 0, q => { q.warm = 1; q.habit = {}; q.pot.empati = 10; });
+    s.people = [a, b, c];
+    for (const q of [a, b]) q.born = s.now - 30 * SIM.DAY;
+    c.born = s.now - 16 * SIM.DAY;
+    s.delning = { andel: 0 };
+    SIM.put(s, 'silver', 200, { [a.id]: 200 }); SIM.put(s, 'silver', 40, { [b.id]: 40 }); SIM.put(s, 'silver', 100, { [c.id]: 100 });
+    const kniv = SIM.addTool(s, 'kniv', b); kniv.hos = b.id;
+    const silver = (p: Person) => SIM.ownsAmount(s, p, 'silver'), byns = () => SIM.amountOf(s, 'silver') - SIM.ownedSum(s, 'silver');
+    // utan lag ingen skatt
+    SIM.skattDygn(s, SIM.DAY);
+    const utan = silver(a) === 200 && silver(b) === 40 && byns() === 0;
+    SIM.stepDelning(s); const delningFore = s.delning?.andel ?? 0;
+    // med lag
+    s.styre!.lagar = [{ id: 'skatt', t: s.now - 2 * SIM.DAY, straff: 4, av: a.id, om: '' }];
+    const skuldA = SIM.skattAv(s, a, SIM.DAY), skuldB = SIM.skattAv(s, b, SIM.DAY);
+    SIM.skattDygn(s, SIM.DAY);
+    const betaltA = 200 - silver(a), betaltB = 40 - silver(b);
+    // ingen delning medan lagen gäller, men en hungrig anhörig får ändå en gåva
+    SIM.stepDelning(s); const delningLag = s.delning?.andel ?? 0;
+    SIM.gain(s, a, 'bar', 20);
+    const allt = SIM.ownsAmount(s, a, 'bar') === 20;
+    b.mother = a.id; b.hunger = 0.9;
+    for (let i = 0; i < 20 && SIM.ownsAmount(s, b, 'bar') <= 0; i++) SIM.askForGift(s, a, b);
+    const gava = SIM.ownsAmount(s, b, 'bar') > 0;
+    // när lagen tas bort slutar skatten och delningen är tillbaka
+    s.styre!.lagar = [];
+    const a0 = silver(a), byn0 = byns();
+    SIM.skattDygn(s, SIM.DAY); SIM.stepDelning(s);
     return [
-      ['under Allmogen går skatten till byns förråd', tillByn],
-      ['under Envälde går den till ledarens', tillLedaren],
-      [`av 20 bär fick ledaren ${fick} och den som samlade ${egen}, i hela bär`, fick === 6 && egen === 10],
-      [`ledaren bjöd på gästabud (${mat0} → ${SIM.ownedStock(s, l).bar ?? 0} bär hos ledaren)`, (s.stat?.gastabud ?? 0) === 1 && (SIM.ownedStock(s, l).bar ?? 0) < mat0],
-      [`och missnöjet sjönk (${miss0.toFixed(2)} → ${(q.missnoje ?? 0).toFixed(2)})`, (q.missnoje ?? 0) <= miss0],
+      ['utan lag tas ingen skatt', utan],
+      [`med lag betalar en med silver exakt (${betaltA} silver för en skatt på ${skuldA.toFixed(2)}), och byns förråd växer lika mycket (${byn0})`, betaltA > 0 && Math.abs(betaltA - skuldA) <= 0.5 && byn0 === betaltA + betaltB],
+      [`den första nivån går före: silvret (${betaltB} för ${skuldB.toFixed(2)}) och inte kniven i handen`, betaltB > 0 && Math.abs(betaltB - skuldB) <= 0.5 && kniv.agare === b.id && kniv.hos === b.id],
+      [`en 16-åring betalar inget (${silver(c)} silver kvar)`, silver(c) === 100],
+      [`ingen delning medan lagen gäller (${delningFore.toFixed(2)} → ${delningLag}), alla 20 bär blev hens egna`, delningFore > 0 && delningLag === 0 && allt],
+      ['men en hungrig anhörig får ändå en gåva', gava],
+      [`byns statistik räknar skatten (${(s.stat?.skattVarde ?? 0).toFixed(0)}) och loggen har en rad`, (s.stat?.skattVarde ?? 0) === byn0 && s.log.some(e => e.text.startsWith('Skatten gav byns förråd'))],
+      [`när lagen tas bort slutar skatten (${a0} → ${silver(a)}) och delningen är tillbaka (${(s.delning?.andel ?? 0).toFixed(2)})`, silver(a) === a0 && byns() === byn0 && (s.delning?.andel ?? 0) > 0],
     ];
   },
 };

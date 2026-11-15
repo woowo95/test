@@ -409,6 +409,10 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     delete (s.seder.v as Record<string, number>).delning;
     if (s.styre) s.styre.oppna = s.styre.oppna.filter(k => (k as string) !== 'delning');
   }],
+  [52, 'v531: skattelagen blir en skatt på rikedomen, och skatten till ledaren och gästabudet tas bort (steg 10.5.3)', s => {
+    delete (s as State & { skattLedare?: number }).skattLedare;
+    if (s.delning) s.delning = { andel: s.delning.andel };
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

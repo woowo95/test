@@ -501,7 +501,7 @@ export function behovAv(s: State, p: Person, k: string) {
   return own <= b.kvar ? 1 : DELA.over;
 }
 // det p kan byta bort: mat och ved utöver det hen själv behöver (b.kvar), material och redskap hen har över. Inte slagen i utom
-function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
+export function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   // den som inte äger något redskap har inget att avvara (spare), och de flesta som betalar äger inget
   const ut: Vara[] = [], over = new Map<Behov, number>(), harRedskap = tingOf(s).some(t => t.agare === p.id);
   for (const k of SAK_LIST) {

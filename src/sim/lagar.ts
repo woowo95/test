@@ -6,16 +6,14 @@ import { rnd } from './slump';
 import { REL, byId } from './folk';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat, think } from './folk';
+import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat } from './folk';
 import { kronika } from './historik';
 import { FRAGOR, ROST, Fraga, framFor, laggFram, rostaOm, vikter } from './rost';
 import { PABUD, Pabud, legitimitet, ledareOf, styreAv } from './styre';
 import { knows } from './teknik';
 import type { HandelseTyp } from './rykten';
-import { amountOf, ownMove, ownedStock } from './lager';
+import { amountOf, ownedStock } from './lager';
 import { FOOD } from './saker';
-import { BYN } from './egendom';
-import { DAY } from './typer';
 
 export const LAG = balans('lag', {
   tak: 6, // så många lagar klarar byn utan skrift (steg 8.4.3) ...
@@ -27,13 +25,7 @@ export const LAG = balans('lag', {
   inflytande: 1, // den gränsen
   troskel: 0.25, // inget tas upp under den här prioriteten (steg 8.4.5)
   nedrostat: 3, // det som röstats ned tas inte upp igen på så här många dygn (år i spelet)
-  skatt: 0.15, // så stor del av det man skaffar går till byn med en lag om skatt (steg 8.4.17) ...
-  dagsverke: 1.5, // ... och så många gånger fler bygger med en lag om dagsverken
-  skattLedare: 0.3, // över den här Envälde-seden går skatten till ledarens förråd i stället för byns
-  skattMiss: 0.01, // missnöjet växer så här mycket per dygn (år i spelet) hos den som betalar skatt till ledaren ...
-  gastabud: 40, // ... och när ledaren äger så här mycket mat bjuder hen byn på gästabud: ...
-  gastabudDel: 0.5, // ... så stor del av maten går till byns förråd ...
-  gastabudMiss: 0.15, // ... och missnöjet sjunker så här mycket
+  dagsverke: 1.5, // så många gånger fler bygger med en lag om dagsverken
   plikt: 0.2, // arbetsplikten höjer viljan att arbeta för byn så här mycket
   bas: 0.25, viktSamlad: 0.4, viktLeg: 0.5, // hur konsekvent lagarna efterlevs (steg 8.4.9): grunden, hur samlad vikten är och legitimiteten
   stegHardare: 0.5, // Envälde och Fejd över det här gör straffet ett steg hårdare när lagen stiftas
@@ -71,8 +63,8 @@ export const LAGAR: Record<string, LagDef> = {
   arbetsplikt: { namn: 'Arbetsplikt', sym: '📜', text: 'Den som kan arbeta ska arbeta', straff: 0, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 2, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.flit), why: dev(p.pot.flit) > 0 ? 'Arbetar ändå' : 'Vill bestämma sin tid själv' }) },
   matdelning: { namn: 'Förrådet delas lika', sym: '📜', text: 'Det man skaffar går till byn', straff: 1, om: 'en vinter med svält', prio: s => clamp(antal(s, 'dog av svält') / 3, 0, 1) * (1 + (s.seder.v.gemenskap ?? 0)) / 2, rost: (s, p) => { const rik = rikPaMat(s, p); return { v: dev(p.pot.empati) * 0.5 + (s.seder.v.gemenskap ?? 0) * 0.5 - (rik ? LAG.rikEmot : 0), why: rik ? 'Vill behålla det hen skaffat' : 'Vill att alla får äta' }; } },
   skogsfred: { namn: 'Inte fälla träd nära byn', sym: '🌲', text: `Ingen fäller träd inom ${LAG_SKOG} rutor från byn`, straff: 0, om: 'att skogen tog slut nära byn', prio: s => clamp((s.fallda ?? 0) / 120, 0, 1) * clamp(1 - (s.seder.v.natur ?? 0), 0, 1), rost: (s, p) => ({ v: -(s.seder.v.natur ?? 0) * 0.5 + (p.tag === 'Trähuggare' ? -0.5 : 0.05), why: p.tag === 'Trähuggare' ? 'Hugger trä och vill ha det nära' : 'Vill ha skogen kvar' }) },
-  // skatt före silvret (steg 8.4.17)
-  skatt: { namn: 'Skatt på fångst och skörd', sym: '📜', text: 'En del av fångsten och skörden går till byn', straff: 4, om: 'att förrådet var tomt', prio: s => clamp(living(s).length / 30, 0, 1) * clamp(1 - (s.delning?.andel ?? 1) * 2, 0, 1), rost: (s, p) => ({ v: (s.seder.v.gemenskap ?? 0) * 0.5 + dev(p.pot.empati) * 0.5 - 0.1, why: 'Tycker att alla ska bidra' }) },
+  // skatt före silvret (steg 8.4.17); en skatt på rikedomen (steg 10.5.3, skatt.ts)
+  skatt: { namn: 'Skatt', sym: '📜', text: 'Varje vuxen betalar varje år en del av det hen äger till byns förråd', straff: 4, om: 'att förrådet var tomt', prio: s => clamp(living(s).length / 30, 0, 1) * clamp(1 - (s.delning?.andel ?? 1) * 2, 0, 1), rost: (s, p) => ({ v: (s.seder.v.gemenskap ?? 0) * 0.5 + dev(p.pot.empati) * 0.5 - 0.1, why: 'Tycker att alla ska bidra' }) },
   dagsverke: { namn: 'Dagsverken på byns byggen', sym: '📜', text: 'De vuxna hjälper till på byns byggen', straff: 0, om: 'att byggena stod stilla', prio: s => clamp((s.byggen?.filter(b => b.b < 1).length ?? 0) / 60, 0, 1), rost: (s, p) => ({ v: dev(p.pot.flit) * 0.5 + (s.seder.v.arbete ?? 0) * 0.5, why: 'Vill ha husen klara' }) },
   stridsplikt: { namn: 'Stridsplikt', sym: '⚔️', text: 'De vuxna ska gå när byn anfalls', straff: 1, om: 'att byn anfölls', prio: s => clamp((s.stat?.rovarflockar ?? 0) / 3, 0, 1) * clamp((s.seder.v.fejd ?? 0) + (s.seder.v.krig ?? 0) + 0.3, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.mod), why: dev(p.pot.mod) > 0 ? 'Vill försvara byn' : 'Vill inte tvingas i strid' }) }, // steg 8.7.9
   // lagar om rösten (steg 8.4.6)
@@ -158,28 +150,10 @@ export function tasUppKvall(s: State) {
 export { laggFram };
 
 // ---------- byns dygn (styre.ts, på kvällen) ----------
-// var och ens rädsla för en farlig handling berättas vidare och bleknar, och skatten till ledaren (steg 10.2.41: tabun, där en
-// rädsla som många delade blev en regel för hela byn, är borta; var och ens rädslor och lärdomar om faror finns kvar)
+// var och ens rädsla för en farlig handling berättas vidare och bleknar (steg 10.2.41: tabun, där en rädsla som många delade
+// blev en regel för hela byn, är borta; var och ens rädslor och lärdomar om faror finns kvar)
 export function lagDygn(s: State) {
-  const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
-  raddDygn(vuxna, s);
-  skattDygn(s, vuxna);
-}
-// skatten till ledaren (steg 8.4.17): den som betalar blir missnöjd, och när ledarens förråd är fullt bjuder hen byn på gästabud
-function skattDygn(s: State, vuxna: Person[]) {
-  const la = s.delning?.ledare, l = la ? vuxna.find(p => p.id === la.id) : undefined;
-  if (!la || !l) return;
-  for (const p of vuxna) if (p !== l) p.missnoje = clamp((p.missnoje ?? 0) + LAG.skattMiss, 0, 1);
-  const mat = ownedStock(s, l);
-  let n = 0;
-  for (const k of FOOD) n += mat[k] ?? 0;
-  if (n < LAG.gastabud) return;
-  let gav = 0;
-  for (const k of FOOD) { const m = Math.floor((mat[k] ?? 0) * LAG.gastabudDel); if (m >= 1) gav += ownMove(s, k, m, l.id, BYN); }
-  if (gav < 1) return;
-  count(s, 'gastabud');
-  for (const p of vuxna) { p.missnoje = clamp((p.missnoje ?? 0) - LAG.gastabudMiss, 0, 1); if (p !== l) think(p, `${l.name} bjöd på gästabud`, 0.1, s.now, DAY); }
-  log(s, `${l.name} bjöd byn på gästabud av skatten: ${Math.round(gav)} mat till byns förråd.`, 'world', [l.id]);
+  raddDygn(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), s);
 }
 // ---------- rädslan för en handling (steg 8.4.10) ----------
 // en död eller en svår skada medan någon gjorde något gör de som såg det och de närmaste rädda för handlingen. Rädslan
