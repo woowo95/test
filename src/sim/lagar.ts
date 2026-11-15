@@ -3,7 +3,7 @@
 // TAS_UPP, efter prioritet (steg 8.4.5). En lag läser spelet med `lagGaller`; ett brott i `doma` (styre.ts) får straffet i lagen.
 import { Act, HOUR, Person, State } from './typer';
 import { rnd } from './slump';
-import { REL } from './folk';
+import { REL, byId } from './folk';
 import { balans } from './balans';
 import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat, think } from './folk';
@@ -118,11 +118,16 @@ export function framlaggare(s: State): Person[] {
 }
 
 // ---------- vad som tas upp (steg 8.4.5) ----------
+// namnet på en levande eller död, också när den döda inte finns kvar i folket (namnet i någons intryck)
+const personNamn = (s: State, id: number) => byId(s, id)?.name ?? s.people.flatMap(p => p.intryck ?? []).find(e => e.om === id)?.namn ?? '';
 export interface LagForslag { fr: Fraga; prio: number; varfor: string }
 export const TAS_UPP: { id: string; lista(s: State, p: Person): LagForslag[] }[] = [
   { id: 'pabud', lista: (s, p) => (Object.keys(PABUD) as Pabud[]).filter(k => (framFor(s, k) ?? ledareOf(s)) === p).flatMap(k => {
-    const ny = PABUD[k].asikt(s, p), gamla = s.styre?.pabud?.[k] ?? 0, d = Math.abs(ny - gamla);
-    return d >= ROST.skillnad ? [{ fr: { f: 'pabud', d: { k, v: Math.round(ny * 100) / 100 }, fram: p.id }, prio: d, varfor: `${p.name} vill ändra påbudet om ${PABUD[k].namn.toLowerCase()}` }] : [];
+    // ett påbud som pekar ut en person (tystnaden, steg 10.4.10): en annan person börjar från noll
+    const om = PABUD[k].vem?.(s, p), pd = PABUD[k].vem ? (om === undefined ? undefined : { om, namn: personNamn(s, om) }) : {};
+    if (!pd) return [];
+    const ny = PABUD[k].asikt(s, p, om), gamla = om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[k] ?? 0 : 0, d = Math.abs(ny - gamla);
+    return d >= ROST.skillnad ? [{ fr: { f: 'pabud', d: { k, v: Math.round(ny * 100) / 100, ...pd }, fram: p.id }, prio: d, varfor: `${p.name} vill ändra påbudet om ${PABUD[k].namn.toLowerCase()}${om !== undefined ? ` om ${pd.namn}` : ''}` }] : [];
   }) },
   { id: 'nylag', lista: (s, p) => knows(p, 'lag') ? Object.keys(LAGAR).flatMap(id => {
     if (lagGaller(s, id) || LAGAR[id].kan?.(s) === false || LAGAR[id].rost(s, p).v <= 0) return [];

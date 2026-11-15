@@ -23,7 +23,7 @@ import { UPPV, upplev } from './uppvaxt';
 import { kronika } from './historik';
 import { Sed, drar, influence } from './seder';
 import { knows } from './teknik';
-import { Bevis, HANDELSER, HandelseTyp, allmant, handelse, ryktbarhet, vittnen } from './rykten';
+import { Bevis, HANDELSER, HandelseTyp, allmant, asiktOm, handelse, ryktbarhet, vittnen } from './rykten';
 import { ISTID, ageIndex, hourOf, isLight, kallTid } from './tid';
 import { temperature, vaderNu } from './vader';
 import { notis } from './notiser';
@@ -72,6 +72,10 @@ export const PAB = balans('pabud', {
   byggUtan: 2,
   // Samla för vintern: påbudet över 0 ger maten och veden så här många fler arbetare per steg (påbudet 1 = ×(1 + hander))
   hander: 1,
+  // påbudet om tystnad (steg 10.4.10): ledarens åsikt = −det hen tycker om personen / 100 × tystOp + (tystEmp − empatin) / tystDiv,
+  // från 0 till 1, om den hen tycker sämst om bland de tystTopp som byn talar mest om. Påbudet gånger tystMax är hur mycket mer
+  // sällan minnen om personen berättas, mindre ju mer den som berättar tyckte om hen
+  tystOp: 1, tystEmp: 10, tystDiv: 10, tystTopp: 3, tystMax: 0.9,
 });
 export const FORM = balans('form', {
   starkt: 0.7, lut: 0.25, mitt: 0.1, // gränserna mellan styrelseformerna, i sederna (steg 8.3.7)
@@ -160,7 +164,8 @@ export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[]
 // påbuden: vad ledaren tycker (åt vilket håll från byns egen sed, som en sed från -1 till 1). sed = byns egen sed som påbudet
 // blandas med (saknas: 0). ruta = påbuden som visas tillsammans i en ruta i Styre (steg 4.5.4.2; saknas: en egen ruta).
 // Hur påbudet används står i val.ts
-interface PabudDef { namn: string; text: string; sed?: Sed; ruta?: string; asikt: (s: State, l: Person) => number }
+// vem = påbudet pekar ut en person (tystnaden, steg 10.4.10): vem ledaren vill att det gäller; asikt får då personen som om
+interface PabudDef { namn: string; text: string; sed?: Sed; ruta?: string; asikt: (s: State, l: Person, om?: number) => number; vem?: (s: State, l: Person) => number | undefined }
 const PDEF = {
   matlager: { ruta: 'Förrådsmålen', namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   vedlager: { ruta: 'Förrådsmålen', namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
@@ -172,10 +177,26 @@ const PDEF = {
   vakt: { ruta: 'Arbetet', namn: 'Nattvakten', text: 'Hur många som håller vakt om natten', sed: 'forsiktighet', asikt: (s, l) => clamp(drar(s, l).forsiktighet, -1, 1) },
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån', text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
+  // tystnaden (steg 10.4.10): en person, levande eller död, som inte ska nämnas
+  tystnad: { namn: 'Tystnad', text: 'Att en viss person inte ska nämnas', vem: (s, l) => tystVem(s, l),
+    asikt: (s, l, om) => om === undefined || om === l.id ? 0 : clamp(-asiktOm(s, l, om) / 100 * PAB.tystOp + (PAB.tystEmp - stat(l, 'empati', s.now)) / PAB.tystDiv, 0, 1) },
 } satisfies Record<string, PabudDef>;
 export type Pabud = keyof typeof PDEF;
 export const PABUD: Record<Pabud, PabudDef> = PDEF;
 export const PABUD_LIST = Object.keys(PDEF) as Pabud[];
+// den ledaren tycker sämst om bland de tystTopp som byn talar mest om (ryktbarheten), levande eller död
+function tystVem(s: State, l: Person) {
+  const ids = new Set<number>();
+  for (const p of living(s)) for (const e of p.intryck ?? []) if (e.om !== l.id) ids.add(e.om);
+  const topp = [...ids].map(id => ({ id, r: ryktbarhet(s, id).r })).filter(x => x.r > 0).sort((a, b) => b.r - a.r || a.id - b.id).slice(0, PAB.tystTopp);
+  return topp.sort((a, b) => asiktOm(s, l, a.id) - asiktOm(s, l, b.id) || a.id - b.id)[0]?.id;
+}
+// hur mycket mer sällan a berättar om om (steg 10.4.10): 1 utan påbud, annars 1 − påbudet × tystMax × (1 − det a tycker om hen)
+export function tystFaktor(s: State, a: Person, om: number) {
+  const st = s.styre;
+  if (st?.tystnad?.id !== om) return 1;
+  return 1 - Math.max(0, pabud(s, 'tystnad')) * PAB.tystMax * (1 - clamp(asiktOm(s, a, om) / 100, 0, 1));
+}
 // en försiktig ledare vill ha större lager, och en intelligent planerar inför istiden
 function lagerAsikt(s: State, l: Person) {
   return clamp(drar(s, l).forsiktighet + (kallTid(ageIndex(s)) ? PAB.plan * (l.pot.intelligens - 10) / 6 : 0), -1, 1);
@@ -204,6 +225,7 @@ export interface Styre {
   dogVinter?: number;
   kyrka?: number; kyrkaVikt?: number; // översteprästens välsignelse (1) eller fördömelse (−1) och vad den är värd (steg 8.6.16)
   hanForbud?: boolean; hanSedd?: number; // förbudet mot hån (steg 8.3.13)
+  tystnad?: { id: number; namn: string }; // den påbudet om tystnad gäller (steg 10.4.10)
   lagar?: Lag[]; nedrostat?: Record<string, number>; // lagarna och det som nyss röstats ned (system 8.4, lagar.ts)
 }
 // en rättegång (steg 3.10.17): det som behövs för att visa den. Texten skrivs när den visas (rattegang nedan), med domens timme

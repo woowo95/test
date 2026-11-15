@@ -2158,3 +2158,34 @@ SCENARIER.minnesed = {
     ];
   },
 };
+
+SCENARIER.tystnad = {
+  text: 'Steg 10.4.10: påbudet om tystnad. Ledaren lägger fram det mot den hen tycker sämst om bland dem byn talar mest om, levande eller död, byn röstar som om andra påbud, och när det gäller berättas minnen om personen mer sällan, mindre sällan ju mer man tyckte om hen, men inte aldrig; fliken Styre visar vem det gäller',
+  kor: () => {
+    const a = medLedare(), s = a.s, l = a.l, alla = SIM.living(s), [x, y] = alla.filter(q => q !== l);
+    l.pot.empati = 3;
+    // byn talar om x (våldsam) och om y (hjälpsam); ledaren tycker illa om x
+    for (const q of alla) if (q !== x && q !== y) q.intryck = [{ om: x.id, namn: x.name, k: 'valdsam', v: 1, c: 1, t: s.now }, { om: y.id, namn: y.name, k: 'hjalpsam', v: 1, c: 1, t: s.now }];
+    SIM.getRel(s, l, x).op = -60; SIM.getRel(s, l, y).op = 40;
+    const vem = SIM.PABUD.tystnad.vem!(s, l), asikt = SIM.PABUD.tystnad.asikt(s, l, x.id);
+    // förslaget och omröstningen
+    const forslag = SIM.TAS_UPP.find(r => r.id === 'pabud')!.lista(s, l).find(f => f.fr.d.k === 'tystnad');
+    const gick = forslag ? SIM.rostaOm(s, forslag.fr) : false;
+    const st = s.styre!, pv = SIM.pabud(s, 'tystnad');
+    // den som ogillar x berättar mer sällan, den som gillade hen nästan som förut, men ingen aldrig
+    const ovan = alla.find(q => q !== l && q !== x && q !== y)!, van = y;
+    SIM.getRel(s, van, x).op = 100;
+    const fOvan = SIM.tystFaktor(s, ovan, x.id), fVan = SIM.tystFaktor(s, van, x.id), fY = SIM.tystFaktor(s, ovan, y.id);
+    // också om en död
+    x.died = s.now; const fDod = SIM.tystFaktor(s, ovan, x.id); x.died = undefined;
+    utanWebblasare(); setByn(s); ui.styreDel = 'pabud';
+    const html = styreFlik.html(), visas = html.includes(`${x.name} nämns`);
+    return [
+      [`ledaren vill tysta den hen tycker sämst om bland dem byn talar mest om (${SIM.byId(s, vem!)?.name ?? 'ingen'}, åsikten ${asikt.toFixed(2)})`, vem === x.id && asikt > 0],
+      [`ledaren lägger fram påbudet och byn röstar (${forslag ? forslag.varfor : 'inget förslag'}; ${gick ? 'gick igenom' : 'röstades ned'})`, !!forslag && forslag.fr.d.om === x.id && gick && st.tystnad?.id === x.id && pv > 0],
+      [`minnen om ${x.name} berättas mer sällan (${fOvan.toFixed(2)}), mindre sällan av den som tyckte om hen (${fVan.toFixed(2)}), men aldrig inte alls; andra som förut (${fY})`, fOvan < 1 && fOvan > 0 && fVan === 1 && fY === 1],
+      [`påbudet gäller också när ${x.name} är död (${fDod.toFixed(2)})`, Math.abs(fDod - fOvan) < 0.2 && fDod < 1],
+      [`fliken Styre visar vem påbudet gäller (${visas ? 'ja' : 'nej'})`, visas],
+    ];
+  },
+};

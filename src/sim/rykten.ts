@@ -8,6 +8,7 @@ import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel
 import { clamp, pickViktat, rnd } from './slump';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
+import { tystFaktor } from './styre';
 import type { Sed } from './seder';
 import { ACTS, Act } from './handlingar';
 import { isLight } from './tid';
@@ -257,6 +258,7 @@ export function troPa(s: State, b: Person, a: Person, r: Rel = getRel(s, a, b)) 
 }
 export const lognFaktor = (b: Person, a: Person) => { const l = intryckOm(b, a.id, 'logn'); return l ? 1 - Math.min(RYKTE.lognMax, RYKTE.lognTro * styrka(l)) : 1; };
 // vad a tycker om personen om: relationen om hen lever, annars det a har för intryck av hen (de döda, steg 3.4.2)
+export const asiktOm = (s: State, a: Person, om: number) => asikt(s, a, om);
 function asikt(s: State, a: Person, om: number) {
   const q = byId(s, om);
   if (q && alive(q)) return s.rels[relKey(a.id, om)]?.op ?? 0;
@@ -279,7 +281,7 @@ export function skvaller(s: State, a: Person, b: Person, r: Rel, berattelse: boo
   if (rnd(s, 'rykte', a) >= chans) return;
   const val = a.intryck.filter(e => e.om !== b.id && !(INTRYCK[e.k].tecken < 0 && (skyddar(s, a, e.om) || dodTiger(s, a, e.om))));
   if (!val.length) return;
-  const e = pickViktat(s, val, val.map(x => styrka(x) * (INTRYCK[x.k].tecken < 0 ? RYKTE.delaNeg : 1)), 'rykte', a);
+  const e = pickViktat(s, val, val.map(x => styrka(x) * (INTRYCK[x.k].tecken < 0 ? RYKTE.delaNeg : 1) * tystFaktor(s, a, x.om)), 'rykte', a); // påbudet om tystnad (steg 10.4.10)
   beratta(s, a, b, e, r);
 }
 // a berättar om intrycket e för b: b blir mindre säker, och a överdriver efter vad hen tycker om personen

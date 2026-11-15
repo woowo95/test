@@ -117,13 +117,13 @@ export interface FragaDef {
 export const FRAGOR: Record<string, FragaDef> = {
   // påbuden som finns blir de första frågorna (steg 8.3.1)
   pabud: {
-    namn: (_s, d) => `${PABUD[d.k as Pabud].namn}: ändra påbudet`, om: (_s, d) => PABUD[d.k as Pabud].text, krets: 'byn',
+    namn: (_s, d) => `${PABUD[d.k as Pabud].namn}${d.namn ? ` om ${d.namn}` : ''}: ändra påbudet`, om: (_s, d) => PABUD[d.k as Pabud].text, krets: 'byn',
     rost: (s, p, d) => {
-      const k = d.k as Pabud, egen = PABUD[k].asikt(s, p), nytt = d.v as number, gamla = s.styre?.pabud?.[k] ?? 0;
+      const k = d.k as Pabud, om = d.om as number | undefined, egen = PABUD[k].asikt(s, p, om), nytt = d.v as number, gamla = om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[k] ?? 0 : 0;
       const v = Math.abs(egen - gamla) - Math.abs(egen - nytt);
       return { v, why: v > 0 ? `Vill ha det så (${PABUD[k].namn.toLowerCase()})` : 'Tycker att det är bra som det är' };
     },
-    gor: (s, d, fram) => { const st = styreAv(s); st.pabud = { ...st.pabud, [d.k as Pabud]: d.v as number }; if (fram) log(s, `Byn gick på ${fram.name}s förslag om ${PABUD[d.k as Pabud].namn.toLowerCase()}.`, 'world', [fram.id]); },
+    gor: (s, d, fram) => { const st = styreAv(s); st.pabud = { ...st.pabud, [d.k as Pabud]: d.v as number }; if (d.om !== undefined) st.tystnad = { id: d.om as number, namn: d.namn as string }; if (fram) log(s, `Byn gick på ${fram.name}s förslag om ${PABUD[d.k as Pabud].namn.toLowerCase()}.`, 'world', [fram.id]); },
   },
   minister: {
     namn: (_s, d) => `${MINISTRAR[d.post as string].namn}: ${d.namn}`, krets: 'byn',

@@ -63,7 +63,9 @@ export const styre: Flik = {
 // (steg 9.3.1; förr en del i fliken Byn, och före 3.10.16 en egen flik)
 // arbetsordningens påbud i ord (steg 9.2.123): under noll räknas som noll, och resten delas lika mellan orden efter det första
 const ordAv = (v: number, ord: string[]) => { const x = Math.max(0, v); return x < 0.05 ? ord[0] : ord[Math.min(ord.length - 1, 1 + Math.floor((x - 0.05) / (0.95 / (ord.length - 1))))]; };
-const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} dygn`;
+// tystnaden (steg 10.4.10): vem den gäller och hur hårt
+const tystVarde = (v: number) => v < 0.05 || !s.styre?.tystnad ? 'ingen' : `${s.styre.tystnad.namn} nämns ${v < 0.4 ? 'mer sällan' : v < 0.75 ? 'sällan' : 'nästan aldrig'}`;
+const varde = (k: Pabud, v: number) => k === 'tystnad' ? tystVarde(v) : k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} dygn`;
 export function pabudDel() {
   const st = s.styre, l = ledareOf(s);
   if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
