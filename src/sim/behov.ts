@@ -1,3 +1,4 @@
+import { skuldFaktor } from './skatt';
 import { SAK_ART, heligtBrutet, matBrutet } from './kultlatt';
 import { utsadeKrok } from './ratter';
 import { hans, honom } from './ord';
@@ -495,7 +496,7 @@ const enheter = (v: Vara[]) => v.reduce((x, { k, n }) => x + n * (behovMed(k)?.p
 export function behovAv(s: State, p: Person, k: string) {
   if (isTool(k)) return needsTool(s, p, k) ? DELA.saknar : ownedKind(s, p, k) > 0 && !spare(s, p, k) ? 1 : DELA.over;
   const b = behovMed(k);
-  if (!b) return DELA.over;
+  if (!b) return k === 'silver' && p.skatteskuld ? DELA.over * skuldFaktor(s, p) : DELA.over; // skatteskulden gör silvret mer värt (steg 10.5.5)
   const own = ownFor(s, p, b);
   if (b.behover(s, p) && own < b.minst) return DELA.saknar * (1 + b.fara(s, p));
   return own <= b.kvar ? 1 : DELA.over;

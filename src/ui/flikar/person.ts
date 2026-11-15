@@ -212,8 +212,9 @@ function formogenhetLista(p: Person) {
   for (const h of housesOf(s)) if (h.ag === p.id) rader.push({ ikon: '<span class="tecken">🏠</span>', namn: 'Hus', n: '1', kv: '', varde: husVarde(s, h) });
   rader.sort((a, b) => (ui.kvSort ? kvOf(b) - kvOf(a) : 0) || b.varde - a.varde); // efter kvaliteten med ett tryck på rubriken (steg 9.2.18)
   const sum = formogenhetDelar(s, p.id).sum;
-  if (!rader.length) return '<p class="muted">Äger inget.</p>';
-  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${v(sum)} sammanlagt. <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
+  const skuld = p.skatteskuld ? ` <span title="Skatten hen inte kunde betala; den läggs på nästa års skatt">Skatteskuld ${v(p.skatteskuld)}.</span>` : ''; // steg 10.5.5
+  if (!rader.length) return `<p class="muted">Äger inget.${skuld}</p>`;
+  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${v(sum)} sammanlagt.${skuld} <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
     <table class="agtab"><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
 }
 // egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras

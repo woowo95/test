@@ -1,4 +1,4 @@
-import { SKATT, skattDygn } from './skatt';
+import { SKATT, skattDygn, skattRegister } from './skatt';
 import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
 import { GASTVARD, gastVardag } from './gastvardag';
@@ -238,7 +238,7 @@ for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
   // fångstgropen (steg 10.2.84) grävdes där den ska ligga; mjärden och snaran görs vid fångstbänken och sätts ut
   if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
 };
-lagRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
+lagRegister(); skattRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart

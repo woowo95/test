@@ -1379,6 +1379,56 @@ SCENARIER.husmarknad = {
   },
 };
 
+SCENARIER.skatteskuld = {
+  text: 'Steg 10.5.5: det som fattas när skatten betalats står kvar som skuld till byn och läggs på nästa års skatt, utan ränta och utan tak. Skulden gör silvret mer värt för den som har den och sänker priset hen begär för sitt hus. Den stryks när skattelagen avskaffas, och den dödas skuld betalas före arvingarna',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s); byggare(s);
+    planBuild(s); byggKlart(s); // en sovsal åt alla
+    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+    const b = ppl.find(q => q.id === a.partner)!;
+    nyInvanare(s, 'm', 30); const d = living(s)[living(s).length - 1]; // en ensam husägare utan lösa saker
+    const h = housesOf(s)[0];
+    h.ag = d.id; h.fn = 'familjehus'; touch(s);
+    for (const t of tingOf(s)) if (t.agare === d.id) t.agare = BYN;
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: a.id, om: '' }] } as unknown as State['styre'];
+    const silverVarde0 = SIM.behovAv(s, d, 'silver'), pris0 = SIM.saljPris(s, h);
+    SIM.skattDygn(s, DAY); const skuld1 = d.skatteskuld ?? 0;
+    SIM.skattDygn(s, DAY); const skuld2 = d.skatteskuld ?? 0;
+    const silverVarde = SIM.behovAv(s, d, 'silver'), pris = SIM.saljPris(s, h);
+    // en familj utan hus köper, med silver nog för det lägre priset men inte för det förra
+    put(s, 'silver', Math.ceil(pris) + 10, { [b.id]: Math.ceil(pris) + 10 });
+    planBuild(s);
+    for (let i = 0; i < 48 && h.ag !== a.id; i++) kor(s, 1);
+    const kopt = h.ag === a.id, salde = (s.hist?.kronika ?? []).some(k => k[1] === `${d.name} sålde sitt hus för att betala skatten.`);
+    const skuldKopt = d.skatteskuld ?? 0, silverD = ownsAmount(s, d, 'silver');
+    SIM.skattDygn(s, DAY);
+    const betald = (d.skatteskuld ?? 0) < Math.max(skuldKopt, 1e-9) && ownsAmount(s, d, 'silver') < silverD;
+    // skulden stryks när lagen tas bort
+    d.skatteskuld = 50;
+    SIM.FRAGOR.bortlag.gor(s, { id: 'skatt' }, undefined);
+    const struken = d.skatteskuld === undefined;
+    // den dödas skuld betalas före arvingarna: a äger silver och har barnet c
+    s.styre!.lagar = [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: a.id, om: '' }];
+    a.partner = undefined; b.partner = undefined;
+    const aSilver = ownsAmount(s, a, 'silver'), c0 = ownsAmount(s, c, 'silver');
+    put(s, 'silver', 200, { [a.id]: 200 }); // (gravgåvan tar sin del först)
+    a.skatteskuld = 12;
+    die(s, a, 'drap');
+    const arv = ownsAmount(s, c, 'silver') - c0;
+    return [
+      [`en husägare utan lösa saker får en skuld som växer (${skuld1.toFixed(1)} → ${skuld2.toFixed(1)} på två år)`, skuld1 > 0 && skuld2 > skuld1 * 1.5],
+      [`hen värderar silver högre (${silverVarde0.toFixed(2)} → ${silverVarde.toFixed(2)})`, silverVarde > silverVarde0],
+      [`husets lägsta pris sjunker (${Math.round(pris0)} → ${Math.round(pris)})`, pris < pris0],
+      ['och en familj utan hus köper det', kopt],
+      ['krönikan skriver att hen sålde sitt hus för att betala skatten', salde],
+      [`efter köpet betalas skulden (${skuldKopt.toFixed(1)} → ${(d.skatteskuld ?? 0).toFixed(1)})`, betald],
+      ['skulden stryks när lagen tas bort', struken],
+      [`den dödas skuld betalas före arvingarna (byn fick ${Math.round(s.stat?.skuldDod ?? 0)}, barnet ärvde ${arv} silver av ${aSilver + 200})`, Math.abs((s.stat?.skuldDod ?? 0) - 12) <= 0.5 && arv > 0 && a.skatteskuld === undefined && s.log.findIndex(e => e.text.includes('skatteskuld')) < s.log.findIndex(e => e.text.includes(`ärvde`) && e.text.includes(a.name))],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {

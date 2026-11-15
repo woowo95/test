@@ -16,6 +16,7 @@ import { payable } from './behov';
 import { ownMove, ownedStock } from './lager';
 import { Ting, tingOf } from './agande';
 import { BYN } from './egendom';
+import { skuldKrok } from './liv';
 
 export const SKATT = balans('skatt', {
   procent: 0.05, // så stor del av förmögenheten betalas per dygn (år i spelet)
@@ -24,6 +25,8 @@ export const SKATT = balans('skatt', {
   hogGanger: 2, // över den övre ribban är procenten så många gånger högre (steg 10.5.4)
   miss: 0.05, // den som betalar en högre procent än hen tycker är rätt blir så här mycket missnöjd per dygn, gånger den del som ligger över
   lutar: 0.5, // så mycket lutningen mot Sammanhållning flyttar den procent var och en vill ha
+  skuldMiss: 0.05, // skulden gör så här missnöjd per dygn, gånger skulden delat med förmögenheten (högst 1) (steg 10.5.5)
+  skuldMax: 2, // silvret blir högst så här mycket mer värt för den som har en skuld, efter skulden mot det lösa hen äger
 });
 
 // en sak man kan betala med: värdet per styck, hur många och hur de lämnas till byn
@@ -100,7 +103,6 @@ const ALDERN: LagTalDef = {
   namn: 'åldern', sym: '⌛', stege: [14, 16, 18, 20], start: SKATT.alder, visa: v => `${v} år`,
   vill: (s, p) => ageOf(p, s.now) < 20 || living(s).some(c => isParent(p, c) && ageOf(c, s.now) >= 14 && ageOf(c, s.now) < 20) ? 20 : 18,
 };
-LAGAR.skatt.tal = { procent: PROCENT, alder: ALDERN, undre: UNDRE, ovre: OVRE };
 
 // vad p ska betala för tiden dt (i spelets tid): procenten av det över den undre ribban, och den dubbla över den övre
 export function skattAv(s: State, p: Person, dt: number) {
@@ -110,20 +112,49 @@ export function skattAv(s: State, p: Person, dt: number) {
 }
 export const betalarSkatt = (s: State, p: Person) => !p.gast && ageOf(p, s.now) >= lagTal(s, 'skatt', 'alder');
 
+// ---------- skulden (steg 10.5.5) ----------
+// det som fattas står kvar som skuld till byn och läggs på nästa års skatt, utan ränta och utan tak. Skulden gör silvret mer
+// värt för den som har den (behovAv), och säljaren nöjer sig med ett lägre pris för sitt hus (saljPris i byggplan.ts)
+export function skuldFaktor(s: State, p: Person) {
+  if (!p.skatteskuld) return 1;
+  const f = formogenhetDelar(s, p.id), losa = f.redskap + f.klader + f.forrad;
+  return 1 + Math.min(SKATT.skuldMax, p.skatteskuld / Math.max(1, losa));
+}
+// den döda betalar skulden ur det hen ägde, efter gravgåvan och före arvet; resten stryks (liv.ts)
+export function skuldVidDoden(s: State, p: Person) {
+  if (!p.skatteskuld) return;
+  // (betalningen görs som om hen ännu ägde: förrådet stryker de dödas andelar i de stackar som ändras, och det är arvingarnas)
+  const dog = p.died; p.died = undefined;
+  const v = betala(s, p, p.skatteskuld);
+  p.died = dog;
+  if (v > 0) { count(s, 'skattVarde', v); count(s, 'skuldDod', v); log(s, `Byn tog saker värda ${Math.round(v)} för ${p.name}s skatteskuld.`, 'death', [p.id]); }
+  delete p.skatteskuld;
+}
+export const struken = (s: State) => { for (const p of s.people) delete p.skatteskuld; };
+
 // en gång per dygn (TAKTER, klockan SKATT.timme), också i en by utan ledare; dt = tiden sedan sist i spelets tid
 export function skattDygn(s: State, dt: number) {
   const lag = s.styre?.lagar?.find(l => l.id === 'skatt');
-  if (!lag || !lagGaller(s, 'skatt')) return;
+  if (!lag || !lagGaller(s, 'skatt')) { if (s.people.some(p => p.skatteskuld)) struken(s); return; }
   const tid = Math.min(dt, s.now - lag.t);
   if (tid <= 0) return;
   let sum = 0;
   const pr = lagTal(s, 'skatt', 'procent');
   for (const p of living(s)) if (betalarSkatt(s, p)) {
-    sum += betala(s, p, skattAv(s, p, tid));
+    const ska = skattAv(s, p, tid) + (p.skatteskuld ?? 0), gav = betala(s, p, ska), w = formogenhetDelar(s, p.id).sum;
+    sum += gav;
+    if (ska - gav > 1e-9) p.skatteskuld = ska - gav; else delete p.skatteskuld; // det som fattas blir skuld (steg 10.5.5)
+    if (p.skatteskuld) p.missnoje = clamp((p.missnoje ?? 0) + SKATT.skuldMiss * Math.min(1, p.skatteskuld / Math.max(1, w)) * tid / DAY, 0, 1);
     const vill = PROCENT.vill(s, p); // den som betalar mer än hen tycker är rätt blir missnöjd (steg 10.5.4)
     if (pr > vill) p.missnoje = clamp((p.missnoje ?? 0) + SKATT.miss * (pr - vill) / pr * tid / DAY, 0, 1);
   }
   if (sum <= 0) return;
   count(s, 'skattVarde', sum);
   log(s, `Skatten gav byns förråd saker värda ${Math.round(sum)}.`, 'world');
+}
+
+// lagens tal och skulden vid döden läggs till när allt är laddat (steg.ts)
+export function skattRegister() {
+  LAGAR.skatt.tal = { procent: PROCENT, alder: ALDERN, undre: UNDRE, ovre: OVRE };
+  skuldKrok.f = skuldVidDoden;
 }
