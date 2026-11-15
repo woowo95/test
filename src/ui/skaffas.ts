@@ -16,7 +16,7 @@ const ARBETE: Record<string, string> = {
 const HITTAS: Record<string, string> = {
   ratlin: 'Odlas på fältet', linfron: 'Köps av handlaren, och kommer tillbaka vid skörden', lin: 'Rötas på torkställningen', vargtand: 'Fås när en varg slaktas',
   torrgras: 'Hittas när man samlar', sten: 'Hittas när man samlar, mest vid stenarna och i sanden',
-  flinta: 'Hittas ibland när man samlar, mest vid stenarna', lera: 'Grävs vid stranden, fortare med benspaden', kol: 'Blir kvar när en eld brunnit ut',
+  flinta: 'Hittas ibland när man samlar, mest vid stenarna', lera: 'Grävs vid stranden, fortare med benspaden', byggsten: 'Bryts vid berget och körs hem på kälken eller släden', kol: 'Blir kvar när en eld brunnit ut',
   rovor: 'Odlas på fältet', arter: 'Odlas på fältet', silver: 'Fås av handlaren',
   honung: 'Tas ur vildbinas bon i skogen på sommaren och hösten', // steg 10.7.25
   appel: 'Plockas från äppelträden på fältet', appelplanta: 'Köps av handlaren', notter: 'Plockas av den vilda hasseln på hösten, och av hassel som satts', // steg 9.7.13–9.7.14
@@ -40,7 +40,7 @@ const ANVANDS: Record<string, string[]> = {
   rokelse: ['Bönen och ritualerna'], brannolja: ['Lamporna, senare'],
   mjarde: ['Sätts ut i vattnet'], snara: ['Sätts ut i skogen'], grop: ['Grävs i skogen'], plankor: ['Golv och möbler, senare'], salva: ['Läkekonsten, senare'], tjara: ['Skyddar trä, senare'], benlim: ['Limmar trä, senare'], tval: ['Tvätta sig, senare'], ratlin: ['Rötas på torkställningen'], linfron: ['Sås på fälten'], leksak: ['Barnen leker med den'], huggen_sten: ['Härden'], rolleka: ['Salva'],
   naverask: ['Salvan och limmet'], remsa: ['Förband'], nal: ['Sy ihop ett stort sår'], bagborr: ['Tänder elden'], kalke: ['Drar hem virket och det tunga'], slade: ['Dras av oxen eller hästen med det tunga'], levoxe: ['Blir byns oxe'], levhast: ['Blir byns häst'], krycka: ['Den som förlorat ett ben'], traben: ['Den som förlorat ett ben'], krok: ['Den som förlorat en hand'], ogonlapp: ['Den som förlorat ett öga'], lerkruka_liten: ['Pynt, och senare kokkärl'], lerkruka_mellan: ['Pynt, och senare vattenkärl'], lerkruka_stor: ['Pynt, och senare förvaring'],
-  torrgras: ['Tänder elden'], naver: ['Tänder elden'], flinta: ['Tänder elden'], sten: ['Eldringen'], mossa: ['Förband'], silver: ['Handel'],
+  torrgras: ['Tänder elden'], naver: ['Tänder elden'], flinta: ['Tänder elden'], sten: ['Eldringen'], byggsten: ['Stenvägar och stenväggar'], mossa: ['Förband'], silver: ['Handel'],
   vilt: ['Slaktas'], varg: ['Slaktas'], vargdel: ['Slaktas'], radjur: ['Slaktas'], fagel: ['Slaktas'], fjadrar: ['Pilar och prydnader senare'], radjurdel: ['Slaktas'], vildsvin: ['Slaktas'], vildsvindel: ['Slaktas'], svinkott: ['Mat'], svinskinn: ['Kläder'], radjursskinn: ['Handel'], bjorn: ['Slaktas'], bjorndel: ['Slaktas'], abborre: ['Rensas'],
   slaktfar: ['Slaktas'], slaktget: ['Slaktas'], djurhorn: ['Handel'], fiskrens: ['Agn och mat åt hunden'], skara: ['Slår ängen till hö'], // djuren (system 9.8)
   levfar: ['Blir byns får'], levget: ['Blir byns get'], levko: ['Blir byns ko'], slaktko: ['Slaktas'], kohud: ['Kläder'], levhons: ['Blir byns höns'],

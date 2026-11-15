@@ -176,3 +176,37 @@ SCENARIER.vildsvin = {
     ];
   },
 };
+
+SCENARIER.byggsten = {
+  text: 'Steg 10.10.5: byggstenen. Den bryts vid berget när Byggplanen planerat något av sten, blir liggande där eftersom ingen orkar bära den, och körs hem på kälken, en i taget, eller på släden: fyra med hästen och sex med oxen. Utan kälke eller släde blir stenen liggande',
+  kor: () => {
+    const { STENBEHOV, FORDON, lassAv, fordonTar, newTing, BYN, living, ageOf, ALDER, amountOf, bergPlats, stenFrakt, TEK } = SIM;
+    const tek = TEK.byggsten;
+    const by = (medKalke: boolean) => {
+      const s = createState(3, START); klockan(s, 8);
+      for (const p of living(s)) if (ageOf(p, s.now) >= ALDER.vuxen) p.tek = { ...p.tek, byggsten: 1 };
+      const m = SIM.bynsMitt(s);
+      if (medKalke) { const g = newTing(s, 'kalke', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y); }
+      const frakt = stenFrakt(s);
+      let tim = 0;
+      for (; tim < 24 && !(medKalke ? amountOf(s, 'byggsten') >= 1 : (s.stat?.byggstenBruten ?? 0) >= 1); tim++) kor(s, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno: 0 } as typeof x.vader; });
+      kor(s, 1);
+      const liggande = (s.stackar ?? []).filter(q => q.k === 'byggsten').reduce((a, q) => a + q.n, 0);
+      return { tim, frakt, bruten: s.stat?.byggstenBruten ?? 0, hemma: amountOf(s, 'byggsten'), liggande, turer: s.stat?.fordonTur_kalke ?? 0 };
+    };
+    STENBEHOV.scenario = () => 2;
+    let med, utan, inget;
+    try { med = by(true); utan = by(false); } finally { delete STENBEHOV.scenario; }
+    { const s = createState(3, START); inget = SIM.materialBuffert(s, 'byggsten'); }
+    const sv = createState(3, START), ber = bergPlats(sv);
+    const hast = fordonTar(lassAv(FORDON.slade, { art: 'hast' } as SIM.Tamdjur), 'byggsten'), oxe = fordonTar(lassAv(FORDON.slade, { art: 'oxe' } as SIM.Tamdjur), 'byggsten'), kalke = fordonTar(lassAv(FORDON.kalke), 'byggsten');
+    return [
+      [`tekniken Byggsten kräver stenhuggarplatsen och stockvägen (${tek.krav.join(', ')})`, tek.krav.includes('stenhuggarplats') && tek.krav.includes('stockvag')],
+      [`stenen väger mer än någon orkar bära (${SIM.viktOf('byggsten')}) och bryts på en ruta intill berget`, SIM.viktOf('byggsten') > 30 && !!ber && SIM.GRANNAR4.some(([dx, dy]) => SIM.groundOf(sv).tiles[(Math.floor(ber!.y) + dy) * SIM.W + Math.floor(ber!.x) + dx] === SIM.T.Sten)],
+      [`utan något planerat av sten vill byn inte ha någon (${inget})`, inget === 0],
+      [`kälken tar en sten, släden fyra med hästen (${hast}) och sex med oxen (${oxe})`, kalke === 1 && hast === 4 && oxe === 6],
+      [`med kälken bröts ${med.bruten} och ${med.hemma} kördes hem på ${med.turer} turer (${med.tim} h)`, med.bruten >= 1 && med.hemma >= 1 && med.turer >= 1],
+      [`utan kälke bröts ${utan.bruten}, och ${utan.liggande} ligger kvar vid berget (${utan.hemma} hemma); frakten går inte (${utan.frakt})`, utan.bruten >= 1 && utan.hemma === 0 && utan.liggande >= 1 && utan.frakt === Infinity && med.frakt < Infinity],
+    ];
+  },
+};

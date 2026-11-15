@@ -1,5 +1,6 @@
 import { eldKan } from './stationseld';
 import { LERA, leraBrist, leraPlats } from './lera';
+import { BYGGSTEN, bergPlats } from './byggsten';
 import { Act, Person, State } from './typer';
 import { familjOf } from './folk';
 import { omtanke } from './omtanke';
@@ -82,6 +83,7 @@ export const PROJEKT_TAL = balans('projekt', {
   virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   stubbe: 1, // ... att gräva bort stubbarna där något ska byggas (steg 6.5.7, skog.ts)
   plantera: 0.6, // ... att flytta plantor när de närmaste träden att fälla står långt bort (steg 6.5.2, skogsvard.ts)
+  byggsten: 0.5, // ... byggstenen när Byggplanen planerat något av sten (steg 10.10.5, byggsten.ts)
   lera: 0.5, // ... leran när förrådet saknar den byn gör av med (steg 9.4.10, lera.ts)
   stationFlytt: 0.4, // ... att flytta en station ute närmare dem som använder den (steg 9.4.8, stationer.ts)
   lagerFlytt: 0.4, // ... att flytta en lagerplats närmare byns mitt (steg 9.4.7, lager.ts)
@@ -250,6 +252,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => LAGER.flyttMin / 60 * ARBETE,
     kan: (s, p) => ageOf(p, s.now) >= ALDER.vuxen && !!lagerFlyttVal(s) && enTill(s, 'flyttLager', p),
     uppgift: s => { const v = lagerFlyttVal(s); return v && { act: 'flyttLager', text: 'Märker ut en ny lagerplats närmare byns mitt.', min: LAGER.flyttMin, spot: { x: v.ny.x + v.ny.w / 2, y: v.ny.y + v.ny.h / 2 } }; },
+  },
+  // byggstenen (steg 10.10.5, byggsten.ts): bryts vid berget när Byggplanen planerat något av sten; det som ligger i högarna där räknas med
+  byggsten: {
+    namn: 'Byggsten', vikt: PROJEKT_TAL.byggsten,
+    brist: s => { const n = materialBuffert(s, 'byggsten'); return n > 0 ? clamp(1 - (amountOf(s, 'byggsten') + (s.stackar ?? []).filter(q => q.k === 'byggsten').reduce((a, q) => a + q.n, 0)) / n, 0, 1) : 0; },
+    kostnad: () => grundvarde('byggsten'),
+    kan: (s, p) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'byggsten') && enTill(s, 'bryta', p) && !!bergPlats(s),
+    uppgift: s => { const at = bergPlats(s); return at && { act: 'bryta', text: 'Bryter en byggsten vid berget.', min: BYGGSTEN.min, spot: at }; },
   },
   // leran (steg 9.4.10, lera.ts): en tur vid stranden när förrådet saknar den byn gör av med
   lera: {

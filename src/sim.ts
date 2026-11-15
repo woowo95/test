@@ -60,6 +60,7 @@ export * from './sim/torst';
 export * from './sim/odling';
 export * from './sim/tamdjur';
 export * from './sim/fordon';
+export * from './sim/byggsten';
 export * from './sim/hage';
 export * from './sim/boskap';
 export * from './sim/slatter';

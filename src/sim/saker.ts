@@ -74,6 +74,7 @@ const DEF = {
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', haller: 2, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true },
+  byggsten: { namn: 'Byggsten', ett: true, skaffa: { act: 'bryta', tek: 'byggsten' }, vikt: 40, lyft: true, stack: 4, mapp: 'Sten', brinnerInte: true }, // steg 10.10.5: bryts vid berget och körs hem på kälken eller släden (byggsten.ts)
   // proteserna (steg 9.5.11, protes.ts): den som förlorat en del får en när byn har en ledig, och har den på sig
   krycka: { namn: 'Krycka', skaffa: RECEPT.krycka, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krycka gick sönder.' }, gors: { text: 'Täljer en krycka.', stat: 'kryckorGjorda', forsta: '{namn} täljde byns första krycka. Med den kan den som förlorat ett ben gå igen.' } },
   traben: { namn: 'Träben', skaffa: RECEPT.traben, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s träben gick sönder.' }, gors: { text: 'Täljer ett träben och binder fast remmar av rep.', stat: 'trabenGjorda', forsta: '{namn} täljde byns första träben.' } },

@@ -9,6 +9,7 @@
 // det som projekten och bygget väntar på. Taket är materialMatt gånger bufferten, aldrig mer än lagerplatserna rymmer. Under
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
+import { stenTillPlan } from './byggsten';
 import { tamArt, tamdjurOf } from './tamdjur';
 import { SKRIFT } from './skriftTal';
 import { trosMobelBrist } from './troshus';
@@ -140,6 +141,7 @@ export const MATERIALMAL = {
   sten: { min: () => 0 },
   flinta: { min: s => (nTools(s, 'bagborr') > 0 ? 0 : TROSKEL.flintaMinsta) + flintaKrok.verktyg(s) }, // med en bågborr behövs ingen flinta till elden (steg 10.6.13), // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
   virke: { min: s => virkeTillHus(s) }, // det husen i Byggplanen behöver, också de som inte är påbörjade (steg 10.2.70)
+  byggsten: { min: s => stenTillPlan(s) }, // det Byggplanen planerat av sten (STENBEHOV i byggsten.ts, steg 10.10.5)
   lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
   rep: { min: () => VILLTAL.repMin }, /* repet går åt till redskapen innan någon förbrukning hunnit räknas: några att börja med */ mossa: { min: () => 1 }, salva: { min: () => 1 }, tjara: { min: () => 1 }, benlim: { min: () => 1 }, tval: { min: () => 1 },

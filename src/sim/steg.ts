@@ -3,6 +3,7 @@ import { budgetDygn, budgetRegister } from './budget';
 import { bynamnRegister } from './bynamn';
 import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
+import { stenBruten } from './byggsten';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
 import { personHand } from './personlogg';
@@ -314,6 +315,7 @@ KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
 KLAR.uppsatt = (s, p, t) => finishUppsatt(s, p, t);
 KLAR.flyttStation = s => { stationFlytta(s); }; // en station ute närmare dem som använder den (stationer.ts, steg 9.4.8)
 KLAR.flyttLager = s => { const v = lagerFlyttVal(s); if (v) lagerFlytta(s, v.z, v.ny); }; // en lagerplats närmare byns mitt (lager.ts, steg 9.4.7)
+KLAR.bryta = stenBruten; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5)
 KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, steg 9.4.10)
 KLAR.stubbe = stubbeGravd; // stubben är bortgrävd och blir lite trä (skog.ts, steg 6.5.7)
 KLAR.plantera = plantaUppgravd; // plantan är uppgrävd och bärs till platsen (skogsvard.ts, steg 6.5.2)
