@@ -1803,6 +1803,8 @@ const MDEF = {
     { t: 'Det blev dragkamp i byn: {n} drog i repet.', om: f => f.sport === 'dragkamp' },
     { t: '{Spelare} kastade mot målet i tur och ordning.', om: f => f.sport === 'kast' },
     { t: 'Det blev kast mot mål i byn, och {n} ställde upp.', om: f => f.sport === 'kast' },
+    { t: '{Spelare} ställde sig på en rad med var sin båge och sköt mot målet.', om: f => f.sport === 'bagskytte' }, // steg 10.7.21
+    { t: 'Det blev bågskytte i byn, och {n} skyttar spände sina bågar.', om: f => f.sport === 'bagskytte' },
     { t: '{Spelare} gjorde snöbollar och kastade dem på varandra.', om: f => f.sport === 'snoboll' },
     { t: 'Det blev snöbollskrig i byn, med {n} som kastade.', om: f => f.sport === 'snoboll' },
     { t: '{Spelare} spelade boll i byn.', om: f => f.sport === 'bollspel' },

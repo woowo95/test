@@ -214,7 +214,7 @@ SCENARIER.matchpublik = {
   },
 };
 SCENARIER.sportsaker = {
-  text: 'Sportens föremål (steg 4.3.1.2): byn gör ett mål, en boll och ett slagträ när den har vuxna nog, föremålen slits när man spelar, och den som vunnit flest matcher i en sport får det i sitt eftermäle',
+  text: 'Sportens föremål (steg 4.3.1.2): byn gör ett mål, en boll och ett slagträ när den har vuxna nog, föremålen slits när man spelar, och den som vunnit flest matcher i en sport får det i sitt eftermäle. Sporterna är rader i registret, och bågskyttet (steg 10.7.21) spelas med var sin egen båge, som slits',
   kor: () => {
     const s = rikDag(3, { rep: 4 });
     const vill = ['mal', 'boll', 'slagtra'].map(k => SIM.villAv(s, k));
@@ -229,7 +229,23 @@ SCENARIER.sportsaker = {
       if (i < 5) s.now += 20 * SIM.HOUR;
     }
     const mal = (s.ting ?? []).find(t => t.k === 'mal');
+    // bågskyttet (steg 10.7.21): med var sin egen båge, målet och pilarna; utan egen båge går ingen med
+    const bs = rikDag(3), [x1, x2, x3] = vuxna(bs) as [Person, Person, Person];
+    SIM.newTing(bs, 'mal', 1, SIM.BYN); SIM.setAmount(bs, 'pilar', 10);
+    for (const t of (bs.ting ?? []).filter(t => t.k === 'bage')) t.agare = SIM.BYN; // ingen äger en båge
+    const lanad = SIM.newTing(bs, 'bage', 1, SIM.BYN);
+    match(bs, 'bagskytte', [x1, x2]); const utanB = [x1, x2].filter(q => q.task?.act === 'sport').length;
+    bs.sport = undefined; lanad.agare = x3.id;
+    const bagar = [x1, x2].map(q => SIM.newTing(bs, 'bage', 1, q.id)), traff0 = x1.skill.traff + x2.skill.traff;
+    klockan(bs, 10); tandEld(bs); match(bs, 'bagskytte', [x1, x2]);
+    const namn = x1.task ? SIM.taskName(x1.task) : '';
+    kor(bs, 1.5);
+    const bm = bs.matcher?.find(x => x.k === 'bagskytte'), slit = bagar.filter(t => t.c < 1).length, traff1 = x1.skill.traff + x2.skill.traff;
+    const radOk = SIM.SPORTER.every(d => SIM.ACTS.sport.verktyg?.[d.id] === d.gor && SIM.ACTS.titta.verktyg?.[d.id] === d.titta && !!SIM.UPPSTALL[d.upp]);
     return [
+      ['varje sport är en rad: uppgiftens namn, uppställningen och bilden står i registret', radOk],
+      [`utan egen båge går ingen med i bågskyttet (${utanB} gick med)`, utanB === 0],
+      [`bågskyttet blev av (${bm?.k ?? 'ingen'}, ${namn}): ${slit} av två bågar slitna, träffsäkerheten ${traff0.toFixed(2)} → ${traff1.toFixed(2)}`, bm?.k === 'bagskytte' && namn === 'Skjuter mot målet' && slit === 2 && traff1 > traff0],
       [`byn vill ha ${vill.join(', ')} av målet, bollen och slagträet`, vill.every(n => n === 1)],
       [`utan föremålen kan byn inte spela ${utan.join(' och ')}`, utan.includes('kast') && utan.includes('bollspel')],
       [`${a.name} vann ${a.sportVinst?.kast ?? 0} av ${matcher} matcher i kast, ${b.name} ${b.sportVinst?.kast ?? 0}`, (a.sportVinst?.kast ?? 0) >= 5 && (a.sportVinst?.kast ?? 0) > (b.sportVinst?.kast ?? 0)],
