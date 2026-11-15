@@ -53,6 +53,7 @@ export const RYKTE = balans('rykte', {
   glomMinne: 2,
   glomTung: 3, // ... en allvarlig händelse (vikt minst tungVikt) glöms så här många gånger långsammare
   tungVikt: 0.5,
+  bedriftDygn: 3, // en mindre bedrift tar efter så här många dygn platsen efter en större (p.bedrift, steg 10.6.1)
   glomGrans: 0.06, // ett intryck som blivit svagare än så här (styrka × säkerhet) är glömt
   paminnGlom: 3, paminnDygn: 2, // efter en påminnelse (besöket vid graven, steg 10.4.8) bleknar minnet av en död så här många gånger långsammare i så många dygn
   dodGlom: 2, // minnet av en död bleknar så här många gånger långsammare, och mer ju ryktbarare hen var: + ryktbarhet / dodRykte
@@ -244,6 +245,8 @@ export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sa
   const d = HANDELSER[h];
   const b: Bevis = { h, t: s.now, ...(offer ? { mot: offer.id, motNamn: offer.name } : {}), ...(sak ? { sak } : {}), sett: true };
   count(s, 'rykte_' + h);
+  // en egen bedrift (steg 10.6.1): den största av de senaste blir kvar, och stoltheten över den ger lust att resa en runsten (skrift.ts)
+  if (d.prestation && (!p.bedrift || d.vikt >= HANDELSER[p.bedrift.h].vikt || s.now - p.bedrift.t > RYKTE.bedriftDygn * DAY)) p.bedrift = { h, t: s.now, ...(offer ? { mot: offer.id, motNamn: offer.name } : {}), ...(sak ? { sak } : {}) };
   for (const q of bara ? [bara] : vittnen(s, p, offer)) intryck(s, q, p, d.i, d.vikt * ganger, q === offer ? RYKTE.offerSaker : RYKTE.sjalvSaker, { ...b }, undefined, 0, q === offer, !!d.prestation);
   if (offer && d.i === 'valdsam') budTillfalle(s, 'skadad', offer, p); // hämnd är en plikt (budet, steg 8.6.6)
 }
@@ -429,6 +432,7 @@ export function glomRykten(s: State, hours: number) {
   const avbildad = new Set<number>(); // de som sakerna i byn visar (steg 4.3.3)
   for (const t of s.ting ?? []) if (t.ber?.mo) avbildad.add(t.ber.mo.om);
   for (const t of s.stationer ?? []) if (t.ber?.mo) avbildad.add(t.ber.mo.om);
+  for (const r of s.runstenar ?? []) if (r.slag === 'minne') avbildad.add(r.om.id); // den som står på en runsten glöms långsammare (steg 10.6.1)
   for (const p of s.people) {
     if (!p.intryck) continue;
     if (!alive(p)) { delete p.intryck; continue; }
@@ -449,6 +453,11 @@ export function glomRykten(s: State, hours: number) {
   }
 }
 // en påminnelse om en död (steg 10.4.8): minnet bleknar långsammare en tid (RYKTE.paminnGlom). Gravtexten, runstenen och boken använder den med 10.6.15
+// den som läser en skrift (steg 10.6.1, skrift.ts) får intrycket i andra hand: beviset b om personen om, med skrivaren som källa
+export function lasIntryck(s: State, q: Person, om: { id: number; namn: string }, b: Bevis, src: number, del: number) {
+  const d = HANDELSER[b.h];
+  intryck(s, q, { id: om.id, name: om.namn }, d.i, d.vikt * del, RYKTE.sjalvSaker, { ...b, sett: undefined } as Bevis, src, 1, false, !!d.prestation);
+}
 export function paminn(s: State, p: Person, vem: number) { (p.paminnd ??= {})[vem] = s.now; }
 export const intryckStyrka = (e: Intryck) => styrka(e);
 

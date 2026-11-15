@@ -1016,6 +1016,53 @@ SCENARIER.gravtext = {
     ];
   },
 };
+SCENARIER.runsten = {
+  text: 'Steg 10.6.1: runstenen. Den som sörjer en nära anhörig och kan hugga sten reser en sten med 3 huggna stenar på byns kant; den som går förbi läser den och får intrycket i andra hand, den döda glöms långsammare, stenen står kvar för elden och för allt som byggs, och utan sorg eller bedrift reses ingen',
+  kor: () => {
+    const a = medLedare(), s = a.s, d = a.v[1], w = a.v[2], annan = a.v[3];
+    klockan(s, 8); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'huggen_sten', 3);
+    for (const p of a.v) (p.tek ??= {}).stenhuggarplats = 1;
+    if (w.partner !== undefined) { const o = SIM.byId(s, w.partner); if (o) o.partner = undefined; w.partner = undefined; }
+    if (d.partner !== undefined) { const o = SIM.byId(s, d.partner); if (o) o.partner = undefined; d.partner = undefined; }
+    SIM.pair(s, w, d, true);
+    SIM.handelse(s, d, 'bjorndodare', undefined, undefined, w, 2);
+    const utan = SIM.runstenLust(s, annan) === undefined && SIM.runstenLust(s, w) === undefined;
+    SIM.die(s, d, 'alderdom');
+    const lust = SIM.runstenLust(s, w);
+    const ingenBedrift = () => { for (const p of SIM.living(s)) p.bedrift = undefined; }; // det som kommer på något under tiden vill resa en sten om det
+    korTills(s, () => !!s.runstenar?.length, 72 * 3600, () => { ingenBedrift(); for (const g of s.gravar ?? []) g.ovardig = true; }); // graven får ingen vård och ingen gravtext, som annars tar lusten
+    const r = s.runstenar?.[0], sten = SIM.amountOf(s, 'huggen_sten');
+    // en inflyttad som aldrig kände den döda går förbi
+    const ny = nyInvanare(s, 'k', 30);
+    if (r) { ny.x = r.x + 1.5; ny.y = r.y + 0.5; }
+    ny.task = undefined; SIM.runstenTimme(s);
+    const e = ny.intryck?.find(x => x.om === d.id);
+    // den döda glöms långsammare: samma minne med och utan stenen
+    const minns = (med: boolean) => {
+      const sp = s.runstenar; if (!med) s.runstenar = []; const q = ny; q.paminnd = undefined;
+      q.intryck = [{ om: d.id, namn: d.name, k: 'bjorndodare', v: 0.6, c: 1, t: s.now }] as SIM.Person['intryck']; SIM.glomRykten(s, 72);
+      const c = q.intryck?.[0]?.c ?? 0; s.runstenar = sp; return c;
+    };
+    const med = minns(true), utanSten = minns(false);
+    // stenen står kvar: ingen station, inget hus och ingen lagerplats på rutan, och elden tar den inte
+    const kvar = !!r && !SIM.usable(s, r.x, r.y) && !SIM.stationAt(s, r.x, r.y);
+    if (r) { for (let i = 0; i < 3; i++) SIM.tand(s, r.y * SIM.W + r.x, 'blixt', 1); korTills(s, () => false, 600); }
+    const brann = !s.runstenar?.some(q => q === r);
+    // en till som varken sörjer eller har en bedrift reser ingen
+    const fore = s.runstenar?.length ?? 0; SIM.setAmount(s, 'huggen_sten', 6); korTills(s, () => false, 12 * 3600, ingenBedrift);
+    return [
+      ['utan sorg eller bedrift finns ingen lust', utan],
+      [`den som sörjer sin partner vill resa en sten (${lust?.slag} ${Math.round((lust?.w ?? 0) * 100) / 100})`, lust?.slag === 'minne' && lust.om.id === d.id],
+      [`stenen reses med 3 huggna stenar ("${r?.text}", ${r?.runor}, sten kvar ${sten})`, !!r && r.av.id === w.id && r.om.id === d.id && sten === 0 && r.text.includes('dödade en björn') && /[ᚠ-ᛪ]/.test(r.runor)],
+      ['den som reste stenen ger en notis och en rad i krönikan', !!s.notiser?.lista.some(n => n.id === 'runsten') && !!s.hist?.kronika.some(k => k[2] === 'runsten')],
+      [`en inflyttad som går förbi får intrycket i andra hand (${e?.k}, led ${e?.led}, källa ${e?.src === w.id ? 'ristaren' : e?.src})`, !!e && e.k === 'bjorndodare' && e.src === w.id && e.led === 1],
+      [`den döda glöms långsammare (säkerheten efter tre dygn ${Math.round(med * 100)} % med stenen, ${Math.round(utanSten * 100)} % utan)`, med > utanSten],
+      ['inget annat kan stå på stenens ruta', kvar],
+      ['elden tar inte stenen', !brann],
+      [`ingen sten reses utan sorg eller bedrift (${(s.runstenar?.length ?? 0) - fore} nya)`, (s.runstenar?.length ?? 0) === fore],
+    ];
+  },
+};
 // d dör, och p bär hen och begraver: kroppens väg och samlingen ur buden som gällde när hen dog (steg 10.4.5)
 function begravHela(s: State, p: Person, d: Person) {
   SIM.die(s, d, 'alderdom');
@@ -2156,7 +2203,7 @@ SCENARIER.gravbesok = {
     // minnet bleknar långsammare efter besöket
     const q = a.v.find(o => o !== p && o !== d)!, e = { om: d.id, namn: d.name, k: 'elak' as SIM.IntryckTyp, v: 1, c: 1, t: s.now };
     p.intryck = [{ ...e }]; q.intryck = [{ ...e }]; SIM.paminn(s, p, d.id);
-    SIM.glomRykten(s, 24); const cp = p.intryck?.[0]?.c ?? 0, cq = q.intryck?.[0]?.c ?? 0;
+    SIM.glomRykten(s, 72); const cp = p.intryck?.[0]?.c ?? 0, cq = q.intryck?.[0]?.c ?? 0;
     // gåvan: den minst värda av det hen får ta
     setFood(s, 0); SIM.setAmount(s, 'kott', 3); // röllekan är värd mindre än köttet
     let gavor = 0; for (let i = 0; i < 40 && !gavor; i++) { SIM.gravbesokKlar(s, p, t); gavor = g.gavor ?? 0; }

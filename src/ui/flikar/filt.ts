@@ -46,8 +46,8 @@ const varorSym = (v: { k: string; n: number }[]) => v.map(w => `<span title="${e
 function forsokHtml(b: ByteMinne) {
   if (!b.forsok?.length) return '';
   const rader = b.forsok.map((f, i) => {
-    const t = `Bud ${i + 1}: ${b.an} ville ha ${f.vill.map(w => `${w.n} ${sakNamn(w.k).toLowerCase()}`).join(', ')} och bjöd ${f.bud.map(w => `${w.n} ${sakNamn(w.k).toLowerCase()}`).join(', ')}, värt ${f.bjod} silver för ${b.bn}, som ville ha ${f.krav}. ${b.bn} sa ${f.ja ? 'ja' : 'nej'}.`;
-    return `<li class="bud ${f.ja ? 'ja' : 'nej'}" title="${esc(t)}"><span class="muted">${i + 1}</span> ${varorSym(f.vill)} ⇐ ${varorSym(f.bud)} <span class="muted">${f.bjod}/${f.krav}</span>${iconImg('silver', 12)} ${f.ja ? '{sym_handslag}' : '{sym_nej}'}</li>`;
+    const t = `Bud ${i + 1}: ${b.an} ville ha ${f.vill.map(w => `${w.n} ${sakNamn(w.k).toLowerCase()}`).join(', ')} och bjöd ${f.bud.map(w => `${w.n} ${sakNamn(w.k).toLowerCase()}`).join(', ')}, värt ${f.bjod} silver för ${b.bn}${f.tro !== undefined && f.tro !== f.bjod ? ` (${b.an} trodde ${f.tro})` : ''}, som ville ha ${f.krav}. ${b.bn} sa ${f.ja ? 'ja' : 'nej'}.`;
+    return `<li class="bud ${f.ja ? 'ja' : 'nej'}" title="${esc(t)}"><span class="muted">${i + 1}</span> ${varorSym(f.vill)} ⇐ ${varorSym(f.bud)} <span class="muted">${f.tro !== undefined && f.tro !== f.bjod ? `<s title="${esc(`${b.an} trodde ${f.tro}`)}">${f.tro}</s> ` : ''}${f.bjod}/${f.krav}</span>${iconImg('silver', 12)} ${f.ja ? '{sym_handslag}' : '{sym_nej}'}</li>`;
   }).join('');
   const r = b.rel, d = r ? r[1] - r[0] : 0;
   const rel = r ? `<p title="${esc(`Hur mycket ${b.bn} gillar ${b.an} (−100 till 100): ${r[0]} före affären, ${r[1]} efter. ${d > 0 ? 'En affär som var bra för handlaren gör hen lite vänligare.' : d < 0 ? 'Ett för dåligt bud irriterar handlaren.' : ''}`)}">{sym_hjarta_rott} ${r[0]} → ${r[1]} ${d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} ${d}` : ''}</p>` : '';

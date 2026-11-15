@@ -69,6 +69,7 @@ import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
+import { projektSaknarRakna } from './projekt';
 import { handelSteg, handlaKlar, handelsMalRakna, handelsTill, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
@@ -91,6 +92,7 @@ import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
 import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
+import { runstenBorja, runstenKlar, runstenTimme } from './skrift';
 import { avrustaKlar, gravDygn, gravKlar, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
@@ -194,6 +196,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   },
   kol: (s, p, t) => { const e = eldById(s, t.ref); if (e) takeCoal(s, p, 'hämtade', e); },
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
+  runsten: (s, p, t) => runstenBorja(s, p, t), // stenarna tas när ristningen börjar (steg 10.6.1)
   gravvard: (s, p, t) => gravvardBorja(s, p, t), // materialet tas när arbetet börjar (steg 10.4.2)
   tvinna: (s, p, _t, dtSec) => twineRope(s, p, dtSec / HOUR_S, villHaAv(s, 'rep') + handelsTill(s, 'rep')), // till bufferten plus handelsmålet (steg 10.5.13)
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); }, // äldre sparfiler: rep tvinnades i handarbetet
@@ -224,7 +227,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
   avrusta: avrustaKlar, rusta: rustaKlar,
-  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, // tron och graven (system 8.5)
+  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, runsten: runstenKlar, // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
@@ -377,6 +380,8 @@ export const TAKTER: Takt[] = [
   { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
   { namn: 'omtanken', sek: 3600, fn: s => { omtankeTimme(s); lonOmtanke(s); } },
+  { namn: 'runstenarna', sek: 3600, fn: s => runstenTimme(s) }, // de som går förbi läser stenarna (skrift.ts, steg 10.6.1)
+  { namn: 'projektens brist', sek: 3600, fn: s => projektSaknarRakna(s) }, // det byns projekt saknar, till handeln (projekt.ts, steg 10.5.17)
   { namn: 'handelsmålet', sek: 3600, fn: s => handelsMalRakna(s) }, // varorna att byta med handlaren (handel.ts, steg 10.5.13)
   { namn: 'lönen', sek: 60, fn: (s, dt) => lonRakna(s, dt) }, // timmarna för byn och missnöjet med lönen (lon.ts, steg 10.5.9) // omtanken om byn (projekt.ts, steg 10.5.2)
   { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },

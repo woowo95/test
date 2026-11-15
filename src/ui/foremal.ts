@@ -290,6 +290,7 @@ export function drawStructures(t: number) {
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
   // graven (steg 10.4.2, platshållare tills Björn valt i bildstilen): en jordhög, och vården som står på den
   for (const g of s.gravar ?? []) { gravPlats(g); if (gravSkick(s, g) < BESOK.laga) igenvuxen(g); } // den slitna graven växer igen (steg 10.4.8)
+  for (const r of s.runstenar ?? []) runstenBild(r.x, r.y); // runstenen (steg 10.6.1, platshållare tills Björn valt i bildstilen)
   for (const h of s.heliga ?? []) stubbIkoner.add(HELIGA_PLATSER[h.k].ikon, h.x * TS, h.y * TS, 1); // de heliga platserna (steg 8.5.5)
   stubbIkoner.end();
   pileIcons.end();
@@ -360,6 +361,14 @@ function igenvuxen(g: { x: number; y: number }) {
   for (const [dx, dy, c] of [[3, 10, 0x647025], [7, 12, 0x4b4f00], [11, 9, 0x647025], [5, 6, 0x898b4c], [12, 13, 0x4b4f00], [9, 4, 0x647025]] as const) gr.beginFill(c).drawRect(X + dx, Y + dy, 2, 3).endFill();
 }
 // graven som platshållare (steg 10.4.2): jordhögen, och gravstolpen, gravbrädan, stockramen, gravhuset eller gravhögen
+// runstenen (steg 10.6.1): en platshållare i paletten, en hög grå sten med ett rödmålat runband, 16 punkter per ruta
+function runstenBild(x: number, y: number) {
+  const X = x * TS, Y = y * TS, gr = structG, u = TS / 16;
+  gr.beginFill(0x3a3a34, 0.35).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill();
+  gr.beginFill(0x8a9c9e).drawPolygon([X + 5 * u, Y + TS - 2 * u, X + 4.5 * u, Y + 6 * u, X + 6 * u, Y + 2 * u, X + 10 * u, Y + 1.5 * u, X + 11.5 * u, Y + 5 * u, X + 11 * u, Y + TS - 2 * u]).endFill();
+  gr.beginFill(0x5f6e70).drawRect(X + 10 * u, Y + 4 * u, 1.5 * u, TS - 6 * u).endFill();
+  gr.lineStyle(u, 0xa8402e).moveTo(X + 6 * u, Y + TS - 3 * u).lineTo(X + 6 * u, Y + 4 * u).quadraticCurveTo(X + 8 * u, Y + 2.5 * u, X + 10 * u, Y + 4 * u).lineTo(X + 10 * u, Y + TS - 3 * u).lineStyle(0);
+}
 function gravPlats(g: { x: number; y: number; vard?: string }) {
   const X = g.x * TS, Y = g.y * TS, gr = structG;
   if (g.vard === 'gravsten') { const id = 'grav_' + (1 + (g.x * 7 + g.y * 13) % 3), b = KARTBILDER[id]!; stubbIkoner.add('kb_' + id, X + ((TS - b.w) >> 1), Y + TS - 2 - b.h, 1); return; } // en av de tre valda gravstenarna (steg 9.9.1)

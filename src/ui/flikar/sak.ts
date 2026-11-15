@@ -1,4 +1,4 @@
-import { tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, GRAVAR, gravSkick, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { runstenRubrik, tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, GRAVAR, gravSkick, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvOrd, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -61,6 +61,12 @@ function grav(i: number) {
   const g = gravAt(s, i % W, Math.floor(i / W));
   if (!g) return '<p class="muted">Graven finns inte längre.</p>';
   return `<div class="phead">${iconImg('grav', 32)}<div><h2>${esc(g.namn)}s grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}${g.stil === 'bal' ? '' : g.vard ? `, med ${GRAVAR[g.vard].namn.toLowerCase()}` : ', en jordhög'}. Begravd för ${durTxt(s.now - g.t)} sedan.</p><p class="small">${skickOrd(gravSkick(s, g))}${g.gavor ? `, ${g.gavor === 1 ? 'en gåva' : `${g.gavor} gåvor`} har lagts här` : ''}.</p>${g.text ? `<p><i>”${esc(g.text)}”</i></p><p class="small muted">Ristat av ${esc(g.textAv?.namn ?? 'någon')}.</p>` : ''}${g.med?.length ? `<p class="small">${g.stil === 'bal' ? 'Brändes med' : 'I graven'}: ${esc(g.med.map(k => sakNamn(k)).join(', '))}</p>` : ''}`;
+}
+// runstenen (steg 10.6.1): runorna överst och texten på svenska under
+function runsten(id: number) {
+  const r = s.runstenar?.find(q => q.id === id);
+  if (!r) return '<p class="muted">Stenen finns inte längre.</p>';
+  return `<div class="phead">${iconImg('huggen_sten', 32)}<div><h2>${esc(runstenRubrik(r))}</h2></div></div><p class="runor">${esc(r.runor)}</p><p><i>”${esc(r.text)}”</i></p><p class="small muted">Rest för ${durTxt(s.now - r.t)} sedan.</p>`;
 }
 function heligPlats(i: number) {
   const h = heligAt(s, i % W, Math.floor(i / W));
@@ -203,6 +209,7 @@ export const sak: Flik = {
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('H:')) return hage(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('q:')) return kvarleva(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('R:')) return runsten(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('g:')) return grav(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('h:')) return heligPlats(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));

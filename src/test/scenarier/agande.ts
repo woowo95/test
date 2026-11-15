@@ -5,7 +5,7 @@ import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, 
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { lasBy } from '../delby';
-import { rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader } from './hjalp';
+import { testBy, rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
@@ -883,7 +883,7 @@ SCENARIER.plagg = {
 };
 
 SCENARIER.bytessystem = {
-  text: 'Ett bytessystem för alla byten (steg 4.4.1.1): ett byte mellan bybor går genom samma kod som handeln med handlaren sedan gör (parter i byte.ts). Ett stort byte (ett redskap) görs på en filt där sakerna ligger en stund och skrivs i krönikan; ett litet vardagsbyte är en överlämning från hand till hand och skrivs bara i loggen. En gåva av ett redskap till ett barn och mat till den som höll på att dö skrivs i krönikan.',
+  text: 'Ett bytessystem för alla byten (steg 4.4.1.1): ett byte mellan bybor går genom samma kod som handeln med handlaren sedan gör (parter i byte.ts). Ett stort byte (ett redskap) görs på en filt där sakerna ligger en stund och skrivs i krönikan; ett litet vardagsbyte är en överlämning från hand till hand och skrivs bara i loggen. En gåva av ett redskap till ett barn och mat till den som höll på att dö skrivs i krönikan. Den som handlar för byn byter till sig det projekten saknar av bybor som har det över (steg 10.5.18).',
   kor: () => {
     const ny = () => {
       const s = createState(6, START);
@@ -921,6 +921,20 @@ SCENARIER.bytessystem = {
     ({ s, a, b } = ny());
     a.hunger = 0; a.health = 0.5; gain(s, b, 'bar', 6); getRel(s, b, a).op = 80; getRel(s, a, b).op = 80; b.pot.empati = 20;
     let dor = 0; for (let i = 0; i < 20 && !dor; i++) { askForGift(s, a, b); dor = (s.hist?.kronika ?? []).filter(k => k[2] === 'gava' && k[1].includes('höll på att dö')).length; }
+    // byn byter med invånarna (steg 10.5.18): den som handlar för byn byter till sig rep, som projekten saknar, av en bybo som har det över
+    const medRep = (ledare: boolean, rep: number) => {
+      const v = ny();
+      if (ledare) v.s.styre = { historia: [], oppna: [], sedan: v.s.now, titel: '', satt: 0, pabud: {} as never, lagar: [], ledare: v.a.id } as unknown as State['styre'];
+      else { v.a.skill.handel = 2; v.b.skill.handel = 1; v.c.skill.handel = 12; }
+      v.s.projektSaknar = { rep: { beh: 3, n: 3, b: 1 } };
+      SIM.put(v.s, 'silver', 10); if (rep) gain(v.s, v.b, 'rep', rep);
+      const f = ledare ? v.a : v.c; f.x = v.b.x; f.y = v.b.y;
+      const bybo0 = ownsAmount(v.s, v.b, 'silver');
+      askForGift(v.s, f, v.b);
+      const byn = Math.round(amountOf(v.s, 'rep') - ownsAmount(v.s, v.b, 'rep'));
+      return { byn, rep: Math.round(ownsAmount(v.s, v.b, 'rep')), fick: Math.round(ownsAmount(v.s, v.b, 'silver') - bybo0) + SIM.payable(v.s, v.b, ['rep', 'silver']).length };
+    };
+    const led = medRep(true, 5), utanLed = medRep(false, 5), utan = medRep(false, 0);
     return [
       [`ett redskap byts på en filt med sakerna från båda (${korg ? 'bytte' : 'inget byte'})`, korg && filt],
       ['det stora bytet står i loggen och i krönikan', stort],
@@ -928,6 +942,9 @@ SCENARIER.bytessystem = {
       ['ett litet byte är en överlämning från hand till hand, i loggen men inte i krönikan', litet],
       ['ett redskap som ges till ett barn står i krönikan', barnGava],
       [`mat till den som håller på att dö står i krönikan (${dor})`, dor > 0],
+      [`ledaren byter till sig rep av en bybo åt byn (byn äger ${led.byn}, bybon har ${led.rep} kvar och fick betalt)`, led.byn >= 1 && led.byn <= 3 && led.rep === 5 - led.byn && led.fick > 0],
+      [`i en by utan ledare gör den skickligaste i Handel detsamma (byn äger ${utanLed.byn})`, utanLed.byn >= 1],
+      [`en bybo utan överflöd byter inte (byn äger ${utan.byn})`, utan.byn === 0],
     ];
   },
 };
@@ -1061,7 +1078,7 @@ SCENARIER.handelsvaror = {
   },
 };
 SCENARIER.handlare = {
-  text: 'Handlare som kommer oftare ju rikare byn är (steg 4.4.1.2 och 10.2.45, handel.ts): en fattig by får vänta länge, och i en rik by kommer den första snart. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen.',
+  text: 'Handlare som kommer oftare ju rikare byn är (steg 4.4.1.2 och 10.2.45, handel.ts): en fattig by får vänta länge, och i en rik by kommer den första snart. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen. Byn köper det projekten saknar och säljer sedan sitt överflöd i samma besök, men inte det projekten behöver (steg 10.5.17).',
   kor: () => {
     const timmar = (s: State, n: number) => { for (let i = 0; i < n * 3600 / BEAT; i++) step(s, BEAT); };
     // en fattig by: handlaren kommer sällan (steg 10.2.45: ingen fast gräns, tiden följer rikedomen)
@@ -1109,9 +1126,45 @@ SCENARIER.handlare = {
       [`på kvällen går en vuxen till filten för att handla för byn (${kvVal.join(', ')})`, kvVal.includes('handla')],
       ['handlaren går hem efter några timmar och nästa besök bestäms', gick],
       ['under istiden kommer ingen handlare', istid],
+      ...byHandel(),
     ];
   },
 };
+// byn handlar för projekten (steg 10.5.17): det projekten saknar köps, och efter köpet säljer byn sitt överflöd i samma besök
+function byHandel(): [string, boolean][] {
+  const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); s.nastaHandlare = s.now; for (let i = 0; i < 2000 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
+  const vuxen = (s: State) => SIM.ledareOf(s) ?? living(s).find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)!;
+  const bas = cloneState(testBy(10));
+  // byn saknar knivar och flinta: kniven är ett projekt med brist, och flintan står i listan
+  const s = cloneState(bas), h = fram(s);
+  s.ting = tingOf(s).filter(t => !SIM.GORS.kniv.includes(t.k));
+  setAmount(s, 'flinta', 0); setAmount(s, 'torrfisk', 120); setAmount(s, 'silver', 10); // (silver att betala flintan med)
+  SIM.projektSaknarRakna(s);
+  const behov = s.projektSaknar?.flinta?.n ?? 0;
+  h.varor = [{ k: 'flinta', n: behov + 5 }]; h.silver = 40;
+  const b0 = s.stat?.handelByten ?? 0;
+  vuxen(s).skill.handel = 20; // (en skicklig som handlar för byn: affären går igenom)
+  helAffar(s, vuxen(s), true);
+  const flinta = Math.round(amountOf(s, 'flinta')), silver = Math.round(amountOf(s, 'silver')), salt = h.varor.filter(w => w.k !== 'flinta');
+  const bada = behov >= 1 && flinta >= 1 && flinta <= behov && salt.length > 0 && (s.stat?.handelByten ?? 0) - b0 === 2 && !!h.bynKlar;
+  // skinnen som plaggen väntar på säljs inte, och utan något att köpa säljer byn direkt för silver
+  const t = cloneState(bas), g = fram(t);
+  SIM.projektSaknarRakna(t);
+  const skinn = t.projektSaknar?.skinn?.beh ?? 0;
+  setAmount(t, 'skinn', skinn); setAmount(t, 'torrfisk', 120); setAmount(t, 'silver', 0);
+  SIM.projektSaknarRakna(t);
+  const utan = cloneState(t); utan.projektSaknar = undefined;
+  const annars = SIM.bynPart(utan, 30, 30).over([]).some(w => w.k === 'skinn'); // utan projekten hade byn sålt skinnen
+  g.varor = []; g.silver = 40;
+  helAffar(t, vuxen(t), true);
+  const behollSkinn = skinn >= 1 && Math.round(amountOf(t, 'skinn')) === skinn && !g.varor.some(w => w.k === 'skinn');
+  const direkt = Math.round(amountOf(t, 'silver')) >= 1 && g.varor.length > 0;
+  return [
+    [`byn köper flintan projekten saknar (${flinta} av ${behov}) och säljer sedan sitt överflöd för silver i samma besök (${silver} silver, handlaren fick ${salt.map(w => `${w.n} ${w.k}`).join(', ')})`, bada],
+    [`byn säljer inte skinnen ett plagg väntar på (${Math.round(amountOf(t, 'skinn'))} av ${skinn} kvar; utan projekten hade byn sålt dem: ${annars ? 'ja' : 'nej'})`, behollSkinn && annars],
+    [`utan något att köpa säljer byn direkt för silver (${Math.round(amountOf(t, 'silver'))} silver, handlaren fick ${g.varor.map(w => `${w.n} ${w.k}`).join(', ')})`, direkt],
+  ];
+}
 
 SCENARIER.silver = {
   text: 'Handeln med silver (steg 4.4.1.3, handel.ts): byn handlar med handlaren genom ledaren eller den äldsta vuxna, som går till filten. Byn säljer det den har gott om och köper det den saknar, i samma byte som alla andra (bytaMed), och silvret jämnar ut skillnaden. Handlaren går aldrig med på ett byte till sin nackdel och köper aldrig mer än hen kan bära: är ryggsäcken full blir det vara mot vara eller silver.',
@@ -1486,7 +1539,28 @@ SCENARIER.forhandling = {
     // många argument: högst tre i berättelsen, och irritationen kommer alltid med
     const manga = ma ? SIM.handelBerattelse(s, { ...ma, arg: ['byn', 'kemiGod', 'vanner', 'smicker', 'skicklig', 'irriterad', 'langt'] }) : '';
     const irr = /irriterad|lura mig|blev sur/.test(manga) && manga.split('. ').length <= 1 + 3 + 3;
+    // budet efter tron (steg 10.5.16): kunden räknar med det hen tror om klanens pris på skinnen hen betalar med
+    const prov = (tro: number | undefined, pris: number) => {
+      const t = createState(6, START);
+      rikBy(t); tandEld(t); setAmount(t, 'ved', 40); setAmount(t, 'grenar', 30); setAmount(t, 'torrgras', 30); t.nastaHandlare = t.now;
+      for (let i = 0; i < 40 && t.handlare?.fas !== 'handlar'; i++) { step(t, BEAT); utanVantan(t); }
+      const th = t.handlare!, kl = SIM.klanById(t, SIM.hp(t, th).gast!.klan)!;
+      th.bynKlar = true; delete th.affar;
+      for (const q of living(t)) if (q.task?.act === 'handla') q.task = undefined;
+      const q = living(t).filter(x => SIM.ageOf(x, t.now) >= SIM.ALDER.vuxen)[1];
+      th.varor = [{ k, n: 2 }]; th.silver = 20; kl.pris = { ...kl.pris, [k]: 1, skinn: pris };
+      SIM.put(t, 'skinn', 15, { [q.id]: 15 });
+      q.lardomar = tro === undefined ? undefined : [{ k: 'pris', a: kl.id, sl: 'skinn', v: tro, c: 1, t: t.now, led: 0 }];
+      helAffar(t, q);
+      const m = q.byten?.[q.byten.length - 1], l = SIM.findL(q, 'pris', kl.id, 'skinn');
+      return { tom: q.thoughts.some(x => x.text.startsWith('Gick tomhänt')), f: m?.forsok ?? [], l, ny: l?.ny === t.now, ratt: !!l && Math.abs(l.v - pris) < 1e-9 && l.c === 1 /* priset när affären gjordes; sedan sjunker det (steg 10.5.14) */, text: m ? SIM.describe(t, l!).what : '' };
+    };
+    const hog = prov(2, 1), utan = prov(undefined, 1.5), ratt = prov(1, 1);
+    const fb = (r: ReturnType<typeof prov>) => r.f.map(f => `${f.tro}/${f.bjod}/${f.krav} ${f.ja ? 'ja' : 'nej'}`).join(', ');
     return [
+      [`en bybo som tror att skinnen är värda dubbelt får tre nej, går tomhänt och har sedan rätt lärdom, som en nyhet (${fb(hog)}; trodde/bjöd/krav)`, hog.tom && hog.f.length === SIM.HANDEL.nejMax && hog.f.every(f => !f.ja && (f.tro ?? 0) > f.bjod) && hog.ratt && hog.ny],
+      [`en bybo utan lärdom där skinnen är värda 1,5 får ja på första budet och lär sig priset (${fb(utan)})`, !utan.tom && utan.f.length === 1 && !!utan.f[0].ja && utan.ratt],
+      [`med rätt lärdom går affären som förut (${fb(ratt)})`, !ratt.tom && !!ratt.f[ratt.f.length - 1]?.ja && ratt.f.every(f => f.tro === f.bjod) && !ratt.ny],
       ['handlarens filt är tom när hen lagt ut den; varorna ligger i packningen', tom],
       ['byn handlar först, genom den som handlar för byn; ingen annan går', byn],
       ['kunden frågar vad handlaren har, och handlaren svarar med varornas symboler', fraga],
