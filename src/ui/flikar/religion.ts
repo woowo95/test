@@ -6,7 +6,7 @@ import { s } from '../lage';
 import { sedBar } from './seder';
 import { omrostningar } from './styre';
 import type { Flik } from '../panel';
-import { BUD, HELIGA_PLATSER, RITUALER, budNamn, forradSum, hogtider, kyrkansForrad, planKlar, planText, troshusAv, troshusKlart, troshusNamn, prastOf, prastSort } from '../../sim';
+import { BUD, HELIGA_PLATSER, RITUALER, budNamn, forradSum, hogtider, kyrkansForrad, planKlar, planText, troshusAv, troshusKlart, troshusNamn, prastOf, prastSort, heligaStenar } from '../../sim';
 
 // det tron har: prästen, de heliga platserna och högtiderna (system 8.5)
 function kultHtml(tr: Tro) {
@@ -20,7 +20,8 @@ function kultHtml(tr: Tro) {
   if (tr.plan) rad.push(`<li title="${esc(planKlar(s, tr) ? 'Planen är klar' : 'Planen bestäms del för del i trons krets')}">📜 Trons hus${planKlar(s, tr) ? ` (${esc(troshusNamn(s, tr))})` : ''}: ${esc(planText(s, tr))}${planKlar(s, tr) ? ` · ${troshusKlart(s, tr) ? 'står klart' : troshusAv(s, tr).length ? 'byggs' : 'väntar på kyrkans egendom'}` : ''}</li>`); // planen (steg 10.3.18)
   if (forradSum(s, tr)) rad.push(`<li title="${esc(Object.entries(kyrkansForrad(s, tr)).filter(([, n]) => n >= 1).map(([k, n]) => `${Math.floor(n + 1e-9)} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(s, tr)}</li>`);
   for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">✨ Helgonet ${esc(h.namn)}</li>`);
-  if (tr.kvade) rad.push(`<li title="${esc(tr.kvade.text)}">📜 Heliga kväden</li>`);
+  const sten = heligaStenar(s, tr)[0]; // ristat på en sten (steg 10.6.2): stensymbolen, och den ristade texten vid tryck
+  if (tr.kvade) rad.push(sten ? `<li title="${esc(`Ristat: ${sten.text}`)}" tabindex="0">📜🪨 Heliga kväden</li>` : `<li title="${esc(tr.kvade.text)}">📜 Heliga kväden</li>`);
   if (s.ritual?.tro === tr.id) rad.push(`<li>Just nu: ${esc(s.ritual.namn ?? RITUALER[s.ritual.k].namn)}</li>`);
   return rad.length ? `<h3>Prästen, platserna och högtiderna</h3><ul class="rels">${rad.join('')}</ul>` : '';
 }
