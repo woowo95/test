@@ -226,6 +226,7 @@ export interface Person {
   sinnen?: number; // karisman gånger detta, när synen, hörseln eller talet är sämre (steg 8.2.2)
   svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
   omt?: number; // omtanken om byn, räknad en gång i timmen (projekt.ts, steg 10.5.2)
+  tiggde?: number; // senast hen fick mat av någon utanför familjen (steg 10.5.11, behov.ts): intrycket tiggare
   lonTim?: Record<string, number>; lonFick?: number; lonObetald?: number; // lönen (steg 10.5.9, lon.ts): timmarna för byn i år per budgetdel, den del av lönen man fått de senaste åren, och den del man inte fick i fjol
   bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; sedSkand?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
   drag?: { namn: string; v: number; t: number }; // anfallarnas tro som en dragning efter att ha svurit trohet (steg 8.8.6)

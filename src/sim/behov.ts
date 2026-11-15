@@ -73,6 +73,7 @@ export const DELA = balans('dela', {
   overflodMax: 1.3,
   gemenskapGe: 0.25, // så mycket givmildare (eller snålare) seden gör folk, vid Sammanhållning fullt ut
   rikGe: 0.7, // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
+  geFrammande: 0.15, // golvet för viljan att ge mat och ved till en främling som ber av nöd (steg 10.5.11), gånger empatin, seden och överflödet; noll för ovänner
   geBarn: 0.95, // viljan att ge till sitt barn ...
   gePartner: 0.8, // ... till sin partner ...
   geFamilj: 0.6, // ... till släkten ...
@@ -239,7 +240,7 @@ function kretsen(s: State, m: Person, har: (g: Person) => boolean, w: (g: Person
   return living(s).filter(g => g !== m && narvarande(g, m) && har(g) && !osams(s, g, m))
     .map(g => ({ g, w: w(g) })).filter(x => byte || x.w > 0).sort((a, b) => b.w - a.w || a.g.id - b.g.id).map(x => x.g);
 }
-const vilja = (s: State, m: Person, b: Behov) => (g: Person) => willing(s, g, m, ownFor(s, g, b) / b.kvar);
+const vilja = (s: State, m: Person, b: Behov) => (g: Person) => willing(s, g, m, ownFor(s, g, b) / b.kvar, true);
 // m ber den i närheten som har över och helst ger (familjen först)
 function askAround(s: State, m: Person, b: Behov) {
   const g = kretsen(s, m, g => overOf(s, g, b, m) >= b.minst, vilja(s, m, b))[0];
@@ -274,7 +275,7 @@ function delAv(s: State, g: Person, b: Behov, rest: number) {
 // m ber g om det m saknar. Ger g? (Hur gärna man ger: agande.ts)
 function gift(s: State, m: Person, g: Person, n: Behov) {
   const over = overOf(s, g, n, m);
-  if (over < n.minst || rnd(s, 'dela', g) >= willing(s, g, m, ownFor(s, g, n) / n.kvar)) return false;
+  if (over < n.minst || rnd(s, 'dela', g) >= willing(s, g, m, ownFor(s, g, n) / n.kvar, true)) return false;
   let rest = Math.min(over, n.mangd(m, s.now));
   const want = rest;
   const gavs: Vara[] = [];
@@ -286,6 +287,7 @@ function gift(s: State, m: Person, g: Person, n: Behov) {
   gavaKlar(s, personPart(s, g), personPart(s, m), gavs, n.fara(s, m) > 0); // samma överlämning och rad som ett byte (steg 4.4.1.1)
   handelse(s, g, n.fara(s, m) > 0 ? 'hjalp' : 'gava', m, n.namn); // de som ser det tycker bättre om den som ger (steg 3.3.1)
   count(s, 'gava_' + n.id, want - rest);
+  if (n.id === 'mat' && !isFamily(g, m)) { if (m.tiggde === undefined || s.now - m.tiggde >= DAY) count(s, 'tiggare'); m.tiggde = s.now; } // fick mat av en som inte är familj: en tiggare (steg 10.5.11)
   return true;
 }
 // a och b talar. Saknar någon av dem något som den andra har över? Då byter de, eller så ger den andra det. Ger true om
@@ -421,13 +423,14 @@ function tradeMaterial(s: State, p: Person, k: string, n: number) {
 // mest. Den som har mycket över ger lättare (overflod = vad hen har delat med vad hen själv behöver: 1 ger 0,7 gånger,
 // 2 ger 1 och 3 eller mer 1,3 gånger), seden Sammanhållning gör alla givmildare och Självförsörjning snålare, och ju
 // rikare byn är desto mindre ger man (delning.ts). Till sina barn och sin partner ger man lika gärna i en rik by
-export function willing(s: State, g: Person, m: Person, overflod = 1) {
+// nod: den som ber om mat eller ved av nöd (behovsstegen); då ger också en främling, med golvet DELA.geFrammande (steg 10.5.11)
+export function willing(s: State, g: Person, m: Person, overflod = 1, nod = false) {
   const over = clamp(DELA.overflodBas + DELA.overflodSteg * overflod, DELA.overflodMin, DELA.overflodMax), sed = 1 + DELA.gemenskapGe * s.seder.v.gemenskap;
   if (forsorjer(s, g, m)) return clamp(DELA.geBarn * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista, så länge man försörjer det
   const r = getRel(s, g, m);
   if (r.op < REL.osams || g.arke === m.id) return 0; // sin ärkefiende ger man aldrig något (steg 3.1.1)
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;
-  const base = (nara ? DELA.gePartner : isKin(g, m) || arBast(g, m) ? DELA.geFamilj : clamp(r.op / DELA.geVanOp, 0, DELA.geVanMax)) * (arRivaler(g, m) ? RELT.rivalGe : 1); // rivaler ger varandra mindre
+  const base = (nara ? DELA.gePartner : isKin(g, m) || arBast(g, m) ? DELA.geFamilj : Math.max(clamp(r.op / DELA.geVanOp, 0, DELA.geVanMax), nod && r.op >= 0 ? DELA.geFrammande : 0)) * (arRivaler(g, m) ? RELT.rivalGe : 1); // rivaler ger varandra mindre
   const rik = nara ? 1 : DELA.rikGe + (1 - DELA.rikGe) * (s.delning?.andel ?? 1);
   return clamp(base * (DELA.geEmpati + emp) * over * sed * rik, 0, 1);
 }

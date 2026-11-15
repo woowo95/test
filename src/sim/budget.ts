@@ -27,6 +27,7 @@ import { FRAGOR, vikter } from './rost';
 import { TAS_UPP, budgetBortKrok } from './lagar';
 import { knows } from './teknik';
 import { forsorjAlder } from './skatt';
+import { RYKTE } from './rykten';
 import { sakNamn } from './saker';
 import type { Tro } from './religion';
 
@@ -66,6 +67,14 @@ const stodjer = (s: State) => { const l = ledareOf(s); return l ? living(s).filt
 const svag = (s: State, p: Person) => (ageOf(p, s.now) < forsorjAlder(s) && !p.partner) || ageOf(p, s.now) >= BUDG.gamla || ligger(p, s.now);
 const ater = (s: State, f: (p: Person) => boolean) => living(s).filter(p => !p.gast && f(p)).reduce((a, p) => a + kroppensMat(p, s.now), 0);
 const narSvag = (s: State, p: Person) => svag(s, p) || living(s).some(q => svag(s, q) && (isParent(p, q) || isParent(q, p) || q.id === p.partner));
+// de fattiga (steg 10.5.11): vuxna som äger mindre än RYKTE.fattig gånger den mittersta i byn, som intrycket fattig (rykten.ts)
+function fattig(s: State, p: Person) {
+  if (p.gast || !p.forv || ageOf(p, s.now) < ALDER.vuxen) return false;
+  const ws = living(s).filter(q => !q.gast && q.forv && ageOf(q, s.now) >= ALDER.vuxen).map(q => q.forv!.w).sort((a, b) => a - b);
+  if (ws.length < 2) return false;
+  const mitt = Math.max(RYKTE.rikMin, ws.length % 2 ? ws[ws.length >> 1] : (ws[ws.length / 2 - 1] + ws[ws.length / 2]) / 2);
+  return p.forv.w < mitt * RYKTE.fattig;
+}
 export const BUDGET: Record<string, BudgetDef> = {
   svaga: {
     namn: 'Mat till barn, gamla och sjuka', sym: '🍼', text: 'Mat ur byns förråd till barnen, de gamla och de sjuka som ligger',
@@ -84,6 +93,12 @@ export const BUDGET: Record<string, BudgetDef> = {
     finns: () => true, saknar: () => ({}),
     mat: { vem: s => !!s.budget?.fest, behov: s => Math.ceil(BUDG.fest * living(s).filter(p => !p.gast).length) },
     vill: (s, p) => fjardedel(0.25 + 0.25 * lutning(s, p) + (p === ledareOf(s) ? 0.25 : 0)),
+  },
+  fattiga: {
+    namn: 'Stöd till fattiga', sym: '🥣', text: 'Mat ur byns förråd till dem som äger mycket mindre än de andra i byn',
+    finns: s => living(s).some(p => fattig(s, p)), saknar: () => ({}),
+    mat: { vem: fattig, behov: s => ater(s, p => fattig(s, p)) },
+    vill: (s, p) => fattig(s, p) ? 1 : fjardedel(0.25 + 0.5 * Math.max(0, lutning(s, p))),
   },
   byggen: {
     namn: 'Byns byggen', sym: '🏠', text: 'Material till byns hus: det de saknar för att bli klara och för att lagas',
