@@ -136,6 +136,13 @@ export const BUD = {
     om: () => 'När handlaren kommer får hen en hel mat ur byns förråd, en gång per besök, och de som följer budet får en bättre relation med hen.' }, // handel.ts frågar valkomnaHandlare
   begravFiende: { namn: 'Den fallne fienden begravs', sort: 'krav', storlek: 2, skala: 'forlat', sida: 0, text: 'En fallen fiende får en grav',
     om: () => 'De som följer budet begraver en avrustad fiende på trons gravplats, med vanlig grävtid, i stället för att hen ligger kvar.' }, // grav.ts
+  // gravens vård (steg 10.4.2): en rad i GRAVAR (grav.ts) per bud. Det som drar mest blir sed vid trons första begravning
+  gravStolpe: { namn: 'En gravstolpe på graven', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravvard', text: 'Graven får en stolpe av trä' },
+  gravBrada: { namn: 'En gravbräda på graven', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravvard', text: 'Graven får en bräda med den dödas namn' },
+  stockram: { namn: 'En stockram kring graven', sort: 'krav', storlek: 1, skala: 'oppen', sida: 1, grupp: 'gravvard', text: 'Graven ramas in med stockar' },
+  gravhus: { namn: 'Ett gravhus över graven', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'gravvard', text: 'Graven får ett litet hus' },
+  gravhog: { namn: 'De stora får en gravhög', sort: 'krav', storlek: 1, skala: 'livet', sida: 1, grupp: 'storagrav', text: 'Ledare, helgon och legender får en gravhög',
+    om: () => 'Den som varit ledare, är trons helgon eller var en legend med gott anseende när hen begravdes får en gravhög av jord och torv i stället för den vanliga vården.' },
   kvade: { namn: 'Kväden vid högtiden', sort: 'krav', storlek: 1, skala: 'fest', sida: 0, kraver: 'hogtid', text: 'Den bästa skalden kväder om tron vid högtiden',
     om: () => 'Den som är bäst i skaldskap bland dem som är med framför ett kväde om tron för de samlade. Saknas skalden mår de som följer budet lite sämre.' },
   framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta', sed: ['gemenskap', 1] },

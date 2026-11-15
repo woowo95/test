@@ -288,8 +288,8 @@ export function drawStructures(t: number) {
     stubbIkoner.add('sb_' + id, Math.round(k.x * TS) - 4 - b.fx, Math.round(k.y * TS) + 4 - b.fy, 1);
   }
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
-  // graven (steg 8.5.1): en av tre gravstenar (Björns val i steg 9.9.1), vilken räknas ur rutan; stenen står med foten i rutan
-  for (const g of s.gravar ?? []) { const id = 'grav_' + (1 + (g.x * 7 + g.y * 13) % 3), b = KARTBILDER[id]!; stubbIkoner.add('kb_' + id, g.x * TS + ((TS - b.w) >> 1), g.y * TS + TS - 2 - b.h, 1); }
+  // graven (steg 10.4.2, platshållare tills Björn valt i bildstilen): en jordhög, och vården som står på den
+  for (const g of s.gravar ?? []) gravPlats(g);
   for (const h of s.heliga ?? []) stubbIkoner.add(HELIGA_PLATSER[h.k].ikon, h.x * TS, h.y * TS, 1); // de heliga platserna (steg 8.5.5)
   stubbIkoner.end();
   pileIcons.end();
@@ -352,4 +352,15 @@ function drawBuild() {
       structG.beginFill(0x7d5b40).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill(); // öppningen: trampad jord
     }
   }
+}
+
+// graven som platshållare (steg 10.4.2): jordhögen, och gravstolpen, gravbrädan, stockramen, gravhuset eller gravhögen
+function gravPlats(g: { x: number; y: number; vard?: string }) {
+  const X = g.x * TS, Y = g.y * TS, gr = structG;
+  if (g.vard === 'gravhog') { gr.beginFill(0x5e3c24).drawEllipse(X + TS / 2, Y + TS - 5, TS / 2, 5).endFill().beginFill(0x7d5b40).drawEllipse(X + TS / 2, Y + TS - 6, TS / 2 - 2, 3).endFill(); return; }
+  gr.beginFill(0x5e3c24).drawEllipse(X + TS / 2, Y + TS - 4, 5, 3).endFill();
+  if (g.vard === 'gravstolpe') gr.beginFill(0x3f2415).drawRect(X + TS / 2 - 1, Y + 3, 2, TS - 7).endFill();
+  else if (g.vard === 'gravbrada') gr.beginFill(0x987e62).drawRect(X + TS / 2 - 3, Y + 4, 6, 6).endFill().beginFill(0x3f2415).drawRect(X + TS / 2 - 1, Y + 10, 2, 2).endFill();
+  else if (g.vard === 'stockram') gr.lineStyle(2, 0x7d5b40).drawRect(X + 2, Y + TS - 9, TS - 4, 7).lineStyle(0);
+  else if (g.vard === 'gravhus') gr.beginFill(0x7d5b40).drawRect(X + 3, Y + TS - 8, TS - 6, 6).endFill().beginFill(0x3f2415).drawPolygon([X + 2, Y + TS - 8, X + TS / 2, Y + 3, X + TS - 2, Y + TS - 8]).endFill();
 }

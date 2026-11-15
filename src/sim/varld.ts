@@ -391,6 +391,10 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
     for (const p of s.people) if ((p.task?.act as string | undefined) === 'hovbygge') p.task = undefined;
   }],
+  [50, 'v529: gravarna blir jordhögar som får sin vård av den som minns den döda (steg 10.4.2), och ledaren nu har varit ledare', s => {
+    for (const g of s.gravar ?? []) if ((g.stil as string) === 'hog') g.stil = 'jord';
+    const l = s.styre?.ledare !== undefined ? s.people.find(p => p.id === s.styre!.ledare) : undefined; if (l) l.ledde = true;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
