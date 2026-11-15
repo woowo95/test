@@ -1006,7 +1006,7 @@ SCENARIER.strakprov = {
     // By 1004 sedan 10.9: i by 1002 utan stråken dog den enda som kunde bygga timmerhus i barnsäng, och då blev inget hus klart
     const fil = fileURLToPath(new URL('../prov-en.ts', import.meta.url));
     const by = (env: Record<string, string>) => {
-      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1002', '12'], { env: { ...process.env, ...env }, encoding: 'utf8' });
+      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1004', '12'], { env: { ...process.env, ...env }, encoding: 'utf8' });
       if (u.status) throw new Error(`prov-en.ts kraschade:\n${(u.stderr ?? '').slice(-1500)}`);
       return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; franAlla: number[]; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
     };
