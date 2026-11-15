@@ -115,7 +115,7 @@ export const STATION = balans('station', {
 // forsta = loggen när byn fått sin första, inne = står inne i ett hus, mobel = en möbel, flera = byn kan ha flera, sover = en sovplats
 // (halmbädden), sitt = en sittplats framför den (bara utseende, steg 2.2.5), platser = ett bord med stubbar att sitta på runt
 // det (steg 2.2.15), verktyg = redskapet man bygger den med (benspaden till latrinen, steg 2.7.2), utkant = står i byns utkant, högst till och helst avst rutor från byn,
-// och med vatten långt från vattnet när byn lärt sig det (latrinen och slaktbänken, siteUtkant nedan), eld = står över elden, med elden i mitten, och används bara när den brinner (grillen, steg 2.8.1), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
+// och med vatten långt från vattnet när byn lärt sig det (latrinen och slaktbänken, sokUtkant nedan), eld = står över elden, med elden i mitten, och används bara när den brinner (grillen, steg 2.8.1), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
 // rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak,
 // stangd = det som ligger där syns inte på kartan, bara när man trycker på möbeln (kistan, Björn efter v92), privat = bara för
 // privata saker (kistan, steg 2.10.18): byggs inte i byns lager utan av var och en i rummet där hen sover (kistorna nedan)
@@ -586,16 +586,16 @@ export function iPlatsMinne<T>(q: string, f: () => T): T {
   if (!platsMinne.has(q)) platsMinne.set(q, f());
   return platsMinne.get(q) as T;
 }
-const sokSite = (s: State, k: string, p?: Person) => stationDef(k)?.tro ? siteTro(s, k, p) : siteSal(s, k) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUtkant(s, k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
+const sokSite = (s: State, k: string, p?: Person) => stationDef(k)?.tro ? siteTro(s, k, p) : siteSal(s, k) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUte(s, k, sokUtkant, 'utkant:' + k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
 // trons möbler (steg 10.3.19): i rummet i trons hus, för den troende p
 function siteTro(s: State, k: string, p?: Person) {
   const tr = p && troOf(s, p.tro), r = tr && troshusRum(s, tr);
   return r ? siteInne(s, k, r) : undefined;
 }
-// i byns utkant (latrinen och slaktbänken): lediga rutor på gräs, sand eller i glesare skog, högst u.till rutor från byn (lägret
+// i byns utkant (latrinen och slaktbänken), en gång i timmen och när något byggs (som siteUte): lediga rutor på gräs, sand eller i glesare skog, högst u.till rutor från byn (lägret
 // och husen, utanforByn), helst u.avst och aldrig närmare än utkantMin, och för latrinen, när byn lärt sig
 // det (s.hygien), långt från vattnet. Avståndet räknas från stationens närmaste ruta
-function siteUtkant(s: State, k: string) {
+function sokUtkant(s: State, k: string) {
   const u = stationDef(k)!.utkant!, m = getMap(s.seed), g = groundOf(s), upp = upptagna(s);
   // sökområdet: byns område och u.till rutor runt
   const { x0, y0, x1, y1 } = omrade(s), R = Math.ceil(u.till) + 1;
@@ -692,18 +692,19 @@ export function gangFri(s: State, rutor: { x: number; y: number }[]) {
 // sedan dess (en stack, ett redskap), söks den om. Alla som undrar om stationen går att bygga (kanBygga, för varje person
 // i valet) får samma svar utan att söka
 const uteCache = new WeakMap<State, { key: string; m: Map<string, { x: number; y: number; rot?: 1 } | undefined> }>();
-function siteUte(s: State, k: string) {
+// (platsen i byns utkant, sokUtkant, sparas på samma sätt)
+function siteUte(s: State, k: string, sok: (s: State, k: string) => { x: number; y: number; rot?: 1 } | undefined = sokUte, q = k) {
   const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${omrade(s).key}`;
   let c = uteCache.get(s);
   if (c?.key !== key) uteCache.set(s, c = { key, m: new Map() });
-  if (c.m.has(k)) {
-    const at = c.m.get(k);
+  if (c.m.has(q)) {
+    const at = c.m.get(q);
     if (!at) return at;
     const { w, h } = storlek(k, at.rot ?? 0);
     if (rutorAv(at.x, at.y, w, h).every(q => ledig(s, q.x, q.y))) return at;
   }
-  const at = sokUte(s, k);
-  c.m.set(k, at);
+  const at = sok(s, k);
+  c.m.set(q, at);
   return at;
 }
 function sokUte(s: State, k: string) {

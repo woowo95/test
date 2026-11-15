@@ -9,7 +9,7 @@ import { utanforByn } from './omrade';
 // frågar). Latrinen (en station, STATIONER i stationer.ts) samlar allt på ett ställe: den som går på toa går dit om byn har
 // en, får vara ifred (lite bättre humör) och lämnar ingen fläck, men gropen fylls (Station.fyllt) och fylls igen när den är
 // full, så att byn gräver en ny. Får någon ont i magen av vatten som toaletten smutsat ner lär sig byn att smutsen kommer
-// därifrån (s.hygien), och lägger sedan latrinen längre från vattnet (siteUtkant i stationer.ts)
+// därifrån (s.hygien), och lägger sedan latrinen längre från vattnet (sokUtkant i stationer.ts)
 import { Act, DAY, H, HOUR, Person, State, T, W } from './typer';
 import { getMap } from './karta';
 import { STATION, Station, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
