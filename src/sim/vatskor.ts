@@ -10,7 +10,7 @@ import { DAY, HOUR, MIN, Person, State } from './typer';
 import { balans } from './balans';
 import { KROPP, count, forstaGang, log, think } from './folk';
 import { isSick } from './sjukdom';
-import { hemma, salvaKrok, vattenKrok } from './halsa';
+import { HALSA, hemma, salvaKrok, vattenKrok } from './halsa';
 
 // örtteet (steg 9.5.8, Hälsosystemet i detalj: Teet och salvan): den som fryser eller är sjuk och är i byn dricker en del ur en
 // kruka med te. Det värmer, och den sjuke står emot bättre en stund (SJUK.lakeort i sjukdom.ts), mer ju bättre teet är, men
@@ -34,7 +34,14 @@ export function drickTe(s: State, p: Person) {
 salvaKrok.har = s => vatskaAv(s, 'salva');
 salvaKrok.ta = s => { const k = medVatska(s, 'salva'); if (!k) return undefined; const q = k.inne!.q ?? 2; taVatska(s, 'salva', 1); return q; };
 // vattnet till sköljningen av ett sår (steg 9.5.25, halsa.ts): kokt vatten först, annars vanligt vatten i en behållare; det tas
-vattenKrok.ta = s => { if (vatskaAv(s, 'kokt') > 0) { taVatska(s, 'kokt', 1); return 'kokt'; } if (vatskaAv(s, 'vatten') > 0) { taVatska(s, 'vatten', 1); return 'vatten'; } return undefined; };
+// såret tvättas med det som håller det rent längst av det byn har (steg 10.7.27); en hel del går åt och krukan blir kvar
+vattenKrok.ta = s => {
+  let bast: VatskaId | undefined;
+  for (const v of Object.keys(VATSKOR) as VatskaId[]) { const k = (VATSKOR[v] as VatskaDef).sar; if (k && vatskaAv(s, v) >= 1 && (!bast || HALSA[k] > HALSA[(VATSKOR[bast] as VatskaDef).sar!])) bast = v; }
+  if (!bast) return undefined;
+  taVatska(s, bast, 1); count(s, 'sar_' + bast);
+  return HALSA[(VATSKOR[bast] as VatskaDef).sar!];
+};
 // hur mycket teet hjälper motståndet just nu (1 = inget)
 export const teFaktor = (s: State, p: Person, lakeort: number) => (p.te?.till ?? 0) > s.now ? 1 + (lakeort - 1) * TE.verkan[p.te!.q] : 1;
 
@@ -56,13 +63,13 @@ export const DRYCK = balans('dryck', {
 // kvall = hur gärna den tas på kvällen, alkohol = hur mycket rus en del ger (rus.ts), mat = näringen en del fyller, tanke = tanken
 // av att dricka den och hur länge (timmar), stat = det som räknas, forsta = raden i loggen första gången ({namn} dricker)
 export interface DryckDef { slacker: number; ren?: true; varm?: number; torst?: number; kvall?: number; alkohol?: number; mat?: { protein?: number; fett?: number }; tanke?: [string, number, number]; stat: string; forsta?: string }
-export interface VatskaDef { namn: string; farg: number; i: string[]; haller?: number; dryck?: DryckDef } // haller = så många dygn den håller i krukan; sedan hälls den ut (saften blir sur)
+export interface VatskaDef { namn: string; farg: number; i: string[]; haller?: number; dryck?: DryckDef; sar?: 'kokt' | 'vatten' | 'sprit' } // sar = balanstalet i HALSA för hur länge ett sår tvättat med den håller sig rent // haller = så många dygn den håller i krukan; sedan hälls den ut (saften blir sur)
 export const VATSKOR = {
-  vatten: { namn: 'Vatten', farg: 0x3b6ea5, i: ['vattensack', 'lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'], dryck: { slacker: 1, torst: DRYCK.vattenVarde, stat: 'krukvattenDrucket' } }, // som dryck bara i en lerkruka (dryckKarl)
+  vatten: { namn: 'Vatten', farg: 0x3b6ea5, i: ['vattensack', 'lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'], dryck: { slacker: 1, torst: DRYCK.vattenVarde, stat: 'krukvattenDrucket' }, sar: 'vatten' }, // som dryck bara i en lerkruka (dryckKarl)
   tjara: { namn: 'Tjära', farg: 0x24201d, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] },
   salva: { namn: 'Salva', farg: 0x647025, i: ['naverask', 'lerkruka_liten'] },
   benlim: { namn: 'Benlim', farg: 0xbdb39b, i: ['naverask', 'lerkruka_liten'] },
-  kokt: { namn: 'Kokat vatten', farg: 0x8a9c9e, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'], dryck: { slacker: 1, ren: true, torst: DRYCK.koktVarde, stat: 'koktDrucket' } }, // kokat i en lerkruka (steg 9.5.25): rent, till såren och att dricka
+  kokt: { namn: 'Kokat vatten', farg: 0x8a9c9e, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'], dryck: { slacker: 1, ren: true, torst: DRYCK.koktVarde, stat: 'koktDrucket' }, sar: 'kokt' }, // kokat i en lerkruka (steg 9.5.25): rent, till såren och att dricka
   vin: { namn: 'Vin', farg: 0x521100, i: ['lerkruka_stor'], haller: 40, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.vinKvall, alkohol: 0.35, stat: 'drack_vin' } }, // vinet (steg 9.6.12, brygg.ts): i stora krukor, blir bättre med tiden
   ol: { namn: 'Öl', farg: 0x906f0f, i: ['lerkruka_stor'], haller: 6, dryck: { slacker: DRYCK.olSlacker, kvall: DRYCK.olKvall, alkohol: 0.25, stat: 'drack_ol' } }, // ölet (steg 9.6.13, brygg.ts): i stora krukor, håller sex dygn
   saft: { namn: 'Saft', farg: 0x742a01, i: ['lerkruka_mellan'], haller: 2, dryck: { slacker: DRYCK.slacker, torst: DRYCK.saftVarde, tanke: ['Drack saft', DRYCK.saftGlad, DRYCK.saftTim], stat: 'saftDrucken', forsta: '{namn} drack byns första saft av krossade bär.' } }, // bär krossade i en mellanstor kruka (steg 9.6.9): den första drycken, håller två dygn
@@ -72,7 +79,7 @@ export const VATSKOR = {
   buljong: { namn: 'Buljong', farg: 0x7d5b40, i: ['lerkruka_mellan'], haller: 2, dryck: { slacker: DRYCK.buljongSlacker, ren: true, varm: TE.varm, torst: DRYCK.buljongVarde, stat: 'buljongDrucken', forsta: '{namn} drack byns första buljong.' } }, // ben och svamp eller kål som sjudit i krukan på elden (steg 10.7.24, tillverka.ts)
   svagdricka: { namn: 'Svagdricka', farg: 0xb2921b, i: ['lerkruka_stor'], haller: 4, dryck: { slacker: 1, ren: true, torst: DRYCK.svagVarde, alkohol: 0.05, stat: 'drack_svagdricka' } }, // bryggs av malt i karet (steg 10.7.24, brygg.ts): mot törsten på dagen
   mjod: { namn: 'Mjöd', farg: 0xd8b25f, i: ['lerkruka_stor'], haller: 20, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.mjodKvall, alkohol: 0.3, stat: 'drack_mjod' } }, // honungen som jäst i karet (steg 10.7.25, brygg.ts)
-  sprit: { namn: 'Sprit', farg: 0xdad0bb, i: ['lerkruka_liten'], dryck: { slacker: DRYCK.spritSlacker, kvall: DRYCK.spritKvall, alkohol: 0.7, stat: 'drack_sprit' } }, // bränd i brännpannan (steg 10.7.26, brygg.ts): håller hur länge som helst
+  sprit: { namn: 'Sprit', farg: 0xdad0bb, i: ['lerkruka_liten'], dryck: { slacker: DRYCK.spritSlacker, kvall: DRYCK.spritKvall, alkohol: 0.7, stat: 'drack_sprit' }, sar: 'sprit' }, // bränd i brännpannan (steg 10.7.26, brygg.ts): håller hur länge som helst
   sno: { namn: 'Snö', farg: 0xdad0bb, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] }, // snön som smälts i en kruka vid elden (steg 10.2.50, torst.ts): blir vatten // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
 } satisfies Record<string, VatskaDef>;
 export type VatskaId = keyof typeof VATSKOR;

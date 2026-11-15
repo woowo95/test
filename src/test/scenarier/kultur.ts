@@ -3462,6 +3462,31 @@ SCENARIER.sprit = {
     ] as [string, boolean][];
   },
 };
+SCENARIER.spritvard = {
+  text: 'Spriten i sårvården (steg 10.7.27): den som tvättar ett sår väljer det byn har som håller såret rent längst: sprit tre gånger grundtiden, kokt vatten två och vanligt vatten en. En tvätt tar en hel sprit och den tomma krukan blir kvar, och byn vill ha minst 2 sprit i förrådet',
+  kor: () => {
+    const s = rikDag(3), [g, q] = vuxna(s);
+    g.skill.lakekonst = 0;
+    const kruka = (v: string, n: number) => { const t = SIM.addTool(s, v === 'sprit' ? 'lerkruka_liten' : 'lerkruka_mellan', g); t.hos = undefined; SIM.fyllVatska(s, v as SIM.VatskaId, n, t); return t; };
+    for (const t of SIM.tingOf(s)) if (t.inne) t.inne = undefined; // inga andra vätskor
+    const tvatta = () => { const w = { inf: 0.1 } as SIM.Skada; SIM.VARD.skolja.gor(s, g, q!, w); return ((w.ren ?? s.now) - s.now) / SIM.HOUR; };
+    const sp = kruka('sprit', 1); kruka('kokt', 1);
+    const t1 = tvatta(), sprKvar = SIM.vatskaAv(s, 'sprit'), koktKvar = SIM.vatskaAv(s, 'kokt');
+    const t2 = tvatta();
+    kruka('vatten', 1);
+    const t3 = tvatta(), t4 = tvatta();
+    const tom = SIM.tingOf(s).includes(sp) && !sp.inne;
+    const mal = SIM.villHaAv(s, 'sprit' as SIM.Materialslag);
+    const bas = SIM.HALSA.renTim;
+    return [
+      [`med sprit håller såret rent ${t1} timmar (${3 * bas}), och spriten går åt men inte det kokta vattnet`, Math.abs(t1 - 3 * bas) < 1e-6 && sprKvar === 0 && koktKvar === 1],
+      [`sedan med kokt vatten ${t2} timmar (${2 * bas})`, Math.abs(t2 - 2 * bas) < 1e-6],
+      [`med vanligt vatten ${t3} timmar (${bas}), utan något ${t4} timmar`, Math.abs(t3 - bas) < 1e-6 && Math.abs(t4 - SIM.HALSA.torrt * bas) < 1e-6],
+      ['den tomma krukan blir kvar', tom],
+      [`byn vill ha minst 2 sprit (${mal})`, mal >= 2],
+    ] as [string, boolean][];
+  },
+};
 SCENARIER.mjod = {
   text: 'Honung och mjöd (steg 10.7.25): honungskakor finns i vildbinas bon i skogen på sommaren och hösten, ett lager på kartan, och är söt mat. Mjödet bryggs i karet av 3 honungskakor och vatten, jäser 4 dygn och ger 5 mjöd i en stor lerkruka; tekniken kommer när byn har honung och har gjort vin två gånger',
   kor: () => {
