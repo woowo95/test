@@ -50,7 +50,7 @@ import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
-import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
+import { eldFlyttKvar, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, type Dodsorsak, barnMat, birth, birthWish, die, framlingSteg, regulate } from './liv';
 import { MARK, groundOf, growGround, markslag, packGround, tileOf } from './mark';
 import { bynsMitt } from './omrade';
@@ -943,7 +943,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   } else {
     if (hamtaForst(s, p, tk)) return; // materialet hämtas först (steg 9.2.43)
     tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { pickUp(s, p, tk, ryms(s, p)); tk.until = now; }
-    if (tk.act === 'flyttaeld') tk.until = now + ELDFLYTT.tim * HOUR; // vid elden: släcka den och bära stenarna (eldflytt.ts)
+    if (tk.act === 'flyttaeld') tk.until = now + eldFlyttKvar(s, p); // vid elden: släcka den och bära de stenar som är kvar (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
   }
 }

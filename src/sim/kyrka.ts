@@ -233,7 +233,7 @@ export const BUD = {
   // maten som bud (steg 10.3.16): en huvudingrediens ur trons gudar. Förbudet gäller råvaran och alla rätter av den; kravet gör att
   // högtidens mat tas ur den först
   matForbud: { namn: 'Förbjuden mat', sort: 'forbud', storlek: 3, skala: 'fest', sida: 1, text: 'De troende äter inte maten, och en troende kock lagar den inte',
-    varden: (_s: State, tr: Tro): string[] => matVarden(tr, 'matForbud'), vardeNamn: (s, v) => (n => n ? `${huvudNamn(v)} (${n})` : huvudNamn(v))(specialHuvud(s, String(v))), // byns egen rätt (steg 10.7.29) mat: v => [String(v)],
+    varden: (_s: State, tr: Tro): string[] => matVarden(tr, 'matForbud'), vardeNamn: (s, v) => (n => n ? `${huvudNamn(v)} (${n})` : huvudNamn(v))(specialHuvud(s, String(v))), mat: v => [String(v)], // vardeNamn: byns egen rätt (steg 10.7.29)
     om: (_s, _tr, b) => `${huvudNamn(b.v)} och alla rätter av det. De som följer budet äter det inte, och en troende kock lagar det inte, utom i svält.` },
   matKrav: { namn: 'Högtidens mat', sort: 'krav', storlek: 1, skala: 'fest', sida: 0, kraver: 'hogtid', text: 'Maten vid högtiden tas ur huvudingrediensen först',
     varden: (_s: State, tr: Tro): string[] => matVarden(tr, 'matKrav'), vardeNamn: (_s, v) => huvudNamn(v),

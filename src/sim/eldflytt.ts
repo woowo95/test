@@ -59,9 +59,28 @@ export function nyEldplats(s: State, mx: number, my: number, ut?: { x: number; y
   return best;
 }
 
+// arbetet med flytten sparas: de stenar som redan burits ligger kvar, och den som tar vid gör det som återstår. Arbetet räknas
+// per tid, från när den som arbetar kom fram till nu, eller till nästa timme om hen gått därifrån
+function raknaFlytt(s: State) {
+  const m = s.fire.flytt;
+  if (!m || m.fran === undefined) return;
+  const p = living(s).find(q => q.id === m.vem), kvar = p?.task?.act === 'flyttaeld' && p.task.phase === 'do';
+  m.gjort = Math.min(ELDFLYTT.tim * HOUR, (m.gjort ?? 0) + s.now - m.fran);
+  if (kvar) m.fran = s.now; else { m.fran = undefined; m.vem = undefined; }
+}
+// p har kommit fram: hur länge det tar att släcka elden och bära de stenar som är kvar
+export function eldFlyttKvar(s: State, p: Person) {
+  const m = s.fire.flytt;
+  if (!m) return ELDFLYTT.tim * HOUR;
+  raknaFlytt(s);
+  m.vem = p.id; m.fran = s.now;
+  return Math.max(0, ELDFLYTT.tim * HOUR - (m.gjort ?? 0));
+}
+
 // en gång i timmen: ska elden flyttas, och vem gör det?
 export function stepEldFlytt(s: State) {
   const f = s.fire, ppl = living(s);
+  raknaFlytt(s);
   if (f.flytt && !eldKanSta(s, f.flytt.x, f.flytt.y)) delete f.flytt; // platsen har tagits: en ny väljs nedan
   if (!f.flytt) {
     // ett hus som ska stå där elden står väntar (bygg.ts bygger inget inpå elden): elden behöver en ny plats bredvid huset
