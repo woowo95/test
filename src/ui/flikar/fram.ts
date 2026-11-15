@@ -41,6 +41,7 @@ export function framHtml(m?: FramMinne) {
     m.glad ? `<li title="${esc(`Publiken blev gladare: +${m.glad} i humöret (av 100) i några timmar`)}">{sym_pil_upp} Glädje +${m.glad}</li>` : '',
     pub.length ? `<li title="${esc(`Hur mycket publiken i snitt gillar ${m.namn} (−100 till 100): ${r0} före, ${r1} efter`)}">{sym_hjarta_rott} ${esc(m.namn)}: ${r0} → ${r1} ${andring(r0, r1)}</li>` : '',
     m.ledare && pub.some(x => x.l0 !== undefined) ? (() => { const l = pub.filter(x => x.l0 !== undefined), a = medel(l.map(x => x.l0!)), b = medel(l.map(x => x.l1!)); return `<li title="${esc(`Hur mycket publiken i snitt gillar ledaren ${m.ledare} efter ${m.bud === 'hana' ? 'hånet' : 'hyllningen'}: ${a} före, ${b} efter`)}">{sym_hjarta_rott} ${esc(m.ledare)}: ${a} → ${b} ${andring(a, b)}</li>`; })() : '',
+    m.vrid ? `<li>${m.vrid > 0 ? 'Gjorde gärningen större' : 'Tonade ned gärningen'}${m.om ? ` om ${esc(m.om)}` : ''}</li>` : '',
     m.rykte?.length ? `<li title="${esc(`Ryktet om ${m.om ?? 'någon'} spreds till ${m.rykte.join(', ')}`)}">Ryktet till ${esc(m.rykte.join(', '))}</li>` : '',
     m.tro?.length ? `<li title="${esc(`Tron övertygade ${m.tro.join(', ')}`)}">Tron övertygade ${esc(m.tro.join(', '))}</li>` : '',
   ].join('');

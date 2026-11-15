@@ -262,7 +262,7 @@ SCENARIER.budskap = {
     for (let i = 0; i < 20; i++) {
       const t = kvall(3 + i), u = t.v[0]!;
       t.s.tron = [{ id: 1, grundare: u.id, gnamn: u.name, t: t.s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: t.s.now, ar: 0 } as SIM.Tro];
-      u.tro = 1; u.troStyrka = 100; u.andlig = 100;
+      u.tro = 1; u.troStyrka = 100; u.andlig = 100; u.pot.karisma = 20; // en karismatisk predikant, så att slumpen inte avgör
       for (const b of t.v.slice(1)) { b.andlig = 100; b.tro = undefined; }
       const r = framfor(t.s, u);
       if (r?.bud === 'tro') { tro++; troText = r.text; overtygad += t.v.slice(1).filter(b => b.tro === 1).length; }
@@ -428,7 +428,7 @@ SCENARIER.framrapport = {
     for (let i = 0; i < 20 && !tro.length; i++) {
       const t = kvall(3 + i), w = t.v[0]!;
       t.s.tron = [{ id: 1, grundare: w.id, gnamn: w.name, t: t.s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: t.s.now, ar: 0 } as SIM.Tro];
-      w.tro = 1; w.troStyrka = 100; w.andlig = 100;
+      w.tro = 1; w.troStyrka = 100; w.andlig = 100; w.pot.karisma = 20;
       for (const b of t.v.slice(1)) { b.andlig = 100; b.tro = undefined; }
       if (!upptrad(t.s, w)) continue;
       kor(t.s, 1.5);
@@ -2186,6 +2186,47 @@ SCENARIER.tystnad = {
       [`minnen om ${x.name} berättas mer sällan (${fOvan.toFixed(2)}), mindre sällan av den som tyckte om hen (${fVan.toFixed(2)}), men aldrig inte alls; andra som förut (${fY})`, fOvan < 1 && fOvan > 0 && fVan === 1 && fY === 1],
       [`påbudet gäller också när ${x.name} är död (${fDod.toFixed(2)})`, Math.abs(fDod - fOvan) < 0.2 && fDod < 1],
       [`fliken Styre visar vem påbudet gäller (${visas ? 'ja' : 'nej'})`, visas],
+    ];
+  },
+};
+
+SCENARIER.overdrift = {
+  text: 'Steg 10.4.11: överdriften i framträdandena. Ett kväde, en sång eller en teater om en person ändrar gärningen mer än ett samtal (formens tal), större när den som uppträder beundrar personen och mindre när hen ogillar hen; versionen räknas en gång så att alla som lyssnar får samma, den som bara hört en större version dras halva vägen ner, den som såg det själv ertappar en överdrift men inte en nedtoning, och redogörelsen säger om gärningen gjordes större eller tonades ned',
+  kor: () => {
+    const a = kvall(), s = a.s, p = a.v[0]!, x = SIM.living(s).find(q => !a.v.includes(q)) ?? a.v[a.v.length - 1]!;
+    const e = { om: x.id, namn: x.name, k: 'hjalpsam' as SIM.IntryckTyp, v: 0.4, c: 1, t: s.now };
+    const medel = (op: number, g: number) => { SIM.getRel(s, p, x).op = op; let m = 0; for (let i = 0; i < 400; i++) m += SIM.scenVersion(s, p, e, g); return m / 400 - e.v; };
+    const samtal = medel(80, 1), kvade = medel(80, SIM.FRAM_AV.kvade!.vrid ?? 1), teater = medel(80, SIM.FRAM_AV.teater!.vrid ?? 1), ogillar = medel(-80, 2);
+    // alla som lyssnar får samma version; den som hört mer dras halva vägen ner; den som såg det ertappar bara en överdrift
+    const [b1, b2, b3] = SIM.living(s).filter(q => q !== p && q !== x), b4 = b1;
+    SIM.getRel(s, p, x).op = 0;
+    for (const b of [b1, b2, b3]) b.intryck = [];
+    b3.intryck = [{ ...e, v: 1, led: 2, src: b2.id }];
+    SIM.beratta(s, p, b1, e, SIM.getRel(s, p, b1), 0.8); SIM.beratta(s, p, b2, e, SIM.getRel(s, p, b2), 0.8);
+    const lika = SIM.intryckOm(b1, x.id, 'hjalpsam')?.v === SIM.intryckOm(b2, x.id, 'hjalpsam')?.v;
+    SIM.beratta(s, p, b3, e, SIM.getRel(s, p, b3), 0.4);
+    const ner = SIM.intryckOm(b3, x.id, 'hjalpsam')?.v ?? 0, nerVantat = 1 - (1 - 0.4 * (x.died === undefined ? 1 : SIM.RYKTE.dodBer)) * SIM.RYKTE.scenNed;
+    b4.intryck = [{ ...e, v: 0.4 }];
+    SIM.beratta(s, p, b4, b4.intryck[0], SIM.getRel(s, p, b4), 0.1); const tonadIngenLogn = !SIM.intryckOm(b4, p.id, 'logn');
+    SIM.beratta(s, p, b4, { ...e }, SIM.getRel(s, p, b4), 1.5); const ertappad = !!SIM.intryckOm(b4, p.id, 'logn');
+    // ett helt kväde om personen: redogörelsen säger om gärningen gjordes större eller tonades ned
+    let vrid = 0, text = '';
+    for (let i = 0; i < 20 && !vrid; i++) {
+      const k = kvall(3 + i), u = k.v[0]!, y = SIM.living(k.s).find(q => !k.v.includes(q)) ?? k.v[k.v.length - 1]!;
+      if (y.task?.act === 'samtal') y.task = undefined;
+      u.intryck = [{ om: y.id, namn: y.name, k: 'hjalpsam', v: 0.5, c: 1, t: k.s.now }]; SIM.getRel(k.s, u, y).op = 100;
+      if (!upptrad(k.s, u) || k.s.fram!.bud !== 'person') continue;
+      kor(k.s, 1.5);
+      const m = k.s.framtradanden?.[k.s.framtradanden.length - 1];
+      vrid = m?.vrid ?? 0; text = vrid ? (vrid > 0 ? 'större' : 'nedtonad') : '';
+    }
+    return [
+      [`ett kväde ändrar gärningen mer än ett samtal, en teater ännu mer (${samtal.toFixed(3)}, ${kvade.toFixed(3)}, ${teater.toFixed(3)})`, kvade > samtal * 1.6 && teater > kvade],
+      [`den som ogillar personen tonar ned gärningen (${ogillar.toFixed(3)})`, ogillar < 0],
+      [`alla som lyssnar får samma version (${lika ? 'ja' : 'nej'})`, lika],
+      [`den som bara hört en större version dras halva vägen ner (${ner.toFixed(2)}, väntat ${nerVantat.toFixed(2)})`, Math.abs(ner - nerVantat) < 1e-9],
+      [`den som såg det ertappar en överdrift men inte en nedtoning (${tonadIngenLogn ? 'ingen' : 'en'} lögnare vid nedtoningen, ${ertappad ? 'ertappad' : 'inte ertappad'} vid överdriften)`, tonadIngenLogn && ertappad],
+      [`redogörelsen för kvädet säger om gärningen gjordes större (${text || 'inget'})`, vrid === 1],
     ];
   },
 };

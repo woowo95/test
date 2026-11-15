@@ -10,7 +10,7 @@ import { ALDER, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, o
 import { budHindrar } from './kyrka';
 import { avbryt } from './lager';
 import { eldPlats } from './karta';
-import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm } from './rykten';
+import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm, scenVersion } from './rykten';
 import { ledareOf, legitimitet, pabud } from './styre';
 import { Ting, tingOf } from './agande';
 import { tingVarde } from './varde';
@@ -38,6 +38,7 @@ export interface FramDef {
   bud?: true; // kan bära ett budskap (steg 4.3.2.3, BUDSKAP)
   kval: number; // hur mycket glädje formen ger jämfört med ett kväde
   amne: keyof typeof AMNE; // vad det handlar om
+  vrid?: number; // hur mycket mer än ett samtal formen ändrar gärningen i ett minne om en person (steg 10.4.11), 1 om inget står
 }
 // vad ett framträdande handlar om (FramDef.amne): ger texten till {amne}
 const AMNE = {
@@ -47,11 +48,11 @@ const AMNE = {
   handelse: (s: State, p: Person) => minneAmne(s, p) ?? 'när byn kom till sjön',
 };
 export const FRAMTRADANDEN: FramDef[] = [
-  { id: 'kvade', namn: 'Kväde', text: '{namn} kväder vid elden om {amne}, och de andra lyssnar.', da: '{namn} kvad vid elden om {amne}, och de andra lyssnade.', bud: true, kval: 1, amne: 'minne' },
+  { id: 'kvade', namn: 'Kväde', text: '{namn} kväder vid elden om {amne}, och de andra lyssnar.', da: '{namn} kvad vid elden om {amne}, och de andra lyssnade.', bud: true, kval: 1, amne: 'minne', vrid: 2 },
   { id: 'tal', namn: 'Tal', text: '{namn} håller ett tal om {amne}.', da: '{namn} höll ett tal om {amne}.', bud: true, min: 2, kval: 0.8, amne: 'byn' },
   { id: 'forelasning', namn: 'Föreläsning', text: '{namn} lär de andra vad {hen} vet om {amne}.', da: '{namn} lärde de andra vad {hen} visste om {amne}.', min: 4, kval: 0.6, amne: 'kunskap' },
-  { id: 'teater', namn: 'Teater', text: '{namn} spelar upp en berättelse för de andra om {amne}, med röster och rörelser.', da: '{namn} spelade upp en berättelse för de andra om {amne}, med röster och rörelser.', bud: true, min: 6, kval: 1.3, amne: 'handelse' },
-  { id: 'sang', namn: 'Sång', text: '{namn} sjunger om {amne} till {inst}.', da: '{namn} sjöng om {amne} till {inst}.', instrument: true, bud: true, kval: 1.2, amne: 'minne' },
+  { id: 'teater', namn: 'Teater', text: '{namn} spelar upp en berättelse för de andra om {amne}, med röster och rörelser.', da: '{namn} spelade upp en berättelse för de andra om {amne}, med röster och rörelser.', bud: true, min: 6, kval: 1.3, amne: 'handelse', vrid: 2.5 },
+  { id: 'sang', namn: 'Sång', text: '{namn} sjunger om {amne} till {inst}.', da: '{namn} sjöng om {amne} till {inst}.', instrument: true, bud: true, kval: 1.2, amne: 'minne', vrid: 2 },
   { id: 'musik', namn: 'Musik', text: '{namn} spelar på {inst} för de andra.', da: '{namn} spelade på {inst} för de andra.', instrument: true, kval: 1.2, amne: 'minne' },
 ];
 // instrumenten (steg 4.3.2.2): saker (saker.ts) som ligger vid scenen. kval gånger formens, ord = i texten, sang = man kan
@@ -95,13 +96,13 @@ export const FRAM = balans('framtradande', {
 });
 
 // framträdandet som pågår: formen, den som uppträder, när det började (task.ref) och slutar, publiken som varit där och texten
-export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; da?: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string; gud?: number } // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
+export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; da?: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string; gud?: number; ver?: number } // ver = gärningens version i ett minne om en person, räknad en gång (steg 10.4.11) // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
 export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string; hanad?: string[]; scen?: number // scen = stationen (steg 9.2.67)
   // redogörelsen (steg 5.4.7.1), sparad när det händer: numret (raden i loggen och notisen pekar hit), publiken med vad var och
   // en tyckte om den som uppträdde före och efter (r0, r1) och om ledaren (l0, l1, efter en hyllning eller ett hån), glädjen
   // (tanken i humöret), de som fick höra ryktet, de som tron övertygade, ledaren (namnet när budskapet gällde ledaren) och
   // om ingen kom (inget)
-  nr?: number; amne?: string; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true }
+  nr?: number; amne?: string; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true; vrid?: 1 | -1 } // vrid: gärningen gjordes större (1) eller tonades ned (-1), steg 10.4.11
 export interface FramLyss { id: number; namn: string; r0: number; r1: number; l0?: number; l1?: number }
 
 // kvällen: tolv timmar bakåt, så att kvällen och natten efter hör till samma dygn
@@ -145,7 +146,7 @@ function stod(s: State, b: Person, l: Person | undefined, d: number) {
 }
 export const BUDSKAP: Record<Bud, BudDef> = {
   person: { namn: 'Om en person', vikt: (_s, _p, x) => x.e ? x.ev * FRAM.budPerson : 0, amne: (s, p, x) => intryckAmne(s, p, x.e!),
-    verkan: (s, p, b, q, f) => { const e = intryckOm(p, f.om!, f.ik); if (e && e.om !== b.id && rnd(s, 'fram', b) < FRAM.rykte * q) { beratta(s, p, b, e, getRel(s, p, b)); return true; } } },
+    verkan: (s, p, b, q, f) => { const e = intryckOm(p, f.om!, f.ik); if (e && e.om !== b.id && rnd(s, 'fram', b) < FRAM.rykte * q) { beratta(s, p, b, e, getRel(s, p, b), f.ver); return true; } } },
   hylla: { namn: 'Hyllar ledaren', vikt: (_s, _p, x) => x.l && x.op > 0 ? x.op / 100 * FRAM.budStyre : 0, amne: (_s, _p, x) => `${x.l!.name}, som leder byn väl`,
     verkan: (s, _p, b, q, f) => stod(s, b, byId(s, f.om!), FRAM.styre * q) },
   hana: { namn: 'Hånar ledaren', vikt: (s, _p, x) => x.l && x.op < 0 ? -x.op / 100 * FRAM.budStyre * hanTillat(s) : 0, amne: (_s, _p, x) => `${x.l!.name}, som tror sig vara förmer än de andra`,
@@ -249,6 +250,9 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
   const fyll = (x: string) => x.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', amne).replace('{inst}', i ? INSTRUMENT[i].ord : '');
   const text = fyll(d.text);
   s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('gud' in bud && bud.gud !== undefined ? { gud: bud.gud } : {}), ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
+  // ett minne om en person: versionen räknas en gång, så att alla som lyssnar får samma (steg 10.4.11)
+  const e = bud?.k === 'person' ? intryckOm(p, bud.om!, bud.ik) : undefined;
+  if (e) s.fram.ver = scenVersion(s, p, e, d.vrid ?? 1);
   s.framKvall = kvall(start);
   count(s, 'framtradanden');
   for (const q of pub) {
@@ -282,6 +286,8 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   const om = f.om !== undefined ? byId(s, f.om) : undefined, ledd = f.bud === 'hylla' || f.bud === 'hana' ? om : undefined;
   const m: FramMinne = { t: f.start, k: f.k, p: p.id, namn: p.name, text: f.da ?? f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt, amne: f.amne, ...(f.scen !== undefined ? { scen: f.scen } : {}),
     nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], ...(om ? { om: om.name } : {}), ...(ledd ? { ledare: ledd.name } : {}) };
+  const e0 = f.ver !== undefined ? intryckOm(p, f.om!, f.ik) : undefined; // gjordes gärningen större eller tonades den ned (steg 10.4.11)
+  if (e0 && Math.abs(f.ver! - e0.v) >= 0.01) m.vrid = f.ver! > e0.v ? 1 : -1;
   if (!pub.length) { // ingen kom (steg 5.4.7.1): redogörelsen säger det
     m.inget = true;
     framMinne(s, m, `${p.name} skulle uppträda, men ingen kom och lyssnade.`);

@@ -89,6 +89,7 @@ export const RYKTE = balans('rykte', {
   falskVikt: 0.8, // ett påhittat bevis väger så här mycket som ett riktigt
   vTak: 1.5, // ett intryck växer långsammare ju närmare det är vMax × vTak
   lognMax: 0.9, // tron på den man tror är en lögnare sjunker som mest så här mycket
+  scenNed: 0.5, // en nedtonad version från en scen drar den som bara hört minnet så här stor del av vägen ner (steg 10.4.11)
   dodBer: 0.5, // det man berättar om en död för man vidare med så här stor del av styrkan
   lognTanke: -0.05, lognTankeTim: 12, // den som hör att någon ljuger om hen blir så här ledsen i så här många timmar
   skitsnack: 1.5, // ett påhittat rykte är så här starkt gånger händelsens vikt
@@ -285,12 +286,18 @@ export function skvaller(s: State, a: Person, b: Person, r: Rel, berattelse: boo
   beratta(s, a, b, e, r);
 }
 // a berättar om intrycket e för b: b blir mindre säker, och a överdriver efter vad hen tycker om personen
-export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel) {
-  const d = INTRYCK[e.k], ex = e.bev?.[0];
-  const over = 1 + d.tecken * asikt(s, a, e.om) / 100 * RYKTE.over + (rnd(s, 'rykte', a) - 0.5) * RYKTE.brus;
-  // överdriften växer inte för varje led: högst så mycket över det bevisen väger
+// gärningen som a berättar den: överdriften efter vad a tycker om personen, plus slumpen, båda gånger g (formens tal på en scen,
+// steg 10.4.11; 1 i ett samtal). Överdriften växer inte för varje led: högst så mycket över det bevisen väger
+export function scenVersion(s: State, a: Person, e: Intryck, g = 1) {
+  const over = 1 + (INTRYCK[e.k].tecken * asikt(s, a, e.om) / 100 * RYKTE.over + (rnd(s, 'rykte', a) - 0.5) * RYKTE.brus) * g;
   const tak = e.bev?.length ? e.bev.reduce((t, x) => t + bevVikt(x), 0) * (1 + RYKTE.over) : RYKTE.vMax;
-  const v = clamp(Math.min(e.v * over, Math.max(e.v, tak)), 0, RYKTE.vMax), c = e.c * troPa(s, b, a, r) * RYKTE.led;
+  return clamp(Math.min(e.v * over, Math.max(e.v, tak)), 0, RYKTE.vMax);
+}
+// vFast = versionen från en scen (steg 10.4.11), samma för alla som lyssnar: en mindre version drar den som bara hört minnet
+// förut scenNed av vägen ner
+export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel, vFast?: number) {
+  const d = INTRYCK[e.k], ex = e.bev?.[0];
+  const v = vFast ?? scenVersion(s, a, e), c = e.c * troPa(s, b, a, r) * RYKTE.led;
   count(s, 'rykte_berattat');
   delade('rykte', 'i_' + e.k, e.namn); // samtalets ämne (steg 3.9.5)
   // påhittat om b själv, eller om något b var med om: b vet bättre (steg 3.3.3)
@@ -301,8 +308,10 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel) {
   const q = byId(s, e.om), om = q ?? { id: e.om, name: e.namn }; // den döda kan vara borta ur folket (compact i steg.ts)
   const led = (e.led ?? 0) + 1;
   // minnet av en död blir mer likt berättarens eget (steg 3.4.2)
-  intryck(s, b, om, e.k, v * (q && alive(q) ? 1 : RYKTE.dodBer), c, ex ? { ...ex, sett: undefined } as Bevis : undefined, a.id, led);
+  const vb = v * (q && alive(q) ? 1 : RYKTE.dodBer);
+  intryck(s, b, om, e.k, vb, c, ex ? { ...ex, sett: undefined } as Bevis : undefined, a.id, led);
   const ny = intryckOm(b, e.om, e.k);
+  if (vFast !== undefined && ny && ny.v > vb) ny.v -= (ny.v - vb) * RYKTE.scenNed; // scenens mindre version drar ner
   if (ny && ex) for (const x of e.bev!.slice(1)) addBevis(ny, { ...x, sett: undefined } as Bevis);
   if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) loggBer(s, 'l_rykte', e.om * 31 + e.k.length, { namn: e.namn, hen: q.sex === 'm' ? 'han' : 'hon', rykte: d.som ?? d.namn, heder: d.tecken > 0 }, 'rel', [e.om]);
 }
