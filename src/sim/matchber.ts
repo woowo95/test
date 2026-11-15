@@ -37,9 +37,10 @@ export function matchBerattelse(s: State, m: MatchMinne): string {
       skrall: !!vinn && !!bast && bast.f - vinn.f >= MATCHBER.skrall, favorit: !!vinn && vinn.id === bast?.id,
     }),
     publik: och((m.publik ?? []).map(x => x.namn)), nPub: m.publik?.length ?? 0,
+    pris: m.pris?.sak ?? '', givare: m.pris?.avNamn ?? '', fick: m.pris?.fickNamn ?? '', prisKvar: m.pris?.fick !== undefined, sjalv: m.pris?.fick === m.pris?.av,
     lang: min >= MATCHBER.lang, kort: min < MATCHBER.kort, glad: m.glad > 0,
   };
-  const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd' | 'm_publik', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
+  const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd' | 'm_publik' | 'm_pris', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
   if (m.installd) return mening('m_installd', 0);
-  return [mening('m_start', 0), mening('m_lopp', 1), ...(m.publik?.length ? [mening('m_publik', 4)] : []), mening('m_vinst', 2), mening('m_slut', 3)].join(' ');
+  return [mening('m_start', 0), mening('m_lopp', 1), ...(m.publik?.length ? [mening('m_publik', 4)] : []), mening('m_vinst', 2), ...(m.pris ? [mening('m_pris', 5)] : []), mening('m_slut', 3)].join(' ');
 }

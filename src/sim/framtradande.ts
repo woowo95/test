@@ -222,7 +222,7 @@ function budVal(s: State, p: Person, d: FramDef) {
 // ---------- beställda framträdanden (steg 4.3.2.4) ----------
 // saken ledaren l kan betala med: hel, ledig (ingen har den i handen eller bär den, den står inte vid en station) och den
 // minst värda av dem, så att ledaren inte ger bort det bästa
-function betalning(s: State, l: Person): Ting | undefined {
+export function betalning(s: State, l: Person): Ting | undefined { // ledarens minst värda lediga sak (också tävlingens pris, steg 10.7.20)
   let best: Ting | undefined, bv = Infinity;
   for (const t of tingOf(s)) {
     if (t.agare !== l.id || t.halv || t.hos !== undefined || t.krok !== undefined || t.lass !== undefined || t.vid !== undefined || t.bar !== undefined || t.c < 1) continue;

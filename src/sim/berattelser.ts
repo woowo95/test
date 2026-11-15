@@ -1845,6 +1845,14 @@ const MDEF = {
     { t: 'Det var en dag som andra.', om: f => f.glad !== true },
   ],
   // publiken runt matchen (steg 10.7.16): {publik} = de som stod och tittade, nPub = hur många
+  // tävlingens pris (steg 10.7.20): {pris} = saken, {givare} = ledaren, {fick} = den som fick den
+  m_pris: [
+    { t: 'Det var en tävling om {givare}s {pris}, och {fick} vann.', om: f => !!f.prisKvar && !f.sjalv },
+    { t: 'Priset var {givare}s {pris}, och nu är det {fick}s.', om: f => !!f.prisKvar && !f.sjalv },
+    { t: '{Fick} gick hem med {givare}s {pris}, priset i tävlingen.', om: f => !!f.prisKvar && !f.sjalv },
+    { t: '{Givare}s {pris} var priset, och {givare} vann själv.', om: f => !!f.prisKvar && !!f.sjalv },
+    { t: 'Priset skulle ha varit {givare}s {pris}, men när matchen var slut fanns det inte kvar.', om: f => !f.prisKvar },
+  ],
   m_publik: [
     { t: 'Publiken hejade: {publik} stod runt om och tittade.', om: f => Number(f.nPub) > 1 },
     { t: 'Runt om stod {publik} och hejade på.', om: f => Number(f.nPub) > 1 },

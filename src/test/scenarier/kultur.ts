@@ -94,6 +94,45 @@ function match(s: State, k: string, med: Person[]) {
   s.sport = { k, x: l.x + 0.5, y: l.y + 0.5, start: s.now, slut: s.now + SIM.HOUR };
   for (const q of med) spela(s, q);
 }
+SCENARIER.tavling = {
+  text: 'Tävlingen med pris (steg 10.7.20): en ledare med svagt stöd sätter upp sin minst värda lediga sak som pris när någon samlar till en match. Vinnaren äger saken, spelarna tycker bättre om ledaren, vinnaren får titeln och en rad i krönikan, och redogörelsen säger priset och givaren. Utan ledig sak blir det en vanlig match, och finns saken inte kvar delas inget ut',
+  kor: () => {
+    const by = (seed: number) => {
+      const s = rikDag(seed, { rep: 4 }), v = vuxna(s), l = v[0]!;
+      s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never };
+      for (const t of s.ting ?? []) if (t.agare === l.id) t.agare = SIM.BYN;
+      const kniv = SIM.newTing(s, 'kniv', 1, l.id);
+      for (const q of v) fritid(s, q);
+      return { s, v, l, kniv };
+    };
+    // samla tills ledaren sätter upp kniven (chansen 0,3 gånger 1 - legitimiteten)
+    const samla = (s: State, p: Person, ggr = 60) => { for (let i = 0; i < ggr; i++) { s.sport = undefined; if (spela(s, p) && (s.sport as SIM.Match | undefined)?.pris) return true; } return false; };
+    const a = by(3), leg = SIM.legitimitet(a.s).v, p = a.v[1]!;
+    const fick = samla(a.s, p);
+    const med = SIM.living(a.s).filter(q => q.task?.act === 'sport' && q !== a.l);
+    const op0 = med.reduce((x, q) => x + SIM.getRel(a.s, q, a.l).op, 0);
+    korTills(a.s, () => !!a.s.matcher?.length, 3 * 3600);
+    const mm = a.s.matcher?.at(-1), op1 = med.reduce((x, q) => x + SIM.getRel(a.s, q, a.l).op, 0);
+    const vinn = a.s.people.find(q => q.id === a.kniv.agare), ber = mm ? SIM.matchBerattelse(a.s, mm) : '';
+    const titel = vinn?.fame.find(f => f.startsWith('Vann tävlingen')), kron = (a.s.hist?.kronika ?? []).some(k => /tävlingen/.test(k[1]));
+    // utan ledig sak: ingen tävling
+    const b = by(4); b.kniv.agare = b.v[2]!.id;
+    const utan = samla(b.s, b.v[1]!, 40);
+    // saken finns inte kvar när matchen är slut
+    const c = by(5); samla(c.s, c.v[1]!); const harPris = !!(c.s.sport as SIM.Match | undefined)?.pris; c.kniv.agare = c.v[3]!.id;
+    korTills(c.s, () => !!c.s.matcher?.length, 3 * 3600);
+    const mc = c.s.matcher?.at(-1);
+    return [
+      [`ledaren (legitimitet ${leg.toFixed(2)}) satte upp ${a.s.matcher?.at(-1)?.pris?.sak ?? 'inget'} som pris`, fick && mm?.pris?.k === 'kniv'],
+      [`vinnaren äger kniven: ${vinn?.name ?? 'ingen'} (${mm?.vnamn ?? mm?.vinnLag ?? '-'} vann)`, !!vinn && mm?.pris?.fick === vinn.id && (mm.vinnare === vinn.id)],
+      [`spelarna tycker bättre om ledaren (${op0.toFixed(0)} → ${op1.toFixed(0)} för ${med.length})`, med.length > 0 && op1 - op0 >= med.length * SIM.SPORT.tavlingTack * 0.5],
+      [`titeln ${titel ?? 'ingen'} och en rad i krönikan`, (!!titel || vinn === a.l) && kron],
+      [`redogörelsen säger priset och givaren: ${ber}`, ber.includes('kniv') && ber.includes(a.l.name) && !/\{|undefined/.test(ber)],
+      ['utan ledig sak blir det en vanlig match', !utan && (b.s.stat?.tavlingar ?? 0) === 0],
+      [`saken fanns inte kvar: ingen fick den (${mc ? SIM.matchBerattelse(c.s, mc) : '-'})`, harPris && !!mc?.pris && mc.pris.fick === undefined && c.kniv.agare === c.v[3]!.id],
+    ];
+  },
+};
 SCENARIER.sportplats = {
   text: 'Platserna i sporterna (steg 4.5.6.10–11): i dragkampen och snöbollskriget två lag på var sin sida om mitten, i brottningen två i mitten och de andra i en ring, i kast på en rad framför målet och i bollspelet den som slår i ena änden',
   kor: () => {
