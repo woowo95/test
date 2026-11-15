@@ -1091,7 +1091,9 @@ export const RUNDA = balans('runda', {
 // Varje ruta har ett helt antal saker av det samlaren letar: bär och rötter efter rikedomen i sitt lager (FYND, saker på en full
 // ruta), grenarna i skogen och stenarna och flintan vid stenarna efter rutan, minus det som plockats där (s.plockat, som växer
 // tillbaka). Bilden visar samma antal (ui/vaxter.ts), så det som syns är det som går att plocka
-const plockKey = (tk: Task, i: number) => `${tk.sok ? 'sten' : ACTS[tk.act].resurs ?? 'gren'}:${i}`;
+// (nyckeln för varje slag och ruta byggs en gång: den frågas för hundratals rutor i varje val av nästa mål)
+const PLOCKNYCKLAR: Record<string, string[]> = {};
+const plockKey = (tk: Task, i: number) => { const slag = tk.sok ? 'sten' : ACTS[tk.act].resurs ?? 'gren'; return (PLOCKNYCKLAR[slag] ??= [])[i] ??= `${slag}:${i}`; };
 function plockatPa(s: State, key: string) {
   const r = s.plockat?.[key];
   if (!r) return 0;
@@ -1125,7 +1127,15 @@ const lagrenPa = (res: Lager) => LAGREN_PA[res] ??= [...lagren(res), ...(res ===
 // och det som gäller hela kartan hämtas en gång, och inga listor byggs. Samma antal som sakerPa
 function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
   const res = ACTS[tk.act].resurs;
-  if (tk.sok || !res) return (x, y) => sakerPa(s, tk, x, y); // stenarna, flintan och grenarna räknas som vanligt
+  if (tk.sok) return (x, y) => sakerPa(s, tk, x, y); // stenarna och flintan räknas som vanligt
+  if (!res) { // grenarna: samma tal som sakerPaRutan, utan att bygga en lista per ruta
+    const solid = gridOf(s).solid, tr = groundOf(s).trees;
+    return (x, y) => {
+      if (!inMap(x, y) || solid[y * W + x] === 1) return 0;
+      const i = y * W + x, h = hash3(s.seed, i, 977), bas = tr[i] >= FOREST && h < RUNDA.grenTat ? 1 + Math.floor(h / RUNDA.grenTat * RUNDA.grenSaker) : 0;
+      return Math.max(0, Math.min(RUNDA.grenSaker, bas) - plockatPa(s, plockKey(tk, i)));
+    };
+  }
   const js = lagrenPa(res), rik = richnessFor(s, js), solid = gridOf(s).solid, dag = Math.floor(s.now / DAY);
   return (x, y) => {
     if (!inMap(x, y) || solid[y * W + x] === 1) return 0;
