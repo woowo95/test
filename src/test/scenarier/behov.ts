@@ -448,6 +448,7 @@ SCENARIER.torst = {
 };
 
 SCENARIER.is = {
+  lang: true,
   text: 'Steg 2.11.3: sjön har en egen temperatur som följer luftens långsamt. Isen lägger sig när vattnet kyls under noll, växer i kylan och smälter på våren. Den som fiskar eller dricker hugger först upp ett hål: tunn is med händerna, tjockare med en sten, och yxan, spjutet och spaden tar sig genom all is (tills isborren kommer). Fisket genom hålet är pimpling',
   kor: () => {
     // 36 dygn (36 år i spelet, drygt fem veckor i verkligheten) från våren, timme för timme: isen i varje tidsålder
@@ -832,6 +833,7 @@ SCENARIER.naring = {
 };
 
 SCENARIER.brist = {
+  lang: true,
   text: 'Steg 2.6.2: under en gräns ger ett näringsvärde brist. Bristen gör en sämre (trötthet, svaghet, fryser lätt, skörbjugg, yrsel och kramp), man äter helst det som fyller bristen, man längtar efter det och berättar om det, och den som vet att någon längtar efter något hämtar hellre den maten',
   kor: () => {
     const s = createState(5, START);

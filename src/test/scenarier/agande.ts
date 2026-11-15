@@ -46,6 +46,7 @@ const helAffar = (s: State, p: Person, forByn = false, tills?: SIM.Affar['fas'])
 };
 
 SCENARIER.agande = {
+  lang: true,
   text: 'Varje redskap är ett ting med ägare och skick. Den som gör det äger det, det gamla och det en död lämnar är byns. Man har redskapet man arbetar med i handen, tar sitt eget först, behåller det egna i handen och lägger tillbaka byns. Man lånar av släkt och vänner, inte av ovänner',
   kor: () => {
     const s = createState(4, START);
@@ -630,6 +631,7 @@ SCENARIER.axelrem = {
     const s = createState(2, START); tandEld(s);
     medBank(s, 'flatarbank');
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, rep: 1, bensyl: 1, skinnklader: 1, axelrem: 1 };
+    for (const r of s.people) for (const k of ['rock_kaninskinn', 'skor_kaninskinn', 'byxor_kaninskinn', 'mossa_kaninskinn', 'snoskor_kaninskinn']) if (SAKER[k]) addTool(s, k, r).bar = r.id; // plaggen har alla redan, så att skinnen inte går till dem först
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12);
     (s.stat ??= {}).fiskeForsok = 1; // byn fiskar, så den vill ha spjut och axelremmar
     const tek = SIM.TEKNIK.find(t => t.id === 'axelrem');
@@ -2699,6 +2701,7 @@ SCENARIER.rovarbyte = {
 };
 
 SCENARIER.entitag = {
+  lang: true,
   text: 'Steg 4.5.3.6: vid en arbetsbänk arbetar en i taget (STATIONER `samtidigt`, annars 1). Står någon redan vid bänken väljer en annan en annan bänk av samma sort eller ett annat arbete, och i en by som arbetar står aldrig två vid samma bänk',
   kor: () => {
     const s = createState(2, START); tandEld(s);

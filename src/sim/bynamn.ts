@@ -6,8 +6,8 @@
 // sant namnet är för byn i dag (sant). Samma tal väljer namnet och säger senare hur illa det stämmer. Var och en tycker om ett
 // namn efter hur sant det är gånger hur slaget tilltalar hen (gilla); den som föreslår tar det hen tycker bäst om (bastaNamn).
 // Efterledet räknas ur byns frö, så att samma by får samma namn utan att slumpen i byn rubbas
-import { T, W, State, Person, inMap } from './typer';
-import { ALDER, ageOf, alive, byId, getRel, living } from './folk';
+import { DAY, T, W, State, Person, inMap } from './typer';
+import { ALDER, ageOf, alive, byId, count, getRel, living } from './folk';
 import { eldPlats, hash } from './karta';
 import { groundOf } from './mark';
 import { FOREST } from './vag';
@@ -16,6 +16,11 @@ import { RYKTE } from './rykten';
 import { GUDAR, gudarOf, troende } from './religion';
 import { drar } from './seder';
 import { ISTID, kalender } from './tid';
+import { LAG, TAS_UPP } from './lagar';
+import { FRAGOR, Fraga, rostaOm } from './rost';
+import { ledareOf } from './styre';
+import { kronika } from './historik';
+import { notis } from './notiser';
 import { balans } from './balans';
 import type { UpplevelseTyp } from './uppvaxt';
 import type { IntryckTyp } from './rykten';
@@ -33,6 +38,8 @@ export const BYNT = balans('bynamn', {
   eget: 0.25, egetEnvalde: 0.4, // det egna namnet: eget + så här mycket gånger dragningen mot Envälde (−1 till 1)
   heligt: 0.4, heligtAndlig: 0.6, // tron: heligt + heligtAndlig × andligheten / 100
   annan: 0, annanRel: 0.6, // en annans namn: annan + annanRel × relationen / 100 (högst 1, lägst 0)
+  avsatt: 0.5, // en avsatt eller störtad ledares namn stämmer så här mycket (steg 10.9.4)
+  vana: 0.3, vanaDygn: 20, // vanan: den som levt vanaDygn dygn med namnet drar av vana från hur gärna hen byter (steg 10.9.4)
 });
 
 export type BynamnSlag = 'nybygget' | 'natur' | 'minne' | 'person' | 'tro';
@@ -83,10 +90,13 @@ export function slagitSigNer(s: State) {
   return k.ai === ISTID && s.now >= k.slut;
 }
 // en person: helt sant medan hen lever i byn, därefter efter hur känd hen är bland de levande
+// (steg 10.9.4: en avsatt eller störtad ledares namn stämmer hälften så bra)
+const AVSATT = new Set(['avsattes', 'störtades', 'drevs ut']);
 function personSant(s: State, om?: number) {
   const p = byId(s, om);
   if (!p) return 0;
-  return alive(p) ? 1 : Math.min(1, (s.kanda?.[p.id] ?? 0) / RYKTE.legend);
+  const v = alive(p) ? 1 : Math.min(1, (s.kanda?.[p.id] ?? 0) / RYKTE.legend);
+  return s.styre?.historia.some(h => h.id === p.id && AVSATT.has(h.slut ?? '')) ? v * BYNT.avsatt : v;
 }
 // tron: byns största tro och hur stor del av byn som hör till den
 function storstaTro(s: State) {
@@ -177,4 +187,62 @@ export function bastaNamn(s: State, p: Person) {
   let bast: (Kandidat & { v: number }) | undefined;
   for (const k of kandidater(s, p)) { const v = gilla(s, p, k); if (v > (bast?.v ?? -1)) bast = { ...k, v }; }
   return bast;
+}
+
+// ---------- dopet och namnbytet (steg 10.9.3–10.9.4) ----------
+// Namnet avgörs som påbuden, som en fråga byn röstar om vid elden klockan 20 (raden bynamn i FRAGOR och TAS_UPP), men står inte
+// som en skylt under Påbud. Den som får lägga fram påbud föreslår det namn hen själv tycker bäst om, när hen tycker klart bättre
+// om det än om det byn heter. Utan ledare föreslår den vuxna med mest karisma, och namnet är det enda som tas upp utan ledare.
+// Var och en röstar efter hur mycket bättre hen tycker om det nya namnet än det byn heter. Ett nej gör att samma namn inte tas
+// upp igen på LAG.nedrostat dygn
+export const BYNAMN_FRAGA = {
+  prio: 2, // prioriteten: så här mycket gånger hur mycket bättre förslagsställaren tycker om namnet (troskeln i LAG.troskel)
+};
+export const nuvarande = (s: State): { rad: string; om?: number } => s.bynamn ?? { rad: 'nybygget' };
+// hur mycket bättre p tycker om namnet k än det byn heter
+export const battre = (s: State, p: Person, k: { rad: string; om?: number }) => gilla(s, p, k) - gilla(s, p, nuvarande(s)) - namnVana(s, p);
+// vanan (steg 10.9.4): var och en håller på namnet efter hur länge hen har levt med det, fullt efter BYNT.vanaDygn dygn. Vanan
+// vid Nybygget är ingen
+export const namnVana = (s: State, p: Person) => s.bynamn ? BYNT.vana * Math.min(1, (s.now - Math.max(s.bynamn.t, p.born)) / (BYNT.vanaDygn * DAY)) : 0;
+// det namn p vill lägga fram, med prioriteten
+export function namnForslag(s: State, p: Person) {
+  if (!slagitSigNer(s) && !s.bynamn) return undefined;
+  const b = bastaNamn(s, p);
+  if (!b || b.namn === bynsNamn(s) || (s.bynamnNej?.[b.namn] ?? 0) > s.now) return undefined;
+  const prio = BYNAMN_FRAGA.prio * battre(s, p, b);
+  return prio > 0 ? { b, prio } : undefined;
+}
+const harHaftLedare = (s: State) => s.people.some(p => p.ledde);
+// raderna i FRAGOR och TAS_UPP läggs till när allt är laddat (steg.ts), som budgeten
+export function bynamnRegister() {
+  TAS_UPP.push({ id: 'bynamn', lista: (s, p) => { const f = namnForslag(s, p); return f ? [{ fr: fragaAv(f.b, p), prio: f.prio, varfor: `${p.name} vill att byn ska heta ${f.b.namn}` }] : []; } });
+  FRAGOR.bynamn = {
+    namn: (_s, d) => `Byns namn: ${d.namn}`, om: (s, d) => `Byn heter ${bynsNamn(s)} och skulle heta ${d.namn}.`, krets: 'byn',
+    rost: (s, p, d) => {
+      const v = battre(s, p, { rad: d.rad as string, om: d.om as number | undefined });
+      return { v, why: v > 0 ? `Tycker att ${d.namn} stämmer bättre` : `Tycker att ${bynsNamn(s)} stämmer bättre` };
+    },
+    gor: (s, d) => dop(s, { namn: d.namn as string, rad: d.rad as string, om: d.om as number | undefined }),
+    nej: (s, d) => { (s.bynamnNej ??= {})[d.namn as string] = s.now + LAG.nedrostat * DAY; count(s, 'bynamn_nej'); },
+    missnoje: s => harHaftLedare(s), utanStyre: true,
+  };
+}
+const fragaAv = (b: Kandidat, p: Person): Fraga => ({ f: 'bynamn', d: { namn: b.namn, rad: b.rad, om: b.om }, fram: p.id });
+// ett ja: byn heter så från och med nu
+export function dop(s: State, k: { namn: string; rad: string; om?: number }) {
+  const forr = s.bynamn ? s.bynamn.namn : undefined;
+  s.bynamn = { namn: k.namn, rad: k.rad, ...(k.om !== undefined ? { om: k.om } : {}), t: s.now };
+  const t = `Byn kallar sig nu ${k.namn}.${forr ? ` Den hette förr ${forr}.` : ''}`;
+  kronika(s, t, 'bynamn'); notis(s, 'bynamn', t, k.om !== undefined ? [k.om] : []); count(s, forr ? 'bynamn_byte' : 'bynamn_dop');
+  if (s.bynamnNej) delete s.bynamnNej[k.namn];
+}
+// klockan 20 utan ledare: den vuxna med mest karisma föreslår, och namnet är det enda som tas upp
+export function dopKvall(s: State) {
+  if (ledareOf(s)) return;
+  const v = vuxna(s);
+  if (!v.length) return;
+  const p = v.reduce((a, q) => q.pot.karisma > a.pot.karisma ? q : a);
+  const f = namnForslag(s, p);
+  if (!f || f.prio < LAG.troskel) return;
+  rostaOm(s, fragaAv(f.b, p));
 }

@@ -45,6 +45,7 @@ SCENARIER.sjukdom = {
 };
 
 SCENARIER.smitta = {
+  lang: true,
   text: 'Steg 9.5.3: varje timme prövas de som står bredvid en sjuk, är i samma rum eller sitter vid samma eld med sjukdomens smitta. Inkubationen döljer sjukdomen så att den hinner spridas, den som är immun smittas inte, och det som inte smittar sprids inte',
   kor: () => {
     const { insjukna } = SIM;

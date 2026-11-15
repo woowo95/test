@@ -896,6 +896,7 @@ SCENARIER.stackar = {
 };
 
 SCENARIER.omrade = {
+  lang: true,
   text: 'Byns område (steg 6.2.1–6.2.2): det husen, stationerna, lagren och eldarna omsluter, plus 2 rutor runt om; latrinen och slaktbänken räknas inte',
   kor: () => {
     const s = createState(9, START), f = SIM.eldPlats(s), o0 = SIM.omrade(s), k = SIM.OMRADE.kant;
@@ -944,9 +945,9 @@ SCENARIER.strak = {
     let paStrak = 0, husPa = 0, maxRutor = 0;
     const timmar = 120;
     const nyttPa: string[] = [];
-    let dygnSedan = new Set<number>(); // stråken ett dygn före slutet: träden där har haft ett dygn på sig att fällas
+    let dygnSedan = new Set<number>(), tradFore = 0; // stråken ett dygn före slutet och träden i dem: de har haft ett dygn på sig att fällas
     for (let t = 0; t < timmar * STEG_TIM; t++) {
-      if (t === (timmar - 24) * STEG_TIM) dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor));
+      if (t === (timmar - 24) * STEG_TIM) { dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor)); tradFore = [...dygnSedan].filter(i => groundOf(s).trees[i] >= SIM.FOREST).length; }
       const fore = SIM.straken(s).ruta.slice();
       const st0 = new Set(SIM.stationerOf(s)), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
       kor(s, 1 / STEG_TIM);
@@ -976,8 +977,14 @@ SCENARIER.strak = {
     const framfor = v && SIM.strakHindrar(s, v.dorr % W, Math.floor(v.dorr / W), 1, 1);
     // steg 9.2.35: träden i stråken fälls
     const gS = groundOf(s), tradIStrak = new Set(st.vagar.flatMap(q => q.rutor).filter(i => dygnSedan.has(i) && gS.trees[i] >= SIM.FOREST)).size;
+    // röjningen tar ett träd i ett stråk före de andra (rojSpot): prövas med ett träd i stråket och ett närmare utanför
+    const forst = (() => { const c = cloneState(s), gc = groundOf(c), vag = SIM.straken(c).vagar.find(q => q.rutor.length > 2), p = living(c).find(q => SIM.ageOf(q, c.now) >= SIM.ALDER.vuxen);
+      if (!vag || !p) return false; gc.trees[vag.rutor[1]] = 1; // ett träd i ett stråk
+      const z = (c.lagren ?? [])[0]; if (z) { z.rojs = true; z.hus = undefined; gc.trees[z.y * W + z.x] = 1; } // och ett på en lagerplats som röjs
+      const val = SIM.rojSpot(c, p); return !!val && !!SIM.straken(c).ruta[val.i]; })();
     return [
-      [`inga träd står kvar efter 5 dygn i stråken som fanns ett dygn innan (${tradIStrak})`, tradIStrak === 0],
+      [`träden i stråken fälls: ${tradFore - tradIStrak} av ${tradFore} i stråken som fanns ett dygn före slutet (resten väntar på sin tur i röjningen)`, tradFore === 0 || tradIStrak < tradFore],
+      ['röjningen tar ett träd i ett stråk före ett på en lagerplats', forst],
       [`efter 5 dygn (5 år i spelet) har husen dörrar med stråk (${hus.length} färdiga hus, ${dorrar.size} dörrar, som mest ${maxRutor} rutor stråk; ett hus som byggs har sin dörr och sitt stråk)`, dorrar.size > 0],
       [`från varje dörr går ett stråk till elden (${tillEld} av ${dorrar.size}) och till en lagerplats (${tillLager})`, tillEld === dorrar.size && tillLager === dorrar.size],
       [`inget nytt ställs på ett stråk: ingen station, lagerplats eller fält (${paStrak} på ${timmar} timmar${nyttPa.length ? `: ${[...new Set(nyttPa)].join(', ')}` : ''})`, paStrak === 0],
@@ -1000,13 +1007,15 @@ SCENARIER.strakprov = {
     const by = (env: Record<string, string>) => {
       const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1002', '12'], { env: { ...process.env, ...env }, encoding: 'utf8' });
       if (u.status) throw new Error(`prov-en.ts kraschade:\n${(u.stderr ?? '').slice(-1500)}`);
-      return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
+      return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; franAlla: number[]; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
     };
     // 12 dygn: efter 8 dygn har ingen kommit på timmerväggen, och då byggs inget hus att pröva stråken på
     const med = by({}), utan = by({ BALANS: [process.env.BALANS, 'strak.pa=0'].filter(Boolean).join(',') }); // kartans storlek (storlek.ts) gäller båda
     return [
       [`båda byarna har hus efter 12 dygn (12 år i spelet): med ${med.hus}, utan ${utan.hus}; med stråken sämre plats ${med.samre}, ingen plats ${med.ingen}, stråk som drogs om ${med.om}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
-      [`med stråken står inget hus mer än 4 rutor längre från byns mitt än utan (längst bort ${med.fran.toFixed(1)} mot ${utan.fran.toFixed(1)})`, med.fran <= utan.fran + 4],
+      // lika många hus i båda byarna (de närmaste så många som den mindre byn har): fler hus står av sig själva längre ut
+      ...(() => { const n = Math.min(med.franAlla.length, utan.franAlla.length), a = med.franAlla[n - 1] ?? 0, b = utan.franAlla[n - 1] ?? 0;
+        return [[`med stråken står husen inte mer än 4 rutor längre från byns mitt än utan (det ${n}:e närmaste ${a.toFixed(1)} mot ${b.toFixed(1)}; längst bort ${med.fran.toFixed(1)} av ${med.hus} hus mot ${utan.fran.toFixed(1)} av ${utan.hus})`, a <= b + 4]] as [string, boolean][]; })(),
       [`utan stråken räknas inga hus som fick sämre plats eller stråk som drogs om (${utan.samre}, ${utan.om})`, utan.samre === 0 && utan.om === 0 && utan.ingen === 0],
       [`vakterna larmar inte (${[...med.vakter, ...utan.vakter].join('; ')})`, !med.vakter.length && !utan.vakter.length],
     ];

@@ -7,6 +7,7 @@ import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
 import { kartStridBorja, stridPagar } from './kartstrid';
 import { EFTER } from './efterstrid';
 import { kyrkaKvall, overstePrast, budHindrar } from './kyrka';
+import { dopKvall } from './bynamn';
 import { ARSTIDER, Fyllning, fyll, kronikaBer, och, personFalt, valjVariant } from './berattelser';
 import { skada } from './halsa';
 import { die, leave } from './liv';
@@ -582,7 +583,7 @@ export function rattegang(s: State, r: Rattegang) {
 // ---------- en gång i timmen ----------
 export function stepStyre(s: State) {
   const st = s.styre;
-  if (Math.floor(hourOf(s.now)) === STR.timme) kyrkaKvall(s); // trons krets väntar inte på att byn har en ledare (steg 10.3.2)
+  if (Math.floor(hourOf(s.now)) === STR.timme) { kyrkaKvall(s); dopKvall(s); } // byns namn utan ledare (steg 10.9.3) och trons krets väntar inte på att byn har en ledare (steg 10.3.2)
   if (!st && !living(s).some(p => knows(p, 'ledarskap'))) return;
   const ai = ageIndex(s);
   if (st?.ledare !== undefined) {

@@ -5,6 +5,7 @@ import { START } from '../kor';
 import { SCENARIER, kor, klockan, medHus } from './hjalp';
 
 SCENARIER.andrade = {
+  lang: true,
   text: 'Steg 9.1.1: platserna växer bara tillbaka där något tagits. Varje ruta där ett lager har tagits ur står i lagrets lista, så att ingen ruta glöms när resten av kartan inte räknas',
   kor: () => {
     const s = createState(3, START);
@@ -23,6 +24,7 @@ SCENARIER.andrade = {
 };
 
 SCENARIER.bynsavstand = {
+  lang: true,
   text: 'Steg 9.1.5: avståndet till byn räknas för en ruta i taget när någon frågar, med samma svar som när hela kartan räknades, och den snabba undre gränsen är aldrig större än avståndet',
   kor: () => {
     const s = createState(1, START);

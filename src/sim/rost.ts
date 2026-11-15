@@ -116,6 +116,8 @@ export interface FragaDef {
   rost(s: State, p: Person, d: FragaData): { v: number; why: string }; // −1 till 1: åsikten och intresset
   gor(s: State, d: FragaData, fram: Person | undefined): void; // vad ett ja gör
   nej?(s: State, d: FragaData): void;
+  missnoje?(s: State): boolean; // om rösterna ger missnöje med styret (byns namn bara i en by som haft en ledare, steg 10.9.3)
+  utanStyre?: true; // frågan kan tas upp utan styre (byns namn), och omröstningen sparas då inte
 }
 export const FRAGOR: Record<string, FragaDef> = {
   // påbuden som finns blir de första frågorna (steg 8.3.1)
@@ -161,13 +163,13 @@ export function rostaOm(s: State, fr: Fraga) {
   const ja = roster.reduce((a, r) => a + (r.ja ? r.w : 0), 0), nej = roster.reduce((a, r) => a + (r.ja ? 0 : r.w), 0), gick = ja > nej;
   const om = def.om?.(s, fr.d);
   // trons omröstningar sparas på tron, och trons krets skapar aldrig byns styre (steg 10.3.2)
-  const lista = tr ? (tr.roster ??= []) : (styreAv(s).roster ??= []);
+  const lista = tr ? (tr.roster ??= []) : def.utanStyre && !s.styre ? [] : (styreAv(s).roster ??= []);
   lista.push({ t: s.now, f: fr.f, namn: def.namn(s, fr.d), fram: fr.fram, framNamn: fram?.name ?? '', roster, ja, nej, gick, ...(om ? { om } : {}) });
   if (lista.length > ROST.sparas) lista.splice(0, lista.length - ROST.sparas);
   count(s, 'omrostning'); count(s, gick ? 'omrostning_ja' : 'omrostning_nej');
   const envalde = Math.max(0, s.seder.v.rang ?? 0);
   // missnöjet med styret: bara byns frågor, inte trons eller skulden på tinget
-  if (def.krets === 'byn' && fr.f !== 'skuld') for (const r of roster) if (r.ja !== gick) { const p = byId(s, r.id); if (p) p.missnoje = clamp((p.missnoje ?? 0) + ROST.miss + ROST.missEnvalde * envalde, 0, 1); }
+  if (def.krets === 'byn' && fr.f !== 'skuld' && (def.missnoje?.(s) ?? true)) for (const r of roster) if (r.ja !== gick) { const p = byId(s, r.id); if (p) p.missnoje = clamp((p.missnoje ?? 0) + ROST.miss + ROST.missEnvalde * envalde, 0, 1); }
   if (gick) def.gor(s, fr.d, fram); else def.nej?.(s, fr.d);
   return gick;
 }

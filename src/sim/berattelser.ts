@@ -1663,13 +1663,15 @@ const MDEF = {
     { t: '{Kund} hade {vara} över och ville sälja det för silver.', om: f => f.salj === true },
     { t: '{Kund} bar fram {vara} och frågade om {handlare} ville köpa.', om: f => f.salj === true },
   ],
-  // ett argument ur registret HANDELSARG (handelsber.ts): {arg} = argumentets id
+  // ett argument ur registret HANDELSARG (handelsber.ts): {arg} = argumentets id, {bynamn} = byns namn, som handlaren säger
+  // (byborna säger byn, steg 10.9.5)
   h_arg: [
     { t: '{Kund} påpekade att {vara} var slarvigt gjort.', om: f => f.arg === 'slitet' },
     { t: '"Se på det här, det håller inte länge", sa {kund} om {vara}.', om: f => f.arg === 'slitet' },
     { t: 'Det syntes att {vara} inte var väl gjort, och det sa {kund} också.', om: f => f.arg === 'slitet' },
     { t: '{Handlare} visade hur fint {vara} var gjort.', om: f => f.arg === 'fint' },
     { t: '"Sådant arbete hittar du inte i någon by här omkring", sa {handlare}.', om: f => f.arg === 'fint' },
+    { t: '"Så fint gör ingen i {bynamn}", sa {handlare}.', om: f => f.arg === 'fint' && !!f.bynamn },
     { t: '{Handlare} lät {kund} känna på {vara}, som var mycket väl gjort.', om: f => f.arg === 'fint' },
     { t: '"Vintern är nära", påminde {handlare}. "Då vill du inte vara utan."', om: f => f.arg === 'vinter' },
     { t: '{Handlare} talade om hösten och om att kölden snart kommer.', om: f => f.arg === 'vinter' },
@@ -1679,9 +1681,11 @@ const MDEF = {
     { t: '{Kund} pekade på snön och sa att byn inte hade mycket att ge.', om: f => f.arg === 'istid' },
     { t: '{Handlare} visste att byn saknade {vara}, och sa det rakt ut.', om: f => f.arg === 'behov' },
     { t: '"Ni har inget sådant själva", sa {handlare}. "Det ser jag."', om: f => f.arg === 'behov' },
+    { t: '"Sådant finns inte i {bynamn}", sa {handlare}. "Det vet jag."', om: f => f.arg === 'behov' && !!f.bynamn },
     { t: '{Handlare} märkte hur mycket {kund} behövde {vara}.', om: f => f.arg === 'behov' },
     { t: '{Handlare} sa att vägen hit hade varit lång.', om: f => f.arg === 'langt' },
     { t: '"Jag har burit det här i många dagar", sa {handlare}.', om: f => f.arg === 'langt' },
+    { t: '"Det är långt till {bynamn}", sa {handlare}. "Jag har burit det här i många dagar."', om: f => f.arg === 'langt' && !!f.bynamn },
     { t: '{Handlare} talade om den långa vägen och om hur tung packningen var.', om: f => f.arg === 'langt' },
     { t: '{Kund} påminde om att de var vänner sedan förra gången.', om: f => f.arg === 'vanner' },
     { t: '"Vi har gjort goda affärer förut, du och jag", sa {kund}.', om: f => f.arg === 'vanner' },
@@ -1702,6 +1706,7 @@ const MDEF = {
     { t: '"Det är inte för min egen skull", sa {kund}. "Hela byn behöver det."', om: f => f.arg === 'byn' },
     { t: '{Handlare} blev irriterad över ett bud som var alldeles för lågt.', om: f => f.arg === 'irriterad' },
     { t: '"Försöker du lura mig?" sa {handlare} när budet kom.', om: f => f.arg === 'irriterad' },
+    { t: '"Är det så man handlar i {bynamn}?" sa {handlare} när budet kom.', om: f => f.arg === 'irriterad' && !!f.bynamn },
     { t: 'Ett av buden var så snålt att {handlare} blev sur.', om: f => f.arg === 'irriterad' },
   ],
   // stämningen: nej = antal nej i ord (nejTal = talet), upp/ner = relationen blev bättre eller sämre

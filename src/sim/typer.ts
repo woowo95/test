@@ -350,6 +350,7 @@ export interface State {
   stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
   aktOm?: Record<string, string>; // vad byn minns om olyckan bakom rädslan för en handling
   bynamn?: import('./bynamn').Bynamn; // byns namn (steg 10.9.1, bynamn.ts); saknas = Nybygget
+  bynamnNej?: Record<string, number>; // namn som röstats ned och när de får tas upp igen (steg 10.9.3)
   kanda?: Record<number, number>; // byns samlade minne (ryktbarheten) av varje person som någon minns, räknat var fjärde timme (steg 10.6.14, rykten.ts)
   runstenar?: import('./skrift').Runsten[]; // runstenarna (steg 10.6.1, skrift.ts)
   skriftSedda?: [string, string][]; // stenarna och böckerna vid förra timmen, id och titel, så att krönikan säger när en är borta (steg 10.6.8)
@@ -504,7 +505,7 @@ export interface Fire {
   want?: number; wantBy?: number; wantWhy?: string; // största önskan om ved på elden just nu, och vems
   ash?: number; ashUntil?: number; // kolhög efter en utbrunnen eld
   at?: { x: number; y: number }; // var elden står om den flyttats (steg 2.10.4); annars där kartan lade den (getMap(seed).fire)
-  flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit' }; // elden ska flyttas hit (eldflytt.ts)
+  flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit'; gjort?: number; vem?: number; fran?: number }; // elden ska flyttas hit (eldflytt.ts); gjort = arbetet som redan gjorts, vem och fran = den som arbetar nu och sedan när| 'vuxit' }; // elden ska flyttas hit (eldflytt.ts)
   // en lägereld till (steg 4.5.6.8, s.eldar): numret (task.ref för den som eldar, tänder eller hämtar kol vid den), de som har
   // sin sovplats närmast den (räknas varje timme i brasor.ts), när den slocknade och när ringen lades
   id?: number; folk?: number[]; ut?: number; klar?: number;
