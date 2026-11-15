@@ -465,10 +465,11 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
 // Byborna handlar med sina egna saker i steg 4.4.1.5, färdigheten Handel kommer i steg 4.4.1.4
 const klanAv = (s: State, h: Handlare) => klanById(s, hp(s, h).gast!.klan);
 export const ledigt = (h: Handlare) => rymmer(h) - kgOf(h.varor);
-// hur mycket handlaren värderar en till av slaget k, gånger grundvärdet
-export function handlarVarde(s: State, h: Handlare, k: string) {
+// hur mycket handlaren värderar en till av slaget k, gånger grundvärdet. tro = kunden som räknar med det hen tror om klanens
+// pris (trorPris, steg 10.5.16); handlaren själv svarar efter det verkliga
+export function handlarVarde(s: State, h: Handlare, k: string, tro?: Person) {
   if (k === 'silver') return 1;
-  const pris = klanPris(klanAv(s, h), k); // klanens pris (steg 10.5.14), både för det hen säljer och det hen köper
+  const kl = klanAv(s, h), pris = tro && kl ? trorPris(tro, kl.id, k) : klanPris(kl, k); // klanens pris (steg 10.5.14), både för det hen säljer och det hen köper
   if (h.varor.some(w => w.k === k)) return (1 + HANDEL.vinst) * pris;
   if (ledigt(h) < viktOf(k)) return 0; // ryggsäcken är full
   const gott = bynPart(s, hp(s, h).x, hp(s, h).y).varde(k) <= DELA.over; // byn har gott om det
@@ -557,6 +558,8 @@ vidLura.push((s, L, X, markt) => {
   count(s, 'klanLurad');
   log(s, `${hp(s, h).name} märkte att ${L.namn} hade lurat ${honom(hp(s, h))}. ${k.namn} kommer att höra om det.`, 'world');
 });
+// handlaren som kunden p tror att hen är (steg 10.5.16): samma part, med värderingen efter p:s tro om klanens priser
+const trodd = (s: State, h: Handlare, p: Person | undefined): Part => { const H_ = handlarPart(s, h); return p ? { ...H_, varde: k => handlarVarde(s, h, k, p) } : H_; };
 // bybon som part med handlaren: hen betalar också med sitt silver, och silvret är värt sitt grundvärde
 const bybonPart = (s: State, p: Person): Part => ({ ...personPart(s, p, true), varde: k => k === 'silver' ? 1 : behovAv(s, p, k) });
 // det p har nytta av av det handlaren har, det hen saknar först
@@ -564,12 +567,12 @@ const vill = (s: State, h: Handlare, p: Person) => h.varor.map(w => ({ w, v: beh
 // det p har mycket mer av än hen behöver och handlaren vill ha, för silver (steg 4.5.4.14): det p har över av ett slag (det hen
 // inte behöver själv, payable i behov.ts) som är värt minst ett helt silver för handlaren, så mycket som hen kan bära.
 // Samma för byn (det byn har gott om), när den handlar (steg 4.5.7.4)
-const salja = (s: State, h: Handlare, p: Person) => saljaAv(s, h, bybonPart(s, p));
-function saljaAv(s: State, h: Handlare, M: Part) {
+const salja = (s: State, h: Handlare, p: Person) => saljaAv(s, h, bybonPart(s, p), p);
+function saljaAv(s: State, h: Handlare, M: Part, tro: Person) {
   const ut: Vara[] = [];
   let plats = ledigt(h);
   for (const w of M.over(['silver'])) {
-    const v = handlarVarde(s, h, w.k), n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9));
+    const v = handlarVarde(s, h, w.k, tro), n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9)); // det kunden tror handlaren ger (steg 10.5.16)
     if (v <= 0 || n < 1 || n * grundvarde(w.k) * v < 1) continue; // det som är värt minst ett helt silver (steg 10.5.12)
     ut.push({ ...w, n }); plats -= n * viktOf(w.k);
   }
@@ -612,7 +615,7 @@ const kravAv = (s: State, h: Handlare, M: Part) => clamp(1 - HANDEL.krav * ((M.h
 // och minst för hen först, betalaAv i behov.ts). Kostar det kunden mer än det hen får är värt för hen, tar hen bort det hen
 // behöver minst. När hen säljer ber hen om silver: mer än sakerna är värda för handlaren, mindre efter varje nej
 function budNu(s: State, h: Handlare, a: Affar, M: Part) {
-  const H_ = handlarPart(s, h);
+  const H_ = trodd(s, h, byId(s, a.vem)); // kunden räknar med det hen tror om klanens priser (steg 10.5.16)
   if (a.salj) {
     const n = Math.min(h.silver, Math.max(1, Math.round(vardFor(a.bud, H_.varde) * (2 - a.f))));
     a.kop = n >= 1 ? [{ k: 'silver', n }] : [];
@@ -633,7 +636,7 @@ function valj(s: State, h: Handlare, a: Affar, M: Part, p: Person) {
   a.kop = (a.byn ? h.varor.filter(w => M.varde(w.k) >= DELA.saknar) : vill(s, h, p).slice(0, HANDEL.egnaMax))
     .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? w.n : Math.min(w.n, 2), q: w.q }));
   if (budNu(s, h, a, M)) return true;
-  const sal = saljaAv(s, h, M);
+  const sal = saljaAv(s, h, M, p);
   if (!sal.length) return false;
   a.salj = true; a.bud = sal;
   return budNu(s, h, a, M);
@@ -683,7 +686,7 @@ function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
   a.rel0 ??= relTal(s, h, p);
   a.arg ??= handelsArg({ s, p, byn: !!a.byn, salj: !!a.salj, kop: a.kop, varde: M.varde, handel: M.handel ?? 0, hHandel: hp(s, h).skill.handel, rel: gastRel(s, h, p), gill: gillar(s, h, p) });
   const hela = (v: Vara[]) => v.map(w => ({ k: w.k, n: Math.max(1, Math.round(w.n)) }));
-  const f: ByteForsok = { vill: hela(a.kop), bud: hela(a.bud), krav: Math.max(1, Math.round(krav)), bjod: Math.max(1, Math.round(bud)) };
+  const f: ByteForsok = { vill: hela(a.kop), bud: hela(a.bud), krav: Math.max(1, Math.round(krav)), bjod: Math.max(1, Math.round(bud)), tro: Math.max(1, Math.round(vardFor(a.bud, trodd(s, h, p).varde))) }; // tro = vad kunden trodde att budet var värt för handlaren (steg 10.5.16)
   (a.forsok ??= []).push(f);
   if (bud >= krav - 1e-9) {
     f.ja = true;
@@ -709,6 +712,9 @@ function slut(s: State, h: Handlare, a: Affar, p: Person | undefined) {
   h.affar = undefined;
   visaFiltar(s, h);
   const bytt = a.byt !== undefined;
+  // de blev inte överens: kunden har ändå hört handlarens priser på slagen i affären (ett byte lär ut dem i vidByte, steg 10.5.16)
+  const kl = klanAv(s, h);
+  if (p && kl && !bytt) for (const k of new Set((a.forsok ?? []).flatMap(f => [...f.vill, ...f.bud].map(w => w.k)))) if (k !== 'silver' && grundvarde(k) > 0) larPris(s, p, kl.id, k, 1);
   if (a.byn) { h.bynKlar = true; count(s, 'handelBesok'); if (bytt) count(s, 'handelByten'); return; }
   if (p) (h.handlat ??= []).push(p.id);
   count(s, 'egenHandel');
@@ -752,8 +758,8 @@ export function handlaVal(s: State, p: Person): { act: typeof HANDLA | typeof KO
     // hen ställer sig i kön om det hen kan betala med räcker till en av varorna hen vill ha, för handlaren, eller om hen har
     // något att sälja (steg 4.5.4.14)
     const v = vill(s, h, p);
-    const kan = v.length ? bybonPart(s, p).over([]).reduce((x, w) => x + w.n * grundvarde(w.k) * handlarVarde(s, h, w.k), 0) : 0;
-    if (!(v.length && kan >= Math.min(...v.map(w => grundvarde(w.k) * handlarVarde(s, h, w.k)))) && !salja(s, h, p).length) return undefined;
+    const kan = v.length ? bybonPart(s, p).over([]).reduce((x, w) => x + w.n * grundvarde(w.k) * handlarVarde(s, h, w.k, p), 0) : 0; // efter det hen tror om priserna (steg 10.5.16)
+    if (!(v.length && kan >= Math.min(...v.map(w => grundvarde(w.k) * handlarVarde(s, h, w.k, p)))) && !salja(s, h, p).length) return undefined;
     ko.push(p.id);
   }
   if (!a && ko[0] === p.id) { ko.shift(); return affarSteg(s, h, h.affar = nyAffar(p, false, s.now)); }

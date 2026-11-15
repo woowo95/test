@@ -309,7 +309,7 @@ export interface ByteVara { k: string; n: number; p: number }
 export interface ByteMinne { nr: number; t: number; a: number; an: string; b: number; bn: string; ag: ByteVara[]; bg: ByteVara[]; fa?: { x: number; y: number }; fb?: { x: number; y: number }; forsok?: ByteForsok[]; avbruten?: true; rel?: [number, number]; arg?: string[] } // arg = argumenten i berättelsen (steg 5.4.6.2, handelsber.ts)
 // ett bud i förhandlingen (steg 5.4.6.1): det kunden ville ha, det hen bjöd, vad handlaren krävde och vad budet var värt för
 // hen (i silver), och om hen sa ja
-export interface ByteForsok { vill: { k: string; n: number }[]; bud: { k: string; n: number }[]; krav: number; bjod: number; ja?: true }
+export interface ByteForsok { vill: { k: string; n: number }[]; bud: { k: string; n: number }[]; krav: number; bjod: number; tro?: number; ja?: true } // tro = vad kunden trodde budet var värt för handlaren (steg 10.5.16)
 
 export interface State {
   v: number; // numret på den senaste uppgraderingen av sparfilen (UPPGRADERINGAR i varld.ts)

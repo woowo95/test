@@ -1486,7 +1486,28 @@ SCENARIER.forhandling = {
     // många argument: högst tre i berättelsen, och irritationen kommer alltid med
     const manga = ma ? SIM.handelBerattelse(s, { ...ma, arg: ['byn', 'kemiGod', 'vanner', 'smicker', 'skicklig', 'irriterad', 'langt'] }) : '';
     const irr = /irriterad|lura mig|blev sur/.test(manga) && manga.split('. ').length <= 1 + 3 + 3;
+    // budet efter tron (steg 10.5.16): kunden räknar med det hen tror om klanens pris på skinnen hen betalar med
+    const prov = (tro: number | undefined, pris: number) => {
+      const t = createState(6, START);
+      rikBy(t); tandEld(t); setAmount(t, 'ved', 40); setAmount(t, 'grenar', 30); setAmount(t, 'torrgras', 30); t.nastaHandlare = t.now;
+      for (let i = 0; i < 40 && t.handlare?.fas !== 'handlar'; i++) { step(t, BEAT); utanVantan(t); }
+      const th = t.handlare!, kl = SIM.klanById(t, SIM.hp(t, th).gast!.klan)!;
+      th.bynKlar = true; delete th.affar;
+      for (const q of living(t)) if (q.task?.act === 'handla') q.task = undefined;
+      const q = living(t).filter(x => SIM.ageOf(x, t.now) >= SIM.ALDER.vuxen)[1];
+      th.varor = [{ k, n: 2 }]; th.silver = 20; kl.pris = { ...kl.pris, [k]: 1, skinn: pris };
+      SIM.put(t, 'skinn', 15, { [q.id]: 15 });
+      q.lardomar = tro === undefined ? undefined : [{ k: 'pris', a: kl.id, sl: 'skinn', v: tro, c: 1, t: t.now, led: 0 }];
+      helAffar(t, q);
+      const m = q.byten?.[q.byten.length - 1], l = SIM.findL(q, 'pris', kl.id, 'skinn');
+      return { tom: q.thoughts.some(x => x.text.startsWith('Gick tomhänt')), f: m?.forsok ?? [], l, ny: l?.ny === t.now, ratt: !!l && Math.abs(l.v - pris) < 1e-9 && l.c === 1 /* priset när affären gjordes; sedan sjunker det (steg 10.5.14) */, text: m ? SIM.describe(t, l!).what : '' };
+    };
+    const hog = prov(2, 1), utan = prov(undefined, 1.5), ratt = prov(1, 1);
+    const fb = (r: ReturnType<typeof prov>) => r.f.map(f => `${f.tro}/${f.bjod}/${f.krav} ${f.ja ? 'ja' : 'nej'}`).join(', ');
     return [
+      [`en bybo som tror att skinnen är värda dubbelt får tre nej, går tomhänt och har sedan rätt lärdom, som en nyhet (${fb(hog)}; trodde/bjöd/krav)`, hog.tom && hog.f.length === SIM.HANDEL.nejMax && hog.f.every(f => !f.ja && (f.tro ?? 0) > f.bjod) && hog.ratt && hog.ny],
+      [`en bybo utan lärdom där skinnen är värda 1,5 får ja på första budet och lär sig priset (${fb(utan)})`, !utan.tom && utan.f.length === 1 && !!utan.f[0].ja && utan.ratt],
+      [`med rätt lärdom går affären som förut (${fb(ratt)})`, !ratt.tom && !!ratt.f[ratt.f.length - 1]?.ja && ratt.f.every(f => f.tro === f.bjod) && !ratt.ny],
       ['handlarens filt är tom när hen lagt ut den; varorna ligger i packningen', tom],
       ['byn handlar först, genom den som handlar för byn; ingen annan går', byn],
       ['kunden frågar vad handlaren har, och handlaren svarar med varornas symboler', fraga],
