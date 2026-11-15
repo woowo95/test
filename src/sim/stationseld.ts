@@ -16,21 +16,23 @@ export const STATIONSELD = balans('stationseld', {
 });
 // burn = ved i timmen, max = så många ved som ryms, varme/radie = hur mycket och hur långt den värmer (0 = inte alls),
 // tim = så många timmar elden behöver brinna för arbetet act (utöver arbetet självt), kravs = arbetet går inte utan elden
-export interface EldStation { burn: number; max: number; varme: number; radie: number; tim?: (s: State, t: Station) => number; kravs: boolean }
+// med = elden finns bara när stationen har det tillbehöret (brännpannan på bryggkaret), acts = bara de arbetena behöver elden
+export interface EldStation { burn: number; max: number; varme: number; radie: number; tim?: (s: State, t: Station) => number; kravs: boolean; med?: string; acts?: string[] }
 export const ELDSTATIONER: Record<string, EldStation> = {
   ortkok: { burn: 1, max: 3, varme: 0.35, radie: 2.5, kravs: true }, // en ved räcker en timme: flera kokningar i rad delar på den
   bakugn: { burn: 1.5, max: 3, varme: 0, radie: 0, tim: () => bakKrok.passivTim(), kravs: true }, // degen gräddas medan elden brinner
   rokeri: { burn: 0.25, max: 4, varme: 0, radie: 0, tim: () => rokKrok.dygn() * 24, kravs: false }, // man tar ner det rökta också när elden är släckt
+  bryggkar: { burn: 2, max: 3, varme: 0, radie: 0, tim: (s, t) => brannKrok.tim(s, t), kravs: true, med: 'brannpanna', acts: ['branna'] }, // brännpannans lilla eld (steg 10.7.26, brygg.ts): bränningen går medan den brinner
 };
 // krokarna sätts av matlagning.ts (stationseldkrok.ts)
-import { bakKrok, rokKrok } from './stationseldkrok';
-export { bakKrok, rokKrok };
-export const eldDef = (t: Station) => ELDSTATIONER[t.k];
+import { bakKrok, brannKrok, rokKrok } from './stationseldkrok';
+export { bakKrok, brannKrok, rokKrok };
+export const eldDef = (t: Station): EldStation | undefined => { const d = ELDSTATIONER[t.k]; return d && (!d.med || !!t.med?.includes(d.med)) ? d : undefined; };
 export const stationBrinner = (t?: Station) => !!t?.eld?.lit;
 const glod = (s: State, t: Station) => !t.eld?.lit && (t.eld?.glod ?? 0) > s.now;
 // stationen med eld som p står vid och arbetar med act
 export function eldStationVid(s: State, p: { x: number; y: number }, act: string) {
-  return stationerOf(s).find(t => eldDef(t) && isKlar(t) && stationDef(t.k)?.gor.includes(act as never) && (at => Math.hypot(p.x - at.x, p.y - at.y) < STATION.vidBank)(vidStation(t)));
+  return stationerOf(s).find(t => eldDef(t) && (!eldDef(t)!.acts || eldDef(t)!.acts!.includes(act)) && isKlar(t) && stationDef(t.k)?.gor.includes(act as never) && (at => Math.hypot(p.x - at.x, p.y - at.y) < STATION.vidBank)(vidStation(t)));
 }
 // p kan arbeta med act vid en station med eld: den brinner, eller det finns ved att tända den med
 export const eldKan = (s: State, p: Person, t?: Station) => !t || !eldDef(t) || stationBrinner(t) || getable(s, p, 'ved') >= 1;
@@ -68,6 +70,7 @@ export function stepStationsEld(s: State, dt: number) {
     const tim = Math.min(dt / 3600, e.ved / d.burn), ms = tim * HOUR;
     e.ved = Math.max(0, e.ved - tim * d.burn);
     if (t.deg) t.deg.kvar -= ms;
+    if (t.bran) t.bran.kvar -= ms; // brännpannan (steg 10.7.26)
     for (const q of t.tork ?? []) q.rok = (q.rok ?? 0) + ms;
     if (e.ved <= 1e-9) { e.ved = 0; e.lit = undefined; e.glod = s.now - (dt * SEC - ms) + STATIONSELD.glodTim * HOUR; count(s, 'stationsEldUt'); }
   }

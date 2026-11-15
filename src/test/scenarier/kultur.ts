@@ -3414,6 +3414,54 @@ SCENARIER.drycker = {
   },
 };
 
+SCENARIER.sprit = {
+  text: 'Spriten och brännpannan (steg 10.7.26): brännpannan är ett tillbehör på bryggkaret av sten, lera och en stor lerkruka. En kruka vin (5) eller en sats öl (8) hälls i pannan, som kokar 30 minuter medan dess lilla eld brinner, och spriten hälls upp i en liten lerkruka. Tekniken prövas fram först när byn bryggt vin och öl åtta gånger var',
+  kor: () => {
+    const s = rikDag(3), p = vuxna(s)[0]!;
+    p.tek = { ...(p.tek ?? {}), bryggkar: 1, kruka: 1, ol: 1, vin: 1 }; p.skill.matlagning = 10;
+    const kar = { id: 995, k: 'bryggkar', x: 3, y: 3, kvar: 0, inne: 1, brygt: 1 } as SIM.Station;
+    s.stationer = [...(s.stationer ?? []), kar];
+    // tekniken: försöken går först när byn bryggt vin och öl åtta gånger var
+    p.tek.sprit = 0.5;
+    s.stat = { ...(s.stat ?? {}), brygt_vin: 8, brygt_ol: 2 };
+    const fore = SIM.forsokVal(s, p)?.id;
+    s.stat.brygt_ol = 8;
+    const efter = SIM.forsokVal(s, p)?.id;
+    p.tek.sprit = 1;
+    // pannan: av sten, lera och en tom stor lerkruka
+    SIM.setAmount(s, 'sten', 4); SIM.setAmount(s, 'lera', 2);
+    for (const t of SIM.tingOf(s)) if (t.k === 'lerkruka_stor') t.hos = 0;
+    const utanKruka = SIM.kanGoraTillbehor(s, p, 'brannpanna');
+    const stor = SIM.addTool(s, 'lerkruka_stor', p); stor.hos = undefined;
+    const medKruka = SIM.kanGoraTillbehor(s, p, 'brannpanna');
+    SIM.finishTillbehor(s, p, { act: 'tillbehor', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: 'brannpanna' } as SIM.Task);
+    const panna = !!kar.med?.includes('brannpanna') && !SIM.tingOf(s).includes(stor);
+    // bränningen: vinet hälls i, pannans eld tänds, och spriten är klar efter 30 minuter
+    const vin = SIM.addTool(s, 'lerkruka_stor', p); vin.hos = undefined; SIM.fyllVatska(s, 'vin', 5, vin);
+    SIM.setAmount(s, 'ved', 6);
+    const val = SIM.bryggVal(s, p);
+    p.x = 3; p.y = 4;
+    const tk = { act: 'branna', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.BRYGG.brannMin * SIM.MIN, carry: 0, why: '', ref: kar.id } as SIM.Task;
+    const tand = SIM.eldaForst(s, p, tk);
+    SIM.brannKlar(s, p, kar.id);
+    const gar = !!kar.bran && SIM.vatskaAv(s, 'vin') === 0 && SIM.stationBrinner(kar);
+    let h = 0;
+    while (kar.bran && kar.bran.kvar > 0 && h < 400) { s.now += SIM.MIN; SIM.stepStationsEld(s, 60); h++; }
+    const lit = SIM.addTool(s, 'lerkruka_liten', p); lit.hos = undefined;
+    const tappVal = SIM.bryggVal(s, p);
+    const n = kar.bran?.n;
+    SIM.bryggKlar(s, p, kar.id);
+    const sprit = SIM.vatskaAv(s, 'sprit');
+    return [
+      [`tekniken prövas inte före åtta bryggningar av öl (${fore ?? 'inget'}), men sedan (${efter ?? 'inget'})`, fore !== 'sprit' && efter === 'sprit'],
+      [`pannan kräver en tom stor lerkruka (utan ${utanKruka ? 'ja' : 'nej'}, med ${medKruka ? 'ja' : 'nej'}), som blir pannan`, !utanKruka && medKruka && panna],
+      [`karet bränner när byn vill ha sprit (${val?.act})`, val?.act === 'branna'],
+      [`5 vin hälls i och pannans eld tänds (${tand} min att tända)`, tand !== false && gar],
+      [`spriten är klar efter ${h} minuter`, h >= 29 && h <= 31],
+      [`${sprit} sprit (${n}) hälls upp i en liten lerkruka (${tappVal?.act} ${tappVal?.v})`, tappVal?.act === 'tappa' && tappVal.v === 'sprit' && sprit >= 1 && sprit === n && !kar.bran && lit.inne?.v === 'sprit'],
+    ] as [string, boolean][];
+  },
+};
 SCENARIER.mjod = {
   text: 'Honung och mjöd (steg 10.7.25): honungskakor finns i vildbinas bon i skogen på sommaren och hösten, ett lager på kartan, och är söt mat. Mjödet bryggs i karet av 3 honungskakor och vatten, jäser 4 dygn och ger 5 mjöd i en stor lerkruka; tekniken kommer när byn har honung och har gjort vin två gånger',
   kor: () => {

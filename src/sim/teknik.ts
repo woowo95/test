@@ -43,7 +43,8 @@ export interface Tek {
   // försöksplatsen (steg 4.2.1.1): nivå 4–5 kommer man bara på genom att pröva sig fram vid en station som redan finns
   // tidigare i kedjan (stationernas sorter i STATIONER; tom lista = elden). Den som prövar kan kraven och är skicklig i
   // färdigheten skill. Varje försök tar en hel sak av materialet och ger ingenting
-  forsok?: { vid: string[]; skill: Skill; vad: string }; // vad: det den som prövar sig fram försöker komma på, efter "Försöker komma på" (steg 9.2.106)
+  forsok?: { vid: string[]; skill: Skill; vad: string };
+  tidigast?: { stat: string; n: number }[]; // försöken går först när byn gjort det här så många gånger (spriten, steg 10.7.26) // vad: det den som prövar sig fram försöker komma på, efter "Försöker komma på" (steg 9.2.106)
   // det episka ögonblicket (steg 4.2.1.3): raden i krönikan när den första i byn kommer på den, med {namn} och {hen}
   episk?: string;
 }
@@ -79,6 +80,7 @@ export const TEKNIK: Tek[] = [
   { id: 'pergament', namn: 'Pergament och bläck', text: 'Skinnet skrapas tunt och spänns; sot av kol gnids med vatten.', effekt: 'Vid garvningsställningen blir ett skinn till 4 blad pergament, och kol och vatten blir bläck i en liten lerkruka.', omr: ['hantverk'], krav: ['garvning', 'stenhuggarplats'], niva: 6, tid: 6, forsok: { vid: ['garvning'], skill: 'hantverk', vad: 'hur skinn blir till pergament' }, episk: '{namn} kom på hur skinnet blir till blad att skriva på.' }, // steg 10.6.4
   { id: 'bryggkar', namn: 'Vin', text: 'Krossade bär med vatten som får stå och jäsa i ett kar, tills det blivit vin.', effekt: 'Byn bygger ett bryggkar och gör vin, som står i stora lerkrukor och blir bättre med tiden.', omr: ['koka_mat', 'grilla'], krav: ['kruka'], niva: 4, tid: 8, forsok: { vid: ['grill'], skill: 'matlagning', vad: 'hur bär blir vin' }, episk: 'Bären i krukan hade börjat bubbla. {namn} smakade och förstod att det blivit något nytt.' }, // steg 9.6.12
   { id: 'ol', namn: 'Öl', text: 'Korn som blöts, gror och torkas till malt, och jäser med vatten och rölleka i bryggkaret.', effekt: 'Byn gör öl, som står i stora lerkrukor.', omr: ['brygga'], krav: ['bryggkar', 'sadesodling'], niva: 5, tid: 1000, nar: 'När byn har korn och har gjort vin', forsok: { vid: ['bryggkar'], skill: 'matlagning', vad: 'hur kornet blir öl' }, episk: 'Kornet hade grott, torkat och jäst. {namn} smakade det första ölet.' }, // steg 9.6.13
+  { id: 'sprit', namn: 'Sprit', text: 'Vin eller öl som kokas i en panna med lock, så att det starka stiger upp och samlas i röret.', effekt: 'Byn bygger en brännpanna på bryggkaret och bränner sprit av vin och öl, den starkaste drycken.', omr: ['brygga'], krav: ['ol'], niva: 6, tid: 12, tidigast: [{ stat: 'brygt_vin', n: 8 }, { stat: 'brygt_ol', n: 8 }], forsok: { vid: ['bryggkar'], skill: 'matlagning', vad: 'hur vinet blir starkare' }, episk: 'Det droppade ur röret, klart som vatten. {namn} smakade och kände det bränna.' }, // steg 10.7.26
   { id: 'mjod', namn: 'Mjöd', text: 'Honungskakor som löses i vatten och får jäsa i bryggkaret, tills det blivit mjöd.', effekt: 'Byn gör mjöd av honung, som står i stora lerkrukor och håller länge.', omr: ['brygga'], krav: ['bryggkar'], niva: 5, tid: 1000, nar: 'När byn har honung och har gjort vin två gånger', forsok: { vid: ['bryggkar'], skill: 'matlagning', vad: 'hur honungen blir mjöd' }, episk: 'Honungen hade jäst i karet. {namn} smakade det första mjödet.' }, // steg 10.7.25
   { id: 'sadesodling', namn: 'Sädesodling', text: 'Korn från handlarna som sås på fältet, och en del av skörden sparas till nästa sådd.', effekt: 'Byn kan odla korn.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 1000, nar: 'När byn får sitt första korn av handlarna' }, // steg 9.6.11
   { id: 'lin', namn: 'Lin', text: 'Linfrön som sås på fälten, och skörden rötas innan den kan spinnas.', effekt: 'Byn kan odla lin.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 6 },
@@ -316,7 +318,7 @@ const stationForsok = (s: State, t: Tek) => stationerOf(s).find(q => t.forsok!.v
 // det i receptet som går åt i ett försök: sakerna, inte verktygen
 const forbrukas = (t: Tek) => Object.keys(recept(t.id)?.av ?? {}).filter(k => !isTool(k));
 const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && ageOf(p, s.now) >= ALDER.uppfinner && canThink(p, t) && hasMaterial(s, t)
-  && p.skill[t.forsok.skill] >= TEKTAL.forsokSkill && (r => !r.length || r.some(k => amountOf(s, k) >= 1))(forbrukas(t)) && (!t.forsok.vid.length || !!stationForsok(s, t));
+  && p.skill[t.forsok.skill] >= TEKTAL.forsokSkill && (t.tidigast ?? []).every(k => (s.stat?.[k.stat] ?? 0) >= k.n) && (r => !r.length || r.some(k => amountOf(s, k) >= 1))(forbrukas(t)) && (!t.forsok.vid.length || !!stationForsok(s, t));
 // hur ofta (steg 4.2.1.2): sedvanan mot nya sätt (seden nyfikenhet, Förnyelse – Tradition) och personens nyfikenhet. Bara när
 // byn har ett överskott av mat och ved (matDygn, vedDygn); farorna avgörs i valet (val.ts), där de går före
 // överskottet (steg 10.2.43): 0 utan mat och ved, 1 när maten räcker TROSKEL.forsokMat dygn och veden TROSKEL.forsokVed, däremellan efter det som räcker kortast

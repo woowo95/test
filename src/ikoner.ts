@@ -4139,6 +4139,7 @@ PIX.lok = PIX.rotter; PAL.lok = PAL.rotter; PIX.vildlok = PIX.vildrova ?? PIX.ro
 PIX.stekhall = PIX.sten ?? PIX.flinta; PAL.stekhall = PAL.sten ?? PAL.flinta; // platshållare för stekhällen (steg 9.6.21) tills Björn valt i bildstilen
 PIX.kvarnsten = PIX.huggen_sten ?? PIX.sten; PAL.kvarnsten = PAL.huggen_sten ?? PAL.sten; PIX.mjol = PIX.artfron; PAL.mjol = PAL.artfron; // platshållare för kvarnstenen och mjölet (steg 9.6.22) tills Björn valt i bildstilen
 PIX.bakugn = PIX.ortkok ?? PIX.sten; PAL.bakugn = PAL.ortkok ?? PAL.sten; PIX.brod = PIX.rotter; PAL.brod = PAL.rotter; // platshållare för bakugnen och brödet (steg 9.6.23) tills Björn valt i bildstilen
+PIX.brannpanna = PIX.ortkok ?? PIX.sten; PAL.brannpanna = PAL.ortkok ?? PAL.sten; // platshållare för brännpannan (steg 10.7.26) tills Björn valt i bildstilen
 PIX.slaktrens = PIX.ben; PAL.slaktrens = PAL.ben; PIX.vaxtrest = PIX.torrgras; PAL.vaxtrest = PAL.torrgras; // platshållare för resterna (steg 9.7.5) tills Björn valt i bildstilen
 PIX.kompost = PIX.latrin ?? PIX.ved; PAL.kompost = PAL.latrin ?? PAL.ved; // platshållare för komposten (steg 9.7.6) tills Björn valt i bildstilen
 PIX.kal = PIX.svamp; PAL.kal = PAL.svamp; PIX.bonor = PIX.arter; PAL.bonor = PAL.arter; PIX.kalfron = PIX.artfron; PAL.kalfron = PAL.artfron; // platshållare för kålen och bönorna (steg 9.7.8) tills Björn valt i bildstilen

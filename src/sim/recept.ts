@@ -174,6 +174,7 @@ const DEF = {
   bank: { var: 'station', av: { virke: RT.bankVirke }, min: RT.bankMin },
   krubba: { var: 'station', av: { virke: RT.krubbaVirke }, min: RT.krubbaMin }, // foderhäcken i fähuset (steg 10.2.88)
   // tillbehören (stationer.ts) och dörrarna (byggnad.ts)
+  brannpanna: { var: 'tillbehor', av: { sten: 4, lera: 2 }, min: 15, tek: 'sprit' }, // brännpannan (steg 10.7.26): härden och röret; den stora lerkrukan tas också (TILLBEHOR.brannpanna.kar)
   stekhall: { var: 'tillbehor', av: { huggen_sten: 1 }, min: 10, tek: 'stekhall' }, // stekhällen (steg 9.6.21): en flat huggen sten över elden vid grillen (steg 10.2.66)
   skinnfall: { var: 'tillbehor', av: { skinn: RT.fallSkinn }, min: RT.fallMin },
   skinndorr: { var: 'dorr', av: { skinn: RT.skinndorrSkinn }, min: RT.skinndorrMin },

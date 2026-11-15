@@ -7,12 +7,12 @@ import { balans } from './balans';
 import { isFood } from './saker';
 import { foodDays } from './ekonomi';
 import { buffert, villHaAv, Materialslag } from './forradsmal';
-import { count, forstaGang, living, log } from './folk';
+import { count, forstaGang, gjort, living, log } from './folk';
 import { Station, isKlar, stationerOf } from './stationer';
-import { DAY, HOUR, Person, State } from './typer';
+import { DAY, HOUR, MIN, Person, State } from './typer';
 import { temperature } from './vader';
 import { getable, takeMaterial } from './behov';
-import { fyllVatska, karRymmer, ledigFor, vatskaAv, VatskaId } from './vatskor';
+import { VATSKOR, fyllVatska, karRymmer, ledigFor, taVatska, vatskaAv, VatskaId } from './vatskor';
 import { knows } from './teknik';
 import { Ting, fylldSack } from './agande';
 import { olTillKyrkan } from './kyrka';
@@ -28,6 +28,10 @@ export const BRYGG = balans('brygg', {
   vinBra: 5, // vinet i krukan är bättre (kvalitet 3) efter så här många dygn ...
   vinBast: 15, // ... och bäst (kvalitet 4) efter så här många
   olVin: 2, // byn kommer på ölet när den har korn och gjort vin så här många gånger
+  brannMin: 2, // så många minuter tar det att hälla en kruka vin eller en sats öl i brännpannan (steg 10.7.26)
+  brannKok: 30, // så många minuter kokar pannan medan dess eld brinner
+  brannVin: 5, brannOl: 8, // så mycket vin eller öl en bränning tar
+  brannVana: 10, // chansen att få 2 sprit i stället för 1 är färdigheten i matlagning delad med det här
   mjodVin: 2, // och på mjödet när den har honung och gjort vin så här många gånger (steg 10.7.25)
 });
 // dryckerna som bryggs: det som läggs i karet, hur många dygn satsen jäser och hur mycket den ger. tek = tekniken
@@ -45,9 +49,10 @@ export const vinKvalitet = (s: State, t: Ting) => t.inne?.t === undefined ? 2 : 
 
 export const karen = (s: State) => stationerOf(s).filter(t => t.k === 'bryggkar' && isKlar(t));
 // det p kan göra vid karen: hälla upp en klar sats (när en ledig stor kruka finns) eller lägga en ny sats i ett tomt kar
-export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malta'; kar: Station; v: BrygdId } | undefined {
+export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malta' | 'branna'; kar: Station; v: BrygdId } | undefined {
   for (const kar of karen(s)) {
     const sats = kar.sats;
+    if (kar.bran && kar.bran.kvar <= 0 && ledigFor(s, 'sprit')) return { act: 'tappa', kar, v: 'sprit' }; // spriten i brännpannan (steg 10.7.26)
     if (sats?.klar && ledigFor(s, sats.v)) return { act: 'tappa', kar, v: sats.v };
   }
   // karet brygger den dryck byn har störst brist på mot sitt förrådsmål (steg 10.7.24): öl och svagdricka delar maltet
@@ -63,6 +68,9 @@ export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malt
       if (Object.entries(d.av).every(([k, n]) => getable(s, p, k) >= n && !(isFood(k) && foodDays(s) < buffert(s, 'mat')))) return { act: 'brygga', kar, v };
     }
   }
+  // brännpannan (steg 10.7.26): när byn vill ha sprit och har en kruka vin eller en sats öl att bränna
+  for (const kar of karen(s)) if (kar.bran && kar.bran.kvar > 0 && !stationBrinner(kar) && eldKan(s, p, kar)) return { act: 'branna', kar, v: 'sprit' }; // pannans eld slocknade innan spriten var klar: den eldas igen
+  if (knows(p, 'sprit') && vatskaAv(s, 'sprit') < villHaAv(s, 'sprit' as Materialslag) && brannAv(s)) for (const kar of karen(s)) if (kar.med?.includes('brannpanna') && !kar.bran && eldKan(s, p, kar)) return { act: 'branna', kar, v: 'sprit' };
   // maltet (steg 9.6.13): kornet blöts och hängs på en torkställning med plats, när en dryck av malt saknar malt
   const tork = torkarna(s).find(t => TORK.rymd - (t.tork ?? []).reduce((n, q) => n + q.n, 0) >= BRYGG.maltKorn), kar0 = karen(s)[0];
   const maltV = vilka.find(v => BRYGD[v].av.malt && getable(s, p, 'malt') < BRYGD[v].av.malt);
@@ -86,6 +94,32 @@ export function olUpptackt(s: State) {
   for (const p of nya) learn(s, p, TEK.ol);
   if (nya.length && forstaGang(s, 'olForsta')) log(s, `${nya[0].name} förstår att kornet kan jäsa till öl som bären till vin.`, 'world', [nya[0].id]);
 }
+// ---------- brännpannan (steg 10.7.26, Mat, matlagning och dryck: Spriten) ----------
+// Pannan är ett tillbehör på bryggkaret med en egen liten eld (ELDSTATIONER.bryggkar). Bränningen har tre led: en kruka vin eller
+// en sats öl hälls i pannan (BRYGG.brannMin), pannan kokar BRYGG.brannKok minuter medan elden brinner (stepStationsEld), och spriten
+// hälls upp i en liten lerkruka (tappa). Den som har vana får 2 sprit, annars 1
+// det som bränns: vinet eller ölet som byn har mest av mot det den vill ha, om det räcker till en bränning
+const BRANN: Partial<Record<VatskaId, number>> = { vin: BRYGG.brannVin, ol: BRYGG.brannOl };
+function brannAv(s: State): VatskaId | undefined {
+  let bast: VatskaId | undefined, bv = -Infinity;
+  for (const v of Object.keys(BRANN) as VatskaId[]) {
+    const har = vatskaAv(s, v), n = BRANN[v]!;
+    if (har < n) continue;
+    const r = har / Math.max(1, villHaAv(s, v as Materialslag));
+    if (r > bv) { bv = r; bast = v; }
+  }
+  return bast;
+}
+export function brannKlar(s: State, p: Person, ref?: number) {
+  const kar = karen(s).find(t => t.id === ref && t.med?.includes('brannpanna')), v = brannAv(s);
+  if (!kar || kar.bran || !v || !stationBrinner(kar)) return; // en bränning som redan går har fått sin ved
+  taVatska(s, v, BRANN[v]!); // de tomma krukorna blir kvar
+  kar.bran = { n: rnd(s, 'mat', p) < (p.skill.matlagning ?? 0) / BRYGG.brannVana ? 2 : 1, kvar: BRYGG.brannKok * MIN };
+  count(s, 'brant_' + v); gjort(s, p, 'brant', 1);
+  if (forstaGang(s, 'brannForsta')) log(s, `${p.name} hällde ${VATSKOR[v].namn.toLowerCase()} i brännpannan och eldade under den.`, 'world', [p.id]);
+}
+// så många timmar pannans eld behöver brinna: det som är kvar av bränningen, eller en hel bränning för den som ska börja
+brannKrok.tim = (_s, t) => { const b = (t as Station).bran; return (b ? Math.max(0, b.kvar) : BRYGG.brannKok * MIN) / HOUR; };
 // mjödet (steg 10.7.25): byn kommer på det när den har honung och har gjort vin några gånger
 export function mjodUpptackt(s: State) {
   if ((s.stat?.brygt_vin ?? 0) < BRYGG.mjodVin || amountOf(s, 'honung') < 1 || living(s).some(p => knows(p, 'mjod'))) return;
@@ -97,6 +131,10 @@ export function mjodUpptackt(s: State) {
 export function bryggKlar(s: State, p: Person, ref?: number) {
   const kar = karen(s).find(t => t.id === ref) ?? karen(s)[0];
   if (!kar) return;
+  if (kar.bran && kar.bran.kvar <= 0) { // spriten hälls upp i en liten lerkruka (steg 10.7.26)
+    const t = ledigFor(s, 'sprit');
+    if (t) { fyllVatska(s, 'sprit', kar.bran.n, t); count(s, 'sprit', kar.bran.n); kar.bran = undefined; if (forstaGang(s, 'spritForsta')) log(s, `${p.name} hällde upp byns första sprit ur brännpannan.`, 'world', [p.id]); return; }
+  }
   if (kar.sats?.klar) {
     let n = kar.sats.n;
     for (let t = ledigFor(s, kar.sats.v); t && n > 0; t = ledigFor(s, kar.sats.v)) {
@@ -140,3 +178,4 @@ import { utsadeKrok } from './ratter';
 import { TEK, learn } from './teknik';
 import { rnd } from './slump';
 import { amountOf } from './lager';
+import { brannKrok, eldKan, stationBrinner } from './stationseld';

@@ -235,6 +235,7 @@ const DEF = {
   rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, tyst: true, stilla: true, verb: 'rensar', plats: 'station' },
   brygga: { namn: 'Lägger en sats i bryggkaret', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'brygger', plats: 'station' }, // brygg.ts (steg 9.6.12)
   malta: { namn: 'Blöter korn till malt', slag: 'hantverk', hantverk: true, verb: 'blöter korn', plats: 'station' }, // kornet hängs på torkställningen (brygg.ts, steg 9.6.13)
+  branna: { namn: 'Bränner sprit', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'bränner', plats: 'station' }, // vin eller öl i brännpannan (brygg.ts, steg 10.7.26)
   tappa: { namn: 'Häller upp ur bryggkaret', slag: 'hantverk', hantverk: true, verb: 'häller upp', plats: 'station' },
   roka: { namn: 'Röker kött och fisk', slag: 'hantverk', hantverk: true, ovar: 'matlagning', stilla: true, verb: 'röker', plats: 'station' }, // rökeriet (matlagning.ts, steg 9.6.8)
   baka: { namn: 'Bakar bröd', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'bakar', plats: 'station' }, // vid bakugnen (matlagning.ts, steg 9.6.23)

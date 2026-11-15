@@ -293,7 +293,7 @@ KLAR.staket = (s, p, t) => staketKlar(s, p, t.ref);
 KLAR.skramma = (s, p, t) => skrammaKlar(s, p, t.ref); // fågelskrämman (odling.ts, steg 9.7.11) // staketet (odling.ts, steg 9.7.10) // sophögen (rester.ts, steg 9.7.5)
 KLAR.steka = (s, p) => stekaKlar(s, p);
 KLAR.baka = (s, p) => bakaKlar(s, p); // bakugnen (matlagning.ts, steg 9.6.23) // stekhällen (matlagning.ts, steg 9.6.21)
-KLAR.malta = (s, p, t) => maltaKlar(s, p, t.ref); KLAR.brygga = (s, p, t) => bryggKlar(s, p, t.ref); KLAR.tappa = (s, p, t) => bryggKlar(s, p, t.ref); // bryggkaret (brygg.ts, steg 9.6.12) // rätten ställs på elden i lerkrukan (matlagning.ts, steg 9.6.3)
+KLAR.malta = (s, p, t) => maltaKlar(s, p, t.ref); KLAR.brygga = (s, p, t) => bryggKlar(s, p, t.ref); KLAR.tappa = (s, p, t) => bryggKlar(s, p, t.ref); KLAR.branna = (s, p, t) => brannKlar(s, p, t.ref); // bryggkaret (brygg.ts, steg 9.6.12) // rätten ställs på elden i lerkrukan (matlagning.ts, steg 9.6.3)
 MEDAN.torka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S); // torkställningen (matlagning.ts)
 MEDAN.roka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S, 'rokeri'); // rökeriet (matlagning.ts, steg 9.6.8)
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
@@ -1586,7 +1586,7 @@ function compact(s: State) {
 import { bakaKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
 import { stepStationsEld } from './stationseld';
 import { vatskorTimme } from './vatskor';
-import { bryggKlar, maltaKlar, stepBrygg } from './brygg';
+import { brannKlar, bryggKlar, maltaKlar, stepBrygg } from './brygg';
 import { rusSteg } from './rus';
 import { latrinTomKlar, soporKlar, stepKompost, stepSophog } from './rester';
 import { skrammaKlar, staketKlar } from './odling';
