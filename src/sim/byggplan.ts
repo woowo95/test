@@ -298,9 +298,10 @@ function utbyggnad(s: State, h: Hus, side: 'v' | 'o' | 'n' | 's', k: number, okA
   let dorrFlyttas: { x: number; y: number } | undefined;
   for (const b of bitsOf(s)) if (b.hus === h.id && gammal(b.x, b.y)) { oppnas.push({ x: b.x, y: b.y, m: golvNu(s) }); if (b.k === 'oppning') dorrFlyttas = { x: b.x, y: b.y }; }
   const dorr = dorrFlyttas ? { x: side === 'v' ? x : side === 'o' ? x + w - 1 : dorrFlyttas.x, y: side === 'n' ? y : side === 's' ? y + hh - 1 : dorrFlyttas.y } : undefined;
+  const tr = h.tro !== undefined ? troOf(s, h.tro) : undefined, vagg = (tr && planDel(s, tr, 'vagg')) || 'timmer'; // trons hus byggs ut med planens vägg (steg 10.3.21)
   for (let yy = y; yy < y + hh; yy++) for (let xx = x; xx < x + w; xx++) {
     if (!nyRuta(xx, yy)) continue;
-    ritning.push({ x: xx, y: yy, m: dorr && dorr.x === xx && dorr.y === yy ? 'oppning' : kant(xx, yy) ? 'timmer' : golvNu(s) });
+    ritning.push({ x: xx, y: yy, m: dorr && dorr.x === xx && dorr.y === yy ? 'oppning' : kant(xx, yy) ? vagg : golvNu(s) });
   }
   if (dorr) {
     const e = eldPlats(s), ux = dorr.x + (side === 'v' ? -1 : side === 'o' ? 1 : 0), uy = dorr.y + (side === 'n' ? -1 : side === 's' ? 1 : 0);

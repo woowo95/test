@@ -90,7 +90,18 @@ export const planText = (s: State, tr: Tro) => DELAR.filter(d => planDel(s, tr, 
 export function troshusForslag(s: State, tr: Tro): FragaData[] {
   if (!rymsBud(s, tr, TROSHUS.storlek)) return [];
   const d = nastaDel(s, tr);
-  return d ? TROSHUS_DELAR[d].val(s, tr).map(v => ({ tro: tr.id, del: d, v })) : [];
+  if (d) return TROSHUS_DELAR[d].val(s, tr).map(v => ({ tro: tr.id, del: d, v }));
+  return igenDelar(s, tr).flatMap(i => TROSHUS_DELAR[i].val(s, tr).filter(v => i === 'storlek' || v !== tr.plan?.[i]).map(v => ({ tro: tr.id, del: i, v })));
+}
+// trons hus växer (steg 10.3.21): när planen är klar och huset står kan frågorna tas upp igen. Storleken när de vuxna troende blivit
+// fler än husets golvrutor (och fler än när storleken avgjordes), en möbel som fått nej när skalan bakom den bytt sida eller huset blivit större
+const ja = (s: State, tr: Tro, d: TrosDel) => Math.sign(TROSHUS_DELAR[d].passar(s, tr, 'ja'));
+export function igenDelar(s: State, tr: Tro): TrosDel[] {
+  if (!planKlar(s, tr) || !troshusAv(s, tr).some(h => h.klar)) return [];
+  const golv = troshusGolv(s, tr), n = vuxnaTroende(s, tr).length, ut: TrosDel[] = [];
+  if (n > golv && n > (tr.planVuxna ?? 0) && (tr.planRutor ?? 0) <= golv) ut.push('storlek');
+  for (const d of ['gudabild', 'bank'] as TrosDel[]) { const nej = tr.planNej?.[d]; if (tr.plan?.[d] === 'nej' && nej && (ja(s, tr, d) !== nej.pa || golv > nej.golv)) ut.push(d); }
+  return ut;
 }
 // frågan i trons krets läggs i FRAGOR när registren byggs (kyrkaRegister), så att importerna hunnit bli klara
 export function troshusRegister() { FRAGOR.troshus = {
@@ -104,10 +115,12 @@ export function troshusRegister() { FRAGOR.troshus = {
     return { v: TROSHUS.bas + (andlighet(s, p) - 50) / 100 + TROSHUS.skala * pa, why: pa > 0.2 ? 'Passar tron' : pa < -0.2 ? 'Passar inte tron' : 'Tycker att det är rätt för tron' };
   },
   gor: (s, d) => {
-    const tr = troOf(s, d.tro as number)!;
-    (tr.plan ??= {})[d.del as TrosDel] = d.v as string;
-    if (d.del === 'storlek') tr.planRutor = planRutor(s, tr, d.v as string); // golvrutorna efter de troende när frågan avgörs
+    const tr = troOf(s, d.tro as number)!, del = d.del as TrosDel, forut = planKlar(s, tr);
+    (tr.plan ??= {})[del] = d.v as string;
+    if (del === 'storlek') { tr.planRutor = planRutor(s, tr, d.v as string); tr.planVuxna = vuxnaTroende(s, tr).length; } // golvrutorna efter de troende när frågan avgörs
+    if (d.v === 'nej') (tr.planNej ??= {})[del] = { pa: ja(s, tr, del), golv: troshusGolv(s, tr) }; else if (tr.planNej) delete tr.planNej[del];
     count(s, 'troshus_plan');
+    if (forut) { const t = `${troNamn(tr)} ändrade planen för ${troshusBestamd(s, tr).toLowerCase()}: ${TROSHUS_DELAR[del].text(d.v as string)}${del === 'storlek' ? `, ${tr.planRutor} golvrutor` : ''}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); count(s, 'troshus_igen'); return; }
     if (!planKlar(s, tr)) return;
     const t = `${troNamn(tr)} har bestämt hur trons hus ska se ut. Det blir ett hus som kallas ${troshusNamn(s, tr).toLowerCase()}: ${planText(s, tr)}.`;
     log(s, t, 'rel', []); kronika(s, t, 'tro'); count(s, 'troshus_klar');

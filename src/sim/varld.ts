@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { TROSHUS_DELAR, planRutor, vaggSorter } from './troshus';
+import { TROSHUS_DELAR, planRutor, vaggSorter, vuxnaTroende } from './troshus';
 import { delarIRad } from './stationer';
 import { nyaKlaner } from './klaner';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
@@ -384,7 +384,8 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
         const pl = (tr.plan ??= {});
         pl.storlek ??= 'lagom'; pl.form ??= 'kvadrat'; pl.altare ??= 'ja'; pl.gudabild ??= tr.gudabild ? 'ja' : 'nej'; pl.bank ??= 'nej';
         if (TROSHUS_DELAR.vagg.fragas?.(s, tr)) pl.vagg ??= vaggSorter(s)[0];
-        tr.planRutor ??= planRutor(s, tr, pl.storlek);
+        tr.planRutor ??= planRutor(s, tr, pl.storlek); tr.planVuxna ??= vuxnaTroende(s, tr).length;
+        for (const d of ['gudabild', 'bank'] as const) if (pl[d] === 'nej') (tr.planNej ??= {})[d] ??= { pa: Math.sign(TROSHUS_DELAR[d].passar(s, tr, 'ja')), golv: 0 }; // tas upp igen när huset står (steg 10.3.21)
       }
       delete tr.hov; delete tr.tempel; delete tr.gudabild;
     }

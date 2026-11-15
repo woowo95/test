@@ -1711,6 +1711,56 @@ SCENARIER.matbud = {
     ];
   },
 };
+SCENARIER.troshusut = {
+  text: 'Steg 10.3.21: trons hus växer. När de vuxna troende blivit fler än husets golvrutor tas storleken upp igen, ett ja gör planen större och byggplanen bygger ut huset eller bygger ett till, som bara de troende bygger ur kyrkans egendom, och en möbel som fått nej tas upp igen när skalan bytt sida och ställs efter ett ja',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    klockan(s, 12);
+    tr.plan = { bank: 'nej' }; tr.sk = { ...tr.sk, prast: 20 }; // prästerna talar inte: ingen bänk
+    const h = medTroshus(s, tr)!;
+    (tr.planNej ??= {}).bank = { pa: Math.sign(SIM.TROSHUS_DELAR.bank.passar(s, tr, 'ja')), golv: SIM.troshusGolv(s, tr) };
+    tr.planVuxna = SIM.vuxnaTroende(s, tr).length;
+    const golv = SIM.troshusGolv(s, tr), inget = !SIM.igenDelar(s, tr).includes('storlek');
+    // fler troende än golvrutor: storleken tas upp igen
+    while (SIM.vuxnaTroende(s, tr).length <= golv) { const p = nyInvanare(s, 'm', 30); p.tro = tr.id; p.troStyrka = 100; }
+    const fragas = SIM.troshusForslag(s, tr).some(d => d.del === 'storlek');
+    SIM.FRAGOR.troshus.gor(s, { tro: tr.id, del: 'storlek', v: 'lagom' }, undefined);
+    const storre = (tr.planRutor ?? 0) > golv, intelIgen = !SIM.igenDelar(s, tr).includes('storlek');
+    const behov = SIM.byggbehov(s).find(b => b.fn === 'troshus'), behovOk = behov?.a.tro === tr.id && behov.a.plats === (tr.planRutor ?? 0) - golv;
+    // byggplanen bygger ut huset eller bygger ett till
+    const husFore = new Set(SIM.housesOf(s).map(x => x.id));
+    byggare(s); s.byggSok = undefined; SIM.stepBehov(s); for (const k in s.byggBehov ?? {}) s.byggBehov![k] -= 24 * SIM.HOUR; SIM.planBuild(s);
+    const nyttTro = SIM.housesOf(s).find(x => !husFore.has(x.id) && x.tro === tr.id), ut = !!h.ut;
+    const vaxer = ut || !!nyttTro, trosBit = SIM.bitsOf(s).find(b => b.b < 1 && b.k === 'vagg' && (b.hus === h.id || b.hus === nyttTro?.id));
+    const vaggOk = !!trosBit && trosBit.m === SIM.planDel(s, tr, 'vagg');
+    // bara de troende bygger, ur kyrkans egendom
+    const trosHus = new Set([h.id, nyttTro?.id]);
+    s.byggen = SIM.bitsOf(s).filter(b => trosHus.has(b.hus)); s.hus = SIM.housesOf(s).filter(x => trosHus.has(x.id)); SIM.touch(s);
+    const ej = nyInvanare(s, 'k', 30); ej.tro = undefined; byggare(s);
+    for (const b of SIM.bitsOf(s)) if (b.k !== 'vagg') { b.b = 1; b.mat = SIM.MATERIAL[b.m].n; }
+    for (const b of SIM.bitsOf(s)) SIM.groundOf(s).trees[b.y * SIM.W + b.x] = 0; SIM.touch(s);
+    satKyrka(s, tr, { [SIM.MATERIAL[trosBit?.m ?? 'timmer'].item!]: 300 });
+    const q = v[1], jq = SIM.buildJob(s, q), jej = SIM.buildJob(s, ej);
+    const troendeBygger = !!jq && trosHus.has(jq.bit.hus) && jej === undefined;
+    // möbeln som fick nej: skalan byter sida, frågan kommer igen, och ett ja ger en bänk att bygga
+    const fore = SIM.igenDelar(s, tr).includes('bank');
+    tr.sk = { ...tr.sk, prast: 80 }; const sidaBytt = SIM.igenDelar(s, tr).includes('bank'), bankFraga = SIM.troshusForslag(s, tr).some(d => d.del === 'bank' && d.v === 'ja');
+    SIM.FRAGOR.troshus.gor(s, { tro: tr.id, del: 'bank', v: 'ja' }, undefined);
+    const bankBrist = SIM.trosMobelBrist(s, tr, 'trosbank') > 0 && tr.planNej?.bank === undefined;
+    return [
+      [`storleken tas inte upp så länge huset räcker`, inget],
+      [`fler vuxna troende än husets ${golv} golvrutor tar upp storleken igen`, fragas],
+      [`ett ja gör planen större (${tr.planRutor} golvrutor) och frågan vilar sedan`, storre && intelIgen],
+      [`raden troshus svarar med det som fattas (${behov?.a.plats})`, behovOk],
+      [`byggplanen bygger ut huset eller bygger ett till (${ut ? 'utbyggnad' : nyttTro ? 'nytt hus' : 'inget'})`, vaxer],
+      [`med planens vägg (${trosBit?.m})`, vaggOk],
+      [`bara de troende bygger, ur kyrkans egendom`, troendeBygger],
+      [`bänken som fick nej tas upp igen när skalan bytt sida (${fore} → ${sidaBytt})`, !fore && sidaBytt && bankFraga],
+      [`ett ja ställer en ny bänk`, bankBrist],
+    ];
+  },
+};
+
 SCENARIER.troshusplan = {
   text: 'Steg 10.3.18: planen för trons hus bestäms del för del i trons krets ur TROSHUS_DELAR (storleken, formen, väggarna när byn kan bygga flera slags, och en fråga per möbel). Skalorna avgör vilket val som läggs fram, ett nej ger ett annat val en annan kväll, och namnet är den första raden i TROSHUSNAMN som passar',
   kor: () => {
