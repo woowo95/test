@@ -23,7 +23,7 @@ import { FOREST, isSoil } from './vag';
 import { tingOf } from './agande';
 import { FYND, UTTAG_IDS, tagits, takenOf } from './fynd';
 import { faltTornado } from './odling';
-import { bjornarOf, djurOf, dodaDjur, faglarOf, radjurOf } from './djur';
+import { bjornarOf, djurOf, dodaDjur, faglarOf, flockdjurOf } from './djur';
 import { isLight } from './tid';
 import { H, HOUR, MIN, SEC, Person, State, T, W, inMap } from './typer';
 import { larmAvbryter } from './handlingar';
@@ -259,7 +259,7 @@ function svep(s: State, t: Tornado, a: number, b: number, gaster?: TornadoGaster
     flyger(s, t, pp, zon);
   }
   // alla djuren på kartan som går att döda en och en: kaninerna, rådjuren, fåglarna och björnarna (vargflocken är en strid för sig)
-  for (const d of [...djurOf(s), ...radjurOf(s), ...faglarOf(s), ...bjornarOf(s)]) {
+  for (const d of [...djurOf(s), ...flockdjurOf(s), ...faglarOf(s), ...bjornarOf(s)]) {
     const zon = zonVid(d.x, d.y);
     if (zon === 0 || zon === 1 && ur(s, t, d.id, 3846) < TORNADO.djurNara) { dodaDjur(s, d.id); t.djur = (t.djur ?? 0) + 1; count(s, 'tornado djur'); }
   }

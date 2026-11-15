@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan } from './hjalp';
+import { SCENARIER, kor, klockan, medBank, setMat } from './hjalp';
 
 // en landruta i byns närhet, d rutor öster om mitten (eller närmast efter)
 const landVid = (s: SIM.State, d: number) => {
@@ -113,6 +113,66 @@ SCENARIER.dragdjur = {
       [`oxen får inga ungar och hästen föl; hästen slaktas inte (${hastSlakt ?? 'nej'})`, ungar && !hastSlakt],
       [`virkeshögen körs hem på släden (${turer} turer, ${perTur.toFixed(1)} virken per tur, ${tim} h) med oxen spänd för (${sagsSpand} turer)`, turer > 0 && perTur > 3 && sagsSpand > 0 && !kvar()],
       [`efter turen står oxen i hagen igen (${hemma ? 'ja' : `nej: ${bo.x.toFixed(1)},${bo.y.toFixed(1)}`})`, hemma],
+    ];
+  },
+};
+
+SCENARIER.vildsvin = {
+  text: 'Steg 10.10.4: vildsvinet. En flock om 3 till 6 står inne i skogen, långt från byn, och räknas som rådjuren (en rad i FLOCKARTER). Jägaren med spjut fäller vildsvin; ibland vänder det sig mot hen och det blir en strid. Det fällda vildsvinet styckas i tre stycken som bärs ett i taget, och slakten ger hela saker',
+  kor: () => {
+    const { FLOCKARTER, flockGrupper, flockOf, startGround, getMap, living, ageOf, amountOf, setAmount, cloneState } = SIM;
+    const f = FLOCKARTER.vildsvin, s0 = createState(6, START); klockan(s0);
+    const g = flockGrupper(s0, f), m = getMap(s0.seed), sg = startGround(s0.seed);
+    const iSkog = g.every(q => sg.trees[Math.floor(q.y) * SIM.W + Math.floor(q.x)] >= 0.5), langt = g.every(q => Math.hypot(q.x - m.fire.x, q.y - m.fire.y) >= f.tal.hemAvst - 3);
+    const v0 = flockOf(s0, f)[0];
+    const p0 = living(s0).find(q => ageOf(q, s0.now) >= 16)!;
+    // jakten: många försök nära flocken med spjut
+    const ut = { mal: 0, fallt: 0, del: 0, anfall: 0, strid: 0, stridFallt: 0 };
+    const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
+    p.tek = { ...p.tek, kniv: 1 }; SIM.newTing(s, 'kniv', 1, p.id);
+    for (let i = 0; i < 200; i++) {
+      Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, stackar: [], kartStrider: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+      const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id;
+      p.x = v0.x - 7; p.y = v0.y; p.skador?.splice(0); p.health = 1; p.died = undefined;
+      const tk = { act: 'jakt', phase: 'do', tx: v0.x, ty: v0.y, until: s.now + SIM.HOUR, carry: 0, tool: 'flintspjut' } as SIM.Task;
+      p.task = tk;
+      SIM.jaktForsok(s, p, tk);
+      if (!tk.jf) continue;
+      if (SIM.flockArtAv(tk.jf.id)?.art === 'vildsvin') ut.mal++;
+      const anf = !!tk.jf.anfall;
+      SIM.jaktKlar(s, p, tk);
+      if (tk.items?.vildsvin || tk.items?.vildsvindel) { ut.fallt++; if (tk.items?.vildsvindel) ut.del++; }
+      if (anf) {
+        ut.anfall++;
+        for (let n = 0; n < 2000 && s.kartStrider?.length; n++) SIM.kartStridSteg(s, 1);
+        if (!s.kartStrider?.length) ut.strid++;
+        if (p.task?.items?.vildsvindel) ut.stridFallt++;
+      }
+    }
+    // styckningen: ett fällt vildsvin blir tre stycken, och jägaren bär ett
+    const st = cloneState(s0), sp = SIM.byId(st, p0.id)!; sp.pot = { ...sp.pot, styrka: 1 }; sp.tek = { ...sp.tek, kniv: 1 }; SIM.newTing(st, 'kniv', 1, sp.id); st.stackar = [];
+    const stk = { act: 'jakt', phase: 'do', tx: sp.x, ty: sp.y, until: st.now + SIM.HOUR, carry: 0, items: { vildsvin: 1 } } as SIM.Task;
+    const kvar = SIM.styckaFallt(st, sp, stk, 'vildsvin'), hog = (st.stackar ?? []).reduce((a, q) => { a[q.k] = (a[q.k] ?? 0) + q.n; return a; }, {} as Record<string, number>);
+    // slakten, helt och i stycken
+    const slakta = (k: string) => {
+      const b = createState(3, START); medBank(b);
+      const q = living(b).find(x => ageOf(x, b.now) >= 16)!;
+      for (const r of b.people) r.tek = { ...r.tek, kniv: 1 };
+      b.ting = (b.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(b, 'kniv', 1, q.id);
+      setMat(b, {}); for (const x of ['svinkott', 'ben', 'svinskinn', 'talg']) setAmount(b, x, 0); setAmount(b, k, 1);
+      SIM.bearbeta(b, q, (SIM.DJUR as Record<string, SIM.Djurart>)[k], 1);
+      return [...['svinkott', 'ben', 'svinskinn', 'talg'].map(x => amountOf(b, x)), SIM.kottAv(q, (SIM.DJUR as Record<string, SIM.Djurart>)[k].slakt.svinkott)];
+    };
+    const hel = slakta('vildsvin'), del = slakta('vildsvindel');
+    const heltal = [...hel.slice(0, 4), ...del.slice(0, 4)].every(x => Number.isInteger(x));
+    return [
+      [`en flock på kartan (${g.length}, ${g.map(q => q.n).join(', ')} vildsvin)`, g.length === 1 && g.every(q => q.n >= 3 && q.n <= 6)],
+      ['flocken står inne i skogen, långt från byns eld', iSkog && langt],
+      [`med spjut går jägaren mot vildsvinet (${ut.mal} av 200) och fäller några (${ut.fallt})`, ut.mal > 100 && ut.fallt > 0],
+      [`ibland vänder vildsvinet sig mot jägaren (${ut.anfall} gånger), och striden tar slut (${ut.strid}); ${ut.stridFallt} fälldes i striden`, ut.anfall > 0 && ut.strid === ut.anfall],
+      [`det fällda vildsvinet styckas i tre stycken: ett i händerna (${stk.items?.vildsvindel ?? 0}), ${kvar} kvar i högen med skinnen (${JSON.stringify(hog)})`, stk.items?.vildsvindel === 1 && kvar === 2 && hog.vildsvindel === 2 && hog.svinskinn === 2],
+      [`slakten av ett helt vildsvin gav fläsk ${hel[0]} (12 gånger slaktarens skicklighet: ${hel[4]}), ben ${hel[1]}, skinn ${hel[2]}, talg ${hel[3]}`, hel[0] === hel[4] && hel[4] >= 6 && hel[1] === 3 && hel[2] === 2 && hel[3] === 4],
+      [`ett stycke gav fläsk ${del[0]}, ben ${del[1]}, talg ${del[3]}, och allt är hela saker`, del[0] === del[4] && del[1] === 1 && del[3] === 1 && heltal],
     ];
   },
 };

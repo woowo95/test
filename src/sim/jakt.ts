@@ -7,14 +7,16 @@ import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { blodas } from './blod';
 import { blocked, freeNear } from './byggnad';
-import { FAGEL, FAGEL_UT, KANINER, KANIN_UT, RADJUR, RADJUR_UT, arFagel, arRadjur, dodaDjur, faglarFlygerBort, faglarOf, djurOf, dragOf, gruppFlyr, halsaOf, radjurOf, satDjurHalsa } from './djur';
-import { styckaFallt } from './styckning';
-import { count, forstaGang, gjort, log, ovning, stat } from './folk';
+import { FAGEL, FAGEL_UT, FLOCKARTER, KANINER, KANIN_UT, arFagel, dodaDjur, faglarFlygerBort, faglarOf, djurOf, dragOf, flockArtAv, flockOf, flockUt, gruppFlyr, halsaOf, satDjurHalsa } from './djur';
+import { lamnaFallt, styckaFallt } from './styckning';
+import { KartStrid, kartStridBorja } from './kartstrid';
+import { EFTER, Efter, STRIDSLAG } from './efterstrid';
+import { alive, byId, count, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { skada, syn } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
 import { KANIN } from './redskap';
 import { clamp, rnd } from './slump';
-import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, chansMot, djurKampe, kastat, nyStrid, slump, traffa } from './strid';
+import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, chansMot, djurKampe, kastat, nyStrid, slitKastat, slump, traffa } from './strid';
 import { isLight } from './tid';
 import { HOUR, Jaktforsok, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { viltStart } from './fynd';
@@ -35,7 +37,7 @@ import { kn, learnK, useK } from './kunskap';
 // med stridens regler och en egen slumpföljd (fröet ur jägarens följd), så att det blir likadant i båda lägena. Gruppen
 // skräms av varje försök och är svårare att smyga på en stund. Stenen träffar sämre och tappas oftast bort
 // det fällda djuret av varje art, vars grundvärde bytet väljs efter (steg 10.2.37)
-const BYTE: Record<string, string> = { kanin: 'vilt', radjur: 'radjur', fagel: 'fagel' };
+const BYTE: Record<string, string> = { kanin: 'vilt', fagel: 'fagel' }; // flockarterna: saken på artens rad (FLOCKARTER)
 export const JAKT = balans('jakt', {
   smygSek: 120, // ett försök: så många sekunder att leta upp en kanin och smyga sig fram
   letaR: 30, // finns ingen kanin nära jaktplatsen går jägaren till den närmaste gruppen inom så här många rutor ...
@@ -89,7 +91,7 @@ const avst = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 // hur försöket går, i sekunder från början: tS jägaren börjar smyga från Q, tA hen är framme vid P, tK hen kastar,
 // tI det slår till, tF haren flyr (och flocken med den, tFlock), tG jägaren har hämtat det som kastades i G, E slutet
 export function jaktForlopp(f: Jaktforsok) {
-  const FLY = arRadjur(f.id) ? RADJUR.flyJakt : arFagel(f.id) ? FAGEL.bort : JAKT.fly; // rådjuret flyr längre (steg 6.6.2), fågeln flyger bort (steg 6.6.3)
+  const fl = flockArtAv(f.id), FLY = fl ? fl.tal.flyJakt : arFagel(f.id) ? FAGEL.bort : JAKT.fly; // rådjuret flyr längre (steg 6.6.2), fågeln flyger bort (steg 6.6.3)
   const E = JAKT.smygSek + f.extra, R = { x: f.x, y: f.y }, S = { x: f.sx, y: f.sy }, d0 = avst(R, S);
   const P = d0 > f.stopp ? mot(R, S, f.stopp / d0) : S; // där jägaren stannar, på vägen mellan hen och haren
   const dPS = avst(P, S), Q = dPS > JAKTSYN.smygRutor ? mot(P, S, JAKTSYN.smygRutor / dPS) : S; // där hen börjar smyga
@@ -157,14 +159,16 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const prova = (d: NonNullable<typeof m>, r: number) => {
     const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty);
     if (dd >= r || heligtAvstar(s, p, d.art, svalt)) return; // det heliga djuret jagas inte, utom i svält (steg 10.3.15)
-    const v = grundvarde(BYTE[d.art] ?? 'vilt') / (1 + dd / JAKT.bytesNara);
+    const v = grundvarde(BYTE[d.art] ?? FLOCKARTER[d.art]?.sak ?? 'vilt') / (1 + dd / JAKT.bytesNara);
     if (v > bv) { bv = v; m = d; }
   };
   for (const d of dj) prova(d, md);
   if (spjut) {
-    const rd = radjurOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < RADJUR.jaktR + RADJUR_UT || Math.hypot(gx - p.x, gy - p.y) < JAKT.letaR + RADJUR_UT);
-    for (const d of rd) prova(d, RADJUR.jaktR);
-    dj.push(...rd);
+    for (const f of Object.values(FLOCKARTER)) { // rådjuren och vildsvinen (steg 10.10.4)
+      const U = flockUt(f), rd = flockOf(s, f, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < f.tal.jaktR + U || Math.hypot(gx - p.x, gy - p.y) < JAKT.letaR + U);
+      for (const d of rd) prova(d, f.tal.jaktR);
+      dj.push(...rd);
+    }
   }
   for (const d of faglarOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < md + FAGEL_UT)) prova(d, md);
   if (!m) { // ingen kanin nära: jägaren går i vanlig fart till den närmaste gruppen hen ser ...
@@ -178,7 +182,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   tk.leta = undefined;
   count(s, 'jaktForsok'); gjort(s, p, 'jaktForsok');
   const drag = dragOf(m.art, m.id), h = halsaOf(s, m.id), now = s.now, jakt = p.skill.jakt ?? 0;
-  const v: Vapen = spjut ? tk.tool as Vapen : 'sten', rad = m.art === 'radjur', fag = m.art === 'fagel';
+  const v: Vapen = spjut ? tk.tool as Vapen : 'sten', rad = FLOCKARTER[m.art], fag = m.art === 'fagel';
   const vader = vaderNu(s);
   const u: Uppstallning = {
     avsikt: 'doda', w: 20, h: 20, vind: vader.vind, dimma: vader.dimma,
@@ -197,7 +201,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const blast = Math.min(1, MOTVIND.bas + vader.vind);
   // var kaninen ser jägaren, och var jägaren tror att det blir
   const sedd = (1 + MOTVIND.lukt * blast * vm) * JAKT.upptack * (1 - JAKT.skygg / 2 + JAKT.skygg * (drag.skygghet ?? 0.5)) * (isLight(now) ? 1 : JAKT.natt)
-    * (rad ? RADJUR.upptack : fag ? FAGEL.upptack : 1) * TERR[markslag(groundOf(s), tileOf(m.x, m.y))] * (1 + JAKT.sno * snoPaMarken(s) * (1 - doljISno(s, p))) * (skramd(s, m.grupp) ? JAKT.skramd : 1)
+    * (rad ? rad.tal.upptack : fag ? FAGEL.upptack : 1) * TERR[markslag(groundOf(s), tileOf(m.x, m.y))] * (1 + JAKT.sno * snoPaMarken(s) * (1 - doljISno(s, p))) * (skramd(s, m.grupp) ? JAKT.skramd : 1)
     / Math.max(0.3, 1 + JAKT.smid * (a.st.smidighet - 10) + JAKT.vana * jakt);
   // den som inte vet om vinden tror att den inte spelar någon roll (steg 6.6.7)
   const tror = sedd * (1 - MOTVIND.lukt * blast * mv) / (1 + MOTVIND.lukt * blast * vm) * (1 + (r() * 2 - 1) * JAKT.gissa * (1 - clamp(jakt / 20, 0, 1))) * JAKT.marg;
@@ -227,7 +231,9 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
     }
   }
   const g = b.skador.reduce((x, w) => x + w.g, 0);
-  const dog = traff && (hand || b.lage === 'dod' || g + h.sar >= (rad ? RADJUR.dod : fag ? FAGEL.dod : JAKT.dod));
+  const dog = traff && (hand || b.lage === 'dod' || g + h.sar >= (rad ? rad.tal.dod : fag ? FAGEL.dod : JAKT.dod));
+  // vildsvinet (steg 10.10.4): det som märkt jägaren eller blivit skadat vänder sig ibland mot hen i stället för att fly
+  const anfall = !!rad && rad.tal.anfall > 0 && !dog && (sett || traff) && r() < rad.tal.anfall;
   // det kastade: stenen tappas oftast bort och då letar hen upp en ny, annars hämtas det som kastades
   const extra = (kastD > 0 ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0) + Math.round(MOTVIND.runtSek * mv * (1 + rak) / 2);
   // djuret kände lukten och flydde: jägaren lär sig lite om vinden (steg 6.6.7)
@@ -235,7 +241,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
     const fore = kn(p, 'motvind'), efter = learnK(p, 'motvind', MOTVIND.lar * blast * vm, now);
     if (fore < MOTVIND.kand && efter >= MOTVIND.kand) { log(s, `${p.name} har lärt sig att smyga på djuren i motvind.`, 'skill', [p.id]); count(s, 'motvindLard'); }
   }
-  tk.jf = { t, id: m.id, x: m.x, y: m.y, sx: p.x, sy: p.y, v, stopp, kast: kastD, sett, ut: dog ? 'fangad' : traff && g > 0 ? 'skadad' : kastD > 0 || !sett ? 'miss' : 'flydde', ...(hand ? { hand: true as const } : {}), extra, g, blod: b.blod };
+  tk.jf = { t, id: m.id, x: m.x, y: m.y, sx: p.x, sy: p.y, v, stopp, kast: kastD, sett, ut: dog ? 'fangad' : traff && g > 0 ? 'skadad' : kastD > 0 || !sett ? 'miss' : 'flydde', ...(hand ? { hand: true as const } : {}), extra, g, blod: b.blod, ...(anfall ? { anfall: true as const } : {}) };
   // flocken flyr bort från jägaren när haren flyr (eller fångas), och då får jägaren smyga sig nära igen (steg 4.5.4.1)
   const o = jaktForlopp(tk.jf);
   // kastet eller sticket är en händelse som slagen i striderna (steg 10.1.19): bilden får den i det ögonblick den sker (bara för att visa)
@@ -248,7 +254,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   return 0;
 }
 // jägaren bär ett fällt rådjur eller en styckdel av det: då jagar hen inte mer på den turen
-export const jaktFallt = (tk: Task) => !!tk.items?.radjur || !!tk.items?.radjurdel || !!tk.items?.fagel; // ett fällt rådjur eller en fågel: hen går hem med det
+export const jaktFallt = (tk: Task) => !!tk.items?.fagel || Object.values(FLOCKARTER).some(f => !!tk.items?.[f.sak] || !!tk.items?.[f.del]); // ett fällt rådjur, vildsvin eller en fågel: hen går hem med det
 export const jaktBar = (tk: Task) => !!tk.carry || jaktFallt(tk);
 // när försöket är slut: spjutet som kastades hämtas (eller är borta), stacket sliter spjutet, och den fångade kaninen
 // bärs hem. En kanin som någon annan hann fånga under tiden är borta
@@ -266,12 +272,14 @@ export function jaktKlar(s: State, p: Person, tk: Task) {
   }
   const h = halsaOf(s, f.id);
   if (h.dod) return;
-  if (f.ut === 'fangad' && arRadjur(f.id)) { // rådjuret (steg 6.6.2): bärs hem helt, eller styckas där det föll
-    count(s, 'radjurFangst'); gjort(s, p, 'radjur');
+  if (f.anfall) { vildsvinAnfaller(s, p, f); return; }
+  const fl = flockArtAv(f.id);
+  if (f.ut === 'fangad' && fl) { // rådjuret (steg 6.6.2) och vildsvinet (steg 10.10.4): bärs hem helt, eller styckas där det föll
+    count(s, `${fl.art}Fangst`); gjort(s, p, fl.art);
     dodaDjur(s, f.id);
-    if (forstaGang(s, 'radjur')) log(s, `${p.name} fällde byns första rådjur med spjutet.`, 'world', [p.id]);
-    tk.items = { ...(tk.items ?? {}), radjur: (tk.items?.radjur ?? 0) + 1 };
-    styckaFallt(s, p, tk, 'radjur');
+    if (forstaGang(s, fl.art)) log(s, `${p.name} fällde byns första ${fl.namn} med spjutet.`, 'world', [p.id]);
+    tk.items = { ...(tk.items ?? {}), [fl.sak]: (tk.items?.[fl.sak] ?? 0) + 1 };
+    styckaFallt(s, p, tk, fl.sak);
     blodas(s, f.x, f.y, 'jakt', 2);
     ovning(p, 'traff', SLAGSMAL.jakt);
   } else if (f.ut === 'fangad' && arFagel(f.id)) { // fågeln (steg 6.6.3): bärs hem
@@ -292,3 +300,44 @@ export function jaktKlar(s: State, p: Person, tk: Task) {
     if (f.hand && r() < JAKT.bett) { count(s, 'jaktBett'); skada(s, p, r() < 0.5 ? 'handH' : 'handV', 'bett', JAKT.bettGrad, 'jakt', 'när hen grep en hare'); }
   } else if (f.ut === 'skadad') { count(s, 'jaktSkadad'); satDjurHalsa(s, f.id, Math.min(f.blod, h.blod), h.sar + f.g); }
 }
+
+// ---------- vildsvinet som vänder sig mot jägaren (steg 10.10.4) ----------
+// Vildsvinet flyr oftast, men det som märkt jägaren eller blivit skadat vänder sig ibland mot hen (anfall på artens rad i
+// FLOCKARTER). Då blir det en strid på kartan (kartstrid.ts) mellan jägaren och vildsvinet, med vildsvinets kropp ur KAMPAR och
+// betarna. Ett vildsvin som fälls i striden styckas och bärs hem av jägaren som står kvar; annars springer det skadat sin väg
+function vildsvinAnfaller(s: State, p: Person, f: Jaktforsok) {
+  if (f.ut === 'skadad') { const h = halsaOf(s, f.id); satDjurHalsa(s, f.id, Math.min(f.blod, h.blod), h.sar + f.g); }
+  const drag = dragOf('vildsvin', f.id), bp = freeNear(s, f.x, f.y);
+  const k = { ...djurKampe('vildsvin', 0, 1, bp.x, bp.y), fart: drag.snabbhet };
+  k.st.styrka = drag.styrka;
+  kartStridBorja(s, 'doda', [[p], []], 'Anfölls av ett vildsvin', { typ: 'vildsvin', egen: true, djur: f.id }, [{ art: 'vildsvin', id: f.id, k, blod: halsaOf(s, f.id).blod }]);
+  count(s, 'vildsvinAnfall'); count(s, 'djurStrid');
+}
+STRIDSLAG.vildsvin = { orsak: 'jakt', text: 'i en strid med ett vildsvin', dod: s => count(s, 'dodVildsvin') };
+function vildsvinSlut(s: State, efter: Efter, g: KartStrid) {
+  const id = Number(efter.djur), st = g.st, vk = st.kampar.find(k => k.djur === 'vildsvin'), falld = vk?.lage === 'dod';
+  const folk = st.kampar.filter(k => k.pid !== undefined).map(k => byId(s, k.pid!)).filter((q): q is Person => !!q && alive(q));
+  count(s, 'vildsvinStrid');
+  if (falld) { dodaDjur(s, id); count(s, 'vildsvinFangst'); count(s, 'vildsvinIStrid'); }
+  else if (vk) satDjurHalsa(s, id, vk.blod, halsaOf(s, id).sar + vk.skador.reduce((a, w) => a + w.g, 0));
+  let bar = false;
+  for (const q of folk) {
+    const k = st.kampar.find(o => o.pid === q.id)!;
+    slitKastat(s, q, st, k);
+    ovning(q, 'narstrid', SLAGSMAL.ovning);
+    think(q, falld ? 'Fällde ett vildsvin som anföll' : 'Anfölls av ett vildsvin', falld ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+    const tid = SLAGSMAL.minst * SEC;
+    if (falld && !bar && k.lage === 'strid') { // den första som står kvar styckar det och bär hem det första stycket
+      gjort(s, q, 'vildsvin');
+      if (forstaGang(s, 'vildsvin')) log(s, `${q.name} fällde byns första vildsvin, när det vände sig mot hen.`, 'world', [q.id]);
+      const t: Task = { act: 'jakt', phase: 'do', tx: q.x, ty: q.y, until: s.now + tid, carry: 0, items: { vildsvin: 1 }, why: 'Bär hem ett fällt vildsvin' };
+      styckaFallt(s, q, t, 'vildsvin');
+      q.task = t; bar = true;
+      continue;
+    }
+    q.task = { act: 'strid', phase: 'do', tx: q.x, ty: q.y, until: s.now + tid, carry: 0, why: 'Anfölls av ett vildsvin' };
+  }
+  if (falld && !bar && vk) lamnaFallt(s, 'vildsvin', 1, vk.x, vk.y);
+  if (folk[0]) log(s, `Ett vildsvin vände sig mot ${folk[0].name}. ${falld ? 'Vildsvinet dog.' : 'Vildsvinet sprang sin väg.'}`, 'world', folk.map(q => q.id));
+}
+EFTER.vildsvin = (s, efter, _v, g) => vildsvinSlut(s, efter, g as KartStrid);

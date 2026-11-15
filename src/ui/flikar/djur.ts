@@ -1,4 +1,4 @@
-import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, tamArt, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, radjurGrupper, radjurOf, vargarOf } from '../../sim';
+import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, tamArt, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, FLOCKARTER, flockGrupper, flockdjurOf, vargarOf } from '../../sim';
 import { djurBild, hasIcon, iconCanvas, iconImg } from '../../ikoner';
 import { bar, condBar, esc, pLink } from '../hjalp';
 import { HONS_ID0, arHona, arTamt, djurSynliga } from '../vaxter';
@@ -13,7 +13,7 @@ const rad = (namn: string, andel: number, varde: string, text: string, cls = '',
 // porträttet på kortet (steg 9.2.51): det levande djuret från sidan, helt och i sina egna proportioner (bilden på kartan), aldrig
 // den döda bilden, som bara är kadavret på kartan. Gånger två, högst 64 punkter brett
 function levande(d: { art: string; id: number }) {
-  const art = d.art as 'varg' | 'kanin' | 'radjur' | 'bjorn' | 'bjornunge', k = ['varg', 'kanin', 'radjur', 'bjorn', 'bjornunge'].includes(art) ? djurBild(art, d.id, 'sida', iIstiden(kalender(s, ui.nu).ai)) : undefined;
+  const art = d.art as 'varg' | 'kanin' | 'radjur' | 'vildsvin' | 'bjorn' | 'bjornunge', k = ['varg', 'kanin', 'radjur', 'vildsvin', 'bjorn', 'bjornunge'].includes(art) ? djurBild(art, d.id, 'sida', iIstiden(kalender(s, ui.nu).ai)) : undefined;
   if (!k || !hasIcon(k)) return iconImg(d.art, 32);
   const c = iconCanvas(k), sk = Math.max(1, Math.min(4, Math.floor(64 / Math.max(c.width, c.height))));
   return `<img class="ikon" src="${c.toDataURL()}" width="${c.width * sk}" height="${c.height * sk}" alt="" style="image-rendering: pixelated">`;
@@ -56,9 +56,9 @@ function honsHtml() {
 function djurHtml() {
   if (arHona(ui.djurId)) return honsHtml();
   if (arTamt(ui.djurId)) return tamHtml();
-  const d = djurSynliga().find(x => x.id === ui.djurId) ?? [...djurOf(s, ui.nu), ...radjurOf(s, ui.nu), ...faglarOf(s, ui.nu), ...bjornarOf(s, ui.nu), ...vargarOf(s)].find(x => x.id === ui.djurId);
+  const d = djurSynliga().find(x => x.id === ui.djurId) ?? [...djurOf(s, ui.nu), ...flockdjurOf(s, ui.nu), ...faglarOf(s, ui.nu), ...bjornarOf(s, ui.nu), ...vargarOf(s)].find(x => x.id === ui.djurId);
   if (!d) return '<p class="muted">Djuret syns inte längre här.</p>';
-  const art = stridOf(d.art), drag = dragOf(d.art, d.id), h = halsaOf(s, d.id), g = d.art === 'kanin' ? grupperOf(s, ui.nu).find(x => x.id === d.grupp) : d.art === 'radjur' ? radjurGrupper(s, ui.nu).find(x => x.id === d.grupp) : d.art === 'fagel' ? fagelFlockar(s, ui.nu).find(x => x.id === d.grupp) : undefined;
+  const art = stridOf(d.art), drag = dragOf(d.art, d.id), h = halsaOf(s, d.id), g = d.art === 'kanin' ? grupperOf(s, ui.nu).find(x => x.id === d.grupp) : FLOCKARTER[d.art] ? flockGrupper(s, FLOCKARTER[d.art], ui.nu).find(x => x.id === d.grupp) : d.art === 'fagel' ? fagelFlockar(s, ui.nu).find(x => x.id === d.grupp) : undefined;
   const f = d.art === 'varg' ? s.vargar?.find(x => x.id === d.grupp) : undefined, topp = 1 + INDIVID.spann;
   const jfr = (v: number, bas: number) => v > bas * 1.08 ? 'mer än de flesta' : v < bas * 0.92 ? 'mindre än de flesta' : 'som de flesta';
   const pr = (v: number) => `${Math.round(v * 100)} %`;
@@ -74,7 +74,7 @@ function djurHtml() {
       ${drag.mod !== undefined ? rad('Mod', drag.mod, pr(drag.mod), 'Hur modig vargen är. Flocken blir modigare ju fler den är, och den flyr när en varg faller eller ledarvargen dör', 'skill') : ''}
       ${f ? rad('Hunger', f.hunger, pr(f.hunger), 'Flockens hunger. En hungrig flock jagar harar, smyger till förrådet på natten och kan anfalla den som är ensam', f.hunger > 0.6 ? 'low' : '') : ''}
       ${f ? `<dt>Flock</dt><dd title="${esc(f.vargar.length > 1 ? `Flocken har ${f.vargar.length} vargar${f.vargar[0] === d.id ? '. Den här är ledarvargen' : ''}` : 'En ensam varg')}"><span>${f.vargar.length} st</span></dd>` : ''}
-      ${g ? `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${d.art === 'radjur' ? 'rådjur' : d.art === 'fagel' ? 'fåglar' : 'harar'} just nu"><span>${g.n} st</span></dd>` : ''}
+      ${g ? `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar'} just nu"><span>${g.n} st</span></dd>` : ''}
     </dl>`;
 }
 export const djur: Flik = { namn: 'Djuret', knapp: 'person', html: djurHtml };

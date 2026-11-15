@@ -105,7 +105,7 @@ export type BudVarde = string | number;
 // ett antaget bud: raden, värdet den gäller och när den antogs (steg 10.3.1)
 export interface AntagetBud { id: BudId; v?: BudVarde; t: number }
 // det heliga djurets art: namnet, och hur stor del av köttet byn slaktat som arten gett (steg 10.3.15)
-export const ART_NAMN: Record<string, string> = { kanin: 'Haren', varg: 'Vargen', radjur: 'Rådjuret', far: 'Fåret', get: 'Geten', fagel: 'Fågeln', bjorn: 'Björnen' };
+export const ART_NAMN: Record<string, string> = { kanin: 'Haren', varg: 'Vargen', radjur: 'Rådjuret', vildsvin: 'Vildsvinet', far: 'Fåret', get: 'Geten', fagel: 'Fågeln', bjorn: 'Björnen' };
 export function kottAndel(s: State, art: string) {
   let a = 0, alla = 0;
   for (const d of DJURARTER) { if (d.act !== 'slakta' || !d.kott) continue; const n = (s.stat?.[d.stat] ?? 0) * (d.slakt[d.kott] ?? 0); alla += n; if (d.art === art) a += n; }

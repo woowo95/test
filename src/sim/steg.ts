@@ -1051,6 +1051,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       const lang = JAKT.smygSek + tk.jf!.extra;
       if (tk.prog < lang) break;
       tk.prog -= lang; jaktKlar(s, p, tk);
+      if (p.task !== tk) return true; // vildsvinet vände sig mot jägaren: striden tar över (steg 10.10.4)
     }
     if (jaktBar(tk)) tk.prog = 0;
     return true;

@@ -46,7 +46,7 @@ export const SAKORD: Record<string, Ord> = {
   torrfisk: ['en', 'torkad fisk', 'torkade fiskar'], talgljus: ['ett', 'talgljus', 'talgljus'], fackla: ['en', 'fackla', 'facklor'], slanda: ['en', 'slända', 'sländor'], kalke: ['en', 'kälke', 'kälkar'], slade: ['en', 'släde', 'slädar'], levoxe: ['en', 'oxe', 'oxar'], levhast: ['en', 'häst', 'hästar'], bagborr: ['en', 'bågborr', 'bågborrar'], hus: ['ett', 'hus', 'hus'], vattensack: ['en', 'vattensäck', 'vattensäckar'],
   rovfron: ['ett', 'rovfrö', 'rovfrön'], rovor: ['en', 'rova', 'rovor'], arter: ['en', 'ärta', 'ärter'], artfron: ['ett', 'ärtfrö', 'ärtfrön'],
   silver: ['en', 'bit silver', 'bitar silver'], virke: ['ett', 'stycke virke', 'stycken virke'], naver: ['en', 'bit näver', 'bitar näver'],
-  vargdel: ['ett', 'vargstycke', 'vargstycken'], radjurdel: ['ett', 'rådjursstycke', 'rådjursstycken'], bjorndel: ['ett', 'björnstycke', 'björnstycken'],
+  vargdel: ['ett', 'vargstycke', 'vargstycken'], radjurdel: ['ett', 'rådjursstycke', 'rådjursstycken'], vildsvindel: ['ett', 'vildsvinsstycke', 'vildsvinsstycken'], vildsvin: ['ett', 'fällt vildsvin', 'fällda vildsvin'], svinkott: ['en', 'bit fläsk', 'bitar fläsk'], svinskinn: ['ett', 'svinskinn', 'svinskinn'], bjorndel: ['ett', 'björnstycke', 'björnstycken'],
 };
 // orden för en sak: ur SAKORD, annars sakens namn i SAKER (samma i ental och flertal)
 export function sakOrd(k: string): Ord {

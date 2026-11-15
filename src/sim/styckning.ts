@@ -9,7 +9,7 @@ import { nTools } from './agande';
 import { count } from './folk';
 import { dropLoad } from './lager';
 import { DJUR, Djurart } from './redskap';
-import { viktOf } from './saker';
+import { SAKER, viktOf } from './saker';
 import { knows } from './teknik';
 import { MIN, Person, State, Task } from './typer';
 import { bordPlats } from './utrustning';
@@ -32,7 +32,7 @@ export function styckaFallt(s: State, p: Person, t: Task, k: string): number {
   const art = artAv(k);
   if (!art || !art.del || viktOf(k) <= bordPlats(s, p) + 1e-9 || !kanStycka(s, p, art)) return 0;
   const delar = Math.ceil(viktOf(k) / STYCK.delVikt), dv = viktOf(art.del);
-  const bar = Math.max(1, Math.min(delar, Math.floor(bordPlats(s, p) / dv + 1e-9)));
+  const bar = SAKER[art.del]?.lyft ? 1 : Math.max(1, Math.min(delar, Math.floor(bordPlats(s, p) / dv + 1e-9))); // det som lyfts med båda händerna bärs ett i taget
   // djuret ligger i bördan (carry) eller bland sakerna (rådjuret från jakten, steg 6.6.2)
   const items = { ...(t.items ?? {}) };
   if (items[k]) { items[k]--; if (!items[k]) delete items[k]; } else t.carry = 0;

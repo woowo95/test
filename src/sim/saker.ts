@@ -116,12 +116,14 @@ const DEF = {
   // eget kött per art (steg 10.3.14): kött = true gör saken till ett köttslag (KOTTSLAG), som grillas, torkas, röks och saltas till samma saker
   radjurkott: { namn: 'Rådjurskött', ett: true, skaffa: RECEPT.radjurkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2.2, fett: 0.7, energi: 0.8, mineral: 0.7, vitamin: 0.3 }, ra: true, haller: 2 },
   farkott: { namn: 'Fårkött', ett: true, skaffa: RECEPT.farkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 1.8, fett: 1.5, energi: 0.9, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
+  svinkott: { namn: 'Fläsk', ett: true, skaffa: RECEPT.svinkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 1.8, fett: 1.6, energi: 1.1, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 }, // vildsvinet (steg 10.10.4) och grisen (10.10.13)
   kokott: { namn: 'Nötkött', ett: true, skaffa: RECEPT.kokott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.9, mineral: 0.7, vitamin: 0.3 }, ra: true, haller: 2 }, // steg 10.10.1
   getkott: { namn: 'Getkött', ett: true, skaffa: RECEPT.getkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 0.9, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   fagelkott: { namn: 'Fågelkött', ett: true, skaffa: RECEPT.fagelkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 0.8, energi: 0.7, mineral: 0.5, vitamin: 0.3 }, ra: true, haller: 2 },
   bjornkott: { namn: 'Björnkött', ett: true, skaffa: RECEPT.bjornkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.6, energi: 0.9, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   farskinn: { namn: 'Fårskinn', ett: true, skaffa: RECEPT.farskinn, stack: 10, mapp: 'Material', slits: 0.0006 }, // fårets och getens egna skinn (steg 10.3.14)
   getskinn: { namn: 'Getskinn', ett: true, skaffa: RECEPT.getskinn, stack: 10, mapp: 'Material', slits: 0.0006 },
+  svinskinn: { namn: 'Svinskinn', ett: true, skaffa: RECEPT.svinskinn, stack: 10, mapp: 'Material', slits: 0.0005 }, // vildsvinets borstiga skinn (steg 10.10.4)
   kohud: { namn: 'Kohud', ett: true, skaffa: RECEPT.kohud, stack: 10, mapp: 'Material', slits: 0.0005 }, // kons tjocka hud (steg 10.10.1)
   vitskinn: { namn: 'Vitt harskinn', ett: true, skaffa: RECEPT.vitskinn, stack: 30, mapp: 'Material', slits: 0.0006 }, // harens vinterpäls (steg 10.7.22): en hare som slaktas under istiden
   vargkott: { namn: 'Vargkött', ett: true, skaffa: RECEPT.vargkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
@@ -250,6 +252,8 @@ const DEF = {
   // styckdelen (steg 6.6.1, styckning.ts): en bit av ett stort djur som var för tungt att bära helt och styckades där det
   // föll. Delarna är fortfarande vilt och slaktas vid slaktbänken (raden vargdel i DJUR, redskap.ts)
   vargdel: { namn: 'Vargstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
+  vildsvin: { vikt: 25, namn: 'Fällt vildsvin', ett: true, skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // steg 10.10.4: styckas i tre stycken
+  vildsvindel: { namn: 'Vildsvinsstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 9, lyft: true, stack: 1, mapp: 'Material', haller: 3 }, // bärs ett i taget med båda händerna
   radjurdel: { namn: 'Rådjursstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 },
   bjorndel: { namn: 'Björnstycke', ett: true, skaffa: { act: 'jakt' }, vikt: 10, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.6
   korn: { namn: 'Korn', ett: true, skaffa: { tid: 0.25, tek: 'sadesodling' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 }, // säden (steg 9.6.11): köps av handlarna, sås och blir gröt

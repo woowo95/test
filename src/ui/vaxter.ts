@@ -1,5 +1,5 @@
 import { richness } from '../sim';
-import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, tandPaRutan, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, radjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden } from '../sim';
+import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, tandPaRutan, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
@@ -103,7 +103,7 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
   if (Math.hypot(dx, dy) > 0.01) h = Math.abs(dx) >= Math.abs(dy) * 0.8 ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
   hallar.set(id, { x, y, h }); sedd.add(id);
   const k = art === 'fagel' ? fagelBild(u, h) : djurBild(art, id, h, art === 'kanin' && iIstiden(ageIndex(s, ui.nu))), c = iconCanvas(k); // fågeln i platsens utseende (steg 6.6.3) // foten nära rutans punkt, mitt under djuret
-  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' || art === 'bjornunge' ? 4 : 3) - c.height), 1);
+  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' || art === 'bjornunge' || art === 'vildsvin' ? 4 : 3) - c.height), 1);
 }
 // djuren där de syns just nu (det man trycker på, interaktion.ts, och djurfliken)
 export const djurSynliga = () => synliga;
@@ -122,13 +122,13 @@ export function drawAnimals() {
   for (const k of jagas.kaniner) { // den som jagas just nu ritas som jakten går (jakt.ts)
     const e = { x: k.x, y: k.y, t: ui.nu, larm: k.larm ? ui.nu + LARM : visad.get(k.id)?.larm ?? 0 };
     visad.set(k.id, e); sedda.add(k.id);
-    const art = k.art, fallt = art === 'radjur' ? kartbild('radjur') : art === 'fagel' ? kartbild(FALLD[k.u ?? 1]) : undefined; // det fällda rådjuret (steg 6.6.2) och fågeln (steg 6.6.3)
+    const art = k.art, fallt = art === 'radjur' ? kartbild('radjur') : art === 'vildsvin' ? 'vildsvin' : art === 'fagel' ? kartbild(FALLD[k.u ?? 1]) : undefined; // det fällda rådjuret (steg 6.6.2) och fågeln (steg 6.6.3)
     if (k.ligger && fallt) { const c = iconCanvas(fallt); djurIkoner.add(fallt, Math.round(k.x * TS - c.width / 2), Math.round(k.y * TS + 2 - c.height), 1); }
     else if (k.ligger) djurIkoner.add('kanin_dod', k.x * TS - 4, k.y * TS - 6, 1); else ritaDjur(art, k.id, k.x, k.y, riktade, k.u);
     if (!k.ligger) ut.push({ id: k.id, art, x: k.x, y: k.y, grupp: -1, u: k.u });
     if (e.larm > ui.nu) larm(k.x, k.y);
   }
-  for (const d of [...djurOf(s, ui.nu, folk), ...radjurOf(s, ui.nu, folk), ...faglarOf(s, ui.nu, folk)]) { // harar, rådjur (steg 6.6.2) och fåglar (steg 6.6.3), som flyr likadant
+  for (const d of [...djurOf(s, ui.nu, folk), ...flockdjurOf(s, ui.nu, folk), ...faglarOf(s, ui.nu, folk)]) { // harar, rådjur (steg 6.6.2), vildsvin (steg 10.10.4) och fåglar (steg 6.6.3), som flyr likadant
     if (jagadId.has(d.id)) continue;
     const e = visad.get(d.id), dt = e ? (ui.nu - e.t) / SEC : Infinity;
     let x = d.x, y = d.y, l = e?.larm ?? 0;
@@ -175,7 +175,7 @@ export function drawAnimals() {
   }
   // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
   // (de tama djuren och hönsflocken markeras på samma sätt, och när musen är över dem; en höna är hela flocken)
-  const kant = (d: SynligtDjur) => { const b = d.art === 'varg' ? { w: 28, h: 19, fot: 5 } : d.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : d.art === 'bjornunge' ? { w: 25, h: 18, fot: 4 } : d.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : d.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
+  const kant = (d: SynligtDjur) => { const b = d.art === 'varg' ? { w: 28, h: 19, fot: 5 } : d.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : d.art === 'bjornunge' || d.art === 'vildsvin' ? { w: 25, h: 18, fot: 4 } : d.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : d.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
     djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(d.x * TS - b.w / 2, d.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); };
   const markerade = new Set<number>();
   for (const id of [ui.tab === 'djur' ? ui.djurId : -1, ui.djurHover]) { if (arHona(id)) honsIdn(hons?.n ?? 0).forEach(q => markerade.add(q)); else markerade.add(id); }

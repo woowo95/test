@@ -103,6 +103,7 @@ const KLADMATERIAL_DEF = {
   bjornskinn: { sak: 'bjornskinn', namn: 'björnskinn', slag: 'skinn', bit: 2, varme: 2.6, hallbar: 1.3, vikt: 2, skydd: 1.5, finhet: 2 }, // steg 6.6.6: det tjockaste skinnet, den varmaste klädern och skyddar mer än vargskinnet
   farskinn: { sak: 'farskinn', namn: 'fårskinn', slag: 'skinn', bit: 1, varme: 1.4, hallbar: 1, vikt: 1.2, skydd: 1, finhet: 0 }, // fårets och getens skinn (steg 10.3.14): fårskinnet med ullen är varmare än harens
   getskinn: { sak: 'getskinn', namn: 'getskinn', slag: 'skinn', bit: 1, varme: 1.1, hallbar: 1.2, vikt: 1.1, skydd: 1.1, finhet: 0 },
+  svinskinn: { sak: 'svinskinn', namn: 'svinskinn', slag: 'skinn', bit: 1, varme: 0.9, hallbar: 1.4, vikt: 1.3, skydd: 1.3, finhet: 0 }, // vildsvinets borstiga skinn (steg 10.10.4): tåligt men inte så varmt
   kohud: { sak: 'kohud', namn: 'kohud', slag: 'skinn', bit: 1, varme: 1.2, hallbar: 1.6, vikt: 1.6, skydd: 1.4, finhet: 0 }, // kons hud (steg 10.10.1): tjock, tung och tålig
   lader: { sak: 'lader', namn: 'läder', slag: 'lader', bit: 1, varme: 1.3, hallbar: 1.5, vikt: 1.2, skydd: 1.4, finhet: 1 }, // steg 7.7.6
   lintyg: { sak: 'lintyg', namn: 'lin', slag: 'tyg', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 2 }, // steg 7.7.9

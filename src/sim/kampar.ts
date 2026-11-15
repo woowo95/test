@@ -32,6 +32,7 @@ export const KAMPAR = {
   kanin: djur('Haren', 'Hare', 6, { styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4 }, 1.4, 'bett'),
   varg: djur('Vargen', 'Varg', 12, { styrka: 10, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9 }, 1.5, 'vargbett'), // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
   radjur: djur('Rådjuret', 'Rådjur', 10, { styrka: 4, uthallighet: 12, mod: 2, smidighet: 16, skicklighet: 4 }, 1.7, 'bett'),
+  vildsvin: djur('Vildsvinet', 'Vildsvin', 12, { styrka: 12, uthallighet: 14, mod: 12, smidighet: 10, skicklighet: 7 }, 1.3, 'betar'), // tungt och envist, flyr oftast men vänder sig ibland mot jägaren (steg 10.10.4)
   fagel: djur('Fågeln', 'Fågel', 5, { styrka: 1, uthallighet: 4, mod: 1, smidighet: 18, skicklighet: 2 }, 1.6, 'bett'),
   bjorn: djur('Björnen', 'Björn', 25, { styrka: 24, uthallighet: 22, mod: 14, smidighet: 8, skicklighet: 8 }, 1.1, 'bjornram'), // tung och långsam men slår hårt (steg 6.6.5)
   bjornunge: djur('Björnungen', 'Björnunge', 2, { styrka: 5, uthallighet: 6, mod: 4, smidighet: 10, skicklighet: 4 }, 1.2, 'vargbett'), // liten och svag, men björnen försvarar den (steg 6.6.5)
