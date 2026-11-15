@@ -152,36 +152,57 @@ export function kvall(seed = 3, timme = 20) {
   v.slice(1).forEach((q, i) => { q.x = f.x + 0.5 + Math.cos(i) * 2; q.y = f.y + 0.5 + Math.sin(i) * 2; q.task = { act: 'samtal', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, dark: true }; });
   return { s, v };
 }
-// p försöker uppträda tills hen gör det (eller det inte går): som om hen valt vad hen gör på kvällen många gånger
+// p försöker uppträda tills hen gör det (eller det inte går): som om hen prövat många kvällar klockan 18 till nu
 export function upptrad(s: State, p: Person, ganger = 300) {
   for (let i = 0; i < ganger; i++) {
-    const fr = SIM.framVal(s, p, q => ({ x: q.x, y: q.y }));
+    delete p.framProv;
+    const fr = SIM.framVal(s, p);
     if (fr?.act === 'upptrada') { p.task = { act: 'upptrada', phase: 'go', tx: fr.spot?.x ?? p.x, ty: fr.spot?.y ?? p.y, until: s.now + fr.dur, carry: 0, ref: fr.ref, tool: fr.tool, dark: true, why: fr.why }; return true; }
   }
   return false;
 }
 SCENARIER.framtradande = {
-  text: 'Framträdandena (steg 4.3.2.1): på kvällen uppträder någon vid elden för dem som sitter där, högst en gång per kväll. Ett kväde går från början; publiken blir glad, framträdandet får en kort text, och den som uppträder övar',
+  text: 'Framträdandena (steg 4.3.2.1 och 10.7.9): på kvällen kallar den som vill uppträda, högst en gång per kväll, och väntar 15 minuter vid scenen eller elden. De som vill lyssna avbryter det de gör och går dit, också den som arbetar långt bort; den som sover väcks inte, och den som fryser farligt värmer sig först. Publiken sitter vid scenen. Publiken blir glad, framträdandet får en kort text, och den som uppträder övar',
   kor: () => {
     const { s, v } = kvall(), p = v[0]!, fore = p.skill[SIM.FRAM_SKILL];
-    const borjar = upptrad(s, p), d = s.fram ? SIM.FRAM_AV[s.fram.k]!.namn : 'inget';
-    const lyss = v.slice(1).filter(q => q.task?.act === 'lyssna').length;
+    for (const q of s.people) for (const r of s.people) if (q !== r) SIM.getRel(s, q, r).op = 100; // alla vill lyssna
+    // en som arbetar långt bort, en som sover och en som fryser farligt
+    const [, borta, sover, fryser] = v as [Person, Person, Person, Person];
+    const f0 = SIM.eldPlats(s);
+    borta.x = Math.max(1, f0.x - 25); borta.y = f0.y + 0.5; borta.task = { act: 'hantverk', phase: 'do', tx: borta.x, ty: borta.y, until: s.now + 3 * SIM.HOUR, carry: 0, dark: !SIM.isLight(s.now) };
+    sover.task = { act: 'vila', phase: 'do', tx: sover.x, ty: sover.y, until: s.now + 8 * SIM.HOUR, carry: 0, dark: !SIM.isLight(s.now), why: 'Är trött' }; sover.rest = 0.05; sover.toa = 1; // sover hela framträdandet
+    fryser.warm = SIM.KROPP.farligt - 0.05;
+    const borjar = upptrad(s, p), d = s.fram ? SIM.FRAM_AV[s.fram.k]!.namn : 'inget', lista = s.fram?.lista ?? [];
+    const avbrot = !borta.task, sov = sover.task?.act === 'vila';
+    SIM.chooseTask(s, fryser); const varmer = fryser.task?.act === 'varma';
+    kor(s, 0.25);
+    const lyss = v.slice(1).filter(q => q.task?.act === 'lyssna').length, bortaKom = borta.task?.act === 'lyssna', sovKom = sover.task?.act === 'lyssna';
     kor(s, 1.5);
     const glad = v.slice(1).filter(q => q.thoughts.some(t => t.text.startsWith('Lyssnade på'))).length;
-    const minne = s.framtradanden?.[0];
-    // samma kväll blir det inget till, och inte heller på dagen eller utan publik
+    const minne = s.framtradanden?.at(-1);
+    // samma kväll blir det inget till, och inte heller på dagen
     const igen = !upptrad(s, v[1]!);
     const dag = kvall(3, 11), pDag = !upptrad(dag.s, dag.v[0]!);
-    const ensam = rikDag(3); klockan(ensam, 20); const pEnsam = !upptrad(ensam, vuxna(ensam)[0]!);
+    // publiken sitter vid scenen: framför den, inte bakom en vägg
+    const m = medScen(3, []), mp = m.v[0]!;
+    for (const q of m.s.people) for (const r of m.s.people) if (q !== r) SIM.getRel(m.s, q, r).op = 100;
+    upptrad(m.s, mp); kor(m.s, 0.3);
+    const vid = SIM.vidStation(m.sc), pub = m.v.slice(1).filter(q => q.task?.act === 'lyssna');
+    const nara = pub.filter(q => Math.hypot(q.task!.tx - vid.x, q.task!.ty - vid.y) <= 6 && q.task!.ty > vid.y && !SIM.blocked(m.s, q.task!.tx, q.task!.ty)).length;
     // en ny by kan bara kväda: ingen behöver något mer
     const ny = createState(9, START), kan = SIM.FRAMTRADANDEN.filter(x => !x.instrument && !(x.min ?? 0)).map(x => x.id);
     return [
-      [`${p.name} börjar ett framträdande (${d}), och ${lyss} av ${v.length - 1} vid elden lyssnar`, borjar && lyss === v.length - 1],
+      [`${p.name} kallar till ett framträdande (${d}), och ${lista.length} av ${v.length - 1} vill lyssna`, borjar && lista.length >= v.length - 2],
+      [`efter väntan lyssnar ${lyss} av ${v.length - 1}`, lyss >= 1],
+      [`den som arbetar långt bort avbryter (${avbrot ? 'ja' : 'nej'}) och kommer (${bortaKom ? 'ja' : 'nej'})`, avbrot && bortaKom],
+      [`den som sover väcks inte (${sov ? 'sover' : 'vaknade'}) och sover vidare medan hen är trött (${sovKom ? 'gick dit' : 'sover'})`, sov && !sovKom],
+      [`den som fryser farligt värmer sig först (${fryser.task?.act})`, varmer],
       [`${glad} i publiken är glada efteråt`, glad >= 2],
       [`texten: ${minne?.text ?? 'ingen'}`, !!minne && minne.n >= 2 && minne.text.includes(p.name)],
       [`${p.name} övade ${SIM.FRAM_SKILL} (${fore.toFixed(2)} → ${p.skill[SIM.FRAM_SKILL].toFixed(2)})`, p.skill[SIM.FRAM_SKILL] > fore],
       ['samma kväll blir det inget framträdande till', igen],
-      ['på dagen och utan publik blir det inget', pDag && pEnsam],
+      ['på dagen blir det inget', pDag],
+      [`vid scenen sitter ${nara} av ${pub.length} i publiken framför den`, pub.length >= 2 && nara === pub.length],
       [`från början finns ${kan.join(', ')} (${ny.people.length} invånare)`, kan.includes('kvade')],
     ];
   },
@@ -326,9 +347,9 @@ SCENARIER.budskap = {
     const pa = framfor(a.s, p), hort = a.v.slice(1).filter(b => b !== q && SIM.intryckOm(b, q.id, 'tjuv')).length;
     // om ledaren: hyllning och hån
     const styr = (op: number, ban = false) => {
-      const k = kvall(5), u = k.v[0]!, l = k.v[1]!, andra = k.v.slice(2);
+      const k = kvall(8), u = k.v[0]!, l = k.v[1]!, andra = k.v.slice(2);
       k.s.styre = { ledare: l.id, historia: [], oppna: [], ...(ban ? { pabud: { matlager: 0, vedlager: 0, torkat: 0, han: -1 } } : {}) } as unknown as typeof k.s.styre;
-      SIM.getRel(k.s, u, l).op = op;
+      SIM.getRel(k.s, u, l).op = op; for (const q of andra) SIM.getRel(k.s, q, u).op = 50; // publiken vill lyssna (steg 10.7.9)
       const tillat = SIM.hanTillat(k.s), fore = snitt(k.s, l, andra), r = framfor(k.s, u);
       return { bud: r?.bud, text: r?.text ?? '', d: snitt(k.s, l, andra) - fore, led: SIM.getRel(k.s, u, l).op, tillat };
     };
@@ -611,11 +632,11 @@ SCENARIER.framrapport = {
       const tm = t.s.framtradanden?.at(-1);
       if (tm?.bud === 'tro' && tm.tro?.length) { tro = tm.tro.filter(x => t.v.find(b => b.name === x)?.tro === 1); troM = tm; troS = t.s; }
     }
-    // ingen kom: publiken går därifrån innan framträdandet börjar
+    // ingen kom: alla sover, och efter 15 minuters väntan ställs det in (steg 10.7.9)
     const e = kvall(7), ep = e.v[0]!;
-    let inget: SIM.FramMinne | undefined;
-    if (upptrad(e.s, ep)) { for (const q of e.v.slice(1)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.s.now + 3 * SIM.HOUR, carry: 0, dark: true }; kor(e.s, 1.5); inget = e.s.framtradanden?.at(-1); }
-    const inglog = e.s.log.find(x => x.fram === inget?.nr);
+    let inget: SIM.FramMinne | undefined, vantat = 0;
+    if (upptrad(e.s, ep)) { for (const q of e.s.people) if (q !== ep) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.s.now + 3 * SIM.HOUR, carry: 0, dark: true }; const t0 = e.s.now; for (let i = 0; i < 400 && e.s.fram; i++) SIM.step(e.s, 10); vantat = (e.s.now - t0) / SIM.MIN; inget = e.s.framtradanden?.at(-1); }
+    const inglog = e.s.log.find(x => x.fram === inget?.nr), ledsen = ep.thoughts.some(t => t.text === 'Ingen kom och lyssnade' && t.v < 0);
     // berättelsen högst upp (steg 5.4.7.2): skriven ur minnet, stabil, med den som uppträdde, ledaren och den som övertygades
     const b0 = m ? SIM.framBerattelse(s, m) : '', bh = hy ? SIM.framBerattelse(k.s, hy) : '', bt = troM ? SIM.framBerattelse(troS, troM) : '', bi = inget ? SIM.framBerattelse(e.s, inget) : '';
     const hel = (x: string) => x.length > 0 && !/\{|undefined|NaN/.test(x);
@@ -626,6 +647,7 @@ SCENARIER.framrapport = {
       [`hyllningen: ledaren ${hy?.ledare ?? 'ingen'}, ${hyl.length} i publiken med före och efter (${hyl.map(x => `${x.l0}→${x.l1}`).join(', ')})`, hy?.bud === 'hylla' && hy.ledare === l.name && hyl.length >= 1 && hyl.every(x => x.l1! >= x.l0!) && hyl.some(x => x.l1! > x.l0!)],
       [`tron övertygade ${tro.join(', ') || 'ingen'}`, tro.length >= 1],
       [`ingen kom: ${inglog?.text ?? 'ingen rad'}`, !!inget?.inget && inget.n === 0 && !!inglog],
+      [`det ställdes in efter ${vantat.toFixed(0)} minuters väntan, och ${ep.name} ${ledsen ? 'har' : 'saknar'} tanken`, vantat >= 14 && vantat <= 17 && ledsen && (e.s.stat?.framInstallt ?? 0) === 1],
       [`berättelsen: ${b0}`, hel(b0) && b0.includes(p.name) && b0 === SIM.framBerattelse(s, m!)],
       [`berättelsen om hyllningen: ${bh}`, hel(bh) && bh.includes(l.name)],
       [`berättelsen om tron: ${bt}`, hel(bt) && tro.some(x => bt.includes(x))],

@@ -69,7 +69,7 @@ import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlag
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportVal, sportVikt } from './sport';
 import { handlaVal } from './handel';
-import { framVal } from './framtradande';
+import { framVal, lyssnaBradska, lyssnaVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
@@ -668,6 +668,12 @@ export const ARBETEN: readonly Arbete[] = [
     if (!hv) return false;
     set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return true;
   } },
+  // ett framträdande (steg 10.7.9, framtradande.ts): den som ville lyssna vid kallelsen går dit. Brådskan stiger under väntan
+  { id: 'lyssna', niva: 3, bradska: ({ s }) => { const b = lyssnaBradska(s); return b ? tillfalle(b.fran, b.till, s.now) : 1; }, prova: ({ s, p, v }) => {
+    const l = skams(p, s.now) ? undefined : lyssnaVal(s, p, q => spotFor(s, 'beratta', q));
+    if (!l) return false;
+    set(v, 'lyssna', l.why); v.spot = l.spot; v.dur = l.dur; v.ref = l.ref; v.tool = l.tool; return true;
+  } },
   { id: 'rusta', niva: 3, prova: ({ s, p, v }) => { const r = rustaVal(s, p); if (!r) return false; v.spot = r.spot; v.ref = r.ref; v.dur = 2 * MIN; return set(v, 'rusta', r.why); } }, // byta om inför strid (steg 8.7.8), på sin nivå bland tillfällena (steg 10.2.2)
   // 4 Grundbehov (toa, värme, vatten, vila, mat). En lat person tillgodoser dem tidigare än en flitig
   { id: 'gammalSover', niva: 4, nar: 'natt', prova: ({ s, p, v, a }) => a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover && set(v, 'sova', 'Är gammal och sover på natten') },
@@ -707,9 +713,9 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'vakt', niva: 6, nar: 'natt', prova: ({ s, p, v, a }) => vaktVal(s, p, v, a) },
   // barnen leker; de lite större hjälper till (raden arbete)
   { id: 'leka', niva: 9, nar: 'dag', kort: true, prova: ({ s, v, a }) => a < ALDER.hjalper && set(v, 'leka', lekText(s)) },
-  // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
+  // ett framträdande vid scenen eller elden (steg 4.3.2 och 10.7.9, framtradande.ts): den som vill uppträda kallar
   { id: 'framtradande', niva: 9, nar: 'natt', prova: ({ s, p, v }) => {
-    const fr = skams(p, s.now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
+    const fr = skams(p, s.now) ? undefined : framVal(s, p);
     if (!fr) return false;
     set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return true;
   } },
