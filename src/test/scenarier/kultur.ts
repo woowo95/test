@@ -310,7 +310,7 @@ SCENARIER.scen = {
     let n = 0, q = 0, kval = 0, slits = 1, text = '';
     for (let i = 0; i < 30 && !n; i++) {
       const b = medScen(3 + i, ['lyra']), p = b.v[0]!; p.skill[SIM.FRAM_SKILL] = 8;
-      if (!upptrad(b.s, p) || b.s.fram!.inst !== 'lyra') continue;
+      if (!upptrad(b.s, p) || b.s.fram!.inst !== 'lyra' || b.s.fram!.grupp) continue; // ensam (gruppen prövas i framgrupp)
       kval = SIM.framKval(b.s, p);
       kor(b.s, 1.5);
       const m = b.s.framtradanden?.[0];
@@ -329,6 +329,47 @@ SCENARIER.scen = {
   },
 };
 
+SCENARIER.framgrupp = {
+  text: 'Steg 10.7.11: flera uppträder tillsammans. När den som kallar valt sång, musik eller teater kan andra som vill stå på scenen med hen, och kvaliteten blir den bästas plus en fjärdedel av de andras, gånger det bästa instrumentet. Alla i gruppen övar och står i minnet, och varje instrument som spelats slits. Tal, föreläsning och kväde görs bara ensam',
+  kor: () => {
+    let m: SIM.FramMinne | undefined, bast = 0, ovat = 0, n = 0, slitna = 0, ensam = 0, ensamGrupp = 0;
+    for (let i = 0; i < 60 && !m; i++) {
+      const x = medScen(3 + i, ['lyra', 'trumma']), [p, q] = x.v as [Person, Person];
+      for (const a of x.s.people) for (const b of x.s.people) if (a !== b) SIM.getRel(x.s, a, b).op = 100;
+      p.skill[SIM.FRAM_SKILL] = 8; q.skill[SIM.FRAM_SKILL] = 7; q.pot.karisma = 20;
+      if (!upptrad(x.s, p)) continue;
+      const f = x.s.fram!;
+      if (!SIM.FRAM_AV[f.k]!.grupp) { ensam++; if (f.grupp?.length) ensamGrupp++; continue; }
+      if (!f.grupp?.length || !f.inst) continue;
+      const folk = [p, ...f.grupp.map(g => SIM.byId(x.s, g.id)!)], fore = folk.map(z => z.skill[SIM.FRAM_SKILL]);
+      kor(x.s, 1.5);
+      const mm = x.s.framtradanden?.at(-1);
+      if (!mm || mm.inget || !mm.grupp?.length) continue;
+      m = mm; n = folk.length;
+      const inst = [f.inst, ...f.grupp.map(g => g.inst)].filter((k): k is string => !!k);
+      bast = Math.max(...folk.map(z => SIM.framKval(x.s, z))) * Math.max(...inst.map(k => SIM.INSTRUMENT[k]!.kval));
+      ovat = folk.filter((z, j) => z.skill[SIM.FRAM_SKILL] > fore[j]!).length;
+      slitna = (x.s.ting ?? []).filter(t => (t.k === 'lyra' || t.k === 'trumma') && t.c < 1).length;
+    }
+    // tal, föreläsning och kväde görs alltid ensam
+    for (let i = 0; i < 40; i++) {
+      const x = kvall(3 + i), p = x.v[0]!;
+      for (const a of x.s.people) for (const b of x.s.people) if (a !== b) SIM.getRel(x.s, a, b).op = 100;
+      p.skill[SIM.FRAM_SKILL] = 8; for (const q of x.v.slice(1)) q.pot.karisma = 20;
+      if (!upptrad(x.s, p)) continue;
+      if (SIM.FRAM_AV[x.s.fram!.k]!.grupp) continue; // teatern kan göras i grupp
+      ensam++; if (x.s.fram!.grupp?.length) ensamGrupp++;
+    }
+    return [
+      [`en grupp på ${n} uppträdde (${m?.k ?? 'ingen'}): ${m?.text ?? ''}`, !!m && n >= 2 && !!m.grupp?.length],
+      [`kvaliteten ${m?.q ?? 0} är högre än den bästa ensam med det bästa instrumentet (${bast.toFixed(2)})`, !!m && m.q > bast + 0.01],
+      [`${ovat} av ${n} i gruppen övade`, n >= 2 && ovat === n],
+      [`gruppen står i minnet (${m?.grupp?.map(g => g.namn).join(', ') ?? 'ingen'}) och i berättelsen`, !!m?.grupp?.length && m.grupp.every(g => m!.text.includes(g.namn))],
+      [`${slitna} av två instrument slits`, slitna === 2 || (m?.grupp?.length ?? 0) > 0 && m!.k === 'sang' && slitna >= 1],
+      [`ett tal, en föreläsning eller ett kväde görs ensam (${ensamGrupp} i grupp av ${ensam})`, ensam >= 5 && ensamGrupp === 0],
+    ];
+  },
+};
 // p uppträder (med budskapet hen väljer) och framträdandet går till slut: texten och budskapet
 function framfor(s: State, p: Person) {
   if (!upptrad(s, p)) return undefined;

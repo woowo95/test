@@ -715,7 +715,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'leka', niva: 9, nar: 'dag', kort: true, prova: ({ s, v, a }) => a < ALDER.hjalper && set(v, 'leka', lekText(s)) },
   // ett framträdande vid scenen eller elden (steg 4.3.2 och 10.7.9, framtradande.ts): den som vill uppträda kallar
   { id: 'framtradande', niva: 9, nar: 'natt', prova: ({ s, p, v }) => {
-    const fr = skams(p, s.now) ? undefined : framVal(s, p);
+    const fr = skams(p, s.now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
     if (!fr) return false;
     set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return true;
   } },

@@ -18,8 +18,8 @@ export const FRAMBER = balans('framber', {
 export function framBerattelse(s: State, m: FramMinne): string {
   const pub = m.publik ?? [], d = pub.reduce((a, x) => a + x.r1 - x.r0, 0);
   const ledd = pub.filter(x => x.l0 !== undefined), ld = ledd.reduce((a, x) => a + x.l1! - x.l0!, 0);
-  const f = {
-    namn: m.namn, form: m.k, amne: m.amne ?? 'det som hänt', inst: m.inst ? INSTRUMENT[m.inst]?.ord ?? m.inst : '', bud: m.bud ?? '',
+  const f = { // gruppen står som den som uppträdde (steg 10.7.11)
+    namn: m.grupp?.length ? och([m.namn, ...m.grupp.map(g => g.namn)]) : m.namn, form: m.k, amne: m.amne ?? 'det som hänt', inst: m.inst ? INSTRUMENT[m.inst]?.ord ?? m.inst : '', bud: m.bud ?? '',
     om: m.om ?? '', ledare: m.ledare ?? '', betalt: m.betalt ?? '', n: talOrd(m.n), nTal: m.n,
     bra: m.q >= FRAMBER.bra, dalig: m.q < FRAMBER.dalig, upp: d > 0, ner: d < 0,
     rykte: och(m.rykte ?? []), tro: och(m.tro ?? []), hanad: och(m.hanad ?? []),

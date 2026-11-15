@@ -30,6 +30,7 @@ export function framHtml(m?: FramMinne) {
   const fakta = [
     `<li title="Den som uppträdde">${iconImg('scen', 16)} ${vemLank(m.p, m.namn)}</li>`,
     m.inst ? `<li title="${esc(`Instrumentet: ${sakNamn(m.inst).toLowerCase()}`)}">${iconImg(m.inst, 16)} ${esc(sakNamn(m.inst))}</li>` : '',
+    ...(m.grupp ?? []).map(g => `<li title="${esc(`På scenen med ${m.namn}${g.inst ? `, spelade ${sakNamn(g.inst).toLowerCase()}` : ''}`)}">${iconImg('scen', 16)} ${vemLank(g.id, g.namn)}${g.inst ? ` ${iconImg(g.inst, 14)}` : ''}</li>`), // gruppen (steg 10.7.11)
     bud ? `<li title="Budskapet">${esc(bud.namn)}${m.om ? ` <span class="muted">(${esc(m.om)})</span>` : ''}</li>` : '',
     m.betalt ? `<li title="${esc(`${m.ledare ?? 'Ledaren'} betalade för framträdandet med en ${m.betalt}`)}">${iconImg('silver', 14)} <span class="muted">betalt med</span> ${esc(m.betalt)}</li>` : '',
   ].join('');
@@ -53,8 +54,8 @@ export function framHtml(m?: FramMinne) {
 // vem och när; knappen öppnar redogörelsen. person = bara de hen var med i, scen = bara de på den scenen (där pågår ett
 // framträdande står det överst), matcher = false utan matcherna
 export function fritidLista(o: { person?: number; scen?: number; matcher?: boolean; antal?: number } = {}) {
-  const fr = (s.framtradanden ?? []).filter(m => m.nr !== undefined && (o.person === undefined || m.p === o.person) && (o.scen === undefined || m.scen === o.scen))
-    .map(m => ({ t: m.t, html: `${iconImg('scen', 12)} ${esc(FRAM_AV[m.k]?.namn ?? m.k)}: ${esc(m.namn)}${framKnapp(m.nr!)}` }));
+  const fr = (s.framtradanden ?? []).filter(m => m.nr !== undefined && (o.person === undefined || m.p === o.person || !!m.grupp?.some(g => g.id === o.person)) && (o.scen === undefined || m.scen === o.scen))
+    .map(m => ({ t: m.t, html: `${iconImg('scen', 12)} ${esc(FRAM_AV[m.k]?.namn ?? m.k)}: ${esc([m.namn, ...(m.grupp ?? []).map(g => g.namn)].join(', '))}${framKnapp(m.nr!)}` }));
   const ma = o.matcher === false || o.scen !== undefined ? [] : (s.matcher ?? []).filter(m => !m.installd && (o.person === undefined || m.spelare.some(q => q.id === o.person)))
     .map(m => ({ t: m.t, html: `${iconImg('boll', 12)} ${esc(SPORT_AV[m.k]?.namn ?? m.k)}: ${esc(m.spelare.map(q => q.namn).join(', '))}${m.vnamn ? `, ${esc(m.vnamn)} vann` : ''}${matchKnapp(m.nr)}` }));
   const nu = s.fram && (o.scen === undefined || s.fram.scen === o.scen) && (o.person === undefined || s.fram.p === o.person)

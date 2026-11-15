@@ -7,7 +7,7 @@ import { ACTS } from './handlingar';
 // finns från början, så att även en liten by har framträdanden. Formerna är rader i registret FRAMTRADANDEN. Framträdandet
 // ger publiken glädje (mer ju skickligare och mer karismatisk den som uppträder är) och får en kort text som beskriver det.
 // Ett framträdande i taget, i s.fram; de senaste står i s.framtradanden.
-import { honom } from './ord';
+import { honom, och } from './ord';
 import { ALDER, KROPP, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, ovning, relKey, stat, think } from './folk';
 import { budHindrar } from './kyrka';
 import { avbryt } from './lager';
@@ -19,7 +19,7 @@ import { predika, troende, troNamn, troOf } from './religion';
 import type { Tro } from './religion';
 import { clamp } from './slump';
 import { rnd } from './slump';
-import { hourOf } from './tid';
+import { hourOf, isLight } from './tid';
 import { coldOf, nederbord, temperature } from './vader';
 import { Station, isKlar, redskapVid, stationById, stationerOf, storlekAv, vidStation } from './stationer';
 import { kvHaller } from './kvalitet';
@@ -39,6 +39,7 @@ export interface FramDef {
   bud?: true; // kan bära ett budskap (steg 4.3.2.3, BUDSKAP)
   kval: number; // hur mycket glädje formen ger (steg 10.7.10): formerna som kräver mer ger mer, 1 är ett vanligt framträdande
   amne: keyof typeof AMNE; // vad det handlar om
+  grupp?: number; // så här många kan stå på scenen tillsammans (steg 10.7.11); utan görs formen bara ensam
   vrid?: number; // hur mycket mer än ett samtal formen ändrar gärningen i ett minne om en person (steg 10.4.11), 1 om inget står
 }
 // vad ett framträdande handlar om (FramDef.amne): ger texten till {amne}
@@ -52,9 +53,9 @@ export const FRAMTRADANDEN: FramDef[] = [
   { id: 'kvade', namn: 'Kväde', text: '{namn} kväder vid elden om {amne}, och de andra lyssnar.', da: '{namn} kvad vid elden om {amne}, och de andra lyssnade.', bud: true, kval: 0.6, amne: 'minne', vrid: 2 },
   { id: 'tal', namn: 'Tal', text: '{namn} håller ett tal om {amne}.', da: '{namn} höll ett tal om {amne}.', bud: true, min: 2, kval: 0.8, amne: 'byn' },
   { id: 'forelasning', namn: 'Föreläsning', text: '{namn} lär de andra vad {hen} vet om {amne}.', da: '{namn} lärde de andra vad {hen} visste om {amne}.', min: 4, kval: 0.8, amne: 'kunskap' },
-  { id: 'teater', namn: 'Teater', text: '{namn} spelar upp en berättelse för de andra om {amne}, med röster och rörelser.', da: '{namn} spelade upp en berättelse för de andra om {amne}, med röster och rörelser.', bud: true, min: 6, kval: 1.3, amne: 'handelse', vrid: 2.5 },
-  { id: 'sang', namn: 'Sång', text: '{namn} sjunger om {amne} till {inst}.', da: '{namn} sjöng om {amne} till {inst}.', instrument: true, bud: true, kval: 1.2, amne: 'minne', vrid: 2 },
-  { id: 'musik', namn: 'Musik', text: '{namn} spelar på {inst} för de andra.', da: '{namn} spelade på {inst} för de andra.', instrument: true, kval: 1.2, amne: 'minne' },
+  { id: 'teater', namn: 'Teater', text: '{namn} spelar upp en berättelse för de andra om {amne}, med röster och rörelser.', da: '{namn} spelade upp en berättelse för de andra om {amne}, med röster och rörelser.', bud: true, min: 6, kval: 1.3, amne: 'handelse', vrid: 2.5, grupp: 4 },
+  { id: 'sang', namn: 'Sång', text: '{namn} sjunger om {amne} till {inst}.', da: '{namn} sjöng om {amne} till {inst}.', instrument: true, bud: true, kval: 1.2, amne: 'minne', vrid: 2, grupp: 3 },
+  { id: 'musik', namn: 'Musik', text: '{namn} spelar på {inst} för de andra.', da: '{namn} spelade på {inst} för de andra.', instrument: true, kval: 1.2, amne: 'minne', grupp: 3 },
 ];
 // instrumenten (steg 4.3.2.2): saker (saker.ts) som ligger vid scenen. kval gånger formens, ord = i texten, sang = man kan
 // sjunga till det (till flöjten kan man bara spela). Lyran är svårast att göra och ger mest glädje
@@ -75,6 +76,9 @@ export const FRAM = balans('framtradande', {
   viljaTim: 0.1,
   vanta: 15, // minuter: den som kallat väntar så här länge vid scenen eller elden innan framträdandet börjar
   med: 0.8, medTycke: 0.5, // vid kallelsen vill var och en lyssna med chansen med × (1 + medTycke × tycket om den som uppträder / 100)
+  // gruppen (steg 10.7.11): bland de vuxna som vill lyssna vill var och en stå på scenen med chansen gruppVilja gånger sin egen
+  // kvalitet, och kvaliteten är den högsta i gruppen plus gruppDel gånger summan av de andras, gånger det bästa instrumentet
+  gruppVilja: 0.5, gruppDel: 0.25,
   ingen: 0.05, // den som skulle uppträda och som ingen kom och lyssnade på blir så här ledsen, i gladjeTim timmar
   sent: 10, // minuter: så här nära slutet går ingen ny dit för att lyssna
   minuter: 30, spann: 30, // ett framträdande varar så här många minuter från att det börjar, plus upp till spann
@@ -132,13 +136,14 @@ function forelasLar(s: State, p: Person, b: Person, x: FramLar, h: number, q: nu
 
 // framträdandet som pågår: formen, den som uppträder, när det kallades (task.ref), började (borjar, efter väntan) och slutar,
 // de som ville lyssna vid kallelsen (lista), publiken som varit där och texten
-export interface Fram { lar?: FramLar; k: string; p: number; start: number; borjar?: number; igang?: true; lista?: number[]; slut: number; publik: number[]; text: string; da?: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string; gud?: number; ver?: number } // ver = gärningens version i ett minne om en person, räknad en gång (steg 10.4.11) // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
+export interface Fram { lar?: FramLar; k: string; p: number; start: number; borjar?: number; igang?: true; lista?: number[]; slut: number; publik: number[]; grupp?: FramMed[]; text: string; da?: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string; gud?: number; ver?: number } // ver = gärningens version i ett minne om en person, räknad en gång (steg 10.4.11) // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
 export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string; hanad?: string[]; scen?: number // scen = stationen (steg 9.2.67)
   // redogörelsen (steg 5.4.7.1), sparad när det händer: numret (raden i loggen och notisen pekar hit), publiken med vad var och
   // en tyckte om den som uppträdde före och efter (r0, r1) och om ledaren (l0, l1, efter en hyllning eller ett hån), glädjen
   // (tanken i humöret), de som fick höra ryktet, de som tron övertygade, ledaren (namnet när budskapet gällde ledaren) och
   // om ingen kom (inget)
-  nr?: number; amne?: string; lart?: string[]; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true; vrid?: 1 | -1 } // vrid: gärningen gjordes större (1) eller tonades ned (-1), steg 10.4.11
+  nr?: number; grupp?: { id: number; namn: string; inst?: string }[]; amne?: string; lart?: string[]; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true; vrid?: 1 | -1 } // vrid: gärningen gjordes större (1) eller tonades ned (-1), steg 10.4.11
+export interface FramMed { id: number; inst?: string } // en medspelare på scenen och instrumentet hen spelar (steg 10.7.11)
 export interface FramLyss { id: number; namn: string; r0: number; r1: number; l0?: number; l1?: number }
 
 // kvällen: tolv timmar bakåt, så att kvällen och natten efter hör till samma dygn
@@ -266,7 +271,7 @@ const SOVER = new Set<string>(['sova', 'vila', 'badd']); // på kvällen och nat
 const kanKomma = (q: Person) => alive(q) && kanGa(q) && !(q.task && (SOVER.has(q.task.act) || ACTS[q.task.act]?.fortsatter?.length));
 // på kvällen (fritiden i val.ts, steg 10.7.9): p vill uppträda och kallar. Hen väljer form, instrument och budskap, går till
 // scenen eller elden och väntar FRAM.vanta minuter. De som vill lyssna avbryter det de gör och går dit (lyssnaVal)
-export function framVal(s: State, p: Person): { act: 'upptrada'; why: string; dur: number; ref: number; tool: string; spot?: { x: number; y: number } } | undefined {
+export function framVal(s: State, p: Person, plats?: (q: Person) => { x: number; y: number }): { act: 'upptrada'; why: string; dur: number; ref: number; tool: string; spot?: { x: number; y: number } } | undefined {
   const h = hourOf(s.now);
   if (s.fram && s.now < s.fram.slut || ageOf(p, s.now) < ALDER.vuxen || h < FRAM.fran || h >= FRAM.till || s.framKvall === kvall(s.now) || isSick(p, s.now)) return undefined;
   const fran = Math.max(p.framProv ?? -Infinity, s.now - (h - FRAM.fran) * HOUR);
@@ -282,8 +287,10 @@ export function framVal(s: State, p: Person): { act: 'upptrada'; why: string; du
   const fyll = (x: string) => x.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', amne).replace('{inst}', i ? INSTRUMENT[i].ord : '');
   const text = fyll(d.text);
   // vid kallelsen avgör var och en som är gammal nog att hjälpa till, en gång, om hen vill lyssna
-  const lista = living(s).filter(q => q !== p && !q.gast && ageOf(q, s.now) >= ALDER.hjalper && rnd(s, 'fram', q) < FRAM.med * (1 + FRAM.medTycke * getRel(s, q, p).op / 100)).map(q => q.id);
-  s.fram = { ...(d.id === 'forelasning' && lar ? { lar } : {}), k: d.id, p: p.id, start, borjar, lista, slut, publik: [], text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('gud' in bud && bud.gud !== undefined ? { gud: bud.gud } : {}), ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
+  let lista = living(s).filter(q => q !== p && !q.gast && ageOf(q, s.now) >= ALDER.hjalper && rnd(s, 'fram', q) < FRAM.med * (1 + FRAM.medTycke * getRel(s, q, p).op / 100)).map(q => q.id);
+  const grupp = gruppVal(s, d, lista, sc, i);
+  if (grupp.length) lista = lista.filter(id => !grupp.some(g => g.id === id));
+  s.fram = { ...(d.id === 'forelasning' && lar ? { lar } : {}), k: d.id, p: p.id, start, borjar, lista, slut, publik: [], ...(grupp.length ? { grupp } : {}), text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('gud' in bud && bud.gud !== undefined ? { gud: bud.gud } : {}), ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
   // ett minne om en person: versionen räknas en gång, så att alla som lyssnar får samma (steg 10.4.11)
   const e = bud?.k === 'person' ? intryckOm(p, bud.om!, bud.ik) : undefined;
   if (e) s.fram.ver = scenVersion(s, p, e, d.vrid ?? 1);
@@ -291,8 +298,42 @@ export function framVal(s: State, p: Person): { act: 'upptrada'; why: string; du
   count(s, 'framtradanden');
   // de som vill och kan avbryter det de gör och väljer igen, där lyssna är ett Tillfälle (lyssnaVal); den som sover väcks inte
   for (const id of lista) { const q = byId(s, id); if (q && q.task && kanKomma(q)) avbryt(s, q); }
+  // medspelarna går till scenen och ställer sig på rad bredvid den som leder
+  const spot = sc ? vidStation(sc) : plats?.(p);
+  grupp.forEach((g, j) => {
+    const q = byId(s, g.id)!, u = spot ? radPlats(s, spot, j) : { x: q.x, y: q.y };
+    avbryt(s, q);
+    q.task = { act: 'upptrada', phase: 'go', tx: u.x, ty: u.y, until: slut, carry: 0, ref: start, tool: d.id, dark: !isLight(s.now), why: `${d.namn} med ${p.name}` };
+  });
   return { act: 'upptrada', why: `${d.namn}: ${text}`, dur: borjar - start, ref: start, tool: d.id, spot: sc && vidStation(sc) }; // på scenen när byn har en
 }
+// gruppen (steg 10.7.11): bland de vuxna i listan som kan komma vill var och en, en gång, stå på scenen med chansen
+// FRAM.gruppVilja gånger sin kvalitet. De bästa får platserna. I musiken behöver var och en ett eget ledigt instrument vid
+// scenen; i sången spelar man ett ledigt instrument eller sjunger med
+function gruppVal(s: State, d: FramDef, lista: number[], sc: Station | undefined, inst?: string): FramMed[] {
+  if ((d.grupp ?? 1) < 2) return [];
+  const pool = sc ? Object.keys(INSTRUMENT).flatMap(k => redskapVid(s, sc, k).map(() => k)) : [];
+  if (inst) pool.splice(pool.indexOf(inst), 1);
+  pool.sort((a, b) => INSTRUMENT[b].kval - INSTRUMENT[a].kval);
+  const vill = lista.map(id => byId(s, id)).filter((q): q is Person => !!q && ageOf(q, s.now) >= ALDER.vuxen && !isSick(q, s.now) && kanKomma(q) && rnd(s, 'fram', q) < FRAM.gruppVilja * framKval(s, q))
+    .sort((a, b) => framKval(s, b) - framKval(s, a));
+  const ut: FramMed[] = [];
+  for (const q of vill) {
+    if (ut.length >= d.grupp! - 1) break;
+    const k = d.instrument ? pool.shift() : undefined;
+    if (d.id === 'musik' && !k) break; // inget instrument kvar att spela på
+    ut.push({ id: q.id, ...(k ? { inst: k } : {}) });
+  }
+  return ut;
+}
+// platsen för medspelare j: på rad bredvid den som leder, växelvis åt höger och vänster
+function radPlats(s: State, u: { x: number; y: number }, j: number) {
+  const x = u.x + (Math.floor(j / 2) + 1) * 0.9 * (j % 2 ? -1 : 1);
+  return blocked(s, x, u.y) ? freeNear(s, Math.floor(x), Math.floor(u.y)) : { x, y: u.y };
+}
+// alla på scenen: den som leder och medspelarna som är kvar
+const paScenen = (s: State, p: Person, f: Fram) => [p, ...(f.grupp ?? []).map(g => byId(s, g.id)).filter((q): q is Person => !!q && alive(q))];
+const namnPa = (s: State, p: Person, f: Fram) => och(paScenen(s, p, f).map(q => q.name));
 // var publiken sitter: står scenen i en sal sprids de på rummets rutor, står den ute sitter de framför den (aldrig bakom en
 // vägg), och utan scen där man berättar (plats, spotFor i val.ts)
 function publikPlats(s: State, f: Fram, q: Person, plats: (q: Person) => { x: number; y: number }) {
@@ -320,11 +361,12 @@ export const lyssnaBradska = (s: State) => { const f = framOppen(s); return f &&
 // medan man uppträder (MEDAN i steg.ts): övning, och de som lyssnar räknas till publiken
 export function upptradaSteg(s: State, p: Person, t: Task, dtSec: number) {
   const f = s.fram;
-  if (!f || f.start !== t.ref || f.p !== p.id) { t.until = Math.min(t.until, s.now); return; }
+  if (!f || f.start !== t.ref || f.p !== p.id && !f.grupp?.some(g => g.id === p.id)) { t.until = Math.min(t.until, s.now); return; }
   if (!f.igang) return; // väntar på publiken
   const h = dtSec / HOUR_S;
   ovning(p, FRAM_SKILL, FRAM.ovning * h);
   t.prog = (t.prog ?? 0) + h;
+  if (f.p !== p.id) return; // publiken räknas av den som leder
   for (const q of s.people) if (alive(q) && q.task?.act === 'lyssna' && q.task.ref === f.start && q.task.phase === 'do' && !f.publik.includes(q.id)) f.publik.push(q.id);
 }
 // medan man lyssnar: slutar den som uppträder, går man därifrån
@@ -342,7 +384,9 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
     if (sitter.length) {
       const sen = Math.max(0, s.now - f.borjar); // kom den som uppträder sent, börjar det nu och varar lika länge
       f.igang = true; f.borjar += sen; f.slut += sen; t.until = f.slut;
-      for (const q of living(s)) if (q.task?.act === 'lyssna' && q.task.ref === f.start) q.task.until = f.slut;
+      // bara de medspelare som står på scenen när det börjar räknas (steg 10.7.11)
+      if (f.grupp) { f.grupp = f.grupp.filter(g => { const q = byId(s, g.id); return !!q && q.task?.act === 'upptrada' && q.task.ref === f.start && q.task.phase === 'do'; }); if (!f.grupp.length) delete f.grupp; }
+      for (const q of living(s)) if ((q.task?.act === 'lyssna' || q.task?.act === 'upptrada') && q.task.ref === f.start) q.task.until = f.slut;
       return;
     }
     s.fram = undefined;
@@ -352,11 +396,16 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
       `${p.name} skulle uppträda, men ingen kom och lyssnade.`);
     return;
   }
-  const d = FRAM_AV[f.k], q = framKval(s, p) * (f.inst ? INSTRUMENT[f.inst].kval : 1), pub = f.publik.map(id => s.people.find(x => x.id === id)).filter((x): x is Person => !!x && alive(x));
+  const d = FRAM_AV[f.k], alla = paScenen(s, p, f), med = alla.slice(1), pub = f.publik.map(id => s.people.find(x => x.id === id)).filter((x): x is Person => !!x && alive(x));
+  // kvaliteten (steg 10.7.11): den bästa i gruppen plus en del av de andras, gånger det bästa instrumentet som spelas
+  const kv = alla.map(x => framKval(s, x)), bast = Math.max(...kv), inst = [f.inst, ...(f.grupp ?? []).filter(g => med.some(x => x.id === g.id)).map(g => g.inst)].filter((k): k is string => !!k);
+  const q = (bast + FRAM.gruppDel * (kv.reduce((a, v) => a + v, 0) - bast)) * (inst.length ? Math.max(...inst.map(k => INSTRUMENT[k].kval)) : 1);
   s.fram = undefined;
-  if (f.inst) slitInstrument(s, f);
+  if (inst.length) slitInstrument(s, f, inst);
+  const namn = namnPa(s, p, f);
   const om = f.om !== undefined ? byId(s, f.om) : undefined, ledd = f.bud === 'hylla' || f.bud === 'hana' ? om : undefined;
-  const m: FramMinne = { t: f.start, k: f.k, p: p.id, namn: p.name, text: f.da ?? f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt, amne: f.amne, ...(f.scen !== undefined ? { scen: f.scen } : {}),
+  const m: FramMinne = { t: f.start, k: f.k, p: p.id, namn: p.name, text: med.length ? fyllDa(d, namn, p, f) : f.da ?? f.text, n: pub.length,
+    ...(med.length ? { grupp: med.map(x => ({ id: x.id, namn: x.name, ...(f.grupp?.find(g => g.id === x.id)?.inst ? { inst: f.grupp.find(g => g.id === x.id)!.inst } : {}) })) } : {}), q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt, amne: f.amne, ...(f.scen !== undefined ? { scen: f.scen } : {}),
     nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], ...(om ? { om: om.name } : {}), ...(ledd ? { ledare: ledd.name } : {}) };
   const e0 = f.ver !== undefined ? intryckOm(p, f.om!, f.ik) : undefined; // gjordes gärningen större eller tonades den ned (steg 10.4.11)
   if (e0 && Math.abs(f.ver! - e0.v) >= 0.01) m.vrid = f.ver! > e0.v ? 1 : -1;
@@ -367,9 +416,9 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   }
   m.glad = Math.round(FRAM.gladje * d.kval * q * 100); // i hundradelar av humöret
   for (const b of pub) {
-    think(b, `Lyssnade på ${p.name}s ${d.namn.toLowerCase()}`, FRAM.gladje * d.kval * q, s.now, FRAM.gladjeTim * HOUR);
+    think(b, med.length ? `Lyssnade på ${d.namn.toLowerCase()} av ${namn}` : `Lyssnade på ${p.name}s ${d.namn.toLowerCase()}`, FRAM.gladje * d.kval * q, s.now, FRAM.gladjeTim * HOUR);
     const r = getRel(s, b, p), r0 = r.op, l0 = ledd && b !== ledd ? getRel(s, b, ledd).op : undefined, tro0 = b.tro;
-    r.op = Math.max(-100, Math.min(100, r.op + FRAM.op * (q - 0.5)));
+    for (const x of alla) if (x !== b) { const rx = getRel(s, b, x); rx.op = Math.max(-100, Math.min(100, rx.op + FRAM.op * (q - 0.5))); } // alla på scenen får mottagningen
     if (f.lar && forelasLar(s, p, b, f.lar, (f.slut - (f.borjar ?? f.start)) / HOUR, q)) (m.lart ??= []).push(b.name); // föreläsningen lär ut ämnet och inget annat (steg 10.6.9)
     const spred = f.bud ? BUDSKAP[f.bud].verkan(s, p, b, q, f) : undefined;
     const lyss: FramLyss = { id: b.id, namn: b.name, r0: Math.round(r0), r1: Math.round(getRel(s, b, p).op) };
@@ -383,10 +432,13 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   if (f.bud) count(s, 'framBud_' + f.bud);
   const l = f.bud === 'hana' ? byId(s, f.om!) : undefined;
   if (l && !s.styre?.hanForbud) laggFram(s, 'hanforbud', { led: l.id }, l); // efter ett hån lägger ledaren fram ett förbud (steg 8.3.13)
-  if (l && alive(l)) { const r = getRel(s, l, p); r.op = clamp(r.op - FRAM.hanOp, -100, 100); }
-  think(p, `Uppträdde för ${pub.length} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
+  for (const x of alla) {
+    if (l && alive(l) && x !== l) { const r = getRel(s, l, x); r.op = clamp(r.op - FRAM.hanOp, -100, 100); }
+    think(x, `Uppträdde för ${pub.length} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
+    gjort(s, x, 'upptradt');
+  }
   count(s, 'framPublik', pub.length);
-  gjort(s, p, 'upptradt');
+  if (med.length) count(s, 'framGrupp');
   if (m.lart) m.text += ` ${m.lart.length === 1 ? m.lart[0] : `${m.lart.slice(0, -1).join(', ')} och ${m.lart.at(-1)}`} lärde sig klart.`;
   framMinne(s, m, m.text);
 }
@@ -399,13 +451,23 @@ function framMinne(s: State, m: FramMinne, text: string) {
 }
 // framträdandet med numret nr, om det finns kvar
 export const framMinneAv = (s: State, nr: number) => s.framtradanden?.find(m => m.nr === nr);
-// instrumentet slits en gång per framträdande, och går det sönder står det i loggen
-function slitInstrument(s: State, f: Fram) {
-  const sc = f.scen !== undefined ? stationById(s, f.scen) : undefined, r = sc && redskapVid(s, sc, f.inst!).sort((a, b) => a.c - b.c)[0];
-  if (!r) return;
-  r.c -= FRAM.slit / kvHaller(r);
-  if (r.c > 1e-9) return;
-  s.ting = (s.ting ?? []).filter(x => x !== r);
-  const tr = SAKER[r.k]?.trasig;
-  if (tr) { count(s, tr.stat); if (tr.text) log(s, tr.text, 'world'); }
+// varje instrument som spelades slits en gång per framträdande, och går det sönder står det i loggen
+function slitInstrument(s: State, f: Fram, kinds: string[]) {
+  const sc = f.scen !== undefined ? stationById(s, f.scen) : undefined;
+  if (!sc) return;
+  const tagna = new Set<Ting>();
+  for (const k of kinds) {
+    const r = redskapVid(s, sc, k).filter(x => !tagna.has(x)).sort((a, b) => a.c - b.c)[0];
+    if (!r) continue;
+    tagna.add(r);
+    r.c -= FRAM.slit / kvHaller(r);
+    if (r.c > 1e-9) continue;
+    s.ting = (s.ting ?? []).filter(x => x !== r);
+    const tr = SAKER[r.k]?.trasig;
+    if (tr) { count(s, tr.stat); if (tr.text) log(s, tr.text, 'world'); }
+  }
+}
+// texten i dåtid med alla på scenen som den som uppträdde
+function fyllDa(d: FramDef, namn: string, p: Person, f: Fram) {
+  return d.da.replace('{namn}', namn).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', f.amne ?? '').replace('{inst}', f.inst ? INSTRUMENT[f.inst].ord : '');
 }
