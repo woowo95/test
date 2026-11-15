@@ -1952,9 +1952,10 @@ SCENARIER.varg = {
     let ri = 0; while (ri < 6.3 && !(land(ri, 26) && land(ri, 38))) ri += 0.2;
     const ut = land(ri, 26)!, fl = land(ri, 38)!;
     const fa = flock(an, 4, 0, 1); fa.x = fa.mx = fl.x; fa.y = fa.my = fl.y;
-    // den ensamma står kvar och samlar tills flocken är framme
+    // den ensamma ligger kvar och sover där tills flocken är framme (en samlare som inget ser att plocka går hem i kylan,
+    // Samlandet: Vidare, och den som är vaken ser flocken och flyr)
     // (de andra håller sig vid elden, så att ingen annan går ut mot flocken och skrämmer den)
-    kor(an, 3, s => { if (!s.stat?.vargstrid) { ensam.x = ut.x; ensam.y = ut.y; ensam.task = { act: 'samla', phase: 'do', tx: ut.x, ty: ut.y, until: s.now + HOUR, carry: 0 } as SIM.Task; for (const q of living(s)) if (q !== ensam) { q.x = e.x + 0.5; q.y = e.y + 1.5; q.task = { act: 'vila', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0 } as SIM.Task; } } });
+    kor(an, 3, s => { if (!s.stat?.vargstrid) { ensam.x = ut.x; ensam.y = ut.y; ensam.task = { act: 'sova', phase: 'do', tx: ut.x, ty: ut.y, until: s.now + HOUR, carry: 0 } as SIM.Task; for (const q of living(s)) if (q !== ensam) { q.x = e.x + 0.5; q.y = e.y + 1.5; q.task = { act: 'vila', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0 } as SIM.Task; } } });
     const anfall = an.stat?.vargAnfall ?? 0, stridAn = an.stat?.vargstrid ?? 0;
     // på natten, när elden slocknat och alla sover, stjäl de mat ur förrådet
     let stal = 0;
