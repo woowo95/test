@@ -205,7 +205,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
     if (!f) { p.task = undefined; return; }
     if (t.brand || !canLight(s, p, f)) return; // med en brand tänds elden när hen kommer fram (steg 10.6.12)
     f.tryProg += dtSec;
-    const per = igniterOf(s)!.minutes * 60;
+    const per = igniterOf(s, p)!.minutes * 60;
     while (f.tryProg >= per && canLight(s, p, f) && !f.lit) { f.tryProg -= per; if (tryLight(s, p, f)) { p.task = undefined; break; } }
   },
 };

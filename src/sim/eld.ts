@@ -11,7 +11,7 @@ import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
 import { isWall, roomAt } from './byggnad';
 import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, isSick, living, log, stat, think } from './folk';
-import { allaTing, nTools } from './agande';
+import { allaTing, nTools, wearTool } from './agande';
 import { kroppFart } from './gang';
 import { SAKER } from './saker';
 import { halsa } from './halsa';
@@ -69,6 +69,7 @@ export const ELD = balans('eld', {
   forsokLara: 10, // efter så här många misslyckade försök sedan elden brann är chansen dubbelt så stor
   naverChans: 1.5, // en näver i stället för höet gör chansen att lyckas så många gånger större (steg 6.3.3)
   flintSprack: 0.004, // chansen att flintan spricker vid ett misslyckat försök
+  borrForsok: 60, // så många försök håller bågborren (steg 10.6.13)
   tandGlad: 0.15, tandGladDygn: 0.5, // glädjen över att tända elden och hur länge den varar (dygn)
   // samla tändmaterial, stenar och flinta (forageItems): per arbetstimme gånger kunnigheten
   hoTakt: 3, // hö (gånger tidsålderns ARSTID.hoPerTid)
@@ -110,7 +111,17 @@ export const brinnerNara = (s: State, x: number, y: number, r: number) => eldarO
 
 // ---------- eld ----------
 export const hearthOf = (f: Fire) => HEARTHS.find(h => h.id === f.hearth) ?? HEARTHS[0];
-export const igniterOf = (s: State) => IGNITERS.find(i => amountOf(s, i.id) >= 1);
+// det bästa tänddon byn har (IGNITERS står från det sämsta till det bästa): ett redskap räknas när ett finns, även slitet, och
+// tänds bara av den som kan tekniken (p; utan p: någon i byn) (steg 10.6.13)
+const kanTeknik = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
+export const igniterOf = (s: State, p?: Person) => {
+  for (let i = IGNITERS.length - 1; i >= 0; i--) {
+    const ig = IGNITERS[i];
+    if (!SAKER[ig.id]?.redskap) { if (amountOf(s, ig.id) >= 1) return ig; continue; }
+    if (nTools(s, ig.id) >= 1 && (p ? kanTeknik(p, ig.id) : living(s).some(q => kanTeknik(q, ig.id)))) return ig;
+  }
+  return undefined;
+};
 // bränsle i förrådet räknat i ved: ved och grenar
 export const fuelStock = (s: State) => amountOf(s, 'ved') + amountOf(s, 'grenar') * GREN;
 // Elden ägs av hela byn, men veden följer ägandet: man eldar med byns och sin egen. fran = den man stjäl av (behov.ts)
@@ -192,7 +203,7 @@ const stenarHem = (s: State) => living(s).reduce((n, q) => n + (q.task?.items?.s
 export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') + stenarHem(s) < ELD.ring || brasaSten(s);
 // kan elden tändas (av p: med det p kan få, behov.ts)? Bränslet räknas efter att grenarna till tändningen tagits (tryLight)
 export function canLight(s: State, p?: Person, f = s.fire) {
-  const ig = igniterOf(s), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);
+  const ig = igniterOf(s, p), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);
   if (!ig) return false;
   const pinnar = has('grenar') >= ig.sticks; // annars ersätter kol grenarna
   const naver = has('naver') >= 1, talja = !naver && kanTalja(s) && has('ved') >= 1; // nävern täljs ur en ved som annars hade brunnit
@@ -203,7 +214,7 @@ export const kanTalja = (s: State) => nTools(s, 'kniv') + nTools(s, 'yxa') > 0;
 // tändmaterialet samlas efter förrådsmålet (steg 10.2.9): flintan, stenarna till ringen, och höet och grenarna under sin buffert
 // (MATERIALMAL, där elden som brinner vill ha mindre än den släckta), också när en eld glöder
 export function needTinder(s: State) {
-  return amountOf(s, 'flinta') < 1 || needStones(s) || tinderShort(s);
+  return !igniterOf(s) || needStones(s) || tinderShort(s); // med en bågborr behövs ingen flinta (steg 10.6.13)
 }
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person, f: Fire, brand?: string) {
@@ -225,7 +236,7 @@ function lightFire(s: State, p: Person, f: Fire, brand?: string) {
 // chansen för ett försök med byns bästa tänddon, före lärandet av försöken. Eldandet är ingen egen färdighet (steg 3.10.8):
 // chansen räknas ur hantverket, och ingen övar av att tända eller fylla på
 function tandChans(s: State, p: Person, f: Fire, naver: boolean) {
-  return igniterOf(s)!.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (amountOf(s, 'ved') > 0 && torrVed(s) <= 0 ? BLOTVED.tand : 1) // en gammal kolhög tar lättare fyr
+  return igniterOf(s, p)!.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (amountOf(s, 'ved') > 0 && torrVed(s) <= 0 ? BLOTVED.tand : 1) // en gammal kolhög tar lättare fyr
     * (naver ? ELD.naverChans : 1); // nävern tar lättare eld än höet
 }
 // ---------- eld från en eld som brinner (steg 10.6.12) ----------
@@ -243,7 +254,7 @@ export function forsokTid(s: State, p: Person, f: Fire) {
   const naver = getable(s, p, 'naver') >= 1 || kanTalja(s) && getable(s, p, 'ved') >= 1, c0 = tandChans(s, p, f, naver);
   let kvar = 1, n = 0;
   for (let k = 0; k < 2000 && kvar > 1e-4; k++) { n += kvar; kvar *= 1 - Math.min(1, c0 * (1 + k / ELD.forsokLara)); }
-  return n * igniterOf(s)!.minutes * 60;
+  return n * igniterOf(s, p)!.minutes * 60;
 }
 // hur p tänder f: med facklan, med en brand från elden kalla, med tänddonet ({}), eller inte alls (undefined)
 export function tandSatt(s: State, p: Person, f: Fire): { kalla?: Fire; fackla?: true } | undefined {
@@ -267,7 +278,7 @@ export function brandTand(s: State, p: Person, f: Fire, fran?: Fire) {
 }
 // ett försök att tända med det bästa tänddonet i förrådet
 export function tryLight(s: State, p: Person, f = s.fire) {
-  const ig = igniterOf(s)!;
+  const ig = igniterOf(s, p)!;
   // en näver ersätter höet (steg 6.3.3); finns ingen täljs fyra ur en ved med kniven eller yxan
   if (getable(s, p, 'naver') < 1 && getable(s, p, 'torrgras') < ig.grass && kanTalja(s) && getable(s, p, 'ved') >= 1) taljaNaver(s, p);
   const naver = getable(s, p, 'naver') >= 1;
@@ -278,7 +289,11 @@ export function tryLight(s: State, p: Person, f = s.fire) {
 
   f.tries++; f.tryTotal++; gjort(s, p, 'tandForsok');
   const c = tandChans(s, p, f, naver) * (1 + (f.tries - 1) / ELD.forsokLara); // varje misslyckat försök sedan elden brann gör nästa lättare
-  if (rnd(s, 'eld', p) < c) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }
+  const lyckas = rnd(s, 'eld', p) < c;
+  if (ig.id === 'bagborr' && wearTool(s, p, 'bagborr', 1 / ELD.borrForsok)) { // borren slits av varje försök (steg 10.6.13)
+    count(s, 'bagborrarTrasiga'); log(s, `${p.name}s bågborr gick sönder.`, 'world', [p.id]);
+  }
+  if (lyckas) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
     use(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id }, f);
     log(s, `Flintan som ${p.name} slog med sprack.`, 'world', [p.id]);

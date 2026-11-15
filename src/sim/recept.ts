@@ -161,6 +161,7 @@ const DEF = {
   scen: { var: 'station', av: { plankor: RT.scenVirke }, min: RT.scenMin },
   // proteserna (steg 9.5.11, protes.ts): kryckan och träbenet täljs och kroken görs av virke bara vid snickarbänken, ögonlappen av skinn för hand
   krycka: { var: 'sak', av: { virke: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true }, traben: { var: 'sak', av: { virke: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true },
+  bagborr: { var: 'sak', av: { ved: 1, grenar: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'bagborr', bank: 'snickarbank', bara: true }, // steg 10.6.13: en båge av gren och rep, en pinne och en skiva
   krok: { var: 'sak', av: { virke: 1 }, min: 3, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true }, ogonlapp: { var: 'sak', av: { skinn: 1 }, min: 3, slag: 'liten' },
   // förbanden (steg 9.5.15): remsor av skinn eller lin (två av varje), och nålen av ben som såret sys med
   remsa: { var: 'sak', av: { skinn: 1 }, ger: 2, min: 2, slag: 'liten', tek: 'kniv' }, remsa_lin: { var: 'sak', av: { lintyg: 1 }, ger: 2, min: 2, slag: 'liten', tek: 'kniv' },
