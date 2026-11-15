@@ -1,6 +1,6 @@
 // Det lilla av tron som resten av spelet frågar om: om en ruta är helig, om någon är präst, kön till ritualerna och gravgåvan. Egen fil utan
 // tunga beroenden, eftersom lager, skogen, kläderna, döden och relationerna läses tidigt (kult.ts läser dem).
-import { Person, State } from './typer';
+import { DAY, Person, State } from './typer';
 import type { Ting } from './agande';
 import type { Ritual, RitualId } from './kult';
 import { balans } from './balans';
@@ -14,6 +14,15 @@ export function vanhelgaPlats(s: State, h: { x: number; y: number; tro: number; 
 }
 export const heligRuta = (s: State, x: number, y: number) => !!s.heliga?.some(h => h.x === x && h.y === y); // där fälls och byggs inget
 export const arPrast = (s: State, p: Person) => !!s.tron?.some(t => t.prast === p.id);
+// festen vid högtiden (steg 10.7.19): en högtid med gille blir en fest för hela byn. Festdagen är dygnet då den hålls, från
+// morgonen till midnatt; x, y är festplatsen. at = så många som åt vid gillet, fram = de som uppträdde och vann = hur många matcher var och en vann
+// gillet börjar klockan tim, och hela festdagen är lusten att samla till en match och att uppträda lust gånger större. Den som
+// hör musik eller sång den dagen dansar, och glädjen blir dans gånger större
+export const FEST = balans('fest', { tim: 16, lust: 3, dans: 1.3 });
+export interface Fest { tro: number; namn: string; dag: number; x: number; y: number; at: number; fram: string[]; vann: Record<string, number> }
+export const festNu = (s: State) => !!s.fest && Math.floor(s.now / DAY) === s.fest.dag;
+export function festFram(s: State, namn: string) { if (festNu(s) && !s.fest!.fram.includes(namn)) s.fest!.fram.push(namn); }
+export function festVann(s: State, namn: string[]) { if (festNu(s)) for (const n of namn) s.fest!.vann[n] = (s.fest!.vann[n] ?? 0) + 1; }
 export function nyRitual(s: State, k: RitualId, d: Partial<Ritual> = {}) { (s.ritualKo ??= []).push({ k, start: s.now, slut: 0, x: d.x ?? 0, y: d.y ?? 0, ...d }); }
 // den dödes saker (steg 10.3.5): två bud i den dödes tro. Gravgåvor: den finaste saken hen bar (på sig, i handen eller i bältet) följer hen,
 // och bar hen inget den finaste hen ägde. Det den döde bar följer med: allt hen bar, och inget av det ärvs. Sakerna läggs på kroppen (med)

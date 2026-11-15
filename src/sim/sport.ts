@@ -35,6 +35,7 @@ import { EFTER } from './efterstrid';
 EFTER.brottning = s => { if (s.sport) s.sport.brott = s.now; };
 import { HOUR, HOUR_S, MIN, SEC, Person, Skill, State, Task, W, inMap } from './typer';
 import { budHindrar } from './kyrka';
+import { FEST, festNu, festVann } from './kultlatt';
 
 export interface SportDef {
   id: string; namn: string;
@@ -141,7 +142,7 @@ export function sportVikt(s: State, p: Person, calm: number) {
   if (!m && s.sport) return 0; // en match i taget
   if (m?.titta?.includes(p.id)) return 0; // den som tittar spelar inte (steg 10.7.16)
   if (!m && !SPORTER.some(d => kanSpela(s, d, vuxna(s)))) return 0;
-  return overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * SPORT.vikt * calm * (m ? SPORT.med : 1) * (stat(p, 'styrka', s.now) + stat(p, 'smidighet', s.now)) / 20;
+  return overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * SPORT.vikt * calm * (m ? SPORT.med : festNu(s) ? FEST.lust : 1) * (stat(p, 'styrka', s.now) + stat(p, 'smidighet', s.now)) / 20;
 }
 // att spela: gå med i matchen som väntar, annars samla folk till en ny (steg 10.7.12)
 export function sportVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number; tool: string } | undefined {
@@ -197,7 +198,7 @@ export function sportPlats(s: State, p: Person, d: SportDef) {
       if (!inMap(i, j) || !ledig(s, i, j) || roomAt(s, i + 0.5, j + 0.5) || bitAt(s, i, j) || tr[j * W + i] >= FOREST) return false;
     }
     return true;
-  }, { x: p.x, y: p.y });
+  }, festNu(s) ? { x: s.fest!.x, y: s.fest!.y } : { x: p.x, y: p.y }); // på festdagen helst nära festplatsen (steg 10.7.19)
 }
 // var och ens plats i matchen, bestämd en gång
 export const platsFor = (s: State, p: Person, m: Match) => (m.platser ??= {})[p.id] ??= plats(s, p, m);
@@ -307,6 +308,7 @@ function avgor(s: State, m: Match, p: Person) {
   } else vinnare = har.length ? [har.reduce((a, q) => res.get(q)! > res.get(a)! ? q : a)] : [];
   if (!vinnare.length) return;
   matchMinne(s, d, m, har, res, vinnare.reduce((a, q) => res.get(q)! > res.get(a)! ? q : a), lag);
+  festVann(s, vinnare.map(q => q.name)); // festen räknar vinsterna (steg 10.7.19)
   count(s, 'sportVinster');
   for (const q of vinnare) bastI(s, d, q);
   // glad eller ledsen (steg 10.7.15): vinnarna och förlorarna bland dem som var med i slutet

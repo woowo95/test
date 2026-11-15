@@ -1713,7 +1713,7 @@ SCENARIER.ritualer = {
     const pr = SIM.prastOf(s, tr);
     // ritualen körs till slut: alla i v är med
     const hogtidNu = () => [s.ritual, ...(s.ritualKo ?? [])].find(r => r?.k === 'hogtid');
-    const korRitual = () => { const r = s.ritual as SIM.Ritual | undefined; if (r?.k !== 'hogtid') return undefined; for (const p of SIM.living(s)) if (p.tro === r.tro) p.task = { act: 'ritual', phase: 'do', tx: r.x, ty: r.y, until: r.slut, carry: 0, why: '' } as SIM.Task; s.now = r.slut; SIM.ritualTimme(s); return r; };
+    const korRitual = () => { if (!s.ritual) { const k = s.ritualKo?.find(r => r.k === 'hogtid'); if (k?.fran) { s.now = Math.max(s.now, k.fran); SIM.ritualTimme(s); } } const r = s.ritual as SIM.Ritual | undefined; if (r?.k !== 'hogtid') return undefined; for (const p of SIM.living(s)) if (p.tro === r.tro) p.task = { act: 'ritual', phase: 'do', tx: r.x, ty: r.y, until: r.slut, carry: 0, why: '' } as SIM.Task; s.now = r.slut; SIM.ritualTimme(s); return r; };
     const tom = () => { s.ritualKo = []; s.ritual = undefined; tr.hogtid = undefined; };
     // ingen högtid utan bud
     tom(); SIM.kultTimme(s); const utanBud = !hogtidNu();
@@ -1754,6 +1754,60 @@ SCENARIER.ritualer = {
   },
 };
 
+SCENARIER.fest = {
+  text: 'Festen vid högtiden (steg 10.7.19): en högtid med gille blir en fest för hela byn. Gillet börjar klockan 16, alla kommer utom de vars egen tro är sluten, och festdagen ger fler matcher och framträdanden; den som hör musik dansar. Maten dras i hela saker och räknas som måltider, och notisen fest säger hur många som åt, vem som uppträdde och vem som vann. Fastan hålls som förut',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'rep', 4); klockan(s, 7); tandEld(s);
+    medBank(s, 'scen'); SIM.nyttVid(s, SIM.newTing(s, 'trumma', 1, SIM.BYN)); SIM.newTing(s, 'boll', 1, SIM.BYN); SIM.newTing(s, 'slagtra', 1, SIM.BYN);
+    for (const q of s.people) { q.pot.styrka = q.pot.smidighet = 16; q.skill[SIM.FRAM_SKILL] = Math.max(q.skill[SIM.FRAM_SKILL], 6); for (const r of s.people) if (q !== r) SIM.getRel(s, q, r).op = 60; }
+    // en utan tro och en med en annan, sluten tro
+    const [, utanTro, sluten] = v.filter(q => q !== SIM.prastOf(s, tr));
+    utanTro.tro = undefined; utanTro.troStyrka = 0;
+    const tr2: SIM.Tro = { ...tr, id: 2, namn: 'Den stängda dörren', bud: [], sk: { oppen: 95 } }; s.tron!.push(tr2); sluten.tro = 2;
+    const ai = SIM.ageIndex(s);
+    s.ritualKo = []; s.ritual = undefined; tr.hogtid = undefined;
+    tr.bud = [...(tr.bud ?? []), { id: 'hogtid', v: SIM.hogtidVarde(ai, 'gille'), t: s.now }];
+    satKyrka(s, tr, { bar: 30 });
+    SIM.kultTimme(s);
+    const ko = s.ritualKo?.find(r => r.k === 'hogtid'), fest = s.fest, dag = Math.floor(s.now / SIM.DAY);
+    const vem = ko ? SIM.RITUALER.hogtid.vem(s, ko as SIM.Ritual) : [];
+    const kyrka0 = SIM.kyrkansAv(s, tr, 'bar'), atit0 = s.stat?.atit ?? 0, gille0 = s.stat?.gille_mat ?? 0, match0 = s.stat?.sportMatcher ?? 0, fram0 = s.framNr ?? 0;
+    let festFram = 0, festMatch = 0, startTim = -1, dans = 0;
+    kor(s, 18, x => {
+      if (SIM.festNu(x)) { festFram = (x.framNr ?? 0) - fram0; festMatch = (x.stat?.sportMatcher ?? 0) - match0; dans = x.stat?.festDans ?? 0; }
+      if (startTim < 0 && x.ritual?.k === 'hogtid') startTim = Math.floor(SIM.hourOf(x.now));
+    });
+    const gille = (s.stat?.gille_mat ?? 0) - gille0, atit = (s.stat?.atit ?? 0) - atit0, kyrka = kyrka0 - SIM.kyrkansAv(s, tr, 'bar');
+    const n = s.notiser?.lista.find(x => x.id === 'fest'), text = n?.rader.at(-1) ?? '';
+    // dansen: på festdagen dansar de som hör musik eller sång
+    let dansade = '';
+    for (let i = 0; i < 20 && !dansade; i++) {
+      const m = medScen(3 + i, ['trumma']), u = m.v[0]!;
+      for (const q of m.s.people) for (const r of m.s.people) if (q !== r) SIM.getRel(m.s, q, r).op = 100;
+      u.skill[SIM.FRAM_SKILL] = 12;
+      m.s.fest = { tro: 1, namn: 'Festen', dag: Math.floor(m.s.now / SIM.DAY), x: u.x, y: u.y, at: 0, fram: [], vann: {} };
+      if (!upptrad(m.s, u) || !m.s.fram?.inst) continue;
+      kor(m.s, 1.5, x => { for (const q of SIM.living(x)) { const t = q.thoughts?.find(h => h.text.startsWith('Dansade')); if (t) dansade = `${q.name}: ${t.text}`; } });
+    }
+    // fastan: bara de troende, ingen fest
+    const f = medTro(7, 3); f.s.ritualKo = []; f.s.ritual = undefined; f.tr.hogtid = undefined;
+    f.tr.bud = [...(f.tr.bud ?? []), { id: 'hogtid', v: SIM.hogtidVarde(SIM.ageIndex(f.s), 'fasta'), t: f.s.now }];
+    const annan = f.v[1]!; annan.tro = undefined;
+    SIM.kultTimme(f.s);
+    const r0 = f.s.ritual as SIM.Ritual | undefined, fr = r0?.k === 'hogtid' ? r0 : f.s.ritualKo?.find(r => r.k === 'hogtid');
+    const fvem = fr ? SIM.RITUALER.hogtid.vem(f.s, fr as SIM.Ritual) : [];
+    return [
+      [`gillet köas till klockan ${ko?.fran !== undefined ? SIM.hourOf(ko.fran) : '-'} och började ${startTim}, och festdagen är i dag`, !!ko && SIM.hourOf(ko.fran ?? 0) === 16 && startTim === 16 && fest?.dag === dag],
+      [`alla kommer utom den med en sluten tro (${vem.length} av ${SIM.living(s).length}, ${utanTro.name} utan tro ${vem.includes(utanTro) ? 'med' : 'inte med'}, ${sluten.name} ${vem.includes(sluten) ? 'med' : 'inte med'})`, vem.includes(utanTro) && !vem.includes(sluten) && vem.length === SIM.living(s).filter(q => !q.gast).length - 1],
+      [`maten i hela saker: ${gille} mat vid gillet, kyrkan gav ${kyrka} och resten åt sin egen, och måltiderna räknas (${atit.toFixed(1)} portioner)`, gille >= 4 && kyrka >= 1 && kyrka <= gille && Number.isInteger(kyrka) && atit >= gille],
+      [`under festdagen ${festMatch} matcher och ${festFram} framträdanden, ${dans} dansade`, festMatch >= 1 && festFram >= 1],
+      [`notisen fest: ${text}`, !!n && text.startsWith(SIM.hogtidNamn(SIM.hogtidVarde(ai, 'gille'))) && /åt vid gillet/.test(text) && /vann/.test(text) && !s.fest],
+      [`den som hör musik dansar (${dansade || 'ingen'})`, !!dansade],
+      [`fastan hålls bara av de troende, utan fest (${fvem.length} av ${SIM.living(f.s).length})`, !!fr && fr.form === 'fasta' && !fvem.includes(annan) && !f.s.fest],
+    ];
+  },
+};
 SCENARIER.heligplats = {
   text: 'Steg 10.3.10: den heliga platsen är ett bud. Ingen plats blir helig utan omröstning, bönen hålls vid elden före och vid den närmaste platsen inom 15 rutor efter, de troende vill ha platsen nära hemmet, bönen i nöd som fick svar ger en kandidat också utan präst, ingen fjärde plats föreslås, platsen räknar bönerna och en sparad by behåller sina platser som bud',
   kor: () => {

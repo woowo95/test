@@ -45,6 +45,7 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   par: { slag: 'folk', rubrik: 'Ett nytt par', vikt: 1 },
   fram: { slag: 'folk', rubrik: 'Ett framträdande', vikt: 1 },
   match: { slag: 'folk', rubrik: 'En match', vikt: 1 },
+  fest: { slag: 'folk', rubrik: 'En fest', vikt: 2 }, // högtiden med gille (steg 10.7.19)
   teknik: { slag: 'framsteg', rubrik: 'Ny kunskap', vikt: 2 },
   mastare: { slag: 'framsteg', rubrik: 'Byns första mästare', vikt: 2 },
   hus: { slag: 'framsteg', rubrik: 'Ett nytt hus', vikt: 2 },

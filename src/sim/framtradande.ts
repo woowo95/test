@@ -10,6 +10,7 @@ import { ACTS } from './handlingar';
 import { antal, honom, och } from './ord';
 import { ALDER, KROPP, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, ovning, relKey, stat, think } from './folk';
 import { budHindrar, kyrkFram } from './kyrka';
+import { FEST, festFram, festNu } from './kultlatt';
 import { avbryt } from './lager';
 import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm, kandVikt, paminn, scenVersion } from './rykten';
 import { ledareOf, legitimitet, pabud } from './styre';
@@ -291,7 +292,7 @@ export function framVal(s: State, p: Person, plats?: (q: Person) => { x: number;
   if (s.fram && s.now < s.fram.slut || ageOf(p, s.now) < ALDER.vuxen || h < FRAM.fran || h >= FRAM.till || s.framKvall === kvall(s.now) || isSick(p, s.now)) return undefined;
   const fran = Math.max(p.framProv ?? -Infinity, s.now - (h - FRAM.fran) * HOUR);
   p.framProv = s.now;
-  if (rnd(s, 'fram', p) >= FRAM.viljaTim * framKval(s, p) * (s.now - fran) / HOUR) return undefined;
+  if (rnd(s, 'fram', p) >= FRAM.viljaTim * framKval(s, p) * (festNu(s) ? FEST.lust : 1) * (s.now - fran) / HOUR) return undefined; // på festdagen oftare (steg 10.7.19)
   const sc = scenen(s), inst = sc ? instrumentVid(s, sc) : [];
   const lar = p.skill[FRAM_SKILL] >= (FRAM_AV.forelasning!.min ?? 0) ? forelasAmne(s, p) : undefined, former = kan(p, inst, lar);
   if (!former.length) return undefined;
@@ -429,9 +430,11 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
     framMinne(s, m, `${p.name} skulle uppträda, men ingen kom och lyssnade.`);
     return;
   }
-  m.glad = Math.round(FRAM.gladje * d.kval * q * 100); // i hundradelar av humöret
+  const dans = festNu(s) && (d.instrument || d.id === 'sang'); // på festdagen dansar de som hör musik eller sång (steg 10.7.19)
+  if (dans) count(s, 'festDans', pub.length);
+  m.glad = Math.round(FRAM.gladje * d.kval * q * (dans ? FEST.dans : 1) * 100); // i hundradelar av humöret
   for (const b of pub) {
-    think(b, med.length ? `Lyssnade på ${d.namn.toLowerCase()} av ${namn}` : `Lyssnade på ${p.name}s ${d.namn.toLowerCase()}`, FRAM.gladje * d.kval * q, s.now, FRAM.gladjeTim * HOUR);
+    think(b, dans ? `Dansade till ${med.length ? namn : `${p.name}s ${d.namn.toLowerCase()}`}` : med.length ? `Lyssnade på ${d.namn.toLowerCase()} av ${namn}` : `Lyssnade på ${p.name}s ${d.namn.toLowerCase()}`, FRAM.gladje * d.kval * q * (dans ? FEST.dans : 1), s.now, FRAM.gladjeTim * HOUR);
     const r = getRel(s, b, p), r0 = r.op, l0 = ledd && b !== ledd ? getRel(s, b, ledd).op : undefined, tro0 = b.tro;
     for (const x of alla) if (x !== b) { const rx = getRel(s, b, x); rx.op = Math.max(-100, Math.min(100, rx.op + FRAM.op * (q - 0.5))); } // alla på scenen får mottagningen
     if (f.lar && forelasLar(s, p, b, f.lar, (f.slut - (f.borjar ?? f.start)) / HOUR, q)) (m.lart ??= []).push(b.name); // föreläsningen lär ut ämnet och inget annat (steg 10.6.9)
@@ -454,6 +457,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   }
   count(s, 'framPublik', pub.length);
   if (med.length) count(s, 'framGrupp');
+  festFram(s, p.name);
   if (m.lart) m.text += ` ${m.lart.length === 1 ? m.lart[0] : `${m.lart.slice(0, -1).join(', ')} och ${m.lart.at(-1)}`} lärde sig klart.`;
   framMinne(s, m, m.text);
 }

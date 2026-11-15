@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { tidKvar, HALSA, ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart } from '../sim';
+import { tidKvar, HALSA, ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart, festNu } from '../sim';
 // lågorna på den som brinner (steg 6.4.16, Björns val f6_brinner i steg 8.10.1): en låga med foten i (x, y) och längden l i
 // bilden f (0–3): ljus kärna, gul mitt och röd spets, en tunga vid sidan som byter sida, och ibland en lös flamma överst
 const BRAND_TAKT = 140, HOJD = [0, 2, 1, -1], SVAJ = [0, 1, 0, -1];
@@ -59,6 +59,8 @@ function platsAv(p: Person) {
   const m = tk && iMatchen(tk), sp2 = still && m ? sportPlats(m, p, x, y, t) : undefined;
   if (sp2) return { ...sp2, still }; // sporten (steg 4.5.6.10–11)
   if (still && tk?.act === 'titta' && tk.phase === 'do' && s.sport?.start === tk.ref && s.sport?.igang) return { x, y: y + Math.abs(Math.sin(t / SEC * 3 + p.id)) * -0.06, still }; // publiken hejar (steg 10.7.16)
+  // på festdagen dansar de som hör musik eller sång: de gungar fram och tillbaka och hoppar lite (steg 10.7.19)
+  if (still && tk?.act === 'lyssna' && tk.phase === 'do' && festNu(s) && s.fram?.igang && s.fram.inst) return { x: x + Math.sin(t / SEC * 2 + p.id) * 0.12, y: y + Math.abs(Math.sin(t / SEC * 4 + p.id)) * -0.05, still };
   const f = still ? s.filtar?.find(g => g.vem === p.id && !g.handlare && g.slut > t) : undefined;
   if (f) return { ...bakomFilt(s, f), still }; // bakom sin egen filt i ett byte (steg 4.5.7.1)
   // promenaden går på riktigt mellan punkter (steg 6.2.8) och svänger inte. Svängningen går aldrig in i en vägg, ett hus,
