@@ -1,6 +1,6 @@
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
+import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -112,7 +112,7 @@ export const ansTecken = (a: string, px = 16) => tecknet(ANS_IKON[a] ?? '', a, p
 // knappt är känd står nära mitten (ANS_KAND läggs till ryktbarheten)
 const ANS_KAND = 3;
 export function ansStapel(om: number) {
-  const { r, a } = ryktbarhet(s, om), v = clamp(a / (r + ANS_KAND), -1, 1), w = Math.round(Math.abs(v) * 50);
+  const { r, a } = anseende(s, om), v = clamp(a / (r + ANS_KAND), -1, 1), w = Math.round(Math.abs(v) * 50);
   return `<span class="sbar ans${v < 0 ? ' neg' : ''}"><span style="${v >= 0 ? `left:50%;width:${w}%` : `left:${50 - w}%;width:${w}%`}"></span></span>`;
 }
 // en stack i en lista: symbolen och namnet. Ett påbörjat redskap har det det ska bli med timglaset bredvid

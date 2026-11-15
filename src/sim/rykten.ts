@@ -34,6 +34,7 @@ export const RYKTE = balans('rykte', {
   detalj: 0.4, // minnet av en död (steg 10.6.15): en händelse per så här mycket av intryckets styrka (styrka × säkerhet), minst 1 och högst bevMax; när minnet bleknar faller den minst viktiga först
   paminnStark: 0.15, // en påminnelse om en död gör minnet så här mycket säkrare, gånger tiden sedan förra påminnelsen delat med paminnDygn (högst 1)
   vMax: 1.5, // ett intryck är som starkast så här
+  arv: 0.25, // så stor del av förälderns anseende räknas i barnets, gånger 1 + seden Härkomst och Förtjänst (steg 10.8.5)
   dampMin: 0.1, // så mycket blir som minst kvar av ett val som ett intryck dämpar (steg 10.8.4)
   syn: 10, // de som var närmare än så här många rutor (och vakna) såg det som hände ...
   synDimma: 0.6, // ... och så här mycket kortare i den tätaste dimman (steg 3.7.11)
@@ -432,6 +433,31 @@ export function ryktbarhet(s: State, om: number) {
   a += prydnadAnseende(s, om);
   return { r, a };
 }
+// arvet (steg 10.8.5): en del av det byn tycker om mor och far, de intryck av föräldern som har en händelse bakom sig (bevis),
+// också när föräldern är död. Delen är RYKTE.arv × (1 + seden Härkomst och Förtjänst): hälften vid full Härkomst, inget vid
+// full Förtjänst. Ett led; inget sparas, så arvet bleknar med förälderns rykte
+export const arvAndel = (s: State) => clamp(RYKTE.arv * (1 + (s.seder.v.fortjanst ?? 0)), 0, 1);
+export function arvAnseende(s: State, om: number) {
+  const p = byId(s, om), d = arvAndel(s);
+  let r = 0, a = 0;
+  if (!p || d <= 0 || (p.mother === undefined && p.father === undefined)) return { r, a };
+  for (const q of living(s)) if (q.id !== om) for (const e of q.intryck ?? []) if ((e.om === p.mother || e.om === p.father) && e.bev?.length) { r += vikt(e) * d; a += INTRYCK[e.k].tecken * vikt(e) * d; }
+  return { r, a };
+}
+// anseendet med arvet: avgör vem som får leda och vem man följer i faran, och visas i rutan för anseendet
+export function anseende(s: State, om: number) {
+  const e = ryktbarhet(s, om), v = arvAnseende(s, om);
+  return { r: e.r + v.r, a: e.a + v.a, arv: v.a };
+}
+// den förälder vars rykte är starkt (det samlade intrycket minst rykte), och vad byn kallar hen: till beskrivningen
+export function foralderRykte(s: State, p: Person, rykte: number) {
+  let bast: { q: Person; k: IntryckTyp; v: number } | undefined;
+  for (const id of [p.father, p.mother]) {
+    const q = id !== undefined ? byId(s, id) : undefined, top = q && samlatIntryck(s, q.id)[0];
+    if (q && top && top[1] >= rykte && top[1] > (bast?.v ?? 0)) bast = { q, k: top[0], v: top[1] };
+  }
+  return bast;
+}
 // de viktigaste intrycken av personen i byn (det samlade intrycket), starkast först
 export function samlatIntryck(s: State, om: number) {
   const m = new Map<IntryckTyp, number>();
@@ -622,7 +648,7 @@ export function dodSymbol(s: State, om: number) {
 }
 // anseendet som symbol (personrutan)
 export function anseendeSym(s: State, om: number) {
-  const { r, a } = ryktbarhet(s, om);
+  const { r, a } = anseende(s, om);
   return r < 0.3 ? '' : a > r * 0.3 ? '😇' : a < -r * 0.3 ? '😈' : '😐';
 }
 // anseendet i ord och vad byn tycker (steg 3.10.5), till exempel "Dåligt anseende: byn tycker att hen är våldsam och en

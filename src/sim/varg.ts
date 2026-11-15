@@ -20,7 +20,7 @@ import { eldPlats, getMap } from './karta';
 import { groundOf, punktIRuta } from './mark';
 import { findPath } from './vag';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
-import { handelse, larma, larmNu, ryktbarhet } from './rykten';
+import { anseende, handelse, larma, larmNu } from './rykten';
 import { KOTTSLAG, SAKER } from './saker';
 import { vattenNu } from './sjo';
 import { clamp, rnd, chansPer } from './slump';
@@ -537,7 +537,7 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   const led = ledareOf(s), sag = f.sag === undefined ? undefined : byId(s, f.sag), modiga = kan.filter(q => vagar(q));
   const kallar = vagar(sag) ? sag! : vagar(led) ? led! : modiga.length ? modiga.reduce((a, q) => stat(q, 'mod', s.now) > stat(a, 'mod', s.now) ? q : a) : undefined;
   if (!kallar) return;
-  const gehor = VARG.foljAns * clamp(ryktbarhet(s, kallar.id).a / Math.max(1, folk.length), -1, 1) + VARG.foljKar * franMitt(kallar, 'karisma', s.now)
+  const gehor = VARG.foljAns * clamp(anseende(s, kallar.id).a / Math.max(1, folk.length), -1, 1) + VARG.foljKar * franMitt(kallar, 'karisma', s.now)
     + (kallar.liv?.vargar ? VARG.foljDrap : 0) + (kallar === led ? VARG.foljLed : 0);
   const nod = clamp(1 - foodOf(s) / Math.max(1, folk.length) / VARG.matNog, 0, 1), sed = (s.seder.v as Record<string, number>).strid ?? 0;
   const vill = kan.map(q => ({ q, v: q === kallar ? Infinity : VARG.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + VARG.foljTycke * getRel(s, q, kallar).op / 100 + VARG.foljSed * sed + VARG.foljNod * nod + gehor + VARG.foljSlump * (rnd(s, 'varg', q) - 0.5) }))

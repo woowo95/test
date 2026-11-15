@@ -3030,3 +3030,32 @@ SCENARIER.ryktesval = {
     ];
   },
 };
+SCENARIER.ryktesarv = {
+  text: 'Ryktet går i arv (steg 10.8.5): i barnets anseende räknas en fjärdedel av de intryck av föräldern som har en händelse bakom sig, också när föräldern är död, hälften vid full Härkomst och inget vid full Förtjänst. Det föräldern bär på sig räknas inte, och det går bara ett led. Anseendet med arvet avgör vem som får leda, och beskrivningen säger vems barn någon är när förälderns rykte är starkt',
+  kor: () => {
+    const t = createState(9, START);
+    klockan(t, 11);
+    const far = nyInvanare(t, 'm', 50), son = nyInvanare(t, 'm', 25), barnbarn = nyInvanare(t, 'k', 3);
+    const byn = [0, 1, 2, 3].map(() => nyInvanare(t, 'k', 35));
+    son.father = far.id; barnbarn.father = son.id;
+    for (const q of byn) q.intryck = [{ om: far.id, namn: far.name, k: 'tjuv', v: 1, c: 1, t: t.now, bev: [{ h: 'stold', t: t.now, sett: true }] }, { om: far.id, namn: far.name, k: 'rik', v: 1, c: 1, t: t.now }];
+    t.seder.v.fortjanst = 0;
+    const tjuv = SIM.INTRYCK.tjuv.tecken * 4, mitt = SIM.arvAnseende(t, son.id).a, egen = SIM.ryktbarhet(t, son.id).a, med = SIM.anseende(t, son.id).a;
+    const bb = SIM.arvAnseende(t, barnbarn.id).a;
+    t.seder.v.fortjanst = 1; const hark = SIM.arvAnseende(t, son.id).a;
+    t.seder.v.fortjanst = -1; const fort = SIM.arvAnseende(t, son.id).a;
+    t.seder.v.fortjanst = 0;
+    // delarna som inte är viktigast skiftar från dygn till dygn: inom tio dygn står det med
+    let besk = '';
+    for (let d = 0; d < 10 && !besk.includes(`till ${far.name}, som byn kallar`); d++) { besk = SIM.beskrivning(t, son); t.now += SIM.DAY; }
+    SIM.die(t, far, 'alderdom'); const dod = SIM.arvAnseende(t, son.id).a;
+    return [
+      [`en fjärdedel av tjuvryktet (${mitt.toFixed(2)}, väntat ${(tjuv / 4).toFixed(2)}); ryktet rik har ingen händelse bakom sig och räknas inte`, Math.abs(mitt - tjuv / 4) < 1e-9],
+      [`anseendet med arvet (${med.toFixed(2)}) = det egna (${egen.toFixed(2)}) + arvet`, Math.abs(med - egen - mitt) < 1e-9],
+      [`hälften vid full Härkomst (${hark.toFixed(2)}), inget vid full Förtjänst (${fort.toFixed(2)})`, Math.abs(hark - tjuv / 2) < 1e-9 && fort === 0],
+      [`bara ett led: barnbarnet ärver inget (${bb})`, bb === 0],
+      [`också när föräldern är död (${dod.toFixed(2)})`, Math.abs(dod - mitt) < 1e-9],
+      [`beskrivningen: "${besk}"`, besk.includes(`son till ${far.name}, som byn kallar en tjuv`)],
+    ];
+  },
+};

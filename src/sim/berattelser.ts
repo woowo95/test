@@ -5,7 +5,7 @@ import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, 
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
-import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, kandVikt, samlatIntryck } from './rykten';
+import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, foralderRykte, kandVikt, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
 import { Hus, housesOf, husById, roomAt } from './byggnad';
@@ -293,6 +293,17 @@ const MDEF = {
     '{van} och {hen} är som syskon.',
     '{Hen} litar mest av alla på {van}.',
     'Var {van} är, där är ofta {hen} också.',
+  ],
+  // vems barn hen är, när förälderns rykte är starkt (steg 10.8.5): {barnet} son eller dotter, {vem} föräldern, {vad} vad byn kallar föräldern
+  besk_foralder: [
+    '{Hen} är {barnet} till {vem}, som byn kallar {vad}.',
+    'Byn minns att {hen} är {barnet} till {vem}, som byn kallar {vad}.',
+    'Som {barnet} till {vem}, som byn kallar {vad}, får {hen} ofta höra om det.',
+    'Många ser {honom} först som {barnet} till {vem}, som byn kallar {vad}.',
+    '{Hen} kommer inte undan att vara {barnet} till {vem}, som byn kallar {vad}.',
+    'Det sägs om {honom} att {hen} är {barnet} till {vem}, som byn kallar {vad}.',
+    'Vart {hen} går följer namnet med: {barnet} till {vem}, som byn kallar {vad}.',
+    'I byn är {hen} {barnet} till {vem}, som byn kallar {vad}.',
   ],
   besk_fiende: [
     '{fiende} kan {hen} inte med.',
@@ -2343,6 +2354,11 @@ export const BESK_DELAR: BeskDel[] = [
   { id: 'rel', vikt: b => b.f.partner || b.f.van ? 0.6 : 0, text: b => mening(b, b.f.partner && b.f.van ? 'besk_partnerVan' : b.f.partner ? 'besk_partner' : 'besk_van', 2) },
   { id: 'langtan', vikt: b => langtar(b.s, b.p) ? 0.55 : 0, text: b => { b.f.vem = langtar(b.s, b.p)!.name; return mening(b, 'besk_langtan', 25); } },
   { id: 'fiende', vikt: b => b.f.fiende ? 0.65 : 0, text: b => mening(b, 'besk_fiende', 3) },
+  { id: 'foralder', vikt: b => alive(b.p) && foralderRykte(b.s, b.p, BERATT.rykte) ? 0.6 : 0, text: b => { // vems barn hen är (steg 10.8.5)
+    const r = foralderRykte(b.s, b.p, BERATT.rykte)!;
+    b.f.barnet = b.p.sex === 'm' ? 'son' : 'dotter'; b.f.vem = r.q.name; b.f.vad = INTRYCK[r.k].som ?? INTRYCK[r.k].namn;
+    return mening(b, 'besk_foralder', 26);
+  } },
   // hur hen bor (steg 10.2.52): i utkanten, mitt emot verkstaden, länge i sitt hus
   { id: 'utkant', vikt: b => borUtkant(b.s, b.p) ? 0.35 : 0, text: b => mening(b, 'besk_utkant', 32) },
   { id: 'verkstad', vikt: b => borVidVerkstad(b.s, b.p) ? 0.3 : 0, text: b => mening(b, 'besk_verkstad', 33) },
