@@ -45,9 +45,8 @@ SCENARIER.sport = {
     hugg.task = { act: 'hugga', phase: 'do', tx: hugg.x, ty: hugg.y, until: g.now + SIM.HOUR, carry: 0, dark: false };
     spela(g, med[0]!);
     const sport0 = g.sport ? SIM.SPORT_AV[g.sport.k]!.namn : 'ingen', ilista = med.slice(1).filter(q => g.sport?.lista?.includes(q.id)).length, avbrot = hugg.task?.act !== 'hugga';
-    let sett = 0, kom = 0;
-    kor(g, 2, () => { sett = Math.max(sett, med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length); if (hugg.task?.act === 'sport') kom = 1; });
-    const glad = med.filter(q => q.thoughts.some(t => /^(Vann|Förlorade) /.test(t.text))).length;
+    let sett = 0, kom = 0, glad = 0; // (glädjen varar en timme: den räknas medan det körs)
+    kor(g, 2, () => { sett = Math.max(sett, med.filter(q => q.task?.act === 'sport' && q.task.phase === 'do').length); if (hugg.task?.act === 'sport') kom = 1; glad = Math.max(glad, med.filter(q => q.thoughts.some(t => /^(Vann|Förlorade) /.test(t.text))).length); });
     const battre = med.filter((q, i) => q.skill.narstrid > fore[i]!).length;
     // den som fryser farligt värmer sig först
     const h = rikDag(3, { rep: 4 }); tandEld(h);
@@ -140,6 +139,38 @@ SCENARIER.lag = {
       [`alla i vinnarlaget fick vinsten (${vinster} vinster, ${vinnare} i vinnarlagen)`, vinster === vinnare && vinnare > 0],
       [`matchen fortsatte medan spelarna gick till sin sida (i ${gar} av ${klara})`, gar >= 1],
       [`berättelsen nämner laget: ${ber}`, /aget med/.test(ber) && !/\{|undefined/.test(ber)],
+    ];
+  },
+};
+SCENARIER.matchpublik = {
+  text: 'Publiken (steg 10.7.16): den som har fritid när en match pågår kan gå dit och titta, också den som är för gammal för att spela. Publiken står i en ring utanför spelarnas yta, blir glad när matchen avgörs, står i redogörelsen och berättelsen och går när matchen är slut',
+  kor: () => {
+    const s = rikDag(3), v = vuxna(s), med = v.slice(0, 2), w = v[2]!, gammal = v[3]!;
+    gammal.born = s.now - 60 * SIM.DAY;
+    for (const q of [w, gammal]) q.task = undefined;
+    const vikt = [SIM.tittaVikt(s, w, 1)]; // ingen match: ingen vikt
+    match(s, 'brottning', med);
+    vikt.push(SIM.tittaVikt(s, w, 1), SIM.tittaVikt(s, med[0]!, 1), SIM.tittaVikt(s, gammal, 1), SIM.sportVikt(s, gammal, 1));
+    const titta = (q: Person) => { const t = SIM.tittaVal(s, q); if (t) q.task = { act: 'titta', phase: 'go', tx: t.spot.x, ty: t.spot.y, until: s.now + t.dur, carry: 0, ref: t.ref, tool: t.tool, dark: false, why: t.why }; return !!t; };
+    const valde = titta(w) && titta(gammal);
+    const m = s.sport!, d = SIM.SPORT_AV.brottning!;
+    let utanfor = true, sag = 0, medIMatchen = false;
+    korTills(s, () => !!s.matcher?.length, 3600, () => {
+      for (const q of [w, gammal]) if (q.task?.act === 'titta' && q.task.phase === 'do') { sag++; if (Math.hypot(q.x - m.x, q.y - m.y) < d.yta + 0.4 || Object.values(m.platser ?? {}).some(u => Math.hypot(u.x - q.x, u.y - q.y) < 0.4)) utanfor = false; }
+      if ([w, gammal].some(q => q.task?.act === 'sport' || m.lista?.includes(q.id) || m.platser?.[q.id])) medIMatchen = true;
+    });
+    const mm = s.matcher?.[0], ber = mm ? SIM.matchBerattelse(s, mm) : '';
+    const glad = [w, gammal].filter(q => q.thoughts.some(t => t.text === 'Såg brottning' && t.v > 0)).length;
+    kor(s, 0.25);
+    const kvar = [w, gammal].filter(q => q.task?.act === 'titta').length;
+    return [
+      [`vikten att titta: ${vikt.map(x => x.toFixed(2)).join(', ')} (utan match, under en match, för en spelare, för en över ${SIM.SPORT.alderTill} som inte får spela: titta och spela)`, vikt[0] === 0 && vikt[1]! > 0 && vikt[2] === 0 && vikt[3]! > 0 && vikt[4] === 0],
+      [`två går och tittar (${valde ? 'ja' : 'nej'}) och står där i ${sag} steg, utanför spelarnas yta och platser`, valde && sag > 0 && utanfor],
+      [`ingen i publiken går med i matchen`, !medIMatchen],
+      [`publiken i redogörelsen: ${mm?.publik?.map(x => x.namn).join(', ') ?? 'ingen'}`, !!mm && !mm.installd && mm.publik?.length === 2],
+      [`${glad} av 2 i publiken blev glada när matchen avgjordes`, glad === 2],
+      [`berättelsen nämner publiken: ${ber}`, ber.includes(w.name) && /hejade|hejade på/.test(ber) && !/\{|undefined/.test(ber)],
+      [`publiken går när matchen är slut (${kvar} kvar)`, kvar === 0],
     ];
   },
 };

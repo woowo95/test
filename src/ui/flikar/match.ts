@@ -1,8 +1,8 @@
 // matchens sammanställning (steg 5.4.8.1) med berättelsen högst upp (steg 5.4.8.2): öppnas med knappen vid raden i Händelser eller i notisen (matchKnapp i hjalp.ts),
 // som framträdandet (fram.ts). Allt läses ur minnet som sparades när matchen avgjordes (matchMinneAv i sim/sport.ts): sporten,
 // platsen och hur länge den varade, spelarna med färdigheten i sportens färdighet och summan, vem som vann och glädjen.
-// I en lagsport (steg 10.7.14) visas de två lagen med summan och vinnarlaget. Publiken kommer med steg 10.7.16. Symbolerna först; texten kommer fram när man håller över raden
-import { MIN, MatchMinne, SKILL_NAMES, SPORT_AV, matchBerattelse, matchMinneAv } from '../../sim';
+// I en lagsport (steg 10.7.14) visas de två lagen med summan och vinnarlaget. Publiken (steg 10.7.16) står sist, med glädjen de fick. Symbolerna först; texten kommer fram när man håller över raden
+import { MIN, MatchMinne, SKILL_NAMES, SPORT, SPORT_AV, matchBerattelse, matchMinneAv } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { clockTxt, esc, vemLank } from '../hjalp';
 import { s, ui } from '../lage';
@@ -32,6 +32,7 @@ export function matchHtml(m?: MatchMinne) {
     m.vinnLag !== undefined ? `<li title="Laget som vann">{sym_medalj} Lag ${m.vinnLag + 1}</li>` : m.vnamn ? `<li title="Den som vann">{sym_medalj} ${vemLank(m.vinnare!, m.vnamn)}</li>` : '',
     m.glad ? `<li title="${esc(`De som vann blev gladare: +${m.glad} i humöret (av 100) i en timme`)}">{sym_pil_upp} +${m.glad}</li>` : '',
     m.ledsen ? `<li title="${esc(`De som förlorade blev ledsna: -${m.ledsen} i humöret (av 100) i en timme`)}">{sym_pil_ned} -${m.ledsen}</li>` : '',
+    m.publik?.length ? `<li title="${esc(`${m.publik.length} stod och tittade och blev gladare: +${Math.round(SPORT.tittaGladje * 100)} i humöret (av 100) i en timme`)}">{sym_oga} ${m.publik.length}</li>` : '',
   ].join('');
   const grupp = (sp: MatchMinne['spelare'], rubrik: string, vann: boolean) => {
     const sum = sp.reduce((a, x) => a + x.f, 0);
@@ -40,5 +41,6 @@ export function matchHtml(m?: MatchMinne) {
   };
   const spel = m.vinnLag !== undefined ? ([0, 1] as const).map(l => grupp(m.spelare.filter(x => x.l === l), `Lag ${l + 1}`, m.vinnLag === l)).join('') : grupp(m.spelare, 'Spelarna', false);
   if (m.installd) return `${huvud}<p>{sym_nej} Det kom för få, så det blev ingen match.</p><ul class="fame">${fakta}</ul>${m.spelare.length ? spel : ''}`;
-  return `${huvud}<ul class="fame">${fakta}</ul>${spel}`;
+  const pub = m.publik?.length ? `<h3 title="De som stod runt om och tittade">De som tittade (${m.publik.length})</h3><ul class="fame">${m.publik.map(x => `<li>${vemLank(x.id, x.namn)}</li>`).join('')}</ul>` : '';
+  return `${huvud}<ul class="fame">${fakta}</ul>${spel}${pub}`;
 }

@@ -87,26 +87,29 @@ export const SPORT = balans('sport', {
   // lagen i snöbollskriget, den som slår i bollspelet, och avståndet mellan de som står på rad
   ring: 1.8, kastAvst: 3, snoAvst: 2.5, slagAvst: 3, rad: 0.8,
   sparas: 20, // så här många matcher sparas i s.matcher (steg 5.4.8.1)
+  titta: 1, // publiken (steg 10.7.16): vikten i fritiden att titta på en match som pågår eller väntar, gånger lugnet
+  tittaGladje: 0.03, // de som står och tittar när matchen avgörs blir så här glada, i gladjeTim timmar
   bastMin: 5, // den som har vunnit så här många matcher i en sport, och fler än någon annan, är den bästa i den (eftermälet)
 });
 
 // matchen som pågår eller väntar på spelare: sporten, platsen, när den började (spelarnas task.ref) och slutar
 // p: den som samlade, lista: de som ville vara med vid ropet (raden sport i val.ts för dem dit), platser: var och ens plats,
-// igang: alla som var på väg har kommit fram (eller väntan är slut) och matchen har börjat
-export interface Match { k: string; x: number; y: number; start: number; slut: number; p?: number; lista?: number[]; platser?: Record<number, { x: number; y: number }>; igang?: true; borjar?: number; lag?: Record<number, 0 | 1>; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[] } // brott: när kampen i brottningen (steg 9.2.92) är slut // n: så många som gått med (platsen i laget)
+// titta: publiken i den ordning de kom (steg 10.7.16), igang: alla som var på väg har kommit fram (eller väntan är slut) och matchen har börjat
+export interface Match { k: string; x: number; y: number; start: number; slut: number; p?: number; lista?: number[]; platser?: Record<number, { x: number; y: number }>; igang?: true; borjar?: number; lag?: Record<number, 0 | 1>; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[]; titta?: number[] } // brott: när kampen i brottningen (steg 9.2.92) är slut // n: så många som gått med (platsen i laget)
 
 // matchens sammanställning (steg 5.4.8.1, Sporten i designdokumentet): sparas när matchen avgörs eller ställs in, inte ur
 // loggen. Raden i Händelser och notisen pekar dit med numret (LogEntry.match), och fliken Matchen (ui/flikar/match.ts) visar
 // den. spelare: var och en med färdigheten i sportens färdighet (0–20) och resultatet (färdigheten plus slumpen, vinnare()),
 // glad: vinnarnas glädje och ledsen förlorarnas sorg efter matchen i hundradelar (SPORT.gladje, SPORT.forlust), installd: det kom för få.
-// Lagen (steg 10.7.14) står hos var och en; publiken kommer med 10.7.16
+// Lagen (steg 10.7.14) står hos var och en, och publik är de som stod och tittade när matchen avgjordes (steg 10.7.16)
 export interface MatchSpelare { id: number; namn: string; f: number; v: number; l?: 0 | 1 } // l: laget (steg 10.7.14)
-export interface MatchMinne { nr: number; k: string; t: number; slut: number; spelare: MatchSpelare[]; vinnare?: number; vnamn?: string; glad: number; ledsen?: number; installd?: true; vinnLag?: 0 | 1 }
+export interface MatchMinne { nr: number; k: string; t: number; slut: number; spelare: MatchSpelare[]; vinnare?: number; vnamn?: string; glad: number; ledsen?: number; installd?: true; vinnLag?: 0 | 1; publik?: { id: number; namn: string }[] }
 function matchMinne(s: State, d: SportDef, m: Match, har: Person[], v: Map<Person, number>, vinn?: Person, vinnLag?: 0 | 1) {
   const mm: MatchMinne = { nr: s.matchNr = (s.matchNr ?? 0) + 1, k: d.id, t: m.borjar ?? m.start, slut: s.now, glad: vinn ? Math.round(SPORT.gladje * 100) : 0, ...(vinn && har.length > 1 ? { ledsen: Math.round(SPORT.forlust * 100) } : {}),
     spelare: har.map(q => ({ id: q.id, namn: q.name, f: Math.round(q.skill[d.skill]), v: Math.round((v.get(q) ?? q.skill[d.skill]) * 10) / 10, ...(m.lag?.[q.id] !== undefined ? { l: m.lag[q.id] } : {}) })) };
   if (vinn) { mm.vinnare = vinn.id; mm.vnamn = vinn.name; } else mm.installd = true;
   if (vinnLag !== undefined) mm.vinnLag = vinnLag;
+  const pub = publiken(s, m); if (pub.length) mm.publik = pub.map(q => ({ id: q.id, namn: q.name }));
   const text = vinnLag !== undefined ? `Laget med ${och(har.filter(q => m.lag?.[q.id] === vinnLag).map(q => q.name))} vann ${d.best}.` : vinn ? `${vinn.name} vann ${d.best}.` : `Det blev ingen ${d.namn.toLowerCase()}: det kom för få.`, ids = har.map(q => q.id);
   log(s, text, 'world', ids).match = mm.nr;
   notis(s, 'match', text, ids, { x: m.x, y: m.y }, { match: mm.nr });
@@ -136,6 +139,7 @@ export function sportVikt(s: State, p: Person, calm: number) {
   if (a < ALDER.vuxen || a > SPORT.alderTill) return 0;
   const m = oppen(s);
   if (!m && s.sport) return 0; // en match i taget
+  if (m?.titta?.includes(p.id)) return 0; // den som tittar spelar inte (steg 10.7.16)
   if (!m && !SPORTER.some(d => kanSpela(s, d, vuxna(s)))) return 0;
   return overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * SPORT.vikt * calm * (m ? SPORT.med : 1) * (stat(p, 'styrka', s.now) + stat(p, 'smidighet', s.now)) / 20;
 }
@@ -143,6 +147,7 @@ export function sportVikt(s: State, p: Person, calm: number) {
 export function sportVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number; tool: string } | undefined {
   let m = oppen(s);
   if (!m && s.sport) return undefined; // en match i taget
+  if (m?.titta?.includes(p.id)) return undefined; // den som tittar spelar inte (steg 10.7.16)
   const ny = !m;
   if (!m) {
     const morkt = s.now + (19 - hourOf(s.now)) * HOUR; // sporten spelas på dagen (isLight i tid.ts): matchen slutar när det blir mörkt
@@ -239,7 +244,7 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
     // tiden räknas från att matchen börjar, och mörkret kapar den
     m.igang = true; m.borjar = s.now;
     m.slut = Math.min(s.now + (19 - hourOf(s.now)) * HOUR, s.now + (SPORT.minuter + rnd(s, 'sport', p) * SPORT.spann) * MIN);
-    for (const q of spelare(s, m, false)) q.task!.until = m.slut;
+    for (const q of [...spelare(s, m, false), ...publiken(s, m, false)]) q.task!.until = m.slut;
     if (d.lag) delaLag(s, m, d, har);
   } else if (spelare(s, m, false).length < d.min) { s.sport = undefined; t.until = s.now; return; } // de andra har gått: matchen är slut
   else if (d.lag && m.lag?.[p.id] === undefined) tillLaget(s, m, d, p); // den som var på väg och kom efter början
@@ -306,7 +311,31 @@ function avgor(s: State, m: Match, p: Person) {
   for (const q of vinnare) bastI(s, d, q);
   // glad eller ledsen (steg 10.7.15): vinnarna och förlorarna bland dem som var med i slutet
   const namn = d.namn.toLowerCase();
+  for (const q of publiken(s, m)) think(q, `Såg ${namn}`, SPORT.tittaGladje, s.now, SPORT.gladjeTim * HOUR); // publiken (steg 10.7.16)
   for (const q of har) if (vinnare.includes(q)) think(q, `Vann ${namn}`, SPORT.gladje, s.now, SPORT.gladjeTim * HOUR); else think(q, `Förlorade ${namn}`, -SPORT.forlust, s.now, SPORT.gladjeTim * HOUR);
+}
+// publiken (steg 10.7.16): den som har fritid när en match pågår eller väntar på spelare, och inte spelar, kan gå dit och
+// titta, utan åldersgräns. Var och en står på sin plats i en ring runt matchen, utanför spelarnas yta, i den ordning de kom,
+// och går när matchen är slut eller ställs in. Den som tittar går aldrig med i matchen
+const publiken = (s: State, m: Match, framme = true) => s.people.filter(q => alive(q) && q.task?.act === 'titta' && q.task.ref === m.start && (!framme || q.task.phase === 'do'));
+const spelar = (m: Match, p: Person) => m.lista?.includes(p.id) || m.p === p.id || !!m.platser?.[p.id];
+export function tittaVikt(s: State, p: Person, calm: number) {
+  const m = s.sport;
+  return m && s.now < m.slut && !spelar(m, p) ? SPORT.titta * calm : 0;
+}
+export function tittaVal(s: State, p: Person) {
+  const m = s.sport;
+  if (!m || s.now >= m.slut || spelar(m, p)) return undefined;
+  const d = SPORT_AV[m.k], l = m.titta ??= [];
+  if (!l.includes(p.id)) l.push(p.id);
+  const i = l.indexOf(p.id), r = d.yta + 1, a = i * 2.4 + m.start % 7; // en plats per åskådare, runt om i ringen
+  return { why: `Vill se ${d.best}`, spot: freeNear(s, m.x + Math.cos(a) * r, m.y + Math.sin(a) * r), dur: m.slut - s.now, ref: m.start, tool: d.id };
+}
+// medan man tittar (MEDAN i steg.ts): man går när matchen är slut eller har ställts in
+export function tittaSteg(s: State, _p: Person, t: Task) {
+  const m = s.sport;
+  if (!m || m.start !== t.ref || s.now >= m.slut) t.until = Math.min(t.until, s.now);
+  else if (t.tool !== m.k) t.tool = m.k; // det blev en annan sport
 }
 function bastI(s: State, d: SportDef, bast: Person) {
   const n = (bast.sportVinst ??= {})[d.id] = (bast.sportVinst[d.id] ?? 0) + 1;

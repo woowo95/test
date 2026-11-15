@@ -2,7 +2,7 @@
 // (ui/flikar/match.ts). Allt läses ur minnet som sparades när matchen avgjordes (MatchMinne i sport.ts), så att texten stämmer
 // med sammanställningen: sporten och spelarna, hur jämnt det var (resultaten, färdigheten plus slumpen), om den svagare vann
 // (färdigheten) och glädjen efteråt. Spelets mallar m_* i BERATTELSER skriver texten; varianten väljs ur matchens nummer,
-// så att samma match alltid berättas likadant och ingen slump dras. Lagen och publiken kommer med 10.3.6
+// så att samma match alltid berättas likadant och ingen slump dras. Lagen (steg 10.7.14) och publiken (steg 10.7.16, en mening när någon tittade) står med
 import type { State } from './typer';
 import type { MatchMinne } from './sport';
 import { SPORT_AV } from './sport';
@@ -36,9 +36,10 @@ export function matchBerattelse(s: State, m: MatchMinne): string {
       jamnt: res.length > 1 && gap <= MATCHBER.jamnt, overlagset: gap >= MATCHBER.overlagset,
       skrall: !!vinn && !!bast && bast.f - vinn.f >= MATCHBER.skrall, favorit: !!vinn && vinn.id === bast?.id,
     }),
+    publik: och((m.publik ?? []).map(x => x.namn)), nPub: m.publik?.length ?? 0,
     lang: min >= MATCHBER.lang, kort: min < MATCHBER.kort, glad: m.glad > 0,
   };
-  const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
+  const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd' | 'm_publik', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
   if (m.installd) return mening('m_installd', 0);
-  return [mening('m_start', 0), mening('m_lopp', 1), mening('m_vinst', 2), mening('m_slut', 3)].join(' ');
+  return [mening('m_start', 0), mening('m_lopp', 1), ...(m.publik?.length ? [mening('m_publik', 4)] : []), mening('m_vinst', 2), mening('m_slut', 3)].join(' ');
 }

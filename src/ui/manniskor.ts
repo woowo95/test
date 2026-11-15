@@ -58,6 +58,7 @@ function platsAv(p: Person) {
   const tk = uppgiftVid(p), d = tk && ACTS[tk.act];
   const m = tk && iMatchen(tk), sp2 = still && m ? sportPlats(m, p, x, y, t) : undefined;
   if (sp2) return { ...sp2, still }; // sporten (steg 4.5.6.10–11)
+  if (still && tk?.act === 'titta' && tk.phase === 'do' && s.sport?.start === tk.ref && s.sport?.igang) return { x, y: y + Math.abs(Math.sin(t / SEC * 3 + p.id)) * -0.06, still }; // publiken hejar (steg 10.7.16)
   const f = still ? s.filtar?.find(g => g.vem === p.id && !g.handlare && g.slut > t) : undefined;
   if (f) return { ...bakomFilt(s, f), still }; // bakom sin egen filt i ett byte (steg 4.5.7.1)
   // promenaden går på riktigt mellan punkter (steg 6.2.8) och svänger inte. Svängningen går aldrig in i en vägg, ett hus,

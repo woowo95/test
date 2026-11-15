@@ -1841,6 +1841,15 @@ const MDEF = {
     { t: 'Sedan gick de tillbaka till arbetet.', om: f => f.glad !== true },
     { t: 'Det var en dag som andra.', om: f => f.glad !== true },
   ],
+  // publiken runt matchen (steg 10.7.16): {publik} = de som stod och tittade, nPub = hur många
+  m_publik: [
+    { t: 'Publiken hejade: {publik} stod runt om och tittade.', om: f => Number(f.nPub) > 1 },
+    { t: 'Runt om stod {publik} och hejade på.', om: f => Number(f.nPub) > 1 },
+    { t: '{Publik} stod runt dem och ropade och hejade.', om: f => Number(f.nPub) > 1 },
+    { t: '{Publik} stod en bit bort och hejade på dem.', om: f => Number(f.nPub) === 1 },
+    { t: '{Publik} kom och tittade och hejade högt.', om: f => Number(f.nPub) === 1 },
+    { t: 'Det var bara {publik} som tittade, men hen hejade för flera.', om: f => Number(f.nPub) === 1 },
+  ],
   // matchen som inte blev av: {sport} = sporten, {spelare} = de som kom
   m_installd: [
     { t: '{Spelare} väntade på de andra, men det kom för få för {sportnamn}.', om: f => !!f.spelare },

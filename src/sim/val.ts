@@ -67,7 +67,7 @@ import { forSmutsigt, latrinFor } from './smuts';
 import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
-import { sportListaVal, sportVal, sportVikt } from './sport';
+import { sportListaVal, sportVal, sportVikt, tittaVal, tittaVikt } from './sport';
 import { handlaVal } from './handel';
 import { framVal, lyssnaBradska, lyssnaVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
@@ -1304,6 +1304,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
   if (gaILara(s, p, v, 'Har tid över')) return; // lärlingen går hellre till mästaren än vilar eller umgås
   const wsp = sportVikt(s, p, calm); // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
+  const wt = tittaVikt(s, p, calm); // att titta på matchen (steg 10.7.16)
   // besöket vid graven (steg 10.4.8): lusten är bandet till den döda, bredvid vilan och umgänget
   const gb = gravbesokVal(s, p);
   if (gb && rnd(s, 'val', p) < gb.w / (gb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'gravbesok', gb.why); v.spot = gb.spot; v.ref = gb.vem; v.tool = gb.laga ? 'laga' : undefined; v.dur = gb.min * MIN; return; }
@@ -1315,8 +1316,12 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   }
   // att skriva och att läsa (steg 10.6.5, skrift.ts): bredvid bönen och berättandet, där det finns blad, bläck och ljus
   if (skrift(s, p, v, platsIByn(s, p, 'val'), wv + wh + wsoc + wp)) return;
-  let r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws + wsp);
-  if (r >= wv + wh + wsoc + wp + wb + ws) {
+  let r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws + wsp + wt);
+  if (r >= wv + wh + wsoc + wp + wb + ws + wsp) {
+    const ti = tittaVal(s, p);
+    if (ti) { set(v, 'titta', ti.why); v.spot = ti.spot; v.dur = ti.dur; v.ref = ti.ref; v.tool = ti.tool; return; }
+    r = (r - wv - wh - wsoc - wp - wb - ws - wsp) / wt * (wv + wh + wsoc + wp + wb + ws);
+  } else if (r >= wv + wh + wsoc + wp + wb + ws) {
     const sp = sportVal(s, p);
     if (sp) { set(v, 'sport', sp.why); v.spot = sp.spot; v.dur = sp.dur; v.ref = sp.ref; v.tool = sp.tool; return; }
     r = (r - wv - wh - wsoc - wp - wb - ws) / wsp * (wv + wh + wsoc + wp + wb + ws); // följer ingen med: något annat på fritiden
