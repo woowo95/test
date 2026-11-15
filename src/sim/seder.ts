@@ -62,7 +62,7 @@ const dev = (v: number) => (v - SED.mitt) / SED.spann;
 interface SedDef { pos: string; neg: string; effect: string; dra: (q: Person['pot'], barn: boolean) => number }
 const DEF = {
   arbete: { pos: 'Plikt', neg: 'Vila', effect: 'Pliktkänsla: hur mycket man jobbar för byn och hur mycket man vilar.', dra: q => dev(q.flit) },
-  gemenskap: { pos: 'Sammanhållning', neg: 'Självförsörjning', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden.', dra: q => dev(q.empati) },
+  gemenskap: { pos: 'Sammanhållning', neg: 'Självförsörjning', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden, och hur stor del av det man skaffar som går till byn.', dra: q => dev(q.empati) },
   barn: { pos: 'Ättens växt', neg: 'Ättens bärkraft', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
   nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
   forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
@@ -70,7 +70,6 @@ const DEF = {
   fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * 0.5 + (barn ? 0.15 : -0.05) },
   fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
   krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * 0.7 + dev(q.mod) * 0.3 - dev(q.empati) * 0.5 }, // steg 8.4.11
-  delning: { pos: 'Delning', neg: 'Ägande', effect: 'Om byn delar lika eller har rika och fattiga: Delning ger mer av det man skaffar till byn.', dra: q => dev(q.empati) * 0.8 - dev(q.intelligens) * 0.1 }, // steg 8.4.12
   natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
   andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: q => dev(q.minne) * 0.05 }, // steg 8.6.1
   rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },

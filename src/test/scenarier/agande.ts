@@ -304,14 +304,21 @@ SCENARIER.egendom = {
 };
 
 SCENARIER.delning = {
-  text: 'Delning: ju fattigare byn är, desto mer av det folk skaffar ger de till byn. Byns rikedom avgör ensamt hur mycket',
+  text: 'Delning: ju fattigare byn är, desto mer av det folk skaffar ger de till byn, och seden Sammanhållning – Självförsörjning flyttar andelen åt var sitt håll från byns första dag (steg 10.5.1)',
   kor: () => {
-    const s = createState(5, START), p = living(s)[0]; utanStartKlader(s); stepDelning(s); // (kläderna från början gör byn rikare, steg 10.2.73)
+    const s = createState(5, START), p = living(s)[0]; utanStartKlader(s); s.seder.v.gemenskap = 0; stepDelning(s); // (seden flyttar andelen, steg 10.5.1) // (kläderna från början gör byn rikare, steg 10.2.73)
     const egetAv = (n: number) => { const f = ownsAmount(s, p, 'bar'); gain(s, p, 'bar', n); return ownsAmount(s, p, 'bar') - f; };
     const ny = s.delning!, nyRik = rikedom(s), nyEgen = egetAv(10);
     // halvrik: hälften av gränsen
     setAmount(s, 'flinta', 0); setAmount(s, 'flinta', (DELNING.rik / 2 - rikedom(s)) / grundvarde('flinta')); stepDelning(s); // flinta: ved är för lite värd sedan steg 6.1.6 och ryms inte i förrådet
     const halv = s.delning!, halvEgen = egetAv(10);
+    // Sammanhållning – Självförsörjning flyttar andelen åt var sitt håll (steg 10.5.1)
+    s.seder.v.gemenskap = 1; stepDelning(s); const samman = s.delning!.andel;
+    s.seder.v.gemenskap = -1; stepDelning(s); const sjalv = s.delning!.andel;
+    s.seder.v.gemenskap = 0; stepDelning(s); const mitt = s.delning!.andel; // (det som skaffades ovan gjorde byn lite rikare)
+    // en sparad by med den gamla seden Delning – Ägande laddas utan den
+    const g = createState(5, START); (g.seder.v as Record<string, number>).delning = 0.5; g.styre = { ...(g.styre ?? {}), oppna: [...(g.styre?.oppna ?? []), 'delning' as SIM.Sed] } as typeof g.styre; g.v = 50; SIM.migrate(g);
+    const gammal = !('delning' in g.seder.v) && !g.styre!.oppna.includes('delning' as SIM.Sed) && g.v === SIM.SPARVERSION;
     // rik
     setAmount(s, 'flinta', amountOf(s, 'flinta') + DELNING.rik / grundvarde('flinta')); stepDelning(s);
     const rik = s.delning!, rikRik = rikedom(s), rikEgen = egetAv(10);
@@ -321,8 +328,8 @@ SCENARIER.delning = {
     // bufferten per jag (steg 6.2.20): i en rik by har byn ingen buffert för maten, utan familjen sin för det den äger. Den
     // fattiga familjen (äger ingen mat) samlar åt sig, den rika (äger mat för många dygn) gör det inte, fast byns förråd är fullt
     const j = createState(5, START); klockan(j); tandEld(j); setFood(j, 300); tandOchFlinta(j); setAmount(j, 'ved', 80); rikBy(j);
-    // den fattiga är den som bryr sig mest om sig själv och familjen (egenintresset, projekt.ts)
-    const vx = living(j).filter(q => SIM.ageOf(q, j.now) >= 18).sort((a, b) => SIM.egenintresse(j, b) - SIM.egenintresse(j, a)), fattig = vx[0], rikP = vx.find(q => !SIM.familjOf(j, fattig.id).includes(q))!;
+    // den fattiga är den som bryr sig mest om sig själv och familjen (den med minst omtanke om byn, projekt.ts)
+    const vx = living(j).filter(q => SIM.ageOf(q, j.now) >= 18).sort((a, b) => SIM.omtanke(j, a) - SIM.omtanke(j, b)), fattig = vx[0], rikP = vx.find(q => !SIM.familjOf(j, fattig.id).includes(q))!;
     for (const q of SIM.familjOf(j, rikP.id)) gain(j, q, 'bar', 120);
     const egenMat = (q: Person) => { let n = 0; for (let i = 0; i < 40; i++) { q.task = undefined; chooseTask(j, q); if ((q.task as Task | undefined)?.why?.startsWith('Behöver egen mat')) n++; } return n; };
     const fDygn = SIM.familjMatDygn(j, SIM.familjOf(j, fattig.id)), rDygn = SIM.familjMatDygn(j, SIM.familjOf(j, rikP.id));
@@ -330,6 +337,8 @@ SCENARIER.delning = {
     return [
       [`en ny by är fattig (rikedom ${nyRik.toFixed(0)}) och ger det mesta till byn (${nyEgen.toFixed(1)} av 10 eget)`, ny.andel > 0.75 && Math.abs(nyEgen - 10 * (1 - ny.andel)) < 1], // i hela saker (steg 2.10.7)
       [`halvvägs till gränsen ${DELNING.rik} ges hälften (andel ${halv.andel.toFixed(2)}, ${halvEgen.toFixed(1)} av 10 eget)`, Math.abs(halv.andel - 0.5) < 0.02 && Math.abs(halvEgen - 5) < 0.3],
+      [`Sammanhållning flyttar andelen ${DELNING.sed} åt var sitt håll (${samman.toFixed(2)} och ${sjalv.toFixed(2)} mot ${mitt.toFixed(2)})`, Math.abs(samman - mitt - DELNING.sed) < 0.01 && Math.abs(mitt - sjalv - DELNING.sed) < 0.01],
+      ['en sparad by med den gamla seden Delning – Ägande laddas utan den', gammal],
       [`en rik by (rikedom ${rikRik.toFixed(0)}) ger inget (${rikEgen.toFixed(1)} av 10 eget)`, rik.andel === 0 && Math.abs(rikEgen - 10) < 0.01],
       [`blir byn fattig igen ger folk igen (andel ${igen.andel.toFixed(2)})`, igen.andel > 0.8],
       [`i en rik by samlar den fattiga familjen mat åt sig (${fattigSamlar} av 40, äger för ${fDygn.toFixed(1)} dygn) men inte den rika (${rikSamlar} av 40, äger för ${rDygn.toFixed(1)} dygn)`, fattigSamlar >= 5 && rikSamlar === 0],

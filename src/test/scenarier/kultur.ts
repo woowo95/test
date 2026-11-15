@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, utanWebblasare } from './hjalp';
+import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -768,32 +768,95 @@ SCENARIER.tinget = {
   },
 };
 SCENARIER.skatt = {
-  text: 'Steg 8.4.17: med en lag om skatt går en del av fångsten till byns förråd, eller till ledarens under Envälde. Den som betalar till ledaren blir missnöjd, och när ledarens förråd är fullt bjuder hen byn på gästabud',
+  text: 'Steg 10.5.3: skattelagen tar en procent av det varje vuxen över 18 år äger, en gång per dygn (ett år i spelet), till byns förråd. Man betalar med hela saker och silver, först det man har över. Medan lagen gäller ger ingen en del av det hen skaffar till byn, men gåvor till den i nöd finns kvar',
   kor: () => {
-    const { s, v, l } = medLedare(), q = v[1];
-    s.styre!.lagar = [{ id: 'skatt', t: s.now, straff: 4, av: l.id, om: '' }];
-    s.seder.v.rang = -0.5; SIM.stepDelning(s);
-    const tillByn = !s.delning?.ledare;
-    s.seder.v.rang = 1; SIM.stepDelning(s);
-    const tillLedaren = s.delning?.ledare?.id === l.id;
-    s.delning = { andel: 0.2, ledare: { id: l.id, andel: 0.3 } };
-    const fore = SIM.ownedStock(s, l).bar ?? 0;
-    SIM.storeLoad(s, { act: 'samla', phase: 'do', tx: 0, ty: 0, until: s.now, carry: 0, why: '', items: { bar: 20 } } as SIM.Task, undefined, undefined, q.id);
-    const fick = (SIM.ownedStock(s, l).bar ?? 0) - fore, egen = SIM.ownedStock(s, q).bar ?? 0;
-    SIM.put(s, 'bar', 60, { [l.id]: 60 });
-    const miss0 = q.missnoje ?? 0, mat0 = SIM.ownedStock(s, l).bar ?? 0;
-    SIM.lagDygn(s);
+    const { s } = medLedare();
+    tomtForrad(s); s.ting = [];
+    const [a, b, c] = treVuxna(s, 0, q => { q.warm = 1; q.habit = {}; q.pot.empati = 10; });
+    s.people = [a, b, c];
+    for (const q of [a, b]) q.born = s.now - 30 * SIM.DAY;
+    c.born = s.now - 16 * SIM.DAY;
+    s.delning = { andel: 0 };
+    SIM.put(s, 'silver', 200, { [a.id]: 200 }); SIM.put(s, 'silver', 40, { [b.id]: 40 }); SIM.put(s, 'silver', 100, { [c.id]: 100 });
+    const kniv = SIM.addTool(s, 'kniv', b); kniv.hos = b.id;
+    const silver = (p: Person) => SIM.ownsAmount(s, p, 'silver'), byns = () => SIM.amountOf(s, 'silver') - SIM.ownedSum(s, 'silver');
+    // utan lag ingen skatt
+    SIM.skattDygn(s, SIM.DAY);
+    const utan = silver(a) === 200 && silver(b) === 40 && byns() === 0;
+    SIM.stepDelning(s); const delningFore = s.delning?.andel ?? 0;
+    // med lag
+    s.styre!.lagar = [{ id: 'skatt', t: s.now - 2 * SIM.DAY, straff: 4, av: a.id, om: '' }];
+    const skuldA = SIM.skattAv(s, a, SIM.DAY), skuldB = SIM.skattAv(s, b, SIM.DAY);
+    SIM.skattDygn(s, SIM.DAY);
+    const betaltA = 200 - silver(a), betaltB = 40 - silver(b);
+    // ingen delning medan lagen gäller, men en hungrig anhörig får ändå en gåva
+    SIM.stepDelning(s); const delningLag = s.delning?.andel ?? 0;
+    SIM.gain(s, a, 'bar', 20);
+    const allt = SIM.ownsAmount(s, a, 'bar') === 20;
+    b.mother = a.id; b.hunger = 0.9;
+    for (let i = 0; i < 20 && SIM.ownsAmount(s, b, 'bar') <= 0; i++) SIM.askForGift(s, a, b);
+    const gava = SIM.ownsAmount(s, b, 'bar') > 0;
+    // när lagen tas bort slutar skatten och delningen är tillbaka
+    s.styre!.lagar = [];
+    const a0 = silver(a), byn0 = byns();
+    SIM.skattDygn(s, SIM.DAY); SIM.stepDelning(s);
     return [
-      ['under Allmogen går skatten till byns förråd', tillByn],
-      ['under Envälde går den till ledarens', tillLedaren],
-      [`av 20 bär fick ledaren ${fick} och den som samlade ${egen}, i hela bär`, fick === 6 && egen === 10],
-      [`ledaren bjöd på gästabud (${mat0} → ${SIM.ownedStock(s, l).bar ?? 0} bär hos ledaren)`, (s.stat?.gastabud ?? 0) === 1 && (SIM.ownedStock(s, l).bar ?? 0) < mat0],
-      [`och missnöjet sjönk (${miss0.toFixed(2)} → ${(q.missnoje ?? 0).toFixed(2)})`, (q.missnoje ?? 0) <= miss0],
+      ['utan lag tas ingen skatt', utan],
+      [`med lag betalar en med silver exakt (${betaltA} silver för en skatt på ${skuldA.toFixed(2)}), och byns förråd växer lika mycket (${byn0})`, betaltA > 0 && Math.abs(betaltA - skuldA) <= 0.5 && byn0 === betaltA + betaltB],
+      [`den första nivån går före: silvret (${betaltB} för ${skuldB.toFixed(2)}) och inte kniven i handen`, betaltB > 0 && Math.abs(betaltB - skuldB) <= 0.5 && kniv.agare === b.id && kniv.hos === b.id],
+      [`en 16-åring betalar inget (${silver(c)} silver kvar)`, silver(c) === 100],
+      [`ingen delning medan lagen gäller (${delningFore.toFixed(2)} → ${delningLag}), alla 20 bär blev hens egna`, delningFore > 0 && delningLag === 0 && allt],
+      ['men en hungrig anhörig får ändå en gåva', gava],
+      [`byns statistik räknar skatten (${(s.stat?.skattVarde ?? 0).toFixed(0)}) och loggen har en rad`, (s.stat?.skattVarde ?? 0) === byn0 && s.log.some(e => e.text.startsWith('Skatten gav byns förråd'))],
+      [`när lagen tas bort slutar skatten (${a0} → ${silver(a)}) och delningen är tillbaka (${(s.delning?.andel ?? 0).toFixed(2)})`, silver(a) === a0 && byns() === byn0 && (s.delning?.andel ?? 0) > 0],
+    ];
+  },
+};
+SCENARIER.skattetal = {
+  text: 'Steg 10.5.4: skattelagens tal (procenten, åldern och två ribbor) ändras var för sig med en omröstning. Var och en vill ha ett eget värde efter vad hen äger och hur hen lutar mot Sammanhållning; under Envälde går ledarens förslag igenom. Över den övre ribban är procenten den dubbla, och den som betalar mer än hen tycker är rätt blir missnöjd',
+  kor: () => {
+    const { s } = medLedare();
+    tomtForrad(s); s.ting = [];
+    const folk = SIM.living(s).slice(0, 5), [rik, ...fattiga] = folk;
+    s.people = folk;
+    for (const p of folk) { p.mother = p.father = p.partner = undefined; p.born = s.now - 30 * SIM.DAY; p.missnoje = 0; (p.tek ??= {}).ledarskap = 1; p.tek.lag = 1; }
+    s.styre!.ledare = fattiga[0].id; s.seder.v.rang = -0.5; s.delning = { andel: 0 };
+    SIM.put(s, 'silver', 500, { [rik.id]: 500 });
+    [5, 10, 10, 10].forEach((n, i) => SIM.put(s, 'silver', n, { [fattiga[i].id]: n }));
+    s.styre!.lagar = [{ id: 'skatt', t: s.now - 2 * SIM.DAY, straff: 4, av: rik.id, om: '' }];
+    const lag = () => s.styre!.lagar!.find(l => l.id === 'skatt')!;
+    const fattigast = fattiga[0], fore = SIM.skattAv(s, fattigast, SIM.DAY);
+    // en fattig majoritet röstar fram en undre ribba, och den fattigaste slipper skatt
+    const forslag = SIM.TAS_UPP.find(r => r.id === 'lagtal')!.lista(s, fattigast).find(f => f.fr.d.k === 'undre');
+    const gickUndre = !!forslag && SIM.rostaOm(s, forslag.fr);
+    const undre = lag().tal?.undre ?? 0, efter = SIM.skattAv(s, fattigast, SIM.DAY);
+    // under Envälde går ledarens förslag igenom
+    s.styre!.ledare = rik.id; s.seder.v.rang = 1; rik.pot.empati = 2; rik.upp = []; // (en rik som lutar mot Självförsörjning vill ha lägre procent)
+    const fram = SIM.framlaggare(s), rikF = SIM.TAS_UPP.find(r => r.id === 'lagtal')!.lista(s, rik).find(f => f.fr.d.k === 'procent');
+    const gickRik = !!rikF && SIM.rostaOm(s, rikF.fr), procent = lag().tal?.procent ?? 0.05;
+    const pabjod = s.log.some(e => e.text.startsWith(`${rik.name} påbjöd`));
+    // den rika betalar dubbel procent över den övre ribban
+    lag().tal = { procent: 0.05, undre: 0, ovre: 200 };
+    const e = SIM.efterlevs(s), dubbel = SIM.skattAv(s, rik, SIM.DAY) / e, vantat = 0.05 * 200 + 0.05 * SIM.SKATT.hogGanger * 300;
+    // en ändrad procent ändrar beloppet
+    lag().tal = { procent: 0.1, undre: 0, ovre: 200 };
+    const dubbelt = SIM.skattAv(s, rik, SIM.DAY) / e;
+    // den som vill ha lägre procent blir missnöjd
+    lag().tal = { procent: 0.2 };
+    SIM.skattDygn(s, SIM.DAY);
+    return [
+      [`en fattig majoritet röstar fram en undre ribba (${undre})`, gickUndre && undre > 0],
+      [`och den fattigaste slipper skatt (${fore.toFixed(2)} → ${efter.toFixed(2)})`, fore > 0 && efter === 0],
+      [`under Envälde lägger bara ledaren fram (${fram.length}) och hens förslag går igenom (procenten ${Math.round(procent * 100)} %)`, fram.length === 1 && fram[0] === rik && gickRik && procent < 0.05],
+      ['och loggen säger att ledaren påbjöd den', pabjod],
+      [`den rika betalar dubbel procent över den övre ribban (${dubbel.toFixed(1)}, väntat ${vantat.toFixed(1)})`, Math.abs(dubbel - vantat) < 1e-6],
+      [`en ändrad procent ändrar beloppet (${dubbel.toFixed(1)} → ${dubbelt.toFixed(1)})`, Math.abs(dubbelt - 2 * dubbel) < 1e-6],
+      [`den som vill ha lägre procent blir missnöjd (${(rik.missnoje ?? 0).toFixed(3)})`, (rik.missnoje ?? 0) > 0],
     ];
   },
 };
 SCENARIER.sederfas8 = {
-  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred, Ägande och delning och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
+  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
   kor: () => {
     const { s, v, l } = medLedare();
     const l0 = SIM.sedOppen(s, 'natur');
@@ -2122,23 +2185,23 @@ SCENARIER.gravbesok = {
 };
 
 SCENARIER.minnesed = {
-  text: 'Steg 10.4.9: legender drar sederna. Minnet av en död drar sederna hos den som minns hen, åt det håll INTRYCK:s sedkolumn pekar och starkare ju starkare minnet är (hjälpsam mot Delning och Sammanhållning, våldsam bort från Fejd), minnen av levande drar inte, alla minnen tillsammans drar högst 0,5 per sed, fliken Seder visar "Minnet av" den döda, och den som kommer på en teknik ses som påhittig',
+  text: 'Steg 10.4.9: legender drar sederna. Minnet av en död drar sederna hos den som minns hen, åt det håll INTRYCK:s sedkolumn pekar och starkare ju starkare minnet är (hjälpsam mot Sammanhållning, våldsam bort från Fejd), minnen av levande drar inte, alla minnen tillsammans drar högst 0,5 per sed, fliken Seder visar "Minnet av" den döda, och den som kommer på en teknik ses som påhittig',
   kor: () => {
     const a = medLedare(), s = a.s, alla = SIM.living(s), p = a.v[1], lev = a.v[2], [d, ond] = alla.filter(q => q !== p && q !== lev && q !== a.l);
-    s.styre!.oppna.push('delning', 'fejd', 'krig');
+    s.styre!.oppna.push('fejd', 'krig');
     const e = (om: Person, k: SIM.IntryckTyp, v = 1) => ({ om: om.id, namn: om.name, k, v, c: 1, t: s.now });
     p.intryck = [e(d, 'hjalpsam'), e(lev, 'hjalpsam'), e(ond, 'valdsam')];
     const fore = SIM.drar(s, p);
     d.died = s.now; ond.died = s.now;
     const efter = SIM.drar(s, p), steg = SIM.SED.minneSteg;
-    const delning = efter.delning - fore.delning, gem = efter.gemenskap - fore.gemenskap, fejd = efter.fejd - fore.fejd;
+    const gem = efter.gemenskap - fore.gemenskap, fejd = efter.fejd - fore.fejd;
     // ett svagare minne drar mindre
     p.intryck = [e(d, 'hjalpsam', 0.5), e(ond, 'valdsam')];
-    const svag = SIM.drar(s, p).delning - fore.delning;
+    const svag = SIM.drar(s, p).gemenskap - fore.gemenskap;
     // många minnen drar tillsammans högst minneMax
     const borta = [9001, 9002, 9003].map(id => ({ id, name: 'Borta' + id }) as Person); // de som inte finns kvar i byn räknas som döda
     p.intryck = [d, ond, ...borta].map(q => e(q, 'hjalpsam'));
-    const tak = SIM.drar(s, p).delning - fore.delning;
+    const tak = SIM.drar(s, p).gemenskap - fore.gemenskap;
     // fliken Seder: raden Minnet av …
     p.intryck = [e(d, 'hjalpsam')];
     const rad = SIM.sedDrag(s).find(r => r.om?.id === d.id);
@@ -2149,11 +2212,11 @@ SCENARIER.minnesed = {
     SIM.learn(s, lev, tek);
     const pah = SIM.intryckOm(vittne, lev.id, 'pahittig');
     return [
-      [`minnet av den hjälpsamma döda drar mot Delning 2 och Sammanhållning 1 (${delning.toFixed(3)}, ${gem.toFixed(3)} mot ${2 * steg} och ${steg})`, Math.abs(delning - 2 * steg) < 1e-9 && Math.abs(gem - steg) < 1e-9],
+      [`minnet av den hjälpsamma döda drar mot Sammanhållning 2 (${gem.toFixed(3)} mot ${2 * steg})`, Math.abs(gem - 2 * steg) < 1e-9],
       [`minnet av den våldsamma drar bort från Fejd (${fejd.toFixed(3)})`, Math.abs(fejd + steg) < 1e-9],
-      [`ett svagare minne drar mindre (${svag.toFixed(3)} mot ${delning.toFixed(3)})`, svag > 0 && svag < delning],
+      [`ett svagare minne drar mindre (${svag.toFixed(3)} mot ${gem.toFixed(3)})`, svag > 0 && svag < gem],
       [`många minnen drar tillsammans högst ${SIM.SED.minneMax} (${tak.toFixed(3)} av ${10 * steg} med 5 döda)`, Math.abs(tak - SIM.SED.minneMax) < 1e-9],
-      [`fliken Seder visar minnet av ${d.name} (${rad ? 'en rad' : 'ingen rad'}, ${syns ? 'syns' : 'syns inte'})`, !!rad && rad.d.delning > 0 && syns],
+      [`fliken Seder visar minnet av ${d.name} (${rad ? 'en rad' : 'ingen rad'}, ${syns ? 'syns' : 'syns inte'})`, !!rad && rad.d.gemenskap > 0 && syns],
       [`den som kommer på ${tek?.namn.toLowerCase()} ses som påhittig (${pah ? pah.v.toFixed(2) : 'nej'})`, !!pah && pah.v > 0],
     ];
   },

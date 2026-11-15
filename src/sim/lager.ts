@@ -347,22 +347,16 @@ export function minska(s: State, a: Stack, v: number) {
 // vems n av något är, när ag säger vems det var (jämkat om det minskat) och resten är owner. Med s ger owner byns
 // andel av resten till byn: mer ju fattigare byn är (delning.ts)
 // I hela saker (steg 2.10.7): det som blir över av ägarens del räknas hos hen (s.andelRest) till nästa gång
-function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
+function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State, k?: string): Del {
   const sum = sumOf(ag), f = sum > n ? n / sum : 1, d: Del = {};
   addDel(d, ag, f);
   const r = n - sum * f;
   if (s && owner !== BYN && r > HEL) {
-    // skatten till ledaren (steg 8.4.17): ledarens del samlas på samma sätt i hela saker
-    const la = s.delning?.ledare, egen = la?.id === owner, fo = 1 - (s.delning?.andel ?? 0) - (la && !egen ? la.andel : 0);
-    const ar = (s.andelRest ??= {}), t = r * fo + (ar[owner] ?? 0), w = Math.min(helt(r), helt(t));
+    const fo = 1 - (s.delning?.andel ?? 0), ar = (s.andelRest ??= {}), t = r * fo + (ar[owner] ?? 0), w = Math.min(helt(r), helt(t));
     if (t - w > HEL) ar[owner] = Math.min(t - w, 1 - HEL); else delete ar[owner];
     if (w > 0) d[owner] = (d[owner] ?? 0) + w;
-    if (la && !egen) {
-      const tl = r * la.andel + (ar[la.id] ?? 0), wl = Math.min(helt(r) - w, helt(tl));
-      if (tl - wl > HEL) ar[la.id] = Math.min(tl - wl, 1 - HEL); else delete ar[la.id];
-      if (wl > 0) { d[la.id] = (d[la.id] ?? 0) + wl; s.skattLedare = (s.skattLedare ?? 0) + wl; }
-    }
-    if (r - helt(r) > HEL) d[owner] = (d[owner] ?? 0) + (r - helt(r)) * (1 - (s.delning?.andel ?? 0)); // en del av en sak: påbörjad hos ägaren (hela)
+    if (k && helt(r) > w) count(s, 'delningVarde', (helt(r) - w) * grundvarde(k)); // det som gick till byn (steg 10.5.3)
+    if (r - helt(r) > HEL) d[owner] = (d[owner] ?? 0) + (r - helt(r)) * fo; // en del av en sak: påbörjad hos ägaren (hela)
   } else if (owner !== BYN && r > 1e-12) d[owner] = (d[owner] ?? 0) + r;
   delete d[BYN];
   return d;
@@ -637,7 +631,7 @@ export function addTo(s: State, k: string, n: number) { if (n > 0) place(s, k, n
 export function put(s: State, k: string, n: number, ag?: Del, c = 1) { place(s, k, n, c, ag && shareOf(ag, n)); }
 // p skaffade n av slaget k och lade det rakt i förrådet: det är hens (egendom.ts), utom det hen ger byn (delning.ts)
 // I hela saker (steg 2.10.7): arbetet räknas hos p tills det blivit en hel sak (arbete)
-export function gain(s: State, p: Person, k: string, n: number) { const w = n > 0 ? arbete(p, k, n) : 0; if (w > 0) place(s, k, w, 1, shareOf(undefined, w, p.id, s)); }
+export function gain(s: State, p: Person, k: string, n: number) { const w = n > 0 ? arbete(p, k, n) : 0; if (w > 0) place(s, k, w, 1, shareOf(undefined, w, p.id, s, k)); }
 // p tar n av slaget k ur förrådet; common = till byns eld eller hus, fran = av den personens först (stöld). Ger vems det var
 export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number) { return takeOwn(s, k, n, p, common, fran).ag; }
 // för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
@@ -1081,7 +1075,7 @@ const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items 
 // det som bärs mellan lagerplatser har alltid sina ägare med sig
 export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN) {
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
-  for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner, s), at);
+  for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner, s, k), at);
   storeTings(s, t, at);
   tomBorda(t);
 }
@@ -1092,7 +1086,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner;
   for (const k in all) {
     if (all[k] < 1e-6) continue;
-    const h = hela(s, k, all[k], SAKER[k]?.i ? undefined : shareOf(t.ag?.[k], all[k], who, s)); // bara hela saker (steg 2.10.7)
+    const h = hela(s, k, all[k], SAKER[k]?.i ? undefined : shareOf(t.ag?.[k], all[k], who, s, k)); // bara hela saker (steg 2.10.7)
     if (h.n <= 0) continue;
     if (SAKER[k]?.i) { hide(s, SAKER[k]!.i!, h.n, { x: tx, y: ty }); continue; }
     const c = t.cond?.[k] ?? 1;

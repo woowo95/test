@@ -1,3 +1,4 @@
+import { skuldFaktor } from './skatt';
 import { troOf } from './religion';
 import { helig } from './kult';
 import { planDel } from './troshus';
@@ -411,7 +412,9 @@ export function lage(s: State, h: { x: number; y: number; w: number; h: number }
 }
 // säljarens lägsta pris: värdet (byn säljer billigt), och behöver säljaren huset också vad det kostar att bygga ett nytt lika stort.
 // Därför säljs ett hus där familjen bor nästan aldrig: köparen betalar aldrig mer än det kostar att bygga nytt (PLAN.kopMax)
-export const saljPris = (s: State, h: Hus) => (husVarde(s, h) * (h.ag === undefined ? PLAN.bynSalj : PLAN.salj) + saljBehov(s, h) * husKostnadAv((h.w - 2) * (h.h - 2))) * lage(s, h);
+// En säljare med skatteskuld nöjer sig med mindre, efter hur mycket mer silvret är värt för hen (steg 10.5.5)
+export const saljPris = (s: State, h: Hus) => (husVarde(s, h) * (h.ag === undefined ? PLAN.bynSalj : PLAN.salj) + saljBehov(s, h) * husKostnadAv((h.w - 2) * (h.h - 2))) * lage(s, h) / saljSkuld(s, h);
+const saljSkuld = (s: State, h: Hus) => { const q = h.ag !== undefined ? byId(s, h.ag) : undefined; return q?.skatteskuld ? skuldFaktor(s, q) : 1; };
 // vad köparen jämför med: ett nytt lika stort hus, på samma läge (köparen betalar också för läget)
 export const nyttLika = (s: State, h: Hus) => husKostnadAv((h.w - 2) * (h.h - 2)) * lage(s, h);
 // finns det ett hus till salu som familjen (ägaren ag) får plats i och har råd med? (familjer som inte har råd att bygga nytt, byggnader.ts)
@@ -471,6 +474,7 @@ export function kopHus(s: State, h: Hus, ag: number, bud?: Person) {
   for (const w of val) if (w.m !== kopare) flytta(s, { k: w.k, n: w.n, t: w.t }, personPart(s, w.m), M);
   const betal = val.map(w => ({ k: w.k, n: w.n, t: w.t }));
   genomfor(s, M, G, [{ k: 'hus', n: 1, hus: h.id, varde: pris }], betal, 'hus');
+  if (saljare?.skatteskuld) { const tx = `${saljare.name} sålde sitt hus för att betala skatten.`; log(s, tx, 'world', [saljare.id, kopare.id]); kronika(s, tx, 'byte'); count(s, 'husSkuld'); } // steg 10.5.5
   h.ag = ag; h.fn = 'familjehus'; h.tom = undefined; h.rumFn = undefined; h.namn = husNamn(kopare.name); husNytt(s, h, 'ag', `Nyss köpt av ${kopare.name}.`); touch(s); count(s, 'husKopt');
   return true;
 }

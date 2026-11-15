@@ -1,3 +1,4 @@
+import { SKATT, skattDygn, skattRegister } from './skatt';
 import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
 import { GASTVARD, gastVardag } from './gastvardag';
@@ -78,6 +79,7 @@ import { Bit, bitAt, bitsOf, husById, MATERIAL, bitById, blocked, freeNear, grid
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
+import { omtankeTimme } from './omtanke';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -236,7 +238,7 @@ for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
   // fångstgropen (steg 10.2.84) grävdes där den ska ligga; mjärden och snaran görs vid fångstbänken och sätts ut
   if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
 };
-lagRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
+lagRegister(); skattRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
@@ -371,6 +373,7 @@ export const TAKTER: Takt[] = [
   { namn: 'facklorTimme', sek: 3600, fn: s => { facklorTimme(s); } },
   { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
+  { namn: 'omtanken', sek: 3600, fn: s => { omtankeTimme(s); } }, // omtanken om byn (projekt.ts, steg 10.5.2)
   { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },
   { namn: 'forbrukTimme', sek: 3600, fn: s => { forbrukTimme(s); } },
   { namn: 'arbetsTimme', sek: 3600, fn: s => { arbetsTimme(s); } },
@@ -393,6 +396,7 @@ export const TAKTER: Takt[] = [
   { namn: 'tidyStore', sek: 3600, fn: s => { tidyStore(s); } },
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
+  { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },

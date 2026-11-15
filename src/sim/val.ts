@@ -33,7 +33,8 @@ const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' 
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, villAv, buffert, lyxtak, materialTimme, onskatDygn, underBuffert, materialTak, sparas, villHaAv } from './forradsmal';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, harAv, toolGroups, underhallGrupp } from './redskap';
-import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, bastaProjekt, egenintresse, hamtas, projektNu } from './projekt';
+import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, bastaProjekt, hamtas, projektNu } from './projekt';
+import { omtanke } from './omtanke';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
@@ -1085,19 +1086,19 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const fs = 1 + FORRAD.forsiktig * pabud(s, M.pabud) + mer, vs = 1 + FORRAD.forsiktig * pabud(s, V.pabud) + mer;
   const onskat = buffert(s, 'mat', mer);
   // bufferten per jag (steg 6.2.20, "Förråden"): byn har sin buffert för den mat byn äger, så stor del av hela bufferten som
-  // byn delar (delning.ts), och familjen sin för det den äger, resten, vägd med egenintresset som projekten (projekt.ts)
+  // byn delar (delning.ts), och familjen sin för det den äger, resten. Byns väger gånger omtanken om byn, som projekten (projekt.ts, steg 10.5.2)
   const delas = s.delning?.andel ?? 1, fdBy = fd * bynsMatAndel(s), malBy = onskat * delas;
-  const wBy = malBy <= 0 ? M.minMatt : fdBy < malBy ? clamp(FORRAD.behovTomt - fdBy / (M.dygn * fs * delas), M.min, FORRAD.behovMax)
-    : mjuktTak(fdBy, malBy, malBy * M.matt, M.min, M.minMatt);
+  const om = omtanke(s, p), wBy = (malBy <= 0 ? M.minMatt : fdBy < malBy ? clamp(FORRAD.behovTomt - fdBy / (M.dygn * fs * delas), M.min, FORRAD.behovMax)
+    : mjuktTak(fdBy, malBy, malBy * M.matt, M.min, M.minMatt)) * om;
   const famDygn = familjMatDygn(s, familjOf(s, p.id)), malFam = onskat * (1 - delas);
-  const wFam = famDygn < malFam ? clamp(FORRAD.behovTomt - famDygn / malFam * (FORRAD.behovTomt - M.min), M.min, FORRAD.behovMax) * egenintresse(s, p) : 0;
+  const wFam = famDygn < malFam ? clamp(FORRAD.behovTomt - famDygn / malFam * (FORRAD.behovTomt - M.min), M.min, FORRAD.behovMax) : 0;
   // den som har mat för kortare tid än egenDygn, sin egen, byns och familjens, arbetar alltid för maten (steg 3.10.26)
   const egen = egnaMatDygn(s, p), wNod = egen < VAL.egenDygn ? FORRAD.behovTomt - egen / VAL.egenDygn * (FORRAD.behovTomt - M.min) : 0;
   const wEgen = Math.max(wNod, wFam);
   const wFood = Math.max(wBy, wEgen);
   // veden över bufferten sjunker mjukt mot taket och vidare (steg 10.2.4), utan undantag för den som saknar yxa eller grenar vid taket
   const vBuf = V.dygn * vs * (FORRAD.behovTomt - V.min); // bufferten: där behovet nedan når V.min
-  const wWood = (wd < vBuf ? clamp(FORRAD.behovTomt - wd / (V.dygn * vs), V.min, FORRAD.behovMax) : mjuktTak(wd, vBuf, vBuf * V.matt, V.min, V.minMatt)) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
+  const wWood = (wd < vBuf ? clamp(FORRAD.behovTomt - wd / (V.dygn * vs), V.min, FORRAD.behovMax) : mjuktTak(wd, vBuf, vBuf * V.matt, V.min, V.minMatt)) * (kallTid(ai) ? ARSTID.vedKall : 1) * om; // byns ved, gånger omtanken (steg 10.5.2) // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
   let best: Act = 'samla', bs = -1, burg = 0;
   // det bästa arbetet för varje rad under Försörjning (steg 6.2.18) och dess poäng utan behovet: lusten, nyttan och bruset

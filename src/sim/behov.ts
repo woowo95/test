@@ -1,3 +1,4 @@
+import { skuldFaktor } from './skatt';
 import { SAK_ART, heligtBrutet, matBrutet } from './kultlatt';
 import { utsadeKrok } from './ratter';
 import { hans, honom } from './ord';
@@ -495,13 +496,13 @@ const enheter = (v: Vara[]) => v.reduce((x, { k, n }) => x + n * (behovMed(k)?.p
 export function behovAv(s: State, p: Person, k: string) {
   if (isTool(k)) return needsTool(s, p, k) ? DELA.saknar : ownedKind(s, p, k) > 0 && !spare(s, p, k) ? 1 : DELA.over;
   const b = behovMed(k);
-  if (!b) return DELA.over;
+  if (!b) return k === 'silver' && p.skatteskuld ? DELA.over * skuldFaktor(s, p) : DELA.over; // skatteskulden gör silvret mer värt (steg 10.5.5)
   const own = ownFor(s, p, b);
   if (b.behover(s, p) && own < b.minst) return DELA.saknar * (1 + b.fara(s, p));
   return own <= b.kvar ? 1 : DELA.over;
 }
 // det p kan byta bort: mat och ved utöver det hen själv behöver (b.kvar), material och redskap hen har över. Inte slagen i utom
-function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
+export function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   // den som inte äger något redskap har inget att avvara (spare), och de flesta som betalar äger inget
   const ut: Vara[] = [], over = new Map<Behov, number>(), harRedskap = tingOf(s).some(t => t.agare === p.id);
   for (const k of SAK_LIST) {

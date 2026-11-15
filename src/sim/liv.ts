@@ -126,6 +126,8 @@ function sorjer(s: State, p: Person) {
   const lev = (id?: number) => { const q = id !== undefined ? byId(s, id) : undefined; return q && alive(q) ? q.name : undefined; };
   return lev(p.partner) ?? lev(p.bast) ?? lev(p.mother) ?? lev(p.father);
 }
+// skatteskulden och arvsskatten betalas efter gravgåvan och före arvet (skatt.ts, steg 10.5.5–10.5.6)
+export const skuldKrok: { f?: (s: State, p: Person) => void } = {};
 export function die(s: State, p: Person, orsak: Dodsorsak) {
   nyttILarmet(s); // en död: rollerna vid larmet väljs om (steg 9.5.19)
   const { text: cause, sorg } = DODSORSAKER[orsak], akt = p.task?.act;
@@ -138,6 +140,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   count(s, 'doda'); count(s, 'dog ' + cause); personNara(s, p, `${p.name} dog ${cause}, ${a} år gammal.`); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
   nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1)
   gravgava(s, p); // gravgåvan läggs undan innan arvet (steg 8.5.6)
+  skuldKrok.f?.(s, p);
   inherit(s, p); // arvingarna får det hen ägde (arv.ts); efter dödsraden, så att orsaken står före verkan (steg 6.7.5)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
@@ -332,7 +335,7 @@ function refound(s: State) {
 // de i med lämnar byn tillsammans: bördan läggs ner först, sedan packar var och en det hen orkar bära av allt hen äger (arv.ts)
 // och resten blir byns. Den som blir kvar släpper sin partner, som när någon dör; ett par som flyttar tillsammans är kvar som par
 export function leave(s: State, ...med: Person[]) {
-  for (const p of med) { avbryt(s, p); p.left = s.now; packUp(s, p); releaseOwner(s, p.id); }
+  for (const p of med) { avbryt(s, p); p.left = s.now; delete p.skatteskuld; packUp(s, p); releaseOwner(s, p.id); } // skulden stryks när hen flyttar (steg 10.5.5)
   for (const q of living(s)) {
     const p = med.find(x => x.id === q.partner);
     if (p) { q.partner = undefined; think(q, `Saknar ${p.name}`, LIV.saknarFlytt, s.now, LIV.saknarFlyttDygn * DAY); }

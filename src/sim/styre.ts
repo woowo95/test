@@ -244,7 +244,7 @@ export const styreAv = styreOf;
 export const ledareOf = (s: State) => { const id = s.styre?.ledare; const p = id === undefined ? undefined : byId(s, id); return p && alive(p) ? p : undefined; };
 // makt-sederna (Skalor som låses upp) syns i Styre och är låsta tills det de styr finns i byn
 export const MAKT_SEDER: readonly Sed[] = ['rang', 'fortjanst', 'fejd', 'andlig'];
-const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'delning', 'natur'];
+const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'natur'];
 export const sedOppen = (s: State, k: Sed) => !LASTA_SEDER.includes(k) || !!s.styre?.oppna.includes(k);
 
 // ---------- legitimiteten ----------
@@ -601,7 +601,6 @@ export function stepStyre(s: State) {
   // de andra skalorna låses upp när det de styr finns i byn (steg 8.4.11–8.4.13)
   if (!s.styre!.oppna.includes('andlig') && living(s).filter(p => p.tro !== undefined).length >= 3) oppnaSed(s, 'andlig'); // steg 8.6.1
   if (!s.styre!.oppna.includes('krig') && (s.stat?.rovarstrid ?? 0) + (s.stat?.vargstrid ?? 0) > 0) oppnaSed(s, 'krig');
-  if (!s.styre!.oppna.includes('delning') && (s.delning?.andel ?? 1) < 0.5) oppnaSed(s, 'delning');
   if (!s.styre!.oppna.includes('natur') && (s.fallda ?? 0) > 0) oppnaSed(s, 'natur');
   missnojeTimme(s);
   if (!ledareOf(s)) return;

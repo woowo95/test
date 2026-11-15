@@ -1379,6 +1379,119 @@ SCENARIER.husmarknad = {
   },
 };
 
+SCENARIER.skatteskuld = {
+  text: 'Steg 10.5.5: det som fattas när skatten betalats står kvar som skuld till byn och läggs på nästa års skatt, utan ränta och utan tak. Skulden gör silvret mer värt för den som har den och sänker priset hen begär för sitt hus. Den stryks när skattelagen avskaffas, och den dödas skuld betalas före arvingarna',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s); byggare(s);
+    planBuild(s); byggKlart(s); // en sovsal åt alla
+    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+    const b = ppl.find(q => q.id === a.partner)!;
+    nyInvanare(s, 'm', 30); const d = living(s)[living(s).length - 1]; // en ensam husägare utan lösa saker
+    const h = housesOf(s)[0];
+    h.ag = d.id; h.fn = 'familjehus'; touch(s);
+    for (const t of tingOf(s)) if (t.agare === d.id) t.agare = BYN;
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: a.id, om: '' }] } as unknown as State['styre'];
+    const silverVarde0 = SIM.behovAv(s, d, 'silver'), pris0 = SIM.saljPris(s, h);
+    SIM.skattDygn(s, DAY); const skuld1 = d.skatteskuld ?? 0;
+    SIM.skattDygn(s, DAY); const skuld2 = d.skatteskuld ?? 0;
+    const silverVarde = SIM.behovAv(s, d, 'silver'), pris = SIM.saljPris(s, h);
+    // en familj utan hus köper, med silver nog för det lägre priset men inte för det förra
+    put(s, 'silver', Math.ceil(pris) + 10, { [b.id]: Math.ceil(pris) + 10 });
+    planBuild(s);
+    for (let i = 0; i < 48 && h.ag !== a.id; i++) kor(s, 1);
+    const kopt = h.ag === a.id, salde = (s.hist?.kronika ?? []).some(k => k[1] === `${d.name} sålde sitt hus för att betala skatten.`);
+    const skuldKopt = d.skatteskuld ?? 0, silverD = ownsAmount(s, d, 'silver');
+    SIM.skattDygn(s, DAY);
+    const betald = (d.skatteskuld ?? 0) < Math.max(skuldKopt, 1e-9) && ownsAmount(s, d, 'silver') < silverD;
+    // skulden stryks när lagen tas bort
+    d.skatteskuld = 50;
+    SIM.FRAGOR.bortlag.gor(s, { id: 'skatt' }, undefined);
+    const struken = d.skatteskuld === undefined;
+    // den dödas skuld betalas före arvingarna: a äger silver och har barnet c
+    s.styre!.lagar = [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: a.id, om: '' }];
+    a.partner = undefined; b.partner = undefined;
+    const aSilver = ownsAmount(s, a, 'silver'), c0 = ownsAmount(s, c, 'silver');
+    put(s, 'silver', 200, { [a.id]: 200 }); // (gravgåvan tar sin del först)
+    a.skatteskuld = 12;
+    die(s, a, 'drap');
+    const arv = ownsAmount(s, c, 'silver') - c0;
+    return [
+      [`en husägare utan lösa saker får en skuld som växer (${skuld1.toFixed(1)} → ${skuld2.toFixed(1)} på två år)`, skuld1 > 0 && skuld2 > skuld1 * 1.5],
+      [`hen värderar silver högre (${silverVarde0.toFixed(2)} → ${silverVarde.toFixed(2)})`, silverVarde > silverVarde0],
+      [`husets lägsta pris sjunker (${Math.round(pris0)} → ${Math.round(pris)})`, pris < pris0],
+      ['och en familj utan hus köper det', kopt],
+      ['krönikan skriver att hen sålde sitt hus för att betala skatten', salde],
+      [`efter köpet betalas skulden (${skuldKopt.toFixed(1)} → ${(d.skatteskuld ?? 0).toFixed(1)})`, betald],
+      ['skulden stryks när lagen tas bort', struken],
+      [`den dödas skuld betalas före arvingarna (byn fick ${Math.round(s.stat?.skuldDod ?? 0)}, barnet ärvde ${arv} silver av ${aSilver + 200})`, Math.abs((s.stat?.skuldDod ?? 0) - 12) <= 0.5 && arv > 0 && a.skatteskuld === undefined && s.log.findIndex(e => e.text.includes('skatteskuld')) < s.log.findIndex(e => e.text.includes(`ärvde`) && e.text.includes(a.name))],
+    ];
+  },
+};
+
+SCENARIER.arvsskatt = {
+  text: 'Steg 10.5.6: arvsskatten är en egen lag som kan gälla utan skattelagen. När någon med arvingar dör går arvsdelen av det hen ägde till byns förråd före arvingarna, i hela saker och silver som kommer närmast; hus och djur tas aldrig. Utan lagen eller utan arvingar tas ingenting, och delen är lagens tal',
+  kor: () => {
+    const s = createState(6, START); utanStartKlader(s);
+    klockan(s);
+    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+    const b = ppl.find(q => q.id === a.partner)!;
+    a.partner = undefined; b.partner = undefined;
+    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [] } as unknown as State['styre'];
+    // en ojämn by väcker frågan, och de andra (som lutar mot Sammanhållning) röstar in lagen utan skattelagen
+    put(s, 'silver', 300, { [a.id]: 300 });
+    s.seder.v.gemenskap = 1;
+    for (const p of ppl) if (p !== a) { p.pot.empati = 18; (p.tek ??= {}).lag = 1; }
+    const prio = SIM.LAGAR.arvsskatt.prio(s), emot = SIM.LAGAR.arvsskatt.rost(s, a).v;
+    const in1 = SIM.rostaOm(s, { f: 'nylag', d: { id: 'arvsskatt' }, fram: b.id });
+    const galler = SIM.lagGaller(s, 'arvsskatt') && !SIM.lagGaller(s, 'skatt');
+    // med 20 %: byn får de hela saker som kommer närmast en femtedel, och barnet resten
+    const lag = s.styre!.lagar!.find(l => l.id === 'arvsskatt');
+    if (lag) lag.tal = { andel: 0.2 };
+    for (const t of tingOf(s)) if (t.agare === a.id) t.agare = BYN;
+    const c0 = ownsAmount(s, c, 'silver');
+    die(s, a, 'drap');
+    const tog = s.stat?.arvsskattVarde ?? 0, arv = ownsAmount(s, c, 'silver') - c0, femtedel = (tog + arv) / 5;
+    const iTax = s.log.findIndex(e => e.text.startsWith('Byn tog saker värda') && e.text.includes(a.name)), iArv = s.log.findIndex(e => e.text.includes('ärvde') && e.text.includes(a.name));
+    const kron = (s.hist?.kronika ?? []).some(k => k[1] === `Byn tog saker värda ${Math.round(tog)} i arvsskatt efter ${a.name}.` && k[2] === 'arv');
+    // ett dödsbo som bara är ett hus ger inget
+    byggare(s); planBuild(s); byggKlart(s);
+    const h = housesOf(s)[0]; h.ag = b.id; touch(s);
+    for (const t of tingOf(s)) if (t.agare === b.id) t.agare = BYN;
+    const bS = ownsAmount(s, b, 'silver'); if (bS > 0) SIM.ownMove(s, 'silver', bS, b.id, BYN);
+    for (const k of Object.keys(SIM.ownedAll(s, b.id))) SIM.ownMove(s, k, SIM.ownedAll(s, b.id)[k], b.id, BYN);
+    const fore = s.stat?.arvsskattVarde ?? 0;
+    die(s, b, 'drap');
+    const husInget = (s.stat?.arvsskattVarde ?? 0) === fore && h.ag === c.id;
+    // utan lagen tas inget
+    const [d, e] = living(s).filter(q => q !== c).slice(0, 2);
+    d.partner = e.id; e.partner = d.id;
+    put(s, 'silver', 100, { [d.id]: 100 });
+    const utanLag = s.styre!.lagar!; s.styre!.lagar = [];
+    const f1 = s.stat?.arvsskattVarde ?? 0; die(s, d, 'drap');
+    const ingetUtan = (s.stat?.arvsskattVarde ?? 0) === f1;
+    s.styre!.lagar = utanLag;
+    // utan arvingar tas inget (allt blir ändå byns)
+    nyInvanare(s, 'm', 30); const g = living(s)[living(s).length - 1];
+    put(s, 'silver', 100, { [g.id]: 100 });
+    const f2 = s.stat?.arvsskattVarde ?? 0; die(s, g, 'drap');
+    const ingetEnsam = (s.stat?.arvsskattVarde ?? 0) === f2;
+    // delen är lagens tal och kan ändras
+    SIM.FRAGOR.lagtal.gor(s, { id: 'arvsskatt', k: 'andel', v: 0.4 }, undefined);
+    const andel = SIM.lagTal(s, 'arvsskatt', 'andel');
+    return [
+      [`en ojämn by väcker frågan (${prio.toFixed(2)}), och den rika med barn röstar emot (${emot.toFixed(2)})`, prio > 0 && emot < 0],
+      ['lagen röstas in utan skattelagen', in1 && galler],
+      [`med 20 % får byn det som kommer närmast en femtedel (${Math.round(tog)} av ${Math.round(tog + arv)}) och barnet resten (${arv})`, tog > 0 && Math.abs(tog - femtedel) <= 1 && arv > 0],
+      ['loggen skriver arvsskatten före arvet, och krönikan under arv', iTax >= 0 && iArv >= 0 && iTax < iArv && kron],
+      ['ett dödsbo som bara är ett hus ger inget, och huset ärvs', husInget],
+      ['utan lagen tas inget', ingetUtan],
+      ['utan arvingar tas inget', ingetEnsam],
+      [`delen kan ändras (${Math.round(andel * 100)} %)`, Math.abs(andel - 0.4) < 1e-9],
+    ];
+  },
+};
+
 SCENARIER.husbyte = {
   text: 'Steg 7.2.12: ett hus säljs genom samma bytessystem som allt annat: när köparen och säljaren möts ligger huset som en symbol på filten, och det blir handslag och en rad i loggen. Går det inte att betala blir det inget. En handlare kan aldrig köpa ett hus',
   kor: () => {
