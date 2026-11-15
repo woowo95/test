@@ -1,5 +1,5 @@
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
-import { H, HOUR, Person, State, T, Task, W, inMap } from './typer';
+import { H, HOUR, MIN, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { byId, count, isParent, living, log, relKey, think } from './folk';
 import { rnd } from './slump';
@@ -34,6 +34,36 @@ export const GRAV = balans('grav', {
   vard: 0.4, vardAnnan: 0.5, // vikten för att göra vården på en grav när byn har det den behöver, och för den som minns hen utan att ha stått hen nära (steg 10.4.2)
 });
 export const gravarOf = (s: State): Grav[] => (s.gravar ??= []);
+// ---------- vad som görs med en död (steg 10.4.7) ----------
+// registret ODEN: en rad per sätt, med var kroppen läggs och vad som blir kvar. Utan tro får byns egna och gäster en grav, brottslingen
+// en ovärdig grav på en egen plats, och den fallne fienden bärs ut i skogen och läggs ner där (kroppen ligger kvar och ruttnar som förut)
+export type OdeId = 'grav' | 'ovardig' | 'skogen';
+export const ODEN: Record<OdeId, { namn: string; grav: boolean; avst?: number; min?: number }> = {
+  grav: { namn: 'Grav', grav: true },
+  ovardig: { namn: 'Ovärdig grav', grav: true, avst: 2 * GRAV.avst }, // rutor utanför byns område
+  skogen: { namn: 'Skogen', grav: false, avst: 8, min: 2 }, // närmaste skogsruta så här långt utanför byns område; minuter att lägga ner kroppen
+};
+// vad den som tar hand om kroppen gör med den: fienden begravs bara av den som följer budet (steg 10.3.23)
+export function odeFor(s: State, p: Person, q: Kvarleva): OdeId {
+  if (q.k === 'fiende') return harBud(s, p, 'begravFiende') ? 'grav' : 'skogen';
+  return byId(s, q.vem)?.brottsling ? 'ovardig' : 'grav';
+}
+// skogen: närmaste skogsruta minst ODEN.skogen.avst utanför byns område, räknat från kroppen; finns ingen räcker närmaste lediga ruta på det avståndet
+function skogsPlats(s: State, x0: number, y0: number) {
+  const ut = ODEN.skogen.avst!; let ledigt: { x: number; y: number } | undefined;
+  for (let r = 0; r < Math.max(W, H); r++) {
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+      const x = x0 + dx, y = y0 + dy;
+      if (!inMap(x, y) || !ledig(s, x, y) || utanforByn(s, x, y) < ut) continue;
+      if (isForest(s, y * W + x)) return { x, y };
+      ledigt ??= { x, y };
+    }
+    if (ledigt && r > 2 * ut) return ledigt;
+  }
+  return ledigt ?? { x: x0, y: y0 };
+}
+
 // ---------- gravplatsen (steg 10.4.6) ----------
 // var graven hamnar: en rad i GRAVPLATSER, ett bud i gruppen gravplats. Varje rad säger vad som drar, vad kartan måste ha och en kostnad
 // per ruta, och sökningen tar rutan med lägst kostnad. Utan tro (eller utan bud) byns egen gravplats nära byn. Avståndet märks bara som gångtid
@@ -60,7 +90,16 @@ export function gravPlats(s: State, tr: Tro | undefined, bud?: string[]): { x: n
     const hp = k === 'helig' ? heligFor(s, tr!) : undefined;
     const { x, y } = hp ? { x: hp.x + 1, y: hp.y + 1 } : sokPlats(s, GRAVPLATSER[k && k !== 'helig' ? k : 'nara']); pl[key] = { x, y };
   }
-  const c = pl[key];
+  return ledigGrav(s, pl[key]);
+}
+// den ovärdiga graven (steg 10.4.7): en egen plats dubbelt så långt ut som byns gravplats
+function ovardigPlats(s: State) {
+  const pl = (s.gravplatser ??= {});
+  if (!pl.ovardig) { const { x, y } = sokPlats(s, { ...GRAVPLATSER.nara, avst: ODEN.ovardig.avst! }); pl.ovardig = { x, y }; }
+  return ledigGrav(s, pl.ovardig);
+}
+// gravarna läggs intill varandra: den första lediga rutan i ringar runt platsens mitt
+function ledigGrav(s: State, c: { x: number; y: number }) {
   for (let r = 0; r < 8; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = c.x + dx, y = c.y + dy;
     if ((Math.abs(dx) === r || Math.abs(dy) === r) && (dx + dy) % 2 === 0 && inMap(x, y) && !gravAt(s, x, y) && ledig(s, x, y)) return { x, y };
@@ -91,8 +130,8 @@ function sokPlats(s: State, r: PlatsRad) {
 // en rad i arbetsordningen: någon bär en död till graven, helst någon nära (steg 8.5.1)
 export function begravaVal(s: State, p: Person) {
   const ledig = (k: Kvarleva) => k.bars === undefined && !living(s).some(o => o !== p && (o.task?.act === 'begrava' || o.task?.act === 'grava') && o.task.ref === k.id);
-  // den fallne fienden begravs (steg 10.3.23): av den som följer budet, när fienden är avrustad
-  const q = s.kvarlevor?.find(k => k.k === 'kropp' && ledig(k)) ?? (harBud(s, p, 'begravFiende') ? s.kvarlevor?.find(k => k.k === 'fiende' && ledig(k) && !avrustbart(s, p, k)) : undefined);
+  // den fallne fienden bärs ut i skogen när sakerna tagits om hand (steg 10.4.7); den som redan ligger där tas upp bara av den som vill ge hen en grav
+  const q = s.kvarlevor?.find(k => k.k === 'kropp' && ledig(k)) ?? s.kvarlevor?.find(k => k.k === 'fiende' && ledig(k) && !avrustbart(s, p, k) && (!k.utburen || odeFor(s, p, k) === 'grav'));
   // en kropp väntar en stund innan någon vill bära den, kortare för den som stod den döda nära (tider dragna när hen dog, steg 10.4.5)
   if (!q || s.now < ((nara(s, p, q.vem) ? q.naraT : q.annanT) ?? 0)) return undefined;
   return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, why: `Bär ${q.namn} till graven` };
@@ -102,6 +141,12 @@ export function kroppUpp(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);
   if (!q) return;
   q.bars = p.id;
+  const ode = q.ode = odeFor(s, p, q);
+  if (ode === 'skogen') { // ut i skogen (steg 10.4.7): kroppen läggs ner, inget grävs
+    const at = skogsPlats(s, q.x, q.y), tid = ODEN.skogen.min! * MIN;
+    t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Bär ${q.namn} ut i skogen`;
+    t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
+  }
   const d = q.k === 'fiende' ? undefined : byId(s, q.vem), tr = q.k === 'fiende' ? troOf(s, p.tro) : d?.brottsling ? undefined : troOf(s, d?.tro);
   // kroppens väg (steg 10.4.5): vattnet bärs till trons plats vid stranden och sänks på en halv timme; bålet tar en timme till när veden finns
   const bud = q.k === 'fiende' ? [] : kroppBud(s, q, tr), vag = q.vag = bud.includes('bal') ? 'bal' : bud.includes('vattenGrav') && tr && vattenNara(s) ? 'vatten' : 'jord';
@@ -110,7 +155,7 @@ export function kroppUpp(s: State, p: Person, t: Task) {
     t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Bär ${q.namn} till vattnet`;
     const tid = BEGRAVNINGAR.vatten.tim! * HOUR; t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
   }
-  const at = gravPlats(s, tr, q.k === 'fiende' ? undefined : kroppBud(s, q, tr)), spade = freeTools(s, p, 'benspade') > 0, bal = vag === 'bal' && amountOf(s, 'ved') >= BEGRAVNINGAR.bal.ved! ? BEGRAVNINGAR.bal.tim! : 0;
+  const at = ode === 'ovardig' ? ovardigPlats(s) : gravPlats(s, tr, q.k === 'fiende' ? undefined : kroppBud(s, q, tr)), spade = freeTools(s, p, 'benspade') > 0, bal = vag === 'bal' && amountOf(s, 'ved') >= BEGRAVNINGAR.bal.ved! ? BEGRAVNINGAR.bal.tim! : 0;
   t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Gräver en grav åt ${q.namn}`;
   const tid = ((spade ? GRAV.spadeTim : GRAV.handTim) + bal) * HOUR;
   t.until = s.now + tid + GA_TID; t.arbTid = tid;
@@ -120,6 +165,11 @@ export function kroppUpp(s: State, p: Person, t: Task) {
 export function gravKlar(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);
   if (!q) return;
+  if (q.ode === 'skogen') { // lagd i skogen (steg 10.4.7): kroppen ligger kvar och ruttnar vidare
+    q.x = Math.floor(p.x); q.y = Math.floor(p.y); q.bars = undefined; q.utburen = true; q.ode = undefined;
+    count(s, 'utburen'); think(p, `Bar ut ${q.namn} i skogen`, 0, s.now, 6 * HOUR);
+    return;
+  }
   s.kvarlevor = s.kvarlevor!.filter(k => k !== q);
   if (q.k === 'fiende') { // fienden får en grav på trons gravplats, utan samling (steg 10.3.23)
     const tr = troOf(s, p.tro), x = Math.floor(p.x), y = Math.floor(p.y);
