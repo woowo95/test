@@ -246,7 +246,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
   }],
   [24, 'v378: historikens kolumner (eld sedan v357) i registrets ordning redan när byn läses in (steg 5.5.7)', s => historikKolumner(s)],
-  [25, 'v510: de nya vågskålarna (steg 8.3.4 och 8.3.5) börjar på noll', s => { s.seder.v.fortjanst ??= 0; s.seder.v.fejd ??= 0; s.seder.v.krig ??= 0; s.seder.v.delning ??= 0; s.seder.v.natur ??= 0; s.seder.v.andlig ??= 0; }],
+  [25, 'v510: de nya vågskålarna (steg 8.3.4 och 8.3.5) börjar på noll', s => { s.seder.v.fortjanst ??= 0; s.seder.v.fejd ??= 0; s.seder.v.krig ??= 0; s.seder.v.natur ??= 0; s.seder.v.andlig ??= 0; }],
   [26, 'v513: färdigheten Läkekonst (steg 9.5.7) börjar på noll', s => { for (const p of s.people) p.skill.lakekonst ??= 0; }],
   [27, 'v518: handlaren är en person bland folket (steg 9.2.111, gast.ts): namnet, hemmet, klanen, platsen och färdigheten flyttar till personen', s => {
     const h = s.handlare as (import('./handel').Handlare & { namn?: string; hem?: string; klan?: number; sex?: 'm' | 'k'; x?: number; y?: number; handel?: number; fodd?: number; smitta?: import('./sjukdom').SjukId }) | undefined;
@@ -404,6 +404,10 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (pl && gl) { if (k !== 'nara') pl[`t${tr.id}${k}`] ??= gl; delete pl[`t${tr.id}`]; }
       delete tr.gravSlag;
     }
+  }],
+  [51, 'v530: seden Delning – Ägande tas bort; Sammanhållning flyttar delningen (steg 10.5.1)', s => {
+    delete (s.seder.v as Record<string, number>).delning;
+    if (s.styre) s.styre.oppna = s.styre.oppna.filter(k => (k as string) !== 'delning');
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

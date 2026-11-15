@@ -14,8 +14,8 @@ export interface Delning { andel: number; ledare?: { id: number; andel: number }
 
 // Balanstalet (regel 8)
 export const DELNING = balans('delning', {
-  sed: 0.3, // så mycket seden Ägande och delning flyttar andelen
-  rik: 250, // så rik är byn när ingen längre ger något av det de skaffar till byn (ungefär arbetstimmar, varde.ts)
+  sed: 0.3, // så mycket seden Sammanhållning – Självförsörjning flyttar andelen (steg 10.5.1)
+  rik: 600, // så rik är byn när ingen längre ger något av det de skaffar till byn (ungefär arbetstimmar, varde.ts)
 });
 
 // hur stor del av det nya som går till byn: allt i en by utan något, inget i en rik by, och jämnt mindre däremellan
@@ -24,7 +24,7 @@ const andelOf = (rik: number) => clamp(1 - rik / DELNING.rik, 0, 1);
 // varje timme (steg.ts) och när en by skapas
 export function stepDelning(s: State) {
   let a = andelOf(rikedom(s));
-  if (s.styre?.oppna?.includes('delning')) a += (s.seder.v.delning ?? 0) * DELNING.sed; // seden Ägande och delning (steg 8.4.12)
+  a += (s.seder.v.gemenskap ?? 0) * DELNING.sed; // Sammanhållning – Självförsörjning, från byns första dag (steg 10.5.1)
   if (lagGaller(s, 'matdelning')) a = Math.max(a, efterlevs(s)); // förrådet delas lika (steg 8.4.1)
   // skatten (steg 8.4.17): till byns förråd, eller till ledarens när seden står åt Envälde
   let led: Delning['ledare'];

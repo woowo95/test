@@ -793,7 +793,7 @@ SCENARIER.skatt = {
   },
 };
 SCENARIER.sederfas8 = {
-  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred, Ägande och delning och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
+  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
   kor: () => {
     const { s, v, l } = medLedare();
     const l0 = SIM.sedOppen(s, 'natur');
@@ -2122,23 +2122,23 @@ SCENARIER.gravbesok = {
 };
 
 SCENARIER.minnesed = {
-  text: 'Steg 10.4.9: legender drar sederna. Minnet av en död drar sederna hos den som minns hen, åt det håll INTRYCK:s sedkolumn pekar och starkare ju starkare minnet är (hjälpsam mot Delning och Sammanhållning, våldsam bort från Fejd), minnen av levande drar inte, alla minnen tillsammans drar högst 0,5 per sed, fliken Seder visar "Minnet av" den döda, och den som kommer på en teknik ses som påhittig',
+  text: 'Steg 10.4.9: legender drar sederna. Minnet av en död drar sederna hos den som minns hen, åt det håll INTRYCK:s sedkolumn pekar och starkare ju starkare minnet är (hjälpsam mot Sammanhållning, våldsam bort från Fejd), minnen av levande drar inte, alla minnen tillsammans drar högst 0,5 per sed, fliken Seder visar "Minnet av" den döda, och den som kommer på en teknik ses som påhittig',
   kor: () => {
     const a = medLedare(), s = a.s, alla = SIM.living(s), p = a.v[1], lev = a.v[2], [d, ond] = alla.filter(q => q !== p && q !== lev && q !== a.l);
-    s.styre!.oppna.push('delning', 'fejd', 'krig');
+    s.styre!.oppna.push('fejd', 'krig');
     const e = (om: Person, k: SIM.IntryckTyp, v = 1) => ({ om: om.id, namn: om.name, k, v, c: 1, t: s.now });
     p.intryck = [e(d, 'hjalpsam'), e(lev, 'hjalpsam'), e(ond, 'valdsam')];
     const fore = SIM.drar(s, p);
     d.died = s.now; ond.died = s.now;
     const efter = SIM.drar(s, p), steg = SIM.SED.minneSteg;
-    const delning = efter.delning - fore.delning, gem = efter.gemenskap - fore.gemenskap, fejd = efter.fejd - fore.fejd;
+    const gem = efter.gemenskap - fore.gemenskap, fejd = efter.fejd - fore.fejd;
     // ett svagare minne drar mindre
     p.intryck = [e(d, 'hjalpsam', 0.5), e(ond, 'valdsam')];
-    const svag = SIM.drar(s, p).delning - fore.delning;
+    const svag = SIM.drar(s, p).gemenskap - fore.gemenskap;
     // många minnen drar tillsammans högst minneMax
     const borta = [9001, 9002, 9003].map(id => ({ id, name: 'Borta' + id }) as Person); // de som inte finns kvar i byn räknas som döda
     p.intryck = [d, ond, ...borta].map(q => e(q, 'hjalpsam'));
-    const tak = SIM.drar(s, p).delning - fore.delning;
+    const tak = SIM.drar(s, p).gemenskap - fore.gemenskap;
     // fliken Seder: raden Minnet av …
     p.intryck = [e(d, 'hjalpsam')];
     const rad = SIM.sedDrag(s).find(r => r.om?.id === d.id);
@@ -2149,11 +2149,11 @@ SCENARIER.minnesed = {
     SIM.learn(s, lev, tek);
     const pah = SIM.intryckOm(vittne, lev.id, 'pahittig');
     return [
-      [`minnet av den hjälpsamma döda drar mot Delning 2 och Sammanhållning 1 (${delning.toFixed(3)}, ${gem.toFixed(3)} mot ${2 * steg} och ${steg})`, Math.abs(delning - 2 * steg) < 1e-9 && Math.abs(gem - steg) < 1e-9],
+      [`minnet av den hjälpsamma döda drar mot Sammanhållning 2 (${gem.toFixed(3)} mot ${2 * steg})`, Math.abs(gem - 2 * steg) < 1e-9],
       [`minnet av den våldsamma drar bort från Fejd (${fejd.toFixed(3)})`, Math.abs(fejd + steg) < 1e-9],
-      [`ett svagare minne drar mindre (${svag.toFixed(3)} mot ${delning.toFixed(3)})`, svag > 0 && svag < delning],
+      [`ett svagare minne drar mindre (${svag.toFixed(3)} mot ${gem.toFixed(3)})`, svag > 0 && svag < gem],
       [`många minnen drar tillsammans högst ${SIM.SED.minneMax} (${tak.toFixed(3)} av ${10 * steg} med 5 döda)`, Math.abs(tak - SIM.SED.minneMax) < 1e-9],
-      [`fliken Seder visar minnet av ${d.name} (${rad ? 'en rad' : 'ingen rad'}, ${syns ? 'syns' : 'syns inte'})`, !!rad && rad.d.delning > 0 && syns],
+      [`fliken Seder visar minnet av ${d.name} (${rad ? 'en rad' : 'ingen rad'}, ${syns ? 'syns' : 'syns inte'})`, !!rad && rad.d.gemenskap > 0 && syns],
       [`den som kommer på ${tek?.namn.toLowerCase()} ses som påhittig (${pah ? pah.v.toFixed(2) : 'nej'})`, !!pah && pah.v > 0],
     ];
   },

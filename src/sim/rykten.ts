@@ -110,8 +110,8 @@ const IDEF = {
   klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
   lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
   fattig: { namn: 'fattig', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
-  generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', sed: { delning: 1 }, betyder: 'Ger bort saker till andra.' },
-  hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', sed: { delning: 2, gemenskap: 1 }, betyder: 'Har gett något till någon som höll på att dö.' },
+  generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', sed: { gemenskap: 1 }, betyder: 'Ger bort saker till andra.' },
+  hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', sed: { gemenskap: 2 }, betyder: 'Har gett något till någon som höll på att dö.' },
   skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', sed: { arbete: 1 }, betyder: 'Har gjort ett mästerverk.' },
   flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '{sym_flitig}', betyder: 'Arbetar mycket mer än de andra i byn.' },
   valbargad: { namn: 'välbärgad', tecken: 1, op: 0, sym: '👛', betyder: 'Äger mer än de flesta i byn.' }, // steg 4.5.4.7

@@ -121,7 +121,7 @@ SCENARIER.seder = {
     const ingaKvar = !SIM.sedDrag(svalt).some(r => r.k === 'svalt');
     const okanda = [...SIM.TAGS.flatMap(g => g.acts).filter(a => !(a in ACTS)), ...SIM.TAGS.filter(g => !g.acts.length).map(g => g.tag)];
     return [
-      [`de som var nära att svälta drar Förutseende från ${svaltFore.toFixed(2)} till ${svaltEfter.forsiktighet.toFixed(2)} (och Plikt), det som format sederna visar det först (${drag?.k}), och när de dött är det borta`, svaltEfter.forsiktighet > svaltFore + 0.2 && drag?.k === 'svalt' && drag.n === vuxna(s).length && ingaKvar],
+      [`de som var nära att svälta drar Förutseende från ${svaltFore.toFixed(2)} till ${svaltEfter.forsiktighet.toFixed(2)} (och Plikt), det som format sederna visar det först (${drag?.k}), och när de dött är det borta`, svaltEfter.forsiktighet > Math.min(svaltFore + 0.2, 0.99) && drag?.k === 'svalt' && drag.n === vuxna(s).length && ingaKvar],
       [`sederna ligger mellan -1 och 1 efter tre dygn (tre år i spelet) och efter 40 dygn i ett svep`, inom(s) && inom(fl) && inom(la) && inom(lang)],
       [`en flitig by drar Plikt mot ${fore[0].mal.toFixed(2)} och en lat mot ${fore[1].mal.toFixed(2)}`, fore[0].mal > 0.5 && fore[1].mal < -0.5],
       [`efter två dygn har Plikt rört sig mot målet: flitig ${fore[0].v.toFixed(2)} → ${fl.seder.v.arbete.toFixed(2)}, lat ${fore[1].v.toFixed(2)} → ${la.seder.v.arbete.toFixed(2)}`, narmare && fl.seder.v.arbete > la.seder.v.arbete + 0.5],
