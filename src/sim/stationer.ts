@@ -629,6 +629,12 @@ function sokUte(s: State, k: string) {
     if (v === undefined) ledigt.set(y * W + x, v = ledig(s, x, y, upp));
     return v;
   };
+  // rutorna med en hög utanför lagret, räknade en gång när de först frågas (förut gicks alla stackar igenom för varje ruta som prövades)
+  let hogar: Set<number> | undefined;
+  const hogUte = () => {
+    if (!hogar) { hogar = new Set(); for (const q of s.stackar ?? []) if (Number.isInteger(q.x) && Number.isInteger(q.y) && !iLagret(s, q.x, q.y)) hogar.add(q.y * W + q.x); }
+    return hogar;
+  };
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (const rot of [0, 1] as const) {
     const { w, h } = storlek(k, rot), R = Math.ceil(STATION.avstand) + 2 + Math.max(w, h);
@@ -636,9 +642,10 @@ function sokUte(s: State, k: string) {
       let fri = true;
       for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = lediga(x + i, y + j);
       if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => lediga(q.x, q.y)); // stubbarna runt bordet
-      if (fri) fri = friRunt(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])], true); // plats för en stig runt (steg 2.10.8)
-      for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h) && !(s.stackar ?? []).some(q => q.x === x + i && q.y === y + h && !iLagret(s, q.x, q.y)); // man står framför den, inte i en vägg, en annan station eller på en hög
-      if (fri) fri = gangFri(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])]);
+      const rutor = fri ? [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])] : []; // stationens rutor och bordets platser, en gång för båda frågorna
+      if (fri) fri = friRunt(s, rutor, true); // plats för en stig runt (steg 2.10.8)
+      for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h) && !hogUte().has((y + h) * W + x + i); // man står framför den, inte i en vägg, en annan station eller på en hög
+      if (fri) fri = gangFri(s, rutor);
       if (fri && arbetar(stationDef(k))) fri = framLand(s, x, y, w, h); // och inte i vattnet (steg 4.5.4.3)
       if (!fri) continue;
       // helst mot en vägg, men inte vid en öppning där man går in (Björn efter v101)
