@@ -637,7 +637,9 @@ export function vildFronPlats(s: State) {
 // (ODLING.vildMat per frö), och platsen töms lite. Den som plockar tänker på odling (steg 2.10.11). När byn har nog plockar man
 // och tänker ändå, men tar inte med sig fler och lämnar platsen. Svaret är det man tar med sig: frön och mat per sak
 export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
-  const ta = !fronNog(s, tk.items), matBrist = foodDays(s) < buffert(s, 'mat'); // nötterna tas med när maten i förrådet räcker kortare än bufferten (steg 10.2.43)
+  const ta = !fronNog(s, tk.items);
+  let brist: boolean | undefined; // nötterna tas med när maten i förrådet räcker kortare än bufferten (steg 10.2.43); räknas först när det frågas
+  const matBrist = () => brist ??= foodDays(s) < buffert(s, 'mat');
   const sk = kunnighet(p.skill.samla) * SNABBARE * dtSec / HOUR_S, ut: Record<string, number> = {};
   let n = 0;
   for (const k of VILDA_IDS) {
@@ -645,7 +647,7 @@ export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
     if (r <= 0) continue;
     const g = ODLING.froTakt * r / FYND[k].topp * sk;
     n += g;
-    if (!ta && !((VILDA[k] as { mat_?: true }).mat_ && matBrist)) continue; // nötterna är mat och plockas efter matbristen
+    if (!ta && !((VILDA[k] as { mat_?: true }).mat_ && matBrist())) continue; // nötterna är mat och plockas efter matbristen
     takeFrom(s, k, tk.tx, tk.ty, g * ODLING.froUttag);
     const v = VILDA[k], fro = GRODOR[v.groda].fro;
     ut[fro] = (ut[fro] ?? 0) + g; ut[v.mat] = (ut[v.mat] ?? 0) + g * ODLING.vildMat;
