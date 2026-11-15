@@ -557,7 +557,7 @@ SCENARIER.klader = {
     const s = createState(2, START); tandEld(s);
     const st = medBank(s, 'flatarbank');
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, bensyl: 1, skinnklader: 1 };
-    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'ben', 3); setAmount(s, 'sten', 6); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12);
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'ben', 3); setAmount(s, 'sten', 6); setAmount(s, 'skinn', 60); setAmount(s, 'rep', 12);
     // utan bensylen vid bänken sys inga kläder
     const utan = !SIM.kanGoras(s, 'rock') && !SIM.kanGoras(s, 'skor');
     let h = 0;
@@ -685,7 +685,7 @@ SCENARIER.ryggsack = {
     const st = medBank(s, 'flatarbank');
     SIM.newTing(s, 'bensyl', 1, BYN).vid = st.id; // bensylen ligger vid bänken
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, rep: 1, bensyl: 1, korg: 1, skinnklader: 1, ryggsack: 1 };
-    for (const r of s.people) for (const k of ['rock_kaninskinn', 'skor_kaninskinn']) addTool(s, k, r).bar = r.id; // de andra plaggen har alla redan
+    for (const r of s.people) for (const k of ['rock_kaninskinn', 'skor_kaninskinn', 'byxor_kaninskinn', 'mossa_kaninskinn', 'snoskor_kaninskinn']) if (SAKER[k]) addTool(s, k, r).bar = r.id; // plaggen har alla redan, så att skinnen inte går till dem först
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12); setAmount(s, 'ben', 3); setAmount(s, 'sten', 6);
     const tek = SIM.TEKNIK.find(t => t.id === 'ryggsack');
     const regTek = !!tek && tek.krav.includes('korg') && tek.krav.includes('skinnklader') && !!tek.forsok;

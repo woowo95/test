@@ -467,6 +467,8 @@ SCENARIER.pynt = {
     const prova = (q: number) => {
       const k2 = SIM.cloneState(s), p2 = k2.people.find(r => r.id === p.id)!, v2 = k2.people.find(r => r.id === v.id)!, t2 = pyntSt(k2)!;
       t2.q = q; p2.thoughts = []; v2.intryck = [];
+      for (const x of SIM.stationerOf(k2)) if (x.ag === p2.id && SIM.stationDef(x.k)?.pynt) x.q = q; // lusten efter ett till kan ha gett ett pynt till (steg 10.2.43)
+      k2.ting = (k2.ting ?? []).filter(x => !(x.k.startsWith('lerkruka_') && x.agare === p2.id)); // bara pyntet som prövas (en kruka hemma är också ett pynt)
       for (const r of [p2, v2]) { r.x = ruta % SIM.W + 0.5; r.y = Math.floor(ruta / SIM.W) + 0.5; r.task = undefined; } // SIM.W: W sätts när kartan skapas
       stepPynt(k2);
       const e = intryckOm(v2, p2.id, 'smakfull');

@@ -113,7 +113,7 @@ SCENARIER.abborre = {
         step(v, BEAT);
         abborreSedd = Math.max(abborreSedd, amountOf(v, 'abborre'));
       }
-      fangat = (v.stat?.fisk ?? 0) - (v.stat?.fisk_gadda ?? 0) - (v.stat?.fisk_mort ?? 0); rensat = v.stat?.rensat ?? 0;
+      fangat = (v.stat?.fisk ?? 0) - ['gadda', 'mort', 'braxen', 'sik'].reduce((a, k) => a + (v.stat?.['fisk_' + k] ?? 0), 0); rensat = v.stat?.rensat ?? 0; // bara abborrarna
       if (!SIM.stationerOf(v).some(t => t.k === 'slaktbank')) continue; // bänken kan brinna upp
       if (fangat >= 3) break; // en enstaka fisk säger inget om rensningen
     }
@@ -121,7 +121,7 @@ SCENARIER.abborre = {
       ['abborren rensas med händerna, utan kniv', kan],
       ['en abborre blir lika mycket fiskkött, några på en kvart', halv && klar],
       ['fiskköttet är dens som ägde abborren, inte dens som rensade', agare],
-      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas (${rensat.toFixed(0)} av ${fangat} fångade på tolv dygn, tolv år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat > 0 && rensat >= fangat * 0.4],
+      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång i förrådet) och några rensas (${rensat.toFixed(0)} av ${fangat} fångade på tolv dygn, tolv år i spelet)`, fangat > 0 && rensat >= 1], // (en hel abborre kan också grillas, torkas eller rökas, steg 9.6)
     ];
   },
 };
@@ -2132,7 +2132,7 @@ SCENARIER.tradorr = {
       p.task = { act: 'gomma', phase: 'do', tx: inneX, ty: inneY, until: q.now + 20 * HOUR, carry: 0, why: 'Vargar är nära, gömmer sig i huset', dark: !isLight(q.now) };
       const id = q.vargNr = (q.vargNr ?? 0) + 1;
       (q.vargar ??= []).push({ id, vargar: [0, 1, 2].map(j => 10_000_000 + id * 8 + j), x: inneX + 8, y: inneY, mx: inneX + 8, my: inneY, gar: q.now + 48 * HOUR, hunger: 1, gor: 'stryker' });
-      let inne = 0, vantade = 0, gomde = 0, stangd = false;
+      let inne = 0, vantade = 0, gomde = 0, stangd = false; const t0 = q.now, dorr0 = q.stat?.vargDorrStrid ?? 0;
       const seen = new Set<string>();
       kor(q, 4, q => {
         const f = q.vargar?.[0]; if (!f) return;
@@ -2142,8 +2142,8 @@ SCENARIER.tradorr = {
         if (nu && roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY)) inne++; // (i dörröppningen, när den modiga går ut, är vargen inte inne)
         if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (står kvar ensam ute tills flocken anfaller) */ const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
       });
-      slutStrider(q); const strider = (q.stridRapporter ?? []).map(x => x.orsak); // striderna på kartan (steg 10.1.17) står i rapporterna
-      return { inne, vantade, gomde, seen, strider, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
+      slutStrider(q); const strider = (q.stridRapporter ?? []).filter(x => x.t >= t0).map(x => x.orsak); // (bara provets strider, inte byns förra) // striderna på kartan (steg 10.1.17) står i rapporterna
+      return { inne, vantade, gomde, seen, strider, dorrStrid: (q.stat?.vargDorrStrid ?? 0) - dorr0, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
     };
     const tra = prov('tradorr', 0), modig = prov('tradorr', 20), annan = prov('tradorr', 0, true), skinn = prov('skinndorr', 0);
     const ordn = cloneState(s); for (const b of bitsOf(ordn)) if (b.k === 'oppning') b.dorr = 'tradorr';
@@ -2154,7 +2154,7 @@ SCENARIER.tradorr = {
       [`flocken väntar utanför den stängda dörren (${tra.vantade} slag) och den som gömmer sig stannar inne (${tra.gomde} slag)`, tra.vantade > 0 && tra.gomde === tra.vantade],
       [`vargarna kommer aldrig in i det stängda huset (${tra.inne + modig.inne + annan.inne} slag)`, tra.inne + modig.inne + annan.inne === 0],
       [`efter ett tag tröttnar flocken (${tra.st.vargTrottnade ?? 0}) och ingen strid blir av (${tra.strider.length})`, (tra.st.vargTrottnade ?? 0) > 0 && tra.strider.length === 0],
-      [`den som vågar går ut och slåss (${modig.strider.join(', ') || 'ingen strid'})`, modig.strider.includes('vargar utanför dörren')],
+      [`den som vågar går ut och slåss (${modig.strider.join(', ') || 'ingen strid'})`, modig.dorrStrid > 0], // (räknas i statistiken: rapporterna har ett tak, och den som förlorat anfalls igen)
       [`ser flocken någon ensam ute jagar den hellre den (${[...annan.seen].join(', ')}; ${annan.strider.join(', ') || 'ingen strid'})`, annan.strider.includes('vargar när vargarna anföll')], // (anfallet går fort: striden visar att det hände, också när stickproven var femte minut inte ser det)
       [`en skinndörr stoppar ingen: dörren stängs inte (${skinn.stangd ? 'stängd' : 'öppen'}), och vargarna går in och anfaller den som är ensam där (${skinn.strider.join(', ') || 'ingen strid'})`, !skinn.stangd && skinn.vantade === 0 && skinn.strider.includes('vargar när vargarna anföll')],
       [`varje rum har en dörr eller öppning (${gridOf(s).rooms.filter(r => r.tiles.length).length} rum; vakten i testerna larmar annars)`, gridOf(s).rooms.every(r => !r.tiles.length || r.open > 0)],
