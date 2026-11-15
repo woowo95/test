@@ -925,6 +925,34 @@ SCENARIER.stengrav = {
     ];
   },
 };
+SCENARIER.gravtext = {
+  text: 'Steg 10.4.4: när vården är klar ristar den som gjorde den en text ur sitt minne: namnet, relationen och de två händelser som väger tyngst, eller bara namnet från den som inte kände hen. En jordhög har ingen text',
+  kor: () => {
+    const a = medLedare(), s = a.s, d = a.v[1], w = a.v[2], fram = a.v[3];
+    klockan(s, 9); SIM.setAmount(s, 'virke', 6);
+    if (w.partner !== undefined) { const o = SIM.byId(s, w.partner); if (o) o.partner = undefined; w.partner = undefined; }
+    if (d.partner !== undefined) { const o = SIM.byId(s, d.partner); if (o) o.partner = undefined; d.partner = undefined; }
+    SIM.pair(s, w, d, true);
+    SIM.handelse(s, d, 'bjorndodare', undefined, undefined, w, 2); SIM.handelse(s, d, 'vargdodare', undefined, undefined, w, 2); SIM.handelse(s, d, 'gava', w, 'en fisk', w, 2);
+    const g = begrav(s, a.v[0], d), jord = g.text;
+    const tk = { act: 'gravvard', phase: 'do', tx: g.x, ty: g.y, until: s.now, carry: 0, tool: 'gravstolpe', ref: g.vem, why: '' } as SIM.Task;
+    w.task = tk; SIM.gravvardBorja(s, w, tk); SIM.gravvardKlar(s, w, tk);
+    const forst = g.text;
+    // den som inte kände hen ristar bara namnet
+    const e = a.v[4] ?? nyInvanare(s, 'm', 30), g2 = begrav(s, a.v[0], e);
+    fram.intryck = (fram.intryck ?? []).filter(x => x.om !== e.id);
+    const tk2 = { ...tk, ref: g2.vem } as SIM.Task; fram.task = tk2; SIM.gravvardBorja(s, fram, tk2); SIM.gravvardKlar(s, fram, tk2);
+    // texten ändras inte när minnet bleknar
+    w.intryck = []; const sen = g.text;
+    return [
+      ['en jordhög har ingen text', jord === undefined],
+      [`texten har namnet, relationen och två händelser ("${forst}")`, !!forst && forst.startsWith(d.name + ', ' + O.gen(w.name) + ' ' + (d.sex === 'k' ? 'hustru' : 'man')) && forst.includes('dödade en björn') && forst.includes(' och ') && (g.textBev?.length ?? 0) === 2],
+      [`skribenten sparas (${g.textAv?.namn})`, g.textAv?.id === w.id],
+      [`den som inte kände hen ristar bara namnet ("${g2.text}")`, g2.text === e.name],
+      ['texten ändras inte när minnet bleknar', sen === forst],
+    ];
+  },
+};
 SCENARIER.bonen = {
   text: 'Steg 8.5.2–8.5.4: bönen är fritid för den troende och ger humör och tro, bönen i nöd låses upp av andligheten och tron, och en bön som hjälpte eller inte hjälpte blir en upplevelse',
   kor: () => {

@@ -1,7 +1,7 @@
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
 import { GRANNAR4, H, HOUR, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { byId, count, living, log, think } from './folk';
+import { byId, count, living, log, relKey, think } from './folk';
 import { rnd } from './slump';
 import { getMap } from './karta';
 import { groundOf } from './mark';
@@ -20,7 +20,8 @@ import { kladAv } from './klader';
 import { getable, takeMaterial } from './behov';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
-import { RYKTE, ryktbarhet } from './rykten';
+import { Bevis, HANDELSER, RYKTE, bevisText, ryktbarhet } from './rykten';
+import { gen, slaktOrd } from './ord';
 import { ALDER, ageOf } from './folk';
 
 // ---------- kroppen och graven (steg 8.5.1) ----------
@@ -218,6 +219,25 @@ export function gravvardKlar(s: State, p: Person, t: Task) {
   const k = t.tool as GravVard, g = s.gravar?.find(q => q.vem === t.ref && !q.vard);
   if (!g || !GRAVAR[k]) return;
   g.vard = k; count(s, 'gravvard'); count(s, 'gravvard_' + k);
+  gravText(s, p, g);
   think(p, `Gjorde en ${GRAVAR[k].namn.toLowerCase()} åt ${g.namn}`, 0.02, s.now, 6 * HOUR);
   log(s, `${p.name} gjorde en ${GRAVAR[k].namn.toLowerCase()} på ${g.namn}s grav.`, 'rel', [p.id]);
+}
+
+// ---------- gravtexten (steg 10.4.4) ----------
+// när vården är klar ristar den som gjorde den en kort text ur sitt eget minne: den dödas namn, relationen och de två händelser som väger tyngst
+// ("Ask, Ingas man, som dödade en björn och delade sin mat"), eller bara namnet från den som inte kände hen. Texten ändras aldrig
+export function gravText(s: State, w: Person, g: Grav) {
+  const d = byId(s, g.vem), kande = !!d && (nara(s, w, g.vem) || !!w.intryck?.some(e => e.om === g.vem));
+  let text = g.namn, bev: Bevis[] = [];
+  if (d && kande) {
+    const r = s.rels[relKey(w.id, d.id)], par = w.partner === d.id || (d.partner === w.id && r?.par !== undefined); // den levande släpper partnern när hen dör; den döda har kvar sin
+    const rel = par ? (d.sex === 'k' ? 'hustru' : 'man') : slaktOrd(w, d) ?? ((r?.op ?? 0) > 40 ? 'vän' : undefined);
+    const alla = (w.intryck ?? []).filter(e => e.om === g.vem).flatMap(e => e.bev ?? []).sort((a, b) => HANDELSER[b.h].vikt - HANDELSER[a.h].vikt);
+    const sett = new Set<string>(); for (const b of alla) { const t = bevisText(b, '').trim(); if (sett.has(t)) continue; sett.add(t); bev.push(b); if (bev.length >= 2) break; }
+    const vad = bev.map(b => bevisText(b, '').trim());
+    text = `${g.namn}${rel ? `, ${gen(w.name)} ${rel}` : ''}${vad.length ? `, som ${vad.join(' och ')}` : ''}`;
+  }
+  g.text = text; g.textAv = { id: w.id, namn: w.name }; if (bev.length) g.textBev = bev.map(b => ({ ...b }));
+  count(s, 'gravtext');
 }
