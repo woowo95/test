@@ -12,7 +12,8 @@ import { ALDER, KROPP, ageOf, alive, byId, count, getRel, gjort, isSick, living,
 import { budHindrar, kyrkFram } from './kyrka';
 import { FEST, festFram, festNu } from './kultlatt';
 import { avbryt } from './lager';
-import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm, kandVikt, paminn, scenVersion } from './rykten';
+import { INTRYCK, Intryck, IntryckTyp, asiktOm, beratta, intryckOm, kandVikt, paminn, scenVersion } from './rykten';
+import { prastOf } from './kult';
 import { ledareOf, legitimitet, pabud } from './styre';
 import { Ting, tingOf } from './agande';
 import { tingVarde } from './varde';
@@ -137,8 +138,8 @@ function forelasLar(s: State, p: Person, b: Person, x: FramLar, h: number, q: nu
 
 // framträdandet som pågår: formen, den som uppträder, när det kallades (task.ref), började (borjar, efter väntan) och slutar,
 // de som ville lyssna vid kallelsen (lista), publiken som varit där och texten
-export interface Fram { lar?: FramLar; k: string; p: number; start: number; borjar?: number; igang?: true; lista?: number[]; slut: number; publik: number[]; grupp?: FramMed[]; text: string; da?: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string; kyrka?: string; gud?: number; ver?: number } // ver = gärningens version i ett minne om en person, räknad en gång (steg 10.4.11) // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
-export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string; kyrka?: string; /* kyrkan som betalade (steg 10.7.18), och betalt är då vad den gav */ hanad?: string[]; scen?: number // scen = stationen (steg 9.2.67)
+export interface Fram { lar?: FramLar; k: string; p: number; start: number; borjar?: number; igang?: true; lista?: number[]; slut: number; publik: number[]; grupp?: FramMed[]; text: string; da?: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string; kyrka?: string; gud?: number; ver?: number; best?: number } // best = den som beställde ett minne om en annan person (steg 10.7.30) // ver = gärningens version i ett minne om en person, räknad en gång (steg 10.4.11) // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
+export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string; kyrka?: string; /* kyrkan som betalade (steg 10.7.18), och betalt är då vad den gav */ bestallt?: string; /* den som beställde minnet (steg 10.7.30) */ hanad?: string[]; scen?: number // scen = stationen (steg 9.2.67)
   // redogörelsen (steg 5.4.7.1), sparad när det händer: numret (raden i loggen och notisen pekar hit), publiken med vad var och
   // en tyckte om den som uppträdde före och efter (r0, r1) och om ledaren (l0, l1, efter en hyllning eller ett hån), glädjen
   // (tanken i humöret), de som fick höra ryktet, de som tron övertygade, ledaren (namnet när budskapet gällde ledaren) och
@@ -231,7 +232,23 @@ export function betalning(s: State, l: Person): Ting | undefined { // ledarens m
   }
   return best;
 }
-// ledaren beställer framträdandet av p (formen d bär ett budskap): ger saken och budskapet blir en hyllning
+// ---------- beställda minnen (steg 10.7.30) ----------
+// beställaren b väljer det minne hos p som b själv har starkast åsikt om (inte om p eller b), och väger det mot det andra
+// budskapet (alt) med budskapens vikter: minnet väger åsiktens styrka / 100 gånger hur säker p är, gånger budPerson
+function bestallMinne(s: State, p: Person, b: Person, alt: number): Intryck | undefined {
+  let bast: Intryck | undefined, bv = 0;
+  for (const e of p.intryck ?? []) {
+    if (e.om === p.id || e.om === b.id) continue;
+    const v = Math.abs(asiktOm(s, b, e.om)) / 100 * e.c;
+    if (v > bv) { bv = v; bast = e; }
+  }
+  if (!bast) return undefined;
+  const w = bv * FRAM.budPerson;
+  return rnd(s, 'fram', b) * (w + alt) < w ? bast : undefined;
+}
+const personBud = (s: State, p: Person, e: Intryck) => ({ k: 'person' as Bud, amne: intryckAmne(s, p, e), om: e.om, ik: e.k as IntryckTyp | undefined });
+// ledaren beställer framträdandet av p (formen d bär ett budskap): ger saken, och budskapet blir en hyllning eller ett minne
+// om en annan person som ledaren har en stark åsikt om (steg 10.7.30)
 function bestall(s: State, p: Person, d: FramDef) {
   const l = ledareOf(s);
   if (!d.bud || !l || l === p || isSick(l, s.now) || getRel(s, p, l).op < FRAM.bestallOp) return undefined;
@@ -241,8 +258,15 @@ function bestall(s: State, p: Person, d: FramDef) {
   t.agare = p.id;
   const namn = (SAKER[t.k]?.namn ?? t.k).toLowerCase(), r = getRel(s, p, l);
   r.op = clamp(r.op + FRAM.bestallTack, -100, 100);
-  think(p, `Fick en ${namn} av ${l.name} för att hylla ${honom(l)}`, 0.05, s.now, 6 * HOUR);
   count(s, 'framBestalld');
+  const e = bestallMinne(s, p, l, FRAM.budStyre); // ledaren tycker fullt om sig själv: hyllningen väger budStyre
+  if (e) {
+    count(s, 'framBestalltMinne');
+    think(p, `Fick en ${namn} av ${l.name} för att berätta om ${e.namn}`, 0.05, s.now, 6 * HOUR);
+    log(s, `${l.name} gav ${p.name} en ${namn} för ett framträdande om ${e.namn}.`, 'rel', [l.id, p.id]);
+    return { ...personBud(s, p, e), gud: undefined, betalt: t.k, best: l.id };
+  }
+  think(p, `Fick en ${namn} av ${l.name} för att hylla ${honom(l)}`, 0.05, s.now, 6 * HOUR);
   log(s, `${l.name} gav ${p.name} en ${namn} för ett framträdande som hyllar ${l.name}.`, 'rel', [l.id, p.id]);
   const x: BudLage = { ev: 0, l, op: r.op };
   return { k: 'hylla' as Bud, amne: BUDSKAP.hylla.amne(s, p, x), om: l.id, ik: undefined, betalt: t.k };
@@ -256,7 +280,10 @@ function kyrkBud(s: State, p: Person, d: FramDef, b: BudVal | undefined) {
   const bet = kyrkFram(s, p);
   if (!bet) return b;
   const dodTroende = b?.k === 'person' && (() => { const q = s.people.find(x => x.id === b.om); return !!q && !alive(q) && q.tro === bet.tro.id; })();
-  const bud: BudVal = b && (b.k === 'tro' || dodTroende) ? b : { k: 'tro', amne: BUDSKAP.tro.amne(s, p, { ev: 0, op: 0 }), om: undefined, ik: undefined, gud: undefined };
+  // prästen talar för kyrkan och kan beställa minnet av någon hen har en stark åsikt om, vägt mot tron (steg 10.7.30)
+  const pr = dodTroende ? undefined : prastOf(s, bet.tro), e = pr && pr !== p ? bestallMinne(s, p, pr, (pr.troStyrka ?? 0) / 100 * FRAM.budTro) : undefined;
+  const bud: BudVal & { best?: number } = e ? { ...personBud(s, p, e), gud: undefined, best: pr!.id } : b && (b.k === 'tro' || dodTroende) ? b : { k: 'tro', amne: BUDSKAP.tro.amne(s, p, { ev: 0, op: 0 }), om: undefined, ik: undefined, gud: undefined };
+  if (e) count(s, 'framBestalltMinne');
   const vad = antal(bet.n, bet.k), namn = troNamn(bet.tro);
   think(p, `Fick ${vad} av ${namn} för att tala om tron`, 0.05, s.now, 6 * HOUR);
   log(s, `${namn} gav ${p.name} ${vad} för ett framträdande ${bud.k === 'tro' ? 'om tron' : `om ${bud.amne}`}.`, 'rel', [p.id]);
@@ -306,10 +333,10 @@ export function framVal(s: State, p: Person, plats?: (q: Person) => { x: number;
   let lista = living(s).filter(q => q !== p && !q.gast && ageOf(q, s.now) >= ALDER.hjalper && rnd(s, 'fram', q) < FRAM.med * (1 + FRAM.medTycke * getRel(s, q, p).op / 100)).map(q => q.id);
   const grupp = gruppVal(s, d, lista, sc, i);
   if (grupp.length) lista = lista.filter(id => !grupp.some(g => g.id === id));
-  s.fram = { ...(d.id === 'forelasning' && lar ? { lar } : {}), k: d.id, p: p.id, start, borjar, lista, slut, publik: [], ...(grupp.length ? { grupp } : {}), text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('gud' in bud && bud.gud !== undefined ? { gud: bud.gud } : {}), ...('betalt' in bud ? { betalt: bud.betalt as string } : {}), ...('kyrka' in bud ? { kyrka: bud.kyrka as string } : {}) } : {}) };
+  s.fram = { ...(d.id === 'forelasning' && lar ? { lar } : {}), k: d.id, p: p.id, start, borjar, lista, slut, publik: [], ...(grupp.length ? { grupp } : {}), text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('gud' in bud && bud.gud !== undefined ? { gud: bud.gud } : {}), ...('betalt' in bud ? { betalt: bud.betalt as string } : {}), ...('kyrka' in bud ? { kyrka: bud.kyrka as string } : {}), ...('best' in bud && bud.best !== undefined ? { best: bud.best as number } : {}) } : {}) };
   // ett minne om en person: versionen räknas en gång, så att alla som lyssnar får samma (steg 10.4.11)
   const e = bud?.k === 'person' ? intryckOm(p, bud.om!, bud.ik) : undefined;
-  if (e) s.fram.ver = scenVersion(s, p, e, d.vrid ?? 1);
+  if (e) s.fram.ver = scenVersion(s, p, e, d.vrid ?? 1, s.fram.best !== undefined ? byId(s, s.fram.best) : undefined); // beställarens åsikt läggs till (steg 10.7.30)
   s.framKvall = kvall(start);
   count(s, 'framtradanden');
   // de som vill och kan avbryter det de gör och väljer igen, där lyssna är ett Tillfälle (lyssnaVal); den som sover väcks inte
@@ -422,7 +449,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   const om = f.om !== undefined ? byId(s, f.om) : undefined, ledd = f.bud === 'hylla' || f.bud === 'hana' ? om : undefined;
   const m: FramMinne = { t: f.start, k: f.k, p: p.id, namn: p.name, text: med.length ? fyllDa(d, namn, p, f) : f.da ?? f.text, n: pub.length,
     ...(med.length ? { grupp: med.map(x => ({ id: x.id, namn: x.name, ...(f.grupp?.find(g => g.id === x.id)?.inst ? { inst: f.grupp.find(g => g.id === x.id)!.inst } : {}) })) } : {}), q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt, ...(f.kyrka ? { kyrka: f.kyrka } : {}), amne: f.amne, ...(f.scen !== undefined ? { scen: f.scen } : {}),
-    nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], ...(om ? { om: om.name } : {}), ...(ledd ? { ledare: ledd.name } : {}) };
+    nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], ...(om ? { om: om.name } : {}), ...(ledd ? { ledare: ledd.name } : {}), ...(f.best !== undefined ? { bestallt: byId(s, f.best)?.name ?? '' } : {}) };
   const e0 = f.ver !== undefined ? intryckOm(p, f.om!, f.ik) : undefined; // gjordes gärningen större eller tonades den ned (steg 10.4.11)
   if (e0 && Math.abs(f.ver! - e0.v) >= 0.01) m.vrid = f.ver! > e0.v ? 1 : -1;
   if (!pub.length) { // ingen kom (steg 5.4.7.1): redogörelsen säger det

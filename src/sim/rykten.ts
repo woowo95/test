@@ -297,8 +297,9 @@ export function skvaller(s: State, a: Person, b: Person, r: Rel, berattelse: boo
 // a berättar om intrycket e för b: b blir mindre säker, och a överdriver efter vad hen tycker om personen
 // gärningen som a berättar den: överdriften efter vad a tycker om personen, plus slumpen, båda gånger g (formens tal på en scen,
 // steg 10.4.11; 1 i ett samtal). Överdriften växer inte för varje led: högst så mycket över det bevisen väger
-export function scenVersion(s: State, a: Person, e: Intryck, g = 1) {
-  const over = 1 + (INTRYCK[e.k].tecken * asikt(s, a, e.om) / 100 * RYKTE.over + (rnd(s, 'rykte', a) - 0.5) * RYKTE.brus) * g;
+// b = den som beställde framträdandet (steg 10.7.30): hens åsikt läggs till den uppträdandes
+export function scenVersion(s: State, a: Person, e: Intryck, g = 1, b?: Person) {
+  const over = 1 + (INTRYCK[e.k].tecken * (asikt(s, a, e.om) + (b ? asikt(s, b, e.om) : 0)) / 100 * RYKTE.over + (rnd(s, 'rykte', a) - 0.5) * RYKTE.brus) * g;
   const tak = e.bev?.length ? e.bev.reduce((t, x) => t + bevVikt(x), 0) * (1 + RYKTE.over) : RYKTE.vMax;
   return clamp(Math.min(e.v * over, Math.max(e.v, tak)), 0, RYKTE.vMax);
 }

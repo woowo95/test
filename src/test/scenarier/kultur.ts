@@ -587,6 +587,58 @@ SCENARIER.bestalld = {
     ];
   },
 };
+SCENARIER.bestalltminne = {
+  text: 'Beställda minnen (steg 10.7.30): ledaren som betalar för ett framträdande kan beställa det om en annan person. Hen väljer det minne hos den som uppträder som hen själv har starkast åsikt om, vägt mot hyllningen, och hens åsikt läggs till den uppträdandes när versionen räknas. Kyrkans präst kan beställa på samma sätt. Redogörelsen säger vem som beställde',
+  kor: () => {
+    // u minns A och B som generösa (B starkare); ledaren l har åsikten opA om A och ingen om B
+    const lage = (seed: number, opA: number) => {
+      const k = kvall(seed), u = k.v[0]!, l = k.v[1]!, A = k.v[2]!, B = k.v[3]!;
+      k.s.styre = { ledare: l.id, historia: [], oppna: [] } as unknown as typeof k.s.styre;
+      for (const t of SIM.tingOf(k.s)) if (t.agare === l.id) t.agare = SIM.BYN;
+      SIM.newTing(k.s, 'kniv', 1, l.id);
+      SIM.getRel(k.s, u, l).op = 0; SIM.getRel(k.s, l, A).op = opA; SIM.getRel(k.s, l, B).op = 0; SIM.getRel(k.s, u, A).op = 0; SIM.getRel(k.s, u, B).op = 0;
+      u.intryck = [{ om: A.id, namn: A.name, k: 'generos', v: 1, c: 1, t: k.s.now }, { om: B.id, namn: B.name, k: 'generos', v: 1.2, c: 1, t: k.s.now }];
+      u.skill[SIM.FRAM_SKILL] = 6;
+      return { ...k, u, l, A, B };
+    };
+    let bestallda = 0, omA = 0, omB = 0, mindre = 0, jamfort = 0, hyll = 0, minne: SIM.FramMinne | undefined, ber = '', l0 = '';
+    for (let i = 0; i < 60; i++) {
+      const x = lage(3 + i, -90);
+      if (!upptrad(x.s, x.u) || x.s.fram!.betalt === undefined || x.s.fram!.kyrka) continue;
+      bestallda++;
+      const f = x.s.fram!;
+      if (f.bud === 'hylla') hyll++;
+      if (f.bud !== 'person') continue;
+      if (f.om === x.A.id && f.best === x.l.id) omA++;
+      if (f.om === x.B.id) omB++;
+      // samma kväll när ledaren i stället beundrar A: versionen blir större
+      const y = lage(3 + i, 90);
+      if (upptrad(y.s, y.u) && y.s.fram?.bud === 'person' && y.s.fram.ver !== undefined && f.ver !== undefined) { jamfort++; if (f.ver < y.s.fram.ver) mindre++; }
+      if (!minne) { kor(x.s, 1.5); minne = x.s.framtradanden?.at(-1); ber = minne ? SIM.framBerattelse(x.s, minne) : ''; l0 = x.l.name; }
+    }
+    // kyrkans präst P hatar A och kan beställa minnet av A
+    let kyrkOm = 0, kyrkForsok = 0;
+    for (let i = 0; i < 40; i++) {
+      const x = lage(3 + i, 0), P = x.v[4] ?? x.l;
+      x.s.styre = undefined as unknown as typeof x.s.styre;
+      x.s.tron = [{ id: 1, grundare: P.id, gnamn: P.name, t: x.s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: x.s.now, ar: 0, sk: { sprid: 15, prast: 50, oppen: 50 } } as SIM.Tro];
+      const tr = x.s.tron[0]!;
+      for (const q of vuxna(x.s)) { q.tro = 1; q.troStyrka = 30; q.andlig = 90; }
+      tr.prast = P.id; SIM.getRel(x.s, P, x.A).op = -90;
+      SIM.put(x.s, 'bar', 5, { [SIM.kyrkaId(1)]: 5 }); tr.framPris = 'bar';
+      if (!upptrad(x.s, x.u) || !x.s.fram?.kyrka) continue;
+      kyrkForsok++;
+      if (x.s.fram.bud === 'person' && x.s.fram.om === x.A.id && x.s.fram.best === P.id) kyrkOm++;
+    }
+    return [
+      [`ledaren beställde ${bestallda} framträdanden: ${omA} om A, som ledaren har en stark åsikt om, och ${hyll} hyllningar`, omA >= 2 && hyll >= 1],
+      [`aldrig om B, som ledaren inte bryr sig om fast den som uppträder minns B starkast (${omB})`, omB === 0],
+      [`när ledaren ogillar A blir gärningen mindre än när ledaren beundrar A (${mindre} av ${jamfort})`, jamfort >= 1 && mindre === jamfort],
+      [`redogörelsen säger vem som beställde (${minne?.bestallt ?? 'ingen'}): ${ber}`, minne?.bestallt === l0 && !/\{|undefined/.test(ber)],
+      [`kyrkans präst beställde minnet av A ${kyrkOm} av ${kyrkForsok} gånger`, kyrkOm >= 1],
+    ];
+  },
+};
 SCENARIER.kyrkfram = {
   text: 'Kyrkans framträdanden (steg 10.7.18): en tro som står åt Sprider sig röstar om att betala ett framträdande, kyrkan lägger undan två hela saker av det den har mest av, och den troende som nästa gång uppträder med ett budskap får dem som sin egendom och talar om tron. Redogörelsen säger vem som betalade och med vad',
   kor: () => {

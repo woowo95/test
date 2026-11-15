@@ -1739,6 +1739,8 @@ const MDEF = {
     { t: 'Det handlade egentligen om {om}, och alla förstod vad {namn} menade.', om: f => f.bud === 'person' },
     { t: 'Alla visste vem det gällde: {om}.', om: f => f.bud === 'person' },
     { t: '{Namn} lade inte fingrarna emellan när det gällde {om}.', om: f => f.bud === 'person' },
+    { t: '{Bestallt} hade gett {namn} en {betalt} för att det skulle handla om {om}.', om: f => f.bud === 'person' && !!f.bestallt && !f.kyrka },
+    { t: 'Framträdandet var beställt: {bestallt} ville att byn skulle höra om {om}.', om: f => f.bud === 'person' && !!f.bestallt },
     { t: 'Det var en hyllning till {ledare}, som leder byn.', om: f => f.bud === 'hylla' && !f.betalt },
     { t: '{Namn} lovordade {ledare} inför hela publiken.', om: f => f.bud === 'hylla' && !f.betalt },
     { t: '{Ledare} hade betalat med en {betalt} för att bli hyllad, och det blev {ledare} också.', om: f => f.bud === 'hylla' && !!f.betalt },
