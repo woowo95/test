@@ -147,7 +147,7 @@ export function taBortLager(s: State, z: Zone) {
   return true;
 }
 // ag: ägarnas delar per slag, räknade först när någon frågar efter slaget (undefined = ingen stack med ägare)
-interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Map<string, Del | undefined>; lagrade: Stack[] }
+interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Map<string, Del | undefined>; agKlar?: true; lagrade: Stack[] }
 const summor = new WeakMap<State, Summa>();
 function summa(s: State) {
   const st = stacksOf(s), c = summor.get(s);
@@ -169,12 +169,13 @@ function summa(s: State) {
 // prövas igen för varje slag; steg 10.2.102)
 function agOf(s: State, k: string) {
   const c = summa(s);
-  let d = c.ag.get(k);
-  if (d === undefined && !c.ag.has(k)) {
-    for (const a of c.lagrade) if (a.k === k && a.ag) addDel(d ??= {}, a.ag);
-    c.ag.set(k, d);
+  // första frågan efter att summorna räknats om går igenom stackarna en gång för alla slag (förut en gång per slag som frågades);
+  // varje slag läggs ihop i stackarnas ordning som förut
+  if (!c.agKlar) {
+    for (const a of c.lagrade) if (a.ag) { let d = c.ag.get(a.k); if (!d) c.ag.set(a.k, d = {}); addDel(d, a.ag); }
+    c.agKlar = true;
   }
-  return d;
+  return c.ag.get(k);
 }
 // hur mycket byn har av ett slag. Redskapen räknas på tingen (agande.ts)
 export function amountOf(s: State, k: string) {
