@@ -247,6 +247,48 @@ SCENARIER.rovardrakt = {
   },
 };
 
+SCENARIER.tatuering = {
+  text: 'Steg 10.7.5: tatueringar. En vuxen som varit med om något stort (fällt en varg eller björn, dödat någon, mist någon nära eller blivit vuxen) vill ha ett märke i pannan, på kinden eller på halsen, så gärna som byns sed i motivet drar. En annan vuxen gör det med bennålen och kol på 4 minuter, i byns stil, och märket syns i porträttet och står i personens berättelse',
+  kor: () => {
+    const s = createState(3, START), v = living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const [g, q, r] = v;
+    s.seder.v.krig = 1; s.seder.v.natur = -1; // byn drar åt Krig och Värna
+    SIM.tatHandelse(s, q, 'strid'); SIM.tatHandelse(s, q, 'jakt'); SIM.tatHandelse(s, r, 'jakt');
+    const vill = (q.tatV ?? []).map(x => x.m).join(', '), ingenJakt = !r.tatV;
+    // upplevelsen som fastnar hos en vuxen ger lusten
+    let fastnat = 0, markt = 0;
+    for (const p of v.slice(3)) { SIM.upplev(s, p, 'dodade', 'en rövare'); if (p.upp?.some(u => u.k === 'dodade')) { fastnat++; if (p.tatV?.some(x => x.m === 'strid')) markt++; } }
+    // ingen bennål: ingen tatuerar
+    const utanNal = SIM.tatVal(s, g);
+    SIM.addTool(s, 'nal', g); SIM.setAmount(s, 'kol', 3);
+    q.x = g.x + 0.5; q.y = g.y;
+    let d: ReturnType<typeof SIM.tatVal>, forsok = 0;
+    for (; forsok < 400 && !d; forsok++) { d = SIM.tatVal(s, g); s.now += SIM.MIN; }
+    const fore = skapad(s, q), B0 = KARNA.portratt(fore);
+    SIM.tatKlar(s, g, d?.q.id);
+    const efter = skapad(s, q), B1 = KARNA.portratt(efter);
+    const stil = SIM.byStil(s), del = efter.del.tatPanna;
+    let skilda = 0, utanfor = 0;
+    for (let i = 0; i < B1.px.length; i++) { if (B1.px[i] !== B0.px[i]) skilda++; if (B1.px[i] < -1 || B1.px[i] >= FARGER.length) utanfor++; }
+    const rad = (q.hand ?? []).find(h => h[1] === 'markt');
+    // pannan är tagen: en jakt efteråt tar inte den platsen
+    SIM.tatHandelse(s, q, 'jakt');
+    // alla tolv delarna finns i porträttet
+    const delar = SIM.TAT_STILAR.flatMap(st => ['panna', 'kind', 'hals'].map(pl => `tat-${st}-${pl}`)), saknas = delar.filter(id => !KARNA.DEL[id]);
+    return [
+      [`lusten följer seden: striden märks i en by som drar åt Krig, jakten inte i en som drar åt Värna (${vill})`, vill === 'strid' && ingenJakt],
+      [`den som dödat någon vill ha märket när upplevelsen fastnat (${markt} av ${fastnat})`, fastnat > 0 && markt === fastnat],
+      ['utan bennål tatuerar ingen', !utanNal],
+      [`den som har bennålen och kol väljer att tatuera (${d?.q.name ?? 'ingen'} efter ${forsok} försök), i 4 minuter`, d?.q === q && d.m === 'strid' && d.dur === 4 * SIM.MIN],
+      [`märket i pannan i byns stil (${del}), 1 kol går åt (${SIM.amountOf(s, 'kol')} kvar)`, del === `tat-${stil}-panna` && !efter.del.tatKind && SIM.amountOf(s, 'kol') === 2 && !q.tatV],
+      [`det syns i porträttet (${skilda} punkter), bara i paletten`, skilda > 0 && utanfor === 0],
+      [`och står i berättelsen (${rad?.[2] ?? ''})`, !!rad],
+      ['en plats rymmer en tatuering: pannan är tagen', !q.tatV],
+      [`tolv delar i porträttet, fyra stilar gånger tre platser (${saknas.join(', ') || 'alla finns'})`, !saknas.length],
+    ];
+  },
+};
+
 SCENARIER.portratt = {
   text: 'Porträtten (steg 5.2.3.1, 5.2.3.3–5.2.3.5): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; humöret, sömnen, sjukdomen, kylan, förbandet och blodet följer spelet, och kläderna och redskapet utrustningen; porträttet och kartfiguren har bara färger ur paletten',
   kor: () => {

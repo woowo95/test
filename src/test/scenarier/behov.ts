@@ -421,7 +421,9 @@ SCENARIER.torst = {
     for (let k = 0; k < STEG_TIM * 2 && q.task?.act === 'smalta'; k++) { step(is, 300); if (kruka.inne?.v === 'sno') snoIKruka = true; }
     const snoDrack = q.torst > 0.9 && (is.stat?.['smalt sno'] ?? 0) >= 1, kvarN = kruka.inne?.v === 'vatten' ? kruka.inne.n : 0, kvar = kvarN >= 1;
     Object.assign(q, { torst: 0.3, task: undefined }); kruka.inne = undefined; // (vattnet i krukan är en dryck hemma)
-    is.fire.lit = false; q.task = undefined; q.warm = 1; chooseTask(is, q);
+    is.fire.lit = false; q.task = undefined; q.warm = 1;
+    { const sp = SIM.drickPlats(is, q); if (sp) { q.x = sp.x; q.y = sp.y; } } // vid vattnet: långt bort äter man hellre snö (steg 9.6.18)
+    chooseTask(is, q);
     const isen = q.task!.act === 'dricka' && /isen/.test(q.task!.why ?? '');
     // två dygn (två år i spelet) i tre byar: alla dricker, ingen törstar ihjäl, och lärdomarna om vattnet sprids
     let drickor = 0, magont = 0, dog = 0, hort = 0, maxTorstiga = 0;

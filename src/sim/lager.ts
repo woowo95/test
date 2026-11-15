@@ -4,7 +4,7 @@ import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
 import { Ting, halvKlar, nTools, newTing, tingOf } from './agande';
 import { kvHaller } from './kvalitet';
-import { forvarAt, sittAt, stationAt, stationDef, stationRutor, tillbakaVid, vidRutaAr } from './stationer';
+import { baraForvar, forvarAt, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr } from './stationer';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
 import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
@@ -473,8 +473,8 @@ function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
   if (groundOf(s).trees[key(x, y)] >= FOREST && zonesOf(s).some(z => z.rojs && inZone(z, x, y))) return false; // ett träd i lagret i skogen fälls först (steg 3.6.9)
   if (stubbeOn(s, x, y)) return false; // på en stubbe läggs inget: den grävs bort först (skog.ts, steg 6.5.7)
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
-  if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
-  if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a; // ett ställ som byggs: ett redskap, som på marken
+  if (f?.redskap) return isTool(k) && (!f.bara || f.bara.includes(k)) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
+  if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a && !!stationDef(st.k)!.forvar!.bara?.includes(k) === !!stationDef(st.k)!.forvar!.bara; // ett ställ som byggs: ett redskap, som på marken
   if (st && vidRutaAr(st, x, y)) return false; // rutan där stationen har sitt redskap (bensylen vid bänken) är stationens
   return !a || (a.k === k && !isTool(k) && a.n < rymd(s, x, y, k) - 1e-9);
 }
@@ -484,6 +484,11 @@ const stangd = (s: State, a: Stack | undefined, x: number, y: number, k: string)
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
 function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) {
+  // en möbel bara för slaget (bokhyllan för blad och böcker, steg 10.6.16) går före alla lager
+  if (baraForvar(k)) for (const t of stationerOf(s)) {
+    const z = zonesOf(s)[zoneAt(s, t.x, t.y)];
+    if (z && forvarAt(s, t.x, t.y)?.bara?.includes(k) && allows(z, k) && roomIn(s, occ, t.x, t.y, k)) return { x: t.x, y: t.y };
+  }
   const zs = zonesOf(s).filter(z => allows(z, k) && (z.prio ?? 0) > minPrio).sort((a, b) => (b.prio ?? 0) - (a.prio ?? 0));
   for (const z of zs) {
     let empty: { x: number; y: number } | undefined;

@@ -8,7 +8,7 @@ import { balans } from './balans';
 import { clamp, rnd } from './slump';
 import { ALDER, KROPP, ageOf, alive, byId, count, isParent, living, log, stat, think } from './folk';
 import { kronika } from './historik';
-import { upplev } from './uppvaxt';
+import { tatKrok, upplev } from './uppvaxt';
 import { SKRIFT } from './skriftTal';
 import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, troOf, troende } from './religion';
 import { ageIndex, ageStart } from './tid';
@@ -30,6 +30,7 @@ import { grundvarde, tingVarde, varuVarde } from './varde';
 satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
 satEgendomVarde(o => varuVarde(o) / grundvarde('ved')); // kyrkans egendom i trons tyngd (steg 10.3.8)
 import { isSick } from './sjukdom';
+import { prastMinns } from './rykten';
 
 // farorna över byn (dangers i val.ts, som sätter den här när den laddas: val.ts läser det mesta i spelet)
 let dangers: (s: State) => { kyla: boolean; svalt: boolean } = () => ({ kyla: false, svalt: false });
@@ -264,7 +265,9 @@ export function ritualTimme(s: State) {
       if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : r.k === 'vuxen' && r.om?.includes(p.id) ? KULT.vuxenTro : r.tyst ? KULT.tystTro : d.tro) * troF);
       p.task!.until = s.now;
     }
+    if (r.k === 'vuxen') for (const id of r.om ?? []) { const q = med.find(o => o.id === id); if (q) tatKrok.vuxen(s, q); } // vuxenblivandet kan märkas i huden (steg 10.7.5)
     if (r.k === 'hogtid' && tr) hogtidSlut(s, tr, r, med);
+    if ((r.k === 'hogtid' || r.k === 'leddBon') && pr && med.includes(pr)) prastMinns(s, pr, med); // prästen berättar om en död (steg 10.6.14)
     if (r.k === 'begravning' && tr && r.om?.length) sorgkvade(s, tr, r.om[0]!, med);
     if (r.k === 'gravol' && tr) gravolSlut(s, tr, med);
     count(s, 'ritual_' + r.k);

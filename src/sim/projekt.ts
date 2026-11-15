@@ -62,7 +62,7 @@ const overHusUppgift = (s: State, p?: Person, virke = false): Uppgift | undefine
 export const PROJEKT_TAL = balans('projekt', {
   overBuffert: 0.3, // ett redskap, vapen eller plagg över det byn behöver väger så här mycket när det är långt till taket (steg 10.2.74)
   kyla: 0.3, // när kylan är en fara väger varje projekt så här mycket av sitt värde (steg 10.2.6): tiden går helst till värmen
-  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 1, skor: 0.7, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, benspade: 0.6, vattensack: 0.5, slanda: 0.5, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, bok: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
+  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 1, skor: 0.7, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, benspade: 0.6, vattensack: 0.5, slanda: 0.5, bagborr: 0.6, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, bok: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, scen: 0.3, // ... varje station när byn saknar den
   grill: 0.8, // ... grillställningen (steg 2.8.1)
   tork: 0.6, // ... torkställningen (steg 2.8.2)
@@ -71,7 +71,7 @@ export const PROJEKT_TAL = balans('projekt', {
   halmbadd: 1.5, // ... halmbäddarna när alla saknar en, under tak eller ute (steg 10.2.48: sängarna kommer fort)
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
-  hylla: 0.4, kista: 0.3, stall: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
+  hylla: 0.4, kista: 0.3, stall: 0.3, bokhylla: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
   lerkruka: 0.3, naverask: 0.3, nal: 0.4, krycka: 0.6, traben: 0.6, krok: 0.5, ogonlapp: 0.2, bonad: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)

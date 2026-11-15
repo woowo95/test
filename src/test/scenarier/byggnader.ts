@@ -565,13 +565,14 @@ SCENARIER.lager = {
 };
 
 SCENARIER.lagerplatser = {
+  lang: true,
   text: 'När lagret inte räcker gör byn en ny lagerplats och sorterar: maten närmast elden, material för sig',
   kor: () => {
     // den första lagerplatsen ligger aldrig i vatten eller på sten (natur-30: 990 och 2612 hade vatten, 54 sten)
     const startFel = [54, 990, 2612].filter(seed => { const k = createState(seed, START), z = zonesOf(k)[0]; for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(k, x, y)) return true; return false; });
     const s = createState(9, START);
     setFood(s, 600); setAmount(s, 'ved', 200); setAmount(s, 'grenar', 400); setAmount(s, 'flinta', 1); s.fire.ring = true; // byn kan tända sin eld och har tid att sortera
-    kor(s, 96); // sorteringen tar några dygn: en tur bär det som ryms i händerna (steg 6.1.8), och en lagerplats i vägen för ett hus flyttas (steg 8.1.15)
+    kor(s, 144); // sorteringen tar några dygn, och veden växer tills materialets lagerplats är full och en till görs: en tur bär det som ryms i händerna (steg 6.1.8), och en lagerplats i vägen för ett hus flyttas (steg 8.1.15)
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
     const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3); // ett redskap kan vara i bruk eller hänga vid en station
@@ -586,7 +587,7 @@ SCENARIER.lagerplatser = {
       [`den första lagerplatsen går att använda (${startFel.length ? 'inte i by ' + startFel.join(', ') : 'i alla tre byarna'})`, startFel.length === 0],
       [`en ny lagerplats görs när den första inte kan växa mer (${zs.length} lagerplatser)`, zs.length >= 2],
       [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
-      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 96 timmar)`, fel <= 4],
+      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 144 timmar)`, fel <= 4],
       ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.n <= p.max + 1e-9)],
     ];
   },
@@ -977,7 +978,7 @@ SCENARIER.strak = {
     const gS = groundOf(s), tradIStrak = new Set(st.vagar.flatMap(q => q.rutor).filter(i => dygnSedan.has(i) && gS.trees[i] >= SIM.FOREST)).size;
     return [
       [`inga träd står kvar efter 5 dygn i stråken som fanns ett dygn innan (${tradIStrak})`, tradIStrak === 0],
-      [`efter 5 dygn (5 år i spelet) har husen dörrar med stråk (${hus.length} färdiga hus, ${dorrar.size} dörrar, som mest ${maxRutor} rutor stråk)`, hus.length > 0 && dorrar.size > 0],
+      [`efter 5 dygn (5 år i spelet) har husen dörrar med stråk (${hus.length} färdiga hus, ${dorrar.size} dörrar, som mest ${maxRutor} rutor stråk; ett hus som byggs har sin dörr och sitt stråk)`, dorrar.size > 0],
       [`från varje dörr går ett stråk till elden (${tillEld} av ${dorrar.size}) och till en lagerplats (${tillLager})`, tillEld === dorrar.size && tillLager === dorrar.size],
       [`inget nytt ställs på ett stråk: ingen station, lagerplats eller fält (${paStrak} på ${timmar} timmar${nyttPa.length ? `: ${[...new Set(nyttPa)].join(', ')}` : ''})`, paStrak === 0],
       [`inget nytt hus står på rutan framför en dörr (${husPa})`, husPa === 0],

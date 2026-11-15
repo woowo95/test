@@ -1520,6 +1520,43 @@ SCENARIER.rollekavild = {
   },
 };
 
+SCENARIER.blommor = {
+  text: 'Steg 10.7.3: blommor i krukorna. Ängsblommor växer vilda på gräsmark på våren och sommaren och sätts i lerkrukorna som örterna. Blomman skördas inte: den växer upp på 3 dygn, blommar i 3 dygn, vissnar och kommer igen, och medan den blommar är krukan ett kvalitetssteg finare pynt. Om en ledig kruka får en ört eller en blomma avgör en poäng: byns brist på örten mot ägarens lust till pynt',
+  kor: () => {
+    const { stepOrtKrukor, addTool, setAmount, amountOf, GRODOR, grodorNu } = SIM;
+    const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 2);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    for (const t of SIM.stationerOf(s)) if (t.ag === p.id) t.ag = undefined; // p har inget pynt, så lusten är full
+    const ny = () => { const k = addTool(s, 'lerkruka_liten', p); k.hos = undefined; k.x = Math.floor(p.x); k.y = Math.floor(p.y); return k; };
+    // ont om rölleka: örten väger mest
+    const k1 = ny(); setAmount(s, 'rolleka', 1); setAmount(s, 'blomma', 1);
+    const pOrt = SIM.krukPoang(s, p, 'rolleka'), pBlom = SIM.krukPoang(s, p, 'blomma');
+    stepOrtKrukor(s);
+    const forst = k1.vaxt?.g;
+    // gott om rölleka: blomman väger mest, och byn vill ha en blomma till den lediga krukan
+    setAmount(s, 'rolleka', SIM.ORTKRUKA.ortMal); s.now += SIM.HOUR;
+    const k2 = ny(); const vill = SIM.blommaVill(s);
+    stepOrtKrukor(s);
+    const sedan = k2.vaxt?.g, blomKvar = amountOf(s, 'blomma');
+    // blomman växer upp på 3 dygn, blommar i 3 och vissnar
+    const q0 = SIM.krukaPyntQ(k2);
+    let upp = 0; for (; upp < 96 && !SIM.krukaBlommar(k2); upp++) { s.now += SIM.HOUR; stepOrtKrukor(s); }
+    const blommar = SIM.krukaBlommar(k2), q1 = SIM.krukaPyntQ(k2), bild = SIM.krukaBild(k2);
+    let tim = 0; while (SIM.krukaBlommar(k2) && tim < 24 * 5) { s.now += SIM.HOUR; stepOrtKrukor(s); tim++; }
+    const vissnat = !SIM.krukaBlommar(k2) && !!k2.vaxt && amountOf(s, 'blomma') === blomKvar;
+    // vilda på gräsmark på våren
+    const fynd = SIM.FYND.blomma, ar = fynd.arstid ?? [];
+    return [
+      [`blomman odlas i kruka (${GRODOR.blomma.plats}) och sås aldrig på fältet`, GRODOR.blomma.plats === 'kruka' && !grodorNu(s).includes('blomma')],
+      [`ont om rölleka: örten väger mer (${pOrt.toFixed(2)} mot ${pBlom.toFixed(2)}) och sätts (${forst})`, pOrt > pBlom && forst === 'rolleka'],
+      [`gott om rölleka: byn vill ha en blomma (${vill}) och den sätts i den lediga krukan (${sedan})`, vill === 1 && sedan === 'blomma'],
+      [`blomman blommar efter ${upp} timmar (3 år i spelet), och krukan är då ett steg finare pynt (${q0} blir ${q1}), ritad med blommorna`, blommar && upp >= 71 && upp <= 73 && q1 === q0 + 1 && !!bild.vaxt?.blommar],
+      [`den blommar i ${tim} timmar (${(tim / 24).toFixed(1)} år i spelet), vissnar och kommer igen, och ger inget att skörda`, vissnat && tim >= 70 && tim <= 74],
+      [`ängsblommorna växer vilda på gräsmark på våren och sommaren (${ar.join(', ')})`, ar[1] > 0 && ar[2] > 0 && ar[0] === 0 && ar[3] === 0],
+    ];
+  },
+};
+
 SCENARIER.ortkruka = {
   text: 'Steg 9.7.16: örter i krukor. Örterna odlas inte på fälten utan i lerkrukor vid husen (kolumnen plats i GRODOR), och krukorna är också pynt',
   kor: () => {

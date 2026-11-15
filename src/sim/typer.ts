@@ -197,6 +197,7 @@ export interface Person {
   blodNotis?: 1; // notisen om att hen snart förblöder är skickad (steg 9.5.14, halsa.ts) // örtteet hjälper motståndet till dess, med teets kvalitet (steg 9.5.8, vatskor.ts)
   bedrift?: import('./rykten').Bevis; // den senaste stora bedriften (steg 10.6.1): stoltheten ger lust att resa en runsten
   sorg?: { namn: string; vem?: number; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
+  tat?: { m: import('./tatuering').TatMotiv; p: import('./tatuering').TatPlats; stil: import('./tatuering').TatStil; t: number; av: number }[]; tatV?: { m: import('./tatuering').TatMotiv; t: number }[]; // tatueringarna och händelserna hen vill märka (steg 10.7.5)
   gravBesok?: number; paminnd?: Record<number, number>; // när hen senast stod vid en grav, och när hen påmindes om en död (steg 10.4.8)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
@@ -344,6 +345,7 @@ export interface State {
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
   aktOm?: Record<string, string>; // vad byn minns om olyckan bakom rädslan för en handling
+  kanda?: Record<number, number>; // byns samlade minne (ryktbarheten) av varje person som någon minns, räknat var fjärde timme (steg 10.6.14, rykten.ts)
   runstenar?: import('./skrift').Runsten[]; // runstenarna (steg 10.6.1, skrift.ts)
   skriftSedda?: [string, string][]; // stenarna och böckerna vid förra timmen, id och titel, så att krönikan säger när en är borta (steg 10.6.8)
   gravar?: import('./kvarlevor').Grav[]; gravplatser?: Record<string, { x: number; y: number }>; heliga?: import('./kult').HeligPlats[]; ritual?: import('./kult').Ritual; ritualKo?: import('./kult').Ritual[]; // graven, de heliga platserna och ritualerna (system 8.5)
@@ -474,7 +476,7 @@ export const HEARTHS: Hearth[] = [
 export interface Igniter { id: string; name: string; desc: string; chance: number; grass: number; sticks: number; minutes: number; requires: string }
 export const IGNITERS: Igniter[] = [
   { id: 'flinta', name: 'Flinta', desc: 'Flintan slås mot en annan sten så att gnistor faller i tändmaterialet. Kräver tålamod och mycket tändmaterial.', chance: 0.025, grass: 3, sticks: 3, minutes: 15, requires: '–' },
-  { id: 'bagborr', name: 'Bågborr', desc: 'En pinne snurras snabbt mot en träskiva med hjälp av en båge tills glöd bildas.', chance: 0.2, grass: 2, sticks: 1, minutes: 10, requires: 'Träbearbetning' },
+  { id: 'bagborr', name: 'Bågborr', desc: 'En pinne snurras snabbt mot en träskiva med hjälp av en båge tills glöd bildas.', chance: 0.13, grass: 2, sticks: 1, minutes: 10, requires: 'Bågborr' }, // steg 10.6.13: ungefär tre försök där flintan tar sexton; håller ELD.borrForsok försök
   { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide' },
   { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
 ];

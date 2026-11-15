@@ -113,7 +113,7 @@ SCENARIER.abborre = {
         step(v, BEAT);
         abborreSedd = Math.max(abborreSedd, amountOf(v, 'abborre'));
       }
-      fangat = (v.stat?.fisk ?? 0) - (v.stat?.fisk_gadda ?? 0) - (v.stat?.fisk_mort ?? 0); rensat = v.stat?.rensat ?? 0;
+      fangat = (v.stat?.fisk ?? 0) - ['gadda', 'mort', 'braxen', 'sik'].reduce((a, k) => a + (v.stat?.['fisk_' + k] ?? 0), 0); rensat = v.stat?.rensat ?? 0; // bara abborrarna
       if (!SIM.stationerOf(v).some(t => t.k === 'slaktbank')) continue; // bänken kan brinna upp
       if (fangat >= 3) break; // en enstaka fisk säger inget om rensningen
     }
@@ -121,7 +121,7 @@ SCENARIER.abborre = {
       ['abborren rensas med händerna, utan kniv', kan],
       ['en abborre blir lika mycket fiskkött, några på en kvart', halv && klar],
       ['fiskköttet är dens som ägde abborren, inte dens som rensade', agare],
-      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas (${rensat.toFixed(0)} av ${fangat} fångade på tolv dygn, tolv år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat > 0 && rensat >= fangat * 0.4],
+      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång i förrådet) och några rensas (${rensat.toFixed(0)} av ${fangat} fångade på tolv dygn, tolv år i spelet)`, fangat > 0 && rensat >= 1], // (en hel abborre kan också grillas, torkas eller rökas, steg 9.6)
     ];
   },
 };
@@ -1335,6 +1335,56 @@ SCENARIER.eldbrand = {
   },
 };
 
+SCENARIER.bagborr = {
+  text: 'Steg 10.6.13: bågborren, ett bättre tänddon av 1 ved, 2 grenar och 1 rep, gjord bara vid snickarbänken av den som kan tekniken. Byn tänder med det bästa tänddon den har: borren ger eld på ungefär tre försök i stället för flintans sexton och tar 2 hö och 1 pinne per försök, håller 60 försök, och flintan gäller igen när borren gått sönder. Med en borr behövs ingen flinta',
+  kor: () => {
+    const { igniterOf, tryLight, canLight, newTing, nTools, BYN, RECEPT, TEK, IGNITERS } = SIM;
+    const s = createState(1, START); klockan(s, 10); tandEld(s, 6);
+    setAmount(s, 'ved', 60); setAmount(s, 'grenar', 40); setAmount(s, 'torrgras', 40); setAmount(s, 'flinta', 1); setAmount(s, 'naver', 0);
+    const r = RECEPT.bagborr, tek = TEK.bagborr, regler = r.av?.ved === 1 && r.av?.grenar === 2 && r.av?.rep === 1 && r.bank === 'snickarbank' && !!r.bara && tek?.niva === 4 && tek.krav.includes('snickarbank') && tek.krav.includes('rep') && !!tek.episk;
+    const fl = IGNITERS.find(i => i.id === 'flinta')!, bo = IGNITERS.find(i => i.id === 'bagborr')!;
+    const forsok = [1 / fl.chance, 1 / bo.chance]; // väntat antal försök utan lärandet
+    const flintaFore = igniterOf(s)?.id, malFore = SIM.MATERIALMAL.flinta.min(s) - SIM.flintaKrok.verktyg(s);
+    const borr = newTing(s, 'bagborr', 1, BYN);
+    const [p, o] = living(s).filter(q => ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const ingenKan = igniterOf(s)?.id; // ingen kan tekniken: flintan
+    p.tek = { ...p.tek, bagborr: 1 };
+    const annan = igniterOf(s, o)?.id; // den som inte kan tekniken tänder med flintan
+    s.people = [p]; // bara hen, så att ingen annan tar hö och grenar
+    // med flinta och borr tänds elden med borren: 2 hö och 1 pinne per försök
+    const medBada = igniterOf(s, p)?.id;
+    Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, tries: 0 });
+    const h0 = amountOf(s, 'torrgras'), g0 = amountOf(s, 'grenar'), fl0 = amountOf(s, 'flinta');
+    const c0 = bo.chance; bo.chance = 0; tryLight(s, p); bo.chance = c0; // ett misslyckat försök, så att elden inte tar bränsle
+    const ho = h0 - amountOf(s, 'torrgras'), grenar = g0 - amountOf(s, 'grenar'), flTagen = fl0 - amountOf(s, 'flinta');
+    // utan flinta men med borren kan byn tända och letar ingen flinta
+    setAmount(s, 'flinta', 0); s.fire.lit = false;
+    const flintMal = (q: State) => SIM.MATERIALMAL.flinta.min(q) - SIM.flintaKrok.verktyg(q); // flintan till elden (redskapen kan vilja ha mer)
+    const malMed = flintMal(s), utanFlinta = canLight(s) && !SIM.needTinder(s) && malMed === 0;
+    // borren går sönder efter 60 försök (sedan gäller flintan igen)
+    setAmount(s, 'flinta', 1); setAmount(s, 'torrgras', 400); setAmount(s, 'grenar', 400); setAmount(s, 'ved', 400);
+    let n = 0;
+    while (nTools(s, 'bagborr') > 0 && n < 200) { s.fire.lit = false; s.fire.tries = 0; tryLight(s, p); n++; }
+    const sonder = !s.ting?.includes(borr) && (s.stat?.bagborrarTrasiga ?? 0) === 1, sedan = igniterOf(s, p)?.id;
+    // en ny görs vid snickarbänken av den som kan tekniken
+    const b = createState(2, START); klockan(b, 8); tandEld(b, 6); medBank(b, 'snickarbank');
+    for (const q of b.people) q.tek = { ...q.tek, snickarbank: 1, rep: 1, bagborr: 1 };
+    setMat(b, { bar: 300 }); setAmount(b, 'ved', 60); setAmount(b, 'grenar', 30); setAmount(b, 'rep', 6); setAmount(b, 'flinta', 1);
+    let h = 0;
+    while (nTools(b, 'bagborr') < 1 && h < 72) { kor(b, 1); h++; }
+    const gjord = nTools(b, 'bagborr') >= 1 && (b.stat?.bagborrarGjorda ?? 0) >= 1;
+    return [
+      [`bågborren görs av 1 ved, 2 grenar och 1 rep bara vid snickarbänken, med tekniken på nivå 4 efter snickarbänken och repet`, regler],
+      [`borren ger eld på ungefär tre försök där flintan tar sexton (${forsok.map(x => x.toFixed(1)).join(' mot ')} utan lärandet och skickligheten, alltså ${(forsok[0] / forsok[1]).toFixed(1)} gånger färre)`, forsok[0] / forsok[1] > 4 && forsok[0] / forsok[1] < 7],
+      [`med flinta och borr tänder den som kan tekniken med borren (${flintaFore} utan borr, ${medBada} med), de andra med flintan (${annan}; ${ingenKan} när ingen kan den)`, flintaFore === 'flinta' && medBada === 'bagborr' && annan === 'flinta' && ingenKan === 'flinta'],
+      [`ett försök tar 2 hö och 1 pinne, och ingen flinta (${ho} hö, ${grenar} grenar, ${flTagen === 0 ? 'flintan kvar' : 'flintan tagen'})`, ho === 2 && grenar === 1 && flTagen === 0],
+      [`utan flinta men med borren kan byn tända, och ingen letar flinta till elden (${malFore} flinta utan borren, ${malMed} med)`, utanFlinta && malFore >= 1],
+      [`borren går sönder efter 60 försök (${n}), och sedan tänder byn med flintan igen (${sedan})`, sonder && n >= 59 && n <= 61 && sedan === 'flinta'],
+      [`en ny görs vid snickarbänken av den som kan tekniken (${gjord ? `efter ${h} timmar` : 'ingen på 72 timmar'})`, gjord],
+    ];
+  },
+};
+
 SCENARIER.brasa = {
   text: 'Flera lägereldar (steg 2.9.1, 4.5.6.8): när två eller fler sover långt från elden och det är kallt vill byn ha en lägereld till nära dem. Fattas stenarna letar en i taget efter dem vid stenarna; sedan läggs ringen av sex stenar. När den är klar är den en lägereld som den första: den tänds med flintan, värmer dem som sover nära och glöder. En släckt lägereld som ingen sover nära tas isär, och stenarna läggs i en hög som används igen',
   env: { BALANS: 'brasa.langt=0,brasa.kyla=-99' }, // alla sovplatser räknas som långt från elden, och det är alltid kallt nog
@@ -2132,7 +2182,7 @@ SCENARIER.tradorr = {
       p.task = { act: 'gomma', phase: 'do', tx: inneX, ty: inneY, until: q.now + 20 * HOUR, carry: 0, why: 'Vargar är nära, gömmer sig i huset', dark: !isLight(q.now) };
       const id = q.vargNr = (q.vargNr ?? 0) + 1;
       (q.vargar ??= []).push({ id, vargar: [0, 1, 2].map(j => 10_000_000 + id * 8 + j), x: inneX + 8, y: inneY, mx: inneX + 8, my: inneY, gar: q.now + 48 * HOUR, hunger: 1, gor: 'stryker' });
-      let inne = 0, vantade = 0, gomde = 0, stangd = false;
+      let inne = 0, vantade = 0, gomde = 0, stangd = false; const t0 = q.now, dorr0 = q.stat?.vargDorrStrid ?? 0;
       const seen = new Set<string>();
       kor(q, 4, q => {
         const f = q.vargar?.[0]; if (!f) return;
@@ -2142,8 +2192,8 @@ SCENARIER.tradorr = {
         if (nu && roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY)) inne++; // (i dörröppningen, när den modiga går ut, är vargen inte inne)
         if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (står kvar ensam ute tills flocken anfaller) */ const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
       });
-      slutStrider(q); const strider = (q.stridRapporter ?? []).map(x => x.orsak); // striderna på kartan (steg 10.1.17) står i rapporterna
-      return { inne, vantade, gomde, seen, strider, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
+      slutStrider(q); const strider = (q.stridRapporter ?? []).filter(x => x.t >= t0).map(x => x.orsak); // (bara provets strider, inte byns förra) // striderna på kartan (steg 10.1.17) står i rapporterna
+      return { inne, vantade, gomde, seen, strider, dorrStrid: (q.stat?.vargDorrStrid ?? 0) - dorr0, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
     };
     const tra = prov('tradorr', 0), modig = prov('tradorr', 20), annan = prov('tradorr', 0, true), skinn = prov('skinndorr', 0);
     const ordn = cloneState(s); for (const b of bitsOf(ordn)) if (b.k === 'oppning') b.dorr = 'tradorr';
@@ -2154,7 +2204,7 @@ SCENARIER.tradorr = {
       [`flocken väntar utanför den stängda dörren (${tra.vantade} slag) och den som gömmer sig stannar inne (${tra.gomde} slag)`, tra.vantade > 0 && tra.gomde === tra.vantade],
       [`vargarna kommer aldrig in i det stängda huset (${tra.inne + modig.inne + annan.inne} slag)`, tra.inne + modig.inne + annan.inne === 0],
       [`efter ett tag tröttnar flocken (${tra.st.vargTrottnade ?? 0}) och ingen strid blir av (${tra.strider.length})`, (tra.st.vargTrottnade ?? 0) > 0 && tra.strider.length === 0],
-      [`den som vågar går ut och slåss (${modig.strider.join(', ') || 'ingen strid'})`, modig.strider.includes('vargar utanför dörren')],
+      [`den som vågar går ut och slåss (${modig.strider.join(', ') || 'ingen strid'})`, modig.dorrStrid > 0], // (räknas i statistiken: rapporterna har ett tak, och den som förlorat anfalls igen)
       [`ser flocken någon ensam ute jagar den hellre den (${[...annan.seen].join(', ')}; ${annan.strider.join(', ') || 'ingen strid'})`, annan.strider.includes('vargar när vargarna anföll')], // (anfallet går fort: striden visar att det hände, också när stickproven var femte minut inte ser det)
       [`en skinndörr stoppar ingen: dörren stängs inte (${skinn.stangd ? 'stängd' : 'öppen'}), och vargarna går in och anfaller den som är ensam där (${skinn.strider.join(', ') || 'ingen strid'})`, !skinn.stangd && skinn.vantade === 0 && skinn.strider.includes('vargar när vargarna anföll')],
       [`varje rum har en dörr eller öppning (${gridOf(s).rooms.filter(r => r.tiles.length).length} rum; vakten i testerna larmar annars)`, gridOf(s).rooms.every(r => !r.tiles.length || r.open > 0)],

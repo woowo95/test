@@ -4,6 +4,7 @@ import { balans } from './balans';
 import { roomAt } from './byggnad';
 import { handelse } from './rykten';
 import { kvOf } from './kvalitet';
+import { krukaPyntQ } from './kruka';
 import { isKlar, krukaHemma, sovrum, stationDef, stationRum, stationerOf } from './stationer';
 
 // ---------- pyntet i hemmen (steg 4.3.4) ----------
@@ -34,9 +35,15 @@ export function stepPynt(s: State) {
     const o = byId(s, t.ag), rum = stationRum(s, t);
     if (o && alive(o) && rum) pynt.push({ o, rum, q: kvOf(t), namn: d.namn.toLowerCase() });
   }
-  for (const o of living(s)) { const k = krukaHemma(s, o); if (k) pynt.push({ o, rum: sovrum(s, o), q: kvOf(k), namn: 'lerkruka' }); }
-  for (const { o, rum, q, namn } of pynt) {
-    if (PYNT.glad[q] > 0 && iRum(s, o, rum)) { think(o, PYNT_TANKE, PYNT.glad[q], s.now, PYNT.gladTim * HOUR); count(s, 'pyntGlad'); }
+  for (const o of living(s)) { const k = krukaHemma(s, o); if (k) pynt.push({ o, rum: sovrum(s, o), q: krukaPyntQ(k), namn: 'lerkruka' }); } // en blommande kruka är ett steg finare (steg 10.7.3)
+  // ägaren trivs av det finaste pyntet i rummet där hen är (en tanke, inte en per pynt)
+  const glad = new Map<Person, number>();
+  for (const { o, rum, q } of pynt) if (PYNT.glad[q] > 0 && iRum(s, o, rum)) glad.set(o, Math.max(glad.get(o) ?? 0, PYNT.glad[q]));
+  for (const [o, v] of glad) { think(o, PYNT_TANKE, v, s.now, PYNT.gladTim * HOUR); count(s, 'pyntGlad'); }
+  // de som ser det får intrycket av det finaste pyntet ägaren har i rummet, inte ett per pynt (steg 10.7.2)
+  const finast: typeof pynt = [];
+  for (const x of pynt) { const i = finast.findIndex(f => f.o === x.o && f.rum === x.rum); if (i < 0) finast.push(x); else if (x.q > finast[i].q) finast[i] = x; }
+  for (const { o, rum, q, namn } of finast) {
     if (PYNT.syn[q] <= 0) continue;
     for (const v of living(s)) {
       if (v === o || v.task?.act === 'sova' || !iRum(s, v, rum)) continue;

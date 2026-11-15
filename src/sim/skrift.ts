@@ -6,7 +6,7 @@ import { getable, takeMaterial } from './behov';
 import { usable } from './lager';
 import { bitAt, roomAt } from './byggnad';
 import { omrade } from './omrade';
-import { Bevis, HANDELSER, Intryck, bevisText, lasIntryck, paminn } from './rykten';
+import { Bevis, HANDELSER, Intryck, bevisText, kandVikt, lasIntryck, paminn } from './rykten';
 import { Ting, newTing, tingOf } from './agande';
 import { taVatska, vatskaAv } from './vatskor';
 import { LARDOMAR, describe, findL, lasLardom } from './minne';
@@ -51,7 +51,7 @@ export const SKRIFTER: Record<SkriftSlag, { namn: string; stadier: SkriftStadium
 };
 export { SKRIFT } from './skriftTal';
 export interface SkriftLag { id: string; straff: number; tal?: Record<string, number> }
-export interface Runsten { lag?: SkriftLag; id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number } // tro = den heliga stenens tro (om = tron)
+export interface Runsten { lag?: SkriftLag; id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number; bild?: 1 } // tro = den heliga stenens tro (om = tron); bild = en bildsten (steg 10.7.1)
 export const runstenarOf = (s: State): Runsten[] => (s.runstenar ??= []);
 export const runstenAt = (s: State, x: number, y: number) => s.runstenar?.find(r => r.x === x && r.y === y);
 
@@ -75,7 +75,7 @@ export function runstenLust(s: State, p: Person): Lust | undefined {
   for (const g of p.sorg ?? []) {
     const d = g.vem !== undefined ? byId(s, g.vem) : s.people.find(q => q.name === g.namn && q.died !== undefined);
     if (!d || alive(d) || harSten(s, 'minne', d.id) || s.gravar?.some(q => q.vem === d.id && q.text)) continue;
-    const w = SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner);
+    const w = SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner) * kandVikt(s, d.id); // den byn minns väljs oftare (steg 10.6.14)
     if (!best || w > best.w) best = { w, slag: 'minne', om: { id: d.id, namn: d.name } };
   }
   const b = p.bedrift;
@@ -194,14 +194,16 @@ export function runstenKlar(s: State, p: Person, t: Task) {
   } else if (l.lag) {
     text = `${l.om.namn}: ${lagText(l.lag)}`;
   } else {
-    text = `${p.name} reste stenen. ${han(p)[0].toUpperCase() + han(p).slice(1)} ${bevisText(bev![0], '').trim()}.`;
+    // en händelse berättas i bilder i stället för runor: bildstenen (steg 10.7.1)
+    text = `${p.name} reste stenen, och bilderna på den visar hur ${bevisText(bev![0], p.name).trim().replace(/\.$/, '')}.`;
   }
+  const bild = l.slag === 'handelse';
   const id = (s.runstenar?.reduce((m, r) => Math.max(m, r.id), 0) ?? 0) + 1;
-  runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), text, runor: runor(text) });
+  runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(bild ? { bild: 1 as const } : {}), text, runor: bild ? '' : runor(text) });
   s.byggV = (s.byggV ?? 0) + 1;
-  count(s, 'runsten'); count(s, 'runsten_' + l.slag);
+  count(s, 'runsten'); count(s, 'runsten_' + l.slag); if (bild) count(s, 'bildsten');
   think(p, l.slag === 'minne' ? `Reste en sten efter ${l.om.namn}` : l.slag === 'helig' ? 'Ristade de heliga kvädena' : l.lag ? 'Ristade en lag' : 'Reste en sten om sin bedrift', 0.03, s.now, 12 * HOUR);
-  const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en runsten om sin bedrift.`;
+  const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en bildsten om sin bedrift.`;
   log(s, rad, 'rel', [p.id]); notis(s, 'runsten', rad, [p.id], { x, y }); kronika(s, rad, 'runsten');
 }
 
@@ -223,7 +225,7 @@ export function runstenTimme(s: State) {
   for (const r of s.runstenar) for (const q of folk) {
     if (Math.hypot(q.x - r.x - 0.5, q.y - r.y - 0.5) > SKRIFT.las) continue;
     for (const b of r.bev ?? []) lasIntryck(s, q, r.om, b, r.av.id, SKRIFT.lasVikt);
-    if (r.slag === 'minne') paminn(s, q, r.om.id);
+    if (r.slag === 'minne') paminn(s, q, r.om.id, r.bev);
     if (r.slag === 'helig' && q.tro === r.tro) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR); // bara den som tror
     count(s, 'runstenLast');
   }
@@ -253,7 +255,7 @@ function skriftBorta(s: State) {
   if (nu.length || forr.length) s.skriftSedda = nu;
 }
 // i rutan som visas vid ett tryck: runorna överst och texten på svenska under
-export const runstenRubrik = (r: Runsten) => r.lag ? `Lagstenen (${LAGAR[r.lag.id]?.namn.toLowerCase() ?? 'lagen'})` : r.slag === 'minne' ? `Stenen efter ${r.om.namn}` : r.slag === 'helig' ? `Den heliga stenen (${r.om.namn.toLowerCase()})` : `${gen(r.av.namn)} sten`;
+export const runstenRubrik = (r: Runsten) => r.lag ? `Lagstenen (${LAGAR[r.lag.id]?.namn.toLowerCase() ?? 'lagen'})` : r.slag === 'minne' ? `Stenen efter ${r.om.namn}` : r.slag === 'helig' ? `Den heliga stenen (${r.om.namn.toLowerCase()})` : `${gen(r.av.namn)} ${r.bild ? 'bildsten' : 'sten'}`;
 // trons heliga stenar (fliken Religion)
 export const heligaStenar = (s: State, tr: Tro) => (s.runstenar ?? []).filter(r => r.slag === 'helig' && r.tro === tr.id);
 
@@ -292,7 +294,7 @@ function starkastBev(s: State, p: Person) {
   let bast: { e: Intryck; v: number } | undefined;
   for (const e of p.intryck ?? []) {
     if (e.om === p.id || !e.bev?.length) continue;
-    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1);
+    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1) * kandVikt(s, e.om); // den byn minns väljs oftare (steg 10.6.14)
     if (!bast || v > bast.v) bast = { e, v };
   }
   return bast;
@@ -447,7 +449,7 @@ export function lasKlar(s: State, q: Person, t: Task) {
   if (k.tro !== undefined) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR);
   if (k.lar) lasLardom(s, q, { ...k.lar, c: k.lar.c * nar }, k.av.id);
   if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt * nar * (k.fel ?? 1));
-  if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id);
+  if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id, k.bev);
   if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, (k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer) * nar, s.now, SKRIFT.gladjeTim * HOUR);
   count(s, 'last'); count(s, 'last_' + k.slag);
 }

@@ -44,7 +44,7 @@ export const KVALITET = [
   { namn: 'Mästerverk', tanke: 'Stolt över sitt mästerverk' },
   { namn: 'Perfekt mästerverk', tanke: 'Gjorde ett perfekt mästerverk' },
 ] as const;
-export const NORMAL = 2, MASTERVERK = 4, PERFEKT = 5;
+export const NORMAL = 2, FIN = 3, MASTERVERK = 4, PERFEKT = 5;
 
 // saken (ett ting eller en möbel) har kvaliteten q; utan q är den normal
 export const kvOf = (t?: { q?: number }) => t?.q ?? NORMAL;
@@ -65,7 +65,7 @@ export function rullaKvalitet(s: State, p: Person, station: number, skill: Skill
 // saken t blev klar och fick sin kvalitet: görarens humör, byns statistik, loggen för mästerverken och berättelsen
 export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }, station: number, namn: string, skill: Skill = 'hantverk') {
   const q = t.q = rullaKvalitet(s, p, station, skill), k = KVALITET[q];
-  if (q >= MASTERVERK || q === 0) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4)
+  if (q >= MASTERVERK || q === 0 || (q >= FIN && SAKER[t.k]?.bildyta)) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4); en bildyta målas från fin (steg 10.7.1)
   count(s, 'kv_' + q);
   if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);
   if (q >= MASTERVERK) notis(s, 'masterverk', `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}.`, [p.id]);

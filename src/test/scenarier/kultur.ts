@@ -428,7 +428,7 @@ SCENARIER.konst = {
     const minns = (medSak: boolean) => {
       const k = SIM.cloneState(s), p = k.people.find(q => q.id === a.id)!;
       p.intryck = [{ om: d.id, namn: d.name, k: 'vargdodare', v: 1, c: 1, t: k.now }];
-      if (!medSak) for (const t of k.ting ?? []) if (t.ber) delete t.ber.mo;
+      for (const t of k.ting ?? []) if (t.ber) { if (!medSak) delete t.ber.mo; delete t.ber.lo; } // bara bilden: en sak gjord i sorg håller också minnet uppe (steg 10.6.15)
       SIM.glomRykten(k, 24 * 5);
       return p.intryck?.[0]?.c ?? 0;
     };
@@ -439,6 +439,47 @@ SCENARIER.konst = {
       [`värdet ${vMed.toFixed(1)} mot ${vUtan.toFixed(1)} utan konst`, vMed > vUtan],
       [`kläderna får ingen konst (${klad} av 10), och ingen konst när göraren inget minns (${tomt} av 10)`, klad === 0 && tomt === 0],
       [`byn minns den döde längre med saken: säkerheten ${med.toFixed(2)} mot ${utanSak.toFixed(2)} efter fem dygn`, med > utanSak],
+    ];
+  },
+};
+
+SCENARIER.bildyta = {
+  text: 'Steg 10.7.1: bildytor och bildstenar. Skölden är en bildyta och får en målad bild av det göraren minns redan från fin kvalitet, andra saker först som mästerverk; ett intryck med en händelse bakom väger dubbelt, så att bilden helst visar en händelse, och den döda som visas bleknar långsammare. En runsten om en händelse huggs med bilder i stället för runor: en bildsten',
+  kor: () => {
+    const s = rikDag(3), [g, d1, d2, a] = vuxna(s) as [Person, Person, Person, Person];
+    SIM.die(s, d1, 'sjukdom'); SIM.die(s, d2, 'sjukdom');
+    const minnen = (): Person['intryck'] => [
+      { om: d1.id, namn: d1.name, k: 'vargdodare', v: 1.5, c: 1, t: s.now }, // starkare, men utan en händelse
+      { om: d2.id, namn: d2.name, k: 'vargdodare', v: 1, c: 1, t: s.now, bev: [{ h: 'vargdodare', t: s.now, sett: true }] },
+    ];
+    g.intryck = minnen();
+    const skold = SIM.newTing(s, 'skold', 1, g.id); skold.q = 3; SIM.sakMinne(s, g, skold);
+    const ber = SIM.sakBerattelse(s, skold, 'Sköld');
+    // en fin kniv är ingen bildyta och får ingen bild
+    const kniv = SIM.newTing(s, 'kniv', 1, g.id); kniv.q = 3; SIM.sakMinne(s, g, kniv);
+    // den döda på skölden bleknar långsammare
+    const minns = (med: boolean) => {
+      const k = SIM.cloneState(s), p = k.people.find(q => q.id === a.id)!;
+      p.intryck = [{ om: d2.id, namn: d2.name, k: 'vargdodare', v: 1, c: 1, t: k.now }];
+      if (!med) for (const t of k.ting ?? []) if (t.ber) delete t.ber.mo;
+      SIM.glomRykten(k, 24 * 5);
+      return p.intryck?.[0]?.c ?? 0;
+    };
+    const med = minns(true), utan = minns(false);
+    // en sten om en bedrift blir en bildsten
+    const b = medLedare(), s2 = b.s, h = b.v[1];
+    klockan(s2, 8); setFood(s2, 400); SIM.setAmount(s2, 'ved', 300); SIM.setAmount(s2, 'huggen_sten', 3);
+    for (const p of b.v) { (p.tek ??= {}).stenhuggarplats = 1; p.sorg = []; p.bedrift = undefined; }
+    SIM.handelse(s2, h, 'bjorndodare', undefined, undefined, b.v[2], 2);
+    const ingenAnnan = () => { for (const p of SIM.living(s2)) { if (p !== h) p.bedrift = undefined; p.sorg = []; } };
+    korTills(s2, () => !!s2.runstenar?.length, 72 * 3600, ingenAnnan);
+    const r = s2.runstenar?.[0];
+    return [
+      [`en fin sköld får en målad bild (${ber})`, !!skold.ber?.mo && skold.ber.mo.mal === 1 && /målning/i.test(ber)],
+      [`bilden visar helst en händelse: ${skold.ber?.mo?.namn} som fällde en varg, inte den starkare ${d1.name} utan händelse`, skold.ber?.mo?.om === d2.id && skold.ber.mo.b?.h === 'vargdodare' && ber.includes(d2.name) && ber.includes('dödade en varg')],
+      ['en fin kniv får ingen bild, och den fina sköldens berättelse är bara bilden', !kniv.ber?.mo && !ber.includes('mästerverk')],
+      [`den döda på skölden bleknar långsammare: säkerheten ${med.toFixed(2)} mot ${utan.toFixed(2)} efter fem dygn`, med > utan],
+      [`en sten om en händelse är en bildsten (${r ? SIM.runstenRubrik(r) : 'ingen sten'}: "${r?.text}")`, !!r && r.slag === 'handelse' && r.bild === 1 && r.runor === '' && /bilderna/.test(r.text) && SIM.runstenRubrik(r).includes('bildsten')],
     ];
   },
 };
@@ -464,15 +505,23 @@ SCENARIER.pynt = {
     const mer = PYNT_LIST.some(j => villPynt(s, p, j)) ? SIM.pyntLust(s, p) : 0; // lusten efter ett pynt till avtar (steg 10.2.43)
     // i rummet: ägaren trivs, och den som är vaken där får ett bättre intryck av ägaren. Ett uselt pynt ger inget
     const v = SIM.living(s).find(q => q !== p)!, ruta = rum?.tiles[0] ?? 0;
-    const prova = (q: number) => {
+    const prova = (q: number, extra?: number) => {
       const k2 = SIM.cloneState(s), p2 = k2.people.find(r => r.id === p.id)!, v2 = k2.people.find(r => r.id === v.id)!, t2 = pyntSt(k2)!;
       t2.q = q; p2.thoughts = []; v2.intryck = [];
+      if (extra !== undefined) k2.stationer!.push({ ...t2, id: 1e6, q: extra }); // ett pynt till i samma rum (steg 10.7.2)
+      for (const x of SIM.stationerOf(k2)) if (x.ag === p2.id && SIM.stationDef(x.k)?.pynt) x.q = q; // lusten efter ett till kan ha gett ett pynt till (steg 10.2.43)
+      k2.ting = (k2.ting ?? []).filter(x => !(x.k.startsWith('lerkruka_') && x.agare === p2.id)); // bara pyntet som prövas (en kruka hemma är också ett pynt)
       for (const r of [p2, v2]) { r.x = ruta % SIM.W + 0.5; r.y = Math.floor(ruta / SIM.W) + 0.5; r.task = undefined; } // SIM.W: W sätts när kartan skapas
       stepPynt(k2);
       const e = intryckOm(v2, p2.id, 'smakfull');
       return { glad: p2.thoughts.find(x => x.text === SIM.PYNT_TANKE)?.v ?? 0, syn: e ? e.v * e.c : 0 };
     };
-    const fin = prova(4), normal = prova(2), usel = prova(0);
+    const fin = prova(4), normal = prova(2), usel = prova(0), tva = prova(4, 3);
+    // lerkrukans utseenden (steg 10.7.2): två krukor ritas olika, och en kruka med rölleka ritas med växten
+    const k1 = SIM.newTing(s, 'lerkruka_liten', 1, p.id), k2 = SIM.newTing(s, 'lerkruka_liten', 1, p.id), k3 = SIM.newTing(s, 'lerkruka_liten', 1, p.id);
+    k3.vaxt = { g: 'rolleka', v: 1 };
+    const b1 = SIM.krukaBild(k1), b2 = SIM.krukaBild(k2), b3 = SIM.krukaBild(k3);
+    const v1 = SIM.tingVarde(k1), v2 = SIM.tingVarde(k2);
     return [
       [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} sorter hos tolv)`, vill && bara === 1 && brist > 0 && sorter === SIM.PYNT_SMAK.length],
       [`p bygger sitt pynt på ${h} timmar (ungefär ${h / 2} månader i spelet), inne i rummet där p sover, med en kvalitet`, byggd],
@@ -480,6 +529,9 @@ SCENARIER.pynt = {
       [`ägaren trivs i rummet: humör +${(fin.glad * 100).toFixed(0)} % med ett mästerverk, +${(normal.glad * 100).toFixed(0)} % med ett normalt`, fin.glad > normal.glad && normal.glad > 0],
       [`den som ser det får intrycket smakfull: ${fin.syn.toFixed(3)} med ett mästerverk, ${normal.syn.toFixed(3)} med ett normalt`, fin.syn > normal.syn && normal.syn > 0],
       [`ett uselt pynt ger ingenting (${usel.glad}, ${usel.syn})`, usel.glad === 0 && usel.syn === 0],
+      [`det finaste pyntet i rummet räknas: med ett fint pynt till är intrycket ${tva.syn.toFixed(3)} som med mästerverket ensamt (${fin.syn.toFixed(3)})`, Math.abs(tva.syn - fin.syn) < 1e-9 && tva.glad === fin.glad],
+      [`två krukor ritas olika (${b1.ikon}, ${b2.ikon}) och har samma värde (${v1.toFixed(1)}, ${v2.toFixed(1)})`, b1.ikon !== b2.ikon && v1 === v2],
+      [`krukan med rölleka ritas med växten (${b3.vaxt?.g}, vuxen ${b3.vaxt?.v})`, b3.vaxt?.g === 'rolleka' && b3.vaxt.v === 1 && !b1.vaxt],
     ];
   },
 };
@@ -1699,6 +1751,43 @@ SCENARIER.orena = {
   },
 };
 
+SCENARIER.helgonminne = {
+  text: 'Steg 10.7.4: helgon ur minnet. Helgon blir den döda som byn fortfarande berättar om: ryktbar bland de levande (KYRKA.helgonRykte) med gott anseende, och av flera den ryktbaraste. Ett kväde, ett framträdande, en bild eller en sten om den döda håller minnet uppe',
+  kor: () => {
+    const s = rikDag(3), v = vuxna(s);
+    const [u, d1, d2] = v;
+    s.tron = [{ id: 1, grundare: u.id, gnamn: u.name, t: s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: s.now, ar: 0 } as SIM.Tro];
+    for (const d of [d1, d2]) { d.tro = 1; d.died = s.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; delete d.intryck; }
+    for (const k of Object.keys(s.rels)) { const [a, b] = k.split('-').map(Number); if ([d1.id, d2.id].includes(a) || [d1.id, d2.id].includes(b)) delete s.rels[k]; }
+    const levande = SIM.living(s);
+    for (const p of levande) p.intryck = [d1, d2].map(d => ({ om: d.id, namn: d.name, k: 'generos' as SIM.IntryckTyp, v: 1, c: 1, t: s.now }));
+    const r0 = [SIM.ryktbarhet(s, d1.id).r, SIM.ryktbarhet(s, d2.id).r];
+    // fyrtio dygn: om d1 kväds det varje dygn, d2 glöms
+    for (let h = 0; h < 24 * 40; h += 4) {
+      s.now += 4 * SIM.HOUR;
+      if (h % 24 === 0) for (const p of SIM.living(s)) SIM.paminn(s, p, d1.id);
+      SIM.glomRykten(s, 4);
+    }
+    const r1 = [SIM.ryktbarhet(s, d1.id).r, SIM.ryktbarhet(s, d2.id).r];
+    SIM.helgonDygn(s);
+    const h = s.tron![0].helgon ?? [];
+    // av två som båda är ryktbara blir den ryktbaraste helgon
+    const s2 = rikDag(3), w = vuxna(s2), [u2, e1, e2] = w;
+    s2.tron = [{ ...s.tron![0], grundare: u2.id, gnamn: u2.name, helgon: undefined }];
+    for (const d of [e1, e2]) { d.tro = 1; d.died = s2.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; delete d.intryck; }
+    for (const k of Object.keys(s2.rels)) { const [a, b] = k.split('-').map(Number); if ([e1.id, e2.id].includes(a) || [e1.id, e2.id].includes(b)) delete s2.rels[k]; }
+    for (const p of SIM.living(s2)) p.intryck = [{ om: e1.id, namn: e1.name, k: 'generos' as SIM.IntryckTyp, v: 0.5, c: 1, t: s2.now }, { om: e2.id, namn: e2.name, k: 'generos' as SIM.IntryckTyp, v: 1, c: 1, t: s2.now }];
+    SIM.helgonDygn(s2);
+    const h2 = s2.tron![0].helgon ?? [];
+    return [
+      [`båda var lika kända (${r0.map(x => x.toFixed(1)).join(' och ')}), och efter 40 dygn (40 år i spelet) är den som det kväds om ryktbarare (${r1.map(x => x.toFixed(2)).join(' mot ')})`, Math.abs(r0[0] - r0[1]) < 1e-9 && r1[0] > r1[1]],
+      [`den som det kväds om blir helgon, den som glömts inte (${h.map(x => x.namn).join(', ') || 'ingen'})`, h.length === 1 && h[0].id === d1.id && r1[1] < SIM.KYRKA.helgonRykte],
+      [`helgonet behöver inga rader i eftermälet, och berättelsen kommer ur det byn minns (${h[0]?.krönika ?? ''})`, d1.fame.length === 0 && (h[0]?.krönika ?? '').includes('generös')],
+      [`av två ryktbara blir den ryktbaraste helgon (${h2.map(x => x.namn).join(', ')})`, h2.length === 1 && h2[0].id === e2.id],
+    ];
+  },
+};
+
 SCENARIER.kyrkan = {
   text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, trons hus (steg 10.3.19), buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
   kor: () => {
@@ -2732,6 +2821,111 @@ SCENARIER.skandning = {
       ['fienden: bål utan rit tar fyra ved och inget blir kvar', bal],
       [`främlingen bärs ut av den som följer budet och begravs av den utan tro (${kg?.k}, ${gastF}, ${gastU})`, kg?.k === 'framling' && gastF === 'skogen' && gastU === 'grav'],
       [`den illa ansedda (${an.toFixed(1)}) bärs ut av den som följer budet, och partnern begraver hen och bryter budet (${illaF.ode}, ${illaP.ode}/${illaP.brot})`, an < 0 && illaF.ode === 'skogen' && illaP.ode === 'grav' && illaP.brot === 'gottNamn'],
+    ];
+  },
+};
+
+SCENARIER.kanda = {
+  text: 'Steg 10.6.14: kända och ökända. Byns samlade minne av en person väger in när någon väljer vem hen pratar, kväder, avbildar, ristar eller skriver om. När en högtid eller en ledd bön slutar berättar prästen för alla som är med om en död hen minns, och om de ökända bara när trons bud tillåter det. En sak gjord i sorg får inskriptionen "Till minne av" och den dödas namn',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    const ny = (om: number, namn: string, k: SIM.IntryckTyp): SIM.Intryck => ({ om, namn, k, v: 1, c: 1, t: s.now });
+    // två döda som berättaren minns lika starkt: den ena minns hela byn (ökänd), den andra bara berättaren
+    const a = v[1], b = v[2];
+    for (const p of v) p.intryck = [];
+    a.intryck = [ny(9001, 'Ulv', 'valdsam'), ny(9002, 'Grim', 'valdsam')];
+    for (const p of v.slice(3)) p.intryck = [ny(9001, 'Ulv', 'valdsam')];
+    SIM.kandaRakna(s);
+    const vUlv = SIM.kandVikt(s, 9001), vGrim = SIM.kandVikt(s, 9002);
+    const ggr: Record<number, number> = {};
+    let n = 0;
+    for (let i = 0; i < 3000; i++) {
+      b.intryck = [];
+      SIM.skvaller(s, a, b, SIM.getRel(s, a, b), true);
+      const e = b.intryck?.[0]; if (e) { ggr[e.om] = (ggr[e.om] ?? 0) + 1; n++; }
+    }
+    const andel = n ? (ggr[9001] ?? 0) / n : 0;
+    // prästen efter en ledd bön: alla som är med och saknade intrycket får det
+    SIM.kultTimme(s);
+    const pr = SIM.prastOf(s, tr)!;
+    const med = v.filter(p => p !== pr).slice(0, 3);
+    const bon = (intryck: SIM.Intryck[]) => {
+      pr.intryck = intryck;
+      for (const q of med) q.intryck = [];
+      for (const q of [pr, ...med]) q.task = { act: 'ritual', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+      s.ritual = { k: 'leddBon', tro: tr.id, start: s.now - SIM.HOUR, slut: s.now, x: pr.x, y: pr.y }; SIM.ritualTimme(s);
+      return med.filter(q => SIM.intryckOm(q, intryck[0].om)).length;
+    };
+    const gott = bon([ny(9003, 'Sigrun', 'hjalpsam')]);
+    const varnar = bon([ny(9004, 'Ulv', 'valdsam')]);
+    tr.bud = [...(tr.bud ?? []), { id: 'deDoda', t: s.now }];
+    const tiger = bon([ny(9004, 'Ulv', 'valdsam')]);
+    // en sak gjord i sorg
+    const g = v[3], d = nyInvanare(s, g.sex === 'm' ? 'k' : 'm', 30);
+    g.partner = d.id; d.partner = g.id;
+    SIM.die(s, d, 'forkylning');
+    const t = { id: 777, k: 'yxa', q: 4 } as { id: number; k: string; q?: number; ber?: SIM.SakMinne };
+    SIM.sakMinne(s, g, t);
+    const text = SIM.sakBerattelse(s, t, 'yxa');
+    return [
+      [`byns minne väger in (Ulv ${vUlv.toFixed(2)}, Grim ${vGrim.toFixed(2)})`, vUlv > vGrim && vGrim > 1],
+      [`en ökänd död väljs oftare i skvallret än en som bara berättaren minns lika starkt (Ulv ${ggr[9001] ?? 0}, Grim ${ggr[9002] ?? 0} av ${n}; den mest omtalade tar ${Math.round(andel * 100)} % av ämnena)`, (ggr[9001] ?? 0) > (ggr[9002] ?? 0)],
+      [`efter en ledd bön med präst har de som var med fått prästens minne av en död (${gott} av ${med.length})`, gott === med.length],
+      [`utan budet varnar prästen för de ökända (${varnar} av ${med.length})`, varnar === med.length],
+      [`med budet att inte tala illa om de döda varnar prästen inte (${tiger})`, tiger === 0],
+      [`en sak gjord i sorg bär texten "Till minne av ${d.name}" (${text})`, text.includes('Till minne av ' + d.name)],
+    ];
+  },
+};
+
+SCENARIER.minnesdetaljer = {
+  text: 'Steg 10.6.15: minnets detaljer. Hur många händelser man minns om en död följer hur starkt minnet är, minst 1 och högst 3 per sak hen var känd för, och när minnet bleknar faller de en i taget, den minst viktiga först. En påminnelse (graven, runstenen, boken, kvädet) gör minnet säkrare och kan lägga tillbaka en händelse som den själv bär, och en klenod i byn gör att minnet bleknar långsammare',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 2);
+    const b = (h: string, t: number) => ({ h, t: s.now - t * SIM.HOUR, sett: true }) as SIM.Bevis;
+    const ny = (om: number, vv: number, bev: SIM.Bevis[]): SIM.Intryck => ({ om, namn: 'Ulv', k: 'valdsam', v: vv, c: 1, t: s.now, bev });
+    for (const p of v) p.intryck = [];
+    const w = v[1];
+    const stark = ny(9001, 1.5, [b('sla', 4), b('drap', 3), b('misshandel', 2), b('sla', 1)]), svag = ny(9002, 0.3, [b('sla', 4), b('misshandel', 2)]);
+    w.intryck = [stark, svag];
+    SIM.glomRykten(s, 0.01);
+    const n0 = [stark.bev!.length, svag.bev!.length];
+    // med tiden: en i taget, den minst viktiga först
+    const vikt = (x: SIM.Bevis) => SIM.HANDELSER[x.h].vikt;
+    let enITaget = true, minstForst = true; const foll: string[] = [];
+    for (let i = 0; i < 400 && w.intryck?.includes(stark); i++) {
+      const fore = stark.bev!.slice();
+      SIM.glomRykten(s, 24);
+      const kvar = stark.bev!;
+      if (kvar.length === fore.length) continue;
+      if (fore.length - kvar.length !== 1) enITaget = false;
+      const borta = fore.filter(x => !kvar.includes(x));
+      for (const x of borta) { foll.push(x.h); if (kvar.some(y => vikt(y) < vikt(x))) minstForst = false; }
+    }
+    // kvädet ger tillbaka en händelse som skalden minns
+    for (const p of v) p.intryck = [];
+    const skald = v[2];
+    tr.bud = [...(tr.bud ?? []), { id: 'sorgkvade', t: s.now }];
+    skald.skill[SIM.FRAM_SKILL] = 20;
+    const egen = ny(9003, 1, [b('sla', 4), b('misshandel', 2)]);
+    w.intryck = [egen]; skald.intryck = [ny(9003, 1, [b('drap', 3)])];
+    SIM.sorgkvade(s, tr, 9003, [skald, w]);
+    const tillbaka = egen.bev!.some(x => x.h === 'drap');
+    // en klenod i byn: minnet av göraren bleknar långsammare
+    const d = nyInvanare(s, 'm', 40); SIM.die(s, d, 'forkylning');
+    const blekna = (klenod: boolean) => {
+      s.ting = (s.ting ?? []).filter(t => t.av !== d.id);
+      if (klenod) { const t = SIM.addTool(s, 'yxa', v[3]); t.q = 5; t.av = d.id; }
+      const e = ny(d.id, 1, [b('sla', 4)]); w.intryck = [e]; w.paminnd = undefined;
+      SIM.glomRykten(s, 24 * 5);
+      return e.c;
+    };
+    const med = blekna(true), utan = blekna(false);
+    return [
+      [`ett starkt minne behåller 3 händelser och ett svagt 1 (${n0.join(' och ')})`, n0[0] === 3 && n0[1] === 1],
+      [`med tiden faller händelserna en i taget, den minst viktiga först (${foll.join(', ')})`, enITaget && minstForst && foll.length >= 2],
+      [`ett kväde ger tillbaka en händelse som skalden minns (${egen.bev!.map(x => x.h).join(', ')})`, tillbaka],
+      [`med en klenod i byn bleknar minnet långsammare (${med.toFixed(2)} mot ${utan.toFixed(2)} efter fem dygn)`, med > utan],
     ];
   },
 };

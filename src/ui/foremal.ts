@@ -1,4 +1,4 @@
-import { rutorAv } from '../sim';
+import { krukaBild, rutorAv } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -68,6 +68,14 @@ function drawPile(pl: Pile, t: number) {
   const yta = () => { if (inne) overG.beginFill(VATSKOR[inne.v].farg).drawRect(x0 + 6, y0 + 4, 4, 2).endFill(); };
   const ensam = (k: string) => { const w = iconCanvas(k).width || 8; if (w > 8) pileIcons.add(k, x0, y0 - 3, 1); else pileIcons.add(k, x0 + 4, y0 + 3, 1); yta(); };
   if (pl.gor) { ensam(pl.gor); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
+  // lerkrukan (steg 10.7.2): ett av tre utseenden efter krukan själv, och växten i den
+  const kruka = pl.k.startsWith('lerkruka_') && pl.id !== undefined ? tingOf(s).find(q => q.id === pl.id) : undefined;
+  if (kruka) {
+    const b = krukaBild(kruka), ik = hasIcon(b.ikon) ? b.ikon : pl.k; ensam(ik);
+    if (b.vaxt) vaxtIKruka(x0 + 8, y0 - 3 + (KRUKKANT[ik] ?? 3), b.vaxt.v, b.vaxt.g === 'blomma', !!b.vaxt.blommar);
+    if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
+    return;
+  }
   const n = clamp(Math.ceil(f * 4), 1, 4);
   // en, några eller många (steg 9.2.40): har saken en egen bild för några eller många i bildstilen ritas den en gång, annars som förut
   const mangd = pl.max === 1 || kartbildEnsam(pl.k) ? '' : f > 2 / 3 ? '_manga' : f > 1 / 3 ? '_nagra' : '';
@@ -80,6 +88,22 @@ function drawPile(pl: Pile, t: number) {
   }
   if (pl.max === 1 || iconCanvas(pl.k).width > 8) { ensam(pl.k); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
+}
+// växten i krukan (steg 10.7.2, platshållare): stjälkar upp från kanten och, när den vuxit, röllekans vita blomkorgar.
+// KRUKKANT = raden i krukans bild där kanten är
+const KRUKKANT: Record<string, number> = { lerkruka_hog: 1, lerkruka_skal: 7 };
+// blomman (steg 10.7.3) har gröna knoppar tills den blommar, och då gula och vita kronor
+function vaxtIKruka(cx: number, kant: number, v: number, blomma = false, blommar = false) {
+  const h = 2 + Math.round(5 * v), g = overG;
+  g.beginFill(0x647025).drawRect(cx - 2, kant - h + 1, 1, h).drawRect(cx, kant - h, 1, h + 1).drawRect(cx + 2, kant - h + 2, 1, h - 1).endFill();
+  g.beginFill(0x898b4c).drawRect(cx - 3, kant - 2, 2, 1).drawRect(cx + 1, kant - 3, 2, 1).endFill(); // bladen
+  if (blomma) {
+    if (!blommar) return;
+    g.beginFill(0xd8b25f).drawRect(cx - 3, kant - h - 1, 2, 2).drawRect(cx + 2, kant - h, 2, 2).endFill().beginFill(0xdad0bb).drawRect(cx - 1, kant - h - 2, 2, 2).endFill();
+    g.beginFill(0xbd753e).drawRect(cx - 2, kant - h, 1, 1).drawRect(cx, kant - h - 1, 1, 1).drawRect(cx + 3, kant - h + 1, 1, 1).endFill();
+    return;
+  }
+  if (v >= 0.6) g.beginFill(0xdad0bb).drawRect(cx - 3, kant - h, 3, 1).drawRect(cx - 1, kant - h - 1, 3, 1).drawRect(cx + 1, kant - h + 1, 3, 1).endFill();
 }
 // mästerverken glänser (steg 2.2.2, platshållare): en liten ljus gnista som blinkar till ibland, var och en i sin takt.
 // Kvaliteten syns annars inte på kartan
@@ -290,7 +314,7 @@ export function drawStructures(t: number) {
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
   // graven (steg 10.4.2, platshållare tills Björn valt i bildstilen): en jordhög, och vården som står på den
   for (const g of s.gravar ?? []) { gravPlats(g); if (gravSkick(s, g) < BESOK.laga) igenvuxen(g); } // den slitna graven växer igen (steg 10.4.8)
-  for (const r of s.runstenar ?? []) runstenBild(r.x, r.y); // runstenen (steg 10.6.1, platshållare tills Björn valt i bildstilen)
+  for (const r of s.runstenar ?? []) runstenBild(r.x, r.y, r.bild === 1); // runstenen (steg 10.6.1, platshållare tills Björn valt i bildstilen)
   for (const h of s.heliga ?? []) stubbIkoner.add(HELIGA_PLATSER[h.k].ikon, h.x * TS, h.y * TS, 1); // de heliga platserna (steg 8.5.5)
   stubbIkoner.end();
   pileIcons.end();
@@ -362,12 +386,20 @@ function igenvuxen(g: { x: number; y: number }) {
 }
 // graven som platshållare (steg 10.4.2): jordhögen, och gravstolpen, gravbrädan, stockramen, gravhuset eller gravhögen
 // runstenen (steg 10.6.1): en platshållare i paletten, en hög grå sten med ett rödmålat runband, 16 punkter per ruta
-function runstenBild(x: number, y: number) {
+// bildstenen (steg 10.7.1): samma sten med målade bilder i stället för runbandet, en figur med spjut och ett djur
+function runstenBild(x: number, y: number, bild = false) {
   const X = x * TS, Y = y * TS, gr = structG, u = TS / 16;
-  gr.beginFill(0x3a3a34, 0.35).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill();
+  gr.beginFill(0x24201d, 0.35).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill();
   gr.beginFill(0x8a9c9e).drawPolygon([X + 5 * u, Y + TS - 2 * u, X + 4.5 * u, Y + 6 * u, X + 6 * u, Y + 2 * u, X + 10 * u, Y + 1.5 * u, X + 11.5 * u, Y + 5 * u, X + 11 * u, Y + TS - 2 * u]).endFill();
-  gr.beginFill(0x5f6e70).drawRect(X + 10 * u, Y + 4 * u, 1.5 * u, TS - 6 * u).endFill();
-  gr.lineStyle(u, 0xa8402e).moveTo(X + 6 * u, Y + TS - 3 * u).lineTo(X + 6 * u, Y + 4 * u).quadraticCurveTo(X + 8 * u, Y + 2.5 * u, X + 10 * u, Y + 4 * u).lineTo(X + 10 * u, Y + TS - 3 * u).lineStyle(0);
+  gr.beginFill(0x61767a).drawRect(X + 10 * u, Y + 4 * u, 1.5 * u, TS - 6 * u).endFill();
+  if (bild) {
+    gr.beginFill(0xa14808).drawRect(X + 6 * u, Y + 4 * u, u, u).drawRect(X + 6 * u, Y + 5 * u, u, 3 * u).drawRect(X + 5.5 * u, Y + 8 * u, u, 2 * u).drawRect(X + 7 * u, Y + 8 * u, u, 2 * u).endFill(); // en människa
+    gr.beginFill(0x3f2415).drawRect(X + 7 * u, Y + 3 * u, 0.6 * u, 6 * u).endFill(); // spjutet
+    gr.beginFill(0x474138).drawRect(X + 8 * u, Y + 9 * u, 2.5 * u, 1.5 * u).drawRect(X + 9.5 * u, Y + 8 * u, u, u).drawRect(X + 8 * u, Y + 10.5 * u, 0.6 * u, u).drawRect(X + 10 * u, Y + 10.5 * u, 0.6 * u, u).endFill(); // djuret
+    gr.beginFill(0xd8b25f).drawRect(X + 6 * u, Y + 12 * u, 4 * u, 0.7 * u).endFill(); // marken under
+    return;
+  }
+  gr.lineStyle(u, 0xa14808).moveTo(X + 6 * u, Y + TS - 3 * u).lineTo(X + 6 * u, Y + 4 * u).quadraticCurveTo(X + 8 * u, Y + 2.5 * u, X + 10 * u, Y + 4 * u).lineTo(X + 10 * u, Y + TS - 3 * u).lineStyle(0);
 }
 function gravPlats(g: { x: number; y: number; vard?: string }) {
   const X = g.x * TS, Y = g.y * TS, gr = structG;

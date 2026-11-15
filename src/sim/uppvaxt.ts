@@ -153,6 +153,7 @@ function effektFor(d: UpplevelseDef, e: Partial<Record<Stat, number>>, vuxen: bo
 
 // p var med om k (om = vad eller vem det gällde). Barn och vuxna formas efter raden (vem), varje slag en gång i barndomen och en
 // gång i vuxenlivet; det fastnar med chansen i registret. Drar ur personens egen slumpföljd, så att inget annat ändras
+export const tatKrok = { upplev: (_s: State, _p: Person, _k: string) => {}, vuxen: (_s: State, _p: Person) => {} };
 export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string) {
   const d: UpplevelseDef = DEF[k];
   if (!alive(p)) return;
@@ -172,6 +173,7 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string) {
   p.upp = lista;
   raknaPot(p);
   count(s, 'upp_' + k); if (vuxen) count(s, 'upp_vuxen');
+  if (vuxen) tatKrok.upplev(s, p, k); // händelsen kan märkas i huden (steg 10.7.5, tatuering.ts sätter kroken)
   log(s, `${p.name}, ${talOrd(u.a)} år, ${liten(upplevelseText(u))}.`, 'rel', [p.id]);
 }
 // alla i byn var med om k (barnen och, sedan steg 4.1.1.2, de vuxna)

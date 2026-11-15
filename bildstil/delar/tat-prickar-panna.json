@@ -1,0 +1,17 @@
+{
+ "id": "tat-prickar-panna",
+ "ritad": 1,
+ "av": "Platshållare (steg 10.7.5), ritad i programmeringschatten",
+ "om": "Platshållare i skiffer: mönstret ligger platt i huden.",
+ "bilder": {
+  "standard": {
+   "x": -2,
+   "y": -11,
+   "rader": [
+    "R.R.R",
+    ".R.R.",
+    "..R.."
+   ]
+  }
+ }
+}

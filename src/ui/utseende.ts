@@ -3,7 +3,7 @@
 // födseln: ett barn ärver dem från mamman och pappan (barnAv), och de första i byn, nykomlingarna och personerna i byar
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
-import { gastTingOf, gastVapen, infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
+import { gastTingOf, gastVapen, infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning, tatDel } from '../sim';
 import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 import { stridAnsikte } from './stridansikte';
@@ -94,7 +94,7 @@ export function skapad(s: State, p: Person): Skapad {
   if (ageOf(p, s.now) < SMABARN.ar) smabarnet(p, u);
   // ärren i ansiktet (steg 8.2.4): samma ärr hela livet, ur rader i PORTRATT; ögonlappen när ett öga är borta
   const arr = p.arr?.find(a => a.d === 'huvud' || a.d === 'kake' || a.d === 'ogaV' || a.d === 'ogaH');
-  u.del = { ...u.del, huvudbonad: null, arr: arr ? `arr-${arr.n}` : null, blamarke: null, redskap: null };
+  u.del = { ...u.del, huvudbonad: null, arr: arr ? `arr-${arr.n}` : null, blamarke: null, redskap: null, tatPanna: tatDel(p, 'panna'), tatKind: tatDel(p, 'kind'), tatHals: tatDel(p, 'hals') }; // tatueringarna (steg 10.7.5)
   Object.assign(u, kropp(s, p, u.del));
   utrustad(s, p, u);
   return u;

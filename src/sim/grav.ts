@@ -521,7 +521,7 @@ export function gravbesokKlar(s: State, p: Person, t: Task) {
   const vem = t.ref ?? -1, g = gravAv(s, vem), q = g ? undefined : sanktAv(s, vem);
   if (!g && !q) return;
   const namn = (g ?? q)!.namn, b = band(s, p, vem, namn);
-  p.gravBesok = s.now; paminn(s, p, vem); count(s, 'gravbesok');
+  p.gravBesok = s.now; paminn(s, p, vem, g?.textBev); // gravtexten bär sina händelser (steg 10.6.15) count(s, 'gravbesok');
   think(p, 'Stod vid graven', BESOK.trost, s.now, 6 * HOUR);
   // gåvan: den minst värda saken hen äger eller får ta
   if (rnd(s, 'val', p) < BESOK.gava * b) {

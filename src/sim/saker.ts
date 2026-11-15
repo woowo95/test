@@ -21,6 +21,7 @@ export interface SakDef {
   haller?: number; // mat och sådant som ruttnar som mat: hur många dygn (år i spelet) den håller i lagret i rumstemperatur och utan tak (LAGER i lager.ts)
   slits?: number; // det som försvinner av skicket per timme
   blir?: { k: string; per: number }; // det den faller sönder till när skicket är slut, och hur många av den per styck
+  bildyta?: true; // en bildyta (steg 10.7.1): saken får ett målat motiv redan från fin kvalitet, andra saker först som mästerverk
   redskap?: true; // räknas styckvis; skicket är hur mycket som finns kvar av redskapet
   hanger?: 'balte' | 'axel'; // var redskapet hänger när det inte används (steg 7.1.1): i bältet eller på axeln (axelremmen, steg 7.1.2). Saknas = det hänger ingenstans
   grupp?: string; // redskap av samma slag som kan ersätta varandra (alla spjut), och görs på samma sätt (redskap.ts)
@@ -75,6 +76,7 @@ const DEF = {
   // proteserna (steg 9.5.11, protes.ts): den som förlorat en del får en när byn har en ledig, och har den på sig
   krycka: { namn: 'Krycka', skaffa: RECEPT.krycka, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krycka gick sönder.' }, gors: { text: 'Täljer en krycka.', stat: 'kryckorGjorda', forsta: '{namn} täljde byns första krycka. Med den kan den som förlorat ett ben gå igen.' } },
   traben: { namn: 'Träben', skaffa: RECEPT.traben, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s träben gick sönder.' }, gors: { text: 'Täljer ett träben och binder fast remmar av rep.', stat: 'trabenGjorda', forsta: '{namn} täljde byns första träben.' } },
+  bagborr: { namn: 'Bågborr', skaffa: RECEPT.bagborr, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'bagborrarTrasiga', text: '{namn}s bågborr gick sönder.' }, gors: { text: 'Gör en bågborr: en båge av gren och rep som snurrar en pinne mot en träskiva.', stat: 'bagborrarGjorda', forsta: '{namn} gjorde byns första bågborr.' } }, // steg 10.6.13: tänddonet, slits per försök (eld.ts)
   krok: { namn: 'Krok', skaffa: RECEPT.krok, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krok gick sönder.' }, gors: { text: 'Gör en krok av trä som sätts på armen.', stat: 'krokarGjorda', forsta: '{namn} gjorde byns första krok åt den som förlorat en hand.' } },
   ogonlapp: { namn: 'Ögonlapp', skaffa: RECEPT.ogonlapp, vikt: 0.1, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s ögonlapp gick sönder.' }, gors: { text: 'Skär en ögonlapp av skinn.', stat: 'ogonlapparGjorda', forsta: '{namn} skar byns första ögonlapp.' } },
   // förbanden (steg 9.5.15): remsorna som läggs på såret och nålen av ben som såret sys med
@@ -142,6 +144,7 @@ const DEF = {
   mjarde: { namn: 'Mjärde', skaffa: RECEPT.mjarde, stack: 1, ruta: 1, mapp: 'Redskap' }, // en flätad korg som sätts ut i vattnet (steg 7.4.2)
   huggen_sten: { namn: 'Huggen sten', skaffa: RECEPT.huggen_sten, stack: 20, vikt: 4, mapp: 'Material' }, // steg 7.5.1
   plankor: { namn: 'Plankor', skaffa: RECEPT.plankor, stack: 20, vikt: 2, mapp: 'Material' },
+  blomma: { namn: 'Blomma', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' }, // ängsblommor till krukorna (steg 10.7.3): ger inget att skörda, bara pynt
   rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true }, // den första örten (steg 7.6.3): går inte att äta och håller länge
   salva: { namn: 'Salva', skaffa: RECEPT.salva, stack: 10, vikt: 0.2, mapp: 'Material' }, // steg 7.6.4–7.6.6: ingen funktion än
   tjara: { namn: 'Tjära', skaffa: RECEPT.tjara, stack: 10, vikt: 0.5, mapp: 'Material' },
@@ -192,7 +195,7 @@ const DEF = {
     gors: { text: 'Täljer en lyra av trä med {verktyg} och spänner strängar av rep.', stat: 'lyrorGjorda', forsta: '{namn} gjorde byns första lyra. Sången till den gör de som lyssnar gladare än något annat.' } },
   // benspaden (steg 2.7.2): tre ben som ett blad, surrade med rep vid en gren, görs vid slöjdbänken. Med den grävs latrinen
   // (stationer.ts) och rötterna fortare (samla i handlingar.ts)
-  skold: { namn: 'Sköld', hanger: 'balte', skaffa: RECEPT.skold, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, gors: { text: 'Gör en sköld.', stat: 'skoldarGjorda', forsta: '{namn} gjorde byns första sköld.' }, trasig: { stat: 'skoldarTrasiga', text: '{namn}s sköld gick sönder.' } }, // steg 8.7.3
+  skold: { namn: 'Sköld', bildyta: true, hanger: 'balte', skaffa: RECEPT.skold, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, gors: { text: 'Gör en sköld.', stat: 'skoldarGjorda', forsta: '{namn} gjorde byns första sköld.' }, trasig: { stat: 'skoldarTrasiga', text: '{namn}s sköld gick sönder.' } }, // steg 8.7.3
   bage: { namn: 'Pilbåge', hanger: 'balte', skaffa: RECEPT.bage, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, gors: { text: 'Gör en pilbåge.', stat: 'bagarGjorda', forsta: '{namn} gjorde byns första pilbåge.' }, trasig: { stat: 'bagarTrasiga', text: '{namn}s båge gick sönder.' } }, // steg 8.7.6
   slunga: { namn: 'Slunga', hanger: 'balte', skaffa: RECEPT.slunga, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, gors: { text: 'Gör en slunga.', stat: 'slungorGjorda', forsta: '{namn} gjorde byns första slunga.' }, trasig: { stat: 'slungorTrasiga', text: '{namn}s slunga gick sönder.' } },
   horn: { namn: 'Horn', hanger: 'balte', skaffa: RECEPT.horn, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, gors: { text: 'Gör ett horn.', stat: 'hornGjorda', forsta: '{namn} gjorde byns första horn.' }, trasig: { stat: 'hornTrasiga', text: '{namn}s horn gick sönder.' } }, // steg 8.7.11

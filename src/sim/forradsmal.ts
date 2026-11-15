@@ -137,7 +137,7 @@ export const MATERIALMAL = {
   grenar: { min: tand },
   torrgras: { min: s => harNaver(s) ? 0 : tand(s) }, // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: () => 0 },
-  flinta: { min: s => TROSKEL.flintaMinsta + flintaKrok.verktyg(s) }, // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
+  flinta: { min: s => (nTools(s, 'bagborr') > 0 ? 0 : TROSKEL.flintaMinsta) + flintaKrok.verktyg(s) }, // med en bågborr behövs ingen flinta till elden (steg 10.6.13), // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
   virke: { min: s => virkeTillHus(s) }, // det husen i Byggplanen behöver, också de som inte är påbörjade (steg 10.2.70)
   lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
@@ -253,6 +253,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   rustning: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), hjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), skold: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), bage: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), slunga: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), horn: () => 1, // vapnen och rustningen efter de vuxna och hoten (steg 10.2.75); // vapnen och rustningen (system 8.7)
   skara: s => (s.angar?.length ?? 0) > 0 ? 1 : 0, // en skära när byn har en slåtteräng (steg 9.8.9)
   benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
+  bagborr: () => 1, // ett tänddon till elden (steg 10.6.13)
   fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
   slanda: () => VILLTAL.slandor, // till dem som spinner, och en i vävstolen (steg 7.7.8)

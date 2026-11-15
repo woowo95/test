@@ -52,7 +52,7 @@ function symbolRad(folk: Person[], aren: number[]) {
 // Skrifter (steg 10.6.8): alla stenar, blad och böcker som finns i byn, nyast först, med stadiets symbol, kvalitetsmärket, titeln
 // och var de finns. Ett tryck på raden visar texten, ett tryck på platsen flyttar kartan dit, och tre knappar väljer stadium
 const STADIER: { id: SkriftStadium; namn: string; ikon: string; tecken: string }[] = [
-  { id: 'sten', namn: 'Runstenar', ikon: 'huggen_sten', tecken: '🪨' }, { id: 'pergament', namn: 'Blad', ikon: 'blad', tecken: '📜' }, { id: 'bok', namn: 'Böcker', ikon: 'bok', tecken: '📖' }];
+  { id: 'sten', namn: 'Runstenar', ikon: 'huggen_sten', tecken: '🪨' }, { id: 'pergament', namn: 'Blad', ikon: 'blad', tecken: '📜' }, { id: 'bok', namn: 'Böcker', ikon: 'bok', tecken: '📜' }];
 function skriftHtml() {
   const alla = skriftLista(s), lista = val.stad ? alla.filter(r => r.stadium === val.stad) : alla;
   const knappar = STADIER.map(d => `<button type="button" data-kstad="${d.id}" aria-pressed="${d.id === val.stad}" title="${d.namn}" aria-label="${d.namn}">${tecknet(d.ikon, d.tecken, 16)}</button>`).join('');

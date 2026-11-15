@@ -146,6 +146,10 @@ export const PAL: Record<string, Record<string, string>> = {
   skinn: { b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
   pergament: { w: '#dad0bb', k: '#bdb39b' },
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
+  bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
+  blomma: { o: '#24201d', g: '#647025', l: '#898b4c', y: '#d8b25f', c: '#bd753e', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.7.3, platshållare
+  bildsten: { o: '#24201d', g: '#8a9c9e', m: '#61767a', r: '#a14808', b: '#3f2415', d: '#474138', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // steg 10.7.1, platshållare
+  bokhylla: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', r: '#742a01', g: '#4b4f00', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.6.16, platshållare
   skrivpulpet: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', w: '#dad0bb', d: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 10.6.11, platshållare
   bok: { h: '#7d5b40', w: '#dad0bb', d: '#24201d' }, // steg 10.6.6, platshållare // steg 10.6.5, platshållare // steg 10.6.4, platshållare
   // vargen (steg 3.7.14, platshållare): grå päls
@@ -2376,6 +2380,42 @@ export const PIX: Record<string, string[]> = {
     '.....oooooo.....',
     '...zzzzzzzzzzz..',
   ],
+  lerkruka_hog: [ // platshållare (steg 10.7.2): en hög och smal kruka med en hals och ett ristat band
+    '................',
+    '......oooo......',
+    '.....orrrro.....',
+    '......oRRo......',
+    '.....oTRRRo.....',
+    '....oTTRRRRo....',
+    '....oTRRRRro....',
+    '....okRkRkro....',
+    '....oTRRRRro....',
+    '....oTRRRrro....',
+    '....oRRRRrro....',
+    '....oRRRrrro....',
+    '.....oRRrro.....',
+    '.....oRrrro.....',
+    '......oooo......',
+    '....zzzzzzzz....',
+  ],
+  lerkruka_skal: [ // platshållare (steg 10.7.2): en låg och vid kruka med en vulst under kanten
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '.oooooooooooooo.',
+    '.orrrrrrrrrrrro.',
+    '.oTTRRRRRRRRrro.',
+    '..okRkRkRkRkro..',
+    '..oTTRRRRRRrro..',
+    '...oTRRRRRrro...',
+    '....oRRRrrro....',
+    '.....oooooo.....',
+    '..zzzzzzzzzzzz..',
+  ],
   // bonaden (platshållare): ett ljust skinn med ett rött mönster, upphängt i en käpp, med fransar
   hogsate: [ // platshållare (steg 10.2.68)
     '....oooooooo....',
@@ -2682,6 +2722,78 @@ export const PIX: Record<string, string[]> = {
     '........oo......',
   ],
   // boken (steg 10.6.6, platshållare): bladen mellan två plankor, ryggen till vänster
+  bagborr: [ // platshållare (steg 10.6.13): en böjd båge med ett snöre runt en stående pinne på en skiva
+    '................',
+    '.......oo.......',
+    '......obbo......',
+    '.....ob..o......',
+    '....ob...oo.....',
+    '...ob...ora.....',
+    '..ob...or.ao....',
+    '..ob..or..ao....',
+    '..obrrrrrrao....',
+    '...ob.....ao....',
+    '....ob....ao....',
+    '.....obb..ao....',
+    '......oo.oaao...',
+    '.......oaaaaaao.',
+    '.......oooooooo.',
+    '........zzzzzz..',
+  ],
+  blomma: [ // platshållare (steg 10.7.3): en liten bukett ängsblommor med gula och vita kronor
+    '................',
+    '.....oo....oo...',
+    '....oyyo..owwo..',
+    '...oyycyo.owcwo.',
+    '....oyyo..owwo..',
+    '..oo.og...go....',
+    '.owwo.g..g......',
+    '.owcwo.g.g..oo..',
+    '..owwg.ggg.oyyo.',
+    '...l.g.gg.gycyo.',
+    '....llggg.goyyo.',
+    '.....lggglg.o...',
+    '......gggl......',
+    '.......gg.......',
+    '.......gg.......',
+    '......zzzz......',
+  ],
+  bildsten: [ // platshållare (steg 10.7.1): en rest sten med en målad jägare, ett spjut och ett djur i stället för runor
+    '................',
+    '......oooo......',
+    '....oogggggo....',
+    '...ogggrbgggo...',
+    '...oggrrbgggmo..',
+    '...oggrrbggggmo.',
+    '...oggrgbggggmo.',
+    '...ogrgrggdgdmo.',
+    '...oggggggdddmo.',
+    '...ogggggdgdgmo.',
+    '...oggggggggmo..',
+    '...oyyyyyyyymo..',
+    '...ogggggggggo..',
+    '...ogggggggggo..',
+    '....ooooooooo...',
+    '...zzzzzzzzzzz..',
+  ],
+  bokhylla: [ // platshållare (steg 10.6.16): en hylla av plankor med böcker och ett rullat blad
+    '................',
+    '..oooooooooooo..',
+    '..obbbbbbbbbbo..',
+    '..ob.oo.o.o.bo..',
+    '..obornogwrwbo..',
+    '..obornogwrwbo..',
+    '..ocooooooooco..',
+    '..obbbbbbbbbbo..',
+    '..ob.o.oo...bo..',
+    '..obgoroowwwbo..',
+    '..obgoroowwwbo..',
+    '..ocooooooooco..',
+    '..obbbbbbbbbbo..',
+    '..oa........ao..',
+    '..oo........oo..',
+    '..zzzzzzzzzzzz..',
+  ],
   skrivpulpet: [ // platshållare (steg 10.6.11): en lutande skiva med ett blad, och en pall framför
     '................',
     '................',
@@ -3983,7 +4095,7 @@ PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 // Björns val efter v193 (steg 3.10.13): den fångade kaninen på kartan ser ut som viltet i förrådet
 PIX.kanin_dod = PIX.vilt; PAL.kanin_dod = PAL.vilt;
 // pyntet (steg 4.3.4): samma bild på kartan och i listorna, och lerkrukan för intrycket smakfull
-for (const k of ['kruka', 'bonad']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; }
+for (const k of ['kruka', 'bonad', 'skrivpulpet', 'bokhylla']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; } // skrivpulpeten och bokhyllan (steg 10.6.11, 10.6.16): platshållarna på kartan
 // bänken och krubban vridna ett kvarts varv (platshållare tills de stående bilderna är ritade, steg 10.2.68 och 10.2.88)
 for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_karta_v'] = Array.from({ length: r[0].length }, (_, x) => Array.from({ length: r.length }, (_, y) => r[r.length - 1 - y][x]).join('')); PAL[k + '_karta_v'] = PAL[k]; }
 
@@ -4019,7 +4131,7 @@ PIX.rokeri = PIX.tork; PAL.rokeri = PAL.tork; PIX.rokfisk = PIX.torrfisk; PAL.ro
 for (const k of RATT_SAKER) { const h = rattInfo(k)!.huvud, f = ({ kott: 'grillkott', fisk: 'grillfisk', rot: 'rotter', svamp: 'svamp', bar: 'bar', sad: 'artfron' } as Record<string, string>)[h]; PIX[k] = PIX[f]; PAL[k] = PAL[f]; } // platshållare för rätterna (steg 9.6.3) tills Björn valt i bildstilen
 // kunskaperna i pratbubblan (steg 9.9.3): platshållare ur befintliga symboler tills de ritats
 for (const [k, f] of [['motvind', 'vader_blast'], ['renahander', 'a_vatten'], ['fukt', 'vader_regn'], ['smitta', 's_dod']] as const) if (PIX[f]) { PIX[k] = PIX[f]; PAL[k] = PAL[f]; }
-for (const k of ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor']) { PIX[k] = PIX.kruka; PAL[k] = PAL.kruka; } // platshållare för lerkrukans tre storlekar (steg 9.4.11) tills Björn valt i bildstilen // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
+for (const k of ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor', 'lerkruka_hog', 'lerkruka_skal']) { if (k.endsWith('hog') || k.endsWith('skal')) { PAL[k] = PAL.kruka; continue; } PIX[k] = PIX.kruka; PAL[k] = PAL.kruka; } // platshållare för lerkrukans tre storlekar (steg 9.4.11) tills Björn valt i bildstilen // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
 // Björns val efter v245 (steg 4.5.2): rocken (version 2) och skorna (version 1) i 16 × 16 punkter, samma form för kaninskinn och
 // vargskinn i materialets färger, och bybornas filt (version 1; handlaren har kvar den förra)
 const ROCK16 = [
@@ -4203,6 +4315,8 @@ for (const k of ['stockvag', 'brygga', 'gadda', 'mort', 'gaddkott', 'mortkott', 
   PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
   PAL[k] = b.pal;
 }
+// den målade skölden (steg 10.7.1, platshållare): skölden med en målad figur mitt på
+{ const b = PIX.skold, mx = 8, my = 8; PIX.skold_malad = b.map((rad, y) => [...rad].map((c, x) => c !== '.' && Math.abs(x - mx + 0.5) <= 1.5 && Math.abs(y - my + 0.5) <= 2.5 && ((x + y) % 2 === 0 || y === my - 2) ? 'Ä' : c).join('')); PAL.skold_malad = { ...PAL.skold, 'Ä': '#a14808' }; }
 for (const [m, c, d, f] of [['vargskinn', '#8a9c9e', '#61767a', '#3e5156'], ['bjornskinn', '#987e62', '#7d5b40', '#5e3c24']]) { PIX['ryggsack_' + m] = PIX.ryggsack_kaninskinn; PAL['ryggsack_' + m] = { ...PAL.ryggsack_kaninskinn, c, d, f }; } // Björns ryggsäck i vargens och björnens skinn
 PIX.ryggsack = PIX.ryggsack_kaninskinn; PAL.ryggsack = PAL.ryggsack_kaninskinn;
 for (const [m, b, c, d] of [['kaninskinn', '#a0947d', '#7e7362', '#bdb39b'], ['vargskinn', '#61767a', '#3e5156', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#3f2415', '#7d5b40']]) { PIX['byxor_' + m] = PIX.byxor_lader; PAL['byxor_' + m] = { ...PAL.byxor_lader, b, c, d }; } // Björns enfärgade byxor (steg 8.10.1) i skinnens färger

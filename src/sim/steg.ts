@@ -21,7 +21,7 @@ import { stepTorka } from './torka';
 import { stepFlod } from './flod';
 import { tornadoSteg } from './tornado';
 import { fallTanke, plantaSatt, plantaUppgravd, vindfallen } from './skogsvard';
-import { askaSteg, brandHetta, brandSteg, brinnerSteg, hjalpaKlar, slackaFram, slackaFylld, slackaSigKlar, slackaSteg } from './brand';
+import { askaSteg, brandHetta, brandSteg, snoSmalt, brinnerSteg, hjalpaKlar, slackaFram, slackaFylld, slackaSigKlar, slackaSteg } from './brand';
 import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
@@ -33,7 +33,7 @@ import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable } from './behov';
-import { lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put } from './lager';
+import { lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf } from './lager';
 import { SAKER, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -205,7 +205,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
     if (!f) { p.task = undefined; return; }
     if (t.brand || !canLight(s, p, f)) return; // med en brand tänds elden när hen kommer fram (steg 10.6.12)
     f.tryProg += dtSec;
-    const per = igniterOf(s)!.minutes * 60;
+    const per = igniterOf(s, p)!.minutes * 60;
     while (f.tryProg >= per && canLight(s, p, f) && !f.lit) { f.tryProg -= per; if (tryLight(s, p, f)) { p.task = undefined; break; } }
   },
 };
@@ -277,6 +277,7 @@ KLAR.hage = (s, p, t) => hageKlar(s, p, t.ref); // hagen (steg 9.8.4), eller att
 KLAR.ang = (s, p) => angKlar(s, p); // slåtterängen märks ut (steg 10.2.36)
 KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => klippKlar(s, p, t.ref);
+KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
 KLAR.slatter = (s, p, t) => slaKlar(s, p, t.ref);
 KLAR.hamla = (s, p, t) => hamlaKlar(s, p, t.ref);
@@ -435,7 +436,7 @@ export const TAKTER: Takt[] = [
   { namn: 'stationseldarna', sek: 60, fn: (s, dt) => stepStationsEld(s, dt) }, // örtkökets, bakugnens och rökeriets eldar brinner (stationseld.ts, steg 10.2.85)
   { namn: 'stepSophog', sek: 3600, fn: s => { stepSophog(s); } },
   { namn: 'stepKompost', sek: 3600, fn: s => { stepKompost(s); } },
-  { namn: 'stepOrtKrukor', sek: 3600, fn: s => { stepOrtKrukor(s); } },
+  { namn: 'stepOrtKrukor', sek: 3600, fn: (s, dt) => { stepOrtKrukor(s, dt); } },
   { namn: 'stadaByten', sek: 3600, fn: s => { stadaByten(s); } },
   { namn: 'stepBrasor', sek: 3600, fn: s => { stepBrasor(s); } },
   { namn: 'stepKlader', sek: 3600, fn: s => { stepKlader(s); } },
@@ -816,7 +817,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
   for (;;) {
     const sist = !tk.path?.length, i = sist ? 0 : tk.path![0];
     const wx = sist ? tk.mx ?? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.my ?? tk.ty : Math.floor(i / W) + 0.5 - off;
-    const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm) * morkFart(s, p) * (snoF < 1 && !roofed(s, p.x, p.y) ? snoF : 1); // i totalmörker går man långsammare (ljus.ts), och ute i snön
+    const ci = tileOf(p.x, p.y), sp = rutFart(p, g, ci, sm) * morkFart(s, p) * (snoF < 1 && !roofed(s, p.x, p.y) ? 1 - (1 - snoF) * (1 - snoSmalt(s, p.x, p.y)) : 1); // i totalmörker går man långsammare (ljus.ts), och ute i snön utom där den smält runt en eld (steg 10.2.51, som snoPaRutan i gang.ts)
     if (gangVakt.lyss) gangVakt.lyss(s, p, fart * sp, morkFart(s, p) < 1); // vakten i testerna (steg 9.2.101)
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
@@ -1023,7 +1024,8 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     if (plockSlag === undefined) bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got)); // på rundan plockas svampen som en sak (svampPlock)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
-    { const r = rollekaNara(s, tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
+    { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
+    if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
     if (ageIndex(s) === VAR) bar('agg', FAGEL.agg * dt / HOUR_S); // fåglarnas ägg, som man ibland hittar på våren (steg 6.6.3)
@@ -1580,19 +1582,20 @@ import { bryggKlar, maltaKlar, stepBrygg } from './brygg';
 import { rusSteg } from './rus';
 import { latrinTomKlar, soporKlar, stepKompost, stepSophog } from './rester';
 import { skrammaKlar, staketKlar } from './odling';
-// den rikaste röllekan på rutan eller bredvid den som samlar (steg 9.7.15): den plockas på vägen. Bara på sommarhalvåret,
-// när den växer, så att de andra tidsåldrarna inte frågar kartan i onödan
+// den rikaste röllekan (eller ängsblomman, steg 10.7.3) på rutan eller bredvid den som samlar (steg 9.7.15): den plockas på
+// vägen. Bara på våren och sommaren, när de växer, så att de andra tidsåldrarna inte frågar kartan i onödan
 const ROLLEKA_GRANNAR = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]] as const;
-function rollekaNara(s: State, x: number, y: number) {
+function vildNara(s: State, k: 'rolleka' | 'blomma', x: number, y: number) {
   const ai = ageIndex(s);
   if (ai !== 1 && ai !== 2) return undefined;
   let best: { x: number; y: number; v: number } | undefined;
-  for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, 'rolleka', x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
+  for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, k, x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
   return best;
 }
-import { stepOrtKrukor } from './kruka';
+import { blommaVill, stepOrtKrukor } from './kruka';
 import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
 import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
+import { tatKlar } from './tatuering';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';

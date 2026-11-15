@@ -222,6 +222,14 @@ const DEF = {
     bas: (s, i, m) => land(s, i) && (markslag(groundOf(s), i) === 'hog' || markslag(groundOf(s), i) === 'kort') ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 0, regrow: [0, 1 / 200, 1 / 120, 1 / 300] },
   },
+  // ängsblommorna (steg 10.7.3): växer på gräsmark på våren och sommaren och växer igen fort; plockas när man samlar där och byn
+  // vill ha blommor till krukorna
+  blomma: {
+    namn: 'Ängsblommor', grupp: 'vaxter', ikon: 'blomma', farg: 0xd8b25f, topp: 1, arstid: [0, 1.2, 1, 0], torka: 0.6,
+    monster: { salt: 117, skala: 3, period: 56, troskel: 0.62 },
+    bas: (s, i, m) => land(s, i) && (markslag(groundOf(s), i) === 'hog' || markslag(groundOf(s), i) === 'kort') ? m * orortOf(s)[i] : 0,
+    uttag: { full: 1, reach: 0, regrow: [0, 1 / 48, 1 / 48, 0] },
+  },
   // hasseln (steg 9.7.14, odling.ts): växer vilt i skogsbrynet, och nötterna mognar på hösten
   hassel: {
     namn: 'Hassel', grupp: 'vaxter', ikon: 'hassel', farg: 0x7d5b40, topp: 1, arstid: [0, 0, 0.3, 1.2], torka: 0.8,
