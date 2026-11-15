@@ -18,6 +18,7 @@ export const alkoholKrok = {
 
 export const RUS = balans('rus', {
   sjunker: 0.15, // så mycket av ruset går över i timmen
+  kanns: 0.1, // en dryck med mindre alkohol än så här ger ingen glädje av ruset (svagdrickan, steg 10.7.24)
   fart: 0.35, // gången och händigheten sjunker så här mycket per hel rus (1 = mycket full) ...
   smid: 6, traff: 4, // ... smidigheten och träffsäkerheten i striden så här många poäng per hel rus
   golv: 0.4, // aldrig under så här stor del av förmågan
@@ -41,11 +42,13 @@ export const rusFaktor = (p: Person) => Math.max(RUS.golv, 1 - RUS.fart * rusAv(
 export const rusSmid = (p: Person) => RUS.smid * rusAv(p);
 export const rusTraff = (p: Person) => RUS.traff * rusAv(p);
 // p dricker en dryck med alkohol
+// följer p budet Inget rus nu (steg 10.3.22): då tas ingen dryck med alkohol (vatskor.ts)
+export const ingetRus = (s: State, p: Person) => budHindrar(s, p, 'ingetRus');
 export function drickAlkohol(s: State, p: Person, v: VatskaId, tagen = false) { // tagen: drycken är redan tagen ur sin kruka (kyrkans öl, steg 10.3.23)
   if (!tagen && !alkoholKrok.ta(s, v)) return false;
   const a = alkoholKrok.alkohol(v), namn = alkoholKrok.namn(v).toLowerCase();
   p.rus = clamp(rusAv(p) + a, 0, 2); p.supit = (p.supit ?? 0) + a;
-  think(p, 'Drack ' + namn, RUS.glad, s.now, RUS.gladTim * HOUR);
+  if (a >= RUS.kanns) think(p, 'Drack ' + namn, RUS.glad, s.now, RUS.gladTim * HOUR); // svagdrickan känns inte (steg 10.7.24)
   count(s, 'drack_' + v);
   if (forstaGang(s, 'alkohol')) log(s, `${p.name} drack byns första ${namn} vid elden.`, 'world', [p.id]);
   return true;

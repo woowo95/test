@@ -142,7 +142,7 @@ export const MATERIALMAL = {
   lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
   rep: { min: () => VILLTAL.repMin }, /* repet går åt till redskapen innan någon förbrukning hunnit räknas: några att börja med */ mossa: { min: () => 1 }, salva: { min: () => 1 }, tjara: { min: () => 1 }, benlim: { min: () => 1 }, tval: { min: () => 1 },
-  vin: { min: () => 1 }, ol: { min: () => 1 }, // dryckerna (brygg.ts): det som dricks räknas i taVatska
+  vin: { min: () => 1 }, ol: { min: () => 1 }, svagdricka: { min: () => 1 }, buljong: { min: () => 1 }, // dryckerna (brygg.ts): det som dricks räknas i taVatska
 } as const satisfies Record<string, Materialmal>;
 export type Materialslag = keyof typeof MATERIALMAL;
 export const MATERIAL_LIST = Object.keys(MATERIALMAL) as Materialslag[];

@@ -3365,3 +3365,51 @@ SCENARIER.dryckval = {
     ];
   },
 };
+
+SCENARIER.drycker = {
+  text: 'Buljong och svagdricka (steg 10.7.24): buljongen av 2 ben, svamp eller kål och vatten sjuder i en mellanstor lerkruka på elden och blir 4 buljong som värmer den som fryser; svagdrickan bryggs av 2 malt och vatten och dricks mot törsten på dagen, och karet brygger den dryck byn har störst brist på',
+  kor: () => {
+    const s = rikDag(3), p = vuxna(s)[0]!;
+    p.tek = { ...(p.tek ?? {}), kruka: 1, bryggkar: 1, ol: 1 };
+    s.fire.lit = true;
+    const sack = () => { const t = SIM.addTool(s, 'vattensack', p); t.hos = undefined; SIM.fyllVatska(s, 'vatten', 1, t); return t; };
+    const kruka = (k: string) => { const t = SIM.addTool(s, k, p); t.hos = undefined; return t; };
+    // buljongen: 2 ben, svamp (det byn har mest av) och vatten i en mellanstor kruka på elden
+    SIM.setAmount(s, 'ben', 2); SIM.setAmount(s, 'svamp', 3); SIM.setAmount(s, 'kal', 1); sack();
+    for (const t of SIM.tingOf(s)) if (t.k === 'lerkruka_mellan' || t.k === 'lerkruka_stor') { t.hos = 0; } // inga andra krukor
+    const k = kruka('lerkruka_mellan');
+    SIM.KLAR_FOR.koka_buljong!(s, p, { act: 'koka_buljong', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' }, 0);
+    const sjuder = k.kok?.r === 'buljong' && SIM.amountOf(s, 'ben') === 0 && SIM.amountOf(s, 'svamp') === 2 && SIM.amountOf(s, 'kal') === 1;
+    for (let i = 0; i < 15 * SIM.MIN / SIM.HOUR + 1; i++) { s.now += SIM.HOUR; SIM.stepKok(s); }
+    const buljong = SIM.vatskaAv(s, 'buljong');
+    // den som fryser tar buljongen före det kokta vattnet, och blir varmare; den som inte fryser tar det kokta
+    const kk = kruka('lerkruka_stor'); SIM.fyllVatska(s, 'kokt', 4, kk);
+    p.warm = 1; const varm = SIM.dryckFor(s, p);
+    p.warm = 0.05; const fryser = SIM.dryckFor(s, p);
+    p.torst = 0.2; SIM.drickHemma(s, p, 'buljong');
+    const varmare = p.warm > 0.05 && Math.abs(p.torst - 0.7) < 1e-9 && SIM.vatskaAv(s, 'buljong') === buljong - 1;
+    // svagdrickan: dricks mot törsten före det kokta, nästan utan rus och utan ruset glädje
+    const sv = kruka('lerkruka_stor'); SIM.fyllVatska(s, 'svagdricka', 4, sv);
+    p.warm = 1; const torst = SIM.dryckFor(s, p);
+    p.torst = 0.2; p.rus = 0; const tankar = p.thoughts.length; SIM.drickHemma(s, p, 'svagdricka');
+    const svag = p.torst === 1 && (p.rus ?? 0) <= 0.05 + 1e-9 && p.thoughts.length === tankar;
+    const kvall = SIM.dryckAv('svagdricka')!.kvall === undefined;
+    // karet: ölet finns men svagdrickan saknas, så karet brygger svagdricka
+    const kar = { id: 996, k: 'bryggkar', x: 3, y: 3, kvar: 0, inne: 1, brygt: 1 } as SIM.Station;
+    s.stationer = [...(s.stationer ?? []), kar];
+    sv.inne = undefined; const ol = kruka('lerkruka_stor'); SIM.fyllVatska(s, 'ol', 4, ol);
+    SIM.setAmount(s, 'malt', 4); SIM.setAmount(s, 'rolleka', 1); SIM.setAmount(s, 'bar', 0); sack();
+    const val1 = SIM.bryggVal(s, p);
+    ol.inne = undefined; SIM.fyllVatska(s, 'svagdricka', 4, sv);
+    const val2 = SIM.bryggVal(s, p);
+    return [
+      [`buljongen sjuder i krukan på elden av ben, svamp och vatten (${sjuder ? 'ja' : 'nej'})`, sjuder],
+      [`efter 15 minuter står ${buljong} buljong i krukan`, buljong === 4],
+      [`den som fryser tar buljongen (${fryser}), den som inte fryser det kokta (${varm})`, fryser === 'buljong' && varm === 'kokt'],
+      ['buljongen släcker halva törsten och värmer', varmare],
+      [`mot törsten tar man svagdrickan före det kokta (${torst})`, torst === 'svagdricka'],
+      ['svagdrickan släcker törsten, ger nästan inget rus och tas inte på kvällen', svag && kvall],
+      [`karet brygger det byn har störst brist på: svagdricka när ölet finns (${val1?.v}), öl när svagdrickan finns (${val2?.v})`, val1?.v === 'svagdricka' && val2?.v === 'ol'],
+    ];
+  },
+};

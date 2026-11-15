@@ -289,7 +289,7 @@ export const ledigKruka = (s: State) => tingOf(s).find(t => t.k === 'lerkruka_me
 // krukorna som står på elden
 export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
 // rätterna i förrådet och i krukorna, i mat (steg 10.2.11): mot det byn äter
-const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + t.kok!.n, 0);
+const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + (t.kok!.vatska ? 0 : t.kok!.n), 0);
 const ratterBehovs = (s: State) => rattMat(s) < matPerDygn(s) * KOK.dygn;
 // p kan laga mat: kan krukan, elden brinner, en ledig kruka, något att koka, byn har för få rätter och ingen annan lagar mat
 export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && s.fire.lit && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
@@ -311,6 +311,7 @@ export function stepKok(s: State) {
   for (const t of kokarNu(s)) {
     if (s.fire.lit) t.kok!.kvar -= HOUR;
     if (t.kok!.kvar > 0) continue;
+    if (t.kok!.vatska) { t.inne = { v: t.kok!.r as import('./vatskor').VatskaId, n: t.kok!.n, q: t.kok!.q, t: s.now }; count(s, 'kokt_' + t.kok!.r, t.kok!.n); t.kok = undefined; continue; } // buljongen står kvar i krukan (steg 10.7.24)
     const tot = Object.values(t.kok!.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {};
     for (const o in t.kok!.ag) { const q = byId(s, Number(o)); if (q && alive(q)) ag[o] = t.kok!.ag[o] / tot * t.kok!.n; }
     if (t.kok!.n > 0) { const h = (s.kockHand ??= {}), har = amountOf(s, t.kok!.r); h[t.kok!.r] = har > 0 ? ((h[t.kok!.r] ?? 0) * har + (t.kok!.h ?? 0) * t.kok!.n) / (har + t.kok!.n) : t.kok!.h ?? 0; put(s, t.kok!.r, t.kok!.n, ag); }

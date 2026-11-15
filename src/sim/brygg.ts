@@ -6,7 +6,7 @@
 import { balans } from './balans';
 import { isFood } from './saker';
 import { foodDays } from './ekonomi';
-import { buffert, villHaAv } from './forradsmal';
+import { buffert, villHaAv, Materialslag } from './forradsmal';
 import { count, forstaGang, living, log } from './folk';
 import { Station, isKlar, stationerOf } from './stationer';
 import { DAY, HOUR, Person, State } from './typer';
@@ -31,11 +31,12 @@ export const BRYGG = balans('brygg', {
 });
 // dryckerna som bryggs: det som läggs i karet, hur många dygn satsen jäser och hur mycket den ger. tek = tekniken
 export interface BrygdDef { namn: string; tek: string; av: Record<string, number>; vatten: boolean; dygn: number; ger: number }
-export const BRYGD: Record<'vin' | 'ol', BrygdDef> = {
+export const BRYGD: Record<string, BrygdDef> = {
   vin: { namn: 'Vin', tek: 'bryggkar', av: { bar: 10 }, vatten: true, dygn: 3, ger: 5 }, // 10 bär krossas med vatten och jäser i 3 dygn
   ol: { namn: 'Öl', tek: 'ol', av: { malt: 4, rolleka: 1 }, vatten: true, dygn: 2, ger: 8 }, // maltet, vatten och rölleka (steg 9.6.13)
+  svagdricka: { namn: 'Svagdricka', tek: 'ol', av: { malt: 2 }, vatten: true, dygn: 1, ger: 8 }, // lite malt och vatten (steg 10.7.24)
 };
-export type BrygdId = keyof typeof BRYGD;
+export type BrygdId = VatskaId;
 export const BRYGD_LIST = Object.keys(BRYGD) as BrygdId[];
 // vinet blir bättre med tiden i krukan: det går att dricka direkt, är bättre efter 5 dygn och bäst efter 15 (kvaliteten 2–4)
 export const vinKvalitet = (s: State, t: Ting) => t.inne?.t === undefined ? 2 : s.now - t.inne.t >= BRYGG.vinBast * DAY ? 4 : s.now - t.inne.t >= BRYGG.vinBra * DAY ? 3 : 2;
@@ -47,19 +48,23 @@ export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malt
     const sats = kar.sats;
     if (sats?.klar && ledigFor(s, sats.v)) return { act: 'tappa', kar, v: sats.v };
   }
+  // karet brygger den dryck byn har störst brist på mot sitt förrådsmål (steg 10.7.24): öl och svagdricka delar maltet
+  const brist = (v: BrygdId) => { const m = villHaAv(s, v as Materialslag); return m > 0 ? 1 - vatskaAv(s, v) / m : 0; };
+  const vilka = BRYGD_LIST.filter(v => knows(p, BRYGD[v].tek) && vatskaAv(s, v) < villHaAv(s, v as Materialslag)).sort((a, b) => brist(b) - brist(a)); // så mycket som dricks (steg 10.2.12)
   for (const kar of karen(s)) {
     if (kar.sats) continue;
-    for (const v of BRYGD_LIST) {
+    for (const v of vilka) {
       const d = BRYGD[v];
-      if (!knows(p, d.tek) || vatskaAv(s, v) >= villHaAv(s, v) || (d.vatten && !fylldSack(s))) continue; // så mycket som dricks (steg 10.2.12)
+      if (d.vatten && !fylldSack(s)) continue;
       // det som också är mat (bären) har sitt värde som mat i förrådsmålen (steg 10.2.1): det bryggs bara av när maten räcker
       // över bufferten, så att vinet ärver bristen på mat
       if (Object.entries(d.av).every(([k, n]) => getable(s, p, k) >= n && !(isFood(k) && foodDays(s) < buffert(s, 'mat')))) return { act: 'brygga', kar, v };
     }
   }
-  // maltet (steg 9.6.13): kornet blöts och hängs på en torkställning med plats, när ölet saknar malt
+  // maltet (steg 9.6.13): kornet blöts och hängs på en torkställning med plats, när en dryck av malt saknar malt
   const tork = torkarna(s).find(t => TORK.rymd - (t.tork ?? []).reduce((n, q) => n + q.n, 0) >= BRYGG.maltKorn), kar0 = karen(s)[0];
-  if (kar0 && tork && knows(p, BRYGD.ol.tek) && vatskaAv(s, 'ol') < villHaAv(s, 'ol') && getable(s, p, 'malt') < BRYGD.ol.av.malt && !maltHanger(s) && getable(s, p, 'korn') - utsadeKrok.av(s, 'korn') >= BRYGG.maltKorn) return { act: 'malta', kar: tork, v: 'ol' };
+  const maltV = vilka.find(v => BRYGD[v].av.malt && getable(s, p, 'malt') < BRYGD[v].av.malt);
+  if (kar0 && tork && maltV && !maltHanger(s) && getable(s, p, 'korn') - utsadeKrok.av(s, 'korn') >= BRYGG.maltKorn) return { act: 'malta', kar: tork, v: maltV };
   return undefined;
 }
 const maltHanger = (s: State) => torkarna(s).some(t => (t.tork ?? []).some(q => q.k === MALTKORN));
@@ -102,7 +107,8 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
   for (const [k, n] of Object.entries(d.av)) takeMaterial(s, p, k, n);
   if (sack) sack.inne = undefined;
   const forsta = !(kar.brygt ?? 0); // karet behåller jästen; den första satsen tar dubbelt så lång tid (steg 9.6.13)
-  kar.sats = { v, n: d.ger, jas: 0, dygn: d.dygn * (v === 'ol' && forsta ? 2 : 1), ...(v === 'ol' && forsta && rnd(s, 'mat', p) < BRYGG.surForsta ? { sur: 1 as const } : {}) };
+  const malt = !!d.av.malt; // det som bryggs av malt (ölet och svagdrickan)
+  kar.sats = { v, n: d.ger, jas: 0, dygn: d.dygn * (malt && forsta ? 2 : 1), ...(malt && forsta && rnd(s, 'mat', p) < BRYGG.surForsta ? { sur: 1 as const } : {}) };
   kar.brygt = (kar.brygt ?? 0) + 1;
   count(s, 'brygt_' + v);
   if (forstaGang(s, 'brygd_' + v)) log(s, `${p.name} lade byns första sats ${d.namn.toLowerCase()} i bryggkaret.`, 'world', [p.id]);

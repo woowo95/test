@@ -11,7 +11,8 @@ import { lagerIStraket } from './strak';
 import { rumVila } from './rum';
 import { PLAN, planBuild, stepByggplan } from './byggplan';
 import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, sattVid, stepMjardar, valjFisk, vittja } from './fisk';
-import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
+import { TILLVERKA, TILLVERKA_LIST, tillverkAv } from './tillverka';
+import { addDel } from './egendom';
 import { RECEPT } from './recept';
 import { stepBlotVed } from './blotved';
 import { stepUppvaxt, upplev } from './uppvaxt';
@@ -251,7 +252,9 @@ satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
 // det som görs vid en station är klart: materialet tas och saken läggs i förrådet, och är hens som gjorde den (tillverka.ts)
 for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) => {
-  for (const [q, n] of Object.entries(d.av)) { if (getable(s, p, q) < n) return; }
+  const av = tillverkAv(d, q => getable(s, p, q)); // svampen eller kålen (steg 10.7.24)
+  if (!av) return;
+  for (const [q, n] of Object.entries(av)) { if (getable(s, p, q) < n) return; }
   const sack = d.vatten ? fylldSack(s) : undefined;
   if (d.vatten && !sack) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
   if (d.eld && !stationFor(s, d.act) && !s.fire.lit) return; // teet kokas vid en eld som brinner om byn inte har örtköket (steg 9.5.8)
@@ -259,8 +262,10 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   if (ar_vatska(d.ger) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
   if (sack) sack.inne = undefined; // säcken töms men finns kvar (steg 7.6.6)
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
-  for (const [q, n] of Object.entries(d.av)) takeMaterial(s, p, q, n);
-  if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
+  const ag: Record<string, number> = {};
+  for (const [q, n] of Object.entries(av)) addDel(ag, takeMaterial(s, p, q, n), 1);
+  if (kar && d.sjud) { kar.kok = { r: d.ger, n: d.n, kvar: d.sjud * MIN, ag, vatska: 1, q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // buljongen sjuder i krukan på elden (stepKok)
+  else if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };

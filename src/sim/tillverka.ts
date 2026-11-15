@@ -6,7 +6,7 @@ import { Act } from './typer';
 // blir ett projekt (projekt.ts) och en handling (handlingar.ts, station i stationer.ts). vill = så många byn vill ha i förrådet.
 // Salvan, tjäran, benlimmet och tvålen har ingen funktion än, så byn vill bara ha några. vatten = vattnet tas ur en fylld vattensäck,
 // som töms men finns kvar (steg 7.6.6, torst.ts). verktyg = redskapet man arbetar med (sländan, steg 7.7.8).
-export interface TillverkDef { act: Act; ger: string; n: number; av: Record<string, number>; min: number; tek: string; vill: number; text: string; forsta: string; vatten?: true; verktyg?: string; eld?: true } // eld = kokas vid en eld som brinner, om inte vid stationen
+export interface TillverkDef { act: Act; ger: string; n: number; av: Record<string, number>; min: number; tek: string; vill: number; text: string; forsta: string; vatten?: true; verktyg?: string; eld?: true; eller?: { av: string[]; n: number }; sjud?: number } // eld = kokas vid en eld som brinner, om inte vid stationen; eller = en av de här också (den byn har mest av); sjud = minuter vätskan sjuder i krukan på elden utan någon som arbetar (kokningen, matlagning.ts)
 export const TILLVERKA: Record<string, TillverkDef> = {
   hugga_sten: { act: 'hugga_sten', ger: 'huggen_sten', n: 1, av: RECEPT.huggen_sten.av!, min: RECEPT.huggen_sten.min, tek: 'stenhuggarplats', vill: 8, text: 'Hugger till en sten.', forsta: '{namn} högg byns första huggna sten.' },
   klyva_plank: { act: 'klyva_plank', ger: 'plankor', n: 2, av: RECEPT.plankor.av!, min: RECEPT.plankor.min, tek: 'klyvplats', vill: 8, text: 'Klyver virke till plankor.', forsta: '{namn} klöv byns första plankor.' },
@@ -24,6 +24,7 @@ export const TILLVERKA: Record<string, TillverkDef> = {
   salta_fagelkott: { act: 'salta_fagelkott', ger: 'saltkott', n: 4, av: { fagelkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in fågelkött så att det håller.', forsta: '{namn} saltade in byns första fågelkött.' },
   salta_bjornkott: { act: 'salta_bjornkott', ger: 'saltkott', n: 4, av: { bjornkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in björnkött så att det håller.', forsta: '{namn} saltade in byns första björnkött.' },
   krossa_saft: { act: 'krossa_saft', ger: 'saft', n: 5, av: { bar: 10 }, min: 3, tek: 'kruka', vill: 5, text: 'Krossar bär till saft i en mellanstor lerkruka.', forsta: '{namn} krossade bär till byns första saft.' }, // steg 9.6.9
+  koka_buljong: { act: 'koka_buljong', ger: 'buljong', n: 4, av: { ben: 2 }, eller: { av: ['svamp', 'kal'], n: 1 }, min: 3, tek: 'kruka', vill: 1, vatten: true, eld: true, sjud: 15, text: 'Lägger ben och svamp eller kål med vatten i en lerkruka som får sjuda på elden.', forsta: '{namn} satte byns första buljong att sjuda på elden.' }, // steg 10.7.24
   koka_te: { act: 'koka_te', ger: 'te', n: 1, av: { rolleka: 1 }, min: 2, tek: 'orte', vill: 2, vatten: true, eld: true, text: 'Kokar ett örtte av rölleka i en liten lerkruka.', forsta: '{namn} kokade byns första örtte av rölleka.' }, // steg 9.5.8
   koka_salva: { act: 'koka_salva', ger: 'salva', n: 1, av: RECEPT.salva.av!, min: RECEPT.salva.min, tek: 'lakesalva', vill: 3, text: 'Kokar en läkesalva av rölleka och talg.', forsta: '{namn} kokade byns första salva.' },
   koka_tjara: { act: 'koka_tjara', ger: 'tjara', n: 1, av: RECEPT.tjara.av!, min: RECEPT.tjara.min, tek: 'ortkok', vill: 2, text: 'Kokar tjära av ved.', forsta: '{namn} kokade byns första tjära.' },
@@ -41,3 +42,9 @@ export const TILLVERKA: Record<string, TillverkDef> = {
   gor_leksak: { act: 'gor_leksak', ger: 'leksak', n: 1, av: RECEPT.leksak.av!, min: RECEPT.leksak.min, tek: 'leksak', vill: 3, text: 'Täljer en leksak till barnen.', forsta: '{namn} täljde byns första leksak.' },
 };
 export const TILLVERKA_LIST = Object.keys(TILLVERKA);
+// materialet i ett recept: av, och av det andra (eller) det som tas, det som finns mest av (har)
+export const tillverkAv = (d: TillverkDef, har: (k: string) => number): Record<string, number> | undefined => {
+  if (!d.eller) return d.av;
+  const k = d.eller.av.reduce((b, k) => har(k) > har(b) ? k : b);
+  return har(k) >= d.eller.n ? { ...d.av, [k]: d.eller.n } : undefined;
+};
