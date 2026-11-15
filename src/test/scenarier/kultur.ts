@@ -543,7 +543,7 @@ SCENARIER.rostlista = {
     const o = s.styre.roster![0];
     setByn(s); ui.styreDel = 'styre';
     const tryck = (id: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: id.slice(0, id.indexOf('-') + 1) } }) } as unknown as HTMLElement);
-    tryck(`rost-${o.t}-${o.f}`);
+    tryck(`rost-${o.t}-${o.f}-${o.fram}`);
     const h = styreFlik.html();
     const lista = h.match(/<ul class="roster">([\s\S]*?)<\/ul>/)?.[1] ?? '';
     const rader = lista.match(/data-hjalp="rr-[^"]*"/g) ?? [];

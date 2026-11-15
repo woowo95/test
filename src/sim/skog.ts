@@ -1,4 +1,4 @@
-import { NARA } from './fynd';
+import { NARA } from './nara';
 import { tingOf } from './agande';
 import { STRAK, straken } from './strak';
 import { bynsMitt, utanforByn } from './omrade';
