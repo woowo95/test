@@ -38,7 +38,7 @@ let strak = '', inne = '';
 for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x; strak += sk.ruta[i]; inne += o.inne[i]; }
 const med = (v: number[]) => { const a = [...v].sort((p, q) => p - q); return a.length ? a[a.length >> 1] : 0; };
 console.log(JSON.stringify({
-  seed, utan, pop: r.n.pop, hus: hus.length, fran: fran.length ? Math.max(...fran) : 0, franMed: med(fran), mellan: med(narmast.filter(isFinite)), mellanMin: narmast.filter(isFinite).length ? Math.min(...narmast.filter(isFinite)) : 0,
+  seed, utan, pop: r.n.pop, hus: hus.length, fran: fran.length ? Math.max(...fran) : 0, franAlla: fran.slice().sort((a, b) => a - b), franMed: med(fran), mellan: med(narmast.filter(isFinite)), mellanMin: narmast.filter(isFinite).length ? Math.min(...narmast.filter(isFinite)) : 0,
   samre: st.strakSamre ?? 0, ingen: st.strakIngen ?? 0, om: st.strakOm ?? 0, eld: snitt('eld'), lager: snitt('lager'), yta: o.n,
   karta: { x0, y0, w: x1 - x0 + 1, h: y1 - y0 + 1, ruta, strak, inne, mitt: { x: m.x - x0, y: m.y - y0 } }, vakter: r.vakter,
 }));

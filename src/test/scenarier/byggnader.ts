@@ -1007,13 +1007,15 @@ SCENARIER.strakprov = {
     const by = (env: Record<string, string>) => {
       const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1002', '12'], { env: { ...process.env, ...env }, encoding: 'utf8' });
       if (u.status) throw new Error(`prov-en.ts kraschade:\n${(u.stderr ?? '').slice(-1500)}`);
-      return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
+      return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; franAlla: number[]; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
     };
     // 12 dygn: efter 8 dygn har ingen kommit på timmerväggen, och då byggs inget hus att pröva stråken på
     const med = by({}), utan = by({ BALANS: [process.env.BALANS, 'strak.pa=0'].filter(Boolean).join(',') }); // kartans storlek (storlek.ts) gäller båda
     return [
       [`båda byarna har hus efter 12 dygn (12 år i spelet): med ${med.hus}, utan ${utan.hus}; med stråken sämre plats ${med.samre}, ingen plats ${med.ingen}, stråk som drogs om ${med.om}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
-      [`med stråken står inget hus mer än 4 rutor längre från byns mitt än utan (längst bort ${med.fran.toFixed(1)} mot ${utan.fran.toFixed(1)})`, med.fran <= utan.fran + 4],
+      // lika många hus i båda byarna (de närmaste så många som den mindre byn har): fler hus står av sig själva längre ut
+      ...(() => { const n = Math.min(med.franAlla.length, utan.franAlla.length), a = med.franAlla[n - 1] ?? 0, b = utan.franAlla[n - 1] ?? 0;
+        return [[`med stråken står husen inte mer än 4 rutor längre från byns mitt än utan (det ${n}:e närmaste ${a.toFixed(1)} mot ${b.toFixed(1)}; längst bort ${med.fran.toFixed(1)} av ${med.hus} hus mot ${utan.fran.toFixed(1)} av ${utan.hus})`, a <= b + 4]] as [string, boolean][]; })(),
       [`utan stråken räknas inga hus som fick sämre plats eller stråk som drogs om (${utan.samre}, ${utan.om})`, utan.samre === 0 && utan.om === 0 && utan.ingen === 0],
       [`vakterna larmar inte (${[...med.vakter, ...utan.vakter].join('; ')})`, !med.vakter.length && !utan.vakter.length],
     ];
