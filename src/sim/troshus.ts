@@ -1,12 +1,17 @@
 import { State, Person } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { count, living, log } from './folk';
+import { ALDER, ageOf, count, living, log } from './folk';
 import { kronika } from './historik';
 import { type SkalaId, Tro, andlighet, skalaV, troNamn, troOf, rymsBud } from './religion';
 import { FRAGOR, type FragaData } from './rost';
-import { MATERIAL } from './byggnad';
+import { MATERIAL, bitsOf, gridOf, housesOf, type Hus } from './byggnad';
+import { needOf } from './bygg';
+import { STATIONER, type StationDef } from './stationer';
+import { kyrkaId } from './egendom';
+import { ownsId } from './lager';
 import { knows } from './teknik';
+import { isKlar, stationerOf, vidStation, type Station } from './stationer';
 
 // ---------- trons hus: planen (steg 10.3.18, "Trons hus" i fliken Samhället) ----------
 // Det finns en sorts religiös byggnad, trons hus. Hur det ska se ut bestäms del för del i trons krets: varje rad i
@@ -15,6 +20,8 @@ import { knows } from './teknik';
 // andra förslag i trons krets (KYRKA.nedrostat), så nästa kväll läggs ett annat val fram. Planen sparas på tron (Tro.plan),
 // och när alla frågor är besvarade är den klar. Husets namn är den första raden i TROSHUSNAMN som passar, som ledarens titel.
 export const TROSHUS = balans('troshus', {
+  minRutor: 8, maxRutor: 72, // husets golvrutor efter storleken: minst och högst
+  bankPer: 6, // en bänk per så många golvrutor
   storlek: 2, // trons tyngd som behövs innan planen tas upp (som ett bud av den storleken)
   bas: 0.15, // rösten för en del av planen utan skalorna, vid andligheten 50
   skala: 0.3, // hur mycket skalorna väger i rösten
@@ -66,15 +73,16 @@ export const planKlar = (s: State, tr: Tro) => !!tr.plan && !nastaDel(s, tr);
 // delens val i planen, också det som inte frågades
 export const planDel = (s: State, tr: Tro, d: TrosDel) => tr.plan?.[d] ?? TROSHUS_DELAR[d].sjalv?.(s, tr);
 // husets namn (som ledarens titel, TITLAR i styre.ts): den första raden som passar
-export const TROSHUSNAMN: { namn: string; passar(s: State, tr: Tro): boolean }[] = [
-  { namn: 'Tempel', passar: (s, tr) => planDel(s, tr, 'vagg') === 'sten' }, // stenväggarna kommer i 10.10.7
-  { namn: 'Kyrka', passar: (_s, tr) => sida0(tr, 'manga') < 0 && sida0(tr, 'prast') < 0 }, // en enda gud och präster
-  { namn: 'Helgedom', passar: (_s, tr) => sida0(tr, 'natur') >= 0.4 }, // andarna i naturen
-  { namn: 'Vé', passar: (s, tr) => planDel(s, tr, 'storlek') === 'trangt' }, // en liten helig inhägnad
-  { namn: 'Hörg', passar: (_s, tr) => tr.plan?.gudabild === 'nej' && tr.plan?.bank === 'nej' }, // ett altare och inget mer
-  { namn: 'Hov', passar: () => true },
+export const TROSHUSNAMN: { namn: string; bestamd: string; passar(s: State, tr: Tro): boolean }[] = [
+  { namn: 'Tempel', bestamd: 'Templet', passar: (s, tr) => planDel(s, tr, 'vagg') === 'sten' }, // stenväggarna kommer i 10.10.7
+  { namn: 'Kyrka', bestamd: 'Kyrkan', passar: (_s, tr) => sida0(tr, 'manga') < 0 && sida0(tr, 'prast') < 0 }, // en enda gud och präster
+  { namn: 'Helgedom', bestamd: 'Helgedomen', passar: (_s, tr) => sida0(tr, 'natur') >= 0.4 }, // andarna i naturen
+  { namn: 'Vé', bestamd: 'Vét', passar: (s, tr) => planDel(s, tr, 'storlek') === 'trangt' }, // en liten helig inhägnad
+  { namn: 'Hörg', bestamd: 'Hörgen', passar: (_s, tr) => tr.plan?.gudabild === 'nej' && tr.plan?.bank === 'nej' }, // ett altare och inget mer
+  { namn: 'Hov', bestamd: 'Hovet', passar: () => true },
 ];
 export const troshusNamn = (s: State, tr: Tro) => TROSHUSNAMN.find(r => r.passar(s, tr))!.namn;
+export const troshusBestamd = (s: State, tr: Tro) => TROSHUSNAMN.find(r => r.passar(s, tr))!.bestamd;
 export const planText = (s: State, tr: Tro) => DELAR.filter(d => planDel(s, tr, d) !== undefined).map(d => TROSHUS_DELAR[d].text(planDel(s, tr, d)!)).join(', ');
 
 // det den som talar för tron kan lägga fram: valen för nästa del, när tron har tyngden för det
@@ -97,9 +105,55 @@ export function troshusRegister() { FRAGOR.troshus = {
   gor: (s, d) => {
     const tr = troOf(s, d.tro as number)!;
     (tr.plan ??= {})[d.del as TrosDel] = d.v as string;
+    if (d.del === 'storlek') tr.planRutor = planRutor(s, tr, d.v as string); // golvrutorna efter de troende när frågan avgörs
     count(s, 'troshus_plan');
     if (!planKlar(s, tr)) return;
     const t = `${troNamn(tr)} har bestämt hur trons hus ska se ut. Det blir ett hus som kallas ${troshusNamn(s, tr).toLowerCase()}: ${planText(s, tr)}.`;
     log(s, t, 'rel', []); kronika(s, t, 'tro'); count(s, 'troshus_klar');
   },
 }; }
+
+// golvrutorna som planen vill ha: en halv, en eller två per vuxen troende, minst minRutor och högst maxRutor
+export const vuxnaTroende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id && ageOf(p, s.now) >= ALDER.vuxen);
+export const planRutor = (s: State, tr: Tro, storlek: string) => clamp(Math.ceil(vuxnaTroende(s, tr).length * (STORLEKAR[storlek]?.per ?? 1)), TROSHUS.minRutor, TROSHUS.maxRutor);
+
+// ---------- trons hus byggs (steg 10.3.19) ----------
+// Huset är ett hus i byggsystemet med Hus.tro. Bara de troende bygger det, och allt material tas ur kyrkans egendom (bygg.ts).
+// Möblerna är stationer med flaggan tro (stationer.ts: altare, gudabild, trosbank) som står i husets rum, och huset är klart
+// när väggarna och altaret står. Då hålls högtiden och den ledda bönen vid altaret (kult.ts).
+export const troshusAv = (s: State, tr: Tro): Hus[] => housesOf(s).filter(h => h.tro === tr.id);
+export const golvAv = (h: Hus) => Math.max(0, h.w - 2) * Math.max(0, h.h - 2);
+export const troshusGolv = (s: State, tr: Tro) => troshusAv(s, tr).reduce((n, h) => n + golvAv(h), 0);
+// rummet i trons första färdiga hus
+export const troshusRum = (s: State, tr: Tro) => { const h = troshusAv(s, tr).find(q => q.klar); return h && gridOf(s).rooms.find(r => r.hus === h.id); };
+export const trosMobler = (s: State, tr: Tro, k: string): Station[] => stationerOf(s).filter(t => t.tro === tr.id && t.k === k);
+// så många av möbeln k som planen vill ha
+export function trosVill(s: State, tr: Tro, k: string) {
+  if (!planKlar(s, tr)) return 0;
+  if (k === 'altare') return tr.plan?.altare === 'ja' ? 1 : 0;
+  if (k === 'gudabild') return tr.plan?.gudabild === 'ja' ? 1 : 0;
+  if (k === 'trosbank') return tr.plan?.bank === 'ja' ? Math.max(1, Math.floor(troshusGolv(s, tr) / TROSHUS.bankPer)) : 0;
+  return 0;
+}
+// hur stor del av möblerna av sorten k trons färdiga hus saknar (0 när väggarna inte står)
+export function trosMobelBrist(s: State, tr: Tro, k: string) {
+  if (tr.slut !== undefined || !troshusRum(s, tr)) return 0;
+  const vill = trosVill(s, tr, k);
+  return vill > 0 ? Math.max(0, vill - trosMobler(s, tr, k).length) / vill : 0;
+}
+const altaret = (s: State, tr: Tro) => trosMobler(s, tr, 'altare').find(isKlar);
+export const troshusKlart = (s: State, tr: Tro) => !!troshusRum(s, tr) && !!altaret(s, tr);
+// där man står vid högtiden och den ledda bönen: framför altaret när huset är klart
+export const troshusPlats = (s: State, tr: Tro) => { const t = troshusKlart(s, tr) ? altaret(s, tr) : undefined; return t && vidStation(t); };
+// det trons hus saknar, utöver det kyrkan redan äger: materialet till väggarna och golven som inte är byggda och till möblerna
+// planen vill ha. Gåvorna till tron går helst dit (offerTimme i kyrka.ts)
+export function troshusSaknar(s: State, tr: Tro): Record<string, number> {
+  const vill: Record<string, number> = {}, hus = new Set(troshusAv(s, tr).map(h => h.id));
+  for (const b of bitsOf(s)) { const it = MATERIAL[b.m]?.item; if (it && b.hus !== undefined && hus.has(b.hus) && b.b < 1) vill[it] = (vill[it] ?? 0) + needOf(b); }
+  for (const k of ['altare', 'gudabild', 'trosbank']) {
+    const d: StationDef = (STATIONER as Record<string, StationDef>)[k], n = Math.max(0, trosVill(s, tr, k) - trosMobler(s, tr, k).length);
+    if (n > 0 && troshusAv(s, tr).length) for (const [m, v] of Object.entries(d.av)) vill[m] = (vill[m] ?? 0) + v * n;
+  }
+  for (const k in vill) { vill[k] -= ownsId(s, kyrkaId(tr.id), k); if (vill[k] < 1) delete vill[k]; }
+  return vill;
+}

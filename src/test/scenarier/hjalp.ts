@@ -42,8 +42,8 @@ export const medBank = (s: State, k = 'slaktbank') => {
   return t;
 };
 // bygger färdigt det hus som är planerat: alla delar utom den sista klara, den sista byggs som vanligt (workOn)
-export function byggKlart(s: State) {
-  const h = housesOf(s).find(q => !q.klar);
+export function byggKlart(s: State, h0?: SIM.Hus) {
+  const h = h0 ?? housesOf(s).find(q => !q.klar);
   if (!h) return undefined;
   const bs = bitsOf(s).filter(b => b.hus === h.id), p = living(s)[0];
   for (const i of SIM.kronaOver(s, h)) groundOf(s).trees[i] = 0; // träden vars krona når över huset fälls först (steg 9.2.49)
@@ -266,4 +266,22 @@ export function tandOchFlinta(s: State) { SIM.setAmount(s, 'torrgras', 30); SIM.
 export function satKyrka(s: SIM.State, tr: SIM.Tro, m: Record<string, number>) {
   for (const [k, n] of Object.entries(SIM.kyrkansForrad(s, tr))) { const v = Math.floor(n + 1e-9); if (v >= 1) SIM.kyrkanTar(s, tr, k, v); }
   for (const [k, n] of Object.entries(m)) SIM.put(s, k, n, { [SIM.kyrkaId(tr.id)]: n });
+}
+// trons hus (steg 10.3.19): planen blir klar (det som inte redan bestämts), byggplanen ritar huset, och huset byggs klart. Med
+// altare ställs ett färdigt altare i huset, så att huset är klart. Ger huset
+export function medTroshus(s: State, tr: SIM.Tro, altare = true) {
+  tr.plan = { storlek: 'lagom', form: 'kvadrat', altare: 'ja', gudabild: 'ja', bank: 'nej', ...tr.plan };
+  if (SIM.TROSHUS_DELAR.vagg.fragas?.(s, tr)) tr.plan.vagg ??= SIM.vaggSorter(s)[0];
+  tr.planRutor ??= SIM.TROSHUS.minRutor;
+  const tek = s.people.map(p => p.tek && { ...p.tek });
+  byggare(s); s.byggSok = undefined; SIM.stepBehov(s);
+  for (const k in s.byggBehov ?? {}) s.byggBehov![k] -= 24 * SIM.HOUR;
+  SIM.planBuild(s);
+  s.people.forEach((p, i) => { p.tek = tek[i]; });
+  const h = housesOf(s).find(q => q.tro === tr.id && !q.klar);
+  if (!h) return undefined;
+  byggKlart(s, h);
+  const q = living(s).find(p => p.tro === tr.id), at = q && SIM.stationSite(s, 'altare', q);
+  if (altare && at) { (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'altare', x: at.x, y: at.y, kvar: 0, klar: s.now, tro: tr.id, inne: 1, ...(at.rot ? { rot: 1 as const } : {}) }); SIM.touch(s); }
+  return h;
 }

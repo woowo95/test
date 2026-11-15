@@ -1,4 +1,5 @@
 import { clamp, gauss, pick, rnd } from './slump';
+import { troshusKlart } from './troshus';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, count, isParent, living, log, relKey, stat } from './folk';
@@ -102,7 +103,7 @@ export const TYNGDDELAR: Record<string, TyngdDel> = {
   troende: { namn: 'De troende', v: (s, tr) => living(s).filter(p => p.tro === tr.id && ageOf(p, s.now) >= ALDER.vuxen).reduce((a, p) => a + (p.troStyrka ?? 0) / 100, 0) * tyngdAlder(s, tr) },
   prast: { namn: 'Prästen', v: (s, tr) => { const q = tr.prast !== undefined ? s.people.find(p => p.id === tr.prast) : undefined; return q && alive(q) && q.tro === tr.id ? TYNGD.prast : 0; } },
   egendom: { namn: 'Kyrkans egendom', v: (s, tr) => { const f = kyrkansForrad(s, tr); return TYNGD.egendom * clamp(egendomIVed(f) / TYNGD.egendomVed, 0, 1); } },
-  hus: { namn: 'Trons hus', v: (_s, tr) => TYNGD.hus * ((tr.hov?.klar ? 1 : 0) + (tr.tempel?.klar ? 1 : 0)) },
+  hus: { namn: 'Trons hus', v: (s, tr) => troshusKlart(s, tr) ? TYNGD.hus : 0 },
 };
 export const tyngdDelar = (s: State, tr: Tro) => Object.entries(TYNGDDELAR).map(([id, d]) => ({ id, namn: d.namn, v: d.v(s, tr) }));
 export const tyngd = (s: State, tr: Tro) => tyngdDelar(s, tr).reduce((a, d) => a + d.v, 0);
@@ -111,7 +112,7 @@ export const tyngdFor = (storlek: number) => [0, TYNGD.s1, TYNGD.s2, TYNGD.s3, T
 export const rymsBud = (s: State, tr: Tro, storlek: number) => tyngd(s, tr) >= tyngdFor(storlek);
 // etiketten (steg 10.3.8): den första som stämmer. Inga gränser, bara vad tron har
 export const ETIKETTER: { namn: string; text: string; har: (s: State, tr: Tro) => boolean }[] = [
-  { namn: 'Kyrka', text: 'Trons hus står klart.', har: (_s, tr) => !!(tr.hov?.klar || tr.tempel?.klar) },
+  { namn: 'Kyrka', text: 'Trons hus står klart.', har: (s, tr) => troshusKlart(s, tr) },
   { namn: 'Präst', text: 'Tron har en präst.', har: (s, tr) => TYNGDDELAR.prast.v(s, tr) > 0 },
   { namn: 'Seder', text: 'Tron har en helig plats.', har: (s, tr) => !!s.heliga?.some(h => h.tro === tr.id && h.skandad === undefined) },
   { namn: 'Delad tro', text: 'Tron har fått sitt namn.', har: (_s, tr) => !!tr.namn },
@@ -267,8 +268,8 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // som trodde dog. ar: året den kom. namn, sym och ber (berättelsen om hur den började) får den när TRO.namn tror (steg 4.1.2.3).
 // sk: värdet på de skalor som låsts upp efter de två första, gudar: trons gudar (steg 4.1.5)
 export interface Tro { hogtidDag?: number; // dygnet då högtiden hölls: också en helig dag (steg 10.3.16)
-  bud?: import('./kyrka').AntagetBud[]; plan?: import('./troshus').TrosPlan; /* planen för trons hus (steg 10.3.18) */ roster?: import('./rost').Omrostning[]; nedrostat?: Record<string, number>; // trons omröstningar, och det som röstats ned och vilar (steg 10.3.2)
-  forrad?: Record<string, number>; /* bara i äldre sparfiler (före steg 10.3.17) */ hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; hogtid?: number; heligKand?: { x: number; y: number; t: number; om: string }[]; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
+  bud?: import('./kyrka').AntagetBud[]; plan?: import('./troshus').TrosPlan; planRutor?: number; /* planen för trons hus och dess golvrutor (steg 10.3.18) */ roster?: import('./rost').Omrostning[]; nedrostat?: Record<string, number>; // trons omröstningar, och det som röstats ned och vilar (steg 10.3.2)
+  forrad?: Record<string, number>; /* bara i äldre sparfiler (före steg 10.3.17) */ hov?: { x: number; y: number; prog: number; klar?: number }; tempel?: { x: number; y: number; prog: number; klar?: number }; /* hov, tempel och gudabild bara i äldre sparfiler (före steg 10.3.19) */ fodda?: number; offrad?: number; gudabild?: number; helgon?: { id: number; namn: string; t: number; krönika: string; myt: string }[]; kvade?: { t: number; text: string; av: number; larjunge?: number }; x?: number; y?: number; prast?: number; hogtid?: number; heligKand?: { x: number; y: number; t: number; om: string }[]; brollop?: number; fodd?: number; vuxen?: number; leddBon?: number; profeter?: number[]; gravSlag?: 'helig' | 'vatten' | 'bryn' | 'by'; id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
 // tolkningen som meningar: "Den som bor i åskmolnen vill att man tystnar när det mullrar. Om man sviker: blixten slår ner i ens hus."

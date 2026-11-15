@@ -64,6 +64,8 @@ export const PAL: Record<string, Record<string, string>> = {
   kruka: { o: '#24201d', r: '#521100', R: '#742a01', T: '#bd753e', k: '#2f261d', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   bonad: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', r: '#521100', R: '#742a01', s: '#906f0f', S: '#b2921b', w: '#a0947d', W: '#bdb39b' }, // (Björn valde version 3 efter v245, steg 4.5.2)
   hogsate: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', s: '#906f0f', S: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // långhusets högsäte (steg 10.2.68, platshållare, 16 punkter)
+  altare: { o: '#24201d', s: '#61767a', S: '#8a9c9e', k: '#3e5156', b: '#5e3c24', c: '#7d5b40', e: '#987e62', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // trons altare (steg 10.3.19, platshållare, 16 punkter per ruta)
+  gudabild: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // gudabilden av trä (steg 10.3.19, platshållare)
   bank: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', z: 'rgba(36,32,29,.30)' }, // långhusets bänk (steg 10.2.68, platshållare, 16 punkter per ruta)
   krubba: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', h: '#906f0f', H: '#d8b25f', g: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // krubban i fähuset (steg 10.2.88, platshållare, 16 punkter per ruta)
   virke: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#bdb39b', E: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // kluvna stockar (steg 4.5.5.2, platshållare, 16 punkter)
@@ -2397,6 +2399,42 @@ export const PIX: Record<string, string[]> = {
     '.ooo.......................ooo..',
     '..zzz.......................zzz.',
   ],
+  altare: [ // platshållare (steg 10.3.19)
+    '................................',
+    '................................',
+    '................................',
+    '..............oyyo..............',
+    '.............oyeeyo.............',
+    '.oooooooooooooooooooooooooooooo.',
+    'oeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeo',
+    'occcccccccccccccccccccccccccccco',
+    'obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo',
+    '.oooooooooooooooooooooooooooooo.',
+    '..oSSSSSSSSSSSSSSSSSSSSSSSSSSo..',
+    '..osssSssssssSsssssSsssssSssso..',
+    '..osSsssssSsssssSssssssSsssSso..',
+    '..okskskskskskskskskskskskskko..',
+    '..oooooooooooooooooooooooooooo..',
+    '...zzzzzzzzzzzzzzzzzzzzzzzzzz...',
+  ],
+  gudabild: [ // platshållare (steg 10.3.19)
+    '......oooo......',
+    '.....oeeeeo.....',
+    '.....oeoeoo.....',
+    '.....oeeeeo.....',
+    '......occo......',
+    '....ooccccoo....',
+    '...occcccccco...',
+    '...ocycccycco...',
+    '...occccccco....',
+    '....occccco.....',
+    '....obbbbbo.....',
+    '....obbbbbo.....',
+    '....obbabbo.....',
+    '...ooaaaaaoo....',
+    '...oaaaaaaao....',
+    '....zzzzzzz.....',
+  ],
   bank: [ // platshållare (steg 10.2.68)
     '................................',
     '................................',
@@ -3828,7 +3866,7 @@ PIX.kanin_dod = PIX.vilt; PAL.kanin_dod = PAL.vilt;
 // pyntet (steg 4.3.4): samma bild på kartan och i listorna, och lerkrukan för intrycket smakfull
 for (const k of ['kruka', 'bonad']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; }
 // bänken och krubban vridna ett kvarts varv (platshållare tills de stående bilderna är ritade, steg 10.2.68 och 10.2.88)
-for (const k of ['bank', 'krubba']) { const r = PIX[k]; PIX[k + '_karta_v'] = Array.from({ length: r[0].length }, (_, x) => Array.from({ length: r.length }, (_, y) => r[r.length - 1 - y][x]).join('')); PAL[k + '_karta_v'] = PAL[k]; }
+for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_karta_v'] = Array.from({ length: r[0].length }, (_, x) => Array.from({ length: r.length }, (_, y) => r[r.length - 1 - y][x]).join('')); PAL[k + '_karta_v'] = PAL[k]; }
 
 // den vilda rovan har samma symbol som rovan (Björn efter v245, steg 4.5.2)
 PIX.vildrova = PIX.rovor; PAL.vildrova = PAL.rovor;

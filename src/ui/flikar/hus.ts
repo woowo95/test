@@ -7,6 +7,7 @@ import type { Flik } from '../panel';
 // var materialet kom ifrån (bygg.ts), som text (steg 3.10.21)
 const HUR: Record<typeof KOM[number], string> = {
   byn: 'Från byns förråd',
+  kyrka: 'Ur kyrkans förråd',
   eget: 'Byggarnas eget',
   familj: 'Från familjen',
   gava: 'Skänkt',
@@ -46,7 +47,7 @@ export const hus: Flik = {
       if (!xs.length) return '';
       const per: Record<string, number> = {};
       for (const q of xs) per[q.k] = (per[q.k] ?? 0) + q.n;
-      const vem = hur === 'byn' || hur === 'eget' ? [] : [...new Set(xs.map(q => q.vem))].map(id => byId(s, id)).filter(p => p);
+      const vem = hur === 'byn' || hur === 'eget' || hur === 'kyrka' ? [] : [...new Set(xs.map(q => q.vem))].map(id => byId(s, id)).filter(p => p);
       const txt = Object.entries(per).map(([k, n]) => `${fmtN(n)} ${sakNamn(k).toLowerCase()}`).join(', ');
       return `<p>${esc(`${HUR[hur]}: ${txt}`)}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</p>`;
     }).join('');

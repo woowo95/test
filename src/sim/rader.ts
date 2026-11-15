@@ -12,7 +12,8 @@ import { rikedom } from './varde';
 import { Rovarflock, forsvaret, rovarnaKommer } from './rovare';
 import { gastAv } from './gast';
 import { vanhelgaPlats } from './kultlatt';
-import { andlighet, troende } from './religion';
+import { andlighet, troNamn, troende } from './religion';
+import { rivStation, stationerOf } from './stationer';
 import { larma } from './rykten';
 import { die } from './liv';
 import { amountOf, addTo, ownsAmount } from './lager';
@@ -131,12 +132,12 @@ function taMedSaker(s: State, f: Rovarflock, m?: Person) {
     }
   }
 }
-// heligt krig river det heliga (steg 8.8.7): hovet rivs till rester, heliga platser märks som skändade och de troende tappar i tro
+// heligt krig river det heliga (steg 8.8.7): altaret och gudabilden slås sönder, heliga platser märks som skändade och de troende tappar i tro
 function riverHeligt(s: State, k: Klan | undefined) {
   count(s, 'heligt_krig');
   for (const tr of s.tron ?? []) {
-    if (tr.hov) { tr.hov = undefined; log(s, `${k?.namn ?? 'Anfallarna'} rev hovet.`, 'world'); kronika(s, `${k?.namn ?? 'Anfallarna'} rev hovet.`, 'rovare'); }
-    tr.gudabild = undefined;
+    // altaret och gudabilden i trons hus förstörs, och huset är inte klart förrän altaret står igen (steg 10.3.19)
+    for (const st of stationerOf(s).filter(q => q.tro === tr.id && (q.k === 'altare' || q.k === 'gudabild'))) { const tx = `${k?.namn ?? 'Anfallarna'} slog sönder ${st.k === 'altare' ? 'altaret' : 'gudabilden'} i ${troNamn(tr).toLowerCase()}s hus.`; rivStation(s, st, tx); kronika(s, tx, 'rovare'); }
     for (const p of troende(s, tr)) p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - RADER.skandad);
   }
   for (const h of s.heliga ?? []) if (!h.skandad) vanhelgaPlats(s, h);

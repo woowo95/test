@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { TROSHUS_DELAR, planRutor, vaggSorter } from './troshus';
 import { delarIRad } from './stationer';
 import { nyaKlaner } from './klaner';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
@@ -376,6 +377,18 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       for (const [k, v] of Object.entries(tr.forrad ?? {})) { const n = Math.floor(v + 1e-9); if (n >= 1) put(s, k, n, tr.slut === undefined ? { [kyrkaId(tr.id)]: n } : undefined); }
       delete tr.forrad;
     }
+  }],
+  [49, 'v528: trons hus byggs (steg 10.3.19): ett gammalt hov eller tempel blir en klar plan som byggs från början, och ingen bygger längre hovet', s => {
+    for (const tr of s.tron ?? []) {
+      if ((tr.hov || tr.tempel) && tr.slut === undefined) {
+        const pl = (tr.plan ??= {});
+        pl.storlek ??= 'lagom'; pl.form ??= 'kvadrat'; pl.altare ??= 'ja'; pl.gudabild ??= tr.gudabild ? 'ja' : 'nej'; pl.bank ??= 'nej';
+        if (TROSHUS_DELAR.vagg.fragas?.(s, tr)) pl.vagg ??= vaggSorter(s)[0];
+        tr.planRutor ??= planRutor(s, tr, pl.storlek);
+      }
+      delete tr.hov; delete tr.tempel; delete tr.gudabild;
+    }
+    for (const p of s.people) if ((p.task?.act as string | undefined) === 'hovbygge') p.task = undefined;
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

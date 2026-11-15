@@ -2,7 +2,7 @@
 import { createState, Person } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, nyInvanare, satKyrka, utanWebblasare } from './hjalp';
+import { SCENARIER, medTroshus, nyInvanare, satKyrka, utanWebblasare } from './hjalp';
 import { hasIcon } from '../../ikoner';
 import { setByn } from '../../ui/lage';
 import { religion } from '../../ui/flikar/religion';
@@ -333,11 +333,13 @@ SCENARIER.trostyngd = {
     // prästen, egendomen och huset
     const utanPrast = del('prast'); tr.prast = folk[1].id; const medPrast = del('prast');
     satKyrka(s, tr, { ved: 10 }); const halvEgendom = del('egendom'); satKyrka(s, tr, { ved: 200 }); const fullEgendom = del('egendom'); satKyrka(s, tr, {});
-    tr.hov = { x: 0, y: 0, prog: 1 }; const halvbyggt = del('hus'); tr.hov.klar = s.now; const klart = del('hus');
+    const hs = structuredClone(s), htr = hs.tron!.find(x => x.id === tr.id)!; medTroshus(hs, htr, false); const halvbyggt = SIM.tyngdDelar(hs, htr).find(d => d.id === 'hus')!.v;
+    const ht = SIM.troshusAv(hs, htr)[0], q0 = SIM.living(hs).find(p => p.tro === htr.id), at = ht && q0 && SIM.stationSite(hs, 'altare', q0);
+    if (at) (hs.stationer ??= []).push({ id: 9001, k: 'altare', x: at.x, y: at.y, kvar: 0, klar: hs.now, tro: htr.id, inne: 1 }); const klart = SIM.tyngdDelar(hs, htr).find(d => d.id === 'hus')!.v;
     const summa = Math.abs(SIM.tyngd(s, tr) - SIM.tyngdDelar(s, tr).reduce((x, d) => x + d.v, 0)) < 1e-9;
     // etiketterna, den första som stämmer
     const et = () => SIM.troEtikett(s, tr).namn;
-    const kyrka = et(); tr.hov = undefined; const prast = et(); tr.prast = undefined;
+    const kyrka = SIM.troEtikett(hs, htr).namn; const prast = et(); tr.prast = undefined;
     (s.heliga ??= []).push({ x: 1, y: 1, k: 'fodd' as SIM.HeligPlats['k'], tro: tr.id, t: s.now, om: 'där tron föddes' }); const seder = et();
     s.heliga[s.heliga.length - 1].skandad = s.now; const vanhelgad = et(); s.heliga.pop();
     const namn = tr.namn; tr.namn = 'Åskans tro'; const delad = et(); tr.namn = undefined; const personlig = et(); tr.namn = namn;
