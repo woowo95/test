@@ -561,7 +561,8 @@ export function budRost(s: State, p: Person, tr: Tro, id: BudId, bv?: BudVarde) 
 export function kyrkaRegister() {
 troshusRegister();
 satHeligtDjur(foljerStorlek, (s, p) => budBrutet(s, p, 'heligtDjur'));
-satMatBud((s, p, k) => !farorNu(s).svalt && !!matBud(s, p, k), (s, p, k) => { const b = matBud(s, p, k); if (b) budBrutet(s, p, b.id); });
+// budet först: farorna kostar, och för de flesta saker finns inget bud
+satMatBud((s, p, k) => !!matBud(s, p, k) && !farorNu(s).svalt, (s, p, k) => { const b = matBud(s, p, k); if (b) budBrutet(s, p, b.id); });
 satBudTillfalle((s, typ, p, q) => budTillfalleK(s, typ, p, q));
 for (const id of Object.keys(BUD) as BudId[]) if (BDEF[id].sort === 'forbud' && BDEF[id].acts) LAGAR[budLag(id)] = { namn: BDEF[id].namn, sym: '📜', text: BDEF[id].text, straff: 4, brott: ['budbrott'], kan: s => (s.seder.v.andlig ?? 0) > 0.2 && !!s.tron?.some(t => budIn(t, id)), prio: s => (s.seder.v.andlig ?? 0) > 0.2 && s.tron?.some(t => budIn(t, id)) ? clamp((s.seder.v.andlig ?? 0), 0, 1) * 0.6 : 0, rost: (s, p) => { if (!s.tron?.some(t => budIn(t, id))) return { v: -1, why: 'Ingen tro har budet längre' }; const ja = budIn(troOf(s, p.tro), id); return { v: ja ? 0.6 : -0.4, why: ja ? 'Tror på budet' : 'Delar inte tron' }; }, om: 'kyrkans önskan' };
 LAGAR.kyrkskatt = { namn: 'Kyrkskatt', sym: '📜', text: 'En del av byns förråd går till kyrkan', straff: 4, om: 'kyrkans krav', kan: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 4)), prio: s => (s.seder.v.andlig ?? 0) > 0.4 ? clamp(s.seder.v.andlig, 0, 1) * 0.7 : 0, rost: (_s, p) => ({ v: p.tro !== undefined ? 0.4 : -0.5, why: p.tro !== undefined ? 'Vill stödja tron' : 'Betalar inte för en tro hen inte har' }) };
