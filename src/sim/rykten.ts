@@ -8,6 +8,7 @@ import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel
 import { clamp, pickViktat, rnd } from './slump';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
+import type { Sed } from './seder';
 import { ACTS, Act } from './handlingar';
 import { isLight } from './tid';
 import { vaderNu } from './vader';
@@ -97,29 +98,32 @@ export const RYKTE = balans('rykte', {
 // intrycken: ordet, om det är gott (+1) eller ont (-1), hur mycket relationen ändras per styrka (op) och symbolen (platshållare).
 // Det som visas (steg 3.10.5): som = ordet i en mening när det är ett substantiv ("en tjuv"), och betyder = vad intrycket betyder
 // vikt = hur mycket intrycket väger i anseendet och ryktbarheten (steg 4.5.3.7), 1 om inget står
-interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string; vikt?: number }
+// sed = vilken sed minnet av en död drar mot (steg 10.4.9), med upplevelsernas skala: 1 lite, 2 tydligt, minus är sedens andra sida
+interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string; vikt?: number; sed?: Partial<Record<Sed, number>> }
 const IDEF = {
-  valdsam: { namn: 'våldsam', tecken: -1, op: -40, sym: '👊', betyder: 'Har slagit, misshandlat eller dödat någon, eller gått på någon för att ta något.' },
+  valdsam: { namn: 'våldsam', tecken: -1, op: -40, sym: '👊', sed: { fejd: -1, krig: -1 }, betyder: 'Har slagit, misshandlat eller dödat någon, eller gått på någon för att ta något.' },
   tjuv: { namn: 'tjuv', tecken: -1, op: -30, sym: '🦝', som: 'en tjuv', betyder: 'Har tagit saker som var någon annans, i smyg eller med våld.' },
   elak: { namn: 'elak', tecken: -1, op: -20, sym: '😠', betyder: 'Har varit elak mot någon.' },
   logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥', som: 'en lögnare', betyder: 'Har ljugit eller överdrivit om någon. Man tror mindre på det lögnaren berättar.' },
   klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
   lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
   fattig: { namn: 'fattig', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
-  generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', betyder: 'Ger bort saker till andra.' },
-  hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', betyder: 'Har gett något till någon som höll på att dö.' },
-  skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', betyder: 'Har gjort ett mästerverk.' },
+  generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', sed: { delning: 1 }, betyder: 'Ger bort saker till andra.' },
+  hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', sed: { delning: 2, gemenskap: 1 }, betyder: 'Har gett något till någon som höll på att dö.' },
+  skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', sed: { arbete: 1 }, betyder: 'Har gjort ett mästerverk.' },
   flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '{sym_flitig}', betyder: 'Arbetar mycket mer än de andra i byn.' },
   valbargad: { namn: 'välbärgad', tecken: 1, op: 0, sym: '👛', betyder: 'Äger mer än de flesta i byn.' }, // steg 4.5.4.7
   rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️', betyder: 'Har dömt rättvist som ledare.' }, // ledarens straff (steg 3.5.3, styre.ts)
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
   arrig: { namn: 'ärrig', tecken: -1, op: 0, sym: '😣', som: 'ärrig', betyder: 'Har ett ärr i ansiktet.' }, // steg 8.2.4
-  stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊', betyder: 'Har vunnit ett slagsmål.' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
+  stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊', sed: { fejd: 1 }, betyder: 'Har vunnit ett slagsmål.' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
   feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
   smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där den sover.' }, // pyntet (steg 4.3.4, pynt.ts)
-  vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺', som: 'en vargdödare', betyder: 'Har dödat en varg.' }, // dödade en varg (steg 3.7.1, varg.ts)
-  bjorndodare: { namn: 'björndödare', tecken: 1, op: 10, sym: '🐾', som: 'en björndödare', betyder: 'Har dödat en björn.' }, // dödade en björn (steg 6.6.6, bjorn.ts)
+  vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺', sed: { krig: 1 }, som: 'en vargdödare', betyder: 'Har dödat en varg.' }, // dödade en varg (steg 3.7.1, varg.ts)
+  bjorndodare: { namn: 'björndödare', tecken: 1, op: 10, sym: '🐾', sed: { fejd: 1, krig: 1 }, som: 'en björndödare', betyder: 'Har dödat en björn.' }, // dödade en björn (steg 6.6.6, bjorn.ts)
+  pahittig: { namn: 'påhittig', tecken: 1, op: 8, sym: '{sym_hjarna}', sed: { nyfikenhet: 2 }, betyder: 'Har kommit på något nytt.' }, // steg 10.4.9 (symbolen är en platshållare)
+  forutseende: { namn: 'förutseende', tecken: 1, op: 8, sym: '{sym_oga}', sed: { forsiktighet: 2 }, betyder: 'Har som ledare tagit byn väl genom vintern.' }, // steg 10.4.9 (symbolen är en platshållare)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
@@ -154,6 +158,8 @@ const HDEF = {
   vannSlagsmal: { i: 'stark', vikt: 0.3, text: 'vann ett slagsmål mot {om}', prestation: true },
   backade: { i: 'feg', vikt: 0.2, text: 'backade från en strid med {om}' }, // steg 3.7.9
   vargdodare: { i: 'vargdodare', vikt: 0.5, text: 'dödade en varg', prestation: true }, // steg 3.7.1
+  pahittig: { i: 'pahittig', vikt: 0.5, text: 'kom på {sak}', prestation: true }, // steg 10.4.9
+  forutseende: { i: 'forutseende', vikt: 0.5, text: 'tog byn väl genom vintern' }, // steg 10.4.9
   bjorndodare: { i: 'bjorndodare', vikt: 1, text: 'dödade en björn', prestation: true }, // steg 6.6.6
   pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat sin sovplats med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
 } satisfies Record<string, HandelseDef>;

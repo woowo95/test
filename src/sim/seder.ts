@@ -12,6 +12,8 @@ import { sedOppen } from './styre';
 import { vikter } from './rost';
 import { andlighet } from './religion';
 import { UpplevelseTyp, upplevelseSed } from './uppvaxt';
+import { INTRYCK, intryckStyrka } from './rykten';
+import { byId } from './folk';
 
 // ---------- balanstal (regel 8) ----------
 // Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, rang, från -1 till 1) rör sig långsamt mot det invånarna drar åt:
@@ -31,6 +33,7 @@ export const SED = balans('seder', {
   rostAldre: 1.5, // över ALDER.aldre
   rostBas: 0.5,
   rostKarisma: 20,
+  minneSteg: 0.1, minneMax: 0.5, // minnet av en död drar så här mycket per steg i INTRYCK:s sedkolumn gånger minnets styrka, och alla minnen tillsammans högst minneMax per sed (steg 10.4.9)
   uppSteg: 0.1, // en upplevelse drar personens hållning så här mycket per steg i sedkolumnen (UPPLEVELSER i uppvaxt.ts, steg 4.5.4.9)
   snittVikt: 1.8, // målet för en sed är byns snitt gånger så här mycket, från -1 till 1
   rorDygn: 2, // sederna rör sig mot målet med en tidskonstant på så här många dygn
@@ -105,7 +108,25 @@ export function drar(s: State, p: Person) {
     const e = upplevelseSed(u.k);
     if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;
   }
+  for (const m of minnen(s, p).values()) for (const k in m.d) d[k as Sed] += m.d[k as Sed]!;
   return d;
+}
+// minnena av de döda som drar personens hållning (steg 10.4.9): per död, INTRYCK:s sedkolumn gånger minnets styrka (styrka
+// gånger säkerhet) gånger minneSteg. Tillsammans drar de högst minneMax per sed; blir det mer krymper alla lika mycket
+export function minnen(s: State, p: Person) {
+  const ut = new Map<number, { namn: string; k: string; v: number; d: Partial<Record<Sed, number>> }>();
+  if (!p.intryck) return ut;
+  const sum: Partial<Record<Sed, number>> = {};
+  for (const e of p.intryck) {
+    const sed = INTRYCK[e.k].sed; if (!sed) continue;
+    const q = byId(s, e.om); if (q && q.died === undefined) continue; // den som flyttat eller är gäst lever
+    const v = intryckStyrka(e) * SED.minneSteg;
+    let m = ut.get(e.om); if (!m) ut.set(e.om, m = { namn: e.namn, k: e.k, v: 0, d: {} });
+    if (v > m.v) { m.v = v; m.k = e.k; }
+    for (const k in sed) { const x = sed[k as Sed]! * v; m.d[k as Sed] = (m.d[k as Sed] ?? 0) + x; sum[k as Sed] = (sum[k as Sed] ?? 0) + Math.abs(x); }
+  }
+  for (const k in sum) if (sum[k as Sed]! > SED.minneMax) { const f = SED.minneMax / sum[k as Sed]!; for (const m of ut.values()) if (m.d[k as Sed] !== undefined) m.d[k as Sed]! *= f; }
+  return ut;
 }
 // rösterna i sederna: varje persons vikt (vikter i rost.ts, samma som sederTarget använder) och andelen av hela byns röst
 // (Tyngsta röster i fliken Seder, steg 4.5.4.10). Störst först. En kopia sorteras: vikter är en cache som simuleringen
@@ -117,15 +138,24 @@ export function roster(s: State) {
 // sederTarget, och hur många som minns den. Störst först
 export function sedDrag(s: State) {
   const ppl = roster(s), tw = ppl.reduce((a, x) => a + x.w, 0);
-  const m = new Map<UpplevelseTyp, { k: UpplevelseTyp; n: Set<number>; d: Record<Sed, number> }>();
-  for (const { p, w } of ppl) for (const u of p.upp ?? []) {
-    const e = upplevelseSed(u.k); if (!e) continue;
-    let r = m.get(u.k); if (!r) m.set(u.k, r = { k: u.k, n: new Set(), d: nollor() });
-    r.n.add(p.id);
-    for (const k in e) if (sedOppen(s, k as Sed)) r.d[k as Sed] += e[k as Sed]! * SED.uppSteg * w / tw * SED.snittVikt;
+  // en rad per slags upplevelse, och en per död som någon minns (om: hen, med intrycket som väger mest, steg 10.4.9)
+  type Rad = { k?: UpplevelseTyp; om?: { id: number; namn: string; i: string }; n: Set<number>; d: Record<Sed, number> };
+  const m = new Map<string, Rad>();
+  for (const { p, w } of ppl) {
+    for (const u of p.upp ?? []) {
+      const e = upplevelseSed(u.k); if (!e) continue;
+      let r = m.get(u.k); if (!r) m.set(u.k, r = { k: u.k, n: new Set(), d: nollor() });
+      r.n.add(p.id);
+      for (const k in e) if (sedOppen(s, k as Sed)) r.d[k as Sed] += e[k as Sed]! * SED.uppSteg * w / tw * SED.snittVikt;
+    }
+    for (const [id, mi] of minnen(s, p)) {
+      let r = m.get('d' + id); if (!r) m.set('d' + id, r = { om: { id, namn: mi.namn, i: mi.k }, n: new Set(), d: nollor() });
+      r.n.add(p.id);
+      for (const k in mi.d) if (sedOppen(s, k as Sed)) r.d[k as Sed] += mi.d[k as Sed]! * w / tw * SED.snittVikt;
+    }
   }
   const storst = (r: { d: Record<Sed, number> }) => Math.max(...SED_LIST.map(k => Math.abs(r.d[k])));
-  return [...m.values()].map(r => ({ k: r.k, n: r.n.size, vem: [...r.n], d: r.d })).filter(r => storst(r) > 0).sort((a, b) => storst(b) - storst(a));
+  return [...m.values()].map(r => ({ k: r.k, om: r.om, n: r.n.size, vem: [...r.n], d: r.d })).filter(r => storst(r) > 0).sort((a, b) => storst(b) - storst(a));
 }
 export function sederTarget(s: State): Record<Sed, number> {
   const t = nollor();

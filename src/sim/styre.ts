@@ -356,7 +356,7 @@ const nodDod = (s: State) => (s.stat?.['dog av svält'] ?? 0) + (s.stat?.['dog a
 // efter varje vinter (steg 4.1.1.2): ledde ledaren byn till framgång (byn växte och ingen svalt eller frös ihjäl) eller i fördärvet
 function ledarensVinter(s: State, l: Person, st: Styre) {
   const folk = living(s).length, folk0 = st.folk0 ?? folk, dog = nodDod(s) - (st.dog0 ?? nodDod(s));
-  if (folk > folk0 && dog === 0) upplev(s, l, 'ledFramgang');
+  if (folk > folk0 && dog === 0) { upplev(s, l, 'ledFramgang'); for (const q of vuxnaOf(s)) if (q !== l) handelse(s, l, 'forutseende', undefined, undefined, q); } // byns vuxna minns ledaren som förutseende (steg 10.4.9)
   else if (dog >= UPPV.fordarvDod || folk < folk0 * UPPV.fordarvKrymp) upplev(s, l, 'ledFordarv');
 }
 // titeln (steg 3.10.18): den första raden i TITLAR som passar

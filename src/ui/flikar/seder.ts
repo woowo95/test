@@ -53,13 +53,16 @@ function sedSumma(k: Sed, alla: ReturnType<typeof sedDrag>) {
   const del = (x: number) => Math.round(x * 100);
   return `<div class="sedsumma muted small"><span>← ${esc(SEDER[k].neg.toLowerCase())} ${del(neg)}</span><span>${esc(SEDER[k].pos.toLowerCase())} ${del(pos)} →</span></div>`;
 }
+// raden är en upplevelse eller minnet av en död (steg 10.4.9)
+const radNamn = (r: ReturnType<typeof sedDrag>[number]) => r.om ? `Minnet av ${r.om.namn}` : upplevelseKort(r.k!);
+const radIkon = (r: ReturnType<typeof sedDrag>[number]) => r.om ? 'i_' + r.om.i : UPP_IKON[r.k!] ?? 'i_okand';
 export function sedFormat(k: Sed) {
   const alla = sedDrag(s).filter(r => Math.abs(r.d[k]) >= 0.005), rader = alla.slice().sort((a, b) => Math.abs(b.d[k]) - Math.abs(a.d[k])).slice(0, 5);
   if (!rader.length) return '';
   return `<div class="sedformat">${rader.map(r => {
     const d = r.d[k], m = Math.abs(d), pil = (d > 0 ? '→' : '←').repeat(m >= 0.15 ? 3 : m >= 0.05 ? 2 : 1), mot = d > 0 ? SEDER[k].pos : SEDER[k].neg;
-    const text = `${upplevelseKort(r.k)}: drar mot ${mot.toLowerCase()} (${Math.max(1, Math.round(m * 100))} av 100), ${r.n} ${r.n === 1 ? 'minns' : 'minns'} det`;
-    return `<span class="sedupp" title="${esc(text)}">${tecknet(UPP_IKON[r.k] ?? 'i_okand', '•')}<b>${pil}</b><span class="muted">${r.n}</span></span>`;
+    const text = `${radNamn(r)}: drar mot ${mot.toLowerCase()} (${Math.max(1, Math.round(m * 100))} av 100), ${r.n} ${r.n === 1 ? 'minns' : 'minns'} det`;
+    return `<span class="sedupp" title="${esc(text)}">${tecknet(radIkon(r), '•')}<b>${pil}</b><span class="muted">${r.n}</span></span>`;
   }).join('')}</div>${sedSumma(k, alla)}`;
 }
 
@@ -72,7 +75,7 @@ export function sedLista(k: Sed) {
   const rader = sedDrag(s).filter(r => Math.abs(r.d[k]) >= 0.005).sort((a, b) => Math.abs(b.d[k]) - Math.abs(a.d[k]));
   const rad = (r: (typeof rader)[number]) => {
     const d = r.d[k], mot = (d > 0 ? SEDER[k].pos : SEDER[k].neg).toLowerCase(), vem = r.vem.map(id => byId(s, id)).filter(p => !!p);
-    return `<li>${tecknet(UPP_IKON[r.k] ?? 'i_okand', '•')}<span><b>${esc(upplevelseKort(r.k))}</b>: drar mot ${esc(mot)}, ${Math.max(1, Math.round(Math.abs(d) * 100))} av 100. <span class="muted">${r.n} minns det: ${vem.map(p => pLink(p)).join(', ')}</span></span></li>`;
+    return `<li>${tecknet(radIkon(r), '•')}<span><b>${esc(radNamn(r))}</b>: drar mot ${esc(mot)}, ${Math.max(1, Math.round(Math.abs(d) * 100))} av 100. <span class="muted">${r.n} minns det: ${vem.map(p => pLink(p)).join(', ')}</span></span></li>`;
   };
   return `<div class="sedlista"><p class="muted small">${esc(SEDER[k].effect)}</p>${rader.length ? `<ul>${rader.map(rad).join('')}</ul>` : '<p class="muted small">Inget som invånarna varit med om drar den här seden just nu.</p>'}</div>`;
 }
