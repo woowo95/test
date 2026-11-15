@@ -496,6 +496,36 @@ SCENARIER.forvaring = {
   },
 };
 
+SCENARIER.bokhylla = {
+  text: 'Steg 10.6.16: bokhyllan. Blad och böcker som ligger utan plats i lagret gör att byn vill ha en bokhylla, den byggs inne av 3 plankor, och där ställs blad och böcker före andra lager, men inget annat',
+  kor: () => {
+    const s = createState(6, START); klockan(s); tandEld(s); materialForrad(s);
+    for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'rep', 0);
+    const fore = SIM.forvarBrist(s, 'bokhylla');
+    for (let n = 0; n < 3; n++) SIM.newTing(s, 'bok', 1, SIM.BYN);
+    for (let n = 0; n < 2; n++) SIM.newTing(s, 'blad', 1, SIM.BYN);
+    SIM.placeTools(s);
+    const brist = SIM.forvarBrist(s, 'bokhylla');
+    setAmount(s, 'plankor', 3);
+    const hyllan = () => SIM.stationerOf(s).find(t => t.k === 'bokhylla' && SIM.isKlar(t));
+    let h = 0;
+    while (!hyllan() && h < 300) { kor(s, 1); h++; }
+    const hy = hyllan();
+    const plankor = SIM.RECEPT.bokhylla.av.plankor;
+    // en ny bok och en ny yxa: boken ställs i hyllan, yxan inte
+    const bok = SIM.newTing(s, 'bok', 1, SIM.BYN), yxa = SIM.newTing(s, 'yxa', 1, SIM.BYN);
+    SIM.placeTools(s);
+    const iHyllan = (t: SIM.Ting) => !!hy && t.x === hy.x && t.y === hy.y;
+    const dar = hy ? tingOf(s).filter(iHyllan).map(t => t.k) : [];
+    return [
+      [`blad och böcker utan plats gör att byn vill ha en bokhylla (${fore.toFixed(2)} före, ${brist.toFixed(2)} efter)`, fore === 0 && brist > 0],
+      [`bokhyllan byggs inne av ${plankor} plankor (${h} timmar)`, !!hy && !!hy.inne && plankor === 3],
+      [`en ny bok ställs i hyllan före andra lager, men inte en yxa (${dar.join(', ')})`, iHyllan(bok) && !iHyllan(yxa)],
+    ];
+  },
+};
+
 SCENARIER.kista = {
   text: 'Kistan i sovrummet (steg 2.10.18): den som sover inne och har egna redskap och kläder som ingen använder bygger en kista i rummet där hen sover. Det egna läggs i den och tillbaka dit efter användning, annat tas ur den, och när ägaren dör tar någon i samma rum över kistan',
   kor: () => {

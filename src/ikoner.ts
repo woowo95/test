@@ -146,7 +146,8 @@ export const PAL: Record<string, Record<string, string>> = {
   skinn: { b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
   pergament: { w: '#dad0bb', k: '#bdb39b' },
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
-  bagborr: { o: '#24201d', a: '#5e3c24', b: '#8a6a45', r: '#c9b48a', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
+  bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
+  bokhylla: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', r: '#742a01', g: '#4b4f00', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.6.16, platshållare
   skrivpulpet: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', w: '#dad0bb', d: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 10.6.11, platshållare
   bok: { h: '#7d5b40', w: '#dad0bb', d: '#24201d' }, // steg 10.6.6, platshållare // steg 10.6.5, platshållare // steg 10.6.4, platshållare
   // vargen (steg 3.7.14, platshållare): grå päls
@@ -2701,6 +2702,24 @@ export const PIX: Record<string, string[]> = {
     '.......oooooooo.',
     '........zzzzzz..',
   ],
+  bokhylla: [ // platshållare (steg 10.6.16): en hylla av plankor med böcker och ett rullat blad
+    '................',
+    '..oooooooooooo..',
+    '..obbbbbbbbbbo..',
+    '..ob.oo.o.o.bo..',
+    '..obornogwrwbo..',
+    '..obornogwrwbo..',
+    '..ocooooooooco..',
+    '..obbbbbbbbbbo..',
+    '..ob.o.oo...bo..',
+    '..obgoroowwwbo..',
+    '..obgoroowwwbo..',
+    '..ocooooooooco..',
+    '..obbbbbbbbbbo..',
+    '..oa........ao..',
+    '..oo........oo..',
+    '..zzzzzzzzzzzz..',
+  ],
   skrivpulpet: [ // platshållare (steg 10.6.11): en lutande skiva med ett blad, och en pall framför
     '................',
     '................',
@@ -4002,7 +4021,7 @@ PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 // Björns val efter v193 (steg 3.10.13): den fångade kaninen på kartan ser ut som viltet i förrådet
 PIX.kanin_dod = PIX.vilt; PAL.kanin_dod = PAL.vilt;
 // pyntet (steg 4.3.4): samma bild på kartan och i listorna, och lerkrukan för intrycket smakfull
-for (const k of ['kruka', 'bonad']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; }
+for (const k of ['kruka', 'bonad', 'skrivpulpet', 'bokhylla']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; } // skrivpulpeten och bokhyllan (steg 10.6.11, 10.6.16): platshållarna på kartan
 // bänken och krubban vridna ett kvarts varv (platshållare tills de stående bilderna är ritade, steg 10.2.68 och 10.2.88)
 for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_karta_v'] = Array.from({ length: r[0].length }, (_, x) => Array.from({ length: r.length }, (_, y) => r[r.length - 1 - y][x]).join('')); PAL[k + '_karta_v'] = PAL[k]; }
 

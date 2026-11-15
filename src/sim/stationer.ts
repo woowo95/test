@@ -85,6 +85,7 @@ export const STATION = balans('station', {
   kistaRymmer: 2, // ... och så många högar (en gammal kista i lagret). Det som ligger i den slits som under tak
   kistaVill: 2, kistaTing: 6, // den som har så många egna redskap och kläder som ingen använder vill ha en kista, och den rymmer så många (steg 2.10.18)
   stallRymmer: 4, // ... och så många redskap
+  bokhyllaRymmer: 6, // ... och bokhyllan så många blad och böcker (steg 10.6.16)
   forvarFulla: 6, // byn vill ha en hylla eller kista fullt ut när så många fulla högar ligger på golvet i lagren ...
   forvarLosa: 4, // ... och ett ställ när så många redskap ligger på golvet ...
   forvarAndel: 0.5, forvarAndelFull: 0.9, // ... och en hylla redan när golvet i förrådshusen börjar bli fullt: från så stor andel av golvet med högar, fullt ut vid den andra (steg 4.5.4.6)
@@ -118,7 +119,7 @@ export const STATION = balans('station', {
 // pynt = bara till för att pynta (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv i rummet där hen sover, som kistan
 // brasa = ringen till en lägereld till medan den läggs (steg 2.9.1, 4.5.6.8, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar). När den är klar blir den en lägereld (nyEld) och ingen station
 export interface Utkant { till: number; avst: number; vatten?: true; falt?: true; tradFri?: true; faltNara?: true } // faltNara: så nära ett fält som möjligt (komposten, steg 10.2.93) // tradFri: söker en plats utan träd (bara latrinen, steg 8.1.14)
-export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
+export interface Forvar { rymmer: number; redskap?: true; bara?: readonly string[]; tak?: true; stangd?: true; privat?: true }
 export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true } // en del i en station med delar (steg 9.4.1)
 export interface StationDef { kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; enda?: true; fahus?: true; kok?: true; tro?: true } // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
@@ -221,6 +222,12 @@ export const STATIONER = {
     namn: 'Redskapsställ', ett: true, ikon: 'stall', w: 1, h: 1, tek: ['hylla'], av: RECEPT.stall.av, min: RECEPT.stall.min, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.stallRymmer, redskap: true },
     bygger: 'Bygger ett ställ för redskap och vapen i lagret.',
     forsta: '{namn} byggde byns första ställ för redskap och vapen. Där står flera redskap på samma plats.',
+  },
+  // bokhyllan (steg 10.6.16): ett ställ bara för blad och böcker, och dit ställs de före andra lager (zoneSpot i lager.ts)
+  bokhylla: {
+    namn: 'Bokhylla', ikon: 'bokhylla', w: 1, h: 1, tek: ['hylla'], av: RECEPT.bokhylla.av, min: RECEPT.bokhylla.min, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.bokhyllaRymmer, redskap: true, bara: ['bok', 'blad'] },
+    bygger: 'Bygger en bokhylla av plankor i lagret.',
+    forsta: '{namn} byggde byns första bokhylla. Där står böckerna och bladen.',
   },
   // latrinen (steg 2.7.2, smuts.ts): en grop som grävs med benspaden i byns utkant. Där går man på toa, och när den är full fylls den igen
   kompost: { // steg 9.7.6 (rester.ts): sophögen blir en kompost, där resterna och latrinens innehåll mognar till färdig kompost
@@ -336,6 +343,9 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 export interface Station { tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: 'vin' | 'ol'; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
+// finns det en möbel bara för slaget k (bokhyllan för blad och böcker, steg 10.6.16)?
+let BARA_FV: Set<string> | undefined;
+export const baraForvar = (k: string) => (BARA_FV ??= new Set(Object.values(STATIONER as Record<string, StationDef>).flatMap(d => d.forvar?.bara ?? []))).has(k);
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
 export const isKlar = (t: Station) => t.kvar <= 0;
 // hur stor del av bygget som är gjort (0 till 1), för framstegscirkeln på kartan
@@ -723,7 +733,7 @@ function golvet(s: State, k: string, alla = false) {
     if (!z || z.hus === undefined || stationAt(s, a.x, a.y)) continue; // bara inomhus (steg 2.10.18)
     const full = a.n >= a.max - 1e-9;
     // alla = också högar som inte är fulla (när golvet börjar bli fullt, steg 4.5.4.6)
-    if (f.redskap ? isTool(a.k) : !isTool(a.k) && (full || alla) && (!f.tak || SAKER[a.k]?.haller !== undefined || (SAKER[a.k]?.slits ?? 0) > 0)) ut.push({ x: a.x, y: a.y, z, full });
+    if (f.redskap ? isTool(a.k) && (!f.bara || f.bara.includes(a.k)) : !isTool(a.k) && (full || alla) && (!f.tak || SAKER[a.k]?.haller !== undefined || (SAKER[a.k]?.slits ?? 0) > 0)) ut.push({ x: a.x, y: a.y, z, full });
   }
   return ut;
 }

@@ -149,6 +149,7 @@ const DEF = {
   hylla: { var: 'station', av: { plankor: RT.hyllaVirke, rep: RT.hyllaRep }, min: RT.hyllaMin },
   kista: { var: 'station', av: { plankor: RT.kistaVirke }, min: RT.kistaMin },
   stall: { var: 'station', av: { plankor: RT.stallVirke, rep: RT.stallRep }, min: RT.stallMin },
+  bokhylla: { var: 'station', av: { plankor: 3 }, min: 15 }, // steg 10.6.16: där blad och böcker står
   latrin: { var: 'station', av: {}, min: RT.latrinMin },
   kompost: { var: 'station', av: { virke: 1 }, min: 10, tek: 'kompost' }, // komposten (steg 9.7.6): en enkel inhägnad av lite trä
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },
