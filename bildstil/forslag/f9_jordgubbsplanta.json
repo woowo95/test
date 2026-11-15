@@ -4,7 +4,7 @@
  "slag": null,
  "vad": "Steg 9.7.9: jordgubbsplantan är låg med tandade blad och röda bär, och sprider utlöpare. Här plantan på en ruta av fältet.",
  "av": "API:t (claude-opus-5-5), tre idéer",
- "kommentar": "Nya versioner: alla plantor visas på en åker. Rita plantan som den växer på en ruta av åkern.",
+ "kommentar": "det ser ut som morötter..",
  "versioner": [
   {
    "bilder": [
@@ -13,79 +13,79 @@
      "rader": [
       "GFGGFGGGFGGFGGGF",
       "FGFFGFFGFFGFFGFF",
-      "FFGFFFFGFFFFFGFF",
-      "EEEFUUEEUUFUEEEE",
-      "GFGUPPPUPPOUUGGF",
-      "FGUPPPPOUPOOOUFF",
-      "FUPPPOPOOUOOONUF",
-      "EUPPOPOONOOONNUE",
-      "GFUPOONOOONNONUF",
-      "FsUOPONOONOONNUF",
-      "sFUONUONUUNONUFF",
-      "EEEutEutEEEutEEE",
-      "GFGsrGsrGGGsrGGF",
+      "FFFGFFUXXUFFFFGF",
+      "EEFUXUUXPWUUXUEE",
+      "GFUXXXUXPWWUWWUF",
+      "FGUXPPXWUWWPWWUF",
+      "FFUXXWWOVOWWWOUF",
+      "EEEUXPWUUUWPOUEE",
+      "GFGFUXUXOXUWUFGF",
+      "FGFFFUFutsFUFFGF",
+      "FFXOXFFtsrFFFFGF",
+      "EEutsEEFEEEEFEEE",
+      "GFtsrGGGFGGFGGGF",
       "FGFFGFFGFFGFFGFF",
-      "FFGFFFFGFFFFFGFF",
-      "EEEFEEEEEEFEEEEE"
+      "FFFGFFFFFGFFFFGF",
+      "EEFEEEEFEEEEFEEE"
      ]
     }
    ],
-   "anteckning": "Plantan står direkt i den fårade jorden på en ruta av åkern, sedd snett ovanifrån. Bladen ligger som en låg, ungefärligt rund kupol, ljusast uppe till vänster och mörkast nere till höger, med kontur i barr0. Vid framkanten tittar tre bär fram under bladen, eftersom de hänger ner mot jorden. De har gröna foderblad, glans uppe till vänster och mörkare rost nedtill. Rutan är helt fylld eftersom den är en åkerruta. En kort utlöpare går ut åt höger med en liten dotterplanta, för att visa att plantan sprider sig. Granskningen: Rättat: tuvan ritades om, något större (cirka 14 × 8 punkter), som en ojämn kupol med tandad kontur i barr0 och flikar som sticker upp i överkanten. De mörka barr0-linjerna inne i tuvan byttes mot oliv1 mellan bladen, så att det inte blir mörka fläckar. Ljuset går nu från oliv3 uppe till vänster till oliv1 nere till höger. Lösa bladprickar utan kontur i högerkanten (P, O och N utanför tuvan) togs bort. Tre röda bär i rost2 med glans i rost3 och kontur i rost0 tittar fram under framkanten, var och en under ett grönt foderblad, ojämnt utspridda. En tunn utlöpare i rost1 går ut mot vänsterkanten, så att plantan visar att den sprider sig. Den fårade jorden i jord1, jord2 och jord0 är kvar som förut. Storleken stämmer mot rutan och kolonisten.",
-   "ide": "En enda rund tuva mitt på rutan, ungefär 12 punkter bred och 8 hög, som ses snett ovanifrån: fem eller sex treflikiga blad med tandad kant ligger över varandra som en låg kupol i oliv2 och oliv3, med ljusast blad uppe till vänster och kontur i barr0. Under bladen vid framkanten tittar tre röda bär fram i rost2 med en glanspunkt i rost3 och små gröna foderblad, och de ligger mot den fårade jorden i jord1 och jord2 med mörka fåror i jord0. Tuvan är bara ungefärligt rund, för en planta är inte spegelsymmetrisk."
+   "anteckning": "Plantan står på en ruta av åkern och ses snett ovanifrån, som kartan. Jorden är vågräta fåror: jord2/jord1 på kammarna och jord0 i fårorna. Bladen ligger platta i en låg stjärnformad rosett, cirka 12 punkter bred, med ett blad bak, ett på var sida och två fram. Småbladen är runda med sågad kant: barr0-konturen bryts punkt för punkt. Ytan är barr3/barr2/oliv2 med en ljus mittnerv i oliv3, och mitten har ett mörkt hjärta. Plantan har inga uppåtstående stjälkar och ser därför inte ut som en morotsblast. Under den främre bladkanten hänger två knubbiga, spetsiga jordgubbar på 3 × 3 punkter, med kontur i rost0, ljus från vänster i rost3 och en grön foderkrans ovanpå. Från höger kant kryper en tunn utlöpare platt ut över jorden. Granskningen: Rättat: bären hängde som avsmalnande strutar (uts/tsr/r) rakt under bladen och läste som morötter. Nu är de två knubbiga, runda bär på 3 × 2 punkter med rost3-glans uppe till vänster och rost0 nere till höger, och var och en har en liten grön foderkrans (barr3/oliv2) ovanpå. Det ena ligger i skåran mitt under rosettens främre kant, det andra ute på jorden till vänster som på en utlöpare. Rosetten är snyggad: sågade bladspetsar med barr0-kontur, ljusa mittnerver i oliv3 och ljuset uppe till vänster. Den är ungefär spegelsymmetrisk, 12 punkter bred och 7 hög, utan stjälkar. Två ensamma oliv-prickar i jorden nere till höger är borttagna. Den fårade jorden runt plantan är återställd till åkerns mönster.",
+   "ide": "Låg rund rosett mitt på rutan, sedd snett ovanifrån: fyra-fem treflikiga blad ligger platta som en stjärna, cirka 12 punkter bred och bara 7 hög. Varje blad är tre runda småblad med sågad kant i barr2/barr3 och oliv2, med barr0-kontur och en ljus mittnerv. Inga uppåtstående stjälkar alls, så att det aldrig liknar en morotsblast. Under rosettens främre kant ligger två-tre runda, knubbiga bär på 2–3 punkter i rost2 med en rost3-glanspunkt och en liten grön foderkrans ovanpå; bären ligger mot den vågräta fårade jorden (jord1/jord2 med jord0 i fårorna)."
   },
   {
    "bilder": [
     {
      "namn": "f9_jordgubbsplanta",
      "rader": [
-      "GFGGFGGFGGFGGFGG",
-      "FFEFFFEFFFEFFFEF",
-      "EEEEFEEEEEEFEEEE",
-      "GHUUUHGGHGUUUGGH",
-      "GUPXOUFGGUPOXUFG",
-      "UUXOOUUGUUOXOUUG",
-      "UPXUXOUFUXOUPOUF",
-      "UXOUOOUFUOXUXOUE",
-      "UXOUOWUFUOWUOWUF",
-      "NUUNUUNENUUNUUFN",
-      "EXOWENENEEEXOWEE",
-      "EuttEutEEFEuttEE",
-      "EttsFtsFEEFttsFE",
-      "EFrEFEEEFEEFrEEF",
-      "GHGGHGGGHGGHGGGH",
-      "GFGGFGGFGGFGGFGG"
+      "GMMFMMFMMFGFGFFG",
+      "MPOMPOMPOMFGFFGF",
+      "MPOOPOOOPOMEFFFE",
+      "EMOOPONOOOOMFEEE",
+      "MPOONsNOOPOMGFFG",
+      "MOONOsONOOOMsFGF",
+      "FMOOMNNMOOMFFNFE",
+      "EEMNMEENMPOEEEsE",
+      "GFutsGutsONFGFNG",
+      "FGtsrFtsrMFGFFsF",
+      "FFErFFErFFFEFNFE",
+      "EEFEEEEFEEEMPOME",
+      "GFGFFGFGFFMPONOM",
+      "FGFFGFFFGFMOONNM",
+      "FFEFFFEFFFFMNMME",
+      "EEFEEEEFEEEEFEEE"
      ]
     }
    ],
-   "anteckning": "Plantan står på en hel åkerruta, 16 × 16 punkter, med vågräta fåror i jord. Ryggarna är jord2 och jord3, fårornas botten jord0. Hela plantan är en låg, avlång remsa längs en ås mitt på rutan. Den består av två treklövertuvor, var och en 7 punkter bred: en till vänster (punkt 0–6) och en till höger (punkt 8–14). Bladen är oliv2 och barr3, med lite oliv3 uppe till vänster och kontur i barr0. Tänderna syns som hack i kanten. Utlöparen i oliv1 går ut ur vänstra tuvans fot, dyker ner i en båge mellan tuvorna och kommer upp i den högra. Därifrån fortsätter den ut genom högra kanten, så att den möter nästa rutas vänstra tuva och en hel åker ser ut som sammanvuxna rader. Bären hänger på stjälkar ner i fåran under tuvorna: två stora koniska bär och ett litet, med grön foderkrans. De är rost3 uppe till vänster och mörknar mot rost0 i spetsen, så det röda syns mot jord0. Ovanför tuvorna syns bara fårad jord, så silhuetten blir platt och bred. Granskningen: Granskad mot reglerna: storleken (16 × 16, en ruta) och vinkeln snett ovanifrån stämmer, och raden följer den vågräta fåran med två bladtuvor, bladen i oliv2/barr3 med kontur i barr0 och bären i rost med grön foderkrona som hänger ner mot jord0, som i idén. Bara paletten används, och ljuset faller från övre vänster (oliv3 och rost3 uppe till vänster). En sak rättades: utlöparen gick ut genom högra kanten (rad 9) men kom inte in från vänster, så den bröts mellan rutorna. Punkten längst till vänster på rad 9 är nu oliv1 i stället för jord0, så utlöparen löper obruten när rutorna sätts ihop till en åker. Allt annat är oförändrat.",
-   "ide": "En låg, bred rad som följer en vågrät fåra över hela rutan: två små bladtuvor till vänster och höger, var och en omkring 6 punkter bred, sammanbundna av en tunn utlöpare i oliv1 som slingrar sig mellan dem och fortsätter ut genom högra kanten mot nästa ruta. Bladen är tandade treklöver i oliv2 och barr3 med kontur i barr0, och bären hänger på böjda stjälkar ner i fårans mörka botten, där det röda syns tydligt mot jord0. Silhuetten blir en platt, avlång remsa som gör att en hel åker ser ut som sammanvuxna rader."
+   "anteckning": "Plantan står platt på en åkerruta med vågräta fåror i jord0–jord2, sedd snett ovanifrån. Moderplantan är en låg, bred rosett uppe till vänster. Bladen är oliv2 och oliv3 med tandad kontur i oliv0, som är ljusast uppe till vänster, och kronan i mitten är i rost1. Ur rosettens framkant går korta stjälkar till två runda röda bär som vilar på jorden. Bären är rost2 och rost1 med en glanspunkt i rost3 och kontur i rost0. Bredvid dem sitter ett litet omoget bär i ljusgrönt. Från rosettens högra kant går en tunn utlöpare i rost1 och oliv1 i en böj över två fåror ner till en liten dotterrosett nere till höger. Silhuetten blir bred och låg, utan en enda upprätt tofs och utan något som liknar en rot, så att den inte kan läsas som en morot. Den mättade färgen sparas till bären, som är det som går att ta. Granskningen: Granskad mot reglerna. Storleken stämmer: plantan fyller en ruta på 16 × 16 punkter med fårad jord, ses snett uppifrån och följer idén. Moderrosetten sitter uppe till vänster och har ljuset uppe till vänster. Utlöparen i rost1 och oliv1 går diagonalt och obruten ner till dotterrosetten. Två röda bär hänger på korta stjälkar ut ur framkanten, och ett omoget ljusgrönt bär ligger i oliv3 och oliv2. Jag rättade en sak: mitt i dotterrosetten låg en ensam punkt i rost1 som såg ut som en lös fläck. Den är nu oliv2, och rosetten tonar mörkare nedåt höger. Allt annat är oförändrat.",
+   "ide": "Diagonal planta med utlöpare: moderplantan sitter som en platt bladrosett uppe till vänster på rutan, och en tunn böjd utlöpare i rost1 och oliv1 slingrar sig snett över en fåra ner till en liten dotterrosett på tre blad nere till höger. Silhuetten blir bred och låg, och utlöparen gör att den inte kan läsas som en rotfrukt. Två runda röda bär hänger på korta böjda stjälkar ut ur moderplantans framkant och vilar på jorden; ett tredje, omoget bär är ljusgrönt."
   },
   {
    "bilder": [
     {
      "namn": "f9_jordgubbsplanta",
      "rader": [
-      "GHGGUGUGHGGHGGGH",
-      "GUGUPPPUGUGUGGFG",
-      "UPPUPPOUUPOUGFFF",
-      "UPOUOPOUUOOUEFEE",
-      "UOOUUWUHUONUGGHG",
-      "GUUWGWGGWUUGFGGF",
-      "FGWFWWGWFFGFFFFG",
-      "EutFWWWEFEEEFEEE",
-      "GsrUOWOUOGGGHGGH",
-      "GGFWUWUOGOOGGFGG",
-      "FFutFutFOFFOGUFF",
-      "EFsrWsrEEOEFUPUE",
-      "HGGutGGHGGOUPOPU",
-      "GFGsrGGGFGGOWUOU",
-      "FFGFFFGFFFFUOUUF",
-      "EEEEFEEEEFEEUEEE"
+      "GGFGGGFGGFGGGFGG",
+      "FGFFGFFFGFFFGFFF",
+      "EFEEFEEFEEEFEEFE",
+      "FFEFFFFEFFFFEFFF",
+      "GGUWUGUWWUGUWUGG",
+      "FUWXWUWXWVUWXVUF",
+      "EUXPXWVXPXWXPWVE",
+      "FVXPXUXPXWUPXWVF",
+      "GUXWVXPXWVXPXWUG",
+      "FUqUVULUUuUWUuUF",
+      "EqKqFKKJttsEttsE",
+      "FFpFFFIEFrFFErFF",
+      "GGFGGGFGGFGGGFGG",
+      "FGFFGFFFGFFFGFFF",
+      "EFEEFEEFEEEFEEFE",
+      "FFEFFFFEFFFFEFFF"
      ]
     }
    ],
-   "anteckning": "Plantan står på en ruta av åkern, sedd snett uppifrån: fårorna går tvärs över rutan som band i jord3/jord2 på kammen och jord0 i botten. Moderplantan står uppe till vänster. Tre långa bladskaft i barr2 reser sig från rosetten och lutar bakåt, så att de tre tandade bladen står som en solfjäder. Tänderna är hack i barr0-konturen, och bladen är ljusast (oliv3) uppe till vänster och mörkare (oliv2, oliv1) åt höger. Fyra bär hänger på korta stjälkar ner framför och bredvid rosetten, där de syns mot jorden. De är i rost2/rost1 med rost0 nere till höger, och tre av dem har en glanspunkt i rost3. Från rosetten löper två utlöpare i oliv2 snett nedåt höger, en högre och en lägre. Båda slutar i en liten dotterplanta på tre blad nere till höger, där de slagit rot. Plantan sprids alltså diagonalt över rutan. Granskningen: Granskad mot reglerna: plantan ryms på en ruta av den fårade åkern (16 × 16) och ses snett uppifrån. Moderplantan står uppe till vänster, och bladen på långa skaft lutar bakåt som en solfjäder i oliv3 och oliv2 med kontur i barr0. Två utlöpare går snett nedåt höger till en dotterplanta på tre blad. Fyra bär hänger på egna skaft framför moderplantan, och bladen syns ljusare än jorden. Fårorna går i samma takt som på åkern. Rättat: bäret i mitten (rad 10, kolumn 5–6) saknade glanspunkt och var helt i rost2. Det har nu en glanspunkt i rost3 uppe till vänster, som de andra bären. Resten är oförändrat.",
-   "ide": "En moderplanta uppe till vänster på rutan med längre bladskaft som reser sig och lutar bakåt, så att de stora tandade bladen står upp som en liten solfjäder i oliv3 och oliv2 mot den fårade jorden. Från den löper två utlöpare snett nedåt höger, och där de slutar har en liten dotterplanta på tre blad slagit rot, så att plantan sprids diagonalt över rutan. Bären, fyra stycken i rost2 och rost1 med en glanspunkt i rost3, hänger samlade framför moderplantan, och bladen har kontur i barr0 så att allt syns ljusare än jorden."
+   "anteckning": "Jordgubbsplantan står på en hel åkerruta (16 × 16) med fårad jord i jord0–jord2. Den sprider sig och växer inte uppåt. Därför är den en låg, tät bladmatta, 14 punkter bred och 6 hög (rad 4–9), som följer fåran vågrätt. Bakre blad är mörka (barr1/barr2) och främre ljusare (barr3/oliv3). Konturen är barr0, med inskärningar så att man anar treflikiga, tandade blad. Bären hänger ner framför mattan mot betraktaren, så de syns längs framkanten i olika mognad: en blomma i ben2 med senapsmitt, ett halvmoget senapsbär och två mogna röda bär i rost. Alla är runda och 3 × 3 punkter, aldrig spetsiga, för att inte likna morötter. Ljuset kommer uppifrån vänster: glansen sitter mitt-vänster och rost0 nederst. Utlöparna syns som en barrstjälk vid rutans båda kanter i fårans höjd, så att plantorna binds ihop från ruta till ruta på åkern. Granskningen: Rättat: Bladen gick ut i rutans kanter (rad 9 bestod av blad över hela bredden). Mattan hålls nu inom kolumn 1–14, så att den fårade jorden syns runt den, och jordens fårmönster fortsätter obrutet i rad 4–11 så att rutan passar ihop med grannrutorna på åkern. Bladmattan var tre likadana klumpar i rad som läste som tre plantor. Nu är den en sammanhängande, överlappande matta med tandad bakkant: mörkare barr1/barr2 bak, ljusare barr3/oliv3 fram, barr0 som kontur och de ljusa punkterna åt övre vänster. Bladen slutar vid rad 9, och under dem syns jord mellan bären. Blomman (ben2 med senapsmitt och ben1 som skuggat nedre blad), det halvmogna bäret (senap) och de två röda bären (rost) är runda, 3 × 3 punkter, med glansen överst och den mörka tonen nere till höger. Det andra röda bäret är flyttat in från kanten. Storleken (en ruta, låg planta), vinkeln och färgerna var redan rätt.",
+   "ide": "Plantan som en låg, tät bladmatta som följer fåran vågrätt över nästan hela rutans bredd, cirka 14 punkter bred och 5–6 hög, med överlappande treflikiga blad där de bakre är mörkare (barr1/barr2) och de främre ljusare (barr3/oliv3). Längs mattans framkant tittar bären fram i olika mognad: en vit-gul blomma i ben2 med senapsmitt, ett halvmoget bär i senap2 och två mogna röda bär i rost2/rost3, alla runda och lika breda som höga, aldrig spetsiga. Jorden syns runt och mellan bladen som fårad jord1/jord2, och inget i plantan sträcker sig uppåt."
   }
  ]
 }

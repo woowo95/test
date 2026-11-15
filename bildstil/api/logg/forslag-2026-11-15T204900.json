@@ -1,0 +1,15 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f9_kk_strid=gör en snyggare version av version 2. tydligare vapen men behåll skölden. (Skölden ska finnas med i alla tre versionerna.)"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.44,
+  "hog": 0.95
+ },
+ "dollar": 1.454,
+ "rapport": [
+  "f9_kk_strid: 3 versioner"
+ ]
+}

@@ -1,0 +1,19 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f10_bank",
+  "f10_hogsate",
+  "f10_krubba!=inte ritade i rätt perspektiv. Ska också gå att rotera"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 1.33,
+  "hog": 2.84
+ },
+ "dollar": 1.357,
+ "rapport": [
+  "f10_bank: 3 versioner; kontrollerna varnar fortfarande: version 3: olika",
+  "f10_hogsate: 3 versioner",
+  "f10_krubba: 3 versioner"
+ ]
+}

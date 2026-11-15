@@ -1,0 +1,17 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f10_bank",
+  "f9_stekhall"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.88,
+  "hog": 1.89
+ },
+ "dollar": 0.953,
+ "rapport": [
+  "f10_bank: 3 versioner",
+  "f9_stekhall: 3 versioner"
+ ]
+}

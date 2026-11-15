@@ -1,0 +1,89 @@
+{
+ "kort": "f10_hogsate",
+ "namn": "Högsätet",
+ "slag": null,
+ "vad": "Steg 10.2.68: högsätet i långhuset, där den som leder byn sitter vid gillena. En möbel av 3 virke, en ruta stor, snett ovanifrån som de andra möblerna",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f10_hogsate",
+     "rader": [
+      "..EEE......EEE..",
+      ".EHHGE....EHHGE.",
+      ".EHGFEEEEEEHGFE.",
+      "..EGEGFGFGFEGE..",
+      "..EGEFFFFFFEFE..",
+      ".EEGEEEEEEEEFEE.",
+      ".EHHHGHHHHGHHGE.",
+      ".EHGHHHHGHHHGGE.",
+      ".EGGHGGHGGGHGGE.",
+      ".EHGGGHGGHGGGGE.",
+      ".EGGGHGGGGGHGFE.",
+      ".EFFFFFFFFFFFFE.",
+      ".EFFFFFFFFFFFFE.",
+      ".EFFEEEEEEEEFFE.",
+      ".EFFE......EFFE.",
+      ".EEEE......EEEE."
+     ]
+    }
+   ],
+   "anteckning": "Högsätet står på golvet med sitsen mot betraktaren och ses snett ovanifrån som de andra möblerna. Sitsen är en tjock planka med längsgående korn i jord3 och jord2, och framkanten är ett band på två punkter i jord1. Bara de två främre benen syns, som korta stumpar längst ut. De två snidade stolparna står i bakkantens hörn och är förkortade. De har runda knoppar med ljuset från vänster och en mörkare skåra under knoppen. Tvärslån i jord1 ligger mellan stolparna som rygg. Konturen är jord0 runt om, och formen är spegelsymmetrisk så att bara ljuset skiljer sidorna åt. Ingen pall eller stubbe hör till bilden. Granskningen: Rättat: i versionen gick stolparna ända ner längs sidorna till benen. Möbeln såg därför ut som en stol rakt framifrån med armstöd, inte som en bänk snett ovanifrån. Nu står de två stolparna bara vid bakkanten, förkortade till rad 0–5. Stolparna har runda knoppar i jord3 med ljuset till vänster, och tvärslån i jord2/jord1 mellan dem bildar ryggen. Sitsen är en bred planka sedd ovanifrån, rad 5–10, med längsgående korn i jord3/jord2 och mörkare nere till höger. Framkanten är ett band på 2 punkter i jord1 (rad 11–12), och under den sitter två benstumpar längst ut på 3–4 punkter. Formen är spegelsymmetrisk med kontur i jord0, är 16 × 16 och syns ljus mot gräset. Ingen pall eller sittplats framför.",
+   "ide": "En bred bänk med två höga högsätesstolpar: sitsen är en tjock planka sedd ovanifrån, cirka 14 punkter bred och 7 hög i jord2 och jord3 med längsgående korn, och framkanten är ett band på 2 punkter i jord1 med två korta benstumpar på 4 punkter längst ut. Vid bakkanten reser sig två snidade stolpar, förkortade till ungefär 7 punkter, med ett runt knoppformat huvud i jord3 och ljuset på vänster sida, och en tvärslå i jord1 mellan dem bildar ryggen. Helheten är spegelsymmetrisk med kontur i jord0 och ryms i en ruta, 16 × 16."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_hogsate",
+     "rader": [
+      "....EEEEEEEE....",
+      "....EHHGHHGE....",
+      "..EEEGHGGGFEEE..",
+      "..EHEGGHGGFEGE..",
+      "EEEGEGHGGFGEFEEE",
+      "EHEGEGGGHGFEFEGE",
+      "EGEEEEEEEEEEEEFE",
+      "EHEHHGHGGGGGFEGE",
+      "EGEHGHGGHGGGFEFE",
+      "EHEGHGGGGHGFGEGE",
+      "EGEGGHGGGGFGFEFE",
+      "EHEGGGGFGGGFFEGE",
+      "EGEGFGGGFGFFFEFE",
+      "EGEGFFGFFGFFFEFE",
+      "EFEFFGFFFFFFFEFE",
+      "EEEEEEEEEEEEEEEE"
+     ]
+    }
+   ],
+   "anteckning": "Högsätet står på långhusets golv och ses snett ovanifrån, som de andra möblerna. Det är en sluten lådstol av tjocka bräder, 16 × 16 punkter. Den höga ryggväggen står vid bakkanten och är förkortad till 7 rader. Överkanten är trappstegsformad i två avsatser: mitten är högst och stegar sedan ner på båda sidor. Mörka fogar i jord0 skiljer bräderna åt. Sitsen (10 × 6) ses ovanifrån och ljusnar mot övre vänstra hörnet, med en svag skugga under ryggen och en fog mitt i. Armstöden är raka sidobräder på var sida, och deras ovansida syns som ett ljusare band. Framsidan är ett helt bräde i jord1. Inga ben syns, så stolen står som en kloss på golvet. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Konturen är jord0, och det finns ingen pall eller fotpall framför. Granskningen: Ryggen var en spetsig pyramid i tre avsatser med smala lodräta ränder, så stolen läste som en vedtrave. Idén säger två avsatser, så ryggen ritades om: en mittbräda (rad 0–5) med ljus ovansida, ett lägre steg på var sida (från rad 2) och sist armstöden (från rad 4). Fogarna i jord0 ligger nu bara mellan bräderna. En fogrand i jord0 skiljer ryggens fot från sitsen. Sitsen är 10 × 6 punkter ovanifrån i jord2 och jord3 med korn och ljusast uppe till vänster, och den mörka tvärranden mitt i sitsen är borta. Armstöden är raka sidobräder med ljus ovansida till vänster och mörkare till höger. Framsidan är ett band på två rader i jord1 med fogar i linje med armstöden, utan ben, och står som en kloss. Formen är spegelsymmetrisk och konturerad i jord0, ljusare än gräset och 16 × 16 punkter, en ruta mot kolonisten. Ingen sittdel framför.",
+   "ide": "En sluten lådstol i form av en kantig tron av tjocka bräder: en kvadratisk sits, cirka 10 × 7 punkter, sedd ovanifrån och omgiven av två armstöd som raka sidobräder i jord1 och jord2. Ryggen är en hel, hög brädvägg vid bakkanten, förkortad till 6–7 punkter, med en trappstegsformad överkant i två avsatser och mörka fogar mellan bräderna. Framsidan är ett helt bräde på 3 punkter i jord1 utan synliga ben, så att stolen står som en kloss på golvet, symmetrisk och konturerad i jord0."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_hogsate",
+     "rader": [
+      "....EEEEEE....",
+      "..EEHHGHHGEE..",
+      ".EFHopqqpoGmE.",
+      "EFHGoqwqpoGFmE",
+      "EFGFopqppoFGmE",
+      "EFHoqpqqpqoGmE",
+      "EHGFopqppoFGmE",
+      "EHFGoqpqpoGFmE",
+      "EGHFopqppoFGmE",
+      "EGFHopqqpoGFmE",
+      "EFGHoGooGoHGmE",
+      "EFmFmFmFmlmllE",
+      "EmFmFmlmlmlllE",
+      ".EFmFmlmlmllE.",
+      "..EEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Högsätet står på golvet med ryggen bakåt och ses snett ovanifrån som de andra möblerna. Det är en grov stam som urholkats, så det har inga ben: nedtill syns bara den rundade barken som ett mörkt band på tre punkter och stammens bas mot golvet. Den kvarlämnade halvrunda kanten reser sig fem punkter bakom sitsen. Uppifrån syns dess övre kant med bark i kol2 och jord1, och innanför den urholkade insidan i jord2 och jord3. Sitsen är en oval i jord3 och jord2 med en årsring i jord1. Den syns på båda sidor om fällen och som en snittkant framtill. Fällen i ben1 och ben2 har kontur i ben0. Den hänger över ryggens kant med två flikar upptill och ligger ner över sitsen, där den slutar i två ojämna flikar. Formen är spegelsymmetrisk, och bara ljuset skiljer sidorna åt. Glansen sitter uppe till vänster och är högst en eller två punkter i ben3. Ingen pall eller stubbe är med, för stolen är själva sittplatsen. Bilden är 14 × 15 punkter och ryms i en ruta. Granskningen: Rättat: 1) Ryggen syntes inte; den ritas nu som en låg, böjd kant i de fem översta raderna, med ljus snittyta i jord3/jord2 överst och bark i jord1 och kol2 på sidorna. 2) Sitsen var helt dold. Nu syns den ovala sitsen i jord3/jord2 med årsringar i jord1 på båda sidor om fällen. Ytan tar rad 0–10, ungefär tre fjärdedelar av höjden. 3) Barkbandet framtill var fyra rader och mörkt. Det är nu tre rader, ljusare till vänster och mörkare till höger. 4) Fällen var en smal rand. Nu är den en spegelsymmetrisk fyrkant i ben0–ben2 som ligger över sits och rygg, breder ut sig över sitsen och har en ojämn frans nedtill. En enda glanspunkt i ben3 finns kvar. Stolen är fortfarande 14 × 15 punkter, utan ben och utan pall, och syns bättre mot gräset med den ljusa sitsen och fällen.",
+   "ide": "En rund stockstol, urholkad ur en grov stam: ovanifrån syns en oval sitsyta i jord3 och jord2 med årsringar i jord1, och bakåt reser sig stammens kvarlämnade halvrunda kant som en låg, böjd rygg på 5 punkter med barken i kol2 och jord1 på utsidan. Framkanten är stammens rundade bark i ett band på 2–3 punkter och nedtill syns inga ben, bara stammens bas mot golvet. En fäll i ben1 och ben2 ligger över sitsen och ryggen som en spegelsymmetrisk fyrkant med ojämna kanter, och hela stolen ryms i 14 × 15 punkter."
+  }
+ ]
+}

@@ -1,0 +1,107 @@
+{
+ "kort": "f7_klyvplats",
+ "namn": "Klyvplatsen",
+ "slag": null,
+ "vad": "Steg 7.5.1: klyvplatsen. Du valde version 3, den låga klyvbänken med en kluven halva fasthållen, och version 3 är nu byggd i spelet. Här fler versioner av version 3: samma bänk, stock och plankor, med små ändringar i virket och i hur det står.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "dethär är nästan exakt samma version fast i olika färger. Kom igen nu försök lite iallafall",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f7_klyvplats_v3_kilen_i_stocken",
+     "rader": [
+      "..............QQQQ..............",
+      ".......EEEEEEEQTSQEEEEEEE.......",
+      "......EGHGGFGEQSSQEGFGFFFE......",
+      ".EEEEEFGGFGEEqQSRQqEEGFFGFEEEEE.",
+      "EHHGHEFGEEEppqQSRQpppEEEFFEGHGGE",
+      "EHGGGEGFFGFEEppQQppEEFGFFFEGGHGE",
+      "EHGHGEFGFFFFGEEEEEEFFGFFEFEGGGFE",
+      "EEEEEEFFEFFFFEFFFFFEFFFFFEEEEEEE",
+      "EHHGHGEFEFFEFEFFEFFEFEFFEEGGHGGE",
+      "EHGHHGGEEEEEEEEEEEEEEEEEEGGHGGFE",
+      "EHGHGGHGGGHGGHGGGHGGGHGGGHGGFGFE",
+      "EGHGGHGGGHGGGGHGGHGGGGHGGGGFGFFE",
+      "EGFGFFFFGFFFFFFGFFFFFFGFFFFFFFFE",
+      "EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "...EGFE..................EGFE...",
+      "...EFFE..................EFFE...",
+      "...EEEE..................EEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Den låga klyvbänken står med långsidan mot betraktaren och ses snett ovanifrån. Bänkskivan är två grova halvstockar som ligger sida vid sida (jord H/G, kontur E, fog i E). Skivan tar ungefär hälften av höjden. Framkanten är ett band på 2 punkter i F, och bara de två främre benen syns, som stumpar på 4 punkter. Ovanpå ligger stocken på längden. Den är bara halvt kluven och ritad i bark F/G, med en mörkare framsida i E/F. Järnkilen (skiffer S/T, kontur Q, en glanspunkt T) står upp mitt i stocken och sticker upp ovanför stockens bakkant. Kilen är förkortad och smalnar ner mot sprickan. Från kilen gapar en V-formad spricka utåt åt båda hållen. Den är bredast vid kilen, med färskt ljust virke i q/p mellan mörka kanter, och smalnar till en tunn mörk linje mot stockens ändar. Det ligger inga lösa plankor och ingen sittplats framför, så silhuetten blir en enda lång, platt och sluten form. Kilen är det enda som bryter upp den. Granskningen: Granskad mot reglerna. Storleken (32 × 18, en låg bänk bredvid kolonisten), vinkeln (skivan och stocken ovanifrån, framkantsband och två korta benstumpar), symmetrin (benen speglade på kolumn 3–6 och 25–28), ljuset (vänster sida ljusare, höger mörkare) och synligheten på gräset (jordbrunt med kontur E) följer reglerna och idén. Kilen står upp från stocken med en glanspunkt, och sprickan med färskt virke är en lins som är bredast vid kilen. Rättat: på rad 7 saknades skarven mellan de två halvstockarna på bänkens högra ände (kolumn 26–29 var F i stället för konturen E). Konturen var därför öppen och sidorna olika. Nu är skarven en hel E-linje på båda ändarna, som till vänster. I övrigt är bilden oförändrad.",
+   "ide": "Kilen i stocken, bred och låg (32 × 18 punkter): bänkskivan är två grova halvstockar sedda ovanifrån (jord G/H med kontur E och ett framkantsband på 2 punkter i F), med två korta benstumpar på 4 punkter längst fram. Ovanpå ligger stocken på längden, bara halvt kluven: en järnkil (skiffer S/T, kontur Q, en glanspunkt T) sitter i mitten, och från den gapar en V-formad spricka som visar ljust färskt virke (ben q/p) mellan barken (F/E). Inga lösa plankor, så silhuetten blir en enda lång, platt, sluten form."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f7_klyvplats_v3_stock_pa_anda",
+     "rader": [
+      "..EEEEE........EEEEE..",
+      ".EFpoppE......EppopFE.",
+      ".EFopoqE......EqopoFE.",
+      ".EFpoppE......EppopFE.",
+      ".EGFFFpoE....EqpGFFFE.",
+      ".EGFGFopE....EpqFGFFE.",
+      ".EGGFFpoE....EqqGFFFE.",
+      "..EGFFGpoE..EqpFGFFE..",
+      "..EGFGFopE..EpqGFFFE..",
+      ".EEGGFFpoEEEEqpFFGFEE.",
+      ".EHEGFFGpoEEqpFGFFEGE.",
+      ".EHEGFGFopEEpqGFFFEGE.",
+      ".EHGEEEEEEEEEEEEEEGHE.",
+      ".EHEEEEEEEEEEEEEGHGGE.",
+      ".EGEqqpqpqpqppoEHGHGE.",
+      ".EGEEEEEEEEEEEEEHGHGE.",
+      ".EGHGHEqpqpqqpqppoEGE.",
+      ".EHGGGEEEEEEEEEEEEEGE.",
+      ".EGFFGFFFGFFFGFFFFGFE.",
+      ".EFFFFFGFFFFFFFFGFFFE.",
+      ".EFFGFFFFFFFGFFFFFFFE.",
+      ".EEEEEEEEEEEEEEEEEEEE.",
+      "..EGFE..........EGFE..",
+      "..EGFE..........EGFE..",
+      "..EGFE..........EGFE..",
+      "..EEEE..........EEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Stocken står på ända vid bänkens bakkant, kluven och förkortad: de två halvorna har fallit isär som ett öppet V. Baserna möts mitt på skivan och topparna lutar utåt. Ändytorna ovanpå är halva ellipser med årsringar i p/o och barkkant i F, och den raka klyvsidan vänder inåt. Den högra halvans klyvyta vetter mot ljuset och är ljusast (q), den vänstra ligger i skugga (p/o). Barken är F/G med kontur i E. Skivan ses ovanifrån (G/H). Framför stocken ligger två tunna kluvna plankor tvärs över bänken, förskjutna och kant i kant, med ljus klyvyta uppåt. Framkanten är ett band på 3 punkter i F, och bara de två främre benen syns, som stumpar på 5 punkter. Bilden blir hög baktill och låg fram, och ingen sittplats är ritad. Granskningen: Granskad mot reglerna. Storleken 22 × 26 är rimlig mot kolonisten (14 × 20). Vinkeln är snett uppifrån: skivan syns ovanifrån, framkanten är ett F-band på 3 punkter och de främre stumparna är 4 punkter. De två stockhalvorna står upp vid bakkanten som ett spegelsymmetriskt V. Ändytorna är i p/o med barkkant, och klyvytorna vetter inåt. Den högra klyvytan är ljusast eftersom den vetter mot ljuset uppe till vänster, vilket stämmer med ljuset. Bara en sak behövde rättas. Rad 15 var ett helt E-streck från vänster kant ända in i högra kanten, så den undre konturen på den bakre plankan smälte ihop med den främre plankan. Det gav ett mörkt, slätt band över skivan. Nu slutar plankans underkant vid kolumn 15, och skivans ytor i G/H fortsätter till höger om den. De två plankorna läses därför som två separata plankor på en ljus skiva. Allt annat är oförändrat.",
+   "ide": "Stocken på ända, kort och högre (22 × 26 punkter): en kort, fyrkantig bänk med skivan ovanifrån (G/H, kontur E, framkant F på 3 punkter, två stumpar på 5 punkter). Vid bakkanten står en kort stock upprätt, förkortad, med den runda ändytan synlig ovanifrån (årsringar i p/o och kant av bark i F), redan kluven så att de två halvorna fallit isär som ett öppet V med den ljusa klyvytan inåt. Framför på skivan ligger två tunna kluvna plankor på tvären, så att bilden blir hög baktill och låg fram, olik alla tidigare."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "klyvplats_v3_pinnar_plankor",
+     "rader": [
+      "...........................EEEE.........",
+      "....EEE.EEE.....EEE.EEE....EHGEEEE......",
+      "....EHE.EHE.....EHE.EHE.....EHGEGFE.....",
+      "....EGE.EGE.....EGE.EGE..EEEEHHEGGE.....",
+      ".EEEEGEEEGEEEEEEEGEEEGEEEEpHEHGEGFE.....",
+      ".EHGEEEEEEEEEEEEEEEEEEEEGHEpHEHGEGFE....",
+      ".EGEwqqqpqqqoqqpqqqqpqqqEHEHHEHHEGFE....",
+      ".EHEqppoppqpopppqpoppoppEGEpHEHGEGFE....",
+      ".EGEFGFFFFGFFFFFFGFFFFFFEHGEpHEHGEGFE...",
+      ".EHGEEEEEEEEEEEEEEEEEEEEEEGEHHEHGEGGE...",
+      ".EGHGEqqqqpqqoqqqqpqqqoqqpEEpHEGHEGFE...",
+      ".EHGHEppopppqppoppppoppqppEGEpHEHGEGFE..",
+      ".EGHGEFFFGFFFFFFGFFFFFFGFFEHEHHEHGEGFE..",
+      ".EHGHGEEEEEEEEEEEEEEEEEEEEGHEpHEHHEGFE..",
+      ".EFFGFFFFFFFFGFFFFFFFFFFGFFFFEpHEHGEGFE.",
+      ".EFFFFGFFFFFFFFFFFFGFFFFFFFFFEHHEHGEGFE.",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEpHEHGEGFE.",
+      "..FE......FE.......FE......FE.EpHEHGEGFE",
+      "..FE......FE.......FE......FE.EHHEHGEGFE",
+      "..EE......EE.......EE......EE.EEEEEEEEEE"
+     ]
+    }
+   ],
+   "anteckning": "Den låga, avlånga bänken ses snett ovanifrån. Skivan (G/H med kontur i jord0) tar större delen av höjden, framkanten är ett band på två punkter i F och under den syns fyra korta stumpar på tre punkter. Stockens två halvor ligger sida vid sida längs skivan med den ljusa klyvytan uppåt (q/p med korn i o). Där syns också ett smalt barkband framtill, eftersom vi ser dem lite snett. De hålls mot bakkanten av två par upprätta tappar, förkortade till fyra punkter, som sticker upp över den bakre kanten. De tre färdiga plankorna står på marken vid bänkens högra ände och lutar snett in över skivan. De ritas framför bänkänden och når olika högt. Silhuetten blir därför låg till vänster och hög till höger. Ljuset kommer från vänster, så den vänstra plankan är ljusast (p/H) och den högra mörkast (G/F). Ingen sittplats är ritad. Granskningen: Granskad mot reglerna; inget behövde rättas, så versionen lämnas oförändrad. Alla 20 rader är 40 punkter breda. Storlek: 40 × 20 punkter, lika hög som kolonisten (14 × 20) men nästan tre gånger så lång. Det stämmer för en låg, avlång bänk med plankor som sticker upp i ena änden. Vinkel: skivan och de två kluvna halvorna ses ovanifrån och tar större delen av höjden. Framkanten är ett band på 2 punkter i F, och bara de fyra främre benstumparna syns, 3 punkter höga. De två paren tappar står upp vid bakkanten, förkortade till 3–4 punkter. Ingen pall eller stubbe är ritad. Ljuset faller uppifrån vänster: ljusaste tonen och den enda glanspunkten (w, ben3, inte ren vit) sitter uppe till vänster på första halvan. Halvorna är mörkare mot framkanten (F), och plankorna har ljus vänsterkant (p/H) och mörk högerkant (F/E). Kontur: allt trä har jord0 (E), inget kol0, och inga mättade toner används. Idén följs: klyvytorna ligger uppåt i q/p med korn i o, tapparna håller halvorna, och tre plankor lutar mot högra änden med foten på marken. Silhuetten är låg till vänster och hög till höger, avsiktligt osymmetrisk, eftersom en bänk med lutade plankor inte är en symmetrisk sak. Brunt trä med mörk kontur och ljusa klyvytor syns tydligt mot det olivgröna gräset. Inget bärs, så regeln om huvud och ansikte gäller inte.",
+   "ide": "Halvorna fasthållna i pinnar, lång och smal med plankor lutade mot ena änden (40 × 20 punkter): en låg, avlång bänk (G/H, kontur E, framkant 2 punkter i F, fyra korta stumpar på 3 punkter). På skivan ligger stockens två halvor sida vid sida med den platta, ljusa klyvytan uppåt (q/p med korn i o), fasthållna av två par upprätta trätappar vid bakkanten, förkortade till 3–4 punkter. Mot bänkens högra ände lutar tre färdiga plankor snett uppåt och sticker upp över skivan, så att silhuetten blir sned och tydligt osymmetrisk: låg till vänster och hög till höger."
+  }
+ ]
+}

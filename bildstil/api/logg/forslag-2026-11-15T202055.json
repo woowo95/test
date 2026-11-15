@@ -1,0 +1,53 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f9_snickarbank!=detta är felriktat. Läs instruktionen",
+  "f9_valp!=detta är samma djur i olika positioner. Felritat",
+  "f9_hund!=utgå från hur vargen ser ut hunden ska se nästan lika dan ut",
+  "f9_far",
+  "f9_get",
+  "f9_hons",
+  "f9_bakugn=gör tre helt nya versioner untan förlaga",
+  "f9_jordgubbsplanta!=det ser ut som morötter..",
+  "f9_appeltrad",
+  "f9_staket",
+  "f9_stekhall",
+  "f9_vaxtrest",
+  "f9_sophog",
+  "f9_kompost!=gör den 2x2 rutor",
+  "f9_lerkrukor=Mittenkrukan ska vara EXAKT den bilden vi redan har för kruka. Sen gör du en mindre och en större fast i samma färg som den vi redan har. Störta krukor har bra form som du har gjort den nu",
+  "f9_rokeri!=inget ser riktigt ut som ett rökeri",
+  "f9_kk_strid=gör en snyggare version av version 2. tydligare vapen men behåll skölden.",
+  "f9_bryggkar=utgå från version 3 men ta bort den blåa cirkeln i mitten. Gör urgröpningen av karet mörkare (mer skuggat)",
+  "f9_vedhog=använd version 3 när det är ett ensamt vedträ men gör så vedstaplarna ser annorlunda ut. Försöka få det att se ut som en staplad vedhög.",
+  "f7_klyvplats!=dethär är nästan exakt samma version fast i olika färger. Kom igen nu försök lite iallafall"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 8.83,
+  "hog": 18.93
+ },
+ "dollar": 9.775,
+ "rapport": [
+  "f9_snickarbank: 3 versioner",
+  "f9_valp: 3 versioner",
+  "f9_hund: 3 versioner",
+  "f9_far: 3 versioner",
+  "f9_get: 3 versioner",
+  "f9_hons: 3 versioner",
+  "f9_bakugn: 3 versioner",
+  "f9_jordgubbsplanta: 3 versioner",
+  "f9_appeltrad: 3 versioner",
+  "f9_staket: 3 versioner",
+  "f9_stekhall: 3 versioner; kontrollerna varnar fortfarande: version 1: perspektiv: Inte snett ovanifrån: ingen mörkare framkant under ytan, som en vy rakt framifrån.; version 3: perspektiv: Inte snett ovanifrån: ingen mörkare framkant under ytan, som en vy rakt framifrån.",
+  "f9_vaxtrest: 3 versioner",
+  "f9_sophog: 3 versioner",
+  "f9_kompost: 3 versioner",
+  "f9_lerkrukor: 3 versioner; kontrollerna varnar fortfarande: version 3: olika",
+  "f9_rokeri: 3 versioner",
+  "f9_kk_strid: 3 versioner",
+  "f9_bryggkar: 3 versioner",
+  "f9_vedhog: 3 versioner",
+  "f7_klyvplats: 3 versioner"
+ ]
+}
