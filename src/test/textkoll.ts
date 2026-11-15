@@ -39,7 +39,7 @@ export const KONTROLLER: Kontroll[] = [
   { id: 'genus', namn: 'En eller ett, eller adjektivets form, efter ordets genus', hitta: t => {
     for (const re of [FEL_ETT, FEL_EN]) { const a = re.exec(t); if (a && !MATT.has((a[2] ?? '').trim().toLowerCase())) return a[0].trim(); }
     const m = new RegExp(`(^|[^\\p{L}])en (\\p{L}+t) (${EN.join('|')})(?=[^\\p{L}]|$)`, 'iu').exec(t);
-    return m && !T_ADJ.has(m[2].toLowerCase()) ? m[0].trim() : undefined;
+    return m && !T_ADJ.has(m[2].toLowerCase()) && !MATT.has(m[2].toLowerCase()) ? m[0].trim() : undefined; // "en bit näver": måttet slutar på t
   } },
   { id: 'nyttOrd', namn: 'Ett ord som inte fanns på järnåldern', hitta: t => NYA.exec(t)?.[2] },
   // ordlagret (steg 6.7.1, src/sim/ord.ts): det simuleringen vet ska inte stå som rådata i texten
