@@ -206,6 +206,15 @@ export function observe(s: State, p: Person, k: LKind, x: number, y: number, c =
   (p.lardomar ??= []).push({ k, a, v, ...(g !== undefined ? { g } : {}), c, t: s.now, led: 0 });
   trim(s, p);
 }
+// platsen är plockad (Samlandet: Vidare och Lärdomarna, steg 9.2.56): samlaren har sett sig omkring där hen står och ingen ruta
+// med saker syns. Hen minns området som tömt (värdet 0) tills det vuxit tillbaka (hoped), i stället för vad hela området har
+// kvar på rutor hen inte ser. Annars lockar samma område om och om igen, ruta efter ruta, fast hen inget hittar där
+export function plockad(s: State, p: Person, k: Kind, x: number, y: number) {
+  if (!MINNE.platser) return;
+  const l = findL(p, k, areaOf(x, y));
+  if (!l) return;
+  l.v = 0; l.c = 1; l.t = s.now; l.src = undefined; l.led = 0;
+}
 // något hela byn var med om (hur högt vattnet nådde, steg 3.8.7, flod.ts): en egen upplevelse, och det högsta värdet gäller
 export function bynsMinne(s: State, p: Person, k: LKind, a: number, v: number) {
   const l = findL(p, k, a);

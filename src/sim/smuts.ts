@@ -155,39 +155,41 @@ export function toaInfo(s: State, f: Flack) {
 // Ser hen blod eller en toa-hög inne i byn (steg 3.6.10) blir humöret sämre
 export function akel(s: State, p: Person) {
   if (p.task?.act === 'sova' || p.task?.act === 'toa') return; // den som själv är på toa störs inte av smutsen
-  const syns = smutsIByn(s).punkter, R = SMUTS.ser;
+  const syns = smutsPunkter(s), R = SMUTS.ser;
   if (syns.length && syns.some(q => Math.abs(q.x - p.x) <= R && Math.abs(q.y - p.y) <= R && Math.hypot(q.x - p.x, q.y - p.y) <= R)) think(p, 'Blod och smuts i byn', SMUTS.synHumor, s.now, SMUTS.synTim * HOUR);
   if (!s.flackar?.length) return;
   if (toaNara(s, tileOf(p.x, p.y)) > SMUTS.akel) think(p, 'Äcklad av smuts', SMUTS.akelHumor, s.now, SMUTS.akelTim * HOUR);
 }
-// blodet och toa-högarna inne i byn som syns (punkter), och rutorna där det ligger blod (blod). Räknas om varje timme i spelet
-// och när blod eller en fläck tillkommer (blodas och smutsaRuta lägger en ny lista), med styrkan vid timmens början, så att
-// levande läget, snabbläget och en inläst by får samma (som toaKarta)
-const synCache = new WeakMap<State, { hr: number; b: unknown; fl: unknown; punkter: { x: number; y: number }[]; blod: Set<number> }>();
-export function smutsIByn(s: State) {
-  const b = blodOf(s), fl = flackarOf(s), hr = Math.floor(s.now / HOUR), h0 = hr * HOUR;
-  let c = synCache.get(s);
-  if (c && c.hr === hr && c.b === s.blod && c.fl === s.flackar) return c; // själva listorna (blodOf ger en ny tom lista när inget blod finns)
-  const punkter: { x: number; y: number }[] = [], blod = new Set<number>();
-  for (const g of b) {
-    const n = blodNu(g, Math.max(h0, g.t));
-    if (n <= 0) continue;
-    blod.add(tileOf(g.x, g.y));
-    if (n > SMUTS.blodSyns && utanforByn(s, Math.floor(g.x), Math.floor(g.y)) <= SMUTS.byn) punkter.push({ x: g.x, y: g.y });
-  }
-  for (const f of fl) {
+// blodet, toa-högarna och resterna inne i byn som syns (punkter), och rutorna där det ligger blod (blod), med styrkan vid timmens
+// början. Rutorna med blod sparas en timme i taget och tills blodet ändras (blodas lägger en ny lista). Punkterna räknas varje
+// gång de frågas, eftersom resterna (stackarna) och byns område ändras utan att listorna gör det: förut sparades också de, och då
+// berodde svaret på vem som frågade först i timmen, så att en inläst by kunde få ett annat svar än den som räknats hela tiden
+const blodCache = new WeakMap<State, { hr: number; b: unknown; blod: Set<number> }>();
+function blodRutor(s: State) {
+  const hr = Math.floor(s.now / HOUR), h0 = hr * HOUR;
+  let c = blodCache.get(s);
+  if (c && c.hr === hr && c.b === s.blod) return c.blod; // själva listan (blodOf ger en ny tom lista när inget blod finns)
+  const blod = new Set<number>();
+  for (const g of blodOf(s)) if (blodNu(g, Math.max(h0, g.t)) > 0) blod.add(tileOf(g.x, g.y));
+  blodCache.set(s, c = { hr, b: s.blod, blod });
+  return blod;
+}
+function smutsPunkter(s: State) {
+  const h0 = Math.floor(s.now / HOUR) * HOUR, punkter: { x: number; y: number }[] = [];
+  for (const g of blodOf(s)) if (blodNu(g, Math.max(h0, g.t)) > SMUTS.blodSyns && utanforByn(s, Math.floor(g.x), Math.floor(g.y)) <= SMUTS.byn) punkter.push({ x: g.x, y: g.y });
+  for (const f of flackarOf(s)) {
     const x = f.i % W, y = Math.floor(f.i / W);
     if (f.k === 'toa' && flackNu(f, Math.max(h0, f.t)) > SMUTS.akel && utanforByn(s, x, y) <= SMUTS.byn) punkter.push({ x: x + 0.5, y: y + 0.5 });
   }
   for (const a of s.stackar ?? []) if ((a.k === 'slaktrens' || a.k === 'vaxtrest') && a.n >= 1 && utanforByn(s, a.x, a.y) <= SMUTS.byn) punkter.push({ x: a.x + 0.5, y: a.y + 0.5 }); // resterna i byn (steg 9.7.5)
-  synCache.set(s, c = { hr, b: s.blod, fl: s.flackar, punkter, blod });
-  return c;
+  return punkter;
 }
+export const smutsIByn = (s: State) => ({ get punkter() { return smutsPunkter(s); }, blod: blodRutor(s) });
 // maten på rutan (x, y) ruttnar fortare i en blodfläck eller på eller bredvid en toa-hög (steg 3.6.10): så här många gånger
 export const ruttSmuts = (s: State, x: number, y: number) => {
   if (!s.blod?.length && !s.flackar?.length) return 1;
   const i = y * W + x;
-  return toaNara(s, i) > 0 || smutsIByn(s).blod.has(i) ? SMUTS.rutt : 1;
+  return toaNara(s, i) > 0 || blodRutor(s).has(i) ? SMUTS.rutt : 1;
 };
 
 // ---------- latrinen ----------

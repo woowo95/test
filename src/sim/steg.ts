@@ -55,7 +55,7 @@ import { SAMTAL, TalkEvent, converse, horHar, kanPrata, skiljsAt } from './samta
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { skrivVanor } from './vanor';
 import { RELT, stepRelationer } from './relationer';
-import { MINNE, areaOf, fearPlace, forget, lookAround, observe, radslaVid, sees, sightOf, trorOm } from './minne';
+import { MINNE, areaOf, fearPlace, forget, lookAround, observe, plockad, radslaVid, sees, sightOf, trorOm } from './minne';
 import { PLATS } from './plats';
 import { chance, clamp, hash3, rnd } from './slump';
 import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
@@ -420,7 +420,7 @@ export const TAKTER: Takt[] = [
   { namn: 'stepByggplan', sek: 3600, fn: s => { stepByggplan(s); } },
   { namn: 'planBuild', sek: PLAN.varTim * 3600, fn: s => { planBuild(s); } }, // byggplanen (steg 7.2.3)
   { namn: 'lagerFlytt', sek: 4 * 3600, fn: s => { lagerFlyttTimme(s); } }, // en lagerplats närmare mitten (steg 9.4.7)
-  { namn: 'stationFlytt', sek: 4 * 3600, fn: s => { stationFlyttTimme(s); } }, // en station ute närmare dem som använder den (steg 9.4.8)
+  { namn: 'stationFlytt', sek: 24 * 3600, fn: s => { stationFlyttTimme(s); } }, // en station ute närmare dem som använder den (steg 9.4.8); en gång per dygn: var folk bor och arbetar ändras långsamt, och sökningen är dyr
   { namn: 'stepEldFlytt', sek: 3600, fn: s => { stepEldFlytt(s); } },
   { namn: 'lagerIStraket', sek: 3600, fn: s => { lagerIStraket(s); } },
   { namn: 'stepPaborjat', sek: 3600, fn: s => { stepPaborjat(s); } },
@@ -1305,7 +1305,9 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   const dr = drag(s, p, tk, rutVarde(s, tk));
   if (dr.ut < -RUNDA.hem || tk.until <= s.now + 2 * MIN) { tk.until = s.now; return 1e-3; }
   let n = nastaPaStrackan(s, tk, x, y);
-  if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla); }
+  // utan något hen vet eller ser går hen vidare ut i det okända bara så länge draget drar utåt (nyfikenheten och modet, minus
+  // bördan, behoven, mörkret och kylan); annars hem
+  if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla, dr.ut > 0); }
   if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; } else tk.until = s.now;
   return 1e-3;
 }
@@ -1370,7 +1372,11 @@ function narmastTand(s: State, tk: Task, x0: number, y0: number, r: number) {
   return bast;
 }
 // platsen är färdig (steg 9.2.56): hen minns den som plockad, ett område i taget (platslärdomarna, minne.ts)
-function platsTom(s: State, p: Person, tk: Task, x: number, y: number) { count(s, 'platsTom'); lookAround(s, p, x + 0.5, y + 0.5); void tk; }
+function platsTom(s: State, p: Person, tk: Task, x: number, y: number) {
+  count(s, 'platsTom'); lookAround(s, p, x + 0.5, y + 0.5);
+  const res = ACTS[tk.act].resurs;
+  if (res === 'samla' && !tk.sok) plockad(s, p, res, x + 0.5, y + 0.5); // det hen letade efter syns inte här: området är plockat
+}
 // nästa mål (steg 9.2.54): den ruta inom RUNDA.malR som är bäst när det hen tror finns där (platslärdomarna, trorOm i minne.ts;
 // grenarna och stenarna syns) vägs mot vägen dit och rädslan, och som är mindre värd för varje bybo som redan är där eller på väg
 // dit. Aldrig tillbaka över rutor hen tömt (de har inga saker), och bara bort från det hen redan sett här. Scenariot samlarmal frågar den direkt
@@ -1386,7 +1392,7 @@ function ringen(inre: number, yttre: number) {
   }
   return r;
 }
-export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, radsla: (x: number, y: number) => number) {
+export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, radsla: (x: number, y: number) => number, vidare = true) {
   // det hen ser räknas som det är, i saker på rutan; längre bort det hen tror, räknat i saker (rikedomen delad med toppen, gånger
   // sakerna på en full ruta), så att en plats som ser rik ut men är tom inte lockar
   const res = ACTS[tk.act].resurs, sikt = sightOf(s, p);
@@ -1412,7 +1418,9 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
     if (v > bv + 1e-9) { bv = v; bast = { x, y }; }
   }
   if (bast) { count(s, 'nyttMal'); return bast; }
-  // inget hen vet eller ser: en riktning bort från byn, mot mark som ser lovande ut (skog, snår, bryn), RUNDA.malR rutor bort
+  // inget hen vet eller ser: en riktning bort från byn, mot mark som ser lovande ut (skog, snår, bryn), RUNDA.malR rutor bort,
+  // om det drar utåt (vidare)
+  if (!vidare) return undefined;
   const m = bynsMitt(s), v0 = Math.atan2(y0 - m.y, x0 - m.x), g = groundOf(s);
   for (let k = 0; k < 8; k++) {
     const v = v0 + (hash3(p.id, k, Math.floor(s.now / HOUR)) - 0.5) * Math.PI, x = Math.round(x0 + Math.cos(v) * R), y = Math.round(y0 + Math.sin(v) * R);
