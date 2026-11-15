@@ -1373,11 +1373,12 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   // blocked och sees för varje ruta, med kartan, väggarna och sikten hämtade en gång. Synen avgörs av avståndet i kvadrat när det
   // är klart innanför eller utanför sikten (med en marginal långt över avrundningen), och annars som sees räknar
   const tiles = getMap(s.seed).tiles, grid = gridOf(s), flod = !!s.flod, sikt2 = sikt * sikt, inom = sikt >= 0 ? sikt2 * (1 - 1e-9) : -1, utom = sikt >= 0 ? sikt2 * (1 + 1e-9) : Infinity;
+  const syn2 = RUNDA.syn * RUNDA.syn, trangInom = RUNDA.syn >= 0 ? syn2 * (1 - 1e-9) : -1, trangUtom = RUNDA.syn >= 0 ? syn2 * (1 + 1e-9) : Infinity;
   for (let k = 0; k < ring.d.length; k++) {
     const x = x0 + ring.dx[k], y = y0 + ring.dy[k], d = ring.d[k], i = y * W + x;
     if (!inMap(x, y) || vt[i] === T.Vatten || tiles[i] === T.Vatten && !grid.brygga[i] || flod && iVattnetNu(s, i) || grid.solid[i] === 1) continue; // (inte i en vägg)
     let trangt = 0;
-    for (const q of andra) if (Math.hypot(q.x - x, q.y - y) < RUNDA.syn) trangt++;
+    for (const q of andra) { const bx = q.x - x, by = q.y - y, b2 = bx * bx + by * by; if (b2 < trangInom ? true : b2 > trangUtom ? false : Math.hypot(bx, by) < RUNDA.syn) trangt++; } // som synen ovan
     const ax = x + 0.5 - p.x, ay = y + 0.5 - p.y, a2 = ax * ax + ay * ay;
     const ser = !tror0 || (a2 < inom ? true : a2 > utom ? false : sees(s, p, x, y, sikt)), tror = ser ? saker(x, y) : tror0!(x, y) * iSaker;
     // vägen dit räknas i samma enhet som det hen tror finns där: bortom synvidden i saker (iSaker). Förut vägde avståndet femtio
