@@ -25,7 +25,7 @@ import { dropSpot, put, stacksOf, use } from './lager';
 import { sumOf } from './egendom';
 import { ledareOf } from './styre';
 import { kanterna } from './varg';
-import { KLAN, KLAN_HEM, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
+import { KLAN, andraInst, basstaPris, handlarKlan, klanById, klanPris, klanerOf, prisAndras } from './klaner';
 import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
 import { handelsArg } from './handelsber';
@@ -58,7 +58,6 @@ export const HANDEL = balans('handel', {
   fylla: 0.7, // packningen fylls till så här stor del av det utrustningen rymmer, så att hen kan köpa något
   handel: [6, 14], // handlarens färdighet i Handel (0–20, steg 4.4.1.4)
   vinst: 0.25, // handlaren värderar sina egna varor så mycket över grundvärdet, och det byn har gott om så mycket under (steg 4.4.1.3)
-  hemPaslag: 0.5, // det som är sällsynt där handlaren kommer ifrån är värt så mycket mer för hen
   ensamTim: 2, // har den som handlar för byn inte kommit på så många timmar, går en annan vuxen
   egnaMax: 3, // en bybo vill köpa högst så många slag av saker i en affär (steg 4.4.1.5)
   // förhandlingen (steg 4.5.7.4): så många sekunder (spelets tid) tar det att fråga vad handlaren har, att plocka upp en sak
@@ -99,18 +98,18 @@ export const HANDLAR_UTR: Record<string, { namn: string; vikt: number }> = {
 // (TAKTER). Det som görs är tillverkarens och säljs i hens tur som annat överflöd (saljaAv); saken har ingen märkning
 export const HANDELSVAROR: readonly string[] = ['rep', 'kniv', 'yxa', 'spjut', 'metspo', 'korg']; // ett material eller en grupp av redskap (GORS)
 const slagAv = (g: string) => GORS[g] ?? [g];
-// priset hos den grannklan som betalar bäst, gånger grundvärdet: det som är sällsynt där en handlare kommer ifrån
-export const handelsPris = (k: string) => Math.max(1, ...HEM.map(h => h.sallsynt.includes(k) ? 1 + HANDEL.hemPaslag : 1));
+// priset hos den grannklan som betalar bäst bland dem som skickar handlare, gånger grundvärdet (steg 10.5.14)
+export const handelsPris = (s: State, k: string) => basstaPris(s, k);
 // arbetstimmarna för saken och dess material (materialet räknat i sitt grundvärde, som är arbetstimmar)
 const timmarFor = (k: string) => { let t = (SAKER[k]?.skaffa?.min ?? 60) / 60; for (const [m, n] of Object.entries(SAKER[k]?.skaffa?.av ?? {})) t += n * grundvarde(m) / ARBETE; return t; };
-export const silverPerTimme = (k: string) => grundvarde(k) * handelsPris(k) / Math.max(1e-9, timmarFor(k));
+export const silverPerTimme = (s: State, k: string) => grundvarde(k) * handelsPris(s, k) / Math.max(1e-9, timmarFor(k));
 // det som finns av gruppen eller materialet g över bufferten, alla ägare räknade: slagen, finast först
 function overBufferten(s: State, g: string): string[] {
   if (!GORS[g]) return Array(Math.max(0, Math.floor(amountOf(s, g) - (arMaterial(g) ? villHaAv(s, g) : 0) + 1e-9))).fill(g);
-  const ks = tingOf(s).map(t => t.halv ? t.halv.gor : t.k).filter(k => GORS[g].includes(k)).sort((a, b) => silverVarde(b) - silverVarde(a));
+  const ks = tingOf(s).map(t => t.halv ? t.halv.gor : t.k).filter(k => GORS[g].includes(k)).sort((a, b) => silverVarde(s, b) - silverVarde(s, a));
   return ks.slice(0, Math.max(0, ks.length - villGrupp(s, g)));
 }
-const silverVarde = (k: string) => grundvarde(k) * handelsPris(k);
+const silverVarde = (s: State, k: string) => grundvarde(k) * handelsPris(s, k);
 // materialet till ett av slaget k finns över bufferten
 const materialOver = (s: State, k: string) => Object.entries(SAKER[k]?.skaffa?.av ?? {}).every(([m, n]) => amountOf(s, m) - (arMaterial(m) ? villHaAv(s, m) : 0) >= n - 1e-9);
 export interface HandelsMal { k: string; n: number; till: number; kvar: number } // slaget, så många till, så många över bufferten byn vill ha av det och den del av silvret som är kvar att fylla
@@ -122,16 +121,16 @@ export function handelsMalRakna(s: State) {
   const silver = medel(x => (x.silver[0] + x.silver[1]) / 2), pack = medel(x => HANDLAR_UTR[x.utr].vikt * (1 - HANDEL.fylla));
   let varde = 0, vikt = 0;
   const over = new Map<string, number>();
-  for (const g of HANDELSVAROR) { const ks = overBufferten(s, g); for (const k of ks) { varde += silverVarde(k); vikt += viktOf(k); over.set(k, (over.get(k) ?? 0) + 1); } }
+  for (const g of HANDELSVAROR) { const ks = overBufferten(s, g); for (const k of ks) { varde += silverVarde(s, k); vikt += viktOf(k); over.set(k, (over.get(k) ?? 0) + 1); } }
   const vuxna = living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vuxen);
   let bast: string | undefined, bv = 0;
   for (const g of HANDELSVAROR) for (const k of slagAv(g)) {
     if (!SAKER[k]?.skaffa || !materialOver(s, k) || !vuxna.some(p => canMake(s, p, k))) continue;
-    const v = silverPerTimme(k);
+    const v = silverPerTimme(s, k);
     if (v > bv + 1e-9) { bast = k; bv = v; }
   }
   if (!bast) return;
-  const n = Math.floor(Math.min((silver - varde) / silverVarde(bast), (pack - vikt) / viktOf(bast)) + 1e-9);
+  const n = Math.floor(Math.min((silver - varde) / silverVarde(s, bast), (pack - vikt) / viktOf(bast)) + 1e-9);
   if (n < 1) return;
   s.handelsMal = { k: bast, n, till: (over.get(bast) ?? 0) + n, kvar: clamp((silver - varde) / silver, 0, 1) };
 }
@@ -168,17 +167,6 @@ export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number; sort:
   { k: 'yxa', n: [1, 1], vikt: 1, sort: V },
   { k: 'benflojt', n: [1, 1], vikt: 1, sort: V },
 ];
-// var handlarna kommer ifrån, och vad som är sällsynt där (det är värt mer för handlaren, HANDEL.hemPaslag)
-const SALLSYNT: Record<typeof KLAN_HEM[number], string[]> = {
-  'kusten i söder': ['skinn', 'vargskinn', 'ved'],
-  'fjällen i norr': ['rovfron', 'artfron', 'bar'],
-  'skogarna i öster': ['fisk', 'torrfisk', 'flinta'],
-  'sjöarna i väster': ['flinta', 'sten', 'kott'],
-  'älvdalen': ['skinn', 'ben', 'torrkott'],
-  'byarna vid havet': ['ved', 'rep', 'torrkott'],
-};
-export const HANDLARHEM = KLAN_HEM.map(namn => ({ namn, sallsynt: SALLSYNT[namn] })); // platserna står i klaner.ts
-const HEM = HANDLARHEM;
 
 export interface HVara { k: string; n: number; q?: number }
 export interface Handlare {
@@ -455,19 +443,20 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
 // Handeln är ett byte som alla andra (bytaMed i behov.ts): båda lägger fram varor, var och en värderar efter sitt eget behov,
 // och silvret jämnar ut skillnaden (växeln). Handlaren går med på ojämna byten till sin fördel, aldrig till sin nackdel: hen
 // värderar sina egna varor högre än grundvärdet (HANDEL.vinst), det byn har gott om lägre, och det som är sällsynt där hen
-// kommer ifrån högre (HEM). Silvret är värt sitt grundvärde för alla. Hen köper aldrig mer än hen kan bära: när ryggsäcken är
+// kommer ifrån högre (klanens pris, steg 10.5.14). Silvret är värt sitt grundvärde för alla. Hen köper aldrig mer än hen kan bära: när ryggsäcken är
 // full tar hen bara emot silver, och då blir det vara mot vara eller silver. Byn handlar med det gemensamma förrådet genom
 // ledaren (eller den äldsta vuxna), en gång per besök: först säljer byn det den har gott om, sedan köper den det den saknar.
 // Byborna handlar med sina egna saker i steg 4.4.1.5, färdigheten Handel kommer i steg 4.4.1.4
-const hemOf = (s: State, h: Handlare) => HEM.find(x => x.namn === hp(s, h).gast!.hem!);
+const klanAv = (s: State, h: Handlare) => klanById(s, hp(s, h).gast!.klan);
 export const ledigt = (h: Handlare) => rymmer(h) - kgOf(h.varor);
 // hur mycket handlaren värderar en till av slaget k, gånger grundvärdet
 export function handlarVarde(s: State, h: Handlare, k: string) {
   if (k === 'silver') return 1;
-  if (h.varor.some(w => w.k === k)) return 1 + HANDEL.vinst;
+  const pris = klanPris(klanAv(s, h), k); // klanens pris (steg 10.5.14), både för det hen säljer och det hen köper
+  if (h.varor.some(w => w.k === k)) return (1 + HANDEL.vinst) * pris;
   if (ledigt(h) < viktOf(k)) return 0; // ryggsäcken är full
   const gott = bynPart(s, hp(s, h).x, hp(s, h).y).varde(k) <= DELA.over; // byn har gott om det
-  return (gott ? 1 - HANDEL.vinst : 1) * (hemOf(s, h)?.sallsynt.includes(k) ? 1 + HANDEL.hemPaslag : 1);
+  return (gott ? 1 - HANDEL.vinst : 1) * pris;
 }
 function taBort(h: Handlare, w: Vara) {
   if (isTool(w.k)) { const i = h.varor.findIndex(x => x.k === w.k && (w.q === undefined || x.q === w.q)); if (i >= 0) h.varor.splice(i, 1); return; }
@@ -523,6 +512,8 @@ vidByte.push((s, m, g, fatt, betal, minne) => {
   if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
   const k = klanById(s, hp(s, h).gast!.klan); // ett byte gör klanen lite vänligare (steg 4.4.3)
   if (k) andraInst(k, KLAN.handel);
+  // det handlaren köpte blir billigare hos klanen och det hen sålde dyrare (steg 10.5.14)
+  if (k) for (const [v, upp] of [[kop ? fatt : betal, -1], [kop ? betal : fatt, 1]] as const) for (const w of v) prisAndras(k, w.k, (w.t ? 1 : w.n) * vardeOf(w), upp);
 });
 // ett redskap köpt av handlaren som ingen i byn kan göra: ägaren kan använda det men inte göra eller laga ett, och kommer en bit
 // närmare tekniken (HANDEL.redskapHopp), en gång per person och teknik (steg 4.5.4.16)

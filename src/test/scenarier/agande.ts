@@ -942,7 +942,7 @@ SCENARIER.handelsvaror = {
     for (const x of t.people) x.tek = { rep: 1 };
     setItems(t, { torrgras: 200, rep: 0 }); SIM.handelsMalRakna(t);
     const m = t.handelsMal, mal = m ? { ...m } : undefined;
-    const varde = (mal?.n ?? 0) * SIM.grundvarde('rep') * SIM.handelsPris('rep');
+    const varde = (mal?.n ?? 0) * SIM.grundvarde('rep') * SIM.handelsPris(t, 'rep');
     const forst = SIM.handlarVaraVal(t, q);
     SIM.twineRope(t, q, 50, SIM.villHaAv(t, 'rep') + SIM.handelsTill(t, 'rep'));
     const repN = amountOf(t, 'rep'), egna = SIM.ownsAmount(t, q, 'rep');
@@ -958,8 +958,8 @@ SCENARIER.handelsvaror = {
     for (const x of w.people) x.tek = { kniv: 1, yxa: 1 };
     setItems(w, { flinta: 60, grenar: 60, torrgras: 60, rep: 0 });
     SIM.handelsMalRakna(w); const utanPaslag = w.handelsMal?.k;
-    const hem = SIM.HANDLARHEM[0].sallsynt; hem.push('yxa');
-    try { SIM.handelsMalRakna(w); } finally { hem.pop(); }
+    for (const k of SIM.klanerOf(w)) (k.pris ??= {}).yxa = 1.5; // (yxan är dyr hos grannklanerna)
+    SIM.handelsMalRakna(w);
     const medPaslag = w.handelsMal?.k;
     // repet säljs i tillverkarens tur, och silvret blir hens
     const s = createState(6, START); rikBy(s); s.nastaHandlare = s.now;
@@ -981,7 +981,7 @@ SCENARIER.handelsvaror = {
     const laddad = !('handlarKopt' in g) && g.people.every(x => !x.task || !('handel' in x.task)) && g.v === SIM.SPARVERSION;
     const hela = (x: number) => Math.abs(x - Math.round(x)) < 1e-9;
     return [
-      [`målet är rep, så många som ryms i silvret (${mal?.n ?? 0} rep värda ${varde.toFixed(1)} av ${silverMitt} silver)`, mal?.k === 'rep' && (mal?.n ?? 0) >= 1 && varde <= silverMitt + 1e-9 && varde + SIM.grundvarde('rep') * SIM.handelsPris('rep') > silverMitt],
+      [`målet är rep, så många som ryms i silvret (${mal?.n ?? 0} rep värda ${varde.toFixed(1)} av ${silverMitt} silver)`, mal?.k === 'rep' && (mal?.n ?? 0) >= 1 && varde <= silverMitt + 1e-9 && varde + SIM.grundvarde('rep') * SIM.handelsPris(t, 'rep') > silverMitt],
       [`raden tvinnar rep att byta med handlaren (${forst ? 'ja' : 'nej'})`, !!forst],
       [`repet tvinnas till bufferten plus målet (${repN.toFixed(1)} av ${SIM.villHaAv(t, 'rep')} + ${mal?.till ?? 0})`, Math.abs(repN - SIM.villHaAv(t, 'rep') - (mal?.till ?? 0)) < 1e-6],
       [`repet är tillverkarens (${egna.toFixed(1)} av ${repN.toFixed(1)})`, Math.abs(egna - repN) < 1e-6],
@@ -1075,7 +1075,8 @@ SCENARIER.silver = {
     // ryggsäcken är full: handlaren köper inget som väger, men byn kan ändå köpa (vara mot vara eller silver)
     const t = createState(6, START), g = fram(t);
     setAmount(t, 'torrfisk', 120); setAmount(t, 'rep', 0);
-    g.varor = [{ k: 'rep', n: 4 }, { k: 'sten', n: Math.floor((SIM.rymmer(g) - 4 * viktOf('rep')) / viktOf('sten')) }]; g.silver = 5;
+    g.varor = [{ k: 'rep', n: 4 }]; g.silver = 5;
+    for (const j of ['sten', 'ben', 'torrgras']) { const n = Math.floor((SIM.rymmer(g) - SIM.kgOf(g.varor)) / viktOf(j) + 1e-9); if (n >= 1) g.varor.push({ k: j, n }); } // (full: det lediga är lättare än allt byn kan sälja)
     const kg0 = SIM.kgOf(g.varor);
     handla(t, g);
     const full = SIM.kgOf(g.varor) <= Math.max(kg0, SIM.rymmer(g)) + 1e-9 && !g.varor.some(w => w.k === 'torrfisk');
@@ -1091,7 +1092,7 @@ SCENARIER.silver = {
       [`handlaren förlorar inget på handeln (grundvärde ${fore.toFixed(1)} → ${varde(h).toFixed(1)})`, vinst],
       [`handlaren bär inte mer än ryggsäcken rymmer (${SIM.kgOf(h.varor).toFixed(1)} av ${SIM.rymmer(h)} kg)`, bara],
       ['efter affären är handlarens filt tom igen och byns filt hopplockad', filt],
-      [`med full ryggsäck köper handlaren inget som väger (${SIM.kgOf(g.varor).toFixed(1)} kg)`, full],
+      [`med full ryggsäck köper handlaren inget som väger (${SIM.kgOf(g.varor).toFixed(1)} kg av ${kg0.toFixed(1)}, rymmer ${SIM.rymmer(g)}: ${g.varor.map(w => w.n + ' ' + w.k).join(', ')})`, full],
       ['någon går till filten och handlar för byn', gick && !!k.bynKlar],
     ];
   },
@@ -1153,7 +1154,8 @@ SCENARIER.handelsko = {
     // torkat kött som båda har nytta av, och något över att betala med
     const k = 'torrkott';
     h.varor = [{ k, n: 2 }]; h.silver = 20;
-    for (const [p, n] of [[a, 6], [b, 2]] as const) { SIM.put(s, 'skinn', n, { [p.id]: n }); SIM.put(s, 'silver', 20, { [p.id]: 20 }); } // b har för lite skinn för att sälja dem (steg 4.5.4.14)
+    const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) hk.pris = { ...hk.pris, [k]: 1, skinn: 1 }; // (klanens priser som grundvärdet: kön prövas, inte priset)
+    SIM.put(s, 'skinn', 6, { [a.id]: 6 }); for (const p of [a, b]) SIM.put(s, 'silver', 20, { [p.id]: 20 }); // b har bara silver: inget att sälja, så det enda b vill är köttet
     const uppgift = (p: Person, v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; };
     const va = SIM.handlaVal(s, a)!; uppgift(a, va);
     const vb = SIM.handlaVal(s, b)!; uppgift(b, vb);
@@ -1364,6 +1366,7 @@ SCENARIER.forhandling = {
     // a och b vill ha torkat kött; de betalar med det de har i sina högar
     const [a, b] = andra, k = 'torrkott';
     h.varor = [{ k, n: 2 }, { k: 'rep', n: 3 }]; h.silver = 20;
+    const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) hk.pris = { ...hk.pris, [k]: 1, rep: 1, skinn: 1 }; // (klanens priser som grundvärdet: förhandlingen prövas, inte priset)
     for (const p of [a, b]) { SIM.put(s, 'skinn', 6, { [p.id]: 6 }); SIM.put(s, 'silver', 20, { [p.id]: 20 }); }
     const aff = () => s.handlare?.affar;
     const uppgift = (p: Person, v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { p.x = v.spot.x; p.y = v.spot.y; p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; return v; };
@@ -1777,6 +1780,35 @@ SCENARIER.grannklaner = {
     const andras = k.map(c => c.folk).join() !== folk0;
     const glomt = Math.abs(k[0].inst) < Math.abs(inst0);
     const ui = SIM.instText(60) === 'vänner' && SIM.instText(-80) === 'fientliga';
+    // priserna (steg 10.5.14): startvärdena, driften, handeln och handlarens värdering
+    const pr = createState(6, START), pk = SIM.klanerOf(pr);
+    const start = pk.every(c => SIM.KLAN_HEM.find(x => x.namn === c.hem)!.sallsynt.every(j => SIM.klanPris(c, j) === 1 + SIM.KLAN.prisSallsynt) && SIM.klanPris(c, 'yxa') === (SIM.KLAN_HEM.find(x => x.namn === c.hem)!.sallsynt.includes('yxa') ? 1 + SIM.KLAN.prisSallsynt : 1));
+    const dygn = (v: State, n: number) => { for (let d = 0; d < n; d++) { v.now += SIM.DAY; SIM.klanSteg(v, SIM.DAY / SIM.SEC); } };
+    const kopia = cloneState(pr), sald = cloneState(pr);
+    let inom = true, avv = 0, nn = 0;
+    for (let d = 0; d < 200; d++) { dygn(pr, 1); for (const c of pk) for (const j in c.pris) { const v = c.pris[j]; if (v < SIM.KLAN.prisMin - 1e-9 || v > SIM.KLAN.prisMax + 1e-9) inom = false; if (d >= 50) { avv += v - SIM.prisStart(c, j); nn++; } } }
+    avv /= Math.max(1, nn);
+    // en försäljning värd 20 silver av rep till klanen sänker priset 0,2, och det mesta är tillbaka efter 60 dygn
+    const sk = SIM.klanerOf(sald)[0], fore = SIM.klanPris(sk, 'rep');
+    SIM.prisAndras(sk, 'rep', 20, -1); const sankt = fore - SIM.klanPris(sk, 'rep');
+    dygn(sald, 60); dygn(kopia, 60);
+    const kvar = SIM.klanPris(SIM.klanerOf(kopia)[0], 'rep') - SIM.klanPris(sk, 'rep');
+    // samma frö ger samma priser
+    const a1 = createState(9, START), a2 = createState(9, START); dygn(a1, 5); dygn(a2, 5);
+    const samma = JSON.stringify(SIM.klanerOf(a1).map(c => c.pris)) === JSON.stringify(SIM.klanerOf(a2).map(c => c.pris));
+    // handlaren betalar mer för och tar mer betalt för det som är dyrt hos hens klan
+    let dyrt = false;
+    if (h) {
+      const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan)!;
+      (hk.pris ??= {}).korg = 1; const kop1 = SIM.handlarVarde(s, h, 'korg');
+      hk.pris.korg = 2; const kop2 = SIM.handlarVarde(s, h, 'korg');
+      h.varor.push({ k: 'korg', n: 1 }); const salj2 = SIM.handlarVarde(s, h, 'korg'); hk.pris.korg = 1; const salj1 = SIM.handlarVarde(s, h, 'korg');
+      h.varor.pop();
+      dyrt = kop1 > 0 && Math.abs(kop2 - 2 * kop1) < 1e-9 && Math.abs(salj2 - 2 * salj1) < 1e-9;
+    }
+    // en sparad by utan priser laddas och börjar på startvärdena
+    const u = cloneState(a1); for (const c of SIM.klanerOf(u)) delete c.pris; SIM.migrate(u);
+    const utan = SIM.klanerOf(u).every(c => SIM.klanPris(c, 'yxa') === SIM.prisStart(c, 'yxa'));
     return [
       [`en ny by har ${SIM.KLAN.antal} grannklaner med folk, styrka och en hövding`, finns],
       ['klanerna har olika namn', unika],
@@ -1788,6 +1820,12 @@ SCENARIER.grannklaner = {
       ['klanerna växer eller krymper med dygnen', andras],
       ['inställningen glöms mot det neutrala', glomt],
       ['inställningen har ord (vänner … fientliga)', ui],
+      ['priserna börjar på 1, och det som är sällsynt på klanens hemort dyrare', start],
+      [`priserna håller sig inom gränserna i 200 dygn (200 år i spelet), i snitt nära startvärdet (${avv.toFixed(3)})`, inom && Math.abs(avv) < 0.05],
+      [`en försäljning värd 20 silver sänker priset ${sankt.toFixed(2)}, och efter 60 dygn är ${kvar.toFixed(3)} kvar`, Math.abs(sankt - 0.2) < 1e-6 && Math.abs(kvar) < 0.06],
+      ['samma frö ger samma priser', samma],
+      ['handlaren betalar mer för och tar mer betalt för det som är dyrt hos hens klan', dyrt],
+      ['en sparad by utan priser laddas och börjar på startvärdena', utan],
     ];
   },
 };
