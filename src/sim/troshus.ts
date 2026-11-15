@@ -22,6 +22,7 @@ import { isKlar, stationerOf, vidStation, type Station } from './stationer';
 export const TROSHUS = balans('troshus', {
   minRutor: 8, maxRutor: 72, // husets golvrutor efter storleken: minst och högst
   bankPer: 6, // en bänk per så många golvrutor
+  altarTing: 3, // så många heliga ting rymmer altaret (steg 10.3.20)
   storlek: 2, // trons tyngd som behövs innan planen tas upp (som ett bud av den storleken)
   bas: 0.15, // rösten för en del av planen utan skalorna, vid andligheten 50
   skala: 0.3, // hur mycket skalorna väger i rösten
@@ -141,7 +142,7 @@ export function trosMobelBrist(s: State, tr: Tro, k: string) {
   const vill = trosVill(s, tr, k);
   return vill > 0 ? Math.max(0, vill - trosMobler(s, tr, k).length) / vill : 0;
 }
-const altaret = (s: State, tr: Tro) => trosMobler(s, tr, 'altare').find(isKlar);
+export const altaret = (s: State, tr: Tro) => trosMobler(s, tr, 'altare').find(isKlar);
 export const troshusKlart = (s: State, tr: Tro) => !!troshusRum(s, tr) && !!altaret(s, tr);
 // där man står vid högtiden och den ledda bönen: framför altaret när huset är klart
 export const troshusPlats = (s: State, tr: Tro) => { const t = troshusKlart(s, tr) ? altaret(s, tr) : undefined; return t && vidStation(t); };

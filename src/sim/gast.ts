@@ -77,7 +77,7 @@ export function gastVapenSatt(s: State, p: Person, k: string | undefined) {
 // så att det går att ta; kläderna följer kroppen
 export function gastTingBort(s: State, p: Person, dod: boolean) {
   if (!s.gastTing?.length) return;
-  if (dod) for (const t of s.gastTing) if (t.agare === p.id && t.bar === undefined) (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: t.k, c: t.c, agare: 0, x: Math.floor(p.x), y: Math.floor(p.y) });
+  if (dod) for (const t of s.gastTing) if (t.agare === p.id && t.bar === undefined) (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: t.k, c: t.c, agare: 0, x: Math.floor(p.x), y: Math.floor(p.y), ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}) });
   s.gastTing = s.gastTing.filter(t => t.agare !== p.id);
   if (!s.gastTing.length) delete s.gastTing;
 }

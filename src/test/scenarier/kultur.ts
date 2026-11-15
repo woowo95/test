@@ -1557,6 +1557,69 @@ SCENARIER.kruka = {
   },
 };
 
+SCENARIER.heligting = {
+  text: 'Steg 10.3.20: heliga föremål är bud. Ett mästerverk som grundaren gjort föreslås först, ett som en troende äger bara när ägaren vill, budet ställer tinget på altaret i trons hus, ingen tar det till arbete eller på sig, bönen i huset ger 1,5 gånger mer, ett heligt krig tar tinget och budet faller, och en fälld anfallare lämnar tinget kvar med kvalitet och berättelse',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    klockan(s, 12);
+    const h = medTroshus(s, tr), alt = SIM.altaret(s, tr);
+    // tre mästerverk: byns yxa, grundarens yxa och en troendes perfekta kniv. Inga andra yxor
+    s.ting = (s.ting ?? []).filter(t => t.k !== 'yxa');
+    const ny = (k: string, ag: number, q: number, av?: number) => { const t = SIM.newTing(s, k, 1, ag); t.q = q; if (av !== undefined) t.av = av; return t; };
+    const byns = ny('yxa', SIM.BYN, 4, v[4].id), grund = ny('yxa', SIM.BYN, 4, v[0].id), kniv = ny('kniv', v[3].id, 5, v[3].id);
+    kniv.ber = { namn: 'Ljungtand' } as SIM.SakMinne;
+    const forst = SIM.heligtTingKandidat(s, tr) === grund;
+    grund.q = 3; v[3].troStyrka = 0; v[3].andlig = 0;
+    const agarenNej = SIM.heligtTingKandidat(s, tr) === byns;
+    v[3].troStyrka = 100; v[3].andlig = 100;
+    const agarenJa = SIM.heligtTingKandidat(s, tr) === kniv;
+    // budet antas: byns yxa ställs på altaret
+    const b: SIM.AntagetBud = { id: 'heligtTing', v: byns.id, t: s.now }; (tr.bud ??= []).push(b); (SIM.BUD.heligtTing as SIM.BudDef).antas!(s, tr, b);
+    const paAltaret = !!alt && byns.helig === tr.id && byns.vid === alt.id && byns.agare === SIM.BYN && byns.x === alt.x;
+    // ingen tar den till arbete: grundarens yxa är den enda andra, och tas den bort finns ingen yxa att ta
+    const p = v[1]; s.ting = s.ting!.filter(t => t !== grund);
+    const ingenYxa = SIM.take(s, p, 'yxa') === undefined;
+    // ... eller på sig: ett plagg som inte värmer tas på när det är fritt, men inte när det är heligt
+    const pl = SIM.KLAD_SLAG.find(k => !SIM.SAKER[k]!.klad!.varme && !['mantel', 'prastdrakt', 'mask', 'tecken'].includes(SIM.kladAv(k)?.plagg ?? ''))!;
+    s.ting = s.ting!.filter(t => !(t.k === pl || SIM.SAKER[t.k]?.klad?.plats === SIM.SAKER[pl]!.klad!.plats));
+    const plagg = ny(pl, SIM.BYN, 4); plagg.helig = tr.id; plagg.vid = alt?.id;
+    SIM.stepKlader(s); const barsInte = s.ting!.every(t => t.k !== pl || t.bar === undefined);
+    plagg.helig = undefined; plagg.vid = undefined; SIM.stepKlader(s); const barsFritt = plagg.bar !== undefined;
+    s.ting = s.ting!.filter(t => t !== plagg);
+    // bönen i trons hus: 1,5 gånger mer med det heliga tinget
+    const rum = h && SIM.gridOf(s).rooms.find(r => r.hus === h.id), ruta = rum?.tiles[0] ?? 0;
+    p.x = ruta % SIM.W + 0.5; p.y = Math.floor(ruta / SIM.W) + 0.5;
+    const bon = () => { p.troStyrka = 10; SIM.bonKlar(s, p, { tool: 'vardag' }); return p.troStyrka - 10; };
+    const med = bon(); byns.helig = undefined; const utan = bon(); byns.helig = tr.id;
+    const starkare = Math.abs(med / utan - 1.5) < 0.01;
+    // det heliga kriget: anfallarna tar tinget först, och budet faller vid nästa timme
+    const k = SIM.nyKlan(s, 8, -40); (s.klaner ??= []).push(k); k.styrka = 8; k.krigisk = 90;
+    SIM.radDygn(s, 'heligt', k);
+    const g = s.rovare!; SIM.radSeger(s, g);
+    const tagen = !s.ting!.includes(byns) && (s.gastTing ?? []).some(t => t.k === 'yxa' && t.q === 4 && g.folk.includes(t.agare));
+    SIM.kyrkaTimme(s);
+    const fallit = !tr.bud!.some(q => q.id === 'heligtTing'), sorjer = SIM.troende(s, tr).every(q => q.thoughts.some(t => t.text === 'Vårt heliga ting är borta'));
+    // tinget med kvalitet och berättelse: anfallaren som bär det fälls, och den som avrustar hen får ett vanligt mästerverk
+    const gt = (s.gastTing ?? []).find(t => t.k === 'yxa' && t.q === 4)!; gt.ber = { namn: 'Bergsklyv' } as SIM.SakMinne;
+    const r = SIM.gastAv(s, gt.agare)!; r.died = s.now; SIM.gastKrok.dod!(s, r, v[2]);
+    const kv = s.kvarlevor?.find(q => q.k === 'fiende' && q.ting?.some(t => t.k === 'yxa'));
+    if (kv) SIM.avrustaKlar(s, v[2], { act: 'avrusta', ref: kv.id } as SIM.Task);
+    const tillbaka = s.ting!.find(t => t.k === 'yxa' && t.ber?.namn === 'Bergsklyv');
+    return [
+      [`ett mästerverk som grundaren gjort föreslås först`, forst],
+      [`en troendes ting föreslås inte när ägaren skulle rösta nej (${agarenNej})`, agarenNej],
+      [`men när ägaren vill, och då det med högst kvalitet (${agarenJa})`, agarenJa],
+      [`budet ställer tinget på altaret, och byn äger det`, paAltaret],
+      [`ingen tar det heliga tinget till arbete`, ingenYxa],
+      [`ingen tar det heliga plagget på sig (${pl}), men väl när det är fritt`, barsInte && barsFritt],
+      [`bönen i trons hus ger 1,5 gånger mer med tinget (${med.toFixed(2)} mot ${utan.toFixed(2)})`, starkare],
+      [`det heliga kriget tar tinget med kvaliteten`, tagen],
+      [`budet faller och de troende sörjer`, fallit && sorjer],
+      [`en fälld anfallare lämnar tinget kvar med kvalitet och berättelse, och det är inte heligt`, !!tillbaka && tillbaka.q === 4 && tillbaka.helig === undefined],
+    ];
+  },
+};
+
 SCENARIER.heligtdjur = {
   text: 'Steg 10.3.15: heliga djur är bud. Arten kommer ur trons gudar och storleken ur köttet byn slaktat; den troende avlivar inte arten, går förbi dess kött och tar av plagget av dess skinn, den svältande äter och får skuld, den anfallne försvarar sig, och vid högtiden offras ett tamdjur av arten',
   kor: () => {

@@ -9,15 +9,17 @@ import { balans } from './balans';
 import { clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
 import { type Sed, drar, habitShare } from './seder';
-import { ALDER, type BudTillfalle, ageOf, count, living, log, relKey, satBudTillfalle, stat, think } from './folk';
-import { FOOD, KOTTSLAG } from './saker';
+import { ALDER, type BudTillfalle, ageOf, byId, count, living, log, relKey, satBudTillfalle, stat, think } from './folk';
+import { FOOD, KOTTSLAG, sakNamn } from './saker';
+import { type Ting, tingOf } from './agande';
+import { MASTERVERK, kvNamn } from './kvalitet';
 import { kronika } from './historik';
 import { GUDAR, Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
 import { farorNu, KULT, RITUALER, type RitualId, farBliPrast, heligaFor, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
 import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
 import { LAGAR, LagForslag, lagGaller } from './lagar';
 import { amountOf, ownMove, ownedStock, ownsAmount, ownsId, put, takeLimit, use } from './lager';
-import { kyrkaId } from './egendom';
+import { BYN, kyrkaId } from './egendom';
 import { eldPlats } from './karta';
 import { heligVarde, heligtDjurAv, heligtDjurVarde, satHeligtDjur, satMatBud } from './kultlatt';
 import { INGREDIENSER, RATT_HUVUD, type RattHuvud, rattInfo } from './ratter';
@@ -25,7 +27,7 @@ import { DJURARTER } from './redskap';
 import { bedFor } from './bygg';
 import { ledareOf } from './styre';
 import { upplev } from './uppvaxt';
-import { troshusForslag, troshusRegister, troshusSaknar } from './troshus';
+import { TROSHUS, altaret, troshusForslag, troshusRegister, troshusSaknar } from './troshus';
 
 export const KYRKA = balans('kyrka', {
   offerChans: 0.03, // chansen per timme att en andlig ger en gåva till kyrkan ...
@@ -53,6 +55,7 @@ export const KYRKA = balans('kyrka', {
   framlingRel: 10, // främlingen: så mycket bättre relation med den som ger (maten är en portion ur förrådet, steg 10.2.35)
   hamndRel: 15, // hämnden: relationen till den som gjort en våldsam handling blir så här mycket sämre
   vecka: 7, // vilodagen, fastan och djuroffret: en gång på så här många dygn (år i spelet)
+  tingTro: 3, tingHumor: -0.15, tingDygn: 2, // det heliga tinget är borta (steg 10.3.20): som när en helig plats vanhelgas
 });
 
 // rösten om ett bud (steg 10.3.9, "Hur var och en röstar" i designdokumentet; startvärden): vikterna för raderna i BUDROST
@@ -144,6 +147,15 @@ export const BUD = {
     vardeNamn: (_s, v) => ART_NAMN[heligtDjurAv(v).art] ?? heligtDjurAv(v).art, storlekAv: v => heligtDjurAv(v).st as 2 | 3 | 4,
     intresse: (s, p, _tr, v) => { const a = kottAndel(s, heligtDjurAv(v).art), h = habitShare(p, ['jakt', 'slakta', 'avliva']); return a > 0 && h > 0 ? { v: -clamp(4 * a * h / 0.1, 0, 1), why: 'Jagar och slaktar djuret' } : { v: 0, why: '' }; },
     om: (_s, _tr, b) => `${ART_NAMN[heligtDjurAv(b.v).art]} är heligt. De som följer budet jagar, slaktar och avlivar det inte, äter inte dess råa kött och bär inte dess skinn, utom i svält och kyla.` },
+  // det heliga tinget (steg 10.3.20): ett mästerverk som står på altaret i trons hus. Ägaren vill inte lämna det, den som gjorde det vill.
+  // Finns tinget inte kvar faller budet (heligaTingKvar)
+  heligtTing: { namn: 'Ett heligt ting', sort: 'offer', storlek: 2, text: 'Ett mästerverk står på altaret i trons hus och används inte',
+    varden: (s: State, tr: Tro): number[] => { const t = heligtTingKandidat(s, tr); return t ? [t.id] : []; },
+    vardeNamn: (s, v) => { const t = tingOf(s).find(q => q.id === Number(v)); return t ? heligtTingNamn(t) : 'ett ting som inte finns kvar'; },
+    intresse: (s, p, _tr, v) => { const t = tingOf(s).find(q => q.id === Number(v)); return !t ? { v: 0, why: '' } : t.agare === p.id ? { v: -1, why: 'Äger tinget själv' } : t.av === p.id ? { v: 1, why: 'Gjorde tinget' } : { v: 0, why: '' }; },
+    antas: (s, tr, b) => helgaTing(s, tr, Number(b.v)),
+    tasBort: (s, tr, b) => { const t = tingOf(s).find(q => q.id === Number(b.v) && q.helig === tr.id); if (t) t.helig = t.vid = undefined; }, // det står kvar som ett vanligt mästerverk
+    om: (s, _tr, b) => { const t = tingOf(s).find(q => q.id === Number(b.v)); return t ? `${heligtTingNamn(t)} står på altaret. Ingen arbetar med det eller bär det. Bönen i trons hus blir starkare, och tas tinget faller budet.` : ''; } },
   // maten som bud (steg 10.3.16): en huvudingrediens ur trons gudar. Förbudet gäller råvaran och alla rätter av den; kravet gör att
   // högtidens mat tas ur den först
   matForbud: { namn: 'Förbjuden mat', sort: 'forbud', storlek: 3, skala: 'fest', sida: 1, text: 'De troende äter inte maten, och en troende kock lagar den inte',
@@ -425,8 +437,41 @@ function budTillfalleK(s: State, typ: BudTillfalle, p: Person, q?: Person): bool
   if (typ === 'falla') return harBud(s, p, 'lunden');
   return false;
 }
+// ---------- de heliga tingen (steg 10.3.20) ----------
+// det ting som föreslås: ett mästerverk som är byns eller en troendes (och då bara när ägaren själv skulle rösta ja). Det som profeten,
+// prästen, grundaren eller ett helgon gjort eller äger först, sedan det med högst kvalitet. Altaret måste stå och rymmer TROSHUS.altarTing
+export function heligtTingKandidat(s: State, tr: Tro): Ting | undefined {
+  if (!altaret(s, tr) || tingOf(s).filter(t => t.helig === tr.id).length >= TROSHUS.altarTing) return undefined;
+  const viktiga = new Set<number>([tr.grundare, ...(tr.prast !== undefined ? [tr.prast] : []), ...(tr.profeter ?? []), ...(tr.helgon ?? []).map(h => h.id)]);
+  const vikt = (t: Ting) => viktiga.has(t.agare) || (t.av !== undefined && viktiga.has(t.av)) ? 1 : 0;
+  const lista = tingOf(s).filter(t => (t.q ?? 0) >= MASTERVERK && t.helig === undefined && !t.halv && t.pa === undefined && (t.agare === BYN || byId(s, t.agare)?.tro === tr.id));
+  lista.sort((a, b) => vikt(b) - vikt(a) || (b.q ?? 0) - (a.q ?? 0) || a.id - b.id);
+  return lista.find(t => { if (t.agare === BYN) return true; const o = byId(s, t.agare); return !!o && budRost(s, o, tr, 'heligtTing', t.id).v > 0; });
+}
+export const heligtTingNamn = (t: Ting) => `${sakNamn(t.k)}${t.ber?.namn ? ` som kallas ${t.ber.namn}` : ''} (${kvNamn(t).toLowerCase()})`;
+// budet antas: tinget blir byns och ställs på altaret
+function helgaTing(s: State, tr: Tro, id: number) {
+  const t = tingOf(s).find(q => q.id === id), alt = altaret(s, tr);
+  if (!t || !alt) return;
+  Object.assign(t, { helig: tr.id, agare: BYN, vid: alt.id, x: alt.x, y: alt.y, hos: undefined, bar: undefined, krok: undefined, lass: undefined });
+  count(s, 'heligtTing');
+  const tx = `${heligtTingNamn(t)} blev heligt i ${troNamn(tr).toLowerCase()} och ställdes på altaret.`;
+  log(s, tx, 'rel'); kronika(s, tx, 'tro');
+}
+// finns tinget inte kvar i byn (taget i ett heligt krig, brunnet) faller budet, och de troende tappar tro och humör som när en helig plats vanhelgas
+function heligaTingKvar(s: State, tr: Tro) {
+  for (const b of (tr.bud ?? []).filter(q => q.id === 'heligtTing')) {
+    if (tingOf(s).some(t => t.id === Number(b.v) && t.helig === tr.id)) continue;
+    tr.bud = tr.bud!.filter(q => q !== b);
+    count(s, 'heligtTingBort');
+    const tx = `Det heliga tinget i ${troNamn(tr).toLowerCase()} finns inte längre, och budet föll.`;
+    log(s, tx, 'rel'); kronika(s, tx, 'tro');
+    for (const p of troende(s, tr)) { p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - KYRKA.tingTro); think(p, 'Vårt heliga ting är borta', KYRKA.tingHumor, s.now, KYRKA.tingDygn * DAY); }
+  }
+}
 // ---------- varje timme ----------
 export function kyrkaTimme(s: State) {
+  for (const tr of s.tron ?? []) if (tr.bud?.length) heligaTingKvar(s, tr);
   for (const tr of s.tron ?? []) { if (tr.slut !== undefined) continue; const folk = troende(s, tr); if (folk.length) offerTimme(s, tr, folk); }
   if (Math.floor(s.now / HOUR) % 24 === 12) { skattDygn(s); helgonDygn(s); kvadeDygn(s); valsignaDygn(s); budDygn(s); }
   const f = s.tron?.length ? living(s).filter(p => p.tro !== undefined).length : 0;

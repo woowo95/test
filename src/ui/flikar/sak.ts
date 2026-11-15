@@ -230,7 +230,7 @@ export const sak: Flik = {
     const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvOrd(t) || 'Normal'}${kvOf(t) === NORMAL ? '' : ` <span class="muted">${esc(kvText(t).replace(/^[^:]*: /, ''))}</span>`}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)
     return `
-    <div class="phead">${iconImg(k, 32)}<div><h2>${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>
+    <div class="phead">${iconImg(k, 32)}<div><h2>${t?.helig !== undefined ? `<span title="Heligt i tron, står på altaret">${iconImg('heligt', 16)}</span> ` : ''}${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>
     ${ber ? `<p class="besk">${esc(ber)}</p>` : ''}
     <dl class="kv">
       <dt>Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>

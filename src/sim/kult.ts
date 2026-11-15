@@ -1,7 +1,7 @@
 // Bönen, de heliga platserna, ritualerna, prästen och profeten (system 8.5). Tre register: BONER (en rad per sorts bön), HELIGA_PLATSER (en rad
 // per sort) och RITUALER (en rad per ritual). Graven och kroppen står i kvarlevor.ts, tron i religion.ts. Bön och offer påverkar nästan bara
 // humöret och tron, och går aldrig före maten eller veden.
-import { troshusPlats } from './troshus';
+import { troshusPlats, troshusRum } from './troshus';
 import { personHand } from './personlogg';
 import { DAY, HOUR, MIN, Person, State, T, W, inMap } from './typer';
 import { balans } from './balans';
@@ -14,7 +14,7 @@ import { ageIndex, ageStart } from './tid';
 import { getMap } from './karta';
 import { groundOf } from './mark';
 import { FOREST } from './vag';
-import { freeNear } from './byggnad';
+import { freeNear, roomAt } from './byggnad';
 import { eldPlats } from './karta';
 import { addTo, amountOf, ownedStock, use } from './lager';
 import { ata } from './naring';
@@ -91,7 +91,7 @@ export function bonNod(s: State, p: Person): { id: BonId; o: string; vem?: numbe
 }
 // bönen är klar (KLAR i steg.ts): humör, tro, och en bön i nöd får svar inom några dygn (steg 8.5.4)
 export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; why?: string }) {
-  const id = (t.tool ?? 'vardag') as BonId, d = BDEF[id], f = (rokelse(s, p) ? KULT.starkare : 1) * (barTecken(s, p) ? KULT.starkare : 1);
+  const id = (t.tool ?? 'vardag') as BonId, d = BDEF[id], f = (rokelse(s, p) ? KULT.starkare : 1) * (barTecken(s, p) ? KULT.starkare : 1) * (vidHeligtTing(s, p) ? KULT.starkare : 1);
   think(p, d.namn === 'Vardagsbön' ? 'Bad sin bön' : d.namn, d.ger.humor * f, s.now, 6 * HOUR);
   p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + d.ger.tro * f);
   count(s, 'bon_' + id);
@@ -100,6 +100,8 @@ export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; w
   const h = heligVid(s, p.tro, p.x, p.y); if (h) h.boner = (h.boner ?? 0) + 1; // platsen räknar bönerna (steg 10.3.10)
   if (id === 'bikt') { p.skuld = 0; count(s, 'bikt'); }
 }
+// ber p i trons hus där ett heligt ting står på altaret (steg 10.3.20)?
+const vidHeligtTing = (s: State, p: Person) => { const tr = troOf(s, p.tro); if (!tr || !(s.ting ?? []).some(t => t.helig === tr.id)) return false; const r = troshusRum(s, tr); return !!r && roomAt(s, Math.floor(p.x), Math.floor(p.y)) === r; };
 const rokelse = (s: State, p: Person) => { if (amountOf(s, 'rokelse') < 1 || rnd(s, 'tro', p) > 0.2) return false; takeMaterial(s, p, 'rokelse', 1); return true; };
 // bär prästen sin dräkt eller sin mask (steg 10.3.11)
 export const barDrakt = (s: State, p: Person) => (s.ting ?? []).some(t => t.bar === p.id && (kladAv(t.k)?.plagg === 'prastdrakt' || kladAv(t.k)?.plagg === 'mask'));

@@ -745,7 +745,7 @@ function fallenFiende(s: State, r: Person, x: number, y: number) {
   const g = gr(r), saker: Record<string, number> | undefined = g.bar && Object.keys(g.bar).length ? { ...g.bar } : undefined;
   g.bar = undefined;
   // fiendens egna vapen och plagg ligger kvar på kroppen med kvalitet och slitage tills någon avrustar hen (steg 10.3.6); bytet ligger för sig
-  const ting = gastTingOf(s, r).map(t => ({ k: t.k, c: t.c, ...(t.q !== undefined ? { q: t.q } : {}) }));
+  const ting = gastTingOf(s, r).map(t => ({ k: t.k, c: t.c, ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}) })); // ett heligt ting de tagit behåller kvalitet och berättelse (steg 10.3.20)
   s.gastTing = (s.gastTing ?? []).filter(t => t.agare !== r.id);
   kvarlevor(s).push({ id: (s.nextKvar = (s.nextKvar ?? 0) + 1), k: 'fiende', x: Math.floor(x), y: Math.floor(y), t: s.now, vem: -1, namn: r.name, text: r.name, ...(saker ? { saker } : {}), ...(ting.length ? { ting } : {}) });
 }

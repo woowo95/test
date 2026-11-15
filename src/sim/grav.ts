@@ -101,14 +101,14 @@ export function avrustaKlar(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);
   if (!q || !avrustbart(s, p, q)) return;
   for (const [k, n] of Object.entries(q.saker ?? {})) { if (SAKER[k]?.redskap) for (let i = 0; i < n; i++) newTing(s, k, 1, -1); else put(s, k, n); }
-  if (q.ting && !orena(s, p)) { for (const g of q.ting) { const ny = newTing(s, g.k, g.c, -1); if (g.q !== undefined) ny.q = g.q; } q.ting = undefined; }
+  if (q.ting && !orena(s, p)) { for (const g of q.ting) { const ny = newTing(s, g.k, g.c, -1); if (g.q !== undefined) ny.q = g.q; if (g.ber) ny.ber = g.ber; } q.ting = undefined; }
   q.saker = undefined; count(s, 'avrustad');
   think(p, 'Tog det en fallen fiende bar', -0.02, s.now, 6 * HOUR);
 }
 // byta om inför strid (steg 8.7.8): när larmet går hämtar var och en sin rustning. Vid en överraskning hinner man inte
 export function rustaVal(s: State, p: Person) {
   if (!p.larm || s.now - p.larm.t > HOUR || p.task?.act === 'strid' || [s.rovare, ...(s.rovareFler ?? [])].some(f => f && Math.hypot(f.x - p.x, f.y - p.y) < 6)) return undefined;
-  const t = (s.ting ?? []).find(q => { const pl = kladAv(q.k)?.plagg; return (pl === 'rustning' || pl === 'hjalm') && q.bar === undefined && q.hos === undefined && q.lass === undefined && (q.agare === p.id || q.agare === undefined || q.agare < 0) && q.x !== undefined; });
+  const t = (s.ting ?? []).find(q => { const pl = kladAv(q.k)?.plagg; return (pl === 'rustning' || pl === 'hjalm') && q.helig === undefined && q.bar === undefined && q.hos === undefined && q.lass === undefined && (q.agare === p.id || q.agare === undefined || q.agare < 0) && q.x !== undefined; });
   return t ? { spot: { x: t.x! + 0.5, y: t.y! + 0.5 }, ref: t.id, why: 'Hämtar sin rustning inför striden' } : undefined;
 }
 export function rustaKlar(s: State, p: Person, t: Task) {

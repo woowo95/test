@@ -65,6 +65,7 @@ export const PAL: Record<string, Record<string, string>> = {
   bonad: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', r: '#521100', R: '#742a01', s: '#906f0f', S: '#b2921b', w: '#a0947d', W: '#bdb39b' }, // (Björn valde version 3 efter v245, steg 4.5.2)
   hogsate: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', s: '#906f0f', S: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // långhusets högsäte (steg 10.2.68, platshållare, 16 punkter)
   altare: { o: '#24201d', s: '#61767a', S: '#8a9c9e', k: '#3e5156', b: '#5e3c24', c: '#7d5b40', e: '#987e62', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // trons altare (steg 10.3.19, platshållare, 16 punkter per ruta)
+  heligt: { o: '#24201d', y: '#d8b25f', e: '#f0dc9a', c: '#987e62' }, // symbolen för ett heligt ting (steg 10.3.20, platshållare)
   gudabild: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // gudabilden av trä (steg 10.3.19, platshållare)
   bank: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', z: 'rgba(36,32,29,.30)' }, // långhusets bänk (steg 10.2.68, platshållare, 16 punkter per ruta)
   krubba: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', h: '#906f0f', H: '#d8b25f', g: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // krubban i fähuset (steg 10.2.88, platshållare, 16 punkter per ruta)
@@ -2416,6 +2417,24 @@ export const PIX: Record<string, string[]> = {
     '..okskskskskskskskskskskskskko..',
     '..oooooooooooooooooooooooooooo..',
     '...zzzzzzzzzzzzzzzzzzzzzzzzzz...',
+  ],
+  heligt: [ // platshållare (steg 10.3.20): en strålande ring
+    '................',
+    '.......y........',
+    '...y...y...y....',
+    '....y..e..y.....',
+    '.......o........',
+    '.....ooooo......',
+    '....oyeeeyo.....',
+    'yy.oye...eyo.yy.',
+    '...oye...eyo....',
+    '....oyeeeyo.....',
+    '.....ooooo......',
+    '................',
+    '....y..e..y.....',
+    '...y...y...y....',
+    '.......y........',
+    '................',
   ],
   gudabild: [ // platshållare (steg 10.3.19)
     '......oooo......',
