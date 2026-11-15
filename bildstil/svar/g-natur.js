@@ -226,7 +226,7 @@
   // ellipser för bröst, höft, hals och huvud, kilar för nos och öron och tjocka linjer för ben och svans. Här får formerna
   // ett läge: framdelen kan lyftas, kroppen huka, huvudet sträckas fram, vridas och skakas, öronen läggas bakåt och käken
   // öppnas (underkäken vrids kring mungipan, och gapet är rött med vita tänder).
-  const VL = { o: ['skiffer', 0], d: ['skiffer', 1], m: ['skiffer', 2], l: ['skiffer', 3], c: ['ben', 2], b: ['ben', 3], k: ['kol', 0], r: ['rost', 2], R: ['rost', 1], a: ['senap', 3] };
+  const VL = { o: ['skiffer', 0], d: ['skiffer', 1], m: ['skiffer', 2], l: ['skiffer', 3], c: ['ben', 2], b: ['ben', 3], k: ['kol', 0], r: ['rost', 2], R: ['rost', 1], a: ['senap', 3], j: ['jord', 2], J: ['jord', 1] };
   function former(w, h, lista) { // som i djur.js, men utan att ta bort tomma rader överst (så att foten står still mellan bilderna)
     const g = Array.from({ length: h }, () => Array(w).fill('.'));
     for (const [inne, ton] of lista) for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -255,7 +255,8 @@
   const VT = { ben: 7.5, kropp: 3.1, ruff: 3.2, huvud: 2.8, nos: 4.4, svans: 1.8, sank: 0.6 }; // spelets varg (VARGTYP[0])
   // p: fram (hela vargen framåt), huka (benen kortare), lyft (framdelen upp, punkter vid bröstet), hx och hy (huvudet fram
   // och ned), vrid (huvudet, minus = nosen upp), gap (underkäken öppen, grader), oron (bakåt), framBen ('lyft' eller 'strack'),
-  // bak (bakfötterna bakåt)
+  // bak (bakfötterna bakåt, minus framåt under kroppen), upp (hela vargen i luften), ragg (håret reser sig längs ryggen),
+  // tand (läppen dras upp och tänderna syns), byte (en tygbit i käftarna)
   function vargSida(p) {
     const t = VT, W = 48, H = 34, fot = H - 1, ben = t.ben - (p.huka || 0), bot = fot - ben, mitt = bot - t.kropp, rygg = mitt - t.kropp;
     const X = 3 + (p.fram || 0), lyft = p.lyft || 0;
@@ -297,8 +298,12 @@
       [L(och(punkt(18, Math.floor(rygg) - 1), punkt(20, Math.floor(rygg) - 1), punkt(22, Math.floor(rygg) - 1), punkt(21, Math.floor(rygg) - 2))), 'd'], // rest nackhår
       [L(hv(punkt(ex, ey))), 'a'], [L(hv(punkt(ex + 1, ey))), 'k'],
       ...(p.gap ? [] : [[L(hv((x, y) => Math.floor(y) === Math.floor(hy + 1.8) && x > hx + 0.4 && x < nx - 0.8)), 'k'], [L(hv(punkt(Math.floor(nx - 1.6), Math.floor(hy + 2.8)))), 'b']]),
+      ...(p.ragg ? [[L((x, y) => { const i = Math.floor(x); return i > 9 && i < 23 && (Math.floor(y) === Math.floor(rygg) - 1 && i % 2 === 0 || Math.floor(y) === Math.floor(rygg) - 2 && i % 4 === 2); }), 'd']] : []),
+      ...(p.tand ? [[L(hv((x, y) => Math.floor(y) === Math.floor(hy + 1.8) && x > hx + 0.6 && x < nx - 1 && Math.floor(x) % 2 === 0)), 'b'], [L(hv(och(punkt(Math.floor(hx + 2), Math.floor(hy - 0.4)), punkt(Math.floor(hx + 3.4), Math.floor(hy - 0.1))))), 'd']] : []),
+      ...(p.byte ? [[L(hv(och(linje([[nx - 1.4, mun[1] + 0.4], [nx - 2, mun[1] + 3.2]], 1.2, 1), linje([[nx - 2, mun[1] + 3.2], [nx - 1, mun[1] + 4.6]], 0.8, 0.6)))), (x, y) => { const [a, b] = V(x, y + upp(x)); return a < nx - 2 && b > mun[1] + 1.2 ? 'J' : 'j'; }]] : []),
     ];
-    return former(W + 3, H, lista.map(([f, ton]) => [(x, y) => f(x - X, y), typeof ton === 'function' ? (x, y) => ton(x - X, y) : ton]));
+    const U = p.upp || 0;
+    return former(W + 3, H, lista.map(([f, ton]) => [(x, y) => f(x - X, y + U), typeof ton === 'function' ? (x, y) => ton(x - X, y + U) : ton]));
   }
   // framifrån: huvudet kommer ned och fram (lite större), skakas åt sidan och vrids, munnen öppnas; när vargen hoppar
   // lyfts framdelen och frambenen viks upp
@@ -309,7 +314,8 @@
     const ora = (s) => p.oron ? tri([hx + s * 1.6, hy - r + 0.9], [hx + s * 4.2, hy - r + 2.2], [hx + s * 4.4, hy - r - 0.6]) : tri([hx + s * 1.2, hy - r + 0.9], [hx + s * 3.6, hy - r + 1.4], [hx + s * 2.8, hy - r - 2.6]);
     const ny = hy + r * 0.65, g = p.gap || 0; // nosen och hur öppen munnen är (0–1)
     const framBen = s => lyft ? linje([[c + s * 1.3, bot - 1 - lyft], [c + s * 2.4, bot + ben * 0.3 - lyft], [c + s * 1.6, bot + ben * 0.5 - lyft]], 0.75) : linje([[c + s * 1.3, bot - 1], [c + s * (1.4 + (p.isar || 0)), fot - 0.4]], 0.75);
-    return former(W, H, [
+    const U = p.upp || 0, upp = lista => lista.map(([f, ton]) => [(x, y) => f(x, y + U), typeof ton === 'function' ? (x, y) => ton(x, y + U) : ton]);
+    return former(W, H, upp([
       [ell(c, bot - t.kropp - lyft * 0.5, t.kropp + 1, t.kropp + 0.4 + lyft * 0.5), 'd'],
       [och(linje([[c - 3, bot - 1], [c - 3.1 - (p.isar || 0) * 0.5, fot - 0.4]], 0.7), linje([[c + 3, bot - 1], [c + 3.1 + (p.isar || 0) * 0.5, fot - 0.4]], 0.7)), 'd'],
       [ell(c, bot - t.kropp + 0.6 - lyft, t.ruff * 0.72, t.kropp + 0.9), (x, y) => Math.abs(x - c) < 1.3 ? 'c' : 'm'],
@@ -322,26 +328,28 @@
         [hv(ell(hx, ny + 1.3 + g * 1.2, 1.3 + g * 0.4, 0.5 + g * 0.9)), (x, y) => { const [a, b] = V(x, y); return Math.abs(b - (ny + 1.3 + g * 1.2)) < 0.5 + g * 0.2 && Math.abs(a - hx) < 0.9 ? 'R' : 'r'; }], // gapet
         [hv(och(punkt(Math.floor(hx) - 1, Math.floor(ny + 1)), punkt(Math.floor(hx) + 1, Math.floor(ny + 1)), punkt(Math.floor(hx) - 1, Math.floor(ny + 1.8 + g * 2.2)), punkt(Math.floor(hx) + 1, Math.floor(ny + 1.8 + g * 2.2)))), 'b'], // tänderna
       ] : [
-        [hv((x, y) => Math.floor(y) === Math.floor(ny + 1.2) && Math.abs(x - hx) < 1.8), 'k'],
+        [hv((x, y) => Math.floor(y) === Math.floor(ny + 1.2) && Math.abs(x - hx) < 1.8), p.tand ? (x, y) => (Math.floor(V(x, y)[0]) - Math.floor(hx)) % 2 ? 'k' : 'b' : 'k'],
         [hv(och(punkt(Math.floor(hx) - 1, Math.floor(ny + 2.2)), punkt(Math.floor(hx) + 1, Math.floor(ny + 2.2)))), 'b'],
       ]),
+      ...(p.byte ? [[hv(linje([[hx + 0.6, ny + 1.4], [hx + 2.8, ny + 2.6], [hx + 3.2, ny + 4.4]], 1, 0.7)), (x, y) => V(x, y)[1] > ny + 3 ? 'J' : 'j']] : []),
       [hv(och(punkt(Math.floor(hx) - 2, Math.floor(hy)), punkt(Math.floor(hx) + 2, Math.floor(hy)), punkt(Math.floor(hx), Math.floor(hy + r * 0.45)))), (x, y) => Math.abs(V(x, y)[0] - hx) > 1 ? 'a' : 'k'],
       [hv(och(punkt(Math.floor(hx) - 1, Math.floor(hy)), punkt(Math.floor(hx) + 1, Math.floor(hy)))), 'k'],
-    ]);
+    ]));
   }
+  // tre nya rörelser utan förlaga (Björn efter bildstil v241: nej utan kommentar ritas om utan förlaga), samma varg som i spelet
   const VARG_ANFALL = [
-    ['Vargen hukar, kastar fram huvudet med gapet uppspärrat och hugger rakt fram, och drar sig sedan tillbaka.',
-      [{ huka: 1, hx: -1.5, hy: 1.5, gap: 0 }, { fram: 2, hx: 2, hy: 0.5, gap: 32, oron: true, framBen: 'strack', bak: 2 }, { fram: 3, hx: 3, hy: 0.5, gap: 4, framBen: 'strack', bak: 2 }, { fram: 1, hx: 0.5, hy: 0.5, gap: 12 }],
-      [{ huka: 1, hy: 1.5 }, { hy: 1, stor: 0.6, gap: 1, isar: 1 }, { hy: 2, stor: 1, gap: 0.2, isar: 1 }, { hy: 1, stor: 0.3, gap: 0.5 }]],
-    ['Vargen hoppar upp mot strupen: framdelen lyfts, frambenen viks upp och käftarna slår ihop högt upp.',
-      [{ huka: 1.5, hx: -1, hy: 1, gap: 8 }, { lyft: 5, fram: 1, vrid: -20, gap: 34, framBen: 'lyft', bak: 1, svans: 1 }, { lyft: 7, fram: 3, vrid: -12, hx: 1, gap: 3, framBen: 'lyft', bak: 2, svans: 1 }, { lyft: 2, fram: 2, vrid: -4, gap: 10, framBen: 'strack' }],
-      [{ huka: 1.5, hy: 1, gap: 0.3 }, { lyft: 5, gap: 1 }, { lyft: 7, gap: 0.1, stor: 0.5 }, { lyft: 2, gap: 0.5 }]],
-    ['Vargen biter lågt och sliter: huvudet nere vid marken, käftarna slår ihop och huvudet skakas åt sidorna.',
-      [{ huka: 0.5, hx: 1, hy: 4, vrid: 18, gap: 30 }, { huka: 0.5, hx: 1.5, hy: 4.5, vrid: 22, gap: 2, oron: true, bak: 1 }, { huka: 0.5, hx: 1, hy: 3.5, vrid: 8, gap: 2, bak: 2 }, { huka: 0.5, hx: 1.5, hy: 4.5, vrid: 28, gap: 2, oron: true, bak: 1 }],
-      [{ hy: 3, gap: 1, isar: 1 }, { hy: 3.5, hx: -2, vrid: -18, gap: 0.2, isar: 1 }, { hy: 3.5, hx: 2, vrid: 18, gap: 0.2, isar: 1 }, { hy: 3, hx: -1, vrid: -8, gap: 0.3, isar: 1 }]],
+    ['Språnget: vargen tar sats lågt, kastar sig fram genom luften med frambenen sträckta och gapet öppet, och landar med käftarna mot målet.',
+      [{ huka: 2, hx: -1, hy: 1.5, oron: true, bak: -1 }, { fram: 3, upp: 4, lyft: 1, framBen: 'strack', bak: 3, gap: 30, oron: true, svans: 1 }, { fram: 6, upp: 2, framBen: 'strack', bak: 3, gap: 14, hx: 1, oron: true }, { fram: 6, huka: 1, framBen: 'strack', bak: 1, gap: 0, hy: 1.5 }],
+      [{ huka: 2, hy: 1, oron: true }, { upp: 4, lyft: 2, stor: 0.6, gap: 1, oron: true }, { upp: 2, lyft: 1, stor: 1.1, gap: 0.6, oron: true }, { huka: 1, stor: 0.8, gap: 0, hy: 1, isar: 1 }]],
+    ['Morret och hugget: håret reser sig längs ryggen, vargen sänker huvudet och visar tänderna, och hugger sedan snabbt med hela halsen sträckt.',
+      [{ ragg: 1, huka: 1, hx: -1, hy: 2, oron: true, tand: true }, { ragg: 1, huka: 1.5, hx: -1.5, hy: 2.5, oron: true, tand: true, bak: -0.5 }, { ragg: 1, fram: 2, hx: 3.5, hy: 0.5, gap: 34, oron: true, framBen: 'strack', bak: 2 }, { ragg: 1, fram: 2, hx: 2.5, hy: 1, oron: true, framBen: 'strack', bak: 2 }],
+      [{ huka: 1, hy: 2, oron: true, tand: true }, { huka: 1.5, hy: 2.5, oron: true, tand: true }, { hy: 1, stor: 1.2, gap: 1, oron: true, isar: 1 }, { hy: 1.5, stor: 0.3, tand: true, isar: 1 }]],
+    ['Bettet som drar: vargen biter fast, sätter i bakbenen och drar bakåt med huvudet uppåt, så att en bit av kläderna hänger i käftarna.',
+      [{ fram: 3, hx: 2, hy: 1, gap: 26, framBen: 'strack', bak: 2 }, { fram: 3, hx: 2.5, hy: 1.5, byte: true, framBen: 'strack', bak: 2 }, { fram: 1, huka: 1, lyft: 1, hx: 0.5, hy: 0, vrid: -8, byte: true, framBen: 'strack', bak: -1, oron: true }, { fram: 0, huka: 1.5, lyft: 1.5, hx: 0, hy: -0.5, vrid: -12, byte: true, framBen: 'strack', bak: -1.5, oron: true }],
+      [{ hy: 1, stor: 0.8, gap: 1 }, { hy: 1.5, stor: 0.8, byte: true }, { hy: 0.5, byte: true, vrid: -14, hx: -1.5, oron: true }, { hy: 0, byte: true, vrid: 14, hx: 1.5, oron: true }]],
   ];
   byt({ id: 'f9_varg_anfall', namn: 'Vargens anfall', typ: 'tre',
-    vad: 'Steg 9.2.31: i striden på kartan hugger vargen med käftarna, en bild per slag (fyra bilder, i samma takt som människornas slag). Nu är det spelets egen varg, byggd av samma former som i djur.js med samma päls, huvud, öron och svans: formerna får ett läge, så att samma varg hukar, sträcker fram huvudet, lägger öronen bakåt och öppnar käftarna. Tre sätt att röra sig, var och ett från sidan (till vänster) och framifrån (till höger). Din kommentar förra gången: ”dethär ser inte ut som vargen över huvud taget”',
+    vad: 'Steg 9.2.31: i striden på kartan hugger vargen med käftarna, en bild per slag (fyra bilder, i samma takt som människornas slag). Nu är det spelets egen varg, byggd av samma former som i djur.js med samma päls, huvud, öron och svans: formerna får ett läge, så att samma varg hukar, sträcker fram huvudet, lägger öronen bakåt och öppnar käftarna. Tre nya sätt att röra sig, ritade utan förlaga, var och ett från sidan (till vänster) och framifrån (till höger). Förra gången sa du nej utan kommentar.',
     versioner: VARG_ANFALL.map(([text, sida, fram]) => ({ text, w: 82, h: 38, rutor: RUTOR, takt: TAKT, rita: (B, P, ruta = 0) => {
       gras(B);
       fotskugga(B, 24, 35, 12); fotskugga(B, 68, 35, 6);
