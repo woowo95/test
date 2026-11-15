@@ -1284,7 +1284,6 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
     tk.plock -= used;
     const klar = tk.plock <= 1e-6, slag = klar ? plockaEn(s, tk, x, y) : undefined;
     if (klar) tk.plock = undefined;
-    if (slag) delete tk.malTomt; // hen hittade något vid målet
     plockSlag = slag ?? ''; workStep(s, p, tk, used, a, learn, false, true, slag ? 1 : 0); plockSlag = undefined;
     return used;
   }
@@ -1316,7 +1315,7 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   let n = nastaPaStrackan(s, tk, x, y);
   // utan något hen vet eller ser går hen vidare ut i det okända bara så länge draget drar utåt (nyfikenheten och modet, minus
   // bördan, behoven, mörkret och kylan); annars hem
-  if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla, dr.ut > 0); if (n) tk.malTomt = 1; } // ett nytt mål: inget plockat där än
+  if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla, dr.ut > 0); }
   if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; } else tk.until = s.now;
   return 1e-3;
 }
@@ -1384,9 +1383,7 @@ function narmastTand(s: State, tk: Task, x0: number, y0: number, r: number) {
 function platsTom(s: State, p: Person, tk: Task, x: number, y: number) {
   count(s, 'platsTom'); lookAround(s, p, x + 0.5, y + 0.5);
   const res = ACTS[tk.act].resurs;
-  // hen kom till sitt mål och hittade inget att plocka där: området är plockat. Den som plockat här minns det som det är
-  // (lookAround), för längre in i området kan det finnas mer än hen såg
-  if (res === 'samla' && !tk.sok && tk.malTomt) plockad(s, p, res, x + 0.5, y + 0.5);
+  if (res === 'samla' && !tk.sok) plockad(s, p, res, x + 0.5, y + 0.5); // det hen letade efter syns inte här: området är plockat
 }
 // nästa mål (steg 9.2.54): den ruta inom RUNDA.malR som är bäst när det hen tror finns där (platslärdomarna, trorOm i minne.ts;
 // grenarna och stenarna syns) vägs mot vägen dit och rädslan, och som är mindre värd för varje bybo som redan är där eller på väg

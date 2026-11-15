@@ -146,7 +146,6 @@ export interface Task {
   rikt?: number; // promenaden: riktningen man går åt (radianer, steg 9.2.84); nästa punkt väljs ungefär åt samma håll
   stanna?: boolean; // vårdaren hinner inte hämta förband utan går direkt och trycker (steg 9.5.16)
   hopp?: boolean; plock?: number; sett?: number[]; // rundan (steg 4.5.6.1, steg.ts): på väg till nästa ruta, sekunder kvar av stoppet, rutorna man nyss plockat på
-  malTomt?: 1; // samlaren har valt ett nytt mål och inte plockat något där än (Samlandet: Vidare, steg.ts)
   letat?: number; // på rundan (steg 9.2.55): sekunder som gåtts sedan förra plocket; det man hittar under tiden (ägg, mossa, hö) räknas på dem
   pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om
   ref?: number; // det arbetet gäller: stammen som huggs, biten som byggs eller huset som ett träd fälls för
