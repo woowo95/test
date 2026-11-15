@@ -5,7 +5,7 @@ import { START } from '../kor';
 import { SCENARIER } from './hjalp';
 
 SCENARIER.sjukdom = {
-  text: 'Steg 9.5.1–9.5.2: varje sjukdom är en rad i SJUKDOMAR med orsak, smitta, inkubation, längd, stadier, följder, vård, dödlighet per ålder och immunitet. Sjukdomen och motståndet växer båda; vinner sjukdomen dör man av den, annars blir man frisk, och immun efter mässlingen och kopporna',
+  text: 'Steg 9.5.1–9.5.2 och 10.10.12: varje sjukdom är en rad i SJUKDOMAR med orsak, smitta, inkubation, längd, stadier, följder, vård, dödlighet per ålder och immunitet. Sjukdomen och motståndet växer båda; vinner sjukdomen dör man av den, annars blir man frisk, och immun efter mässlingen och kopporna. Den som förlorar mot förkylningen får lunginflammation i stället för att dö',
   kor: () => {
     const { SJUKDOMAR, SJUK_IDS, insjukna, sjukSteg, isSick, sjukText } = SIM;
     const s = createState(3, START), mall = living(s).find(p => SIM.ageOf(p, s.now) >= 20 && SIM.ageOf(p, s.now) < 40)!;
@@ -24,6 +24,23 @@ SCENARIER.sjukdom = {
       }
       return { dog: dog / n, frisk, dygn: frisk ? dygn / frisk : 0 };
     };
+    // förkylningen blir lunginflammation för den som förlorar (steg 10.10.12): förkylda som fryser och arbetar utan att sova, mot
+    // lika många som vilar varma
+    const forlorar = (fryser: boolean, n: number) => {
+      let lung = 0, dodFork = 0;
+      for (let i = 0; i < n; i++) {
+        const p: Person = { ...mall, id: 9500 + i, born: s.now - 30 * DAY, sjuk: undefined, immun: undefined, hunger: 1, warm: fryser ? 0 : 1 };
+        const t0 = s.now;
+        insjukna(s, p, 'forkylning');
+        let tid = 0;
+        while (p.sjuk?.k === 'forkylning' && tid < 20 * DAY) { s.now += 600e3; tid += 600e3; if (sjukSteg(s, p, 600, !fryser && (tid / 3600e3) % 24 < 8, fryser) === 'forkylning') dodFork++; }
+        if (p.sjuk?.k === 'lunginflammation') lung++;
+        s.now = t0;
+      }
+      return { lung, dodFork };
+    };
+    const kall = forlorar(true, 40), varm = forlorar(false, 40);
+    const lungNotis = (s.notiser?.lista ?? []).some(n => n.id === 'sjuk' && n.rader.some(r => r.includes('lunginflammation efter en förkylning')));
     const fork = prov('forkylning', 30, 40), koppVux = prov('koppor', 30, 60), lungGam = prov('lunginflammation', 70, 60), lungVux = prov('lunginflammation', 30, 60);
     // inkubationen döljer sjukdomen, och stadiet står i kortet
     const q: Person = { ...mall, id: 9999, sjuk: undefined, immun: undefined };
@@ -38,6 +55,8 @@ SCENARIER.sjukdom = {
       [`en frisk vuxen blir frisk från förkylningen och dör inte (${fork.frisk} av 40 friska, i snitt ${fork.dygn.toFixed(1)} dygn, ${Math.round(fork.dog * 100)} % döda)`, fork.dog === 0 && fork.frisk === 40 && fork.dygn > 1 && fork.dygn < 4],
       [`kopporna dödar ungefär var tredje vuxen, färre när hen vilar (${Math.round(koppVux.dog * 100)} %)`, koppVux.dog > 0.05 && koppVux.dog < 0.45],
       [`lunginflammationen dödar fler gamla än vuxna (${Math.round(lungGam.dog * 100)} % mot ${Math.round(lungVux.dog * 100)} %)`, lungGam.dog > lungVux.dog],
+      [`av 40 förkylda som fryser och arbetar får en del lunginflammation (${kall.lung}), av 40 som vilar varma ingen (${varm.lung}), och ingen dör av förkylning (${kall.dodFork + varm.dodFork})`, kall.lung > 0 && kall.lung < 40 && varm.lung === 0 && kall.dodFork + varm.dodFork === 0],
+      [`notisen säger att hen fått lunginflammation efter förkylningen (${lungNotis ? 'ja' : 'nej'})`, lungNotis],
       ['inkubationen döljer sjukdomen, och kortet säger stadiet', dold && text],
       ['den som haft mässlingen blir inte sjuk i den igen', immun],
     ];

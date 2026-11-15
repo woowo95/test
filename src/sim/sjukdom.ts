@@ -36,6 +36,7 @@ export interface SjukDef {
   vard: string[]; // det som hjälper (vården, 9.5.29 och 9.5.33)
   immun?: true;
   arbete: number; // så mycket orkar den sjuke i arbetet
+  blir?: { k: string; why: string }; // den som förlorar mot sjukdomen dör inte av den utan får den här (steg 10.10.12: förkylningen blir lunginflammation)
 }
 const DEF = {
   magsjuka: {
@@ -55,11 +56,11 @@ const DEF = {
   },
   forkylning: {
     namn: 'Förkylning', orsak: ['kyla', 'smitta'], smitta: 0.04, inkubation: [0.3, 0.6], langd: [2, 3],
-    dod: { barn: 0, vuxen: 0, gammal: 0 }, foljd: { hosta: 0.5 }, vard: ['vila', 'varme'], arbete: 0.7,
+    dod: { barn: 0, vuxen: 0, gammal: 0 }, foljd: { hosta: 0.5 }, vard: ['vila', 'varme'], arbete: 0.7, blir: { k: 'lunginflammation', why: 'efter en förkylning som inte vilades bort' },
     stadier: [{ fran: 0, text: 'Förkyld, snuvig' }, { fran: 0.4, text: 'Förkyld, hostar' }],
   },
   lunginflammation: {
-    namn: 'Lunginflammation', orsak: ['kyla', 'smitta'], smitta: 0.01, inkubation: [0.1, 0.2], langd: [4, 6],
+    namn: 'Lunginflammation', orsak: ['smitta'], smitta: 0.01, inkubation: [0.1, 0.2], langd: [4, 6],
     dod: { barn: 0.2, vuxen: 0.02, gammal: 0.33 }, foljd: { feber: 1, hosta: 1 }, vard: ['vila', 'varme', 'lakeort'], arbete: 0.2,
     stadier: [{ fran: 0, text: 'Lunginflammation, hostar och har feber' }, { fran: 0.5, text: 'Lunginflammation, hög feber' }],
   },
@@ -220,7 +221,18 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
   const mot = bas * naring * (sover ? SJUK.vila : 1) * (p.warm < KROPP.kallt ? SJUK.fryser : 1) * lakeort;
   j.mot = Math.min(1, j.mot + mot * h);
   j.grad = Math.min(1, j.grad + bas * farlighet(d, p, s.now) * j.r * (arbetar ? SJUK.arbetar : 1) * h);
-  if (j.grad >= 1 && j.mot < 1) { count(s, 'sjukDod_' + j.k); delete p.sjuk; return j.k; }
+  if (j.grad >= 1 && j.mot < 1) {
+    // sjukdomen vann. Förkylningen dödar inte: den blir lunginflammation, som börjar från början med tecken direkt (steg 10.10.12)
+    const b = d.blir;
+    if (b) {
+      delete p.sjuk; count(s, 'sjukBlir_' + b.k);
+      insjukna(s, p, b.k as SjukId, b.why);
+      const ny = p.sjuk as Sjuk | undefined;
+      if (ny) { ny.tecken = s.now; ny.st = 0; notis(s, 'sjuk', `${p.name} har fått ${SJUKDOMAR[b.k as SjukId].namn.toLowerCase()} ${b.why}.`, [p.id]); }
+      return undefined;
+    }
+    count(s, 'sjukDod_' + j.k); delete p.sjuk; return j.k;
+  }
   if (j.mot >= 1) {
     if (d.immun) (p.immun ??= {})[j.k] = 1;
     count(s, 'frisk_' + j.k); delete p.sjuk;
