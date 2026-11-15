@@ -88,12 +88,12 @@
       PA('En bred låg rygg med en fäll, och armstöd på sidorna', hogsate[1]),
       PA('Två höga stolpar med drakhuvuden och en röd dyna', hogsate[2]),
     ]),
-    KORT('f10_bank', 'Bänken', S + '10.2.68: bänkarna längs väggarna i långhuset, en per fyra sovplatser. Av 2 virke, två rutor lång', [
+    KORT('f10_bank', 'Bänken', S + '10.2.68: bänkarna längs väggarna i långhuset, en per fyra sovplatser. Av 2 virke, två rutor lång. Den står längs väggar åt båda hållen, och ingenting vrids i spelet: två bilder, liggande (två rutor bred och en hög) och stående (en ruta bred och två höga), båda snett ovanifrån', [
       PA('En planka på två klossar', bank[0]),
       PA('Med en ryggribba på tre korta stolpar', bank[1]),
       PA('En kluven stock med rundade ändar och barken framåt', bank[2]),
     ]),
-    KORT('f10_krubba', 'Krubban', S + '10.2.88: krubban, en foderhäck av virke där höet läggs. Den gör rummet till ett fähus, där djuren står i istiden. Två rutor lång', [
+    KORT('f10_krubba', 'Krubban', S + '10.2.88: krubban, en foderhäck av virke där höet läggs. Den gör rummet till ett fähus, där djuren står i istiden. Två rutor lång. Den kan vridas, och ingenting vrids i spelet: två bilder, liggande (två rutor bred och en hög) och stående (en ruta bred och två höga), båda snett ovanifrån som kartans andra möbler', [
       PA('En häck som är bredare upptill, med höet mellan ribborna', krubba[0]),
       PA('Ett långt lågt tråg fyllt med hö', krubba[1]),
       PA('En häck på två höga stolpar med en rund tuss hö', krubba[2]),

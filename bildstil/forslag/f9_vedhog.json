@@ -1,0 +1,258 @@
+{
+ "kort": "f9_vedhog",
+ "namn": "Vedhögen i lagret",
+ "slag": null,
+ "vad": "Steg 9.2.39: vedsymbolen görs om helt. Tre nya vedträn, kluvna, med en ljus kluven sida, mörk bark och ändträet med årsringar synligt. Till vänster symbolen i lagret (16 × 16 punkter), till höger samma ved på marken som en, några och många i stacken, ritade som stackarna du valde (version 1: några är tre i en triangel, många sex i en pyramid).",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "använd version 3 när det är ett ensamt vedträ men gör så vedstaplarna ser annorlunda ut. Försöka få det att se ut som en staplad vedhög.",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_vedhog_symbol",
+     "rader": [
+      "................",
+      "................",
+      "...........EEE..",
+      ".........EEqpHE.",
+      ".......EEqpqHGFE",
+      ".....EEqpqHGFGFE",
+      "...EEqpqHGFGFFFE",
+      ".EEqpqHGFGFFFEE.",
+      "EEEEEEGFGFFEE...",
+      "EpGGpEFGFEE.....",
+      "EGppGEFEE.......",
+      "EFGGFEE.........",
+      ".EFFE...........",
+      "..EE............",
+      "................",
+      "................"
+     ]
+    },
+    {
+     "namn": "f9_vedhog_en",
+     "rader": [
+      ".......EEE..",
+      ".....EEqpHE.",
+      "...EEqpqHGFE",
+      ".EEqpHGFGFFE",
+      "EEEEEGFGFEE.",
+      "EpGpEFFEE...",
+      "EFGFEEE.....",
+      ".EEE........"
+     ]
+    },
+    {
+     "namn": "f9_vedhog_nagra",
+     "rader": [
+      "...EEEEEE...",
+      "...EqpqpE...",
+      "...EpqpHE...",
+      "...EHGGHE...",
+      "...EGHHGE...",
+      "...EFGGFE...",
+      ".EEEEFFEEEE.",
+      "EFHHFEEFHHFE",
+      "EpGGHEEpGGHE",
+      "EGpHGEEGpHGE",
+      "EpGGHEEpGGHE",
+      "EEEEEEEEEEEE"
+     ]
+    },
+    {
+     "namn": "f9_vedhog_manga",
+     "rader": [
+      ".......EEEE.......",
+      "......EFHHFE......",
+      "......EpGGHE......",
+      "...EEEEGpHGEEEE...",
+      "...EqpEpGGHEqpE...",
+      "...EpqEEEEEEpHE...",
+      "...EHGGHEEHGGHE...",
+      "...EGHHGEEGHHGE...",
+      "...EFGGFEEFGGFE...",
+      ".EEEEFFEEEEFFEEEE.",
+      "EFHHFEEFHHFEEFHHFE",
+      "EpGGHEEpGGHEEpGGHE",
+      "EGpHGEEGpHGEEGpHGE",
+      "EpGGHEEpGGHEEpGGHE",
+      "EEEEEEEEEEEEEEEEEE"
+     ]
+    }
+   ],
+   "anteckning": "Ensamt vedträ (symbolen och ett på marken) är version 3 som Björn ville: ett kluvet vedträ som ligger snett från nere till vänster upp åt höger, med den ljusa kluvna sidan uppåt mot ljuset (ben1 som glans i övre vänstra kanten), mörk bark (jord1/jord0) på undersidan och ändträet med en ring av jord2 vänt mot betraktaren nere till vänster. Stackarna är nu en riktig staplad vedhög: alla vedträn ligger parallellt med ändträet framåt mot betraktaren, och man ser ovanifrån en bit av översidan, som löper bakåt (uppåt i bilden). Den översta raden ligger i skårorna mellan träna under. Några: två i botten och ett ovanpå. Många: tre, två och ett. Det översta trät visar barken, de undre den kluvna sidan, så att ändträet med årsringarna syns först. Konturen är jord0 och det finns ingen skugga. Granskningen: Rättat: i version 1 hade vedträna samma bruna ton rakt igenom, så varken den kluvna sidan, barken eller årsringarna syntes, vilket kortet kräver. Symbolen och vedträt på marken är nu kluvna halvklabbar som ligger snett och ses snett uppifrån. Den kluvna ovansidan är ljus (ben2/ben1) med en ljus kant mot barken (jord3). Barken nere till höger är mörk (jord1/jord2). Ändträet nere till vänster är en halvcirkel med märg och årsringar i jord2 på ljust trä. Ljuset kommer uppifrån vänster. Konturen är jord0 och kol används inte. Stackarna har kvar valet från version 1: några är tre i en triangel och många sex i en pyramid. Ändarna har nu tydliga ringar och en barkkant, och klabbarna ligger logiskt: de nedre har den platta kluvna sidan nedåt, och de som ligger ovanpå har bågen nedåt i skåran mellan två klabbar. Deras ljusa kluvna ovansida syns snett uppifrån. Det enda vedträt på marken är krympt till 12 × 8 punkter, så att det står rätt i storlek mot kolonisten (14 × 20). Stackarna är 12 × 12 och 18 × 15 punkter.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_vedtra_lager",
+     "rader": [
+      "................",
+      "................",
+      "..EEEEEEEEEEEE..",
+      ".EqqpqpqpHpHpHE.",
+      ".EqpqpHpqpHpHGE.",
+      ".EpqpHpHpHpHGHE.",
+      ".EpHpHpHHpHGHGE.",
+      ".EFGHGHFFHGHGFE.",
+      ".EFGHGHHHHGHGFE.",
+      ".EFGHHGGGGHHGFE.",
+      "..EFGHHHHHHGFE..",
+      "...EFGGGGGGFE...",
+      "....EFFFFFFE....",
+      ".....EEEEEE.....",
+      "................",
+      "................"
+     ]
+    },
+    {
+     "namn": "f9_vedtra_mark_en",
+     "rader": [
+      ".EEEEEEE.",
+      "EqpHpHpHE",
+      "EpHpHpHGE",
+      "EHHGFGHGE",
+      "EFHFGFGFE",
+      ".EFHFHFE.",
+      "..EFFFE..",
+      "...EEE..."
+     ]
+    },
+    {
+     "namn": "f9_ved_mark_nagra",
+     "rader": [
+      ".....EEEEEEE.....",
+      "....EqpHpHpHE....",
+      "....EpHpHpHGE....",
+      "....EHHGFGHGE....",
+      "....EFHFGFGFE....",
+      ".EEEEEFHFHFEEEEE.",
+      "EqpHpHEFFFEHpHpHE",
+      "EpHpHpHEEEHpHpHGE",
+      "EHHGFGHGEHHGFGHGE",
+      "EFHFGFGFEFHFGFGFE",
+      ".EFHFHFE.EFHFHFE.",
+      "..EFFFE...EFFFE..",
+      "...EEE.....EEE..."
+     ]
+    },
+    {
+     "namn": "f9_ved_mark_manga",
+     "rader": [
+      ".........EEEEEEE.........",
+      "........EqpHpHpHE........",
+      "........EpHpHpHGE........",
+      "........EHHGFGHGE........",
+      "........EFHFGFGFE........",
+      ".....EEEEEFHFHFEEEEE.....",
+      "....EqpHpHEFFFEHpHpHE....",
+      "....EpHpHpHEEEHpHpHGE....",
+      "....EHHGFGHGEHHGFGHGE....",
+      "....EFHFGFGFEFHFGFGFE....",
+      ".EEEEEFHFHFEEEFHFHFEEEEE.",
+      "EqpHpHEFFFEHpHEFFFEHpHpHE",
+      "EpHpHpHEEEHpHpHEEEHpHpHGE",
+      "EHHGFGHGEHHGFGHGEHHGFGHGE",
+      "EFHFGFGFEFHFGFGFEFHFGFGFE",
+      ".EFHFHFE.EFHFHFE.EFHFHFE.",
+      "..EFFFE...EFFFE...EFFFE..",
+      "...EEE.....EEE.....EEE..."
+     ]
+    }
+   ],
+   "anteckning": "Efter Björns kommentar: det ensamma vedträet är version 3, ett kluvet vedträ som ligger snett från nere till vänster upp åt höger. Den ljusa kluvna sidan vetter upp mot ljuset och den mörka barken ligger nedåt höger. Ändträet med kärnan och årsringen syns i den nedre vänstra änden. Kontur i jord0, trä i jord1–3 och ben1 på den kluvna sidan. Den används både som symbol i lagret och som ett vedträ på marken (mindre, i naturlig storlek). Staplarna är gjorda om helt: ingen triangel eller pyramid längre, utan en staplad vedhög. Vedträna ligger parallellt i lager med ändträet vänt mot betraktaren, så att framsidan blir rader av runda ändar med årsringar och mörk kant. Ovanpå syns det översta lagrets ovansidor snett uppifrån, omväxlande kluven sida och bark. Några är fyra vedträn i två lager (2 × 2). Många är en hel vedtrave i tre lager om fyra, hållen på plats av två stolpar som står upp vid kortsidorna. Ändarna varierar i form och ton så att det ser ut som ved och inte som lådor. Granskningen: Rättat: version 2 följde inte idén. 'Några' var sex rutor i ett rutnät och 'många' en ställning med stolpar och tjugo rutor, alltså en vedbod och inte en stack. Kortet kräver tre i en triangel och sex i en pyramid (3-2-1), som i version 1. Dessutom saknades årsringar och mörk bark, och vedträna var bara bruna klossar. Alla fyra bilderna är omritade med ett och samma kluvna vedträ, ett halvt vedträ med den kluvna sidan uppåt. Den kluvna sidan syns snett ovanifrån som en ljus yta i ben (q/p) med fibrer i H. Ändträet är vänt mot betraktaren: en halvcirkel i H med årsringar i G och en mörk märg. Barken är ett mörkt band i jord1 längs den runda undersidan, med kontur i jord0 och ingen svart. Ljuset kommer uppifrån vänster. Formen är spegelsymmetrisk och bara kornet skiljer sidorna åt. Storlekarna: symbolen i lagret är 14 × 12 punkter centrerad i 16 × 16. Ett vedträ på marken är 9 × 8. Tre i en triangel är 17 × 13 och sex i en pyramid 25 × 18, alltså mindre än en kolonist på bredden och lägre än en stående. Veden är ljusare än gräset och har kontur, så den syns på det.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_vedhog_symbol",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      ".............E..",
+      "...........EEqE.",
+      ".........EEwqpE.",
+      ".......EEqqpqGE.",
+      "..EEEEEqqppGFFE.",
+      ".EpGHEqqpFGFFE..",
+      ".EGpGEpGFFFEE...",
+      ".EGpGEGFFEE.....",
+      ".EHGHEFEE.......",
+      "..EEEEE.........",
+      "................",
+      "................",
+      "................"
+     ]
+    },
+    {
+     "namn": "f9_vedhog_en",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      ".............E..",
+      "...........EEqE.",
+      ".........EEwqpE.",
+      ".......EEqqpqGE.",
+      "..EEEEEqqppGFFE.",
+      ".EpGHEqqpFGFFE..",
+      ".EGpGEpGFFFEE...",
+      ".EGpGEGFFEE.....",
+      ".EHGHEFEE.......",
+      "..EEEEE.........",
+      "................",
+      "................",
+      "................"
+     ]
+    },
+    {
+     "namn": "f9_vedhog_nagra",
+     "rader": [
+      "................",
+      "................",
+      "......EEE.......",
+      ".....EwqpE......",
+      ".....EqpqE......",
+      "....EEpqpEE.....",
+      "...EGEppHEFE....",
+      "...EFEHGHEFE....",
+      "...EGEGpGEFE....",
+      "...EFEHGGEFE....",
+      "...EGFEEEFFE....",
+      "...EpGHEHGHE....",
+      "...EGpGEGpGE....",
+      "...EHGHEHGGE....",
+      "....EEE.EEE.....",
+      "................"
+     ]
+    },
+    {
+     "namn": "f9_vedhog_manga",
+     "rader": [
+      "......EEE.......",
+      ".....EwqpE......",
+      "....EEqpqEE.....",
+      "...EGEppHEFE....",
+      "...EFEHGHEFE....",
+      "...EGEGpGEFE....",
+      "..EEFEHGGEFEE...",
+      ".EGEGFEEEFFEFE..",
+      ".EFEpGHEHGHEFE..",
+      ".EGEGpGEGpGEFE..",
+      ".EFEHGHEHGGEFE..",
+      ".EGFEEEGEEEFFE..",
+      ".EpGHEHGHEHGHE..",
+      ".EGpGEGpGEGpGE..",
+      ".EHGHEHGGEHGGE..",
+      "..EEE.EEE.EEE..."
+     ]
+    }
+   ],
+   "anteckning": "Det ensamma vedträet följer version 3, både som symbol i lagret och på marken. Det är ett avlångt kluvet trä som ligger snett från nere till vänster upp till höger. Den ljusa kluvna sidan (ben1/jord3, en glanspunkt i ben2) vetter uppåt mot ljuset. Den mörka barken (jord1) ligger på undersidan, och ändträet med årsringar (jord2 i mitten, jord3/ben1 runt om) syns nere till vänster. Konturen är jord0. Staplarna är omgjorda efter kommentaren så att de ser ut som en staplad vedtrave. Vedträna ligger parallellt med ändarna mot betraktaren. Varje träs ljusa ändyta med årsringar syns framtill, och snett ovanifrån syns det översta träets bark som löper bakåt. De undre trädens bark skymtar på sidorna bakom de övre. 'Några' är tre trän i en triangel (två nere och ett ovanpå). 'Många' är sex trän i en pyramid (tre, två och ett). Den nedre radens ändar står på marken. Ljuset kommer uppifrån vänster, så ändytorna är ljusast till vänster och mörkast nere till höger. Granskningen: Storlek, vinkel, symmetri och stackarnas form (en, tre i triangel, sex i pyramid) stämmer, så formerna och konturerna är kvar. Rättat är det kortet kräver men som inte syntes. Den kluvna sidan var inte ljus. På vedträt är ovansidan nu två ljusa band i ben (q/p) med en glanspunkt (w) uppe till vänster. Barken längs nederkanten är två mörka band i jord1/jord2. Tidigare flöt allt ihop i samma bruna H. I stackarna har den översta kubben fått en ljus kluven ovansida i stället för mörk bark. De undre kubbarna ligger med barken upp i mörkt jord1/jord2. Ändträt hade bara korn utan årsringar. Nu har varje ände en ljus kärna med en mörkare ring runt (H G H / G p G / H G H). Ringen skiljer ändarna från den ljusa kluvna ytan ovanför. Vedträt på marken (en) är nu samma ved som symbolen i lagret, som kortet säger. Tidigare var det ett smalare trä med bara ett ljust band.",
+   "ide": ""
+  }
+ ]
+}

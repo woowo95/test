@@ -1,0 +1,15 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f7_ortkok=jag tycker fortfarande att växterna som torkar kan se bättre ut. gör 9 versioner där du själv väljer ut dem 3 bästa att visa mig"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 1.28,
+  "hog": 2.74
+ },
+ "dollar": 5.772,
+ "rapport": [
+  "f7_ortkok: 9 versioner"
+ ]
+}

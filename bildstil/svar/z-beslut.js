@@ -59,5 +59,30 @@
     f9_forband: B10(1, 'Remsan syns inte i porträttet. Bennålen finns redan i spelet och ritas inte om.'),
     f9_foder: B10(4, 'Den som föder får symbolen för barn som redan finns i spelet; ingen ny symbol.'),
     f9_proteser: B10(3, 'Ögonlappen tas från version 1 och resten från version 3. Ögonlappen syns i porträttet med utseendet som redan finns där (ogonlapp i karaktärsskaparen).'),
+    // Björns svar 2026-11-15
+    f7_fangstgrop: B10(1),
+    f7_fangstbank: B10(2, 'Utan stubben (f7_fangstbank_stubbe): sittplatsen är en egen sak som spelet ställer framför stationen.'),
+    f9_appel: S10(1),
+    f9_brod: S10(1),
+    f9_jordgubbar: S10(1),
+    f9_kal: S10(1),
+    f9_hassel: B10(1),
+    f9_kat_grot: B10(1),
+    f9_kat_gryta: B10(1),
+    f9_slaktrens: B10(3),
+    f9_kolstam: B10(1),
+    f9_lera: B10(2),
+    f9_kk_tro: B10(1),
+    f9_amne_mat: B10(1),
+    f9_fiskrens: B10(1),
+    f9_kappa: B10(3),
+    f9_mantel: B10(1),
+    f9_sjal: B10(2),
+    f9_skjorta_ylle: B10(3),
+    f9_tunika_ylle: B10(1),
+    f9_bjorn_anfall: B10(1, 'Du skrev att den ser bra ut från sidan men inte framifrån: sidan byggs in som den är, och anfallet framifrån ritas om när det byggs in.'),
   });
+  // borttagna 2026-11-15: örtkökets delar (dublett av örtköket), bärtuvan under träd (står i designdokumentet: inga bär
+  // under träd) och höet (folk plockar det långa gräset och gräset som redan finns i spelet; ingen egen bild)
+  for (let i = VAL.length - 1; i >= 0; i--) if (['f9_ortkok_delar', 'f9_bartuva', 'f9_ho'].includes(VAL[i].id)) VAL.splice(i, 1);
 })();

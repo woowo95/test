@@ -1,0 +1,201 @@
+{
+ "kort": "f10_bank",
+ "namn": "Bänken",
+ "slag": null,
+ "vad": "Steg 10.2.68: bänkarna längs väggarna i långhuset, en per fyra sovplatser. Av 2 virke, två rutor lång. Den står längs väggar åt båda hållen, och ingenting vrids i spelet: två bilder, liggande (två rutor bred och en hög) och stående (en ruta bred och två höga), båda snett ovanifrån",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f10_bank_liggande",
+     "rader": [
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "EHHHHHHHHHHHGHHHHHHHHHHHHHGHHHHE",
+      "EHHHHGGGGGGHHHHHHHHHGGGGGHHHHHGE",
+      "EHHHHHHHHHHHHGGGHHHHHHHHHHHHGHGE",
+      "EHHGGGGHHHHHHHHHHHGGGGGGGHHHGGGE",
+      "EHHHHHHHHGGGHHHHHHHHHHHGGHHGGGGE",
+      "EHGGGHHHHHHHHGGGGGGGGHHHHHGGGGGE",
+      "EHHHHHGGGGHHHHHHGGGGGGGGGGHGGGGE",
+      "EGGGGGGGGGHHHGGGGGGGGGGGGGGGGGGE",
+      "EGGFFFFFFFFFFGGFFFFFFFFFFFFFFFFE",
+      "EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "..EFFE....................EFFE..",
+      "..EFFE....................EFFE..",
+      "..EFEE....................EFEE..",
+      "..EEEE....................EEEE.."
+     ]
+    },
+    {
+     "namn": "f10_bank_staende",
+     "rader": [
+      "....EEEEEEEE....",
+      "...EHHHHHHHGE...",
+      "...EHHHGHHHGE...",
+      "...EHHHGHHGGE...",
+      "...EHHHGHHGGE...",
+      "...EHHHHHHGGE...",
+      "...EHGHHHGHGE...",
+      "...EHGHHHGHGE...",
+      "...EHGHHHGGGE...",
+      "...EHHHHHGGGE...",
+      "...EHHHGHHGGE...",
+      "...EHHHGHHGGE...",
+      "...EHHHGHHHGE...",
+      "...EHGHGHHHGE...",
+      "...EHGHHHGHGE...",
+      "...EHGHHHGGGE...",
+      "...EHHHHGGGGE...",
+      "...EHHHHHGHGE...",
+      "...EHHGHHGHGE...",
+      "...EHHGHHGGGE...",
+      "...EHHGHHHGGE...",
+      "...EHHHHGHGGE...",
+      "...EHGHHGHGGE...",
+      "...EGGHHGGGGE...",
+      "...EGGGGGGGGE...",
+      "...EGFFFFFFFE...",
+      "...EFFFFFFFFE...",
+      "....EEEEEEEE....",
+      "....EFE..EFE....",
+      "....EFE..EFE....",
+      "....EFE..EFE....",
+      "....EEE..EEE...."
+     ]
+    }
+   ],
+   "anteckning": "Bänken står på golvet längs väggen, så man ser den snett ovanifrån. Den liggande bilden är två rutor bred och en hög: en tjock planka i jord3 och jord2 med kornet längs plankan och kontur i jord0. Skivan tar nio rader, framkanten är ett band på två rader i jord1, och bara de två främre benen syns som stumpar på fyra rader under var sin ände. I den stående bilden, en ruta bred och två höga, går plankan lodrätt, tio punkter bred, med kornet uppifrån och ner. Framkanten syns bara som bandet över den nedre kortänden. Bara de två närmaste benen sticker ut under den; de bakre döljs av skivan. Ljuset kommer uppifrån vänster: jord3 dominerar uppe till vänster och jord2 nere till höger. Ingen sittplats eller pall hör till bilden. Granskningen: Granskat mot reglerna: storleken stämmer (32 × 16 och 16 × 32, två rutor lång mot kolonistens 14 × 20), vinkeln är snett ovanifrån med skivan ovanifrån, framkantsbandet i jord1 och korta benstumpar på 4 punkter. Kontur i jord0, inget kol0, ljuset uppe till vänster och den ljusa jord2/jord3-plankan syns tydligt mot gräset. Den liggande bilden är oförändrad. I den stående bilden satt benen i kolumn 3–5 och 10–12, alltså utanför den rundade bottenkonturen (kolumn 4–11), så de hängde löst snett under hörnen. Jag flyttade in dem en punkt till kolumn 4–6 och 9–11, så att de står under skivans nedre kortände.",
+   "ide": "Plankbänk på ben: en enda tjock planka i jord2 och jord3 med längsgående korn, kontur i jord0, sedd ovanifrån så att skivan tar ungefär tio punkter av höjden, med ett framkantsband på 2–3 punkter i jord1 och två korta ben på 4 punkter i jord1 och jord0 under var sin ände. Den liggande bilden är 32 punkter bred med skivan över hela bredden. I den stående bilden går plankan lodrätt, omkring 10 punkter bred och 26 hög. Där syns framkanten bara som ett band över den nedre kortänden, och bara de två närmaste benen sticker ut under den, eftersom de bakre döljs av skivan."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_bank_liggande",
+     "rader": [
+      "..EEEEEEEEEEEEEEEEEEEEEEEEEEEE..",
+      ".EqHHHHGHHHHHHGHHHHHHHGHHHHHHpE.",
+      "EqHHGHHHHHGHHHHGHHHHHHHHGHHHGHpE",
+      "EqHGHHHHGHHHHHHHGFGHHHHHGHHHGHpE",
+      "EqHHHGHHHHHHGHHHHGHHHHHGHHHHGGpE",
+      "EqHGHHHHFGHHHHGHHHHHHGHHHHGHGGpE",
+      "EqGHHHGHHHHHGHHHHHGHHHHGHHGGGGpE",
+      "EqHGHHHHGHHHHGHHHHHGHHHHGHHHGGpE",
+      "EpGGHGGGHGGGGHGGGGGHGGGGHGGGGGoE",
+      "EoFFGFFFFGFFFFFGFFFFGFFFFFGFFFoE",
+      ".EoFFFGFFFFFFGFFFFFFFGFFFFFFFFE.",
+      "..EEEEEEEEEEEEEEEEEEEEEEEEEEEE..",
+      "....EHGGE..............EHGGE....",
+      "....EGGFE..............EGGFE....",
+      "....EEEEE..............EEEEE....",
+      "................................"
+     ]
+    },
+    {
+     "namn": "f10_bank_staende",
+     "rader": [
+      "...EEEEEEEEEE...",
+      "..EFHHHHHGHHFE..",
+      "EEEGHGHHHHHGFEEE",
+      "EHEFHHHGHHHHFEGE",
+      "EGEGHHHHHGHGFEFE",
+      "EEEFHGHHHHHHFEEE",
+      "..EFHHHHGFGHFE..",
+      "..EGHHGHHGHHFE..",
+      "..EFHHHHHHHGEE..",
+      "..EFGHHHGHHHFE..",
+      "..EGHHHHHHGHFE..",
+      "..EFHGHHHHHGFE..",
+      "..EFHHHGHHHHEE..",
+      "..EGHHHHHGHGFE..",
+      "..EFGHFGHHHHFE..",
+      "..EFHHGHHHGHFE..",
+      "..EGHHHHGHHGEE..",
+      "..EFHGHHHHHHFE..",
+      "..EFHHHHGHGGFE..",
+      "..EGGHHHHHHGFE..",
+      "..EFHHGHHGHGEE..",
+      "..EFHHHHFGHGFE..",
+      "..EGGHGHHHGGFE..",
+      "..EFHGGHGHGGFE..",
+      "..EFGHGGGHGGEE..",
+      "..EFGGGHGGGGFE..",
+      "..EFGGGGGGGGFE..",
+      "..EFqqqqqqqpFE..",
+      "..EFqHHGGHHpFE..",
+      "EHEEFqGFFGpFEEGE",
+      "EGE.EFqppoFE.EFE",
+      "EEE...EEEE...EEE"
+     ]
+    }
+   ],
+   "anteckning": "Bänken är en kluven stock med den platta klyvytan uppåt. Den vilar på två korta klossar som ligger tvärs under ändarna. Klyvytan ses ovanifrån i jord3 och jord2 med två kvistar och mörknar mot framkanten. I den liggande bilden (32×16) buktar den rundade barksidan ned som ett mörkare band i jord1 och jord0. Under bandet syns bara klossarnas framsidor som stumpar på 3 punkter. Ändträet syns som en ljus ring i båda kortändarna, ljusast till vänster mot ljuset. I den stående bilden (16×32) ligger stocken lodrätt. Barken syns bara som en smal mörk kant längs långsidorna. Den nedre kortänden blir framkanten: ändträets halvcirkel med ljus ring och märg. Klossarna är bredare än stocken, så deras ändar sticker ut på båda sidor vid övre änden och som låga stumpar vid nedre. Ingen sittplats ingår, och ingen stubbe står framför. Granskningen: Liggande: rad 13 var 33 punkter bred och klossarna låg inte rakt under; den raden är omritad till 32 punkter med klossarna på kolumn 4–8 och 23–27. Barksidans framband var 6 punkter högt med utspridda mörka jord0-prickar. Det bryter mot regeln om ett smalt framband på 2–3 punkter och mot förbudet mot mörka fläckar. Klyvytan är därför förlängd med en rad, så att den tar ungefär 9 av 16 rader, och barken är nu ett band på 2 rader jord1 med jord2-korn plus en kontur av jord0, utan fläckar. Den ljusa änden finns kvar i båda kortändarna, i ben2/ben1 till vänster och ben1/ben0 till höger. Stående: klossarnas stumpar vid den nedre änden var olika och den högra saknade kontur på ena sidan. De är nu symmetriska, 3 × 3 punkter med jord0-kontur, ljusare till vänster och mörkare till höger. Resten är oförändrat: storleken (32 × 16 och 16 × 32 mot kolonistens 14 × 20), vinkeln snett ovanifrån, att jord3 syns på gräset och ändträets halvcirkel som framkant följer idén.",
+   "ide": "Kluven stock på klossar: en halverad stock med den platta klyvytan uppåt i jord3 och jord2 med några kvistar, och den rundade barksidan som ett bredare och mörkare framband i jord1 och jord0 som buktar ned mot marken. Stocken vilar på två tvärlagda korta klossar vid ändarna, och bara deras framsidor syns som låga stumpar på 3 punkter. I den liggande bilden syns ändträet som en halvcirkel med en ljus ring i varje kortände. I den stående bilden ligger stocken lodrätt, och den nedre kortänden visar ändträets halvcirkel med årsringar som bildens framkant, medan barksidan bara syns som en smal mörk kant längs båda långsidorna."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_bank_liggande",
+     "rader": [
+      "....EE....................EE....",
+      ".EEEHGEEEEEEEEEEEEEEEEEEEEHGEEE.",
+      ".EGFHGFGFFGFGFFFGFGFFFGFGFHGFFE.",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "....GE....................GE....",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      ".EHHGHGHHGHGGHGHGGHGGHGGGHGGGGE.",
+      ".EHGHGGHGGHGHGGGHGGHGGGGHGGFGGE.",
+      ".EGHGGGHGGGGHGGGGHGGGGFGGGFGGFE.",
+      ".EGGGFGGGGFGGGGGFGGGGFGGGFGFFFE.",
+      ".EFGFFFGFFFFFGFFFFFFGFFFFFFFFFE.",
+      ".EFFFGFFFFFFFFGFFFFFFFFGFFFFFFE.",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "...GFE...................GFE....",
+      "...GFE...................GFE....",
+      "...EEE...................EEE...."
+     ]
+    },
+    {
+     "namn": "f10_bank_staende",
+     "rader": [
+      "EEEE............",
+      "EGFE............",
+      "EFFEEEEEEEEEEEE.",
+      "EFGEEHHGHGHHGGE.",
+      "EHGEEHGHHGHGGGE.",
+      "EGFEEHHGHGGHGGE.",
+      "EFFEEGHGGHGGHGE.",
+      "EGFEEHGHGGHGGGE.",
+      "EFGEEGHGGHGGGFE.",
+      "EFFEEHGGHGGHGGE.",
+      "EGFEEGHGHGGGHGE.",
+      "EFFEEHGGGHGGGFE.",
+      "EFGEEGHGGGHGGGE.",
+      "EFFEEHGGHGGGHGE.",
+      "EGFEEGGHGGHGGFE.",
+      "EFFEEGHGGGGHGGE.",
+      "EFGEEHGGHGGGGFE.",
+      "EFFEEGGHGGHGGGE.",
+      "EGFEEGHGGGGHGFE.",
+      "EFFEEGGGHGGGGGE.",
+      "EHGEEHGGGGHGGFE.",
+      "EGFEEGGHGGGGFGE.",
+      "EFFEEGGGGHGGGFE.",
+      "EFFEEGHGGGGFGGE.",
+      "EFFEEGGGHGGGGFE.",
+      "EEEEEGGGGGFGGFE.",
+      ".GE.EFGFFGFFFFE.",
+      ".GE.EFFFGFFFFFE.",
+      ".EE.EEEEEEEEEEE.",
+      ".....GFE...GFE..",
+      ".....GFE...GFE..",
+      ".....EEE...EEE.."
+     ]
+    }
+   ],
+   "anteckning": "Bänken står med ryggen mot långhusets vägg, så ryggstödet sitter vid bakkanten, alltså uppåt i den liggande bilden och mot väggen till vänster i den stående. Sitsen ses ovanifrån som en ljus planka i jord2 och jord3 med ljuset uppe till vänster. Ryggslån i jord1 vilar på två korta stolpar med ljusa toppar. I den liggande bilden syns stolparna några punkter mellan slån och sitsen. I den stående bilden ligger slån som en mörkare list längs vänstra långsidan, med två ljusa stolptoppar, och en stolpstump syns under listens nedre ände. Bara framkanten och de främre benen syns: i den liggande bilden längs nederkanten, i den stående vid den nedre kortänden. Konturen är jord0 och det finns ingen sittplats framför bänken. Granskningen: Storleken (32 × 16 och 16 × 32 mot kolonistens 14 × 20), vinkeln, symmetrin och läsbarheten på gräset stämmer med idén och behålls. Jag rättade tre saker. Framkanten var bara ett band på en punkt i jord1. Den är nu två punkter i båda bilderna, som reglerna kräver. I den liggande bilden flyttade jag sitsen upp en rad, så att stolparna under ryggslån bara syns en rad och sitsen med framband tar hälften av höjden. Raderna skrevs om så att alla blev exakt 32 punkter breda. I den stående bilden satt stolpstumpen under slåns nedre ände som en ensam svävande prick. Den går nu ner i två punkter och slutar med en kontur i jämnhöjd med sitsens nederkant, så att den läses som stolpen ner mot sitsen.",
+   "ide": "Ryggbänk mot väggen: en smalare sitsplanka i jord2 och jord3 med framband i jord1 och korta främre ben. Vid bakkanten, mot väggen, står ett lågt ryggstöd: en slå i jord1 på två förkortade stolpar som bara sticker upp 4–5 punkter, med stolparnas toppar ljusa uppåt vänster. I den liggande bilden löper ryggslån längs hela bakkanten ovanför sitsen. I den stående bilden löper slån lodrätt längs den vänstra långsidan som en smal mörkare list med två stolptoppar, medan sitsen och den nedre kortändens framband och ben ligger till höger om den."
+  }
+ ]
+}

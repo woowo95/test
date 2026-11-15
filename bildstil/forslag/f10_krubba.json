@@ -1,0 +1,202 @@
+{
+ "kort": "f10_krubba",
+ "namn": "Krubban",
+ "slag": null,
+ "vad": "Steg 10.2.88: krubban, en foderhäck av virke där höet läggs. Den gör rummet till ett fähus, där djuren står i istiden. Två rutor lång. Den kan vridas, och ingenting vrids i spelet: två bilder, liggande (två rutor bred och en hög) och stående (en ruta bred och två höga), båda snett ovanifrån som kartans andra möbler",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "inte ritade i rätt perspektiv. Ska också gå att rotera",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f10_krubba_liggande",
+     "rader": [
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "EHHHGHHHHGHHHHHGHHHHGHHHHHGHHGGE",
+      "EHGGGGHGGGGGGHGGGGGGGHGGGGGGGFFE",
+      "EHGFFFJFFFFFFJFFFFFFFFJFFFFFFGFE",
+      "EHGJKKLLLLLKKKKLLLLLKKKLLLLKJGFE",
+      "EGGKLLLKKKKLLLLKKKKKLLLKKKKKJFFE",
+      "EHGKKKLLLLKKKKKLLLKKKKKJKKKJJGFE",
+      "EHGJKKKKJJJKKKKKJJJKKKKJJJKJJGFE",
+      "EHHGHHHHGHHHHHHGHHHHHGHHHHGHGGFE",
+      "EGGGGFGGGGGGGFGGGGGGGGFGGGGGGFFE",
+      "EGFFGFFFFFFEFGFFFFFFFEFGFFFFFFFE",
+      "EFFFFFFFFFFEFFFFFFFFFEFFFFFFFFFE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      "..EGE......................EFE..",
+      "..EGE......................EFE..",
+      "..EEE......................EEE.."
+     ]
+    },
+    {
+     "namn": "f10_krubba_staende",
+     "rader": [
+      ".EEEEEEEEEEEEEE.",
+      "EHHHHGHHHHHGHGGE",
+      "EHGGGHGGGGGGGFFE",
+      "EHGFFJFFFFJFFGFE",
+      "EHGKLLKLKKLKJGFE",
+      "EHHKLLKLKKLKJGFE",
+      "EHGKLLKLLKLKJFFE",
+      "EHGKKLKLLKLKJGFE",
+      "EGGKKLKLLKKKJGFE",
+      "EHGLKLKKLKKLJGFE",
+      "EHGLKLKKLKKLJGFE",
+      "EHHLKLLKLKKLKFFE",
+      "EHGLKKLKLLKLJGFE",
+      "EHGKKKLKLLKKJGFE",
+      "EGGKLKLKKLKKJGFE",
+      "EHGKLKLKKLLKJGFE",
+      "EHGKLKKLKLLKJFFE",
+      "EHHKLLKLKLKKJGFE",
+      "EHGJLLKLKKKLJGFE",
+      "EHGJKLKLLKKLJGFE",
+      "EGGKKLKKLKKLJGFE",
+      "EHGKKLJKLKKKJGFE",
+      "EHGJKKJKKKJKJFFE",
+      "EHGJKKJKJKJJJGFE",
+      "EHHHGHHHHHGHHGFE",
+      "EGGGGFGGGGGGGFFE",
+      "EGFFFGFFFFFFFFFE",
+      "EFFFFFFFFFFFFFFE",
+      ".EEEEEEEEEEEEEE.",
+      ".EGE........EFE.",
+      ".EGE........EFE.",
+      ".EEE........EEE."
+     ]
+    }
+   ],
+   "anteckning": "Krubban står på marken som en låg, öppen låda av kluvna plankor på fyra korta ben. Den ses snett ovanifrån som slaktbänken. Det man ser mest är lådans öppning ovanifrån: fyra plankkanter i jord1–jord3 med kontur i jord0. Bakre kanten är ljusast och höger kant mörkast, eftersom ljuset kommer uppifrån vänster. Innanför bakkanten syns en smal skuggad rad av lådans insida, och sedan höet i senap1–senap3 med strån som går på längden. Under öppningen syns framsidan som ett mörkare band på 3 punkter i jord1 med plankfogar. Under det syns bara de två främre benstumparna; de bakre skyms av lådan. I den liggande bilden är framsidan en långsida. I den stående bilden är samma låda vriden så att långsidan står lodrätt: öppningen och höet tar nästan hela höjden, strået går uppåt, och framsidan är bara den korta gaveln längst ner. Ljuset faller fortfarande uppifrån vänster. Ingen pall och inga djur hör till bilden. Granskningen: Ingenting behövde rättas; versionen är oförändrad. Storleken stämmer: liggande 32 × 16 och stående 16 × 32 är två rutor långa och sitter lågt bredvid kolonisten (14 × 20), som en krubba ska. Vinkeln stämmer: den öppna lådan ses ovanifrån. I den liggande bilden tar ytan 10 av 16 punkter, och framkanten är ett smalt band i jord1 med plankfogar. Bara de två främre benstumparna syns, inga sidoben och ingen sittplats. I den stående bilden blir ytan längre (26 av 32 punkter), eftersom bara den korta gaveln vetter framåt. Den ligger något över tre fjärdedelar, men jag har inte ändrat det: bandet och benen är lika höga som i den liggande bilden, så att samma krubba ser likadan ut vriden. Ljuset kommer uppifrån vänster i båda: jord3 på vänster och övre kant, jord1 till höger och nere, och senap3 till vänster i höet. Konturen är jord0 och inget kol används. Lådan och benen är spegelsymmetriska; benen står i kolumnerna 2–4 och 27–29 respektive 1–3 och 12–14. Höet ligger i strån på längden och syns tydligt mot den mörkare plankramen. Det ljusbruna virket skiljer sig från det olivgröna gräset. Raderna har rätt bredd: 32 respektive 16 tecken.",
+   "ide": "Låg lådkrubba av kluvna plankor: liggande bild 32 × 16 där den öppna lådan ses ovanifrån och tar omkring 10 punkter av höjden, med lådans fyra kanter som 2 punkter breda jordbruna plankramar (jord1–jord3, kontur jord0) och höet i senap1–senap3 fyllt i mitten med strån som går på längden. Framkanten är ett band på 3 punkter i jord1 med plankfogar, och under den syns bara två korta benstumpar på 4 punkter vid hörnen. Stående bild 16 × 32 är samma låda med långsidan lodrät: ramen och höet ses ovanifrån över nästan hela höjden, framkanten är bara den korta gaveln längst ner (3 punkter, mörkare), och två stumpar syns under den, så att ljuset fortfarande faller uppifrån vänster i båda."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_krubba_liggande",
+     "rader": [
+      "..HE........................GE..",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      ".EHHGHHHGHHGHHGHGHHGHGGHGGHGGFE.",
+      ".EGHJIHJKHIJHKJHJIHJKGIJGJIGJFE.",
+      ".EHGKJGKLGJKGLKGKJGKLGJKGKJGKFE.",
+      ".EGGLKGLKGKLFKLFLKFKLFKLFLKFKFE.",
+      ".EHLKLLKLKKLKJKLKKJKLKJKKJKJJFE.",
+      ".EGKLKJKKJKLKJJKJKKJIJKJJIJJIFE.",
+      ".EHGHKGHGGHGKGHGGFGGKGFGGFGFFFE.",
+      ".EFJFEFJFEFJFIFEFJFEFIFEFJFEFIE.",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.",
+      ".EHFE......................EGFE.",
+      ".EGFE......................EGFE.",
+      ".EGFE......................EGFE.",
+      ".EGFE......................EFFE.",
+      "..EE........................EE.."
+     ]
+    },
+    {
+     "namn": "f10_krubba_staende",
+     "rader": [
+      ".HE..........EF.",
+      ".EEEEEEEEEEEEEE.",
+      ".EHGGHGGHGGFGFE.",
+      ".EHHGLKLKKJFFGE.",
+      ".EHKJKLKJKJJIGE.",
+      ".EGJKLLKKJKIJFE.",
+      ".EHHGKLKKJJFFGE.",
+      ".EHKLLKKLJKJIGE.",
+      ".EGJKKLLKKJIJFE.",
+      ".EHHGLKLKKJFFGE.",
+      ".EHKJKLKKJKJIGE.",
+      ".EGKKLLKJKJIJFE.",
+      ".EHHGKLKJKJFFGE.",
+      ".EHJKLKKLKJJIGE.",
+      ".EGKJKLKKJKIJFE.",
+      ".EHHGLLKKJKFFGE.",
+      ".EHKJKLKJKJJIGE.",
+      ".EGJKLKLKJJIJFE.",
+      ".EHHGKLKKJJFFGE.",
+      ".EHKLKKLKJKJIGE.",
+      ".EGJKLKKJKJIJFE.",
+      ".EHHGKLKKJJFFGE.",
+      ".EGJKKJKJJIIIFE.",
+      ".EHGHGGHGGFGFFE.",
+      "..EFGFFGFEFFFE..",
+      "....EFGFFFFE....",
+      "......EGFE......",
+      ".....GE..FE.....",
+      "....GE....FE....",
+      "...GE......FE...",
+      "..GE........FE..",
+      "..EE........EE.."
+     ]
+    }
+   ],
+   "anteckning": "Krubban står på två kryssbockar av slanor, en vid vardera gaveln, och V-rännan vilar i krysset. Liggande (32 × 16): vi ser snett ovanifrån ner i rännan. Den bakre spjälsidan står upp förkortad vid bakkanten. Dess överslana är ljus, och de lodräta ribborna (jord2–jord3) har hö mellan sig. Bockarnas övre ändar sticker upp vid gavlarna. I botten ligger höet ovanifrån i senapstoner, ljusast till vänster. Den främre spjälsidan är ett mörkare band på 3 punkter (jord1/jord0) där höet tittar fram mellan spjälorna. Under bandet syns bara krysslens två främre fötter som stumpar på 5 punkter. Stående (16 × 32): rännan löper längs bildens höjd. Båda spjälsidorna syns som smala rader av tvärribbor, den vänstra ljusare och den högra mörkare, och höet fyller mitten. Bakre gaveln är förkortad uppe, med bockändarna som sticker upp. Den närmaste gavelbrädan är V-formad och smalnar nedåt mot bockens kryss, som syns framifrån. Därunder går de två benen ut till fötterna. Ingen sittplats och inga andra behållare. Konturen är jord0 och ljuset kommer uppifrån vänster. Granskningen: Granskat: storleken stämmer (32 × 16 och 16 × 32 mot kolonistens 14 × 20), vinkeln är snett ovanifrån med rännan och höet ovanifrån, framkanten är ett smalt mörkare band och bara de främre fötterna syns som stumpar på 5 punkter. Gavlarna, krysset och fötterna är spegelsymmetriska, och den mörka jord0-konturen och det ljusa virket gör att krubban syns på gräset. En rättelse: i den liggande bilden var den vänstra gaveln mörk (jord1) på rad 4–7, alltså mörkare än den högra, trots att ljuset kommer från vänster. Jag har gjort den ljus (jord3 och jord2 omväxlande), så att gavelbrädan är ljus till vänster och mörk till höger. Den stående bilden är oförändrad.",
+   "ide": "Hög spjälhäck i V-form på bockar: i liggande bild 32 × 16 står ett kryssformat bockben av slanor vid vardera gaveln, och mellan dem löper en ränna vars två lutande spjälsidor ses snett ovanifrån som en rad tunna ljusa ribbor (jord2–jord3) som öppnar sig uppåt, med senapsgult hö som sticker upp mellan spjälorna och ligger i botten. Den bakre spjälsidan står upp förkortad vid bakkanten, den främre syns som ett smalare mörkare spjälband på 3 punkter, och bara krysslens främre fötter syns som stumpar på 5 punkter. I stående bild 16 × 32 ligger V-rännan längs bildens höjd: båda spjälsidorna syns som lika smala lutande ribbrader på vänster och höger sida (den vänstra ljusare), höet fyller mitten, och längst ner syns gavelkrysset framifrån och de två främre fötterna."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_krubba_liggande",
+     "rader": [
+      "...EEEEEEEEEEEEEEEEEEEEEEEEEE...",
+      "..EHHGHHGHHGHGHHGHGHGGHGGHGGFE..",
+      ".EGHFHGHGGHGHGGHGGHGGFGGFGFFHGE.",
+      ".EHHFHGEEEEEEEEEEEEEEEEEEGFFHHE.",
+      ".EHHFGHEKLKLKKLKKJKKLKJKHFGFGGE.",
+      ".EHHFHGELKKLKJKLKKJKKJKJHGFFHGE.",
+      ".EHGFHGEKLKKJKKLKJKKJKJJGGGFGGE.",
+      ".EHGFGHEKKJKLKJKKJKJKJJIHFGFGGE.",
+      ".EHHFHGEJKKJKKJKJKJJKJIJGGFFHGE.",
+      ".EHHFGGEHGHGGHGGHGGGHGGGGFFFGGE.",
+      ".EGGFHGHHGHGHGGHGGHGGGFGGFGFGFE.",
+      ".EFFFGFGFFGFFGFFFGFFFFFFFFFFFFE.",
+      "..EFFFFEFFFFFEFFFFEFFFEFFEFEEE..",
+      "...EEQTSSRQEEEEEEEEEEQTSSRQEE...",
+      ".....QSSRRQ..........QSSRRQ.....",
+      "......QQQQ............QQQQ......"
+     ]
+    },
+    {
+     "namn": "f10_krubba_staende",
+     "rader": [
+      "....EEEEEEEE....",
+      "..EEHHHGHHGGEE..",
+      ".EHHHGHHHHGHGGE.",
+      ".EGHHGHHGHGGGFE.",
+      ".EFFFFFFFFFFFFE.",
+      ".EHGHHGHGHGGGFE.",
+      ".EHGEEEEEEEEGFE.",
+      ".EHGEKLKLKKHGFE.",
+      ".EGHELKKLKJGFGE.",
+      ".EHHEKLKKJKHGFE.",
+      ".EGHEKKLKJKGGGE.",
+      ".EHGELKKJKJHFGE.",
+      ".EGHEKLKKJKGGFE.",
+      ".EHGEKKJKLKHFGE.",
+      ".EHHEKLKKJJGGFE.",
+      ".EGHEKKLKJKHFGE.",
+      ".EHGEJKKLKJGGFE.",
+      ".EGHEKKJKKJHFGE.",
+      ".EHGEKJKKJJGGFE.",
+      ".EGHEJKKJKJHFGE.",
+      ".EHGEKJKJJIGGFE.",
+      ".EGHEJKJJIJGFGE.",
+      ".EGHEHGHGGHGGFE.",
+      ".EHGHGGHGGGFGFE.",
+      ".EFFFFFFFFFFFFE.",
+      ".EGHHHGHHGHGGFE.",
+      ".EGHGHHGGHGGFFE.",
+      ".EFGFFGFFFFFFFE.",
+      "..EFFFFFEFFFEE..",
+      "...EEQTSSRQEE...",
+      ".....QSSRRQ.....",
+      "......QQQQ......"
+     ]
+    }
+   ],
+   "anteckning": "Krubban är en urholkad halvstock som vilar på två låga stenar. Den har inga ben, så inget behöver förkortas. Liggande (32 × 16) ses stocken snett ovanifrån. Ovansidan tar raderna 0–10, alltså två tredjedelar av höjden. Höfyllningen i senap ligger mitt i urholkningen. Den bakre och vänstra innerkanten ligger i skugga (jord0), eftersom ljuset kommer uppifrån vänster. På var sida löper en barkrand i jord1–jord2 med ljusare kant upptill. Gavlarna är ändträ som ljusa halvmånar i jord3, och den högra gaveln är mörkare. Under ovansidan syns stockens buk som ett mörkt band på 2 punkter, och de två stenarna i skiffer sticker fram 3 punkter under bandet. Stående (16 × 32) är samma stock vriden ett kvarts varv, inte en vriden bild. Barkränderna löper längs vänster och höger sida, ändträet syns överst och nederst, och längst ner syns bukens band och den främre stenen. Den bakre stenen är dold under stocken. Det finns ingen pall, och ingen ny behållare: höet ligger direkt i stocken. Granskningen: Rättat: 1) Den högra stenen var ljussatt spegelvänt (T i mitten, R till vänster). Nu har båda stenarna samma ljus från övre vänster (skiffer2 uppe till vänster, skiffer1 nere till höger), och formen är spegelsymmetrisk. 2) Idén ville ha ljusa halvmånar av ändträ (jord3) vid gavlarna, men där fanns bara barkränder. Nu har båda bilderna en tydlig halvmåne av ändträ, åtskild från barken av en jord1-linje: vid gavlarna i den liggande, överst och nederst i den stående. Ändträet är något mörkare på skuggsidan. 3) Urholkningen ljussattes om som en grop: ovan- och vänsterväggen ligger i skugga (jord0) och är kontur mot höet, medan nedre och högra innerväggen får ljus (jord2–jord3). Därmed läses höet som nedsänkt i stocken. Höet går från ljust uppe till vänster till senap0 nere till höger. 4) Bukbandet är jämnare (jord1 med lite jord0 mot underkanten) i stället för spridda mörka prickar, och den högra barkranden är mörkare än den vänstra. Storleken (32 × 16 och 16 × 32), vinkeln snett ovanifrån och stenarna i stället för ben är oförändrade.",
+   "ide": " Urholkad stock på stenar: liggande bild 32 × 16 är en tjock, rundad halvstock sedd ovanifrån, där urholkningen med hö i senap tar mitten och stockens kanter syns som rundade barkränder i jord0–jord2 med ändträ som ljusare halvmånar (jord3) vid gavlarna. Framsidan är ett rundat mörkare band på 2 punkter av stockens buk, och i stället för ben vilar den på två låga gråa stenar (skiffer1–skiffer2, kontur skiffer0) som sticker fram 3 punkter under bandet. Stående bild 16 × 32 är samma stock lagd längs höjden: barkränderna löper på var sida om höfyllningen, det runda ändträet syns ovanifrån längst upp och längst ner, och nederst syns stockbukens smala band och den främre stenen."
+  }
+ ]
+}

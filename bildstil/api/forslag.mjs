@@ -24,7 +24,7 @@ import { guideText } from './guide.mjs';
 
 const HAR = path.dirname(fileURLToPath(import.meta.url)), BILDSTIL = path.resolve(HAR, '..');
 const UT = path.join(BILDSTIL, 'forslag'), TORRT = path.join(HAR, 'ut');
-const MODELL = 'claude-opus-5-5', INSATS = 'high', MAXTOKENS = 48000, VERSIONER = 3;
+const MODELL = 'claude-opus-5-5', INSATS = 'high', MAXTOKENS = 48000, VERSIONER = +process.env.VERSIONER || 3; // VERSIONER=9: fler att välja de tre bästa ur (Björn efter bildstil v238)
 const PRIS = { in: 2, ut: 10, cacheLas: 0.1, cacheSkriv: 2.5 }; // per miljon tokens med batch
 const PT = JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'portratt.json'), 'utf8')).tecken;
 const TECKEN = [...JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'bilder.json'), 'utf8')).tecken];
@@ -88,6 +88,7 @@ async function rita(k, nr, { ide, kommentar, lage, fel }) {
   text.push('Den första bilden är byns scen i dagsljus med de godkända bilderna i stilen, tre gånger större. Det du ritar ska höra ihop med den: kontur, ljus, korn.');
   if (k.bars) { bilder.push(k.underlagPng); text.push('Den andra bilden är kolonisten framifrån, från sidan och bakifrån och i porträttet, utan något, fyra gånger större.'); }
   if (!symbol(k) && !k.bars) { bilder.push(await pa(() => window.FORSLAGEN.behallarePng(4))); text.push(`Bild ${bilder.length} visar behållarna som finns i spelet, fyra gånger större: den stora lerkrukan och näverasken. Ligger saken i en behållare är det en av dem, ritad som de är; hitta aldrig på en ny behållare.`); }
+  if (/^f9_(hund|valp)$/.test(k.id)) { const v = await pa(() => window.FORSLAGEN.vargPng(4)); if (v) { bilder.push(v); text.push(`Bild ${bilder.length} är vargen som den står på kartan i spelet (från sidan, framifrån och bakifrån), fyra gånger större. Hunden är en tämjd varg och ska se nästan likadan ut: samma kroppsbyggnad, huvud och ställning, ritad på samma sätt, bara lite mindre, med en annan päls eller svans${k.id === 'f9_valp' ? '. Valpen är en ung hund: samma djur men mindre, med större huvud och kortare ben' : ''}.`); } }
   if (lage === 'andra') { bilder.push(k.kortPng); text.push('Den sista bilden är kortet som det ser ut nu, tre gånger större.'); }
   text.push(omKortet(k));
   if (k.bars) text.push(omBars(k.underlag));
@@ -171,12 +172,13 @@ try {
     const r = await pa(() => VAL.map(s => ({ id: s.id, namn: s.namn, fel: (() => { try { return KONTROLL.kort(s).resultat.filter(x => !x.ok).length; } catch (e) { return -1; } })() })).filter(x => x.fel));
     for (const x of r) console.log(`${x.id}\t${x.namn}\t${x.fel} fel`);
   } else if (kommando === 'torrt' || kommando === 'rita') {
-    const kommentarer = {}, ids = args.map(a => { const i = a.indexOf('='); if (i < 0) return a; kommentarer[a.slice(0, i)] = a.slice(i + 1).trim(); return a.slice(0, i); });
+    const kommentarer = {}, nya = new Set(), ids = args.map(a => { const i = a.indexOf('='); let id = i < 0 ? a : a.slice(0, i); if (i >= 0) kommentarer[id.replace(/!$/, '')] = a.slice(i + 1).trim();
+      if (id.endsWith('!')) { id = id.slice(0, -1); nya.add(id); } return id; }); // id! = nya idéer fast kommentaren inte säger det
     const kort = [];
     for (const id of ids) {
       const k = await pa(i => window.FORSLAGEN.info(i), id); if (!k) throw new Error('Inget kort med id ' + id);
       if (k.bars) { k.underlag = {}; for (const r of ['fram', 'sida', 'bak', 'portratt']) k.underlag[r] = (await pa(x => window.FORSLAGEN.underlag(x), r)).rader; k.underlagPng = await pa(() => window.FORSLAGEN.underlagPng(4)); }
-      k.kommentar = kommentarer[id] || null; k.lage = k.kommentar && !utanForlaga(k.kommentar) ? 'andra' : 'nya';
+      k.kommentar = kommentarer[id] || null; k.lage = k.kommentar && !utanForlaga(k.kommentar) && !nya.has(id) ? 'andra' : 'nya';
       if (k.lage === 'andra') k.kortPng = await pa(i => window.FORSLAGEN.kortPng(i), id);
       kort.push(k);
     }

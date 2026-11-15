@@ -23,6 +23,8 @@ Bildstilens guide (regler för allt som ritas):
 - En sak i förrådet ritas som en enda sak (ett äpple, en limpa, en balja), aldrig som en hög eller flera; bilderna för en hel stack ritas senare, när Björn godkänt saken.
 - Bara behållarna som finns: ligger något i en behållare är det lerkrukan eller näverasken som redan finns i spelet. Hitta aldrig på nya behållare (korgar, skålar, säckar, lådor).
 - Plantor på åkern och träd bland träden: en planta ritas som den står på en ruta av åkern, och ett träd eller en buske i samma stil och storlek som spelets granar och björkar (ett vuxet träd är omkring 31 punkter högt och ett gammalt 46).
+- Sittplatsen är en egen sak: en station, bänk eller ett bord ritas utan pall, stubbe, stol eller annat att sitta på framför. Spelet ställer sittplatsen (stubben) framför stationen för sig, så den hör aldrig till stationens bild.
+- Tre djur, inte ett djur i tre ställningar: versionerna av ett djur är tre olika djur att välja mellan (kroppsbyggnad, päls, huvud, svans, horn), alla i samma ställning: stående på alla ben, som djuret står på kartan. Samma djur stående, sittande, liggande eller betande är inte tre versioner. Ett tamt djur som har en vild förfader i spelet (hunden och valpen efter vargen) ritas från spelets bild av förfadern.
 - Det som sitter ihop ritas som bitar som passar ihop: ett staket ritas som en bit längs (vågrät, 16 punkter bred) och en bit tvärs (lodrät, 16 punkter hög), som sätts ihop till en hage.
 
 Svara bara med JSON enligt schemat.`;

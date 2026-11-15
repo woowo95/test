@@ -4,140 +4,141 @@
  "slag": null,
  "vad": "Steg 9.7.10: staketet är gärdsle av stolpar och grenar kring fältet och hindrar djur från att komma åt grödan. Här en ruta stakett som kan upprepas längs fältets kant.",
  "av": "API:t (claude-opus-5-5), tre idéer",
- "kommentar": "Nya versioner: visa staketet i ett sammanhang där flera bitar sitter ihop i en hage. Rita bitarna längs och tvärs så att de passar ihop.",
  "versioner": [
   {
    "bilder": [
     {
      "namn": "längs",
      "rader": [
-      "G....HG..HG....H",
-      "E....HE..HE....H",
-      "E....GE..GE....G",
-      "EHHHGHEIIHE....H",
-      "E....GEHGGE....G",
-      "EHHGGHE..HEHHGGH",
-      "E....HEHGHE....G",
-      "EHGHGGE..GEHGGGG",
-      "E....FEHGFE....G",
-      "EGHGGGE..GEGHGFG",
-      "E....GEHGGE....F",
-      "E....FE..FEHGGFF"
+      "EGE.............",
+      "EFE.EGE.........",
+      "MNMMMNM.........",
+      "EFE.EFE.........",
+      "HHGGEFE.HHGGEE..",
+      "GGEEEFEHGGEE..HH",
+      "EEE.EFEGEE..HHGG",
+      "EFHHEFEE..HHGGEE",
+      "HGGGEFE.HHGFEE..",
+      "GGEEEGEHGFEE..HH",
+      "EEE.EFEGEE..HGGG",
+      "EFHGEFEE..HHGFEE",
+      "HGGGEFE.HHGGEE..",
+      "GFEEEFEGFFEE..GG",
+      "....EEE.........",
+      "................"
      ]
     },
     {
      "namn": "tvärs",
      "rader": [
-      "..GE..",
-      "..FE..",
-      ".HHG..",
-      "..GGE.",
-      ".HGG..",
-      "..GFE.",
-      "..HG..",
-      "..GE..",
-      "..II..",
-      "..FE..",
-      ".HGG..",
-      "..GGE.",
-      ".GHG..",
-      "..GFE.",
-      "..HG..",
-      "..GE.."
+      "EGE..EGE",
+      "MNMMMMNM",
+      "EFEHGEFE",
+      "EFEGFEFE",
+      "EEEEFEEE",
+      ".GGHHEE.",
+      ".FFGGHH.",
+      ".EEFFGG.",
+      ".HHEEFF.",
+      ".GGHGEE.",
+      ".FFGGHH.",
+      ".EEFGGG.",
+      ".HGEEFF.",
+      ".GGHHEE.",
+      ".FFGGHH.",
+      ".EEFFGG."
      ]
     }
    ],
-   "anteckning": "Gärdsgården står på marken längs fältets kant, så bilden visar stolpar och slanor snett uppifrån. Längs-biten är 16 × 12 punkter. Mitt i står ett stolppar som når tre punkter över slanorna. Stolparna har ljus vänstersida och ovansida och mörk högersida i jord0, eftersom ljuset kommer uppifrån vänster. De hålls ihop av ett vidjeband på två punkter i senap0. I varje ände står en halv stolpe: kolumn 15 är den ljusa halvan och kolumn 0 den mörka, så två bitar bildar en hel stolpe där de möts. Fyra tunna grenslanor ligger mellan stolparna, höga till vänster och låga till höger. De ligger bakom stolparna, där de kläms fast, och har en kontur i jord0 vid knycken och under den nedersta slanan. Glesorna mellan slanorna släpper igenom gräset. Tvärs-biten är 6 × 16 punkter. Där syns slanorna uppifrån som korta lutande streck staplade längs stolplinjen. Mitt i står en förkortad stump med ljus ovansida och vidjeband. Överst finns en halv stump, nederdelen av en stolpe, och nederst en halv stump med den ljusa ovansidan. Staplade bitar bildar därför hela stumpar, och hörnet delar stolpe med längs-bitens ände. Bitarna är i jord1–jord3 och därför ljusare än gräset; inga mättade toner används. Granskningen: Rättat: I längsbiten bildade jord0-punkterna under slanorna (kolumn 2 och 11) och kolumnen jord0 i stolparna lodräta mörka streck, så att gärdsgården i liten storlek läste som en rad lodräta spjälor och inte som snedställda slanor. Slanorna är nu ett punkt tunna i jord3 och jord2 med luckor där gräset syns, och de ligger trappstegsvis högt till vänster och lågt till höger tvärs över biten, bakom stolpparet (rad 3, 4 och 5 för den översta slanan). De är ljusast uppe till vänster och mörkare nere till höger, så att de syns mot gräset. Stolparna är 2 punkter: en ljus sida och kontur i jord0 till höger. Toppen är ljus ovansida (HG), och ändarnas halva stolpar blir en hel stolpe (H|E) när två bitar möts. Vidjebandet är två punkter senap0 mellan stolparna i paret, ovanför slanorna, i stället för att skära av en stolpe. I tvärsbiten lutade slanorna omväxlande åt vänster och höger som ett fiskben. Nu lutar alla åt samma håll som i längsbiten och ligger som korta streck staplade längs linjen, med kontur i jord0 i den nedre högra änden. Stumparna i ändarna och mitt i har ljus ovansida och samma ljusa vänstra och mörka högra sida som stolparna i längsbiten, så att hörnstolpen stämmer. Storleken (12 punkter hög mot kolonistens 20, omkring en meter) och vinkeln behölls.",
-   "ide": "Klassisk gärdsgård med snedställda slanor: biten längs är 16 punkter bred och 12 hög, med ett stolppar mitt i som sticker upp 3 punkter över slanorna och en halv stolpe i varje ände som blir hel när två bitar möts. Mellan stolparna ligger fyra tunna grenslanor snett i samma riktning (högt till vänster, lågt till höger) och vidjeband syns som två punkter senap0 runt stolpparet, allt i jord1–jord3 med kontur jord0 så att det blir ljusare än gräset. Biten tvärs är 16 punkter hög men bara 5–6 punkter bred: snett uppifrån ses slanorna som korta lutande streck staplade på varandra längs en lodrät linje, och stolparna syns som förkortade stumpar med ljus ovansida i ändarna, så att hörnet där en längs- och en tvärsbit möts delar samma stolpe."
+   "anteckning": "Gärdsgården står på marken längs fältets kant. Längsbiten är 16 × 16 punkter. Vid vänstra kanten står stolpparet i jord1 med jord0-kontur, omkring 14 punkter högt. Den bakre stolpen står lite högre upp, och den främre en punkt längre ner eftersom den är närmare betraktaren. Toppen syns som en ljusare snittyta. Strax under toppen binder en vidjering i oliv0, med glimtar av oliv1, ihop paren. Slanorna ligger klämda mellan stolparna: de täcker den bakre stolpen, och den främre stolpen täcker dem. Slanorna lutar från nedre vänster upp mot höger med lutningen ett steg upp per två punkter och ligger med fyra raders mellanrum. Ljuset faller på den övre kanten (jord3), sedan kommer jord2 och sist jord0 som kontur under. Mönstret går jämnt upp i 16 punkter, så slanan som lämnar högra kanten fortsätter i nästa bits vänstra kant som ett obrutet sicksack. Tvärsbiten är samma gärdsgård sedd uppifrån längs kanten: ett band på 6 punkter där slanorna syns som korta snedstreck under varandra (jord3, jord2, jord1, jord0). Mönstret upprepas var fjärde rad och möter därför sig självt när bitarna läggs på varandra. Överst står stolpparet upp som två korta stumpar på var sin sida om slanorna, bundna med vidjeringen. Bandet når rutans övre och nedre kant. Granskningen: Längsbiten följer idén och behålls oförändrad. Höjden stämmer mot kolonisten: stolparna är omkring 14 punkter höga och toppen syns förkortad. Slanorna stiger en rad per två punkter och går över i nästa bit, så sicksacken blir obruten. Ljuset ligger på slanornas övre vänstra sidor, konturen är jord0 och vidjeringen oliv0. Den bakre stolpen skymtar bakom slanorna och den främre står över dem, vilket är logiskt för ett stolppar som klämmer slanorna. Tvärsbiten är rättad i övre änden. Där syntes inget stolppar, bara en grötig yta utan kontur (raderna 0, 2, 3 och 4). Nu står två korta stumpar upp vid övre änden, en på var sida om slanorna: jord1 med jord0-kontur och en glanspunkt i jord2 på toppen. Vidjeringen binder ihop dem, slanorna kläms mellan dem och bottnarna avslutas i jord0. Resten av bandet (rad 5–15) är oförändrat och möter längsbitarna i hörnen.",
+   "ide": "Klassisk gärdsgård av klenträ: i längsbiten står ett par tunna stolpar (jord1 med jord0-kontur, omkring 14 punkter höga, förkortade så att toppen syns) vid vänstra kanten, och fyra–fem snedställda slanor i jord2 och jord3 lutar från nedre vänster upp mot höger och når biten till höger, så att upprepade bitar bildar ett obrutet sicksackmönster. Ljuset faller på slanornas övre vänstra sidor, och stolparna binds ihop med en vidjering i oliv0 strax under toppen. Tvärsbiten är samma gärdsgård sedd uppifrån längs kanten: ett smalt band på 5–6 punkter där slanorna syns som korta snedstreck under varandra, stolpparet står upp vid övre änden som två korta stumpar, och bandet når rutans övre och nedre kant så att det möter längsbitarna i hörnen."
   },
   {
    "bilder": [
     {
      "namn": "längs",
      "rader": [
-      "E......HE......H",
-      "E......HE......H",
-      "E......GE......G",
-      "EHHGHHGHHGHHGHHG",
-      "EGGFGGFGGFGGFGGG",
-      "GHGGHGHGEHGHGGHG",
-      "FGGFGGFGEGFGGFGG",
-      "EGHGGHGGHGGHGGHG",
-      "EFGFGFFGFGFFGFGG",
-      "GFGGFGFGEFGFGGFG",
-      "FFGFFFFFEFFGFFFF",
+      ".E...E...E...E..",
+      ".FE..FE..FE..FE.",
+      "HFEHGFEHHFEGHFEH",
+      "GHGGHFEGHGHGGFEH",
+      "FGFFGFEFFGFWGFEF",
+      "GFEHGHGHGFEGHGHG",
+      "FFEGFGFFGFEFGFWF",
+      "GHGGHFEHGHGGHFEG",
+      "FGFFGFEFWGFFGFEF",
       "EEEEEEEEEEEEEEEE"
      ]
     },
     {
      "namn": "tvärs",
      "rader": [
-      "EHGE",
-      "GHFE",
-      "HGFE",
-      "HGFE",
-      "GHFE",
-      "GHFE",
-      "HGFE",
-      "EHGE",
-      "EHGE",
-      "GHFE",
-      "HGFE",
-      "HGFE",
-      "GHFE",
-      "GHFE",
-      "HGFE",
-      "EHGE"
+      "EFEEFE",
+      "EGHGFE",
+      "EHFEGE",
+      "EHGGFE",
+      "EGEEFE",
+      "EFHGGE",
+      "EGFEFE",
+      "EHGWFE",
+      "EFEEGE",
+      "EGHGFE",
+      "EHFEGE",
+      "EGHGFE",
+      "EGEEFE",
+      "EFHGGE",
+      "EGFEFE",
+      "EHGGFE"
      ]
     }
    ],
-   "anteckning": "Staketet står på marken längs åkerns kant och ses snett uppifrån som kartan. Biten längs (16 × 12) är en låg flätad vägg på 9 punkter där tre spetsiga stolpar sticker upp 3 punkter över flätan: en hel stolpe i mitten och en halv stolpe i varje ände. Ändarnas halvor blir en hel stolpe på 2 punkter när bitarna läggs bredvid varandra, lika bred som mittstolpen. Vidjorna går växelvis framför och bakom stolparna. Där en vidja går bakom syns stolpen, med en jord0-skugga på högersidan eftersom ljuset kommer från vänster. Flätan är ljus i jord3 och jord2 överst och mörknar mot jord1, och nederkanten mot marken är jord0. Biten tvärs (4 × 16) ses ovanifrån som ett smalt band. Överkanten är en slingrande ljus linje i jord3 som byter sida mellan stolptopparna. Till höger ligger ett mörkare band på 2 punkter, sidan bort från ljuset. Stolptopparna sitter i mitten och som halvor i båda ändar, så att hörnen sluter mot längsbitarnas halvstolpar. Bara jordtoner används, inga mättade färger, eftersom staketet inte är något man tar. Granskningen: Rättat: I biten längs stod stolparna i kolumn 7 och 15, och kolumn 0 var bara en platt F-rand. Bilden var därför osymmetrisk och följde inte idén. Nu står en hel stolpe i mitten (kolumn 7–8, ljus vänstersida H/G och jord0 som skuggsida och kontur), och ändarna har halva stolpar. Kolumn 15 är den ljusa halvan och kolumn 0 den mörka, så att två bitar bildar en hel stolpe på 2 punkter i skarven. Stolparna sticker upp 3 punkter över flätan. Flätan består nu av fyra grenar, två rader var, som växelvis går framför och bakom stolparna: översta och tredje grenen går framför mittstolpen och bakom ändstolparna, de andra två tvärtom. Grenarna har korn i jord3/jord2 överst och jord2/jord1 längst ner, och nederkanten mot marken är en rad jord0. Biten tvärs har fått en rytm som passar ihop: stolptoppar på rad 0, 7–8 och 15, så att den möter halvstolparna i hörnen. Mellan dem slingrar en ljus linje i jord3 mellan kolumn 0 och 1, och sidan mot betraktaren är ett genomgående mörkare band på 2 punkter (jord1 och jord0). Storlek, vinkel och kontrast mot gräset var redan rätt och är oförändrade.",
-   "ide": "Flätat staket av vidjor: biten längs är en låg, tät vägg, 16 punkter bred och 9 hög, där tre spetsiga stolpar (en i varje ände som halva stolpar och en i mitten) sticker upp 2–3 punkter över flätan. Flätan ritas som vågräta grenar som växelvis går framför och bakom stolparna, med korn i jord2 och jord3 överst och jord1 längst ner, och en mörkare nederkant mot marken. Biten tvärs ses snett ovanifrån som ett smalt band, 16 högt och 4 brett, där flätans överkant syns som en slingrande ljus linje i jord3 mellan stolptopparna och sidan mot betraktaren som ett 2 punkter smalt mörkare band, så att hörnen sluter tätt med halvstolparna."
+   "anteckning": "Gärdet står på marken längs fältets kant. Längsbiten (16 × 10) ses snett framifrån-ovan: fyra stakar i jord0, en vid var fjärde punkt, sticker upp två punkter med spetsiga toppar. Under dem ligger en låg, tät vägg på 8 punkter: ovansidan är en ljus kant i jord3 med jord2-korn, och tre vidjeband i jord1 och jord2 går omväxlande framför och bakom stakarna, så att flätan har mönsterlängden 8 punkter. Bitarna går därför jämnt ihop både efter 16 punkter och i ändarna. Ett par barr2-blad sitter i flätan, och underkanten är en kontur i jord0. Tvärsbiten (6 × 16) är samma vägg sedd ovanifrån som ett lodrätt flätband, 4 punkter brett, med kontur i jord0. Vid var fjärde punkt syns en stakes runda, kapade topp med en kort mörk stump nedåt mot betraktaren. Mellan stakarna slingrar sig grenarna diagonalt i jord1, jord2 och jord3. Den ljusa sidan ligger åt vänster och den mörka åt höger, efter ljuset. Ingen sittplats eller behållare hör till bilden. Granskningen: Rättat: 1) Tvärsbiten saknade stakarna som idén kräver; den var bara en slät flätstruktur. Nu syns fyra stakar, en var fjärde punkt, som runda toppar sedda ovanifrån (jord3 uppe till vänster, jord2 nere till höger, jord0-kant ovanför) med en kort stump nedåt mot betraktaren. Mellan dem går flätade grenar tvärs över bandet. Bandet är 4 punkter brett med jord0-kontur och upprepas sömlöst var 16:e punkt. 2) I längsbiten syntes stakarna bara som toppar och försvann i flätningen. Nu går flätningen växelvis framför och bakom stakarna i kolumn 1, 5, 9 och 13. Varje varv på två rader går framför varannan stake, och där varvet går bakom syns staken som en lodrät jord1/jord0-stolpe. Så läses väggen som vävd och inte som en remsa, och mönstret har 8 punkters period så att bitarna möts i kanterna. Det som behölls: ovankanten i jord3 och H-korn, de spetsiga topparna två punkter över flätningen, bottenkanten i jord0 och några enstaka barr2-blad. Storleken, 10 punkter hög mot kolonistens 20, och vinkeln snett uppifrån var redan rätt.",
+   "ide": "Lågt flätat risgärde: längsbiten är en tät, låg vägg omkring 8 punkter hög där vidjor och grenar i jord1 och jord2 med enstaka barr2-blad flätas vågrätt in och ut mellan fyra spetsiga stakar i jord0, en vid var fjärde punkt, med stakarnas toppar som sticker upp två punkter över flätningen. Flätningen visar ovansidan som en ljusare kant i jord3 och H-korn, så att väggen läses som en tjock korg och inte som en platt remsa, och den går ända ut i båda kanterna så att bitarna flyter ihop. Tvärsbiten visar flätningen snett ovanifrån som ett lodrätt band, 4 punkter brett, där grenarna slingrar sig som ett flätmönster mellan stakarna, som syns som runda toppar med korta stumpar nedåt mot betraktaren."
   },
   {
    "bilder": [
     {
      "namn": "längs",
      "rader": [
-      "......EE.EE.....",
-      "......HF.HF.....",
-      "....HGGF.GF.HGE.",
-      "E.....GFEHF...HG",
-      "HGE...HFHGF.....",
-      "..HGE.GF.GFGE...",
-      "....HGGF.HF.HGE.",
-      "E.....HFEGF...HG",
-      "HGE...GFHGF.....",
-      "..HGE.GF.HFGE...",
-      "....HGHF.GF.HGE.",
-      "......GF.GF.....",
-      "......FE.FE....."
+      "HHE.............",
+      "HGE.....EEEE....",
+      "GFEEEEEEGHGGEEEE",
+      "GGEGHGGGFGFFGGHG",
+      "FGEFGFFGEEEEFFGF",
+      "GFEEEEEE....EEEE",
+      "GGE.............",
+      "FGEEE....EEEEEEE",
+      "GFEGHEEEEGGHGGGH",
+      "GGEFGGHGGFGFFGFF",
+      "FGEEEFFGFEEEEEEE",
+      "GFE..EEEE.......",
+      "EEE............."
      ]
     },
     {
      "namn": "tvärs",
      "rader": [
-      "HFEHGEGF",
-      "GFEGHEGF",
-      "HFEFGEHF",
-      "GFEGFEGF",
-      "HFEHGEGF",
-      "GFEGHEHF",
-      "HFEFGEGF",
-      "GFEGFEGF",
-      "HFEHGEHF",
-      "GFEGHEGF",
-      "HFEFGEGF",
-      "GFEGFEHF",
-      "HFEHGEGF",
-      "GFEGHEGF",
-      "HFEFGEHF",
-      "GFEGFEGF"
+      "EGHHEGE.",
+      "EHHGEFE.",
+      "EGEEEGE.",
+      "EGGFEHE.",
+      "EHFGEGE.",
+      "EGEEEFE.",
+      "EHE.EGE.",
+      "EGE.EFE.",
+      "EGE..EHE",
+      ".EHE.EGE",
+      ".EGE.EFE",
+      ".EFE.EGE",
+      ".EGEEGE.",
+      "EHE.EFE.",
+      "EGE.EGE.",
+      "EFE.EHE."
      ]
     }
    ],
-   "anteckning": "Gärdsgård av stolpar och grenar som klinas i jord, ljus från övre vänster. Längs (16×13): grenarna lutar snett och upprepas var 8:e punkt, så att biten går ihop med nästa i båda ändarna. Mitt på står ett stolppar som grenarna kläms mellan, med en vidja i spalten mellan stolparna. Stolparna står upp från marken längst ner, och bara framsidan syns. Tvärs (8×16): samma staket sett längs sin egen riktning snett uppifrån. Grenarna blir ett smalt band av överlappande bitar som upprepas var 4:e rad och passar ihop uppåt och nedåt. Stolpparet står på var sin sida om bandet, förkortat och resande sig från markraden. Allt är jordtoner med kontur i jord0, ljusare än gräset så att staketet syns runt fältet. Granskningen: Längs är oförändrad. Grenarna går kant i kant och fortsätter diagonalt i skarven, två punkter ned per rad, så att bitarna går att lägga efter varandra. Stolparna har ljus vänstersida och mörk högersida, och träets jordtoner syns tydligt mot gräset. Tvärs rättade jag. I versionen slutade de två slanorna på sidorna tre punkter från överkanten och två från nederkanten, och raderna 3 och 13 hade tvärband av jord0. När två bitar staplades blev det därför ett glapp mitt på hagens sidor, vilket syns i bilden. Längsbiten är obruten, så sidorna och långsidorna passade inte ihop. Nu går stolpen och båda slanorna obrutna genom alla 16 rader, så bitarna passar ihop i ändarna. Kornet växlar fortfarande mellan jord3 och jord2 på de ljusa sidorna med jord1 i skuggan, och jord0 bildar konturen mellan delarna, som förut.",
-   "ide": ""
+   "anteckning": "Staketet står på fältets kant och ses snett uppifrån. Längsbiten (16 × 13) har den kluvna stolpen vid vänstra kanten, 3 punkter bred och 13 hög, med avsågad topp i jord3, ljus sida åt vänster och jord0 i skuggsidan till höger. Två liggande slanor i jord2 med jord1-korn och jord0-kontur går ut till högra kanten. Där tar nästa bits stolpe emot dem, så bitarna radas på varandra. Den övre slanan svänger en punkt uppåt och den undre en punkt nedåt. Mellan slanorna syns gräset. Tvärsbiten (8 × 16) är samma bygge sett uppifrån: stolpens fyrkantiga topp och en kort stump vid övre kanten, och två tunna parallella slanor som löper hela rutan och svänger en punkt åt höger på mitten. De slutar vid nedre kanten på samma kolumner som de börjar, så nästa bits stolpe tar emot dem. I hagens hörn möts bitarna vid stolparna. Ingen skugga är ritad. Granskningen: Rättat: i tvärsbiten slutade båda slanorna två rader för tidigt upptill. Raderna 0–1 visade bara stolptoppen, så när bitarna staplades lodrätt syntes ett glapp i slanorna vid varje fog. Nu löper slanlinjerna (kolumn 0–2 och 4–6) hela vägen upp till övre kanten och möter den nedre kanten på biten ovanför. Stolptoppen i jord3 ligger kvar ovanpå mellan dem, 3 punkter bred som i längsbiten. Längsbiten är oförändrad: stolpen är 3 × 13 punkter med ljus topp, och de två krokiga slanorna med jord1-korn passar i höjd (rad 3–4 och 8–9) mot nästa bits stolpe. Den är tydligt ljusare än gräset, och storleken stämmer mot kolonisten.",
+   "ide": "Glest stolp- och slanstaket: längsbiten har en grov, kluven stolpe vid vänstra kanten, 3 punkter bred och 13 punkter hög med ljus avsågad topp i jord3, och två raka liggande slanor i jord2 med jord0-kontur som går vågrätt ut till högra kanten, där nästa bits stolpe tar emot dem; mellan slanorna syns gräset genom, så att staketet blir luftigt och högt. Slanorna är lätt krokiga med en punkts svängning och barken markeras med jord1-korn. Tvärsbiten är samma bygge sett uppifrån: två tunna parallella linjer av slanor som löper lodrätt hela rutan, med stolpens fyrkantiga topp vid övre kanten och en kort stump nedåt, så att bitarna fogas ihop vid stolparna i hagens hörn."
   }
  ]
 }

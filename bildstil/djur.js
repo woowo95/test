@@ -53,6 +53,11 @@
   const och = (...f) => (x, y) => f.some(g => g(x, y));
   const punkt = (px, py) => (x, y) => Math.floor(x) === px && Math.floor(y) === py;
 
+  // skala (t.s, under 1 för ett mindre djur av samma former: hunden och valpen, Björn efter bildstil v238): formerna ritas i
+  // vargens mått och läses av glesare. Ögat är en punkt i den skalade bilden, så att det inte faller bort mellan punkterna.
+  const skalat = (t, W, H, lista, X = 0) => { const S = t.s || 1;
+    return former(Math.round(W * S), Math.round(H * S), lista.map(([f, ton]) => [(x, y) => f(x / S - X, y / S), typeof ton === 'function' ? (x, y) => ton(x / S - X, y / S) : ton])); };
+  const oga = (t, px, py, X = 0) => { const S = t.s || 1; return (x, y) => Math.floor((x + X) * S) === Math.floor((px + X + 0.5) * S) && Math.floor(y * S) === Math.floor((py + 0.5) * S); };
   // de tre vargarna: mått i punkter, foten på raden h - 1
   const VARGTYP = [
     { namn: 'smal', ben: 7.5, kropp: 3.1, ruff: 3.2, huvud: 2.8, nos: 4.4, svans: 1.8, sank: 0.6, mask: false, arg: true },
@@ -70,11 +75,12 @@
     const huvud = ell(hx, hy, t.huvud + 0.4, t.huvud);
     const nos = och(tri([hx, hy - 0.9], [nx, hy + 0.9], [hx, hy + t.huvud * 0.9]), ell(nx - 0.6, hy + 1.2, 0.9, 0.7));
     const ora = (x0) => tri([x0 - 1.5, hy - t.huvud + 1], [x0 + 1.5, hy - t.huvud + 1], [x0 - 0.4, hy - t.huvud - 3.2]);
-    const framBen = (x) => linje([[x, bot - 1], [x + 0.2, fot - 1.2], [x + 0.8, fot - 0.4]], 0.8, 0.65);
-    const bakBen = (x) => linje([[x + 1.2, bot - 1.8], [x - 1.2, bot + ben * 0.55], [x - 0.6, fot - 1], [x + 0.2, fot - 0.4]], 1.5, 0.65);
+    const bt = t.bt || 1, framBen = (x) => linje([[x, bot - 1], [x + 0.2, fot - 1.2], [x + 0.8, fot - 0.4]], 0.8 * bt, 0.65 * bt);
+    const bakBen = (x) => linje([[x + 1.2, bot - 1.8], [x - 1.2, bot + ben * 0.55], [x - 0.6, fot - 1], [x + 0.2, fot - 0.4]], 1.5 * bt, 0.65 * bt);
     const svansSpets = t.arg ? [-1.6, fot - ben * 0.4] : [1.4, fot - ben * 0.3];
     // arg (Björn efter bildstil v122): en rak, yvig svans som hänger snett bakåt och är tjockast på mitten
-    const svans = t.arg ? och(linje([[4.2, rygg + 0.8], [1, rygg + 3.4]], 0.9, 1.7), linje([[1, rygg + 3.4], svansSpets], 1.7, 0.8))
+    // krull (hunden): svansen går upp och ringlar sig över ländryggen, med ljus spets
+    const svans = t.krull ? linje([[4.6, rygg + 1.2], [2.6, rygg - 1.6], [3.6, rygg - 4], [6.4, rygg - 4.4], [7.6, rygg - 2.6]], t.svans * 0.75, t.svans * 0.55) : t.arg ? och(linje([[4.2, rygg + 0.8], [1, rygg + 3.4]], 0.9, 1.7), linje([[1, rygg + 3.4], svansSpets], 1.7, 0.8))
       : linje([[4.5, rygg + 1], [2.2, rygg + 3.2], [1.4, rygg + 6], svansSpets], t.svans * 0.6, t.svans * 1.1);
     const ex = Math.floor(hx + 0.6), ey = Math.floor(hy - 0.3); // ögat
     const ton = (x, y) => { // pälsen: mörk rygg, mellan på sidorna, ljus undersida
@@ -84,7 +90,7 @@
     const X = 3; // allt flyttas X punkter åt höger, så att svansen ryms bakom bakbenen
     const lista = [
       [och(framBen(16.5), bakBen(6.2)), 'd'], // benen på andra sidan, i skugga
-      [svans, t.arg ? (x, y) => y > svansSpets[1] - 1.2 ? 'k' : x > 2.6 - (y - rygg) * 0.4 ? 'd' : 'l' : (x, y) => y > svansSpets[1] - 0.6 ? 'k' : x < 2.6 && y > rygg + 4 ? 'm' : 'd'],
+      [svans, t.krull ? (x, y) => x > 6.4 && y > rygg - 3.6 ? 'c' : y < rygg - 2.4 ? 'm' : 'd' : t.arg ? (x, y) => y > svansSpets[1] - 1.2 ? 'k' : x > 2.6 - (y - rygg) * 0.4 ? 'd' : 'l' : (x, y) => y > svansSpets[1] - 0.6 ? 'k' : x < 2.6 && y > rygg + 4 ? 'm' : 'd'],
       [kropp, ton],
       [hals, (x, y) => (y > mitt - 0.5 || x > hx - 2.5 && y > hy + 1) ? 'c' : y < rygg + 1 + t.sank * 0.5 ? 'd' : 'm'],
       [och(framBen(19.5), bakBen(9)), (x, y) => y > fot - 1.6 ? 'l' : 'm'],
@@ -96,14 +102,14 @@
         [punkt(ex, ey), 'a'], [punkt(ex + 1, ey), 'k'], // gult öga med mörk ögonvrå, inga ögonbryn (Björn)
         [(x, y) => Math.floor(y) === Math.floor(hy + 1.8) && x > hx + 0.4 && x < nx - 0.8, 'k'], // munnen
         [punkt(Math.floor(nx - 1.6), Math.floor(hy + 2.8)), 'b'], // en tand
-      ] : [[punkt(ex, ey), 'k']]),
+      ] : [[oga(t, ex, ey, 3), 'k']]),
     ];
-    return former(W + X, H, lista.map(([f, ton]) => [(x, y) => f(x - X, y), typeof ton === 'function' ? (x, y) => ton(x - X, y) : ton]));
+    return skalat(t, W + X, H, lista, X);
   }
   function vargFram(t) {
     const W = 15, H = 26, fot = H - 1, c = 7.5, bot = fot - t.ben, hy = bot - t.kropp * 2 - 1.2 + t.sank, r = t.huvud + 0.5;
     const ora = (s) => tri([c + s * 1.2, hy - r + 0.9], [c + s * 3.6, hy - r + 1.4], [c + s * 2.8, hy - r - 2.6]);
-    return former(W, H, [
+    return skalat(t, W, H, [
       [ell(c, bot - t.kropp, t.kropp + 1, t.kropp + 0.4), 'd'], // kroppen bakom bröstet
       [och(linje([[c - 3, bot - 1], [c - 3.1, fot - 0.4]], 0.7), linje([[c + 3, bot - 1], [c + 3.1, fot - 0.4]], 0.7)), 'd'], // bakbenen
       [ell(c, bot - t.kropp + 0.6, t.ruff * 0.72, t.kropp + 0.9), (x, y) => Math.abs(x - c) < 1.3 ? 'c' : 'm'], // bröstet och ruffen
@@ -112,7 +118,7 @@
       [och(ora(-1), ora(1)), (x, y) => Math.abs(x - c) > 2.2 && Math.abs(x - c) < 3.4 && y > hy - r - 0.5 ? 'k' : 'm'],
       [ell(c, hy, r + 0.9, r), (x, y) => y < hy - 0.8 ? 'm' : Math.abs(x - c) > r - 0.6 ? 'l' : t.mask ? 'c' : 'l'],
       [ell(c, hy + r * 0.65, 1.7, 1.4), 'c'], // nosen
-      [och(punkt(Math.floor(c) - 2, Math.floor(hy)), punkt(Math.floor(c) + 2, Math.floor(hy)), punkt(Math.floor(c), Math.floor(hy + r * 0.45))), t.arg ? (x, y) => Math.abs(x - c) > 1 ? 'a' : 'k' : 'k'],
+      [och(oga(t, Math.floor(c) - 2, Math.floor(hy)), oga(t, Math.floor(c) + 2, Math.floor(hy)), oga(t, Math.floor(c), Math.floor(hy + r * 0.45))), t.arg ? (x, y) => Math.abs(x - c) > 1 ? 'a' : 'k' : 'k'],
       ...(t.arg ? [
         [och(punkt(Math.floor(c) - 1, Math.floor(hy)), punkt(Math.floor(c) + 1, Math.floor(hy))), 'k'], // mörka ögonvrår, inga ögonbryn (Björn)
         [(x, y) => Math.floor(y) === Math.floor(hy + r * 0.65 + 1.2) && Math.abs(x - c) < 1.8, 'k'], // munnen
@@ -123,13 +129,14 @@
   function vargBak(t) {
     const W = 15, H = 26, fot = H - 1, c = 7.5, bot = fot - t.ben, hy = bot - t.kropp * 2 - 1.2 + t.sank, r = t.huvud + 0.5;
     const ora = (s) => tri([c + s * 1.2, hy - r + 0.9], [c + s * 3.6, hy - r + 1.4], [c + s * 2.8, hy - r - 2.6]);
-    return former(W, H, [
+    return skalat(t, W, H, [
       [och(ora(-1), ora(1)), 'd'],
       [ell(c, hy, r + 0.6, r), 'm'],
       [ell(c, bot - t.kropp - 0.6, t.ruff * 0.75, t.kropp + 0.6), (x, y) => Math.abs(x - c) < 1.5 && y < bot - t.kropp ? 'd' : 'm'], // nacken och ryggen
       [och(linje([[c - 2.2, bot - 2], [c - 2.6, bot + 1.5], [c - 2.3, fot - 0.4]], 1.2, 0.7), linje([[c + 2.2, bot - 2], [c + 2.6, bot + 1.5], [c + 2.3, fot - 0.4]], 1.2, 0.7)), (x, y) => y > fot - 1.6 ? 'l' : 'm'], // bakbenen
       [ell(c, bot - t.kropp * 0.6, t.kropp + 0.4, t.kropp * 0.9), 'm'], // höften
-      [linje([[c, bot - t.kropp * 0.8], [c, bot + t.ben * 0.4]], t.svans * 0.7, t.svans), (x, y) => y > bot + t.ben * 0.4 + t.svans - 1 ? 'k' : 'd'], // svansen
+      t.krull ? [ell(c, bot - t.kropp * 1.7, t.svans * 0.9, t.svans * 0.75), (x, y) => y < bot - t.kropp * 1.7 - 0.6 ? 'c' : 'm'] // den ringlade svansen ligger på ländryggen
+        : [linje([[c, bot - t.kropp * 0.8], [c, bot + t.ben * 0.4]], t.svans * 0.7, t.svans), (x, y) => y > bot + t.ben * 0.4 + t.svans - 1 ? 'k' : 'd'], // svansen
     ]);
   }
   const VARG = VARGTYP.map(t => ({ sida: vargSida(t), fram: vargFram(t), bak: vargBak(t) }));
@@ -239,5 +246,5 @@
 
   // ritningarna till spelet (bildstil/djurtillspelet.cjs skriver src/djurbilder.ts). Björns val är inbyggda i steg 5.1.11:
   // vargen version 1 och haren version 2 och 3
-  window.DJURBILD = { VARG, KANIN, PALS, FAST };
+  window.DJURBILD = { VARG, KANIN, PALS, FAST, vargen: t => ({ sida: vargSida(t), fram: vargFram(t), bak: vargBak(t) }), VARGTYP };
 })();
