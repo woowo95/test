@@ -2075,3 +2075,48 @@ SCENARIER.utburen = {
     ];
   },
 };
+SCENARIER.gravbesok = {
+  text: 'Steg 10.4.8: besök och gåvor vid graven. Den som minns eller sörjer en död går på fritiden till graven, lusten växer tillbaka på ett dygn, minnet bleknar långsammare efter besöket, gåvan är den minst värda saken hen får ta, en sliten grav lagas när materialet finns, och en grav som vuxit igen helt tas bort; den som sänkts får besöken vid stranden',
+  kor: () => {
+    const a = medLedare(), s = a.s, d = a.v[1];
+    klockan(s, 10); setFood(s, 400); SIM.setAmount(s, 'virke', 4); SIM.setAmount(s, 'rolleka', 5);
+    const p = a.v.find(q => q !== d && (q.partner === d.id || SIM.isParent(q, d) || SIM.isParent(d, q))) ?? a.v[0];
+    const b = begravHela(s, a.v[0], d), g = b.g!;
+    g.vard = 'gravstolpe';
+    // en vecka senare: minnet och sorgen finns kvar
+    const val = SIM.gravbesokVal(s, p), annan = a.v.find(q => q !== p && q !== d && !(q.intryck ?? []).some(e => e.om === d.id) && !SIM.nara(s, q, d.id));
+    const utan = annan ? SIM.gravbesokVal(s, annan) : undefined;
+    const t = { act: 'gravbesok', phase: 'do', ref: d.id, until: s.now, carry: 0, why: '' } as SIM.Task;
+    SIM.gravbesokKlar(s, p, t);
+    const efter = SIM.gravbesokVal(s, p), stod = p.thoughts.some(x => x.text === 'Stod vid graven');
+    s.now += SIM.DAY; const igen = SIM.gravbesokVal(s, p);
+    // minnet bleknar långsammare efter besöket
+    const q = a.v.find(o => o !== p && o !== d)!, e = { om: d.id, namn: d.name, k: 'elak' as SIM.IntryckTyp, v: 1, c: 1, t: s.now };
+    p.intryck = [{ ...e }]; q.intryck = [{ ...e }]; SIM.paminn(s, p, d.id);
+    SIM.glomRykten(s, 24); const cp = p.intryck?.[0]?.c ?? 0, cq = q.intryck?.[0]?.c ?? 0;
+    // gåvan: den minst värda av det hen får ta
+    setFood(s, 0); SIM.setAmount(s, 'kott', 3); // röllekan är värd mindre än köttet
+    let gavor = 0; for (let i = 0; i < 40 && !gavor; i++) { SIM.gravbesokKlar(s, p, t); gavor = g.gavor ?? 0; }
+    const rolleka = SIM.amountOf(s, 'rolleka');
+    // en sliten gravstolpe lagas med ett virke
+    g.t = s.now - 20 * SIM.DAY; g.lagad = undefined; p.gravBesok = undefined; const skick0 = SIM.gravSkick(s, g);
+    const lv = SIM.gravbesokVal(s, p), virke0 = SIM.amountOf(s, 'virke');
+    SIM.gravbesokKlar(s, p, { ...t, tool: lv?.laga ? 'laga' : undefined });
+    const lagad = SIM.gravSkick(s, g) === 1 && SIM.amountOf(s, 'virke') === virke0 - 1;
+    // en grav som vuxit igen helt tas bort
+    g.t = s.now - 100 * SIM.DAY; g.lagad = undefined; SIM.gravDygn(s); const borta = !s.gravar?.some(x => x.vem === d.id);
+    // den sänkta: besöken vid stranden
+    (s.sankta ??= []).push({ vem: d.id, namn: d.name, x: 5, y: 5, t: s.now, sjo: 0 }); p.gravBesok = undefined;
+    const sv = SIM.gravbesokVal(s, p);
+    return [
+      [`den som stod hen nära vill gå till graven (${val?.why}, lust ${val?.w.toFixed(2)})`, !!val && val.w > 0 && Math.abs(val.spot.x - g.x - 0.5) < 1e-6],
+      [`den som inte minns hen går inte dit (${annan ? (utan ? 'går' : 'går inte') : 'ingen sådan'})`, !utan],
+      ['besöket ger tröst, och lusten växer tillbaka på ett dygn', stod && !efter && !!igen],
+      [`minnet bleknar långsammare efter besöket (${cp.toFixed(3)} mot ${cq.toFixed(3)})`, cp > cq],
+      [`en gåva läggs ibland: den minst värda saken (${gavor} gåva, röllekan ${rolleka} av 5, köttet ${SIM.amountOf(s, 'kott')} av 3)`, gavor === 1 && rolleka === 4 && SIM.amountOf(s, 'kott') === 3],
+      [`en sliten grav lagas med material (skick ${skick0.toFixed(2)} → ${lagad ? '1' : 'olagad'}, ${lv?.min} min)`, skick0 < 0.5 && !!lv?.laga && lv.min === 5 && lagad],
+      ['en grav som vuxit igen helt tas bort', borta],
+      [`den sänkta får besöken vid stranden (${sv?.why})`, !!sv && sv.spot.x === 5.5],
+    ];
+  },
+};

@@ -629,7 +629,7 @@ SCENARIER.rykten = {
     const tjuv = SIM.intryckOm(d.q, d.p.id, 'tjuv');
     // mästerverk: imponerad, men rivalen blir avundsjuk
     const m = by();
-    m.r.x = m.p.x + 3; m.r.rivaler = [m.p.id];
+    m.r.x = m.p.x + 3; m.r.rivaler = [m.p.id]; m.w.pot.empati = 20; // den med låg empati blir avundsjuk i stället
     const imp0 = getRel(m.t, m.w, m.p).op, riv0 = getRel(m.t, m.r, m.p).op;
     SIM.handelse(m.t, m.p, 'masterverk', undefined, 'en yxa');
     const imp1 = getRel(m.t, m.w, m.p).op, riv1 = getRel(m.t, m.r, m.p).op;

@@ -1,5 +1,5 @@
 import { rutorAv } from '../sim';
-import { VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
+import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { STUBBILDER } from '../stubbilder';
@@ -289,7 +289,7 @@ export function drawStructures(t: number) {
   }
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
   // graven (steg 10.4.2, platshållare tills Björn valt i bildstilen): en jordhög, och vården som står på den
-  for (const g of s.gravar ?? []) gravPlats(g);
+  for (const g of s.gravar ?? []) { gravPlats(g); if (gravSkick(s, g) < BESOK.laga) igenvuxen(g); } // den slitna graven växer igen (steg 10.4.8)
   for (const h of s.heliga ?? []) stubbIkoner.add(HELIGA_PLATSER[h.k].ikon, h.x * TS, h.y * TS, 1); // de heliga platserna (steg 8.5.5)
   stubbIkoner.end();
   pileIcons.end();
@@ -354,6 +354,11 @@ function drawBuild() {
   }
 }
 
+// den igenvuxna graven som platshållare (steg 10.4.8): gräs och sly över vad graven än är
+function igenvuxen(g: { x: number; y: number }) {
+  const X = g.x * TS, Y = g.y * TS, gr = structG;
+  for (const [dx, dy, c] of [[3, 10, 0x647025], [7, 12, 0x4b4f00], [11, 9, 0x647025], [5, 6, 0x898b4c], [12, 13, 0x4b4f00], [9, 4, 0x647025]] as const) gr.beginFill(c).drawRect(X + dx, Y + dy, 2, 3).endFill();
+}
 // graven som platshållare (steg 10.4.2): jordhögen, och gravstolpen, gravbrädan, stockramen, gravhuset eller gravhögen
 function gravPlats(g: { x: number; y: number; vard?: string }) {
   const X = g.x * TS, Y = g.y * TS, gr = structG;

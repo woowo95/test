@@ -71,7 +71,7 @@ import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
 import { efterAnfall } from './rovare';
 import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
-import { GRAV, avrustaVal, begravaVal, gravvardVal, rustaVal } from './grav';
+import { GRAV, avrustaVal, begravaVal, gravbesokVal, gravvardVal, rustaVal } from './grav';
 import { budBrutet, budForbjuder, viltBikta, vilodagNu } from './kyrka';
 import { LAG, lagGaller, raddFor } from './lagar';
 import { ligger } from './sjukdom';
@@ -1291,6 +1291,9 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
   if (gaILara(s, p, v, 'Har tid över')) return; // lärlingen går hellre till mästaren än vilar eller umgås
   const wsp = sportVikt(s, p, calm); // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
+  // besöket vid graven (steg 10.4.8): lusten är bandet till den döda, bredvid vilan och umgänget
+  const gb = gravbesokVal(s, p);
+  if (gb && rnd(s, 'val', p) < gb.w / (gb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'gravbesok', gb.why); v.spot = gb.spot; v.ref = gb.vem; v.tool = gb.laga ? 'laga' : undefined; v.dur = gb.min * MIN; return; }
   // bönen (steg 8.5.2): lusten följer andligheten, bredvid vilan och umgänget
   if (rnd(s, 'val', p) < bonVikt(s, p) / (bonVikt(s, p) + wv + wh + wsoc + wp + 1e-9)) {
     if (viltBikta(s, p)) { set(v, 'be', BONER.bikt.text()); v.tool = 'bikt'; v.dur = BONER.bikt.min * MIN; return; } // bikten (steg 8.6.9)

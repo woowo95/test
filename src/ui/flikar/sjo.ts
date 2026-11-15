@@ -51,7 +51,7 @@ function sjoHtml() {
       <dt>Napp</dt><dd>${fmtN(st.napp)}${andel(st.napp, st.forsok)}</dd>
       <dt>Fångade fiskar</dt><dd>${fmtN(st.fisk)}${andel(st.fisk, st.napp)}</dd>
       <dt>Bad</dt><dd>${times(st.bad)}</dd></dl>` : '<p class="muted">Ingen har fiskat eller badat här.</p>'}
-    ${sankta.length ? `<h3>De sänkta</h3><ul class="small">${sankta.map(q => `<li>${esc(q.namn)}, för ${durTxt(s.now - q.t)} sedan</li>`).join('')}</ul>` : ''}
+    ${sankta.length ? `<h3>De sänkta</h3><ul class="small">${sankta.map(q => `<li>${esc(q.namn)}, för ${durTxt(s.now - q.t)} sedan${q.gavor ? `, ${q.gavor === 1 ? 'en gåva' : `${q.gavor} gåvor`} vid stranden` : ''}</li>`).join('')}</ul>` : ''}
     ${st && st.fisk ? `<h3>Fiskar oftast</h3>${topp(st.fiskare)}` : ''}
     ${st && st.bad ? `<h3>Badar oftast</h3>${topp(st.badare)}` : ''}
     ${st?.log.length ? `<h3>Historik</h3><ol class="logg">${st.log.slice().reverse().slice(0, 40).map(sjoEntry).join('')}</ol>` : ''}`;

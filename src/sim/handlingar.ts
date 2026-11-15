@@ -131,6 +131,7 @@ const DEF = {
   varda: { namn: 'Vårdar', tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true, fortsatter: ['brand', 'tornado', 'varg'] as const },
   // tron och graven (system 8.5, kult.ts och kvarlevor.ts)
   be: { namn: 'Ber', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true },
+  gravbesok: { namn: 'Står vid graven', tecken: '🪦', ikon: 'a_be', framme: true, stilla: true, skamfri: true }, // besöket vid graven (steg 10.4.8)
   ritual: { namn: 'Är med på en ritual', tecken: '✨', ikon: 'a_be', stilla: true, social: true, tyst: true, dygn: true },
   begrava: { namn: 'Går för att ta hand om en död', tecken: '✨', ikon: 'a_be', framme: true, stilla: true },
   gravvard: { namn: 'Gör vården på en grav', slag: 'bygga', framme: true, stilla: true }, // steg 10.4.2

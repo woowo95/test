@@ -32,6 +32,7 @@ export interface SakDef {
   klad?: Klad; // ett klädesplagg (steg 2.3.2, utrustning.ts)
   mark?: true; // ligger kvar på marken där den hamnade: ingen bär, äger eller lagrar den (toa-högen, smuts.ts)
   varde?: number; // ett fast grundvärde, när saken inte skaffas i byn (silvret, steg 4.4.1.3)
+  gravgava?: true; // får läggas på en grav vid ett besök (steg 10.4.8), som maten (mat)
   brinnerInte?: true; // brinner inte upp i en eldsvåda (brand.ts, steg 3.8.5); allt annat i förrådet gör det
 }
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
@@ -141,7 +142,7 @@ const DEF = {
   mjarde: { namn: 'Mjärde', skaffa: RECEPT.mjarde, stack: 1, ruta: 1, mapp: 'Redskap' }, // en flätad korg som sätts ut i vattnet (steg 7.4.2)
   huggen_sten: { namn: 'Huggen sten', skaffa: RECEPT.huggen_sten, stack: 20, vikt: 4, mapp: 'Material' }, // steg 7.5.1
   plankor: { namn: 'Plankor', skaffa: RECEPT.plankor, stack: 20, vikt: 2, mapp: 'Material' },
-  rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' }, // den första örten (steg 7.6.3): går inte att äta och håller länge
+  rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true }, // den första örten (steg 7.6.3): går inte att äta och håller länge
   salva: { namn: 'Salva', skaffa: RECEPT.salva, stack: 10, vikt: 0.2, mapp: 'Material' }, // steg 7.6.4–7.6.6: ingen funktion än
   tjara: { namn: 'Tjära', skaffa: RECEPT.tjara, stack: 10, vikt: 0.5, mapp: 'Material' },
   benlim: { namn: 'Benlim', skaffa: RECEPT.benlim, stack: 10, vikt: 0.3, mapp: 'Material' },

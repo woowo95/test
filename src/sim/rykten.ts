@@ -6,7 +6,7 @@ import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
-import { HOUR, Person, Rel, State } from './typer';
+import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { ACTS, Act } from './handlingar';
 import { isLight } from './tid';
@@ -51,6 +51,7 @@ export const RYKTE = balans('rykte', {
   glomTung: 3, // ... en allvarlig händelse (vikt minst tungVikt) glöms så här många gånger långsammare
   tungVikt: 0.5,
   glomGrans: 0.06, // ett intryck som blivit svagare än så här (styrka × säkerhet) är glömt
+  paminnGlom: 3, paminnDygn: 2, // efter en påminnelse (besöket vid graven, steg 10.4.8) bleknar minnet av en död så här många gånger långsammare i så många dygn
   dodGlom: 2, // minnet av en död bleknar så här många gånger långsammare, och mer ju ryktbarare hen var: + ryktbarhet / dodRykte
   dodRykte: 3,
   dodSlakt: 2, // släkten minns sina egna så här många gånger längre
@@ -421,12 +422,17 @@ export function glomRykten(s: State, hours: number) {
       if (dod) t *= RYKTE.dodGlom + rOf(e.om) / RYKTE.dodRykte;
       if (dod && q && isKin(p, q)) t *= RYKTE.dodSlakt;
       if (dod && avbildad.has(e.om)) t *= RYKTE.konstGlom;
+      if (dod && (p.paminnd?.[e.om] ?? -Infinity) > s.now - RYKTE.paminnDygn * DAY) t *= RYKTE.paminnGlom;
       e.c *= Math.exp(-hours / t);
       return styrka(e) >= RYKTE.glomGrans;
     });
     if (!p.intryck.length) delete p.intryck;
+    if (p.paminnd) { for (const k in p.paminnd) if (p.paminnd[k] <= s.now - RYKTE.paminnDygn * DAY) delete p.paminnd[k]; if (!Object.keys(p.paminnd).length) delete p.paminnd; }
   }
 }
+// en påminnelse om en död (steg 10.4.8): minnet bleknar långsammare en tid (RYKTE.paminnGlom). Gravtexten, runstenen och boken använder den med 10.6.15
+export function paminn(s: State, p: Person, vem: number) { (p.paminnd ??= {})[vem] = s.now; }
+export const intryckStyrka = (e: Intryck) => styrka(e);
 
 // ---------- tycke och smak (steg 3.3.5) ----------
 // smaken: 'a:' + arbete eller 'm:' + mat, från -1 (avsmak) till 1 (tycke)

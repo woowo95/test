@@ -195,6 +195,7 @@ export interface Person {
   hn?: Record<string, number>; hnBlodat?: 1; // hälsans tecken förra timmen och att hen blött (steg 9.5.31, halsonotiser.ts)
   blodNotis?: 1; // notisen om att hen snart förblöder är skickad (steg 9.5.14, halsa.ts) // örtteet hjälper motståndet till dess, med teets kvalitet (steg 9.5.8, vatskor.ts)
   sorg?: { namn: string; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
+  gravBesok?: number; paminnd?: Record<number, number>; // när hen senast stod vid en grav, och när hen påmindes om en död (steg 10.4.8)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
   uppkallad?: number; // id för den hen är uppkallad efter (steg 10.4.1)
@@ -387,7 +388,7 @@ export interface State {
   flackar?: import('./smuts').Flack[]; // fläckar på marken som bleknar: toa-smutsen (smuts.ts)
   blod?: import('./blod').Blodflack[]; // blodet på marken (bara utseende, blod.ts)
   hygien?: number; // hur mycket byn vet om att toa-smutsen gör vattnet sjukt (0–1, smuts.ts, steg 2.7.2)
-  sankta?: { vem: number; namn: string; x: number; y: number; t: number; sjo: number; med?: string[] }[]; // de döda som sänkts i sjön (steg 10.4.5)
+  sankta?: { vem: number; namn: string; x: number; y: number; t: number; sjo: number; med?: string[]; gavor?: number }[]; // de döda som sänkts i sjön (steg 10.4.5), och gåvorna vid stranden (steg 10.4.8)
   styre?: import('./styre').Styre; // ledaren, påbuden, straffen och vågskålarna (steg 3.5, styre.ts)
   djurHalsa?: import('./djur').DjurHalsa[]; djurDoda?: { id: number; t: number }[]; // skadade och dödade djur (steg 3.7.13, djur.ts)
   bjornMott?: { ar: number; ids: number[] }; // de som mött björnen i år (steg 6.6.5, bjorn.ts): var och en en gång per år

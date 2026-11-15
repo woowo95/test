@@ -86,7 +86,7 @@ import { sjoRakna, vattenNu } from './sjo';
 import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
-import { avrustaKlar, gravKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
+import { avrustaKlar, gravDygn, gravKlar, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
 import { lagRegister } from './lagar';
@@ -219,7 +219,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
   avrusta: avrustaKlar, rusta: rustaKlar,
-  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, // tron och graven (system 8.5)
+  be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
@@ -393,6 +393,7 @@ export const TAKTER: Takt[] = [
   { namn: 'tidyStore', sek: 3600, fn: s => { tidyStore(s); } },
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
+  { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },
   { namn: 'wearBuild', sek: 21600, fn: (s, dt, c) => { wearBuild(s, dt / HOUR_S, c.ai); } },
