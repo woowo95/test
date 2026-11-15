@@ -328,8 +328,8 @@ SCENARIER.delning = {
     // bufferten per jag (steg 6.2.20): i en rik by har byn ingen buffert för maten, utan familjen sin för det den äger. Den
     // fattiga familjen (äger ingen mat) samlar åt sig, den rika (äger mat för många dygn) gör det inte, fast byns förråd är fullt
     const j = createState(5, START); klockan(j); tandEld(j); setFood(j, 300); tandOchFlinta(j); setAmount(j, 'ved', 80); rikBy(j);
-    // den fattiga är den som bryr sig mest om sig själv och familjen (egenintresset, projekt.ts)
-    const vx = living(j).filter(q => SIM.ageOf(q, j.now) >= 18).sort((a, b) => SIM.egenintresse(j, b) - SIM.egenintresse(j, a)), fattig = vx[0], rikP = vx.find(q => !SIM.familjOf(j, fattig.id).includes(q))!;
+    // den fattiga är den som bryr sig mest om sig själv och familjen (den med minst omtanke om byn, projekt.ts)
+    const vx = living(j).filter(q => SIM.ageOf(q, j.now) >= 18).sort((a, b) => SIM.omtanke(j, a) - SIM.omtanke(j, b)), fattig = vx[0], rikP = vx.find(q => !SIM.familjOf(j, fattig.id).includes(q))!;
     for (const q of SIM.familjOf(j, rikP.id)) gain(j, q, 'bar', 120);
     const egenMat = (q: Person) => { let n = 0; for (let i = 0; i < 40; i++) { q.task = undefined; chooseTask(j, q); if ((q.task as Task | undefined)?.why?.startsWith('Behöver egen mat')) n++; } return n; };
     const fDygn = SIM.familjMatDygn(j, SIM.familjOf(j, fattig.id)), rDygn = SIM.familjMatDygn(j, SIM.familjOf(j, rikP.id));

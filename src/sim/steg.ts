@@ -78,6 +78,7 @@ import { Bit, bitAt, bitsOf, husById, MATERIAL, bitById, blocked, freeNear, grid
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
+import { omtankeTimme } from './omtanke';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -371,6 +372,7 @@ export const TAKTER: Takt[] = [
   { namn: 'facklorTimme', sek: 3600, fn: s => { facklorTimme(s); } },
   { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
+  { namn: 'omtanken', sek: 3600, fn: s => { omtankeTimme(s); } }, // omtanken om byn (projekt.ts, steg 10.5.2)
   { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },
   { namn: 'forbrukTimme', sek: 3600, fn: s => { forbrukTimme(s); } },
   { namn: 'arbetsTimme', sek: 3600, fn: s => { arbetsTimme(s); } },

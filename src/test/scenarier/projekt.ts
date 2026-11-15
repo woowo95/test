@@ -1,7 +1,7 @@
 // Scenarier. Byns projekt (steg 2.2.7): byn väljer vad den bygger och gör efter vad den saknar.
 import { createState, living, ageOf, ALDER, chooseTask, dangers, GORS, STATION_LIST, PROJEKT, PROJEKT_LIST, projekt, bastaProjekt, projektVarde, addTool, setAmount, State } from '../../sim';
 import * as SIM from '../../sim';
-import { START } from '../kor';
+import { START, STEG_TIM } from '../kor';
 import { setItems, setFood, SCENARIER, medBank, kor, byggKlart } from './hjalp';
 import { setByn } from '../../ui/lage';
 import { pabudDel } from '../../ui/flikar/styre';
@@ -66,9 +66,9 @@ SCENARIER.projekt = {
 };
 
 SCENARIER.jaget = {
-  text: 'Jaget och familjen i projekten (steg 6.1.16, "Arbetsstationer och möbler" i designdokumentet): varje projekt räknar både vad byn saknar och vad personen själv och familjen saknar. Personens värde = byns värde + det egna × egenintresset, som sjunker med empatin och seden Sammanhållning och stiger med Självförsörjning',
+  text: 'Jaget och familjen i projekten (steg 6.1.16, "Arbetsstationer och möbler" i designdokumentet): varje projekt räknar både vad byn saknar och vad personen själv och familjen saknar. Personens värde = byns värde × omtanken om byn + det egna (steg 10.5.2), och omtanken stiger med empatin och seden Sammanhållning och sjunker med Självförsörjning',
   kor: () => {
-    const { personVarde, egenintresse, familjOf, PROJEKT_TAL } = SIM;
+    const { personVarde, omtankeMed, familjOf, OMTANKE } = SIM;
     const s = by(4), p = vuxna(s)[0], fam = familjOf(s, p.id);
     // ingen i familjen har en kniv: det egna läggs till byns värde
     const by0 = projektVarde(s, 'kniv'), mitt = personVarde(s, 'kniv', fam, 1);
@@ -79,16 +79,16 @@ SCENARIER.jaget = {
     // när p äger en kniv saknar familjen ingen
     addTool(s, 'kniv', p);
     const harEgen = personVarde(s, 'kniv', fam, 1);
-    // egenintresset: empatin och seden
+    // omtanken: empatin och seden
     const e = { ...p.pot }, sed = s.seder.v.gemenskap;
-    p.pot.empati = 18; s.seder.v.gemenskap = 1; const sam = egenintresse(s, p);
-    p.pot.empati = 3; s.seder.v.gemenskap = -1; const sjalv = egenintresse(s, p);
+    p.pot.empati = 18; s.seder.v.gemenskap = 1; const sam = omtankeMed(s, p, 0);
+    p.pot.empati = 3; s.seder.v.gemenskap = -1; const sjalv = omtankeMed(s, p, 0);
     p.pot = e; s.seder.v.gemenskap = sed;
     return [
       [`det egna läggs till byns värde (${by0.toFixed(2)} → ${mitt.toFixed(2)})`, mitt > by0],
       [`när byn har knivar nog men inte familjen är kniven ändå värd något för p (${byEfter.toFixed(2)}, ${egenEfter.toFixed(2)})`, byEfter === 0 && egenEfter > 0],
       [`när p äger en kniv saknar familjen ingen (${harEgen.toFixed(2)})`, harEgen === 0],
-      [`egenintresset är lågt med hög empati i en sammanhållen by (${sam.toFixed(2)}) och högt med låg empati och självförsörjning (${sjalv.toFixed(2)}, högst ${PROJEKT_TAL.egenMax})`, sam < 0.6 && sjalv > 1.4 && sjalv <= PROJEKT_TAL.egenMax],
+      [`omtanken om byn är hög med hög empati i en sammanhållen by (${sam.toFixed(2)}, högst ${OMTANKE.max}) och låg med låg empati och självförsörjning (${sjalv.toFixed(2)})`, sam > 1.4 && sam <= OMTANKE.max && sjalv < 0.6],
     ];
   },
 };
@@ -199,5 +199,45 @@ SCENARIER.fullaforrad = {
       PROJEKT_LIST.forEach((k, i) => { PROJEKT[k].brist = brist[i]; });
       ved.matt = vedMatt; ved.dygn = vedDygn;
     }
+  },
+};
+
+SCENARIER.omtanke = {
+  text: 'Steg 10.5.2: omtanken. Det egna och familjens väger alltid 1, och byns arbete väger byns brist gånger omtanken om byn: 1 för en vanlig person, högre med empati, seden Sammanhållning och goda relationer i byn, lägre med Självförsörjning och osämja. Mot en bestämd person räknas samma tal med relationen till just hen, så att man hellre bygger på en väns hus än på en oväns',
+  kor: () => {
+    const s = by(4), p = vuxna(s)[0], fam = SIM.familjOf(s, p.id), andra = SIM.living(s).filter(q => q !== p);
+    // en vanlig person med neutrala relationer i en by utan sed
+    s.seder.v.gemenskap = 0; p.pot.empati = SIM.SED.mitt; for (const q of andra) { const r = s.rels[SIM.relKey(p.id, q.id)]; if (r) r.op = 0; }
+    SIM.omtankeTimme(s); const vanlig = SIM.omtanke(s, p);
+    // osams med byn: det egna går före byns. Byn saknar inga knivar men p:s familj saknar en
+    const annan = vuxna(s).find(q => !fam.includes(q))!;
+    for (let i = 0; i < 6; i++) addTool(s, 'kniv', annan);
+    const f = dangers(s), vanligVal = bastaProjekt(s, p, f);
+    for (const q of andra) if (!fam.includes(q)) SIM.getRel(s, p, q).op = -100;
+    SIM.omtankeTimme(s); const osams = SIM.omtanke(s, p);
+    const e0 = p.pot.empati; p.pot.empati = 3; s.seder.v.gemenskap = -1; SIM.omtankeTimme(s); const osamsSjalv = SIM.omtanke(s, p), osamsVal = bastaProjekt(s, p, f); p.pot.empati = e0; s.seder.v.gemenskap = 0;
+    // en vän och en ovän: omtanken om var och en
+    const [van, ovan] = andra.filter(q => !fam.includes(q));
+    SIM.getRel(s, p, van).op = 80; SIM.getRel(s, p, ovan).op = -80;
+    const omVan = SIM.omtankeOm(s, p, van.id), omOvan = SIM.omtankeOm(s, p, ovan.id), omFam = SIM.omtankeOm(s, p, p.id);
+    // två hus på samma avstånd: p bygger på vännens
+    const b = SIM.createState(4, START); b.now = new Date(b.now).setHours(10, 0, 0, 0);
+    for (const q of b.people) q.tek = { ...q.tek, yxa: 1, timmervagg: 1, timmer: 1 };
+    b.byggSok = undefined; SIM.planBuild(b); const h1 = SIM.housesOf(b).find(h => !h.klar);
+    let h2: SIM.Hus | undefined;
+    if (h1) { const kopia = SIM.bitsOf(b).filter(x => x.hus === h1.id); h2 = { ...h1, id: h1.id + 1000, namn: 'Kopian' }; SIM.housesOf(b).push(h2); for (const x of kopia) SIM.bitsOf(b).push({ ...x, id: x.id + 100000, hus: h2.id }); }
+    const bp = vuxna(b)[0], bf = SIM.familjOf(b, bp.id), [bv, bo] = SIM.living(b).filter(q => q !== bp && !bf.includes(q) && SIM.ageOf(q, b.now) >= 18);
+    if (h1 && h2) { h1.ag = bo.id; h2.ag = bv.id; SIM.getRel(b, bp, bv).op = 80; SIM.getRel(b, bp, bo).op = -80; }
+    const jobb = SIM.buildJob(b, bp), paVan = !!jobb && jobb.bit.hus === h2?.id;
+    // byns ved: samma by med Sammanhållning och med Självförsörjning, ett dygn
+    const ved = (g: number) => { const v = SIM.cloneState(s); for (const q of SIM.living(v)) for (const r of SIM.living(v)) if (q !== r) { const x = v.rels[SIM.relKey(q.id, r.id)]; if (x) x.op = 0; } setAmount(v, 'ved', 20); let n = 0; kor(v, 24, w => { w.seder.v.gemenskap = g; for (const q of SIM.living(w)) if (q.task?.act === 'ved') n++; }); return n / STEG_TIM; };
+    const vedSam = ved(1), vedSjalv = ved(-1);
+    return [
+      [`en vanlig person med neutrala relationer i en by utan sed har omtanken 1 (${vanlig.toFixed(2)})`, Math.abs(vanlig - 1) < 1e-9],
+      [`osämja sänker omtanken (${osams.toFixed(2)}), och den som är osams med en självförsörjande by och har låg empati (${osamsSjalv.toFixed(2)}) gör det familjen saknar först (${osamsVal?.k}, annars ${vanligVal?.k})`, osams < 1 && osamsSjalv < osams && !!osamsVal && (PROJEKT[osamsVal.k].egen?.(s, fam, p) ?? 0) > 0 && osamsVal.k !== vanligVal?.k],
+      [`omtanken om en vän är större än om en ovän, och familjen väger 1 (${omVan.toFixed(2)}, ${omOvan.toFixed(2)}, ${omFam})`, omVan > omOvan && omFam === 1],
+      [`två hus på samma avstånd: man bygger på vännens (${jobb ? SIM.housesOf(b).find(h => h.id === jobb.bit.hus)?.namn : 'inget'})`, paVan],
+      [`en by med Sammanhållning lägger fler timmar på byns ved än med Självförsörjning (${vedSam.toFixed(1)} mot ${vedSjalv.toFixed(1)} timmar)`, vedSam > vedSjalv],
+    ];
   },
 };

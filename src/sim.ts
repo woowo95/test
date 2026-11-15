@@ -112,6 +112,7 @@ export * from './sim/stationseld';
 export * from './sim/tillverka';
 export * from './sim/blotved';
 export * from './sim/delning';
+export * from './sim/omtanke';
 export * from './sim/varde';
 export * from './sim/arv';
 export * from './sim/djur';

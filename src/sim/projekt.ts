@@ -1,7 +1,8 @@
 import { eldKan } from './stationseld';
 import { LERA, leraBrist, leraPlats } from './lera';
 import { Act, Person, State } from './typer';
-import { familjOf, stat } from './folk';
+import { familjOf } from './folk';
+import { omtanke } from './omtanke';
 import { clamp } from './slump';
 import { LAGER, amountOf, lagerFlyttVal } from './lager';
 import { arMaterial, materialBuffert, stationBrist, villAv, villHaAv } from './forradsmal';
@@ -28,7 +29,6 @@ import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
 import { STATION, kanGoras, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
-import { SED } from './seder';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
 import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
@@ -90,10 +90,6 @@ export const PROJEKT_TAL = balans('projekt', {
   hage: 1, ang: 1, // ... hagen och ängen åt betesdjuren (steg 10.2.36)
   falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
-  // jaget och familjen (steg 6.1.16): det egna värdet räknas med egenintresset, som är egen för en vanlig människa i en by
-  // utan sed, sjunker med egenEmpati per steg empati över det vanliga och med egenSed när seden är Sammanhållning (stiger när
-  // den är Självförsörjning), och ligger mellan 0 och egenMax
-  egen: 1, egenEmpati: 0.3, egenSed: 0.5, egenMax: 2,
 });
 
 // projektet k som uppgift, om p kan göra det nu (steg 6.2.17): ett redskap görs bara så, i arbetet som behöver det
@@ -342,15 +338,13 @@ export function laggTillProjekt(rader: Record<string, ProjektDef>) { for (const 
 // det som skyddar mot kylan väger mer ju kallare det är (steg 10.2.71, KLADER.kylaVikt)
 const kylFaktor = (s: State, d: ProjektDef) => d.motKyla ? 1 + KLADER.kylaVikt * coldOf(temperature(s)) : 1;
 export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * kylFaktor(s, d) * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
-// hur mycket p bryr sig om det hen och familjen saknar, jämfört med byn (steg 6.1.16): mindre med empati och seden Sammanhållning
-export const egenintresse = (s: State, p: Person) => clamp(PROJEKT_TAL.egen - PROJEKT_TAL.egenEmpati * (stat(p, 'empati', s.now) - SED.mitt) / SED.spann - PROJEKT_TAL.egenSed * (s.seder?.v.gemenskap ?? 0), 0, PROJEKT_TAL.egenMax);
-// det projektet är värt för den som har familjen fam och egenintresset ei: byns värde och det egna (vad p och familjen saknar) gånger egenintresset
+// det projektet är värt för den som har familjen fam och omtanken om byn om: byns brist gånger omtanken och det egna (vad p och familjen saknar)
 // Byns brist kommer från timräkningen (arbetsTimme i val.ts, steg 6.2.21), så länge den finns
 // byns brist ur timmens räkning (val.ts), men räknas fram igen när något byggts eller satts upp sedan dess (s.byggV), så att ingen börjar ett andra bord samma timme
 export const bristNu = (s: State, k: string) => s.arbBehov?.brist && s.arbBehov.bv === (s.byggV ?? 0) ? s.arbBehov.brist[k] ?? 0 : PROJEKT[k].brist(s);
-export function personVarde(s: State, k: string, fam: readonly Person[], ei: number, p?: Person) {
-  const d = PROJEKT[k], e = d.egen && ei > 0 ? d.egen(s, fam, p) : 0;
-  return d.vikt * kylFaktor(s, d) * (bristNu(s, k) + e * ei) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
+export function personVarde(s: State, k: string, fam: readonly Person[], om: number, p?: Person) {
+  const d = PROJEKT[k], e = d.egen ? d.egen(s, fam, p) : 0;
+  return d.vikt * kylFaktor(s, d) * (bristNu(s, k) * om + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
 }
 // den i familjen som sover under tak utan en bädd
 function utanEgenBadd(s: State, fam: readonly Person[]) {
@@ -390,11 +384,11 @@ function arv(s: State, p: Person, m: string, f: ProjektFara, djup = 0): { u?: Up
 // (steg 6.1.17). egen: bara det p och familjen saknar räknas, pyssel för ens egen skull på fritiden (craft i val.ts)
 export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) {
   let best: { k: string; varde: number; u?: Uppgift; sak?: string } | undefined;
-  const fam = familjOf(s, p.id), ei = egenintresse(s, p); // p, partnern och de ogifta barnen
+  const fam = familjOf(s, p.id), om = omtanke(s, p); // p, partnern och de ogifta barnen
   for (const k of PROJEKT_LIST) {
     // när kylan är en fara är projekten mindre värda: tiden går helst till värmen (steg 10.2.6, PROJEKT_TAL.kyla), utom det som
     // skyddar mot kylan (steg 10.2.71)
-    const d = PROJEKT[k], v = (egen ? (d.egen && ei > 0 ? d.vikt * kylFaktor(s, d) * d.egen(s, fam, p) * ei / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()) : 0) : personVarde(s, k, fam, ei, p)) * (f.kyla && !d.motKyla ? PROJEKT_TAL.kyla : 1);
+    const d = PROJEKT[k], v = (egen ? (d.egen ? d.vikt * kylFaktor(s, d) * d.egen(s, fam, p) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()) : 0) : personVarde(s, k, fam, om, p)) * (f.kyla && !d.motKyla ? PROJEKT_TAL.kyla : 1);
     if (v <= 0 || best && v <= best.varde) continue;
     if (d.kan(s, p, f)) {
       const u = d.uppgift(s, p), vf = u?.act === 'falla' ? v * fallVilja(s) : v; // färre fällningar när stammar ligger kvar (steg 9.2.87)

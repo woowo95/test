@@ -1,4 +1,5 @@
 import { husNytt } from './byggnad';
+import { omtankeOm } from './omtanke';
 import { gen, hans } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from './folk';
@@ -126,7 +127,10 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
     const need = needOf(b), tro = husTro(s, b.hus);
     // trons hus (steg 10.3.19): bara de troende bygger, och en bit vars material kyrkan inte äger väntar (det hämtas inte)
     if (tro !== undefined && (p.tro !== tro || need > 0 && avail(s, M.item!, p, b.hus) < need)) continue;
-    const sc = (repair ? 0 : b.k === 'golv' ? (M.item ? BYGG.prioTra : BYGG.prioJord) : BYGG.prioVagg) + Math.hypot(b.x - p.x, b.y - p.y);
+    // omtanken (steg 10.5.2): man bygger hellre på det egna och en väns hus än på en oväns; byns hus efter omtanken om byn
+    const om = omtankeOm(s, p, b.hus !== undefined ? husById(s, b.hus)?.ag : undefined);
+    if (om <= 0) continue;
+    const sc = ((repair ? 0 : b.k === 'golv' ? (M.item ? BYGG.prioTra : BYGG.prioJord) : BYGG.prioVagg) + Math.hypot(b.x - p.x, b.y - p.y)) / om;
     if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p, b.hus) < need }; }
   }
   return best;
