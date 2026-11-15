@@ -214,7 +214,8 @@ for (const [ks, why] of [
   [['branna', 'sprit'], 'spriten (steg 10.7.26) bränns i brännpannan på bryggkaret, som kommer efter vinet och ölet; scenariot sprit prövar den'],
   [['mjod'], 'mjödet (steg 10.7.25) kräver honung från vildbin och bryggkaret; scenariot mjod prövar det'],
   [['gropa'], 'festmåltiden i kokgropen (steg 10.7.28) kräver tekniken Kokgrop efter lerkrukan och en ritual eller ett bröllop; scenariot festmaltid prövar den'],
-  [['rock_vitskinn', 'skor_vitskinn', 'axelrem_vitskinn', 'ryggsack_vitskinn'], 'vitskinnet (steg 10.7.22) kommer bara från harar som slaktas under istiden, och plaggen som tar mycket skinn görs sällan av det; scenariot vinterpals prövar det'],
+  [['rock_vitskinn', 'skor_vitskinn', 'snoskor_vitskinn', 'axelrem_vitskinn', 'ryggsack_vitskinn'], 'vitskinnet (steg 10.7.22) kommer bara från harar som slaktas under istiden, och plaggen som tar mycket skinn görs sällan av det; scenariot vinterpals prövar det'],
+  [['naver'], 'nävern (steg 6.3.3) täljs bara när en eld tänds med försök och höet inte räcker, och sedan 10.6.12 tänds eldarna oftast med en brand från en eld som brinner; scenariot naver prövar den'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 
 // aldrig: allt i registren används, i minst en av testbyarna

@@ -2331,18 +2331,18 @@ SCENARIER.troskrets = {
     // ett nedröstat bud: bara den som talar tror starkt, de andra tycker att budet är för hårt
     for (const p of v) p.troStyrka = p === frams ? 100 : 0; // den som talar bär ensam tyngden för ett litet bud (steg 10.3.8)
     for (const p of v) for (const q of v) if (p !== q) SIM.getRel(s, p, q).op = 0;
-    const n0 = tr.roster?.length ?? 0;
-    kvall(2);
-    const ned = tr.roster?.[n0];
+    // det första som röstas ned (planen för trons hus kan gå före buden de första kvällarna)
+    let ned: NonNullable<SIM.Tro['roster']>[number] | undefined, dn = 1;
+    while (!ned && dn < 8) { dn++; const n = tr.roster?.length ?? 0; kvall(dn); ned = tr.roster?.slice(n).find(o => !o.gick); }
     const tillbaka: number[] = [];
-    for (let d = 3; d <= 7; d++) { const n = tr.roster!.length; kvall(d); if (tr.roster!.slice(n).some(o => o.namn === ned?.namn)) tillbaka.push(d - 2); }
+    for (let d = dn + 1; d <= dn + 5; d++) { const n = tr.roster!.length; kvall(d); if (tr.roster!.slice(n).some(o => o.namn === ned?.namn)) tillbaka.push(d - dn); }
     // två trosriktningar samma kväll
     const tr2: SIM.Tro = { ...structuredClone(tr), id: 2, namn: 'Stillhetens väg', roster: undefined, nedrostat: undefined, bud: undefined };
     s.tron!.push(tr2);
     for (const p of v.slice(Math.ceil(v.length / 2))) { p.tro = 2; }
     for (const p of v) p.troStyrka = 60;
     const a0 = tr.roster!.length, b0 = tr2.roster?.length ?? 0;
-    kvall(8);
+    kvall(dn + 6);
     const bada = tr.roster!.length > a0 && (tr2.roster?.length ?? 0) > b0;
     return [
       [`en by utan ledarskap röstar i trons krets (${o1?.namn ?? 'ingen omröstning'}: ${o1?.gick ? 'ja' : 'nej'})`, baraTroende],
@@ -2383,8 +2383,9 @@ SCENARIER.buden = {
     const b2 = medTro(7, 2); b2.s.styre = undefined; b2.tr.bud = []; b2.tr.sk = { ...b2.tr.sk, fest: 10 };
     for (const p of b2.v) delete p.tek!.ledarskap;
     const dag2 = b2.s.now - (b2.s.now % 86400000);
-    for (let d = 1; d <= 60 && !b2.tr.roster?.length; d++) { b2.s.now = dag2 + d * 86400000 + 20 * 3600000; SIM.kyrkaKvall(b2.s); }
-    const forstaBud = b2.tr.roster?.[0];
+    const ettBud = () => b2.tr.roster?.find(o => o.f === 'nyttBud' || o.f === 'bytBud'); // planen för trons hus är inget bud och kan komma före
+    for (let d = 1; d <= 60 && !ettBud(); d++) { b2.s.now = dag2 + d * 86400000 + 20 * 3600000; SIM.kyrkaKvall(b2.s); }
+    const forstaBud = ettBud();
     // de nya förbuden (steg 10.3.22), i en egen by
     const b3 = medTro(6, 4), s3 = b3.s, tr3 = b3.tr;
     for (const p of b3.v) p.troStyrka = 90;

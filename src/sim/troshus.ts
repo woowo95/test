@@ -24,7 +24,7 @@ export const TROSHUS = balans('troshus', {
   bankPer: 6, // en bänk per så många golvrutor
   altarTing: 3, // så många heliga ting rymmer altaret (steg 10.3.20)
   storlek: 2, // trons tyngd som behövs innan planen tas upp (som ett bud av den storleken)
-  bas: 0.15, // rösten för en del av planen utan skalorna, vid andligheten 50
+  bas: 0, // rösten för en del av planen utan skalorna, vid andligheten 50
   skala: 0.3, // hur mycket skalorna väger i rösten
 });
 export type TrosDel = 'storlek' | 'form' | 'vagg' | 'altare' | 'gudabild' | 'bank';
@@ -112,7 +112,7 @@ export function troshusRegister() { FRAGOR.troshus = {
     const tr = troOf(s, d.tro as number);
     if (!tr) return { v: 0, why: '' };
     const pa = clamp(TROSHUS_DELAR[d.del as TrosDel].passar(s, tr, d.v as string), -1, 1);
-    return { v: TROSHUS.bas + (andlighet(s, p) - 50) / 100 + TROSHUS.skala * pa, why: pa > 0.2 ? 'Passar tron' : pa < -0.2 ? 'Passar inte tron' : 'Tycker att det är rätt för tron' };
+    return { v: (p.troStyrka ?? 0) / 100 + TROSHUS.bas + (andlighet(s, p) - 50) / 100 + TROSHUS.skala * pa, why: pa > 0.2 ? 'Passar tron' : pa < -0.2 ? 'Passar inte tron' : 'Tycker att det är rätt för tron' };
   },
   gor: (s, d) => {
     const tr = troOf(s, d.tro as number)!, del = d.del as TrosDel, forut = planKlar(s, tr);
