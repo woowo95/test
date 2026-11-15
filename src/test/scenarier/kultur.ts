@@ -3672,6 +3672,58 @@ SCENARIER.bynamn = {
       [`en by med ett namn visar det (${SIM.bynsNamn(med)}), och det finns kvar efter sparningen (${SIM.bynsNamn(medSparad)}, rad ${medSparad.bynamn?.rad})`, SIM.bynsNamn(med) === 'Granåsen' && SIM.bynsNamn(medSparad) === 'Granåsen' && medSparad.bynamn?.rad === 'gran'],
       [`en sparad by utan namn heter ${SIM.bynsNamn(sparad)}`, SIM.bynsNamn(sparad) === 'Nybygget'],
       ['rubriken och flikens titel frågar bynsNamn, och laddningskortet behåller spelets namn', /<h1 id="bynamn">/.test(mall) && /document\.title = n/.test(main) && /bynsNamn\(s\)/.test(main) && /<h2>Samhällssimulatorn<\/h2>/.test(mall)],
+      ...namnmallar(),
     ];
   },
 };
+// steg 10.9.2: namnmallarna i registret BYNAMN, hur sant varje namn är och vem som tycker om vad
+function namnmallar(): [string, boolean][] {
+  const s = createState(9, START), vux = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), p = vux[0];
+  const k1 = SIM.kandidater(s, p).map(k => k.namn).join(', '), k2 = SIM.kandidater(createState(9, START), p).map(k => k.namn).join(', ');
+  const nyF = SIM.sant(s, { rad: 'nybygget' });
+  const hus = SIM.slagitSigNer(s);
+  (s.hus ??= []).push({ klar: s.now } as never);
+  const nyE = SIM.sant(s, { rad: 'nybygget' });
+  s.hus.pop();
+  // sjön: elden vid stranden och långt ifrån
+  const g = SIM.groundOf(s), W = s.W ?? 64;
+  let strand: { x: number; y: number } | undefined;
+  for (let i = 0; i < g.tiles.length && !strand; i++) if (g.tiles[i] === SIM.T.Gras && g.tiles[i + 1] === SIM.T.Vatten) strand = { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
+  const eld0 = s.fire.at;
+  s.fire.at = strand; const sjoNara = SIM.sant(s, { rad: 'sjon' });
+  s.fire.at = eld0;
+  // vargen: 15 % av de vuxna bär ett vargbett
+  const vargFore = SIM.sant(s, { rad: 'varg' }), till0 = SIM.tilltal(s, p, { rad: 'varg' });
+  const n = Math.ceil(vux.length * 0.15);
+  for (const q of vux.slice(0, n)) (q.upp ??= []).push({ k: 'vargbett', a: 0, e: {} });
+  const vargEfter = SIM.sant(s, { rad: 'varg' }), till1 = SIM.tilltal(s, p, { rad: 'varg' });
+  // en person: helt sant medan hen lever, sedan efter hur känd hen är
+  const q = vux[1], levande = SIM.sant(s, { rad: 'person', om: q.id });
+  q.died = s.now; s.kanda = {}; const glomd = SIM.sant(s, { rad: 'person', om: q.id });
+  s.kanda = { [q.id]: SIM.RYKTE.legend }; const kand = SIM.sant(s, { rad: 'person', om: q.id });
+  q.died = undefined;
+  // genitiv: ett namn som slutar på s tar inget s till
+  const nS = q.name; q.name = 'Torgils'; const ks = SIM.kandidater(s, p).filter(k => k.om === q.id).map(k => k.namn); q.name = nS;
+  // en grannklans namn hoppas över
+  const forsta = SIM.kandidater(s, p).find(k => k.rad === 'gran')!;
+  s.klaner = [{ namn: forsta.namn + 's folk' } as never];
+  const hoppas = !SIM.kandidater(s, p).some(k => k.namn === forsta.namn);
+  s.klaner = undefined;
+  const bast = SIM.bastaNamn(s, p);
+  if (process.env.ALLA) for (let by = 1; by <= 20; by++) {
+    const t = createState(by, START), v = SIM.living(t).filter(o => SIM.ageOf(o, t.now) >= SIM.ALDER.vuxen);
+    (t.hus ??= []).push({ klar: t.now } as never);
+    const fr = v.reduce((a, o) => o.pot.karisma > a.pot.karisma ? o : a), b = SIM.bastaNamn(t, fr)!;
+    console.log(`    by ${by}: ${b.namn} (${b.rad}, ${b.v.toFixed(2)}); ${SIM.kandidater(t, fr).map(k => `${k.namn} ${SIM.gilla(t, fr, k).toFixed(2)}`).join(', ')}`);
+  }
+  return [
+    [`namnen ur byns frö blir desamma i samma by (${k1})`, k1 === k2 && k1.length > 0],
+    [`Nybygget är sant tills byn slagit sig ner (${nyF} utan hus, ${nyE} med ett färdigt hus; nere utan hus: ${hus})`, nyF === 1 && nyE === 0 && !hus],
+    [`sjön är sann när elden står vid stranden (${sjoNara.toFixed(2)})`, !!strand && sjoNara > 0.9],
+    [`vargen blir sann när 15 % av de vuxna bär ett vargbett (${vargFore.toFixed(2)} → ${vargEfter.toFixed(2)}), och den som bär det tycker mer om namnet (${till0} → ${till1})`, vargFore === 0 && vargEfter === 1 && (till1 > till0) === vux.slice(0, n).includes(p)],
+    [`en persons namn: ${levande} medan hen lever, ${glomd} när hen är död och glömd, ${kand} när hen är en legend`, levande === 1 && glomd === 0 && kand === 1],
+    [`genitiv: ${ks.join(', ')}`, ks.length > 0 && ks.every(k => k.startsWith('Torgils') && !k.startsWith('Torgilss'))],
+    [`ett namn som en grannklans namn börjar med hoppas över (${forsta.namn})`, hoppas],
+    [`den som föreslår tar det hen tycker bäst om (${bast?.namn}, ${bast?.v.toFixed(2)})`, !!bast && bast.v >= Math.max(...SIM.kandidater(s, p).map(k => SIM.gilla(s, p, k)))],
+  ];
+}
