@@ -1835,6 +1835,56 @@ SCENARIER.tamslakt = {
   },
 };
 
+SCENARIER.ko = {
+  text: 'Steg 10.10.1: kon. Handlaren säljer kon dyrare än fåret; hon blir hungrig dubbelt så fort, betar av hagen dubbelt så fort och behöver dubbelt så mycket hö över istiden. Hon ger 4 mjölk i den minsta krukan som rymmer allt (annars den största, och resten stannar i henne), och slakten ger mycket kött, ben, hud, talg och horn',
+  kor: () => {
+    const { nyttTamdjur, stepTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, setAmount, amountOf, tamdjurOf, hoRacker, betesTal, HANDLARVAROR, DJUR, canProcess, bearbeta, tamArt, DAY, VINTER } = SIM;
+    const s = createState(4, START); klockan(s, 10);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    const iHandeln = HANDLARVAROR.some(w => w.k === 'levko'), pris = SIM.SAKER.levko?.varde ?? 0;
+    // den köpta kon blir ett djur
+    setAmount(s, 'levko', 1); stepBoskap(s);
+    const ko = tamdjurOf(s).find(d => d.art === 'ko');
+    const far = nyttTamdjur(s, 'far', p.x + 2, p.y, undefined, s.now - 3 * DAY);
+    if (ko) { ko.x = p.x + 1; ko.y = p.y; ko.hona = true; }
+    ko!.hunger = 0; far.hunger = 0;
+    for (let h = 0; h < 6; h++) stepTamdjur(s);
+    const hk = ko?.hunger ?? 0, hf = far.hunger;
+    // höet över istiden: kon räknas som två får
+    const tal = betesTal(s);
+    setAmount(s, 'torrgras', 3 * VINTER.hoPerDjur - 1); const for1 = hoRacker(s);
+    setAmount(s, 'torrgras', 3 * VINTER.hoPerDjur); const for2 = hoRacker(s);
+    // mjölken: den minsta krukan som rymmer allt
+    const liten = addTool(s, 'lerkruka_liten', p), mellan = addTool(s, 'lerkruka_mellan', p), stor = addTool(s, 'lerkruka_stor', p);
+    for (const k of [liten, mellan, stor]) k.hos = undefined;
+    ko!.mjolk = 1; ko!.hunger = 0;
+    const v1 = mjolkaVal(s, p); if (v1) mjolkaKlar(s, p, v1.id);
+    const nMellan = mellan.inne?.n ?? 0, iMellan = nMellan === 4 && !liten.inne && !stor.inne;
+    // bara en liten kruka ledig: hon ger det som ryms, resten stannar i henne
+    mellan.inne = undefined; stor.hos = p.id; mellan.hos = p.id;
+    ko!.mjolk = 1;
+    const v2 = mjolkaVal(s, p); if (v2) mjolkaKlar(s, p, v2.id);
+    const rest = ko!.mjolkRest ?? 0, iLiten = liten.inne?.n ?? 0;
+    // slakten
+    setAmount(s, 'slaktko', 1); (p.tek ??= {}).kniv = 1; setAmount(s, 'kniv', 1);
+    (s.stationer ??= []).push({ id: 9902, k: 'slaktbank', x: Math.floor(p.x) + 2, y: Math.floor(p.y), kvar: 0 }); SIM.touch(s);
+    p.skill.jakt = 0; // köttet följer jakten (kottFaktor)
+    const kan = canProcess(s, p, DJUR.ko);
+    if (kan) bearbeta(s, p, DJUR.ko, DJUR.ko.maxTim);
+    const kott = amountOf(s, 'kokott'), hud = amountOf(s, 'kohud'), ben = amountOf(s, 'ben'), talg = amountOf(s, 'talg');
+    return [
+      [`handlaren säljer kor, dyrare än fåren (${pris} mot ${SIM.SAKER.levfar?.varde})`, iHandeln && pris > (SIM.SAKER.levfar?.varde ?? 0)],
+      ['den köpta kon blir byns ko', !!ko && amountOf(s, 'levko') === 0],
+      [`kon blir hungrig dubbelt så fort som fåret (${hk.toFixed(3)} mot ${hf.toFixed(3)})`, Math.abs(hk - 2 * hf) < 1e-9 && hf > 0],
+      [`en ko och ett får äter som tre får (${tal}), och höet räcker först vid ${3 * VINTER.hoPerDjur} (${for1} → ${for2})`, tal === 3 && !for1 && for2],
+      [`mjölken hälls i den minsta krukan som rymmer allt (${nMellan} i den mellanstora)`, iMellan],
+      [`finns bara en liten kruka får den det som ryms och resten stannar i kon (${iLiten} i krukan, ${rest} kvar)`, iLiten === 2 && rest === 2],
+      [`kon ger ${tamArt('ko').mjolk} mjölk, geten ${tamArt('get').mjolk}`, tamArt('ko').mjolk === 4 && tamArt('get').mjolk === 2],
+      [`slakten ger 20 kött, 4 hudar, 5 ben och 5 talg (${kott} av ${SIM.kottAv(p, 20)} efter jakten, ${hud}, ${ben}, ${talg})`, kan && kott === SIM.kottAv(p, 20) && hud === 4 && ben >= 5 && talg >= 5],
+    ];
+  },
+};
+
 SCENARIER.mjolk = {
   text: 'Steg 9.8.8: mjölken. En vuxen get som inte är hungrig får mjölk utom i istiden; hon mjölkas i en lerkruka, och mjölken dricks av den törstige som är hemma: den släcker törsten och fyller protein',
   kor: () => {

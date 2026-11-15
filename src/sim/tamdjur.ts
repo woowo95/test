@@ -25,6 +25,8 @@ export const TAMDJUR = {
   hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', ...KOTTSLAG, 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'varg', ater: 1 },
   far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur', ater: 1, ull: 2, unge: 'ett lamm', lev: 'levfar' },
   get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: ['lovkarve', 'torrgras'], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur', ater: 1, mjolk: 2, unge: 'en killing', lev: 'levget' },
+  // kon (steg 10.10.1): äter som två får, ger mest mjölk och mest slakt, och lever längst
+  ko: { namn: 'Ko', ord: ['en', 'ko', 'kor', 'kon'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 60, mattar: 0.5, ikon: 'radjur', ater: 2, mjolk: 4, unge: 'en kalv', lev: 'levko' },
 } as const satisfies Record<string, TamArt>;
 export type TamArtId = keyof typeof TAMDJUR;
 export const TAM_LIST = Object.keys(TAMDJUR) as TamArtId[];
@@ -32,7 +34,7 @@ export const tamArt = (a: TamArtId): TamArt => TAMDJUR[a];
 
 // ett tamdjur. hunger 0–1 (1 = svälter), svalt = timmar det svultit, agare = personen som äger det (ingen = byn), matad = hur
 // mycket var och en matat det (hunden byter till den som matat mest, steg 9.8.3)
-export interface Tamdjur { id: number; art: TamArtId; born: number; hunger: number; svalt?: number; agare?: number; x: number; y: number; matad?: Record<number, number>; lojal?: number; hage?: number; dog?: number; ull?: number; mjolk?: number; fahus?: number; kyla?: number; hona?: boolean } // hona: könet, satt när djuret kommer till byn (steg 9.9.3); äldre djur efter id, // fahus = huset djuret står i under istiden, kyla = timmar ute i istiden (steg 9.8.9)
+export interface Tamdjur { id: number; art: TamArtId; born: number; hunger: number; svalt?: number; agare?: number; x: number; y: number; matad?: Record<number, number>; lojal?: number; hage?: number; dog?: number; ull?: number; mjolk?: number; mjolkRest?: number; fahus?: number; kyla?: number; hona?: boolean } // hona: könet, satt när djuret kommer till byn (steg 9.9.3); äldre djur efter id, // fahus = huset djuret står i under istiden, kyla = timmar ute i istiden (steg 9.8.9)
 export const TAM_ID0 = 900_000_000; // tamdjurens id ligger över alla vilda djurs (djur.ts)
 
 export const TAM = balans('tamdjur', {

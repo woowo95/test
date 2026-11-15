@@ -17,7 +17,7 @@ import { VINTER, hoAv, hoRacker } from './slatter';
 import { HAGE, betesTal, djurIHagen, hageDygn, hagarOf } from './hage';
 import { farorNu } from './kult';
 import { heligtAvstar } from './kultlatt';
-import { fyllVatska, ledigFor } from './vatskor';
+import { fyllVatska, karRymmer, ledigFor, ledigaFor } from './vatskor';
 import { TAMDJUR, TamArtId, Tamdjur, arHona, nyttTamdjur, tamAlder, tamArt, tamdjurOf } from './tamdjur';
 
 export const BOSKAP = balans('boskap', {
@@ -118,13 +118,22 @@ export function mjolkaVal(s: State, p: Person) {
   }
   return b;
 }
+// mjölken hälls i den minsta lediga krukan som rymmer allt, annars i den största (steg 10.10.1); det som inte ryms stannar i djuret
+// till nästa mjölkning
 export function mjolkaKlar(s: State, p: Person, ref?: number) {
   const d = tamdjurOf(s).find(q => q.id === ref);
-  if (!d || (d.mjolk ?? 0) < 1 || !fyllVatska(s, 'mjolk', tamArt(d.art).mjolk!)) return;
-  d.mjolk = 0;
+  if (!d || (d.mjolk ?? 0) < 1) return;
+  const n = tamArt(d.art).mjolk! + (d.mjolkRest ?? 0);
+  const t = mjolkKar(s, n);
+  if (!t || !fyllVatska(s, 'mjolk', n, t)) return;
+  d.mjolk = 0; d.mjolkRest = Math.max(0, n - karRymmer(t)) || undefined;
   ovning(p, 'skotsel', BOSKAP.ovning); gjort(s, p, 'mjolkat'); count(s, 'mjolkat');
-  if (forstaGang(s, 'mjolkatGet')) log(s, `${p.name} mjölkade byns första get.`, 'world', [p.id]);
+  if (forstaGang(s, 'mjolkatGet')) log(s, `${p.name} mjölkade byns första ${tamArt(d.art).ord[1]}.`, 'world', [p.id]);
 }
+const mjolkKar = (s: State, n: number) => {
+  const lediga = ledigaFor(s, 'mjolk');
+  return lediga.find(t => karRymmer(t) >= n) ?? lediga[lediga.length - 1];
+};
 
 // ---------- slakten av tamdjuren (steg 9.8.7) ----------
 // Ett får eller en get avlivas och slaktas vid slaktbänken som viltet (raderna far och get i DJUR, redskap.ts): kött, ben, skinn,
@@ -135,7 +144,7 @@ export const SLAKTDJUR = balans('slaktdjur', {
   kvarLiv: 0.2, // ett djur slaktas när mindre än så här stor del av livet är kvar (steg 10.2.33; förr vid 75 %)
   min: 15, // minuter det tar att avliva djuret och bära det till slaktbänken
 });
-export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget' };
+export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget', ko: 'slaktko' };
 // betet och höet räcker för ett djur till: någon hage har bete för det i BOSKAP.beteDygn dygn, och höet räcker över istiden (steg 10.2.33)
 export const rymsEnTill = (s: State, art: TamArtId = 'far') => { const at = tamArt(art).ater; return hagarOf(s).some(h => hageDygn(s, h, at) >= BOSKAP.beteDygn) && hoAv(s) >= (betesTal(s) + at) * VINTER.hoPerDjur; };
 // värdet av att behålla djuret: honan och den vuxna mer, det sista av sitt kön mycket mer (så att ett par blir kvar så länge

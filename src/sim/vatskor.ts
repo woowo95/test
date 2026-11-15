@@ -88,7 +88,8 @@ export const ar_vatska = (k: string): k is VatskaId => k in VATSKOR;
 export const karRymmer = (t: Ting) => krukaAv(t.k)?.rymmer ?? 1;
 const behallare = (t: Ting) => t.k === 'vattensack' || t.k === 'naverask' || !!krukaAv(t.k);
 // en ledig behållare som passar vätskan v: tom, färdig (inte en kruka som torkar) och inte i någons hand
-export const ledigFor = (s: State, v: VatskaId) => tingOf(s).filter(t => behallare(t) && !t.inne && !t.vaxt && !t.kok && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && (VATSKOR[v].i as string[]).includes(t.k)).sort((a, b) => karRymmer(a) - karRymmer(b) || a.id - b.id)[0];
+export const ledigaFor = (s: State, v: VatskaId) => tingOf(s).filter(t => behallare(t) && !t.inne && !t.vaxt && !t.kok && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && (VATSKOR[v].i as string[]).includes(t.k)).sort((a, b) => karRymmer(a) - karRymmer(b) || a.id - b.id); // minst först
+export const ledigFor = (s: State, v: VatskaId) => ledigaFor(s, v)[0];
 // hur mycket av vätskan byn har, i alla behållare
 // kyrkans krukor (steg 10.3.23): ingen annan dricker ur dem
 const kyrkans = (t: Ting) => t.agare !== undefined && t.agare < 0;

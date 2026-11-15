@@ -113,15 +113,17 @@ const DEF = {
   // eget kött per art (steg 10.3.14): kött = true gör saken till ett köttslag (KOTTSLAG), som grillas, torkas, röks och saltas till samma saker
   radjurkott: { namn: 'Rådjurskött', ett: true, skaffa: RECEPT.radjurkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2.2, fett: 0.7, energi: 0.8, mineral: 0.7, vitamin: 0.3 }, ra: true, haller: 2 },
   farkott: { namn: 'Fårkött', ett: true, skaffa: RECEPT.farkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 1.8, fett: 1.5, energi: 0.9, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
+  kokott: { namn: 'Nötkött', ett: true, skaffa: RECEPT.kokott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.9, mineral: 0.7, vitamin: 0.3 }, ra: true, haller: 2 }, // steg 10.10.1
   getkott: { namn: 'Getkött', ett: true, skaffa: RECEPT.getkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 0.9, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   fagelkott: { namn: 'Fågelkött', ett: true, skaffa: RECEPT.fagelkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 0.8, energi: 0.7, mineral: 0.5, vitamin: 0.3 }, ra: true, haller: 2 },
   bjornkott: { namn: 'Björnkött', ett: true, skaffa: RECEPT.bjornkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.6, energi: 0.9, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   farskinn: { namn: 'Fårskinn', ett: true, skaffa: RECEPT.farskinn, stack: 10, mapp: 'Material', slits: 0.0006 }, // fårets och getens egna skinn (steg 10.3.14)
   getskinn: { namn: 'Getskinn', ett: true, skaffa: RECEPT.getskinn, stack: 10, mapp: 'Material', slits: 0.0006 },
+  kohud: { namn: 'Kohud', ett: true, skaffa: RECEPT.kohud, stack: 10, mapp: 'Material', slits: 0.0005 }, // kons tjocka hud (steg 10.10.1)
   vitskinn: { namn: 'Vitt harskinn', ett: true, skaffa: RECEPT.vitskinn, stack: 30, mapp: 'Material', slits: 0.0006 }, // harens vinterpäls (steg 10.7.22): en hare som slaktas under istiden
   vargkott: { namn: 'Vargkött', ett: true, skaffa: RECEPT.vargkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', ett: true, skaffa: RECEPT.vargskinn, stack: 5, mapp: 'Material', slits: 0.0006 },
-  slaktfar: { vikt: 12, namn: 'Slaktat får', ett: true, varde: 20, stack: 1, mapp: 'Material', haller: 3 }, slaktget: { vikt: 12, namn: 'Slaktad get', varde: 20, stack: 1, mapp: 'Material', haller: 3 }, // steg 9.8.7: ett tamdjur som avlivats, slaktas vid slaktbänken som viltet
+  slaktfar: { vikt: 12, namn: 'Slaktat får', ett: true, varde: 20, stack: 1, mapp: 'Material', haller: 3 }, slaktget: { vikt: 12, namn: 'Slaktad get', varde: 20, stack: 1, mapp: 'Material', haller: 3 }, slaktko: { vikt: 40, namn: 'Slaktad ko', varde: 50, stack: 1, mapp: 'Material', haller: 3 }, // steg 9.8.7: ett tamdjur som avlivats, slaktas vid slaktbänken som viltet
   djurhorn: { namn: 'Djurhorn', ett: true, varde: 2, stack: 20, vikt: 0.2, mapp: 'Material' }, fiskrens: { namn: 'Fiskrens', stack: 25, ruta: 50, mapp: 'Material', haller: 2 }, // steg 9.8.7: hornen från fåren och getterna, och fiskrensen som blir agn
   radjur: { vikt: 15, namn: 'Fällt rådjur', ett: true, skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.2: en full famn, som vargen
   fagel: { namn: 'Fälld fågel', skaffa: { act: 'jakt' }, stack: 5, vikt: 8, ruta: 20, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 0.8, energi: 0.7, mineral: 0.5, vitamin: 0.3 }, ra: true, haller: 2 }, // steg 6.6.3: orre, ripa eller skogsduva, samma sak
@@ -273,7 +275,7 @@ const DEF = {
   jordgubbsplanta: { namn: 'Jordgubbsplanta', ett: true, varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
   appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
   ull: { namn: 'Ull', ett: true, varde: 3, stack: 20, vikt: 0.2, mapp: 'Material' }, // klipps av fåren (steg 9.8.5, boskap.ts)
-  levfar: { namn: 'Levande får', ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levhons: { namn: 'Höna', varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
+  levfar: { namn: 'Levande får', ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levko: { namn: 'Levande ko', varde: 60, stack: 1, vikt: 0, mapp: 'Material' }, // kon (steg 10.10.1) levhons: { namn: 'Höna', varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
   appelplanta: { namn: 'Äppelplanta', ett: true, varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },
   honung: { namn: 'Honungskaka', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, naring: { energi: 2.2, vitamin: 0.2, mineral: 0.2 } }, // steg 10.7.25: vaxkakan med honungen i, från vildbin i skogen; ruttnar inte
   notter: { namn: 'Hasselnötter', skaffa: { act: 'samla' }, stack: 50, ruta: 100, mapp: 'Mat', mat: 6.8, naring: { fett: 2, protein: 1.2, energi: 1.2, mineral: 0.8, vitamin: 0.3 }, haller: 20 }, // steg 9.7.14: håller länge
