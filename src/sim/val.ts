@@ -10,7 +10,7 @@ import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
 import { facklaVal, ljusAt } from './ljus';
 import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, platsIByn, utanforByn } from './omrade';
-import { SKRIFT, lasVal, skrivVal } from './skrift';
+import { SKRIFT, lasVal, skrivPlats, skrivVal } from './skrift';
 import { GANG } from './gang';
 import { iVattnetNu, sjoNamn, sjoVid, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
@@ -1332,7 +1332,7 @@ function skrift(s: State, p: Person, v: Val, at: { x: number; y: number }, annan
   if (w <= 0) return false;
   const r = rnd(s, 'val', p) * (w + annan);
   if (r >= w) return false;
-  if (sk && r < sk.w) { set(v, 'skriva', sk.why); v.spot = at; v.dur = SKRIFT.skrivMin * MIN; }
+  if (sk && r < sk.w) { const pl = skrivPlats(s, p, at); set(v, 'skriva', sk.why); v.spot = pl.spot; v.dur = pl.dur; } // vid en ledig skrivpulpet, annars för hand där hen är (steg 10.6.11)
   else { set(v, 'lasa', la!.why); v.spot = la!.spot; v.ref = la!.ref; v.dur = SKRIFT.lasMin * MIN; }
   return true;
 }

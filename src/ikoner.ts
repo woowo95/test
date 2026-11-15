@@ -146,6 +146,7 @@ export const PAL: Record<string, Record<string, string>> = {
   skinn: { b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
   pergament: { w: '#dad0bb', k: '#bdb39b' },
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
+  skrivpulpet: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', w: '#dad0bb', d: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 10.6.11, platshållare
   bok: { h: '#7d5b40', w: '#dad0bb', d: '#24201d' }, // steg 10.6.6, platshållare // steg 10.6.5, platshållare // steg 10.6.4, platshållare
   // vargen (steg 3.7.14, platshållare): grå päls
   varg: { o: '#24201d', G: '#61767a', H: '#8a9c9e', g: '#3e5156', W: '#dad0bb', k: '#24201d' }, // (Björn valde version 1 efter v245, steg 4.5.2)
@@ -2681,6 +2682,24 @@ export const PIX: Record<string, string[]> = {
     '........oo......',
   ],
   // boken (steg 10.6.6, platshållare): bladen mellan två plankor, ryggen till vänster
+  skrivpulpet: [ // platshållare (steg 10.6.11): en lutande skiva med ett blad, och en pall framför
+    '................',
+    '................',
+    '...oooooooooo...',
+    '..occcccccccco..',
+    '..ocwwwwwwwcco..',
+    '.occwddwdwwccco.',
+    '.occwwwwwwwccco.',
+    '.ocbbbbbbbbbbco.',
+    '.oooooooooooooo.',
+    '..oa.......ao...',
+    '..oa..ooo..ao...',
+    '..oa.obbbo.ao...',
+    '..oa.oaaao.ao...',
+    '..oo.oa.ao.oo...',
+    '.....oo.oo......',
+    '..zz..zz.zz.zz..',
+  ],
   bok: [
     '........',
     '.hhhhhh.',

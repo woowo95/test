@@ -1,4 +1,4 @@
-import { DAY, H, HOUR, Lardom, Person, Skill, State, Task, W } from './typer';
+import { DAY, H, HOUR, Lardom, MIN, Person, Skill, State, Task, W } from './typer';
 import { SKRIFT } from './skriftTal';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, relKey, stat, think } from './folk';
 import { TEK, TEKTAL, knows, learn } from './teknik';
@@ -27,6 +27,7 @@ import { troshusAv } from './troshus';
 import { LAGAR, type Lag, lagTak, lagarNu, skrivenLag } from './lagar';
 import { pabud } from './styre';
 import { STRAFF_NAMN } from './styre';
+import { kvVid, stationDef, stationFor, vidStation } from './stationer';
 
 // ---------- skriften (system 10.6) ----------
 // Skriften i tre stadier: runstenen, pergamentet och boken. Registret SKRIFTER har en rad per slag av innehåll, med de stadier
@@ -407,13 +408,18 @@ function skriv(s: State, p: Person, l: SkrivLust): { titel: string; text: string
   if (l.slag === 'helig') return { titel: `De heliga kvädena (${om.toLowerCase()})`, text: troOf(s, l.tro!)?.kvade?.text ?? '' };
   return { titel: `Berättelsen om ${om}`, text: `${om} ${vad}.` };
 }
+// var och hur länge hen skriver (steg 10.6.11): vid en ledig skrivpulpet fortare, annars för hand där hen är (at, vid elden)
+export function skrivPlats(s: State, p: Person, at: { x: number; y: number }) {
+  const st = stationFor(s, 'skriva', p);
+  return { spot: st ? vidStation(st) : at, dur: SKRIFT.skrivMin * MIN / (st ? stationDef(st.k)?.fart?.skriva ?? 1 : 1), st };
+}
 // när bladet är skrivet: 1 blad pergament och 1 dos bläck går åt, och bladet ligger i förrådet och är skrivarens
 export function skrivKlar(s: State, p: Person) {
   const l = skrivLust(s, p);
   if (!l || !harAtt(s) || skrivLjus(s, p.x, p.y) < SKRIFT.ljusMin) return;
   taVatska(s, 'black', 1);
   const tx = skriv(s, p, l), kv = { id: l.bok?.id ?? 0, k: l.bok ? 'bok' : 'blad', q: undefined as number | undefined };
-  nyKvalitet(s, p, kv, 0, tx.titel, SKRIFTER[l.slag].skill); // kvaliteten ligger på skriften och rör inte bladets eller bokens hållbarhet (steg 10.6.7)
+  nyKvalitet(s, p, kv, kvVid(s, p, 'skriva'), tx.titel, SKRIFTER[l.slag].skill); // vid skrivpulpeten med stationens tillägg (steg 10.6.11) // kvaliteten ligger på skriften och rör inte bladets eller bokens hållbarhet (steg 10.6.7)
   const q = kv.q ?? NORMAL, fc = SKRIFT.felChans[q] ?? 0;
   const fel = fc > 0 && rnd(s, 'kunskap', p) < fc ? (rnd(s, 'kunskap', p) < 0.5 ? SKRIFT.felOver : SKRIFT.felUnder) : undefined; // slås en gång och står kvar i texten
   if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, l.lar.k === 'fara' ? MINNE.vMaxFara : l.lar.k === 'vatten' ? 1 : l.lar.k === 'pris' ? Infinity : MINNE.vMax) };
