@@ -5,6 +5,7 @@ import { Strom, clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task } from './typer';
 import { balans } from './balans';
 import { nyAndlighet } from './religion';
+import { RYKTE, ryktbarhet } from './rykten';
 import { hourOf } from './tid';
 import { lista, och, tal } from './ord';
 
@@ -148,9 +149,12 @@ export const NK = ['a', 'e', 'ja', 'ra', 'dis', 'run', 'hild', 'frid', 'ny', 'vi
 export const NM = ['e', 'o', 'ar', 'ik', 'ulf', 'mund', 'björn', 'vid', 'stig', 'ger', 'an', 'kel', 'vald', 'gaut', 'fast', 'leif', 'orm'];
 export const NAMN = balans('namn', {
   arv: 0.15, // så ofta får ett barn en del av en förälders namn: början eller slutet (Torbjörn → Tuskbjörn, steg 4.5.4.8)
+  uppkalla: 0.06, // chansen per födsel, när det finns någon att uppkalla efter, att barnet uppkallas (steg 10.4.1)
+  slakt: 3, // så mycket mer en förfader väger än en annan förebild
 });
 const stor = (n: string) => n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
-const ledigt = (s: State, n: string) => n.length >= 3 && n.length <= 9 && !s.people.some(p => p.name === n && alive(p));
+// ett slumpat namn är aldrig namnet på någon byn har kvar, levande eller död (steg 10.4.1)
+const ledigt = (s: State, n: string) => n.length >= 3 && n.length <= 9 && !s.people.some(p => p.name === n);
 // den längsta början (N1) och det längsta slutet (NM eller NK) som namnet har (steg 4.5.4.8)
 const langst = (del: string[], n: string, slut: boolean) => del.filter(d => slut ? n.endsWith(d.toLowerCase()) && d.length < n.length : n.startsWith(d)).sort((a, b) => b.length - a.length)[0];
 export const namnSlut = (n: string) => langst([...NM, ...NK], n.toLowerCase(), true);
@@ -183,6 +187,33 @@ export function makeName(s: State, sex: 'm' | 'k', strom: Strom = 'folk', forald
     if (ledigt(s, nn)) return nn;
   }
   return pick(s, N1, strom) + pick(s, sex === 'k' ? NK : NM, strom);
+}
+
+// barn uppkallas efter personen (steg 10.4.1): en förfader (förälder, far- eller morförälder) eller någon en förälder minns
+// och byn minns väl och gott, av barnets kön, som inte själv är uppkallad och inte har något barn uppkallat efter sig.
+// Slumpen slås en gång när det finns någon; valet vägs efter 1 plus ryktbarheten, en förfader NAMN.slakt gånger mer
+function uppkalla(s: State, sex: 'm' | 'k', foraldrar: (Person | undefined)[]) {
+  const f = foraldrar.filter((q): q is Person => !!q), fader = new Set<number>();
+  for (const q of f) { fader.add(q.id); for (const g of [q.mother, q.father]) if (g !== undefined) fader.add(g); }
+  const minns = new Set<number>(); for (const q of f) for (const e of q.intryck ?? []) minns.add(e.om);
+  const tagen = new Set<number>(); for (const q of s.people) if (q.uppkallad !== undefined) tagen.add(q.uppkallad);
+  const kand: [Person, number][] = [];
+  for (const q of s.people) {
+    if (q.sex !== sex || q.gast || q.uppkallad !== undefined || tagen.has(q.id) || / den (yngre|andre)$/.test(q.name)) continue;
+    const rb = ryktbarhet(s, q.id);
+    if (fader.has(q.id)) kand.push([q, (1 + rb.r) * NAMN.slakt]);
+    else if (minns.has(q.id) && rb.r >= RYKTE.dodLog && rb.a >= -rb.r * 0.3) kand.push([q, 1 + rb.r]);
+  }
+  if (!kand.length || rnd(s, 'folk') >= NAMN.uppkalla) return undefined;
+  let r = rnd(s, 'folk') * kand.reduce((a, [, v]) => a + v, 0), q = kand[0][0];
+  for (const [k, v] of kand) { r -= v; if (r <= 0) { q = k; break; } }
+  return { q, namn: `${q.name} ${alive(q) ? 'den yngre' : 'den andre'}` };
+}
+
+// barnets logg säger vem hen är uppkallad efter
+export function uppkalladLogg(s: State, ch: Person) {
+  const q = byId(s, ch.uppkallad);
+  if (q) log(s, `${ch.name} är uppkallad efter ${q.name}${alive(q) ? '' : ', som är död'}.`, 'birth', [ch.id, q.id]);
 }
 
 // ---------- personer ----------
@@ -304,7 +335,9 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
     x: f.x + (rnd(s, 'folk') - 0.5) * 3, y: f.y + (rnd(s, 'folk') - 0.5) * 3, fame: [],
     hue: Math.floor(rnd(s, 'folk') * 360),
   };
-  p.name = makeName(s, sex, 'folk', [mother, father]);
+  const uk = mother || father ? uppkalla(s, sex, [mother, father]) : undefined;
+  if (uk) { p.name = uk.namn; p.uppkallad = uk.q.id; count(s, 'uppkallade'); }
+  else p.name = makeName(s, sex, 'folk', [mother, father]);
   p.andlig = nyAndlighet(s, p, mother, father); // ur personens egen följd (steg 4.1.1.1)
   const at = freeNear(s, p.x, p.y); p.x = at.x; p.y = at.y; // inte i en husvägg
   return p;
