@@ -194,6 +194,42 @@ function medScen(seed: number, ks: string[]) {
   for (const i of ks) SIM.nyttVid(k.s, SIM.newTing(k.s, i, 1, SIM.BYN));
   return { ...k, sc };
 }
+SCENARIER.forelasning = {
+  text: 'Steg 10.6.9: föreläsningens ämne. Föreläsningen handlar om en sak som föreläsaren kan och andra i byn saknar, en teknik på nivå 1 eller 2 eller en färdighet, och alla som lyssnar kommer säkert framåt i just den, mer ju längre och bättre föreläsningen är. Den som inte kan något som någon annan saknar kan inte föreläsa',
+  kor: () => {
+    const { s, v } = kvall(), p = v[0]!, pub = v.slice(1, 5);
+    const lika = (x: Person) => { for (const k of SIM.SKILLS) x.skill[k] = 5; };
+    for (const q of s.people) lika(q);
+    // en teknik på nivå 2 som bara p kan, och vars krav alla kan
+    const t2 = TEKNIK.find(t => t.niva === 2 && t.krav.length > 0)!, t3 = TEKNIK.find(t => t.niva === 3)!;
+    for (const q of s.people) { q.tek ??= {}; for (const k of [...t2.krav, ...t3.krav]) q.tek[k] = 1; delete q.tek[t2.id]; delete q.tek[t3.id]; }
+    p.tek![t2.id] = 1;
+    const amne = SIM.forelasAmne(s, p);
+    const fore = pub.map(q => JSON.stringify({ tek: { ...q.tek, [t2.id]: 0 }, skill: q.skill }));
+    s.fram = { lar: amne, k: 'forelasning', p: p.id, start: s.now, slut: s.now + SIM.HOUR, publik: pub.map(q => q.id), text: 'x', da: 'x', amne: 'x' };
+    p.task = { act: 'upptrada', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: s.now, tool: 'forelasning' };
+    SIM.upptradaKlar(s, p, p.task);
+    const fram = pub.map(q => q.tek?.[t2.id] ?? 0), efter = pub.map(q => JSON.stringify({ tek: { ...q.tek, [t2.id]: 0 }, skill: q.skill }));
+    // texten i ett riktigt framträdande nämner ämnet
+    let text = '';
+    for (let i = 0; i < 40 && !text; i++) { const k = kvall(3 + i), a = k.v[0]!; for (const q of k.s.people) { lika(q); q.tek ??= {}; for (const x of t2.krav) q.tek[x] = 1; delete q.tek[t2.id]; } a.tek![t2.id] = 1; a.skill[SIM.FRAM_SKILL] = 8; if (upptrad(k.s, a) && k.s.fram!.k === 'forelasning') text = k.s.fram!.text; }
+    // bara nivå 3: inget ämne, och då ingen föreläsning
+    delete p.tek![t2.id]; p.tek![t3.id] = 1;
+    const tre = SIM.forelasAmne(s, p);
+    let aldrig = true;
+    for (let i = 0; i < 40; i++) { const k = kvall(3 + i), a = k.v[0]!; for (const q of k.s.people) { lika(q); q.skill[SIM.FRAM_SKILL] = 8; } for (const q of k.s.people) if (q !== a) { q.tek ??= {}; for (const x of Object.keys(a.tek ?? {})) q.tek[x] = 1; } if (upptrad(k.s, a) && k.s.fram!.k === 'forelasning') aldrig = false; }
+    const fr = SIM.TEKNIK.find(t => t.id === t2.id)!.namn.toLowerCase();
+    return [
+      [`ämnet är tekniken på nivå 2 som bara föreläsaren kan (${amne && 'tek' in amne ? amne.tek : 'inget'})`, !!amne && 'tek' in amne && amne.tek === t2.id],
+      [`fyra åhörare får samma framsteg i ${fr} (${fram.map(x => x.toFixed(2)).join(', ')})`, fram.every(x => x > 0 && Math.abs(x - fram[0]!) < 1e-9)],
+      ['och i inget annat', efter.every((x, i) => x === fore[i])],
+      [`texten nämner ämnet (${text || 'ingen föreläsning'})`, text.includes(O.goraUtan(t2))],
+      [`en teknik på nivå 3 väljs aldrig (${tre ? 'ett ämne' : 'inget ämne'})`, !tre],
+      ['den som inte kan något andra saknar föreläser aldrig', aldrig],
+    ];
+  },
+};
+
 SCENARIER.scen = {
   text: 'Scenen och instrumenten (steg 4.3.2.2): byn vill ha en trumma, en benflöjt och en lyra till scenen när den finns. Med ett instrument vid scenen blir det sång och musik där, lyran ger mest glädje, och utan scen bara kväden, tal, föreläsningar och teater',
   kor: () => {
