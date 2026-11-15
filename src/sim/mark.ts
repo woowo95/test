@@ -19,6 +19,7 @@ export const MARK = balans('mark', {
   gladaKant: 1, // utanför kanten är det så här många rutor ung skog ...
   gladaKantTrad: 0.6, // ... med så här stora träd (0 till 1)
   nott: 0.045, // slitage när någon går över en ruta (gånger STEG.markNot och så långt man går)
+  hoTacke: 0.2, stubb: 0.33, // höet är gräset (steg 10.10.9): ett hö är så här mycket av rutans gräs, som plockas ner till stubben men aldrig till bar jord
   grasAter: 0.011, // så mycket gräset växer tillbaka per timme (gånger grasVaxt per tidsålder). Lite trampad mark hinner läka, så bara stigarna blir bara
   stigAter: 0.2, // på bar jord (en stig) växer gräset bara så här fort, så att stigarna ligger kvar länge när ingen går där (steg 2.10.15)
   grasVaxt: [0.1, 1.2, 1, 0.6], // grästillväxt per tidsålder

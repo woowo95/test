@@ -19,8 +19,11 @@ import { halsa } from './halsa';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { eldPlats } from './karta';
-import { groundOf, tileOf } from './mark';
-import { grenFaktor } from './buskar';
+import { MARK, groundOf, tileOf } from './mark';
+import { BAR, VAG, isSoil } from './vag';
+import { hageAt } from './hage';
+import { angAt } from './slatter';
+import { arBuske, grenFaktor } from './buskar';
 import { moodOf } from './humor';
 import { duty } from './seder';
 import { kunnighet } from './ekonomi';
@@ -76,7 +79,6 @@ export const ELD = balans('eld', {
   hoTakt: 3, // hö (gånger tidsålderns ARSTID.hoPerTid)
   grenarTakt: 3, // grenar (gånger ARSTID.grenarIstid i istiden)
   // tändmaterialet på rutan (steg 9.3.4, tandPaRutan): hö i gräset och kvistar på all mark, hela saker, efter årstiden
-  hoSaker: 12, // hö på en gräsruta på sommaren (gånger ARSTID.hoPerTid och hur orörd marken är)
   kvistSaker: 6, // kvistar på en ruta (gånger ARSTID.grenarIstid i istiden och fler vid buskarna)
   tandAter: 16, // det som plockats av tändmaterialet växer tillbaka med så här många saker per dygn (år i spelet)
   stenTakt: 0.8, // stenar till eldringen ...
@@ -495,8 +497,7 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   return Object.keys(got).length ? got : undefined;
 }
 // ---------- tändmaterialet på rutan (steg 9.3.4) ----------
-// Höet ligger i gräset och skogen (inte på stigarna, efter hur orörd marken är) och kvistarna på all mark, flera hela saker per
-// ruta efter årstiden. Det som plockats (s.plockat, som för grenarna och stenarna i steg.ts) växer tillbaka, ELD.tandAter per dygn
+// Höet är gräset självt (hoPaRutan, steg 10.10.9) och kvistarna ligger på all mark, flera hela saker per ruta efter årstiden. Det som plockats (s.plockat, som för grenarna och stenarna i steg.ts) växer tillbaka, ELD.tandAter per dygn
 export type Tand = 'torrgras' | 'grenar';
 const tandKey = (k: Tand, i: number) => `${k === 'torrgras' ? 'ho' : 'kvist'}:${i}`;
 export function tandPaRutan(s: State, k: Tand, x: number, y: number): number {
@@ -504,17 +505,24 @@ export function tandPaRutan(s: State, k: Tand, x: number, y: number): number {
   const g = groundOf(s), i = y * W + x, t = g.tiles[i];
   if (t === T.Vatten || t === T.Sten || isWall(s, x + 0.5, y + 0.5)) return 0; /* inget hö och inga kvistar under en vägg */
   const ai = ageIndex(s);
-  const bas = k === 'torrgras'
-    ? (t === T.Gras || t === T.Skog ? Math.floor(ELD.hoSaker * ARSTID.hoPerTid[ai] * Math.min(1, g.cover[i]) + 1e-9) : 0)
-    : Math.floor(ELD.kvistSaker * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * grenFaktor(g, i) + 1e-9);
+  if (k === 'torrgras') return hoPaRutan(s, x, y);
+  const bas = Math.floor(ELD.kvistSaker * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * grenFaktor(g, i) + 1e-9);
   const r = s.plockat?.[tandKey(k, i)];
   if (!r) return bas;
   const kvar = r.n - Math.floor((s.now - r.t) / DAY * ELD.tandAter);
   if (kvar <= 0) { delete s.plockat![tandKey(k, i)]; return bas; }
   return Math.max(0, bas - kvar);
 }
+// höet är gräset (steg 10.10.9): högt och kort gräs på öppen mark, inte under träd, på en buske, i hagen eller på ängen. Ett hö
+// är MARK.hoTacke av gräset, ner till stubben (MARK.stubb); det växer tillbaka med gräset (growGround i mark.ts)
+export function hoPaRutan(s: State, x: number, y: number) {
+  const g = groundOf(s), i = y * W + x, c = g.cover[i];
+  if (c < BAR || !isSoil(g.tiles[i]) || g.trees[i] >= VAG.ungskog || arBuske(g, i) || hageAt(s, x, y) || angAt(s, x, y)) return 0;
+  return Math.max(0, Math.floor((Math.min(1, c) - MARK.stubb) / MARK.hoTacke + 1e-9));
+}
 // en sak tändmaterial tas från rutan
-function tandPlocka(s: State, k: Tand, x: number, y: number) {
+export function tandPlocka(s: State, k: Tand, x: number, y: number) {
+  if (k === 'torrgras') { const g = groundOf(s), i = y * W + x; g.cover[i] = Math.max(MARK.stubb, Math.min(1, g.cover[i]) - MARK.hoTacke); return; }
   const key = tandKey(k, y * W + x), r = s.plockat?.[key];
   const kvar = r ? Math.max(0, r.n - Math.floor((s.now - r.t) / DAY * ELD.tandAter)) : 0;
   (s.plockat ??= {})[key] = { n: kvar + 1, t: s.now };

@@ -425,6 +425,7 @@ function uppgradera(s: State) {
   { const g = s as State & { tabun?: unknown; tabuAkt?: unknown }; delete g.tabun; delete g.tabuAkt; } // tabun togs bort (steg 10.2.41)
   if (s.stationer?.some(t => (t.k as string) === 'vaggbrade')) s.stationer = s.stationer.filter(t => (t.k as string) !== 'vaggbrade'); // väggbrädet togs bort (steg 10.2.47)
   for (const p of s.people) if (p.tek?.vaggbrade !== undefined) delete p.tek.vaggbrade;
+  if (s.plockat) for (const k in s.plockat) if (k.startsWith('ho:')) delete s.plockat[k]; // hötuvorna finns inte: höet är gräset (steg 10.10.9)
   useMap(s);
   if (behoverStorreKarta(s)) storreKarta(s); // först av allt, innan något räknats på den gamla kartan (steg 2.10.9, kartflytt.ts)
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }

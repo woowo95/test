@@ -1,5 +1,5 @@
 import { richness } from '../sim';
-import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, tandPaRutan, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden } from '../sim';
+import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
@@ -25,9 +25,6 @@ function ritaRad(k: string, n: number, x: number, y: number) {
     b.rader.forEach((r, ry) => { for (let rx = 0; rx < r.length; rx++) { const h = b.pal[r[rx]]; if (r[rx] !== '.' && h) plantG.beginFill(parseInt(h.slice(1), 16)).drawRect(x + dx + rx, y + dy + ry, 1, 1).endFill(); } });
   });
 }
-// höet på rutan (steg 9.3.4, platshållare tills Björn valt i bildstilen): en, två eller tre tuvor efter hur mycket som ligger där
-// (en tuva per fyra hö), så att den tomplockade rutan syns
-const HO = ['h.H.h', '.hHh.', '..H..'];
 // den vilda röllekan (steg 9.7.15): Björns val i bildstilen, f7_rolleka version 1 och 2, i två varianter efter rutan
 const ROLLEKA_VILD = [
   ['.yxy...yy.', 'yxxxv.yxxv', '.vCv...vC.', '..C....C..', '..C...C...', '.D.C.CD.D.', 'DED.CC.DE.', '.DEDCDEDD.'],
@@ -66,8 +63,6 @@ export function drawPlants(force = false) {
       ritaRad(q.k, n, x, y); j += n;
     }
     if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5)); // röllekan växer vild (steg 9.7.15)
-    const ho = Math.min(3, Math.floor(tandPaRutan(s, 'torrgras', rx, ry) / 4));
-    for (let k = 0; k < ho; k++, j++) ritaBild(HO, Math.round(x + 1 + plats(i, 30 + j) * 10), Math.round(y + 2 + plats(i, 40 + j) * 11));
     const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
     if (gr > 0) { ritaRad('grenar', gr, x, y); j += gr; }
   }
