@@ -1326,7 +1326,7 @@ SCENARIER.troskrets = {
 };
 
 SCENARIER.buden = {
-  text: 'Steg 8.6.6–8.6.10 och 10.3.3: buden verkar, och en by utan ledare röstar in en högtid. Fastan en dag av sju, den första fångsten till tron, tionde till prästen, djuroffret, att tacka före maten; främlingar får mat, man gifter sig inom tron, hämnd är en plikt, de döda talar man inte illa om och lunden fälls inte',
+  text: 'Steg 8.6.6–8.6.10, 10.3.3 och 10.3.22: buden verkar, och en by utan ledare röstar in en högtid. Fastan en dag av sju, den första fångsten till tron, tionde till prästen, djuroffret, att tacka före maten; främlingar får mat, man gifter sig inom tron, hämnd är en plikt, de döda talar man inte illa om och lunden fälls inte',
   kor: () => {
     const { s, v, tr } = medTro(6, 4);
     for (const p of v) p.troStyrka = 90;
@@ -1356,7 +1356,38 @@ SCENARIER.buden = {
     const dag2 = b2.s.now - (b2.s.now % 86400000);
     for (let d = 1; d <= 60 && !b2.tr.roster?.length; d++) { b2.s.now = dag2 + d * 86400000 + 20 * 3600000; SIM.kyrkaKvall(b2.s); }
     const forstaBud = b2.tr.roster?.[0];
+    // de nya förbuden (steg 10.3.22), i en egen by
+    const b3 = medTro(6, 4), s3 = b3.s, tr3 = b3.tr;
+    for (const p of b3.v) p.troStyrka = 90;
+    tr3.bud = (['ingetRus', 'djurVilar', 'ingenHandel', 'ingenStrid', 'ingenHan'] as const).map(id => ({ id, t: s3.now }));
+    const f3 = b3.v[0], o3 = nyInvanare(s3, 'm', 25); o3.tro = undefined;
+    const dagen = (helig: boolean) => { for (let i = 0; i < 14 && SIM.heligDag(s3, tr3) !== helig; i++) s3.now += 86400000; };
+    // inget rus
+    const kr3 = SIM.addTool(s3, 'lerkruka_stor', o3); kr3.hos = undefined; SIM.fyllVatska(s3, 'vin', 10, kr3);
+    klockan(s3, 22);
+    const rusF = SIM.kvallsDryck(s3, f3, true), rusO = SIM.kvallsDryck(s3, o3, true);
+    const brutet0 = s3.stat?.bud_brutet ?? 0; SIM.supa(s3, f3); const supBrott = (s3.stat?.bud_brutet ?? 0) > brutet0 && (f3.skuld ?? 0) > 0;
+    // djuren vilar på den heliga dagen
+    dagen(true); const avlHelg = SIM.budForbjuder(s3, f3, 'avliva'), klHelg = SIM.budForbjuder(s3, f3, 'klippa');
+    dagen(false); const avlVardag = SIM.budForbjuder(s3, f3, 'avliva');
+    // inte handla med främlingar
+    const handla3 = SIM.budForbjuder(s3, f3, 'handla'), koa3 = SIM.budForbjuder(s3, f3, 'koa'), handlaO = SIM.budForbjuder(s3, o3, 'handla');
+    // ingen strid på heliga dagar: gräl blir inget slagsmål
+    dagen(true);
+    const q3 = b3.v[1]; for (let i = 0; i < 300; i++) SIM.gralBlirSlagsmal(s3, f3, q3);
+    const stridHelg = SIM.kartStrider(s3).length, stoppad = s3.stat?.bud_ingenStrid ?? 0;
+    // ingen hånar gudarna
+    const x3 = { ev: 0, op: 0, gud: tr3, gudOp: -50 };
+    const hanO = SIM.BUDSKAP.hanaGud.vikt(s3, o3, x3), hanF = SIM.BUDSKAP.hanaGud.vikt(s3, q3, x3);
+    const t3 = q3.troStyrka!, r3 = SIM.getRel(s3, q3, o3).op;
+    SIM.BUDSKAP.hanaGud.verkan(s3, o3, q3, 1, { gud: tr3.id } as SIM.Fram);
     return [
+      [`inget rus: den som följer budet tar inget till kvällen (${rusF ?? 'inget'}), den utan tro tar (${rusO ?? 'inget'}), och den som super bryter budet (${supBrott})`, rusF === undefined && rusO === 'vin' && supBrott],
+      [`djuren vilar på den heliga dagen (${avlHelg}, ${klHelg}), men inte andra dagar (${avlVardag ?? 'tillåtet'})`, avlHelg === 'djurVilar' && klHelg === 'djurVilar' && avlVardag === undefined],
+      [`inte handla med främlingar (${handla3}, ${koa3}), den utan tro handlar (${handlaO ?? 'tillåtet'})`, handla3 === 'ingenHandel' && koa3 === 'ingenHandel' && handlaO === undefined],
+      [`ingen strid på heliga dagar: ${stoppad} gräl blev inget slagsmål (${stridHelg} strider)`, stridHelg === 0 && stoppad > 0],
+      [`ingen hånar gudarna: den utan tro kan (${hanO.toFixed(2)}), den som följer budet inte (${hanF}), och den troende som hör får svagare tro (${t3} → ${q3.troStyrka!.toFixed(0)}) och tycker sämre om hånaren (${r3.toFixed(0)} → ${SIM.getRel(s3, q3, o3).op.toFixed(0)})`, hanO > 0 && hanF === 0 && q3.troStyrka! < t3 && SIM.getRel(s3, q3, o3).op < r3],
+
       [`en by utan ledare röstar in tidsålderns högtid först (${forstaBud?.namn ?? 'ingen omröstning'}: ${forstaBud?.gick ? 'ja' : 'nej'})`, !!forstaBud?.gick && b2.tr.bud?.[0]?.id === 'hogtid' && b2.s.styre === undefined],
       [`en sparad by får buden i den nya formen (${ny2.map(b => SIM.budNamn(s, b)).slice(0, 3).join(', ')} …)`, omgjord],
       [`fastan en dag i veckan (${fastade})`, fastade],

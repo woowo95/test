@@ -33,6 +33,7 @@ import { ledareOf } from './styre';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
 import { upplev } from './uppvaxt';
 import { husPlats, kanterna } from './varg';
+import { budHindrar } from './kyrka';
 
 export const KARTSTRID = balans('kartstrid', {
   ser: 12, // den som är vaken och står så här nära en strid ser den (rutor)
@@ -337,6 +338,7 @@ export function serStriden(s: State) {
 export function gralBlirSlagsmal(s: State, a: Person, b: Person) {
   if (ageOf(a, s.now) < ALDER.smabarn || ageOf(b, s.now) < ALDER.smabarn || a.task?.act === 'strid' || b.task?.act === 'strid' || !alive(a) || !alive(b)) return;
   if (rnd(s, 'strid', a) >= SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a))) return;
+  if (budHindrar(s, a, 'ingenStrid')) { count(s, 'bud_ingenStrid'); return; } // den heliga dagen (steg 10.3.22)
   kartStridBorja(s, 'slagsmal', [[a], [b]], 'efter ett gräl');
   handelse(s, a, 'sla', b); // den som började slagsmålet slog först
 }

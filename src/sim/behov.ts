@@ -27,6 +27,7 @@ import { handelse, smakMat } from './rykten';
 import { VED } from './eld';
 import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 import { SJUK, insjukna } from './sjukdom';
+import { budHindrar } from './kyrka';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -191,7 +192,7 @@ export function needLadder(s: State, p: Person, dtSec: number) {
 // det tycker att hen är våldsam, och en tjuv
 function ran(s: State, p: Person, b: Behov, dtSec: number) {
   if (stat(p, 'aggression', s.now) < DELA.ranAgg || ageOf(p, s.now) < ALDER.vaktFran || p.task?.act === 'strid' || !kanGa(p)) return false;
-  if (!chance(s, DELA.ranTakt, dtSec, 'dela', p)) return false;
+  if (!chance(s, DELA.ranTakt, dtSec, 'dela', p) || budHindrar(s, p, 'ingenStrid')) return false; // ingen strid på den heliga dagen (steg 10.3.22)
   const op = (q: Person) => s.rels[relKey(p.id, q.id)]?.op ?? 0;
   const offer = living(s).filter(q => q !== p && q.task?.act !== 'sova' && q.task?.act !== 'strid' && !isFamily(p, q) && ageOf(q, s.now) >= ALDER.smabarn
     && Math.hypot(q.x - p.x, q.y - p.y) <= DELA.ranNara && ownFor(s, q, b) >= b.minst).sort((a, c) => op(a) - op(c) || a.id - c.id)[0];

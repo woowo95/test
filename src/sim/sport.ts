@@ -26,6 +26,7 @@ import { EFTER } from './efterstrid';
 // kampen i brottningen är slut: ringen är ledig igen (steg 10.1.7)
 EFTER.brottning = s => { if (s.sport) s.sport.brott = s.now; };
 import { HOUR, HOUR_S, MIN, SEC, Person, Skill, State, Task } from './typer';
+import { budHindrar } from './kyrka';
 
 export interface SportDef {
   id: string; namn: string;
@@ -195,6 +196,7 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
     if (mot.length) {
       // kampen sker på kartan och tar tid (steg 10.1.7): ringen är upptagen tills den är slut (EFTER.brottning)
       const q = mot[Math.floor(rnd(s, 'sport', p) * mot.length)];
+      if (budHindrar(s, p, 'ingenStrid')) { count(s, 'bud_ingenStrid'); return; } // den heliga dagen (steg 10.3.22)
       kartStridBorja(s, 'brottning', [[p], [q]], 'i brottningen', { typ: 'brottning' });
       m.brott = s.now + (STRID.maxTid + 60) * SEC; m.brottare = [p.id, q.id]; count(s, 'brottningar');
     }

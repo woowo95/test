@@ -1712,6 +1712,8 @@ const MDEF = {
     { t: '{Namn} drev med {ledare} och härmade sättet att gå.', om: f => f.bud === 'hana' },
     { t: 'Det var inte svårt att höra att det var {ledare} som hånades.', om: f => f.bud === 'hana' },
     { t: '{Namn} gjorde narr av {ledare}, som tror sig vara förmer än de andra.', om: f => f.bud === 'hana' },
+    { t: '{Namn} drev med {amne} och sade att de inte fanns.', om: f => f.bud === 'hanaGud' },
+    { t: 'Det var gudarna som fick höra det, och de troende teg.', om: f => f.bud === 'hanaGud' },
     { t: 'Det var tron som låg {namn} varmast om hjärtat.', om: f => f.bud === 'tro' },
     { t: '{Namn} ville att de andra skulle tro som {namn} själv.', om: f => f.bud === 'tro' },
   ],
@@ -1746,6 +1748,8 @@ const MDEF = {
   f_verkan: [
     { t: 'Efteråt såg publiken på {ledare} med lite större respekt.', om: f => f.verkan === 'hylla' },
     { t: 'Flera i publiken tyckte lite bättre om {ledare} efter det.', om: f => f.verkan === 'hylla' },
+    { t: '{Hanad} tvivlade efteråt och tyckte sämre om {namn}.', om: f => f.verkan === 'hanaGud' },
+    { t: 'De troende i publiken, {hanad}, gick därifrån med svagare tro.', om: f => f.verkan === 'hanaGud' },
     { t: 'Publiken skrattade åt {ledare}, och {ledare} blev arg på {namn}.', om: f => f.verkan === 'hana' },
     { t: 'Det blev skratt, men {ledare} tyckte inte att det var roligt.', om: f => f.verkan === 'hana' },
     { t: 'Snart visste {rykte} vad {namn} tyckte om {om}.', om: f => f.verkan === 'rykte' },

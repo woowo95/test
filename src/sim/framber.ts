@@ -22,13 +22,13 @@ export function framBerattelse(s: State, m: FramMinne): string {
     namn: m.namn, form: m.k, amne: m.amne ?? 'det som hänt', inst: m.inst ? INSTRUMENT[m.inst]?.ord ?? m.inst : '', bud: m.bud ?? '',
     om: m.om ?? '', ledare: m.ledare ?? '', betalt: m.betalt ?? '', n: talOrd(m.n), nTal: m.n,
     bra: m.q >= FRAMBER.bra, dalig: m.q < FRAMBER.dalig, upp: d > 0, ner: d < 0,
-    rykte: och(m.rykte ?? []), tro: och(m.tro ?? []),
+    rykte: och(m.rykte ?? []), tro: och(m.tro ?? []), hanad: och(m.hanad ?? []),
   };
   const mening = (mall: 'f_start' | 'f_bud' | 'f_publik' | 'f_mott' | 'f_verkan' | 'f_inget', i: number, g = {}) => { const x = { ...f, ...g }; return fyll(valjVariant(s, mall, (m.nr ?? 0) * 16 + i, x, 0), x); };
   if (m.inget) return mening('f_inget', 0);
   const verkan = [
     m.bud === 'hylla' && ld > 0 ? 'hylla' : '', m.bud === 'hana' && m.ledare ? 'hana' : '',
-    m.rykte?.length && m.om ? 'rykte' : '', m.tro?.length ? 'tro' : '',
+    m.rykte?.length && m.om ? 'rykte' : '', m.tro?.length ? 'tro' : '', m.hanad?.length ? 'hanaGud' : '',
   ].filter(Boolean);
   return [mening('f_start', 0), m.bud ? mening('f_bud', 1) : '', mening('f_publik', 2), mening('f_mott', 3), ...verkan.map((v, i) => mening('f_verkan', 4 + i, { verkan: v }))].filter(Boolean).join(' ');
 }

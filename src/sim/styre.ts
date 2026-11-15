@@ -6,7 +6,7 @@ import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, mis
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
 import { kartStridBorja, stridPagar } from './kartstrid';
 import { EFTER } from './efterstrid';
-import { kyrkaKvall, overstePrast } from './kyrka';
+import { kyrkaKvall, overstePrast, budHindrar } from './kyrka';
 import { ARSTIDER, Fyllning, fyll, kronikaBer, och, personFalt, valjVariant } from './berattelser';
 import { skada } from './halsa';
 import { die, leave } from './liv';
@@ -462,7 +462,7 @@ function doma(s: State, l: Person) {
     // tinget (steg 8.4.7): vid Allmoge avgör byn skulden i en omröstning. Vid Fejd kan den anklagade kräva holmgång med den drabbade: den som vinner har rätt
     const drabbad = b.mot !== undefined ? byId(s, b.mot) : undefined;
     const utanHolm = st.utanHolm?.includes(`${id}:${b.h}:${Math.round(b.t)}`); // förlorade holmgången om det här
-    if (lag && !utanHolm && (s.seder.v.fejd ?? 0) >= STR.holmgang && drabbad && alive(drabbad) && drabbad !== q && ageOf(drabbad, now) >= ALDER.vuxen && q.task?.act !== 'strid' && drabbad.task?.act !== 'strid') {
+    if (lag && !utanHolm && !budHindrar(s, q, 'ingenStrid') && (s.seder.v.fejd ?? 0) >= STR.holmgang && drabbad && alive(drabbad) && drabbad !== q && ageOf(drabbad, now) >= ALDER.vuxen && q.task?.act !== 'strid' && drabbad.task?.act !== 'strid') {
       // holmgången sker på kartan och tar tid (steg 10.1.7): vinner den anklagade är saken avgjord; förlorar hen döms hen på
       // nästa ting utan ny holmgång (EFTER.holmgang)
       kartStridBorja(s, 'skada', [[q], [drabbad]], 'en holmgång', { typ: 'holmgang', q: q.id, brott: b.h, t: Math.round(b.t) });

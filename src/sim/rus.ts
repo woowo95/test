@@ -7,6 +7,7 @@ import { ALDER, ageOf, count, forstaGang, log, think } from './folk';
 import { clamp } from './slump';
 import { HOUR, HOUR_S, Person, State } from './typer';
 import { isLight } from './tid';
+import { budBrutet, budHindrar } from './kyrka';
 type VatskaId = import('./vatskor').VatskaId;
 // vätskorna i krukorna (vatskor.ts sätter kroken, så att den här filen inte laddar vatskor.ts och halsa.ts i en ring)
 export const alkoholKrok = { finns: (_s: State, _v: VatskaId) => false, ta: (_s: State, _v: VatskaId) => false };
@@ -64,11 +65,12 @@ export function rusSteg(s: State, p: Person, dtSec: number) {
 // vill p ta en dryck med alkohol i kväll (steg 10.2.34: ett val, raden kvallsdryck i val.ts): en vuxen som är hemma när det är
 // mörkt och inte druckit för mycket, när byn har vin eller öl. Svarar med drycken
 export function kvallsDryck(s: State, p: Person, hemma: boolean): VatskaId | undefined {
-  if (!hemma || isLight(s.now) || ageOf(p, s.now) < ALDER.vuxen || rusAv(p) >= RUS.mest) return undefined;
+  if (!hemma || isLight(s.now) || ageOf(p, s.now) < ALDER.vuxen || rusAv(p) >= RUS.mest || budHindrar(s, p, 'ingetRus')) return undefined; // budet inget rus (steg 10.3.22)
   return (Object.keys(ALKOHOL) as VatskaId[]).find(k => alkoholKrok.finns(s, k));
 }
 // supandet (utbrottet supa i humor.ts): den som mår dåligt super sig full när byn har något att dricka
 export const kanSupa = (s: State) => (Object.keys(ALKOHOL) as VatskaId[]).some(k => alkoholKrok.finns(s, k));
 export function supa(s: State, p: Person) {
+  if (budHindrar(s, p, 'ingetRus') && kanSupa(s)) budBrutet(s, p, 'ingetRus'); // utbrottet går före budet (steg 10.3.22)
   for (let i = 0; i < RUS.supa; i++) { const v = (Object.keys(ALKOHOL) as VatskaId[]).find(k => alkoholKrok.finns(s, k)); if (!v) break; drickAlkohol(s, p, v); }
 }

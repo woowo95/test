@@ -113,6 +113,14 @@ export const BUD = {
   medfolj: { namn: 'Det den döde bar följer med', sort: 'offer', storlek: 3, skala: 'livet', sida: 1, text: 'Allt den döde bar följer hen och ärvs inte' },
   lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Lunden får stå', sed: ['natur', -1] },
   kottHelg: { namn: 'Inget kött på heliga dagar', sort: 'forbud', storlek: 2, skala: 'fest', sida: 1, text: 'Inget kött på den heliga dagen', mat: () => ['kott'], dag: true }, // ätandet, inte slakten (steg 10.3.16)
+  // de nya förbuden (steg 10.3.22). Bud med dag gäller bara den heliga dagen (heligDag)
+  ingetRus: { namn: 'Inget rus', sort: 'forbud', storlek: 3, skala: 'fest', sida: 1, text: 'De troende dricker inte öl eller vin',
+    om: () => 'De som följer budet tar inte öl eller vin till kvällen eller mot törsten, och den som super sig full bryter budet.' }, // rus.ts frågar
+  djurVilar: { namn: 'Djuren vilar på den heliga dagen', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Ingen slaktar eller klipper djuren på den heliga dagen', acts: ['avliva', 'klippa'], dag: true },
+  ingenHandel: { namn: 'Inte handla med främlingar', sort: 'forbud', storlek: 3, skala: 'oppen', sida: 1, text: 'Man handlar inte med främlingar', acts: ['handla', 'koa'] }, // gåvorna går som förut
+  ingenStrid: { namn: 'Ingen strid på heliga dagar', sort: 'forbud', storlek: 3, skala: 'krig', sida: 0, text: 'Ingen börjar slåss på den heliga dagen', dag: true,
+    om: () => 'På den heliga dagen börjar de som följer budet ingen strid, inget slagsmål och ingen brottning. Den som anfalls försvarar sig.' }, // kartstrid.ts, sport.ts, behov.ts och styre.ts frågar budHindrar
+  ingenHan: { namn: 'Ingen hånar gudarna', sort: 'forbud', storlek: 1, skala: 'forlat', sida: 1, text: 'Ingen hånar gudarna' }, // budskapet hanaGud (framtradande.ts)
   framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta', sed: ['gemenskap', 1] },
   orena: { namn: 'En fiendes saker är orena', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'Man rör inte det fienden bar' }, // steg 10.3.6
   giftaTro: { namn: 'Inte gifta sig utanför tron', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'Man gifter sig inom tron' },
@@ -217,12 +225,14 @@ export const budStorlek = (b: BudDef, v?: BudVarde) => b.storlekAv && v !== unde
 // budet som förbjuder handlingen, om det finns något för p (steg 8.6.6): valet av aktivitet frågar. Svält och kyla går före, men kostar (budBrutet)
 export function budForbjuder(s: State, p: Person, act: Act): BudId | undefined {
   const tr = troOf(s, p.tro);
-  for (const { id } of tr?.bud ?? []) if (BDEF[id].acts?.includes(act) && foljer(p, id)) return id;
-  for (const id of Object.keys(BUD) as BudId[]) if (BDEF[id].acts?.includes(act) && lagGaller(s, budLag(id))) return id; // lagen gäller alla (steg 8.6.12)
+  for (const { id } of tr?.bud ?? []) if (BDEF[id].acts?.includes(act) && foljer(p, id) && (!BDEF[id].dag || heligDag(s, tr!))) return id;
+  for (const id of Object.keys(BUD) as BudId[]) if (BDEF[id].acts?.includes(act) && lagGaller(s, budLag(id)) && (!BDEF[id].dag || (s.tron ?? []).some(t => budIn(t, id) && heligDag(s, t)))) return id; // lagen gäller alla (steg 8.6.12)
   return undefined;
 }
 // den heliga dagen (steg 10.3.16): ett dygn av sju (ett år i spelet av sju), och dygnet då en högtid hålls. Alla bud om heliga dagar frågar den
 export const heligDag = (s: State, tr: Tro) => { const d = Math.floor(s.now / DAY); return d % KYRKA.vecka === tr.id % KYRKA.vecka || tr.hogtidDag === d; };
+// håller budet id p från något just nu (steg 10.3.22): p följer det, och ett bud om heliga dagar bara på den heliga dagen
+export const budHindrar = (s: State, p: Person, id: BudId) => { const tr = troOf(s, p.tro); return !!tr && budIn(tr, id) && foljer(p, id) && (!BDEF[id].dag || heligDag(s, tr)); };
 export const vilodagNu = (s: State, p: Person) => { const tr = troOf(s, p.tro); return budIn(tr, 'vilodag') && foljer(p, 'vilodag') && heligDag(s, tr); };
 // ---------- maten som bud (steg 10.3.16) ----------
 // huvudingrediensen i saken: rätten minns den, och råvaran är den
