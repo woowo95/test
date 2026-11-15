@@ -1864,6 +1864,9 @@ const MDEF = {
     { t: '{Fick} gick hem med {givare}s {pris}, priset i tävlingen.', om: f => !!f.prisKvar && !f.sjalv },
     { t: '{Givare}s {pris} var priset, och {givare} vann själv.', om: f => !!f.prisKvar && !!f.sjalv },
     { t: 'Priset skulle ha varit {givare}s {pris}, men när matchen var slut fanns det inte kvar.', om: f => !f.prisKvar },
+    { t: '{Fick} vann tävlingen och fick {givare}s {pris} att ta med sig.', om: f => !!f.prisKvar && !f.sjalv },
+    { t: '{Givare} hade satt upp sin {pris} som pris, och {givare} tog tillbaka den själv.', om: f => !!f.prisKvar && !!f.sjalv },
+    { t: '{Givare} hade lovat sin {pris} till vinnaren, men den var borta när det var dags.', om: f => !f.prisKvar },
   ],
   m_publik: [
     { t: 'Publiken hejade: {publik} stod runt om och tittade.', om: f => Number(f.nPub) > 1 },
@@ -1872,6 +1875,8 @@ const MDEF = {
     { t: '{Publik} stod en bit bort och hejade på dem.', om: f => Number(f.nPub) === 1 },
     { t: '{Publik} kom och tittade och hejade högt.', om: f => Number(f.nPub) === 1 },
     { t: 'Det var bara {publik} som tittade, men hen hejade för flera.', om: f => Number(f.nPub) === 1 },
+    { t: '{Publik} samlades runt platsen för att se på.', om: f => Number(f.nPub) > 1 },
+    { t: '{Publik} satt i gräset och tittade på hela matchen.', om: f => Number(f.nPub) === 1 },
   ],
   // matchen som inte blev av: {sport} = sporten, {spelare} = de som kom
   m_installd: [
