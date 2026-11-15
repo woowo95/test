@@ -4,6 +4,7 @@
 // kladdiga och förvaras på samma sätt. Ett recept som ger något av dem behöver en ledig behållare som passar (tillverka.ts), och
 // när det används blir den tomma behållaren kvar där den stod. Bilden: behållaren med en yta i vätskans färg (ui/foremal.ts)
 import { tingOf, Ting } from './agande';
+import { BYN } from './egendom';
 import { krukaAv } from './kruka';
 import { DAY, HOUR, MIN, Person, State } from './typer';
 import { balans } from './balans';
@@ -61,13 +62,16 @@ const behallare = (t: Ting) => t.k === 'vattensack' || t.k === 'naverask' || !!k
 // en ledig behållare som passar vätskan v: tom, färdig (inte en kruka som torkar) och inte i någons hand
 export const ledigFor = (s: State, v: VatskaId) => tingOf(s).filter(t => behallare(t) && !t.inne && !t.vaxt && !t.kok && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && (VATSKOR[v].i as string[]).includes(t.k)).sort((a, b) => karRymmer(a) - karRymmer(b) || a.id - b.id)[0];
 // hur mycket av vätskan byn har, i alla behållare
-export const vatskaAv = (s: State, v: VatskaId) => tingOf(s).reduce((n, t) => n + (t.inne?.v === v ? t.inne.n : 0), 0);
+// kyrkans krukor (steg 10.3.23): ingen annan dricker ur dem
+const kyrkans = (t: Ting) => t.agare !== undefined && t.agare < 0;
+export const vatskaAv = (s: State, v: VatskaId) => tingOf(s).reduce((n, t) => n + (t.inne?.v === v && !kyrkans(t) ? t.inne.n : 0), 0);
 // den första behållaren med vätskan v
-export const medVatska = (s: State, v: VatskaId) => tingOf(s).find(t => t.inne?.v === v && t.inne.n > 0);
+export const medVatska = (s: State, v: VatskaId) => tingOf(s).find(t => t.inne?.v === v && t.inne.n > 0 && !kyrkans(t));
 // n av vätskan v hälls i en ledig behållare (fylls till det den rymmer). Ger behållaren, eller undefined om ingen fanns
 export function fyllVatska(s: State, v: VatskaId, n: number, t = ledigFor(s, v)) {
   if (!t || n <= 0) return undefined;
   t.inne = { v, n: Math.min(karRymmer(t), n), t: s.now }; // t = när den gjordes (saften håller två dygn)
+  if (kyrkans(t)) t.agare = BYN; // kyrkans tomma kruka som fylls igen blir byns (steg 10.3.23)
   return t;
 }
 // n av vätskan v tas ur behållarna; en tömd behållare blir kvar där den stod. Ger hur mycket som togs
@@ -78,7 +82,7 @@ export function taVatska(s: State, v: VatskaId, n: number) {
   let kvar = n;
   for (const t of tingOf(s)) {
     if (kvar <= 0) break;
-    if (t.inne?.v !== v) continue;
+    if (t.inne?.v !== v || kyrkans(t)) continue;
     const d = Math.min(kvar, t.inne.n);
     t.inne.n -= d; kvar -= d;
     if (t.inne.n <= 0) t.inne = undefined;

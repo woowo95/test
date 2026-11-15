@@ -28,6 +28,7 @@ import { handelsArg } from './handelsber';
 import { notis } from './notiser';
 import { barSmitta } from './sjukdom';
 import { gastGar, gastTillbaka, hp, nyGast } from './gast';
+import { valkomnaHandlare } from './kyrka';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -283,6 +284,7 @@ function nastaKl(t: number, kl: number) {
 const kvallNu = (t: number) => hourOf(t) >= HANDEL.kvall && hourOf(t) < HANDEL.sentKvall;
 // framme vid filtens plats: på kvällen breds filten ut, annars väntar hen på kvällen (steg 4.5.4.11)
 function framme(s: State, h: Handlare) {
+  valkomnaHandlare(s, h); // handlaren ska välkomnas (steg 10.3.23)
   hp(s, h).x = h.mx; hp(s, h).y = h.my;
   if (kvallNu(s.now)) { lagUt(s, h); return; }
   h.fas = 'vantar'; h.kvall = nastaKl(s.now, HANDEL.kvall);

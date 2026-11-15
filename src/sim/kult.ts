@@ -18,7 +18,7 @@ import { freeNear, roomAt } from './byggnad';
 import { eldPlats } from './karta';
 import { addTo, amountOf, ownedStock, use } from './lager';
 import { ata } from './naring';
-import { budIn, foljer, hogtidKrav, hogtidMat, kyrkansAv, kyrkanTar } from './kyrka';
+import { budIn, foljer, hogtidKrav, hogtidMat, hogtidOlKvade, kyrkansAv, kyrkanTar } from './kyrka';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
@@ -357,6 +357,7 @@ export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
     if (m) { use(s, p, m, 1); p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KULT.offerTro); count(s, 'offer'); }
     else think(p, 'Hade inget att offra', KULT.offerInget, s.now, 12 * HOUR);
   }
+  if (r.form !== 'fasta') hogtidOlKvade(s, tr, med); // ölet och kvädet (steg 10.3.23)
 }
 // ---------- varje timme ----------
 export function kultTimme(s: State) {

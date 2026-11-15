@@ -24,6 +24,7 @@ import { TORKA } from './torka';
 import { iVattnetNu } from './sjo';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 import { tecken } from './religion';
+import { forstaSkorden } from './kyrka';
 
 // ---------- odling (steg 2.10.2–) ----------
 // Vilda grödor växer på kartan som andra växter: vild rova på ängarna och vilda ärter i skogsbrynet (registret VILDA, lager i
@@ -121,7 +122,7 @@ export type FaltSteg = keyof typeof FALT_STEG;
 // r = rutorna (steg 9.7.1): varje ruta är en enhet med sitt eget steg, sin gröda, hur långt den vuxit, när den mognade och
 // arbetet som är kvar på den. Fältets steg, gröda, vuxit och mogen är en sammanfattning av rutorna (sammanfatta), för bilden
 export interface Ruta { st: FaltSteg; g?: GrodaSlag; v?: number; m?: number; kvar?: number; fu?: number; sj?: number } // sj = sjuk sedan den tiden (steg 9.7.12) // fu = fukten (steg 9.7.2)
-export interface Falt { r?: Ruta[]; id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; vatten?: number; fore?: number[]; bered?: number[]; skott?: number[] } // vatten: hur länge grödan klarar sig under torkan (1 = nyss vattnad, torka.ts)
+export interface Falt { offrat?: number; r?: Ruta[]; id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; vatten?: number; fore?: number[]; bered?: number[]; skott?: number[] } // vatten: hur länge grödan klarar sig under torkan (1 = nyss vattnad, torka.ts)
 // fore, bered och skott (steg 3.10.6, rutan i panelen) per ruta k: vad som växte där innan fältet (MARK_FORE), när den bereddes och
 // när någon sist arbetade på den
 // arbetet per ruta i steget (ms)
@@ -480,7 +481,7 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     const b = bordSkord(s, faltRuta(f, k)); utarma(s, faltRuta(f, k)); // bördigheten (steg 9.7.2)
     if (Math.abs((r.fu ?? d.fukt) - d.fukt) < 0.1 && kn(p, 'fukt') < 1) learnK(p, 'fukt', JORD.larFukt, s.now); // den som ser grödan trivas lär sig fukten (steg 9.7.3)
     const sk = 1 + (p.skill.odling ?? 0) / ODLING.skillSkord; // en skicklig odlare får mer (steg 9.7.7)
-    if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b * sk); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b * sk); }
+    if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b * sk); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b * sk); forstaSkorden(s, p, f, d.sak, r.m); } // den första skörden offras (steg 10.3.23)
     if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
     gain(s, p, 'vaxtrest', 1); // växtresterna (steg 9.7.5)
     f.r![k] = (d as GrodaDef).flerarig ? { st: 'vaxer', g: r.g, v: (d as GrodaDef).ater ?? ODLING.flerAter, fu: r.fu } : { st: 'bereda' }; // en flerårig gröda växer igen (steg 9.7.9), annars grävs jorden upp

@@ -1326,7 +1326,7 @@ SCENARIER.troskrets = {
 };
 
 SCENARIER.buden = {
-  text: 'Steg 8.6.6–8.6.10, 10.3.3 och 10.3.22: buden verkar, och en by utan ledare röstar in en högtid. Fastan en dag av sju, den första fångsten till tron, tionde till prästen, djuroffret, att tacka före maten; främlingar får mat, man gifter sig inom tron, hämnd är en plikt, de döda talar man inte illa om och lunden fälls inte',
+  text: 'Steg 8.6.6–8.6.10, 10.3.3, 10.3.22 och 10.3.23: buden verkar, och en by utan ledare röstar in en högtid. Fastan en dag av sju, den första fångsten till tron, tionde till prästen, djuroffret, att tacka före maten; främlingar får mat, man gifter sig inom tron, hämnd är en plikt, de döda talar man inte illa om och lunden fälls inte',
   kor: () => {
     const { s, v, tr } = medTro(6, 4);
     for (const p of v) p.troStyrka = 90;
@@ -1381,7 +1381,50 @@ SCENARIER.buden = {
     const hanO = SIM.BUDSKAP.hanaGud.vikt(s3, o3, x3), hanF = SIM.BUDSKAP.hanaGud.vikt(s3, q3, x3);
     const t3 = q3.troStyrka!, r3 = SIM.getRel(s3, q3, o3).op;
     SIM.BUDSKAP.hanaGud.verkan(s3, o3, q3, 1, { gud: tr3.id } as SIM.Fram);
+    // de nya kraven och offren (steg 10.3.23), i en egen by
+    const b4 = medTro(6, 4), s4 = b4.s, tr4 = b4.tr, kid = SIM.kyrkaId(tr4.id);
+    for (const p of b4.v) p.troStyrka = 90;
+    tr4.bud = (['hogtid', 'olHogtid', 'kvade', 'forstaSkord', 'valkomna', 'begravFiende'] as const).map(id => ({ id, t: s4.now }));
+    const vux4 = b4.v.filter(p => SIM.ageOf(p, s4.now) >= SIM.ALDER.vuxen), f4 = vux4[0];
+    // öl vid högtiden: kyrkans kruka, som byn inte dricker ur
+    const olTr = SIM.olTillKyrkan(s4, f4)?.id;
+    const kr4 = SIM.addTool(s4, 'lerkruka_stor', f4); kr4.hos = undefined; SIM.fyllVatska(s4, 'ol', 10, kr4); kr4.agare = kid;
+    const byOl = SIM.medVatska(s4, 'ol'), ol0 = kr4.inne!.n;
+    for (const p of vux4) p.skill.skaldskap = 0;
+    SIM.hogtidOlKvade(s4, tr4, vux4);
+    const drack = ol0 - (kr4.inne?.n ?? 0), utanKvade = vux4.some(p => p.thoughts?.some(t => t.text === 'Ingen kvad om tron vid högtiden'));
+    kr4.inne = undefined; SIM.hogtidOlKvade(s4, tr4, vux4);
+    const saknas = vux4.some(p => p.thoughts?.some(t => t.text === 'Ölet saknades vid högtiden'));
+    // kväden vid högtiden
+    vux4[1].skill.skaldskap = 12; const kt0 = vux4[0].troStyrka!; vux4[0].troStyrka = 50;
+    SIM.hogtidOlKvade(s4, tr4, vux4);
+    const kvad = (s4.stat?.hogtid_kvade ?? 0) === 1 && vux4[0].troStyrka! > 50; void kt0;
+    // den första skörden offras
+    const falt: { offrat?: number } = {}; SIM.put(s4, 'korn', 5, { [f4.id]: 5 });
+    const k0 = SIM.kyrkansAv(s4, tr4, 'korn');
+    SIM.forstaSkorden(s4, f4, falt, 'korn', s4.now); SIM.forstaSkorden(s4, f4, falt, 'korn', s4.now + 3600000);
+    const k1 = SIM.kyrkansAv(s4, tr4, 'korn');
+    SIM.forstaSkorden(s4, f4, falt, 'korn', s4.now + 3 * 86400000);
+    const k2 = SIM.kyrkansAv(s4, tr4, 'korn');
+    // handlaren ska välkomnas
+    klockan(s4, 10); const hs4 = SIM.skickaHandlare(s4), h4 = s4.handlare;
+    const rel0 = h4 ? SIM.gastRel(s4, h4, f4)?.op ?? 0 : 0;
+    if (h4) SIM.valkomnaHandlare(s4, h4);
+    const valk = !!h4 && (SIM.gastRel(s4, h4, f4)?.op ?? 0) > rel0 && (s4.stat?.handlare_valkommen ?? 0) === 1;
+    // den fallne fienden begravs, av den som följer budet
+    s4.kvarlevor = [{ id: 901, k: 'fiende', x: Math.floor(f4.x) + 2, y: Math.floor(f4.y), t: s4.now, vem: -1, namn: 'Rövaren Ulf', text: 'Rövaren Ulf' }];
+    const utanTro = nyInvanare(s4, 'm', 25); utanTro.tro = undefined;
+    let valt: ReturnType<typeof SIM.begravaVal>, annanV = false;
+    for (let i = 0; i < 200 && !valt; i++) { s4.now += 60000; valt = SIM.begravaVal(s4, f4); annanV ||= !!SIM.begravaVal(s4, utanTro); }
+    if (valt) { const t = { act: 'begrava', phase: 'do', ref: valt.ref, until: s4.now, carry: 0, dark: false, why: '' } as SIM.Task; SIM.kroppUpp(s4, f4, t); SIM.gravKlar(s4, f4, t); }
+    const gravd = SIM.gravarOf(s4).find(g => g.namn === 'Rövaren Ulf');
     return [
+      [`öl vid högtiden: den som följer budet tappar ölet åt kyrkan (${olTr === tr4.id}), byn dricker inte ur kyrkans kruka (${!byOl}), de ${vux4.length} vuxna drack ${drack}, och utan öl saknas det (${saknas})`, olTr === tr4.id && !byOl && drack === Math.min(vux4.length, ol0) && saknas],
+      [`kväden vid högtiden: utan skald saknas kvädet (${utanKvade}), med en skald får de troende starkare tro (50 → ${vux4[0].troStyrka!.toFixed(1)})`, utanKvade && kvad],
+      [`den första skörden offras: en hel sak per skörd (kyrkans korn ${k0} → ${k1} → ${k2})`, k1 === k0 + 1 && k2 === k1 + 1],
+      [`handlaren välkomnas med mat och bättre relation (${hs4.text})`, valk],
+      [`den fallne fienden begravs på trons gravplats (${gravd ? `grav, tro ${gravd.tro}` : 'ingen grav'}), men inte av den utan budet (${annanV ? 'valde' : 'valde inte'})`, !!gravd && gravd.tro === tr4.id && !annanV && !s4.kvarlevor.length],
+
       [`inget rus: den som följer budet tar inget till kvällen (${rusF ?? 'inget'}), den utan tro tar (${rusO ?? 'inget'}), och den som super bryter budet (${supBrott})`, rusF === undefined && rusO === 'vin' && supBrott],
       [`djuren vilar på den heliga dagen (${avlHelg}, ${klHelg}), men inte andra dagar (${avlVardag ?? 'tillåtet'})`, avlHelg === 'djurVilar' && klHelg === 'djurVilar' && avlVardag === undefined],
       [`inte handla med främlingar (${handla3}, ${koa3}), den utan tro handlar (${handlaO ?? 'tillåtet'})`, handla3 === 'ingenHandel' && koa3 === 'ingenHandel' && handlaO === undefined],

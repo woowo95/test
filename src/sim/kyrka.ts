@@ -27,7 +27,12 @@ import { DJURARTER } from './redskap';
 import { bedFor } from './bygg';
 import { ledareOf } from './styre';
 import { upplev } from './uppvaxt';
-import { TROSHUS, altaret, troshusForslag, troshusRegister, troshusSaknar } from './troshus';
+import { TROSHUS, altaret, troshusForslag, troshusRegister, troshusSaknar, vuxnaTroende } from './troshus';
+import { drickAlkohol } from './rus';
+import { framKval, FRAM_SKILL } from './framtradande';
+import { gastRel } from './gastrel';
+import { hp } from './gast';
+import type { Handlare } from './handel';
 
 export const KYRKA = balans('kyrka', {
   offerChans: 0.03, // chansen per timme att en andlig ger en gåva till kyrkan ...
@@ -52,6 +57,7 @@ export const KYRKA = balans('kyrka', {
   djur: 2, // djuroffret: så mycket kött en gång i veckan (sju dygn, sju år i spelet)
   djurSakna: -0.03, // den troende mår så här mycket sämre när det inte finns något att offra
   offerDygn: 28, // människooffret: högst en gång på så här många dygn (år i spelet), och bara den som dömts
+  kvadeTro: 3, kvadeHumor: 0.04, skald: 1, // kvädet vid högtiden (steg 10.3.23): tro och humör för de samlade troende, gånger skaldens kvalitet; skald = minsta skaldskapet
   framlingRel: 10, // främlingen: så mycket bättre relation med den som ger (maten är en portion ur förrådet, steg 10.2.35)
   hamndRel: 15, // hämnden: relationen till den som gjort en våldsam handling blir så här mycket sämre
   vecka: 7, // vilodagen, fastan och djuroffret: en gång på så här många dygn (år i spelet)
@@ -121,6 +127,17 @@ export const BUD = {
   ingenStrid: { namn: 'Ingen strid på heliga dagar', sort: 'forbud', storlek: 3, skala: 'krig', sida: 0, text: 'Ingen börjar slåss på den heliga dagen', dag: true,
     om: () => 'På den heliga dagen börjar de som följer budet ingen strid, inget slagsmål och ingen brottning. Den som anfalls försvarar sig.' }, // kartstrid.ts, sport.ts, behov.ts och styre.ts frågar budHindrar
   ingenHan: { namn: 'Ingen hånar gudarna', sort: 'forbud', storlek: 1, skala: 'forlat', sida: 1, text: 'Ingen hånar gudarna' }, // budskapet hanaGud (framtradande.ts)
+  // de nya kraven och offren (steg 10.3.23)
+  olHogtid: { namn: 'Öl vid högtiden', sort: 'krav', storlek: 2, skala: 'fest', sida: 0, kraver: 'hogtid', text: 'Var och en dricker en öl ur kyrkans krukor vid högtiden',
+    om: () => 'Vid varje högtid dricker varje vuxen som är med en öl ur en kruka som kyrkan äger, och den tomma krukan blir kvar. Den som följer budet och tappar öl ger krukan till kyrkan när den har mindre öl än de vuxna troende. Saknas ölet mår de som följer budet lite sämre.' },
+  forstaSkord: { namn: 'Den första skörden offras', sort: 'offer', storlek: 2, skala: 'livet', sida: 0, text: 'Det första ur varje skörd går till tron',
+    om: () => 'Den första hela saken ur varje ny skörd på ett fält går till kyrkans egendom, när den som skördar följer budet.' }, // odling.ts frågar forstaSkorden
+  valkomna: { namn: 'Handlaren ska välkomnas', sort: 'krav', storlek: 1, skala: 'oppen', sida: 0, text: 'Handlaren får mat när hen kommer',
+    om: () => 'När handlaren kommer får hen en hel mat ur byns förråd, en gång per besök, och de som följer budet får en bättre relation med hen.' }, // handel.ts frågar valkomnaHandlare
+  begravFiende: { namn: 'Den fallne fienden begravs', sort: 'krav', storlek: 2, skala: 'forlat', sida: 0, text: 'En fallen fiende får en grav',
+    om: () => 'De som följer budet begraver en avrustad fiende på trons gravplats, med vanlig grävtid, i stället för att hen ligger kvar.' }, // grav.ts
+  kvade: { namn: 'Kväden vid högtiden', sort: 'krav', storlek: 1, skala: 'fest', sida: 0, kraver: 'hogtid', text: 'Den bästa skalden kväder om tron vid högtiden',
+    om: () => 'Den som är bäst i skaldskap bland dem som är med framför ett kväde om tron för de samlade. Saknas skalden mår de som följer budet lite sämre.' },
   framling: { namn: 'Främlingar ska få mat', sort: 'krav', storlek: 2, skala: 'oppen', sida: 0, text: 'Den som kommer får äta', sed: ['gemenskap', 1] },
   orena: { namn: 'En fiendes saker är orena', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'Man rör inte det fienden bar' }, // steg 10.3.6
   giftaTro: { namn: 'Inte gifta sig utanför tron', sort: 'forbud', storlek: 2, skala: 'oppen', sida: 1, text: 'Man gifter sig inom tron' },
@@ -387,7 +404,7 @@ function valsignaDygn(s: State) {
 // förbuden mot handlingar frågar valet av aktivitet (budForbjuder). Resten verkar här: kraven vid sin tid och offren vid sitt
 // tillfälle varje dygn (budDygn), och de bud som rör andra system när det händer (budTillfalle, via folk.ts). Bara den som
 // följer budet (foljer) påverkas; kyla och svält går före, som i fastan (behov.ts)
-const harBud = (s: State, p: Person | undefined, id: BudId) => { const tr = p && troOf(s, p.tro); return budIn(tr, id) && foljer(p!, id); };
+export const harBud = (s: State, p: Person | undefined, id: BudId) => { const tr = p && troOf(s, p.tro); return budIn(tr, id) && foljer(p!, id); };
 let doda: (s: State, p: Person) => void = () => {};
 export const satOffrad = (f: typeof doda) => { doda = f; };
 function budDygn(s: State) {
@@ -552,4 +569,46 @@ FRAGOR.nyttBud = {
   rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined); return { v: r.v, why: r.why }; },
   gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b: AntagetBud = { id: d.id as BudId, ...(d.v !== undefined ? { v: d.v } : {}), t: s.now }; (tr.bud ??= []).push(b); BDEF[b.id].antas?.(s, tr, b); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
+}
+
+// ---------- de nya kraven och offren (steg 10.3.23) ----------
+// kyrkans öl: krukor med öl som tron äger. Ingen annan dricker ur dem (vatskor.ts)
+export const kyrkansOl = (s: State, tr: Tro) => tingOf(s).filter(t => t.agare === kyrkaId(tr.id) && t.inne?.v === 'ol' && t.inne.n > 0);
+export const olAntal = (s: State, tr: Tro) => kyrkansOl(s, tr).reduce((a, t) => a + Math.floor(t.inne!.n + 1e-9), 0);
+// tron som får ölet p tappar: p följer budet, och kyrkan har mindre öl än de vuxna troende (brygg.ts)
+export function olTillKyrkan(s: State, p: Person): Tro | undefined {
+  const tr = troOf(s, p.tro);
+  return tr && harBud(s, p, 'olHogtid') && olAntal(s, tr) < vuxnaTroende(s, tr).length ? tr : undefined;
+}
+// ölet och kvädet när högtiden slutar (kult.ts hogtidSlut)
+export function hogtidOlKvade(s: State, tr: Tro, med: Person[]) {
+  if (budIn(tr, 'olHogtid')) for (const p of med) {
+    if (ageOf(p, s.now) < ALDER.vuxen) continue;
+    const t = budHindrar(s, p, 'ingetRus') ? undefined : kyrkansOl(s, tr)[0];
+    if (t) { t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined; drickAlkohol(s, p, 'ol', true); count(s, 'hogtid_ol'); } // den tomma krukan blir kvar
+    else if (p.tro === tr.id && foljer(p, 'olHogtid') && !budHindrar(s, p, 'ingetRus')) think(p, 'Ölet saknades vid högtiden', KULT.offerInget, s.now, 12 * HOUR);
+  }
+  if (!budIn(tr, 'kvade')) return;
+  const skald = med.filter(p => (p.skill[FRAM_SKILL] ?? 0) >= KYRKA.skald).sort((a, b) => (b.skill[FRAM_SKILL] ?? 0) - (a.skill[FRAM_SKILL] ?? 0) || a.id - b.id)[0];
+  if (!skald) { for (const p of med) if (p.tro === tr.id && foljer(p, 'kvade')) think(p, 'Ingen kvad om tron vid högtiden', KULT.offerInget, s.now, 12 * HOUR); return; }
+  const q = framKval(s, skald);
+  for (const p of med) if (p !== skald && p.tro === tr.id) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kvadeTro * q); think(p, `Hörde ${skald.name}s kväde om tron`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+  count(s, 'hogtid_kvade');
+  log(s, `${skald.name} kvad om ${troNamn(tr)} vid högtiden.`, 'rel', [skald.id]);
+}
+// den första skörden (odling.ts): den första hela saken k ur en ny skörd på fältet f går till kyrkan. m = när rutan mognade; en ruta
+// som mognat mer än ett dygn efter den som offrades hör till en ny skörd
+export function forstaSkorden(s: State, p: Person, f: { offrat?: number }, k: string, m: number | undefined) {
+  if (m === undefined || (f.offrat !== undefined && m < f.offrat + DAY) || !harBud(s, p, 'forstaSkord') || ownsAmount(s, p, k) < 1) return;
+  const tr = troOf(s, p.tro)!;
+  ownMove(s, k, 1, p.id, kyrkaId(tr.id)); f.offrat = m; count(s, 'forstaSkord');
+  p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kravTro);
+  think(p, 'Gav det första ur skörden till tron', KYRKA.kravHumor, s.now, 12 * HOUR);
+}
+// handlaren välkomnas när hen kommer fram (handel.ts), en gång per besök: en hel mat ur byns förråd, och de som följer budet får en bättre relation
+export function valkomnaHandlare(s: State, h: Handlare) {
+  const folj = living(s).filter(f => harBud(s, f, 'valkomna'));
+  if (!folj.length) return;
+  for (const f of folj) { const r = gastRel(s, h, f); if (r) r.op = Math.min(100, r.op + KYRKA.framlingRel); }
+  if (MAT.anvand(s, hp(s, h)) > 0) count(s, 'handlare_valkommen');
 }

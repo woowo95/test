@@ -39,8 +39,8 @@ export const rusFaktor = (p: Person) => Math.max(RUS.golv, 1 - RUS.fart * rusAv(
 export const rusSmid = (p: Person) => RUS.smid * rusAv(p);
 export const rusTraff = (p: Person) => RUS.traff * rusAv(p);
 // p dricker en dryck med alkohol
-export function drickAlkohol(s: State, p: Person, v: VatskaId) {
-  if (!alkoholKrok.ta(s, v)) return false;
+export function drickAlkohol(s: State, p: Person, v: VatskaId, tagen = false) { // tagen: drycken är redan tagen ur sin kruka (kyrkans öl, steg 10.3.23)
+  if (!tagen && !alkoholKrok.ta(s, v)) return false;
   const a = ALKOHOL[v] ?? 0;
   p.rus = clamp(rusAv(p) + a, 0, 2); p.supit = (p.supit ?? 0) + a;
   think(p, v === 'vin' ? 'Drack vin' : 'Drack öl', RUS.glad, s.now, RUS.gladTim * HOUR);
