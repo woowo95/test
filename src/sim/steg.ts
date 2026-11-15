@@ -37,7 +37,7 @@ import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './r
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
-import { FYND, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, sankning, takeFrom } from './fynd';
+import { FYND, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, type Tand, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
@@ -82,7 +82,7 @@ import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
-import { sjoRakna, vattenNu } from './sjo';
+import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
 import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
@@ -1101,16 +1101,33 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
   // länge byn behöver flinta (som förut i forageItems, eld.ts)
   if (tk.sok) {
     const v = rutVarde(s, tk)(x, y), sten = needStones(s);
-    const n = sten ? Math.floor(v * RUNDA.stenSaker + 1e-9) : flintaBehovs(s, tk) && hash3(s.seed, i, 991) < v * RUNDA.flintTat ? 1 : 0;
+    const n = sten ? Math.floor(v * RUNDA.stenSaker + 1e-9) : hash3(s.seed, i, 991) < v * RUNDA.flintTat && flintaBehovs(s, tk) ? 1 : 0; // rutans tal först: det är billigt, och de flesta rutor har ingen flinta
     return [{ k: sten ? 'sten' : 'flinta', n: Math.max(0, n - plockatPa(s, plockKey(tk, i))) }];
   }
   // bär och rötter, och svampen som växer där (kantarellen och den giftiga spindlingen)
   // antalet är rikedomen räknad i saker, och resten avgör om det ligger en sak till (räknat ur rutan och dygnet, ingen slump),
   // så att det i snitt finns lika mycket som rikedomen säger
-  if (res) { const dag = Math.floor(s.now / DAY), svamp = res === 'samla'; return [...lagren(res), ...(svamp ? ['kantarell', 'spindling'] as FyndId[] : [])].map((j, n) => { const v = richness(s, j, x + 0.5, y + 0.5) / FYND[j].topp * (FYND[j].saker ?? 1), hel = Math.floor(v); return { k: j, n: hel + (hash3(s.seed + n, i, dag) < v - hel ? 1 : 0) }; }); }
+  if (res) { const dag = Math.floor(s.now / DAY); return lagrenPa(res).map((j, n) => { const v = richness(s, j, x + 0.5, y + 0.5) / FYND[j].topp * (FYND[j].saker ?? 1), hel = Math.floor(v); return { k: j, n: hel + (hash3(s.seed + n, i, dag) < v - hel ? 1 : 0) }; }); }
   const tr = groundOf(s).trees[i];
   const h = hash3(s.seed, i, 977), bas = tr >= FOREST && h < RUNDA.grenTat ? 1 + Math.floor(h / RUNDA.grenTat * RUNDA.grenSaker) : 0;
   return [{ k: 'grenar', n: Math.max(0, Math.min(RUNDA.grenSaker, bas) - plockatPa(s, plockKey(tk, i))) }];
+}
+// lagren med saker på rutan för den som samlar res: bär och rötter, och svampen som växer där
+const LAGREN_PA: Partial<Record<string, readonly FyndId[]>> = {};
+const lagrenPa = (res: Lager) => LAGREN_PA[res] ??= [...lagren(res), ...(res === 'samla' ? ['kantarell', 'spindling'] as FyndId[] : [])];
+// sakerPa för den som frågar om många rutor på en gång utan att något i byn ändras emellan (nästa mål, sträckan): väggarna, dygnet
+// och det som gäller hela kartan hämtas en gång, och inga listor byggs. Samma antal som sakerPa
+function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
+  const res = ACTS[tk.act].resurs;
+  if (tk.sok || !res) return (x, y) => sakerPa(s, tk, x, y); // stenarna, flintan och grenarna räknas som vanligt
+  const js = lagrenPa(res), rik = richnessFor(s, js), solid = gridOf(s).solid, dag = Math.floor(s.now / DAY);
+  return (x, y) => {
+    if (!inMap(x, y) || solid[y * W + x] === 1) return 0;
+    const i = y * W + x;
+    let sum = 0;
+    for (let n = 0; n < js.length; n++) { const f = FYND[js[n]], v = rik(n, i) / f.topp * (f.saker ?? 1), hel = Math.floor(v); sum += hel + (hash3(s.seed + n, i, dag) < v - hel ? 1 : 0); }
+    return sum;
+  };
 }
 const flintaBehovs = (s: State, tk: Task) => underBuffert(s, 'flinta', tk.items?.flinta ?? 0); // efter förbrukningen (steg 10.2.12)
 // sakerna på marken utan en samlare (för bilden, ui/vaxter.ts och terrang.ts): det som samlas (bär, rötter och svamp) eller grenarna
@@ -1263,10 +1280,10 @@ function nastaPaStrackan(s: State, tk: Task, x: number, y: number) {
   return undefined;
 }
 function strackaFran(s: State, tk: Task, x0: number, y0: number, r: number) {
-  const vt = vattenNu(s), kand: number[] = [];
+  const vt = vattenNu(s), kand: number[] = [], saker = sakerLasare(s, tk);
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = x0 + dx, y = y0 + dy;
-    if (Math.hypot(dx, dy) > r + 0.01 || !inMap(x, y) || vt[y * W + x] === T.Vatten || sakerPa(s, tk, x, y) <= 0 || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
+    if (Math.hypot(dx, dy) > r + 0.01 || !inMap(x, y) || vt[y * W + x] === T.Vatten || saker(x, y) <= 0 || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
     kand.push(y * W + x);
   }
   const ut: number[] = [];
@@ -1281,10 +1298,10 @@ function strackaFran(s: State, tk: Task, x0: number, y0: number, r: number) {
 // den närmaste rutan inom r med saker, och dit man kan gå (inte i vattnet). Samma ruta varje gång (ingen slump)
 function narmastMedSaker(s: State, tk: Task, x0: number, y0: number, r: number) {
   let bast: { x: number; y: number } | undefined, bd = Infinity;
-  const vt = vattenNu(s);
+  const vt = vattenNu(s), saker = sakerLasare(s, tk);
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-    if (d > r + 0.01 || d >= bd || !inMap(x, y) || vt[y * W + x] === T.Vatten || sakerPa(s, tk, x, y) <= 0 || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
+    if (d > r + 0.01 || d >= bd || !inMap(x, y) || vt[y * W + x] === T.Vatten || saker(x, y) <= 0 || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
     bast = { x, y }; bd = d;
   }
   return bast;
@@ -1313,22 +1330,40 @@ function platsTom(s: State, p: Person, tk: Task, x: number, y: number) { count(s
 // nästa mål (steg 9.2.54): den ruta inom RUNDA.malR som är bäst när det hen tror finns där (platslärdomarna, trorOm i minne.ts;
 // grenarna och stenarna syns) vägs mot vägen dit och rädslan, och som är mindre värd för varje bybo som redan är där eller på väg
 // dit. Aldrig tillbaka över rutor hen tömt (de har inga saker), och bara bort från det hen redan sett här. Scenariot samlarmal frågar den direkt
+// rutorna längre bort än inre och högst yttre rutor, rad för rad (dy ytterst), med avståndet: räknas en gång per par av mått
+const ringar = new Map<string, { dx: Int16Array; dy: Int16Array; d: Float64Array }>();
+function ringen(inre: number, yttre: number) {
+  const key = `${inre}:${yttre}`;
+  let r = ringar.get(key);
+  if (!r) {
+    const dx: number[] = [], dy: number[] = [], d: number[] = [];
+    for (let y = -yttre; y <= yttre; y++) for (let x = -yttre; x <= yttre; x++) { const a = Math.hypot(x, y); if (!(a <= inre || a > yttre)) { dx.push(x); dy.push(y); d.push(a); } }
+    ringar.set(key, r = { dx: Int16Array.from(dx), dy: Int16Array.from(dy), d: Float64Array.from(d) });
+  }
+  return r;
+}
 export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, radsla: (x: number, y: number) => number) {
   // det hen ser räknas som det är, i saker på rutan; längre bort det hen tror, räknat i saker (rikedomen delad med toppen, gånger
   // sakerna på en full ruta), så att en plats som ser rik ut men är tom inte lockar
   const res = ACTS[tk.act].resurs, sikt = sightOf(s, p);
-  const tror0 = res && !tk.sok ? trorOm(s, p, res) : undefined, iSaker = res && !tk.sok ? (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf(res)) : 0;
-  const tror = (x: number, y: number) => !tror0 || sees(s, p, x, y, sikt) ? sakerPa(s, tk, x, y) : tror0(x, y) * iSaker;
+  const tror0 = res && !tk.sok ? trorOm(s, p, res, 'osedda') : undefined, iSaker = res && !tk.sok ? (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf(res)) : 0;
   const andra = living(s).filter(q => q !== p && q.task?.act === tk.act).map(q => ({ x: q.task!.tx, y: q.task!.ty }));
-  const vt = vattenNu(s), R = RUNDA.malR;
+  const vt = vattenNu(s), R = RUNDA.malR, saker = sakerLasare(s, tk);
   let bast: { x: number; y: number } | undefined, bv = 0;
-  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-    const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-    if (d <= RUNDA.syn || d > R || !inMap(x, y) || vt[y * W + x] === T.Vatten || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
-    const trangt = andra.filter(q => Math.hypot(q.x - x, q.y - y) < RUNDA.syn).length;
+  const ring = ringen(RUNDA.syn, R);
+  // blocked och sees för varje ruta, med kartan, väggarna och sikten hämtade en gång. Synen avgörs av avståndet i kvadrat när det
+  // är klart innanför eller utanför sikten (med en marginal långt över avrundningen), och annars som sees räknar
+  const tiles = getMap(s.seed).tiles, grid = gridOf(s), flod = !!s.flod, sikt2 = sikt * sikt, inom = sikt >= 0 ? sikt2 * (1 - 1e-9) : -1, utom = sikt >= 0 ? sikt2 * (1 + 1e-9) : Infinity;
+  for (let k = 0; k < ring.d.length; k++) {
+    const x = x0 + ring.dx[k], y = y0 + ring.dy[k], d = ring.d[k], i = y * W + x;
+    if (!inMap(x, y) || vt[i] === T.Vatten || tiles[i] === T.Vatten && !grid.brygga[i] || flod && iVattnetNu(s, i) || grid.solid[i] === 1) continue; // (inte i en vägg)
+    let trangt = 0;
+    for (const q of andra) if (Math.hypot(q.x - x, q.y - y) < RUNDA.syn) trangt++;
+    const ax = x + 0.5 - p.x, ay = y + 0.5 - p.y, a2 = ax * ax + ay * ay;
+    const ser = !tror0 || (a2 < inom ? true : a2 > utom ? false : sees(s, p, x, y, sikt)), tror = ser ? saker(x, y) : tror0!(x, y) * iSaker;
     // vägen dit räknas i samma enhet som det hen tror finns där: bortom synvidden i saker (iSaker). Förut vägde avståndet femtio
     // gånger tyngre än det hen hört, så att inget mål längre bort vann och rundan gick åt ett slumpat håll (steg 9.9.5)
-    const v = (tror(x, y) - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut * (tror0 && !sees(s, p, x, y, sikt) ? iSaker : 1);
+    const v = (tror - radsla(x, y)) / (1 + trangt) - d * RUNDA.ut * (ser ? 1 : iSaker);
     if (v > bv + 1e-9) { bv = v; bast = { x, y }; }
   }
   if (bast) { count(s, 'nyttMal'); return bast; }

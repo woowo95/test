@@ -859,7 +859,17 @@ function bredvid(s: State, x: number, y: number) {
 // stänger in något (ställd där före v78, eller ett hus byggdes bredvid den) så att ingen stängs ute
 function utanLager(s: State) {
   const fv = stationerOf(s).filter(t => stationDef(t.k)?.forvar && t.ag === undefined), alla = fv.length ? nadda(s) : undefined;
-  const stanger = (t: Station) => nadda(s, -1, t.y * W + t.x).n > alla!.n + 1;
+  // stänger möbeln in något: utan den nås mer än dess egen ruta. Det är så när möbelns ruta går att nå (den ligger vid elden eller
+  // intill en nådd ruta) och en ruta bredvid den går att gå på men inte nås i dag. Samma svar som att räkna om allt som nås utan
+  // möbeln (nadda med utan), utan att gå igenom kartan en gång per möbel
+  const stanger = (t: Station) => {
+    const g = groundOf(s), hinder = stationRutor(s).hinder, f = eldPlats(s), i = t.y * W + t.x;
+    if (g.tiles[i] === T.Vatten || g.solid?.[i]) return false;
+    const gr = GRANNAR4.map(([dx, dy]) => ({ x: t.x + dx, y: t.y + dy })).filter(q => q.x >= 0 && q.y >= 0 && q.x < W && q.y < H).map(q => q.y * W + q.x);
+    const vidElden = Math.abs(t.x - f.x) + Math.abs(t.y - f.y) <= 1;
+    if (!vidElden && !gr.some(j => alla!.sedd[j])) return false;
+    return gr.some(j => !alla!.sedd[j] && g.tiles[j] !== T.Vatten && !g.solid?.[j] && !hinder[j]);
+  };
   // ingen ruta rakt bredvid nås: ingen kommer åt möbeln (tre hyllor i ett hörn, eller en vägg som byggts upp igen efter en tornado)
   const utom = (t: Station) => !GRANNAR4.some(([dx, dy]) => alla!.sedd[(t.y + dy) * W + t.x + dx]);
   const fram = framRutor(s), iVag = (t: Station) => fram.has(t.y * W + t.x); // framför en arbetsstation (steg 3.10.1)
@@ -1126,8 +1136,13 @@ export const verktygVid = (s: State, act: Act, k: string) => { const t = station
 const platserFor = (t: Station, k: string) => stationDef(t.k)?.vid?.[k] ?? 0;
 // så många platser för redskap av slaget k som står tomma i byns färdiga stationer
 export function tommaPlatser(s: State, k: string) {
-  let n = 0;
-  for (const t of stationerOf(s)) if (isKlar(t)) n += Math.max(0, platserFor(t, k) - redskapVid(s, t, k).length);
+  let n = 0, vid: Map<number | undefined, number> | undefined; // redskapen av slaget k per station, räknade en gång och bara om någon station har en plats
+  for (const t of stationerOf(s)) {
+    const pl = isKlar(t) ? platserFor(t, k) : 0;
+    if (pl <= 0) continue;
+    if (!vid) { vid = new Map(); for (const q of tingOf(s)) if (q.k === k) vid.set(q.vid, (vid.get(q.vid) ?? 0) + 1); }
+    n += Math.max(0, pl - (vid.get(t.id) ?? 0));
+  }
   return n;
 }
 export const tommaKnivplatser = (s: State) => tommaPlatser(s, 'kniv');

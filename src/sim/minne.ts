@@ -4,11 +4,11 @@ import { PLATS } from './plats';
 import { byId, count, forstaGang, gjort, isParent, living, log, stat } from './folk';
 import { delade, larFalt, loggBer } from './berattelser';
 import { teach } from './teknik';
-import { FANGST, Kind, type Lager, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
+import { FANGST, FYND, Kind, type Lager, lagren, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsFor, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { KUNSKAPER, kn, learnK } from './kunskap';
-import { clamp, pickViktat, rnd } from './slump';
+import { clamp, clampI, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
 import { DAY, H, HOUR, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
 import { FOREST } from './vag';
@@ -227,10 +227,28 @@ function fear(s: State, p: Person, a: number) {
 // rundan (steg 4.5.6.2): vad personen tror att rutan (x, y) ger, med rädslan för området dragen ifrån. Rutorna hen ser
 // räknas som de är; längre bort gäller minnet, det hen hört och det marken lovar (den nyfikne tror mer på det okända)
 export const radslaVid = (s: State, p: Person, x: number, y: number) => fear(s, p, areaOf(x, y));
-export function trorOm(s: State, p: Person, k: Lager) {
-  const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
+// osedda: för den som frågar om många rutor hen inte ser, på en gång och utan att något i byn ändras emellan (nastaMal i steg.ts).
+// Det som är detsamma för hela lärdomsområdet (lärdomen, vad den hoppas på, områdets värde och rädslan) räknas då en gång per
+// område, och årstiden och mönstrens snitt en gång; svaret är exakt detsamma som utan
+export function trorOm(s: State, p: Person, k: Lager, lage?: 'osedda') {
+  const sight = sightOf(s, p), u = trustUnknown(s, p), syns = lage ? synsFor(s, k) : (i: number) => synsOf(s, k, i);
   const kind = k === 'samla' || k === 'jakt' || k === 'fiske' ? k : undefined;
-  return (x: number, y: number) => kind ? perceive(s, p, kind, x, y, sight, u, syns) : richness(s, k, x + 0.5, y + 0.5) - fear(s, p, areaOf(x, y));
+  if (!kind || !lage) return (x: number, y: number) => kind ? perceive(s, p, kind, x, y, sight, u, syns) : richness(s, k, x + 0.5, y + 0.5) - fear(s, p, areaOf(x, y));
+  // per område: a = det lärdomen hoppas på gånger säkerheten, den = områdets värde (minst synsMin), b = 1 − säkerheten (utan lärdom: l falskt)
+  type Omr = { l: boolean; a: number; den: number; b: number; fear: number };
+  const omr = new Map<number, Omr>(), land = !FYND[lagren(kind)[0]].vatten;
+  let sistA = -1, sist: Omr | undefined;
+  return (x: number, y: number) => {
+    const ar = areaOf(x, y), sy = land ? syns(clampI(y, H) * W + clampI(x, W)) : standAt(s, kind, x, y, syns); // på land är det rutans eget värde (standAt)
+    let o = ar === sistA ? sist : omr.get(ar);
+    if (!o) { // i samma ordning som perceive: lärdomen, områdets värde, och sist rädslan
+      const l = findL(p, kind, ar), pot = areaValue(s, kind, ar, 'syns');
+      o = { l: !!l, a: l ? Math.min(MINNE.vMax, hoped(s, l)) * l.c : 0, den: Math.max(MINNE.synsMin, pot), b: l ? 1 - l.c : 0, fear: fear(s, p, ar) };
+      omr.set(ar, o);
+    }
+    sistA = ar; sist = o;
+    return (o.l ? o.a * Math.min(MINNE.synsMax, sy / o.den) + sy * u * o.b : sy * u) - o.fear;
+  };
 }
 // det man ser: rutorna runt där man står just nu.
 // Synvidden beror på var man står: kort i skogen, längre i öppen terräng, och kortare i mörker

@@ -201,7 +201,7 @@ export const overTak = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) 
 // Bufferten för ett redskap är hur många byn vill ha av gruppen (GORS i redskap.ts). Under den är redskapet ett projekt
 // (projekt.ts), och det görs bara som projekt: i arbetet som behöver det (withTools i val.ts, yxan till veden), på Förbättra
 // eller som pyssel på fritiden. En ny grupp är en ny rad här.
-const vuxna = (s: State, fran: number) => living(s).filter(p => ageOf(p, s.now) >= fran).length;
+const vuxna = (s: State, fran: number) => { let n = 0; for (const p of living(s)) if (ageOf(p, s.now) >= fran) n++; return n; };
 const perVuxna = (s: State, per: number, min: number, max: number, fran: number = ALDER.vuxen) => clamp(Math.floor(vuxna(s, fran) / per), min, max);
 // ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
 const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna, VILLTAL.spjutMin, VILLTAL.spjutMax) : 0;
