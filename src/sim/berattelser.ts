@@ -69,6 +69,7 @@ export const BERATT = balans('beratt', {
   konst: 0.8, // så stor del av mästerverken får ett motiv, när göraren minns någon
   konstMin: 0.2,
   malning: 0.4, // så stor del av dem är målade; de andra är ristade
+  bildHandelse: 2, // ett intryck med en händelse bakom väger så här mycket mer som motiv, så att bilden helst visar en händelse (steg 10.7.1)
   dimma: 0.5, // dimman räknas från den här tätheten
   // samtalens ämnen (steg 3.9.5)
   dodDygn: 2, // man pratar om den som dog för högst så här många dygn sedan
@@ -2577,8 +2578,11 @@ export function sakMinne(s: State, p: Person, t: { id: number; k: string; q?: nu
     : p.pregnantSince !== undefined ? ['gravid'] : s.styre?.ledare === p.id ? ['ledare'] : undefined;
   if (liv) { m.l = liv[0]; if (liv[1] !== undefined) m.lo = liv[1]; }
   if (sorg) m.mn = sorg.name; // inskriptionen "Till minne av" (steg 10.6.14): namnet står kvar när den döda är borta ur folket
-  const mo = (t.q ?? 0) >= 4 && sakGrupp(t.k) !== 'klad' && hash(s.seed, t.id, 6) < BERATT.konst ? motiv(s, p) : undefined;
-  if (mo) { if (hash(s.seed, t.id, 7) < BERATT.malning) mo.mal = 1; m.mo = mo; }
+  // en bildyta (skölden, steg 10.7.1) målas alltid från fin kvalitet; andra mästerverk ristas eller målas ibland
+  const yta = !!SAKER[t.k]?.bildyta, q = t.q ?? 0;
+  const mo = yta ? (q >= 3 ? motiv(s, p) : undefined) : q >= 4 && sakGrupp(t.k) !== 'klad' && hash(s.seed, t.id, 6) < BERATT.konst ? motiv(s, p) : undefined;
+  if (mo) { if (yta || hash(s.seed, t.id, 7) < BERATT.malning) mo.mal = 1; m.mo = mo; }
+  if (q > 0 && q < 4) { t.ber = { g: m.g, h: m.h, ai: m.ai, ...(mo ? { mo } : {}) }; return; } // en fin bildyta minns bara bilden
   if ((t.q ?? 0) >= 5) {
     const ef = EFTERLED[sakGrupp(t.k)], fore = liv?.[0] === 'sorg' || liv?.[0] === 'barn' ? FORLED[liv[0]] : vad ? FORLED[vad as 'sno'] : m.natt ? FORLED.natt
       : m.h >= BERATT.glad ? FORLED.glad : m.h <= BERATT.ledsen ? FORLED.ledsen : FORLED.ai[m.ai];
@@ -2591,7 +2595,7 @@ function motiv(s: State, p: Person): Motiv | undefined {
   let bast, b = BERATT.konstMin;
   for (const e of p.intryck ?? []) {
     if (e.om === p.id) continue;
-    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1) * kandVikt(s, e.om); // den byn minns väljs oftare (steg 10.6.14)
+    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1) * kandVikt(s, e.om) * (e.bev?.length ? BERATT.bildHandelse : 1); // den byn minns väljs oftare (steg 10.6.14), en händelse helst (steg 10.7.1)
     if (v > b) { b = v; bast = e; }
   }
   if (!bast) return undefined;
@@ -2624,12 +2628,14 @@ export function sakBerattelse(s: State, t: { id: number; k: string; q?: number; 
   const nara = m.nara !== undefined ? byId(s, m.nara) : undefined, at = m.at !== undefined ? byId(s, m.at) : undefined, lo = m.lo !== undefined ? byId(s, m.lo) : undefined;
   const vem = m.varg !== undefined ? byId(s, m.varg) : undefined;
   const del = (mall: MallId, n: number, g: Fyllning = {}) => fyll(valjVariant(s, mall, t.id * 16 + n, { ...f, ...g }, 0), { ...f, ...g });
+  const konst = () => del('m_konst', 6, { konst: m.mo!.mal ? 'en målning' : 'ristningar', konst2: m.mo!.mal ? 'Målningen' : 'Ristningarna', gjort: m.mo!.mal ? 'målat' : 'ristat', motiv: motivText(s, m.mo!) });
+  if (!usel && q < 4) return m.mo ? konst() : ''; // en fin bildyta: bara bilden (steg 10.7.1)
   const ut = [del(usel ? 'u_gjord' : 'm_gjord', 0)];
   if (!usel && m.l && (lo || m.lo === undefined)) ut.push(del('m_liv', 1, { om: lo?.name }));
   if (nara) ut.push(del(usel ? 'u_nara' : 'm_nara', 2, { nara: nara.name }));
   if (!usel && m.mn) ut.push(del('m_minne', 7, { om: m.mn })); // en sak gjord i sorg (steg 10.6.14)
   else if (!usel && at) ut.push(del('m_inskr', 3, { at: at.name, som: SOM[Math.floor(hash(s.seed, t.id, 5) * SOM.length)] }));
-  if (!usel && m.mo) ut.push(del('m_konst', 6, { konst: m.mo.mal ? 'en målning' : 'ristningar', konst2: m.mo.mal ? 'Målningen' : 'Ristningarna', gjort: m.mo.mal ? 'målat' : 'ristat', motiv: motivText(s, m.mo) }));
+  if (!usel && m.mo) ut.push(konst());
   if (vem) ut.push(del('m_varg', 4, { vem: vem === p ? p.name : vem.name, hen2: hen(vem) }));
   if (q >= 5 && m.namn) ut.push(del('m_perfekt', 5));
   return ut.join(' ');

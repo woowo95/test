@@ -51,7 +51,7 @@ export const SKRIFTER: Record<SkriftSlag, { namn: string; stadier: SkriftStadium
 };
 export { SKRIFT } from './skriftTal';
 export interface SkriftLag { id: string; straff: number; tal?: Record<string, number> }
-export interface Runsten { lag?: SkriftLag; id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number } // tro = den heliga stenens tro (om = tron)
+export interface Runsten { lag?: SkriftLag; id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number; bild?: 1 } // tro = den heliga stenens tro (om = tron); bild = en bildsten (steg 10.7.1)
 export const runstenarOf = (s: State): Runsten[] => (s.runstenar ??= []);
 export const runstenAt = (s: State, x: number, y: number) => s.runstenar?.find(r => r.x === x && r.y === y);
 
@@ -194,14 +194,16 @@ export function runstenKlar(s: State, p: Person, t: Task) {
   } else if (l.lag) {
     text = `${l.om.namn}: ${lagText(l.lag)}`;
   } else {
-    text = `${p.name} reste stenen. ${han(p)[0].toUpperCase() + han(p).slice(1)} ${bevisText(bev![0], '').trim()}.`;
+    // en händelse berättas i bilder i stället för runor: bildstenen (steg 10.7.1)
+    text = `${p.name} reste stenen, och bilderna på den visar hur ${bevisText(bev![0], p.name).trim().replace(/\.$/, '')}.`;
   }
+  const bild = l.slag === 'handelse';
   const id = (s.runstenar?.reduce((m, r) => Math.max(m, r.id), 0) ?? 0) + 1;
-  runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), text, runor: runor(text) });
+  runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(bild ? { bild: 1 as const } : {}), text, runor: bild ? '' : runor(text) });
   s.byggV = (s.byggV ?? 0) + 1;
-  count(s, 'runsten'); count(s, 'runsten_' + l.slag);
+  count(s, 'runsten'); count(s, 'runsten_' + l.slag); if (bild) count(s, 'bildsten');
   think(p, l.slag === 'minne' ? `Reste en sten efter ${l.om.namn}` : l.slag === 'helig' ? 'Ristade de heliga kvädena' : l.lag ? 'Ristade en lag' : 'Reste en sten om sin bedrift', 0.03, s.now, 12 * HOUR);
-  const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en runsten om sin bedrift.`;
+  const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en bildsten om sin bedrift.`;
   log(s, rad, 'rel', [p.id]); notis(s, 'runsten', rad, [p.id], { x, y }); kronika(s, rad, 'runsten');
 }
 
@@ -253,7 +255,7 @@ function skriftBorta(s: State) {
   if (nu.length || forr.length) s.skriftSedda = nu;
 }
 // i rutan som visas vid ett tryck: runorna överst och texten på svenska under
-export const runstenRubrik = (r: Runsten) => r.lag ? `Lagstenen (${LAGAR[r.lag.id]?.namn.toLowerCase() ?? 'lagen'})` : r.slag === 'minne' ? `Stenen efter ${r.om.namn}` : r.slag === 'helig' ? `Den heliga stenen (${r.om.namn.toLowerCase()})` : `${gen(r.av.namn)} sten`;
+export const runstenRubrik = (r: Runsten) => r.lag ? `Lagstenen (${LAGAR[r.lag.id]?.namn.toLowerCase() ?? 'lagen'})` : r.slag === 'minne' ? `Stenen efter ${r.om.namn}` : r.slag === 'helig' ? `Den heliga stenen (${r.om.namn.toLowerCase()})` : `${gen(r.av.namn)} ${r.bild ? 'bildsten' : 'sten'}`;
 // trons heliga stenar (fliken Religion)
 export const heligaStenar = (s: State, tr: Tro) => (s.runstenar ?? []).filter(r => r.slag === 'helig' && r.tro === tr.id);
 

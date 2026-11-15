@@ -290,7 +290,7 @@ export function drawStructures(t: number) {
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
   // graven (steg 10.4.2, platshållare tills Björn valt i bildstilen): en jordhög, och vården som står på den
   for (const g of s.gravar ?? []) { gravPlats(g); if (gravSkick(s, g) < BESOK.laga) igenvuxen(g); } // den slitna graven växer igen (steg 10.4.8)
-  for (const r of s.runstenar ?? []) runstenBild(r.x, r.y); // runstenen (steg 10.6.1, platshållare tills Björn valt i bildstilen)
+  for (const r of s.runstenar ?? []) runstenBild(r.x, r.y, r.bild === 1); // runstenen (steg 10.6.1, platshållare tills Björn valt i bildstilen)
   for (const h of s.heliga ?? []) stubbIkoner.add(HELIGA_PLATSER[h.k].ikon, h.x * TS, h.y * TS, 1); // de heliga platserna (steg 8.5.5)
   stubbIkoner.end();
   pileIcons.end();
@@ -362,12 +362,20 @@ function igenvuxen(g: { x: number; y: number }) {
 }
 // graven som platshållare (steg 10.4.2): jordhögen, och gravstolpen, gravbrädan, stockramen, gravhuset eller gravhögen
 // runstenen (steg 10.6.1): en platshållare i paletten, en hög grå sten med ett rödmålat runband, 16 punkter per ruta
-function runstenBild(x: number, y: number) {
+// bildstenen (steg 10.7.1): samma sten med målade bilder i stället för runbandet, en figur med spjut och ett djur
+function runstenBild(x: number, y: number, bild = false) {
   const X = x * TS, Y = y * TS, gr = structG, u = TS / 16;
-  gr.beginFill(0x3a3a34, 0.35).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill();
+  gr.beginFill(0x24201d, 0.35).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill();
   gr.beginFill(0x8a9c9e).drawPolygon([X + 5 * u, Y + TS - 2 * u, X + 4.5 * u, Y + 6 * u, X + 6 * u, Y + 2 * u, X + 10 * u, Y + 1.5 * u, X + 11.5 * u, Y + 5 * u, X + 11 * u, Y + TS - 2 * u]).endFill();
-  gr.beginFill(0x5f6e70).drawRect(X + 10 * u, Y + 4 * u, 1.5 * u, TS - 6 * u).endFill();
-  gr.lineStyle(u, 0xa8402e).moveTo(X + 6 * u, Y + TS - 3 * u).lineTo(X + 6 * u, Y + 4 * u).quadraticCurveTo(X + 8 * u, Y + 2.5 * u, X + 10 * u, Y + 4 * u).lineTo(X + 10 * u, Y + TS - 3 * u).lineStyle(0);
+  gr.beginFill(0x61767a).drawRect(X + 10 * u, Y + 4 * u, 1.5 * u, TS - 6 * u).endFill();
+  if (bild) {
+    gr.beginFill(0xa14808).drawRect(X + 6 * u, Y + 4 * u, u, u).drawRect(X + 6 * u, Y + 5 * u, u, 3 * u).drawRect(X + 5.5 * u, Y + 8 * u, u, 2 * u).drawRect(X + 7 * u, Y + 8 * u, u, 2 * u).endFill(); // en människa
+    gr.beginFill(0x3f2415).drawRect(X + 7 * u, Y + 3 * u, 0.6 * u, 6 * u).endFill(); // spjutet
+    gr.beginFill(0x474138).drawRect(X + 8 * u, Y + 9 * u, 2.5 * u, 1.5 * u).drawRect(X + 9.5 * u, Y + 8 * u, u, u).drawRect(X + 8 * u, Y + 10.5 * u, 0.6 * u, u).drawRect(X + 10 * u, Y + 10.5 * u, 0.6 * u, u).endFill(); // djuret
+    gr.beginFill(0xd8b25f).drawRect(X + 6 * u, Y + 12 * u, 4 * u, 0.7 * u).endFill(); // marken under
+    return;
+  }
+  gr.lineStyle(u, 0xa14808).moveTo(X + 6 * u, Y + TS - 3 * u).lineTo(X + 6 * u, Y + 4 * u).quadraticCurveTo(X + 8 * u, Y + 2.5 * u, X + 10 * u, Y + 4 * u).lineTo(X + 10 * u, Y + TS - 3 * u).lineStyle(0);
 }
 function gravPlats(g: { x: number; y: number; vard?: string }) {
   const X = g.x * TS, Y = g.y * TS, gr = structG;

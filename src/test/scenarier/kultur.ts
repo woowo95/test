@@ -428,7 +428,7 @@ SCENARIER.konst = {
     const minns = (medSak: boolean) => {
       const k = SIM.cloneState(s), p = k.people.find(q => q.id === a.id)!;
       p.intryck = [{ om: d.id, namn: d.name, k: 'vargdodare', v: 1, c: 1, t: k.now }];
-      if (!medSak) for (const t of k.ting ?? []) if (t.ber) delete t.ber.mo;
+      for (const t of k.ting ?? []) if (t.ber) { if (!medSak) delete t.ber.mo; delete t.ber.lo; } // bara bilden: en sak gjord i sorg håller också minnet uppe (steg 10.6.15)
       SIM.glomRykten(k, 24 * 5);
       return p.intryck?.[0]?.c ?? 0;
     };
@@ -439,6 +439,47 @@ SCENARIER.konst = {
       [`värdet ${vMed.toFixed(1)} mot ${vUtan.toFixed(1)} utan konst`, vMed > vUtan],
       [`kläderna får ingen konst (${klad} av 10), och ingen konst när göraren inget minns (${tomt} av 10)`, klad === 0 && tomt === 0],
       [`byn minns den döde längre med saken: säkerheten ${med.toFixed(2)} mot ${utanSak.toFixed(2)} efter fem dygn`, med > utanSak],
+    ];
+  },
+};
+
+SCENARIER.bildyta = {
+  text: 'Steg 10.7.1: bildytor och bildstenar. Skölden är en bildyta och får en målad bild av det göraren minns redan från fin kvalitet, andra saker först som mästerverk; ett intryck med en händelse bakom väger dubbelt, så att bilden helst visar en händelse, och den döda som visas bleknar långsammare. En runsten om en händelse huggs med bilder i stället för runor: en bildsten',
+  kor: () => {
+    const s = rikDag(3), [g, d1, d2, a] = vuxna(s) as [Person, Person, Person, Person];
+    SIM.die(s, d1, 'sjukdom'); SIM.die(s, d2, 'sjukdom');
+    const minnen = (): Person['intryck'] => [
+      { om: d1.id, namn: d1.name, k: 'vargdodare', v: 1.5, c: 1, t: s.now }, // starkare, men utan en händelse
+      { om: d2.id, namn: d2.name, k: 'vargdodare', v: 1, c: 1, t: s.now, bev: [{ h: 'vargdodare', t: s.now, sett: true }] },
+    ];
+    g.intryck = minnen();
+    const skold = SIM.newTing(s, 'skold', 1, g.id); skold.q = 3; SIM.sakMinne(s, g, skold);
+    const ber = SIM.sakBerattelse(s, skold, 'Sköld');
+    // en fin kniv är ingen bildyta och får ingen bild
+    const kniv = SIM.newTing(s, 'kniv', 1, g.id); kniv.q = 3; SIM.sakMinne(s, g, kniv);
+    // den döda på skölden bleknar långsammare
+    const minns = (med: boolean) => {
+      const k = SIM.cloneState(s), p = k.people.find(q => q.id === a.id)!;
+      p.intryck = [{ om: d2.id, namn: d2.name, k: 'vargdodare', v: 1, c: 1, t: k.now }];
+      if (!med) for (const t of k.ting ?? []) if (t.ber) delete t.ber.mo;
+      SIM.glomRykten(k, 24 * 5);
+      return p.intryck?.[0]?.c ?? 0;
+    };
+    const med = minns(true), utan = minns(false);
+    // en sten om en bedrift blir en bildsten
+    const b = medLedare(), s2 = b.s, h = b.v[1];
+    klockan(s2, 8); setFood(s2, 400); SIM.setAmount(s2, 'ved', 300); SIM.setAmount(s2, 'huggen_sten', 3);
+    for (const p of b.v) { (p.tek ??= {}).stenhuggarplats = 1; p.sorg = []; p.bedrift = undefined; }
+    SIM.handelse(s2, h, 'bjorndodare', undefined, undefined, b.v[2], 2);
+    const ingenAnnan = () => { for (const p of SIM.living(s2)) { if (p !== h) p.bedrift = undefined; p.sorg = []; } };
+    korTills(s2, () => !!s2.runstenar?.length, 72 * 3600, ingenAnnan);
+    const r = s2.runstenar?.[0];
+    return [
+      [`en fin sköld får en målad bild (${ber})`, !!skold.ber?.mo && skold.ber.mo.mal === 1 && /målning/i.test(ber)],
+      [`bilden visar helst en händelse: ${skold.ber?.mo?.namn} som fällde en varg, inte den starkare ${d1.name} utan händelse`, skold.ber?.mo?.om === d2.id && skold.ber.mo.b?.h === 'vargdodare' && ber.includes(d2.name) && ber.includes('dödade en varg')],
+      ['en fin kniv får ingen bild, och den fina sköldens berättelse är bara bilden', !kniv.ber?.mo && !ber.includes('mästerverk')],
+      [`den döda på skölden bleknar långsammare: säkerheten ${med.toFixed(2)} mot ${utan.toFixed(2)} efter fem dygn`, med > utan],
+      [`en sten om en händelse är en bildsten (${r ? SIM.runstenRubrik(r) : 'ingen sten'}: "${r?.text}")`, !!r && r.slag === 'handelse' && r.bild === 1 && r.runor === '' && /bilderna/.test(r.text) && SIM.runstenRubrik(r).includes('bildsten')],
     ];
   },
 };

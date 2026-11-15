@@ -147,6 +147,7 @@ export const PAL: Record<string, Record<string, string>> = {
   pergament: { w: '#dad0bb', k: '#bdb39b' },
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
+  bildsten: { o: '#24201d', g: '#8a9c9e', m: '#61767a', r: '#a14808', b: '#3f2415', d: '#474138', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // steg 10.7.1, platshållare
   bokhylla: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', r: '#742a01', g: '#4b4f00', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.6.16, platshållare
   skrivpulpet: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', w: '#dad0bb', d: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 10.6.11, platshållare
   bok: { h: '#7d5b40', w: '#dad0bb', d: '#24201d' }, // steg 10.6.6, platshållare // steg 10.6.5, platshållare // steg 10.6.4, platshållare
@@ -2702,6 +2703,24 @@ export const PIX: Record<string, string[]> = {
     '.......oooooooo.',
     '........zzzzzz..',
   ],
+  bildsten: [ // platshållare (steg 10.7.1): en rest sten med en målad jägare, ett spjut och ett djur i stället för runor
+    '................',
+    '......oooo......',
+    '....oogggggo....',
+    '...ogggrbgggo...',
+    '...oggrrbgggmo..',
+    '...oggrrbggggmo.',
+    '...oggrgbggggmo.',
+    '...ogrgrggdgdmo.',
+    '...oggggggdddmo.',
+    '...ogggggdgdgmo.',
+    '...oggggggggmo..',
+    '...oyyyyyyyymo..',
+    '...ogggggggggo..',
+    '...ogggggggggo..',
+    '....ooooooooo...',
+    '...zzzzzzzzzzz..',
+  ],
   bokhylla: [ // platshållare (steg 10.6.16): en hylla av plankor med böcker och ett rullat blad
     '................',
     '..oooooooooooo..',
@@ -4241,6 +4260,8 @@ for (const k of ['stockvag', 'brygga', 'gadda', 'mort', 'gaddkott', 'mortkott', 
   PIX[k] = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join(''));
   PAL[k] = b.pal;
 }
+// den målade skölden (steg 10.7.1, platshållare): skölden med en målad figur mitt på
+{ const b = PIX.skold, mx = 8, my = 8; PIX.skold_malad = b.map((rad, y) => [...rad].map((c, x) => c !== '.' && Math.abs(x - mx + 0.5) <= 1.5 && Math.abs(y - my + 0.5) <= 2.5 && ((x + y) % 2 === 0 || y === my - 2) ? 'Ä' : c).join('')); PAL.skold_malad = { ...PAL.skold, 'Ä': '#a14808' }; }
 for (const [m, c, d, f] of [['vargskinn', '#8a9c9e', '#61767a', '#3e5156'], ['bjornskinn', '#987e62', '#7d5b40', '#5e3c24']]) { PIX['ryggsack_' + m] = PIX.ryggsack_kaninskinn; PAL['ryggsack_' + m] = { ...PAL.ryggsack_kaninskinn, c, d, f }; } // Björns ryggsäck i vargens och björnens skinn
 PIX.ryggsack = PIX.ryggsack_kaninskinn; PAL.ryggsack = PAL.ryggsack_kaninskinn;
 for (const [m, b, c, d] of [['kaninskinn', '#a0947d', '#7e7362', '#bdb39b'], ['vargskinn', '#61767a', '#3e5156', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#3f2415', '#7d5b40']]) { PIX['byxor_' + m] = PIX.byxor_lader; PAL['byxor_' + m] = { ...PAL.byxor_lader, b, c, d }; } // Björns enfärgade byxor (steg 8.10.1) i skinnens färger

@@ -66,7 +66,7 @@ function grav(i: number) {
 function runsten(id: number) {
   const r = s.runstenar?.find(q => q.id === id);
   if (!r) return '<p class="muted">Stenen finns inte längre.</p>';
-  return `<div class="phead">${iconImg('huggen_sten', 32)}<div><h2>${esc(runstenRubrik(r))}</h2></div></div><p class="runor">${esc(r.runor)}</p><p><i>”${esc(r.text)}”</i></p><p class="small muted">Rest för ${durTxt(s.now - r.t)} sedan.</p>`;
+  return `<div class="phead">${iconImg(r.bild ? 'bildsten' : 'huggen_sten', 32)}<div><h2>${esc(runstenRubrik(r))}</h2></div></div>${r.bild ? '<p class="small muted">Stenen berättar i bilder i stället för runor.</p>' : `<p class="runor">${esc(r.runor)}</p>`}<p><i>”${esc(r.text)}”</i></p><p class="small muted">Rest för ${durTxt(s.now - r.t)} sedan.</p>`;
 }
 function heligPlats(i: number) {
   const h = heligAt(s, i % W, Math.floor(i / W));
@@ -239,7 +239,7 @@ export const sak: Flik = {
     const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvOrd(t) || 'Normal'}${kvOf(t) === NORMAL ? '' : ` <span class="muted">${esc(kvText(t).replace(/^[^:]*: /, ''))}</span>`}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)
     return `
-    <div class="phead">${iconImg(k, 32)}<div><h2>${t?.helig !== undefined ? `<span title="Heligt i tron, står på altaret">${iconImg('heligt', 16)}</span> ` : ''}${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>
+    <div class="phead">${iconImg(SAKER[k]?.bildyta && t?.ber?.mo ? k + '_malad' : k, 32)}<div><h2>${t?.helig !== undefined ? `<span title="Heligt i tron, står på altaret">${iconImg('heligt', 16)}</span> ` : ''}${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>
     ${ber ? `<p class="besk">${esc(ber)}</p>` : ''}
     <dl class="kv">
       <dt>Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>
