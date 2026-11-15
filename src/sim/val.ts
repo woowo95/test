@@ -44,7 +44,7 @@ import { eldPlats, getMap } from './karta';
 import { ryggsack, ryms } from './utrustning';
 // p orkar bära en av saken k (virket lyfts med båda händerna, steg 10.2.89)
 const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, p)({ [k]: viktOf(k) });
-import { amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar } from './lager';
+import { allows, amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
@@ -1089,10 +1089,11 @@ function radda(s: State, p: Person, pass: (a: { k: string; x: number; y: number 
 }
 // värdet av det som ligger ute och inte är i lagret (steg 10.2.6): det som inte ruttnar bärs in efter vad det är värt
 function vardeUte(s: State) { let v = 0; for (const a of s.stackar ?? []) if (a.n > 0 && !isStored(s, a.x, a.y)) v += grundvarde(a.k) * a.n; return v; }
-// det jobbet flyttar inom lagret (sorterar, närmare elden) är också värt att bära: värdet av stacken på rutan
+// det jobbet sorterar (maten bland materialet) är också värt att bära, fast det ligger i ett lager: värdet av stacken på rutan.
+// Det som ligger bredvid lagret eller bara kan flyttas närmare elden räknas som lagrat
 function vardeIFel(s: State, gt: { x: number; y: number; k: string }) {
-  const x = Math.floor(gt.x), y = Math.floor(gt.y);
-  if (!isStored(s, x, y)) return 0;
+  const x = Math.floor(gt.x), y = Math.floor(gt.y), zi = zoneAt(s, x, y);
+  if (zi < 0 || allows(zonesOf(s)[zi], gt.k)) return 0;
   let v = 0; for (const a of s.stackar ?? []) if (a.x === x && a.y === y && a.k === gt.k) v += grundvarde(a.k) * a.n;
   return v;
 }

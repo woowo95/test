@@ -70,7 +70,7 @@ export const LAGER = balans('lager', {
   svaltOmvag: 30, // vid svält väger det som inte är mat som om det låg så här många rutor längre bort (steg 10.2.6)
   barFullt: 8, // när förrådet är fullt bärs bara det som ligger längre bort från lägret än så här många rutor (det man bär in hamnar ändå utanför) ...
   barVarde: 1, barVardeMin: 1, barVardeMax: 4, // ... gånger sakens grundvärde delat med barVarde, mellan min och max (steg 10.2.44): det värdefulla bärs från närmare
-  barSortera: 100, // saker i fel lagerplats (maten bland materialet)
+  barSortera: 40, // saker i fel lagerplats (maten bland materialet): före det som ligger bredvid lagret, som redan räknas som lagrat
   barNarmare: 150, // saker som kan flyttas till en lagerplats närmare elden
 });
 
