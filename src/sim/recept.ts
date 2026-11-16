@@ -161,6 +161,7 @@ const DEF = {
   kvarnsten: { var: 'station', av: { huggen_sten: 2 }, min: 20, tek: 'kvarnsten' }, // kvarnstenen (steg 9.6.22): två huggna stenar som kornet mals mellan
   kokgrop: { var: 'station', av: { sten: 8 }, min: 10, tek: 'kokgrop' }, // kokgropen (steg 10.7.28)
   bryggkar: { var: 'station', av: { virke: 1 }, min: 15, tek: 'bryggkar', verktyg: { yxa: 'yxan' } }, // bryggkaret (steg 9.6.12)
+  vattenho: { var: 'station', av: { virke: 1 }, min: 10, tek: 'staket', verktyg: { yxa: 'yxan' } }, // vattenhon i hagen (steg 10.10.30)
   rokeri: { var: 'station', av: { huggen_sten: 3, grenar: 4, lera: 2 }, min: 20, tek: 'rokeri' }, // rökeriet (steg 9.6.8): en låg ugn av huggen sten med ett tak av grenar och lera (steg 10.2.66)
   brasa: { var: 'station', av: { sten: RT.brasaSten }, min: RT.brasaMin },
   scen: { var: 'station', av: { plankor: RT.scenVirke }, min: RT.scenMin },

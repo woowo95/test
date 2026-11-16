@@ -9,6 +9,7 @@
 // det som projekten och bygget väntar på. Taket är materialMatt gånger bufferten, aldrig mer än lagerplatserna rymmer. Under
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
+import { hoBrist } from './vattenho';
 import { stenTillPlan } from './byggsten';
 import { tamArt, tamdjurOf } from './tamdjur';
 import { SKRIFT } from './skriftTal';
@@ -292,6 +293,7 @@ export function stationBrist(s: State, k: StationSlag) {
   if (d.hard) return harBrist(s); // härden: ett hus där folk sover utan en härd (steg 7.5.3)
   if (d.langhus) return langhusBrist(s, k); // högsätet och bänkarna i långhuset (steg 10.2.68)
   if (d.utkant?.drag) return kupBrist(s, k); // bikupan (steg 10.10.16)
+  if (d.hage) return hoBrist(s); // vattenhon i hagen som inte når vattnet (steg 10.10.30)
   if (d.fahus) { const n = fahusHus(s).length; return n ? fahusUtanKrubba(s).length / n : 0; } // en krubba i varje fähus (steg 10.2.88)
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;

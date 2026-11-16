@@ -1,4 +1,4 @@
-import { krukaBild, ljusSort, pollinerad, retadeOf, rutorAv } from '../sim';
+import { HO, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -263,6 +263,7 @@ export function drawStructures(t: number) {
     const vaggOvan = !!st.inne && bitAt(s, st.x, st.y - 1)?.k === 'vagg', y0 = vaggOvan ? Math.max(st.y * TS - upp, st.y * TS - VAGG_KANT) : st.y * TS - upp;
     pileIcons.add(isKlar(st) ? smutsIkon(ik, smutsGrad(s.now, st.klar)) : ik, x0, y0, sk); // en station i bruk blir smutsigare (steg 5.1.7.3)
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
+    if (st.k === 'vattenho' && (st.vatten ?? 0) > 0) { const f = Math.min(1, st.vatten! / HO.rymmer); overG.beginFill(VATSKOR.vatten.farg).drawRect(st.x * TS + 3, y0 + 8 + Math.round(2 * (1 - f)), 10, 1 + Math.round(f)).endFill(); } // vattnet i hon, efter hur fylld den är (steg 10.10.30)
     if (st.fyllt && st.fyllt > 0.1) { const f = clamp(st.fyllt, 0, 1); overG.beginFill(0x2f261d).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5 * f, 4 * f).endFill(); } // latrinen mörknar när den fylls (smuts.ts)
     if ((st.q ?? 0) >= MASTERVERK) glans(st.x * TS + w - 3, st.y * TS + 3, t, st.id, st.q === PERFEKT);
     // stubbarna (Björn valde den korta stocken efter v89) är en ruta stora: framför bänken och runt bordet

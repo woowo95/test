@@ -1120,3 +1120,59 @@ SCENARIER.djuregenskaper = {
     ];
   },
 };
+
+SCENARIER.vattenho = {
+  text: 'Steg 10.10.30: vattenhon. En hage med djur som inte når vattnet får en ho som huggs ur en stock (1 virke, 10 minuter) och står i hagen. Vattnet ur en kruka hälls i i hela vatten och krukan blir kvar tom, regnet fyller hon lika mycket med korta som med långa slag, och den rymmer aldrig mer än 20',
+  kor: () => {
+    const { HO, RECEPT, setAmount, stepBoskap, hoarOf, hoI, hageVidVatten, hagarOf, stationBrist, hoFyll, hoRegn, newTing, BYN, isKlar } = SIM;
+    // en by med får i en hage som inte når vattnet
+    let s: SIM.State | undefined, h: SIM.Hage | undefined;
+    for (let seed = 3; seed < 30 && !h; seed++) {
+      const b = createState(seed, START); klockan(b, 8);
+      const p = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen)[0];
+      setAmount(b, 'levfar', 2); stepBoskap(b);
+      for (const q of SIM.living(b)) (q.tek ??= {}).staket = 1;
+      setAmount(b, 'grenar', 400); setAmount(b, 'rep', 4);
+      const mat = SIM.hageUppgift(b, p); if (mat?.ref === -1) SIM.hageKlar(b, p, -1);
+      for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
+      for (let d = SIM.vallaVal(b, p), n = 0; d && n < 5; d = SIM.vallaVal(b, p), n++) SIM.vallaKlar(b, p, d.id);
+      const hg = hagarOf(b)[0];
+      if (hg && !hageVidVatten(b, hg) && SIM.tamdjurOf(b).some(d => d.hage === hg.id)) { s = b; h = hg; }
+    }
+    if (!s || !h) return [['en by med får i en hage utan vatten', false]];
+    const brist = stationBrist(s, 'vattenho');
+    setAmount(s, 'virke', 6);
+    for (let t = 0; t < 24 && !hoarOf(s).some(isKlar); t++) kor(s, 1);
+    const ho = hoI(s, h), byggd = !!ho && isKlar(ho), efter = stationBrist(s, 'vattenho');
+    // vattnet ur en full mellanstor kruka hälls i: fem vatten, och krukan blir kvar tom
+    const ho2 = ho ?? { id: -1, k: 'vattenho', x: h.x, y: h.y, kvar: 0, klar: s.now } as SIM.Station;
+    ho2.vatten = 0; ho2.regn = undefined;
+    const kr = newTing(s, 'lerkruka_mellan', 1, BYN); kr.inne = { v: 'vatten', n: 5 };
+    const n1 = hoFyll(s, ho2, kr), tom = kr.inne === undefined && SIM.tingOf(s).includes(kr);
+    // fullt: hon tar bara det som får plats, och resten blir kvar i krukan
+    ho2.vatten = HO.rymmer - 2; kr.inne = { v: 'vatten', n: 5 };
+    const n2 = hoFyll(s, ho2, kr), rest = kr.inne?.n ?? 0, full = ho2.vatten;
+    // regnet: samma tid med korta och långa slag, vid en tid då det regnar (vädret läses vid tiden nu)
+    const b0 = SIM.cloneState(s);
+    for (let i = 0; i < 24 * 60 && !(SIM.vaderNu(b0).nb > 0.3 && !SIM.vaderNu(b0).sno); i++) b0.now += 3600_000;
+    const regn = (slag: number) => {
+      const b = SIM.cloneState(b0), t = hoarOf(b).find(isKlar);
+      if (!t) return 0;
+      t.vatten = 0; t.regn = undefined;
+      for (let sek = 0; sek < 3 * 3600; sek += slag) hoRegn(b, slag);
+      return t.vatten! + (t.regn ?? 0);
+    };
+    const kort = regn(60), lang = regn(600);
+    // i spelets eget väder: många timmar regn fyller den aldrig över 20
+    let max = 0; const b = SIM.cloneState(s); const tb = hoarOf(b).find(isKlar);
+    if (tb) { tb.vatten = 0; for (let i = 0; i < 24 * 30; i++) { b.now += 3600_000; hoRegn(b, 3600); max = Math.max(max, tb.vatten ?? 0); } }
+    return [
+      [`hagen utan vatten saknar en ho (brist ${brist.toFixed(2)}), och den huggs ur ${JSON.stringify(RECEPT.vattenho.av)} på ${RECEPT.vattenho.min} minuter`, brist > 0 && RECEPT.vattenho.av.virke === 1 && RECEPT.vattenho.min === 10],
+      [`hon byggdes i hagen (${byggd}) och bristen är borta (${efter})`, byggd && efter === 0],
+      [`en full mellanstor kruka ger ${n1} vatten i hon och krukan blir kvar tom (${tom})`, n1 === 5 && tom],
+      [`full ho: ${n2} hälls i, ${rest} blir kvar i krukan och hon har ${full}`, n2 === 2 && rest === 3 && full === HO.rymmer],
+      [`regnet fyller lika mycket med korta som långa slag (${kort.toFixed(2)} och ${lang.toFixed(2)})`, Math.abs(kort - lang) < 1e-6 && kort > 0],
+      [`i en månad av spelets väder fylls hon högst till ${max} (av ${HO.rymmer})`, !!tb && max > 0 && max <= HO.rymmer],
+    ];
+  },
+};
