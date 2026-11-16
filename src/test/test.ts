@@ -40,7 +40,7 @@ const utan = (n: Nyckeltal) => JSON.parse(JSON.stringify(n, (k, v) => k === 'ms'
 const facitText = (f: Facit) => JSON.stringify({ byar: Object.fromEntries(Object.entries(f.byar).map(([k, b]) => [k, { ...b, n: utan(b.n) }])) }, null, 1) + '\n';
 const spara = process.argv.includes('--spara'), utkastI = process.argv.indexOf('--utkast'), utkast = utkastI >= 0 ? process.argv[utkastI + 1] : undefined;
 
-type Jobb = { seed: number; fran: number; till: number; in: string; ut: string; forra: number };
+type Jobb = { seed: number; fran: number; till: number; in: string; ut: string; forra: number; kand: boolean };
 let allaBitar: BitSvar[] = [];
 let res: { seed: number; n: Nyckeltal; vakter: string[] }[], nytt: Facit = { byar: {} }, jobbtider: { namn: string; ms: number }[] = [];
 const facit = lasFacit();
@@ -68,11 +68,12 @@ if (spara) {
   for (const seed of BYAR) {
     const f = facit?.byar[seed];
     const granser = f && f.granser.at(-1) === DAGAR && f.granser.slice(1, -1).every(g => existsSync(byFil(BYDIR, seed, g))) ? f.granser : [0, DAGAR];
-    granser.slice(1).forEach((till, i) => jobb.push({ seed, fran: granser[i], till, in: i ? byFil(BYDIR, seed, granser[i]) : '-', ut: ut && till < DAGAR ? byFil(ut, seed, till) : '-', forra: f?.bitMs[i] ?? till - granser[i] }));
+    granser.slice(1).forEach((till, i) => jobb.push({ seed, fran: granser[i], till, in: i ? byFil(BYDIR, seed, granser[i]) : '-', ut: ut && till < DAGAR ? byFil(ut, seed, till) : '-', forra: granser === f?.granser ? f.bitMs[i] ?? 0 : till - granser[i], kand: granser === f?.granser && f.bitMs[i] !== undefined }));
+    // bitarnas tid från facit gäller bara när byn delas som i facit; går den hela vägen i en bit (TESTDYGN=90) finns ingen tid att gå efter
   }
   const ordning = [...jobb].sort((a, b) => b.forra - a.forra); // den som tog längst tid förra gången först
-  const f = (j: Jobb) => prioAv(facit?.byar[j.seed]?.bitMs.length ? j.forra / 1000 : undefined); // de korta bitarna med lägre prioritet (steg 9.2.64)
-  const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut, ...(ut ? ['--alla', ut] : [])], `by ${j.seed}, dygn ${j.fran}–${j.till}`, {}, f(j), gransAv(facit?.byar[j.seed]?.bitMs.length ? j.forra : undefined))
+  const f = (j: Jobb) => prioAv(j.kand ? j.forra / 1000 : undefined); // de korta bitarna med lägre prioritet (steg 9.2.64)
+  const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut, ...(ut ? ['--alla', ut] : [])], `by ${j.seed}, dygn ${j.fran}–${j.till}`, {}, f(j), gransAv(j.kand ? j.forra : undefined))
     .catch((e: Error) => { console.log(e.message); process.exit(1); })));
   allaBitar = svar;
   const hela = BYAR.map(seed => svar.filter(b => b.seed === seed).sort((a, b) => a.fran - b.fran));
