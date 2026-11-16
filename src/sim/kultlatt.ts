@@ -51,9 +51,12 @@ export const bytaChans = (p: Person, oppen: number) => ((p.tvivel ?? 0) * 0.5 + 
 
 // ---------- det heliga djuret (steg 10.3.15) ----------
 // budet Ett heligt djur har värdet "art:storlek": arten och storleken (2–4) som räknades när budet föreslogs
-export const HELIGTDJUR = balans('heligtdjur', {
-  hunger: 0.2, // den som är så här hungrig (0 = svälter) äter det heliga djurets kött och bryter budet
-});
+// farorna över byn (dangers i val.ts, som sätter den här när den laddas: val.ts läser det mesta i spelet). Farorna nu, för de
+// filer som inte kan läsa val.ts: djurhållningen frågar samma svältmått som valet av aktivitet (steg 10.2.1), och det heliga djuret
+// och kyrkans bud frågar samma mått i jakten, slakten, ätandet och buden (steg 10.11.18)
+let dangers: (s: State) => { kyla: boolean; svalt: boolean } = () => ({ kyla: false, svalt: false });
+export const satFaror = (f: typeof dangers) => { dangers = f; };
+export const farorNu = (s: State) => dangers(s);
 export const heligtDjurVarde = (art: string, st: number) => `${art}:${st}`;
 export const heligtDjurAv = (v: unknown) => { const [art, st] = String(v).split(':'); return { art, st: Number(st) || 2 }; };
 // sakerna som bara arten ger: det råa köttet och skinnet (fylls av DJUR i redskap.ts). Det lagade, torkade och garvade minns inte djuret

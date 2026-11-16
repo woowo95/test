@@ -24,7 +24,7 @@ import { kvarById, nara } from './kvarlevor';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
 import { kladAv } from './klader';
-import { FEST, heligtDjurAv, matAvstar, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
+import { FEST, farorNu, heligtDjurAv, matAvstar, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
 import { tamdjurOf } from './tamdjur';
 import { grundvarde, tingVarde, varuVarde } from './varde';
 import { och, tal } from './ord';
@@ -34,11 +34,7 @@ satEgendomVarde(o => varuVarde(o) / grundvarde('ved')); // kyrkans egendom i tro
 import { isSick } from './sjukdom';
 import { prastMinns } from './rykten';
 
-// farorna över byn (dangers i val.ts, som sätter den här när den laddas: val.ts läser det mesta i spelet)
-let dangers: (s: State) => { kyla: boolean; svalt: boolean } = () => ({ kyla: false, svalt: false });
-export const satFaror = (f: typeof dangers) => { dangers = f; };
-// farorna nu, för de filer som inte kan läsa val.ts (djurhållningen frågar samma svältmått som valet av aktivitet, steg 10.2.1)
-export const farorNu = (s: State) => dangers(s);
+export { farorNu, satFaror } from './kultlatt'; // farorna över byn (steg 10.11.18: i kultlatt.ts, så att förrådet också kan läsa dem)
 export const KULT = balans('kult', {
   heligR: 15, // man ber vid den närmaste heliga platsen inom så här många rutor, och röstar för en plats så nära hemmet (steg 10.3.10)
   heligTak: 3, // en tro har högst så här många heliga platser
@@ -87,7 +83,7 @@ export function bonFritid(s: State, p: Person): { id: BonId; o?: string; spot?: 
 // bönen i nöd: bara den som är andlig och troende nog, en gång per fara och dygn, när en fara är över byn eller någon nära lider
 export function bonNod(s: State, p: Person): { id: BonId; o: string; vem?: number } | undefined {
   if (p.tro === undefined || andlighet(s, p) < KULT.nodAnde || (p.troStyrka ?? 0) < KULT.nodTro || p.bonNodD === dygnNr(s.now)) return undefined;
-  const f = dangers(s);
+  const f = farorNu(s);
   if (f.svalt) return { id: 'nod', o: 'svälten' };
   if (f.kyla) return { id: 'nod', o: 'kylan' };
   const q = living(s).find(o => o !== p && (p.partner === o.id || isParent(p, o) || isParent(o, p)) && (o.skador?.some(w => w.g >= 0.5) || isSick(o, s.now)));
@@ -100,7 +96,7 @@ export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; w
   p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + d.ger.tro * f);
   count(s, 'bon_' + id);
   if (id === 'vardag') p.bonD = dygnNr(s.now);
-  if (id === 'nod' || id === 'for') { p.bonNodD = dygnNr(s.now); p.bonVan = { t: s.now, o: id === 'nod' ? (dangers(s).svalt ? 'svalt' : 'kyla') : 'nara', ...(id === 'for' && t.ref !== undefined ? { vem: t.ref } : {}), x: Math.floor(p.x), y: Math.floor(p.y) }; }
+  if (id === 'nod' || id === 'for') { p.bonNodD = dygnNr(s.now); p.bonVan = { t: s.now, o: id === 'nod' ? (farorNu(s).svalt ? 'svalt' : 'kyla') : 'nara', ...(id === 'for' && t.ref !== undefined ? { vem: t.ref } : {}), x: Math.floor(p.x), y: Math.floor(p.y) }; }
   const h = heligVid(s, p.tro, p.x, p.y); if (h) h.boner = (h.boner ?? 0) + 1; // platsen räknar bönerna (steg 10.3.10)
   if (id === 'bikt') { p.skuld = 0; count(s, 'bikt'); }
 }
@@ -116,7 +112,7 @@ function bonSvar(s: State, p: Person) {
   if (!b) return;
   // bönen för en nära hjälpte om hen blivit frisk från sjukdomen och de svåra skadorna; dog hen hjälpte den inte
   const q = b.vem !== undefined ? byId(s, b.vem) : undefined, frisk = !!q && alive(q) && !isSick(q, s.now) && !q.skador?.some(w => w.g >= 0.5);
-  const f = dangers(s), over = b.o === 'svalt' ? !f.svalt : b.o === 'kyla' ? !f.kyla : frisk;
+  const f = farorNu(s), over = b.o === 'svalt' ? !f.svalt : b.o === 'kyla' ? !f.kyla : frisk;
   if (over || s.now - b.t >= KULT.hjalpDygn * DAY || b.o === 'nara' && (!q || !alive(q))) {
     p.bonVan = undefined;
     if (over) { upplev(s, p, 'bonHjalpte'); count(s, 'bon_hjalpte'); bonSvarPlats(s, p, b); tecken(s, p, 'bonSvar'); } else { upplev(s, p, 'bonInte'); p.tvivel = (p.tvivel ?? 0) + 1; count(s, 'bon_inte'); }

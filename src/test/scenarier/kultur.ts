@@ -2735,7 +2735,7 @@ SCENARIER.heligting = {
 };
 
 SCENARIER.heligtdjur = {
-  text: 'Steg 10.3.15: heliga djur är bud. Arten kommer ur trons gudar och storleken ur köttet byn slaktat; den troende avlivar inte arten, går förbi dess kött och tar av plagget av dess skinn, den svältande äter och får skuld, den anfallne försvarar sig, och vid högtiden offras ett tamdjur av arten',
+  text: 'Steg 10.3.15: heliga djur är bud. Arten kommer ur trons gudar och storleken ur köttet byn slaktat; den troende avlivar inte arten, går förbi dess kött och tar av plagget av dess skinn, i en by som svälter äter man och får skuld (samma svältmått i jakten, ätandet och buden, steg 10.11.18), den anfallne försvarar sig, och vid högtiden offras ett tamdjur av arten',
   kor: () => {
     const { s, v, tr } = medTro(6, 3);
     klockan(s, 12);
@@ -2751,13 +2751,16 @@ SCENARIER.heligtdjur = {
     SIM.nyttTamdjur(s, 'far', p.x + 1, p.y, undefined, s.now - 30 * SIM.DAY);
     for (const r of [p, q]) SIM.addTool(s, 'kniv', r);
     const avstar = SIM.heligtAvstar(s, p, 'far') && !SIM.heligtAvstar(s, q, 'far');
-    // maten: den troende går förbi fårköttet, den svältande äter det och får skuld
-    setFood(s, 0); SIM.setAmount(s, 'farkott', 6); SIM.setAmount(s, 'bar', 6);
-    p.hunger = 0.6; const m1 = SIM.takeFood(s, 3, p).per;
-    const forbi = !m1.farkott && (m1.bar ?? 0) > 0;
-    SIM.setAmount(s, 'bar', 0); p.hunger = 0.05; const skuld0 = p.skuld ?? 0;
+    // maten: den troende går förbi fårköttet, också när hen är mycket hungrig, så länge byn inte svälter (steg 10.11.18: samma
+    // svältmått som jakten och buden); när byn svälter äter hen det och får skuld
+    setFood(s, 0); SIM.setAmount(s, 'farkott', 6); SIM.setAmount(s, 'bar', 200);
+    const ejSvalt = !SIM.farorNu(s).svalt;
+    p.hunger = 0.05; const m1 = SIM.takeFood(s, 3, p).per;
+    const forbi = ejSvalt && !m1.farkott && (m1.bar ?? 0) > 0;
+    SIM.setAmount(s, 'bar', 0); SIM.setAmount(s, 'farkott', 2); const skuld0 = p.skuld ?? 0;
+    const byVarSvalt = SIM.farorNu(s).svalt;
     const m2 = SIM.takeFood(s, 1, p).per; for (const k in m2) SIM.heligtBrutet(s, p, SIM.SAK_ART[k]);
-    const svalt = (m2.farkott ?? 0) > 0 && (p.skuld ?? 0) > skuld0;
+    const svalt = byVarSvalt && (m2.farkott ?? 0) > 0 && (p.skuld ?? 0) > skuld0;
     // kläderna: plagget av fårskinn tas av och ligger kvar
     const rock = SIM.addTool(s, 'rock_farskinn', p); rock.bar = p.id;
     SIM.stepKlader(s);
@@ -2772,8 +2775,8 @@ SCENARIER.heligtdjur = {
     return [
       [`arten kommer ur gudarna och storleken ur köttet (${varden.join(', ')})`, fyra],
       ['den troende avlivar inte fåret, den som inte tror gör det', avstar],
-      [`den troende går förbi fårköttet (${JSON.stringify(m1)})`, forbi],
-      [`den svältande äter det och får skuld (${JSON.stringify(m2)}, skuld ${skuld0} → ${p.skuld ?? 0})`, svalt],
+      [`den troende går förbi fårköttet också hungrig när byn har mat (${JSON.stringify(m1)})`, forbi],
+      [`när byn svälter (${byVarSvalt ? "ja" : "nej"}) äter hen det och får skuld (${JSON.stringify(m2)}, skuld ${skuld0} → ${p.skuld ?? 0})`, svalt],
       [`plagget av fårskinn tas av och ligger kvar${tog ? ', och den som inte tror tar det' : ''}`, av],
       ['den anfallne försvarar sig', forsvar],
       [`vid högtiden offras ett får (${n0} → ${SIM.tamdjurOf(s).filter(d => d.art === 'far').length})`, offrat],
