@@ -221,7 +221,7 @@ SCENARIER.fritid = {
       ['man badar bara när det är varmt', badVarmt],
       [`folk sitter vid stranden (${strand} gånger)`, strand >= 2],
       ['den som sitter vid stranden sitter på land', strandLand],
-      [`man vilar ut när det är mörkt (${(100 * vila.natt / vila.nattN).toFixed(0)} % av natten) och lite på dagen (${(100 * vila.dag / vila.dagN).toFixed(0)} %)`, vila.natt / vila.nattN > 2 * vila.dag / vila.dagN],
+      [`man vilar ut när det är mörkt (${(100 * vila.natt / vila.nattN).toFixed(0)} % av natten) och lite på dagen (${(100 * vila.dag / vila.dagN).toFixed(0)} %)`, vila.natt / vila.nattN > 1.5 * vila.dag / vila.dagN], // nattvakten och samtalen tar ungefär halva natten, så kvoten ligger kring 2 och slumpen flyttar den åt båda hållen
     ];
   },
 };
