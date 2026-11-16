@@ -6,7 +6,7 @@ import { ACTS, ACT_LIST, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
 import { amountOf, gain, put, use } from './lager';
-import { getable, Recept, takeMaterial, takeRecipe } from './behov';
+import { getable, Recept, saknatAv, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
 import { sparas, villAv, villHaAv } from './forradsmal';
 import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
@@ -289,7 +289,9 @@ export function receptTill(s: State, p: Person, g: string): Recept | undefined {
   // saknas bara redskapet vid stationen (bensylen vid slöjdbänken) fattas det som ett verktyg, så att det görs (fattas i projekt.ts)
   const vid = kanGoras(s, g as Act, p) ? undefined : saknasVid(s, g as Act, p);
   if (!kanGoras(s, g as Act, p) && !vid || harAv(s, g) >= villAv(s, g) || !enTill(s, g as Act, p) || halvOf(s, p, ks)) return undefined;
-  const k = ks.find(k => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k)); });
+  // det slag p kan göra, helst ett vars material finns (rocken av rådjursskinn när det finns rådjursskinn men inga kaninskinn)
+  const kan = ks.filter(k => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k)); });
+  const k = kan.find(k => !saknatAv(s, p, av(k))) ?? kan[0];
   return k ? { av: av(k), spar: m => sparas(s, m), ...(vid ? { verktyg: vid } : {}) } : undefined;
 }
 // arbetet att göra ett redskap i gruppen g. tool = slaget som görs när gruppen har flera (namnet på arbetet, handlingar.ts)
