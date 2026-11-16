@@ -1,5 +1,5 @@
 import { MIN, State, Person } from './typer';
-import { REDSKAP_SLAG, SAKER, isTool } from './saker';
+import { REDSKAP_SLAG, SAKER, gruppOf, isTool } from './saker';
 import { ACTS, usesTool } from './handlingar';
 import { alive, byId } from './folk';
 import { kvHaller } from './kvalitet';
@@ -83,6 +83,9 @@ export function take(s: State, p: Person, k: string): Ting | undefined {
   c.hos = p.id; c.x = c.y = c.lass = undefined;
   return c;
 }
+// ett redskap som slitits sönder räknas som förbrukat (steg 10.11.9): i s.forbruk under '@' och gruppen, samma glidande medel som
+// materialen (forradsmal.ts), så att byn vill ha så många extra som går åt
+export function redskapSlitet(s: State, k: string) { const f = s.forbruk ??= {}, g = '@' + gruppOf(k); f[g] = (f[g] ?? 0) + 1; }
 // slitage på redskapet p arbetar med (i handen, annars hens eget, annars det sämsta). true = det gick sönder
 export function wearTool(s: State, p: Person, k: string, v: number) {
   const ts = toolsOf(s, k);
@@ -91,6 +94,7 @@ export function wearTool(s: State, p: Person, k: string, v: number) {
   t.c -= v / kvHaller(t); // ett bättre redskap håller längre (kvalitet.ts)
   if (t.c > 1e-9) return false;
   s.ting = tingOf(s).filter(x => x !== t);
+  redskapSlitet(s, t.k); // det utslitna räknas som förbrukat (steg 10.11.9)
   return true;
 }
 // i slutet av varje steg: ägare som dött eller flyttat gör tinget till byns. Den som inte längre arbetar med ett redskap

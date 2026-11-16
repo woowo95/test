@@ -22,7 +22,6 @@ import { ljusPlatser } from './ljus';
 import { allows, amountOf, rymd, zonesOf } from './lager';
 import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
-import { clamp } from './slump';
 import { sportFor } from './sport';
 import { STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools, tingOf } from './agande';
@@ -33,7 +32,7 @@ import { fahusHus } from './slatter';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
 import { DAY, GREN, HOUR, State, WEEK } from './typer';
-import { TILLVERKA } from './tillverka';
+import { TillverkDef } from './tillverka';
 import { protesVill } from './protes';
 
 export const FORRAD = balans('forrad', {
@@ -74,16 +73,11 @@ export const VILLTAL = balans('vill', {
   rustBas: 0.15, rustHot: 0.6, // vapnen efter hoten (steg 10.2.75): rustning, hjälm och sköld åt så här stor del av de vuxna i fred, och upp till så här mycket mer vid stort hot ...
   bageBas: 0.1, bageHot: 0.4, // ... och bågar och slungor
   hotDygn: 6, hotStrider: 3, // hotet: så här många strider på så här många dygn är fullt hot
-  spjutPerVuxna: 3, spjutMin: 1, spjutMax: 4, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst Min och högst Max
+  spjutPerVuxna: 3, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst ett; och dessutom de som slits ut (steg 10.11.9)
   snoskorPer: 4, halsbandPer: 3,
-  korgPerVuxna: 3, korgMin: 1, korgMax: 5, // ... en korg
-  yxaPerVuxna: 4, yxaMin: 1, yxaMax: 3, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
-  knivar: 1, // ... så många knivar, och en till för varje tom knivplats vid en station (stationer.ts)
-  spadar: 1, // så många benspadar byn vill ha (steg 2.7.2)
-  slandor: 2,
-  vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
+  korgPerVuxna: 3, // ... en korg
+  yxaPerVuxna: 4, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
   repMin: 4, // byn vill ha minst så här många rep; fler efter förbrukningen (MATERIALMAL, steg 10.2.12)
-  facklor: 3, // så många facklor byn vill ha när den kan göra dem (steg 6.3.6)
 });
 // eldens del av materialets buffert (steg 10.2.7): det som lämnas kvar i förrådet till elden när något byggs, görs eller tvinnas
 // (bygg.ts, stationer.ts, redskap.ts), räknat ur vad eldarna förbrukar: veden de bränner under TROSKEL.eldTim timmar, och det en
@@ -212,9 +206,9 @@ export function overOchUnder(s: State, k: Materialslag, extra = 0) {
 // (projekt.ts), och det görs bara som projekt: i arbetet som behöver det (withTools i val.ts, yxan till veden), på Förbättra
 // eller som pyssel på fritiden. En ny grupp är en ny rad här.
 const vuxna = (s: State, fran: number) => { let n = 0; for (const p of living(s)) if (ageOf(p, s.now) >= fran) n++; return n; };
-const perVuxna = (s: State, per: number, min: number, max: number, fran: number = ALDER.vuxen) => clamp(Math.floor(vuxna(s, fran) / per), min, max);
+const perVuxna = (s: State, per: number, fran: number = ALDER.vuxen) => Math.max(1, Math.floor(vuxna(s, fran) / per)); // minst ett att arbeta med
 // ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
-const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna, VILLTAL.spjutMin, VILLTAL.spjutMax) : 0;
+const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna) : 0;
 // flintan till redskapen byn vill ha och saknar (redskap.ts, satt där så att filerna inte importerar varandra)
 export const flintaKrok = { verktyg: (_s: State) => 0 };
 const krukorIByn = (s: State) => tingOf(s).filter(t => t.k.startsWith('lerkruka_')).length;
@@ -230,13 +224,13 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
   nat: s => Math.min(2, Math.ceil(spjutVill(s) / 3)), // ett nät på tre fiskare, högst två (steg 9.6.16)
-  korg: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax),
+  korg: s => perVuxna(s, VILLTAL.korgPerVuxna),
   nal: s => living(s).some(p => p.skill.lakekonst >= 2 || !!p.tatV?.length) ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15) eller vill ha ett märke (tatuering.ts, steg 10.7.5)
   krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)
-  naverask: s => ortkokKan(s) ? TILLVERKA.koka_salva.vill + TILLVERKA.koka_lim.vill : 0, // näveraskarna (steg 9.4.14): salvan och limmet som byn vill ha förvaras i dem
+  naverask: s => ortkokKan(s) ? villHaAv(s, 'salva') + villHaAv(s, 'benlim') : 0, // näveraskarna (steg 9.4.14): salvan och limmet som byn vill ha förvaras i dem
   lerkruka: s => Math.round(living(s).reduce((n, p) => n + (villPynt(s, p, 'kruka') ? pyntLust(s, p) : 0), 0)) + // lusten efter en kruka till avtar (steg 10.2.43)
-    (nTools(s, 'vattensack') < 1 ? 1 : 0) + (ortkokKan(s) ? TILLVERKA.koka_tjara.vill : 0), // och tjäran i stora krukor (steg 9.4.14) // lerkrukorna (steg 9.4.12): de som vill ha en kruka som pynt, och en att bära vatten i när byn saknar en vattensäck
-  kniv: s => VILLTAL.knivar + tommaPlatser(s, 'kniv'), // och en till för en tom knivplats vid slaktbänken
+    (nTools(s, 'vattensack') < 1 ? 1 : 0) + (ortkokKan(s) ? villHaAv(s, 'tjara') : 0), // och tjäran i stora krukor (steg 9.4.14) // lerkrukorna (steg 9.4.12): de som vill ha en kruka som pynt, och en att bära vatten i när byn saknar en vattensäck
+  kniv: s => 1 + tommaPlatser(s, 'kniv'), // en att arbeta med, och en till för en tom knivplats vid slaktbänken
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
   rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)
   skor: s => living(s).length,
@@ -253,25 +247,30 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   kappa: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, sjal: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ullens plagg (steg 9.8.15)
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
-  ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna, VILLTAL.korgMin, VILLTAL.korgMax), // lika många som korgarna, till dem som samlar (steg 7.1.3)
+  ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna), // lika många som korgarna, till dem som samlar (steg 7.1.3)
   rustning: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), hjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), skold: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), bage: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), slunga: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), horn: () => 1, // vapnen och rustningen efter de vuxna och hoten (steg 10.2.75); // vapnen och rustningen (system 8.7)
   skara: s => (s.angar?.length ?? 0) > 0 ? 1 : 0, // en skära när byn har en slåtteräng (steg 9.8.9)
-  benspade: () => VILLTAL.spadar, // till latrinen och rötterna (steg 2.7.2)
+  benspade: () => 1, // en, latrinen och rötterna (steg 2.7.2)
   bagborr: () => 1, // ett tänddon till elden (steg 10.6.13)
   kalke: () => 1, // en kälke till det tunga (steg 10.10.2)
   slade: s => tamdjurOf(s).some(d => tamArt(d.art).styrka) ? 1 : 0, // en släde när byn har ett dragdjur att spänna för (steg 10.10.3)
-  fackla: () => VILLTAL.facklor, // till den som går ut i mörkret (steg 6.3.6, ljus.ts)
+  fackla: () => 1, // en, den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
-  slanda: () => VILLTAL.slandor, // till dem som spinner, och en i vävstolen (steg 7.7.8)
-  vattensack: () => VILLTAL.vattensackar, // till den som inte kan gå (steg 2.10.1)
+  slanda: () => 1, // en, dem som spinner, och en i vävstolen (steg 7.7.8)
+  vattensack: () => 1, // en, den som inte kan gå (steg 2.10.1)
   boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2)
   bok: s => (s.ting ?? []).filter(t => t.k === 'bok' && (t.delar?.length ?? 0) >= SKRIFT.bokDelar).length + 1, // en bok med lediga delar till den som skriver (steg 10.6.6)
   trumma: s => tommaPlatser(s, 'trumma'), benflojt: s => tommaPlatser(s, 'benflojt'), lyra: s => tommaPlatser(s, 'lyra'), // ett av varje till scenen (steg 4.3.2.2)
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
-  yxa: s => perVuxna(s, VILLTAL.yxaPerVuxna, VILLTAL.yxaMin, VILLTAL.yxaMax, VILLTAL.yxaFran) + (s.hus?.some(h => !h.klar) ? VILLTAL.yxaBygge : 0),
+  yxa: s => perVuxna(s, VILLTAL.yxaPerVuxna, VILLTAL.yxaFran) + (s.hus?.some(h => !h.klar) ? VILLTAL.yxaBygge : 0),
 };
-// hur många byn vill ha av gruppen g
-export const villAv = (s: State, g: string) => REDSKAPMAL[g](s);
+// de redskap av gruppen g som slitits sönder (redskapSlitet i agande.ts, steg 10.11.9) räknas som förbrukade, i samma glidande medel
+// som materialen, så att byn har så många extra som går åt på materialDygn dygn
+const redskapBuffert = (s: State, g: string) => Math.ceil((s.forbruk?.['@' + g] ?? 0) / FORRAD.forbrukDygn * FORRAD.materialDygn - 1e-9);
+// hur många byn vill ha av gruppen g: de som används och de som går åt (bara när byn vill ha något av gruppen)
+export const villAv = (s: State, g: string) => { const n = REDSKAPMAL[g](s); return n > 0 ? n + redskapBuffert(s, g) : 0; };
+// hur många byn vill ha av det tillverkade (tillverka.ts): materialen efter förbrukningen, det andra efter radens tal
+export const tillverkVill = (s: State, d: TillverkDef) => arMaterial(d.ger) ? villHaAv(s, d.ger) : d.vill;
 // en station av sorten k: bufferten är en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5): en per den som sover
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)

@@ -6,7 +6,7 @@ import { familjOf } from './folk';
 import { omtanke } from './omtanke';
 import { clamp } from './slump';
 import { LAGER, amountOf, lagerFlyttVal } from './lager';
-import { arMaterial, materialBuffert, stationBrist, villAv, villHaAv } from './forradsmal';
+import { materialBuffert, stationBrist, tillverkVill, villAv, villHaAv } from './forradsmal';
 import { SAKER } from './saker';
 import { KLADER, PLAGG, PLAGG_LIST } from './klader';
 import { coldOf, temperature } from './vader';
@@ -183,7 +183,7 @@ const tillverk = (k: string): ProjektDef => {
   // tjäran, salvan och limmet räknas i sina behållare och behöver en ledig som passar (steg 9.4.14, vatskor.ts)
   const antal = (s: State) => ar_vatska(d.ger) ? vatskaAv(s, d.ger) + (d.sjud ? tingOf(s).reduce((n, t) => n + (t.kok?.r === d.ger ? t.kok.n : 0), 0) : 0) : amountOf(s, d.ger), kar = (s: State) => !ar_vatska(d.ger) || !!ledigFor(s, d.ger);
   // så många byn vill ha: det som följer förbrukningen (salvan, tjäran, limmet, tvålen; MATERIALMAL, steg 10.2.12) efter den, det andra efter raden
-  const vill = (s: State) => arMaterial(d.ger) ? villHaAv(s, d.ger) : d.vill;
+  const vill = (s: State) => tillverkVill(s, d);
   const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.eld || !!stationFor(s, d.act) || s.fire.lit) && eldKan(s, p, stationFor(s, d.act, p)) /* örtkökets eld (steg 10.2.85) */ && (!d.vatten || !!fylldSack(s)) && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
   return {
     namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)

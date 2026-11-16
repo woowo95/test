@@ -22,6 +22,7 @@ import { balans } from './balans';
 import { hemma, kanGa } from './halsa';
 import { fylldSack, freeTools, toolsOf } from './agande';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
+import { tillverkVill } from './forradsmal';
 import { amountOf } from './lager';
 import { getable, isFamily } from './behov';
 import { kanGoras } from './stationer';
@@ -226,7 +227,7 @@ const torrtFalt = (s: State, p: Person) => faltOf(s).find(f => (f.agare === p.id
 const FYLL = 0;
 const villFylla = (s: State, p: Person) => !fylldSack(s) && enTillDar(s, 'vatten', p, t => !t.falt && !t.ho && t.ref === FYLL, -1) && TILLVERKA_LIST.some(k => {
   const d = TILLVERKA[k];
-  return d.vatten && amountOf(s, d.ger) < d.vill && kanGoras(s, d.act) && living(s).some(q => knows(q, d.tek)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n);
+  return d.vatten && amountOf(s, d.ger) < tillverkVill(s, d) && kanGoras(s, d.act) && living(s).some(q => knows(q, d.tek)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n);
 });
 // det som väljs (val.ts): den närmaste som behöver vatten och som ingen annan redan hämtar åt, och vattnet att fylla säcken vid
 // det kärl p bär vatten i (steg 9.4.12): vattensäcken, eller annars en mellanstor lerkruka som i säcken

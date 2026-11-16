@@ -2,7 +2,7 @@ import { stubbeOn } from './stubbar';
 import { OMRADE, omrade, utanforByn } from './omrade';
 import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
-import { Ting, halvKlar, nTools, newTing, tingOf } from './agande';
+import { Ting, halvKlar, nTools, newTing, redskapSlitet, tingOf } from './agande';
 import { kvHaller } from './kvalitet';
 import { baraForvar, forvarAt, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr } from './stationer';
 import { faltAt } from './odling';
@@ -833,6 +833,7 @@ export function wearStore(s: State, dtSec: number) {
     const nere = t.hos === undefined && t.lass === undefined && t.krok === undefined; // på marken, vid en station eller i förrådet (utan plats än)
     t.c -= Math.min(t.c, wearAt(t.k, nere && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, nere, temp) * h / kvHaller(t));
   }
+  for (const t of tingOf(s)) if (t.c <= 1e-6 && !t.halv) redskapSlitet(s, t.k); // det utslitna räknas som förbrukat (steg 10.11.9)
   s.ting = tingOf(s).filter(t => t.c > 1e-6);
   tidy(s);
   for (const k in bort) { const w = forlorat(s, k, bort[k]); if (w > 0) taBort(s, k, w); } // det gömda som förfallit
