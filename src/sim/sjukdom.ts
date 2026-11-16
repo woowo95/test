@@ -90,6 +90,7 @@ export const SJUK = balans('sjuk', {
   // chansen är lika mycket mindre, och lika många är sjuka som förut. Vatten och skämd mat ger magsjuka, rått kött
   // matförgiftning och kylan förkylning
   vatten: 0.11, skamd: 0.22, ratt: 0.3, kyla: 0.12,
+  smutsig: 0.15, // chansen till magsjuka för en måltid av mat som plockats där toa-smutsen var full (steg 10.11.14)
   // smittan (steg 9.5.3): så här nära (rutor) räknas som bredvid, och så här nära samma eld som att sitta vid den
   nara: 1.5, eldNara: 3,
   rum: 0.6, eld: 0.5, // i samma rum och vid samma eld smittar det så här mycket av radens smitta (bredvid: hela)

@@ -68,7 +68,7 @@ import { materialBuffert } from './forradsmal';
 import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
-import { forSmutsigt, latrinFor } from './smuts';
+import { smutsAvdrag, latrinFor } from './smuts';
 import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
@@ -357,8 +357,6 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });
   }
   cands.sort((a, b) => a.d - b.d);
-  // man plockar inte där det är toa-smuts (steg 2.7.2), så länge det finns rena platser
-  if (d.resurs === 'samla' && s.flackar?.length) { const rena = cands.filter(c => !forSmutsigt(s, c.x, c.y)); if (rena.length) cands.splice(0, cands.length, ...rena); }
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
   // avsides (toa): en plats var som helst mellan narAvstAng och langtAvsides, så att högarna inte bildar en ring (steg 3.6.7)
   const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : plats === 'avsides' && cands.length ? cands[Math.floor(rnd(s, 'val', p) * cands.length)] : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want, plats === 'avsides' ? min : 0) ?? { x: mid.x, y: mid.y };
@@ -371,16 +369,16 @@ function vidBanken(s: State, x: number, y: number) {
 }
 
 // samlandet (steg 2.12.4): busken är tom men famnen inte full. Den bästa rutan inom MINNE.sokR, med lite avdrag för
-// avståndet som när man väljer plats (pickSpot), men inte i vattnet, i husen eller där det är toa-smuts. Ger ingen ruta
+// avståndet som när man väljer plats (pickSpot), men inte i vattnet eller i husen; toa-smutsen räknas som en längre väg (steg 10.11.14). Ger ingen ruta
 // minst PLATS.vidare går man hem med det man har
 export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
   const cx = Math.floor(x0), cy = Math.floor(y0), tiles = vattenNu(s), R = MINNE.sokR; // vattnet som det är nu (torkan och översvämningen)
   let best: { x: number; y: number } | undefined, bv = -Infinity;
   for (let y = Math.max(0, cy - R); y <= Math.min(H - 1, cy + R); y++) for (let x = Math.max(0, cx - R); x <= Math.min(W - 1, cx + R); x++) {
-    if (tiles[y * W + x] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
+    if (tiles[y * W + x] === T.Vatten || bitAt(s, x, y)) continue;
     const r = richness(s, k, x + 0.5, y + 0.5);
     if (r < PLATS.vidare) continue;
-    const v = r - Math.hypot(x - cx, y - cy) * MINNE.sokPris;
+    const v = r - (Math.hypot(x - cx, y - cy) + smutsAvdrag(s, x, y)) * MINNE.sokPris; // toa-smutsen som en längre väg (steg 10.11.14)
     if (v > bv) { bv = v; best = { x: x + 0.5, y: y + 0.5 }; }
   }
   return best;
@@ -400,10 +398,10 @@ export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0:
     if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const d = Math.hypot(dx, dy), i = y * W + x;
     if (d < 0.5 || d > r + 0.01) continue;
-    if (tiles[i] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
+    if (tiles[i] === T.Vatten || bitAt(s, x, y)) continue;
     const v0 = utan ? 0 : drag?.tror ? drag.tror(x, y) : varde(x, y);
     if (v0 < minst) continue; // rutan ger för lite för alla kraven
-    const v = v0 - d * MINNE.sokPris + hash3(id, i, n) * 0.1 + (drag ? drag.ut * (lager.at(i) - d0) - (drag.tror && !utan ? 0 : drag.radsla(x, y)) : 0);
+    const v = v0 - (d + smutsAvdrag(s, x, y)) * MINNE.sokPris + hash3(id, i, n) * 0.1 + (drag ? drag.ut * (lager.at(i) - d0) - (drag.tror && !utan ? 0 : drag.radsla(x, y)) : 0);
     for (let j = 0; j < krav.length; j++) if (v0 >= krav[j].minst && v > bv[j] && !krav[j].sett.includes(i)) { bv[j] = v; best[j] = { x: x + 0.5, y: y + 0.5 }; }
   }
   return best.find(b => b);

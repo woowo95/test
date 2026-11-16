@@ -44,7 +44,7 @@ function toaHog(i: number) {
   const f = toaAt(s, i % W, Math.floor(i / W));
   if (!f) return '<p class="muted">Den har bleknat bort.</p>';
   const inf = toaInfo(s, f), vem = f.av !== undefined ? byId(s, f.av) : undefined;
-  const gor = [inf.akel && 'Äcklar dem som går förbi', inf.plock && 'Ingen plockar här eller bredvid', inf.vatten && 'Smutsar vattnet i närheten'].filter(Boolean);
+  const gor = [inf.akel && 'Äcklar dem som går förbi', inf.plock && 'Sämre att plocka här och bredvid: den som äter det kan bli magsjuk', inf.vatten && 'Smutsar vattnet i närheten'].filter(Boolean);
   return `
     <div class="phead">${iconImg('toa', 32)}<div><h2>${esc(sakNamn('toa'))}</h2></div></div>
     <dl class="kv">

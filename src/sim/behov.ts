@@ -30,6 +30,7 @@ import { dampning, handelse, smakMat } from './rykten';
 import { VED, vedPerDygn } from './eld';
 import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 import { SJUK, insjukna } from './sjukdom';
+import { smutsigtAtit } from './smuts';
 import { budHindrar } from './kyrka';
 
 // ---------- behovsstegen ----------
@@ -106,7 +107,12 @@ function eat(s: State, p: Person, fran?: Person) {
     think(p, 'Åt vid bordet', KROPP.bordGlad * kvEffekt(bordVid(s, p)), now, KROPP.bordGladTim * HOUR); count(s, 'bordMal');
     let mest = 0; for (const k in per) if (per[k] > mest) { mest = per[k]; p.task!.mal = k; } // maten på bordet och i händerna (steg 3.10.3, bara utseende)
   }
-  if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35 * SJUK.skamd) {
+  const smutsig = smutsigtAtit(s, per); // maten som plockats där det var toa-smuts (steg 10.11.14)
+  if (smutsig > 0 && rnd(s, 'halsa', p) < smutsig * SJUK.smutsig) {
+    insjukna(s, p, 'magsjuka', 'av smutsig mat'); p.sickWhy = 'Magsjuk av mat som plockats vid toa-smuts';
+    think(p, 'Åt smutsig mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'smutsigMat');
+  }
+  else if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35 * SJUK.skamd) {
     insjukna(s, p, 'magsjuka', 'av skämd mat'); p.sickWhy = 'Magsjuk av skämd mat'; // steg 9.5.1
     think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
     loggBer(s, 'l_magsjuk', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon' }, 'world', [p.id]);

@@ -98,7 +98,7 @@ import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
-import { akel, latrinUpptagen, latrinVanta, regnetTvattar, toaBesok } from './smuts';
+import { akel, latrinUpptagen, latrinVanta, regnetTvattar, smutsigtPlock, toaBesok, toaNara } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
@@ -1482,8 +1482,10 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   if (res && (rich < PLATS.tomtGrans || chance(s, 1 / STEG.minneSek, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
   // det arbetet ger läggs i bördan; något annat än det arbetet ger tas bara med om det ryms i händerna (steg 6.1.8),
   // utom ett sällsynt fynd (flintan), som man inte lämnar
+  const smt = res === 'samla' && s.flackar?.length ? toaNara(s, tileOf(tk.tx, tk.ty)) : 0; // plockat där det är toa-smuts (steg 10.11.14)
   const bar = (k: string, n: number) => {
     if (!(n > 0)) return;
+    if (smt) smutsigtPlock(s, k, n, smt);
     // platsen i händerna prövas först när det blir en hel sak till: arbetet mot nästa sak (p.delar) tar ingen plats. Förut föll
     // varje liten del bort när händerna var fulla, så att ägg, mossa och frön nästan aldrig hittades (steg 9.9.5)
     const fore = (tk.items?.[k] ?? 0) + (p.delar?.[k] ?? 0), nyHel = Math.floor(fore + n + 1e-9) > Math.floor(fore + 1e-9);
@@ -1492,7 +1494,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   };
   // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
   const u = UTFALL[tk.act];
-  if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar })) && y > 0) tk.carry += y;
+  if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar })) && y > 0) { tk.carry += y; if (smt) smutsigtPlock(s, carryKind(tk.act), y, smt); }
   helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7); ett plock är alltid en hel sak (steg 9.2.55) // bara hela saker i bördan (steg 2.10.7); på en runda med hela saker ges saken bara vid stoppet (rundaRuta, steg 6.1.3)
   const sk = d.arbete!;
   const before = p.skill[sk];

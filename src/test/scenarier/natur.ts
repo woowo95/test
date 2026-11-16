@@ -1066,9 +1066,9 @@ SCENARIER.utkant = {
 };
 
 SCENARIER.latrin = {
-  text: 'Toa-smuts och latriner (steg 2.7.2): den som går på toa utanför en latrin lämnar en fläck som bleknar på två dygn. Den äcklar den som går förbi, man plockar inte där, och nära vattnet smutsar den vattnet. Latrinen är en grop i byns utkant som grävs med benspaden: man går dit, får vara ifred och lämnar ingen fläck, gropen fylls och fylls igen, och byn gräver en ny. Får någon ont i magen av toa-smutsat vatten lär sig byn att lägga latrinen långt från vattnet. Benspaden görs av tre ben, ett rep och en gren och gräver fram rötter fortare',
+  text: 'Toa-smuts och latriner (steg 2.7.2): den som går på toa utanför en latrin lämnar en fläck som bleknar på två dygn. Den äcklar den som går förbi, gör det sämre att plocka där (maten kan ge magsjuka), och nära vattnet smutsar den vattnet. Latrinen är en grop i byns utkant som grävs med benspaden: man går dit, får vara ifred och lämnar ingen fläck, gropen fylls och fylls igen, och byn gräver en ny. Får någon ont i magen av toa-smutsat vatten lär sig byn att lägga latrinen långt från vattnet. Benspaden görs av tre ben, ett rep och en gren och gräver fram rötter fortare',
   kor: () => {
-    const { flackarOf, toaBesok, akel, toaNara, toaVatten, vattenSmuts, smutsOf, forSmutsigt, magont, latrinFor, latrinBrist, stationSite, utanforByn, STATION, shoreOf, tidyTools, stationerOf, isKlar } = SIM;
+    const { flackarOf, toaBesok, akel, toaNara, toaVatten, vattenSmuts, smutsOf, smutsAvdrag, smutsigtPlock, smutsigtAtit, magont, latrinFor, latrinBrist, stationSite, utanforByn, STATION, shoreOf, tidyTools, stationerOf, isKlar } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
     // utan latrin: en fläck där p står, som äcklar den som går förbi
@@ -1079,7 +1079,7 @@ SCENARIER.latrin = {
     akel(s, q);
     const akelQ = q.thoughts.some(t => t.text === 'Äcklad av smuts');
     p.thoughts = []; p.task = { act: 'toa' } as SIM.Person['task']; akel(s, p); const sjalv = !p.thoughts.length; p.task = undefined;
-    const plock = forSmutsigt(s, Math.floor(p.x), Math.floor(p.y)) && !forSmutsigt(s, Math.floor(p.x) + 4, Math.floor(p.y));
+    const plock = smutsAvdrag(s, p.x, p.y) > 0 && smutsAvdrag(s, p.x + 4, p.y) === 0;
     const rngOrord = JSON.stringify(s.rngs) === rng0;
     // toa-högen är en sak som går att trycka på (steg 2.10.5): den vet vem som lämnade den, hur länge den ligger kvar och vad den gör
     const th = SIM.toaAt(s, Math.floor(p.x), Math.floor(p.y)), ti = th && SIM.toaInfo(s, th);
@@ -1132,9 +1132,10 @@ SCENARIER.latrin = {
     const byggd = stationerOf(b).some(t => t.k === 'latrin' && isKlar(t));
     kor(b, 24);
     const besok = b.stat?.latrinbesok as number ?? 0;
-    // väl framme letar den som samlar upp den bästa platsen i närheten, men inte där det är toa-smuts eller i ett hus
-    // (pickSpot i minne.ts, kodgenomgången 3.10.25)
-    let spotVal = 0, spotFel = 0;
+    // väl framme letar den som samlar upp den bästa platsen i närheten, men inte i ett hus (pickSpot i minne.ts,
+    // kodgenomgången 3.10.25); toa-smutsen räknas som en längre väg (steg 10.11.14), så en smutsig ruta väljs bara om den är
+    // mycket rikare
+    let spotVal = 0, spotFel = 0, spotSmuts = 0, spotFran = 0;
     {
       const v = createState(2, START); klockan(v); tandEld(v);
       const [a, b] = living(v).filter(r => ageOf(r, v.now) >= 18) as [SIM.Person, SIM.Person];
@@ -1149,19 +1150,25 @@ SCENARIER.latrin = {
       const min = 5;
       for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
         const x = Math.floor(mid.x + dx), y = Math.floor(mid.y + dy), d = SIM.utanforByn(v, x, y);
-        if (d < min || vat[y * SIM.W + x] === SIM.T.Vatten || forSmutsigt(v, x, y) || SIM.bitAt(v, x, y)) continue;
+        if (d < min || vat[y * SIM.W + x] === SIM.T.Vatten || SIM.bitAt(v, x, y)) continue;
         const r = SIM.pickSpot(v, b, 'samla', [{ x, y, d }]);
         if (!r) continue;
         spotVal++;
-        if (forSmutsigt(v, r.x, r.y) || SIM.bitAt(v, r.x, r.y)) spotFel++;
+        if (SIM.bitAt(v, r.x, r.y)) spotFel++;
+        if (smutsAvdrag(v, x, y) > 0) spotFran++;
+        if (smutsAvdrag(v, r.x, r.y) > 0) spotSmuts++;
       }
     }
+    // den smutsiga maten (steg 10.11.14): fem av 20 bär plockades vid full toa-smuts; den som äter två bär äter en fjärdedel smutsigt
+    let smutsigAt = 0, smutsigKvar = 0;
+    { const m = createState(1, START); setMat(m, { bar: 18 }); smutsigtPlock(m, 'bar', 5, 1); smutsigAt = smutsigtAtit(m, { bar: 2 }); smutsigKvar = m.smutsMat?.bar ?? 0; }
     return [
       [`latrinen används av en i taget: den andra väntar, och väntan går in i bristen på latriner (${brist0.toFixed(2)} → ${brist1.toFixed(2)})`, enITaget],
-      [`den som samlar väljer aldrig en plats med toa-smuts eller i ett hus (${spotFel} av ${spotVal})`, spotVal > 50 && spotFel === 0],
+      [`den som samlar väljer aldrig en plats i ett hus (${spotFel} av ${spotVal}), och toa-smutsen gör platsen sämre: färre smutsiga platser väljs (${spotSmuts}) än det fanns att börja från (${spotFran})`, spotVal > 50 && spotFel === 0 && spotSmuts < spotFran],
+      [`maten som plockats vid toa-smuts kan ge magsjuka: den som äter av den äter så stor del smutsigt (${smutsigAt.toFixed(2)}), och det smutsiga i förrådet minskar (${smutsigKvar.toFixed(2)})`, smutsigAt > 0.2 && smutsigAt < 0.3 && smutsigKvar > 0 && smutsigKvar < 5],
       [`toabesöket utanför en latrin lämnar en fläck där man står`, flack],
       ['den som står bredvid blir äcklad, men inte den som själv är på toa', akelQ && sjalv],
-      ['man plockar inte på eller bredvid fläcken', plock],
+      ['fläcken gör det sämre att plocka på och bredvid den, men rutan stryks inte (steg 10.11.14)', plock],
       ['fläckarna rör inte byns slumpföljder', rngOrord],
       ['toa-högen är en sak som vet vem som lämnade den, hur länge den ligger kvar och vad den gör', hog],
       ['fläcken bleknar bort på två dygn (två år i spelet, två dagar i verkligheten)', bleknat],

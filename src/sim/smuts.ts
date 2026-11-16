@@ -22,6 +22,8 @@ import { smutsOf } from './sjo';
 import { BLODFORM, blodNu, blodOf, blodas } from './blod';
 import { roomAt, gridOf } from './byggnad';
 import { vaderNu } from './vader';
+import { isFood } from './saker';
+import { amountOf } from './lager';
 
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
@@ -32,7 +34,7 @@ export const SMUTS = balans('smuts', {
   latrinVatten: 0.5, // ... och så här mycket för en latrin på stranden
   akel: 0.25, // den som står på eller bredvid en toa-fläck som är starkare än så här blir äcklad ...
   akelHumor: -0.05, akelTim: 2, // ... så här mycket (humör), i så många timmar
-  plock: 0.15, // man plockar inte på eller bredvid en toa-fläck som är starkare än så här
+  plockRutor: 20, // toa-smuts i full styrka på eller bredvid rutan gör den lika mycket sämre att plocka på som så här många rutors längre väg (steg 10.11.14)
   ifred: 0.04, ifredTim: 2, // den som går på toa i latrinen får vara ifred: så här mycket bättre humör, i så många timmar
   byn: 0, // blod och toa-högar så här nära byns område (utanforByn, 0 innanför) ligger inne i byn (steg 3.6.10) ...
   ser: 4, // ... och syns för den som är vaken inom så här många rutor ...
@@ -134,8 +136,28 @@ export const toaNara = (s: State, i: number) => s.flackar?.length ? toaKarta(s).
 export const toaVatten = (s: State, i: number) => (s.flackar?.length || s.stationer?.length) ? toaKarta(s).vatten[i] ?? 0 : 0;
 // hur smutsigt vattnet är på rutan i (0–1): mönstret längs stränderna (smutsOf i sjo.ts) och toa-smutsen i närheten
 export const vattenSmuts = (s: State, i: number) => gridOf(s).brygga[i] ? 0 : clamp(smutsOf(s.seed)[i] + toaVatten(s, i), 0, 1); // ute vid bryggan är vattnet rent (steg 7.3.10)
-// man plockar inte där det är toa-smuts (spotFor i val.ts)
-export const forSmutsigt = (s: State, x: number, y: number) => toaNara(s, y * W + x) > SMUTS.plock;
+// toa-smutsen sänker värdet på att plocka på rutan (x, y) (steg 10.11.14): så många rutors längre väg är den värd. Rutan stryks
+// inte, så den som inte har något bättre (den som svälter) plockar där ändå, och får en chans till magsjuka (smutsigtAtit)
+export const smutsAvdrag = (s: State, x: number, y: number) => toaNara(s, Math.floor(y) * W + Math.floor(x)) * SMUTS.plockRutor;
+// maten som plockats där det är toa-smuts (steg 10.11.14): n av saken k, plockad på en ruta med smutsen t (0–1). Byn minns
+// hur mycket av förrådets k som är smutsigt (s.smutsMat), vägt efter smutsen
+export function smutsigtPlock(s: State, k: string, n: number, t: number) {
+  if (t > 0 && n > 0 && isFood(k)) (s.smutsMat ??= {})[k] = (s.smutsMat[k] ?? 0) + n * t;
+}
+// den som åt per (saken → mängd) åt så här stor del smutsigt (0–1), och det smutsiga i förrådet minskar med det som åts. Den
+// smutsiga delen av k är det smutsiga delat med allt av k som fanns (det som åts och det som är kvar)
+export function smutsigtAtit(s: State, per: Record<string, number>) {
+  let alla = 0, smutsigt = 0;
+  for (const k in per) {
+    alla += per[k];
+    const d = s.smutsMat?.[k]; if (!d) continue;
+    const fanns = amountOf(s, k) + per[k], del = fanns > 0 ? Math.min(1, d / fanns) : 0;
+    smutsigt += per[k] * del;
+    s.smutsMat![k] = Math.max(0, Math.min(d, fanns) - per[k] * del);
+    if (s.smutsMat![k] < 1e-6) delete s.smutsMat![k];
+  }
+  return alla > 0 ? smutsigt / alla : 0;
+}
 
 // toa-högen på rutan (x, y), om det finns en som inte bleknat bort (steg 2.10.5: den går att trycka på)
 export const toaAt = (s: State, x: number, y: number) => flackarOf(s).find(f => f.k === 'toa' && f.i === y * W + x && flackNu(f, s.now) > 0);
@@ -148,7 +170,7 @@ export function toaInfo(s: State, f: Flack) {
     const x = x0 + dx, y = y0 + dy;
     if (x >= 0 && y >= 0 && x < W && y < H && map.tiles[y * W + x] === T.Vatten) { vatten = true; break; }
   }
-  return { n, kvar: n * (DEF[f.k]?.bleknar ?? 0), akel: n > SMUTS.akel, plock: n > SMUTS.plock, vatten };
+  return { n, kvar: n * (DEF[f.k]?.bleknar ?? 0), akel: n > SMUTS.akel, plock: n > 0, vatten };
 }
 
 // varje steg för den som är vaken: står hen på eller bredvid en toa-fläck blir hen äcklad. Inte den som själv är på toa.
