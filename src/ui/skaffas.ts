@@ -47,7 +47,7 @@ const ANVANDS: Record<string, string[]> = {
   levfar: ['Blir byns får'], levget: ['Blir byns get'], levko: ['Blir byns ko'], slaktko: ['Slaktas'], kohud: ['Kläder'], levhons: ['Blir byns höns'],
   blomma: ['Sätts i en lerkruka'], blad: ['Läses av den som har något nytt att lära där'], bok: ['Skrivs i del för del och läses'], // steg 10.6.5–10.6.6
   bensyl: ['Syr kläder vid slöjdbänken'], boll: ['Sport'], slagtra: ['Sport'], mal: ['Sport'],
-  slanda: ['Spinner lin till tråd'], fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'], bivax: ['Vaxljus'],
+  slanda: ['Spinner lin till tråd'], fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'], vaxljus: ['Lyser inomhus, dubbelt så länge som talgljuset'], bivax: ['Vaxljus'],
   trumma: ['Spelas på scenen'], benflojt: ['Spelas på scenen'], lyra: ['Spelas på scenen'], rovfron: ['Sås på fältet'], artfron: ['Sås på fältet'], malt: ['Ölet i bryggkaret'], kalfron: ['Sås på fältet'], kompost: ['Gödslar fältet'], jordgubbsplanta: ['Planteras på fältet'], appelplanta: ['Planteras på fältet'], slaktrens: ['Bärs till sophögen'], vaxtrest: ['Bärs till sophögen'], // steg 9.6.13
 };
 

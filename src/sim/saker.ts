@@ -225,6 +225,9 @@ const DEF = {
   // åt den som inte kan gå (torst.ts), och senare till fälten. Den tar en hand
   talgljus: { namn: 'Talgljus', ett: true, skaffa: RECEPT.talgljus, vikt: 0.3, stack: 10, mapp: 'Redskap', slits: 0.0003, redskap: true,
     gors: { text: 'Doppar en veke av torrt gräs i smält talg tills den blivit ett ljus.', stat: 'ljusGjorda', forsta: '{namn} gjorde byns första talgljus. Det står på bordet inne och lyser upp rummet på kvällen.' } },
+  // vaxljuset (steg 10.10.24, ljus.ts): i samma grupp som talgljuset, så det står på samma möbler och räknas i samma mål
+  vaxljus: { namn: 'Vaxljus', ett: true, skaffa: RECEPT.vaxljus, vikt: 0.3, stack: 10, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'talgljus',
+    gors: { text: 'Doppar en veke av torrt gräs i smält bivax tills den blivit ett ljus.', stat: 'vaxljusGjorda', forsta: '{namn} gjorde byns första vaxljus. Det brinner dubbelt så länge som ett talgljus.' } },
   fackla: { namn: 'Fackla', skaffa: RECEPT.fackla, vikt: 1, hander: 1, stack: 5, mapp: 'Redskap', slits: 0.0003, redskap: true,
     gors: { text: 'Klyver en käpp i toppen och binder torrt gräs och talg i klykan till en fackla.', stat: 'facklorGjorda', forsta: '{namn} gjorde byns första fackla. Med den kan man gå ut i mörkret och se vart man går.' } }, // brinner FACKLA.brinnTim timmar och bärs tänd i en hand (ljus.ts, steg 6.3.6)
   // sländan (steg 7.7.8): med den spinner man lin till tråd var som helst, och i vävstolen fortare (steg 7.7.9)

@@ -899,3 +899,41 @@ SCENARIER.bistick = {
     ];
   },
 };
+
+SCENARIER.vaxljus = {
+  text: 'Steg 10.10.24: vaxljuset. Det görs av ett bivax och ett hö och brinner 16 timmar, ställs på samma möbler som talgljuset, en by med vax gör vaxljus och sparar talgen, en by utan vax gör talgljus som förut, och målet för ljus räknar båda sorterna',
+  kor: () => {
+    const { LJUSSORTER, kindFor, makeTask, harAv, friLjus, finishLjus, newTing, BYN, setStock, ALDER, ageOf } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const p = SIM.living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    (p.tek ??= {}).fackla = 1;
+    const r = SIM.SAKER.vaxljus?.skaffa?.av, rad = SIM.RECEPT.vaxljus;
+    // valet: med vax, talg och hö görs vaxljus; utan vax talgljus
+    s.ting = (s.ting ?? []).filter(t => SIM.gruppOf(t.k) !== 'talgljus');
+    setStock(s, { torrgras: 10, talg: 4, bivax: 2 });
+    const medVax = kindFor(s, p, 'talgljus'), uppg = makeTask(s, p, 'talgljus');
+    setStock(s, { bivax: 0 });
+    const utanVax = kindFor(s, p, 'talgljus');
+    // samma möbler: ett vaxljus är det lediga ljuset och ställs på bordet med sin sort
+    const bord = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bord', x: 60, y: 60, kvar: 0 } as SIM.Station;
+    (s.stationer ??= []).push(bord); SIM.touch(s);
+    newTing(s, 'vaxljus', 1, BYN);
+    const fri = friLjus(s)?.k;
+    finishLjus(s, p, { tx: 60.5, ty: 60.5, ref: bord.id } as SIM.Task);
+    const l = s.ljus?.find(x => x.st === bord.id);
+    // det brinner 16 timmar: efter 8 timmar är hälften kvar
+    if (l) { l.tand = true; l.tandT = s.now; } s.now += 8 * SIM.HOUR; SIM.facklorTimme(s);
+    const halva = l ? l.c : -1;
+    // målet räknar båda sorterna
+    newTing(s, 'talgljus', 1, BYN); newTing(s, 'vaxljus', 1, BYN);
+    const har = harAv(s, 'talgljus');
+    return [
+      [`vaxljuset görs av ett bivax och ett hö på ${rad?.min} minuter och brinner ${LJUSSORTER.vaxljus?.brinnTim} timmar`, r?.bivax === 1 && r?.torrgras === 1 && rad?.min === 3 && LJUSSORTER.vaxljus?.brinnTim === 16],
+      [`med vax görs ett vaxljus (${medVax}, arbetet "${SIM.taskName(uppg as unknown as SIM.Task)}"), och talgen blir kvar`, medVax === 'vaxljus' && uppg.tool === 'vaxljus'],
+      [`utan vax görs ett talgljus som förut (${utanVax})`, utanVax === 'talgljus'],
+      [`vaxljuset är det lediga ljuset (${fri}) och står på bordet med sin sort (${l?.k})`, fri === 'vaxljus' && l?.k === 'vaxljus'],
+      [`efter 8 timmar är hälften kvar (${halva.toFixed(2)})`, Math.abs(halva - 0.5) < 0.01],
+      [`målet räknar båda sorterna (${har} ljus)`, har === 2],
+    ];
+  },
+};

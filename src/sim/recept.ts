@@ -136,6 +136,7 @@ const DEF = {
   grillgadda: { var: 'sak', av: { gaddkott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' }, grillmort: { var: 'sak', av: { mortkott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' },
   torrgadda: { var: 'sak', av: { gaddkott: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' }, torrmort: { var: 'sak', av: { mortkott: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
   talgljus: { var: 'sak', av: { talg: 2, torrgras: 1 }, min: 3, slag: 'liten', tek: 'fackla' },
+  vaxljus: { var: 'sak', av: { bivax: 1, torrgras: 1 }, min: 3, slag: 'liten', tek: 'fackla' }, // steg 10.10.24: ett ljus av bivax som brinner dubbelt så länge
   slanda: { var: 'sak', av: { grenar: 1, sten: 1 }, min: 3, slag: 'liten', tek: 'slanda', bank: 'snickarbank' }, // steg 7.7.8: en pinne med en tyngd av sten
   fackla: { var: 'sak', av: { grenar: 1, torrgras: 1, talg: 1 }, min: 3, slag: 'liten', tek: 'fackla' },
   vattensack: { var: 'sak', av: { skinn: 2, rep: 1 }, min: 5, slag: 'stor', tek: 'vattensack' },

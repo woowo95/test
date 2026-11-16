@@ -4432,6 +4432,11 @@ for (const k in PIX) if (k.endsWith('_v')) PAL[k] ??= PAL[k.slice(0, -2)];
 // bildstilens godkända bilder (kartbilder.ts, steg 5.2.4) som PIX och PAL med id:t kb_<id>. kartbild(k) ger id:t för sakens
 // kartbild, som ritas i sin naturliga storlek, aldrig förstorad eller förminskad (steg 5.1.2.1)
 for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; PAL['kb_' + id] = b.pal; }
+// vaxljuset (steg 10.10.24, platshållare): talgljusets bilder med det gula vaxet i stället för den vita talgen
+{ const VAX: Record<string, string> = { '#dad0bb': '#efe0a8', '#bdb39b': '#d8c27a', '#a0947d': '#b29a52' };
+  const gul = (p: Record<string, string>) => Object.fromEntries(Object.entries(p).map(([c, f]) => [c, VAX[f] ?? f]));
+  for (const v of ['1', '2', '1_tand', '2_tand']) if (KARTBILDER['talgljus' + v]) { PIX['kb_vaxljus' + v] = KARTBILDER['talgljus' + v].rader; PAL['kb_vaxljus' + v] = gul(KARTBILDER['talgljus' + v].pal); }
+  PIX.vaxljus = KARTBILDER.talgljus.rader; PAL.vaxljus = gul(KARTBILDER.talgljus.pal); }
 // lågorna där det brinner och tornadon (Björns val i bildstilen, steg 5.1.2.2) heter som förut, så att knappen i testläget hittar dem
 // animationernas bilder (steg 5.1.9, animbilder.ts) med id:t an_<id>; ui/animation.ts väljer bild efter klockan
 for (const [id, b] of Object.entries(ANIMBILDER)) { PIX['an_' + id] = b.rader; PAL['an_' + id] = b.pal; }

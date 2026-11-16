@@ -20,6 +20,7 @@ import { balans } from './balans';
 import { fartVid, kvVid, kanGoras, nyttVid, slitVid, stationFor } from './stationer';
 import { smutsa } from './smuts';
 import { krukaAv, krukaFormad } from './kruka';
+import { LJUSGRUPP, LJUSSORTER } from './ljus';
 import { SAK_ART, heligtBrutet } from './kultlatt';
 
 // ---------- balanstal (regel 8) ----------
@@ -222,10 +223,13 @@ export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k
 export const kindFor = (s: State, p: Person, g: string) => {
   const ks = GORS[g], halv = halvOf(s, p, ks)?.halv!.gor;
   if (halv) return halv;
+  if (g === LJUSGRUPP) return ljusVal(ks.filter(k => canMake(s, p, k))) ?? ks.find(k => k === 'talgljus') ?? ks[ks.length - 1];
   if (!(g in PLAGG)) return ks.find(k => canMake(s, p, k)) ?? ks[ks.length - 1];
   const kan = ks.filter(k => canMake(s, p, k));
   return materialVal(s, p, g, kan) ?? ks[ks.length - 1];
 };
+// ljuset (steg 10.10.24): bland sorterna p kan göra, den som ger flest brinntimmar för materialets värde (LJUSSORTER, ljus.ts)
+const ljusVal = (ks: string[]) => { let b: string | undefined, bv = -1; for (const k of ks) { const v = LJUSSORTER[k]!.brinnTim / Math.max(1e-9, Object.entries(av(k)).reduce((n, [m, a]) => n + grundvarde(m) * a, 0)); if (v > bv + 1e-12) { bv = v; b = k; } } return b; };
 // ---------- kläderna: valet av material (steg 3.10.12, valMaterial i klader.ts) ----------
 // läget när p ska sy ett plagg i gruppen g av något av slagen ks (alla går att göra nu): kylan (hösten, istiden eller någon
 // som fryser), hotet (vargar sedda nära byn eller en strid i byn nyligen), vad varje material värmer och skyddar, hur mycket

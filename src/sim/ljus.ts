@@ -220,6 +220,7 @@ export function finishUppsatt(s: State, p: Person, tk: { tx: number; ty: number 
 // rummet (raden ljus i LJUSKALLOR) och släcks när ingen vaken är kvar där. Det brinner LJUS.brinnTim timmar
 export const LJUS = balans('talgljus', {
   brinnTim: 8, // ett talgljus brinner så här många timmar
+  vaxTim: 16, // ... och ett vaxljus (steg 10.10.24)
   r: 2, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet)
   min: 5, // minuter att ställa fram ett
 });
@@ -227,6 +228,7 @@ export const LJUS = balans('talgljus', {
 // (saker.ts), och allt som frågar efter ljuset frågar gruppen. Ljuset på bordet minns sin sort (TalgLjus.k, ingen = talgljus)
 export const LJUSSORTER: Record<string, { brinnTim: number }> = {
   talgljus: { get brinnTim() { return LJUS.brinnTim; } },
+  vaxljus: { get brinnTim() { return LJUS.vaxTim; } }, // steg 10.10.24
 };
 export const LJUSGRUPP = 'talgljus';
 export const ljusSort = (l: TalgLjus) => l.k ?? 'talgljus';
