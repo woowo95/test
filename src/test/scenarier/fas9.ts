@@ -1196,6 +1196,7 @@ SCENARIER.brod = {
       [`bagaren kan baka (${kan ? 'ja' : 'nej'}), och degen jäser i ugnen (${iUgnen ? 'ja' : 'nej'})`, kan && iUgnen],
       [`efter jäsningen och gräddningen ligger ${brod} bröd i förrådet`, brod === 4 && !ugn.deg],
       [`brödet håller ${SAKER.brod!.haller} dygn, längre än annan lagad mat (${RATT.haller})`, SAKER.brod!.haller! > RATT.haller],
+      ['bakningen räddar inget (mjölet håller) och ligger på Förbättra (steg 10.11.21)', SIM.ARBETEN.find(a => a.id === 'baka')?.niva === 8],
     ];
   },
 };
@@ -1335,6 +1336,7 @@ SCENARIER.sophog = {
       [`resterna i byn syns som smuts (${smuts} punkter)`, smuts >= fore && smuts > 0],
       [`de bärs till sophögen i utkanten (${pa} där, ${kvar} kvar i byn, ${utanforByn(s, h.x, h.y).toFixed(1)} rutor utanför byn)`, pa > 0 && kvar < rens + 6],
       [`på sophögen ruttnar de bort (${s.sophog!.n.toFixed(2)} kvar efter fyra dygn)`, s.sophog!.n < pa * 0.5],
+      ['soporna räddar inget och bärs ut på Förbättra (steg 10.11.21)', SIM.ARBETEN.find(a => a.id === 'sopor')?.niva === 8],
     ];
   },
 };
@@ -2001,7 +2003,13 @@ SCENARIER.slatter = {
     const d0 = tamdjurOf(s).find(d => d.fahus === id)!; d0.hunger = 0.9;
     for (const d of tamdjurOf(s)) if (d !== d0) d.hunger = 0;
     const matas = mataVal(s, p) === d0 && foderFor(s, p, d0) === 'torrgras';
+    // slåttern på Rädda bara när gräset annars går förlorat (steg 10.11.21): mitt i sommaren är det långt kvar, i slutet av hösten inte
+    s.kal = SIM.nyKalender(s.now, SIM.SOMMAR); const tidigt = SIM.slatterKvar(s);
+    s.kal = SIM.nyKalender(s.now, SIM.HOST); const nu0 = s.now; s.now = SIM.kalender(s).slut - 10 * SIM.HOUR; const sent = SIM.slatterKvar(s); s.now = nu0;
+    s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+    const raddaSent = sent < SIM.VAL.raddaTim && tidigt > 7 * 24 && SIM.ARBETEN.some(a => a.id === 'slatterForb' && a.niva === 8);
     return [
+      [`slåttern räddar gräset sent på hösten (${sent.toFixed(0)} h kvar, mot ${tidigt.toFixed(0)} h på sommaren) och görs annars på Förbättra`, raddaSent],
       [`någon märker ut en slåtteräng när byn har hage och djur, så stor som höet till dem kräver (${ang ? `${ang.w} × ${ang.h}` : 'ingen'})`, angBrist === 1 && !!au && !!ang && ang.w * ang.h * VINTER.angMarg >= djur.length * VINTER.hoPerDjur / VINTER.ho && SIM.angBrist(s) === 0],
       [`utan skära slås ingen äng`, utan],
       [`med skäran slås ängen till hö (${slagna} rutor, ${ho} hö)`, slagna >= 1 && ho === slagna * VINTER.ho],

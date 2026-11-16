@@ -96,6 +96,8 @@ export function angMark(s: State) {
 }
 // slåttern: på sensommaren och hösten, i dagsljus, med skäran
 const slattertid = (s: State) => { const ai = kalender(s).ai; return ai === SOMMAR || ai === HOST; };
+// timmarna kvar av slåttertiden (steg 10.11.21): det gräs som inte slagits när istiden kommer går förlorat
+export function slatterKvar(s: State) { const k = kalender(s); return k.ai === HOST ? (k.slut - s.now) / HOUR : k.ai === SOMMAR ? (k.slut - s.now) / HOUR + 7 * 24 : Infinity; }
 // nästa ruta högt gräs på ängen som p kan slå, eller undefined
 export function slaVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !slattertid(s) || !isLight(s.now) || getable(s, p, 'skara') < 1) return undefined;
