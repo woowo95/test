@@ -540,7 +540,7 @@ interface Ctx { s: State; p: Person; v: Val; a: number; lazy: number; light: boo
 const faror = (c: Ctx) => c.f ??= dangers(c.s);
 // Förbättra dämpas mjukt (steg 10.11.20): när kylan eller hungern är en fara tas raderna på Förbättra och projekten med chansen
 // VAL.projFara (en dragning per val), som bygget dämpas (byggDampning): tiden går helst till faran, men ingenting stängs av
-const slatterRad = ({ s, p, v }: Ctx) => { const i = slaVal(s, p); if (i === undefined) return false; projektVal(v, { act: 'slatter', text: 'Slår det höga gräset på ängen med skäran.', min: VINTER.slaMin, tool: 'skara', spot: { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }, ref: i }, 'Gräset på slåtterängen står högt'); return true; };
+const slatterRad = ({ s, p, v }: Ctx, i = slaVal(s, p)) => { if (i === undefined) return false; projektVal(v, { act: 'slatter', text: 'Slår det höga gräset på ängen med skäran.', min: VINTER.slaMin, tool: 'skara', spot: { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }, ref: i }, 'Gräset på slåtterängen står högt'); return true; };
 const forbNu = (c: Ctx) => { const f = faror(c); return !(f.kyla || f.svalt) || (c.forb ??= rnd(c.s, 'val', c.p) < VAL.projFara); };
 // lat: hur mycket tidigare den lata tar grundbehoven
 const fryser = (c: Ctx) => c.p.warm < KROPP.kallt + KROPP.latVarme * c.lazy;
@@ -777,7 +777,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'avliva', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const d = avlivaVal(s, p); if (!d) return false; projektVal(v, { act: 'avliva', text: `Avlivar ${tamArt(d.art).ord[3]} och bär det till slaktbänken.`, min: SLAKTDJUR.min, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, { gammal: 'Djuret är gammalt', svalt: 'Byn behöver mat', host: 'Höet räcker inte över istiden', stold: 'Hungern driver till stöld' }[slaktOrsak(s, d, p)!] ?? 'Flocken är för stor'); return true; } }, // steg 9.8.7
   // slåttern räddar gräset som annars går förlorat när istiden kommer (steg 10.11.21): på Rädda med chansen raddaTim delat med
   // timmarna kvar av slåttertiden, annars på Förbättra
-  { id: 'slatter', niva: 5, nar: 'dag', kort: true, prova: c => rnd(c.s, 'val', c.p) < Math.min(1, VAL.raddaTim / slatterKvar(c.s)) && slatterRad(c) }, // steg 9.8.9
+  { id: 'slatter', niva: 5, nar: 'dag', kort: true, prova: c => { const i = slaVal(c.s, c.p); return i !== undefined && rnd(c.s, 'val', c.p) < Math.min(1, VAL.raddaTim / slatterKvar(c.s)) && slatterRad(c, i); } }, // steg 9.8.9
   { id: 'fyllaHo', niva: 5, kort: true, prova: ({ s, p, v }) => { const d = hoVal(s, p); if (!d) return false; v.spot = d.spot; v.ref = d.ref; v.tool = d.karl; v.dur = 0; v.ho = true; set(v, 'vatten', 'Hämtar vatten till vattenhon'); return true; } }, // steg 10.10.31
   { id: 'mata', niva: 5, kort: true, prova: ({ s, p, v }) => { const d = mataVal(s, p); if (!d) return false; projektVal(v, { act: 'mata', text: `Ger ${tamArt(d.art).ord[3]} mat.`, min: TAM.mataMin, spot: { x: d.x, y: d.y }, ref: d.id }, 'Djuren är hungriga'); return true; } }, // steg 9.8.1
   { id: 'tomma_latrin', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const l = latrinAttTomma(s); if (!l || !enTill(s, 'tomma_latrin', p)) return false; projektVal(v, { act: 'tomma_latrin', text: 'Tömmer latrinen i komposten, så att ingen ny grop behöver grävas.', min: REST.tomMin, ref: l.id, spot: { x: l.x + 0.5, y: l.y + 0.5 } }, 'Latrinen är nästan full'); return true; } }, // steg 9.7.6: när byn har en kompost

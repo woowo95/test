@@ -21,7 +21,8 @@ import { tal as talFlik, talVal } from '../../ui/flikar/tal';
 import { rikVal } from '../../ui/graf';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
-const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
+// handlaren lägger ut filten i slutet av nästa anrop av step, så att byn inte hinner handla innan scenariot ställt i ordning
+const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now + (BEAT - 2) * SIM.SEC; };
 // p gör hela sin affär med handlaren (steg 4.5.7.4): hen får uppgiften handlaVal ger, står på platsen och gör klart den, steg för
 // steg tills affären är över. forByn = hen handlar för byn, vem som än skulle ha gjort det. Ger den första uppgiften och alla
 // tills = stanna (med uppgiften kvar) när affären kommit till den fasen och p står på sin plats.

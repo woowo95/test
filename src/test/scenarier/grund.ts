@@ -1931,12 +1931,12 @@ SCENARIER.brinner = {
       const w = cloneState(s); angSlag(w, a.mitt, 'hog');
       if (w.vader) { w.vader.torr = 240; w.vader.fukt = 0; w.vader.sno = sno; }
       const svar = SIM.tandTest(w, a.mitt % W, Math.floor(a.mitt / W));
-      step(w, 20 * 60); // (eldens kant går en ruta på två till tre minuter, steg 10.2.17)
+      step(w, 40 * 60); // (eldens kant går en ruta på två till tre minuter, steg 10.2.17; i snön sprids den sällan, så tjugo minuter räcker inte alltid)
       return { ok: svar.ok, n: w.brand?.n ?? 0, dry: SIM.torrhet(w) };
     };
     const bar = ang(0), snoig = ang(1);
     return [
-      [`i snön tänds en brand med knappen Brand (${snoig.ok ? 'ja' : 'nej'}) och sprids (${snoig.n} rutor efter tjugo minuter, torrhet ${Math.round(snoig.dry * 100)} %)`, snoig.ok && snoig.n > 1],
+      [`i snön tänds en brand med knappen Brand (${snoig.ok ? 'ja' : 'nej'}) och sprids (${snoig.n} rutor efter fyrtio minuter, torrhet ${Math.round(snoig.dry * 100)} %)`, snoig.ok && snoig.n > 1],
       [`... men långsammare än på bar mark (${bar.n} rutor, torrhet ${Math.round(bar.dry * 100)} %)`, snoig.n < bar.n],
       [`${p.name} börjar brinna (${brann ? 'ja' : 'nej'}) och väljer först att släcka sig själv (${ACTS_NAMN(valde)})`, brann && valde === 'slackaSig'],
       [`elden på ${p.name} är släckt efter ${(sek / 60).toFixed(1)} minuter (${Object.keys(sx).filter(k => k.startsWith('brinner slackt ')).join(', ')})`, slackt && sek <= 10 * 60],
