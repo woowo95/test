@@ -215,7 +215,7 @@ for (const [ks, why] of [
   [['branna', 'sprit'], 'spriten (steg 10.7.26) bränns i brännpannan på bryggkaret, som kommer efter vinet och ölet; scenariot sprit prövar den'],
   [['mjod'], 'mjödet (steg 10.7.25) kräver honung från vildbin och bryggkaret; scenariot mjod prövar det'],
   [['gropa'], 'festmåltiden i kokgropen (steg 10.7.28) kräver tekniken Kokgrop efter lerkrukan och en ritual eller ett bröllop; scenariot festmaltid prövar den'],
-  [['rock_radjursskinn', 'axelrem_radjursskinn', 'ryggsack_radjursskinn'], 'rådjursskinnet är ett klädmaterial, men rådjuren är få och skinnet går oftast till de mindre plaggen'],
+  [['rock_radjursskinn', 'axelrem_radjursskinn', 'ryggsack_radjursskinn', 'mossa_radjursskinn'], 'rådjursskinnet är ett klädmaterial, men rådjuren är få och skinnet går oftast till de mindre plaggen'],
   [['rock_vitskinn', 'byxor_vitskinn', 'mossa_vitskinn', 'skor_vitskinn', 'snoskor_vitskinn', 'axelrem_vitskinn', 'ryggsack_vitskinn'], 'vitskinnet (steg 10.7.22) kommer bara från harar som slaktas under istiden, och plaggen görs sällan av det; scenariot vinterpals prövar det'],
   [['vildsvin', 'vildsvindel'], 'vildsvinen (steg 10.10.4) står långt inne i skogen, och jägaren letar där kaninerna brukar vara, så hen kommer sällan nära en flock; scenariot vildsvin prövar jakten'],
   [['kalke', 'slade'], 'kälken och släden (steg 10.10.1–10.10.2) är tekniker på nivå 3–4 efter snickarbänken och repet; scenariot kalke prövar dem'],

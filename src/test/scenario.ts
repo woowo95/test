@@ -28,11 +28,16 @@ import { Utfall, gransAv, korSkript, pool, prioAv } from './pool';
 import { ui } from '../ui/lage';
 
 const GRUPP = 6; // så många korta scenarier i varje process
-const KLOCKA = 2; // klocktid per processortid, med marginal: alla scenarier och testbyarna delar på kärnorna
 // hur lång tid varje scenario tog förra gången (processorns tid, s), sparat när alla körs (steg 9.2.64): kön startar de
 // längsta först, och de korta körs med lägre prioritet så att de långa får hela kärnor
 const TIDER = new URL('../../test/scenariotider.json', import.meta.url);
 const forraTid: Record<string, number> = existsSync(TIDER) ? JSON.parse(readFileSync(TIDER, 'utf8')) : {};
+// klocktiden för varje scenario förra gången (s), när alla kördes samtidigt: tidsgränsen räknas på den (steg 10.11.25), eftersom
+// processorns tid inte räknar det ett scenario kör i egna processer (strakprov kör byar i egna processer). En grupp får sin tid
+// delad lika på scenarierna i den
+const KLOCKOR = new URL('../../test/scenarioklocka.json', import.meta.url);
+const forraKlocka: Record<string, number> = existsSync(KLOCKOR) ? JSON.parse(readFileSync(KLOCKOR, 'utf8')) : {};
+const klocka: Record<string, number> = {};
 const b2n = (b: string) => b.slice(0, b.indexOf('\n'));
 
 // Utan namn körs alla scenarier samtidigt, vart och ett i en egen process. Med ett namn körs bara det, här.
@@ -90,11 +95,12 @@ else {
   const svar: Record<string, Utfall> = {};
   await pool(grupper.map(g => async () => {
     const kant = g.every(n => forraTid[n] !== undefined), prio = prioAv(kant ? tid(g) : undefined);
-    // tidsgränsen efter förra gången (steg 10.11.25): ett scenario som hänger stoppas efter några minuter. Processorns tid räknas
-    // om till klocktid med marginal, eftersom alla scenarier delar på kärnorna
-    const grans = gransAv(kant ? tid(g) * 1000 * KLOCKA : undefined);
-    if (g.length === 1) { svar[g[0]] = await korSkript('scenario.ts', g, SCENARIER[g[0]]!.env, prio, grans); return; }
+    // tidsgränsen efter förra gångens klocktid (steg 10.11.25): ett scenario som hänger stoppas efter några minuter
+    const grans = gransAv(g.every(n => forraKlocka[n] !== undefined) ? g.reduce((a, n) => a + forraKlocka[n]!, 0) * 1000 : undefined);
+    const t0 = Date.now(), klar = () => { for (const n of g) klocka[n] = Math.round((Date.now() - t0) / 1000 / g.length); };
+    if (g.length === 1) { svar[g[0]] = await korSkript('scenario.ts', g, SCENARIER[g[0]]!.env, prio, grans); klar(); return; }
     const u = await korSkript('scenario.ts', ['--grupp', ...g], {}, prio, grans), bitar = u.out.split(MARK).slice(1);
+    klar();
     for (const b of bitar) { const i = b.indexOf('\n'), n = b.slice(0, i); svar[n] = { code: /^FEL/m.test(b) ? 1 : 0, out: b.slice(i + 1), err: '' }; }
     // kraschade gruppen räknas den som kraschade med felet, och de som inte hann köras körs var för sig. Felkoden ensam är
     // ingen krasch när ett scenario i gruppen skrev FEL (då sätts den av körningen) och inget fel skrevs ut
@@ -116,6 +122,7 @@ else {
     const nya: Record<string, number> = {};
     for (const n of namn) { const m = /^(?:OK|FEL) +\S+ \((\d+) s\)/m.exec(svar[n]?.out ?? ''); if (m) nya[n] = +m[1]; }
     writeFileSync(TIDER, JSON.stringify(Object.fromEntries(Object.entries({ ...forraTid, ...nya }).filter(([n]) => SCENARIER[n]).sort(([a], [b]) => a < b ? -1 : 1)), null, 1) + '\n');
+    writeFileSync(KLOCKOR, JSON.stringify(Object.fromEntries(Object.entries({ ...forraKlocka, ...klocka }).filter(([n]) => SCENARIER[n]).sort(([a], [b]) => a < b ? -1 : 1)), null, 1) + '\n');
   }
   const hoppade = Object.keys(SCENARIER).filter(n => !namn.includes(n));
   if (snabb && hoppade.length) console.log(`(hoppade över de långa: ${hoppade.join(', ')})`);
