@@ -49,7 +49,7 @@ import { GRANNAR4, HOUR, T } from './typer';
 import { UTRUSTNING, harBalte, paSig, paSigVikt } from './utrustning';
 import { PLAGG, kladAv } from './klader';
 import { amountOf, use } from './lager';
-import { capacity } from './lager';
+import { capacity, enPerRuta } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
 import { viktOf } from './saker';
 import { allaTing, ownedBy, toolsOf, wearTool } from './agande';
@@ -1004,7 +1004,7 @@ export function kastat(s: State, p: Person, v: string, d: number, x: number, y: 
   if (wearTool(s, p, v, r() * KAST.slit)) return 'trasig';
   // det som kastas blir ett ting på marken där det landade (steg 8.7.4); det ligger som allt annat utanför lagret och bärs in
   const t = toolsOf(s, v).find(q => q.agare === p.id && q.bar === undefined) ?? toolsOf(s, v)[0];
-  if (t) { t.hos = undefined; t.lass = undefined; t.vid = undefined; t.x = Math.floor(x); t.y = Math.floor(y); count(s, 'kastLigger'); }
+  if (t) { t.hos = undefined; t.lass = undefined; t.vid = undefined; t.x = Math.floor(x); t.y = Math.floor(y); count(s, 'kastLigger'); enPerRuta(s); } // på en upptagen ruta i lagret får det en egen plats
   return undefined;
 }
 

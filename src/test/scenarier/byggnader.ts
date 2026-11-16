@@ -1015,8 +1015,9 @@ SCENARIER.strakprov = {
     return [
       [`båda byarna har hus efter 12 dygn (12 år i spelet): med ${med.hus}, utan ${utan.hus}; med stråken sämre plats ${med.samre}, ingen plats ${med.ingen}, stråk som drogs om ${med.om}`, med.hus > 0 && utan.hus > 0 && !med.utan && utan.utan],
       // lika många hus i båda byarna (de närmaste så många som den mindre byn har): fler hus står av sig själva längre ut
-      ...(() => { const n = Math.min(med.franAlla.length, utan.franAlla.length), a = med.franAlla[n - 1] ?? 0, b = utan.franAlla[n - 1] ?? 0;
-        return [[`med stråken står husen inte mer än 4 rutor längre från byns mitt än utan (det ${n}:e närmaste ${a.toFixed(1)} mot ${b.toFixed(1)}; längst bort ${med.fran.toFixed(1)} av ${med.hus} hus mot ${utan.fran.toFixed(1)} av ${utan.hus})`, a <= b + 4]] as [string, boolean][]; })(),
+      // det mittersta av dem, så att ett enda hus som byarna byggt olika (de växer olika fort) inte avgör
+      ...(() => { const n = Math.min(med.franAlla.length, utan.franAlla.length), m = Math.floor((n - 1) / 2), a = med.franAlla[m] ?? 0, b = utan.franAlla[m] ?? 0;
+        return [[`med stråken står husen inte mer än 4 rutor längre från byns mitt än utan (det mittersta av de ${n} närmaste ${a.toFixed(1)} mot ${b.toFixed(1)}; längst bort ${med.fran.toFixed(1)} av ${med.hus} hus mot ${utan.fran.toFixed(1)} av ${utan.hus})`, a <= b + 4]] as [string, boolean][]; })(),
       [`utan stråken räknas inga hus som fick sämre plats eller stråk som drogs om (${utan.samre}, ${utan.om})`, utan.samre === 0 && utan.om === 0 && utan.ingen === 0],
       [`vakterna larmar inte (${[...med.vakter, ...utan.vakter].join('; ')})`, !med.vakter.length && !utan.vakter.length],
     ];

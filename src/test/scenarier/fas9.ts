@@ -1531,7 +1531,8 @@ SCENARIER.rollekavild = {
     return [
       [`röllekan är ett lager på kartan (${FYND.rolleka.namn}) och växer på ${rutor} rutor på sommaren`, rutor > 50],
       [`under istiden växer den inte (${istid} rutor)`, istid === 0],
-      [`den som samlar plockar den (${SIM.amountOf(b, 'rolleka')} i förrådet efter sex dygn)`, SIM.amountOf(b, 'rolleka') >= 1],
+      // det som plockats räknas, inte det som ligger i förrådet: rövarna kan ha tagit det, eller byn använt det
+      [`den som samlar plockar den (${(b.stat?.samlat_rolleka ?? 0).toFixed(1)} plockade på sex dygn)`, (b.stat?.samlat_rolleka ?? 0) >= 1],
     ];
   },
 };
