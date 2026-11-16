@@ -11,7 +11,7 @@ import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } fr
 import { matOrdning } from './naring';
 import { eldPlats, getMap } from './karta';
 import { Act, DAY, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
-import { MATERIAL, bitAt, lagretsMitt, roofed } from './byggnad';
+import { MATERIAL, bitAt, blocked, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
@@ -1164,6 +1164,7 @@ export function haulJob(s: State, near?: number, baraMat = false) {
     const sc = a.sc + (baraMat && !isFood(a.k) ? LAGER.svaltOmvag : 0); // vid svält bärs maten först (steg 10.2.6)
     if (sc >= bs || taken.has(key(a.x, a.y)) || near !== undefined && a.d > near) continue;
     if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
+    if (blocked(s, a.x, a.y)) continue; // det som ligger i vattnet eller i en vägg når ingen
     if (!finns(a.x, a.y, a.k)) continue; // det har burits sedan listan räknades
     bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why: a.why, k: a.k };
   }

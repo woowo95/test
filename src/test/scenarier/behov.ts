@@ -786,6 +786,7 @@ SCENARIER.halsoflik = {
 };
 
 SCENARIER.naring = {
+  lang: true,
   text: 'Steg 2.6.1: fem näringsvärden (energi, protein, fett, vitaminer, mineraler) fylls av maten efter vad den innehåller och sjunker olika fort. Mättnaden är en sammanfattning av dem: den sjunker som förut när inget värde är slut, och en portion höjer den lika mycket som förut när inget värde blir fyllt',
   kor: () => {
     const s = createState(5, START);

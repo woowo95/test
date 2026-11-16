@@ -686,7 +686,7 @@ const omkringA: AtgardDef = {
     for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {
       if (!inMap(xx, yy)) return [];
       const i = yy * W + xx, t = getMap(s.seed).tiles[i];
-      if (t === T.Vatten || t === T.Sten || gridOf(s).at.has(i)) return [];
+      if (t === T.Vatten || t === T.Sten || gridOf(s).at.has(i) || faltAt(s, xx, yy) || angAt(s, xx, yy)) return []; // inte heller på ett fält eller en slåtteräng
       if (kant(xx, yy) && (paStrak(s, xx, yy) || stationRutor(s).at.has(i) || zonesOf(s).some(z => xx >= z.x && xx < z.x + z.w && yy >= z.y && yy < z.y + z.h) || (s.stackar ?? []).some(q => q.x === xx && q.y === yy))) return [];
     }
     const dorr = dorrPlats(s, x, y, w, h, eldPlats(s));

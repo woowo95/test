@@ -937,6 +937,7 @@ SCENARIER.matchrapport = {
     const s = rikDag(3, { rep: 4 }), v = vuxna(s), a = v[0]!, b = v[1]!;
     a.skill.traff = 18; b.skill.traff = 2;
     SIM.newTing(s, 'mal', 1, a.id);
+    tandEld(s); // elden brinner, så att ingen går från matchen för att tända den
     match(s, 'kast', [a, b]);
     const tanke = (q: Person, r: RegExp) => q.thoughts.find(x => r.test(x.text) && x.until > s.now);
     korTills(s, () => !!s.matcher?.some(x => !x.installd), 3 * 3600);
@@ -3554,7 +3555,7 @@ SCENARIER.spritvard = {
   },
 };
 SCENARIER.festmaltid = {
-  text: 'Festmåltid i kokgropen (steg 10.7.28): kokgropen lagar en stor sats med minst fyra grupper, tre gånger krukans mängder till 12 portioner, när en ritual med mat väntar. Bröllopet utlyses två timmar i förväg; satsen ligger i gropen tills bröllopet börjar och äts då av alla som en måltid på nivån Fest. Blir ingen ritual av läggs satsen i förrådet',
+  text: 'Festmåltid i kokgropen (steg 10.7.28): kokgropen lagar en stor sats med minst fyra grupper, tre gånger krukans mängder till 12 portioner, när en ritual med mat väntar. Bröllopet utlyses två timmar i förväg; satsen ligger i gropen tills bröllopet och äts när det är slut av alla som var med, som en måltid på nivån Fest. Blir ingen ritual av läggs satsen i förrådet',
   kor: () => {
     const sats = (s: SIM.State) => {
       const p = vuxna(s)[0]!;
@@ -3576,7 +3577,8 @@ SCENARIER.festmaltid = {
     const laddad = !!t.grop && t.grop.n >= 1 && t.grop.n <= 12 && SIM.rattInfo(t.grop.r)?.niva === 'fest' && r?.av.reduce((a, [, n]) => a + n, 0) === 21;
     const id = t.grop?.r ?? '', namn = SIM.SAKER[id]?.namn ?? '', n1 = t.grop?.n ?? 0;
     let kvarFore = false;
-    for (let h = 0; h < 3; h++) { s.now += SIM.HOUR; SIM.stepKok(s); if (h === 0) kvarFore = !!t.grop && t.grop.kvar <= 0; SIM.ritualTimme(s); }
+    // alla går till bröllopet när det börjar och äter när det är slut (steg 10.11.10)
+    for (let h = 0; h < 5; h++) { s.now += SIM.HOUR; SIM.stepKok(s); if (h === 0) kvarFore = !!t.grop && t.grop.kvar <= 0; SIM.ritualTimme(s); if (s.ritual) for (const q of SIM.living(s)) q.task = { act: 'ritual', until: s.ritual.slut } as SIM.Task; }
     const folk = SIM.living(s), atit = folk.filter(q => q.thoughts.some(x => x.text === 'Åt en festmåltid')).length;
     const tom = !t.grop;
     // ingen ritual: satsen läggs i förrådet när den är klar

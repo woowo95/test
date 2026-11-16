@@ -1139,6 +1139,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
   const t = stationById(s, tk.ref);
   if (!t || t.kvar > MIN || t.klar !== undefined) return; // flera kan bygga på samma (steg 10.2.5): den som blir klar sist gör inget mer
   t.kvar = 0; t.klar = s.now; gjort(s, p, 'mobel');
+  s.byggV = (s.byggV ?? 0) + 1; // den färdiga räknas: bristen och platserna räknas om (bristNu i projekt.ts)
   const d = stationDef(t.k)!;
   if (d.hard) { // härden är lagd: den blir en eld inne i huset (steg 7.5.3)
     nyEld(s, t);

@@ -45,6 +45,7 @@ SCENARIER.bynsavstand = {
 };
 
 SCENARIER.sparmark = {
+  lang: true,
   text: 'Steg 9.1.4: gräset och skogen sparas som det som skiljer sig från startkartan. En sparad och inläst by får exakt samma mark som med det gamla formatet (en byte per ruta), och sparningen blir mindre',
   kor: () => {
     const s = createState(3, START);

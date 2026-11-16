@@ -79,7 +79,7 @@ SCENARIER.stenring = {
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
     kor(r, 1 / 360); // tio sekunder: tändmaterialet hittas lika fort som bären (steg 2.12.4), och det räcker snart (en tändning, steg 10.2.7)
-    const nara = () => th.task?.act === 'samla' && th.task.phase === 'do' && Math.hypot(th.task.tx - tom.x, th.task.ty - tom.y) <= 6; // rundan (steg 4.5.6.1): hen går omkring på platsen
+    const nara = () => th.task?.act === 'samla' && th.task.phase === 'do' && Math.hypot(th.task.tx - tom.x, th.task.ty - tom.y) <= 8; // rundan (steg 4.5.6.1): hen går omkring på platsen, en sträcka i taget (runda.stracka 8)
     const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) + (th.task!.items?.grenar ?? 0) > 0 // hö eller kvistar: tändmaterialet ligger på rutorna (steg 9.3.4)
       || ((th.task?.act === 'tanda' || th.task?.act === 'ved') && SIM.amountOf(r, 'torrgras') + SIM.amountOf(r, 'grenar') + SIM.getable(r, th, 'torrgras') + SIM.getable(r, th, 'grenar') > 0); // ... eller redan hämtat (höet ligger några få per ruta, steg 10.10.9) och tänder, eller hämtar ved först när elden saknar bränsle, så mycket en tändning tar (steg 10.2.7) och tänder
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);

@@ -5,7 +5,7 @@ import { Ting } from './agande';
 import { ALDER, ageOf } from './folk';
 import { loggBer } from './berattelser';
 import { ownMove, zoneAt } from './lager';
-import { bitAt } from './byggnad';
+import { bitAt, blocked } from './byggnad';
 import { stationAt } from './stationer';
 import { W, H, inMap } from './typer';
 import { grundvarde } from './varde';
@@ -91,7 +91,8 @@ export interface Overl { k: string; a: number; b: number; t: number }
 export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: number; vem?: number; par?: number; byn?: true; byt?: number } // byt = när bytet på filten godkändes (steg 4.5.4.17) // handlare: handlarens id, när det är handlarens filt (ligger tills hen går)
 const filtarOf = (s: State) => (s.filtar ??= []);
 // filten läggs aldrig på en lagerplats, en station, i en dörröppning eller på en byggruta (steg 9.2.44): rutan (x, y) är fri för en filt
-export const filtFri = (s: State, x: number, y: number) => { const X = Math.floor(x), Y = Math.floor(y); return inMap(X, Y) && zoneAt(s, X, Y) < 0 && !stationAt(s, X, Y) && !bitAt(s, X, Y); };
+// en filt ligger på land: aldrig i vattnet eller i en vägg (sakerna på den hamnade annars i sjön, där ingen når dem)
+export const filtFri = (s: State, x: number, y: number) => { const X = Math.floor(x), Y = Math.floor(y); return inMap(X, Y) && !blocked(s, X, Y) && zoneAt(s, X, Y) < 0 && !stationAt(s, X, Y) && !bitAt(s, X, Y); };
 // den närmaste platsen kring (x, y) där två filtar mitt emot varandra (dy isär) båda ligger fritt
 export function filtNara(s: State, x: number, y: number, dy: number) {
   for (let r = 0; r <= 6; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
