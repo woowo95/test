@@ -1975,14 +1975,15 @@ SCENARIER.slatter = {
     const slakt = djur.filter(d => slaktOrsak(s, d) === 'host').length;
     setAmount(s, 'torrgras', djur.length * VINTER.hoPerDjur);
     const ingenSlakt = djur.every(d => slaktOrsak(s, d) !== 'host');
-    // i istiden: ett fähus med en krubba (steg 10.2.88), med plats för några; de andra djuren fryser ihjäl
+    // i istiden: ett fähus med en krubba (steg 10.2.88), med plats för några; de andra djuren fryser ihjäl (det tåligaste djuret
+    // tål kylan 1 + INDIVID.spann gånger så länge, steg 10.10.29)
     const fh = medFahus(s), id = fh?.id ?? -1, plats = SIM.fahusPlats(s);
     for (let i = 0; i < 2; i++) nyttTamdjur(s, 'far', m.x + 3 + i, m.y, undefined, s.now - 3 * DAY); // fler djur än fähuset rymmer
     const n = tamdjurOf(s).filter(d => d.art !== 'hund').length;
     s.kal = SIM.nyKalender(s.now, SIM.ISTID);
     s.stationer = [...(s.stationer ?? []), { id: 990, k: 'kompost', x: m.x + 14, y: m.y + 14, kvar: 0 } as SIM.Station]; SIM.touch(s); /* en färdig kompost, som i scenariot kompost */
     const ko = SIM.komposten(s), rest0 = ko?.kompost?.rest ?? 0;
-    for (let h = 0; h < VINTER.frysTim; h++) { for (const d of tamdjurOf(s)) d.hunger = Math.min(d.hunger, 0.5); stepVinter(s); }
+    for (let h = 0; h < Math.ceil(VINTER.frysTim * (1 + SIM.INDIVID.spann)); h++) { for (const d of tamdjurOf(s)) d.hunger = Math.min(d.hunger, 0.5); stepVinter(s); }
     const inne = tamdjurOf(s).filter(d => d.fahus === id).length, kvar = tamdjurOf(s).filter(d => d.art !== 'hund').length;
     const rest1 = ko?.kompost?.rest ?? 0;
     // djuren i fähuset äter hö

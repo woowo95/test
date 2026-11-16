@@ -1412,9 +1412,9 @@ SCENARIER.skatteskuld = {
     planBuild(s);
     for (let i = 0; i < 48 && h.ag !== a.id; i++) kor(s, 1);
     const kopt = h.ag === a.id, salde = (s.hist?.kronika ?? []).some(k => k[1] === `${d.name} sålde sitt hus för att betala skatten.`);
-    const skuldKopt = d.skatteskuld ?? 0, silverD = ownsAmount(s, d, 'silver');
+    const skuldKopt = d.skatteskuld ?? 0, formD = SIM.formogenheter(s).egen.get(d.id) ?? 0;
     SIM.skattDygn(s, DAY);
-    const betald = (d.skatteskuld ?? 0) < Math.max(skuldKopt, 1e-9) && ownsAmount(s, d, 'silver') < silverD;
+    const betald = (d.skatteskuld ?? 0) < Math.max(skuldKopt, 1e-9) && (SIM.formogenheter(s).egen.get(d.id) ?? 0) < formD; // (med det som kommer närmast beloppet, silver eller en sak)
     // skulden stryks när lagen tas bort
     d.skatteskuld = 50;
     SIM.FRAGOR.bortlag.gor(s, { id: 'skatt' }, undefined);

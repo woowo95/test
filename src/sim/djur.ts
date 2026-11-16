@@ -515,9 +515,16 @@ function bjornBuskar(s: State): number[] {
   return ut;
 }
 // går vägen från a till b över land
+// (varje ruta linjen går genom, också den den bara skär ett hörn av)
 function overLand(vt: Uint8Array | number[], a: { x: number; y: number }, b: { x: number; y: number }) {
-  const n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) * 2);
-  for (let k = 1; k < n; k++) { const x = a.x + (b.x - a.x) * k / n, y = a.y + (b.y - a.y) * k / n; if (vt[Math.floor(y) * W + Math.floor(x)] === T.Vatten) return false; }
+  const dx = b.x - a.x, dy = b.y - a.y, sx = Math.sign(dx), sy = Math.sign(dy);
+  let x = Math.floor(a.x), y = Math.floor(a.y);
+  const x1 = Math.floor(b.x), y1 = Math.floor(b.y), tdx = sx ? Math.abs(1 / dx) : Infinity, tdy = sy ? Math.abs(1 / dy) : Infinity;
+  let tx = sx ? (sx > 0 ? x + 1 - a.x : a.x - x) * tdx : Infinity, ty = sy ? (sy > 0 ? y + 1 - a.y : a.y - y) * tdy : Infinity;
+  for (let k = 0; k < 4 * (W + H) && (x !== x1 || y !== y1); k++) {
+    if (tx < ty) { x += sx; tx += tdx; } else { y += sy; ty += tdy; }
+    if (vt[y * W + x] === T.Vatten) return false;
+  }
   return true;
 }
 // björnens väg under dygnet: ställena den äter vid, med när den kommer fram och när den går. Vägen räknas en gång per dygn,

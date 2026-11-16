@@ -42,12 +42,12 @@ function tamHtml() {
     </dl>`;
 }
 // djurets egenskaper (steg 10.10.29) som symboler: 💪 styrka och 🐾 snabbhet (bara dragdjuren, där de ger lasset och farten),
-// 🛡 tålighet, 🦁 mod och 🤝 tamhet; stapeln är full för den bästa av arten, och texten kommer fram när man håller musen över raden
+// 🛡 tålighet, ⚔ mod och 🤝 tamhet; stapeln är full för den bästa av arten, och texten kommer fram när man håller musen över raden
 function egRader(e: { styrka: number; snabbhet: number; talighet: number; mod: number; tamhet: number }, bas: typeof e, drag: boolean) {
   const topp = 1 + INDIVID.spann, jfr = (v: number, b: number) => v > b * 1.08 ? 'mer än de flesta' : v < b * 0.92 ? 'mindre än de flesta' : 'som de flesta';
   const r = (sym: string, k: keyof typeof e, text: string) => rad(sym, k === 'mod' ? e.mod : e[k] / (bas[k] * topp), `${Math.round(e[k] / bas[k] * 100)} %`, `${text}, ${jfr(e[k], bas[k])} av arten`, 'skill');
   return (drag ? r('💪', 'styrka', 'Styrka: hur tungt lass släden tar') + r('🐾', 'snabbhet', 'Snabbhet: hur fort släden går') : '')
-    + r('🛡', 'talighet', 'Tålighet: hur länge djuret tål svält, kyla och stick') + r('🦁', 'mod', 'Mod: hur nära en fara kommer innan djuret flyr')
+    + r('🛡', 'talighet', 'Tålighet: hur länge djuret tål svält, kyla och stick') + r('⚔', 'mod', 'Mod: hur nära en fara kommer innan djuret flyr')
     + r('🤝', 'tamhet', 'Tamhet: hur fort det går att leda, mjölka, klippa och spänna för djuret');
 }
 // hönsflocken (steg 9.8.10): 🐔 hur många hönor, 🧑 ägaren och äggen om dygnet (inga i istiden)

@@ -1233,8 +1233,9 @@ SCENARIER.handelsfardighet = {
     setAmount(bas, 'torrfisk', 120); setAmount(bas, 'silver', 0); h0.varor = []; h0.silver = 400; SIM.hp(bas, h0).skill.handel = 10;
     if (bas.styre) bas.styre.ledare = undefined;
     // byn säljer fisk för silver med en ovan och en skicklig i Handel
-    const salj = (skill: number, i = 0) => {
+    const salj = (skill: number, i = 0, fisk = 120) => {
       const s = cloneState(bas), p = vuxna(s)[0];
+      setAmount(s, 'torrfisk', fisk);
       s.stat = { ...s.stat }; const l0 = s.stat.lurat ?? 0;
       s.seed = bas.seed; for (let j = 0; j < i; j++) SIM.rnd(s, 'handel');
       p.skill.handel = skill;
@@ -1242,12 +1243,13 @@ SCENARIER.handelsfardighet = {
       helAffar(s, p, true);
       return { silver: amountOf(s, 'silver'), ovat: p.skill.handel > fore, lurad: p.thoughts?.some(t => t.text.startsWith('Blev lurad')) ?? false, lurat: (s.stat?.lurat ?? 0) > l0 };
     };
-    // packningen rymmer mycket här, så att det är silvret som tar slut i bytet och den som lurar har plats för det hen tar extra
+    // packningen rymmer mycket här, så att det är silvret som tar slut i bytet och den som lurar har plats för det hen tar extra.
+    // Luret prövas med mer fisk än handlarens silver räcker till: tar handlaren redan allt byn bjuder ut finns inget mer att lura till sig
     const utr = SIM.HANDLAR_UTR[h0.utr], vikt0 = utr.vikt; utr.vikt = vikt0 * 10;
     let ovan, skicklig, lurat = 0, markt = 0;
     try {
       ovan = salj(0); skicklig = salj(20);
-      for (let i = 0; i < 60; i++) { const r = salj(0, i); if (r.lurat) lurat++; if (r.lurad) markt++; }
+      for (let i = 0; i < 60; i++) { const r = salj(0, i, 400); if (r.lurat) lurat++; if (r.lurad) markt++; }
     } finally { utr.vikt = vikt0; }
     // utan ledare handlar den skickligaste
     const t = cloneState(bas), v = vuxna(t);

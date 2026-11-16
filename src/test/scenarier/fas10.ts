@@ -179,6 +179,9 @@ SCENARIER.vildsvin = {
 
 SCENARIER.byggsten = {
   text: 'Steg 10.10.5: byggstenen. Den bryts vid berget när Byggplanen planerat något av sten, blir liggande där eftersom ingen orkar bära den, och körs hem på kälken, en i taget, eller på släden: fyra med hästen och sex med oxen. Utan kälke eller släde blir stenen liggande',
+  // scenariot prövar brytandet och frakten, inte hur högt byn sätter stenen bland projekten: i en ny by går latrinen, spjuten
+  // och det andra före, så stenen får en hög vikt här (om stenen bryts i byarna avgörs i fasens Balans)
+  env: { BALANS: 'projekt.byggsten=100' },
   kor: () => {
     const { STENBEHOV, FORDON, lassAv, fordonTar, newTing, BYN, living, ageOf, ALDER, amountOf, bergPlats, stenFrakt, TEK } = SIM;
     const tek = TEK.byggsten;
@@ -632,6 +635,7 @@ SCENARIER.bikupa = {
   },
 };
 SCENARIER.bisvarm = {
+  lang: true,
   text: 'Steg 10.10.17: svärmen flyttar in. En tom kupa nära rika vildbon får bin på sommaren men aldrig på våren, hösten eller i istiden, och utan vildbin inom räckhåll kommer ingen svärm. Svärmarna kommer lika ofta med korta som med långa slag, två samhällen intill varandra får halva draget var, en andra kupa byggs först när den första har bin, och en kupa som brinner tar samhället med sig',
   kor: () => {
     const { BIN, binSteg, samhallen, dragDelat, drag, svarmTillgang, kupBrist, stationSite, takenOf, groundOf, BUSKE, BARBUSKE, nyKalender, VAR, SOMMAR, HOST, ISTID, HOUR, taBort, formogenheter } = SIM;

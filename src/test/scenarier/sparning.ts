@@ -254,6 +254,7 @@ SCENARIER.slump = {
 };
 
 SCENARIER.karta = {
+  lang: true,
   text: 'Steg 2.10.9: en ny by får kartan 120 × 120. En äldre by (80 × 50) får den stora kartan när den laddas: den gamla kartan ligger kvar i mitten och ser ut som förut, och allt i byn flyttas lika mycket',
   kor: () => {
     const ny = createState(4, START), nyOk = ny.W === 120 && ny.H === 120 && !ny.kart;

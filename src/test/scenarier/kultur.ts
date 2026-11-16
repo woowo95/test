@@ -559,6 +559,7 @@ SCENARIER.budskap = {
   },
 };
 SCENARIER.bestalld = {
+  lang: true,
   text: 'Beställda framträdanden (steg 4.3.2.4): ledaren betalar den som ska uppträda med en hel sak ur sin egen egendom, och framträdandet hyllar då ledaren. Ledaren ger den minst värda lediga saken, inget när hen inget har, och den som avskyr ledaren tackar nej',
   kor: () => {
     // vid: om ledaren har något att betala med; op: vad den som uppträder tycker om ledaren

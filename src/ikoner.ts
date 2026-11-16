@@ -151,7 +151,7 @@ export const PAL: Record<string, Record<string, string>> = {
   slade: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.3, platshållare (också tekniken Släde)
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
   bisymbol: { o: '#24201d', y: '#b2921b' }, // steg 10.10.25, platshållare: ett bi på fältrutan
-  bivax: { o: '#24201d', h: '#efe0a8', H: '#d8c27a', d: '#b29a52', z: 'rgba(36,32,29,.30)' }, // steg 10.10.20, platshållare
+  bivax: { o: '#24201d', h: '#d8b25f', H: '#b2921b', d: '#906f0f', z: 'rgba(36,32,29,.30)' }, // steg 10.10.20, platshållare
   bikupa: { o: '#24201d', h: '#d8b25f', H: '#b2921b', d: '#906f0f', g: '#5e3c24', z: 'rgba(36,32,29,.30)' }, // steg 10.10.16, platshållare
   honung: { o: '#24201d', h: '#b2921b', H: '#d8b25f', d: '#906f0f', v: '#694902', z: 'rgba(36,32,29,.30)' }, // steg 10.7.25, platshållare
   blomma: { o: '#24201d', g: '#647025', l: '#898b4c', y: '#d8b25f', c: '#bd753e', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.7.3, platshållare
@@ -4240,7 +4240,7 @@ PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka;
 PIX.snickarbank = PIX.flatarbank; PAL.snickarbank = PAL.flatarbank;
 PIX.naverask = PIX.korg; PAL.naverask = PAL.korg;
 PIX.orte = PIX.kruka; PAL.orte = PAL.kruka;
-PAL.s_bistick = { o: '#24201d', y: '#d8b25f', k: '#24201d', r: '#a14808', R: '#d0805a' }; // platshållare för bisticket i hälsofliken (steg 10.10.22): ett litet bi och en röd svullnad
+PAL.s_bistick = { o: '#24201d', y: '#d8b25f', k: '#24201d', r: '#a14808', R: '#bd753e' }; // platshållare för bisticket i hälsofliken (steg 10.10.22): ett litet bi och en röd svullnad
 PIX.s_bistick = [
   '................',
   '................',
@@ -4455,7 +4455,7 @@ for (const k in PIX) if (k.endsWith('_v')) PAL[k] ??= PAL[k.slice(0, -2)];
 // kartbild, som ritas i sin naturliga storlek, aldrig förstorad eller förminskad (steg 5.1.2.1)
 for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; PAL['kb_' + id] = b.pal; }
 // vaxljuset (steg 10.10.24, platshållare): talgljusets bilder med det gula vaxet i stället för den vita talgen
-{ const VAX: Record<string, string> = { '#dad0bb': '#efe0a8', '#bdb39b': '#d8c27a', '#a0947d': '#b29a52' };
+{ const VAX: Record<string, string> = { '#dad0bb': '#d8b25f', '#bdb39b': '#b2921b', '#a0947d': '#906f0f' };
   const gul = (p: Record<string, string>) => Object.fromEntries(Object.entries(p).map(([c, f]) => [c, VAX[f] ?? f]));
   for (const v of ['1', '2', '1_tand', '2_tand']) if (KARTBILDER['talgljus' + v]) { PIX['kb_vaxljus' + v] = KARTBILDER['talgljus' + v].rader; PAL['kb_vaxljus' + v] = gul(KARTBILDER['talgljus' + v].pal); }
   PIX.vaxljus = KARTBILDER.talgljus.rader; PAL.vaxljus = gul(KARTBILDER.talgljus.pal); }
