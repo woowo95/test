@@ -8,6 +8,11 @@ Regler som tvingar fram ett resultat i stället för att systemen ger det, i hel
 
 Varje fynd anger var regeln finns, vad den tvingar fram, vad som saknas i systemet, vilket system som kunde avgöra i stället, vad du skulle märka i spelet och hur stort bygget är.
 
+
+## Björns svar
+
+Ja till fynd 1–5, 7, 8, 10–12 och 14, fynd 6 bara för vattnet, vattningen och säcken, att mata djur, vattenhon och staketet, och gränsfall 20, 22, 33, 34, 36, 39 och 40. De blev stegen 10.11.3–10.11.21 i Färdplanen, i den ordningen. Bordet (fynd 10) räknas per hus efter dem som bor där och vad som får plats, och efter hela byn i samlingssalen och långhuset, med värdet efter platser per virke. Gränsfall 35 (skyddet för små byar) prövas i Balansen (10.11.23). Fynd 9 och 13 väntar. Kodgenomgången är nu 10.11.22.
+
 ## Fynd 1–14
 
 1. **Släckarna får bara välja en ruta som ingen annan släcker** (`brand.ts:673–674` `brandMal`, och samma filter i `slackaSteg` rad 737 och 740).
@@ -171,7 +176,7 @@ Mindre gränsfall, som jag tror är grundregler: striden slutar 20 sekunder efte
 
 **Står kvar som de beskrevs:** 1, 2, 13, 19, 22, 41 (se fynd 7), 48, 67, 70, 72, 73, 74, 75, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92 (se fynd 14), 93, 94, 95, 96 och 97. Nummer 76 (maten äts i registrets ordning) är inte kontrollerat den här gången.
 
-Dessutom två gamla kommentarer, som rättas i kodgenomgången 10.11.3: `matlagning.ts:123` nämner `TORK.maxStall`, som inte finns längre, och `klader.ts:12` säger "i ordningen", fast valet nu är en summa med vikter.
+Dessutom två gamla kommentarer, som rättas i kodgenomgången 10.11.22: `matlagning.ts:123` nämner `TORK.maxStall`, som inte finns längre, och `klader.ts:12` säger "i ordningen", fast valet nu är en summa med vikter.
 
 ## Bedömt som grundregler
 
