@@ -1,6 +1,6 @@
 import { bynsMitt } from './omrade';
 import { balans } from './balans';
-import { ALDER, ageOf, count, living, log } from './folk';
+import { ALDER, ageOf, count, enTillDar, living, log } from './folk';
 import { motgangNu, motgangTal } from './motgang';
 import { bitsOf, roofed, touch } from './byggnad';
 import { avbryt, flodUndan, stacksOf, tidy } from './lager';
@@ -11,7 +11,7 @@ import { iVattnetNu, vattenNu } from './sjo';
 import { vattnetAndrat } from './torka';
 import { areaOf, bynsMinne } from './minne';
 import { eldPlats } from './karta';
-import { DAY, HOUR, State, T, W } from './typer';
+import { DAY, HOUR, State, T, Task, W } from './typer';
 
 // Översvämningen (steg 3.8.3, "Motgångarna i spelet" i designdokumentet). En av motgångarna i registret MOTGANGAR
 // (motgang.ts), på våren och hösten: efter ett långt regn stiger sjön en ruta i taget, en till tre rutor upp på marken
@@ -82,12 +82,16 @@ export function stepFlod(s: State) {
   lera(s);
   if (s.flodHot) serFloden(s);
 }
-// de vakna vuxna ser vattnet stiga: når det maten och ingen bär undan den än, avbryter de det de gör och väljer om (raden flod i
-// val.ts bär undan den). Det som fortsätter i en brand (strid, vård, den som bärs eller föder) fortsätter också nu
+// de vakna vuxna ser vattnet stiga: når det maten, avbryter de det de gör och väljer om (raden flod i val.ts bär undan den). Fler
+// hjälps åt (steg 10.11.16): chansen att en till avbryter faller med hur många som redan bär undan (enTillDar i folk.ts), och så
+// länge det finns mat kvar att bära (flodUndan) kommer fler. Det som fortsätter i en brand (strid, vård, den som bärs eller föder)
+// fortsätter också nu
+const barUndan = (t: Task) => !!t.why?.startsWith('Vattnet stiger');
 function serFloden(s: State) {
-  if (!flodUndan(s) || living(s).some(p => p.task?.act === 'bara' && p.task.why?.startsWith('Vattnet stiger'))) return;
+  if (!flodUndan(s)) return;
   for (const p of living(s)) {
     if (!p.task || p.task.act === 'sova' || p.task.act === 'badd' || p.task.act === 'bara' || ageOf(p, s.now) < ALDER.vuxen || !larmAvbryter(p.task.act, 'brand')) continue;
+    if (!enTillDar(s, 'bara', p, barUndan)) continue;
     avbryt(s, p); p.task = undefined; count(s, 'flod avbryter');
   }
 }
