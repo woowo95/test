@@ -46,10 +46,11 @@ export function stepBoskap(s: State) {
   const istid = iIstiden(kalender(s).ai);
   for (const d of tamdjurOf(s)) {
     if (tamArt(d.art).ull) d.ull = Math.min(1, (d.ull ?? 0) + BOSKAP.ullTim);
-    if (tamArt(d.art).mjolk && hona(d) && vuxen(s, d) && !istid && d.hunger < BOSKAP.hungrig) d.mjolk = Math.min(1, (d.mjolk ?? 0) + BOSKAP.mjolkTim);
+    if (tamArt(d.art).mjolk && hona(d) && vuxen(s, d) && !istid && d.hunger < BOSKAP.hungrig && !d.torstTim) d.mjolk = Math.min(1, (d.mjolk ?? 0) + BOSKAP.mjolkTim);
   }
 }
 
+// (ett djur utan vatten ger ingen mjölk, steg 10.10.31)
 // det köpta levande djuret blir ett vuxet djur där det ligger, och ägs av den som ägde varan (annars byn); det fångade (kultingen)
 // blir ett ungt djur, fött nu, och ägs av den som vittjade fällan
 function kopta(s: State) {

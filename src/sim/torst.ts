@@ -54,6 +54,7 @@ export const TORST = balans('torst', {
   fyllMin: 3, // så många minuter det tar att fylla vattensäcken vid vattnet (steg 2.10.1)
   hamtaR: 30, // man hämtar vatten åt den som inte kan gå och är högst så här många rutor bort
   hamtaTorst: 2, hamtaFalt: 1, hamtaKok: 0.3, // vattnets poäng (steg 10.2.37): gånger törsten, gånger hur torrt fältet är, och örtköket
+  hamtaDjur: 1, // vattenhons poäng (steg 10.10.31): gånger hur tom hon är och hur många djur som dricker ur den
   hander: 0.35, // så mycket av törsten släcks av vattnet som bärs i händerna, utan säck eller kruka (steg 10.2.35)
   ammaAr: 1, // under så här många år dricker barnet av sin mor när hon är nära ...
   ammaNara: 6, // ... högst så här många rutor bort
@@ -211,7 +212,7 @@ function smutsigt(s: State, p: Person, i: number) {
 // ---------- vattensäcken (steg 2.10.1) ----------
 // Den som inte kan gå och ligger hemma törstar. En vuxen som kan gå tar byns vattensäck, fyller den vid vattnet (där hen
 // skulle ha druckit själv) och bär den till hen. Det väljs som vården, före förbättringarna (val.ts). Säcken slits en gång per tur
-const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && o.task.ref === q.id);
+const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && !o.task.ho && o.task.ref === q.id);
 // under torkan (steg 3.8.2) vattnar ägaren sitt fält med säcken när grödan snart vissnar, om ingen annan redan gör det
 const vattnas = (s: State, f: Falt) => living(s).some(o => o.task?.act === 'vatten' && o.task.falt && o.task.ref === f.id);
 // ett fält som behöver vatten: under torkan när grödan snart vissnar (steg 3.8.2), och annars när rutor på familjens fält är torrare än
@@ -222,7 +223,7 @@ const torrtFalt = (s: State, p: Person) => faltOf(s).find(f => (f.agare === p.id
 // örtköket behöver vatten (steg 7.6.6): ingen säck står fylld, ingen fyller en, och byn vill ha något som kokas med vatten och som
 // någon kan göra. ref = FYLL i uppgiften: säcken fylls och blir stående fylld
 const FYLL = 0;
-const villFylla = (s: State, p: Person) => !fylldSack(s) && !living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && o.task.ref === FYLL) && TILLVERKA_LIST.some(k => {
+const villFylla = (s: State, p: Person) => !fylldSack(s) && !living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && !o.task.ho && o.task.ref === FYLL) && TILLVERKA_LIST.some(k => {
   const d = TILLVERKA[k];
   return d.vatten && amountOf(s, d.ger) < d.vill && kanGoras(s, d.act) && living(s).some(q => knows(q, d.tek)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n);
 });
@@ -255,7 +256,10 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   return best ? { spot, ref: best.id, why: `Hämtar vatten i ${i} åt ${best.name}`, karl } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true, karl };
 }
 // säcken är fylld (KLAR i steg.ts): bär den till den törstige, eller låt den stå fylld till örtköket (FYLL). Utan säck i handen blir det inget
+// vattenhon (steg 10.10.31): kärlet fylls och bärs dit, och vattnet hälls i (satt i djurtorst.ts, som läses efter den här filen)
+export const hoKrok = { fylld: (_s: State, _p: Person, _t: Task) => undefined as void, fram: (_s: State, _p: Person, _t: Task) => undefined as void };
 export function vattenFylld(s: State, p: Person, t: Task) {
+  if (t.ho) { hoKrok.fylld(s, p, t); return; } // till vattenhon (djurtorst.ts, steg 10.10.31)
   if (t.ref === FYLL && !t.falt) { // till örtköket: säcken står fylld tills någon kokar med den
     const karl = t.tool ?? 'vattensack', k = toolsOf(s, karl).find(q => q.hos === p.id) ?? toolsOf(s, karl)[0];
     if (t.tool && k) { k.inne = { v: 'vatten', n: 1 }; wearUsed(s, p, 1); count(s, 'sack fylld'); } // vattnet i säcken eller krukan (steg 9.4.14)
@@ -271,6 +275,7 @@ export function vattenFylld(s: State, p: Person, t: Task) {
 }
 // framme hos den törstige (arrive i steg.ts): hen dricker, och säcken slits
 export function vattenFram(s: State, p: Person, t: Task) {
+  if (t.ho) { hoKrok.fram(s, p, t); p.task = undefined; return; } // vattnet hälls i hon (djurtorst.ts, steg 10.10.31)
   if (t.falt) { // vattnet på fältet: en säck räcker till TORKA.sackRutor rutor
     const f = faltById(s, t.ref), n = t.tool === 'lerkruka_mellan' ? JORD.karlRutor : TORKA.sackRutor;
     if (f && f.vatten !== undefined) {

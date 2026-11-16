@@ -13,6 +13,7 @@ import { lagerIStraket } from './strak';
 import { angIVagen, angMark } from './slatter';
 import { tamFaraSteg } from './djurflykt';
 import { hoRegn } from './vattenho';
+import { djurTorstSteg } from './djurtorst';
 import { rumVila } from './rum';
 import { PLAN, planBuild, stepByggplan } from './byggplan';
 import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, sattVid, stepMjardar, valjFisk, vittja } from './fisk';
@@ -538,6 +539,7 @@ export const TAKTER: Takt[] = [
   { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
   { namn: 'ängen i vägen', sek: 3600, fn: s => { angIVagen(s); } }, // ängen som byn eller ett stråk når flyttas (slatter.ts, steg 10.10.28); sist, så att de andra radernas förskjutning är som förut
   { namn: 'vattenhon', sek: 600, fn: (s, dt) => hoRegn(s, dt) }, // regnet fyller vattenhon (vattenho.ts, steg 10.10.30)
+  { namn: 'djurens törst', sek: 600, fn: (s, dt) => djurTorstSteg(s, dt) }, // tamdjuren dricker (djurtorst.ts, steg 10.10.31)
   { namn: 'djuren flyr', sek: 0, fn: (s, dt) => tamFaraSteg(s, dt) }, // tamdjuren flyr från bina, elden och vargarna efter sitt mod (djurflykt.ts, steg 10.10.29)
 ];
 // de som behöver räknas varje slag fast de står på sin plats: striden, elden och den som brinner, vården och samtalet
@@ -741,7 +743,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const tk = p.task!, d = ACTS[tk.act];
     let used: number;
     if (tk.phase === 'go' || tk.phase === 'back') {
-      if ((tk.act === 'varda' && tk.phase === 'go') || (tk.act === 'vatten' && tk.phase === 'back' && !tk.falt)) vardMal(s, tk); // den skadade kan ha flyttat sig
+      if ((tk.act === 'varda' && tk.phase === 'go') || (tk.act === 'vatten' && tk.phase === 'back' && !tk.falt && !tk.ho)) vardMal(s, tk); // den skadade kan ha flyttat sig
       const w = walk(s, p, tk, left);
       used = w.used;
       if (tk.bar !== undefined && !barMed(s, p, tk)) { left -= used; continue; } // den som bärs följer med

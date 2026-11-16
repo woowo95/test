@@ -1176,3 +1176,77 @@ SCENARIER.vattenho = {
     ];
   },
 };
+
+SCENARIER.djurtorst = {
+  text: 'Steg 10.10.31: djurens törst. Djuren i en hage vid stranden dricker själva; i en hage utan vatten dricker de ur hon och skötaren fyller den; ett djur utan vatten slutar ge mjölk och dör efter ett dygn, senare om det är tåligt; snön räcker när den ligger, och törsten växer lika mycket med korta som med långa slag',
+  lang: true,
+  kor: () => {
+    const { TAM, HO, setAmount, stepBoskap, hoarOf, hoI, hageVidVatten, hagarOf, djurTorstSteg, nyttTamdjur, tamdjurOf, tamEg, isKlar, DAY } = SIM;
+    const torr = (b: SIM.State) => { b.vader = { ...(b.vader ?? { fukt: 0.5 }), sno: 0 } as typeof b.vader; };
+    // en hage vid stranden: en ruta intill vattnet
+    const a = createState(4, START); klockan(a, 10); torr(a);
+    const tl = SIM.getMap(a.seed).tiles, Wa = SIM.W;
+    let vid: { x: number; y: number } | undefined;
+    for (let i = 0; i < tl.length && !vid; i++) if (tl[i] === SIM.T.Vatten && tl[i + 1] !== SIM.T.Vatten && tl[i + 2] !== SIM.T.Vatten) vid = { x: i % Wa + 1, y: Math.floor(i / Wa) };
+    a.hagar = [{ id: 1, x: vid!.x, y: vid!.y, w: 2, h: 1 }];
+    const f1 = nyttTamdjur(a, 'far', vid!.x + 0.5, vid!.y + 0.5, undefined, a.now - 4 * DAY); f1.hage = 1;
+    for (let t = 0; t < 13; t++) { torr(a); djurTorstSteg(a, 3600); }
+    const strand = hageVidVatten(a, a.hagar[0]) && (a.stat?.djurDrack_stranden ?? 0) >= 1 && !f1.torstTim;
+    // törsten per tid: korta och långa slag
+    const k1 = nyttTamdjur(a, 'ko', vid!.x, vid!.y), k2 = nyttTamdjur(a, 'ko', vid!.x, vid!.y); k1.torst = 0; k2.torst = 0; k1.hage = k2.hage = 1;
+    const b1 = SIM.cloneState(a), b2 = SIM.cloneState(a);
+    for (let t = 0; t < 6 * 60; t++) djurTorstSteg(b1, 60);
+    djurTorstSteg(b2, 6 * 3600);
+    const t1 = tamdjurOf(b1).find(d => d.id === k1.id)!.torst!, t2 = tamdjurOf(b2).find(d => d.id === k1.id)!.torst!;
+    // snön: en hage utan vatten och utan ho, med snö på marken
+    const c = SIM.cloneState(a); c.hagar = [{ id: 2, x: 5, y: 5, w: 3, h: 3 }];
+    for (const d of tamdjurOf(c)) { d.hage = 2; d.torst = 1; }
+    c.vader = { ...(c.vader ?? { fukt: 0.5 }), sno: 1 } as typeof c.vader; djurTorstSteg(c, 600);
+    const sno = tamdjurOf(c).every(d => d.torst === 0) && (c.stat?.djurDrack_sno ?? 0) >= 1;
+    // utan vatten: geten ger ingen mjölk och dör; den tåligare lever längre
+    const e = SIM.cloneState(a); e.hagar = [{ id: 3, x: 5, y: 5, w: 3, h: 3 }];
+    e.tamdjur = []; const getter = Array.from({ length: 6 }, () => { const g = nyttTamdjur(e, 'get', 6, 6, undefined, e.now - 4 * DAY); g.hage = 3; g.hona = true; g.mjolk = 0; g.torst = 1; return g; });
+    const [klen, talig] = [...getter].sort((x, y) => tamEg(x).talighet - tamEg(y).talighet).filter((_, i, l) => i === 0 || i === l.length - 1);
+    let mjolkUtan = 0, dKlen = 0, dTalig = 0;
+    for (let t = 1; t <= 60 && !(dKlen && dTalig); t++) {
+      torr(e); djurTorstSteg(e, 3600); for (const g of tamdjurOf(e)) g.hunger = 0; stepBoskap(e);
+      if (t === 6) mjolkUtan = klen.mjolk ?? 0;
+      if (!dKlen && klen.dog !== undefined) dKlen = t; if (!dTalig && talig.dog !== undefined) dTalig = t;
+    }
+    const notis = (e.notiser?.lista ?? []).some(n => n.id === 'djurtorst');
+    // en hage utan vatten i en by: hon byggs, djuren dricker ur den och skötaren fyller den
+    let s: SIM.State | undefined, h: SIM.Hage | undefined;
+    for (let seed = 3; seed < 30 && !h; seed++) {
+      const b = createState(seed, START); klockan(b, 8);
+      const p = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen)[0];
+      setAmount(b, 'levfar', 3); stepBoskap(b);
+      for (const q of SIM.living(b)) (q.tek ??= {}).staket = 1;
+      setAmount(b, 'grenar', 400); setAmount(b, 'rep', 4);
+      const mat = SIM.hageUppgift(b, p); if (mat?.ref === -1) SIM.hageKlar(b, p, -1);
+      for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
+      for (let d = SIM.vallaVal(b, p), n = 0; d && n < 5; d = SIM.vallaVal(b, p), n++) SIM.vallaKlar(b, p, d.id);
+      const hg = hagarOf(b)[0];
+      if (hg && !hageVidVatten(b, hg) && tamdjurOf(b).some(d => d.hage === hg.id)) { s = b; h = hg; }
+    }
+    let fylld = 0, drack = 0, levde = false;
+    if (s && h) {
+      setAmount(s, 'virke', 6);
+      for (let t = 0; t < 24 && !hoarOf(s).some(isKlar); t++) kor(s, 1, torr);
+      const ho = hoI(s, h);
+      if (ho) {
+        ho.vatten = 2; const f0 = s.stat?.hoFylld ?? 0, d0 = s.stat?.djurDrack_vattenhon ?? 0, n0 = tamdjurOf(s).length;
+        { const [p1, p2] = SIM.living(s).filter(r => SIM.ageOf(r, s!.now) >= SIM.ALDER.vuxen); SIM.addTool(s, 'vattensack', p1); SIM.addTool(s, 'lerkruka_mellan', p2 ?? p1); } // vattnet bärs i en säck eller kruka
+        kor(s, 36, torr);
+        fylld = (s.stat?.hoFylld ?? 0) - f0; drack = (s.stat?.djurDrack_vattenhon ?? 0) - d0; levde = tamdjurOf(s).length >= n0;
+      }
+    }
+    return [
+      [`djuren i en hage vid stranden dricker själva (${strand})`, strand],
+      [`törsten växer lika mycket med korta som med långa slag (${t1.toFixed(4)} och ${t2.toFixed(4)})`, Math.abs(t1 - t2) < 1e-9 && t1 > 0.4 && t1 < 0.6],
+      [`när snön ligger äter djuren snö (${sno})`, sno],
+      [`en get utan vatten ger ingen mjölk (${mjolkUtan})`, mjolkUtan === 0],
+      [`utan vatten dör den klena efter ${dKlen} timmar och den tåliga efter ${dTalig} (ett dygn är ${TAM.torstDod} timmar), med en notis (${notis})`, dKlen > 0 && dTalig > dKlen && dKlen >= TAM.torstDod * 0.7 && notis],
+      [`i en hage utan vatten dricker djuren ur hon (${drack} gånger) och skötaren fyller den (${fylld} vatten av ${HO.rymmer}); inget djur dog (${levde})`, !!h && drack > 0 && fylld > 0 && levde],
+    ];
+  },
+};

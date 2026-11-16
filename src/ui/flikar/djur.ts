@@ -1,4 +1,4 @@
-import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, tamArt, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, tamEg, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, FLOCKARTER, flockGrupper, flockdjurOf, vargarOf } from '../../sim';
+import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, tamArt, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, tamEg, HO, hoI, hageVidVatten, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, FLOCKARTER, flockGrupper, flockdjurOf, vargarOf } from '../../sim';
 import { djurBild, hasIcon, iconCanvas, iconImg } from '../../ikoner';
 import { bar, condBar, esc, pLink } from '../hjalp';
 import { HONS_ID0, arHona, arTamt, djurSynliga } from '../vaxter';
@@ -25,13 +25,14 @@ function tamHtml() {
   const d = (s.tamdjur ?? []).find(x => x.id === ui.djurId && x.dog === undefined);
   if (!d) return '<p class="muted">Djuret finns inte längre.</p>';
   const a = TAMDJUR[d.art], alder = Math.floor(tamAlder(s, d)), q = byId(s, d.agare), hage = hageById(s, d.hage), fahus = d.fahus !== undefined ? fahusOf(s).find(h => h.id === d.fahus) : undefined;
-  const pr = (v: number) => `${Math.round(v * 100)} %`, rd = (sym: string, text: string, inre: string) => `<dt title="${esc(text)}">${sym}</dt><dd title="${esc(text)}">${inre}</dd>`;
-  const plats = fahus ? rd('🏠', 'Står i fähuset under istiden', 'Fähuset') : hage ? rd('🍃', 'Går i hagen och betar', `Hagen ${hage.w} × ${hage.h}`) : rd('🍃', 'Går lös och betar där det finns bete', 'Lös');
+  const ho = hage ? hoI(s, hage) : undefined, pr = (v: number) => `${Math.round(v * 100)} %`, rd = (sym: string, text: string, inre: string) => `<dt title="${esc(text)}">${sym}</dt><dd title="${esc(text)}">${inre}</dd>`;
+  const plats = fahus ? rd('🏠', 'Står i fähuset under istiden', 'Fähuset') : hage ? rd('🍃', ho ? `Går i hagen och betar. Vattenhon har ${ho.vatten ?? 0} av ${HO.rymmer} vatten` : hageVidVatten(s, hage) ? 'Går i hagen och betar, och dricker vid stranden' : 'Går i hagen och betar', `Hagen ${hage.w} × ${hage.h}${ho ? ` · ${ho.vatten ?? 0}/${HO.rymmer}` : ''}`) : rd('🍃', 'Går lös och betar där det finns bete', 'Lös');
   return `
     <div class="phead">${levande({ art: a.ikon, id: d.id })}<div><h2>${esc(tamNamn(d))}</h2></div></div>
     <dl class="kv">
       ${rd('🕓', `${alder} år gammal (ett dygn är ett år i spelet). ${tamNamn(d)} lever högst ${a.liv} år`, `${alder} år`)}
       ${rad('🍖', d.hunger, pr(d.hunger), d.hunger >= 1 ? 'Svälter' : d.hunger >= 0.5 ? 'Hungrig: behöver mat' : 'Mätt', d.hunger > 0.6 ? 'low' : '')}
+      ${rad(iconImg('a_vatten', 14), 1 - (d.torst ?? 0), d.torstTim ? `${Math.floor(d.torstTim)} h utan` : pr(1 - (d.torst ?? 0)), d.torstTim ? `Har inte fått vatten på ${Math.floor(d.torstTim)} timmar och ger ingen mjölk` : 'Vätskan: djuret dricker när den är slut, vid stranden, ur vattenhon eller snö', d.torstTim ? 'low' : 'skill', true)}
       ${rd('🧑', d.agare !== undefined ? 'Ägaren. Djuret ärvs och matas av hen' : 'Byn äger djuret', q ? pLink(q) : d.agare !== undefined ? '–' : 'Byn')}
       ${d.art === 'hund' && d.lojal !== undefined ? rad('❤', d.lojal, pr(d.lojal), 'Lojalitet mot ägaren: växer när ägaren matar och är nära, sjunker när hen är långt borta och när hunden är hungrig', 'skill') : ''}
       ${tamArt(d.art).ull ? rad(iconImg('ull', 14), d.ull ?? 0, pr(d.ull ?? 0), (d.ull ?? 0) >= 1 ? 'Ullen är full och kan klippas' : 'Ullen växer ut och klipps med kniven', 'skill', true) : ''}
