@@ -8,7 +8,7 @@ import { clamp } from './slump';
 import { LAGER, amountOf, lagerFlyttVal } from './lager';
 import { materialBuffert, stationBrist, tillverkVill, villAv, villHaAv } from './forradsmal';
 import { SAKER } from './saker';
-import { KLADER, PLAGG, PLAGG_LIST } from './klader';
+import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST } from './klader';
 import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
@@ -119,7 +119,8 @@ const NAMN: Record<string, string> = { kniv: 'Kniv', yxa: 'Yxa', spjut: 'Spjut',
 const redskap = (g: string): ProjektDef => {
   const k = GORS[g].reduce((a, b) => grundvarde(b) < grundvarde(a) ? b : a); // det billigaste slaget räknas i kostnaden
   return {
-    namn: NAMN[g] ?? SAKER[GORS[g][0]]!.namn, vikt: (PROJEKT_TAL as Record<string, number>)[g] ?? 1, ...((PLAGG as Record<string, { varme?: number }>)[g]?.varme ? { motKyla: true as const } : {}),
+    // ett plagg som klär en kroppsdel som annars är naken väger också för tanken det tar bort (KLADER.humorVarde, steg 10.2.72)
+    namn: NAMN[g] ?? SAKER[GORS[g][0]]!.namn, vikt: ((PROJEKT_TAL as Record<string, number>)[g] ?? 1) * (NAKEN_PLATS[(PLAGG as Record<string, { plats?: string }>)[g]?.plats ?? ''] ? 1 - KLADER.humorVarde * KLADER.nakenDel : 1), ...((PLAGG as Record<string, { varme?: number }>)[g]?.varme ? { motKyla: true as const } : {}),
     // under bufferten: hur stor del som saknas. Över den, upp till taket (steg 10.2.74): ett till är värt mindre ju närmare taket,
     // och det som kan ersättas av ett bättre är också värt något; vägs med poäng mot att fylla förråden
     brist: s => {

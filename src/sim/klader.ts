@@ -17,8 +17,11 @@ import type { SakDef } from './saker';
 import { balans } from './balans';
 
 export const KLADER = balans('klader', {
-  naken: -0.06, // humöret för den som är helt naken (steg 10.2.72) ...
-  nakenDel: -0.015, // ... och för varje del (fötterna, benen, överkroppen) som saknar plagg
+  naken: -0.15, // humöret för den som är helt naken (steg 10.2.72): kläderna är nästan ett grundbehov ...
+  nakenDel: -0.05, // ... och för varje del (fötterna, benen, överkroppen) som saknar plagg
+  // ett plagg som klär en av delarna är värt mer i projekten (projekt.ts): 1 + så här mycket gånger tanken det tar bort (nakenDel),
+  // så att byn syr det som gör folk olyckliga att sakna
+  humorVarde: 100,
   kylaVikt: 1.5, // ett plagg som värmer väger så här mycket mer i projekten när kylan är som störst (coldOf 1, steg 10.2.71)
   vinterVarm: 1.5, // ett material minst så här varmt (gånger kaninskinnet) håller bäraren varm nog när kylan kommer (punkt 1)
   hotTim: 48, // vargar sedda nära byn eller en strid i byn för högst så här många timmar sedan: byn hotas (punkt 2)
@@ -29,6 +32,8 @@ export const KLADER = balans('klader', {
   vKyla: 8, vHot: 5, vSaknas: 3, vGottOm: 2, vDyrt: 1.5, vFin: 1, vVarde: 0.5,
 });
 
+// platserna på kroppen där den som saknar plagg känner sig naken (stepNaken i steg.ts): skjortan och rocken klär överkroppen
+export const NAKEN_PLATS: Record<string, string> = { fotter: 'fotter', ben: 'ben', inre: 'kropp', yttre: 'kropp' };
 export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'ull' | 'flatat' | 'smycke'; // ull: ylletyget (steg 9.8.14), som tyget men också till kappan, manteln och sjalen
 type Skadeslag = 'hugg' | 'stick' | 'slag' | 'bett';
 // ett plagg. namn = hur plagget börjar ("Rock" i "Rock av vargskinn"), ord = i en mening ("en rock", "ett par skor"),
@@ -104,6 +109,7 @@ const KLADMATERIAL_DEF = {
   farskinn: { sak: 'farskinn', namn: 'fårskinn', slag: 'skinn', bit: 1, varme: 1.4, hallbar: 1, vikt: 1.2, skydd: 1, finhet: 0 }, // fårets och getens skinn (steg 10.3.14): fårskinnet med ullen är varmare än harens
   getskinn: { sak: 'getskinn', namn: 'getskinn', slag: 'skinn', bit: 1, varme: 1.1, hallbar: 1.2, vikt: 1.1, skydd: 1.1, finhet: 0 },
   svinskinn: { sak: 'svinskinn', namn: 'svinskinn', slag: 'skinn', bit: 1, varme: 0.9, hallbar: 1.4, vikt: 1.3, skydd: 1.3, finhet: 0 }, // vildsvinets borstiga skinn (steg 10.10.4): tåligt men inte så varmt
+  radjursskinn: { sak: 'radjursskinn', namn: 'rådjursskinn', slag: 'skinn', bit: 1, varme: 1.2, hallbar: 1.2, vikt: 1.1, skydd: 1.1, finhet: 1 }, // rådjurets skinn: tunt och smidigt, lite varmare och tåligare än harens
   kohud: { sak: 'kohud', namn: 'kohud', slag: 'skinn', bit: 1, varme: 1.2, hallbar: 1.6, vikt: 1.6, skydd: 1.4, finhet: 0 }, // kons hud (steg 10.10.1): tjock, tung och tålig
   lader: { sak: 'lader', namn: 'läder', slag: 'lader', bit: 1, varme: 1.3, hallbar: 1.5, vikt: 1.2, skydd: 1.4, finhet: 1 }, // steg 7.7.6
   lintyg: { sak: 'lintyg', namn: 'lin', slag: 'tyg', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 2 }, // steg 7.7.9

@@ -4291,6 +4291,7 @@ PIX.rock_vitskinn = ROCK16; PAL.rock_vitskinn = { o: '#7e7362', G: '#bdb39b', H:
 PIX.rock_svinskinn = ROCK16; PAL.rock_svinskinn = { o: '#24201d', G: '#474138', H: '#61767a', g: '#24201d', W: '#dad0bb' }; PIX.skor_svinskinn = SKOR16; PAL.skor_svinskinn = { o: '#24201d', G: '#474138', H: '#61767a', d: '#24201d', W: '#dad0bb' }; // platshållare (steg 10.10.4)
 PIX.rock_kohud = ROCK16; PAL.rock_kohud = { o: '#24201d', G: '#5e3c24', H: '#987e62', g: '#24201d', W: '#dad0bb' }; PIX.skor_kohud = SKOR16; PAL.skor_kohud = { o: '#24201d', G: '#5e3c24', H: '#987e62', d: '#24201d', W: '#dad0bb' }; // platshållare (steg 10.10.1)
 PIX.rock_getskinn = ROCK16; PAL.rock_getskinn = { o: '#24201d', G: '#987e62', H: '#bdb39b', g: '#7d5b40', W: '#dad0bb' }; PIX.skor_getskinn = SKOR16; PAL.skor_getskinn = { o: '#24201d', G: '#987e62', H: '#bdb39b', d: '#7d5b40', W: '#dad0bb' };
+PIX.rock_radjursskinn = ROCK16; PAL.rock_radjursskinn = { o: '#24201d', G: '#987e62', H: '#bdb39b', g: '#5e3c24', W: '#dad0bb' }; PIX.skor_radjursskinn = SKOR16; PAL.skor_radjursskinn = { o: '#24201d', G: '#987e62', H: '#bdb39b', d: '#5e3c24', W: '#dad0bb' }; // platshållare: rådjurets rödbruna skinn
 // steg 7.1.2: axelremmen, en platshållare (en rem snett över bröstet från axeln till höften, med en knut av rep) tills Björn
 // valt bland versionerna i bildstilen (steg 7.1.4)
 const AXELREM16 = [
@@ -4311,7 +4312,7 @@ const AXELREM16 = [
   '...........oGHo.',
   '............oo..',
 ];
-for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#61767a', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#7d5b40'], ['farskinn', '#bdb39b', '#dad0bb'], ['getskinn', '#987e62', '#bdb39b'], ['kohud', '#5e3c24', '#987e62'], ['svinskinn', '#474138', '#61767a'], ['vitskinn', '#bdb39b', '#dad0bb']]) {
+for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#61767a', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#7d5b40'], ['farskinn', '#bdb39b', '#dad0bb'], ['getskinn', '#987e62', '#bdb39b'], ['kohud', '#5e3c24', '#987e62'], ['radjursskinn', '#987e62', '#bdb39b'], ['svinskinn', '#474138', '#61767a'], ['vitskinn', '#bdb39b', '#dad0bb']]) {
   PIX['axelrem_' + m] = AXELREM16; PAL['axelrem_' + m] = { o: '#24201d', G, H, y: '#a0947d', Y: '#bdb39b', d: '#5e3c24' };
 }
 PIX.axelrem = PIX.axelrem_kaninskinn; PAL.axelrem = PAL.axelrem_kaninskinn; // tekniken har remmens bild
@@ -4335,7 +4336,7 @@ const RYGGSACK16 = [
   '...oooooooooo...',
   '................',
 ];
-for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#61767a', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#7d5b40'], ['farskinn', '#bdb39b', '#dad0bb'], ['getskinn', '#987e62', '#bdb39b'], ['kohud', '#5e3c24', '#987e62'], ['svinskinn', '#474138', '#61767a'], ['vitskinn', '#bdb39b', '#dad0bb']]) {
+for (const [m, G, H] of [['kaninskinn', '#7d5b40', '#987e62'], ['vargskinn', '#61767a', '#8a9c9e'], ['bjornskinn', '#5e3c24', '#7d5b40'], ['farskinn', '#bdb39b', '#dad0bb'], ['getskinn', '#987e62', '#bdb39b'], ['kohud', '#5e3c24', '#987e62'], ['radjursskinn', '#987e62', '#bdb39b'], ['svinskinn', '#474138', '#61767a'], ['vitskinn', '#bdb39b', '#dad0bb']]) {
   PIX['ryggsack_' + m] = RYGGSACK16; PAL['ryggsack_' + m] = { o: '#24201d', G, H, y: '#a0947d', d: '#5e3c24' };
 }
 PIX.ryggsack = PIX.ryggsack_kaninskinn; PAL.ryggsack = PAL.ryggsack_kaninskinn; // tekniken har säckens bild
@@ -4423,7 +4424,7 @@ PAL.hus = { a: '#24201d', b: '#7d5b40', c: '#987e62', d: '#5e3c24', e: '#2f261d'
 PIX.rustning = PIX.ledarskap; PAL.rustning = PAL.ledarskap; PIX.lag = PIX.ledarskap; PAL.lag = PAL.ledarskap; PIX.i_arrig = PIX.i_stark; PAL.i_arrig = PAL.i_stark; // platshållare
 PIX.lon = PIX.silver; PAL.lon = PAL.silver; PIX.i_tigger = PIX.i_fattig; PAL.i_tigger = PAL.i_fattig; // platshållare (steg 10.5.9 och 10.5.11): lönen som silvret, tiggaren som den fattige
 for (const k of ['slunga', 'horn']) { PIX[k] = PIX.benspade; PAL[k] = PAL.benspade; } // platshållare (system 8.7)
-for (const pl of ['rustning', 'hjalm', 'prastdrakt', 'tecken', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'kappa', 'sjal', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'farskinn', 'getskinn', 'kohud', 'svinskinn', 'lader', 'lintyg', 'ylle', 'benband', 'tandband', 'fjaderband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
+for (const pl of ['rustning', 'hjalm', 'prastdrakt', 'tecken', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'kappa', 'sjal', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'farskinn', 'getskinn', 'radjursskinn', 'kohud', 'svinskinn', 'lader', 'lintyg', 'ylle', 'benband', 'tandband', 'fjaderband']) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const pl of ['prastdrakt', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor']) { PIX[`${pl}_vitskinn`] = PIX.rock_vitskinn; PAL[`${pl}_vitskinn`] = PAL.rock_vitskinn; } // de andra skinnplaggen av vitt harskinn i vitt (steg 10.7.22), platshållare
 for (const m of ['lader', 'lintyg', 'ylle']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }

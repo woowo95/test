@@ -111,7 +111,7 @@ import { handelse } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
-import { KLADER, PLAGG, kladAv } from './klader';
+import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
 import { allaTing } from './agande';
 import { och } from './ord';
 import { stepPynt } from './pynt';
@@ -1105,7 +1105,7 @@ function tidTillTom(s: State, p: Person, tk: Task) {
 // att vara naken känns (steg 10.2.72): den som är helt naken får sämre humör, också när ingen annan har kläder, och den som
 // saknar plagg på fötterna, benen eller överkroppen får lite sämre humör för varje del som saknas
 const NAKEN_DELAR: Record<string, string> = { fotter: 'fötterna', ben: 'benen', kropp: 'överkroppen' };
-const kroppsdel = (plats: string) => plats === 'inre' || plats === 'yttre' ? 'kropp' : plats; // skjortan och rocken klär överkroppen
+const kroppsdel = (plats: string) => NAKEN_PLATS[plats] ?? plats; // skjortan och rocken klär överkroppen
 function stepNaken(s: State) {
   const pa = new Map<number, Set<string>>();
   for (const t of allaTing(s)) { const r = t.bar !== undefined ? kladAv(t.k) : undefined; if (r) (pa.get(t.bar!) ?? pa.set(t.bar!, new Set()).get(t.bar!)!).add(kroppsdel(PLAGG[r.plagg].plats)); }
