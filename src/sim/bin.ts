@@ -15,6 +15,7 @@ import { Station, isKlar, stationerOf } from './stationer';
 import { chance } from './slump';
 import { count, forstaGang, log } from './folk';
 import { notis } from './notiser';
+import { hardVinter } from './vader';
 
 export const BIN = balans('bin', {
   r: 10, // bina flyger så här många rutor från samhället
@@ -30,6 +31,11 @@ export const BIN = balans('bin', {
   svarmFullt: 4, // ... och så mycket av lagret (summan) ger full tillgång
   svarmHonung: 2, // det nya samhället börjar med så många honungskakor
   varde: 15, // ett bisamhälle räknas så här mycket i ägarens rikedom
+  // binas år (steg 10.10.18)
+  honungTim: 1 / 24, // honungskakor per timme som samhället samlar vid fullt drag
+  aterTim: 1 / 120, // honungskakor per timme som samhället äter, hela året
+  hardVinter: 0.5, // i en hård vinter äter det så här mycket mer
+  rymmer: 10, // kupan rymmer så många kakor
 });
 
 // en dragkälla: vad den ger inom räckhåll av (x, y), i tidsåldern ai, med eller utan torka. ikon = symbolen i kupans ruta
@@ -98,8 +104,21 @@ export function svarmTillgang(s: State, x: number, y: number) {
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r && inMap(x + dx, y + dy)) n += fyndAt(s, 'honung', (y + dy) * W + x + dx);
   return Math.min(1, n / BIN.svarmFullt);
 }
+// binas år (steg 10.10.18): samhället samlar honung efter draget och äter hela tiden, mer i en hård vinter. Kupan rymmer
+// BIN.rymmer kakor, och decimalerna är arbetet mot nästa kaka. När honungen är slut dör samhället och kupan står tom
+function binasAr(s: State, dt: number) {
+  const h = dt / HOUR_S, at = BIN.aterTim * (1 + BIN.hardVinter * hardVinter(s)) * h;
+  for (const t of samhallen(s)) {
+    t.bi = Math.min(BIN.rymmer, t.bi! + BIN.honungTim * dragDelat(s, t.x, t.y, t) * h - at);
+    if (t.bi > 1e-9) continue;
+    t.bi = undefined; count(s, 'bidod');
+    log(s, 'Bisamhället i en av kuporna dog när honungen tog slut. Kupan står tom.', 'world', t.ag !== undefined ? [t.ag] : []);
+    notis(s, 'bin', 'Ett bisamhälle dog när honungen tog slut, och kupan står tom tills en ny svärm flyttar in.', t.ag !== undefined ? [t.ag] : [], { x: t.x + 0.5, y: t.y + 0.5 });
+  }
+}
 // binas takt (en rad i TAKTER, var fjärde timme): på sommaren kan en svärm flytta in i en tom kupa, räknat per tid
 export function binSteg(s: State, dt: number) {
+  binasAr(s, dt);
   if (kalender(s).ai !== SOMMAR) return;
   for (const t of kupor(s)) {
     if (t.bi !== undefined) continue;

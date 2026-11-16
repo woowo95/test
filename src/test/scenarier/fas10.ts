@@ -680,3 +680,53 @@ SCENARIER.bisvarm = {
     ];
   },
 };
+SCENARIER.binasar = {
+  text: 'Steg 10.10.18: binas år. Ett samhälle med fullt drag fyller kupan på en vår och sommar och stannar vid 10, ett med draget 0,4 går jämnt upp över ett år, ett med 3 kakor när hösten börjar lever till våren i en vanlig vinter men inte i en hård, ett med 2 dör, honungen ändras lika mycket med korta som med långa slag, och den tomma kupan kan få en ny svärm',
+  kor: () => {
+    const { BIN, binSteg, svarmTillgang, DRAGKALLOR, DRAG_LIST, MOTGANGAR, nyKalender, kalender, VAR, SOMMAR, HOST, DAY } = SIM;
+    const s = createState(5, START), W = SIM.W; klockan(s, 0); s.founded -= 100 * DAY;
+    // en dragkälla bara för provet, som ger draget v på våren och sommaren
+    let dragNu = 0; (DRAGKALLOR as Record<string, SIM.DragKalla>).prov = { namn: 'Prov', ikon: 'blomma', summa: () => dragNu * BIN.dragFullt };
+    DRAG_LIST.push('prov');
+    const sparat = SIM.takenOf(s).blomma!.slice(); SIM.takenOf(s).blomma!.fill(1);
+    const g = SIM.groundOf(s), buskar = g.buske?.slice(); g.buske?.fill(0); s.falt = [];
+    const harda = (pa: boolean) => { for (const k of Object.keys(MOTGANGAR) as (keyof typeof MOTGANGAR)[]) (MOTGANGAR[k] as { chans: number }).chans = pa && k === 'hardVinter' ? 1 : 0; };
+    const chanser = Object.fromEntries(Object.entries(MOTGANGAR).map(([k, v]) => [k, (v as { chans: number }).chans]));
+    try {
+      // tidsåldern ai börjar nu, och de följande är hela veckor: börja i tidsåldern före och vänta tills ai börjar
+      const borja = (ai: number) => { s.kal = nyKalender(s.now, (ai + 3) % 4); while (kalender(s).ai !== ai) s.now += 3600 * 1000; s.now = kalender(s).start; };
+      const kupa = (bi: number, x = 60, y = 60): SIM.Station => { const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x, y, kvar: 0, bi }; s.stationer = [...(s.stationer ?? []).filter(q => q.k !== 'bikupa'), t]; return t; };
+      let hogst = 0; const kor = (dagar: number, dt = 14400) => { hogst = 0; for (let t = 0; t < dagar * 86400; t += dt) { s.now += dt * 1000; binSteg(s, dt); for (const q of s.stationer ?? []) if (q.k === 'bikupa') hogst = Math.max(hogst, q.bi ?? 0); } };
+      harda(false);
+      // fullt drag en vår och sommar
+      borja(VAR); dragNu = 1; const full = kupa(2); kor(14); const fullt = hogst, slut = full.bi;
+      // draget 0,4 ett helt år
+      borja(VAR); dragNu = 0.4; const jamn = kupa(5); kor(28); const ar = jamn.bi;
+      // vintern: 3 och 2 kakor när hösten börjar
+      dragNu = 0;
+      borja(HOST); const tre = kupa(3); kor(14); const treVanlig = tre.bi, varNu = kalender(s).ai;
+      borja(HOST); const tva = kupa(2); kor(14); const tvaVanlig = tva.bi;
+      harda(true); borja(HOST); const treH = kupa(3); kor(14); const treHard = treH.bi; harda(false);
+      const dodNotis = (s.notiser?.lista ?? []).some(q => q.id === 'bin' && q.rader.some(r => r.includes('dog')));
+      // korta och långa slag en sommar
+      borja(SOMMAR); dragNu = 0.7; const t0 = s.now; const a = kupa(1); kor(6, 600); const kort = a.bi;
+      s.now = t0; const b = kupa(1); kor(6, 14400); const lang = b.bi;
+      // den tomma kupan får en ny svärm: den rikaste platsen för svärmar
+      let bx = 0, by = 0, bv = -1; for (let y = 25; y < SIM.H - 25; y += 3) for (let x = 25; x < W - 25; x += 3) { const v = svarmTillgang(s, x, y); if (v > bv) { bv = v; bx = x; by = y; } }
+      borja(SOMMAR); const tom = kupa(0, bx, by); tom.bi = undefined; kor(7); const ny = tom.bi;
+      return [
+        [`fullt drag en vår och sommar fyller kupan och stannar vid ${BIN.rymmer} (högst ${fullt.toFixed(2)}, ${slut?.toFixed(2)} när hösten börjar)`, fullt === BIN.rymmer && slut !== undefined && slut > BIN.rymmer - 0.1],
+        [`med draget 0,4 går året jämnt upp (5 → ${ar?.toFixed(2)})`, ar !== undefined && Math.abs(ar - 5) < 0.05],
+        [`3 kakor när hösten börjar räcker till våren i en vanlig vinter (${treVanlig?.toFixed(2)}, nu ${varNu === VAR ? 'vår' : varNu})`, treVanlig !== undefined && treVanlig > 0 && varNu === VAR],
+        [`men inte i en hård (${treHard ?? 'dött'}), och 2 kakor räcker inte (${tvaVanlig ?? 'dött'})`, treHard === undefined && tvaVanlig === undefined],
+        ['en notis säger när ett samhälle dött', dodNotis],
+        [`honungen ändras lika mycket med 10 minuters slag (${kort?.toFixed(3)}) som med fyra timmars (${lang?.toFixed(3)})`, kort !== undefined && lang !== undefined && Math.abs(kort - lang) < 0.01],
+        [`den tomma kupan får en ny svärm på sommaren (${ny ?? 'ingen'})`, ny !== undefined],
+      ];
+    } finally {
+      DRAG_LIST.splice(DRAG_LIST.indexOf('prov'), 1); delete (DRAGKALLOR as Record<string, unknown>).prov;
+      for (const k in chanser) (MOTGANGAR as Record<string, { chans: number }>)[k].chans = chanser[k];
+      SIM.takenOf(s).blomma!.set(sparat); if (buskar) g.buske!.set(buskar);
+    }
+  },
+};

@@ -1,7 +1,7 @@
 import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { drag, dragDelar, DRAG_LIST, DRAGKALLOR, delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK } from '../../sim';
+import { BIN, drag, dragDelar, DRAG_LIST, DRAGKALLOR, delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
@@ -25,7 +25,8 @@ function gorRad(a: keyof typeof ACTS, bara: boolean) {
 function dragRad(st: { x: number; y: number }) {
   const v = drag(s, st.x, st.y), delar = dragDelar(s, st.x, st.y);
   const vaxter = DRAG_LIST.filter(k => (delar[k] ?? 0) > 0).map(k => `<span ${tip(`${DRAGKALLOR[k].namn}: ${fmtN(Math.round(delar[k] * 10) / 10)}`)}>${iconImg(DRAGKALLOR[k].ikon)}</span>`).join('');
-  return `<h3>Drag</h3><p ${tip(`Så mycket blommar för bina här: ${Math.round(v * 100)} %. Hösten och istiden blommar inget`)}>${condBar(v)}<span>${Math.round(v * 100)} %</span> ${vaxter}</p>`;
+  const t = st as { bi?: number }, kakor = t.bi === undefined ? '' : `<p ${tip(`Ett bisamhälle bor här. ${fmtN(Math.floor(t.bi))} hela honungskakor av ${BIN.rymmer}`)}>${iconImg('honung')} ${fmtN(Math.floor(t.bi))} / ${BIN.rymmer} ${condBar(t.bi / BIN.rymmer)}</p>`;
+  return `<h3>Bin</h3>${kakor || `<p class="muted" ${tip('Ingen svärm har flyttat in än. På sommaren kan en svärm från vildbina eller en annan kupa komma')}>Tom</p>`}<h3>Drag</h3><p ${tip(`Så mycket blommar för bina här: ${Math.round(v * 100)} %. Hösten och istiden blommar inget`)}>${condBar(v)}<span>${Math.round(v * 100)} %</span> ${vaxter}</p>`;
 }
 function testRad(id: number) {
   if (!ui.testMode) return '';

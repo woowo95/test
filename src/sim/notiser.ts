@@ -56,7 +56,7 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   byte: { slag: 'handel', rubrik: 'Byte med handlaren', vikt: 1 },
   gast: { slag: 'handel', rubrik: 'En gäst', vikt: 1 },
   sjuk: { slag: 'folk', rubrik: 'Sjukdom', vikt: 2 }, // någon insjuknar, blir sämre eller frisk (steg 9.5.4, sjukdom.ts)
-  bin: { slag: 'framsteg', rubrik: 'Bina', vikt: 2 }, // byns första bisamhälle (steg 10.10.17)
+  bin: { slag: 'framsteg', rubrik: 'Bina', vikt: 2 }, // byns första bisamhälle (steg 10.10.17) och ett samhälle som dör (steg 10.10.18)
   smitta: { slag: 'fara', rubrik: 'En smitta i byn', vikt: 3 }, // det första fallet av en sjukdom som smittar
 };
 export const NOTIS = {
