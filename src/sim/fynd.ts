@@ -21,6 +21,8 @@ import { smakGift } from './rykten';
 import { tecken } from './religion';
 import { insjukna } from './sjukdom';
 import { NARA } from './nara';
+// hur rikt vildbinas lager måste vara för att ett bo ska finnas där (BIN.boSyns, satt av bin.ts så att filerna inte importerar varandra)
+export const vildboKrok = { syns: () => 0.6 };
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -247,7 +249,8 @@ const DEF = {
   honung: {
     namn: 'Vildbin', grupp: 'vaxter', ikon: 'honung', farg: 0xe8b830, topp: 1, arstid: [0, 0, 1, 1], torka: 0.6,
     monster: { salt: 127, skala: 6, period: 84, troskel: 0.7, gles: 0.3 },
-    bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? m * orortOf(s)[i] : 0,
+    // honungen finns bara i ett bo: där lagret är så rikt att boet syns (BIN.boSyns), annars ingen alls (steg 10.10.15)
+    bas: (s, i, m) => { const v = land(s, i) && groundOf(s).trees[i] >= FOREST ? m * orortOf(s)[i] : 0; return v >= vildboKrok.syns() ? v : 0; },
     uttag: { full: 1, reach: 1, regrow: [0, 0, 1 / 400, 1 / 400] },
   },
 } satisfies Record<string, FyndDef>;

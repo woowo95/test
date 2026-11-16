@@ -239,7 +239,8 @@ SCENARIER.rotter = {
       [`i istiden växer inga bär, så allt som samlas är rötter (${istid.b.toFixed(4)} bär)`, istid.r > 0 && istid.b < 1e-9],
       // en buske töms helt sedan steg 2.12.4, så bär och rötter tas i den mängd de växer: ungefär hälften var på sommaren
       // med den större bufferten (steg 9.9.4) samlas mer, och rötterna räcker längre än bären: en tredjedel bär (34 % i by-provet)
-      [`på sommaren är en stor del bär (${(sommar.b / (sommar.b + sommar.r) * 100).toFixed(0)} %)`, sommar.b > 0.3 * (sommar.b + sommar.r)],
+      // sedan bären inte växer under träd (steg 10.10.8) finns färre buskar i skogen kring byn: en femtedel till en fjärdedel bär
+      [`på sommaren är en stor del bär (${(sommar.b / (sommar.b + sommar.r) * 100).toFixed(0)} %)`, sommar.b > 0.17 * (sommar.b + sommar.r)],
       [`bär och rötter i egna stackar, och ingen bärstack rymmer mer än ${STACK.bar} (mer i en förvaring)`, sommar.skild && istid.skild],
     ];
   },

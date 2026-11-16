@@ -216,6 +216,10 @@ for (const [ks, why] of [
   [['mjod'], 'mjödet (steg 10.7.25) kräver honung från vildbin och bryggkaret; scenariot mjod prövar det'],
   [['gropa'], 'festmåltiden i kokgropen (steg 10.7.28) kräver tekniken Kokgrop efter lerkrukan och en ritual eller ett bröllop; scenariot festmaltid prövar den'],
   [['rock_vitskinn', 'skor_vitskinn', 'snoskor_vitskinn', 'axelrem_vitskinn', 'ryggsack_vitskinn'], 'vitskinnet (steg 10.7.22) kommer bara från harar som slaktas under istiden, och plaggen som tar mycket skinn görs sällan av det; scenariot vinterpals prövar det'],
+  [['kalke', 'slade'], 'kälken och släden (steg 10.10.1–10.10.2) är tekniker på nivå 3–4 efter snickarbänken och repet; scenariot kalke prövar dem'],
+  [['byggsten', 'bryta'], 'byggstenen (steg 10.10.5) kräver stenhuggarplatsen och stockvägen, nivå 4, och en plan av sten; scenariot byggsten prövar den'],
+  [['gris', 'kulting', 'slaktgris', 'bur', 'levoxe', 'levhast', 'salta_svinkott', 'rock_svinskinn', 'skor_svinskinn', 'axelrem_svinskinn', 'byxor_svinskinn', 'mossa_svinskinn', 'snoskor_svinskinn', 'ryggsack_svinskinn'], 'grisen kommer ur buren (nivå 5, steg 10.10.13), oxen och hästen med handlaren (steg 10.10.3), och byn hinner sällan dit på 50 dygn; scenarierna bur, gris och dragdjur prövar dem'],
+  [['skatta', 'bivax', 'vaxljus'], 'bikupan (steg 10.10.16) kommer först när byn tagit honung ur vildbon, och skattningen och vaxet efter det; scenarierna bikupa, skattning och vaxljus prövar dem'],
   [['naver'], 'nävern (steg 6.3.3) täljs bara när en eld tänds med försök och höet inte räcker, och sedan 10.6.12 tänds eldarna oftast med en brand från en eld som brinner; scenariot naver prövar den'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 

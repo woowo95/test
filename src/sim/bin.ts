@@ -9,7 +9,7 @@ import { BARBUSKE } from './buskar';
 import { GRODOR, GrodaSlag, faltOf, faltRuta, rutorAv } from './odling';
 import { torkaNu } from './torka';
 import { HOST, ISTID, SOMMAR, VAR, kalender } from './tid';
-import { fyndAt } from './fynd';
+import { fyndAt, vildboKrok } from './fynd';
 import { HOUR_S, MIN, State, W, inMap } from './typer';
 import { Station, isKlar, stationerOf } from './stationer';
 import { antalPa, chance, rnd } from './slump';
@@ -38,7 +38,7 @@ export const BIN = balans('bin', {
   // vildbina (steg 10.10.15)
   dragNog: 0.6, // byn vill ha en bikupa till där draget är minst så här stort (steg 10.10.16)
   boSyns: 0.6, // boet syns där vildbinas lager är minst så här rikt och ett vuxet träd står
-  vildTim: 0.4, // så många honungskakor i timmen tar den som samlar intill ett rikt bo
+  vildTim: 6, // så många honungskakor i timmen tar den som samlar intill ett rikt bo: en tur till boet är ett arbete på 3–10 minuter och ger hela kakor
   // svärmen (steg 10.10.17)
   svarmTim: 1 / 48, // chansen per timme att en svärm flyttar in i en tom kupa på sommaren, gånger tillgången på svärmar
   svarmR: 20, // vildbinas bon inom så här många rutor från kupan ger svärmar ...
@@ -126,6 +126,7 @@ export function dragDelar(s: State, x: number, y: number): Record<string, number
 }
 // draget på (x, y): summan delad med BIN.dragFullt, högst 1
 // vildboet syns på ruta i (steg 10.10.15): på sommaren och hösten, där vildbinas lager är rikt och ett vuxet träd står
+vildboKrok.syns = () => BIN.boSyns; // honungen finns bara i ett bo (fynd.ts)
 export const vildboSyns = (s: State, i: number) => { const ai = kalender(s).ai; return (ai === SOMMAR || ai === HOST) && groundOf(s).trees[i] >= FOREST && fyndAt(s, 'honung', i) >= BIN.boSyns; };
 export const drag = (s: State, x: number, y: number) => Math.min(1, Object.values(dragDelar(s, x, y)).reduce((a, b) => a + b, 0) / BIN.dragFullt);
 

@@ -229,13 +229,16 @@ SCENARIER.slitage = {
     const v = pilesOf(a).find(q => q.k === 'ved')!; a.stackar!.find(q => q.x === v.x && q.y === v.y)!.c = 0.0001;
     wearStore(a, 3600);
     // skämd mat: allt i förrådet är nästan förstört. Upp till tio dygn (den som inte är hungrig nog låter den skämda maten ligga, steg 9.6.24): man äter mer sällan sedan hungern växer långsammare (steg 2.12.1)
-    const m = createState(6, START);
-    setFood(m, 200); pilesOf(m); for (const st of m.stackar!) st.c = 0.08;
-    let tagg = false; // (någon kan sedan bli magsjuk av annat, så det ses medan det händer)
-    // chansen är liten per skämd måltid (SJUK.skamd), så provet går tills någon blivit sjuk, högst tio dygn (tio år i spelet)
-    let timmar = 0;
-    for (; timmar < 240 && !tagg; timmar++) kor(m, 1, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); tagg ||= living(s).some(p => p.sickWhy === 'Magsjuk av skämd mat'); });
-    const sjuka = m.stat?.skamdMat ?? 0;
+    // chansen är liten per skämd måltid (SJUK.skamd, ca 5 %) och den mätte låter maten ligga, så det blir bara ett par skämda
+    // måltider om dygnet: provet går tills någon blivit sjuk, högst tio dygn (tio år i spelet) i en by och sedan i nästa
+    let tagg = false, sjuka = 0, timmar = 0; // (någon kan sedan bli magsjuk av annat, så det ses medan det händer)
+    for (const seed of [6, 7, 8]) {
+      if (tagg) break;
+      const m = createState(seed, START);
+      setFood(m, 200); pilesOf(m); for (const st of m.stackar!) st.c = 0.08;
+      for (let t = 0; t < 240 && !tagg; t++, timmar++) kor(m, 1, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); tagg ||= living(s).some(p => p.sickWhy === 'Magsjuk av skämd mat'); });
+      sjuka += m.stat?.skamdMat ?? 0;
+    }
     // högar på marken: en nära elden och en långt bort, mitt i natten
     const n = createState(5, START);
     const mp = getMap(5), f = mp.fire, land = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && mp.tiles[y * W + x] !== T.Vatten && mp.tiles[y * W + x] !== T.Sten;

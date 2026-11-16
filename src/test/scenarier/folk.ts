@@ -2298,7 +2298,7 @@ SCENARIER.amnen = {
       [`samtalen i byn handlar om olika saker (${[...sett.keys()].join(', ')})`, sett.size >= 4],
       [`maten är ett ämne i en by som har mat, strax innan man äter (kodgenomgången 3.10.25)`, sett.has('mat')],
       [`varje text är hel (t.ex. ${texter[0] ?? '–'})`, texter.length > 0 && texter.every(hel)],
-      [`varje symbol i pratbubblan finns (${[...ikoner].join(', ')})`, [...ikoner].every(hasIcon) && Object.values(SIM.AMNEN).every(d => !d.ikon || hasIcon(d.ikon)) && Object.keys(SIM.KUNSKAPER).every(hasIcon)], // också kunskaperna som inget samtal råkade handla om
+      [`varje symbol i pratbubblan finns (${[...ikoner].join(', ')})`, [...ikoner].every(hasIcon) && Object.values(SIM.AMNEN).every(d => !d.ikon || hasIcon(d.ikon)) && Object.entries(SIM.KUNSKAPER).every(([k, d]) => hasIcon(d?.ikon ?? k))], // också kunskaperna som inget samtal råkade handla om
     ];
   },
 };
