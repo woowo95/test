@@ -385,7 +385,7 @@ export function usable(s: State, x: number, y: number, utomElden = false, utomSt
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
   if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) return false; // på torget byggs och ställs inget (steg 7.3.13)
-  if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) && !(utomVag && MATERIAL[bitAt(s, x, y)!.m]?.vag && !MATERIAL[bitAt(s, x, y)!.m].brygga) || sittAt(s, x, y) && !utomStation || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
+  if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) && !(utomVag && MATERIAL[bitAt(s, x, y)!.m]?.vag && !MATERIAL[bitAt(s, x, y)!.m].brygga) || sittAt(s, x, y) && !utomStation || faltAt(s, x, y) || angAt(s, x, y)) return false; // inte heller på ett fält (odling.ts) eller en slåtteräng (slatter.ts, steg 10.11.5)
   if (s.heliga?.length && heligRuta(s, x, y)) return false;
   if (s.runstenar?.some(r => r.x === x && r.y === y)) return false; // runstenen står kvar (steg 10.6.1) // på en helig plats byggs inget (steg 8.5.5)
   const st = stationAt(s, x, y);
@@ -1240,3 +1240,4 @@ export function pickUp(s: State, p: Person, t: Task, ryms: (b: Record<string, nu
 }
 import { clamp } from './slump';
 import { grundvarde } from './varde';
+import { angAt } from './slatter';

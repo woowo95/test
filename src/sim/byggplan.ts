@@ -699,6 +699,7 @@ const vagRang = (m: string) => VAGAR.findIndex(v => v.m === m);
 const vagKostnad = (s: State, v: typeof VAGAR[number], ritning: Andring[]) => (ritningKostnad(ritning) + v.frakt(s) * ritning.length) * MATERIAL[v.m].slit / MATERIAL.stockvag.slit;
 // kan vägmaterialet m läggas på rutan i: ingen bit där, eller en väg av ett sämre material som är sliten nog att lagas (virket i den är förlorat)
 function vagLedig(s: State, i: number, m: string) {
+  if (faltAt(s, i % W, Math.floor(i / W)) || angAt(s, i % W, Math.floor(i / W))) return false; // ingen väg över ett fält eller en slåtteräng
   const b = gridOf(s).at.get(i);
   return !b || !!MATERIAL[b.m]?.vag && !MATERIAL[b.m].brygga && b.b >= 1 && b.c < BYGG.laga && vagRang(b.m) >= 0 && vagRang(b.m) < vagRang(m);
 }
@@ -869,7 +870,6 @@ function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
 }
 function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Person[]) {
   const fam = u.a.ag !== undefined ? familjOf(s, u.a.ag) : [], by = byggare.find(p => fam.includes(p)) ?? (fam.find(p => p.id === u.a.ag) ?? byggare[0] ?? ppl[0]);
-  if (f.ritning.some(a => faltAt(s, a.x, a.y) || angAt(s, a.x, a.y))) { count(s, 'planPaFalt'); return; } // aldrig på ett fält eller en slåtteräng (steg 9.8.9)
   if (f.at === 'kopaHus') { s.husAffar = { hus: f.hus!.id, ag: u.a.ag!, t: s.now }; return; }
   if (f.at === 'stockvagA' || f.at === 'bryggaA' || f.at === 'infartA') {
     s.nextBit ??= 1;
