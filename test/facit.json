@@ -11,40 +11,40 @@
     50
    ],
    "bitMs": [
-    671427,
-    190920,
-    174157,
-    165343,
-    138765,
-    378474
+    920500,
+    319543,
+    143704,
+    193505,
+    130527,
+    405644
    ],
    "n": {
-    "pop": 8,
+    "pop": 9,
     "atergrundad": 0,
     "invandrade": 4,
     "utvandrade": 0,
     "fodda": 8,
-    "doda": 12,
+    "doda": 11,
     "svalt": 0,
     "kyla": 0,
     "blod": 5,
     "infektion": 0,
     "amputerat": 0,
     "hunger": 0,
-    "humor": 0.523,
-    "vintermat": 961,
-    "vinterved": 1152,
-    "eld": 96,
+    "humor": 0.502,
+    "vintermat": 1303,
+    "vinterved": 872,
+    "eld": 95,
     "kb": 2156,
-    "delKb": 304
+    "delKb": 300
    },
    "hash": [
-    "69b3d26e0c09",
-    "87193ea4a35b",
-    "a167e2dc1003",
-    "160398bc9830",
-    "3b8064242af1",
-    "d3dfcc604eb7"
+    "283cc6034083",
+    "ec36664a1523",
+    "030eb1eea8ed",
+    "06c07be93d16",
+    "7fabdfe4d44d",
+    "0adf7e55651f"
    ]
   },
   "1511": {
@@ -61,22 +61,22 @@
     50
    ],
    "bitMs": [
-    70581,
-    512642,
-    305151,
-    369383,
-    320023,
-    239380,
-    180859,
-    237624,
-    181356
+    147849,
+    394085,
+    300374,
+    648865,
+    232152,
+    249694,
+    322952,
+    321579,
+    272534
    ],
    "n": {
-    "pop": 18,
+    "pop": 17,
     "atergrundad": 0,
     "invandrade": 2,
     "utvandrade": 2,
-    "fodda": 24,
+    "fodda": 25,
     "doda": 8,
     "svalt": 0,
     "kyla": 1,
@@ -84,23 +84,23 @@
     "infektion": 0,
     "amputerat": 0,
     "hunger": 0,
-    "humor": 0.564,
-    "vintermat": 865,
-    "vinterved": 1192,
-    "eld": 86,
-    "kb": 2452,
-    "delKb": 408
+    "humor": 0.549,
+    "vintermat": 1088,
+    "vinterved": 1026,
+    "eld": 88,
+    "kb": 2417,
+    "delKb": 411
    },
    "hash": [
-    "92e5a9a8d24e",
-    "d1030238791c",
-    "348a896b0c7f",
-    "91805ec4b43c",
-    "65fe393a08a9",
-    "ccd5f84c6c0a",
-    "a54985391a98",
-    "a0d3351cb194",
-    "469703e82cd7"
+    "283be3e2a087",
+    "cd960c0043bd",
+    "ca7c20d19b5a",
+    "732e88bd8c38",
+    "97a63a59c20d",
+    "77c48641996b",
+    "20c494bae1e4",
+    "b41bc98431f2",
+    "9db7d5949c83"
    ]
   },
   "4634": {
@@ -114,40 +114,40 @@
     50
    ],
    "bitMs": [
-    326242,
-    315770,
-    727540,
-    432149,
-    163838,
-    243150
+    501869,
+    337450,
+    478391,
+    845330,
+    221333,
+    226977
    ],
    "n": {
-    "pop": 14,
+    "pop": 11,
     "atergrundad": 0,
-    "invandrade": 5,
+    "invandrade": 4,
     "utvandrade": 3,
-    "fodda": 19,
+    "fodda": 18,
     "doda": 16,
     "svalt": 0,
     "kyla": 4,
-    "blod": 1,
+    "blod": 2,
     "infektion": 0,
     "amputerat": 0,
     "hunger": 0,
-    "humor": 0.497,
-    "vintermat": 623,
-    "vinterved": 2465,
-    "eld": 91,
-    "kb": 2297,
-    "delKb": 355
+    "humor": 0.506,
+    "vintermat": 434,
+    "vinterved": 477,
+    "eld": 94,
+    "kb": 2266,
+    "delKb": 339
    },
    "hash": [
-    "eadd59403bd4",
-    "92e91436d7e7",
-    "18af631aa317",
-    "9babb56ac325",
-    "6ebe6a2bd243",
-    "a969a3911117"
+    "cfae36edb56d",
+    "9eeab8733831",
+    "2d75c4a8224e",
+    "6f7ca057921e",
+    "897ca974d09d",
+    "cac9f8a0cf0c"
    ]
   }
  }
