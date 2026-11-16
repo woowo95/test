@@ -21,6 +21,8 @@ import { husNamn } from './byggnader';
 import { Person, State } from './typer';
 import { tamArt, tamdjurOf } from './tamdjur';
 import { honsVarde } from './hons';
+import { stationDef, stationerOf } from './stationer';
+import { BIN } from './bin';
 
 // arvingarna, i tur och ordning: partnern, barnen, föräldrarna, syskonen
 export function heirsOf(s: State, p: Person): Person[] {
@@ -62,6 +64,11 @@ export function inherit(s: State, p: Person) {
   for (const d of tamdjurOf(s).filter(d => d.agare === p.id && d.art !== 'hund').sort((a, b) => a.id - b.id)) {
     const i = val.indexOf(Math.min(...val)), v = tamArt(d.art).varde;
     d.agare = heirs[i].id; val[i] += v; fick[i].push(`${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]}`); varde[i].push(v);
+  }
+  // bikupan (steg 10.10.16) ärvs som hönsen, en kupa i taget till den som hittills fått minst
+  for (const t of stationerOf(s).filter(t => t.ag === p.id && stationDef(t.k)?.agd).sort((a, b) => a.id - b.id)) {
+    const i = val.indexOf(Math.min(...val)), v = varuVarde(stationDef(t.k)!.av) + (t.bi !== undefined ? BIN.varde : 0);
+    t.ag = heirs[i].id; val[i] += v; fick[i].push(stationDef(t.k)!.namn.toLowerCase()); varde[i].push(v);
   }
   if (s.hons?.agare === p.id) { const i = val.indexOf(Math.min(...val)), v = honsVarde(s); s.hons.agare = heirs[i].id; val[i] += v; fick[i].push('hönsen'); varde[i].push(v); } // hönsen (steg 9.8.10)
   const eget = ownedAll(s, p.id);

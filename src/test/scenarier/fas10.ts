@@ -553,3 +553,130 @@ SCENARIER.drag = {
     ];
   },
 };
+SCENARIER.vildbo = {
+  text: 'Steg 10.10.15: vildbona syns. Boet syns på sommaren och hösten där vildbinas lager är rikt och ett vuxet träd står, inte på våren och inte där trädet fällts. Samlaren väljer platsen efter honungen som efter svampen, står vid boet och tar BIN.vildTim kakor i timmen, och byn räknar den vilda honungen',
+  kor: () => {
+    const { BIN, vildboSyns, nyKalender, SOMMAR, HOST, VAR, groundOf, fyndAt, FOREST } = SIM;
+    const s = createState(42, START), W = SIM.W;
+    s.kal = nyKalender(s.now, SOMMAR);
+    let bo = -1; for (let i = 0; i < W * SIM.H && bo < 0; i++) if (fyndAt(s, 'honung', i) >= BIN.boSyns && groundOf(s).trees[i] >= FOREST) bo = i;
+    const sommar = bo >= 0 && vildboSyns(s, bo);
+    s.kal = nyKalender(s.now, HOST); const host = bo >= 0 && vildboSyns(s, bo);
+    s.kal = nyKalender(s.now, VAR); const var_ = bo >= 0 && vildboSyns(s, bo);
+    s.kal = nyKalender(s.now, SOMMAR);
+    const tr = groundOf(s).trees[bo]; groundOf(s).trees[bo] = 0; const fallt = vildboSyns(s, bo); groundOf(s).trees[bo] = tr;
+    // en by utan mat på sommaren i tolv timmar: samlarna hittar bona och bär hem honung
+    setMat(s, {}); SIM.setAmount(s, 'ved', 300);
+    const tid: number[] = [];
+    for (let h = 0; h < 12 * 3600; h++) { SIM.step(s, 1); for (const p of SIM.living(s)) if (p.task?.act === 'samla' && p.task.phase === 'do' && !p.task.hopp && SIM.richness(s, 'honung', Math.floor(p.task.tx) + 0.5, Math.floor(p.task.ty) + 0.5) > 0) tid.push(p.id); }
+    const vild = s.stat?.honungVild ?? 0, hemma = SIM.amountOf(s, 'honung');
+    const takt = tid.length ? vild / (tid.length / 3600) : 0;
+    return [
+      [`boet syns på sommaren (${sommar}) och hösten (${host}), inte på våren (${var_}) och inte där trädet fällts (${fallt})`, sommar && host && !var_ && !fallt],
+      [`samlarna tog ${vild.toFixed(1)} kakor vild honung och ${hemma} hela kakor kom hem`, vild > 1 && hemma >= 1],
+      [`vid boet tas ungefär ${BIN.vildTim} kakor i timmen (${takt.toFixed(2)})`, takt > BIN.vildTim * 0.7 && takt <= BIN.vildTim * 1.05],
+    ];
+  },
+};
+SCENARIER.bikupa = {
+  text: 'Steg 10.10.16: bikupan. Tekniken prövas fram vid slöjdbänken först när byn tagit 3 honungskakor ur vildbon. Kupan flätas av 4 hö på 2 grenar och byggs i utkanten där draget är störst; ingen byggs där draget är under 0,6 eller medan en tom kupa står. Byggaren äger den, arvingen får den, och den är av sådant som brinner',
+  kor: () => {
+    const { RECEPT, STATIONER, TEK, BIN, STATION, drag, kupBrist, stationSite, forsokVal, startStation, inherit, heirsOf, takenOf, groundOf, BUSKE, BARBUSKE, nyKalender, SOMMAR, HOST, living, ageOf, ALDER, utanforByn, setAmount } = SIM;
+    const s = createState(5, START), W = SIM.W; klockan(s, 10);
+    s.kal = nyKalender(s.now, SOMMAR);
+    const r = RECEPT.bikupa, recept = r.av.torrgras === 4 && r.av.grenar === 2 && r.min === 10 && STATIONER.bikupa.flera;
+    const tek = TEK.bikupa, krav = tek.krav.includes('korg') && tek.niva === 4 && tek.forsok?.vid.includes('flatarbank') && tek.forsok.skill === 'hantverk';
+    // försöken: en skicklig slöjdare som kan korgen, vid slöjdbänken, med hö och grenar
+    const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen && heirsOf(s, q).length > 0) ?? living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    medBank(s, 'flatarbank'); setAmount(s, 'torrgras', 20); setAmount(s, 'grenar', 20); setMat(s, { kott: 200 }); setAmount(s, 'ved', 300);
+    p.tek = { ...(p.tek ?? {}), korg: 1, flatarbank: 1, bikupa: 0.9 }; p.skill.hantverk = 12;
+    s.stat = { ...(s.stat ?? {}), honungVild: 2.5 }; const fore = forsokVal(s, p)?.id;
+    s.stat.honungVild = 3; const efter = forsokVal(s, p)?.id;
+    // draget: inga ängsblommor och inga buskar, utom ett snår av bärbuskar en bit öster om byn
+    p.tek.bikupa = 1;
+    takenOf(s).blomma!.fill(1);
+    const g = groundOf(s); g.buske ??= new Uint8Array(W * SIM.H); g.buske.fill(0);
+    SIM.touch(s);
+    const tom = kupBrist(s, 'bikupa');
+    const m = SIM.bynsMitt(s), R = Math.ceil(Math.sqrt(SIM.omrade(s).n / Math.PI)) + 4;
+    const sx = Math.floor(m.x + R), sy = Math.floor(m.y);
+    for (let dy = -4; dy <= 4; dy++) for (let dx = 0; dx <= 8; dx++) { const i = (sy + dy) * W + sx + dx; if (SIM.inMap(sx + dx, sy + dy)) g.buske[i] = BUSKE + BARBUSKE; }
+    s.now += SIM.HOUR; SIM.touch(s); // platsen räknas om
+    const at = stationSite(s, 'bikupa'), dAt = at ? drag(s, at.x, at.y) : 0, avst = at ? utanforByn(s, at.x, at.y) : -1;
+    const motSnar = !!at && at.x >= m.x; // på snårets sida av byn
+    const motsatt = drag(s, Math.floor(m.x - R), sy);
+    const brist = kupBrist(s, 'bikupa');
+    s.kal = nyKalender(s.now, HOST); const host = kupBrist(s, 'bikupa'); s.kal = nyKalender(s.now, SOMMAR);
+    // byggaren
+    const tk = { act: 'station', tool: 'bikupa', phase: 'do', until: s.now } as SIM.Task;
+    startStation(s, p, tk);
+    const kupa = SIM.stationerOf(s).find(t => t.k === 'bikupa');
+    const agd = kupa?.ag === p.id;
+    if (kupa) kupa.kvar = 0;
+    const medTom = kupBrist(s, 'bikupa');
+    // arvet
+    const arv = heirsOf(s, p); inherit(s, p);
+    const arvd = !arv.length || arv.some(q => q.id === kupa?.ag);
+    const brinner = Object.keys(STATIONER.bikupa.av).every(k => !SIM.SAKER[k]?.brinnerInte);
+    return [
+      ['kupan flätas av 4 hö på 2 grenar på 10 minuter, och byn kan ha flera', recept],
+      ['tekniken Bikupa (nivå 4) kräver korgen och prövas fram vid slöjdbänken med hantverket', !!krav],
+      [`försöken börjar först när byn tagit 3 kakor ur vildbon (vid 2,5: ${fore ?? 'inget'}, vid 3: ${efter ?? 'inget'})`, fore !== 'bikupa' && efter === 'bikupa'],
+      [`utan något som blommar vill byn ingen kupa (${tom})`, tom === 0],
+      [`kupan ska stå i utkanten (${avst.toFixed(1)} rutor från byn, högst ${STATION.kupaTill}) vid snåret, där draget är ${dAt.toFixed(2)} (på andra sidan byn ${motsatt.toFixed(2)})`, !!at && avst >= STATION.utkantMin && avst <= STATION.kupaTill && motSnar && dAt > motsatt],
+      [`draget där är minst ${BIN.dragNog}: byn vill ha en kupa (${brist}), men inte på hösten (${host})`, dAt >= BIN.dragNog && brist === 1 && host === 0],
+      [`byggaren äger kupan (${kupa?.ag} = ${p.id}), och medan den står tom vill byn ingen till (${medTom})`, agd && medTom === 0],
+      [`arvingen får kupan (${arv.map(q => q.id).join(', ') || 'inga arvingar'} → ${kupa?.ag})`, arvd && arv.length > 0],
+      ['kupan är av hö och grenar, som brinner, så eldsvådan tar den som andra stationer', brinner],
+    ];
+  },
+};
+SCENARIER.bisvarm = {
+  text: 'Steg 10.10.17: svärmen flyttar in. En tom kupa nära rika vildbon får bin på sommaren men aldrig på våren, hösten eller i istiden, och utan vildbin inom räckhåll kommer ingen svärm. Svärmarna kommer lika ofta med korta som med långa slag, två samhällen intill varandra får halva draget var, en andra kupa byggs först när den första har bin, och en kupa som brinner tar samhället med sig',
+  kor: () => {
+    const { BIN, binSteg, samhallen, dragDelat, drag, svarmTillgang, kupBrist, stationSite, takenOf, groundOf, BUSKE, BARBUSKE, nyKalender, VAR, SOMMAR, HOST, ISTID, HOUR, taBort, formogenheter } = SIM;
+    const s = createState(5, START), W = SIM.W; klockan(s, 10);
+    s.kal = nyKalender(s.now, SOMMAR);
+    // den rikaste platsen för svärmar på kartan, som inte är vatten
+    let bx = 0, by = 0, bv = -1;
+    for (let y = 25; y < SIM.H - 25; y += 3) for (let x = 25; x < W - 25; x += 3) { const v = svarmTillgang(s, x, y); if (v > bv) { bv = v; bx = x; by = y; } }
+    const kupa = (n: number, x = bx, y = by): SIM.Station[] => Array.from({ length: n }, () => { const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x, y, kvar: 0 }; (s.stationer ??= []).push(t); return t; });
+    const rensa = () => { s.stationer = (s.stationer ?? []).filter(t => t.k !== 'bikupa'); };
+    // en sommar (7 dygn) i slag om dt sekunder: hur stor del av n tomma kupor som fick bin
+    const sommar = (ai: number, n: number, dt: number, timmar = 168) => { rensa(); const k = kupa(n); const t0 = s.now; s.kal = nyKalender(s.now, ai); for (let t = 0; t < timmar * 3600; t += dt) { s.now = t0 + t * 1000; binSteg(s, dt); } s.now = t0; return k.filter(q => q.bi !== undefined).length / n; };
+    const iSommar = sommar(SOMMAR, 200, 14400), vantat = 1 - Math.exp(-168 / 48 * bv);
+    const andra = [VAR, HOST, ISTID].map(ai => sommar(ai, 50, 14400));
+    const kort = sommar(SOMMAR, 400, 600, 24), lang = sommar(SOMMAR, 400, 14400, 24);
+    s.kal = nyKalender(s.now, SOMMAR);
+    const sparat = takenOf(s).honung!.slice(); takenOf(s).honung!.fill(1); const utanVild = sommar(SOMMAR, 50, 14400); takenOf(s).honung!.set(sparat);
+    const notisen = (s.notiser?.lista ?? []).some(q => q.id === 'bin');
+    // draget: buskar överallt, två samhällen intill varandra får halva var
+    rensa(); s.kal = nyKalender(s.now, SOMMAR);
+    const g = groundOf(s); g.buske ??= new Uint8Array(W * SIM.H); for (let i = 0; i < W * SIM.H; i++) g.buske[i] = BUSKE + BARBUSKE;
+    takenOf(s).blomma!.fill(0);
+    const [a, b] = kupa(2); a.bi = 2; b.bi = 2;
+    const ensam = drag(s, a.x, a.y), delat = dragDelat(s, a.x, a.y, a);
+    rensa();
+    // en andra kupa: medan den första står tom vill byn ingen till, men när den har bin
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), bikupa: 1 };
+    s.now += HOUR; SIM.touch(s);
+    const at = stationSite(s, 'bikupa')!, [forsta] = kupa(1, at.x, at.y); forsta.ag = p.id; SIM.touch(s);
+    const medTom = kupBrist(s, 'bikupa');
+    forsta.bi = 2; s.now += HOUR; SIM.touch(s);
+    const medBin = kupBrist(s, 'bikupa'), andraPlats = stationSite(s, 'bikupa');
+    const rik = formogenheter(s).egen.get(p.id) ?? 0; forsta.bi = undefined; const fattig = formogenheter(s).egen.get(p.id) ?? 0; forsta.bi = 2;
+    // branden tar kupan, och samhället med den
+    const fore = samhallen(s).length; taBort(s, forsta); const efter = samhallen(s).length;
+    return [
+      [`på sommaren får ${(iSommar * 100).toFixed(0)} % av de tomma kuporna bin (väntat ${(vantat * 100).toFixed(0)} %, tillgången ${bv.toFixed(2)})`, Math.abs(iSommar - vantat) < 0.12 && iSommar > 0],
+      [`på våren, hösten och i istiden kommer ingen svärm (${andra.join(', ')})`, andra.every(v => v === 0)],
+      [`utan vildbin inom räckhåll kommer ingen (${utanVild})`, utanVild === 0],
+      [`svärmarna kommer lika ofta med 10 minuters slag (${(kort * 100).toFixed(0)} %) som med fyra timmars (${(lang * 100).toFixed(0)} %)`, Math.abs(kort - lang) < 0.08],
+      ['byns första bisamhälle får en notis', notisen],
+      [`två samhällen intill varandra delar på draget (${ensam.toFixed(2)} → ${delat.toFixed(2)})`, Math.abs(delat - ensam / 2) < 1e-9],
+      [`medan den första kupan står tom vill byn ingen till (${medTom}); när den har bin vill den det (${medBin}), en bit bort (${andraPlats ? Math.hypot(andraPlats.x - at.x, andraPlats.y - at.y).toFixed(1) : '–'} rutor)`, medTom === 0 && medBin === 1 && !!andraPlats],
+      [`samhället räknas i ägarens rikedom (${fattig.toFixed(0)} → ${rik.toFixed(0)})`, Math.abs(rik - fattig - BIN.varde) < 1e-6],
+      [`en kupa som brinner tar samhället med sig (${fore} → ${efter})`, fore === 1 && efter === 0],
+    ];
+  },
+};

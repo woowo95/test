@@ -49,6 +49,7 @@ import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, 
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
+import { BIN, binSteg } from './bin';
 import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
 import { eldFlyttKvar, flyttaElden, stepEldFlytt } from './eldflytt';
@@ -410,6 +411,7 @@ export const TAKTER: Takt[] = [
   { namn: 'stepIs', sek: 3600, fn: s => { stepIs(s); } },
   { namn: 'growGround', sek: 3600, fn: (s, _dt, c) => { growGround(s, 1, c.ai); } },
   { namn: 'growFynd', sek: 14400, fn: (s, dt, c) => { growFynd(s, dt / HOUR_S, c.ai, vaxtFaktor(s), vaderNu(s).nb); } },
+  { namn: 'bina', sek: 14400, fn: (s, dt) => { binSteg(s, dt); } }, // svärmarna (bin.ts, steg 10.10.17)
   { namn: 'forget', sek: 14400, fn: (s, dt) => { forget(s, dt / HOUR_S); } },
   { namn: 'stepRykten', sek: 3600, fn: s => { stepRykten(s, moodOf); } },
   { namn: 'glomRykten', sek: 14400, fn: (s, dt) => { glomRykten(s, dt / HOUR_S); } },
@@ -1020,6 +1022,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
         if (ff > ELD.flintaStenar) observe(s, p, 'flinta', tk.tx, tk.ty);
       }
       else if (plockSlag === 'kantarell' || plockSlag === 'spindling') { const f = svampPlock(s, p, plockSlag); for (const k in f) bar(k, f[k]); }
+      else if (plockSlag === 'honung') { const g = BIN.vildTim * dtSec / HOUR_S; takeFrom(s, 'honung', Math.floor(tk.tx) + 0.5, Math.floor(tk.ty) + 0.5, g); bar('honung', g); count(s, 'honungVild', g); if (g > 0 && !s.stat?.vildboHittat && forstaGang(s, 'vildboHittat')) log(s, `${p.name} hittade ett bo med vildbin och tog honung ur det.`, 'world', [p.id]); } // vildboet (steg 10.10.15)
       else if (plockSlag) { tk.carry += 1; count(s, 'samlat_bar', 1); gjort(s, p, 'samlat', 1); }
     } else if (y > 0) {
       // rötterna efter hur mycket av platsen som var rötter före uttaget; med benspaden gräver man fram fler (steg 2.7.2)
@@ -1037,7 +1040,6 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
     { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
-    { const r = vildNara(s, 'honung', tk.tx, tk.ty, HONUNG_AR); if (r) { const g = r.v * dt / HOUR_S * HONUNG; takeFrom(s, 'honung', r.x, r.y, g); bar('honung', g); } } // honungskakorna i vildbinas bon (steg 10.7.25)
     if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
@@ -1099,7 +1101,6 @@ function stepNaken(s: State) {
     else if (saknas.length) think(p, `Har inget på ${och(saknas.map(d => NAKEN_DELAR[d]!))}`, KLADER.nakenDel * saknas.length, s.now, 2 * HOUR);
   }
 }
-const HONUNG = 0.4; // så många honungskakor per timmes samlande intill ett rikt bo (steg 10.7.25)
 const ROLLEKA = 0.6; // så mycket rölleka per timmes samlande på en rik röllekaruta (steg 9.7.15)
 export const RUNDA = balans('runda', {
   sett: 12, // så många rutor minns man att man nyss plockat på ...
@@ -1165,7 +1166,7 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
 }
 // lagren med saker på rutan för den som samlar res: bär och rötter, och svampen som växer där
 const LAGREN_PA: Partial<Record<string, readonly FyndId[]>> = {};
-const lagrenPa = (res: Lager) => LAGREN_PA[res] ??= [...lagren(res), ...(res === 'samla' ? ['kantarell', 'spindling'] as FyndId[] : [])];
+const lagrenPa = (res: Lager) => LAGREN_PA[res] ??= [...lagren(res), ...(res === 'samla' ? ['kantarell', 'spindling', 'honung'] as FyndId[] : [])]; // honungen i vildbona räknas som svampen (steg 10.10.15)
 // sakerPa för den som frågar om många rutor på en gång utan att något i byn ändras emellan (nästa mål, sträckan): väggarna, dygnet
 // och det som gäller hela kartan hämtas en gång, och inga listor byggs. Samma antal som sakerPa
 function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
@@ -1195,7 +1196,7 @@ export const sakerPaMarken = (s: State, slag: 'samla' | 'grenar', x: number, y: 
 export const sakerPa = (s: State, tk: Task, x: number, y: number) => sakerPaRutan(s, tk, x, y).reduce((a, q) => a + q.n, 0);
 // ett plock (steg 9.2.55): en sak tas från rutan, den som det finns mest av. Svarar med slaget, eller undefined om rutan är tom
 function plockaEn(s: State, tk: Task, x: number, y: number): string | undefined {
-  const fore = sakerPaRutan(s, tk, x, y).sort((a, b) => b.n - a.n)[0];
+  const fore = sakerPaRutan(s, tk, x, y).filter(q => q.k !== 'honung').sort((a, b) => b.n - a.n)[0]; // honungen tas i takt (vildboet i rundaRuta)
   if (!fore || fore.n <= 0) return undefined;
   const res = ACTS[tk.act].resurs, i = y * W + x;
   if (res && !tk.sok) {
@@ -1283,6 +1284,14 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   }
   const x = Math.floor(tk.tx), y = Math.floor(tk.ty), full = fullBorda(s, p, tk);
   if (tk.sok && !tk.tandmat && !needStones(s) && !flintaBehovs(s, tk)) { tk.until = s.now; return 1e-3; } // byn har nog
+  // vildboet (steg 10.10.15): intill ett bo tas honungen i takt, BIN.vildTim kakor i timmen, tills det inte finns någon kaka kvar där
+  if (!full && (sakerPaRutan(s, tk, x, y).find(q => q.k === 'honung')?.n ?? 0) > 0) {
+    tk.plock = undefined;
+    const used = Math.max(1e-3, Math.min(left, slut, BIT));
+    s.now = now + used * SEC;
+    plockSlag = 'honung'; workStep(s, p, tk, used, a, learn, false, true, 0); plockSlag = undefined;
+    return used;
+  }
   // plocka (steg 9.2.55): stå still och plocka rutan tom, en hel sak per RUNDA.plock sekunder
   if (!full && sakerPa(s, tk, x, y) > 0) {
     tk.plock ??= RUNDA.plock;
@@ -1602,8 +1611,8 @@ import { skrammaKlar, staketKlar } from './odling';
 // den rikaste röllekan (eller ängsblomman, steg 10.7.3) på rutan eller bredvid den som samlar (steg 9.7.15): den plockas på
 // vägen. Bara på våren och sommaren, när de växer, så att de andra tidsåldrarna inte frågar kartan i onödan
 const ROLLEKA_GRANNAR = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]] as const;
-const VAXTAR = [1, 2], HONUNG_AR = [2, 3]; // vår och sommar; honungen på sommaren och hösten
-function vildNara(s: State, k: 'rolleka' | 'blomma' | 'honung', x: number, y: number, ar = VAXTAR) {
+const VAXTAR = [1, 2]; // vår och sommar
+function vildNara(s: State, k: 'rolleka' | 'blomma', x: number, y: number, ar = VAXTAR) {
   if (!ar.includes(ageIndex(s))) return undefined;
   let best: { x: number; y: number; v: number } | undefined;
   for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, k, x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }

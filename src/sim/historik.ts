@@ -8,6 +8,7 @@ import { kartminneSteg } from './kartminne';
 import { formogenheter, rikedomDelar } from './varde';
 import { SAK_LIST, isTool } from './saker';
 import { tingOf } from './agande';
+import { samhallen } from './bin';
 
 // ---------- byns historik ----------
 // Några nyckeltal sparas en gång i timmen (en timme är ca 15 dagar i spelet). Efter en vecka (en tidsålder) slås
@@ -34,6 +35,7 @@ export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; va
   // matlagningen (steg 9.2.62): det som grillats och det som bränts sedan byns början, ur byns statistik
   { id: 'grillat', namn: 'Grillat sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.grillat as number) ?? 0) },
   { id: 'brant', namn: 'Bränt sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.brant as number) ?? 0) },
+  { id: 'bisamhallen', namn: 'Bisamhällen', hur: 'sist', varde: s => samhallen(s).length }, // steg 10.10.17
 ];
 
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });

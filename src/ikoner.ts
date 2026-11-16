@@ -149,6 +149,7 @@ export const PAL: Record<string, Record<string, string>> = {
   kalke: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.2, platshållare
   slade: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.3, platshållare (också tekniken Släde)
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
+  bikupa: { o: '#24201d', h: '#d8b25f', H: '#b2921b', d: '#906f0f', g: '#5e3c24', z: 'rgba(36,32,29,.30)' }, // steg 10.10.16, platshållare
   honung: { o: '#24201d', h: '#b2921b', H: '#d8b25f', d: '#906f0f', v: '#694902', z: 'rgba(36,32,29,.30)' }, // steg 10.7.25, platshållare
   blomma: { o: '#24201d', g: '#647025', l: '#898b4c', y: '#d8b25f', c: '#bd753e', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.7.3, platshållare
   bildsten: { o: '#24201d', g: '#8a9c9e', m: '#61767a', r: '#a14808', b: '#3f2415', d: '#474138', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // steg 10.7.1, platshållare
@@ -2780,6 +2781,24 @@ export const PIX: Record<string, string[]> = {
     '.......oooooooo.',
     '........zzzzzz..',
   ],
+  bikupa: [ // platshållare (steg 10.10.16): en halmkupa i ringar av flätat hö, med flustret nere vid foten, på en stubbe av grenar
+    '................',
+    '......oooo......',
+    '....oohHHhoo....',
+    '...ohHhhhhHho...',
+    '...oddddddddo...',
+    '..ohHhhhhhhHho..',
+    '..ohhhhhhhhhho..',
+    '..oddddddddddo..',
+    '.ohHhhhhhhhhHho.',
+    '.ohhhhhhhhhhhho.',
+    '.oddddddoodddddo',
+    '.ohhhhhhoohhhho.',
+    '..oooooooooooo..',
+    '...gg......gg...',
+    '...zzzzzzzzzz...',
+    '................',
+  ],
   honung: [ // platshållare (steg 10.7.25): en bit vaxkaka med sexkantiga celler fulla av honung
     '................',
     '................',
@@ -4203,6 +4222,7 @@ PIX.kokgrop = PIX.sten; PAL.kokgrop = PAL.sten; // platshållare för kokgropen 
 PIX.sprit = PIX.lerkruka_liten ?? PIX.kruka; PAL.sprit = PAL.lerkruka_liten ?? PAL.kruka; PIX.mjod = PIX.honung; PAL.mjod = PAL.honung; // teknikerna Sprit och Mjöd (steg 10.7.25–10.7.26), platshållare
 PIX.brannpanna = PIX.ortkok ?? PIX.sten; PAL.brannpanna = PAL.ortkok ?? PAL.sten; // platshållare för brännpannan (steg 10.7.26) tills Björn valt i bildstilen
 PIX.slaktrens = PIX.ben; PAL.slaktrens = PAL.ben; PIX.vaxtrest = PIX.torrgras; PAL.vaxtrest = PAL.torrgras; // platshållare för resterna (steg 9.7.5) tills Björn valt i bildstilen
+PIX.bikupa_karta = PIX.bikupa; PAL.bikupa_karta = PAL.bikupa; // platshållare för bikupan på kartan (steg 10.10.16)
 PIX.kompost = PIX.latrin ?? PIX.ved; PAL.kompost = PAL.latrin ?? PAL.ved; // platshållare för komposten (steg 9.7.6) tills Björn valt i bildstilen
 PIX.kal = PIX.svamp; PAL.kal = PAL.svamp; PIX.bonor = PIX.arter; PAL.bonor = PAL.arter; PIX.kalfron = PIX.artfron; PAL.kalfron = PAL.artfron; // platshållare för kålen och bönorna (steg 9.7.8) tills Björn valt i bildstilen
 PIX.jordgubbar = PIX.bar; PAL.jordgubbar = PAL.bar; PIX.jordgubbsplanta = PIX.bar; PAL.jordgubbsplanta = PAL.bar; // platshållare för jordgubbarna (steg 9.7.9) tills Björn valt i bildstilen

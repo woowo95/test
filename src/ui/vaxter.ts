@@ -1,5 +1,5 @@
 import { richness } from '../sim';
-import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden } from '../sim';
+import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden, vildboSyns, samhallen } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
@@ -30,6 +30,9 @@ const ROLLEKA_VILD = [
   ['.yxy...yy.', 'yxxxv.yxxv', '.vCv...vC.', '..C....C..', '..C...C...', '.D.C.CD.D.', 'DED.CC.DE.', '.DEDCDEDD.'],
   ['yxy..yy..yx.', 'xxv.yxxv.xxv', '.C...vC..vC.', '.C....C..C..', '..C...C.C...', 'D.DC.DCC.D..', 'EDD.CCC.DED.', '.DEDDCDEDD..'],
 ];
+// vildbinas bo på stammen (steg 10.10.15, platshållare tills Björn valt i bildstilen): en grå-gul kupa av vax som hänger på trädet
+const VILDBO = ['.jj.', 'jhHj', 'hHhH', 'jhHj', 'HhHh', '.jj.'];
+let bon: number[] = []; // rutorna med ett bo som syns, för bina som surrar runt stammen (drawAnimals)
 const ritaBild = (rad: string[], x: number, y: number) => rad.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const c = BILD_FARG[r[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
 // Var det kan växa syns inte. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
@@ -52,13 +55,14 @@ export function drawPlants(force = false) {
   const nu = performance.now();
   if (!force && (key === ritad || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
   ritad = key; ritadNar = nu;
-  plantG.clear();
+  plantG.clear(); bon = [];
   for (let ry = v.y0; ry <= v.y1; ry++) for (let rx = v.x0; rx <= v.x1; rx++) {
     const i = ry * W + rx, x = rx * TS, y = ry * TS;
     let j = 0; // varje sak får en fast plats i rutan, så att bilden inte hoppar runt när kartan ritas om
     for (const q of sakerPaMarken(s, 'samla', rx, ry)) {
       const n = Math.min(3, q.n);
       if (n <= 0) continue;
+      if (q.k === 'honung') { if (vildboSyns(s, i)) { bon.push(i); ritaBild(VILDBO, x + 9, y + 3); } continue; } // honungen syns som boet på trädet, inte som kakor på marken
       if (q.k === 'bar') continue; // bären syns på bärbuskarna (steg 6.5.4, terrang.ts), och under träd växer inga (steg 10.10.8)
       ritaRad(q.k, n, x, y); j += n;
     }
@@ -110,6 +114,10 @@ const honsIdn = (n: number) => Array.from({ length: n }, (_, i) => HONS_ID0 + i)
 export function drawAnimals() {
   samlaJakt();
   djurIkoner.start(); larmIkoner.start(); brandRokIkoner.start(); djurFx.clear();
+  // bina surrar runt stammen där ett bo syns (steg 10.10.15): tre små prickar som går runt boet, var och en i sin egen takt
+  for (const i of bon) { const bx = (i % W) * TS + 11, by = Math.floor(i / W) * TS + 6; for (let k = 0; k < 3; k++) { const v = performance.now() / (700 + k * 230) + k * 2.1 + i; djurFx.beginFill(0x24201d).drawRect(Math.round(bx + Math.cos(v) * (4 + k)), Math.round(by + Math.sin(v * 1.3) * (3 + k)), 1, 1).endFill(); } }
+  // bina vid flustret (steg 10.10.17): i en kupa med ett samhälle flyger de ut och in på våren och sommaren, var och ett åt sitt håll
+  { const ai = ageIndex(s, ui.nu); if (ai === 1 || ai === 2) for (const t of samhallen(s)) { const fx = t.x * TS + 8, fy = t.y * TS + 12; for (let k = 0; k < 4; k++) { const v = performance.now() / (900 + k * 170) + k * 1.7 + t.id, ut = Math.abs(Math.sin(v)) * (3 + k * 2), r = k * 1.9 + t.id; djurFx.beginFill(0x24201d).drawRect(Math.round(fx + Math.cos(r) * ut), Math.round(fy + Math.sin(r) * ut * 0.6 - ut * 0.4), 1, 1).endFill(); } } }
   const folk = living(s).map(posOf), jagas = jagade(), sedda = new Set<number>(), ut: SynligtDjur[] = [];
   const jagadId = new Set(jagas.kaniner.map(k => k.id)), riktade = new Set<number>();
   for (const k of jagas.kaniner) { // den som jagas just nu ritas som jakten går (jakt.ts)

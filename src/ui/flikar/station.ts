@@ -1,7 +1,7 @@
 import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK } from '../../sim';
+import { drag, dragDelar, DRAG_LIST, DRAGKALLOR, delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
@@ -21,6 +21,12 @@ function gorRad(a: keyof typeof ACTS, bara: boolean) {
   return `<dt ${tip(om + (bara ? '. Görs bara här' : ''))}>${vad}</dt><dd>${esc(ACTS[a].namn)}${bara ? ' <span class="muted">bara här</span>' : ''}</dd>`;
 }
 // testläget (steg 3.10.1): stationen kan tas bort eller flyttas till en ruta man trycker på på kartan (interaktion.ts)
+// binas drag vid kupan (steg 10.10.16): en stapel, och symbolerna för det som blommar inom räckhåll
+function dragRad(st: { x: number; y: number }) {
+  const v = drag(s, st.x, st.y), delar = dragDelar(s, st.x, st.y);
+  const vaxter = DRAG_LIST.filter(k => (delar[k] ?? 0) > 0).map(k => `<span ${tip(`${DRAGKALLOR[k].namn}: ${fmtN(Math.round(delar[k] * 10) / 10)}`)}>${iconImg(DRAGKALLOR[k].ikon)}</span>`).join('');
+  return `<h3>Drag</h3><p ${tip(`Så mycket blommar för bina här: ${Math.round(v * 100)} %. Hösten och istiden blommar inget`)}>${condBar(v)}<span>${Math.round(v * 100)} %</span> ${vaxter}</p>`;
+}
 function testRad(id: number) {
   if (!ui.testMode) return '';
   const val = ui.flytta === id;
@@ -110,6 +116,7 @@ export const station: Flik = {
     return `
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${st.ber?.namn ? `★ ${esc(st.ber.namn)}: ` : ''}${esc(d.namn)}</h2><p class="muted">${status}${st.q !== undefined ? ` ${kvMark(st, 12)} ${esc(kvText(st))}.` : ''} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${st.ber ? `<p class="besk">${esc(sakBerattelse(s, st, d.namn))}</p>` : ''}${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${d.pynt && klar ? `<p ${tip(`Pynt: ägaren trivs i rummet med det (humör +${Math.round(PYNT.glad[kvOf(st)] * 100)} %), och de som ser det där tycker bättre om hen. Ju finare det är, desto mer`)}>😊 +${Math.round(PYNT.glad[kvOf(st)] * 100)} % 🏺</p>` : ''}${agare ? `<p>Ägs av ${pLink(agare)}.</p>` : ''}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>
     ${bruk}
+    ${d.utkant?.drag ? dragRad(st) : ''}
     ${st.k === 'scen' && fritidLista({ scen: st.id }) ? `<h3>Framträdanden här</h3>${fritidLista({ scen: st.id, antal: 10 })}` : ''}
     ${d.gor.length ? `<h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>` : ''}
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
