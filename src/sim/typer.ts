@@ -194,6 +194,7 @@ export interface Person {
   rus?: number; kvallT?: number; supit?: number; fylla?: 1; bak?: number; // fylla = var full i kväll, bak = timmar bakfylla kvar (steg 9.6.15) // berusningen nu och det man supit på sistone (steg 9.6.14, rus.ts) // kvallT = när hen sist frågade sig om en kvällsdryck (steg 10.7.23)
   protMinne?: string[]; // proteinet i de senaste måltiderna (steg 9.6.5, behov.ts)
   hn?: Record<string, number>; hnBlodat?: 1; // hälsans tecken förra timmen och att hen blött (steg 9.5.31, halsonotiser.ts)
+  gift?: number; // bigiftet just nu, räknat mot kroppens storlek (steg 10.10.22, halsa.ts gift)
   blodNotis?: 1; // notisen om att hen snart förblöder är skickad (steg 9.5.14, halsa.ts) // örtteet hjälper motståndet till dess, med teets kvalitet (steg 9.5.8, vatskor.ts)
   bedrift?: import('./rykten').Bevis; // den senaste stora bedriften (steg 10.6.1): stoltheten ger lust att resa en runsten
   sorg?: { namn: string; vem?: number; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)

@@ -43,7 +43,7 @@ import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './r
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
-import { FYND, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
+import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
@@ -104,7 +104,7 @@ import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } 
 import { lagRegister } from './lagar';
 import { oppnaSed } from './rost';
 import { handelse } from './rykten';
-import { tal, horsel, barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
+import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, PLAGG, kladAv } from './klader';
@@ -1023,7 +1023,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
         if (ff > ELD.flintaStenar) observe(s, p, 'flinta', tk.tx, tk.ty);
       }
       else if (plockSlag === 'kantarell' || plockSlag === 'spindling') { const f = svampPlock(s, p, plockSlag); for (const k in f) bar(k, f[k]); }
-      else if (plockSlag === 'honung') { const g = BIN.vildTim * dtSec / HOUR_S; takeFrom(s, 'honung', Math.floor(tk.tx) + 0.5, Math.floor(tk.ty) + 0.5, g); bar('honung', g); count(s, 'honungVild', g); if (g > 0 && !s.stat?.vildboHittat && forstaGang(s, 'vildboHittat')) log(s, `${p.name} hittade ett bo med vildbin och tog honung ur det.`, 'world', [p.id]); } // vildboet (steg 10.10.15)
+      else if (plockSlag === 'honung') { const g = BIN.vildTim * dtSec / HOUR_S; takeFrom(s, 'honung', Math.floor(tk.tx) + 0.5, Math.floor(tk.ty) + 0.5, g); bar('honung', g); binStick(s, p, dtSec, BIN.vildStick * fyndAt(s, 'honung', Math.floor(tk.ty) * W + Math.floor(tk.tx))); count(s, 'honungVild', g); if (g > 0 && !s.stat?.vildboHittat && forstaGang(s, 'vildboHittat')) log(s, `${p.name} hittade ett bo med vildbin och tog honung ur det.`, 'world', [p.id]); } // vildboet (steg 10.10.15)
       else if (plockSlag) { tk.carry += 1; count(s, 'samlat_bar', 1); gjort(s, p, 'samlat', 1); }
     } else if (y > 0) {
       // rötterna efter hur mycket av platsen som var rötter före uttaget; med benspaden gräver man fram fler (steg 2.7.2)

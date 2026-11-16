@@ -849,3 +849,53 @@ SCENARIER.vinterhonung = {
     }
   },
 };
+SCENARIER.bistick = {
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=1' },
+  text: 'Steg 10.10.22: bisticken. Av många skattningar av en full kupa utan fackla ger ungefär var fjärde ett stick och med fackla färre än var tionde; den skickliga i djurskötsel får färre, vildboet dubbelt så många som kupan, en liten kupa färre än en full och den med kläder färre än den utan. Flera stick läggs ihop till ett antal på kroppsdelen och läker på 12 timmar, den som har ont nog vilar hellre, 30 stick sänker medvetandet hos en vuxen och 15 hos ett barn, och sticken blir lika många med korta som med långa slag',
+  kor: () => {
+    const { BIN, OLYCKOR, binStick, halsaSteg, gift, medvetande, vilaHellre, kladVarme, chooseTask, ALDER, ageOf } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const vuxna = SIM.living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen), p = vuxna[0], barn = SIM.living(s).find(q => ageOf(q, s.now) < ALDER.vuxen);
+    const kupa: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x: 60, y: 60, kvar: 0, bi: BIN.rymmer, ag: p.id }; (s.stationer ??= []).push(kupa);
+    const klader = SIM.tingOf(s).filter(t => t.bar === p.id), avKlad = () => { for (const t of klader) t.bar = undefined; }, paKlad = () => { for (const t of klader) t.bar = p.id; };
+    const rent = () => { p.skador = undefined; p.gift = undefined; p.hunger = 1; p.torst = 1; p.warm = 1; p.rest = 1; p.blod = 1; };
+    // n skattningar på två minuter i slag om dt sekunder: sticken per skattning
+    const skatta = (n: number, opt: { tool?: string; skotsel?: number; bi?: number; dt?: number } = {}) => {
+      const sk = p.skill.skotsel; p.skill.skotsel = opt.skotsel ?? 0; kupa.bi = opt.bi ?? BIN.rymmer; let st = 0; const dt = opt.dt ?? 10;
+      for (let i = 0; i < n; i++) { rent(); p.task = { act: 'skatta', phase: 'do', ref: kupa.id, tool: opt.tool, tx: kupa.x + 0.5, ty: kupa.y + 0.5, until: s.now + 2 * 60000, carry: 0, dark: false, why: '' } as SIM.Task; for (let t = 0; t < 120; t += dt) { halsaSteg(s, p, dt); } st += (p.skador ?? []).reduce((a, w) => a + (w.k === 'bistick' ? w.n ?? 1 : 0), 0); }
+      p.skill.skotsel = sk; p.task = undefined; rent(); return st / n;
+    };
+    avKlad();
+    const utan = skatta(3000), fackla = skatta(3000, { tool: 'fackla' }), skicklig = skatta(3000, { skotsel: 15 }), liten = skatta(3000, { bi: 3 });
+    const kort = skatta(3000, { dt: 2 }), lang = skatta(3000, { dt: 120 });
+    // vildboet: lika stort bo, med BIN.vildStick
+    let vild = 0; for (let i = 0; i < 3000; i++) { rent(); vild += binStick(s, p, 120, BIN.vildStick); } vild /= 3000; rent();
+    paKlad(); const varme = kladVarme(s, p), medKlad = skatta(3000); avKlad();
+    // flera stick på samma del läggs ihop och läker på 12 timmar
+    const rad = { ...OLYCKOR.skatta!, delar: ['handV'] as SIM.Kroppsdel[] };
+    rent(); const paHand = () => (p.skador ?? []).reduce((a, w) => a + (w.n ?? 1), 0); while (paHand() < 2) binStick(s, p, 10, 1, rad);
+    const hand = (p.skador ?? []).filter(w => w.k === 'bistick'), antal = hand.length === 1 ? hand[0].n ?? 1 : -1;
+    let timmar = 0; while ((p.skador ?? []).some(w => w.k === 'bistick') && timmar < 30) { for (let k = 0; k < 6; k++) { p.hunger = 1; p.torst = 1; halsaSteg(s, p, 600); } timmar++; }
+    // smärtan: den som fått 25 stick vilar hellre och skattar inte
+    rent(); while (paHand() < 25) binStick(s, p, 10, 1, { ...rad, delar: ['handV', 'handH', 'armV', 'armH'] as SIM.Kroppsdel[] });
+    const ont = (p.skador ?? []).reduce((a, w) => a + (w.n ?? 1), 0), vill = vilaHellre(p); chooseTask(s, p); const valde = p.task?.act;
+    // giftet: 30 stick sänker medvetandet hos en vuxen, 15 hos ett barn
+    rent(); p.skador = [{ d: 'bal', k: 'bistick', g: 1, b: 0, n: 29 }]; const g29 = gift(s, p); p.gift = g29; const m29 = medvetande(p);
+    p.skador = [{ d: 'bal', k: 'bistick', g: 1, b: 0, n: 40 }]; p.gift = gift(s, p); const m40 = medvetande(p); p.skador = [{ d: 'bal', k: 'bistick', g: 1, b: 0, n: 29 }]; p.gift = undefined; const m0 = medvetande(p);
+    let gBarn = 0; if (barn) { barn.skador = [{ d: 'bal', k: 'bistick', g: 1, b: 0, n: 15 }]; gBarn = gift(s, barn); barn.skador = undefined; }
+    rent();
+    return [
+      [`en full kupa utan fackla ger ${utan.toFixed(2)} stick per skattning (ungefär var fjärde)`, utan > 0.2 && utan < 0.33],
+      [`med fackla ${fackla.toFixed(3)} (färre än var tionde)`, fackla < 0.1],
+      [`den skickliga i djurskötsel får färre (${skicklig.toFixed(2)})`, skicklig < utan * 0.6],
+      [`vildboet ger dubbelt så många som kupan (${vild.toFixed(2)} mot ${utan.toFixed(2)})`, Math.abs(vild / utan - 2) < 0.3],
+      [`en liten kupa ger färre än en full (${liten.toFixed(2)})`, liten < utan * 0.5],
+      [`den med kläder (värmen ${varme.toFixed(2)}) får färre (${medKlad.toFixed(2)})`, varme > 0 && medKlad < utan * (1 - BIN.kladSkydd * varme) + 0.04],
+      [`två stick på handen blir en skada med antalet ${antal.toFixed(2)}, som läkt efter ${timmar} timmar`, Math.abs(antal - 2) < 0.01 && timmar >= 11 && timmar <= 13],
+      [`den som fått ${ont} stick vilar hellre (${vill}) och skattar inte (${valde})`, vill && valde !== 'skatta'],
+      [`29 stick sänker inte medvetandet genom giftet (${m29.toFixed(3)} = ${m0.toFixed(3)}), 40 gör det (${m40.toFixed(3)})`, Math.abs(m29 - m0) < 1e-9 && m40 < m29 - 0.05],
+      [`hos ett barn räknas 15 stick som 30 (${gBarn})`, !barn || gBarn === 30],
+      [`sticken blir lika många med 2 sekunders slag (${kort.toFixed(2)}) som med två minuters (${lang.toFixed(2)})`, Math.abs(kort - lang) < 0.05],
+    ];
+  },
+};

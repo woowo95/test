@@ -31,7 +31,9 @@ import { bedFor } from './bygg';
 import { freeNear, roomAt } from './byggnad';
 import { isForest, tileOf } from './mark';
 import { eldPlats } from './karta';
-import { chance, clamp, pick, rnd } from './slump';
+import { antalPa, chance, clamp, pick, rnd } from './slump';
+import { BIN, kupor } from './bin';
+import { kladVarme } from './utrustning';
 import { Act, DAY, HOUR, HOUR_S, Person, Skill, State, Stock, Task } from './typer';
 import { balans } from './balans';
 import { GANG } from './gang';
@@ -186,6 +188,7 @@ export const SKADOR = {
   sticksar: { namn: 'Sticksår', ett: 'ett sticksår', tecken: '🗡️', blod: 1.5, smarta: 0.7, fel: 0.5, lakTim: 48, inf: 1.5 }, // ett djupt stick (steg 3.7.2, strid.ts)
   hjarnskakning: { namn: 'Hjärnskakning', ett: 'en hjärnskakning', tecken: '💫', blod: 0, smarta: 0.6, fel: 0.3, lakTim: 48 }, // ett hårt slag mot huvudet
   forfrysning: { namn: 'Förfrysning', ett: 'en förfrysning', tecken: '🥶', blod: 0, smarta: 0.5, fel: 0.6, lakTim: 72 }, // av kylan (steg 8.2.3)
+  bistick: { namn: 'Bistick', ett: 'ett bistick', tecken: '📍', blod: 0, get smarta() { return BIN.smarta; }, fel: 0.02, lakTim: 12 }, // per kroppsdel med ett antal (n), svullnar och läker på 12 timmar (steg 10.10.22, bin.ts); tecknet är en platshållare
   brannskada: { namn: 'Brännskada', ett: 'en brännskada', tecken: '🔥', blod: 0, smarta: 0.8, fel: 0.4, lakTim: 72, inf: 1.5 }, // av elden i en eldsvåda (steg 3.8.5, brand.ts)
 } satisfies Record<string, SkadaDef>;
 export type SkadaTyp = keyof typeof SKADOR;
@@ -193,13 +196,16 @@ const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
 // en skada: del, typ, grad (0–1, sjunker när den läker) och blödningen kvar (1 = som nyss, 0 = levrad).
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
 export interface Men { d: Kroppsdel; fel: number; ont: number }
-export interface Skada { fT?: number; rh?: 1; vardare?: number; d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number; oppet?: 1; satt?: 1; snett?: 1; t0?: number; spala?: 1 } // benbrottet: öppet, satt (9.5.28) eller snett läkt (steg 9.5.27) // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
+export interface Skada { n?: number; /* bisticken: antalet stick på delen (steg 10.10.22) */ fT?: number; rh?: 1; vardare?: number; d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number; oppet?: 1; satt?: 1; snett?: 1; t0?: number; spala?: 1 } // benbrottet: öppet, satt (9.5.28) eller snett läkt (steg 9.5.27) // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
 // per handling, medan den görs: risk per timme (mindre för den skicklige), skadorna och delarna som kan drabbas, gradens
 // spann (de flesta skador är lätta: min + slump² × (max − min)), dödsorsaken om den dödar direkt och när det hände
-interface OlyckaDef { risk: number; typer: SkadaTyp[]; delar: Kroppsdel[]; min: number; max: number; dod: Dodsorsak; nar: string }
+// fardighet = färdigheten som sänker risken (annars arbetets), lugnar = redskapen som lugnar och hur stor del av risken som blir kvar
+// med dem (steg 10.10.22), riskAv = hur risken växer med det man arbetar vid, bistick = skadan är bistick, ett antal per kroppsdel
+interface OlyckaDef { risk: number; typer: SkadaTyp[]; delar: Kroppsdel[]; min: number; max: number; dod: Dodsorsak; nar: string; fardighet?: Skill; lugnar?: Record<string, number>; riskAv?: (s: State, p: Person) => number; bistick?: true }
+let skattaRisk: number | undefined; // ett prov kan sätta risken (BIN.stick annars)
 export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
   jakt: { risk: 0.01, typer: ['bett', 'klos', 'benbrott'], delar: [...ARMAR, ...HANDER, ...BEN, ...FOTTER, 'bal'], min: 0.1, max: 1, dod: 'jakt', nar: 'under en jakt' },
   falla: { risk: 0.03, typer: ['krossar', 'benbrott'], delar: [...BEN, ...FOTTER, ...ARMAR, 'huvud'], min: 0.15, max: 1, dod: 'olycka', nar: 'när ett träd föll' },
@@ -207,14 +213,39 @@ export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
   slakta: { risk: 0.01, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.8, dod: 'olycka', nar: 'när hen slaktade' },
   rensa: { risk: 0.005, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.6, dod: 'olycka', nar: 'när hen rensade fisk' },
   kniv: { risk: 0.01, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.7, dod: 'olycka', nar: 'när hen slog flinta' },
+  // bisticken vid kupan (steg 10.10.22): BIN.stick stick i timmen för den ovana vid ett fullt bo, gånger honungen i kupan
+  skatta: { get risk() { return skattaRisk ?? BIN.stick; }, set risk(v: number) { skattaRisk = v; }, typer: ['bistick'], delar: [...HANDER, ...ARMAR, 'huvud'], min: 1, max: 1, dod: 'bistick', nar: 'vid bikupan', fardighet: 'skotsel', get lugnar() { return { fackla: BIN.rok }; }, riskAv: (s, p) => { const t = kupor(s).find(q => q.id === p.task?.ref); return t?.bi ? t.bi / BIN.rymmer : 0; }, bistick: true },
 };
+// bina sticker den som arbetar vid ett bo (steg 10.10.22): risken per timme (rad = olyckans rad, storlek = boets storlek gånger det
+// som gör det argare, som vildbinas BIN.vildStick), sänkt av färdigheten, redskapet som lugnar och tjocka kläder. Antalet stick på
+// stunden dras så att det blir lika många med korta som med långa slag, och varje stick hamnar på en av radens kroppsdelar
+export function binStick(s: State, p: Person, dtSec: number, storlek: number, rad: OlyckaDef = OLYCKOR.skatta!) {
+  const t = p.task, sk = rad.fardighet;
+  const r = rad.risk * storlek * Math.max(0, 1 - (sk ? p.skill[sk] : 0) / HALSA.skicklig) * (t?.tool && rad.lugnar?.[t.tool] !== undefined ? rad.lugnar[t.tool] : 1) * (1 - BIN.kladSkydd * kladVarme(s, p));
+  const n = antalPa(s, r * dtSec / HOUR_S, 'halsa', p);
+  for (let i = 0; i < n; i++) stick(s, p, pick(s, rad.delar, 'halsa', p));
+  return n;
+}
+// ett stick till på delen d: antalet som inte läkt (n × g) och ett till, och svullnaden börjar om
+function stick(s: State, p: Person, d: Kroppsdel) {
+  if (p.saknas?.includes(d)) return;
+  const w = p.skador?.find(q => q.k === 'bistick' && q.d === d);
+  if (w) { w.n = (w.n ?? 1) * w.g + 1; w.g = 1; } else (p.skador ??= []).push({ d, k: 'bistick', g: 1, b: 0, g0: 1, n: 1 });
+  count(s, 'bistick');
+}
+// giftet: de stick som inte läkt, räknat mot kroppens storlek (ett barn tål hälften)
+export function gift(s: State, p: Person) {
+  let v = 0;
+  for (const w of p.skador ?? []) if (w.k === 'bistick') v += (w.n ?? 1) * w.g;
+  return v / (ageOf(p, s.now) < ALDER.vuxen ? BIN.barnTal : 1);
+}
 
 // ---------- det kroppen ger ----------
 // hur mycket sämre en del är just nu (0 = hel, 1 = går inte att använda)
 export function delFel(p: Person, d: Kroppsdel) {
   if (p.saknas?.includes(d)) return PROTES_FEL[p.protes?.[d] ?? ''] ?? 1; // en förlorad del kommer inte tillbaka (steg 8.2.3), men en protes ger tillbaka en del (steg 9.5.11)
   let f = 0;
-  for (const w of p.skador ?? []) if (w.d === d) f += SKADA[w.k].fel * w.g * (w.k === 'benbrott' && p.krycka && GADELAR.includes(d) ? HALSA.krycka : 1) + (w.fast ? HALSA.fastFel : 0); // vapnet i såret hindrar delen (steg 9.5.21); kryckan låter den med ett brutet ben gå (steg 9.5.28)
+  for (const w of p.skador ?? []) if (w.d === d) f += SKADA[w.k].fel * w.g * (w.n ?? 1) * (w.k === 'benbrott' && p.krycka && GADELAR.includes(d) ? HALSA.krycka : 1) + (w.fast ? HALSA.fastFel : 0); // vapnet i såret hindrar delen (steg 9.5.21); kryckan låter den med ett brutet ben gå (steg 9.5.28)
   for (const m of p.men ?? []) if (m.d === d) f += m.fel; // det som läkte fel (steg 8.2.4)
   return Math.min(1, f);
 }
@@ -265,6 +296,7 @@ export const medDelar = (p: Person) => {
 export function medvetande(p: Person) {
   let v = 1 - HALSA.medTrott * (1 - p.rest) - HALSA.medTorst * clamp(1 - p.torst / TORST.laker, 0, 1) - HALSA.medSvalt * clamp(1 - p.hunger / KROPP.lakerMat, 0, 1);
   if (p.blod !== undefined && p.blod < 1) v -= HALSA.medBlod * clamp((1 - p.blod) / (1 - HALSA.blodDod), 0, 1);
+  if (p.gift) v -= clamp((p.gift - BIN.giftYr) / (BIN.giftDod - BIN.giftYr), 0, 1); // bigiftet (steg 10.10.22)
   if (p.skador?.length || p.men?.length || p.saknas?.length) v -= HALSA.medSmarta * smarta(p) + HALSA.medInf * infektion(p) + HALSA.medHuvud * delFel(p, 'huvud');
   if (p.sjuk) v -= HALSA.medInf * sjukFeber(p); // febern av en sjukdom (steg 9.5.4)
   return clamp(v, 0, 1);
@@ -272,7 +304,7 @@ export function medvetande(p: Person) {
 const medArbete = (p: Person) => { const m = medvetande(p); return m >= HALSA.medLag ? 1 : HALSA.medArbete + (1 - HALSA.medArbete) * m / HALSA.medLag; };
 export function smarta(p: Person) {
   let v = 0;
-  for (const w of p.skador ?? []) v += SKADA[w.k].smarta * w.g + HALSA.infSmarta * (w.inf ?? 0);
+  for (const w of p.skador ?? []) v += SKADA[w.k].smarta * w.g * (w.n ?? 1) + HALSA.infSmarta * (w.inf ?? 0);
   for (const m of p.men ?? []) v += m.ont; // kronisk smärta (steg 8.2.4)
   return Math.min(1, v);
 }
@@ -310,7 +342,7 @@ export function skadeLista(p: Person, now: number): SkadeRad[] {
     const sk = SKADA[w.k], ren = (w.ren ?? 0) > now, kall = (w.inf ?? 0) >= HALSA.kallbrand;
     const gar = w.inf === undefined ? `läker, ungefär ${Math.ceil(w.g * sk.lakTim / lak)} timmar kvar` : kall ? 'kallbrand, blir sämre' : ren ? `${INFSTADIER[infStadium(w)].toLowerCase()}, rengjort, blir bättre` : `${INFSTADIER[infStadium(w)].toLowerCase()}, blir sämre`; // infektionens stadium (steg 9.5.24)
     return {
-      d: w.d, tecken: w.inf === undefined ? sk.tecken : kall ? '☠️' : '🦠', ikon: 's_' + (w.inf === undefined ? w.k : kall ? 'kall' : 'inf'), namn: `${sk.namn} i ${DEL[w.d].i}`,
+      d: w.d, tecken: w.inf === undefined ? sk.tecken : kall ? '☠️' : '🦠', ikon: 's_' + (w.inf === undefined ? w.k : kall ? 'kall' : 'inf'), namn: w.k === 'bistick' ? `${Math.max(1, Math.round((w.n ?? 1) * w.g))} bistick i ${DEL[w.d].i}` : `${sk.namn} i ${DEL[w.d].i}`,
       grad: w.g >= HALSA.radd ? 'mycket svårt' : w.g >= HALSA.avbryt ? 'svårt' : 'lätt', bloder: w.b > 0 && oppet(w),
       gjort: [...w.f ? [w.f === 2 ? 'förband' : 'förband av mossa'] : [], ...ren ? ['rengjort'] : [], ...w.satt ? ['satt'] : [], ...w.snett ? ['läker snett'] : [], ...w.spala ? ['spjälat'] : []], vard: [...w.f ? ['s_forb'] : [], ...ren ? ['s_ren'] : [], ...w.spala ? ['s_spala'] : []], gar, battre: w.inf === undefined || (ren && !kall),
     };
@@ -409,6 +441,7 @@ export function forlora(s: State, p: Person, d: Kroppsdel, hur: string) {
 }
 // en skada som läkt (steg 8.2.4): den kan läka fel och ge ett bestående men, och lämna ett ärr som ändrar utseendet
 function laktSkada(s: State, p: Person, w: Skada) {
+  if (w.k === 'bistick') return; // ett stick lämnar inget efter sig
   const g0 = w.g0 ?? 0;
   if (g0 >= HALSA.menGrad && rnd(s, 'halsa', p) < (w.snett ? HALSA.snettMen : HALSA.menChans)) { // ett snett läkt brott ger oftare ett bestående men (steg 9.5.27)
     const ont = !GADELAR.includes(w.d) && !DEL[w.d].syn;
@@ -428,8 +461,10 @@ function laktSkada(s: State, p: Person, w: Skada) {
 function olyckaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undefined {
   const t = p.task, o = t && t.phase === 'do' ? OLYCKOR[t.act] : undefined;
   if (!o) return undefined;
-  const pd = ACTS[t!.act], sk: Skill | undefined = pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined);
-  if (!chance(s, o.risk * (1 - (sk ? p.skill[sk] : 0) / HALSA.skicklig) * (1 - HALSA.smidig * franMitt(p, 'smidighet', s.now)) / HOUR_S, dtSec, 'halsa', p)) return undefined;
+  if (o.bistick) { binStick(s, p, dtSec, o.riskAv ? o.riskAv(s, p) : 1, o); return undefined; } // bisticken (steg 10.10.22)
+  const pd = ACTS[t!.act], sk: Skill | undefined = o.fardighet ?? pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined);
+  const lugn = t!.tool && o.lugnar?.[t!.tool] !== undefined ? o.lugnar[t!.tool] : 1, av = o.riskAv ? o.riskAv(s, p) : 1;
+  if (!chance(s, o.risk * (1 - (sk ? p.skill[sk] : 0) / HALSA.skicklig) * (1 - HALSA.smidig * franMitt(p, 'smidighet', s.now)) * lugn * av / HOUR_S, dtSec, 'halsa', p)) return undefined;
   const k = pick(s, o.typer, 'halsa', p), d = pick(s, o.delar, 'halsa', p), u = rnd(s, 'halsa', p);
   count(s, 'olyckor'); // skadorna i arbetet (de i slagsmål och straff räknas inte här)
   return skada(s, p, d, k, o.min + u * u * (o.max - o.min), o.dod, o.nar);
@@ -455,6 +490,8 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
     if (w.inf === undefined) w.g -= h * lak / SKADA[w.k].lakTim * (w.k === 'brannskada' ? 1 + SALVA.bransk * salvaVerkan(w) : 1) * (w.k === 'benbrott' ? alderLak(s, p) * (w.snett ? 0.5 : 1) : 1); // ett infekterat sår läker inte; salvan hjälper brännskadan (steg 9.5.10)
   }
   if (p.skador.some(w => (w.inf ?? 0) >= 1)) return 'kallbrand';
+  const gf = gift(s, p); p.gift = gf > 0 ? gf : undefined;
+  if (gf >= BIN.giftDod) return 'bistick';
   for (const w of p.skador) if (w.g <= 0) laktSkada(s, p, w);
   p.skador = p.skador.filter(w => w.g > 0);
   uppdateraSinnen(p);

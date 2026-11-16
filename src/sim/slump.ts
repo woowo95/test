@@ -69,6 +69,14 @@ export function pickViktat<X>(s: State, items: X[], vikter: number[], k: Strom, 
   for (let i = 0; i < items.length; i++) { x -= vikter[i]; if (x <= 0) return items[i]; }
   return items[sista ? items.length - 1 : 0];
 }
+// antalet händelser på en stund där i snitt lam händer (Poissonfördelningen): så att det blir lika många med korta som med långa
+// slag också när flera kan hända på samma slag (bisticken, steg 10.10.22). Inget dras när lam är noll
+export function antalPa(s: State, lam: number, k: Strom, p?: Person) {
+  if (lam <= 0) return 0;
+  const L = Math.exp(-lam); let n = 0, q = rnd(s, k, p);
+  while (q > L && n < 1000) { n++; q *= rnd(s, k, p); }
+  return n;
+}
 export function chance(s: State, ratePerSec: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.exp(-ratePerSec * dtSec); }
 // chansen c per period om perSek sekunder, räknad för dtSec sekunder (steg 10.2.15: per tid, aldrig per slag)
 export function chansPer(s: State, c: number, perSek: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.pow(1 - Math.min(1, c), dtSec / perSek); }

@@ -21,6 +21,7 @@ import { kn, learnK, useK } from './kunskap';
 import { isLight } from './tid';
 import { capacity, put } from './lager';
 import { viktOf } from './saker';
+import { wearUsed } from './redskap';
 import type { Person } from './typer';
 
 export const BIN = balans('bin', {
@@ -51,6 +52,15 @@ export const BIN = balans('bin', {
   vinter: 3, // ... lämnar så många, som räcker över en vanlig vinter men inte alltid en hård
   vaxPer: 2, // varannan skattad kaka ger ett bivax (räknat på kupan)
   ovning: 0.03, // så mycket övar skattningen djurskötseln (som klippningen och mjölkningen)
+  // bisticken (steg 10.10.22, halsa.ts binStick)
+  stick: 8, // stick i timmen för den ovana vid en full kupa (ungefär ett på var fjärde skattning)
+  vildStick: 2, // vid ett vildbo så här många gånger fler
+  rok: 0.3, // med en fackla som ryker blir så här mycket av risken kvar
+  kladSkydd: 0.8, // kläderna tar bort upp till så här mycket av sticken (gånger plaggens värme)
+  smarta: 0.04, // så ont gör ett stick
+  giftYr: 30, // från så många stick sjunker medvetandet hos en vuxen ...
+  giftDod: 120, // ... och vid så många dör man
+  barnTal: 0.5, // ett barn tål så här stor del
 });
 
 // en dragkälla: vad den ger inom räckhåll av (x, y), i tidsåldern ai, med eller utan torka. ikon = symbolen i kupans ruta
@@ -190,6 +200,7 @@ export function skattaKlar(s: State, p: Person, ref?: number) {
   t.skattat = (t.skattat ?? 0) + n;
   const vax = Math.floor(t.skattat / BIN.vaxPer);
   if (vax > 0) { t.skattat -= vax * BIN.vaxPer; put(s, 'bivax', vax, { [ag]: vax }); count(s, 'bivax', vax); }
+  if (p.task?.tool === 'fackla') wearUsed(s, p, 1); // facklan slits som andra redskap
   ovning(p, 'skotsel', BIN.ovning); gjort(s, p, 'skattat'); count(s, 'honungKupa', n);
   if (forstaGang(s, 'forstaSkattning')) log(s, `${p.name} skattade byns första bikupa och fick ${n} honungskakor.`, 'world', [p.id]);
 }

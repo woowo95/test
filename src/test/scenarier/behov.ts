@@ -529,6 +529,7 @@ SCENARIER.kropp = {
     // varje farligt arbete ger sina skador i sina delar
     const fel: string[] = [];
     for (const [act, o] of Object.entries(OLYCKOR)) {
+      if (o!.bistick) continue; // bisticken prövas i scenariot bistick
       fyll(); s.stat = {}; p.task = { act: act as Act, phase: 'do', tx: p.x, ty: p.y, until: s.now + 1000 * HOUR, carry: 0, why: '' };
       for (let i = 0; i < 2000 && !s.stat.skador; i++) halsaSteg(s, p, MIN60 * 30);
       const w = p.skador?.[0];
@@ -554,7 +555,7 @@ SCENARIER.kropp = {
       [`ett mycket svårt skärsår kan förblöda (${dogSvart ?? 'överlevde'})`, dogSvart === 'blod'],
       [`ett brutet ben går långsammare (${fart0.toFixed(2)} → ${fart1.toFixed(2)}), och ett skärsår i handen arbetar långsammare (${(arb1 / arb0).toFixed(2)} av farten)`, fart1 < fart0 && arb1 < arb0],
       [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
-      [`olyckorna i ${Object.keys(OLYCKOR).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
+      [`olyckorna i ${Object.keys(OLYCKOR).filter(k => !OLYCKOR[k as Act]!.bistick).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
       [`på tio dygn i två byar: ${skador} olyckor (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 0 && skador <= 3 * vantat + 3],
     ];
   },

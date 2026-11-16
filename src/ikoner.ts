@@ -4219,6 +4219,25 @@ PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka;
 PIX.snickarbank = PIX.flatarbank; PAL.snickarbank = PAL.flatarbank;
 PIX.naverask = PIX.korg; PAL.naverask = PAL.korg;
 PIX.orte = PIX.kruka; PAL.orte = PAL.kruka;
+PAL.s_bistick = { o: '#24201d', y: '#d8b25f', k: '#24201d', r: '#a14808', R: '#d0805a' }; // platshållare för bisticket i hälsofliken (steg 10.10.22): ett litet bi och en röd svullnad
+PIX.s_bistick = [
+  '................',
+  '................',
+  '....oo..........',
+  '...oyko.........',
+  '...okyo.........',
+  '....ooo.........',
+  '......o.........',
+  '.......o........',
+  '........RRRR....',
+  '.......RRrrRR...',
+  '.......RrrrrR...',
+  '.......RRrrRR...',
+  '........RRRR....',
+  '................',
+  '................',
+  '................',
+];
 PIX.s_spala = PIX.grenar ?? PIX.s_forb; PAL.s_spala = PAL.grenar ?? PAL.s_forb; // platshållare för spjälan (steg 9.5.28) tills Björn valt i bildstilen
 PIX.remsa = PIX.mossa ?? PIX.skinn; PAL.remsa = PAL.mossa ?? PAL.skinn; PIX.nal = PIX.bensyl; PAL.nal = PAL.bensyl; // platshållare för remsan och nålen (steg 9.5.15) tills Björn valt i bildstilen
 for (const k of ['krycka', 'traben', 'krok', 'protes']) { PIX[k] = PIX.slagtra ?? PIX.benspade; PAL[k] = PAL.slagtra ?? PAL.benspade; } PIX.ogonlapp = PIX.skinn ?? PIX.benspade; PAL.ogonlapp = PAL.skinn ?? PAL.benspade; // platshållare för proteserna (steg 9.5.11) tills Björn valt i bildstilen
