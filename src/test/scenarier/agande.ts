@@ -2819,7 +2819,7 @@ SCENARIER.kronikakat = {
     const fodd = K[K.length - 1];
     K.push([s.now, 'En rad ur en gammal sparfil.']);
     setByn(s);
-    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined, kat: undefined });
+    Object.assign(kronikaVal, { viktigt: true, ar: undefined, kat: undefined });
     const alla = kronikaFlik.html();
     kronikaVal.kat = 'liv';
     const liv = kronikaFlik.html();
@@ -2849,7 +2849,7 @@ SCENARIER.skriftlista = {
     SIM.placeTools(s);
     SIM.runstenTimme(s);
     setByn(s);
-    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined, kat: 'skrift', stad: undefined, skrift: undefined });
+    Object.assign(kronikaVal, { viktigt: true, ar: undefined, kat: 'skrift', stad: undefined, skrift: undefined });
     const h = kronikaFlik.html(), rader = (x: string) => (x.match(/data-kskrift="/g) ?? []).length;
     const ordning = [...h.matchAll(/data-kskrift="([^"]+)"/g)].map(m => m[1]);
     kronikaVal.stad = 'bok';
@@ -2879,7 +2879,7 @@ SCENARIER.skriftlista = {
 };
 
 SCENARIER.kronikalista = {
-  text: 'Krönikan och händelserna i en lista (steg 5.4.2, ui/flikar/kronika.ts): Stort visar krönikan, Allt händelseloggen, senast först under en rubrik per år, och stenen Byns tal alla byns grafer (steg 9.3.2). Man bläddrar år för år och kan välja en person: bara raderna där hen står med. Bara panelen.',
+  text: 'Krönikan och händelserna i en lista (steg 5.4.2 och 10.2.60, ui/flikar/kronika.ts): en rad symboler där en i taget är vald (det viktiga, kategorierna och allt), alltid nyast först under en rubrik per år, och stenen Byns tal alla byns grafer (steg 9.3.2). Man bläddrar år för år. Bara panelen.',
   kor: () => {
     utanWebblasare();
     const s = createState(6, START);
@@ -2888,28 +2888,28 @@ SCENARIER.kronikalista = {
     const [a, b] = living(s), K = s.hist!.kronika, D = SIM.DAY;
     K.push([s.now - D, `${a.name} hittade en sten.`], [s.now, `${b.name} och ${a.name} byggde ett hus.`]);
     const rader = (h: string) => (h.match(/<li/g) ?? []).length;
-    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined });
+    Object.assign(kronikaVal, { viktigt: true, ar: undefined, kat: undefined });
     const alla = kronikaFlik.html();
-    kronikaVal.person = a.id; const medA = kronikaFlik.html();
-    kronikaVal.person = b.id; const medB = kronikaFlik.html();
-    kronikaVal.person = undefined; kronikaVal.ar = SIM.kalender(s, s.now).ar; const iAr = kronikaFlik.html();
+    kronikaVal.ar = SIM.kalender(s, s.now).ar; const iAr = kronikaFlik.html();
     kronikaVal.ar = undefined; kronikaVal.viktigt = false; const allt = kronikaFlik.html();
-    kronikaVal.viktigt = true; kronikaVal.nyast = false; const aldst = kronikaFlik.html(); kronikaVal.nyast = true;
+    // en i taget (steg 10.2.60): en kategori trycks, sedan stjärnan
+    kronikaFlik.klick!({ closest: (q: string) => q === '[data-kkat]' ? { dataset: { kkat: 'liv' } } : null } as unknown as HTMLElement); const kat = kronikaFlik.html();
+    kronikaFlik.klick!({ closest: (q: string) => q.includes('[data-kvis]') ? { dataset: { kvis: 'viktigt' } } : null } as unknown as HTMLElement); const vikt = kronikaFlik.html();
+    const valda = (h: string) => (h.split('kblad')[0].match(/aria-pressed="true"/g) ?? []).length, /* (bara symbolraden, inte året) */ tryckt = (h: string, d: string) => new RegExp(`${d}[^>]*aria-pressed="true"`).test(h);
     talVal.vy = 'kartan'; const kartan = talFlik.html(); talVal.vy = 'grafer';
     const grafer = talFlik.html(); // graferna i stenen Byns tal (steg 9.3.2)
     Object.assign(rikVal, { vy: 'person', person: a.id }); const rikP = talFlik.html();
     Object.assign(rikVal, { vy: 'sak', sak: 'ved', person: undefined }); const rikS = talFlik.html();
     Object.assign(rikVal, { vy: 'byn', sak: undefined });
-    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined });
+    Object.assign(kronikaVal, { viktigt: true, ar: undefined, kat: undefined });
     const forst = alla.indexOf(`${b.name}</button> och`), sen = alla.indexOf(`${a.name}</button> hittade`);
     return [
       [`Stort visar hela krönikan (${rader(alla)} rader av ${K.length})`, rader(alla) === K.length],
       ['senast först, med en rubrik per år', forst >= 0 && sen > forst && /<h4 class="kar">År \d+<\/h4>/.test(alla)],
-      [`personen: bara raderna där hen står med (${a.name} ${rader(medA)}, ${b.name} ${rader(medB)})`, rader(medA) === K.filter(r => r[1].includes(a.name)).length && rader(medB) === K.filter(r => r[1].includes(b.name)).length && medB.includes(`${b.name}</button> och`) && !medB.includes('hittade en sten')],
       ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
       [`Allt visar krönikan och händelseloggen i en lista (${rader(allt)} rader, ${s.log.length} i loggen; steg 9.2.125)`, rader(allt) >= s.log.length && allt.includes('hittade en sten') && s.log.length > K.length],
-      ['äldst först vänder ordningen', aldst.indexOf(`${a.name}</button> hittade`) >= 0 && aldst.indexOf(`${a.name}</button> hittade`) < aldst.indexOf(`${b.name}</button> och`)],
-      ['symbolerna överst: det viktiga eller allt, ordningen och kategorierna, och ingen Karta i Krönikan', /data-kvis="viktigt"/.test(alla) && /data-kordning="aldst"/.test(alla) && /data-kkat=/.test(alla) && !/kmReglage|Kartan/.test(alla)],
+      [`en rad symboler där en i taget är vald: det viktiga, ${(alla.match(/data-kkat=/g) ?? []).length} kategorier och allt, utan ordningen och personlistan, och ingen Karta i Krönikan (steg 10.2.60)`, /data-kvis="viktigt"/.test(alla) && /data-kvis="allt"/.test(alla) && (alla.match(/data-kkat=/g) ?? []).length === SIM.KRONIKA_KAT.length && !/data-kordning|data-kperson/.test(alla) && !/kmReglage|Kartan/.test(alla)],
+      ['ett tryck på en kategori väljer bara den, och stjärnan väljer sedan bara det viktiga', valda(alla) === 1 && tryckt(alla, 'data-kvis="viktigt"') && valda(allt) === 1 && tryckt(allt, 'data-kvis="allt"') && valda(kat) === 1 && tryckt(kat, 'data-kkat="liv"') && valda(vikt) === 1 && tryckt(vikt, 'data-kvis="viktigt"')],
       ['Kartan är en flik i Byns tal bredvid graferna (steg 9.2.126)', kartan.includes('kmReglage') && /data-tvy="grafer"/.test(kartan) && /data-tvy="kartan"/.test(grafer)],
       [`Byns tal visar alla byns grafer under varandra (${(grafer.match(/data-graf=/g) ?? []).length} st, steg 9.3.2)`, ['folk', 'humor', 'eld', 'forrad', 'rik'].every(g => grafer.includes(`data-graf="${g}"`)) && !grafer.includes(`class="logg"`)],
       ['rikedomens graf har en väljare överst: byn, en person eller en sak (steg 6.9.14)', grafer.includes('data-rikvy') && !grafer.includes('data-rikval') && living(s).every(p => rikP.includes(`<option value="${p.id}"`)) && rikP.includes('data-rikvy="person"') && rikS.includes('data-rikvy="sak"') && rikS.includes('data-rikval')],

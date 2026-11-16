@@ -2584,7 +2584,7 @@ SCENARIER.fritidlista = {
     const scen = stationFlik.html().includes(`data-fram="${m.nr}"`);
     ui.selected = m.p; ui.personDel = 'om';
     const pres = personFlik.html().includes(`data-fram="${m.nr}"`);
-    Object.assign(kronikaVal, { viktigt: true, nyast: true, ar: undefined, person: undefined, kat: 'fritid' });
+    Object.assign(kronikaVal, { viktigt: true, ar: undefined, kat: 'fritid' });
     const kron = kronikaFlik.html().includes(`data-fram="${m.nr}"`);
     kronikaVal.kat = undefined;
     return [
