@@ -97,8 +97,8 @@ function anfall(k: ReturnType<typeof djuretNu>, d: { x: number; y: number }, iko
   return { x: k.x + dx / l * 0.3, y: k.y + dy / l * 0.3 };
 }
 // björnens anfall (Björns val i bildstilen, steg 10.11.1): björnen reser sig på bakbenen och slår ned med ramen, fyra ramar
-// som går runt medan den slår, från sidan (speglad västerut) eller framifrån när den slår söderut
-const bjornAnfall = (dx: number, dy: number) => () => { const n = Math.floor(performance.now() / 180) % 4; return 'kb_bjorn_anfall_' + (dy > Math.abs(dx) ? 'fram' : dx < 0 ? 'vast' : 'sida') + '_' + n; };
+// som går runt medan den slår, från sidan (speglad västerut) eller framifrån när den slår söderut; norrut (bakifrån) dagens utfall
+const bjornAnfall = (dx: number, dy: number) => () => { if (-dy > Math.abs(dx)) return undefined; const n = Math.floor(performance.now() / 180) % 4; return 'kb_bjorn_anfall_' + (dy > Math.abs(dx) ? 'fram' : dx < 0 ? 'vast' : 'sida') + '_' + n; };
 function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<number>, u = 1, bild?: (h: DjurHall) => string | undefined) {
   const e = hallar.get(id), dx = e ? x - e.x : 0, dy = e ? y - e.y : 0;
   let h: DjurHall = e?.h ?? 'sida';
