@@ -966,3 +966,69 @@ SCENARIER.pollinering = {
     ];
   },
 };
+SCENARIER.retad = {
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=1' },
+  text: 'Steg 10.10.27: det uppretade boet. Det sticker alla inom 3 rutor och lugnar sig efter 10 minuter; den som kan går undan till en plats utanför, och djuren springer; den med kläder får färre stick än den utan och ett får färre än en ko; en medvetslös intill ett fullt uppretat bo dör men inte intill ett litet; trädet med vildboet som fälls och kupan som rivs retar boet; röken och djurskötseln sänker chansen vid skattningen, och sticken och chansen blir lika med korta som med långa slag',
+  kor: () => {
+    const { BIN, retadeSteg, binStick, halsaSteg, chooseTask, ALDER, ageOf, nyttTamdjur, fyndAt, groundOf, FOREST, MIN } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const vuxna = SIM.living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen), p = vuxna[0], q = vuxna[1];
+    const bo = { x: 60.5, y: 60.5 };
+    const kupa: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x: 60, y: 60, kvar: 0, bi: BIN.rymmer, ag: p.id }; (s.stationer ??= []).push(kupa);
+    const klader = SIM.tingOf(s).filter(t => t.bar === p.id), avKlad = () => { for (const t of klader) t.bar = undefined; }, paKlad = () => { for (const t of klader) t.bar = p.id; };
+    const rent = (x: SIM.Person) => { x.skador = undefined; x.gift = undefined; x.hunger = 1; x.torst = 1; x.warm = 1; x.rest = 1; x.blod = 1; x.svimmat = undefined; x.task = undefined; };
+    const andra = SIM.living(s).filter(x => x !== p && x !== q); for (const x of andra) { x.x = 10; x.y = 10; }
+    const reta = (st = 1) => { s.retade = [{ ...bo, slut: s.now + BIN.retadTid * MIN, st }]; };
+    const stick = (x: SIM.Person) => (x.skador ?? []).reduce((a, w) => a + (w.k === 'bistick' ? (w.n ?? 1) * w.g : 0), 0);
+    // en minut intill och en bit utanför, utan kläder
+    avKlad(); rent(p); rent(q); p.x = bo.x + 2; p.y = bo.y; q.x = bo.x + 5; q.y = bo.y; reta();
+    for (let t = 0; t < 60; t++) { p.x = bo.x + 2; p.y = bo.y; p.task = undefined; retadeSteg(s, 1); s.now += 1000; }
+    const inom = stick(p), utom = stick(q);
+    s.now += BIN.retadTid * MIN; retadeSteg(s, 1); const lugn = !s.retade;
+    // korta och långa slag, kläder eller inte: stick per minut i snitt av 40 minuter
+    const perMin = (dt: number, klad: boolean) => { if (klad) paKlad(); else avKlad(); let n = 0; for (let i = 0; i < 40; i++) { rent(p); reta(); for (let t = 0; t < 60; t += dt) { p.x = bo.x + 1; p.y = bo.y; p.task = undefined; retadeSteg(s, dt); s.now += dt * 1000; } n += stick(p); } avKlad(); return n / 40; };
+    const kort = perMin(1, false), lang = perMin(30, false), klad = perMin(1, true), varme = (paKlad(), SIM.kladVarme(s, p)); avKlad();
+    // den som kan går undan
+    rent(p); p.x = bo.x + 1; p.y = bo.y; reta(); chooseTask(s, p); const flyr = p.task?.act, flyD = p.task ? Math.hypot(p.task.tx - bo.x, p.task.ty - bo.y) : 0;
+    // djuren: ett får och en ko intill boet i en minut, flyttade tillbaka varje sekund (pälsen), och sedan fria (de springer)
+    const far = nyttTamdjur(s, 'far', bo.x + 1, bo.y), ko = nyttTamdjur(s, 'ko', bo.x - 1, bo.y);
+    let fS = 0, kS = 0; const nSt = (d: SIM.Tamdjur) => d.bistick?.n ?? 0;
+    for (let i = 0; i < 20; i++) { far.bistick = undefined; ko.bistick = undefined; reta(); for (let t = 0; t < 60; t++) { far.x = bo.x + 1; far.y = bo.y; ko.x = bo.x - 1; ko.y = bo.y; retadeSteg(s, 1); s.now += 1000; } fS += nSt(far); kS += nSt(ko); }
+    far.bistick = undefined; ko.bistick = undefined; far.x = bo.x + 1; far.y = bo.y; reta(); for (let t = 0; t < 10; t++) { retadeSteg(s, 1); s.now += 1000; }
+    const farBort = Math.hypot(far.x - bo.x, far.y - bo.y), farStick = nSt(far);
+    // den medvetslösa med 40 stick intill ett fullt och ett litet bo i tio minuter
+    const ligger = (st: number) => { rent(p); p.svimmat = true; p.skador = [{ d: 'bal', k: 'bistick', g: 1, b: 0, n: 40 }]; reta(st); let dog = false; for (let t = 0; t < BIN.retadTid * 60 && !dog; t += 2) { p.x = bo.x + 1; p.y = bo.y; p.svimmat = true; retadeSteg(s, 2); if (halsaSteg(s, p, 2) === 'bistick') dog = true; s.now += 2000; } rent(p); return dog; };
+    const dorFull = ligger(1), dorLiten = ligger(0.25);
+    delete s.retade;
+    // trädet med vildboet och kupan som rivs
+    let tradBo = -1, fall = 0;
+    { // en by på sommaren med ett vildbo
+      const s2 = createState(42, START); s2.kal = SIM.nyKalender(s2.now, SIM.SOMMAR);
+      for (let i = 0; i < SIM.W * SIM.H && tradBo < 0; i++) if (fyndAt(s2, 'honung', i) >= BIN.boSyns && groundOf(s2).trees[i] >= FOREST) tradBo = i;
+      if (tradBo >= 0) { SIM.fellTree(s2, SIM.living(s2)[0], tradBo % SIM.W + 0.5, Math.floor(tradBo / SIM.W) + 0.5); fall = (s2.retade ?? []).length; }
+    }
+    SIM.taBort(s, kupa); const rivs = (s.retade ?? []).length; delete s.retade; (s.stationer ??= []).push(kupa);
+    // chansen vid skattningen: hur ofta två minuters skattning retar boet
+    const retar = (n: number, opt: { tool?: string; skotsel?: number; dt?: number } = {}) => {
+      const sk = p.skill.skotsel; p.skill.skotsel = opt.skotsel ?? 0; let r = 0; const dt = opt.dt ?? 10;
+      for (let i = 0; i < n; i++) { rent(p); p.task = { act: 'skatta', phase: 'do', ref: kupa.id, tool: opt.tool, tx: kupa.x + 0.5, ty: kupa.y + 0.5, until: s.now + 2 * 60000, carry: 0, dark: false, why: '' } as SIM.Task; for (let t = 0; t < 120; t += dt) binStick(s, p, dt, 1); if (s.retade?.length) r++; delete s.retade; }
+      p.skill.skotsel = sk; rent(p); return r / n;
+    };
+    const rUtan = retar(4000), rFackla = retar(4000, { tool: 'fackla' }), rSkicklig = retar(4000, { skotsel: 15 }), rKort = retar(4000, { dt: 2 }), rLang = retar(4000, { dt: 120 });
+    const vantat = BIN.retas * 2 / 60;
+    return [
+      [`intill ett fullt uppretat bo får den utan kläder ${inom.toFixed(1)} stick på en minut (10), utanför 3 rutor ${utom}`, inom > 4 && inom < 18 && utom === 0],
+      [`boet lugnar sig efter ${BIN.retadTid} minuter (${lugn})`, lugn],
+      [`sticken per minut blir lika med 1 sekunds slag (${kort.toFixed(1)}) som med 30 (${lang.toFixed(1)})`, Math.abs(kort - lang) < 1.5],
+      [`den med kläder (värmen ${varme.toFixed(2)}) får färre (${klad.toFixed(1)})`, varme > 0 && klad < kort * 0.8],
+      [`den som kan gå flyr (${flyr}) till en plats ${flyD.toFixed(1)} rutor från boet`, flyr === 'flyBin' && flyD > BIN.retadR],
+      [`ett får får färre stick än en ko (${(fS / 20).toFixed(1)} mot ${(kS / 20).toFixed(1)} på en minut)`, fS < kS * 0.4],
+      [`fåret springer ${farBort.toFixed(1)} rutor bort på tio sekunder och får ${farStick} stick`, farBort > BIN.retadR && farStick <= 3],
+      [`den medvetslösa intill ett fullt bo dör (${dorFull}), intill ett litet inte (${dorLiten})`, dorFull && !dorLiten],
+      [`trädet med vildboet som fälls retar boet (${tradBo >= 0 ? fall : 'inget bo'})`, tradBo >= 0 && fall === 1],
+      [`kupan som rivs retar boet (${rivs})`, rivs === 1],
+      [`skattningen retar boet ${(rUtan * 100).toFixed(1)} % av gångerna (väntat ${(vantat * 100).toFixed(1)} %), med fackla ${(rFackla * 100).toFixed(1)} % och för den skickliga ${(rSkicklig * 100).toFixed(1)} %`, Math.abs(rUtan - vantat) < vantat * 0.4 && rFackla < rUtan * 0.6 && rSkicklig < rUtan * 0.6],
+      [`chansen blir lika med 2 sekunders slag (${(rKort * 100).toFixed(1)} %) som med två minuters (${(rLang * 100).toFixed(1)} %)`, Math.abs(rKort - rLang) < vantat * 0.4],
+    ];
+  },
+};

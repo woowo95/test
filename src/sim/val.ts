@@ -623,6 +623,8 @@ export const ARBETEN: readonly Arbete[] = [
     if (sk.act === 'hjalpaRovare') { const d = vardVal(s, p, false), q = d && living(s).find(x => x.id === d.ref); if (q && vardBehov(s, q, p)?.blod && varda(s, p, v, false)) return true; }
     set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; return true;
   } },
+  // den som kan gå flyr från ett uppretat bo (steg 10.10.27, bin.ts)
+  { id: 'binFly', niva: 1, prova: ({ s, p, v }) => { const b = retatNara(s, p.x, p.y); if (!b || !kanGa(p)) return false; set(v, 'flyBin', 'Bina sticker, springer undan'); v.spot = flyFranBin(s, p, b); v.dur = MIN; return true; } },
   { id: 'brand', niva: 1, prova: ({ s, p, v }) => { const br = brandVal(s, p); if (!br) return false; set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; return true; } },
   // de vuxna som orkar bär undan maten från lagerplatserna vattnet kan nå, också på natten (flod.ts)
   { id: 'flod', niva: 1, prova: ({ s, p, v, a }) => {
@@ -1437,5 +1439,5 @@ import { TAM, mataVal, tamArt } from './tamdjur';
 import { HAGE, vallaVal } from './hage';
 import { VINTER, hamlaVal, hamlatPa, slaVal } from './slatter';
 import { ORTKRUKA, ortPlockaVal, ortSattaVal } from './kruka';
-import { BIN, skattaVal } from './bin';
+import { BIN, flyFranBin, retatNara, skattaVal } from './bin';
 import { BOSKAP, SLAKTDJUR, avlivaVal, klippVal, mjolkaVal, slaktOrsak } from './boskap';

@@ -27,7 +27,7 @@ import { brasaMal, nyEld } from './brasor';
 import { vidEld } from './eld';
 import { rumTaggar } from './rum';
 import { faltOf, faltRutor } from './odling';
-import { BIN, dragDelat } from './bin';
+import { BIN, dragDelat, retaBo } from './bin';
 import { underMinnet } from './sjo';
 import { paStrak } from './strak';
 
@@ -1409,6 +1409,7 @@ function tomt(s: State, borta: Station[]) {
 }
 // stationen t tas bort (också när den brunnit upp, brand.ts)
 export function taBort(s: State, t: Station) {
+  if (t.k === 'bikupa' && (t.bi ?? 0) > 0) retaBo(s, 'kupa', t.x + 0.5, t.y + 0.5, 0, undefined, Math.min(1, t.bi! / BIN.rymmer)); // kupan som välts, rivs eller blåser sönder (steg 10.10.27)
   s.stationer = stationerOf(s).filter(q => q !== t);
   tomt(s, [t]);
   touch(s);

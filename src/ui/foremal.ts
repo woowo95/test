@@ -1,4 +1,4 @@
-import { krukaBild, ljusSort, pollinerad, rutorAv } from '../sim';
+import { krukaBild, ljusSort, pollinerad, retadeOf, rutorAv } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -228,6 +228,11 @@ export function drawStructures(t: number) {
   drawBuild();
   pileIcons.start(); rokIkoner.start(); mattIkoner.start();
   drawFalt();
+  // det uppretade boet (steg 10.10.27): ett moln av bin i rörelse kring boet, platshållare med bisymbolen
+  for (const b of retadeOf(s)) for (let k = 0; k < 8; k++) {
+    const v = t / 400 * (k % 2 ? 1 : -1.3) + k * 0.785, r = TS * (0.6 + 0.4 * Math.sin(t / 700 + k * 1.7) + (k % 3) * 0.35);
+    rokIkoner.add('bisymbol', Math.round(b.x * TS + Math.cos(v) * r - 2), Math.round(b.y * TS + Math.sin(v) * r * 0.7 - 1), 1);
+  }
   drawKarra();
   for (const f of eldarOf(s)) lagereld(f); // den första och lägereldarna till (steg 4.5.6.8)
   for (const pl of piles()) if (!forvarAt(s, pl.x, pl.y)?.stangd) drawPile(pl, t); // det som ligger i en kista syns bara när man trycker på den

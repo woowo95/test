@@ -10,9 +10,9 @@ import { GRODOR, GrodaSlag, faltOf, faltRuta, rutorAv } from './odling';
 import { torkaNu } from './torka';
 import { HOST, ISTID, SOMMAR, VAR, kalender } from './tid';
 import { fyndAt } from './fynd';
-import { HOUR_S, State, W, inMap } from './typer';
+import { HOUR_S, MIN, State, W, inMap } from './typer';
 import { Station, isKlar, stationerOf } from './stationer';
-import { chance, rnd } from './slump';
+import { antalPa, chance, rnd } from './slump';
 import { count, forstaGang, log } from './folk';
 import { notis } from './notiser';
 import { hardVinter } from './vader';
@@ -23,6 +23,13 @@ import { capacity, put } from './lager';
 import { viktOf } from './saker';
 import { wearUsed } from './redskap';
 import type { Person } from './typer';
+import { blocked } from './byggnad';
+import { kanGa, retadStick } from './halsa';
+import { avbryt } from './lager';
+import { kartStrider } from './kartstrid';
+import { tamArt, tamDor, tamdjurOf } from './tamdjur';
+import { hageById } from './hage';
+import { FAROR } from './efterstrid';
 
 export const BIN = balans('bin', {
   r: 10, // bina flyger så här många rutor från samhället
@@ -62,6 +69,16 @@ export const BIN = balans('bin', {
   giftYr: 30, // från så många stick sjunker medvetandet hos en vuxen ...
   giftDod: 120, // ... och vid så många dör man
   barnTal: 0.5, // ett barn tål så här stor del
+  // det uppretade boet (steg 10.10.27, registret RETAR)
+  retas: 1, // arbetet vid ett fullt bo retar upp det så här många gånger i timmen för den ovana utan rök
+  fallRetas: 1, // chansen att boet retas när trädet med vildboet fälls
+  kupaRetas: 1, // chansen att boet retas när kupan välts, rivs eller blåser sönder
+  stridRetas: 6, // en strid intill boet retar upp det så här många gånger i timmen
+  retadR: 3, // det uppretade boet sticker alla inom så här många rutor
+  retadStick: 10, // stick i minuten och kropp vid ett fullt uppretat bo (färre vid ett litet)
+  retadTid: 10, // minuter som boet är uppretat innan det lugnar sig
+  undan: 4, // den som flyr går så här många rutor bortom BIN.retadR
+  djurFart: 1, // ett djur som flyr bina springer så här många rutor i sekunden
 });
 
 // en dragkälla: vad den ger inom räckhåll av (x, y), i tidsåldern ai, med eller utan torka. ikon = symbolen i kupans ruta
@@ -207,3 +224,100 @@ export function skattaKlar(s: State, p: Person, ref?: number) {
   ovning(p, 'skotsel', BIN.ovning); gjort(s, p, 'skattat'); count(s, 'honungKupa', n);
   if (forstaGang(s, 'forstaSkattning')) log(s, `${p.name} skattade byns första bikupa och fick ${n} honungskakor.`, 'world', [p.id]);
 }
+
+// ---------- det uppretade boet (steg 10.10.27, Djuren i detalj: Det uppretade boet) ----------
+// Det som retar upp ett bo är rader i registret RETAR, var och en med sin chans: perTim = chansen räknas per tid (gånger
+// timmarna), annars en gång när det händer. Det uppretade boet (s.retade) sticker alla inom BIN.retadR rutor, människor och
+// djur, i BIN.retadTid minuter och lugnar sig sedan. Människorna och djuren flyr ifrån det, och den som inte kan fly ligger kvar
+export interface RetaDef { namn: string; chans: number; perTim?: true }
+export const RETAR: Record<string, RetaDef> = {
+  arbete: { namn: 'arbetet vid boet', get chans() { return BIN.retas; }, perTim: true }, // skattningen och den som tar honung ur ett vildbo (halsa.ts binStick)
+  fall: { namn: 'trädet som fälldes', get chans() { return BIN.fallRetas; } }, // skog.ts fellTree
+  kupa: { namn: 'kupan som välts eller revs', get chans() { return BIN.kupaRetas; } }, // stationer.ts taBort
+  strid: { namn: 'striden intill boet', get chans() { return BIN.stridRetas; }, perTim: true }, // retadeSteg
+};
+export interface Retat { x: number; y: number; slut: number; st: number; kupa?: number }
+export const retadeOf = (s: State) => s.retade ?? [];
+// boets storlek: kupans honung mot BIN.rymmer, vildbinas lager på rutan
+function boStorlek(s: State, x: number, y: number, kupa?: number) {
+  if (kupa !== undefined) { const t = kupor(s).find(q => q.id === kupa); return t?.bi ? Math.min(1, t.bi / BIN.rymmer) : 0; }
+  return Math.min(1, fyndAt(s, 'honung', Math.floor(y) * W + Math.floor(x)));
+}
+// raden orsak kan reta upp boet på (x, y): dtSec = tiden (redan gånger det som höjer och sänker chansen) för en rad per tid.
+// st = boets storlek när kupan redan är borta. Ett bo som redan är uppretat förblir det BIN.retadTid minuter från nu
+export function retaBo(s: State, orsak: keyof typeof RETAR, x: number, y: number, dtSec = 0, kupa?: number, st?: number) {
+  const rad = RETAR[orsak], storlek = st ?? boStorlek(s, x, y, kupa);
+  if (storlek <= 0) return false;
+  if (rad.perTim ? !chance(s, rad.chans / HOUR_S, dtSec, 'bin') : rnd(s, 'bin') >= rad.chans) return false;
+  const slut = s.now + BIN.retadTid * MIN, f = retadeOf(s).find(r => Math.hypot(r.x - x, r.y - y) < 1);
+  if (f) { f.slut = slut; return true; }
+  (s.retade ??= []).push({ x, y, slut, st: storlek, kupa });
+  count(s, 'boRetat'); count(s, 'boRetat ' + orsak);
+  const nara = living(s).filter(p => Math.hypot(p.x - x, p.y - y) <= BIN.retadR + 1).map(p => p.id);
+  log(s, `Bina blev uppretade av ${rad.namn} och sticker alla som kommer nära.`, 'world', nara);
+  notis(s, 'retat', `Bina i ${kupa !== undefined || orsak === 'kupa' ? 'en bikupa' : 'ett vildbo'} blev uppretade av ${rad.namn}. De sticker alla inom ${BIN.retadR} rutor i ${BIN.retadTid} minuter.`, nara, { x, y });
+  return true;
+}
+// närmaste uppretade bo inom räckhåll r från (x, y)
+export function retatNara(s: State, x: number, y: number, r = BIN.retadR + 1) {
+  let b: Retat | undefined, bd = r;
+  for (const q of retadeOf(s)) { const d = Math.hypot(q.x - x, q.y - y); if (d <= bd) { b = q; bd = d; } }
+  return b;
+}
+// platsen dit p flyr från boet b: BIN.retadR + BIN.undan rutor bort, rakt ifrån boet eller åt sidan om det är vatten eller vägg
+export function flyFranBin(s: State, p: Person, b: Retat) {
+  const dx = p.x - b.x, dy = p.y - b.y, l = Math.hypot(dx, dy), u = (p.id * 2.399) % (2 * Math.PI);
+  const ux = l > 0.1 ? dx / l : Math.cos(u), uy = l > 0.1 ? dy / l : Math.sin(u), R = BIN.retadR + BIN.undan;
+  for (const v of [0, 0.6, -0.6, 1.2, -1.2, 1.8, -1.8]) {
+    const c = Math.cos(v), sn = Math.sin(v), x = b.x + (ux * c - uy * sn) * R, y = b.y + (ux * sn + uy * c) * R;
+    if (inMap(Math.floor(x), Math.floor(y)) && !blocked(s, x, y)) return { x, y };
+  }
+  return { x: p.x, y: p.y };
+}
+// stick i timmen vid boet b (gånger storleken)
+const perTim = (b: Retat) => BIN.retadStick * 60 * b.st;
+// det uppretade boets takt (en rad i TAKTER, varje slag): strider intill ett bo retar upp det, och det uppretade boet sticker
+// människor och djur inom BIN.retadR rutor efter tiden sedan sist. Djuren springer undan. Efter BIN.retadTid lugnar det sig
+export function retadeSteg(s: State, dt: number) {
+  for (const g of kartStrider(s)) for (const k of g.st.kampar) {
+    if (k.lage !== 'strid') continue;
+    for (const t of samhallen(s)) if ((t.bi ?? 0) > 0 && Math.hypot(t.x + 0.5 - k.x, t.y + 0.5 - k.y) <= BIN.retadR) retaBo(s, 'strid', t.x + 0.5, t.y + 0.5, dt, t.id);
+    const cx = Math.floor(k.x), cy = Math.floor(k.y), r = BIN.retadR;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const x = cx + dx, y = cy + dy;
+      if (dx * dx + dy * dy <= r * r && inMap(x, y) && vildboSyns(s, y * W + x)) retaBo(s, 'strid', x + 0.5, y + 0.5, dt);
+    }
+  }
+  if (!s.retade?.length) return;
+  for (const b of s.retade) {
+    for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) <= BIN.retadR) {
+      retadStick(s, p, dt, perTim(b));
+      if (kanGa(p) && p.task?.act !== 'flyBin') avbryt(s, p); // den som kan går undan (valet av aktivitet, raden binFly)
+    }
+    for (const d of tamdjurOf(s)) {
+      const dx = d.x - b.x, dy = d.y - b.y, l = Math.hypot(dx, dy);
+      if (l > BIN.retadR) continue;
+      const a = tamArt(d.art), n = antalPa(s, perTim(b) * (a.pals ?? 1) * dt / HOUR_S, 'bin');
+      if (n > 0) { const g = d.bistick ?? { n: 0, g: 1 }; d.bistick = { n: g.n * g.g + n, g: 1 }; count(s, 'bistickDjur', n); }
+      if (d.bistick && d.bistick.n * d.bistick.g >= BIN.giftDod * a.ater) { tamDor(s, d, 'av bistick'); continue; }
+      // djuret springer bort från boet, inom sin hage
+      const v = l > 0.1 ? [dx / l, dy / l] : [Math.cos(d.id), Math.sin(d.id)], st = Math.min(BIN.retadR + 0.5 - l, BIN.djurFart * dt);
+      if (st <= 0) continue;
+      let nx = d.x + v[0] * st, ny = d.y + v[1] * st;
+      const h = hageById(s, d.hage);
+      if (h) { nx = Math.min(h.x + h.w - 0.5, Math.max(h.x + 0.5, nx)); ny = Math.min(h.y + h.h - 0.5, Math.max(h.y + 0.5, ny)); }
+      if (inMap(Math.floor(nx), Math.floor(ny)) && !blocked(s, nx, ny)) { d.x = nx; d.y = ny; }
+    }
+  }
+  const kvar = s.retade.filter(b => s.now < b.slut);
+  if (kvar.length < s.retade.length) log(s, 'De uppretade bina lugnade sig.', 'world');
+  if (kvar.length) s.retade = kvar; else delete s.retade;
+}
+// djurens stick läker på samma tid som människans (SKADA.bistick.lakTim): en rad i TAKTER var tionde minut
+export function djurStickSteg(s: State, dt: number) {
+  for (const d of tamdjurOf(s)) if (d.bistick) { d.bistick.g -= dt / HOUR_S / BISTICK_LAK; if (d.bistick.g <= 0) d.bistick = undefined; }
+}
+const BISTICK_LAK = 12;
+// den som dött av bistick får en notis
+export function binDod(s: State, p: Person) { notis(s, 'retat', `${p.name} dog av bistick.`, [p.id], { x: p.x, y: p.y }); }
+FAROR.push(s => !!s.retade?.length); // korta slag medan bina sticker

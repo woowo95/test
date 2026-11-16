@@ -49,7 +49,7 @@ import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, 
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
-import { BIN, binSteg, skattaKlar } from './bin';
+import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
 import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
 import { eldFlyttKvar, flyttaElden, stepEldFlytt } from './eldflytt';
@@ -412,6 +412,8 @@ export const TAKTER: Takt[] = [
   { namn: 'stepIs', sek: 3600, fn: s => { stepIs(s); } },
   { namn: 'growGround', sek: 3600, fn: (s, _dt, c) => { growGround(s, 1, c.ai); } },
   { namn: 'growFynd', sek: 14400, fn: (s, dt, c) => { growFynd(s, dt / HOUR_S, c.ai, vaxtFaktor(s), vaderNu(s).nb); } },
+  { namn: 'uppretade bin', sek: 0, fn: (s, dt) => retadeSteg(s, dt) }, // sticker och lugnar sig (bin.ts, steg 10.10.27)
+  { namn: 'binas stick hos djuren', sek: 600, fn: (s, dt) => djurStickSteg(s, dt) }, // läker (bin.ts, steg 10.10.27)
   { namn: 'bina', sek: 14400, fn: (s, dt) => { binSteg(s, dt); } }, // svärmarna (bin.ts, steg 10.10.17)
   { namn: 'forget', sek: 14400, fn: (s, dt) => { forget(s, dt / HOUR_S); } },
   { namn: 'stepRykten', sek: 3600, fn: s => { stepRykten(s, moodOf); } },
@@ -533,7 +535,7 @@ export const TAKTER: Takt[] = [
   { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
 ];
 // de som behöver räknas varje slag fast de står på sin plats: striden, elden och den som brinner, vården och samtalet
-const VARJE_SLAG = new Set<Act>(['strid', 'slacka', 'slackaSig', 'hjalpaBrinnande', 'flyEld', 'varna', 'skilja', 'forsvar', 'forsvarRovare', 'varda', 'samtal', 'tanda']);
+const VARJE_SLAG = new Set<Act>(['strid', 'slacka', 'slackaSig', 'hjalpaBrinnande', 'flyEld', 'flyBin', 'varna', 'skilja', 'forsvar', 'forsvarRovare', 'varda', 'samtal', 'tanda']);
 // p står still vid sitt arbete och kan vänta med att räknas (steg 10.2.21): inget är klart i slaget, inget avbryter (nöden,
 // dag som blir natt), och hen har inte väntat KLOCKA.arbetsBit sekunder
 function vantar(p: Person, tk: Task, now: number, dt: number) {
@@ -691,7 +693,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const q = KROPP.dodBas + KROPP.dodAlder * Math.exp(KROPP.dodTakt * a) + (a < ALDER.barnsjuk ? KROPP.dodBarn : 0);
   if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > ALDER.alderdom ? 'alderdom' : a < ALDER.barnsjuk ? 'barnsjukdom' : 'olycka'); if (a >= ALDER.barnsjuk && a <= ALDER.alderdom) fearPlace(s, p, DODSORSAKER.olycka.text); return true; }
   const dod = halsaSteg(s, p, dtSec); // kroppen: olyckor i farligt arbete, blödning och läkning (steg 2.5.1)
-  if (dod) { die(s, p, dod); fearPlace(s, p, DODSORSAKER[dod].text); return true; }
+  if (dod) { die(s, p, dod); if (dod === 'bistick') binDod(s, p); fearPlace(s, p, DODSORSAKER[dod].text); return true; }
   return false;
 }
 

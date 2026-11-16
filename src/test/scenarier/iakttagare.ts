@@ -169,6 +169,7 @@ export const SALLSYNT: Record<string, string> = {
   gastKommer: 'gästen är på väg in en kort stund innan hen väntar vid filten (det som räknas här); scenarierna handlare och rovargang prövar det',
   jordgubbar: 'jordgubbarna sätts sällan på 35 dygn, när andra grödor ger mer; scenariot flerarig prövar dem', jordgubbsplanta: 'som jordgubbar; scenariot flerarig prövar dem',
   undan: 'tornadon kommer sällan, bara på sommaren och hösten och inte i alla byar på 35 dygn (steg 3.8.4); scenariot tornado prövar att gå undan',
+  flyBin: 'bara den som står nära ett uppretat bo flyr (steg 10.10.27); scenariot retad prövar det',
   flyEld: 'bara den som står nära en brinnande ruta och inte släcker går undan (steg 3.8.5); scenariot brand prövar branden',
   rock_vargskinn: 'en rock av vargskinn behöver två vargskinn, alltså två fällda vargar (steg 3.7.14), sällan på 35 dygn; scenariot plagg prövar den',
   skor_vargskinn: 'skor av vargskinn behöver ett vargskinn, alltså en fälld varg (steg 3.7.14), sällan på 35 dygn; scenariot plagg prövar dem',

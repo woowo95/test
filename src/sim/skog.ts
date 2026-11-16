@@ -153,6 +153,7 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   const g = groundOf(s), i = tileOf(x, y);
   if (!isForest(s, i)) return;
   const stam = stamAv(g, i);
+  if (fyndAt(s, 'honung', i) >= BIN.boSyns) retaBo(s, 'fall', Math.floor(x) + 0.5, Math.floor(y) + 0.5); // trädet med vildboet (steg 10.10.27)
   g.trees[i] = 0; g.cover[i] = 1;
   if (s.halvfallt) delete s.halvfallt[i];
   const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ...stam, av: p.id }; // den som fällde hugger helst själv (steg 9.2.87)
@@ -234,3 +235,5 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
   return undefined;
 }
 import { rutorAv } from './odling';
+import { fyndAt } from './fynd';
+import { BIN, retaBo } from './bin';
