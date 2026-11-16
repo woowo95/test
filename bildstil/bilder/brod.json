@@ -1,0 +1,19 @@
+{
+"id": "brod",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 12,
+"h": 9,
+"rader": [
+"...rrrrrr...",
+".ruuuWVtutr.",
+"ruWuuWVutttr",
+"ruuWWWVVVttr",
+"rututWVtttsr",
+"rtuttWVtutsr",
+"rtsssssssssr",
+".rssssssssr.",
+"..rrrrrrrr.."
+],
+"pal": {"V": "#a0947d", "W": "#bdb39b", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "u": "#987e62"}
+}

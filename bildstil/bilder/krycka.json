@@ -1,0 +1,27 @@
+{
+"id": "krycka",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 7,
+"h": 17,
+"rader": [
+"EE...EE",
+"EHE.EFE",
+"EGEEEFE",
+"EGGGGFE",
+"rEEEEEr",
+"rur.rtr",
+"rur.rtr",
+"rurrrsr",
+"ruuutsr",
+"rurrrsr",
+"rur.rsr",
+".rursr.",
+".rursr.",
+"..rtr..",
+"..rtr..",
+"..rsr..",
+"..rrr.."
+],
+"pal": {"E": "#521100", "F": "#742a01", "G": "#a14808", "H": "#bd753e", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "u": "#987e62"}
+}

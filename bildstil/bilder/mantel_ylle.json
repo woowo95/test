@@ -1,27 +1,20 @@
 {
 "id": "mantel_ylle",
 "ritad": 1,
-"av": "Claude, ur Björns val i bildstilen (steg 9.9.1)",
-"w": 14,
-"h": 12,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 16,
+"h": 10,
 "rader": [
-"...oooooooo...",
-"..occccccbbo..",
-".occcccccbbbo.",
-".occccccccbbo.",
-".occccccccbbo.",
-"occccccccbbbbo",
-"occccccccbbbbo",
-"occcccccbbbbbo",
-"occcccccbbbbao",
-"oaaccccbbbbaao",
-".oooaaaaaaooo.",
-"....oooooo...."
+".EEEEEEEEEEEEEE.",
+"EqpqpqpqpqpqpqpE",
+"EqGGFGFGGFGFFGpE",
+"EqGXWUGFGFFGFGpE",
+"EpFWGUFGGFFGFFpE",
+"EqGVUUGFGFFFGFpE",
+"EppqpqpqpqpqpqpE",
+"EFFGFFFGFFFFGFFE",
+"EopopopopopopopE",
+".EEEEEEEEEEEEEE."
 ],
-"pal": {
-"a": "#a0947d",
-"b": "#bdb39b",
-"c": "#dad0bb",
-"o": "#24201d"
-}
+"pal": {"E": "#521100", "F": "#742a01", "G": "#a14808", "U": "#7e7362", "V": "#a0947d", "W": "#bdb39b", "X": "#dad0bb", "o": "#694902", "p": "#906f0f", "q": "#b2921b"}
 }

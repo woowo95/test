@@ -274,6 +274,8 @@ export const regrowOf = (k: Lager, ai: number) => Math.max(...lagren(k).map(j =>
 
 // mönstret räknas om en gång per dygn (det kryper långsamt) och är detsamma i spelet och vid ikappräkning
 const monstren = new WeakMap<State, { dag: number; v: Partial<Record<FyndId, { m: Float32Array; snitt: number }>> }>();
+// var den vilda hasseln växer, oavsett årstid och hur mycket som plockats (bara för bilden: busken på kartan, steg 10.11.1)
+export const hasselVaxer = (s: State, i: number) => FYND.hassel.bas(s, i, monsterOf(s, 'hassel').m[i]);
 function monsterOf(s: State, k: FyndId) {
   const dag = Math.floor(s.now / DAY);
   let c = monstren.get(s);

@@ -1,0 +1,22 @@
+{
+"id": "slaktrens",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 14,
+"h": 12,
+"rader": [
+"....UU...UU...",
+"...UXWU.UXWU..",
+"...UWUU.UWUU..",
+"...UWU..UWU.UU",
+"..EUWUFGUWUUXU",
+".EGUWUFHUWUUVU",
+"EGFGUFGGFUGFUE",
+"EFGFFGFFFFGFFE",
+"rtutsEFGFFFEEr",
+".rstutsEFFEEr.",
+"..rstssrEEEE..",
+"...rrrrr......"
+],
+"pal": {"E": "#521100", "F": "#742a01", "G": "#a14808", "H": "#bd753e", "U": "#7e7362", "V": "#a0947d", "W": "#bdb39b", "X": "#dad0bb", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "u": "#987e62"}
+}

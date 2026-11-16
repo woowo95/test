@@ -1,0 +1,25 @@
+{
+"id": "lok",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 9,
+"h": 15,
+"rader": [
+"..I.I.I..",
+".ILILIKI.",
+"..ILLKI..",
+"...IKI...",
+"...EHE...",
+"..EHGFE..",
+".EHWHFGE.",
+"EHHFHGFGE",
+"EHHFGGFGE",
+"EHGFHGFGE",
+"EHHFGGFFE",
+".EGFGGFE.",
+"..EEEEE..",
+"...ttt...",
+"..t.t.t.."
+],
+"pal": {"E": "#521100", "F": "#742a01", "G": "#a14808", "H": "#bd753e", "I": "#353204", "K": "#647025", "L": "#898b4c", "W": "#bdb39b", "t": "#7d5b40"}
+}

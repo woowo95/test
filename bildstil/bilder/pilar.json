@@ -1,0 +1,31 @@
+{
+"id": "pilar",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 15,
+"h": 21,
+"rader": [
+".......k.......",
+"...k..knk......",
+"..knkknmlk.k...",
+".knmlnmlllknk..",
+"knmllnkkklnmlk.",
+"knkkklktknmlllk",
+".kktkkktknkkklk",
+"..ktk.ktkkktkk.",
+"..ktk.ktk.ktk..",
+"..ktk.ktk.ktk..",
+"..ktk.ktk.ktk..",
+"..ktk.ktk.ktk..",
+"..ktk.ktk.ktk..",
+"..ktk.ktk.ktk..",
+".kGtFkktkkGtFk.",
+"kGGtFFGtFGGtFFk",
+"kGGtFGGtFGGtFFk",
+"kGktkGGtFGktkFk",
+".kkrkGktkFkrkk.",
+"...k.kkrkk.k...",
+".......k......."
+],
+"pal": {"F": "#742a01", "G": "#a14808", "k": "#24201d", "l": "#2f261d", "m": "#372f25", "n": "#474138", "r": "#3f2415", "t": "#7d5b40"}
+}

@@ -1,0 +1,19 @@
+{
+"id": "skjorta_ylle",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 12,
+"h": 9,
+"rader": [
+".IIIIIIIIII.",
+"ILLLKLLKLLKI",
+"ILPKLLLLKPKI",
+"IPLKLKLLKLPI",
+"ILPKLLKLKPKI",
+"ILKLLKLLKLKI",
+"IKPKKPKKPKJI",
+"IJKJJKJJJJJI",
+".IIIIIIIIII."
+],
+"pal": {"I": "#353204", "J": "#4b4f00", "K": "#647025", "L": "#898b4c", "P": "#505e3e"}
+}

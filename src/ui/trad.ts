@@ -201,8 +201,9 @@ const torrBjorkPx = (h: number, sno: number) => { const M = torrBjorkM(h); retur
 // typ 'buske': en buske (steg 6.5.3, ui/buske.ts), s = vilken av de tre formerna, + 3 med bären på (bärbusken, steg 6.5.4)
 export type TradBild = { typ: 'gran' | 'torr' | 'buske'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov; kol?: boolean; hamlad?: boolean }; // hamlad: den hamlade björken (steg 9.8.16) // kol: en kolnad stam efter en brand (steg 9.2.26)
 function tradPx(b: TradBild, sno: number): { w: number; h: number; px: Int8Array; fot?: number } {
-  // den kolnade stammen (steg 9.2.26, platshållare tills Björn valt i bildstilen): torrakan i kolets två mörkaste toner
-  if (b.kol) { const p = tradPx({ ...b, kol: false }, 0); for (let i = 0; i < p.px.length; i++) if (p.px[i] >= 0) p.px[i] = p.px[i] === BEN || p.px[i] === KOL + 3 ? KOL + 1 : KOL; return p; }
+  // den kolnade stammen (steg 9.2.26, Björns val i bildstilen, steg 10.11.1): torrakan helt svart, stammen och alla grenar kolade,
+  // med lite ljusare kol där torrakan är ljus (på den sida ljuset kommer från)
+  if (b.kol) { const p = tradPx({ ...b, kol: false }, 0); for (let i = 0; i < p.px.length; i++) if (p.px[i] >= 0) p.px[i] = KOL + Math.max(0, (p.px[i] % 4) - 1); return p; }
   if (b.typ === 'buske') return buskPx(b.s % BUSK_FORMER.length, b.s >= BUSK_FORMER.length); // s >= 3: med bären på (steg 6.5.4)
   if (b.hamlad) return iBild(hamladM(b.lov ?? 'sommar', b.s));
   if (b.bjork) {

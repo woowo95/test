@@ -1,0 +1,18 @@
+{
+"id": "appel",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 8,
+"h": 8,
+"rader": [
+"....sKJ.",
+".EEsEEE.",
+"EHFsGGFE",
+"EwHGGqFE",
+"EHGqGFFE",
+"EGGGFFFE",
+".EGFFFE.",
+"..EEEE.."
+],
+"pal": {"E": "#521100", "F": "#742a01", "G": "#a14808", "H": "#bd753e", "J": "#4b4f00", "K": "#647025", "q": "#b2921b", "s": "#5e3c24", "w": "#d8b25f"}
+}

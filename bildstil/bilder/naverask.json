@@ -1,0 +1,20 @@
+{
+"id": "naverask",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 10,
+"h": 10,
+"rader": [
+"..rrrrrr..",
+".rXWWVWVr.",
+"rWsstsssUr",
+"rWLKLKKJUr",
+"rWXWWVWVUr",
+"rutututssr",
+"rWXWVWVVUr",
+"rWVWVVWUUr",
+".rVWVVUUr.",
+"..rrrrrr.."
+],
+"pal": {"J": "#4b4f00", "K": "#647025", "L": "#898b4c", "U": "#7e7362", "V": "#a0947d", "W": "#bdb39b", "X": "#dad0bb", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "u": "#987e62"}
+}

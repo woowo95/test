@@ -1,0 +1,21 @@
+{
+"id": "jordgubbar",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 9,
+"h": 11,
+"rader": [
+"....M....",
+".M.MKM.M.",
+"MLMLKKMKM",
+".MLLKKKM.",
+".EMLEKME.",
+".EHGGGFE.",
+".EGqGqFE.",
+"..EGGFE..",
+"..EGqFE..",
+"...EFE...",
+"....E...."
+],
+"pal": {"E": "#521100", "F": "#742a01", "G": "#a14808", "H": "#bd753e", "K": "#647025", "L": "#898b4c", "M": "#21290d", "q": "#b2921b"}
+}

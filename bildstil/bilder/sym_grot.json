@@ -1,0 +1,26 @@
+{
+"id": "sym_grot",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"......V..V......",
+".....V....V.....",
+"......U..U......",
+".....UUUUUU.....",
+"...rUXWWWWVUr...",
+"..ruUVWVWVVUsr..",
+"..rutttttttssr..",
+"...rruttttsrr...",
+"..rtuutttttssr..",
+".rtuutttttttssr.",
+".ruutttttttstsr.",
+".rutttttttttssr.",
+".rtttttttstsssr.",
+"..rtttttstsssr..",
+"...rststssssr...",
+"....rrrrrrrr...."
+],
+"pal": {"U": "#7e7362", "V": "#a0947d", "W": "#bdb39b", "X": "#dad0bb", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "u": "#987e62"}
+}

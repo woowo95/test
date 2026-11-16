@@ -1,0 +1,25 @@
+{
+"id": "sym_hotmarke",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 16,
+"h": 15,
+"rader": [
+".....kkkkkk.....",
+"...kkmmmmmmkk...",
+"..kmmmmHHmmmmk..",
+".kmmmmmGHmmmmmk.",
+".kmmmmmGHmmmmmk.",
+"kmmmmmmGHmmmmmmk",
+"kmmmmmmGHmmmmmmk",
+"kmmmmmmGHmmmmmmk",
+"kmmmmmmFGmmmmmmk",
+"kmmmmmmmmmmmmmmk",
+".kmmmmmGHmmmmmk.",
+".kmmmmmFGmmmmmk.",
+"..kmmmmmmmmmmk..",
+"...kkmmmmmmkk...",
+".....kkkkkk....."
+],
+"pal": {"F": "#742a01", "G": "#a14808", "H": "#bd753e", "k": "#24201d", "m": "#372f25"}
+}

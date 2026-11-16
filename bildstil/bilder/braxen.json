@@ -1,0 +1,21 @@
+{
+"id": "braxen",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 16,
+"h": 11,
+"rader": [
+"......r.........",
+"......sr........",
+"....QQssQQ....rr",
+"..QWXWTWTTQ..rsr",
+".QkWTWTVTVTQrsr.",
+"QTVtqVqTqVtVrr..",
+"QVtqtVqtqVUUrr..",
+".QUVTVUVTUUQrsr.",
+"..QVUVUUVUQ..rsr",
+"....QQQQQQ....rr",
+".....rssr......."
+],
+"pal": {"Q": "#233035", "T": "#8a9c9e", "U": "#7e7362", "V": "#a0947d", "W": "#bdb39b", "X": "#dad0bb", "k": "#24201d", "q": "#b2921b", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40"}
+}

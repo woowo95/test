@@ -1,4 +1,4 @@
-import { HO, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv } from '../sim';
+import { HO, fallorAv, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -126,7 +126,6 @@ function drawKarra() {
 }
 // grödans symbol när den är mogen, tills rutan skördats. Framstegscirkeln över rutan där någon röjer, gräver eller sår
 function drawFalt() {
-  for (const f of faltOf(s)) if ((s.skramma ?? []).includes(f.id)) { const X = f.x * TS, Y = f.y * TS; structG.lineStyle(1, 0x3f2415).moveTo(X + TS / 2, Y + 2).lineTo(X + TS / 2, Y + TS - 1).moveTo(X + 3, Y + 6).lineTo(X + TS - 3, Y + 6).lineStyle(0).beginFill(0xb2921b).drawRect(X + TS / 2 - 2, Y + 1, 4, 4).endFill(); } // fågelskrämman (steg 9.7.11): en platshållare
   for (const i of s.staket ?? []) { const X = (i % W) * TS, Y = Math.floor(i / W) * TS; structG.lineStyle(1, 0x7d5b40).moveTo(X, Y + TS / 2).lineTo(X + TS, Y + TS / 2).moveTo(X + 2, Y + 3).lineTo(X + 2, Y + TS - 2).moveTo(X + TS - 3, Y + 3).lineTo(X + TS - 3, Y + TS - 2).lineStyle(0); } // staketet (steg 9.7.10): en platshållare tills Björn valt i bildstilen
   for (const f of faltOf(s)) {
     const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', R = rutorAv(f);
@@ -144,6 +143,7 @@ function drawFalt() {
     // cirkeln syns bara när någon arbetar på fältet (steg 8.1.3)
     if (!vaxer && !mogen && living(s).some(p => { const t = uppgiftVid(p); return t?.act === 'odla' && t.phase === 'do' && t.ref === f.id; })) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
   }
+  for (const f of faltOf(s)) if ((s.skramma ?? []).includes(f.id)) pileIcons.add('kb_fagelskramma', f.x * TS, f.y * TS + TS - (KARTBILDER.fagelskramma?.h ?? TS), 1); // fågelskrämman (steg 9.7.11) på fältets första ruta, Björns val i bildstilen (steg 10.11.1)
 }
 // framstegscirkeln för det som inte är klart: en mörk bricka med ljus kant som fylls med gult medsols från klockan tolv,
 // ju längre arbetet kommit (p från 0 till 1). I pixlar, 9 × 9 punkter, samma punkter som framstegSvg i panelerna (steg 5.3.2.2)
@@ -233,6 +233,7 @@ export function drawStructures(t: number) {
     const v = t / 400 * (k % 2 ? 1 : -1.3) + k * 0.785, r = TS * (0.6 + 0.4 * Math.sin(t / 700 + k * 1.7) + (k % 3) * 0.35);
     rokIkoner.add('bisymbol', Math.round(b.x * TS + Math.cos(v) * r - 2), Math.round(b.y * TS + Math.sin(v) * r * 0.7 - 1), 1);
   }
+  for (const m of fallorAv(s, 'grop')) { const b = KARTBILDER[m.n > 0 ? 'fangstgrop_oppen' : 'fangstgrop_tackt']; if (b) pileIcons.add('kb_fangstgrop_' + (m.n > 0 ? 'oppen' : 'tackt'), Math.round(m.x * TS + TS / 2 - b.w / 2), Math.round(m.y * TS + TS / 2 - b.h / 2), 1); } // fångstgropen (steg 10.2.84): täckt, och öppen när något fallit i (Björns val, steg 10.11.1)
   drawKarra();
   for (const f of eldarOf(s)) lagereld(f); // den första och lägereldarna till (steg 4.5.6.8)
   for (const pl of piles()) if (!forvarAt(s, pl.x, pl.y)?.stangd) drawPile(pl, t); // det som ligger i en kista syns bara när man trycker på den

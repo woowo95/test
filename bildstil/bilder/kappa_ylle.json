@@ -1,0 +1,18 @@
+{
+"id": "kappa_ylle",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 16,
+"h": 8,
+"rader": [
+"..rrrrrrrrrrrr..",
+".rututtmtutttsr.",
+"urtuttumttutssrt",
+"rtuttutmuttstssr",
+"urttsttmtsttssrs",
+"rstsstsmsstssssr",
+".rssrssmsrsssrr.",
+"..rrrrrrrrrrrr.."
+],
+"pal": {"m": "#372f25", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "u": "#987e62"}
+}

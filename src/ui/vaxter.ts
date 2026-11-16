@@ -1,4 +1,4 @@
-import { richness } from '../sim';
+import { hasselVaxer, richness } from '../sim';
 import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden, vildboSyns, samhallen } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
@@ -34,6 +34,7 @@ const ROLLEKA_VILD = [
 const VILDBO = ['.jj.', 'jhHj', 'hHhH', 'jhHj', 'HhHh', '.jj.'];
 let bon: number[] = []; // rutorna med ett bo som syns, för bina som surrar runt stammen (drawAnimals)
 const ritaBild = (rad: string[], x: number, y: number) => rad.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const c = BILD_FARG[r[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
+const ritaKb = (b: { rader: string[]; pal: Record<string, string> }, x: number, y: number) => b.rader.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const h = b.pal[r[dx]]; if (r[dx] !== '.' && h) plantG.beginFill(parseInt(h.slice(1), 16)).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
 // Var det kan växa syns inte. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
 // bildruta vid tiden som visas (ui.nu), som folket, eftersom de skuttar omkring (djur.ts).
@@ -67,6 +68,7 @@ export function drawPlants(force = false) {
       ritaRad(q.k, n, x, y); j += n;
     }
     if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5)); // röllekan växer vild (steg 9.7.15)
+    if (rx % 2 === 0 && ry % 2 === 0 && hasselVaxer(s, i) > 0.3) { const b = KARTBILDER.hassel; if (b) ritaKb(b, x + 8 - (b.w >> 1), y + TS - b.h + 2); } // den vilda hasseln (steg 9.7.14) som en buske på varannan ruta där den växer (Björns val, steg 10.11.1)
     const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
     if (gr > 0) { ritaRad('grenar', gr, x, y); j += gr; }
   }
@@ -94,12 +96,15 @@ function anfall(k: ReturnType<typeof djuretNu>, d: { x: number; y: number }, iko
   djurIkoner.add(ikon, Math.round(k.slar.x * TS - 4), Math.round(k.slar.y * TS - 10), 1);
   return { x: k.x + dx / l * 0.3, y: k.y + dy / l * 0.3 };
 }
-function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<number>, u = 1) {
+// björnens anfall (Björns val i bildstilen, steg 10.11.1): björnen reser sig på bakbenen och slår ned med ramen, fyra ramar
+// som går runt medan den slår, från sidan (speglad västerut) eller framifrån när den slår söderut
+const bjornAnfall = (dx: number, dy: number) => () => { const n = Math.floor(performance.now() / 180) % 4; return 'kb_bjorn_anfall_' + (dy > Math.abs(dx) ? 'fram' : dx < 0 ? 'vast' : 'sida') + '_' + n; };
+function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<number>, u = 1, bild?: (h: DjurHall) => string | undefined) {
   const e = hallar.get(id), dx = e ? x - e.x : 0, dy = e ? y - e.y : 0;
   let h: DjurHall = e?.h ?? 'sida';
   if (Math.hypot(dx, dy) > 0.01) h = Math.abs(dx) >= Math.abs(dy) * 0.8 ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
   hallar.set(id, { x, y, h }); sedd.add(id);
-  const k = art === 'fagel' ? fagelBild(u, h) : djurBild(art, id, h, art === 'kanin' && iIstiden(ageIndex(s, ui.nu))), c = iconCanvas(k); // fågeln i platsens utseende (steg 6.6.3) // foten nära rutans punkt, mitt under djuret
+  const k = bild?.(h) ?? (art === 'fagel' ? fagelBild(u, h) : djurBild(art, id, h, art === 'kanin' && iIstiden(ageIndex(s, ui.nu)))), c = iconCanvas(k); // fågeln i platsens utseende (steg 6.6.3) // foten nära rutans punkt, mitt under djuret
   djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' || art === 'bjornunge' || art === 'vildsvin' ? 4 : 3) - c.height), 1);
 }
 // djuren där de syns just nu (det man trycker på, interaktion.ts, och djurfliken)
@@ -150,7 +155,7 @@ export function drawAnimals() {
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
   // i en strid på kartan (steg 9.2.29) står vargen och björnen där striden har dem, vid tiden som visas
   for (const d of vargarOf(s)) { const k = djuretNu('varg', d.id, ui.nu), { x, y } = anfall(k, d, 'an_bett'); ritaDjur('varg', d.id, x, y, riktade); ut.push({ ...d, x, y }); }
-  for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id, ui.nu) : undefined, { x, y } = anfall(k, d, 'an_klo'); ritaDjur(d.art, d.id, x, y, riktade); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
+  for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id, ui.nu) : undefined, { x, y } = anfall(k, d, 'an_klo'); ritaDjur(d.art, d.id, x, y, riktade, 1, k?.slar ? bjornAnfall(k.slar.x - k.x, k.slar.y - k.y) : undefined); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
   for (const d of s.tamdjur ?? []) { // läser listan utan att skriva (tamdjurOf gör s.tamdjur ??= []); de döda står inte kvar i den
     if (d.dog !== undefined) continue;
     const ikon = TAMDJUR[d.art].ikon as Djur['art']; ritaDjur(ikon, d.id, d.x, d.y, riktade); ut.push({ id: d.id, art: ikon, x: d.x, y: d.y, grupp: -1, tam: d.art });
@@ -207,9 +212,9 @@ function ritaTornadoSpar() {
   }
 }
 // märket där ett hot senast sågs (steg 9.2.122), så länge larmet gäller: vargflocken (VARG.seddTim), rövarna tills de flyr och björnen
-// (BJORNJAKT.vet). Bara i bilden. Platshållare: varningssymbolen ur bildstilen, tills ett märke valts i bildstilens valdel
+// (BJORNJAKT.vet). Bara i bilden: märket Björn valde i bildstilen (steg 10.11.1)
 function hotMarken() {
-  const mark = (x: number, y: number) => larmIkoner.add('kb_sym_varning', Math.round(x * TS - 8), Math.round(y * TS - 16), 1);
+  const mark = (x: number, y: number) => larmIkoner.add('kb_sym_hotmarke', Math.round(x * TS - 8), Math.round(y * TS - 16), 1);
   for (const f of s.vargar ?? []) if (f.sx !== undefined && f.sy !== undefined && f.gor !== 'flyr' && f.vargar.length && f.sedd !== undefined && ui.nu - f.sedd < VARG.seddTim * HOUR) mark(f.sx, f.sy);
   for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f?.sx !== undefined && f.sy !== undefined && f.sedd !== undefined && f.gor !== 'flyr') mark(f.sx, f.sy);
   const b = s.bjornJakt;

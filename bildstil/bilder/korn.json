@@ -1,0 +1,26 @@
+{
+"id": "korn",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 11,
+"h": 16,
+"rader": [
+".o..oqo..o.",
+"..owwqqpo..",
+"oowwqwqppoo",
+".owqwqqpqpo",
+".oqwqqpqpo.",
+"..oqqpqpo..",
+"...oqppo...",
+"...rttsr...",
+"...rtssr...",
+"...oqpto...",
+"..opqppto..",
+"..oqptpto..",
+".opqpptpto.",
+".oqptpptpo.",
+"opqptpptpto",
+"ostststssso"
+],
+"pal": {"o": "#694902", "p": "#906f0f", "q": "#b2921b", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "w": "#d8b25f"}
+}

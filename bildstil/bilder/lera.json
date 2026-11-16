@@ -1,0 +1,17 @@
+{
+"id": "lera",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 16,
+"h": 7,
+"rader": [
+"...kkkkkkk......",
+".kkFFGGGFFkk....",
+"kFFGFGGFGFFFk...",
+"kFFFFGFFGFFFk...",
+"krFFFFFFFFFrrk..",
+".krrrFFFFrrk..kF",
+"..kkrrrrrrk...kr"
+],
+"pal": {"F": "#742a01", "G": "#a14808", "k": "#24201d", "r": "#3f2415"}
+}

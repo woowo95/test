@@ -1,0 +1,20 @@
+{
+"id": "kal",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 10,
+"h": 10,
+"rader": [
+"...IIII...",
+".IITTLLII.",
+".ITLLLLKI.",
+"ITLKKKKLKI",
+"ITKLWLLKKI",
+"ILKLLLKKJI",
+"ILLKKKKJJI",
+".ILLKKJJI.",
+"..IIIIII..",
+"....VU...."
+],
+"pal": {"I": "#353204", "J": "#4b4f00", "K": "#647025", "L": "#898b4c", "T": "#8a9c9e", "U": "#7e7362", "V": "#a0947d", "W": "#bdb39b"}
+}

@@ -1,0 +1,23 @@
+{
+"id": "nat",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"w": 16,
+"h": 13,
+"rader": [
+"..........QQ.QQ.",
+"UUUUUUUstQTSQTSQ",
+"UVXWWVWtsQSRQSRQ",
+"UXVWVWVstWQQQQQU",
+"UWWVWWWtsWQTSQWU",
+"UVVVVVVstVQSRQVU",
+"UVWWWVWtsVWQQVWU",
+"UWVWVWVstWVWVWVU",
+"VUUUUUUtsUUUUUUU",
+"WVWVWUrsrrrrrrrr",
+"V.V.U...........",
+".V.U.U..........",
+"..U.U..........."
+],
+"pal": {"Q": "#233035", "R": "#3e5156", "S": "#61767a", "T": "#8a9c9e", "U": "#7e7362", "V": "#a0947d", "W": "#bdb39b", "X": "#dad0bb", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40"}
+}

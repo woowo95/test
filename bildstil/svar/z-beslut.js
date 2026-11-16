@@ -40,48 +40,29 @@
   Object.assign(BESLUT, {
   });
   // Björns svar 2026-11-10/11: godkända kort, som byggs in i steg 10.11.1 (fas 10:s inbyggnad av bildstilens val)
+  // Björns svar 2026-11-10/15, inbyggda i steg 10.11.1: korten tas bort. Sakerna i förrådet (stack: true) ligger kvar som
+  // valda tills Björn svarat på stackarna (stackar.js gör korten <id>_stack av dem)
   const B10 = (val, text) => ({ val, steg: '10.11.1', text: text ? text + ' Byggs in i steg 10.11.1.' : undefined });
-  const S10 = (val, text) => ({ ...B10(val, text), stack: true }); // en sak i förrådet: stackarna blir ett eget förslag (stackar.js)
+  const S10 = (val, text) => ({ ...B10(val, text), stack: true });
   Object.assign(BESLUT, {
-    f5_grodd: B10(1),
-    f8_bage: B10(1),
-    f8_pil: B10(3, 'Bara pilarna: bågen i bilden hör inte hit, den har en egen bild (Bågen).'),
-    f9_hotmarke: B10(1),
     f9_naverask: S10(3),
     f9_spjala: S10(2),
     f9_nat: S10(3),
     f9_braxen: S10(1),
     f9_sik: S10(1),
-    f9_kat_soppa: B10(3),
     f9_korn: S10(1),
     f9_lok: S10(1),
-    f9_fagelskramma: B10(1),
-    f9_forband: B10(1, 'Remsan syns inte i porträttet. Bennålen finns redan i spelet och ritas inte om.'),
-    f9_foder: B10(4, 'Den som föder får symbolen för barn som redan finns i spelet; ingen ny symbol.'),
-    f9_proteser: B10(3, 'Ögonlappen tas från version 1 och resten från version 3. Ögonlappen syns i porträttet med utseendet som redan finns där (ogonlapp i karaktärsskaparen).'),
-    // Björns svar 2026-11-15
-    f7_fangstgrop: B10(1),
-    f7_fangstbank: B10(2, 'Utan stubben (f7_fangstbank_stubbe): sittplatsen är en egen sak som spelet ställer framför stationen.'),
     f9_appel: S10(1),
     f9_brod: S10(1),
     f9_jordgubbar: S10(1),
     f9_kal: S10(1),
-    f9_hassel: B10(1),
-    f9_kat_grot: B10(1),
-    f9_kat_gryta: B10(1),
-    f9_slaktrens: B10(3),
-    f9_kolstam: B10(1),
-    f9_lera: B10(2),
-    f9_kk_tro: B10(1),
-    f9_amne_mat: B10(1),
-    f9_fiskrens: B10(1),
-    f9_kappa: B10(3),
-    f9_mantel: B10(1),
-    f9_sjal: B10(2),
-    f9_skjorta_ylle: B10(3),
-    f9_tunika_ylle: B10(1),
-    f9_bjorn_anfall: B10(1, 'Du skrev att den ser bra ut från sidan men inte framifrån: sidan byggs in som den är, och anfallet framifrån ritas om när det byggs in.'),
   });
+  { const INBYGGT_10111 = ['f5_grodd', 'f8_bage', 'f8_pil', 'f9_hotmarke', 'f9_kat_soppa', 'f9_fagelskramma', 'f9_forband', 'f9_foder', 'f9_proteser', 'f7_fangstgrop', 'f7_fangstbank', 'f9_hassel', 'f9_kat_grot', 'f9_kat_gryta', 'f9_slaktrens', 'f9_kolstam', 'f9_lera', 'f9_kk_tro', 'f9_amne_mat', 'f9_fiskrens', 'f9_kappa', 'f9_mantel', 'f9_sjal', 'f9_skjorta_ylle', 'f9_tunika_ylle', 'f9_bjorn_anfall'];
+    for (let i = VAL.length - 1; i >= 0; i--) if (INBYGGT_10111.includes(VAL[i].id)) VAL.splice(i, 1); }
+  // björnens anfall framifrån, ritat om efter Björns kommentar (steg 10.11.1): en version att säga ja eller nej till
+  if (!VAL.some(s => s.id === 'f10_bjorn_fram')) VAL.push({ id: 'f10_bjorn_fram', namn: 'Björnens anfall framifrån', typ: 'janej', slag: [],
+    vad: 'Björnen reser sig framifrån och slår ned med båda ramarna, fyra ramar som går runt medan den slår söderut. Din kommentar förra gången: den såg bra ut från sidan men inte framifrån. Sidan är inbyggd som den var, och det här är den nya ritningen framifrån, som redan syns i spelet.',
+    versioner: [EGEN('Fyra ramar: reser sig, vrålar med ramarna högt, slår ned, träffar.', {"pal": {"V": "#a0947d", "k": "#24201d", "l": "#2f261d", "m": "#372f25", "r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "E": "#521100", "X": "#dad0bb"}, "rader": ["............................VVV.....................VVV.........................................................", "............................kkk.....................kkk.........................................................", ".....kkk.........kkk.......klllk..kkk.........kkk..klllk........kkk.........kkk.............kkk.........kkk.....", "....kmmmk.kkkkk.kmmmk......klllk.kmmmk.kkkkk.kmmmk.klllk.......kmmmk.kkkkk.kmmmk...........kmmmk.kkkkk.kmmmk....", "....kmmmkkssssskkmmmk......klllk.kmmmkkssssskkmmmk.klllk.......kmmmkkssssskkmmmk...........kmmmkkssssskkmmmk....", "....kmmkssssssssskmmk.......kkkk.kmmkssssssssskmmk.kkkk........kmmkssssssssskmmk...........kmmkssssssssskmmk....", ".....kkssssssssssrkk........kssk..kkssssssssssrkk..krrk.........kkssssssssssrkk.............kkssssssssssrkk.....", ".....ksssssssssssrrk........kssk..ksssssssssssrrk..krrk.........ksssssssssssrrk.............ksssssssssssrrk.....", ".....ksssksssssksrrk.........ksk..ksssksssssksrrk..krk..........ksssksssssksrrk.............ksssksssssksrrk.....", ".VVV.ksssssssssssrrk.VVV.....kssk.ksssssssssssrrk.krrk..........ksssssssssssrrk.............ksssssssssssrrk.....", ".kkk.ksssssskssssrrk.kkk.....kssk.ksssssskssssrrk.krrk..........ksssssskssssrrk.............ksssssskssssrrk.....", "klllkksssskkkkkssrrkklllk....kssk.ksssskkkkkssrrk.krrk..........ksssskkkkkssrrk.............ksssskkkkkssrrk.....", "klllk.kssktttttksrk.klllk....kssk..kssktttttksrk..krrk...........kssktttttksrk...............kssktttttksrk......", "klllk..ksktttttksk..klllk.....ksk...kskXEEXtksk...krk.............kskXEEXtksk.................ksktttttksk.......", ".kkkk..kkktttttkkk..kkkk......kssk..kkkEEEEtkkk..krrk.............kkkEEEEtkkk.................kkktttttkkk.......", ".ksskkkssskktkkssskkkrrk......ksskkkssskktkkssskkkrrk...........kkssskktkkssskk.............kkssskktkkssskk.....", ".ksskssssssskssssssrkrrk......ksskssssssskssssssrkrrk......kkk.kssssssskssssssrk.kkk.......kssssssskssssssrk....", ".ksskssssssssssssssrkrrk......ksskssssssssssssssrkrrk.....klllkkssssssssssssssrkklllk....kkkssssssssssssssrkkk..", "..kskssssssssssssssrkrk........kskssssssssssssssrkrk......klllkkssssssssssssssrkklllk....kskssssssssssssssrkrk..", "..kkkssssssssssssssrkkk........kkkssssssssssssssrkkk......klllkkssssssssssssssrkklllk....ksskssssssssssssskrrk..", "..kssssssssssssssssrrrk........kssssssssssssssssrrrk.......kkkssssssssssssssssrrrkkk.....ksskssssssssssssskrrk..", ".ksssssssssssssssssrrrrk......ksssssssssssssssssrrrrk......VVVssssssssssssssssrrrVVV....kksskssssssssssssskrrkk.", ".ksssssssssssssssssrrrrk......ksssssssssssssssssrrrrk.......ksssssssssssssssssrrrrk.....kskskssssssssssssskrkrk.", ".ksssssssssssssssssrrrrk......ksssssssssssssssssrrrrk.......ksssssssssssssssssrrrrk.....ksksskssssssssssskrrkrk.", ".ksssssssssssssssssrrrrk......ksssssssssssssssssrrrrk.......ksssssssssssssssssrrrrk.....ksksskssssssssssskrrkrk.", "kssssssssssssssssssrrrrrk....kssssssssssssssssssrrrrrk.....kssssssssssssssssssrrrrrk...kssskskssssssssssskrkrrrk", ".ksssssssssssssssssrrrrk......ksssssssssssssssssrrrrk.......ksssssssssssssssssrrrrk.....kssksskssssssssskrrkrrk.", ".ksssssssssssssssssrrrrk......ksssssssssssssssssrrrrk.......ksssssssssssssssssrrrrk.....ksskkkkssssssssskkkkrrk.", ".ksssssssssssssssssrrrrk......ksssssssssssssssssrrrrk.......ksssssssssssssssssrrrrk.....kssklllksssssssklllkrrk.", ".ksssssssssssssssssrrrrk......ksssssssssssssssssrrrrk.......ksssssssssssssssssrrrrk.....kssklllksssssssklllkrrk.", "..kssssssssssssssssrrrk........kssssssssssssssssrrrk.........kssssssssssssssssrrrk.......ksklllksssssssklllkrk..", "..kssssssssssssssssrrrk........kssssssssssssssssrrrk.........kssssssssssssssssrrrk.......ksskkkssssssssskkkrrk..", "...ksssssssssssssssrrk..........ksssssssssssssssrrk...........ksssssssssssssssrrk.........ksVVVsssssssssVVVrk...", "...ksssssssssssssssrrk..........ksssssssssssssssrrk...........ksssssssssssssssrrk.........ksssssssssssssssrrk...", "...kkssssssssssssssrkk..........kkssssssssssssssrkk...........kkssssssssssssssrkk.........kkssssssssssssssrkk...", "...kskkssssssssssskkrk..........kskkssssssssssskkrk...........kskkssssssssssskkrk.........kskkssssssssssskkrk...", "..ksssskkssssssskkrrrrk........ksssskkssssssskkrrrrk.........ksssskkssssssskkrrrrk.......ksssskkssssssskkrrrrk..", "...kssssskkkkkkksrrrrk..........kssssskkkkkkksrrrrk...........kssssskkkkkkksrrrrk.........kssssskkkkkkksrrrrk...", "...ksssssk.....ksrrrrk..........ksssssk.....ksrrrrk...........ksssssk.....ksrrrrk.........ksssssk.....ksrrrrk...", "...ksssssk.....ksrrrrk..........ksssssk.....ksrrrrk...........ksssssk.....ksrrrrk.........ksssssk.....ksrrrrk...", "...ksssssk.....ksrrrrk..........ksssssk.....ksrrrrk...........ksssssk.....ksrrrrk.........ksssssk.....ksrrrrk...", "...ksssssk.....ksrrrrk..........ksssssk.....ksrrrrk...........ksssssk.....ksrrrrk.........ksssssk.....ksrrrrk...", "...klllllk.....klllllk..........klllllk.....klllllk...........klllllk.....klllllk.........klllllk.....klllllk...", "...kkkkkkk.....kkkkkkk..........kkkkkkk.....kkkkkkk...........kkkkkkk.....kkkkkkk.........kkkkkkk.....kkkkkkk..."]})] });
   // borttagna 2026-11-15: örtkökets delar (dublett av örtköket), bärtuvan under träd (står i designdokumentet: inga bär
   // under träd) och höet (folk plockar det långa gräset och gräset som redan finns i spelet; ingen egen bild)
   for (let i = VAL.length - 1; i >= 0; i--) if (['f9_ortkok_delar', 'f9_bartuva', 'f9_ho'].includes(VAL[i].id)) VAL.splice(i, 1);
