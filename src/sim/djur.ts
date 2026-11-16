@@ -626,14 +626,15 @@ export const INDIVID = balans('individ', {
   sarTim: 0.04, // så mycket sår (summan av skadornas grad) läker per timme
   glomTim: 24, // ett dödat djur glöms efter så här många timmar (gruppen det hörde till har bytt plats då)
 });
-export interface DjurDrag { alder: number; styrka: number; snabbhet: number; skygghet?: number; mod?: number }
+export interface DjurDrag { alder: number; styrka: number; snabbhet: number; talighet: number; mod: number; tamhet: number }
 export interface DjurHalsa { id: number; blod: number; sar: number; t: number } // blod 0–1 och sår, sparat vid tiden t
 // djurets egenskaper: ur id:t, kring artens värden. Ålder i år (ett dygn i verkligheten), styrka och snabbhet i artens
-// mått (snabbhet gånger stridens fart), skygghet och mod 0–1
+// mått (snabbhet gånger stridens fart), tålighet kring 1 och mod 0–1. Kaninens skygghet är 1 − mod, samma tal som vargens
+// mod (steg 10.10.29), och ett vilt djur har tamhet 0
 export function dragOf(art: Djur['art'], id: number): DjurDrag {
   const d = stridOf(art), v = (n: number) => 1 + (hash(id, n, 21) * 2 - 1) * INDIVID.spann;
   const alder = Math.floor(hash(id, 1, 21) * d.alder) + 1, aldr = Math.max(0, alder / d.alder - INDIVID.gammal) / (1 - INDIVID.gammal);
-  return { alder, styrka: d.styrka * v(2), snabbhet: d.fart * v(3) * (1 - INDIVID.gammalFart * aldr), ...(art === 'varg' ? { mod: hash(id, 5, 21) } : { skygghet: hash(id, 4, 21) }) }; // rådjuret är skyggt som kaninen
+  return { alder, styrka: d.styrka * v(2), snabbhet: d.fart * v(3) * (1 - INDIVID.gammalFart * aldr), talighet: v(6), mod: art === 'varg' ? hash(id, 5, 21) : 1 - hash(id, 4, 21), tamhet: 0 }; // rådjuret är skyggt som kaninen
 }
 // djurets hälsa just nu: det sparade, läkt med tiden sedan dess
 export function halsaOf(s: State, id: number): { blod: number; sar: number; dod: boolean } {

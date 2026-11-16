@@ -27,8 +27,7 @@ import { blocked } from './byggnad';
 import { kanGa, retadStick } from './halsa';
 import { avbryt } from './lager';
 import { kartStrider } from './kartstrid';
-import { tamArt, tamDor, tamdjurOf } from './tamdjur';
-import { hageById } from './hage';
+import { tamArt, tamDor, tamEg, tamdjurOf } from './tamdjur';
 import { FAROR } from './efterstrid';
 
 export const BIN = balans('bin', {
@@ -78,7 +77,6 @@ export const BIN = balans('bin', {
   retadStick: 10, // stick i minuten och kropp vid ett fullt uppretat bo (färre vid ett litet)
   retadTid: 10, // minuter som boet är uppretat innan det lugnar sig
   undan: 4, // den som flyr går så här många rutor bortom BIN.retadR
-  djurFart: 1, // ett djur som flyr bina springer så här många rutor i sekunden
 });
 
 // en dragkälla: vad den ger inom räckhåll av (x, y), i tidsåldern ai, med eller utan torka. ikon = symbolen i kupans ruta
@@ -277,7 +275,7 @@ export function flyFranBin(s: State, p: Person, b: Retat) {
 // stick i timmen vid boet b (gånger storleken)
 const perTim = (b: Retat) => BIN.retadStick * 60 * b.st;
 // det uppretade boets takt (en rad i TAKTER, varje slag): strider intill ett bo retar upp det, och det uppretade boet sticker
-// människor och djur inom BIN.retadR rutor efter tiden sedan sist. Djuren springer undan. Efter BIN.retadTid lugnar det sig
+// människor och djur inom BIN.retadR rutor efter tiden sedan sist. Efter BIN.retadTid lugnar det sig
 export function retadeSteg(s: State, dt: number) {
   for (const g of kartStrider(s)) for (const k of g.st.kampar) {
     if (k.lage !== 'strid') continue;
@@ -299,14 +297,7 @@ export function retadeSteg(s: State, dt: number) {
       if (l > BIN.retadR) continue;
       const a = tamArt(d.art), n = antalPa(s, perTim(b) * (a.pals ?? 1) * dt / HOUR_S, 'bin');
       if (n > 0) { const g = d.bistick ?? { n: 0, g: 1 }; d.bistick = { n: g.n * g.g + n, g: 1 }; count(s, 'bistickDjur', n); }
-      if (d.bistick && d.bistick.n * d.bistick.g >= BIN.giftDod * a.ater) { tamDor(s, d, 'av bistick'); continue; }
-      // djuret springer bort från boet, inom sin hage
-      const v = l > 0.1 ? [dx / l, dy / l] : [Math.cos(d.id), Math.sin(d.id)], st = Math.min(BIN.retadR + 0.5 - l, BIN.djurFart * dt);
-      if (st <= 0) continue;
-      let nx = d.x + v[0] * st, ny = d.y + v[1] * st;
-      const h = hageById(s, d.hage);
-      if (h) { nx = Math.min(h.x + h.w - 0.5, Math.max(h.x + 0.5, nx)); ny = Math.min(h.y + h.h - 0.5, Math.max(h.y + 0.5, ny)); }
-      if (inMap(Math.floor(nx), Math.floor(ny)) && !blocked(s, nx, ny)) { d.x = nx; d.y = ny; }
+      if (d.bistick && d.bistick.n * d.bistick.g >= BIN.giftDod * a.ater * tamEg(d).talighet) tamDor(s, d, 'av bistick'); // djuret springer undan efter sitt mod (djurflykt.ts)
     }
   }
   const kvar = s.retade.filter(b => s.now < b.slut);

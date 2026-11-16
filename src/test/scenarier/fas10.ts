@@ -78,9 +78,9 @@ SCENARIER.dragdjur = {
     const iHagen = !!oxe && !!h && oxe.hage === h.id, medDjur = villAv(s, 'slade');
     const hast = nyttTamdjur(s, 'hast', m.x, m.y, undefined, s.now - 4 * DAY); hast.hage = h?.id;
     // lasset och farten
-    const sl = FORDON.slade, lOxe = lassAv(sl, oxe), lHast = lassAv(sl, hast);
+    const sl = FORDON.slade, artOxe = { art: 'oxe' } as SIM.Tamdjur, artHast = { art: 'hast' } as SIM.Tamdjur, lOxe = lassAv(sl, artOxe), lHast = lassAv(sl, artHast); // arternas värden; individerna skiljer sig kring dem (steg 10.10.29)
     s.vader = { ...(s.vader ?? { fukt: 0.5 }), sno: 1 } as typeof s.vader;
-    const fOxe = fordonFart(s, sl, m.x + 6, m.y, oxe), fHast = fordonFart(s, sl, m.x + 6, m.y, hast);
+    const fOxe = fordonFart(s, sl, m.x + 6, m.y, artOxe), fHast = fordonFart(s, sl, m.x + 6, m.y, artHast);
     // vem som tas: det djur som ger mest per tid för lasset (byggstenens vikt prövas med en tung sak: virket i högar om 40)
     const g = newTing(s, 'slade', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y);
     const per = (d: SIM.Tamdjur, n: number) => Math.min(n, Math.floor(lassAv(sl, d) / SIM.viktOf('virke'))) * fordonFart(s, sl, m.x + 6, m.y, d);
@@ -994,7 +994,7 @@ SCENARIER.retad = {
     const far = nyttTamdjur(s, 'far', bo.x + 1, bo.y), ko = nyttTamdjur(s, 'ko', bo.x - 1, bo.y);
     let fS = 0, kS = 0; const nSt = (d: SIM.Tamdjur) => d.bistick?.n ?? 0;
     for (let i = 0; i < 20; i++) { far.bistick = undefined; ko.bistick = undefined; reta(); for (let t = 0; t < 60; t++) { far.x = bo.x + 1; far.y = bo.y; ko.x = bo.x - 1; ko.y = bo.y; retadeSteg(s, 1); s.now += 1000; } fS += nSt(far); kS += nSt(ko); }
-    far.bistick = undefined; ko.bistick = undefined; far.x = bo.x + 1; far.y = bo.y; reta(); for (let t = 0; t < 10; t++) { retadeSteg(s, 1); s.now += 1000; }
+    far.bistick = undefined; ko.bistick = undefined; far.x = bo.x + 1; far.y = bo.y; reta(); for (let t = 0; t < 10; t++) { retadeSteg(s, 1); SIM.tamFaraSteg(s, 1); s.now += 1000; }
     const farBort = Math.hypot(far.x - bo.x, far.y - bo.y), farStick = nSt(far);
     // den medvetslösa med 40 stick intill ett fullt och ett litet bo i tio minuter
     const ligger = (st: number) => { rent(p); p.svimmat = true; p.skador = [{ d: 'bal', k: 'bistick', g: 1, b: 0, n: 40 }]; reta(st); let dog = false; for (let t = 0; t < BIN.retadTid * 60 && !dog; t += 2) { p.x = bo.x + 1; p.y = bo.y; p.svimmat = true; retadeSteg(s, 2); if (halsaSteg(s, p, 2) === 'bistick') dog = true; s.now += 2000; } rent(p); return dog; };
@@ -1070,6 +1070,53 @@ SCENARIER.angflytt = {
       [`höet på den nya ängen räcker åt djuren (ingen brist: ${racker})`, racker],
       [`ett stråk går över ängen (${r === undefined ? 'inget stråk utanför byn' : strakKvar}) och flyttar den (${strakFlytt})`, r !== undefined && strakKvar && strakFlytt],
       [`den som går förbi ängen går runt den (${paAng} rutor på ängen av ${v.length})`, v.length > 0 && paAng === 0],
+    ];
+  },
+};
+
+SCENARIER.djuregenskaper = {
+  text: 'Steg 10.10.29: djurens egenskaper. Varje djur har styrka, snabbhet, tålighet, mod och tamhet kring artens värden. Den starkare oxen tar större lass, den snabbare hästen kör fortare, det tåligare djuret lever längre utan mat, det rädda djuret flyr först och lämnar släden, och ett vilt djur har tamhet 0',
+  kor: () => {
+    const { FORDON, fordonFart, lassAv, nyttTamdjur, tamEg, tamFaraSteg, stepTamdjur, newTing, taFordon, tingOf, living, ageOf, ALDER, DAY, BYN, TAMFLYKT, BIN, dragOf } = SIM;
+    const s = createState(4, START); klockan(s, 10);
+    const m = SIM.bynsMitt(s), sl = FORDON.slade, fler = (art: 'oxe' | 'hast' | 'far') => Array.from({ length: 8 }, () => nyttTamdjur(s, art, m.x, m.y, undefined, s.now - 4 * DAY));
+    const ytterst = <T,>(l: T[], f: (x: T) => number) => { const o = [...l].sort((a, b) => f(a) - f(b)); return [o[0], o[o.length - 1]]; };
+    // styrkan ger lasset
+    const [svag, stark] = ytterst(fler('oxe'), d => tamEg(d).styrka), lSvag = lassAv(sl, svag), lStark = lassAv(sl, stark);
+    // snabbheten ger farten
+    s.vader = { ...(s.vader ?? { fukt: 0.5 }), sno: 1 } as typeof s.vader;
+    const [lang, snabb] = ytterst(fler('hast'), d => tamEg(d).snabbhet), fLang = fordonFart(s, sl, m.x + 6, m.y, lang), fSnabb = fordonFart(s, sl, m.x + 6, m.y, snabb);
+    // tåligheten: två får utan mat, det tåliga dör senare
+    const [klen, talig] = ytterst(fler('far'), d => tamEg(d).talighet);
+    s.tamdjur = (s.tamdjur ?? []).filter(d => d === klen || d === talig);
+    let dKlen = 0, dTalig = 0;
+    for (let t = 1; t <= 200 && !(dKlen && dTalig); t++) { klen.hunger = talig.hunger = 1; stepTamdjur(s); if (!dKlen && klen.dog !== undefined) dKlen = t; if (!dTalig && talig.dog !== undefined) dTalig = t; }
+    // modet: två oxar spända för var sin släde, lika långt från ett uppretat bo; den rädda flyr och lämnar släden
+    const b = createState(5, START); klockan(b, 10);
+    const bm = SIM.bynsMitt(b), oxar = Array.from({ length: 8 }, () => nyttTamdjur(b, 'oxe', bm.x, bm.y, undefined, b.now - 4 * DAY));
+    const [radd, modig] = ytterst(oxar, d => tamEg(d).mod);
+    b.tamdjur = (b.tamdjur ?? []).filter(d => d === radd || d === modig);
+    const kuskar = living(b).filter(q => ageOf(q, b.now) >= ALDER.vuxen).slice(0, 2);
+    const bo = { x: bm.x, y: bm.y }, fr = BIN.retadR / 2, gr = (d: SIM.Tamdjur) => TAMFLYKT.r * (1.5 - tamEg(d).mod) * fr, L = (gr(radd) + gr(modig)) / 2;
+    const spann = [radd, modig].map((d, i) => {
+      const p = kuskar[i]; p.x = bo.x + L; p.y = bo.y + (i ? 1 : -1) * 0.01; d.x = p.x; d.y = p.y;
+      p.task = { act: 'bara', phase: 'back', tx: 0, ty: 0, until: b.now + 3600_000, carry: 0, items: { virke: 2 } };
+      const g = newTing(b, 'slade', 1, BYN); taFordon(b, p, p.task!, g.id, d.id); return { p, g };
+    });
+    b.retade = [{ x: bo.x, y: bo.y, slut: b.now + 10 * 60_000, st: 1 }];
+    tamFaraSteg(b, 1);
+    const flydde = Math.hypot(radd.x - bo.x, radd.y - bo.y) > L + 0.1, stannade = Math.abs(Math.hypot(modig.x - bo.x, modig.y - bo.y) - L) < 0.01;
+    const slitSig = spann[0].g.lass === undefined && spann[0].g.djur === undefined && spann[0].g.x !== undefined && spann[0].p.task === undefined;
+    const kvarSpand = spann[1].g.lass === spann[1].p.id && spann[1].g.djur === modig.id && tingOf(b).includes(spann[1].g);
+    // det vilda djuret är inte tamt
+    const vild = [dragOf('varg', 123), dragOf('kanin', 456), dragOf('radjur', 789)];
+    return [
+      [`den starkare oxen tar större lass (${lStark.toFixed(0)} mot ${lSvag.toFixed(0)})`, lStark > lSvag],
+      [`den snabbare hästen kör fortare (${fSnabb.toFixed(2)} mot ${fLang.toFixed(2)} rutor/s)`, fSnabb > fLang],
+      [`det tåligare fåret lever längre utan mat (${dTalig} mot ${dKlen} timmar)`, dKlen > 0 && dTalig > dKlen],
+      [`den rädda oxen flyr (${flydde}) och den modiga står kvar (${stannade}) lika långt från bina`, flydde && stannade],
+      [`den rädda slet sig: släden står kvar med lasset och kusken slutade (${slitSig}); den modiga är kvar förspänd (${kvarSpand})`, slitSig && kvarSpand],
+      [`de vilda djuren har tamhet 0 och ett mod (${vild.map(v => v.mod.toFixed(2)).join(', ')})`, vild.every(v => v.tamhet === 0 && v.mod >= 0 && v.mod <= 1)],
     ];
   },
 };

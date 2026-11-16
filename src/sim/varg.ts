@@ -139,7 +139,7 @@ const vaken = (p: Person) => p.task?.act !== 'sova';
 // flockens mod: vargarnas medelmod (0–1) gånger storleken
 function flockMod(f: Vargflock) {
   let m = 0;
-  for (const id of f.vargar) m += dragOf('varg', id).mod ?? 0.5;
+  for (const id of f.vargar) m += dragOf('varg', id).mod;
   return m / Math.max(1, f.vargar.length) * (1 + VARG.flockMod * (f.vargar.length - 1));
 }
 // den närmaste punkten på var och en av kartans fyra kanter, den närmaste först
@@ -599,7 +599,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   const n = f.vargar.length, modF = 1 + VARG.flockMod * (n - 1);
   const djur: DjurMed[] = f.vargar.map((id, j) => {
     const d = dragOf('varg', id), v = j / Math.max(1, n) * Math.PI * 2, q = freeNear(s, clamp(f.x + (n > 1 ? Math.cos(v) : 0), 0.5, W - 0.5), clamp(f.y + (n > 1 ? Math.sin(v) : 0), 0.5, H - 0.5)), k = djurKampe('varg', 0, 1, q.x, q.y);
-    k.fart = d.snabbhet; k.st.styrka = d.styrka; k.st.mod = clamp(k.st.mod * (VARG.stridModBas + VARG.stridModDrag * (d.mod ?? 0.5)) * modF * (VARG.stridHungerBas + VARG.stridHunger * f.hunger), 1, 20);
+    k.fart = d.snabbhet; k.st.styrka = d.styrka; k.st.mod = clamp(k.st.mod * (VARG.stridModBas + VARG.stridModDrag * d.mod) * modF * (VARG.stridHungerBas + VARG.stridHunger * f.hunger), 1, 20);
     if (j === 0 && n > 1) { k.ledare = 'fram'; k.namn = 'Ledarvargen'; } else if (n > 1) k.namn = `Varg ${j + 1}`; // ledarvargen: faller den sjunker modet hos de andra
     return { art: 'varg', id, k, blod: halsaOf(s, id).blod };
   });

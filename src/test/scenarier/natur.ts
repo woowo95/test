@@ -1756,7 +1756,7 @@ SCENARIER.individer = {
     const dj = djurOf(s), art = SIM.djurStrid('kanin');
     const drag = dj.map(d => SIM.dragOf(d.art, d.id));
     const samma = dj.every((d, i) => JSON.stringify(SIM.dragOf(d.art, d.id)) === JSON.stringify(drag[i]));
-    const iSpann = drag.every(g => g.alder >= 1 && g.alder <= art.alder && g.styrka > 0 && g.snabbhet > 0 && g.skygghet! >= 0 && g.skygghet! <= 1);
+    const iSpann = drag.every(g => g.alder >= 1 && g.alder <= art.alder && g.styrka > 0 && g.snabbhet > 0 && g.mod >= 0 && g.mod <= 1 && g.tamhet === 0);
     const olika = new Set(drag.map(g => g.styrka.toFixed(2))).size > 1;
     // en skadad kanin läker med tiden
     const a = dj[0], b = dj[1], fore = s.now;

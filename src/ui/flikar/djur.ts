@@ -1,4 +1,4 @@
-import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, tamArt, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, FLOCKARTER, flockGrupper, flockdjurOf, vargarOf } from '../../sim';
+import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, tamArt, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, tamEg, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, FLOCKARTER, flockGrupper, flockdjurOf, vargarOf } from '../../sim';
 import { djurBild, hasIcon, iconCanvas, iconImg } from '../../ikoner';
 import { bar, condBar, esc, pLink } from '../hjalp';
 import { HONS_ID0, arHona, arTamt, djurSynliga } from '../vaxter';
@@ -37,7 +37,17 @@ function tamHtml() {
       ${tamArt(d.art).ull ? rad(iconImg('ull', 14), d.ull ?? 0, pr(d.ull ?? 0), (d.ull ?? 0) >= 1 ? 'Ullen är full och kan klippas' : 'Ullen växer ut och klipps med kniven', 'skill', true) : ''}
       ${tamArt(d.art).mjolk ? rad('💧', d.mjolk ?? 0, pr(d.mjolk ?? 0), (d.mjolk ?? 0) >= 1 ? 'Full av mjölk och kan mjölkas' : `Mjölken växer till, och ${tamArt(d.art).ord[3]} mjölkas två gånger om dygnet`, 'skill') : ''}
       ${d.art !== 'hund' ? plats : ''}
+      ${egRader(tamEg(d), tamEg({ art: d.art }), !!tamArt(d.art).styrka)}
     </dl>`;
+}
+// djurets egenskaper (steg 10.10.29) som symboler: 💪 styrka och 🐾 snabbhet (bara dragdjuren, där de ger lasset och farten),
+// 🛡 tålighet, 🦁 mod och 🤝 tamhet; stapeln är full för den bästa av arten, och texten kommer fram när man håller musen över raden
+function egRader(e: { styrka: number; snabbhet: number; talighet: number; mod: number; tamhet: number }, bas: typeof e, drag: boolean) {
+  const topp = 1 + INDIVID.spann, jfr = (v: number, b: number) => v > b * 1.08 ? 'mer än de flesta' : v < b * 0.92 ? 'mindre än de flesta' : 'som de flesta';
+  const r = (sym: string, k: keyof typeof e, text: string) => rad(sym, k === 'mod' ? e.mod : e[k] / (bas[k] * topp), `${Math.round(e[k] / bas[k] * 100)} %`, `${text}, ${jfr(e[k], bas[k])} av arten`, 'skill');
+  return (drag ? r('💪', 'styrka', 'Styrka: hur tungt lass släden tar') + r('🐾', 'snabbhet', 'Snabbhet: hur fort släden går') : '')
+    + r('🛡', 'talighet', 'Tålighet: hur länge djuret tål svält, kyla och stick') + r('🦁', 'mod', 'Mod: hur nära en fara kommer innan djuret flyr')
+    + r('🤝', 'tamhet', 'Tamhet: hur fort det går att leda, mjölka, klippa och spänna för djuret');
 }
 // hönsflocken (steg 9.8.10): 🐔 hur många hönor, 🧑 ägaren och äggen om dygnet (inga i istiden)
 function honsHtml() {
@@ -68,10 +78,11 @@ function djurHtml() {
       ${rad('Ålder', drag.alder / art.alder, `${drag.alder} år`, `${drag.alder} år gammal. En ${art.art.toLowerCase()} blir högst ${art.alder} år.`)}
       ${rad('Styrka', drag.styrka / (art.styrka * topp), kortTal(drag.styrka), `Styrka ${kortTal(drag.styrka)}, ${jfr(drag.styrka, art.styrka)}`)}
       ${rad('Snabbhet', drag.snabbhet / (art.fart * topp), kortTal(drag.snabbhet), `Snabbhet ${kortTal(drag.snabbhet)}, ${jfr(drag.snabbhet, art.fart)}${drag.alder / art.alder > 0.7 ? '. Den är gammal och har blivit långsammare' : ''}`)}
-      ${drag.skygghet !== undefined ? rad('Skygghet', drag.skygghet, pr(drag.skygghet), 'Hur tidigt den märker den som smyger och flyr', 'skill') : ''}
+      ${rad('Tålighet', drag.talighet / topp, pr(drag.talighet), 'Hur mycket skador och svält den tål', 'skill')}
       ${rad('Hälsa', h.blod, pr(h.blod), h.sar > 0 ? 'Skadad: blodet och såren läker med tiden' : 'Frisk', 'cond')}
       ${h.sar > 0 ? `<dt title="Summan av såren. De läker med tiden">Sår</dt><dd title="Summan av såren. De läker med tiden"><span>${kortTal(h.sar)}</span></dd>` : ''}
-      ${drag.mod !== undefined ? rad('Mod', drag.mod, pr(drag.mod), 'Hur modig vargen är. Flocken blir modigare ju fler den är, och den flyr när en varg faller eller ledarvargen dör', 'skill') : ''}
+      ${rad('Mod', drag.mod, pr(drag.mod), d.art === 'varg' ? 'Hur modig vargen är. Flocken blir modigare ju fler den är, och den flyr när en varg faller eller ledarvargen dör' : 'Hur modig den är. Den skygga märker den som smyger tidigt och flyr', 'skill')}
+      ${rad('Tamhet', 0, '0 %', 'Ett vilt djur är inte tamt alls', 'skill')}
       ${f ? rad('Hunger', f.hunger, pr(f.hunger), 'Flockens hunger. En hungrig flock jagar harar, smyger till förrådet på natten och kan anfalla den som är ensam', f.hunger > 0.6 ? 'low' : '') : ''}
       ${f ? `<dt>Flock</dt><dd title="${esc(f.vargar.length > 1 ? `Flocken har ${f.vargar.length} vargar${f.vargar[0] === d.id ? '. Den här är ledarvargen' : ''}` : 'En ensam varg')}"><span>${f.vargar.length} st</span></dd>` : ''}
       ${g ? `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar'} just nu"><span>${g.n} st</span></dd>` : ''}

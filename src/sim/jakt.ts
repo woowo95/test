@@ -200,7 +200,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   if (mv) useK(p, 'motvind', now);
   const blast = Math.min(1, MOTVIND.bas + vader.vind);
   // var kaninen ser jägaren, och var jägaren tror att det blir
-  const sedd = (1 + MOTVIND.lukt * blast * vm) * JAKT.upptack * (1 - JAKT.skygg / 2 + JAKT.skygg * (drag.skygghet ?? 0.5)) * (isLight(now) ? 1 : JAKT.natt)
+  const sedd = (1 + MOTVIND.lukt * blast * vm) * JAKT.upptack * (1 - JAKT.skygg / 2 + JAKT.skygg * (1 - drag.mod)) * (isLight(now) ? 1 : JAKT.natt)
     * (rad ? rad.tal.upptack : fag ? FAGEL.upptack : 1) * TERR[markslag(groundOf(s), tileOf(m.x, m.y))] * (1 + JAKT.sno * snoPaMarken(s) * (1 - doljISno(s, p))) * (skramd(s, m.grupp) ? JAKT.skramd : 1)
     / Math.max(0.3, 1 + JAKT.smid * (a.st.smidighet - 10) + JAKT.vana * jakt);
   // den som inte vet om vinden tror att den inte spelar någon roll (steg 6.6.7)

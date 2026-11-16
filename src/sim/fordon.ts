@@ -15,7 +15,7 @@ import { snoPaMarken } from './vader';
 import { Person, State, Task, DAY, inMap } from './typer';
 import { balans } from './balans';
 import { familjOf } from './folk';
-import { Tamdjur, tamArt, tamdjurOf } from './tamdjur';
+import { Tamdjur, tamArt, tamEg, tamdjurOf } from './tamdjur';
 
 export interface FordonRad { sak: string; drar: 'manniska' | 'djur'; lass: number; bar: number; namn: string }
 export const FORDON_TAL = balans('fordon', {
@@ -39,10 +39,10 @@ export function fordonI(s: State, t?: Task): IBordan | undefined {
   return undefined;
 }
 // lasset (vikt) för fordonet med djuret d
-export const lassAv = (f: FordonRad, d?: Tamdjur) => f.drar === 'djur' ? (d ? (tamArt(d.art).styrka ?? 0) * FORDON_TAL.lassPerStyrka : 0) : f.lass;
+export const lassAv = (f: FordonRad, d?: Pick<Tamdjur, 'art'> & { id?: number }) => f.drar === 'djur' ? (d && tamArt(d.art).styrka ? tamEg(d).styrka * FORDON_TAL.lassPerStyrka : 0) : f.lass; // individens styrka (steg 10.10.29)
 // fordonets fart på rutan (x, y), som del av gångfarten: full på is och på snö som inte smält, annars barmarkens; gånger djurets snabbhet
 export function fordonFart(s: State, f: FordonRad, x: number, y: number, d?: Tamdjur) {
-  const fx = Math.floor(x), fy = Math.floor(y), djur = f.drar === 'djur' ? (d ? tamArt(d.art).snabb ?? 1 : 1) : 1;
+  const fx = Math.floor(x), fy = Math.floor(y), djur = f.drar === 'djur' ? (d ? tamEg(d).snabbhet : 1) : 1; // individens snabbhet (steg 10.10.29)
   if (inMap(fx, fy) && groundOf(s).tiles[tileOf(x, y)] === 0) return djur; // isen (den som går på vattnet går på is)
   const sno = roofed(s, x, y) ? 0 : Math.min(1, snoPaMarken(s)) * (1 - snoSmalt(s, x, y));
   return (f.bar + (1 - f.bar) * sno) * djur;

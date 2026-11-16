@@ -149,3 +149,4 @@ export * from './sim/forlossning';
 export * from './sim/klocka';
 export * from './sim/bynamn';
 export * from './sim/bin';
+export * from './sim/djurflykt';

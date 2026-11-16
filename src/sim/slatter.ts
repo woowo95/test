@@ -22,7 +22,7 @@ import { gridOf, housesOf, Hus } from './byggnad';
 import { rumTaggar } from './rum';
 import { komposten } from './rester';
 import { betesTal, betesdjurOf, hagarOf } from './hage';
-import { Tamdjur, tamDor, tamdjurOf } from './tamdjur';
+import { Tamdjur, tamDor, tamEg, tamdjurOf } from './tamdjur';
 import { faltRiktning, faltSite } from './odling';
 import { iByn } from './omrade';
 import { paStrak } from './strak';
@@ -154,7 +154,7 @@ export function stepVinter(s: State) {
     if (h) { d.kyla = 0; godsel += VINTER.godsel; continue; }
     d.kyla = (d.kyla ?? 0) + 1;
     d.hunger = Math.min(1, d.hunger + VINTER.kylaHunger);
-    if (d.kyla >= VINTER.frysTim) tamDor(s, d, 'frös ihjäl');
+    if (d.kyla >= VINTER.frysTim * tamEg(d).talighet) tamDor(s, d, 'frös ihjäl'); // det tåliga tål kylan längre (steg 10.10.29)
     else if (d.kyla === 1) count(s, 'tamFryser');
   }
   if (godsel > 0) {
