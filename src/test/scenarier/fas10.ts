@@ -937,3 +937,32 @@ SCENARIER.vaxljus = {
     ];
   },
 };
+
+SCENARIER.pollinering = {
+  text: 'Steg 10.10.25: pollineringen. Bönor, jordgubbar och äppelträd ger en femtedel mer i skörd när ett levande bisamhälle finns inom 10 rutor från fältrutan; rovor ger lika med och utan, en tom kupa och en kupa utom räckhåll ger inget, och skörden är hela saker',
+  kor: () => {
+    const { workOdla, sammanfatta, amountOf, BIN } = SIM;
+    const skord = (g: 'bonor' | 'rovor', kupa?: { d: number; bi?: number }) => {
+      const s = createState(1, START); klockan(s, 10);
+      const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+      const x = Math.floor(p.x) + 3, y = Math.floor(p.y);
+      const f: SIM.Falt = { id: 1, x, y, w: 3, dir: 1, n: 6, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 6 }, () => ({ st: 'mogen' as const, g, m: s.now })) };
+      s.falt = [f]; sammanfatta(f);
+      if (kupa) (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x: x + kupa.d, y, kvar: 0, bi: kupa.bi } as SIM.Station);
+      SIM.touch(s);
+      const fore = amountOf(s, g);
+      workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60 * 6);
+      return { stat: s.stat?.skord ?? 0, hela: Number.isInteger(amountOf(s, g) - fore), skordat: f.r!.every(r => r.st !== 'mogen') };
+    };
+    const utan = skord('bonor'), med = skord('bonor', { d: 2, bi: 5 }), tom = skord('bonor', { d: 2 }), langt = skord('bonor', { d: 16, bi: 5 });
+    const rUtan = skord('rovor'), rMed = skord('rovor', { d: 2, bi: 5 });
+    const kvot = med.stat / utan.stat;
+    return [
+      [`allt skördades (${[utan, med, tom, langt, rUtan, rMed].every(x => x.skordat) ? 'ja' : 'nej'})`, [utan, med, tom, langt, rUtan, rMed].every(x => x.skordat)],
+      [`bönfältet med ett samhälle inom 10 rutor ger ${kvot.toFixed(3)} gånger så mycket`, Math.abs(kvot - (1 + BIN.pollen)) < 1e-9],
+      [`rovorna ger lika med och utan (${rUtan.stat.toFixed(2)}, ${rMed.stat.toFixed(2)})`, Math.abs(rUtan.stat - rMed.stat) < 1e-9],
+      [`en tom kupa och en kupa 16 rutor bort ger inget (${tom.stat.toFixed(2)}, ${langt.stat.toFixed(2)} mot ${utan.stat.toFixed(2)})`, Math.abs(tom.stat - utan.stat) < 1e-9 && Math.abs(langt.stat - utan.stat) < 1e-9],
+      ['skörden i förrådet är hela saker', [utan, med, rMed].every(x => x.hela)],
+    ];
+  },
+};

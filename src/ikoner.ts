@@ -149,6 +149,7 @@ export const PAL: Record<string, Record<string, string>> = {
   kalke: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.2, platshållare
   slade: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.3, platshållare (också tekniken Släde)
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
+  bisymbol: { o: '#24201d', y: '#b2921b' }, // steg 10.10.25, platshållare: ett bi på fältrutan
   bivax: { o: '#24201d', h: '#efe0a8', H: '#d8c27a', d: '#b29a52', z: 'rgba(36,32,29,.30)' }, // steg 10.10.20, platshållare
   bikupa: { o: '#24201d', h: '#d8b25f', H: '#b2921b', d: '#906f0f', g: '#5e3c24', z: 'rgba(36,32,29,.30)' }, // steg 10.10.16, platshållare
   honung: { o: '#24201d', h: '#b2921b', H: '#d8b25f', d: '#906f0f', v: '#694902', z: 'rgba(36,32,29,.30)' }, // steg 10.7.25, platshållare
@@ -2800,6 +2801,7 @@ export const PIX: Record<string, string[]> = {
     '................',
     '................',
   ],
+  bisymbol: ['.oo.', 'oyyo', '.oo.'], // platshållare (steg 10.10.25): ett bi
   bikupa: [ // platshållare (steg 10.10.16): en halmkupa i ringar av flätat hö, med flustret nere vid foten, på en stubbe av grenar
     '................',
     '......oooo......',

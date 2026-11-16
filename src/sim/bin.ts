@@ -26,6 +26,7 @@ import type { Person } from './typer';
 
 export const BIN = balans('bin', {
   r: 10, // bina flyger så här många rutor från samhället
+  pollen: 0.2, // grödorna som blommar för bina ger så här mycket mer i skörd när ett samhälle når fältrutan (steg 10.10.25)
   dragFullt: 20, // så mycket som blommar inom räckhåll ger draget 1
   torka: 0.6, // i torkan blommar buskar och grödor så här mycket (ängsblommorna har lagrets egen torka)
   // vildbina (steg 10.10.15)
@@ -118,6 +119,8 @@ export const drag = (s: State, x: number, y: number) => Math.min(1, Object.value
 // de färdiga kuporna, och de som har ett bisamhälle (honungen i kupan, t.bi)
 export const kupor = (s: State) => stationerOf(s).filter(t => t.k === 'bikupa' && isKlar(t));
 export const samhallen = (s: State) => kupor(s).filter(t => t.bi !== undefined);
+// pollineringen (steg 10.10.25): ett levande samhälle inom BIN.r rutor från rutan i (vildbina räknas inte)
+export const pollinerad = (s: State, i: number) => { const x = i % W + 0.5, y = Math.floor(i / W) + 0.5; return samhallen(s).some(t => (t.bi ?? 0) > 0 && Math.hypot(t.x + 0.5 - x, t.y + 0.5 - y) <= BIN.r); };
 // draget ett samhälle på (x, y) får: samhällen inom BIN.r rutor från varandra delar på det (utan = kupan själv)
 export function dragDelat(s: State, x: number, y: number, utan?: Station) {
   const n = samhallen(s).filter(t => t !== utan && Math.hypot(t.x - x, t.y - y) <= BIN.r).length;

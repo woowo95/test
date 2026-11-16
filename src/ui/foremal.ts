@@ -1,4 +1,4 @@
-import { krukaBild, ljusSort, rutorAv } from '../sim';
+import { krukaBild, ljusSort, pollinerad, rutorAv } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -138,6 +138,7 @@ function drawFalt() {
       if (!rojd) structG.lineStyle(1, 0x5e3c24).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);
       else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40).drawRect(X, Y, TS, TS).endFill();
       if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);
+      if ((r.st === 'vaxer' || r.st === 'mogen') && r.g && (GRODOR[r.g] as { drag?: number }).drag && pollinerad(s, i)) pileIcons.add('bisymbol', X + TS - 5, Y + 1, 1); // bina når rutan (steg 10.10.25)
       if (bild && grodaPa(f, k)) { const kb = liten ? (bild === 'grodd' ? 'grodd_liten' : bild) : kartbild(bild) || bild, b = iconCanvas(kb).width, bh = iconCanvas(kb).height; pileIcons.add(kb, Math.round(X + (TS - b) / 2), Math.round(Y + (TS - bh) / 2), 1); }
     }
     // cirkeln syns bara när någon arbetar på fältet (steg 8.1.3)

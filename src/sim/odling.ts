@@ -25,6 +25,7 @@ import { iVattnetNu } from './sjo';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 import { tecken } from './religion';
 import { forstaSkorden } from './kyrka';
+import { BIN, pollinerad } from './bin';
 
 // ---------- odling (steg 2.10.2–) ----------
 // Vilda grödor växer på kartan som andra växter: vild rova på ängarna och vilda ärter i skogsbrynet (registret VILDA, lager i
@@ -482,7 +483,8 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     const b = bordSkord(s, faltRuta(f, k)); utarma(s, faltRuta(f, k)); // bördigheten (steg 9.7.2)
     if (Math.abs((r.fu ?? d.fukt) - d.fukt) < 0.1 && kn(p, 'fukt') < 1) learnK(p, 'fukt', JORD.larFukt, s.now); // den som ser grödan trivas lär sig fukten (steg 9.7.3)
     const sk = 1 + (p.skill.odling ?? 0) / ODLING.skillSkord; // en skicklig odlare får mer (steg 9.7.7)
-    if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b * sk); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b * sk); forstaSkorden(s, p, f, d.sak, r.m); } // den första skörden offras (steg 10.3.23)
+    const po = (d as GrodaDef).drag && pollinerad(s, faltRuta(f, k)) ? 1 + BIN.pollen : 1; // bina ger mer av det som blommar för dem (steg 10.10.25)
+    if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b * sk * po); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b * sk * po); if (po > 1) count(s, 'pollinerat'); forstaSkorden(s, p, f, d.sak, r.m); } // den första skörden offras (steg 10.3.23)
     if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
     gain(s, p, 'vaxtrest', 1); // växtresterna (steg 9.7.5)
     f.r![k] = (d as GrodaDef).flerarig ? { st: 'vaxer', g: r.g, v: (d as GrodaDef).ater ?? ODLING.flerAter, fu: r.fu } : { st: 'bereda' }; // en flerårig gröda växer igen (steg 9.7.9), annars grävs jorden upp
