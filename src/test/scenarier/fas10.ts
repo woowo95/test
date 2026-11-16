@@ -497,7 +497,7 @@ SCENARIER.gris = {
 SCENARIER.drag = {
   text: 'Steg 10.10.14: binas drag. Ängsblommor, bärbuskar och ett bönfält inom räckhåll höjer draget var för sig, utom räckhåll gör de det inte, rovor ger inget, hösten och istiden ger noll, torkan sänker och talet stannar vid 1. Scenariot skriver ut draget i utkanten av de sparade testbyarna',
   kor: () => {
-    const { DRAGKALLOR, BIN, drag, dragDelar, takenOf, groundOf, BUSKE, BARBUSKE, nyKalender, VAR, SOMMAR, HOST, ISTID, inMap } = SIM;
+    const { BIN, drag, dragDelar, takenOf, groundOf, BUSKE, BARBUSKE, nyKalender, VAR, SOMMAR, HOST, ISTID, inMap } = SIM;
     const s = createState(4, START); let W = SIM.W; W = SIM.W;
     s.kal = nyKalender(s.now, VAR);
     // en ruta där ängsblommor växer, med land 15 rutor åt väster: punkten P ligger 5 rutor väster om den
@@ -512,19 +512,19 @@ SCENARIER.drag = {
     // ängsblommorna 5 rutor bort, och samma ruta sedd från 15 rutor bort
     const vid = (dx: number) => (py * W + px + dx);
     takenOf(s).blomma![vid(5)] = 0;
-    const blomVid = SIM.fyndAt(s, 'blomma', vid(5)), blomNara = DRAGKALLOR.blomma.summa(s, px, py, VAR, false), blomLangt = DRAGKALLOR.blomma.summa(s, px - 10, py, VAR, false);
+    const blomVid = SIM.fyndAt(s, 'blomma', vid(5)), blomNara = SIM.dragSumma(s, 'blomma', px, py, VAR, false), blomLangt = SIM.dragSumma(s, 'blomma', px - 10, py, VAR, false);
     takenOf(s).blomma![vid(5)] = 1;
     // en bärbuske 4 rutor bort och en 14 rutor bort
     g.buske![vid(4)] = BUSKE + BARBUSKE;
-    const buskVar = DRAGKALLOR.barbuske.summa(s, px, py, VAR, false), buskSommar = DRAGKALLOR.barbuske.summa(s, px, py, SOMMAR, false), buskTorr = DRAGKALLOR.barbuske.summa(s, px, py, VAR, true);
+    const buskVar = SIM.dragSumma(s, 'barbuske', px, py, VAR, false), buskSommar = SIM.dragSumma(s, 'barbuske', px, py, SOMMAR, false), buskTorr = SIM.dragSumma(s, 'barbuske', px, py, VAR, true);
     g.buske![vid(4)] = 0; g.buske![vid(14)] = BUSKE + BARBUSKE;
-    const buskLangt = DRAGKALLOR.barbuske.summa(s, px, py, VAR, false); g.buske![vid(14)] = 0;
+    const buskLangt = SIM.dragSumma(s, 'barbuske', px, py, VAR, false); g.buske![vid(14)] = 0;
     // ett bönfält med fyra rutor som växer, 3 rutor bort; samma fält med rovor; och bönfältet 14 rutor bort
     const falt = (x: number, gr: SIM.GrodaSlag): SIM.Falt => ({ id: 992, x, y: py, w: 4, dir: 1, n: 4, agare: 0, steg: 'vaxer', klara: 4, kvar: 0, rord: s.now, groda: gr, r: [0, 1, 2, 3].map(() => ({ st: 'vaxer' as const, g: gr, v: 0.5 })) });
     s.falt = [falt(px + 3, 'bonor')];
-    const bonor = DRAGKALLOR.grodor.summa(s, px, py, VAR, false), bonorHost = dragDelar(s, px, py).grodor;
-    s.falt = [falt(px + 3, 'rovor')]; const rovor = DRAGKALLOR.grodor.summa(s, px, py, VAR, false);
-    s.falt = [falt(px + 14, 'bonor')]; const bonLangt = DRAGKALLOR.grodor.summa(s, px, py, VAR, false);
+    const bonor = SIM.dragSumma(s, 'grodor', px, py, VAR, false), bonorHost = dragDelar(s, px, py).grodor;
+    s.falt = [falt(px + 3, 'rovor')]; const rovor = SIM.dragSumma(s, 'grodor', px, py, VAR, false);
+    s.falt = [falt(px + 14, 'bonor')]; const bonLangt = SIM.dragSumma(s, 'grodor', px, py, VAR, false);
     // årstiderna och taket
     s.falt = [falt(px + 3, 'bonor')];
     const iVar = drag(s, px, py);
@@ -690,7 +690,7 @@ SCENARIER.binasar = {
     const { BIN, binSteg, svarmTillgang, DRAGKALLOR, DRAG_LIST, MOTGANGAR, nyKalender, kalender, VAR, SOMMAR, HOST, DAY } = SIM;
     const s = createState(5, START), W = SIM.W; klockan(s, 0); s.founded -= 100 * DAY;
     // en dragkälla bara för provet, som ger draget v på våren och sommaren
-    let dragNu = 0; (DRAGKALLOR as Record<string, SIM.DragKalla>).prov = { namn: 'Prov', ikon: 'blomma', summa: () => dragNu * BIN.dragFullt };
+    let dragNu = 0; (DRAGKALLOR as Record<string, SIM.DragKalla>).prov = { namn: 'Prov', ikon: 'blomma', rutor: (_s, _ai, _torr, r, add) => add(Math.floor((r.y0 + r.y1) / 2) * W + Math.floor((r.x0 + r.x1) / 2), dragNu * BIN.dragFullt) };
     DRAG_LIST.push('prov');
     const sparat = SIM.takenOf(s).blomma!.slice(); SIM.takenOf(s).blomma!.fill(1);
     const g = SIM.groundOf(s), buskar = g.buske?.slice(); g.buske?.fill(0); s.falt = [];

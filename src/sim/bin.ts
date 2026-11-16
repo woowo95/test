@@ -10,7 +10,7 @@ import { GRODOR, GrodaSlag, faltOf, faltRuta, rutorAv } from './odling';
 import { torkaNu } from './torka';
 import { HOST, ISTID, SOMMAR, VAR, kalender } from './tid';
 import { fyndAt, vildboKrok } from './fynd';
-import { HOUR_S, MIN, State, W, inMap } from './typer';
+import { H, HOUR_S, MIN, State, W, inMap } from './typer';
 import { Station, isKlar, stationerOf } from './stationer';
 import { antalPa, chance, rnd } from './slump';
 import { count, forstaGang, log } from './folk';
@@ -79,50 +79,70 @@ export const BIN = balans('bin', {
   undan: 4, // den som flyr går så här många rutor bortom BIN.retadR
 });
 
-// en dragkälla: vad den ger inom räckhåll av (x, y), i tidsåldern ai, med eller utan torka. ikon = symbolen i kupans ruta
-export interface DragKalla { namn: string; ikon: string; summa: (s: State, x: number, y: number, ai: number, torr: boolean) => number }
-// rutorna inom BIN.r rutor från (x, y)
-function inomR(x: number, y: number, fn: (i: number) => void) {
-  const cx = Math.floor(x), cy = Math.floor(y), r = BIN.r;
-  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-    if (dx * dx + dy * dy > r * r) continue;
-    const xx = cx + dx, yy = cy + dy;
-    if (inMap(xx, yy)) fn(yy * W + xx);
-  }
-}
+// en dragkälla: vad den ger på varje ruta i rutan x0–x1, y0–y1 (add med rutans index och värdet), i tidsåldern ai, med eller
+// utan torka. ikon = symbolen i kupans ruta. Summan inom räckhåll av en plats räknas ur rutorna (dragDelar och dragSok)
+export type DragRuta = { x0: number; y0: number; x1: number; y1: number };
+export interface DragKalla { namn: string; ikon: string; rutor: (s: State, ai: number, torr: boolean, r: DragRuta, add: (i: number, v: number) => void) => void }
+const iRutan = (r: DragRuta, fn: (i: number) => void) => { for (let y = Math.max(0, r.y0); y <= Math.min(H - 1, r.y1); y++) for (let x = Math.max(0, r.x0); x <= Math.min(W - 1, r.x1); x++) fn(y * W + x); };
 // bärbuskarna blommar mest på våren
 const BUSK_ARSTID = [0, 0.5, 0.25, 0];
 export const DRAGKALLOR: Record<string, DragKalla> = {
   // ängsblommorna: värmekartans lager, 1 per full ruta, med lagrets egen årstid och torka
-  blomma: { namn: 'Ängsblommor', ikon: 'blomma', summa: (s, x, y) => { let n = 0; inomR(x, y, i => { n += fyndAt(s, 'blomma', i); }); return n; } },
+  blomma: { namn: 'Ängsblommor', ikon: 'blomma', rutor: (s, _ai, _torr, r, add) => iRutan(r, i => { const n = fyndAt(s, 'blomma', i); if (n) add(i, n); }) },
   // bärbuskarna: 0,5 per buske på våren och 0,25 på sommaren
-  barbuske: { namn: 'Bärbuskar', ikon: 'bar', summa: (s, x, y, ai, torr) => {
+  barbuske: { namn: 'Bärbuskar', ikon: 'bar', rutor: (s, ai, torr, r, add) => {
     const b = groundOf(s).buske, v = BUSK_ARSTID[ai] * (torr ? BIN.torka : 1);
-    if (!b || !v) return 0;
-    let n = 0; inomR(x, y, i => { if (b[i] === BUSKE + BARBUSKE) n += v; }); return n;
+    if (b && v) iRutan(r, i => { if (b[i] === BUSKE + BARBUSKE) add(i, v); });
   } },
   // fältrutorna som växer eller är mogna med en gröda som har ett dragtal (drag på grödans rad i GRODOR), på våren och sommaren
-  grodor: { namn: 'Grödor', ikon: 'bonor', summa: (s, x, y, ai, torr) => {
-    if (ai !== VAR && ai !== SOMMAR) return 0;
-    const r2 = BIN.r * BIN.r, cx = Math.floor(x), cy = Math.floor(y);
-    let n = 0;
-    for (const f of faltOf(s)) rutorAv(f).forEach((r, k) => {
-      const d = r.g && (GRODOR[r.g as GrodaSlag] as { drag?: number }).drag;
-      if (!d || (r.st !== 'vaxer' && r.st !== 'mogen')) return;
-      const i = faltRuta(f, k), dx = i % W - cx, dy = Math.floor(i / W) - cy;
-      if (dx * dx + dy * dy <= r2) n += d;
+  grodor: { namn: 'Grödor', ikon: 'bonor', rutor: (s, ai, torr, r, add) => {
+    if (ai !== VAR && ai !== SOMMAR) return;
+    for (const f of faltOf(s)) rutorAv(f).forEach((q, k) => {
+      const d = q.g && (GRODOR[q.g as GrodaSlag] as { drag?: number }).drag;
+      if (!d || (q.st !== 'vaxer' && q.st !== 'mogen')) return;
+      const i = faltRuta(f, k), x = i % W, y = Math.floor(i / W);
+      if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) add(i, d * (torr ? BIN.torka : 1));
     });
-    return n * (torr ? BIN.torka : 1);
   } },
 };
 export const DRAG_LIST = Object.keys(DRAGKALLOR);
+// något blommar: draget är noll på hösten och i istiden
+export const blommar = (s: State) => { const ai = kalender(s).ai; return ai !== HOST && ai !== ISTID; };
+// halva bredden av cirkeln med radien BIN.r på varje rad dy (-r … r): rutorna med dx² + dy² ≤ r²
+const halvBredd = () => Array.from({ length: 2 * BIN.r + 1 }, (_, j) => Math.floor(Math.sqrt(BIN.r * BIN.r - (j - BIN.r) ** 2) + 1e-9));
+// källan k:s summa inom räckhåll av (x, y) i tidsåldern ai, med eller utan torka
+export function dragSumma(s: State, k: string, x: number, y: number, ai: number, torr: boolean) {
+  const cx = Math.floor(x), cy = Math.floor(y), r = BIN.r, hw = halvBredd();
+  let n = 0;
+  DRAGKALLOR[k].rutor(s, ai, torr, { x0: cx - r, y0: cy - r, x1: cx + r, y1: cy + r }, (i, v) => { if (Math.abs(i % W - cx) <= hw[Math.floor(i / W) - cy + r]) n += v; });
+  return n;
+}
 // varje källas del av det som blommar inom räckhåll av (x, y) just nu
 export function dragDelar(s: State, x: number, y: number): Record<string, number> {
   const ai = kalender(s).ai, ut: Record<string, number> = {};
-  if (ai === HOST || ai === ISTID) { for (const k of DRAG_LIST) ut[k] = 0; return ut; }
-  const torr = torkaNu(s);
-  for (const k of DRAG_LIST) ut[k] = DRAGKALLOR[k].summa(s, x, y, ai, torr);
+  const torr = ai === HOST || ai === ISTID ? false : torkaNu(s);
+  for (const k of DRAG_LIST) ut[k] = ai === HOST || ai === ISTID ? 0 : dragSumma(s, k, x, y, ai, torr);
   return ut;
+}
+// draget på många platser i samma sökning (bikupans plats, sokUtkant i stationer.ts): rutornas värde räknas en gång för hela
+// kartan (eller rutan där platserna prövas, ruta, och BIN.r runt om), och summan inom räckhåll av en plats tas ur radernas
+// löpande summor. Svaret är dragDelat(s, x, y)
+export function dragSok(s: State, ruta: DragRuta = { x0: 0, y0: 0, x1: W - 1, y1: H - 1 }): (x: number, y: number) => number {
+  const ai = kalender(s).ai;
+  if (ai === HOST || ai === ISTID) return () => 0;
+  const torr = torkaNu(s), v = new Float64Array(W * H), r = BIN.r, hw = halvBredd(), sam = samhallen(s);
+  for (const k of DRAG_LIST) DRAGKALLOR[k].rutor(s, ai, torr, { x0: ruta.x0 - r, y0: ruta.y0 - r, x1: ruta.x1 + r, y1: ruta.y1 + r }, (i, n) => { v[i] += n; });
+  const P = new Float64Array((W + 1) * H); // P[y·(W+1) + x] = summan av rad y till vänster om x
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) P[y * (W + 1) + x + 1] = P[y * (W + 1) + x] + v[y * W + x];
+  return (x, y) => {
+    const cx = Math.floor(x), cy = Math.floor(y);
+    let n = 0;
+    for (let dy = -r; dy <= r; dy++) {
+      const yy = cy + dy, a = Math.max(0, cx - hw[dy + r]), b = Math.min(W - 1, cx + hw[dy + r]);
+      if (yy >= 0 && yy < H && a <= b) n += P[yy * (W + 1) + b + 1] - P[yy * (W + 1) + a];
+    }
+    return Math.min(1, n / BIN.dragFullt) / (1 + sam.filter(t => Math.hypot(t.x - x, t.y - y) <= BIN.r).length);
+  };
 }
 // draget på (x, y): summan delad med BIN.dragFullt, högst 1
 // vildboet syns på ruta i (steg 10.10.15): på sommaren och hösten, där vildbinas lager är rikt och ett vuxet träd står

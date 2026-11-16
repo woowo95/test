@@ -28,7 +28,7 @@ import { brasaMal, nyEld } from './brasor';
 import { vidEld } from './eld';
 import { rumTaggar } from './rum';
 import { faltOf, faltRutor } from './odling';
-import { BIN, dragDelat, retaBo } from './bin';
+import { BIN, blommar, dragDelat, dragSok, retaBo } from './bin';
 import { underMinnet } from './sjo';
 import { paStrak } from './strak';
 
@@ -623,6 +623,7 @@ function sokUtkant(s: State, k: string) {
   // varje ruta prövas en gång per sökning, inte en gång för varje plats den ingår i: avståndet från byn om stationen får stå
   // där, annars NaN. Det som står runt om sparas på samma sätt (friRunt). Inget i byn ändras under sökningen, så svaret är detsamma
   const rutMinne = new Map<number, number>(), runtMinne = new Map<number, boolean>();
+  const dragVid = u.drag ? dragSok(s, { x0: x0 - R, y0: y0 - R, x1: x1 + R, y1: y1 + R }) : undefined; // bikupan: draget på varje plats, räknat en gång för sökningen
   const rutan = (x: number, y: number) => {
     const i = y * W + x;
     let v = rutMinne.get(i);
@@ -648,7 +649,7 @@ function sokUtkant(s: State, k: string) {
       const vatten = u.vatten && s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
       // komposten (steg 10.2.93): så nära ett fält som möjligt, så att den som bär ut komposten går kort
       if (falt.length) { const sc = faltAv(x, y) + vatten + rot * STATION.vriden; if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; } continue; }
-      if (u.drag) { const sc = -dragDelat(s, x, y) + d * 1e-4 + rot * STATION.vriden; if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; } continue; } // bikupan: där draget är störst, och av två lika den närmare (steg 10.10.16)
+      if (dragVid) { const sc = -dragVid(x, y) + d * 1e-4 + rot * STATION.vriden; if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; } continue; } // bikupan: där draget är störst, och av två lika den närmare (steg 10.10.16)
       if (u.falt && d < u.avst) continue;
       // latrinen: lika långt från byn som fälten (steg 4.5.4.5), räknat från byns område (steg 6.2.4)
       const sc = Math.abs(d - (u.falt ? Math.min(u.till, STATION.latrinMal) : u.avst)) + vatten + rot * STATION.vriden;
@@ -1098,6 +1099,7 @@ export function receptStation(s: State, p: Person, k: StationSlag): Recept | und
 // bikupan (steg 10.10.16): byn vill ha en kupa till när ingen tom kupa står och draget på den bästa lediga platsen är minst
 // BIN.dragNog. På hösten och i istiden är draget noll, så då byggs ingen
 export function kupBrist(s: State, k: string) {
+  if (!blommar(s)) return 0; // inget drag någonstans: platsen behöver inte sökas
   if (stationerOf(s).some(t => t.k === k && t.bi === undefined)) return 0; // en tom kupa står: byn väntar på en svärm
   const at = stationSite(s, k);
   return at && dragDelat(s, at.x, at.y) >= BIN.dragNog ? 1 : 0; // samhällena intill delar på draget (steg 10.10.17)
