@@ -147,8 +147,9 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
     return;
   }
   if (kar.sats) return;
-  const v = bryggVal(s, p)?.v;
-  if (!v) return;
+  const b = bryggVal(s, p); // (materialet kan ha tagits medan man arbetade: då kan valet vara ett annat arbete eller ett annat kar)
+  if (b?.act !== 'brygga' || b.kar !== kar) return;
+  const v = b.v;
   const d = BRYGD[v], sack = d.vatten ? fylldSack(s) : undefined;
   if (d.vatten && !sack) return;
   for (const [k, n] of Object.entries(d.av)) takeMaterial(s, p, k, n);
@@ -172,7 +173,6 @@ export function stepBrygg(s: State) {
     if (sats.jas >= sats.dygn * DAY) { if (sats.sur) { kar.sats = undefined; count(s, 'surSats'); continue; } sats.klar = 1; count(s, 'jast_' + sats.v); } // en sur sats hälls ut
   }
 }
-export const harBrygd = (s: State) => living(s).some(p => BRYGD_LIST.some(v => knows(p, BRYGD[v].tek)));
 export type { VatskaId };
 import { TORK, torkarna } from './matlagning';
 import { utsadeKrok } from './ratter';

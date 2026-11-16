@@ -92,7 +92,7 @@ export function runstenLust(s: State, p: Person): Lust | undefined {
     if (!best || w > best.w) best = { w, slag: 'helig', om: { id: tr.id, namn: troNamn(tr) } };
   }
   const lg = lagLust(s, p);
-  if (lg && (!best || lg.w > best.w)) best = { w: lg.w, slag: 'lag', om: { id: LAG_ID.indexOf(lg.lag.id), namn: LAGAR[lg.lag.id]!.namn }, lag: lg.lag };
+  if (lg && (!best || lg.w > best.w)) best = { w: lg.w, slag: 'lag', om: { id: Object.keys(LAGAR).indexOf(lg.lag.id), namn: LAGAR[lg.lag.id]!.namn }, lag: lg.lag }; // (numret räknas här: lönen och arvsskatten läggs i LAGAR efter att filen laddats)
   return best;
 }
 
@@ -101,7 +101,6 @@ export function runstenLust(s: State, p: Person): Lust | undefined {
 // straff och tal som nu höjer taket (lagTak i lagar.ts). Lusten att skriva en lag är andelen lagar som är oskrivna, gånger hur nära
 // taket byn är, gånger påbudet Skriv ner lagarna: fullt påbud hela, inget halva och ett påbud emot ingen. Den som skriver väljer den
 // oskrivna lag hen själv röstar starkast för
-const LAG_ID = Object.keys(LAGAR);
 export function lagSkrivVikt(s: State) {
   const lag = lagarNu(s);
   if (!lag.length) return 0;
@@ -287,7 +286,6 @@ export function bokPlats(s: State, slag: SkriftSlag) {
   }
   return best;
 }
-export const bokGenre = (t: Ting) => t.delar?.[0]?.slag;
 const sammaLar = (a: Lardom, b: Lardom) => a.k === b.k && a.a === b.a && a.sl === b.sl;
 // det starkaste intrycket p har av en annan, med ett bevis att berätta om (som i framträdandet, helst en död)
 function starkastBev(s: State, p: Person) {

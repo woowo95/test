@@ -15,7 +15,7 @@ import { avbryt } from './lager';
 import { INTRYCK, Intryck, IntryckTyp, asiktOm, beratta, intryckOm, kandVikt, paminn, scenVersion } from './rykten';
 import { prastOf } from './kult';
 import { ledareOf, legitimitet, pabud } from './styre';
-import { Ting, tingOf } from './agande';
+import { Ting, redskapSlitet, tingOf } from './agande';
 import { tingVarde } from './varde';
 import { predika, troende, troNamn, troOf } from './religion';
 import type { Tro } from './religion';
@@ -509,6 +509,7 @@ function slitInstrument(s: State, f: Fram, kinds: string[]) {
     r.c -= FRAM.slit / kvHaller(r);
     if (r.c > 1e-9) continue;
     s.ting = (s.ting ?? []).filter(x => x !== r);
+    redskapSlitet(s, r.k); // det utslitna räknas som förbrukat (steg 10.11.9)
     const tr = SAKER[r.k]?.trasig;
     if (tr) { count(s, tr.stat); if (tr.text) log(s, tr.text, 'world'); }
   }

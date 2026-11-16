@@ -8,13 +8,12 @@ import { krukaPyntQ } from './kruka';
 import { isKlar, krukaHemma, sovrum, stationDef, stationRum, stationerOf } from './stationer';
 
 // ---------- pyntet i hemmen (steg 4.3.4) ----------
-// Lerkrukan och mattan är saker som bara är till för att pynta (pynt i STATIONER, stationer.ts).
+// Lerkrukan (ett ting, kruka.ts) och mattorna (pynt i STATIONER, stationer.ts) är bara till för att pynta.
 // Var och en som är vuxen och sover inne bygger ett åt sig själv, av den sort hen tycker om (pyntSort), och ställer det i
 // rummet där hen sover: i familjens hus eller i byns hus där hen sover. Högst ett var, så att byn inte fylls av små saker.
 // Som alla möbler får det en kvalitet när det blir klart, och ett mästerverk kan få en berättelse och ett motiv (4.3.3).
 // Varje timme: ägaren som är i rummet trivs (en tanke, mer ju finare pyntet är), och de andra som är vakna där ser det och
 // får ett bättre intryck av ägaren (smakfull, rykten.ts), också det mer ju finare det är. Ett uselt pynt ger ingenting.
-// Fler sorters pynt kommer senare (steg 10.3.1.2).
 export const PYNT = balans('pynt', {
   glad: [0, 0.01, 0.02, 0.03, 0.05, 0.08], // ägarens humör i rummet med pyntet, per kvalitet (usel till ★) ...
   gladTim: 1.5, // ... och så många timmar efter att hen gått därifrån

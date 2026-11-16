@@ -166,10 +166,10 @@ const spelare = (s: State, m: Match, framme: boolean) => s.people.filter(q => al
 // den som spelar med sitt eget redskap (SportDef.egen) har ett ledigt
 const harEgen = (s: State, q: Person, d: SportDef) => !d.egen || ownsFree(s, q, d.egen.k);
 const kanSpela = (s: State, d: SportDef, vuxna: number) => vuxna >= d.min && (!d.egen || living(s).filter(q => harEgen(s, q, d)).length >= d.min) && (!d.nar || NAR[d.nar](s)) && d.foremal.every(k => isTool(k) ? nTools(s, k) >= 1 : amountOf(s, k) >= 1); // ett slitet redskap är fortfarande ett
-// matchen som går att gå med i (den som är slut glöms)
+// matchen som går att gå med i (den som är slut glöms, när den är avgjord: spelarna avgör den när de är klara)
 function oppen(s: State) {
   const m = s.sport;
-  if (m && s.now >= m.slut) { s.sport = undefined; return undefined; }
+  if (m && s.now >= m.slut) { if (!m.spelat || m.avgjord || !spelare(s, m, false).length) s.sport = undefined; return undefined; }
   return m && !m.igang && spelare(s, m, false).length < SPORT_AV[m.k].max ? m : undefined;
 }
 // hur många av föremålet k (ett redskap) byn vill ha: ett, när byn har vuxna nog till en sport som behöver det (VILL i redskap.ts)

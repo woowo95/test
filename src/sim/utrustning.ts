@@ -17,7 +17,7 @@
 // En ny plats blir en rad i PLATSER.
 import { Person, State, Task } from './typer';
 import { KLAD_SLAG, SAKER, viktOf } from './saker';
-import { heldBy, iKroken, Ting, allaTing, tingOf } from './agande';
+import { heldBy, iKroken, Ting, allaTing, redskapSlitet, tingOf } from './agande';
 import { kvEffekt, kvHaller } from './kvalitet';
 import { ACTS } from './handlingar';
 import { BYN, lends } from './egendom';
@@ -174,6 +174,7 @@ export function slitRygg(s: State, t: Ting, y: number, haller: number) {
   t.c -= y / haller / kvHaller(t);
   if (t.c > 1e-9) return;
   s.ting = tingOf(s).filter(x => x !== t);
+  redskapSlitet(s, t.k); // det utslitna räknas som förbrukat (steg 10.11.9)
   count(s, 'kladerSlitna');
 }
 // ryms bördan b i p:s fria händer (och ryggsäcken)?

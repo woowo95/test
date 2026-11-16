@@ -20,8 +20,6 @@ export const KRUKOR = {
   stor: { namn: 'Stor lerkruka', lera: 4, rymmer: 10, vikt: 2, min: 4 },
 } satisfies Record<string, KrukaDef>;
 export type KrukSlag = keyof typeof KRUKOR;
-export const KRUK_LIST = Object.keys(KRUKOR) as KrukSlag[];
-export const krukSak = (k: KrukSlag) => `lerkruka_${k}`; // saken i SAKER
 export const krukaAv = (sak: string): KrukaDef | undefined => (KRUKOR as Record<string, KrukaDef>)[sak.replace(/^lerkruka_/, '')] && sak.startsWith('lerkruka_') ? (KRUKOR as Record<string, KrukaDef>)[sak.replace(/^lerkruka_/, '')] : undefined;
 export const KRUKA = balans('kruka', {
   torkTim: 24, // en kruka torkar på ungefär så här många timmar i vanligt väder ...
@@ -51,7 +49,6 @@ export function stepKrukor(s: State) {
     if (forstaGang(s, 'krukaBrandForsta')) log(s, 'Den första lerkrukan brändes i elden och är färdig.', 'world');
   }
 }
-export const krukaKlar = (t: Ting) => t.ler === undefined;
 // ägaren bär sin lediga lerkruka till rummet där hen sover, som pynt (steg 9.4.12), när hen inte har något pynt där (steg 10.11.17:
 // krukan flyttar sig inte själv). Efter arbetet ställs den tillbaka i förrådet som redskapen (placeTools), och sedan bärs den hit
 // igen. Raden krukaHem i ARBETEN (val.ts) väljer det bland det man gör för att göra det bättre; hen går till krukan, tar upp den
@@ -88,6 +85,7 @@ export function slappKruka(s: State, tk: Task, p: Person, x: number, y: number) 
   const fx = Math.floor(x), fy = Math.floor(y);
   if (fri(s, fx, fy)) { k.x = fx; k.y = fy; if (krukaHemma(s, p) === k) count(s, 'krukaHem'); }
 }
+// hur många lerkrukor byn vill ha (REDSKAPMAL i forradsmal.ts, steg 9.4.12)
 export const krukaVill = (s: State) => villAv(s, 'lerkruka');
 
 // ---------- utseendet (steg 10.7.2) ----------
@@ -104,7 +102,7 @@ export const krukaUtseende = (t: { id: number }) => KRUKA_UTSEENDEN[t.id % KRUKA
 export function krukaBild(t: Ting) {
   const u = krukaUtseende(t);
   return { ikon: u.id === 'rundad' ? t.k : `lerkruka_${u.id}`, ...(t.vaxt ? { vaxt: { g: t.vaxt.g, v: Math.min(1, t.vaxt.v), ...(krukaBlommar(t) ? { blommar: true } : {}) } } : {}) };
-} // hur många lerkrukor byn vill ha (REDSKAPMAL i forradsmal.ts, steg 9.4.12)
+}
 
 
 // ---------- örter i krukor (steg 9.7.16, Odlingen i detalj: Örter i krukor) ----------

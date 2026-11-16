@@ -117,12 +117,14 @@ const platsAv = (tr: Tro | undefined, bud?: string[]): PlatsId | undefined => {
   const ids = bud ?? tr?.bud?.map(b => b.id) ?? [];
   return tr ? PLATSER.find(k => ids.includes(GRAVPLATSER[k].bud)) : undefined;
 };
-const heligFor = (s: State, tr: Tro) => s.heliga?.find(h => h.tro === tr.id);
+const heligFor = (s: State, tr: Tro) => s.heliga?.find(h => h.tro === tr.id && !h.skandad); // (en vanhelgad plats har förlorat sitt bud, steg 10.3.10)
 export function gravPlats(s: State, tr: Tro | undefined, bud?: string[]): { x: number; y: number } {
   const k = platsAv(tr, bud), pl = (s.gravplatser ??= {}), key = !k || k === 'nara' ? 'by' : `t${tr!.id}${k}`;
   if (!pl[key]) {
     const hp = k === 'helig' ? heligFor(s, tr!) : undefined;
-    const { x, y } = hp ? { x: hp.x + 1, y: hp.y + 1 } : sokPlats(s, GRAVPLATSER[k && k !== 'helig' ? k : 'nara']); pl[key] = { x, y };
+    const { x, y } = hp ? { x: hp.x + 1, y: hp.y + 1 } : sokPlats(s, GRAVPLATSER[k && k !== 'helig' ? k : 'nara']);
+    if (k === 'helig' && !hp) return ledigGrav(s, { x, y }); // ingen helig plats än: graven läggs vid byn, och platsen sparas först när den heliga finns
+    pl[key] = { x, y };
   }
   return ledigGrav(s, pl[key]);
 }
@@ -521,7 +523,7 @@ export function gravbesokKlar(s: State, p: Person, t: Task) {
   const vem = t.ref ?? -1, g = gravAv(s, vem), q = g ? undefined : sanktAv(s, vem);
   if (!g && !q) return;
   const namn = (g ?? q)!.namn, b = band(s, p, vem, namn);
-  p.gravBesok = s.now; paminn(s, p, vem, g?.textBev); // gravtexten bär sina händelser (steg 10.6.15) count(s, 'gravbesok');
+  p.gravBesok = s.now; paminn(s, p, vem, g?.textBev); count(s, 'gravbesok'); // gravtexten bär sina händelser (steg 10.6.15)
   think(p, 'Stod vid graven', BESOK.trost, s.now, 6 * HOUR);
   // gåvan: den minst värda saken hen äger eller får ta
   if (rnd(s, 'val', p) < BESOK.gava * b) {

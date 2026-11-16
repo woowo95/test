@@ -272,6 +272,7 @@ export function ritualTimme(s: State) {
     if ((r.k === 'hogtid' || r.k === 'leddBon') && pr && med.includes(pr)) prastMinns(s, pr, med); // prästen berättar om en död (steg 10.6.14)
     if (r.k === 'begravning' && tr && r.om?.length) sorgkvade(s, tr, r.om[0]!, med);
     if (r.k === 'gravol' && tr) gravolSlut(s, tr, med);
+    if (r.k === 'brollop') festMat(s, med); // de som är med äter (steg 10.11.10)
     count(s, 'ritual_' + r.k);
     s.ritual = undefined;
   }
@@ -286,15 +287,14 @@ export function ritualTimme(s: State) {
   s.ritual = { ...n, start: s.now, slut: s.now + d.tim * HOUR, x: at.x, y: at.y };
   const hp = heligVid(s, n.tro, at.x, at.y); if (hp) hp.ritualer = (hp.ritualer ?? 0) + 1; // platsen räknar ritualerna (steg 10.3.10)
   log(s, `${n.namn ?? d.namn} samlar byn.`, 'rel', []);
-  if (n.k === 'brollop') festMat(s);
   if (n.k === 'begravning' && !s.stat?.ritual_begravning) count(s, 'ritual_forsta_begravning');
 }
-// bröllopets fest (steg 8.5.13, 10.11.10): var och en äter en portion ur förrådet, av det byn har mest av, som vid gillet (ata);
+// bröllopets fest (steg 8.5.13, 10.11.10): när den är slut äter var och en som var med en portion ur förrådet, av det byn har mest av, som vid gillet (ata);
 // när maten tar slut äter resten inte
-function festMat(s: State) {
-  if (festKrok.servera(s, living(s)).size) return; // festmåltiden ur kokgropen (steg 10.7.28)
+function festMat(s: State, med: Person[]) {
+  if (festKrok.servera(s, med).size) return; // festmåltiden ur kokgropen (steg 10.7.28)
   let n = 0;
-  for (const p of living(s)) {
+  for (const p of med) {
     const k = FOOD.filter(q => amountOf(s, q) >= 1).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0];
     if (!k) break;
     addTo(s, k, -1); ata(p, { [k]: KROPP.mattar }); count(s, 'atit', 1); n++;

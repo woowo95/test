@@ -9,7 +9,7 @@ import { ALDER, ageOf, alive, byId, count, andraGor, enTill, familjOf, forstaGan
 import { enOrd, han, hans, sinOrd, stor } from './ord';
 import { getable, Recept, takeMaterial } from './behov';
 import { sparas } from './forradsmal';
-import { Ting, freeTools, nTools, tingOf, wearTool } from './agande';
+import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool } from './agande';
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
 import { troshusRum, trosMobelBrist } from './troshus';
@@ -1404,6 +1404,7 @@ export function slitVid(s: State, act: Act, v: number) {
   r.c -= v / kvHaller(r); // ett bättre redskap håller längre (kvalitet.ts)
   if (r.c > 1e-9) return false;
   s.ting = tingOf(s).filter(q => q !== r);
+  redskapSlitet(s, r.k); // det utslitna räknas som förbrukat (steg 10.11.9)
   const tr = SAKER[r.k]?.trasig;
   if (tr) count(s, tr.stat);
   return true;

@@ -29,7 +29,8 @@ import { bynsNamn } from './bynamn';
 
 export const RADER = balans('rader', {
   forsvar: 0.2, // lockelsen är rikedomen minus så här stor del av försvaret
-  chans: 0.01, // chansen per dygn, för varje 500 i lockelse och för varje klan som har ett skäl
+  chans: 0.01, // chansen per dygn, för varje lockPer i lockelse och för varje klan som har ett skäl
+  lockPer: 500, // lockelsen som ger chansen ovan
   skyddDygn: 3, // chansen efter en räd stiger igen med den här tidskonstanten (ingen fast vila)
   per: 150, // en anfallare för varje så här mycket i rikedom
   viktPlundra: 1, viktHamnd: 0.2, viktHeligt: 0.1, // skälet lottas med vikter
@@ -66,7 +67,7 @@ export function radDygn(s: State, tvingaSkal?: RadSkal, tvingaKlan?: Klan) {
     const skal = (Object.keys(SKAL) as RadSkal[]).filter(q => SKAL[q].galler(s, k));
     if (!skal.length && !tvingaSkal) continue;
     const skydd = k.radT === undefined ? 1 : 1 - Math.exp(-(s.now - k.radT) / (RADER.skyddDygn * DAY));
-    if (!tvingaSkal && rnd(s, 'rovare') >= RADER.chans * lock / 500 * skydd) continue;
+    if (!tvingaSkal && rnd(s, 'rovare') >= RADER.chans * lock / RADER.lockPer * skydd) continue;
     const tot = skal.reduce((a, q) => a + SKAL[q].vikt(), 0); let x = rnd(s, 'rovare') * tot, val = skal[0] ?? 'plundra';
     for (const q of skal) { x -= SKAL[q].vikt(); if (x <= 0) { val = q; break; } }
     val = tvingaSkal ?? val;

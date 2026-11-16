@@ -2659,7 +2659,7 @@ SCENARIER.kruka = {
     stepPynt(s);
     const trivs = p.thoughts.some(t => t.text === PYNT_TANKE);
     // byn vill ha krukor: till dem som vill ha en kruka som pynt, och en att bära vatten i utan säck
-    const vill = krukaVill(s), pyntare = SIM.living(s).filter(q => SIM.villPynt(s, q, 'kruka')).length;
+    const vill = krukaVill(s), pyntare = Math.round(SIM.living(s).reduce((n, q) => n + (SIM.villPynt(s, q, 'kruka') ? SIM.pyntLust(s, q) : 0), 0)); // (lusten efter en kruka till avtar, steg 10.2.43)
     return [
       [`en kruka som torkar går inte att använda (${torkar ? 'nej' : 'ja'})`, torkar],
       [`utan vattensäck bär man vatten i den mellanstora krukan (${vattenKarl(s, p) ?? 'inget'})`, vatten],

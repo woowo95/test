@@ -169,7 +169,8 @@ export function skattDygn(s: State, dt: number) {
 const egnaArvingar = (s: State, p: Person) => p.partner !== undefined && living(s).some(q => q.id === p.partner) || living(s).some(q => isParent(p, q));
 // hur ojämnt rikedomen är fördelad bland de vuxna (0 = lika, 1 = en äger allt)
 function ojamnhet(s: State) {
-  const f = formogenhet(s), v = [...f.w.values()].sort((a, b) => a - b), n = v.length, sum = v.reduce((a, b) => a + b, 0);
+  const f = formogenhet(s), alder = lagGaller(s, 'skatt') ? lagTal(s, 'skatt', 'alder') : SKATT.alder; // (barnen äger inget och räknas inte)
+  const v = living(s).filter(p => !p.gast && ageOf(p, s.now) >= alder).map(p => f.w.get(p.id) ?? 0).sort((a, b) => a - b), n = v.length, sum = v.reduce((a, b) => a + b, 0);
   if (n < 2 || sum <= 0) return 0;
   let g = 0; v.forEach((x, i) => { g += (2 * (i + 1) - n - 1) * x; });
   return clamp(g / (n * sum), 0, 1);

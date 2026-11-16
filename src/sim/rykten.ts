@@ -36,9 +36,9 @@ export const RYKTE = balans('rykte', {
   paminnStark: 0.15, // en påminnelse om en död gör minnet så här mycket säkrare, gånger tiden sedan förra påminnelsen delat med paminnDygn (högst 1)
   vMax: 1.5, // ett intryck är som starkast så här
   arv: 0.25, // så stor del av förälderns anseende räknas i barnets, gånger 1 + seden Härkomst och Förtjänst (steg 10.8.5)
-  dampMin: 0.1,
+  dampMin: 0.1, // så mycket blir som minst kvar av ett val som ett intryck dämpar (steg 10.8.4)
   pratOfta: 0.5, // i en pratsam by berättas rykten upp till så här mycket oftare, i en förtegen så här mycket mer sällan (steg 10.8.6)
-  pratOppna: 20, // seden Pratsamhet och Förtegenhet låses upp när så här många dåliga rykten berättats i byn // så mycket blir som minst kvar av ett val som ett intryck dämpar (steg 10.8.4)
+  pratOppna: 20, // seden Pratsamhet och Förtegenhet låses upp när så här många dåliga rykten berättats i byn
   syn: 10, // de som var närmare än så här många rutor (och vakna) såg det som hände ...
   synDimma: 0.6, // ... och så här mycket kortare i den tätaste dimman (steg 3.7.11)
   sjalvSaker: 1, // den som såg det själv är så här säker ...

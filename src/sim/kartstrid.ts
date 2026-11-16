@@ -88,8 +88,7 @@ function tillBilden(g: KartStrid, n0: number) {
 
 // ---------- korta steg när faran är nära ----------
 // faran är nära så länge en strid pågår på kartan (fler faror kommer med rövarna och djuren)
-export const KARTSTRID_PROV = { alltid: false }; // proven: byn går i korta steg också utan strid (npm run kortsteg mäter att arbetet går som vanligt)
-export const faraNara = (s: State) => KARTSTRID_PROV.alltid || kartStrider(s).length > 0 || FAROR.some(f => f(s));
+export const faraNara = (s: State) => kartStrider(s).length > 0 || FAROR.some(f => f(s));
 // längden på byns nästa slag (sekunder): korta steg medan faran är nära, annars ett helt slag (slagLangd). Spelet och
 // ikappräkningen frågar samma sak, och step delar aldrig ett slag, så att slagen blir desamma
 export function nastaSteg(s: State) { return faraNara(s) ? STRID.kortSteg : slagLangd(s); }

@@ -144,6 +144,11 @@ export const smutsAvdrag = (s: State, x: number, y: number) => toaNara(s, Math.f
 export function smutsigtPlock(s: State, k: string, n: number, t: number) {
   if (t > 0 && n > 0 && isFood(k)) (s.smutsMat ??= {})[k] = (s.smutsMat[k] ?? 0) + n * t;
 }
+// det smutsiga kan inte vara mer än det som finns: maten som ruttnat, kokats, bytts bort eller getts bort tar sin del med sig
+// (räknas en gång i timmen, TAKTER i steg.ts)
+export function smutsMatTimme(s: State) {
+  for (const k in s.smutsMat ?? {}) { const n = Math.min(s.smutsMat![k], amountOf(s, k)); if (n < 1e-6) delete s.smutsMat![k]; else s.smutsMat![k] = n; }
+}
 // den som åt per (saken → mängd) åt så här stor del smutsigt (0–1), och det smutsiga i förrådet minskar med det som åts. Den
 // smutsiga delen av k är det smutsiga delat med allt av k som fanns (det som åts och det som är kvar)
 export function smutsigtAtit(s: State, per: Record<string, number>) {

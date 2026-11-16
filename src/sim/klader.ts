@@ -9,8 +9,8 @@ import { RECEPT } from './recept';
 // (varde.ts), och kvaliteten läggs ovanpå (kvalitet.ts). Ett nytt material (björnskinn, läder, ull) blir en rad i KLADMATERIAL
 // och kan genast bli alla plagg av sitt slag; ett nytt plagg blir en rad i PLAGG och en handling (handlingar.ts) med
 // plaggets nyckel. Bilden är plaggets ritning i materialets färger (ikoner.ts).
-// Den som syr väljer material (valMaterial) i ordningen kylan, striden, det som saknas, det som finns gott om, värdet och
-// sist smak och anseende ("Valet av material"); läget tas fram i redskap.ts (materialLage). Filen frågar inget annat i
+// Den som syr väljer material (valMaterial) med kylan, striden, det som saknas, det som finns gott om, värdet och smak och
+// anseende vägda ihop (vikterna i KLADER, steg 10.2.38) ("Valet av material"); läget tas fram i redskap.ts (materialLage). Filen frågar inget annat i
 // spelet, så att saker.ts kan läsa den när sakerna läggs upp.
 import type { Kroppsdel } from './halsa';
 import type { SakDef } from './saker';

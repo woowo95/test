@@ -22,7 +22,6 @@ export const TATUERINGAR = {
   sorg: { namn: 'Sorgen', plats: 'hals', sed: 'gemenskap', text: 'miste någon nära' },
 } satisfies Record<string, TatDef>;
 export type TatMotiv = keyof typeof TATUERINGAR;
-export const TAT_LIST = Object.keys(TATUERINGAR) as TatMotiv[];
 const DEF: Record<TatMotiv, TatDef> = TATUERINGAR;
 // stilarna: fyra formfamiljer. Byn får sin ur byns frö och en klan sin ur klanens nummer
 export const TAT_STILAR = ['linjer', 'prickar', 'flator', 'djur'] as const;

@@ -132,9 +132,8 @@ export const lockar = (s: State) => { const rik = rikedom(s); return clamp(rik /
 // (steg 8.7.14) skyddet efter ett anfall avtar med tiden i stället för en fast vila
 export const efterAnfall = (s: State) => s.rovarVila === undefined ? 1 : 1 - Math.exp(-Math.max(0, s.now - s.rovarVila) / (ROVARE.vilaDygn * DAY));
 
-// testläget (steg 4.5.4.4): en liten, mellanstor eller stor flock kommer nu (så många rövare). Flocken dyker upp en bit
-// utanför byn, ungefär ROVARE.testNara rutor från elden, och går direkt till anfall utan att vänta på mörkret (steg
-// 4.5.7.10); en rad i Händelser säger var (steg 4.5.6.4). Svarar med raden, eller skälet till att ingen flock kan komma
+// testläget (steg 4.5.4.4): en liten, mellanstor eller stor flock kommer nu (så många rövare). Flocken kommer in från kanten
+// som ett vanligt gäng (steg 10.1.16) och väntar kortare (ROVARE.testVanta); en rad i Händelser säger var (steg 4.5.6.4). Svarar med raden, eller skälet till att ingen flock kan komma
 // just nu (rovarHinder)
 export const ROVARFLOCK = { liten: ROVARE.antal[0], mellan: ROVARE.antal[1], stor: 2 * ROVARE.antal[1] } as const;
 export const rovarHinder = (s: State) => s.rovare ? 'Det finns redan en rövarflock vid byn' : undefined;
@@ -154,9 +153,9 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?
   if (!tvinga && rnd(s, 'rovare') >= ROVARE.kommer * lockar(s) * efterAnfall(s)) return;
   // en ny flock kan komma medan en annan är på kartan (steg 8.7.18): den går samtidigt med den (rovareFler, rovarSteg)
   const forra = s.rovare;
-  const m = getMap(s.seed), nara = undefined as { x: number; y: number } | undefined; // testläget kommer in från kanten som ett vanligt gäng (steg 10.1.16): bara väntan är kortare
-  let x = nara?.x ?? 0, y = nara?.y ?? 0;
-  for (let i = 0; !nara && i < 20; i++) {
+  const m = getMap(s.seed); // testläget kommer in från kanten som ett vanligt gäng (steg 10.1.16): bara väntan är kortare
+  let x = 0, y = 0;
+  for (let i = 0; i < 20; i++) {
     const sida = Math.floor(rnd(s, 'rovare') * 4), l = rnd(s, 'rovare');
     x = sida === 0 ? 0.5 : sida === 1 ? W - 0.5 : l * W; y = sida === 2 ? 0.5 : sida === 3 ? H - 0.5 : l * H;
     if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break;

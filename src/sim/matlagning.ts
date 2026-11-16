@@ -120,7 +120,7 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
 // en handling (torka), i arbetstimmar, likadant i båda lägena. Det som hänger är deras som ägde råvaran; den som dött
 // har inget kvar där, och det blir byns när det tas ner.
 // En ställning rymmer TORK.rymd (fyra köttbitar, steg 2.10.22). Har byn mer över än det får plats på ställningarna bygger den
-// en till (torkBrist, projekt.ts), högst TORK.maxStall. Den som torkar hänger upp på och tar ner från alla ställningar.
+// en till (torkBrist, forradsmal.ts): bristen sjunker när ställningarna räcker. Den som torkar hänger upp på och tar ner från alla ställningar.
 // Frysningen: under istiden fryser maten i lagret och ruttnar bara LAGER.frost så fort (ruttTemp i lager.ts, sedan v60);
 // det syns som ❄ i lagret och på saken.
 export const TORK = balans('torkning', {

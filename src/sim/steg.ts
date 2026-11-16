@@ -98,7 +98,7 @@ import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
-import { akel, latrinUpptagen, latrinVanta, regnetTvattar, smutsigtPlock, toaBesok, toaNara } from './smuts';
+import { akel, latrinUpptagen, latrinVanta, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
@@ -128,7 +128,7 @@ import { kost, kostStart } from './kostnad';
 import { KLOCKA } from './klocka';
 import { borjaForlossning } from './forlossning';
 
-// Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
+// Simuleringen går i slag om KLOCKA.slag sekunder (BEAT, kortare vid fara och längre när alla sover), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
 // än som ryms i de fria händerna (fullBorda i utrustning.ts, steg 6.1.8). STEG.markNot = hur mycket ett steg nöter marken (MARK.nott per ruta)
 export const BEAT = KLOCKA.slag;
@@ -388,7 +388,7 @@ export const TAKTER: Takt[] = [
   { namn: 'branden', sek: 0, fn: (s, dt) => { brandSteg(s, dt); brinnerSteg(s, dt); } }, // gnistor, blixten, elden som sprider sig och den som brinner (brand.ts)
   { namn: 'förrådets slitage', sek: 60, fn: (s, dt) => { wearStore(s, dt); stepBlotVed(s, dt); } }, // slitage, fortare utanför lagret, och veden som blir blöt och torkar (steg 7.3.4)
   { namn: 'elden', sek: 10, fn: (s, dt, c) => stepFire(s, dt, c.ppl) },
-  // det som räknas i timmar (steg 10.2.21 B): var sitt system med sin egen takt, utspritt över timmen. Det som ändras långsamt
+  // det som räknas i timmar (steg 10.2.21 B): var sitt system med sin egen takt; de som räknas varje timme går vid timmens början. Det som ändras långsamt
   // (fynden som växer igen, glömskan, ryktena, husens slitage) räknas glesare och får tiden sedan sist
   { namn: 'atSteg', sek: 3600, fn: s => { atSteg(s); } },
   { namn: 'stepSeder', sek: 3600, fn: s => { stepSeder(s); } },
@@ -407,6 +407,7 @@ export const TAKTER: Takt[] = [
   { namn: 'lönen', sek: 60, fn: (s, dt) => lonRakna(s, dt) }, // timmarna för byn och missnöjet med lönen (lon.ts, steg 10.5.9) // omtanken om byn (projekt.ts, steg 10.5.2)
   { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },
   { namn: 'forbrukTimme', sek: 3600, fn: s => { forbrukTimme(s); } },
+  { namn: 'smutsMat', sek: 3600, fn: s => { if (s.smutsMat) smutsMatTimme(s); } }, // det smutsiga följer maten som finns kvar (steg 10.11.14)
   { namn: 'arbetsTimme', sek: 3600, fn: s => { arbetsTimme(s); } },
   { namn: 'historikSteg', sek: 3600, fn: s => { historikSteg(s); } },
   { namn: 'stepVader', sek: 3600, fn: s => { stepVader(s); } },
@@ -1488,12 +1489,12 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const smt = res === 'samla' && s.flackar?.length ? toaNara(s, tileOf(tk.tx, tk.ty)) : 0; // plockat där det är toa-smuts (steg 10.11.14)
   const bar = (k: string, n: number) => {
     if (!(n > 0)) return;
-    if (smt) smutsigtPlock(s, k, n, smt);
     // platsen i händerna prövas först när det blir en hel sak till: arbetet mot nästa sak (p.delar) tar ingen plats. Förut föll
     // varje liten del bort när händerna var fulla, så att ägg, mossa och frön nästan aldrig hittades (steg 9.9.5)
     const fore = (tk.items?.[k] ?? 0) + (p.delar?.[k] ?? 0), nyHel = Math.floor(fore + n + 1e-9) > Math.floor(fore + 1e-9);
     if (nyHel && k !== carryKind(tk.act) && !SAKER[k]?.skaffa?.sallsynt) { const b = bordSlag(tk), w = viktOf(k); if (!ryms(s, p)({ ...b, [k]: Math.ceil((b[k] ?? 0) / w + n - 1e-9) * w })) return; } // bördan blir hela saker (helaIBordan)
     tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n;
+    if (smt) smutsigtPlock(s, k, n, smt); // (bara det som ryms och bärs hem)
   };
   // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
   const u = UTFALL[tk.act];
