@@ -860,9 +860,11 @@ function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
   for (const k of Object.keys(ATGARDER)) {
     if (u.a.tro !== undefined && k !== 'nyttHus' && k !== 'byggaUt') continue; // trons hus byggs nytt eller byggs ut (steg 10.3.19)
     const d = ATGARDER[k];
-    for (const f of d.foresla(s, u, okAt).slice(0, PLAN.perBehov)) {
+    // förslagen får poäng först, och de PLAN.perBehov bästa prövas (steg 10.11.7): förut togs de första i den ordning åtgärden gav dem
+    const poang = (f: Forslag) => f.varde / (Math.max(PROJEKT_TAL.minKostnad, f.kostnad) * (1 + PLAN.stegPaslag * d.steg));
+    const fs = d.foresla(s, u, okAt).map(f => ({ f, sc: poang(f) })).sort((a, c) => c.sc - a.sc).slice(0, PLAN.perBehov);
+    for (const { f, sc } of fs) {
       if (!ritningOk(s, f, okAt) || u.fn === 'forbattra' && !vedRacker(s, f)) continue;
-      const sc = f.varde / (Math.max(PROJEKT_TAL.minKostnad, f.kostnad) * (1 + PLAN.stegPaslag * d.steg));
       if (sc > bs) { bs = sc; bast = f; }
     }
   }
