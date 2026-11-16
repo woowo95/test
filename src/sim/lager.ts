@@ -14,7 +14,7 @@ import { Act, DAY, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './t
 import { MATERIAL, bitAt, blocked, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
-import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
+import { BYN, Del, addDel, kyrkaId, sumOf, takeOrder } from './egendom';
 import { FOOD, SAKER, SAK_LIST, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, viktOf } from './saker';
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, underMinnet } from './sjo';
@@ -300,8 +300,11 @@ function cleanDel(s: State, a: Stack) {
   if (!d) return;
   let sum = 0;
   for (const o in d) {
-    const q = +o <= BYN ? undefined : byId(s, +o); // en tro (id under noll) äger tills den dör ut (releaseOwner, steg 10.3.17)
-    if ((+o >= BYN && (!q || !alive(q))) || !(d[o] > 1e-9)) delete d[o]; else sum += d[o];
+    // en tro (kyrkaId, id under noll) äger tills den dör ut (releaseOwner, steg 10.3.17); det någon bar åt en tro som dött ut
+    // blir byns när det läggs ner, som det en död bar. Budgetens delar (id under -1000000) äger så länge budgeten finns
+    const q = +o <= BYN ? undefined : byId(s, +o), tro = +o < BYN && +o > -1000000 ? s.tron?.find(t => kyrkaId(t.id) === +o) : undefined;
+    const borta = +o >= BYN ? !q || !alive(q) : +o > -1000000 && (!tro || tro.slut !== undefined);
+    if (borta || !(d[o] > 1e-9)) delete d[o]; else sum += d[o];
   }
   if (sum > a.n + HEL) { const ks = Object.keys(d); heltFordelat(ks.map(o => d[o]), a.n).forEach((m, i) => { d[ks[i]] = m; if (!(m > 0)) delete d[ks[i]]; }); }
   if (!Object.keys(d).length) delete a.ag;
