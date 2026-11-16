@@ -16,6 +16,11 @@ import { chance, rnd } from './slump';
 import { count, forstaGang, log } from './folk';
 import { notis } from './notiser';
 import { hardVinter } from './vader';
+import { ALDER, ageOf, gjort, living, ovning } from './folk';
+import { isLight } from './tid';
+import { capacity, put } from './lager';
+import { viktOf } from './saker';
+import type { Person } from './typer';
 
 export const BIN = balans('bin', {
   r: 10, // bina flyger så här många rutor från samhället
@@ -38,6 +43,11 @@ export const BIN = balans('bin', {
   aterTim: 1 / 120, // honungskakor per timme som samhället äter, hela året
   hardVinter: 0.5, // i en hård vinter äter det så här mycket mer
   rymmer: 10, // kupan rymmer så många kakor
+  // skattningen (steg 10.10.20)
+  skattaMin: 2, // minuter det tar att skatta kupan
+  gissa: 1, // så många kakor lämnar den som skattar åt bina
+  vaxPer: 2, // varannan skattad kaka ger ett bivax (räknat på kupan)
+  ovning: 0.03, // så mycket övar skattningen djurskötseln (som klippningen och mjölkningen)
 });
 
 // en dragkälla: vad den ger inom räckhåll av (x, y), i tidsåldern ai, med eller utan torka. ikon = symbolen i kupans ruta
@@ -137,4 +147,37 @@ export function binSteg(s: State, dt: number) {
     log(s, fran ? 'En svärm lämnade en full bikupa och flyttade in i en tom.' : 'En svärm bin flyttade in i en tom bikupa.', 'world', t.ag !== undefined ? [t.ag] : []);
     if (forstaGang(s, 'forstaBisamhalle')) notis(s, 'bin', 'En svärm bin har flyttat in i en av byns kupor. Byn har fått sitt första bisamhälle.', t.ag !== undefined ? [t.ag] : [], { x: t.x + 0.5, y: t.y + 0.5 });
   }
+}
+
+// ---------- skattningen (steg 10.10.20, Djuren i detalj: Skattningen) ----------
+// de hela kakor den som skattar kan ta ur kupan: det som ligger över det hen lämnar åt bina
+export const attTa = (t: Station) => t.bi === undefined ? 0 : Math.max(0, Math.floor(t.bi - BIN.gissa + 1e-9));
+// ägaren skattar den av sina kupor där det finns mest att ta (en kupa utan ägare skattas av vem som helst), och två tar aldrig
+// samma kupa. Ingen regel säger när på året: på våren finns inget över, och överskottet kommer på sommaren
+export function skattaVal(s: State, p: Person) {
+  if (ageOf(p, s.now) < ALDER.vuxen || !isLight(s.now) || capacity(s, p) < viktOf('honung')) return undefined;
+  let b: Station | undefined, bn = 0, bd = Infinity;
+  for (const t of samhallen(s)) {
+    if (t.ag !== undefined && t.ag !== p.id) continue;
+    const n = attTa(t), d = Math.hypot(t.x - p.x, t.y - p.y);
+    if (n < 1 || n < bn || (n === bn && d >= bd)) continue;
+    if (living(s).some(q => q !== p && q.task?.act === 'skatta' && q.task.ref === t.id)) continue;
+    b = t; bn = n; bd = d;
+  }
+  return b;
+}
+// hen tar så många hela kakor hen kan bära; varannan skattad kaka ger ett bivax av de tomma vaxkakor som skärs bort.
+// Honungen och vaxet är ägarens, och arbetet övar djurskötseln
+export function skattaKlar(s: State, p: Person, ref?: number) {
+  const t = kupor(s).find(q => q.id === ref);
+  if (!t) return;
+  const n = Math.min(attTa(t), Math.floor(capacity(s, p) / viktOf('honung') + 1e-9));
+  if (n < 1) return;
+  const ag = t.ag ?? p.id;
+  t.bi! -= n; put(s, 'honung', n, { [ag]: n });
+  t.skattat = (t.skattat ?? 0) + n;
+  const vax = Math.floor(t.skattat / BIN.vaxPer);
+  if (vax > 0) { t.skattat -= vax * BIN.vaxPer; put(s, 'bivax', vax, { [ag]: vax }); count(s, 'bivax', vax); }
+  ovning(p, 'skotsel', BIN.ovning); gjort(s, p, 'skattat'); count(s, 'honungKupa', n);
+  if (forstaGang(s, 'forstaSkattning')) log(s, `${p.name} skattade byns första bikupa och fick ${n} honungskakor.`, 'world', [p.id]);
 }

@@ -49,7 +49,7 @@ import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, 
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
-import { BIN, binSteg } from './bin';
+import { BIN, binSteg, skattaKlar } from './bin';
 import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
 import { eldFlyttKvar, flyttaElden, stepEldFlytt } from './eldflytt';
@@ -289,6 +289,7 @@ KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => klippKlar(s, p, t.ref);
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
+KLAR.skatta = (s, p, t) => skattaKlar(s, p, t.ref); // bikupan (bin.ts, steg 10.10.20)
 KLAR.ortPlocka = (s, p, t) => ortPlockaKlar(s, p, t.ref); // örtkrukan (kruka.ts, steg 10.10.11)
 KLAR.ortSatta = (s, p, t) => ortSattaKlar(s, p, t.ref);
 KLAR.slatter = (s, p, t) => slaKlar(s, p, t.ref);

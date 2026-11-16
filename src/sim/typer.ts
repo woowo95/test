@@ -106,7 +106,7 @@ export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[
   skaldskap: [{ k: 'upptradt', namn: 'Framträdanden' }],
   lakekonst: [{ k: 'vardat', namn: 'Vårdtillfällen' }],
   odling: [{ k: 'odlat', namn: 'Rutor skötta' }],
-  skotsel: [{ k: 'matat', namn: 'Matade djur' }, { k: 'vallat', namn: 'Vallade djur' }, { k: 'klippt', namn: 'Klippta får' }, { k: 'mjolkat', namn: 'Mjölkade getter' }, { k: 'avlivat', namn: 'Avlivade djur' }, { k: 'slagit', namn: 'Slagna ängsrutor' }, { k: 'hamlat', namn: 'Hamlade björkar' }],
+  skotsel: [{ k: 'matat', namn: 'Matade djur' }, { k: 'vallat', namn: 'Vallade djur' }, { k: 'klippt', namn: 'Klippta får' }, { k: 'mjolkat', namn: 'Mjölkade getter' }, { k: 'skattat', namn: 'Skattade bikupor' }, { k: 'avlivat', namn: 'Avlivade djur' }, { k: 'slagit', namn: 'Slagna ängsrutor' }, { k: 'hamlat', namn: 'Hamlade björkar' }],
   handel: [{ k: 'bytt', namn: 'Byten' }, { k: 'lurade', namn: 'Lurade någon', av: 'bytt' }, { k: 'lurad', namn: 'Märkte att någon lurade', av: 'bytt' }],
 };
 

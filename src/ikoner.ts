@@ -149,6 +149,7 @@ export const PAL: Record<string, Record<string, string>> = {
   kalke: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.2, platshållare
   slade: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.3, platshållare (också tekniken Släde)
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
+  bivax: { o: '#24201d', h: '#efe0a8', H: '#d8c27a', d: '#b29a52', z: 'rgba(36,32,29,.30)' }, // steg 10.10.20, platshållare
   bikupa: { o: '#24201d', h: '#d8b25f', H: '#b2921b', d: '#906f0f', g: '#5e3c24', z: 'rgba(36,32,29,.30)' }, // steg 10.10.16, platshållare
   honung: { o: '#24201d', h: '#b2921b', H: '#d8b25f', d: '#906f0f', v: '#694902', z: 'rgba(36,32,29,.30)' }, // steg 10.7.25, platshållare
   blomma: { o: '#24201d', g: '#647025', l: '#898b4c', y: '#d8b25f', c: '#bd753e', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.7.3, platshållare
@@ -2781,6 +2782,24 @@ export const PIX: Record<string, string[]> = {
     '.......oooooooo.',
     '........zzzzzz..',
   ],
+  bivax: [ // platshållare (steg 10.10.20): en rund kaka av ljust bivax, smält och stelnad
+    '................',
+    '................',
+    '................',
+    '.....oooooo.....',
+    '...ooHHHHHHoo...',
+    '..oHHhhhhhhHHo..',
+    '..oHhhhhhhhhHo..',
+    '..ohhhhhhhhhho..',
+    '..ohhhhhhhhhdo..',
+    '..odhhhhhhhddo..',
+    '...ooddddddoo...',
+    '.....oooooo.....',
+    '....zzzzzzzz....',
+    '................',
+    '................',
+    '................',
+  ],
   bikupa: [ // platshållare (steg 10.10.16): en halmkupa i ringar av flätat hö, med flustret nere vid foten, på en stubbe av grenar
     '................',
     '......oooo......',
@@ -4527,7 +4546,7 @@ VS_PALS.forEach((pals, pi) => {
   for (const h of DJUR_HALL) { const k = `djur_vildsvin_0_${pi}_${h}`, rader = r[(h === 'vast' ? 'sida' : h) as Hall]; PIX[k] = h === 'vast' ? rader.map(rad => [...rad].reverse().join('')) : rader; PAL[k] = pal; }
 });
 PIX.vildsvin = PIX.djur_vildsvin_0_0_sida; PAL.vildsvin = PAL.djur_vildsvin_0_0_sida; // det fällda vildsvinet och djuret i texterna
-PIX.kulting = PIX.vildsvin; PAL.kulting = PAL.vildsvin; PIX.slaktgris = PIX.vildsvin; PAL.slaktgris = PAL.vildsvin; // platshållare (steg 10.10.13)
+PIX.gris = PIX.vildsvin; PAL.gris = PAL.vildsvin; PIX.kulting = PIX.vildsvin; PAL.kulting = PAL.vildsvin; PIX.slaktgris = PIX.vildsvin; PAL.slaktgris = PAL.vildsvin; // platshållare (steg 10.10.13)
 // djurets bild: ritningen och pälsen ur id:t (som djurets andra egenskaper, steg 3.7.13) och hållet det rör sig åt
 const idTal = (id: number, salt: number) => { let h = Math.imul(id ^ salt, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return (h ^ (h >>> 13)) >>> 0; };
 // fågeln (steg 6.6.3): utseendet (orre, ripa, skogsduva) kommer från platsen, inte från id:t

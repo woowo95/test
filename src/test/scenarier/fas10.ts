@@ -769,3 +769,42 @@ SCENARIER.svarmning = {
     ];
   },
 };
+SCENARIER.skattning = {
+  text: 'Steg 10.10.20: skattningen. Ägaren skattar den av sina kupor där mest finns att ta, tar de hela kakor som ligger över den kaka hen lämnar åt bina och så många hen kan bära, och varannan kaka ger ett bivax räknat på kupan. Honungen och vaxet är ägarens, arbetet övar djurskötseln, en annans kupa skattas inte, en kupa utan ägare skattas av vem som helst men aldrig av två, och på våren finns inget att ta',
+  kor: () => {
+    const { skattaVal, skattaKlar, capacity, viktOf, ownedAll, ALDER, ageOf } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    const vuxna = SIM.living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen), [p, q] = vuxna;
+    const kupa = (bi: number | undefined, ag?: number, x = 60): SIM.Station => { const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x, y: 60, kvar: 0, bi, ag }; (s.stationer ??= []).push(t); return t; };
+    const rensa = () => { s.stationer = (s.stationer ?? []).filter(t => t.k !== 'bikupa'); };
+    const agt = (id: number, k: string) => ownedAll(s, id)[k] ?? 0;
+    // två egna kupor: den med mest att ta väljs
+    const liten = kupa(4.5, p.id, 58), stor = kupa(7.6, p.id, 70);
+    const val = skattaVal(s, p), annans = skattaVal(s, q);
+    const hon0 = agt(p.id, 'honung'), vax0 = agt(p.id, 'bivax'), sk0 = p.skill.skotsel;
+    skattaKlar(s, p, stor.id);
+    const tog = agt(p.id, 'honung') - hon0, vax = agt(p.id, 'bivax') - vax0, kvar = stor.bi, rest = stor.skattat;
+    const ovat = p.skill.skotsel > sk0, gjordes = SIM.gjortDygn(s, p, 'skattat') >= 1;
+    // varannan kaka: en kaka i taget två gånger ger ett vax
+    rensa(); const en = kupa(2.5, p.id); const v1 = agt(p.id, 'bivax'); skattaKlar(s, p, en.id); const efterEn = agt(p.id, 'bivax') - v1; en.bi = 2.5; skattaKlar(s, p, en.id); const efterTva = agt(p.id, 'bivax') - v1;
+    // bärförmågan: så många som ryms
+    const orkar = Math.floor(capacity(s, p) / viktOf('honung') + 1e-9);
+    rensa(); const full = kupa(1 + orkar + 3, p.id); const h1 = agt(p.id, 'honung'); skattaKlar(s, p, full.id); const bar = agt(p.id, 'honung') - h1;
+    // utan ägare: vem som helst, men aldrig två
+    rensa(); const fri = kupa(5); const qVal = skattaVal(s, q);
+    q.task = { act: 'skatta', phase: 'do', ref: fri.id, until: s.now } as SIM.Task; const pVal = skattaVal(s, p); q.task = undefined;
+    const qh = agt(q.id, 'honung'); skattaKlar(s, q, fri.id); const qFick = agt(q.id, 'honung') - qh;
+    // på våren: kupan har en och en halv kaka
+    rensa(); kupa(1.6, p.id); const var_ = skattaVal(s, p);
+    rensa();
+    return [
+      [`ägaren väljer den kupa där mest finns att ta (${val?.id === stor.id ? 'den stora' : val?.id === liten.id ? 'den lilla' : 'ingen'}), och en annan tar inte hens (${annans ? 'tog' : 'nej'})`, val?.id === stor.id && !annans],
+      [`hen tar de hela kakor som ligger över den hen lämnar (7,6 → ${kvar?.toFixed(2)}, ${tog} kakor) och får ${vax} bivax (${rest} kvar mot nästa)`, tog === 6 && Math.abs(kvar! - 1.6) < 1e-9 && vax === 3 && rest === 0],
+      [`varannan kaka ger ett bivax räknat på kupan (efter en: ${efterEn}, efter två: ${efterTva})`, efterEn === 0 && efterTva === 1],
+      [`hen tar så många hen kan bära (${bar} av ${orkar + 3}, orkar ${orkar})`, bar === orkar],
+      [`skattningen övar djurskötseln (${sk0} → ${p.skill.skotsel}) och räknas i det hen gjort (${gjordes})`, ovat && gjordes],
+      [`en kupa utan ägare skattas av vem som helst (${qVal ? 'ja' : 'nej'}), men aldrig av två (${pVal ? 'två' : 'en'}), och honungen blir hens (${qFick})`, !!qVal && !pVal && qFick === 4],
+      [`med en och en halv kaka i kupan finns inget att ta (${var_ ? 'tog' : 'inget'})`, !var_],
+    ];
+  },
+};

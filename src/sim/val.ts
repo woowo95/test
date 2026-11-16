@@ -835,6 +835,7 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   // 6 Försörjning: mjölken är mat som geten ger varje dag (steg 9.8.6; flyttad från Rädda i steg 10.2.1)
   { id: 'ortPlocka', niva: 6, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works) return false; const t = ortPlockaVal(s, p); if (!t) return false; projektVal(v, { act: 'ortPlocka', text: 'Plockar den mogna örten i sin lerkruka.', min: ORTKRUKA.plockMin, spot: { x: t.x! + 0.5, y: t.y! + 0.5 }, ref: t.id }, 'Örten i krukan är mogen'); return true; } }, // steg 10.10.11
+  { id: 'skatta', niva: 6, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works) return false; const t = skattaVal(s, p); if (!t) return false; projektVal(v, { act: 'skatta', text: 'Skär honungskakor ur bikupan.', min: BIN.skattaMin, spot: { x: t.x + 0.5, y: t.y + 0.5 }, ref: t.id }, 'Kupan har honung över'); return true; } }, // steg 10.10.20
   { id: 'mjolka', niva: 6, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works) return false; const d = mjolkaVal(s, p); if (!d) return false; projektVal(v, { act: 'mjolka', text: 'Mjölkar geten i en lerkruka.', min: BOSKAP.mjolkMin, spot: { x: d.x, y: d.y }, ref: d.id }, 'Geten har mjölk'); return true; } }, // steg 9.8.8
   // 7 Tak: att bygga åt den som saknar sovplats och laga det som är slitet. När bygget har sina arbetare går man vidare
   { id: 'bygga', niva: 7, nar: 'dag', kort: true, prova: c => { const d = dag(c), dmp = byggDampning(faror(c), d.utanYxa); return d.works && !!d.job && !radFull(c.s, c.p, 'bygga') && (dmp >= 1 || rnd(c.s, 'val', c.p) < dmp) && bygg(c); } },
@@ -1436,4 +1437,5 @@ import { TAM, mataVal, tamArt } from './tamdjur';
 import { HAGE, vallaVal } from './hage';
 import { VINTER, hamlaVal, hamlatPa, slaVal } from './slatter';
 import { ORTKRUKA, ortPlockaVal, ortSattaVal } from './kruka';
+import { BIN, skattaVal } from './bin';
 import { BOSKAP, SLAKTDJUR, avlivaVal, klippVal, mjolkaVal, slaktOrsak } from './boskap';

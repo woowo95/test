@@ -18,7 +18,8 @@ const HITTAS: Record<string, string> = {
   torrgras: 'Hittas när man samlar', sten: 'Hittas när man samlar, mest vid stenarna och i sanden',
   flinta: 'Hittas ibland när man samlar, mest vid stenarna', lera: 'Grävs vid stranden, fortare med benspaden', byggsten: 'Bryts vid berget och körs hem på kälken eller släden', kol: 'Blir kvar när en eld brunnit ut',
   rovor: 'Odlas på fältet', arter: 'Odlas på fältet', silver: 'Fås av handlaren',
-  honung: 'Tas ur vildbinas bon i skogen på sommaren och hösten', // steg 10.7.25
+  honung: 'Tas ur vildbinas bon i skogen på sommaren och hösten och skärs ur byns bikupor', // steg 10.7.25 och 10.10.20
+  bivax: 'Skärs bort när bikupan skattas: varannan honungskaka ger ett', // steg 10.10.20
   appel: 'Plockas från äppelträden på fältet', appelplanta: 'Köps av handlaren', notter: 'Plockas av den vilda hasseln på hösten, och av hassel som satts', // steg 9.7.13–9.7.14
   jordgubbar: 'Odlas på fältet, och skördas flera gånger', jordgubbsplanta: 'Köps av handlaren', // steg 9.7.9
   kal: 'Odlas på fältet', bonor: 'Köps av handlaren och odlas på fältet', kalfron: 'Köps av handlaren, och kommer tillbaka vid skörden', // steg 9.7.8
@@ -46,7 +47,7 @@ const ANVANDS: Record<string, string[]> = {
   levfar: ['Blir byns får'], levget: ['Blir byns get'], levko: ['Blir byns ko'], slaktko: ['Slaktas'], kohud: ['Kläder'], levhons: ['Blir byns höns'],
   blomma: ['Sätts i en lerkruka'], blad: ['Läses av den som har något nytt att lära där'], bok: ['Skrivs i del för del och läses'], // steg 10.6.5–10.6.6
   bensyl: ['Syr kläder vid slöjdbänken'], boll: ['Sport'], slagtra: ['Sport'], mal: ['Sport'],
-  slanda: ['Spinner lin till tråd'], fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'],
+  slanda: ['Spinner lin till tråd'], fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'], bivax: ['Vaxljus'],
   trumma: ['Spelas på scenen'], benflojt: ['Spelas på scenen'], lyra: ['Spelas på scenen'], rovfron: ['Sås på fältet'], artfron: ['Sås på fältet'], malt: ['Ölet i bryggkaret'], kalfron: ['Sås på fältet'], kompost: ['Gödslar fältet'], jordgubbsplanta: ['Planteras på fältet'], appelplanta: ['Planteras på fältet'], slaktrens: ['Bärs till sophögen'], vaxtrest: ['Bärs till sophögen'], // steg 9.6.13
 };
 
