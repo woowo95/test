@@ -15,12 +15,13 @@ export const VAG = balans('vag', {
   trampHog: 0.75, // högt gräs trampas ner direkt till så här högt ...
   trampPlanta: 4, // ... och en liten planta (under skog) trampas ihjäl så här många gånger fortare än gräset nöts
   brandNara: 3, // en ruta bredvid elden kostar så här mycket mer att gå på, så att man håller avstånd när det går (steg 9.2.136)
+  ang: 3, // en ruta på slåtterängen kostar så här mycket mer att gå på, så att den som går en enstaka tur går runt och inte trampar ner gräset (steg 10.10.28)
   sokVikt: 0.52, // sökningen räknar så mycket per ruta som är kvar till målet: mer än den billigaste rutan (stigBas), så att den går fort och hellre tar den raka vägen
 });
 
 // solid = väggar, built = byggda eller planerade rutor, hinder = hyllor, kistor och ställ (går inte att gå igenom, stationer.ts),
 // lost = rutor med lösa saker på golvet (långsamma, lager.ts). Steg 2.3.6
-export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; alder?: Float32Array; art?: Uint8Array; buske?: Uint8Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array; brand?: Uint8Array } // brand: 1 = rutan brinner, 2 = bredvid elden (brand.ts, steg 9.2.136)
+export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; alder?: Float32Array; art?: Uint8Array; buske?: Uint8Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array; ang?: Uint8Array; brand?: Uint8Array } // brand: 1 = rutan brinner, 2 = bredvid elden (brand.ts, steg 9.2.136)
 export const HIGH = 0.9, BAR = 0.3; // högt gräs över HIGH, bar jord under BAR
 export const FOREST = 0.5; // träd från detta värde räknas som skog
 export const BUSKE = 250; // g.buske från detta värde: en buske står på rutan (buskar.ts, steg 6.5.3)
@@ -39,7 +40,7 @@ export function markFart(g: Ground, i: number) {
   return g.cover[i] >= HIGH ? GANG.fartHog : 1;
 }
 // kostnad att gå in på en ruta: man följer hellre en upptrampad stig än går över orörd mark
-const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? VAG.stigBas + VAG.stigTacke * g.cover[i] : 1) / speedAt(g, i);
+const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? VAG.stigBas + VAG.stigTacke * g.cover[i] : 1) / speedAt(g, i) * (g.ang?.[i] ? VAG.ang : 1);
 
 // vatten, väggar och hyllor går man inte genom
 const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1 || g.hinder?.[i] === 1;

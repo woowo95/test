@@ -10,6 +10,7 @@ import { personHand } from './personlogg';
 import { hamtaForst, hamtat } from './paborjat';
 import { sorgTimme } from './liv';
 import { lagerIStraket } from './strak';
+import { angIVagen, angMark } from './slatter';
 import { rumVila } from './rum';
 import { PLAN, planBuild, stepByggplan } from './byggplan';
 import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, sattVid, stepMjardar, valjFisk, vittja } from './fisk';
@@ -369,7 +370,7 @@ const rumAntal = (s: State, c: Slag) => {
 // ändras på riktigt. npm run kostnad visar datortiden per rad
 type Takt = { namn: string; sek: number; fas?: number; fn: (s: State, dt: number, c: Slag) => void };
 export const TAKTER: Takt[] = [
-  { namn: 'kartan', sek: 0, fn: s => { gridOf(s); stationRutor(s); sakerPaGolvet(s); } }, // väggarna och rummen, hyllorna och sakerna på golvet (steg 2.3.6), så att vägsökningen vet var de står
+  { namn: 'kartan', sek: 0, fn: s => { gridOf(s); stationRutor(s); sakerPaGolvet(s); angMark(s); } }, // väggarna och rummen, hyllorna och sakerna på golvet (steg 2.3.6), så att vägsökningen vet var de står
   { namn: 'tidsåldern', sek: 60, fn: (s, _dt, c) => { if (c.ai !== s.lastAgeIdx) { s.lastAgeIdx = c.ai; log(s, AGES_BORJAR[c.ai], 'world'); } } },
   { namn: 'kaninerna', sek: 10, fn: (s, dt) => djurSteg(s, dt) }, // kaningrupperna väljer plats när deras tid börjar
   { namn: 'grannklanerna', sek: 600, fn: (s, dt) => klanSteg(s, dt) }, // de växer och glömmer (klaner.ts, steg 4.4.3)
@@ -533,6 +534,7 @@ export const TAKTER: Takt[] = [
   { namn: 'relationerna', sek: 600, fn: (s, dt) => { const k = Math.exp(-STEG.blek * dt / 86400); for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; } } },
   { namn: 'flytt och nybyggare', sek: 60, fn: (s, dt) => { if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world'); regulate(s, dt); } },
   { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
+  { namn: 'ängen i vägen', sek: 3600, fn: s => { angIVagen(s); } }, // ängen som byn eller ett stråk når flyttas (slatter.ts, steg 10.10.28); sist, så att de andra radernas förskjutning är som förut
 ];
 // de som behöver räknas varje slag fast de står på sin plats: striden, elden och den som brinner, vården och samtalet
 const VARJE_SLAG = new Set<Act>(['strid', 'slacka', 'slackaSig', 'hjalpaBrinnande', 'flyEld', 'flyBin', 'varna', 'skilja', 'forsvar', 'forsvarRovare', 'varda', 'samtal', 'tanda']);

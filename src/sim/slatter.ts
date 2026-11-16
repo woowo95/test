@@ -10,7 +10,7 @@ import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { getable } from './behov';
 import { amountOf, gain } from './lager';
-import { DAY, HOUR, Person, State, T, W } from './typer';
+import { DAY, H, HOUR, Person, State, T, W } from './typer';
 import { stadium, tradArt } from './trad';
 import { utanforByn } from './omrade';
 import { heligRuta } from './kultlatt';
@@ -24,6 +24,8 @@ import { komposten } from './rester';
 import { betesTal, betesdjurOf, hagarOf } from './hage';
 import { Tamdjur, tamDor, tamdjurOf } from './tamdjur';
 import { faltRiktning, faltSite } from './odling';
+import { iByn } from './omrade';
+import { paStrak } from './strak';
 
 export const VINTER = balans('vinter', {
   angMarg: 1.5, // ängen får så här många gånger de rutor som höet till djuren behöver (alla rutor har inte högt gräs) ...
@@ -60,17 +62,37 @@ const angSida = (s: State) => Math.min(VINTER.angMax, Math.max(VINTER.angMin, Ma
 // projektets arbete för p: att märka ut ängen
 export function angUppgift(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !angBrist(s) || living(s).some(q => q !== p && q.task?.act === 'ang')) return undefined;
-  const n = angSida(s), at = faltSite(s, n, n * n);
+  const n = angSida(s), at = faltSite(s, n, n * n, true);
   return at && { act: 'ang' as const, text: 'Märker ut en slåtteräng, där gräset får växa sig högt till hö åt djuren.', min: VINTER.angMatMin, spot: { x: at.x + 0.5, y: at.y + 0.5 } };
 }
 export function angKlar(s: State, p: Person) {
   if (!angBrist(s)) return;
-  const n = angSida(s), at = faltSite(s, n, n * n);
+  const n = angSida(s), at = faltSite(s, n, n * n, true);
   if (!at) return;
   const y = faltRiktning(s, at.y) > 0 ? at.y : at.y - (n - 1);
   (s.angar ??= []).push({ id: angarOf(s).length + 1, x: at.x, y, w: n, h: n });
   s.byggV = (s.byggV ?? 0) + 1; count(s, 'angar');
   log(s, `${p.name} märkte ut en slåtteräng, där gräset får växa sig högt till hö åt djuren i istiden.`, 'world', [p.id]);
+}
+// ängen ligger utanför byns område och där inga gångstråk går, och den stoppar aldrig ett stråk (steg 10.10.28). Växer byn över
+// den eller går ett stråk över den flyttas den: den gamla blir vanlig mark där gräset plockas som annat hö, och projektet ang
+// märker ut en ny längre ut när ängarna inte räcker. En i timmen, som lagerplatsen i stråket (en rad i TAKTER)
+export function angIVagen(s: State) {
+  const a = angarOf(s).find(a => angRutor(a).some(i => iByn(s, i % W, Math.floor(i / W)) || paStrak(s, i % W, Math.floor(i / W))));
+  if (!a) return;
+  const iby = angRutor(a).some(i => iByn(s, i % W, Math.floor(i / W)));
+  s.angar = angarOf(s).filter(q => q !== a); s.byggV = (s.byggV ?? 0) + 1;
+  count(s, 'angFlyttad'); count(s, iby ? 'angFlyttad byn' : 'angFlyttad strak');
+  log(s, iby ? 'Byn har vuxit över slåtterängen. Den blir vanlig mark, och en ny äng märks ut längre ut.' : 'Ett gångstråk går över slåtterängen. Den blir vanlig mark, och en ny äng märks ut längre ut.', 'world');
+}
+// ängens rutor i marken (g.ang), som vägsökningen frågar: räknas om när ängarna ändras (raden kartan i TAKTER, varje slag)
+const angNyckel = new WeakMap<object, string>();
+export function angMark(s: State) {
+  const g = groundOf(s), l = angarOf(s), key = l.map(a => `${a.x},${a.y},${a.w},${a.h}`).join(';');
+  if (angNyckel.get(g) === key) return;
+  angNyckel.set(g, key);
+  if (!l.length) { g.ang = undefined; return; }
+  const m = new Uint8Array(W * H); for (const a of l) for (const i of angRutor(a)) m[i] = 1; g.ang = m;
 }
 // slåttern: på sensommaren och hösten, i dagsljus, med skäran
 const slattertid = (s: State) => { const ai = kalender(s).ai; return ai === SOMMAR || ai === HOST; };

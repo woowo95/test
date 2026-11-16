@@ -1032,3 +1032,44 @@ SCENARIER.retad = {
     ];
   },
 };
+SCENARIER.angflytt = {
+  text: 'Steg 10.10.28: slåtterängen utanför byn. Ängen märks ut utanför byns område där inga stråk går; en äng som byn vuxit över flyttas, ett stråk dras över ängen och flyttar den i stället för att gå runt, den som går en enstaka tur går runt ängen, och den nya ängen räcker åt djuren efter flytten',
+  kor: () => {
+    const { nyttTamdjur, hageVal, hageKlar, angarOf, angRutor, angIVagen, angMark, iByn, paStrak, straken, findPath, groundOf, HIGH, DAY } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    let W = SIM.W; const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+    (p.tek ??= {}).staket = 1; SIM.setAmount(s, 'grenar', 800); SIM.setAmount(s, 'rep', 2);
+    const m = SIM.bynsMitt(s);
+    for (let k = 0; k < 4; k++) nyttTamdjur(s, k < 3 ? 'far' : 'get', m.x + (k % 2), m.y + (k >> 1), undefined, s.now - 3 * DAY);
+    hageKlar(s, p, -1); for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
+    const ute = (a: SIM.Ang) => angRutor(a).every(i => !iByn(s, i % W, Math.floor(i / W)) && !paStrak(s, i % W, Math.floor(i / W)));
+    const marka = () => { const u = SIM.angUppgift(s, p); if (u) SIM.angKlar(s, p); return angarOf(s)[angarOf(s).length - 1]; };
+    const forsta = marka(), forstaUte = !!forsta && ute(forsta);
+    // byn har vuxit över ängen: en äng i byns mitt flyttas, och en ny märks ut utanför
+    s.angar = [{ id: 9, x: Math.floor(m.x) - 1, y: Math.floor(m.y) - 1, w: 3, h: 3 }]; s.byggV = (s.byggV ?? 0) + 1;
+    angIVagen(s); const byFlytt = angarOf(s).length === 0 && (s.stat?.['angFlyttad byn'] ?? 0) === 1;
+    const ny = marka(), nyUte = !!ny && ute(ny), racker = SIM.angBrist(s) === 0;
+    // ett stråk över ängen: ängen läggs på ett stråk utanför byn, stråket går kvar över den och ängen flyttas
+    const b = SIM.cloneState(testBy(10)), Wb = SIM.W; // en by med hus och stråk
+    const r = straken(b).vagar.flatMap(v => v.rutor).find(i => [-1, 0, 1].every(dy => [-1, 0, 1].every(dx => !iByn(b, i % Wb + dx, Math.floor(i / Wb) + dy))));
+    let strakFlytt = false, strakKvar = false;
+    if (r !== undefined) {
+      b.angar = [{ id: 10, x: r % Wb - 1, y: Math.floor(r / Wb) - 1, w: 3, h: 3 }]; b.byggV = (b.byggV ?? 0) + 1;
+      strakKvar = straken(b).ruta[r] > 0;
+      const f0 = b.stat?.['angFlyttad strak'] ?? 0;
+      angIVagen(b); strakFlytt = angarOf(b).length === 0 && (b.stat?.['angFlyttad strak'] ?? 0) === f0 + 1;
+    }
+    // den som går en enstaka tur går runt ängen: en äng med högt gräs mellan två punkter
+    W = SIM.W; const g = groundOf(s), a: SIM.Ang = { id: 11, x: ny!.x, y: ny!.y, w: ny!.w, h: ny!.h }; s.angar = [a]; angMark(s);
+    for (const i of angRutor(a)) g.cover[i] = Math.max(g.cover[i], HIGH);
+    const my = a.y + Math.floor(a.h / 2), v = findPath(g, a.x - 2, my, a.x + a.w + 1, my) ?? [];
+    const paAng = v.filter(i => angRutor(a).includes(i)).length;
+    return [
+      [`ängen märks ut utanför byns område och utanför stråken (${forstaUte})`, forstaUte],
+      [`en äng som byn vuxit över flyttas (${byFlytt}), och den nya ligger utanför (${nyUte})`, byFlytt && nyUte],
+      [`höet på den nya ängen räcker åt djuren (ingen brist: ${racker})`, racker],
+      [`ett stråk går över ängen (${r === undefined ? 'inget stråk utanför byn' : strakKvar}) och flyttar den (${strakFlytt})`, r !== undefined && strakKvar && strakFlytt],
+      [`den som går förbi ängen går runt den (${paAng} rutor på ängen av ${v.length})`, v.length > 0 && paAng === 0],
+    ];
+  },
+};
