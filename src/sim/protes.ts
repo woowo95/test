@@ -2,8 +2,8 @@
 // och kryckan görs bara vid snickarbänken och ger tillbaka ungefär hälften av gångfarten för ett förlorat ben eller en fot, kroken
 // görs av virke bara vid snickarbänken och ger tillbaka en del av greppet, och ögonlappen görs av skinn för hand (fortare och bättre
 // vid slöjdbänken) och är bara utseende. Hur mycket varje protes ger står i PROTES_FEL (halsa.ts); här vilka delar den passar,
-// vem som behöver en och att den sätts på
-import { tingOf } from './agande';
+// vem som behöver en, och vem som får den först när en vårdare sätter den på (steg 10.11.19)
+import { tingOf, type Ting } from './agande';
 import { living } from './folk';
 import { type Kroppsdel, PA_DELEN } from './halsa';
 import { count } from './folk';
@@ -21,23 +21,44 @@ const utan = (p: Person, k: string) => (p.saknas ?? []).filter(d => PROTESER[k].
 // hur många byn vill ha av protesen k (REDSKAPMAL i forradsmal.ts): en per förlorad del utan protes. Kryckan och träbenet delar på benen
 export const protesVill = (s: State, k: string) => living(s).reduce((n, p) => n + (k === 'krycka' ? (brutetBen(p) && !p.krycka ? 1 : 0) : utan(p, k === 'traben' ? 'traben' : k).length), 0); // kryckan till den med ett brutet ben (steg 9.5.28)
 const brutetBen = (p: Person) => (p.skador ?? []).some(w => w.k === 'benbrott' && ['benV', 'benH', 'fotV', 'fotH'].includes(w.d));
-// en gång i timmen: den som saknar en protes får en ledig från byns förråd eller sin egen, och den som tappat sin (den gick sönder)
-// har ingen längre
+// en protes av slaget k som är ledig: i byns förråd eller hens egen
+const ledig = (s: State, q: Person, k: string) => tingOf(s).filter(t => t.k === k && t.pa === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && (t.agare === 0 || t.agare === q.id));
+// hur mycket q behöver en protes av slaget k: de förlorade delarna den passar, och kryckan till den med ett brutet ben
+const behov = (q: Person, k: string) => utan(q, k).length + (k === 'krycka' && brutetBen(q) && !q.krycka ? 1 : 0);
+// den protes q ska få (steg 10.11.19): en ledig av ett slag hen behöver, när den som behöver den mest får den först. De som behöver
+// slaget ställs i ordning efter behovet (de som saknar fler delar först); finns det n lediga får de n första en var
+export function protesFor(s: State, q: Person): { k: string; t: Ting } | undefined {
+  if (!q.saknas?.length && !brutetBen(q)) return undefined;
+  for (const k of ['krycka', ...PROTES_LIST.filter(x => x !== 'krycka')]) {
+    if (!behov(q, k)) continue;
+    const fria = ledig(s, q, k);
+    if (!fria.length) continue;
+    const fore = living(s).filter(o => o !== q && (behov(o, k) > behov(q, k) || behov(o, k) === behov(q, k) && behov(o, k) > 0 && o.id < q.id)).length;
+    if (fore < tingOf(s).filter(t => t.k === k && t.pa === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.agare === 0).length + (fria.some(t => t.agare === q.id) ? 1 : 0)) return { k, t: fria.find(t => t.agare === q.id) ?? fria[0] };
+  }
+  return undefined;
+}
+// vårdaren sätter protesen på q (behandlingen protes i VARD, halsa.ts): hen har den på sig
+export function protesPa(s: State, q: Person) {
+  const v = protesFor(s, q);
+  if (!v) return;
+  const { k, t } = v;
+  t.pa = q.id; t.bar = q.id; t.x = undefined; t.y = undefined;
+  if (k === 'krycka' && brutetBen(q) && !q.krycka) { q.krycka = 1; count(s, 'kryckaPa'); return; }
+  t.agare = q.id;
+  const d = utan(q, k)[0];
+  p_protes(q, d, k);
+  count(s, 'protesPa');
+}
+function p_protes(q: Person, d: Kroppsdel, k: string) {
+  q.protes ??= {};
+  for (const u of [d, ...PA_DELEN[d] ?? []]) if (q.saknas!.includes(u)) q.protes[u] = k;
+}
+// en gång i timmen: kryckan tas av när benet läkt, och den som tappat sin protes (den gick sönder) har ingen längre
 export function protesTimme(s: State) {
   for (const p of living(s)) {
-    // kryckan till den med ett brutet ben (steg 9.5.28): hen har den tills benet läkt
-    if (brutetBen(p) && !p.krycka) { const t = tingOf(s).find(q => q.k === 'krycka' && q.pa === undefined && q.hos === undefined && q.lass === undefined && q.bar === undefined && (q.agare === 0 || q.agare === p.id)); if (t) { t.pa = p.id; t.bar = p.id; t.x = undefined; t.y = undefined; p.krycka = 1; count(s, 'kryckaPa'); } }
     if (p.krycka && !brutetBen(p) && !Object.values(p.protes ?? {}).includes('krycka')) { const t = tingOf(s).find(q => q.k === 'krycka' && q.pa === p.id); if (t) { t.pa = undefined; t.bar = undefined; } delete p.krycka; }
     for (const d of Object.keys(p.protes ?? {}) as Kroppsdel[]) if (!tingOf(s).some(t => t.pa === p.id && t.k === p.protes![d])) delete p.protes![d];
     if (p.protes && !Object.keys(p.protes).length) delete p.protes;
-    if (!p.saknas?.length) continue;
-    for (const k of PROTES_LIST) for (const d of utan(p, k)) {
-      const t = tingOf(s).find(q => q.k === k && q.pa === undefined && q.hos === undefined && q.lass === undefined && q.bar === undefined && (q.agare === 0 || q.agare === p.id));
-      if (!t) continue;
-      t.pa = p.id; t.bar = p.id; t.agare = p.id; t.x = undefined; t.y = undefined; // hen har den på sig
-      p.protes ??= {};
-      for (const u of [d, ...PA_DELEN[d] ?? []]) if (p.saknas.includes(u)) p.protes[u] = k;
-      count(s, 'protesPa');
-    }
   }
 }

@@ -269,22 +269,33 @@ SCENARIER.salva = {
 };
 
 SCENARIER.protes = {
-  text: 'Steg 9.5.11: proteserna. Kryckan, träbenet och kroken görs bara vid snickarbänken och ögonlappen för hand eller vid slöjdbänken. Den som förlorat ett ben får ett träben och går igen ungefär hälften så bra, den som förlorat en hand får en krok och en del av greppet, och ögonlappen är bara utseende',
+  text: 'Steg 9.5.11: proteserna. Kryckan, träbenet och kroken görs bara vid snickarbänken och ögonlappen för hand eller vid slöjdbänken. Den som förlorat ett ben får ett träben och går igen ungefär hälften så bra, den som förlorat en hand får en krok och en del av greppet, och ögonlappen är bara utseende. En vårdare sätter protesen på, och den som behöver den mest får den först (steg 10.11.19)',
   kor: () => {
-    const { RECEPT: R, addTool, protesTimme, rorlighet, handighet, syn, forlora, protesVill, STATIONER } = SIM;
-    const s = createState(1, START), [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const { RECEPT: R, addTool, rorlighet, handighet, syn, forlora, protesVill, STATIONER, vardKlar, vardVal } = SIM;
+    const s = createState(1, START), [p, q, g] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    // vårdaren g sätter protesen på (steg 10.11.19): behandlingen protes i VARD
+    const satt = (o: SIM.Person) => { g.x = o.x; g.y = o.y; vardKlar(s, g, { act: 'varda', phase: 'do', tx: o.x, ty: o.y, until: s.now, carry: 0, why: '', ref: o.id }); };
     const bank = ['krycka', 'traben', 'krok'].every(k => (R as Record<string, SIM.ReceptRad>)[k].bank === 'snickarbank' && (R as Record<string, SIM.ReceptRad>)[k].bara) && STATIONER.flatarbank.gor.includes('ogonlapp') && !(R.ogonlapp as SIM.ReceptRad).bara;
     const hel = rorlighet(p);
     forlora(s, p, 'benV', 'höggs av'); p.skador = undefined;
     const utan = rorlighet(p), vill = protesVill(s, 'traben');
     addTool(s, 'traben', q).agare = 0;
-    protesTimme(s);
+    const sjalv = !p.protes;
+    const val = vardVal(s, g, false);
+    satt(p);
     const med = rorlighet(p);
     const h0 = handighet(q); forlora(s, q, 'handH', 'höggs av'); q.skador = undefined; const hUtan = handighet(q);
-    addTool(s, 'krok', q).agare = 0; protesTimme(s); const hMed = handighet(q);
+    addTool(s, 'krok', q).agare = 0; satt(q); const hMed = handighet(q);
     const s0 = syn(p); forlora(s, p, 'ogaV', 'gick förlorat'); p.skador = undefined; const sUtan = syn(p);
-    addTool(s, 'ogonlapp', p).agare = 0; protesTimme(s);
+    addTool(s, 'ogonlapp', p).agare = 0; satt(p);
+    // den som behöver den mest får den först: två har förlorat en fot, den ena båda, och byn har ett träben
+    const c = createState(1, START), [a, b, v] = SIM.living(c).filter(r => SIM.ageOf(r, c.now) >= SIM.ALDER.vuxen);
+    forlora(c, a, 'fotV', 'höggs av'); forlora(c, b, 'fotV', 'höggs av'); forlora(c, b, 'fotH', 'höggs av'); a.skador = undefined; b.skador = undefined;
+    addTool(c, 'traben', v).agare = 0;
+    const forA = SIM.vardBehov(c, a, v)?.protes, forB = SIM.vardBehov(c, b, v)?.protes;
     return [
+      [`protesen sätter sig inte själv, en vårdare väljer att sätta den på (${val?.why ?? 'inget'})`, sjalv && val?.ref === p.id && /protes/.test(val.why)],
+      [`den som behöver den mest får den först (${forB ? 'den utan båda fötterna' : '-'}${forA ? ', och den andra också' : ''})`, !!forB && !forA],
       [`kryckan, träbenet och kroken görs bara vid snickarbänken, ögonlappen för hand och fortare vid slöjdbänken`, bank],
       [`byn vill ha ett träben åt den som förlorat ett ben (${vill})`, vill === 1],
       [`med träbenet går hen igen ungefär hälften så bra (hel ${hel.toFixed(2)}, utan ${utan.toFixed(2)}, med ${med.toFixed(2)})`, med > utan && med < hel && p.protes?.benV === 'traben'],
@@ -558,7 +569,7 @@ SCENARIER.infbalans = {
 
 // att sätta benet och spjälan (steg 9.5.28)
 function sattaBenet(): [string, boolean][] {
-  const { vardKlar, kanGa, handighet, protesTimme, addTool, setAmount, HALSA } = SIM;
+  const { vardKlar, kanGa, handighet, addTool, setAmount, HALSA } = SIM;
   const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
   const vard = () => { g.x = q.x; g.y = q.y; vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id }); };
   setAmount(s, 'grenar', 10); setAmount(s, 'remsa', 4);
@@ -566,7 +577,7 @@ function sattaBenet(): [string, boolean][] {
   q.skador = [{ d: 'benV', k: 'benbrott', g: 0.6, b: 0, t0: s.now }]; vard();
   const satt = !!q.skador[0].satt && !!q.skador[0].spala;
   const utanKrycka = kanGa(q);
-  addTool(s, 'krycka', g).agare = 0; protesTimme(s);
+  addTool(s, 'krycka', g).agare = 0; vard();
   const medKrycka = kanGa(q);
   let fel = 0;
   for (let i = 0; i < 40; i++) { g.skill.lakekonst = 0; q.skador = [{ d: 'benH', k: 'benbrott', g: 0.4, b: 0, t0: s.now }]; vard(); if (q.skador[0].snett) fel++; }

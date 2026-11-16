@@ -1,3 +1,4 @@
+import { protesFor, protesPa } from './protes'; // bara inne i funktioner: protes.ts läser den här filen
 import { gasterNu, gastLever } from './gast';
 import { han, honom } from './ord';
 import { personHand } from './personlogg';
@@ -585,7 +586,7 @@ function infStadieNotis(s: State, p: Person, w: Skada) {
 // med senare = steget där de börjar användas: de finns i registret men deras krav är inte uppfyllda förrän dess
 export interface VardDef {
   namn: string; text: string; krav: (s: State, q: Person, w: Skada, g: Person) => boolean;
-  material?: Record<string, number>; redskap?: string; fardighet?: number; tid: number; risk: number; bradska: number; andra?: true; senare?: string;
+  material?: Record<string, number>; redskap?: string; fardighet?: number; tid: number; risk: number; bradska: number; andra?: true; senare?: string; hel?: true; // hel = gäller hela människan, inte ett sår (w saknas)
   gor: (s: State, g: Person, q: Person, w: Skada) => void;
 }
 const stor = (w: Skada) => oppet(w) && w.g >= HALSA.vardFel;
@@ -611,6 +612,7 @@ export const VARD: Record<string, VardDef> = {
   salva: { namn: 'Läkesalva', text: 'Lägger läkesalva på såret', krav: (_s, _q, w) => (stor(w) || w.k === 'brannskada') && w.salva === undefined && (w.inf ?? 0) < HALSA.kallbrand, tid: 2, risk: 0, bradska: 2, gor: (s, _g, _q, w) => { const q = salvaKrok.ta(s); if (q !== undefined) { w.salva = q; count(s, 'salvaPaSar'); } } }, // steg 9.5.10
   satta: { namn: 'Sätta benet', text: 'Drar benet rätt så att det läker rakt', krav: (s, _q, w) => w.k === 'benbrott' && !w.satt && !w.snett && !BARA_VILA.has(w.d) && w.t0 !== undefined && s.now - w.t0 <= HALSA.sattTim * HOUR, tid: 3, risk: HALSA.sattaFel, bradska: 3, andra: true, gor: (s, g, q, w) => { const fel = g.skill.lakekonst < HALSA.sattaLak && rnd(s, 'halsa', g) < HALSA.sattaFel; if (fel) w.snett = 1; else w.satt = 1; think(q, 'Benet drogs rätt, det gjorde ont', -0.1, s.now, 2 * HOUR); count(s, fel ? 'benSattFel' : 'benSatt'); } }, // steg 9.5.28
   spala: { namn: 'Spjäla', text: 'Binder en spjäla av två grenar och en remsa runt brottet', krav: (_s, _q, w) => w.k === 'benbrott' && !w.spala && !BARA_VILA.has(w.d), material: { grenar: 2 }, tid: 2, risk: 0, bradska: 2, andra: true, gor: (s, g, _q, w) => { takeMaterial(s, g, 'grenar', 2); if (getable(s, g, 'remsa') >= 1) takeMaterial(s, g, 'remsa', 1); else if (getable(s, g, 'rep') >= 1) takeMaterial(s, g, 'rep', 1); w.spala = 1; count(s, 'spjalat'); } }, // steg 9.5.28
+  protes: { namn: 'Sätta på en protes', text: 'Sätter på träbenet, kryckan, kroken eller ögonlappen och spänner remmarna', krav: (s, q) => !!protesFor(s, q), tid: 2, risk: 0, bradska: 0.5, andra: true, hel: true, gor: (s, _g, q) => protesPa(s, q) }, // steg 10.11.19: den som behöver den mest får den först (protes.ts)
   amputera: { namn: 'Amputera', text: 'Tar av delen med kallbrand med kniven eller yxan, så att hen lever', krav: (_s, q, w, g) => g !== q && (w.inf ?? 0) >= HALSA.kallbrand && !!DEL[w.d].ute, tid: 10, risk: 0.3, bradska: 1, andra: true, gor: (s, g, q, w) => { const yxa = getable(s, g, 'kniv') < 1; forlora(s, q, w.d, 'amputerades'); const st = q.skador?.[q.skador.length - 1]; if (st) st.g = yxa ? HALSA.ampYxa : HALSA.ampKniv; count(s, 'amputerat'); } }, // steg 8.2.3: med kniven går det bättre än med yxan (steg 9.5.25)
 };
 export const VARD_LIST = Object.keys(VARD);
@@ -630,18 +632,19 @@ function rivRemsa(s: State, q: Person, g: Person) {
 }
 // behandlingarna q behöver härnäst och som g kan göra, mest brådskande först
 export function vardNasta(s: State, q: Person, g: Person) {
-  const ut: { k: string; w: Skada }[] = [];
-  for (const k of VARD_LIST) { const v = VARD[k]; for (const w of q.skador ?? []) if (v.krav(s, q, w, g) && vardKan(s, g, v, q)) ut.push({ k, w }); }
+  const ut: { k: string; w?: Skada }[] = [];
+  for (const k of VARD_LIST) { const v = VARD[k]; if (v.hel) { if (vardKan(s, g, v, q) && v.krav(s, q, undefined as unknown as Skada, g)) ut.push({ k }); continue; } for (const w of q.skador ?? []) if (v.krav(s, q, w, g) && vardKan(s, g, v, q)) ut.push({ k, w }); }
   return ut.sort((a, b) => VARD[b.k].bradska - VARD[a.k].bradska);
 }
 // det q behöver av den som vårdar (g): behandlingarna i VARD och att bäras hem. undefined = inget
 export function vardBehov(s: State, q: Person, g: Person) {
   const sk = q.skador ?? [];
-  if (!sk.length && !(g !== q && !kanGa(q) && !hemma(s, q))) return undefined; // den som svimmat bärs hem också utan sår
+  const protes = g !== q && VARD.protes.krav(s, q, undefined as unknown as Skada, g);
+  if (!sk.length && !protes && !(g !== q && !kanGa(q) && !hemma(s, q))) return undefined; // den som svimmat bärs hem också utan sår
   const n = vardNasta(s, q, g), har = (k: string) => n.some(x => x.k === k);
   const blod = har('trycka'), forband = har('forband') || har('salva') || har('satta') || har('spala'), rengor = har('skolja'), amputera = har('amputera');
   const bara = g !== q && !q.gast && !kanGa(q) && !hemma(s, q) && q.task?.act !== 'buren';
-  return blod || forband || rengor || bara || amputera ? { blod, forband, rengor, bara } : undefined;
+  return blod || forband || rengor || bara || amputera || protes ? { blod, forband, rengor, bara, protes } : undefined;
 }
 // den med kortast tid kvar till förblödning vårdas först (steg 9.5.18): avståndet räknas så här mycket kortare
 const bradska = (q: Person) => Math.max(0.1, Math.min(1, tidKvar(q) / HALSA.kortTim));
@@ -659,7 +662,7 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
   // rätten till vård (steg 9.5.9): den närmaste, men sederna och styret flyttar fram somliga (vardRatt)
   let best: Person | undefined, bd = Infinity;
   for (const q of [...living(s), ...gasterNu(s).filter(g => g.gast!.sort !== 'rovare')]) { // gästerna vårdas också, utom rövarna (steg 9.2.113)
-    if (q === p || !q.skador?.length && !q.svimmat) continue;
+    if (q === p || !q.skador?.length && !q.svimmat && !q.saknas?.length) continue; // den som saknar en del kan behöva en protes (steg 10.11.19)
     const d = Math.hypot(q.x - p.x, q.y - p.y);
     if (d >= (s.now - (q.ropT ?? -Infinity) < HALSA.ropTim * HOUR ? HALSA.ropR : HALSA.vardR) || utanVard(s, q) || d / vardRatt(s, p, q) * bradska(q) >= bd || !vardBehov(s, q, p) || vardas(s, q, p)) continue; // den som ropat hörs längre (steg 9.5.16)
     best = q; bd = d / vardRatt(s, p, q) * bradska(q);
@@ -671,7 +674,7 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
   const lager = fetchSpot(s, 'remsa') ?? fetchSpot(s, 'mossa'), fart = GANG.fart;
   const omvag = lager ? (Math.hypot(lager.x - p.x, lager.y - p.y) + Math.hypot(best.x - lager.x, best.y - lager.y) - Math.hypot(best.x - p.x, best.y - p.y)) / fart / 3600 : 0;
   const stanna = b.blod && !(p.forbandMed ?? 0) && tidKvar(best) < omvag * HALSA.hamtaMarg;
-  return { spot: { x: best.x, y: best.y }, ref: best.id, stanna, why: b.bara && !b.blod && !b.rengor ? `Går för att bära hem ${best.name}` : stanna ? `Springer till ${best.name} och trycker på såret` : `Tar hand om ${best.name}s sår` };
+  return { spot: { x: best.x, y: best.y }, ref: best.id, stanna, why: b.protes && !b.blod && !b.rengor && !b.forband && !b.bara ? `Sätter en protes på ${best.name}` : b.bara && !b.blod && !b.rengor ? `Går för att bära hem ${best.name}` : stanna ? `Springer till ${best.name} och trycker på såret` : `Tar hand om ${best.name}s sår` };
 }
 // rätten till vård (steg 9.5.9, "Rätt till vård" i designdokumentet): hur mycket före de andra p vårdar q, efter sederna och
 // styret. Vid Sammanhållning vårdas alla lika; vid Självförsörjning vårdar släkten sina egna; vid Envälde går ledaren och hens
@@ -716,6 +719,7 @@ export function vardKlar(s: State, p: Person, t: Task) {
   for (const w of q.skador ?? []) for (const k of ['avsnora', 'sy', 'dra_ut', 'trycka', 'forband', 'salva', 'satta', 'spala']) { const v = VARD[k]; if (v.krav(s, q, w, p) && vardKan(s, p, v, q)) v.gor(s, p, q, w); }
   for (const w of [...q.skador ?? []]) if (VARD.amputera.krav(s, q, w, p) && vardKan(s, p, VARD.amputera)) VARD.amputera.gor(s, p, q, w);
   for (const w of q.skador ?? []) if (w.inf !== undefined && w.inf < HALSA.kallbrand) VARD.skolja.gor(s, p, q, w); // också det som redan är rent: det hålls rent längre
+  if (b.protes && VARD.protes.krav(s, q, undefined as unknown as Skada, p)) VARD.protes.gor(s, p, q, undefined as unknown as Skada); // sist protesen (steg 10.11.19)
   count(s, 'vard');
   ovning(p, 'lakekonst', HALSA.lakeOvning); gjort(s, p, 'vardat'); // läkekonsten växer när man vårdar (steg 9.5.7)
   if (q !== p && q.health < UPPV.naraHalsa) { upplev(s, p, 'raddade', q.name); upplev(s, q, 'raddad', p.name); } // nära döden (steg 4.1.1.2)
