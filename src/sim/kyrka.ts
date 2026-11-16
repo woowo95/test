@@ -9,7 +9,8 @@ import { balans } from './balans';
 import { clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
 import { type Sed, drar, habitShare } from './seder';
-import { ALDER, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat, think } from './folk';
+import { ata } from './naring';
+import { ALDER, KROPP, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat, think } from './folk';
 import { INTRYCK, beratta, paminn, ryktbarhet, samlatIntryck } from './rykten';
 import { FOOD, KOTTSLAG, sakNamn } from './saker';
 import { type Ting, tingOf } from './agande';
@@ -376,7 +377,7 @@ export const KYRKUTGIFTER: Record<string, KyrkUtgift> = {
     gor: (s, tr) => { const pr = prastOf(s, tr); if (pr && kyrkanTar(s, tr, 'bar', 1)) think(pr, 'Fick mat av tron', 0.03, s.now, 6 * HOUR); } },
   // gåvor till de fattiga (Öppen)
   fattig: { namn: 'ge åt de fattiga', vikt: (s, tr) => { const v = skalaV(tr, 'oppen') ?? 50; return v < 40 && kyrkansAv(s, tr, 'bar') >= 2 ? (50 - v) / 50 : 0; },
-    gor: (s, tr) => { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0]; if (q && kyrkanTar(s, tr, 'bar', 2)) { q.hunger = Math.min(1, q.hunger + 0.3); think(q, 'Fick mat av tron', 0.05, s.now, 6 * HOUR); } } },
+    gor: (s, tr) => { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0]; if (q && kyrkanTar(s, tr, 'bar', 1)) { ata(q, { bar: KROPP.mattar }); count(s, 'atit', 1); think(q, 'Fick mat av tron', 0.05, s.now, 6 * HOUR); } } }, // en portion som äts (steg 10.11.10)
   // ett framträdande som sprider tron eller minnet av en död troende (Sprider sig, steg 10.7.18): kyrkan lägger undan
   // KYRKA.framPris hela saker av det den har mest av, och den troende som nästa gång uppträder med ett budskap får dem (kyrkFram)
   fram: { namn: 'betala ett framträdande', vikt: (s, tr) => { const v = skalaV(tr, 'sprid'); return v !== undefined && v < 40 && !tr.framPris && framSak(s, tr) ? (50 - v) / 50 : 0; },
@@ -699,15 +700,14 @@ export function sorgkvade(s: State, tr: Tro, om: number, med: Person[]) {
   count(s, 'sorgkvade');
   log(s, `${skald.name} kvad om ${d?.name ?? e.namn} vid graven.`, 'rel', [skald.id]);
 }
-// gravölet (steg 10.4.12): byns vuxna vid elden efter begravningen. En hel mat per två och en öl var ur kyrkans egendom; räcker det inte
+// gravölet (steg 10.4.12, 10.11.10): byns vuxna vid elden efter begravningen. En portion mat som äts och en öl var ur kyrkans egendom; räcker det inte
 // hålls inget gravöl. kan = det räcker för de vuxna som finns, slut = maten och ölet för dem som var med
 const gravolMat = (s: State, tr: Tro) => FOOD.reduce((a, k) => a + kyrkansAv(s, tr, k), 0);
-export const gravolKan = (s: State, tr: Tro | undefined) => { const n = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length; return !!tr && n > 0 && gravolMat(s, tr) >= Math.ceil(n / 2) && olAntal(s, tr) >= n; };
+export const gravolKan = (s: State, tr: Tro | undefined) => { const n = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length; return !!tr && n > 0 && gravolMat(s, tr) >= n && olAntal(s, tr) >= n; };
 export function gravolSlut(s: State, tr: Tro, med: Person[]) {
-  let n = Math.ceil(med.length / 2);
-  while (n > 0) { const k = FOOD.filter(q => kyrkansAv(s, tr, q) >= 1).sort((a, b) => kyrkansAv(s, tr, b) - kyrkansAv(s, tr, a))[0]; if (!k) break; const m = Math.min(n, kyrkansAv(s, tr, k)); kyrkanTar(s, tr, k, m); n -= m; }
   for (const p of med) {
-    p.hunger = Math.min(1, p.hunger + KULT.festMat);
+    const k = FOOD.filter(q => kyrkansAv(s, tr, q) >= 1).sort((a, b) => kyrkansAv(s, tr, b) - kyrkansAv(s, tr, a))[0];
+    if (k && kyrkanTar(s, tr, k, 1)) { ata(p, { [k]: KROPP.mattar }); count(s, 'atit', 1); } // en portion var (steg 10.11.10)
     const t = budHindrar(s, p, 'ingetRus') ? undefined : kyrkansOl(s, tr)[0];
     if (t) { t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined; drickAlkohol(s, p, 'ol', true); count(s, 'gravol_ol'); } // den tomma krukan blir kvar
   }

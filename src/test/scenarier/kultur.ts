@@ -3175,7 +3175,7 @@ SCENARIER.gravol = {
       [`samlingen och gravölet står i kön (${ko})`, ko === 'begravning, gravol'],
       [`sorgkvädet sprider skaldens minne till samlingen (${visste} → ${hordes} av ${lyss.length})`, hordes === lyss.length && hordes > visste && (s.stat?.sorgkvade ?? 0) === 1],
       ['gravölet hålls inte utan kyrkans mat och öl', utan],
-      [`gravölet: byns vuxna vid elden, en mat per två och en öl var (${med.length} vuxna, ${at} mat, ${drack} öl)`, gr?.k === 'gravol' && med.length === n && at === Math.ceil(n / 2) && drack === n],
+      [`gravölet: byns vuxna vid elden, en portion mat och en öl var (${med.length} vuxna, ${at} mat, ${drack} öl)`, gr?.k === 'gravol' && med.length === n && at === n && drack === n],
     ];
   },
 };

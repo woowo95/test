@@ -53,7 +53,6 @@ export const KULT = balans('kult', {
   profetSkala: 18, // så mycket en syn flyttar trons skalor
   vanhelgaChans: 0.01, // chansen per dygn att en sluten tro vanhelgar en annan tros plats
   slutenFran: 70, // Öppen – Sluten: så sluten ska tron vara
-  festMat: 0.15, // bröllopets fest gör alla så här mycket mättare (steg 8.5.13)
   fest: 50, forsakelse: 50, // Fest – Försakelse: över så här mycket på respektive sida (0 = Fest, 100 = Försakelse)
   tystTro: 1, // tron den tysta begravningen ger (steg 10.4.5)
   vattenR: 20, // ... och så här nära ska vattnet vara för att den döde läggs i vatten
@@ -294,13 +293,17 @@ export function ritualTimme(s: State) {
   if (n.k === 'brollop') festMat(s);
   if (n.k === 'begravning' && !s.stat?.ritual_begravning) count(s, 'ritual_forsta_begravning');
 }
-// bröllopets fest (steg 8.5.13): en hel sak mat per två i byn ur förrådet, av det byn har mest av, och alla blir mättare
+// bröllopets fest (steg 8.5.13, 10.11.10): var och en äter en portion ur förrådet, av det byn har mest av, som vid gillet (ata);
+// när maten tar slut äter resten inte
 function festMat(s: State) {
   if (festKrok.servera(s, living(s)).size) return; // festmåltiden ur kokgropen (steg 10.7.28)
-  const folk = living(s), n = Math.ceil(folk.length / 2), k = FOOD.filter(q => amountOf(s, q) >= n).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0];
-  if (!k) return;
-  addTo(s, k, -n); count(s, 'festmat');
-  for (const p of folk) p.hunger = Math.min(1, p.hunger + KULT.festMat);
+  let n = 0;
+  for (const p of living(s)) {
+    const k = FOOD.filter(q => amountOf(s, q) >= 1).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0];
+    if (!k) break;
+    addTo(s, k, -1); ata(p, { [k]: KROPP.mattar }); count(s, 'atit', 1); n++;
+  }
+  if (n) count(s, 'festmat');
 }
 // bröllopet (steg 10.3.3): byns fest hålls alltid. Har båda i paret samma tro och den har budet Bröllopet välsignas, hålls det vid trons
 // heliga plats och de troende får tro. Ett bröllop bland de troende lyfter fram budet bland trons förslag (tr.brollop)
