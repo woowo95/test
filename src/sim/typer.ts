@@ -474,15 +474,13 @@ export interface Stock { id: number; x: number; y: number; ved: number; grenar: 
 export interface Seder { v: Record<import('./seder').Sed, number>; at?: number } // händelserna som flyttade byns seder direkt (ev, log) togs bort i steg 4.5.4.9
 
 // ---------- eldstäder och tänddon ----------
-// Bara lägerelden går att ha i dag. De andra är förberedda och byggs när bygg- och teknikträdet finns.
+// Eldstäderna som finns: lägerelden och härden i huset (steg 7.5.3). Välbehaget och vilan vid elden räknas ur eldstaden för den eld
+// som värmer personen mest (steg 10.2.109).
 // spread = relativ risk att elden tar sig ut i omgivningen (används när brandsystemet finns).
 export interface Hearth { id: string; name: string; desc: string; indoor: boolean; maxFuel: number; burn: number; radius: number; comfort: number; spread: number; requires: string }
 export const HEARTHS: Hearth[] = [
   { id: 'lagereld', name: 'Lägereld', desc: 'Trä staplat på marken innanför en ring av stenar. Lätt att göra, men mycket värme går förlorad och den kan inte stå inomhus.', indoor: false, maxFuel: 6, burn: 0.5, radius: 5, comfort: 0.04, spread: 1, requires: 'Eld' },
-  { id: 'stenring', name: 'Stenring', desc: 'Elden ligger i en ring av stenar som håller glöden samlad och stänger ute vinden.', indoor: false, maxFuel: 8, burn: 0.45, radius: 5.5, comfort: 0.05, spread: 0.5, requires: 'Stenhuggning' },
   { id: 'hard', name: 'Härd', desc: 'Stensatt härd i golvet med rökhål i taket. Den första elden som går att ha inomhus.', indoor: true, maxFuel: 10, burn: 0.4, radius: 6, comfort: 0.07, spread: 0.3, requires: 'Bofast by' },
-  { id: 'murad', name: 'Murad eldstad', desc: 'Eldstad av sten och lera med rökgång. Röken leds ut och värmen stannar i rummet.', indoor: true, maxFuel: 14, burn: 0.35, radius: 7, comfort: 0.09, spread: 0.12, requires: 'Murning' },
-  { id: 'kakelugn', name: 'Kakelugn', desc: 'Lagrar värmen i tegel och kakel och värmer länge efter att träet brunnit ut.', indoor: true, maxFuel: 18, burn: 0.3, radius: 8, comfort: 0.11, spread: 0.03, requires: 'Keramik, murning' },
 ];
 // chance = chans per försök, grass/sticks = tändmaterial per försök, minutes = tid per försök
 export interface Igniter { id: string; name: string; desc: string; chance: number; grass: number; sticks: number; minutes: number; requires: string }

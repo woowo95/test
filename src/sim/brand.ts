@@ -42,7 +42,7 @@ import { notis } from './notiser';
 
 // Eldsvådor och skogsbrand (steg 3.8.5, "Motgångarna i spelet" och "Elden" i designdokumentet). Inte en rad i MOTGANGAR:
 // branden har ingen tid i kalendern utan börjar när en gnista eller blixten tänder något som brinner. Gnistor flyger från
-// lägerelden (spread i HEARTHS, typer.ts: lägerelden mest, kakelugnen nästan inte) och från brasorna, och blixten slår ner
+// lägerelden (spread i HEARTHS, typer.ts: lägerelden mest, härden mindre) och från brasorna, och blixten slår ner
 // i åskan (blixtNu i vader.ts). Det som kan brinna på en ruta är marken (skog, ungskog och gräs; bar jord och byns mark inte),
 // grödorna, väggarna av trä och ris (brinner i MATERIAL, byggnad.ts) och sakerna i förrådet (utom de som inte brinner,
 // brinnerInte i saker.ts). Elden tar sig till grannrutorna, fortare när marken är torr (torrTim i vader.ts: en per torr

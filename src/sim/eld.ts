@@ -158,6 +158,13 @@ export function heatAt(s: State, x: number, y: number) {
   for (const f of eldarOf(s)) { const I = fireHeat(s, f); if (I) { const e = eldXY(s, f); v = Math.max(v, varmeFran(I, radieAv(I, f), e.x + 0.5, e.y + 0.5, x, y)); } }
   return v;
 }
+// eldstaden för den eld som värmer mest på platsen (steg 10.2.109): härdens välbehag gäller den som sitter vid en härd.
+// Värms man av något annat än en eld (örtkökets eld, en brand) räknas lägerelden
+export function varmasteHard(s: State, x: number, y: number) {
+  let b = HEARTHS[0], bv = 0;
+  for (const f of eldarOf(s)) { const I = fireHeat(s, f); if (I) { const e = eldXY(s, f), v = varmeFran(I, radieAv(I, f), e.x + 0.5, e.y + 0.5, x, y); if (v > bv) { bv = v; b = hearthOf(f); } } }
+  return b;
+}
 // hur mycket ved som önskas på elden just nu (den som vill ha mest av dem som använder den)
 export const fireWant = (s: State, f = s.fire) => f.want ?? 0;
 export interface Wish { v: number; why: string }

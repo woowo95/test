@@ -2689,6 +2689,16 @@ SCENARIER.hantverk7 = {
     const titlar = ['Slaktare', 'Kock', 'Odlare', 'Stenhuggare'].every(k => SIM.TAGS.some(t => t.tag === k && t.acts.length > 0));
     const q = SIM.living(s)[1]; p.tag = q.tag = 'Slaktare'; p.skill.jakt = 90;
     const mast = SIM.yrkeNamn(s, p) === 'Mästerslaktare' && SIM.yrkeNamn(s, q) === 'Slaktare';
+    // välbehaget ur den eld som värmer mest (steg 10.2.109): vid härden 0,07, vid lägerelden 0,04
+    const e0 = SIM.eldXY(s, s.fire), hx = Math.min(W - 3, e0.x + 12), hy = e0.y;
+    s.fire.lit = true; s.fire.fuel = SIM.hearthOf(s.fire).maxFuel;
+    s.eldar = [...(s.eldar ?? []), { ...SIM.newFire(), id: 9001, at: { x: hx, y: hy }, hearth: 'hard', folk: [], lit: true, fuel: 10 }]; SIM.touch(s);
+    p.thoughts = []; q.thoughts = [];
+    for (let i = 0; i < 120 && !(p.thoughts.some(t => t.text === 'Värms av elden') && q.thoughts.some(t => t.text === 'Värms av elden')); i++) { // (de står kvar vid eldarna tills behoven räknats)
+      p.x = hx + 1; p.y = hy + 1; q.x = e0.x + 1.5; q.y = e0.y + 0.5; s.fire.fuel = SIM.hearthOf(s.fire).maxFuel; SIM.step(s, 2);
+    }
+    const varms = (r: typeof p) => r.thoughts.find(t => t.text === 'Värms av elden')?.v;
+    const vp = varms(p), vq = varms(q);
     return [
       ['varje rad i TILLVERKA har en sak (eller en vätska, steg 9.5.8) och en handling', rader],
       ['örtköket gör minst fyra saker, och recepten stämmer', ortkok],
@@ -2697,6 +2707,7 @@ SCENARIER.hantverk7 = {
       ['linet rötas på torkställningen', lin],
       ['yrkestitlarna har sina handlingar', titlar],
       ['den skickligaste i ett yrke är mästare', mast],
+      [`den som värms av härden får Värms av elden med 0,07 (${vp}), den vid lägerelden 0,04 (${vq})`, vp === 0.07 && vq === 0.04],
     ];
   },
 };

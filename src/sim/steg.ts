@@ -50,7 +50,7 @@ import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
+import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
@@ -476,11 +476,11 @@ export const TAKTER: Takt[] = [
   { namn: 'compact', sek: 3600, fn: s => { compact(s); } },
   // kroppen: behoven, att äta, hälsan och graviditeten, för var och en
   { namn: 'behoven', sek: 30, fn: (s, dt, c) => {
-    const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp), inRum = rumAntal(s, c);
+    const temp = temperature(s), coldRate = coldOf(temp), inRum = rumAntal(s, c);
     for (const p of c.ppl) {
       if (!alive(p)) continue; // dödad tidigare i samma slag (av vargar eller i ett slagsmål)
       const a = ageOf(p, c.now);
-      needsStep(s, p, a, dt, coldRate, fh, inRum, temp);
+      needsStep(s, p, a, dt, coldRate, inRum, temp);
       if (p.task?.act !== 'strid') needLadder(s, p, dt); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
       if (healthStep(s, p, a, c.ai, dt)) continue; // dog
       pregnancy(s, p, a, c.ppl.length, dt);
@@ -639,7 +639,7 @@ export function nyVarme(w: number, v: ReturnType<typeof varmeDelar>, dt: number)
   if (r.under) return clamp(w + dt * r.netto, 0, 1);
   return clamp(w + dt * (v.hetta + r.netto) - r.svalnar, 0, KROPP.maxVarm);
 }
-function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>, temp: number) {
+function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, inRum: Map<number, number>, temp: number) {
   const now = s.now;
   const vs = viloSlag(p);
   // mättnaden är en sammanfattning av näringen (steg 2.6.1); den som är för varm och arbetar tungt tappar salt (steg 2.6.2)
@@ -659,7 +659,8 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
     p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak] * e, 0, 1);
     if (p.task!.act === 'sova') think(p, VILOTANKE[tak][0], VILOTANKE[tak][1] * e, now, 8 * HOUR);
   }
-  if (heat > KROPP.eldNara) {
+  if (heat > KROPP.eldNara) { // välbehaget ur eldstaden för den eld som värmer mest (steg 10.2.109)
+    const fh = varmasteHard(s, p.x, p.y);
     think(p, 'Värms av elden', fh.comfort, now, HOUR);
     p.rest = clamp(p.rest + dtSec / HOUR_S * fh.comfort * heat, 0, 1); // avslappning vid elden
   }
