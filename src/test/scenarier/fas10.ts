@@ -808,3 +808,44 @@ SCENARIER.skattning = {
     ];
   },
 };
+SCENARIER.vinterhonung = {
+  text: 'Steg 10.10.21: Vinterhonungen. Den som inget vet skattar ner till en kaka och samhället dör före våren; ägaren och den som skattade kan kunskapen efteråt och lämnar 3 nästa gång, och det samhället lever till våren. Kunskapen går vidare i ett samtal, bleknar inte hos den som äger ett levande samhälle, och den som kan skattar inte en kupa med mindre än 4 kakor',
+  kor: () => {
+    const { BIN, binSteg, skattaVal, skattaKlar, kn, share, SAMTALSSLAG, MOTGANGAR, nyKalender, kalender, VAR, HOST, DAY, ALDER, ageOf } = SIM;
+    const s = createState(5, START); klockan(s, 0); s.founded -= 100 * DAY;
+    const [p, o, q] = SIM.living(s).filter(x => ageOf(x, s.now) >= ALDER.vuxen);
+    for (const x of [p, o, q]) delete x.kunskap?.vinterhonung;
+    const chanser = Object.fromEntries(Object.entries(MOTGANGAR).map(([k, v]) => [k, (v as { chans: number }).chans]));
+    for (const k in chanser) (MOTGANGAR as Record<string, { chans: number }>)[k].chans = 0;
+    try {
+      const borja = (ai: number) => { s.kal = nyKalender(s.now, (ai + 3) % 4); while (kalender(s).ai !== ai) s.now += 3600 * 1000; s.now = kalender(s).start + 10 * 3600 * 1000; };
+      const kupa = (bi: number, ag?: number): SIM.Station => { const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x: 60, y: 60, kvar: 0, bi, ag }; s.stationer = [...(s.stationer ?? []).filter(x => x.k !== 'bikupa'), t]; return t; };
+      const kor = (dagar: number) => { for (let t = 0; t < dagar * 86400; t += 14400) { s.now += 14400 * 1000; binSteg(s, 14400); } };
+      // den som inget vet skattar på hösten, och samhället dör i istiden
+      borja(HOST); const a = kupa(6, o.id); a.ag = undefined; const fore = skattaVal(s, p)?.id === a.id; skattaKlar(s, p, a.id); a.ag = o.id;
+      const kvarA = a.bi; kor(14); const dogA = a.bi === undefined, iVar = kalender(s).ai === VAR;
+      const kanP = kn(p, 'vinterhonung'), kanO = kn(o, 'vinterhonung'), kanQ = kn(q, 'vinterhonung');
+      // nästa höst lämnar hen 3, och samhället lever till våren
+      borja(HOST); const b = kupa(6); skattaKlar(s, p, b.id); const kvarB = b.bi; kor(14); const leverB = b.bi !== undefined && kalender(s).ai === VAR;
+      // den som kan skattar inte under 4 kakor
+      const liten = kupa(3.9); const val39 = skattaVal(s, p); liten.bi = 4; const val4 = skattaVal(s, p);
+      // samtalet
+      for (let n = 0; n < 400 && kn(q, 'vinterhonung') < 0.3; n++) share(s, p, q, { op: 60 } as never, SAMTALSSLAG['berättelse']);
+      const kanQEfter = kn(q, 'vinterhonung');
+      // ägaren till ett levande samhälle glömmer inte: kunskapen har inte använts på tio dygn, och binas takt håller den vid liv
+      const c = kupa(5, o.id); o.kunskap!.vinterhonung.t = s.now - 10 * DAY; q.kunskap!.vinterhonung.t = s.now - 10 * DAY;
+      binSteg(s, 14400); const oT = o.kunskap!.vinterhonung.t, qT = q.kunskap!.vinterhonung.t; void c;
+      return [
+        [`den som inget vet skattar en kupa utan ägare ner till en kaka (6 → ${kvarA?.toFixed(2)})`, fore && Math.abs(kvarA! - 1) < 1e-9],
+        [`samhället dör före våren (${dogA ? 'dog' : a.bi?.toFixed(2)}, ${iVar ? 'nu vår' : 'inte vår än'})`, dogA && iVar],
+        [`ägaren och den som skattade kan Vinterhonungen efteråt (${kanO}, ${kanP}), men inte någon annan (${kanQ})`, kanO === 1 && kanP === 1 && kanQ === 0],
+        [`nästa gång lämnar hen ${BIN.vinter} (6 → ${kvarB?.toFixed(2)}), och det samhället lever till våren (${b.bi?.toFixed(2) ?? 'dött'})`, Math.abs(kvarB! - BIN.vinter) < 1e-9 && leverB],
+        [`den som kan skattar inte en kupa med 3,9 kakor (${val39 ? 'tog' : 'nej'}) men med 4 (${val4 ? 'ja' : 'nej'})`, !val39 && !!val4],
+        [`kunskapen går vidare i ett samtal (${kanQEfter.toFixed(2)})`, kanQEfter >= BIN.kan],
+        [`den bleknar inte hos den som äger ett levande samhälle (${oT === s.now ? 'använd nu' : 'gammal'}), men hos den som inte gör det (${qT === s.now ? 'använd nu' : 'gammal'})`, oT === s.now && qT < s.now],
+      ];
+    } finally {
+      for (const k in chanser) (MOTGANGAR as Record<string, { chans: number }>)[k].chans = chanser[k];
+    }
+  },
+};

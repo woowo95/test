@@ -16,7 +16,8 @@ import { chance, rnd } from './slump';
 import { count, forstaGang, log } from './folk';
 import { notis } from './notiser';
 import { hardVinter } from './vader';
-import { ALDER, ageOf, gjort, living, ovning } from './folk';
+import { ALDER, ageOf, alive, byId, gjort, living, ovning } from './folk';
+import { kn, learnK, useK } from './kunskap';
 import { isLight } from './tid';
 import { capacity, put } from './lager';
 import { viktOf } from './saker';
@@ -45,7 +46,9 @@ export const BIN = balans('bin', {
   rymmer: 10, // kupan rymmer så många kakor
   // skattningen (steg 10.10.20)
   skattaMin: 2, // minuter det tar att skatta kupan
-  gissa: 1, // så många kakor lämnar den som skattar åt bina
+  gissa: 1, // så många kakor lämnar den som skattar åt bina när hen inte kan Vinterhonungen ...
+  kan: 0.3, // ... och den som kan den (minst så här mycket, steg 10.10.21) ...
+  vinter: 3, // ... lämnar så många, som räcker över en vanlig vinter men inte alltid en hård
   vaxPer: 2, // varannan skattad kaka ger ett bivax (räknat på kupan)
   ovning: 0.03, // så mycket övar skattningen djurskötseln (som klippningen och mjölkningen)
 });
@@ -128,6 +131,12 @@ function binasAr(s: State, dt: number) {
     t.bi = Math.min(BIN.rymmer, t.bi! + BIN.honungTim * dragDelat(s, t.x, t.y, t) * h - at);
     if (t.bi > 1e-9) continue;
     t.bi = undefined; count(s, 'bidod');
+    // Vinterhonungen (steg 10.10.21): ägaren och den som skattade sist förstår att bina behövde honungen
+    for (const q of new Set([t.ag, t.skattare].map(id => id !== undefined ? byId(s, id) : undefined))) {
+      if (!q || !alive(q) || kn(q, 'vinterhonung') >= 1) continue;
+      learnK(q, 'vinterhonung', 1, s.now); count(s, 'larVinterhonung');
+      log(s, `${q.name} förstod att bina behöver honung kvar över istiden.`, 'world', [q.id]);
+    }
     log(s, 'Bisamhället i en av kuporna dog när honungen tog slut. Kupan står tom.', 'world', t.ag !== undefined ? [t.ag] : []);
     notis(s, 'bin', 'Ett bisamhälle dog när honungen tog slut, och kupan står tom tills en ny svärm flyttar in.', t.ag !== undefined ? [t.ag] : [], { x: t.x + 0.5, y: t.y + 0.5 });
   }
@@ -135,6 +144,7 @@ function binasAr(s: State, dt: number) {
 // binas takt (en rad i TAKTER, var fjärde timme): på sommaren kan en svärm flytta in i en tom kupa, räknat per tid
 export function binSteg(s: State, dt: number) {
   binasAr(s, dt);
+  for (const t of samhallen(s)) { const q = t.ag !== undefined ? byId(s, t.ag) : undefined; if (q && alive(q)) useK(q, 'vinterhonung', s.now); } // den som äger ett levande samhälle glömmer inte Vinterhonungen
   if (kalender(s).ai !== SOMMAR) return;
   for (const t of kupor(s)) {
     if (t.bi !== undefined) continue;
@@ -151,7 +161,9 @@ export function binSteg(s: State, dt: number) {
 
 // ---------- skattningen (steg 10.10.20, Djuren i detalj: Skattningen) ----------
 // de hela kakor den som skattar kan ta ur kupan: det som ligger över det hen lämnar åt bina
-export const attTa = (t: Station) => t.bi === undefined ? 0 : Math.max(0, Math.floor(t.bi - BIN.gissa + 1e-9));
+// hur mycket p lämnar åt bina: en kaka, eller BIN.vinter för den som kan Vinterhonungen (steg 10.10.21)
+export const lamnar = (p: Person) => kn(p, 'vinterhonung') >= BIN.kan ? BIN.vinter : BIN.gissa;
+export const attTa = (t: Station, p: Person) => t.bi === undefined ? 0 : Math.max(0, Math.floor(t.bi - lamnar(p) + 1e-9));
 // ägaren skattar den av sina kupor där det finns mest att ta (en kupa utan ägare skattas av vem som helst), och två tar aldrig
 // samma kupa. Ingen regel säger när på året: på våren finns inget över, och överskottet kommer på sommaren
 export function skattaVal(s: State, p: Person) {
@@ -159,7 +171,7 @@ export function skattaVal(s: State, p: Person) {
   let b: Station | undefined, bn = 0, bd = Infinity;
   for (const t of samhallen(s)) {
     if (t.ag !== undefined && t.ag !== p.id) continue;
-    const n = attTa(t), d = Math.hypot(t.x - p.x, t.y - p.y);
+    const n = attTa(t, p), d = Math.hypot(t.x - p.x, t.y - p.y);
     if (n < 1 || n < bn || (n === bn && d >= bd)) continue;
     if (living(s).some(q => q !== p && q.task?.act === 'skatta' && q.task.ref === t.id)) continue;
     b = t; bn = n; bd = d;
@@ -171,10 +183,10 @@ export function skattaVal(s: State, p: Person) {
 export function skattaKlar(s: State, p: Person, ref?: number) {
   const t = kupor(s).find(q => q.id === ref);
   if (!t) return;
-  const n = Math.min(attTa(t), Math.floor(capacity(s, p) / viktOf('honung') + 1e-9));
+  const n = Math.min(attTa(t, p), Math.floor(capacity(s, p) / viktOf('honung') + 1e-9));
   if (n < 1) return;
   const ag = t.ag ?? p.id;
-  t.bi! -= n; put(s, 'honung', n, { [ag]: n });
+  t.bi! -= n; put(s, 'honung', n, { [ag]: n }); t.skattare = p.id; useK(p, 'vinterhonung', s.now);
   t.skattat = (t.skattat ?? 0) + n;
   const vax = Math.floor(t.skattat / BIN.vaxPer);
   if (vax > 0) { t.skattat -= vax * BIN.vaxPer; put(s, 'bivax', vax, { [ag]: vax }); count(s, 'bivax', vax); }
