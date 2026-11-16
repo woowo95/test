@@ -2634,9 +2634,9 @@ function brottning(): [string, boolean][] {
 }
 
 SCENARIER.kruka = {
-  text: 'Steg 9.4.12: lerkrukan är pynt och i bruk genom systemen som finns. En kruka som torkar går inte att använda; den mellanstora bär vatten som säcken; ägarens lediga kruka ställs i rummet där hen sover och är pynt där, och byn vill ha krukor till pyntet och att bära vatten i',
+  text: 'Steg 9.4.12: lerkrukan är pynt och i bruk genom systemen som finns. En kruka som torkar går inte att använda; den mellanstora bär vatten som säcken; ägarens lediga kruka bärs av hen till rummet där hen sover (steg 10.11.17) och är pynt där, och byn vill ha krukor till pyntet och att bära vatten i',
   kor: () => {
-    const { addTool, freeTools, vattenKarl, krukorHem, krukaHemma, stepPynt, sovrum, bedTile, krukaVill, pyntSort, PYNT_TANKE } = SIM;
+    const { addTool, freeTools, vattenKarl, krukaHemVal, krukaUpp, krukaNer, placeTools, krukaHemma, stepPynt, sovrum, bedTile, krukaVill, pyntSort, PYNT_TANKE } = SIM;
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
     const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!;
     for (const t of SIM.tingOf(s).filter(t => t.k === 'vattensack')) s.ting = SIM.tingOf(s).filter(q => q !== t);
@@ -2645,9 +2645,15 @@ SCENARIER.kruka = {
     const torkar = freeTools(s, p, 'lerkruka_mellan') === 0 && vattenKarl(s, p) === undefined;
     k.ler = undefined;
     const vatten = vattenKarl(s, p) === 'lerkruka_mellan';
-    // pyntet: krukan ställs i rummet där ägaren sover och är pynt där
-    krukorHem(s);
-    const hemma = krukaHemma(s, p) === k, rum = sovrum(s, p);
+    // pyntet: krukan står i förrådet och flyttar sig inte själv; ägaren går dit, tar upp den och bär den till rummet där hen sover
+    placeTools(s); SIM.stepKrukor(s);
+    const stodKvar = krukaHemma(s, p) === undefined && k.x !== undefined;
+    const val = krukaHemVal(s, p);
+    const tk = p.task = { act: 'krukaHem', phase: 'do', tx: k.x! + 0.5, ty: k.y! + 0.5, until: s.now, carry: 0, ref: k.id, why: '' } as SIM.Task;
+    krukaUpp(s, p, tk);
+    const bars = tk.phase === 'back' && k.hos === p.id && k.x === undefined && krukaHemma(s, p) === undefined;
+    p.x = tk.tx; p.y = tk.ty; krukaNer(s, p, tk);
+    const hemma = krukaHemma(s, p) === k && k.hos === undefined, rum = sovrum(s, p);
     const ruta = rum!.tiles[0];
     p.x = ruta % SIM.W + 0.5; p.y = Math.floor(ruta / SIM.W) + 0.5; p.task = undefined; p.thoughts = [];
     stepPynt(s);
@@ -2657,6 +2663,8 @@ SCENARIER.kruka = {
     return [
       [`en kruka som torkar går inte att använda (${torkar ? 'nej' : 'ja'})`, torkar],
       [`utan vattensäck bär man vatten i den mellanstora krukan (${vattenKarl(s, p) ?? 'inget'})`, vatten],
+      [`krukan i förrådet flyttar sig inte själv (${stodKvar ? 'står kvar' : 'flyttade sig'}), och ägaren vill bära den hem (${val?.t === k ? 'ja' : 'nej'})`, stodKvar && val?.t === k],
+      [`hen tar upp krukan och bär den (${bars ? 'ja' : 'nej'})`, bars],
       [`ägarens kruka ställs i rummet där hen sover (${hemma ? 'där' : 'inte där'}) och är pynt: hen trivs (${trivs ? 'ja' : 'nej'})`, hemma && trivs],
       [`byn vill ha ${vill} krukor (${pyntare} som pynt och en att bära vatten i), och lerkrukan är en av smakerna (${pyntSort(s, p)})`, vill === pyntare + 1 && 'kruka' in SIM.PYNT_SMAK],
     ];

@@ -249,6 +249,7 @@ const DEF = {
   avliva: { namn: 'Slaktar ett djur', slag: 'odla', verb: 'avlivar', tungt: true }, // boskap.ts (steg 9.8.7)
   ortPlocka: { namn: 'Plockar örten i krukan', slag: 'odla', verb: 'plockar örten' }, // kruka.ts (steg 10.10.11)
   ortSatta: { namn: 'Sätter en växt i krukan', slag: 'odla', verb: 'sätter en växt i krukan' }, // kruka.ts (steg 10.10.11)
+  krukaHem: { namn: 'Bär sin lerkruka hem', slag: 'hantverk', verb: 'bär krukan hem', under: { go: 'går till krukan', do: 'tar upp krukan', back: 'bär krukan' } }, // kruka.ts (steg 10.11.17)
   mjolka: { namn: 'Mjölkar getterna', slag: 'odla', verb: 'mjölkar', yrke: 'Herde' }, // boskap.ts (steg 9.8.8)
   skatta: { namn: 'Skattar bikupan', slag: 'odla', verb: 'skattar bikupan', yrke: 'Biodlare', redskap: { fackla: { namn: 'Skattar bikupan med en rykande fackla', tar: 'Tar en fackla för röken.', haller: 40 } }, slits: { enhet: 'skattningar', per: 'gang' } }, // bin.ts (steg 10.10.20)
   tatuera: { namn: 'Tatuerar', slag: 'hantverk', verb: 'tatuerar', framme: true, stilla: true }, // tatuering.ts (steg 10.7.5)

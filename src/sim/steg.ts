@@ -296,6 +296,7 @@ KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
 KLAR.skatta = (s, p, t) => skattaKlar(s, p, t.ref); // bikupan (bin.ts, steg 10.10.20)
 KLAR.ortPlocka = (s, p, t) => ortPlockaKlar(s, p, t.ref); // örtkrukan (kruka.ts, steg 10.10.11)
 KLAR.ortSatta = (s, p, t) => ortSattaKlar(s, p, t.ref);
+KLAR.krukaHem = krukaUpp; // lerkrukan tas upp och bärs till sovrummet (kruka.ts, steg 10.11.17)
 KLAR.slatter = (s, p, t) => slaKlar(s, p, t.ref);
 KLAR.hamla = (s, p, t) => hamlaKlar(s, p, t.ref);
 KLAR.avliva = (s, p, t) => avlivaKlar(s, p, t.ref);
@@ -338,6 +339,7 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
   vatten: vattenFram, // vattnet i säcken till den som inte kan gå (torst.ts)
   slacka: slackaFram, // vattnet i säcken på elden (brand.ts)
   plantera: plantaSatt, // plantan sätts i jorden (skogsvard.ts)
+  krukaHem: krukaNer, // lerkrukan ställs i sovrummet (kruka.ts)
 };
 
 // ---------- huvudsteg ----------
@@ -1631,7 +1633,7 @@ function vildNara(s: State, k: 'rolleka' | 'blomma', x: number, y: number, ar = 
   for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, k, x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
   return best;
 }
-import { blommaVill, ortPlockaKlar, ortSattaKlar, stepOrtKrukor } from './kruka';
+import { blommaVill, krukaNer, krukaUpp, ortPlockaKlar, ortSattaKlar, stepOrtKrukor } from './kruka';
 import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
 import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';

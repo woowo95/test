@@ -6,12 +6,12 @@
 import { balans } from './balans';
 import { tingOf, Ting } from './agande';
 import { villAv } from './forradsmal';
-import { pyntLust, pyntOf, sittAt, sovrum, stationAt } from './stationer';
+import { krukaHemma, pyntLust, pyntOf, sittAt, sovrum, stationAt } from './stationer';
 import { temperature, vaderNu } from './vader';
 import { ALDER, ageOf, count, forstaGang, living, log, ovning } from './folk';
 import { clamp, rnd } from './slump';
 import { PERFEKT, kvOf } from './kvalitet';
-import { HOUR, Person, State, W } from './typer';
+import { HOUR, Person, State, Task, W } from './typer';
 
 export interface KrukaDef { namn: string; lera: number; rymmer: number; vikt: number; min: number }
 export const KRUKOR = {
@@ -27,13 +27,13 @@ export const KRUKA = balans('kruka', {
   torkTim: 24, // en kruka torkar på ungefär så här många timmar i vanligt väder ...
   varm: 0.05, // ... fortare för varje grad över 10 (så här mycket mer per grad) och långsammare under
   regn: 0.3, // ... och så här fort när det regnar eller snöar
+  upp: 2, // minuter att ta upp krukan och göra den redo att bäras till rummet (steg 10.11.17)
   spricka: [0.6, 0.3, 0.1, 0.05, 0.02, 0], // chansen att den spricker i bränningen, per kvalitet (usel till ★)
 });
 // krukan är formad: den är rå och ska torka
 export function krukaFormad(t: Ting) { t.ler = 0; }
 // en gång i timmen: de råa krukorna torkar, och de torra bränns i elden när den brinner
 export function stepKrukor(s: State) {
-  krukorHem(s);
   const torka = Math.max(0.1, 1 + KRUKA.varm * (temperature(s) - 10)) * (vaderNu(s).nb > 0 ? KRUKA.regn : 1) / KRUKA.torkTim;
   for (const t of [...tingOf(s)]) {
     if (t.ler === undefined) continue;
@@ -52,18 +52,41 @@ export function stepKrukor(s: State) {
   }
 }
 export const krukaKlar = (t: Ting) => t.ler === undefined;
-// ägaren ställer sin lediga lerkruka i rummet där hen sover, som pynt (steg 9.4.12), när hen inte har något pynt där. Efter arbetet
-// ställs den tillbaka i förrådet som redskapen (placeTools), och sedan hit igen
-export function krukorHem(s: State) {
-  for (const p of living(s)) {
-    if (ageOf(p, s.now) < ALDER.vuxen || pyntOf(s, p)) continue;
-    const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.kok === undefined /* en rätt som lagas på elden flyttas inte */ && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined);
-    if (!rum || !k) continue;
-    const i = rum.tiles.find(j => { const x = j % W, y = Math.floor(j / W); return !stationAt(s, x, y) && !sittAt(s, x, y) && !tingOf(s).some(t => t.x === x && t.y === y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y); });
-    if (i === undefined) continue;
-    k.x = i % W; k.y = Math.floor(i / W); k.vid = undefined;
-    count(s, 'krukaHem');
-  }
+// ägaren bär sin lediga lerkruka till rummet där hen sover, som pynt (steg 9.4.12), när hen inte har något pynt där (steg 10.11.17:
+// krukan flyttar sig inte själv). Efter arbetet ställs den tillbaka i förrådet som redskapen (placeTools), och sedan bärs den hit
+// igen. Raden krukaHem i ARBETEN (val.ts) väljer det bland det man gör för att göra det bättre; hen går till krukan, tar upp den
+// (KLAR i steg.ts), bär den till en fri ruta i rummet och ställer ner den där (LAMNA i steg.ts)
+const fri = (s: State, x: number, y: number) => !stationAt(s, x, y) && !sittAt(s, x, y) && !tingOf(s).some(t => t.x === x && t.y === y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y);
+const barsHem = (s: State, p: Person, t: Ting) => living(s).some(q => q !== p && q.task?.act === 'krukaHem' && q.task.ref === t.id);
+export function krukaHemVal(s: State, p: Person) {
+  if (ageOf(p, s.now) < ALDER.vuxen || pyntOf(s, p)) return undefined;
+  const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.kok === undefined /* en rätt som lagas på elden flyttas inte */ && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined && t.x !== undefined && t.y !== undefined && !barsHem(s, p, t));
+  if (!rum || !k) return undefined;
+  const i = rum.tiles.find(j => fri(s, j % W, Math.floor(j / W)));
+  return i === undefined ? undefined : { t: k, i };
+}
+// framme vid krukan: hen tar upp den och bär den mot rummet
+export function krukaUpp(s: State, p: Person, tk: Task) {
+  const v = krukaHemVal(s, p);
+  if (!v || v.t.id !== tk.ref) return;
+  const k = v.t;
+  k.hos = p.id; k.x = k.y = k.vid = undefined;
+  tk.phase = 'back'; tk.tx = v.i % W + 0.5; tk.ty = Math.floor(v.i / W) + 0.5; tk.why = 'Bär sin lerkruka till rummet där hen sover';
+}
+// framme i rummet: krukan ställs på rutan, eller där hen står om rutan blivit upptagen
+export function krukaNer(s: State, p: Person, tk: Task) {
+  slappKruka(s, tk, p, tk.tx, tk.ty);
+  p.task = undefined;
+}
+// krukan som bärs ställs ner på (x, y) om rutan är fri, annars får den en plats i förrådet (placeTools): också när bäraren
+// avbryts på vägen (avbryt i lager.ts)
+export function slappKruka(s: State, tk: Task, p: Person, x: number, y: number) {
+  if (tk.act !== 'krukaHem' || tk.phase !== 'back') return;
+  const k = tingOf(s).find(t => t.id === tk.ref && t.hos === p.id);
+  if (!k) return;
+  k.hos = undefined;
+  const fx = Math.floor(x), fy = Math.floor(y);
+  if (fri(s, fx, fy)) { k.x = fx; k.y = fy; if (krukaHemma(s, p) === k) count(s, 'krukaHem'); }
 }
 export const krukaVill = (s: State) => villAv(s, 'lerkruka');
 

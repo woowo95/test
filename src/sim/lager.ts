@@ -22,6 +22,7 @@ import { FLOD } from './flod';
 import { forbrukat } from './forradsmal';
 import { strakI } from './strak';
 import { slappPlanta } from './skogsvard';
+import { slappKruka } from './kruka';
 import { HELIGTDJUR, SAK_ART, heligRuta, heligtAvstar, matAvstar } from './kultlatt';
 
 // ---------- balanstal (regel 8) ----------
@@ -1147,6 +1148,7 @@ export function avbryt(s: State, p: Person) {
   const t = p.task;
   if (t && (isCarrying(t) || t.ting?.length)) dropLoad(s, t, p.x, p.y, p.id);
   if (t) slappPlanta(s, t, p.x, p.y); // plantan som bärs sätts i jorden där bäraren är (steg 6.5.3)
+  if (t) slappKruka(s, t, p, p.x, p.y); // lerkrukan som bärs ställs ner där bäraren är (steg 10.11.17)
   p.task = undefined;
 }
 // stackar som någon borde bära: saker på marken långt bort, saker bredvid lagret när det finns plats i det, saker i
