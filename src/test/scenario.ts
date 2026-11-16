@@ -24,10 +24,11 @@ import './scenarier/fas10';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { Utfall, korSkript, pool, prioAv } from './pool';
+import { Utfall, gransAv, korSkript, pool, prioAv } from './pool';
 import { ui } from '../ui/lage';
 
 const GRUPP = 6; // så många korta scenarier i varje process
+const KLOCKA = 2; // klocktid per processortid, med marginal: alla scenarier och testbyarna delar på kärnorna
 // hur lång tid varje scenario tog förra gången (processorns tid, s), sparat när alla körs (steg 9.2.64): kön startar de
 // längsta först, och de korta körs med lägre prioritet så att de långa får hela kärnor
 const TIDER = new URL('../../test/scenariotider.json', import.meta.url);
@@ -88,9 +89,12 @@ else {
     .sort((a, b) => tid(b) - tid(a));
   const svar: Record<string, Utfall> = {};
   await pool(grupper.map(g => async () => {
-    const prio = prioAv(g.every(n => forraTid[n] !== undefined) ? tid(g) : undefined);
-    if (g.length === 1) { svar[g[0]] = await korSkript('scenario.ts', g, SCENARIER[g[0]]!.env, prio); return; }
-    const u = await korSkript('scenario.ts', ['--grupp', ...g], {}, prio), bitar = u.out.split(MARK).slice(1);
+    const kant = g.every(n => forraTid[n] !== undefined), prio = prioAv(kant ? tid(g) : undefined);
+    // tidsgränsen efter förra gången (steg 10.11.25): ett scenario som hänger stoppas efter några minuter. Processorns tid räknas
+    // om till klocktid med marginal, eftersom alla scenarier delar på kärnorna
+    const grans = gransAv(kant ? tid(g) * 1000 * KLOCKA : undefined);
+    if (g.length === 1) { svar[g[0]] = await korSkript('scenario.ts', g, SCENARIER[g[0]]!.env, prio, grans); return; }
+    const u = await korSkript('scenario.ts', ['--grupp', ...g], {}, prio, grans), bitar = u.out.split(MARK).slice(1);
     for (const b of bitar) { const i = b.indexOf('\n'), n = b.slice(0, i); svar[n] = { code: /^FEL/m.test(b) ? 1 : 0, out: b.slice(i + 1), err: '' }; }
     // kraschade gruppen räknas den som kraschade med felet, och de som inte hann köras körs var för sig. Felkoden ensam är
     // ingen krasch när ett scenario i gruppen skrev FEL (då sätts den av körningen) och inget fel skrevs ut

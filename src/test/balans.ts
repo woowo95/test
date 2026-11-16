@@ -39,3 +39,4 @@ const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));
 // statistiken och teknikerna per by sparas i balans-stat.json (används för gräns 4: varje nytt system används i de flesta byarna)
 writeFileSync('balans-stat.json', JSON.stringify(res.map(r => ({ seed: r.seed, stat: r.stat, tek: r.tek }))));
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');
+if (vakter.length) process.exitCode = 1; // en kedja (npm run kedja) stannar då, så att larmet ses genast

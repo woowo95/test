@@ -18,6 +18,7 @@
     "teknik": "tsx src/test/teknik.ts",
     "likhet": "bash src/test/likhet.sh",
     "koll": "tsx src/test/koll.ts",
+    "kedja": "tsx src/test/kedja.ts",
     "snabbkoll": "tsx src/test/snabbkoll.ts",
     "riktad": "tsx src/test/riktad.ts",
     "samma": "tsx src/test/samma.ts",

@@ -5,12 +5,12 @@
 // lika lång tid. npm run koll (--utkast fil) sparar slutet av varje bit bredvid utkastet; när allt är grönt blir det nytt facit,
 // så att nästa körning börjar bitarna från byarna som den här koden byggt.
 import './utc';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, copyFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { DOK_KB, rad } from './kor';
 import { NYCKELTAL, Nyckeltal } from './nyckeltal';
-import { korJson, pool, prioAv } from './pool';
+import { gransAv, korJson, pool, prioAv } from './pool';
 import { BitSvar, DEL, laggIhop } from './delby';
 import { IAKTTAGARE } from './scenarier/iakttagare';
 
@@ -53,21 +53,15 @@ if (spara) {
     .catch((e: Error) => { console.log(e.message); process.exit(1); })));
   res = hela.map(b => ({ seed: b.seed, ...laggIhop([b]) }));
   allaBitar = hela;
-  const mal = hela.reduce((a, b) => a + b.delMs.reduce((x, y) => x + y, 0), 0) / JOBB;
-  for (const b of hela) {
-    const bitar = Math.max(1, Math.ceil(b.delMs.reduce((x, y) => x + y, 0) / mal));
-    const g = basta(b.delMs, bitar), granser = [0, ...g.map(i => i * DEL), DAGAR];
-    const bitMs = granser.slice(1).map((t, i) => b.delMs.slice(granser[i] / DEL, t / DEL).reduce((a, x) => a + x, 0));
-    const hash = granser.slice(1).map(t => b.delHash[t / DEL - 1]);
-    nytt.byar[b.seed] = { granser, bitMs, n: res.find(r => r.seed === b.seed)!.n, hash };
-  }
+  for (const [seed, b] of Object.entries(valjBitar(hela))) nytt.byar[seed] = { ...b, n: res.find(r => r.seed === +seed)!.n };
   if (!res.some(r => r.vakter.length)) {
     rmSync(BYDIR, { recursive: true, force: true }); mkdirSync(BYDIR, { recursive: true });
     for (const [seed, b] of Object.entries(nytt.byar)) for (const g of b.granser.slice(1, -1)) copyFileSync(byFil(tmp, +seed, g), byFil(BYDIR, +seed, g));
   }
   rmSync(tmp, { recursive: true, force: true });
 } else {
-  // bitarna från facits sparade byar; saknas en sparad by går den byn hela vägen i en bit
+  // bitarna från facits sparade byar; saknas en sparad by går den byn hela vägen i en bit. Med --utkast sparas byn vid varje
+  // delgräns, och bitarna väljs om efter hur lång tid delarna tog nu, så att nästa körning delar det som blivit långsamt (steg 10.11.24)
   const ut = utkast ? `${utkast}.byar/` : undefined;
   if (ut) mkdirSync(ut, { recursive: true });
   const jobb: Jobb[] = [];
@@ -78,14 +72,19 @@ if (spara) {
   }
   const ordning = [...jobb].sort((a, b) => b.forra - a.forra); // den som tog längst tid förra gången först
   const f = (j: Jobb) => prioAv(facit?.byar[j.seed]?.bitMs.length ? j.forra / 1000 : undefined); // de korta bitarna med lägre prioritet (steg 9.2.64)
-  const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut], `by ${j.seed}, dygn ${j.fran}–${j.till}`, {}, f(j))
+  const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut, ...(ut ? ['--alla', ut] : [])], `by ${j.seed}, dygn ${j.fran}–${j.till}`, {}, f(j), gransAv(facit?.byar[j.seed]?.bitMs.length ? j.forra : undefined))
     .catch((e: Error) => { console.log(e.message); process.exit(1); })));
   allaBitar = svar;
-  res = BYAR.map(seed => {
-    const bitar = svar.filter(b => b.seed === seed).sort((a, b) => a.fran - b.fran);
-    nytt.byar[seed] = { granser: [0, ...bitar.map(b => b.till)], bitMs: bitar.map(b => b.ms), n: laggIhop(bitar).n, hash: bitar.map(b => b.delHash[b.delHash.length - 1]) };
+  const hela = BYAR.map(seed => svar.filter(b => b.seed === seed).sort((a, b) => a.fran - b.fran));
+  // utan --utkast behålls bitarna; samma-kollen jämför då med facits hash vid samma gränser
+  const valda = ut ? valjBitar(hela.map(bitar => ({ seed: bitar[0].seed, delMs: bitar.flatMap(b => b.delMs), delHash: bitar.flatMap(b => b.delHash) }))) : undefined;
+  res = hela.map(bitar => {
+    const seed = bitar[0].seed;
+    nytt.byar[seed] = { ...(valda?.[seed] ?? { granser: [0, ...bitar.map(b => b.till)], bitMs: bitar.map(b => b.ms), hash: bitar.map(b => b.delHash[b.delHash.length - 1]) }), n: laggIhop(bitar).n };
     return { seed, ...laggIhop(bitar) };
   });
+  // bara byarna vid de nya gränserna blir kvar bredvid utkastet (koll gör dem till facits sparade byar)
+  if (ut && valda) for (const fil of readdirSync(ut)) { const m = /^(\d+)-(\d+)\.json\.gz$/.exec(fil); if (!m || !valda[+m[1]]?.granser.slice(1, -1).includes(+m[2])) rmSync(ut + fil); }
   jobbtider = svar.map(b => ({ namn: `by ${b.seed}, dygn ${b.fran}–${b.till}`, ms: b.ms }));
 }
 
@@ -114,8 +113,9 @@ if (spara) {
     const d = NYCKELTAL.filter(m => !(m.facit ?? lika)(r.n[m.k], f[m.k])).map(m => `${m.kort} ${f[m.k]} → ${r.n[m.k]}`);
     if (d.length) andr.push(`by ${r.seed}: ${d.join(', ')}`);
     // samma-kollen (steg 10.2.105): hela byns tillstånd i slutet av varje bit, också det som inget nyckeltal visar
-    const fh = facit.byar[r.seed].hash, nh = nytt.byar[r.seed]?.hash, g = nytt.byar[r.seed]?.granser ?? [];
-    const olik = fh && nh && fh.length === nh.length ? nh.map((h, i) => h === fh[i] ? 0 : g[i + 1]).filter(x => x) : [];
+    // gränserna kan ha valts om (steg 10.11.24): hashen jämförs vid de gränser som finns i båda
+    const fb = facit.byar[r.seed], nh = svarHash(r.seed);
+    const olik = fb.granser.slice(1).filter((g, i) => fb.hash?.[i] !== undefined && nh.has(g) && nh.get(g) !== fb.hash[i]);
     if (olik.length) samma.push(`by ${r.seed} efter dygn ${olik.join(', ')}`);
   }
   console.log(andr.length ? 'Ändrat mot facit:\n  ' + andr.join('\n  ') : 'Facit: oförändrat.');
@@ -136,6 +136,24 @@ for (const [namn, i] of Object.entries(IAKTTAGARE)) {
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');
 if (vakter.length) process.exitCode = 1;
 
+// hela byns hash efter varje del (dygn → hash), ur bitarna som kördes
+function svarHash(seed: number): Map<number, string> {
+  const m = new Map<number, string>();
+  for (const b of allaBitar) if (b.seed === seed) b.delHash.forEach((h, i) => m.set(Math.min(b.till, b.fran + (i + 1) * DEL), h));
+  return m;
+}
+// bitarnas gränser efter delarnas tider: ingen bit tar mer än en JOBB-del av alla byars tid tillsammans, så en by som blivit
+// långsam delas i fler bitar nästa gång (steg 10.2.104 och 10.11.24)
+function valjBitar(byar: { seed: number; delMs: number[]; delHash: string[] }[]): Record<number, Omit<FacitBy, 'n'>> {
+  const mal = byar.reduce((a, b) => a + b.delMs.reduce((x, y) => x + y, 0), 0) / JOBB, ut: Record<number, Omit<FacitBy, 'n'>> = {};
+  for (const b of byar) {
+    const bitar = Math.max(1, Math.ceil(b.delMs.reduce((x, y) => x + y, 0) / mal));
+    const g = basta(b.delMs, bitar), granser = [0, ...g.map(i => i * DEL), DAGAR];
+    const bitMs = granser.slice(1).map((t, i) => b.delMs.slice(granser[i] / DEL, Math.ceil(t / DEL)).reduce((a, x) => a + x, 0));
+    ut[b.seed] = { granser, bitMs, hash: granser.slice(1).map(t => b.delHash[Math.ceil(t / DEL) - 1]) };
+  }
+  return ut;
+}
 // gränserna (som delindex) som delar delarnas tider i bitar (så många) i följd med den kortaste längsta biten
 function basta(ms: number[], bitar: number): number[] {
   const n = ms.length, sum = (a: number, b: number) => ms.slice(a, b).reduce((x, y) => x + y, 0);

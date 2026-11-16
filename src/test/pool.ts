@@ -16,9 +16,10 @@ export const LANGT_JOBB_S = 100, LAG_PRIO = 10;
 export const prioAv = (forraS: number | undefined) => forraS !== undefined && forraS >= LANGT_JOBB_S ? 0 : LAG_PRIO;
 // ett skript i src/test, kört med tsx i en egen process (env läggs till datorns miljö, t.ex. { TIDSZON: 'Europe/Stockholm' }).
 // prio: 0 vanlig, högre är lägre prioritet (som nice)
-export function korSkript(fil: string, args: string[] = [], env: Record<string, string> = {}, prio = 0): Promise<Utfall> {
+// grans: tidsgränsen i ms (TIDSGRANS_MIN om inget anges)
+export function korSkript(fil: string, args: string[] = [], env: Record<string, string> = {}, prio = 0, grans?: number): Promise<Utfall> {
   const path = fileURLToPath(new URL('./' + fil, import.meta.url));
-  return korProcess(process.execPath, ['--import', 'tsx', path, ...args], env, prio);
+  return korProcess(process.execPath, ['--import', 'tsx', path, ...args], env, prio, grans);
 }
 // processerna som går just nu (var och en i sin egen grupp): avbryts testet (Ctrl-C) eller stoppas det stoppas de också, eftersom
 // de inte längre är i samma grupp som testet
@@ -28,7 +29,7 @@ process.on('exit', stoppaAlla);
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) process.on(sig, () => { stoppaAlla(); process.exit(130); });
 // grans: tidsgränsen i ms (TIDSGRANS_MIN om inget anges). Processen startas i en egen grupp, så att hela gruppen (det den själv
 // startat, som ett scenario med egen miljö) stoppas när tiden är ute (steg 9.2.60)
-export function korProcess(cmd: string, args: string[], env: Record<string, string> = {}, prio = 0, grans = TIDSGRANS_MIN * 60_000): Promise<Utfall> {
+export function korProcess(cmd: string, args: string[], env: Record<string, string> = {}, prio = 0, grans: number = TIDSGRANS_MIN * 60_000): Promise<Utfall> {
   return new Promise(ok => {
     let out = '', err = '', klar = false;
     const c = spawn(cmd, args, { env: { ...process.env, MATARE_BARN: '1', ...env }, detached: process.platform !== 'win32' });
@@ -58,12 +59,15 @@ export async function pool<T>(jobb: (() => Promise<T>)[], n = cpus().length): Pr
 // sista raden i utskriften tolkad som JSON
 export const sistaJson = <T>(u: Utfall): T => JSON.parse(u.out.trim().split('\n').pop()!);
 // ett skript som skriver sitt svar som JSON på sista raden. Kraschar det kastas ett fel med slutet av felutskriften
-export async function korJson<T>(fil: string, args: string[], namn: string, env: Record<string, string> = {}, prio = 0): Promise<T> {
-  const u = await korSkript(fil, args, env, prio);
+export async function korJson<T>(fil: string, args: string[], namn: string, env: Record<string, string> = {}, prio = 0, grans?: number): Promise<T> {
+  const u = await korSkript(fil, args, env, prio, grans);
   if (u.code) throw new Error(`${namn} kraschade:\n${u.err.slice(-1500)}`);
   return sistaJson<T>(u);
 }
 
+// tidsgränsen för ett jobb som körts förut (steg 10.11.25): tre gånger så lång som förra gången, minst fem minuter (datorns tid),
+// så att ett jobb som hänger stoppas efter några minuter i stället för att testet står i timmar. Utan en förra tid gäller TIDSGRANS_MIN
+export const gransAv = (forraMs: number | undefined) => forraMs === undefined ? undefined : Math.max(5 * 60_000, 3 * forraMs);
 // sekunder sedan t0 (datorns tid), utan decimaler
 export const sek = (t0: number) => ((Date.now() - t0) / 1000).toFixed(0);
 // testbyarnas frön (balans, jamfor, natur och snabbkoll): by nummer i, räknat från 0

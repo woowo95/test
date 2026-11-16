@@ -2261,7 +2261,8 @@ function namnMinne(b: Besk, text: string, prov = false) {
       .replace(new RegExp(`${fore}(${PREP}) ${n}${efter}${inte}`, 'g'), `$1 ${honom}`).replace(new RegExp(`${fore}${n}s `, 'g'), `${hans} `);
     else if (sist === false) x = x.replace(new RegExp(`^${Han}${efter}`), n);
     const iP = Math.max(x.lastIndexOf(n), ord('(?:hon|han|henne|honom|hennes|hans|Hon|Han|Hennes|Hans)').test(x) ? 0 : -1);
-    let iA = -1; for (const a of x.matchAll(b.andra!)) iA = Math.max(iA, a.index!);
+    // en annans namn inuti personens eget räknas inte (Yrkan i Yrkan den yngre)
+    let iA = -1; for (const a of x.split(n).join('\u0000'.repeat(n.length)).matchAll(b.andra!)) iA = Math.max(iA, a.index!);
     if (iA >= 0 || iP >= 0) sist = iP > iA;
     return x;
   }).join(' ');
