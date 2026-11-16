@@ -516,4 +516,4 @@ export interface Fire {
 // om den brinner och sedan när (tandT), och åt vilket håll väggen den sitter på står (vx, vy; ingen = i marken)
 export interface Uppsatt { x: number; y: number; c: number; tand?: true; tandT?: number; vx?: number; vy?: number }
 // ett talgljus som står på ett bord eller en hylla inne (ljus.ts, steg 6.3.8): stationen, hur mycket som är kvar (c, 0–1), om det brinner
-export interface TalgLjus { st: number; c: number; tand?: true; tandT?: number }
+export interface TalgLjus { st: number; c: number; tand?: true; tandT?: number; k?: string } // k: sorten i LJUSSORTER (ljus.ts, steg 10.10.23), ingen = talgljus

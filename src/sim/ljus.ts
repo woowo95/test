@@ -6,6 +6,8 @@
 // så fort (gången i walk och arbetet i arbetsTakt, steg.ts) och får lite sämre humör (morkT; HUMOR.morkMinus i moodOf, humor.ts). Den som
 // sover eller vilar bryr sig inte. Ljus är neutralt för humöret
 import { balans } from './balans';
+import { antal } from './ord';
+import { gruppOf } from './saker';
 import { BRAND, brandLjus } from './brand';
 import { eldXY, eldarOf, fireHeat } from './eld';
 import { roomAt } from './byggnad';
@@ -221,6 +223,13 @@ export const LJUS = balans('talgljus', {
   r: 2, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet)
   min: 5, // minuter att ställa fram ett
 });
+// ljusens sorter (steg 10.10.23): en rad per sort, med hur många timmar den brinner. Sakerna hör till gruppen talgljus
+// (saker.ts), och allt som frågar efter ljuset frågar gruppen. Ljuset på bordet minns sin sort (TalgLjus.k, ingen = talgljus)
+export const LJUSSORTER: Record<string, { brinnTim: number }> = {
+  talgljus: { get brinnTim() { return LJUS.brinnTim; } },
+};
+export const LJUSGRUPP = 'talgljus';
+export const ljusSort = (l: TalgLjus) => l.k ?? 'talgljus';
 const LJUSBORD = new Set(['bord', 'bord2', 'bord3', 'hylla']);
 // borden och hyllorna inne, utan ett ljus, i rum där folk varit vakna i mörker minst UPPSATT.trosk timmar (som avtar)
 export function ljusPlatser(s: State) {
@@ -232,7 +241,7 @@ export function ljusPlatser(s: State) {
   const har = new Set((s.ljus ?? []).map(l => l.st));
   return stationerOf(s).filter(st => LJUSBORD.has(st.k) && isKlar(st) && !har.has(st.id) && (rum.get(roomAt(s, st.x, st.y)?.id ?? -1) ?? 0) >= UPPSATT.trosk);
 }
-export const friLjus = (s: State) => tingOf(s).find(x => x.k === 'talgljus' && x.hos === undefined && !x.halv);
+export const friLjus = (s: State) => tingOf(s).find(x => gruppOf(x.k) === LJUSGRUPP && x.hos === undefined && !x.halv);
 // tk (någons uppgift eller plats) är i rummet där ljuset l står
 function iRummet(s: State, l: TalgLjus, tk: { tx: number; ty: number }) {
   const st = stationById(s, l.st), r = st && roomAt(s, st.x, st.y);
@@ -242,7 +251,7 @@ function ljusTimme(s: State) {
   for (const l of (s.ljus ?? []).slice()) {
     if (!stationById(s, l.st)) { s.ljus = s.ljus!.filter(x => x !== l); continue; } // bordet är borta, och ljuset med det
     if (l.tand) {
-      l.c -= (s.now - (l.tandT ?? s.now)) / (LJUS.brinnTim * HOUR); l.tandT = s.now;
+      l.c -= (s.now - (l.tandT ?? s.now)) / (LJUSSORTER[ljusSort(l)]!.brinnTim * HOUR); l.tandT = s.now;
       if (l.c <= 1e-9) { s.ljus = s.ljus!.filter(x => x !== l); count(s, 'ljusBrunna'); continue; }
     }
     const behov = lightLevel(s.now) <= 0 && living(s).some(q => vaken(q) && (iRummet(s, l, { tx: q.x, ty: q.y }) || !!q.task && iRummet(s, l, q.task)));
@@ -254,7 +263,7 @@ export function finishLjus(s: State, p: Person, tk: Task) {
   const t = friLjus(s), st = tk.ref !== undefined ? stationById(s, tk.ref) : undefined;
   if (!t || !st || (s.ljus ?? []).some(l => l.st === st.id)) return;
   s.ting = tingOf(s).filter(q => q !== t);
-  (s.ljus ??= []).push({ st: st.id, c: t.c });
+  (s.ljus ??= []).push(t.k === 'talgljus' ? { st: st.id, c: t.c } : { st: st.id, c: t.c, k: t.k });
   count(s, 'ljusFram');
-  if (forstaGang(s, 'ljusForsta')) log(s, `${p.name} ställde ett talgljus på ${st.k === 'hylla' ? 'hyllan' : 'bordet'} inne. Där är det ljust på kvällen.`, 'world', [p.id]);
+  if (forstaGang(s, 'ljusForsta')) log(s, `${p.name} ställde ${antal(1, t.k)} på ${st.k === 'hylla' ? 'hyllan' : 'bordet'} inne. Där är det ljust på kvällen.`, 'world', [p.id]);
 }

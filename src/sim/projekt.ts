@@ -33,7 +33,7 @@ import { knows } from './teknik';
 import { STATION, kanGoras, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
-import { LJUS, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
+import { LJUS, LJUSSORTER, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
 import { ALDER, ageOf, enTill, living } from './folk';
 import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
 import { VATSKOR, ar_vatska, ledigFor, vatskaAv } from './vatskor';
@@ -313,7 +313,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   ljus: {
     namn: 'Talgljus på bordet', vikt: PROJEKT_TAL.ljus,
     brist: s => ljusPlatser(s).length ? 1 : 0,
-    kostnad: () => grundvarde('talgljus') + LJUS.min / 60 * ARBETE,
+    kostnad: () => Math.min(...Object.keys(LJUSSORTER).map(grundvarde)) + LJUS.min / 60 * ARBETE,
     kan: (s, p) => !!friLjus(s) && ljusPlatser(s).length > 0 && enTill(s, 'ljus', p),
     uppgift: s => { const st = ljusPlatser(s)[0]; return st && { act: 'ljus', text: 'Ställer fram ett talgljus inne.', min: LJUS.min, spot: { x: st.x + 0.5, y: st.y + 0.5 }, ref: st.id }; },
   },

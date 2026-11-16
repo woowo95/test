@@ -1,4 +1,4 @@
-import { krukaBild, rutorAv } from '../sim';
+import { krukaBild, ljusSort, rutorAv } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -280,7 +280,7 @@ export function drawStructures(t: number) {
   for (const l of s.ljus ?? []) {
     const st = stationById(s, l.st);
     if (!st) continue;
-    const k = 'kb_talgljus' + (1 + st.id % 2) + (l.tand ? '_tand' : ''), c = iconCanvas(k), w = storlekAv(st).w * TS;
+    const k = 'kb_' + ljusSort(l) + (1 + st.id % 2) + (l.tand ? '_tand' : ''), c = iconCanvas(k), w = storlekAv(st).w * TS;
     pileIcons.add(k, st.x * TS + ((w - c.width) >> 1), st.y * TS + 6 - c.height, 1);
   }
   rokIkoner.end(); mattIkoner.end();

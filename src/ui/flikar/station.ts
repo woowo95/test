@@ -1,7 +1,7 @@
 import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { BIN, drag, dragDelar, DRAG_LIST, DRAGKALLOR, delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK } from '../../sim';
+import { BIN, drag, dragDelar, DRAG_LIST, DRAGKALLOR, delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK, ljusSort } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
@@ -107,7 +107,7 @@ export const station: Flik = {
     const hanger = (st.tork ?? []).map(q => { const dygn = q.k === 'maltkorn' ? TORK.maltDygn : st.k === 'rokeri' ? ROK.dygn : TORK.dygn, del = Math.round(torrDel(s, q, hangSlag) * 100); return `<span ${tip(`${fmtN(q.n)} ${hangNamn(q.k)}, ${st.k === 'rokeri' ? 'rökt' : 'torkat'} till ${del} % av ${dygn} dygn`)}>${iconImg(q.k === 'maltkorn' ? 'korn' : q.k)} ×${fmtN(q.n)} · ${del} %</span>`; }).join(' ');
     // talgljuset på bordet eller hyllan (ljus.ts, steg 6.3.8): om det brinner och hur mycket som är kvar
     const tl = s.ljus?.find(q => q.st === st.id);
-    const ljuset = tl ? `<p ${tip(`Ett talgljus, ${tl.tand ? 'tänt' : 'släckt'}, ${Math.round(tl.c * 100)} % kvar`)}>${iconImg('talgljus')} ${tl.tand ? 'Tänt' : 'Släckt'} ${condBar(tl.c)}<span>${Math.round(tl.c * 100)} %</span></p>` : '';
+    const ljuset = tl ? `<p ${tip(`${sakNamn(ljusSort(tl))}, ${tl.tand ? 'tänt' : 'släckt'}, ${Math.round(tl.c * 100)} % kvar`)}>${iconImg(ljusSort(tl))} ${tl.tand ? 'Tänt' : 'Släckt'} ${condBar(tl.c)}<span>${Math.round(tl.c * 100)} %</span></p>` : '';
     const fyllt = ljuset + (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
     // det som används just nu (steg 3.6.6): den som arbetar, sakerna på bänken och hur långt arbetet kommit
     const ib = klar ? iBruk(st) : undefined;
