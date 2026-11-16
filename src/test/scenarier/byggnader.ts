@@ -1849,7 +1849,7 @@ SCENARIER.byggplan2 = {
 };
 
 SCENARIER.skjul = {
-  text: 'Steg 7.3.2–7.3.6 och 9.2.137: jordgolvet som en stig, blöt ved, torkhuset och vedboden. Två torkställningar ute ger ett torkhus, mycket ved ute en vedbod: ett vanligt hus med timmerväggar, en dörr och jordgolv runt det som redan står, och där inne blir veden aldrig blöt. Stolpen och skjulen finns inte längre',
+  text: 'Steg 7.3.2–7.3.6 och 9.2.137: jordgolvet som en stig, blöt ved, torkhuset och vedboden. Det som går förlorat utan tak (maten som ruttnar, den blöta veden) ger ett torkhus eller en vedbod (steg 10.11.6): ett vanligt hus med timmerväggar, en dörr och jordgolv runt det som redan står, och där inne blir veden aldrig blöt. Stolpen och skjulen finns inte längre',
   kor: () => {
     const s = createState(6, START);
     klockan(s); byggare(s);
@@ -1858,6 +1858,9 @@ SCENARIER.skjul = {
     const hu = housesOf(s)[0], z = SIM.zonesOf(s)[0];
     (s.stationer ??= []).push({ id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 6, y: hu.y, kvar: 0 } as SIM.Station, { id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 9, y: hu.y, kvar: 0 } as SIM.Station);
     SIM.touch(s);
+    // utan förlust vill byn inget torkhus; när maten ruttnar (steg 10.11.6) vill den
+    s.ruttet = undefined; const utanForlust = !SIM.byggbehov(s).find(b => b.fn === 'torkhus');
+    s.byggBehov = undefined; s.ruttet = 10;
     const behovTork = SIM.byggbehov(s).find(b => b.fn === 'torkhus');
     s.byggBehov = undefined; SIM.planBuild(s);
     const t = housesOf(s).find(h => h.fn === 'torkhus'), tb = t ? bitsOf(s).filter(b => b.hus === t.id) : [];
@@ -1877,7 +1880,8 @@ SCENARIER.skjul = {
     const torr = a.blot === undefined, torrEfter = SIM.torrVed(s);
     return [
       ['stolpen finns inte längre', ingenStolpe],
-      ['två torkställningar ute: byn vill ha ett torkhus', !!behovTork],
+      ['torkställningar ute men inget som går förlorat: inget torkhus', utanForlust],
+      ['maten ruttnar och torkställningarna står ute: byn vill ha ett torkhus', !!behovTork],
       [`Byggplanen bygger ett torkhus med timmerväggar (${vaggar}), en dörr (${dorr ? 'ja' : 'nej'}) och jordgolv (${jord} rutor) runt torkställningarna`, !!t && vaggar >= 8 && dorr && jord >= 2],
       ['torkställningarna står inne i huset, under tak (rummet)', inne],
       [`ved ute i regnet blir blöt (${nb})`, !nb || blot],

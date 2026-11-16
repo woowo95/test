@@ -2,8 +2,8 @@ import { husNytt } from './byggnad';
 import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
 import { planKlar, planRutor, troshusBestamd, troshusGolv, vuxnaTroende } from './troshus';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
-import { ageIndex, kallTid } from './tid';
-import { heatAt } from './eld';
+import { heatAt, vedPerDygn } from './eld';
+import { BLOTVED } from './blotved';
 import { eldPlats } from './karta';
 import { changed, enPerRuta, isStored, ownedAll, stacksOf, zoneAt, zonesOf } from './lager';
 import { tillbaka, tramat } from './bygg';
@@ -47,9 +47,11 @@ export const HUS = balans('hus', {
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
   vagVarme: 0.01, // den som ska värma sig räknar så här mycket värme för varje ruta vägen till ett rum eller till elden är (steg 10.2.9)
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
-  torkhusFran: 2, // så många torkställningar ute innan byn vill ha ett torkhus (steg 7.3.5)
-  vedbodFran: 40, // så mycket ved ute utan tak innan byn vill ha en vedbod (steg 7.3.6)
-  omkringAkut: 0.25, // hur akut torkhuset och vedboden är (0 till 1), vedboden dubbelt så akut inför vintern
+  // torkhuset och vedboden byggs efter det som går förlorat utan tak (steg 10.11.6): förlusten per dygn (grundvärde) under så här
+  // många dygn mot vad ett sådant hus kostar (grundvärde) är hur akut det är (högst 1)
+  omkringDygn: 5,
+  omkringKostnad: 30,
+  matVarde: 1.2, // vad maten som ruttnat är värd per sak (grundvärde, ungefär fisk och bär)
   salAkut: 0.3, // hur akut det är med en samlingssal när byn har en scen (0 till 1, steg 7.2.7) ...
   salMin: 8, // ... och så många rutor den har minst
   verkstadHyllor: 2, // en lagerplats med det stationerna använder för så här många stationer i verkstaden (steg 7.2.9)
@@ -117,12 +119,12 @@ export const BYGGNADER = {
   // står ute, torkställningarna eller vedhögarna. Byggs av Byggplanens åtgärd omkring (byggplan.ts)
   torkhus: {
     namn: 'Torkhus', ikon: 'tork', behov: 'Under tak torkar maten i alla väder', fara: false, vikt: 0.8, omkring: true,
-    akut: s => torkUte(s).length >= HUS.torkhusFran ? { v: HUS.omkringAkut, plats: 0 } : { v: 0, plats: 0 },
+    akut: s => torkUte(s).length ? { v: omkringAkut(torkForlust(s)), plats: 0 } : { v: 0, plats: 0 },
     namnFor: (_s, _w, _h, same) => same ? `Torkhus ${same + 1}` : 'Torkhuset',
   },
   vedbod: {
     namn: 'Vedbod', ikon: 'ved', behov: 'Under tak blir veden aldrig blöt och torkar fortare', fara: false, vikt: 0.8, omkring: true,
-    akut: s => { const n = vedUte(s).reduce((a, q) => a + q.n, 0); return n >= HUS.vedbodFran ? { v: HUS.omkringAkut * (kallTid(ageIndex(s)) ? 2 : 1), plats: 0 } : { v: 0, plats: 0 }; },
+    akut: s => vedUte(s).length ? { v: omkringAkut(vedForlust(s)), plats: 0 } : { v: 0, plats: 0 },
     namnFor: (_s, _w, _h, same) => same ? `Vedbod ${same + 1}` : 'Vedboden',
   },
   // fähuset (steg 9.8.9, slatter.ts): djuren står där i istiden och fryser inte. Byggs när byn har betesdjur som inte får plats
@@ -162,6 +164,15 @@ export const BYGGNADER = {
   },
 } satisfies Record<string, Byggnad>;
 // torkställningarna ute utan tak, och vedhögarna ute i lagret utan tak
+// det som går förlorat per dygn utan tak (grundvärde, steg 10.11.6): maten som ruttnat (s.ruttet glöms med hälften per dygn, så
+// det är ungefär ett dygns förlust), och veden som brinner fortare för att den är blöt (BLOTVED.brann gånger andelen blöt ved)
+const torkForlust = (s: State) => (s.ruttet ?? 0) * HUS.matVarde;
+function vedForlust(s: State) {
+  let alla = 0, blot = 0;
+  for (const a of stacksOf(s)) if (a.k === 'ved') { alla += a.n; if (a.blot) blot += a.n; }
+  return alla > 0 ? vedPerDygn(s) * blot / alla * BLOTVED.brann * grundvarde('ved') : 0;
+}
+const omkringAkut = (forlust: number) => Math.min(1, forlust * HUS.omkringDygn / HUS.omkringKostnad);
 export const torkUte = (s: State) => stationerOf(s).filter(t => t.k === 'tork' && isKlar(t) && !roofed(s, t.x, t.y));
 export const vedUte = (s: State) => stacksOf(s).filter(a => a.k === 'ved' && zoneAt(s, a.x, a.y) >= 0 && !roofed(s, a.x, a.y));
 export type Fn = keyof typeof BYGGNADER;
