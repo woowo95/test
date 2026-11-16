@@ -181,6 +181,7 @@ export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number; sort:
   { k: 'kniv', n: [1, 1], vikt: 2, sort: V },
   { k: 'yxa', n: [1, 1], vikt: 1, sort: V },
   { k: 'benflojt', n: [1, 1], vikt: 1, sort: V },
+  { k: 'honung', n: [2, 4], vikt: 1, sort: V }, { k: 'bivax', n: [1, 3], vikt: 1, sort: V }, // steg 10.10.26: honung till mjödet och vax till ljus åt en by utan bin
 ];
 
 export interface HVara { k: string; n: number; q?: number }
@@ -239,7 +240,7 @@ function sortFor(s: State) {
   return kan.length > 1 ? kan[Math.floor(rnd(s, 'handel') * kan.length)] : kan[0] ?? 'vandrande';
 }
 // varorna en handlare har med sig: dragna ur HANDLARVAROR tills de är värda nog eller packningen är full
-function packa(s: State, kg: number, sort: string): HVara[] {
+export function packa(s: State, kg: number, sort: string): HVara[] {
   const mal = mellan(s, HANDEL.vardeVaror), ut: HVara[] = [], rader = HANDLARVAROR.filter(v => v.sort.includes(sort));
   let varde = 0;
   for (let i = 0; i < 30 && varde < mal; i++) {

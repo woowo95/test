@@ -3197,3 +3197,41 @@ SCENARIER.rovarstilla = {
     ];
   },
 };
+
+SCENARIER.bihandel = {
+  text: 'Steg 10.10.26: honung och vax hos handlaren. Handlaren har ibland 2 till 4 honungskakor eller 1 till 3 bivax i packningen, en by som saknar mat byter till sig kakor och kan sedan komma på mjödet, en by med vax över det den behöver säljer det, och allt byts i hela saker',
+  kor: () => {
+    const s = createState(6, START);
+    // packningen: många handlare packar, och några har honung eller vax i hela mängder inom spannet
+    let hon = 0, vax = 0, hela = true;
+    for (let i = 0; i < 300; i++) for (const w of SIM.packa(s, 125, 'vandrande')) {
+      if (w.k === 'honung') { hon++; hela &&= Number.isInteger(w.n) && w.n >= 2; }
+      if (w.k === 'bivax') { vax++; hela &&= Number.isInteger(w.n) && w.n >= 1; }
+    }
+    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
+    const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    for (const p of living(s)) { if (p.task?.act === 'handla') p.task = undefined; delete p.hopp; }
+    // en by utan honung och utan mat nog byter till sig kakor: honungen är mat, och en by med mat nog köper ingen
+    setAmount(s, 'honung', 0); setAmount(s, 'bivax', 0); setMat(s, {});
+    h.bynKlar = undefined; h.varor = [{ k: 'honung', n: 4 }]; h.silver = 0;
+    SIM.put(s, 'silver', 300, { [BYN]: 300 }); // byns silver
+    const ka = helAffar(s, a, true).forsta;
+    const kopt = amountOf(s, 'honung');
+    (b.tek ??= {}).bryggkar = 1; s.stat = { ...(s.stat ?? {}), brygt_vin: SIM.BRYGG.mjodVin }; SIM.mjodUpptackt(s); // en som kan bryggkaret, och vin gjort två gånger
+    const mjod = living(s).some(p => SIM.knows(p, 'mjod'));
+    // en by med vax över det den behöver säljer det
+    const over = 6; // byn har inget mål för vaxet: allt är över
+    setAmount(s, 'bivax', over);
+    h.affar = undefined; h.bynKlar = undefined; h.varor = []; h.silver = 300; delete h.handlat;
+    for (const p of living(s)) if (p.task?.act === 'handla') p.task = undefined;
+    const kb = helAffar(s, b, true).forsta;
+    const kvar = amountOf(s, 'bivax');
+    return [
+      [`av 300 packningar har ${hon} honung och ${vax} vax, i hela mängder`, hon > 0 && vax > 0 && hon < 300 && vax < 300 && hela],
+      [`en by som saknar mat byter till sig kakor (${kopt}, ${ka?.why ?? 'gick inte'})`, kopt >= 1 && Number.isInteger(kopt)],
+      [`med honungen kan byn komma på mjödet (${mjod ? 'ja' : 'nej'})`, mjod],
+      [`en by med vax över det den behöver säljer det (${over} → ${kvar}, ${kb?.why ?? 'gick inte'})`, kvar < over && Number.isInteger(kvar)],
+    ];
+  },
+};
