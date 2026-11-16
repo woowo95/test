@@ -8,7 +8,7 @@
 import { balans } from './balans';
 import { farorNu } from './kult';
 import { KOTTSLAG, isFood } from './saker';
-import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
+import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning } from './folk';
 import { getable, takeMaterial } from './behov';
 import { hash3, rnd } from './slump';
 import { put } from './lager';
@@ -112,7 +112,7 @@ export function mataVal(s: State, p: Person) {
   let b: Tamdjur | undefined, bd = Infinity;
   for (const d of tamdjurOf(s)) {
     if (d.hunger < TAM.matas || (d.agare !== undefined && d.agare !== p.id && byId(s, d.agare)?.died === undefined) || !foderFor(s, p, d)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'mata' && q.task.ref === d.id)) continue;
+    if (!enTillDar(s, 'mata', p, t => t.ref === d.id, d.id)) continue; // två kan hjälpas åt (steg 10.11.8)
     const dd = Math.hypot(d.x - p.x, d.y - p.y) - d.hunger * 10;
     if (Math.hypot(d.x - p.x, d.y - p.y) <= TAM.mataR && dd < bd) { b = d; bd = dd; }
   }

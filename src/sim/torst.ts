@@ -8,7 +8,7 @@
 // spädbarnet dricker av sin mor (modern törstar för två), och de små barnen dricker byns drycker när en vuxen av familjen är nära
 import { strandNu } from './sjo';
 import { ACTS } from './handlingar';
-import { ALDER, KROPP, ageOf, alive, byId, count, familjOf, forstaGang, isSick, living, log, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, enTillDar, familjOf, forstaGang, isSick, living, log, think } from './folk';
 import { areaOf, findL, observe } from './minne';
 import { magont, vattenSmuts } from './smuts';
 import { getMap, perKarta } from './karta';
@@ -212,18 +212,19 @@ function smutsigt(s: State, p: Person, i: number) {
 // ---------- vattensäcken (steg 2.10.1) ----------
 // Den som inte kan gå och ligger hemma törstar. En vuxen som kan gå tar byns vattensäck, fyller den vid vattnet (där hen
 // skulle ha druckit själv) och bär den till hen. Det väljs som vården, före förbättringarna (val.ts). Säcken slits en gång per tur
-const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && !o.task.ho && o.task.ref === q.id);
+// fler kan bära vatten åt samma törstande, fält eller örtkök (steg 10.11.8): chansen att en till gör det faller med hur många som redan gör det
+const hamtas = (s: State, p: Person, q: Person) => !enTillDar(s, 'vatten', p, t => !t.falt && !t.ho && t.ref === q.id, q.id);
 // under torkan (steg 3.8.2) vattnar ägaren sitt fält med säcken när grödan snart vissnar, om ingen annan redan gör det
-const vattnas = (s: State, f: Falt) => living(s).some(o => o.task?.act === 'vatten' && o.task.falt && o.task.ref === f.id);
+const vattnas = (s: State, p: Person, f: Falt) => !enTillDar(s, 'vatten', p, t => !!t.falt && t.ref === f.id, f.id);
 // ett fält som behöver vatten: under torkan när grödan snart vissnar (steg 3.8.2), och annars när rutor på familjens fält är torrare än
 // det p vattnar till (steg 9.7.4)
 // hur torrt fältet är, 0 till 1: vattnet i torkan, annars andelen torra rutor
 const faltTorrt = (s: State, p: Person, f: Falt) => s.sjoTorr?.pa && f.vatten !== undefined ? 1 - f.vatten : torraRutor(f, p).length / Math.max(1, f.n);
-const torrtFalt = (s: State, p: Person) => faltOf(s).find(f => (f.agare === p.id || familjOf(s, p.id).some(q => q.id === f.agare)) && f.vuxit !== undefined && !vattnas(s, f) && (s.sjoTorr?.pa && (f.vatten ?? 1) < TORKA.vattna || torraRutor(f, p).length >= JORD.karlRutor));
+const torrtFalt = (s: State, p: Person) => faltOf(s).find(f => (f.agare === p.id || familjOf(s, p.id).some(q => q.id === f.agare)) && f.vuxit !== undefined && !vattnas(s, p, f) && (s.sjoTorr?.pa && (f.vatten ?? 1) < TORKA.vattna || torraRutor(f, p).length >= JORD.karlRutor));
 // örtköket behöver vatten (steg 7.6.6): ingen säck står fylld, ingen fyller en, och byn vill ha något som kokas med vatten och som
 // någon kan göra. ref = FYLL i uppgiften: säcken fylls och blir stående fylld
 const FYLL = 0;
-const villFylla = (s: State, p: Person) => !fylldSack(s) && !living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && !o.task.ho && o.task.ref === FYLL) && TILLVERKA_LIST.some(k => {
+const villFylla = (s: State, p: Person) => !fylldSack(s) && enTillDar(s, 'vatten', p, t => !t.falt && !t.ho && t.ref === FYLL, -1) && TILLVERKA_LIST.some(k => {
   const d = TILLVERKA[k];
   return d.vatten && amountOf(s, d.ger) < d.vill && kanGoras(s, d.act) && living(s).some(q => knows(q, d.tek)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n);
 });
@@ -240,7 +241,7 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
     const qa = ageOf(q, s.now);
     if (q === p || kanGa(q) && qa >= ALDER.smabarn || !torstig(q, 0) || qa < TORST.ammaAr && ammas(s, q) || !hemma(s, q)) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
-    if (d >= bd || hamtas(s, q)) continue;
+    if (d >= bd || hamtas(s, p, q)) continue;
     best = q; bd = d;
   }
   // vem eller vad som får vattnet väljs med poäng (steg 10.2.37): den törstige efter hur törstig hen är, fältet efter hur torrt

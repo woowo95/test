@@ -10,7 +10,7 @@ import { snoPaMarken } from './vader';
 import { TORST, drickPlats, hoKrok, vattenKarl } from './torst';
 import { naVattnet } from './is';
 import { kanGa } from './halsa';
-import { ALDER, ageOf, byId, count, living } from './folk';
+import { ALDER, ageOf, byId, count, enTillDar } from './folk';
 import { Station, isKlar, stationById, vidStation } from './stationer';
 import { wearUsed } from './redskap';
 import { toolsOf } from './agande';
@@ -51,7 +51,7 @@ export function hoVal(s: State, p: Person): { spot: { x: number; y: number }; re
   const ryms = karRymmer({ k: karl } as Ting);
   let best: Station | undefined, bs = 0;
   for (const t of hoarOf(s)) {
-    if (!isKlar(t) || HO.rymmer - (t.vatten ?? 0) < ryms || living(s).some(o => o.task?.act === 'vatten' && o.task.ho && o.task.ref === t.id)) continue;
+    if (!isKlar(t) || HO.rymmer - (t.vatten ?? 0) < ryms || !enTillDar(s, 'vatten', p, q => !!q.ho && q.ref === t.id, t.id)) continue; // två kan hjälpas åt (steg 10.11.8)
     const sc = TORST.hamtaDjur * (1 - (t.vatten ?? 0) / HO.rymmer) * drickerUr(s, t);
     if (sc > bs) { bs = sc; best = t; }
   }

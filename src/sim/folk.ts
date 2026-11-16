@@ -244,6 +244,13 @@ export function enTill(s: State, act: Act, p?: Person) {
   for (const q of s.people) if (q !== p && alive(q) && q.task?.act === act) n++;
   return !n || hash3(p?.id ?? 0, Math.floor(s.now / 60000), actKod(act)) < ARBETARE.fler ** n;
 }
+// samma sak för ett mål (steg 10.11.8): fler kan hjälpas åt med samma törstande, fält, djur eller vattenho, men chansen att en
+// till tar det faller med hur många som redan gör det där (ar väljer uppgifterna med samma mål)
+export function enTillDar(s: State, act: Act, p: Person, ar: (t: Task) => boolean, mal = 0) {
+  let n = 0;
+  for (const q of s.people) if (q !== p && alive(q) && q.task?.act === act && ar(q.task)) n++;
+  return !n || hash3(p.id, Math.floor(s.now / 60000), actKod(act) + mal) < ARBETARE.fler ** n;
+}
 // så många andra som gör handlingen just nu
 export function andraGor(s: State, act: Act, utom?: Person) { let n = 0; for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act) n++; return n; }
 export function doingAct(s: State, act: Act, utom?: Person) {
