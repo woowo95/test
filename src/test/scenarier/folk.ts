@@ -2480,6 +2480,7 @@ SCENARIER.personlogg = {
     kor(s, 24); // ett dygn av vardagsarbete
     const rader = folk.flatMap(p => p.hand ?? []), mest = Math.max(...folk.map(p => p.hand?.length ?? 0));
     const vardagRad = rader.filter(r => !(r[1] in SIM.PERSONLOGG) || /^(Samlade|Högg|Bar|Hämtade|Fiskade|Åt|Drack|Sov|Pratade|Gick)/.test(r[2])).length;
+    const skador = (q: Person) => q.hand?.filter(r => r[1] === 'skada').length ?? 0, skFore = new Map(living(s).map(q => [q, skador(q)])); // en annan kan ha skadats under dygnet (en björn)
     SIM.skada(s, a, 'armV', 'skarsar', 0.6, 'olycka', 'när hen högg ved');
     const nara = SIM.naraAv(s, a), ovriga = living(s).filter(q => q !== a && !nara.includes(q));
     const t = SIM.TEKNIK.find(x => !SIM.knows(a, x.id) && x.krav.every(k => SIM.knows(a, k)))!;
@@ -2487,7 +2488,7 @@ SCENARIER.personlogg = {
     const fore = new Map(living(s).map(q => [q, q.hand?.length ?? 0]));
     SIM.die(s, a, 'olycka');
     const har = (p: Person, k: string) => !!p.hand?.some(r => r[1] === k);
-    const k107 = [!living(s).some(q => q !== a && har(q, 'skada')), nara.length > 0 && nara.every(q => (q.hand?.length ?? 0) > fore.get(q)! && har(q, 'nara')), ovriga.every(q => (q.hand?.length ?? 0) === fore.get(q))];
+    const k107 = [!living(s).some(q => q !== a && skador(q) > skFore.get(q)!), nara.length > 0 && nara.every(q => (q.hand?.length ?? 0) > fore.get(q)! && har(q, 'nara')), ovriga.every(q => (q.hand?.length ?? 0) === fore.get(q))];
     // 9.2.108: tre lärdomar samma dygn blir en rad, och en orolig och en modig person skriver olika om samma skada
     const b = living(s)[0], fore108 = SIM.personRader(s, b).length;
     for (const x of ['Kom på A.', 'Kom på B.', 'Kom på C.']) SIM.personHand(s, b, 'lart', x);

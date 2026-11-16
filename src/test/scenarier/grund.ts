@@ -2003,6 +2003,7 @@ SCENARIER.fallcirkel = {
   },
 };
 SCENARIER.skogsvard = {
+  lang: true,
   text: 'Steg 6.5.2: skogsvården. Den som fäller träd långt från byn kommer på Skogsvård. När de närmaste träden att fälla står långt bort gräver byn upp en skuggad planta och sätter den nära byn, bredvid en stubbe, där inget ska byggas',
   kor: () => {
     const s = createState(3, START), g = groundOf(s), f = SIM.bynsMitt(s);
