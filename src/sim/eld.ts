@@ -34,7 +34,7 @@ import { ACTS, SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, T, Task, W, H } from './typer';
 import { balans } from './balans';
 import { num } from './format';
-import { brasaSten, vedPerEld, BRASA } from './brasor';
+import { vedPerEld, BRASA } from './brasor';
 import { iVattnetNu } from './sjo';
 import { tecken } from './religion';
 
@@ -201,9 +201,9 @@ function fireWish(s: State, p: Person, vc: number, f: Fire, vid: boolean): Wish 
 // (bufferten i FORRADSMAL är minst det tändmaterial byn vill ha, och mer när byn förbrukar mycket, steg 6.2.14)
 export const tinderShort = (s: State, tk?: Task) => underBuffert(s, 'torrgras', tk?.items?.torrgras ?? 0) || underBuffert(s, 'grenar', tk?.items?.grenar ?? 0);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat. Stenar behövs också till en lägereld till (brasor.ts).
-// Stenarna som någon bär hem räknas, så att ingen samlar fler än ringen behöver
+// Båda är förrådsmålet för stenen (steg 10.11.4). Stenarna som någon bär hem räknas, så att ingen samlar fler än ringen behöver
 const stenarHem = (s: State) => living(s).reduce((n, q) => n + (q.task?.items?.sten ?? 0), 0);
-export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') + stenarHem(s) < ELD.ring || brasaSten(s);
+export const needStones = (s: State) => underBuffert(s, 'sten', stenarHem(s));
 // kan elden tändas (av p: med det p kan få, behov.ts)? Bränslet räknas efter att grenarna till tändningen tagits (tryLight)
 export function canLight(s: State, p?: Person, f = s.fire) {
   const ig = igniterOf(s, p), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);

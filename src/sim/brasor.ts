@@ -1,16 +1,14 @@
 import { freeNear, isWall } from './byggnad';
-import { DAY, Fire, Person, State, W } from './typer';
+import { DAY, Fire, State, W } from './typer';
 import { balans } from './balans';
 import { eldPlats } from './karta';
-import { ALDER, ageOf, count, living, log } from './folk';
+import { count, living, log } from './folk';
 import { coldOf, temperature } from './vader';
-import { amountOf, changed, isStored, enPerRuta } from './lager';
+import { changed, isStored, enPerRuta } from './lager';
 import { bedTile } from './byggnader';
 import { newFire, woodDays } from './eld';
 import { Station } from './stationer';
 import { RT } from './recept';
-import { flintSpot } from './fynd';
-import type { Uppgift } from './projekt';
 
 // ---------- fler lägereldar (steg 2.9.1, och 4.5.6.8: en brasa är en lägereld) ----------
 // Den första lägerelden är byns mitt och ligger kvar där den är. Men när byn vuxit och hyddorna ligger långt från den, och det
@@ -38,7 +36,6 @@ export const BRASA = balans('brasa', {
   vedDygn: 4, // ... och bränslet i förrådet räcker så här många dygn (år i spelet) för varje eld, den nya brasan medräknad
   slackDygn: 2, // när bränslet tryter sköts så många eldar som veden räcker till i så här många dygn var, de mest använda först (eld.ts)
   tomDygn: 3, // en släckt brasa som ingen sover nära tas isär efter så här många dygn
-  letaMin: 120, // fattas stenarna går en i taget till stenarna och letar så här många minuter (projekt.ts)
 });
 
 // lägereldarna efter den första (eld.ts)
@@ -54,15 +51,10 @@ const langt = (s: State) => BRASA.langt - BRASA.langtGem * Math.max(0, -s.seder.
 export const vedPerEld = (s: State, extra: number) => woodDays(s) / (brasorOf(s).length + 1 + extra);
 // stenar som ligger i högar på marken (de från en lägereld som tagits isär), på väg in i lagret
 const stenPaMarken = (s: State) => (s.stackar ?? []).reduce((n, a) => a.k === 'sten' && !isStored(s, a.x, a.y) ? n + a.n : n, 0); // utanför lagret: amountOf räknar lagret
-// byn behöver stenar till en lägereld till (eld.ts, needStones): den vill ha en, ingen är påbörjad och stenarna räcker inte
-export const brasaSten = (s: State) => brasaBrist(s) > 0 && !(s.stationer ?? []).some(t => t.k === 'brasa' && t.kvar > 0) && amountOf(s, 'sten') + stenPaMarken(s) < RT.brasaSten;
-// stenarna letas som en del av projektet (projekt.ts): byn samlar sällan, så annars kommer lägerelden aldrig. En i taget, och
-// bara den som får bygga en. Stenarna hittas vid stenarna när byn behöver dem (forageItems i eld.ts)
-export const kanLetaBrasaSten = (s: State, p: Person) => brasaSten(s) && ageOf(p, s.now) >= ALDER.ansvar && !living(s).some(q => q !== p && q.task?.sok);
-export function brasaLeta(s: State, p: Person): Uppgift | undefined {
-  const sp = flintSpot(s, p);
-  return sp ? { act: 'samla', text: 'Letar efter stenar till en lägereld vid stenarna.', min: BRASA.letaMin, spot: sp, sok: true } : undefined;
-}
+// stenarna som lägereldarna byn planerar saknar (steg 10.11.4): ringen till en lägereld till, när byn vill ha en och ingen är
+// påbörjad, utan de stenar som redan ligger på marken på väg in. Det blir förrådsmålet för stenen (forradsmal.ts), och stenarna
+// samlas som annat material
+export const brasaStenMal = (s: State) => brasaBrist(s) > 0 && !(s.stationer ?? []).some(t => t.k === 'brasa' && t.kvar > 0) ? Math.max(0, RT.brasaSten - stenPaMarken(s)) : 0;
 // ringen är lagd (finishStation i stationer.ts): den påbörjade stationen blir en lägereld på samma ruta, med samma nummer
 export function nyEld(s: State, t: Station) {
   s.stationer = (s.stationer ?? []).filter(q => q !== t);

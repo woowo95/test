@@ -1389,10 +1389,10 @@ SCENARIER.bagborr = {
 };
 
 SCENARIER.brasa = {
-  text: 'Flera lägereldar (steg 2.9.1, 4.5.6.8): när två eller fler sover långt från elden och det är kallt vill byn ha en lägereld till nära dem. Fattas stenarna letar en i taget efter dem vid stenarna; sedan läggs ringen av sex stenar. När den är klar är den en lägereld som den första: den tänds med flintan, värmer dem som sover nära och glöder. En släckt lägereld som ingen sover nära tas isär, och stenarna läggs i en hög som används igen',
+  text: 'Flera lägereldar (steg 2.9.1, 4.5.6.8): när två eller fler sover långt från elden och det är kallt vill byn ha en lägereld till nära dem. Fattas stenarna blir de förrådsmålet för stenen (steg 10.11.4) och samlas som annat material; sedan läggs ringen av sex stenar. När den är klar är den en lägereld som den första: den tänds med flintan, värmer dem som sover nära och glöder. En släckt lägereld som ingen sover nära tas isär, och stenarna läggs i en hög som används igen',
   env: { BALANS: 'brasa.langt=0,brasa.kyla=-99' }, // alla sovplatser räknas som långt från elden, och det är alltid kallt nog
   kor: () => {
-    const { BRASA, stepBrasor, brasaSten, brasorOf, fireHeat, heatAt, PROJEKT, dangers, stationerOf } = SIM;
+    const { BRASA, stepBrasor, brasaStenMal, needStones, brasorOf, fireHeat, heatAt, PROJEKT, dangers, stationerOf } = SIM;
     const b = createState(1, START); klockan(b); tandEld(b);
     setMat(b, { bar: 80, fisk: 30 }); setAmount(b, 'ved', 200); setAmount(b, 'sten', 0);
     // utan hus sover man vid elden: byn vill inte ha någon lägereld till
@@ -1401,10 +1401,9 @@ SCENARIER.brasa = {
     stepBrasor(b);
     const vill = (b.brasa?.vill ?? 0) > 0;
     const vuxen = living(b).find(r => ageOf(r, b.now) >= 18)!, f = dangers(b);
-    const u0 = PROJEKT.brasa.uppgift(b, vuxen);
-    const leta = brasaSten(b) && PROJEKT.brasa.kan(b, vuxen, f) && u0?.act === 'samla' && !!u0.sok;
+    const leta = brasaStenMal(b) === RT.brasaSten && needStones(b) && !PROJEKT.brasa.kan(b, vuxen, f);
     setAmount(b, 'sten', RT.brasaSten);
-    const bygga = !brasaSten(b) && PROJEKT.brasa.uppgift(b, vuxen)?.act === 'station';
+    const bygga = !needStones(b) && PROJEKT.brasa.kan(b, vuxen, f) && PROJEKT.brasa.uppgift(b, vuxen)?.act === 'station';
     // i byn: ringen läggs och blir en lägereld, som tänds
     let h = 0, e = brasorOf(b)[0];
     while (!(e && e.lit) && h < 96) { kor(b, 1); b.fire.lit = true; b.fire.fuel = Math.max(b.fire.fuel, 3); setAmount(b, 'ved', Math.max(amountOf(b, 'ved'), 150)); setAmount(b, 'torrgras', Math.max(amountOf(b, 'torrgras'), 10)); h++; e = brasorOf(b)[0]; }
@@ -1434,7 +1433,7 @@ SCENARIER.brasa = {
       stepBrasor(b);
       isar = !brasorOf(b).includes(e) && ((b.stat?.brasaIsar as number) ?? 0) > 0;
       hog = (b.stackar ?? []).some(a => a.k === 'sten' && a.x === 1 && a.y === 1 && a.n >= RT.brasaSten);
-      ateranv = !!b.brasa && !brasaSten(b); // stenarna i högen räcker till nästa: ingen behöver leta
+      ateranv = !!b.brasa && brasaStenMal(b) === 0; // stenarna i högen räcker till nästa: ingen behöver leta
     }
     // en sparad by från före v284: en färdig brasa (en station med en egen eld) blir en lägereld på samma plats
     const g = createState(1, START); klockan(g); tandEld(g);
@@ -1444,7 +1443,7 @@ SCENARIER.brasa = {
     return [
       ['utan hus sover man vid elden, och byn vill inte ha någon lägereld till', ingen],
       ['de sover långt bort och det är kallt: byn vill ha en lägereld till', vill],
-      ['utan stenar letar en vuxen efter dem vid stenarna', leta],
+      ['utan stenar blir ringens stenar förrådsmålet, och lägerelden kan inte byggas än', leta],
       ['med sex stenar läggs ringen i stället', bygga],
       [`ringen läggs (efter ${h} timmar) en bit från den första elden, blir en lägereld och tänds`, byggd && flyttad && tand],
       ['den är en lägereld som den första: stenring, tändningar och historik', lika],

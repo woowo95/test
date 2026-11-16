@@ -26,7 +26,7 @@ import { clamp } from './slump';
 import { sportFor } from './sport';
 import { STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools, tingOf } from './agande';
-import { brasaBrist } from './brasor';
+import { brasaBrist, brasaStenMal } from './brasor';
 import { MATERIAL, bitsOf } from './byggnad';
 import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
 import { fahusHus } from './slatter';
@@ -139,7 +139,7 @@ const harNaver = (s: State) => amountOf(s, 'naver') >= TROSKEL.tandBrist || nToo
 export const MATERIALMAL = {
   grenar: { min: tand },
   torrgras: { min: s => harNaver(s) ? 0 : tand(s) }, // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
-  sten: { min: () => 0 },
+  sten: { min: s => (s.fire.ring ? 0 : ELD.ring) + brasaStenMal(s) }, // de stenar eldringarna byn planerar saknar (steg 10.11.4)
   flinta: { min: s => (nTools(s, 'bagborr') > 0 ? 0 : TROSKEL.flintaMinsta) + flintaKrok.verktyg(s) }, // med en bågborr behövs ingen flinta till elden (steg 10.6.13), // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
   virke: { min: s => virkeTillHus(s) }, // det husen i Byggplanen behöver, också de som inte är påbörjade (steg 10.2.70)
   byggsten: { min: s => stenTillPlan(s) }, // det Byggplanen planerat av sten (STENBEHOV i byggsten.ts, steg 10.10.5)
