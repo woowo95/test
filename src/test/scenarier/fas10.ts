@@ -730,3 +730,42 @@ SCENARIER.binasar = {
     }
   },
 };
+SCENARIER.svarmning = {
+  lang: true,
+  text: 'Steg 10.10.19: svärmningen. Ett starkt samhälle ger en tom kupa intill bin på sommaren också utan vildbin, och mister 2 hela kakor; ett svagt samhälle svärmar inte, utan en tom kupa händer inget, på hösten och i istiden svärmar inget, och svärmarna kommer lika ofta med korta som med långa slag',
+  kor: () => {
+    const { BIN, binSteg, svarmTillgang, nyKalender, VAR, SOMMAR, HOST, ISTID, takenOf } = SIM;
+    const s = createState(5, START); klockan(s, 10);
+    takenOf(s).honung!.fill(1); // inga vildbin någonstans
+    const vildNu = svarmTillgang(s, 60, 60);
+    const par = (stark: number, tom = true): SIM.Station[] => {
+      const a: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x: 60, y: 60, kvar: 0, bi: stark, ag: 1 };
+      const ut = [a];
+      if (tom) ut.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x: 64, y: 60, kvar: 0, ag: 2 });
+      s.stationer = [...(s.stationer ?? []).filter(q => q.k !== 'bikupa'), ...ut]; return ut;
+    };
+    // n försök à timmar timmar i tidsåldern ai: hur stor del som svärmade
+    const forsok = (ai: number, n: number, dt: number, stark = 9, timmar = 24, tom = true) => {
+      let svarm = 0; const t0 = s.now; s.kal = nyKalender(t0, ai);
+      for (let k = 0; k < n; k++) { const [a, b] = par(stark, tom); s.now = t0; for (let t = 0; t < timmar * 3600; t += dt) { s.now += dt * 1000; binSteg(s, dt); } if (b?.bi !== undefined) svarm++; else if (!tom && a.bi! < stark - 1) svarm++; }
+      s.now = t0; return svarm / n;
+    };
+    // ett starkt samhälle och en tom kupa: en sommardag, tills svärmen kommit
+    s.kal = nyKalender(s.now, SOMMAR);
+    let fore = 0, efter = 0, nyBi: number | undefined, nyAg: number | undefined;
+    for (let k = 0; k < 200 && nyBi === undefined; k++) { const [a, b] = par(9); for (let t = 0; t < 24 * 3600 && b.bi === undefined; t += 14400) { fore = a.bi!; s.now += 14400 * 1000; binSteg(s, 14400); } efter = a.bi!; nyBi = b.bi; nyAg = b.ag; }
+    const at = BIN.aterTim * 4 + 1e-6; // vad samhället kan ha ätit och samlat på ett slag
+    const svag = forsok(SOMMAR, 100, 14400, BIN.svarmVid - 1);
+    const utanTom = forsok(SOMMAR, 100, 14400, 9, 24, false);
+    const andra = [VAR, HOST, ISTID].map(ai => forsok(ai, 100, 14400));
+    const kort = forsok(SOMMAR, 400, 600), lang = forsok(SOMMAR, 400, 14400), vantat = 1 - Math.exp(-24 / 48 * BIN.kupSvarm);
+    return [
+      [`utan vildbin (tillgången ${vildNu.toFixed(2)}) ger ett starkt samhälle den tomma kupan bin (${nyBi ?? 'ingen'}), och den tomma kupans ägare äger det (${nyAg})`, vildNu === 0 && nyBi === BIN.svarmHonung && nyAg === 2],
+      [`samhället som svärmade mister ${BIN.svarmHonung} hela kakor (${fore.toFixed(2)} → ${efter.toFixed(2)})`, Math.abs(fore - efter - BIN.svarmHonung) < at],
+      [`ett samhälle med ${BIN.svarmVid - 1} kakor svärmar inte (${svag})`, svag === 0],
+      [`utan en tom kupa händer inget (${utanTom})`, utanTom === 0],
+      [`på våren, hösten och i istiden svärmar inget (${andra.join(', ')})`, andra.every(v => v === 0)],
+      [`svärmarna kommer lika ofta med 10 minuters slag (${(kort * 100).toFixed(0)} %) som med fyra timmars (${(lang * 100).toFixed(0)} %), väntat ${(vantat * 100).toFixed(0)} %`, Math.abs(kort - lang) < 0.08 && Math.abs(lang - vantat) < 0.08],
+    ];
+  },
+};

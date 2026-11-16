@@ -12,7 +12,7 @@ import { HOST, ISTID, SOMMAR, VAR, kalender } from './tid';
 import { fyndAt } from './fynd';
 import { HOUR_S, State, W, inMap } from './typer';
 import { Station, isKlar, stationerOf } from './stationer';
-import { chance } from './slump';
+import { chance, rnd } from './slump';
 import { count, forstaGang, log } from './folk';
 import { notis } from './notiser';
 import { hardVinter } from './vader';
@@ -29,7 +29,9 @@ export const BIN = balans('bin', {
   svarmTim: 1 / 48, // chansen per timme att en svärm flyttar in i en tom kupa på sommaren, gånger tillgången på svärmar
   svarmR: 20, // vildbinas bon inom så här många rutor från kupan ger svärmar ...
   svarmFullt: 4, // ... och så mycket av lagret (summan) ger full tillgång
-  svarmHonung: 2, // det nya samhället börjar med så många honungskakor
+  svarmHonung: 2, // det nya samhället börjar med så många honungskakor (och en kupa som svärmar mister lika många hela kakor)
+  svarmVid: 7, // ett samhälle med minst så många kakor svärmar (steg 10.10.19) ...
+  kupSvarm: 0.5, // ... och lägger så mycket till tillgången på svärmar för en tom kupa inom BIN.svarmR rutor
   varde: 15, // ett bisamhälle räknas så här mycket i ägarens rikedom
   // binas år (steg 10.10.18)
   honungTim: 1 / 24, // honungskakor per timme som samhället samlar vid fullt drag
@@ -98,12 +100,16 @@ export function dragDelat(s: State, x: number, y: number, utan?: Station) {
   const n = samhallen(s).filter(t => t !== utan && Math.hypot(t.x - x, t.y - y) <= BIN.r).length;
   return drag(s, x, y) / (1 + n);
 }
-// tillgången på svärmar vid (x, y): vildbinas lager inom BIN.svarmR rutor delat med BIN.svarmFullt, högst 1
-export function svarmTillgang(s: State, x: number, y: number) {
+// vildbinas del av tillgången på svärmar vid (x, y): lagret inom BIN.svarmR rutor delat med BIN.svarmFullt
+export function vildSvarm(s: State, x: number, y: number) {
   const r = BIN.svarmR; let n = 0;
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r && inMap(x + dx, y + dy)) n += fyndAt(s, 'honung', (y + dy) * W + x + dx);
-  return Math.min(1, n / BIN.svarmFullt);
+  return n / BIN.svarmFullt;
 }
+// samhällena som kan svärma till (x, y) (steg 10.10.19): minst BIN.svarmVid kakor och inom BIN.svarmR rutor
+export const starkaNara = (s: State, x: number, y: number) => samhallen(s).filter(t => t.bi! >= BIN.svarmVid && Math.hypot(t.x - x, t.y - y) <= BIN.svarmR);
+// tillgången på svärmar vid (x, y), högst 1: vildbinas del och BIN.kupSvarm för varje starkt samhälle inom räckhåll
+export const svarmTillgang = (s: State, x: number, y: number) => Math.min(1, vildSvarm(s, x, y) + BIN.kupSvarm * starkaNara(s, x, y).length);
 // binas år (steg 10.10.18): samhället samlar honung efter draget och äter hela tiden, mer i en hård vinter. Kupan rymmer
 // BIN.rymmer kakor, och decimalerna är arbetet mot nästa kaka. När honungen är slut dör samhället och kupan står tom
 function binasAr(s: State, dt: number) {
@@ -122,10 +128,13 @@ export function binSteg(s: State, dt: number) {
   if (kalender(s).ai !== SOMMAR) return;
   for (const t of kupor(s)) {
     if (t.bi !== undefined) continue;
-    const till = svarmTillgang(s, t.x, t.y);
+    const vild = vildSvarm(s, t.x, t.y), starka = starkaNara(s, t.x, t.y), kup = BIN.kupSvarm * starka.length, till = Math.min(1, vild + kup);
     if (till <= 0 || !chance(s, BIN.svarmTim * till / HOUR_S, dt, 'bin')) continue;
+    // varifrån svärmen kom: vildbina eller ett av de starka samhällena, efter deras del av tillgången
+    const u = rnd(s, 'bin') * (vild + kup), fran = u < vild ? undefined : starka[Math.min(starka.length - 1, Math.floor((u - vild) / BIN.kupSvarm))];
+    if (fran) { fran.bi! -= BIN.svarmHonung; count(s, 'bisvarmKupa'); }
     t.bi = BIN.svarmHonung; count(s, 'bisvarm');
-    log(s, 'En svärm bin flyttade in i en tom bikupa.', 'world', t.ag !== undefined ? [t.ag] : []);
+    log(s, fran ? 'En svärm lämnade en full bikupa och flyttade in i en tom.' : 'En svärm bin flyttade in i en tom bikupa.', 'world', t.ag !== undefined ? [t.ag] : []);
     if (forstaGang(s, 'forstaBisamhalle')) notis(s, 'bin', 'En svärm bin har flyttat in i en av byns kupor. Byn har fått sitt första bisamhälle.', t.ag !== undefined ? [t.ag] : [], { x: t.x + 0.5, y: t.y + 0.5 });
   }
 }
