@@ -330,6 +330,8 @@ function boende(s: State): Boende {
   boenden.set(s, b);
   return b;
 }
+// de som bor i varje familjehus (husets id), för borden (bordVal i stationer.ts)
+export const husFolk = (s: State) => { const m = new Map<number, Person[]>(); for (const e of boende(s).egna.values()) m.set(e.hus, e.folk); return m; };
 // huset där p får sova (steg 3.10.2): familjens eget hus, eller undefined för byns hus där man sover
 export const sovHus = (s: State, p: Person) => boende(s).egna.get(p.id)?.hus;
 // rutan där p sover, också om den är blöt (bedTile tar en torr), eller undefined

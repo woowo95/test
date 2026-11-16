@@ -894,20 +894,22 @@ SCENARIER.skinnfall = {
 
 SCENARIER.bord = {
   lang: true,
-  text: 'Bord och stubbar (steg 2.2.15): en egen teknik med tre storlekar (4, 8 och 10 platser). Byn bygger den storlek som räcker åt dem som saknar en plats, och vid bordet äter man tillsammans, blir glad av det och samtalar',
+  text: 'Bord och stubbar (steg 2.2.15): en egen teknik med tre storlekar (4, 8 och 10 platser). Alla storlekar får bristen, och byn bygger den som ger flest platser för virket och arbetet (steg 10.11.11), och vid bordet äter man tillsammans, blir glad av det och samtalar',
   kor: () => {
-    const { TEK, PROJEKT, bordStorlek, bordPlatser, platserAv, stationerOf, isKlar, usable } = SIM;
+    const { TEK, PROJEKT, bordPlatser, platserAv, stationerOf, isKlar, usable } = SIM;
     // en by där alla kan bygga bord och det finns gott om trä och mat
     const s = createState(1, START); klockan(s); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, bord: 1 };
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10); setAmount(s, 'plankor', 10);
-    const n = living(s).length, k0 = bordStorlek(s)!, brist0 = PROJEKT[k0]!.brist(s), andra = ['bord', 'bord2', 'bord3'].filter(k => k !== k0).every(k => PROJEKT[k]!.brist(s) === 0);
+    const n = living(s).length, STORLEK = ['bord', 'bord2', 'bord3'], varde = (k: string) => PROJEKT[k]!.vikt * PROJEKT[k]!.brist(s) / PROJEKT[k]!.kostnad();
+    const text00 = STORLEK.map(k => PROJEKT[k]!.brist(s).toFixed(2)).join(', '), vtext = STORLEK.map(k => varde(k).toFixed(3)).join(', ');
+    const k0 = STORLEK.reduce((a, b) => varde(b) > varde(a) ? b : a), brist0 = PROJEKT[k0]!.brist(s), alla = STORLEK.every(k => Math.abs(PROJEKT[k]!.brist(s) - Math.min(1, Math.min(platserAv(k), n) / n)) < 1e-9);
     let h = 0;
     const bordet = () => stationerOf(s).find(t => isKlar(t) && platserAv(t.k) > 0);
     while (!bordet() && h < 96) { kor(s, 1); h++; }
     const b = bordet();
     const pl = b ? bordPlatser(b) : [], tomma = pl.every(q => !usable(s, q.x, q.y));
-    const brist1 = PROJEKT[k0]!.brist(s);
+    const n1 = living(s).length, saknar = Math.max(0, n1 - SIM.allaPlatser(s)), brist1 = Math.max(...STORLEK.map(k => PROJEKT[k]!.brist(s))), text0 = STORLEK.map(k => PROJEKT[k]!.brist(s).toFixed(2)).join(', ');
     // ett dygn med bordet: måltider och samtal vid det, och aldrig två på samma plats
     const plats = new Set(pl.map(q => q.y * W + q.x));
     let samtal = 0, krock = 0;
@@ -921,9 +923,10 @@ SCENARIER.bord = {
     const mal = (s.stat?.bordMal ?? 0) - mal0, glada = living(s).filter(p => p.thoughts.some(t => t.text === 'Åt vid bordet')).length;
     const tek = TEK.bord;
     return [
-      [`byn vill ha ${SIM.stationDef(k0)?.namn.toLowerCase()} (${platserAv(k0)} platser åt ${n}, brist ${brist0.toFixed(2)}), inte de andra storlekarna`, brist0 === 1 && andra && platserAv(k0) >= Math.min(n, 10)],
+      [`alla storlekar har bristen efter platserna de fyller åt ${n} (${text00})`, alla],
+      [`byn vill helst ha ${SIM.stationDef(k0)?.namn.toLowerCase()} (${platserAv(k0)} platser, brist ${brist0.toFixed(2)}; värdet ${vtext})`, brist0 > 0],
       [`bordet byggs på ${h} timmar, med ${pl.length} stubbar runt där inget annat får stå`, !!b && b.k === k0 && pl.length === platserAv(k0) && tomma],
-      [`när bordet står har alla en plats (brist ${brist1.toFixed(2)}; ${stationerOf(s).filter(t => t.k === k0 && isKlar(t)).length} sådana bord efter ett dygn till, när byn vuxit)`, brist1 === 0],
+      [`när bordet står gäller bristen bara dem som saknar en plats (${saknar} av ${n1}: ${text0})`, Math.abs(brist1 - Math.min(saknar, 10) / n1) < 1e-9],
       [`man äter vid bordet (${mal} måltider på ett dygn) och blir glad av det (${glada} av ${living(s).length})`, mal >= 3 && glada >= 1],
       [`man samtalar vid bordet (${samtal} gånger någon satt där och pratade)`, samtal > 0],
       [`aldrig två på samma plats (${krock} gånger)`, krock === 0],

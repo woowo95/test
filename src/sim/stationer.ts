@@ -17,7 +17,7 @@ import { Zone, amountOf, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
-import { HUS, bedTile, fahusUtanKrubba, krubbaKrok, fnOf, langhusRum, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
+import { HUS, bedTile, fahusUtanKrubba, husFolk, krubbaKrok, fnOf, langhusRum, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
 import { coldOf, nederbord, temperature } from './vader';
 import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
@@ -69,6 +69,7 @@ export const STATION = balans('station', {
   // dragningen mot mitten (steg 9.4.8): hur mycket en station ute används glöms på brukatDygn dygn; att flytta den är värt det
   // gånger hur många rutor närmare dem som använder den, delat med flyttFull, och den nya platsen ligger minst flyttMinste närmare
   brukatDygn: 3, flyttFull: 60, flyttMin: 15, flyttMinste: 3,
+  bordHemma: 10, // man äter helst där man bor: ett bord i någon annans familjehus är så här många rutor längre bort (steg 10.11.11)
   bordUte: 20, // när det är kallt eller regnar är ett bord ute så här många rutor längre bort än ett inne (steg 7.2.8)
   avstand: 2.5, // en station ute står helst så här många rutor utanför det byn omsluter (tillHoljet i omrade.ts), från stationens mitt
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
@@ -586,7 +587,7 @@ export function friRunt(s: State, rutor: { x: number; y: number }[], motVagg = f
 export interface Rekt { x: number; y: number; w: number; h: number }
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
 // borden och scenen står hellre i samlingssalen när den har plats (steg 7.2.7 och 7.2.8)
-const siteSal = (s: State, k: string) => { const sal = stationDef(k)?.fahus ? fahusUtanKrubba(s)[0] : stationDef(k)?.langhus ? langhusRum(s) : (k === 'scen' || stationDef(k)?.platser) ? samlingRum(s) : undefined; return sal && siteInne(s, k, sal); }; // långhusets möbler i långhuset (steg 10.2.68)
+const siteSal = (s: State, k: string, p?: Person) => { const sal = stationDef(k)?.fahus ? fahusUtanKrubba(s)[0] : stationDef(k)?.langhus ? langhusRum(s) : k === 'scen' ? samlingRum(s) : stationDef(k)?.platser ? bordVal(s, k, p)?.r : undefined; return sal && siteInne(s, k, sal); }; // långhusets möbler i långhuset (steg 10.2.68)
 export const stationSite = (s: State, k: string, p?: Person) => iPlatsMinne(`${k}|${p?.id ?? ''}`, () => sokSite(s, k, p));
 // medan f körs ger samma fråga om en plats (q) samma svar utan att söka igen: för projektvalet, som frågar om p kan göra
 // projektet (kan) och sedan var (uppgift) utan att något i byn ändras emellan (bastaProjekt i projekt.ts). Utanför söks det varje gång
@@ -601,7 +602,7 @@ export function iPlatsMinne<T>(q: string, f: () => T): T {
   if (!platsMinne.has(q)) platsMinne.set(q, f());
   return platsMinne.get(q) as T;
 }
-const sokSite = (s: State, k: string, p?: Person) => stationDef(k)?.hage ? siteHo(s) : stationDef(k)?.tro ? siteTro(s, k, p) : siteSal(s, k) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUte(s, k, sokUtkant, 'utkant:' + k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
+const sokSite = (s: State, k: string, p?: Person) => stationDef(k)?.hage ? siteHo(s) : stationDef(k)?.tro ? siteTro(s, k, p) : siteSal(s, k, p) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUte(s, k, sokUtkant, 'utkant:' + k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
 // trons möbler (steg 10.3.19): i rummet i trons hus, för den troende p
 function siteTro(s: State, k: string, p?: Person) {
   const tr = p && troOf(s, p.tro), r = tr && troshusRum(s, tr);
@@ -1169,7 +1170,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
 // långbordet (3 × 2) tio. Stubbarna hör till bordet: de byggs med det och inget annat får stå där. Bordet står ute nära
 // elden (siteUte). Den som är hungrig går till en ledig plats och äter där (måltiden i val.ts,
 // MAT i behov.ts) och blir glad av det, och vid bordet samtalar man (spotFor i val.ts). Byn bygger bord så länge någon saknar
-// en plats, och den storlek som räcker åt dem som saknar (bordStorlek, projekt.ts)
+// en plats, i den storlek som ger mest för virket där den behövs (bordVal)
 export function bordPlatser(t: { k: string; x: number; y: number; rot?: unknown }) {
   if (!stationDef(t.k)?.platser) return [];
   const { w, h } = storlekAv(t), ut: { x: number; y: number }[] = [];
@@ -1193,9 +1194,13 @@ export function ledigPlats(s: State, p: Person) {
   const tagen = new Set<number>();
   for (const q of living(s)) if (q !== p && q.task && VID_BORDET.has(q.task.act)) tagen.add(Math.floor(q.task.ty) * W + Math.floor(q.task.tx));
   let best: { x: number; y: number } | undefined, bd = Infinity;
-  for (const t of borden) for (const q of bordPlatser(t)) {
-    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0);
+  const hemma = sovHus(s, p);
+  for (const t of borden) {
+    const hus = husAv(s, t), borta = hus?.ag !== undefined && hus.id !== hemma ? STATION.bordHemma : 0;
+    for (const q of bordPlatser(t)) {
+    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + borta + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0);
     if (d < bd && !tagen.has(q.y * W + q.x) && !blocked(s, q.x + 0.5, q.y + 0.5)) { bd = d; best = { x: q.x + 0.5, y: q.y + 0.5 }; } // inte en plats där något står i vägen (då flyttade freeNear i val.ts en bit från bordet)
+  }
   }
   return best;
 }
@@ -1206,17 +1211,44 @@ export function bordVid(s: State, p: { x: number; y: number }) {
   for (const [dx, dy] of GRANNAR4) { const t = stationAt(s, p.x + dx, p.y + dy); if (t && stationDef(t.k)?.platser) return t; }
   return undefined;
 }
-// den storlek byn vill bygga: den minsta som räcker åt alla som saknar en plats, annars den största. Ingen när alla har en
-const BORD_LIST = STATION_LIST.filter(k => platserAv(k) > 0).sort((a, b) => platserAv(a) - platserAv(b));
-export function bordStorlek(s: State): StationSlag | undefined {
-  const fattas = living(s).length - allaPlatser(s);
-  if (fattas <= 0) return undefined;
-  return BORD_LIST.find(k => platserAv(k) >= fattas) ?? BORD_LIST[BORD_LIST.length - 1];
+// var ett bord av sorten k gör mest nytta (steg 10.11.11). Varje hus räknar dem som bor där och platserna vid husets bord,
+// samlingssalen och långhuset (eller platsen ute vid elden när ingen sal finns) hela byn och alla platser. Ett bord som inte
+// får plats i rummet med sina sittplatser går inte att välja där. Nyttan är platserna bordet fyller åt dem som saknar, så att
+// projektets värde (nyttan delad med virket och arbetet, projekt.ts) väljer storleken. p = bara de hus p får bygga i
+interface BordStalle { r?: Rum; folk: number; har: number }
+const bordCache = new WeakMap<State, { key: string; m: Map<string, { r?: Rum; fyller: number } | undefined> }>();
+function bordStallen(s: State): BordStalle[] {
+  const n = living(s).length, alla = allaPlatser(s), ut: BordStalle[] = [];
+  for (const r of new Set([samlingRum(s), langhusRum(s)])) if (r) ut.push({ r, folk: n, har: alla });
+  for (const [hus, folk] of husFolk(s)) {
+    const har = bordenOf(s).filter(t => stationRum(s, t)?.hus === hus).reduce((a, t) => a + platserAv(t.k), 0);
+    for (const r of gridOf(s).rooms) if (r.hus === hus) ut.push({ r, folk: folk.length, har });
+  }
+  ut.push({ folk: n, har: alla }); // ute nära elden, sist: ett rum går före när det fyller lika många
+  return ut;
 }
-// hur stor del av byn som saknar en plats vid ett bord, för den storlek som ska byggas (0 för de andra)
+export function bordVal(s: State, k: string, p?: Person) {
+  const key = `${s.byggV ?? 0}:${s.now}:${living(s).length}:${stationerOf(s).length}`;
+  let c = bordCache.get(s);
+  if (!c || c.key !== key) bordCache.set(s, c = { key, m: new Map() });
+  const q = `${k}|${p ? familjHus(s, p) : ''}`;
+  if (c.m.has(q)) return c.m.get(q);
+  let best: { r?: Rum; fyller: number } | undefined;
+  for (const st of bordStallen(s)) {
+    const fyller = Math.min(platserAv(k), st.folk - st.har);
+    if (fyller <= 0 || best && fyller <= best.fyller) continue;
+    if (st.r && (p && !farBygga(s, husById(s, st.r.hus), p) || !siteInne(s, k, st.r))) continue;
+    best = { r: st.r, fyller };
+  }
+  c.m.set(q, best);
+  return best;
+}
+// vilka familjehus p får bygga i, som nyckel i minnet ovan
+const familjHus = (s: State, p: Person) => housesOf(s).filter(h => h.ag !== undefined && farBygga(s, h, p)).map(h => h.id).join(',') || '-';
+// hur stor del av byn ett bord av sorten k ger en plats åt där det gör mest nytta (0 när alla har en plats)
 export function bordBrist(s: State, k: string) {
-  const n = living(s).length;
-  return n && k === bordStorlek(s) ? Math.min(1, (n - allaPlatser(s)) / n) : 0;
+  const n = living(s).length, v = n ? bordVal(s, k) : undefined;
+  return v ? Math.min(1, v.fyller / n) : 0;
 }
 
 // ---------- tillbehören (steg 2.2.14) ----------
