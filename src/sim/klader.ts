@@ -17,8 +17,11 @@ import type { SakDef } from './saker';
 import { balans } from './balans';
 
 export const KLADER = balans('klader', {
-  naken: -0.06, // humöret för den som är helt naken (steg 10.2.72) ...
-  nakenDel: -0.015, // ... och för varje del (fötterna, benen, överkroppen) som saknar plagg
+  naken: -0.15, // humöret för den som är helt naken (steg 10.2.72): kläderna är nästan ett grundbehov ...
+  nakenDel: -0.05, // ... och för varje del (fötterna, benen, överkroppen) som saknar plagg
+  // ett plagg som klär en av delarna är värt mer i projekten (projekt.ts): 1 + så här mycket gånger tanken det tar bort (nakenDel),
+  // så att byn syr det som gör folk olyckliga att sakna
+  humorVarde: 100,
   kylaVikt: 1.5, // ett plagg som värmer väger så här mycket mer i projekten när kylan är som störst (coldOf 1, steg 10.2.71)
   vinterVarm: 1.5, // ett material minst så här varmt (gånger kaninskinnet) håller bäraren varm nog när kylan kommer (punkt 1)
   hotTim: 48, // vargar sedda nära byn eller en strid i byn för högst så här många timmar sedan: byn hotas (punkt 2)
@@ -29,6 +32,8 @@ export const KLADER = balans('klader', {
   vKyla: 8, vHot: 5, vSaknas: 3, vGottOm: 2, vDyrt: 1.5, vFin: 1, vVarde: 0.5,
 });
 
+// platserna på kroppen där den som saknar plagg känner sig naken (stepNaken i steg.ts): skjortan och rocken klär överkroppen
+export const NAKEN_PLATS: Record<string, string> = { fotter: 'fotter', ben: 'ben', inre: 'kropp', yttre: 'kropp' };
 export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'ull' | 'flatat' | 'smycke'; // ull: ylletyget (steg 9.8.14), som tyget men också till kappan, manteln och sjalen
 type Skadeslag = 'hugg' | 'stick' | 'slag' | 'bett';
 // ett plagg. namn = hur plagget börjar ("Rock" i "Rock av vargskinn"), ord = i en mening ("en rock", "ett par skor"),
