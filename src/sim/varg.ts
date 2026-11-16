@@ -5,7 +5,7 @@ import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
 import { GANG } from './gang';
-import { kronikaBer, och, personFalt, sakVarg, talOrd } from './berattelser';
+import { kronikaBer, och, personFalt, sakVarg } from './berattelser';
 import { redskapIHanden } from './agande';
 import { blodas } from './blod';
 import { bedFor } from './bygg';
@@ -586,7 +586,7 @@ export function vargjaktSteg(s: State, p: Person, tk: Task) {
     f.gor = 'flyr'; count(s, 'vargjaktFlydde');
     for (const q of med) { q.task!.until = s.now; q.task!.prog = 1; }
     log(s, `Vargarna märkte jägarna och sprang innan ${p.name} och de andra hann fram.`, 'world', med.map(q => q.id));
-    kronikaBer(s, 'k_vargSprang', p.id, { ...personFalt(p), med: med.length > 1 ? ` med ${talOrd(med.length - 1)} till` : '' }); // steg 3.7.16
+    kronikaBer(s, 'k_vargSprang', p.id, { ...personFalt(p), med: med.length > 1 ? ` med ${tal(med.length - 1)} till` : '' }); // steg 3.7.16
     return;
   }
   vargStrid(s, f, med, 'doda', 'på vargjakt'); // de som är kvar drar vidare när striden är slut (vargSlut)
@@ -672,7 +672,7 @@ function vargSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   const stText = `${namn} slogs med ${n > 1 ? `${tal(n)} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${stor(tal(doda.length))} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? 'Vargarna förlorade.' : vinnare === 1 ? 'Vargarna vann.' : 'Ingen vann.'}`;
   log(s, stText, 'world', folk.map(p => p.id)); notis(s, 'strid', stText, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
-  if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), vargar: n > 1 ? `${talOrd(n)} vargar` : 'en varg', fallde: talOrd(doda.length), svara: svara.length ? ` ${och(svara)} skadades svårt.` : '' });
+  if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), vargar: n > 1 ? `${tal(n)} vargar` : 'en varg', fallde: tal(doda.length), svara: svara.length ? ` ${och(svara)} skadades svårt.` : '' });
   else if (svara.length) kronikaBer(s, 'k_vargAnfall', folk[0].id, { svara: och(svara) });
   if (avsikt === 'doda' && !f.vargar.length && f.valp) { f.valp = undefined; vargValp(s, folk.filter(p => p.died === undefined)); } // valpen står kvar (steg 9.8.2)
   if (vinnare !== 1 || doda.length || (avsikt === 'doda' && f.vargar.length)) f.gor = 'flyr'; // efter vargjakten drar de som är kvar vidare
