@@ -418,6 +418,11 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     if (s.handlare) delete (s.handlare as { kopt?: unknown }).kopt;
     for (const p of s.people) if (p.task) delete (p.task as { handel?: unknown }).handel;
   }],
+  [54, 'v530: bonaden tas bort; de som hänger tas ner och skinnet och repet läggs i förrådet (steg 10.2.110)', s => {
+    for (const t of s.stationer ?? []) if (t.k === 'bonad' && t.kvar <= 0) { put(s, 'skinn', 1); put(s, 'rep', 1); }
+    if (s.stationer) s.stationer = s.stationer.filter(t => t.k !== 'bonad');
+    for (const p of s.people) { if (p.tek) delete p.tek.bonad; if (p.task?.act === 'station' && p.task.tool === 'bonad') p.task = undefined; }
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

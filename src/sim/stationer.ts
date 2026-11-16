@@ -60,7 +60,7 @@ import { paStrak } from './strak';
 // ---------- balanstal (regel 8) ----------
 export const STATION = balans('station', {
   bankPer: 4, // långhuset vill ha en bänk per så här många sovplatser (steg 10.2.68)
-  mattaSmak: 0.5, // så stor del av byn tycker om mattor (steg 10.7.6; krukan och bonaden delar på resten av smaken som förut)
+  mattaSmak: 0.5, // så stor del av byn tycker om mattor (steg 10.7.6)
   mattaFin: 0.5, mattaStorlek: 0.4, mattaTyg: 0.15, // mattans storlek (steg 10.7.6): lusten gånger 1 + mattaFin för en finare + ägarens smak (upp till mattaStorlek), mot bristen på tyg gånger mattaTyg per tyg
   mattaTygMal: 10, // tyget räknas som en brist när byn har mindre än så här mycket av det
   pyntAvtar: 0.3, // lusten efter ett pynt till är så här stor del av lusten efter det förra (steg 10.2.43)
@@ -370,11 +370,6 @@ export const STATIONER = {
     namn: 'Krubba', ikon: 'krubba', w: 2, h: 1, tek: ['snickarbank'], av: RECEPT.krubba.av, min: RECEPT.krubba.min, gor: [], inne: true, mobel: true, flera: true, fahus: true,
     bygger: 'Snickrar en krubba till fähuset.',
     forsta: '{namn} snickrade byns första krubba och ställde den i fähuset. Där läggs höet åt djuren, och där står de i istiden.',
-  },
-  bonad: {
-    namn: 'Bonad', ikon: 'bonad', w: 1, h: 1, tek: ['bonad'], av: RECEPT.bonad.av, min: RECEPT.bonad.min, gor: [], inne: true, mobel: true, flera: true, pynt: true,
-    bygger: 'Ritar ett mönster på ett skinn och hänger upp det som en bonad.',
-    forsta: '{namn} hängde upp byns första bonad där {han} sover, ett skinn med ett mönster på. Den är bara till för att vara vacker.',
   },
   ...MATTA_ST,
 } satisfies Record<string, StationDef>;
@@ -871,14 +866,14 @@ const halvPynt = (s: State, p: Person) => stationerOf(s).some(t => t.ag === p.id
 // lusten efter ett pynt till: 1 för den som inget har, och STATION.pyntAvtar gånger mindre för varje pynt hen redan har
 export const pyntLust = (s: State, p: Person) => STATION.pyntAvtar ** pyntAntal(s, p);
 // smaken (steg 10.7.6): en rad per sort med ett eget tal, fast för var och en (ingen slump), så att en ny sort inte ändrar vad
-// någon tycker om de andra. Krukan och bonaden delar ett tal (var och en tycker om den ena av dem, som förut); mattan har sitt eget.
+// någon tycker om de andra. Alla tycker om krukan sedan bonaden togs bort (steg 10.2.110); mattan har sitt eget tal.
 // Lerkrukan är en av sorterna fast den inte är en möbel, och alla mattor är en sort
 export const PYNT_SMAK: Record<string, { salt: number; fran: number; till: number }> = {
-  kruka: { salt: 43, fran: 0, till: 0.5 }, bonad: { salt: 43, fran: 0.5, till: 1 }, matta: { salt: 44, fran: 0, till: STATION.mattaSmak },
+  kruka: { salt: 43, fran: 0, till: 1 }, matta: { salt: 44, fran: 0, till: STATION.mattaSmak },
 };
 export const PYNT_SORTER = Object.keys(PYNT_SMAK);
 export const gillarPynt = (s: State, p: Person, sort: string) => { const r = PYNT_SMAK[sort]; if (!r) return false; const h = hash3(s.seed, p.id, r.salt); return h >= r.fran && h < r.till; };
-// den första sorten p tycker om (krukan eller bonaden), och sorten i smaken för pyntet k
+// den första sorten p tycker om, och sorten i smaken för pyntet k
 export const pyntSort = (s: State, p: Person) => PYNT_SORTER.find(k => gillarPynt(s, p, k))!;
 export const pyntSmakAv = (k: string) => stationDef(k)?.smak ?? k;
 // p vill ha pyntet k: hen är vuxen, sover inne, bygger inte redan ett och tycker om sorten. En matta: den storlek och det tyg p väljer

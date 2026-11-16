@@ -52,7 +52,7 @@ export const RUMSTYPER = {
   fahus: { namn: 'Fähus', ikon: 'krubba', slag: 'grund', om: 'Här står en krubba med hö, och här står djuren i istiden', krav: i => i.krubba >= 1 }, // steg 10.2.88
   torkhus: { namn: 'Torkhus', ikon: 'tork', slag: 'grund', om: 'En torkställning under tak', krav: i => i.tork >= 1 },
   varmt: { namn: 'Varmt', ikon: 'lagereld', slag: 'egenskap', om: 'Härden värmer rummet', krav: i => i.eld >= 1 },
-  prytt: { namn: 'Prytt', ikon: 'bonad', slag: 'egenskap', om: 'Minst tre saker pryder rummet', krav: i => i.pynt >= RUM.pryttMin },
+  prytt: { namn: 'Prytt', ikon: 'kruka', slag: 'egenskap', om: 'Minst tre saker pryder rummet', krav: i => i.pynt >= RUM.pryttMin },
   trangt: { namn: 'Trångt', ikon: '👥', slag: 'egenskap', om: 'Fler sover här än ytan räcker till', krav: i => i.folk > i.sov },
   smutsigt: { namn: 'Smutsigt', ikon: '😣', slag: 'egenskap', om: 'Smuts på golvet', krav: i => i.smuts >= 1 },
   hydda: { namn: 'Hydda', ikon: '🏠', slag: 'kombination', om: 'Man sover och lagar mat i samma lilla rum', krav: (i, t) => (t.has('sovrum') || t.has('sovsal')) && t.has('kok') && i.rutor <= RUM.hyddaMax, delar: ['sovrum', 'sovsal', 'kok'] },

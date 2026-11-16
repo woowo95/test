@@ -61,7 +61,6 @@ export const PAL: Record<string, Record<string, string>> = {
   lyra: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', e: '#987e62', y: '#d8b25f' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   // pyntet (steg 4.3.4, platshållare i bildstilens palett, 16 punkter per ruta)
   kruka: { o: '#24201d', r: '#521100', R: '#742a01', T: '#bd753e', k: '#2f261d', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
-  bonad: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', r: '#521100', R: '#742a01', s: '#906f0f', S: '#b2921b', w: '#a0947d', W: '#bdb39b' }, // (Björn valde version 3 efter v245, steg 4.5.2)
   hogsate: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', s: '#906f0f', S: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // långhusets högsäte (steg 10.2.68, platshållare, 16 punkter)
   altare: { o: '#24201d', s: '#61767a', S: '#8a9c9e', k: '#3e5156', b: '#5e3c24', c: '#7d5b40', e: '#987e62', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // trons altare (steg 10.3.19, platshållare, 16 punkter per ruta)
   heligt: { o: '#24201d', y: '#d8b25f', e: '#dad0bb', c: '#987e62' }, // symbolen för ett heligt ting (steg 10.3.20, platshållare)
@@ -2413,7 +2412,6 @@ export const PIX: Record<string, string[]> = {
     '.....oooooo.....',
     '..zzzzzzzzzzzz..',
   ],
-  // bonaden (platshållare): ett ljust skinn med ett rött mönster, upphängt i en käpp, med fransar
   hogsate: [ // platshållare (steg 10.2.68)
     '....oooooooo....',
     '...oSsSsSsSSo...',
@@ -2539,24 +2537,6 @@ export const PIX: Record<string, string[]> = {
     '.oao........oao........oao..oao.',
     '.ooo........ooo........ooo..ooo.',
     '..zzz........zzz........zzz.zzz.',
-  ],
-  bonad: [ // (Björn valde version 3 efter v245, steg 4.5.2)
-    '.oooooooooooooo.',
-    'ocbbbbbbbbbbbbbo',
-    '.oosSSsSSsSSsoo.',
-    '..osSSsSSsSSso..',
-    '..orRRrRRrRRro..',
-    '..orRRrRRrRRro..',
-    '..owWWwWWwWWwo..',
-    '..owWWwWWwWWwo..',
-    '..osSSsSSsSSso..',
-    '..osSSsSSsSSso..',
-    '..orRRrRRrRRro..',
-    '..orRRrRRrRRro..',
-    '..owWWwWWwWWwo..',
-    '..oSooSooSooSo..',
-    '..oSooSooSooSo..',
-    '...o..o..o..o...',
   ],
 
   // trumman (platshållare, 16 punkter): ett ljust skinn spänt över en ring av trä, med snören
@@ -4200,7 +4180,7 @@ PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 // Björns val efter v193 (steg 3.10.13): den fångade kaninen på kartan ser ut som viltet i förrådet
 PIX.kanin_dod = PIX.vilt; PAL.kanin_dod = PAL.vilt;
 // pyntet (steg 4.3.4): samma bild på kartan och i listorna, och lerkrukan för intrycket smakfull
-for (const k of ['kruka', 'bonad', 'skrivpulpet', 'bokhylla']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; } // skrivpulpeten och bokhyllan (steg 10.6.11, 10.6.16): platshållarna på kartan
+for (const k of ['kruka', 'skrivpulpet', 'bokhylla']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; } // skrivpulpeten och bokhyllan (steg 10.6.11, 10.6.16): platshållarna på kartan
 // bänken och krubban vridna ett kvarts varv (platshållare tills de stående bilderna är ritade, steg 10.2.68 och 10.2.88)
 for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_karta_v'] = Array.from({ length: r[0].length }, (_, x) => Array.from({ length: r.length }, (_, y) => r[r.length - 1 - y][x]).join('')); PAL[k + '_karta_v'] = PAL[k]; }
 

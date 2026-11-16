@@ -782,10 +782,10 @@ SCENARIER.bildyta = {
 
 // den vävda mattan (steg 10.7.6): smaken per sort, storleken efter lusten och tyget, ett golv man går över och som annat står på
 function matta(): [string, boolean][] {
-  const { PROJEKT, isKlar, bedTile, mattaVal, mattaAt, stationAt, stationerOf, stationDef, villPynt, gillarPynt, pyntSort, hash3, MATTOR, PYNT } = SIM;
-  // smaken för krukan och bonaden är densamma som förut, då en sort valdes ur ett enda tal (nu en rad per sort)
+  const { PROJEKT, isKlar, bedTile, mattaVal, mattaAt, stationAt, stationerOf, stationDef, villPynt, gillarPynt, pyntSort, MATTOR, PYNT } = SIM;
+  // alla tycker om krukan sedan bonaden togs bort (steg 10.2.110); mattan har sitt eget tal
   const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
-  const lika = Array.from({ length: 60 }, (_, i) => i).every(i => pyntSort(s, { id: i } as Person) === ['kruka', 'bonad'][Math.floor(hash3(s.seed, i, 43) * 2)]);
+  const lika = Array.from({ length: 60 }, (_, i) => i).every(i => pyntSort(s, { id: i } as Person) === 'kruka');
   const gillar = Array.from({ length: 60 }, (_, i) => gillarPynt(s, { id: i } as Person, 'matta')).filter(Boolean).length;
   setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'lintyg', 20);
   const p = vuxna(s).find(q => bedTile(s, q) !== undefined && gillarPynt(s, q, 'matta'))!;
@@ -818,40 +818,40 @@ function matta(): [string, boolean][] {
   };
   const gl = t ? steg('matta_liten_lin', 2) : 0, gs = t ? steg('matta_stor_lin', 2) : 0, gr = t ? steg('matta_rund_ylle', 2) : 0;
   return [
-    [`smaken per sort: krukan och bonaden som förut (${lika ? 'samma' : 'annan'} hos 60), och ${gillar} av 60 tycker om mattor`, lika && gillar > 15 && gillar < 45],
+    [`smaken per sort: alla tycker om krukan (${lika ? 'ja' : 'nej'} hos 60), och ${gillar} av 60 tycker om mattor`, lika && gillar > 15 && gillar < 45],
     [`p, som tycker om mattor, vill väva en fin matta när det finns tyg (${k}, ${Object.keys(MATTOR).length} storlekar)`, vill && fin],
     [`utan tyg och med en kruka hemma väljer p en mindre (${liten || 'ingen'})`, mindre],
     [`p väver mattan på ${h} timmar (ungefär ${h / 2} månader i spelet) och lägger den i rummet där p sover`, byggd],
-    [`mattan ligger som ett golv: rutorna har ingen station, man går över dem, och en bonad kan stå på den`, golv && !!site],
+    [`mattan ligger som ett golv: rutorna har ingen station, man går över dem, och en annan möbel kan stå på den`, golv && !!site],
     [`den stora och den runda är ett steg finare som pynt (humör +${(gl * 100).toFixed(1)} %, +${(gs * 100).toFixed(1)} %, +${(gr * 100).toFixed(1)} %)`, gl === PYNT.glad[2] && gs === PYNT.glad[3] && gr === PYNT.glad[3]],
   ];
 }
 SCENARIER.pynt = {
-  text: 'Pynt i hemmen (steg 4.3.4): var och en som är vuxen och sover inne bygger ett pynt åt sig själv (en lerkruka eller en bonad, efter smaken), och lusten efter ett till avtar, i rummet där hen sover. Ägaren trivs där, och de som ser det får ett bättre intryck av ägaren, mer ju finare det är. Den vävda mattan (steg 10.7.6): smaken räknas per sort, storleken efter lusten och bristen på tyg, och mattan ligger som ett golv som man går över och som annat står på; den stora och den runda är ett steg finare',
+  text: 'Pynt i hemmen (steg 4.3.4): var och en som är vuxen och sover inne bygger ett pynt åt sig själv (en matta, efter smaken; krukan prövas i scenariot kruka), och lusten efter ett till avtar, i rummet där hen sover. Ägaren trivs där, och de som ser det får ett bättre intryck av ägaren, mer ju finare det är. Den vävda mattan (steg 10.7.6): smaken räknas per sort, storleken efter lusten och bristen på tyg, och mattan ligger som ett golv som man går över och som annat står på; den stora och den runda är ett steg finare',
   kor: () => {
-    const { PROJEKT, PYNT_LIST, isKlar, pyntOf, pyntSort, villPynt, bedTile, stationRum, stepPynt, intryckOm } = SIM;
+    const { PROJEKT, PYNT_LIST, isKlar, pyntOf, villPynt, bedTile, stationRum, stepPynt, intryckOm } = SIM;
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
-    setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'skinn', 4); SIM.setAmount(s, 'rep', 4);
+    setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'lintyg', 20);
     // bara p kan göra pynt: rummet har plats för färre pynt än de som sover där, och de andra hann annars ta platserna först
-    const p = vuxna(s).find(q => bedTile(s, q) !== undefined && pyntSort(s, q) !== 'kruka' && !SIM.gillarPynt(s, q, 'matta'))!; // mattan prövas för sig nedan (steg 10.7.6); lerkrukan är ett ting sedan steg 9.4.11 (scenariot kruka)
-    p.tek = { ...p.tek, kruka: 1, bonad: 1 };
-    const k = pyntSort(s, p);
+    const p = vuxna(s).find(q => bedTile(s, q) !== undefined && SIM.gillarPynt(s, q, 'matta'))!; // pyntet som är en möbel är mattan sedan bonaden togs bort (steg 10.2.110); lerkrukan är ett ting sedan steg 9.4.11 (scenariot kruka)
+    p.tek = { ...p.tek, matta: 1 };
+    const k = SIM.mattaVal(s, p) ?? '';
     const vill = villPynt(s, p, k), bara = PYNT_LIST.filter(j => villPynt(s, p, j)).length, brist = PROJEKT[k]!.brist(s);
-    const sorter = new Set(Array.from({ length: 12 }, (_, i) => pyntSort(s, { id: i } as Person))).size; // smaken skiljer sig mellan människor
+    const sorter = Array.from({ length: 12 }, (_, i) => SIM.gillarPynt(s, { id: i } as Person, 'matta')).filter(Boolean).length; // smaken skiljer sig mellan människor
     // pyntet väger lite mot arbetet om maten; här väger det mer, så att p bygger sitt snart
     let h = 0; const vikt = PYNT_LIST.map(j => PROJEKT[j]!.vikt); for (const j of PYNT_LIST) PROJEKT[j]!.vikt = 20;
     const pyntSt = (x: State) => pyntOf(x, x.people.find(r => r.id === p.id)!) as SIM.Station | undefined;
-    try { while (!(pyntSt(s) && isKlar(pyntSt(s)!)) && h < 240) { kor(s, 1); h++; for (const m of ['virke', 'skinn', 'rep']) if (SIM.amountOf(s, m) < 4) SIM.setAmount(s, m, 6); } } finally { PYNT_LIST.forEach((j, i) => { PROJEKT[j]!.vikt = vikt[i]; }); }
+    try { while (!(pyntSt(s) && isKlar(pyntSt(s)!)) && h < 240) { kor(s, 1); h++; if (SIM.amountOf(s, 'lintyg') < 6) SIM.setAmount(s, 'lintyg', 20); } } finally { PYNT_LIST.forEach((j, i) => { PROJEKT[j]!.vikt = vikt[i]; }); }
     const t = pyntSt(s), b = bedTile(s, p), rum = t && stationRum(s, t);
-    const byggd = !!t && isKlar(t) && t.k === k && t.ag === p.id && !!t.inne && b !== undefined && !!rum?.tiles.includes(b) && t.q !== undefined;
+    const byggd = !!t && isKlar(t) && !!SIM.stationDef(t.k)?.golv && t.ag === p.id && !!t.inne && b !== undefined && !!rum?.tiles.includes(b) && t.q !== undefined;
     const mer = PYNT_LIST.some(j => villPynt(s, p, j)) ? SIM.pyntLust(s, p) : 0; // lusten efter ett pynt till avtar (steg 10.2.43)
     // i rummet: ägaren trivs, och den som är vaken där får ett bättre intryck av ägaren. Ett uselt pynt ger inget
     const v = SIM.living(s).find(q => q !== p)!, ruta = rum?.tiles[0] ?? 0;
     const prova = (q: number, extra?: number) => {
       const k2 = SIM.cloneState(s), p2 = k2.people.find(r => r.id === p.id)!, v2 = k2.people.find(r => r.id === v.id)!, t2 = pyntSt(k2)!;
-      t2.q = q; p2.thoughts = []; v2.intryck = [];
+      t2.q = q; t2.k = 'matta_liten_lin'; p2.thoughts = []; v2.intryck = []; // (den lilla mattan: den stora är ett steg finare, steg 10.7.6)
       if (extra !== undefined) k2.stationer!.push({ ...t2, id: 1e6, q: extra }); // ett pynt till i samma rum (steg 10.7.2)
-      for (const x of SIM.stationerOf(k2)) if (x.ag === p2.id && SIM.stationDef(x.k)?.pynt) x.q = q; // lusten efter ett till kan ha gett ett pynt till (steg 10.2.43)
+      for (const x of SIM.stationerOf(k2)) if (x.ag === p2.id && SIM.stationDef(x.k)?.pynt) { x.q = q; x.k = 'matta_liten_lin'; } // lusten efter ett till kan ha gett ett pynt till (steg 10.2.43)
       k2.ting = (k2.ting ?? []).filter(x => !(x.k.startsWith('lerkruka_') && x.agare === p2.id)); // bara pyntet som prövas (en kruka hemma är också ett pynt)
       for (const r of [p2, v2]) { r.x = ruta % SIM.W + 0.5; r.y = Math.floor(ruta / SIM.W) + 0.5; r.task = undefined; } // SIM.W: W sätts när kartan skapas
       stepPynt(k2);
@@ -866,7 +866,7 @@ SCENARIER.pynt = {
     const v1 = SIM.tingVarde(k1), v2 = SIM.tingVarde(k2);
     const m = matta();
     return [
-      [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} sorter hos tolv)`, vill && bara === 1 && brist > 0 && sorter === 2],
+      [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} av tolv tycker om mattor)`, vill && bara === 1 && brist > 0 && sorter > 0 && sorter < 12],
       [`p bygger sitt pynt på ${h} timmar (ungefär ${h / 2} månader i spelet), inne i rummet där p sover, med en kvalitet`, byggd],
       [`lusten efter ett pynt till avtar (${mer.toFixed(2)} mot 1 utan)`, !!t && mer <= SIM.STATION.pyntAvtar + 1e-9],
       [`ägaren trivs i rummet: humör +${(fin.glad * 100).toFixed(0)} % med ett mästerverk, +${(normal.glad * 100).toFixed(0)} % med ett normalt`, fin.glad > normal.glad && normal.glad > 0],
