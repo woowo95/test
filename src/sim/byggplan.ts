@@ -76,7 +76,7 @@ export const PLAN = balans('byggplan', {
   kopMax: 0.9, // köparens högsta pris är så här stor del av vad det kostar att bygga nytt
   prisRel: 0.3, // en vän betalar mindre ...
   prisSkill: 0.3, // ... och den som är bättre på handel
-  rivDygn: 2, // ett eget hus som stått tomt så här många dygn (år i spelet) rivs
+  rivDygn: 2, // ett tomt eget hus som ingen velat köpa på så här många dygn (år i spelet) rivs (steg 10.11.15)
   potMitt: 50, // en egenskap på det här värdet drar inte åt något håll
   tatSed: 0.7, tatLedare: 0.3, // hur mycket seden Sammanhållning och ledarens empati gör att husen står tätt
   raderFran: 0.5, // över det här (seden Förnyelse och ledarens nyfikenhet) byggs husen i rader längs stråken
@@ -573,13 +573,28 @@ function planSkadat(s: State, okAt: (i: number) => boolean, byggare: Person[]) {
     return; // ett i taget
   }
 }
-// en familj river sitt eget hus när ingen vill köpa det och det står tomt (steg 7.2.15): hälften av materialet går till ägaren
+// vill någon köpa huset h? En familj (ett par, räknat från den med lägst id, som i familjUtanHus i byggnader.ts) utan eget hus,
+// som får plats i det och vars högsta pris når säljarens lägsta (steg 10.11.15)
+export function villKopa(s: State, h: Hus): boolean {
+  if (!kopbart(s, h)) return false;
+  const hs = housesOf(s), plats = sovPersoner((h.w - 2) * (h.h - 2)), salj = saljPris(s, h);
+  for (const o of living(s)) {
+    const pa = byId(s, o.partner);
+    if (!pa || !living(s).includes(pa) || pa.id < o.id || o.id === h.ag || pa.id === h.ag) continue;
+    const folk = familjOf(s, o.id);
+    if (folk.length < HUS.familjMin || folk.length > plats || hs.some(q => q.ag === o.id || q.ag === pa.id)) continue;
+    if (kopPris(s, o.id, nyttLika(s, h)) >= salj) return true;
+  }
+  return false;
+}
+// ett tomt eget hus står till salu på husmarknaden (steg 10.11.15): så länge någon vill köpa det står det kvar. Har ingen velat köpa
+// det på PLAN.rivDygn dygn river familjen det (steg 7.2.15): hälften av materialet går till ägaren
 export function rivOmTomt(s: State) {
   for (const h of housesOf(s)) {
     if (h.ag === undefined || !h.klar || h.ut) continue;
     const folk = familjOf(s, h.ag);
     if (folk.length && folk.some(q => sovHus(s, q) === h.id)) { h.tom = undefined; continue; }
-    h.tom ??= s.now;
+    if (h.tom === undefined || villKopa(s, h)) { h.tom = s.now; continue; } // till salu: tiden räknas från då ingen längre ville köpa
     if (s.now - h.tom < PLAN.rivDygn * DAY) continue;
     const mat = tramat(bitsOf(s).filter(b => b.hus === h.id)), namn = h.namn;
     s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
