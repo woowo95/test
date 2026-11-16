@@ -39,6 +39,7 @@
     ];
     return former(W, H, lista);
   }
+  window.F98.sida = sida; // fyrbenta djur från sidan (också 10.10-djur.js)
   const HUND = { W: 33, H: 21, ben: 5.5, kropp: 3.2, ruff: 3.3, huvud: 2.7, nos: 4.2, svans: 1.9, sank: 0.4, len: 8 };
   const VALP = { W: 23, H: 14, ben: 3, kropp: 2.5, ruff: 2.6, huvud: 2.5, nos: 2.4, svans: 1.4, sank: 0.5, len: 5, xb: 4, oraH: 2.2 };
   const hund = [
