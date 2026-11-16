@@ -517,6 +517,13 @@ export function kanGoras(s: State, act: Act, p?: Person) {
   const t = stationFor(s, act, p), k = t && stationDef(t.k)?.kraver?.[act];
   return !!t && (!k || redskapVid(s, t, k).length > 0);
 }
+// redskapet som saknas vid stationen för act (bensylen vid slöjdbänken): stationen finns men redskapet ligger inte där. Det
+// blir ett projekt som det som fattas till receptet (receptTill i redskap.ts, steg 6.2.19)
+export function saknasVid(s: State, act: Act, p?: Person) {
+  if (!BARA.has(act)) return undefined;
+  const t = stationFor(s, act, p), k = t && stationDef(t.k)?.kraver?.[act];
+  return t && k && !redskapVid(s, t, k).length ? k : undefined;
+}
 // platsen där man står och arbetar vid stationen: mitt för den på rutan söder om den
 export const vidStation = (t: Station) => { if (t.delar?.length) { const q = arbetsDel(t); return { x: q.x + q.w / 2, y: q.y + q.h + 0.1 }; } const { w, h } = storlekAv(t); return { x: t.x + w / 2, y: t.y + h + 0.1 }; }; // framför delen man arbetar vid (steg 9.4.1)
 // hur många gånger fortare p gör act just där hen står: stationens fart för den som står vid den, annars 1

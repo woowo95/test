@@ -17,7 +17,7 @@ import { anseendeSym } from './rykten';
 import { DORRAR, DORR_LIST } from './byggnad';
 import { utanDorr } from './bygg';
 import { balans } from './balans';
-import { fartVid, kvVid, kanGoras, nyttVid, slitVid, stationFor } from './stationer';
+import { fartVid, kvVid, kanGoras, nyttVid, saknasVid, slitVid, stationFor } from './stationer';
 import { smutsa } from './smuts';
 import { krukaAv, krukaFormad } from './kruka';
 import { LJUSGRUPP, LJUSSORTER } from './ljus';
@@ -286,9 +286,11 @@ export function underhallGrupp(s: State, p: Person) {
 // slaget hen kan göra, men inte materialet (projekt.ts, steg 6.1.17). undefined när p kan göra det, eller inte kan alls
 export function receptTill(s: State, p: Person, g: string): Recept | undefined {
   const ks = GORS[g];
-  if (!kanGoras(s, g as Act, p) || harAv(s, g) >= villAv(s, g) || !enTill(s, g as Act, p) || halvOf(s, p, ks)) return undefined;
+  // saknas bara redskapet vid stationen (bensylen vid slöjdbänken) fattas det som ett verktyg, så att det görs (fattas i projekt.ts)
+  const vid = kanGoras(s, g as Act, p) ? undefined : saknasVid(s, g as Act, p);
+  if (!kanGoras(s, g as Act, p) && !vid || harAv(s, g) >= villAv(s, g) || !enTill(s, g as Act, p) || halvOf(s, p, ks)) return undefined;
   const k = ks.find(k => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k)); });
-  return k ? { av: av(k), spar: m => sparas(s, m) } : undefined;
+  return k ? { av: av(k), spar: m => sparas(s, m), ...(vid ? { verktyg: vid } : {}) } : undefined;
 }
 // arbetet att göra ett redskap i gruppen g. tool = slaget som görs när gruppen har flera (namnet på arbetet, handlingar.ts)
 export function makeTask(s: State, p: Person, g: string) {
