@@ -93,6 +93,9 @@ export const BRAND = balans('brand', {
   hot: 10, // elden hotar byn när en ruta brinner så här nära byns område (utanforByn): då släcker de vuxna ...
   hotR: 2, hotVarde: 8, // ... och också längre bort, när det inom så här många rutor står så här mycket värt (husen, förrådet, stationerna, fälten; steg 10.2.44)
   husVarde: 2, faltVarde: 1, // det en husbit och en fältruta är värd (grundvärde) i hotet
+  byVarde: 8, // en ruta som brinner nära byns område är värd så här mycket att släcka, utöver det som står nära (steg 10.11.3) ...
+  inreVikt: 0.2, // ... en ruta inne i elden (den sprider inte) så här mycket av en kantruta ...
+  slackGang: 4, // ... och värdet halveras när rutan ligger så här många rutor längre bort
   hetta: 1.2, // branden är het (steg 9.2.135): en ruta som brinner värmer som lägerelden tätt intill (värmen i heatAt, eld.ts; över KROPP.eldTatt blir man för varm) ...
   hettaR: 2, // ... ut till så här många rutor, avtagande
   fara: 2, // den som är så här nära en brinnande ruta och inte släcker går undan ...
@@ -656,8 +659,31 @@ export function hjalpaKlar(s: State, p: Person, t: Task) {
 
 // vad p gör åt branden: släcker (de vuxna när elden är nära byn), eller går undan (den som är nära elden)
 type BrandMal = { act: 'slacka' | 'flyEld'; why: string; spot: { x: number; y: number }; dur: number; tool?: string; ref?: number };
-// den brinnande ruta som någon redan släcker med händerna
-const slacks = (s: State, i: number, utom: Person) => living(s).some(q => q !== utom && q.task?.act === 'slacka' && !q.task.tool && q.task.ref === i);
+// hur många som släcker varje brinnande ruta med händerna (utom p)
+function slackare(s: State, utom: Person) {
+  const m = new Map<number, number>();
+  for (const q of living(s)) if (q !== utom && q.task?.act === 'slacka' && !q.task.tool && q.task.ref !== undefined) m.set(q.task.ref, (m.get(q.task.ref) ?? 0) + 1);
+  return m;
+}
+// vad det är värt för p att släcka den brinnande rutan i (steg 10.11.3): värdet av det som står nära (och byn), delat med hur
+// många som redan släcker där; en kantruta väger mer än en inre, och en nära mer än en långt bort. 0 om inget hotas där
+function slackVarde(s: State, b: Brand, i: number, p: { x: number; y: number }, ut: ReturnType<typeof bynsAvstand>, m: Map<number, number>) {
+  const v = vardeNara(s, i) + (ut.at(i) <= BRAND.hot ? BRAND.byVarde : 0);
+  if (!(v > 0) || !hotad(s, ut, i)) return 0;
+  const d = Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y);
+  return v * (inreOf(b)[i] ? BRAND.inreVikt : 1) / (1 + (m.get(i) ?? 0)) / (1 + d / BRAND.slackGang);
+}
+// den brinnande ruta som är mest värd för p att släcka (bara de som godkänns), och dess värde
+function bastSlack(s: State, b: Brand, p: { x: number; y: number }, m: Map<number, number>, ok?: (r: Brand['r'][number]) => boolean) {
+  const ut = bynsAvstand(s);
+  let best = -1, bv = 0;
+  for (const r of b.r) {
+    if (ok && !ok(r)) continue;
+    const v = slackVarde(s, b, r[0], p, ut, m);
+    if (v > bv) { bv = v; best = r[0]; }
+  }
+  return best;
+}
 function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undefined {
   if (!kanGa(p) || !b.r.length) return;
   const n = narmast(b, p.x, p.y);
@@ -667,13 +693,11 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
       const spot = drickPlats(s, p);
       if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: BRAND.fyllMin * MIN, tool: 'vattensack', ref: mal };
     }
-    // var och en tar sin egen ruta i eldens kant (steg 9.9.4): rutorna inne i elden sprider den inte längre, och två på samma ruta
-    // släcker inte fortare. Finns ingen ledig kantruta nära byn tas den närmaste som brinner där
-    const ut = bynsAvstand(s), inre = inreOf(b);
-    const m0 = narmast(b, p.x, p.y, i => slacks(s, i, p) || !hotad(s, ut, i) || !!inre[i]);
-    const m = m0.i >= 0 ? m0 : narmast(b, p.x, p.y, i => !hotad(s, ut, i)); // bara det som brinner nära byn eller nära något värt
-    const fot = m.i >= 0 ? fotfaste(s, b, m.i, p) : undefined;
-    if (fot) return { act: 'slacka', why: 'Släcker elden med händerna', spot: fot, dur: BRAND.handMin * MIN, ref: m.i };
+    // var och en väljer den ruta som är mest värd att släcka (steg 10.11.3): det som står nära, delat med hur många som redan
+    // släcker där, och kanten före det inre
+    const i = bastSlack(s, b, p, slackare(s, p));
+    const fot = i >= 0 ? fotfaste(s, b, i, p) : undefined;
+    if (fot) return { act: 'slacka', why: 'Släcker elden med händerna', spot: fot, dur: BRAND.handMin * MIN, ref: i };
   }
   if (n.d > BRAND.fara) return;
   return bortFran(s, p, n.i);
@@ -725,23 +749,23 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
   const b = s.brand;
   if (t.tool) return; // vattensäcken fylls
   if (!b) { t.until = s.now; return; }
-  const k = kartaOf(b), inre = inreOf(b);
+  const k = kartaOf(b);
   // tiden räcker till flera rutor (steg 9.9.4): när en ruta är släckt går resten av tiden till nästa inom räckhåll. Förut gick
   // resten förlorad, så att ingen släckte mer än en ruta per slag hur fort hen än arbetade
   let kvar = dtSec;
   for (let varv = 0; varv < 40 && kvar > 1e-6; varv++) {
     let r = b.r.find(q => q[0] === t.ref && q[3] < 1);
     if (!r || Math.hypot(r[0] % W + 0.5 - p.x, Math.floor(r[0] / W) + 0.5 - p.y) > BRAND.handR) {
-      // nästa ruta inom räckhåll, helst en i kanten som ingen annan släcker; annars går hen vidare till den närmaste
-      const ledig = (i: number) => (b.r.find(q => q[0] === i)?.[3] ?? 1) >= 1;
-      const n0 = narmast(b, p.x, p.y, i => ledig(i) || !!inre[i] || slacks(s, i, p)), n = n0.i >= 0 && n0.d <= BRAND.handR ? n0 : narmast(b, p.x, p.y, ledig);
-      r = n.i >= 0 && n.d <= BRAND.handR ? b.r.find(q => q[0] === n.i) : undefined;
+      // nästa ruta inom räckhåll, den som är mest värd att släcka (steg 10.11.3); annars går hen till den som är mest värd
+      const sl = slackare(s, p), inom = (q: Brand['r'][number]) => q[3] < 1 && Math.hypot(q[0] % W + 0.5 - p.x, Math.floor(q[0] / W) + 0.5 - p.y) <= BRAND.handR;
+      const n = bastSlack(s, b, p, sl, inom);
+      r = n >= 0 ? b.r.find(q => q[0] === n) : undefined;
       if (!r) {
-        const ut = bynsAvstand(s), m = narmast(b, p.x, p.y, i => ledig(i) || !hotad(s, ut, i) || !!inre[i] || slacks(s, i, p));
-        if (m.i < 0 || !kanGa(p)) { if (varv === 0) t.until = s.now; return; }
-        const pl = fotfaste(s, b, m.i, p);
+        const mi = bastSlack(s, b, p, sl, q => q[3] < 1);
+        if (mi < 0 || !kanGa(p)) { if (varv === 0) t.until = s.now; return; }
+        const pl = fotfaste(s, b, mi, p);
         if (!pl) { if (varv === 0) t.until = s.now; return; }
-        t.ref = m.i; t.tx = pl.x; t.ty = pl.y; t.phase = 'go'; t.pk = undefined; t.path = undefined; // går till nästa ruta som brinner
+        t.ref = mi; t.tx = pl.x; t.ty = pl.y; t.phase = 'go'; t.pk = undefined; t.path = undefined; // går till nästa ruta som brinner
         return;
       }
     }
