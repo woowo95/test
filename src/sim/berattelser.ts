@@ -2246,7 +2246,8 @@ function starkastUpp(p: Person) {
 interface Besk { s: State; p: Person; f: Fyllning; nyck: (i: number) => number; borjan: Set<string>; hors?: boolean; sist?: boolean; andra?: RegExp }
 interface BeskDel { id: string; fast?: true; vikt: (b: Besk) => number; text: (b: Besk) => string }
 // början på en mening (de två första orden), så att två meningar i samma beskrivning inte börjar likadant
-const borjan = (t: string) => t.split(/(?<=[.!?])\s+/).map(x => x.split(' ').slice(0, 2).join(' ').toLowerCase());
+// (ett namn som Yrkan den yngre räknas som ett ord: "Yrkan den yngre är" och "Yrkan den yngre undviker" börjar olika)
+const borjan = (t: string) => t.split(/(?<=[.!?])\s+/).map(x => x.replace(/ den (yngre|andre)\b/g, '_den_$1').split(' ').slice(0, 2).join(' ').toLowerCase());
 // hörsägen (steg 6.7.3, b_sager): "säger", "talar om" står bara en gång i en beskrivning
 const HORS = /\bsäger\b|\btalar om\b/;
 const mening = (b: Besk, m: MallId, i: number) => {

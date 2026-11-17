@@ -59,7 +59,7 @@ const ARTIKEL = new RegExp(`(^|[^\\p{L}])(som|är|var) (lögnare|tjuv|klåpare|v
 // fel som bara gäller en hel beskrivning eller en lång text: upprepningar och för långa meningar. De skrivs i texter.txt
 export const STIL: Kontroll[] = [
   { id: 'sammaMening', namn: 'Samma mening två gånger', hitta: t => { const m = meningar(t); return m.find((x, i) => m.indexOf(x) !== i); } },
-  { id: 'sammaBorjan', namn: 'Samma början på två meningar', hitta: t => { const b = meningar(t).map(x => x.split(' ').slice(0, 2).join(' ').toLowerCase()); return b.find((x, i) => b.indexOf(x) !== i && x.includes(' ')); } },
+  { id: 'sammaBorjan', namn: 'Samma början på två meningar (ett namn som Yrkan den yngre är ett ord)', hitta: t => { const b = meningar(t).map(x => x.replace(/ den (yngre|andre)\b/g, '_den_$1').split(' ').slice(0, 2).join(' ').toLowerCase()); return b.find((x, i) => b.indexOf(x) !== i && x.includes(' ')); } },
   { id: 'lang', namn: 'En för lång mening (fler än 30 ord)', hitta: t => meningar(t).find(x => x.split(' ').length > 30)?.slice(0, 60) },
 ];
 const meningar = (t: string) => t.split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(Boolean);
