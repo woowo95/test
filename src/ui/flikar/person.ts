@@ -37,7 +37,7 @@ export const person: Flik = {
     const bi = g ? `<span class="muted small">${esc(g.sort.toLowerCase())}</span>` : binamnHtml(p).trim();
     const marken = `${alive(p) ? prickar(p) : ''}${g ? '' : anseende(p)}`.trim();
     return `
-      <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div class="phuvud"><h2><span class="pnamn"${namnStorlek(p.name)}>${esc(p.name)}</span></h2>
+      <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div class="phuvud"><h2><span class="pnamn"${namnStorlek(p.name)}>${esc(p.name)}</span>${lever ? `<button type="button" class="oga${ui.follow === p.id ? ' sel' : ''}" data-folj="${p.id}" title="Följ ${esc(p.name)} med kartan (som att trycka två gånger på porträttet)" aria-label="Följ med kartan">{sym_oga}</button>` : ''}</h2>
       <p class="binamnrad">${bi || '&nbsp;'}</p>${g ? '' : binamnForkl(p)}
       <p class="pfakta">${pFakta(p)}${g?.fran ? ` · från ${esc(g.fran)}` : ''}</p><p class="pmarken">${marken || '&nbsp;'}</p>
       <p class="status klick${hel ? ' hel' : ''}" ${fallUt(sid)} title="${esc(hel ? 'Tryck för att korta' : 'Tryck för hela texten och skälet')}">${status}</p>${hel && why ? `<p class="muted small pskal">${esc(why)}</p>` : ''}</div></div>
@@ -440,7 +440,7 @@ function binamnForkl(p: Person) {
 }
 function anseende(p: Person) {
   const a = alive(p) ? anseendeSym(s, p.id) : dodSymbol(s, p.id);
-  return a ? ` <span class="anseende" title="${esc(alive(p) ? 'Vad byn tycker om hen' : a === '★' ? 'En legend i byn' : 'Ökänd i byn')}">${ansTecken(a)}</span>` : '';
+  return a ? ` <span class="anseende mark klick" data-pdel="ryk" tabindex="0" title="${esc(`${alive(p) ? 'Vad byn tycker om hen' : a === '★' ? 'En legend i byn' : 'Ökänd i byn'}. Tryck för ryktena`)}">${ansTecken(a)}</span>` : '';
 }
 // Vad byn tycker (steg 3.10.5): anseendet som en stapel med neutralt i mitten och en sammanfattning vid musen (eller ett
 // tryck); varje symbol har ett tecken för om den drar anseendet uppåt eller nedåt, och ett tryck visar vad den betyder och

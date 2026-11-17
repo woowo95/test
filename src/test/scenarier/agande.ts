@@ -1423,8 +1423,12 @@ SCENARIER.gastsida = {
     hjalpKlick({ closest: () => ({ dataset: { hjalp: `pstat-${by.id}` } }) } as unknown as HTMLElement); const helStatus = person.html();
     hjalpKlick({ closest: () => ({ dataset: { hjalp: `pstat-${by.id}` } }) } as unknown as HTMLElement);
     const huvud = rader(bybo) === 5 && rader(pres) === 5 && tomtBi && alder && !/status klick hel/.test(bybo) && /status klick hel/.test(helStatus);
+    // ögat vid namnet och märkena (steg 11.1.42): ögat följer med kartan, och väntar hen barn öppnar märket hälsan
+    const oga = /data-folj="\d+"/.test(bybo) && /data-folj="-\d+"/.test(pres);
+    by.pregnantSince = s.now; const gravid = /class="mark klick" data-pdel="halsa"/.test(person.html()); by.pregnantSince = undefined;
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['ögat vid namnet följer personen med kartan, för bybon och gästen, och märket Väntar barn öppnar hälsan (steg 11.1.42)', oga && gravid],
       ['huvudet står still: namnet, öknamnet (raden finns också tom), ålder och yrke, märkena och det hen gör, fem rader för både bybon och gästen, och det hen gör visas helt vid ett tryck (steg 11.1.41)', huvud],
       [`handlaren och ${r.length} rövare är gäster med var sitt negativa id`, !!h && r.length === 2 && g.every(x => x.id < 0) && new Set(g.map(x => x.id)).size === g.length],
       [`handlarens sida har namnet, vad hen gör och flikarna ${knappar(pres)}`, !!h && pres.includes(h.namn) && pres.includes(h.gor)],

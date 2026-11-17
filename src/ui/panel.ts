@@ -23,7 +23,8 @@ import { tal } from './flikar/tal';
 import { $, hjalpKlick } from './hjalp';
 import { OPPNAR, bubblaKlick } from './bubbla';
 import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
-import { renderPorts } from './portratt';
+import { renderPorts, startFollow, stopFollow } from './portratt';
+import { gaster } from './gaster';
 import { bandHtml, stenHtml } from './runstenar';
 
 // panelerna: flikarna och listan över allt byn äger.
@@ -167,6 +168,8 @@ document.addEventListener('click', e => {
   const b = el.closest<HTMLElement>('[data-id]');
   if (b) { selectPerson(Number(b.dataset.id)); return; }
   if (hjalpKlick(el)) { renderPanel(true); return; }
+  const fo = el.closest<HTMLElement>('[data-folj]'); // ögat vid namnet i personrutan följer personen med kartan (steg 11.1.42)
+  if (fo) { const id = Number(fo.dataset.folj); if (ui.follow === id) stopFollow(); else startFollow(id, gaster().find(g => g.id === id)?.namn); renderPanel(true); return; }
   if (el.closest('[data-kvsort]')) { ui.kvSort = !ui.kvSort; renderPanel(true); return; } // stackarna efter kvalitet (steg 9.2.18)
   const lv = el.closest<HTMLElement>('[data-visa]'); // en länk till en annan flik (flikLank i hjalp.ts)
   if (lv && (ALLA[lv.dataset.visa as FlikId]?.syns?.() ?? true)) { if (lv.dataset.kkatLank) Object.assign(kronikaVal, { del: 'handelser', viktigt: false, kat: lv.dataset.kkatLank, ar: undefined }); visa(lv.dataset.visa as FlikId); renderPanel(true); return; }
