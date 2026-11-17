@@ -41,8 +41,8 @@ export const person: Flik = {
       <p class="binamnrad">${bi || '&nbsp;'}</p>${g ? '' : binamnForkl(p)}
       <p class="pfakta">${pFakta(p)}${g?.fran ? ` · från ${esc(g.fran)}` : ''}</p><p class="pmarken">${marken || '&nbsp;'}</p>
       <p class="status klick${hel ? ' hel' : ''}" ${fallUt(sid)} title="${esc(hel ? 'Tryck för att korta' : 'Tryck för hela texten och skälet')}">${status}</p>${hel && why ? `<p class="muted small pskal">${esc(why)}</p>` : ''}</div></div>
-      ${flikRad(flikar, flik)}
-      ${delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p) + (g && d.gast ? d.gast(g) : ''))).join('')}`;
+      ${flikRad(flikar, flik, p)}
+      ${delar.length === 1 ? ensamDel(flik, delar[0].html(p) + (g && delar[0].gast ? delar[0].gast(g) : '')) : delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p) + (g && d.gast ? d.gast(g) : ''))).join('')}`;
   },
   klick(el) {
     const ti = el.closest<HTMLElement>('.tid [data-t]');
@@ -65,11 +65,13 @@ export const person: Flik = {
 // gast = det som är särskilt för en gäst (gaster.ts), efter det som står för alla (steg 9.2.114)
 // kort = sammanfattningen på rubriken (steg 5.3.4.2), som syns också när delen är hopfälld
 interface Del { id: string; tecken: string; namn: string; levande?: true; html(p: Person): string; kort?(p: Person): string; gast?(g: Gast): string }
-interface PFlik { id: string; tecken: string; namn: string; delar: string[] }
+interface PFlik { id: string; tecken: string; namn: string; delar: string[]; fel?: (p: Person) => boolean } // fel = en röd prick på symbolen (steg 11.1.44)
+// åtta flikar (steg 11.1.44): Översikt, Behov, Egenskaper, Hälsa, Saker, Människor, Kunskap och Händelser
 const FLIKAR: PFlik[] = [
-  { id: 'om', tecken: '🪪', namn: 'Om', delar: ['pres', 'tid'] },
+  { id: 'om', tecken: '🪪', namn: 'Översikt', delar: ['pres'] },
+  { id: 'behov', tecken: '{sym_energi}', namn: 'Behov', delar: ['behov', 'tid'] },
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', delar: ['egen'] }, // en egen flik igen (steg 6.9.10)
-  { id: 'kropp', tecken: '❤️', namn: 'Kropp', delar: ['behov', 'halsa'] },
+  { id: 'halsa', tecken: '❤️', namn: 'Hälsa', delar: ['halsa'], fel: p => alive(p) && (skadeLista(p, s.now).length > 0 || sickNow(p) || ['svalt', 'frys', 'torst'].includes(halsaLage(p, s.now) ?? '') || bristerNu(p).length > 0) },
   { id: 'saker', tecken: '🎒', namn: 'Saker', delar: ['utr', 'form'] },
   { id: 'folk', tecken: '👥', namn: 'Människor', delar: ['rel', 'ryk'] },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', delar: ['kun'] },
@@ -89,7 +91,9 @@ function delHtml(d: Del, i: number, kort: string | undefined, html: () => string
   const forst = i === 0 || ui.personDel === d.id, ut = utfalld(d.id, forst); // en del man valt direkt är också utfälld från början
   return `<h3 class="delrub klick falla" data-pfall="${d.id}" data-forst="${forst ? 1 : 0}" role="button" tabindex="0" aria-expanded="${ut}" title="${ut ? 'Tryck för att fälla ihop' : 'Tryck för att fälla ut'}"><span class="dtk">${d.tecken}</span>${d.namn}${kort ? `<span class="kort">${kort}</span>` : ''}</h3>${ut ? `<div class="delinne">${html()}</div>` : ''}`;
 }
-const flikRad = (delar: PFlik[], del: PFlik) => `<div class="pdelar" role="tablist">${delar.map(d => `<button type="button" role="tab" data-pdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>`;
+const flikRad = (delar: PFlik[], del: PFlik, p: Person) => `<div class="pdelar" role="tablist">${delar.map(d => { const fel = d.fel?.(p); return `<button type="button" role="tab" data-pdel="${d.id}" aria-selected="${d === del}" title="${d.namn}${fel ? ': något är fel' : ''}" aria-label="${d.namn}">${d.tecken}${fel ? '<span class="felprick"></span>' : ''}</button>`; }).join('')}</div>`;
+// en flik med bara en del (steg 11.1.44): ingen delrubrik, flikens namn står som rubrik och delen är alltid utfälld
+const ensamDel = (f: PFlik, html: string) => `<h3 class="flikrub">${esc(f.namn)}</h3><div class="delinne">${html}</div>`;
 const DELAR: Del[] = [
   { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml, kort: p => `${Math.floor(ageOf(p, s.now))} år · ${esc(yrkeNamn(s, p) ?? '–')}`, gast: gastPres },
   { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, kort: p => moodWord(moodOf(p, s.now)) },
