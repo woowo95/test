@@ -1,4 +1,5 @@
-import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serializeParts, step, timeLabel } from '../sim';
+import { gammalNyckel, lasEllerFlytta, sparaBy, tolkaText, webbBas } from './lagring';
 import { $, esc } from './hjalp';
 import { bortaHtml, ikappHtml, spolaText } from './borta';
 import { s, ui } from './lage';
@@ -7,13 +8,16 @@ import { drawPlants } from './vaxter';
 import { sparaAnnan } from './byar';
 
 // ---------- sparning: i webbläsaren och i artefaktens databas; den nyaste vinner när byn läses in ----------
-const SAVE_KEY = 'samhalle-save-v1';
+// I webbläsaren ligger byn i webbläsarens databas, en post per del (lagring.ts, steg 11.2.1). En by som sparats på det
+// gamla sättet, som en text under SAVE_KEY i det enkla minnet, flyttas över första gången den läses
+const SAVE_KEY = 'samhalle-save-v1', EGEN = 'egen';
 let lokalLarm = false; // felet skrivs i konsolen en gång, inte var tjugonde sekund
 export function saveLocal() {
   if (ui.testMode || !s) return;
-  if (ui.annanBy) { ui.lokalFel = !sparaAnnan(); return; } // en annan by sparas för sig (steg 9.2.16, byar.ts)
-  try { localStorage.setItem(SAVE_KEY, serialize(s)); ui.lokalFel = lokalLarm = false; }
-  catch (e) { ui.lokalFel = true; if (!lokalLarm) console.error('Byn kunde inte sparas i webbläsaren', e); lokalLarm = true; }
+  if (ui.annanBy) { void sparaAnnan().then(ok => { ui.lokalFel = !ok; }); return; } // en annan by sparas för sig (steg 9.2.16, byar.ts)
+  sparaBy(webbBas, EGEN, s).then(() => { ui.lokalFel = lokalLarm = false; }, e => {
+    ui.lokalFel = true; if (!lokalLarm) console.error('Byn kunde inte sparas i webbläsaren', e); lokalLarm = true;
+  });
 }
 // I databasen: varje del av byn (serializeParts) i ett eller flera dokument om högst BIT tecken (ett dokument rymmer 256 KB),
 // och sist dokumentet "byn" som säger vilken uppsättning (a eller b) som är hel. En sparning som avbryts halvvägs lämnar
@@ -49,11 +53,7 @@ export async function saveDb() {
 
 // det som lästs ur molnet: byn (null om det inte finns någon), uppsättningen den låg i och historikdelarna som de står där
 interface Last { d: any; id: string; by: State | null; slot?: string; hist: [string, string][] }
-function parse(txt: string | null | undefined): State | null {
-  if (!txt) return null;
-  try { const o = JSON.parse(txt); return o && typeof o.v === 'number' && Array.isArray(o.people) ? migrate(o) : null; } catch { return null; }
-}
-const parseMoln = (txt: string) => parse(txt) ?? (() => { throw new Error('byn i molnet gick inte att tolka'); })();
+const parseMoln = (txt: string) => tolkaText(txt) ?? (() => { throw new Error('byn i molnet gick inte att tolka'); })();
 // delarna läses samtidigt, men bara ur uppsättningen som "byn" pekar ut (den senast hela). Saknas en del, eller går byn inte
 // att tolka, kastas ett fel: då gick byn inte att läsa, och den får inte skrivas över
 async function readDb(d: any, id: string): Promise<Last> {
@@ -107,7 +107,8 @@ export function nyByVald() { if (ui.molnFel) setGrund(Infinity); }
 // nyare än den som spelas byts den in med nyare(by)
 export async function loadSaves(nyare: (by: State) => void): Promise<State | null> {
   let local: State | null = null, g: number | null = null;
-  try { local = parse(localStorage.getItem(SAVE_KEY)); const v = localStorage.getItem(GRUND_KEY); g = v === null ? null : Number(v); } catch { /* ignoreras */ }
+  try { local = (await lasEllerFlytta(webbBas, EGEN, gammalNyckel(SAVE_KEY)))?.by ?? null; } catch (e) { console.warn('Byn i webbläsaren gick inte att läsa', e); }
+  try { const v = localStorage.getItem(GRUND_KEY); g = v === null ? null : Number(v); } catch { /* ignoreras */ }
   try {
     const r = await fromCloud(LAS_MS);
     if (!r) return local;

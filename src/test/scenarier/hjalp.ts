@@ -171,7 +171,7 @@ function uiLasNu(s: State, t: number) {
 // (testerna i övrigt körs i datorns tidszon, här UTC, där byn startar 06:00)
 export const LANG_S = 13;
 export const STOCKHOLM = { TIDSZON: 'Europe/Stockholm' };
-export const SCENARIER: Record<string, { text: string; lang?: boolean; env?: Record<string, string>; kor: () => Koll[] }> = {};
+export const SCENARIER: Record<string, { text: string; lang?: boolean; env?: Record<string, string>; kor: () => Koll[] | Promise<Koll[]> }> = {};
 
 export const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;
 

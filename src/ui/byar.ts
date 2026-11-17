@@ -1,4 +1,5 @@
-import { DAY, State, createState, migrate, serialize } from '../sim';
+import { DAY, State, createState } from '../sim';
+import { gammalNyckel, lasEllerFlytta, sparaBy, webbBas } from './lagring';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
 
@@ -11,9 +12,10 @@ import { s, ui } from './lage';
 const LISTA_KEY = 'samhalle-byar-v1', AKTIV_KEY = 'samhalle-aktiv-v1', byKey = (id: string) => 'samhalle-by-' + id;
 export const TEST_START = Date.parse('2026-10-20T08:00:00+02:00'); // testbyarnas start (START i src/test/kor.ts)
 export interface ByRad { id: string; namn: string; seed: number; dag: number }
-// i webbläsaren: byn, och antingen när den sparades (vagg, datorns tid) eller tiden i byn den ska räknas fram till (mal)
-interface Sparad { t: string; vagg?: number; mal?: number }
-
+// i webbläsarens databas (lagring.ts, steg 11.2.1): byn i delar, och antingen när den sparades (vagg, datorns tid) eller tiden i
+// byn den ska räknas fram till (mal). Förut låg byn som en text (t) i det enkla minnet; den flyttas över första gången
+interface Tid { vagg?: number; mal?: number }
+interface Sparad extends Tid { t: string }
 const las = <T>(k: string): T | undefined => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) as T : undefined; } catch { return undefined; } };
 export const byarna = (): ByRad[] => las<ByRad[]>(LISTA_KEY) ?? [];
 const sattLista = (l: ByRad[]) => { try { localStorage.setItem(LISTA_KEY, JSON.stringify(l)); } catch { /* ignoreras */ } };
@@ -21,18 +23,18 @@ const sattLista = (l: ByRad[]) => { try { localStorage.setItem(LISTA_KEY, JSON.s
 export const aktivBy = () => { try { const v = localStorage.getItem(AKTIV_KEY); return v && byarna().some(b => b.id === v) ? v : undefined; } catch { return undefined; } };
 const sattAktiv = (id: string | undefined) => { try { if (id) localStorage.setItem(AKTIV_KEY, id); else localStorage.removeItem(AKTIV_KEY); } catch { /* ignoreras */ } };
 
-// den valda andra byn sparas i webbläsaren (saveLocal i spara.ts). false = minnet räckte inte
-export function sparaAnnan(): boolean {
+// den valda andra byn sparas i webbläsaren (saveLocal i spara.ts). false = det gick inte
+export async function sparaAnnan(): Promise<boolean> {
   if (!ui.annanBy || !s) return true;
-  try { localStorage.setItem(byKey(ui.annanBy), JSON.stringify({ t: serialize(s), vagg: Date.now() } satisfies Sparad)); return true; } catch { return false; }
+  try { await sparaBy(webbBas, byKey(ui.annanBy), s, { vagg: Date.now() } satisfies Tid); return true; } catch { return false; }
 }
 // en annan by ur webbläsaren, och hur långt efter klockan den ligger (ui.forskjut)
-function lasAnnan(id: string): { by: State; forskjut: number } | undefined {
-  const r = las<Sparad>(byKey(id));
-  if (!r) return undefined;
+async function lasAnnan(id: string): Promise<{ by: State; forskjut: number } | undefined> {
   try {
-    const by = migrate(JSON.parse(r.t));
-    return { by, forskjut: r.vagg !== undefined ? r.vagg - by.now : Date.now() - (r.mal ?? by.now) };
+    const r = await lasEllerFlytta<Tid>(webbBas, byKey(id), gammalNyckel(byKey(id)), txt => { const g = JSON.parse(txt) as Sparad; return { t: g.t, extra: { vagg: g.vagg, mal: g.mal } }; });
+    if (!r) return undefined;
+    const e = r.extra ?? {};
+    return { by: r.by, forskjut: e.vagg !== undefined ? e.vagg - r.by.now : Date.now() - (e.mal ?? r.by.now) };
   } catch { return undefined; }
 }
 
@@ -42,7 +44,7 @@ export async function bytTill(id: string | undefined) {
   if (ui.busy || id === ui.annanBy) return;
   byte.fore?.();
   if (!id) { ui.annanBy = undefined; ui.forskjut = 0; sattAktiv(undefined); await byte.egen?.(); return; }
-  const r = lasAnnan(id);
+  const r = await lasAnnan(id);
   if (!r) { ui.byFel = 'Byn gick inte att läsa.'; return; }
   ui.annanBy = id; ui.forskjut = r.forskjut; sattAktiv(id);
   await byte.ladda?.(r.by);
@@ -53,14 +55,14 @@ export async function laggTillTestby(seed: number, dag: number) {
   ui.byFel = '';
   if (!Number.isInteger(seed) || !Number.isInteger(dag) || dag < 0 || dag > 400) { ui.byFel = 'Fröet och dygnet ska vara hela tal (dygnet 0–400).'; return; }
   const id = `t${seed}-${dag}-${Date.now().toString(36)}`, by = createState(seed, TEST_START);
-  try { localStorage.setItem(byKey(id), JSON.stringify({ t: serialize(by), mal: TEST_START + dag * DAY } satisfies Sparad)); }
-  catch { ui.byFel = 'Webbläsarens minne är fullt: ta bort en by först.'; return; }
+  try { await sparaBy(webbBas, byKey(id), by, { mal: TEST_START + dag * DAY } satisfies Tid); }
+  catch { ui.byFel = 'Byn gick inte att spara i webbläsaren: ta bort en by först.'; return; }
   sattLista([...byarna(), { id, namn: `By ${seed}, dygn ${dag}`, seed, dag }]);
   await bytTill(id);
 }
 export function taBort(id: string) {
   if (id === ui.annanBy) return; // den valda byn tas inte bort; byt först
-  try { localStorage.removeItem(byKey(id)); } catch { /* ignoreras */ }
+  gammalNyckel(byKey(id)).glom(); void webbBas.taBort(byKey(id)).catch(() => { /* ignoreras */ });
   sattLista(byarna().filter(b => b.id !== id));
 }
 // adressen #testby=frö:dygn (när Björn ber om en testby i chatten): byn läggs till och väljs, och adressen töms

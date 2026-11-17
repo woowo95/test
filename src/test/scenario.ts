@@ -61,7 +61,7 @@ async function korHar(namn: string) {
   // gränssnittets läge börjar som i ett nytt spel: i en grupp lämnade ett scenario annars kvar en vald flik åt nästa (handlarrel
   // lämnade relationerna öppna, och handslag såg då inte bytena)
   Object.assign(ui, structuredClone(UI_START));
-  const cpu0 = process.threadCpuUsage(), k = sc.kor();
+  const cpu0 = process.threadCpuUsage(), k = await sc.kor(); // ett scenario får vänta på något (sparbas: databasen)
   gangVakt.lyss = undefined;
   if (langsam) k.push([`vakten: någon går mycket långsamt utan flera skäl (${nLangsam} ggr), första: ${langsam}`, false]);
   const ok = k.every(([, b]) => b);
