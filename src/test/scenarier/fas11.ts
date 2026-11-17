@@ -2241,3 +2241,20 @@ SCENARIER.reslikhet = {
     ];
   },
 };
+
+SCENARIER.varugrupper = {
+  text: 'Varugrupperna (steg 11.6.1): varje sak med ett pris hör till precis en grupp i VARUGRUPPER, och varje grupp har saker',
+  kor: () => {
+    const utan = SIM.sakerMedPris().filter(k => !SIM.gruppAv(k));
+    const tomma = SIM.VARUGRUPP_IDS.filter(g => !SIM.sakerIGrupp(g).length);
+    const dubbla = SIM.sakerMedPris().filter(k => SIM.VARUGRUPP_IDS.filter(g => SIM.sakerIGrupp(g).includes(k)).length !== 1);
+    const ratt = (k: string, g: SIM.VarugruppId) => SIM.gruppAv(k) === g;
+    return [
+      [`varje sak med ett pris hör till en grupp (${utan.length} utan: ${utan.slice(0, 8).join(', ')})`, !utan.length],
+      [`varje grupp har saker (${tomma.join(', ') || 'alla'})`, !tomma.length],
+      [`ingen sak hör till två grupper (${dubbla.length})`, !dubbla.length],
+      ['salt är dryck och salt, bär mat, ved bränsle, flinta sten, rep virke, yxa redskap, en rock skinn och ett halsband prydnad', ratt('salt', 'dryck') && ratt('bar', 'mat') && ratt('ved', 'bransle') && ratt('flinta', 'sten') && ratt('rep', 'virke') && ratt('yxa', 'redskap') && ratt('rock_vargskinn', 'skinn') && ratt('halsband_tandband', 'prydnad')],
+      ['silvret har inget pris', !SIM.sakerMedPris().includes('silver')],
+    ];
+  },
+};
