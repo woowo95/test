@@ -142,6 +142,7 @@ export function renderPanel(force = false) {
   renderOwned();
   skriv(SIDOR.v, vanster, force);
   skriv(SIDOR.h, ui.hoger, force);
+  { const r = SIDOR.h.el.querySelector<HTMLElement>('[data-rulla]'); if (r) { r.removeAttribute('data-rulla'); r.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } } // en ruta som just öppnats syns (steg 11.1.32)
   const dold = SIDOR.r.el.hidden;
   skriv(SIDOR.r, ärRuta(ui.tab) ? ui.tab : undefined, force);
   if ((flytta || dold) && !SIDOR.r.el.hidden) { flytta = false; placeraRuta(); }

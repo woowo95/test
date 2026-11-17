@@ -2,7 +2,9 @@
 import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, bynsMitt, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus, testBy } from './hjalp';
+import { tekInfo } from '../../ui/flikar/teknik';
+import { setByn } from '../../ui/lage';
+import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus, testBy, utanWebblasare } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.stenring = {
@@ -354,7 +356,13 @@ SCENARIER.teknik = {
     ens.slice(1).forEach(p => { p.tek!.yxa = 0; });
     if (ens[0]) die(s, ens[0], 'olycka');
     const dott = ens.length > 0 && living(s).filter(p => knows(p, 'yxa')).length === 0;
+    // teknikens ruta (steg 11.1.32): nivån och hur tekniken lärs, procenten vid den som funderar, och halvminnet förklaras
+    const v = createState(4, START), [c2, d2] = living(v).filter(p => ageOf(p, v.now) >= 20);
+    c2.tek = { yxa: 0.37 }; d2.tek = { yxa: 0.2 }; d2.halvminne = ['yxa'];
+    utanWebblasare(); setByn(v); const ruta = tekInfo(living(v), 'yxa', true);
+    const rutaOk = new RegExp(`<b>Nivå ${SIM.TEK.yxa.niva}: lärs (i samtal med den som kan|genom att arbeta bredvid någon|som lärling hos en mästare)</b>`).test(ruta) && ruta.includes('<small>37 %</small>') && /title="Halvminne: [^"]+">halvminne/.test(ruta) && ruta.startsWith('<div class="tinfo" data-rulla>');
     return [
+      ['teknikens ruta säger nivån och hur den lärs, procenten för den som funderar och vad halvminnet är, och panelen rullar dit (steg 11.1.32)', rutaOk],
       ['en nyfiken och intelligent person kommer på det mycket fortare', snabb],
       ['utan flinta kommer ingen på yxan', utanMaterial],
       [`när den sista som kan yxa dör finns kunskapen inte kvar (${ens.length} kunde)`, dott],

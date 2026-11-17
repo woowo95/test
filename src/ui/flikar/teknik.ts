@@ -1,5 +1,5 @@
 import { ACTS, MATERIAL, SKILL_ORD, SLAG, Person, SAKER, TEK, TEKNIK, TEKTAL, Tek, amountOf, harSak, hasMaterial, knows, materialOf, living, sakNamn, stationDef } from '../../sim';
-import { iconImg } from '../../ikoner';
+import { iconImg, tecknet } from '../../ikoner';
 import { ringSvg } from '../framsteg';
 import { bar, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -7,14 +7,14 @@ import type { Flik } from '../panel';
 
 // teknikträdet som symboler: det som inte kräver något till vänster, sträck till det som är låst bakom det.
 // Ett tryck på en symbol visar mer om den.
-let tekSel: string | undefined;
+let tekSel: string | undefined, rulla = false; // rulla: rutan har just öppnats, och panelen rullar dit en gång (steg 11.1.32)
 const KOLUMN = 64; // varje kolumn i trädet är lika bred; blir trädet bredare än rutan skrollar man i sidled (steg 2.12.7)
 export const teknik: Flik = {
   namn: 'Teknik',
   html: tekHtml,
   klick(el) {
     const tn = el.closest<HTMLElement>('[data-tek]');
-    if (tn) { tekSel = tekSel === tn.dataset.tek ? undefined : tn.dataset.tek; return true; }
+    if (tn) { tekSel = tekSel === tn.dataset.tek ? undefined : tn.dataset.tek; rulla = !!tekSel; return true; }
     return false;
   },
 };
@@ -53,8 +53,8 @@ function tekHtml() {
   return `<div class="tekhead">${hjalpKnapp('teknik', 'Hur fungerar teknik?')}</div>
     ${hjalpText('teknik', `<p class="muted small">Kunskap uppstår när någon arbetar med något och kommer på hur det kan göras bättre; det svåraste kommer man bara på genom att pröva sig fram vid en station. Den sprids när den som kan lär ut den: i samtal, genom att arbeta bredvid någon, eller som lärling hos en mästare.</p>`)}
     ${TECKENRAD}
-    <div class="ttradram"><div class="ttrad" style="height:${h}px;width:${cols * KOLUMN}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div></div>${dolda ? `<p class="muted small" title="${esc('Syns när någon i byn kan något av det som krävs.')}">+${dolda} okända</p>` : ''}
-    ${tekInfo(ppl, tekSel)}`;
+    <div class="ttradram"><div class="ttrad" style="height:${h}px;width:${cols * KOLUMN}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div></div>${dolda ? `<p class="muted small" title="${esc('Syns när någon i byn kan något av det som krävs.')}">${tecknet('tek_last', '', 14)}<i class="tf ok last"></i> +${dolda} okända</p>` : ''}
+    ${tekInfo(ppl, tekSel, (r => (rulla = false, r))(rulla))}`;
 }
 // raden ovanför trädet som alltid syns (steg 11.1.30): symbol och ett ord för varje tecken på noderna
 const TECKENRAD = `<div class="tforkl" aria-label="Tecknen i trädet"><span title="Någon i byn kan tekniken"><i class="tf kan"></i>Kan</span><span title="Någon funderar på den: ringen fylls"><i class="tf pa"></i>Funderar</span><span title="Ingen kan den eller funderar på den"><i class="tf ok"></i>Ingen</span><span title="Bara en kan den: dör hen försvinner kunskapen"><i class="tf ensam">1</i>Bara en</span><span title="Ingen kan komma på den nu, för det som behövs finns inte i byn"><i class="tf brist">!</i>Material saknas</span></div>`;
@@ -71,7 +71,9 @@ function recept(t: Tek): { k: string; n: number; per?: string }[] {
   return Object.values(MATERIAL).filter(m => m.tek === t.id && m.item).map(m => ({ k: m.item!, n: m.n, per: m.namn.toLowerCase() }));
 }
 // det som visas när man tryckt på en symbol i trädet, eller på en teknik i personens kunskap (flikar/person.ts)
-export function tekInfo(ppl: Person[], id: string | undefined) {
+// hur tekniken lärs, efter nivå (steg 11.1.32): "Nivå 3: lärs genom att arbeta bredvid någon"
+const larsText = (t: Tek) => `Nivå ${t.niva}: lärs ${t.niva <= TEKTAL.larNiva ? 'i samtal med den som kan' : t.niva === 3 ? 'genom att arbeta bredvid någon' : 'som lärling hos en mästare'}`;
+export function tekInfo(ppl: Person[], id: string | undefined, rullaHit = false) {
   const t = id ? TEK[id] : undefined;
   if (!t) return '';
   const kan = ppl.filter(p => knows(p, t.id));
@@ -83,9 +85,10 @@ export function tekInfo(ppl: Person[], id: string | undefined) {
   const arb = lista([...new Set(t.omr.map(a => SLAG[ACTS[a].slag ?? 'hantverk'].toLowerCase()))], 'eller');
   const krav = t.krav.length ? ` om hen kan ${lista(t.krav.map(k => TEK[k].namn.toLowerCase()))}` : '';
   const finns = lista(materialOf(t).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
-  return `<div class="tinfo"><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b>${r.length ? `<span class="tmat" title="${esc(rtext)}">${mat}</span>` : ''}</div>
+  return `<div class="tinfo"${rullaHit ? ' data-rulla' : ''}><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b>${r.length ? `<span class="tmat" title="${esc(rtext)}">${mat}</span>` : ''}</div>
+    <p class="small"><b>${esc(larsText(t))}</b></p>
     <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
     <p class="small muted">${t.forsok ? `Den som är skicklig i ${esc(SKILL_ORD[t.forsok.skill])} kan pröva sig fram till det vid ${esc(t.forsok.vid.length ? lista([...new Set(t.forsok.vid.map(k => stationDef(k)?.namn.toLowerCase() ?? k))], 'eller') : 'elden')}${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}. Varje försök tar en sak av materialet.` : `Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.`} ${esc(sprids(t))}</p>
     ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}${kan.length === 1 ? `<p class="small varn">⚠ Bara ${esc(kan[0].name)} kan det.</p>` : ''}
-    ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}${p.lar?.tek === t.id ? `<small class="muted">lärling hos ${esc(namnAv(ppl, p.lar.av))}</small>` : p.halvminne?.includes(t.id) ? '<small class="muted">halvminne</small>' : ''}`).join('')}</div>` : ''}</div>`;
+    ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}<small>${Math.round(p.tek![t.id] * 100)} %</small>${p.lar?.tek === t.id ? `<small class="muted">lärling hos ${esc(namnAv(ppl, p.lar.av))}</small>` : p.halvminne?.includes(t.id) ? '<small class="muted" title="Halvminne: hen var lärling men miste sin mästare innan hen lärt sig klart. Det hen hann lära sig gör det lättare att komma på det igen eller att lära sig klart hos en annan mästare">halvminne</small>' : ''}`).join('')}</div>` : ''}</div>`;
 }
