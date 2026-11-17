@@ -377,7 +377,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   const talk = (MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (slag.dela ? MINNE[slag.dela] : 0)) * (arBast(a, b) ? RELT.bastBerattar : 1);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
-    const w = a.lardomar.map(l => (l.k === 'ort' ? ORT.dela : l.k === 'fara' ? MINNE.delaFara : l.k === 'pris' ? (nyhet(s, l) ? 2 : 1) : l.k === 'flinta' || l.k === 'vatten' || l.k === 'flod' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
+    const w = a.lardomar.map(l => (l.k === 'ort' ? ORT.dela * (nyhet(s, l) ? ORT.nyVikt : 1) : l.k === 'fara' ? MINNE.delaFara : l.k === 'pris' ? (nyhet(s, l) ? 2 : 1) : l.k === 'flinta' || l.k === 'vatten' || l.k === 'flod' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
     const l = pickViktat(s, a.lardomar, w, 'minne', a);
     if (l.k === 'ort') berattaOrt(s, a, b, l, r); else tell(s, a, b, l, r);
   }
@@ -404,7 +404,7 @@ export function lasLardom(s: State, q: Person, l: Lardom, av: number) {
   trim(s, q);
 }
 // en rättelse är en nyhet i två dygn
-const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINNE.nyhetDygn * DAY;
+export const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINNE.nyhetDygn * DAY;
 export function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));

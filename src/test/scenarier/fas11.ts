@@ -1398,3 +1398,34 @@ SCENARIER.byhistorik = {
     ];
   },
 };
+
+SCENARIER.bynyhet = {
+  text: 'Nyheterna (steg 11.4.9, trorOmBy och storForandring i ort.ts): det en person tror om en by är byns tal vid tiden för uppgiften, och nyare uppgifter där något stort ändrats (ny ledare, invånarna ändrade med mer än 30 %, svält, gått under) är en nyhet i två dygn som berättas hellre och förs vidare som en nyhet',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c, d] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && vl.platser!.some(q => q.by === x.nr))!, nr = vl.platser!.find(q => q.by === r.nr)!.nr;
+    const t0 = s.now - 30 * SIM.DAY;
+    r.hist = [{ t: t0, tal: { ...r.tal, folk: 20 }, led: 'Ulf' }, { t: t0 + 10 * SIM.DAY, tal: { ...r.tal, folk: 22 }, led: 'Ulf' }, { t: t0 + 20 * SIM.DAY, tal: { ...r.tal, folk: 22 }, led: 'Tora' }, { t: t0 + 25 * SIM.DAY, tal: { ...r.tal, folk: 40 }, led: 'Tora' }];
+    const la = SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR }), tror = SIM.trorOmBy(s, la);
+    SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY }); const liten = SIM.nyhet(s, la); // 20 till 22: ingen nyhet
+    SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + 21 * SIM.DAY }); const ledare = SIM.nyhet(s, la); // ny ledare
+    const lb = SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY });
+    SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 26 * SIM.DAY }); const folk = SIM.nyhet(s, lb), tror2 = SIM.trorOmBy(s, lb); // 22 till 40
+    SIM.berattaOrt(s, b!, c!, lb, SIM.getRel(s, b!, c!)); const vidare = SIM.nyhet(s, SIM.findL(c!, 'ort', nr)!);
+    const rykte = SIM.larOrt(s, d!, nr, SIM.O_RYKTE, 1);
+    // vikten i samtalen: samma plats med och utan nyhet
+    const vikt = (l: SIM.Lardom) => SIM.ORT.dela * (SIM.nyhet(s, l) ? SIM.ORT.nyVikt : 1);
+    const vNy = vikt(lb);
+    const s2 = s.now; s.now += 2 * SIM.DAY + SIM.HOUR; const sedan = SIM.nyhet(s, lb), vGammal = vikt(lb); s.now = s2;
+    return [
+      [`man tror byns tal vid uppgiftens tid (${tror?.tal.folk} invånare, ${tror?.led})`, tror?.tal.folk === 20 && tror.led === 'Ulf'],
+      ['en liten ändring är ingen nyhet', !liten],
+      ['en ny ledare är en nyhet', ledare],
+      [`invånarna ändrade med mer än 30 % är en nyhet (${tror2?.tal.folk})`, folk && tror2?.tal.folk === 40],
+      ['nyheten förs vidare som en nyhet', vidare],
+      [`en nyhet berättas hellre (${vNy} mot ${vGammal})`, vNy === SIM.ORT.nyVikt * vGammal],
+      ['efter två dygn är den ingen nyhet längre', !sedan],
+      ['ett rykte ger bara sorten och namnet', SIM.trorOmBy(s, rykte) === undefined],
+    ];
+  },
+};

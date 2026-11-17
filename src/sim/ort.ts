@@ -4,7 +4,7 @@
 // först berättade (fr), som ryktets förskjutning räknas ur. En person minns högst ORT.max platser, och det minst säkra trängs
 // undan. Att höra om en plats igen, på samma eller en högre nivå, stärker minnet.
 import { balans } from './balans';
-import { findL, MINNE, trimLardomar } from './minne';
+import { findL, MINNE, nyhet, trimLardomar } from './minne';
 import { delade } from './berattelser';
 import { alive, byId, count, gjort, living } from './folk';
 import { kronika } from './historik';
@@ -14,7 +14,7 @@ import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
 import { VARLD } from './varldmark';
 import { klanById } from './klaner';
 import { DAY, Lardom, Person, Rel, State } from './typer';
-import { BYSORTER, RadtalId, VarldRad } from './radtal';
+import { BYSORTER, radNr, RadtalId, VarldRad } from './radtal';
 
 export const ORT = balans('ort', {
   max: 10, // så många platser i världen minns en person högst (utöver de andra lärdomarna); det minst säkra trängs undan
@@ -26,6 +26,7 @@ export const ORT = balans('ort', {
   ryktRadie: 0.5, // ett rykte är ett område med den här radien i dygns gång (steg 11.4.5) ...
   ryktFran: 0.3, ryktTill: 0.85, // ... och mitten ligger så här långt från platsen, i andelar av radien
   dela: 1, // hur gärna man berättar om en plats i världen i ett samtal, gånger säkerheten (som en plats med värdet 1, steg 11.4.4)
+  nyStor: 0.3, nyVikt: 2, // en nyhet om en by (steg 11.4.9): invånarna ändrade med mer än så här stor andel; så mycket hellre berättas den
   histDygn: 5, histMax: 16, // byarnas historik (steg 11.4.8): en bild var femte dygn, högst så många per by
   nedC: 0.5, // en plats vars säkerhet sjunkit under MINNE.glomGrans sjunker en nivå och får den här säkerheten; ett rykte glöms
 });
@@ -42,15 +43,20 @@ export const O_RYKTE = 0, O_KANT = 1, O_BESOKT = 2;
 
 // p lär sig om platsen nr på nivån niva med säkerheten c; uppgifterna är från tiden t (nu om inget anges), av src (den som
 // berättade) eller själv, och fr är den som först berättade ett rykte
-export function larOrt(s: State, p: Person, nr: number, niva: number, c: number, o: { t?: number; src?: number; led?: number; fr?: number } = {}): Lardom {
+// ny: uppgiften är en nyhet sedan den tiden (den som berättar en nyhet för den vidare, steg 11.4.9)
+export function larOrt(s: State, p: Person, nr: number, niva: number, c: number, o: { t?: number; src?: number; led?: number; fr?: number; ny?: number } = {}): Lardom {
   const t = o.t ?? s.now, led = o.led ?? (o.src === undefined ? 0 : 1), e = findL(p, 'ort', nr);
   if (e) {
     if (niva > e.v) { e.v = niva; e.c = Math.max(e.c, c); if (niva > O_RYKTE) delete e.fr; }
     else e.c = niva === e.v ? Math.max(e.c, c, e.c + MINNE.berattaStark * (1 - e.c)) : Math.min(1, e.c + MINNE.berattaStark * (1 - e.c)); // att höra om det igen stärker minnet
-    if (t > e.t) { e.t = t; e.src = o.src; e.led = led; if (o.src === undefined) delete e.src; }
+    if (t > e.t) {
+      const ny = o.ny ?? (storForandring(s, nr, e.t, t) ? s.now : undefined); // nyare uppgifter där något stort ändrats
+      if (ny !== undefined && (e.ny === undefined || ny > e.ny)) e.ny = ny;
+      e.t = t; e.src = o.src; e.led = led; if (o.src === undefined) delete e.src;
+    }
     return e;
   }
-  const l: Lardom = { k: 'ort', a: nr, v: niva, c, t, led, ...(o.src !== undefined ? { src: o.src } : {}), ...(niva === O_RYKTE && o.fr !== undefined ? { fr: o.fr } : {}) };
+  const l: Lardom = { k: 'ort', a: nr, v: niva, c, t, led, ...(o.src !== undefined ? { src: o.src } : {}), ...(niva === O_RYKTE && o.fr !== undefined ? { fr: o.fr } : {}), ...(o.ny !== undefined ? { ny: o.ny } : {}) };
   (p.lardomar ??= []).push(l);
   trimLardomar(s, p);
   return l;
@@ -77,7 +83,7 @@ export function berattaOrt(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   delade('fjarran', 'karta', q ? (l.v === O_RYKTE ? `${LANDMARKEN[q.k].namn.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats långt borta');
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a);
   const niva = Math.max(O_RYKTE, l.v - 1), fore = findL(b, 'ort', l.a);
-  larOrt(s, b, l.a, niva, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1, fr: l.v === O_RYKTE ? (l.fr ?? a.id) : a.id });
+  larOrt(s, b, l.a, niva, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1, fr: l.v === O_RYKTE ? (l.fr ?? a.id) : a.id, ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   if (!fore) { count(s, 'ortBerattad'); gjort(s, a, 'berattat'); }
 }
 // ---------- ryktets läge (steg 11.4.5) ----------
@@ -230,5 +236,25 @@ export function radVid(r: VarldRad, t: number): RadBild | undefined {
   let b = h[0]!;
   for (const x of h) if (x.t <= t) b = x; else break;
   return b;
+}
+
+// ---------- nyheterna (steg 11.4.9, Flera samhällen: Uppgifterna om en by och nyheterna) ----------
+// Det en person tror om en by är byns bild vid tiden för uppgiften (radVid), och ett rykte ger bara sorten och namnet. Hör
+// någon nyare uppgifter där något stort ändrats blir det en nyhet i MINNE.nyhetDygn dygn, som berättas ORT.nyVikt gånger hellre
+// (share i minne.ts) och förs vidare som en nyhet: byn har gått under eller delats, fått en ny ledare eller börjat lyda under en
+// annan, svultit, eller invånarna har ändrats med mer än ORT.nyStor. Krig och fred kommer med krigen mellan byarna
+export const ortensRad = (s: State, nr: number): VarldRad | undefined => { const vl = s.varld, q = vl && varldPlatsNr(vl, nr); return q?.by !== undefined ? radNr(vl!, q.by) : undefined; };
+export function trorOmBy(s: State, l: Lardom): RadBild | undefined {
+  if (l.k !== 'ort' || l.v <= O_RYKTE) return undefined;
+  const r = ortensRad(s, l.a);
+  return r && radVid(r, l.t);
+}
+export function storForandring(s: State, nr: number, t0: number, t1: number): boolean {
+  const r = ortensRad(s, nr), a = r && radVid(r, t0), b = r && radVid(r, t1);
+  if (!r || !a || !b) return false;
+  if (r.svalt !== undefined && r.svalt > t0 && r.svalt <= t1) return true;
+  if ((s.varld!.rader ?? []).some(x => x.fran === r.nr && x.grundad > t0 && x.grundad <= t1)) return true; // byn har delats
+  if (a === b) return false;
+  return !!a.borta !== !!b.borta || a.led !== b.led || a.lyder !== b.lyder || Math.abs(b.tal.folk - a.tal.folk) > ORT.nyStor * Math.max(1, a.tal.folk);
 }
 
