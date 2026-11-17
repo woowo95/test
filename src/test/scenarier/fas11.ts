@@ -1369,3 +1369,32 @@ SCENARIER.kartlager = {
     ];
   },
 };
+
+SCENARIER.byhistorik = {
+  text: 'Byarnas historik (steg 11.4.8, sparaHistorik och radVid i ort.ts): varje by sparar sina tal glest, en bild var femte dygn, de senaste tätt och äldre glesare, inom en gräns för storleken; det man tror om en by är bilden vid uppgiftens tid',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x))!;
+    delete r.hist;
+    const t0 = r.t, folk: number[] = [];
+    // byn går 200 dygn: talen ändras varje dygn och historiken sparas varje timme
+    for (let d = 0; d < 200; d++) for (let h = 0; h < 24; h++) {
+      r.t = t0 + (d * 24 + h) * SIM.HOUR; r.tal.folk = 20 + d; if (h === 0) folk.push(r.tal.folk);
+      SIM.sparaHistorik(s);
+    }
+    const h = r.hist!, luckor = h.slice(1).map((b, i) => (b.t - h[i]!.t) / SIM.DAY);
+    const nya = luckor.slice(-3), gamla = luckor.slice(0, 3);
+    const mitt = h[Math.floor(h.length / 2)]!, vid = SIM.radVid(r, mitt.t + SIM.DAY);
+    const ruin = vl.rader!.find(x => x !== r && SIM.lever(vl, x))!; delete ruin.hist;
+    ruin.t = t0; SIM.sparaHistorik(s); ruin.tal.folk = 0; ruin.t = t0 + 10 * SIM.DAY; SIM.sparaHistorik(s); ruin.t = t0 + 20 * SIM.DAY; SIM.sparaHistorik(s);
+    return [
+      [`högst ${SIM.ORT.histMax} bilder (${h.length})`, h.length === SIM.ORT.histMax],
+      [`den första och den senaste finns kvar (${Math.round((h[0]!.t - t0) / SIM.DAY)} och ${Math.round((h[h.length - 1]!.t - t0) / SIM.DAY)} dygn)`, h[0]!.t === t0 && h[h.length - 1]!.t >= t0 + 195 * SIM.DAY],
+      [`bilderna ligger på femte dygnen efter den första (${luckor.slice(1).join('/')})`, luckor.slice(1).every(x => Math.abs(x / 5 - Math.round(x / 5)) < 1e-6)],
+      [`de senaste tätt och äldre glesare (${nya.join('/')} dygn mot ${gamla.join('/')})`, Math.max(...nya) < Math.min(...gamla)],
+      [`det man tror är byns tal vid uppgiftens tid (${vid?.tal.folk} = ${mitt.tal.folk})`, vid?.tal.folk === mitt.tal.folk],
+      [`en uppgift äldre än alla bilder ger den första`, SIM.radVid(r, t0 - SIM.DAY) === h[0]],
+      [`en by som gått under sparas som borta och ändras inte mer (${ruin.hist!.length} bilder)`, ruin.hist!.length === 2 && !!ruin.hist![1]!.borta],
+    ];
+  },
+};
