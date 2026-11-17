@@ -3,22 +3,23 @@
 // 1 säsong eller 4 säsonger (steg 9.2.8), och ett tryck eller drag längs den visar värdena där. Bara utseende: spelet läser den aldrig.
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
 import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender, living, rikSerie, sakNamn, type RikRad } from '../sim';
-import { esc } from './hjalp';
+import { esc, fallUt, hjalpText } from './hjalp';
+import { tecknet } from '../ikoner';
 import { ritaOm, s, vidNyBy } from './lage';
 
 // en serie är ett tal i historiken (tal) eller punkter som räknas fram (punkter, t.ex. byns rikedom per dygn, steg 6.9.13)
 // farg är en färg i paletten; linjen ritas i ton 2 i ljust läge och ton 3 i mörkt (--g-färg i template.html, steg 6.9.17)
 interface Serie { tal?: string; namn?: string; farg: 'skiffer' | 'senap' | 'rost' | 'oliv' | 'jord'; punkter?: () => [number, number][] }
-interface Graf { namn: string; serier: Serie[] | (() => Serie[]); max?: number; procent?: boolean; topp?: () => string } // topp: val överst i grafen
+interface Graf { namn: string; serier: Serie[] | (() => Serie[]); max?: number; procent?: boolean; enhet?: 'st' | 'rik'; forkl?: string; topp?: () => string } // topp: val överst i grafen; enhet och forkl (steg 11.1.37): talets enhet i förklaringen, och texten som ett tryck på rubriken visar
 // byns rikedom (steg 6.9.13): summan och delarna som i sidhuvudet, en punkt per dygn ur historikens rader
 const rik = (namn: string, ton: Serie['farg'], v: (r: RikRad) => number): Serie => ({ namn, farg: ton, punkter: () => rikSerie(s, v) });
 export const GRAFER: Record<string, Graf> = { // i den ordning de står i Byns tal
-  folk: { namn: 'Invånare', serier: [{ tal: 'folk', farg: 'skiffer' }] },
+  folk: { namn: 'Invånare', serier: [{ tal: 'folk', farg: 'skiffer' }], enhet: 'st' },
   humor: { namn: 'Humör', serier: [{ tal: 'humor', farg: 'senap' }], max: 1, procent: true },
   eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: 'rost' }] },
-  forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: 'oliv' }, { tal: 'tra', farg: 'jord' }] },
-  rik: { namn: 'Byns rikedom', serier: () => rikSerier(), topp: () => rikTopp() },
-  matlagning: { namn: 'Matlagningen', serier: [{ tal: 'grillat', farg: 'senap' }, { tal: 'brant', farg: 'rost' }] }, // det som grillats och bränts (steg 9.2.62)
+  forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: 'oliv' }, { tal: 'tra', farg: 'jord' }], enhet: 'st' },
+  rik: { namn: 'Byns rikedom', serier: () => rikSerier(), enhet: 'rik', topp: () => rikTopp() },
+  matlagning: { namn: 'Matlagningen', serier: [{ tal: 'grillat', farg: 'senap' }, { tal: 'brant', farg: 'rost' }], enhet: 'st', forkl: 'Hur mycket mat som grillas och hur mycket som bränns vid elden. En ovan kock bränner mer, och den som lagat mat länge bränner mindre.' }, // det som grillats och bränts (steg 9.2.62)
 };
 
 // vad rikedomens graf visar (steg 6.9.14): hela byn (summan och delarna), en persons förmögenhet eller hur många av en sak
@@ -54,19 +55,24 @@ function rikTopp() {
 // eller drar längs grafen (visa), vars värden står under grafen
 const LANGD = { allt: { namn: 'Allt', t: Infinity }, dygn: { namn: '1 år', t: DAY }, sasong: { namn: '1 tidsålder', t: WEEK }, ar: { namn: '4 tidsåldrar', t: 4 * WEEK } } as const;
 type Langd = keyof typeof LANGD;
-const fonster: Record<string, { langd?: Langd; visa?: number; start?: number }> = {}; // start: grafens första mätpunkt (steg 9.2.124)
+const fonster: Record<string, { visa?: number; start?: number }> = {}; // start: grafens första mätpunkt (steg 9.2.124)
+// tidsfönstret gäller alla grafer (steg 11.1.36): en rad överst i Byns tal
+let langd: Langd = 'sasong';
+export const langdRad = () => `<div class="grafval grafallaval" role="toolbar" aria-label="Tidsfönstret">${(Object.keys(LANGD) as Langd[]).map(l => `<button type="button" class="grafallt" data-graflangd="${l}" aria-pressed="${langd === l}">${LANGD[l].namn}</button>`).join('')}</div>`;
 const B = 300, H = 70; // ritytan i SVG:ns enheter
 
 function spann(id: string) {
-  const f = fonster[id] ??= {}, start = Math.max(s.founded, Math.min(f.start ?? s.founded, s.now)), nu = s.now, l = LANGD[f.langd ?? 'sasong'].t;
+  const f = fonster[id] ??= {}, start = Math.max(s.founded, Math.min(f.start ?? s.founded, s.now)), nu = s.now, l = LANGD[langd].t;
   return { fran: Math.max(start, nu - l), till: Math.max(nu, start + DAY / 24) };
 }
 const tidNamn = (t: number) => { const k = kalender(s, t); return `År ${k.ar}, ${AGES[k.ai].toLowerCase()}`; };
 const talTxt = (g: Graf, v: number) => g.procent ? `${Math.round(v * 100)} %` : v >= 10 || Number.isInteger(v) ? String(Math.round(v)) : v.toFixed(1).replace('.', ',');
+// talet med sin enhet i förklaringen (steg 11.1.37): "64 %", "34 st", rikedomen med vågens symbol före
+const talEnhet = (g: Graf, v: number) => g.enhet === 'st' ? `${talTxt(g, v)} st` : g.enhet === 'rik' ? `${tecknet('sym_vag', '⚖', 12)} ${talTxt(g, v)}` : talTxt(g, v);
 // seriens värde vid tiden t: den senaste punkten före eller vid t
 const vardeVid = (p: [number, number][], t: number) => { let v: number | undefined; for (const q of p) { if (q[0] > t) break; v = q[1]; } return v; };
 
-export function grafHtml(id: string) {
+export function grafHtml(id: string, forsta = false) {
   const g = GRAFER[id], rader = (typeof g.serier === 'function' ? g.serier() : g.serier).map(se => ({ se, alla: se.punkter ? se.punkter() : historikSerie(s, se.tal!) }));
   // allt börjar vid grafens första mätpunkt och slutar nu (steg 9.2.124): en serie som började mätas senare än grundandet får inget tomt fält
   (fonster[id] ??= {}).start = Math.min(...rader.map(r => r.alla[0]?.[0] ?? Infinity));
@@ -80,18 +86,17 @@ export function grafHtml(id: string) {
   const max = g.max ?? 1.1 * Math.max(1, ...serier.flatMap(se => se.p.filter(p => p[0] >= fran && p[0] <= till).map(p => p[1])));
   const x = (t: number) => ((t - fran) / (till - fran) * B).toFixed(1), y = (v: number) => (H - Math.min(v, max) / max * (H - 2) - 1).toFixed(1);
   const linjer = serier.map(se => se.p.length ? `<polyline fill="none" style="stroke:var(--g-${se.farg})" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${se.p.map(p => `${x(p[0])},${y(p[1])}`).join(' ')}"/>` : '').join('');
-  const sist = (se: typeof serier[0]) => { const v = vardeVid(se.p, till); return v === undefined ? '–' : talTxt(g, v); };
+  const sist = (se: typeof serier[0]) => { const v = vardeVid(se.p, till); return v === undefined ? '–' : talEnhet(g, v); };
   const visa = f.visa !== undefined && f.visa >= fran && f.visa <= till ? f.visa : undefined;
   const strek = visa !== undefined ? `<line x1="${x(visa)}" y1="0" x2="${x(visa)}" y2="${H}" class="grafvisa" vector-effect="non-scaling-stroke"/>` : '';
-  const val = (Object.keys(LANGD) as Langd[]).map(l => `<button type="button" class="grafallt" data-graflangd="${id}:${l}" aria-pressed="${(f.langd ?? 'sasong') === l}">${LANGD[l].namn}</button>`).join('');
   // under grafen: varje series färg och namn, och värdet där man tryckt (annars nu)
-  const forklaring = serier.map(se => { const v = vardeVid(se.p, visa ?? till); return `<span class="grafserie"><i style="background:var(--g-${se.farg})"></i>${esc(se.namn)} <b>${v === undefined ? '–' : talTxt(g, v)}</b></span>`; }).join('');
+  const forklaring = serier.map(se => { const v = vardeVid(se.p, visa ?? till); return `<span class="grafserie"><i style="background:var(--g-${se.farg})"></i>${esc(se.namn)} <b>${v === undefined ? '–' : talEnhet(g, v)}</b></span>`; }).join('');
   return `<div class="graf" data-graf="${id}"${id === 'rik' ? ` data-rikvy="${rikVal.vy}"` : ''}>
-    <div class="grafhuvud"><span class="grafnamn">${g.namn}</span>${serier.length === 1 ? `<span class="grafserie">${sist(serier[0])}</span>` : ''}</div>
-    <div class="grafval">${val}</div>${g.topp?.() ?? ''}
-    <div class="grafram"><span class="grafmax">${talTxt(g, max)}</span><svg class="grafyta dra" viewBox="0 0 ${B} ${H}" preserveAspectRatio="none" role="img" aria-label="${g.namn} från ${tidNamn(fran)} till nu">
+    <div class="grafhuvud">${g.forkl ? `<span class="grafnamn klick falla" ${fallUt(`graf-${id}`)}>${g.namn}</span>` : `<span class="grafnamn">${g.namn}</span>`}${serier.length === 1 ? `<span class="grafserie">${sist(serier[0])}</span>` : ''}</div>
+    ${g.forkl ? hjalpText(`graf-${id}`, `<p class="muted small">${esc(g.forkl)}</p>`) : ''}${g.topp?.() ?? ''}
+    <div class="grafram"><span class="grafmax">${talTxt(g, max)}</span><span class="grafnoll">0</span><svg class="grafyta dra" viewBox="0 0 ${B} ${H}" preserveAspectRatio="none" role="img" aria-label="${g.namn} från ${tidNamn(fran)} till nu">
       <line x1="0" y1="${H - 0.5}" x2="${B}" y2="${H - 0.5}" class="grafaxel" vector-effect="non-scaling-stroke"/>${linjer}${strek}</svg></div>
-    <div class="grafaxlar"><span>${tidNamn(fran)}</span><span class="muted">${visa !== undefined ? tidNamn(visa) : 'tryck eller dra för värdet'}</span><span>nu</span></div>
+    <div class="grafaxlar"><span>${tidNamn(fran)}</span><span class="muted">${visa !== undefined ? tidNamn(visa) : forsta ? 'tryck eller dra för värdet' : ''}</span><span>nu</span></div>
     <div class="grafforkl">${forklaring}</div>
   </div>`;
 }
@@ -135,9 +140,8 @@ document.addEventListener('click', e => {
 document.addEventListener('click', e => {
   const b = (e.target as Element).closest<HTMLElement>('[data-graflangd]');
   if (!b) return;
-  const [id, l] = b.dataset.graflangd!.split(':');
-  const f = fonster[id] ??= {};
-  f.langd = l as Langd; f.visa = undefined;
+  langd = b.dataset.graflangd as Langd; // fönstret gäller alla grafer (steg 11.1.36)
+  for (const f of Object.values(fonster)) f.visa = undefined;
   ritaOm();
 });
 }
