@@ -309,6 +309,9 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .sbar::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
 .sbar > span { position: absolute; top: 0; bottom: 0; background: var(--accent); border-radius: 4px; }
 .sbar.ans > span { background: var(--good); } .sbar.ans.neg > span { background: var(--bad); } /* anseendet (steg 3.10.5) */
+/* det som fälls ut vid ett tryck (steg 11.1.2): ▸ eller ▾ först på raden, efter aria-expanded, likadant i alla flikar och rutor */
+.falla::before { content: '▸'; display: inline-block; width: 1em; flex: none; color: var(--muted); font-size: 0.8em; font-weight: normal; }
+.falla[aria-expanded="true"]::before { content: '▾'; }
 .sbar.hall > span { background: var(--g-oliv); } .sbar.hall.neg > span { background: var(--g-rost); } /* klanens hållning (steg 11.1.39) */
 .anshuvud { cursor: help; margin-bottom: 8px; }
 .anshuvud .sbar { margin: 4px 0 2px; }
@@ -411,7 +414,7 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .pdelar button[aria-selected="true"] { border-bottom-color: var(--accent); opacity: 1; }
 .pdelar button[aria-pressed="true"] { border-bottom-color: var(--accent); opacity: 1; }
 .delrub { display: flex; align-items: center; gap: 6px; cursor: pointer; border-bottom: 1px solid var(--line); padding-bottom: 3px; } /* en del i personens flik (steg 5.3.4.2) */
-.delrub .dtk { font-size: 14px; } .delrub .kort { margin-left: auto; font-weight: normal; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 11px; } .delrub .pil { font-size: 10px; color: var(--muted); } .delrub:not(:has(.kort)) .pil { margin-left: auto; }
+.delrub .dtk { font-size: 14px; } .delrub .kort { margin-left: auto; font-weight: normal; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 11px; } 
 .delinne { margin-bottom: 6px; } .delinne h3 { font-size: 0.85em; opacity: 0.8; }
 .pdelar button:disabled { opacity: 0.2; cursor: default; } /* en del i Byn som inte finns än (steg 5.3.3.2) */
 .tro { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 0 7px; margin: 0 3px 3px 0; font-size: 13px; cursor: help; }

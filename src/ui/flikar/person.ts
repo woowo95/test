@@ -8,7 +8,7 @@ import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
 import { gravidDel, gravidKvar } from '../../sim/steg';
-import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { fritidLista } from './fram';
@@ -79,7 +79,7 @@ function valda(finns: (d: Del) => boolean) {
 const utfalld = (id: string, forst: boolean) => ui.personFall[id] ?? forst;
 function delHtml(d: Del, i: number, kort: string | undefined, html: () => string) {
   const forst = i === 0 || ui.personDel === d.id, ut = utfalld(d.id, forst); // en del man valt direkt är också utfälld från början
-  return `<h3 class="delrub klick" data-pfall="${d.id}" data-forst="${forst ? 1 : 0}" role="button" tabindex="0" aria-expanded="${ut}" title="${ut ? 'Tryck för att fälla ihop' : 'Tryck för att fälla ut'}"><span class="dtk">${d.tecken}</span>${d.namn}${kort ? `<span class="kort">${kort}</span>` : ''}<span class="pil">${ut ? '▾' : '▸'}</span></h3>${ut ? `<div class="delinne">${html()}</div>` : ''}`;
+  return `<h3 class="delrub klick falla" data-pfall="${d.id}" data-forst="${forst ? 1 : 0}" role="button" tabindex="0" aria-expanded="${ut}" title="${ut ? 'Tryck för att fälla ihop' : 'Tryck för att fälla ut'}"><span class="dtk">${d.tecken}</span>${d.namn}${kort ? `<span class="kort">${kort}</span>` : ''}</h3>${ut ? `<div class="delinne">${html()}</div>` : ''}`;
 }
 const flikRad = (delar: PFlik[], del: PFlik) => `<div class="pdelar" role="tablist">${delar.map(d => `<button type="button" role="tab" data-pdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>`;
 const DELAR: Del[] = [
@@ -230,7 +230,7 @@ function rad(p: Person, key: string, namn: string, inner: string, delar: Orsak[]
   const title = [...delar.map(x => `${x.namn} ${tal(x.v)}${enhet}`), mer].filter(x => x).join(', ');
   const lista = delar.length ? `<ul class="thoughts">${delar.map(x => `<li class="${x.v < 0 ? 'neg' : 'pos'}"${x.till !== undefined ? ` title="Stannar kvar ${esc(durTxt(x.till - s.now))} till"` : ''}>${esc(x.namn)} <span>${tal(x.v)}${enhet}</span></li>`).join('')}</ul>` : '';
   const matt = d === undefined ? '' : `<p class="muted">Har ändrats ${tal(d)} i timmen den senaste stunden.</p>`;
-  return `<dt class="klick" data-hjalp="${id}" title="${esc(title)}" tabindex="0" role="button">${namn}</dt><dd class="klick" data-hjalp="${id}" title="${esc(title)}">${inner}</dd>
+  return `<dt class="klick falla" ${fallUt(id)} title="${esc(title)}">${namn}</dt><dd class="klick" data-hjalp="${id}" title="${esc(title)}">${inner}</dd>
     ${hjalpText(id, `<dd class="forkl">${matt}${lista}${mer ? `<p class="muted">${esc(mer)}</p>` : ''}</dd>`)}`;
 }
 // törsten per timme och varför (torstDelar i torst.ts, steg 2.4.1–2.4.2)
@@ -362,23 +362,23 @@ function egenHtml(p: Person) {
     const upp = (p.upp ?? []).filter(u => u.e[k]).map(u => `${vuxenUpp(u) ? 'Minne' : 'Minne från barndomen'} (${u.a} år): ${upplevelseText(u)}, ${plusMinus(u.e[k]!)}`);
     const anlag = p.anlag && uppEffekt(p, k) ? ` Anlaget är ${visa(p.anlag[k])}; upplevelserna flyttar det ${plusMinus(Math.round(uppEffekt(p, k)))}.` : '';
     const rader = [...upp, ...arbetar(SKILLS.filter(sk => ACTS[sk as Act]?.egenskap === k)), ...STAT_GOR[k]];
-    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}" tabindex="0" role="button">${STAT_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu + anlag))}`;
+    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join(', '))}">${STAT_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu + anlag))}`;
   };
   const skillRad = (k: Skill) => {
     const v = p.skill[k], id = `f-${k}-${p.id}`, tr = trend(p, 'sk_' + k, v), dd = trendD(p, 'sk_' + k);
     const nu = ovarNu(p, k) ? `Övar just nu${dd ? `: ${dd > 0 ? '+' : ''}${visa(dd, 2)} i timmen` : ''}.` : dd ? `Har ändrats ${visa(dd, 2)} i timmen den senaste stunden.` : 'Ändras inte just nu. Den växer när hen övar.';
     const rader = [...arbetar(ACTS[k as Act]?.arbete === k ? [k] : []), ...SKILL_GOR[k]];
-    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}" tabindex="0" role="button">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu, gjortHtml(p, k)))}`;
+    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu, gjortHtml(p, k)))}`;
   };
   // andligheten (steg 4.1.1.1) syns från början, så att man ser den växa (steg 4.5.3.4)
   const ande = (() => {
     const v = andlighet(s, p), id = `e-andlig-${p.id}`, rader = ['Hur viktigt det heliga är för hen, inte vad hen tror på', 'Ärvs delvis från föräldrarna och flyttas av det hen är med om', ...(p.upp ?? []).filter(u => u.n).map(u => `${upplevelseText(u)} (${u.a} år), ${u.n! > 0 ? '+' : '−'}${Math.abs(u.n!)}`)];
-    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}" tabindex="0" role="button">Andlighet</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 100)}<span>${Math.round(v)}</span></dd>${hjalpText(id, gorHtml(rader, 'Skalan går från 0 till 100.'))}`;
+    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join(', '))}">Andlighet</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 100)}<span>${Math.round(v)}</span></dd>${hjalpText(id, gorHtml(rader, 'Skalan går från 0 till 100.'))}`;
   })();
   // tron hen har (steg 4.1.2.1): vem som står bakom, och vid tryck tolkningen och tecknet den kom ur
   const tr = troOf(s, p.tro), tro = tr ? (() => {
     const id = `e-tro-${p.id}`, rader = [...tr.ber ? [tr.ber] : [tolkning(tr)], `${tr.grundare === p.id ? 'Hen' : tr.gnamn} tolkade ${teckenText(tr.k, tr.om)} som ett tecken`, `Tron är ${Math.round(p.troStyrka ?? 0)} av 100 stark hos hen`];
-    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join('. '))}" tabindex="0" role="button">Tro</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join('. '))}">${bar((p.troStyrka ?? 0) / 100)}<span>${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${esc(troNamn(tr))}</span></dd>${hjalpText(id, gorHtml(rader.slice(1), rader[0]))}`;
+    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join('. '))}">Tro</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join('. '))}">${bar((p.troStyrka ?? 0) / 100)}<span>${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${esc(troNamn(tr))}</span></dd>${hjalpText(id, gorHtml(rader.slice(1), rader[0]))}`;
   })() : '';
   return `<dl class="kv">${STATS.map(statRad).join('')}${ande}${tro}
       ${ageOf(p, now) >= ALDER.hjalper ? `<dt>Pliktkänsla</dt><dd>${bar(d, 'skill')}<span>${d > 0.75 ? 'Plikttrogen' : d > 0.5 ? 'Gör sin del' : d > 0.3 ? 'Bekväm' : 'Lat'}</span></dd>` : ''}</dl>
@@ -396,7 +396,7 @@ function utanforHtml(p: Person) {
   if (!g.length) return '';
   const id = `utanfor-${p.id}`, h = s.handlare;
   const rad = (x: (typeof g)[number]) => { const har = h && hp(s, h).name === x.q.namn && klanById(s, hp(s, h).gast!.klan)?.namn === x.klan; return gastRelRad(har ? `<button class="plink" data-id="${h!.id}" type="button">${esc(x.q.namn)}</button>` : `<span>${esc(x.q.namn)}</span>`, x.r, undefined, false, x.klan); };
-  return `<h3 class="klick" data-hjalp="${id}" title="Gästerna hen känner" tabindex="0" role="button">Utanför byn ${hjalpOppen(id) ? '▾' : '▸'}</h3>${hjalpOppen(id) ? `<ul class="rels">${g.map(rad).join('')}</ul>` : ''}`;
+  return `<h3 class="klick falla" ${fallUt(id)} title="Gästerna hen känner">Utanför byn ${hjalpOppen(id) ? '▾' : '▸'}</h3>${hjalpOppen(id) ? `<ul class="rels">${g.map(rad).join('')}</ul>` : ''}`;
 }
 function relInne(p: Person) {
   const sarskild = (q: Person) => p.partner === q.id || p.bast === q.id || p.arke === q.id || p.mentor === q.id || q.mentor === p.id || !!p.rivaler?.includes(q.id);
@@ -438,7 +438,7 @@ function anseende(p: Person) {
 // vilka som tycker så
 function ryktenHtml(p: Person) {
   const byn = samlatIntryck(s, p.id).slice(0, 6), sam = anseendeText(s, p.id), hid = `ans-${p.id}`;
-  const huvud = `<div class="anshuvud klick" data-hjalp="${hid}" title="${esc(sam)}" tabindex="0" role="button">${ansStapel(p.id)}<span class="ansskala"><span>Dåligt</span><span>Neutralt</span><span>Gott</span></span></div>${hjalpText(hid, `<p class="muted small">${esc(sam)}</p>`)}`;
+  const huvud = `<div class="anshuvud klick falla" ${fallUt(hid)} title="${esc(sam)}">${ansStapel(p.id)}<span class="ansskala"><span>Dåligt</span><span>Neutralt</span><span>Gott</span></span></div>${hjalpText(hid, `<p class="muted small">${esc(sam)}</p>`)}`;
   // arvet (steg 10.8.5): en del av det byn tycker om mor och far räknas i anseendet
   const arv = arvAnseende(s, p.id).a, fo = [p.father, p.mother].map(id => id !== undefined ? byId(s, id) : undefined).filter((q): q is Person => !!q);
   const arvRad = Math.abs(arv) >= 0.05 ? `<p class="muted small ansarv" title="${esc(`En del av det byn tycker om ${fo.map(q => q.name).join(' och ')} räknas i ${p.name}s anseende`)}"><span class="riktn${arv > 0 ? '' : ' ned'}">${arv > 0 ? '▲' : '▼'}</span> Ärvt från föräldrarna: ${fo.map(q => pLink(q)).join(' och ')}</p>` : '';
