@@ -25,6 +25,7 @@
     "jamfor": "tsx src/test/jamfor.ts",
     "natur": "tsx src/test/natur.ts",
     "lardom": "tsx src/test/lardom.ts",
+    "radmatt": "tsx src/test/radmatt.ts",
     "hus": "tsx src/test/hus.ts",
     "strid": "tsx src/test/strid.ts",
     "prov": "tsx src/test/prov.ts",
