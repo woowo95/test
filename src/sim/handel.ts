@@ -1,5 +1,5 @@
 import { honom } from './ord';
-import { horOmGast, ORT, radBesoker } from './ort';
+import { gastensPlatser, horOmGast, ORT, radBesoker } from './ort';
 import { byPlats } from './landmarken';
 import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
@@ -307,10 +307,11 @@ function kommer(s: State, tvinga?: boolean) {
   // handlaren är en person bland folket (steg 9.2.111, gast.ts), med samma id som i bytena
   s.people.push(nyGast(s, { id: h.id, namn: kh.person.namn, sex, fodd, rad: { sort: 'handlare', klan: kh.klan.id, hem: kh.klan.hem }, x: ut.x, y: ut.y, nyckel, skill: { handel: heltMellan(s, HANDEL.handel) } }));
   gastTillbaka(s, s.people[s.people.length - 1]); // samma person som förra gången, om hen varit här (steg 9.2.114)
+  if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); } // handlarens by har besökt huvudbyn (steg 11.4.10)
+  gastensPlatser(s, s.people[s.people.length - 1]); // det hens by känner (steg 11.4.11)
   h.varor = packa(s, rymmer(h), sort);
   const smitta = barSmitta(s); if (smitta) hp(s, h).smitta = smitta; // ibland bär hen en sjukdom utifrån (steg 9.5.5)
   s.handlare = h;
-  if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); } // handlarens by har besökt huvudbyn (steg 11.4.10)
   count(s, 'handlare');
   log(s, `En handlare, ${hp(s, h).name} från ${kh.klan.namn} vid ${hp(s, h).gast!.hem!}, kommer gående mot byn.`, 'world');
   return true;

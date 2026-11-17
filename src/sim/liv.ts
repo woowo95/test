@@ -1,5 +1,5 @@
 import { honom } from './ord';
-import { horOmGast, raknaBynVet } from './ort';
+import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
@@ -257,6 +257,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }, fran
   const blir = p.id, ut = kantMot(s, k.id) ?? kanten(s, p.x, p.y);
   p.id = nyttGastId(s); p.x = ut.x; p.y = ut.y;
   p.gast = { sort: 'framling', klan: k.id, hem: k.hem, blir, fas: 'kommer', ...(tek ? { tek } : {}), ...(tvinga?.ja !== undefined ? { ja: tvinga.ja } : {}), ...(egen ? { hemRad: fran } : {}) };
+  gastensPlatser(s, p); // det hens by känner (steg 11.4.11)
   s.people.push(p);
   count(s, 'framlingKommer');
   log(s, `En främling från ${k.namn} kommer gående mot byn.`, 'move', [p.id]);

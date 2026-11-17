@@ -1,5 +1,5 @@
 import { antal, lista, och, stor, tal } from './ord';
-import { rovareSedda } from './ort';
+import { rovareSedda, gastensPlatser } from './ort';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
@@ -176,6 +176,7 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?
     const ov = Math.max(0, (skick - 5) * 2); // skickligheten i striden är 5 + färdigheten / 2, som hos en bybo (personKampe)
     const p = nyGast(s, { id: nyttGastId(s), namn, sex: hem?.sex ?? sex, fodd: foddNar(s.seed, gastNyckel(k?.id, namn), 'rovare', s.now), rad: { sort: 'rovare', klan: k?.id }, x, y, nyckel: gastNyckel(k?.id, namn), pot: { styrka, uthallighet, mod, smidighet }, skill: { narstrid: ov, traff: ov } }); // drar ingen slump
     gastTillbaka(s, p);
+    gastensPlatser(s, p); // det hens by känner (steg 11.4.11)
     s.people.push(p);
     return p.id;
   });
