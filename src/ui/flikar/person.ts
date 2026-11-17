@@ -235,8 +235,10 @@ function formogenhetLista(p: Person) {
   const sum = formogenhetDelar(s, p.id).sum;
   const skuld = p.skatteskuld ? ` <span title="Skatten hen inte kunde betala; den läggs på nästa års skatt">Skatteskuld ${v(p.skatteskuld)}.</span>` : ''; // steg 10.5.5
   if (!rader.length) return `<p class="muted">Äger inget.${skuld}</p>`;
-  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${v(sum)} sammanlagt.${skuld} <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
-    <table class="agtab"><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
+  // kolumnrubriker och vågens symbol vid värdet (steg 11.1.49)
+  const vag = tecknet('sym_vag', '⚖', 12);
+  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${vag} ${v(sum)} sammanlagt.${skuld} <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
+    <table class="agtab"><thead><tr><th></th><th>Sak</th><th class="tal">Antal</th><th>Kvalitet</th><th title="Hur mycket som är kvar innan den är utsliten">Skick</th><th class="tal" title="Värde, ungefär i arbetstimmar">${vag}</th></tr></thead><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
 }
 // egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras
 const SKALA = 2;
@@ -345,7 +347,9 @@ function halsaHtml(p: Person) {
   const nasta = [...new Set(vardNasta(s, p, p).map(x => VARD[x.k].namn))], lr = larmRollNu(s, p), vardRad = (nasta.length ? `<p class="muted">Behöver härnäst: ${esc(nasta.join(', ').toLowerCase())}</p>` : '') + (lr ? `<p class="muted">Vid larmet (${esc(LARMHOT[lr.hot]?.namn.toLowerCase() ?? lr.hot)}): ${esc(ROLLNAMN[lr.roll].toLowerCase())}</p>` : ''); // rollen vid larmet (steg 9.5.19)
   const formagor = (Object.keys(FORMAGOR) as (keyof typeof FORMAGOR)[]).map(k => {
     const f = FORMAGOR[k], v = f.varde(p), ont = 'ont' in f;
-    return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, (ont ? v > 0.5 : v < LAG.halsa) ? 'low' : '')}<span>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}`);
+    // en förmåga där högt är dåligt (smärtan) är rostfärgad när den är hög (steg 11.1.48)
+    const dalig = ont ? v > 0.5 : v < LAG.halsa;
+    return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, dalig ? 'low' : '')}<span${ont && dalig ? ' class="ont"' : ''}>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}${ont ? '. Här är högt dåligt' : ''}`);
   }).join('');
   // näringen (steg 2.6.1): mättnaden är en sammanfattning av de fem värdena
   const n = naringNu(p), barn = ageOf(p, s.now) < ALDER.matBarn ? KROPP.hungerBarn : 1;
@@ -353,9 +357,11 @@ function halsaHtml(p: Person) {
   const naring = NARINGAR.map(k => rad(p, 'n_' + k, `${tecknet('n_' + k, NARING[k].tecken, 14)} ${NARING[k].namn}`, `${bar(n[k], bristGrad(p, k) > 0 ? 'low' : '')}<span>${Math.round(n[k] * 100)} %</span>${bristGrad(p, k) > 0 ? bristTecken(k) : ''}`,
     [{ namn: 'Sjunker', v: -sjunker(k, KROPP.hungerTim) * barn }, ...svett(k) ? [{ namn: 'Tappar salt: arbetar hårt i värmen', v: -sjunker(k, KROPP.hungerTim) * barn * svett(k) }] : []], ' % per timme',
     `Finns i ${NARING[k].fran}. Under ${Math.round(NARINGBAL.brist * 100)} %: ${NARING[k].brist.namn.toLowerCase()} (${NARING[k].brist.gor.charAt(0).toLowerCase() + NARING[k].brist.gor.slice(1)})`)).join('');
-  // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
-  return `<div class="kropp">${gubbe}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
-    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Status</h3><dl class="kv">${formagor}${gangRad(p)}</dl><h3>Näring</h3><dl class="kv">${naring}</dl>`;
+  // figuren med H och V för personens högra och vänstra sida (hen står vänd mot oss), och en rad om att den går att trycka på
+  // (steg 11.1.48). Förmågorna har gångfarten, och Näring bara näringsämnena (vätskan står under Behov)
+  const fig = `<div class="kroppfig"><div class="hvrad"><span class="hv" title="Personens högra sida">H</span>${gubbe}<span class="hv" title="Personens vänstra sida">V</span></div><p class="muted small">Tryck på en kroppsdel</p></div>`;
+  return `<div class="kropp">${fig}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
+    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Förmågor</h3><dl class="kv">${formagor}${gangRad(p)}</dl><h3>Näring</h3><dl class="kv">${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string, extra = '') {
@@ -378,7 +384,7 @@ function ovarNu(p: Person, k: Skill) {
   return !!d && p.task!.phase === 'do' && (d.arbete === k || d.ovar === k || (k === 'hantverk' && !!d.hantverk));
 }
 function egenHtml(p: Person) {
-  const now = s.now, d = duty(s, p);
+  const now = s.now;
   const statRad = (k: Stat) => {
     const v = stat(p, k, now), id = `e-${k}-${p.id}`, per = stat(p, k, now + DAY) - v; // ett dygn = ett år
     const nu = Math.abs(per) < 0.005 ? 'Ändras inte med åldern just nu.' : `${per > 0 ? 'Växer' : 'Sjunker'} med åldern: ${per > 0 ? '+' : '−'}${visa(Math.abs(per), 2)} om året.`;
@@ -402,10 +408,9 @@ function egenHtml(p: Person) {
   // tron hen har (steg 4.1.2.1): vem som står bakom, och vid tryck tolkningen och tecknet den kom ur
   const tr = troOf(s, p.tro), tro = tr ? (() => {
     const id = `e-tro-${p.id}`, rader = [...tr.ber ? [tr.ber] : [tolkning(tr)], `${tr.grundare === p.id ? 'Hen' : tr.gnamn} tolkade ${teckenText(tr.k, tr.om)} som ett tecken`, `Tron är ${visa((p.troStyrka ?? 0) / 5)} av 10 stark hos hen`];
-    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join('. '))}">Tro</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join('. '))}">${bar((p.troStyrka ?? 0) / 100)}<span>${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${esc(troNamn(tr))}</span></dd>${hjalpText(id, gorHtml(rader.slice(1), rader[0]))}`;
+    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join('. '))}">Tro: ${esc(troNamn(tr))}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join('. '))}">${bar((p.troStyrka ?? 0) / 100)}<span>${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${visa((p.troStyrka ?? 0) / 5)}</span></dd>${hjalpText(id, gorHtml(rader.slice(1), rader[0]))}`;
   })() : '';
-  return `<dl class="kv">${STATS.map(statRad).join('')}${ande}${tro}
-      ${ageOf(p, now) >= ALDER.hjalper ? `<dt>Pliktkänsla</dt><dd>${bar(d, 'skill')}<span>${d > 0.75 ? 'Plikttrogen' : d > 0.5 ? 'Gör sin del' : d > 0.3 ? 'Bekväm' : 'Lat'}</span></dd>` : ''}</dl>
+  return `<dl class="kv">${STATS.map(statRad).join('')}${ande}${tro}</dl>
       <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(skillRad).join('')}</dl>`;
 }
 // relationerna med typerna som symboler (steg 3.1.1, RELATIONER i relationer.ts): ett tryck på symbolen visar varför.
@@ -511,7 +516,7 @@ function gearHtml(p: Person) {
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
   const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.krok !== undefined ? `i ${byId(s, t.krok)?.name ?? 'någon'}s bälte` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
   const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 4)}</span>` : ''}${skickRing(t.c, cls.includes('hand'), px > 20)}</span>`;
-  const t = uppgiftVid(p), borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), ih = bordaIHander(s, p, t, u), kg = (n: number) => `${kortTal(n)} vikt`;
+  const t = uppgiftVid(p), borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), ih = bordaIHander(s, p, t, u), kg = (n: number) => `${kortTal(n)} kg`; // vikten i kg överallt (steg 11.1.49)
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
   // den som äter vid bordet har maten i den första fria handen (steg 3.10.3)
   const mal = vidBordet(p) ? t?.mal : undefined, malHand = mal ? (['hoger', 'vanster'] as const).find(k => !u[k].ting && !u[k].borda) : undefined;
@@ -544,8 +549,8 @@ function gearHtml(p: Person) {
   const paSig = paSigVikt(s, p); // samma vikt som simuleringen räknar mot det hen orkar (utrustning.ts)
   const rad = PLATS_LIST.filter(k => !PLATSER[k].hand).map(k => ruta(k)).join('');
   return `<div class="utrhander"><div class="utrhand">${ruta('hoger', true)}${handKg('hoger')}</div>${utrGubbe(p, u, ih)}<div class="utrhand">${ruta('vanster', true)}${handKg('vanster')}</div></div>
-    <div class="tekrad utrrad">${rad}</div><p class="small muted utrkg">På sig <b>${kg(paSig)}</b>${bar ? ` · börda <b>${kg(borda)}</b>` : ''} · orkar <b>${kg(orkar)}</b></p>
-    <div class="tekrad">${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, väger ${kg(viktOf(t.k))}, ${where(t)}`, 'pa')).join('')}</div>${stockHtml(p)}`;
+    <p class="utretik">På kroppen</p><div class="tekrad utrrad">${rad}</div><p class="small muted utrkg">På sig <b>${kg(paSig)}</b>${bar ? ` · börda <b>${kg(borda)}</b>` : ''} · orkar <b>${kg(orkar)}</b></p>
+    ${own.length ? `<p class="utretik">Äger, bär inte</p><div class="tekrad">${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, väger ${kg(viktOf(t.k))}, ${where(t)}`, 'pa')).join('')}</div>` : ''}${stockHtml(p)}`;
 }
 // människan i utrustningen (steg 5.3.4.3): samma figur som på kartan (folkbild.ts), med kläderna på, och redskapen i
 // händerna (och i bältet) som små bilder ovanpå, där platserna är
@@ -563,7 +568,7 @@ function stockHtml(p: Person) {
   const own = Object.entries(ownedStock(s, p)).filter(([k, n]) => n >= 0.5 && STACK[k]).sort((a, b) => b[1] - a[1]);
   if (!own.length) return '';
   const txt = fmtN;
-  return `<div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${txt(n)} ${sakNamn(k).toLowerCase()}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
+  return `<p class="utretik">Hens del i förrådet</p><div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${txt(n)} ${sakNamn(k).toLowerCase()}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
 }
 let kunTek: string | undefined; // tekniken vars ruta är öppen i kunskapen
 // kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.
