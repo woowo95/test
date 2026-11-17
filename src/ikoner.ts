@@ -144,6 +144,7 @@ export const PAL: Record<string, Record<string, string>> = {
   skinndorr_karta: { e: '#bdb39b', E: '#dad0bb', o: '#5e3c24', O: '#7e7362', S: '#987e62', s: '#7d5b40', Z: '#2f261d', z: '#474138', d: '#372f25' },
   skinn: { b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
   pergament: { w: '#dad0bb', k: '#bdb39b' },
+  karta: { w: '#dad0bb', k: '#bdb39b', d: '#5e3c24', r: '#a14808', b: '#61767a', o: '#24201d' }, // platserna i världen (steg 11.4.4, platshållare)
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
   kalke: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.2, platshållare
   slade: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.3, platshållare (också tekniken Släde)
@@ -2918,6 +2919,11 @@ export const PIX: Record<string, string[]> = {
     '.wwwwww.',
     '.kdddwk.',
     '........',
+  ],
+  // kartan (steg 11.4.4, platshållare, 16 punkter): ett blad med en sjö, en stig och ett kryss där platsen ligger
+  karta: [
+    '................', '.oooooooooooooo.', '.okwwwwwwwwwwko.', '.owwwbbwwwwwwwo.', '.owwbbbwwwdwwwo.', '.owwwbwwwwdwwwo.', '.owwwwwwwdwwwwo.', '.owdwwwwdwwwwwo.',
+    '.owwdwwdwwwwwwo.', '.owwwddwwwrwrwo.', '.owwwwwwwwwrwwo.', '.owwwwwwwwrwrwo.', '.okwwwwwwwwwwko.', '.oooooooooooooo.', '................', '................',
   ],
   // ett tomt blad pergament (steg 10.6.4, platshållare): ett ljust, lite ojämnt blad med hörnet uppvikt
   pergament: [

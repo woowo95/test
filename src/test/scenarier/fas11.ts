@@ -1250,3 +1250,31 @@ SCENARIER.ortblekna = {
     ];
   },
 };
+
+SCENARIER.fjarran = {
+  text: 'Platserna sprids i samtal (steg 11.4.4, berattaOrt i ort.ts): ämnet Fjärran platser i AMNEN, och ett led i berättandet tar bort en nivå: den som besökt en plats berättar, lyssnaren känner den, och nästa lyssnare har ett rykte med den som först berättade det',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const nr = vl.platser!.find(x => x.k === 'by' && x.by !== vl.huvud)!.nr;
+    SIM.larOrt(s, a!, nr, SIM.O_BESOKT, 1);
+    SIM.samtalBorjar();
+    SIM.berattaOrt(s, a!, b!, SIM.findL(a!, 'ort', nr)!, SIM.getRel(s, a!, b!));
+    const amne = SIM.samtalAmne(s, a!, b!, 'prat');
+    const lb = SIM.findL(b!, 'ort', nr);
+    SIM.berattaOrt(s, b!, c!, lb!, SIM.getRel(s, b!, c!));
+    const lc = SIM.findL(c!, 'ort', nr);
+    SIM.berattaOrt(s, c!, a!, lc!, SIM.getRel(s, c!, a!)); // tillbaka till den som var där: hen har kvar sin nivå
+    // i vanliga samtal (share i minne.ts): den som varit där berättar om platsen bland det andra hen vet
+    const s2 = SIM.cloneState(testBy(3)), [resenar, ...andra] = SIM.living(s2).filter(q => SIM.ageOf(q, s2.now) >= 18);
+    SIM.larOrt(s2, resenar!, nr, SIM.O_BESOKT, 1);
+    for (let i = 0; i < 400; i++) { const q = andra[i % andra.length]!; SIM.share(s2, resenar!, q, SIM.getRel(s2, resenar!, q), SIM.SAMTALSSLAG['berättelse']); }
+    const vet = andra.filter(q => SIM.ortNiva(q, nr) === SIM.O_KANT).length;
+    return [
+      [`samtalets ämne är Fjärran platser (${amne.k}: ${amne.o})`, amne.k === 'fjarran' && SIM.AMNEN.fjarran.namn === 'Fjärran platser'],
+      [`den som hör det av den som varit där känner platsen, ett led bort (${lb?.v}, led ${lb?.led})`, lb?.v === SIM.O_KANT && lb.src === a!.id && lb.led === 1],
+      [`nästa lyssnare har ett rykte, med den som först berättade det som rykte (${lc?.v}, led ${lc?.led})`, lc?.v === SIM.O_RYKTE && lc.fr === b!.id && lc.led === 2],
+      ['den som varit där har kvar sin nivå', SIM.ortNiva(a!, nr) === SIM.O_BESOKT],
+      [`i samtalen sprids platsen bland det andra man vet (${vet} av ${andra.length} känner den efter 400 berättelser)`, vet > 0],
+    ];
+  },
+};

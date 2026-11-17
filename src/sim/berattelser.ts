@@ -1280,6 +1280,16 @@ const MDEF = {
     '{namn} sa till {med} att det finns {om} på ett ställe {hen} vet.',
     '{namn} och {med} pratade om {om} och var det brukar finnas.',
   ],
+  p_fjarran: [
+    '{namn} berättade för {med} om {om}.',
+    '{namn} och {med} pratade om {om}, långt härifrån.',
+    '{med} fick höra av {namn} om {om}.',
+    '{namn} beskrev vägen till {om} för {med}.',
+    '{med} frågade {namn} om {om}.',
+    '{namn} mindes {om} och berättade det för {med}.',
+    '{namn} och {med} undrade hur det står till i {om}.',
+    '{namn} visste något om {om}, och {med} lyssnade noga.',
+  ],
   p_pris: [
     '{namn} berättade för {med} {om}.',
     '{namn} och {med} pratade om {om}.',
@@ -2718,6 +2728,7 @@ const ADEF = {
   teknik: { prio: 60, namn: 'En teknik' },
   kunskap: { prio: 55, namn: 'Något man kan' },
   plats: { prio: 50, namn: 'En plats' },
+  fjarran: { prio: 52, namn: 'Fjärran platser', ikon: 'karta' }, // en plats i världen (steg 11.4.4, ort.ts)
   pris: { prio: 45, namn: 'Ett pris', ikon: 'silver' },
   langtan: { prio: 40, namn: 'Det man längtar efter', ikon: 's_mat' },
   karlek: { prio: 30, namn: 'Kärlek' },

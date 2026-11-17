@@ -4,12 +4,15 @@
 // först berättade (fr), som ryktets förskjutning räknas ur. En person minns högst ORT.max platser, och det minst säkra trängs
 // undan. Att höra om en plats igen, på samma eller en högre nivå, stärker minnet.
 import { balans } from './balans';
-import { byId } from './folk';
 import { findL, MINNE, trimLardomar } from './minne';
+import { delade } from './berattelser';
+import { byId, count, gjort } from './folk';
+import { clamp } from './slump';
+import { lognFaktor } from './rykten';
 import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
 import { VARLD } from './varldmark';
 import { klanById } from './klaner';
-import { Lardom, Person, State } from './typer';
+import { Lardom, Person, Rel, State } from './typer';
 
 export const ORT = balans('ort', {
   max: 10, // så många platser i världen minns en person högst (utöver de andra lärdomarna); det minst säkra trängs undan
@@ -18,6 +21,7 @@ export const ORT = balans('ort', {
   anfall: 0.5, // den som ser rövare från en grannby får ett rykte om byn de kom ifrån så här säkert
   // platserna bleknar (steg 11.4.3): så här många gånger personens vanliga tid för en lärdom, per nivå
   glomRykte: 4, glomKant: 10, glomBesokt: 25,
+  dela: 1, // hur gärna man berättar om en plats i världen i ett samtal, gånger säkerheten (som en plats med värdet 1, steg 11.4.4)
   nedC: 0.5, // en plats vars säkerhet sjunkit under MINNE.glomGrans sjunker en nivå och får den här säkerheten; ett rykte glöms
 });
 
@@ -56,6 +60,20 @@ export function ortBleknar(l: Lardom, timmar: number, tau: number): boolean {
   if (l.v <= O_RYKTE) return false;
   l.v--; l.c = ORT.nedC;
   return true;
+}
+// ---------- platserna i samtalen (steg 11.4.4) ----------
+// a berättar för b om platsen i lärdomen l: ett led i berättandet tar bort en nivå (besökt blir känt, känt blir rykte), och
+// säkerheten är den hos den som berättar gånger hur mycket b tror på a, som för andra lärdomar. Ett rykte som börjar här får a
+// som den som först berättade (ryktets förskjutning, steg 11.4.5); ett rykte som berättas vidare behåller sin. Att berätta
+// stärker det egna minnet. Samtalets ämne blir Fjärran platser
+export function berattaOrt(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
+  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
+  const vl = s.varld, q = vl && varldPlatsNr(vl, l.a);
+  delade('fjarran', 'karta', q ? (l.v === O_RYKTE ? `${LANDMARKEN[q.k].namn.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats långt borta');
+  const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a);
+  const niva = Math.max(O_RYKTE, l.v - 1), fore = findL(b, 'ort', l.a);
+  larOrt(s, b, l.a, niva, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1, fr: l.v === O_RYKTE ? (l.fr ?? a.id) : a.id });
+  if (!fore) { count(s, 'ortBerattad'); gjort(s, a, 'berattat'); }
 }
 // nivån p har i minnet för platsen nr (undefined: okänd)
 export const ortNiva = (p: Person, nr: number): number | undefined => findL(p, 'ort', nr)?.v;
