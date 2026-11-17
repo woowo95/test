@@ -1007,7 +1007,12 @@ SCENARIER.titel = {
     const form = SIM.styrelseform(t).namn;
     SIM.leave(t, l); SIM.stepStyre(t);
     const yrkeEfter = SIM.yrkeNamn(t, l);
+    // titelns text och styrets text säger inte emot varandra (steg 11.1.27): titeln säger hur ledaren fick sin plats och vad folket
+    // kallar hen, aldrig vem som bestämmer, och ordet förman finns inte
+    const titlar = ['Kung', 'Drottning', 'Jarl', 'Järnhanden', 'Krigshövding', 'Hövding', 'Storjägare', 'Den vise', 'Den visa', 'Byfader', 'Bymoder', 'Äldste', 'Äldsta', 'Ålderman', 'Ålderkvinna'].map(n => SIM.titelOm(n));
+    const titelText = titlar.every(x => !!x && !/förman|bestäm|påbud|styr|makt/i.test(x.kort + ' ' + x.om)) && SIM.titelOm('Ålderman')!.kort === 'vald av byn' && /för ordet vid tinget/.test(SIM.titelOm('Ålderman')!.om);
     return [
+      ['titelns text säger hur ledaren fick sin plats och vad folket kallar hen, aldrig vem som bestämmer; åldermannen är vald av byn och för ordet vid tinget (steg 11.1.27)', titelText],
       [`den första ledaren får en titel (${forsta})`, vald && !!forsta],
       [`ledarens yrke är titeln (${yrkeLed}), de andras som förut, och efteråt kommer det gamla tillbaka (${yrkeEfter})`, yrkeLed === ns('Kung', 'Drottning') && l.tag === 'Jägare' && yrkeAnnan && yrkeEfter === 'Jägare'],
       ...fall.map(([vad, vant, fick]) => [`${vad}: ${vant} (${fick})`, fick === vant] as [string, boolean]),
