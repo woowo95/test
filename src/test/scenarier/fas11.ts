@@ -486,3 +486,44 @@ SCENARIER.varldskronika = {
     ];
   },
 };
+
+SCENARIER.vagval = {
+  text: 'Vägvalet (steg 11.2.20): den billigaste vägen på världens rutnät för ett färdsätt, sparad som en del av världen; vägen går runt berg och myr, och vagnen tar en annan väg än den som går',
+  kor: () => {
+    // en liten provvärld: slätt med ett bergsblock, ett myrblock och en vägg av tät skog med en lucka
+    const nr = (k: SIM.MarkId) => SIM.MARK_IDS.indexOf(k);
+    const prov = (rita: (x: number, y: number) => SIM.MarkId) => {
+      const w = 30, h = 16, mark = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) mark[y * w + x] = nr(rita(x, y));
+      const v: SIM.VarldMark = { gen: 1, fro: 1, delfro: 0, w, h, mark, flod: new Uint8Array(w * h), ned: new Int32Array(w * h).fill(-1) };
+      return { v, vl: { fro: 1, mark: {} as SIM.Varlden['mark'] } as SIM.Varlden, i: (x: number, y: number) => y * w + x };
+    };
+    const har = (v: SIM.VarldMark, r: number[] | undefined, k: SIM.MarkId) => !!r?.some(i => v.mark[i] === nr(k));
+    const berg = prov((x, y) => x >= 12 && x < 18 && y >= 4 && y < 12 ? 'berg' : 'slatt');
+    const bv = SIM.billigasteVag(berg.vl, berg.v, berg.i(3, 8), berg.i(26, 8), 'fots');
+    const myr = prov((x, y) => x >= 12 && x < 18 && y >= 4 && y < 12 ? 'myr' : 'slatt');
+    const mv = SIM.billigasteVag(myr.vl, myr.v, myr.i(3, 8), myr.i(26, 8), 'fots');
+    const tat = prov((x, y) => x === 15 && y > 1 ? 'tat' : 'slatt');
+    const fots = SIM.billigasteVag(tat.vl, tat.v, tat.i(3, 12), tat.i(26, 12), 'fots'), vagn = SIM.billigasteVag(tat.vl, tat.v, tat.i(3, 12), tat.i(26, 12), 'vagn');
+    const vagnAnnan = !!fots && !!vagn && har(tat.v, fots.rutor, 'tat') && !har(tat.v, vagn.rutor, 'tat') && vagn.rutor.some(i => i === tat.i(15, 0) || i === tat.i(15, 1)) && vagn.kostnad > fots.kostnad;
+    const hav = prov((x) => x === 15 ? 'hav' : 'slatt'), ingen = SIM.billigasteVag(hav.vl, hav.v, hav.i(3, 3), hav.i(26, 3), 'fots');
+    // i en riktig värld: från huvudbyn till en annan by
+    const s = SIM.cloneState(testBy(10)), vl = SIM.medVarld(s), v = SIM.varldMark(s)!;
+    const hb = vl.platser!.find(p => p.by === vl.huvud)!, a = hb.y * v.w + hb.x;
+    let vag: SIM.VarldVag | undefined, mal: SIM.VarldPlats | undefined;
+    for (const p of vl.platser!.filter(q => q.k === 'by' && q !== hb).sort((p, q) => Math.hypot(p.x - hb.x, p.y - hb.y) - Math.hypot(q.x - hb.x, q.y - hb.y))) { vag = SIM.vagMellan(vl, v, a, p.y * v.w + p.x, 'fots', s.now); if (vag) { mal = p; break; } }
+    const k = SIM.kostnader(vl, v, 'fots');
+    const stegOk = !!vag && vag.rutor[0] === a && vag.rutor.at(-1) === mal!.y * v.w + mal!.x && vag.rutor.every((i, n) => n === 0 || Math.max(Math.abs(i % v.w - vag!.rutor[n - 1] % v.w), Math.abs(Math.floor(i / v.w) - Math.floor(vag!.rutor[n - 1] / v.w))) === 1);
+    const summa = vag ? vag.rutor.slice(1).reduce((t, i, n) => t + k[i] * (i % v.w !== vag!.rutor[n] % v.w && Math.floor(i / v.w) !== Math.floor(vag!.rutor[n] / v.w) ? Math.SQRT2 : 1), 0) : 0;
+    const sparad = !!vag && SIM.vagMellan(vl, v, a, mal!.y * v.w + mal!.x, 'fots', s.now + 1) === vag && vl.vagar!.length === 1 && JSON.parse(JSON.stringify(vl)).vagar[0].rutor.length === vag.rutor.length;
+    return [
+      [`vägen går runt berget (kostnad ${bv?.kostnad.toFixed(1)})`, !!bv && !har(berg.v, bv.rutor, 'berg')],
+      [`vägen går runt myren (kostnad ${mv?.kostnad.toFixed(1)})`, !!mv && !har(myr.v, mv.rutor, 'myr')],
+      [`vagnen tar en annan väg än den som går: den som går tar sig genom den täta skogen (${fots?.kostnad.toFixed(1)}), vagnen går runt genom luckan (${vagn?.kostnad.toFixed(1)})`, vagnAnnan],
+      ['över havet finns ingen väg', ingen === undefined],
+      [`i världen går vägen från huvudbyn till ${mal?.namn ?? 'ingen by'} ruta för ruta (${vag?.rutor.length ?? 0} rutor)`, stegOk],
+      [`vägens kostnad är summan av rutorna (${vag?.kostnad} och ${summa.toFixed(3)})`, !!vag && Math.abs(vag.kostnad - summa) < 0.01],
+      ['vägen sparas i världen och räknas inte om', sparad],
+    ];
+  },
+};
