@@ -969,12 +969,14 @@ SCENARIER.oversvamning = {
     // fram till timmen innan vattnet börjar stiga
     let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
     kor(s, (b0 - s.now) / HOUR);
-    // på stranden närmast byn (en ruta från vattnet): en hög bär, en hög grenar och en hög sten, och ett fält med ärter
+    // på stranden närmast byn (en ruta från vattnet), utanför lagren (ett lager som ligger i vägen för ett bygge flyttas med det som ligger där):
+    // en hög bär, en hög grenar och en hög sten, och ett fält med ärter. Stenen ligger 12 rutor från bären: den som bär in bären tar
+    // annars med sig stenen förbi på vägen till lagret, och då prövas inte vattnet
     const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.bynsMitt(s);
     const strand: { x: number; y: number }[] = [];
-    for (let i = 0; i < W * W; i++) if (land[i] === 1 && g[i] !== T.Sten) strand.push({ x: i % W, y: Math.floor(i / W) });
+    for (let i = 0; i < W * W; i++) if (land[i] === 1 && g[i] !== T.Sten && !SIM.isStored(s, i % W, Math.floor(i / W))) strand.push({ x: i % W, y: Math.floor(i / W) });
     strand.sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y));
-    const [pb, pg, ps] = [strand[0], strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 3)!, strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 6)!];
+    const [pb, pg, ps] = [strand[0], strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 3)!, strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 12)!];
     s.stackar!.push({ k: 'grenar', n: 8, c: 1, x: pg.x, y: pg.y }, { k: 'sten', n: 3, c: 1, x: ps.x, y: ps.y });
     SIM.tidy(s);
     const pf = strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 9)!;
@@ -1859,9 +1861,15 @@ SCENARIER.brand = {
       const bits = SIM.bitsOf(by), id = Math.max(0, ...bits.map(q => q.id)) + 1;
       bits.push({ id, x: pv.x, y: pv.y, k: 'vagg', m: 'ris', b: 1, mat: 5, c: 1 }); SIM.touch(by);
       const ris = bits.find(q => q.id === id)!;
-      const vuxen = living(by).find(p => SIM.ageOf(p, by.now) >= SIM.ALDER.vuxen)!;
+      // (säcken fylls av den som står nära vattnet när elden syns, som byn valdes för, och närmast risväggen av dem: den som är ute på
+      // jakt hinner inte tillbaka innan byn släckt)
+      const vuxen = living(by).filter(p => SIM.ageOf(p, by.now) >= SIM.ALDER.vuxen).sort((a, b) => +SIM.naVattnet(by, b) - +SIM.naVattnet(by, a) || Math.hypot(a.x - pv.x, a.y - pv.y) - Math.hypot(b.x - pv.x, b.y - pv.y) || a.id - b.id)[0];
       SIM.addTool(by, 'vattensack', vuxen);
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) SIM.tand(by, (pv.y + dy) * W + pv.x + dx, 'gnista', 0);
+      // säcken prövas i en kopia där bara hen finns: i byn släcker de andra de nio rutorna med händerna på någon minut, innan säcken hunnit fyllas
+      const ensam = cloneState(by); ensam.people = ensam.people.filter(p => p.id === vuxen.id);
+      kor(ensam, 2, torr);
+      const ensamSack = ensam.stat?.['brand sack'] ?? 0;
       const t0 = by.now;
       let iVagg = 0, iVattnet = 0, sack = 0, hand = 0, risC = 1, tim = 0;
       const sedda = new Set<number>();
@@ -1889,7 +1897,7 @@ SCENARIER.brand = {
         [`där skogen brann står kolnade stammar som torrakor (${kolnade} av ${brunnen.length}; en kan ha huggits eller fallit av ålder) i aska (${hogt} rutor med högt gräs kvar)`, brunnen.length > 0 && kolnade >= brunnen.length * 0.95 && hogt <= brunnen.length * 0.02],
         ['den kolnade stammen faller efter torrakans tid', fallit],
         [`elden nära byn sågs (${st['brand sedd'] ?? 0}) och hotade byn (${st['brand hot'] ?? 0})`, (st['brand sedd'] ?? 0) >= 1 && (st['brand hot'] ?? 0) >= 1],
-        [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador (sedda var femte minut; i korta slag släcks elden ofta mellan två prov)`, (st['brand sack'] ?? 0) >= 1 && (st['brand slackt'] ?? 0) >= 2],
+        [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador (sedda var femte minut; i korta slag släcks elden ofta mellan två prov); ensam med säcken bar hen ${ensamSack} säckar`, ensamSack >= 1 && (st['brand slackt'] ?? 0) >= 2],
         [`risväggen brann (skick ${risC.toFixed(2)}${ris.b < 1 ? ', rasade' : ''})`, risC < 1],
         [`ingen stod i en vägg (${iVagg}) eller i vattnet (${iVattnet})`, iVagg === 0 && iVattnet === 0],
         [`elden nära byn slocknade efter ${(tim / 12).toFixed(1)} timmar${by.brand ? ` (${by.brand.r.length} rutor brinner längre bort)` : ''}`, by.brand ? !naraByn() : slocknat],

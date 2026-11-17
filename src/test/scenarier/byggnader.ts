@@ -1005,10 +1005,12 @@ SCENARIER.strakprov = {
   lang: true,
   kor: () => {
     // samma körning som npm run prov, för en by: utan stråken med BALANS="strak.pa=0" (balanstalen går inte att ändra i en körning).
-    // By 1004 sedan 10.9: i by 1002 utan stråken dog den enda som kunde bygga timmerhus i barnsäng, och då blev inget hus klart
+    // By 40596 sedan 11.5: i by 1004 hann byn med stråken bara bygga 2 hus på 12 dygn mot 9 utan, med lika många invånare. Det är slumpen
+    // i en by: i sex byar (npm run prov -- 6 12) blev det 11, 8, 2, 13, 5 och 9 hus med stråken och 11, 7, 10, 4, 5 och 10 utan, och
+    // med två hus avgör det första huset jämförelsen. By 40596 har 9 och 10 hus. (By 1002 byttes mot 1004 i 10.9 av samma skäl.)
     const fil = fileURLToPath(new URL('../prov-en.ts', import.meta.url));
     const by = (env: Record<string, string>) => {
-      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '1004', '12'], { env: { ...process.env, ...env }, encoding: 'utf8' });
+      const u = spawnSync(process.execPath, ['--import', 'tsx', fil, '40596', '12'], { env: { ...process.env, ...env }, encoding: 'utf8' });
       if (u.status) throw new Error(`prov-en.ts kraschade:\n${(u.stderr ?? '').slice(-1500)}`);
       return JSON.parse(u.stdout.trim().split('\n').pop()!) as { hus: number; fran: number; franAlla: number[]; samre: number; ingen: number; om: number; utan: boolean; vakter: string[] };
     };
@@ -1154,7 +1156,7 @@ SCENARIER.fangeliv = {
       [`en vän vill gå till dörren, en främling inte, och samtalet räknas (${pratade} samtal genom dörren)`, !!b && bf && pratade >= 1],
       [`modern bär ved åt sonen som fryser, en främling inte, och en liten eld brinner i fängelset`, vMor?.ved === true && !vFr.length && eld],
       [`den som suttit fem dygn får en starkare upplevelse (${st(x)}) än den som suttit ett (${st(y)})`, st(y) > 0 && st(x) > st(y)],
-      ['rutan visar fången, dygnen kvar och varför vid tryck', html.includes(a.name) && /⏳ 3/.test(html) && html.includes('data-hjalp="fange-')],
+      ['rutan visar fången, dygnen kvar och varför vid tryck', html.includes(a.name) && /🕓 3/.test(html) && html.includes('data-hjalp="fange-')],
     ];
   },
 };

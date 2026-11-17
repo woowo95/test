@@ -562,6 +562,7 @@ SCENARIER.bot = {
   },
 };
 SCENARIER.forlatelse = {
+  lang: true,
   text: 'Förlåtelsen (steg 10.8.3): den som blir ombedd svarar direkt efter sin empati, relationen innan, allvaret och hur många gånger det hänt förut. Vid ja tar hen emot gåvan, relationen lagas halva vägen tillbaka, skulden försvinner och ryktet om händelsen blir svagare hos hen och hos dem som ser det; misshandel står i krönikan. Vid nej byter inget ägare och skulden sitter kvar',
   kor: () => {
     // q har empatin emp och tyckte op om p innan; p gjorde k mot q, ganger gånger. w står bredvid och ser det
@@ -2485,6 +2486,7 @@ SCENARIER.sorg = {
 };
 
 SCENARIER.personlogg = {
+  lang: true,
   text: 'Personens händelser (steg 9.2.107–9.2.108, personlogg.ts): en skada, en ny kunskap och en död hamnar hos rätt person, de som stod den döda nära får en rad, ett dygn av vanligt arbete skriver inget om vardagen, det som händer samma dygn blir en rad, och personligheten färgar texten',
   kor: () => {
     const s = createState(3, START);

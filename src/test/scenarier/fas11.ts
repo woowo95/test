@@ -54,8 +54,8 @@ SCENARIER.borta = {
     kor(s, 12, () => {
       for (const q of SIM.living(s)) {
         if (ids.has(q.id)) tva++;
-        const t = q.task;
-        if (t && [t.med, t.fran, t.bar, t.ref].some(id => ids.has(id as number))) pekas++;
+        const t = q.task; // (ref är saken arbetet gäller: en stam, ett bygge eller ett fält, ingen person)
+        if (t && [t.med, t.fran, t.bar].some(id => ids.has(id as number))) pekas++;
       }
       if (roster().some(p => ids.has(p.id))) roster0++;
     });
