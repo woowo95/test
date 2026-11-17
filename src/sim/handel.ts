@@ -24,6 +24,7 @@ import { knows } from './teknik';
 import { dropSpot, put, stacksOf, use } from './lager';
 import { sumOf } from './egendom';
 import { kanterna } from './varg';
+import { kantMot } from './grannbyar';
 import { larPris, MINNE, trorPris } from './minne';
 import { KLAN, andraInst, handlarKlan, klanById, klanPris, klanerOf, prisAndras } from './klaner';
 import { foddNar, gastNyckel } from './gastliv';
@@ -284,13 +285,14 @@ function filtPlats(s: State) {
   return { x: n.x, y: n.y - BYTE.bakom };
 }
 
-// en handlare kommer in från kanten närmast byn (en av de två närmaste, slumpat), på land
+// en handlare kommer in från kanten som pekar mot grannbyn hen kommer från (kantMot, steg 11.2.22); har grannbyn ingen plats
+// i världen från kanten närmast byn (en av de två närmaste, slumpat), på land
 function kommer(s: State, tvinga?: boolean) {
   const kh = handlarKlan(s, tvinga); // ingen klan som tycker om byn nog: ingen handlare den här gången
   if (!kh) return false;
   const e = eldPlats(s), m = getMap(s.seed), mal = filtPlats(s);
-  const k = kanterna(e.x, e.y).filter(p => m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] !== T.Vatten);
-  const ut = k.length ? k[Math.floor(rnd(s, 'handel') * Math.min(2, k.length))] : { x: 0.5, y: e.y + 0.5 };
+  const k = () => kanterna(e.x, e.y).filter(p => m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] !== T.Vatten);
+  const ut = kantMot(s, kh.klan.id) ?? (k().length ? k()[Math.floor(rnd(s, 'handel') * Math.min(2, k().length))] : { x: 0.5, y: e.y + 0.5 });
   const sex = kh.person.sex, sort = sortFor(s), utr = HANDLARSORTER[sort].utr;
   const nr = s.handlarNr = (s.handlarNr ?? 0) + 1;
   const h: Handlare = {

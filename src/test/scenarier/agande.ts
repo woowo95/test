@@ -2120,10 +2120,11 @@ SCENARIER.rovare = {
     const gc = SIM.flockStrid(c, fc);
     const strid = (c.stat?.rovarStrid ?? 0) === 1 && !!gc && /rövare/.test(gc.orsak) && vuxna.every(p => p.task?.act === 'strid');
     // byn väntar med många fler: rövarna står inte emot, och tar ingenting. De flyr eller faller, och de som flyr lämnar kartan
-    const d = cloneState(bas); rovarGang(d, 2, { x: malet(d).x + 12, y: malet(d).y }, { anfaller: true });
+    const d = cloneState(bas); for (const [x, al] of [['m', 30], ['k', 28], ['m', 34], ['k', 26]] as const) nyInvanare(d, x, al); // åtta vuxna mot två
+    rovarGang(d, 2, { x: malet(d).x + 12, y: malet(d).y }, { anfaller: true });
     for (const p of living(d)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: d.now + 8 * HOUR, carry: 0 };
     const md = malet(d);
-    for (const p of living(d).filter(p => SIM.ageOf(p, d.now) >= SIM.ALDER.vaktFran).slice(0, 5)) { Object.assign(p, SIM.freeNear(d, md.x, md.y)); p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: d.now + 3 * HOUR, carry: 0 }; }
+    for (const p of living(d).filter(p => SIM.ageOf(p, d.now) >= SIM.ALDER.vaktFran).slice(0, 8)) { Object.assign(p, SIM.freeNear(d, md.x, md.y)); p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: d.now + 3 * HOUR, carry: 0 }; }
     korTills(d, () => !d.rovare, 3600);
     const vande = !d.rovare && (d.stat?.rovat ?? 0) === 0;
     const borta = !d.rovare && !d.people.some(p => p.gast?.sort === 'rovare' && SIM.gastLever(p)) && (d.stat?.rovarBorta ?? 0) + (d.stat?.rovarDoda ?? 0) >= 1;
@@ -3242,7 +3243,7 @@ SCENARIER.handlarenIgen = {
     const k = SIM.klanerOf(r)[0]; k.inst = -80;
     SIM.rovarnaKommer(r, 2, true, k.id);
     const f = r.rovare!, rv = r.people.find(q => q.id === f.folk[0])!;
-    rv.gast!.flytt = true; rv.x = 0.6; rv.y = 0.6; // hen flyr och står redan vid kanten
+    rv.gast!.flytt = true; const ut = SIM.kantMot(r, k.id) ?? { x: 0.6, y: 0.6 }; rv.x = ut.x; rv.y = ut.y; // hen flyr och står redan vid kanten mot sin by (steg 11.2.22)
     step(r, 5);
     const rovHem = !!k.personer.find(q => q.namn === rv.name && q.roll === 'rovare')?.kropp;
     return [

@@ -19,7 +19,7 @@ import { rykteDod, startSmak } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, andraInst, klanById, klanerOf, narhet } from './klaner';
-import { utbrytning } from './grannbyar';
+import { kantMot, utbrytning } from './grannbyar';
 import { prisIPrat } from './handel';
 import { gaMot } from './rovare';
 import { kanterna } from './varg';
@@ -228,7 +228,7 @@ export function regulate(s: State, dtSec: number) {
 }
 // en främling från en grannby som inte tycker illa om byn (steg 4.4.4.2), oftare från en som ligger nära (narhet). Hen kan ofta en teknik som ingen i byn kan, men
 // vars krav byn kan, och tekniken under den. Främlingen kommer gående (steg 9.2.115): hen är en gäst som går in på kartan
-// från närmaste kanten, mot ledaren (eller elden när byn saknar ledare), pratar med hen en stund och stannar som bybo eller
+// från kanten som pekar mot grannbyn (steg 11.2.22), mot ledaren (eller elden när byn saknar ledare), pratar med hen en stund och stannar som bybo eller
 // går igen (framlingSteg). Byn avgör: ledaren, eller de vuxna om byn saknar ledare. Det väger tekniken, klanens inställning,
 // seden Förnyelse – Tradition, trängseln och maten. Klanen minns hur det gick
 export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
@@ -244,7 +244,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   p.fran = k.id;
   if (tek) { const lar = (id: string) => { if (knows(p, id)) return; (p.tek ??= {})[id] = 1; for (const x of TEK[id]?.krav ?? []) lar(x); }; lar(tek); }
   // gästen: id som en gäst, och bybons id väntar tills hen får stanna
-  const blir = p.id, ut = kanten(s, p.x, p.y);
+  const blir = p.id, ut = kantMot(s, k.id) ?? kanten(s, p.x, p.y);
   p.id = nyttGastId(s); p.x = ut.x; p.y = ut.y;
   p.gast = { sort: 'framling', klan: k.id, hem: k.hem, blir, fas: 'kommer', ...(tek ? { tek } : {}), ...(tvinga?.ja !== undefined ? { ja: tvinga.ja } : {}) };
   s.people.push(p);
@@ -252,7 +252,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   log(s, `En främling från ${k.namn} kommer gående mot byn.`, 'move', [p.id]);
   return p;
 }
-// närmaste kanten som inte är vatten, från (x, y)
+// närmaste kanten som inte är vatten, från (x, y): när grannbyn inte har någon plats i världen
 function kanten(s: State, x: number, y: number) {
   const m = getMap(s.seed);
   return kanterna(x, y).find(k => m.tiles[Math.floor(k.y) * W + Math.floor(k.x)] !== T.Vatten) ?? kanterna(x, y)[0];
@@ -274,7 +274,7 @@ export function framlingSteg(s: State, dtSec: number) {
     } else if (g.fas === 'pratar') {
       if (s.now >= (g.till ?? 0)) framlingBeslut(s, p);
     } else if (g.fas === 'gar') {
-      const ut = kanten(s, p.x, p.y), kvar = gaMot(s, p, ut.x, ut.y, dtSec, t0);
+      const ut = kantMot(s, g.klan) ?? kanten(s, p.x, p.y), kvar = gaMot(s, p, ut.x, ut.y, dtSec, t0); // hem mot grannbyn (steg 11.2.22)
       if (kvar >= 0 && kvar < 0.5 || kvar < 0) gastGar(s, p.id, true);
     }
   }

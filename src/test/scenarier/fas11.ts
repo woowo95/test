@@ -603,3 +603,46 @@ SCENARIER.klanbort = {
     ];
   },
 };
+
+SCENARIER.rattkant = {
+  text: 'Rätt kant (steg 11.2.22, grannbyar.ts): bykartan och världskartan hänger ihop med väderstrecken. Handlaren, främlingen och rövarna kommer in från den kant på bykartan som pekar mot grannbyn de kommer från, där en rak linje från elden mot grannbyn når kanten (eller närmaste land längs kanten), och går ut åt samma håll. Har byn ingen värld gäller den närmaste kanten',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!, h = vl.platser!.find(p => p.by === vl.huvud)!, e = SIM.eldPlats(s);
+    const kl = SIM.klanerOf(s), tiles = SIM.getMap(s.seed).tiles;
+    const pa = (q: { x: number; y: number }) => q.x <= 0.31 || q.y <= 0.31 || q.x >= SIM.W - 0.31 || q.y >= SIM.H - 0.31;
+    const vinkel = (k: SIM.Klan) => {
+      const p = vl.platser!.find(q => q.by === k.rad)!, q = SIM.kantMot(s, k.id)!;
+      const a = Math.atan2(p.y - h.y, p.x - h.x), b = Math.atan2(q.y - e.y - 0.5, q.x - e.x - 0.5);
+      return Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+    };
+    const kanter = kl.map(k => SIM.kantMot(s, k.id));
+    const paKant = kanter.every(q => !!q && pa(q) && tiles[Math.floor(q.y) * SIM.W + Math.floor(q.x)] !== SIM.T.Vatten);
+    const ratt = kl.filter(k => vinkel(k) < 0.05).length; // de vars kant inte är vatten pekar exakt mot grannbyn
+    const nara = kl.every(k => vinkel(k) < Math.PI / 2);
+    // handlaren
+    const a = SIM.cloneState(s); SIM.skickaHandlare(a);
+    const ha = a.handlare!, hk = SIM.hp(a, ha).gast!.klan, hm = SIM.kantMot(a, hk)!;
+    const handlare = !!ha && ha.fran.x === hm.x && ha.fran.y === hm.y && ha.ut.x === hm.x && ha.ut.y === hm.y;
+    // främlingen in och ut
+    const b = SIM.cloneState(s); for (const k of SIM.klanerOf(b)) k.inst = 20;
+    const f = SIM.framling(b)!, fm = SIM.kantMot(b, f.gast!.klan)!;
+    const framIn = f.x === fm.x && f.y === fm.y;
+    f.gast!.fas = 'gar'; f.x = e.x + 0.5; f.y = e.y + 1.5;
+    const d0 = Math.hypot(f.x - fm.x, f.y - fm.y); SIM.framlingSteg(b, 20);
+    const framUt = Math.hypot(f.x - fm.x, f.y - fm.y) < d0;
+    // rövarna
+    const c = SIM.cloneState(s), rk = SIM.klanerOf(c)[1]; SIM.rovarnaKommer(c, 3, false, rk.id);
+    const rm = SIM.kantMot(c, rk.id)!, rovare = !!c.rovare && c.rovare.x === rm.x && c.rovare.y === rm.y;
+    // utan värld: den närmaste kanten
+    const u = SIM.cloneState(s); delete u.varld;
+    const utan = SIM.kantMot(u, kl[0].id) === undefined;
+    return [
+      [`kanten mot varje grannby ligger på bykartans kant, på land (${kanter.map(q => q ? `${q.x.toFixed(1)},${q.y.toFixed(1)}` : '–').join('; ')})`, paKant],
+      [`kanten pekar från elden mot grannbyn (${ratt} av ${kl.length} exakt, resten närmaste land längs kanten)`, ratt > 0 && nara],
+      ['handlaren kommer in från kanten mot sin grannby och går ut där', handlare],
+      ['främlingen kommer in från kanten mot sin grannby och går hem åt det hållet', framIn && framUt],
+      ['rövarna kommer in från kanten mot sin grannby', rovare],
+      ['en by utan värld har ingen sådan kant (då gäller den närmaste)', utan],
+    ];
+  },
+};
