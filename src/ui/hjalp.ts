@@ -163,7 +163,10 @@ export const hallCirkel = (c: number) => `<span class="hall${c < LAG.skick ? ' l
 export const kvOrd = (t: { q?: number }) => t.q === undefined || kvOf(t) === NORMAL ? '' : `<span class="kvo kv${kvOf(t)}" title="${esc(kvText(t))}">${esc(kvNamn(t))}</span>`;
 // stackarna efter kvalitet, bäst först (ett tryck på rubriken, ui.kvSort), annars efter namnet
 export const kvOrdning = <T extends { k: string; q?: number }>(a: T, b: T) => ui.kvSort ? kvOf(b) - kvOf(a) : 0;
-export const kvRubrik = (rubrik: string) => `<h3 class="tryck" data-kvsort="1" title="Sortera efter ${ui.kvSort ? 'namnet' : 'kvaliteten'}">${rubrik}${ui.kvSort ? ' ↓ kvalitet' : ''}</h3>`;
+// sorteringen efter kvalitet (steg 11.1.50): en och samma symbol sist på rubriken i Lagret, Högen, Stationens förvaring och
+// Förmögenhet. Platshållaren är kvalitetens stjärna; den är tryckt när listan står efter kvaliteten
+export const kvKnapp = () => `<button type="button" class="kvsort" data-kvsort="1" aria-pressed="${ui.kvSort}" title="${ui.kvSort ? 'Står efter kvaliteten, bäst först. Tryck för att sortera som vanligt' : 'Sortera efter kvaliteten, bäst först'}" aria-label="Sortera efter kvalitet">${kvSvg(4, 14)}</button>`;
+export const kvRubrik = (rubrik: string) => `<h3 class="kvrub">${rubrik}${kvKnapp()}</h3>`;
 export const kvMark = (t: { q?: number }, size = 10) => { const m = kvSvg(t.q, size); return m && `<span class="kvm" title="${esc(kvText(t))}">${m}</span>`; };
 // byns egna namn på rätter och drycker står först (steg 10.7.29)
 const listNamn = (k: string) => (n => n ? `${n} (${sakNamn(k)})` : sakNamn(k))(egetNamn(s, k));
