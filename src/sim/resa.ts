@@ -54,6 +54,8 @@ import { ARMAR, BEN, FOTTER, HALSA, VARD, halsaSteg, skada, vardKalla, vardKan, 
 import { SJUK_DOD, insjukna, sjukSteg, type SjukId } from './sjukdom';
 import { DODSORSAKER, die, type Dodsorsak } from './liv';
 import { ovning } from './folk';
+import { GRODOR, rutorAv } from './odling';
+import { TORKA } from './torka';
 
 export const RESA = balans('resa', {
   samlaSek: 3600, // så länge (sekunder i verkligheten) ledaren får samla sällskapet innan resan ställs in (en timme, ett kvarts dygn i spelet)
@@ -679,10 +681,21 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     const dygn = 2 * dygnDit(s, hem, q) + RESMAL[skal].stannar;
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
     const lust = (ny + mod) / 20, hemma = clamp(Math.min(fd, wd) / dygn, 0, 1);
-    const sc = RESA.vikt * varde / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
+    const sc = RESA.vikt * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
     if (sc > 0 && (!bast || sc > bast.sc)) bast = { mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: Math.round(dygn * 100) / 100, fara: Math.round(fara * 1000) / 1000, sc, varor };
   }
   return bast;
+}
+// det p förlorar hemma medan hen är borta: de egna grödorna som vissnar under torkan innan hen är tillbaka och kan vattna (steg
+// 3.8.2), i värdet av skörden. Det vägs mot resans värde, för ledaren och för den som väljer att följa med
+export function hemmaForlust(s: State, p: Person, dygn: number) {
+  if (!s.sjoTorr?.pa) return 0;
+  let v = 0;
+  for (const f of s.falt ?? []) {
+    if (f.agare !== p.id || (f.vatten ?? 1) * TORKA.falt * HOUR >= dygn * DAY) continue;
+    for (const x of rutorAv(f)) if (x.st === 'vaxer' && x.g) v += GRODOR[x.g].perRuta * grundvarde(GRODOR[x.g].sak);
+  }
+  return v;
 }
 // ledaren samlar: ett nytt sällskap med målet, varorna och samlingsplatsen
 export function samlaResa(s: State, p: Person, r: ResPlan): Sallskap | undefined {
@@ -715,7 +728,7 @@ export function kallelse(s: State, sl: Sallskap, r: ResPlan) {
   for (const x of vilja) {
     const pb = packbehov(s, sl);
     if (sallskapKraft(s, sl) >= sl.krav && (!pb || pb.ryms)) break; // sällskapet räcker: fler späder bara andelarna
-    if (x.v + RESA.foljVinst * r.varde / r.dygn / (sl.medl.length + 1) <= RESA.folj) continue;
+    if (x.v + RESA.foljVinst * (r.varde / (sl.medl.length + 1) - hemmaForlust(s, x.q, r.dygn)) / r.dygn <= RESA.folj) continue;
     if (foljMed(vl, sl, x.q)) count(s, 'resa följer med');
   }
   if (sl.medl.length > 1) dagbok(s, sl, 'samlas', `${sl.medl.length - 1} följer med.`);

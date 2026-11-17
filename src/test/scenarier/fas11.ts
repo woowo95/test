@@ -1810,6 +1810,11 @@ SCENARIER.samlaresa = {
     for (const p of [a, b]) SIM.larOrt(s, p, mal.nr, SIM.O_RYKTE, 1);
     a.pot.nyfikenhet = 18; a.pot.mod = 18; b.pot.nyfikenhet = 18; b.pot.mod = 3;
     const modig = SIM.resaPlan(s, a, 99, 99), forsiktig = SIM.resaPlan(s, b, 99, 99), nod = SIM.resaPlan(s, a, SIM.resaPlan(s, a, 99, 99)!.dygn * 0.1, 99);
+    // under torkan väger a sitt eget fält som vissnar medan hen är borta (hemmaForlust)
+    const st = SIM.cloneState(s), at = st.people.find(q => q.id === a.id)!;
+    st.falt = [{ id: 1, x: 0, y: 0, w: 3, dir: 1, n: 6, agare: a.id, steg: 'vaxer', klara: 0, kvar: 0, sadda: 6, groda: 'arter', vuxit: 0, rord: st.now, vatten: 0.1 } as SIM.Falt]; // vattnet räcker bara ett par timmar till
+    st.sjoTorr = { niva: 0, tomma: [], v: 0, t: st.now, ...st.sjoTorr, pa: true };
+    const forlust = SIM.hemmaForlust(st, at, modig!.dygn), torr = SIM.resaPlan(st, at, 99, 99);
     // a väger raderna på Förbättra: resan vinner, och a samlar och går till samlingsplatsen, där sällskapet packar
     const s1 = SIM.cloneState(s), a1 = s1.people.find(q => q.id === a.id)!;
     for (const f of SIM.FOOD) if (SIM.amountOf(s1, f) > 0) SIM.setAmount(s1, f, Math.max(SIM.amountOf(s1, f), 60));
@@ -1824,6 +1829,7 @@ SCENARIER.samlaresa = {
     return [
       [`a vill se ${mal.namn}, ${modig?.dygn} dygn borta (poäng ${modig?.sc.toFixed(3)})`, modig?.skal === 'se' && modig.mal === mal.nr && modig.sc > 0],
       [`den försiktiga får lägre poäng (${forsiktig?.sc.toFixed(3)})`, !!forsiktig && forsiktig.sc < modig!.sc],
+      [`under torkan vägs det egna fältet som vissnar medan a är borta (förlust ${forlust}, poäng ${torr?.sc.toFixed(3) ?? 0})`, forlust > 0 && (torr?.sc ?? 0) < modig!.sc],
       [`med mat för en kort tid hemma blir poängen låg (${nod?.sc.toFixed(3) ?? 0})`, (nod?.sc ?? 0) < modig!.sc * 0.2],
       [`resan vinner över de andra raderna på Förbättra (${kand.slice(0, 3).map(k => `${k.id} ${k.sc.toFixed(2)}`).join(', ')})`, vann?.id === 'samlaResa'],
       [`a samlade till resan och gick till samlingsplatsen, där sällskapet packade (${sl?.skede ?? 'inget sällskap'})`, !!sl && sl.mal === mal.nr && sl.skal === 'se' && (sl.skede === 'packar' || sl.skede === 'gar' || sl.skede === 'ute')],
