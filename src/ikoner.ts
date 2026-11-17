@@ -268,6 +268,7 @@ export const PAL: Record<string, Record<string, string>> = {
   s_forb: { Z: '#898b4c', u: '#a0947d', z: '#647025', x: '#324726' },
   s_ren: { a: '#8a9c9e', f: '#dad0bb', F: '#dad0bb', A: '#dad0bb', c: '#3e5156' },
   s_kall: { g: '#233035', G: '#3e5156', q: '#24201d' },
+  fangelse: { a: '#474138', b: '#7d5b40', c: '#a0947d' }, // platshållare: gallret (steg 11.12.1)
   n_energi: { A: '#dad0bb', a: '#d8b25f', D: '#7d5b40' },
   b_energi: { D: '#7d5b40', a: '#d8b25f' },
   n_protein: { A: '#a0947d', a: '#a14808', D: '#742a01' },
@@ -4028,6 +4029,16 @@ export const PIX: Record<string, string[]> = {
     '..ccc...',
   ],
   // kallbrand: samma klump som infektionen, lila och mörkare (Björn efter v89)
+  fangelse: [ // platshållare: dörr med galler (steg 11.12.1)
+    'bbbbbbbb',
+    'bcacacab',
+    'bcacacab',
+    'bcacacab',
+    'bcacacab',
+    'bcacacab',
+    'bcacacab',
+    'bbbbbbbb',
+  ],
   s_kall: [
     '...g.g..',
     '.gGGGGg.',

@@ -1,3 +1,4 @@
+import { FANG, fangelseAsikt, fangelsePabud } from './fangelse';
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { efterlevs, lagDygn, lagForBrott, lagTak, lagarNu, tasUppKvall } from './lagar';
@@ -181,6 +182,8 @@ const PDEF = {
   lagskrift: { ruta: 'Arbetet', namn: 'Skriv ner lagarna', text: 'Hur gärna lagarna skrivs ner, så att byn klarar fler', asikt: s => clamp(lagarNu(s).length / Math.max(1, lagTak(s)), 0, 1) }, // 0 utan lagar, 1 vid taket
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån mot ledaren', /* steg 11.1.29 */ text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
+  // fängelset (steg 11.12.1, fangelse.ts): viljan växer med de hårda domarna, seden Rang och ledarens aggression
+  fangelse: { ruta: 'Arbetet', namn: 'Fängelse', text: 'Om byn ska ha ett fängelse där den som dömts kan sitta inlåst', sed: 'rang', asikt: (s, l) => fangelseAsikt(s, l) },
   // tystnaden (steg 10.4.10): en person, levande eller död, som inte ska nämnas
   tystnad: { namn: 'Tystnad', text: 'Att en viss person inte ska nämnas', vem: (s, l) => tystVem(s, l),
     asikt: (s, l, om) => om === undefined || om === l.id ? 0 : clamp(-asiktOm(s, l, om) / 100 * PAB.tystOp + (PAB.tystEmp - stat(l, 'empati', s.now)) / PAB.tystDiv, 0, 1) },
@@ -448,7 +451,7 @@ export const STRAFF_REG = [
   { id: 8, namn: 'Ingen vård', da: 'tog rätten till vård från', inf: 'inte få vård', nu: 'tar rätten till vård från' }, // steg 9.5.30
 ] as const;
 const STRAFF = STRAFF_REG.map(r => r.nu);
-const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev']);
+const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev', 'rymning']); // rymningen ur fängelset (steg 11.12.1)
 // straffets steg (0 till 3) för vikten v gånger hårdheten
 function stegOf(v: number, h: HandelseTyp, rang: number) {
   if (h === 'drap' && rang >= STR.utvisRang && v >= STR.utvis) return 3;
@@ -629,3 +632,6 @@ EFTER.holmgang = (s, e, vinnare) => {
   (stn.utanHolm ??= []).push(nyckel);
   if (stn.utanHolm.length > 40) stn.utanHolm.shift();
 };
+
+// påbudet Fängelse gäller (steg 11.12.1): fangelse.ts frågar, så att filerna inte importerar varandra
+fangelsePabud.galler = s => !!ledareOf(s) && pabud(s, 'fangelse') > FANG.galler; // bara med en ledare: styret vill ha det

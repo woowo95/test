@@ -375,7 +375,7 @@ export const dorrOppningar = (s: State) => bitsOf(s).filter(b => {
   return !!h?.klar && !fnOf(h).lager;
 });
 // öppningarna som saknar dörren k eller en bättre (en skinndörr ersätter aldrig en trädörr)
-export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => dorrRang(b.dorr) < dorrRang(k));
+export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => dorrRang(b.dorr) < dorrRang(k)).sort((a, b) => +(husById(s, b.hus)?.fn === 'fangelse') - +(husById(s, a.hus)?.fn === 'fangelse')); // fängelset först (steg 11.12.1)
 // p kan hänga dörren: p kan tekniken, det finns fler öppningar utan den än de som redan hänger en, och p kan få tag i materialet
 // receptet till en dörr av sorten k som någon öppning saknar, när p kunde hänga den om materialet fanns (steg 6.2.19)
 export function receptDorr(s: State, p: Person, k: DorrSlag): Recept | undefined {

@@ -167,6 +167,7 @@ export function dampning(s: State, p: Person, om: number, val: Dampval) {
 interface HandelseDef { i: IntryckTyp; vikt: number; text: string; prestation?: true }
 const HDEF = {
   budbrott: { i: 'valdsam', vikt: 0.2, text: 'bröt mot ett bud som är lag' }, // steg 8.6.12
+  rymning: { i: 'valdsam', vikt: 0.3, text: 'slog sönder dörren och rymde ur fängelset' }, // steg 11.12.1
   stold: { i: 'tjuv', vikt: 0.5, text: 'stal {sak} av {om}' },
   stoldLindrig: { i: 'tjuv', vikt: 0.2, text: 'tog {sak} av {om}' },
   boskapsstold: { i: 'tjuv', vikt: 0.6, text: 'slaktade {sak} som {om} ägde' }, // steg 9.8.12

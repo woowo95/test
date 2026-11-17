@@ -102,6 +102,7 @@ import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
+import { brytKlar, fangelseKrok } from './fangelse';
 import { akel, latrinLedigNara, latrinUpptagen, latrinVanta, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
@@ -111,7 +112,7 @@ import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
 import { lagRegister } from './lagar';
 import { oppnaSed } from './rost';
-import { handelse } from './rykten';
+import { handelse, larma } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
@@ -243,7 +244,11 @@ const KLAR: Partial<Record<Act, Krok>> = {
   avrusta: avrustaKlar, rusta: rustaKlar,
   be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, runsten: runstenKlar, skriva: (s, p) => skrivKlar(s, p), lasa: lasKlar, // skriva och läsa (steg 10.6.5) // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
+  rymma: (s, p, t) => brytKlar(s, p, t.ref), // fångens dörr är sönder (fangelse.ts, steg 11.12.1)
 };
+fangelseKrok.larma = (s, p) => { larma(s, 'rymning', 1, [p]); };
+fangelseKrok.brott = (s, p) => { handelse(s, p, 'rymning'); };
+fangelseKrok.brinner = (s, x, y) => brandHetta(s, x, y) > 0;
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
