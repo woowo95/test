@@ -1,4 +1,5 @@
 // Scenarier. Fas 9: kartan växer (9.1) och fördjupningarna.
+import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
@@ -1647,6 +1648,10 @@ SCENARIER.tamdjur = {
     const val = mataVal(s, p), sk0 = p.skill.skotsel ?? 0;
     mataKlar(s, p, val?.id);
     const matad = h.hunger, sk1 = p.skill.skotsel;
+    // djurets ruta (steg 11.1.59): etiketterna i ord som för de vilda djuren, och hungern som Mättnad där full stapel är bra
+    // (djur.ts ritar djuren med kartbilden och går inte att köra utan webbläsare, så källan läses)
+    const dr = readFileSync(new URL('../../ui/flikar/djur.ts', import.meta.url), 'utf8');
+    const djurRuta = ["rd('Ålder'", "rad('Mättnad', 1 - d.hunger", "rd('Ägare'", "r('Mod'", "rad('Mättnad', 1 - f.hunger", "% av artens bästa", "'varg' : 'vargar'"].every(x => dr.includes(x)) && !/rd\('(🍖|🧑|🕓|🐔)'|rad\('(🍖|❤|💧)'/.test(dr);
     // ägaren dör: fåret ärvs (hunden går till den som matat den mest, steg 9.8.3)
     const fa = nyttTamdjur(s, 'far', p.x, p.y + 1, p.id); fa.hunger = 0;
     p.partner = undefined; const barn0 = vuxna[1]!; barn0.mother = p.id; /* en arvinge som säkert finns: ett vuxet barn */
@@ -1657,6 +1662,7 @@ SCENARIER.tamdjur = {
     const f = nyttTamdjur(s, 'far', p.x, p.y + 2);
     for (let i = 0; i < 24 + TAM.svaltTim + 2; i++) stepTamdjur(s);
     return [
+      ['djurets ruta har etiketterna i ord (Ålder, Mättnad, Ägare, Mod) som de vilda djuren, styrkan av artens bästa och flocken med artens namn (steg 11.1.59)', djurRuta],
       [`hunden räknas i byns rikedom (${Math.round(rik0)} → ${Math.round(rik1)})`, rik1 > rik0],
       [`hungern växer med tiden (${hungrig.toFixed(2)})`, hungrig > TAM.matas],
       [`den som äger hunden och har slaktrens matar den (${val ? 'vald' : 'inte vald'}, hunger ${hungrig.toFixed(2)} → ${matad.toFixed(2)})`, !!val && matad < hungrig],

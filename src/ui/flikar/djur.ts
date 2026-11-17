@@ -18,39 +18,39 @@ function levande(d: { art: string; id: number }) {
   const c = iconCanvas(k), sk = Math.max(1, Math.min(4, Math.floor(64 / Math.max(c.width, c.height))));
   return `<img class="ikon" src="${c.toDataURL()}" width="${c.width * sk}" height="${c.height * sk}" alt="" style="image-rendering: pixelated">`;
 }
-// ett tamt djur (hund, får eller get, steg 9.8.1): porträttet, och raderna med symbolen först (🕓 ålder, 🍖 hunger, 🧑 ägare, och för
-// hunden ❤ lojaliteten, fåret ullen, geten 💧 mjölken, 🍃 hagen eller 🏠 fähuset); texten kommer fram när man håller musen över raden.
+// ett tamt djur (hund, får eller get, steg 9.8.1): porträttet, och raderna med samma etiketter i ord som de vilda djuren (steg 11.1.59:
+// Ålder, Mättnad, Vätska, Ägare, och Lojalitet, Ull, Mjölk och Plats); texten kommer fram när man håller musen över raden.
 // Allt läses ur simuleringens värden (tamAlder, hagen och fähusen); inget räknas om här
 function tamHtml() {
   const d = (s.tamdjur ?? []).find(x => x.id === ui.djurId && x.dog === undefined);
   if (!d) return '<p class="muted">Djuret finns inte längre.</p>';
   const a = TAMDJUR[d.art], alder = Math.floor(tamAlder(s, d)), q = byId(s, d.agare), hage = hageById(s, d.hage), fahus = d.fahus !== undefined ? fahusOf(s).find(h => h.id === d.fahus) : undefined;
   const ho = hage ? hoI(s, hage) : undefined, pr = (v: number) => `${Math.round(v * 100)} %`, rd = (sym: string, text: string, inre: string) => `<dt title="${esc(text)}">${sym}</dt><dd title="${esc(text)}">${inre}</dd>`;
-  const plats = fahus ? rd('🏠', 'Står i fähuset under istiden', 'Fähuset') : hage ? rd('🍃', ho ? `Går i hagen och betar. Vattenhon har ${ho.vatten ?? 0} av ${HO.rymmer} vatten` : hageVidVatten(s, hage) ? 'Går i hagen och betar, och dricker vid stranden' : 'Går i hagen och betar', `Hagen ${hage.w} × ${hage.h}${ho ? ` · ${ho.vatten ?? 0}/${HO.rymmer}` : ''}`) : rd('🍃', 'Går lös och betar där det finns bete', 'Lös');
+  const plats = fahus ? rd('Plats', 'Står i fähuset under istiden', 'Fähuset') : hage ? rd('Plats', ho ? `Går i hagen och betar. Vattenhon har ${ho.vatten ?? 0} av ${HO.rymmer} vatten` : hageVidVatten(s, hage) ? 'Går i hagen och betar, och dricker vid stranden' : 'Går i hagen och betar', `Hagen ${hage.w} × ${hage.h}${ho ? ` · ${ho.vatten ?? 0}/${HO.rymmer}` : ''}`) : rd('🍃', 'Går lös och betar där det finns bete', 'Lös');
   return `
     <div class="phead">${levande({ art: a.ikon, id: d.id })}<div><h2>${esc(tamNamn(d))}</h2></div></div>
     <dl class="kv">
-      ${rd('🕓', `${alder} år gammal. ${tamNamn(d)} lever högst ${a.liv} år`, `${alder} år`)}
-      ${rad('🍖', d.hunger, pr(d.hunger), d.hunger >= 1 ? 'Svälter' : d.hunger >= 0.5 ? 'Hungrig: behöver mat' : 'Mätt', d.hunger > 0.6 ? 'low' : '')}
-      ${rad(iconImg('a_vatten', 14), 1 - (d.torst ?? 0), d.torstTim ? `${Math.floor(d.torstTim)} h utan` : pr(1 - (d.torst ?? 0)), d.torstTim ? `Har inte fått vatten på ${Math.floor(d.torstTim)} timmar och ger ingen mjölk` : 'Vätskan: djuret dricker när den är slut, vid stranden, ur vattenhon eller snö', d.torstTim ? 'low' : 'skill', true)}
-      ${rd('🧑', d.agare !== undefined ? 'Ägaren. Djuret ärvs och matas av hen' : 'Byn äger djuret', q ? pLink(q) : d.agare !== undefined ? '–' : 'Byn')}
-      ${d.art === 'hund' && d.lojal !== undefined ? rad('❤', d.lojal, pr(d.lojal), 'Lojalitet mot ägaren: växer när ägaren matar och är nära, sjunker när hen är långt borta och när hunden är hungrig', 'skill') : ''}
-      ${tamArt(d.art).ull ? rad(iconImg('ull', 14), d.ull ?? 0, pr(d.ull ?? 0), (d.ull ?? 0) >= 1 ? 'Ullen är full och kan klippas' : 'Ullen växer ut och klipps med kniven', 'skill', true) : ''}
-      ${tamArt(d.art).mjolk ? rad('💧', d.mjolk ?? 0, pr(d.mjolk ?? 0), (d.mjolk ?? 0) >= 1 ? 'Full av mjölk och kan mjölkas' : `Mjölken växer till, och ${tamArt(d.art).ord[3]} mjölkas två gånger om året`, 'skill') : ''}
+      ${rd('Ålder', `${alder} år gammal. ${tamNamn(d)} lever högst ${a.liv} år`, `${alder} år`)}
+      ${rad('Mättnad', 1 - d.hunger, pr(1 - d.hunger), d.hunger >= 1 ? 'Svälter' : d.hunger >= 0.5 ? 'Hungrig: behöver mat' : 'Mätt', d.hunger > 0.6 ? 'low' : '')}
+      ${rad('Vätska', 1 - (d.torst ?? 0), d.torstTim ? `${Math.floor(d.torstTim)} h utan` : pr(1 - (d.torst ?? 0)), d.torstTim ? `Har inte fått vatten på ${Math.floor(d.torstTim)} timmar och ger ingen mjölk` : 'Vätskan: djuret dricker när den är slut, vid stranden, ur vattenhon eller snö', d.torstTim ? 'low' : 'skill', true)}
+      ${rd('Ägare', d.agare !== undefined ? 'Ägaren. Djuret ärvs och matas av hen' : 'Byn äger djuret', q ? pLink(q) : d.agare !== undefined ? '–' : 'Byn')}
+      ${d.art === 'hund' && d.lojal !== undefined ? rad('Lojalitet', d.lojal, pr(d.lojal), 'Lojalitet mot ägaren: växer när ägaren matar och är nära, sjunker när hen är långt borta och när hunden är hungrig', 'skill') : ''}
+      ${tamArt(d.art).ull ? rad('Ull', d.ull ?? 0, pr(d.ull ?? 0), (d.ull ?? 0) >= 1 ? 'Ullen är full och kan klippas' : 'Ullen växer ut och klipps med kniven', 'skill') : ''}
+      ${tamArt(d.art).mjolk ? rad('Mjölk', d.mjolk ?? 0, pr(d.mjolk ?? 0), (d.mjolk ?? 0) >= 1 ? 'Full av mjölk och kan mjölkas' : `Mjölken växer till, och ${tamArt(d.art).ord[3]} mjölkas två gånger om året`, 'skill') : ''}
       ${d.art !== 'hund' ? plats : ''}
       ${egRader(tamEg(d), tamEg({ art: d.art }), !!tamArt(d.art).styrka)}
     </dl>`;
 }
-// djurets egenskaper (steg 10.10.29) som symboler: 💪 styrka och 🐾 snabbhet (bara dragdjuren, där de ger lasset och farten),
-// 🛡 tålighet, ⚔ mod och 🤝 tamhet; stapeln är full för den bästa av arten, och texten kommer fram när man håller musen över raden
+// djurets egenskaper (steg 10.10.29): styrka och snabbhet (bara dragdjuren, där de ger lasset och farten), tålighet, mod och tamhet; stapeln är full för den bästa av arten, och texten kommer fram när man håller musen över raden
 function egRader(e: { styrka: number; snabbhet: number; talighet: number; mod: number; tamhet: number }, bas: typeof e, drag: boolean) {
   const topp = 1 + INDIVID.spann, jfr = (v: number, b: number) => v > b * 1.08 ? 'mer än de flesta' : v < b * 0.92 ? 'mindre än de flesta' : 'som de flesta';
-  const r = (sym: string, k: keyof typeof e, text: string) => rad(sym, k === 'mod' ? e.mod : e[k] / (bas[k] * topp), `${Math.round(e[k] / bas[k] * 100)} %`, `${text}, ${jfr(e[k], bas[k])} av arten`, 'skill');
-  return (drag ? r('💪', 'styrka', 'Styrka: hur tungt lass släden tar') + r('🐾', 'snabbhet', 'Snabbhet: hur fort släden går') : '')
-    + r('🛡', 'talighet', 'Tålighet: hur länge djuret tål svält, kyla och stick') + r('⚔', 'mod', 'Mod: hur nära en fara kommer innan djuret flyr')
-    + r('🤝', 'tamhet', 'Tamhet: hur fort det går att leda, mjölka, klippa och spänna för djuret');
+  // samma etiketter i ord som de vilda djuren (steg 11.1.59); styrkan och snabbheten mot artens bästa
+  const r = (namn: string, k: keyof typeof e, text: string) => { const v = k === 'mod' ? e.mod : e[k] / (bas[k] * topp), bast = k === 'styrka' || k === 'snabbhet'; return rad(namn, v, bast ? `${Math.round(v * 100)} % av artens bästa` : `${Math.round(e[k] / bas[k] * 100)} %`, `${text}, ${jfr(e[k], bas[k])} av arten`, 'skill'); };
+  return (drag ? r('Styrka', 'styrka', 'Styrka: hur tungt lass släden tar') + r('Snabbhet', 'snabbhet', 'Snabbhet: hur fort släden går') : '')
+    + r('Tålighet', 'talighet', 'Tålighet: hur länge djuret tål svält, kyla och stick') + r('Mod', 'mod', 'Mod: hur nära en fara kommer innan djuret flyr')
+    + r('Tamhet', 'tamhet', 'Tamhet: hur fort det går att leda, mjölka, klippa och spänna för djuret');
 }
-// hönsflocken (steg 9.8.10): 🐔 hur många hönor, 🧑 ägaren och äggen om dygnet (inga i istiden)
+// hönsflocken (steg 9.8.10): hur många hönor, ägaren och äggen om dygnet (inga i istiden)
 function honsHtml() {
   const h = honsOf(s);
   if (!h) return '<p class="muted">Hönsen finns inte längre.</p>';
@@ -59,9 +59,9 @@ function honsHtml() {
   return `
     <div class="phead">${levande({ art: 'fagel', id: HONS_ID0 })}<div><h2>Höns</h2></div></div>
     <dl class="kv">
-      ${rd('🐔', 'Så många hönor går i flocken. De letar mat själva, så ingen matar dem', `${h.n} st`)}
-      ${rd('🧑', h.agare !== undefined ? 'Ägaren. Äggen blir hens' : 'Byn äger flocken', q ? pLink(q) : h.agare !== undefined ? '–' : 'Byn')}
-      ${rd(iconImg('agg', 14), agg === 0 ? 'Inga ägg i istiden' : 'Ägg om året: en per höna, utom i istiden', `${kortTal(agg)} ägg/år`)}
+      ${rd('Flock', 'Så många hönor går i flocken. De letar mat själva, så ingen matar dem', `${h.n} ${h.n === 1 ? 'höna' : 'hönor'}`)}
+      ${rd('Ägare', h.agare !== undefined ? 'Ägaren. Äggen blir hens' : 'Byn äger flocken', q ? pLink(q) : h.agare !== undefined ? '–' : 'Byn')}
+      ${rd('Ägg', agg === 0 ? 'Inga ägg i istiden' : 'Ägg om året: en per höna, utom i istiden', `${kortTal(agg)} ägg/år`)}
     </dl>`;
 }
 function djurHtml() {
@@ -77,16 +77,16 @@ function djurHtml() {
     <div class="phead">${levande(d)}<div><h2>${esc(art.art)}</h2></div></div>
     <dl class="kv">
       ${rad('Ålder', drag.alder / art.alder, `${drag.alder} år`, `${drag.alder} år gammal. En ${art.art.toLowerCase()} blir högst ${art.alder} år.`)}
-      ${rad('Styrka', drag.styrka / (art.styrka * topp), kortTal(drag.styrka), `Styrka ${kortTal(drag.styrka)}, ${jfr(drag.styrka, art.styrka)}`)}
-      ${rad('Snabbhet', drag.snabbhet / (art.fart * topp), kortTal(drag.snabbhet), `Snabbhet ${kortTal(drag.snabbhet)}, ${jfr(drag.snabbhet, art.fart)}${drag.alder / art.alder > 0.7 ? '. Den är gammal och har blivit långsammare' : ''}`)}
+      ${rad('Styrka', drag.styrka / (art.styrka * topp), `${Math.round(drag.styrka / (art.styrka * topp) * 100)} % av artens bästa`, `Styrka ${kortTal(drag.styrka)}, ${jfr(drag.styrka, art.styrka)}`)}
+      ${rad('Snabbhet', drag.snabbhet / (art.fart * topp), `${Math.round(drag.snabbhet / (art.fart * topp) * 100)} % av artens bästa`, `Snabbhet ${kortTal(drag.snabbhet)}, ${jfr(drag.snabbhet, art.fart)}${drag.alder / art.alder > 0.7 ? '. Den är gammal och har blivit långsammare' : ''}`)}
       ${rad('Tålighet', drag.talighet / topp, pr(drag.talighet), 'Hur mycket skador och svält den tål', 'skill')}
       ${rad('Hälsa', h.blod, pr(h.blod), h.sar > 0 ? 'Skadad: blodet och såren läker med tiden' : 'Frisk', 'cond')}
       ${h.sar > 0 ? `<dt title="Summan av såren. De läker med tiden">Sår</dt><dd title="Summan av såren. De läker med tiden"><span>${kortTal(h.sar)}</span></dd>` : ''}
       ${rad('Mod', drag.mod, pr(drag.mod), d.art === 'varg' ? 'Hur modig vargen är. Flocken blir modigare ju fler den är, och den flyr när en varg faller eller ledarvargen dör' : 'Hur modig den är. Den skygga märker den som smyger tidigt och flyr', 'skill')}
       ${rad('Tamhet', 0, '0 %', 'Ett vilt djur är inte tamt alls', 'skill')}
-      ${f ? rad('Hunger', f.hunger, pr(f.hunger), 'Flockens hunger. En hungrig flock jagar harar, smyger till förrådet på natten och kan anfalla den som är ensam', f.hunger > 0.6 ? 'low' : '') : ''}
-      ${f ? `<dt>Flock</dt><dd title="${esc(f.vargar.length > 1 ? `Flocken har ${f.vargar.length} vargar${f.vargar[0] === d.id ? '. Den här är ledarvargen' : ''}` : 'En ensam varg')}"><span>${f.vargar.length} st</span></dd>` : ''}
-      ${g ? `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar'} just nu"><span>${g.n} st</span></dd>` : ''}
+      ${f ? rad('Mättnad', 1 - f.hunger, pr(1 - f.hunger), 'Flockens mättnad: full stapel är mätt. En hungrig flock jagar harar, smyger till förrådet på natten och kan anfalla den som är ensam', f.hunger > 0.6 ? 'low' : '') : ''}
+      ${f ? `<dt>Flock</dt><dd title="${esc(f.vargar.length > 1 ? `Flocken har ${f.vargar.length} vargar${f.vargar[0] === d.id ? '. Den här är ledarvargen' : ''}` : 'En ensam varg')}"><span>${f.vargar.length} ${f.vargar.length === 1 ? 'varg' : 'vargar'}</span></dd>` : ''}
+      ${g ? `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar'} just nu"><span>${g.n} ${FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar'}</span></dd>` : ''}
     </dl>`;
 }
 export const djur: Flik = { namn: 'Djuret', knapp: 'person', html: djurHtml };
