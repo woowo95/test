@@ -15,8 +15,12 @@ function kultHtml(tr: Tro) {
   for (const h of pl) rad.push(`<li title="${esc(`Platsen ${h.om}`)}">${esc(HELIGA_PLATSER[h.k].namn)}${h.skandad ? ' (vanhelgad)' : ''}</li>`);
   const har = (tr.bud ?? []).filter(b => b.id === 'hogtid').length;
   if (hg || har) rad.push(`<li title="Skalan Fest – Försakelse avgör hur många högtider tron föreslår">${har} av ${Math.max(hg, har)} ${hg === 1 ? 'högtid' : 'högtider'} om året</li>`);
-  // varje bud: namnet, och för ritualbuden när, vilka, var och vad som går åt; varför står sist (steg 10.3.3)
-  for (const b of tr.bud ?? []) { const d = BUD[b.id] as { text: string; om?(s: unknown, tr: Tro, b: unknown): string }; rad.push(`<li title="${esc(`${d.om ? d.om(s, tr, b) + ' ' : ''}Varför: ${d.text.toLowerCase()}.`)}">📜 ${esc(budNamn(s, b))}</li>`); }
+  // varje bud och högtid är en rad som fälls ut (steg 11.1.24): en högtid säger när den firas, vad man gör, vilka som är med och vad
+  // som går åt (BUD[...].om), ett bud vad det säger, och båda varför tron antog det (steg 10.3.3)
+  (tr.bud ?? []).forEach((b, i) => {
+    const d = BUD[b.id] as { text: string; om?(s: unknown, tr: Tro, b: unknown): string }, id = `bud-${tr.id}-${i}`;
+    rad.push(`<li class="klick falla" ${fallUt(id)} title="${esc(budNamn(s, b))}">📜 ${esc(budNamn(s, b))}${hjalpText(id, `<p class="muted small budmer">${d.om ? esc(d.om(s, tr, b)) + ' ' : ''}Varför tron antog det: ${esc(d.text.toLowerCase())}.</p>`)}</li>`);
+  });
   if (tr.plan) rad.push(`<li title="${esc(planKlar(s, tr) ? 'Planen är klar' : 'Planen bestäms del för del i trons krets')}">📜 Trons hus${planKlar(s, tr) ? ` (${esc(troshusNamn(s, tr))})` : ''}: ${esc(planText(s, tr))}${planKlar(s, tr) ? ` · ${troshusKlart(s, tr) ? 'står klart' : troshusAv(s, tr).length ? 'byggs' : 'väntar på kyrkans egendom'}` : ''}</li>`); // planen (steg 10.3.18)
   if (forradSum(s, tr)) rad.push(`<li title="${esc(Object.entries(kyrkansForrad(s, tr)).filter(([, n]) => n >= 1).map(([k, n]) => `${Math.floor(n + 1e-9)} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(s, tr)}</li>`);
   for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">✨ Helgonet ${esc(h.namn)}</li>`);

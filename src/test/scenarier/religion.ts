@@ -334,6 +334,15 @@ SCENARIER.religionsflik = {
     const html = religion.html();
     hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement); // som ett tryck på knappen
     const oppen = religion.html();
+    // bud och högtider fälls ut (steg 11.1.24)
+    stor.tr.bud = [{ id: 'hogtid', v: SIM.hogtidVarde(0, 'gille'), t: s.now }, { id: 'fasta', t: s.now }] as never;
+    const budStangd = religion.html();
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: `bud-${stor.tr.id}-0` } }) } as unknown as HTMLElement);
+    const budOppen = religion.html();
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: `bud-${stor.tr.id}-0` } }) } as unknown as HTMLElement);
+    const budOk = new RegExp(`class="klick falla" data-hjalp="bud-${stor.tr.id}-1" aria-expanded="false"`).test(budStangd) && !budStangd.includes('class="muted small budmer"')
+      && /class="muted small budmer">I istiden[^<]*Varför tron antog det: /.test(budOppen);
+    stor.tr.bud = undefined;
     const minst = SIM.troNamn(andra[2].tr), tron = (h: string) => h.split('<h3>Andligheten i byn</h3>')[0]; // trosriktningarna, utan listan över personer
     return [
       ['fliken syns inte innan någon tror, sedan syns den', !fore && religion.syns!()],
@@ -342,6 +351,7 @@ SCENARIER.religionsflik = {
       ['skalorna Natur – Människa och Många – En syns', html.includes('Natur') && html.includes('Människa') && html.includes('Många')],
       ['upplevelsen som rör tron syns', html.includes('en blixt som slog ner i granen')],
       [`den minsta tron (${minst}) ligger under Övriga trosriktningar och syns när man öppnar dem`, html.includes('Övriga trosriktningar') && !tron(html).includes(minst) && tron(oppen).includes(minst)],
+      [`trons bud och högtider är rader som fälls ut: högtiden säger när och vad man gör, och båda varför (steg 11.1.24)`, budOk],
       ['trons tyngd står inte som tal: etiketten står ensam, och talet med delarna i förklaringen (steg 11.1.20)', !html.includes('· tyngd') && new RegExp(`title="[^"]*Tyngd [^"]*"><b>${SIM.troEtikett(s, stor.tr).namn}</b></p>`).test(html)],
       ['andligheten och trons styrka förklaras som 0 till 10, utan talet 0 till 100 (steg 11.1.21)', /title="Tron är [\d,]+ av 10 stark hos/.test(html) && /title="Andlighet [\d,]+ av 10:/.test(html) && !/av 100 stark/.test(html)],
       [`rubrikerna: De troende (N) i varje tro och Andligheten i byn sist (steg 11.1.19)`, html.includes('<h3>De troende (5)</h3>') && html.includes('<h3>Andligheten i byn</h3>') && !html.includes('<h3>Personer</h3>')],
