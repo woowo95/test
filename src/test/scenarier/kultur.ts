@@ -1074,6 +1074,8 @@ SCENARIER.sedlista = {
     const styreH = styreFlik.html(), iStyre = /data-hjalp="sed-rang"[^>]*>[\s\S]*?<div class="sedlista">/.test(styreH);
     tryck('sed-rang');
     const igen = styreFlik.html().includes('class="sedlista"');
+    // de låsta sederna sist (steg 11.1.14): efter den första grå raden kommer ingen upplåst
+    const lastSist = (h: string) => { const i = h.indexOf('class="muted lastsed"'); return i > 0 && !/data-hjalp="sed-/.test(h.slice(i).split('</ul>')[0]) && /❔ /.test(h.slice(i)); };
     const lagg = SIM.sedLaggning(s), drag = SIM.sedDrag(s), mal = SIM.sederTarget(s);
     const summa = SIM.SED_LIST.filter(x => SIM.sedOppen(s, x) && Math.abs(mal[x]) < 1).map(x => ({ k: x, rad: lagg[x] + drag.reduce((a, r) => a + r.d[x], 0), mal: mal[x] }));
     // vågen visar vart den är på väg (steg 11.1.12): pilen när vågen lutar åt andra hållet, ingen när den står vid målet
@@ -1089,6 +1091,7 @@ SCENARIER.sedlista = {
       ['vågskålen i Styre öppnar samma lista, och ett tryck till stänger', iStyre && !igen],
       // steg 11.1.11: läggningen är en egen rad, och raderna under en sed summerar till byns mål för seden
       [`vågen har en pil åt det håll den är på väg när det som drar pekar åt andra hållet, och ingen när den står vid målet`, pilen && ingen],
+      [`en sed som inte är upplåst står sist som en grå rad "❔ Namn", i Seder och Styre, utan att säga när den kommer`, lastSist(sederFlik.html()) && lastSist(styreH) && !/Kommer senare/.test(sederFlik.html() + styreH)],
       [`invånarnas läggning är en egen rad i listan`, lista.includes('Invånarnas läggning')],
       [`raderna under en sed summerar till byns mål (${summa.map(x => `${x.k} ${x.rad.toFixed(3)}/${x.mal.toFixed(3)}`).join(', ')})`, summa.length > 0 && summa.every(x => Math.abs(x.rad - x.mal) < 1e-9)],
     ];

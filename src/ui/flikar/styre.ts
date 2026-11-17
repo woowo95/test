@@ -2,7 +2,7 @@ import { BUDGET, sederTarget, budgetAndel, budgetNu, sakNamn, type Omrostning, t
 import { iconImg } from '../../ikoner';
 import { bar, esc, fallUt, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
-import { sedFormat, sedKlick, sedLista, sedVag } from './seder';
+import { lastSed, sedFormat, sedKlick, sedLista, sedVag } from './seder';
 import type { Flik } from '../panel';
 
 // styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, vågskålarna, rättegångarna och de ledare byn haft.
@@ -26,9 +26,10 @@ function styretHtml() {
       ${hjalpText('styre', `<dl class="kv smal">${delar.map(([n, v, w]) => `<dt class="small">${n}</dt><dd class="small">${bar(v)}<span>${Math.round(v * 100)} % · väger ${num(w)}</span></dd>`).join('') + (lg.oratt > 0.005 ? `<dt class="small">Orättvisa straff</dt><dd class="small">−${Math.round(lg.oratt * 100)} %</dd>` : '')}</dl>`)}</div>
       ${lyss !== undefined ? `<div class="ruta" title="Hur mycket byn rättar sig efter påbuden"><div class="rutnamn">📜 Lyssnar</div><div class="rutbar">${bar(lyss)}<span>${Math.round(lyss * 100)} %</span></div></div>` : ''}</div>`
       : '<p class="muted">Byn har ingen ledare just nu. Ingen vuxen som kan ledarskap är vald ännu.</p>';
-    const skalar = VAGSKALAR.map(v => {
-      const oppen = v.sed ? st.oppna.includes(v.id) : false;
-      if (!oppen) return `<li class="muted" title="${esc(v.steg ? `Kommer senare (steg ${v.steg})` : 'Inte upplåst än')}">❔ ${esc(v.namn)}</li>`;
+    // en sed som inte är upplåst står sist som en grå rad (steg 11.1.14), som i Seder
+    const oppenSkal = (v: (typeof VAGSKALAR)[number]) => v.sed ? st.oppna.includes(v.id) : false;
+    const skalar = [...VAGSKALAR.filter(oppenSkal), ...VAGSKALAR.filter(v => !oppenSkal(v))].map(v => {
+      if (!oppenSkal(v)) return lastSed(v.namn);
       const d = SEDER[v.sed!], x = s.seder.v[v.sed!] ?? 0;
       return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos), sederTarget(s)[v.sed!])}${sedFormat(v.sed!)}${sedLista(v.sed!)}</li>`;
     }).join('');
