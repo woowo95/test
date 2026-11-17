@@ -6,7 +6,7 @@ import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
 import { taBortITest } from '../testborta';
-import { condBar, durTxt, esc, fmtN, kvMark, kvOrdning, kvRubrik, kvText, pLink, pileTxt } from '../hjalp';
+import { condBar, durTxt, esc, fmtN, hjalpKnapp, hjalpText, kvMark, kvOrdning, kvRubrik, kvText, pLink, pileTxt } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -115,7 +115,7 @@ export const station: Flik = {
       + (ib.klar !== undefined ? `<p ${tip(`${Math.round(ib.klar * 100)} % klart`)}>${condBar(ib.klar)}<span>${Math.round(ib.klar * 100)} %</span></p>` : ib.p.task!.until > s.now ? `<p class="muted">${durTxt(ib.p.task!.until - s.now)} kvar</p>` : '') : '';
     const av = Object.entries(d.av).map(([k, n]) => `<span ${tip(`${fmtN(n)} ${sakNamn(k).toLowerCase()}`)}>${iconImg(k)}${fmtN(n)}</span>`).join(' ');
     return `
-    <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${st.ber?.namn ? `★ ${esc(st.ber.namn)}: ` : ''}${esc(d.namn)}</h2><p class="muted">${status}${st.q !== undefined ? ` ${kvMark(st, 12)} ${esc(kvText(st))}.` : ''} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${st.ber ? `<p class="besk">${esc(sakBerattelse(s, st, d.namn))}</p>` : ''}${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${d.pynt && klar ? `<p ${tip(`Pynt: ägaren trivs i rummet med det (humör +${Math.round(PYNT.glad[kvOf(st)] * 100)} %), och de som ser det där tycker bättre om hen. Ju finare det är, desto mer`)}>😊 +${Math.round(PYNT.glad[kvOf(st)] * 100)} % 🏺</p>` : ''}${agare ? `<p>Ägs av ${pLink(agare)}.</p>` : ''}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>
+    <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${st.ber?.namn ? `★ ${esc(st.ber.namn)}: ` : ''}${esc(d.namn)}</h2><p class="muted">${status}${st.q !== undefined ? ` ${kvMark(st, 12)} ${esc(kvText(st))}.` : ''} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${st.ber ? `<p class="besk">${esc(sakBerattelse(s, st, d.namn))}</p>` : ''}${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${d.pynt && klar ? `<p ${tip(`Pynt: ägaren trivs i rummet med det (humör +${Math.round(PYNT.glad[kvOf(st)] * 100)} %), och de som ser det där tycker bättre om hen. Ju finare det är, desto mer`)}>😊 +${Math.round(PYNT.glad[kvOf(st)] * 100)} % 🏺</p>` : ''}${agare ? `<p>Ägs av ${pLink(agare)}.</p>` : ''}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div>${hjalpKnapp('st-om', 'Vad gör stationen?')}</div>${hjalpText('st-om', `<p class="muted small">${d.mobel ? 'En möbel i huset.' : 'En plats där man arbetar.'} Det som görs här står under Här görs. Den slits när den används och lagas av den som kan, och en bättre station ger oftare bra kvalitet.</p>`)}
     ${bruk}
     ${d.utkant?.drag ? dragRad(st) : ''}
     ${st.k === 'scen' && fritidLista({ scen: st.id }) ? `<h3>Framträdanden här</h3>${fritidLista({ scen: st.id, antal: 10 })}` : ''}

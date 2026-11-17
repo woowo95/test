@@ -1,6 +1,6 @@
 import { ACTS, FYND, ISHAL, SjoLogg, ageIndex, byId, fyndAt, isCm, living, sjoNamn, sjoVid, sjoarna, temperature, vattenGrader } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { bar, clockTxt, durTxt, esc, fmtN, pLink, times } from '../hjalp';
+import { bar, clockTxt, durTxt, esc, fmtN, hjalpKnapp, hjalpText, pLink, times } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -36,7 +36,7 @@ function sjoHtml() {
   const sankta = (s.sankta ?? []).filter(q => q.sjo === n).slice().reverse(); // de döda som sänkts här (steg 10.4.5)
   return `
     <div class="phead"><span class="dot big" style="background:var(--g-skiffer)"></span><div><h2>${esc(sjoNamn(s, n))}</h2>
-    <p class="muted">${rutor.length} rutor vatten. Man fiskar och badar från stranden.</p></div></div>
+    <p class="muted">${rutor.length} rutor vatten. Man fiskar och badar från stranden.</p></div>${hjalpKnapp('sjo-om', 'Vad gör sjön?')}</div>${hjalpText('sjo-om', `<p class="muted small">I sjön finns fisk, som blir färre där man fiskar mycket och växer till igen med tiden. Man dricker och badar här, och i kylan fryser sjön.</p>`)}
     <h3>Just nu</h3><dl class="kv">
       <dt>${iconImg('abborre', 14)} Fisk</dt><dd>${bar(kvar)}<span>${Math.round(kvar * 100)} % av en rik sjö</span></dd>
       <dt>Fisket nu</dt><dd>${sas >= 1 ? 'Bra' : sas >= 0.7 ? 'Måttligt' : 'Dåligt'} efter årstiden</dd>

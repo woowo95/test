@@ -1435,6 +1435,7 @@ SCENARIER.flerarig = {
     return [
       [`jordgubbarna skördas (${bar}) och växer igen efteråt (${igen ? 'ja' : 'nej'})`, bar > 0 && igen],
       [`under istiden dör de inte utan vilar (${vilar ? 'ja' : 'nej'})`, vilar],
+      ['fältets ruta har en ?-knapp som säger vad fältet gör (steg 11.1.55)', /data-hjalp="falt-om"/.test(fr)],
       ['fältets ruta: stapeln heter Mogen och tidsraden Mognar (steg 11.1.54)', faltRuta],
     ];
   },

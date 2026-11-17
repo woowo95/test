@@ -143,6 +143,7 @@ SCENARIER.egnaeldar = {
     const eldRuta = /<h3>Sedan byn grundades<\/h3>/.test(er) && /<dt>Brunnit i<\/dt>[\s\S]*<dt>Trä använt<\/dt>[\s\S]*<h3>Sedan byn grundades<\/h3>[\s\S]*<dt>Brunnit i<\/dt>[\s\S]*<dt>Trä använt<\/dt>/.test(er)
       && / av \d+ ved<\/span>/.test(er) && !/Mest trä|Totalt/.test(er) && /class="klick falla"[^>]*>Tändning<\/h3>/.test(er) && !/Tänddon/.test(er) && /class="dot big"[^>]*title="Brinner\./.test(er);
     return [
+      ['eldens ruta har en ?-knapp som säger vad elden gör (steg 11.1.55)', /data-hjalp="eld-om"/.test(er)],
       ['eldens ruta: Sedan byn grundades med samma radnamn, veden som N av M ved, ingen rad Mest trä, tändningen hopfälld och pricken förklarad (steg 11.1.53)', eldRuta],
       ['en varm natt hittades', varmNatt],
       [`ingen vid elden: ingen trivsam önskan (${langtBort.toFixed(2)} ved) och ingen hämtar ved`, langtBort < 1 && ingenHamtar],

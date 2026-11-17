@@ -1,6 +1,6 @@
 import { KOM, NYSS_HUS, husVisas, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
-import { cap, esc, fmtN, pLink } from '../hjalp';
+import { cap, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -52,7 +52,7 @@ export const hus: Flik = {
       return `<p>${esc(`${HUR[hur]}: ${txt}`)}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</p>`;
     }).join('');
     return `
-    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${anv ? `<p>${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p>${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p>${dorrar}</p>` : ''}</div></div>
+    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${anv ? `<p>${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p>${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p>${dorrar}</p>` : ''}</div>${hjalpKnapp('hus-om', 'Vad gör huset?')}</div>${hjalpText('hus-om', `<p class="muted small">Huset håller värmen och skyddar mot väder och kyla. Rummen används till det byn behöver, och den som äger huset bor där med familjen.</p>`)}
     <h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
   },
 };
