@@ -280,6 +280,37 @@ SCENARIER.trokategori = {
 };
 
 
+SCENARIER.fragetecken = {
+  text: 'Steg 11.1.3: ?-knappen används bara för förklaringar. En berättelse (om tron och om en gud) fälls ut med boksymbolen, och de mindre trosriktningarna visas med raden "▸ Visa N till"',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(9, START);
+    setByn(s);
+    const ny = (k: SIM.TeckenTyp, n: number) => {
+      const a = nyInvanare(s, 'k', 40); a.andlig = 100;
+      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      const tr = SIM.troOf(s, a.tro)!;
+      for (let j = 1; j < n; j++) nyInvanare(s, 'm', 30).tro = tr.id;
+      SIM.stepReligion(s);
+      return tr;
+    };
+    const stor = ny('blixt', 5); ny('brand', 4); ny('vinterSlut', 3); ny('drom', 1);
+    if (!stor.gudar?.length) stor.gudar = [{ namn: 'Åskan', form: 'ande', omr: ['vader'], ber: 'Guden kom till när blixten slog ner.' } as never];
+    const html = religion.html();
+    const fragor = [...html.matchAll(/<button type="button" class="hjalp" data-hjalp="([^"]*)"[^>]*title="([^"]*)"[^>]*>\?<\/button>/g)].map(m => m[2]);
+    const bocker = [...html.matchAll(/<button type="button" class="hjalp bok" data-hjalp="([^"]*)"[^>]*title="([^"]*)"/g)].map(m => m[2]);
+    const ovriga = (s.tron ?? []).filter(tr => tr.slut === undefined).length - 3;
+    const mer = new RegExp(`class="lank falla mer"[^>]*>Visa ${ovriga} till<`).test(html);
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement);
+    const oppen = religion.html();
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement);
+    return [
+      [`?-knappen förklarar bara (${fragor.join('; ')})`, fragor.length > 0 && fragor.every(t => /^(Vad|Hur fungerar|Varför)/.test(t))],
+      [`berättelserna fälls ut med boksymbolen (${bocker.join('; ')})`, bocker.includes('Berättelsen om tron') && bocker.includes('Hur guden kom till')],
+      [`de mindre trosriktningarna visas med "▸ Visa ${ovriga} till", och raden fälls ut`, ovriga > 0 && mer && /aria-expanded="true"[^>]*>Visa färre</.test(oppen)],
+    ];
+  },
+};
 SCENARIER.religionsflik = {
   text: 'Fliken Religion (steg 4.1.3): syns när den första tron finns och visar varje tro med symbol, namn, antal troende, skalorna, grundaren, de troende och upplevelserna som rör tron; de minsta under Övriga trosriktningar, och alla i byn med andlighet och tro',
   kor: () => {
