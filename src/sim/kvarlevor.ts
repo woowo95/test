@@ -6,12 +6,12 @@ import { balans } from './balans';
 import { alive, byId, isParent, living, relKey, think } from './folk';
 import { upplev } from './uppvaxt';
 import { klanById } from './klaner';
+import { klanHandelse } from './byrel';
 
 export const KVAR = balans('kvar', {
   seR: 4, // så många rutor bort ser man det
   seTim: 6, // så länge sitter tanken i (timmar i spelet)
   nara: 2.5, // ... och så mycket mer för den som stod den döda nära
-  klan: 5, // så mycket ovänligare blir klanen vars gäst ser en skändad kropp (steg 10.4.13)
 });
 export interface KvarDef { namn: string; ikon: string; haller: number; se: number; tanke: string }
 export const KVARLEVOR = {
@@ -60,7 +60,7 @@ export function kvarTimme(s: State) {
 export function sagSkandad(s: State, p: Person, q: Kvarleva) {
   if (p.gast) {
     const k = klanById(s, p.gast!.klan);
-    if (k && !q.klaner?.includes(k.id)) { (q.klaner ??= []).push(k.id); k.inst = Math.max(-100, Math.min(100, Math.round(k.inst - KVAR.klan))); }
+    if (k && !q.klaner?.includes(k.id)) { (q.klaner ??= []).push(k.id); klanHandelse(s.varld, k, 'skandad'); }
     return;
   }
   const nar = nara(s, p, q.vem);

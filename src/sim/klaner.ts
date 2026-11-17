@@ -20,11 +20,8 @@ export const KLAN = balans('klan', {
   styrka: [0.25, 0.5], // så stor del av dem kan slåss
   resurser: [15, 30], // så mycket har de per person (ungefär arbetstimmar)
   inst: [-15, 35], // inställningen till byn från början
-  glomma: 0.03, // så stor del av inställningen glöms varje dygn, mot det neutrala
   handelMin: -30, // en klan som tycker sämre om byn än så skickar ingen handlare
-  handel: 2, // ett byte med klanens handlare gör klanen så mycket vänligare
-  lurad: 10, // så mycket mindre vänlig blir klanen när handlaren märker att byn lurat hen ...
-  marka: 0.03, // ... och chansen att hen märker det, per poäng i handlarens Handel
+  marka: 0.03, // chansen att hen märker det, per poäng i handlarens Handel
   handlarePer: 2, // så många handlare har en klan som mest (namngivna personer), sedan kommer samma igen
   utbrytFran: 30, // en familj som flyttar ur en by med så många invånare eller fler blir en ny grannklan (steg 4.4.4.1) ...
   utbrytInst: 50, // ... som tycker så här om byn från början
@@ -39,8 +36,6 @@ export const KLAN = balans('klan', {
   taEmotSed: 0.2, // ... plus så mycket gånger seden Förnyelse – Tradition (−1 till 1) ...
   taEmotTrang: 0.4, // ... minus så mycket när byn är trång (0 till 1) ...
   taEmotMat: 0.3, // ... och minus så mycket när maten är knapp (0 till 1)
-  stannarInst: 3, // klanen blir så mycket vänligare när byn tar emot en av dem ...
-  nejInst: 6, // ... och så mycket mindre vänlig när byn visar bort hen
   // priserna (steg 10.5.14): ett påslag per slag, gånger grundvärdet
   prisSallsynt: 0.5, // det som är sällsynt på klanens hemort börjar så här mycket över 1
   prisDrift: 0.1, // varje pris flyttas slumpvis högst så mycket per dygn (ett år i spelet) ...
@@ -112,16 +107,13 @@ export function nyKlan(s: State, folk: number, inst: number, namn: string, hem: 
 }
 export const klanMellan = mellan;
 
-// en gång om dygnet (ett år i spelet): priserna driver och inställningen glöms mot det neutrala. Folket, styrkan och resurserna
-// räknar raden i världen (rad.ts, steg 11.3.2–11.3.3)
+// en gång om dygnet (ett år i spelet): priserna driver. Folket, styrkan och resurserna räknar raden i världen (rad.ts, steg
+// 11.3.2–11.3.3), och inställningen glöms mot grundläget med de andra relationerna (relGlom i byrel.ts, steg 11.3.4)
 export function klanSteg(s: State, dtSec: number) {
   const dygn = Math.floor(s.now / DAY) - Math.floor((s.now - dtSec * SEC) / DAY);
   const kl = klanerOf(s);
   if (!kl.length || dygn < 1) return;
   for (let i = 0; i < dygn; i++) for (const k of kl) prisDrift(s, k); // driften räknas per dygn som gått
-  for (const k of kl) {
-    if (k.inst) k.inst -= Math.sign(k.inst) * Math.min(Math.abs(k.inst), Math.max(1, Math.round(Math.abs(k.inst) * KLAN.glomma))); // minst ett steg, så att den når det neutrala
-  }
 }
 // inställningen ändras (handel, utbrytning, invandring): hela tal mellan −100 och 100
 export function andraInst(k: Klan, d: number) { k.inst = clamp(Math.round(k.inst + d), -100, 100); }

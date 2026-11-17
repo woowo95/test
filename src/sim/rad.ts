@@ -27,6 +27,7 @@ import { fodslarPerAr, fodVilja } from './steg';
 import { ageIndex, iIstiden } from './tid';
 import { PERIODRADER, antalUr, periodSlut, varldSlump } from './varldslag';
 import { varldHandelse } from './varldkronika';
+import { relGlom } from './byrel';
 import { Varlden, varldMark } from './varlden';
 import { DAY, State } from './typer';
 
@@ -123,4 +124,6 @@ function radRikedom(vl: Varlden, r: VarldRad, n: number, nod: boolean) {
 radKrok.startMat = folk => Math.round(folk * portionerPerDygn() * RAD.startMat);
 
 // varje timme: radens regler för varje by i världen som lever efter dem, i ordning efter numret
+// varje dygn (ett år i spelet): relationerna mellan byarna glöms mot grundläget (byrel.ts, steg 11.3.4)
+PERIODRADER.push({ namn: 'relationerna glöms', period: 'dygn', fn: (_s, vl) => relGlom(vl) });
 PERIODRADER.push({ namn: 'radens mat', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radMat(s, vl, r, n); } });

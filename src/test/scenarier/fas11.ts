@@ -739,3 +739,43 @@ SCENARIER.radrikedom = {
     ];
   },
 };
+
+SCENARIER.byrelation = {
+  text: 'Relationen mellan två byar (steg 11.3.4, byrel.ts): ett tal åt varje håll för par som mött varandra, grundläget ur tro och släktband, glömskan mot grundläget och registret BYHANDELSER',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const [a, b, c] = vl.rader!.filter(r => SIM.lever(vl, r));
+    const fore = SIM.relation(vl, a.nr, b.nr);
+    a.tro = { namn: 'Solens väg', andel: 80, krig: 50 }; b.tro = { namn: 'Solens väg', andel: 60, krig: 20 }; c.tro = { namn: 'Bergets folk', andel: 70, krig: 90 };
+    const samma = SIM.grundlage(vl, a.nr, b.nr), annan = SIM.grundlage(vl, c.nr, a.nr), annanA = SIM.grundlage(vl, a.nr, c.nr);
+    const utanBand = SIM.grundlage(vl, a.nr, c.nr);
+    SIM.nyttSlaktband(vl, a.nr, c.nr, 2);
+    const medBand = SIM.grundlage(vl, a.nr, c.nr);
+    SIM.mots(vl, a.nr, b.nr);
+    const motts = SIM.relation(vl, a.nr, b.nr) === samma && SIM.relation(vl, b.nr, a.nr) === SIM.grundlage(vl, b.nr, a.nr);
+    SIM.byHandelse(vl, 'gava', a.nr, b.nr, 3); // a ger b en gåva: b ser vänligare på a
+    const gava = SIM.relation(vl, b.nr, a.nr)! - SIM.grundlage(vl, b.nr, a.nr), andraHallet = SIM.relation(vl, a.nr, b.nr) === samma;
+    SIM.byHandelse(vl, 'plundring', c.nr, b.nr);
+    const plund = SIM.relation(vl, b.nr, c.nr)!;
+    SIM.byHandelse(vl, 'muta', a.nr, c.nr);
+    const muta = (vl.mutor?.[`${c.nr}>${a.nr}`] ?? 0) === SIM.BYREL.muta;
+    const k = a.syn!, i0 = k.inst;
+    SIM.klanHandelse(vl, k, 'handel');
+    const huvud = k.inst === i0 + SIM.BYREL.handel && SIM.relation(vl, a.nr, vl.huvud!) === k.inst;
+    const b0 = SIM.relation(vl, b.nr, c.nr)!;
+    let hela = true;
+    for (let h = 0; h < 30 * 24; h++) { s.now += 3600e3; SIM.varldSteg(s); for (const v of Object.values(vl.rel ?? {})) if (!Number.isInteger(v) || v < -100 || v > 100) hela = false; }
+    const glomt = SIM.relation(vl, b.nr, c.nr)!, mal = SIM.grundlage(vl, b.nr, c.nr);
+    return [
+      [`två byar som inte mött varandra har inget tal (${fore})`, fore === undefined],
+      [`samma tro ger ett vänligt grundläge (${samma}), en annan tro ett ovänligt, mer för den krigiska (${annan} mot ${annanA})`, samma > 0 && annan < annanA && annanA < 0],
+      [`släktband höjer grundläget (${utanBand} → ${medBand})`, medBand > utanBand],
+      ['när byarna möts börjar talet åt båda hållen i grundläget', motts],
+      [`en gåva gör mottagaren vänligare (+${gava}) och ändrar inte givarens syn`, gava === 3 * SIM.BYREL.gava && andraHallet],
+      [`plundringen gör offret ovänligt (${plund})`, plund < SIM.grundlage(vl, b.nr, c.nr) - 10],
+      ['mutan går till ledaren och sparas för sig', muta],
+      ['huvudbyns förbindelse bär byns syn på huvudbyn', huvud],
+      [`talet glöms mot grundläget (${b0} → ${glomt}, grundläget ${mal}), i hela tal mellan −100 och 100`, Math.abs(glomt - mal) < Math.abs(b0 - mal) / 2 && hela],
+    ];
+  },
+};

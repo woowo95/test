@@ -26,7 +26,8 @@ import { sumOf } from './egendom';
 import { kanterna } from './varg';
 import { kantMot } from './grannbyar';
 import { larPris, MINNE, trorPris } from './minne';
-import { KLAN, andraInst, handlarKlan, klanById, klanPris, klanerOf, prisAndras } from './klaner';
+import { KLAN, handlarKlan, klanById, klanPris, klanerOf, prisAndras } from './klaner';
+import { klanHandelse } from './byrel';
 import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
 import { handelsArg } from './handelsber';
@@ -523,7 +524,7 @@ vidByte.push((s, m, g, fatt, betal, minne) => {
   b.push({ vem: kop ? g.namn : m.namn, fick: varorText(kop ? fatt : betal), gav: varorText(kop ? betal : fatt), m: minne });
   if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
   const k = klanById(s, hp(s, h).gast!.klan); // ett byte gör klanen lite vänligare (steg 4.4.3)
-  if (k) andraInst(k, KLAN.handel);
+  if (k) klanHandelse(s.varld, k, 'handel');
   // den som handlade lär sig klanens pris på det som byttes (steg 10.5.15), före prisets ändring: det var det priset som gällde
   const kund = kop ? g : m, kp = kund.p ?? (h.affar?.vem !== undefined ? byId(s, h.affar.vem) : undefined);
   if (k && kp) for (const w of [...fatt, ...betal]) if (w.k !== 'silver' && grundvarde(w.k) > 0) larPris(s, kp, k.id, w.k, 1);
@@ -549,7 +550,7 @@ vidLura.push((s, L, X, markt) => {
   if (h && L.id === h.id && markt && X.p) luradMed(s, h, X.p, false); // bybon minns att handlaren lurade hen (steg 4.5.7.11)
   if (!h || !k || X.id !== h.id || rnd(s, 'klan') >= KLAN.marka * hp(s, h).skill.handel) return;
   if (L.p) luradMed(s, h, L.p, true); // och handlaren att bybon lurade hen
-  andraInst(k, -KLAN.lurad);
+  klanHandelse(s.varld, k, 'lurad');
   count(s, 'klanLurad');
   log(s, `${hp(s, h).name} märkte att ${L.namn} hade lurat ${honom(hp(s, h))}. ${k.namn} kommer att höra om det.`, 'world');
 });

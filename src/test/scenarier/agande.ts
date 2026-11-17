@@ -1974,11 +1974,11 @@ SCENARIER.grannklaner = {
     const ph = { ...pa, id: h?.id ?? -1, namn: h ? SIM.hp(s, h).name : '' } as SIM.Part;
     const i0 = k[0].inst;
     for (const fn of SIM.vidByte) fn(s, pa, ph, [], [], { nr: 0, t: s.now, a: pa.id, an: pa.namn, b: ph.id, bn: ph.namn, ag: [], bg: [] });
-    const vanligare = k[0].inst === i0 + SIM.KLAN.handel;
+    const vanligare = k[0].inst === i0 + SIM.BYREL.handel;
     if (h) SIM.hp(s, h).skill.handel = 1000; // märker det säkert
     const i1 = k[0].inst;
     for (const fn of SIM.vidLura) fn(s, pa, ph, false);
-    const lurad = k[0].inst === i1 - SIM.KLAN.lurad;
+    const lurad = k[0].inst === i1 - SIM.BYREL.lurad;
     // dygnen går: folket ändras, inställningen glöms
     const folk0 = k.map(c => c.folk).join(), inst0 = k[0].inst;
     for (let d = 0; d < 3; d++) { s.now += SIM.DAY; SIM.klanSteg(s, SIM.DAY / SIM.SEC); SIM.varldSteg(s); } // folket räknar raden i världen (steg 11.3.2)

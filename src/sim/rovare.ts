@@ -7,7 +7,8 @@ import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log,
 import { halsa, horsel, kanGa } from './halsa';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
-import { Klan, andraInst, klanById, klanerOf } from './klaner';
+import { Klan, klanById, klanerOf } from './klaner';
+import { klanHandelse } from './byrel';
 import { kantMot } from './grannbyar';
 import { addTo, amountOf, avbryt, carryKind, dropLoad, isCarrying, zoneOf, zonesOf } from './lager';
 import { hundSkaller, tamArt, tamStulen, tamUte } from './tamdjur';
@@ -92,7 +93,6 @@ export const ROVARE = balans('rovare', {
   bar: 20, // så mycket väger det varje rövare som står kvar kan bära (steg 8.7.16)
   boskapR: 30, // varje rövare driver bort ett betesdjur som står ute inom så här många rutor (steg 9.8.12)
   styrka: [8, 14], mod: [8, 15], uthallighet: [9, 14], smidighet: [8, 14], skicklighet: [6, 11], // rövarnas kroppar (lägst, högst)
-  fiende: 15, // när byn dödar rövare blir klanen så här mycket ovänligare för var och en
   testVanta: 4, // testläget: gänget rastar så här många minuter innan anfallet, i stället för lurMin, så att man hinner se livet på rastplatsen (steg 10.1.16 och 10.2.31); inget annat skiljer
   larmTim: 2, // ... om hen inte redan fått larmet de senaste så här många timmarna
   anfallUt: 2, // en flock som setts så här nära byns område (utanforByn) eller inne i det gör att byn går i anfallsläge (steg 9.2.104)
@@ -734,7 +734,7 @@ gastKrok.dod = (s, r, av) => {
   count(s, 'rovarDoda');
   fallenFiende(s, r, r.x, r.y);
   klanMinns(s, f, r, av && !av.gast ? av.id : undefined);
-  const k = klanById(s, f.klan); if (k) andraInst(k, -ROVARE.fiende);
+  const k = klanById(s, f.klan); if (k) klanHandelse(s.varld, k, 'dodade');
   r.died = s.now; r.cause = 'i en strid';
   f.folk = f.folk.filter(id => id !== r.id);
   gastGar(s, r.id);

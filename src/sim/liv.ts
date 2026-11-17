@@ -18,7 +18,8 @@ import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
-import { KLAN, andraInst, klanById, klanerOf, narhet } from './klaner';
+import { KLAN, klanById, klanerOf, narhet } from './klaner';
+import { klanHandelse } from './byrel';
 import { kantMot, utbrytning } from './grannbyar';
 import { prisIPrat } from './handel';
 import { gaMot } from './rovare';
@@ -293,7 +294,7 @@ export function framlingBeslut(s: State, p: Person) {
   const ja = g.ja ?? rnd(s, 'klan') < v;
   const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
   if (!ja) {
-    andraInst(k, -KLAN.nejInst); count(s, 'framlingNej');
+    klanHandelse(s.varld, k, 'bortvisad'); count(s, 'framlingNej');
     g.fas = 'gar'; g.path = undefined; g.pk = undefined;
     log(s, `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att ${honom(p)} skulle stanna, och ${p.sex === 'k' ? 'hon' : 'han'} går vidare.`, 'move', [p.id]);
     return undefined;
@@ -305,7 +306,7 @@ export function framlingBeslut(s: State, p: Person) {
   for (const q of s.people) if (q.task?.med === gid) q.task.med = p.id;
   upplev(s, p, 'flyttade');
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
-  andraInst(k, KLAN.stannarInst); count(s, 'framling'); if (tek) count(s, 'framlingTek'); budTillfalle(s, 'framling', p); // främlingen får mat (budet, steg 8.6.6)
+  klanHandelse(s.varld, k, 'mottagen'); count(s, 'framling'); if (tek) count(s, 'framlingTek'); budTillfalle(s, 'framling', p); // främlingen får mat (budet, steg 8.6.6)
   const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, som ingen i byn kunde` : ''}. ${vem} lät ${honom(p)} stanna.`;
   log(s, text, 'move', [p.id]); notis(s, 'inflytt', text, [p.id]);
   if (tek) kronika(s, text, 'flytt');

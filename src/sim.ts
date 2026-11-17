@@ -165,3 +165,4 @@ export * from './sim/vattenho';
 export * from './sim/djurtorst';
 export * from './sim/grannbyar';
 export * from './sim/rad';
+export * from './sim/byrel';
