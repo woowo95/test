@@ -1355,6 +1355,46 @@ const medLedare = (seed = 6) => {
   s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never };
   return { s, v, l };
 };
+SCENARIER.fangelsestraff = {
+  env: { BALANS: 'fangelse.bryt=99' }, // ingen rymmer: här prövas domen
+  text: 'Fängelse som straff (steg 11.12.3, lagar.ts och styre.ts): straffet Fängelse finns bara när byn har ett fängelse med ledig plats. En mild ledare föreslår ett mildare straff i dråplagen; utan fängelse kliver förslaget förbi Fängelse, och en lag med Fängelse döms då med det närmaste mildare. Med fängelse röstas Fängelse in, den dömde går dit och sitter de dygn domen säger (1 till 5 efter brottets vikt), väljer inget arbete och är fri när tiden gått',
+  kor: () => {
+    const { s, v, l } = medLedare(), q = v[1]!, d = v[2]!;
+    klockan(s, 10);
+    for (const p of v) { p.pot.empati = 18; p.pot.aggression = 2; } // alla vill ha mildare straff, och ledaren är mild
+    s.seder.v.rang = 0;
+    s.styre!.lagar = [{ id: 'drapforbud', t: s.now, straff: 3, av: l.id, om: '' }];
+    const forslag = () => SIM.TAS_UPP.find(r => r.id === 'lagstraff')!.lista(s, l).map(f => f.fr.d.ny as number);
+    // utan fängelse: Fängelse föreslås inte, och en lag med Fängelse döms med det närmaste mildare
+    const utan = forslag(), utanDom = SIM.straffNu(s, 9);
+    // med fängelse: ledaren föreslår Fängelse, och byn röstar in det
+    medHus(s); const h = SIM.housesOf(s)[0]!; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s);
+    const med = forslag();
+    const fr = SIM.TAS_UPP.find(r => r.id === 'lagstraff')!.lista(s, l)[0];
+    if (fr) SIM.rostaOm(s, fr.fr);
+    const inrostat = s.styre!.lagar![0]!.straff === 9, andr = s.styre!.roster?.find(o => o.f === 'lagstraff')?.andr;
+    // ett dråp som ledaren såg: domen på kvällen (lagen efterlevs inte alltid, så det kan behövas några kvällar)
+    s.now = s.now - (s.now % SIM.DAY) + 20 * SIM.HOUR;
+    for (let i = 0; i < 10 && !s.styre!.ratt?.length; i++) {
+      (l.intryck ??= []).push({ om: q.id, namn: q.name, k: 'valdsam', v: 1, c: 1, t: s.now - i, bev: [{ h: 'drap', t: s.now - i, mot: d.id, motNamn: d.name, sett: true }] });
+      SIM.stepStyre(s);
+    }
+    const r = s.styre!.ratt?.[0], dygn = q.fange?.till !== undefined ? Math.round((q.fange.till - s.now) / SIM.DAY) : 0;
+    // hen går dit och väljer inget arbete
+    let inne = false, arbete = false;
+    kor(s, 1, () => { if (q.task && q.task.act !== 'fangen') arbete = true; if (SIM.roomAt(s, q.x, q.y)?.hus === h.id) inne = true; });
+    // när tiden gått är hen fri
+    if (q.fange) q.fange.till = s.now + 10 * SIM.MIN;
+    kor(s, 1);
+    return [
+      [`utan fängelse föreslår den milda ledaren ${utan.map(k => SIM.STRAFF_NAMN[k]).join(', ') || 'inget'} i stället för Utvisning, inte Fängelse, och en lag med Fängelse döms med ${SIM.STRAFF_NAMN[utanDom]}`, utan.length === 1 && utan[0] !== 9 && utanDom === 8],
+      [`med fängelse föreslås ${med.map(k => SIM.STRAFF_NAMN[k]).join(', ')}, och byn röstar in det (från ${andr?.fran} till ${andr?.till})`, med[0] === 9 && inrostat && andr?.till === 9],
+      [`dråparen döms till fängelse i ${dygn} dygn (dråp väger mest: fem)`, r?.steg === 9 && r.dygn === 5 && dygn === 5],
+      ['hen går in i fängelset och väljer inget arbete', inne && !arbete],
+      ['när tiden gått är hen fri', !q.fange && (s.stat?.fangelse_slappt ?? 0) >= 1],
+    ];
+  },
+};
 SCENARIER.lagar = {
   text: 'Steg 8.4.1–8.4.6: en lag är ett påbud eller förbud med ett straff, som stiftas i omröstningen. Ur det som hänt väcks förslag, det med högst prioritet tas upp, taket håller nere antalet, och en lag kan ta bort rösten',
   kor: () => {

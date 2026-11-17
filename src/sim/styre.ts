@@ -1,7 +1,7 @@
-import { FANG, fangelseAsikt, fangelsePabud } from './fangelse';
+import { FANG, fangelseAsikt, fangelseDygn, fangelseLedigt, fangelsePabud, satt } from './fangelse';
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think } from './folk';
-import { efterlevs, lagDygn, lagForBrott, lagTak, lagarNu, tasUppKvall } from './lagar';
+import { efterlevs, lagDygn, lagForBrott, lagTak, lagarNu, straffNu, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
@@ -243,7 +243,7 @@ export interface Rattegang {
   hard: number; rang: number; emp: number; hum: number; agg: number; // hårdheten och vad sederna och ledaren lade till
   nara?: true; steg: number; lagom: number; // ledaren stod den dömda nära, straffet och det byn tyckte var lagom
   oratt?: true; leg?: number; van?: number; // orättvis: legitimiteten den kostade och hur många som tyckte sämre om ledaren
-  publik: number; dog?: true; // hur många som såg straffet, och om den dömda dog av slaget
+  publik: number; dog?: true; dygn?: number; // hur många som såg straffet, om den dömda dog av slaget, och dygnen i fängelset (steg 11.12.3)
   regn?: true; sno?: true; kallt?: true; eld?: true; natt?: true; // vädret och elden
 }
 const styreOf = (s: State) => s.styre ??= { historia: [], oppna: [] };
@@ -449,12 +449,14 @@ export const STRAFF_REG = [
   { id: 6, namn: 'Döden', da: 'dömde till döden', inf: 'dö', nu: 'dömer till döden' },
   { id: 7, namn: 'Förlorad rätt', da: 'tog rösten från', inf: 'förlora rösten', nu: 'tar rösten från' },
   { id: 8, namn: 'Ingen vård', da: 'tog rätten till vård från', inf: 'inte få vård', nu: 'tar rätten till vård från' }, // steg 9.5.30
+  { id: 9, namn: 'Fängelse', da: 'satte i fängelse', inf: 'sitta i fängelset', nu: 'sätter i fängelse' }, // steg 11.12.3: kräver ett fängelse med ledig plats (fangelse.ts)
 ] as const;
 const STRAFF = STRAFF_REG.map(r => r.nu);
 const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev', 'rymning']); // rymningen ur fängelset (steg 11.12.1)
-// straffets steg (0 till 3) för vikten v gånger hårdheten
-function stegOf(v: number, h: HandelseTyp, rang: number) {
+// straffets steg (0 till 3, eller Fängelse 9 när byn har ett med ledig plats) för vikten v gånger hårdheten
+function stegOf(v: number, h: HandelseTyp, rang: number, fang = false) {
   if (h === 'drap' && rang >= STR.utvisRang && v >= STR.utvis) return 3;
+  if (fang && rang >= STR.slagRang && v >= FANG.dom) return 9;
   if (rang >= STR.slagRang && v >= STR.slag) return 2;
   return v >= STR.skam ? 1 : 0;
 }
@@ -464,6 +466,8 @@ const brottText = (b: Bevis, led?: string, l?: Person) => HANDELSER[b.h].text.re
 function hardDelar(s: State, l: Person) {
   return { rang: STR.rang * (s.seder.v.rang ?? 0), emp: STR.empati * (10 - stat(l, 'empati', s.now)) / 10, hum: STR.humor * (0.5 - moodOf(l, s.now)), agg: STR.agg * franMitt(l, 'aggression', s.now) };
 }
+// ledarens hårdhet (1 är lagom, mellan STR.min och STR.max): ledaren föreslår ett annat straff i en lag efter den (lagar.ts, steg 11.12.3)
+export const ledarHard = (s: State, l: Person) => { const d = hardDelar(s, l); return clamp(1 + d.rang + d.emp + d.hum + d.agg, STR.min, STR.max); };
 function doma(s: State, l: Person) {
   const st = styreOf(s), now = s.now, rang = s.seder.v.rang ?? 0;
   const domt = (st.domt ??= []);
@@ -501,9 +505,10 @@ function doma(s: State, l: Person) {
     } else if (lag && rang <= STR.tingRost && !Object.values(st.ministrar ?? {}).length && FRAGOR.skuld) {
       if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); continue; }
     }
-    const vikt = HANDELSER[b.h].vikt, steg = lag ? lag.straff : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang);
+    // ett straff som kräver något (Fängelse, steg 11.12.3) döms bara när det finns; annars det närmaste mildare, och lagen behåller sitt
+    const fang = !!fangelseLedigt(s), vikt = HANDELSER[b.h].vikt, steg = lag ? straffNu(s, lag.straff) : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang, fang);
     // det byn tycker är lagom: vikten gånger hårdheten som sederna godtar
-    const lagom = lag ? lag.straff : stegOf(vikt * clamp(1 + STR.rang * rang, STR.min, STR.max), b.h, rang);
+    const lagom = lag ? steg : stegOf(vikt * clamp(1 + STR.rang * rang, STR.min, STR.max), b.h, rang, fang);
     const orattvist = lag ? !!b.falsk : steg > lagom || (nara && steg < lagom) || !!b.falsk;
     const sett = vittnen(s, l).filter(x => x !== q);
     const r: Rattegang = { t: now, led: l.id, ledNamn: l.name, om: id, namn: q.name, b: { ...b }, ...kanner(s, l, q, b), hard: hard0, ...delar,
@@ -522,6 +527,7 @@ function doma(s: State, l: Person) {
     if (steg === 8) q.utanVard = now + STR.vardDygn * DAY; // ingen vårdar hen under tiden (vardRatt i halsa.ts)
     if (steg === 6) { r.dog = true; q.brottsling = true; kronika(s, `${q.name} dömdes till döden.`, 'ledare'); die(s, q, 'avrattad'); continue; }
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
+    if (steg === 9) { const h = fangelseLedigt(s); if (h) { const dygn = fangelseDygn(vikt); r.dygn = dygn; satt(s, q, h, `Dömd för att ${hon(q)} ${brottText(b)}`, now + dygn * DAY, true); } }
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }
     if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad ur byn av ${l.name}.`, [q.id, l.id]); leave(s, q); }
     if (orattvist) {

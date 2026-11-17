@@ -9,7 +9,8 @@ import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat } from './folk';
 import { kronika } from './historik';
 import { FRAGOR, ROST, Fraga, framFor, laggFram, rostaOm, vikter } from './rost';
-import { PABUD, Pabud, legitimitet, ledareOf, styreAv } from './styre';
+import { PABUD, Pabud, STRAFF_NAMN, ledarHard, legitimitet, ledareOf, styreAv } from './styre';
+import { fangelseLedigt } from './fangelse';
 import { knows } from './teknik';
 import type { HandelseTyp } from './rykten';
 import { amountOf, ownedStock } from './lager';
@@ -31,6 +32,7 @@ export const LAG = balans('lag', {
   plikt: 0.2, // arbetsplikten höjer viljan att arbeta för byn så här mycket
   bas: 0.25, viktSamlad: 0.4, viktLeg: 0.5, // hur konsekvent lagarna efterlevs (steg 8.4.9): grunden, hur samlad vikten är och legitimiteten
   stegHardare: 0.5, // Envälde och Fejd över det här gör straffet ett steg hårdare när lagen stiftas
+  straffHard: 0.4, // ledaren vill ha ett steg hårdare eller mildare straff i en lag för varje så här mycket hårdheten skiljer sig från lagom (steg 11.12.3)
   rikEmot: 0.4, rikAndel: 1.5, // den som äger mer än rikAndel gånger sin del av byns mat röstar så här mycket emot att förrådet delas lika
   aktSett: 0.8, aktHort: 0.5, // rädslan för en handling hos den som såg olyckan och hos de närmaste
   aktRadd: 0.3, // över det här räknas man som rädd för handlingen
@@ -43,7 +45,21 @@ export const LAG = balans('lag', {
 });
 export const LAG_SKOG = 8; // förbudet att fälla nära byn: inom så många rutor från byns område
 
-const STEGEN = [0, 1, 4, 5, 2, 7, 8, 3, 6]; // ordningen från mildast till hårdast
+const STEGEN = [0, 1, 4, 5, 2, 7, 8, 9, 3, 6]; // ordningen från mildast till hårdast (Fängelse 9 före Utvisning, steg 11.12.3)
+// ett straff som kräver något finns bara när kravet är uppfyllt (Straff som kräver något): Fängelse kräver ett fängelse med ledig plats
+export const straffKan = (s: State, k: number) => k !== 9 || !!fangelseLedigt(s);
+// straffet som går att verkställa nu: lagens, eller det närmaste mildare som går
+export function straffNu(s: State, k: number) {
+  for (let i = STEGEN.indexOf(k); i >= 0; i--) if (straffKan(s, STEGEN[i])) return STEGEN[i];
+  return 0;
+}
+// d steg hårdare (eller mildare) än k i STEGEN, förbi de straff som inte går nu
+function straffSteg(s: State, k: number, d: number) {
+  let i = STEGEN.indexOf(k);
+  for (let n = Math.abs(d); n > 0;) { const j = i + Math.sign(d); if (j < 0 || j >= STEGEN.length) break; i = j; if (straffKan(s, STEGEN[i])) n--; }
+  while (!straffKan(s, STEGEN[i]) && i > 0) i--;
+  return STEGEN[i];
+}
 
 // lagarna: en rad per lag. prio = hur väl det som hänt väcker den (0–1). rost = åsikten och intresset, −1 till 1. brott = händelserna som bryter
 // mot den. kan = systemet den kräver finns
@@ -117,10 +133,9 @@ export function efterlevs(s: State) {
   return clamp(LAG.bas + LAG.viktSamlad * samlad + LAG.viktLeg * legitimitet(s).v - LAG.overTak * over, 0, 1);
 }
 // straffet när lagen stiftas: radens, ett steg hårdare med Envälde och Fejd
-const startStraff = (s: State, id: string) => {
-  const i = STEGEN.indexOf(LAGAR[id].straff), hard = (s.seder.v.rang ?? 0) + (s.seder.v.fejd ?? 0) > LAG.stegHardare;
-  return STEGEN[Math.min(STEGEN.length - 1, i + (hard ? 1 : 0))];
-};
+const startStraff = (s: State, id: string) => straffSteg(s, LAGAR[id].straff, (s.seder.v.rang ?? 0) + (s.seder.v.fejd ?? 0) > LAG.stegHardare ? 1 : 0);
+// det straff ledaren l vill ha i lagen id (steg 11.12.3): radens, ett steg för varje LAG.straffHard som hårdheten skiljer sig från lagom
+const ledarStraff = (s: State, l: Person, id: string) => straffSteg(s, LAGAR[id].straff, Math.trunc((ledarHard(s, l) - 1) / LAG.straffHard));
 
 // ---------- frågorna (steg 8.3.1 och 8.4.1–8.4.2) ----------
 // ---------- vem som får lägga fram (steg 8.4.4) ----------
@@ -155,6 +170,12 @@ export const TAS_UPP: { id: string; lista(s: State, p: Person): LagForslag[] }[]
     const iE = talPlats(d, d.vill(s, p)), iO = d.stege.indexOf(lagTalRa(s, l.id, k));
     return iE !== iO ? [{ fr: { f: 'lagtal', d: { id: l.id, k, v: d.stege[iE] }, fram: p.id }, prio: clamp(Math.abs(iE - iO) / 3, 0, 1), varfor: `${p.name} vill ändra ${d.namn} i lagen ${LAGAR[l.id].namn.toLowerCase()}` }] : [];
   })) },
+  // ett annat straff i en lag som gäller (steg 11.12.3): ledaren föreslår det straff som passar hens hårdhet
+  { id: 'lagstraff', lista: (s, p) => p !== ledareOf(s) ? [] : lagarNu(s).flatMap(l => {
+    if (!LAGAR[l.id].straff && !LAGAR[l.id].brott) return []; // lagar utan straff (rösten, arbetsplikten) ändras inte så
+    const ny = ledarStraff(s, p, l.id), d = Math.abs(STEGEN.indexOf(ny) - STEGEN.indexOf(l.straff));
+    return ny !== l.straff ? [{ fr: { f: 'lagstraff', d: { id: l.id, ny }, fram: p.id }, prio: clamp(d / 3, 0, 1), varfor: `${p.name} vill ha ett ${STEGEN.indexOf(ny) > STEGEN.indexOf(l.straff) ? 'hårdare' : 'mildare'} straff i lagen ${LAGAR[l.id].namn.toLowerCase()}` }] : [];
+  }) },
   { id: 'bortlag', lista: (s, p) => lagarNu(s).flatMap(l => {
     const v = LAGAR[l.id].rost(s, p).v, nara = lagarNu(s).length >= lagTak(s) - 1 ? 0.3 : 0;
     return v < 0 ? [{ fr: { f: 'bortlag', d: { id: l.id }, fram: p.id }, prio: -v * 0.4 + nara, varfor: `${p.name} tycker illa om lagen` }] : [];
@@ -274,10 +295,21 @@ FRAGOR.lagtal = {
     log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
   },
 };
+// ett annat straff i en lag (steg 11.12.3): ett hårdare straff vill den aggressiva ha och ett mildare den med empati
 FRAGOR.lagstraff = {
   namn: (_s, d) => `Ändra straffet: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
-  rost: (_s, p, d) => ({ v: (d.ny as number) === 3 || (d.ny as number) === 6 ? dev(p.pot.aggression) - dev(p.pot.empati) : dev(p.pot.empati) * 0.5, why: 'Tycker att straffet ska vara ett annat' }),
-  gor: (s, d) => { const l = s.styre?.lagar?.find(x => x.id === d.id); if (l) l.straff = d.ny as number; },
+  andr: (s, d) => ({ k: `lagstraff:${d.id}`, fran: s.styre?.lagar?.find(x => x.id === d.id)?.straff ?? 0, till: d.ny as number }),
+  rost: (s, p, d) => {
+    const nu = s.styre?.lagar?.find(x => x.id === d.id)?.straff ?? 0, hardare = STEGEN.indexOf(d.ny as number) > STEGEN.indexOf(nu), v = (dev(p.pot.aggression) - dev(p.pot.empati)) * (hardare ? 1 : -1) * 0.5;
+    return { v, why: v > 0 ? `Vill ha ett ${hardare ? 'hårdare' : 'mildare'} straff` : 'Tycker att straffet är bra som det är' };
+  },
+  gor: (s, d, fram) => {
+    const l = s.styre?.lagar?.find(x => x.id === d.id);
+    if (!l) return;
+    l.straff = d.ny as number; count(s, 'lag_straff');
+    const t = `Byn ändrade straffet i lagen ${LAGAR[l.id].namn.toLowerCase()} till ${STRAFF_NAMN[l.straff].toLowerCase()}.`;
+    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
+  },
 };
 // skulden på tinget vid Allmoge (steg 8.4.7): var och en röstar efter vad hen vet och vad hen tycker om den anklagade
 FRAGOR.skuld = {
