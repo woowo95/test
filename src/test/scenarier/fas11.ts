@@ -1570,3 +1570,33 @@ SCENARIER.sallskap = {
     ];
   },
 };
+SCENARIER.packning = {
+  text: 'Packningens behov (steg 11.5.3, packbehov i resa.ts): maten, vattnet och fodret räknas ur dygnen, resenärerna, djuren och ledarens marginal, med bärförmågan som tak; en försiktig ledare tar med mer än en slarvig, och allt är hela saker',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
+    const sl = SIM.nyttSallskap(s, a!, mal, 'handel')!; SIM.foljMed(vl, sl, b!);
+    const pot = { ...a!.pot };
+    a!.pot.mod = 18; a!.pot.flit = 3; const slarv = SIM.packbehov(s, sl)!;
+    a!.pot.mod = 3; a!.pot.flit = 18; const fors = SIM.packbehov(s, sl)!;
+    a!.pot = pot;
+    // med ett djur och mot den bortersta platsen
+    const djur = SIM.tamdjurOf(s)[0];
+    if (djur) SIM.djurMed(sl, djur.id);
+    const med = SIM.packbehov(s, sl)!;
+    const ensam = SIM.nyttSallskap(s, c!, mal, 'handel')!;
+    let langt: SIM.Packbehov | undefined;
+    for (const p of [...vl.platser!].filter(q => q.k === 'by' && q.by !== vl.huvud).sort((x, y) => Math.hypot(y.x - hb.x, y.y - hb.y) - Math.hypot(x.x - hb.x, x.y - hb.y)).slice(0, 8)) {
+      ensam.mal = p.nr; const x = SIM.packbehov(s, ensam);
+      if (x && (!langt || x.dygn > langt.dygn)) langt = x;
+    }
+    const hela = [slarv, fors, med, langt].every(x => !x || [x.mat, x.vatten, x.foder].every(Number.isInteger));
+    return [
+      [`ledarens marginal: slarvig ${SIM.marginal({ ...a!, pot: { ...pot, mod: 18, flit: 3 } } as SIM.Person).toFixed(2)}, försiktig ${SIM.marginal({ ...a!, pot: { ...pot, mod: 3, flit: 18 } } as SIM.Person).toFixed(2)}`, true],
+      [`två resenärer i ${slarv.dygn} dygn: den försiktiga tar ${fors.mat} portioner, den slarviga ${slarv.mat}`, fors.mat > slarv.mat && slarv.mat >= Math.floor(2 * SIM.RESA.matPerDygn * slarv.dygn)],
+      [`ett djur behöver foder där det inte kan beta (${med.foder} hö) och bär (${med.bar} mot ${fors.bar})`, !djur || med.bar >= fors.bar],
+      [`allt är hela saker`, hela],
+      [`taket: den ensamma på lång resa (${langt?.dygn} dygn) bär högst sin bärförmåga (${langt?.vikt} av ${langt?.bar})`, !!langt && langt.vikt <= langt.bar && (langt.ryms || langt.mat < Math.ceil(SIM.RESA.matPerDygn * langt.dygn))],
+    ];
+  },
+};

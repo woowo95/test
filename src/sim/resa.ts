@@ -6,10 +6,24 @@
 import { balans } from './balans';
 import { LandmarkId } from './landmarken';
 import { Person, State } from './typer';
-import { Varlden } from './varlden';
+import { Varlden, varldMark } from './varlden';
+import { byPlats, varldPlatserPa } from './landmarken';
+import { clamp } from './slump';
+import { ryggsack } from './utrustning';
+import { tamArt, tamdjurOf } from './tamdjur';
+import { viktOf } from './saker';
+import { VARLD, VARLDMARK, MARK_IDS, VarldMark } from './varldmark';
+import { kostnader, vagMellan, vagRutor } from './vagval';
 
 export const RESA = balans('resa', {
   samlaSek: 3600, // så länge (sekunder i verkligheten) ledaren får samla sällskapet innan resan ställs in (en timme, ett kvarts dygn i spelet)
+  // packningen (steg 11.5.3)
+  matPerDygn: 1.6, // portioner per resenär och dygn (en vuxens måltid är en portion)
+  margModig: 1, margMitt: 1.25, margForsiktig: 1.5, // ledarens marginal: den modiga och slarviga, mitten och den försiktiga
+  utanVatten: 0.5, // en sträcka utan vatten längre än så många dygn kräver en vattensäck per resenär
+  foderPerDygn: 2, // hö per djur och dygn där det inte går att beta
+  hander: 20, rygg: 20, // vikt en resenär bär i händerna och i en ryggsäck
+  packPerStyrka: 20, // ett packdjurs last för varje steg av dess styrka
 });
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
@@ -59,3 +73,64 @@ export function foljMed(vl: Varlden, sl: Sallskap, p: Person) {
 export function djurMed(sl: Sallskap, djurId: number) { if (!sl.djur.includes(djurId)) sl.djur.push(djurId); }
 // de sällskap som är på väg, framme eller packar (inte de som kommit hem)
 export const sallskapNu = (vl: Varlden | undefined) => (vl?.sallskap ?? []).filter(x => x.skede !== 'hemma');
+
+// ---------- packningen (steg 11.5.3, Packningen i tal) ----------
+// ledarens marginal: 1,25 i mitten, mot 1,0 för den modiga och slarviga (högt mod, låg flit) och 1,5 för den försiktiga
+export function marginal(p: Person) {
+  const x = clamp(((p.pot.flit - 10) - (p.pot.mod - 10)) / 18, -1, 1);
+  return x >= 0 ? RESA.margMitt + x * (RESA.margForsiktig - RESA.margMitt) : RESA.margMitt + x * (RESA.margMitt - RESA.margModig);
+}
+// finns det vatten på eller bredvid rutan (en flod, en sjö, en myr; havet är salt)
+function vattenVid(v: VarldMark, i: number) {
+  if (v.flod[i] || VARLDMARK[MARK_IDS[v.mark[i]]].vatten) return true;
+  const x = i % v.w, y = Math.floor(i / v.w);
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const nx = x + dx, ny = y + dy;
+    if (nx >= 0 && ny >= 0 && nx < v.w && ny < v.h && MARK_IDS[v.mark[ny * v.w + nx]] === 'sjo') return true;
+  }
+  return false;
+}
+// vägen dit räknad i dygn: hela sträckan, den längsta sträckan utan vatten och dygnen där djuren inte kan beta (i en frisk
+// vuxens gångfart; farten kommer i steg 11.5.7)
+export interface VagDygn { rutor: number[]; dygn: number; torr: number; utanBete: number }
+export function vagDygn(s: State, fran: number, till: number): VagDygn | undefined {
+  const vl = s.varld, v = varldMark(s);
+  if (!vl || !v) return undefined;
+  const vag = vagMellan(vl, v, fran, till, 'fots', s.now);
+  if (!vag) return undefined;
+  const rutor = vagRutor(vag, v.w), k = kostnader(vl, v, 'fots');
+  let torr = 0, hit = 0, utanBete = 0;
+  for (let n = 1; n < rutor.length; n++) {
+    const i = rutor[n], d = k[i] / VARLD.gangPerDygn;
+    hit = vattenVid(v, i) ? 0 : hit + d; torr = Math.max(torr, hit);
+    if (!VARLDMARK[MARK_IDS[v.mark[i]]].bete && !varldPlatserPa(vl, i % v.w, Math.floor(i / v.w)).some(p => p.k === 'by')) utanBete += d;
+  }
+  return { rutor, dygn: vag.kostnad / VARLD.gangPerDygn, torr, utanBete };
+}
+// vad en resenär bär och vad ett djur bär
+export const barResenar = (s: State, p: Person) => RESA.hander + (ryggsack(s, p) ? RESA.rygg : 0);
+export const barDjur = (s: State, id: number) => { const d = tamdjurOf(s).find(q => q.id === id); return d ? (tamArt(d.art).styrka ?? 0) * RESA.packPerStyrka : 0; };
+
+// packningens behov för en resa: maten, vattensäckarna och fodret i hela saker, dygnen och bärförmågan. Går inte allt in tas
+// maten före fodret, och vattnet först (utan vatten kommer ingen fram)
+export interface Packbehov { dygn: number; mat: number; vatten: number; foder: number; bar: number; vikt: number; ryms: boolean }
+export function packbehov(s: State, sl: Sallskap): Packbehov | undefined {
+  const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
+  if (!vl || !v || !hem || !mal) return undefined;
+  const vd = vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x);
+  if (!vd) return undefined;
+  const folk = sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p), led = folk.find(p => p.id === sl.ledare) ?? folk[0];
+  const n = folk.length, dygn = 2 * vd.dygn + RESMAL[sl.skal].stannar;
+  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+  const vatten = vd.torr > RESA.utanVatten ? n : 0;
+  let mat = Math.ceil(n * RESA.matPerDygn * dygn * (led ? marginal(led) : RESA.margMitt) - 1e-9);
+  let foder = Math.ceil(sl.djur.length * RESA.foderPerDygn * 2 * vd.utanBete - 1e-9);
+  const vMat = 1, vVatten = viktOf('vattensack'), vFoder = viktOf('torrgras');
+  const behov = mat * vMat + vatten * vVatten + foder * vFoder, ryms = behov <= bar;
+  if (!ryms) {
+    let rum = bar - vatten * vVatten;
+    mat = Math.max(0, Math.min(mat, Math.floor(rum / vMat))); rum -= mat * vMat;
+    foder = Math.max(0, Math.min(foder, Math.floor(rum / vFoder)));
+  }
+  return { dygn: Math.round(dygn * 100) / 100, mat, vatten, foder, bar, vikt: mat * vMat + vatten * vVatten + foder * vFoder, ryms };
+}
