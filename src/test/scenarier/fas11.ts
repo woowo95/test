@@ -1865,3 +1865,34 @@ SCENARIER.kallelse = {
     ];
   },
 };
+
+SCENARIER.sallskapkarta = {
+  text: 'Sällskapet på världskartan (steg 11.5.12, sallskapLage och sallskapRuta i resa.ts, bilden i ui/varldbild.ts): sällskapet står mellan rutan det är på och nästa längs vägen, vänt åt sitt håll, och rör sig när det går; rutan har skälet, målet, skedet, medlemmarna, packningen och hur många dygn det är kvar',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, v = SIM.varldMark(s)!;
+    const [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 20 && SIM.ageOf(q, s.now) < 50 && SIM.personFart(s, q) === 1);
+    const hb = SIM.byPlats(vl, vl.huvud!)!, malP = vl.platser!.find(p => p.nr === hb.grannar![0]!.nr)!;
+    s.now = Math.floor(s.now / SIM.DAY) * SIM.DAY + SIM.DAY + 7 * SIM.HOUR;
+    const sl = SIM.nyttSallskap(s, a!, malP.nr, 'handel')!; SIM.foljMed(vl, sl, b!);
+    sl.ut = { samla: { x: 1, y: 1 }, kant: { x: 1, y: 1 } };
+    for (const p of [a!, b!]) SIM.gaBort(s, p);
+    sl.skede = 'ute'; sl.ruta = hb.y * v.w + hb.x; sl.pack = { brod: 12, skinn: 5 };
+    const vag = SIM.vagMellan(vl, v, sl.ruta, malP.y * v.w + malP.x, 'fots', s.now)!;
+    sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg }; sl.pos = 0; sl.gang = 0;
+    const l0 = SIM.sallskapLage(s, sl)!;
+    s.now += SIM.HOUR; SIM.resaBehov(s, SIM.HOUR);
+    const l1 = SIM.sallskapLage(s, sl)!, rutor = SIM.vagenRutor(s, sl), pos = sl.pos ?? 0;
+    const a1 = rutor[pos]!, b1 = rutor[Math.min(pos + 1, rutor.length - 1)]!;
+    const mellan = Math.min(a1 % v.w, b1 % v.w) <= l1.x + 1e-9 && l1.x <= Math.max(a1 % v.w, b1 % v.w) + 1e-9 && Math.min(Math.floor(a1 / v.w), Math.floor(b1 / v.w)) <= l1.y + 1e-9 && l1.y <= Math.max(Math.floor(a1 / v.w), Math.floor(b1 / v.w)) + 1e-9;
+    const ratt = l1.dx === Math.sign(b1 % v.w - a1 % v.w) && l1.dy === Math.sign(Math.floor(b1 / v.w) - Math.floor(a1 / v.w));
+    const r = SIM.sallskapRuta(s, sl);
+    const tecken = VB.TECKEN.sallskap!, iPal = tecken.length === VB.VK && tecken.every(rad => rad.length === VB.VK && [...rad].every(c => c === '.' || c in VB.TECKENPAL));
+    return [
+      [`sällskapet står mellan två rutor på vägen (${l1.x.toFixed(2)}, ${l1.y.toFixed(2)})`, mellan],
+      [`och är vänt åt sitt håll (${l1.dx}, ${l1.dy})`, ratt && (l1.dx !== 0 || l1.dy !== 0)],
+      [`det rör sig när det går (${l0.kvar} → ${l1.kvar} dygn kvar)`, l1.kvar < l0.kvar && (l1.x !== l0.x || l1.y !== l0.y)],
+      [`rutan: ${r.titel}, ${r.skede}, ${r.ledare} med ${r.medl.join(', ')}, ${r.pack.map(([k, n]) => `${n} ${k}`).join(', ')}`, r.titel.includes(malP.namn) && r.skede === 'På väg dit' && r.ledare === a!.name && r.medl.includes(b!.name) && r.pack.length === 2 && r.kvar !== undefined],
+      ['bilden är 16 × 16 punkter i paletten', iPal],
+    ];
+  },
+};

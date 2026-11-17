@@ -45,6 +45,8 @@ export const TECKEN: Record<string, string[]> = {
   spang: t('', '', '', '', '', '', '...kkkkkkkkkk', '...kJlJlJlJlk', '...kkkkkkkkkk'),
   stubbe: t('', '', '', '', '', '', '.....kkkk', '....klJlJk', '....kJJJJk', '....kjJJjk', '...kjkkkkjk'),
   eld: t('', '', '', '', '', '.......y', '......yry', '......rYr', '.....yrRry', '.....jkkkj'),
+  // sällskapet på vägen (steg 11.5.12, platshållare): två vandrare åt höger, den första med en packning på ryggen
+  sallskap: t('', '', '.....kk.....kk', '....kwwk...kwwk', '....kwwk...kwwk', '..jj.kk.....kk', '.jJJkrrk...krrk', '.jJlkrrk...krrk', '.jJJkrrk...krrk', '..jjkrrk...krrk', '.....kjk....kjk', '.....k.k....k.k', '.....k.k....k.k', '....kk.kk..kk.kk'),
   karta: t('', '', '..kkkkkkkkkkkk', '..kwwwWwwwwwWk', '..kwGGwwssswWk', '..kwGGGwssswWk', '..kwwGwwwsswWk', '..kwwwwJJwwwWk', '..kwwSwJJwwwWk', '..kwSSSwwwGGWk', '..kwwwwwwwGGWk', '..kkkkkkkkkkkk'),
 };
 
