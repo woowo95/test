@@ -1335,3 +1335,37 @@ SCENARIER.bynvet = {
     ];
   },
 };
+
+SCENARIER.kartlager = {
+  text: 'Två lager på världskartan (steg 11.4.7, bynsKarta i ort.ts och ritaVarld i ui/varldbild.ts): det byn känner ritas tydligt, ryktena som grå områden och resten blekt, och en hemlig plats syns först när byn har ett rykte om den',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, v = SIM.varldMark(s)!, K = VB.VK, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const langt = vl.platser!.filter(x => x.by !== vl.huvud && !SIM.iNaromradet(s, x.nr) && !(SIM.LANDMARKEN[x.k] as SIM.LandmarkDef).folk), kand = langt[0]!, rykt = langt.find(x => Math.hypot(x.x - kand.x, x.y - kand.y) > 4)!;
+    SIM.larOrt(s, a!, kand.nr, SIM.O_KANT, 1); SIM.larOrt(s, b!, rykt.nr, SIM.O_RYKTE, 1, { fr: b!.id });
+    // en hemlig plats långt borta
+    const hx = rykt.x, hy = rykt.y, gom = { ...kand, nr: 99999, k: 'gomma' as const, namn: 'Gömman' }; // på den kända platsens ruta, långt från närområdet
+    vl.platser!.push(gom);
+    SIM.raknaBynVet(s);
+    const kn = SIM.bynsKarta(s)!, hb = vl.platser!.find(x => x.by === vl.huvud)!;
+    const kSet = new Set(vl.platser!.filter(x => (kn.niva(x.nr) ?? -1) >= SIM.O_KANT).map(x => x.y * v.w + x.x));
+    const lag = (x: number, y: number) => VB.lager(kn, kSet, v.w, x, y);
+    const o = kn.rykten.find(r => r.nr === rykt.nr);
+    // ritat: en blek ruta har det ljusa mönstret, en känd ruta inte
+    const bild = VB.ritaVarld(vl, v, kn), utan = VB.ritaVarld(vl, v);
+    const px = (bb: typeof bild, x: number, y: number) => { const i = (y * bb.w + x) * 4; return `${bb.data[i]},${bb.data[i + 1]},${bb.data[i + 2]}`; };
+    const hex = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(',');
+    let blek = -1, bx = 0, by = 0;
+    for (let y = 0; y < v.h && blek < 0; y++) for (let x = 0; x < v.w; x++) if (lag(x, y) === 'blek' && !vl.platser!.some(q => q.x === x && q.y === y)) { blek = 1; bx = x; by = y; break; }
+    const gomSynsFore = !VB.rutaText(vl, v, gom.x, gom.y, kn).includes('Gömma') && !SIM.syns(kn, gom); // kn frågar byn när den används
+    SIM.larOrt(s, b!, gom.nr, SIM.O_RYKTE, 1, { fr: b!.id }); SIM.raknaBynVet(s);
+    const kn2 = SIM.bynsKarta(s)!;
+    return [
+      [`närområdet och den kända platsen är tydliga (${lag(hb.x, hb.y)}, ${lag(kand.x, kand.y)})`, lag(hb.x, hb.y) === 'kant' && lag(kand.x, kand.y) === 'kant'],
+      [`ryktet är ett grått område runt platsen (${o ? 'finns' : 'saknas'}, ${lag(Math.floor(o?.x ?? 0), Math.floor(o?.y ?? 0))})`, !!o && lag(Math.floor(o.x), Math.floor(o.y)) === 'rykte' && Math.hypot(hx + 0.5 - o.x, hy + 0.5 - o.y) < o.r],
+      [`resten är blekt, med det ljusa mönstret (${px(bild, bx * K, by * K)})`, blek > 0 && px(bild, bx * K, by * K) === hex(VB.BLEKFARG) && px(utan, bx * K, by * K) !== hex(VB.BLEKFARG)],
+      [`den kända platsens ruta ritas som förut`, px(bild, kand.x * K + 1, kand.y * K) === px(utan, kand.x * K + 1, kand.y * K)],
+      [`en hemlig plats syns inte förrän byn har ett rykte om den `, gomSynsFore && SIM.syns(kn2, gom)],
+      ['utan byns kunskap syns allt (som förut)', SIM.syns(undefined, gom)],
+    ];
+  },
+};

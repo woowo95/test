@@ -22,6 +22,7 @@ export interface LandmarkDef {
   flodFri?: true; // tar bort flodens kostnad och släpper över vagnen (bron)
   blir?: Partial<Record<MarkId, MarkId>>; // gör rutans mark till en annan när man går (den röjda passagen)
   kostnad?: Partial<Record<MarkId, number>>; // kostnaden att gå på marken, utan att fler färdsätt kommer fram (spången)
+  hemlig?: true; // syns inte på världskartan förrän byn har ett rykte om den (ort.ts, steg 11.4.7)
   folk?: true; // en plats med folk (en by, ett läger): inte känd i närområdet, byn får veta om den genom någon (ort.ts, steg 11.4.2)
   tathet?: number; // chansen per landruta att platsen finns när världen skapas (placering.ts, steg 11.2.14); utan: den uppstår i spelet
 }
@@ -37,7 +38,7 @@ export const LANDMARKEN = {
   runsten: { namn: 'Runsten', tecken: 'runsten', mark: ['slatt', 'skog'], avst: 2, projekt: true, tathet: 0.003 },
   fyndplats: { namn: 'Fyndplats', tecken: 'kors', mark: LAND, avst: 2, fynd: true, tillfallig: true, tathet: 0.004 },
   karavanrest: { namn: 'Karavanrest', tecken: 'vagn', mark: LAND, avst: 1, fynd: true, tillfallig: true },
-  gomma: { namn: 'Gömma', tecken: 'packning', mark: LAND, avst: 1, fynd: true, tillfallig: true },
+  gomma: { namn: 'Gömma', tecken: 'packning', mark: LAND, avst: 1, fynd: true, tillfallig: true, hemlig: true },
   bro: { namn: 'Bro', tecken: 'bro', mark: ['slatt', 'skog', 'tat', 'myr'], avst: 1, projekt: true, flodFri: true },
   spang: { namn: 'Spång', tecken: 'spang', mark: ['myr'], avst: 1, projekt: true, kostnad: { myr: 1 } },
   passage: { namn: 'Röjd passage', tecken: 'stubbe', mark: ['tat'], avst: 1, projekt: true, blir: { tat: 'skog' } },
