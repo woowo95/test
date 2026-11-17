@@ -7,6 +7,7 @@
 import { alive } from './folk';
 import { avbryt } from './lager';
 import { Person, State } from './typer';
+import { raknaBynVet } from './ort';
 
 export const ute = (p: Person) => p.ute !== undefined;
 // bybon lämnar byn: arbetet släpps som när någon avbryter det (det som var reserverat för hen räknas inte längre, eftersom
@@ -15,11 +16,13 @@ export function gaBort(s: State, p: Person) {
   if (!alive(p) || ute(p)) return;
   avbryt(s, p);
   p.ute = s.now;
+  raknaBynVet(s); // det byn vet utan hen (steg 11.4.6)
 }
 // bybon kommer hem till rutan x, y (kanten hen kommer in från) med det hen har på sig, och väljer ett nytt arbete
-export function kommHem(p: Person, x: number, y: number) {
+export function kommHem(s: State, p: Person, x: number, y: number) {
   if (!ute(p)) return;
   delete p.ute;
   p.x = x; p.y = y;
   p.task = undefined;
+  raknaBynVet(s); // det byn vet med det hen vet (steg 11.4.6)
 }

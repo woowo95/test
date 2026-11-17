@@ -24,15 +24,15 @@ SCENARIER.bortafalt = {
       for (const q of SIM.living(s)) if (q.task && [q.task.med, q.task.fran, q.task.bar].includes(p.id)) valdes++; // fälten som pekar på en annan person
     });
     const stod = p.x === x && p.y === y;
-    const agerUnder = ager();
-    SIM.kommHem(p, x + 1, y);
+    const finns = new Set(SIM.tingOf(s).map(g => g.id)), agerUnder = ager(), agerKvar = agerFore.split(',').filter(id => id && finns.has(Number(id))).join(','); // det som slitits ut under tiden finns inte längre (ett utlånat redskap)
+    SIM.kommHem(s, p, x + 1, y);
     const barHem = bar(), hemma = SIM.living(s).includes(p) && !SIM.ute(p) && p.x === x + 1 && p.y === y;
     kor(s, 1);
     return [
       ['den som är borta är bybo men inte i byn', borta],
       [`hen gör inget i byn medan hen är borta (${gjorde} gånger)`, gjorde === 0 && stod],
       [`ingen i byn väljer hen till något (${valdes} gånger)`, valdes === 0],
-      ['hen äger sitt medan hen är borta', agerUnder === agerFore],
+      ['hen äger sitt medan hen är borta', agerUnder === agerKvar],
       [`hen kommer hem till rutan, är i byn igen och har med sig det hen har på sig (${barFore.split(',').filter(Boolean).length} saker)`, hemma && barHem === barFore],
       ['hen är i byn och lever vidare efter en timme', SIM.living(s).includes(p) && !!p.task],
     ];
@@ -64,7 +64,7 @@ SCENARIER.borta = {
     for (const p of alla) SIM.gaBort(s, p);
     kor(s, 2);
     const inteOmgrundad = s.people.length === nr && alla.every(p => SIM.alive(p)) && SIM.living(s).length === 0;
-    for (const p of alla) SIM.kommHem(p, p.x, p.y);
+    for (const p of alla) SIM.kommHem(s, p, p.x, p.y);
     kor(s, 1);
     return [
       ['de som är borta lever och är bybor', lever],
@@ -1298,6 +1298,40 @@ SCENARIER.ryktlage = {
       [`och aldrig i mitten (${inteMitt} av ${n})`, inteMitt === n],
       [`en annan första berättare ger en annan mitt (${olika} av ${n})`, olika > n * 0.9],
       ['samma rykte ligger på samma ställe', a.x === b.x && a.y === b.y],
+    ];
+  },
+};
+
+SCENARIER.bynvet = {
+  text: 'Det byn vet (steg 11.4.6, raknaBynVet i ort.ts): sammanställningen av minnena hos dem som är hemma, med den högsta nivån, den senaste tiden och vilka som vet; räknad en gång i timmen och genast vid avfärd, hemkomst och dödsfall, med en rad i krönikan när en plats försvinner ur byns kunskap',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const pl = vl.platser!.filter(x => x.by !== vl.huvud && !SIM.iNaromradet(s, x.nr)), nr = pl[0]!.nr, nr2 = pl[1]!.nr;
+    SIM.larOrt(s, a!, nr, SIM.O_BESOKT, 1); SIM.larOrt(s, b!, nr, SIM.O_RYKTE, 1);
+    SIM.raknaBynVet(s);
+    const forst = SIM.bynKanner(s, nr);
+    SIM.gaBort(s, a!);
+    const ute = SIM.bynKanner(s, nr);
+    SIM.kommHem(s, a!, a!.x, a!.y);
+    const hem = SIM.bynKanner(s, nr);
+    // a är ensam om nr2; när a dör försvinner platsen ur byns kunskap
+    SIM.larOrt(s, a!, nr2, SIM.O_KANT, 1);
+    const fore = SIM.bynKanner(s, nr2);
+    SIM.larOrt(s, b!, pl[2]!.nr, SIM.O_KANT, 1);
+    for (let i = 0; i < 4000 && !SIM.bynKanner(s, pl[2]!.nr); i++) SIM.step(s, SIM.BEAT);
+    const timme = SIM.bynKanner(s, pl[2]!.nr);
+    const n = (s.hist?.kronika ?? []).length;
+    SIM.die(s, a!, 'kyla');
+    const efter = SIM.bynKanner(s, nr2), rad = (s.hist?.kronika ?? []).slice(n).find(k => k[2] === 'forlust' && String(k[1]).includes('minns längre'));
+    const hemma = SIM.bynKanner(s, vl.platser!.find(x => x.by === vl.huvud)!.nr), nara = vl.platser!.find(x => SIM.iNaromradet(s, x.nr) && x.by !== vl.huvud);
+    return [
+      [`den högsta nivån och vilka som vet (${forst?.v}, ${forst?.vem.length} vet)`, forst?.v === SIM.O_BESOKT && forst.vem.length === 2],
+      [`den som är ute räknas inte (${ute?.v}, ${ute?.vem.length})`, ute?.v === SIM.O_RYKTE && ute.vem.length === 1],
+      [`hemkomsten räknas genast (${hem?.v})`, hem?.v === SIM.O_BESOKT],
+      [`en gång i timmen kommer nya minnen med (${!!timme})`, !!timme && !fore],
+      [`när den enda som vet dör försvinner platsen, med en rad i krönikan ("${rad?.[1]}")`, !efter && !!rad],
+      ['byns egen plats är besökt', hemma?.v === SIM.O_BESOKT],
+      ['närområdet är känt', !nara || (SIM.bynKanner(s, nara.nr)?.v ?? -1) >= SIM.O_KANT],
     ];
   },
 };

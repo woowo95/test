@@ -1,5 +1,5 @@
 import { honom } from './ord';
-import { horOmGast } from './ort';
+import { horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
@@ -165,7 +165,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
     else if (r && r.op > REL.saknar) { const f = r.op > REL.naraVan ? RELT.naraSorj : 1; think(q, `Saknar ${p.name}`, LIV.saknar * f, s.now, LIV.saknarDygn * f * DAY); }
     // familjen och vännerna sörjer en död som kom av svält, kyla, vargar eller rövare (steg 4.5.4.9)
     if (sorg && (varPartner || isParent(p, q) || isParent(q, p) || q.bast === p.id || (r && r.op > REL.saknar) || (q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father))) upplev(s, q, 'sorjde', `${p.name}, som dog ${cause}`);
-  }
+  }  if (!p.gast) raknaBynVet(s); // det byn vet utan hen (steg 11.4.6)
 }
 
 export function birth(s: State, mother: Person) {

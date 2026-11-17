@@ -6,7 +6,8 @@
 import { balans } from './balans';
 import { findL, MINNE, trimLardomar } from './minne';
 import { delade } from './berattelser';
-import { byId, count, gjort } from './folk';
+import { alive, byId, count, gjort, living } from './folk';
+import { kronika } from './historik';
 import { clamp, hash3 } from './slump';
 import { lognFaktor } from './rykten';
 import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
@@ -133,3 +134,41 @@ export function describeOrt(s: State, l: Lardom) {
   return { text: what, what, place: q?.namn ?? 'okänd plats', src, sure, wrong: q ? '' : 'platsen finns inte längre' };
 }
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
+
+// ---------- det byn vet (steg 11.4.6, Flera samhällen: Det byn vet) ----------
+// Byns kunskap är en sammanställning och inget eget förråd: för varje plats den högsta nivån bland minnena hos dem som är
+// hemma (inte den som är ute på resa), den senaste tiden för uppgifterna och vilka som vet. Den räknas en gång i timmen
+// (TAKTER) och genast vid ett dödsfall, en hemkomst och en avfärd. Närområdet och byns egen plats står inte i den, eftersom
+// de alltid är kända (bynKanner frågar dem). När en plats försvinner ur byns kunskap och ingen bybo längre minns den, inte
+// heller den som är ute, skrivs en rad i krönikan, som när en teknik dör
+export interface VetOrt { v: number; t: number; vem: number[] }
+export interface BynVet { t: number; p: Record<number, VetOrt> }
+export function raknaBynVet(s: State) {
+  if (!s.varld) return;
+  const ny: Record<number, VetOrt> = {};
+  for (const p of living(s)) for (const l of p.lardomar ?? []) {
+    if (l.k !== 'ort') continue;
+    const e = ny[l.a];
+    if (!e) ny[l.a] = { v: l.v, t: l.t, vem: [p.id] };
+    else { e.v = Math.max(e.v, l.v); e.t = Math.max(e.t, l.t); e.vem.push(p.id); }
+  }
+  const fore = s.bynVet?.p;
+  if (fore) for (const k in fore) {
+    const nr = Number(k);
+    if (ny[nr] || iNaromradet(s, nr)) continue;
+    if (s.people.some(q => alive(q) && !q.gast && findL(q, 'ort', nr))) continue; // den som är ute minns den ännu
+    const q = varldPlatsNr(s.varld, nr), om = fore[nr]!.vem.map(id => byId(s, id)).find(x => x && x.died !== undefined);
+    kronika(s, `Ingen i byn minns längre ${q ? `${LANDMARKEN[q.k].namn.toLowerCase()} ${q.namn}` : 'en plats långt borta'}${om ? `; ${om.name} var den sista som visste om den` : ''}.`, 'forlust');
+    count(s, 'ortGlomdIByn');
+  }
+  s.bynVet = { t: s.now, p: ny };
+}
+// det byn vet om platsen nr: sammanställningen, närområdet (känt) och byns egen plats (besökt); undefined: okänd
+export function bynKanner(s: State, nr: number): VetOrt | undefined {
+  const vl = s.varld;
+  if (vl?.huvud !== undefined && byPlats(vl, vl.huvud)?.nr === nr) return { v: O_BESOKT, t: s.now, vem: [] };
+  const e = s.bynVet?.p[nr];
+  if (!iNaromradet(s, nr)) return e;
+  return e && e.v >= O_KANT ? e : { v: O_KANT, t: s.now, vem: e?.vem ?? [] };
+}
+

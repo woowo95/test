@@ -327,6 +327,7 @@ export interface State {
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   varld?: import('./varlden').Varlden; // världen byn ligger i (steg 11.2.7, varlden.ts); testbyarna har ingen
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
+  bynVet?: import('./ort').BynVet; // det byn vet om platserna i världen (steg 11.4.6, ort.ts)
   textminne?: Record<string, string[]>; // textminnet (steg 6.7.3): början på de tre senaste krönikaraderna per mall, utan historiken
   notiser?: import('./notiser').Notiser; // notiserna som spelaren inte tagit bort (notiser.ts, steg 5.4.3)
   W?: number; H?: number; // kartans storlek (saknas i de äldsta byarna: 64×40)
