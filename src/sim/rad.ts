@@ -17,8 +17,14 @@
 //
 // Rikedomen och styrkan (steg 11.3.3) räknas samma timme: rikedomen går mot ett mål som teknikerna sätter (RAD.rikPer per
 // person) och sjunker i nöd, och styrkan går mot folket gånger andelen som kan slåss (RAD.styrka), mer med vapen och sköld.
+// Kunskapen (steg 11.3.9) räknas en gång per dygn (ett år i spelet): varje öppen teknik (byn kan kraven) kommer byn på med
+// chansen ett delat med nivåns mål i testbyarna (TEKTAL.nivaDygn) gånger trögheten (RAD.troghet), mindre i en liten by
+// (folket mot RAD.kunskapFolk). En teknik som en by inom räckhåll kan sprids med RAD.sprid per dygn när byarna mött varandra
+// och är vänliga (relationen minst RAD.vanlig, byrel.ts), inom RAD.kontaktDygn. En teknik som ingen annan av byns tekniker bygger på kan tappas, med
+// en chans som växer ju färre byn är (RAD.tappa, under RAD.tappaFolk).
 import { balans } from './balans';
-import { TEK } from './teknik';
+import { TEK, TEKNIK, TEKTAL } from './teknik';
+import { relation } from './byrel';
 import { MARK_IDS, VARLDMARK, VarldMark } from './varldmark';
 import { BYSORTER, radKrok, VarldRad } from './radtal';
 import { KROPP } from './folk';
@@ -49,6 +55,14 @@ export const RAD = balans('rad', {
   rikNod: 0.02, // en timme i nöd (maten slut) tar så stor del av rikedomen
   styrka: 0.35, // styrkan går mot folket gånger så stor del (de som kan slåss), gånger 1 + teknikernas styrka, högst folket ...
   styrkaDygn: 0.5, // ... och kommer så stor del av vägen dit per dygn
+  // kunskapen (steg 11.3.9)
+  troghet: 1.5, // en öppen teknik tar så många gånger nivåns mål i testbyarna (TEKTAL.nivaDygn) i snitt ...
+  kunskapFolk: 15, // ... i en by med så många eller fler; en mindre by i proportion
+  sprid: 0.2, // chansen per dygn att en teknik sprids från en vänlig by inom räckhåll ...
+  kontaktDygn: 3, // ... så här många dygns gång bort (år i spelet) eller närmare
+  vanlig: 15, // byarna är vänliga när relationen är minst så mycket
+  tappa: 0.05, // chansen per dygn att en by tappar en teknik som inget annat bygger på, i en by med ett fåtal ...
+  tappaFolk: 12, // ... och noll från så här många
 });
 
 export type RadKolumn = 'barkraft' | 'forvaring' | 'styrka' | 'rikedom';
@@ -121,9 +135,38 @@ function radRikedom(vl: Varlden, r: VarldRad, n: number, nod: boolean) {
   r.tal.styrka = Math.min(r.tal.folk, Math.max(0, st + antalUr((styrkaMal(r) - st) * perTimme(RAD.styrkaDygn), varldSlump(vl, r.nr, n, A.styrka))));
 }
 
+// ärendena för kunskapen (dygnet): teknikens nummer i TEKNIK efter sorten
+const K = { ny: 1 << 16, tappa: 2 << 16, sprid: 3 << 16 };
+const nivaMal = (niva: number) => TEKTAL.nivaDygn[Math.min(TEKTAL.nivaDygn.length, niva) - 1];
+// grannarna inom räckhåll (grannätet på byns plats)
+export function grannRader(vl: Varlden, r: VarldRad, dygn: number): VarldRad[] {
+  const p = vl.platser?.find(q => q.by === r.nr);
+  return (p?.grannar ?? []).filter(g => g.dygn <= dygn).flatMap(g => { const q = vl.platser?.find(x => x.nr === g.nr); const m = q?.by !== undefined ? vl.rader?.find(x => x.nr === q.by) : undefined; return m && BYSORTER[m.sort].folk ? [m] : []; });
+}
+// ett dygn: nya tekniker, spridda tekniker och tappade tekniker
+export function radKunskap(vl: Varlden, r: VarldRad, n: number) {
+  const kan = new Set(r.tek), ny: string[] = [], liten = Math.min(1, r.tal.folk / RAD.kunskapFolk);
+  const vanner = grannRader(vl, r, RAD.kontaktDygn).filter(m => (relation(vl, r.nr, m.nr) ?? -Infinity) >= RAD.vanlig);
+  TEKNIK.forEach((t, i) => {
+    if (kan.has(t.id) || !t.krav.every(k => kan.has(k))) return;
+    if (varldSlump(vl, r.nr, n, K.ny + i) < liten / (nivaMal(t.niva) * RAD.troghet)) { ny.push(t.id); return; }
+    vanner.forEach(m => { if (!ny.includes(t.id) && m.tek.includes(t.id) && varldSlump(vl, r.nr, n, K.sprid + i * 64 + (m.nr % 64)) < RAD.sprid) ny.push(t.id); });
+  });
+  // tappade: det som ingen annan teknik byn kan bygger på
+  const tappa = RAD.tappa * Math.max(0, 1 - r.tal.folk / RAD.tappaFolk), bort = new Set<string>();
+  if (tappa > 0) TEKNIK.forEach((t, i) => {
+    if (!kan.has(t.id) || r.tek.some(id => TEK[id]?.krav.includes(t.id))) return;
+    if (varldSlump(vl, r.nr, n, K.tappa + i) < tappa) bort.add(t.id);
+  });
+  if (!ny.length && !bort.size) return;
+  r.tek = TEKNIK.map(t => t.id).filter(id => (kan.has(id) && !bort.has(id)) || ny.includes(id));
+}
+
 radKrok.startMat = folk => Math.round(folk * portionerPerDygn() * RAD.startMat);
 
 // varje timme: radens regler för varje by i världen som lever efter dem, i ordning efter numret
+// varje dygn (ett år i spelet): kunskapen i varje by i världen som lever efter radens regler
+PERIODRADER.push({ namn: 'radens kunskap', period: 'dygn', fn: (_s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radKunskap(vl, r, n); } });
 // varje dygn (ett år i spelet): relationerna mellan byarna glöms mot grundläget (byrel.ts, steg 11.3.4)
 PERIODRADER.push({ namn: 'relationerna glöms', period: 'dygn', fn: (_s, vl) => relGlom(vl) });
 PERIODRADER.push({ namn: 'radens mat', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radMat(s, vl, r, n); } });

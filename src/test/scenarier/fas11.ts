@@ -733,7 +733,7 @@ SCENARIER.radrikedom = {
       [`rikedomen går mot målet på några dygn (${fattig.tal.rikedom} av ${Math.round(SIM.rikMal(fattig))})`, nara(fattig)],
       [`hus och redskap sätter ett högre mål per person (${Math.round(SIM.rikMal(rustad) / rustad.tal.folk)} mot ${Math.round(SIM.rikMal(fattig) / fattig.tal.folk)})`, SIM.rikMal(rustad) / rustad.tal.folk > SIM.rikMal(fattig) / fattig.tal.folk && nara(rustad)],
       [`i nöd sjunker rikedomen (2000 → ${nod.tal.rikedom})`, nod.tal.rikedom < 1000],
-      [`styrkan går mot folket gånger andelen som kan slåss (${fattig.tal.styrka} av ${fattig.tal.folk}), mer med vapen och sköld (${rustad.tal.styrka} av ${rustad.tal.folk})`, st(fattig) && st(rustad) && rustad.tal.styrka / rustad.tal.folk > fattig.tal.styrka / fattig.tal.folk],
+      [`styrkan går mot folket gånger andelen som kan slåss (${fattig.tal.styrka} av ${fattig.tal.folk}), mer med vapen och sköld (${rustad.tal.styrka} av ${rustad.tal.folk}; byarna kommer på tekniker under tiden)`, st(fattig) && st(rustad) && SIM.styrkaMal({ ...fattig, tal: { ...fattig.tal, folk: 20 }, tek: ['skold', 'flintspjut'] }) > SIM.styrkaMal({ ...fattig, tal: { ...fattig.tal, folk: 20 }, tek: [] })],
       ['styrkan är aldrig fler än folket, och talen är hela', aldrigFler && hela],
       ['grannbyns styrka och resurser följer raden', foljer],
     ];
@@ -935,6 +935,47 @@ SCENARIER.undergang = {
       ['världens krönika: Gått under', krona],
       ['huvudbyn förlorar förbindelsen med byn', borta],
       [`ingen flyttar dit, och de som var på väg går hem igen (${hem0} → ${annan.tal.folk})`, !tillRuin && annan.tal.folk === hem0 + 2],
+    ];
+  },
+};
+
+SCENARIER.radkunskap = {
+  text: 'Kunskapen i raden (steg 11.3.9, rad.ts): nya tekniker efter nivåns mål, spridning vid vänlig kontakt och tekniker som tappas när för få kan dem',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const [a, b] = vl.rader!.filter(r => SIM.lever(vl, r) && SIM.grannRader(vl, r, SIM.RAD.kontaktDygn).length);
+    const m = SIM.grannRader(vl, a, SIM.RAD.kontaktDygn).find(x => x.nr !== vl.huvud && SIM.lever(vl, x))!;
+    // stor och liten by, 20 dygn från ingenting
+    const kor20 = (folk: number) => { const r = { ...a, tal: { ...a.tal, folk }, tek: [] as string[] }; for (let n = 0; n < 20; n++) SIM.radKunskap(vl, r, n); return r.tek; };
+    const stor = kor20(20), liten = kor20(3);
+    const ordning = stor.every(id => SIM.TEK[id].krav.every(k => stor.includes(k)));
+    const niva1 = stor.filter(id => SIM.TEK[id].niva === 1).length, hogre = stor.filter(id => SIM.TEK[id].niva >= 3).length;
+    // spridning: en teknik som grannen kan, med och utan vänskap
+    const x = SIM.TEKNIK.find(t => t.niva === 4 && t.krav.length)!;
+    const grund = (id: string): string[] => [...SIM.TEK[id].krav.flatMap(grund), id];
+    const krav = [...new Set(x.krav.flatMap(grund))];
+    m.tek = [...new Set([...krav, x.id])];
+    const forsok = (rel: number) => { SIM.mots(vl, a.nr, m.nr); vl.rel![`${a.nr}>${m.nr}`] = rel; let ja = 0; for (let n = 0; n < 300; n++) { const r = { ...a, tal: { ...a.tal, folk: 20 }, tek: [...krav] }; SIM.radKunskap(vl, r, 100 + n); if (r.tek.includes(x.id)) ja++; } return ja; };
+    const vanlig = forsok(40), ovanlig = forsok(-40);
+    // tappa: en liten by tappar det som inget bygger på, aldrig det som något annat bygger på
+    const t = { ...b, tal: { ...b.tal, folk: 2 }, tek: [...krav] };
+    let aldrigBas = true, tappade = 0;
+    for (let n = 0; n < 60; n++) {
+      const fore = [...t.tek]; SIM.radKunskap(vl, t, 1000 + n);
+      const bort = fore.filter(id => !t.tek.includes(id)); tappade += bort.length;
+      if (bort.some(id => fore.some(o => SIM.TEK[o].krav.includes(id)))) aldrigBas = false;
+    }
+    // av sig själv: världen i tio dygn
+    const fore = vl.rader!.filter(r => SIM.lever(vl, r)).reduce((n, r) => n + r.tek.length, 0);
+    for (let h = 0; h < 10 * 24; h++) { s.now += 3600e3; SIM.varldSteg(s); }
+    const efter = vl.rader!.filter(r => SIM.lever(vl, r)).reduce((n, r) => n + r.tek.length, 0);
+    const hela = vl.rader!.every(r => r.tek.every(id => SIM.TEK[id].krav.every(k => r.tek.includes(k))));
+    return [
+      [`en by kommer på tekniker efter nivåns mål: på 20 dygn ${stor.length} (${niva1} på nivå 1, ${hogre} på nivå 3 eller högre)`, niva1 >= 3 && stor.length > niva1 && ordning],
+      [`en liten by kommer på färre (${liten.length} mot ${stor.length})`, liten.length < stor.length],
+      [`en vänlig granne sprider tekniken ${x.namn} (${vanlig} av 300 dygn mot ${ovanlig} utan vänskap)`, vanlig > ovanlig * 1.5 && vanlig > 30],
+      [`en liten by tappar tekniker (${tappade} gånger på 60 dygn) men aldrig det som något annat bygger på`, tappade > 0 && aldrigBas],
+      [`världen på tio dygn: ${fore} → ${efter} tekniker, och varje by kan kraven för det den kan`, efter > fore && hela],
     ];
   },
 };
