@@ -15,6 +15,8 @@ export * from './sim/varldmark';
 export * from './sim/varlden';
 export * from './sim/landmarken';
 export * from './sim/radtal';
+export * from './sim/varldnamn';
+export * from './sim/placering';
 export * from './sim/tid';
 export * from './sim/varld';
 export * from './sim/kartflytt';

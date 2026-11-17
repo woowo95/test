@@ -9,6 +9,7 @@
 import { hash3 } from './slump';
 import { FLOD_NEDRE, FLOD_OVRE, Fardsatt, MARK_IDS, MarkId, VARLD, VARLDMARK, VarldMark } from './varldmark';
 import { Varlden } from './varlden';
+import { NAMNSLAG, varldNamn } from './varldnamn';
 
 export interface LandmarkDef {
   namn: string;
@@ -21,24 +22,25 @@ export interface LandmarkDef {
   flodFri?: true; // tar bort flodens kostnad och släpper över vagnen (bron)
   blir?: Partial<Record<MarkId, MarkId>>; // gör rutans mark till en annan när man går (den röjda passagen)
   kostnad?: Partial<Record<MarkId, number>>; // kostnaden att gå på marken, utan att fler färdsätt kommer fram (spången)
+  tathet?: number; // chansen per landruta att platsen finns när världen skapas (placering.ts, steg 11.2.14); utan: den uppstår i spelet
 }
 const LAND: readonly MarkId[] = ['slatt', 'skog', 'tat', 'myr', 'berg'];
 export const LANDMARKEN = {
-  by: { namn: 'By', tecken: 'hus', mark: ['slatt', 'skog'], avst: 3 },
+  by: { namn: 'By', tecken: 'hus', mark: ['slatt', 'skog'], avst: 1 }, // inte på en annan bys karta; hur nära grannen ligger säger ingen regel
   handelslager: { namn: 'Handelsläger', tecken: 'talt', mark: ['slatt', 'skog'], avst: 4, tillfallig: true },
   rovarlager: { namn: 'Rövarläger', tecken: 'eldstad', mark: ['skog', 'tat', 'berg'], avst: 4, tillfallig: true },
   utpost: { namn: 'Utpost', tecken: 'torn', mark: ['slatt', 'skog', 'berg'], avst: 3, projekt: true },
   ruin: { namn: 'Ruin', tecken: 'ruin', mark: LAND, avst: 3, fynd: true },
-  helig: { namn: 'Helig plats', tecken: 'sten', mark: LAND, avst: 3 },
-  gravhog: { namn: 'Gravhög', tecken: 'hog', mark: ['slatt', 'skog'], avst: 2 },
-  runsten: { namn: 'Runsten', tecken: 'runsten', mark: ['slatt', 'skog'], avst: 2, projekt: true },
-  fyndplats: { namn: 'Fyndplats', tecken: 'kors', mark: LAND, avst: 2, fynd: true, tillfallig: true },
+  helig: { namn: 'Helig plats', tecken: 'sten', mark: LAND, avst: 3, tathet: 0.004 },
+  gravhog: { namn: 'Gravhög', tecken: 'hog', mark: ['slatt', 'skog'], avst: 2, tathet: 0.005 },
+  runsten: { namn: 'Runsten', tecken: 'runsten', mark: ['slatt', 'skog'], avst: 2, projekt: true, tathet: 0.003 },
+  fyndplats: { namn: 'Fyndplats', tecken: 'kors', mark: LAND, avst: 2, fynd: true, tillfallig: true, tathet: 0.004 },
   karavanrest: { namn: 'Karavanrest', tecken: 'vagn', mark: LAND, avst: 1, fynd: true, tillfallig: true },
   gomma: { namn: 'Gömma', tecken: 'packning', mark: LAND, avst: 1, fynd: true, tillfallig: true },
   bro: { namn: 'Bro', tecken: 'bro', mark: ['slatt', 'skog', 'tat', 'myr'], avst: 1, projekt: true, flodFri: true },
   spang: { namn: 'Spång', tecken: 'spang', mark: ['myr'], avst: 1, projekt: true, kostnad: { myr: 1 } },
   passage: { namn: 'Röjd passage', tecken: 'stubbe', mark: ['tat'], avst: 1, projekt: true, blir: { tat: 'skog' } },
-  rastplats: { namn: 'Rastplats', tecken: 'eld', mark: ['slatt', 'skog'], avst: 2 },
+  rastplats: { namn: 'Rastplats', tecken: 'eld', mark: ['slatt', 'skog'], avst: 2, tathet: 0.003 },
 } as const satisfies Record<string, LandmarkDef>;
 export type LandmarkId = keyof typeof LANDMARKEN;
 export const LANDMARK_IDS = Object.keys(LANDMARKEN) as LandmarkId[];
@@ -47,7 +49,7 @@ const def = (k: LandmarkId): LandmarkDef => LANDMARKEN[k];
 // en plats i världen
 export interface VarldPlats {
   nr: number; k: LandmarkId; x: number; y: number;
-  namn: string; // ur namnregistret (steg 11.2.12); tills dess sortens namn
+  namn: string; // ur namnregistret (varldnamn.ts, steg 11.2.12)
   fro: number; // platsens eget frö, ur världens frö och numret
   fran: number; till?: number; // när den uppstod och när den upphör (tillfälliga platser)
   by?: number; // platsens nummer för byn den hör till
@@ -69,7 +71,7 @@ export function hinder(vl: Varlden, v: VarldMark, k: LandmarkId, x: number, y: n
 export function laggPlats(vl: Varlden, v: VarldMark, k: LandmarkId, x: number, y: number, nu: number, o: { till?: number; by?: number; namn?: string } = {}): VarldPlats | undefined {
   if (hinder(vl, v, k, x, y)) return undefined;
   const nr = vl.nastaPlats = (vl.nastaPlats ?? 0) + 1;
-  const p: VarldPlats = { nr, k, x, y, namn: o.namn ?? def(k).namn, fro: Math.floor(hash3(vl.fro, nr, 0x504c) * 2 ** 31), fran: nu, ...(o.till !== undefined ? { till: o.till } : {}), ...(o.by !== undefined ? { by: o.by } : {}) };
+  const p: VarldPlats = { nr, k, x, y, namn: o.namn ?? varldNamn(vl, NAMNSLAG[k], nr), fro: Math.floor(hash3(vl.fro, nr, 0x504c) * 2 ** 31), fran: nu, ...(o.till !== undefined ? { till: o.till } : {}), ...(o.by !== undefined ? { by: o.by } : {}) };
   varldPlatser(vl).push(p);
   return p;
 }
