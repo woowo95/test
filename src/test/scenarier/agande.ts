@@ -2850,7 +2850,7 @@ SCENARIER.kronikakat = {
     return [
       [`alla slag i krönikan har en kategori${okanda.length ? ` (saknas: ${okanda.join(', ')})` : ''}`, okanda.length === 0],
       [`en födsel hamnar under Liv (${fodd[2]} → ${SIM.kronikaKat(fodd[2])})`, SIM.kronikaKat(fodd[2]) === 'liv'],
-      [`raden med kategoriernas symboler (${symboler})`, symboler === SIM.KRONIKA_KAT.length],
+      [`raden med kategoriernas symboler: sju i Händelser, Skrifter och Fritid är egna delar (${symboler}, steg 11.1.34)`, symboler === SIM.KRONIKA_KAT.length - 2 && /data-kdel="skrifter"/.test(alla) && /data-kdel="fritid"/.test(alla) && !/data-kkat="(skrift|fritid)"/.test(alla)],
       ['Liv visar födseln, Strid inte', liv.includes(fodd[1].slice(0, 10)) && !strid.includes(fodd[1].slice(0, 10))],
       ['raden utan slag står bara när ingen kategori är vald', alla.includes('En rad ur en gammal sparfil') && !liv.includes('En rad ur en gammal sparfil')],
     ];
@@ -2869,7 +2869,7 @@ SCENARIER.skriftlista = {
     SIM.placeTools(s);
     SIM.runstenTimme(s);
     setByn(s);
-    Object.assign(kronikaVal, { viktigt: true, ar: undefined, kat: 'skrift', stad: undefined, skrift: undefined });
+    Object.assign(kronikaVal, { del: 'skrifter', viktigt: true, ar: undefined, kat: undefined, stad: undefined, skrift: undefined });
     const h = kronikaFlik.html(), rader = (x: string) => (x.match(/data-kskrift="/g) ?? []).length;
     const ordning = [...h.matchAll(/data-kskrift="([^"]+)"/g)].map(m => m[1]);
     kronikaVal.stad = 'bok';
@@ -2885,7 +2885,7 @@ SCENARIER.skriftlista = {
     const hEfter = kronikaFlik.html(), K = s.hist?.kronika ?? [];
     const bortRad = K.some(k => k[2] === 'skrift' && String(k[1]).includes('finns inte längre'));
     const forsta = K.some(k => k[2] === 'skrift' && String(k[1]).includes('första delen'));
-    Object.assign(kronikaVal, { kat: undefined, stad: undefined, skrift: undefined });
+    Object.assign(kronikaVal, { del: 'handelser', kat: undefined, stad: undefined, skrift: undefined });
     return [
       [`en sten, ett blad och en bok ger tre rader, nyast först (${ordning.join(', ')})`, rader(h) === 3 && ordning[0] === `ting-${bok.id}` && ordning[2] === 'sten-1'],
       ['tre knappar väljer stadium, och knappen för böckerna visar bara boken', (h.match(/data-kstad="/g) ?? []).length === 3 && rader(hBok) === 1 && hBok.includes(`data-kskrift="ting-${bok.id}"`)],
@@ -2928,7 +2928,7 @@ SCENARIER.kronikalista = {
       ['senast först, med en rubrik per år', forst >= 0 && sen > forst && /<h4 class="kar">År \d+<\/h4>/.test(alla)],
       ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
       [`Allt visar krönikan och händelseloggen i en lista (${rader(allt)} rader, ${s.log.length} i loggen; steg 9.2.125)`, rader(allt) >= s.log.length && allt.includes('hittade en sten') && s.log.length > K.length],
-      [`en rad symboler där en i taget är vald: det viktiga, ${(alla.match(/data-kkat=/g) ?? []).length} kategorier och allt, utan ordningen och personlistan, och ingen Karta i Krönikan (steg 10.2.60)`, /data-kvis="viktigt"/.test(alla) && /data-kvis="allt"/.test(alla) && (alla.match(/data-kkat=/g) ?? []).length === SIM.KRONIKA_KAT.length && !/data-kordning|data-kperson/.test(alla) && !/kmReglage|Kartan/.test(alla)],
+      [`en rad symboler där en i taget är vald: det viktiga, ${(alla.match(/data-kkat=/g) ?? []).length} kategorier och allt, utan ordningen och personlistan, och ingen Karta i Krönikan (steg 10.2.60)`, /data-kvis="viktigt"/.test(alla) && /data-kvis="allt"/.test(alla) && (alla.match(/data-kkat=/g) ?? []).length === SIM.KRONIKA_KAT.length - 2 && !/data-kordning|data-kperson/.test(alla) && !/kmReglage|Kartan/.test(alla)],
       ['ett tryck på en kategori väljer bara den, och stjärnan väljer sedan bara det viktiga', valda(alla) === 1 && tryckt(alla, 'data-kvis="viktigt"') && valda(allt) === 1 && tryckt(allt, 'data-kvis="allt"') && valda(kat) === 1 && tryckt(kat, 'data-kkat="liv"') && valda(vikt) === 1 && tryckt(vikt, 'data-kvis="viktigt"')],
       ['Kartan är en flik i Byns tal bredvid graferna (steg 9.2.126)', kartan.includes('kmReglage') && /data-tvy="grafer"/.test(kartan) && /data-tvy="kartan"/.test(grafer)],
       [`Byns tal visar alla byns grafer under varandra (${(grafer.match(/data-graf=/g) ?? []).length} st, steg 9.3.2)`, ['folk', 'humor', 'eld', 'forrad', 'rik'].every(g => grafer.includes(`data-graf="${g}"`)) && !grafer.includes(`class="logg"`)],

@@ -2748,9 +2748,9 @@ SCENARIER.fritidlista = {
     const scen = stationFlik.html().includes(`data-fram="${m.nr}"`);
     ui.selected = m.p; ui.personDel = 'om';
     const pres = personFlik.html().includes(`data-fram="${m.nr}"`);
-    Object.assign(kronikaVal, { viktigt: true, ar: undefined, kat: 'fritid' });
+    Object.assign(kronikaVal, { del: 'fritid', viktigt: true, ar: undefined, kat: undefined });
     const kron = kronikaFlik.html().includes(`data-fram="${m.nr}"`);
-    kronikaVal.kat = undefined;
+    kronikaVal.del = 'handelser';
     return [
       [`${m.namn} uppträdde på scenen (${SIM.FRAM_AV[m.k]!.namn})`, true],
       ['scenens ruta visar framträdandet som just slutat, med knappen till redogörelsen', scen],

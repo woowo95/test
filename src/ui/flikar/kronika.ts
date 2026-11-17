@@ -8,7 +8,7 @@ import { AGES, KRONIKA_KAT, type LogEntry, type Person, type SkriftStadium, kale
 import { visaPaKartan } from '../notiser';
 import { tecknet } from '../../ikoner';
 import { fritidLista } from './fram';
-import { clockTxt, esc, kvMark, linkify, namnI } from '../hjalp';
+import { clockTxt, delRad, esc, kvMark, linkify, namnI } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
 
@@ -16,7 +16,7 @@ interface Rad { t: number; text: string; slag?: string; kind?: LogEntry['kind'];
 // var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet
 const iText = (text: string, folk: Person[]) => folk.filter(p => namnI(text, p.name) >= 0).map(p => p.id);
 // symbolen som är vald: kat (en kategori), annars viktigt (bara krönikan) eller allt (krönikan och händelseloggen); forkl: symbolen vars förklaring visas
-export const val: { viktigt: boolean; ar?: number; kat?: string; forkl?: string; stad?: SkriftStadium; skrift?: string } = { viktigt: true }; // stad = stadiet i listan över skrifterna, skrift = raden som är öppen (steg 10.6.8) // (exporterat för scenarierna)
+export const val: { del: 'handelser' | 'skrifter' | 'fritid'; viktigt: boolean; ar?: number; kat?: string; forkl?: string; stad?: SkriftStadium; skrift?: string } = { del: 'handelser', viktigt: true }; // stad = stadiet i listan över skrifterna, skrift = raden som är öppen (steg 10.6.8) // (exporterat för scenarierna)
 function rader(): Rad[] {
   const krona: Rad[] = (s.hist?.kronika ?? []).map(([t, text, slag]) => ({ t, text, slag, viktig: true, ids: iText(text, s.people) }))
     .filter(r => val.kat === undefined || kronikaKat(r.slag) === val.kat).sort((a, b) => a.t - b.t);
@@ -34,11 +34,15 @@ const FORKL: Record<string, string> = {
   ar: 'Ett år i taget: bläddra med pilarna, eller tryck på året för alla år.',
 };
 const knapp = (data: string, pressed: boolean, sym: string, alt: string, namn: string) => `<button type="button" ${data} aria-pressed="${pressed}" title="${esc(namn)}" aria-label="${esc(namn)}">${tecknet(sym, alt, 16)}</button>`;
+// delraden överst (steg 11.1.34): Händelser är listan, och Skrifter och Fritid är egna delar eftersom de har en annan form. Raden i
+// Händelser har stjärnan, de sju kategorierna och allt; Fritidens och Skrifternas rader står kvar i listan när ingen kategori är vald
+const DELAR = [{ id: 'handelser', tecken: '{sym_stjarna}', namn: 'Händelser' }, { id: 'skrifter', tecken: '{sym_skriftrulle}', namn: 'Skrifter' }, { id: 'fritid', tecken: '🎲', namn: 'Fritid' }] as const;
+const KAT_RAD = KRONIKA_KAT.filter(k => k.id !== 'skrift' && k.id !== 'fritid');
 function symbolRad(aren: number[]) {
   const i = val.ar === undefined ? -1 : aren.indexOf(val.ar);
   const aldre = i < 0 ? aren.at(-1) : aren[i - 1], nyare = i < 0 ? undefined : aren[i + 1];
   const pil = (dit: number | undefined, tecken: string, namn: string) => `<button type="button" data-kar="${dit ?? ''}" ${dit === undefined ? 'disabled' : ''} title="${namn}" aria-label="${namn}">${tecken}</button>`;
-  const kat = KRONIKA_KAT.map(k => `<button type="button" data-kkat="${k.id}" aria-pressed="${k.id === val.kat}" title="${k.namn}" aria-label="${k.namn}">${tecknet(k.ikon, k.tecken, 16)}</button>`).join('');
+  const kat = KAT_RAD.map(k => `<button type="button" data-kkat="${k.id}" aria-pressed="${k.id === val.kat}" title="${k.namn}" aria-label="${k.namn}">${tecknet(k.ikon, k.tecken, 16)}</button>`).join('');
   const forkl = val.forkl ? FORKL[val.forkl] ?? KRONIKA_KAT.find(k => k.id === val.forkl)?.namn : undefined;
   return `<div class="pdelar kfilter" role="toolbar" aria-label="Visa">${knapp('data-kvis="viktigt"', val.viktigt && val.kat === undefined, 'sym_stjarna', '⭐', 'Bara det viktiga')}${kat}${knapp('data-kvis="allt"', !val.viktigt && val.kat === undefined, 'sym_skriftrulle', '📜', 'Allt')}</div>
     <div class="kblad">${pil(aldre, '◀', 'Året före')}<button type="button" data-kar="alla" aria-pressed="${val.ar === undefined}" title="${val.ar === undefined ? 'Alla år' : 'Visa alla år'}">${val.ar === undefined ? 'Alla år' : `År ${val.ar}`}</button>${pil(nyare, '▶', 'Året efter')}</div>
@@ -74,12 +78,15 @@ export const kronika: Flik = {
       const k = kalender(s, r.t), cls = [r.kind ? `k-${r.kind}` : '', r.viktig && !val.viktigt ? 'viktig' : ''].filter(Boolean).join(' ');
       html += `<li${cls ? ` class="${cls}"` : ''}><span class="when">${r.kind ? clockTxt(r.t) : AGES[k.ai]}</span>${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids, byte: r.byte, bnr: r.bnr, fram: r.fram, match: r.match })}</li>`;
     }
-    const skrifter = val.kat === 'skrift' ? skriftHtml() : '';
-    // Fritid (steg 9.2.67): de senaste framträdandena och matcherna överst, med knappen till redogörelsen
-    const fritid = val.kat === 'fritid' ? fritidLista() : '';
-    return symbolRad(aren) + skrifter + (fritid ? `<h4 class="kar">Framträdanden och matcher</h4>${fritid}` : '') + (html ? html + '</ol>' : fritid ? '' : '<p class="muted">Inget har hänt här än.</p>');
+    const rad = delRad('data-kdel', DELAR, val.del);
+    if (val.del === 'skrifter') return rad + skriftHtml();
+    // Fritid (steg 9.2.67): de senaste framträdandena och matcherna, med knappen till redogörelsen
+    if (val.del === 'fritid') { const f = fritidLista(); return rad + (f ? `<h4 class="kar">Framträdanden och matcher</h4>${f}` : '<p class="muted">Inga framträdanden eller matcher än.</p>'); }
+    return rad + symbolRad(aren) + (html ? html + '</ol>' : '<p class="muted">Inget har hänt här än.</p>');
   },
   klick(el) {
+    const dl = el.closest<HTMLElement>('[data-kdel]');
+    if (dl) { val.del = dl.dataset.kdel as typeof val.del; return true; }
     const st = el.closest<HTMLElement>('[data-kstad]');
     if (st) { const v = st.dataset.kstad as SkriftStadium; val.stad = val.stad === v ? undefined : v; return true; }
     const pl = el.closest<HTMLElement>('[data-kplats]');
