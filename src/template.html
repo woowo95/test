@@ -440,7 +440,7 @@ dd .ont { color: var(--g-rost); font-weight: 700; }
 button.rw { border: none; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; text-decoration: underline dotted; text-underline-offset: 2px; }
 .rw.pos { color: var(--good); } .rw.neg { color: var(--bad); }
 .lard li { padding: 4px 0; } .lard li > span { display: block; padding-left: 10px; } .lard small { display: block; font-size: 11px; }
-.lard .lnal { margin-left: 6px; border: 0; background: none; cursor: pointer; padding: 0 2px; vertical-align: middle; border-radius: 3px; } .lard .lnal.sel { outline: 2px solid #d8b25f; } /* platsen på kartan (steg 10.2.63) */
+.lard .lnal { margin-left: 6px; border: 0; background: none; cursor: pointer; padding: 0 2px; vertical-align: middle; border-radius: 3px; } .lard .lnal.sel { outline: 2px solid #d8b25f; background: var(--g-senap); } /* ögat är fyllt när nålen sitter på kartan (steg 11.1.51) */ /* platsen på kartan (steg 10.2.63) */
 .lard .fel { color: var(--bad); } .lard .fel::before { content: "⚠ "; } .lard li.fara { color: var(--fara); }
 .fame li::before { content: "◆ "; color: var(--accent); }
 .pdelar { display: flex; gap: 4px; margin: 10px 0 0; border-bottom: 1px solid var(--line); }
@@ -448,6 +448,9 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .pdelar button[aria-selected="true"] { border-bottom-color: var(--accent); opacity: 1; }
 .pdelar button { position: relative; } .pdelar .felprick { position: absolute; top: 3px; right: calc(50% - 14px); width: 7px; height: 7px; border-radius: 50%; background: var(--g-rost); } /* något är fel i hälsan (steg 11.1.44) */
 .flikrub { margin: 12px 0 4px; }
+.rels:has(> li.falla) { padding-left: 14px; } .rels > li.falla { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; row-gap: 4px; position: relative; } .rels > li.falla::before { position: absolute; left: -14px; top: 0.3em; } .rels > li.falla > .relfork { grid-column: 1 / -1; } /* hela relationsraden fälls ut (steg 11.1.51) */
+.kvrub { display: flex; align-items: center; gap: 6px; } .kvsort { margin-left: auto; background: none; border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; line-height: 0; cursor: pointer; opacity: 0.6; }
+.kvsort[aria-pressed="true"] { opacity: 1; background: var(--barbg); border-color: var(--accent); } /* sorteringen efter kvalitet (steg 11.1.50) */
 .utretik { margin: 8px 0 2px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; } /* raderna i Utrustning (steg 11.1.49) */
 .agtab th { font-size: 11px; font-weight: normal; color: var(--muted); text-align: left; padding: 0 4px; } .agtab th.tal { text-align: right; }
 /* Översikt (steg 11.1.45): familjen som små porträtt med namn, och sederna hen håller som en liten våg med ett ord */

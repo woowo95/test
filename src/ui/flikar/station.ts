@@ -6,7 +6,7 @@ import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
 import { taBortITest } from '../testborta';
-import { condBar, durTxt, esc, fmtN, kvMark, kvOrdning, kvText, pLink, pileTxt } from '../hjalp';
+import { condBar, durTxt, esc, fmtN, kvMark, kvOrdning, kvRubrik, kvText, pLink, pileTxt } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -123,7 +123,7 @@ export const station: Flik = {
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}
     ${tb ? `<h3>Tillbehör</h3><dl class="kv">${tb}</dl>` : ''}
-    ${d.forvar ? `<h3>Förvaring</h3>${inne ? `<dl class="kv stk">${inne}</dl>` : '<p class="muted">tom</p>'}<p class="muted">${forvar}</p>` : ''}
+    ${d.forvar ? `${kvRubrik('Förvaring')}${inne ? `<dl class="kv stk">${inne}</dl>` : '<p class="muted">tom</p>'}<p class="muted">${forvar}</p>` : ''}
     ${platser ? `<h3>Redskap</h3><dl class="kv">${platser}</dl>` : ''}
     <h3>Material</h3><p ${tip(`${d.min} minuters arbete. ${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av} <span class="muted">· ${d.min} min</span></p>
     ${testRad(st.id)}`;

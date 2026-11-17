@@ -8,7 +8,7 @@ import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg, vagSvg } from '../framsteg';
 import { gravidDel, gravidKvar } from '../../sim/steg';
-import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, kvKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { pliktDelar, VANA_AR } from '../../sim';
@@ -237,7 +237,7 @@ function formogenhetLista(p: Person) {
   if (!rader.length) return `<p class="muted">Äger inget.${skuld}</p>`;
   // kolumnrubriker och vågens symbol vid värdet (steg 11.1.49)
   const vag = tecknet('sym_vag', '⚖', 12);
-  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${vag} ${v(sum)} sammanlagt.${skuld} <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
+  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${vag} ${v(sum)} sammanlagt.${skuld} ${kvKnapp()}</p>
     <table class="agtab"><thead><tr><th></th><th>Sak</th><th class="tal">Antal</th><th>Kvalitet</th><th title="Hur mycket som är kvar innan den är utsliten">Skick</th><th class="tal" title="Värde, ungefär i arbetstimmar">${vag}</th></tr></thead><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
 }
 // egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras
@@ -439,8 +439,9 @@ function relInne(p: Person) {
     const oppen = typer.find(t => hjalpOppen(id(t.id))), utf = hjalpOppen(id('mer'));
     // ordet för relationen: ett tryck visar utförligt vad hen tycker om den andra och varför (steg 3.9.6)
     const ord = `<button type="button" class="rw klick ${r.op < REL.osams ? 'neg' : r.op > REL.vanOrd ? 'pos' : ''}" data-hjalp="${id('mer')}" data-hjalp-grupp="rt-${p.id}-${q.id}-" title="Vad ${esc(p.name)} tycker om ${esc(q.name)}">${relWord(p, q, r.op)}</button>`;
-    const mer = utf ? `<p class="muted small relfork">${relationText(s, p, q, r).map(esc).join(' ')}</p>` : oppen ? `<p class="muted small relfork"><b>${esc(oppen.namn)}</b>: ${esc(oppen.varfor(s, p, q, r))}</p>` : '';
-    return `<li>${pLink(q)}<span class="relsyms">${sym}</span>${ord}<span class="muted">${r.talks} samtal</span>${mer}</li>`;
+    // ett tryck var som helst på raden fäller ut allt (steg 11.1.51): vad hen tycker och varför varje typ gäller
+    const mer = utf ? `<p class="muted small relfork">${relationText(s, p, q, r).map(esc).join(' ')}${typer.map(t => `<br><b>${esc(t.namn)}</b>: ${esc(t.varfor(s, p, q, r))}`).join('')}</p>` : oppen ? `<p class="muted small relfork"><b>${esc(oppen.namn)}</b>: ${esc(oppen.varfor(s, p, q, r))}</p>` : '';
+    return `<li class="klick falla" ${fallUt(id('mer'), `rt-${p.id}-${q.id}-`)} title="Tryck för allt om relationen">${pLink(q)}<span class="relsyms">${sym}</span>${ord}<span class="muted">${r.talks} samtal</span>${mer}</li>`;
   }).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>';
 }
 
@@ -475,13 +476,13 @@ function ryktenHtml(p: Person) {
   const vem = (k: IntryckTyp) => living(s).flatMap(q => { const e = intryckOm(q, p.id, k); return e ? [{ q, e }] : []; }).sort((a, b) => b.e.v * b.e.c - a.e.v * a.e.c);
   const syms = byn.map(([k]) => {
     const title = `${cap(INTRYCK[k].namn)}: ${vem(k).length} i byn tycker så. Drar anseendet ${upp(k) ? 'uppåt' : 'nedåt'}`;
-    return `<button type="button" class="tnod liten ryk" data-hjalp="${bid(k)}" data-hjalp-grupp="by-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${ikTecken(k)}<span class="riktn${upp(k) ? '' : ' ned'}">${upp(k) ? '▲' : '▼'}</span><span class="antal">${vem(k).length}</span></button>`;
+    return `<button type="button" class="tnod liten ryk" data-hjalp="${bid(k)}" data-hjalp-grupp="by-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${ikTecken(k)}<span class="riktn${upp(k) ? '' : ' ned'}">${upp(k) ? '▲' : '▼'}</span><span class="antal" title="${vem(k).length} tycker så">${vem(k).length}</span></button>`;
   });
   const vald = byn.map(x => x[0]).find(k => hjalpOppen(bid(k)));
   const forkl = vald ? (() => {
     const L = vem(vald), MAX = 10;
     const namn = L.slice(0, MAX).map(({ q, e }) => `${pLink(q)} <span class="muted">(${intryckText(s, e).sure}${e.src === undefined && !e.led ? ', såg det själv' : ''})</span>`).join(', ');
-    return `<p class="muted small relfork"><b>${esc(cap(INTRYCK[vald].namn))}</b>, drar anseendet ${upp(vald) ? 'uppåt' : 'nedåt'}. ${esc(INTRYCK[vald].betyder)}${INTRYCK[vald].beteende ? ' ' + esc(INTRYCK[vald].beteende!) : ''}<br>Tycker så: ${namn}${L.length > MAX ? ` och ${L.length - MAX} till` : ''}.</p>`;
+    return `<p class="muted small relfork"><b>${esc(cap(INTRYCK[vald].namn))}</b>, drar anseendet ${upp(vald) ? 'uppåt' : 'nedåt'}. ${esc(INTRYCK[vald].betyder)}${INTRYCK[vald].beteende ? ' ' + esc(INTRYCK[vald].beteende!) : ''}<br>${L.length} tycker så: ${namn}${L.length > MAX ? ` och ${L.length - MAX} till` : ''}.</p>`;
   })() : '';
   const omHen = byn.length || arvRad ? `${huvud}${arvRad}<div class="tekrad">${syms.join('')}</div>${forkl}` : '<p class="muted">Byn har ingen särskild bild av hen.</p>';
   const per = new Map<number, Intryck[]>();
@@ -584,8 +585,9 @@ function knowledgeHtml(p: Person) {
     return `<button type="button" class="tnod liten ${kan ? 'kan' : 'pa'}${kunTek === x.id ? ' sel' : ''}" data-ptek="${x.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(x.id, 16)}${kan ? '' : `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(v * 100)} 100"/></svg>`}</button>`;
   });
   const rows = ks.map(([k, e]) => ({ n: KUNSKAPER[k]?.namn ?? k, v: e.v }));
-  return `${tk.length ? `<h3>Teknik</h3><div class="tekrad">${tk.join('')}</div>${kunTek && (p.tek?.[kunTek] ?? 0) > 0.01 ? tekInfo(living(s), kunTek) : ''}` : ''}<h3>Kunskap</h3>${rows.length ? `<dl class="kv lang">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
-      <h3>Lärdomar</h3>${lv.length ? lardomHtml(p, lv) : '<p class="muted">Inga lärdomar ännu.</p>'}${lt.length ? `<h3>Tro</h3>${lardomHtml(p, lt)}` : ''}`;
+  // rubrikerna (steg 11.1.51): Tekniker, Kunnande, Lärdomar och Föreställningar
+  return `${tk.length ? `<h3>Tekniker</h3><div class="tekrad">${tk.join('')}</div>${kunTek && (p.tek?.[kunTek] ?? 0) > 0.01 ? tekInfo(living(s), kunTek) : ''}` : ''}<h3>Kunnande</h3>${rows.length ? `<dl class="kv lang">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
+      <h3>Lärdomar</h3>${lv.length ? lardomHtml(p, lv) : '<p class="muted">Inga lärdomar ännu.</p>'}${lt.length ? `<h3>Föreställningar</h3>${lardomHtml(p, lt)}` : ''}`;
 }
 // lärdomarna som en symbol per slag (steg 3.3.6) med antalet platser, och en varning när någon av dem inte stämmer.
 // Ett tryck visar platserna, vad hen tror, hur säker hen är, varifrån det kommer och om det är fel
@@ -593,10 +595,12 @@ function lardomHtml(p: Person, ls: Lardom[]) {
   const slag = [...new Set(ls.map(l => l.k))], id = (k: LKind) => `ld-${p.id}-${k}`;
   const sym = slag.map(k => {
     const d = LARDOMAR[k], n = ls.filter(l => l.k === k), fel = n.some(l => describe(s, l).wrong), title = k === 'flod' ? `${cap(d.namn)}: ${describe(s, n[0]).what.toLowerCase()}` : `${cap(d.namn)}: ${n.length} ${k === 'pris' ? (n.length === 1 ? 'pris' : 'priser') : n.length === 1 ? 'plats' : 'platser'}${fel ? ', något stämmer inte' : ''}`; // högvattnet: hur högt det nådde (steg 3.8.7)
-    return `<button type="button" class="tnod liten kan${hjalpOppen(id(k)) ? ' sel' : ''}" data-hjalp="${id(k)}" data-hjalp-grupp="ld-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${tecknet(d.ikon, d.tecken)}<span class="antal">${n.length}</span>${fel ? '<span class="brist">!</span>' : ''}</button>`;
+    return `<button type="button" class="tnod liten kan${hjalpOppen(id(k)) ? ' sel' : ''}" data-hjalp="${id(k)}" data-hjalp-grupp="ld-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${tecknet(d.ikon, d.tecken)}<span class="antal">${n.length}</span>${fel ? '<span class="brist" title="Något hen tror stämmer inte">!</span>' : ''}</button>`;
   }).join('');
   const k = slag.find(x => hjalpOppen(id(x)));
-  const lista = k ? `<ul class="lard">${groups(ls.filter(l => l.k === k)).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, g[0]).place))}</b>${g[0].k === 'flod' || g[0].k === 'pris' ? '' : `<button type="button" class="lnal${ui.nal?.a === g[0].a ? ' sel' : ''}" data-lnal="${g[0].a}" title="Visa platsen på kartan" aria-label="Visa platsen på kartan">{sym_oga}</button>`}${g.map(l => { const d = describe(s, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '';
+  // utropstecknet förklaras när slaget är öppet (steg 11.1.51)
+  const felNot = k && ls.some(l => l.k === k && describe(s, l).wrong) ? '<p class="muted small"><span class="brist">!</span> Något hen tror stämmer inte. Det som är fel står med rött.</p>' : '';
+  const lista = k ? `${felNot}<ul class="lard">${groups(ls.filter(l => l.k === k)).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, g[0]).place))}</b>${g[0].k === 'flod' || g[0].k === 'pris' ? '' : `<button type="button" class="lnal${ui.nal?.a === g[0].a ? ' sel' : ''}" data-lnal="${g[0].a}" title="Visa platsen på kartan" aria-label="Visa platsen på kartan">{sym_oga}</button>`}${g.map(l => { const d = describe(s, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '';
   return `<div class="tekrad">${sym}</div>${lista}`;
 }
 // vad personen brukar ägna sin vakna tid åt, i grupper efter slaget av arbete (SLAG); en handling utan slag står för sig.
