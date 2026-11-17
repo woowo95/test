@@ -1435,8 +1435,12 @@ SCENARIER.gastsida = {
     ui.personDel = 'om'; const ov = person.html();
     const oversikt = /<dt>Ålder<\/dt><dd>\d+ år · (man|kvinna) · född /.test(ov) && /<h3>Familjen<\/h3>/.test(ov) && /<h3>Seder hen håller<\/h3>/.test(ov)
       && /<dt>Gör nu<\/dt>/.test(ov) && /<dt>Humör<\/dt>/.test(ov) && /data-pdel="halsa" role="button"/.test(ov) && !/Gångfart|Viktiga händelser/.test(ov);
+    // Behov (steg 11.1.46): Vätska efter Mättnad, takten med enhet, tårtan med åren och pliktkänslan med det den kommer av
+    ui.personDel = 'behov'; ui.personFall['tid'] = true; SIM.addHabit(by, 'samla', 1, 3); const bh = person.html(); ui.personFall['tid'] = undefined as unknown as boolean;
+    const behovFlik = /Mättnad<\/dt>[\s\S]*Vätska<\/dt>[\s\S]*Vila<\/dt>/.test(bh) && /% per timme/.test(bh) && new RegExp(`De senaste ${SIM.VANA_AR} åren`).test(bh) && /Pliktkänsla/.test(bh) && /Flit [+−]/.test(bh);
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['Behov: Vätska står efter Mättnad, takten skrivs i % per timme, tårtan har De senaste N åren och pliktkänslan står med flit, empati och seden (steg 11.1.46)', behovFlik],
       ['Översikt: ålder med kön och födelse, familjen, sederna hen håller, det hen gör, humöret och hälsan som öppnar Hälsa, utan gångfarten och händelserna (steg 11.1.45)', oversikt],
       ['en flik med en enda del visar flikens namn som rubrik utan delrubrik, och Hälsa får en röd prick när hen svälter (steg 11.1.44)', flik8],
       ['ögat vid namnet följer personen med kartan, för bybon och gästen, och märket Väntar barn öppnar hälsan (steg 11.1.42)', oga && gravid],

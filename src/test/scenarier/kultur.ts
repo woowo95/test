@@ -2746,7 +2746,7 @@ SCENARIER.fritidlista = {
     setByn(b.s);
     ui.stationId = b.sc.id;
     const scen = stationFlik.html().includes(`data-fram="${m.nr}"`);
-    ui.selected = m.p; ui.personDel = 'om';
+    ui.selected = m.p; ui.personDel = 'hand'; // framträdandena står under Händelser (steg 11.1.45)
     const pres = personFlik.html().includes(`data-fram="${m.nr}"`);
     Object.assign(kronikaVal, { del: 'fritid', viktigt: true, ar: undefined, kat: undefined });
     const kron = kronikaFlik.html().includes(`data-fram="${m.nr}"`);
@@ -2754,7 +2754,7 @@ SCENARIER.fritidlista = {
     return [
       [`${m.namn} uppträdde på scenen (${SIM.FRAM_AV[m.k]!.namn})`, true],
       ['scenens ruta visar framträdandet som just slutat, med knappen till redogörelsen', scen],
-      ['det står i Presentationen hos den som uppträdde', pres],
+      ['det står under Händelser hos den som uppträdde', pres],
       ['Krönikans Fritid listar det', kron],
     ];
   },
