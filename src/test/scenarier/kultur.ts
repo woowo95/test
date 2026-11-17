@@ -1119,6 +1119,35 @@ SCENARIER.bubbla = {
     ];
   },
 };
+SCENARIER.pilar = {
+  text: 'Steg 11.1.2: allt som fälls ut vid ett tryck har ▸ eller ▾ först på raden, från ett ställe i koden (fallUt och klassen falla). Varje rad som går att fälla ut i personens flikar, Seder och Styre har pilen, och den byts när raden fälls ut',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
+    for (const x of v) x.upp = [...x.upp ?? [], { k: 'svalt', a: 20, e: {}, v: 1, t: s.now }];
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never };
+    setByn(s); ui.selected = l.id; ui.styreDel = 'styre';
+    const sidor = () => [sederFlik.html(), styreFlik.html(), ...['om', 'egen', 'kropp', 'saker', 'folk', 'kun', 'logg'].map(d => { ui.personDel = d; return personFlik.html(); })].join('');
+    // en rad som fälls ut: ett element med data-hjalp som inte är en knapp (?-knappen, symbolerna) eller med data-pfall, data-kskrift eller data-f
+    const rader = (h: string) => [...h.matchAll(/<(li|dt|h3|div|button)\b[^>]*\b(data-hjalp|data-pfall|data-kskrift|data-f)="[^"]*"[^>]*>/g)].map(m => m[0])
+      .filter(x => !/class="(hjalp|relsym|tnod|rw|binamn)\b/.test(x) && !/class="[^"]*\b(relsym|tnod|rw|binamn)\b/.test(x) && !/^<button[^>]*class="hjalp"/.test(x) && !/^<dd/.test(x));
+    const fore = sidor(), r0 = rader(fore);
+    const utanPil = r0.filter(x => !/class="[^"]*\bfalla\b/.test(x) || !/aria-expanded="(true|false)"/.test(x));
+    // en sed fälls ut: pilen byts
+    const k = SIM.SED_LIST.find(x => SIM.sedOppen(s, x))!;
+    const stangd = new RegExp(`data-hjalp="sed-${k}"[^>]*aria-expanded="false"`).test(fore);
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: `sed-${k}`, hjalpGrupp: 'sed-' } }) } as unknown as HTMLElement);
+    const oppen = new RegExp(`data-hjalp="sed-${k}"[^>]*aria-expanded="true"`).test(sederFlik.html());
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: `sed-${k}`, hjalpGrupp: 'sed-' } }) } as unknown as HTMLElement);
+    const css = readFileSync(new URL('../../template.html', import.meta.url), 'utf8');
+    const regel = /\.falla::before \{ content: '▸'/.test(css) && /\.falla\[aria-expanded="true"\]::before \{ content: '▾'/.test(css);
+    return [
+      [`varje rad som går att fälla ut har pilen (${r0.length} rader${utanPil.length ? `; utan: ${utanPil.slice(0, 2).join(' ')}` : ''})`, r0.length >= 10 && !utanPil.length],
+      ['pilen byts när raden fälls ut', stangd && oppen],
+      ['pilen kommer från ett ställe: regeln för klassen falla i template.html', regel && !/<span class="pil">/.test(fore)],
+    ];
+  },
+};
 SCENARIER.makten = {
   text: 'Steg 8.3.4–8.3.12: Förtjänst – Härkomst och Förlikning – Fejd låses upp och börjar där byn lutar, tronföljden följer sederna, formen har tidens namn, missnöjet växer och bleknar, och en fraktion som väger mer än legitimiteten avsätter ledaren fredligt eller slåss',
   kor: () => {
