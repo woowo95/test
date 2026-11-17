@@ -102,7 +102,7 @@ import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
-import { akel, latrinUpptagen, latrinVanta, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
+import { akel, latrinLedigNara, latrinUpptagen, latrinVanta, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
@@ -205,7 +205,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   // i latrinen, annars blir det en fläck (smuts.ts). Latrinen används av en i taget (steg 10.2.79): står någon annan där väntar
   // man bredvid, tiden räknas och arbetet blir längre, och väntan går in i bristen på latriner
   toa: (s, p, t, dt) => {
-    if (t.prog === undefined) { const l = stationById(s, t.ref); if (l && latrinUpptagen(s, l, p)) { t.until += dt * SEC; latrinVanta(s, dt / 60); return; } }
+    if (t.prog === undefined) { const l = stationById(s, t.ref); if (l && latrinUpptagen(s, l, p)) { t.until += dt * SEC; if (!latrinLedigNara(s, p, l)) latrinVanta(s, dt / 60); return; } } // väntan är brist bara när ingen annan latrin är ledig nära (steg 11.1.71)
     p.toa = 1; if (t.prog === undefined) { t.prog = 0; toaBesok(s, p, t.ref); }
   },
   kol: (s, p, t) => { const e = eldById(s, t.ref); if (e) takeCoal(s, p, 'hämtade', e); },
@@ -416,6 +416,7 @@ export const TAKTER: Takt[] = [
   { namn: 'lönen', sek: 60, fn: (s, dt) => lonRakna(s, dt) }, // timmarna för byn och missnöjet med lönen (lon.ts, steg 10.5.9) // omtanken om byn (projekt.ts, steg 10.5.2)
   { namn: 'stepLarlingar', sek: 3600, fn: s => { stepLarlingar(s); } },
   { namn: 'forbrukTimme', sek: 3600, fn: s => { forbrukTimme(s); } },
+  { namn: 'latrinerVaxerIgen', sek: 14400, fn: s => { latrinerVaxerIgen(s); } }, // en latrin som ingen använt på länge växer igen (smuts.ts, steg 11.1.71)
   { namn: 'smutsMat', sek: 3600, fn: s => { if (s.smutsMat) smutsMatTimme(s); } }, // det smutsiga följer maten som finns kvar (steg 10.11.14)
   { namn: 'arbetsTimme', sek: 3600, fn: s => { arbetsTimme(s); } },
   { namn: 'historikSteg', sek: 3600, fn: s => { historikSteg(s); } },
@@ -787,7 +788,9 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     }
     if (spar.pa && tk.phase !== 'go') sparaUppgift(p, t1 - (left - used) * SEC); // det som plockats syns när biten är klar (steg 6.1.1)
     // vana: tiden räknas mot yrkestaggar
-    addHabit(p, tk.act, Math.exp(-used * SEC / HABIT_FADE), used / HOUR_S);
+    const hf = Math.exp(-used * SEC / HABIT_FADE);
+    addHabit(p, tk.act, hf, used / HOUR_S);
+    if (p.paus || tk.paus) p.paus = (p.paus ?? 0) * hf + (tk.paus ? used / HOUR_S : 0); // pauserna för sig (steg 11.1.72), samma blekning som vanorna
     // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem
     thinkWhileWorking(s, p, tk.act, used);
     arbetaBredvid(s, p, tk, used); // nivå 3 och lärlingen lär sig av den som kan och arbetar nära (steg 4.2.3.2–4.2.3.3)

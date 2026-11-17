@@ -607,6 +607,9 @@ function hide(s: State, host: string, n: number, at?: { x: number; y: number }) 
 // sämsta skicket först. Ger vems det var, hur mycket som togs och skicket på det
 // I hela saker (steg 2.10.7): ägarens påbörjade först, sedan hela saker, och det som blir över av den sista blir påbörjat
 // hos ägaren. Skicket är de hela sakernas
+// vakten för det som svävar (steg 11.1.74): testerna lyssnar på varje uttag ur en stack, med den som tar och stackens ruta
+let uttagLyss: ((s: State, p: Person | undefined, k: string, n: number, x: number, y: number) => void) | undefined;
+export const lyssnaPaUttag = (f: typeof uttagLyss) => { uttagLyss = f; };
 function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fran?: number) {
   const ag: Del = {};
   let got = 0, cw = 0, tagna = 0;
@@ -624,6 +627,7 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
         if (v <= 0) continue;
         if (dold) a.dold! -= v; else { a.n -= v; if (o !== BYN) { a.ag![o] -= v; cleanDel(s, a); } }
         hamtatI(s, a.x, a.y, v); // hur mycket som hämtas på lagerplatsen (steg 9.4.7)
+        uttagLyss?.(s, p, k, v, a.x, a.y); // vakten för det som svävar (steg 11.1.74), bara i testerna
         w -= v; tog += v; cw += v * a.c;
       }
       tagna += tog;

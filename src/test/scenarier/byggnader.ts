@@ -1026,6 +1026,41 @@ SCENARIER.strakprov = {
   },
 };
 
+SCENARIER.vilafart = {
+  text: 'Vilan går fortare (steg 11.1.72): den som sover i en bädd är utvilad på ungefär en åttondel av dygnet (tre timmar, en och en halv månad i spelet), golvet och marken ger mindre i samma förhållande, och vilan räknas i sömn, trötthet och pauser när inget annat lockar',
+  kor: () => {
+    const K = SIM.KROPP, badd = K.restVila + K.restBadd, tim = (1 - K.trottNatt) / badd;
+    const s = createState(3, START); kor(s, 24);
+    const ppl = living(s), pauser = ppl.filter(p => (p.paus ?? 0) > 0).length, trott = ppl.every(p => (p.paus ?? 0) <= SIM.vana(p, 'vila') * (1 + 1e-6) + 1e-9);
+    return [
+      [`i bädden från trött till utvilad på ${tim.toFixed(1)} timmar (en åttondel av dygnet är 3)`, tim >= 2.5 && tim <= 3.5],
+      [`golvet och marken i samma förhållande som bädden (${(K.restGolv / K.restBadd).toFixed(2)} och ${(K.restTak / K.restBadd).toFixed(2)})`, Math.abs(K.restGolv / K.restBadd - 0.6) < 0.01 && Math.abs(K.restTak / K.restBadd - 0.4) < 0.01],
+      [`efter ett dygn har ${pauser} av ${ppl.length} pauser räknade för sig, och aldrig mer än vilan (resten är trötthet)`, pauser > 0 && trott],
+    ];
+  },
+};
+
+SCENARIER.sovplats = {
+  text: 'Sovplatsen när platserna inte räcker (steg 11.1.66): ett rum rymmer bara så många sovande som det har platser, ingen delar plats för att rummet är fullt (bara de minsta barnen sover hos sin mor eller far), de som inte får plats sover ute vid elden, och lagerrutorna är inget golv att sova på',
+  kor: () => {
+    const s = createState(6, START); medHus(s);
+    while (living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.smabarn).length < 12) nyInvanare(s, 'm', 25);
+    SIM.touch(s); s.now += SIM.SEC;
+    const rum = gridOf(s).rooms.filter(r => r.tiles.length && SIM.sovplatser(s, r) > 0), platser = rum.reduce((n, r) => n + SIM.sovplatser(s, r), 0);
+    const stora = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.smabarn), inne = stora.filter(p => SIM.bedTile(s, p) !== undefined);
+    const rutor = inne.map(p => SIM.bedTile(s, p)!), delar = rutor.length - new Set(rutor).size;
+    // en lagerruta i rummet: den räknas inte som golv, och ingen sover på den
+    const r0 = rum[0], fore = SIM.sovplatser(s, r0), i0 = r0.tiles.find(i => !rutor.includes(i)) ?? r0.tiles[0];
+    SIM.zonesOf(s).push({ x: i0 % SIM.W, y: Math.floor(i0 / SIM.W), w: 1, h: 1, namn: 'Lagret i rummet' }); SIM.touch(s); s.now += SIM.SEC;
+    const lagerFri = !living(s).some(p => SIM.bedTile(s, p) === i0) && SIM.sovplatser(s, r0) <= fore;
+    return [
+      [`${stora.length} som inte är småbarn och ${platser} sovplatser: ${inne.length} sover inne, de andra ute vid elden`, stora.length > platser && inne.length <= platser && inne.length > 0],
+      [`ingen delar plats (${delar} delade rutor)`, delar === 0],
+      ['lagerrutan i rummet är inget golv: ingen sover där, och rummet får inte fler platser', lagerFri],
+    ];
+  },
+};
+
 SCENARIER.rumstyper = {
   text: 'Steg 7.2.1: rummen räknas fram och funktionen sitter på rummet, inte på hela huset. Registret RUMSTYPER ger rummet en tagg för varje krav det uppfyller, och taggar som passar dåligt ihop ger ett minus',
   kor: () => {

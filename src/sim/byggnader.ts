@@ -1,5 +1,5 @@
 import { husNytt } from './byggnad';
-import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, familjOf, living, log } from './folk';
 import { planKlar, planRutor, troshusBestamd, troshusGolv, vuxnaTroende } from './troshus';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
 import { heatAt, vedPerDygn } from './eld';
@@ -310,22 +310,22 @@ function boende(s: State): Boende {
   }
   const ovriga = ppl.filter(q => !egna.has(q.id)).sort((a, c) => a.id - c.id);
   // vem som sover var: först var och en i sin egen bädd, sedan de andra i id-ordning på det som är kvar (bäddar utan ägare
-  // först). Bäddar som någon annan äger delas inte; finns färre platser än folk delar man de andra
+  // först). Ett rum rymmer bara så många sovande som det har platser, och ingen delar plats för att rummet är fullt (steg
+  // 11.1.66): de som blir utan i familjens hus sover i byns hus om det finns plats där, och annars ute vid elden, som före det
+  // första huset (bedTile är undefined). Bara de minsta barnen sover hos sin mor eller far
   const lever = new Set(ppl.map(q => q.id)), agd = new Map<number, number>(), plats = new Map<number, number>();
   for (const t of stationerOf(s)) if (t.ag !== undefined && lever.has(t.ag) && isKlar(t) && stationDef(t.k)?.sover) agd.set(t.y * W + t.x, t.ag);
   const fordela = (tiles: number[], folk: Person[]) => {
-    const ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i)), rest: Person[] = [];
+    const ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i)), rest: Person[] = [], utan: Person[] = [];
     for (const i of tiles) { const o = agd.get(i); if (o !== undefined && ids.has(o) && !plats.has(o)) plats.set(o, i); }
-    for (const q of folk) if (!plats.has(q.id)) rest.push(q);
-    rest.forEach((q, n) => { if (fria.length) plats.set(q.id, fria[n % fria.length]); });
-    // ägs alla bäddar av andra sover den som blev utan (ett barn som nyss fötts) hos sin mor eller far, eller delar en plats
-    for (const q of folk) if (!plats.has(q.id) && tiles.length) {
-      const f = [q.mother, q.father].map(id => id === undefined ? undefined : plats.get(id)).find(i => i !== undefined && tiles.includes(i));
-      plats.set(q.id, f ?? tiles[q.id % tiles.length]);
-    }
+    for (const q of folk) if (!plats.has(q.id)) (ageOf(q, s.now) < ALDER.smabarn ? utan : rest).push(q);
+    rest.forEach((q, n) => { if (n < fria.length) plats.set(q.id, fria[n]); });
+    for (const q of utan) { const f = [q.mother, q.father].map(id => id === undefined ? undefined : plats.get(id)).find(i => i !== undefined); if (f !== undefined) plats.set(q.id, f); }
+    return folk.filter(q => !plats.has(q.id) && ageOf(q, s.now) >= ALDER.smabarn);
   };
-  for (const e of new Set(egna.values())) fordela(e.tiles, e.folk);
-  fordela(gemensamt, ovriga);
+  const overblivna: Person[] = [];
+  for (const e of new Set(egna.values())) overblivna.push(...fordela(e.tiles, e.folk));
+  fordela(gemensamt, [...ovriga, ...overblivna]);
   b = { key, egna, gemensamt, ovriga, plats };
   boenden.set(s, b);
   return b;
@@ -337,9 +337,11 @@ export const sovHus = (s: State, p: Person) => boende(s).egna.get(p.id)?.hus;
 // rutan där p sover, också om den är blöt (bedTile tar en torr), eller undefined
 export const sovPlats = (s: State, p: Person) => boende(s).plats.get(p.id);
 // golvrutorna i rummet där man kan sova: där ingen station står, och halmbäddarna (rutan uppe till vänster)
+// Lagerrutorna är inget golv att sova på (steg 11.1.66)
+const lagerRuta = (s: State, i: number) => zoneAt(s, i % W, Math.floor(i / W)) >= 0;
 function sovRutor(s: State, r: Rum) {
   const st = stationRutor(s);
-  return st.at.size ? r.tiles.filter(i => !st.at.has(i) || st.sov.has(i)) : r.tiles;
+  return r.tiles.filter(i => (!st.at.has(i) || st.sov.has(i)) && (st.sov.has(i) || !lagerRuta(s, i)));
 }
 // tre rutor per person (steg 9.2.36): så många golvrutor ett sovrum för n personer byggs med, och så många personer som får
 // plats på ett golv. Golvet räknas utan stationerna, men med halmbäddarna (de är en del av sovplatsen)
@@ -347,7 +349,7 @@ export const sovRutorFor = (n: number) => n * HUS.sovPer + HUS.sovFast;
 export const sovPersoner = (rutor: number) => rutor <= 0 ? 0 : Math.max(1, Math.floor((rutor - HUS.sovFast) / HUS.sovPer));
 function golvRutor(s: State, r: Rum) {
   const st = stationRutor(s);
-  return st.at.size ? r.tiles.filter(i => { const t = st.at.get(i); return !t || !!stationDef(t.k)?.sover; }).length : r.tiles.length;
+  return r.tiles.filter(i => { const t = st.at.get(i); return t ? !!stationDef(t.k)?.sover : !lagerRuta(s, i); }).length;
 }
 // varje bädd är en sovplats, också om rummet egentligen är för litet för så många (steg 9.2.36)
 const rumPlatser = (s: State, r: Rum) => { const st = stationRutor(s).sov; return Math.max(sovPersoner(golvRutor(s, r)), r.tiles.filter(i => st.has(i)).length); };
@@ -398,7 +400,8 @@ export function bedTile(s: State, p: Person) {
   const iso = sjukBadd(s, p); if (iso !== undefined) return iso; // den sjuke i ett tomt hus när byn kan Smittan (steg 9.5.5)
   const b = boende(s), t = b.plats.get(p.id);
   if (t === undefined || !blot(s, t)) return t;
-  return (b.egna.get(p.id)?.tiles ?? b.gemensamt).find(i => !blot(s, i)); // ingen sover på en blöt ruta: en annan, eller ingen (steg 3.8.7, flod.ts)
+  const tagna = new Set(b.plats.values()); // en annan ledig ruta, inte någon annans plats (steg 11.1.66)
+  return (b.egna.get(p.id)?.tiles ?? b.gemensamt).find(i => !blot(s, i) && !tagna.has(i)); // ingen sover på en blöt ruta: en annan, eller ingen (steg 3.8.7, flod.ts)
 }
 // rutan är blöt: vattnet står där eller stod där nyss, eller golvet är lera (steg 3.8.7, flod.ts)
 const blot = (s: State, i: number) => flodBlot(s, i) || gridOf(s).at.get(i)?.m === 'lera';
