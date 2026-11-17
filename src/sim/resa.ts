@@ -13,7 +13,7 @@ import { TORST } from './torst';
 import { SAKER } from './saker';
 import { alive } from './folk';
 import { BYN } from './egendom';
-import { amountOf, use } from './lager';
+import { amountOf, laggIn, use } from './lager';
 import { FOOD } from './saker';
 import { bynsMitt, utanforByn } from './omrade';
 import { blocked, freeNear } from './byggnad';
@@ -48,6 +48,7 @@ export const RESA = balans('resa', {
   foderPerDygn: 2, // hö per djur och dygn där det inte går att beta
   hander: 20, rygg: 20, // vikt en resenär bär i händerna och i en ryggsäck
   packPerStyrka: 20, // ett packdjurs last för varje steg av dess styrka
+  andelVarde: 40, // en andel per så mycket i värde för varje insats (Andelarna i tal)
   packTim: 6, // timmar en resenär väntar vid samlingsplatsen innan hen väljer om (sällskapet ställs in i steg 11.5.11)
   // behoven på vägen (steg 11.5.6): orken per timme i gång och i nattens rast, och tappet en natt utan tak
   orkGang: 0.06, // så mycket ork per timme i gång på dagen (en hel dag tar 0,72)
@@ -98,6 +99,7 @@ export interface Sallskap {
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
   behov?: ResBehov; // mättnaden, vätskan och orken på vägen, för hela gruppen (steg 11.5.6)
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
+  delning?: Andelar; // hur det delades hemma (steg 11.5.9)
 }
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
 export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number }
@@ -402,6 +404,7 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   const in_ = sl.ut?.kant ?? bynsMitt(s);
   for (const p of resenarer(s, sl)) if (ute(p)) kommHem(s, p, in_.x, in_.y);
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
+  delaHemma(s, sl);
   sl.skede = 'hemma'; sl.t = t;
   count(s, 'resa hemma');
 }
@@ -460,4 +463,70 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   }
   if (k) k.inst = Math.min(100, k.inst + RESA.besokInst);
   sl.dagbok.push([t, `Mötte folket i ${r.namn}.`]); count(s, 'resa besök');
+}
+
+// ---------- hemkomsten och andelarna (steg 11.5.9, Andelarna i tal) ----------
+// Hemma går det som finns kvar av insatserna tillbaka till sina ägare (av en sak som flera satsat delat efter hur mycket var och
+// en satsade, i hela saker), och ett djur som lever går tillbaka; ett djur som dött ersätts inte. Varje delägare får en fordran:
+// värdet av det hen satsade som gått åt, plus hens del av vinsten (bytets värde minus det som gått åt). Andelarna är en per
+// resenär och en per RESA.andelVarde i värde för varje insats. Bytet (det som är kvar i packningen) delas i hela saker, den mest
+// värda först till den som har störst fordran kvar.
+export type Agare = number | 'by';
+export interface Andelar { tillbaka: [Agare, string, number][]; byte: [Agare, string, number][]; gatt: number; varde: number; vinst: number; fordran: [Agare, number][]; andelar: [Agare, number][] }
+export function delaAndelar(insatser: Insats[], resenarer: number[], kvar: Record<string, number>, djurLever: (id: number) => boolean, varde: (k: string) => number = grundvarde): Andelar {
+  const pack: Record<string, number> = {};
+  for (const k in kvar) { const n = Math.floor(kvar[k]! + 1e-9); if (n > 0) pack[k] = n; }
+  const tillbaka: [Agare, string, number][] = [], gattPer = new Map<Agare, number>(), andel = new Map<Agare, number>();
+  const lagg = <K>(m: Map<K, number>, k: K, v: number) => m.set(k, (m.get(k) ?? 0) + v);
+  for (const id of resenarer) lagg(andel, id as Agare, 1);
+  for (const x of insatser) { const a = Math.floor(x.varde / RESA.andelVarde); if (a > 0) lagg(andel, x.agare, a); }
+  // djuren: det levande går tillbaka, det döda ersätts inte
+  for (const x of insatser) if (x.djur !== undefined && djurLever(x.djur)) tillbaka.push([x.agare, x.sak, 1]);
+  // sakerna: det som är kvar av varje sak delas efter insatserna, i hela saker (störst rest först)
+  const saker = [...new Set(insatser.filter(x => x.djur === undefined).map(x => x.sak))].sort();
+  for (const sak of saker) {
+    const ins = insatser.filter(x => x.djur === undefined && x.sak === sak), N = ins.reduce((a, x) => a + x.n, 0), har = Math.min(pack[sak] ?? 0, N);
+    const del = ins.map(x => ({ x, n: Math.floor(har * x.n / N), rest: har * x.n / N - Math.floor(har * x.n / N) }));
+    let over = har - del.reduce((a, d) => a + d.n, 0);
+    for (const d of [...del].sort((a, b) => b.rest - a.rest)) { if (over <= 0) break; d.n++; over--; }
+    for (const d of del) {
+      if (d.n > 0) tillbaka.push([d.x.agare, sak, d.n]);
+      lagg(gattPer, d.x.agare, (d.x.n - d.n) * d.x.varde / d.x.n);
+    }
+    pack[sak] = (pack[sak] ?? 0) - har; if (pack[sak]! <= 0) delete pack[sak];
+  }
+  const gatt = [...gattPer.values()].reduce((a, v) => a + v, 0);
+  const vardeByte = Object.entries(pack).reduce((a, [k, n]) => a + n * varde(k), 0), vinst = vardeByte - gatt;
+  const summa = [...andel.values()].reduce((a, v) => a + v, 0);
+  const fordran = new Map<Agare, number>();
+  for (const a of new Set<Agare>([...gattPer.keys(), ...andel.keys()])) fordran.set(a, (gattPer.get(a) ?? 0) + (summa ? vinst * (andel.get(a) ?? 0) / summa : 0));
+  // bytet: den mest värda saken först till den som har störst fordran kvar
+  const kvarF = new Map(fordran), byte = new Map<string, number>();
+  const ordning = [...fordran.keys()];
+  for (const k of Object.keys(pack).sort((a, b) => varde(b) - varde(a) || (a < b ? -1 : 1))) {
+    for (let n = 0; n < pack[k]!; n++) {
+      let bast = ordning[0]!;
+      for (const a of ordning) if ((kvarF.get(a) ?? 0) > (kvarF.get(bast) ?? 0) + 1e-9) bast = a;
+      if (bast === undefined) break;
+      kvarF.set(bast, (kvarF.get(bast) ?? 0) - varde(k));
+      const nyckel = JSON.stringify([bast, k]); byte.set(nyckel, (byte.get(nyckel) ?? 0) + 1);
+    }
+  }
+  const r2 = (x: number) => Math.round(x * 100) / 100;
+  return {
+    tillbaka, byte: [...byte].map(([k, n]) => { const [a, sak] = JSON.parse(k) as [Agare, string]; return [a, sak, n] as [Agare, string, number]; }),
+    gatt: r2(gatt), varde: r2(vardeByte), vinst: r2(vinst), fordran: [...fordran].map(([a, v]) => [a, r2(v)] as [Agare, number]), andelar: [...andel],
+  };
+}
+// hemma: insatserna tillbaka och bytet delat, i förrådet hos ägarna (byns det som är byns, och den döda ägarens går till byn)
+function delaHemma(s: State, sl: Sallskap) {
+  const lever = (id: number) => (s.tamdjur ?? []).some(d => d.id === id && d.dog === undefined);
+  const a = delaAndelar(sl.insatser, sl.medl, sl.pack, lever);
+  const agareI = (x: Agare) => { if (x === 'by') return undefined; const p = s.people.find(q => q.id === x); return p && alive(p) ? x : undefined; };
+  const djurArt = new Set(sl.insatser.filter(x => x.djur !== undefined).map(x => x.sak)); // djuret går själv hem (hemkomst)
+  for (const [ag, sak, n] of a.tillbaka) if (!djurArt.has(sak)) laggIn(s, sak, n, agareI(ag));
+  for (const [ag, sak, n] of a.byte) laggIn(s, sak, n, agareI(ag));
+  sl.pack = {}; sl.delning = a;
+  count(s, 'resa bytets värde', Math.round(a.varde));
+  sl.dagbok.push([s.now, `Hemma: bytet var värt ${Math.round(a.varde)}, det som gått åt ${Math.round(a.gatt)}.`]);
 }

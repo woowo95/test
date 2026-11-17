@@ -659,6 +659,8 @@ export function addTo(s: State, k: string, n: number) { if (n > 0) place(s, k, n
 export function put(s: State, k: string, n: number, ag?: Del, c = 1) { place(s, k, n, c, ag && shareOf(ag, n)); }
 // p skaffade n av slaget k och lade det rakt i förrådet: det är hens (egendom.ts), utom det hen ger byn (delning.ts)
 // I hela saker (steg 2.10.7): arbetet räknas hos p tills det blivit en hel sak (arbete)
+// n hela saker av slaget k läggs i förrådet, ägda av personen agare (eller byns), till exempel bytet från en resa (steg 11.5.9)
+export function laggIn(s: State, k: string, n: number, agare?: number) { n = Math.floor(n + 1e-9); if (n > 0) place(s, k, n, 1, agare === undefined ? undefined : { [agare]: n }); }
 export function gain(s: State, p: Person, k: string, n: number) { const w = n > 0 ? arbete(p, k, n) : 0; if (w > 0) place(s, k, w, 1, shareOf(undefined, w, p.id, s, k)); }
 // p tar n av slaget k ur förrådet; common = till byns eld eller hus, fran = av den personens först (stöld). Ger vems det var
 export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number) { return takeOwn(s, k, n, p, common, fran).ag; }

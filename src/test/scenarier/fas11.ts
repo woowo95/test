@@ -1763,3 +1763,33 @@ SCENARIER.radbesok = {
     ];
   },
 };
+
+SCENARIER.andelar = {
+  text: 'Hemkomsten och andelarna (steg 11.5.9, delaAndelar i resa.ts): insatserna går tillbaka till sina ägare, och bytet delas i hela saker efter fordran. Exemplet i avsnittet: tre resenärer tar med en annans häst (80), 24 bröd ur byns förråd och den enes 20 skinn (60); 18 bröd äts och skinnen blir 12 salt och 3 knivar (210)',
+  kor: () => {
+    const V: Record<string, number> = { brod: 1, skinn: 3, hast: 80, salt: 10, kniv: 30 }, varde = (k: string) => V[k] ?? 0;
+    const A = 1, B = 2, C = 3, D = 4, HAST = 99;
+    const ins: SIM.Insats[] = [{ agare: D, sak: 'hast', n: 1, varde: 80, djur: HAST }, { agare: 'by', sak: 'brod', n: 24, varde: 24 }, { agare: A, sak: 'skinn', n: 20, varde: 60 }];
+    const a = SIM.delaAndelar(ins, [A, B, C], { brod: 6, salt: 12, kniv: 3 }, id => id === HAST, varde);
+    const f = new Map(a.fordran), fick = (x: SIM.Agare) => a.byte.filter(b => b[0] === x).reduce((t, b) => t + b[2] * varde(b[1]), 0);
+    const tillbaka = (x: SIM.Agare, sak: string) => a.tillbaka.find(t => t[0] === x && t[1] === sak)?.[2] ?? 0;
+    const delat = a.byte.reduce((t, b) => t + b[2] * varde(b[1]), 0);
+    // i en by: hemkomsten lägger insatserna och bytet i förrådet hos ägarna
+    const s = SIM.cloneState(testBy(3)), [p, q] = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= 18), vl = s.varld!;
+    const sl = SIM.nyttSallskap(s, p!, SIM.byPlats(vl, vl.huvud!)!.grannar![0]!.nr, 'handel')!; SIM.foljMed(vl, sl, q!);
+    sl.insatser = [{ agare: 'by', sak: 'brod', n: 10, varde: 10 }]; sl.pack = { brod: 4, silver: 30 };
+    const silver0 = SIM.amountOf(s, 'silver'), brod0 = SIM.amountOf(s, 'brod');
+    SIM.hemkomst(s, sl, s.now);
+    const fickSilver = Math.round(SIM.amountOf(s, 'silver') - silver0);
+    return [
+      [`hästen och 6 bröd går tillbaka (${tillbaka(D, 'hast')} häst, ${tillbaka('by', 'brod')} bröd)`, tillbaka(D, 'hast') === 1 && tillbaka('by', 'brod') === 6],
+      [`det som gått åt är värt 78 och vinsten 132 (${a.gatt}, ${a.vinst})`, a.gatt === 78 && a.vinst === 132],
+      [`andelarna: en per resenär och en per 40 i värde (A ${new Map(a.andelar).get(A)}, D ${new Map(a.andelar).get(D)})`, new Map(a.andelar).get(A) === 2 && new Map(a.andelar).get(D) === 2 && new Map(a.andelar).get(B) === 1 && !new Map(a.andelar).get('by')],
+      [`fordran: A 104, B och C 22, D 44, byn 18 (${a.fordran.map(([x, v]) => `${x} ${v}`).join(', ')})`, f.get(A) === 104 && f.get(B) === 22 && f.get(C) === 22 && f.get(D) === 44 && f.get('by') === 18],
+      [`bytet delas i hela knivar och hela salt, hela värdet (${delat} av 210)`, delat === 210 && a.byte.every(b => Number.isInteger(b[2]) && (b[1] === 'kniv' || b[1] === 'salt'))],
+      [`den med störst fordran får de mest värda först (A fick ${fick(A)}: ${a.byte.filter(b => b[0] === A).map(b => `${b[2]} ${b[1]}`).join(', ')})`, a.byte.some(b => b[0] === A && b[1] === 'kniv')],
+      [`ingen får mycket mer eller mindre än sin fordran (${[A, B, C, D, 'by' as const].map(x => Math.round(fick(x) - f.get(x)!)).join(', ')})`, [A, B, C, D, 'by' as const].every(x => Math.abs(fick(x) - f.get(x)!) <= 30)],
+      [`hemma läggs bytet och insatserna i förrådet (${fickSilver} silver, bröd ${Math.round(SIM.amountOf(s, 'brod') - brod0)})`, fickSilver === 30 && Math.round(SIM.amountOf(s, 'brod') - brod0) === 4 && sl.skede === 'hemma'],
+    ];
+  },
+};
