@@ -2496,3 +2496,53 @@ SCENARIER.handlarby = {
     ];
   },
 };
+
+SCENARIER.handlarlast = {
+  lang: true,
+  text: 'Handlarens varor ur raden (steg 11.6.9): lasten tas bland det byns tekniker kan göra och högst det byn har över, dras ur raden när hen går hemifrån och är det hen har i huvudbyn; det hen har kvar och köpt går hem till raden',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    s.handlare = undefined; delete s.handlarVantar; vl.farder = [];
+    const huvud = vl.rader!.find(x => x.nr === vl.huvud)!;
+    let r: SIM.VarldRad | undefined, c: SIM.ByCtx | undefined;
+    for (const x of vl.rader!) {
+      if (!SIM.lever(vl, x) || !x.syn || x.nr === vl.huvud) continue;
+      x.tal.folk = Math.max(x.tal.folk, 20); SIM.radVaror(x);
+      for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') x.varor![g] = 3 * Math.round(SIM.radVill(x, g, SIM.rikMal(x)));
+      x.tal.mat = 3 * Math.round(SIM.radVill(x, 'mat', SIM.rikMal(x)));
+      x.tal.silver = 100; x.tal.rikedom = SIM.radRikedomUr(x);
+      SIM.mots(vl, x.nr, huvud.nr);
+      const cx = SIM.byCtx(s, vl, x, huvud);
+      if (SIM.fardAffar(cx)) { r = x; c = cx; break; }
+    }
+    if (!r || !c) return [['en by kan skicka en handlare till huvudbyn', false]];
+    const har0 = Object.fromEntries(SIM.VARUGRUPP_IDS.map(g => [g, SIM.radHar(r!, g)])), sv0 = r.tal.silver;
+    SIM.BYHANDLINGAR.handel.gor(c);
+    const f = vl.farder!.find(x => x.fran === r!.nr)!, last = f.last!;
+    const kan = !!last && last.varor.length > 0 && last.varor.every(w => { const t = SIM.SAKER[w.k]?.skaffa?.tek; return !t || r!.tek.includes(t); });
+    const dragit = r.tal.silver === sv0 - last.silver && SIM.VARUGRUPP_IDS.some(g => SIM.radHar(r!, g) < har0[g]!);
+    const hela = last.varor.every(w => Number.isInteger(w.n) && w.n >= 1) && Number.isInteger(last.silver), lastText = last?.varor.map(w => `${w.n} ${w.k}`).join(', ');
+    // en by utan överskott ger ingen last
+    const fattig = SIM.packaRad(SIM.cloneState(testBy(10)).varld!.rader!.find(x => x.nr === r!.nr)!, () => 0.5, () => 0).varor.length === 0;
+    // hen kommer fram med lasten
+    SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
+    korTills(s, () => !!s.handlare, 3 * 3600);
+    const h = s.handlare!;
+    const samma = !!h && h.silver === last.silver && h.varor.map(w => w.k).join() === last.varor.map(w => w.k).join();
+    // hen köper fem ved och går hem
+    h.varor.push({ k: 'ved', n: 5 });
+    korTills(s, () => !s.handlare, 3 * 86400);
+    const hem = vl.farder!.find(x => x.id === f.id)!;
+    const ved0 = SIM.radHar(r, SIM.gruppAv('ved')!), s1 = r.tal.silver, bar = hem?.silver ?? -1;
+    if (hem) SIM.KOHANDELSER.fardHem(s, vl, vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id)!);
+    const hemma = !!hem && r.tal.silver === s1 + bar && SIM.radHar(r, SIM.gruppAv('ved')!) > ved0;
+    return [
+      [`lasten är sådant byns tekniker kan göra (${lastText})`, kan],
+      [`lasten och ${last?.silver} silver dras ur raden när hen går`, dragit],
+      ['lasten är hela saker', hela],
+      ['en by utan något över ger ingen last', fattig],
+      ['hen har lasten i huvudbyn', samma],
+      [`det hen har kvar och köpt går hem till raden (${bar} silver)`, hemma],
+    ];
+  },
+};

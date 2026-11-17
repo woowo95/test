@@ -255,6 +255,11 @@ export function packa(s: State, kg: number, sort: string): HVara[] {
   return ut;
 }
 
+// lasten ur byns rad (steg 11.6.9): packas i byhandling.ts (packaRad), och det hen har kvar och har köpt går hem till raden
+export interface HandlarLast { varor: HVara[]; silver: number; sort: string }
+// det handlaren bär hem till raden: varorna och silvret (fardHem i byhandling.ts)
+export const handlarHemLast = (h: Handlare): HandlarLast => ({ varor: h.varor.map(w => ({ ...w })), silver: Math.floor(h.silver), sort: h.sort ?? 'vandrande' });
+
 // platsen för handeln (steg 4.5.7.3): där handlaren står, med hens filt framför sig, bybons filt mitt emot och den som handlar
 // bakom den (BYTE.bakom, FILT_MOT). Allt det ska ligga på fri mark: ingen byggnad, station, möbel, lagerplats, hög, fält, stock
 // eller annan filt (ledig i stationer.ts), och ingen husvägg alldeles intill, så att stigen till en dörr är fri. Platsen ligger
@@ -291,11 +296,12 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   const e = eldPlats(s), m = getMap(s.seed), mal = filtPlats(s);
   const k = () => kanterna(e.x, e.y).filter(p => m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] !== T.Vatten);
   const ut = kantMot(s, kh.klan.id) ?? (k().length ? k()[Math.floor(rnd(s, 'handel') * Math.min(2, k().length))] : { x: 0.5, y: e.y + 0.5 });
-  const sex = kh.person.sex, sort = sortFor(s), utr = HANDLARSORTER[sort].utr;
+  const fard = rad === undefined ? undefined : s.varld?.farder?.find(x => x.handlare && x.fran === rad && x.t2 === undefined), last = fard?.last; // lasten byn gav hen (steg 11.6.9)
+  const sex = kh.person.sex, sort = last?.sort ?? sortFor(s), utr = HANDLARSORTER[sort].utr;
   const nr = s.handlarNr = (s.handlarNr ?? 0) + 1;
   const h: Handlare = {
     id: -nr, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / HANDEL.fart * SEC,
-    fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: heltMellan(s, HANDLARSORTER[sort].silver),
+    fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: last ? last.silver : heltMellan(s, HANDLARSORTER[sort].silver),
   };
   h.sort = sort;
   const nyckel = gastNyckel(kh.klan.id, kh.person.namn), fodd = kh.person.fodd ??= foddNar(s.seed, nyckel, 'handlare', s.now); // samma person varje gång, drar ingen slump
@@ -304,7 +310,8 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   gastTillbaka(s, s.people[s.people.length - 1]); // samma person som förra gången, om hen varit här (steg 9.2.114)
   if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); trampaFard(s, kh.klan.rad, s.varld.huvud, sallskapTyngd(1)); } // handlarens by har besökt huvudbyn (steg 11.4.10), och hen trampade vägen (steg 11.5.1)
   gastensPlatser(s, s.people[s.people.length - 1]); // det hens by känner (steg 11.4.11)
-  h.varor = packa(s, rymmer(h), sort);
+  h.varor = last ? last.varor : packa(s, rymmer(h), sort);
+  if (fard) delete fard.last; // lasten bärs nu av hen
   const smitta = barSmitta(s); if (smitta) hp(s, h).smitta = smitta; // ibland bär hen en sjukdom utifrån (steg 9.5.5)
   s.handlare = h;
   count(s, 'handlare');
@@ -315,8 +322,8 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
 // handlaren från byn rad har kommit fram till kartans kant (byhandling.ts, steg 11.6.8) och går in när det är fritt
 export function handlarFram(s: State, rad: number) { (s.handlarVantar ??= []).push(rad); }
 // handlaren har gått från byn: färden hem på världskartan börjar (krok, så att handel.ts inte laddar byhandling.ts)
-export const handlarKrok = { hem: (_s: State, _rad: number) => {}, borta: (_s: State, _rad: number) => {} }; // borta: hen dog i byn
-const handlarHem = (s: State, rad: number) => handlarKrok.hem(s, rad);
+export const handlarKrok = { hem: (_s: State, _rad: number, _last?: HandlarLast) => {}, borta: (_s: State, _rad: number) => {} }; // borta: hen dog i byn; last: det hen bär hem
+const handlarHem = (s: State, rad: number, h?: Handlare) => handlarKrok.hem(s, rad, h ? handlarHemLast(h) : undefined);
 const handlarBorta = (s: State, h: Handlare) => { const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined; if (rad !== undefined) handlarKrok.borta(s, rad); };
 
 // testläget (steg 4.5.4.4): en handlare skickas till byn nu, från vilken grannklan som helst, och en rad i Händelser säger
@@ -428,7 +435,7 @@ export function handelSteg(s: State, dtSec: number) {
     const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined;
     gastGar(s, h.id, true); // hen har lämnat kartan (steg 9.2.111) och klanen sparar hen till nästa gång (steg 9.2.114)
     s.handlare = undefined;
-    if (rad !== undefined) handlarHem(s, rad); // och går hem till sin by på världskartan (steg 11.6.8)
+    if (rad !== undefined) handlarHem(s, rad, h); // och går hem till sin by på världskartan med det hen har kvar och köpt (steg 11.6.8 och 11.6.9)
   }
 }
 
