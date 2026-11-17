@@ -217,3 +217,31 @@ SCENARIER.landmarken = {
     ];
   },
 };
+
+SCENARIER.radtal = {
+  text: 'Raden i tal (steg 11.2.9): RADTAL läser huvudbyns rad ur byn, en gång i timmen, i hela tal som stämmer med byn',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), t0 = s.now;
+    SIM.medVarld(s);
+    kor(s, 3);
+    const vl = s.varld!, r = vl.rader?.find(x => x.nr === vl.huvud);
+    const skrevs = !!r && r.t > t0 && r.t <= s.now && s.now - r.t <= 3600 * 1000;
+    SIM.skrivHuvudRad(s);
+    const tal = r!.tal, hela = SIM.RADTAL_IDS.every(k => Number.isInteger(tal[k]) && tal[k] >= 0);
+    const folk = s.people.filter(p => p.died === undefined && p.left === undefined && !p.gast).length;
+    const silver = SIM.stacksOf(s).filter(a => a.k === 'silver' && SIM.isStored(s, a.x, a.y)).reduce((a, b) => a + b.n, 0);
+    const vuxna = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran).length;
+    const bara = SIM.cloneState(testBy(10)); // en by utan värld får ingen rad
+    kor(bara, 2);
+    return [
+      ['huvudbyns rad skrivs av sig själv en gång i timmen', skrevs && vl.rader!.length === 1],
+      [`talen är hela (${SIM.RADTAL_IDS.map(k => `${k} ${tal[k]}`).join(', ')})`, hela],
+      ['folket är byborna', tal.folk === folk && folk > 0],
+      ['maten är portionerna i byn', tal.mat === Math.floor(SIM.foodOf(s)) && tal.mat > 0],
+      ['rikedomen är byns rikedom', tal.rikedom === Math.round(SIM.rikedom(s)) && tal.rikedom > 0],
+      ['silvret är silvret i byns förråd', tal.silver === Math.floor(silver)],
+      ['styrkan är de vuxna som kan slåss', tal.styrka > 0 && tal.styrka <= vuxna],
+      ['en by utan värld får ingen rad', !bara.varld],
+    ];
+  },
+};
