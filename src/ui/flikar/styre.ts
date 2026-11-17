@@ -1,6 +1,6 @@
 import { BUDGET, sederTarget, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { bar, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
+import { bar, delRad, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import { lastSed, sedFormat, sedKlick, sedLista, sedVag } from './seder';
 import type { Flik } from '../panel';
@@ -41,7 +41,7 @@ function styretHtml() {
 interface Del { id: string; tecken: string; namn: string; html(): string }
 const DELAR: Del[] = [
   { id: 'styre', tecken: '👑', namn: 'Styret', html: styretHtml },
-  { id: 'pabud', tecken: '📜', namn: 'Lagar', html: () => `${lagarDel() || '<p class="muted">Byn har inga lagar än.</p>'}${budgetDelar()}<h3>Påbud</h3>${pabudDel()}` }, // lagarna och påbuden (steg 10.2.58)
+  { id: 'pabud', tecken: '📜', namn: 'Lagar och påbud', html: () => `${lagarDel() || '<p class="muted">Byn har inga lagar än.</p>'}${budgetDelar()}<h3>Påbud</h3>${pabudDel()}` }, // lagarna och påbuden (steg 10.2.58)
 ];
 const oppen = () => DELAR.find(d => d.id === ui.styreDel) ?? DELAR[0];
 export const styre: Flik = {
@@ -50,8 +50,7 @@ export const styre: Flik = {
   krav: 'öppnas när byn har haft en ledare',
   html() {
     const del = oppen();
-    return `<div class="pdelar" role="tablist">${DELAR.map(d => `<button type="button" role="tab" data-sdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>
-      <h3>${del.namn}</h3>${del.html()}`;
+    return `${delRad('data-sdel', DELAR, del.id)}${del.html()}`;
   },
   klick(el) {
     const b = el.closest<HTMLButtonElement>('[data-sdel]');

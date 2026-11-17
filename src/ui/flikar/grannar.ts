@@ -1,6 +1,6 @@
 import { hp, KLAN, KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
-import { esc, hjalpKnapp, hjalpText } from '../hjalp';
+import { delRad, esc, hjalpKnapp, hjalpText } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -73,8 +73,8 @@ export const grannar: Flik = {
   syns: () => !!s.klaner?.length || !!s.handlarNr || !!s.rovarNr || !!s.handlare || !!s.rovare,
   html() {
     const del = oppen();
-    return `<div class="pdelar" role="tablist">${DELAR.map(d => `<button type="button" role="tab" data-odel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>
-      <div class="phead"><div><h3>${del.namn}</h3></div>${hjalpKnapp('omvarlden', 'Vad är klanernas hållning?')}</div>${hjalpText('omvarlden', hallText())}${del.html()}`;
+    return `${delRad('data-odel', DELAR, del.id)}
+      <div class="phead"><div></div>${hjalpKnapp('omvarlden', 'Vad är klanernas hållning?')}</div>${hjalpText('omvarlden', hallText())}${del.html()}`;
   },
   klick(el) {
     const b = el.closest<HTMLButtonElement>('[data-odel]');
