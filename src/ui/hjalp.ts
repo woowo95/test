@@ -48,6 +48,9 @@ export const condBar = (c: number) => bar(c, c < LAG.skick ? 'low' : '');
 const oppna = new Set<string>();
 export const hjalpKnapp = (id: string, title: string) => `<button type="button" class="hjalp" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">?</button>`;
 export const hjalpText = (id: string, html: string) => oppna.has(id) ? html : '';
+// en rad som fälls ut vid ett tryck (steg 11.1.2): attributen, och klassen falla på samma element ger ▸ eller ▾ först på raden
+// (en regel i template.html, efter aria-expanded), så att pilen ser likadan ut i alla flikar och rutor
+export const fallUt = (id: string, grupp?: string) => `data-hjalp="${id}"${grupp ? ` data-hjalp-grupp="${grupp}"` : ''} aria-expanded="${oppna.has(id)}" tabindex="0" role="button"`;
 export const hjalpOppen = (id: string) => oppna.has(id);
 // data-hjalp-grupp: bara en i gruppen är öppen åt gången (de vars id börjar likadant, t.ex. kroppens delar)
 export function hjalpKlick(el: HTMLElement) {

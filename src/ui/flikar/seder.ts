@@ -1,6 +1,6 @@
 import { MAKT_SEDER, SEDER, SED_LIST, type Sed, ageOf, byId, roster, sedDrag, sedOppen, upplevelseKort, yrkeNamn } from '../../sim';
 import { tecknet } from '../../ikoner';
-import { esc, hjalpKnapp, hjalpOppen, hjalpText, pLink } from '../hjalp';
+import { esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
 import { vagSvg } from '../framsteg';
@@ -69,7 +69,7 @@ export function sedFormat(k: Sed) {
 // en sed går att trycka på (steg 9.2.66): ett tryck öppnar en lista under vågen med vad seden gör och en rad per upplevelse som
 // drar den: symbolen, namnet, åt vilket håll och hur mycket den drar, och hur många och vilka som minns den. Ett tryck till stänger.
 // Samma i Seder och i Styres vågskålar; en sed i taget är öppen (gruppen sed-)
-export const sedKlick = (k: Sed) => `class="klick" data-hjalp="sed-${k}" data-hjalp-grupp="sed-" title="${esc(SEDER[k].effect)}" tabindex="0" role="button" aria-expanded="${hjalpOppen(`sed-${k}`)}"`;
+export const sedKlick = (k: Sed) => `class="klick falla" ${fallUt(`sed-${k}`, 'sed-')} title="${esc(SEDER[k].effect)}"`;
 export function sedLista(k: Sed) {
   if (!hjalpOppen(`sed-${k}`)) return '';
   const rader = sedDrag(s).filter(r => Math.abs(r.d[k]) >= 0.005).sort((a, b) => Math.abs(b.d[k]) - Math.abs(a.d[k]));

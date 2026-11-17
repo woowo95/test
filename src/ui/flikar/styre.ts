@@ -1,6 +1,6 @@
 import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
+import { bar, esc, fallUt, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import { sedFormat, sedKlick, sedLista, sedVag } from './seder';
 import type { Flik } from '../panel';
@@ -116,7 +116,7 @@ export function omrostningar(lista = s.styre?.roster, rubrik = 'Omröstningar') 
   if (!lista?.length) return '';
   return `<h3>${esc(rubrik)}</h3><ol class="logg">${lista.slice().reverse().map(o => {
     const id = `rost-${o.t}-${o.f}-${o.fram}`, val = o.f === 'ledare';
-    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rost-" title="Tryck för alla röster" tabindex="0" role="button"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? 'ja' : 'nej'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, rostMer(o))}`;
+    return `<li class="klick falla" ${fallUt(id, 'rost-')} title="Tryck för alla röster"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? 'ja' : 'nej'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, rostMer(o))}`;
   }).join('')}</ol>`;
 }
 // en omröstning utfälld (steg 9.2.65): en stapel som delas i ja och nej efter vikten, och under den en rad per röst med en symbol
@@ -129,7 +129,7 @@ function rostMer(o: Omrostning) {
   const rader = o.roster.slice().sort((a, b) => (val ? 0 : Number(b.ja) - Number(a.ja)) || b.w - a.w).map(r => {
     const id = `rr-${o.t}-${r.id}`, sym = val ? '' : `<span title="${r.ja ? 'Ja' : 'Nej'}">${iconImg(r.ja ? 'r_ja' : 'r_nej', 12)}</span>`;
     const mark = (r.id === o.fram ? ` <span title="Lade fram frågan">${iconImg('r_fram', 12)}</span>` : '') + (l?.id === r.id ? ` <span title="Byns ledare">${iconImg('ledarskap', 12)}</span>` : '');
-    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="rr-" title="${esc(r.why)}" tabindex="0" role="button">${sym}<span class="rnamn">${esc(r.namn)}${mark}</span><span class="rostw" title="Väger ${Math.round(r.w * 100)} %">${bar(r.w / max)}</span></li>${hjalpText(id, `<li class="small muted rvarfor">${esc(r.why)}</li>`)}`;
+    return `<li class="klick falla" ${fallUt(id, 'rr-')} title="${esc(r.why)}">${sym}<span class="rnamn">${esc(r.namn)}${mark}</span><span class="rostw" title="Väger ${Math.round(r.w * 100)} %">${bar(r.w / max)}</span></li>${hjalpText(id, `<li class="small muted rvarfor">${esc(r.why)}</li>`)}`;
   }).join('');
   return `<li class="small">${o.om ? `<p>${esc(o.om)}</p>` : ''}<p class="muted">${val ? `Byn valde ${esc(o.framNamn)}.` : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p>${stapel}<ul class="roster">${rader}</ul></li>`;
 }
@@ -140,7 +140,7 @@ function rattegangar() {
   if (!lista?.length) return '';
   return `<h3>Rättegångar</h3><ol class="logg">${lista.slice().reverse().map(r => {
     const id = `ratt-${r.t}-${r.om}`, x = rattegang(s, r);
-    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="ratt-" title="Tryck för hela rättegången" tabindex="0" role="button"><span class="when">${timeLabel(s, r.t)}</span>${esc(r.namn)} ${esc(x.brott)}: ${esc(STRAFF_NAMN[r.steg].toLowerCase())}${r.oratt ? ' <span class="oratt">orättvis</span>' : ''}</li>${hjalpText(id, rattMer(r, x))}`;
+    return `<li class="klick falla" ${fallUt(id, 'ratt-')} title="Tryck för hela rättegången"><span class="when">${timeLabel(s, r.t)}</span>${esc(r.namn)} ${esc(x.brott)}: ${esc(STRAFF_NAMN[r.steg].toLowerCase())}${r.oratt ? ' <span class="oratt">orättvis</span>' : ''}</li>${hjalpText(id, rattMer(r, x))}`;
   }).join('')}</ol>`;
 }
 function rattMer(r: Rattegang, x: ReturnType<typeof rattegang>) {
