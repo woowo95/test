@@ -44,6 +44,7 @@ export * from './sim/seder';
 export * from './sim/relationer';
 export * from './sim/uppvaxt';
 export * from './sim/religion';
+export * from './sim/trotext';
 export * from './sim/val';
 export * from './sim/samtal';
 export * from './sim/humor';
