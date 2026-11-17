@@ -15,7 +15,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ANSIKTSORD, drag, glomArv, rovarSkapad, skapad, skonNiva } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar, utanWebblasare } from './hjalp';
-import { setByn } from '../../ui/lage';
+import { setByn, ui } from '../../ui/lage';
+import { sak as sakFlik } from '../../ui/flikar/sak';
 import { lagstBehov } from '../../ui/hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
@@ -53,7 +54,12 @@ SCENARIER.sakruta = {
   kor: () => {
     const ks = Object.entries(SAKER).filter(([k, d]) => d && !d.dold && !d.mark && !d.i && k !== 'paborjat').map(([k]) => k);
     const utanSkaffa = ks.filter(k => !skaffasKant(k)), utanAnv = ks.filter(k => !anvandsKant(k));
+    // sakens ruta (steg 11.1.58): skick och hur länge den håller på en rad, värdet med vågens symbol, och inget om det som kommer senare
+    const s = createState(3, START); utanWebblasare(); setByn(s);
+    const p0 = living(s)[0], yx = SIM.newTing(s, 'yxa', 0, p0.id); yx.hos = p0.id; ui.sak = `t:${yx.id}`; const sr = sakFlik.html!();
+    const sakRuta = /Skick<\/dt><dd>[\s\S]*?\d+ %( · (håller|räcker) [^<]+ till)?<\/span>/.test(sr) && !/<dt>Slitage<\/dt>|<dt>Håller<\/dt>/.test(sr) && /Värde<\/dt><dd>(<img|<span|⚖)/.test(sr) && !/senare'/.test(readFileSync(new URL('../../ui/skaffas.ts', import.meta.url), 'utf8'));
     return [
+      ['sakens ruta: skicket och hur länge den håller på en rad, värdet med vågens symbol, och inget om det som kommer senare (steg 11.1.58)', sakRuta],
       [`${ks.length} saker; hur de skaffas saknas för: ${utanSkaffa.join(', ') || 'ingen'}`, ks.length > 40 && !utanSkaffa.length],
       [`vad de används till saknas för: ${utanAnv.join(', ') || 'ingen'}`, !utanAnv.length],
     ];

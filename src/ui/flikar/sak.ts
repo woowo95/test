@@ -1,6 +1,6 @@
 import { runstenRubrik, tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, GRAVAR, gravSkick, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf, egetNamn, specialText } from '../../sim';
-import { iconImg } from '../../ikoner';
-import { condBar, durTxt, esc, kvOrd, kvText, pLink } from '../hjalp';
+import { iconImg, tecknet } from '../../ikoner';
+import { condBar, durTxt, esc, fallUt, hjalpText, kvOrd, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
 import { tradBild, tradBildUrl } from '../trad';
@@ -193,7 +193,7 @@ function slagIForradet(k: string) {
     <div class="phead">${iconImg(k, 32)}<div><h2>${esc(sakNamn(k))}</h2></div></div>
     <dl class="kv">
       <dt>I förrådet</dt><dd>${isTool(k) ? Math.ceil(n - 1e-9) : Math.round(n)} st</dd>
-      ${v ? `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${kortTal(v)} styck</dd>` : ''}
+      ${v ? `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${tecknet('sym_vag', '⚖', 12)} ${kortTal(v)} styck</dd>` : ''}
       <dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg styck</dd>
       <dt>Ägare</dt><dd class="rader">${agarRader(ag.ag, ag.n)}</dd>
       ${sl ? `<dt title="Var de ligger: antalet, skicket och hur fort de slits där">Skick</dt><dd class="rader">${sl}</dd>` : ''}
@@ -227,11 +227,13 @@ export const sak: Flik = {
       : t?.kopt !== undefined ? `<dt>Köpt</dt><dd>av en handlare, för ${durTxt(s.now - t.kopt)} sedan</dd>` : ''; // (steg 5.3.5.3)
     const kl = t && klenod(s, t), klen = kl ? `<dt>Klenod</dt><dd>★ Byn minns ${pLink(kl)} genom den</dd>` : ''; // (steg 3.4.3)
     const agare = t ? (t.agare === BYN ? 'Byns' : pLink(byId(s, t.agare))) : '';
-    const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} grader: ruttnar nästan inte` : `Ruttnar${sl.smuts ? ' fortare i blod och smuts' : ''}, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
-    const haller = sl.gang ? `<dt>Räcker till</dt><dd>${Math.max(0, Math.floor(c / sl.gang + 1e-9))} ${esc(sl.enhet!)} till</dd>` // per gång (steg 2.3.12)
-      : sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
+    const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} °C: ruttnar nästan inte` : `Ruttnar${sl.smuts ? ' fortare i blod och smuts' : ''}, ${Math.round(temperature(s))} °C` : ORSAK[sl.orsak];
+    // skick, slitage och hur länge den håller på en rad (steg 11.1.58): Skick 80 % · håller 3 år till, och orsaken vid ett tryck
+    const haller = sl.gang ? `räcker ${Math.max(0, Math.floor(c / sl.gang + 1e-9))} ${esc(sl.enhet!)} till` // per gång (steg 2.3.12)
+      : sl.per > 0 ? `håller ${durTxt(c / sl.per * HOUR)} till` : '';
+    const skickId = `skick-${t ? 't' + t.id : 'p'}`;
     // vad den är värd (steg 3.10.6, varde.ts): ungefär så många timmars arbete det tar att skaffa eller göra den, efter skick och kvalitet
-    const v1 = t ? tingVarde(t) : grundvarde(a.k) * c, varde = `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${kortTal(v1)}${!t && p && p.n >= 2 ? `, ${kortTal(v1 * Math.round(p.n))} alla` : ''}</dd>`;
+    const v1 = t ? tingVarde(t) : grundvarde(a.k) * c, varde = `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${tecknet('sym_vag', '⚖', 12)} ${kortTal(v1)}${!t && p && p.n >= 2 ? `, ${kortTal(v1 * Math.round(p.n))} alla` : ''}</dd>`;
     // vad plagget skyddar mot, i tal (steg 9.2.14): kylan, och i striden hur stor del av skadan det tar per slag, på delarna det täcker
     const strid = SKYDD[a.k], PAR: Record<string, string> = { arm: 'armarna', ben: 'benen', fot: 'fötterna', hand: 'händerna' }, SLAGORD: Record<string, string> = { hugg: 'hugg', stick: 'stick', slag: 'slag', bett: 'bett' };
     const klad = (SAKER[a.k]?.klad?.varme ? `<dt>Kylan</dt><dd>Värmer ${Math.round(kladSkydd(a.k, t) * 100)} %</dd>` : '')
@@ -242,10 +244,10 @@ export const sak: Flik = {
     <div class="phead">${iconImg(SAKER[k]?.bildyta && t?.ber?.mo ? k + '_malad' : k, 32)}<div><h2>${t?.helig !== undefined ? `<span title="Heligt i tron, står på altaret">${iconImg('heligt', 16)}</span> ` : ''}${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${egetNamn(s, k) ? `${esc(egetNamn(s, k)!)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>${specialText(s, k, sakNamn) ? `<p class="small">${esc(specialText(s, k, sakNamn))}</p>` : ''}
     ${ber ? `<p class="besk">${esc(ber)}</p>` : ''}
     <dl class="kv">
-      <dt>Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>
+      <dt class="klick falla" ${fallUt(skickId)} title="${esc(`${orsak}${sl.per > 0 ? `, ${perDygn(sl.per)} % per år` : ''}`)}">Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %${haller ? ` · ${haller}` : ''}</span></dd>
+      ${hjalpText(skickId, `<dd class="forkl">${esc(orsak)}${sl.per > 0 ? ` (${perDygn(sl.per)} % per år)` : ''}</dd>`)}
       ${kv}
-      <dt>Slitage</dt><dd>${esc(orsak)}${sl.per > 0 ? ` (${perDygn(sl.per)} % per år)` : ''}</dd>
-      ${haller}${mangd}${varde}<dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg${!t && p && p.n >= 2 ? `, ${kortTal(viktOf(k) * Math.round(p.n))} kg alla` : ''}</dd>${klad}
+      ${mangd}${varde}<dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg${!t && p && p.n >= 2 ? `, ${kortTal(viktOf(k) * Math.round(p.n))} kg alla` : ''}</dd>${klad}
       ${t ? `<dt>Var</dt><dd>${var_(t, p)}</dd><dt>Ägare</dt><dd>${agare}</dd>` : p ? `<dt>Ägare</dt><dd class="rader">${agarRader(p.ag, Math.round(p.n))}</dd>` : ''}
       ${gjord}${klen}
       ${t?.halv ? '' : skaffasRader(k)}
