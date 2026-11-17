@@ -1070,3 +1070,44 @@ SCENARIER.radtro = {
     ];
   },
 };
+
+SCENARIER.splittring = {
+  text: 'Splittringen (steg 11.3.12, byflytt.ts): andelen i byn med en annan tro än byns höjer chansen att en grupp bryter upp, och den nya byn får den andra tron',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x))!;
+    r.tal.folk = 20; r.tal.mat = 400;
+    r.tro = { namn: 'Byns tro', andel: 40, krig: 20 };
+    const utan = SIM.nyChans(r, 2);
+    r.tro.annan = { namn: 'Den andra tron', andel: 30, krig: 90 };
+    const med = SIM.nyChans(r, 2);
+    // en grupp på fyra bryter upp: de med den andra tron går med
+    r.tal.folk -= 4;
+    const ny = SIM.nyBy(s, vl, r, 4, s.now)!;
+    const kvar = r.tro.annan?.andel ?? 0, mor = r.tro.namn;
+    // utan en annan tro tar gruppen med sig byns
+    const b = vl.rader!.find(x => SIM.lever(vl, x) && x !== r && x !== ny && x.nr !== vl.huvud)!;
+    b.tal.folk = 20; b.tal.mat = 400; b.tro = { namn: 'Bs tro', andel: 30, krig: 50 };
+    b.tal.folk -= 3;
+    const ny2 = SIM.nyBy(s, vl, b, 3, s.now);
+    // av sig själv: samma stora och trånga by med och utan en stor andra tro, 20 dygn
+    const delningar = (annan: boolean) => {
+      const t = SIM.createState(11, Date.UTC(2026, 0, 1)), tv = t.varld!, tr = tv.rader!.find(x => SIM.lever(tv, x))!;
+      tr.tro = { namn: 'Byns tro', andel: 35, krig: 20 };
+      for (let n = 0; n < 20 * 24; n++) {
+        tr.tal.folk = 60; tr.tal.mat = 10000; // byn hålls stor och trång
+        if (annan) tr.tro.annan = { namn: 'Den andra tron', andel: 35, krig: 90 };
+        SIM.radFlytt(t, tv, tr, 5000 + n);
+      }
+      const nya = tv.rader!.filter(x => x.fran === tr.nr);
+      return { n: nya.length, andra: nya.filter(x => x.tro?.namn === 'Den andra tron').length };
+    };
+    const u = delningar(false), m = delningar(true);
+    return [
+      [`chansen att bryta upp växer med andelen med en annan tro (${utan.toFixed(3)} → ${med.toFixed(3)})`, med > utan * 1.5],
+      [`den nya byn får den andra tron (${ny?.tro?.namn} ${ny?.tro?.andel} %), och moderbyn behåller sin (${mor}, den andra tron ${kvar} % kvar)`, ny?.tro?.namn === 'Den andra tron' && ny.tro.andel === 100 && mor === 'Byns tro' && kvar < 30],
+      [`utan en annan tro tar gruppen med sig byns (${ny2?.tro?.namn})`, ny2?.tro?.namn === 'Bs tro'],
+      [`av sig själv på 20 dygn: ${u.n} nya byar utan en annan tro, ${m.n} med (${m.andra} med den andra tron; de lediga platserna sätter gränsen)`, m.n >= u.n && m.andra > 0 && u.n > 0],
+    ];
+  },
+};

@@ -11,6 +11,8 @@
 // Chansen (NYBY.chans) växer med gruppens storlek (fullt från NYBY.grupp) och moderbyns (fullt från NYBY.moder). Den nya byn
 // minns sin moderby (raden.fran, ett släktband i byrel.ts), tar med sig sin del av maten och kan en del av moderbyns tekniker
 // (NYBY.tek av var och en, och bara det vars krav den kan). Världens krönika får raden Delad.
+// Splittringen (steg 11.3.12): andelen i moderbyn med en annan tro än byns höjer chansen (NYBY.tro); de som har den tron går
+// med gruppen och den nya byn får den, annars tar gruppen med sig moderbyns tro.
 //
 // Undergången (steg 11.3.8): en by utan folk går under. Raden och platsen blir en ruin, och det som fanns kvar blir hela saker
 // (raden.kvar): silvret, och en del av rikedomen (RUIN.kvar) som saker byn kunde göra, valda med världens slump efter
@@ -50,6 +52,7 @@ export const NYBY = balans('nyby', {
   grupp: 4, // ... gruppen så många eller fler (färre: i proportion) ...
   moder: 30, // ... och moderbyn så många eller fler (färre: i proportion)
   tek: 0.7, // den nya byn kan så stor del av moderbyns tekniker
+  tro: 2, // chansen blir 1 + så här mycket gånger andelen med en annan tro än byns gånger större (steg 11.3.12)
 });
 // ärendena i världens slump (timmen; rad.ts har 1–6)
 const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15, ruin: 16 };
@@ -76,7 +79,20 @@ export function flyttMal(vl: Varlden, v: VarldMark | undefined, r: VarldRad): { 
 }
 
 // chansen att gruppen grundar en egen by, när moderbyn ännu har dem kvar
-export const nyChans = (r: VarldRad, grupp: number) => NYBY.chans * Math.min(1, grupp / NYBY.grupp) * Math.min(1, r.tal.folk / NYBY.moder); // r.tal.folk: moderbyn innan de går
+// (steg 11.3.12): gånger 1 + NYBY.tro gånger andelen i byn med en annan tro än byns, högst 1
+export const nyChans = (r: VarldRad, grupp: number) => Math.min(1, NYBY.chans * Math.min(1, grupp / NYBY.grupp) * Math.min(1, r.tal.folk / NYBY.moder) * (1 + NYBY.tro * (r.tro?.annan?.andel ?? 0) / 100)); // r.tal.folk: moderbyn innan de går
+// tron i den nya byn (steg 11.3.12): har moderbyn en annan tro går de som har den med gruppen, så många som ryms, och den nya
+// byn får den tron; annars tar gruppen med sig moderbyns tro. Andelarna räknas i hela personer
+function delaTro(r: VarldRad, ny: VarldRad, grupp: number) {
+  const t = r.tro;
+  if (!t) return;
+  const fore = r.tal.folk + grupp, a = t.annan;
+  const troende = a ? Math.round(a.andel / 100 * fore) : 0, med = Math.min(grupp, troende);
+  if (!a || !med) { ny.tro = { namn: t.namn, andel: t.andel, krig: t.krig }; return; }
+  ny.tro = { namn: a.namn, andel: Math.round(100 * med / grupp), krig: a.krig };
+  const kvar = troende - med;
+  if (kvar > 0 && r.tal.folk > 0) a.andel = Math.round(100 * kvar / r.tal.folk); else delete t.annan;
+}
 // byrutorna i världen (marken och vattnet; räknas en gång per värld)
 const rutor = new WeakMap<VarldMark, number[]>();
 // gruppen grundar en ny by på den närmaste lediga byplatsen inom räckhåll; undefined om ingen finns
@@ -96,6 +112,7 @@ export function nyBy(s: State, vl: Varlden, r: VarldRad, grupp: number, t: numbe
   const mat = Math.min(r.tal.mat, Math.round(r.tal.mat * grupp / Math.max(1, r.tal.folk + grupp))); // sin del av maten
   r.tal.mat -= mat;
   const ny: VarldRad = { nr, sort: 'by', namn: p.namn, x: p.x, y: p.y, grundad: t, fran: r.nr, t, tal: { folk: grupp, mat, rikedom: 0, silver: 0, styrka: 0 }, tek, fasta: [] };
+  delaTro(r, ny, grupp);
   vl.rader!.push(ny);
   p.by = nr;
   p.grannar = byGrannar(vl, v, p, t);
