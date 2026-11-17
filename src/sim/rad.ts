@@ -44,21 +44,21 @@ export const RAD = balans('rad', {
   flod: 1, // en flodruta runt platsen föder så många till
   grundUtan: 15, // grundtalet för en by utan plats i världen
   // maten, födda och döda (steg 11.3.2)
-  overskott: 0.25, // så mycket mer än behovet skaffar de vid låg trängsel; noll när folket når bärkraften
+  overskott: 1.5, // så mycket mer än behovet skaffar de vid låg trängsel; noll när folket når bärkraften
   istid: 0.3, // i istiden är överskottet (och bristen över bärkraften) så stor del
-  forvaringDygn: 2, // så många dygns mat (år i spelet) får plats i förrådet, gånger 1 + teknikernas förvaring
+  forvaringDygn: 60, // så många dygns mat (år i spelet) får plats i förrådet, gånger 1 + teknikernas förvaring
   svaltDod: 0.1, // så stor del av dem som blir utan mat en timme (ungefär 15 dagar i spelet) dör
   modrar: 0.2, // så stor del av folket är kvinnor som kan få barn och har en partner
-  dod: 0.03, // så stor del dör av ålder och olyckor per dygn (ett år i spelet)
-  startMat: 1, // en ny by har så många dygns mat
+  dod: 0.04, // så stor del dör av ålder och olyckor per dygn (ett år i spelet)
+  startMat: 19, // en ny by har så många dygns mat
   // rikedom och styrka (steg 11.3.3)
-  rikPer: 20, // rikedomen går mot så mycket per person (ungefär arbetstimmar), gånger 1 + teknikernas rikedom ...
+  rikPer: 200, // rikedomen går mot så mycket per person (värdet, som RADTAL.rikedom), gånger 1 + teknikernas rikedom ...
   rikDygn: 0.5, // ... och kommer så stor del av vägen dit per dygn (ett år i spelet)
   rikNod: 0.02, // en timme i nöd (maten slut) tar så stor del av rikedomen
   styrka: 0.35, // styrkan går mot folket gånger så stor del (de som kan slåss), gånger 1 + teknikernas styrka, högst folket ...
   styrkaDygn: 0.5, // ... och kommer så stor del av vägen dit per dygn
   // kunskapen (steg 11.3.9)
-  troghet: 1.5, // en öppen teknik tar så många gånger nivåns mål i testbyarna (TEKTAL.nivaDygn) i snitt ...
+  troghet: 2.5, // en öppen teknik tar så många gånger nivåns mål i testbyarna (TEKTAL.nivaDygn) i snitt ...
   kunskapFolk: 15, // ... i en by med så många eller fler; en mindre by i proportion
   sprid: 0.2, // chansen per dygn att en teknik sprids från en vänlig by inom räckhåll ...
   kontaktDygn: 3, // ... så här många dygns gång bort (år i spelet) eller närmare
@@ -69,7 +69,7 @@ export const RAD = balans('rad', {
   troNy: 0.2, // chansen per dygn att en by utan tro får en
   troSprid: 0.2, // chansen per dygn att en vänlig grannes tro sprids till byn (inom RAD.kontaktDygn)
   troStart: 10, // en ny tro i byn börjar med så många procent troende ...
-  troMal: 35, // ... och andelen går mot så många procent ...
+  troMal: 25, // ... och andelen går mot så många procent ...
   troDygn: 0.2, // ... så stor del av vägen per dygn; en annan tro utan en vänlig granne som delar den går lika fort mot noll
 });
 
@@ -84,6 +84,8 @@ export function tekTillskott(r: VarldRad, k: RadKolumn): number {
   if (n === undefined) { n = 0; for (const id of r.tek) n += TEK[id]?.rad?.[k] ?? 0; m[k] = n; }
   return n;
 }
+// det en ny by kan från början: nivå 1, som en grupp människor kan när de grundar en by (testbyarna kan dem första dygnet)
+export const startTek = () => Object.values(TEK).filter(t => t.niva === 1).map(t => t.id);
 // platsens grundtal: vad marken på rutan och de åtta runt den föder, och floderna
 export function grundtal(v: VarldMark, x: number, y: number): number {
   let n = 0;
@@ -205,6 +207,7 @@ export function radTro(vl: Varlden, r: VarldRad, n: number) {
   if (r.tro && r.syn) r.syn.krigisk = r.tro.krig;
 }
 
+radKrok.startTek = startTek;
 radKrok.startMat = folk => Math.round(folk * portionerPerDygn() * RAD.startMat);
 
 // varje timme: radens regler för varje by i världen som lever efter dem, i ordning efter numret
@@ -215,3 +218,33 @@ PERIODRADER.push({ namn: 'radens tro', period: 'dygn', fn: (_s, vl, n) => { for 
 // varje dygn (ett år i spelet): relationerna mellan byarna glöms mot grundläget (byrel.ts, steg 11.3.4)
 PERIODRADER.push({ namn: 'relationerna glöms', period: 'dygn', fn: (_s, vl) => relGlom(vl) });
 PERIODRADER.push({ namn: 'radens mat', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radMat(s, vl, r, n); } });
+
+// ---------- vakten för raden (steg 11.3.14, Flera samhällen: Raden mäts mot testbyarna) ----------
+// Det stora testet (vakta i src/test/kor.ts, en gång i timmen) larmar om något som inte får finnas i världen: ett tal i en rad
+// som inte är ett helt tal (eller är negativt), en by som vuxit långt över vad platsen föder, eller
+// fler byar som gått under än RADVAKT.dott av alla som funnits
+export const RADVAKT = balans('radvakt', {
+  barkraft: 3, // en by får ha högst så många gånger platsens bärkraft ...
+  folk: 20, // ... plus så många
+  dott: 0.6, // högst så stor del av byarna som funnits har gått under
+});
+export function radVakt(s: State): [string, string][] {
+  const vl = s.varld, fel: [string, string][] = [];
+  if (!vl?.rader) return fel;
+  const v = varldMark(s);
+  let byar = 0, ruiner = 0;
+  for (const r of vl.rader) {
+    for (const k of Object.keys(r.tal) as (keyof typeof r.tal)[]) {
+      const x = r.tal[k];
+      if (!Number.isInteger(x) || x < 0) fel.push(['radens tal', `${r.namn} (${r.nr}) ${k} = ${x}`]);
+    }
+    if (r.nr === vl.huvud) continue;
+    if (BYSORTER[r.sort].folk) {
+      byar++;
+      const tak = RADVAKT.barkraft * barkraft(v, r) + RADVAKT.folk;
+      if (r.tal.folk > tak) fel.push(['raden växer utan gräns', `${r.namn} (${r.nr}) folk ${r.tal.folk}, bärkraften ${Math.round(barkraft(v, r))}`]);
+    } else if (r.sort === 'ruin') { byar++; ruiner++; }
+  }
+  if (byar >= 10 && ruiner > RADVAKT.dott * byar) fel.push(['raderna dör ut', `${ruiner} av ${byar} byar har gått under`]);
+  return fel;
+}

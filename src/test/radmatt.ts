@@ -1,8 +1,8 @@
 // npm run radmatt -- [byar] [dygn] (16 byar i 35 dygn om inget anges): raden mäts mot testbyarna (steg 11.2.10, Flera samhällen:
 // Raden mäts mot testbyarna). Många testbyar sammanfattas med RADTAL en gång per dygn (ett år i spelet), och medianen och
 // fjärdedelarna per ålder (byns dygn) för folk, mat i dygn, rikedom per person, antal tekniker per nivå, andelen med en tro och
-// andelen som dött ut sparas i test/radfacit.json, facit för radens regler (RAD, fas 11.3). När reglerna finns körs de från samma
-// start och skrivs ut bredvid.
+// andelen som dött ut sparas i test/radfacit.json, facit för radens regler (RAD, fas 11.3). Radens regler körs från samma start och
+// skrivs ut bredvid med npm run radregler (radregler.ts, steg 11.3.14).
 import './utc';
 import { writeFileSync } from 'node:fs';
 import { korJson, pool } from './pool';

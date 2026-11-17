@@ -721,7 +721,7 @@ SCENARIER.radrikedom = {
     const [fattig, rustad, nod] = vl.rader!.filter(r => SIM.lever(vl, r));
     for (const r of [fattig, rustad]) { r.tal.folk = Math.round(SIM.barkraft(v, r) * 0.8); r.tal.mat = SIM.forradTak(r); r.tal.rikedom = 0; r.tal.styrka = 0; }
     rustad.tek = ['timmervagg', 'skold', 'flintspjut'];
-    nod.tal.folk = Math.round(SIM.barkraft(v, nod) * 3); nod.tal.mat = 0; nod.tal.rikedom = 2000;
+    nod.tal.folk = Math.round(SIM.barkraft(v, nod) * 3); nod.tal.mat = 0; nod.tal.rikedom = Math.round(SIM.rikMal(nod)); const fore = nod.tal.rikedom;
     const tid = (dygn: number, fn?: () => void) => { for (let h = 0; h < dygn * 24; h++) { s.now += 3600e3; SIM.varldSteg(s); fn?.(); } };
     let aldrigFler = true;
     tid(4, () => { for (const r of vl.rader!) if (r.tal.styrka > r.tal.folk) aldrigFler = false; });
@@ -732,7 +732,7 @@ SCENARIER.radrikedom = {
     return [
       [`rikedomen går mot målet på några dygn (${fattig.tal.rikedom} av ${Math.round(SIM.rikMal(fattig))})`, nara(fattig)],
       [`hus och redskap sätter ett högre mål per person (${Math.round(SIM.rikMal(rustad) / rustad.tal.folk)} mot ${Math.round(SIM.rikMal(fattig) / fattig.tal.folk)})`, SIM.rikMal(rustad) / rustad.tal.folk > SIM.rikMal(fattig) / fattig.tal.folk && nara(rustad)],
-      [`i nöd sjunker rikedomen (2000 → ${nod.tal.rikedom})`, nod.tal.rikedom < 1000],
+      [`i nöd sjunker rikedomen (${fore} → ${nod.tal.rikedom})`, nod.tal.rikedom < fore / 2],
       [`styrkan går mot folket gånger andelen som kan slåss (${fattig.tal.styrka} av ${fattig.tal.folk}), mer med vapen och sköld (${rustad.tal.styrka} av ${rustad.tal.folk}; byarna kommer på tekniker under tiden)`, st(fattig) && st(rustad) && SIM.styrkaMal({ ...fattig, tal: { ...fattig.tal, folk: 20 }, tek: ['skold', 'flintspjut'] }) > SIM.styrkaMal({ ...fattig, tal: { ...fattig.tal, folk: 20 }, tek: [] })],
       ['styrkan är aldrig fler än folket, och talen är hela', aldrigFler && hela],
       ['grannbyns styrka och resurser följer raden', foljer],
@@ -1132,6 +1132,29 @@ SCENARIER.forhistoria = {
       [`en gammal by kan mindre än en yngre (${gamla.length} byar med ${Math.min(...levande.map(r => r.tek.length))}–${Math.max(...levande.map(r => r.tek.length))} tekniker)`, omvant],
       [`huvudbyn har förbindelse med ${klaner.length} grannbyar, alla levande byar ur raden`, levandeKlaner],
       ['samma frö ger samma förhistoria', lika],
+    ];
+  },
+};
+
+SCENARIER.radvakt = {
+  text: 'Vakten för raden (steg 11.3.14, radVakt i rad.ts): det stora testet larmar om ett tal i en rad som inte är helt, en by som växer utan gräns eller för många byar som gått under; en värld efter förhistorien är tyst',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=400' },
+  kor: () => {
+    const s = SIM.createState(5, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const tyst = SIM.radVakt(s);
+    for (let h = 0; h < 10 * 24; h++) { s.now += 3600e3; SIM.varldSteg(s); }
+    const tystSen = SIM.radVakt(s);
+    const larmar = (andra: (t: SIM.State) => void) => { const t = SIM.cloneState(s); andra(t); return SIM.radVakt(t).map(f => f[0]); };
+    const by = (t: SIM.State) => t.varld!.rader!.find(r => SIM.lever(t.varld!, r))!;
+    const decimal = larmar(t => { by(t).tal.mat += 0.5; });
+    const stor = larmar(t => { by(t).tal.folk = 5000; });
+    const ruiner = larmar(t => { for (const r of t.varld!.rader!) if (SIM.lever(t.varld!, r)) { r.sort = 'ruin'; r.tal.folk = 0; } });
+    const byar = vl.rader!.filter(r => SIM.lever(vl, r)).length, ruin = vl.rader!.filter(r => r.sort === 'ruin').length;
+    return [
+      [`en värld efter förhistorien (${byar} byar, ${ruin} ruiner) är tyst, också efter tio dygn${tyst.length || tystSen.length ? `: ${[...tyst, ...tystSen].map(f => f[1]).join('; ')}` : ''}`, !tyst.length && !tystSen.length],
+      [`ett tal som inte är helt larmar (${decimal.join(', ')})`, decimal.includes('radens tal')],
+      [`en by som växer utan gräns larmar (${stor.join(', ')})`, stor.includes('raden växer utan gräns')],
+      [`för många byar som gått under larmar (${ruiner.join(', ')})`, ruiner.includes('raderna dör ut')],
     ];
   },
 };

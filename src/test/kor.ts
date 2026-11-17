@@ -9,6 +9,7 @@ import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Mar
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { gastLever } from '../sim/gast';
+import { radVakt } from '../sim/rad';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { kollaText, konI, titta } from './textkoll';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
@@ -186,6 +187,8 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     if (!Number.isFinite(d.x) || !Number.isFinite(d.y) || !inMap(d.x, d.y)) larm('djurets plats', () => `${d.art} ${d.id} på ${d.x},${d.y}`);
     else if (tiles[tileOf(d.x, d.y)] === T.Vatten) larm(`${d.art} i vattnet`, () => `${d.art} ${d.id} på ${d.x.toFixed(1)},${d.y.toFixed(1)}`);
   }
+  // världens rader (steg 11.3.14): hela tal, ingen by som växer utan gräns och inte för många som gått under
+  for (const [typ, text] of radVakt(s)) larm(typ, () => text);
   // varje rum har minst en dörr eller öppning, så att ingen behöver bryta en vägg (steg 3.7.21)
   for (const r of gridOf(s).rooms) if (r.tiles.length && !r.open && !housesOf(s).find(h => h.id === r.hus)?.ut) larm('rum utan öppning', () => `rummet vid ${r.tiles[0] % W},${Math.floor(r.tiles[0] / W)}${r.hus !== undefined ? ` (hus ${r.hus})` : ''}`);
 }
