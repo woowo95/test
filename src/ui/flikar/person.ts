@@ -345,7 +345,9 @@ function halsaHtml(p: Person) {
   const nasta = [...new Set(vardNasta(s, p, p).map(x => VARD[x.k].namn))], lr = larmRollNu(s, p), vardRad = (nasta.length ? `<p class="muted">Behöver härnäst: ${esc(nasta.join(', ').toLowerCase())}</p>` : '') + (lr ? `<p class="muted">Vid larmet (${esc(LARMHOT[lr.hot]?.namn.toLowerCase() ?? lr.hot)}): ${esc(ROLLNAMN[lr.roll].toLowerCase())}</p>` : ''); // rollen vid larmet (steg 9.5.19)
   const formagor = (Object.keys(FORMAGOR) as (keyof typeof FORMAGOR)[]).map(k => {
     const f = FORMAGOR[k], v = f.varde(p), ont = 'ont' in f;
-    return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, (ont ? v > 0.5 : v < LAG.halsa) ? 'low' : '')}<span>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}`);
+    // en förmåga där högt är dåligt (smärtan) är rostfärgad när den är hög (steg 11.1.48)
+    const dalig = ont ? v > 0.5 : v < LAG.halsa;
+    return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, dalig ? 'low' : '')}<span${ont && dalig ? ' class="ont"' : ''}>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}${ont ? '. Här är högt dåligt' : ''}`);
   }).join('');
   // näringen (steg 2.6.1): mättnaden är en sammanfattning av de fem värdena
   const n = naringNu(p), barn = ageOf(p, s.now) < ALDER.matBarn ? KROPP.hungerBarn : 1;
@@ -353,9 +355,11 @@ function halsaHtml(p: Person) {
   const naring = NARINGAR.map(k => rad(p, 'n_' + k, `${tecknet('n_' + k, NARING[k].tecken, 14)} ${NARING[k].namn}`, `${bar(n[k], bristGrad(p, k) > 0 ? 'low' : '')}<span>${Math.round(n[k] * 100)} %</span>${bristGrad(p, k) > 0 ? bristTecken(k) : ''}`,
     [{ namn: 'Sjunker', v: -sjunker(k, KROPP.hungerTim) * barn }, ...svett(k) ? [{ namn: 'Tappar salt: arbetar hårt i värmen', v: -sjunker(k, KROPP.hungerTim) * barn * svett(k) }] : []], ' % per timme',
     `Finns i ${NARING[k].fran}. Under ${Math.round(NARINGBAL.brist * 100)} %: ${NARING[k].brist.namn.toLowerCase()} (${NARING[k].brist.gor.charAt(0).toLowerCase() + NARING[k].brist.gor.slice(1)})`)).join('');
-  // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
-  return `<div class="kropp">${gubbe}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
-    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Status</h3><dl class="kv">${formagor}${gangRad(p)}</dl><h3>Näring</h3><dl class="kv">${naring}</dl>`;
+  // figuren med H och V för personens högra och vänstra sida (hen står vänd mot oss), och en rad om att den går att trycka på
+  // (steg 11.1.48). Förmågorna har gångfarten, och Näring bara näringsämnena (vätskan står under Behov)
+  const fig = `<div class="kroppfig"><div class="hvrad"><span class="hv" title="Personens högra sida">H</span>${gubbe}<span class="hv" title="Personens vänstra sida">V</span></div><p class="muted small">Tryck på en kroppsdel</p></div>`;
+  return `<div class="kropp">${fig}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
+    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Förmågor</h3><dl class="kv">${formagor}${gangRad(p)}</dl><h3>Näring</h3><dl class="kv">${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string, extra = '') {

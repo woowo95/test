@@ -1441,8 +1441,12 @@ SCENARIER.gastsida = {
     // Egenskaper (steg 11.1.47): Temperament i stället för Aggression, och pliktkänslan står under Behov
     ui.personDel = 'egen'; const eg = person.html();
     const egenFlik = /Temperament/.test(eg) && !/Aggression/.test(eg) && !/>Pliktkänsla</.test(eg);
+    // Hälsa (steg 11.1.48): figuren med H och V, Förmågor med gångfarten, och Näring utan vätskan
+    ui.personDel = 'halsa'; const ha = person.html();
+    const halsaFlik = /class="hv"[^>]*>H</.test(ha) && /class="hv"[^>]*>V</.test(ha) && /<h3>Förmågor<\/h3>[\s\S]*Gångfart[\s\S]*<h3>Näring<\/h3>/.test(ha) && !/Vätska/.test(ha.split('<h3>Näring</h3>')[1] ?? '');
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['Hälsa: figuren med H och V, Förmågor med gångfarten och Näring utan vätskan (steg 11.1.48)', halsaFlik],
       ['Egenskaper: Temperament i stället för Aggression, och ingen pliktkänsla där (steg 11.1.47)', egenFlik],
       ['Behov: Vätska står efter Mättnad, takten skrivs i % per timme, tårtan har De senaste N åren och pliktkänslan står med flit, empati och seden (steg 11.1.46)', behovFlik],
       ['Översikt: ålder med kön och födelse, familjen, sederna hen håller, det hen gör, humöret och hälsan som öppnar Hälsa, utan gångfarten och händelserna (steg 11.1.45)', oversikt],

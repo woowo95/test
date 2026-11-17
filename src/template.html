@@ -403,6 +403,9 @@ h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; le
 .gubbe { width: 84px; height: 120px; flex: none; } .kortfigur { width: 28px; height: 40px; margin-left: auto; flex: none; } /* samma figur som på kartan (steg 5.3.4.3) */
 .gubbe .klick { cursor: pointer; } .gubbe .klick:hover { filter: brightness(1.2); }
 .gubbe .vald { filter: brightness(1.35) drop-shadow(0 0 0.5px var(--accent)); }
+.kroppfig { flex: none; display: grid; justify-items: center; } .kroppfig p { margin: 2px 0 0; }
+.hvrad { display: flex; align-items: center; gap: 4px; } .hv { font-family: var(--display); font-size: 13px; color: var(--muted); } /* personens högra och vänstra sida (steg 11.1.48) */
+dd .ont { color: var(--g-rost); font-weight: 700; }
 .kroppinfo { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .kropp .forkl { margin: 0 0 4px; padding: 6px 8px; border-radius: 6px; background: var(--barbg); font-size: 14px; }
 .skador { display: grid; gap: 4px; margin: 4px 0 8px; padding: 0; list-style: none; }
