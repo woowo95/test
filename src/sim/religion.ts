@@ -115,7 +115,7 @@ export const rymsBud = (s: State, tr: Tro, storlek: number) => tyngd(s, tr) >= t
 export const ETIKETTER: { namn: string; text: string; har: (s: State, tr: Tro) => boolean }[] = [
   { namn: 'Kyrka', text: 'Trons hus står klart.', har: (s, tr) => troshusKlart(s, tr) },
   { namn: 'Präst', text: 'Tron har en präst.', har: (s, tr) => TYNGDDELAR.prast.v(s, tr) > 0 },
-  { namn: 'Seder', text: 'Tron har en helig plats.', har: (s, tr) => !!s.heliga?.some(h => h.tro === tr.id && h.skandad === undefined) },
+  { namn: 'Helig plats', text: 'Tron har en helig plats.', har: (s, tr) => !!s.heliga?.some(h => h.tro === tr.id && h.skandad === undefined) },
   { namn: 'Delad tro', text: 'Tron har fått sitt namn.', har: (_s, tr) => !!tr.namn },
   { namn: 'Personlig tro', text: 'Bara några få tror.', har: () => true },
 ];
