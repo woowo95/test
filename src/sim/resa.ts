@@ -12,6 +12,7 @@ import { clamp } from './slump';
 import { ryggsack } from './utrustning';
 import { tamArt, tamdjurOf } from './tamdjur';
 import { viktOf } from './saker';
+import { grundvarde } from './varde';
 import { VARLD, VARLDMARK, MARK_IDS, VarldMark } from './varldmark';
 import { kostnader, vagMellan, vagRutor } from './vagval';
 
@@ -133,4 +134,33 @@ export function packbehov(s: State, sl: Sallskap): Packbehov | undefined {
     foder = Math.max(0, Math.min(foder, Math.floor(rum / vFoder)));
   }
   return { dygn: Math.round(dygn * 100) / 100, mat, vatten, foder, bar, vikt: mat * vMat + vatten * vVatten + foder * vFoder, ryms };
+}
+
+// ---------- boken över insatserna (steg 11.5.4, Andelarna i tal) ----------
+// Vem som satsat vad i sällskapet: egna saker, något ur byns förråd ('by') eller ett djur (en annans häst), i hela saker med
+// värdet när resan började. Den som äger en insats behöver inte följa med, och risken är ägarens.
+export function satsa(sl: Sallskap, agare: number | 'by', sak: string, n: number): Insats | undefined {
+  n = Math.floor(n);
+  if (n <= 0) return undefined;
+  const e = sl.insatser.find(x => x.agare === agare && x.sak === sak && x.djur === undefined);
+  sl.pack[sak] = (sl.pack[sak] ?? 0) + n;
+  if (e) { e.n += n; e.varde = Math.round(e.n * grundvarde(sak)); return e; }
+  const ny: Insats = { agare, sak, n, varde: Math.round(n * grundvarde(sak)) };
+  sl.insatser.push(ny);
+  return ny;
+}
+// ett djur som insats: ägaren är djurets ägare (eller byn), och värdet är artens
+export function satsaDjur(s: State, sl: Sallskap, djurId: number): Insats | undefined {
+  const d = tamdjurOf(s).find(q => q.id === djurId);
+  if (!d || sl.insatser.some(x => x.djur === djurId)) return undefined;
+  djurMed(sl, djurId);
+  const ny: Insats = { agare: d.agare ?? 'by', sak: d.art, n: 1, varde: tamArt(d.art).varde, djur: djurId };
+  sl.insatser.push(ny);
+  return ny;
+}
+// värdet var och en satsat, per ägare
+export function insatsPer(sl: Sallskap): Map<number | 'by', number> {
+  const m = new Map<number | 'by', number>();
+  for (const x of sl.insatser) m.set(x.agare, (m.get(x.agare) ?? 0) + x.varde);
+  return m;
 }
