@@ -281,7 +281,7 @@ SCENARIER.trokategori = {
 
 
 SCENARIER.fragetecken = {
-  text: 'Steg 11.1.3: ?-knappen används bara för förklaringar. En berättelse (om tron och om en gud) fälls ut med boksymbolen, och de mindre trosriktningarna visas med raden "▸ Visa N till"',
+  text: 'Steg 11.1.3 och 11.1.18: ?-knappen används bara för förklaringar. En berättelse (om tron och om en gud) fälls ut med boksymbolen, varje tro fälls ihop med ▸ vid namnet (den största är utfälld), och de mindre trosriktningarna står under ▸-raden Övriga trosriktningar',
   kor: () => {
     utanWebblasare();
     const s = createState(9, START);
@@ -300,14 +300,16 @@ SCENARIER.fragetecken = {
     const fragor = [...html.matchAll(/<button type="button" class="hjalp" data-hjalp="([^"]*)"[^>]*title="([^"]*)"[^>]*>\?<\/button>/g)].map(m => m[2]);
     const bocker = [...html.matchAll(/<button type="button" class="hjalp bok" data-hjalp="([^"]*)"[^>]*title="([^"]*)"/g)].map(m => m[2]);
     const ovriga = (s.tron ?? []).filter(tr => tr.slut === undefined).length - 3;
-    const mer = new RegExp(`class="lank falla mer"[^>]*>Visa ${ovriga} till<`).test(html);
+    const mer = /class="tekhead klick falla" data-hjalp="tro-ovriga"[^>]*aria-expanded="false"[^>]*><b>Övriga trosriktningar<\/b>/.test(html);
     hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement);
     const oppen = religion.html();
     hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement);
     return [
       [`?-knappen förklarar bara (${fragor.join('; ')})`, fragor.length > 0 && fragor.every(t => /^(Vad|Hur fungerar|Varför)/.test(t))],
       [`berättelserna fälls ut med boksymbolen (${bocker.join('; ')})`, bocker.includes('Berättelsen om tron') && bocker.includes('Hur guden kom till')],
-      [`de mindre trosriktningarna visas med "▸ Visa ${ovriga} till", och raden fälls ut`, ovriga > 0 && mer && /aria-expanded="true"[^>]*>Visa färre</.test(oppen)],
+      [`de mindre trosriktningarna (${ovriga}) står under ▸-raden Övriga trosriktningar, som fälls ut`, ovriga > 0 && mer && /data-hjalp="tro-ovriga"[^>]*aria-expanded="true"/.test(oppen)],
+      // steg 11.1.18: den största tron är utfälld och de andra ihopfällda; ett tryck fäller ut en annan
+      ['den största tron är utfälld och de andra ihopfällda med ▸ vid namnet', new RegExp(`data-hjalp="troihop-${stor.id}" aria-expanded="true"`).test(html) && /data-hjalp="troupp-\d+" aria-expanded="false"/.test(html) && (html.match(/Grundare:/g) ?? []).length === 1],
     ];
   },
 };
