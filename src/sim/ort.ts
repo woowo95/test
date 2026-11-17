@@ -172,3 +172,23 @@ export function bynKanner(s: State, nr: number): VetOrt | undefined {
   return e && e.v >= O_KANT ? e : { v: O_KANT, t: s.now, vem: e?.vem ?? [] };
 }
 
+// ---------- byns karta (steg 11.4.7, Flera samhällen: Vad spelaren ser och vad byn vet) ----------
+// Det världskartan behöver för sina två lager: nivån byn har för en plats (bynKanner), om en ruta ligger i närområdet och
+// ryktenas områden (ett per plats byn bara har ett rykte om, läget ur minnet hos den första som vet). Det byn känner ritas
+// tydligt, ryktena som grå områden och resten blekt; en hemlig plats (LANDMARKEN) syns först när byn har ett rykte om den
+export interface BynsKarta { niva: (nr: number) => number | undefined; nara: (x: number, y: number) => boolean; rykten: { nr: number; x: number; y: number; r: number }[] }
+export function bynsKarta(s: State): BynsKarta | undefined {
+  const vl = s.varld, h = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
+  if (!vl) return undefined;
+  const R = ORT.narDygn * VARLD.gangPerDygn, rykten: BynsKarta['rykten'] = [];
+  for (const k in s.bynVet?.p ?? {}) {
+    const nr = Number(k), e = s.bynVet!.p[nr]!;
+    if (bynKanner(s, nr)?.v !== O_RYKTE) continue;
+    const l = e.vem.map(id => byId(s, id)).map(q => q && findL(q, 'ort', nr)).find(x => x && x.v === O_RYKTE), o = l && ryktesLage(s, l);
+    if (o) rykten.push({ nr, ...o });
+  }
+  return { niva: nr => bynKanner(s, nr)?.v, nara: (x, y) => !!h && Math.hypot(x - h.x, y - h.y) <= R, rykten };
+}
+// syns platsen på världskartan: allt utom en hemlig plats som byn inte har ett rykte om
+export const syns = (k: BynsKarta | undefined, q: { nr: number; k: keyof typeof LANDMARKEN }) => !k || !(LANDMARKEN[q.k] as LandmarkDef).hemlig || k.niva(q.nr) !== undefined;
+

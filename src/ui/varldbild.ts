@@ -4,7 +4,7 @@
 // del av rutorna och platsernas tecken (LANDMARKEN) på sina rutor; huvudbyn får en ljus ram. Allt tar sina färger ur paletten.
 // Här finns bara det som går att räkna utan webbläsaren: bilden som punkter, tecknen (platshållare i 16 punkter tills Björn
 // valt i bildstilen) och vyns matematik för att dra och zooma. Knappen och rutan som visar kartan är ui/varldskarta.ts.
-import { FLOD_NEDRE, LANDMARKEN, MARK_IDS, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
+import { BynsKarta, FLOD_NEDRE, LANDMARKEN, MARK_IDS, O_KANT, syns, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
 import { hash3 } from '../sim/slump';
 import { farg } from '../palett';
 
@@ -54,6 +54,10 @@ const RGB: Record<string, number[]> = Object.fromEntries(Object.entries(TECKENPA
 const MARKRGB = MARK_IDS.map(k => { const [r, n] = VARLDMARK[k].farg; return rgb(farg(r, n)); });
 export const FLODFARG = farg('skiffer', 2);
 export const RAMFARG = farg('ben', 3);
+// lagren (steg 11.4.7): det byn inte känner täcks av ett mönster ur paletten, så att färgerna stannar i paletten: ryktena tätt
+// i grått och resten glest i ljust (en punkt i varannan rad och kolumn)
+export const RYKTFARG = farg('skiffer', 3);
+export const BLEKFARG = farg('ben', 2);
 export const TECKENANDEL = 0.45; // så stor del av rutorna med ett marktecken visar det (en hash per ruta, samma varje gång)
 
 export interface VarldBild { w: number; h: number; data: Uint8ClampedArray }
@@ -79,7 +83,12 @@ export const huvudbynsPlats = (vl: Varlden) => vl.huvud === undefined ? undefine
 export const visarMarktecken = (v: VarldMark, x: number, y: number) => hash3(v.fro, x, y, 0x7ec4e7) < TECKENANDEL;
 
 // hela världskartan som punkter: marken, floderna, marktecknen, platserna och huvudbynsramen
-export function ritaVarld(vl: Varlden, v: VarldMark): VarldBild {
+// vilket lager en världsruta hör till: känd (närområdet eller en känd plats), inom ett rykte eller blek
+export function lager(kn: BynsKarta, kand: Set<number>, w: number, x: number, y: number): 'kant' | 'rykte' | 'blek' {
+  if (kn.nara(x, y) || kand.has(y * w + x)) return 'kant';
+  return kn.rykten.some(o => Math.hypot(x + 0.5 - o.x, y + 0.5 - o.y) < o.r) ? 'rykte' : 'blek';
+}
+export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta): VarldBild {
   const b: VarldBild = { w: v.w * VK, h: v.h * VK, data: new Uint8ClampedArray(v.w * VK * v.h * VK * 4) };
   for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {
     const c = MARKRGB[v.mark[ry * v.w + rx]];
@@ -96,7 +105,16 @@ export function ritaVarld(vl: Varlden, v: VarldMark): VarldBild {
     const tk = (VARLDMARK[MARK_IDS[v.mark[ry * v.w + rx]]] as { tecken?: string }).tecken;
     if (tk && !upptagen.has(ry * v.w + rx) && !v.flod[ry * v.w + rx] && visarMarktecken(v, rx, ry)) ritaTecken(b, tk, rx, ry);
   }
-  for (const p of vl.platser ?? []) ritaTecken(b, LANDMARKEN[p.k].tecken, p.x, p.y);
+  for (const p of vl.platser ?? []) if (syns(kn, p)) ritaTecken(b, LANDMARKEN[p.k].tecken, p.x, p.y);
+  if (kn) {
+    const kand = new Set((vl.platser ?? []).filter(p => (kn.niva(p.nr) ?? -1) >= O_KANT).map(p => p.y * v.w + p.x)), rc = rgb(RYKTFARG), bc = rgb(BLEKFARG);
+    for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {
+      const l = lager(kn, kand, v.w, rx, ry);
+      if (l === 'kant') continue;
+      for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++)
+        if (l === 'rykte' ? (x + y) % 2 === 0 : x % 2 === 0 && y % 2 === 0) punkt(b, rx * VK + x, ry * VK + y, l === 'rykte' ? rc : bc);
+    }
+  }
   const hb = huvudbynsPlats(vl);
   if (hb) {
     const rc = rgb(RAMFARG);
@@ -106,10 +124,10 @@ export function ritaVarld(vl: Varlden, v: VarldMark): VarldBild {
 }
 
 // texten för en ruta (när musen är över eller man trycker): marken och platserna där
-export function rutaText(vl: Varlden, v: VarldMark, x: number, y: number): string {
+export function rutaText(vl: Varlden, v: VarldMark, x: number, y: number, kn?: BynsKarta): string {
   if (x < 0 || y < 0 || x >= v.w || y >= v.h) return '';
   const i = y * v.w + x, mk = VARLDMARK[MARK_IDS[v.mark[i]]].namn;
-  const pl = (vl.platser ?? []).filter((p: VarldPlats) => p.x === x && p.y === y), hb = huvudbynsPlats(vl);
+  const pl = (vl.platser ?? []).filter((p: VarldPlats) => p.x === x && p.y === y && syns(kn, p)), hb = huvudbynsPlats(vl);
   const delar = pl.map(p => `${p === hb ? 'Er by' : LANDMARKEN[p.k].namn} ${p.namn}`);
   if (v.flod[i]) delar.push(v.flod[i] === FLOD_NEDRE ? 'en bred flod' : 'en å');
   return [mk, ...delar].join(' · ');

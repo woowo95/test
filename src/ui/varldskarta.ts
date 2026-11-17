@@ -2,7 +2,7 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { varldMark, Varlden } from '../sim';
+import { bynsKarta, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { s } from './lage';
 import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
@@ -41,17 +41,17 @@ document.body.appendChild(ruta);
 const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement>('.vkInfo')!;
 
 // bilden räknas en gång per värld och när platserna ändrats
-let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1;
+let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1;
 function bilden() {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return undefined;
-  const n = vl.platser?.length ?? 0;
-  if (!bild || bildFor !== vl || bildPlatser !== n) {
-    const b = ritaVarld(vl, v);
+  const n = vl.platser?.length ?? 0, vet = s!.bynVet?.t ?? 0;
+  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet) { // och när det byn vet räknats om (steg 11.4.7)
+    const b = ritaVarld(vl, v, bynsKarta(s!));
     bild = document.createElement('canvas'); bild.width = b.w; bild.height = b.h;
     const g = bild.getContext('2d')!, id = g.createImageData(b.w, b.h);
     id.data.set(b.data); g.putImageData(id, 0, 0);
-    bildFor = vl; bildPlatser = n;
+    bildFor = vl; bildPlatser = n; bildVet = vet;
   }
   return bild;
 }
@@ -109,7 +109,7 @@ duk.addEventListener('pointermove', e => {
   const r = duk.getBoundingClientRect(), fore = pekare.get(e.pointerId);
   if (!fore) { // musen över kartan
     const vl = s?.varld, v = s && varldMark(s);
-    if (vl && v && vy) { const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top); duk.title = rutaText(vl, v, q.x, q.y); }
+    if (vl && v && vy) { const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top); duk.title = rutaText(vl, v, q.x, q.y, s && bynsKarta(s)); }
     return;
   }
   const nu = { x: e.clientX, y: e.clientY };
@@ -131,7 +131,7 @@ const slapp = (e: PointerEvent) => {
   if (!pekare.size) duk.classList.remove('drar');
   if (fanns && !pekare.size && drog < 6 && vy) { // ett tryck utan att dra: rutans text under kartan
     const r = duk.getBoundingClientRect(), vl = s?.varld, v = s && varldMark(s);
-    if (vl && v) { const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top); info.textContent = rutaText(vl, v, q.x, q.y); }
+    if (vl && v) { const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top); info.textContent = rutaText(vl, v, q.x, q.y, s && bynsKarta(s)); }
   }
 };
 duk.addEventListener('pointerup', slapp);
