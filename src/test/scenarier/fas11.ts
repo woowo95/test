@@ -1693,3 +1693,46 @@ SCENARIER.vagbehov = {
     ];
   },
 };
+
+SCENARIER.resfart = {
+  text: 'Farten (steg 11.5.7, sallskapFart och gången i resa.ts): den långsammaste medlemmens fart gånger lastens, årstidens och orkens; ledens fart ligger i rutans kostnad. Ett sällskap med ett barn går långsammare, en stig går fortare än obanad mark, lasten bromsar, och sällskapet går fram, stannar och kommer hem',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50 && SIM.personFart(s0, q) === 1);
+    const barn = SIM.living(s0).find(q => SIM.ageOf(q, s0.now) < SIM.ALDER.vuxen && SIM.ageOf(q, s0.now) >= SIM.ALDER.gangBarn);
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!, mal = hb.grannar![0]!.nr;
+    const dag0 = Math.floor(s0.now / SIM.DAY) * SIM.DAY + SIM.DAY + 7 * SIM.HOUR;
+    const ny = (ids: number[], stig = false) => {
+      const s = SIM.cloneState(s0); s.now = dag0;
+      const folk = ids.map(id => s.people.find(q => q.id === id)!);
+      const sl = SIM.nyttSallskap(s, folk[0]!, mal, 'handel')!; for (const p of folk.slice(1)) SIM.foljMed(s.varld!, sl, p);
+      sl.ut = { samla: { x: 1, y: 1 }, kant: { x: 1, y: 1 } };
+      for (const p of folk) SIM.gaBort(s, p);
+      const hem = SIM.byPlats(s.varld!, sl.by)!, v = SIM.varldMark(s)!;
+      sl.skede = 'ute'; sl.ruta = hem.y * v.w + hem.x;
+      const vag = SIM.vagMellan(s.varld!, v, sl.ruta, s.varld!.platser!.find(p => p.nr === mal)!.y * v.w + s.varld!.platser!.find(p => p.nr === mal)!.x, 'fots', s.now)!;
+      sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg }; sl.pos = 0; sl.gang = 0;
+      if (stig) { const l = s.varld!.leder ??= {}; for (const i of SIM.vagenRutor(s, sl)) l[i] = [20, s.now, 1]; s.varld!.ledVer = (s.varld!.ledVer ?? 0) + 1; }
+      return { s, sl, folk };
+    };
+    const kor = (x: { s: SIM.State }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    const vuxen = ny([vuxna[0]!.id, vuxna[1]!.id]), medBarn = barn ? ny([vuxna[0]!.id, barn.id]) : undefined, stig = ny([vuxna[0]!.id, vuxna[1]!.id], true);
+    const fV = SIM.sallskapFart(vuxen.s, vuxen.sl), fB = medBarn ? SIM.sallskapFart(medBarn.s, medBarn.sl) : 1;
+    kor(vuxen, 2); if (medBarn) kor(medBarn, 2); kor(stig, 2);
+    // hur stor del av vägen som är gången (rutorna och gången mot nästa)
+    const del = (x: { s: SIM.State; sl: SIM.Sallskap }) => { const r = SIM.vagenRutor(x.s, x.sl), k = SIM.kostnader(x.s.varld!, SIM.varldMark(x.s)!, 'fots'), p = x.sl.pos!; return p >= r.length - 1 ? 1 : (p + x.sl.gang! / k[r[p + 1]]) / (r.length - 1); };
+    const tung = ny([vuxna[0]!.id, vuxna[1]!.id]); tung.sl.pack = { brod: 36 }; const fL = SIM.lastFart(tung.s, tung.sl);
+    // hela resan: fram, stanna och hem
+    const hel = ny([vuxna[0]!.id, vuxna[1]!.id]), sett = new Set<string>();
+    for (let h = 0; h < 60 * 24 && hel.sl.skede !== 'hemma'; h++) { kor(hel, 1); sett.add(hel.sl.skede); }
+    const trampat = Object.keys(hel.s.varld!.leder ?? {}).length;
+    return [
+      [`ett barn går långsammare (${fB.toFixed(2)} mot ${fV.toFixed(2)})`, !!medBarn && fB < fV && fB === SIM.RESA.fartBarn * SIM.orkFart(medBarn.sl)],
+      [`och kommer kortare på två timmar (${medBarn ? del(medBarn).toFixed(2) : '–'} mot ${del(vuxen).toFixed(2)} av vägen)`, !!medBarn && del(medBarn) < del(vuxen) && del(vuxen) < 1],
+      [`en stig går fortare än obanad mark (${del(stig).toFixed(2)} mot ${del(vuxen).toFixed(2)} av vägen)`, del(stig) > del(vuxen)],
+      [`lasten bromsar (${fL.toFixed(2)})`, fL < 1 && fL >= SIM.RESA.lastMin],
+      [`sällskapet går fram, stannar och kommer hem (${[...sett].join(', ')})`, hel.sl.skede === 'hemma' && sett.has('framme') && sett.has('hemat')],
+      ['resenärerna är hemma i byn igen', hel.folk.every(p => !SIM.ute(p))],
+      [`resan trampade leden (${trampat} rutor)`, trampat > 2],
+    ];
+  },
+};
