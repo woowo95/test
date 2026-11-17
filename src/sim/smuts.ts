@@ -21,6 +21,7 @@ import { FOREST } from './vag';
 import { smutsOf } from './sjo';
 import { BLODFORM, blodNu, blodOf, blodas } from './blod';
 import { roomAt, gridOf } from './byggnad';
+import { bedTile } from './byggnader';
 import { vaderNu } from './vader';
 import { isFood } from './saker';
 import { amountOf } from './lager';
@@ -29,11 +30,14 @@ import { amountOf } from './lager';
 export const SMUTS = balans('smuts', {
   latrinVantFull: 10, // så många minuters väntan på latrinen på sistone (byn tillsammans) gör bristen på latriner hel (steg 10.2.79) ...
   latrinVantDygn: 1, // ... och väntan klingar av till hälften på så här många dygn
+  latrinUpptagen: 8, // en latrin där någon redan är räknas som så här många rutor längre bort när man väljer latrin (steg 11.1.71), och en ledig latrin inom så här många rutor gör att väntan inte är brist
+  latrinGlomDygn: 2, // en latrin som ingen använt på så här många dygn (år i spelet) växer igen och försvinner (steg 11.1.71)
   vattenNara: 3, // toa-smuts så här många rutor från vattnet gör vattnet smutsigare ...
   vattenPer: 0.25, // ... så här mycket för en toa-fläck i full styrka på stranden (mindre längre bort) ...
   latrinVatten: 0.5, // ... och så här mycket för en latrin på stranden
   akel: 0.25, // den som står på eller bredvid en toa-fläck som är starkare än så här blir äcklad ...
   akelHumor: -0.05, akelTim: 2, // ... så här mycket (humör), i så många timmar
+  toaInne: 2, // en toahög inomhus äcklar så här många gånger mer, för dem som är i rummet eller sover där, och väger lika mycket mer i rummets smuts (steg 11.1.73)
   plockRutor: 20, // toa-smuts i full styrka på eller bredvid rutan gör den lika mycket sämre att plocka på som så här många rutors längre väg (steg 10.11.14)
   ifred: 0.04, ifredTim: 2, // den som går på toa i latrinen får vara ifred: så här mycket bättre humör, i så många timmar
   byn: 0, // blod och toa-högar så här nära byns område (utanforByn, 0 innanför) ligger inne i byn (steg 3.6.10) ...
@@ -102,7 +106,7 @@ export function smutsVid(s: State, t: { id: number; k: string; x: number; y: num
 // det blir samma i levande läget, snabbläget och gränssnittet
 interface ToaKarta { hr: number; fl: Flack[]; v: number; n: number; nara: Float32Array; vatten: Float32Array }
 const kartor = new WeakMap<State, ToaKarta>();
-const latriner = (s: State) => stationerOf(s).filter(t => stationDef(t.k)?.gor.includes('toa'));
+export const latriner = (s: State) => stationerOf(s).filter(t => stationDef(t.k)?.gor.includes('toa'));
 function toaKarta(s: State): ToaKarta {
   const hr = Math.floor(s.now / HOUR), fl = flackarOf(s), v = s.byggV ?? 0, n = stationerOf(s).length;
   let c = kartor.get(s);
@@ -186,6 +190,14 @@ export function akel(s: State, p: Person) {
   if (syns.length && syns.some(q => Math.abs(q.x - p.x) <= R && Math.abs(q.y - p.y) <= R && Math.hypot(q.x - p.x, q.y - p.y) <= R)) think(p, 'Blod och smuts i byn', SMUTS.synHumor, s.now, SMUTS.synTim * HOUR);
   if (!s.flackar?.length) return;
   if (toaNara(s, tileOf(p.x, p.y)) > SMUTS.akel) think(p, 'Äcklad av smuts', SMUTS.akelHumor, s.now, SMUTS.akelTim * HOUR);
+  // en toahög inomhus (steg 11.1.73): den som är i rummet eller sover där äcklas mer än av en hög ute i byn
+  const i = tileOf(p.x, p.y), har = roomAt(s, i % W, Math.floor(i / W)), b = bedTile(s, p), sov = b === undefined ? undefined : roomAt(s, b % W, Math.floor(b / W));
+  if ((har || sov) && toaIRum(s, [har, sov])) think(p, 'Äcklad av toa i huset', SMUTS.akelHumor * SMUTS.toaInne, s.now, SMUTS.akelTim * HOUR);
+}
+// en toahög som syns (starkare än SMUTS.akel) på golvet i något av rummen
+function toaIRum(s: State, rum: (ReturnType<typeof roomAt>)[]) {
+  for (const f of flackarOf(s)) if (f.k === 'toa' && flackNu(f, s.now) > SMUTS.akel) for (const r of rum) if (r && r.tiles.includes(f.i)) return true;
+  return false;
 }
 // blodet, toa-högarna och resterna inne i byn som syns (punkter), och rutorna där det ligger blod (blod), med styrkan vid timmens
 // början. Rutorna med blod sparas en timme i taget och tills blodet ändras (blodas lägger en ny lista). Punkterna räknas varje
@@ -220,12 +232,13 @@ export const ruttSmuts = (s: State, x: number, y: number) => {
 };
 
 // ---------- latrinen ----------
-// den latrin p går till: den närmaste färdiga som inte är full
+// den latrin p går till: en färdig som inte är full, efter avståndet och om den är ledig (steg 11.1.71): en där någon redan
+// är räknas som SMUTS.latrinUpptagen rutor längre bort, så att de latriner som finns används
 export function latrinFor(s: State, p: Person) {
   let best: Station | undefined, bd = Infinity;
   for (const t of latriner(s)) {
     if (!isKlar(t) || (t.fyllt ?? 0) >= 1) continue;
-    const d = Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - p.y);
+    const d = Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - p.y) + (latrinUpptagen(s, t, p) ? SMUTS.latrinUpptagen : 0);
     if (d < bd) { bd = d; best = t; }
   }
   return best;
@@ -236,6 +249,15 @@ export const latrinFyllt = (t: Station) => clamp(t.fyllt ?? 0, 0, 1);
 // med en kompost (steg 9.7.6) töms den nästan fulla latrinen i stället, så byn vill ha en ny först när den är full
 // minuterna byborna väntat på latrinen på sistone, avklingade till nu (steg 10.2.79)
 export const latrinVantNu = (s: State) => { const v = s.latrinVant; return v ? v.m * Math.pow(0.5, (s.now - v.t) / (SMUTS.latrinVantDygn * DAY)) : 0; };
+// en annan latrin är ledig nära p (steg 11.1.71): då är väntan ingen brist på latriner
+export const latrinLedigNara = (s: State, p: Person, utom: Station) => latriner(s).some(t => t !== utom && isKlar(t) && (t.fyllt ?? 0) < 1 && Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - p.y) <= SMUTS.latrinUpptagen && !latrinUpptagen(s, t, p));
+// en latrin som ingen använt på SMUTS.latrinGlomDygn växer igen och försvinner (steg 11.1.71), som en full som fylls igen.
+// Räknas glest (TAKTER i steg.ts); tiden räknas från senaste besöket, eller från att den blev klar
+export function latrinerVaxerIgen(s: State) {
+  for (const t of latriner(s)) if (isKlar(t) && (t.fyllt ?? 0) < STATION.latrinNy && s.now - (t.anv ?? t.klar ?? s.now) >= SMUTS.latrinGlomDygn * DAY) {
+    fyllIgen(s, t, false); count(s, 'latriner igenvuxna');
+  }
+}
 // väntan läggs till (den som står och väntar på en latrin där någon annan är, steg.ts)
 export function latrinVanta(s: State, min: number) { s.latrinVant = { m: latrinVantNu(s) + min, t: s.now }; count(s, 'latrinVantMin', min); }
 // bristen på latriner: ingen latrin som inte är (nästan) full, eller så mycket väntan på dem som finns (steg 10.2.79)
@@ -247,7 +269,7 @@ const harKompost = (s: State) => stationerOf(s).some(t => t.k === 'kompost' && i
 export function toaBesok(s: State, p: Person, ref?: number) {
   const t = stationById(s, ref);
   if (t && isKlar(t) && stationDef(t.k)?.gor.includes('toa') && Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - p.y) < 1.5) {
-    t.fyllt = latrinFyllt(t) + 1 / STATION.latrinRymmer;
+    t.fyllt = latrinFyllt(t) + 1 / STATION.latrinRymmer; t.anv = s.now;
     count(s, 'latrinbesok');
     think(p, 'Fick vara ifred', SMUTS.ifred, s.now, SMUTS.ifredTim * HOUR);
     if (t.fyllt >= 1 - 1e-9 && !harKompost(s)) fyllIgen(s, t); // med en kompost står den full tills någon tömmer den (steg 9.7.6)
@@ -257,12 +279,13 @@ export function toaBesok(s: State, p: Person, ref?: number) {
   count(s, 'toafläckar');
 }
 // en full latrin fylls igen: den försvinner och rutan blir bar jord, som sedan blir gräs av sig själv (mark.ts)
-function fyllIgen(s: State, t: Station) {
+function fyllIgen(s: State, t: Station, full = true) {
   s.stationer = stationerOf(s).filter(q => q !== t);
   s.byggV = (s.byggV ?? 0) + 1;
   const g = groundOf(s), i = t.y * W + t.x;
   g.cover[i] = 0;
   if (g.trees[i] < FOREST) g.trees[i] = 0;
+  if (!full) return;
   count(s, 'latriner fyllda');
   if (forstaGang(s, 'latrin_full')) log(s, 'Byns första latrin blev full och fylldes igen. Nu behövs en ny grop.', 'world');
 }

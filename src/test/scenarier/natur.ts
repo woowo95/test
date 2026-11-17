@@ -6,7 +6,7 @@ import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
-import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare } from './hjalp';
+import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.djur = {
@@ -1071,6 +1071,21 @@ SCENARIER.utkant = {
   },
 };
 
+SCENARIER.latriner = {
+  lang: true,
+  text: 'För många latriner (steg 11.1.71): den som behöver gå väljer latrin efter avståndet och om den är ledig, väntan räknas som brist bara när ingen annan latrin var ledig nära, och en latrin som inte använts på länge växer igen. En stor by under 5 dygn (5 år i spelet): antalet latriner håller sig vid det som kön kräver',
+  kor: () => {
+    const s = testBy(30, b => living(b).length >= 15 && SIM.latriner(b).length >= 1);
+    const antal = () => SIM.latriner(s).length, fore = antal();
+    let mest = fore;
+    kor(s, 5 * 24, v => { const n = SIM.latriner(v).length; if (n > mest) mest = n; });
+    const folk = living(s).length, efter = antal(), igen = s.stat?.['latriner igenvuxna'] ?? 0, tak = Math.max(3, Math.ceil(folk / 5));
+    return [
+      [`${folk} invånare: ${fore} latriner före, ${efter} efter 5 år, högst ${mest} (högst ${tak}, en per fem invånare), ${igen} växte igen`, mest <= tak && efter >= 1],
+    ];
+  },
+};
+
 SCENARIER.latrin = {
   text: 'Toa-smuts och latriner (steg 2.7.2): den som går på toa utanför en latrin lämnar en fläck som bleknar på två dygn. Den äcklar den som går förbi, gör det sämre att plocka där (maten kan ge magsjuka), och nära vattnet smutsar den vattnet. Latrinen är en grop i byns utkant som grävs med benspaden: man går dit, får vara ifred och lämnar ingen fläck, gropen fylls och fylls igen, och byn gräver en ny. Får någon ont i magen av toa-smutsat vatten lär sig byn att lägga latrinen långt från vattnet. Benspaden görs av tre ben, ett rep och en gren och gräver fram rötter fortare',
   kor: () => {
@@ -1753,7 +1768,17 @@ SCENARIER.smutsibyn = {
     const bleknad = smutsIByn(u).punkter.length;
     blodas(u, uz.x + 0.5, uz.y + 0.5, 'blodning', 1);
     const farsk = smutsIByn(u).punkter.length, antal = u.blod.length;
+    // samma toahög ute och inne (steg 11.1.73): inne i ett hus äcklar den mer, och den väger tyngre i rummets smuts
+    const w = createState(1, START); klockan(w); medHus(w);
+    const rum = SIM.gridOf(w).rooms.find(r => r.tiles.length > 2)!, [a, b2] = living(w).filter(r => ageOf(r, w.now) >= 18) as [SIM.Person, SIM.Person];
+    const ti = rum.tiles[0], humorAv = (r: SIM.Person) => r.thoughts.filter(x => /Äcklad/.test(x.text)).reduce((n, x) => n + x.v, 0);
+    Object.assign(b2, { x: ti % SIM.W + 0.5, y: Math.floor(ti / SIM.W) + 0.5, task: undefined }); toaBesok(w, b2);
+    Object.assign(a, { x: ti % SIM.W + 0.5, y: Math.floor(ti / SIM.W) + 0.5, task: undefined }); a.thoughts = []; akel(w, a); const inneH = humorAv(a);
+    const ute = createState(1, START); klockan(ute); const [a2, b3] = living(ute).filter(r => ageOf(r, ute.now) >= 18) as [SIM.Person, SIM.Person];
+    Object.assign(b3, { task: undefined }); toaBesok(ute, b3); Object.assign(a2, { x: b3.x, y: b3.y, task: undefined }); a2.thoughts = []; akel(ute, a2); const uteH = humorAv(a2);
+    const rumSmuts = SIM.rumInfo(w, rum).smuts;
     return [
+      [`samma toahög äcklar mer inne i huset (humör ${inneH.toFixed(2)}) än ute i byn (${uteH.toFixed(2)}), och väger ${rumSmuts} i rummets smuts (steg 11.1.73)`, inneH < uteH && uteH < 0 && rumSmuts === SMUTS.toaInne],
       ['ingen tanke utan blod', !fore],
       [`den som ser blodet inne i byn får tanken (${ibyn} fläckar och högar syns, lagret inne i byn: ${inne})`, ser && inne],
       ['inte den som är långt bort eller sover', !langtBort && !sover],

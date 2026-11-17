@@ -56,12 +56,12 @@ export const KROPP = balans('kropp', {
   trottDag: 0.1, // under detta är man så trött på dagen att man måste vila (bufferten nästan tom) ...
   trottNatt: 0.12, // ... och på natten
   latVila: 0.2, // så mycket högre är gränsen för den som är helt lat
-  restVila: 0.09, // vila per timme när man vilar
+  restVila: 0.19, // vila per timme när man vilar (0,09 före steg 11.1.72: sömnen i en bädd tar nu ungefär en åttondel av dygnet)
   restArbete: -0.04, // ... när man arbetar hårt (-0,06 före steg 2.3.10)
   restVaken: -0.02, // ... annars (-0,03 före steg 2.3.10)
-  restGolv: 0.03, // extra vila per timme när man sover inomhus på golv
-  restTak: 0.02, // ... på bar mark under tak
-  restBadd: 0.05, // ... i en halmbädd (steg 2.2.5)
+  restGolv: 0.063, // extra vila per timme när man sover inomhus på golv (höjda i samma förhållande som restVila, steg 11.1.72)
+  restTak: 0.042, // ... på bar mark under tak
+  restBadd: 0.105, // ... i en halmbädd (steg 2.2.5)
   strandVila: 0.05, // att sitta vid vattnet ger så mycket vila
   // umgänge (social) och toa
   socialTim: 18, // timmar från fullt umgänge till tomt

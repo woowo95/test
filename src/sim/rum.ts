@@ -3,7 +3,7 @@ import { Hus, Rum, gridOf } from './byggnad';
 import { balans } from './balans';
 import { brasorOf } from './brasor';
 import { eldPlats } from './karta';
-import { flackNu, flackarOf } from './smuts';
+import { SMUTS, flackNu, flackarOf } from './smuts';
 import { isKlar, stationDef, stationerOf, storlekAv } from './stationer';
 import { living } from './folk';
 import { HOUR, State, W } from './typer';
@@ -76,7 +76,7 @@ export const RUM_MINUS: RumMinus[] = [
   { namn: 'Trångt och smutsigt', a: ['trangt'], b: ['smutsigt'] },
 ];
 
-function rumInfo(s: State, r: Rum): RumInfo {
+export function rumInfo(s: State, r: Rum): RumInfo {
   const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sida: 0, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, kok: 0, bara: new Set() };
   if (r.tiles.length) {
     const xs = r.tiles.map(t => t % W), ys = r.tiles.map(t => Math.floor(t / W));
@@ -107,7 +107,7 @@ function rumInfo(s: State, r: Rum): RumInfo {
   const lagret = new Set<number>();
   for (const a of s.stackar ?? []) { const t = a.y * W + a.x; if (rutor.has(t) && a.n > 0) { i.bara.add(a.k); lagret.add(t); } }
   i.forvar += lagret.size;
-  for (const f of flackarOf(s)) if (rutor.has(f.i) && flackNu(f, s.now) >= RUM.smutsMin) i.smuts++;
+  for (const f of flackarOf(s)) if (rutor.has(f.i) && flackNu(f, s.now) >= RUM.smutsMin) i.smuts += f.k === 'toa' ? SMUTS.toaInne : 1; // en toahög väger tyngre i rummets smuts (steg 11.1.73)
   return i;
 }
 
