@@ -1075,7 +1075,9 @@ SCENARIER.latriner = {
   lang: true,
   text: 'För många latriner (steg 11.1.71): den som behöver gå väljer latrin efter avståndet och om den är ledig, väntan räknas som brist bara när ingen annan latrin var ledig nära, och en latrin som inte använts på länge växer igen. En stor by under 5 dygn (5 år i spelet): antalet latriner håller sig vid det som kön kräver',
   kor: () => {
-    const s = testBy(30, b => living(b).length >= 15 && SIM.latriner(b).length >= 1);
+    // en stor testby; har den ingen latrin än (testbyarna kommer sällan på latrinen på 45 dygn) får den en, och de vuxna kan gräva fler
+    const s = testBy(30, b => living(b).length >= 15);
+    if (!SIM.latriner(s).length) { medBank(s, 'latrin'); for (const p of living(s)) if (ageOf(p, s.now) >= 18) p.tek = { ...p.tek, latrin: 1 }; }
     const antal = () => SIM.latriner(s).length, fore = antal();
     let mest = fore;
     kor(s, 5 * 24, v => { const n = SIM.latriner(v).length; if (n > mest) mest = n; });
