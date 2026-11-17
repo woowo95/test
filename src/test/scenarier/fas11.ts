@@ -1600,3 +1600,23 @@ SCENARIER.packning = {
     ];
   },
 };
+SCENARIER.insatser = {
+  text: 'Boken över insatserna (steg 11.5.4, satsa i resa.ts): vem som satsat vad i sällskapet (egna saker, byns förråd, en annans djur) i hela saker med värde, och ägaren behöver inte följa med',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!, sl = SIM.nyttSallskap(s, a!, hb.grannar![0]!.nr, 'handel')!; SIM.foljMed(vl, sl, b!);
+    const egen = SIM.satsa(sl, a!.id, 'skinn', 20), by = SIM.satsa(sl, 'by', 'brod', 24.7), igen = SIM.satsa(sl, a!.id, 'skinn', 5), noll = SIM.satsa(sl, 'by', 'brod', 0.4);
+    // en annans häst: c följer inte med
+    const hast: SIM.Tamdjur = { id: SIM.TAM_ID0 + 99999, art: 'hast', born: s.now - 5 * SIM.DAY, hunger: 0, agare: c!.id, x: 1, y: 1 };
+    s.tamdjur!.push(hast);
+    const dj = SIM.satsaDjur(s, sl, hast.id), dj2 = SIM.satsaDjur(s, sl, hast.id), per = SIM.insatsPer(sl);
+    return [
+      [`egna saker med värde (${egen?.n} skinn, ${egen?.varde})`, !!egen && egen.n === 25 && egen === igen && egen.varde === Math.round(25 * SIM.grundvarde('skinn'))],
+      [`ur byns förråd i hela saker (${by?.n} bröd)`, by?.n === 24 && by.agare === 'by' && !noll],
+      [`en annans häst, en gång (${dj?.varde})`, !!dj && !dj2 && dj.agare === c!.id && dj.varde === SIM.tamArt('hast').varde && sl.djur.includes(hast.id)],
+      ['ägaren till hästen följer inte med', !sl.medl.includes(c!.id) && per.get(c!.id) === dj?.varde],
+      ['sakerna ligger i den gemensamma packningen', sl.pack.skinn === 25 && sl.pack.brod === 24],
+      ['allt i boken är hela saker', sl.insatser.every(x => Number.isInteger(x.n) && Number.isInteger(x.varde))],
+    ];
+  },
+};
