@@ -1023,3 +1023,50 @@ SCENARIER.radledare = {
     ];
   },
 };
+
+SCENARIER.radtro = {
+  text: 'Tron i raden (steg 11.3.11, rad.ts): en by får en tro, andelen troende växer och en vänlig grannes tro sprids',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const a = vl.rader!.find(r => SIM.lever(vl, r) && SIM.grannRader(vl, r, SIM.RAD.kontaktDygn).some(m => m.nr !== vl.huvud && SIM.lever(vl, m)))!;
+    const m = SIM.grannRader(vl, a, SIM.RAD.kontaktDygn).find(x => x.nr !== vl.huvud && SIM.lever(vl, x))!;
+    for (const r of vl.rader!) if (r.nr !== vl.huvud) delete r.tro;
+    SIM.mots(vl, a.nr, m.nr);
+    const rel = (v: number) => { vl.rel![`${a.nr}>${m.nr}`] = v; };
+    // utan vänner: byn får en egen tro, och andelen växer
+    rel(-40);
+    const egen = { ...a, tro: undefined as SIM.RadTro | undefined };
+    let dygnTill = -1;
+    for (let n = 0; n < 40; n++) { SIM.radTro(vl, egen, n); if (egen.tro && dygnTill < 0) dygnTill = n + 1; }
+    // spridning: grannen har en tro, med och utan vänskap
+    m.tro = { namn: 'Grannens tro', andel: 40, krig: 80 };
+    const forsok = (v: number) => { rel(v); let ja = 0; for (let n = 0; n < 300; n++) { const r = { ...a, tro: undefined as SIM.RadTro | undefined }; SIM.radTro(vl, r, 500 + n); if (r.tro?.namn === 'Grannens tro') ja++; } return ja; };
+    const vanlig = forsok(40), ovanlig = forsok(-40);
+    // en by med en egen tro får grannens som sin andra tro; den växer med kontakten och dör ut utan
+    rel(40);
+    const b = { ...a, tro: { namn: 'Byns tro', andel: 30, krig: 20 } as SIM.RadTro };
+    let n = 1000; while (!b.tro.annan && n < 1300) SIM.radTro(vl, b, n++);
+    const fick = b.tro.annan?.namn === 'Grannens tro';
+    for (let i = 0; i < 10; i++) SIM.radTro(vl, b, n++);
+    const vaxte = b.tro.annan?.andel ?? 0;
+    rel(-40);
+    for (let i = 0; i < 40 && b.tro.annan; i++) SIM.radTro(vl, b, n++);
+    const doog = !b.tro.annan;
+    // byter plats när den andra tron blir större
+    const c = { ...a, tro: { namn: 'Byns tro', andel: 10, krig: 20, annan: { namn: 'Grannens tro', andel: 30, krig: 80 } } as SIM.RadTro };
+    rel(40); SIM.radTro(vl, c, 2000);
+    // av sig själv: världen i 20 dygn
+    for (const r of vl.rader!) if (r.nr !== vl.huvud) delete r.tro;
+    for (let h = 0; h < 20 * 24; h++) { s.now += 3600e3; SIM.varldSteg(s); }
+    const levande = vl.rader!.filter(r => SIM.lever(vl, r)), medTro = levande.filter(r => r.tro);
+    const hela = levande.every(r => !r.tro || (Number.isInteger(r.tro.andel) && r.tro.andel >= 0 && r.tro.andel <= 100 && (!r.tro.annan || r.tro.annan.andel <= r.tro.andel)));
+    const namn = medTro.map(r => r.tro!.namn), krigiskt = levande.every(r => !r.tro || !r.syn || r.syn.krigisk === r.tro.krig);
+    return [
+      [`en by utan vänner får en egen tro (efter ${dygnTill} dygn, ${egen.tro?.namn}) och andelen växer (${egen.tro?.andel} %)`, dygnTill > 0 && !!egen.tro && egen.tro.namn !== 'Grannens tro' && egen.tro.andel >= SIM.RAD.troMal - 3],
+      [`en vänlig grannes tro sprids (${vanlig} av 300 dygn mot ${ovanlig} utan vänskap)`, vanlig > 30 && ovanlig === 0],
+      [`en by med en egen tro får grannens som sin andra tro, som växer med kontakten (${vaxte} %) och dör ut utan`, fick && vaxte > SIM.RAD.troStart && doog],
+      [`blir den andra tron större byter de plats (${c.tro!.namn} ${c.tro!.andel} %, ${c.tro!.annan?.namn} ${c.tro!.annan?.andel} %)`, c.tro!.namn === 'Grannens tro' && c.tro!.annan?.namn === 'Byns tro'],
+      [`världen på 20 dygn: ${medTro.length} av ${levande.length} byar har en tro (${[...new Set(namn)].join(', ')}), andelarna är hela procent och grannbyns krigiskhet följer tron`, medTro.length >= levande.length / 2 && hela && krigiskt],
+    ];
+  },
+};

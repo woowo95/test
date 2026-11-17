@@ -25,6 +25,7 @@
 import { balans } from './balans';
 import { TEK, TEKNIK, TEKTAL } from './teknik';
 import { relation } from './byrel';
+import { TRONAMN } from './religion';
 import { MARK_IDS, VARLDMARK, VarldMark } from './varldmark';
 import { BYSORTER, radKrok, VarldRad } from './radtal';
 import { KROPP } from './folk';
@@ -63,6 +64,12 @@ export const RAD = balans('rad', {
   vanlig: 15, // byarna är vänliga när relationen är minst så mycket
   tappa: 0.05, // chansen per dygn att en by tappar en teknik som inget annat bygger på, i en by med ett fåtal ...
   tappaFolk: 12, // ... och noll från så här många
+  // tron (steg 11.3.11)
+  troNy: 0.2, // chansen per dygn att en by utan tro får en
+  troSprid: 0.2, // chansen per dygn att en vänlig grannes tro sprids till byn (inom RAD.kontaktDygn)
+  troStart: 10, // en ny tro i byn börjar med så många procent troende ...
+  troMal: 35, // ... och andelen går mot så många procent ...
+  troDygn: 0.2, // ... så stor del av vägen per dygn; en annan tro utan en vänlig granne som delar den går lika fort mot noll
 });
 
 export type RadKolumn = 'barkraft' | 'forvaring' | 'styrka' | 'rikedom';
@@ -136,7 +143,7 @@ function radRikedom(vl: Varlden, r: VarldRad, n: number, nod: boolean) {
 }
 
 // ärendena för kunskapen (dygnet): teknikens nummer i TEKNIK efter sorten
-const K = { ny: 1 << 16, tappa: 2 << 16, sprid: 3 << 16 };
+const K = { ny: 1 << 16, tappa: 2 << 16, sprid: 3 << 16, tro: 4 << 16 };
 const nivaMal = (niva: number) => TEKTAL.nivaDygn[Math.min(TEKTAL.nivaDygn.length, niva) - 1];
 // grannarna inom räckhåll (grannätet på byns plats)
 export function grannRader(vl: Varlden, r: VarldRad, dygn: number): VarldRad[] {
@@ -162,11 +169,44 @@ export function radKunskap(vl: Varlden, r: VarldRad, n: number) {
   r.tek = TEKNIK.map(t => t.id).filter(id => (kan.has(id) && !bort.has(id)) || ny.includes(id));
 }
 
+// ---------- tron (steg 11.3.11) ----------
+// En by utan tro får en med RAD.troNy per dygn: ett namn som ingen annan by i världen har och en läggning från fridsam till
+// krigisk. Har en vänlig granne inom räckhåll en tro sprids den med RAD.troSprid: till en by utan tro blir den byns tro, och
+// till en by med en annan tro blir den byns andra tro (annan). Andelen troende går mot RAD.troMal, RAD.troDygn av vägen per
+// dygn och minst en procent; den andra tron växer bara medan en vänlig granne delar den och går annars mot noll. Blir den
+// andra tron större än byns byter de plats. Grannbyns krigiskhet (Klan.krigisk) följer tron.
+const steg = (v: number, mal: number) => v === mal ? v : v + Math.sign(mal - v) * Math.max(1, Math.round(Math.abs(mal - v) * RAD.troDygn));
+function nyTroNamn(vl: Varlden, u: number) {
+  const tagna = new Set((vl.rader ?? []).flatMap(r => [r.tro?.namn, r.tro?.annan?.namn]));
+  const fria = TRONAMN.filter(n => !tagna.has(n));
+  return fria.length ? fria[Math.floor(u * fria.length)] : `Den nya ${TRONAMN[Math.floor(u * TRONAMN.length)].toLowerCase()}`;
+}
+export function radTro(vl: Varlden, r: VarldRad, n: number) {
+  const vanner = grannRader(vl, r, RAD.kontaktDygn).filter(m => m.tro && (relation(vl, r.nr, m.nr) ?? -Infinity) >= RAD.vanlig);
+  const u = (i: number) => varldSlump(vl, r.nr, n, K.tro + i);
+  const fran = vanner.find((m, i) => m.tro!.namn !== r.tro?.namn && m.tro!.namn !== r.tro?.annan?.namn && u(10 + i) < RAD.troSprid)?.tro;
+  if (!r.tro) {
+    if (fran) r.tro = { namn: fran.namn, andel: RAD.troStart, krig: fran.krig };
+    else if (u(0) < RAD.troNy) r.tro = { namn: nyTroNamn(vl, u(1)), andel: RAD.troStart, krig: Math.round(u(2) * 100) };
+  } else {
+    r.tro.andel = steg(r.tro.andel, RAD.troMal);
+    const a = r.tro.annan;
+    if (a) {
+      a.andel = steg(a.andel, vanner.some(m => m.tro!.namn === a.namn) ? RAD.troMal : 0);
+      if (a.andel <= 0) delete r.tro.annan;
+      else if (a.andel > r.tro.andel) { const { annan: _, ...forr } = r.tro; r.tro = { ...a, annan: forr }; }
+    } else if (fran) r.tro.annan = { namn: fran.namn, andel: RAD.troStart, krig: fran.krig };
+  }
+  if (r.tro && r.syn) r.syn.krigisk = r.tro.krig;
+}
+
 radKrok.startMat = folk => Math.round(folk * portionerPerDygn() * RAD.startMat);
 
 // varje timme: radens regler för varje by i världen som lever efter dem, i ordning efter numret
 // varje dygn (ett år i spelet): kunskapen i varje by i världen som lever efter radens regler
 PERIODRADER.push({ namn: 'radens kunskap', period: 'dygn', fn: (_s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radKunskap(vl, r, n); } });
+// varje dygn: tron i varje by i världen som lever efter radens regler (steg 11.3.11)
+PERIODRADER.push({ namn: 'radens tro', period: 'dygn', fn: (_s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radTro(vl, r, n); } });
 // varje dygn (ett år i spelet): relationerna mellan byarna glöms mot grundläget (byrel.ts, steg 11.3.4)
 PERIODRADER.push({ namn: 'relationerna glöms', period: 'dygn', fn: (_s, vl) => relGlom(vl) });
 PERIODRADER.push({ namn: 'radens mat', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radMat(s, vl, r, n); } });

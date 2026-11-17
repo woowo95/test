@@ -44,7 +44,7 @@ export const BYSORT_IDS = Object.keys(BYSORTER) as BysortId[];
 // finns i en by som går i simuleringen. Resten byggs ur raden när personen behövs (fas 11.3)
 export interface FastPerson { namn: string; kon: 'm' | 'k'; fodd: number; roll: 'ledare' | 'handlare' | 'mott'; id?: number; nyckel?: number; dor?: number } // nyckel och dor (dödsdagen): en fast person i en by i världen (radperson.ts, steg 11.3.10)
 // tron i raden: namnet, andelen troende i procent och läggningen från fridsam (0) till krigisk (100)
-export interface RadTro { namn: string; andel: number; krig: number }
+export interface RadTro { namn: string; andel: number; krig: number; annan?: RadTro } // annan: den näst största tron i byn (steg 11.3.11)
 
 // en by som en rad i världen: de fasta fälten (nummer, sort, namn, plats, när den grundades, raden den kom ur och den den
 // lyder under), talen, teknikerna, tron, ledaren och de fasta personerna
@@ -59,14 +59,15 @@ export interface VarldRad {
 // behöver ladda reglerna
 export const radKrok = { startMat: (_folk: number) => 0, utflytt: (_s: State, _n: number) => {} }; // utflytt: de som lämnar huvudbyn (byflytt.ts, steg 11.3.5)
 const fast = (p: Person, roll: FastPerson['roll']): FastPerson => ({ namn: p.name, kon: p.sex, fodd: p.born, roll, id: p.id });
-// tron flest bybor har
+// tron flest bybor har, och den näst största som annan
 function radTro(s: State): RadTro | undefined {
   const folk = s.people.filter(alive), n = new Map<number, number>();
   for (const p of folk) if (p.tro !== undefined) n.set(p.tro, (n.get(p.tro) ?? 0) + 1);
-  let bast: number | undefined, m = 0;
-  for (const [id, k] of n) if (k > m || (k === m && id < bast!)) { bast = id; m = k; }
-  const tr = troOf(s, bast);
-  return tr ? { namn: troNamn(tr), andel: Math.round(100 * m / Math.max(1, folk.length)), krig: Math.round(skalaV(tr, 'krig') ?? 50) } : undefined;
+  const ord = [...n].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+  const som = ([id, m]: [number, number]): RadTro | undefined => { const tr = troOf(s, id); return tr ? { namn: troNamn(tr), andel: Math.round(100 * m / Math.max(1, folk.length)), krig: Math.round(skalaV(tr, 'krig') ?? 50) } : undefined; };
+  const forsta = ord[0] && som(ord[0]), andra = ord[1] && som(ord[1]);
+  if (forsta && andra) forsta.annan = andra;
+  return forsta;
 }
 // de fasta fälten och listorna ur en by som går i simuleringen (sorten och raden den kom ur ändras inte)
 function lasFasta(s: State, r: VarldRad) {

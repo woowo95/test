@@ -261,6 +261,8 @@ export const TECKEN = {
 export type TeckenTyp = keyof typeof TECKEN;
 const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
 // chansen att tolka varje tecken till en egen tro (steg 8.5.18), ett balanstal per rad; det som saknas har TRO.grundaChans
+// alla trosnamnen (raden i världen, steg 11.3.11)
+export const TRONAMN: readonly string[] = Object.values(TECKEN).flatMap(d => (d as TeckenDef).namn);
 export const TECKENTAL = balans('tecken', {
   blixt: 0.3, brand: 0.3, vinterSlut: 0.3, torkaSlut: 0.3, flodSlut: 0.3, jakt: 0.3, barnFrisk: 0.3, drom: 0.3,
   tornado: 0.25, brandStopp: 0.2, overlevde: 0.2, barnAska: 0.2, ingenDog: 0.1, skord: 0.1, dubbelt: 0.15, fynd: 0.1, svampsyn: 0.25, dodDrom: 0.15, frosjo: 0.1, bonSvar: 0.2,
