@@ -19,8 +19,8 @@ import { SAKER, isFood, viktOf } from './saker';
 import { grundvarde } from './varde';
 import { Varlden } from './varlden';
 import { DAY, Stat, State } from './typer';
-import { gruppAv, radGruppPaslag, radHar, radRikedomUr, radTar, radVaror, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
-import { rikMal } from './rad';
+import { gruppAv, radMarkId, radGruppPaslag, radHar, radRikedomUr, radTar, radVaror, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
+import { RAD, rikMal } from './rad';
 import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
 import { trampaFard, sallskapTyngd } from './leder';
@@ -164,18 +164,31 @@ function skickaFard(c: ByCtx, a: FardAffar) {
   const { s, vl, r, mot } = c, t0 = c.t, huvud = mot.nr === vl.huvud, n = huvud ? 0 : a.n; // till huvudbyn går handlaren (lasten: 11.6.9)
   taUr(r, a.g, n);
   const f: RadFard = { id: vl.nastaFard = (vl.nastaFard ?? 0) + 1, fran: r.nr, till: mot.nr, g: a.g, n, t0, t1: t0 + a.dygn * DAY, ...huvud ? { handlare: true as const } : {} };
-  if (huvud) { let i = 0; f.last = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x484c + i++), g => overskott(r, g)); } // handlarens varor ur raden (steg 11.6.9)
+  if (huvud) { let i = 0; f.last = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x484c + i++), g => overskott(r, g), radHandlarSort(s, r)); } // handlarens varor ur raden (steg 11.6.9)
   (vl.farder ??= []).push(f);
   trampaFard(s, r.nr, mot.nr, sallskapTyngd(BYHANDLING.barare));
   laggIKo(vl, f.t1, 'fardFram', { sak: f.id });
   count(s, huvud ? 'handlare_skickad' : 'radhandel_ut');
 }
+// handlarsorten (steg 11.6.10): byns dragdjur kommer ur marken där den ligger, oxen på slätten och hästen i skogen (bete åt
+// dem); på annan mark har byn inga. Byn skickar den sista sorten i HANDLARSORTER som den är rik nog för och kan utrusta
+export function radDjur(s: State, r: VarldRad): 'oxe' | 'hast' | undefined {
+  const m = radMarkId(s, r);
+  return m === 'slatt' ? 'oxe' : m === 'skog' ? 'hast' : undefined;
+}
+export function radHandlarSort(s: State, r: VarldRad): string {
+  const per = r.tal.rikedom / Math.max(1, r.tal.folk) / RAD.rikPer, djur = !!radDjur(s, r);
+  let ut = 'vandrande';
+  for (const [id, d] of Object.entries(HANDLARSORTER)) if (per >= d.rik && (!d.djur || djur) && (!d.tek || r.tek.includes(d.tek))) ut = id;
+  return ut;
+}
+handlarKrok.sorter = s => { const vl = s.varld, h = vl && radNr(vl, vl.huvud); return vl && h ? radGrannar(vl, h).filter(r => r.syn).map(r => radHandlarSort(s, r)) : []; };
 // lasten ur byns rad (steg 11.6.9, Flera samhällen: Det som kommer till huvudbyn kommer ur en rad): när byn skickar sin handlare
 // dras varorna ur HANDLARVAROR bland det byns tekniker kan göra (sakens tek), högst det byn har över i sakens varugrupp
 // (over, i grundvärde och maten i portioner), och dras ur raden genast; silvret tas ur radens silver. Slumpen är världens
 // (rand), så att det blir lika i det levande läget och ikappräkningen. Det hen har kvar och har köpt går hem till raden (fardHem)
-export function packaRad(r: VarldRad, rand: () => number, over: (g: VarugruppId) => number): HandlarLast {
-  const sort = 'vandrande', kg = HANDLAR_UTR[HANDLARSORTER[sort].utr]?.vikt ?? 0;
+export function packaRad(r: VarldRad, rand: () => number, over: (g: VarugruppId) => number, sort = 'vandrande'): HandlarLast {
+  const kg = HANDLAR_UTR[HANDLARSORTER[sort].utr]?.vikt ?? 0;
   const helt = ([a, b]: readonly [number, number] | number[]) => a + Math.floor(rand() * (b - a + 1));
   const [a0, b0] = HANDEL.vardeVaror, mal = a0 + rand() * (b0 - a0), ut: HVara[] = [];
   const kvar: Partial<Record<VarugruppId, number>> = {};

@@ -2546,3 +2546,30 @@ SCENARIER.handlarlast = {
     ];
   },
 };
+
+SCENARIER.handlarsort = {
+  text: 'Handlarsorterna följer byn (steg 11.6.10): en by skickar en vandrande handlare, en med packdjur eller en med vagn efter sin rikedom, sina djur och sina tekniker; den vandrande bär som en resenär (40 vikt) och den med packdjur mer',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const lev = vl.rader!.filter(x => SIM.lever(vl, x) && x.nr !== vl.huvud && x.tal.folk > 0);
+    const medDjur = lev.find(x => SIM.radDjur(s, x)), utan = lev.find(x => !SIM.radDjur(s, x));
+    if (!medDjur) return [['en by i världen har dragdjur', false]];
+    const rik = (r: SIM.VarldRad, per: number, tek: boolean) => { r.tal.rikedom = Math.round(per * SIM.RAD.rikPer * r.tal.folk); r.tek = tek ? [...new Set([...r.tek, 'ryggsack'])] : r.tek.filter(t => t !== 'ryggsack'); return SIM.radHandlarSort(s, r); };
+    const fattig = rik(medDjur, 0.5, true), rikMed = rik(medDjur, 1.2, true), utanTek = rik(medDjur, 1.2, false), utanDjur = utan ? rik(utan, 1.2, true) : 'vandrande';
+    const kg = (sort: string) => SIM.HANDLAR_UTR[SIM.HANDLARSORTER[sort].utr].vikt;
+    // med packdjur rymmer lasten mer än den vandrandes
+    rik(medDjur, 1.2, true);
+    const over = () => 10000, a = SIM.packaRad(SIM.cloneState(s).varld!.rader!.find(x => x.nr === medDjur.nr)!, mulberry(1), over, 'packdjur'), b = SIM.packaRad(SIM.cloneState(s).varld!.rader!.find(x => x.nr === medDjur.nr)!, mulberry(1), over, 'vandrande');
+    const tung = (l: SIM.HandlarLast) => SIM.kgOf(l.varor);
+    return [
+      [`en fattig by skickar en vandrande handlare (${fattig})`, fattig === 'vandrande'],
+      [`en rik by med dragdjur (${SIM.radDjur(s, medDjur)}) och packsadeln skickar en med packdjur (${rikMed})`, rikMed === 'packdjur'],
+      [`utan tekniken för packsadeln går hen till fots (${utanTek})`, utanTek === 'vandrande'],
+      [`en rik by utan djur skickar en vandrande (${utanDjur})`, utanDjur === 'vandrande'],
+      ['ingen by har vagn innan tekniken finns', lev.every(r => SIM.radHandlarSort(s, r) !== 'vagn')],
+      [`den vandrande bär 40 vikt, den med packdjur mer (${kg('vandrande')}, ${kg('packdjur')})`, kg('vandrande') === 40 && kg('packdjur') > 40],
+      [`lasten ryms i det hen bär (${tung(b).toFixed(0)} av 40, ${tung(a).toFixed(0)} av ${kg('packdjur')})`, tung(b) <= 40 && tung(a) <= kg('packdjur') && tung(a) >= tung(b)],
+    ];
+  },
+};
+const mulberry = (frö: number) => () => { frö = (frö + 0x6D2B79F5) | 0; let t = Math.imul(frö ^ (frö >>> 15), 1 | frö); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };

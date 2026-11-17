@@ -173,6 +173,11 @@ function radMark(s: State, r: VarldRad) {
   }
   return c.m;
 }
+// marken där byn ligger (VARLDMARK), eller inget utan världskarta
+export function radMarkId(s: State, r: VarldRad): string | undefined {
+  const v = varldMark(s);
+  return v && r.x !== undefined && r.y !== undefined ? MARK_IDS[v.mark[r.y * v.w + r.x]] : undefined;
+}
 export function markPaslag(s: State, r: VarldRad, k: string): number {
   const m = radMark(s, r), sall = m ? m.sallsynt : r.syn?.sallsynt;
   return sall?.includes(k) ? 1 + RADPRIS.sallsynt : m?.vanligt.includes(k) ? 1 - RADPRIS.vanligt : 1;

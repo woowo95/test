@@ -14,7 +14,7 @@ import { bitAt, blocked, freeNear } from './byggnad';
 import { ledig } from './stationer';
 import { clamp, pick, rnd } from './slump';
 import { iIstiden, ageIndex, hourOf } from './tid';
-import { grundvarde, rikedom } from './varde';
+import { grundvarde } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { GORS, canMake } from './redskap';
 import { amountOf } from './lager';
@@ -45,10 +45,8 @@ import { valkomnaHandlare } from './kyrka';
 // kartans kant tills ingen annan handlare är i byn och går in, men aldrig under istiden. Hen slår upp en
 // filt nära elden (byte.ts) och lägger ut sina varor, stannar några timmar och går sedan tillbaka samma väg. Handlaren är
 // ingen bybo: hen har ett namn, ett hem långt borta, sina varor och sitt silver, och sin egen utrustning, som inte väntar på
-// byns tekniker (HANDLAR_UTR): en ryggsäck från början (en kärra när det finns vägar, fas 7, och packdjur, 11.4.1.2, kommer
-// senare). Hen bär aldrig mer än utrustningen rymmer. Handeln själv är steg 4.4.1.3, färdigheten Handel 4.4.1.4.
+// byns tekniker (HANDLAR_UTR): sorten följer hembyn (steg 11.6.10, HANDLARSORTER). Hen bär aldrig mer än utrustningen rymmer. Handeln själv är steg 4.4.1.3, färdigheten Handel 4.4.1.4.
 export const HANDEL = balans('handel', {
-  rik: 400, // byns rikedom (ungefär arbetstimmar) som mått för vilka handlarsorter som kommer
   // kvällsmarknaden (steg 4.5.4.11): filten läggs ut på kvällen, efter arbetet, och handlaren går på morgonen (klockslag). Den
   // som kommer fram efter sentKvall, på natten eller på dagen väntar vid filtens plats till nästa kväll
   kvall: 19, sentKvall: 23, morgon: 7,
@@ -86,9 +84,12 @@ export const HANDEL = balans('handel', {
   redskapHopp: 0.1, // ett köpt redskap byn inte kan göra tar ägaren så långt mot tekniken, en gång per teknik (steg 4.5.4.16)
 });
 
-// handlarens utrustning: det hen bär varorna i. Bara ryggsäcken nu; kärran (vägar, fas 7) och packdjuret (11.4.1.2) läggs till här
+// handlarens utrustning: det hen bär varorna i, i vikt (saker.ts). Den vandrande bär som en resenär: 20 i händerna och 20 i
+// ryggsäcken (steg 11.6.10). Packdjuret bär sitt lass med packsadel ovanpå (hästen 60, steg 11.11.3), och vagnen sitt lass
 export const HANDLAR_UTR: Record<string, { namn: string; vikt: number }> = {
-  ryggsack: { namn: 'Ryggsäck', vikt: 125 }, // i vikt (saker.ts, steg 6.1.8)
+  ryggsack: { namn: 'Ryggsäck', vikt: 40 },
+  packdjur: { namn: 'Packdjur', vikt: 100 },
+  vagn: { namn: 'Vagn', vikt: 300 },
 };
 
 // ---------- handelsvarorna (steg 10.5.13, "Ekonomi och handel (Handelsvarorna)" i designdokumentet) ----------
@@ -132,7 +133,7 @@ const materialOver = (s: State, k: string) => Object.entries(SAKER[k]?.skaffa?.a
 export interface HandelsMal { k: string; n: number; till: number; kvar: number } // slaget, så många till, så många över bufferten byn vill ha av det och den del av silvret som är kvar att fylla
 export function handelsMalRakna(s: State) {
   s.handelsMal = undefined;
-  const r = rikedom(s) / HANDEL.rik, sorter = Object.keys(HANDLARSORTER).filter(k => HANDLARSORTER[k].rik <= r);
+  const sorter = handlarKrok.sorter(s); // de sorter grannbyarna skulle skicka (byhandling.ts)
   if (!sorter.length) sorter.push('vandrande');
   const medel = (f: (x: typeof HANDLARSORTER[string]) => number) => sorter.reduce((a, x) => a + f(HANDLARSORTER[x]), 0) / sorter.length;
   const silver = medel(x => (x.silver[0] + x.silver[1]) / 2), pack = medel(x => HANDLAR_UTR[x.utr].vikt * (1 - HANDEL.fylla));
@@ -154,14 +155,18 @@ export function handelsMalRakna(s: State) {
 // så många av materialet k över bufferten som byn vill ha för handeln (repet tvinnas till bufferten plus det)
 export const handelsTill = (s: State, k: string) => s.handelsMal?.k === k ? s.handelsMal.till : 0;
 
-// sorterna av handlare (steg 4.5.4.16): vilken som kommer styrs av hur rik byn är (rik = gånger HANDEL.rik), inte av byns
-// tekniker; finns flera som byn är rik nog för väljs en på måfå. Sorten bestämmer utrustningen (HANDLAR_UTR) och varorna
-// (kolumnen sort i HANDLARVAROR). I dag finns bara den vandrande med ryggsäck; den med bärdjur (steg 11.4.1.2) och med kärra
-// (vägarna, fas 7) läggs till här, med sina finare varor i HANDLARVAROR
-export const HANDLARSORTER: Record<string, { namn: string; utr: string; rik: number; silver: readonly [number, number] }> = {
+// sorterna av handlare (steg 4.5.4.16 och 11.6.10): sorten följer hembyn, inte huvudbyn. En by skickar den sista sorten i
+// registret som den har råd med och kan utrusta (radHandlarSort i byhandling.ts): rik är rikedomen per person som andel av
+// RAD.rikPer, djur att byns mark ger bete åt dragdjur (radDjur), och tek tekniken byn behöver (packsadeln görs med samma
+// teknik som ryggsäcken; vagnen kommer med 11.11.2). Sorten bestämmer utrustningen (HANDLAR_UTR), silvret och varorna
+// (kolumnen sort i HANDLARVAROR)
+export interface HandlarSortDef { namn: string; utr: string; rik: number; djur?: true; tek?: string; silver: readonly [number, number] }
+export const HANDLARSORTER: Record<string, HandlarSortDef> = {
   vandrande: { namn: 'Vandrande handlare', utr: 'ryggsack', rik: 0, get silver() { return HANDEL.silver as unknown as readonly [number, number]; } }, // silver: det hen har med sig (balanstalet)
+  packdjur: { namn: 'Handlare med packdjur', utr: 'packdjur', rik: 1, djur: true, tek: 'ryggsack', silver: [20, 50] },
+  vagn: { namn: 'Handlare med vagn', utr: 'vagn', rik: 1.5, djur: true, tek: 'vagn', silver: [40, 90] },
 };
-const V = ['vandrande']; // de sorter av handlare som kan ha varan
+const V = ['vandrande', 'packdjur', 'vagn']; // de sorter av handlare som kan ha varan
 // varorna handlarna har med sig: slaget, hur många åt gången, hur ofta (vikt) och vilka sorter av handlare som kan ha dem. Hela saker
 export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number; sort: readonly string[] }[] = [
   { k: 'flinta', n: [1, 3], vikt: 3, sort: V },
@@ -232,11 +237,8 @@ export const kgOf = (v: HVara[]) => v.reduce((a, w) => a + w.n * viktOf(w.k), 0)
 export const rymmer = (h: Handlare) => HANDLAR_UTR[h.utr]?.vikt ?? 0;
 
 
-// vilken sorts handlare som kommer: en av dem byn är rik nog för (bara en finns i dag, och då dras ingen slump)
-function sortFor(s: State) {
-  const r = rikedom(s) / HANDEL.rik, kan = Object.keys(HANDLARSORTER).filter(k => HANDLARSORTER[k].rik <= r);
-  return kan.length > 1 ? kan[Math.floor(rnd(s, 'handel') * kan.length)] : kan[0] ?? 'vandrande';
-}
+// sorten när ingen by gett hen en last (testläget): den vandrande
+const sortFor = (_s: State) => 'vandrande';
 // varorna en handlare har med sig: dragna ur HANDLARVAROR tills de är värda nog eller packningen är full
 export function packa(s: State, kg: number, sort: string): HVara[] {
   const mal = mellan(s, HANDEL.vardeVaror), ut: HVara[] = [], rader = HANDLARVAROR.filter(v => v.sort.includes(sort));
@@ -322,7 +324,7 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
 // handlaren från byn rad har kommit fram till kartans kant (byhandling.ts, steg 11.6.8) och går in när det är fritt
 export function handlarFram(s: State, rad: number) { (s.handlarVantar ??= []).push(rad); }
 // handlaren har gått från byn: färden hem på världskartan börjar (krok, så att handel.ts inte laddar byhandling.ts)
-export const handlarKrok = { hem: (_s: State, _rad: number, _last?: HandlarLast) => {}, borta: (_s: State, _rad: number) => {} }; // borta: hen dog i byn; last: det hen bär hem
+export const handlarKrok = { hem: (_s: State, _rad: number, _last?: HandlarLast) => {}, borta: (_s: State, _rad: number) => {}, sorter: (_s: State): string[] => [] }; // borta: hen dog i byn; last: det hen bär hem; sorter: de sorter grannbyarna skulle skicka (steg 11.6.10)
 const handlarHem = (s: State, rad: number, h?: Handlare) => handlarKrok.hem(s, rad, h ? handlarHemLast(h) : undefined);
 const handlarBorta = (s: State, h: Handlare) => { const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined; if (rad !== undefined) handlarKrok.borta(s, rad); };
 

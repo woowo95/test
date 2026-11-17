@@ -121,7 +121,7 @@ export const SALLSYNT: Record<string, string> = {
   skor: 'som rock; scenariot plagg prövar det; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   rock_kaninskinn: 'som rock; scenariot plagg prövar det; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   skor_kaninskinn: 'som rock; scenariot plagg prövar det; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
-  koa: 'handlaren kommer först när byn är rik nog (HANDEL.rik), och de hungrigare byarna efter 6.6 hinner sällan dit på 35 dygn; scenariot handelsko prövar kön; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
+  koa: 'handlaren kommer bara när en grannby med överflöd skickar hen (steg 11.6.8); scenariot handelsko prövar kön; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   fjadrar: 'fjädrar blir det bara när en fälld fågel slaktas och inte äts hel; fåglarna jagas bara när ingen kanin eller inget rådjur finns nära (steg 6.6.3), och i de hungriga byarna äts de; scenariot faglar prövar slakten; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns',
   kol: 'kol blir det bara när elden brunnit ut helt',
   flyttaeld: 'elden flyttas bara när ett hus behöver platsen eller byn har minst tre hus och vuxit ifrån elden (steg 2.10.4); scenariot eldflytt prövar det',
