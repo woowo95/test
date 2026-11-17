@@ -900,7 +900,7 @@ SCENARIER.ledare = {
     SIM.stepStyre(b.t);
     const slut = !SIM.ledareOf(b.t) && SIM.pabud(b.t, 'matlager') === b.t.seder.v.forsiktighet && b.t.styre!.historia[0].till !== undefined;
     return [
-      [`Tyngsta röster räknar med ledarens extra vikt (${l.name} ${lr ? Math.round(lr.andel * 100) : 0} %), är sorterad och andelarna blir 100 %`, rostOk],
+      [`Störst inflytande räknar med ledarens extra vikt (${l.name} ${lr ? Math.round(lr.andel * 100) : 0} %), är sorterad och andelarna blir 100 %`, rostOk],
       ['utan tekniken Ledarskap blir ingen ledare', ingen],
       [`den som kan ledarskap och är omtyckt blir ledare (${titel})`, vald],
       ['den första ledaren låser upp seden Envälde', !rang0 && rang1],

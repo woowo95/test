@@ -167,6 +167,8 @@ document.addEventListener('click', e => {
   if (b) { selectPerson(Number(b.dataset.id)); return; }
   if (hjalpKlick(el)) { renderPanel(true); return; }
   if (el.closest('[data-kvsort]')) { ui.kvSort = !ui.kvSort; renderPanel(true); return; } // stackarna efter kvalitet (steg 9.2.18)
+  const lv = el.closest<HTMLElement>('[data-visa]'); // en länk till en annan flik (flikLank i hjalp.ts)
+  if (lv && (ALLA[lv.dataset.visa as FlikId]?.syns?.() ?? true)) { visa(lv.dataset.visa as FlikId); renderPanel(true); return; }
   for (const id of IDS) if (ALLA[id].klick?.(el)) { renderPanel(true); return; }
   const tb = el.closest<HTMLElement>('.tabs button');
   if (tb?.getAttribute('aria-disabled') === 'true') return; // en blek sten öppnar inget; bubblan har sagt vad som krävs

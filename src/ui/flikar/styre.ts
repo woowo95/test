@@ -1,6 +1,6 @@
 import { BUDGET, sederTarget, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { bar, esc, fallUt, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
+import { bar, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import { lastSed, sedFormat, sedKlick, sedLista, sedVag } from './seder';
 import type { Flik } from '../panel';
@@ -34,7 +34,7 @@ function styretHtml() {
       return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos), sederTarget(s)[v.sed!])}${sedFormat(v.sed!)}${sedLista(v.sed!)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<div class="phead"><div><h3>Maktens seder</h3></div>${flikLank('seder', 'Alla seder')}</div><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
 }
 
 // stenen Styre (steg 9.3.1): delarna i en rad knappar överst, styret och påbuden. Registret: en ny del är en rad i DELAR

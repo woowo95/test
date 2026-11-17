@@ -14,7 +14,7 @@ export const seder: Flik = {
     return `<div class="tekhead">${hjalpKnapp('seder', 'Vad är seder?')}</div>
     ${hjalpText('seder', '<p class="muted">Byns seder är vad invånarna tillsammans tycker är viktigt. Var och en drar dem efter sin personlighet och det hen varit med om. Äldre och karismatiska röster väger tyngst. Sederna påverkar vad var och en väljer att göra.</p><p class="muted small">Under vågen står det som drar seden: invånarnas läggning och det de varit med om, med pilar åt det håll det drar (fler pilar drar mer) och hur många som minns det. Tryck på en sed för hela listan och vad seden gör.</p>')}
     <ul class="seder">${SED_LIST.filter(k => sedOppen(s, k) && !MAKT_SEDER.includes(k)).map(k => `<li ${sedKlick(k)}>${sedVag(sd.v[k], SEDER[k].neg, SEDER[k].pos, mal[k])}${sedFormat(k)}${sedLista(k)}</li>`).join('')}${SED_LIST.filter(k => !sedOppen(s, k) && !MAKT_SEDER.includes(k)).map(k => lastSed(`${SEDER[k].neg} – ${SEDER[k].pos}`)).join('')}</ul>
-    <h3>Tyngsta röster</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span>${esc(yrkeNamn(s, x.p) ?? '')}</span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år</span><span title="Andel av byns röst i sederna">${Math.round(x.andel * 100)} %</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
+    <h3>Störst inflytande</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span>${esc(yrkeNamn(s, x.p) ?? '')}</span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år</span><span title="Andel av inflytandet över byns seder">${Math.round(x.andel * 100)} %</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
 `;
   },
 };

@@ -1091,6 +1091,7 @@ SCENARIER.sedlista = {
       ['vågskålen i Styre öppnar samma lista, och ett tryck till stänger', iStyre && !igen],
       // steg 11.1.11: läggningen är en egen rad, och raderna under en sed summerar till byns mål för seden
       [`vågen har en pil åt det håll den är på väg när det som drar pekar åt andra hållet, och ingen när den står vid målet`, pilen && ingen],
+      ['rubrikerna heter Störst inflytande i Seder och Maktens seder i Styre, med en länk till fliken Seder (steg 11.1.15)', sederFlik.html().includes('<h3>Störst inflytande</h3>') && !sederFlik.html().includes('Tyngsta röster') && /<h3>Maktens seder<\/h3><\/div><button type="button" class="lank" data-visa="seder">/.test(styreH) && !styreH.includes('Vågskålar')],
       [`en sed som inte är upplåst står sist som en grå rad "❔ Namn", i Seder och Styre, utan att säga när den kommer`, lastSist(sederFlik.html()) && lastSist(styreH) && !/Kommer senare/.test(sederFlik.html() + styreH)],
       [`invånarnas läggning är en egen rad i listan`, lista.includes('Invånarnas läggning')],
       [`raderna under en sed summerar till byns mål (${summa.map(x => `${x.k} ${x.rad.toFixed(3)}/${x.mal.toFixed(3)}`).join(', ')})`, summa.length > 0 && summa.every(x => Math.abs(x.rad - x.mal) < 1e-9)],

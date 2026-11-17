@@ -55,6 +55,8 @@ const oppna = new Set<string>();
 export const berattelseKnapp = (id: string, title: string) => `<button type="button" class="hjalp bok" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">${tecknet('berattelse', '📜', 14)}</button>`;
 // fler rader som visas vid ett tryck (steg 11.1.3): "▸ Visa N till"
 export const merKnapp = (id: string, n: number) => `<button type="button" class="lank falla mer" ${fallUt(id)}>${oppna.has(id) ? 'Visa färre' : `Visa ${n} till`}</button>`;
+// en länk till en annan flik (steg 11.1.15): ett tryck öppnar den (panel.ts)
+export const flikLank = (flik: string, text: string) => `<button type="button" class="lank" data-visa="${flik}">${esc(text)}</button>`;
 export const hjalpKnapp = (id: string, title: string) => `<button type="button" class="hjalp" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">?</button>`;
 export const hjalpText = (id: string, html: string) => oppna.has(id) ? html : '';
 // en rad som fälls ut vid ett tryck (steg 11.1.2): attributen, och klassen falla på samma element ger ▸ eller ▾ först på raden
