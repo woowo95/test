@@ -2,7 +2,9 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medHus, setFood, tandEld } from './hjalp';
+import { SCENARIER, kor, klockan, medHus, setFood, tandEld, utanWebblasare } from './hjalp';
+import { falt as faltFlik } from '../../ui/flikar/falt';
+import { setByn, ui } from '../../ui/lage';
 
 SCENARIER.andrade = {
   lang: true,
@@ -1425,11 +1427,15 @@ SCENARIER.flerarig = {
     s.falt = [f]; sammanfatta(f);
     workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60 * 2);
     const igen = f.r!.every(r => r.st === 'vaxer' && r.g === 'jordgubbar'), bar = amountOf(s, 'jordgubbar');
+    // fältets ruta (steg 11.1.54): stapeln heter Mogen och tidsraden Mognar
+    utanWebblasare(); setByn(s); ui.faltId = f.id; ui.faltRuta = 0; const fr = faltFlik.html!(); ui.faltRuta = -1;
+    const faltRuta = /<dt>Mogen<\/dt><dd>/.test(fr) && /<dt>Mognar<\/dt><dd>/.test(fr) && !/<dt>Växer<\/dt>/.test(fr);
     s.kal = nyKalender(s.now, 0); stepOdling(s);
     const vilar = f.r!.every(r => r.st === 'vaxer') && !(s.stat?.frostdod);
     return [
       [`jordgubbarna skördas (${bar}) och växer igen efteråt (${igen ? 'ja' : 'nej'})`, bar > 0 && igen],
       [`under istiden dör de inte utan vilar (${vilar ? 'ja' : 'nej'})`, vilar],
+      ['fältets ruta: stapeln heter Mogen och tidsraden Mognar (steg 11.1.54)', faltRuta],
     ];
   },
 };

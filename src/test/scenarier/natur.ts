@@ -4,7 +4,9 @@ import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
+import { sjo as sjoFlik } from '../../ui/flikar/sjo';
+import { setByn, ui } from '../../ui/lage';
+import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.djur = {
@@ -153,7 +155,11 @@ SCENARIER.sjo = { // by 4: by 3 fiskade knappt efter steg 2.3.11
     fp.x = fx; fp.y = fy; fp.task = { act: 'fiske', phase: 'do', tx: fx, ty: fy, until: f.now + 2 * HOUR, carry: 0, why: 'prov', dark: !isLight(f.now) };
     step(f, 70); // en bit om BIT sekunder: hen ser att stranden är tom (steg.ts)
     const flyttat = !!fp.task && fp.task.act === 'fiske' && Math.hypot(fp.task.tx - fx, fp.task.ty - fy) > 1.5;
+    // sjöns ruta (steg 11.1.54): fisken mot en rik sjö, nappen av försöken, °C och Sedan byn grundades
+    utanWebblasare(); setByn(s); const nr = Object.keys(s.sjoar ?? {}).map(Number).find(k => (s.sjoar![k].forsok ?? 0) > 0) ?? 0; ui.sjoNr = nr; const sr = sjoFlik.html!();
+    const sjoRuta = /% av en rik sjö/.test(sr) && / °C</.test(sr) && !/ grader</.test(sr) && /<h3>Sedan byn grundades<\/h3>/.test(sr) && (!s.sjoar?.[nr]?.forsok || /% av försöken\)/.test(sr));
     return [
+      ['sjöns ruta: fisken som % av en rik sjö, nappen som % av försöken, grader i °C och Sedan byn grundades (steg 11.1.54)', sjoRuta],
       [`fiskaren går till en annan plats när stranden är utfiskad (${f.stat?.fiskeByter ?? 0} byten)`, flyttat && (f.stat?.fiskeByter ?? 0) === 1],
       [`ett bad räknas vid sjön intill stranden (${SIM.sjoNamn(b, SIM.sjoVid(b, bx, by))}) och hos den som badade`, badSjo?.bad === 1 && badSjo.badare[bp.id] === 1 && badSjo.log[0]?.k === 'bad'],
       [`den som sitter vid stranden ser ut över vattnet med namn (${[...strandNamn].join('; ') || 'ingen satt vid stranden'})`, [...strandNamn].every(n => /över (isen på )?(sjön|.*tjärnen)/.test(n))],

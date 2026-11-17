@@ -63,11 +63,11 @@ function rutaHtml() {
     <div class="phead">${iconImg(mogen ? d.sak : 'grodd', 32)}<div><h2>${esc(d.namn)}</h2>
     <p class="muted">${vid} · ruta ${k + 1} av ${f.n}</p></div></div>
     <dl class="kv">
-      <dt>${mogen ? 'Mogen' : 'Växer'}</dt><dd>${bar(mogen ? 1 : vuxit)}<span>${Math.round((mogen ? 1 : vuxit) * 100)} %</span></dd>
+      <dt>Mogen</dt><dd>${bar(mogen ? 1 : vuxit)}<span>${Math.round((mogen ? 1 : vuxit) * 100)} %</span></dd>
       ${mogen ? `<dt>Skörda</dt><dd>${over > 0 ? `inom ${durTxt(over)}, sedan blir den övermogen` : `övermogen, ${Math.round(a * 100)} % kvar`}</dd>`
-        : `<dt>Mogen</dt><dd>${mogenOm}</dd>`}
+        : `<dt>Mognar</dt><dd>${mogenOm}</dd>`}
       ${sjuk ? `<dt>Sjuk</dt><dd>sjukdomen sprider sig till grannrutorna</dd>` : ''}
       <dt>Ger</dt><dd title="Mer av en skicklig odlare">${iconImg(d.sak, 14)} ${fmtN(d.perRuta * a * bordSkord(s, faltRuta(f, k)))} och ${iconImg(d.fro, 14)} ${fmtN((mogen ? froTillbaka(s, f, k, d, ru.m) : d.fron) * a)} frön</dd>
-      <dt>Frosten</dt><dd>${flerarig ? 'dör inte av frosten: vilar i kylan och i istiden, och växer igen efter skörden' : 'dör när det blir kallare än ' + d.frost + ' grader, och i istiden'}</dd>
+      <dt>Frosten</dt><dd>${flerarig ? 'dör inte av frosten: vilar i kylan och i istiden, och växer igen efter skörden' : 'dör när det blir kallare än ' + d.frost + ' °C, och i istiden'}</dd>
     </dl>${markHtml(f, k)}`;
 }

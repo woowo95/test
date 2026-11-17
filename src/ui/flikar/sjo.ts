@@ -12,7 +12,7 @@ function sjoEntry(e: SjoLogg) {
   return `<li><span class="when">${clockTxt(e.t)}</span>${e.k === 'fisk' ? `${who} fångade en abborre.` : `${who} badade.`}</li>`;
 }
 // del av det föregående: napp per försök, fångst per napp
-const andel = (a: number, b: number) => b ? ` (${Math.round(a / b * 100)} %)` : '';
+const andel = (a: number, b: number, av = '') => b ? ` (${Math.round(a / b * 100)} %${av ? ` av ${av}` : ''})` : ''; // "Napp 12 (30 % av försöken)" (steg 11.1.54)
 function topp(r: Record<number, number>) {
   const xs = Object.entries(r).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   return `<ul class="rels">${xs.map(x => `<li>${pLink(x.p)}<span></span><span></span><span class="muted">${fmtN(x.n)}</span></li>`).join('')}</ul>`; // fyra celler, som rutnätet .rels (antalet sist, som i Elden)
@@ -38,18 +38,18 @@ function sjoHtml() {
     <div class="phead"><span class="dot big" style="background:var(--g-skiffer)"></span><div><h2>${esc(sjoNamn(s, n))}</h2>
     <p class="muted">${rutor.length} rutor vatten. Man fiskar och badar från stranden.</p></div></div>
     <h3>Just nu</h3><dl class="kv">
-      <dt>${iconImg('abborre', 14)} Fisk</dt><dd>${bar(kvar)}<span>${Math.round(kvar * 100)} %</span></dd>
+      <dt>${iconImg('abborre', 14)} Fisk</dt><dd>${bar(kvar)}<span>${Math.round(kvar * 100)} % av en rik sjö</span></dd>
       <dt>Fisket nu</dt><dd>${sas >= 1 ? 'Bra' : sas >= 0.7 ? 'Måttligt' : 'Dåligt'} efter årstiden</dd>
-      <dt>Luften</dt><dd>${Math.round(temp)} grader</dd>
-      <dt>Vattnet</dt><dd>${Math.round(vattenGrader(s))} grader</dd>
+      <dt>Luften</dt><dd>${Math.round(temp)} °C</dd>
+      <dt>Vattnet</dt><dd>${Math.round(vattenGrader(s))} °C</dd>
       <dt>Isen</dt><dd>${isText()}</dd>
       ${fiskar.length ? `<dt>Fiskar</dt><dd>${fiskar.map(pLink).join(', ')}</dd>` : ''}
       ${badar.length ? `<dt>Badar</dt><dd>${badar.map(pLink).join(', ')}</dd>` : ''}
     </dl>
-    <h3>Totalt</h3>${st ? `<dl class="kv fam">
+    <h3>Sedan byn grundades</h3>${st ? `<dl class="kv fam">
       <dt>Fiskeförsök</dt><dd>${fmtN(st.forsok)}</dd>
-      <dt>Napp</dt><dd>${fmtN(st.napp)}${andel(st.napp, st.forsok)}</dd>
-      <dt>Fångade fiskar</dt><dd>${fmtN(st.fisk)}${andel(st.fisk, st.napp)}</dd>
+      <dt>Napp</dt><dd>${fmtN(st.napp)}${andel(st.napp, st.forsok, 'försöken')}</dd>
+      <dt>Fångade fiskar</dt><dd>${fmtN(st.fisk)}${andel(st.fisk, st.napp, 'nappen')}</dd>
       <dt>Bad</dt><dd>${times(st.bad)}</dd></dl>` : '<p class="muted">Ingen har fiskat eller badat här.</p>'}
     ${sankta.length ? `<h3>De sänkta</h3><ul class="small">${sankta.map(q => `<li>${esc(q.namn)}, för ${durTxt(s.now - q.t)} sedan${q.gavor ? `, ${q.gavor === 1 ? 'en gåva' : `${q.gavor} gåvor`} vid stranden` : ''}</li>`).join('')}</ul>` : ''}
     ${st && st.fisk ? `<h3>Fiskar oftast</h3>${topp(st.fiskare)}` : ''}
