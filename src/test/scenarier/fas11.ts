@@ -2258,3 +2258,31 @@ SCENARIER.varugrupper = {
     ];
   },
 };
+
+SCENARIER.grupppris = {
+  text: 'Huvudbyns pris per sak (steg 11.6.2): priset stiger när förrådet sjunker och håller sig inom sina gränser, brist på en sak höjer bara den, och brist i hela gruppen höjer alla saker i den',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10));
+    const p = (k: string) => SIM.byPaslag(s, k);
+    // repet: mycket, sedan inget
+    SIM.setAmount(s, 'rep', 40); const repMycket = p('rep'), virke1 = p('virke');
+    SIM.setAmount(s, 'rep', 0); const repInget = p('rep'), virke2 = p('virke');
+    // maten: mycket, sedan nästan inget
+    const mat = SIM.FOOD.filter(k => SIM.gruppAv(k) === 'mat');
+    const fore = mat.map(k => SIM.amountOf(s, k));
+    SIM.setAmount(s, 'bar', SIM.amountOf(s, 'bar') + 400);
+    const barM = p('bar'), fiskM = p('fisk'), saltM = p('salt');
+    for (const k of mat) SIM.setAmount(s, k, 0);
+    const barT = p('bar'), fiskT = p('fisk'), saltT = p('salt');
+    mat.forEach((k, i) => SIM.setAmount(s, k, fore[i]!));
+    const alla = SIM.sakerMedPris().map(p), inom = alla.every(x => x >= SIM.PRIS.min - 1e-9 && x <= SIM.PRIS.max + 1e-9);
+    const f = (x: number) => x.toFixed(2);
+    return [
+      [`repet blir dyrare när förrådet tar slut (${f(repMycket)} → ${f(repInget)})`, repInget > repMycket],
+      [`brist på rep höjer inte virket (${f(virke1)} → ${f(virke2)})`, Math.abs(virke2 - virke1) < 1e-9],
+      [`brist på all mat höjer både bären och fisken (${f(barM)} → ${f(barT)}, ${f(fiskM)} → ${f(fiskT)})`, barT > barM && fiskT > fiskM],
+      [`men inte saltet (${f(saltM)} → ${f(saltT)})`, Math.abs(saltT - saltM) < 1e-9],
+      [`alla priser ligger mellan ${SIM.PRIS.min} och ${SIM.PRIS.max} gånger grundvärdet (${f(Math.min(...alla))}–${f(Math.max(...alla))})`, inom],
+    ];
+  },
+};
