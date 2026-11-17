@@ -26,7 +26,12 @@ import { tamArt, tamdjurOf } from './tamdjur';
 import { viktOf } from './saker';
 import { grundvarde } from './varde';
 import { VARLD, VARLDMARK, MARK_IDS, VarldMark } from './varldmark';
-import { kostnader, vagMellan, vagRutor } from './vagval';
+import { kostnader, vagMellan, vagRutor, VarldVag } from './vagval';
+import { delFel, GADELAR } from './halsa';
+import { ageOf, ALDER } from './folk';
+import { snoPaMarken } from './vader';
+import { sallskapTyngd, trampa } from './leder';
+import { kommHem } from './ute';
 
 export const RESA = balans('resa', {
   samlaSek: 3600, // så länge (sekunder i verkligheten) ledaren får samla sällskapet innan resan ställs in (en timme, ett kvarts dygn i spelet)
@@ -46,6 +51,11 @@ export const RESA = balans('resa', {
   orkBlot: 0.08, // så mycket per timme i det kraftigaste regnet eller snöfallet, för den som inte ryms i tälten
   talt: 4, // så många ryms i ett tält
   orkFartFran: 0.5, orkFartMin: 0.6, // under så mycket ork går sällskapet långsammare, jämnt ner till orkFartMin vid ingen ork
+  // farten (steg 11.5.7)
+  fartBarn: 0.75, fartGammal: 0.75, fartBen: 0.5, // barn och gamla, och den med skadade ben (ner till så här)
+  lastFran: 0.5, lastMin: 0.8, // lasten bromsar över så stor del av bärförmågan, jämnt ner till lastMin vid full last
+  snoFran: 0.3, snoFart: 0.8, // så mycket snö på marken, och farten i den
+  dagTim: 12, // timmar i gång per dygn (dagsljuset, isLight)
 });
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
@@ -75,6 +85,7 @@ export interface Sallskap {
   dagbok: [number, string][]; // resans dagbok (steg 11.5.13)
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
   behov?: ResBehov; // mättnaden, vätskan och orken på vägen, för hela gruppen (steg 11.5.6)
+  gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
 }
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
 export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number }
@@ -253,7 +264,8 @@ export function resaSteg(s: State, p: Person, tk: Task) {
   if (sl.medl.every(id => { const q = s.people.find(x => x.id === id); return !q || !alive(q) || ute(q); })) {
     for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.dog === undefined) d.ute = s.now; // djuren följer med ut
     const hem = byPlats(s.varld!, sl.by), v = varldMark(s);
-    sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0;
+    sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0; sl.gang = 0;
+    satVag(s, sl, true);
   }
 }
 
@@ -289,6 +301,9 @@ export function nattTapp(s: State, sl: Sallskap, t = s.now) {
 }
 // en bit av tiden (dt sekunder, kortare än en timme) för ett sällskap på vägen
 function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
+  if (sl.skede !== 'framme' && isLight(t)) ga(s, sl, t, dt);
+  else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= RESMAL[sl.skal].stannar * 24 * HOUR) { sl.skede = 'hemat'; satVag(s, sl, false); }
+  if (!PA_VAGEN.includes(sl.skede)) return;
   const b = behovOf(sl), tim = dt / HOUR, dag = isLight(t), framme = sl.skede === 'framme', r = rutaNu(s, sl), n = sl.medl.length;
   b.matt = clamp(b.matt - tim / KROPP.hungerTim, 0, 1);
   b.vatska = clamp(b.vatska - tim / TORST.tim * (dag ? 1 : TORST.somn), 0, 1);
@@ -320,4 +335,61 @@ export function resaBehov(s: State, dt: number) {
     if (!PA_VAGEN.includes(sl.skede)) continue;
     for (let gjort = 0; gjort < dt - 1e-9;) { const d = Math.min(600, dt - gjort); behovBit(s, sl, s.now - dt + gjort + d, d); gjort += d; }
   }
+}
+
+// ---------- farten och gången längs leden (steg 11.5.7, Farten i tal) ----------
+// Sällskapets fart är den långsammaste medlemmens (en frisk vuxen 1, barn och gamla 0,75, skadade ben ner till 0,5, ett djur
+// sin egen) gånger lastens, årstidens (snön) och orkens. Ledens fart ligger i rutans kostnad (vagval.ts), så en stig går
+// fortare än obanad mark. Lasten bromsar bara på resan, inte i byn. Sällskapet går i dagsljuset, ruta för ruta längs vägen,
+// och trampar leden (leder.ts) där det går; framme stannar det så många dygn som skälet säger och går sedan hem.
+const resenarer = (s: State, sl: Sallskap) => sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p && alive(p));
+export function personFart(s: State, p: Person) {
+  const a = ageOf(p, s.now), ben = Math.max(0, ...GADELAR.map(d => clamp(delFel(p, d), 0, 1)));
+  return Math.min(a < ALDER.vuxen ? RESA.fartBarn : a >= ALDER.gammal ? RESA.fartGammal : 1, 1 - (1 - RESA.fartBen) * ben);
+}
+// packningens vikt (maten väger en per portion, som i packbehov)
+export const packVikt = (sl: Sallskap) => Object.entries(sl.pack).reduce((a, [k, n]) => a + n * (FOOD.includes(k) ? 1 : viktOf(k)), 0);
+export function lastFart(s: State, sl: Sallskap) {
+  const bar = resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+  const x = bar > 0 ? packVikt(sl) / bar : 1;
+  return x <= RESA.lastFran ? 1 : Math.max(RESA.lastMin, 1 - (1 - RESA.lastMin) * (x - RESA.lastFran) / (1 - RESA.lastFran));
+}
+export function sallskapFart(s: State, sl: Sallskap) {
+  const folk = resenarer(s, sl), djur = (s.tamdjur ?? []).filter(d => sl.djur.includes(d.id) && d.dog === undefined);
+  const lang = Math.min(1, ...folk.map(p => personFart(s, p)), ...djur.map(d => tamArt(d.art).snabb ?? 1));
+  return lang * lastFart(s, sl) * (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * orkFart(sl);
+}
+// vägen bort till målet eller hem igen
+function satVag(s: State, sl: Sallskap, bort: boolean) {
+  const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
+  if (!vl || !v || !hem || !mal) return;
+  const a = hem.y * v.w + hem.x, b = mal.y * v.w + mal.x, vag = vagMellan(vl, v, bort ? a : b, bort ? b : a, 'fots', s.now);
+  sl.vag = vag ? { fran: vag.fran, till: vag.till, steg: vag.steg } : undefined; sl.pos = 0; sl.gang = 0; sl.ruta = bort ? a : b;
+}
+export const vagenRutor = (s: State, sl: Sallskap) => { const v = varldMark(s); return v && sl.vag ? vagRutor(sl.vag as VarldVag, v.w) : []; };
+// en bit av dagen i gång (dt sekunder): framåt längs vägen i rutornas kostnad
+function ga(s: State, sl: Sallskap, t: number, dt: number) {
+  const vl = s.varld, v = varldMark(s), rutor = vagenRutor(s, sl);
+  if (!vl || !v || !rutor.length) return;
+  const k = kostnader(vl, v, 'fots'), tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length);
+  sl.gang = (sl.gang ?? 0) + VARLD.gangPerDygn / RESA.dagTim * sallskapFart(s, sl) * dt / HOUR;
+  let pos = sl.pos ?? 0;
+  while (pos < rutor.length - 1 && sl.gang >= k[rutor[pos + 1]] - 1e-9) {
+    sl.gang -= k[rutor[pos + 1]];
+    trampa(vl, [rutor[pos], rutor[pos + 1]], tyngd, t);
+    pos++; sl.ruta = rutor[pos];
+  }
+  sl.pos = pos;
+  if (pos < rutor.length - 1) return;
+  sl.gang = 0;
+  if (sl.skede === 'ute') { sl.skede = 'framme'; sl.framme = t; count(s, 'resa framme'); }
+  else if (sl.skede === 'hemat') hemkomst(s, sl, t);
+}
+// sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
+export function hemkomst(s: State, sl: Sallskap, t: number) {
+  const in_ = sl.ut?.kant ?? bynsMitt(s);
+  for (const p of resenarer(s, sl)) if (ute(p)) kommHem(s, p, in_.x, in_.y);
+  for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
+  sl.skede = 'hemma'; sl.t = t;
+  count(s, 'resa hemma');
 }
