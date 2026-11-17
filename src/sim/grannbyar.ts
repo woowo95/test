@@ -13,7 +13,7 @@ import { eldPlats, getMap } from './karta';
 import { byGrannar } from './grannat';
 import { hinder, laggPlats, VarldPlats } from './landmarken';
 import { byRutor } from './placering';
-import { VarldRad } from './radtal';
+import { radKrok, VarldRad } from './radtal';
 import { narmasteMal } from './vagval';
 import { varldHandelse } from './varldkronika';
 import { medVarld, varldMark } from './varlden';
@@ -33,7 +33,7 @@ function nyRad(s: State, k: Klan, p: VarldPlats | undefined): VarldRad {
   const vl = s.varld!;
   const r: VarldRad = {
     nr: vl.nastaRad = (vl.nastaRad ?? 0) + 1, sort: 'by', namn: k.namn, grundad: p?.fran ?? s.now, t: s.now,
-    tal: { folk: k.folk, mat: 0, rikedom: k.resurser, silver: 0, styrka: k.styrka }, tek: [], fasta: [], syn: k,
+    tal: { folk: k.folk, mat: radKrok.startMat(k.folk), rikedom: k.resurser, silver: 0, styrka: k.styrka }, tek: [], fasta: [], syn: k,
     ...(p ? { x: p.x, y: p.y } : {}),
   };
   (vl.rader ??= []).push(r);

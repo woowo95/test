@@ -114,7 +114,8 @@ export function nyKlan(s: State, folk: number, inst: number, namn: string, hem: 
 }
 export const klanMellan = mellan;
 
-// en gång om dygnet (ett år i spelet): klanerna växer eller krymper, och inställningen glöms mot det neutrala
+// en gång om dygnet (ett år i spelet): styrkan och resurserna ändras, och inställningen glöms mot det neutrala. Folket räknar
+// raden i världen (rad.ts, steg 11.3.2)
 export function klanSteg(s: State, dtSec: number) {
   const dygn = Math.floor(s.now / DAY) - Math.floor((s.now - dtSec * SEC) / DAY);
   const kl = klanerOf(s);
@@ -122,12 +123,11 @@ export function klanSteg(s: State, dtSec: number) {
   for (let i = 0; i < dygn; i++) for (const k of kl) prisDrift(s, k); // driften räknas per dygn som gått
   for (const k of kl) {
     const f = KLAN.vaxt + (rnd(s, 'klan') * 2 - 1) * KLAN.vaxtSpann;
-    k.folk = Math.max(3, Math.round(k.folk * (1 + f) + (rnd(s, 'klan') < 0.5 ? 0 : f > 0 ? 1 : -1)));
     k.styrka = Math.min(k.folk, Math.max(1, Math.round(k.folk * mellan(s, KLAN.styrka))));
     k.resurser = Math.max(0, Math.round(k.resurser * (1 + f) + k.folk * (rnd(s, 'klan') - 0.5)));
     if (k.inst) k.inst -= Math.sign(k.inst) * Math.min(Math.abs(k.inst), Math.max(1, Math.round(Math.abs(k.inst) * KLAN.glomma))); // minst ett steg, så att den når det neutrala
   }
-  for (const r of s.varld?.rader ?? []) if (r.syn) { r.t = s.now; r.tal.folk = r.syn.folk; r.tal.styrka = r.syn.styrka; r.tal.rikedom = r.syn.resurser; } // raden i världen följer
+  for (const r of s.varld?.rader ?? []) if (r.syn) { r.tal.styrka = r.syn.styrka; r.tal.rikedom = r.syn.resurser; } // raden i världen följer; folket räknar raden själv (rad.ts, steg 11.3.2)
 }
 // inställningen ändras (handel, utbrytning, invandring): hela tal mellan −100 och 100
 export function andraInst(k: Klan, d: number) { k.inst = clamp(Math.round(k.inst + d), -100, 100); }

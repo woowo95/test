@@ -725,13 +725,17 @@ const SJUK_DOD: Record<SjukId, Dodsorsak> = { magsjuka: 'magsjuka', matforgiftni
 // tiden kvar tills barnet föds (ms), för panelen (steg 9.2.70)
 export const gravidKvar = (p: Person, now: number) => p.pregnantSince === undefined ? undefined : Math.max(0, p.pregnantSince + STEG.dragtid * DAY - now);
 export const gravidDel = (p: Person, now: number) => p.pregnantSince === undefined ? undefined : Math.min(1, (now - p.pregnantSince) / (STEG.dragtid * DAY));
+// viljan att skaffa barn: hur många byn är, maten i dygn, maten den haft (barnMat i liv.ts) och seden Barn (−1 till 1). En by i
+// världen (rad.ts, steg 11.3.2) använder samma vilja och födslarna per år för en kvinna som kan få barn
+export const fodVilja = (pop: number, matDygn: number, barnMatF: number, sed: number) => birthWish(pop) * clamp(matDygn / STEG.matDygn, STEG.matMin, 1) * barnMatF * (1 + STEG.sedBarn * sed);
+export function fodslarPerAr(vilja: number) { const c = STEG.chans * vilja; return c / (1 + c * (STEG.dragtid + STEG.mellanFodslar)); }
 // graviditet: en kvinna med partner kan bli gravid; viljan styrs av hur många byn är, maten och sederna
 function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   const now = s.now;
   if (p.foder) { if (now >= p.foder.till) birth(s, p); } // förlossningen tar tid (steg 9.5.29)
   else if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > STEG.dragtid * DAY) borjaForlossning(s, p); }
   else if (p.sex === 'k' && p.partner !== undefined && a >= ALDER.gravFran && a <= ALDER.gravTill && (!p.lastBirth || now - p.lastBirth > STEG.mellanFodslar * DAY)) {
-    const f = birthWish(pop) * clamp(foodDays(s) / STEG.matDygn, STEG.matMin, 1) * barnMat(s, pop) * (1 + STEG.sedBarn * s.seder.v.barn);
+    const f = fodVilja(pop, foodDays(s), barnMat(s, pop), s.seder.v.barn);
     if (chance(s, STEG.chans * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; notis(s, 'gravid', `${p.name} väntar barn.`, [p.id]); }
   }
 }

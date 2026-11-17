@@ -1981,7 +1981,7 @@ SCENARIER.grannklaner = {
     const lurad = k[0].inst === i1 - SIM.KLAN.lurad;
     // dygnen går: folket ändras, inställningen glöms
     const folk0 = k.map(c => c.folk).join(), inst0 = k[0].inst;
-    for (let d = 0; d < 3; d++) { s.now += SIM.DAY; SIM.klanSteg(s, SIM.DAY / SIM.SEC); }
+    for (let d = 0; d < 3; d++) { s.now += SIM.DAY; SIM.klanSteg(s, SIM.DAY / SIM.SEC); SIM.varldSteg(s); } // folket räknar raden i världen (steg 11.3.2)
     const andras = k.map(c => c.folk).join() !== folk0;
     const glomt = Math.abs(k[0].inst) < Math.abs(inst0);
     const instOrd = SIM.instText(60) === 'vänner' && SIM.instText(-80) === 'fientliga';

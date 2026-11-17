@@ -211,9 +211,13 @@ export const immigrationRate = (pop: number) => pop < LIV.nybyggareUnder ? LIV.n
 // ett dygn (ett år i spelet) så att årstiderna jämnas ut. 0 vid 1 dygns mat i snitt, 1 vid 3,5 eller mer. Är maten knapp
 // föds färre barn (barnMat), fler flyttar (hungerFlytt) och färre nybyggare stannar: så når byn det tak som marken och redskapen kan föda, utan
 // att folk svälter ihjäl. En by på sju eller färre flyttar inte för maten
-export const matGott = (s: State) => clamp(((s.matSnitt ?? LIV.matStart) - LIV.matGottFran) / LIV.matGottSpann, 0, 1);
-export const barnMat = (s: State, pop: number) => 1 - LIV.barnMatTapp * (1 - matGott(s)) * clamp((pop - LIV.barnMatFran) / LIV.barnMatSpann, 0, 1); // färre barn: från sju invånare
-export const hungerFlytt = (s: State, pop: number) => LIV.hungerTakt * (1 - matGott(s)) * clamp((pop - LIV.hungerFran) / LIV.hungerSpann, 0, 1); // flyttar per dygn
+// samma regler ur ett snitt av maten i dygn (gott, 0–1), för en by i världen (rad.ts, steg 11.3.2)
+export const matGottAv = (snitt: number) => clamp((snitt - LIV.matGottFran) / LIV.matGottSpann, 0, 1);
+export const barnMatAv = (gott: number, pop: number) => 1 - LIV.barnMatTapp * (1 - gott) * clamp((pop - LIV.barnMatFran) / LIV.barnMatSpann, 0, 1); // färre barn: från sju invånare
+export const hungerFlyttAv = (gott: number, pop: number) => LIV.hungerTakt * (1 - gott) * clamp((pop - LIV.hungerFran) / LIV.hungerSpann, 0, 1); // flyttar per dygn
+export const matGott = (s: State) => matGottAv(s.matSnitt ?? LIV.matStart);
+export const barnMat = (s: State, pop: number) => barnMatAv(matGott(s), pop);
+export const hungerFlytt = (s: State, pop: number) => hungerFlyttAv(matGott(s), pop);
 export function regulate(s: State, dtSec: number) {
   const pop = living(s).length;
   if (pop === 0) { if (!s.people.some(alive)) refound(s); return; } // byn är tom bara när ingen bybo lever, inte när alla är borta (steg 11.2.4)

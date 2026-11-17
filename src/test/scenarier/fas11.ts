@@ -578,7 +578,8 @@ SCENARIER.klanbort = {
     const narhet = SIM.narhet(kt[0]) === 1 && SIM.narhet(kt[1]) === SIM.KLAN.naraDygn / 4;
     // talen i raden följer grannbyn
     t.now += SIM.DAY; SIM.klanSteg(t, SIM.DAY / SIM.SEC);
-    const foljer = kt.every(c => { const r = t.varld!.rader!.find(x => x.nr === c.rad)!; return r.tal.folk === c.folk && r.tal.styrka === c.styrka && r.tal.rikedom === c.resurser && r.t === t.now; });
+    SIM.varldSteg(t);
+    const foljer = kt.every(c => { const r = t.varld!.rader!.find(x => x.nr === c.rad)!; return r.tal.folk === c.folk && r.tal.styrka === c.styrka && r.tal.rikedom === c.resurser; });
     // en sparad by från före v531: grannklanerna (och en till än grannätet rymmer) blir byar i världen
     const g = SIM.cloneState(s), gamla = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: SIM.KLAN_HEM_NAMN[1] }));
     const extra = { ...gamla[0], id: 99, namn: 'Extrafolket', personer: [] };
@@ -676,6 +677,39 @@ SCENARIER.barkraft = {
       [`teknikerna ger mer bärkraft: ${utan} utan och ${med.toFixed(1)} med odling (torkningen ger förvaring, inte bärkraft)`, Math.abs(med - vantat) < 1e-9 && med > utan],
       ['kolumnen i TEKNIK har bärkraft, förvaring, styrka och rikedom, var och en mellan 0 och 1', anvands && rimliga],
       [`byarna i en ny värld kan föda några (${alla.join(', ')})`, alla.length > 0 && alla.every(x => x > 0)],
+    ];
+  },
+};
+
+SCENARIER.radmat = {
+  text: 'Maten, födda och döda i raden (steg 11.3.2, rad.ts): en by i världen växer mot sin bärkraft, svälter när maten tar slut (och världens krönika får raden Svält), har alltid hela tal och räknas likadant i levande läge och ikappräkning; huvudbyns rad rör reglerna inte',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!, v = SIM.varldMark(s)!;
+    const rader = vl.rader!.filter(r => SIM.lever(vl, r));
+    const [liten, trang] = rader, bk = (r: SIM.VarldRad) => SIM.barkraft(v, r);
+    liten.tal.folk = 4; liten.tal.mat = 30;
+    trang.tal.folk = Math.round(bk(trang) * 3); trang.tal.mat = 0;
+    const huvud = vl.rader!.find(r => r.nr === vl.huvud)!, huvudFore = JSON.stringify(huvud.tal);
+    const ikapp = SIM.cloneState(s);
+    let hela = true, trangMin = trang.tal.folk;
+    for (let h = 1; h <= 30 * 24; h++) { // 30 dygn (30 år i spelet), en timme i taget
+      s.now += 3600e3; SIM.varldSteg(s);
+      for (const r of vl.rader!) if (!SIM.RADTAL_IDS.every(k => Number.isInteger(r.tal[k]) && r.tal[k] >= 0)) hela = false;
+      trangMin = Math.min(trangMin, trang.tal.folk);
+    }
+    ikapp.now = s.now; SIM.varldSteg(ikapp);
+    const lika = JSON.stringify(vl.rader!.map(r => r.tal)) === JSON.stringify(ikapp.varld!.rader!.map(r => r.tal));
+    const svalt = (vl.kronika ?? []).filter(h => h.k === 'svalt' && h.by === trang.nr).length;
+    const foljer = rader.every(r => !r.syn || r.syn.folk === r.tal.folk);
+    const tak = rader.every(r => r.tal.mat <= SIM.forradTak(r));
+    return [
+      [`en liten by växer mot sin bärkraft (4 → ${liten.tal.folk}, bärkraften ${Math.round(bk(liten))})`, liten.tal.folk > 8 && liten.tal.folk < bk(liten) * 1.5],
+      [`en trång by utan mat svälter (${Math.round(bk(trang) * 3)} → ${trangMin}, Svält ${svalt} gånger i världens krönika)`, trangMin < bk(trang) * 2 && svalt > 0],
+      ['talen är alltid hela och aldrig under noll', hela],
+      ['maten ryms i förrådet', tak],
+      ['levande läge och ikappräkning ger samma rader', lika],
+      ['grannbyns folk följer raden', foljer],
+      ['huvudbyns rad rör reglerna inte', JSON.stringify(huvud.tal) === huvudFore],
     ];
   },
 };
