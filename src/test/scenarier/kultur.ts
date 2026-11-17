@@ -12,6 +12,10 @@ import { person as personFlik } from '../../ui/flikar/person';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
 import { styre as styreFlik } from '../../ui/flikar/styre';
 import { seder as sederFlik } from '../../ui/flikar/seder';
+import { religion as religionFlik } from '../../ui/flikar/religion';
+import { teknik as teknikFlik } from '../../ui/flikar/teknik';
+import { tal as talFlik } from '../../ui/flikar/tal';
+import { grannar as grannarFlik } from '../../ui/flikar/grannar';
 import { forrad as forradFlik, forradRader } from '../../ui/flikar/forrad';
 import { OPPNAR, bubblaKlick, bubblaText, forklaringAv } from '../../ui/bubbla';
 import { esc, hjalpKlick, tidForklaring } from '../../ui/hjalp';
@@ -1219,6 +1223,23 @@ SCENARIER.forradsflik = {
       ['förrådet har ingen runsten', ingenSten],
       ['spaltens rubrik på datorn öppnar fliken, och spalten står kvar', spalt && syns],
       [`fliken visar sakerna i mapparna med namn och antal (${rader.length} mappar)`, rader.length > 0 && !!k && html.includes(`data-sak="k:${k.k}"`) && html.includes(SIM.sakNamn(k.k))],
+    ];
+  },
+};
+SCENARIER.stennamn = {
+  text: 'Steg 11.1.7: varje runsten har sitt namn i liten text under stenen, ljust med mörk kant, och alla sju namnen får plats i kolumnen på bred och smal skärm (en punkt i typsnittet är ungefär 5 punkter bred vid 9 och 10 punkters storlek)',
+  kor: () => {
+    const sten = readFileSync(new URL('../../ui/runstenar.ts', import.meta.url), 'utf8'), css = readFileSync(new URL('../../template.html', import.meta.url), 'utf8');
+    const namn = [sederFlik, religionFlik, styreFlik, teknikFlik, kronikaFlik, talFlik, grannarFlik].map(f => f.namn);
+    const iKnappen = /<span class="stennamn">\$\{namn\}<\/span>/.test(sten);
+    const regel = css.match(/\.runsten \.stennamn \{([^}]*)\}/)?.[1] ?? '';
+    const synlig = /display: block/.test(regel) && !/clip|width: 1px/.test(regel) && /color: #dad0bb/.test(regel) && /text-shadow/.test(regel);
+    const bred = Number(css.match(/--stenar: (\d+)px; \}/)?.[1] ?? 64), smal = Number(css.match(/body \{ --stenar: (\d+)px;/)?.[1] ?? 52);
+    const langst = Math.max(...namn.map(n => n.length)), ryms = langst * 5 <= Math.min(bred, smal) - 4;
+    return [
+      ['namnet står under stenen i knappen', iKnappen],
+      ['namnet syns, i ljus text med mörk kant', synlig],
+      [`alla sju namnen får plats i kolumnen (${namn.join(', ')}; det längsta ${langst} tecken, kolumnen ${smal} och ${bred} punkter)`, namn.length === 7 && ryms],
     ];
   },
 };
