@@ -1414,7 +1414,7 @@ SCENARIER.gastsida = {
     ui.personDel = 'utr'; const utr = person.html();
     ui.selected = r[0]?.id; ui.personDel = 'pres'; const rp = person.html();
     ui.personDel = 'egen'; const re = person.html();
-    const knappar = (x: string) => [...x.matchAll(/data-pdel="(\w+)"/g)].map(m => m[1]).join(',');
+    const knappar = (x: string) => [...x.matchAll(/role="tab" data-pdel="(\w+)"/g)].map(m => m[1]).join(',');
     const by = living(s)[0]!; ui.selected = by.id; const bybo = person.html();
     // huvudet står still (steg 11.1.41): lika många rader för bybon och gästen, raden för öknamnet finns när den är tom, åldern
     // står med yrket, och det hen gör klipps tills man trycker, då skälet kommer fram
@@ -1426,13 +1426,28 @@ SCENARIER.gastsida = {
     // ögat vid namnet och märkena (steg 11.1.42): ögat följer med kartan, och väntar hen barn öppnar märket hälsan
     const oga = /data-folj="\d+"/.test(bybo) && /data-folj="-\d+"/.test(pres);
     by.pregnantSince = s.now; const gravid = /class="mark klick" data-pdel="halsa"/.test(person.html()); by.pregnantSince = undefined;
+    // åtta flikar (steg 11.1.44): en flik med en del har flikens namn som rubrik, och hälsans symbol får en röd prick när något är fel
+    ui.personDel = 'egen'; const ensam = person.html(); ui.personDel = 'om';
+    const frisk = person.html(); by.hunger = 0; const svalt = person.html(); by.hunger = 1;
+    const flik8 = /<h3 class="flikrub">Egenskaper<\/h3>/.test(ensam) && !/class="delrub/.test(ensam) && !/felprick/.test(frisk) && /data-pdel="halsa"[^>]*>[^<]*(<img[^>]*>)?[^<]*<span class="felprick">/.test(svalt);
+    // Översikt (steg 11.1.45): Ålder med kön och födelse, familjen som porträtt, sederna, det hen gör och humöret, hälsan öppnar
+    // Hälsa, och gångfarten och händelserna står inte här
+    ui.personDel = 'om'; const ov = person.html();
+    const oversikt = /<dt>Ålder<\/dt><dd>\d+ år · (man|kvinna) · född /.test(ov) && /<h3>Familjen<\/h3>/.test(ov) && /<h3>Seder hen håller<\/h3>/.test(ov)
+      && /<dt>Gör nu<\/dt>/.test(ov) && /<dt>Humör<\/dt>/.test(ov) && /data-pdel="halsa" role="button"/.test(ov) && !/Gångfart|Viktiga händelser/.test(ov);
+    // Behov (steg 11.1.46): Vätska efter Mättnad, takten med enhet, tårtan med åren och pliktkänslan med det den kommer av
+    ui.personDel = 'behov'; ui.personFall['tid'] = true; SIM.addHabit(by, 'samla', 1, 3); const bh = person.html(); ui.personFall['tid'] = undefined as unknown as boolean;
+    const behovFlik = /Mättnad<\/dt>[\s\S]*Vätska<\/dt>[\s\S]*Vila<\/dt>/.test(bh) && /% per timme/.test(bh) && new RegExp(`De senaste ${SIM.VANA_AR} åren`).test(bh) && /Pliktkänsla/.test(bh) && /Flit [+−]/.test(bh);
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['Behov: Vätska står efter Mättnad, takten skrivs i % per timme, tårtan har De senaste N åren och pliktkänslan står med flit, empati och seden (steg 11.1.46)', behovFlik],
+      ['Översikt: ålder med kön och födelse, familjen, sederna hen håller, det hen gör, humöret och hälsan som öppnar Hälsa, utan gångfarten och händelserna (steg 11.1.45)', oversikt],
+      ['en flik med en enda del visar flikens namn som rubrik utan delrubrik, och Hälsa får en röd prick när hen svälter (steg 11.1.44)', flik8],
       ['ögat vid namnet följer personen med kartan, för bybon och gästen, och märket Väntar barn öppnar hälsan (steg 11.1.42)', oga && gravid],
       ['huvudet står still: namnet, öknamnet (raden finns också tom), ålder och yrke, märkena och det hen gör, fem rader för både bybon och gästen, och det hen gör visas helt vid ett tryck (steg 11.1.41)', huvud],
       [`handlaren och ${r.length} rövare är gäster med var sitt negativa id`, !!h && r.length === 2 && g.every(x => x.id < 0) && new Set(g.map(x => x.id)).size === g.length],
       [`handlarens sida har namnet, vad hen gör och flikarna ${knappar(pres)}`, !!h && pres.includes(h.namn) && pres.includes(h.gor)],
-      ['samma flikknappar som för en bybo, alla sju flikar (steg 4.5.7.6, 5.3.4.1, 6.9.10 och Händelser i 10.2.61)', knappar(pres) === knappar(bybo) && knappar(pres).split(',').length === 7],
+      ['samma flikknappar som för en bybo, alla åtta flikar (steg 4.5.7.6, 5.3.4.1, 6.9.10, Händelser i 10.2.61 och åtta flikar i 11.1.44)', knappar(pres) === knappar(bybo) && knappar(pres).split(',').length === 8],
       ['presentationen har handlarens klan, silver och packning som rader', /från .+ vid /.test(pres) && pres.includes('Silver') && pres.includes('Packning') && pres.includes('Handlare')],
       ['egenskaperna visar färdigheten Handel (gästen är en person med alla flikar, steg 9.2.114)', egen.includes('Handel')],
       ['presentationen visar varorna i packningen med priset i silver, och utrustningen är hens egen', pres.includes('Varor') && /silver styck/.test(pres) && utr.includes('Utrustning')],
@@ -1876,7 +1891,7 @@ SCENARIER.handslag = {
     const [f1] = t.filtar ?? [];
     const kort = !!f1 && f1.byt === t.now && f1.slut - t.now === (SIM.BYTE.handslagSek + SIM.BYTE.flyttSek) * SIM.SEC + SIM.BYTE.packaMin * SIM.MIN;
     // gränssnittet: handslaget vid raden i loggen och bland personens byten, och rutan med hela bytet
-    ui.nu = t.now; ui.selected = a.id;
+    ui.nu = t.now; ui.selected = a.id; ui.personDel = 'hand'; // bytena står under Händelser (steg 11.1.45)
     const rad = !!e && linkify(e).includes(`data-byte="${m?.nr}"`), sida = person.html(), visas = sida.includes('<h3>Byten</h3>') && sida.includes(`data-byte="${m?.nr}"`);
     const klickat = filtFlik.klick!({ closest: () => ({ dataset: { byte: String(m?.nr) } }) } as unknown as HTMLElement) && ui.byteNr === m?.nr && ui.tab === 'filt';
     const ruta = filtFlik.html(), helRuta = ruta.includes('<h2>Bytet</h2>') && ruta.includes(a.name) && ruta.includes(b.name) && ruta.includes('Värt') && /silver/.test(ruta);

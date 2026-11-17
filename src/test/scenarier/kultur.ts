@@ -1147,7 +1147,7 @@ SCENARIER.pilar = {
     for (const x of v) x.upp = [...x.upp ?? [], { k: 'svalt', a: 20, e: {}, v: 1, t: s.now }];
     s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never };
     setByn(s); ui.selected = l.id; ui.styreDel = 'styre';
-    const sidor = () => [sederFlik.html(), styreFlik.html(), ...['om', 'egen', 'kropp', 'saker', 'folk', 'kun', 'logg'].map(d => { ui.personDel = d; return personFlik.html(); })].join('');
+    const sidor = () => [sederFlik.html(), styreFlik.html(), ...['om', 'behov', 'egen', 'halsa', 'saker', 'folk', 'kun', 'logg'].map(d => { ui.personDel = d; return personFlik.html(); })].join('');
     // en rad som fälls ut: ett element med data-hjalp som inte är en knapp (?-knappen, symbolerna) eller med data-pfall, data-kskrift eller data-f
     const rader = (h: string) => [...h.matchAll(/<(li|dt|h3|div|button)\b[^>]*\b(data-hjalp|data-pfall|data-kskrift|data-f)="[^"]*"[^>]*>/g)].map(m => m[0])
       .filter(x => !/class="(hjalp|relsym|tnod|rw|binamn)\b/.test(x) && !/class="[^"]*\b(relsym|tnod|rw|binamn)\b/.test(x) && !/^<button[^>]*class="hjalp"/.test(x) && !/^<dd/.test(x));
@@ -1206,7 +1206,7 @@ SCENARIER.tidsord = {
     // panelerna i en testby
     const s = testBy(40); setByn(s);
     const sidor = [sederFlik.html(), styreFlik.html(), kronikaFlik.html()];
-    for (const p of SIM.living(s).slice(0, 4)) for (const d of ['om', 'egen', 'kropp', 'saker', 'folk', 'kun', 'logg']) { ui.selected = p.id; ui.personDel = d; sidor.push(personFlik.html()); }
+    for (const p of SIM.living(s).slice(0, 4)) for (const d of ['om', 'behov', 'egen', 'halsa', 'saker', 'folk', 'kun', 'logg']) { ui.selected = p.id; ui.personDel = d; sidor.push(personFlik.html()); }
     const text = sidor.join(' ').replace(/ett dygn i verkligheten/g, '').replace(/<[^>]+>/g, ' ') + sidor.map(h => [...h.matchAll(/title="([^"]*)"/g)].map(m => m[1]).join(' ')).join(' ');
     const iPanel = text.match(/[^.]{0,40}(dygn|säsong|klicka)[^.]{0,20}/i)?.[0];
     // året och tidsstaven har samma förklaring, med kopplingen till den riktiga klockan (steg 11.1.5)
@@ -2746,7 +2746,7 @@ SCENARIER.fritidlista = {
     setByn(b.s);
     ui.stationId = b.sc.id;
     const scen = stationFlik.html().includes(`data-fram="${m.nr}"`);
-    ui.selected = m.p; ui.personDel = 'om';
+    ui.selected = m.p; ui.personDel = 'hand'; // framträdandena står under Händelser (steg 11.1.45)
     const pres = personFlik.html().includes(`data-fram="${m.nr}"`);
     Object.assign(kronikaVal, { del: 'fritid', viktigt: true, ar: undefined, kat: undefined });
     const kron = kronikaFlik.html().includes(`data-fram="${m.nr}"`);
@@ -2754,7 +2754,7 @@ SCENARIER.fritidlista = {
     return [
       [`${m.namn} uppträdde på scenen (${SIM.FRAM_AV[m.k]!.namn})`, true],
       ['scenens ruta visar framträdandet som just slutat, med knappen till redogörelsen', scen],
-      ['det står i Presentationen hos den som uppträdde', pres],
+      ['det står under Händelser hos den som uppträdde', pres],
       ['Krönikans Fritid listar det', kron],
     ];
   },
