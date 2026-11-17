@@ -256,7 +256,10 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .tnod.kan { border-color: var(--good); }
 .tnod.sel { box-shadow: 0 0 0 3px var(--accent); }
 .tnod .ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; } /* pixelringen, fyra punkter utanför knappen åt alla håll (steg 5.3.2.2) */
-.tnod .antal.ensam { background: var(--bad); } .tinfo .fel { color: var(--bad); }
+.tnod .antal.ensam { background: var(--g-senap); } .tinfo .fel { color: var(--bad); } .tinfo .varn { color: var(--g-senap); } /* bara en kan: senap, rött är bara materialet som saknas (steg 11.1.31) */
+.tforkl { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; margin: 4px 0 6px; color: var(--muted); } .tforkl > span { display: inline-flex; align-items: center; gap: 4px; } /* tecknen i trädet (steg 11.1.30) */
+.tf { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); background: var(--panel); box-sizing: border-box; font-style: normal; font-size: 9px; line-height: 10px; text-align: center; color: var(--panel); font-weight: 700; }
+.tf.kan { border-color: var(--good); } .tf.pa { border-color: var(--accent); border-style: dotted; } .tf.ok { opacity: 0.45; } .tf.ensam { background: var(--g-senap); border-color: var(--g-senap); } .tf.brist { background: var(--bad); border-color: var(--bad); }
 .tnod .hantal { position: absolute; right: 2px; bottom: 1px; font-size: 11px; font-weight: 700; color: #dad0bb; text-shadow: 0 1px 1px #24201d, 0 0 2px #24201d; } /* hur många av saken som ligger i handen (steg 10.2.82) */
 .tnod .antal { position: absolute; right: -6px; bottom: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--good); color: var(--panel); font-size: 11px; line-height: 18px; text-align: center; padding: 0 4px; }
 .anseende { font-size: 0.8em; cursor: help; }
