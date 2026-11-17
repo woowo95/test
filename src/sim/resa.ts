@@ -667,3 +667,38 @@ function samlasSteg(s: State, sl: Sallskap, p: Person) {
   if (!alla) sl.medl = sl.medl.filter(id => vid.includes(id)); // de som inte kom är inte med
   if (sallskapKraft(s, sl) < (sl.krav ?? 0) - 1e-9 || !borjaPacka(s, sl)) stallIn(s, sl);
 }
+
+// ---------- sällskapet på världskartan (steg 11.5.12, Flera samhällen: Vad spelaren ser och vad byn vet) ----------
+// Spelaren ser sällskapet som det är: en bild som rör sig längs vägen, mellan rutan det är på och nästa (gången mot nästa ruta i
+// rutans kostnad), vänd åt sitt håll, och en ruta med skälet, målet, skedet, medlemmarna, djuren, packningen och hur långt det
+// är kvar i dygn (i sällskapets fart nu), eller hur länge det stannar framme.
+export const SKEDEN: Record<Skede, string> = { samlas: 'Samlas', packar: 'Packar', gar: 'Går ut ur byn', ute: 'På väg dit', framme: 'Framme', hemat: 'På väg hem', hemma: 'Hemma' };
+export interface SallskapLage { x: number; y: number; dx: number; dy: number; kvar: number }
+export function sallskapLage(s: State, sl: Sallskap): SallskapLage | undefined {
+  const vl = s.varld, v = varldMark(s);
+  if (!vl || !v || !PA_VAGEN.includes(sl.skede)) return undefined;
+  const rutor = vagenRutor(s, sl), pos = sl.pos ?? 0;
+  if (sl.skede === 'framme' || !rutor.length) {
+    const i = sl.skede === 'framme' && rutor.length ? rutor[rutor.length - 1] : sl.ruta;
+    if (i === undefined) return undefined;
+    const kvar = sl.skede === 'framme' ? Math.max(0, RESMAL[sl.skal].stannar - (s.now - (sl.framme ?? s.now)) / DAY) : 0;
+    return { x: i % v.w, y: Math.floor(i / v.w), dx: 0, dy: 0, kvar: Math.round(kvar * 100) / 100 };
+  }
+  const k = kostnader(vl, v, 'fots'), a = rutor[pos], b = rutor[Math.min(pos + 1, rutor.length - 1)];
+  const f = a === b ? 0 : clamp((sl.gang ?? 0) / k[b], 0, 1), ax = a % v.w, ay = Math.floor(a / v.w), bx = b % v.w, by = Math.floor(b / v.w);
+  let kvar = -(sl.gang ?? 0);
+  for (let n = pos + 1; n < rutor.length; n++) kvar += k[rutor[n]];
+  kvar = Math.max(0, kvar) / (VARLD.gangPerDygn * Math.max(1e-9, sallskapFart(s, sl)));
+  return { x: ax + (bx - ax) * f, y: ay + (by - ay) * f, dx: Math.sign(bx - ax), dy: Math.sign(by - ay), kvar: Math.round(kvar * 100) / 100 };
+}
+export interface SallskapRuta { titel: string; skede: string; ledare: string; medl: string[]; djur: string[]; pack: [string, number][]; kvar?: number; stannar?: number }
+export function sallskapRuta(s: State, sl: Sallskap): SallskapRuta {
+  const mal = s.varld?.platser?.find(p => p.nr === sl.mal)?.namn ?? '', lage = sallskapLage(s, sl);
+  const namn = (id: number) => s.people.find(p => p.id === id)?.name ?? '';
+  const djur = sl.djur.map(id => s.tamdjur?.find(d => d.id === id)).filter(d => !!d).map(d => tamArt(d!.art).namn);
+  return {
+    titel: `${RESMAL[sl.skal].namn}: ${mal}`, skede: SKEDEN[sl.skede], ledare: namn(sl.ledare), medl: sl.medl.filter(id => id !== sl.ledare).map(namn).filter(Boolean),
+    djur, pack: Object.entries(sl.pack).filter(([, n]) => n >= 1).map(([k, n]) => [SAKER[k]?.namn ?? k, Math.floor(n)] as [string, number]).sort((a, b) => b[1] - a[1]),
+    ...(lage && sl.skede !== 'framme' ? { kvar: lage.kvar } : {}), ...(lage && sl.skede === 'framme' ? { stannar: lage.kvar } : {}),
+  };
+}

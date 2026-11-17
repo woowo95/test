@@ -2,7 +2,7 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { bynsKarta, hortHandelse, kalender, platsRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { bynsKarta, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { s } from './lage';
 import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
@@ -66,6 +66,27 @@ function bilden() {
   return bild;
 }
 
+// sällskapets bild (steg 11.5.12), åt höger och spegelvänd åt vänster
+const spritar: Partial<Record<'h' | 'v', HTMLCanvasElement>> = {};
+function sprite(vanster: boolean) {
+  const nyckel = vanster ? 'v' : 'h';
+  if (spritar[nyckel]) return spritar[nyckel]!;
+  const c = document.createElement('canvas'); c.width = c.height = VK;
+  const g = c.getContext('2d')!, r = TECKEN.sallskap;
+  for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++) { const k = r[y][vanster ? VK - 1 - x : x]; if (k !== '.') { g.fillStyle = TECKENPAL[k]; g.fillRect(x, y, 1, 1); } }
+  return spritar[nyckel] = c;
+}
+const vandrar = new Map<number, boolean>(); // åt vänster senast (står kvar när sällskapet går rakt upp eller ner)
+function ritaSallskap(g: CanvasRenderingContext2D) {
+  if (!s) return;
+  for (const sl of sallskapNu(s.varld)) {
+    const l = sallskapLage(s, sl);
+    if (!l) continue;
+    if (l.dx) vandrar.set(sl.id, l.dx < 0);
+    g.drawImage(sprite(vandrar.get(sl.id) ?? false), Math.round(l.x * VK), Math.round(l.y * VK));
+  }
+}
+
 let vy: Vy | undefined, ritas = false;
 const matt = () => { const r = duk.getBoundingClientRect(); return { sw: r.width, sh: r.height }; };
 function rita() {
@@ -79,6 +100,7 @@ function rita() {
   g.imageSmoothingEnabled = false;
   g.setTransform(vy.z * dpr, 0, 0, vy.z * dpr, -vy.x * vy.z * dpr, -vy.y * vy.z * dpr);
   g.drawImage(b, 0, 0);
+  ritaSallskap(g);
 }
 const senare = () => { if (!ritas) { ritas = true; requestAnimationFrame(rita); } };
 
@@ -94,6 +116,7 @@ function oppna() {
     vy = begransa({ x: (hb.x + 0.5) * VK - sw / 2 / z, y: (hb.y + 0.5) * VK - sh / 2 / z, z }, b.width, b.height, sw, sh); rita();
   }
 }
+setInterval(() => { if (!ruta.hidden && sallskapNu(s?.varld).length) senare(); }, 1000); // sällskapen rör sig
 function stang() { ruta.hidden = true; knapp.setAttribute('aria-expanded', 'false'); }
 knapp.addEventListener('click', () => ruta.hidden ? oppna() : stang());
 ruta.querySelector('.vkStang')!.addEventListener('click', stang);
@@ -161,6 +184,13 @@ function rutaHtml(x: number, y: number): string {
     const tab = r.rader.length ? `<table><tr><th></th><th>Byn tror</th><th>Sant nu</th></tr>${r.rader.map(d => `<tr><th>${esc(d.namn)}</th><td>${esc(d.tror ?? '–')}</td><td>${esc(d.sant)}</td></tr>`).join('')}</table>` : '';
     const vem = r.vem.length ? `<div>Vet: ${r.vem.map(esc).join(', ')}</div>` : '';
     delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
+  }
+  for (const sl of sallskapNu(vl)) { // sällskapet på rutan (steg 11.5.12)
+    const l = sallskapLage(s, sl);
+    if (!l || Math.round(l.x) !== x || Math.round(l.y) !== y) continue;
+    const r = sallskapRuta(s, sl), dygn = (d: number) => `${d.toLocaleString('sv', { maximumFractionDigits: 1 })} dygn`;
+    const kvar = r.kvar !== undefined ? `, ${dygn(r.kvar)} kvar` : r.stannar !== undefined ? `, stannar ${dygn(r.stannar)} till` : '';
+    delar.push(`<div class="vkPlats"><b>🎒 ${esc(r.titel)}</b>: ${esc(r.skede)}${kvar}<div>${esc(r.ledare)}${r.medl.length ? ` med ${r.medl.map(esc).join(', ')}` : ''}${r.djur.length ? ` och ${r.djur.map(d => esc(d.toLowerCase())).join(', ')}` : ''}</div>${r.pack.length ? `<div>Packning: ${r.pack.map(([k, n]) => `${n} ${esc(k.toLowerCase())}`).join(', ')}</div>` : ''}</div>`);
   }
   return delar.join('');
 }
