@@ -875,3 +875,37 @@ SCENARIER.giftermal = {
     ];
   },
 };
+
+SCENARIER.nyby = {
+  text: 'Nya byar (steg 11.3.7, byflytt.ts): en grupp som lämnar kan grunda en by på en ledig plats, oftare en stor grupp ur en stor by, och den nya byn minns sin moderby och kan en del av dess tekniker',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!, v = SIM.varldMark(s)!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x))!;
+    r.tal.folk = 40; r.tal.mat = 400;
+    r.tek = ['flinta', 'flintyxa', 'fiskespjut', 'eldborr', 'korg', 'rep'].filter(id => SIM.TEK[id]);
+    const liten = SIM.nyChans({ ...r, tal: { ...r.tal, folk: 8 } }, 1), stor = SIM.nyChans(r, 4);
+    const n0 = vl.rader!.length, k0 = (vl.kronika ?? []).length, mat0 = r.tal.mat;
+    r.tal.folk -= 4;
+    const ny = SIM.nyBy(s, vl, r, 4, s.now)!;
+    const plats = vl.platser!.find(p => p.by === ny?.nr);
+    const tekOk = !!ny && ny.tek.every(id => r.tek.includes(id) && (SIM.TEK[id]?.krav ?? []).every(k => ny.tek.includes(k)));
+    const dagar = plats && SIM.flyttMal(vl, v, r).find(m => m.r.nr === ny.nr);
+    const krona = (vl.kronika ?? []).slice(k0).some(h => h.k === 'delad' && h.by === r.nr && h.mot === ny.nr);
+    // av sig självt: en stor och trång by (som inte svälter) i 20 dygn
+    const t = SIM.createState(11, Date.UTC(2026, 0, 1)), tv = t.varld!, tr = tv.rader!.find(x => SIM.lever(tv, x))!;
+    tr.tal.folk = 60; tr.tal.mat = 10000;
+    const tn0 = tv.rader!.length;
+    for (let n = 0; n < 20 * 24; n++) SIM.radFlytt(t, tv, tr, 5000 + n);
+    const nya = tv.rader!.filter(x => x.fran === tr.nr);
+    return [
+      [`en stor grupp ur en stor by grundar oftare en egen by (${stor.toFixed(2)} mot ${liten.toFixed(2)})`, stor > liten * 4],
+      [`gruppen fick en plats och en rad (${n0} → ${vl.rader!.length} rader), med 4 personer`, !!ny && !!plats && vl.rader!.length === n0 + 1 && ny.tal.folk === 4],
+      [`den nya byn minns sin moderby och de två är släkt (${SIM.slaktband(vl, ny.nr, r.nr)} band)`, ny.fran === r.nr && SIM.slaktband(vl, ny.nr, r.nr) > 0],
+      [`den kan en del av moderbyns tekniker (${ny.tek.length} av ${r.tek.length}), och bara det vars krav den kan`, tekOk && ny.tek.length < r.tek.length + 1],
+      [`den tog sin del av maten (${mat0} → ${r.tal.mat} + ${ny.tal.mat})`, r.tal.mat + ny.tal.mat === mat0 && ny.tal.mat > 0],
+      ['den ligger inom räckhåll och moderbyn kan flytta dit', !!dagar],
+      ['världens krönika: Delad', krona],
+      [`av sig själv: en stor och trång by delas på 20 dygn (${tn0} → ${tv.rader!.length} rader, ${nya.length} nya ur den)`, nya.length >= 1],
+    ];
+  },
+};
