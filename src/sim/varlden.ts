@@ -14,6 +14,8 @@ export interface Varlden {
   mark: { gen: number; delfro: number; w: number; h: number; mark: string; flod: string; ned: string }; // marken packad (base64)
   platser?: import('./landmarken').VarldPlats[]; nastaPlats?: number; // platserna i världen (steg 11.2.8, landmarken.ts)
   rader?: import('./radtal').VarldRad[]; nastaRad?: number; huvud?: number; // byarnas rader och huvudbyns nummer (steg 11.2.9, radtal.ts)
+  borjan?: number; perioder?: Record<import('./varldslag').PeriodId, number>; // världens början och perioderna som räknats (steg 11.2.17, varldslag.ts)
+  ko?: import('./varldslag').KoPost[]; nastaKo?: number; // det som händer vid en känd tid, sorterat på tiden
 }
 export const varldFro = (seed: number) => Math.floor(hash3(seed, 0x5741524c, 0x11207) * 2 ** 31);
 

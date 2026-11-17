@@ -79,6 +79,7 @@ import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
 import { skrivHuvudRad } from './radtal';
+import { varldSteg } from './varldslag';
 import { projektSaknarRakna } from './projekt';
 import { handelSteg, handlaKlar, handelsMalRakna, handelsTill, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
@@ -435,6 +436,7 @@ export const TAKTER: Takt[] = [
   { namn: 'tidyStore', sek: 3600, fn: s => { tidyStore(s); } },
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
+  { namn: 'världen', sek: 300, fn: s => { varldSteg(s); } }, // världens perioder och kön, räknade mot klockan (varldslag.ts, steg 11.2.17)
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
