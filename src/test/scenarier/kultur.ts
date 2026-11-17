@@ -1132,7 +1132,13 @@ SCENARIER.bubbla = {
     bubblaKlick(el(svgDel));
     const knappIngen = !bubblaKlick(el(knapp)) && bubblaText() === undefined;
     [g.document, g.innerWidth, g.innerHeight] = [d0, w0, h0];
+    // i mobilen (steg 11.1.61): rutan om det man tryckt på syns i tre sekunder ovanför porträttraden, samtalet får ett ord och
+    // talet över den som förblöder har enheten. (interaktion.ts och manniskor.ts ritar med PIXI, så källan läses)
+    const src61 = (f: string) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
+    const mobil61 = /\.hoverBox\.tryckt:not\(\[hidden\]\) \{ display: block;/.test(src61('template.html')) && /setTimeout\(\(\) => \{ box\.classList\.remove\('tryckt'\); \}, 3000\)/.test(src61('ui/interaktion.ts'))
+      && /PRATORD\[pratSort\(p, q\)\]/.test(src61('ui/interaktion.ts')) && src61('ui/manniskor.ts').includes('round(kvar * 60))} min`');
     return [
+      ['i mobilen syns texten om det man tryckt på i tre sekunder ovanför porträttraden, samtalet säger vad slags samtal det är, och talet över den som förblöder skrivs i min (steg 11.1.61)', mobil61],
       ['en symbol med förklaring ger texten, också när man tryckt på bilden i den', forklaringAv(el(bild))?.text === sym.attr.title],
       ['en ritad symbol ger texten i sin <title>', forklaringAv(el(svgDel))?.text === 'Vikt 4 av 5'],
       ['det som öppnar något (en rad som fälls ut, en person) ger ingen bubbla', !forklaringAv(el(iRad)) && !forklaringAv(el(knapp)) && OPPNAR.includes('.klick')],

@@ -36,6 +36,11 @@ const bubbles: { id: number; kind: string; good: boolean; until: number; i?: str
 // (spelets tid) efter samtalet: sedan sitter de tysta tills nästa (steg 3.10.3)
 const talkWith = new Map<number, number>();
 vidNyBy.push(() => { bubbles.length = 0; talkWith.clear(); });
+// pratbubblans färg efter relationen (steg 3.10.3): kär (partnern eller mycket romans), grälar, goda vänner eller annars.
+// PRATORD är samma sak i ord (steg 11.1.61), för texten om den man trycker på
+export const pratSort = (p: Person, q: Person | undefined, r = q ? s.rels[relKey(p.id, q.id)] : undefined) =>
+  q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' as const : (r?.op ?? 0) < REL.gral ? 'ovan' as const : (r?.op ?? 0) > REL.van ? 'van' as const : 'neutral' as const;
+export const PRATORD: Record<ReturnType<typeof pratSort>, string> = { karlek: 'pratar kärleksfullt med', ovan: 'grälar med', van: 'pratar vänskapligt med', neutral: 'pratar med' };
 // samtal som startat sedan förra bildrutan (vid tiden som visas, nu): en bubbla i samtalets färg en stund. Samtal som
 // hunnit bli gamla, när tiden spolas fram, visas inte
 export function addTalks(events: TalkEvent[], now: number, nu: number) {
@@ -481,7 +486,7 @@ export function drawPeople(t: number) {
     if (talking || flash.has(p.id) && (isSocial(p) || medGast)) { // bara den som gör något socialt just nu, som personrutan säger (steg 2.3.7)
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
       // bubblans färg: kär (partnern eller mycket romans), grälar (som i folk.ts), goda vänner eller annars
-      const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
+      const rel = pratSort(p, q, r);
       const ikon = (flash.has(p.id) || q && p.prat?.m === q.id) ? amneIkon(p.prat) : undefined; // ämnet (steg 3.9.5, 9.2.10)
       pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, flash.get(p.id), rel, ikon);
       if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s, s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
@@ -521,7 +526,7 @@ export function drawPeople(t: number) {
     if (kvar >= HALSA.kortTim || dolda.has(p.id)) continue;
     const tx = blodTexter[b] ?? (blodTexter[b] = (() => { const t2 = new PIXI.Text('', blodStyle); t2.scale.set(0.5); t2.anchor.set(0.5, 1); labels.addChild(t2); return t2; })());
     b++;
-    const txt = `${Math.max(1, Math.round(kvar * 60))}`;
+    const txt = `${Math.max(1, Math.round(kvar * 60))} min`; // med enhet (steg 11.1.61)
     if (tx.text !== txt) tx.text = txt;
     const q = posOf(p), topp = huvud.get(p.id) ?? q.y * TS - 13; tx.position.set(q.x * TS + 8, topp - 2); tx.visible = true;
   }
