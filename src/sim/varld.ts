@@ -1,6 +1,6 @@
 import { balans } from './balans';
 import { TROSHUS_DELAR, planRutor, vaggSorter, vuxnaTroende } from './troshus';
-import { delarIRad } from './stationer';
+import { delarAv, delarIRad, rivStation, stationDef } from './stationer';
 import { nyaKlaner } from './klaner';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
@@ -10,7 +10,8 @@ import { put, setStock, storeFromSums } from './lager';
 import { kyrkaId } from './egendom';
 import { isTool } from './saker';
 import { migrateTools, newTing, toolsFromItems } from './agande';
-import { MATERIAL } from './byggnad';
+import { MATERIAL, isWall } from './byggnad';
+import { enOrd, stor } from './ord';
 import { kladNyckel } from './klader';
 import { migrateFalt } from './odling';
 import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
@@ -422,6 +423,10 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const t of s.stationer ?? []) if (t.k === 'bonad' && t.kvar <= 0) { put(s, 'skinn', 1); put(s, 'rep', 1); }
     if (s.stationer) s.stationer = s.stationer.filter(t => t.k !== 'bonad');
     for (const p of s.people) { if (p.tek) delete p.tek.bonad; if (p.task?.act === 'station' && p.task.tool === 'bonad') p.task = undefined; }
+  }],
+  [55, 'v530: en station ute som ett hus byggts ut över rivs, som när huset byggs ut nu (steg 10.2.77)', s => {
+    for (const t of [...(s.stationer ?? [])]) if (!t.inne && delarAv(t).some(q => { for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) if (isWall(s, x + 0.5, y + 0.5)) return true; return false; }))
+      rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs, eftersom ett hus byggts ut över den.`);
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
