@@ -554,12 +554,15 @@ SCENARIER.kista = {
     let h = 0; const vikt = PROJEKT.kista!.vikt; PROJEKT.kista!.vikt = 20;
     try { while (!(kistaOf(s, p) && isKlar(kistaOf(s, p)!)) && h < 72) { kor(s, 1); h++; } } finally { PROJEKT.kista!.vikt = vikt; }
     const k = kistaOf(s, p), b = bedTile(s, p);
-    kor(s, 1);
+    // det egna bärs dit när någon har tid: några timmar
+    const fria = () => egna.filter(t => t.hos === undefined && t.bar === undefined && t.lass === undefined);
+    for (let i = 0; i < 8 && (i === 0 || !fria().length || fria().some(t => !(k && t.vid === k.id && t.x === k.x && t.y === k.y))); i++) kor(s, 1);
     const byggd = !!k && isKlar(k) && k.ag === p.id && !!k.inne && b !== undefined && !!stationRum(s, k)?.tiles.includes(b);
     // det egna som ingen har i handen ligger i kistan, inte byns spjut, och det syns inte i lagret
     const iKistan = (t: SIM.Ting) => !!k && t.vid === k.id && t.x === k.x && t.y === k.y;
     const lediga = egna.filter(t => t.hos === undefined && t.bar === undefined && t.lass === undefined);
     const iLagret = pilesOf(s).some(a => k && a.x === k.x && a.y === k.y);
+    const iKistanNu = lediga.filter(iKistan).length, egetOk = lediga.length > 0 && lediga.every(iKistan) && !iKistan(byns) && !iLagret;
     // q lånar yxan: när q är klar ligger den i kistan igen
     const yxa = egna[0]; yxa.vid = k?.id; yxa.x = k?.x; yxa.y = k?.y; yxa.hos = undefined;
     const tog = take(s, q, 'yxa') === yxa;
@@ -580,7 +583,7 @@ SCENARIER.kista = {
     return [
       [`p vill ha en kista, de andra inte (${andra}), och byn vill bygga en (brist ${brist})`, vill && andra === 0 && brist === 1],
       [`p bygger sin kista på ${h} timmar, inne i rummet där p sover`, byggd],
-      [`det egna som ingen använder ligger i kistan (${lediga.filter(iKistan).length} av ${lediga.length}), inte byns spjut, och inget av det syns i lagret`, lediga.length > 0 && lediga.every(iKistan) && !iKistan(byns) && !iLagret],
+      [`det egna som ingen använder ligger i kistan (${iKistanNu} av ${lediga.length}), inte byns spjut, och inget av det syns i lagret`, egetOk],
       ['den som lånar yxan lägger tillbaka den i kistan', tog && tillbaka],
       ['det som inte är ägarens tas ur kistan och läggs i lagret', ut],
       [`i kistan slits det som under tak (${orsak}, ${mult} gånger), och den går att gå förbi`, orsak === 'kista' && mult === LAGER.inne && hinder === 0],

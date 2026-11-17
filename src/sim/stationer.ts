@@ -88,6 +88,7 @@ export const STATION = balans('station', {
   fallVarme: 0.5, // den som sover under en skinnfäll kyls så här mycket mindre (av det som når in i huset)
   // förvaringen (steg 2.3.6): hyllan, kistan och redskapsstället
   hyllaRymmer: 3, // ... och rymmer så många högar av ett slag
+  vagnRymmer: 3, // grundarnas trasiga vagn rymmer så många högar av ett slag (steg 11.6.13)
   kistaRymmer: 2, // ... och så många högar (en gammal kista i lagret). Det som ligger i den slits som under tak
   kistaVill: 2, kistaTing: 6, // den som har så många egna redskap och kläder som ingen använder vill ha en kista, och den rymmer så många (steg 2.10.18)
   stallRymmer: 4, // ... och så många redskap
@@ -128,7 +129,7 @@ export const STATION = balans('station', {
 export interface Utkant { drag?: true; till: number; avst: number; vatten?: true; falt?: true; tradFri?: true; faltNara?: true } // faltNara: så nära ett fält som möjligt (komposten, steg 10.2.93) // tradFri: söker en plats utan träd (bara latrinen, steg 8.1.14)
 export interface Forvar { rymmer: number; redskap?: true; bara?: readonly string[]; tak?: true; stangd?: true; privat?: true }
 export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true } // en del i en station med delar (steg 9.4.1)
-export interface StationDef { kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; agd?: true; enda?: true; fahus?: true; kok?: true; tro?: true; golv?: true; hage?: true; rund?: true; pyntQ?: number; smak?: string } // hage = står i en hage (vattenhon, steg 10.10.30); golv = ligger på golvet som en matta: man går över den och annat står på den (steg 10.7.6); pyntQ = så många kvalitetssteg finare som pynt; smak = sorten i smaken (PYNT_SMAK) när den inte är stationens id // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
+export interface StationDef { kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; agd?: true; enda?: true; fahus?: true; kok?: true; tro?: true; golv?: true; hage?: true; rund?: true; pyntQ?: number; smak?: string; vrak?: true } // vrak = byggs aldrig, står där grundarna kom (vagnen, steg 11.6.13); hage = står i en hage (vattenhon, steg 10.10.30); golv = ligger på golvet som en matta: man går över den och annat står på den (steg 10.7.6); pyntQ = så många kvalitetssteg finare som pynt; smak = sorten i smaken (PYNT_SMAK) när den inte är stationens id // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus', 'naverask', 'ogonlapp', 'nal'];
 // träsakerna vid snickarbänken (steg 9.4.5): receptets kolumn bank säger var det görs fortare och bättre, bara att det bara görs
@@ -247,6 +248,13 @@ export const STATIONER = {
     namn: 'Kista', ikon: 'kista', w: 1, h: 1, tek: ['hylla'], av: RECEPT.kista.av, min: RECEPT.kista.min, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.kistaRymmer, tak: true, stangd: true, privat: true },
     bygger: 'Bygger en kista åt sig själv, i rummet där man sover.',
     forsta: '{namn} byggde byns första kista, i rummet där {han} sover. Där ligger {hans} redskap och kläder när {han} inte använder dem, och de slits som under tak.',
+  },
+  // grundarnas trasiga vagn (steg 11.6.13): byns grundare kom som ett resande sällskap långt bortifrån, och vagnen står på
+  // startplatsen i lagret med de första sakerna i. Ingen kan bygga en (ingen teknik), och den slits som annat i lagret
+  vagn: {
+    namn: 'Trasig vagn', ikon: 'vagnsvrak', w: 1, h: 1, tek: [], av: {}, min: 10, gor: [], mobel: true, ett: true, vrak: true, forvar: { rymmer: STATION.vagnRymmer },
+    bygger: 'Ingen bygger en trasig vagn.',
+    forsta: 'Grundarnas vagn gick sönder här, och här slog de sig ner.',
   },
   stall: {
     namn: 'Redskapsställ', ett: true, ikon: 'stall', w: 1, h: 1, tek: ['hylla'], av: RECEPT.stall.av, min: RECEPT.stall.min, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.stallRymmer, redskap: true },

@@ -5,7 +5,7 @@ import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, paKartan, newPerson, raddAkt, relKey, startSkills, think, uppkalladLogg } from './folk';
-import { pair } from './varld';
+import { pair, stallVagn } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, pickViktat, rnd } from './slump';
 import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
@@ -323,7 +323,12 @@ export function framlingBeslut(s: State, p: Person) {
   return p;
 }
 // en nybyggare (ibland ett par) kommer vandrande och slår sig ner, med lite rötter (ungefär ett dygns mat, ett år i spelet)
-function immigrate(s: State, alone: boolean) {
+// i en by med en värld kommer nybyggarna ur en by i grannätet, som får färre invånare (steg 11.6.13); kan ingen by skicka dem
+// kommer ingen. Den som återgrundar byn (alone) kommer långt bortifrån och tas inte ur någon by
+export function immigrate(s: State, alone: boolean): Person | undefined {
+  const par = !alone && rnd(s, 'flytt') < LIV.parChans;
+  const ur = alone ? undefined : radKrok.nybyggare(s, par ? 2 : 1);
+  if (ur === null) return undefined;
   const mk = (sex: 'm' | 'k') => {
     const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
     startSkills(s, p, age); startSmak(s, p);
@@ -333,19 +338,22 @@ function immigrate(s: State, alone: boolean) {
     for (const k in MEDHAVT) put(s, k, MEDHAVT[k], { [p.id]: MEDHAVT[k] }); // lite mat från vandringen, så att man hinner samla innan man svälter
     return p;
   };
-  const a = mk(rnd(s, 'folk') < 0.5 ? 'm' : 'k');
-  if (!alone && rnd(s, 'flytt') < LIV.parChans) {
+  const a = mk(rnd(s, 'folk') < 0.5 ? 'm' : 'k'), varifran = ur ? ` från ${ur.namn}` : '';
+  if (ur?.syn) a.fran = ur.syn.id;
+  if (par) {
     const b = mk(a.sex === 'm' ? 'k' : 'm');
+    if (ur?.syn) b.fran = ur.syn.id;
     pair(s, a, b, true);
-    log(s, `${a.name} och ${b.name} kom vandrande och slog sig ner i byn.`, 'move', [a.id, b.id]);
-  } else log(s, `${a.name} kom vandrande och slog sig ner i byn.`, 'move', [a.id]);
+    log(s, `${a.name} och ${b.name} kom vandrande${varifran} och slog sig ner i byn.`, 'move', [a.id, b.id]);
+  } else log(s, `${a.name} kom vandrande${varifran} och slog sig ner i byn.`, 'move', [a.id]);
   count(s, 'invandrade');
   return a;
 }
 // alla är borta: en vandrare hittar den övergivna boplatsen och grundar byn på nytt
 function refound(s: State) {
-  const p = immigrate(s, true);
+  const p = immigrate(s, true)!;
   p.grundare = 'ny';
+  stallVagn(s); // hen kom med en vagn långt bortifrån (steg 11.6.13)
   count(s, 'atergrundad'); kronikaBer(s, 'k_atergrundad', p.id, personFalt(p));
   log(s, `${p.name} hittade den övergivna boplatsen och grundade byn på nytt.`, 'world', [p.id]);
 }

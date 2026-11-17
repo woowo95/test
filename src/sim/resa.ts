@@ -35,7 +35,7 @@ import type { Skill } from './typer';
 import { kommHem } from './ute';
 import { larOrt, O_BESOKT, radBesoker } from './ort';
 import { BYSORTER, radNr } from './radtal';
-import { radPaslag, radPrisAndras, radTar } from './priser';
+import { byPaslag, gruppAv, radHar, radPaslag, radPrisAndras, radTar } from './priser';
 import { makeName } from './folk';
 import { rnd } from './slump';
 import { DAY } from './typer';
@@ -44,7 +44,7 @@ import { kanGa } from './halsa';
 import { SEC } from './typer';
 import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
-import { trorPris } from './minne';
+import { kannerPris, trorPris } from './minne';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -126,7 +126,7 @@ export const RESA = balans('resa', {
   forsvunnen: 3, // kommer ingen hem räknas resenärerna som försvunna efter så många gånger den väntade tiden (steg 11.5.18)
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
-const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
+export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
 export interface ResmalDef { namn: string; mal: readonly LandmarkId[]; stannar: number }
@@ -158,10 +158,12 @@ export interface Sallskap {
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
   delning?: Andelar; // hur det delades hemma (steg 11.5.9)
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
+  kop?: [string, number][]; // det ledaren tänkt köpa hem, det byn har brist på (steg 11.6.11)
   krav?: number; // kraften sällskapet behöver mot ledens fara (steg 11.5.11)
   berattad?: number; // när resan berättades hemma (steg 11.5.13)
   varde?: number; matNasta?: number; // resans väntade värde (resaPlan), och när ledaren väger nästa gång om maten tar slut (steg 11.5.15)
   forlorat?: number; // timmar i gång som går förlorade: vilse eller ett oväder som väntas ut (steg 11.5.14)
+  spar?: number[]; mott?: string[]; // rutorna sällskapet gått sedan förra timmen, och de sällskap det mött (steg 11.6.12)
   buren?: [number, BurenSatt][]; utvagNasta?: number; // de som bärs och hur, och när ledaren väger nästa gång om någon är långsam (steg 11.5.17)
 }
 export type BurenSatt = 'vagn' | 'djur' | 'bar';
@@ -377,7 +379,7 @@ function rutaNu(s: State, sl: Sallskap) {
 }
 // den mat i packningen som håller kortast
 const kortastMat = (sl: Sallskap) => FOOD.filter(k => (sl.pack[k] ?? 0) >= 1).sort((a, b) => (SAKER[a]!.haller ?? 99) - (SAKER[b]!.haller ?? 99))[0];
-function tappa(sl: Sallskap, k: string, n: number) { sl.pack[k] = (sl.pack[k] ?? 0) - n; if (sl.pack[k]! <= 0) delete sl.pack[k]; }
+export function tappa(sl: Sallskap, k: string, n: number) { sl.pack[k] = (sl.pack[k] ?? 0) - n; if (sl.pack[k]! <= 0) delete sl.pack[k]; }
 // sällskapets fart efter orken (en faktor i Farten i tal)
 export const orkFart = (sl: Sallskap, ork?: number) => {
   const o = ork ?? sl.behov?.ork ?? 1;
@@ -442,7 +444,7 @@ export function resaBehov(s: State, dt: number) {
 // sin egen) gånger lastens, årstidens (snön) och orkens. Ledens fart ligger i rutans kostnad (vagval.ts), så en stig går
 // fortare än obanad mark. Lasten bromsar bara på resan, inte i byn. Sällskapet går i dagsljuset, ruta för ruta längs vägen,
 // och trampar leden (leder.ts) där det går; framme stannar det så många dygn som skälet säger och går sedan hem.
-const resenarer = (s: State, sl: Sallskap) => sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p && alive(p) && !p.dodVag); // den som dött på vägen är inte med (steg 11.5.18)
+export const resenarer = (s: State, sl: Sallskap) => sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p && alive(p) && !p.dodVag); // den som dött på vägen är inte med (steg 11.5.18)
 export function personFart(s: State, p: Person) {
   const a = ageOf(p, s.now), ben = Math.max(0, ...GADELAR.map(d => clamp(delFel(p, d), 0, 1)));
   return Math.min(a < ALDER.vuxen ? RESA.fartBarn : a >= ALDER.gammal ? RESA.fartGammal : 1, 1 - (1 - RESA.fartBen) * ben);
@@ -485,7 +487,7 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
   while (pos < rutor.length - 1 && sl.gang >= k[rutor[pos + 1]] - 1e-9) {
     sl.gang -= k[rutor[pos + 1]];
     trampa(vl, [rutor[pos], rutor[pos + 1]], tyngd, t);
-    pos++; sl.ruta = rutor[pos];
+    pos++; sl.ruta = rutor[pos]; (sl.spar ??= []).push(sl.ruta); // rutorna sedan sist, för mötena (steg 11.6.12)
   }
   sl.pos = pos;
   if (pos < rutor.length - 1) return;
@@ -533,6 +535,21 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
     radPrisAndras(s, r, sak, pay, -1);
   }
   if (fick) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; dagbok(s, sl, 'handel', `Sålde ${salda} saker i ${r.namn} för ${fick} silver.`, t); count(s, 'resa sålde', salda); }
+  // köpa: det byn har brist på, om det fortfarande är billigare här än hemma, så mycket byn har och silvret räcker till (steg 11.6.11)
+  let kopta = 0, gav = 0;
+  for (const [sak, n] of sl.kop ?? []) {
+    const g = gruppAv(sak), per = varde1(sak) * radPaslag(s, r, sak);
+    if (!g || g === 'mat' || radPaslag(s, r, sak) >= byPaslag(s, sak)) continue;
+    let m = Math.min(n, Math.floor(radHar(r, g) * RESA.matKvar / varde1(sak) + 1e-9), Math.floor((sl.pack.silver ?? 0) / per + 1e-9));
+    while (m > 0 && Math.ceil(m * per - 1e-9) > (sl.pack.silver ?? 0)) m--;
+    if (m <= 0) continue;
+    const pay = Math.ceil(m * per - 1e-9);
+    tappa(sl, 'silver', pay); sl.pack[sak] = (sl.pack[sak] ?? 0) + m;
+    radTar(r, sak, -m); radTar(r, 'silver', pay);
+    radPrisAndras(s, r, sak, pay, 1);
+    kopta += m; gav += pay;
+  }
+  if (kopta) { dagbok(s, sl, 'handel', `Köpte ${kopta} saker i ${r.namn} för ${gav} silver att ta hem.`, t); count(s, 'resa köpte hem', kopta); }
   // köpa: mat för vägen hem
   const v = varldMark(s), hem = byPlats(vl, sl.by), vd = v && hem ? vagDygn(s, plats.y * v.w + plats.x, hem.y * v.w + hem.x) : undefined;
   const led = folk.find(p => p.id === sl.ledare) ?? folk[0];
@@ -640,7 +657,9 @@ export function stallIn(s: State, sl: Sallskap) {
   count(s, 'resa inställd');
 }
 // varorna byn har över sina förrådsmål som tros betala bättre i klanens by, så mycket en resenär bär, mest vinst per vikt först
-export function resaVaror(s: State, p: Person, klan: number | undefined): { varor: [string, number][]; vinst: number } {
+// (sälja), och det byn har brist på som personen tror är billigare där än hemma, efter ett prisminne (köpa, steg 11.6.11): för silvret byn har och det
+// försäljningen tros ge, så mycket sällskapet bär hem, mest vinst per vikt först. Silvret till köpen tas med bland varorna.
+export function resaVaror(s: State, p: Person, klan: number | undefined): { varor: [string, number][]; vinst: number; kop: [string, number][] } {
   const bar = barResenar(s, p), varor: [string, number][] = [];
   let vikt = 0, vinst = 0;
   const rad = (Object.keys(MATERIALMAL) as (keyof typeof MATERIALMAL)[]).filter(k => !BEHALL.includes(k) && !FOOD.includes(k) && grundvarde(k) > 0)
@@ -651,7 +670,23 @@ export function resaVaror(s: State, p: Person, klan: number | undefined): { varo
     if (m <= 0) continue;
     varor.push([x.k, m]); vikt += m * viktOf(x.k); vinst += m * x.d;
   }
-  return { varor, vinst };
+  // köpa: det byn har under sina förrådsmål, där klanens pris tros vara lägre än byns eget
+  const kop: [string, number][] = [];
+  if (klan === undefined) return { varor, vinst, kop };
+  const harSilver = Math.floor(amountOf(s, 'silver') + 1e-9);
+  let budget = harSilver + varor.reduce((a, [k, n]) => a + Math.floor(n * grundvarde(k) * trorPris(p, klan, k)), 0), hemVikt = 0, kostar = 0;
+  const brist = (Object.keys(MATERIALMAL) as (keyof typeof MATERIALMAL)[]).filter(k => !BEHALL.includes(k) && !FOOD.includes(k) && grundvarde(k) > 0)
+    .map(k => ({ k, per: grundvarde(k) * trorPris(p, klan, k), d: grundvarde(k) * (byPaslag(s, k) - trorPris(p, klan, k)), n: Math.ceil(villHaAv(s, k) - amountOf(s, k) - 1e-9) }))
+    .filter(x => x.d > 1e-9 && x.n > 0 && kannerPris(p, klan, x.k)).sort((a, b) => b.d / viktOf(b.k) - a.d / viktOf(a.k) || (a.k < b.k ? -1 : 1));
+  for (const x of brist) {
+    const m = Math.min(x.n, Math.floor(budget / Math.max(1e-9, x.per) + 1e-9), Math.floor((bar - hemVikt) / Math.max(1e-9, viktOf(x.k)) + 1e-9));
+    if (m <= 0) continue;
+    kop.push([x.k, m]); hemVikt += m * viktOf(x.k); vinst += m * x.d;
+    const pay = Math.ceil(m * x.per - 1e-9); budget -= pay; kostar += pay;
+  }
+  const silver = Math.min(harSilver, kostar);
+  if (silver > 0) varor.push(['silver', silver]);
+  return { varor, vinst, kop };
 }
 // dygnen dit som personen räknar dem: den sparade vägens, annars fågelvägen
 function dygnDit(s: State, fran: { x: number; y: number }, till: { x: number; y: number }) {
@@ -659,7 +694,7 @@ function dygnDit(s: State, fran: { x: number; y: number }, till: { x: number; y:
   const sparad = vl.vagar?.find(x => x.fs === 'fots' && x.fran === a && x.till === b);
   return (sparad ? sparad.kostnad : Math.hypot(till.x - fran.x, till.y - fran.y) * RESA.omvag) / VARLD.gangPerDygn;
 }
-export interface ResPlan { mal: number; namn: string; skal: ResmalId; varde: number; dygn: number; fara: number; sc: number; varor: [string, number][] }
+export interface ResPlan { mal: number; namn: string; skal: ResmalId; varde: number; dygn: number; fara: number; sc: number; varor: [string, number][]; kop?: [string, number][] }
 // den resa personen helst skulle samla till och dess poäng (utan bruset); fd och wd är dygnen byns mat och ved räcker
 export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan | undefined {
   const vl = s.varld, v = varldMark(s), hem = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
@@ -671,10 +706,10 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     const niva = kannerOrt(s, p, q.nr);
     if (niva === undefined) continue;
     const r = q.by !== undefined ? radNr(vl, q.by) : undefined;
-    let skal: ResmalId | undefined, varde = 0, varor: [string, number][] = [];
+    let skal: ResmalId | undefined, varde = 0, varor: [string, number][] = [], kop: [string, number][] = [];
     if (q.k === 'by' && r && BYSORTER[r.sort].folk && r.tal.folk > 0) {
       const h = resaVaror(s, p, r.nr);
-      if (h.vinst > 0) { skal = 'handel'; varde = h.vinst * (1 + p.skill.handel / 20); varor = h.varor; }
+      if (h.vinst > 0) { skal = 'handel'; varde = h.vinst * (1 + p.skill.handel / 20); varor = h.varor; kop = h.kop; }
     }
     if (!skal && niva === O_RYKTE && (RESMAL.se.mal as readonly string[]).includes(q.k)) { skal = 'se'; varde = RESA.seVarde * ny / 10; }
     if (!skal) continue;
@@ -682,7 +717,7 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
     const lust = (ny + mod) / 20, hemma = clamp(Math.min(fd, wd) / dygn, 0, 1);
     const sc = RESA.vikt * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
-    if (sc > 0 && (!bast || sc > bast.sc)) bast = { mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: Math.round(dygn * 100) / 100, fara: Math.round(fara * 1000) / 1000, sc, varor };
+    if (sc > 0 && (!bast || sc > bast.sc)) bast = { mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: Math.round(dygn * 100) / 100, fara: Math.round(fara * 1000) / 1000, sc, varor, kop };
   }
   return bast;
 }
@@ -702,6 +737,7 @@ export function samlaResa(s: State, p: Person, r: ResPlan): Sallskap | undefined
   const sl = nyttSallskap(s, p, r.mal, r.skal);
   if (!sl) return undefined;
   sl.varor = r.varor.map(([k, n]) => [k, n]); sl.varde = r.varde;
+  if (r.kop?.length) sl.kop = r.kop.map(([k, n]) => [k, n]);
   sl.ut = utgang(s, sl);
   if (!sl.ut) { stallIn(s, sl); return undefined; }
   dagbok(s, sl, 'samlas', `${p.name} samlar till en resa till ${r.namn}.`);
@@ -791,6 +827,7 @@ export const DAGBOK = {
   fram: { namn: 'Framme', sym: '📍' },
   handel: { namn: 'Handel', sym: '⚖️' },
   mote: { namn: 'Möte', sym: '🤝' },
+  vagmote: { namn: 'Möte på vägen', sym: '🤝', stor: true }, // steg 11.6.12
   fynd: { namn: 'Fynd', sym: '🎁', stor: true },
   vilse: { namn: 'Vilse', sym: '❔' },
   ovader: { namn: 'Oväder', sym: '🌧️' },

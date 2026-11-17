@@ -533,6 +533,8 @@ export const trorPris = (p: Person | undefined, by: number | undefined, sl: stri
   const g = prisKrok.grupp(sl), l = findL(p, 'pris', by, sl) ?? (g ? findL(p, 'pris', by, GR + g) : undefined);
   return l ? l.c * l.v + (1 - l.c) : 1;
 };
+// tror p något om vad byn betalar för saken eller dess grupp (köpen på en handelsresa, steg 11.6.11)
+export const kannerPris = (p: Person, by: number, sl: string) => { const g = prisKrok.grupp(sl); return !!(findL(p, 'pris', by, sl) ?? (g ? findL(p, 'pris', by, GR + g) : undefined)); };
 function describePris(s: State, l: Lardom) {
   const place = byNamn(s, l.a), namn = slagNamn(l.sl!);
   const what = (l.v >= 1.15 ? `Betalar bra för ${namn}` : l.v <= 0.85 ? `Betalar dåligt för ${namn}` : `Vanligt pris för ${namn}`) + ` (${Math.round(l.v * 100)} %)` + (nyhet(s, l) ? ', ett annat pris än man trott' : '');

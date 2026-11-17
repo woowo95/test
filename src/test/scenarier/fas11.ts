@@ -1803,8 +1803,8 @@ SCENARIER.samlaresa = {
     const s = SIM.cloneState(testBy(30)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
     const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s.now));
     const a = vuxna[0]!, b = vuxna[1]!;
-    // en plats längre bort som ingen känner till, och som a hör rykten om
-    const mal = vl.platser!.filter(q => q.nr !== hem.nr && (SIM.RESMAL.se.mal as readonly string[]).includes(q.k) && SIM.kannerOrt(s, a, q.nr) === undefined)
+    // en plats längre bort som ingen känner till, och som a hör rykten om (inte en by: där kan byn också vilja handla, steg 11.6.11)
+    const mal = vl.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by' && (SIM.RESMAL.se.mal as readonly string[]).includes(q.k) && SIM.kannerOrt(s, a, q.nr) === undefined)
       .sort((x, y) => Math.hypot(x.x - hem.x, x.y - hem.y) - Math.hypot(y.x - hem.x, y.y - hem.y))[0]!;
     for (const p of SIM.living(s)) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'ort' || l.v !== SIM.O_RYKTE);
     for (const p of [a, b]) SIM.larOrt(s, p, mal.nr, SIM.O_RYKTE, 1);
@@ -2573,3 +2573,130 @@ SCENARIER.handlarsort = {
   },
 };
 const mulberry = (frö: number) => () => { frö = (frö + 0x6D2B79F5) | 0; let t = Math.imul(frö ^ (frö >>> 15), 1 | frö); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+
+SCENARIER.handelsresa = {
+  text: 'Huvudbyns handelsresa (steg 11.6.11, resaVaror och resaPlan i resa.ts): byn reser för att sälja det den har över till den by där den tror att varorna är värda mest, efter prisminnena, och inte till en by den inget vet om. Det byn har brist på köps där det tros vara billigare än hemma, för byns silver, och tas hem',
+  kor: () => {
+    const s = SIM.cloneState(testBy(30)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const a = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q))[0]!;
+    a.pot.nyfikenhet = 15; a.pot.mod = 15;
+    const byar = vl.platser!.filter(q => q.k === 'by' && q.nr !== hem.nr && q.by !== undefined && (SIM.radNr(vl, q.by)?.tal.folk ?? 0) > 0)
+      .sort((x, y) => Math.hypot(x.x - hem.x, x.y - hem.y) - Math.hypot(y.x - hem.x, y.y - hem.y));
+    const [X, Y, Z] = byar as [SIM.VarldPlats, SIM.VarldPlats, SIM.VarldPlats];
+    const rX = SIM.radNr(vl, X.by!)!, rY = SIM.radNr(vl, Y.by!)!;
+    // a känner bara till X och Y; Z vet a inget om
+    for (const p of SIM.living(s)) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'pris' && !(l.k === 'ort' && byar.some(q => q.nr === l.a)));
+    for (const q of [X, Y]) SIM.larOrt(s, a, q.nr, SIM.O_BESOKT, 1); // besökta: ingen nyfikenhet drar a dit
+    const varor = (Object.keys(SIM.MATERIALMAL) as (keyof typeof SIM.MATERIALMAL)[]).filter(k => !SIM.FOOD.includes(k) && SIM.grundvarde(k) > 0 && !!SIM.gruppAv(k) && SIM.gruppAv(k) !== 'mat' && SIM.viktOf(k) <= 2);
+    const salj = varor[0]!, kop = (Object.keys(SIM.MATERIALMAL) as (keyof typeof SIM.MATERIALMAL)[]).filter(k => !SIM.FOOD.includes(k) && SIM.grundvarde(k) > 0 && !!SIM.gruppAv(k) && SIM.gruppAv(k) !== 'mat' && SIM.gruppAv(k) !== SIM.gruppAv(salj) && SIM.viktOf(k) <= 5)
+      .sort((x, y) => SIM.villHaAv(s, y) * SIM.grundvarde(y) - SIM.villHaAv(s, x) * SIM.grundvarde(x) || (x < y ? -1 : 1))[0]!;
+    for (const k of Object.keys(SIM.MATERIALMAL) as (keyof typeof SIM.MATERIALMAL)[]) if (!SIM.FOOD.includes(k)) SIM.setAmount(s, k, SIM.villHaAv(s, k));
+    SIM.setAmount(s, salj, SIM.villHaAv(s, salj) + 20);
+    const tror = (r: SIM.VarldRad, k: string, v: number) => (a.lardomar ??= []).push({ k: 'pris', a: r.nr, sl: k, v, c: 1, t: s.now, led: 0 } as SIM.Lardom);
+    tror(rX, salj, 2); tror(rY, salj, 1.2);
+    const plan = SIM.resaPlan(s, a, 99, 99);
+    // Z betalar mest på riktigt, men a vet inget om Z
+    const okand = SIM.kannerOrt(s, a, Z.nr) === undefined && plan?.mal !== Z.nr;
+    // brist hemma: kop är slut hemma och tros vara billigt i Y (och dyrt i X)
+    const s2 = SIM.cloneState(s), a2 = s2.people.find(q => q.id === a.id)!;
+    a2.lardomar = (a2.lardomar ?? []).filter(l => !(l.k === 'pris' && l.sl === salj));
+    SIM.setAmount(s2, salj, SIM.villHaAv(s2, salj));
+    SIM.setAmount(s2, kop, 0); SIM.setAmount(s2, 'silver', 200);
+    (a2.lardomar ??= []).push({ k: 'pris', a: rY.nr, sl: kop, v: 0.6, c: 1, t: s2.now, led: 0 } as SIM.Lardom, { k: 'pris', a: rX.nr, sl: kop, v: 2.4, c: 1, t: s2.now, led: 0 } as SIM.Lardom);
+    const plan2 = SIM.resaPlan(s2, a2, 99, 99);
+    // framme i Y köper sällskapet det byn har brist på, och betalar med silvret
+    const vl2 = s2.varld!, rY2 = SIM.radNr(vl2, Y.by!)!, g = SIM.gruppAv(kop)!;
+    (rY2.varor ??= {})[g] = Math.max(rY2.varor[g] ?? 0, 400); rY2.egen = { ...rY2.egen, [kop]: 0.3 };
+    const sl = SIM.nyttSallskap(s2, a2, Y.nr, 'handel')!;
+    sl.kop = plan2?.kop ?? []; sl.pack.silver = 100;
+    const fore = rY2.tal.silver;
+    SIM.radBesok(s2, sl, s2.now);
+    const fick = sl.pack[kop] ?? 0;
+    return [
+      [`a vill handla i ${X.namn}, där hen tror att ${salj} betalas bäst (${plan?.skal} till ${plan?.namn}, ${plan?.varor.map(([k, n]) => `${n} ${k}`).join(', ')})`, plan?.skal === 'handel' && plan.mal === X.nr && plan.varor.some(([k]) => k === salj)],
+      [`inte till ${Z.namn}, som a inget vet om`, okand],
+      [`med brist hemma reser a till ${Y.namn} där ${kop} tros vara billigt (${plan2?.namn}, köpa ${plan2?.kop?.map(([k, n]) => `${n} ${k}`).join(', ')}, silver med ${plan2?.varor.find(([k]) => k === 'silver')?.[1] ?? 0})`, plan2?.mal === Y.nr && !!plan2.kop?.some(([k]) => k === kop) && plan2.varor.some(([k]) => k === 'silver')],
+      [`framme köper sällskapet ${fick} ${kop} för silvret, och byn får silvret (${fore} → ${rY2.tal.silver})`, fick > 0 && (sl.pack.silver ?? 0) < 100 && rY2.tal.silver > fore],
+    ];
+  },
+};
+
+SCENARIER.vagmote = {
+  text: 'Möten på vägen (steg 11.6.12, vagmote.ts): två sällskap på samma ruta under samma period möts. Huvudbyns sällskap får veta var färdens by ligger, vart den går och vad den betalar, och en färd på väg hem med silver köper det sällskapet har att sälja och bär det hem; två färder från olika byar gör att byarna mött varandra. Ett möte sker en gång, och inte där sällskapen inte varit på samma ruta',
+  kor: () => {
+    const s = SIM.cloneState(testBy(30)), vl = s.varld!, w = SIM.varldMark(s)!.w, H = 3600 * 1000;
+    const byRuta = new Map((vl.platser ?? []).filter(p => p.k === 'by' && p.by !== undefined).map(p => [p.y * w + p.x, p]));
+    const levande = (nr: number | undefined) => nr !== undefined && nr !== vl.huvud && (SIM.radNr(vl, nr)?.tal.folk ?? 0) > 0;
+    const vag = (vl.vagar ?? []).filter(v => v.fs === 'fots' && levande(byRuta.get(v.fran)?.by) && levande(byRuta.get(v.till)?.by) && SIM.vagRutor(v, w).length >= 8)[0]!;
+    const A = byRuta.get(vag.fran)!, B = byRuta.get(vag.till)!, rA = SIM.radNr(vl, A.by!)!;
+    for (const k of [`${A.by}>${B.by}`, `${B.by}>${A.by}`]) delete vl.rel?.[k];
+    const n = SIM.periodNu(vl, 'timme', s.now) - 1, tb = SIM.periodSlut(vl, 'timme', n);
+    // färden från A är på väg hem från B med silver; en färd från B går samma väg mot A samtidigt
+    const f: SIM.RadFard = { id: 9001, fran: A.by!, till: B.by!, g: 'virke', n: 0, t0: tb - 36 * H, t1: tb - 12 * H, t2: tb + 12 * H, silver: 200 };
+    const f2: SIM.RadFard = { id: 9002, fran: B.by!, till: A.by!, g: 'virke', n: 0, t0: f.t1, t1: f.t2!, t2: f.t2! + 24 * H };
+    (vl.farder ??= []).push(f, f2);
+    const ruta = SIM.fardSpar(vl, f, tb - H, tb, w).filter(r => !byRuta.has(r))[0]!;
+    const a = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q))[0]!;
+    a.lardomar = (a.lardomar ?? []).filter(l => !((l.k === 'ort' && l.a === A.nr) || (l.k === 'pris' && l.a === A.by)));
+    const sak = (Object.keys(SIM.MATERIALMAL) as string[]).find(k => !SIM.FOOD.includes(k as never) && SIM.grundvarde(k) >= 2 && SIM.grundvarde(k) <= 20 && !SIM.BEHALL.includes(k))!;
+    const sl = SIM.nyttSallskap(s, a, B.nr, 'handel')!;
+    sl.skede = 'ute'; sl.ruta = ruta; sl.pack = { [sak]: 6 };
+    const kunde = SIM.kannerOrt(s, a, A.nr), forut = SIM.relation(vl, A.by!, B.by!);
+    SIM.vagMoten(s, vl, n);
+    const medA = () => sl.dagbok.filter(d => d[2] === 'vagmote' && d[1].startsWith(`Mötte folk från ${rA.namn} `));
+    const mote = medA(), vet = SIM.kannerOrt(s, a, A.nr), pris = (a.lardomar ?? []).some(l => l.k === 'pris' && l.a === A.by);
+    SIM.vagMoten(s, vl, n);
+    // långt bort: ett sällskap på en ruta färderna aldrig går över möter ingen
+    const s2 = SIM.cloneState(s), sl2 = s2.varld!.sallskap!.find(x => x.id === sl.id)!;
+    sl2.mott = []; sl2.dagbok = []; for (const x of s2.varld!.farder!) x.mott = [];
+    const vagset = new Set(SIM.vagRutor(vag, w));
+    sl2.ruta = [...Array(SIM.varldMark(s2)!.mark.length).keys()].find(r => !vagset.has(r) && !byRuta.has(r) && Math.abs(r % w - ruta % w) + Math.abs(Math.floor(r / w) - Math.floor(ruta / w)) > 10)!;
+    SIM.vagMoten(s2, s2.varld!, n);
+    return [
+      [`sällskapet möter färden från ${rA.namn} på vägen (${mote.map(d => d[1]).join(' ')})`, mote.length === 1],
+      [`a vet nu var ${A.namn} ligger (${kunde ?? 'okänd'} → ${vet}) och vad byn betalar`, kunde === undefined && vet !== undefined && vet >= SIM.O_KANT && pris],
+      [`färden köpte ${f.hem?.map(x => `${x.n} ${x.k}`).join(', ') ?? 'inget'} för ${200 - (f.silver ?? 0)} silver, och sällskapet har silvret (${sl.pack.silver ?? 0})`, (f.hem?.[0]?.n ?? 0) > 0 && (sl.pack.silver ?? 0) === 200 - (f.silver ?? 0) && (sl.pack.silver ?? 0) > 0],
+      [`två färder från olika byar möts, och byarna har mött varandra (${forut} → ${SIM.relation(vl, A.by!, B.by!)})`, forut === undefined && SIM.relation(vl, A.by!, B.by!) !== undefined],
+      [`samma möte sker inte igen (${medA().length})`, medA().length === 1],
+      [`långt från färderna möter sällskapet ingen (${sl2.dagbok.length})`, !sl2.dagbok.some(d => d[2] === 'vagmote')],
+    ];
+  },
+};
+
+SCENARIER.flyttare = {
+  text: 'Främlingar, nybyggare och utflyttare ur världen (steg 11.6.13): nybyggaren tas ur en bys folk i grannätet, och kan ingen by skicka någon kommer ingen; den som flyttar ut läggs till en bys folk. Grundarna, och den som återgrundar en utdöd by, kommer långt bortifrån och tas inte ur någon by, och deras trasiga vagn står på startplatsen med de första sakerna i',
+  kor: () => {
+    const ny = SIM.createState(5, Date.UTC(2026, 0, 1)), vagn = ny.stationer?.find(t => t.k === 'vagn');
+    const iVagnen = (ny.stackar ?? []).filter(a => vagn && a.x === vagn.x && a.y === vagn.y).map(a => `${a.n} ${a.k}`);
+    const kanBygga = SIM.living(ny).some(p => SIM.kanBygga(ny, p, 'vagn'));
+    // nybyggaren ur en by
+    const s = SIM.cloneState(testBy(30)), vl = s.varld!;
+    const folk0 = (vl.rader ?? []).filter(r => r.nr !== vl.huvud).reduce((a, r) => a + r.tal.folk, 0), pop0 = SIM.living(s).length;
+    const p = SIM.immigrate(s, false);
+    const folk1 = (vl.rader ?? []).filter(r => r.nr !== vl.huvud).reduce((a, r) => a + r.tal.folk, 0), kom = SIM.living(s).length - pop0;
+    const text = s.log.at(-1)?.text ?? '';
+    // ingen by kan skicka någon: ingen kommer
+    const s2 = SIM.cloneState(testBy(30));
+    for (const r of s2.varld!.rader ?? []) if (r.nr !== s2.varld!.huvud) r.tal.folk = Math.min(r.tal.folk, 1);
+    const pop2 = SIM.living(s2).length, p2 = SIM.immigrate(s2, false);
+    // utflyttaren läggs till en by
+    const s3 = SIM.cloneState(testBy(30)), ko0 = (s3.varld!.ko ?? []).filter(k => k.typ === 'flytt').length;
+    SIM.radKrok.utflytt(s3, 2);
+    const ut = (s3.varld!.ko ?? []).filter(k => k.typ === 'flytt').at(-1);
+    // återgrundaren: ingen by får färre, och vagnen står i lagret
+    const s4 = SIM.cloneState(testBy(30));
+    s4.stationer = (s4.stationer ?? []).filter(t => t.k !== 'vagn');
+    for (const q of SIM.living(s4)) q.died = s4.now;
+    const folk4 = (s4.varld!.rader ?? []).reduce((a, r) => a + r.tal.folk, 0);
+    SIM.regulate(s4, 1);
+    const folk4b = (s4.varld!.rader ?? []).reduce((a, r) => a + r.tal.folk, 0);
+    return [
+      [`grundarnas trasiga vagn står på startplatsen med de första sakerna i (${iVagnen.join(', ')})`, !!vagn && iVagnen.length > 0 && !!SIM.forvarAt(ny, vagn.x, vagn.y)],
+      ['ingen kan bygga en trasig vagn', !kanBygga],
+      [`nybyggaren tas ur en by (${kom} kom, byarnas folk ${folk0} → ${folk1}: "${text}")`, !!p && kom >= 1 && folk1 === folk0 - kom && text.includes(' från ')],
+      [`kan ingen by skicka någon kommer ingen (${SIM.living(s2).length - pop2})`, !p2 && SIM.living(s2).length === pop2],
+      [`den som flyttar ut är på väg till en by i världen (${ut ? `${ut.data?.n} till rad ${ut.sak}` : 'ingen'})`, !!ut && (s3.varld!.ko ?? []).filter(k => k.typ === 'flytt').length === ko0 + 1 && ut.data?.n === 2 && ut.sak !== s3.varld!.huvud],
+      [`den som återgrundar byn tas inte ur någon by (${folk4} → ${folk4b}), och vagnen står i lagret`, SIM.living(s4).length === 1 && folk4b === folk4 && !!s4.stationer?.some(t => t.k === 'vagn')],
+    ];
+  },
+};

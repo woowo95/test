@@ -1,12 +1,12 @@
 import { balans } from './balans';
 import { TROSHUS_DELAR, planRutor, vaggSorter, vuxnaTroende } from './troshus';
-import { delarAv, delarIRad, rivStation, stationDef } from './stationer';
+import { delarAv, delarIRad, rivStation, stationAt, stationDef } from './stationer';
 import { nyaGrannbyar } from './grannbyar';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
-import { put, setStock, storeFromSums } from './lager';
+import { inZone, put, setStock, storeFromSums, zonesOf } from './lager';
 import { kyrkaId } from './egendom';
 import { isTool } from './saker';
 import { migrateTools, newTing, toolsFromItems } from './agande';
@@ -33,11 +33,21 @@ const START_KLADER = ['rock', 'byxor', 'skor'] as const;
 // kläderna från början (steg 10.2.73): 1 = alla har dem på sig. Scenarierna, som prövar annat, börjar utan (storlek.ts)
 export const START = balans('start', { klader: 1 });
 export function createState(seed: number, now: number, storlek = { W: KARTA.bredd, H: KARTA.hojd }): State { return simulera(() => skapaBy(seed, now, storlek)); } // som simuleringen (typer.ts)
+// grundarna kom som ett resande sällskap långt bortifrån, och så gör de som återgrundar en utdöd by: deras trasiga vagn står på
+// startplatsen, i lagret där de första sakerna ligger (steg 11.6.13). Finns redan en vagn, eller något annat på rutan, står den kvar
+export function stallVagn(s: State) {
+  if (s.stationer?.some(t => t.k === 'vagn')) return;
+  const z = zonesOf(s)[0], a = s.stackar?.find(q => z && inZone(z, q.x, q.y)), x = a?.x ?? z?.x, y = a?.y ?? z?.y;
+  if (x === undefined || y === undefined || stationAt(s, x, y)) return;
+  (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vagn', x, y, kvar: 0 });
+  s.byggV = (s.byggV ?? 0) + 1;
+}
 function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
   const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, fire: newFire(), seder: newSeder(), W: storlek.W, H: storlek.H, kal: nyKalender(now) };
   useMap(s);
   setStock(s, { bar: 30, grenar: 20 });
+  stallVagn(s);
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
   for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s, 'folk')) * DAY));
   const [a, b, c, d] = s.people;

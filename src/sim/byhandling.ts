@@ -112,7 +112,7 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // mottagaren betalar med silver och, när silvret inte räcker, med det den själv har mest överflöd av. Betalningen bärs hem och
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
-export interface RadFard { id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[] } // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+export interface RadFard { id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 const enhet = (g: VarugruppId) => g === 'mat' ? BYHANDLING.portion : 1; // en enhet i gruppens tillgång, i grundvärde
 const overskott = (r: VarldRad, g: VarugruppId) => Math.floor(radHar(r, g) - radVill(r, g, rikMal(r)));
 const restid = (vl: Varlden, r: VarldRad, mot: VarldRad) => {
@@ -266,6 +266,20 @@ const fardRutor = (vl: Varlden, w: number, a: number, b: number) => {
   const u = vl.vagar?.find(x => x.fs === 'fots' && x.fran === b && x.till === a);
   return u ? vagRutor(u, w).reverse() : undefined;
 };
+// rutorna färden går över mellan tiderna ta och tb, på vägen ut och hem (för mötena på vägen, steg 11.6.12)
+export function fardSpar(vl: Varlden, f: RadFard, ta: number, tb: number, w: number): number[] {
+  const ut: number[] = [];
+  for (const [fr, ti, a, b] of [[f.fran, f.till, f.t0, f.t1], [f.till, f.fran, f.t1, f.t2]] as [number, number, number, number | undefined][]) {
+    if (b === undefined) continue;
+    const lo = Math.max(ta, a), hi = Math.min(tb, b);
+    if (hi < lo) continue;
+    const p = byPlats(vl, fr), q = byPlats(vl, ti), v = p && q ? fardRutor(vl, w, p.y * w + p.x, q.y * w + q.x) : undefined;
+    if (!v?.length) continue;
+    const del = (t: number) => (t - a) / Math.max(1, b - a) * (v.length - 1);
+    for (let i = Math.max(0, Math.floor(del(lo))); i <= Math.min(v.length - 1, Math.ceil(del(hi))); i++) ut.push(v[i]);
+  }
+  return ut;
+}
 export function fardLage(vl: Varlden, f: RadFard, t: number, w: number): { x: number; y: number; dx: number } | undefined {
   if (t >= f.t1 && f.t2 === undefined) return undefined; // framme (handlaren i huvudbyn)
   const ut = t < f.t1, a = byPlats(vl, ut ? f.fran : f.till), b = byPlats(vl, ut ? f.till : f.fran);

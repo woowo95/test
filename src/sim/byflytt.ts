@@ -55,7 +55,7 @@ export const NYBY = balans('nyby', {
   tro: 2, // chansen blir 1 + så här mycket gånger andelen med en annan tro än byns gånger större (steg 11.3.12)
 });
 // ärendena i världens slump (timmen; rad.ts har 1–6)
-const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15, ruin: 16 };
+const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15, ruin: 16, in: 17 };
 const platsAv = (vl: Varlden, r: VarldRad) => { const p = byPlats(vl, r.nr); return p?.k === 'by' ? p : undefined; };
 
 // hur många som vill flytta ur raden per dygn (ett år i spelet): trängseln och hungern, med huvudbyns regler
@@ -153,6 +153,25 @@ radKrok.utflytt = (s, n) => {
   for (const m of mal) { x -= m.vikt; if (x < 0) { val = m; break; } }
   mots(vl, h.nr, val.r.nr);
   laggIKo(vl, s.now + val.dygn * DAY, 'flytt', { sak: val.r.nr, data: { fran: h.nr, n } });
+};
+// nybyggarna till huvudbyn (immigrate i liv.ts) kommer ur en by i grannätet inom räckhåll som har fler än de n som går, oftare
+// ur en by nära (steg 11.6.13); finns ingen sådan by kommer ingen
+radKrok.nybyggare = (s, n) => {
+  const vl = s.varld, h = vl?.rader?.find(r => r.nr === vl.huvud);
+  if (!vl || !h) return undefined;
+  const fran: { r: VarldRad; vikt: number }[] = [];
+  for (const g of platsAv(vl, h)?.grannar ?? []) {
+    if (g.dygn > FLYTT.dygn) continue;
+    const m = radNr(vl, varldPlatsNr(vl, g.nr)?.by);
+    if (m && m.nr !== h.nr && BYSORTER[m.sort].folk && m.tal.folk > n) fran.push({ r: m, vikt: 1 / (1 + g.dygn / FLYTT.narDygn) });
+  }
+  const sum = fran.reduce((a, m) => a + m.vikt, 0);
+  if (!sum) return null;
+  let x = varldSlump(vl, h.nr, Math.floor(s.now / 1000), A.in) * sum, val = fran[fran.length - 1];
+  for (const m of fran) { x -= m.vikt; if (x < 0) { val = m; break; } }
+  val.r.tal.folk -= n;
+  mots(vl, val.r.nr, h.nr); nyttSlaktband(vl, val.r.nr, h.nr);
+  return val.r;
 };
 // de som flyttade kommer fram: till en by i världen läggs de till folket, till huvudbyn kommer var och en som en främling
 KOHANDELSER.flytt = (_s, vl, p) => {
