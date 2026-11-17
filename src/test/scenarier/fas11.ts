@@ -5,6 +5,8 @@ import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
 import { readFileSync } from 'node:fs';
 import * as VB from '../../ui/varldbild';
+import { createHash } from 'node:crypto';
+import { kanonisk } from '../pool';
 
 SCENARIER.bortafalt = {
   text: 'Borta från byn, fältet (steg 11.2.3): den som är borta är fortfarande bybo och äger sitt, men finns inte på bykartan, ritas inte och väljs inte till något, och kommer tillbaka med allt sitt',
@@ -2195,6 +2197,41 @@ SCENARIER.forsvunnen = {
       [`väntad tid ${vantad.toFixed(1)} dygn; efter ett dygn står sällskapet kvar (${forTidigt})`, vantad > 0 && forTidigt === 'framme'],
       [`efter ${SIM.RESA.forsvunnen} gånger den tiden: försvunnet (${b.sl.skede}, ${e.cause}), och borta ur sällskapen på kartan`, b.sl.skede === 'forsvunnet' && !SIM.alive(e) && !SIM.sallskapNu(b.s.varld).includes(b.sl)],
       [`en notis om de försvunna`, (b.s.notiser?.lista ?? []).some(n => n.id === 'resa' && n.rader.some(r => r.includes('försvunna')))],
+    ];
+  },
+};
+
+SCENARIER.reslikhet = {
+  lang: true,
+  text: 'Likheten med en resa (steg 11.5.19): samma by med ett sällskap som samlas, packar, går, är framme och kommer hem räknas på tre sätt, fram till samma tid: i det levande lägets femminutersanrop med inspelningen av vägarna, i ikappräkningens steg (nastaSteg, som när spelet varit stängt) och i ett enda långt anrop per timme. Byarna och resan ska vara exakt lika varje dygn',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(30)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!, vm = SIM.varldMark(s0)!;
+    const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 18 && SIM.ageOf(q, s0.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s0.now));
+    for (const q of vuxna) { q.pot.mod = 16; q.pot.nyfikenhet = 14; }
+    const mal = vl0.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by').sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s0, hem.y * vm.w + hem.x, q.y * vm.w + q.x))!;
+    const sl0 = SIM.samlaResa(s0, s0.people.find(q => q.id === vuxna[0]!.id)!, { mal: mal.nr, namn: mal.namn, skal: 'se', varde: 30, dygn: 6, fara: 0.3, sc: 1, varor: [] })!;
+    // klockans rest (tiden som inte räckt till ett helt slag) hör till hur anropen delats, inte till byn
+    const hash = (s: SIM.State) => { const j = JSON.parse(kanonisk(SIM.serialize(s))); delete j.skuld; delete j.stegRest; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
+    const [spel, ikapp, lang] = [0, 1, 2].map(() => SIM.cloneState(s0));
+    const id = sl0.id, skede = (s: SIM.State) => s.varld!.sallskap!.find(x => x.id === id)!.skede;
+    const sett = new Set<string>(), DYGN = 4;
+    let olik = -1;
+    for (let d = 1; d <= DYGN && olik < 0; d++) {
+      const mal = s0.now + d * SIM.DAY;
+      SIM.spar.pa = true;
+      while (spel.now < mal) { SIM.spar.v = new WeakMap(); SIM.step(spel, Math.min(300, (mal - spel.now) / SIM.SEC), [] as SIM.TalkEvent[]); }
+      SIM.spar.pa = false;
+      while (ikapp.now < mal) SIM.step(ikapp, Math.min(SIM.nastaSteg(ikapp), (mal - ikapp.now) / SIM.SEC));
+      while (lang.now < mal) SIM.step(lang, Math.min(3600, (mal - lang.now) / SIM.SEC));
+      sett.add(skede(spel));
+      const [a, b, c] = [spel, ikapp, lang].map(hash);
+      if (a !== b || a !== c) olik = d;
+    }
+    const sl = spel.varld!.sallskap!.find(x => x.id === id)!;
+    return [
+      [`ett sällskap till ${mal.namn} med ${sl0.medl.length} resenärer`, sl0.medl.length > 0],
+      [`resan gick igenom skedena: ${[...sett].join(', ')}`, sett.has('gar') || sett.has('ute') || sett.has('framme') || sett.has('hemat')],
+      [`levande läget, ikappräkningen och de långa anropen är exakt lika i ${DYGN} dygn (${olik < 0 ? 'lika' : `olika efter dygn ${olik}`}; dagboken ${sl.dagbok.length} rader)`, olik < 0],
     ];
   },
 };
