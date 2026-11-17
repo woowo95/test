@@ -1114,6 +1114,8 @@ SCENARIER.bubbla = {
       ['nästa tryck på samma sak stänger den', stangs],
       ['ett tryck på något annat med förklaring visar dess text', annan],
       ['ett tryck på en knapp visar ingen bubbla', knappIngen],
+      // steg 11.1.1: med fingret visar knappar sin förklaring, men en rad som fälls ut gör det inte
+      ['med fingret ger en rad som fälls ut ingen bubbla, men en knapp ger sin förklaring', !forklaringAv(el(iRad), true) && !forklaringAv(el(rad), true) && forklaringAv(el(knapp), true)?.text === 'Visa'],
     ];
   },
 };
