@@ -11,6 +11,10 @@
 // Chansen (NYBY.chans) växer med gruppens storlek (fullt från NYBY.grupp) och moderbyns (fullt från NYBY.moder). Den nya byn
 // minns sin moderby (raden.fran, ett släktband i byrel.ts), tar med sig sin del av maten och kan en del av moderbyns tekniker
 // (NYBY.tek av var och en, och bara det vars krav den kan). Världens krönika får raden Delad.
+//
+// Undergången (steg 11.3.8): en by utan folk går under. Raden och platsen blir en ruin, och det som fanns kvar blir hela saker
+// (raden.kvar): silvret, och en del av rikedomen (RUIN.kvar) som saker byn kunde göra, valda med världens slump efter
+// grundvärdet. Maten ruttnar. Världens krönika får raden Gått under, och huvudbyn förlorar sin förbindelse med byn.
 import { balans } from './balans';
 import { mots, nyttSlaktband, relation, grundlage } from './byrel';
 import { emigrationRate, hungerFlyttAv, LIV, matGottAv } from './liv';
@@ -26,12 +30,20 @@ import { narmasteMal } from './vagval';
 import { byGrannar } from './grannat';
 import { varldHandelse } from './varldkronika';
 import { TEK } from './teknik';
+import { SAKER } from './saker';
+import { grundvarde } from './varde';
+import { klanerAndrade } from './klaner';
+import { log } from './folk';
+import { kronika } from './historik';
 import { DAY, State } from './typer';
 
 export const FLYTT = balans('flytt', {
   dygn: 3, // byarna i grannätet så här många dygns gång bort (år i spelet) eller närmare är inom räckhåll
   narDygn: 1, // en by så många dygns gång bort väger hälften så mycket som en alldeles intill
   trang: 1.5, // trängseln där (folket delat med bärkraften) väger 1,5 − trängseln, aldrig under noll
+});
+export const RUIN = balans('ruin', {
+  kvar: 0.05, // så stor del av rikedomen blir kvar som saker i ruinen
 });
 export const NYBY = balans('nyby', {
   chans: 0.3, // chansen att en grupp som flyttar grundar en egen by, när gruppen och moderbyn är stora nog ...
@@ -40,7 +52,7 @@ export const NYBY = balans('nyby', {
   tek: 0.7, // den nya byn kan så stor del av moderbyns tekniker
 });
 // ärendena i världens slump (timmen; rad.ts har 1–6)
-const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15 };
+const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15, ruin: 16 };
 const radNr = (vl: Varlden, nr: number) => vl.rader?.find(r => r.nr === nr);
 const platsAv = (vl: Varlden, r: VarldRad) => vl.platser?.find(p => p.k === 'by' && p.by === r.nr);
 
@@ -133,5 +145,33 @@ KOHANDELSER.flytt = (_s, vl, p) => {
   else { const hem = radNr(vl, fran); if (hem) hem.tal.folk += n; } // byn finns inte längre: de går hem igen
 };
 
+// saker som kan finnas kvar i en ruin: det byn kunde göra och som har ett värde
+const RUINSAKER = (r: VarldRad) => r.tek.filter(id => SAKER[id] && grundvarde(id) >= 0.5 && id !== 'kompost');
+// byn går under: raden och platsen blir en ruin med det som fanns kvar i hela saker
+export function undergang(s: State, vl: Varlden, r: VarldRad, t: number) {
+  const kvar: Record<string, number> = {};
+  if (r.tal.silver > 0) kvar.silver = r.tal.silver;
+  const saker = RUINSAKER(r);
+  let varde = r.tal.rikedom * RUIN.kvar;
+  for (let i = 0; saker.length && i < 1000; i++) {
+    const id = saker[Math.floor(varldSlump(vl, r.nr, i, A.ruin) * saker.length)], v = grundvarde(id);
+    if (v > varde) break;
+    varde -= v; kvar[id] = (kvar[id] ?? 0) + 1;
+  }
+  r.sort = 'ruin'; r.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; r.t = t;
+  if (Object.keys(kvar).length) r.kvar = kvar;
+  delete r.ledare;
+  const p = platsAv(vl, r);
+  if (p) p.k = 'ruin';
+  varldHandelse(vl, 'gattUnder', t, { by: r.nr });
+  if (r.syn) { // huvudbyn hör det och förlorar förbindelsen
+    const text = `${r.namn} finns inte längre. Byn har gått under och är en ruin.`;
+    log(s, text, 'world'); kronika(s, text, 'utflytt');
+    klanerAndrade(s);
+  }
+}
+
 // varje timme, efter maten: flytten ur varje by i världen som lever efter radens regler
 PERIODRADER.push({ namn: 'flytten', period: 'timme', fn: (s, vl, n) => { for (const r of [...vl.rader ?? []]) if (lever(vl, r)) radFlytt(s, vl, r, n); } });
+// varje timme, sist: en by utan folk går under (huvudbyn grundas på nytt i stället, liv.ts)
+PERIODRADER.push({ namn: 'undergången', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) if (r.sort === 'by' && r.nr !== vl.huvud && r.tal.folk <= 0) undergang(s, vl, r, periodSlut(vl, 'timme', n)); } });

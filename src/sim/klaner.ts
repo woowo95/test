@@ -76,15 +76,17 @@ export interface Klan {
   pris?: Record<string, number>; // påslaget per slag (steg 10.5.14); saknas i en sparad by från före v533: startvärdena
   rad?: number; dygn?: number; sallsynt?: string[]; // raden i världen, restiden dit till fots och det som är sällsynt på marken där (steg 11.2.15)
 }
-// förbindelserna med världens byar, i radernas ordning (räknas om när en rad läggs till)
+// förbindelserna med världens byar, i radernas ordning (räknas om när en rad läggs till eller går under); en ruin har ingen
 const lista = new WeakMap<object, { n: number; k: Klan[] }>();
 export function klanerOf(s: State): Klan[] {
   const r = s.varld?.rader;
   if (!r) return [];
   let c = lista.get(r);
-  if (!c || c.n !== r.length) lista.set(r, c = { n: r.length, k: r.flatMap(x => x.syn ? [x.syn] : []) });
+  if (!c || c.n !== r.length) lista.set(r, c = { n: r.length, k: r.flatMap(x => x.syn && x.sort !== 'ruin' ? [x.syn] : []) });
   return c.k;
 }
+// en by har gått under (byflytt.ts): listan räknas om
+export const klanerAndrade = (s: State) => { if (s.varld?.rader) lista.delete(s.varld.rader); };
 export const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : klanerOf(s).find(k => k.id === id);
 // hur nära byn ligger: 1 inom KLAN.naraDygn, sedan i proportion mot restiden
 export const narhet = (k: Klan) => k.dygn === undefined ? 1 : Math.min(1, KLAN.naraDygn / Math.max(1e-6, k.dygn));

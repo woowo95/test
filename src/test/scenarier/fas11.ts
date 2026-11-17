@@ -235,7 +235,7 @@ SCENARIER.radtal = {
     const bara = SIM.cloneState(testBy(10)); delete bara.varld; // en by utan värld får ingen rad
     kor(bara, 2);
     return [
-      ['huvudbyns rad skrivs av sig själv en gång i timmen', skrevs && vl.rader!.filter(x => !x.syn).length === 1],
+      ['huvudbyns rad skrivs av sig själv en gång i timmen', skrevs && vl.rader!.filter(x => x.nr === vl.huvud).length === 1 && !r!.syn],
       [`talen är hela (${SIM.RADTAL_IDS.map(k => `${k} ${tal[k]}`).join(', ')})`, hela],
       ['folket är byborna', tal.folk === folk && folk > 0],
       ['maten är portionerna i byn', tal.mat === Math.floor(SIM.foodOf(s)) && tal.mat > 0],
@@ -906,6 +906,35 @@ SCENARIER.nyby = {
       ['den ligger inom räckhåll och moderbyn kan flytta dit', !!dagar],
       ['världens krönika: Delad', krona],
       [`av sig själv: en stor och trång by delas på 20 dygn (${tn0} → ${tv.rader!.length} rader, ${nya.length} nya ur den)`, nya.length >= 1],
+    ];
+  },
+};
+
+SCENARIER.undergang = {
+  text: 'Undergången (steg 11.3.8, byflytt.ts): en by utan folk blir en ruin med det som fanns kvar i hela saker och får en rad i världens krönika; huvudbyn förlorar förbindelsen',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.syn)!, annan = vl.rader!.find(x => SIM.lever(vl, x) && x !== r)!;
+    r.tek = ['korg', 'yxa', 'rep', 'kniv'].filter(id => SIM.SAKER[id]); r.tal.rikedom = 600; r.tal.silver = 7; r.tal.mat = 50;
+    const kl0 = SIM.klanerOf(s).length, k0 = (vl.kronika ?? []).length;
+    r.tal.folk = 0;
+    s.now += 3600e3; SIM.varldSteg(s);
+    const plats = vl.platser!.find(p => p.by === r.nr);
+    const kvar = r.kvar ?? {}, hela = Object.values(kvar).every(n => Number.isInteger(n) && n > 0);
+    const saker = Object.keys(kvar).filter(k => k !== 'silver');
+    const krona = (vl.kronika ?? []).slice(k0).some(h => h.k === 'gattUnder' && h.by === r.nr);
+    const borta = SIM.klanerOf(s).length === kl0 - 1 && !SIM.klanerOf(s).includes(r.syn!);
+    // ingen flyttar till en ruin, och den som var på väg dit går hem igen
+    const hem0 = annan.tal.folk;
+    SIM.KOHANDELSER.flytt(s, vl, { t: s.now, nr: 0, typ: 'flytt', sak: r.nr, data: { fran: annan.nr, n: 2 } });
+    const tillRuin = SIM.flyttMal(vl, SIM.varldMark(s), annan).some(m => m.r.nr === r.nr);
+    return [
+      [`byn är en ruin, raden och platsen (${r.sort}, ${plats?.k})`, r.sort === 'ruin' && plats?.k === 'ruin' && !SIM.lever(vl, r)],
+      [`det som fanns kvar är hela saker: ${Object.entries(kvar).map(([k, n]) => `${n} ${k}`).join(', ')}`, hela && kvar.silver === 7 && saker.length > 0 && saker.every(k => r.tek.includes(k))],
+      ['maten har ruttnat och talen är noll', r.tal.mat === 0 && r.tal.rikedom === 0],
+      ['världens krönika: Gått under', krona],
+      ['huvudbyn förlorar förbindelsen med byn', borta],
+      [`ingen flyttar dit, och de som var på väg går hem igen (${hem0} → ${annan.tal.folk})`, !tillRuin && annan.tal.folk === hem0 + 2],
     ];
   },
 };

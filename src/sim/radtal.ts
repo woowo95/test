@@ -52,6 +52,7 @@ export interface VarldRad {
   nr: number; sort: BysortId; namn: string; x?: number; y?: number; grundad: number; fran?: number; lyder?: number;
   t: number; tal: Record<RadtalId, number>; tek: string[]; tro?: RadTro; ledare?: number; fasta: FastPerson[];
   svalt?: number; // senaste svälten (steg 11.3.2, rad.ts)
+  kvar?: Record<string, number>; // det som finns kvar i en ruin, i hela saker (steg 11.3.8, byflytt.ts)
   syn?: import('./klaner').Klan; // huvudbyns förbindelse med byn: hållningen, de namngivna personerna och priserna (steg 11.2.15, grannbyar.ts)
 }
 // det radens regler (rad.ts) säger om en ny rad; rad.ts sätter det när den laddas, så att filerna som skapar rader inte
