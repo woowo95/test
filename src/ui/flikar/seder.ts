@@ -1,4 +1,4 @@
-import { MAKT_SEDER, SEDER, SED_LIST, type Sed, ageOf, byId, roster, sedDrag, sedLaggning, sedOppen, upplevelseKort, yrkeNamn } from '../../sim';
+import { MAKT_SEDER, SEDER, SED_LIST, type Sed, ageOf, byId, roster, sedDrag, sedLaggning, sedOppen, sederTarget, upplevelseKort, yrkeNamn } from '../../sim';
 import { tecknet } from '../../ikoner';
 import { esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -9,11 +9,11 @@ import { vagSvg } from '../framsteg';
 export const seder: Flik = {
   namn: 'Seder',
   html() {
-    const sd = s.seder;
+    const sd = s.seder, mal = sederTarget(s);
     const voices = roster(s).slice(0, 5); // med ledarens extra vikt (steg 4.5.4.10)
     return `<div class="tekhead">${hjalpKnapp('seder', 'Vad är seder?')}</div>
     ${hjalpText('seder', '<p class="muted">Byns seder är vad invånarna tillsammans tycker är viktigt. Var och en drar dem efter sin personlighet och det hen varit med om. Äldre och karismatiska röster väger tyngst. Sederna påverkar vad var och en väljer att göra.</p>')}
-    <ul class="seder">${SED_LIST.filter(k => sedOppen(s, k) && !MAKT_SEDER.includes(k)).map(k => `<li ${sedKlick(k)}>${sedVag(sd.v[k], SEDER[k].neg, SEDER[k].pos)}${sedFormat(k)}
+    <ul class="seder">${SED_LIST.filter(k => sedOppen(s, k) && !MAKT_SEDER.includes(k)).map(k => `<li ${sedKlick(k)}>${sedVag(sd.v[k], SEDER[k].neg, SEDER[k].pos, mal[k])}${sedFormat(k)}
       ${hjalpText('seder', `<p class="muted small">${SEDER[k].effect}</p><p class="muted small">Under vågen: det invånarna varit med om som drar seden, med pilar åt det håll det drar (fler pilar drar mer) och hur många som minns det. Tryck på en sed för hela listan.</p>`)}${sedLista(k)}</li>`).join('')}</ul>
     <h3>Tyngsta röster</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span>${esc(yrkeNamn(s, x.p) ?? '')}</span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år</span><span title="Andel av byns röst i sederna">${Math.round(x.andel * 100)} %</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
 `;
@@ -25,9 +25,14 @@ export const seder: Flik = {
 const VIKTER = 5;
 // långa ord delas vid sammansättningen med ett mjukt bindestreck, som i skissen (Själv-försörjning)
 const bryt = (o: string) => o.replace(/^(Själv|Samman|Gemen)(?=\S{5})/, '$1&shy;');
-export function sedVag(v: number, neg = '', pos = '') {
+// vart vågen är på väg (steg 11.1.12): när det som drar (mal, byns mål) pekar åt ett annat håll än vågen lutar, eller mycket
+// längre, står en liten pil vid vågen åt det hållet. Skillnaden som räcker är en halv vikt
+const PIL_SKILLNAD = 0.5 / VIKTER;
+export function sedVag(v: number, neg = '', pos = '', mal?: number) {
   const n = Math.min(VIKTER, Math.round(Math.abs(v) * VIKTER));
-  return `<div class="sedvag"><span class="sedord">${bryt(neg)}</span><span class="vag" role="img" aria-label="${n ? `${n} av ${VIKTER} åt ${v < 0 ? 'vänster' : 'höger'}` : 'i jämvikt'}">${vagSvg(n, v < 0 ? -1 : 1)}</span><span class="sedord">${bryt(pos)}</span></div>`;
+  const d = mal === undefined ? 0 : mal - v, pil = Math.abs(d) >= PIL_SKILLNAD
+    ? `<span class="sedmot" title="${esc(`På väg mot ${(d > 0 ? pos : neg).replace(/&shy;/g, '').toLowerCase()}: det som drar seden pekar dit, men sederna rör sig långsamt, så vågen följer efter en tid`)}">${d > 0 ? '→' : '←'}</span>` : '';
+  return `<div class="sedvag"><span class="sedord">${bryt(neg)}</span><span class="vag" role="img" aria-label="${n ? `${n} av ${VIKTER} åt ${v < 0 ? 'vänster' : 'höger'}` : 'i jämvikt'}">${d < 0 ? pil : ''}${vagSvg(n, v < 0 ? -1 : 1)}${d > 0 ? pil : ''}</span><span class="sedord">${bryt(pos)}</span></div>`;
 }
 export function sedBar(v: number) {
   const w = Math.round(Math.abs(v) * 50);

@@ -1076,6 +1076,11 @@ SCENARIER.sedlista = {
     const igen = styreFlik.html().includes('class="sedlista"');
     const lagg = SIM.sedLaggning(s), drag = SIM.sedDrag(s), mal = SIM.sederTarget(s);
     const summa = SIM.SED_LIST.filter(x => SIM.sedOppen(s, x) && Math.abs(mal[x]) < 1).map(x => ({ k: x, rad: lagg[x] + drag.reduce((a, r) => a + r.d[x], 0), mal: mal[x] }));
+    // vågen visar vart den är på väg (steg 11.1.12): pilen när vågen lutar åt andra hållet, ingen när den står vid målet
+    const v0 = s.seder.v[k];
+    s.seder.v[k] = -Math.sign(mal[k] || 1) * 0.6; const motH = sederFlik.html(), pilen = new RegExp(`data-hjalp="sed-${k}"[\\s\\S]*?class="sedmot" title="På väg mot [^"]*sederna rör sig långsamt[^"]*">${mal[k] >= 0 ? '→' : '←'}<`).test(motH);
+    s.seder.v[k] = mal[k]; const vid = sederFlik.html(), ingen = !new RegExp(`data-hjalp="sed-${k}"[^>]*>(?:(?!</li>)[\\s\\S])*?class="sedmot"`).test(vid);
+    s.seder.v[k] = v0;
     return [
       [`sederna går att trycka på och listan är stängd från början (${SIM.SEDER[k].neg} – ${SIM.SEDER[k].pos})`, stangd.includes(`data-hjalp="sed-${k}"`) && !stangd.includes('class="sedlista"')],
       ['listan säger vad seden gör', lista.includes(esc(SIM.SEDER[k].effect))],
@@ -1083,6 +1088,7 @@ SCENARIER.sedlista = {
       [`hur många och vilka som minns den (${v.length})`, lista.includes(`${v.length} minns det`) && alla],
       ['vågskålen i Styre öppnar samma lista, och ett tryck till stänger', iStyre && !igen],
       // steg 11.1.11: läggningen är en egen rad, och raderna under en sed summerar till byns mål för seden
+      [`vågen har en pil åt det håll den är på väg när det som drar pekar åt andra hållet, och ingen när den står vid målet`, pilen && ingen],
       [`invånarnas läggning är en egen rad i listan`, lista.includes('Invånarnas läggning')],
       [`raderna under en sed summerar till byns mål (${summa.map(x => `${x.k} ${x.rad.toFixed(3)}/${x.mal.toFixed(3)}`).join(', ')})`, summa.length > 0 && summa.every(x => Math.abs(x.rad - x.mal) < 1e-9)],
     ];
