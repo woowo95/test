@@ -51,10 +51,10 @@ const ALLA: readonly Fardsatt[] = ['fots', 'packdjur', 'vagn'];
 export const VARLDMARK = {
   hav: { namn: 'Hav', farg: ['skiffer', 1], kostnad: Infinity, fram: [], vatten: false, bete: false, vanligt: ['fisk'], sallsynt: [], land: false },
   slatt: { namn: 'Slätt', farg: ['oliv', 3], kostnad: 1, fram: ALLA, vatten: false, bete: true, vanligt: ['korn'], sallsynt: ['lera'], land: true },
-  skog: { namn: 'Skog', farg: ['oliv', 2], tecken: 'träd', kostnad: 1.4, fram: ALLA, vatten: false, bete: true, vanligt: ['ved', 'bar'], sallsynt: ['honung', 'svamp'], land: true },
+  skog: { namn: 'Skog', farg: ['oliv', 2], tecken: 'trad', kostnad: 1.4, fram: ALLA, vatten: false, bete: true, vanligt: ['ved', 'bar'], sallsynt: ['honung', 'svamp'], land: true },
   tat: { namn: 'Tät skog', farg: ['barr', 2], tecken: 'gran', kostnad: 2.5, fram: ['fots', 'packdjur'], vatten: false, bete: false, vanligt: ['virke', 'ved'], sallsynt: ['tjara', 'naver'], land: true },
   myr: { namn: 'Myr', farg: ['barr', 3], tecken: 'tuva', kostnad: 3, fram: ['fots'], vatten: true, bete: false, vanligt: ['bar'], sallsynt: ['lera'], land: true },
-  berg: { namn: 'Berg', farg: ['skiffer', 2], tecken: 'berg', kostnad: 5, fram: ['fots', 'packdjur'], vatten: false, bete: false, vanligt: ['sten', 'flinta'], sallsynt: ['silver'], land: true },
+  berg: { namn: 'Berg', farg: ['ben', 0], tecken: 'berg', kostnad: 5, fram: ['fots', 'packdjur'], vatten: false, bete: false, vanligt: ['sten', 'flinta'], sallsynt: ['silver'], land: true },
   sjo: { namn: 'Sjö', farg: ['skiffer', 2], kostnad: Infinity, fram: [], vatten: true, bete: false, vanligt: ['fisk'], sallsynt: [], land: false },
 } as const satisfies Record<string, MarkDef>;
 export type MarkId = keyof typeof VARLDMARK;
