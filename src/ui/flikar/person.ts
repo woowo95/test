@@ -528,7 +528,7 @@ function gearHtml(p: Person) {
     const pl = PLATSER[k], x = u[k], cls = stor ? ' stor' : '';
     if (x.ting) {
       const h = handerFor(s, p, x.ting.k);
-      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}${x.ting.q !== undefined ? `, ${kvNamn(x.ting).toLowerCase()}` : ''}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad?.varme ? `, skyddar ${Math.round(SAKER[x.ting.k]!.klad!.varme * 100)} % mot kylan` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${k === 'krok' || k === 'krok2' ? x.ting.hos === p.id ? ', hänger i bältet medan hen bär' : ', hänger i bältet tills hen behöver det' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
+      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}${x.ting.q !== undefined ? `, ${kvNamn(x.ting).toLowerCase()}` : ''}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad?.varme ? `, värmer ${Math.round(SAKER[x.ting.k]!.klad!.varme * 100)} %` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${k === 'krok' || k === 'krok2' ? x.ting.hos === p.id ? ', hänger i bältet medan hen bär' : ', hänger i bältet tills hen behöver det' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
       const i = ting(x.ting, title, (k === 'vanster' && x.ting === u.hoger.ting ? 'kan hand pa' : 'kan hand') + cls, stor ? 36 : 16);
       const ik = (k === 'hoger' || k === 'vanster') && ih[k]?.k; // det som ligger i just den handen (steg 6.1.2)
       return x.borda && ik ? i.replace(/<\/span>$/, `<span class="antal">${iconImg(ik, 10)}</span>${antal(k)}</span>`) : i;
