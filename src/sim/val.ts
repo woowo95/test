@@ -20,6 +20,7 @@ import { freeTools, take } from './agande';
 import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
 import { bjornjaktVal } from './bjorn';
+import { resaVal } from './resa';
 import { tornadoSkydd } from './tornado';
 import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './brand';
 import { foodDays, foodDaysAll } from './ekonomi';
@@ -672,6 +673,12 @@ export const ARBETEN: readonly Arbete[] = [
     const j = bjornjaktVal(s, p);
     if (!j) return false;
     set(v, 'bjornjakt', j.why); v.spot = j.spot; v.dur = j.dur; return true;
+  } },
+  // ... och resenären i ett sällskap som packar eller går ut ur byn (resa.ts, steg 11.5.5)
+  { id: 'resa', niva: 3, prova: ({ s, p, v }) => {
+    const r = resaVal(s, p);
+    if (!r) return false;
+    set(v, 'resa', r.why); v.spot = r.spot; v.dur = r.dur; v.ref = r.ref; return true;
   } },
   // ... och den som ville vara med när någon samlade till en match (sport.ts, steg 10.7.12)
   { id: 'sport', niva: 3, prova: ({ s, p, v }) => {

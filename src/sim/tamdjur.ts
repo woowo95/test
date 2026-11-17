@@ -45,7 +45,7 @@ export const DRAGDJUR = TAM_LIST.filter(a => tamArt(a).styrka); // de som spänn
 
 // ett tamdjur. hunger 0–1 (1 = svälter), svalt = timmar det svultit, agare = personen som äger det (ingen = byn), matad = hur
 // mycket var och en matat det (hunden byter till den som matat mest, steg 9.8.3)
-export interface Tamdjur { id: number; art: TamArtId; born: number; hunger: number; svalt?: number; agare?: number; x: number; y: number; matad?: Record<number, number>; lojal?: number; hage?: number; dog?: number; ull?: number; mjolk?: number; mjolkRest?: number; bistick?: { n: number; g: number }; torst?: number; torstTim?: number; fahus?: number; kyla?: number; hona?: boolean } // torst = 0 när djuret druckit, 1 när det vill dricka igen, och torstTim = timmar utan vatten sedan dess (steg 10.10.31); hona: könet, satt när djuret kommer till byn (steg 9.9.3); äldre djur efter id, // fahus = huset djuret står i under istiden, kyla = timmar ute i istiden (steg 9.8.9)
+export interface Tamdjur { ute?: number; id: number; art: TamArtId; born: number; hunger: number; svalt?: number; agare?: number; x: number; y: number; matad?: Record<number, number>; lojal?: number; hage?: number; dog?: number; ull?: number; mjolk?: number; mjolkRest?: number; bistick?: { n: number; g: number }; torst?: number; torstTim?: number; fahus?: number; kyla?: number; hona?: boolean } // torst = 0 när djuret druckit, 1 när det vill dricka igen, och torstTim = timmar utan vatten sedan dess (steg 10.10.31); hona: könet, satt när djuret kommer till byn (steg 9.9.3); äldre djur efter id, // fahus = huset djuret står i under istiden, kyla = timmar ute i istiden (steg 9.8.9)
 export const TAM_ID0 = 900_000_000; // tamdjurens id ligger över alla vilda djurs (djur.ts)
 
 export const TAM = balans('tamdjur', {
@@ -67,7 +67,7 @@ export function tamEg(d: Pick<Tamdjur, 'art'> & { id?: number }): Egenskaper {
   const a = tamArt(d.art), v = (n: number) => d.id === undefined ? 1 : 1 + (hash3(d.id, n, 0x7e9) * 2 - 1) * INDIVID.spann;
   return { styrka: (a.styrka ?? 1) * v(1), snabbhet: (a.snabb ?? 1) * v(2), talighet: (a.tal ?? 1) * v(3), mod: Math.min(1, (a.mod ?? 0.5) * v(4)), tamhet: (a.tam ?? 1) * v(5) };
 }
-export const tamdjurOf = (s: State) => (s.tamdjur ??= []).filter(d => d.dog === undefined);
+export const tamdjurOf = (s: State) => (s.tamdjur ??= []).filter(d => d.dog === undefined && d.ute === undefined); // ute: med ett sällskap på resa (steg 11.5.5, resa.ts)
 export const tamAlder = (s: State, d: Tamdjur) => (s.now - d.born) / DAY;
 export const arHona = (d: Tamdjur) => d.hona ?? d.id % 2 === 0; // äldre sparfiler: varannan efter id
 export const tamNamn = (d: Tamdjur) => tamArt(d.art).namn;

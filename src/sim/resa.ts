@@ -5,7 +5,14 @@
 // står i blocket RESA. Ingen person är med i två sällskap.
 import { balans } from './balans';
 import { LandmarkId } from './landmarken';
-import { Person, State } from './typer';
+import { H, HOUR, Person, State, Task, W } from './typer';
+import { alive } from './folk';
+import { BYN } from './egendom';
+import { amountOf, use } from './lager';
+import { FOOD } from './saker';
+import { bynsMitt, utanforByn } from './omrade';
+import { blocked, freeNear } from './byggnad';
+import { gaBort, ute } from './ute';
 import { Varlden, varldMark } from './varlden';
 import { byPlats, varldPlatserPa } from './landmarken';
 import { clamp } from './slump';
@@ -25,6 +32,7 @@ export const RESA = balans('resa', {
   foderPerDygn: 2, // hö per djur och dygn där det inte går att beta
   hander: 20, rygg: 20, // vikt en resenär bär i händerna och i en ryggsäck
   packPerStyrka: 20, // ett packdjurs last för varje steg av dess styrka
+  packTim: 6, // timmar en resenär väntar vid samlingsplatsen innan hen väljer om (sällskapet ställs in i steg 11.5.11)
 });
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
@@ -40,7 +48,7 @@ export const RESMAL = {
 export type ResmalId = keyof typeof RESMAL;
 export const RESMAL_IDS = Object.keys(RESMAL) as ResmalId[];
 
-export type Skede = 'samlas' | 'packar' | 'ute' | 'framme' | 'hemat' | 'hemma';
+export type Skede = 'samlas' | 'packar' | 'gar' | 'ute' | 'framme' | 'hemat' | 'hemma'; // gar: på väg ut ur byn
 // en insats i boken: vem som äger den, saken (eller djuret) och hur många, i hela saker, och värdet när resan började
 export interface Insats { agare: number | 'by'; sak: string; n: number; varde: number; djur?: number }
 export interface Sallskap {
@@ -52,6 +60,7 @@ export interface Sallskap {
   pack: Record<string, number>; // den gemensamma packningen, hela saker
   insatser: Insats[];
   dagbok: [number, string][]; // resans dagbok (steg 11.5.13)
+  ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
 }
 
 // ett nytt sällskap med ledaren som första medlem; det samlas tills det packar
@@ -163,4 +172,71 @@ export function insatsPer(sl: Sallskap): Map<number | 'by', number> {
   const m = new Map<number | 'by', number>();
   for (const x of sl.insatser) m.set(x.agare, (m.get(x.agare) ?? 0) + x.varde);
   return m;
+}
+
+// ---------- packningsskedet i byn (steg 11.5.5, Packningen i tal) ----------
+// Ledaren bestämmer att sällskapet packar: maten och fodret tas ur förrådet i hela saker (bokförda som insatser hos dem som
+// ägde dem, det som var byns som byns), och samlingsplatsen är där linjen från byns mitt mot rätt kant (målets håll i världen)
+// lämnar byns område. Varje resenär går dit med sitt (handlingen resa); när alla är framme lastas djuren och sällskapet går
+// ut ur kartan längs samma linje. Den som når kanten är borta (gaBort), och när alla gått är sällskapet ute på vägen.
+export interface Utgang { samla: { x: number; y: number }; kant: { x: number; y: number } }
+export function utgang(s: State, sl: Sallskap): Utgang | undefined {
+  const vl = s.varld, hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
+  if (!hem || !mal) return undefined;
+  const c = bynsMitt(s), dx = mal.x - hem.x, dy = mal.y - hem.y;
+  const [sx, sy] = Math.abs(dx) >= Math.abs(dy) ? [Math.sign(dx) || 1, 0] : [0, Math.sign(dy) || 1];
+  const d = sx > 0 ? W - 1 - c.x : sx < 0 ? c.x : sy > 0 ? H - 1 - c.y : c.y;
+  let samla = { x: c.x + sx * d, y: c.y + sy * d };
+  for (let n = 0; n <= d; n++) { const x = c.x + sx * n, y = c.y + sy * n; if (utanforByn(s, x, y) >= 1 && !blocked(s, x, y)) { samla = { x, y }; break; } }
+  return { samla: freeNear(s, samla.x, samla.y), kant: freeNear(s, c.x + sx * d, c.y + sy * d) };
+}
+// maten och fodret till packningen: den mat det finns mest av först, i hela saker, bokförd hos ägarna
+function taIPackning(s: State, sl: Sallskap, k: string, n: number, led?: Person) {
+  const ag = use(s, led, k, n);
+  for (const o in ag) { const m = Math.floor(ag[o] + 1e-9); if (m > 0) satsa(sl, o === String(BYN) ? 'by' : +o, k, m); }
+}
+export function borjaPacka(s: State, sl: Sallskap): boolean {
+  const pb = packbehov(s, sl), ut = utgang(s, sl);
+  if (sl.skede !== 'samlas' || !pb || !ut) return false;
+  const led = s.people.find(p => p.id === sl.ledare);
+  let mat = pb.mat;
+  for (const k of [...FOOD].sort((a, b) => amountOf(s, b) - amountOf(s, a))) {
+    if (mat <= 0) break;
+    const n = Math.min(mat, Math.floor(amountOf(s, k)));
+    if (n > 0) { taIPackning(s, sl, k, n, led); mat -= n; }
+  }
+  const ho = Math.min(pb.foder, Math.floor(amountOf(s, 'torrgras')));
+  if (ho > 0) taIPackning(s, sl, 'torrgras', ho, led);
+  sl.skede = 'packar'; sl.ut = ut; sl.vid = []; sl.packar = s.now;
+  return true;
+}
+// nivån Tillfälle (val.ts): resenären i ett sällskap som packar går till samlingsplatsen, och när sällskapet går, till kanten
+export function resaVal(s: State, p: Person): { spot: { x: number; y: number }; dur: number; why: string; ref: number } | undefined {
+  const sl = sallskapFor(s.varld, p.id);
+  if (!sl?.ut || (sl.skede !== 'packar' && sl.skede !== 'gar') || ute(p)) return undefined;
+  const namn = s.varld!.platser!.find(q => q.nr === sl.mal)?.namn ?? '';
+  return sl.skede === 'packar'
+    ? { spot: sl.ut.samla, dur: RESA.packTim * HOUR, why: `Packar för resan till ${namn}`, ref: sl.id }
+    : { spot: sl.ut.kant, dur: RESA.packTim * HOUR, why: `Går ut på resan till ${namn}`, ref: sl.id };
+}
+// resenären är framme (MEDAN i steg.ts): vid samlingsplatsen väntar hen in de andra, vid kanten lämnar hen byn
+export function resaSteg(s: State, p: Person, tk: Task) {
+  const sl = s.varld?.sallskap?.find(x => x.id === tk.ref);
+  if (!sl?.ut || !sl.medl.includes(p.id)) { tk.until = s.now; return; }
+  if (sl.skede === 'packar') {
+    if (!sl.vid!.includes(p.id)) sl.vid!.push(p.id);
+    const kvar = sl.medl.filter(id => { const q = s.people.find(x => x.id === id); return q && alive(q) && !ute(q) && !sl.vid!.includes(id); });
+    if (kvar.length) return;
+    sl.skede = 'gar'; // alla är framme: djuren lastas och sällskapet går
+    for (const d of tamdjurOf(s)) if (sl.djur.includes(d.id)) { d.x = sl.ut.samla.x; d.y = sl.ut.samla.y; }
+    for (const id of sl.medl) { const q = s.people.find(x => x.id === id); if (q?.task?.act === 'resa') { q.task.tx = sl.ut.kant.x; q.task.ty = sl.ut.kant.y; q.task.phase = 'go'; } }
+    return;
+  }
+  if (sl.skede !== 'gar' || Math.hypot(p.x - sl.ut.kant.x, p.y - sl.ut.kant.y) > 1.5) return;
+  gaBort(s, p);
+  if (sl.medl.every(id => { const q = s.people.find(x => x.id === id); return !q || !alive(q) || ute(q); })) {
+    for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.dog === undefined) d.ute = s.now; // djuren följer med ut
+    const hem = byPlats(s.varld!, sl.by), v = varldMark(s);
+    sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0;
+  }
 }

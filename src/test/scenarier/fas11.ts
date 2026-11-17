@@ -1,6 +1,6 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { SCENARIER, kor, testBy } from './hjalp';
+import { SCENARIER, kor, korTills, testBy } from './hjalp';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
 import { readFileSync } from 'node:fs';
@@ -1617,6 +1617,35 @@ SCENARIER.insatser = {
       ['ägaren till hästen följer inte med', !sl.medl.includes(c!.id) && per.get(c!.id) === dj?.varde],
       ['sakerna ligger i den gemensamma packningen', sl.pack.skinn === 25 && sl.pack.brod === 24],
       ['allt i boken är hela saker', sl.insatser.every(x => Number.isInteger(x.n) && Number.isInteger(x.varde))],
+    ];
+  },
+};
+SCENARIER.packskede = {
+  text: 'Packningsskedet i byn (steg 11.5.5, borjaPacka och resaSteg i resa.ts): maten tas ur förrådet i hela saker, varje resenär går till samlingsplatsen vid byns utkant, djuren lastas, och sällskapet går ut längs linjen mot rätt kant och lämnar kartan',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q));
+    const hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
+    const sl = SIM.nyttSallskap(s, a!, mal, 'handel')!; SIM.foljMed(vl, sl, b!);
+    const hast: SIM.Tamdjur = { id: SIM.TAM_ID0 + 99999, art: 'hast', born: s.now - 5 * SIM.DAY, hunger: 0, agare: a!.id, x: a!.x, y: a!.y };
+    s.tamdjur!.push(hast); SIM.satsaDjur(s, sl, hast.id);
+    SIM.setAmount(s, 'brod', 40);
+    const mat0 = SIM.foodOf(s), pb = SIM.packbehov(s, sl)!;
+    const ok = SIM.borjaPacka(s, sl), tog = Math.round(mat0 - SIM.foodOf(s)), ut = sl.ut!;
+    const samlaUte = SIM.utanforByn(s, ut.samla.x, ut.samla.y) >= 1;
+    const vid = new Set<number>(); let lastad = false;
+    korTills(s, () => sl.skede === 'ute', 12 * 3600, () => {
+      for (const p of [a!, b!]) if (!SIM.ute(p) && Math.hypot(p.x - ut.samla.x, p.y - ut.samla.y) <= 2) vid.add(p.id);
+      if (sl.skede === 'gar' && hast.x === ut.samla.x && hast.y === ut.samla.y) lastad = true;
+    });
+    const kant = ut.kant.x <= 1 || ut.kant.y <= 1 || ut.kant.x >= SIM.W - 2 || ut.kant.y >= SIM.H - 2;
+    return [
+      [`packningen tas ur förrådet: ${tog} portioner av ${pb.mat}, i hela saker`, ok && tog === pb.mat && sl.insatser.every(x => Number.isInteger(x.n))],
+      ['maten är bokförd som insatser', sl.insatser.filter(x => !x.djur).reduce((t, x) => t + x.n, 0) >= pb.mat],
+      [`samlingsplatsen ligger vid byns utkant och kanten vid kartans kant`, samlaUte && kant],
+      [`båda gick till samlingsplatsen (${vid.size})`, vid.size === 2],
+      ['djuren lastades vid samlingsplatsen', lastad],
+      [`sällskapet lämnade kartan (${sl.skede})`, sl.skede === 'ute' && SIM.ute(a!) && SIM.ute(b!) && !SIM.living(s).includes(a!)],
+      ['hästen är med på resan och inte i byn', hast.ute !== undefined && !SIM.tamdjurOf(s).includes(hast)],
     ];
   },
 };
