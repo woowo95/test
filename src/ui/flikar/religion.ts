@@ -1,5 +1,5 @@
 const kortTyngd = (v: number) => (Math.round(v * 10) / 10).toLocaleString('sv-SE');
-import { GUD_OMR, Gud, Person, troEtikett, tyngd, tyngdDelar, formNamn, gudarOf, SKALA_IDS, SKALOR, Tro, UPPV, skalaSyns, skalaV, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, tolkning, troNamn, troende, upplevelseText } from '../../sim';
+import { trosBerattelse, GUD_OMR, Gud, Person, troEtikett, tyngd, tyngdDelar, formNamn, gudarOf, SKALA_IDS, SKALOR, Tro, UPPV, skalaSyns, skalaV, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, troNamn, troende, upplevelseText } from '../../sim';
 import { tecknet } from '../../ikoner';
 import { bar, berattelseKnapp, esc, fallUt, flikLank, num, hjalpKnapp, hjalpOppen, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -64,10 +64,10 @@ function troHtml(tr: Tro, storst = false) {
   const grundare = g && alive(g) ? pLink(g) : `${esc(tr.gnamn)} <small class="muted">(lever inte längre)</small>`;
   const fid = storst ? `troihop-${tr.id}` : `troupp-${tr.id}`, ut = storst ? !hjalpOppen(fid) : hjalpOppen(fid);
   const huvud = `<div class="tekhead klick falla" data-hjalp="${fid}" aria-expanded="${ut}" tabindex="0" role="button" title="${ut ? 'Tryck för att fälla ihop' : 'Tryck för att fälla ut'}">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">👥 ${folk.length}</span> ${berattelseKnapp(id, 'Berättelsen om tron')}</div>`;
-  if (!ut) return huvud + hjalpText(id, `<p class="muted">${esc(tr.ber ?? tolkning(tr))}</p>`);
+  if (!ut) return huvud + hjalpText(id, `<p class="muted">${esc(trosBerattelse(s, tr))}</p>`);
   return `${huvud}
     <p class="small" title="${esc(`${troEtikett(s, tr).text} Tyngd ${kortTyngd(tyngd(s, tr))}: ` + tyngdDelar(s, tr).map(d => `${d.namn} ${kortTyngd(d.v)}`).join(', ') + '.')}"><b>${esc(troEtikett(s, tr).namn)}</b></p>
-    ${hjalpText(id, `<p class="muted">${esc(tr.ber ?? tolkning(tr))}</p>`)}
+    ${hjalpText(id, `<p class="muted">${esc(trosBerattelse(s, tr))}</p>`)}
     <p class="small">Grundare: ${grundare}, år ${tr.ar}</p>
     ${skalaHtml(tr)}
     ${gudarHtml(tr)}

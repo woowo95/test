@@ -313,6 +313,28 @@ SCENARIER.fragetecken = {
     ];
   },
 };
+SCENARIER.trotext = {
+  text: 'Trons berättelse växer med tron (steg 11.1.23): den byggs av stycken ur registret TROSTYCKEN, ett för varje sak tron har fått, så att en personlig tro har ett par meningar och en kyrka en hel berättelse. Berättelsen blir längre när tron får en helig plats och en präst',
+  kor: () => {
+    const s = createState(9, START);
+    const a = nyInvanare(s, 'k', 40); a.andlig = 100;
+    for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, 'blixt'); }
+    const tr = SIM.troOf(s, a.tro)!;
+    if (!tr) return [['en tro uppstod', false]];
+    for (let j = 0; j < 6; j++) nyInvanare(s, 'm', 30).tro = tr.id;
+    SIM.stepReligion(s);
+    const meningar = (x: string) => x.split(/(?<=[.!?])\s+/).filter(Boolean).length;
+    const fore = SIM.trosBerattelse(s, tr);
+    (s.heliga ??= []).push({ x: Math.floor(a.x), y: Math.floor(a.y), k: 'lund', tro: tr.id, t: s.now, om: 'test' });
+    tr.prast = a.id;
+    const efter = SIM.trosBerattelse(s, tr);
+    return [
+      [`den unga tron har ett par meningar (${meningar(fore)}): "${fore}"`, meningar(fore) >= 1 && meningar(fore) <= 4],
+      [`med en helig plats och en präst blir berättelsen längre (${meningar(efter)} meningar) och nämner dem`, meningar(efter) > meningar(fore) && efter.includes('Den heliga lunden') && efter.includes(`${a.name} är dess präst`)],
+    ];
+  },
+};
+
 SCENARIER.religionsflik = {
   text: 'Fliken Religion (steg 4.1.3): syns när den första tron finns och visar varje tro med symbol, namn, antal troende, skalorna, grundaren, de troende och upplevelserna som rör tron; de minsta under Övriga trosriktningar, och alla i byn med andlighet och tro',
   kor: () => {
