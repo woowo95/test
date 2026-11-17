@@ -1829,3 +1829,39 @@ SCENARIER.samlaresa = {
     ];
   },
 };
+
+SCENARIER.kallelse = {
+  text: 'Kallelsen (steg 11.5.11, kallelse och samlasSteg i resa.ts): ledaren kallar som vid björnjakten, och de villigaste följer med tills kraften räcker mot ledens fara; en kort och ofarlig resa går ledaren ensam, eftersom fler bara späder andelarna. Resenärerna går till samlingsplatsen; den som inte kommit inom en timme är inte med, och räcker inte kraften ställs resan in',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(30)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
+    const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 18 && SIM.ageOf(q, s0.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s0.now));
+    for (const q of vuxna) { q.pot.mod = 16; q.pot.nyfikenhet = 14; }
+    const vm = SIM.varldMark(s0)!, mal = vl0.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by').sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s0, hem.y * vm.w + hem.x, q.y * vm.w + q.x))!;
+    const plan = (fara: number): SIM.ResPlan => ({ mal: mal.nr, namn: mal.namn, skal: 'se', varde: 30, dygn: 6, fara, sc: 1, varor: [] });
+    // en farlig resa: fler följer med tills kraften räcker
+    const s1 = SIM.cloneState(s0), led1 = s1.people.find(q => q.id === vuxna[0]!.id)!;
+    const sl1 = SIM.samlaResa(s1, led1, plan(0.3))!;
+    const kraft1 = SIM.sallskapKraft(s1, sl1), utanSista = kraft1 - SIM.resKraft(s1, s1.people.find(q => q.id === sl1.medl.at(-1))!);
+    // en ofarlig resa: ledaren går ensam
+    const s2 = SIM.cloneState(s0), led2 = s2.people.find(q => q.id === vuxna[0]!.id)!;
+    const sl2 = SIM.samlaResa(s2, led2, plan(0.01))!;
+    // resenärerna går till samlingsplatsen och sällskapet packar
+    korTills(s1, () => sl1.skede !== 'samlas' || !s1.varld!.sallskap!.includes(sl1), 2 * 3600);
+    // en som sover länge kommer inte inom en timme: sällskapet går utan hen
+    const s3 = SIM.cloneState(s0), led3 = s3.people.find(q => q.id === vuxna[0]!.id)!, b3 = s3.people.find(q => q.id === vuxna[1]!.id)!;
+    const sl3 = SIM.samlaResa(s3, led3, plan(0.01))!; SIM.foljMed(s3.varld!, sl3, b3);
+    b3.task = { act: 'sova', phase: 'do', tx: b3.x, ty: b3.y, until: s3.now + 3 * SIM.HOUR, carry: 0, dark: false, why: 'Sover' };
+    korTills(s3, () => sl3.skede !== 'samlas' || !s3.varld!.sallskap!.includes(sl3), 2 * 3600);
+    // kraften räcker inte: resan ställs in
+    const s4 = SIM.cloneState(s0), led4 = s4.people.find(q => q.id === vuxna[0]!.id)!;
+    const sl4 = SIM.samlaResa(s4, led4, plan(0.01))!; sl4.krav = 100;
+    korTills(s4, () => !s4.varld!.sallskap!.includes(sl4), 2 * 3600);
+    return [
+      [`en farlig resa: sällskapet blir ${sl1.medl.length}, kraften ${kraft1.toFixed(2)} mot kravet ${sl1.krav}`, sl1.medl.length > 1 && kraft1 >= sl1.krav! && utanSista < sl1.krav!],
+      [`en ofarlig resa går ledaren ensam (${sl2.medl.length})`, sl2.medl.length === 1],
+      [`resenärerna gick till samlingsplatsen och sällskapet packar (${sl1.skede})`, sl1.skede !== 'samlas' && s1.varld!.sallskap!.includes(sl1)],
+      [`den som sov kom inte inom en timme och är inte med (${sl3.skede}, ${sl3.medl.length} med)`, sl3.skede !== 'samlas' && !sl3.medl.includes(b3.id) && SIM.sallskapFor(s3.varld, b3.id) === undefined],
+      [`när kraften inte räcker ställs resan in (${s4.stat?.['resa inställd'] ?? 0})`, !s4.varld!.sallskap!.includes(sl4) && (s4.stat?.['resa inställd'] ?? 0) >= 1],
+    ];
+  },
+};

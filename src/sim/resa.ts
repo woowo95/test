@@ -38,7 +38,9 @@ import { klanPris, prisAndras } from './klaner';
 import { makeName } from './folk';
 import { rnd } from './slump';
 import { DAY } from './typer';
-import { stat } from './folk';
+import { getRel, isSick, living, stat } from './folk';
+import { kanGa } from './halsa';
+import { SEC } from './typer';
 import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { trorPris } from './minne';
@@ -77,6 +79,11 @@ export const RESA = balans('resa', {
   seVarde: 15, // det väntade värdet av att se en plats man bara hört rykten om, för en medelmåttigt nyfiken (arbetstimmar)
   omvag: 1.5, // en väg ingen gått räknas som fågelvägen gånger så här mycket
   faraDygn: 0.04, // ledens fara per dygn på vägen (tills vägens händelser finns, steg 11.5.14)
+  // kallelsen (steg 11.5.11)
+  kraftPerFara: 15, // den kraft sällskapet behöver per del av ledens fara (en medelstark vuxen har kraften 1)
+  foljMod: 0.4, foljTycke: 0.4, foljNyfiken: 0.3, foljSlump: 0.6, // viljan att följa med: modet, tycket om ledaren, nyfikenheten och slumpen ...
+  foljVinst: 0.05, // ... och den egna delen av resans väntade värde per dygn (värdet delat med resenärerna) ...
+  folj: 0.35, // ... över så mycket följer man med
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
@@ -111,6 +118,7 @@ export interface Sallskap {
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
   delning?: Andelar; // hur det delades hemma (steg 11.5.9)
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
+  krav?: number; // kraften sällskapet behöver mot ledens fara (steg 11.5.11)
 }
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
 export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number }
@@ -273,7 +281,10 @@ export function resaVal(s: State, p: Person): { spot: { x: number; y: number }; 
   const sl = sallskapFor(s.varld, p.id);
   if (!sl?.ut || (sl.skede !== 'samlas' && sl.skede !== 'packar' && sl.skede !== 'gar') || ute(p)) return undefined;
   const namn = s.varld!.platser!.find(q => q.nr === sl.mal)?.namn ?? '';
-  if (sl.skede === 'samlas') return sl.ledare === p.id ? { spot: sl.ut.samla, dur: RESA.packTim * HOUR, why: `Samlar till en resa till ${namn}`, ref: sl.id } : undefined;
+  if (sl.skede === 'samlas') {
+    const led = sl.ledare === p.id ? undefined : s.people.find(q => q.id === sl.ledare);
+    return { spot: sl.ut.samla, dur: RESA.packTim * HOUR, why: led ? `Följer ${led.name} på en resa till ${namn}` : `Samlar till en resa till ${namn}`, ref: sl.id };
+  }
   return sl.skede === 'packar'
     ? { spot: sl.ut.samla, dur: RESA.packTim * HOUR, why: `Packar för resan till ${namn}`, ref: sl.id }
     : { spot: sl.ut.kant, dur: RESA.packTim * HOUR, why: `Går ut på resan till ${namn}`, ref: sl.id };
@@ -282,10 +293,7 @@ export function resaVal(s: State, p: Person): { spot: { x: number; y: number }; 
 export function resaSteg(s: State, p: Person, tk: Task) {
   const sl = s.varld?.sallskap?.find(x => x.id === tk.ref);
   if (!sl?.ut || !sl.medl.includes(p.id)) { tk.until = s.now; return; }
-  if (sl.skede === 'samlas') { // ledaren är vid samlingsplatsen: sällskapet packar, och går inte det ställs resan in
-    if (sl.ledare === p.id && !borjaPacka(s, sl)) stallIn(s, sl);
-    return;
-  }
+  if (sl.skede === 'samlas') { samlasSteg(s, sl, p); return; }
   if (sl.skede === 'packar') {
     if (!sl.vid!.includes(p.id)) sl.vid!.push(p.id);
     const kvar = sl.medl.filter(id => { const q = s.people.find(x => x.id === id); return q && alive(q) && !ute(q) && !sl.vid!.includes(id); });
@@ -622,5 +630,40 @@ export function samlaResa(s: State, p: Person, r: ResPlan): Sallskap | undefined
   if (!sl.ut) { stallIn(s, sl); return undefined; }
   sl.dagbok.push([s.now, `${p.name} samlar till en resa till ${r.namn}.`]);
   count(s, 'resa samlas');
+  kallelse(s, sl, r);
   return sl;
+}
+
+// ---------- kallelsen (steg 11.5.11, Flera samhällen: Sällskapet) ----------
+// När ledaren samlar kallar hen, som vid björnjakten: varje vuxen som kan gå väger att följa med efter modet, tycket om ledaren,
+// nyfikenheten och sin egen del av resans väntade värde, som späds för varje ny resenär. Ledaren tar de villigaste tills
+// kraften räcker mot ledens fara (RESA.kraftPerFara gånger faran) och bärförmågan räcker till packningen; fler än så späder bara
+// andelarna. Resenärerna går till samlingsplatsen. När alla är där packar sällskapet; har det inte kommit ihop inom en timme
+// (RESA.samlaSek) går ledaren med dem som kommit, om kraften räcker, och annars ställs resan in.
+export const resKraft = (s: State, p: Person) => (stat(p, 'styrka', s.now) + stat(p, 'mod', s.now)) / 20;
+export const sallskapKraft = (s: State, sl: Sallskap) => resenarer(s, sl).reduce((a, p) => a + resKraft(s, p), 0);
+export function kallelse(s: State, sl: Sallskap, r: ResPlan) {
+  const vl = s.varld!, led = s.people.find(p => p.id === sl.ledare);
+  if (!led) return;
+  sl.krav = Math.round(RESA.kraftPerFara * r.fara * 100) / 100;
+  const kan = living(s).filter(q => q !== led && !q.gast && ageOf(q, s.now) >= ALDER.vuxen && kanGa(q) && !isSick(q, s.now) && !ute(q) && !sallskapFor(vl, q.id));
+  const vilja = kan.map(q => ({ q, v: RESA.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + RESA.foljTycke * getRel(s, q, led).op / 100 + RESA.foljNyfiken * (stat(q, 'nyfikenhet', s.now) - 10) / 10 + RESA.foljSlump * (rnd(s, 'resa', q) - 0.5) }))
+    .sort((a, b) => b.v - a.v || a.q.id - b.q.id);
+  for (const x of vilja) {
+    const pb = packbehov(s, sl);
+    if (sallskapKraft(s, sl) >= sl.krav && (!pb || pb.ryms)) break; // sällskapet räcker: fler späder bara andelarna
+    if (x.v + RESA.foljVinst * r.varde / r.dygn / (sl.medl.length + 1) <= RESA.folj) continue;
+    if (foljMed(vl, sl, x.q)) count(s, 'resa följer med');
+  }
+  if (sl.medl.length > 1) sl.dagbok.push([s.now, `${sl.medl.length - 1} följer med.`]);
+}
+// den som är vid samlingsplatsen medan sällskapet samlas: ledaren väntar in de andra
+function samlasSteg(s: State, sl: Sallskap, p: Person) {
+  const vid = sl.vid ??= [];
+  if (!vid.includes(p.id)) vid.push(p.id);
+  if (sl.ledare !== p.id) return;
+  const alla = sl.medl.every(id => { const q = s.people.find(x => x.id === id); return !q || !alive(q) || vid.includes(id); });
+  if (!alla && s.now - sl.borjan < RESA.samlaSek * SEC) return;
+  if (!alla) sl.medl = sl.medl.filter(id => vid.includes(id)); // de som inte kom är inte med
+  if (sallskapKraft(s, sl) < (sl.krav ?? 0) - 1e-9 || !borjaPacka(s, sl)) stallIn(s, sl);
 }
