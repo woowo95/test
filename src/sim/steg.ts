@@ -564,11 +564,13 @@ function vantar(p: Person, tk: Task, now: number, dt: number) {
 // tiden (sekunder) sedan raden t räknades, om den ska räknas i slaget som slutar vid now, annars undefined. Sist räknad står i
 // s.takter; en by som saknar den (en ny eller äldre sparning) räknar raden som om den räknats när slaget började
 const TAKT_OFF: number[] = [];
+// radens förskjutning inom perioden ur namnet, så att en ny rad i TAKTER inte flyttar de andra
+const namnFas = (n: string) => { let h = 2166136261; for (let i = 0; i < n.length; i++) h = Math.imul(h ^ n.charCodeAt(i), 16777619); return (h >>> 0) / 2 ** 32; };
 function taktDt(s: State, t: Takt, i: number, now: number, dtSec: number) {
   if (t.sek <= 0) return dtSec;
   // (det som räknas i hela timmar går vid timmens början, som klockan i spelet: motgångarna, vädret och dygnets händelser följer
   // timmen; det som räknas oftare sprids över perioden)
-  const tk = s.takter ??= {}, P = t.sek * SEC, off = TAKT_OFF[i] ??= (t.fas ?? (t.sek % 3600 === 0 ? 0 : (i * 0.618) % 1)) * P; // radens förskjutning räknas en gång
+  const tk = s.takter ??= {}, P = t.sek * SEC, off = TAKT_OFF[i] ??= (t.fas ?? (t.sek % 3600 === 0 ? 0 : namnFas(t.namn))) * P; // radens förskjutning räknas en gång
   const sist = tk[t.namn];
   // första gången (en ny by eller en äldre sparning), eller när klockan har flyttats (ett prov): systemet räknas direkt, så att
   // det som räknas sällan (timmens behov, byggplanen) finns från början
