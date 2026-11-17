@@ -79,7 +79,7 @@ import { arbetsTimme, chooseTask, nastaBuske, nastaRedskap, spotFor } from './va
 import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
-import { resaSteg } from './resa';
+import { resaSteg, resaBehov } from './resa';
 import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
 import { skrivHuvudRad } from './radtal';
 import { varldSteg } from './varldslag';
@@ -450,6 +450,7 @@ export const TAKTER: Takt[] = [
   { namn: 'tidyStore', sek: 3600, fn: s => { tidyStore(s); } },
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
+  { namn: 'sällskapen på vägen', sek: 600, fn: (s, dt) => resaBehov(s, dt) }, // mättnaden, vätskan och orken (resa.ts, steg 11.5.6)
   { namn: 'världen', sek: 300, fn: s => { varldSteg(s); } }, // världens perioder och kön, räknade mot klockan (varldslag.ts, steg 11.2.17)
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)

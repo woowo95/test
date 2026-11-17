@@ -1649,3 +1649,47 @@ SCENARIER.packskede = {
     ];
   },
 };
+
+SCENARIER.vagbehov = {
+  text: 'Behoven på vägen (steg 11.5.6, resaBehov i resa.ts): sällskapets mättnad, vätska och ork räknas var tionde minut för hela gruppen; maten går åt i hela saker, den som håller kortast först, vattnet ur säckarna på en torr sträcka och höet där djuren inte kan beta. En natt i köld utan tält kostar ork, och ett trött sällskap går långsammare',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, [a, b] = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 18);
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!, mal = hb.grannar![0]!.nr, v = SIM.varldMark(s0)!;
+    // en kall natt de närmaste dygnen (klockan sex på morgonen efter)
+    let natt = 0;
+    for (let d = 1; d < 60 && !natt; d++) { const t = (Math.floor(s0.now / SIM.DAY) + d) * SIM.DAY + 3 * SIM.HOUR; if (SIM.temperature(s0, t) < SIM.RESA.koldFran - 6 && SIM.vaderNu(s0, t).nb === 0) natt = t + 3 * SIM.HOUR; }
+    // en torr ruta där det inte går att beta
+    let torr: number | undefined;
+    for (let i = 0; i < v.w * v.h && torr === undefined; i++) { const m = SIM.VARLDMARK[SIM.MARK_IDS[v.mark[i]]]; if (!m.bete && !m.vatten && !v.flod[i]) torr = i; }
+    const ny = (t: number, pack: Record<string, number>, ruta?: number) => {
+      const s = SIM.cloneState(s0); s.now = t;
+      const sl = SIM.nyttSallskap(s, s.people.find(q => q.id === a!.id)!, mal, 'handel')!; SIM.foljMed(s.varld!, sl, s.people.find(q => q.id === b!.id)!);
+      sl.pack = { ...pack }; sl.skede = 'ute'; sl.ruta = ruta;
+      return { s, sl };
+    };
+    // natten i köld, med och utan tält
+    const utan = ny(natt - 6 * SIM.HOUR, {}), med = ny(natt - 6 * SIM.HOUR, { talt: 1 });
+    utan.sl.behov = { matt: 1, vatska: 1, ork: 0.5, fulla: 0, foder: 0 }; med.sl.behov = { ...utan.sl.behov };
+    utan.s.now = natt; med.s.now = natt; SIM.resaBehov(utan.s, 6 * SIM.HOUR); SIM.resaBehov(med.s, 6 * SIM.HOUR);
+    // en dag i gång
+    const dagT = Math.floor(s0.now / SIM.DAY) * SIM.DAY + SIM.DAY + 8 * SIM.HOUR, gang = ny(dagT, {});
+    gang.s.now = dagT + 10 * SIM.HOUR; SIM.resaBehov(gang.s, 10 * SIM.HOUR);
+    const fartUtvilad = SIM.orkFart(gang.sl); gang.sl.behov!.ork = 0.2; const fartTrott = SIM.orkFart(gang.sl);
+    // maten, vattnet och höet under två dygn på en torr ruta utan bete, med en häst
+    const lang = ny(dagT, { fisk: 2, brod: 10, vattensack: 2, torrgras: 6 }, torr);
+    lang.sl.djur.push(SIM.TAM_ID0 + 99999);
+    const fiskForst: boolean[] = [];
+    for (let h = 1; h <= 48; h++) { lang.s.now = dagT + h * SIM.HOUR; SIM.resaBehov(lang.s, SIM.HOUR); fiskForst.push((lang.sl.pack.brod ?? 0) === 10 || !lang.sl.pack.fisk); }
+    const p = lang.sl.pack, hel = Object.values(p).every(n => Number.isInteger(n));
+    return [
+      [`hittade en kall natt (${natt ? Math.round(SIM.temperature(s0, natt - 3 * SIM.HOUR)) : '–'} grader) och en torr ruta utan bete`, natt > 0 && torr !== undefined],
+      [`en natt i köld utan tält kostar ork (${utan.sl.behov!.ork.toFixed(2)} mot ${med.sl.behov!.ork.toFixed(2)} med tält)`, utan.sl.behov!.ork < med.sl.behov!.ork - 0.05],
+      [`en dag i gång sänker orken (${gang.sl.behov!.ork.toFixed(2)})`, gang.sl.behov!.ork < 0.6],
+      [`ett trött sällskap går långsammare (fart ${fartTrott.toFixed(2)} mot ${fartUtvilad.toFixed(2)})`, fartTrott < fartUtvilad && fartTrott >= SIM.RESA.orkFartMin],
+      [`maten går åt i hela saker, fisken (håller kortast) före brödet (kvar: ${JSON.stringify(p)})`, hel && !p.fisk && (p.brod ?? 0) < 10 && fiskForst.every(x => x)],
+      [`vattnet ur säckarna på den torra sträckan (${lang.sl.behov!.fulla} fulla kvar)`, lang.sl.behov!.fulla === 0 && (lang.s.stat?.['resa dricker ur säcken'] ?? 0) >= 1],
+      [`hästen äter hö där den inte kan beta (${p.torrgras ?? 0} kvar av 6)`, (p.torrgras ?? 0) <= 2],
+      [`mättnaden hålls uppe av maten (${lang.sl.behov!.matt.toFixed(2)})`, lang.sl.behov!.matt > 0.3],
+    ];
+  },
+};

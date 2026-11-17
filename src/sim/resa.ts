@@ -6,6 +6,11 @@
 import { balans } from './balans';
 import { LandmarkId } from './landmarken';
 import { H, HOUR, Person, State, Task, W } from './typer';
+import { isLight } from './tid';
+import { temperature, vaderNu } from './vader';
+import { KROPP, count } from './folk';
+import { TORST } from './torst';
+import { SAKER } from './saker';
 import { alive } from './folk';
 import { BYN } from './egendom';
 import { amountOf, use } from './lager';
@@ -33,6 +38,14 @@ export const RESA = balans('resa', {
   hander: 20, rygg: 20, // vikt en resenär bär i händerna och i en ryggsäck
   packPerStyrka: 20, // ett packdjurs last för varje steg av dess styrka
   packTim: 6, // timmar en resenär väntar vid samlingsplatsen innan hen väljer om (sällskapet ställs in i steg 11.5.11)
+  // behoven på vägen (steg 11.5.6): orken per timme i gång och i nattens rast, och tappet en natt utan tak
+  orkGang: 0.06, // så mycket ork per timme i gång på dagen (en hel dag tar 0,72)
+  orkVila: 0.1, // så mycket ork per timme i nattens rast (en hel natt ger 1,2)
+  koldFran: 8, // grader: under så kallt drar natten ute ork ...
+  orkKold: 0.012, // ... så mycket per timme och grad under koldFran, för den som inte ryms i tälten
+  orkBlot: 0.08, // så mycket per timme i det kraftigaste regnet eller snöfallet, för den som inte ryms i tälten
+  talt: 4, // så många ryms i ett tält
+  orkFartFran: 0.5, orkFartMin: 0.6, // under så mycket ork går sällskapet långsammare, jämnt ner till orkFartMin vid ingen ork
 });
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
@@ -61,7 +74,10 @@ export interface Sallskap {
   insatser: Insats[];
   dagbok: [number, string][]; // resans dagbok (steg 11.5.13)
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
+  behov?: ResBehov; // mättnaden, vätskan och orken på vägen, för hela gruppen (steg 11.5.6)
 }
+// sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
+export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number }
 
 // ett nytt sällskap med ledaren som första medlem; det samlas tills det packar
 export function nyttSallskap(s: State, ledare: Person, mal: number, skal: ResmalId): Sallskap | undefined {
@@ -238,5 +254,70 @@ export function resaSteg(s: State, p: Person, tk: Task) {
     for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.dog === undefined) d.ute = s.now; // djuren följer med ut
     const hem = byPlats(s.varld!, sl.by), v = varldMark(s);
     sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0;
+  }
+}
+
+// ---------- behoven på vägen (steg 11.5.6, Packningen i tal och Orken och tälten på resan) ----------
+// Ute på vägen räknas sällskapet var tionde minut (en rad i TAKTER) med tre tal för hela gruppen. Mättnaden sjunker som en
+// bybos, och när gruppen är hungrig äter den en portion per resenär ur packningen, den mat som håller kortast först. Vätskan
+// sjunker som törsten; vid vatten dricker gruppen och fyller säckarna, och på en torr sträcka dricker den ur säckarna, en per
+// resenär. Djuren äter hö där det inte går att beta, i hela saker. Orken sjunker i gång på dagen och stiger i nattens rast, och
+// en natt utan tak drar ork efter kölden och regnet eller snön för den del av gruppen som inte ryms i tälten. Framme tär
+// vädret inte. Låg ork sänker farten (orkFart, steg 11.5.7).
+export const PA_VAGEN: readonly Skede[] = ['ute', 'framme', 'hemat'];
+const behovOf = (sl: Sallskap) => sl.behov ??= { matt: 1, vatska: 1, ork: 1, fulla: sl.pack.vattensack ?? 0, foder: 0 };
+// rutan sällskapet är på (i världen), och om det går att beta och finns vatten där
+function rutaNu(s: State, sl: Sallskap) {
+  const v = varldMark(s), i = sl.ruta;
+  if (!v || i === undefined) return { vatten: false, bete: true };
+  const by = varldPlatserPa(s.varld!, i % v.w, Math.floor(i / v.w)).some(p => p.k === 'by');
+  return { vatten: vattenVid(v, i) || by, bete: by || !!VARLDMARK[MARK_IDS[v.mark[i]]].bete };
+}
+// den mat i packningen som håller kortast
+const kortastMat = (sl: Sallskap) => FOOD.filter(k => (sl.pack[k] ?? 0) >= 1).sort((a, b) => (SAKER[a]!.haller ?? 99) - (SAKER[b]!.haller ?? 99))[0];
+function tappa(sl: Sallskap, k: string, n: number) { sl.pack[k] = (sl.pack[k] ?? 0) - n; if (sl.pack[k]! <= 0) delete sl.pack[k]; }
+// sällskapets fart efter orken (en faktor i Farten i tal)
+export const orkFart = (sl: Sallskap) => {
+  const o = sl.behov?.ork ?? 1;
+  return o >= RESA.orkFartFran ? 1 : RESA.orkFartMin + (1 - RESA.orkFartMin) * Math.max(0, o) / RESA.orkFartFran;
+};
+// tappet i ork per timme en natt utan tak, för hela gruppen (tälten skyddar fyra var)
+export function nattTapp(s: State, sl: Sallskap, t = s.now) {
+  const n = sl.medl.length, talt = Math.floor(sl.pack.talt ?? 0), utan = n ? Math.max(0, n - RESA.talt * talt) / n : 0;
+  const v = vaderNu(s, t);
+  return utan * (Math.max(0, RESA.koldFran - temperature(s, t)) * RESA.orkKold + v.nb * RESA.orkBlot);
+}
+// en bit av tiden (dt sekunder, kortare än en timme) för ett sällskap på vägen
+function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
+  const b = behovOf(sl), tim = dt / HOUR, dag = isLight(t), framme = sl.skede === 'framme', r = rutaNu(s, sl), n = sl.medl.length;
+  b.matt = clamp(b.matt - tim / KROPP.hungerTim, 0, 1);
+  b.vatska = clamp(b.vatska - tim / TORST.tim * (dag ? 1 : TORST.somn), 0, 1);
+  if (dag && !framme) b.ork -= tim * RESA.orkGang;
+  else if (!dag) b.ork += tim * RESA.orkVila - (framme ? 0 : tim * nattTapp(s, sl, t));
+  b.ork = clamp(b.ork, 0, 1);
+  // äta: en portion per resenär, den mat som håller kortast först
+  while (b.matt < KROPP.hungrig) {
+    let at = 0;
+    for (let k = kortastMat(sl); k && at < n; k = kortastMat(sl)) { const m = Math.min(n - at, Math.floor(sl.pack[k]!)); tappa(sl, k, m); at += m; }
+    if (!at) { count(s, 'resa utan mat'); break; }
+    b.matt = clamp(b.matt + KROPP.mattar * at / n, 0, 1);
+    count(s, 'resa måltid');
+  }
+  // dricka: vid vatten fylls säckarna, annars dricker gruppen ur dem, en per resenär
+  if (r.vatten) { b.vatska = 1; b.fulla = Math.floor(sl.pack.vattensack ?? 0); }
+  else if (b.vatska < TORST.torstig) {
+    if (b.fulla >= n) { b.fulla -= n; b.vatska = 1; count(s, 'resa dricker ur säcken'); } else count(s, 'resa utan vatten');
+  }
+  // djuren äter hö där det inte går att beta
+  if (!r.bete && sl.djur.length) {
+    b.foder += sl.djur.length * RESA.foderPerDygn * tim / 24;
+    while (b.foder >= 1 - 1e-9) { if ((sl.pack.torrgras ?? 0) < 1) { count(s, 'resa djur utan foder'); b.foder = 0; break; } tappa(sl, 'torrgras', 1); b.foder = Math.max(0, b.foder - 1); }
+  }
+}
+// var tionde minut (TAKTER): sällskapen på vägen, i bitar om högst tio minuter
+export function resaBehov(s: State, dt: number) {
+  for (const sl of sallskapNu(s.varld)) {
+    if (!PA_VAGEN.includes(sl.skede)) continue;
+    for (let gjort = 0; gjort < dt - 1e-9;) { const d = Math.min(600, dt - gjort); behovBit(s, sl, s.now - dt + gjort + d, d); gjort += d; }
   }
 }
