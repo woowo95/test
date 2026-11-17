@@ -210,6 +210,7 @@ export interface Person {
   framme?: number; // räknad fram till den här tiden: under de korta stegen tar den som inte är inblandad i faran sitt arbete en minutbit i förväg (steg 10.1.4, slag i steg.ts)
   gast?: import('./gast').GastRad; smitta?: import('./sjukdom').SjukId; // en gäst: handlaren, en rövare eller en främling (steg 9.2.111, gast.ts); id är då negativt; smitta: sjukdomen en gäst bär utan att någon ser det (steg 9.5.5)
   born: number; died?: number; cause?: string; left?: number;
+  ute?: number; // borta från byn sedan den här tiden (steg 11.2.3, ute.ts): fortfarande bybo och äger sitt, men inte på bykartan
   fran?: number; // grannklanen hen kom ifrån (en främling, steg 4.4.4.2)
   grundare?: true | 'ny'; // grundade byn, eller grundade den på nytt (steg 3.9.7)
   mother?: number; father?: number; partner?: number;

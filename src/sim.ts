@@ -10,6 +10,7 @@ export * from './sim/karta';
 export * from './sim/mark';
 export * from './sim/trad';
 export * from './sim/folk';
+export * from './sim/ute';
 export * from './sim/tid';
 export * from './sim/varld';
 export * from './sim/kartflytt';

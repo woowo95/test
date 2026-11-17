@@ -226,7 +226,10 @@ export function livet(s: State, p: Person, k: string, episod = false) {
   l[k] = (l[k] ?? 0) + 1;
 }
 export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.born) / DAY;
-export function living(s: State) { return s.people.filter(alive); }
+// de som är i byn (paKartan): bybor som lever och inte är borta (steg 11.2.3, ute.ts). Den som är borta är fortfarande bybo (alive), men
+// går inte i slaget, ritas inte och väljs inte till något
+export const paKartan = (p: Person) => alive(p) && p.ute === undefined;
+export function living(s: State) { return s.people.filter(paKartan); }
 // sjuk just nu (sickUntil är aldrig 0 eller NaN i spelet; då ger uttrycket ändå samma svar som !!sickUntil &&)
 export { isSick } from './sjukdom'; // sjukdomarna (steg 9.5.1, sjukdom.ts); den gamla klockan sickUntil räknas tills den gått ut
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }

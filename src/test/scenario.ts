@@ -23,6 +23,7 @@ import './scenarier/mastare';
 import './scenarier/kultur';
 import './scenarier/fas9';
 import './scenarier/fas10';
+import './scenarier/fas11';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';

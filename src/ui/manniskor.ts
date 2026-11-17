@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { tidKvar, HALSA, ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart, festNu, SPORT_AV, type SportDef } from '../sim';
+import { tidKvar, HALSA, ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, paKartan, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart, festNu, SPORT_AV, type SportDef } from '../sim';
 // lågorna på den som brinner (steg 6.4.16, Björns val f6_brinner i steg 8.10.1): en låga med foten i (x, y) och längden l i
 // bilden f (0–3): ljus kärna, gul mitt och röd spets, en tunga vid sidan som byter sida, och ibland en lös flamma överst
 const BRAND_TAKT = 140, HOJD = [0, 2, 1, -1], SVAJ = [0, 1, 0, -1];
@@ -507,7 +507,7 @@ export function drawPeople(t: number) {
   markIcons.end();
   let n = 0;
   for (const p of [byId(s, ui.selected), ui.hovered !== ui.selected ? byId(s, ui.hovered) : undefined]) {
-    if (!p || !alive(p)) continue;
+    if (!p || !paKartan(p)) continue; // den som är borta från byn (steg 11.2.3) har inget namn på kartan
     const tx = nameTags[n++];
     if (tx.text !== p.name) tx.text = p.name;
     // namnet ovanför figuren, det hen bär på huvudet och symbolen över huvudet (steg 9.2.27), så att det inte täcker figuren
