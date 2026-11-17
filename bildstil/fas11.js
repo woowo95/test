@@ -547,3 +547,53 @@
   // Korten f11_varldskarta_v1_bojd och f11_karavan är borttagna ur valdelen (Björn 2026-11-09: bara det som finns i spelet
   // eller kommer snart). Ritningarna ovan finns kvar som förlaga till världskartan (11.1.6) och karavanerna (11.3.4).
 })();
+
+// fas 11: tecknen på världskartan som kom med resorna (11.4 och 11.5): sällskapet som är ute på resa, gömman (packning som
+// lämnats kvar), graven efter den som dog på vägen, vagnen och knappen som öppnar världskartan. 16 × 16 punkter per ruta som
+// spelets världskarta, i spelets färger (TECKENPAL i src/ui/varldbild.ts), på marken bredvid ett träd och ett berg ur spelet.
+(() => {
+  const L = { k: 'kol0', K: 'kol3', j: 'jord1', J: 'jord2', l: 'jord3', y: 'senap3', Y: 'senap1', r: 'rost2', R: 'rost1', g: 'oliv1', G: 'oliv3', b: 'barr1', B: 'barr3', d: 'skiffer1', s: 'skiffer2', S: 'skiffer3', w: 'ben3', W: 'ben1' };
+  const TRAD = ['', '', '', '......GGG', '....GGGGGgg', '...GGGGGgggg', '...GGGGgggggg', '....GGgggggg', '.....gggggg', '.......jj', '.......jj', '......kjjk'];
+  const BERG = ['', '', '.......kk', '......kwwk', '.....kwwSdk', '....kSSSSddk', '...kSSSSdddk', '...kSSSdddddk', '..kSSSSddddddk', '..kSSSddddddddk', '.kkkkkkkkkkkkkk'];
+  const fyll = (B, w, h, ramp, ton) => { const i = B.P.i(ramp, ton); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, i); };
+  // på världskartan: tre rutor i rad, träd, saken och berg, på gräsmark
+  const PA_KARTAN = (text, rader) => ({ text, w: 16 * 3 + 8, h: 16 + 8, rita: (B) => {
+    fyll(B, 56, 24, 'oliv', 2);
+    ritaSprite(B, TRAD, L, 4, 4); ritaSprite(B, rader, L, 20, 4); ritaSprite(B, BERG, L, 36, 4);
+  } });
+  // knappen: en ruta i panelens mörka färg med en ram
+  const KNAPP = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
+    fyll(B, 24, 24, 'kol', 1); const ram = B.P.i('kol', 2);
+    for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
+    ritaSprite(B, rader, L, 4, 4);
+  } });
+  const KORT = (id, namn, vad, versioner) => ({ id, namn, typ: 'tre', vad, versioner });
+
+  VAL.push(
+    KORT('f11_sallskap', 'Sällskapet på resa', 'Steg 11.5: ett sällskap som är ute på resa syns på världskartan där det är just nu och flyttar sig en ruta i taget. Bilden visar det mellan ett träd och ett berg ur spelet.', [
+      PA_KARTAN('Två vandrare i rad med packning på ryggen.', ['', '', '.....kk......kk.', '....kwwk....kwwk', '....kwwk....kwwk', '..kk.kk...kk.kk.', '.kJJkrrk.kJJkrrk', '.kJlkrrk.kJlkrrk', '.kJJkrrk.kJJkrrk', '..kkkrrk..kkkrrk', '....kjjk....kjjk', '....k.k.....k.k.', '....k..k...k..k.', '...kk..kk.kk..kk']),
+      PA_KARTAN('Tre små figurer på led, den främsta med en vandringsstav.', ['', '', '', '', '.kk...kk...kk..J', 'kwwk.kwwk.kwwk.J', '.kk...kk...kk..J', 'kRRk.kggk.krrkkJ', 'kRRk.kggk.krrk.J', 'kjjk.kjjk.kjjk.J', 'k..k.k..k.k..k.J', 'kk.kkk.kkk.kk..J']),
+      PA_KARTAN('En större vandrare med ett knyte på en stång över axeln och en väska vid höften.', ['', '', '.....kk.........', '....kwwk........', '....kwwk...kkkk.', '.....kk...kJJJJk', '...kkrrkjjkJlJJk', '..kJkrrk..kJJJJk', '..kJkrrk...kkkk.', '...kkrrk........', '....kjjk........', '....k..k........', '...k....k.......', '..kk....kk......']),
+    ]),
+    KORT('f11_gomma', 'Gömman', 'Steg 11.5: packning som ett sällskap lämnat kvar ute i världen (en gömma) syns på världskartan tills någon hämtar den. Bilden visar den mellan ett träd och ett berg ur spelet.', [
+      PA_KARTAN('Ett knyte ombundet med rep.', ['', '', '', '', '', '......kkkk......', '....kkJJJJkk....', '...kJJJyJJJJk...', '...kJJyyyJJJk...', '..kJJJJyJJJJJk..', '..kJlJJyJJJlJk..', '..kJJJJyJJJJJk..', '...kkkkkkkkkk...']),
+      PA_KARTAN('Ett röse av stenar där knytet sticker fram.', ['', '', '', '', '', '.......kk.......', '......kSdk......', '.....kkkkkk.....', '....kSSdkSdk....', '...kkkkJJkkkk...', '..kSSdkJlkSSdk..', '..kSddkkkkSddk..', '.kkkkkkkkkkkkkk.']),
+      PA_KARTAN('En käpp med en röd lapp över en grävd fläck.', ['', '', '', '.......Jrr......', '.......JrRr.....', '.......Jrr......', '.......J........', '.......J........', '.......J........', '....kkkJkkk.....', '..kjjJJJJJjjk...', '.kjJJlJJJlJJjk..', '..kjjjjjjjjjk...']),
+    ]),
+    KORT('f11_grav', 'Graven ute i världen', 'Steg 11.5: den som dör på en resa begravs där, och graven syns på världskartan. I spelet är den nu ett kryss. Bilden visar den mellan ett träd och ett berg ur spelet.', [
+      PA_KARTAN('En gräsbevuxen hög med en rest sten.', ['', '', '', '.......kk.......', '......kSSk......', '......kSdk......', '......kSdk......', '......kSdk......', '....kkkSdkkk....', '..kkgGGkkGGgkk..', '.kgGGGGGGGGGGgk.', 'kgggGGGGGGGGgggk', 'kkkkkkkkkkkkkkkk']),
+      PA_KARTAN('En låg stenhäll i gräset.', ['', '', '', '', '', '', '...kkkkkkkkkk...', '..kSSSSSSSSSdk..', '.kSSSSSSSSSdddk.', '.kdddddddddddk..', '.kkkkkkkkkkkkk..', 'g..G........G.g.']),
+      PA_KARTAN('En hög av nygrävd jord med en trästolpe och ett rött band.', ['', '', '', '.......kk.......', '......kJJk......', '......kRRk......', '......kJJk......', '......kJlk......', '......kJlk......', '...kkkkJlkkkk...', '..kjjjjkkjjjjk..', '.kjJJJJJJJJJJjk.', 'kjJJJJlJJJlJJJjk', 'kkkkkkkkkkkkkkkk']),
+    ]),
+    KORT('f11_vagn', 'Vagnen', 'Steg 11.5: ett sällskap som har en vagn drar den med sig, och en vagn som lämnats kvar syns på världskartan. Bilden visar den mellan ett träd och ett berg ur spelet.', [
+      PA_KARTAN('En tvåhjulig kärra från sidan med säckar på flaket och skaklar framåt.', ['', '', '', '', '....kkk.kkk.....', '...kwwWkwwWk....', '...kWWWkWWWk....', '.kkkkkkkkkkkkkkk', '.kJlJJJJJlJJk...', '.kkkkkkkkkkk....', '....kjJjk.......', '...kjJkJjk......', '....kjJjk.......', '.....kkk........']),
+      PA_KARTAN('En tom handkärra med höga sidor och två hjul.', ['', '', '', '', '..kkkkkkkkkk....', '..kJJJJJJJJk....', '..kJlJJJJlJk....', '..kkkkkkkkkkkkkk', '...kj....kj.....', '..kjJk..kjJk....', '...kj....kj.....']),
+      PA_KARTAN('En fyrhjulig vagn med ett tak av ljust tyg.', ['', '', '', '....kkkkkkk.....', '...kwwwwwwwk....', '..kwWwwwwwWwk...', '..kwwwwwwwwwk...', '.kkkkkkkkkkkkk..', '.kJJJJJJJJJJJkkk', '.kkkkkkkkkkkkk..', '..kjk.....kjk...', '.kjJjk...kjJjk..', '..kjk.....kjk...']),
+    ]),
+    KORT('f11_kartknapp', 'Knappen till världskartan', 'Steg 11.4: knappen i spelet som öppnar världskartan. Bilden visar den som en knapp i panelen.', [
+      KNAPP('En rulle pergament som är utrullad, med skog, sjö och en väg.', ['', '', '', '.kkk........kkk.', 'kwWWkkkkkkkkWWwk', 'kWwkwwwwwwwwkwWk', 'kWwkwGGwwsswkwWk', 'kWwkwwGwJssWkwWk', 'kWwkwwwJJwwWkwWk', 'kWwkwSwwwGGWkwWk', 'kWwkwwwwwGGWkwWk', 'kwWWkkkkkkkkWWwk', '.kkk........kkk.']),
+      KNAPP('En vikt karta med två veck och ett rött kryss.', ['', '', '', '.kkkkkkkkkkkkkk.', '.kwwwWwwwwWwwwk.', '.kwGGWwsswWrwrk.', '.kwGwWwwssWwrwk.', '.kwwwWJwwwWrwrk.', '.kwSwWJJwwWwwwk.', '.kSSSWwJwwWwGGk.', '.kwwwWwwwwWwGGk.', '.kkkkkkkkkkkkkk.']),
+      KNAPP('Ett fyrkantigt pergament med en kompassros.', ['', '', '', '..kkkkkkkkkkkk..', '..kwwwwwwwwwWk..', '..kwwwwRwwwwWk..', '..kwwwwRwwwwWk..', '..kwwwkRkwwwWk..', '..kwRRRkdddwWk..', '..kwwwkdkwwwWk..', '..kwwwwdwwwwWk..', '..kwwwwdwwwwWk..', '..kWWWWWWWWWWk..', '..kkkkkkkkkkkk..']),
+    ]),
+  );
+})();
