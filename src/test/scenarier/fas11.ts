@@ -1221,3 +1221,32 @@ SCENARIER.naromrade = {
     ];
   },
 };
+
+SCENARIER.ortblekna = {
+  text: 'Platserna bleknar (steg 11.4.3, ortBleknar i ort.ts): minnet av en plats i världen sjunker per tid, långsammare ju högre nivån är, en nivå i taget, och dör med personen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, folk = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18), p = folk[0]!, q = folk[1]!;
+    const [a, b, c] = vl.platser!.filter(x => x.by !== vl.huvud).map(x => x.nr);
+    for (const x of [p, q]) { SIM.larOrt(s, x, a!, SIM.O_RYKTE, 1); SIM.larOrt(s, x, b!, SIM.O_KANT, 1); SIM.larOrt(s, x, c!, SIM.O_BESOKT, 1); }
+    // timme för timme: när varje plats första gången sjunker en nivå eller glöms
+    const forst: Record<number, number> = {}, niva0 = { [a!]: SIM.O_RYKTE, [b!]: SIM.O_KANT, [c!]: SIM.O_BESOKT };
+    let hopp = false, sedan: number[] = [];
+    for (let h = 24; h <= 24 * 3000 && Object.keys(forst).length < 3; h += 24) {
+      SIM.forget(s, 24); // ett dygn i taget (glömskan är densamma i en timme i taget)
+      for (const nr of [a!, b!, c!]) {
+        const v = SIM.ortNiva(p, nr);
+        if (forst[nr] === undefined && v !== niva0[nr]) { forst[nr] = h; if (v !== undefined && v !== niva0[nr]! - 1) hopp = true; if (nr === c) sedan = [v ?? -1]; }
+      }
+      if (h === 24) { s.now += SIM.HOUR; SIM.die(s, q, 'kyla'); }
+    }
+    const qKvar = (q.lardomar ?? []).some(l => l.k === 'ort');
+    const kvot = forst[c!]! / forst[a!]!;
+    return [
+      [`ett rykte bleknar först (${Math.round(forst[a!]! / 24)} dygn), sedan en känd plats (${Math.round(forst[b!]! / 24)}) och sist en besökt (${Math.round(forst[c!]! / 24)})`, forst[a!]! < forst[b!]! && forst[b!]! < forst[c!]!],
+      [`en besökt plats bleknar ${kvot.toFixed(1)} gånger så långsamt som ett rykte (${SIM.ORT.glomBesokt / SIM.ORT.glomRykte})`, Math.abs(kvot / (SIM.ORT.glomBesokt / SIM.ORT.glomRykte) - 1) < 0.05],
+      [`en nivå i taget: den besökta platsen blev känd (${sedan[0]})`, !hopp && sedan[0] === SIM.O_KANT],
+      ['ett rykte som bleknat är glömt', SIM.ortNiva(p, a!) === undefined],
+      ['platserna dör med personen', !qKvar],
+    ];
+  },
+};

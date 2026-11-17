@@ -21,7 +21,7 @@ import { lognFaktor, skvaller } from './rykten';
 import { delaVarsel } from './motgang';
 import { klanById, klanPris } from './klaner';
 import { sakNamn } from './saker';
-import { ORT, describeOrt } from './ort';
+import { ORT, describeOrt, ortBleknar } from './ort';
 
 // ---------- balanstal (regel 8) ----------
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
@@ -443,6 +443,7 @@ export function forget(s: State, hours: number) {
     if (p.lardomar) {
       const tau = 24 * (MINNE.glomBas + m / MINNE.glomMinne); // 3–13 dygn
       p.lardomar = p.lardomar.filter(l => {
+        if (l.k === 'ort') { if (ortBleknar(l, hours, tau)) return true; count(s, 'glomt'); return false; } // en nivå i taget (steg 11.4.3)
         l.c *= Math.exp(-hours / (tau * (l.k === 'fara' ? MINNE.glomFara : l.k === 'flod' ? MINNE.glomFlod : l.k === 'pris' ? MINNE.prisGlom : 1)));
         if (l.c >= MINNE.glomGrans) return true;
         count(s, 'glomt'); return false;

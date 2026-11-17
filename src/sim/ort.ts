@@ -16,14 +16,18 @@ export const ORT = balans('ort', {
   narDygn: 1, // närområdet: platserna utan folk inom så många dygns gång (fågelvägen i obanad slätt) från byn är kända för alla som bor där (steg 11.4.2)
   prat: 0.6, // en gäst som berättar om sin hemby i småpratet ger platsen som känd så här säkert; i en affär eller med ledaren helt säkert
   anfall: 0.5, // den som ser rövare från en grannby får ett rykte om byn de kom ifrån så här säkert
+  // platserna bleknar (steg 11.4.3): så här många gånger personens vanliga tid för en lärdom, per nivå
+  glomRykte: 4, glomKant: 10, glomBesokt: 25,
+  nedC: 0.5, // en plats vars säkerhet sjunkit under MINNE.glomGrans sjunker en nivå och får den här säkerheten; ett rykte glöms
 });
 
 // nivåerna: vad personen vet om platsen. Ett led i berättandet tar bort en nivå (steg 11.4.4)
-export interface OrtNivaDef { namn: string; text: string }
+// glom: hur långsamt nivån bleknar, ett balanstal i ORT
+export interface OrtNivaDef { namn: string; text: string; glom: 'glomRykte' | 'glomKant' | 'glomBesokt' }
 export const ORTNIVA = [
-  { namn: 'Rykte', text: 'har hört talas om' }, // ungefär var, och bara sorten och namnet
-  { namn: 'Känt', text: 'vet var den ligger' },
-  { namn: 'Besökt', text: 'har varit där' },
+  { namn: 'Rykte', text: 'har hört talas om', glom: 'glomRykte' }, // ungefär var, och bara sorten och namnet
+  { namn: 'Känt', text: 'vet var den ligger', glom: 'glomKant' },
+  { namn: 'Besökt', text: 'har varit där', glom: 'glomBesokt' },
 ] as const satisfies readonly OrtNivaDef[];
 export const O_RYKTE = 0, O_KANT = 1, O_BESOKT = 2;
 
@@ -41,6 +45,17 @@ export function larOrt(s: State, p: Person, nr: number, niva: number, c: number,
   (p.lardomar ??= []).push(l);
   trimLardomar(s, p);
   return l;
+}
+// ---------- platserna bleknar (steg 11.4.3) ----------
+// Säkerheten sjunker per tid som andra lärdomar (forget i minne.ts, en gång i timmen), långsammare ju högre nivån är. När den
+// sjunkit under MINNE.glomGrans sjunker platsen en nivå, en i taget, och ett rykte glöms. Platserna dör med personen.
+// tau är personens vanliga tid i timmar; true: lärdomen finns kvar
+export function ortBleknar(l: Lardom, timmar: number, tau: number): boolean {
+  l.c *= Math.exp(-timmar / (tau * ORT[ORTNIVA[l.v]?.glom ?? 'glomRykte']));
+  if (l.c >= MINNE.glomGrans) return true;
+  if (l.v <= O_RYKTE) return false;
+  l.v--; l.c = ORT.nedC;
+  return true;
 }
 // nivån p har i minnet för platsen nr (undefined: okänd)
 export const ortNiva = (p: Person, nr: number): number | undefined => findL(p, 'ort', nr)?.v;
