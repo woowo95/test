@@ -93,7 +93,7 @@ const egen = (s: State, p: Person) => { const f = formogenhet(s); return { w: f.
 const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
 // skattelagens tal (steg 10.5.4): procenten, åldern och de två ribborna, med det var och en vill ha
 const PROCENT: LagTalDef = {
-  namn: 'procenten', sym: '%', stege: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1, 0.12, 0.15, 0.2], start: SKATT.procent, visa: v => `${Math.round(v * 100)} %`,
+  namn: 'procenten', ord: 'skatt', sym: '%', stege: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1, 0.12, 0.15, 0.2], start: SKATT.procent, visa: v => `${Math.round(v * 100)} %`,
   vill: (s, p) => {
     const { w, m } = egen(s, p);
     let i = talPlats(PROCENT, SKATT.procent * (1 + SKATT.lutar * lutning(s, p)));
@@ -102,15 +102,15 @@ const PROCENT: LagTalDef = {
   },
 };
 const UNDRE: LagTalDef = {
-  namn: 'den undre ribban', sym: '⤓', stege: [0, 20, 40, 60, 80, 100, 150, 200], start: 0, ingen: 0, visa: v => v ? `${v}` : 'ingen',
+  namn: 'den undre ribban', ord: 'den som har mer än', sym: '⤓', stege: [0, 20, 40, 60, 80, 100, 150, 200], start: 0, ingen: 0, visa: v => v ? `${v}` : 'ingen',
   vill: (s, p) => { const { w, m } = egen(s, p); return w < m / 2 ? UNDRE.stege.find(v => v > w) ?? 200 : lutning(s, p) > 0.3 ? m / 4 : 0; },
 };
 const OVRE: LagTalDef = {
-  namn: 'den övre ribban', sym: '⤒', stege: [0, 1000, 800, 600, 400, 300, 200], start: 0, ingen: Infinity, visa: v => v ? `${v}` : 'ingen',
+  namn: 'den övre ribban', ord: 'som mest av', sym: '⤒', stege: [0, 1000, 800, 600, 400, 300, 200], start: 0, ingen: Infinity, visa: v => v ? `${v}` : 'ingen',
   vill: (s, p) => { const { w, m } = egen(s, p); return w < m ? 2 * m : Infinity; },
 };
 const ALDERN: LagTalDef = {
-  namn: 'åldern', sym: '🕓', stege: [14, 16, 18, 20], start: SKATT.alder, visa: v => `${v} år`,
+  namn: 'åldern', ord: 'från', sym: '🕓', stege: [14, 16, 18, 20], start: SKATT.alder, visa: v => `${v} år`,
   vill: (s, p) => ageOf(p, s.now) < 20 || living(s).some(c => isParent(p, c) && ageOf(c, s.now) >= 14 && ageOf(c, s.now) < 20) ? 20 : 18,
 };
 
@@ -177,7 +177,7 @@ function ojamnhet(s: State) {
 }
 const rikMedArvingar = (s: State, p: Person) => { const { w, m } = egen(s, p); return w > m && egnaArvingar(s, p); };
 const ANDEL: LagTalDef = {
-  namn: 'arvsdelen', sym: '%', stege: [0.1, 0.2, 0.3, 0.4, 0.5], start: SKATT.arvAndel, visa: v => `${Math.round(v * 100)} %`,
+  namn: 'arvsdelen', ord: 'arvsdel', sym: '%', stege: [0.1, 0.2, 0.3, 0.4, 0.5], start: SKATT.arvAndel, visa: v => `${Math.round(v * 100)} %`,
   vill: (s, p) => rikMedArvingar(s, p) ? ANDEL.stege[0] : ANDEL.stege[0] + (ANDEL.stege[ANDEL.stege.length - 1] - ANDEL.stege[0]) * Math.max(0, lutning(s, p)),
 };
 export function arvsskattVidDoden(s: State, p: Person) {

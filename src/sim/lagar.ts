@@ -50,7 +50,8 @@ const STEGEN = [0, 1, 4, 5, 2, 7, 8, 3, 6]; // ordningen från mildast till hår
 export interface LagDef { namn: string; sym: string; text: string; straff: number; brott?: HandelseTyp[]; prio(s: State): number; rost(s: State, p: Person): { v: number; why: string }; kan?(s: State): boolean; tek?: string; om?: string; tal?: Record<string, LagTalDef> }
 // ett tal i en lag (steg 10.5.4): stegen av tillåtna värden, värdet från början och det var och en vill ha. 0 i stegen kan betyda
 // ingen, och ingen är då värt `ingen` (0 för en undre gräns, Infinity för en övre)
-export interface LagTalDef { namn: string; sym: string; stege: number[]; start: number; ingen?: number; vill(s: State, p: Person): number; visa(v: number): string }
+export interface LagTalDef { namn: string; ord: string; sym: string; // ord = ordet före talet i gränssnittet ("skatt 10 %", "från 12 år", steg 11.1.26)
+  stege: number[]; start: number; ingen?: number; vill(s: State, p: Person): number; visa(v: number): string }
 const talEff = (d: LagTalDef, v: number) => v === 0 && d.ingen !== undefined ? d.ingen : v;
 // platsen i stegen som ligger närmast värdet x
 export function talPlats(d: LagTalDef, x: number) {

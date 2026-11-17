@@ -1364,7 +1364,12 @@ SCENARIER.lagar = {
     const e0 = SIM.efterlevs(s);
     for (const id of Object.keys(SIM.LAGAR)) if (!SIM.lagGaller(s, id)) s.styre!.lagar!.push({ id, t: s.now, straff: 0, av: l.id, om: '' });
     const e1 = SIM.efterlevs(s);
+    // talen har ord (steg 11.1.26): skattelagens tal med ordet före, legitimitetens delar som "väger N %", och taket förklaras
+    utanWebblasare(); setByn(s); ui.styreDel = 'pabud'; const lagH = styreFlik.html(); ui.styreDel = 'styre';
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: 'styre' } }) } as unknown as HTMLElement); const styH = styreFlik.html(); hjalpKlick({ closest: () => ({ dataset: { hjalp: 'styre' } }) } as unknown as HTMLElement);
+    const ord = /skatt \d+ %/.test(lagH) && /från \d+ år/.test(lagH) && /väger \d+ %/.test(styH) && /title="Byn orkar minnas \d+ lagar på en gång\./.test(lagH);
     return [
+      ['talen i Styre har ord: "skatt 10 %", "från 18 år", "väger 60 %", och taket förklaras med att byn orkar minnas så många (steg 11.1.26)', ord],
       [`vid Envälde får bara ledaren lägga fram (${fore}), vid Allmogen fler (${manga})`, fore === 1 && manga > 1],
       [`stölderna väcker en lag som tas upp (${om ?? 'inget skäl'})`, tog && lag],
       [`straffet står i lagen (${straff === undefined ? '-' : SIM.STRAFF_NAMN[straff]})`, straff !== undefined],

@@ -107,7 +107,7 @@ export function lonDygn(s: State) {
 }
 
 const TIM: LagTalDef = {
-  namn: 'lönen per timme', sym: '💰', stege: [0.25, 0.5, 1, 2], start: LON.start, visa: v => `${v} silver`,
+  namn: 'lönen per timme', ord: 'lön', sym: '💰', stege: [0.25, 0.5, 1, 2], start: LON.start, visa: v => `${v} silver`,
   // den som arbetar mycket för byn vill ha mer, och lutningen mot Sammanhållning drar uppåt
   vill: (s, p) => LON.start * (1 + LON.lutar * lutning(s, p) + Object.values(p.lonTim ?? {}).reduce((a, x) => a + x, 0) / 100),
 };
