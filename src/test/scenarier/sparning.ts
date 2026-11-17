@@ -4,7 +4,9 @@ import { Person, createState, addTool, getRel, step, living, serializeParts, joi
 import * as SIM from '../../sim';
 import { DOK_KB, START, STEG_DYGN, korBy } from '../kor';
 import { kanonisk } from '../pool';
-import { setItems, setFood, Koll, kor, SCENARIER, testBy } from './hjalp';
+import { setItems, setFood, Koll, kor, SCENARIER, testBy, utanWebblasare } from './hjalp';
+import { setByn } from '../../ui/lage';
+import { tal as talFlik, talVal } from '../../ui/flikar/tal';
 import { lasBy, lasEllerFlytta, minnesBas, sparaBy } from '../../ui/lagring';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
@@ -36,7 +38,14 @@ SCENARIER.historik = {
     const rik = h.rik ?? [], rdagar = rik.map(r => Math.floor(r[0] / DAY)), nuRad = SIM.rikRad(s), nuDel = SIM.rikedomDelar(s);
     const rikOk = rik.length >= 10 && rdagar.every((d, k) => k === 0 || d === rdagar[k - 1] + 1) && rik.every(r => r[1] >= 0 && r[2] >= 0 && r[3] >= 0 && Object.values(r[4]).every(Number.isInteger) && Object.values(r[5]).every(v => Number.isInteger(v) && v > 0));
     const rikSerie = SIM.rikSerie(s, r => r[1] + r[2] + r[3]);
+    // graferna i Byns tal (steg 11.1.36–11.1.37): en rad med tidsfönstret överst, inga rader under varje graf, "tryck eller dra" en
+    // gång, talen med sin enhet, axeln med 0 nere och Matlagningen förklarad vid ett tryck
+    utanWebblasare(); setByn(cloneState(s)); talVal.vy = 'grafer';
+    const g = talFlik.html();
+    const grafOk = (g.match(/data-graflangd=/g) ?? []).length === 4 && /grafallaval/.test(g) && (g.match(/tryck eller dra för värdet/g) ?? []).length === 1
+      && /Humör <b>\d+ %<\/b>|class="grafserie">\d+ %/.test(g) && /\d+ st</.test(g) && /(sym_vag|⚖)/.test(g) && /class="grafnoll">0</.test(g) && /data-hjalp="graf-matlagning"/.test(g);
     return [
+      ['graferna har en rad med tidsfönstret överst, "tryck eller dra" en gång, talen med enhet, 0 nere och Matlagningen förklaras (steg 11.1.36–11.1.37)', grafOk],
       [`en rad i timmen den senaste veckan (${h.tim.length} timmar)`, timOk],
       [`äldre timmar är ett värde per dygn, utan luckor och fram till timmarna (${h.dygn.length} dygn)`, h.dygn.length >= 2 && ettPerDygn && fortsatt],
       ['nyckeltalen är rimliga (invånare, humör 0–1, skog som andel)', folkOk],
@@ -327,7 +336,12 @@ SCENARIER.kartminne = {
     const gamla = k.filter(b => b[0] < grans), veckor = new Set(gamla.map(b => Math.floor((b[0] - s.founded) / SIM.WEEK)));
     const nya = k.filter(b => b[0] >= grans);
     const delar = SIM.histParts(s, s.hist), ater = SIM.joinHist(Object.values(delar));
+    // delraden i Byns tal (steg 11.1.38): namn under symbolerna, Kartan heter Byn över tid, och färgernas förklaring är utfälld
+    utanWebblasare(); setByn(cloneState(s)); talVal.vy = 'kartan';
+    const km = talFlik.html(); talVal.vy = 'grafer';
+    const delOk = /class="pdelar namngivna"/.test(km) && /<span class="delnamn">Byn över tid<\/span>/.test(km) && /<span class="delnamn">Graferna<\/span>/.test(km) && /<details open><summary class="muted">Färgerna/.test(km);
     return [
+      ['delraden i Byns tal har namn under symbolerna (Graferna, Byn över tid), och färgernas förklaring är utfälld (steg 11.1.38)', delOk],
       [`bilden packas och läses tillbaka likadant (${Math.round(p.length / 1024 * 10) / 10} KB för ${SIM.W}×${SIM.H} rutor)`, isDeepStrictEqual(SIM.lasKarta(p), r) && p.length < 20 * 1024],
       ['bara registrets slag på bilden (inga människor eller djur)', r.every(x => bokstaver.has(x))],
       ['vatten, gräs och skog finns på bilden', ['v', 's'].every(x => r.includes(x)) && (r.includes('h') || r.includes('k'))],

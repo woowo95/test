@@ -48,7 +48,7 @@ export function kartminneHtml() {
   return `<div class="kartminne"><img id="kmBild" src="${kartUrl(b[i].p)}" alt="Kartan ${kartNamn(b[i].t, nu)}" width="${W}" height="${H}">
     <input id="kmReglage" type="range" min="0" max="${b.length - 1}" value="${i}" aria-label="Året" title="Dra för att se kartan år för år">
     <p class="muted" id="kmNamn">${kartNamn(b[i].t, nu)}</p>
-    <details><summary class="muted">Färgerna</summary><p class="kmFarger">${KARTRUTA.map(r => `<span><i style="background:${KARTFARG[r.id]}"></i>${r.namn}</span>`).join('')}</p></details></div>`;
+    <details open><summary class="muted">Färgerna</summary><p class="kmFarger">${KARTRUTA.map(r => `<span><i style="background:${KARTFARG[r.id]}"></i>${r.namn}</span>`).join('')}</p></details></div>`;
 }
 // reglaget byter bild utan att panelen ritas om
 if (typeof document !== 'undefined') document.addEventListener('input', e => {
