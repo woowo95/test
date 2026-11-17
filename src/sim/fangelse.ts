@@ -28,10 +28,13 @@ export const FANG = balans('fangelse', {
   hjalp: 0.15, // familj och partner (närhet 1) går tidigt ...
   van: 0.5, // ... en vän (närhet så här) senare ...
   framling: 0.2, // ... och en främling först när nöden är stor
+  // straffet Fängelse (steg 11.12.3): domen är 1 till 5 hela dygn (år i spelet) efter brottets vikt
+  domPerVikt: 5, // dygn per vikt (dråp 1 ger fem dygn, en stöld 0,5 tre)
+  dom: 0.75, // i en dom utan lag blir det fängelse från så här mycket (händelsens vikt gånger hårdheten), mellan slag och utvisning
 });
 // larmet, brottet och branden sätts av steg.ts, så att den här filen inte drar in dem (och importerna inte går runt)
 export const fangelseKrok: { larma(s: State, p: Person): void; brott(s: State, p: Person): void; brinner(s: State, x: number, y: number): boolean; matStack(s: State, p: Person): { x: number; y: number } | undefined; taMat(s: State, p: Person): string | undefined; ata(s: State, q: Person, k: string): void } = { larma: () => undefined, brott: () => undefined, brinner: () => false, matStack: () => undefined, taMat: () => undefined, ata: () => undefined };
-const HARDA = new Set([2, 3, 6]); // Slag, Utvisning och Döden i STRAFF_REG (styre.ts)
+const HARDA = new Set([2, 3, 6, 9]); // Slag, Utvisning, Döden och Fängelse i STRAFF_REG (styre.ts)
 export const hardaDomar = (s: State) => (s.styre?.ratt ?? []).filter(r => s.now - r.t < FANG.domDygn * DAY && HARDA.has(r.steg)).length;
 // hur mycket ledaren l vill ha ett fängelse (påbudet Fängelse i styre.ts), −1 till 1
 export const fangelseAsikt = (s: State, l: Person) => clamp(hardaDomar(s) * FANG.domVikt + (s.seder.v.rang ?? 0) * FANG.rang + (stat(l, 'aggression', s.now) - 10) * FANG.aggression - FANG.bas, -1, 1);
@@ -53,11 +56,16 @@ export function fangelseAkut(s: State) {
   const hs = fangelseHus(s), fullt = hs.length > 0 && hs.every(h => rutorI(s, h).length > 0 && fangar(s, h).length >= rutorI(s, h).length);
   return !hs.length || fullt ? { v: FANG.akut, plats: fangelsePlatser(s) } : { v: 0, plats: 0 };
 }
-// p sätts i fängelset h (av domen i steg 11.12.3 och fångarna i 11.12.6, och av scenarierna): till = när hen släpps
-export function satt(s: State, p: Person, h: Hus, varfor: string, till?: number) {
+// ett byggt fängelse med ledig plats (straffet Fängelse kräver det, steg 11.12.3)
+export const fangelseLedigt = (s: State) => fangelseHus(s).find(h => fangelseKlart(s, h) && fangar(s, h).length < rutorI(s, h).length);
+// domens längd i hela dygn för ett brott med vikten v
+export const fangelseDygn = (v: number) => clamp(Math.round(v * FANG.domPerVikt), 1, 5);
+// p sätts i fängelset h (av domen i steg 11.12.3 och fångarna i 11.12.6, och av scenarierna): till = när hen släpps. Den dömde
+// går dit själv (ga), annars hamnar p inne direkt
+export function satt(s: State, p: Person, h: Hus, varfor: string, till?: number, ga = false) {
   p.fange = { hus: h.id, t: s.now, varfor, ...(till !== undefined ? { till } : {}) };
   const i = rutorI(s, h)[p.id % Math.max(1, rutorI(s, h).length)];
-  if (i !== undefined) { p.x = i % W + 0.5; p.y = Math.floor(i / W) + 0.5; }
+  if (i !== undefined && !ga) { p.x = i % W + 0.5; p.y = Math.floor(i / W) + 0.5; }
   p.task = undefined; count(s, 'fangelse_in');
 }
 // viljan att komma ut: modet, lågt humör, dygnen som återstår och mycket vid brand

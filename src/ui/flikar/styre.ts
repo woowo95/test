@@ -118,6 +118,7 @@ function ministrar() {
 function andrText(a: NonNullable<Omrostning['andr']>) {
   const [slag, id, k] = a.k.split(':');
   if (slag === 'pabud' && PABUD[id as Pabud]) return `${PABUD[id as Pabud].namn}: från ${varde(id as Pabud, a.fran)} till ${varde(id as Pabud, a.till)}`;
+  if (slag === 'lagstraff') return `Straffet: från ${STRAFF_NAMN[a.fran]?.toLowerCase() ?? '?'} till ${STRAFF_NAMN[a.till]?.toLowerCase() ?? '?'}`; // steg 11.12.3
   const td = slag === 'lagtal' ? LAGAR[id]?.tal?.[k] : undefined;
   return td ? `${td.namn}: från ${td.visa(a.fran)} till ${td.visa(a.till)}` : '';
 }
