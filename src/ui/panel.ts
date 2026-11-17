@@ -37,8 +37,8 @@ export interface Flik {
   krav?: string; // ... och ett tryck på den säger vad som krävs för att den ska öppnas (steg 11.1.8)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-// runstenarna uppifrån (steg 9.3.1–9.3.2): Seder, Tro, Styre, Teknik, Krönika, Byns tal och Omvärlden
-const FLIKAR = { seder, religion, styre, teknik, kronika, tal, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match, forrad } satisfies Record<string, Flik>;
+// runstenarna uppifrån (steg 9.3.1–9.3.2, 11.1.17): Seder, Styre, Tro, Teknik, Krönika, Byns tal och Omvärlden
+const FLIKAR = { seder, styre, religion, teknik, kronika, tal, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match, forrad } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];

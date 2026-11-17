@@ -1242,7 +1242,7 @@ SCENARIER.forradsflik = {
   },
 };
 SCENARIER.stennamn = {
-  text: 'Steg 11.1.7–11.1.8: varje runsten har sitt namn i liten text under stenen, ljust med mörk kant, en blek sten går att trycka på och säger vad som krävs (texten på flikens rad), och alla sju namnen får plats i kolumnen på bred och smal skärm (en punkt i typsnittet är ungefär 5 punkter bred vid 9 och 10 punkters storlek)',
+  text: 'Steg 11.1.7, 11.1.8 och 11.1.17: runstenarna står i ordningen Seder, Styre, Tro, Teknik, Krönika, Byns tal och Omvärlden, varje runsten har sitt namn i liten text under stenen, ljust med mörk kant, en blek sten går att trycka på och säger vad som krävs (texten på flikens rad), och alla sju namnen får plats i kolumnen på bred och smal skärm (en punkt i typsnittet är ungefär 5 punkter bred vid 9 och 10 punkters storlek)',
   kor: () => {
     const sten = readFileSync(new URL('../../ui/runstenar.ts', import.meta.url), 'utf8'), css = readFileSync(new URL('../../template.html', import.meta.url), 'utf8');
     const namn = [sederFlik, religionFlik, styreFlik, teknikFlik, kronikaFlik, talFlik, grannarFlik].map(f => f.namn);
@@ -1255,12 +1255,14 @@ SCENARIER.stennamn = {
     const krav = [religionFlik, styreFlik, grannarFlik].map(f => f.krav ?? '');
     const kravOk = /tro/.test(krav[0]) && /ledare/.test(krav[1]) && /klan/.test(krav[2]) && /handlare/.test(krav[2]) && /rövare/.test(krav[2]);
     const panel = readFileSync(new URL('../../ui/panel.ts', import.meta.url), 'utf8');
+    const ordning = (panel.match(/const FLIKAR = \{([^}]*)\}/)?.[1] ?? '').split(',').map(x => x.trim()).filter(x => ['seder', 'styre', 'religion', 'teknik', 'kronika', 'tal', 'grannar'].includes(x));
     const tryckbar = /setAttribute\('aria-disabled', blek\)/.test(panel) && !/b\.disabled = /.test(panel) && /stenKrav\(ALLA\[id\]\)/.test(panel);
     const blek = { closest: (sel: string) => sel === '#map canvas' || sel === FALLER ? null : blek, getAttribute: (n: string) => n === 'title' ? `Tro: ${krav[0]}` : null } as unknown as HTMLElement;
     const bubbla = forklaringAv(blek)?.text === `Tro: ${krav[0]}`;
     return [
       [`en blek sten säger vad som krävs för Tro, Styre och Omvärlden (${krav.join('; ')})`, kravOk],
       ['en blek sten går att trycka på, och trycket visar kravet i en bubbla men öppnar ingen flik', tryckbar && bubbla],
+      [`runstenarna står i ordningen Seder, Styre, Tro, Teknik, Krönika, Byns tal och Omvärlden (${ordning.join(', ')})`, ordning.join() === 'seder,styre,religion,teknik,kronika,tal,grannar'],
       ['namnet står under stenen i knappen', iKnappen],
       ['namnet syns, i ljus text med mörk kant', synlig],
       [`alla sju namnen får plats i kolumnen (${namn.join(', ')}; det längsta ${langst} tecken, kolumnen ${smal} och ${bred} punkter)`, namn.length === 7 && ryms],
