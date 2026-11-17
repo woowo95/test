@@ -518,6 +518,10 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
   .greppa { display: flex; justify-content: center; padding: 8px 0 2px; touch-action: none; cursor: grab; }
   .greppa i { width: 40px; height: 4px; background: var(--line); }
   .panel > .stang { top: 18px; }
+  /* krysset och bakåtpilen är 44 punkter stora på en smal skärm, så att fingret träffar (steg 11.1.10) */
+  .panel > .stang, .panel > .bakat { width: 44px; height: 44px; font-size: 20px; }
+  .panel > .stang { right: 8px; } .panel > .bakat { right: 58px; top: 18px; }
+  .panelkropp > :first-child { margin-right: 106px; }
   .panel.ruta { max-width: calc(100vw - var(--stenar) - 16px); }
 }
 @keyframes arkUpp { from { transform: translateY(100%); } to { transform: translateY(0); } }
