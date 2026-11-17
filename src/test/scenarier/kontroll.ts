@@ -14,7 +14,9 @@ import { anvandsKant, skaffasKant } from '../../ui/skaffas';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ANSIKTSORD, drag, glomArv, rovarSkapad, skapad, skonNiva } from '../../ui/utseende';
-import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
+import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar, utanWebblasare } from './hjalp';
+import { setByn } from '../../ui/lage';
+import { lagstBehov } from '../../ui/hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER['ui-ren'] = {
@@ -356,7 +358,12 @@ SCENARIER.portratt = {
     SIM.newTing(s, 'yxa', 0, kp.id).hos = kp.id;
     const kladd = skapad(s, kp);
     const kladOk = !naken.klader.rock && !naken.klader.skor && !naken.del.redskap && kladd.klader.rock === 'vargskinn' && kladd.klader.skor && kladd.klader.balte && kladd.del.redskap === 'redskap-yxa';
+    // porträttraden (steg 11.1.43): symbolen för det behov som ligger längst under sin gräns står vid namnet
+    utanWebblasare(); setByn(s);
+    const bp = vuxna[0]; bp.hunger = 0.01; const lagMat = lagstBehov(bp)?.ikon === 's_mat'; bp.hunger = 1;
+    bp.warm = -1; const lagKyla = lagstBehov(bp)?.ikon === 'sym_frysa';
     return [
+      ['porträttraden visar symbolen för det lägsta behovet: mat för den hungriga, kyla för den som fryser (steg 11.1.43)', lagMat && lagKyla],
       [`kläderna och redskapet följer utrustningen (${kladd.klader.rock}, ${kladd.klader.skor}, ${kladd.klader.balte}, ${kladd.del.redskap})`, kladOk],
       ['samma person blir likadan igen, när allt räknas om', forst.every((v, i) => v === igen[i])],
       [`porträttet följer kroppen: sover, sjuk, fryser, förband och blod (${efter.humor}, ${efter.sjuk}, ${efter.kyla}, ${efter.forband.join('/')}, ${efter.blod})`, kroppOk],

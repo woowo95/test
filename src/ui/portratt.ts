@@ -1,9 +1,10 @@
-import { KROPP, Person, halsa, ageOf, alive, byId, living, moodOf, taskName, yrkeNamn } from '../sim';
-import { $, LAG, bar, esc, tempBar, trend } from './hjalp';
+import { Person, halsa, ageOf, alive, byId, living, moodOf, taskName, yrkeNamn } from '../sim';
+import { $, LAG, bar, esc, lagstBehov, tempBar, trend } from './hjalp';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 import { figurSvg, portrattImg, portrattUrl } from './folkbild';
 import { skapad } from './utseende';
 import { bytesNu } from './jakt';
+import { iconImg } from '../ikoner';
 
 // porträttraden överst på kartan: en knapp per invånare, med mer om personen när musen är över den.
 // Ett tryck väljer personen (data-id, fångas i panel.ts), ett dubbeltryck följer hen med kameran
@@ -25,12 +26,13 @@ export function renderPorts() {
     let el = portEls.get(p.id);
     if (!el) {
       el = document.createElement('button'); el.type = 'button'; el.className = 'port'; el.dataset.id = String(p.id);
-      el.innerHTML = `<img class="pf" alt="" width="64" height="64"><span class="pn"></span><span class="pa"></span>`;
+      el.innerHTML = `<img class="pf" alt="" width="64" height="64"><span class="pn"></span><span class="pa"></span><span class="pbehov"></span>`;
       portEls.set(p.id, el);
     }
     if (row.children[k] !== el) row.insertBefore(el, row.children[k] ?? null);
-    const low = p.hunger < LAG.hunger || halsa(p) < KROPP.svag || p.warm < LAG.varmeRad || moodOf(p, s.now) < LAG.olycklig;
-    el.classList.toggle('low', low);
+    const lag = lagstBehov(p), lagK = lag?.ikon ?? '', pb = el.children[3] as HTMLElement;
+    el.classList.toggle('low', !!lag);
+    if (pb.dataset.k !== lagK) { pb.dataset.k = lagK; pb.innerHTML = lag ? iconImg(lag.ikon, 16) : ''; pb.title = lag?.namn ?? ''; }
     el.setAttribute('aria-pressed', String(ui.selected === p.id));
     const img = el.children[0] as HTMLImageElement, u = portrattUrl(skapad(s, p));
     if (img.getAttribute('src') !== u) img.src = u; // bara när porträttet ändrats (steg 5.2.3.2)
@@ -47,9 +49,9 @@ function showTip(id: number) {
   const m = moodOf(p, s.now);
   tip.innerHTML = `<div class="tiphead">${portrattImg(skapad(s, p), 'big')}<h4>${esc(p.name)}</h4>${figurSvg(skapad(s, p), 'kortfigur', 'Figuren')}</div><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${yrkeNamn(s, p) ? ' · ' + esc(yrkeNamn(s, p)!) : ''}</p>
     <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
-    <dl><dt>Humör</dt><dd>${bar(m, m < LAG.humor ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < LAG.hunger ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
+    <dl><dt>Humör</dt><dd>${bar(m, m < LAG.olycklig ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < LAG.hunger ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
     <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(halsa(p), halsa(p) < LAG.halsa ? 'low' : '', trend(p, 'health', halsa(p)))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>
-    <p class="op">Tryck för att välja, tryck två gånger för att följa.</p>`;
+    ${lagstBehov(p) ? `<p class="op">Lägst just nu: ${esc(lagstBehov(p)!.namn.toLowerCase())}</p>` : ''}<p class="op">Tryck för att välja. Ögat i rutan följer.</p>`;
   const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
   tip.hidden = false;
   tip.style.top = `${Math.max(8, r.top - wrap.top - tip.offsetHeight - 6)}px`; // ovanför raden, som står längst ner (steg 5.3.3.4)

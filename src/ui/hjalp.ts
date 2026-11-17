@@ -1,6 +1,6 @@
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { DAY, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
+import { DAY, halsa, moodOf, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -118,6 +118,19 @@ export function relWord(p: Person, q: Person, op: number) {
   return op > REL.naraVan ? 'Nära vän' : op > REL.vanOrd ? 'Vän' : op > REL.osams ? 'Bekant' : op > REL.ovan ? 'Ogillar' : 'Ovän';
 }
 export const sickNow = (p: Person) => isSick(p, s.now);
+// det behov som är lägst (steg 11.1.43): av mat, värme, hälsa och humör under sin gräns det som ligger längst under, och dess
+// symbol står vid namnet i stället för ett utropstecken. Gränserna är desamma som förut (LAG och KROPP.svag)
+const BEHOV_LAG: { namn: string; ikon: string; v: (p: Person) => number; grans: () => number }[] = [
+  { namn: 'Hungrig', ikon: 's_mat', v: p => p.hunger, grans: () => LAG.hunger },
+  { namn: 'Fryser', ikon: 'sym_frysa', v: p => p.warm, grans: () => LAG.varmeRad },
+  { namn: 'Svag hälsa', ikon: 'sym_hjarta_rott', v: p => halsa(p), grans: () => KROPP.svag },
+  { namn: 'Olycklig', ikon: 'sym_grata', v: p => moodOf(p, s.now), grans: () => LAG.olycklig },
+];
+export function lagstBehov(p: Person) {
+  let b: (typeof BEHOV_LAG)[number] | undefined, min = 1;
+  for (const x of BEHOV_LAG) { const g = x.grans(), d = g > 0 ? x.v(p) / g : 1; if (x.v(p) < g && d < min) { min = d; b = x; } }
+  return b;
+}
 // de små symbolerna vid namnet (steg 3.10.5): ledaren och den som är skadad, med symbolen för den
 // svåraste skadan. namn = det som står vid musen, ikon = bildens nyckel i ikoner.ts
 // oppnar = personens del som ett tryck på symbolen öppnar (steg 9.2.70), visa = byns flik (steg 11.1.42: alla märken öppnar det de gäller)
