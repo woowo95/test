@@ -342,7 +342,7 @@
       MOLN('En tät klunga närmast boet och glesare bin utåt', 1),
       MOLN('Ett glest moln av gula och mörka prickar', 2),
     ]),
-    KORT('f10_egenskaper', 'Djurens egenskaper', S + '10.10.29: fem symboler när man trycker på ett djur: styrka, snabbhet, tålighet, mod och tamhet (i den ordningen). 16 punkter var', [
+    KORT('f10_tamhet', 'Symbolen Tamhet', S + '10.10.29: symbolen för hur tamt ett djur är, bland djurets egenskaper när man trycker på det. Styrka, snabbhet, tålighet och mod har redan sina symboler (musklen, tassen, skölden och svärdet), så bara tamheten ritas. 16 punkter', [
       EG('Oket, hoven med fartstreck, skölden, vildsvinshuvudet och handen med grimskaftet', 0),
       EG('En böjd arm, en springande tass, ett tjockt skinn, en låga och ett djur som nosar på en hand', 1),
       EG('En stapel per egenskap i var sin färg', 2),
@@ -352,5 +352,15 @@
       PA('Ett fyrkantigt tråg av plankor på två klossar', ho[1]),
       PA('En halv stock på två stenar, kortare och djupare', ho[2]),
     ]),
+  );
+  // den andra vinkeln av den valda kälken (version 1) och vattenhon (version 2), Björns svar 17-11: ”Måste finnas i två vinklar”
+  // (bildstilens regel: det som kan vändas ritas åt båda håll). Kälken ligger med fören åt höger, hon står lodrätt.
+  const kalkeLangs = former(22, 14, [[och(rakt(1, 1, 17, 3), rakt(1, 11, 17, 13), ell(17, 2, 1.6, 1), ell(17, 12, 1.6, 1)), 'b'], yta(2, 3, 16, 11, 'd', 'b', (x, y) => (Math.floor(x) % 3 === 0 ? 'c' : 'd'), 2), [linje([[17, 3], [21, 7], [17, 11]], 0.5), 'h']]);
+  const hoLodrat = former(18, 34, [yta(1, 1, 17, 30, 'd', 'b', null, 3), [rakt(3, 3, 15, 26), vatten], [rakt(2, 30, 16, 34), 'a']]);
+  VAL.push(
+    { id: 'f10_kalke_vinklar', namn: 'Kälken åt båda håll', typ: 'janej', slag: [], vad: 'Kälken du valde (version 1) med fören uppåt, och samma kälke liggande med fören åt höger, så att den kan dras åt alla håll på kartan. Din kommentar: ”Måste finnas i två vinklar.” Byggs in i steg 11.14.1.',
+      versioner: [RAD('Fören uppåt (din version 1) och fören åt höger.', [kalke[0], kalkeLangs])] },
+    { id: 'f10_vattenho_vinklar', namn: 'Vattenhon åt båda håll', typ: 'janej', slag: [], vad: 'Vattenhon du valde (version 2), tråget av plankor på två klossar, liggande vågrätt och stående lodrätt. Din kommentar: ”Måste finnas i två riktningar.” Byggs in i steg 11.14.1.',
+      versioner: [RAD('Vågrät (din version 2) och lodrät.', [ho[1], hoLodrat])] },
   );
 })();

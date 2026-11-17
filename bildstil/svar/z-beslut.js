@@ -15,7 +15,8 @@
   { const i = VAL.findIndex(s => s.id === 'f7_barnklader'); if (i >= 0) VAL.splice(i, 1); }
   // inbyggda i steg 9.9.1 (Björns val): korten tas bort här, sist av alla svar-filer
   { const INBYGGT_991 = ['f9_amne_arbete', 'f9_amne_barn', 'f9_amne_dod', 'f9_amne_fara', 'f9_amne_karlek', 'f9_amne_kunskap', 'f9_amne_langtan', 'f9_amne_plats', 'f9_amne_rykte', 'f9_amne_teknik', 'f9_amne_trost', 'f9_amne_vader_aska', 'f9_amne_vader_blast', 'f9_amne_vader_dimma', 'f9_amne_vader_klart', 'f9_amne_vader_regn', 'f9_amne_vader_sno', 'f9_amne_vardag', 'f9_amne_varsel', 'f9_amne_gral', 'f9_kk_liv', 'f9_kk_motgang', 'f9_kk_styre', 'f9_kk_bygge', 'f9_kk_fritid', 'f9_kk_grannar', 'f9_r_ja', 'f9_r_nej', 'f9_r_fram', 'f7_lintyg', 'f7_mossa', 'f8_hjalm', 'f8_skold', 'f8_mantel', 'f8_rustning', 'f7_halsband', 'f7_garvning', 'f9_uppsatt_vagg', 'f9_balte_mindre', 'f6_band', 'f9_lagermark', 'f9_nedslag', 'f9_stackar', 'f9_rutsaker', 'f9_tal', 'f9_snostank', 'f8_rokelse', 'f8_grav'];
-    for (let i = VAL.length - 1; i >= 0; i--) if (INBYGGT_991.includes(VAL[i].id)) VAL.splice(i, 1); }
+    for (let i = VAL.length - 1; i >= 0; i--) if (INBYGGT_991.includes(VAL[i].id)) VAL.splice(i, 1);
+    INBYGGT_991.forEach(id => (window.INBYGGT ||= new Set()).add(id)); }
   const B = (val, text) => ({ val, steg: '8.10.1', text: text ? text + ' Byggs in i steg 8.10.1.' : undefined });
   Object.assign(BESLUT, {
     f7_axelrem: B(1),
@@ -43,7 +44,8 @@
   // Björns svar 2026-11-10/15, inbyggda i steg 10.11.1: korten tas bort. Sakerna i förrådet (stack: true) ligger kvar som
   // valda tills Björn svarat på stackarna (stackar.js gör korten <id>_stack av dem)
   const B10 = (val, text) => ({ val, steg: '10.11.1', text: text ? text + ' Byggs in i steg 10.11.1.' : undefined });
-  const S10 = (val, text) => ({ ...B10(val, text), stack: true });
+  // stackarna väntar på Björns svar och byggs in tillsammans med saken i steg 11.14.1 (svar/zz-1711.js)
+  const S10 = (val, text) => ({ val, steg: '11.14.1', text: text ? text + ' Byggs in i steg 11.14.1.' : undefined, stack: true });
   Object.assign(BESLUT, {
     f9_naverask: S10(3),
     f9_spjala: S10(2),
@@ -57,8 +59,10 @@
     f9_jordgubbar: S10(1),
     f9_kal: S10(1),
   });
-  { const INBYGGT_10111 = ['f5_grodd', 'f8_bage', 'f8_pil', 'f9_hotmarke', 'f9_kat_soppa', 'f9_fagelskramma', 'f9_forband', 'f9_foder', 'f9_proteser', 'f7_fangstgrop', 'f7_fangstbank', 'f9_hassel', 'f9_kat_grot', 'f9_kat_gryta', 'f9_slaktrens', 'f9_kolstam', 'f9_lera', 'f9_kk_tro', 'f9_amne_mat', 'f9_fiskrens', 'f9_kappa', 'f9_mantel', 'f9_sjal', 'f9_skjorta_ylle', 'f9_tunika_ylle', 'f9_bjorn_anfall'];
-    for (let i = VAL.length - 1; i >= 0; i--) if (INBYGGT_10111.includes(VAL[i].id)) VAL.splice(i, 1); }
+  { const INBYGGT_10111 = ['f5_grodd', 'f8_bage', 'f8_pil', 'f9_hotmarke', 'f9_fagelskramma', 'f9_forband', 'f9_proteser', 'f7_fangstgrop', 'f9_hassel', 'f9_kat_grot', 'f9_kat_gryta', 'f9_slaktrens', 'f9_kolstam', 'f9_lera', 'f9_kk_tro', 'f9_amne_mat', 'f9_fiskrens', 'f9_kappa', 'f9_mantel', 'f9_skjorta_ylle', 'f9_bjorn_anfall'];
+    for (let i = VAL.length - 1; i >= 0; i--) if (INBYGGT_10111.includes(VAL[i].id)) VAL.splice(i, 1);
+    // forslag.js lägger annars tillbaka korten som har en fil i forslag/ (de kom tillbaka i bildstil v242)
+    INBYGGT_10111.forEach(id => (window.INBYGGT ||= new Set()).add(id)); }
   // björnens anfall framifrån, ritat om efter Björns kommentar (steg 10.11.1): en version att säga ja eller nej till
   if (!VAL.some(s => s.id === 'f10_bjorn_fram')) VAL.push({ id: 'f10_bjorn_fram', namn: 'Björnens anfall framifrån', typ: 'janej', slag: [],
     vad: 'Björnen reser sig framifrån och slår ned med båda ramarna, fyra ramar som går runt medan den slår söderut. Din kommentar förra gången: den såg bra ut från sidan men inte framifrån. Sidan är inbyggd som den var, och det här är den nya ritningen framifrån, som redan syns i spelet.',

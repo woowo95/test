@@ -8,7 +8,7 @@
   const STACK = (n, w, h) => n === 1 ? [[0, 0]] : n === 3 ? [[0, 0], [w * 0.6, 0], [w * 0.3, -h * 0.5]]
     : [[0, 0], [w * 0.6, 0], [w * 1.2, 0], [w * 0.3, -h * 0.5], [w * 0.9, -h * 0.5], [w * 0.6, -h]];
   for (const [id, b] of Object.entries(BESLUT)) {
-    if (!b.stack || BESLUT[id + '_stack'] || VAL.some(s => s.id === id + '_stack')) continue;
+    if (!b.stack || VAL.some(s => s.id === id + '_stack')) continue; // ett valt stackkort görs också, och flyttas till Valt
     const s = VAL.find(x => x.id === id), v = s && s.versioner[b.val - 1];
     let S = null; try { S = v && KONTROLL.storsta(v, PAL); } catch (e) { S = null; }
     if (!S) continue;

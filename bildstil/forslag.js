@@ -4,9 +4,10 @@
 // { framfor, bakom } }. Raderna är tecknen i PORTRATT.tecken ('.' är genomskinligt). Det som bärs ritas på kolonisten:
 // framfor över figuren och bakom bara där figuren inte är, på en duk på 26 × 32 punkter där figuren (14 × 20) står
 // med övre vänstra hörnet i (6, 6); i porträttet (64 × 64) går bakom bara på bakgrunden. Kontrollerna (kontroll.js)
-// körs på korten som på alla andra.
+// körs på korten som på alla andra. En fil med typ: 'janej' och fore (raden först i texten) är ritad med kod, inte av API:t.
 (() => {
   if (typeof FORSLAG === 'undefined' || typeof VAL === 'undefined') return;
+  const INBYGGT = window.INBYGGT || new Set(); // korten som byggts in i spelet (svar/z-beslut.js) kommer inte tillbaka
   const MF = 6, FW = 26, FH = 32, FRO = 22, FORE = 'Ritad av API:t: tre nya idéer, var och en ritad för sig utan att se de andra.';
   const idx = (P, ch) => { const t = PORTRATT.tecken[ch]; return ch !== '.' && t && /\d$/.test(t) ? P.i(t.slice(0, -1), +t.slice(-1)) : -1; };
   const bredd = r => Math.max(0, ...r.map(x => x.length));
@@ -113,13 +114,13 @@
     // ett förslag (som det sparas) som ett kort, för kontrollen innan det sparas
     kort(d) {
       const hopsatt = Array.isArray(d.slag) ? d.slag.includes('hopsatt') : /^(staket|staketet|gärdsgård|gärdsgården|stängsel|stängslet|hägnad|hägnaden)$/i.test((d.namn || '').trim().split(/\s+/)[0]);
-      return { id: d.kort, namn: d.namn, slag: d.slag, typ: 'tre', vad: d.vad, versioner: d.versioner.map(v => version(v, hopsatt)) };
+      return { id: d.kort, namn: d.namn, slag: d.slag, typ: d.typ || 'tre', vad: d.vad, versioner: d.versioner.map(v => version(v, hopsatt)) };
     },
   };
   for (const d of Object.values(FORSLAG)) {
     const i = VAL.findIndex(s => s.id === d.kort), grund = d.om || window.FORSLAGEN.grund(d.vad);
-    const vad = `${FORE} ${grund}${d.kommentar ? ' Din kommentar förra gången: ”' + d.kommentar + '”' : ''}`;
+    const vad = `${d.fore ?? FORE} ${grund}${d.kommentar ? ' Din kommentar förra gången: ”' + d.kommentar + '”' : ''}`;
     const s = { ...window.FORSLAGEN.kort(d), vad, grund, ...(i >= 0 && VAL[i].slag ? { slag: VAL[i].slag } : {}) };
-    if (i >= 0) VAL[i] = s; else VAL.push(s);
+    if (i >= 0) VAL[i] = s; else if (!INBYGGT.has(d.kort)) VAL.push(s);
   }
 })();

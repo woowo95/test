@@ -1,0 +1,40 @@
+{
+ "kort": "f10_snokruka",
+ "namn": "Snökrukan",
+ "slag": null,
+ "typ": "janej",
+ "fore": "Ritad med kod: behållaren som redan finns, oförändrad, med bara innehållet nytt.",
+ "om": "Steg 10.2.50: när vattnet är fruset smälts snö i en lerkruka vid elden, och man dricker när den smält. Här mellankrukan du valde, full av snö som står upp över kanten.",
+ "kommentar": "Använd befintliga behållare",
+ "av": "kod",
+ "vad": "Steg 10.2.50: när vattnet är fruset smälts snö i en lerkruka vid elden, och man dricker när den smält. Här mellankrukan du valde, full av snö som står upp över kanten.",
+ "versioner": [
+  {
+   "ide": "Mellankrukan full av snö.",
+   "bilder": [
+    {
+     "namn": "snokruka",
+     "rader": [
+      ".....qwwq.....",
+      "...rwwwwwqr...",
+      "...rwwwwqqr...",
+      "....rutssr....",
+      ".rrrrutssrrrr.",
+      "rur.rutssr.rsr",
+      "rtruttttsssrsr",
+      "rruuttttttssrr",
+      "ruttttttttsssr",
+      "rLKKKKKKKKKJIr",
+      "rutJttJttJtssr",
+      "rLKKKKKKKKJJIr",
+      ".rtttttttsssr.",
+      "..rtttttsssr..",
+      "...rtttsssr...",
+      "....rtsssr....",
+      "...rrrrrrrr..."
+     ]
+    }
+   ]
+  }
+ ]
+}

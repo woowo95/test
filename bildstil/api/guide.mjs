@@ -21,10 +21,16 @@ Bildstilens guide (regler för allt som ritas):
 
 - Vet vad bilden är till: bestäm innan du ritar i vilket sammanhang saken syns, t.ex. den växande plantan på åkern eller skörden som sak i förrådet. Kortets text säger vilket; rita bara det.
 - En sak i förrådet ritas som en enda sak (ett äpple, en limpa, en balja), aldrig som en hög eller flera; bilderna för en hel stack ritas senare, när Björn godkänt saken.
-- Bara behållarna som finns: ligger något i en behållare är det lerkrukan eller näverasken som redan finns i spelet. Hitta aldrig på nya behållare (korgar, skålar, säckar, lådor).
+- Bara behållarna som finns, oförändrade: ligger något i en behållare är det lerkrukan (liten, mellan eller stor) eller näverasken som redan finns i spelet, ritad exakt som den är; bara innehållet i öppningen ritas nytt. Hitta aldrig på nya behållare (korgar, skålar, säckar, lådor) och ändra aldrig formen på dem som finns.
 - Plantor på åkern och träd bland träden: en planta ritas som den står på en ruta av åkern, och ett träd eller en buske i samma stil och storlek som spelets granar och björkar (ett vuxet träd är omkring 31 punkter högt och ett gammalt 46).
 - Sittplatsen är en egen sak: en station, bänk eller ett bord ritas utan pall, stubbe, stol eller annat att sitta på framför. Spelet ställer sittplatsen (stubben) framför stationen för sig, så den hör aldrig till stationens bild.
 - Tre djur, inte ett djur i tre ställningar: versionerna av ett djur är tre olika djur att välja mellan (kroppsbyggnad, päls, huvud, svans, horn), alla i samma ställning: stående på alla ben, som djuret står på kartan. Samma djur stående, sittande, liggande eller betande är inte tre versioner. Ett tamt djur som har en vild förfader i spelet (hunden och valpen efter vargen) ritas från spelets bild av förfadern.
 - Det som sitter ihop ritas som bitar som passar ihop: ett staket ritas som en bit längs (vågrät, 16 punkter bred) och en bit tvärs (lodrät, 16 punkter hög), som sätts ihop till en hage.
+- Symbolerna som finns används: finns redan en symbol för något (heligt, styrka, snabbhet, tålighet, mod) ritas ingen ny; bara det som saknas ritas.
+- Anfall är en knuff: ett djur eller en människa som anfaller ritas inte i någon ny ställning. Spelet skjuter den vanliga bilden framåt mot målet och tillbaka; rita aldrig särskilda anfallsbilder (gap, tunga, resta ramar).
+- Husen byggs som husen: ett hus (fähuset, ladan) byggs av spelets väggar, tak och dörrar som de andra husen och får ingen egen bild.
+- Det som kan vändas ritas åt båda håll: en sak som står längs eller tvärs på kartan (en kälke, en ho, ett kar) ritas både liggande vågrätt och stående lodrätt.
+- Samma storlek när något ritas om: en sak som ritas om behåller sin storlek, om inte kommentaren säger något annat.
+- Väggar helt uppifrån: en vägg (av timmer, sten eller flätverk) ritas rakt ovanifrån som spelets timmervägg, ett band av krönet utan någon framsida.
 
 Svara bara med JSON enligt schemat.`;
