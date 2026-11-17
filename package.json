@@ -12,6 +12,7 @@
     "check": "tsc -p .",
     "kortsteg": "tsx src/test/kortsteg.ts",
     "kostnad": "tsx src/test/kostnad.ts",
+    "varldkostnad": "tsx src/test/varldkostnad.ts",
     "ikapp": "tsx src/test/ikapp.ts",
     "slaglangd": "tsx src/test/slaglangd.ts",
     "takt": "tsx src/test/takt.ts",
