@@ -1,7 +1,7 @@
 const kortTyngd = (v: number) => (Math.round(v * 10) / 10).toLocaleString('sv-SE');
 import { GUD_OMR, Gud, Person, troEtikett, tyngd, tyngdDelar, formNamn, gudarOf, SKALA_IDS, SKALOR, Tro, UPPV, skalaSyns, skalaV, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, tolkning, troNamn, troende, upplevelseText } from '../../sim';
 import { tecknet } from '../../ikoner';
-import { bar, berattelseKnapp, esc, hjalpKnapp, hjalpText, merKnapp, pLink } from '../hjalp';
+import { bar, berattelseKnapp, esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
 import { sedBar } from './seder';
 import { omrostningar } from './styre';
@@ -51,10 +51,15 @@ function gudarHtml(tr: Tro) {
   return `<h3>Gudar</h3><ul class="rels">${nu.map(g => gudHtml(tr, g, alla.indexOf(g))).join('')}</ul>${glomda.length ? `<p class="small muted">Glömda: ${glomda.map(g => `${esc(g.namn)} (${timeLabel(s, g.slut!)})`).join(', ')}</p>` : ''}`;
 }
 
-function troHtml(tr: Tro) {
+// varje tro går att fälla ihop med ▸ vid namnet (steg 11.1.18): den största är utfälld från början och de andra ihopfällda.
+// Ett tryck byter; för den största minns trycket att den fällts ihop, för de andra att de fällts ut
+function troHtml(tr: Tro, storst = false) {
   const folk = troende(s, tr).sort((a, b) => (b.troStyrka ?? 0) - (a.troStyrka ?? 0)), g = byId(s, tr.grundare), id = `tro-${tr.id}`;
   const grundare = g && alive(g) ? pLink(g) : `${esc(tr.gnamn)} <small class="muted">(lever inte längre)</small>`;
-  return `<div class="tekhead">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">👥 ${folk.length}</span> ${berattelseKnapp(id, 'Berättelsen om tron')}</div>
+  const fid = storst ? `troihop-${tr.id}` : `troupp-${tr.id}`, ut = storst ? !hjalpOppen(fid) : hjalpOppen(fid);
+  const huvud = `<div class="tekhead klick falla" data-hjalp="${fid}" aria-expanded="${ut}" tabindex="0" role="button" title="${ut ? 'Tryck för att fälla ihop' : 'Tryck för att fälla ut'}">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">👥 ${folk.length}</span> ${berattelseKnapp(id, 'Berättelsen om tron')}</div>`;
+  if (!ut) return huvud + hjalpText(id, `<p class="muted">${esc(tr.ber ?? tolkning(tr))}</p>`);
+  return `${huvud}
     <p class="small" title="${esc(`${troEtikett(s, tr).text} Tyngd ${kortTyngd(tyngd(s, tr))}: ` + tyngdDelar(s, tr).map(d => `${d.namn} ${kortTyngd(d.v)}`).join(', ') + '.')}"><b>${esc(troEtikett(s, tr).namn)}</b> · tyngd ${kortTyngd(tyngd(s, tr))}</p>
     ${hjalpText(id, `<p class="muted">${esc(tr.ber ?? tolkning(tr))}</p>`)}
     <p class="small">Grundare: ${grundare}, år ${tr.ar}</p>
@@ -71,12 +76,12 @@ export const religion: Flik = {
   html() {
     const tron = (s.tron ?? []).filter(tr => tr.slut === undefined).sort((a, b) => troende(s, b).length - troende(s, a).length || a.id - b.id);
     const stora = tron.slice(0, STORA), ovriga = tron.slice(STORA), glomda = (s.tron ?? []).filter(tr => tr.slut !== undefined);
-    const ovr = ovriga.length ? `<div class="tekhead"><b>Övriga trosriktningar</b> <span>👥 ${ovriga.reduce((n, tr) => n + troende(s, tr).length, 0)}</span> ${merKnapp('tro-ovriga', ovriga.length)}</div>${hjalpText('tro-ovriga', ovriga.map(troHtml).join(''))}` : '';
+    const ovr = ovriga.length ? `<div class="tekhead klick falla" ${fallUt('tro-ovriga')} title="De mindre trosriktningarna"><b>Övriga trosriktningar</b> <span>👥 ${ovriga.reduce((n, tr) => n + troende(s, tr).length, 0)}</span></div>${hjalpText('tro-ovriga', ovriga.map(tr => troHtml(tr)).join(''))}` : '';
     const glo = glomda.length ? `<h3>Trosriktningar som dött ut</h3><ul class="rels">${glomda.map(tr => `<li>${tr.sym ? tecknet(tr.sym, '✨') : '✨'}<span>${esc(troNamn(tr))}</span><span></span><span class="muted">${timeLabel(s, tr.slut!)}</span></li>`).join('')}</ul>` : '';
     const folk = living(s).filter(p => ageOf(p, s.now) >= UPPV.fran).sort((a, b) => andlighet(s, b) - andlighet(s, a));
     const personer = `<h3>Personer</h3><ul class="rels">${folk.map(p => { const tr = s.tron?.find(t => t.id === p.tro); return `<li>${pLink(p)}<span title="Andlighet">${bar(andlighet(s, p) / 100)}</span><span>${tr ? `${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${esc(troNamn(tr))}` : '<span class="muted">–</span>'}</span><span class="muted">${Math.round(andlighet(s, p))}</span></li>`; }).join('')}</ul>`;
     return `<div class="tekhead"><b>Tron i byn</b> ${hjalpKnapp('religion', 'Vad är tron?')}</div>
     ${hjalpText('religion', '<p class="muted">En tro börjar när en mycket andlig person tolkar något oförklarligt som ett tecken. Den sprids i samtalen, och när tre delar den får den ett namn och en berättelse. Skalorna visar vad tron handlar om: andar i naturen eller förfäderna, många gudar eller en. Gudarna föds ur byns stora händelser, och en gud som inget påminner om glöms.</p>')}
-    ${tron.length ? stora.map(troHtml).join('') + ovr : '<p class="muted">Ingen i byn tror på något just nu.</p>'}${glo}${personer}`;
+    ${tron.length ? stora.map((tr, i) => troHtml(tr, i === 0)).join('') + ovr : '<p class="muted">Ingen i byn tror på något just nu.</p>'}${glo}${personer}`;
   },
 };
