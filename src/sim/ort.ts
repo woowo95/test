@@ -28,6 +28,7 @@ export const ORT = balans('ort', {
   ryktFran: 0.3, ryktTill: 0.85, // ... och mitten ligger så här långt från platsen, i andelar av radien
   dela: 1, // hur gärna man berättar om en plats i världen i ett samtal, gånger säkerheten (som en plats med värdet 1, steg 11.4.4)
   nyStor: 0.3, nyVikt: 2, // en nyhet om en by (steg 11.4.9): invånarna ändrade med mer än så här stor andel; så mycket hellre berättas den
+  gastKant: 0.75, gastRykte: 0.5, // så säkert en gäst känner det hens by känner och har rykten om (hembyn och det byn besökt: helt säkert, steg 11.4.11)
   histDygn: 5, histMax: 16, // byarnas historik (steg 11.4.8): en bild var femte dygn, högst så många per by
   nedC: 0.5, // en plats vars säkerhet sjunkit under MINNE.glomGrans sjunker en nivå och får den här säkerheten; ett rykte glöms
 });
@@ -276,5 +277,20 @@ export function radKanner(vl: Varlden, r: VarldRad, nr: number): number | undefi
   if (g.some(x => x.nr === nr)) return O_KANT;
   for (const x of g) if (varldPlatsNr(vl, x.nr)?.grannar?.some(y => y.nr === nr)) return O_RYKTE;
   return undefined;
+}
+
+// ---------- gästernas platser (steg 11.4.11, Flera samhällen: Platsen i minnet) ----------
+// En gäst (handlare, främling, rövare) har sin hemby som besökt och känner det hens by känner (radKanner), med uppgifter från
+// i dag: så får byn i samtalen veta hur det står till i världen och höra om platser den inte sett. Det mest säkra går först
+// när minnet är fullt (ORT.max)
+export function gastensPlatser(s: State, g: Person) {
+  const vl = s.varld, r = vl && radNr(vl, klanById(s, g.gast?.klan)?.rad ?? g.gast?.hemRad), egen = r && byPlats(vl!, r.nr);
+  if (!vl || !r || !egen) return;
+  const nr = new Set<number>([egen.nr, ...(r.besokt ?? [])]);
+  for (const x of egen.grannar ?? []) { nr.add(x.nr); for (const y of varldPlatsNr(vl, x.nr)?.grannar ?? []) nr.add(y.nr); }
+  for (const n of nr) {
+    const v = radKanner(vl, r, n);
+    if (v !== undefined && varldPlatsNr(vl, n)) larOrt(s, g, n, v, v === O_BESOKT ? 1 : v === O_KANT ? ORT.gastKant : ORT.gastRykte);
+  }
 }
 

@@ -1453,3 +1453,25 @@ SCENARIER.radort = {
     ];
   },
 };
+
+SCENARIER.gastort = {
+  text: 'Gästernas platser (steg 11.4.11, gastensPlatser i ort.ts): handlare och andra besökare har sin hemby som besökt och känner det deras by känner, så att byn i samtalen hör om platser den inte sett',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    SIM.skickaHandlare(s);
+    const h = s.handlare && SIM.hp(s, s.handlare), kl = h && SIM.klanById(s, h.gast!.klan!), r = kl?.rad !== undefined ? SIM.radNr(vl, kl.rad) : undefined;
+    const hem = r && SIM.byPlats(vl, r.nr), ortL = (h?.lardomar ?? []).filter(l => l.k === 'ort');
+    const somByn = ortL.every(l => r && SIM.radKanner(vl, r, l.a) === l.v);
+    // handlaren berättar för en bybo om en plats bybon inte känner
+    const b = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 18)!, ny = ortL.find(l => l.a !== hem?.nr && SIM.kannerOrt(s, b, l.a) === undefined);
+    if (ny && h) SIM.berattaOrt(s, h, b, ny, SIM.getRel(s, h, b));
+    const f = SIM.framling(s), fOrt = (f?.lardomar ?? []).filter(l => l.k === 'ort');
+    return [
+      [`handlaren har sin hemby som besökt (${r?.namn})`, !!hem && SIM.ortNiva(h!, hem.nr) === SIM.O_BESOKT],
+      [`och känner det hens by känner (${ortL.length} platser, högst ${SIM.ORT.max})`, ortL.length > 1 && ortL.length <= SIM.ORT.max && somByn],
+      ['uppgifterna är från i dag', ortL.every(l => l.t === s.now)],
+      [`en bybo hör om en plats hen inte sett (${ny ? SIM.ortNiva(b, ny.a) : 'ingen'})`, !!ny && SIM.ortNiva(b, ny.a) !== undefined],
+      [`en främling känner också sin bys platser (${fOrt.length})`, !f || fOrt.length > 0],
+    ];
+  },
+};
