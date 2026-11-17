@@ -83,6 +83,8 @@ export function byHandelse(vl: Varlden, id: ByHandelseId, gor: number, mot: numb
   satt(vl, mot, gor, relation(vl, mot, gor)! + d);
   if (h.ledare) { const k = nyckel(mot, gor); (vl.mutor ??= {})[k] = (vl.mutor[k] ?? 0) + d; }
 }
+// gåvans verkan på mottagarens syn (steg 11.6.14): värdet (i grundvärde) i tiotal gånger BYREL.gava, i hela tal och lägst 1
+export const gavaRel = (varde: number) => Math.max(1, Math.round(BYREL.gava * varde / 10));
 // huvudbyn gör något mot byn bakom förbindelsen k (handeln, främlingarna, striderna)
 export function klanHandelse(vl: Varlden | undefined, k: Klan, id: ByHandelseId, mangd = 1) {
   if (vl && vl.huvud !== undefined && k.rad !== undefined) byHandelse(vl, id, vl.huvud, k.rad, mangd);

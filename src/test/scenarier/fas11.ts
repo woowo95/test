@@ -2380,7 +2380,7 @@ SCENARIER.byhandlingar = {
     const val = SIM.byVal(s, vl, r, 5);
     SIM.byarnasHandlingar(s, vl, 5);
     const efter = gr.map(g => SIM.relation(vl, g.nr, r.nr) ?? 0);
-    const i = val ? gr.indexOf(val.c.mot) : -1, andrad = !val ? true : val.id === 'handel' ? !!vl.farder?.some(x => x.fran === r.nr && x.till === val.c.mot.nr) : efter[i] === fore[i] + SIM.BYREL.fjask || efter[i] === 100;
+    const i = val ? gr.indexOf(val.c.mot) : -1, andrad = !val ? true : val.id === 'handel' || val.id === 'gava' ? !!vl.farder?.some(x => x.fran === r.nr && x.till === val.c.mot.nr) : efter[i] === fore[i] + SIM.BYREL.fjask || efter[i] === 100;
     // samma värld väljer samma sak
     const a = SIM.cloneState(testBy(10)), b = SIM.cloneState(testBy(10));
     const valen = (x: SIM.State) => JSON.stringify((x.varld!.rader ?? []).filter(q => SIM.lever(x.varld!, q)).map(q => { const v = SIM.byVal(x, x.varld!, q, 7); return v ? [v.id, v.c.mot.nr] : 0; }));
@@ -2697,6 +2697,56 @@ SCENARIER.flyttare = {
       [`kan ingen by skicka någon kommer ingen (${SIM.living(s2).length - pop2})`, !p2 && SIM.living(s2).length === pop2],
       [`den som flyttar ut är på väg till en by i världen (${ut ? `${ut.data?.n} till rad ${ut.sak}` : 'ingen'})`, !!ut && (s3.varld!.ko ?? []).filter(k => k.typ === 'flytt').length === ko0 + 1 && ut.data?.n === 2 && ut.sak !== s3.varld!.huvud],
       [`den som återgrundar byn tas inte ur någon by (${folk4} → ${folk4b}), och vagnen står i lagret`, SIM.living(s4).length === 1 && folk4b === folk4 && !!s4.stationer?.some(t => t.k === 'vagn')],
+    ];
+  },
+};
+
+SCENARIER.bygava = {
+  text: 'Gåvan (steg 11.6.14): en by ger en granne det den har mest över, i hela saker, för att höja relationen; gåvan bärs dit som en färd och läggs i mottagarens förråd, och mottagarens syn höjs efter värdet (i tiotal, i hela tal och lägst 1). Huvudbyns gåvor går med sändebudet',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud))!;
+    const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud)!;
+    SIM.mots(vl, r.nr, mot.nr);
+    r.tal.folk = Math.max(r.tal.folk, 20); SIM.radVaror(r); SIM.radVaror(mot);
+    const vill = (x: typeof r, g: SIM.VarugruppId) => Math.round(SIM.radVill(x, g, SIM.rikMal(x)));
+    for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') r.varor![g] = vill(r, g);
+    r.tal.mat = vill(r, 'mat'); r.varor!.virke = vill(r, 'virke') + 100; r.tal.rikedom = SIM.radRikedomUr(r);
+    const c = SIM.byCtx(s, vl, r, mot);
+    c.rel = -10; const lag = SIM.BYHANDLINGAR.gava.poang(c);
+    c.rel = 80; const hog = SIM.BYHANDLINGAR.gava.poang(c);
+    c.rel = 0; c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), empati: 2 }; const utan = SIM.BYHANDLINGAR.gava.poang(c);
+    c.led = { ...c.led, empati: 19 }; const med = SIM.BYHANDLINGAR.gava.poang(c);
+    const aff = SIM.gavaAffar(c);
+    // ingen gåva till huvudbyn i det här steget
+    const h = vl.rader!.find(x => x.nr === vl.huvud), tillHuvud = h ? SIM.gavaAffar(SIM.byCtx(s, vl, r, h)) : undefined;
+    // utan överskott ingen gåva
+    const r2 = JSON.parse(JSON.stringify(r)) as typeof r; for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') r2.varor![g] = 0; r2.tal.mat = 0;
+    const ingen = SIM.gavaAffar({ ...c, r: r2 });
+    // färden ger sig av med gåvan och kommer fram
+    const v0 = r.varor!.virke!, mv0 = mot.varor!.virke ?? 0, rel0 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
+    SIM.BYHANDLINGAR.gava.gor(c);
+    const f = vl.farder?.find(x => x.fran === r.nr && x.gava)!;
+    const ut = !!f && f.g === 'virke' && r.varor!.virke === v0 - f.n && Number.isInteger(f.n) && f.n > 0;
+    const n = f?.n ?? 0, varde = n * (f?.g === 'mat' ? SIM.BYHANDLING.portion : 1), vantad = Math.max(1, Math.round(SIM.BYREL.gava * varde / 10));
+    SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
+    const fram = (mot.varor!.virke ?? 0) === mv0 + n, rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
+    const hemKo = vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id);
+    if (hemKo) SIM.KOHANDELSER.fardHem(s, vl, hemKo);
+    const tomHem = r.varor!.virke === v0 - n && r.tal.silver >= 0;
+    const lagst = SIM.gavaRel(1) === 1 && SIM.gavaRel(0.2) === 1;
+    // en värld i 30 dygn: byarna ger gåvor
+    const w = SIM.cloneState(testBy(10)); w.now += 30 * 86400e3; SIM.varldSteg(w);
+    const f2 = (x: number) => x.toFixed(2);
+    return [
+      [`gåvan lönar sig vid låg relation (${f2(lag)}) men inte vid hög (${f2(hog)})`, lag > 0 && hog <= 0],
+      [`en ledare med empati ger mer (${f2(utan)} → ${f2(med)})`, med > utan],
+      [`byn ger det den har mest över (${aff ? `${aff.n} ${aff.g}` : 'inget'}), inget utan överskott och inget till huvudbyn`, aff?.g === 'virke' && !ingen && !tillHuvud],
+      [`gåvan lämnar byn i hela saker (${n} virke)`, ut],
+      [`gåvan läggs i mottagarens förråd, och mottagarens syn höjs med ${rel1 - rel0} (värdet ${varde} ger ${vantad})`, fram && rel1 - rel0 === Math.min(vantad, 100 - rel0)],
+      ['inget kommer tillbaka hem', tomHem],
+      ['en liten gåva höjer ändå med 1', lagst],
+      [`byarna i en värld ger gåvor på 30 dygn (${w.stat?.radgava_fram ?? 0} gåvor fram)`, (w.stat?.radgava_fram ?? 0) > 0],
     ];
   },
 };

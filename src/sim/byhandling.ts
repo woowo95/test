@@ -7,7 +7,7 @@
 // Fler rader kommer med sina steg: handelsfärden (11.6.6), gåvan (11.6.14), mutan (11.6.15), anfallen (11.6.16), kriget
 // (11.6.22) och sändebudet (11.6.23). Huvudbyn väljer ur samma register när handlingen kan bli en resa med verkliga bybor.
 import { balans } from './balans';
-import { byHandelse, relation } from './byrel';
+import { BYREL, byHandelse, gavaRel, relation } from './byrel';
 import { count } from './folk';
 import { varldPlatsNr } from './landmarken';
 import { lever } from './rad';
@@ -39,6 +39,10 @@ export const BYHANDLING = balans('byhandling', {
   portion: 0.5, // en portion mat i grundvärde
   minRel: -10, // byarna handlar inte med den de ser lägre på än så
   skala: 20, // en vinst på så mycket (i grundvärde) är en poäng
+  // gåvan (steg 11.6.14)
+  gava: 40, // så mycket (i grundvärde) av det byn har över ger den bort
+  gavaMal: 40, // gåvan lönar sig tills relationen nått hit
+  gavaKostnad: 0.1, // det gåvan kostar i poäng (bärarnas tid, det som kunde bytts)
 });
 
 // det poängen räknas ur: byn som gör (r), grannen (mot), hur r ser på mot, ledarens egenskaper (1–20) och trons krigiskhet (0–1)
@@ -56,6 +60,14 @@ export const BYHANDLINGAR = {
     namn: 'Fjäsk',
     poang: c => Math.max(0, BYHANDLING.fjaskMal - c.rel) / 100 * (0.5 + ledDrag(c, 'karisma')) * radsla(c) * (1 - c.krig / 2) - BYHANDLING.fjaskKostnad,
     gor: c => byHandelse(c.vl, 'fjask', c.r.nr, c.mot.nr),
+  },
+  // gåvan (steg 11.6.14): byn ger bort det den har mest över till en granne den vill stå väl med, mer av en ledare med
+  // empati och mot en starkare granne; mottagarens syn höjs efter gåvans värde när den kommer fram. Huvudbyns gåvor och gåvor
+  // till huvudbyn går med sändebudet (11.6.23)
+  gava: {
+    namn: 'Gåva',
+    poang: c => { const a = gavaAffar(c); return a ? Math.max(0, BYHANDLING.gavaMal - c.rel) / 100 * (0.5 + ledDrag(c, 'empati')) * radsla(c) * (1 - c.krig / 2) * Math.min(2, gavaRel(a.n * enhet(a.g)) / BYREL.fjask) - BYHANDLING.gavaKostnad : -1; },
+    gor: c => { const a = gavaAffar(c); if (a) skickaFard(c, a, true); },
   },
   // handelsfärden (steg 11.6.6): byn säljer det den har överflöd av där det är dyrast, när vinsten är större än resans kostnad
   handel: {
@@ -112,7 +124,7 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // mottagaren betalar med silver och, när silvret inte räcker, med det den själv har mest överflöd av. Betalningen bärs hem och
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
-export interface RadFard { id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+export interface RadFard { gava?: true; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 const enhet = (g: VarugruppId) => g === 'mat' ? BYHANDLING.portion : 1; // en enhet i gruppens tillgång, i grundvärde
 const overskott = (r: VarldRad, g: VarugruppId) => Math.floor(radHar(r, g) - radVill(r, g, rikMal(r)));
 const restid = (vl: Varlden, r: VarldRad, mot: VarldRad) => {
@@ -154,21 +166,34 @@ export function fardAffar(c: ByCtx): FardAffar | undefined {
   }
   return bast;
 }
+// gåvan (steg 11.6.14): det byn har mest över (i grundvärde), högst BYHANDLING.gava, i hela enheter; inte till eller från huvudbyn
+export function gavaAffar(c: ByCtx): FardAffar | undefined {
+  const { vl, r, mot } = c;
+  if (r.nr === vl.huvud || mot.nr === vl.huvud || r.tal.folk < BYHANDLING.barare * 2) return undefined;
+  const dygn = restid(vl, r, mot);
+  if (dygn === undefined) return undefined;
+  let bast: FardAffar | undefined;
+  for (const g of VARUGRUPP_IDS) {
+    const n = Math.floor(Math.min(overskott(r, g), BYHANDLING.gava / enhet(g)));
+    if (n > 0 && (!bast || n * enhet(g) > bast.n * enhet(bast.g))) bast = { g, n, dygn, vinst: 0 };
+  }
+  return bast;
+}
 // lasten tas ur byns förråd och färden ger sig av
 const taUr = (r: VarldRad, g: VarugruppId, n: number) => {
   if (g === 'mat') { r.tal.mat = Math.max(0, r.tal.mat - n); return; }
   const v = radVaror(r); v[g] = Math.max(0, (v[g] ?? 0) - n); r.tal.rikedom = radRikedomUr(r);
 };
 const laggTill = (r: VarldRad, g: VarugruppId, n: number) => taUr(r, g, -n);
-function skickaFard(c: ByCtx, a: FardAffar) {
+function skickaFard(c: ByCtx, a: FardAffar, gava = false) {
   const { s, vl, r, mot } = c, t0 = c.t, huvud = mot.nr === vl.huvud, n = huvud ? 0 : a.n; // till huvudbyn går handlaren (lasten: 11.6.9)
   taUr(r, a.g, n);
-  const f: RadFard = { id: vl.nastaFard = (vl.nastaFard ?? 0) + 1, fran: r.nr, till: mot.nr, g: a.g, n, t0, t1: t0 + a.dygn * DAY, ...huvud ? { handlare: true as const } : {} };
+  const f: RadFard = { id: vl.nastaFard = (vl.nastaFard ?? 0) + 1, fran: r.nr, till: mot.nr, g: a.g, n, t0, t1: t0 + a.dygn * DAY, ...huvud ? { handlare: true as const } : {}, ...gava ? { gava: true as const } : {} };
   if (huvud) { let i = 0; f.last = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x484c + i++), g => overskott(r, g), radHandlarSort(s, r)); } // handlarens varor ur raden (steg 11.6.9)
   (vl.farder ??= []).push(f);
   trampaFard(s, r.nr, mot.nr, sallskapTyngd(BYHANDLING.barare));
   laggIKo(vl, f.t1, 'fardFram', { sak: f.id });
-  count(s, huvud ? 'handlare_skickad' : 'radhandel_ut');
+  count(s, gava ? 'radgava_ut' : huvud ? 'handlare_skickad' : 'radhandel_ut');
 }
 // handlarsorten (steg 11.6.10): byns dragdjur kommer ur marken där den ligger, oxen på slätten och hästen i skogen (bete åt
 // dem); på annan mark har byn inga. Byn skickar den sista sorten i HANDLARSORTER som den är rik nog för och kan utrusta
@@ -219,7 +244,12 @@ KOHANDELSER.fardFram = (s, vl, p) => {
   const r = radNr(vl, f.fran), mot = radNr(vl, f.till);
   if (f.handlare) { handlarFram(s, f.fran); return; } // handlaren väntar vid kartans kant och går in när det är fritt (handel.ts)
   f.t2 = f.t1 + (f.t1 - f.t0);
-  if (mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) {
+  if (f.gava && mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) { // gåvan läggs i förrådet och mottagaren ser bättre på givaren
+    laggTill(mot, f.g, f.n);
+    if (r) byHandelse(vl, 'gava', r.nr, mot.nr, gavaRel(f.n * enhet(f.g)) / BYREL.gava);
+    f.n = 0;
+    count(s, 'radgava_fram');
+  } else if (mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) {
     const pris = f.n * enhet(f.g) * radGruppPaslag(s, mot, f.g), b = betalning(s, mot, f.g);
     laggTill(mot, f.g, f.n);
     const sv = Math.min(b.silver, Math.round(pris));
