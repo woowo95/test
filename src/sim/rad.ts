@@ -38,7 +38,7 @@ import { varldHandelse } from './varldkronika';
 import { relGlom } from './byrel';
 import { Varlden, varldMark } from './varlden';
 import { DAY, State } from './typer';
-import { RADPRIS, radRikedomUr, radVaror, radVill, VARUGRUPP_IDS } from './priser';
+import { RADPRIS, radRikedomUr, radVaror, radVill, VARUGRUPP_IDS, markGrupp } from './priser';
 
 export const RAD = balans('rad', {
   // bärkraften (steg 11.3.1)
@@ -132,7 +132,7 @@ export function radMat(s: State, vl: Varlden, r: VarldRad, n: number) {
   doda += antalUr((folk - doda) * RAD.dod / 24, varldSlump(vl, r.nr, n, A.doda));
   r.tal.folk = Math.max(0, folk - Math.min(folk, doda) + fodda);
   r.tal.mat = Math.min(mat, forradTak(r));
-  radRikedom(vl, r, n, mat === 0);
+  radRikedom(s, vl, r, n, mat === 0);
   r.t = t;
   if (r.syn) { r.syn.folk = r.tal.folk; r.syn.styrka = r.tal.styrka; r.syn.resurser = r.tal.rikedom; } // huvudbyns förbindelse med byn följer
 }
@@ -143,13 +143,14 @@ export const styrkaMal = (r: VarldRad) => Math.min(r.tal.folk, Math.round(r.tal.
 // så stor del av vägen en timme tar, när en hel dygns väg är del
 const perTimme = (del: number) => 1 - (1 - del) ** (1 / 24);
 // en timme: rikedomen går mot teknikernas mål och sjunker i nöd, och styrkan går mot folket
-// rikedomen är husen och tillgången i varje varugrupp (steg 11.6.3, priser.ts): var del går mot sin del av målet
-function radRikedom(vl: Varlden, r: VarldRad, n: number, nod: boolean) {
+// rikedomen är husen och tillgången i varje varugrupp (steg 11.6.3, priser.ts): var del går mot sin del av målet, mer i en
+// grupp som byns mark ger mycket av och mindre i en där marken har sällsynt (markGrupp, steg 11.6.7)
+function radRikedom(s: State, vl: Varlden, r: VarldRad, n: number, nod: boolean) {
   const varor = radVaror(r), mal = rikMal(r);
   let i = 0;
   const flytta = (v: number, m: number) => Math.max(0, v + antalUr(nod ? -v * RAD.rikNod : (m - v) * perTimme(RAD.rikDygn), varldSlump(vl, r.nr, n, i++ ? A.rikDel + i : A.rik)));
   r.hus = flytta(r.hus ?? 0, mal * RADPRIS.husAndel);
-  for (const g of VARUGRUPP_IDS) if (g !== 'mat') varor[g] = flytta(varor[g] ?? 0, radVill(r, g, mal));
+  for (const g of VARUGRUPP_IDS) if (g !== 'mat') varor[g] = flytta(varor[g] ?? 0, radVill(r, g, mal) * markGrupp(s, r, g)); // byn gör mer av det marken ger mycket av (steg 11.6.7)
   r.tal.rikedom = radRikedomUr(r);
   const st = r.tal.styrka;
   r.tal.styrka = Math.min(r.tal.folk, Math.max(0, st + antalUr((styrkaMal(r) - st) * perTimme(RAD.styrkaDygn), varldSlump(vl, r.nr, n, A.styrka))));

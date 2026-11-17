@@ -36,7 +36,8 @@
     "vard": "tsx src/test/vard.ts",
     "texter": "tsx src/test/texter.ts",
     "utseende": "tsx src/test/utseende.ts",
-    "svavar": "tsx src/test/svavar.ts"
+    "svavar": "tsx src/test/svavar.ts",
+    "radhandel": "tsx src/test/radhandel.ts"
   },
   "repository": {
     "type": "git",

@@ -30,12 +30,12 @@ export const BYHANDLING = balans('byhandling', {
   fjaskKostnad: 0.1, // det fjäsket kostar i poäng (tid, ära)
   radsla: 2, // högst så mycket väger att grannen är starkare (styrkan delad med den egna)
   // handelsfärden (steg 11.6.6)
-  last: 40, // så mycket (i grundvärde) bär en handelsfärd
+  last: 80, // så mycket (i grundvärde) bär en handelsfärd (ställt i steg 11.6.7 med npm run radhandel)
   barare: 2, // så många går med en handelsfärd
-  dygnKostnad: 1.5, // det en bärare kostar per dygn på vägen, i grundvärde (maten och arbetet hemma)
+  dygnKostnad: 0.3, // det en bärare kostar per dygn på vägen, i grundvärde (maten och arbetet hemma)
   portion: 0.5, // en portion mat i grundvärde
   minRel: -10, // byarna handlar inte med den de ser lägre på än så
-  skala: 40, // en vinst på så mycket (i grundvärde) är en poäng
+  skala: 20, // en vinst på så mycket (i grundvärde) är en poäng
 });
 
 // det poängen räknas ur: byn som gör (r), grannen (mot), hur r ser på mot, ledarens egenskaper (1–20) och trons krigiskhet (0–1)

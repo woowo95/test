@@ -143,6 +143,7 @@ export const RADPRIS = balans('radpris', {
   vanligt: 0.25, // det marken ger mycket av kostar så här mycket mindre
   salt: 0.01, // det byn köper sänker dess pris så här mycket per silver i värde, och det den säljer höjer det
   glom: 0.1, // det egna påslaget går så stor del av vägen tillbaka mot markens per dygn (ett år i spelet)
+  markProd: 1, // en by gör så mycket mer i en grupp för varje sak i den som marken ger mycket av (och mindre för en sällsynt) (steg 11.6.7)
 });
 const ovriga = () => VARUGRUPP_IDS.filter(g => g !== 'mat');
 // gruppernas tillgång ur rikedomen, för en rad som inte har några (en rad från före v532, en ny rad)
@@ -175,6 +176,14 @@ function radMark(s: State, r: VarldRad) {
 export function markPaslag(s: State, r: VarldRad, k: string): number {
   const m = radMark(s, r), sall = m ? m.sallsynt : r.syn?.sallsynt;
   return sall?.includes(k) ? 1 + RADPRIS.sallsynt : m?.vanligt.includes(k) ? 1 - RADPRIS.vanligt : 1;
+}
+// hur mycket byn gör i gruppen g jämfört med det den vill ha: mer för varje sak i gruppen som marken ger mycket av, mindre för
+// varje sällsynt (steg 11.6.7)
+export function markGrupp(s: State, r: VarldRad, g: VarugruppId): number {
+  const m = radMark(s, r);
+  if (!m) return 1;
+  const n = m.vanligt.filter(k => gruppAv(k) === g).length - m.sallsynt.filter(k => gruppAv(k) === g).length;
+  return clamp(1 + RADPRIS.markProd * n, 0.25, 3);
 }
 // gruppens påslag i en by i världen (huvudbyns rad räknas ur byn)
 export function radGruppPaslag(s: State, r: VarldRad, g: VarugruppId): number {

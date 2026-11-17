@@ -2380,7 +2380,7 @@ SCENARIER.byhandlingar = {
     const val = SIM.byVal(s, vl, r, 5);
     SIM.byarnasHandlingar(s, vl, 5);
     const efter = gr.map(g => SIM.relation(vl, g.nr, r.nr) ?? 0);
-    const andrad = val ? efter[gr.indexOf(val.c.mot)] === fore[gr.indexOf(val.c.mot)] + SIM.BYREL.fjask || efter[gr.indexOf(val.c.mot)] === 100 : true;
+    const i = val ? gr.indexOf(val.c.mot) : -1, andrad = !val ? true : val.id === 'handel' ? !!vl.farder?.some(x => x.fran === r.nr && x.till === val.c.mot.nr) : efter[i] === fore[i] + SIM.BYREL.fjask || efter[i] === 100;
     // samma värld väljer samma sak
     const a = SIM.cloneState(testBy(10)), b = SIM.cloneState(testBy(10));
     const valen = (x: SIM.State) => JSON.stringify((x.varld!.rader ?? []).filter(q => SIM.lever(x.varld!, q)).map(q => { const v = SIM.byVal(x, x.varld!, q, 7); return v ? [v.id, v.c.mot.nr] : 0; }));
@@ -2392,7 +2392,7 @@ SCENARIER.byhandlingar = {
       [`fjäsket lönar sig vid låg relation (${f(lag)}) men inte vid hög (${f(hog)})`, lag > 0 && hog <= 0],
       [`en ledare med karisma fjäskar mer (${f(utan)} → ${f(med)})`, med > utan],
       [`en krigisk tro fjäskar mindre (${f(frid)} → ${f(krigisk)})`, krigisk < frid],
-      [`det valda ändrar grannens syn på byn (${val?.id ?? 'inget'})`, andrad],
+      [`det valda görs (${val?.id ?? 'inget'}: fjäsket ändrar grannens syn på byn, handeln skickar en färd)`, andrad],
       ['samma värld väljer samma sak', valen(a) === valen(b)],
       [`byarna fjäskar under 20 dygn (${w.stat?.byhandling_fjask ?? 0} gånger)`, (w.stat?.byhandling_fjask ?? 0) > 0],
     ];
