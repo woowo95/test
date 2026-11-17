@@ -2,7 +2,7 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { fardLage, bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { s } from './lage';
 import { omUngefar } from './hjalp';
@@ -102,6 +102,11 @@ function ritaSallskap(g: CanvasRenderingContext2D) {
     if (l.dx) vandrar.set(sl.id, l.dx < 0);
     g.drawImage(sprite(vandrar.get(sl.id) ?? false), Math.round(l.x * VK), Math.round(l.y * VK));
   }
+  const vl = s.varld, v = varldMark(s);
+  if (vl && v) for (const f of vl.farder ?? []) { // byarnas handelsfärder (steg 11.6.6), med sällskapets bild
+    const l = fardLage(vl, f, s.now, v.w);
+    if (l) g.drawImage(sprite(l.dx < 0), Math.round(l.x * VK), Math.round(l.y * VK));
+  }
 }
 
 let vy: Vy | undefined, ritas = false;
@@ -133,7 +138,7 @@ function oppna() {
     vy = begransa({ x: (hb.x + 0.5) * VK - sw / 2 / z, y: (hb.y + 0.5) * VK - sh / 2 / z, z }, b.width, b.height, sw, sh); rita();
   }
 }
-setInterval(() => { if (!ruta.hidden && sallskapNu(s?.varld).length) senare(); }, 1000); // sällskapen rör sig
+setInterval(() => { if (!ruta.hidden && (sallskapNu(s?.varld).length || s?.varld?.farder?.length)) senare(); }, 1000); // sällskapen rör sig
 function stang() { ruta.hidden = true; knapp.setAttribute('aria-expanded', 'false'); }
 knapp.addEventListener('click', () => ruta.hidden ? oppna() : stang());
 ruta.querySelector('.vkStang')!.addEventListener('click', stang);

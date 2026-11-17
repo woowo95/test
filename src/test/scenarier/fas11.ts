@@ -2398,3 +2398,54 @@ SCENARIER.byhandlingar = {
     ];
   },
 };
+
+SCENARIER.handelsfard = {
+  text: 'Handelsfärden mellan två byar (steg 11.6.6): en by med överflöd skickar en färd till den granne där gruppen är dyrast när resan är dragen; lasten lämnar byn när färden går, mottagaren får den och betalar när den kommer fram, och betalningen kommer hem, allt i hela tal',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && SIM.radGrannar(vl, x).filter(g => g.nr !== vl.huvud).length >= 2)!;
+    const gr = SIM.radGrannar(vl, r).filter(g => g.nr !== vl.huvud), dyr = gr[0], billig = gr[1];
+    for (const g of gr) SIM.mots(vl, r.nr, g.nr);
+    r.tal.folk = Math.max(r.tal.folk, 20);
+    SIM.radVaror(r); SIM.radVaror(dyr); SIM.radVaror(billig);
+    // byn har precis det den vill ha av allt utom virket, som den har dubbelt så mycket av som den vill; grannen dyr har inget
+    // virke men silver, och grannen billig har tre gånger så mycket
+    const vill = (x: typeof r, g: SIM.VarugruppId) => Math.round(SIM.radVill(x, g, SIM.rikMal(x)));
+    for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') r.varor![g] = vill(r, g);
+    r.tal.mat = vill(r, 'mat');
+    r.varor!.virke = 2 * vill(r, 'virke'); r.tal.rikedom = SIM.radRikedomUr(r);
+    dyr.varor!.virke = 0; dyr.tal.silver = 200; dyr.tal.rikedom = SIM.radRikedomUr(dyr);
+    billig.varor!.virke = 3 * vill(billig, 'virke'); billig.tal.rikedom = SIM.radRikedomUr(billig);
+    const c = SIM.byCtx(s, vl, r, dyr), a = SIM.BYHANDLINGAR.handel.poang(c), aff = SIM.fardAffar(c);
+    const cb = SIM.byCtx(s, vl, r, billig), b = SIM.fardAffar(cb);
+    const val = SIM.byVal(s, vl, r, 3);
+    // färden ger sig av
+    const v0 = r.varor!.virke!, rel0 = SIM.relation(vl, dyr.nr, r.nr) ?? 0;
+    SIM.BYHANDLINGAR.handel.gor(c);
+    const f = vl.farder?.find(x => x.fran === r.nr)!, ut = !!f && r.varor!.virke === v0 - f.n && f.g === 'virke';
+    // den kommer fram
+    const dv0 = dyr.varor!.virke ?? 0, ds0 = dyr.tal.silver;
+    const fram = vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!;
+    SIM.KOHANDELSER.fardFram(s, vl, fram);
+    const betalt = (dyr.varor!.virke ?? 0) === dv0 + f.n && dyr.tal.silver === ds0 - (f.silver ?? 0) && (f.silver ?? 0) > 0;
+    const rel = (SIM.relation(vl, dyr.nr, r.nr) ?? 0) > rel0;
+    // och hem
+    const rs0 = r.tal.silver, hem = vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id)!;
+    SIM.KOHANDELSER.fardHem(s, vl, hem);
+    const hemma = r.tal.silver === rs0 + (f.silver ?? 0) && !vl.farder!.some(x => x.id === f.id);
+    const hela = [r, dyr].every(x => Number.isInteger(x.tal.silver) && Object.values(x.varor ?? {}).every(n => Number.isInteger(n ?? 0)));
+    // en värld i 30 dygn: byarna handlar
+    const w = SIM.cloneState(testBy(10)); w.now += 30 * 86400e3; SIM.varldSteg(w);
+    const f2 = (x: number) => x.toFixed(2);
+    return [
+      [`handeln lönar sig hos den by där virket är dyrt (${f2(a)}), inte där det finns gott om det`, a > 0 && !!aff && aff.g === 'virke' && (!b || b.g !== 'virke')],
+      [`byn väljer en handelsfärd (${val?.id ?? 'inget'})`, val?.id === 'handel'],
+      [`lasten lämnar byn när färden går (${f?.n} virke)`, ut],
+      [`mottagaren får lasten och betalar ${f.silver} silver`, betalt],
+      ['mottagaren ser vänligare på byn efter handeln', rel],
+      ['betalningen kommer hem och färden är slut', hemma],
+      ['allt är hela tal', hela],
+      [`byarna i en värld handlar på 30 dygn (${w.stat?.radhandel_fram ?? 0} färder fram)`, (w.stat?.radhandel_fram ?? 0) > 0],
+    ];
+  },
+};
