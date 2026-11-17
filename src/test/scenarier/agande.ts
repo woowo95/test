@@ -1430,8 +1430,14 @@ SCENARIER.gastsida = {
     ui.personDel = 'egen'; const ensam = person.html(); ui.personDel = 'om';
     const frisk = person.html(); by.hunger = 0; const svalt = person.html(); by.hunger = 1;
     const flik8 = /<h3 class="flikrub">Egenskaper<\/h3>/.test(ensam) && !/class="delrub/.test(ensam) && !/felprick/.test(frisk) && /data-pdel="halsa"[^>]*>[^<]*(<img[^>]*>)?[^<]*<span class="felprick">/.test(svalt);
+    // Översikt (steg 11.1.45): Ålder med kön och födelse, familjen som porträtt, sederna, det hen gör och humöret, hälsan öppnar
+    // Hälsa, och gångfarten och händelserna står inte här
+    ui.personDel = 'om'; const ov = person.html();
+    const oversikt = /<dt>Ålder<\/dt><dd>\d+ år · (man|kvinna) · född /.test(ov) && /<h3>Familjen<\/h3>/.test(ov) && /<h3>Seder hen håller<\/h3>/.test(ov)
+      && /<dt>Gör nu<\/dt>/.test(ov) && /<dt>Humör<\/dt>/.test(ov) && /data-pdel="halsa" role="button"/.test(ov) && !/Gångfart|Viktiga händelser/.test(ov);
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['Översikt: ålder med kön och födelse, familjen, sederna hen håller, det hen gör, humöret och hälsan som öppnar Hälsa, utan gångfarten och händelserna (steg 11.1.45)', oversikt],
       ['en flik med en enda del visar flikens namn som rubrik utan delrubrik, och Hälsa får en röd prick när hen svälter (steg 11.1.44)', flik8],
       ['ögat vid namnet följer personen med kartan, för bybon och gästen, och märket Väntar barn öppnar hälsan (steg 11.1.42)', oga && gravid],
       ['huvudet står still: namnet, öknamnet (raden finns också tom), ålder och yrke, märkena och det hen gör, fem rader för både bybon och gästen, och det hen gör visas helt vid ett tryck (steg 11.1.41)', huvud],
@@ -1881,7 +1887,7 @@ SCENARIER.handslag = {
     const [f1] = t.filtar ?? [];
     const kort = !!f1 && f1.byt === t.now && f1.slut - t.now === (SIM.BYTE.handslagSek + SIM.BYTE.flyttSek) * SIM.SEC + SIM.BYTE.packaMin * SIM.MIN;
     // gränssnittet: handslaget vid raden i loggen och bland personens byten, och rutan med hela bytet
-    ui.nu = t.now; ui.selected = a.id;
+    ui.nu = t.now; ui.selected = a.id; ui.personDel = 'hand'; // bytena står under Händelser (steg 11.1.45)
     const rad = !!e && linkify(e).includes(`data-byte="${m?.nr}"`), sida = person.html(), visas = sida.includes('<h3>Byten</h3>') && sida.includes(`data-byte="${m?.nr}"`);
     const klickat = filtFlik.klick!({ closest: () => ({ dataset: { byte: String(m?.nr) } }) } as unknown as HTMLElement) && ui.byteNr === m?.nr && ui.tab === 'filt';
     const ruta = filtFlik.html(), helRuta = ruta.includes('<h2>Bytet</h2>') && ruta.includes(a.name) && ruta.includes(b.name) && ruta.includes('Värt') && /silver/.test(ruta);

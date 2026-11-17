@@ -6,7 +6,7 @@ import { figurSvg, portrattImg } from '../folkbild';
 import { FARGER, farg } from '../../palett';
 import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
-import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
+import { framstegSvg, ringSvg, tartFarg, tartSvg, vagSvg } from '../framsteg';
 import { gravidDel, gravidKvar } from '../../sim/steg';
 import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
@@ -75,7 +75,7 @@ const FLIKAR: PFlik[] = [
   { id: 'saker', tecken: '🎒', namn: 'Saker', delar: ['utr', 'form'] },
   { id: 'folk', tecken: '👥', namn: 'Människor', delar: ['rel', 'ryk'] },
   { id: 'kun', tecken: '🧠', namn: 'Kunskap', delar: ['kun'] },
-  { id: 'logg', tecken: '📜', namn: 'Händelser', delar: ['hand'] }, // personens händelselogg i en egen flik: byten, framträdanden, matcher och det viktiga (steg 10.2.61)
+  { id: 'logg', tecken: '📜', namn: 'Händelser', delar: ['liv', 'hand'] }, // personens händelselogg i en egen flik: byten, framträdanden, matcher och det viktiga (steg 10.2.61)
 ];
 // flikarna som har något att visa, den öppna (ui.personDel är fliken eller en del i den) och dess delar
 function valda(finns: (d: Del) => boolean) {
@@ -99,6 +99,7 @@ const DELAR: Del[] = [
   { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, kort: p => moodWord(moodOf(p, s.now)) },
   { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, kort: halsaKort },
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort },
+  { id: 'liv', tecken: '🍃', namn: 'Livet', html: livet, kort: p => { const n = p.upp?.length ?? 0; return n ? `${n} ${n === 1 ? 'upplevelse' : 'upplevelser'}` : 'Inget ännu'; } }, // barndomen och vuxenlivet (steg 11.1.45)
   { id: 'hand', tecken: '📜', namn: 'Händelser', html: handHtml, kort: p => { const n = personRader(s, p).length; return n ? `${n} ${n === 1 ? 'händelse' : 'händelser'}` : 'Inget ännu'; } }, // steg 9.2.108
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, kort: tidKort, gast: gastTid },
   { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => gearHtml(p), kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; } },
@@ -180,18 +181,26 @@ function pFakta(p: Person) {
 }
 // en övertygelse: personen drar en sed minst så här mycket åt ena hållet (ett helt steg är 1, seder.ts)
 const OVERTYGAD = 0.35;
+// Översikt (steg 11.1.45): vem personen är och vad hen gör just nu. Beskrivningen i två meningar med resten under ▸ mer, åldern
+// med kön och födelsen, yrket, familjen som små porträtt med namn, sederna hen håller som en liten våg med ett ord, det hen gör
+// och varför, humöret i ett ord och en rad om hälsan som öppnar Hälsa. Gångfarten står under Hälsa och livet och händelserna
+// under Händelser
 function presHtml(p: Person) {
-  const a = ageOf(p, s.now), kids = childrenOf(s, p), d = drar(s, p);
+  const a = ageOf(p, s.now), kids = childrenOf(s, p), d = drar(s, p), lever = alive(p);
   const tro = SED_LIST.filter(k => sedOppen(s, k) && Math.abs(d[k]) >= OVERTYGAD).sort((x, y) => Math.abs(d[y]) - Math.abs(d[x]))
-    .map(k => { const sed = SEDER[k], namn = d[k] > 0 ? sed.pos : sed.neg; return `<span class="tro" title="${esc(sed.effect)}">${esc(namn)}</span>`; });
-  return `<p class="besk">${esc(beskrivning(s, p))}</p><dl class="kv fam"><dt>${p.sex === 'k' ? 'Kvinna' : 'Man'}</dt><dd>${Math.floor(a)} år · född ${timeLabel(s, p.born)}${p.fran !== undefined ? ` · från ${esc(klanById(s, p.fran)?.namn ?? 'en grannklan')}` : ''}</dd>
+    .map(k => { const sed = SEDER[k], namn = d[k] > 0 ? sed.pos : sed.neg; return `<span class="tro" title="${esc(`${namn}. ${sed.effect}`)}">${vagSvg(Math.min(5, Math.max(1, Math.round(Math.abs(d[k]) * 5))), d[k] < 0 ? -1 : 1, 1)}${esc(namn)}</span>`; });
+  const mening = beskrivning(s, p).split(/(?<=[.!?])\s+/), bid = `besk-${p.id}`, merOppen = hjalpOppen(bid);
+  const besk = `<p class="besk">${esc(mening.slice(0, 2).join(' '))}${mening.length > 2 ? `${merOppen ? ' ' + esc(mening.slice(2).join(' ')) : ''} <span class="lank falla" ${fallUt(bid)}>${merOppen ? 'mindre' : 'mer'}</span>` : ''}</p>`;
+  const fam = (rel: string, qs: (Person | undefined)[]) => { const f = qs.filter((q): q is Person => !!q); return f.length ? f.map(q => `<button type="button" class="famp" data-id="${q.id}" title="${esc(`${rel}: ${q.name}`)}">${portrattImg(skapad(s, q), 'liten')}<span>${esc(q.name)}</span><small class="muted">${esc(rel)}</small></button>`).join('') : ''; };
+  const famHtml = fam('förälder', [byId(s, p.mother), byId(s, p.father)]) + fam('partner', [byId(s, p.partner)]) + fam('barn', kids);
+  const t = lever ? uppgiftVid(p) : undefined, h = halsaKort(p);
+  return `${besk}<dl class="kv fam"><dt>Ålder</dt><dd>${Math.floor(a)} år · ${p.sex === 'k' ? 'kvinna' : 'man'} · född ${timeLabel(s, p.born)}${p.fran !== undefined ? ` · från ${esc(klanById(s, p.fran)?.namn ?? 'en grannklan')}` : ''}</dd>
       <dt>Yrke</dt><dd>${esc(yrkeNamn(s, p) ?? '–')}${p.tag && yrkeNamn(s, p) !== p.tag ? ` <span class="muted">(${esc(p.tag.toLowerCase())})</span>` : ''}</dd>
-      <dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
-      <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd>
-      <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd>${alive(p) ? gangRad(p) : ''}</dl>
-      <h3>Viktiga händelser</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}
-      ${fritidLista({ person: p.id }) ? `<h3>Framträdanden och matcher</h3>${fritidLista({ person: p.id, antal: 8 })}` : ''}
-      ${bytenHtml(p.byten)}${livet(p)}`;
+      ${lever ? `<dt>Gör nu</dt><dd>${statusRad(p, pratarMed(s, p))}${t?.why ? `<br><span class="muted small">${esc(t.why)}</span>` : ''}</dd>
+      <dt>Humör</dt><dd>${esc(moodWord(moodOf(p, s.now)))}</dd>
+      <dt>Hälsa</dt><dd><span class="lank" data-pdel="halsa" role="button" tabindex="0" title="Öppna Hälsa">${esc(cap(h))} ▸</span></dd>` : ''}</dl>
+      <h3>Familjen</h3>${famHtml ? `<div class="famrad">${famHtml}</div>` : `<p class="muted">${p.mother || p.father ? '–' : 'Bland de första i byn, utan familj här'}</p>`}
+      <h3>Seder hen håller</h3>${tro.length ? `<p class="trorad">${tro.join('')}</p>` : '<p class="muted">Inga seder hen håller hårt på.</p>'}`;
 }
 // gångfarten (steg 3.10.10, i presentationen sedan steg 9.2.28): som del av en frisk vuxens på en stig, och raderna i
 // registret som ändrar den just nu (gangDelar: skadorna, bördan, marken, åldern) när man trycker på den. Rörligheten, kroppens
@@ -206,8 +215,8 @@ function livet(p: Person) {
   const ande = (u: Upplevelse) => u.n ? `${u.e && Object.keys(u.e).length ? ', ' : ''}Andlighet ${u.n > 0 ? '+' : '−'}${Math.abs(u.n)}` : ''; // syns från början (steg 4.5.3.4)
   const rad = (u: Upplevelse) => `<li>${u.a} år: ${esc(upplevelseText(u))} <span class="muted">${esc(effektText(u.e) + ande(u))}</span></li>`;
   const barn = (p.upp ?? []).filter(u => !vuxenUpp(u)), vuxen = (p.upp ?? []).filter(vuxenUpp);
-  if (!barn.length && !vuxen.length) return '';
-  return `<h3>Livet</h3>${barn.length ? `<p class="muted">Barndomen</p><ul class="fame">${barn.map(rad).join('')}</ul>` : ''}${vuxen.length ? `<p class="muted">Vuxenlivet</p><ul class="fame">${vuxen.map(rad).join('')}</ul>` : ''}`;
+  if (!barn.length && !vuxen.length) return '<p class="muted">Inget som format hen ännu.</p>';
+  return `${barn.length ? `<p class="muted">Barndomen</p><ul class="fame">${barn.map(rad).join('')}</ul>` : ''}${vuxen.length ? `<p class="muted">Vuxenlivet</p><ul class="fame">${vuxen.map(rad).join('')}</ul>` : ''}`;
 }
 // förmögenheten (steg 3.6.4, som en lista sedan steg 6.9.11): allt hen äger, som i ett lager: symbol, namn, antal, kvalitet,
 // hållbarhet och värdet sist (ungefär i arbetstimmar, varde.ts). Redskapen och kläderna en rad var, andelarna i förrådet en rad
@@ -344,7 +353,7 @@ function halsaHtml(p: Person) {
   // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
   const vatska = rad(p, 'torst', '💧 Vätska', `${bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst))}<span>${Math.round(p.torst * 100)} %</span>`, torstRad(p), ' i timmen', 'Att dricka fyller den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.');
   return `<div class="kropp">${gubbe}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
-    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Status</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
+    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Status</h3><dl class="kv">${formagor}${gangRad(p)}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string, extra = '') {
@@ -603,10 +612,13 @@ const SMA = 0.01;
 let tidVald: string | undefined; // namnet på delen som är markerad med ett tryck
 // personens händelser (steg 9.2.108, personlogg.ts): senaste först, med slagets symbol och när det hände; en ihopslagen rad
 // visar alla sina texter när man håller musen över den
+// Händelser (steg 11.1.45 och 11.1.52): det viktiga, framträdandena och matcherna och bytena står här och inte i Översikt
 function handHtml(p: Person) {
   const r = personRader(s, p);
-  if (!r.length) return '<p class="muted">Inget särskilt har hänt ännu.</p>';
-  return `<ul class="fame phand">${r.map(x => `<li${x.alla.length > 1 ? ` title="${esc(x.alla.join(' '))}"` : ''}><span title="${esc(PERSONLOGG[x.k].namn)}">${PERSONLOGG[x.k].ikon}</span> <span class="muted">${esc(clockTxt(x.t))}</span> ${esc(x.text)}</li>`).join('')}</ul>`;
+  const extra = `${p.fame.length ? `<h3>Viktiga händelser</h3><ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : ''}
+      ${fritidLista({ person: p.id }) ? `<h3>Framträdanden och matcher</h3>${fritidLista({ person: p.id, antal: 8 })}` : ''}${bytenHtml(p.byten)}`;
+  if (!r.length) return '<p class="muted">Inget särskilt har hänt ännu.</p>' + extra;
+  return extra + `<h3>Dag för dag</h3><ul class="fame phand">${r.map(x => `<li${x.alla.length > 1 ? ` title="${esc(x.alla.join(' '))}"` : ''}><span title="${esc(PERSONLOGG[x.k].namn)}">${PERSONLOGG[x.k].ikon}</span> <span class="muted">${esc(clockTxt(x.t))}</span> ${esc(x.text)}</li>`).join('')}</ul>`;
 }
 function tidHtml(p: Person) {
   const tot = habitTotal(p) - vana(p, 'sova');
