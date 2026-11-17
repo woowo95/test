@@ -11,6 +11,7 @@ import { State } from './typer';
 export interface Varlden {
   fro: number; // världens frö
   mark: { gen: number; delfro: number; w: number; h: number; mark: string; flod: string; ned: string }; // marken packad (base64)
+  platser?: import('./landmarken').VarldPlats[]; nastaPlats?: number; // platserna i världen (steg 11.2.8, landmarken.ts)
 }
 export const varldFro = (seed: number) => Math.floor(hash3(seed, 0x5741524c, 0x11207) * 2 ** 31);
 
