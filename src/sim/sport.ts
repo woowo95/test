@@ -225,11 +225,12 @@ export function sportListaVal(s: State, p: Person) {
   return { why: `Följer med ${byId(s, m.p ?? -1)?.name ?? 'de andra'} och spelar ${d.namn.toLowerCase()}`, spot: platsFor(s, p, m), dur: m.slut - s.now, ref: m.start, tool: d.id };
 }
 // hör q ropet från p och kan komma: en vuxen upp till SPORT.alderTill inom hörhåll, vaken, kan gå, strider inte, gör inget som
-// inte ens ett larm avbryter, och är inte rädd för att spela
+// inte ens ett larm avbryter, bär ingen död (den som bär en kropp till graven lägger inte ner den för att spela) och är inte
+// rädd för att spela
 function horRopet(s: State, p: Person, q: Person) {
   const a = ageOf(q, s.now), t = q.task;
   return paKartan(q) && !q.gast && a >= ALDER.vuxen && a <= SPORT.alderTill && Math.hypot(q.x - p.x, q.y - p.y) <= SPORT.nara && kanGa(q)
-    && !(t && (t.act === 'sport' || t.act === 'sova' || t.act === 'badd' || ACTS[t.act]?.fortsatter?.length)) && !kartStridAv(s, q) && !raddFor(s, q, 'sport');
+    && !(t && (t.act === 'sport' || t.act === 'sova' || t.act === 'badd' || ACTS[t.act]?.fortsatter?.length)) && !kartStridAv(s, q) && !raddFor(s, q, 'sport') && !s.kvarlevor?.some(k => k.bars === q.id);
 }
 // chansen att q vill vara med när p samlar: överskottet, kroppen, tycket om p och, för den som arbetar, pliktkänslan
 const foljChans = (s: State, p: Person, q: Person) => SPORT.folj * overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * (stat(q, 'styrka', s.now) + stat(q, 'smidighet', s.now)) / 20

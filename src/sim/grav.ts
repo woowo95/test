@@ -1,5 +1,5 @@
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
-import { DAY, H, HOUR, MIN, Person, State, T, Task, W, inMap } from './typer';
+import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { byId, count, isParent, living, log, relKey, think } from './folk';
 import { rnd } from './slump';
@@ -30,7 +30,7 @@ import { ALDER, ageOf } from './folk';
 // kroppen ligger kvar där personen dog. En vuxen, helst någon nära, bär den till gravplatsen och gräver (nivån Rädda i arbetsordningen). Grävandet
 // går fortare med spade. Graven är en ruta (10.1.3 bygger vidare på den). Tron ger stilen och samlingen vid graven (ritualerna, kult.ts)
 export const GRAV = balans('grav', {
-  handTim: 3, spadeTim: 1, // så länge det tar att gräva för hand och med spade
+  handMin: 3, spadeMin: 2, // så många minuter (i verkligheten) det tar att gräva för hand och med spade (en stor sak)
   avst: 5, // gravplatsen ligger så här långt utanför byn
   naraTim: 0.5, annanTim: 2, // så länge det i medel dröjer innan den som stod den döda nära, och någon annan, vill bära hen till graven (timmar, steg 10.4.5)
   vard: 0.4, vardAnnan: 0.5, // vikten för att göra vården på en grav när byn har det den behöver, och för den som minns hen utan att ha stått hen nära (steg 10.4.2)
@@ -42,15 +42,15 @@ export const gravarOf = (s: State): Grav[] => (s.gravar ??= []);
 // Skändningarna (steg 10.4.13) är fyra rader till: tron väljer en efter sina skalor när budet skanda antas och behåller den
 export type OdeId = 'grav' | 'ovardig' | 'skogen' | SkandId;
 export type SkandId = 'djuren' | 'balRit' | 'vattnet' | 'stigen';
-export interface OdeRad { namn: string; grav: boolean; avst?: number; min?: number; tim?: number; ved?: number; skalor?: [SkalaId, 0 | 1][]; vatten?: true; kvar?: true }
+export interface OdeRad { namn: string; grav: boolean; avst?: number; min?: number; ved?: number; skalor?: [SkalaId, 0 | 1][]; vatten?: true; kvar?: true }
 export const ODEN: Record<OdeId, OdeRad> = {
   grav: { namn: 'Grav', grav: true },
   ovardig: { namn: 'Ovärdig grav', grav: true, avst: 2 * GRAV.avst }, // rutor utanför byns område
   skogen: { namn: 'Skogen', grav: false, avst: 8, min: 2 }, // närmaste skogsruta så här långt utanför byns område; minuter att lägga ner kroppen
   // skändningarna: kvar = kroppen ligger kvar som en skändad kropp (KVARLEVOR), annars blir inget kvar
   djuren: { namn: 'Åt djuren', grav: false, avst: 1, min: 2, skalor: [['natur', 0]], kvar: true }, // strax utanför byns område
-  balRit: { namn: 'Bål utan rit', grav: false, avst: 1, tim: 1, ved: 4, skalor: [['natur', 1]] }, // saknas veden blir det åt djuren
-  vattnet: { namn: 'Vattnet', grav: false, tim: 0.5, skalor: [['natur', 0]], vatten: true }, // närmaste strand; den skändade står inte bland de sänkta
+  balRit: { namn: 'Bål utan rit', grav: false, avst: 1, min: 2, ved: 4, skalor: [['natur', 1]] }, // saknas veden blir det åt djuren
+  vattnet: { namn: 'Vattnet', grav: false, min: 2, skalor: [['natur', 0]], vatten: true }, // närmaste strand; den skändade står inte bland de sänkta
   stigen: { namn: 'Vid stigen', grav: false, min: 2, skalor: [['krig', 1], ['oppen', 1]], kvar: true }, // där vägen in till byn korsar byns kant
 };
 const SKAND: SkandId[] = ['djuren', 'balRit', 'vattnet', 'stigen'];
@@ -187,7 +187,7 @@ export function kroppUpp(s: State, p: Person, t: Task) {
   const ode = q.ode = val.ode;
   if (arSkand(ode)) { // skändningen (steg 10.4.13): utan ved eller vatten blir det åt djuren
     const k: SkandId = (ode === 'balRit' && amountOf(s, 'ved') < ODEN.balRit.ved!) || (ode === 'vattnet' && !vattenNara(s)) ? 'djuren' : ode, r = ODEN[k];
-    const at = k === 'vattnet' ? strandPlats(s, q.x, q.y) : k === 'stigen' ? stigPlats(s) : skogsPlats(s, q.x, q.y, r.avst, false), tid = r.min ? r.min * MIN : r.tim! * HOUR;
+    const at = k === 'vattnet' ? strandPlats(s, q.x, q.y) : k === 'stigen' ? stigPlats(s) : skogsPlats(s, q.x, q.y, r.avst, false), tid = r.min! * MIN;
     q.ode = k; t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Bär bort ${q.namn} (${r.namn.toLowerCase()})`;
     t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
   }
@@ -202,13 +202,20 @@ export function kroppUpp(s: State, p: Person, t: Task) {
   if (vag === 'vatten') {
     const at = vattenPlats(s, tr!);
     t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Bär ${q.namn} till vattnet`;
-    const tid = BEGRAVNINGAR.vatten.tim! * HOUR; t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
+    const tid = BEGRAVNINGAR.vatten.min! * MIN; t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
   }
-  const at = ode === 'ovardig' ? ovardigPlats(s) : gravPlats(s, tr, q.k === 'fiende' ? undefined : kroppBud(s, q, tr)), spade = freeTools(s, p, 'benspade') > 0, bal = vag === 'bal' && amountOf(s, 'ved') >= BEGRAVNINGAR.bal.ved! ? BEGRAVNINGAR.bal.tim! : 0;
+  // en grav som någon börjat gräva ligger kvar som en grop (q.grav), och nästa grävare fortsätter där, som ett halvfällt träd
+  const at = q.grav ?? (ode === 'ovardig' ? ovardigPlats(s) : gravPlats(s, tr, q.k === 'fiende' ? undefined : kroppBud(s, q, tr))), spade = freeTools(s, p, 'benspade') > 0, bal = vag === 'bal' && amountOf(s, 'ved') >= BEGRAVNINGAR.bal.ved! ? BEGRAVNINGAR.bal.min! : 0;
   t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Gräver en grav åt ${q.namn}`;
-  const tid = ((spade ? GRAV.spadeTim : GRAV.handTim) + bal) * HOUR;
+  const hel = ((spade ? GRAV.spadeMin : GRAV.handMin) + bal) * MIN, del = q.grav?.del ?? 0, tid = hel * (1 - del);
+  q.grav = { x: at.x, y: at.y, del, hel };
   t.until = s.now + tid + GA_TID; t.arbTid = tid;
   t.tool = spade ? 'benspade' : undefined; if (spade) take(s, p, 'benspade');
+}
+// medan graven grävs: gropen blir djupare (q.grav.del), så att arbetet finns kvar om grävaren avbryts
+export function gravaMedan(s: State, _p: Person, t: Task, dtSec: number) {
+  const q = t.phase === 'do' ? kvarById(s, t.ref ?? -1) : undefined;
+  if (q?.grav) q.grav.del = Math.min(1, q.grav.del + dtSec * SEC / q.grav.hel);
 }
 // graven är klar: kroppen är borta, och är den döde troende samlas trosfränderna (steg 8.5.6). Den som dog som brottsling begravs ovärdigt (steg 8.4.8)
 export function gravKlar(s: State, p: Person, t: Task) {
@@ -434,9 +441,9 @@ export function gravText(s: State, w: Person, g: Grav) {
 // ---------- begravningens former (steg 10.4.5) ----------
 // två led: kroppens väg (i jorden utan bud, bålet eller vattnet) och samlingen (den enkla utan bud, den tysta eller den vanliga). Varje rad är ett bud
 export type BegrId = 'bal' | 'vatten' | 'tyst' | 'vanlig' | 'vaka' | 'sorgkvade' | 'gravol';
-export const BEGRAVNINGAR: Record<BegrId, { namn: string; led: 'vag' | 'samling' | 'tillagg'; bud: BudId; skalor: [SkalaId, 0 | 1][]; ved?: number; tim?: number; minAvst?: number; vatten?: true }> = {
-  bal: { namn: 'Bålet', led: 'vag', bud: 'bal', skalor: [['natur', 0], ['fest', 0]], ved: 4, tim: 1 },
-  vatten: { namn: 'Vattnet', led: 'vag', bud: 'vattenGrav', skalor: [['natur', 0]], minAvst: 20, vatten: true, tim: 0.5 },
+export const BEGRAVNINGAR: Record<BegrId, { namn: string; led: 'vag' | 'samling' | 'tillagg'; bud: BudId; skalor: [SkalaId, 0 | 1][]; ved?: number; tim?: number; min?: number; minAvst?: number; vatten?: true }> = {
+  bal: { namn: 'Bålet', led: 'vag', bud: 'bal', skalor: [['natur', 0], ['fest', 0]], ved: 4, min: 2 }, // min = arbetet (bålet läggs och tänds, sänkningen); tim = det man väntar på (vakan, gravölet)
+  vatten: { namn: 'Vattnet', led: 'vag', bud: 'vattenGrav', skalor: [['natur', 0]], minAvst: 20, vatten: true, min: 2 },
   tyst: { namn: 'Den tysta begravningen', led: 'samling', bud: 'tystBegr', skalor: [['fest', 1]] },
   vanlig: { namn: 'Begravningen', led: 'samling', bud: 'vanligBegr', skalor: [] },
   // tilläggen (steg 10.4.12): egna bud som läggs till de andra formerna och blir aldrig sed av sig själva (gruppen tillagg är ingen sedgrupp)

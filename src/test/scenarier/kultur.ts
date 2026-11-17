@@ -1543,12 +1543,14 @@ SCENARIER.graven = {
     klockan(s, 10); tandEld(s); setFood(s, 200);
     SIM.die(s, d, 'alderdom');
     const kr = s.kvarlevor?.find(k => k.k === 'kropp' && k.vem === d.id), kx = kr?.x; // där den låg när hen dog; kroppen bärs sedan
-    let h = 0, bar = false, stod = 0, kort = '';
+    let h = 0, bar = false, stod = 0, rad = 0, kort = '';
     // steg 9.2.130: den som går för att ta hand om den döde går dit, tar upp kroppen direkt och står inte still vid den, och kortet
     // säger vems kropp hen går till
     while (s.kvarlevor?.some(k => k.vem === d.id) && h < 72 * 12) {
       kor(s, 1 / 12); h++;
-      for (const p of SIM.living(s)) { const tk = p.task; if (tk?.act !== 'begrava') continue; if (tk.phase === 'do') stod++; if (tk.phase === 'go' && !kort) kort = SIM.taskName(tk); }
+      let nu = false; // stod = den längsta stunden i rad vid kroppen (kroppen kan tas upp igen när grävaren avbrutits)
+      for (const p of SIM.living(s)) { const tk = p.task; if (tk?.act !== 'begrava') continue; if (tk.phase === 'do') nu = true; if (tk.phase === 'go' && !kort) kort = SIM.taskName(tk); }
+      rad = nu ? rad + 1 : 0; stod = Math.max(stod, rad);
     }
     h = Math.round(h / 12);
     { const p = v[2], t0 = p.task; p.task = { act: 'grava', phase: 'go', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task; bar = SIM.gangDelar(s, p).delar.some(r => r.k === 'bar'); p.task = t0; } // den som bär kroppen dit
@@ -1919,7 +1921,7 @@ function begravHela(s: State, p: Person, d: Person) {
   return { kr, tid, g: s.gravar?.find(g => g.vem === d.id), r: s.ritualKo[0] };
 }
 SCENARIER.begravning = {
-  text: 'Steg 10.4.5: begravningens former. Kroppens väg (jorden, bålet med fyra ved och en timme till, vattnet där kroppen sänks) och samlingen (den enkla, den tysta med familjen, den vanliga med trosfränderna) blir trons seder när en troende dör och sparas på kroppen; en kropp väntar en stund innan någon bär den',
+  text: 'Steg 10.4.5: begravningens former. Kroppens väg (jorden, bålet med fyra ved och två minuter till, vattnet där kroppen sänks) och samlingen (den enkla, den tysta med familjen, den vanliga med trosfränderna) blir trons seder när en troende dör och sparas på kroppen; en kropp väntar en stund innan någon bär den',
   kor: () => {
     // bålet: natur och fest
     const a = medTro(6, 2); a.tr.natur = 15; a.tr.sk = { ...a.tr.sk, fest: 15, livet: 50 }; SIM.setAmount(a.s, 'ved', 20);
@@ -1944,12 +1946,12 @@ SCENARIER.begravning = {
     const b6 = begravHela(u.s, u.v[0], du);
     return [
       [`bålet blir sed och sparas på kroppen (${b1.kr.bud?.join(', ')})`, !!b1.kr.bud?.includes('bal')],
-      [`bålet tar fyra ved och en timme till (${ved0 - ved1} ved, ${Math.round(b1.tid / SIM.HOUR * 10) / 10} timmar, ${b1.g?.stil})`, ved0 - ved1 === 4 && b1.g?.stil === 'bal' && b1.tid >= 2 * SIM.HOUR],
+      [`bålet tar fyra ved och två minuter till (${ved0 - ved1} ved, ${Math.round(b1.tid / SIM.MIN * 10) / 10} minuter, ${b1.g?.stil})`, ved0 - ved1 === 4 && b1.g?.stil === 'bal' && b1.tid >= (SIM.GRAV.spadeMin + SIM.BEGRAVNINGAR.bal.min!) * SIM.MIN],
       ['kroppen väntar en stund innan någon bär den', vantar],
       [`utan ved blir det jorden och budet bryts (${b2.g?.stil})`, b2.g?.stil === 'jord' && (a.s.stat?.bud_brutet ?? 0) > brutna],
       [`den tysta samlar bara familjen (${vemTyst.length} av ${SIM.living(c.s).length})`, tyst && c.tr.bud!.some(x => x.id === 'tystBegr') && vemTyst.every(q => SIM.isParent(q, c.v[1]) || SIM.isParent(c.v[1], q) || q.partner === c.v[1].id || c.v[1].partner === q.id)],
       [`den vanliga samlar trosfränderna (${e.tr.bud!.filter(x => /Begr/.test(x.id)).map(x => x.id).join(', ')})`, !!b4.r && !b4.r.tyst && e.tr.bud!.some(x => x.id === 'vanligBegr')],
-      [`vattnet: kroppen sänks och sjön minns hen (${w.tr.bud!.filter(x => /vatten|bal/.test(x.id)).map(x => x.id).join(', ')}, ${b5.g ? 'en grav' : 'ingen grav'})`, w.tr.bud!.some(x => x.id === 'vattenGrav') && !b5.g && !!sankt && Math.round(b5.tid / SIM.MIN) === 30],
+      [`vattnet: kroppen sänks och sjön minns hen (${w.tr.bud!.filter(x => /vatten|bal/.test(x.id)).map(x => x.id).join(', ')}, ${b5.g ? 'en grav' : 'ingen grav'})`, w.tr.bud!.some(x => x.id === 'vattenGrav') && !b5.g && !!sankt && Math.round(b5.tid / SIM.MIN) === SIM.BEGRAVNINGAR.vatten.min],
       [`utan tro: ingen samling, och familjen får humör (${b6.g?.stil})`, !b6.r && !!b6.g && (!barn || barn.thoughts.some(x => x.text.includes('begravdes')))],
     ];
   },
