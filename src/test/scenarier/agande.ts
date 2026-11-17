@@ -1450,8 +1450,12 @@ SCENARIER.gastsida = {
     // sorteringen efter kvalitet (steg 11.1.50): samma knapp sist på rubriken, tryckt när listan står efter kvaliteten
     ui.kvSort = true; ui.personDel = 'utr'; ui.personFall['form'] = true; const kvPa = person.html(), rub = kvRubrik('Förvaring'); ui.kvSort = false;
     const kvSortering = /class="kvsort" data-kvsort="1" aria-pressed="true"/.test(kvPa) && /<h3 class="kvrub">Förvaring<button type="button" class="kvsort"/.test(rub) && !/aria-pressed="true"/.test(kvRubrik('Förvaring')); delete ui.personFall['form'];
+    // Människor och Kunskap (steg 11.1.51): hela relationsraden fälls ut, och rubrikerna Kunnande och Lärdomar
+    ui.personDel = 'kun'; const ku = person.html(); ui.personDel = 'rel'; const re2 = person.html();
+    const kunFlik = /<h3>Kunnande<\/h3>/.test(ku) && /<h3>Lärdomar<\/h3>/.test(ku) && !/<h3>Kunskap<\/h3>/.test(ku) && (/<li class="klick falla" data-hjalp="rt-/.test(re2) || /Inga relationer/.test(re2));
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['Människor och Kunskap: hela relationsraden fälls ut, och rubrikerna heter Kunnande och Lärdomar (steg 11.1.51)', kunFlik],
       ['sorteringen efter kvalitet har samma knapp sist på rubriken i Förmögenhet och förvaringen, tryckt när den gäller (steg 11.1.50)', kvSortering],
       ['Saker: etiketten På kroppen i Utrustning, vikten i kg och kolumnrubriker i Förmögenhet (steg 11.1.49)', sakerFlik],
       ['Hälsa: figuren med H och V, Förmågor med gångfarten och Näring utan vätskan (steg 11.1.48)', halsaFlik],
