@@ -39,6 +39,7 @@ export const STROMMAR = {
   bin: 'bina: svärmarna som flyttar in i kuporna (steg 10.10.17, bin.ts)',
   gift: 'giftermål med grannbyarna: vem som gifter sig, med vilken by och vem som flyttar (steg 11.3.6, giftermal.ts)',
   skuld: 'skulden: när man ber om förlåtelse och svaret (steg 10.8.2, skuld.ts)',
+  resa: 'resorna: vilka sällskapet möter och vad som händer på vägen (fas 11.5, resa.ts)',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

@@ -1736,3 +1736,30 @@ SCENARIER.resfart = {
     ];
   },
 };
+
+SCENARIER.radbesok = {
+  text: 'Besöket hos en rad (steg 11.5.8, radBesok i resa.ts): sällskapet som är framme säljer det det har med sig mot byns silver efter byns pris, köper mat för vägen hem, möter byns folk, får platsen som besökt och ändrar radens tal i hela saker',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0)!;
+    const r = SIM.radNr(vl, mal.by)!;
+    r.tal.silver = 60; r.tal.mat = Math.max(r.tal.mat, 100); // en granne med silver och mat
+    const sl = SIM.nyttSallskap(s, a!, mal.nr, 'handel')!; SIM.foljMed(vl, sl, b!);
+    sl.pack = { skinn: 12, brod: 1 }; sl.skede = 'framme';
+    const fore = { ...r.tal }, inst0 = r.syn?.inst ?? 0, mott0 = r.fasta.filter(f => f.roll === 'mott').length;
+    SIM.radBesok(s, sl, s.now);
+    const heltal = Object.values(r.tal).every(Number.isInteger) && Object.values(sl.pack).every(Number.isInteger);
+    const mat = SIM.FOOD.reduce((t, f) => t + (sl.pack[f] ?? 0), 0);
+    return [
+      [`en granne med folk (${mal.namn})`, !!mal],
+      [`sällskapet sålde skinnen mot silver (${12 - (sl.pack.skinn ?? 0)} skinn, byns silver ${fore.silver} → ${r.tal.silver})`, (sl.pack.skinn ?? 0) < 12],
+      [`och köpte mat för vägen hem (${mat} portioner, byns mat ${fore.mat} → ${r.tal.mat})`, mat > 1 && r.tal.mat < fore.mat],
+      ['radens tal och packningen är hela saker', heltal],
+      ['platsen är besökt för huvudbyn och resenärerna', !!SIM.radNr(vl, vl.huvud)!.besokt?.includes(mal.nr) && [a!, b!].every(p => SIM.ortNiva(p, mal.nr) === SIM.O_BESOKT)],
+      [`byn minns att den mött huvudbyns folk (${mott0} → ${r.fasta.filter(f => f.roll === 'mott').length})`, r.fasta.filter(f => f.roll === 'mott').length === Math.min(SIM.RESA.mott, mott0 + 1)],
+      [`inställningen blev bättre (${inst0} → ${r.syn?.inst})`, !r.syn || r.syn.inst > inst0 || inst0 >= 100],
+      [`dagboken har besöket (${sl.dagbok.length} rader)`, sl.dagbok.length >= 3],
+    ];
+  },
+};

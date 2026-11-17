@@ -32,6 +32,12 @@ import { ageOf, ALDER } from './folk';
 import { snoPaMarken } from './vader';
 import { sallskapTyngd, trampa } from './leder';
 import { kommHem } from './ute';
+import { larOrt, O_BESOKT, radBesoker } from './ort';
+import { BYSORTER, radNr } from './radtal';
+import { klanPris, prisAndras } from './klaner';
+import { makeName } from './folk';
+import { rnd } from './slump';
+import { DAY } from './typer';
 
 export const RESA = balans('resa', {
   samlaSek: 3600, // så länge (sekunder i verkligheten) ledaren får samla sällskapet innan resan ställs in (en timme, ett kvarts dygn i spelet)
@@ -56,7 +62,13 @@ export const RESA = balans('resa', {
   lastFran: 0.5, lastMin: 0.8, // lasten bromsar över så stor del av bärförmågan, jämnt ner till lastMin vid full last
   snoFran: 0.3, snoFart: 0.8, // så mycket snö på marken, och farten i den
   dagTim: 12, // timmar i gång per dygn (dagsljuset, isLight)
+  // besöket hos en rad (steg 11.5.8)
+  besokInst: 2, // så mycket bättre blir inställningen hos byn som får besök
+  matKvar: 0.5, // så stor del av sin mat säljer en by högst
+  mott: 3, // så många av byns folk som huvudbyn mött minns raden
 });
+// det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
+const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
 export interface ResmalDef { namn: string; mal: readonly LandmarkId[]; stannar: number }
@@ -382,7 +394,7 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
   sl.pos = pos;
   if (pos < rutor.length - 1) return;
   sl.gang = 0;
-  if (sl.skede === 'ute') { sl.skede = 'framme'; sl.framme = t; count(s, 'resa framme'); }
+  if (sl.skede === 'ute') { sl.skede = 'framme'; sl.framme = t; count(s, 'resa framme'); radBesok(s, sl, t); }
   else if (sl.skede === 'hemat') hemkomst(s, sl, t);
 }
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
@@ -392,4 +404,60 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
   sl.skede = 'hemma'; sl.t = t;
   count(s, 'resa hemma');
+}
+
+// ---------- besöket hos en rad (steg 11.5.8, Besöket hos en rad) ----------
+// Sällskapet som kommer fram: platsen blir besökt för huvudbyns rad och för var och en av resenärerna. Är platsen en by med
+// folk säljer sällskapet det det har med sig att byta (allt utom maten och det som behövs för vägen) mot byns silver, efter
+// byns pris, och köper mat för vägen hem för silvret, aldrig mer än byns överskott. Byns tal ändras i hela saker: silvret,
+// maten och rikedomen. Resenärerna möter byns folk, och byn minns dem som mött huvudbyn (de fasta personerna, rollen mott).
+const varde1 = (k: string) => grundvarde(k);
+export function radBesok(s: State, sl: Sallskap, t: number) {
+  const vl = s.varld, plats = vl?.platser?.find(p => p.nr === sl.mal);
+  if (!vl || !plats) return;
+  radBesoker(vl, vl.huvud, sl.mal);
+  const folk = resenarer(s, sl);
+  for (const p of folk) larOrt(s, p, sl.mal, O_BESOKT, 1, { t });
+  const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
+  sl.dagbok.push([t, `Kom fram till ${plats.namn}.`]);
+  if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
+  const k = r.syn;
+  // sälja: varorna mot byns silver
+  let fick = 0, salda = 0;
+  for (const sak of Object.keys(sl.pack).sort()) {
+    if (BEHALL.includes(sak) || FOOD.includes(sak) || !(varde1(sak) > 0)) continue;
+    const per = varde1(sak) * klanPris(k, sak);
+    const m = Math.min(Math.floor(sl.pack[sak]!), Math.floor(r.tal.silver / per));
+    if (m <= 0) continue;
+    const pay = Math.floor(m * per);
+    r.tal.silver -= pay; fick += pay; salda += m; tappa(sl, sak, m);
+    r.tal.rikedom += Math.round(m * varde1(sak)) - pay;
+    if (k) prisAndras(k, sak, pay, -1);
+  }
+  if (fick) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; sl.dagbok.push([t, `Sålde ${salda} saker i ${r.namn} för ${fick} silver.`]); count(s, 'resa sålde', salda); }
+  // köpa: mat för vägen hem
+  const v = varldMark(s), hem = byPlats(vl, sl.by), vd = v && hem ? vagDygn(s, plats.y * v.w + plats.x, hem.y * v.w + hem.x) : undefined;
+  const led = folk.find(p => p.id === sl.ledare) ?? folk[0];
+  const behov = vd ? Math.ceil(folk.length * RESA.matPerDygn * (vd.dygn + RESMAL[sl.skal].stannar) * (led ? marginal(led) : RESA.margMitt) - 1e-9) : 0;
+  const har = FOOD.reduce((a, f) => a + Math.floor(sl.pack[f] ?? 0), 0), kop = FOOD.filter(f => varde1(f) > 0).sort((a, b) => (SAKER[b]!.haller ?? 0) - (SAKER[a]!.haller ?? 0))[0];
+  if (kop && behov > har) {
+    const per = varde1(kop) * klanPris(k, kop);
+    let m = Math.min(behov - har, Math.floor(r.tal.mat * RESA.matKvar), Math.floor((sl.pack.silver ?? 0) / per));
+    while (m > 0 && Math.ceil(m * per) > (sl.pack.silver ?? 0)) m--;
+    if (m > 0) {
+      const pay = Math.ceil(m * per);
+      tappa(sl, 'silver', pay); sl.pack[kop] = (sl.pack[kop] ?? 0) + m;
+      r.tal.mat -= m; r.tal.silver += pay; r.tal.rikedom += pay - Math.round(m * varde1(kop));
+      if (k) prisAndras(k, kop, pay, 1);
+      sl.dagbok.push([t, `Köpte ${m} ${SAKER[kop]!.namn.toLowerCase()} för ${pay} silver till vägen hem.`]); count(s, 'resa köpte', m);
+    }
+  }
+  // mötet: byn minns resenärerna som mött huvudbyn, och inställningen blir lite bättre
+  const mott = r.fasta.filter(f => f.roll === 'mott').length;
+  if (mott < RESA.mott) {
+    const kon = rnd(s, 'resa') < 0.5 ? 'm' : 'k';
+    r.fasta.push({ namn: makeName(s, kon, 'resa'), kon, fodd: Math.round(t - (18 + rnd(s, 'resa') * 30) * DAY), roll: 'mott' });
+  }
+  if (k) k.inst = Math.min(100, k.inst + RESA.besokInst);
+  sl.dagbok.push([t, `Mötte folket i ${r.namn}.`]); count(s, 'resa besök');
 }
