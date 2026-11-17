@@ -20,6 +20,7 @@ import { halMin, halVal, islagt, naVattnet } from './is';
 import { Act, GRANNAR4, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { hemma, kanGa } from './halsa';
+import { hjalperFange } from './fangelse';
 import { fylldSack, freeTools, toolsOf } from './agande';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { tillverkVill } from './forradsmal';
@@ -240,7 +241,9 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   let best: Person | undefined, bd = TORST.hamtaR;
   for (const q of living(s)) {
     const qa = ageOf(q, s.now);
-    if (q === p || kanGa(q) && qa >= ALDER.smabarn || !torstig(q, 0) || qa < TORST.ammaAr && ammas(s, q) || !hemma(s, q)) continue;
+    // den som sitter i fängelset (steg 11.12.2): p går när fångens törst gånger närheten är stor nog (fangelse.ts)
+    if (q.fange) { if (q === p || !hjalperFange(s, p, q, 1 - q.torst)) continue; }
+    else if (q === p || kanGa(q) && qa >= ALDER.smabarn || !torstig(q, 0) || qa < TORST.ammaAr && ammas(s, q) || !hemma(s, q)) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
     if (d >= bd || hamtas(s, p, q)) continue;
     best = q; bd = d;

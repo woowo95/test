@@ -1067,6 +1067,50 @@ SCENARIER.fangelse = {
   },
 };
 
+SCENARIER.fangemat = {
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,fangelse.bryt=99' }, // ingen rymmer: här prövas bara maten
+  text: 'Mat och vatten till fången (steg 11.12.2, fangelse.ts): den som sitter inne får vatten buret som den som inte kan gå, och arbetet barmat bär hela portioner mat till dörren. Var och en går när fångens hunger eller törst gånger närheten är stor nog: familj och partner tidigt, vänner senare och en främling först när nöden är stor',
+  kor: () => {
+    const s = createState(6, START); klockan(s, 10); medHus(s);
+    const h = housesOf(s)[0]; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s);
+    setFood(s, 30);
+    const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), [a, mor] = vuxna as [SIM.Person, SIM.Person];
+    const b = SIM.newPerson(s, 'm', s.now - 30 * DAY); s.people.push(b); Object.assign(b, { x: a.x, y: a.y }); // en främling utan släkt i byn
+    a.mother = mor.id;
+    SIM.satt(s, a, h, 'Dömd'); SIM.satt(s, b, h, 'Dömd');
+    const framlingar = vuxna.filter(q => q !== a && q !== mor && q.partner !== a.id && q.mother !== a.id && q.father !== a.id);
+    // nöden 0,4: modern går, en främling inte; nöden 0,9: också en främling
+    a.hunger = 0.6; b.hunger = 0.6;
+    const morGar = SIM.matTillFange(s, mor)?.ref === a.id, framlingGarInte = framlingar.every(q => SIM.matTillFange(s, q)?.ref !== b.id);
+    b.hunger = 0.1;
+    const framlingGar = framlingar.some(q => SIM.matTillFange(s, q)?.ref === b.id);
+    // vattnet: modern bär vatten när sonen är törstig, främlingen inte vid samma törst
+    a.torst = 0.6; b.torst = 0.6; b.hunger = 0.6;
+    const vMor = SIM.vattenVal(s, mor)?.ref === a.id, vFramling = framlingar.every(q => SIM.vattenVal(s, q)?.ref !== b.id);
+    // en timme med liten nöd (0,05): ingen går med mat, och båda blir hungrigare
+    a.hunger = 0.95; b.hunger = 0.95; a.torst = 0.9; b.torst = 0.9;
+    const a0 = a.hunger, b0 = b.hunger;
+    kor(s, 1, v => { for (const f of [a, b]) if (!f.fange) SIM.satt(v, f, h, 'Dömd'); });
+    const hungrigare = a.hunger < a0 && b.hunger < b0;
+    // fyra timmar med samma nöd (0,4): sonen får mat före främlingen
+    a.hunger = 0.6; b.hunger = 0.6;
+    let forstA = -1, forstB = -1, ha = a.hunger, hb = b.hunger, mat = 0;
+    kor(s, 4, v => {
+      for (const f of [a, b]) if (!f.fange) SIM.satt(v, f, h, 'Dömd');
+      if (forstA < 0 && a.hunger > ha + 0.05) forstA = v.now; if (forstB < 0 && b.hunger > hb + 0.05) forstB = v.now;
+      ha = a.hunger; hb = b.hunger; mat = v.stat?.['bar mat till fangen'] ?? mat;
+    });
+    const fore = forstA >= 0 && (forstB < 0 || forstA < forstB);
+    return [
+      ['en släkting går med mat när nöden är 0,4, en främling inte', morGar && framlingGarInte],
+      ['när nöden är stor (0,9) går också en främling', framlingGar],
+      ['vattnet: släktingen bär vatten vid törsten 0,4, främlingen inte', vMor && vFramling],
+      [`när nöden är liten går ingen, och fångarna blir hungrigare (mättnaden ${a0} → ${a.hunger.toFixed(3)})`, hungrigare],
+      [`vid samma nöd får sonen mat före främlingen (mat buren ${mat} gånger)`, fore],
+    ];
+  },
+};
+
 SCENARIER.vilafart = {
   text: 'Vilan går fortare (steg 11.1.72): den som sover i en bädd är utvilad på ungefär en åttondel av dygnet (tre timmar, en och en halv månad i spelet), golvet och marken ger mindre i samma förhållande, och vilan räknas i sömn, trötthet och pauser när inget annat lockar',
   kor: () => {
