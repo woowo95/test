@@ -8,7 +8,8 @@
 import { ALDER, ageOf, count, log } from './folk';
 import { kronika } from './historik';
 import { notis } from './notiser';
-import { KLAN, Klan, KlanPerson, klanMellan, nyKlan } from './klaner';
+import { KLAN, Klan, KlanPerson, klanById, klanMellan, nyKlan } from './klaner';
+import { eldPlats, getMap } from './karta';
 import { byGrannar } from './grannat';
 import { hinder, laggPlats, VarldPlats } from './landmarken';
 import { byRutor } from './placering';
@@ -17,7 +18,7 @@ import { narmasteMal } from './vagval';
 import { varldHandelse } from './varldkronika';
 import { medVarld, varldMark } from './varlden';
 import { MARK_IDS, VARLD, VARLDMARK, VarldMark } from './varldmark';
-import { Person, State } from './typer';
+import { H, Person, State, T, W } from './typer';
 
 const RIKTNING = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
 const huvudPlats = (s: State) => s.varld?.platser?.find(p => p.k === 'by' && p.by === s.varld!.huvud);
@@ -98,4 +99,30 @@ export function utbrytning(s: State, grupp: Person[], pop: number) {
   log(s, text, 'world', grupp.map(p => p.id)); notis(s, 'utflytt', text, grupp.map(p => p.id));
   kronika(s, text, 'utbrytning');
   return k;
+}
+
+// ---------- rätt kant (steg 11.2.22, Flera samhällen: Världen i tal: bykartan och kartreceptet) ----------
+// Bykartan och världskartan hänger ihop med väderstrecken: den som kommer från en grannby kommer in från den kant på bykartan
+// som pekar mot grannbyn, och går ut åt samma håll. Kanten är där en rak linje från elden i grannbyns väderstreck når kartans
+// kant; är det vatten där tas den närmaste punkten längs kanten som är land. Saknar byn eller grannbyn en plats i världen
+// finns ingen sådan kant (undefined), och då gäller den närmaste kanten
+const KANT = 0.3; // så långt in från kartans kant står den som kommer in
+export function kantMot(s: State, klan: number | undefined): { x: number; y: number } | undefined {
+  const k = klanById(s, klan), h = huvudPlats(s), p = k && s.varld?.platser?.find(q => q.k === 'by' && q.by === k.rad);
+  if (!h || !p || (p.x === h.x && p.y === h.y)) return undefined;
+  const e = eldPlats(s), cx = e.x + 0.5, cy = e.y + 0.5, dx = p.x - h.x, dy = p.y - h.y;
+  const tx = dx > 0 ? (W - KANT - cx) / dx : dx < 0 ? (KANT - cx) / dx : Infinity, ty = dy > 0 ? (H - KANT - cy) / dy : dy < 0 ? (KANT - cy) / dy : Infinity;
+  const tt = Math.min(tx, ty), x = Math.min(W - KANT, Math.max(KANT, cx + dx * tt)), y = Math.min(H - KANT, Math.max(KANT, cy + dy * tt));
+  // runt kanten medurs: en punkt per ruta, och den närmaste som är land
+  const runt: { x: number; y: number }[] = [];
+  for (let i = 0; i < W; i++) runt.push({ x: i + 0.5, y: KANT });
+  for (let i = 0; i < H; i++) runt.push({ x: W - KANT, y: i + 0.5 });
+  for (let i = W - 1; i >= 0; i--) runt.push({ x: i + 0.5, y: H - KANT });
+  for (let i = H - 1; i >= 0; i--) runt.push({ x: KANT, y: i + 0.5 });
+  const tiles = getMap(s.seed).tiles, land = (q: { x: number; y: number }) => tiles[Math.floor(q.y) * W + Math.floor(q.x)] !== T.Vatten;
+  let n0 = 0, d0 = Infinity;
+  runt.forEach((q, i) => { const d = Math.hypot(q.x - x, q.y - y); if (d < d0) { d0 = d; n0 = i; } });
+  if (land({ x, y })) return { x, y };
+  for (let n = 1; n <= runt.length >> 1; n++) for (const i of [n0 + n, n0 - n]) { const q = runt[(i + runt.length) % runt.length]; if (land(q)) return q; }
+  return { x, y };
 }

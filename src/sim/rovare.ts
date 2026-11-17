@@ -8,6 +8,7 @@ import { halsa, horsel, kanGa } from './halsa';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, andraInst, klanById, klanerOf } from './klaner';
+import { kantMot } from './grannbyar';
 import { addTo, amountOf, avbryt, carryKind, dropLoad, isCarrying, zoneOf, zonesOf } from './lager';
 import { hundSkaller, tamArt, tamStulen, tamUte } from './tamdjur';
 import { DORRAR, bitAt, bitsOf, freeNear, husById, roomAt } from './byggnad';
@@ -154,14 +155,16 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean, klan?
   // en ny flock kan komma medan en annan är på kartan (steg 8.7.18): den går samtidigt med den (rovareFler, rovarSteg)
   const forra = s.rovare;
   const m = getMap(s.seed); // testläget kommer in från kanten som ett vanligt gäng (steg 10.1.16): bara väntan är kortare
-  let x = 0, y = 0;
-  for (let i = 0; i < 20; i++) {
+  // den grannklan som tycker sämst om byn, om någon inte tycker om den
+  const k: Klan | undefined = klan !== undefined ? klanById(s, klan) : klanerOf(s).filter(q => q.inst < 0).sort((a, b) => a.inst - b.inst)[0];
+  // gänget kommer in från kanten som pekar mot grannbyn (steg 11.2.22), annars från en slumpad kant
+  const mot = kantMot(s, k?.id);
+  let x = mot?.x ?? 0, y = mot?.y ?? 0;
+  for (let i = 0; i < 20 && !mot; i++) {
     const sida = Math.floor(rnd(s, 'rovare') * 4), l = rnd(s, 'rovare');
     x = sida === 0 ? 0.5 : sida === 1 ? W - 0.5 : l * W; y = sida === 2 ? 0.5 : sida === 3 ? H - 0.5 : l * H;
     if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break;
   }
-  // den grannklan som tycker sämst om byn, om någon inte tycker om den
-  const k: Klan | undefined = klan !== undefined ? klanById(s, klan) : klanerOf(s).filter(q => q.inst < 0).sort((a, b) => a.inst - b.inst)[0];
   const n = tvinga ?? Math.round(mellan(s, ROVARE.antal));
   const folk: number[] = Array.from({ length: n }, () => { // gänget har ingen ledare (steg 10.2.25)
     const slump = rnd(s, 'rovare') < 0.5 ? 'm' as const : 'k' as const; // man eller kvinna som alla andra (steg 10.2.100)
@@ -517,14 +520,15 @@ function ga(c: RCtx, m: { x: number; y: number }) {
 const egenPunkt = (r: Person): [number, number] => { const v = hash3(r.id, 11, 0) * Math.PI * 2, d = ROVARE.bredvid * (0.4 + 0.6 * hash3(r.id, 12, 0)); return [Math.cos(v) * d, Math.sin(v) * d]; };
 const sidaOm = (r: Person) => (gr(r).fil ?? (hash3(r.id, 14, 0) - 0.5) * 2) * ROVARE.filBredd; // rutor åt sidan om vägen: var och en sin fil
 const egenFart = (r: Person) => 1 - hash3(r.id, 13, 0) * ROVARE.fartSpann; // aldrig fortare än en bybo
-// mot närmaste kanten; den som kommer dit är borta från kartan, hem till klanen (steg 9.2.114)
+// mot kanten som pekar mot grannbyn (steg 11.2.22), annars den närmaste; den som kommer dit är borta från kartan, hem till
+// grannbyn (steg 9.2.114)
 function hemat(c: RCtx) {
   const { s, f, r } = c;
   // vägen ut väljs en gång (den närmaste kanten som går att nå) och hålls sedan: annars byter hen kant fram och tillbaka vid en sjö,
   // där det finns väg till den närmaste kanten från en ruta men inte från nästa
   const g = gr(r);
   let kvar = g.ut ? ga(c, g.ut) : -1;
-  if (kvar < 0) { g.ut = undefined; for (const k of kanterna(r.x, r.y)) { kvar = ga(c, k); if (kvar >= 0) { g.ut = k; break; } } }
+  if (kvar < 0) { g.ut = undefined; for (const k of [kantMot(s, f.klan), ...kanterna(r.x, r.y)]) { if (!k) continue; kvar = ga(c, k); if (kvar >= 0) { g.ut = k; break; } } }
   if (f.rad) iFarten(s, r, c.dt); // saker i farten (steg 8.8.3)
   if (kvar >= 0.5) return;
   f.folk = f.folk.filter(id => id !== r.id);
