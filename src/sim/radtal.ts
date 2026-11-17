@@ -51,6 +51,7 @@ export interface RadTro { namn: string; andel: number; krig: number }
 export interface VarldRad {
   nr: number; sort: BysortId; namn: string; x?: number; y?: number; grundad: number; fran?: number; lyder?: number;
   t: number; tal: Record<RadtalId, number>; tek: string[]; tro?: RadTro; ledare?: number; fasta: FastPerson[];
+  syn?: import('./klaner').Klan; // huvudbyns förbindelse med byn: hållningen, de namngivna personerna och priserna (steg 11.2.15, grannbyar.ts)
 }
 const fast = (p: Person, roll: FastPerson['roll']): FastPerson => ({ namn: p.name, kon: p.sex, fodd: p.born, roll, id: p.id });
 // tron flest bybor har

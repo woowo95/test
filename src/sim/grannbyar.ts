@@ -1,0 +1,101 @@
+// ---------- grannbyarna (steg 11.2.15, Flera samhällen: grannklanerna blir världens byar) ----------
+// Byns grannar är byarna i dess grannät i världen (grannat.ts). När byn grundas får varje sådan by en rad i världen, och raden
+// bär huvudbyns förbindelse med den (raden.syn, en Klan i klaner.ts): hållningen till byn, de namngivna personerna, priserna och
+// restiden dit till fots. Var de bor står som marken och riktningen ("skogen i öster"), och det som är sällsynt hos dem är det
+// marken där har sällsynt (VARLDMARK). En familj som bryter sig ut ur byn slår sig ner på den närmaste lediga byplatsen som går
+// att nå till fots och blir en ny by i världen. En sparad by från före v531 får sin värld, och dess grannklaner blir byarna i
+// grannätet, i ordning efter avståndet, med sina namn och allt de visste om byn.
+import { ALDER, ageOf, count, log } from './folk';
+import { kronika } from './historik';
+import { notis } from './notiser';
+import { KLAN, Klan, KlanPerson, klanMellan, nyKlan } from './klaner';
+import { byGrannar } from './grannat';
+import { hinder, laggPlats, VarldPlats } from './landmarken';
+import { byRutor } from './placering';
+import { VarldRad } from './radtal';
+import { narmasteMal } from './vagval';
+import { varldHandelse } from './varldkronika';
+import { medVarld, varldMark } from './varlden';
+import { MARK_IDS, VARLD, VARLDMARK, VarldMark } from './varldmark';
+import { Person, State } from './typer';
+
+const RIKTNING = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
+const huvudPlats = (s: State) => s.varld?.platser?.find(p => p.k === 'by' && p.by === s.varld!.huvud);
+// var en plats ligger sett från huvudbyn: marken där och väderstrecket
+function hemAv(v: VarldMark, h: VarldPlats | undefined, p: VarldPlats) {
+  const m = VARLDMARK[MARK_IDS[v.mark[p.y * v.w + p.x]]];
+  const r = h ? RIKTNING[((Math.round(Math.atan2(p.y - h.y, p.x - h.x) / (Math.PI / 4)) % 8) + 8) % 8] : undefined;
+  return { hem: r ? `${m.bestamd} i ${r}` : m.bestamd, sallsynt: [...m.sallsynt] };
+}
+// förbindelsen får sin rad i världen, på platsen
+function nyRad(s: State, k: Klan, p: VarldPlats | undefined): VarldRad {
+  const vl = s.varld!;
+  const r: VarldRad = {
+    nr: vl.nastaRad = (vl.nastaRad ?? 0) + 1, sort: 'by', namn: k.namn, grundad: p?.fran ?? s.now, t: s.now,
+    tal: { folk: k.folk, mat: 0, rikedom: k.resurser, silver: 0, styrka: k.styrka }, tek: [], fasta: [], syn: k,
+    ...(p ? { x: p.x, y: p.y } : {}),
+  };
+  (vl.rader ??= []).push(r);
+  if (p) { p.by = r.nr; p.namn = k.namn; }
+  k.rad = r.nr;
+  return r;
+}
+// förbindelsen ligger på platsen: var den bor, vad som är sällsynt där och restiden
+function placera(s: State, k: Klan, p: VarldPlats | undefined, dygn: number | undefined) {
+  const v = varldMark(s);
+  if (p && v) { const h = hemAv(v, huvudPlats(s), p); k.hem = h.hem; k.sallsynt = h.sallsynt; }
+  if (dygn !== undefined) k.dygn = dygn;
+  return nyRad(s, k, p);
+}
+
+// den närmaste lediga byplatsen som går att nå till fots från huvudbyn blir en ny by (utbrytning, en sparad klan utan by)
+function nyPlats(s: State, namn: string): { p: VarldPlats; dygn: number } | undefined {
+  const vl = medVarld(s), v = varldMark(s), h = huvudPlats(s);
+  if (!v || !h) return undefined;
+  const lediga = new Set(byRutor(v).filter(i => !hinder(vl, v, 'by', i % v.w, Math.floor(i / v.w))));
+  const [f] = narmasteMal(vl, v, h.y * v.w + h.x, lediga, 1, 'fots');
+  const p = f && laggPlats(vl, v, 'by', f.till % v.w, Math.floor(f.till / v.w), s.now, { namn });
+  if (!p) return undefined;
+  p.grannar = byGrannar(vl, v, p, s.now);
+  h.grannar = byGrannar(vl, v, h, s.now);
+  return { p, dygn: Math.round(f.kostnad / VARLD.gangPerDygn * 100) / 100 };
+}
+
+// grannbyarna: varje by i huvudbyns grannät som inte har en rad får en, och en förbindelse med byn. Gamla klaner (en sparad by
+// från före v531) tar byarna i ordning efter avståndet; de som blir över får en ny plats
+export function nyaGrannbyar(s: State, gamla: Klan[] = []) {
+  const vl = medVarld(s), h = huvudPlats(s), kvar = [...gamla];
+  for (const g of h?.grannar ?? []) {
+    const p = vl.platser?.find(q => q.nr === g.nr);
+    if (!p || p.by !== undefined) continue;
+    const k = kvar.shift() ?? nyKlan(s, klanMellan(s, KLAN.folk), klanMellan(s, KLAN.inst), p.namn, '');
+    placera(s, k, p, g.dygn);
+  }
+  for (const k of kvar) { const n = nyPlats(s, k.namn); placera(s, k, n?.p, n?.dygn); }
+}
+// en ny grannby (scenarierna och utbrytningen): på den närmaste lediga byplatsen
+export function nyGrannby(s: State, folk: number, inst: number, o: { namn?: string; personer?: KlanPerson[] } = {}): Klan {
+  const n = nyPlats(s, o.namn ?? '');
+  const k = nyKlan(s, folk, inst, o.namn ?? n?.p.namn ?? 'Grannbyn', '', o.personer);
+  placera(s, k, n?.p, n?.dygn);
+  return k;
+}
+
+// en familj flyttar ur en mycket stor by (emigrate i liv.ts, steg 4.4.4.1): de grundar en ny by i världen, uppkallad efter den
+// första av grundarna, som tycker om byn de kom ifrån. De som flyttade är byns namngivna personer
+export function utbrytning(s: State, grupp: Person[], pop: number) {
+  if (pop < KLAN.utbrytFran || grupp.length < 2) return undefined;
+  const vuxna = grupp.filter(p => ageOf(p, s.now) >= ALDER.vuxen), forst = vuxna[0] ?? grupp[0];
+  const namn = `${forst.name}${/[sxz]$/.test(forst.name) ? '' : 's'} folk`;
+  const per = grupp.map(p => ({ namn: p.name, sex: p.sex, roll: vuxna.includes(p) ? 'grundare' : 'barn', id: p.id } as KlanPerson));
+  const k = nyGrannby(s, grupp.length, KLAN.utbrytInst, { namn, personer: per });
+  k.utbrytare = true; k.grundad = s.now;
+  k.styrka = Math.max(1, vuxna.length);
+  const r = s.varld?.rader?.find(x => x.nr === k.rad);
+  if (r) { r.grundad = s.now; r.fran = s.varld!.huvud; r.tal.styrka = k.styrka; varldHandelse(s.varld!, 'delad', s.now, { by: s.varld!.huvud, mot: r.nr }); }
+  count(s, 'utbrytning');
+  const text = `${namn} är en ny by vid ${k.hem}: ${grupp.map(p => p.name).join(', ')} som lämnade byn.`;
+  log(s, text, 'world', grupp.map(p => p.id)); notis(s, 'utflytt', text, grupp.map(p => p.id));
+  kronika(s, text, 'utbrytning');
+  return k;
+}

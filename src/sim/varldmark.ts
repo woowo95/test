@@ -38,7 +38,7 @@ export const VARLD_GEN = 1;
 
 export type Fardsatt = 'fots' | 'packdjur' | 'vagn';
 export interface MarkDef {
-  namn: string;
+  namn: string; bestamd: string; // namnet och den bestämda formen ("slätten i norr", steg 11.2.15)
   farg: readonly [string, 0 | 1 | 2 | 3]; // ramp och ton ur paletten (palett.ts)
   tecken?: string; // ett tecken på kartan (berg, granar); ritas i steg 11.2.16
   kostnad: number; // att gå en ruta, slätt = 1; Infinity i havet
@@ -49,13 +49,13 @@ export interface MarkDef {
 }
 const ALLA: readonly Fardsatt[] = ['fots', 'packdjur', 'vagn'];
 export const VARLDMARK = {
-  hav: { namn: 'Hav', farg: ['skiffer', 1], kostnad: Infinity, fram: [], vatten: false, bete: false, vanligt: ['fisk'], sallsynt: [], land: false },
-  slatt: { namn: 'Slätt', farg: ['oliv', 3], kostnad: 1, fram: ALLA, vatten: false, bete: true, vanligt: ['korn'], sallsynt: ['lera'], land: true },
-  skog: { namn: 'Skog', farg: ['oliv', 2], tecken: 'trad', kostnad: 1.4, fram: ALLA, vatten: false, bete: true, vanligt: ['ved', 'bar'], sallsynt: ['honung', 'svamp'], land: true },
-  tat: { namn: 'Tät skog', farg: ['barr', 2], tecken: 'gran', kostnad: 2.5, fram: ['fots', 'packdjur'], vatten: false, bete: false, vanligt: ['virke', 'ved'], sallsynt: ['tjara', 'naver'], land: true },
-  myr: { namn: 'Myr', farg: ['barr', 3], tecken: 'tuva', kostnad: 3, fram: ['fots'], vatten: true, bete: false, vanligt: ['bar'], sallsynt: ['lera'], land: true },
-  berg: { namn: 'Berg', farg: ['ben', 0], tecken: 'berg', kostnad: 5, fram: ['fots', 'packdjur'], vatten: false, bete: false, vanligt: ['sten', 'flinta'], sallsynt: ['silver'], land: true },
-  sjo: { namn: 'Sjö', farg: ['skiffer', 2], kostnad: Infinity, fram: [], vatten: true, bete: false, vanligt: ['fisk'], sallsynt: [], land: false },
+  hav: { namn: 'Hav', bestamd: 'havet', farg: ['skiffer', 1], kostnad: Infinity, fram: [], vatten: false, bete: false, vanligt: ['fisk'], sallsynt: [], land: false },
+  slatt: { namn: 'Slätt', bestamd: 'slätten', farg: ['oliv', 3], kostnad: 1, fram: ALLA, vatten: false, bete: true, vanligt: ['korn'], sallsynt: ['lera'], land: true },
+  skog: { namn: 'Skog', bestamd: 'skogen', farg: ['oliv', 2], tecken: 'trad', kostnad: 1.4, fram: ALLA, vatten: false, bete: true, vanligt: ['ved', 'bar'], sallsynt: ['honung', 'svamp'], land: true },
+  tat: { namn: 'Tät skog', bestamd: 'den täta skogen', farg: ['barr', 2], tecken: 'gran', kostnad: 2.5, fram: ['fots', 'packdjur'], vatten: false, bete: false, vanligt: ['virke', 'ved'], sallsynt: ['tjara', 'naver'], land: true },
+  myr: { namn: 'Myr', bestamd: 'myren', farg: ['barr', 3], tecken: 'tuva', kostnad: 3, fram: ['fots'], vatten: true, bete: false, vanligt: ['bar'], sallsynt: ['lera'], land: true },
+  berg: { namn: 'Berg', bestamd: 'bergen', farg: ['ben', 0], tecken: 'berg', kostnad: 5, fram: ['fots', 'packdjur'], vatten: false, bete: false, vanligt: ['sten', 'flinta'], sallsynt: ['silver'], land: true },
+  sjo: { namn: 'Sjö', bestamd: 'sjön', farg: ['skiffer', 2], kostnad: Infinity, fram: [], vatten: true, bete: false, vanligt: ['fisk'], sallsynt: [], land: false },
 } as const satisfies Record<string, MarkDef>;
 export type MarkId = keyof typeof VARLDMARK;
 // ordningen är rutans tal i marken (Uint8Array): ändras den, ändras VARLD_GEN

@@ -5,6 +5,7 @@ import { DAY, HOUR, Person, State } from './typer';
 import { balans } from './balans';
 import { alive, byId, isParent, living, relKey, think } from './folk';
 import { upplev } from './uppvaxt';
+import { klanById } from './klaner';
 
 export const KVAR = balans('kvar', {
   seR: 4, // så många rutor bort ser man det
@@ -58,7 +59,7 @@ export function kvarTimme(s: State) {
 // att se en skändad kropp eller skändningen (steg 10.4.13): tanken, en gång upplevelsen, och en gäst gör sin klan ovänligare, en gång per kropp och klan
 export function sagSkandad(s: State, p: Person, q: Kvarleva) {
   if (p.gast) {
-    const k = s.klaner?.find(c => c.id === p.gast!.klan);
+    const k = klanById(s, p.gast!.klan);
     if (k && !q.klaner?.includes(k.id)) { (q.klaner ??= []).push(k.id); k.inst = Math.max(-100, Math.min(100, Math.round(k.inst - KVAR.klan))); }
     return;
   }

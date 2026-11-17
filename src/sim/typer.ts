@@ -451,7 +451,7 @@ export interface State {
   overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; filtNr?: number; byteNr?: number; bytt?: import('./byte').Bytt[];
   rovareFler?: import('./rovare').Rovarflock[]; // flockar som väntar på att få gå (steg 8.7.18)
   rovare?: import('./rovare').Rovarflock; rovarNr?: number; rovarVila?: number; // rövarflocken på kartan, hur många som kommit och när nästa tidigast kommer (steg 4.4.5, rovare.ts)
-  klaner?: import('./klaner').Klan[]; klanNr?: number; // grannklanerna (steg 4.4.3, klaner.ts)
+  klaner?: import('./klaner').Klan[]; klanNr?: number; // klaner = grannklanerna i en sparad by från före v531, som blir världens byar (steg 11.2.15, grannbyar.ts); klanNr = nästa nummer för en grannbys förbindelse
   projektSaknar?: Record<string, import('./projekt').ProjektSaknar>; // det byns projekt saknar, per material, räknat en gång i timmen (steg 10.5.17, projekt.ts)
   handelsMal?: import('./handel').HandelsMal; // varorna byn gör att byta med handlaren, räknat en gång i timmen (steg 10.5.13, handel.ts)
   epidemi?: { k: import('./sjukdom').SjukId; ids: number[]; skriven?: 1 }; // utbrottet som pågår (steg 9.5.5, sjukdom.ts)

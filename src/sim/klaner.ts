@@ -1,22 +1,21 @@
 import { DAY, Person, SEC, State } from './typer';
 import { balans } from './balans';
-import { clamp, pick, rnd } from './slump';
-import { ALDER, ageOf, count, log, makeName } from './folk';
-import { kronika } from './historik';
-import { notis } from './notiser';
+import { clamp, pick, pickViktat, rnd } from './slump';
+import { makeName } from './folk';
 import { SAK_LIST } from './saker';
 import { grundvarde } from './varde';
 
-// ---------- grannklanerna (steg 4.4.3) ----------
-// Byn är inte ensam i världen. Grannklanerna finns ännu inte på någon karta (den utzoomade världskartan är steg 11.1.3): de är
-// en lista med namn, var de bor, hur många de är, hur starka (de som kan slåss), hur mycket de har (ungefär arbetstimmar, som
-// byns rikedom i varde.ts), hur de ser på byn (inställningen, −100 till 100: byns anseende hos dem) och några namngivna
-// personer. De växer och krymper av sig själva en gång om dygnet (ett år i spelet), och inställningen glöms långsamt mot det
-// neutrala. Handlarna kommer från dem (handel.ts): en klan som tycker illa om byn skickar ingen handlare, varje byte med
+// ---------- grannbyarnas förbindelse med byn (steg 4.4.3; från steg 11.2.15 världens byar) ----------
+// Byn är inte ensam i världen. Grannarna är världens byar i huvudbyns grannät (grannbyar.ts): varje sådan rad i världen bär
+// byns förbindelse med den (raden.syn, en Klan här): namn, var den ligger, hur många de är, hur starka (de som kan slåss), hur
+// mycket de har (ungefär arbetstimmar, som byns rikedom i varde.ts), hur de ser på byn (inställningen, −100 till 100: byns
+// anseende hos dem), några namngivna personer och restiden dit till fots. De växer och krymper av sig själva en gång om dygnet
+// (ett år i spelet), och inställningen glöms långsamt mot det neutrala. Ju längre bort en by ligger, desto mer sällan kommer
+// handlare, främlingar och räder därifrån (narhet). Handlarna kommer från dem (handel.ts): en klan som tycker illa om byn skickar ingen handlare, varje byte med
 // klanens handlare gör den lite vänligare, och märker handlaren att byn lurat hen blir den mindre vänlig. Invandrarna kommer
 // därifrån (steg 4.4.4.2), och de som bryter sig ut ur byn blir en av dem (steg 4.4.4.1).
 export const KLAN = balans('klan', {
-  antal: 4, // så många grannklaner finns när byn grundas
+  naraDygn: 1, // en grannby så här många dygns gång bort (ett år i spelet) eller närmare kommer man ifrån som förut; dubbelt så långt bort hälften så ofta
   folk: [12, 60], // så många är de från början
   styrka: [0.25, 0.5], // så stor del av dem kan slåss
   resurser: [15, 30], // så mycket har de per person (ungefär arbetstimmar)
@@ -52,8 +51,6 @@ export const KLAN = balans('klan', {
   prisSalt: 0.01, // det handlaren köper sänker klanens pris så mycket per silver i värde, och det hen säljer höjer det lika mycket
 });
 
-// klanernas namn: ett register, så att fler är en rad till
-export const KLAN_NAMN = ['Björnklanen', 'Älvfolket', 'Stenbyn', 'Ugglornas folk', 'Rävklanen', 'Tranfolket', 'Sälfolket', 'Granklanen', 'Vargåsens folk', 'Mossbyn', 'Laxfolket', 'Hjortklanen'];
 // rollerna hos klanernas namngivna personer
 export const KLAN_ROLLER: Record<string, { namn: string }> = {
   hovding: { namn: 'Hövding' },
@@ -63,8 +60,8 @@ export const KLAN_ROLLER: Record<string, { namn: string }> = {
   grundare: { namn: 'Grundare' },
   barn: { namn: 'Barn' },
 };
-// var klanerna bor, och vad som är sällsynt där (det börjar dyrare hos klanen, KLAN.prisSallsynt). Gästernas liv i gastliv.ts
-// reser dit
+// var klanerna bodde i en sparad by från före v531, och vad som var sällsynt där (priset i en sådan by tills den fått sin plats i
+// världen). Gästernas liv i gastliv.ts reser dit
 export const KLAN_HEM: readonly { namn: string; sallsynt: readonly string[] }[] = [
   { namn: 'kusten i söder', sallsynt: ['skinn', 'vargskinn', 'ved'] },
   { namn: 'fjällen i norr', sallsynt: ['rovfron', 'artfron', 'bar'] },
@@ -85,76 +82,66 @@ export interface Klan {
   utbrytare?: true; // klanen grundades av några som lämnade byn (steg 4.4.4.1)
   grundad?: number; // när, om den grundades efter byn
   pris?: Record<string, number>; // påslaget per slag (steg 10.5.14); saknas i en sparad by från före v533: startvärdena
+  rad?: number; dygn?: number; sallsynt?: string[]; // raden i världen, restiden dit till fots och det som är sällsynt på marken där (steg 11.2.15)
 }
-export const klanerOf = (s: State) => s.klaner ?? [];
-export const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : s.klaner?.find(k => k.id === id);
+// förbindelserna med världens byar, i radernas ordning (räknas om när en rad läggs till)
+const lista = new WeakMap<object, { n: number; k: Klan[] }>();
+export function klanerOf(s: State): Klan[] {
+  const r = s.varld?.rader;
+  if (!r) return [];
+  let c = lista.get(r);
+  if (!c || c.n !== r.length) lista.set(r, c = { n: r.length, k: r.flatMap(x => x.syn ? [x.syn] : []) });
+  return c.k;
+}
+export const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : klanerOf(s).find(k => k.id === id);
+// hur nära byn ligger: 1 inom KLAN.naraDygn, sedan i proportion mot restiden
+export const narhet = (k: Klan) => k.dygn === undefined ? 1 : Math.min(1, KLAN.naraDygn / Math.max(1e-6, k.dygn));
 const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'klan') * (b - a);
 export const instText = (v: number) => v >= 50 ? 'vänner' : v >= 15 ? 'vänliga' : v > -15 ? 'neutrala' : v > -50 ? 'misstänksamma' : 'fientliga';
 
-// en ny klan: namnet som ingen annan klan har, och en hövding och en äldste med namn
-export function nyKlan(s: State, folk: number, inst: number, personer?: KlanPerson[], egetNamn?: string): Klan {
-  const upptagna = new Set(klanerOf(s).map(k => k.namn)), fria = KLAN_NAMN.filter(n => !upptagna.has(n));
+// en ny förbindelse med en by (grannbyar.ts ger den en rad i världen): en hövding och en äldste med namn
+export function nyKlan(s: State, folk: number, inst: number, namn: string, hem: string, personer?: KlanPerson[]): Klan {
   const id = (s.klanNr = (s.klanNr ?? 0) + 1);
-  const namn = egetNamn ?? (fria.length ? pick(s, fria, 'klan') : `${pick(s, KLAN_NAMN, 'klan')} ${id}`);
   const per = (r: string): KlanPerson => { const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k'; return { namn: makeName(s, sex, 'klan'), sex, roll: r }; };
   const k: Klan = {
     krigisk: Math.round(rnd(s, 'klan') * 100), // klanens tro får sina skalor när den grundas (steg 8.8.6)
-    id, namn, hem: pick(s, KLAN_HEM_NAMN, 'klan'), folk: Math.round(folk), styrka: 0, resurser: 0, inst: Math.round(inst),
+    id, namn, hem, folk: Math.round(folk), styrka: 0, resurser: 0, inst: Math.round(inst),
     personer: personer ?? [per('hovding'), per('aldste'), ...(rnd(s, 'klan') < 0.5 ? [per('jagare')] : [])],
   };
   k.styrka = Math.round(k.folk * mellan(s, KLAN.styrka));
   k.resurser = Math.round(k.folk * mellan(s, KLAN.resurser));
-  (s.klaner ??= []).push(k);
   return k;
 }
-// grannklanerna när byn grundas (och i en sparad by från före v242)
-export function nyaKlaner(s: State) {
-  for (let i = 0; i < KLAN.antal; i++) nyKlan(s, mellan(s, KLAN.folk), mellan(s, KLAN.inst));
-}
+export const klanMellan = mellan;
 
 // en gång om dygnet (ett år i spelet): klanerna växer eller krymper, och inställningen glöms mot det neutrala
 export function klanSteg(s: State, dtSec: number) {
   const dygn = Math.floor(s.now / DAY) - Math.floor((s.now - dtSec * SEC) / DAY);
-  if (!s.klaner?.length || dygn < 1) return;
-  for (let i = 0; i < dygn; i++) for (const k of s.klaner) prisDrift(s, k); // driften räknas per dygn som gått
-  for (const k of s.klaner) {
+  const kl = klanerOf(s);
+  if (!kl.length || dygn < 1) return;
+  for (let i = 0; i < dygn; i++) for (const k of kl) prisDrift(s, k); // driften räknas per dygn som gått
+  for (const k of kl) {
     const f = KLAN.vaxt + (rnd(s, 'klan') * 2 - 1) * KLAN.vaxtSpann;
     k.folk = Math.max(3, Math.round(k.folk * (1 + f) + (rnd(s, 'klan') < 0.5 ? 0 : f > 0 ? 1 : -1)));
     k.styrka = Math.min(k.folk, Math.max(1, Math.round(k.folk * mellan(s, KLAN.styrka))));
     k.resurser = Math.max(0, Math.round(k.resurser * (1 + f) + k.folk * (rnd(s, 'klan') - 0.5)));
     if (k.inst) k.inst -= Math.sign(k.inst) * Math.min(Math.abs(k.inst), Math.max(1, Math.round(Math.abs(k.inst) * KLAN.glomma))); // minst ett steg, så att den når det neutrala
   }
+  for (const r of s.varld?.rader ?? []) if (r.syn) { r.t = s.now; r.tal.folk = r.syn.folk; r.tal.styrka = r.syn.styrka; r.tal.rikedom = r.syn.resurser; } // raden i världen följer
 }
 // inställningen ändras (handel, utbrytning, invandring): hela tal mellan −100 och 100
 export function andraInst(k: Klan, d: number) { k.inst = clamp(Math.round(k.inst + d), -100, 100); }
 
-// klanen en handlare kommer ifrån (handel.ts): bland dem som inte tycker illa om byn, och vem av klanens handlare
+// klanen en handlare kommer ifrån (handel.ts): bland dem som inte tycker illa om byn, oftare ur de som ligger nära, och vem av klanens handlare
 // alla = testläget (steg 4.5.4.4): vilken klan som helst, också en som inte tycker om byn
 export function handlarKlan(s: State, alla?: boolean): { klan: Klan; person: KlanPerson } | undefined {
   const kan = klanerOf(s).filter(k => alla || k.inst > KLAN.handelMin);
   if (!kan.length) return undefined;
-  const klan = pick(s, kan, 'klan'), har = klan.personer.filter(p => p.roll === 'handlare');
+  const klan = pickViktat(s, kan, kan.map(narhet), 'klan'), har = klan.personer.filter(p => p.roll === 'handlare');
   if (har.length >= KLAN.handlarePer || (har.length && rnd(s, 'klan') < 0.5)) return { klan, person: pick(s, har, 'klan') };
   const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k', person = { namn: makeName(s, sex, 'klan'), sex, roll: 'handlare' } as KlanPerson;
   klan.personer.push(person);
   return { klan, person };
-}
-
-// en familj flyttar ur en mycket stor by (emigrate i liv.ts, steg 4.4.4.1): de blir en ny grannklan, uppkallad efter den
-// första av grundarna, som tycker om byn de kom ifrån. De som flyttade är klanens namngivna personer
-export function utbrytning(s: State, grupp: Person[], pop: number) {
-  if (pop < KLAN.utbrytFran || grupp.length < 2) return undefined;
-  const vuxna = grupp.filter(p => ageOf(p, s.now) >= ALDER.vuxen), forst = vuxna[0] ?? grupp[0];
-  const namn = `${forst.name}${/[sxz]$/.test(forst.name) ? '' : 's'} folk`;
-  const per = grupp.map(p => ({ namn: p.name, sex: p.sex, roll: vuxna.includes(p) ? 'grundare' : 'barn', id: p.id } as KlanPerson));
-  const k = nyKlan(s, grupp.length, KLAN.utbrytInst, per, namn);
-  k.utbrytare = true; k.grundad = s.now;
-  k.styrka = Math.max(1, vuxna.length);
-  count(s, 'utbrytning');
-  const text = `${namn} är en ny grannklan vid ${k.hem}: ${grupp.map(p => p.name).join(', ')} som lämnade byn.`;
-  log(s, text, 'world', grupp.map(p => p.id)); notis(s, 'utflytt', text, grupp.map(p => p.id));
-  kronika(s, text, 'utbrytning');
-  return k;
 }
 
 // ---------- priserna (steg 10.5.14, "Ekonomi och handel (Priserna hos grannklanerna)" i designdokumentet) ----------
@@ -164,7 +151,7 @@ export function utbrytning(s: State, grupp: Person[], pop: number) {
 // sänker klanens pris och det hen säljer höjer det (prisHandel, handel.ts). Handlaren värderar efter sin klans pris
 let prisSlag: string[] | undefined;
 const slagMedPris = () => prisSlag ??= SAK_LIST.filter(k => k !== 'silver' && grundvarde(k) > 0);
-export const prisStart = (k: Klan, slag: string) => 1 + (KLAN_HEM.find(h => h.namn === k.hem)?.sallsynt.includes(slag) ? KLAN.prisSallsynt : 0);
+export const prisStart = (k: Klan, slag: string) => 1 + ((k.sallsynt ?? KLAN_HEM.find(h => h.namn === k.hem)?.sallsynt)?.includes(slag) ? KLAN.prisSallsynt : 0);
 export const klanPris = (k: Klan | undefined, slag: string) => !k ? 1 : k.pris?.[slag] ?? prisStart(k, slag);
 const avrunda = (x: number) => Math.round(clamp(x, KLAN.prisMin, KLAN.prisMax) * 1000) / 1000;
 function prisDrift(s: State, k: Klan) {

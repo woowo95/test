@@ -146,15 +146,14 @@ SCENARIER.floder = {
 };
 
 SCENARIER.varldtillstand = {
-  text: 'Världen bredvid byn (steg 11.2.7): byn utvecklas exakt som utan värld, världens frö rör inte byns slump, och världen sparas och laddas med byn',
+  text: 'Världen bredvid byn (steg 11.2.7): varje by har en värld (steg 11.2.15), världens frö rör inte byns slump, samma frö ger samma värld, och världen sparas och laddas med byn',
   kor: async () => {
-    const utan = SIM.cloneState(testBy(10)), med = SIM.cloneState(testBy(10));
+    const har = SIM.cloneState(testBy(10)), med = SIM.cloneState(testBy(10)); delete med.varld;
     const slumpFore = JSON.stringify(med.rngs);
     SIM.medVarld(med);
     const slumpEfter = JSON.stringify(med.rngs), fro = med.varld!.fro;
-    kor(utan, 6); kor(med, 6);
-    const byn = (s: SIM.State) => { const o = JSON.parse(SIM.serialize(s)); delete o.varld; return JSON.stringify(o); };
-    const lika = byn(utan) === byn(med);
+    const lika = JSON.stringify(har.varld!.mark) === JSON.stringify(med.varld!.mark) && JSON.stringify(har.varld!.platser!.map(p => [p.k, p.x, p.y])) === JSON.stringify(med.varld!.platser!.map(p => [p.k, p.x, p.y]));
+    kor(med, 6);
     // världen följer med i sparningen, som en egen del inom sin gräns
     const delar = SIM.serializeParts(med), kb = new TextEncoder().encode(delar.varlden ?? '').length / 1024;
     const bas = minnesBas(); await sparaBy(bas, 'b', med);
@@ -164,9 +163,9 @@ SCENARIER.varldtillstand = {
     const gammal = SIM.cloneState(ny); gammal.varld!.mark.gen = 0;
     const kvar = SIM.varldMark(gammal)!;
     return [
-      ['en testby har ingen värld', !testBy(10).varld && !SIM.varldMark(testBy(10))],
+      ['en testby har en värld', !!testBy(10).varld && !!SIM.varldMark(testBy(10))],
       ['världens frö räknas ur byns utan att röra byns slump', slumpFore === slumpEfter && fro === SIM.varldFro(med.seed) && fro !== med.seed],
-      ['byn utvecklas exakt som utan värld (6 timmar)', lika],
+      ['samma frö ger samma värld: marken och platserna', lika],
       [`världen sparas som en egen del inom sin gräns (${kb.toFixed(0)} KB av ${SIM.delGrans('varlden')})`, kb > 0 && kb <= SIM.delGrans('varlden')],
       ['världen laddas med byn, exakt som den räknades fram', samma(a, ratt) && samma(b, ratt) && ny.varld!.fro === fro],
       ['en sparad värld behåller sitt land och sin version', kvar.gen === 0 && samma({ ...kvar, gen: ratt.gen }, ratt)],
@@ -233,10 +232,10 @@ SCENARIER.radtal = {
     const folk = s.people.filter(p => p.died === undefined && p.left === undefined && !p.gast).length;
     const silver = SIM.stacksOf(s).filter(a => a.k === 'silver' && SIM.isStored(s, a.x, a.y)).reduce((a, b) => a + b.n, 0);
     const vuxna = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran).length;
-    const bara = SIM.cloneState(testBy(10)); // en by utan värld får ingen rad
+    const bara = SIM.cloneState(testBy(10)); delete bara.varld; // en by utan värld får ingen rad
     kor(bara, 2);
     return [
-      ['huvudbyns rad skrivs av sig själv en gång i timmen', skrevs && vl.rader!.length === 1],
+      ['huvudbyns rad skrivs av sig själv en gång i timmen', skrevs && vl.rader!.filter(x => !x.syn).length === 1],
       [`talen är hela (${SIM.RADTAL_IDS.map(k => `${k} ${tal[k]}`).join(', ')})`, hela],
       ['folket är byborna', tal.folk === folk && folk > 0],
       ['maten är portionerna i byn', tal.mat === Math.floor(SIM.foodOf(s)) && tal.mat > 0],
@@ -437,7 +436,7 @@ SCENARIER.varldslag = {
       let summa = 0; for (let n = 0; n < 4000; n++) summa += SIM.antalUr(1.25, SIM.varldSlump(vl, 9, n, 5));
       const rng = JSON.stringify(levande.rngs) === JSON.stringify(ny().rngs);
       // en by utan värld
-      const utan = SIM.cloneState(testBy(10)); utan.now += 86400e3; SIM.varldSteg(utan);
+      const utan = SIM.cloneState(testBy(10)); delete utan.varld; utan.now += 86400e3; SIM.varldSteg(utan);
       const takt = SIM.TAKTER.some(r => r.namn === 'världen');
       return [
         [`levande läge och ikappräkning ger exakt samma värld (${a.length} händelser på fyra dygn, fyra år i spelet)`, lika],
@@ -554,6 +553,53 @@ SCENARIER.grannat = {
       [`huvudbyns grannar är de närmaste att nå (${hb.grannar!.map(g => g.dygn).join(', ')} dygn till fots)`, hb.grannar!.length > 0 && narmare.length === 0],
       ['närmast räknas i vägens kostnad, inte fågelvägen (minst en by har en annan närmaste granne än den fågelvägen ger)', inteFagel],
       [`världen ryms i sin del av sparfilen (${Math.round(storlek / 1024)} kB av ${SIM.SPARGRANS.varlden} kB) och skapas på ${Math.round(tid)} ms`, storlek < SIM.SPARGRANS.varlden * 1024],
+    ];
+  },
+};
+
+SCENARIER.klanbort = {
+  text: 'Grannklanerna blir världens byar (steg 11.2.15, grannbyar.ts): en ny by har en värld, och grannarna är byarna i dess grannät, med en rad i världen som bär förbindelsen (hållningen, personerna, priserna och restiden). Var de bor är marken och väderstrecket, och det sällsynta hos dem är det marken där har sällsynt. Handlarna kommer därifrån, oftare från de nära. Talen i raden följer grannbyn varje dygn. En sparad by från före v531 får sin värld, och grannklanerna blir byarna i grannätet med sina namn och allt de visste',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld, k = SIM.klanerOf(s);
+    const h = vl?.platser?.find(p => p.by === vl.huvud), v = SIM.varldMark(s)!;
+    const rad = (c: SIM.Klan) => vl?.rader?.find(r => r.nr === c.rad), plats = (c: SIM.Klan) => vl?.platser?.find(p => p.k === 'by' && p.by === c.rad);
+    const varld = !!vl && !s.klaner && !!h && k.length === h.grannar!.length && k.length > 0;
+    const rader = k.every(c => rad(c)?.syn === c && rad(c)!.namn === c.namn && plats(c)?.namn === c.namn && rad(c)!.x === plats(c)!.x);
+    const dygn = k.every(c => c.dygn === h!.grannar!.find(g => g.nr === plats(c)!.nr)!.dygn);
+    const RIKT = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
+    const hem = k.every(c => { const m = SIM.VARLDMARK[SIM.MARK_IDS[v.mark[plats(c)!.y * v.w + plats(c)!.x]]]; return c.hem.startsWith(m.bestamd + ' i ') && RIKT.some(r => c.hem.endsWith(r)) && JSON.stringify(c.sallsynt) === JSON.stringify(m.sallsynt); });
+    // handlarna: oftare från en by nära
+    const t = SIM.cloneState(s), kt = SIM.klanerOf(t);
+    for (const c of kt) c.inst = 0;
+    kt[0].dygn = 0.5; for (const c of kt.slice(1)) c.dygn = 4;
+    const fran = new Map<number, number>();
+    for (let i = 0; i < 600; i++) { const x = SIM.handlarKlan(t)!; fran.set(x.klan.id, (fran.get(x.klan.id) ?? 0) + 1); }
+    const nara = fran.get(kt[0].id) ?? 0, annan = (fran.get(kt[1].id) ?? 0);
+    const narhet = SIM.narhet(kt[0]) === 1 && SIM.narhet(kt[1]) === SIM.KLAN.naraDygn / 4;
+    // talen i raden följer grannbyn
+    t.now += SIM.DAY; SIM.klanSteg(t, SIM.DAY / SIM.SEC);
+    const foljer = kt.every(c => { const r = t.varld!.rader!.find(x => x.nr === c.rad)!; return r.tal.folk === c.folk && r.tal.styrka === c.styrka && r.tal.rikedom === c.resurser && r.t === t.now; });
+    // en sparad by från före v531: grannklanerna (och en till än grannätet rymmer) blir byar i världen
+    const g = SIM.cloneState(s), gamla = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: SIM.KLAN_HEM_NAMN[1] }));
+    const extra = { ...gamla[0], id: 99, namn: 'Extrafolket', personer: [] };
+    g.klaner = [...gamla, extra]; delete g.varld; g.v = 55; g.klanNr = 99; SIM.migrate(g);
+    const kg = SIM.klanerOf(g), ex = kg.find(c => c.id === 99);
+    const migr = !g.klaner && kg.length === gamla.length + 1 && gamla.every(c => kg.some(x => x.id === c.id && x.namn === c.namn && x.inst === c.inst && x.rad !== undefined));
+    const extraPlats = !!ex && ex.dygn !== undefined && g.varld!.platser!.some(p => p.k === 'by' && p.by === ex.rad && p.namn === 'Extrafolket');
+    const laddad = SIM.klanById(g, gamla[0].id)?.namn === gamla[0].namn && JSON.parse(SIM.serialize(g)).klaner === undefined;
+    // en ny grannby på den närmaste lediga byplatsen
+    const n = SIM.cloneState(s), ny = SIM.nyGrannby(n, 10, 20, { namn: 'Nyfolket' }), np = n.varld!.platser!.find(p => p.by === ny.rad);
+    const nyPlats = !!np && np.namn === 'Nyfolket' && !!np.grannar?.length && SIM.klanerOf(n).includes(ny) && ny.dygn !== undefined;
+    return [
+      [`en ny by har en värld och ${k.length} grannar, byarna i grannätet`, varld],
+      ['varje granne har en rad i världen med förbindelsen, och platsen och raden heter som grannen', rader],
+      [`restiden är grannätets (${k.map(c => c.dygn).join(', ')} dygn, år i spelet)`, dygn],
+      [`var de bor är marken och väderstrecket, och det sällsynta är markens (${k.map(c => c.hem).join(', ')})`, hem],
+      [`handlarna kommer oftare från en by nära (${nara} gånger från den på ett halvt dygn, ${annan} från en på fyra)`, narhet && nara > 3 * annan && annan > 0],
+      ['talen i raden följer grannbyn varje dygn', foljer],
+      ['i en sparad by från före v531 blir grannklanerna byar i världen, med namn, hållning och id', migr && laddad],
+      ['en klan som grannätet inte rymmer får den närmaste lediga byplatsen', extraPlats],
+      ['en ny grannby får den närmaste lediga byplatsen, med ett grannät', nyPlats],
     ];
   },
 };

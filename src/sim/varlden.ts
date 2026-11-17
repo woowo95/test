@@ -3,7 +3,8 @@
 // världens krönika. Den sparas med byn, i samma ögonblick, som en egen del av sparfilen (varlden i DELAR, steg.ts), och varje
 // sparad by har sin egen värld. Världens frö räknas ur byns frö med en hash, så att inget i världen drar ur byns slumpföljder
 // och byn utvecklas exakt som utan värld. Marken sparas som den räknades fram, med generatorns version, så att en sparad värld
-// inte flyttar sig när generatorn ändras. Spelet ger byn en värld när den visas (medVarld); testbyarna har ingen.
+// inte flyttar sig när generatorn ändras. Byn får sin värld när den grundas (medVarld, från nyaGrannbyar i grannbyar.ts, steg
+// 11.2.15), en sparad by när den laddas (uppgradering 56).
 import { hash3 } from './slump';
 import { VarldMark, skapaVarldMark } from './varldmark';
 import { State } from './typer';
