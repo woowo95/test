@@ -30,7 +30,8 @@ import { kostnader, vagMellan, vagRutor, VarldVag } from './vagval';
 import { delFel, GADELAR } from './halsa';
 import { ageOf, ALDER } from './folk';
 import { snoPaMarken } from './vader';
-import { sallskapTyngd, trampa } from './leder';
+import { ledKlass, sallskapTyngd, trampa } from './leder';
+import type { Skill } from './typer';
 import { kommHem } from './ute';
 import { larOrt, O_BESOKT, radBesoker } from './ort';
 import { BYSORTER, radNr } from './radtal';
@@ -88,6 +89,15 @@ export const RESA = balans('resa', {
   folj: 0.35, // ... över så mycket följer man med
   // dagboken och redogörelsen (steg 11.5.13)
   minns: 20, // så många resor som kommit hem minns byn (redogörelsen), de äldsta glöms
+  // vägens händelser (steg 11.5.14)
+  fardSank: 0.5, // den bästa i sällskapet med full färdighet (20) ändrar risken så här mycket (sänker den, eller höjer ett fynd)
+  vilseStig: 0.02, // risken per dygn att gå vilse på stig, led och väg (på obanad mark står den i VAGHANDELSER)
+  vilseTim: 4, // timmar i gång som går förlorade när sällskapet går vilse
+  ovaderTim: 6, ovaderOrk: 0.2, // timmar sällskapet väntar ut ovädret, och orken det drar för den som inte ryms i tälten
+  ovaderNb: 2, // risken för oväder gånger (1 + så här mycket gånger regnet eller snön just nu, 0–1)
+  tappadLast: 2, // risken att tappa något gånger (1 + så här mycket gånger lasten delat med bärförmågan)
+  fyndMat: 0.5, // portioner per resenär i ett fynd av mat (minst en hel)
+  fyndVarm: 5, fyndKall: 0.3, // under så många grader hittar sällskapet bara så stor del så ofta
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
@@ -124,6 +134,7 @@ export interface Sallskap {
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
   krav?: number; // kraften sällskapet behöver mot ledens fara (steg 11.5.11)
   berattad?: number; // när resan berättades hemma (steg 11.5.13)
+  forlorat?: number; // timmar i gång som går förlorade: vilse eller ett oväder som väntas ut (steg 11.5.14)
 }
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
 export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number }
@@ -349,10 +360,12 @@ export function nattTapp(s: State, sl: Sallskap, t = s.now) {
   const v = vaderNu(s, t);
   return utan * (Math.max(0, RESA.koldFran - temperature(s, t)) * RESA.orkKold + v.nb * RESA.orkBlot);
 }
-// en bit av tiden (dt sekunder, kortare än en timme) för ett sällskap på vägen
+// en bit av tiden (dt millisekunder, högst tio minuter) för ett sällskap på vägen
 function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (sl.skede !== 'framme' && isLight(t)) ga(s, sl, t, dt);
   else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= RESMAL[sl.skal].stannar * 24 * HOUR) { sl.skede = 'hemat'; satVag(s, sl, false); dagbok(s, sl, 'ut', 'Vänder hem.', t); }
+  if (!PA_VAGEN.includes(sl.skede)) return;
+  if (sl.skede !== 'framme') vagHandelser(s, sl, t, dt);
   if (!PA_VAGEN.includes(sl.skede)) return;
   const b = behovOf(sl), tim = dt / HOUR, dag = isLight(t), framme = sl.skede === 'framme', r = rutaNu(s, sl), n = sl.medl.length;
   b.matt = clamp(b.matt - tim / KROPP.hungerTim, 0, 1);
@@ -379,11 +392,11 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
     while (b.foder >= 1 - 1e-9) { if ((sl.pack.torrgras ?? 0) < 1) { count(s, 'resa djur utan foder'); b.foder = 0; break; } tappa(sl, 'torrgras', 1); b.foder = Math.max(0, b.foder - 1); }
   }
 }
-// var tionde minut (TAKTER): sällskapen på vägen, i bitar om högst tio minuter
+// var tionde minut (TAKTER): sällskapen på vägen, i bitar om högst tio minuter (dt i millisekunder, som s.now)
 export function resaBehov(s: State, dt: number) {
   for (const sl of sallskapNu(s.varld)) {
     if (!PA_VAGEN.includes(sl.skede)) continue;
-    for (let gjort = 0; gjort < dt - 1e-9;) { const d = Math.min(600, dt - gjort); behovBit(s, sl, s.now - dt + gjort + d, d); gjort += d; }
+    for (let gjort = 0; gjort < dt - 1e-9;) { const d = Math.min(600 * SEC, dt - gjort); behovBit(s, sl, s.now - dt + gjort + d, d); gjort += d; }
   }
 }
 
@@ -417,10 +430,11 @@ function satVag(s: State, sl: Sallskap, bort: boolean) {
   sl.vag = vag ? { fran: vag.fran, till: vag.till, steg: vag.steg } : undefined; sl.pos = 0; sl.gang = 0; sl.ruta = bort ? a : b;
 }
 export const vagenRutor = (s: State, sl: Sallskap) => { const v = varldMark(s); return v && sl.vag ? vagRutor(sl.vag as VarldVag, v.w) : []; };
-// en bit av dagen i gång (dt sekunder): framåt längs vägen i rutornas kostnad
+// en bit av dagen i gång (dt millisekunder): framåt längs vägen i rutornas kostnad
 function ga(s: State, sl: Sallskap, t: number, dt: number) {
   const vl = s.varld, v = varldMark(s), rutor = vagenRutor(s, sl);
   if (!vl || !v || !rutor.length) return;
+  if (sl.forlorat && sl.forlorat > 0) { const d = Math.min(dt, sl.forlorat * HOUR); sl.forlorat = Math.max(0, sl.forlorat - d / HOUR); dt -= d; if (dt <= 0) return; } // vilse eller väntar ut ett oväder (steg 11.5.14)
   const k = kostnader(vl, v, 'fots'), tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length);
   sl.gang = (sl.gang ?? 0) + VARLD.gangPerDygn / RESA.dagTim * sallskapFart(s, sl) * dt / HOUR;
   let pos = sl.pos ?? 0;
@@ -722,6 +736,10 @@ export const DAGBOK = {
   handel: { namn: 'Handel', sym: '⚖️' },
   mote: { namn: 'Möte', sym: '🤝' },
   fynd: { namn: 'Fynd', sym: '💎', stor: true },
+  vilse: { namn: 'Vilse', sym: '❓' },
+  ovader: { namn: 'Oväder', sym: '🌧️' },
+  tappad: { namn: 'Tappat', sym: '🫳' },
+  mat: { namn: 'Mat', sym: '🫐' },
   ran: { namn: 'Rån', sym: '🗡️', stor: true },
   strid: { namn: 'Strid', sym: '⚔️', stor: true },
   skada: { namn: 'Skada', sym: '🩹', stor: true },
@@ -757,4 +775,62 @@ export function redogorelseAv(s: State, id: number): Redogorelse | undefined {
   const sl = resaAv(s, id);
   if (!sl) return undefined;
   return { titel: `${RESMAL[sl.skal].namn}: ${malNamn(s, sl)}`, borjan: sl.borjan, hem: sl.berattad!, ledare: sl.ledare, medl: sl.medl, dagbok: sl.dagbok, delning: sl.delning };
+}
+
+// ---------- vägens händelser (steg 11.5.14, Flera samhällen: Vägens händelser i tal) ----------
+// Registret VAGHANDELSER har en rad per händelse på vägen: risken per dygn, vad som höjer den (risk), färdigheten i sällskapet
+// som ändrar den (den bästa resenärens, fardighet; ett fynd blir vanligare, det andra ovanligare) och utfallet (gor). Risken är
+// en chans per tid: under en bit på dt sekunder sker händelsen med chansen 1 − e^(−risk·dt/dygn). Händelserna sker på vägen
+// (inte framme) och skrivs i dagboken. Här finns de ofarliga raderna; sjukdom, olycka, rån och rovdjur kommer senare.
+export interface VagHandelseDef { namn: string; dygn: number; fardighet?: Skill; okar?: true; risk?: (s: State, sl: Sallskap, t: number) => number; gor: (s: State, sl: Sallskap, t: number) => void }
+const basta = (s: State, sl: Sallskap, k: Skill) => Math.max(0, ...resenarer(s, sl).map(p => p.skill[k] ?? 0));
+export const VAGHANDELSER: Record<string, VagHandelseDef> = {
+  vilse: {
+    namn: 'Gå vilse', dygn: 0.06, fardighet: 'jakt', // på obanad mark; på stig och bättre RESA.vilseStig
+    risk: (s, sl) => { const vl = s.varld; return vl && sl.ruta !== undefined && ledKlass(vl, sl.ruta) !== 'obanad' ? RESA.vilseStig / VAGHANDELSER.vilse!.dygn : 1; },
+    gor: (s, sl, t) => { sl.forlorat = (sl.forlorat ?? 0) + RESA.vilseTim; dagbok(s, sl, 'vilse', `Gick vilse och förlorade ${RESA.vilseTim} timmar.`, t); },
+  },
+  ovader: {
+    namn: 'Oväder', dygn: 0.05,
+    risk: (s, _sl, t) => 1 + RESA.ovaderNb * vaderNu(s, t).nb,
+    gor: (s, sl, t) => {
+      const n = sl.medl.length, utan = n ? Math.max(0, n - RESA.talt * Math.floor(sl.pack.talt ?? 0)) / n : 0;
+      sl.forlorat = (sl.forlorat ?? 0) + RESA.ovaderTim; const b = behovOf(sl); b.ork = clamp(b.ork - RESA.ovaderOrk * utan, 0, 1);
+      dagbok(s, sl, 'ovader', `Ett oväder: väntade ut det i ${RESA.ovaderTim} timmar${utan > 0 ? ' utan tak' : ' i tälten'}.`, t);
+    },
+  },
+  tappad: {
+    namn: 'Tappad utrustning', dygn: 0.03, fardighet: 'hantverk',
+    risk: (s, sl) => { const bar = resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0); return 1 + RESA.tappadLast * (bar > 0 ? Math.min(1, packVikt(sl) / bar) : 0); },
+    gor: (s, sl, t) => {
+      const saker = Object.keys(sl.pack).filter(k => !FOOD.includes(k) && (sl.pack[k] ?? 0) >= 1).sort();
+      const alla = saker.reduce((a, k) => a + Math.floor(sl.pack[k]!), 0);
+      if (!alla) return;
+      let x = Math.floor(rnd(s, 'resa') * alla), k = saker[0]!;
+      for (const q of saker) { x -= Math.floor(sl.pack[q]!); if (x < 0) { k = q; break; } }
+      tappa(sl, k, 1); count(s, 'resa tappade');
+      dagbok(s, sl, 'tappad', `Tappade ${SAKER[k]?.namn.toLowerCase() ?? k} på vägen.`, t);
+    },
+  },
+  mat: {
+    namn: 'Fynd av mat', dygn: 0.08, fardighet: 'samla', okar: true,
+    risk: (s, _sl, t) => temperature(s, t) >= RESA.fyndVarm ? 1 : RESA.fyndKall,
+    gor: (s, sl, t) => {
+      const m = Math.max(1, Math.floor(resenarer(s, sl).length * RESA.fyndMat));
+      sl.pack.bar = (sl.pack.bar ?? 0) + m; count(s, 'resa hittade mat', m);
+      dagbok(s, sl, 'mat', `Hittade ${m} ${m === 1 ? 'portion' : 'portioner'} bär längs vägen.`, t);
+    },
+  },
+};
+export const VAGHANDELSE_IDS = Object.keys(VAGHANDELSER).sort();
+// risken per dygn för en händelse just nu
+export function vagRisk(s: State, sl: Sallskap, id: string, t = s.now) {
+  const h = VAGHANDELSER[id]!, f = h.fardighet ? basta(s, sl, h.fardighet) / 20 * RESA.fardSank : 0;
+  return h.dygn * (h.risk?.(s, sl, t) ?? 1) * (h.okar ? 1 + f : Math.max(0, 1 - f));
+}
+export function vagHandelser(s: State, sl: Sallskap, t: number, dt: number) {
+  for (const id of VAGHANDELSE_IDS) {
+    const p = 1 - Math.exp(-vagRisk(s, sl, id, t) * dt / DAY);
+    if (rnd(s, 'resa') < p) { VAGHANDELSER[id]!.gor(s, sl, t); count(s, `resa ${VAGHANDELSER[id]!.namn.toLowerCase()}`); }
+  }
 }

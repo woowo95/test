@@ -1930,3 +1930,59 @@ SCENARIER.redogorelse = {
     ];
   },
 };
+
+SCENARIER.vaghandelser = {
+  text: 'Vägens händelser (steg 11.5.14, VAGHANDELSER i resa.ts): de ofarliga raderna (gå vilse, oväder, tappad utrustning och fynd av mat) med risk per dygn, det som höjer den och färdigheten som sänker den (eller höjer ett fynd). Risken är en chans per tid, så korta och långa bitar ger lika många händelser, och sällskapet på vägen går med spelets egen klocka',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, [a, b] = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
+    const mal = SIM.byPlats(vl0, vl0.huvud!)!.grannar![0]!.nr;
+    const ny = () => {
+      const s = SIM.cloneState(s0), p = s.people.find(q => q.id === a!.id)!, q = s.people.find(x => x.id === b!.id)!;
+      const sl = SIM.nyttSallskap(s, p, mal, 'handel')!; SIM.foljMed(s.varld!, sl, q);
+      sl.skede = 'ute'; sl.pack = { skinn: 5000, rep: 5000 };
+      return { s, sl, p, q };
+    };
+    // vilse: obanad mark mot stig, och den som kan jakt
+    const x = ny(), v = SIM.varldMark(x.s)!, i = SIM.byPlats(x.s.varld!, x.sl.by)!; x.sl.ruta = i.y * v.w + i.x;
+    x.p.skill.jakt = 0; x.q.skill.jakt = 0;
+    delete x.s.varld!.leder?.[x.sl.ruta]; x.s.varld!.ledVer = (x.s.varld!.ledVer ?? 0) + 1;
+    const obanad = SIM.vagRisk(x.s, x.sl, 'vilse');
+    (x.s.varld!.leder ??= {})[x.sl.ruta] = [20, x.s.now, 1];
+    const stig = SIM.vagRisk(x.s, x.sl, 'vilse');
+    x.p.skill.jakt = 20; const jagare = SIM.vagRisk(x.s, x.sl, 'vilse');
+    x.p.skill.samla = 0; x.q.skill.samla = 0; const fynd0 = SIM.vagRisk(x.s, x.sl, 'mat'); x.p.skill.samla = 20; const fynd20 = SIM.vagRisk(x.s, x.sl, 'mat');
+    // tusen dygn på vägen (utan att gå), i timmar och i tiominutersbitar: lika många händelser, nära risken gånger dygnen
+    const kor = (bit: number) => {
+      const y = ny(), n: Record<string, number> = {};
+      for (const id of SIM.VAGHANDELSE_IDS) n[id] = 0;
+      const rakna = () => { const c: Record<string, number> = {}; for (const [, , k] of y.sl.dagbok) if (k) c[k] = (c[k] ?? 0) + 1; return c; };
+      let risk: Record<string, number> = {};
+      for (let t = 0; t < 1000 * SIM.DAY; t += bit) {
+        y.s.now = s0.now + t;
+        if (t % SIM.DAY === 0) for (const id of SIM.VAGHANDELSE_IDS) risk[id] = (risk[id] ?? 0) + SIM.vagRisk(y.s, y.sl, id);
+        SIM.vagHandelser(y.s, y.sl, y.s.now, bit); y.sl.forlorat = 0;
+      }
+      const c = rakna(); for (const id of SIM.VAGHANDELSE_IDS) n[id] = c[id] ?? 0;
+      return { n, risk, heltal: Object.values(y.sl.pack).every(Number.isInteger), y };
+    };
+    const tim = kor(SIM.HOUR), tio = kor(10 * SIM.MIN);
+    const nara = (k: string, r: { n: Record<string, number>; risk: Record<string, number> }) => Math.abs(r.n[k]! - r.risk[k]!) <= 4 * Math.sqrt(r.risk[k]!) + 3;
+    const lika = SIM.VAGHANDELSE_IDS.every(k => Math.abs(tim.n[k]! - tio.n[k]!) <= 4 * Math.sqrt(tim.risk[k]!) + 3);
+    // med spelets egen klocka: ett sällskap på väg kommer framåt
+    const z = ny(); const zv = SIM.varldMark(z.s)!, hem = SIM.byPlats(z.s.varld!, z.sl.by)!, mp = z.s.varld!.platser!.find(p => p.nr === mal)!;
+    for (const p of [z.p, z.q]) SIM.gaBort(z.s, p);
+    z.sl.pack = { brod: 40 }; z.sl.ruta = hem.y * zv.w + hem.x;
+    const vag = SIM.vagMellan(z.s.varld!, zv, z.sl.ruta, mp.y * zv.w + mp.x, 'fots', z.s.now)!;
+    z.sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg }; z.sl.pos = 0; z.sl.gang = 0;
+    const t0 = z.s.now; korTills(z.s, () => (z.sl.pos ?? 0) >= 2 || z.sl.skede !== 'ute', 30 * 3600);
+    return [
+      [`gå vilse: obanad mark ${obanad.toFixed(3)}, stig ${stig.toFixed(3)} per dygn`, Math.abs(obanad - 0.06) < 1e-9 && Math.abs(stig - 0.02) < 1e-9],
+      [`den som kan jakt sänker risken (${stig.toFixed(3)} → ${jagare.toFixed(3)})`, jagare < stig],
+      [`den som kan samla hittar oftare mat (${fynd0.toFixed(3)} → ${fynd20.toFixed(3)})`, fynd20 > fynd0],
+      [`tusen dygn i timmar: ${SIM.VAGHANDELSE_IDS.map(k => `${k} ${tim.n[k]} (väntat ${Math.round(tim.risk[k]!)})`).join(', ')}`, SIM.VAGHANDELSE_IDS.every(k => nara(k, tim) && tim.n[k]! > 0)],
+      [`i tiominutersbitar lika många: ${SIM.VAGHANDELSE_IDS.map(k => `${k} ${tio.n[k]}`).join(', ')}`, lika && SIM.VAGHANDELSE_IDS.every(k => nara(k, tio))],
+      [`det tappade och det hittade är hela saker (${5000 - (tim.y.sl.pack.skinn ?? 0) + 5000 - (tim.y.sl.pack.rep ?? 0)} tappade, ${tim.y.sl.pack.bar ?? 0} bär)`, tim.heltal && (tim.y.sl.pack.bar ?? 0) > 0],
+      [`spelets klocka flyttar sällskapet längs vägen (${z.sl.pos ?? 0} rutor på ${((z.s.now - t0) / SIM.HOUR).toFixed(1)} timmar)`, (z.sl.pos ?? 0) >= 2 || z.sl.skede !== 'ute'],
+    ];
+  },
+};
