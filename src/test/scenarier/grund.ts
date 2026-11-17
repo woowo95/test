@@ -1666,8 +1666,15 @@ SCENARIER.brandfart = {
     const a = torrAng();
     if (typeof a === 'string') return [[a, false]];
     const { s, mitt } = a;
+    // elden slumpas ur byns frö och tiden, och en enda brand varierar mycket (från 13 till 60 rutor när den tänds en bråkdel av en
+    // sekund senare), så en brand är inget mått: medelvärdet av nio bränder tända med en minuts mellanrum
     const prov = (slag: 'hog' | 'skog', torr: number) => {
+      const ut = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(k => prov1(slag, torr, k)).sort((u, v) => u.n - v.n);
+      return { fore: Math.max(...ut.map(u => u.fore)), n: Math.round(ut.reduce((u, v) => u + v.n, 0) / ut.length), alla: ut.map(u => u.n).join(', ') };
+    };
+    const prov1 = (slag: 'hog' | 'skog', torr: number, k: number) => {
       const x = cloneState(s), cx = mitt % W, cy = Math.floor(mitt / W);
+      if (k) step(x, 60 * k);
       angSlag(x, mitt, slag);
       if (x.vader) { x.vader.torr = torr; x.vader.fukt = 0; }
       SIM.tand(x, mitt, 'blixt', 0);
@@ -1678,8 +1685,8 @@ SCENARIER.brandfart = {
     };
     const hog = prov('hog', 240), skog = prov('skog', 240), blot = prov('hog', 0);
     return [
-      [`i torrt högt gräs brinner ${hog.n} rutor efter tio minuter (en ruta tändes)`, hog.fore === 1 && hog.n >= 20 && hog.n <= 200],
-      [`i torr skog går det långsammare: ${skog.n} rutor`, skog.n >= 2 && skog.n < hog.n / 2],
+      [`i torrt högt gräs brinner ${hog.n} rutor efter tio minuter i medel (en ruta tändes; ${hog.alla})`, hog.fore === 1 && hog.n >= 20 && hog.n <= 200],
+      [`i torr skog går det långsammare: ${skog.n} rutor i medel (${skog.alla})`, skog.n >= 2 && skog.n < hog.n / 2],
       [`i blött högt gräs tar den sig inte vidare: ${blot.n} ruta`, blot.n <= 1],
     ];
   },
