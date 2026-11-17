@@ -1,5 +1,5 @@
 import { SKATT, skattDygn, skattRegister } from './skatt';
-import { raknaBynVet } from './ort';
+import { raknaBynVet, sparaHistorik } from './ort';
 import { budgetDygn, budgetRegister } from './budget';
 import { bynamnRegister } from './bynamn';
 import { heligtAvstar } from './kultlatt';
@@ -433,7 +433,8 @@ export const TAKTER: Takt[] = [
   { namn: 'binas stick hos djuren', sek: 600, fn: (s, dt) => djurStickSteg(s, dt) }, // läker (bin.ts, steg 10.10.27)
   { namn: 'bina', sek: 14400, fn: (s, dt) => { binSteg(s, dt); } }, // svärmarna (bin.ts, steg 10.10.17)
   { namn: 'forget', sek: 14400, fn: (s, dt) => { forget(s, dt / HOUR_S); } },
-  { namn: 'det byn vet', sek: 3600, fn: s => raknaBynVet(s) }, // om platserna i världen (ort.ts, steg 11.4.6)
+  { namn: 'det byn vet', sek: 3600, fn: s => raknaBynVet(s) },
+  { namn: 'byarnas historik', sek: 3600, fn: s => sparaHistorik(s) }, // en bild per by var femte dygn (ort.ts, steg 11.4.8) // om platserna i världen (ort.ts, steg 11.4.6)
   { namn: 'stepRykten', sek: 3600, fn: s => { stepRykten(s, moodOf); } },
   { namn: 'glomRykten', sek: 14400, fn: (s, dt) => { glomRykten(s, dt / HOUR_S); } },
   { namn: 'stepBerattelser', sek: 3600, fn: s => { stepBerattelser(s); } },

@@ -13,7 +13,8 @@ import { lognFaktor } from './rykten';
 import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
 import { VARLD } from './varldmark';
 import { klanById } from './klaner';
-import { Lardom, Person, Rel, State } from './typer';
+import { DAY, Lardom, Person, Rel, State } from './typer';
+import { BYSORTER, RadtalId, VarldRad } from './radtal';
 
 export const ORT = balans('ort', {
   max: 10, // så många platser i världen minns en person högst (utöver de andra lärdomarna); det minst säkra trängs undan
@@ -25,6 +26,7 @@ export const ORT = balans('ort', {
   ryktRadie: 0.5, // ett rykte är ett område med den här radien i dygns gång (steg 11.4.5) ...
   ryktFran: 0.3, ryktTill: 0.85, // ... och mitten ligger så här långt från platsen, i andelar av radien
   dela: 1, // hur gärna man berättar om en plats i världen i ett samtal, gånger säkerheten (som en plats med värdet 1, steg 11.4.4)
+  histDygn: 5, histMax: 16, // byarnas historik (steg 11.4.8): en bild var femte dygn, högst så många per by
   nedC: 0.5, // en plats vars säkerhet sjunkit under MINNE.glomGrans sjunker en nivå och får den här säkerheten; ett rykte glöms
 });
 
@@ -191,4 +193,42 @@ export function bynsKarta(s: State): BynsKarta | undefined {
 }
 // syns platsen på världskartan: allt utom en hemlig plats som byn inte har ett rykte om
 export const syns = (k: BynsKarta | undefined, q: { nr: number; k: keyof typeof LANDMARKEN }) => !k || !(LANDMARKEN[q.k] as LandmarkDef).hemlig || k.niva(q.nr) !== undefined;
+
+// ---------- byarnas historik (steg 11.4.8, Flera samhällen: Uppgifterna om en by och nyheterna) ----------
+// Varje by sparar sina uppgifter glest, så att det en person tror om en by är byns tal vid tiden för uppgiften: en gammal
+// uppgift men aldrig en påhittad. En bild sparas var ORT.histDygn:e dygn (vid radens tid, när den räknats fram dit), och när de
+// blir fler än ORT.histMax tas den bild bort vars lucka blir minst i förhållande till hur gammal den är, så att de senaste
+// ligger tätt och de äldre glesare. Den första och den senaste bilden tas aldrig bort.
+export interface RadBild { t: number; tal: Record<RadtalId, number>; led?: string; tro?: string; lyder?: number; inst?: number; borta?: true }
+export function radBild(r: VarldRad): RadBild {
+  const b: RadBild = { t: r.t, tal: { ...r.tal } }, led = r.ledare !== undefined ? r.fasta[r.ledare]?.namn : undefined;
+  if (led) b.led = led;
+  if (r.tro) b.tro = r.tro.namn;
+  if (r.lyder !== undefined) b.lyder = r.lyder;
+  if (r.syn) b.inst = Math.round(r.syn.inst);
+  if (!BYSORTER[r.sort].folk || r.tal.folk <= 0) b.borta = true;
+  return b;
+}
+export function sparaHistorik(s: State) {
+  const vl = s.varld, steg = ORT.histDygn * DAY;
+  for (const r of vl?.rader ?? []) {
+    const h = r.hist ??= [], sist = h[h.length - 1];
+    if (sist?.borta) continue; // en by som gått under ändras inte mer
+    if (sist && Math.floor(r.t / steg) <= Math.floor(sist.t / steg)) continue;
+    h.push(radBild(r));
+    while (h.length > ORT.histMax) {
+      let bast = 1, min = Infinity;
+      for (let i = 1; i < h.length - 1; i++) { const v = (h[i + 1]!.t - h[i - 1]!.t) / Math.max(1, r.t - h[i]!.t); if (v < min) { min = v; bast = i; } }
+      h.splice(bast, 1);
+    }
+  }
+}
+// det man tror om byn med uppgifter från tiden t: den senaste bilden som inte är nyare än t (den första om t är äldre än alla)
+export function radVid(r: VarldRad, t: number): RadBild | undefined {
+  const h = r.hist;
+  if (!h?.length) return undefined;
+  let b = h[0]!;
+  for (const x of h) if (x.t <= t) b = x; else break;
+  return b;
+}
 
