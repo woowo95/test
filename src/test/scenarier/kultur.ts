@@ -12,6 +12,7 @@ import { person as personFlik } from '../../ui/flikar/person';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
 import { styre as styreFlik } from '../../ui/flikar/styre';
 import { seder as sederFlik } from '../../ui/flikar/seder';
+import { forrad as forradFlik, forradRader } from '../../ui/flikar/forrad';
 import { OPPNAR, bubblaKlick, bubblaText, forklaringAv } from '../../ui/bubbla';
 import { esc, hjalpKlick, tidForklaring } from '../../ui/hjalp';
 
@@ -1197,6 +1198,27 @@ SCENARIER.tidsord = {
       [`året och tidsstaven har samma förklaring: ett år är ett dygn och en tidsålder en vecka, med dagen och klockan ("${forkl.replace(/\n/g, ' ')}")`, samma && /Ett år i spelet är ett dygn i verkligheten, och en tidsålder är en vecka/.test(forkl) && forkl.includes(`dag ${k.dag} av ${k.av}`) && /kl\. \d\d:\d\d/.test(forkl) && forkl.startsWith(SIM.timeLabel(s, s.now))],
       [`ingen sträng i gränssnittets kod säger dygn, säsong eller klicka${fel.length ? `: ${fel.slice(0, 3).join('; ')}` : ''}`, !fel.length],
       [`panelerna i en testby säger inte dygn, säsong eller klicka${iPanel ? `: ${iPanel}` : ''}`, !iPanel],
+    ];
+  },
+};
+SCENARIER.forradsflik = {
+  text: 'Steg 11.1.6: förrådet är en flik utan runsten (flikar/forrad.ts). Rikedomen i sidhuvudet öppnar och stänger den på bred och smal skärm, spaltens rubrik på datorn öppnar den, och fliken visar sakerna i mapparna med namn och antal',
+  kor: () => {
+    utanWebblasare();
+    const s = testBy(20); setByn(s);
+    const html = forradFlik.html(), rader = forradRader();
+    const panel = readFileSync(new URL('../../ui/panel.ts', import.meta.url), 'utf8'), css = readFileSync(new URL('../../template.html', import.meta.url), 'utf8');
+    // rikedomen öppnar fliken (samma knapp på bred och smal skärm: visa lägger den i högra panelen, som i mobilen är ett ark)
+    const rik = /\$\('calRik'\)\.addEventListener\('click', forradFlik\)/.test(panel) && /const forradFlik = \(\) => \{ if \(ui\.hoger === 'forrad'\) stang\('h'\); else visa\('forrad'\);/.test(panel);
+    const ingenSten = forradFlik.knapp !== undefined && forradFlik.knapp !== 'person' && /FLIKAR = \{[^}]*\bforrad\b/.test(panel);
+    const spalt = /data-forrad title="Öppna förrådet"/.test(panel) && /if \(\(e\.target as HTMLElement\)\.closest\('\[data-forrad\]'\)\) \{ forradFlik\(\)/.test(panel);
+    const syns = /\.owned \{[^}]*display: block;/.test(css) && !/forradOppen/.test(css);
+    const k = rader[0]?.ks[0];
+    return [
+      ['rikedomen i sidhuvudet öppnar och stänger förrådets flik, på bred och smal skärm', rik],
+      ['förrådet har ingen runsten', ingenSten],
+      ['spaltens rubrik på datorn öppnar fliken, och spalten står kvar', spalt && syns],
+      [`fliken visar sakerna i mapparna med namn och antal (${rader.length} mappar)`, rader.length > 0 && !!k && html.includes(`data-sak="k:${k.k}"`) && html.includes(SIM.sakNamn(k.k))],
     ];
   },
 };

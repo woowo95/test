@@ -94,8 +94,10 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 /* lista till vänster över allt byn äger */
 /* Förrådet öppnas med rikedomen i sidhuvudet (steg 5.3.3.4) */
 /* förrådsspalten är smal (steg 6.9.2): en rad är bara symbolen och antalet */
-.owned { position: absolute; left: 10px; top: 12px; width: 120px; max-height: calc(100% - 110px); display: none; overflow-y: auto; background: none; color: #dad0bb; text-shadow: 0 1px 2px #24201d, 0 0 3px #24201d; padding: 0 2px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
+.owned { position: absolute; left: 10px; top: 12px; width: 120px; max-height: calc(100% - 110px); display: block; overflow-y: auto; background: none; color: #dad0bb; text-shadow: 0 1px 2px #24201d, 0 0 3px #24201d; padding: 0 2px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
 .owned h4 { margin: 0 0 3px; font-size: 16px; opacity: 0.8; font-family: var(--display); font-weight: 400; }
+.owned .forradrub { border: 0; background: none; color: inherit; font: inherit; padding: 0; cursor: pointer; text-shadow: inherit; } /* rubriken öppnar förrådets flik (steg 11.1.6) */
+.forradlista { list-style: none; padding: 0; margin: 0 0 8px; } .forradlista li { display: flex; gap: 6px; align-items: center; padding: 2px 0; } .forradlista .n { margin-left: auto; font-variant-numeric: tabular-nums; }
 .owned .fold { display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; padding: 2px 0; cursor: pointer; }
 .owned .fold .n { float: right; font-weight: 400; opacity: 0.8; }
 .owned ul { list-style: none; margin: 0 0 2px; padding: 0 0 0 8px; }
@@ -162,7 +164,6 @@ body.hOppen .zoom { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(--
 .panel > .bakat[hidden] { display: none; }
 .panelkropp { overflow-y: auto; padding: 12px 14px 16px; min-width: 0; }
 .panelkropp > :first-child { margin-right: 62px; } /* plats för krysset */
-body.forradOppen .owned { display: block; }
 body.vOppen .owned { display: none; }
 /* flikknapparna i en kolumn längst till höger (runstenarna i steg 5.3.3.1) */
 .tabs { position: fixed; z-index: 2; right: 0; top: var(--topp); bottom: 0; width: var(--stenar); box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 10px 6px; background: none; overflow-y: auto; scrollbar-width: none; pointer-events: none; }
@@ -525,7 +526,7 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
 <div class="app">
   <header>
     <h1 id="bynamn">Samhällssimulatorn</h1>
-    <div class="cal" aria-live="polite"><b id="calYear">År 1</b><span id="calAge" class="tidsstav">Vårtid</span><span id="calTime"></span><span id="calMotgang" hidden></span><span class="nycklar"><span id="calTemp" class="nyckel"></span><button type="button" id="calRik" class="nyckel calknapp" aria-expanded="false" aria-controls="owned"></button><button type="button" id="calFolk" class="nyckel calknapp"></button><button type="button" id="calNotis" class="nyckel calknapp" aria-expanded="false" aria-controls="notisRuta" hidden></button></span><span id="sparFel" title="Byn kunde inte sparas i molnet. Den finns kvar i webbläsaren, och spelet försöker igen om en minut." hidden>☁✗</span><span id="molnFel" title="Byn i molnet gick inte att läsa. Den sparas inte där förrän den har lästs, så att den inte skrivs över. Spelet försöker igen, och är byn i molnet nyare tar den över." hidden>☁?</span><span id="lokalFel" title="Byn kunde inte sparas i webbläsaren (lagringen är kanske full eller avstängd). Den sparas i molnet om det går." hidden>⚠</span></div>
+    <div class="cal" aria-live="polite"><b id="calYear">År 1</b><span id="calAge" class="tidsstav">Vårtid</span><span id="calTime"></span><span id="calMotgang" hidden></span><span class="nycklar"><span id="calTemp" class="nyckel"></span><button type="button" id="calRik" class="nyckel calknapp" aria-expanded="false"></button><button type="button" id="calFolk" class="nyckel calknapp"></button><button type="button" id="calNotis" class="nyckel calknapp" aria-expanded="false" aria-controls="notisRuta" hidden></button></span><span id="sparFel" title="Byn kunde inte sparas i molnet. Den finns kvar i webbläsaren, och spelet försöker igen om en minut." hidden>☁✗</span><span id="molnFel" title="Byn i molnet gick inte att läsa. Den sparas inte där förrän den har lästs, så att den inte skrivs över. Spelet försöker igen, och är byn i molnet nyare tar den över." hidden>☁?</span><span id="lokalFel" title="Byn kunde inte sparas i webbläsaren (lagringen är kanske full eller avstängd). Den sparas i molnet om det går." hidden>⚠</span></div>
   </header>
     <section class="mapwrap" aria-label="Karta över byn">
       <div id="map"></div>

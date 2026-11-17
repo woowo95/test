@@ -1,6 +1,7 @@
 import { FOLDERS, amountOf, grundvarde, isTool, kortTal, ownedSum, sakNamn, wornOf } from '../sim';
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
+import { forrad } from './flikar/forrad';
 import { kronika } from './flikar/kronika';
 import { hog, lager } from './flikar/lager';
 import { hus } from './flikar/hus';
@@ -36,7 +37,7 @@ export interface Flik {
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
 // runstenarna uppifrån (steg 9.3.1–9.3.2): Seder, Tro, Styre, Teknik, Krönika, Byns tal och Omvärlden
-const FLIKAR = { seder, religion, styre, teknik, kronika, tal, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
+const FLIKAR = { seder, religion, styre, teknik, kronika, tal, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match, forrad } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -133,6 +134,7 @@ export function renderPanel(force = false) {
   }
   const vanster = ui.tab === 'person' || (ärRuta(ui.tab) && ui.selected !== undefined) ? 'person' : undefined;
   document.body.classList.toggle('vOppen', !!vanster);
+  $('calRik').setAttribute('aria-expanded', String(ui.hoger === 'forrad')); // rikedomen öppnar förrådet (steg 11.1.6)
   document.body.classList.toggle('hOppen', !!ui.hoger); // zoomen flyttar till vänster om den högra panelen (steg 5.3.6); värmekartornas knappar står kvar och täcks (steg 10.2.62)
   renderOwned();
   skriv(SIDOR.v, vanster, force);
@@ -168,12 +170,10 @@ document.addEventListener('click', e => {
 });
 
 // listan till vänster över allt i förrådet, i mappar som kan fällas ihop: en sak per rad, symbolen och antalet, namnet när musen är över.
-// Förrådet har ingen egen runsten: rikedomen överst i sidhuvudet är knappen som öppnar och stänger det (steg 5.3.3.4)
-$('calRik').addEventListener('click', () => {
-  const oppna = !document.body.classList.contains('forradOppen');
-  document.body.classList.toggle('forradOppen', oppna); $('calRik').setAttribute('aria-expanded', String(oppna));
-  if (oppna && (ui.tab === 'person' || ui.selected !== undefined)) stang('v'); // listan står där personens panel står
-});
+// Förrådet är en flik utan runsten (steg 11.1.6, flikar/forrad.ts): rikedomen överst i sidhuvudet öppnar och stänger den, också i
+// mobilen, och spaltens rubrik på datorn öppnar den
+const forradFlik = () => { if (ui.hoger === 'forrad') stang('h'); else visa('forrad'); renderPanel(true); };
+$('calRik').addEventListener('click', forradFlik);
 const closed = new Set<string>();
 let ownedKey = '';
 // namnet, hur mycket som är byns och invånarnas egna (egendom.ts), och värdet (varde.ts)
@@ -185,7 +185,7 @@ function tipOf(k: string, n: number) {
 function renderOwned() {
   const rows = FOLDERS.map(f => ({ f, ks: f.k.map(k => ({ k, n: amountOf(s, k) })).filter(r => r.n >= (isTool(r.k) ? 1e-6 : 0.5)) })).filter(r => r.ks.length);
   const ute = piles().filter(p => !p.stored);
-  const html = `<h4>Förrådet</h4>${rows.map(({ f, ks }) => {
+  const html = `<h4><button type="button" class="forradrub" data-forrad title="Öppna förrådet">Förrådet</button></h4>${rows.map(({ f, ks }) => {
     const sum = f.summa ? ` <span class="n">${Math.round(ks.reduce((a, r) => a + r.n, 0))}</span>` : '';
     return `<button type="button" class="fold falla" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li class="klick" data-sak="k:${r.k}" title="${tipOf(r.k, r.n)}" tabindex="0" role="button">${iconImg(r.k)}<span class="n">${isTool(r.k) ? Math.ceil(r.n - 1e-9) : Math.max(1, Math.round(r.n))}</span></li>`).join('')}</ul>`}`;
   }).join('') || '<p>Inget ännu</p>'}${ute.length ? `<p class="ute">${ute.length} ${ute.length === 1 ? 'hög' : 'högar'} på marken</p>` : ''}`;
@@ -193,6 +193,7 @@ function renderOwned() {
   ownedKey = html; $('owned').innerHTML = html;
 }
 $('owned').addEventListener('click', e => {
+  if ((e.target as HTMLElement).closest('[data-forrad]')) { forradFlik(); return; }
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button.fold');
   if (!b) return;
   const f = b.dataset.f!; if (closed.has(f)) closed.delete(f); else closed.add(f);
