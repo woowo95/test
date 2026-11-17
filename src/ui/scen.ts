@@ -75,12 +75,17 @@ export function layout() {
   const w = el.clientWidth, h = el.clientHeight;
   if (!w || !h) return; // kartan syns inte än (dold flik): ingen storlek att räkna med, annars blir kameran NaN och fastnar
   if (!Number.isFinite(cam.x) || !Number.isFinite(cam.y)) { cam.x = -1; cam.y = -1; } // börja om vid elden
-  if (app.renderer.width !== w * app.renderer.resolution || app.renderer.height !== h * app.renderer.resolution) app.renderer.resize(w, h);
   const fit = Math.min(w / (W * TS), h / (H * TS));
   cam.zoom = clamp(cam.zoom, 1, 20); // den största förstoringen: tjugo gånger hela kartan (steg 3.10.6, 9.2.85)
-  // hela punkter (steg 10.2.56): inzoomad blir varje punkt i världen ett helt antal punkter på skärmen, så att ingen punkt
-  // blir bredare än sin granne och bilden inte ser suddig ut
-  const res = app.renderer.resolution, sc0 = fit * cam.zoom, sc = sc0 * res >= 1 ? Math.max(1, Math.round(sc0 * res)) / res : sc0;
+  // hela punkter (steg 10.2.56): varje punkt i världen blir ett helt antal punkter i bilden, så att ingen punkt blir bredare
+  // än sin granne. Steglös zoom (steg 11.1.67): i stället för att avrunda skalan (som hoppar mellan fasta nivåer) får
+  // canvasen en upplösning där skalan blir hela canvaspunkter, och webbläsaren skalar den mjukt till skärmen. Bilden blir lite
+  // mjukare mellan nivåerna men hoppar aldrig. Antalet canvaspunkter är det närmaste hela, så att canvasen är mellan två
+  // tredjedelar och en och en halv gång så stor som skärmen åt varje håll
+  const res0 = Math.min(2, window.devicePixelRatio || 1), sc0 = fit * cam.zoom, d = sc0 * res0;
+  const res = d >= 1 ? Math.max(1, Math.round(d)) / sc0 : res0, sc = sc0;
+  if (Math.abs(app.renderer.resolution - res) > 1e-9) app.renderer.resolution = res;
+  if (app.renderer.width !== Math.round(w * res) || app.renderer.height !== Math.round(h * res)) { app.renderer.resize(w, h); view.style.width = `${w}px`; view.style.height = `${h}px`; } // exakt kartans storlek, fast canvasens punkter avrundas
   if (cam.x < 0 && s) { const f = eldPlats(s); cam.x = f.x * TS; cam.y = f.y * TS; }
   if (cam.x < 0) { cam.x = W * TS / 2; cam.y = H * TS / 2; }
   const hw = w / 2 / sc, hh = h / 2 / sc;
