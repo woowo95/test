@@ -1203,7 +1203,7 @@ SCENARIER.naromrade = {
     const sparat = (p.lardomar ?? []).filter(l => l.k === 'ort').length;
     const ingaByar = byar.every(q => SIM.living(s).every(b => SIM.kannerOrt(s, b, q.nr) === undefined));
     // handlaren kommer: den som pratar eller handlar med hen känner sedan hens hemby
-    s.delning = { andel: 0 }; Object.assign(s.fire, { lit: true, fuel: 4, ring: true }); SIM.setAmount(s, 'ved', 40); s.nastaHandlare = s.now;
+    s.delning = { andel: 0 }; Object.assign(s.fire, { lit: true, fuel: 4, ring: true }); SIM.setAmount(s, 'ved', 40); SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 3000 && !(s.handlare && (s.handlare.fas === 'vantar' || s.handlare.fas === 'handlar')); i++) SIM.step(s, SIM.BEAT);
     const h = s.handlare, hemOrt = h && SIM.gastHemOrt(s, SIM.hp(s, h));
     const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
@@ -2446,6 +2446,53 @@ SCENARIER.handelsfard = {
       ['betalningen kommer hem och färden är slut', hemma],
       ['allt är hela tal', hela],
       [`byarna i en värld handlar på 30 dygn (${w.stat?.radhandel_fram ?? 0} färder fram)`, (w.stat?.radhandel_fram ?? 0) > 0],
+    ];
+  },
+};
+
+SCENARIER.handlarby = {
+  lang: true,
+  text: 'Handlaren kommer från en by (steg 11.6.8): en by med överflöd skickar sin handlare till huvudbyn som en färd på världskartan, hen väntar vid kartans kant och går in när ingen annan handlare är där, och när hen går hem börjar färden hem; en by skickar aldrig två',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    s.handlare = undefined; delete s.handlarVantar; vl.farder = [];
+    const huvud = vl.rader!.find(x => x.nr === vl.huvud)!;
+    // den första byn med syn på huvudbyn som får en affär där när den har tre gånger så mycket som den vill av allt
+    let r: SIM.VarldRad | undefined, c: SIM.ByCtx | undefined;
+    for (const x of vl.rader!) {
+      if (!SIM.lever(vl, x) || !x.syn || x.nr === vl.huvud) continue;
+      x.tal.folk = Math.max(x.tal.folk, 20); SIM.radVaror(x);
+      for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') x.varor![g] = 3 * Math.round(SIM.radVill(x, g, SIM.rikMal(x)));
+      x.tal.rikedom = SIM.radRikedomUr(x);
+      SIM.mots(vl, x.nr, huvud.nr);
+      const cx = SIM.byCtx(s, vl, x, huvud);
+      if (SIM.fardAffar(cx)) { r = x; c = cx; break; }
+    }
+    if (!r || !c) return [['en by kan skicka en handlare till huvudbyn', false]];
+    SIM.BYHANDLINGAR.handel.gor(c);
+    const f = vl.farder!.find(x => x.fran === r!.nr)!;
+    const skickad = !!f && f.handlare === true && f.till === vl.huvud && f.n === 0;
+    const syns = !!SIM.fardLage(vl, f, (f.t0 + f.t1) / 2, SIM.varldMark(s)!.w);
+    const inteTva = !SIM.fardAffar(SIM.byCtx(s, vl, r, huvud));
+    // hen kommer fram till kanten och går in
+    SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
+    const vantar = !!(s.handlarVantar as number[] | undefined)?.includes(r.nr) && !SIM.fardAffar(SIM.byCtx(s, vl, r, huvud));
+    korTills(s, () => !!s.handlare, 3 * 3600);
+    const kom = !!s.handlare && SIM.handlarKlan(s)?.klan.rad === r.nr;
+    // och går hem: färden hem börjar och kommer fram
+    korTills(s, () => !s.handlare, 3 * 86400);
+    const hem = vl.farder!.find(x => x.id === f.id);
+    const paVagHem = !s.handlare && !!hem && hem.t2 !== undefined && hem.t2 > s.now;
+    if (hem) SIM.KOHANDELSER.fardHem(s, vl, vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id)!);
+    const slut = !vl.farder!.some(x => x.id === f.id) && !!SIM.fardAffar(SIM.byCtx(s, vl, r, huvud));
+    return [
+      ['byn skickar sin handlare som en färd till huvudbyn, utan last', skickad],
+      ['färden syns på världskartan', syns],
+      ['byn skickar inte en handlare till medan hen är ute', inteTva],
+      ['handlaren väntar vid kanten när färden är framme', vantar],
+      ['handlaren från byn går in i huvudbyn', kom],
+      ['när hen går börjar färden hem', paVagHem],
+      ['hemma igen kan byn skicka en ny', slut],
     ];
   },
 };

@@ -108,7 +108,11 @@ export function andraInst(k: Klan, d: number) { k.inst = clamp(Math.round(k.inst
 export function handlarKlan(s: State, alla?: boolean): { klan: Klan; person: KlanPerson } | undefined {
   const kan = klanerOf(s).filter(k => alla || k.inst > KLAN.handelMin);
   if (!kan.length) return undefined;
-  const klan = pickViktat(s, kan, kan.map(narhet), 'klan'), har = klan.personer.filter(p => p.roll === 'handlare');
+  return klanHandlare(s, pickViktat(s, kan, kan.map(narhet), 'klan'));
+}
+// handlaren i byn bakom förbindelsen: en av de kända, eller en ny (steg 11.6.8: byn som skickar hen är given)
+export function klanHandlare(s: State, klan: Klan): { klan: Klan; person: KlanPerson } {
+  const har = klan.personer.filter(p => p.roll === 'handlare');
   if (har.length >= KLAN.handlarePer || (har.length && rnd(s, 'klan') < 0.5)) return { klan, person: pick(s, har, 'klan') };
   const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k', person = { namn: makeName(s, sex, 'klan'), sex, roll: 'handlare' } as KlanPerson;
   klan.personer.push(person);

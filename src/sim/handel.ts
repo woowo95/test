@@ -3,7 +3,7 @@ import { gastensPlatser, horOmGast, ORT, radBesoker } from './ort';
 import { byPlats } from './landmarken';
 import { sallskapTyngd, trampaFard } from './leder';
 import { bynsMitt, utanforByn } from './omrade';
-import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
+import { ByteForsok, ByteMinne, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER } from './klocka';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think, paKartan } from './folk';
@@ -29,7 +29,7 @@ import { sumOf } from './egendom';
 import { kanterna } from './varg';
 import { kantMot } from './grannbyar';
 import { larPris, MINNE, trorPris } from './minne';
-import { KLAN, handlarKlan, klanById, klanPris, klanerOf, prisAndras, prisKrok } from './klaner';
+import { KLAN, handlarKlan, klanHandlare, klanById, klanPris, klanerOf, prisAndras, prisKrok } from './klaner';
 const gruppAvKrok = (k: string) => prisKrok.grupp(k);
 import { klanHandelse } from './byrel';
 import { foddNar, gastNyckel } from './gastliv';
@@ -41,18 +41,14 @@ import { gastGar, gastTillbaka, hp, nyGast } from './gast';
 import { valkomnaHandlare } from './kyrka';
 
 // ---------- handlarna (steg 4.4.1) ----------
-// När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
-// tidsålder (HANDEL.dygn, en vecka i verkligheten) och oftare ju rikare byn är, men aldrig under istiden. Hen slår upp en
+// En handlare kommer när en by i världen skickat hen (byhandling.ts, steg 11.6.8): hen går över världskartan, väntar vid
+// kartans kant tills ingen annan handlare är i byn och går in, men aldrig under istiden. Hen slår upp en
 // filt nära elden (byte.ts) och lägger ut sina varor, stannar några timmar och går sedan tillbaka samma väg. Handlaren är
 // ingen bybo: hen har ett namn, ett hem långt borta, sina varor och sitt silver, och sin egen utrustning, som inte väntar på
 // byns tekniker (HANDLAR_UTR): en ryggsäck från början (en kärra när det finns vägar, fas 7, och packdjur, 11.4.1.2, kommer
 // senare). Hen bär aldrig mer än utrustningen rymmer. Handeln själv är steg 4.4.1.3, färdigheten Handel 4.4.1.4.
 export const HANDEL = balans('handel', {
-  rik: 400, // byns rikedom (ungefär arbetstimmar) innan den första handlaren kommer
-  dygn: 7, // en handlare kommer ungefär så här ofta (dygn: år i spelet) när byn är precis så rik, en tidsålder ...
-  rikOftare: 0.5, // ... och oftare ju rikare byn är: dygn / (1 + rikOftare × (rikedomen / rik − 1)) ...
-  dygnMin: 2, // ... men aldrig oftare än så här
-  dygnMax: 14, // ... och aldrig mer sällan (en by som blivit fattigare)
+  rik: 400, // byns rikedom (ungefär arbetstimmar) som mått för vilka handlarsorter som kommer
   // kvällsmarknaden (steg 4.5.4.11): filten läggs ut på kvällen, efter arbetet, och handlaren går på morgonen (klockslag). Den
   // som kommer fram efter sentKvall, på natten eller på dagen väntar vid filtens plats till nästa kväll
   kvall: 19, sentKvall: 23, morgon: 7,
@@ -235,11 +231,6 @@ const heltMellan = (s: State, [a, b]: readonly [number, number] | number[]) => a
 export const kgOf = (v: HVara[]) => v.reduce((a, w) => a + w.n * viktOf(w.k), 0);
 export const rymmer = (h: Handlare) => HANDLAR_UTR[h.utr]?.vikt ?? 0;
 
-// hur många dygn till nästa handlare, efter hur rik byn är nu
-function intervall(s: State) {
-  const r = rikedom(s) / HANDEL.rik;
-  return clamp(HANDEL.dygn / Math.max(0.1, 1 + HANDEL.rikOftare * (r - 1)), HANDEL.dygnMin, HANDEL.dygnMax);
-}
 
 // vilken sorts handlare som kommer: en av dem byn är rik nog för (bara en finns i dag, och då dras ingen slump)
 function sortFor(s: State) {
@@ -293,8 +284,9 @@ function filtPlats(s: State) {
 
 // en handlare kommer in från kanten som pekar mot grannbyn hen kommer från (kantMot, steg 11.2.22); har grannbyn ingen plats
 // i världen från kanten närmast byn (en av de två närmaste, slumpat), på land
-function kommer(s: State, tvinga?: boolean) {
-  const kh = handlarKlan(s, tvinga); // ingen klan som tycker om byn nog: ingen handlare den här gången
+function kommer(s: State, tvinga?: boolean, rad?: number) {
+  const fran = rad === undefined ? undefined : klanerOf(s).find(k => k.rad === rad);
+  const kh = fran ? klanHandlare(s, fran) : rad === undefined ? handlarKlan(s, tvinga) : undefined; // byn som skickade hen, eller (testläget) vilken som helst
   if (!kh) return false;
   const e = eldPlats(s), m = getMap(s.seed), mal = filtPlats(s);
   const k = () => kanterna(e.x, e.y).filter(p => m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] !== T.Vatten);
@@ -319,6 +311,13 @@ function kommer(s: State, tvinga?: boolean) {
   log(s, `En handlare, ${hp(s, h).name} från ${kh.klan.namn} vid ${hp(s, h).gast!.hem!}, kommer gående mot byn.`, 'world');
   return true;
 }
+
+// handlaren från byn rad har kommit fram till kartans kant (byhandling.ts, steg 11.6.8) och går in när det är fritt
+export function handlarFram(s: State, rad: number) { (s.handlarVantar ??= []).push(rad); }
+// handlaren har gått från byn: färden hem på världskartan börjar (krok, så att handel.ts inte laddar byhandling.ts)
+export const handlarKrok = { hem: (_s: State, _rad: number) => {}, borta: (_s: State, _rad: number) => {} }; // borta: hen dog i byn
+const handlarHem = (s: State, rad: number) => handlarKrok.hem(s, rad);
+const handlarBorta = (s: State, h: Handlare) => { const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined; if (rad !== undefined) handlarKrok.borta(s, rad); };
 
 // testläget (steg 4.5.4.4): en handlare skickas till byn nu, från vilken grannklan som helst, och en rad i Händelser säger
 // varifrån (steg 4.5.6.4). Svarar med raden, eller skälet till att ingen kan komma just nu (handlarHinder)
@@ -373,11 +372,11 @@ function packaIhop(s: State, h: Handlare) {
 // avrundas), och hen går hem
 export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number, r: number, till?: { x: number; y: number }) {
   if (dod) {
+    handlarBorta(s, h);
     packaIhop(s, h);
     const P = hp(s, h);
     gastGar(s, h.id); // hen och packningen är borta (steg 9.2.111)
     s.handlare = undefined;
-    s.nastaHandlare = s.now + intervall(s) * DAY;
     log(s, `Handlaren ${P.name} från ${P.gast!.hem!} dog i tornadon.`, 'world');
     notis(s, 'gast', `Handlaren ${P.name} från ${P.gast!.hem!} dog i tornadon.`, [], { x: Math.floor(P.x), y: Math.floor(P.y) });
     return;
@@ -393,9 +392,9 @@ export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number,
 // handlaren dog av svält, kyla eller sjukdom (gastvardag.ts, steg 9.2.113): packningen tas ihop, besöket tar slut och nästa
 // handlare kommer en annan gång. Kroppen ligger kvar bland folket
 export function handlarenDog(s: State, h: Handlare) {
+  handlarBorta(s, h);
   packaIhop(s, h);
   s.handlare = undefined;
-  s.nastaHandlare = s.now + intervall(s) * DAY;
 }
 
 // var handlaren är vid tiden t när hen går: rakt från där hen började mot målet (hen går runt det som är i vägen, men det
@@ -414,9 +413,11 @@ function gaSteg(s: State, h: Handlare) {
 // varje slag (steg.ts): handlaren kommer, handlar och går
 export function handelSteg(s: State, dtSec: number) {
   const nyTimme = Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR);
-  if (nyTimme && !s.handlare) {
-    if (s.nastaHandlare === undefined) s.nastaHandlare = s.now + intervall(s) * DAY; // den första kommer också efter rikedomen: en fattig by får vänta länge (steg 10.2.45)
-    else if (s.now >= s.nastaHandlare && (!iIstiden(ageIndex(s)) || s.infart?.klar) && !kommer(s)) s.nastaHandlare = s.now + intervall(s) * DAY;
+  // en handlare som en by skickat (steg 11.6.8) går in när ingen annan handlare är i byn, men inte under istiden
+  if (nyTimme && !s.handlare && s.handlarVantar?.length && (!iIstiden(ageIndex(s)) || s.infart?.klar)) {
+    const rad = s.handlarVantar.shift()!;
+    if (!s.handlarVantar.length) delete s.handlarVantar;
+    if (!kommer(s, false, rad)) handlarHem(s, rad); // byn finns inte längre bland grannarna: hen går hem
   }
   const h = s.handlare;
   if (!h) return;
@@ -424,9 +425,10 @@ export function handelSteg(s: State, dtSec: number) {
   else if (h.fas === 'vantar') { if (s.now >= h.kvall!) lagUt(s, h); }
   else if (h.fas === 'handlar') { if (s.now >= h.gar) gar(s, h); else { glomAffar(s, h); visaFiltar(s, h); } }
   else if (gaSteg(s, h)) {
+    const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined;
     gastGar(s, h.id, true); // hen har lämnat kartan (steg 9.2.111) och klanen sparar hen till nästa gång (steg 9.2.114)
     s.handlare = undefined;
-    s.nastaHandlare = s.now + intervall(s) * DAY * (0.7 + 0.6 * rnd(s, 'handel'));
+    if (rad !== undefined) handlarHem(s, rad); // och går hem till sin by på världskartan (steg 11.6.8)
   }
 }
 

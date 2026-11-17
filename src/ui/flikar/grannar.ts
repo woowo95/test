@@ -38,7 +38,9 @@ function handlareHtml() {
   const h = s.handlare, n = s.handlarNr ?? 0;
   if (!n && !h) return '<p class="muted">Ingen handlare har kommit än.</p>';
   const nu = h ? `<p>${iconImg('handlare', 16)} ${pLink(hp(s, h))} från ${esc(hp(s, h).gast!.hem!)} ${h.fas === 'kommer' ? 'är på väg hit' : h.fas === 'gar' ? 'går hem' : 'är här'}.</p>` : '';
-  const nasta = !h && s.nastaHandlare ? `<p title="${esc(timeLabel(s, s.nastaHandlare))}">Nästa väntas om ungefär ${esc(omUngefar(s.nastaHandlare - s.now))}.</p>` : '';
+  // handlarna som byarna skickat och som är på väg (steg 11.6.8): byn och när hen är framme
+  const vl = s.varld, pa = (vl?.farder ?? []).filter(f => f.handlare && f.t2 === undefined && f.t1 > s.now);
+  const nasta = pa.map(f => `<p title="${esc(timeLabel(s, f.t1))}">${iconImg('handlare', 16)} En handlare från ${esc(vl!.rader?.find(r => r.nr === f.fran)?.namn ?? 'en by')} är på väg, framme om ungefär ${esc(omUngefar(f.t1 - s.now))}.</p>`).join('');
   return `${nu}${nasta}<h4>Sedan byn grundades</h4><dl class="kv smal"><dt>Handlare som kommit</dt><dd>${n}</dd></dl><p>${kronikaLank('grannar', 'Bytena i krönikan')}</p>`;
 }
 // räderna (steg 4.4.5, rovare.ts): flocken som är här nu och det som hänt

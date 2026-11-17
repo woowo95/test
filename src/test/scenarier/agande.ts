@@ -957,7 +957,7 @@ SCENARIER.priser = {
   text: 'Priser som lärdomar (steg 10.5.15, minne.ts): byn minns vad en grannklan betalar för ett slag. En affär med klanens handlare ger priset på det som byttes med full säkerhet, handlarens småprat och främlingen som pratar med ledaren ett osäkrare. Priserna sprids i samtal oförändrade och med lägre säkerhet för varje led, glöms långsammare än platser, har ett eget tak och blir en nyhet när ett nytt pris skiljer mycket från det man trodde. Valet av handelsvaror läser det den som handlar för byn tror',
   kor: () => {
     const vuxna = (v: State) => living(v).filter(x => SIM.ageOf(x, v.now) >= SIM.ALDER.vuxen);
-    const s = createState(6, START); rikBy(s); s.nastaHandlare = s.now;
+    const s = createState(6, START); rikBy(s); SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 60 && !s.handlare; i++) step(s, BEAT);
     const h = s.handlare, [p, q, r] = vuxna(s);
     const hk = h ? SIM.klanById(s, SIM.hp(s, h).gast!.klan) : undefined;
@@ -1049,7 +1049,7 @@ SCENARIER.handelsvaror = {
     SIM.handelsMalRakna(w);
     const medPaslag = w.handelsMal?.k;
     // repet säljs i tillverkarens tur, och silvret blir hens
-    const s = createState(6, START); rikBy(s); s.nastaHandlare = s.now;
+    const s = createState(6, START); rikBy(s); SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 60 && !s.handlare; i++) step(s, BEAT);
     const h = s.handlare, p = vuxen(s);
     let bjuds = false, silver = 0;
@@ -1082,20 +1082,18 @@ SCENARIER.handelsvaror = {
   },
 };
 SCENARIER.handlare = {
-  text: 'Handlare som kommer oftare ju rikare byn är (steg 4.4.1.2 och 10.2.45, handel.ts): en fattig by får vänta länge, och i en rik by kommer den första snart. Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen, och nästa besök bestäms. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen. Byn köper det projekten saknar och säljer sedan sitt överflöd i samma besök, men inte det projekten behöver (steg 10.5.17).',
+  text: 'Handlaren (steg 4.4.1.2, handel.ts) kommer bara när en by i världen skickat hen (steg 11.6.8). Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen. Byn köper det projekten saknar och säljer sedan sitt överflöd i samma besök, men inte det projekten behöver (steg 10.5.17).',
   kor: () => {
     const timmar = (s: State, n: number) => { for (let i = 0; i < n * 3600 / BEAT; i++) step(s, BEAT); };
-    // en fattig by: handlaren kommer sällan (steg 10.2.45: ingen fast gräns, tiden följer rikedomen)
-    let s = createState(6, START);
-    timmar(s, 3);
-    const fattigT = (s.nastaHandlare ?? 0) - s.now, fattig = !s.handlare && fattigT > SIM.HANDEL.dygnMax / 2 * SIM.DAY;
-    // en rik by: den första handlaren bestäms
+    // ingen klocka (steg 11.6.8): utan en by som skickat hen kommer ingen handlare, hur rik byn än är
+    const s = createState(6, START);
     rikBy(s); for (let i = 0; i < 40; i++) addTo(s, 'flinta', 10);
-    timmar(s, 2);
-    s.nastaHandlare = undefined; timmar(s, 2); // (den rika byn bestämmer på nytt, efter sin rikedom)
-    const bestamd = rikedom(s) >= SIM.HANDEL.rik && s.nastaHandlare !== undefined && s.nastaHandlare - s.now < fattigT;
-    // handlaren kommer: från kanten, med varor som ryms i ryggsäcken
-    s.nastaHandlare = s.now;
+    s.varld!.farder = [];
+    timmar(s, 3);
+    const ingen = !s.handlare && !s.handlarVantar;
+    // handlaren från en by kommer: från kanten, med varor som ryms i ryggsäcken
+    const fran = SIM.klanerOf(s)[0];
+    SIM.handlarFram(s, fran.rad!);
     for (let i = 0; i < 30 && s.handlare?.fas !== 'handlar' && s.handlare?.fas !== 'vantar'; i++) step(s, BEAT);
     // kvällsmarknaden (steg 4.5.4.11): på dagen väntar hen vid filtens plats till kvällen och går på morgonen
     const v0 = s.handlare, med = v0 && { varor: structuredClone(v0.varor), silver: v0.silver }, dagNu = SIM.hourOf(s.now), vantar = !!v0 && v0.fas === 'vantar' && !(s.filtar ?? []).some(f => f.handlare === v0.id) && SIM.hourOf(v0.kvall!) === SIM.HANDEL.kvall && SIM.handlarFas(v0) === 'Väntar på kvällen';
@@ -1113,22 +1111,20 @@ SCENARIER.handlare = {
     const kvVal = living(kv).filter(q => SIM.ageOf(q, kv.now) >= SIM.ALDER.vuxen).map(q => { SIM.chooseTask(kv, q); return q.task?.act; });
     // hen går hem efter några timmar, filten plockas ihop och nästa besök bestäms
     timmar(s, (h ? (h.gar - s.now) / HOUR : 0) + 1);
-    const gick = !s.handlare && !(s.filtar ?? []).some(f => f.handlare !== undefined) && (s.nastaHandlare ?? 0) > s.now + SIM.HANDEL.dygnMin * 0.7 * SIM.DAY - 2 * HOUR
-      && s.log.some(l => l.text.includes('gick hemåt'));
+    const gick = !s.handlare && !(s.filtar ?? []).some(f => f.handlare !== undefined) && s.log.some(l => l.text.includes('gick hemåt'));
     // under istiden kommer ingen
     const t = createState(6, START); rikBy(t);
-    t.kal = SIM.nyKalender(t.now, SIM.ISTID); t.nastaHandlare = t.now;
+    t.kal = SIM.nyKalender(t.now, SIM.ISTID); SIM.handlarFram(t, (SIM.handlarKlan(t) ?? SIM.handlarKlan(t, true))!.klan.rad!);
     timmar(t, 3);
     const istid = SIM.iIstiden(SIM.ageIndex(t)) && !t.handlare;
     return [
-      [`en fattig by får vänta länge på handlaren (rikedom ${Math.round(rikedom(createState(6, START)))}, ${(fattigT / SIM.DAY).toFixed(1)} dygn)`, fattig],
-      [`när byn är rik nog bestäms den första handlaren (rikedom ${Math.round(rikedom(s))})`, bestamd],
+      [`utan en by som skickat hen kommer ingen handlare (rikedom ${Math.round(rikedom(s))})`, ingen],
       [`handlaren kommer från kanten med varor som ryms i ryggsäcken (${h && med ? `${hNamn}, ${SIM.kgOf(med.varor).toFixed(1)} kg av ${SIM.rymmer(h)}` : 'ingen'})`, kom],
       [`handlaren som kommer klockan ${dagNu.toFixed(1)} väntar vid filtens plats till kvällen (${v0?.kvall ? SIM.hourOf(v0.kvall).toFixed(1) : '–'})`, vantar],
       ['handlaren breder ut en filt strax utanför byns område, med varorna kvar i packningen, och går på morgonen', filt && morgon],
       ['den första handlaren står i krönikan', kron],
       [`på kvällen går en vuxen till filten för att handla för byn (${kvVal.join(', ')})`, kvVal.includes('handla')],
-      ['handlaren går hem efter några timmar och nästa besök bestäms', gick],
+      ['handlaren går hem efter några timmar', gick],
       ['under istiden kommer ingen handlare', istid],
       ...byHandel(),
     ];
@@ -1136,7 +1132,7 @@ SCENARIER.handlare = {
 };
 // byn handlar för projekten (steg 10.5.17): det projekten saknar köps, och efter köpet säljer byn sitt överflöd i samma besök
 function byHandel(): [string, boolean][] {
-  const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); s.nastaHandlare = s.now; for (let i = 0; i < 2000 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
+  const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!); for (let i = 0; i < 2000 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
   const vuxen = (s: State) => SIM.ledareOf(s) ?? living(s).find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)!;
   // klanen tar vanligt pris för allt och den som handlar tror inget annat: vad den sparade byns ledare råkar tro om klanens priser
   // (steg 10.5.16) prövas inte här
@@ -1178,7 +1174,7 @@ function byHandel(): [string, boolean][] {
 SCENARIER.silver = {
   text: 'Handeln med silver (steg 4.4.1.3, handel.ts): byn handlar med handlaren genom ledaren eller den äldsta vuxna, som går till filten. Byn säljer det den har gott om och köper det den saknar, i samma byte som alla andra (bytaMed), och silvret jämnar ut skillnaden. Handlaren går aldrig med på ett byte till sin nackdel och köper aldrig mer än hen kan bära: är ryggsäcken full blir det vara mot vara eller silver.',
   kor: () => {
-    const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); s.nastaHandlare = s.now; /* (ingen fara går före handeln) */ for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
+    const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!); /* (ingen fara går före handeln) */ for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
     const varde = (h: SIM.Handlare) => h.varor.reduce((a, w) => a + w.n * grundvarde(w.k), 0) + h.silver * grundvarde('silver');
     const vuxen = (s: State) => living(s).find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)!;
     const handla = (s: State, _h: SIM.Handlare) => { helAffar(s, vuxen(s), true); };
@@ -1229,7 +1225,7 @@ SCENARIER.silver = {
 SCENARIER.handelsfardighet = {
   text: 'Färdigheten Handel (steg 4.4.1.4, behov.ts): den skickligare i ett byte får en större del av vinsten, den som är mycket skickligare kan lura en ovan, och den lurade märker det ibland och minns det (en sur tanke). Båda övar Handel i varje byte. Byn handlar genom ledaren, och utan ledare genom den som är skickligast i Handel. En nykomling har lite handel från början, av berättandet och hantverket.',
   kor: () => {
-    const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); s.nastaHandlare = s.now; /* (ingen fara går före handeln) */ for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
+    const fram = (s: State) => { rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!); /* (ingen fara går före handeln) */ for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); } return s.handlare!; };
     const vuxna = (s: State) => living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const bas = createState(6, START), h0 = fram(bas);
     setAmount(bas, 'torrfisk', 120); setAmount(bas, 'silver', 0); h0.varor = []; h0.silver = 400; SIM.hp(bas, h0).skill.handel = 10;
@@ -1275,7 +1271,7 @@ SCENARIER.handelsko = {
   text: 'Hur handeln syns (steg 4.4.1.5, handel.ts): byn handlar först, sedan ställer sig de bybor som har nytta av något handlaren har i kö vid filten, först till kvarn. Den första handlar med sina egna saker, den andra väntar. Det den första köpte är borta för nästa, som går tomhänt och blir lite sämre till mods. Handlaren minns bytena under besöket, och bilden visar pratbubblor bara för den som handlar.',
   kor: () => {
     const s = createState(6, START);
-    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ s.nastaHandlare = s.now;
+    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const fore = SIM.handlaVal(s, a); // byn har inte handlat: den som handlar för byn går först
@@ -1343,7 +1339,7 @@ SCENARIER.tillfalle = {
     const borta = !!sen && !SIM.vargjaktVal(s, sen);
     // handeln: en rik by där handlaren just kommit (eller snart går) och byn redan handlat; a är trött
     const hs = createState(6, START); utanStartKlader(hs);
-    rikBy(hs); hs.nastaHandlare = hs.now;
+    rikBy(hs); SIM.handlarFram(hs, (SIM.handlarKlan(hs) ?? SIM.handlarKlan(hs, true))!.klan.rad!);
     for (let i = 0; i < 40 && hs.handlare?.fas !== 'handlar'; i++) { step(hs, BEAT); utanVantan(hs); }
     const h = hs.handlare!, a = living(hs).filter(p => SIM.ageOf(p, hs.now) >= SIM.ALDER.vuxen)[0];
     h.bynKlar = true; h.varor = [{ k: 'torrkott', n: 4 }];
@@ -1535,7 +1531,7 @@ SCENARIER.forhandling = {
   text: 'Handeln som förhandling (steg 4.5.7.4, handel.ts): handlarens varor ligger i packningen och filten är tom. Kunden frågar vad handlaren har (handlaren svarar med varornas symboler), väljer, och handlaren lägger det på sin filt. Kunden hämtar det hen bjuder från sina egna högar och förhandlar en kort stund; första budet är en bra affär för kunden. Handlaren svarar bara ja eller nej; vid nej bjuder kunden mer, och efter tre nej ger hen upp. Vid ja blir det handslag, var och en plockar upp det den fått och kunden bär hem det köpta. En kund i taget, också medan hen hämtar, och byn handlar genom den som handlar för byn. Buden sparas med bytet, och en affär som inte blev av får en egen rad (redogörelsen, steg 5.4.6.1), med en kort berättelse om argumenten och hur det gick (steg 5.4.6.2).',
   kor: () => {
     const s = createState(6, START);
-    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ s.nastaHandlare = s.now;
+    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const hf = () => s.filtar?.find(f => f.handlare === h.id);
@@ -1606,7 +1602,7 @@ SCENARIER.forhandling = {
     // budet efter tron (steg 10.5.16): kunden räknar med det hen tror om klanens pris på skinnen hen betalar med
     const prov = (tro: number | undefined, pris: number) => {
       const t = createState(6, START);
-      rikBy(t); tandEld(t); setAmount(t, 'ved', 40); setAmount(t, 'grenar', 30); setAmount(t, 'torrgras', 30); t.nastaHandlare = t.now;
+      rikBy(t); tandEld(t); setAmount(t, 'ved', 40); setAmount(t, 'grenar', 30); setAmount(t, 'torrgras', 30); SIM.handlarFram(t, (SIM.handlarKlan(t) ?? SIM.handlarKlan(t, true))!.klan.rad!);
       for (let i = 0; i < 40 && t.handlare?.fas !== 'handlar'; i++) { step(t, BEAT); utanVantan(t); }
       const th = t.handlare!, kl = SIM.klanById(t, SIM.hp(t, th).gast!.klan)!;
       th.bynKlar = true; delete th.affar;
@@ -1719,7 +1715,7 @@ SCENARIER.filtar = {
   kor: () => {
     utanWebblasare();
     const s = createState(6, START);
-    rikBy(s); setByn(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ s.nastaHandlare = s.now;
+    rikBy(s); setByn(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, hf = s.filtar?.find(f => f.handlare === h.id);
     // byn handlar först: den som handlar för byn lägger ut byns saker mitt emot handlaren när de förhandlar
@@ -1766,7 +1762,7 @@ SCENARIER.filtplats = {
   kor: () => {
     utanWebblasare();
     const s = createState(6, START);
-    rikBy(s); setByn(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ s.nastaHandlare = s.now;
+    rikBy(s); setByn(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, hf = s.filtar?.find(f => f.handlare === h.id);
     const forByn = living(s).find(p => !!SIM.handlaVal(s, p));
@@ -1789,7 +1785,7 @@ SCENARIER.overflod = {
   text: 'Byborna säljer sitt överflöd för silver (steg 4.5.4.14, handel.ts): den som har mycket mer av något än hen behöver går till handlaren för att sälja det mot silver, när handlaren vill ha det, också om hen inte vill köpa något. Silvret sparas till nästa handlare eller byte. Den som bara har lite över går inte.',
   kor: () => {
     const s = createState(6, START);
-    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ s.nastaHandlare = s.now;
+    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     h.bynKlar = true; h.varor = []; h.silver = 100;
@@ -1804,7 +1800,7 @@ SCENARIER.overflod = {
     const hanFick = h.varor.some(w => w.k === k);
     // handlaren vill inte ha det (ryggsäcken full): ingen går dit för att sälja
     const t = createState(6, START);
-    rikBy(t); t.nastaHandlare = t.now;
+    rikBy(t); SIM.handlarFram(t, (SIM.handlarKlan(t) ?? SIM.handlarKlan(t, true))!.klan.rad!);
     for (let i = 0; i < 40 && t.handlare?.fas !== 'handlar'; i++) { step(t, BEAT); utanVantan(t); }
     const h2 = t.handlare!, [c] = living(t).filter(p => SIM.ageOf(p, t.now) >= SIM.ALDER.vuxen);
     h2.bynKlar = true; h2.varor = [{ k: 'sten', n: 999 }];
@@ -1824,7 +1820,7 @@ SCENARIER.handlarprat = {
   text: 'Småprat med handlaren (steg 4.5.4.15, handel.ts): medan handlaren är i byn småpratar byborna som är nära med hen, som med en bybo (samtalen, symbolen och pratbubblan), också de som inte handlar. Ingen kunskap byts och relationerna ändras inte: samtalet påverkar bara humöret.',
   kor: () => {
     const s = createState(6, START);
-    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ s.nastaHandlare = s.now;
+    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const social = (p: Person, x: number, y: number) => { p.x = x; p.y = y; p.task = { act: 'samtal', phase: 'do', tx: x, ty: y, until: s.now + HOUR, carry: 0, dark: false, why: '' } as Task; };
@@ -1849,7 +1845,7 @@ SCENARIER.handlarprat = {
     let t = createState(6, START);
     for (const seed of [6, 7, 8, 9]) {
       t = createState(seed, START);
-      rikBy(t); t.nastaHandlare = t.now;
+      rikBy(t); SIM.handlarFram(t, (SIM.handlarKlan(t) ?? SIM.handlarKlan(t, true))!.klan.rad!);
       for (let i = 0; i < 24 * 12 && !(t.stat?.handlarPrat); i++) { step(t, BEAT); utanVantan(t); }
       if (t.stat?.handlarPrat) break;
     }
@@ -1867,7 +1863,7 @@ SCENARIER.kopta = {
   text: 'Köpta redskap (steg 4.5.4.16, handel.ts, behov.ts, redskap.ts): finns inget redskap av ett slag i byn som ett arbete inte går utan (yxan för att fälla träd), vill byborna köpa ett av handlaren, också om de inte arbetar med det. Den som köpt det kan använda det men inte göra ett förrän byn kan tekniken, och kommer en fast bit närmare tekniken, en gång. Handlarens sort följer byns rikedom, inte byns tekniker, och hen har bara varor som sorten kan ha.',
   kor: () => {
     const s = createState(6, START);
-    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ s.nastaHandlare = s.now;
+    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const sort = !!h.sort && h.varor.every(w => SIM.HANDLARVAROR.some(v => v.k === w.k && v.sort.includes(h.sort!))); // (sorten följer byns rikedom)
@@ -1927,7 +1923,7 @@ SCENARIER.handslag = {
     const ihop = !(t.filtar?.length) && t.now - (e?.t ?? 0) <= (SIM.BYTE.packaMin + 1) * SIM.MIN + (SIM.BYTE.handslagSek + SIM.BYTE.flyttSek) * SIM.SEC;
     // ett byte med handlaren: sakerna går mellan hens filt och den som handlar, och hen minns bytet
     const s = createState(6, START);
-    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ s.nastaHandlare = s.now;
+    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, [c] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     h.bynKlar = true; h.varor = []; h.silver = 100;
@@ -1961,12 +1957,11 @@ SCENARIER.grannklaner = {
     // alla tycker illa om byn: ingen handlare
     const f = cloneState(s); rikBy(f);
     for (const c of SIM.klanerOf(f)) c.inst = -80;
-    f.nastaHandlare = f.now;
-    for (let i = 0; i < 40; i++) step(f, BEAT);
-    const ingen = !f.handlare && f.nastaHandlare > f.now;
+    const fv = f.varld!, fh = fv.rader!.find(r => r.nr === fv.huvud)!;
+    const ingen = SIM.klanerOf(f).every(c => { const r = fv.rader!.find(x => x.nr === c.rad); return !r || !SIM.fardAffar(SIM.byCtx(f, fv, r, fh)); }); // (steg 11.6.8: byn skickar ingen handlare)
     // en klan är vänlig: handlaren kommer därifrån
     rikBy(s); k[0].inst = 40; for (const c of k.slice(1)) c.inst = -80;
-    s.nastaHandlare = s.now;
+    SIM.handlarFram(s, k[0].rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare, fran = !!h && SIM.hp(s, h).gast!.klan === k[0].id && SIM.hp(s, h).gast!.hem! === k[0].hem && k[0].personer.some(p => p.roll === 'handlare' && p.namn === SIM.hp(s, h).name);
     // ett byte gör klanen vänligare, en upptäckt lurendrejeri mindre vänlig
@@ -2025,9 +2020,9 @@ SCENARIER.grannklaner = {
     const vag = (stangd.match(/sym_vag|⚖/g) ?? []).length >= fk.length;
     const knapp = /data-hjalp="omvarlden"/.test(stangd) && !/Vakten håller sig vaken/.test(stangd) && /Vakten håller sig vaken/.test(oppen) && /fientligare/.test(oppen);
     // Handlarna, Räderna och Försvaret (steg 11.1.40): rubriken över räknarna, länkarna till krönikan och vaktraderna
-    fl.handlarNr = 2; fl.rovarNr = 1; fl.nastaHandlare = fl.now + 2 * SIM.DAY;
+    fl.handlarNr = 2; fl.rovarNr = 1; { const fv = fl.varld!, kr = SIM.klanerOf(fl)[0].rad!; (fv.farder ??= []).push({ id: 999, fran: kr, till: fv.huvud!, g: 'mat', n: 0, t0: fl.now, t1: fl.now + 2 * SIM.DAY, handlare: true }); }
     ui.omvDel = 'handlare'; const hH = grannarFlik.html(); ui.omvDel = 'rader'; const rH = grannarFlik.html(); ui.omvDel = 'forsvar'; const fH = grannarFlik.html(); ui.omvDel = 'grannar';
-    const omv40 = /<h4>Sedan byn grundades<\/h4>/.test(hH) && /Nästa väntas om ungefär 2 år/.test(hH) && /data-kkat-lank="grannar">Bytena i krönikan</.test(hH)
+    const omv40 = /<h4>Sedan byn grundades<\/h4>/.test(hH) && /En handlare från .* är på väg, framme om ungefär 2 år/.test(hH) && /data-kkat-lank="grannar">Bytena i krönikan</.test(hH)
       && /Rövare som kommit/.test(rH) && /data-kkat-lank="strid">Striderna i krönikan</.test(rH) && /Vaktade i natt/.test(fH) && /Vaktar nu/.test(fH);
     const forkl = /title="Hur de ser på byn: fientliga \(-60 av −100 till 100\)\. De skickar ingen handlare"/.test(stangd);
     return [
@@ -3295,7 +3290,7 @@ SCENARIER.bihandel = {
       if (w.k === 'honung') { hon++; hela &&= Number.isInteger(w.n) && w.n >= 2; }
       if (w.k === 'bivax') { vax++; hela &&= Number.isInteger(w.n) && w.n >= 1; }
     }
-    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); s.nastaHandlare = s.now;
+    rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     for (const p of living(s)) { if (p.task?.act === 'handla') p.task = undefined; delete p.hopp; }
