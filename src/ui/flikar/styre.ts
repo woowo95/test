@@ -41,7 +41,7 @@ function styretHtml() {
 interface Del { id: string; tecken: string; namn: string; html(): string }
 const DELAR: Del[] = [
   { id: 'styre', tecken: '👑', namn: 'Styret', html: styretHtml },
-  { id: 'pabud', tecken: '📜', namn: 'Lagar och påbud', html: () => `${lagarDel() || '<p class="muted">Byn har inga lagar än.</p>'}${budgetDelar()}<h3>Påbud</h3>${pabudDel()}` }, // lagarna och påbuden (steg 10.2.58)
+  { id: 'pabud', tecken: '📜', namn: 'Lagar och påbud', html: () => { const lag = lagarDel(), pab = pabudKort(); return `${pabudDel()}${lag.rubrik}${lag.kort || pab ? `<ul class="lagkortlista">${lag.kort}${pab}</ul>` : '<p class="muted">Byn har inga lagar eller påbud än.</p>'}${budgetDelar()}`; } }, // lagarna och påbuden (steg 10.2.58), i en lista (steg 11.1.29)
 ];
 const oppen = () => DELAR.find(d => d.id === ui.styreDel) ?? DELAR[0];
 export const styre: Flik = {
@@ -67,23 +67,23 @@ const ordAv = (v: number, ord: string[]) => { const x = Math.max(0, v); return x
 // tystnaden (steg 10.4.10): vem den gäller och hur hårt
 const tystVarde = (v: number) => v < 0.05 || !s.styre?.tystnad ? 'ingen' : `${s.styre.tystnad.namn} nämns ${v < 0.4 ? 'mer sällan' : v < 0.75 ? 'sällan' : 'nästan aldrig'}`;
 const varde = (k: Pabud, v: number) => k === 'tystnad' ? tystVarde(v) : k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} år`;
-export function pabudDel() {
+// lagar och påbud ser likadana ut (steg 11.1.29): kort i en och samma lista, med namnet, vad det säger med sitt tal och ett litet
+// ord om det är en lag eller ett påbud. Ett tryck fäller ut resten: straffet och vem som lade fram lagen, och vad ledaren vill mot
+// vad byn själv vill för påbudet
+const kort = (id: string, namn: string, sort: 'lag' | 'påbud', sager: string, mer: string, extra = '') =>
+  `<li class="klick falla lagkort" ${fallUt(id, 'kort-')} title="${esc(namn)}"><span class="kortnamn"><b>${esc(namn)}</b> <span class="kortsort">${sort}</span>${extra}</span><span class="small">${sager}</span>${hjalpText(id, `<span class="small muted kortmer">${mer}</span>`)}</li>`;
+export function pabudKort() {
   const st = s.styre, l = ledareOf(s);
-  if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
-  // en ruta per påbud, och påbuden med samma ruta (lagret) tillsammans i en
-  const rutor = new Map<string, Pabud[]>();
-  for (const k of PABUD_LIST) { const r = PABUD[k].ruta ?? PABUD[k].namn; rutor.set(r, [...(rutor.get(r) ?? []), k]); }
-  const rad = (k: Pabud, ensam: boolean) => {
+  if (!l || !st?.pabud) return '';
+  return PABUD_LIST.map(k => {
     const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0, led = st.pabud![k] ?? egen;
-    const lag = k === 'bygg' || k === 'vinter' ? (v: number) => Math.max(0, v) : (v: number) => v; // ledarens vilja räknas inte under det lägsta värdet
-    const olika = varde(k, led) !== varde(k, egen), pil = `<span class="muted">${olika && lag(led) > lag(egen) + 0.02 ? '▲' : olika && lag(led) < lag(egen) - 0.02 ? '▼' : ''}</span>`; // pilen bara när det märks i värdet (steg 9.2.123)
-    return `${ensam ? '' : `<dt title="${esc(d.text)}">${esc(d.namn)}</dt>`}<dd title="${esc(`${l.name} vill ${varde(k, led)}, byn själv ${varde(k, egen)}`)}"><b>${varde(k, pabud(s, k))}</b>${pil}</dd>${hjalpText('pabud', `<dd class="small muted helrad">${esc(d.text)}. ${esc(l.name)}: ${varde(k, led)}, byn: ${varde(k, egen)}</dd>`)}`;
-  };
-  return `<div class="tekhead">${hjalpKnapp('pabud', 'Vad är påbud?')}</div>
-    ${hjalpText('pabud', `<p class="muted">${esc(l.name)} bestämmer påbuden efter sin personlighet och ser över dem varje årstid. Byn blandar påbudet med sin egen sed: ju högre legitimitet och rangordning, desto mer lyssnar byn.</p>`)}
-    <div class="rutor">${[...rutor].map(([namn, ks]) => ks.length === 1
-      ? `<div class="ruta" title="${esc(PABUD[ks[0]].text)}"><div class="rutnamn">${esc(namn)}</div><dl class="kv ensam">${rad(ks[0], true)}</dl></div>`
-      : `<div class="ruta bred"><div class="rutnamn">${esc(namn)}</div><dl class="kv smal">${ks.map(k => rad(k, false)).join('')}</dl></div>`).join('')}</div>`;
+    return kort(`kort-pabud-${k}`, d.namn, 'påbud', `${esc(d.text)}: <b>${esc(varde(k, pabud(s, k)))}</b>`, `${esc(l.name)} vill ${esc(varde(k, led))}, byn själv ${esc(varde(k, egen))}. Byn följer påbudet så mycket som den lyssnar på ledaren.`);
+  }).join('');
+}
+export function pabudDel() {
+  const l = ledareOf(s);
+  return `<div class="tekhead">${hjalpKnapp('pabud', 'Vad är lagar och påbud?')}</div>
+    ${hjalpText('pabud', `<p class="muted">En lag säger vad som är förbjudet eller vad var och en är skyldig, och har ett straff; byn röstar om den och minns bara ett visst antal. Ett påbud är en inriktning utan straff, som ${l ? esc(l.name) : 'ledaren'} bestämmer efter sin personlighet och ser över varje årstid. Byn blandar påbudet med sin egen sed: ju högre legitimitet och rangordning, desto mer lyssnar byn.</p>`)}`;
 }
 
 // lagens tal som symboler, och texten när man trycker (steg 10.5.4)
@@ -91,11 +91,12 @@ const lagTalHtml = (l: Lag) => Object.entries(LAGAR[l.id].tal ?? {}).map(([k, d]
 // lagarna (steg 8.4.1): en symbol per lag och en för straffet; texten kommer fram vid hovring. Hur väl de efterlevs och taket (steg 8.4.3, 8.4.9)
 function lagarDel() {
   const lagar = lagarNu(s);
-  if (!lagar.length) return '';
+  if (!lagar.length) return { rubrik: '', kort: '' };
   const td = lagTakDelar(s), takText = `Taket: ${td.minne} som byn minns, ${td.ministrar} för ministrarna och ${td.skrivna} för de skrivna lagarna${td.minne + td.ministrar + td.skrivna > LAG.takVisas ? `, aldrig fler än ${LAG.takVisas}` : ''}.`;
   // skriftens symbol vid en skriven lag (steg 10.6.10): ett tryck säger var den står och hur taket är sammansatt
   const skrift = (l: Lag) => { const v = skrivenVar(s, l); return v.length ? ` <span class="lagskrift" title="${esc(`Står skriven ${v.join(' och ')}, så byn behöver inte minnas den. ${takText}`)}">${iconImg('pergament', 12)}</span>` : ''; };
-  return `<p class="muted small" title="${esc(`Byn orkar minnas ${lagTak(s)} lagar på en gång. ${takText}`)}">${lagar.length} av ${lagTak(s)} lagar · efterlevs ${Math.round(efterlevs(s) * 100)} %</p><ul class="rels">${lagar.slice(0, LAG.takVisas).map(l => { const d = LAGAR[l.id]; return `<li title="${esc(`${d.text}. ${d.om ? `Kom efter ${d.om}. ` : ''}Straffet: ${STRAFF_NAMN[l.straff].toLowerCase()}.`)}">${d.sym} ${esc(d.namn)} <span class="muted">${esc(STRAFF_NAMN[l.straff])}</span>${lagTalHtml(l)}${skrift(l)}</li>`; }).join('')}</ul>`;
+  const kortLag = (l: Lag) => { const d = LAGAR[l.id], av = byId(s, l.av); return kort(`kort-lag-${l.id}`, d.namn, 'lag', `${esc(d.text)}${lagTalHtml(l)}`, `Straffet: ${esc(STRAFF_NAMN[l.straff].toLowerCase())}. ${av ? `${esc(av.name)} lade fram den` : 'Lagd fram av någon som inte finns i byn längre'}${d.om ? `, efter ${esc(d.om)}` : ''}, ${esc(timeLabel(s, l.t))}.`, skrift(l)); };
+  return { rubrik: `<p class="muted small" title="${esc(`Byn orkar minnas ${lagTak(s)} lagar på en gång. ${takText}`)}">${lagar.length} av ${lagTak(s)} lagar · efterlevs ${Math.round(efterlevs(s) * 100)} %</p>`, kort: lagar.slice(0, LAG.takVisas).map(kortLag).join('') };
 }
 // budgeten (steg 10.5.7): en symbol per del med sin procent, ritade som påbuden; texten och det delen fick i år vid ett tryck
 function budgetDelar() {

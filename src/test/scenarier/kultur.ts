@@ -1367,8 +1367,14 @@ SCENARIER.lagar = {
     // talen har ord (steg 11.1.26): skattelagens tal med ordet före, legitimitetens delar som "väger N %", och taket förklaras
     utanWebblasare(); setByn(s); ui.styreDel = 'pabud'; const lagH = styreFlik.html(); ui.styreDel = 'styre';
     hjalpKlick({ closest: () => ({ dataset: { hjalp: 'styre' } }) } as unknown as HTMLElement); const styH = styreFlik.html(); hjalpKlick({ closest: () => ({ dataset: { hjalp: 'styre' } }) } as unknown as HTMLElement);
+    // lagar och påbud som kort i en lista (steg 11.1.29): namnet, ett litet ord och ett tryck för resten
+    const lagKort = /<ul class="lagkortlista">(?:(?!<\/ul>)[\s\S])*class="kortsort">lag<(?:(?!<\/ul>)[\s\S])*class="kortsort">påbud</.test(lagH) && !/[▲▼]/.test(lagH.replace(/title="[^"]*"/g, ''));
+    const kid = lagH.match(/data-hjalp="(kort-lag-[^"]+)"/)?.[1] ?? '';
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: kid, hjalpGrupp: 'kort-' } }) } as unknown as HTMLElement); ui.styreDel = 'pabud'; const kortUt = styreFlik.html(); hjalpKlick({ closest: () => ({ dataset: { hjalp: kid, hjalpGrupp: 'kort-' } }) } as unknown as HTMLElement); ui.styreDel = 'styre';
+    const kortMer = /class="small muted kortmer">Straffet: [^<]*lade fram den|class="small muted kortmer">Straffet: [^<]*Lagd fram/.test(kortUt);
     const ord = /skatt \d+ %/.test(lagH) && /från \d+ år/.test(lagH) && /väger \d+ %/.test(styH) && /title="Byn orkar minnas \d+ lagar på en gång\./.test(lagH);
     return [
+      ['lagar och påbud är kort i en och samma lista med ett litet ord, utan pilarna, och ett tryck visar straffet och vem som lade fram lagen (steg 11.1.29)', lagKort && kortMer],
       ['talen i Styre har ord: "skatt 10 %", "från 18 år", "väger 60 %", och taket förklaras med att byn orkar minnas så många (steg 11.1.26)', ord],
       [`vid Envälde får bara ledaren lägga fram (${fore}), vid Allmogen fler (${manga})`, fore === 1 && manga > 1],
       [`stölderna väcker en lag som tas upp (${om ?? 'inget skäl'})`, tog && lag],

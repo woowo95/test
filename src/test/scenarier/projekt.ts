@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 import { START, STEG_TIM } from '../kor';
 import { setItems, setFood, SCENARIER, medBank, kor, byggKlart } from './hjalp';
 import { setByn } from '../../ui/lage';
-import { pabudDel } from '../../ui/flikar/styre';
+import { pabudKort } from '../../ui/flikar/styre';
 
 // en by där alla vuxna kan allt, med material till allt och elden tänd mitt på dagen
 function by(seed: number) {
@@ -132,8 +132,8 @@ SCENARIER.arbetspabud = {
     s.styre.pabud = { bygg: 1, vinter: 1 };
     SIM.arbetsTimme(s); const med = { ...s.arbBehov!.arb }, byggMed = SIM.pabud(s, 'bygg');
     // i ord i Styre (steg 9.2.123): hur ofta och hur många fler, inte procent; ledaren vill under det lägsta värdet: ingen pil
-    setByn(s); const html = pabudDel();
-    s.styre.pabud = { bygg: -1, vinter: -1 }; const lag = pabudDel();
+    setByn(s); const html = pabudKort();
+    s.styre.pabud = { bygg: -1, vinter: -1 }; const lag = pabudKort();
     const ord = /<b>(alltid|ofta|ibland)<\/b>/.test(html) && /<b>(många fler|några fler)<\/b>/.test(html);
     return [
       [`påbuden står i ord i Styre (${html.match(/<b>[^<]*<\/b>/g)?.join(' ').replace(/<\/?b>/g, '') ?? '–'})`, ord],
