@@ -2293,7 +2293,15 @@ SCENARIER.rivforhus = {
     const brist0 = SIM.stationBrist(s, 'slaktbank'), virke0 = amountOf(s, 'virke');
     SIM.rivStation(s, t, 'Slaktbänken revs för ett hus.');
     const borta = !SIM.stationerOf(s).some(q => q.id === t.id), tillbaka = amountOf(s, 'virke') > virke0, brist1 = SIM.stationBrist(s, 'slaktbank');
+    // ett hus som byggs ut över en station ute: stationen rivs också då (en lyra stod annars kvar i den nya väggen)
+    const b = createState(5, START); klockan(b); medHus(b);
+    const h = SIM.housesOf(b).find(q => q.klar)!, st: SIM.Station = { id: b.nextStation = (b.nextStation ?? 0) + 1, k: 'slaktbank', x: h.x + h.w, y: h.y + 1, kvar: 0 };
+    (b.stationer ??= []).push(st); SIM.touch(b);
+    const f = SIM.BYGGATGARDER.byggaUt.foresla(b, { fn: SIM.fnId(h) as SIM.Fn, a: { v: 1, plats: 0, hus: h.id }, sc: 0 }, () => true).find(q => q.x === h.x && q.y === h.y && q.w > h.w && q.h === h.h);
+    if (f) SIM.byggUt(b, f, SIM.living(b)[0], false);
+    const utRiven = !!f && !SIM.stationerOf(b).some(q => q.id === st.id);
     return [
+      [`ett hus som byggs ut över en station ute river den också (${f ? utRiven ? 'riven' : 'står kvar' : 'ingen utbyggnad österut'})`, utRiven],
       ['en station ute hindrar inte ett hus, men annat som byggs', forHus && !annars],
       [`när den rivs försvinner den och en del av materialet kommer tillbaka (virke ${virke0} → ${amountOf(s, 'virke')})`, borta && tillbaka],
       [`och byn vill bygga den igen (brist ${brist0} → ${brist1})`, brist1 > brist0],

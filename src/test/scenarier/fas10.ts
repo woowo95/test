@@ -1054,8 +1054,9 @@ SCENARIER.angflytt = {
     angIVagen(s); const byFlytt = angarOf(s).length === 0 && (s.stat?.['angFlyttad byn'] ?? 0) === 1;
     const ny = marka(), nyUte = !!ny && ute(ny), racker = SIM.angBrist(s) === 0;
     // ett stråk över ängen: ängen läggs på ett stråk utanför byn, stråket går kvar över den och ängen flyttas
-    const b = SIM.cloneState(testBy(10)), Wb = SIM.W; // en by med hus och stråk
-    const r = straken(b).vagar.flatMap(v => v.rutor).find(i => [-1, 0, 1].every(dy => [-1, 0, 1].every(dx => !iByn(b, i % Wb + dx, Math.floor(i / Wb) + dy))));
+    const utanfor = (q: SIM.State) => { const Wq = SIM.W; return straken(q).vagar.flatMap(v => v.rutor).find(i => [-1, 0, 1].every(dy => [-1, 0, 1].every(dx => !iByn(q, i % Wq + dx, Math.floor(i / Wq) + dy)))); };
+    const b = SIM.cloneState(testBy(10, q => utanfor(q) !== undefined)), Wb = SIM.W; // en by med hus och ett stråk utanför byn
+    const r = utanfor(b);
     let strakFlytt = false, strakKvar = false;
     if (r !== undefined) {
       b.angar = [{ id: 10, x: r % Wb - 1, y: Math.floor(r / Wb) - 1, w: 3, h: 3 }]; b.byggV = (b.byggV ?? 0) + 1;

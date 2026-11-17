@@ -936,11 +936,13 @@ function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   if (u.fn === 'sovsal' && sovPersoner(iw * ih) >= HUS.langhus) count(s, 'planerat_langhus'); // ett långhus (så ofta det händer, samhalle-192)
 }
 // en utbyggnad: den nya delen blir bitar i huset, och den gamla väggen öppnas när den är klar (slutUt i bygg.ts)
-function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
+export function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   const h = f.hus!;
   s.nextBit ??= 1;
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: h.id, ...(forb ? { forb: 1 as const } : {}) });
   h.ut = { x: f.x, y: f.y, w: f.w, h: f.h, oppnas: f.oppnas.map(a => [a.x, a.y, a.m]) };
+  // det som står ute där den nya delen ska stå rivs, som för ett nytt hus (steg 10.2.77)
+  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för att ${h.namn.toLowerCase()} byggdes ut.`);
   touch(s); lagerUrVagen(s, f, h);
   // en öppning i den gamla väggen redan nu, så att ingen blir instängd i den nya delen (den blir golv som resten sist)
   if (!f.ritning.some(a => a.m === 'oppning') && f.oppnas.length) {

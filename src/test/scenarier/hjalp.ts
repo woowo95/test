@@ -19,11 +19,14 @@ export const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0
 
 export type Koll = [string, boolean];
 // en by från npm test (steg 10.2.106): den yngsta av testbyarna som facit sparat (test/facit-byar/) och som är minst minDygn
-// gammal, så att ett scenario som bara iakttar en by inte kör en egen. Finns ingen sparad by (före första facit) körs by 1 dit
-export const testBy = (minDygn: number): State => {
+// gammal, så att ett scenario som bara iakttar en by inte kör en egen. Behöver scenariot något som inte alla byar har (ett stråk
+// utanför byn) tar det den yngsta som har det (villkor), så att det inte beror på hur just den yngsta byn råkade bli. Finns
+// ingen sparad by (före första facit) körs by 1 dit
+export const testBy = (minDygn: number, villkor?: (s: State) => boolean): State => {
   const dir = fileURLToPath(new URL('../../../test/facit-byar/', import.meta.url));
   const filer = readdirSync(dir).map(f => /^(\d+)-(\d+)\.json\.gz$/.exec(f)).filter(m => m && +m[2] >= minDygn).sort((a, b) => +a![2] - +b![2] || +a![1] - +b![1]);
-  return filer.length ? lasBy(dir + filer[0]![0]) : korBy(1, minDygn).s;
+  for (const f of filer) { const b = lasBy(dir + f![0]); if (!villkor || villkor(b)) return b; }
+  return korBy(1, minDygn).s;
 };
 export const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * STEG_TIM; i++) { step(s, BEAT); varje?.(s); } };
 // klockan h samma dag, i testernas tidszon (UTC, se utc.ts; ett scenario med env: STOCKHOLM får svensk tid)
