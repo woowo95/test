@@ -177,4 +177,5 @@ export * from './sim/radperson';
 export * from './sim/leder';
 export * from './sim/resa';
 export * from './sim/vagmote';
+export * from './sim/radanfall';
 export * from './sim/forhistoria';

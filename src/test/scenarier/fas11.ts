@@ -2797,3 +2797,49 @@ SCENARIER.muta = {
     ];
   },
 };
+
+SCENARIER.radanfall = {
+  text: 'Anfall mellan två rader (steg 11.6.16): en flock ur byns styrka anfaller en granne den ser ner på; när den kommer fram avgörs anfallet av antal och utrustning mot försvararnas antal, utrustning och skydd, med utfallet i hela döda och hela saker som de överlevande bär hem',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud))!;
+    const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud)!;
+    SIM.mots(vl, r.nr, mot.nr);
+    r.tal.folk = 40; r.tal.styrka = 20; mot.tal.folk = 30; mot.tal.styrka = 10; SIM.radVaror(mot); mot.tal.mat = 200;
+    // chansen följer antal och utrustning, och försvararna har skyddet
+    const n = SIM.flockStorlek(r), p = SIM.vinstChans(r, mot, n), pLika = SIM.vinstChans(r, { ...mot, tal: { ...mot.tal, styrka: n } }, n);
+    const fattig = { ...r, tal: { ...r.tal, rikedom: 0 } }, rik = { ...r, tal: { ...r.tal, rikedom: r.tal.folk * SIM.RAD.rikPer } }, pFattig = SIM.vinstChans(fattig, mot, n), pRik = SIM.vinstChans(rik, mot, n);
+    const svag = SIM.flockStorlek({ ...r, tal: { ...r.tal, styrka: 2 } });
+    // vilja: bara mot den man ser ner på
+    const c = SIM.byCtx(s, vl, r, mot);
+    c.rel = 20; const van = SIM.BYHANDLINGAR.plundra.poang(c);
+    c.rel = -80; c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), aggression: 19 }; c.krig = 1; const st0 = mot.tal.styrka; mot.tal.styrka = 5; const ovan = SIM.BYHANDLINGAR.plundra.poang(c); mot.tal.styrka = st0;
+    // flocken ger sig av och kommer fram
+    const folk0 = [r.tal.folk, mot.tal.folk], rel0 = SIM.relation(vl, mot.nr, r.nr) ?? 0, mat0 = mot.tal.mat;
+    SIM.BYHANDLINGAR.plundra.gor(c);
+    const f = vl.farder!.find(x => x.fran === r.nr && x.anfall)!;
+    SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!);
+    const dodaA = folk0[0] - r.tal.folk, dodaF = folk0[1] - mot.tal.folk;
+    const tagit = Object.values(f.byte ?? {}).reduce((a, x) => a + (x ?? 0), 0);
+    const hela = [dodaA, dodaF, ...Object.values(f.byte ?? {})].every(x => Number.isInteger(x));
+    const rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
+    const matFore = mat0 - mot.tal.mat, rM0 = r.tal.mat;
+    SIM.KOHANDELSER.fardHem(s, vl, vl.ko!.find(q => q.typ === 'fardHem' && q.sak === f.id)!);
+    const hem = r.tal.mat - rM0 === (f.byte?.mat ?? 0) && matFore === (f.byte?.mat ?? 0);
+    const kron = (vl.kronika ?? []).some(h => h.k === 'rad' && h.by === r.nr && h.mot === mot.nr);
+    // samma anfall ger samma utfall, och många anfall: förlorarna dör mer
+    let vinst = 0, dA = 0, dF = 0;
+    for (let i = 0; i < 200; i++) { const u = SIM.anfallUtfall(r, mot, n, j => SIM.varldSlump(vl, i, 7, j), g => g === 'mat' ? SIM.BYHANDLING.portion : 1); if (u.vann) vinst++; dA += u.dodaA; dF += u.dodaF; }
+    const f2 = (x: number) => x.toFixed(2);
+    return [
+      [`chansen följer antal och utrustning (${f2(p)} med ${n} mot 10, ${f2(pLika)} lika många, ${f2(pFattig)} fattigt och ${f2(pRik)} rikt utrustade), och skyddet gör lika många svagare`, p > pLika && pRik > pFattig && pLika < 0.5],
+      ['en för svag by anfaller inte', svag === 0],
+      [`byn plundrar inte en vän (${f2(van)}), men en aggressiv ledare plundrar en svagare granne den ser ner på (${f2(ovan)})`, van < 0 && ovan > 0],
+      [`flocken kommer fram: ${dodaA} anfallare och ${dodaF} försvarare dog, ${tagit} saker togs, allt i hela tal`, hela && dodaA + dodaF > 0 && (tagit > 0) === (f.byte !== undefined && tagit > 0)],
+      [`försvararnas syn på anfallarna sjunker (${rel0} → ${rel1})`, rel1 < rel0],
+      ['bytet tas ur försvararnas förråd och läggs hemma när flocken kommer hem', hem],
+      ['världens krönika får en räd', kron],
+      [`många anfall: ${vinst} av 200 vunna, förlorarna dör mer (${dA} anfallare, ${dF} försvarare)`, vinst > 0 && vinst < 200],
+    ];
+  },
+};

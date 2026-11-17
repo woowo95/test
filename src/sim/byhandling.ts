@@ -25,6 +25,8 @@ import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
 import { trampaFard, sallskapTyngd } from './leder';
 import { vagRutor } from './vagval';
+import { anfallUtfall, BYANFALL, flockStorlek, vinstChans } from './radanfall';
+import { varldHandelse } from './varldkronika';
 import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, handlarFram, handlarKrok, kgOf } from './handel';
 
 export const BYHANDLING = balans('byhandling', {
@@ -47,6 +49,12 @@ export const BYHANDLING = balans('byhandling', {
   muta: 20, // så mycket en muta är värd (i silver eller grundvärde)
   mutaMal: 40, // mutan lönar sig tills relationen nått hit
   mutaKostnad: 0.15, // det mutan kostar i poäng utöver silvret (risken, äran)
+  // plundringen (steg 11.6.16)
+  plundraRel: 0, // fejden: byn vill plundra den den ser lägre på än minus så mycket ...
+  plundraFull: 50, // ... och vill det fullt ut vid minus så mycket mer
+  plundraVan: 20, // svälten: en by som saknar mat plundrar en granne den inte ser så här väl på
+  dodVarde: 20, // en död egen väger så mycket (i grundvärde) mot bytet
+  plundraKostnad: 0.2, // det anfallet kostar i poäng (tiden, risken för hämnd)
 });
 
 // det poängen räknas ur: byn som gör (r), grannen (mot), hur r ser på mot, ledarens egenskaper (1–20) och trons krigiskhet (0–1)
@@ -85,6 +93,30 @@ export const BYHANDLINGAR = {
       const m = mutaMed(c.r)!;
       if (m === 'silver') radTar(c.r, 'silver', -BYHANDLING.muta); else taUr(c.r, m, Math.ceil(BYHANDLING.muta / enhet(m)));
       laggIKo(c.vl, c.t + dygn * DAY, 'muta', { sak: c.mot.nr, data: { fran: c.r.nr, n: BYHANDLING.muta } });
+    },
+  },
+  // plundringen (steg 11.6.16): en flock ur byns styrka anfaller en granne den ser ner på (en fejd), eller som den inte är vän med
+  // när den själv saknar mat (svälten), mer av en aggressiv ledare och en krigisk tro, när bytet väger mer än de döda man väntar sig; anfallet avgörs när flocken kommer fram (radanfall.ts)
+  plundra: {
+    namn: 'Plundring',
+    poang: c => {
+      const n = c.r.nr === c.vl.huvud || c.mot.nr === c.vl.huvud ? 0 : flockStorlek(c.r);
+      if (!n || restid(c.vl, c.r, c.mot) === undefined) return -1;
+      const fejd = clamp((-c.rel - BYHANDLING.plundraRel) / BYHANDLING.plundraFull, 0, 1);
+      const svalt = c.rel < BYHANDLING.plundraVan ? clamp(1 - c.r.tal.mat / Math.max(1, radVill(c.r, 'mat', rikMal(c.r))), 0, 1) : 0;
+      const vilja = Math.max(fejd, svalt) * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig);
+      const p = vinstChans(c.r, c.mot, n), byte = Math.min(n * BYANFALL.bar, VARUGRUPP_IDS.reduce((x, g) => x + radHar(c.mot, g) * enhet(g) * BYANFALL.byte, 0));
+      const doda = n * (p * BYANFALL.dodVinnare + (1 - p) * BYANFALL.dod);
+      return vilja * (p * byte - doda * BYHANDLING.dodVarde) / BYHANDLING.skala - BYHANDLING.plundraKostnad;
+    },
+    gor: c => {
+      const n = flockStorlek(c.r), dygn = restid(c.vl, c.r, c.mot);
+      if (!n || dygn === undefined) return;
+      const f: RadFard = { id: c.vl.nastaFard = (c.vl.nastaFard ?? 0) + 1, fran: c.r.nr, till: c.mot.nr, g: 'mat', n: 0, anfall: n, t0: c.t, t1: c.t + dygn * DAY };
+      (c.vl.farder ??= []).push(f);
+      trampaFard(c.s, c.r.nr, c.mot.nr, sallskapTyngd(n));
+      laggIKo(c.vl, f.t1, 'fardFram', { sak: f.id });
+      count(c.s, 'radanfall_ut');
     },
   },
   // handelsfärden (steg 11.6.6): byn säljer det den har överflöd av där det är dyrast, när vinsten är större än resans kostnad
@@ -142,7 +174,7 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // mottagaren betalar med silver och, när silvret inte räcker, med det den själv har mest överflöd av. Betalningen bärs hem och
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
-export interface RadFard { gava?: true; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+export interface RadFard { gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 const enhet = (g: VarugruppId) => g === 'mat' ? BYHANDLING.portion : 1; // en enhet i gruppens tillgång, i grundvärde
 const overskott = (r: VarldRad, g: VarugruppId) => Math.floor(radHar(r, g) - radVill(r, g, rikMal(r)));
 const restid = (vl: Varlden, r: VarldRad, mot: VarldRad) => {
@@ -279,7 +311,8 @@ KOHANDELSER.fardFram = (s, vl, p) => {
   const r = radNr(vl, f.fran), mot = radNr(vl, f.till);
   if (f.handlare) { handlarFram(s, f.fran); return; } // handlaren väntar vid kartans kant och går in när det är fritt (handel.ts)
   f.t2 = f.t1 + (f.t1 - f.t0);
-  if (f.gava && mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) { // gåvan läggs i förrådet och mottagaren ser bättre på givaren
+  if (f.anfall) { if (r && mot) anfallFram(s, vl, f, r, mot); }
+  else if (f.gava && mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) { // gåvan läggs i förrådet och mottagaren ser bättre på givaren
     laggTill(mot, f.g, f.n);
     if (r) byHandelse(vl, 'gava', r.nr, mot.nr, gavaRel(f.n * enhet(f.g)) / BYREL.gava);
     f.n = 0;
@@ -309,7 +342,23 @@ KOHANDELSER.fardHem = (_s, vl, p) => {
   r.tal.silver += f.silver ?? 0;
   if (f.h && f.hn) laggTill(r, f.h, f.hn);
   for (const w of f.hem ?? []) radTar(r, w.k, w.n); // handlarens varor (steg 11.6.9)
+  for (const [g, n] of Object.entries(f.byte ?? {}) as [VarugruppId, number][]) laggTill(r, g, n); // bytet (steg 11.6.16)
 };
+// flocken kommer fram (steg 11.6.16): uträkningen i radanfall.ts, de döda dras ur båda byarna, bytet tas ur försvararnas förråd
+// och bärs hem, och försvararnas syn på anfallarna sjunker för plundringen och för varje dödad
+function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRad) {
+  if (!BYSORTER[mot.sort].folk || mot.tal.folk <= 0) return; // byn finns inte längre: flocken går hem
+  const u = anfallUtfall(r, mot, f.anfall!, i => varldSlump(vl, r.nr, f.id, 0x414e + i), enhet);
+  const dra = (x: VarldRad, n: number) => { x.tal.folk = Math.max(0, x.tal.folk - n); x.tal.styrka = Math.max(0, Math.min(x.tal.styrka, x.tal.folk) - n); };
+  dra(r, u.dodaA); dra(mot, u.dodaF);
+  f.anfall! -= u.dodaA;
+  for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) taUr(mot, g, n);
+  f.byte = u.byte;
+  byHandelse(vl, 'plundring', r.nr, mot.nr);
+  if (u.dodaF) byHandelse(vl, 'dodade', r.nr, mot.nr, u.dodaF);
+  varldHandelse(vl, 'rad', f.t1, { by: r.nr, mot: mot.nr });
+  count(s, 'radanfall_fram'); if (u.vann) count(s, 'radanfall_vann'); count(s, 'radanfall_doda', u.dodaA + u.dodaF);
+}
 // byns handlare är på väg till huvudbyn, väntar vid kanten eller är där
 const handlarUte = (s: State, nr: number) => !!s.varld?.farder?.some(f => f.handlare && f.fran === nr) || !!s.handlarVantar?.includes(nr);
 // handlaren har gått från huvudbyn (handel.ts): färden hem börjar, lika lång som dit; dog hen kommer färden aldrig hem
