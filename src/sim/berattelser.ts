@@ -288,7 +288,7 @@ const MDEF = {
   besk_van: [
     '{van} är {hans} bästa vän.',
     '{Hans} närmaste vän är {van}.',
-    '{Hen} umgås mest med {van}, {hans} bästa vän.',
+    '{Hen} umgås mest med sin bästa vän, {van}.',
     '{Hen} och {van} är nära vänner.',
     '{Hen} har {van} som bästa vän.',
     '{van} och {hen} är bästa vänner.',
@@ -360,13 +360,13 @@ const MDEF = {
   // det starkaste minnet: {minne} = upplevelsen ('var nära att svälta ihjäl'), {vid} = åldern då
   besk_minne: [
     '{Hen} var {vid} år när {hen} {minne}.',
-    '{Hen} {minne} när {hen} var {vid} år.',
+    'Från när {hen} var {vid} år minns {hen} särskilt att {hen} {minne}.',
     'Det starkaste minnet {hen} har är från när {hen} var {vid}: {hen} {minne}.',
     'Vid {vid} års ålder hände något som {hen} minns: {hen} {minne}.',
-    '{Hans} starkaste minne: {hen} {minne} vid {vid} års ålder.',
-    'Det som präglat {honom} mest är att {hen} {minne}, {vid} år gammal.',
-    '{Hen} {minne} som {vid}-åring och minns det fortfarande.',
-    'Ett minne {hen} bär med sig är att {hen} {minne} vid {vid} års ålder.',
+    '{Hans} starkaste minne är från {vid} års ålder: {hen} {minne}.',
+    'Det som präglat {honom} mest hände när {hen} var {vid}: {hen} {minne}.',
+    '{Hen} minns fortfarande något från när {hen} var {vid}: {hen} {minne}.',
+    'Ett minne {hen} bär med sig är från {vid} års ålder: {hen} {minne}.',
   ],
   // vem hen är i byn (steg 3.9.7). {ny} = grundade byn på nytt, {kvar} = lever
   besk_grundare: [
@@ -402,7 +402,7 @@ const MDEF = {
     '{Hans} utseende präglas av {del}.',
     '{namn} anses inte vacker; {hen} har {del}.',
     'Ett kännetecken hos {namn} är {del}.',
-    '{Hen} har {del}, vilket syns tydligt.',
+    'I {hans} utseende märks {del}.',
   ],
   // {ar} = åldern
   besk_aldst: [
@@ -441,19 +441,19 @@ const MDEF = {
   besk_bedrift: [
     '{Hen} {vad}.',
     'Det var {namn} som {vad}.',
-    '{namn} var den som {vad}.',
+    'Till {hans} bedrifter hör att {hen} {vad}.',
     'Bland {hans} bedrifter: {hen} {vad}.',
     '{namn} {vad}, vilket byn minns.',
     'Det var {namn} som en gång {vad}.',
-    'Det står fast att {hen} {vad}.',
+    'Byn minns att {hen} {vad}.',
     'I byns historia nämns att {namn} {vad}.',
   ],
   // den döda som stod hen närmast: {dod} = namnet, {vem} = 'mor', 'son', 'hustru', 'vän' …
   besk_sorjer: [
-    '{Hen} sörjer {dod}, {hans} {vem}.',
+    '{Hen} sörjer {dod}, sin {vem}.',
     '{Hen} är i sorg efter {dod}.',
-    '{Hen} saknar {dod}, {hans} {vem}.',
-    '{Hen} har nyligen förlorat {dod}, {hans} {vem}.',
+    '{Hen} saknar {dod}, sin {vem}.',
+    '{Hen} har nyligen förlorat {dod}, sin {vem}.',
     '{dod}, {hans} {vem}, har dött, och {hen} sörjer.',
     '{Hen} har ännu inte kommit över att {dod} dog.',
     '{Hen} sörjer fortfarande {dod}.',
@@ -461,13 +461,13 @@ const MDEF = {
   ],
   besk_saknar: [
     '{Hans} {vem} {dod} är död.',
-    '{Hen} har förlorat {dod}, {hans} {vem}.',
+    '{Hen} har förlorat {dod}, sin {vem}.',
     '{dod}, {hans} {vem}, lever inte längre.',
-    '{Hen} minns {dod}, {hans} {vem}, som är död.',
+    '{Hen} minns {dod}, sin {vem}, som är död.',
     '{Hen} tänker ibland på {dod}.',
     '{Hen} minns fortfarande {dod}.',
     '{dod} dog för länge sedan, och {hen} minns det fortfarande.',
-    '{Hen} har sett {dod}, {hans} {vem}, dö.',
+    '{Hen} har sett {dod}, sin {vem}, dö.',
   ],
   // vapnet hen föredrar: {vad} = vapnet ('flintkniv', 'bara händerna')
   besk_vapenGilla: [
