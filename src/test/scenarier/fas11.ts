@@ -1475,3 +1475,28 @@ SCENARIER.gastort = {
     ];
   },
 };
+
+SCENARIER.byruta = {
+  text: 'Byns ruta på världskartan (steg 11.4.12, platsRuta i ort.ts och ui/varldskarta.ts): spalterna Byn tror (med året och varifrån) och Sant nu, vilka som känner platsen och varningen Bara en vet',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && vl.platser!.some(q => q.by === x.nr && !SIM.iNaromradet(s, q.nr)))!, nr = vl.platser!.find(q => q.by === r.nr)!.nr;
+    const t0 = s.now - 20 * SIM.DAY;
+    r.hist = [{ t: t0, tal: { ...r.tal, folk: 11 }, led: 'Ulf' }];
+    const okand = SIM.platsRuta(s, nr);
+    SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR, src: b!.id }); SIM.raknaBynVet(s);
+    const en = SIM.platsRuta(s, nr)!;
+    SIM.larOrt(s, b!, nr, SIM.O_RYKTE, 1); SIM.raknaBynVet(s);
+    const tva = SIM.platsRuta(s, nr)!;
+    const folk = en.rader.find(d => d.namn === 'Invånare'), led = en.rader.find(d => d.namn === 'Ledare');
+    const egen = SIM.platsRuta(s, vl.platser!.find(q => q.by === vl.huvud)!.nr)!;
+    return [
+      [`en okänd plats har ingen spalt Byn tror (${okand?.niva ?? 'okänd'})`, !!okand && !okand.niva && okand.rader.every(d => d.tror === undefined) && okand.rader.length > 0],
+      [`Byn tror är byns tal vid uppgiftens tid, Sant nu är talen nu (${folk?.tror} mot ${folk?.sant})`, folk?.tror === '11' && folk.sant === String(r.tal.folk) && led?.tror === 'Ulf'],
+      [`året och varifrån (år ${en.ar}, ${en.kalla})`, en.ar === SIM.yearNo(s, t0 + SIM.HOUR) && !!en.kalla?.includes(b!.name)],
+      [`vilka som vet (${en.vem.join(', ')}) och Bara en vet`, en.vem.length === 1 && en.vem[0] === a!.name && en.baraEn],
+      [`två som vet: ingen varning (${tva.vem.length})`, tva.vem.length === 2 && !tva.baraEn],
+      ['byns egen plats har ingen jämförelse', egen.egen && !egen.rader.length],
+    ];
+  },
+};

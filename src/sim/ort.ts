@@ -15,6 +15,7 @@ import { VARLD } from './varldmark';
 import type { Varlden } from './varlden';
 import { klanById } from './klaner';
 import { DAY, Lardom, Person, Rel, State } from './typer';
+import { yearNo } from './tid';
 import { BYSORTER, radNr, RadtalId, VarldRad } from './radtal';
 
 export const ORT = balans('ort', {
@@ -292,5 +293,35 @@ export function gastensPlatser(s: State, g: Person) {
     const v = radKanner(vl, r, n);
     if (v !== undefined && varldPlatsNr(vl, n)) larOrt(s, g, n, v, v === O_BESOKT ? 1 : v === O_KANT ? ORT.gastKant : ORT.gastRykte);
   }
+}
+
+// ---------- byns ruta på världskartan (steg 11.4.12, Flera samhällen: Det byn vet) ----------
+// Rutan för en plats: spalten Byn tror (med året uppgifterna är från och varifrån de kom) bredvid Sant nu, vilka som känner
+// platsen och varningen Bara en vet. Kartorna och böckerna som också kan bära byns kunskap kommer med kartorna
+export interface RutaRad { namn: string; tror?: string; sant: string }
+export interface PlatsRuta { namn: string; sort: string; niva?: string; ar?: number; kalla?: string; rader: RutaRad[]; vem: string[]; baraEn: boolean; egen: boolean }
+function bildRader(s: State, b: RadBild | undefined): Record<string, string> {
+  if (!b) return {};
+  if (b.borta) return { kvar: 'Nej' };
+  const vl = s.varld!;
+  return { kvar: 'Ja', folk: String(b.tal.folk), mat: String(b.tal.mat), rikedom: String(b.tal.rikedom), styrka: String(b.tal.styrka), led: b.led ?? 'Ingen', tro: b.tro ?? 'Ingen', lyder: b.lyder !== undefined ? radNr(vl, b.lyder)?.namn ?? 'en annan by' : 'Ingen' };
+}
+const RUTARADER: [string, string][] = [['kvar', 'Finns kvar'], ['folk', 'Invånare'], ['mat', 'Mat'], ['rikedom', 'Rikedom'], ['styrka', 'Styrka'], ['led', 'Ledare'], ['tro', 'Tro'], ['lyder', 'Lyder under']];
+export function platsRuta(s: State, nr: number): PlatsRuta | undefined {
+  const vl = s.varld, q = vl && varldPlatsNr(vl, nr);
+  if (!vl || !q) return undefined;
+  const k = bynKanner(s, nr), egen = q.by !== undefined && q.by === vl.huvud;
+  const vem = (k?.vem ?? []).map(id => byId(s, id)).filter((p): p is Person => !!p);
+  // den senaste uppgiften bland dem som vet
+  let bast: Lardom | undefined;
+  for (const p of vem) { const l = findL(p, 'ort', nr); if (l && (!bast || l.t > bast.t)) bast = l; }
+  const r = ortensRad(s, nr), sant = r && !egen ? bildRader(s, radBild(r)) : {};
+  const tror = r && !egen && k && k.v > O_RYKTE ? bildRader(s, radVid(r, bast?.t ?? s.now)) : {};
+  const rader = r && !egen ? RUTARADER.map(([id, namn]) => ({ namn, sant: sant[id] ?? '', ...(tror[id] !== undefined ? { tror: tror[id] } : {}) })) : [];
+  return {
+    namn: egen ? `Er by ${q.namn}` : q.namn, sort: LANDMARKEN[q.k].namn, egen, rader,
+    ...(k ? { niva: ORTNIVA[k.v]!.namn } : {}), ...(bast ? { ar: yearNo(s, bast.t), kalla: describeOrt(s, bast).src } : {}),
+    vem: vem.map(p => p.name), baraEn: !egen && !iNaromradet(s, nr) && vem.length === 1,
+  };
 }
 

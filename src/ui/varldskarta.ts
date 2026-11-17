@@ -2,7 +2,7 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { bynsKarta, varldMark, Varlden } from '../sim';
+import { bynsKarta, platsRuta, syns, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { s } from './lage';
 import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
@@ -17,6 +17,11 @@ stil.textContent = `
   border: 1px solid ${farg('kol', 3)}; background: ${farg('kol', 1)}; color: ${farg('ben', 3)}; cursor: pointer; }
 .vkInfo { margin: 0; padding: 6px 12px; min-height: 1.4em; color: ${farg('ben', 3)}; background: ${farg('kol', 1)}; }
 #calVarld img { display: block; image-rendering: pixelated; }
+.vkInfo .vkPlats { margin-top: 4px; }
+.vkInfo table { border-collapse: collapse; margin-top: 2px; }
+.vkInfo th, .vkInfo td { padding: 1px 8px 1px 0; text-align: left; font-weight: normal; }
+.vkInfo th { color: ${farg('ben', 1)}; }
+.vkInfo .vkVarna { color: ${farg('rost', 3)}; }
 `;
 document.head.appendChild(stil);
 
@@ -131,8 +136,26 @@ const slapp = (e: PointerEvent) => {
   if (!pekare.size) duk.classList.remove('drar');
   if (fanns && !pekare.size && drog < 6 && vy) { // ett tryck utan att dra: rutans text under kartan
     const r = duk.getBoundingClientRect(), vl = s?.varld, v = s && varldMark(s);
-    if (vl && v) { const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top); info.textContent = rutaText(vl, v, q.x, q.y, s && bynsKarta(s)); }
+    if (vl && v) { const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top); info.innerHTML = rutaHtml(q.x, q.y); }
   }
 };
 duk.addEventListener('pointerup', slapp);
 duk.addEventListener('pointercancel', e => { pekare.delete(e.pointerId); if (!pekare.size) duk.classList.remove('drar'); });
+
+// ---------- byns ruta (steg 11.4.12): det byn tror bredvid det som är sant, vilka som vet och varningen Bara en vet ----------
+const esc = (x: string) => x.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+function rutaHtml(x: number, y: number): string {
+  const vl = s?.varld, v = s && varldMark(s);
+  if (!s || !vl || !v) return '';
+  const kn = bynsKarta(s), delar = [`<div>${esc(rutaText(vl, v, x, y, kn))}</div>`];
+  for (const q of (vl.platser ?? []).filter(p => p.x === x && p.y === y && syns(kn, p))) {
+    const r = platsRuta(s, q.nr);
+    if (!r || r.egen) continue;
+    const huvud = `<b>${esc(r.sort)} ${esc(r.namn)}</b>: ${r.niva ? esc(r.niva) : 'okänd för byn'}${r.ar !== undefined ? `, uppgifter från år ${r.ar} (${esc(r.kalla ?? '')})` : ''}`;
+    const tab = r.rader.length ? `<table><tr><th></th><th>Byn tror</th><th>Sant nu</th></tr>${r.rader.map(d => `<tr><th>${esc(d.namn)}</th><td>${esc(d.tror ?? '–')}</td><td>${esc(d.sant)}</td></tr>`).join('')}</table>` : '';
+    const vem = r.vem.length ? `<div>Vet: ${r.vem.map(esc).join(', ')}</div>` : '';
+    delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
+  }
+  return delar.join('');
+}
+
