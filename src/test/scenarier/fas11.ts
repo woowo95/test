@@ -1525,3 +1525,28 @@ SCENARIER.hortkronika = {
     ];
   },
 };
+SCENARIER.leder = {
+  text: 'Lederna (steg 11.5.1, leder.ts): många färder ger en stig som är billigare att gå och ritas på världskartan, vägarna genom den räknas om, och en led som ingen går växer igen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, v = SIM.varldMark(s)!;
+    const hb = SIM.byPlats(vl, vl.huvud!)!, g = hb.grannar![0]!, gp = vl.platser!.find(q => q.nr === g.nr)!;
+    const a = hb.y * v.w + hb.x, b = gp.y * v.w + gp.x;
+    const vag = SIM.vagMellan(vl, v, a, b, 'fots', s.now)!, rutor = SIM.vagRutor(vag, v.w), k0 = vag.kostnad, ver0 = vl.ledVer ?? 0;
+    const t0 = s.now;
+    for (let n = 0; n < 15; n++) SIM.trampa(vl, rutor, SIM.sallskapTyngd(1), t0 + n * SIM.HOUR); // femton vandrare
+    SIM.raknaLeder(vl, v, t0 + 15 * SIM.HOUR);
+    const mitt = rutor[Math.floor(rutor.length / 2)]!, klass = SIM.ledKlass(vl, mitt);
+    const bild = VB.ritaVarld(vl, v), mx = (mitt % v.w) * VB.VK + VB.VK / 2, my = Math.floor(mitt / v.w) * VB.VK + VB.VK / 2, pi = (my * bild.w + mx) * 4;
+    const hex = '#' + [0, 1, 2].map(c => bild.data[pi + c]!.toString(16).padStart(2, '0')).join('');
+    const k1 = vag.kostnad;
+    SIM.raknaLeder(vl, v, t0 + 200 * SIM.DAY); // 200 dygn utan färder
+    return [
+      ['en människa, ett packdjur och en vagn trampar 1, 2 och 4', SIM.sallskapTyngd(1, 1, 1) === 7],
+      [`femton färder ger en stig mitt på vägen (${klass})`, klass === 'stig'],
+      [`stigen ritas på världskartan (${hex})`, hex === VB.LEDFARG.stig],
+      [`vägen räknades om och blev billigare (${k0} → ${k1})`, k1 < k0 && (vl.ledVer ?? 0) > ver0],
+      ['en stig som ingen går växer igen och glöms', SIM.ledKlass(vl, mitt) === 'obanad' && !vl.leder?.[mitt]],
+      ['marken utan leder ritas som förut', SIM.ledFart(vl, mitt) === 1],
+    ];
+  },
+};

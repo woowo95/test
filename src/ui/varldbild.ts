@@ -4,7 +4,7 @@
 // del av rutorna och platsernas tecken (LANDMARKEN) på sina rutor; huvudbyn får en ljus ram. Allt tar sina färger ur paletten.
 // Här finns bara det som går att räkna utan webbläsaren: bilden som punkter, tecknen (platshållare i 16 punkter tills Björn
 // valt i bildstilen) och vyns matematik för att dra och zooma. Knappen och rutan som visar kartan är ui/varldskarta.ts.
-import { BynsKarta, FLOD_NEDRE, LANDMARKEN, MARK_IDS, O_KANT, syns, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
+import { BynsKarta, FLOD_NEDRE, LANDMARKEN, LEDER, LedId, ledKlass, MARK_IDS, O_KANT, syns, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
 import { hash3 } from '../sim/slump';
 import { farg } from '../palett';
 
@@ -100,6 +100,7 @@ export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta): VarldBild 
     const x0 = (i % v.w) * VK + m, y0 = Math.floor(i / v.w) * VK + m, j = v.ned[i];
     streck(b, x0, y0, (j % v.w) * VK + m, Math.floor(j / v.w) * VK + m, v.flod[i] === FLOD_NEDRE ? 5 : 3, fc);
   }
+  ritaLeder(b, vl, v);
   const upptagen = new Set((vl.platser ?? []).map(p => p.y * v.w + p.x));
   for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {
     const tk = (VARLDMARK[MARK_IDS[v.mark[ry * v.w + rx]]] as { tecken?: string }).tecken;
@@ -123,6 +124,29 @@ export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta): VarldBild 
   return b;
 }
 
+// lederna (steg 11.5.1): en trampad ruta binds ihop med de trampade grannarna med ett streck, tunt för en stig och bredare
+// för en led och en väg; platshållare i paletten tills bildstilen ritat lederna
+export const LEDFARG: Record<LedId, string> = { obanad: '', stig: farg('jord', 2), led: farg('jord', 3), vag: farg('ben', 2) };
+const LEDBREDD: Record<LedId, number> = { obanad: 0, stig: 1, led: 2, vag: 3 };
+function ritaLeder(b: VarldBild, vl: Varlden, v: VarldMark) {
+  const l = vl.leder;
+  if (!l) return;
+  const m = VK / 2;
+  for (const k of Object.keys(l)) {
+    const i = +k, ki = ledKlass(vl, i);
+    if (ki === 'obanad') continue;
+    const x = i % v.w, y = Math.floor(i / v.w);
+    for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+      const nx = x + dx, ny = y + dy, j = ny * v.w + nx;
+      if (nx < 0 || ny < 0 || nx >= v.w || ny >= v.h) continue;
+      const kj = ledKlass(vl, j);
+      if (kj === 'obanad') continue;
+      const svag = LEDBREDD[kj] < LEDBREDD[ki] ? kj : ki; // strecket är den smalare rutans
+      streck(b, x * VK + m, y * VK + m, nx * VK + m, ny * VK + m, LEDBREDD[svag], rgb(LEDFARG[svag]));
+    }
+  }
+}
+
 // texten för en ruta (när musen är över eller man trycker): marken och platserna där
 export function rutaText(vl: Varlden, v: VarldMark, x: number, y: number, kn?: BynsKarta): string {
   if (x < 0 || y < 0 || x >= v.w || y >= v.h) return '';
@@ -130,6 +154,8 @@ export function rutaText(vl: Varlden, v: VarldMark, x: number, y: number, kn?: B
   const pl = (vl.platser ?? []).filter((p: VarldPlats) => p.x === x && p.y === y && syns(kn, p)), hb = huvudbynsPlats(vl);
   const delar = pl.map(p => `${p === hb ? 'Er by' : LANDMARKEN[p.k].namn} ${p.namn}`);
   if (v.flod[i]) delar.push(v.flod[i] === FLOD_NEDRE ? 'en bred flod' : 'en å');
+  const led = ledKlass(vl, i);
+  if (led !== 'obanad') delar.push(LEDER[led].namn.toLowerCase());
   return [mk, ...delar].join(' · ');
 }
 

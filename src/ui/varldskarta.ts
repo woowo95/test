@@ -51,17 +51,17 @@ document.body.appendChild(ruta);
 const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement>('.vkInfo')!, kronLista = ruta.querySelector('.vkKronika ol')!;
 
 // bilden räknas en gång per värld och när platserna ändrats
-let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1;
+let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1, bildLed = -1;
 function bilden() {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return undefined;
-  const n = vl.platser?.length ?? 0, vet = s!.bynVet?.t ?? 0;
-  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet) { // och när det byn vet räknats om (steg 11.4.7)
+  const n = vl.platser?.length ?? 0, vet = s!.bynVet?.t ?? 0, led = vl.ledVer ?? 0;
+  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet || bildLed !== led) { // och när en led bytt klass (steg 11.5.1) // och när det byn vet räknats om (steg 11.4.7)
     const b = ritaVarld(vl, v, bynsKarta(s!));
     bild = document.createElement('canvas'); bild.width = b.w; bild.height = b.h;
     const g = bild.getContext('2d')!, id = g.createImageData(b.w, b.h);
     id.data.set(b.data); g.putImageData(id, 0, 0);
-    bildFor = vl; bildPlatser = n; bildVet = vet;
+    bildFor = vl; bildPlatser = n; bildVet = vet; bildLed = led;
   }
   return bild;
 }

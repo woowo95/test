@@ -2,30 +2,32 @@
 // En resa väljer den billigaste vägen på världens rutnät för sitt färdsätt (till fots, med packdjur eller med vagn). Att gå in
 // på en ruta kostar det rutKostnad säger (marken, platserna där och floden, landmarken.ts); snett kostar det √2 gånger så mycket,
 // och man går inte snett förbi ett hörn man inte kommer fram genom. Vägen räknas med A* och sparas som en del av världen
-// (vl.vagar), så att samma resa inte räknas om; att räkna om den när en ruta byter klass eller en bro byggs kommer med lederna.
+// (vl.vagar), så att samma resa inte räknas om; när en ruta byter klass räknas den om (leder.ts, steg 11.5.1).
 import { Fardsatt, VarldMark } from './varldmark';
 import { Varlden } from './varlden';
 import { rutKostnad } from './landmarken';
+import { LEDER, LED_IDS, ledFart } from './leder';
 
 export interface VarldVag { fran: number; till: number; fs: Fardsatt; steg: string; kostnad: number; t: number } // steg: vagRutor packar upp
 
 // kostnaden för varje ruta med ett färdsätt, räknad en gång per värld, färdsätt och platsernas antal
 const cache = new WeakMap<Varlden, Map<string, Float32Array>>();
 export function kostnader(vl: Varlden, v: VarldMark, fs: Fardsatt): Float32Array {
-  const nyckel = `${fs}:${vl.nastaPlats ?? 0}:${vl.platser?.length ?? 0}`;
+  const nyckel = `${fs}:${vl.nastaPlats ?? 0}:${vl.platser?.length ?? 0}:${vl.ledVer ?? 0}`;
   let m = cache.get(vl);
   if (!m) cache.set(vl, m = new Map());
   let k = m.get(nyckel);
   if (!k) {
     for (const n of m.keys()) if (n.startsWith(fs + ':')) m.delete(n);
     k = new Float32Array(v.w * v.h);
-    for (let i = 0; i < k.length; i++) k[i] = rutKostnad(vl, v, i, fs);
+    for (let i = 0; i < k.length; i++) k[i] = rutKostnad(vl, v, i, fs) / ledFart(vl, i); // ledens fart delar kostnaden (steg 11.5.1)
     m.set(nyckel, k);
   }
   return k;
 }
 
 const S2 = Math.SQRT2;
+const maxFart = () => Math.max(...LED_IDS.map(id => LEDER[id].fart));
 const GRANNAR = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, S2], [1, -1, S2], [-1, 1, S2], [-1, -1, S2]] as const;
 
 // sökningen på rutnätet (A* med en uppskattning, Dijkstra utan): ett tryck för varje ruta när den är klar, som kan stoppa
@@ -73,7 +75,7 @@ export function billigasteVag(vl: Varlden, v: VarldMark, a: number, b: number, f
   if (a === b) return { rutor: [a], kostnad: 0 };
   if (!isFinite(k[b])) return undefined;
   const bx = b % w, by = Math.floor(b / w);
-  const est = (i: number) => { const dx = Math.abs(i % w - bx), dy = Math.abs(Math.floor(i / w) - by); return Math.max(dx, dy) + (S2 - 1) * Math.min(dx, dy); }; // ingen ruta kostar under 1
+  const est = (i: number) => { const dx = Math.abs(i % w - bx), dy = Math.abs(Math.floor(i / w) - by); return (Math.max(dx, dy) + (S2 - 1) * Math.min(dx, dy)) / maxFart(); }; // ingen ruta kostar under 1 delat med den snabbaste leden
   const { g, fran } = sok(k, w, v.h, a, est, i => i === b);
   return isFinite(g[b]) ? { rutor: spara(fran, b), kostnad: g[b] } : undefined;
 }
