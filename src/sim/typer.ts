@@ -212,6 +212,7 @@ export interface Person {
   gast?: import('./gast').GastRad; smitta?: import('./sjukdom').SjukId; // en gäst: handlaren, en rövare eller en främling (steg 9.2.111, gast.ts); id är då negativt; smitta: sjukdomen en gäst bär utan att någon ser det (steg 9.5.5)
   born: number; died?: number; cause?: string; left?: number;
   ute?: number; // borta från byn sedan den här tiden (steg 11.2.3, ute.ts): fortfarande bybo och äger sitt, men inte på bykartan
+  dodVag?: { orsak: string; t: number }; // dog på resan, men byn vet det inte förrän beskedet kommer (steg 11.5.18, resa.ts)
   fran?: number; // grannklanen hen kom ifrån (en främling, steg 4.4.4.2)
   grundare?: true | 'ny'; // grundade byn, eller grundade den på nytt (steg 3.9.7)
   mother?: number; father?: number; partner?: number;

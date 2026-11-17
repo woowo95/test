@@ -52,7 +52,7 @@ import { log } from './folk';
 import { notis } from './notiser';
 import { ARMAR, BEN, FOTTER, HALSA, VARD, halsaSteg, skada, vardKalla, vardKan, type Kroppsdel, type SkadaTyp } from './halsa';
 import { SJUK_DOD, insjukna, sjukSteg, type SjukId } from './sjukdom';
-import { die } from './liv';
+import { DODSORSAKER, die, type Dodsorsak } from './liv';
 import { ovning } from './folk';
 
 export const RESA = balans('resa', {
@@ -121,6 +121,7 @@ export const RESA = balans('resa', {
   lamnaKost: 150, // det kostar ledaren så mycket att lämna någon (i värde), mer för den som bryr sig och om hen tycker om personen
   lamnaEmpati: 0.5, lamnaTycke: 1,
   gommaDygn: 20, // det som släpps ligger i en gömma så här många dygn (år i spelet)
+  forsvunnen: 3, // kommer ingen hem räknas resenärerna som försvunna efter så många gånger den väntade tiden (steg 11.5.18)
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
@@ -138,7 +139,7 @@ export const RESMAL = {
 export type ResmalId = keyof typeof RESMAL;
 export const RESMAL_IDS = Object.keys(RESMAL) as ResmalId[];
 
-export type Skede = 'samlas' | 'packar' | 'gar' | 'ute' | 'framme' | 'hemat' | 'hemma'; // gar: på väg ut ur byn
+export type Skede = 'samlas' | 'packar' | 'gar' | 'ute' | 'framme' | 'hemat' | 'hemma' | 'forsvunnet'; // forsvunnet: ingen kom hem (steg 11.5.18) // gar: på väg ut ur byn
 // en insats i boken: vem som äger den, saken (eller djuret) och hur många, i hela saker, och värdet när resan började
 export interface Insats { agare: number | 'by'; sak: string; n: number; varde: number; djur?: number }
 export interface Sallskap {
@@ -174,7 +175,7 @@ export function nyttSallskap(s: State, ledare: Person, mal: number, skal: Resmal
   return sl;
 }
 // sällskapet en person är med i (inte de som kommit hem)
-export const sallskapFor = (vl: Varlden | undefined, id: number) => vl?.sallskap?.find(x => x.skede !== 'hemma' && x.medl.includes(id));
+export const sallskapFor = (vl: Varlden | undefined, id: number) => vl?.sallskap?.find(x => x.skede !== 'hemma' && x.skede !== 'forsvunnet' && x.medl.includes(id));
 // en till följer med medan sällskapet samlas
 export function foljMed(vl: Varlden, sl: Sallskap, p: Person) {
   if (sl.skede !== 'samlas' || sallskapFor(vl, p.id)) return false;
@@ -184,7 +185,7 @@ export function foljMed(vl: Varlden, sl: Sallskap, p: Person) {
 // ett djur följer med (ett packdjur, en häst)
 export function djurMed(sl: Sallskap, djurId: number) { if (!sl.djur.includes(djurId)) sl.djur.push(djurId); }
 // de sällskap som är på väg, framme eller packar (inte de som kommit hem)
-export const sallskapNu = (vl: Varlden | undefined) => (vl?.sallskap ?? []).filter(x => x.skede !== 'hemma');
+export const sallskapNu = (vl: Varlden | undefined) => (vl?.sallskap ?? []).filter(x => x.skede !== 'hemma' && x.skede !== 'forsvunnet');
 
 // ---------- packningen (steg 11.5.3, Packningen i tal) ----------
 // ledarens marginal: 1,25 i mitten, mot 1,0 för den modiga och slarviga (högt mod, låg flit) och 1,5 för den försiktiga
@@ -429,6 +430,7 @@ export function resaBehov(s: State, dt: number) {
   if (vl?.gommor?.length) vl.gommor = vl.gommor.filter(g => s.now - g.t < RESA.gommaDygn * DAY); // gömmorna ligger kvar en tid (steg 11.5.17)
   for (const sl of sallskapNu(s.varld)) {
     if (!PA_VAGEN.includes(sl.skede)) continue;
+    if (!resenarer(s, sl).length) { forsvunnet(s, sl); continue; } // alla är döda: sällskapet står, och efter en tid räknas det som försvunnet (steg 11.5.18)
     for (let gjort = 0; gjort < dt - 1e-9;) { const d = Math.min(600 * SEC, dt - gjort); behovBit(s, sl, s.now - dt + gjort + d, d); gjort += d; }
   }
 }
@@ -438,7 +440,7 @@ export function resaBehov(s: State, dt: number) {
 // sin egen) gånger lastens, årstidens (snön) och orkens. Ledens fart ligger i rutans kostnad (vagval.ts), så en stig går
 // fortare än obanad mark. Lasten bromsar bara på resan, inte i byn. Sällskapet går i dagsljuset, ruta för ruta längs vägen,
 // och trampar leden (leder.ts) där det går; framme stannar det så många dygn som skälet säger och går sedan hem.
-const resenarer = (s: State, sl: Sallskap) => sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p && alive(p));
+const resenarer = (s: State, sl: Sallskap) => sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p && alive(p) && !p.dodVag); // den som dött på vägen är inte med (steg 11.5.18)
 export function personFart(s: State, p: Person) {
   const a = ageOf(p, s.now), ben = Math.max(0, ...GADELAR.map(d => clamp(delFel(p, d), 0, 1)));
   return Math.min(a < ALDER.vuxen ? RESA.fartBarn : a >= ALDER.gammal ? RESA.fartGammal : 1, 1 - (1 - RESA.fartBen) * ben);
@@ -495,6 +497,7 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   for (const p of resenarer(s, sl)) if (ute(p)) kommHem(s, p, in_.x, in_.y);
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
   delaHemma(s, sl);
+  beskedet(s, sl); // den som dog på vägen: arvet delas nu (steg 11.5.18)
   sl.skede = 'hemma'; sl.t = t;
   count(s, 'resa hemma');
   redogorelse(s, sl, t);
@@ -732,7 +735,7 @@ function samlasSteg(s: State, sl: Sallskap, p: Person) {
 // Spelaren ser sällskapet som det är: en bild som rör sig längs vägen, mellan rutan det är på och nästa (gången mot nästa ruta i
 // rutans kostnad), vänd åt sitt håll, och en ruta med skälet, målet, skedet, medlemmarna, djuren, packningen och hur långt det
 // är kvar i dygn (i sällskapets fart nu), eller hur länge det stannar framme.
-export const SKEDEN: Record<Skede, string> = { samlas: 'Samlas', packar: 'Packar', gar: 'Går ut ur byn', ute: 'På väg dit', framme: 'Framme', hemat: 'På väg hem', hemma: 'Hemma' };
+export const SKEDEN: Record<Skede, string> = { samlas: 'Samlas', packar: 'Packar', gar: 'Går ut ur byn', ute: 'På väg dit', framme: 'Framme', hemat: 'På väg hem', hemma: 'Hemma', forsvunnet: 'Försvunnet' };
 export interface SallskapLage { x: number; y: number; dx: number; dy: number; kvar: number }
 export function sallskapLage(s: State, sl: Sallskap): SallskapLage | undefined {
   const vl = s.varld, v = varldMark(s);
@@ -1017,12 +1020,53 @@ export function vardaPaVagen(s: State, sl: Sallskap, q: Person, folk = resenarer
   ovning(g, 'lakekonst', HALSA.lakeOvning);
 }
 // en resenär dör på vägen: hen dör som hemma (die), men kroppen ligger inte på byns karta; sällskapet går vidare utan hen
-function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Parameters<typeof die>[2], t: number) {
-  if (!alive(p)) return;
-  die(s, p, orsak);
+function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Dodsorsak, t: number) {
+  if (!alive(p) || p.dodVag) return;
+  p.dodVag = { orsak, t }; delete p.sjuk;
+  if (sl.ledare === p.id) { const ny = resenarer(s, sl)[0]; if (ny) sl.ledare = ny.id; } // den som är kvar leder
+  if (sl.buren) { sl.buren = sl.buren.filter(b => b[0] !== p.id); if (!sl.buren.length) delete sl.buren; }
   count(s, 'resa död');
-  dagbok(s, sl, 'dod', `${p.name} dog ${p.cause ?? ''} på vägen.`, t);
+  dagbok(s, sl, 'dod', `${p.name} dog ${DODSORSAKER[orsak].text} på vägen.`, t);
+  // de andra begraver hen vid leden
+  const vl = s.varld;
+  if (vl && sl.ruta !== undefined && resenarer(s, sl).length) {
+    (vl.gravar ??= []).push({ ruta: sl.ruta, vem: p.id, namn: p.name, t });
+    count(s, 'resa begravd');
+    dagbok(s, sl, 'dod', `${p.name} begravdes vid leden.`, t);
+  }
 }
+
+// ---------- den som inte kommer hem (steg 11.5.18, Flera samhällen: Andelarna i tal) ----------
+// Den som dör på vägen är död för sällskapet men inte för byn: hen begravs vid leden (en grav på världskartan), och dödsfallet
+// räknas i byn (die i liv.ts: arvet, sorgen, krönikan) först när beskedet kommer, när någon från sällskapet kommer hem. Kommer
+// ingen hem räknas resenärerna som försvunna när tre gånger den väntade tiden gått (RESA.forsvunnen), och sällskapet är borta.
+export interface VagGrav { ruta: number; vem: number; namn: string; t: number }
+function beskedet(s: State, sl: Sallskap, orsak?: Dodsorsak) {
+  for (const id of sl.medl) {
+    const p = s.people.find(q => q.id === id);
+    if (!p || !alive(p) || (!p.dodVag && !orsak)) continue;
+    const t = p.dodVag?.t ?? s.now, o = (orsak ?? p.dodVag!.orsak) as Dodsorsak;
+    delete p.dodVag;
+    die(s, p, o); p.died = Math.min(t, s.now); // hen dog när hen dog, även om byn får veta det nu
+    count(s, 'resa besked');
+  }
+}
+// den väntade tiden för resan, i dygn: dit och hem och tiden framme
+export function vantadDygn(s: State, sl: Sallskap) {
+  const vl = s.varld, hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
+  return (hem && mal ? 2 * dygnDit(s, { x: hem.x, y: hem.y }, { x: mal.x, y: mal.y }) : 0) + RESMAL[sl.skal].stannar;
+}
+function forsvunnet(s: State, sl: Sallskap) {
+  if (s.now - sl.borjan < RESA.forsvunnen * Math.max(1, vantadDygn(s, sl)) * DAY) return;
+  const namn = resenarNamn(s, sl);
+  beskedet(s, sl, 'forsvunnen');
+  sl.skede = 'forsvunnet'; sl.t = s.now;
+  count(s, 'resa försvunnet');
+  const text = `${namn} kom aldrig hem från ${RESMAL[sl.skal].namn.toLowerCase()} till ${malNamn(s, sl)} och räknas som försvunna.`;
+  log(s, text, 'world', sl.medl);
+  notis(s, 'resa', text, sl.medl, undefined, { resa: sl.id });
+}
+const resenarNamn = (s: State, sl: Sallskap) => { const n = sl.medl.map(id => s.people.find(p => p.id === id)?.name).filter(Boolean) as string[]; return n.length > 1 ? `${n.slice(0, -1).join(', ')} och ${n[n.length - 1]}` : n[0] ?? 'Sällskapet'; };
 
 // ---------- när någon blir långsam (steg 11.5.17, Flera samhällen: Farten i tal) ----------
 // Sällskapet går i den långsammaste medlemmens fart. Blir någon långsam (under RESA.langsam, t.ex. med skadade ben) väger

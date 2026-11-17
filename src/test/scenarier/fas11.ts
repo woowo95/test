@@ -2090,7 +2090,7 @@ SCENARIER.vagsjuk = {
       [`inget blod och ingen kroppsdel på byns karta (${SIM.kvarlevor(k.s).length - kv0} nya kvarlevor)`, SIM.kvarlevor(k.s).length === kv0 && JSON.stringify(k.s.blod ?? null) === blod0],
       [`olyckan och sjukdomen: ${skadad} skadad, ${sjuka} sjuk, ${o.sl.dagbok.filter(x => x[2] === 'skada').length} rader i dagboken, ${notiser} notiser`, skadad === 1 && sjuka >= 1 && o.sl.dagbok.filter(x => x[2] === 'skada').length === 2 && notiser >= 2],
       [`förkylningen räknas på vägen (${sj.q.sjuk ? 'fortfarande sjuk' : SIM.alive(sj.q) ? 'frisk' : 'död'} efter ${timmar} timmar)`, !sj.q.sjuk || !SIM.alive(sj.q)],
-      [`den som förblöder dör på vägen (${SIM.alive(d.q) ? 'lever' : 'död'}, ${d.sl.dagbok.filter(x => x[2] === 'dod').length} rad i dagboken, ${SIM.kvarlevor(d.s).length - dkv} kroppar i byn)`, !SIM.alive(d.q) && d.sl.dagbok.some(x => x[2] === 'dod') && SIM.kvarlevor(d.s).length === dkv],
+      [`den som förblöder dör på vägen (${d.q.dodVag ? 'död på vägen' : 'lever'}, ${d.sl.dagbok.filter(x => x[2] === 'dod').length} rad i dagboken, ${SIM.kvarlevor(d.s).length - dkv} kroppar i byn)`, !!d.q.dodVag && d.sl.dagbok.some(x => x[2] === 'dod') && SIM.kvarlevor(d.s).length === dkv],
     ];
   },
 };
@@ -2151,6 +2151,50 @@ SCENARIER.utvagar = {
       [`den tunga lasten: ${Object.entries(lage.slapp).map(([k, n]) => `${n} ${k}`).join(', ')} släpps (värde ${Math.round(lage.slappVarde)}), lasten bromsar inte längre (${lastEfter.toFixed(2)})`, Object.keys(lage.slapp).length > 0 && lastEfter === 1 && Object.values(lage.slapp).every(Number.isInteger)],
       [`det släppta blir en gömma på rutan (${gm.length})`, gm.length === 1 && gm[0]!.ruta === tung.sl.ruta],
       [`gömman är borta efter ${SIM.RESA.gommaDygn} dygn (${tung.s.varld!.gommor?.length ?? 0} kvar)`, !(tung.s.varld!.gommor?.length)],
+    ];
+  },
+};
+
+SCENARIER.forsvunnen = {
+  text: 'Den som inte kommer hem (steg 11.5.18, resa.ts): den som dör på vägen begravs vid leden av de andra (en grav på världskartan), men för byn lever hen tills beskedet kommer hem med sällskapet; då räknas dödsfallet med den tid det hände, och arvet delas. Dör alla räknas de som försvunna när tre gånger den väntade tiden gått',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!, mal = hb.grannar![0]!.nr;
+    const ny = (antal: number) => {
+      const s = SIM.cloneState(s0), folk = vuxna.slice(0, antal).map(q => s.people.find(x => x.id === q.id)!);
+      const sl = SIM.nyttSallskap(s, folk[0]!, mal, 'handel')!; for (const q of folk.slice(1)) SIM.foljMed(s.varld!, sl, q);
+      for (const x of folk) { SIM.gaBort(s, x); delete x.skador; delete x.sjuk; x.blod = 1; }
+      sl.skede = 'framme'; sl.framme = s.now; sl.pack = { brod: 50, vattensack: 4 }; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 4, foder: 0 };
+      const v = SIM.varldMark(s)!; sl.ruta = hb.y * v.w + hb.x;
+      return { s, sl, folk };
+    };
+    const kor = (x: { s: SIM.State }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    const dodas = (x: { s: SIM.State }, p: SIM.Person) => { SIM.skada(x.s, p, 'huvud', 'krossar', 0.3, 'olycka', 'på resan'); p.blod = 0.01; };
+    // ledaren dör på vägen: de andra begraver hen, och en annan leder
+    const a = ny(3), d = a.folk[0]!, partner = d.partner;
+    dodas(a, d); kor(a, 1);
+    const t0 = d.dodVag?.t, grav = a.s.varld!.gravar ?? [], dodFor = SIM.alive(d), ledare = a.sl.ledare;
+    // hemma några dygn senare: beskedet
+    a.s.now += 3 * SIM.DAY; SIM.hemkomst(a.s, a.sl, a.s.now);
+    const efter = !SIM.alive(d) && d.died === t0 && !d.dodVag;
+    const gift = partner !== undefined ? a.s.people.find(q => q.id === partner) : undefined;
+    // alla dör: ingen begraver, ingen kommer hem, och efter tre gånger den väntade tiden är de försvunna
+    const b = ny(1), e = b.folk[0]!;
+    dodas(b, e); kor(b, 1);
+    const ingenGrav = !(b.s.varld!.gravar?.length), vantad = SIM.vantadDygn(b.s, b.sl);
+    kor(b, 24); const forTidigt = b.sl.skede;
+    b.s.now = b.sl.borjan + (SIM.RESA.forsvunnen * vantad + 1) * SIM.DAY; SIM.resaBehov(b.s, SIM.HOUR);
+    return [
+      [`ledaren dog på vägen men lever för byn (${t0 !== undefined ? 'död på vägen' : 'lever'}, ${dodFor ? 'levande i byn' : 'död i byn'})`, t0 !== undefined && dodFor],
+      [`de andra begravde hen vid leden (${grav.length} grav, ${grav[0]?.namn})`, grav.length === 1 && grav[0]!.ruta === a.sl.ruta && grav[0]!.vem === d.id],
+      [`en annan leder sällskapet (${ledare !== d.id})`, ledare !== d.id && a.folk.some(q => q.id === ledare)],
+      [`dagboken: ${a.sl.dagbok.filter(x => x[2] === 'dod').map(x => x[1]).join(' / ')}`, a.sl.dagbok.filter(x => x[2] === 'dod').length === 2],
+      [`beskedet hemma: död med tiden då det hände (${d.cause}, ${efter})`, efter],
+      [`partnern är änka och inte halvt gift (${gift ? gift.partner ?? 'ingen' : 'ingen partner'})`, !gift || gift.partner === undefined],
+      [`den ensamma som dör begravs inte (${ingenGrav})`, ingenGrav],
+      [`väntad tid ${vantad.toFixed(1)} dygn; efter ett dygn står sällskapet kvar (${forTidigt})`, vantad > 0 && forTidigt === 'framme'],
+      [`efter ${SIM.RESA.forsvunnen} gånger den tiden: försvunnet (${b.sl.skede}, ${e.cause}), och borta ur sällskapen på kartan`, b.sl.skede === 'forsvunnet' && !SIM.alive(e) && !SIM.sallskapNu(b.s.varld).includes(b.sl)],
+      [`en notis om de försvunna`, (b.s.notiser?.lista ?? []).some(n => n.id === 'resa' && n.rader.some(r => r.includes('försvunna')))],
     ];
   },
 };

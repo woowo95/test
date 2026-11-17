@@ -79,16 +79,19 @@ function sprite(vanster: boolean) {
 }
 const vandrar = new Map<number, boolean>(); // åt vänster senast (står kvar när sällskapet går rakt upp eller ner)
 // gömmorna (steg 11.5.17, platshållare: packningens tecken) under sällskapen
-let gommaBild: HTMLCanvasElement | undefined;
+const tecknBild: Record<string, HTMLCanvasElement> = {};
+function tecken(namn: 'packning' | 'kors') {
+  if (tecknBild[namn]) return tecknBild[namn];
+  const b = tecknBild[namn] = document.createElement('canvas'); b.width = b.height = VK;
+  const c = b.getContext('2d')!, r = TECKEN[namn];
+  for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++) { const k = r[y]?.[x]; if (k && k !== '.') { c.fillStyle = TECKENPAL[k]; c.fillRect(x, y, 1, 1); } }
+  return b;
+}
 function ritaGommor(g: CanvasRenderingContext2D) {
   const vl = s?.varld, v = s && varldMark(s);
-  if (!vl?.gommor?.length || !v) return;
-  if (!gommaBild) {
-    gommaBild = document.createElement('canvas'); gommaBild.width = gommaBild.height = VK;
-    const c = gommaBild.getContext('2d')!, r = TECKEN.packning;
-    for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++) { const k = r[y]?.[x]; if (k && k !== '.') { c.fillStyle = TECKENPAL[k]; c.fillRect(x, y, 1, 1); } }
-  }
-  for (const gm of vl.gommor) g.drawImage(gommaBild, (gm.ruta % v.w) * VK, Math.floor(gm.ruta / v.w) * VK);
+  if (!vl || !v) return;
+  for (const gr of vl.gravar ?? []) g.drawImage(tecken('kors'), (gr.ruta % v.w) * VK, Math.floor(gr.ruta / v.w) * VK); // gravarna vid leden (steg 11.5.18, platshållare: korset)
+  for (const gm of vl.gommor ?? []) g.drawImage(tecken('packning'), (gm.ruta % v.w) * VK, Math.floor(gm.ruta / v.w) * VK);
 }
 function ritaSallskap(g: CanvasRenderingContext2D) {
   if (!s) return;
@@ -200,6 +203,7 @@ function rutaHtml(x: number, y: number): string {
     delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
   }
   const vm = varldMark(s!);
+  for (const gr of vl.gravar ?? []) if (vm && gr.ruta === y * vm.w + x) delar.push(`<div class="vkPlats"><b>✝ Grav</b>: ${esc(gr.namn)}<div>Begravd vid leden år ${kalender(s!, gr.t).ar}</div></div>`); // steg 11.5.18
   for (const gm of vl.gommor ?? []) { // en gömma på rutan (steg 11.5.17)
     if (!vm || gm.ruta !== y * vm.w + x) continue;
     delar.push(`<div class="vkPlats"><b>🎒 Gömma</b>: ${Object.entries(gm.saker).map(([k, n]) => `${n} ${esc((SAKER[k]?.namn ?? k).toLowerCase())}`).join(', ')}<div>Gömdes år ${kalender(s!, gm.t).ar}</div></div>`);
