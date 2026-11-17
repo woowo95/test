@@ -1,5 +1,5 @@
 import { BRASA, ELD, FireLog, HOUR, amountOf, byId, eldById, eldFaktor, brinnTakt, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
-import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
+import { bar, clockTxt, durTxt, esc, fallUt, fmtN, hjalpOppen, num, pLink, times } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -25,10 +25,10 @@ function fireHtml() {
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   const tgt = forsta ? fireWant(s) : f.want ?? 0;
   return `
-    <div class="phead"><span class="dot big" style="background:${f.lit ? '#d8b25f' : glod ? 'var(--g-rost)' : 'var(--tom)'}"></span><div><h2>${esc(h.name)}</h2>
+    <div class="phead"><span class="dot big" role="img" tabindex="0" aria-label="${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}" title="${esc(`${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}. Pricken är gul när elden brinner, rost när den glöder och grå när den är släckt`)}" style="background:${f.lit ? '#d8b25f' : glod ? 'var(--g-rost)' : 'var(--tom)'}"></span><div><h2>${esc(h.name)}</h2>
     <p class="muted">${esc(h.desc)}${forsta ? '' : ' En lägereld till, nära sovplatserna.'}</p><p class="status">${status}</p></div></div>
     <h3>Just nu</h3><dl class="kv">
-      <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel}</span></dd>
+      <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel} ved</span></dd>
       <dt>Värme</dt><dd>${bar(fireHeat(s, f))}<span>${f.lit ? `${num(heatRadius(s, f))} rutor ut` : '–'}</span></dd>
       <dt>Förbrukning</dt><dd>${num(takt)} ved i timmen${fr > 1 || fv > 1 || f.blot ? ` <span class="muted">(${[fr > 1 ? 'regnet' : '', fv > 1 ? 'den hårda vintern' : '', f.blot ? 'den blöta veden' : ''].filter(Boolean).join(' och ')})</span>` : ''}</dd>
       <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / takt * HOUR)}` : '–'}</dd>
@@ -40,9 +40,9 @@ function fireHtml() {
       <dt>Brunnit i</dt><dd>${durTxt(now - (f.litAt ?? now))}</dd>
       <dt>Tändes</dt><dd>${f.litAt !== undefined ? clockTxt(f.litAt) : '–'}</dd>
       <dt>Tänd av</dt><dd>${f.litBy !== undefined ? pLink(byId(s, f.litBy)) : forsta ? 'Byns grundare' : '–'}</dd>
-      <dt>Trä använt</dt><dd>${fmtN(f.burned)}</dd></dl>` : ''}
+      <dt>Trä använt</dt><dd>${fmtN(f.burned)} ved</dd></dl>` : ''}
     ${forsta ? '' : `<h3>Sover nära</h3><p class="muted">När ingen sover nära den och den är släckt tas den isär efter ${BRASA.tomDygn} år, och stenarna läggs i en hög.</p>${(f.folk ?? []).map(id => byId(s, id)).filter(p => p).map(p => pLink(p)).join(' ') || '<span class="muted">Ingen</span>'}`}
-    <h3>Tändning</h3><dl class="kv fam">
+    <h3 class="klick falla" ${fallUt('eld-tand')}>Tändning</h3>${hjalpOppen('eld-tand') ? `<dl class="kv fam">
       <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${fmtN(amountOf(s, ig.id))} i förrådet)` : 'Inget. Någon måste hitta en flinta.'}</dd>
       <dt>Stenring</dt><dd>${f.ring || !forsta ? 'Ligger runt eldplatsen' : `Behövs till den första elden: ${fmtN(amountOf(s, 'sten'))} av ${ELD.ring} stenar`}</dd>
       <dt>Hö</dt><dd>${fmtN(amountOf(s, 'torrgras'))} i förrådet</dd>
@@ -51,14 +51,13 @@ function fireHtml() {
       ${amountOf(s, 'kol') >= 1 ? `<dt>Kol</dt><dd>${fmtN(amountOf(s, 'kol'))} i förrådet</dd>` : ''}
       ${ig ? `<dt>Per försök</dt><dd>${ig.grass} hö och ${ig.sticks} grenar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
       ${!f.lit ? `<dt>Försök</dt><dd>${f.tries} sedan elden slocknade${lighter ? `, ${pLink(lighter)} försöker nu` : ''}</dd>` : ''}
-    </dl>
-    <h3>Totalt</h3><dl class="kv fam">
-      <dt>Brunnit</dt><dd>${f.litSec > 0 ? durTxt(f.litSec * 1000) : 'Aldrig'}</dd>
-      <dt>Trä bränt</dt><dd>${Math.round(f.totalBurned)}</dd>
+    </dl>` : ''}
+    <h3>Sedan byn grundades</h3><dl class="kv fam">
+      <dt>Brunnit i</dt><dd>${f.litSec > 0 ? durTxt(f.litSec * 1000) : 'Aldrig'}</dd>
+      <dt>Trä använt</dt><dd>${Math.round(f.totalBurned)} ved</dd>
       <dt>Tänd</dt><dd>${times(f.lightings)}, ${f.tryTotal} försök</dd>
       <dt>Slocknat</dt><dd>${times(f.outs)}</dd></dl>
     <h3>Eldstaden</h3><dl class="kv fam">
-      <dt>Mest trä</dt><dd>${h.maxFuel}</dd>
       <dt>Välbehag</dt><dd>+${Math.round(h.comfort * 100)} i humör nära elden</dd>
       <dt>Inomhus</dt><dd>${h.indoor ? 'Ja' : 'Nej'}</dd>
       <dt>Spridningsrisk</dt><dd>${spreadWord(h.spread)}</dd></dl>
