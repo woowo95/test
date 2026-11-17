@@ -1550,3 +1550,23 @@ SCENARIER.leder = {
     ];
   },
 };
+SCENARIER.sallskap = {
+  text: 'Sällskapet och registret RESMAL (steg 11.5.2, resa.ts): ett sällskap är en post i världen med ledare, medlemmar, djur, mål, skäl, skede och packning, ingen är med i två, och det sparas med världen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
+    const sl = SIM.nyttSallskap(s, a!, mal, 'handel')!, igen = SIM.nyttSallskap(s, a!, mal, 'se');
+    const med = SIM.foljMed(vl, sl, b!), tva = SIM.foljMed(vl, sl, b!);
+    SIM.djurMed(sl, 7);
+    const kopia = JSON.parse(JSON.stringify(s)) as SIM.State, k = kopia.varld!.sallskap![0]!;
+    return [
+      ['varje skäl har namn och mål', SIM.RESMAL_IDS.every(id => SIM.RESMAL[id].namn && SIM.RESMAL[id].mal.length > 0)],
+      [`sällskapet har ledare, mål, skäl och skedet samlas (${sl.skede})`, sl.ledare === a!.id && sl.mal === mal && sl.skal === 'handel' && sl.skede === 'samlas' && sl.by === vl.huvud],
+      ['ledaren kan inte leda två sällskap', !igen],
+      ['en till följer med, men bara en gång', med && !tva && sl.medl.length === 2],
+      ['ett djur följer med', sl.djur.includes(7)],
+      ['sällskapet sparas med världen', k.id === sl.id && k.medl.join() === sl.medl.join() && SIM.sallskapFor(kopia.varld, b!.id)?.id === sl.id],
+      [`blocket RESA har tiden att samla (${SIM.RESA.samlaSek} s)`, SIM.RESA.samlaSek > 0],
+    ];
+  },
+};

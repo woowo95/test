@@ -172,4 +172,5 @@ export * from './sim/byflytt';
 export * from './sim/giftermal';
 export * from './sim/radperson';
 export * from './sim/leder';
+export * from './sim/resa';
 export * from './sim/forhistoria';
