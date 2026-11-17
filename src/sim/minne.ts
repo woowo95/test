@@ -19,7 +19,7 @@ import { smutsAvdrag, vattenSmuts } from './smuts';
 import { bitAt } from './byggnad';
 import { lognFaktor, skvaller } from './rykten';
 import { delaVarsel } from './motgang';
-import { klanById, klanPris } from './klaner';
+import { prisKrok } from './klaner';
 import { sakNamn } from './saker';
 import { ORT, berattaOrt, describeOrt, ortBleknar } from './ort';
 
@@ -92,6 +92,7 @@ export const MINNE = balans('minne', {
   prisFel: 0.25, // ett nytt pris som skiljer så här mycket från det man trodde är en nyhet
   prisGlom: 6, // priser glöms så här många gånger så långsamt som platser
   prisMax: 8, // så många priser minns man högst (utöver max); det minst säkra trängs undan
+  prisGrupp: 0.3, // småpratet handlar så här ofta om en hel varugrupp i stället för en sak (steg 11.6.4)
 });
 
 // Kunskap och lärdomar.
@@ -507,28 +508,36 @@ export function describe(s: State, l: Lardom) {
 // Byn minns vad en grannklan betalar för ett slag: klanen (a) och slaget (sl) är nyckeln, påslaget på grundvärdet (v, klanens
 // pris) värdet. Den som handlat med klanens handlare vet priset på det som byttes; småpratet med handlaren och främlingen som
 // pratat med ledaren ger ett osäkrare pris. Priserna sprids i samtal oförändrade, glöms långsamt och har ett eget tak
-const klanNamn = (s: State, id: number) => klanById(s, id)?.namn ?? 'en grannklan';
-const prisOm = (s: State, l: Lardom) => `vad ${klanNamn(s, l.a)} betalar för ${sakNamn(l.sl!).toLowerCase()}`;
-// p lär sig klanens pris på slaget med säkerheten c (1 = egen affär), av src (den som berättade) eller själv
-export function larPris(s: State, p: Person, klan: number, sl: string, c: number, src?: number) {
-  const v = klanPris(klanById(s, klan), sl), e = findL(p, 'pris', klan, sl), fel = !!e && Math.abs(e.v - v) >= MINNE.prisFel - 1e-9;
+// Från steg 11.6.4 är nyckeln byn i världen (a = radens nummer) och slaget en sak eller en hel varugrupp (sl = "grupp:mat",
+// "maten är dyr i Granåsen"). Det man tror om en sak går före det man tror om dess grupp, och ett okänt pris räknas som 1
+const byNamn = (s: State, nr: number) => s.varld?.rader?.find(r => r.nr === nr)?.namn ?? 'en by';
+const GR = 'grupp:';
+const slagNamn = (sl: string) => (sl.startsWith(GR) ? prisKrok.gruppNamn(sl.slice(GR.length)) : sakNamn(sl)).toLowerCase();
+const prisOm = (s: State, l: Lardom) => `vad ${byNamn(s, l.a)} betalar för ${slagNamn(l.sl!)}`;
+// p lär sig byns pris på slaget med säkerheten c (1 = egen affär), av src (den som berättade) eller själv
+export function larPris(s: State, p: Person, by: number, sl: string, c: number, src?: number) {
+  const v = prisKrok.radPris(s, by, sl), e = findL(p, 'pris', by, sl), fel = !!e && Math.abs(e.v - v) >= MINNE.prisFel - 1e-9;
   if (e) {
     if (c < e.c && !fel) { e.c = Math.min(1, e.c + MINNE.berattaStark * (1 - e.c)); return; } // det man redan tror säkrare stärks bara
     e.v = v; e.c = c; e.t = s.now; e.src = src; e.led = src === undefined ? 0 : 1;
     if (fel) { e.ny = s.now; count(s, 'prisRattat'); } else delete e.ny;
     return;
   }
-  (p.lardomar ??= []).push({ k: 'pris', a: klan, sl, v, c, t: s.now, ...(src !== undefined ? { src } : {}), led: src === undefined ? 0 : 1 });
+  (p.lardomar ??= []).push({ k: 'pris', a: by, sl, v, c, t: s.now, ...(src !== undefined ? { src } : {}), led: src === undefined ? 0 : 1 });
   count(s, 'prisLart');
   trim(s, p);
 }
-// det p tror att klanen betalar för slaget, gånger grundvärdet: lärdomen vägd med säkerheten, annars 1
-export const trorPris = (p: Person | undefined, klan: number, sl: string) => { const l = p && findL(p, 'pris', klan, sl); return l ? l.c * l.v + (1 - l.c) : 1; };
+// det p tror att byn betalar för saken, gånger grundvärdet: lärdomen om saken, annars om dess grupp, vägd med säkerheten, annars 1
+export const trorPris = (p: Person | undefined, by: number | undefined, sl: string) => {
+  if (!p || by === undefined) return 1;
+  const g = prisKrok.grupp(sl), l = findL(p, 'pris', by, sl) ?? (g ? findL(p, 'pris', by, GR + g) : undefined);
+  return l ? l.c * l.v + (1 - l.c) : 1;
+};
 function describePris(s: State, l: Lardom) {
-  const place = klanNamn(s, l.a), namn = sakNamn(l.sl!).toLowerCase();
+  const place = byNamn(s, l.a), namn = slagNamn(l.sl!);
   const what = (l.v >= 1.15 ? `Betalar bra för ${namn}` : l.v <= 0.85 ? `Betalar dåligt för ${namn}` : `Vanligt pris för ${namn}`) + ` (${Math.round(l.v * 100)} %)` + (nyhet(s, l) ? ', ett annat pris än man trott' : '');
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : 'egen affär') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som visste` : ''}`;
   const sure = l.c >= 0.75 ? 'säker' : l.c >= 0.4 ? 'ganska säker' : 'osäker';
-  const wrong = Math.abs(klanPris(klanById(s, l.a), l.sl!) - l.v) >= MINNE.prisFel - 1e-9 ? 'stämmer inte längre' : '';
+  const wrong = Math.abs(prisKrok.radPris(s, l.a, l.sl!) - l.v) >= MINNE.prisFel - 1e-9 ? 'stämmer inte längre' : '';
   return { text: `${what} hos ${place}`, what, place, src, sure, wrong };
 }

@@ -38,6 +38,7 @@ import { varldHandelse } from './varldkronika';
 import { relGlom } from './byrel';
 import { Varlden, varldMark } from './varlden';
 import { DAY, State } from './typer';
+import { RADPRIS, radRikedomUr, radVaror, radVill, VARUGRUPP_IDS } from './priser';
 
 export const RAD = balans('rad', {
   // bärkraften (steg 11.3.1)
@@ -111,7 +112,7 @@ export const lever = (vl: Varlden, r: VarldRad) => r.nr !== vl.huvud && BYSORTER
 export const matDygn = (r: VarldRad) => r.tal.folk ? r.tal.mat / (r.tal.folk * portionerPerDygn()) : 0;
 export const forradTak = (r: VarldRad) => Math.round(r.tal.folk * portionerPerDygn() * RAD.forvaringDygn * (1 + tekTillskott(r, 'forvaring')));
 // ärendena i världens slump för raden
-const A = { mat: 1, svalt: 2, fodda: 3, doda: 4, rik: 5, styrka: 6 };
+const A = { mat: 1, svalt: 2, fodda: 3, doda: 4, rik: 5, styrka: 6, rikDel: 32 };
 
 // en timme (ungefär 15 dagar i spelet) för raden: maten, svälten, födda och döda
 export function radMat(s: State, vl: Varlden, r: VarldRad, n: number) {
@@ -142,9 +143,14 @@ export const styrkaMal = (r: VarldRad) => Math.min(r.tal.folk, Math.round(r.tal.
 // så stor del av vägen en timme tar, när en hel dygns väg är del
 const perTimme = (del: number) => 1 - (1 - del) ** (1 / 24);
 // en timme: rikedomen går mot teknikernas mål och sjunker i nöd, och styrkan går mot folket
+// rikedomen är husen och tillgången i varje varugrupp (steg 11.6.3, priser.ts): var del går mot sin del av målet
 function radRikedom(vl: Varlden, r: VarldRad, n: number, nod: boolean) {
-  const rik = r.tal.rikedom, steg = nod ? -rik * RAD.rikNod : (rikMal(r) - rik) * perTimme(RAD.rikDygn);
-  r.tal.rikedom = Math.max(0, rik + antalUr(steg, varldSlump(vl, r.nr, n, A.rik)));
+  const varor = radVaror(r), mal = rikMal(r);
+  let i = 0;
+  const flytta = (v: number, m: number) => Math.max(0, v + antalUr(nod ? -v * RAD.rikNod : (m - v) * perTimme(RAD.rikDygn), varldSlump(vl, r.nr, n, i++ ? A.rikDel + i : A.rik)));
+  r.hus = flytta(r.hus ?? 0, mal * RADPRIS.husAndel);
+  for (const g of VARUGRUPP_IDS) if (g !== 'mat') varor[g] = flytta(varor[g] ?? 0, radVill(r, g, mal));
+  r.tal.rikedom = radRikedomUr(r);
   const st = r.tal.styrka;
   r.tal.styrka = Math.min(r.tal.folk, Math.max(0, st + antalUr((styrkaMal(r) - st) * perTimme(RAD.styrkaDygn), varldSlump(vl, r.nr, n, A.styrka))));
 }

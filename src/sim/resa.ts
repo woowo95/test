@@ -35,7 +35,7 @@ import type { Skill } from './typer';
 import { kommHem } from './ute';
 import { larOrt, O_BESOKT, radBesoker } from './ort';
 import { BYSORTER, radNr } from './radtal';
-import { klanPris, prisAndras } from './klaner';
+import { radPaslag, radPrisAndras, radTar } from './priser';
 import { makeName } from './folk';
 import { rnd } from './slump';
 import { DAY } from './typer';
@@ -524,13 +524,13 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   let fick = 0, salda = 0;
   for (const sak of Object.keys(sl.pack).sort()) {
     if (BEHALL.includes(sak) || FOOD.includes(sak) || !(varde1(sak) > 0)) continue;
-    const per = varde1(sak) * klanPris(k, sak);
+    const per = varde1(sak) * radPaslag(s, r, sak);
     const m = Math.min(Math.floor(sl.pack[sak]!), Math.floor(r.tal.silver / per));
     if (m <= 0) continue;
     const pay = Math.floor(m * per);
-    r.tal.silver -= pay; fick += pay; salda += m; tappa(sl, sak, m);
-    r.tal.rikedom += Math.round(m * varde1(sak)) - pay;
-    if (k) prisAndras(k, sak, pay, -1);
+    fick += pay; salda += m; tappa(sl, sak, m);
+    radTar(r, sak, m); radTar(r, 'silver', -pay);
+    radPrisAndras(s, r, sak, pay, -1);
   }
   if (fick) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; dagbok(s, sl, 'handel', `Sålde ${salda} saker i ${r.namn} för ${fick} silver.`, t); count(s, 'resa sålde', salda); }
   // köpa: mat för vägen hem
@@ -539,14 +539,14 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   const behov = vd ? Math.ceil(folk.length * RESA.matPerDygn * (vd.dygn + RESMAL[sl.skal].stannar) * (led ? marginal(led) : RESA.margMitt) - 1e-9) : 0;
   const har = FOOD.reduce((a, f) => a + Math.floor(sl.pack[f] ?? 0), 0), kop = FOOD.filter(f => varde1(f) > 0).sort((a, b) => (SAKER[b]!.haller ?? 0) - (SAKER[a]!.haller ?? 0))[0];
   if (kop && behov > har) {
-    const per = varde1(kop) * klanPris(k, kop);
+    const per = varde1(kop) * radPaslag(s, r, kop);
     let m = Math.min(behov - har, Math.floor(r.tal.mat * RESA.matKvar), Math.floor((sl.pack.silver ?? 0) / per));
     while (m > 0 && Math.ceil(m * per) > (sl.pack.silver ?? 0)) m--;
     if (m > 0) {
       const pay = Math.ceil(m * per);
       tappa(sl, 'silver', pay); sl.pack[kop] = (sl.pack[kop] ?? 0) + m;
-      r.tal.mat -= m; r.tal.silver += pay; r.tal.rikedom += pay - Math.round(m * varde1(kop));
-      if (k) prisAndras(k, kop, pay, 1);
+      radTar(r, kop, -m); radTar(r, 'silver', pay);
+      radPrisAndras(s, r, kop, pay, 1);
       dagbok(s, sl, 'handel', `Köpte ${m} ${SAKER[kop]!.namn.toLowerCase()} för ${pay} silver till vägen hem.`, t); count(s, 'resa köpte', m);
     }
   }
@@ -673,7 +673,7 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     const r = q.by !== undefined ? radNr(vl, q.by) : undefined;
     let skal: ResmalId | undefined, varde = 0, varor: [string, number][] = [];
     if (q.k === 'by' && r && BYSORTER[r.sort].folk && r.tal.folk > 0) {
-      const h = resaVaror(s, p, r.syn?.id);
+      const h = resaVaror(s, p, r.nr);
       if (h.vinst > 0) { skal = 'handel'; varde = h.vinst * (1 + p.skill.handel / 20); varor = h.varor; }
     }
     if (!skal && niva === O_RYKTE && (RESMAL.se.mal as readonly string[]).includes(q.k)) { skal = 'se'; varde = RESA.seVarde * ny / 10; }

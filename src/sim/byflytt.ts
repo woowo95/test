@@ -176,7 +176,7 @@ export function undergang(s: State, vl: Varlden, r: VarldRad, t: number) {
     if (v > varde) break;
     varde -= v; kvar[id] = (kvar[id] ?? 0) + 1;
   }
-  r.sort = 'ruin'; r.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; r.t = t;
+  r.sort = 'ruin'; r.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; r.t = t; delete r.varor; delete r.hus; delete r.egen;
   if (Object.keys(kvar).length) r.kvar = kvar;
   delete r.ledare;
   const p = platsAv(vl, r);

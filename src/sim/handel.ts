@@ -29,7 +29,8 @@ import { sumOf } from './egendom';
 import { kanterna } from './varg';
 import { kantMot } from './grannbyar';
 import { larPris, MINNE, trorPris } from './minne';
-import { KLAN, handlarKlan, klanById, klanPris, klanerOf, prisAndras } from './klaner';
+import { KLAN, handlarKlan, klanById, klanPris, klanerOf, prisAndras, prisKrok } from './klaner';
+const gruppAvKrok = (k: string) => prisKrok.grupp(k);
 import { klanHandelse } from './byrel';
 import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
@@ -105,7 +106,7 @@ export const HANDELSVAROR: readonly string[] = ['rep', 'kniv', 'yxa', 'spjut', '
 const slagAv = (g: string) => GORS[g] ?? [g];
 // priset hos den grannklan som betalar bäst bland dem som skickar handlare, gånger grundvärdet (steg 10.5.14), så som den som
 // handlar för byn tror att det är (trorPris, steg 10.5.15)
-export const handelsPris = (s: State, k: string) => { const p = forByn(s); let b = 0, n = 0; for (const kl of klanerOf(s)) if (kl.inst > KLAN.handelMin) { b = Math.max(b, trorPris(p, kl.id, k)); n++; } return n ? b : 1; };
+export const handelsPris = (s: State, k: string) => { const p = forByn(s); let b = 0, n = 0; for (const kl of klanerOf(s)) if (kl.inst > KLAN.handelMin) { b = Math.max(b, trorPris(p, kl.rad, k)); n++; } return n ? b : 1; };
 // slagen ett pris i samtal kan handla om: byns handelsvaror och det handlaren har med sig
 let prisSlagen: string[] | undefined;
 const handelsSlag = () => prisSlagen ??= HANDELSVAROR.flatMap(slagAv).filter(k => grundvarde(k) > 0);
@@ -117,7 +118,8 @@ export function prisIPrat(s: State, p: Person, g: Person, extra: string[] = []) 
   const slag = [...new Set([...handelsSlag(), ...extra.filter(k => k !== 'silver' && grundvarde(k) > 0)])];
   const sl = pick(s, slag, 'handel'), annan = kl.length > 1 && rnd(s, 'handel', p) < MINNE.prisGranne;
   const k = annan ? pick(s, kl.filter(x => x.id !== hem), 'handel') : klanById(s, hem);
-  if (k) larPris(s, p, k.id, sl, annan ? MINNE.prisPrat * MINNE.prisPrat : MINNE.prisPrat, g.id);
+  const gr = rnd(s, 'handel', p) < MINNE.prisGrupp ? gruppAvKrok(sl) : undefined; // ibland hela gruppen: "maten är dyr hos oss" (steg 11.6.4)
+  if (k?.rad !== undefined) larPris(s, p, k.rad, gr ? 'grupp:' + gr : sl, annan ? MINNE.prisPrat * MINNE.prisPrat : MINNE.prisPrat, g.id);
 }
 // arbetstimmarna för saken och dess material (materialet räknat i sitt grundvärde, som är arbetstimmar)
 const timmarFor = (k: string) => { let t = (SAKER[k]?.skaffa?.min ?? 60) / 60; for (const [m, n] of Object.entries(SAKER[k]?.skaffa?.av ?? {})) t += n * grundvarde(m) / ARBETE; return t; };
@@ -478,7 +480,7 @@ export const ledigt = (h: Handlare) => rymmer(h) - kgOf(h.varor);
 // pris (trorPris, steg 10.5.16); handlaren själv svarar efter det verkliga
 export function handlarVarde(s: State, h: Handlare, k: string, tro?: Person) {
   if (k === 'silver') return 1;
-  const kl = klanAv(s, h), pris = tro && kl ? trorPris(tro, kl.id, k) : klanPris(kl, k); // klanens pris (steg 10.5.14), både för det hen säljer och det hen köper
+  const kl = klanAv(s, h), pris = tro && kl ? trorPris(tro, kl.rad, k) : klanPris(s, kl, k); // klanens pris (steg 10.5.14), både för det hen säljer och det hen köper
   if (h.varor.some(w => w.k === k)) return (1 + HANDEL.vinst) * pris;
   if (ledigt(h) < viktOf(k)) return 0; // ryggsäcken är full
   const gott = bynPart(s, hp(s, h).x, hp(s, h).y).varde(k) <= DELA.over; // byn har gott om det
@@ -532,10 +534,10 @@ vidByte.push((s, m, g, fatt, betal, minne) => {
   if (k) klanHandelse(s.varld, k, 'handel');
   // den som handlade lär sig klanens pris på det som byttes (steg 10.5.15), före prisets ändring: det var det priset som gällde
   const kund = kop ? g : m, kp = kund.p ?? (h.affar?.vem !== undefined ? byId(s, h.affar.vem) : undefined);
-  if (k && kp) for (const w of [...fatt, ...betal]) if (w.k !== 'silver' && grundvarde(w.k) > 0) larPris(s, kp, k.id, w.k, 1);
+  if (k?.rad !== undefined && kp) for (const w of [...fatt, ...betal]) if (w.k !== 'silver' && grundvarde(w.k) > 0) larPris(s, kp, k.rad, w.k, 1);
   if (kp) horOmGast(s, kp, hp(s, h), 1); // och var handlaren bor (steg 11.4.2)
   // det handlaren köpte blir billigare hos klanen och det hen sålde dyrare (steg 10.5.14)
-  if (k) for (const [v, upp] of [[kop ? fatt : betal, -1], [kop ? betal : fatt, 1]] as const) for (const w of v) prisAndras(k, w.k, (w.t ? 1 : w.n) * vardeOf(w), upp);
+  if (k) for (const [v, upp] of [[kop ? fatt : betal, -1], [kop ? betal : fatt, 1]] as const) for (const w of v) prisAndras(s, k, w.k, (w.t ? 1 : w.n) * vardeOf(w), upp);
 });
 // ett redskap köpt av handlaren som ingen i byn kan göra: ägaren kan använda det men inte göra eller laga ett, och kommer en bit
 // närmare tekniken (HANDEL.redskapHopp), en gång per person och teknik (steg 4.5.4.16)
@@ -720,7 +722,7 @@ function slut(s: State, h: Handlare, a: Affar, p: Person | undefined) {
   const bytt = a.byt !== undefined;
   // de blev inte överens: kunden har ändå hört handlarens priser på slagen i affären (ett byte lär ut dem i vidByte, steg 10.5.16)
   const kl = klanAv(s, h);
-  if (p && kl && !bytt) for (const k of new Set((a.forsok ?? []).flatMap(f => [...f.vill, ...f.bud].map(w => w.k)))) if (k !== 'silver' && grundvarde(k) > 0) larPris(s, p, kl.id, k, 1);
+  if (p && kl?.rad !== undefined && !bytt) for (const k of new Set((a.forsok ?? []).flatMap(f => [...f.vill, ...f.bud].map(w => w.k)))) if (k !== 'silver' && grundvarde(k) > 0) larPris(s, p, kl.rad, k, 1);
   if (a.byn) {
     if (bytt) count(s, 'handelByten');
     // byns andra affär (steg 10.5.17): efter köpet säljer den som handlar för byn det byn kan avvara

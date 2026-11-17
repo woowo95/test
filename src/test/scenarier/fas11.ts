@@ -579,7 +579,7 @@ SCENARIER.klanbort = {
     const nara = fran.get(kt[0].id) ?? 0, annan = (fran.get(kt[1].id) ?? 0);
     const narhet = SIM.narhet(kt[0]) === 1 && SIM.narhet(kt[1]) === SIM.KLAN.naraDygn / 4;
     // talen i raden följer grannbyn
-    t.now += SIM.DAY; SIM.klanSteg(t, SIM.DAY / SIM.SEC);
+    t.now += SIM.DAY;
     SIM.varldSteg(t);
     const foljer = kt.every(c => { const r = t.varld!.rader!.find(x => x.nr === c.rad)!; return r.tal.folk === c.folk && r.tal.styrka === c.styrka && r.tal.rikedom === c.resurser; });
     // en sparad by från före v531: grannklanerna (och en till än grannätet rymmer) blir byar i världen
@@ -2283,6 +2283,75 @@ SCENARIER.grupppris = {
       [`brist på all mat höjer både bären och fisken (${f(barM)} → ${f(barT)}, ${f(fiskM)} → ${f(fiskT)})`, barT > barM && fiskT > fiskM],
       [`men inte saltet (${f(saltM)} → ${f(saltT)})`, Math.abs(saltT - saltM) < 1e-9],
       [`alla priser ligger mellan ${SIM.PRIS.min} och ${SIM.PRIS.max} gånger grundvärdet (${f(Math.min(...alla))}–${f(Math.max(...alla))})`, inom],
+    ];
+  },
+};
+
+SCENARIER.radbrist = {
+  text: 'Bristen i raden (steg 11.6.3): en by i världen har en tillgång per varugrupp och husen, rikedomen är summan, samma prisformel gäller rad och by, en sak utan egen post följer gruppen och inget pris slumpas',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => x.nr !== vl.huvud && SIM.lever(vl, x))!;
+    SIM.radVaror(r);
+    const summa = r.tal.rikedom === SIM.radRikedomUr(r) && SIM.VARUGRUPP_IDS.every(g => g === 'mat' || Number.isInteger(r.varor![g] ?? 0));
+    // en timme med radens regler: rikedomen är fortfarande summan
+    for (let i = 0; i < 24; i++) SIM.radMat(s, vl, r, 1000 + i);
+    const summa2 = r.tal.rikedom === SIM.radRikedomUr(r);
+    // brist i virke och rep: allt i gruppen blir dyrare, och det som har en egen post avviker
+    const g = 'virke' as const, fore = SIM.radPaslag(s, r, 'rep'), plankFore = SIM.radPaslag(s, r, 'plankor');
+    r.varor!.virke = 0; r.tal.rikedom = SIM.radRikedomUr(r);
+    const efter = SIM.radPaslag(s, r, 'rep'), plankEfter = SIM.radPaslag(s, r, 'plankor');
+    const foljer = !r.egen?.plankor && Math.abs(plankEfter - Math.min(SIM.PRIS.max, SIM.radGruppPaslag(s, r, g) * SIM.markPaslag(s, r, 'plankor'))) < 1e-9;
+    // en försäljning till raden sänker sakens eget påslag, och bara dess
+    SIM.radPrisAndras(s, r, 'rep', 30, -1);
+    const egen = (r.egen?.rep ?? 1) < SIM.markPaslag(s, r, 'rep') && SIM.radPaslag(s, r, 'plankor') === plankEfter;
+    // raden får saker i hela tal
+    const rik0 = r.tal.rikedom; SIM.radTar(r, 'yxa', 2);
+    const hela = r.tal.rikedom === rik0 + Math.round(2 * SIM.grundvarde('yxa')) && r.tal.rikedom === SIM.radRikedomUr(r);
+    // samma by ger samma priser (inget slumpas)
+    const a = SIM.cloneState(testBy(10)), b = SIM.cloneState(testBy(10));
+    const pr = (x: SIM.State) => JSON.stringify((x.varld!.rader ?? []).map(q => SIM.sakerMedPris().slice(0, 40).map(k => SIM.radPaslag(x, q, k).toFixed(4))));
+    const samma = pr(a) === pr(b);
+    // huvudbyns rad följer huvudbyns pris
+    const hr = vl.rader!.find(x => x.nr === vl.huvud)!, huvud = SIM.radPaslag(s, hr, 'rep') === SIM.byPaslag(s, 'rep');
+    const f = (x: number) => x.toFixed(2);
+    return [
+      ['rikedomen är husen och gruppernas tillgång, i hela tal', summa && summa2],
+      [`brist i virke och rep höjer repet (${f(fore)} → ${f(efter)}) och plankorna (${f(plankFore)} → ${f(plankEfter)})`, efter > fore && plankEfter > plankFore],
+      ['plankorna har ingen egen post och följer gruppen', foljer],
+      ['en försäljning till byn sänker bara repets eget påslag', egen],
+      ['saker som byn får ändrar gruppen och rikedomen i hela tal', hela],
+      ['samma by ger samma priser', samma],
+      ['huvudbyns rad har huvudbyns pris', huvud],
+    ];
+  },
+};
+
+SCENARIER.prisminne = {
+  text: 'Prisminnet per by (steg 11.6.4): byn minns vad varje by i världen betalar, för en sak eller en hel varugrupp; det man tror om saken går före gruppen, och ett okänt pris är 1',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => x.nr !== vl.huvud && SIM.lever(vl, x))!, p = s.people.find(x => SIM.alive(x))!;
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'pris');
+    const okant = SIM.trorPris(p, r.nr, 'rep') === 1;
+    // en gruppdom täcker repet, som ingen dom har för sig
+    r.varor = { ...SIM.radVaror(r), virke: 0 }; r.tal.rikedom = SIM.radRikedomUr(r);
+    SIM.larPris(s, p, r.nr, 'grupp:virke', 1);
+    const gl = SIM.findL(p, 'pris', r.nr, 'grupp:virke'), grupp = !!gl && gl.a === r.nr && SIM.trorPris(p, r.nr, 'rep') === gl.v && gl.v > 1;
+    // en dom om saken går före gruppen
+    SIM.sattRadPris(s, r, 'rep', 0.6);
+    SIM.larPris(s, p, r.nr, 'rep', 1);
+    const sak = Math.abs(SIM.trorPris(p, r.nr, 'rep') - SIM.radPaslag(s, r, 'rep')) < 1e-9 && SIM.trorPris(p, r.nr, 'rep') !== gl!.v;
+    // en annan by är okänd
+    const annan = vl.rader!.find(x => x.nr !== r.nr && x.nr !== vl.huvud)!, annanOk = SIM.trorPris(p, annan.nr, 'rep') === 1;
+    // texten säger byns namn
+    const txt = SIM.describe(s, gl!);
+    return [
+      ['ett pris man inte vet något om är 1', okant],
+      [`gruppen virke och rep är dyr hos ${r.namn}, och det gäller repet (${gl?.v.toFixed(2)})`, grupp],
+      ['det man tror om repet går före gruppen', sak],
+      ['nyckeln är byn: en annan by är okänd', annanOk],
+      [`texten säger byns namn och gruppen (${txt.text})`, txt.place === r.namn && /virke/.test(txt.what)],
     ];
   },
 };

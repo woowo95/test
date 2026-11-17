@@ -85,7 +85,6 @@ import { skrivHuvudRad } from './radtal';
 import { varldSteg } from './varldslag';
 import { projektSaknarRakna } from './projekt';
 import { handelSteg, handlaKlar, handelsMalRakna, handelsTill, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
-import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
 import { JAKT, jaktBar, jaktFallt, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
@@ -404,7 +403,6 @@ export const TAKTER: Takt[] = [
   { namn: 'tidsåldern', sek: 60, fn: (s, _dt, c) => { if (c.ai !== s.lastAgeIdx) { s.lastAgeIdx = c.ai; log(s, AGES_BORJAR[c.ai], 'world'); } } },
   { namn: 'kaninerna', sek: 10, fn: (s, dt) => djurSteg(s, dt) }, // kaningrupperna väljer plats när deras tid börjar
   { namn: 'giftermålen', sek: 3600, fn: (s, dt) => giftSteg(s, dt) }, // med någon i en vänlig grannby (giftermal.ts, steg 11.3.6)
-  { namn: 'grannklanerna', sek: 600, fn: (s, dt) => klanSteg(s, dt) }, // de växer och glömmer (klaner.ts, steg 4.4.3)
   { namn: 'handlaren', sek: 0, fn: (s, dt) => handelSteg(s, dt) }, // kommer, handlar och går (handel.ts, steg 4.4.1)
   { namn: 'vargarna', sek: 0, fn: (s, dt) => vargSteg(s, dt) }, // under istiden (varg.ts, steg 3.7.1)
   { namn: 'björnen', sek: 0, fn: s => bjornSteg(s) }, // den som kommer nära björnen (bjorn.ts, steg 6.6.5)

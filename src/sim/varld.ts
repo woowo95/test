@@ -429,6 +429,13 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs, eftersom ett hus byggts ut över den.`);
   }],
   [56, 'v531: grannklanerna blir byar i världen (steg 11.2.15)', s => { nyaGrannbyar(s, s.klaner, false); delete s.klaner; }],
+  [57, 'v532: priserna finns i raden, de slumpade priserna hos grannbyarna tas bort (steg 11.6.3)', s => { for (const r of s.varld?.rader ?? []) if (r.syn) delete r.syn.pris; }],
+  [58, 'v532: prislärdomarna gäller en by i världen, inte en klan (steg 11.6.4)', s => {
+    const rad = new Map((s.varld?.rader ?? []).flatMap(r => r.syn ? [[r.syn.id, r.nr] as const] : []));
+    const om = (ls: import('./typer').Person['lardomar']) => ls?.filter(l => l.k !== 'pris' || rad.has(l.a)).map(l => l.k === 'pris' ? { ...l, a: rad.get(l.a)! } : l);
+    for (const p of s.people) if (p.lardomar) p.lardomar = om(p.lardomar);
+    for (const r of s.varld?.rader ?? []) for (const k of r.syn?.personer ?? []) if (k.kropp?.lardomar) k.kropp.lardomar = om(k.kropp.lardomar);
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

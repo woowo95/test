@@ -1,9 +1,7 @@
-import { DAY, Person, SEC, State } from './typer';
+import { Person, State } from './typer';
 import { balans } from './balans';
 import { clamp, pick, pickViktat, rnd } from './slump';
 import { makeName } from './folk';
-import { SAK_LIST } from './saker';
-import { grundvarde } from './varde';
 
 // ---------- grannbyarnas förbindelse med byn (steg 4.4.3; från steg 11.2.15 världens byar) ----------
 // Byn är inte ensam i världen. Grannarna är världens byar i huvudbyns grannät (grannbyar.ts): varje sådan rad i världen bär
@@ -35,12 +33,6 @@ export const KLAN = balans('klan', {
   taEmotSed: 0.2, // ... plus så mycket gånger seden Förnyelse – Tradition (−1 till 1) ...
   taEmotTrang: 0.4, // ... minus så mycket när byn är trång (0 till 1) ...
   taEmotMat: 0.3, // ... och minus så mycket när maten är knapp (0 till 1)
-  // priserna (steg 10.5.14): ett påslag per slag, gånger grundvärdet
-  prisSallsynt: 0.5, // det som är sällsynt på klanens hemort börjar så här mycket över 1
-  prisDrift: 0.1, // varje pris flyttas slumpvis högst så mycket per dygn (ett år i spelet) ...
-  prisDrag: 0.03, // ... och dras så stor del av vägen mot startvärdet
-  prisMin: 0.5, prisMax: 2.5, // priset håller sig mellan de här
-  prisSalt: 0.01, // det handlaren köper sänker klanens pris så mycket per silver i värde, och det hen säljer höjer det lika mycket
 });
 
 // rollerna hos klanernas namngivna personer
@@ -73,7 +65,7 @@ export interface Klan {
   personer: KlanPerson[];
   utbrytare?: true; // klanen grundades av några som lämnade byn (steg 4.4.4.1)
   grundad?: number; // när, om den grundades efter byn
-  pris?: Record<string, number>; // påslaget per slag (steg 10.5.14); saknas i en sparad by från före v533: startvärdena
+  pris?: Record<string, number>; // de slumpade priserna före v532 (steg 10.5.14); tas bort när byn laddas, priset finns i raden (priser.ts)
   rad?: number; dygn?: number; sallsynt?: string[]; // raden i världen, restiden dit till fots och det som är sällsynt på marken där (steg 11.2.15)
 }
 // förbindelserna med världens byar, i radernas ordning (räknas om när en rad läggs till eller går under); en ruin har ingen
@@ -108,14 +100,6 @@ export function nyKlan(s: State, folk: number, inst: number, namn: string, hem: 
 }
 export const klanMellan = mellan;
 
-// en gång om dygnet (ett år i spelet): priserna driver. Folket, styrkan och resurserna räknar raden i världen (rad.ts, steg
-// 11.3.2–11.3.3), och inställningen glöms mot grundläget med de andra relationerna (relGlom i byrel.ts, steg 11.3.4)
-export function klanSteg(s: State, dtSec: number) {
-  const dygn = Math.floor(s.now / DAY) - Math.floor((s.now - dtSec * SEC) / DAY);
-  const kl = klanerOf(s);
-  if (!kl.length || dygn < 1) return;
-  for (let i = 0; i < dygn; i++) for (const k of kl) prisDrift(s, k); // driften räknas per dygn som gått
-}
 // inställningen ändras (handel, utbrytning, invandring): hela tal mellan −100 och 100
 export function andraInst(k: Klan, d: number) { k.inst = clamp(Math.round(k.inst + d), -100, 100); }
 
@@ -131,25 +115,24 @@ export function handlarKlan(s: State, alla?: boolean): { klan: Klan; person: Kla
   return { klan, person };
 }
 
-// ---------- priserna (steg 10.5.14, "Ekonomi och handel (Priserna hos grannklanerna)" i designdokumentet) ----------
-// Varje klan har ett pris per slag (allt med grundvärde utom silvret): ett påslag på grundvärdet som börjar på 1, och på
-// 1 + KLAN.prisSallsynt för det som är sällsynt på klanens hemort. En gång om dygnet (ett år i spelet) flyttas varje pris
-// slumpvis högst KLAN.prisDrift och dras KLAN.prisDrag av vägen mot startvärdet, inom KLAN.prisMin–prisMax. Det handlaren köper
-// sänker klanens pris och det hen säljer höjer det (prisHandel, handel.ts). Handlaren värderar efter sin klans pris
-let prisSlag: string[] | undefined;
-const slagMedPris = () => prisSlag ??= SAK_LIST.filter(k => k !== 'silver' && grundvarde(k) > 0);
-export const prisStart = (k: Klan, slag: string) => 1 + ((k.sallsynt ?? KLAN_HEM.find(h => h.namn === k.hem)?.sallsynt)?.includes(slag) ? KLAN.prisSallsynt : 0);
-export const klanPris = (k: Klan | undefined, slag: string) => !k ? 1 : k.pris?.[slag] ?? prisStart(k, slag);
-const avrunda = (x: number) => Math.round(clamp(x, KLAN.prisMin, KLAN.prisMax) * 1000) / 1000;
-function prisDrift(s: State, k: Klan) {
-  const p = (k.pris ??= {});
-  for (const slag of slagMedPris()) {
-    const v = p[slag] ?? prisStart(k, slag), mal = prisStart(k, slag);
-    p[slag] = avrunda(v + (rnd(s, 'pris') * 2 - 1) * KLAN.prisDrift + KLAN.prisDrag * (mal - v));
-  }
-}
-// handlaren köpte (upp = −1) eller sålde (upp = 1) varor värda varde silver av slaget
-export function prisAndras(k: Klan, slag: string, varde: number, upp: 1 | -1) {
-  if (slag === 'silver' || !(grundvarde(slag) > 0)) return;
-  (k.pris ??= {})[slag] = avrunda(klanPris(k, slag) + upp * KLAN.prisSalt * varde);
-}
+
+// ---------- priset hos en grannby (steg 10.5.14; från steg 11.6.3 radens pris, priser.ts) ----------
+// Priset hos en grannby är priset i dess rad: gruppens påslag ur bristen gånger sakens eget (radPaslag). En förbindelse utan rad
+// (en sparad by från före v531) har priset det som är sällsynt där ger. Det handlaren köper sänker priset och det hen säljer
+// höjer det (radPrisAndras). priser.ts sätter krokarna när den laddas
+type R = import('./radtal').VarldRad;
+export const prisKrok = {
+  pris: (_s: State, _r: R, _slag: string) => 1, andras: (_s: State, _r: R, _slag: string, _varde: number, _upp: 1 | -1) => {},
+  satt: (_s: State, _r: R, _slag: string, _v: number) => {}, sallsynt: () => 0.5,
+  radPris: (_s: State, _nr: number, _sl: string) => 1, // priset på en sak, eller en grupp ("grupp:mat"), i byn med numret nr (prisminnet, minne.ts)
+  grupp: (_k: string): string | undefined => undefined, gruppNamn: (_id: string) => '',
+};
+const radAv = (s: State, k: Klan) => k.rad === undefined ? undefined : s.varld?.rader?.find(r => r.nr === k.rad);
+export const klanPris = (s: State, k: Klan | undefined, slag: string) => {
+  if (!k) return 1;
+  const r = radAv(s, k);
+  return r ? prisKrok.pris(s, r, slag) : 1 + ((k.sallsynt ?? KLAN_HEM.find(h => h.namn === k.hem)?.sallsynt)?.includes(slag) ? prisKrok.sallsynt() : 0);
+};
+// för scenarierna: priserna hos förbindelsen k blir de här
+export function sattKlanPris(s: State, k: Klan, p: Record<string, number>) { const r = radAv(s, k); if (r) for (const [sl, v] of Object.entries(p)) prisKrok.satt(s, r, sl, v); }
+export function prisAndras(s: State, k: Klan, slag: string, varde: number, upp: 1 | -1) { const r = radAv(s, k); if (r) prisKrok.andras(s, r, slag, varde, upp); }
