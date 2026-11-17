@@ -1429,3 +1429,27 @@ SCENARIER.bynyhet = {
     ];
   },
 };
+
+SCENARIER.radort = {
+  text: 'Radens kunskap om platser (steg 11.4.10, radKanner i ort.ts): en by i världen känner byarna i sitt grannät, har rykten om grannarnas grannar och har besökt sin egen plats och det dess handlare besökt',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && (SIM.byPlats(vl, x.nr)?.grannar?.length ?? 0) > 1)!, egen = SIM.byPlats(vl, r.nr)!;
+    const g = egen.grannar![0]!, gg = SIM.varldPlatsNr(vl, g.nr)!.grannar!.map(y => y.nr).find(n => n !== egen.nr && !egen.grannar!.some(x => x.nr === n));
+    const langt = vl.platser!.find(q => q.nr !== egen.nr && !egen.grannar!.some(x => x.nr === q.nr) && !egen.grannar!.some(x => SIM.varldPlatsNr(vl, x.nr)?.grannar?.some(y => y.nr === q.nr)))!;
+    const fore = SIM.radKanner(vl, r, langt.nr);
+    SIM.radBesoker(vl, r.nr, langt.nr); SIM.radBesoker(vl, r.nr, langt.nr);
+    // en handlare från en grannby besöker huvudbyn
+    const s2 = SIM.cloneState(testBy(3)), vl2 = s2.varld!, hb = SIM.byPlats(vl2, vl2.huvud!)!;
+    for (const x of vl2.rader!) delete x.besokt;
+    SIM.skickaHandlare(s2);
+    const kl = s2.handlare && SIM.klanById(s2, SIM.hp(s2, s2.handlare).gast!.klan!), hr = kl?.rad !== undefined ? SIM.radNr(vl2, kl.rad) : undefined;
+    return [
+      ['byns egen plats är besökt', SIM.radKanner(vl, r, egen.nr) === SIM.O_BESOKT],
+      ['byarna i grannätet är kända', SIM.radKanner(vl, r, g.nr) === SIM.O_KANT],
+      [`grannarnas grannar är rykten (${gg !== undefined ? 'finns' : 'ingen'})`, gg === undefined || SIM.radKanner(vl, r, gg) === SIM.O_RYKTE],
+      [`en plats långt borta är okänd tills någon från byn besökt den (${fore} → ${SIM.radKanner(vl, r, langt.nr)})`, fore === undefined && SIM.radKanner(vl, r, langt.nr) === SIM.O_BESOKT && r.besokt!.length === 1],
+      [`handlarens by har besökt huvudbyn (${hr?.namn})`, !!hr && SIM.radKanner(vl2, hr, hb.nr) === SIM.O_BESOKT && !!hr.besokt?.includes(hb.nr)],
+    ];
+  },
+};
