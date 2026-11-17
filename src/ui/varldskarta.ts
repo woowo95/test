@@ -2,7 +2,7 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { bynsKarta, platsRuta, syns, varldMark, Varlden } from '../sim';
+import { bynsKarta, hortHandelse, kalender, platsRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { s } from './lage';
 import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
@@ -22,6 +22,11 @@ stil.textContent = `
 .vkInfo th, .vkInfo td { padding: 1px 8px 1px 0; text-align: left; font-weight: normal; }
 .vkInfo th { color: ${farg('ben', 1)}; }
 .vkInfo .vkVarna { color: ${farg('rost', 3)}; }
+.vkKronika { position: absolute; top: 8px; left: 8px; max-width: min(420px, calc(100% - 70px)); max-height: 45%; overflow: auto; padding: 4px 8px;
+  background: ${farg('kol', 1)}; color: ${farg('ben', 3)}; border: 1px solid ${farg('kol', 3)}; border-radius: 3px; }
+.vkKronika summary { cursor: pointer; }
+.vkKronika ol { margin: 4px 0 0; padding-left: 0; list-style: none; }
+.vkKronika li.vkBlek { color: ${farg('ben', 1)}; }
 `;
 document.head.appendChild(stil);
 
@@ -41,9 +46,9 @@ knapp.innerHTML = teckenUrl('karta');
 
 const ruta = document.createElement('div');
 ruta.className = 'vkRuta'; ruta.hidden = true; ruta.setAttribute('role', 'dialog'); ruta.setAttribute('aria-label', 'Världskartan');
-ruta.innerHTML = `<canvas></canvas><button type="button" class="vkStang" title="Stäng" aria-label="Stäng">✕</button><p class="vkInfo"></p>`;
+ruta.innerHTML = `<canvas></canvas><details class="vkKronika"><summary title="Världens krönika: det byn hört i full färg, resten blekare">📜</summary><ol></ol></details><button type="button" class="vkStang" title="Stäng" aria-label="Stäng">✕</button><p class="vkInfo"></p>`;
 document.body.appendChild(ruta);
-const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement>('.vkInfo')!;
+const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement>('.vkInfo')!, kronLista = ruta.querySelector('.vkKronika ol')!;
 
 // bilden räknas en gång per värld och när platserna ändrats
 let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1;
@@ -80,6 +85,7 @@ const senare = () => { if (!ritas) { ritas = true; requestAnimationFrame(rita); 
 function oppna() {
   if (!s?.varld) return;
   ruta.hidden = false; knapp.setAttribute('aria-expanded', 'true'); info.textContent = '';
+  kronLista.innerHTML = kronikaHtml();
   vy = undefined; rita();
   // börja vid huvudbyn, lite inzoomat
   const b = bilden(), vl = s.varld, hb = vl.platser?.find(p => p.by === vl.huvud);
@@ -157,5 +163,12 @@ function rutaHtml(x: number, y: number): string {
     delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
   }
   return delar.join('');
+}
+
+// världens krönika (steg 11.4.13): de senaste först, det byn hört i full färg och resten blekare
+function kronikaHtml(): string {
+  const vl = s?.varld;
+  if (!s || !vl) return '';
+  return (vl.kronika ?? []).slice(-60).reverse().map(h => `<li${hortHandelse(s!, h) ? '' : ' class="vkBlek"'}>År ${kalender(s!, h.t).ar}: ${esc(varldHandelseText(vl, h))}</li>`).join('');
 }
 

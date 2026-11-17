@@ -8,6 +8,8 @@ import { findL, MINNE, nyhet, trimLardomar } from './minne';
 import { delade } from './berattelser';
 import { alive, byId, count, gjort, living } from './folk';
 import { kronika } from './historik';
+import { notis } from './notiser';
+import { varldHandelseText, VarldHandelse } from './varldkronika';
 import { clamp, hash3 } from './slump';
 import { lognFaktor } from './rykten';
 import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
@@ -54,7 +56,7 @@ export function larOrt(s: State, p: Person, nr: number, niva: number, c: number,
     else e.c = niva === e.v ? Math.max(e.c, c, e.c + MINNE.berattaStark * (1 - e.c)) : Math.min(1, e.c + MINNE.berattaStark * (1 - e.c)); // att höra om det igen stärker minnet
     if (t > e.t) {
       const ny = o.ny ?? (storForandring(s, nr, e.t, t) ? s.now : undefined); // nyare uppgifter där något stort ändrats
-      if (ny !== undefined && (e.ny === undefined || ny > e.ny)) e.ny = ny;
+      if (ny !== undefined && (e.ny === undefined || ny > e.ny)) { e.ny = ny; nyhetNarByn(s, p, nr, e.t, t, o.src); }
       e.t = t; e.src = o.src; e.led = led; if (o.src === undefined) delete e.src;
     }
     return e;
@@ -323,5 +325,36 @@ export function platsRuta(s: State, nr: number): PlatsRuta | undefined {
     ...(k ? { niva: ORTNIVA[k.v]!.namn } : {}), ...(bast ? { ar: yearNo(s, bast.t), kalla: describeOrt(s, bast).src } : {}),
     vem: vem.map(p => p.name), baraEn: !egen && !iNaromradet(s, nr) && vem.length === 1,
   };
+}
+
+// ---------- det byn hört i världens krönika (steg 11.4.13, Flera samhällen: Världens krönika) ----------
+// Byn har hört en händelse när dess uppgifter om platsen är nyare än händelsen (minst känd; ett rykte ger bara namnet). Det
+// som händer i byn själv har den alltid hört. En nyhet som når byn (den första i byn som får nyare uppgifter med en stor
+// ändring) skrivs i byns krönika med vem som kom med den och ger en notis; händelserna däremellan i världens krönika är nyheten
+export function hortHandelse(s: State, h: VarldHandelse): boolean {
+  const vl = s.varld;
+  if (!vl) return false;
+  if (h.by === vl.huvud || h.mot === vl.huvud) return true;
+  const nr = h.plats ?? (h.by !== undefined ? byPlats(vl, h.by)?.nr : undefined);
+  const k = nr === undefined ? undefined : bynKanner(s, nr);
+  return !!k && k.v >= O_KANT && k.t >= h.t;
+}
+function nyhetNarByn(s: State, p: Person, nr: number, t0: number, t1: number, src: number | undefined) {
+  const vl = s.varld, e = s.bynVet?.p[nr];
+  if (!vl || p.gast || (e && e.t >= t1)) return; // byn har redan hört det
+  if (e) { e.t = t1; if (!e.vem.includes(p.id)) e.vem.push(p.id); }
+  else (s.bynVet ??= { t: s.now, p: {} }).p[nr] = { v: findL(p, 'ort', nr)?.v ?? O_KANT, t: t1, vem: [p.id] }; // tills det räknas om
+  const r = ortensRad(s, nr), q = varldPlatsNr(vl, nr);
+  const vad = (vl.kronika ?? []).filter(h => h.t > t0 && h.t <= t1 && (h.by === r?.nr || h.mot === r?.nr || h.plats === nr)).map(h => varldHandelseText(vl, h));
+  const fore = r && radVid(r, t0), nu = r && radVid(r, t1);
+  if (!vad.length && fore && nu) {
+    if (nu.borta && !fore.borta) vad.push(`${q?.namn ?? 'Byn'} har gått under`);
+    else if (nu.led !== fore.led) vad.push(`${q?.namn ?? 'Byn'} har fått en ny ledare${nu.led ? `, ${nu.led}` : ''}`);
+    else vad.push(`${q?.namn ?? 'Byn'} har nu ${nu.tal.folk} invånare (förut ${fore.tal.folk})`);
+  }
+  const kom = src !== undefined ? byId(s, src) : p, text = `Nyheter från ${q?.namn ?? 'en by långt borta'}: ${vad.join('. ')}. ${kom?.name ?? 'Någon'} kom med nyheten.`;
+  kronika(s, text, 'nyhet');
+  notis(s, 'nyhet', text, [p.id, ...(kom && kom !== p && !kom.gast ? [kom.id] : [])]);
+  count(s, 'nyhetNarByn');
 }
 
