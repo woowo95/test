@@ -55,11 +55,11 @@ import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight,
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
-import { SJUK, type SjukId, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
+import { SJUK, SJUK_DOD, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
 import { eldFlyttKvar, flyttaElden, stepEldFlytt } from './eldflytt';
 import { giftSteg } from './giftermal';
-import { DODSORSAKER, type Dodsorsak, barnMat, birth, birthWish, die, framlingSteg, regulate } from './liv';
+import { DODSORSAKER, barnMat, birth, birthWish, die, framlingSteg, regulate } from './liv';
 import { MARK, groundOf, growGround, markslag, packGround, tileOf } from './mark';
 import { bynsMitt } from './omrade';
 import { SAMTAL, TalkEvent, converse, horHar, kanPrata, skiljsAt } from './samtal';
@@ -744,7 +744,6 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
 }
 
 // dödsorsaken för varje sjukdom (steg 9.5.1): den heter som raden, och svampförgiftningen som förut
-const SJUK_DOD: Record<SjukId, Dodsorsak> = { magsjuka: 'magsjuka', matforgiftning: 'matforgiftning', svampforgiftning: 'svamp', forkylning: 'forkylning', lunginflammation: 'lunginflammation', massling: 'massling', koppor: 'koppor' };
 // hur långt graviditeten gått, 0–1 (steg 8.1.11), eller inget
 // tiden kvar tills barnet föds (ms), för panelen (steg 9.2.70)
 export const gravidKvar = (p: Person, now: number) => p.pregnantSince === undefined ? undefined : Math.max(0, p.pregnantSince + STEG.dragtid * DAY - now);

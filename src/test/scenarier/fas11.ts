@@ -1934,6 +1934,7 @@ SCENARIER.redogorelse = {
 SCENARIER.vaghandelser = {
   text: 'Vägens händelser (steg 11.5.14, VAGHANDELSER i resa.ts): de ofarliga raderna (gå vilse, oväder, tappad utrustning och fynd av mat) med risk per dygn, det som höjer den och färdigheten som sänker den (eller höjer ett fynd). Risken är en chans per tid, så korta och långa bitar ger lika många händelser, och sällskapet på vägen går med spelets egen klocka',
   kor: () => {
+    const IDS = ['mat', 'ovader', 'tappad', 'vilse']; // de ofarliga raderna, räknade efter sitt slag i dagboken (sjukdomen och olyckan prövas i vagsjuk)
     const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, [a, b] = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
     const mal = SIM.byPlats(vl0, vl0.huvud!)!.grannar![0]!.nr;
     const ny = () => {
@@ -1954,20 +1955,20 @@ SCENARIER.vaghandelser = {
     // tusen dygn på vägen (utan att gå), i timmar och i tiominutersbitar: lika många händelser, nära risken gånger dygnen
     const kor = (bit: number) => {
       const y = ny(), n: Record<string, number> = {};
-      for (const id of SIM.VAGHANDELSE_IDS) n[id] = 0;
+      for (const id of IDS) n[id] = 0;
       const rakna = () => { const c: Record<string, number> = {}; for (const [, , k] of y.sl.dagbok) if (k) c[k] = (c[k] ?? 0) + 1; return c; };
       let risk: Record<string, number> = {};
       for (let t = 0; t < 1000 * SIM.DAY; t += bit) {
         y.s.now = s0.now + t;
-        if (t % SIM.DAY === 0) for (const id of SIM.VAGHANDELSE_IDS) risk[id] = (risk[id] ?? 0) + SIM.vagRisk(y.s, y.sl, id);
+        if (t % SIM.DAY === 0) for (const id of IDS) risk[id] = (risk[id] ?? 0) + SIM.vagRisk(y.s, y.sl, id);
         SIM.vagHandelser(y.s, y.sl, y.s.now, bit); y.sl.forlorat = 0;
       }
-      const c = rakna(); for (const id of SIM.VAGHANDELSE_IDS) n[id] = c[id] ?? 0;
+      const c = rakna(); for (const id of IDS) n[id] = c[id] ?? 0;
       return { n, risk, heltal: Object.values(y.sl.pack).every(Number.isInteger), y };
     };
     const tim = kor(SIM.HOUR), tio = kor(10 * SIM.MIN);
     const nara = (k: string, r: { n: Record<string, number>; risk: Record<string, number> }) => Math.abs(r.n[k]! - r.risk[k]!) <= 4 * Math.sqrt(r.risk[k]!) + 3;
-    const lika = SIM.VAGHANDELSE_IDS.every(k => Math.abs(tim.n[k]! - tio.n[k]!) <= 4 * Math.sqrt(tim.risk[k]!) + 3);
+    const lika = IDS.every(k => Math.abs(tim.n[k]! - tio.n[k]!) <= 4 * Math.sqrt(tim.risk[k]!) + 3);
     // med spelets egen klocka: ett sällskap på väg kommer framåt
     const z = ny(); const zv = SIM.varldMark(z.s)!, hem = SIM.byPlats(z.s.varld!, z.sl.by)!, mp = z.s.varld!.platser!.find(p => p.nr === mal)!;
     for (const p of [z.p, z.q]) SIM.gaBort(z.s, p);
@@ -1979,8 +1980,8 @@ SCENARIER.vaghandelser = {
       [`gå vilse: obanad mark ${obanad.toFixed(3)}, stig ${stig.toFixed(3)} per dygn`, Math.abs(obanad - 0.06) < 1e-9 && Math.abs(stig - 0.02) < 1e-9],
       [`den som kan jakt sänker risken (${stig.toFixed(3)} → ${jagare.toFixed(3)})`, jagare < stig],
       [`den som kan samla hittar oftare mat (${fynd0.toFixed(3)} → ${fynd20.toFixed(3)})`, fynd20 > fynd0],
-      [`tusen dygn i timmar: ${SIM.VAGHANDELSE_IDS.map(k => `${k} ${tim.n[k]} (väntat ${Math.round(tim.risk[k]!)})`).join(', ')}`, SIM.VAGHANDELSE_IDS.every(k => nara(k, tim) && tim.n[k]! > 0)],
-      [`i tiominutersbitar lika många: ${SIM.VAGHANDELSE_IDS.map(k => `${k} ${tio.n[k]}`).join(', ')}`, lika && SIM.VAGHANDELSE_IDS.every(k => nara(k, tio))],
+      [`tusen dygn i timmar: ${IDS.map(k => `${k} ${tim.n[k]} (väntat ${Math.round(tim.risk[k]!)})`).join(', ')}`, IDS.every(k => nara(k, tim) && tim.n[k]! > 0)],
+      [`i tiominutersbitar lika många: ${IDS.map(k => `${k} ${tio.n[k]}`).join(', ')}`, lika && IDS.every(k => nara(k, tio))],
       [`det tappade och det hittade är hela saker (${5000 - (tim.y.sl.pack.skinn ?? 0) + 5000 - (tim.y.sl.pack.rep ?? 0)} tappade, ${tim.y.sl.pack.bar ?? 0} bär)`, tim.heltal && (tim.y.sl.pack.bar ?? 0) > 0],
       [`spelets klocka flyttar sällskapet längs vägen (${z.sl.pos ?? 0} rutor på ${((z.s.now - t0) / SIM.HOUR).toFixed(1)} timmar)`, (z.sl.pos ?? 0) >= 2 || z.sl.skede !== 'ute'],
     ];
@@ -2037,6 +2038,59 @@ SCENARIER.matslut = {
       [`slaktade: fåret är dött och köttet i hela saker i packningen (${kott.map(([k, n]) => `${n} ${k}`).join(', ')})`, farDog && kott.length > 0 && kott.every(([, n]) => Number.isInteger(n))],
       [`letade: tiden går förlorad (${letat} gång)`, letat === 1],
       [`ledaren väger inte igen förrän efter ${SIM.RESA.matOmTim} timmar (${beslut0} → ${leta.sl.dagbok.length} rader, ${igen} beslut)`, igen <= 1 + (leta.sl.pack.bar ? 0 : 0)],
+    ];
+  },
+};
+
+SCENARIER.vagsjuk = {
+  text: 'Sjukdom och olycka på vägen (steg 11.5.16, VAGHANDELSER i resa.ts): en resenär får en riktig sjukdom eller skada, kroppen räknas på vägen som hemma, och den som kan läkekonsten bäst vårdar med det som finns i packningen (remsan, repet och grenarna tas ur den, i hela saker). Inget hamnar på byns karta, och den som dör skrivs i dagboken',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, [a, b] = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!, mal = hb.grannar![0]!.nr;
+    const ny = (pack: Record<string, number>) => {
+      const s = SIM.cloneState(s0), p = s.people.find(q => q.id === a!.id)!, q = s.people.find(x => x.id === b!.id)!;
+      const sl = SIM.nyttSallskap(s, p, mal, 'handel')!; SIM.foljMed(s.varld!, sl, q);
+      for (const x of [p, q]) { SIM.gaBort(s, x); delete x.skador; delete x.sjuk; x.blod = 1; }
+      sl.skede = 'framme'; sl.framme = s.now; sl.pack = { brod: 50, vattensack: 4, ...pack }; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 4, foder: 0 };
+      const v = SIM.varldMark(s)!; sl.ruta = hb.y * v.w + hb.x;
+      return { s, sl, p, q };
+    };
+    const kor = (x: { s: SIM.State }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    // riskerna: sjukdom 0,03 per dygn och olycka 0,02 på stig, dubbelt på obanad mark
+    const r = ny({}); r.p.skill.lakekonst = 0; r.q.skill.lakekonst = 0;
+    delete r.s.varld!.leder?.[r.sl.ruta!]; r.s.varld!.ledVer = (r.s.varld!.ledVer ?? 0) + 1;
+    const sjuk = SIM.vagRisk(r.s, r.sl, 'sjukdom'), obanad = SIM.vagRisk(r.s, r.sl, 'olycka');
+    (r.s.varld!.leder ??= {})[r.sl.ruta!] = [20, r.s.now, 1]; const stig = SIM.vagRisk(r.s, r.sl, 'olycka');
+    // ett stort sår i benet: den andra trycker, snör av och lägger förband med det i packningen
+    const k = ny({ remsa: 2, rep: 1 }); k.p.skill.lakekonst = 10;
+    const kv0 = SIM.kvarlevor(k.s).length, blod0 = JSON.stringify(k.s.blod ?? null);
+    SIM.skada(k.s, k.q, 'benV', 'skarsar', 0.7, 'olycka', 'på resan');
+    kor(k, 1);
+    const w = k.q.skador?.find(x => x.k === 'skarsar');
+    // ett benbrott: spjälas med grenarna ur packningen
+    const br = ny({ grenar: 2, remsa: 1 }); br.p.skill.lakekonst = 10;
+    SIM.skada(br.s, br.q, 'benH', 'benbrott', 0.5, 'olycka', 'på resan');
+    kor(br, 1);
+    const bw = br.q.skador?.find(x => x.k === 'benbrott');
+    // olyckan och sjukdomen ur registret skrivs i dagboken och ger en notis
+    const o = ny({}); SIM.VAGHANDELSER.olycka!.gor(o.s, o.sl, o.s.now); SIM.VAGHANDELSER.sjukdom!.gor(o.s, o.sl, o.s.now);
+    const skadad = [o.p, o.q].filter(x => x.skador?.length).length, sjuka = [o.p, o.q].filter(x => x.sjuk).length;
+    const notiser = (o.s.notiser?.lista ?? []).filter(n => n.id === 'resa' && n.resa?.includes(o.sl.id)).reduce((t, n) => t + n.n, 0);
+    // sjukdomen räknas på vägen tills den gått över (eller dödat)
+    const sj = ny({}); SIM.insjukna(sj.s, sj.q, 'forkylning'); sj.q.sjuk!.tecken = sj.s.now; sj.q.sjuk!.st = 0;
+    let timmar = 0; for (; timmar < 40 * 24 && sj.q.sjuk && SIM.alive(sj.q); timmar++) kor(sj, 1);
+    // den som förblöder dör på vägen: i dagboken, men ingen kropp på byns karta
+    const d = ny({}); SIM.skada(d.s, d.q, 'huvud', 'krossar', 0.3, 'olycka', 'på resan'); d.q.blod = 0.01;
+    const dkv = SIM.kvarlevor(d.s).length; kor(d, 1);
+    return [
+      [`riskerna: sjukdom ${sjuk.toFixed(3)}, olycka ${stig.toFixed(3)} på stig och ${obanad.toFixed(3)} på obanad mark per dygn`, Math.abs(sjuk - 0.03) < 1e-9 && Math.abs(stig - 0.02) < 1e-9 && Math.abs(obanad - 0.04) < 1e-9],
+      [`det stora såret slutade blöda och fick förband ur packningen (blöder ${w?.b}, förband ${w?.f}, av ${w?.av !== undefined}; kvar ${JSON.stringify(k.sl.pack)})`, !!w && w.b === 0 && (w.f === 2 || w.av !== undefined) && (k.sl.pack.remsa ?? 0) < 2],
+      [`benbrottet spjälades med grenarna ur packningen (spjäla ${bw?.spala}, satt ${bw?.satt ?? bw?.snett}; grenar kvar ${br.sl.pack.grenar ?? 0})`, !!bw?.spala && !br.sl.pack.grenar],
+      [`packningen är hela saker`, [k, br].every(x => Object.values(x.sl.pack).every(Number.isInteger))],
+      [`inget blod och ingen kroppsdel på byns karta (${SIM.kvarlevor(k.s).length - kv0} nya kvarlevor)`, SIM.kvarlevor(k.s).length === kv0 && JSON.stringify(k.s.blod ?? null) === blod0],
+      [`olyckan och sjukdomen: ${skadad} skadad, ${sjuka} sjuk, ${o.sl.dagbok.filter(x => x[2] === 'skada').length} rader i dagboken, ${notiser} notiser`, skadad === 1 && sjuka >= 1 && o.sl.dagbok.filter(x => x[2] === 'skada').length === 2 && notiser >= 2],
+      [`förkylningen räknas på vägen (${sj.q.sjuk ? 'fortfarande sjuk' : SIM.alive(sj.q) ? 'frisk' : 'död'} efter ${timmar} timmar)`, !sj.q.sjuk || !SIM.alive(sj.q)],
+      [`den som förblöder dör på vägen (${SIM.alive(d.q) ? 'lever' : 'död'}, ${d.sl.dagbok.filter(x => x[2] === 'dod').length} rad i dagboken, ${SIM.kvarlevor(d.s).length - dkv} kroppar i byn)`, !SIM.alive(d.q) && d.sl.dagbok.some(x => x[2] === 'dod') && SIM.kvarlevor(d.s).length === dkv],
     ];
   },
 };

@@ -50,6 +50,10 @@ import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
 import { log } from './folk';
 import { notis } from './notiser';
+import { ARMAR, BEN, FOTTER, HALSA, VARD, halsaSteg, skada, vardKalla, vardKan, type Kroppsdel, type SkadaTyp } from './halsa';
+import { SJUK_DOD, insjukna, sjukSteg, type SjukId } from './sjukdom';
+import { die } from './liv';
+import { ovning } from './folk';
 
 export const RESA = balans('resa', {
   samlaSek: 3600, // så länge (sekunder i verkligheten) ledaren får samla sällskapet innan resan ställs in (en timme, ett kvarts dygn i spelet)
@@ -107,6 +111,8 @@ export const RESA = balans('resa', {
   letaTim: 6, letaMat: 0.8, // timmar sällskapet letar mat, och portionerna per resenär det väntar sig hitta (färdigheten Samla och kylan som för ett fynd)
   matOmTim: 12, // timmar innan ledaren väger igen, om det fortfarande inte finns mat
   orkSvalt: 0.02, // så mycket ork per timme drar hungern när mättnaden är slut
+  olyckaObanad: 2, // en olycka är så här mycket vanligare på obanad mark än på stig, led och väg (steg 11.5.16)
+  olyckaMin: 0.2, olyckaMax: 0.7, // hur svår skadan blir (som i OLYCKOR: de flesta lätta)
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
@@ -377,6 +383,7 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (!PA_VAGEN.includes(sl.skede)) return;
   if (sl.skede !== 'framme') vagHandelser(s, sl, t, dt);
   if (!PA_VAGEN.includes(sl.skede)) return;
+  kropparPaVagen(s, sl, t, dt);
   const b = behovOf(sl), tim = dt / HOUR, dag = isLight(t), framme = sl.skede === 'framme', r = rutaNu(s, sl), n = sl.medl.length;
   b.matt = clamp(b.matt - tim / KROPP.hungerTim, 0, 1);
   b.vatska = clamp(b.vatska - tim / TORST.tim * (dag ? 1 : TORST.somn), 0, 1);
@@ -823,6 +830,34 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
       dagbok(s, sl, 'tappad', `Tappade ${SAKER[k]?.namn.toLowerCase() ?? k} på vägen.`, t);
     },
   },
+  // sjukdom och olycka (steg 11.5.16): en resenär får en riktig sjukdom eller skada, som vårdas med det sällskapet har med sig
+  sjukdom: {
+    namn: 'Sjukdom', dygn: 0.03, fardighet: 'lakekonst',
+    gor: (s, sl, t) => {
+      const folk = resenarer(s, sl).filter(p => !p.sjuk);
+      if (!folk.length) return;
+      const p = folk[Math.floor(rnd(s, 'resa') * folk.length)]!, k: SjukId = temperature(s, t) < RESA.koldFran ? 'forkylning' : 'magsjuka';
+      if (!insjukna(s, p, k, 'på resan')) return;
+      p.sjuk!.tecken = s.now; p.sjuk!.st = 0; // på vägen märks det genast, och byn hemma vet inget om det (ingen smitta dit)
+      count(s, 'resa sjuk');
+      dagbok(s, sl, 'skada', `${p.name} blev sjuk: ${k === 'forkylning' ? 'förkyld i kylan' : 'ont i magen av maten och vattnet'}.`, t);
+    },
+  },
+  olycka: {
+    namn: 'Olycka', dygn: 0.02,
+    risk: (s, sl) => { const vl = s.varld; return vl && sl.ruta !== undefined && ledKlass(vl, sl.ruta) === 'obanad' ? RESA.olyckaObanad : 1; },
+    gor: (s, sl, t) => {
+      const folk = resenarer(s, sl);
+      if (!folk.length) return;
+      const p = folk[Math.floor(rnd(s, 'resa') * folk.length)]!;
+      const typer: SkadaTyp[] = ['krossar', 'benbrott', 'skarsar'], delar: Kroppsdel[] = [...BEN, ...FOTTER, ...ARMAR];
+      const k = typer[Math.floor(rnd(s, 'resa') * typer.length)]!, d = delar[Math.floor(rnd(s, 'resa') * delar.length)]!, u = rnd(s, 'resa');
+      const dod = skada(s, p, d, k, RESA.olyckaMin + u * u * (RESA.olyckaMax - RESA.olyckaMin), 'olycka', 'på resan');
+      count(s, 'resa olycka');
+      dagbok(s, sl, 'skada', `${p.name} föll och skadade sig.`, t);
+      if (dod) dorPaVagen(s, sl, p, dod, t);
+    },
+  },
   mat: {
     namn: 'Fynd av mat', dygn: 0.08, fardighet: 'samla', okar: true,
     risk: (s, _sl, t) => temperature(s, t) >= RESA.fyndVarm ? 1 : RESA.fyndKall,
@@ -922,4 +957,47 @@ function vandHem(s: State, sl: Sallskap) {
   const vag = sl.ruta !== hem.y * v.w + hem.x ? vagMellan(vl, v, sl.ruta, hem.y * v.w + hem.x, 'fots', s.now) : undefined;
   sl.vag = vag ? { fran: vag.fran, till: vag.till, steg: vag.steg } : undefined; sl.pos = 0; sl.gang = 0;
   if (!vag) hemkomst(s, sl, s.now); // redan vid byn (eller ingen väg): hemma
+}
+
+// ---------- sjukdom och olycka på vägen (steg 11.5.16, Flera samhällen: Vägens händelser i tal) ----------
+// Resenärernas kroppar räknas på vägen som hemma: blödningen, läkningen, infektionen och sjukdomen (halsaSteg och sjukSteg), men
+// inget hamnar på byns karta. Vården är densamma som i byn (VARD) med materialet ur sällskapets packning i stället för byns
+// förråd (vardKalla): den resenär som kan läkekonsten bäst vårdar de andra, och den skadade sig själv i det som går att göra
+// själv. På vägen görs det som går med händerna och packningen; det som kräver byn (salvan, nålen, amputationen) väntar.
+export const VAGVARD = ['avsnora', 'dra_ut', 'trycka', 'forband', 'byta', 'satta', 'spala', 'skolja'];
+function kropparPaVagen(s: State, sl: Sallskap, t: number, dt: number) {
+  const folk = resenarer(s, sl);
+  if (!folk.some(p => p.skador?.length || p.sjuk)) return;
+  const sek = dt / SEC, natt = !isLight(t);
+  for (const p of folk) {
+    if (!p.skador?.length && !p.sjuk) continue;
+    vardaPaVagen(s, sl, p, folk);
+    const sjukDod = sjukSteg(s, p, sek, natt, !natt && sl.skede !== 'framme');
+    if (sjukDod) { dorPaVagen(s, sl, p, SJUK_DOD[sjukDod], t); continue; }
+    const dod = halsaSteg(s, p, sek);
+    if (dod) dorPaVagen(s, sl, p, dod, t);
+  }
+}
+// den som kan läkekonsten bäst vårdar q med det som finns i packningen
+export function vardaPaVagen(s: State, sl: Sallskap, q: Person, folk = resenarer(s, sl)) {
+  if (!q.skador?.length) return;
+  const andra = folk.filter(g => g !== q && kanGa(g)), g = andra.length ? andra.reduce((a, b) => (b.skill.lakekonst ?? 0) > (a.skill.lakekonst ?? 0) ? b : a) : q;
+  vardKalla.pack = sl.pack;
+  let gjorde = false;
+  try {
+    for (const w of [...q.skador ?? []]) for (const k of VAGVARD) {
+      const v = VARD[k]!, vem = v.andra && g === q ? undefined : g;
+      if (vem && v.krav(s, q, w, vem) && vardKan(s, vem, v, q)) { v.gor(s, vem, q, w); gjorde = true; }
+    }
+  } finally { vardKalla.pack = undefined; }
+  if (!gjorde) return;
+  count(s, 'resa vård');
+  ovning(g, 'lakekonst', HALSA.lakeOvning);
+}
+// en resenär dör på vägen: hen dör som hemma (die), men kroppen ligger inte på byns karta; sällskapet går vidare utan hen
+function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Parameters<typeof die>[2], t: number) {
+  if (!alive(p)) return;
+  die(s, p, orsak);
+  count(s, 'resa död');
+  dagbok(s, sl, 'dod', `${p.name} dog ${p.cause ?? ''} på vägen.`, t);
 }

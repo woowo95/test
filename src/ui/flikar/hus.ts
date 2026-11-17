@@ -1,6 +1,6 @@
 import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
-import { cap, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
+import { cap, esc, fmtN, hjalpKnapp, hjalpText, omUngefar, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -54,7 +54,7 @@ export const hus: Flik = {
     // fångarna (steg 11.12.4): namnet och dygnen kvar, och varför när man trycker
     const fang = h.fn === 'fangelse' ? fangar(s, h).map(p => {
       const f = p.fange!, kvar = f.till !== undefined ? Math.max(1, Math.ceil((f.till - s.now) / DAY)) : undefined, id = `fange-${p.id}`;
-      const om = `${f.varfor}. ${kvar !== undefined ? `Släpps om ${kvar} dygn (${kvar} år i spelet).` : 'Ledaren har inte avgjort hur länge än.'}`;
+      const om = `${f.varfor}. ${kvar !== undefined ? `Släpps om ${omUngefar(kvar * DAY)}.` : 'Ledaren har inte avgjort hur länge än.'}`;
       return `<li>🔒 ${pLink(p)} <span class="muted">${kvar !== undefined ? `⏳ ${kvar}` : '⏳ ?'}</span> ${hjalpKnapp(id, 'Varför och hur länge')}${hjalpText(id, `<p class="small">${esc(om)}</p>`)}</li>`;
     }).join('') : '';
     const fangHtml = h.fn === 'fangelse' ? `<h3>Fångar${fangEldBrinner(s, h.id) ? ' <span title="En liten eld brinner därinne" aria-label="En liten eld brinner">🔥</span>' : ''}</h3>${fang ? `<ul class="fangar">${fang}</ul>` : '<p class="muted">Ingen sitter här nu.</p>'}` : '';

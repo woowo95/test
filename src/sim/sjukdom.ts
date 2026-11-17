@@ -11,6 +11,7 @@
 // Filen är systemets enda ställe: registret, insjuknandet, förloppet och texterna.
 import { hp } from './gast';
 import { DAY, HOUR_S, State, Person } from './typer';
+import type { Dodsorsak } from './liv';
 import { balans } from './balans';
 import { ageOf, ALDER, KROPP, count } from './folk';
 import { clamp, rnd } from './slump';
@@ -206,6 +207,8 @@ function epidemi(s: State, p: Person, k: SjukId) {
 }
 
 // förloppet varje slag (steg.ts): sjukdomen och motståndet växer. Svarar med dödsorsaken om sjukdomen vann
+// dödsorsaken när sjukdomen vann (die i liv.ts)
+export const SJUK_DOD: Record<SjukId, Dodsorsak> = { magsjuka: 'magsjuka', matforgiftning: 'matforgiftning', svampforgiftning: 'svamp', forkylning: 'forkylning', lunginflammation: 'lunginflammation', massling: 'massling', koppor: 'koppor' };
 export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arbetar: boolean, lakeort = 1): SjukId | undefined { // lakeort: läkeörten eller teet (steg 9.5.8), gånger motståndet
   const j = p.sjuk;
   if (!j || s.now < j.tecken) return undefined;

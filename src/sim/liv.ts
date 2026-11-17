@@ -4,7 +4,7 @@ import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, newPerson, raddAkt, relKey, startSkills, think, uppkalladLogg } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, paKartan, newPerson, raddAkt, relKey, startSkills, think, uppkalladLogg } from './folk';
 import { pair } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, pickViktat, rnd } from './slump';
@@ -142,9 +142,9 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   raddAkt(s, p, akt, `${p.name} dog ${cause}`, orsak); // de som såg det blir rädda för det hen gjorde (steg 8.4.10)
   if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)
   const a = Math.floor(ageOf(p, s.now));
-  log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${a} år gammal.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
+  log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${a} år gammal.`, [p.id], p.ute === undefined ? { x: Math.floor(p.x), y: Math.floor(p.y) } : undefined);
   count(s, 'doda'); count(s, 'dog ' + cause); personNara(s, p, `${p.name} dog ${cause}, ${a} år gammal.`); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
-  nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1)
+  if (p.ute === undefined) nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1); den som dör på resan ligger inte på byns karta
   gravgava(s, p); // gravgåvan läggs undan innan arvet (steg 8.5.6)
   skuldKrok.f?.(s, p);
   inherit(s, p); // arvingarna får det hen ägde (arv.ts); efter dödsraden, så att orsaken står före verkan (steg 6.7.5)
@@ -154,6 +154,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)
   rykteDod(s, p); // byn minns hen (steg 3.4.1)
   kunskapDod(s, p); // lärlingen och det som ingen annan kan (steg 4.2.3.4)
+  for (const q of s.people) if (q.partner === p.id && alive(q) && !paKartan(q)) q.partner = undefined; // den som är på resa släpper också sin partner (sorgen när beskedet når hen, steg 11.5.18)
   for (const q of living(s)) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)], varPartner = q.partner === p.id;
@@ -356,6 +357,7 @@ export function leave(s: State, ...med: Person[]) {
     const p = med.find(x => x.id === q.partner);
     if (p) { q.partner = undefined; think(q, `Saknar ${p.name}`, LIV.saknarFlytt, s.now, LIV.saknarFlyttDygn * DAY); }
   }
+  for (const q of s.people) if (alive(q) && !paKartan(q) && med.some(x => x.id === q.partner)) q.partner = undefined; // också den som är på resa
 }
 
 function emigrate(s: State) {
