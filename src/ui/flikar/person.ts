@@ -8,7 +8,7 @@ import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg, vagSvg } from '../framsteg';
 import { gravidDel, gravidKvar } from '../../sim/steg';
-import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, kvKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { pliktDelar, VANA_AR } from '../../sim';
@@ -237,7 +237,7 @@ function formogenhetLista(p: Person) {
   if (!rader.length) return `<p class="muted">Äger inget.${skuld}</p>`;
   // kolumnrubriker och vågens symbol vid värdet (steg 11.1.49)
   const vag = tecknet('sym_vag', '⚖', 12);
-  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${vag} ${v(sum)} sammanlagt.${skuld} <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
+  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${vag} ${v(sum)} sammanlagt.${skuld} ${kvKnapp()}</p>
     <table class="agtab"><thead><tr><th></th><th>Sak</th><th class="tal">Antal</th><th>Kvalitet</th><th title="Hur mycket som är kvar innan den är utsliten">Skick</th><th class="tal" title="Värde, ungefär i arbetstimmar">${vag}</th></tr></thead><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
 }
 // egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras

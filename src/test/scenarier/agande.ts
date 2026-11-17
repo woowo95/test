@@ -13,7 +13,7 @@ import { person } from '../../ui/flikar/person';
 import { grannar as grannarFlik } from '../../ui/flikar/grannar';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
-import { hjalpKlick, linkify } from '../../ui/hjalp';
+import { hjalpKlick, kvRubrik, linkify } from '../../ui/hjalp';
 import { taBortITest, testBortaIByn } from '../../ui/testborta';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { lager as lagerFlik } from '../../ui/flikar/lager';
@@ -1447,8 +1447,12 @@ SCENARIER.gastsida = {
     // Saker (steg 11.1.49): etiketter i Utrustning, vikten i kg och kolumnrubriker i Förmögenhet
     SIM.newTing(s, 'yxa', 0, by.id); ui.personDel = 'utr'; ui.personFall['form'] = true; const sk = person.html(); delete ui.personFall['form'];
     const sakerFlik = /class="utretik">På kroppen</.test(sk) && / kg</.test(sk) && !/ vikt</.test(sk) && /<th>Sak<\/th>/.test(sk);
+    // sorteringen efter kvalitet (steg 11.1.50): samma knapp sist på rubriken, tryckt när listan står efter kvaliteten
+    ui.kvSort = true; ui.personDel = 'utr'; ui.personFall['form'] = true; const kvPa = person.html(), rub = kvRubrik('Förvaring'); ui.kvSort = false;
+    const kvSortering = /class="kvsort" data-kvsort="1" aria-pressed="true"/.test(kvPa) && /<h3 class="kvrub">Förvaring<button type="button" class="kvsort"/.test(rub) && !/aria-pressed="true"/.test(kvRubrik('Förvaring')); delete ui.personFall['form'];
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['sorteringen efter kvalitet har samma knapp sist på rubriken i Förmögenhet och förvaringen, tryckt när den gäller (steg 11.1.50)', kvSortering],
       ['Saker: etiketten På kroppen i Utrustning, vikten i kg och kolumnrubriker i Förmögenhet (steg 11.1.49)', sakerFlik],
       ['Hälsa: figuren med H och V, Förmågor med gångfarten och Näring utan vätskan (steg 11.1.48)', halsaFlik],
       ['Egenskaper: Temperament i stället för Aggression, och ingen pliktkänsla där (steg 11.1.47)', egenFlik],
