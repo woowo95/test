@@ -378,7 +378,7 @@ function ovarNu(p: Person, k: Skill) {
   return !!d && p.task!.phase === 'do' && (d.arbete === k || d.ovar === k || (k === 'hantverk' && !!d.hantverk));
 }
 function egenHtml(p: Person) {
-  const now = s.now, d = duty(s, p);
+  const now = s.now;
   const statRad = (k: Stat) => {
     const v = stat(p, k, now), id = `e-${k}-${p.id}`, per = stat(p, k, now + DAY) - v; // ett dygn = ett år
     const nu = Math.abs(per) < 0.005 ? 'Ändras inte med åldern just nu.' : `${per > 0 ? 'Växer' : 'Sjunker'} med åldern: ${per > 0 ? '+' : '−'}${visa(Math.abs(per), 2)} om året.`;
@@ -402,10 +402,9 @@ function egenHtml(p: Person) {
   // tron hen har (steg 4.1.2.1): vem som står bakom, och vid tryck tolkningen och tecknet den kom ur
   const tr = troOf(s, p.tro), tro = tr ? (() => {
     const id = `e-tro-${p.id}`, rader = [...tr.ber ? [tr.ber] : [tolkning(tr)], `${tr.grundare === p.id ? 'Hen' : tr.gnamn} tolkade ${teckenText(tr.k, tr.om)} som ett tecken`, `Tron är ${visa((p.troStyrka ?? 0) / 5)} av 10 stark hos hen`];
-    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join('. '))}">Tro</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join('. '))}">${bar((p.troStyrka ?? 0) / 100)}<span>${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${esc(troNamn(tr))}</span></dd>${hjalpText(id, gorHtml(rader.slice(1), rader[0]))}`;
+    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join('. '))}">Tro: ${esc(troNamn(tr))}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join('. '))}">${bar((p.troStyrka ?? 0) / 100)}<span>${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${visa((p.troStyrka ?? 0) / 5)}</span></dd>${hjalpText(id, gorHtml(rader.slice(1), rader[0]))}`;
   })() : '';
-  return `<dl class="kv">${STATS.map(statRad).join('')}${ande}${tro}
-      ${ageOf(p, now) >= ALDER.hjalper ? `<dt>Pliktkänsla</dt><dd>${bar(d, 'skill')}<span>${d > 0.75 ? 'Plikttrogen' : d > 0.5 ? 'Gör sin del' : d > 0.3 ? 'Bekväm' : 'Lat'}</span></dd>` : ''}</dl>
+  return `<dl class="kv">${STATS.map(statRad).join('')}${ande}${tro}</dl>
       <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(skillRad).join('')}</dl>`;
 }
 // relationerna med typerna som symboler (steg 3.1.1, RELATIONER i relationer.ts): ett tryck på symbolen visar varför.

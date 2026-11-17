@@ -50,7 +50,7 @@ export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'kar
 export type Stat = typeof STATS[number];
 export const STAT_NAMES: Record<Stat, string> = {
   styrka: 'Styrka', uthallighet: 'Uthållighet', intelligens: 'Intelligens', nyfikenhet: 'Nyfikenhet',
-  karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod', minne: 'Minne', smidighet: 'Smidighet', aggression: 'Aggression',
+  karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod', minne: 'Minne', smidighet: 'Smidighet', aggression: 'Temperament', // namnet i gränssnittet (steg 11.1.47)
 };
 // vad varje egenskap påverkar utöver arbetena som har den som egenskap (ACTS), med orden personrutan visar.
 // Skriv till en rad när simuleringen börjar fråga efter egenskapen på ett nytt ställe
