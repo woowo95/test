@@ -37,6 +37,7 @@ export const STROMMAR = {
   tamdjur: 'de tama djuren: när de dör av ålder, valpen och hunden, får och getter (fas 9.8, tamdjur.ts)',
   fram: 'framträdandena: vem som uppträder, vilken form och hur länge (steg 4.3.2, framtradande.ts)',
   bin: 'bina: svärmarna som flyttar in i kuporna (steg 10.10.17, bin.ts)',
+  gift: 'giftermål med grannbyarna: vem som gifter sig, med vilken by och vem som flyttar (steg 11.3.6, giftermal.ts)',
   skuld: 'skulden: när man ber om förlåtelse och svaret (steg 10.8.2, skuld.ts)',
 } as const;
 export type Strom = keyof typeof STROMMAR;

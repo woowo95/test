@@ -56,7 +56,7 @@ export interface VarldRad {
 }
 // det radens regler (rad.ts) säger om en ny rad; rad.ts sätter det när den laddas, så att filerna som skapar rader inte
 // behöver ladda reglerna
-export const radKrok = { startMat: (_folk: number) => 0 };
+export const radKrok = { startMat: (_folk: number) => 0, utflytt: (_s: State, _n: number) => {} }; // utflytt: de som lämnar huvudbyn (byflytt.ts, steg 11.3.5)
 const fast = (p: Person, roll: FastPerson['roll']): FastPerson => ({ namn: p.name, kon: p.sex, fodd: p.born, roll, id: p.id });
 // tron flest bybor har
 function radTro(s: State): RadTro | undefined {

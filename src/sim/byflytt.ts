@@ -10,7 +10,7 @@ import { balans } from './balans';
 import { mots, nyttSlaktband, relation, grundlage } from './byrel';
 import { emigrationRate, hungerFlyttAv, LIV, matGottAv } from './liv';
 import { barkraft, lever, matDygn } from './rad';
-import { BYSORTER, VarldRad } from './radtal';
+import { BYSORTER, radKrok, VarldRad } from './radtal';
 import { clamp } from './slump';
 import { KOHANDELSER, PERIODRADER, antalUr, laggIKo, periodSlut, varldSlump } from './varldslag';
 import { Varlden, varldMark } from './varlden';
@@ -23,7 +23,7 @@ export const FLYTT = balans('flytt', {
   trang: 1.5, // trängseln där (folket delat med bärkraften) väger 1,5 − trängseln, aldrig under noll
 });
 // ärendena i världens slump (timmen; rad.ts har 1–6)
-const A = { flytt: 11, mal: 12 };
+const A = { flytt: 11, mal: 12, ut: 13 };
 const radNr = (vl: Varlden, nr: number) => vl.rader?.find(r => r.nr === nr);
 const platsAv = (vl: Varlden, r: VarldRad) => vl.platser?.find(p => p.k === 'by' && p.by === r.nr);
 
@@ -60,6 +60,18 @@ export function radFlytt(s: State, vl: Varlden, r: VarldRad, n: number) {
   laggIKo(vl, periodSlut(vl, 'timme', n) + val.dygn * DAY, 'flytt', { sak: val.r.nr, data: { fran: r.nr, n: ant } });
 }
 
+// de som lämnar huvudbyn (emigrate i liv.ts) väljer en by i världen på samma sätt och kommer fram efter restiden; slumpen är
+// världens (huvudbyns nummer och tiden)
+radKrok.utflytt = (s, n) => {
+  const vl = s.varld, h = vl?.rader?.find(r => r.nr === vl.huvud);
+  if (!vl || !h || n <= 0) return;
+  const mal = flyttMal(vl, varldMark(s), h).filter(m => m.r.nr !== vl.huvud), sum = mal.reduce((a, m) => a + m.vikt, 0);
+  if (!sum) return; // ingen by inom räckhåll: de söker lyckan längre bort
+  let x = varldSlump(vl, h.nr, Math.floor(s.now / 1000), A.ut) * sum, val = mal[mal.length - 1];
+  for (const m of mal) { x -= m.vikt; if (x < 0) { val = m; break; } }
+  mots(vl, h.nr, val.r.nr);
+  laggIKo(vl, s.now + val.dygn * DAY, 'flytt', { sak: val.r.nr, data: { fran: h.nr, n } });
+};
 // de som flyttade kommer fram: till en by i världen läggs de till folket, till huvudbyn kommer var och en som en främling
 KOHANDELSER.flytt = (_s, vl, p) => {
   const fran = p.data!.fran, n = p.data!.n, m = radNr(vl, p.sak!);

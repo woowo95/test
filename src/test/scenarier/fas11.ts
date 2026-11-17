@@ -825,3 +825,53 @@ SCENARIER.byflytt = {
     ];
   },
 };
+
+SCENARIER.giftermal = {
+  text: 'Giftermål med grannarna (steg 11.3.6, giftermal.ts): den som inte finner någon i byn kan gifta sig med någon i en vänlig grannby, och en av de två flyttar; radens folk ändras lika mycket, och släktbandet höjer relationen mellan byarna. De som flyttar ur byn går till en by i världen (steg 11.3.5)',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const folk = SIM.living(s);
+    // en vänlig grannby
+    const k = SIM.klanerOf(s).find(c => c.rad !== undefined)!, r = vl.rader!.find(x => x.nr === k.rad)!;
+    k.inst = 40; r.tal.folk = 20;
+    const kan = SIM.giftBar(s).includes(k);
+    k.inst = 0; const ovanlig = !SIM.giftBar(s).includes(k); k.inst = 40;
+    // en ensam vuxen utan någon i byn: alla andra har en partner
+    const p = folk.find(q => SIM.ageOf(q, s.now) >= 18)!;
+    for (const q of folk) if (q !== p && q.partner === undefined) q.partner = -1;
+    p.partner = undefined;
+    const ensam = SIM.utanNagon(s).includes(p);
+    const g0 = SIM.grundlage(vl, r.nr, vl.huvud!), f0 = r.tal.folk, pop0 = SIM.living(s).length;
+    const q = SIM.giftermal(s, p, k, false)!;
+    const in1 = !!q && q.partner === p.id && p.partner === q.id && r.tal.folk === f0 - 1 && SIM.living(s).length === pop0 + 1 && q.fran === k.id;
+    const g1 = SIM.grundlage(vl, r.nr, vl.huvud!);
+    // en annan ensam flyttar dit
+    const p2 = SIM.living(s).find(x => x !== p && x !== q && SIM.ageOf(x, s.now) >= 18)!;
+    p2.partner = undefined;
+    const pop1 = SIM.living(s).length, barn = SIM.living(s).filter(c => SIM.isParent(p2, c) && SIM.ageOf(c, s.now) < SIM.ALDER.vuxen).length;
+    SIM.giftermal(s, p2, k, true);
+    const ut = p2.left !== undefined && r.tal.folk === f0 - 1 + 1 + barn && SIM.living(s).length === pop1 - 1 - barn;
+    const g2 = SIM.grundlage(vl, r.nr, vl.huvud!);
+    // det händer av sig självt: en ensam utan någon i byn och en vänlig grannby, många dygn
+    const t = SIM.createState(6, Date.UTC(2026, 0, 1)), tk = SIM.klanerOf(t).find(c => c.rad !== undefined)!;
+    tk.inst = 60; t.varld!.rader!.find(x => x.nr === tk.rad)!.tal.folk = 30;
+    const tp = SIM.living(t).find(x => SIM.ageOf(x, t.now) >= 18)!;
+    for (const x of SIM.living(t)) if (x !== tp) x.partner = -1;
+    tp.partner = undefined;
+    for (let h = 0; h < 40 * 24 && tp.partner === undefined && tp.left === undefined; h++) { t.now += 3600e3; SIM.giftSteg(t, 3600); }
+    const sjalv = tp.partner !== undefined || tp.left !== undefined;
+    // utflytten ur huvudbyn går till en by i världen
+    const fran = () => (vl.ko ?? []).filter(x => x.typ === 'flytt' && x.data!.fran === vl.huvud && x.data!.n === 2).length, ko0 = fran();
+    SIM.radKrok.utflytt(s, 2);
+    const utflytt = fran() === ko0 + 1;
+    return [
+      ['en vänlig grannby går att gifta sig in i, en neutral inte', kan && ovanlig],
+      ['den som inte finner någon i byn kan gifta sig utanför den', ensam],
+      [`den nya kommer till byn och blir hens partner, och grannbyn har en färre (${f0} → ${f0 - 1})`, in1],
+      [`bybon flyttar dit med sina barn (${barn}), och grannbyn får lika många`, ut],
+      [`släktbanden höjer grundläget för relationen (${g0} → ${g1} → ${g2})`, g1 > g0 && g2 > g1],
+      ['det händer av sig självt inom 40 dygn (40 år i spelet)', sjalv],
+      ['de som flyttar ur byn går till en by i världen', utflytt],
+    ];
+  },
+};
