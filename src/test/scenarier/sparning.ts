@@ -376,3 +376,26 @@ SCENARIER.sparbas = {
     ];
   },
 };
+
+SCENARIER.sparstorlek = {
+  text: 'Vakten för sparfilens storlek (steg 11.2.2): varje del av det sparade har en gräns, testbyarnas delar håller sig under den, och veckans kartbilder glesas ut så att historikens del håller sin',
+  kor: () => {
+    const s = testBy(40), delar = SIM.sparStorlek(s);
+    const utan = delar.filter(d => !(d.grans > 0)), over = delar.filter(d => d.kb > d.grans);
+    const visa = delar.map(d => `${d.del} ${Math.round(d.kb)}/${d.grans}`).join(', ');
+    // veckans bilder: åtta stora bilder samma vecka glesas ut till högst VECKA_KB, och den första och den nyaste blir kvar
+    const stor = 'x'.repeat(60 * 1024), k: [number, string][] = Array.from({ length: 8 }, (_, i) => [i * DAY, stor]);
+    const fore = [...k];
+    SIM.glesaVeckan(k, () => 0);
+    const sum = k.reduce((a, b) => a + b[1].length, 0) / 1024;
+    // en annan veckas bilder rörs inte
+    const k2: [number, string][] = [[0, stor], [DAY, stor], [2 * DAY, stor], [8 * DAY, 'kort'], [9 * DAY, 'kort']];
+    SIM.glesaVeckan(k2, b => Math.floor(b[0] / WEEK));
+    return [
+      [`varje del har en gräns (${delar.map(d => d.del).join(', ')})`, !utan.length],
+      [`testbyns delar ligger under sina gränser i KB (${visa})`, !over.length],
+      [`veckans bilder glesas ut till högst ${SIM.VECKA_KB} KB (${fore.length} → ${k.length} bilder, ${Math.round(sum)} KB)`, sum <= SIM.VECKA_KB && k[0] === fore[0] && k[k.length - 1] === fore[fore.length - 1]],
+      ['en tidigare veckas bilder rörs inte', k2.length === 5],
+    ];
+  },
+};

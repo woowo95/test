@@ -8,7 +8,7 @@ import './utc';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { DOK_KB, rad } from './kor';
+import { rad } from './kor';
 import { NYCKELTAL, Nyckeltal } from './nyckeltal';
 import { ALLVARLIGT, korJson, pool, prioAv } from './pool';
 import { BitSvar, DEL, laggIhop } from './delby';
@@ -106,8 +106,9 @@ if (spara) {
 for (const r of res) console.log(rad(r));
 // återgrundning skrivs alltid ut, så att det syns om en by dött ut och börjat om
 const ater = res.filter(r => r.n.atergrundad > 0);
-const storst = Math.max(...res.map(r => r.n.delKb));
-if (storst > DOK_KB * 0.75) console.log(`VARNING: en del av sparfilen är ${storst} KB, och ett dokument i molnet rymmer ${DOK_KB} KB. Delen sparas i bitar, men dela gärna upp den (DELAR i steg.ts).`);
+// vakten för sparfilens storlek (steg 11.2.2): varje del har en gräns (SPARGRANS i steg.ts)
+const over = res.filter(r => r.n.sparAndel > 100);
+if (over.length) { console.log(`FEL sparstorlek: en del av sparfilen har vuxit över sin gräns (SPARGRANS i steg.ts): ${over.map(r => `by ${r.seed} ${r.n.sparAndel} %`).join(', ')}. Delarna visas med npm run scenario -- sparstorlek`); process.exitCode = 1; }
 console.log(ater.length ? 'ÅTERGRUNDADE BYAR: ' + ater.map(r => `by ${r.seed} (${r.n.atergrundad} ggr)`).join(', ') : 'Återgrundade byar: inga.');
 const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));
 

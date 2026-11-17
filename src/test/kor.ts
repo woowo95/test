@@ -5,7 +5,7 @@ import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
 import { forLangtArbete } from '../sim/tider';
 import { kyrkaId } from '../sim/egendom';
 import { budgetAgare } from '../sim/budget';
-import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
+import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, sparStorlek, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { gastLever } from '../sim/gast';
@@ -104,6 +104,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     ms: Math.round(performance.now() - t0),
     kb: Math.round(serialize(s).length / 1024),
     delKb: Math.round(Math.max(...Object.values(serializeParts(s)).map(d => new TextEncoder().encode(d).length)) / 1024),
+    sparAndel: Math.round(Math.max(...sparStorlek(s).map(d => d.kb / d.grans)) * 100), // den del som ligger närmast sin gräns (steg 11.2.2)
   };
   const vakter = [...fel].map(([typ, f]) => `${typ} (${f.n} ggr), första: ${f.forsta}`);
   return { seed, n, vakter, s, ack: { hunger, humor, humorN, lit, steg, vintermat, vinterved } };

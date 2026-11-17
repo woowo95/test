@@ -59,5 +59,19 @@ export function kartminneSteg(s: State) {
   // äldre än GLES glesas bilderna ut till en per vecka (den första i varje sjudagarsblock räknat från grundandet, som inte alltid börjar när tidsåldern gör), så att sparningen inte växer för fort
   const grans = s.now - GLES, vecka = (b: [number, string]) => Math.floor((b[0] - s.founded) / WEEK);
   for (let i = k.length - 1; i > 0; i--) if (k[i][0] < grans && vecka(k[i]) === vecka(k[i - 1])) k.splice(i, 1);
+  glesaVeckan(k, vecka);
+}
+// Veckans bilder får tillsammans vara högst VECKA_KB (steg 11.2.2), så att veckans del av historiken håller sin gräns
+// (SPARGRANS i steg.ts): blir de större tas bilden bort som ligger närmast den före, men aldrig veckans första eller den nyaste
+export const VECKA_KB = 256;
+export function glesaVeckan(k: [number, string][], vecka: (b: [number, string]) => number) {
+  const v = vecka(k[k.length - 1]);
+  let forsta = k.length - 1; while (forsta > 0 && vecka(k[forsta - 1]) === v) forsta--;
+  let sum = 0; for (let i = forsta; i < k.length; i++) sum += k[i][1].length;
+  while (sum > VECKA_KB * 1024 && k.length - forsta > 2) {
+    let b = forsta + 1;
+    for (let i = forsta + 2; i < k.length - 1; i++) if (k[i][0] - k[i - 1][0] < k[b][0] - k[b - 1][0]) b = i;
+    sum -= k[b][1].length; k.splice(b, 1);
+  }
 }
 export const GLES = 4 * WEEK; // fyra veckor (28 år i spelet): så länge finns en bild per dygn

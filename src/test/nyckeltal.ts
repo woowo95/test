@@ -59,6 +59,8 @@ const DEF = [
   { k: 'kb', namn: 'sparfil KB', kort: 'sparfil', enhet: ' KB', dec: 0, bra: -1, dator: true, facit: nara },
   // den största delen av sparfilen (ett dokument i molnet rymmer DOK_KB, kor.ts)
   { k: 'delKb', namn: 'största delen KB', kort: 'största delen', enhet: ' KB', dec: 0, bra: -1, dator: true, facit: nara },
+  // den del av sparfilen som ligger närmast sin gräns (SPARGRANS i steg.ts, steg 11.2.2), i procent av gränsen. Över 100 larmar det stora testet
+  { k: 'sparAndel', namn: 'del av sin gräns %', kort: 'sparandel', enhet: ' %', dec: 0, bra: -1, dator: true, facit: nara },
 ] as const satisfies readonly MattDef[];
 
 export type Nyckel = (typeof DEF)[number]['k'];
