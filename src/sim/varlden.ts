@@ -8,6 +8,7 @@ import { hash3 } from './slump';
 import { VarldMark, skapaVarldMark } from './varldmark';
 import { State } from './typer';
 import { laggByar, laggHuvudby, laggOvriga } from './placering';
+import { laggGrannat } from './grannat';
 
 export interface Varlden {
   fro: number; // världens frö
@@ -49,6 +50,7 @@ export function medVarld(s: State) {
   laggByar(s.varld, v); // byarna, de övriga platserna och sist huvudbyn med samma regler (placering.ts, steg 11.2.13–11.2.14)
   laggOvriga(s.varld, v);
   laggHuvudby(s);
+  laggGrannat(s.varld, v, s.founded); // varje bys närmaste grannar med väg och restid (grannat.ts, steg 11.2.21)
   return s.varld;
 }
 // världens mark som rutnät, packad upp en gång per värld
