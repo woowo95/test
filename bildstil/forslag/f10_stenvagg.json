@@ -1,0 +1,174 @@
+{
+ "kort": "f10_stenvagg",
+ "namn": "Stenväggen",
+ "slag": null,
+ "vad": "Steg 10.10.7: en vägg av staplad sten, varmare än timmer och brinner inte. Väggen ses snett ovanifrån som timmerväggen: toppen och framsidan. Här tre rutor vägg i rad",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Stenväggen ritas helt uppifrån, som spelets timmervägg",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "stenvagg_huggen",
+     "rader": [
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QTTTSTSSQTTSTTSSQTTTSTSSQTTSTTSSQTTTSTSSQTTSTTSQ",
+      "QTSSSTSRQTSTSSSRQTSSSTSRQTSTSSSRQTSSSTSRQTSTSSSQ",
+      "QTSTSSSRQSSSTSRSQTSTSSSRQSSSTSRSQTSTSSSRQSSSTSRQ",
+      "QSSSRSRRQTSSSRSRQSSSRSRRQTSSSRSRQSSSRSRRQTSSSRSQ",
+      "QSRSRRRRQSRRSRRRQSRSRRRRQSRRSRRRQSRSRRRRQSRRSRRQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QSSSQTTTSTSSQTTSTSSSQTTTSTSSQTTSTSSSQTTTSTSSQTTQ",
+      "QSSRQTSSSSTRQTSSTSSRQTSSSSTRQTSSTSSRQTSSSSTRQTSQ",
+      "QSRRQTSSRSSRQSSTSSRRQTSSRSSRQSSTSSRRQTSSRSSRQSSQ",
+      "QRRRQSRRRSRRQSRSRRRRQSRRRSRRQSRSRRRRQSRRRSRRQSRQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+     ]
+    },
+    {
+     "namn": "stenvagg_murad",
+     "rader": [
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QTTSnTTTSSnTTSSnnTTSnTTTSSnTTSSnnTTSnTTTSSnTTSSQ",
+      "QTSRnTSSSRnTSSRnnTSRnTSSSRnTSSRnnTSRnTSSSRnTSSRQ",
+      "QSRQnSSRSRnSRRQnnSRQnSSRSRnSRRQnnSRQnSSRSRnSRRQQ",
+      "QnnnnSRRRQnnnnnnnnnnnSRRRQnnnnnnnnnnnSRRRQnnnnnQ",
+      "QTSSnnnnnnTTTSSnTTSSnnnnnnTTTSSnTTSSnnnnnnTTTSSQ",
+      "QSSRnTTSSnTSSSRnTSSRnTTSSnTSSSRnTSSRnTTSSnTSSSRQ",
+      "QSRRnTSSRnSSTSRnSSRRnTSSRnSSTSRnSSRRnTSSRnSSTSRQ",
+      "QRSQnSSRQnSSRRQnSRSQnSSRQnSSRRQnSRSQnSSRQnSSRRQQ",
+      "QRQQnSRQQnRRRQQnSRQQnSRQQnRRRQQnSRQQnSRQQnRRRQQQ",
+      "QnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+     ]
+    },
+    {
+     "namn": "stenvagg_kallmur",
+     "rader": [
+      "QQQQ.QQQQQQ.QQQ.QQQQ.QQQQQQ.QQQ.QQQQ.QQQQQQ.QQQQ",
+      "QTTSQTTTSTSQTTSQTTTSQTTTSTSQTTSQTTTSQTTTSTSQTTSQ",
+      "QSSRQTSSSRRQTSRQTSSRQTSSSRRQTSRQTSSRQTSSSRRQTSRQ",
+      "QSRRQSRSRRRQSSRQSSRRQSRSRRRQSSRQSSRRQSRSRRRQSSRQ",
+      "QSRSQSRRRRQQSRRQSSRSQSRRRRQQSRRQSSRSQSRRRRQQSRRQ",
+      "QRRQTTTSSTQQRRQQSRRQTTTSSTQQRRQQSRRQTTTSSTQQRRQQ",
+      "QTSQTSSTSRQTTSSQTTSQTSSTSRQTTSSQTTSQTSSTSRQTTSSQ",
+      "QSRQSSTSRRQTSSRQTSRQSSTSRRQTSSRQTSRQSSTSRRQTSSRQ",
+      "QRRQSRSRRQQSRRRQSRRQSRSRRQQSRRRQSRRQSRSRRQQSRRRQ",
+      "QQQQRRRRQQQRRRQQRQQQRRRRQQQRRRQQRQQQRRRRQQQRRRQQ",
+      "QQQ.QQQQQQ.QQQQ.QQQ.QQQQQQ.QQQQ.QQQ.QQQQQQ.QQQQQ"
+     ]
+    }
+   ],
+   "anteckning": "Björns kommentar gäller vinkeln: väggen ritas nu helt uppifrån som spelets timmervägg, alltså bara krönet som ett band utan framsida. Den ljusa toppen och den mörka framsidan från förra kortet är borta. Det som inte ändrats är de tre versionerna och bredden på tre rutor (48 punkter): huggna block, fältsten i lerbruk och kallmur av kantig sten. Krönet visar stenarna ovanifrån, lagda i två skift över väggens tjocklek med förskjutna fogar så att de binder. Ljuset kommer uppifrån vänster, så varje sten har sin ljusa ton (skiffer3) uppe till vänster och sin mörka ton (skiffer1) nere till höger. Konturen och fogarna är skiffer0. Leran i den murade varianten är rostbrun (rost1). Kallmuren har inget bruk; där syns mörka glipor mellan stenarna och en ojämn kant. Banden går i ett mönster som upprepas var 16:e punkt, så att rutorna kan läggas efter varandra. Granskningen: Granskat mot guiden. Kortet säger 'toppen och framsidan', men guidens regel 'Väggar helt uppifrån' gäller före kortet. Alla tre versionerna läses redan som krönet ovanifrån, ett band av stenar utan framsida. Storleken stämmer: tre rutor (48 punkter) breda och 11–12 punkter djupa. Ljuset faller uppifrån vänster, konturen är skiffer0 och väggen syns ljus mot gräset, så stenvagg_huggen och stenvagg_kallmur lämnas oförändrade. I stenvagg_murad var fogarna rost1. Det är en mättad ton som ska sparas till det man ska se, och idén är staplad sten, inte rött murbruk. Fogarna är därför bytta till den dämpade kol3 (lera och jord mellan stenarna). Formen och storleken är oförändrade.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "stenvagg_kluven",
+     "rader": [
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QTTTSTSTRTTSTTTSRTTTSTSTRTTSTTTSRTTTSTSTRTTSTTTQ",
+      "QTSSTSSSRTSTSSTSRTSSTSSSRTSTSSTSRTSSTSSSRTSTSSTQ",
+      "QSSSTSSSRSSSSTSSRSSSTSSSRSSSSTSSRSSSTSSSRSSSSTSQ",
+      "QSSSRSSSRSSSSSRSRSSSRSSSRSSSSSRSRSSSRSSSRSSSSSRQ",
+      "QRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRQ",
+      "QTTSRTTTSTSTRTTSTTTSRTTTSTSTRTTSTTTSRTTTSTSTRTTQ",
+      "QTSSRTSSTSSSRTSTSSTSRTSSTSSSRTSTSSTSRTSSTSSSRTSQ",
+      "QSTSRSSSTSSSRSSSSTSSRSSSTSSSRSSSSTSSRSSSTSSSRSSQ",
+      "QSRSRSSSRSSSRSSSSSRSRSSSRSSSRSSSSSRSRSSSRSSSRSSQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+     ]
+    },
+    {
+     "namn": "stenvagg_lerfogad",
+     "rader": [
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QTTSTGTTTSTGTTSTTTTSTGTTTSTGTTSTTTTSTGTTTSTGTTSQ",
+      "QSSTSGTSSSSGTSSSTSSTSGTSSSSGTSSSTSSTSGTSSSSGTSSQ",
+      "QSTSSGSSTSRGSTSSSSTSSGSSTSRGSTSSSSTSSGSSTSRGSTSQ",
+      "QSSSRFGGGGGFSSSRSSSSRFGGGGGFSSSRSSSSRFGGGGGFSSSQ",
+      "QFGGFTTTSTTFRRSRGFGGFTTTSTTFRRSRGFGGFTTTSTTFRRSQ",
+      "QTSTGTSSTSSFGGFGTTSTGTSSTSSFGGFGTTSTGTSSTSSFGGFQ",
+      "QSSSGSSTSSSFTTSTTSSSGSSTSSSFTTSTTSSSGSSTSSSFTTSQ",
+      "QSTSFSSSSTRFTSSSSSTSFSSSSTRFTSSSSSTSFSSSSTRFTSSQ",
+      "QRRRFRSRRRRFSSRRSRRRFRSRRRRFSSRRSRRRFRSRRRRFSSRQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+     ]
+    },
+    {
+     "namn": "stenvagg_torrstaplad",
+     "rader": [
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QTSQTTTSTQTTSSQTTTSQTTTSTQTTSSQTTTSQTTTSTQTTSSSQ",
+      "QSSQTSSSRQTSSRQTTSSQTSSSRQTSSRQTTSSQTSSSRQTSSRRQ",
+      "QSSQSSTSSQSSTSQSSSSQSSTSSQSSTSQSSSSQSSTSSQSSTSSQ",
+      "QRRQRRSRRQRRSRQRSRRQRRSRRQRRSRQRSRRQRRSRRQRRSRRQ",
+      "QQQQSRQQQQSRQQQQRQQQSRQQQQSRQQQQRQQQSRQQQQSRQQQQ",
+      "QTTSTQTTSTTQTTSTTTTSTQTTSTTQTTSTTTTSTQTTSTTQTTSQ",
+      "QSSTSQTSSSSQTSSSTSSTSQTSSSSQTSSSTSSTSQTSSSSQTSSQ",
+      "QSTSSQSSTSSQSSTSSSTSSQSSTSSQSSTSSSTSSQSSTSSQSSTQ",
+      "QSRRRQRRSRRQRSRRRSRRRQRRSRRQRSRRRSRRRQRRSRRQRSRQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+     ]
+    }
+   ],
+   "anteckning": "Efter Björns kommentar ritas stenväggen nu rakt ovanifrån, som spelets timmervägg. Den är ett band av krönet, tre rutor långt (48 × 11 punkter), helt utan framsida, ben eller förkortning. Kortets tre varianter finns kvar som förut, nu sedda uppifrån. Den första är kluvna block i två skift med förskjutna fogar. Den andra är kullersten fogad med varm lera (jord2/jord1), och det är den som syns som varmare än timmer. Den tredje är torrstaplad fältsten med mörka glipor. Konturen är skiffer0 runt hela bandet. Varje sten är ljusast uppe till vänster (skiffer3) och mörknar nedåt höger (skiffer1), med korn i två till tre toner. Varianterna två och tre är byggda av ett mönster på 16 punkter som upprepas, så att bitarna går att lägga i rad ruta för ruta. Granskningen: Granskad mot reglerna. Kortet säger att väggen ska ses snett med topp och framsida, men bildstilens regel \"Väggar helt uppifrån\" går före: en vägg ritas rakt ovanifrån som timmerväggen, som ett band av krönet utan framsida. Alla tre versionerna följer redan regeln. De visar två rader stenar ovanifrån, varje sten är ljus uppe till vänster och mörk nere till höger, och det finns inget mörkare framband. Storleken stämmer: 48 × 11 punkter, alltså tre rutor i rad, och den låga bandhöjden passar mot kolonisten. Konturen är skiffer0 och inte svart. Den grå stenen syns tydligt mot det olivgröna gräset, och den mättade färgen sparas: bara lerfogen i stenvagg_lerfogad är jordtoner. Stenvagg_kluven och stenvagg_lerfogad är oförändrade; de mörka punkterna längst ner i stenarna i kluven sitter ihop med fogarna och läses som kantskador, inte som fläckar. Rättat i stenvagg_torrstaplad: i rad 1–4 var kolumn 46 en fog direkt intill ramen, vilket gav en dubbelt tjock mörk kant bara på höger sida. Den är nu fylld med stentoner, så att högerkanten är lika smal som vänsterkanten.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "stenvagg_huggen",
+     "rader": [
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QTTTSTSSQTSTTSSSQTTTSTSSQTSTTSSSQTTTSTSSQTSTTSSQ",
+      "QTSSTSSSQTTSSSTSQTSSTSSSQTTSSSTSQTSSTSSSQTTSSSTQ",
+      "QSSSSSRSQSSTSSSRQSSSSSRSQSSTSSSRQSSSSSRSQSSTSSSQ",
+      "QSRSRRRRQRSSRRRRQSRSRRRRQRSSRRRRQSRSRRRRQRSSRRRQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QSTSQTSTTSSSQTTTSTSSQTSTTSSSQTTTSTSSQTSTTSSSQTSQ",
+      "QSSSQTTSSSTSQTSSTSSSQTTSSSTSQTSSTSSSQTTSSSTSQTSQ",
+      "QSTSQSSTSSSRQSSSSSRSQSSTSSSRQSSSSSRSQSSTSSSRQSRQ",
+      "QRRRQRSSRRRRQSRSRRRRQRSSRRRRQSRSRRRRQRSSRRRRQRRQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+     ]
+    },
+    {
+     "namn": "stenvagg_lerbruk",
+     "rader": [
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QGTTSSGGTTSGGGTSGGTTSSGGTTSGGGTSGGTTSSGGTTSGGGTQ",
+      "QTSTSSGTSTSRGTSTGTSTSSGTSTSRGTSTGTSTSSGTSTSRGTSQ",
+      "QSSTSRFGRRRFGSTSGSSTSRFGRRRFGSTSGSSTSRFGRRRFGSTQ",
+      "QGRRRFGGFFFGGSSRGGRRRFGGFFFGGSSRGGRRRFGGFFFGGSSQ",
+      "QGFFFGGTTSGGGRRGGGFFFGGTTSGGGRRGGGFFFGGTTSGGGRRQ",
+      "QGTSGGTSTSSGGFFGGGTSGGTSTSSGGFFGGGTSGGTSTSSGGFFQ",
+      "QTSTSGSSSTRGGTTSGTSTSGSSSTRGGTTSGTSTSGSSSTRGGTTQ",
+      "QSSRRFSRSRRFTSTRGSSRRFSRSRRFTSTRGSSRRFSRSRRFTSTQ",
+      "QGRRFGGRRRFGSRRRGGRRFGGRRRFGSRRRGGRRFGGRRRFGSRRQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+     ]
+    },
+    {
+     "namn": "stenvagg_torr",
+     "rader": [
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+      "QQTTSSQQTTSQQQTSQQTTSSQQTTSQQQTSQQTTSSQQTTSQQQTQ",
+      "QTSTSSQTSTSRQTSTQTSTSSQTSTSRQTSTQTSTSSQTSTSRQTSQ",
+      "QSSTSRQQRRRQQSTSQSSTSRQQRRRQQSTSQSSTSRQQRRRQQSTQ",
+      "QQRRRQQQQQQQQSSRQQRRRQQQQQQQQSSRQQRRRQQQQQQQQSSQ",
+      "QQQQQQQTTSQQQRRQQQQQQQQTTSQQQRRQQQQQQQQTTSQQQRRQ",
+      "QQTSQQTSTSSQQQQQQQTSQQTSTSSQQQQQQQTSQQTSTSSQQQQQ",
+      "QTSTSQSSSTRQQTTSQTSTSQSSSTRQQTTSQTSTSQSSSTRQQTTQ",
+      "QSSRRQSRSRRQTSTRQSSRRQSRSRRQTSTRQSSRRQSRSRRQTSTQ",
+      "QQRRQQQRRRQQSRRRQQRRQQQRRRQQSRRRQQRRQQQRRRQQSRRQ",
+      "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+     ]
+    }
+   ],
+   "anteckning": "Väggen ritas nu helt uppifrån som timmerväggen: bara krönet syns som ett band tvärs över tre rutor (48 × 11 punkter), utan framsida. Stenarna ligger plant i krönet och ses ovanifrån. Ljuset kommer uppifrån vänster, så varje sten är ljus (skiffer3) i övre vänstra kanten och mörk (skiffer1) nere till höger. Konturen är skiffer0. Jag har behållit kortets tre versioner: huggen kvadersten i förskjutna skift, kullersten i lerbruk med fogar i jord (mörkare under stenarna) och torrlagd sten med mörka springor. Mönstret följer rutan, så väggen kan läggas ihop bit för bit. Granskningen: Granskat, inget behövde rättas. Kortet talar om topp och framsida, men stilregeln om väggar gäller före kortet: en vägg ritas rakt ovanifrån som timmerväggen, ett band av krönet utan framsida. Alla tre versionerna följer det och ritas därför inte om med framsida. Storlek: 48 × 11 punkter, alltså tre rutor i rad. Bandet är smalare än kolonisten (14 × 20) är hög, vilket stämmer för ett krön sett ovanifrån. Varje version upprepar sig exakt var 16:e punkt, så en ruta i taget kan sättas ihop. I den huggna versionen är förbanden förskjutna inom rutan. Ljuset: varje sten har skiffer3 uppe till vänster och skiffer1 nere till höger. Konturen och fogarna är skiffer0, materialets mörkaste ton, och ingen kol används. Lerbruket i version 2 är jord1 och jord2, och de torra fogarna i version 3 är skiffer0. Kornet är jämnt, utan ensamma mörka prickar inne i stenarna och utan glans. Det grå skiffret är ljusare än det oliva gräset och har mörk kontur, så väggen syns tydligt på gräset. Symmetri och bärande gäller inte för en vägg. Ingen färg utanför paletten och inga genomskinliga punkter inne i väggen.",
+   "ide": ""
+  }
+ ]
+}

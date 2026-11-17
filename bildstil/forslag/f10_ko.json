@@ -1,0 +1,99 @@
+{
+ "kort": "f10_ko",
+ "namn": "Kon",
+ "slag": null,
+ "vad": "Steg 10.10.1: kon är ett betesdjur som köps av handlaren och ger mest mjölk och kött. Större än fåret och geten, med juver och små horn. Från sidan på gräs",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f10_ko",
+     "rader": [
+      "..q....q........................",
+      "...qrrq.........................",
+      "..ruutsr........................",
+      ".rutttssrrrrrrrrrrrrrrrrrrrrrr..",
+      ".rtkttstuuutuuutuuutuuutuuututrs",
+      "rttutssttuututtutuutuututtutusrs",
+      "rtttsstststtstttsttsttstststtsrs",
+      "oppttsststtststtsstststtstsstsrs",
+      ".oorsssssstssstsststssstssstssrs",
+      "....rsssssstsssstssstsssstssssrs",
+      ".....rsssstsssssstssssssstssssrs",
+      "......rsssssstsssssstsssssssssrs",
+      ".......rsssstssssssssssssstsssrs",
+      ".........rtsrrrrrrrrrrrrrtsrrrrs",
+      ".........rtsrFE....oqpo.rtsrFE.s",
+      ".........rtsrFE....oppo.rtsrFE.E",
+      ".........rtsrFE....u..u.rtsrFE.E",
+      ".........rtsrFE.........rtsrFE..",
+      ".........rtsrEE.........rtsrEE..",
+      ".........EFEE...........EFEE...."
+     ]
+    }
+   ],
+   "anteckning": "Kon står på alla fyra benen som djuren på kartan, sedd från sidan och lite ovanifrån, med huvudet åt vänster mot ljuset (32 × 20 punkter). Ryggens ovansida syns som ett ljusare band i rost3 och flanken mörknar nedåt mot rost1, med kontur i rost0. Huvudet hålls i ryggens höjd med örat bakom hornen. De två små hornen i ben2 böjer uppåt och utåt, och mulen i ben1 har en mörkare näsborre. De bortre benen är tunnare, i jord, och slutar en punkt högre än de närmre, som står på marken med klövar i jord0. Juvret i ben1 hänger under buken framför bakbenen med två spenar i rost3. Svansen hänger rakt från korset ner till hasorna och slutar i en mörk tofs. Ingen markskugga är ritad. Granskningen: Ritade om kon i samma storlek (32 × 20). Raderna hade olika bredd (32–34 tecken), nu är alla 32. Svansen var ett tjockt band av rsr-kolumner som gick från ryggen ner i bakbenet. Nu hänger den som en smal svans från bakdelen ner till hasorna, med en mörk tofs i jord0. Juvret satt mitt under buken. Nu hänger det framför bakbenen, symmetriskt, i ben1 med kontur i ben0 och spenar i rost3. De bortre benen står nu förskjutna bakom de närmre i stället för mitt under kroppen. De är mörkare i jord1/jord0 och slutar en punkt högre. Hornen är spegelsymmetriska i ben2 och huvudet fick ett öga. Ryggbandet i rost3 och kornet i rost1/rost2 behölls.",
+   "ide": "Lång och låg järnålderskko i rostbrunt, sedd från sidan och lite ovanifrån som djuren på kartan, omkring 30 × 20 punkter med huvudet åt vänster mot ljuset. Kroppen är en rak, avlång tunna i rost1 och rost2 med ett ljusare band i rost3 längs ryggen där man ser lite ovanpå, och kontur i rost0. Det smala huvudet hålls i ryggens höjd och har en mule i ben1 och två små ljusa horn i ben2 som böjer uppåt. Fyra raka ben står på marken; de bortre två är förskjutna en punkt uppåt och mörkare i jord0. Ett runt juver i ben1 med spenar i rust3 hänger mellan bakbenen, och svansen hänger rak bakifrån ner till hasorna med en mörk tofs."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_ko",
+     "rader": [
+      "..oq..qo..................",
+      ".oqqqqqqo.................",
+      "oGqwqqqqGo................",
+      ".oqkqqkqoooooooooooooooo..",
+      ".oqqqqqqoqqwqqqqqqGGGqqqoo",
+      ".oqqqqqpqqqqqqqqqGFFFGqpop",
+      ".oqqqqqppqqGGqqqqGFFFGqpop",
+      ".oHFHHFppqGFFGqqqqGFFGppop",
+      ".oHHHHHpppGFFFGqqqqGGpppop",
+      "..ooooopppGFFFGqqpppppppop",
+      "......oppGFFGpppppppppppoG",
+      "......oopppppppppppppppppoG",
+      "........oppooooqppoopppo..",
+      "........oppo..opppooppo...",
+      "........oppo...o.o.oppo...",
+      "........oppo.......oppo...",
+      "........oppo.......oppo...",
+      "........EFFE.......EFFE...",
+      "........EEEE.......EEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Kon står på alla fyra benen i profil med huvudet åt vänster, som djuren på kartan. Huvudet är vänt mot betraktaren så att båda ögonen, de utåtpekande öronen och de små krokiga hornen syns. Nosen är mörkare i jord3 med näsborrar i jord1. Halsen syns knappt, så huvudet sitter direkt mot bogen. Kroppen är djup och rund i ben2 och ben1, ljusast uppe till vänster, med kontur i ben0. Två sammanhängande fläckar i jord1 och jord2 med kornig kant sitter på bog och höft. De främre benen ritas i ben1 och de bortre i skugga i ben0. Det stora juvret sitter mellan bak- och frambenen direkt under buken. Svansen hänger tätt längs låret och slutar i en tofs i jord2. Bilden är 26 × 19 punkter och har ingen skugga på marken. Granskningen: Version 2 var trasig och följde inte idén. Raderna hade olika längd, bilden hade bara 10 rader i stället för omkring 19, och kon låg ner i stället för att stå på alla ben som på kartan. Juvret, svansen och benen saknades. Jag ritade om kon enligt idén: en kort och tjock fjällko, 26 × 19 punkter, som står på fyra korta, grova ben. Två av benen syns, med klövar i jord1 och jord0. Kroppen har en djup, rund buk, ett brett kort huvud nästan utan hals och en päls i ben1 och ben2 med kontur i ben0, med en enda glanspunkt i ben3. På sidan sitter två stora sammanhängande fält i jord1 och jord2 med kornig kant, utan små prickar. Öronen i jord2 pekar ut åt sidorna och de små hornen i ben2 böjer inåt. Mulen är i jord3 med näsborrar i jord1. Det stora juvret i ben1 och ben2 hänger under buken framför bakbenen, och svansen hänger tätt mot låret med en tofs i jord2. Ögonen är kol0, eftersom de verkligen är svarta. Ljuset faller från övre vänstra hörnet, så kroppen mörknar mot ben1 nere till höger. Ingen skugga är ritad.",
+   "ide": "Kort och tjock fjällko, omkring 26 × 19 punkter: en djup, rund buk som nästan når halvvägs ner på de korta, grova benen, ett brett kort huvud och nästan ingen hals. Pälsen är ben1 och ben2 med kontur i ben0, och på sidan sitter två stora sammanhängande fält i jord1 och jord2 med kornig kant, så att inga små prickar uppstår. Öronen pekar ut åt sidorna, och de små krokiga hornen i ben2 böjer framåt och inåt. Ett stort juver i ben1 syns tydligt under den runda buken, och svansen hänger tätt mot låret."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_ko",
+     "rader": [
+      "..qp...qp.....................",
+      ".EEEEEEEEE....................",
+      ".EHHqHGGFEFE..................",
+      ".EGqqHGGFFEEEEEEEEEEEEEEEEE...",
+      ".EHGqHkGFFGHHHHGHHHGHHHGHHGE..",
+      ".EGqqGGFFGGHGHHGHGHHGHGGHGFEE.",
+      ".EGqGGGFFFGGHGGGHGGGHGGFGGFEE.",
+      ".oqppGGFFGFGGFGGGFGGGFGGFGFEE.",
+      ".opopFGFFFGFGFGGFGFGGFGFFGFEE.",
+      "..oooEEFGFFFGFFFGFFGFFGFFFFEE.",
+      ".......EFFFFFGFFFFFFGFFFFFFEE.",
+      "........EFGFFFGFFFFFGFFFFGFEE.",
+      ".........EGEEFEEEEuutEFEEGFEE.",
+      ".........EGEEFE..sutsEFEEGE.E.",
+      ".........EGEEFE...s.sEFEEGE.E.",
+      ".........EGEEFE......EFEEGE.EF",
+      ".........EGElml......lmlEGE.E.",
+      ".........lml............lml..."
+     ]
+    }
+   ],
+   "anteckning": "Kon står på alla fyra benen på gräset, som djuren står på kartan, sedd från sidan och lite ovanifrån med huvudet åt vänster. Den är 30 × 18 punkter, alltså större än fåret och geten. Mankhöjden blir ungefär tre fjärdedelar av en människa (14 × 20). Ryggen syns lite uppifrån som ett ljusare band i jord3. Sidan och buken mörknar ner mot jord1, och konturen är jord0 runt hela kroppen. De bortre benen är mörkare och slutar en rad högre än de främre, så att djuret står på marken i spelets vinkel. Klövarna är kol eftersom de verkligen är nästan svarta. Två små horn i ben står på hjässan, och örat sticker ut bakom dem mot halsen. En ljus bläs löper ner mot den ljusa mulen. Juvret sitter mellan bakbenen med två spenar. Det har rostens ljusa toner, eftersom mjölken är det man ska se. Svansen hänger rakt ner från länden och slutar i en tofs. Ingen skugga är ritad. Granskningen: Granskad och lämnad oförändrad. Storleken stämmer: kon är 30 × 18 punkter, längre än kolonisten (14 × 20) och tydligt större än får och get, med kroppen omkring 15 punkter hög. Hon står på alla fyra benen från sidan som djuren på kartan. Benen är förskjutna i djupled och de bortre stumparna är kortare, så hon läses snett uppifrån. Ljuset faller rätt: ryggen är ljus jord3 och buken mörkare jord1. Konturen är jord0, och kol0 finns bara i ögat. De små hornen är i ben. Juvret har spenar i rost, som enda mättade färg eftersom det är mjölken man tar. Den bruna kroppen med mörk kontur syns tydligt mot det olivgröna gräset. Svansen hänger fritt bakom med en tofs. Alla rader är 30 tecken långa.",
+   "ide": ""
+  }
+ ]
+}

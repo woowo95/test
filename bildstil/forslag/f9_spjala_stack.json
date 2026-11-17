@@ -1,0 +1,185 @@
+{
+ "kort": "f9_spjala_stack",
+ "namn": "Spjälan i förrådet",
+ "slag": [],
+ "vad": "Spjälan, som du valde (version 2), som den ligger i förrådet: en, några (tre i en triangel) och många (sex i en pyramid), som stackarna du valde. Byggs in i steg 10.11.1 tillsammans med saken.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "spjala_1",
+     "rader": [
+      ".EEEEEEEEEEEE.",
+      "EHHGHHHGHHHGGE",
+      "EGHHGGHHHGHGFE",
+      "EFGFFGFFFGFFFE",
+      "EFFFFFFFFFFFEE",
+      ".EEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "spjala_3",
+     "rader": [
+      ".EEEEEEEEEEEE..",
+      "EGHGGHGHGGHGFE.",
+      "EGEEEEEEEEEEEE.",
+      "EEHHGHHHGHHHGGE",
+      "EEGHHGGHHHGHGFE",
+      ".EEEEEEEEEEEEE.",
+      "EHGHHGHHGHHGGE.",
+      "EFGFFGFFFGFFFE.",
+      "EFFFFFFFFFFFEE.",
+      ".EEEEEEEEEEEE.."
+     ]
+    },
+    {
+     "namn": "spjala_6",
+     "rader": [
+      ".EEEEEEEEEEEE..",
+      "EGHGGHGHGGHGFE.",
+      "EGEEEEEEEEEEEE.",
+      "EEHGHHGHGHHGHGE",
+      ".EEEEEEEEEEEEFE",
+      "EHHGHHHGHHHGGEE",
+      "EGHHGGHHHGHGFEE",
+      ".EEEEEEEEEEEEEE",
+      "EEGHHGGHHGHGGFE",
+      "EGEEEEEEEEEEEE.",
+      "EHGHHGHHGHHGGE.",
+      "EFGFFGFFFGFFFE.",
+      "EFFFFFFFFFFFEE.",
+      ".EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Spjälan från version 2 ligger vågrätt i oförändrad storlek (14 × 6): ovansidan i jord2–jord3 med ådring, en smal framkant på 2 punkter i jord1 och kontur i jord0. Stacken ses snett ovanifrån som kartan. En spjäla som ligger bakom en annan ritas högre upp i bilden och döljs av den främre, så att bara dess ovansida syns. En spjäla som ligger ovanpå vilar i skåran mellan två under sig och lyfts därför ännu högre upp. Vid tre ligger två i botten, den bakre och den främre, med den tredje ovanpå i skåran. Vid sex ligger tre i botten, två i mitten och en överst. De ligger lite ojämnt i sidled, som en verklig trave, så att ändarna på de skymda spjälorna sticker fram och antalet går att läsa. Hela framkanten syns bara på den främsta bottenspjälan. Ljuset kommer uppifrån vänster, så de högra ändarna är mörkare. Ingen behållare används. Granskningen: Spjälan för en är oförändrad (version 2, 14 × 6). Stackarna för tre och sex är omritade efter idén, i samma storlek per spjäla. Förut låg spjälorna rakt ovanpå varandra och visade var sin mörka framkant, så sexstacken blev en hög trappa på 18 rader. Dessutom stack lösa bitar ut på vänster sida, med ensamma prickar (en F mellan konturer på två ställen) och dubbla konturer. Nu ligger spjälorna parallellt, sedda snett uppifrån. Vid tre syns den bakre spjälans ovansida, sedan den översta helt, med en punkt förskjutning åt höger och uppåt. Den främre visar bara en rad ovansida och den enda framkanten på 2 punkter. Vid sex syns den bakre bottenspjälan och den bakre i mellanlagret som smala remsor bakom den översta. Den översta syns helt och ljusast. Därefter kommer den främre i mellanlagret och sist den främsta bottenspjälan, den enda med mörk framkant. Mellanlagret är förskjutet en punkt åt höger, så att lagren går att skilja åt i ändarna. Det blir en låg trave på 15 × 14 punkter i stället för 18 × 18. Materialet är kluvet trä i jord2–jord3 med korn, framkanten är i jord1 och konturen i jord0. Det syns på gräset och har ljuset uppe till vänster.",
+   "ide": "Liggande parallellt som en vedtrave: spjälan från version 2 ligger vågrätt i oförändrad storlek, ljust kluvet trä i jord2–jord3 med ådring och kontur i jord0. Vid tre ligger två spjälor sida vid sida och den tredje mitt ovanpå i skåran mellan dem, förskjuten en bit bakåt och upp i bilden. Vid sex ligger tre i botten, två ovanpå och en överst, så att stacken ser ut som en låg trekantig trave där ovansidorna syns och bara den främsta spjälan visar sin smala mörkare framkant på 2 punkter."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_spjala_stack_en",
+     "rader": [
+      ".EEE..........",
+      "EHHHE.........",
+      ".EFHHE........",
+      "..EFHGE.......",
+      "...EFHHE......",
+      "....EFGHE.....",
+      ".....EFHHE....",
+      "......EFHGE...",
+      ".......EFHHE..",
+      "........EFHGE.",
+      ".........EFFFE",
+      "..........EEE."
+     ]
+    },
+    {
+     "namn": "f9_spjala_stack_tre",
+     "rader": [
+      "....EEE..........",
+      "..EEEHHE.........",
+      ".EHHHEHHE........",
+      ".EEFHHEHGE.......",
+      "EHHEFHGEHHE......",
+      ".EFHEFHHEGHE.....",
+      "..EFHEFGHEHHE....",
+      "...EFHEFHHEHGE...",
+      "....EFGEFHGEHHE..",
+      ".....EFHEFHHEHGE.",
+      "......EFHEFHGEFFE",
+      ".......EFHEFFFEE.",
+      "........EFHEEE...",
+      ".........EFFFE...",
+      "..........EEE...."
+     ]
+    },
+    {
+     "namn": "f9_spjala_stack_sex",
+     "rader": [
+      ".......EEE..........",
+      ".....EEEHHE.........",
+      "...EEEHHEHHE........",
+      "..EHHHEHHEHGE.......",
+      "..EEFHHEHGEHHE......",
+      ".EHHEFHGEHHEGHE.....",
+      ".EEFHEFHHEGHEHHE....",
+      "EHHEFHEFGHEHHEHGE...",
+      ".EFHEFHEFHHEHGEHHE..",
+      "..EFHEFGEFHGEHHEHGE.",
+      "...EFHEFHEFHHEHGEFFE",
+      "....EFGEFHEFHGEFFEE.",
+      ".....EFHEFHEFFFEE...",
+      "......EFHEFHEEE.....",
+      ".......EFHEFFFEE....",
+      "........EFHEEE......",
+      ".........EFFFE......",
+      "..........EEE......."
+     ]
+    }
+   ],
+   "anteckning": "Spjälorna ligger platt på förrådsgolvet och ses snett ovanifrån. Varje spjäla går från övre vänster till nedre höger. Den smala framsidan nere till vänster är jord1 och ovansidan jord3/jord2 med kornet längs spjälan. Den övre vänstra ändytan är ljus, den nedre högra ändytan jord1 och konturen jord0. Vid tre ligger två spjälor bredvid varandra med en punkts glipa, och den tredje vilar ovanpå över glipan, flyttad en punkt uppåt mot bakkanten. Vid sex ligger tre spjälor nederst, två ovanpå i glipornas mitt och en överst. Varje högre rad är flyttad en punkt uppåt mot bakkanten och täcker konturerna under sig, så att den syns ligga ovanpå. Ingen behållare, ingen skugga. Granskningen: Granskat mot reglerna. Storleken stämmer mot kolonisten: en spjäla är 14 × 12, tre är 17 × 15 och sex är 20 × 18. Spjälorna ligger snett från övre vänster till nedre höger, som idén säger. Ljuset faller uppe till vänster, och ändytorna nere till höger är en ton mörkare (jord1). Konturen är jord0, och ingen kol eller mättad ton används. Bilderna är ljusare än gräset och syns därför på det. Raderna är lika långa i alla tre bilderna. En sak är rättad: i sexstacken stod en ensam jord1-prick inne i konturen nere till höger (rad 14, »EEEFE«). Den bröt mot regeln om korn utan ensamma prickar, och konturen där är nu ren. Allt annat är oförändrat.",
+   "ide": "Diagonalt staplade som en trappa: varje spjäla ligger snett från övre vänster till nedre höger, så att silhuetten blir långsmal och lutande i stället för bred. Vid tre ligger två snedställda spjälor bredvid varandra och den tredje vilar på dem i mitten; vid sex bildar raderna tre, två och en en pyramid där varje högre rad flyttas några punkter uppåt mot bakkanten. Trästrukturen följer spjälans längd och ändytorna nere till höger är en ton mörkare (jord1), medan ljuset faller på ovansidan uppe till vänster."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_spjala_stack_en",
+     "rader": [
+      ".EEEEEEEEEEEE.",
+      "EHGHHGHGHHGHGE",
+      "EGHGGHGGHGGHGE",
+      "EFFGFFFFFGFFFE",
+      ".EEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "f9_spjala_stack_nagra",
+     "rader": [
+      ".....EEEE.....",
+      ".....EHGE.....",
+      ".EEEEEHGEEEEE.",
+      "EHGHHEGGEHGHGE",
+      "EGHGGEHGEGGHGE",
+      "EFFGFEHGEGFFFE",
+      ".EEEEEHGEEEEE.",
+      ".....EGGE.....",
+      ".....EHGE.....",
+      ".EEEEEHGEEEEE.",
+      "EHGHHEHGEHGHGE",
+      "EGHGGEFFEGGHGE",
+      "EFFGFEEEEGFFFE",
+      ".EEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "f9_spjala_stack_manga",
+     "rader": [
+      "..EEEE..EEEE..",
+      "..EHGE..EHGE..",
+      ".EEGGEEEEHGEE.",
+      "EHEHGEHGEGGEGE",
+      "EGEHGEHGEHGEGE",
+      "EEEEEEEEEEEEEE",
+      "EHGHHGHGHHGHGE",
+      "EGHGGHGGHGGHGE",
+      "EFFGFFFFFGFFFE",
+      "EEEEEEEEEEEEEE",
+      "EGEHGEGGEGGEGE",
+      "EFEHGEFFEHGEFE",
+      ".EEGGEEEEHGEE.",
+      "..EHGE..EGGE..",
+      ".EEHGEEEEHGEE.",
+      "EHEHFEHGEHGEGE",
+      "EGEFFEGGEFFEGE",
+      "EFEEEEFFEEEEFE",
+      ".EEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Spjälan ligger platt på förrådets golv och ses snett ovanifrån: en ljus ovansida i jord3/jord2 med kornet i ljusets riktning, en smal framkant i jord1 och en egen kontur i jord0, så att lagren går att skilja åt. En: spjälan ensam och vågrät (14 × 5). Tre: två vågräta med ett genomskinligt mellanrum och en lodrät tvärs över dem i mitten. Den lodräta ligger ovanpå och sticker därför upp en punkt ovanför den bakre spjälan. Den syns förkortad, och dess ände mot betraktaren visar framkanten i jord1. Sex: tre vågräta i botten, två lodräta tvärs över dem och en vågrät överst. Varje lager ligger två punkter högre i bilden än lagret under, eftersom det vilar ovanpå. Det översta lagret täcker mitten av de lodräta, och i mellanrummen syns bara de lodräta spjälorna eller genomskinligt, så att stacken blir kantig och smalnar mot toppen. Ingen behållare används, och skuggan på marken ritas inte. Granskningen: Storlek, vinkel, symmetri och läsbarhet på gräset stämmer. Stacken följer idén: tre spjälor är två vågräta med mellanrum och en lodrät tvärs över i mitten. Sex spjälor är tre vågräta i botten, två lodräta över dem och en vågrät överst, förskjuten uppåt för att visa höjden. Varje spjäla har egen kontur i jord0, och sidorna är spegelsymmetriska. Jag rättade bara några ensamma mörka punkter (jord1) mitt på de lodräta spjälorna. De låg i samma rad som framkanten på spjälan under och såg ut som om bandet gick igenom den översta spjälan. Det gällde rad 5 och 9 i 'några' och rad 4 och 11 i 'många', som nu är jord2. Framkanten längst ner på de lodräta spjälorna är kvar i jord1.",
+   "ide": "Korsvis lagda i lager som ett litet torkställ: varje lager ligger vinkelrätt mot lagret under, så att stacken blir kantig och fyrkantig i grunden men smalnar mot toppen. Vid tre ligger två spjälor vågrätt med ett mellanrum och den tredje lodrätt tvärs över dem i mitten, så att en trekantig uppbyggnad syns snett ovanifrån; vid sex ligger tre vågrätt i botten, två lodrätt tvärs över dem och en vågrät överst. Mellanrummen mellan spjälorna är genomskinliga eller visar den mörkare undre spjälan i jord1, och varje spjäla har sin egen kontur i jord0 så att lagren går att skilja åt i liten storlek."
+  }
+ ]
+}

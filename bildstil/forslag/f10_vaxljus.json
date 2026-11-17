@@ -1,0 +1,178 @@
+{
+ "kort": "f10_vaxljus",
+ "namn": "Vaxljuset",
+ "slag": null,
+ "vad": "Steg 10.10.24: vaxljuset görs av bivax med en veke av hö och brinner dubbelt så länge som talgljuset. Det står på bord och hyllor. Till vänster släckt, till höger tänt",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Ljuset ska vara väldigt litet",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "vaxljus_slackt",
+     "rader": [
+      ".....",
+      ".....",
+      ".....",
+      "..m..",
+      ".ImI.",
+      "ILLKI",
+      "IKKJI",
+      "ILKJI",
+      "IKJJI",
+      ".III."
+     ]
+    },
+    {
+     "namn": "vaxljus_tant",
+     "rader": [
+      "..u..",
+      ".uwt.",
+      ".tLt.",
+      "..m..",
+      ".ImI.",
+      "ILLKI",
+      "IKKJI",
+      "ILKJI",
+      "IKJJI",
+      ".III."
+     ]
+    }
+   ],
+   "anteckning": "Björn ville ha ett väldigt litet ljus, så jag har krympt det till 5 × 10 punkter. Själva ljuset är 3 punkter brett och 5 högt med kontur, ungefär en tredjedel av en ruta. Det står direkt på bordet eller hyllan, utan stake och utan fat, och ses snett ovanifrån: krönet syns som en ljus yta och framsidan som en kort stump. Bivaxet ritas i senap med konturen i senap0, ljusast till vänster och mörkast till höger. Bilden till vänster visar det släckta ljuset med en kort sotad veke av hö. Bilden till höger visar det tända ljuset: en liten låga på 2–3 punkter i rost och senap med en enda glanspunkt, och vaxet närmast vekan lyser upp. Båda bilderna har samma ruta så att ljuset står på samma plats. Granskningen: Storleken (5 × 10) passar mot kolonisten och de två bilderna är lika stora. Silhuetten är symmetrisk, konturen är senap0 (bivaxets mörkaste ton) och ljuset kommer från vänster. Jag rättade bara vinkeln på toppen. Veken hängde i luften ovanför en kontur och ljusets ovansida syntes inte. Nu har toppen en bakkant med veken (kol2, förkolnad) i mitten och en ljusare yta (senap3) som ses snett ovanifrån. Kroppen är därmed en rad kortare. Kroppen är nu likadan i båda bilderna, så att bara lågan skiljer släckt från tänt. Lågan är oförändrad: rost och senap med en enda ljus punkt av ben3, som är glans men inte ren vit.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "vaxljus_fot_slackt",
+     "rader": [
+      ".......",
+      ".......",
+      ".......",
+      "...m...",
+      ".ILLKI.",
+      ".ILKJI.",
+      ".IKLJI.",
+      ".ILKJI.",
+      ".IKKJI.",
+      "EGHHGFE",
+      ".EFFFE."
+     ]
+    },
+    {
+     "namn": "vaxljus_fot_tant",
+     "rader": [
+      "...u...",
+      "..uLu..",
+      "..tLt..",
+      "...m...",
+      ".ILuKI.",
+      ".ILKJI.",
+      ".IKLJI.",
+      ".ILKJI.",
+      ".IKKJI.",
+      "EGHHGFE",
+      ".EFFFE."
+     ]
+    },
+    {
+     "namn": "vaxljus_hallare_slackt",
+     "rader": [
+      ".......",
+      ".......",
+      ".......",
+      "...m...",
+      ".ILLKI.",
+      ".ILKJI.",
+      ".IKKJI.",
+      "QSTSRRQ",
+      ".QRRRQ.",
+      "..QRQ.."
+     ]
+    },
+    {
+     "namn": "vaxljus_hallare_tant",
+     "rader": [
+      "...u...",
+      "..uLu..",
+      "..tLt..",
+      "...m...",
+      ".ILuKI.",
+      ".ILKJI.",
+      ".IKKJI.",
+      "QSTSRRQ",
+      ".QRRRQ.",
+      "..QRQ.."
+     ]
+    },
+    {
+     "namn": "vaxljus_block_slackt",
+     "rader": [
+      ".......",
+      ".......",
+      ".......",
+      "...m...",
+      ".ILLKI.",
+      "ILLLKJI",
+      "IKLKJJI",
+      "IKKJJII",
+      ".IIIII."
+     ]
+    },
+    {
+     "namn": "vaxljus_block_tant",
+     "rader": [
+      "...u...",
+      "..uLu..",
+      "..tLt..",
+      "...m...",
+      ".ILuKI.",
+      "ILLLKJI",
+      "IKLKJJI",
+      "IKKJJII",
+      ".IIIII."
+     ]
+    }
+   ],
+   "anteckning": "Efter Björns kommentar har jag krympt ljuset kraftigt. Förut var det nästan lika högt som en människa, nu är det bara 6–11 punkter högt och 3–7 punkter brett, en liten sak på en ruta på 16 punkter. Kortets tre former finns kvar: ett smalt ljus på en träfot, ett ljus i en liten järnhållare och ett kort, tjockt blockljus. Varje form finns släckt (till vänster) och tänd (till höger). Ljuset står upprätt på bord och hyllor och ses snett ovanifrån, så toppen syns som en ljus yta och sidan som ett smalt band. Bivaxet har senaptoner: ljust uppe till vänster och senap0 som kontur nere till höger. Veken av hö syns som en mörk prick. Det tända ljuset har en liten låga i rost och senap3 (de mättade tonerna sparas till elden) och en smält grop i toppen. Släckt och tänt ljus har samma storlek; bilden har bara luft ovanför där lågan annars sitter. Granskningen: Rättat: 1) Ljuset på foten var 6 punkter brett, så veken och lågan (kolumn 2) kunde inte stå mitt på ljuset. Bilden är nu 7 punkter bred: ljuset har 3 punkter vax mellan konturerna, och veke och låga står i mittkolumnen. Foten (EGHHGFE / .EFFFE.) är också symmetrisk. Vaxet går från L till vänster över K till J till höger, så ljuset faller från vänster. 2) På ljuset i hållaren saknades den vänstra konturen (senap0), och vaxet stack ut ensidigt. Ljuset har nu kontur på båda sidor, står mitt i skålen och har samma bredd som de andra ljusen. Den tända versionen behåller den smälta, glödande gropen (rost3) i ljusets topp. 3) Blockljuset följde redan reglerna och är oförändrat. Storleken mot kolonisten, vinkeln snett uppifrån och konturerna mot gräset är oförändrade. Släckt och tänt finns för alla tre varianterna.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "vaxljus_slackt",
+     "rader": [
+      ".....",
+      ".....",
+      "..m..",
+      ".ILI.",
+      "ILKJI",
+      "ILKJI",
+      "IKJJI",
+      "ILKJI",
+      "IKJII",
+      ".III."
+     ]
+    },
+    {
+     "namn": "vaxljus_tant",
+     "rader": [
+      "..u..",
+      ".uLt.",
+      "..t..",
+      ".IwI.",
+      "ILKJI",
+      "ILKJI",
+      "IKJJI",
+      "ILKJI",
+      "IKJII",
+      ".III."
+     ]
+    }
+   ],
+   "anteckning": "Efter kommentaren är vaxljuset nu mycket litet: ett smalt ljus på 5 × 8 punkter (med lågan 5 × 10), ungefär en tredjedel av en ruta. Det står ensamt på bord och hyllor, så det ritas utan ljusstake och utan behållare, bara som det står upprätt. Det ses snett uppifrån: överst syns den rundade toppen med en ljus kant kring veken. Bivaxet är senap i tre toner med senap0 som kontur, ljusast till vänster och mörkast till höger. Hövekens stump är kolmörk. Det släckta ljuset till vänster har bara den svarta veken. Det tända till höger har en liten låga på tre punkter i rost och senap, med ljus kärna och en ljusare smält yta överst; elden är den enda starka färgen. Båda bilderna har samma höjd så att ljuset står på samma plats. Granskningen: Inget behövde rättas. Storleken är 5 × 10 punkter, ungefär halva kolonistens höjd, som de andra småsakerna och talgljuset. Ljuset ses snett uppifrån: toppen syns ovanifrån som en ljusare yta (ILI) ovanför kroppen, så det är ingen platt sidovy. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt, ljust till vänster (L/K) och mörkt nere till höger (J/I). Konturen är senap0, materialets mörkaste ton, och inte svart. Kroppen har korn i tre senaptoner. Vaxet syns gulare än gräset och har kontur. Den släckta veken är kol2 (bränt hö). I det tända ljuset ger lågan (rost3/senap3/rost2) det starka där det betyder något, och den smälta vaxpölen glänser med en enda ben3-punkt, som inte är ren vit. Båda bilderna har samma storlek och står rätt på varandra.",
+   "ide": ""
+  }
+ ]
+}

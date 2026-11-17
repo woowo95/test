@@ -1,0 +1,104 @@
+{
+ "kort": "f10_gudabild",
+ "namn": "Gudabilden",
+ "slag": null,
+ "vad": "Steg 10.3.19: gudabilden i trons hus, den snidade bilden av trons gud. En ruta stor",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f10_gudabild",
+     "rader": [
+      "......EEEEE.....",
+      ".....EHHGGFE....",
+      ".....EHGHGFE....",
+      ".....EGHHGFE....",
+      ".....EHEGEFE....",
+      ".....EHEHEFE....",
+      ".....EHGHGFE....",
+      ".....EHFEFFE....",
+      ".....EFHHGFE....",
+      ".....EGFHFFE....",
+      ".....EFHGHFE....",
+      ".....EHFGFFE....",
+      ".....EGHFGFE....",
+      ".....EHGGGFE....",
+      ".....EHGHGFE....",
+      "..QQQEHGGGFEQQQ.",
+      "..QTSEHGGFFESRQ.",
+      "..QTSEEEEEEESRQ.",
+      "..QTTSTSSSSSRRQ.",
+      "..QTSSSTSSSRSRQ.",
+      "..QRRRRRRRRRRRQ.",
+      "..QRRRRRRRRRRRQ.",
+      "...QQQQQQQQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Gudabilden är en snidad trästolpe som står rakt upp i trons hus, med foten nedsänkt i en liten fyrkantig stenhäll. Den ses snett ovanifrån som kartan: stolpen syns förkortad och står vid hällens bakkant. Hällens ovansida syns ljus, och framkanten är ett mörkare skifferband på 2 punkter med kontur under. Stolpen är 8 punkter bred med kontur och 6 punkter trä innanför, och den är 18 punkter hög. Med hällen är bilden 16 × 24 punkter, så den sticker upp ovanför rutan ungefär som en människa. Formen är spegelsymmetrisk: ett rundat huvud, djupa ögonhålor i jord0, en rak näsa och en munlinje. Under munnen smalnar skägget av till en kil, och armarna är snidade band som möts i ett kryss över magen. Träet har tre jordtoner med jord0 som kontur, ljus på vänster sida och mörkt till höger. Ingen pall och inga mättade färger används, eftersom gudabilden är något att se på och inget att ta. Granskningen: Ritade om stolpen. Den var 8 punkter bred, ojämn och osymmetrisk (konturen hoppade på högra sidan), och ansiktet gick inte att läsa. Nu är den 7 punkter bred med kontur (kolumn 5–11) och spegelsymmetrisk kring mitten, liksom foten (kolumn 2–14). Ansiktet sitter högt med en ljus pannrand, djupa ögonhålor i jord0 och en rak ljus näsa mellan dem. Under munnen smalnar ett ljust skägg som en kil, och snidade spår korsas över magen. Ljuset ligger till vänster (jord3) och skuggan till höger (jord1), med jord0 som kontur. Bilden är sänkt från 24 till 23 punkter, så den bara sticker upp lite över kolonistens 20. Stenfotens yta ses snett ovanifrån med lugnare korn i stället för randigt T/S-mönster. Framkanten är ett band på 2 punkter i skiffer1 med skiffer0 som kontur.",
+   "ide": "En hög smal trästolpe med snidat ansikte, likt en nordisk stavgud, som står rakt upp på en liten fyrkantig fotplatta av jord eller sten; stolpen är omkring 6–7 punkter bred och upp till 20 punkter hög, så den sticker upp ovanför rutan som en människa. Ansiktet sitter högt upp med djupa ögonhålor, rak näsa och ett skägg som blir en kil nedåt, och armarna är bara snidade band som korsas över magen; träet är jord i tre toner med jord0 som kontur, ljuset på vänster sida och mörkt till höger. Bilden är spegelsymmetrisk, och foten ses snett ovanifrån som en liten ellips eller fyrkant där den främre kanten är ett mörkare band på 2 punkter."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_gudabild",
+     "rader": [
+      "..EE........EE..",
+      "..EHE.EEEE.EFE..",
+      "...EHHGGGGFFE...",
+      "....EGLGFKFE....",
+      "....EGGHFFFE....",
+      "....EHGGGFFE....",
+      "..EEGHHGGFFFEE..",
+      "..EHGFGHGGFGFE..",
+      "..EGHFHGGFFGFE..",
+      "..EHGGFGGFGFFE..",
+      "..EHHGFGGFGGFE..",
+      "..EGGFFEEFFGFE..",
+      ".EEHHHHHHHHHGEE.",
+      ".EHHGGGGGGGGHGE.",
+      ".EHGHGFFFFGHGFE.",
+      ".EEHHGGGGGGHGEE.",
+      ".EGFGFFFFFFFFFE.",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Gudabilden står fast på marken i trons hus, snidad ur en enda tjock stubbe. Den ses snett ovanifrån som kartan. Gestalten sitter med knäna uppdragna och händerna vilande på knäna, och skägget faller ner mellan armarna. Huvudet har en hjälm med två små horn. Framför fötterna syns stubbens kapade topp som en ellips med årsringar. Under den ligger ett smalt band av stockens framsida, som är det enda som syns av foten. Allt är trä i jordtoner med jord0 som kontur, ljusast uppe till vänster och mörkast nere till höger. Silhuetten är spegelsymmetrisk. De två ögonen av inlagd bärnsten i senap är det enda starka. Ingen skugga är ritad, och ingen sittplats hör till bilden. Bilden är 16 punkter bred, en ruta, och 18 hög, eftersom figuren reser sig något över rutan som en stående sak. Granskningen: Rättat: 1) Idén krävde att stockens topp med årsringar syns som en ellips framför fötterna. Foten var bara ett slätt block, så nu ligger en ljus ändyta (rad 12–15) med ringar i jord3/jord2 och märg i jord1 framför fötterna. Under den sitter ett smalt mörkare framband och sedan konturen. 2) Kroppen hade många inre jord0-linjer som blev mörka fläckar och gjorde gestalten för mörk mot gräset. Armar, händer och knän skiljs nu åt med jord1 och ljusare jord3/jord2, och jord0 finns bara kvar i konturen och i den symmetriska springan mellan fötterna. Gestalten syns därmed bättre på gräset. 3) Silhuetten är kontrollerad och spegelsymmetrisk rad för rad (horn, hjälm, axlar, knän och fot). Bara ljuset skiljer sidorna åt: ljust till vänster och mörkare till höger. Storleken (16 × 18) och huvudet med horn och bärnstensögon är oförändrade. Ögonen är fortfarande det enda starka.",
+   "ide": "En låg och bred sittande gudabild, snidad ur en enda tjock stubbe: en knubbig gestalt med knäna uppdragna och händerna på knäna eller kring ett horn eller skägg, ungefär 12 punkter bred och 14 hög. Gestalten sitter på en rund stockfot som ses snett ovanifrån, där toppen av stocken med årsringar syns som en ellips framför fötterna; kroppen är jord och huvudet har en spetsig hjälm eller ett par små horn. Formen är symmetrisk med bred, tung silhuett; två små senapsglimtar som ögon (inlagd bärnsten) är det enda starka."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_gudabild",
+     "rader": [
+      "......QQQQ......",
+      "....QQTTSSQQ....",
+      "...QTuttttsRQ...",
+      "...QuTTSSSRsQ...",
+      "...QtttTSssrQ...",
+      "...QutsTStssQ...",
+      "...QtsrSRsrrQ...",
+      "...QuTStsSRsQ...",
+      "...QtTSTSRRrQ...",
+      "...QuStsssRsQ...",
+      "...QtTSTSRRrQ...",
+      "...QuSTSSRRsQ...",
+      "...QtTSSTRRrQ...",
+      "...QuSTSSRRsQ...",
+      "...QutttssssQ...",
+      "...QTSSTSRRRQ...",
+      ".QTQSTSSSRRRQSQ.",
+      "QTSHHGHGGFGFFSRQ",
+      "QSRHGFGGFGFFEQRQ",
+      ".QTSQTSRQTSRQSQ.",
+      "..QRRQRRQQRRQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Runstenen står rest på kartan och ses snett ovanifrån: framsidan med ristningen vänder mot betraktaren. Den rundade toppen är förkortad och har ljuset på vänster kant. Ristningen är ett ansikte med stora ögon, näsa och mun, och runt kanten går ett band av slingor. Den är målad i rost, ljusare (rost2/rost3) till vänster och mörkare (rost1/rost0) till höger. Foten står nedsjunken i en låg jordhög som omges av en oval krans av kullersten. Den bakre delen av kransen döljs av stenen, så bara sidorna och framkanten syns, och framkanten är ett mörkare band. Konturen är skiffer0 runt stenen och kullerstenen. Skuggan lägger programmet till. Granskningen: Storleken (10 punkter bred, stenen omkring 16 hög och foten 21 punkter mot kolonistens 20), vinkeln, skifferkonturen och den ovala kransen vid foten följer idén och behålls oförändrade. Rättat: ansiktet var rörigt och osymmetriskt, med rost utspridd i fläckar så att gudafiguren inte gick att läsa. Ristningen är omritad spegelsymmetriskt. Ett ristat band av slingor går runt kanten: överst ett rostband, på sidorna rost3/rost2 till vänster och rost1/rost0 till höger, och nederst ett tvärband. Inuti står ett tydligt ansikte med två bryn, två stora ögon i rost, en näsa och en mun. Stenen mellan ristningarna har korn i skiffer1–3, ljusast till vänster och mörkast till höger, så att formen bara skiljs av ljuset.",
+   "ide": "En rest stenhäll av runstenstyp, snett ovanifrån: en rundad, lite avsmalnande platta i skiffertoner, 10–11 punkter bred och omkring 18 hög, med en ristad gudafigur i form av ett ansikte med stora ögon och ett band av slingor runt kanten, ritad i rost som målad färg i ristningarna. Stenen står i en låg hög av kullersten eller jord vid foten, som ses ovanifrån som en oval krans; konturen är skiffer0 och ljuset faller på vänstra kanten. Silhuetten är en symmetrisk rundbåge, helt annan än en stolpe, och rosten gör att den syns som helig på kartan."
+  }
+ ]
+}

@@ -1,0 +1,49 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f10_bikupa",
+  "f10_bur",
+  "f10_gris",
+  "f10_gudabild",
+  "f10_hast",
+  "f10_ko",
+  "f10_kott",
+  "f10_oxe",
+  "f10_vildsvin",
+  "f9_lovkarve",
+  "f9_jordgubbsplanta=Börja om från början",
+  "f9_korn_stack",
+  "f9_lok_stack",
+  "f9_spjala_stack",
+  "f10_tamhet",
+  "f10_bivax!=Rita en vaxkaka i stället",
+  "f10_stenvagg=Stenväggen ritas helt uppifrån, som spelets timmervägg",
+  "f10_vaxljus=Ljuset ska vara väldigt litet"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 7.95,
+  "hog": 17.04
+ },
+ "dollar": 6.952,
+ "rapport": [
+  "f10_bikupa: 3 versioner",
+  "f10_bur: 3 versioner",
+  "f10_gris: 3 versioner",
+  "f10_gudabild: 3 versioner",
+  "f10_hast: 3 versioner",
+  "f10_ko: 3 versioner",
+  "f10_kott: 3 versioner",
+  "f10_oxe: 3 versioner",
+  "f10_vildsvin: 3 versioner",
+  "f9_lovkarve: 3 versioner",
+  "f9_jordgubbsplanta: 3 versioner",
+  "f9_korn_stack: 3 versioner; kontrollerna varnar fortfarande: version 3: olika",
+  "f9_lok_stack: 3 versioner",
+  "f9_spjala_stack: 3 versioner",
+  "f10_tamhet: 3 versioner",
+  "f10_bivax: 3 versioner",
+  "f10_stenvagg: 3 versioner",
+  "f10_vaxljus: 3 versioner; kontrollerna varnar fortfarande: version 3: olika"
+ ]
+}

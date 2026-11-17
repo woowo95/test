@@ -1,0 +1,121 @@
+{
+ "kort": "f10_hast",
+ "namn": "Hästen",
+ "slag": null,
+ "vad": "Steg 10.10.3: hästen är ett dragdjur som drar släden, dyrare än oxen men snabbare. Högbent, med lång hals, man och svans. Från sidan på gräs",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f10_hast",
+     "rader": [
+      ".....................E.E....",
+      "...................EpEHE....",
+      ".................EpEEHHGE...",
+      "................EpEEHHHGGE..",
+      "...............EpEFHHkHGGGE.",
+      "..............EpEFHHGHHGGGGE",
+      ".............EpEFHHGGEGHGGFE",
+      "............EpEFHHGGGEEGGFFE",
+      ".....EEEEEEEpEFHHGGGGE.EEEE.",
+      "..EGEHqHHHHHHHHGHGGGFE......",
+      ".EGFEGFFFFFFFFGHGGGFE.......",
+      ".EFGEHHGHHGHHGHGGGFE........",
+      ".EGFEGHHGHGHGGHGGFFE........",
+      "..EFEGGHGGGHGGGGFGFE........",
+      "..EEEFGGFGGGFGGFGFFE........",
+      "....EGEFFEEEEFFEGFE.........",
+      "....EGEFFE..EFFEGFE.........",
+      "....EGEFFE..EFFEGFE.........",
+      "....EnEmlE..EmlEnmE.........",
+      "....EnEmlE..EmlEnmE.........",
+      "....EnEmlE..EmlEnmE.........",
+      "....EnEmlE..EmlEnmE.........",
+      "....EnEEEE..EEEEnmE.........",
+      "....EEE.........EEE........."
+     ]
+    }
+   ],
+   "anteckning": "Hästen står på alla fyra benen med huvudet åt höger, snett ovanifrån som djuren på kartan. Ryggen syns som ett ljust band med en mörk ål under. Den höjda halsen bär en kort, upprätt man med ljus mitt och kanter i jord0. Svansen sitter kort och yvig vid länden. De bortre benen syns mellan de närmare, är mörkare och slutar en punkt högre. Underbenen och hovarna är mörka. Konturen är jord0, och bara ögat är kol0. Bilden är 28 × 24 punkter. Granskningen: Storleken (28 × 24) stämmer mot kolonisten (14 × 20). Vinkeln, ryggbandet, ålen, den korta yviga svansen, manen i två toner och huvudet åt höger följer idén och syns väl på gräset. Kol0 finns bara i ögat. Jag rättade benen. Idén vill ha mörka underben, men de närmre benen var ljusa (jord1) ända ner. Nu har de närmre underbenen kol3 med kol2 på skuggsidan, så att de blir mörka men ljusare än de bortre. De bortre underbenen fick kol2 med kol1 på högersidan, så att de är mörkast och ljuset går från vänster till höger. De bortre benen slutar fortfarande en punkt högre. Allt annat är oförändrat.",
+   "ide": "Liten, satt nordisk häst, omkring 28 × 24 punkter, stående på alla fyra benen med huvudet åt höger. Den ses snett uppifrån som djuren på kartan, så ryggen syns som ett smalt ljust band och de bortre benen står en punkt högre och mörkare. Pälsen är gulbrun i jord3 och jord2 med en mörk ål längs ryggen och mörka underben. Halsen är tjock men lång och höjd, manen kort och upprättstående i två toner (ljus i mitten och jord0 på kanterna), och svansen är kort och yvig. Konturen är jord0."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_hast",
+     "rader": [
+      ".......................r.r......",
+      "......................rtrsr.....",
+      ".....................lmttssr....",
+      "....................lmmtktqsr...",
+      "...................lmlststqtsr..",
+      "..................lmtstssttqsr..",
+      ".................lmutssrrsttqsr.",
+      "................lmtstssr.rssqsr.",
+      "...............lmtstssr...rrrr..",
+      "..............lmltstssr.........",
+      "......rrrrrrrlmltststsr.........",
+      "...lrtuttsttsmttststssr.........",
+      "..lmrtsttststtststsstssr........",
+      ".lmlrststsstststsststssr........",
+      ".lmlrsstssstsstssststssr........",
+      ".lmlrstsstssstsstsstssr.........",
+      ".lmlrsstssrrrrrrrrtsssr.........",
+      ".lmlrtssr.rsr..rsr.rtsr.........",
+      ".lmm.rtsr.rsr..rsr.rtsr.........",
+      ".lml.rttr.rsr..rsr.rtsr.........",
+      ".lml.rtsr.rsr..rsr.rttr.........",
+      ".lml..rtr.rsr..rsr..rtr.........",
+      "..lm..rtr.rsr..rsr..rtr.........",
+      "..l...rtr.rsr..rsr..rtr.........",
+      "......rtr.rsr..rsr..rtr.........",
+      "......rsr.rsr..rsr..rtr.........",
+      "......rtr.lml..lml..rsr.........",
+      "......rtr.lll..lll..rtr.........",
+      "......lml...........lml.........",
+      "......lll...........lll........."
+     ]
+    }
+   ],
+   "anteckning": "Hästen står på alla fyra benen som på kartan, vänd åt höger, 32 × 30 punkter. Huvudet är högt med nosen lätt framåt, och den långa halsen går snett ner till manken. Manen hänger över halsens överkant i kol1 och kol2. Ryggen och länden är det ljusa bandet överst eftersom ljuset kommer uppifrån vänster; sidan och buken är mörkare, i rost1. Glansen är två punkter rost3, en på länden och en på halsen. Den vita bläsen i ben2 löper längs ansiktets framkant ner mot mulen, och ögat är en punkt kol0. De bortre benen står förskjutna uppåt, i skugga och lite kortare, mellan de närmre benen. Hovarna är i kol1 och kol2. Svansen hänger rakt ner bakom länden. Konturen är rost0. Selen och släden ritas inte; hästen är djuret för sig. Granskningen: Granskad, inget behövde rättas. Storleken stämmer: hästen är omkring 30 × 30 punkter, ryggen ligger kring 19 punkter över marken och huvudet når 30, så den är högre än kolonisten (20) men inte större än en häst ska vara. Den står på alla fyra ben. De bortre benen slutar två rader högre än de främre, och ryggen är ett band, så den ses snett uppifrån som djuren på kartan. Pälsen är rost1 och rost2 med kontur i rost0 och har bara två glanspunkter i rost3, en på halsen och en på länden. Manen och svansen är kol1 och kol2, bläsen går i ben2 nedför ansiktet och bara ögat är kol0. Den rostbruna hästen syns tydligt mot det olivgröna gräset och följer idén.",
+   "ide": "Hög och smal häst, omkring 30 × 30 punkter, stående på fyra långa, tunna ben med huvudet högt och nosen lätt framåt. Den ses snett uppifrån med ryggen som ett band och de bortre benen förskjutna uppåt. Pälsen är rostbrun i rost1 och rost2, och glansen på länden och halsen är en eller två punkter rost3. Den långa manen och den långa svansen hänger ner i kol1 och kol2, och en smal vit bläs går nedför ansiktet i ben2. Konturen är rost0."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_hast",
+     "rader": [
+      ".......Q.Q..........................",
+      "......QSQQmmQQ......................",
+      ".....QTTSmmmmmQQ....................",
+      "....QTTSSmTmmmmQQQ..................",
+      "...QTSkSRTTSmmmmTTQQQQQQQQQQQQQ.....",
+      "..QTSTSSRSTTSmmmSTTTSTTTSTTSTTSQ....",
+      "..QTSRSSQRSTSSmmSSTSTSSTSTSSTSSSQmQ.",
+      ".QTSSRSQQSSTSSSSSSSRSSSSRSSSRSSRQmmQ",
+      ".QTSRSSQQSTSSRSSRSSSRSSRSSRSSSRRQmQ.",
+      ".QTSSRQQSTSSSRSSSRSSSRSSSRSSRSRRQmm.",
+      "QTSSRSQQSSTSSSRSSSSRSSRSSSSRSRRRQmQ.",
+      "QSSRSQ.QSTSSRSSSRSSSRSSSRSRSRRSRQQ..",
+      "QSRRQ..QTSSRSSRSSRSSRSRSSRSRRSRRQ...",
+      ".QQQ....QSSRSRSSRSRSSRSRRSRSRRRRQ...",
+      ".........QSSRSRSRSRSRRSRRSRRSRRRQ...",
+      ".........QSSRSRRQQQQQQQQRRSRSRRQ....",
+      ".........QTSRQQRQ......QRRQSSRQ.....",
+      ".........QTSRQQRQ......QRRQTSRQ.....",
+      ".........QSTRQQRQ......QRRQSTRQ.....",
+      ".........QTSRQQRQ......QRRQSSRQ.....",
+      ".........oqwqoopo......oppoqwqo.....",
+      "........oqqqppoppo....opooqqqppo....",
+      "........oqpqppooo.....ooooqpqppo....",
+      "........opqppoo..........opqppoo....",
+      ".........ooooo............ooooo....."
+     ]
+    }
+   ],
+   "anteckning": "Hästen står på kartan från sidan på alla fyra ben, vänd åt vänster, med huvudet sänkt framåt på den böjda halsen. Den ses lite snett uppifrån: ryggen är ett brett ljust band i skiffer3, och sidan mörknar ner mot buken och bakdelen. Benen på den bortre sidan är mörkare och slutar en rad högre än de närmre. Hovskäggen i ben2 och ben1, med kontur i ben0, täcker hovarna helt, så inga hovar syns. Manen ligger platt längs halskammen på den synliga sidan, och svansen är en kort knut i kol2 vid korset. Bara ögat är kol0. Ingen sele eller släde ritas, eftersom spelet sätter ihop hästen och släden för sig. Bilden är 36 × 25 punkter. Granskningen: Granskad, inget behövde rättas. Storleken är rimlig: 36 × 25 punkter, med manken omkring 20 punkter över hovarna, ungefär lika hög som kolonisten (14 × 20), vilket passar en tung arbetshäst. Kroppen ses snett uppifrån med ryggen som en ljus yta i skiffer3. Ljuset faller från vänster (skiffer3 och skiffer2) mot höger och nedåt (skiffer1). Konturen är skiffer0 och runt hovskäggen ben0. Den grå kroppen syns tydligt mot det olivgröna gräset. Bilden följer idén: djup bringa, kraftig bakdel, halsen i båge med sänkt huvud, korta tjocka ben med yviga hovskägg i ben2 och glans högst en punkt i ben3, äppelfläckar i skiffer1, platt man och knuten svans i kol2. Kol0 används bara i ögat, som är svart. Hästen bär ingenting, så det finns ingen rem att kontrollera.",
+   "ide": "Tung grå arbetshäst, omkring 34 × 26 punkter, bred och låg, med djup bringa, kraftig bakdel och halsen böjd i en båge med huvudet sänkt framåt. Den står på fyra korta, tjocka ben med yviga hovskägg i ben2 som täcker hovarna, och ryggen syns som en bred ljus yta snett uppifrån. Pälsen är skiffergrå i skiffer2 och skiffer3 med mörkare äppelfläckar i skiffer1, manen ligger platt åt ena sidan och svansen är knuten i en kort knut, båda i skiffer0 och kol2. Konturen är skiffer0."
+  }
+ ]
+}

@@ -1,0 +1,153 @@
+{
+ "kort": "f10_bikupa",
+ "namn": "Bikupan",
+ "slag": null,
+ "vad": "Steg 10.10.16–10.10.17: halmkupan flätas av hö på två grenar och står i byns utkant. Till vänster tom, till höger med bin vid flustret (i spelet rör de sig). En ruta stor, snett ovanifrån",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "bikupa_tom",
+     "rader": [
+      "................",
+      "................",
+      "......IIII......",
+      "....IKLLKKJI....",
+      "...IKLLLKKKJI...",
+      "...IJJKJJJJII...",
+      "..IKLLKLKKKJJI..",
+      "..IJJJJJJJJIII..",
+      "..IKLKLKKKJKJI..",
+      "..IJJJJJJJJJII..",
+      "..IKLKKLKKJKJI..",
+      "..IJKJJllJJJJI..",
+      "..IIIIlkklIIII..",
+      "..EHGE....EGFE..",
+      "...EE......EE...",
+      "................"
+     ]
+    },
+    {
+     "namn": "bikupa_med_bin",
+     "rader": [
+      "................",
+      "................",
+      "......IIII......",
+      "....IKLLKKJI....",
+      "...IKLLLKKKJI...",
+      "...IJJKJJJJII...",
+      "..IKLLKLKKKJJI..",
+      "..IJJJJJJJJIII..",
+      "..IKLKLKKKJKJI..",
+      "..IJJJJJJJJJII..",
+      "..IKLKKLKKJKJI..",
+      "..IJKJJllJkKJI..",
+      "..IIIIlkklIIII..",
+      "..EHGE.Kk.EGFE..",
+      "...EE......EE...",
+      "....Kk.........."
+     ]
+    }
+   ],
+   "anteckning": "Halmkupan står på marken i byns utkant och vilar på två grova grenar som ligger parallellt framåt–bakåt under den. Grenarna bär kupan, så av dem syns bara de främre ändarna, med ändträet utåt, som stumpar under kupans nederkant. Kupan är klockformad och spegelsymmetrisk, 12 punkter bred och 11 hög. Den ses snett ovanifrån: den rundade toppen syns som en ljus kupol och halmvarven som band, ljusast till vänster där ljuset faller. Mellan varven går skåror i senap1 och senap0, och konturen är senap0. Flustret är ett halvrunt hål nere mitt på framsidan, så att bina flyger ut mot betraktaren. Hålet är kol1 och innerst kol0, eftersom det är verkligt mörkt. I den högra versionen surrar fyra bin som små prickar i senap2 och kol0 runt flustret. Spelet rör dem, så de ritas fritt i luften och inte på halmen. Granskningen: Formen är spegelsymmetrisk och 12 × 13 punkter, alltså lagom mot kolonisten (14 × 20). Kupan ses snett uppifrån med ljus kupol uppe till vänster och mörkare varv åt höger. Konturen är senap0, och grenstumparna i jord1–jord2 har jord0 som kontur. Tomma versionen lämnades oförändrad. I versionen med bin rättade jag bara bina. De två som satt längst ut vid högerkanten (rad 11 och rad 14) låg långt från flustret, och prickarna i högerkanten bröt mot regeln om ensamma prickar. Nu sitter tre bin samlade runt flustret: ett på halmen till höger om hålet, ett mellan grenstumparna strax under hålet och ett snett nedanför. Varje bi är två punkter (senap2 och kol0), och bina rör inte varandra, inte ens snett.",
+   "ide": "Klassisk klockformad halmkupa, cirka 12 punkter bred och 11 hög, spegelsymmetrisk, sedd snett ovanifrån så att den rundade toppen syns som en ljus kupol och de vågräta halmvarven som bågar av senap1–senap3 med senap0 som kontur och mörkare skåror mellan varven. Den vilar på två grova grenar i jord1–jord2 som ligger parallellt på marken, och bara grenarnas främre ändar sticker fram som korta stumpar under kupans nederkant. Flustret är ett litet halvrunt hål nere i mitten av framsidan i kol1/kol0; i högra versionen sitter tre–fyra bin som en–två punkter stora prickar i senap2 och kol0 runt hålet."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_bikupa_tom",
+     "rader": [
+      "......IKI.......",
+      "......IJI.......",
+      ".....ILKJI......",
+      "....ILKKJJI.....",
+      "...IKJKJJJII....",
+      "...ILLKKKJJI....",
+      "...IKJJKJJII....",
+      "...ILKLKKJJI....",
+      "...IJKJJJJJI....",
+      "...IKKKKJJJI....",
+      "...IJKJJJJII....",
+      "....IJEEEII.....",
+      "...HGF...GFE....",
+      ".....GGFFE......",
+      "...HGE...GFE....",
+      ".HGE.......GFE.."
+     ]
+    },
+    {
+     "namn": "f10_bikupa_bin",
+     "rader": [
+      "......IKI.......",
+      "......IJI.......",
+      ".....ILKJI......",
+      "....ILKKJJI.....",
+      "...IKJKJJJII....",
+      "...ILLKKKJJI....",
+      "...IKJJKJJII....",
+      "...ILKLKKJJI....",
+      "...IJKJJJJJI....",
+      "...IKKKKJJJI....",
+      "...IJKJJJJII....",
+      "....IJELkII.....",
+      "...HGF.LkGFE....",
+      ".....LkFLk......",
+      "...HGE...GFE....",
+      ".HGE.......GFE.."
+     ]
+    }
+   ],
+   "anteckning": "Halmkupan står på två grenar som korsar varandra i ett lågt X, så att den inte rör den fuktiga marken. Kupan är 9 punkter bred och 13 hög, med en knuten tofs i toppen. Den är flätad i täta varv: ljusa band i senap (ljusast uppe till vänster) växlar med mörkare fogar, och konturen är senap0. Snett ovanifrån döljer kupan grenarnas mitt. Bakre grenändar sticker bara fram vid sidorna, och de främre benen syns som två korta snedben ut till vänster och höger nedanför. Flustret är en smal springa i jord0 mitt i kupans fot. I den högra versionen sitter bina på grenkrysset precis framför springan och i flustret, och ett flyger vid sidan. Bina är senap3 med en kolrand, eftersom det är dem man ska se. Ingen skugga är ritad. Granskningen: Rättat: 1) Kupan var nästan rak och kantig från rad 4 till 11. Nu har den äggform: rundad topp, bredast i mitten och smalare fot runt flustret. 2) Halmen hade bara slumpat korn. Nu ligger den i täta vågräta varv, där ljusa rader i senap2–3 växlar med mörkare fograder i senap1. Den ljusaste tonen sitter uppe till vänster och den mörkaste nere till höger. Den ensamma mörka pricken i rad 8 är borttagen. 3) Grenkrysset var osymmetriskt: krysspunkten låg en punkt för långt åt höger, och benen hade olika bredd på sidorna. Nu är det ett lågt X som är spegelsymmetriskt kring kupans mitt. Kupan vilar i krysset ovanför marken, och de ljusa ändarna ligger till vänster och de mörka till höger. 4) Bina satt utspridda i luften. Nu sitter de samlade i flustret och på grenkrysset precis framför springan, som idén säger. Storleken är kvar, 9 punkter bred, och den syns tydligt mot kolonisten och gräset. Tofsen och flustret är oförändrade.",
+   "ide": "Hög, smal kupa som en äggform eller trubbig kon, cirka 9 punkter bred och 13 hög, med en liten knuten halmtofs i toppen, och den står upphöjd på två grenar som korsar varandra i ett lågt X under den så att kupan inte rör den fuktiga marken. Halmen är flätad i täta, smala varv där tonen byts punkt för punkt i senap, ljusast uppe till vänster och mörkast nere till höger, och grenkrysset i jord1–jord2 syns som två korta snedben fram till vänster och höger. Flustret sitter som en smal mörk springa nertill vid kupans fot; i högra versionen sitter bina samlade på grenen precis framför springan."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "bikupa_tom",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "................",
+      "....IKLEEKJI....",
+      "...IKLKGFLKJI...",
+      "..IKLLKGFKLKJI..",
+      ".IKLKLKGFKLKJJI.",
+      ".EGGGGGGGFFFFFE.",
+      ".IKLKJKGFKJKJJI.",
+      ".IJKJKJGFJKJJII.",
+      "SIJJIGkkkkFIJIIR",
+      "RSIIIFEEEEFIIIRQ",
+      "QSTSSSRSSRSSRRRQ",
+      ".QRRRRRRRRRRRRQ.",
+      "..QQQQQQQQQQQQ.."
+     ]
+    },
+    {
+     "namn": "bikupa_med_bin",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "................",
+      "....IKLEEKJI....",
+      "...IKLKGFLKJI...",
+      "..IKLLKGFKLKJI..",
+      ".IKLKLKGFKLKJJI.",
+      ".EGGGGGGGFFFFFE.",
+      ".IKLKJKGFKJKJJI.",
+      ".IJKJKJGFJKJJII.",
+      "SIJJIGkkkkFIJIIR",
+      "RSIIIFEEEEFIIIRQ",
+      "QSTKkSRSKkSSRRRQ",
+      ".QRRRRRRRLkRRRQ.",
+      "..QQQQQQQQQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Halmkupan står direkt på en platt sten. Snett ovanifrån ser man mest den runda toppen, en låg bulle av hövarv i senap0–senap3 med senap0 som kontur. Två böjda grenar (jord0–jord2) korsar varandra över toppen och delar den i fyra fält; deras ljusa sida ligger åt vänster och upp, mot ljuset. Framsidan syns bara som ett smalt band av mörkare varv. Där möts den lodräta grenen nertill vid flustret, ett brett och lågt hål som är helt svart (kol0). Stenen syns som en smal skifferkant runt foten med en mörkare framkant. Några lösa strån sticker ut och gör randen lurvig. I högra versionen kryper tre bin (senap3 med kol0) på stenkanten framför hålet. Kupan är i övrigt oförändrad, och binas rörelse sköter spelet. Granskningen: Rättat: Översta raden var osymmetrisk och trasig (ett ensamt K och ett hål). Den är nu en jämn, spegelsymmetrisk topp med ljuset till vänster. Den vågräta grenen stack ut utanför kupan till bildens kanter och slutade i en ljus senap3-punkt till vänster. Nu går den bara över kupans bredd, med jord0 som kontur i båda ändar. Stenens nedre band hade mörka skiffer0-fläckar mitt i ytan. Nu är framkanten jämn skiffer1 med en riktig skiffer0-kontur under, så stenen läses som en platt häll. Kupans form, revbenskorset, flustret och bina på stenkanten framför hålet är oförändrade, liksom storleken (14 punkter bred och 9 hög, låg mot kolonisten). Båda versionerna är lika utom bina.",
+   "ide": "Låg och bred kupa, cirka 14 punkter bred och bara 9 hög, där två böjda grenar i jord0–jord2 går som mörka revben i ett kors över toppen och håller ihop de tjocka hövarven, så att kupan uppifrån ser ut som en rund bulle delad i fyra fält. Kupan står direkt på en platt flat sten i skiffer1–skiffer2 som syns som en smal kant runt foten, och den lösa höstrån som sticker ut i ytterkanten ger silhuetten en lite lurvig rand. Flustret är ett brett lågt hål mitt fram där grenarna möts nertill; i högra versionen kryper några bin på stenkanten framför hålet."
+  }
+ ]
+}

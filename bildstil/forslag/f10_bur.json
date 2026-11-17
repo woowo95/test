@@ -1,0 +1,90 @@
+{
+ "kort": "f10_bur",
+ "namn": "Buren",
+ "slag": null,
+ "vad": "Steg 10.10.13: buren är en fälla från fångstbänken (4 grenar och 2 rep) som sätts ut i skogen och ibland fångar en kulting. En ruta stor",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f10_bur",
+     "rader": [
+      ".....GE..EF.....",
+      "......GFFE......",
+      ".....oqqppo.....",
+      ".....opqpoo.....",
+      ".....HGEGFE.....",
+      "....HEF..FGE....",
+      "....GEF..FFE....",
+      "...HE.FooF.GE...",
+      "...GEp....oFE...",
+      "..qqpqppqpppoo..",
+      "..HE.F....F.GE..",
+      "..GE.E....E.FE..",
+      ".GE..........FE.",
+      ".HE..........GE.",
+      "GE............FE",
+      "E..............E"
+     ]
+    }
+   ],
+   "anteckning": "Buren står på marken som en låg fyrsidig pyramid av fyra grenar. De främre fötterna står längst ner i bilden och de bakre högre upp och närmare mitten, så att fyrkanten på marken syns snett uppifrån och marken syns genom gallret. Grenarna korsas i toppen, där spetsarna sticker upp som ett kryss över surrningen av det första repet. Det andra repet går som ett band runt grenarna halvvägs upp: den främre delen ligger lägre och över de främre grenarna, den bakre syns högre upp mellan de bakre grenarna. Formen är spegelsymmetrisk. Grenarna till vänster är ljusare (jord2–jord3) och de till höger mörkare (jord1), alla med jord0 i skuggkanten. Repet är ljusast till vänster (ben2) och mörknar åt höger mot ben0. Ingen kulting och ingen skugga är ritad. Granskningen: Granskad mot reglerna; inget behövde rättas. Storlek: buren fyller en ruta (16 × 16), lägre än kolonisten (14 × 20). Den är något bredare än idéns 14 punkter men ryms i rutan. Vinkel: den är ritad snett uppifrån. De bakre fötterna står högre (rad 11) och längre in än de främre (rad 15), så att den fyrsidiga pyramiden får djup och inte blir en platt sidovy. Marken syns genom de genomskinliga punkterna mellan grenarna. Bandet halvvägs upp läses som en ring: framsidan går lägre (rad 9) och baksidan högre mellan de bakre grenarna (rad 7–8). Symmetri: silhuetten är spegelsymmetrisk punkt för punkt. Bara ljuset skiljer sidorna åt, med jord3/ben2 till vänster och jord0/ben0 till höger. Material: grenarna är i jord1–jord3 med jord0 som mörkaste kontur, repen i ben0–ben2. Inget kol0 eller annan färg utanför paletten förekommer. Synlighet: den ljusa repsurrningen i toppen och det ljusa bandet syns tydligt mot det olivgröna gräset. Grenarnas toppar sticker upp ovanför surrningen som korsade grenar. Den bärs inte och är ingen station, så reglerna om rem och arbetsyta gäller inte.",
+   "ide": "Fyrsidig pyramid: fyra grobba grenar står med fötterna i en fyrkant på marken och lutar in mot varandra, där de korsas i toppen och surras ihop med ett rep. Det andra repet går runt grenarna halvvägs upp som ett band, så att formen blir en låg spetsig bur ungefär 14 punkter bred och 14 hög. Från spelets vinkel syns marken mellan grenarna, den bakre foten högre upp än den främre, och formen är spegelsymmetrisk med grenar i jord1–jord3 med jord0-kontur och rep i ben1–ben2, ljust uppe till vänster."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_bur",
+     "rader": [
+      "..EGE......EGE..",
+      ".EEEEEEEEEEEEEE.",
+      "EHGqHGHHGHGHqGGE",
+      "EGFpGFGGFGFGpFFE",
+      "EEEEqEEEEEEqEEEE",
+      "..EHEq....qEGE..",
+      "..EGE.q..q.EFE..",
+      "..EHE..qp..EGE..",
+      "..EHE.q..p.EGE..",
+      "..EGEq....pEFE..",
+      ".EEEqEEEEEEpEEE.",
+      "EHGqHGHHGHGHpGGE",
+      "EGFpGFGGFGFGoFFE",
+      "EFFoFEFFEFFEoFEE",
+      ".EEEEEEEEEEEEEE.",
+      "..EGE......EFE.."
+     ]
+    }
+   ],
+   "anteckning": "Buren ligger platt på marken och ses snett uppifrån. Fyra grenar bildar en kvadrat. Den bakre och den främre grenen ligger överst och korsar sidogrenarna som i en timmerknut, så att alla ändar sticker ut en eller två punkter. Grenarna har jord0 som kontur och jord1–jord3 med korn; den ljusa sidan är uppe till vänster. De två repen är spända i ett kryss över öppningen, där marken syns igenom. Repen är lindade runt grenarna vid hörnen och är det ljusaste i bilden (ben). Den främre grenens framsida syns som ett mörkare band på två punkter. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Bilden är en ruta stor. Granskningen: Granskad, inget behövde rättas. Buren är en ruta stor (16 × 16) och står i rimlig storlek mot kolonisten (14 × 20). Den ses snett uppifrån: den bortre grenen är ett smalt band och den främre ett bredare, mörkare band (jord1/jord0) längst ner. Sidogrenarna går under tvärgrenarna som i en timmerknut, och alla ändar sticker ut en till två punkter. Repen bildar ett symmetriskt kryss över öppningen med två punkter i mitten, och de är knutna över hörnen. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt (ben2 till vänster, ben1/ben0 till höger). Konturen är jord0, inget kol används, och repens ben-toner är det ljusaste i bilden. Den bruna ramen med mörk kontur syns tydligt mot det olivgröna gräset.",
+   "ide": "Låg fyrkantig ram ovanifrån: fyra grenar ligger i en kvadrat på marken och korsar varandra vid hörnen som en timmerknut, så att ändarna sticker ut en punkt eller två. De två repen är spända i ett kryss över öppningen som ett glest galler, fastknutna i hörnen, och ramen ses snett uppifrån med den främre grenen som ett mörkare band på 2–3 punkter. Bilden fyller nästan hela rutan, är låg och platt och symmetrisk, med repens ben-toner som det ljusaste."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_bur",
+     "rader": [
+      "EE............EE",
+      "EHEE........EEGE",
+      "EFHGEE....EEGHFE",
+      "EEFFGHEEEEGGFFEE",
+      "..EEFFqpqoFFEE..",
+      "....EEpqpoEE....",
+      "..EEHGopooGGEE..",
+      "EEHGFFEEEEFFHGEE",
+      "EGFFEEEGFEEEFFGE",
+      "EFEE..EHFE..EEFE",
+      "EE...EGFE.....EE",
+      ".....EGFEqp.....",
+      "....EGFE...qpo..",
+      ".EEEEEEEEEEEEEE.",
+      "EHGGHGGFGGFGGFFE",
+      ".EEEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Buren står gillrad på marken, sedd snett ovanifrån. Locket är två grenar korsade i ett X och surrade i korset med det ena repet (ljus knut i ben). Bakkanten vilar mot marken uppe i bilden. Framkanten lyfts av den tredje grenen, en kort stödpinne som står snett under korset ner mot marken. Därför öppnar sig luckan mot betraktaren och silhuetten blir med flit sned och osymmetrisk. Den fjärde grenen ligger tvärs på marken framför som tröskel. Det andra repet är utlösaren: ett tunt ljust streck från stödpinnens fot ut till en liten pinne i marken till höger. Allt trä har jord0-kontur, jord2–jord3 i ljuset uppe till vänster och jord1 i skuggsidan. Repen är i ben med ben0 som kontur. Ingen skugga och ingen kulting är ritad: bilden visar den tomma, gillrade fällan, en ruta stor. Granskningen: Granskad mot reglerna, inget behövde rättas, så versionen lämnas oförändrad. Storlek: buren ryms i en ruta (16 × 16) och står lägre än kolonisten (14 × 20), som den ska. Vinkel: locket syns snett uppifrån som en lutande yta. Bakkanten med de övre grenändarna vilar mot marken, framkanten är upplyft och stöttas av den sneda pinnen. Tröskeln längst ner är en stock ovanifrån med ett smalt mörkt band runt. Idén följs: två korsade grenar är surrade med rep i ben i krysset, den tredje grenen står snett under locket, den fjärde ligger som tröskel framför, och det andra repet går som ett tunt ljust streck från pinnens fot ner mot marken. Asymmetrin är avsiktlig eftersom fällan är gillrad, och alla rader är 16 tecken. Färger: bara paletten, med jord0 som kontur kring träet, ingen kol0, och repet når högst ben2, alltså ingen ren vit. Ljuset faller från vänster upptill: grenarna är ljusare på vänster och övre sida och stocken ljusnar åt vänster. Kornet växlar mellan F, G och H utan mörka fläckar. Brunt trä med mörk kontur och ljust rep skiljer sig tydligt från det olivgröna gräset. Fällan bärs inte, så inget går genom ett huvud.",
+   "ide": "Fallbur på pinne: två grenar korsade och surrade med det ena repet bildar ett lock som vilar med bakkanten mot marken och är uppstöttat i framkanten av en tredje, kort gren som står snett, medan den fjärde grenen ligger på marken som tröskel framför. Det andra repet löper från stödpinnen ner till marken som en utlösare, ett tunt ljust streck. Silhuetten är en sned, kilformad lucka som öppnar sig mot betraktaren, asymmetrisk med flit eftersom den är gillrad, i jord-toner med jord0-kontur och rep i ben."
+  }
+ ]
+}
