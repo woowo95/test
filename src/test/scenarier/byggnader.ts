@@ -7,7 +7,9 @@ import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
-import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanStartKlader } from './hjalp';
+import { hus as husFlik } from '../../ui/flikar/hus';
+import { setByn, ui } from '../../ui/lage';
+import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -1043,7 +1045,11 @@ SCENARIER.rumstyper = {
     SIM.setRumFn(s, r(), 'samling');
     const fnRum = SIM.rumFnId(s, r()) === 'samling' && SIM.fnId(h) === 'sovsal' && SIM.sovplatser(s, r()) === 0 && SIM.samlingRum(s)?.id === r().id;
     const namn = SIM.rumNamn(s, r());
+    // husets ruta (steg 11.1.57): etiketterna Används till och Rummen, och värmen skrivs håller värmen N %
+    utanWebblasare(); setByn(s); ui.husId = h.id; const hr = husFlik.html!();
+    const husRuta = /class="etik">Används till</.test(hr) && /class="etik">Rummen</.test(hr) && /[Hh]åller värmen \d+ %/.test(hr) && !/mindre värme/.test(hr);
     return [
+      ['husets ruta: etiketterna Används till och Rummen, och värmen skrivs håller värmen N % (steg 11.1.57)', husRuta],
       ['ett hus från en gammal sparfil är ett rum med husets funktion', gammal],
       [`rummet är en sovsal med en sovplats per tre rutor (${SIM.sovplatser(s, rum)} på ${rum.tiles.length} rutor, steg 9.2.36)`, sov],
       ['ett bord inne gör rummet till en matsal', matsal],

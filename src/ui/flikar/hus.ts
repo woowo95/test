@@ -28,7 +28,7 @@ export const hus: Flik = {
     const status = klar < bits.length ? `Byggs: ${klar} av ${bits.length} delar klara.` : bra ? `${cap(bra)}.` : '';
     // dörren i öppningen (DORRAR i byggnad.ts, steg 2.2.16): symbolen, och förklaringen när musen är över
     const dorrar = bits.filter(b => b.k === 'oppning').map(b => {
-      const d = dorrDef(b.dorr), om = d ? `${d.namn}: släpper ut ${Math.round(d.tat * 100)} % mindre värme än en öppen dörröppning` : 'Öppen dörröppning: värmen går ut här';
+      const d = dorrDef(b.dorr), om = d ? `${d.namn}: håller värmen ${Math.round(d.tat * 100)} %` : 'Öppen dörröppning: värmen går ut här'; // värmen skrivs på ett sätt (steg 11.1.57)
       return d ? `<span title="${esc(om)}" aria-label="${esc(om)}">${iconImg(d.ikon)} ${esc(d.namn)}</span>` : `<span class="muted" title="${esc(om)}" aria-label="${esc(om)}">Öppen dörröppning</span>`;
     }).join(', ');
     // vad huset används till efter det som står i det (RUMSFUNKTIONER i byggnader.ts, steg 2.2.17)
@@ -52,7 +52,7 @@ export const hus: Flik = {
       return `<p>${esc(`${HUR[hur]}: ${txt}`)}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</p>`;
     }).join('');
     return `
-    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${anv ? `<p>${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p>${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p>${dorrar}</p>` : ''}</div>${hjalpKnapp('hus-om', 'Vad gör huset?')}</div>${hjalpText('hus-om', `<p class="muted small">Huset håller värmen och skyddar mot väder och kyla. Rummen används till det byn behöver, och den som äger huset bor där med familjen.</p>`)}
+    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${anv ? `<p><span class="etik">Används till</span> ${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p><span class="etik">Rummen</span> ${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p><span class="etik">${dorrar.includes(', ') ? 'Dörrarna' : 'Dörren'}</span> ${dorrar}</p>` : ''}</div>${hjalpKnapp('hus-om', 'Vad gör huset?')}</div>${hjalpText('hus-om', `<p class="muted small">Huset håller värmen och skyddar mot väder och kyla. Rummen används till det byn behöver, och den som äger huset bor där med familjen.</p>`)}
     <h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
   },
 };

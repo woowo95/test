@@ -234,7 +234,7 @@ export const sak: Flik = {
     const v1 = t ? tingVarde(t) : grundvarde(a.k) * c, varde = `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${kortTal(v1)}${!t && p && p.n >= 2 ? `, ${kortTal(v1 * Math.round(p.n))} alla` : ''}</dd>`;
     // vad plagget skyddar mot, i tal (steg 9.2.14): kylan, och i striden hur stor del av skadan det tar per slag, på delarna det täcker
     const strid = SKYDD[a.k], PAR: Record<string, string> = { arm: 'armarna', ben: 'benen', fot: 'fötterna', hand: 'händerna' }, SLAGORD: Record<string, string> = { hugg: 'hugg', stick: 'stick', slag: 'slag', bett: 'bett' };
-    const klad = (SAKER[a.k]?.klad?.varme ? `<dt>Kylan</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '')
+    const klad = (SAKER[a.k]?.klad?.varme ? `<dt>Kylan</dt><dd>Värmer ${Math.round(kladSkydd(a.k, t) * 100)} %</dd>` : '')
       + (strid ? `<dt>Slag och stick</dt><dd>Tar ${Object.entries(strid.tar).map(([k, v]) => `${Math.round(v! * 100)} % av ${SLAGORD[k] ?? k}`).join(', ')}, på ${[...new Set(strid.delar.map(d => PAR[d.replace(/[VH]$/, '')] ?? KROPPSDELAR[d].i))].join(' och ')}</dd>` : '');
     const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvOrd(t) || 'Normal'}${kvOf(t) === NORMAL ? '' : ` <span class="muted">${esc(kvText(t).replace(/^[^:]*: /, ''))}</span>`}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)

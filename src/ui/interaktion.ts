@@ -251,7 +251,7 @@ function showHover(gx: number, gy: number) {
     const M = MATERIAL[bit.m], hus = husById(s, bit.hus);
     const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${sakNamn(M.item!).toLowerCase()}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
     const d = dorrDef(bit.dorr); // en dörr i öppningen (byggnad.ts)
-    rows.push(`${iconImg(d?.ikon ?? M.ikon ?? '', 12)} <b>${esc(d?.namn ?? M.namn)}</b>${hus ? ` i ${esc(husVisas(s, hus).toLowerCase())}` : ''}${st ? ' · ' + st : ''}${d ? ` · släpper ut ${Math.round(d.tat * 100)} % mindre värme än en öppning` : ''}`);
+    rows.push(`${iconImg(d?.ikon ?? M.ikon ?? '', 12)} <b>${esc(d?.namn ?? M.namn)}</b>${hus ? ` i ${esc(husVisas(s, hus).toLowerCase())}` : ''}${st ? ' · ' + st : ''}${d ? ` · håller värmen ${Math.round(d.tat * 100)} %` : ''}`);
   }
   const rum = roomAt(s, x, y);
   if (rum) {
