@@ -24,6 +24,7 @@ import { aktivBy, byarHtml, byte, bytTill, laggTillTestby, taBort, testbyIAdress
 import './ui/interaktion';
 import './ui/ram';
 import './ui/symboler'; // emojierna blir pixelsymboler (steg 5.3.2.1)
+import './ui/varldskarta'; // världskartan (steg 11.2.16)
 import './ui/ark'; // panelerna som ark nerifrån på en liten skärm (steg 5.3.7)
 import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
