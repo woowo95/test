@@ -13,6 +13,7 @@ export * from './sim/folk';
 export * from './sim/ute';
 export * from './sim/varldmark';
 export * from './sim/varlden';
+export * from './sim/varldslag';
 export * from './sim/landmarken';
 export * from './sim/radtal';
 export * from './sim/varldnamn';
