@@ -1,6 +1,8 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett (flera namn: de körs samtidigt, de korta i grupper)
+// --karta (det stora testet): kartan för npm run riktad byggs samtidigt, ur V8:s täckning (kartan.ts)
+// De röda scenarierna sparas (RODA i pool.ts), så att npm run riktad -- --roda kan köra om dem efter en rättning
 import './scenarier/storlek'; // först: scenariernas byar på 120 × 120
 import './utc';
 import './scenarier/grund';
@@ -23,8 +25,10 @@ import './scenarier/fas9';
 import './scenarier/fas10';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { gangLangsam, gangVakt } from '../sim/gang';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { Utfall, gransAv, korSkript, pool, prioAv } from './pool';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { RODA, Utfall, korSkript, pool, prioAv } from './pool';
+import { lasTackning, sparaKarta, tackningsMapp } from './kartan';
 import { ui } from '../ui/lage';
 
 const GRUPP = 6; // så många korta scenarier i varje process
@@ -32,17 +36,11 @@ const GRUPP = 6; // så många korta scenarier i varje process
 // längsta först, och de korta körs med lägre prioritet så att de långa får hela kärnor
 const TIDER = new URL('../../test/scenariotider.json', import.meta.url);
 const forraTid: Record<string, number> = existsSync(TIDER) ? JSON.parse(readFileSync(TIDER, 'utf8')) : {};
-// klocktiden för varje scenario förra gången (s), när alla kördes samtidigt: tidsgränsen räknas på den (steg 10.11.25), eftersom
-// processorns tid inte räknar det ett scenario kör i egna processer (strakprov kör byar i egna processer). En grupp får sin tid
-// delad lika på scenarierna i den
-const KLOCKOR = new URL('../../test/scenarioklocka.json', import.meta.url);
-const forraKlocka: Record<string, number> = existsSync(KLOCKOR) ? JSON.parse(readFileSync(KLOCKOR, 'utf8')) : {};
-const klocka: Record<string, number> = {};
 const b2n = (b: string) => b.slice(0, b.indexOf('\n'));
 
 // Utan namn körs alla scenarier samtidigt, vart och ett i en egen process. Med ett namn körs bara det, här.
 // Med --snabb körs bara de som inte är långa, och dessutom de som nämns efter: --snabb delning arv
-const arg = process.argv.slice(2), snabb = arg[0] === '--snabb', grupp = arg[0] === '--grupp';
+const karta = process.argv.includes('--karta'), arg = process.argv.slice(2).filter(a => a !== '--karta'), snabb = arg[0] === '--snabb', grupp = arg[0] === '--grupp';
 const val = !snabb && !grupp && arg.length === 1 ? arg[0] : undefined;
 // ett scenario här, i den här processen. Tiden är processorns tid för scenariot (ungefär tiden när det körs ensamt).
 // Väggklockan beror på hur mycket annat datorn gör samtidigt och kan vara flera gånger längre när alla körs på en gång
@@ -92,29 +90,31 @@ else {
   // utskriften kommer ändå i vanlig ordning
   const grupper = [...namn.filter(ensam).map(n => [n]), ...Array.from({ length: Math.ceil(korta.length / GRUPP) }, (_, i) => korta.slice(i * GRUPP, (i + 1) * GRUPP))]
     .sort((a, b) => tid(b) - tid(a));
-  const svar: Record<string, Utfall> = {};
+  const svar: Record<string, Utfall> = {}, tackning: Record<string, Set<string>> = {};
+  // med --karta får varje process en mapp för täckningen, och funktionerna räknas för alla scenarier i den
+  const tack = (g: string[]): Record<string, string> => karta ? { NODE_V8_COVERAGE: tackningsMapp(g[0]) } : {};
+  const lasT = (g: string[], env: Record<string, string>) => { if (env.NODE_V8_COVERAGE) { const f = lasTackning(env.NODE_V8_COVERAGE); for (const n of g) tackning[n] = f; } };
+  // ingen tidsgräns efter förra gångens tid: ett scenario som hängt sig stoppas av pulsen (pool.ts), ett långsamt aldrig
   await pool(grupper.map(g => async () => {
-    const kant = g.every(n => forraTid[n] !== undefined), prio = prioAv(kant ? tid(g) : undefined);
-    // tidsgränsen efter förra gångens klocktid (steg 10.11.25): ett scenario som hänger stoppas efter några minuter
-    const grans = gransAv(g.every(n => forraKlocka[n] !== undefined) ? g.reduce((a, n) => a + forraKlocka[n]!, 0) * 1000 : undefined);
-    const t0 = Date.now(), klar = () => { for (const n of g) klocka[n] = Math.round((Date.now() - t0) / 1000 / g.length); };
-    if (g.length === 1) { svar[g[0]] = await korSkript('scenario.ts', g, SCENARIER[g[0]]!.env, prio, grans); klar(); return; }
-    const u = await korSkript('scenario.ts', ['--grupp', ...g], {}, prio, grans), bitar = u.out.split(MARK).slice(1);
-    klar();
+    const kant = g.every(n => forraTid[n] !== undefined), prio = prioAv(kant ? tid(g) : undefined), env = tack(g);
+    if (g.length === 1) { svar[g[0]] = await korSkript('scenario.ts', g, { ...SCENARIER[g[0]]!.env, ...env }, prio); lasT(g, env); return; }
+    const u = await korSkript('scenario.ts', ['--grupp', ...g], env, prio), bitar = u.out.split(MARK).slice(1);
+    lasT(g, env);
     for (const b of bitar) { const i = b.indexOf('\n'), n = b.slice(0, i); svar[n] = { code: /^FEL/m.test(b) ? 1 : 0, out: b.slice(i + 1), err: '' }; }
     // kraschade gruppen räknas den som kraschade med felet, och de som inte hann köras körs var för sig. Felkoden ensam är
     // ingen krasch när ett scenario i gruppen skrev FEL (då sätts den av körningen) och inget fel skrevs ut
     const sist = bitar.length ? b2n(bitar[bitar.length - 1]) : undefined;
     const forklarad = !u.err.trim() && bitar.some(b => /^FEL/m.test(b));
     if (u.code && sist && !svar[sist]!.code && !forklarad) svar[sist] = { code: u.code, out: svar[sist]!.out, err: u.err };
-    for (const n of g) if (!svar[n]) svar[n] = await korSkript('scenario.ts', [n]);
+    for (const n of g) if (!svar[n]) { const e = tack([n]); svar[n] = await korSkript('scenario.ts', [n], e); lasT([n], e); }
   }));
   let fel = 0;
+  const roda: string[] = [];
   for (const n of namn) {
     const u = svar[n];
     // kraschade det utan att skriva FEL (t.ex. efter en VARNING-rad) skrivs kraschen ut, så att den räknas som FEL
     const krasch = (u.code !== 0 || !u.out) && !/^FEL/m.test(u.out);
-    if (u.code || krasch) fel++;
+    if (u.code || krasch) { fel++; roda.push(n); }
     process.stdout.write(u.out + (krasch ? `FEL  ${n}: kraschade\n${u.err.slice(-1500)}\n` : ''));
   }
   // tiderna sparas när alla scenarier körts (npm run scenario utan namn, och i det stora testet), avrundade
@@ -122,8 +122,12 @@ else {
     const nya: Record<string, number> = {};
     for (const n of namn) { const m = /^(?:OK|FEL) +\S+ \((\d+) s\)/m.exec(svar[n]?.out ?? ''); if (m) nya[n] = +m[1]; }
     writeFileSync(TIDER, JSON.stringify(Object.fromEntries(Object.entries({ ...forraTid, ...nya }).filter(([n]) => SCENARIER[n]).sort(([a], [b]) => a < b ? -1 : 1)), null, 1) + '\n');
-    writeFileSync(KLOCKOR, JSON.stringify(Object.fromEntries(Object.entries({ ...forraKlocka, ...klocka }).filter(([n]) => SCENARIER[n]).sort(([a], [b]) => a < b ? -1 : 1)), null, 1) + '\n');
+    if (karta) { const k = sparaKarta(tackning); console.log(`(kartan för riktad byggd: ${k.scenarier} scenarier och ${k.funktioner} funktioner)`); }
   }
+  // de röda: de som var röda förut och inte kördes nu, och de som är röda nu
+  const forut: string[] = existsSync(RODA) ? JSON.parse(readFileSync(RODA, 'utf8')) : [];
+  mkdirSync(dirname(RODA), { recursive: true });
+  writeFileSync(RODA, JSON.stringify([...new Set([...forut.filter(n => !namn.includes(n) && SCENARIER[n]), ...roda])]));
   const hoppade = Object.keys(SCENARIER).filter(n => !namn.includes(n));
   if (snabb && hoppade.length) console.log(`(hoppade över de långa: ${hoppade.join(', ')})`);
   if (fel) { console.log(`${fel} scenario misslyckades.`); process.exitCode = 1; }

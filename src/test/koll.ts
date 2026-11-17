@@ -3,11 +3,13 @@
 // 10.2.105) och alla scenarier körs samtidigt. Scenarier som går igenom visas bara
 // som en siffra. "Annan utveckling" är väntat när spelet ändrats med avsikt. När allt är grönt (typkontrollen, inga vaktlarm,
 // ingen krasch och alla scenarier) sparas dagens utfall som nytt facit, så att byarna inte körs en gång till med npm run facit.
-// npm run samma (egna byar, för ombyggnad) körs inte här.
+// npm run samma (egna byar, för ombyggnad) körs inte här. Kartan för npm run riktad byggs under scenarierna (kartan.ts).
+// Typfel, en krasch eller ett vaktlarm i testbyarna gör resten meningslöst: då stoppas det som går genast, och felkoden blir
+// ALLVARLIGT, så att kedjan stannar. Ett rött scenario eller en iakttagare samlas, och felkoden blir 1 (testkedjan efter v530).
 import './utc';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { korSkript, scenarioSammanfattning, sek, typkontroll, typRad } from './pool';
+import { ALLVARLIGT, korSkript, scenarioSammanfattning, sek, stoppaAlla, typkontroll, typRad } from './pool';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
@@ -20,9 +22,22 @@ rmSync(FACIT, { force: true });
 const t0 = Date.now();
 // varje del tas tid på, så att koll sist kan skriva de fem längsta jobben (steg 9.2.17)
 const tid = async <T>(f: Promise<T>) => { const a = Date.now(); const v = await f; return { v, ms: Date.now() - a }; };
-const [typT, testT, scenT] = await Promise.all([tid(typkontroll()), tid(korSkript('test.ts', ['--utkast', FACIT])), tid(korSkript('scenario.ts'))]);
+let avbrutet = '';
+const avbryt = (varfor: string) => { if (!avbrutet) { avbrutet = varfor; stoppaAlla(); } };
+const [typT, testT, scenT] = await Promise.all([
+  tid(typkontroll().then(u => { if (u.code) avbryt('typfel'); return u; })),
+  tid(korSkript('test.ts', ['--utkast', FACIT]).then(u => { if (u.code === ALLVARLIGT || (u.code && !u.out.includes('Vakter: inga fel.'))) avbryt('en krasch eller ett vaktlarm i testbyarna'); return u; })),
+  tid(korSkript('scenario.ts', ['--karta'])),
+]);
 const typ = typT.v, test = testT.v, scen = scenT.v;
 console.log(typRad(typ));
+if (avbrutet) {
+  // det som stoppades har inget att säga: bara felet som stoppade det skrivs ut
+  if (avbrutet !== 'typfel') console.log(test.out.split('\n').filter(r => !r.startsWith('@@jobb ')).join('\n').trim() || 'TESTET KRASCHADE:\n' + test.err.slice(-1500));
+  console.log(`AVBRUTET efter ${sek(t0)} s (datorns tid): ${avbrutet}. Scenarierna stoppades, eftersom resten inte säger något förrän det är rättat. Facit sparas inte.`);
+  rmSync(FACIT, { force: true }); rmSync(FACIT + '.byar/', { recursive: true, force: true });
+  process.exit(ALLVARLIGT);
+}
 const jobbRad = test.out.split('\n').find(r => r.startsWith('@@jobb '));
 console.log(test.out.split('\n').filter(r => !r.startsWith('@@jobb ')).join('\n').trim() || 'TESTET KRASCHADE:\n' + test.err.slice(-1500));
 console.log(scenarioSammanfattning(scen));
@@ -47,4 +62,4 @@ console.log(`(${sek(t0)} s, datorns tid)`);
 // avbryts inte och inga tester stryks; larmet säger att nästa steg blir att göra spelet eller testerna snabbare
 const GRANS_MIN = 20, min = (Date.now() - t0) / 60_000;
 if (min > GRANS_MIN) console.log(`TIDSVAKT: det stora testet tog ${Math.round(min)} min klocktid, mer än gränsen ${GRANS_MIN} min (datorns tid). ${langst} Gör spelet eller testerna snabbare (Testerna och deras tid i fliken Läget).`);
-if (typ.code || test.code || scen.code) process.exitCode = 1; // "annan utveckling" är väntad efter en ändring i spelet
+process.exitCode = typ.code || test.code === ALLVARLIGT ? ALLVARLIGT : test.code || scen.code ? 1 : 0; // "annan utveckling" är väntad efter en ändring i spelet

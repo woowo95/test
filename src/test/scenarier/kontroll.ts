@@ -372,13 +372,15 @@ SCENARIER.portratt = {
 };
 
 SCENARIER.processgrupp = {
-  text: 'Steg 9.2.60: när testet stoppar en process efter tidsgränsen (korProcess i pool.ts) stoppas hela gruppen av processer den startat, inte bara den',
+  text: 'Steg 9.2.60: när testet stoppar en process efter tidsgränsen (korProcess i pool.ts) stoppas hela gruppen av processer den startat, inte bara den; och pulsen stoppar bara en process som hängt sig, aldrig en långsam (testkedjan efter v530)',
   kor: () => {
     const ut = execFileSync(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('../processgrupp.ts', import.meta.url))], { encoding: 'utf8' });
-    const r = JSON.parse(ut.trim().split('\n').pop()!) as { pid: number; kvar: boolean; stoppad: boolean };
+    const r = JSON.parse(ut.trim().split('\n').pop()!) as { pid: number; kvar: boolean; stoppad: boolean; hangStoppad: boolean; langsamKlar: boolean };
     return [
       ['processen som aldrig blev klar stoppades efter tidsgränsen', r.stoppad],
       [`och den den startade (pid ${r.pid}) lever inte kvar`, r.pid > 0 && !r.kvar],
+      ['en by som hängt sig (inga slag i spelet) stoppades av pulsen', r.hangStoppad],
+      ['men en långsam by som räknade slag hela tiden fick bli klar', r.langsamKlar],
     ];
   },
 };

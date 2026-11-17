@@ -1,9 +1,12 @@
 // npm run balans -- [antal byar = 20] [dygn = 90]
 // Kör många slumpade byar parallellt och visar median, sämsta och bästa värde för varje nyckeltal. Vad som är bättre
 // står i registret NYCKELTAL (nyckeltal.ts); tal som bara är information visas med lägsta och högsta värde.
+// Byarna sparas i samma cache som jamfor (bycache.ts): en by som jamfor redan kört med samma kod körs inte igen, och jamfor
+// efter balansen kör bara de byar balansen inte redan kört (testkedjan efter v530). Med BALANS satt körs allt som vanligt.
 import './utc';
 import { writeFileSync } from 'node:fs';
-import { korJson, pool, seedAv, sek } from './pool';
+import { ALLVARLIGT, korJson, pool, seedAv, sek } from './pool';
+import { byCacheFil, kodHash, lasByCache } from './bycache';
 import { NYCKELTAL, Matt, Nyckeltal, median, snittTal, vardeAv } from './nyckeltal';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
@@ -13,7 +16,12 @@ const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Ut = { seed: number; n: Nyckeltal; vakter: string[]; stat?: Record<string, number>; tek?: string[] };
 
 const t0 = Date.now();
-const res = await pool(seeds.map(seed => () => korJson<Ut>('en.ts', [String(seed), String(dagar)], `by ${seed}`)));
+const fil = process.env.BALANS?.trim() ? undefined : byCacheFil(kodHash(), '', dagar), sparade = fil ? lasByCache<Ut>(fil) : {};
+const res = await pool(seeds.map(seed => () => sparade[seed] ? Promise.resolve(sparade[seed]) : korJson<Ut>('en.ts', [String(seed), String(dagar)], `by ${seed}`)
+  .then(r => (sparade[seed] = r)).catch((e: Error) => { console.log(e.message); process.exit(ALLVARLIGT); }))); // en krasch: kedjan stannar
+const fran = seeds.filter(seed => lasByCache<Ut>(fil ?? '')[seed]).length;
+if (fil) writeFileSync(fil, JSON.stringify(sparade));
+if (fran) console.log(`(${fran} byar fanns redan sparade av jamfor eller en tidigare balans med samma kod)`);
 
 console.log(`${antal} byar, ${dagar} dygn (${dagar} år i spelet) (${sek(t0)} s, datorns tid)`);
 // en by med andel (byar som dog ut) står på raden under tabellen i stället
@@ -39,4 +47,4 @@ const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));
 // statistiken och teknikerna per by sparas i balans-stat.json (används för gräns 4: varje nytt system används i de flesta byarna)
 writeFileSync('balans-stat.json', JSON.stringify(res.map(r => ({ seed: r.seed, stat: r.stat, tek: r.tek }))));
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');
-if (vakter.length) process.exitCode = 1; // en kedja (npm run kedja) stannar då, så att larmet ses genast
+if (vakter.length) process.exitCode = ALLVARLIGT; // en kedja (npm run kedja) stannar då, så att larmet ses genast

@@ -348,6 +348,8 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
 // lägger dtSec till tiden som ska räknas (s.skuld) och tar så många hela slag som ryms; det som blir över räknas i nästa anrop.
 // Ett slag delas aldrig, så att byn blir densamma hur tiden än delas upp: spelet, ikappräkningen och testerna går igenom samma
 // följd av slag. events = samtalen, för att visa dem
+// testerna lyssnar efter slagen för att se att en process inte hängt sig (src/test/puls.ts); i spelet finns ingen lyssnare
+declare global { var slagPuls: (() => void) | undefined }
 export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också när gränssnittet räknar (typer.ts)
   simulera(() => {
     if (s.stegRest !== undefined) delete s.stegRest; // (en äldre sparning)
@@ -356,6 +358,7 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också 
       const plan = nastaSteg(s);
       if (skuld < plan - 1e-9) break;
       slag(s, plan, events); skuld -= plan;
+      globalThis.slagPuls?.();
     }
     if (skuld > 1e-9) s.skuld = Math.round(skuld * 1000) / 1000; else delete s.skuld;
   });

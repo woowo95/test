@@ -3,7 +3,7 @@
 // fyra byar under de första 12 dygnen (12 år i spelet, knappt två veckor i verkligheten). Den hittar fel medan de är färska.
 // Den mäter inte balansen och jämför inget med facit: det gör det stora testet efter en grupp steg (npm run koll, jamfor, likhet).
 import './utc';
-import { korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
+import { ALLVARLIGT, korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
@@ -24,4 +24,5 @@ for (const [i, r] of byar.entries()) {
 }
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : `Vakter: inga fel (${BYAR.length} byar i ${DAGAR} dygn).`);
 console.log(`(${sek(t0)} s, datorns tid)`);
-if (typ.code || scen.code || krasch || vakter.length) process.exitCode = 1;
+// typfel, en krasch eller ett vaktlarm gör resten meningslöst: kedjan stannar (ALLVARLIGT); ett rött scenario samlas
+process.exitCode = typ.code || krasch || vakter.length ? ALLVARLIGT : scen.code ? 1 : 0;

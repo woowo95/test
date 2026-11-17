@@ -5,12 +5,12 @@
 // lika lång tid. npm run koll (--utkast fil) sparar slutet av varje bit bredvid utkastet; när allt är grönt blir det nytt facit,
 // så att nästa körning börjar bitarna från byarna som den här koden byggt.
 import './utc';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, copyFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { DOK_KB, rad } from './kor';
 import { NYCKELTAL, Nyckeltal } from './nyckeltal';
-import { gransAv, korJson, pool, prioAv } from './pool';
+import { ALLVARLIGT, korJson, pool, prioAv } from './pool';
 import { BitSvar, DEL, laggIhop } from './delby';
 import { IAKTTAGARE } from './scenarier/iakttagare';
 
@@ -19,7 +19,12 @@ const FACIT = new URL('../../test/facit.json', import.meta.url), BYDIR = fileURL
 // stora testet är mycket längre än de andra (steg 10.2.104): en lång by får fler bitar än en kort
 // by 1511 och 4634 får alla motgångar (MOTGANGAR) inom testets tid, så att samma-kollen ur testbyarna kör dem alla (steg 10.2.105)
 // DAGAR: 50 dygn (50 år i spelet, sju veckor i verkligheten); hela 90 dygn körs i fasens Balans med TESTDYGN=90 npm test
-// (steg 10.2.107), som jämför med facit men aldrig sparar något
+// (steg 10.2.107), som jämför med facit men aldrig sparar något. Byarna efter 50 dygn sparas (SLUT, testkedjan efter v530), och
+// 90-dygnstestet kör de första 50 dygnen i bitar som vanligt och fortsätter samtidigt från den sparade byn efter 50 dygn, i
+// stället för att köra varje by hela vägen i en bit. Saknas den sparade byn (koden har ändrats sedan facit) går den sista
+// biten hela vägen till slutet
+const SLUT = fileURLToPath(new URL('../../node_modules/.cache/slutbyar/', import.meta.url));
+const slutFil = (seed: number, hash: string) => `${SLUT}${seed}-${hash}.json.gz`;
 const FACITDYGN = 50, DAGAR = Number(process.env.TESTDYGN ?? FACITDYGN), BYAR = [1, 1511, 4634], JOBB = 20;
 if (DAGAR !== FACITDYGN && (process.argv.includes('--spara') || process.argv.includes('--utkast'))) { console.log(`Facit gäller ${FACITDYGN} dygn; med TESTDYGN=${DAGAR} sparas inget.`); process.exit(1); }
 // hur mycket ett tal får ändras innan det räknas som en ändring står i registret (facit i nyckeltal.ts):
@@ -40,7 +45,7 @@ const utan = (n: Nyckeltal) => JSON.parse(JSON.stringify(n, (k, v) => k === 'ms'
 const facitText = (f: Facit) => JSON.stringify({ byar: Object.fromEntries(Object.entries(f.byar).map(([k, b]) => [k, { ...b, n: utan(b.n) }])) }, null, 1) + '\n';
 const spara = process.argv.includes('--spara'), utkastI = process.argv.indexOf('--utkast'), utkast = utkastI >= 0 ? process.argv[utkastI + 1] : undefined;
 
-type Jobb = { seed: number; fran: number; till: number; in: string; ut: string; forra: number; kand: boolean };
+type Jobb = { seed: number; fran: number; till: number; in: string; ut: string; forra: number; kand: boolean; lang?: boolean };
 let allaBitar: BitSvar[] = [];
 let res: { seed: number; n: Nyckeltal; vakter: string[] }[], nytt: Facit = { byar: {} }, jobbtider: { namn: string; ms: number }[] = [];
 const facit = lasFacit();
@@ -49,8 +54,10 @@ if (spara) {
   // hela vägen för varje by, sparad vid varje delgräns; gränserna väljs sedan bland delgränserna så att bitarna tar ungefär lika lång tid, fler bitar i en lång by
   const tmp = `${tmpdir()}/facit-byar-${process.pid}/`;
   mkdirSync(tmp, { recursive: true });
-  const hela = await pool(BYAR.map(seed => () => korJson<BitSvar>('delby.ts', ['--bit', String(seed), '0', String(DAGAR), '-', '-', '--alla', tmp], `by ${seed}`)
-    .catch((e: Error) => { console.log(e.message); process.exit(1); })));
+  mkdirSync(SLUT, { recursive: true });
+  const hela = await pool(BYAR.map(seed => () => korJson<BitSvar>('delby.ts', ['--bit', String(seed), '0', String(DAGAR), '-', slutTmp(seed), '--alla', tmp], `by ${seed}`)
+    .catch((e: Error) => { console.log(e.message); process.exit(ALLVARLIGT); })));
+  sparaSlut(hela);
   res = hela.map(b => ({ seed: b.seed, ...laggIhop([b]) }));
   allaBitar = hela;
   for (const [seed, b] of Object.entries(valjBitar(hela))) nytt.byar[seed] = { ...b, n: res.find(r => r.seed === +seed)!.n };
@@ -64,18 +71,25 @@ if (spara) {
   // delgräns, och bitarna väljs om efter hur lång tid delarna tog nu, så att nästa körning delar det som blivit långsamt (steg 10.11.24)
   const ut = utkast ? `${utkast}.byar/` : undefined;
   if (ut) mkdirSync(ut, { recursive: true });
-  const jobb: Jobb[] = [];
+  const jobb: Jobb[] = [], bas = Math.min(DAGAR, FACITDYGN);
+  mkdirSync(SLUT, { recursive: true });
   for (const seed of BYAR) {
     const f = facit?.byar[seed];
-    const granser = f && f.granser.at(-1) === DAGAR && f.granser.slice(1, -1).every(g => existsSync(byFil(BYDIR, seed, g))) ? f.granser : [0, DAGAR];
-    granser.slice(1).forEach((till, i) => jobb.push({ seed, fran: granser[i], till, in: i ? byFil(BYDIR, seed, granser[i]) : '-', ut: ut && till < DAGAR ? byFil(ut, seed, till) : '-', forra: granser === f?.granser ? f.bitMs[i] ?? 0 : till - granser[i], kand: granser === f?.granser && f.bitMs[i] !== undefined }));
-    // bitarnas tid från facit gäller bara när byn delas som i facit; går den hela vägen i en bit (TESTDYGN=90) finns ingen tid att gå efter
+    const granser = f && f.granser.at(-1) === bas && f.granser.slice(1, -1).every(g => existsSync(byFil(BYDIR, seed, g))) ? f.granser : [0, bas];
+    granser.slice(1).forEach((till, i) => jobb.push({ seed, fran: granser[i], till, in: i ? byFil(BYDIR, seed, granser[i]) : '-', ut: ut && till < DAGAR ? byFil(ut, seed, till) : till === FACITDYGN && DAGAR === FACITDYGN ? slutTmp(seed) : '-', forra: granser === f?.granser ? f.bitMs[i] ?? 0 : till - granser[i], kand: granser === f?.granser && f.bitMs[i] !== undefined }));
+    if (DAGAR > bas) { // 90-dygnstestet: från den sparade byn efter 50 dygn, eller den sista biten hela vägen
+      const h = f?.hash?.at(-1), sparad = h && f!.granser.at(-1) === bas ? slutFil(seed, h) : undefined;
+      if (sparad && existsSync(sparad)) jobb.push({ seed, fran: bas, till: DAGAR, in: sparad, ut: '-', forra: 1e12, kand: false, lang: true });
+      else Object.assign(jobb[jobb.length - 1]!, { till: DAGAR, forra: 1e12, lang: true });
+    }
   }
   const ordning = [...jobb].sort((a, b) => b.forra - a.forra); // den som tog längst tid förra gången först
-  const f = (j: Jobb) => prioAv(j.kand ? j.forra / 1000 : undefined); // de korta bitarna med lägre prioritet (steg 9.2.64)
-  const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut, ...(ut ? ['--alla', ut] : [])], `by ${j.seed}, dygn ${j.fran}–${j.till}`, {}, f(j), gransAv(j.kand ? j.forra : undefined))
-    .catch((e: Error) => { console.log(e.message); process.exit(1); })));
+  const f = (j: Jobb) => j.lang ? 0 : prioAv(j.kand ? j.forra / 1000 : undefined); // de korta bitarna med lägre prioritet (steg 9.2.64)
+  // ingen tidsgräns efter förra gångens tid: en bit som hängt sig stoppas av pulsen (pool.ts), en långsam aldrig
+  const svar = await pool(ordning.map(j => () => korJson<BitSvar>('delby.ts', ['--bit', String(j.seed), String(j.fran), String(j.till), j.in, j.ut, ...(ut ? ['--alla', ut] : [])], `by ${j.seed}, dygn ${j.fran}–${j.till}`, {}, f(j))
+    .catch((e: Error) => { console.log(e.message); process.exit(ALLVARLIGT); })));
   allaBitar = svar;
+  if (DAGAR === FACITDYGN) sparaSlut(svar.filter(b => b.till === FACITDYGN));
   const hela = BYAR.map(seed => svar.filter(b => b.seed === seed).sort((a, b) => a.fran - b.fran));
   // utan --utkast behålls bitarna; samma-kollen jämför då med facits hash vid samma gränser
   const valda = ut ? valjBitar(hela.map(bitar => ({ seed: bitar[0].seed, delMs: bitar.flatMap(b => b.delMs), delHash: bitar.flatMap(b => b.delHash) }))) : undefined;
@@ -135,7 +149,15 @@ for (const [namn, i] of Object.entries(IAKTTAGARE)) {
 }
 
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');
-if (vakter.length) process.exitCode = 1;
+if (vakter.length) process.exitCode = ALLVARLIGT; // kedjan stannar: något omöjligt har hänt i byarna
+
+// byn efter 50 dygn sparas under en tillfällig namn och får sedan hashen av hela byn som namn, så att 90-dygnstestet hittar den
+// by som hör till facit. De som är äldre än en vecka tas bort
+function slutTmp(seed: number) { return `${SLUT}${seed}-tmp${process.pid}.json.gz`; }
+function sparaSlut(bitar: BitSvar[]) {
+  for (const b of bitar) if (existsSync(slutTmp(b.seed))) renameSync(slutTmp(b.seed), slutFil(b.seed, b.delHash.at(-1)!));
+  for (const fil of readdirSync(SLUT)) if (Date.now() - statSync(SLUT + fil).mtimeMs > 7 * 86_400_000) rmSync(SLUT + fil, { force: true });
+}
 
 // hela byns hash efter varje del (dygn → hash), ur bitarna som kördes
 function svarHash(seed: number): Map<number, string> {

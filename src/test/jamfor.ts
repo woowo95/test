@@ -17,19 +17,20 @@
 //   som skiljer sig mest från koden markeras på varje rad. Inget stopp: byar = byar per värde, 16 om inget anges.
 // BALANS före kommandot gäller alla körningar (båda versionerna, eller utan och med --satt).
 //
-// Resultaten sparas i node_modules/.cache/jamfor, så att en by aldrig körs två gånger med samma kod: den tidigare
+// Resultaten sparas i node_modules/.cache/jamfor (bycache.ts), så att en by aldrig körs två gånger med samma kod (balansen
+// läser och skriver samma, så att jamfor efter npm run balans bara kör de byar balansen inte redan kört): den tidigare
 // versionens per commit, och den nuvarandes per innehållet i det som avgör byarna (en.ts och allt den importerar,
 // tsconfig.json och node-versionen). En ändring i scenarierna eller gränssnittet kör alltså inte om något. Balanstalen
 // står i filnamnet, så körningen utan dem är densamma för jamfor, --satt och --svep.
 // 35 dygn räcker för grundandet och den första vintern (istiden tar slut efter 34 dygn).
 import './utc';
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, relative, resolve } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { korProcess, pool, seedAv, sek, sistaJson } from './pool';
+import { ALLVARLIGT, korProcess, pool, seedAv, sek, sistaJson } from './pool';
+import { byCacheFil, kodHash } from './bycache';
 import { NYCKELTAL, Matt, Nyckeltal, STOR, median, medel, snittTal, vardeAv } from './nyckeltal';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
@@ -90,34 +91,11 @@ async function talenNu(): Promise<Record<string, Tal>> {
 }
 const kollaNamn = (kalla: string, namn: string, nu: Record<string, Tal>) => nu[namn] ?? stopp(`${kalla}: inget balanstal heter ${namn} (se npm run talen -- ${namn.split('.')[0]}).`);
 
-// det som avgör hur byarna går med koden nu: en.ts och allt den importerar, fil för fil, och tsconfig.json och node-versionen
-function kodHash(): string {
-  const filer = new Set<string>(), ko = [join(ROT, 'src/test/en.ts')];
-  const hitta = (dir: string, s: string) => {
-    const p = resolve(dir, s);
-    for (const f of [p, p + '.ts', join(p, 'index.ts')]) if (existsSync(f) && statSync(f).isFile()) return f;
-    return stopp(`jamfor: hittar inte '${s}', som importeras i ${relative(ROT, dir)}.`);
-  };
-  while (ko.length) {
-    const f = ko.pop()!;
-    if (filer.has(f)) continue;
-    filer.add(f);
-    for (const [, s] of readFileSync(f, 'utf8').matchAll(/(?:from|import)\s*\(?\s*['"](\.\.?\/[^'"]+)['"]/g)) ko.push(hitta(dirname(f), s));
-  }
-  const h = createHash('sha1').update(process.version);
-  for (const f of [...filer, join(ROT, 'tsconfig.json')].sort()) h.update(relative(ROT, f)).update(readFileSync(f));
-  return 'nu-' + h.digest('hex');
-}
-
 // en sida är en kod och en uppsättning balanstal, med de byar som redan körts
 type Ut = { seed: number; n: Nyckeltal; vakter: string[] };
 interface Sida { namn: string; dir: string; balans: string; fil: string; ut: Record<number, Ut> }
-const cacheDir = join(ROT, 'node_modules', '.cache', 'jamfor');
-mkdirSync(cacheDir, { recursive: true });
 function sida(namn: string, dir: string, kod: string, balans: string): Sida {
-  let b = balans.replace(/[^\w.=,-]/g, '_');
-  if (b.length > 100) b = createHash('sha1').update(balans).digest('hex');
-  const fil = join(cacheDir, `${kod}${balans ? '-med-' + b : ''}-${dagar}.json`);
+  const fil = byCacheFil(kod, balans, dagar);
   return { namn, dir, balans, fil, ut: existsSync(fil) ? JSON.parse(readFileSync(fil, 'utf8')) : {} };
 }
 let korda = 0;
@@ -130,7 +108,7 @@ async function kor(sidor: Sida[], seeds: number[]) {
     else { s.ut[seed] = sistaJson<Ut>(u); korda++; }
   })));
   for (const s of new Set(sidor)) writeFileSync(s.fil, JSON.stringify(s.ut));
-  if (fel.length) stopp('BYAR KRASCHADE:\n' + fel.join('\n'));
+  if (fel.length) { console.log('BYAR KRASCHADE:\n' + fel.join('\n')); process.exit(ALLVARLIGT); } // kedjan stannar
 }
 
 // ett 95 %-intervall för snittet av skillnaderna, genom att dra byarna om och om igen (samma dragning varje gång)

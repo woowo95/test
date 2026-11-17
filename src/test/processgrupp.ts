@@ -1,7 +1,9 @@
 // Provet för steg 9.2.60 (scenariot processgrupp): en process som startar en till och aldrig blir klar stoppas efter
-// tidsgränsen, och då stoppas också den den startade. Skriver sista raden som JSON: barnbarnets pid och om det lever kvar
+// tidsgränsen, och då stoppas också den den startade. Och pulsen (testkedjan efter v530): en by som hängt sig stoppas när inget
+// slag räknats på en stund (här HANGT_S = 4 s), men en långsam by som räknar slag längre än så stoppas inte.
+// Skriver sista raden som JSON: barnbarnets pid, om det lever kvar och hur det gick för byarna
 import { readFileSync } from 'node:fs';
-import { korProcess } from './pool';
+import { korProcess, korSkript } from './pool';
 
 // en stoppad process som ingen har hämtat (en zombie) lever inte: i en behållare i molnet hämtar process 1 inte barnen, och då
 // finns pid:et kvar fast processen är stoppad. /proc finns bara i Linux; annars gäller svaret från kill
@@ -14,4 +16,6 @@ await new Promise(r => setTimeout(r, 300));
 let kvar = false;
 try { process.kill(pid, 0); kvar = !zombie(pid); } catch { kvar = false; }
 if (kvar) try { process.kill(pid, 'SIGKILL'); } catch { /* */ }
-console.log(JSON.stringify({ pid, kvar, stoppad: /stoppad efter/.test(u.err) }));
+process.env.HANGT_S = '4';
+const [hang, langsam] = await Promise.all([korSkript('pulsprov.ts', ['hang']), korSkript('pulsprov.ts', ['langsam', '10'])]);
+console.log(JSON.stringify({ pid, kvar, stoppad: /stoppad efter/.test(u.err), hangStoppad: /hängde sig/.test(hang.err), langsamKlar: !langsam.code && langsam.out.includes('klar') }));

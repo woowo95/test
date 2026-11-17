@@ -1,8 +1,10 @@
-// npm run riktad -- [--mot ref] [--visa] [scenarier]: den riktade kollen. Kör bara de scenarier som använder det som ändrats sedan ref
+// npm run riktad -- [--mot ref] [--roda] [--visa] [scenarier]: den riktade kollen. Kör bara de scenarier som använder det som ändrats sedan ref
 // (HEAD om inget anges, alltså det som inte är committat; --mot HEAD~1 efter en commit), också de långa, och dessutom
 // typkontrollen och, när simuleringen ändrats, vakterna i fyra byar under de första 12 dygnen (12 år i spelet) som i snabbkollen.
-// --visa skriver bara vilka scenarier som skulle köras. npm run riktad -- --karta bygger om kartan: alla scenarier körs en gång med V8:s täckning (vilka funktioner de kör), ca 4 min
-// datorns tid. Kartan sparas i node_modules/.cache/riktad och är inte med i git.
+// --roda kör också de scenarier som var röda senast alla eller många scenarier kördes (koll, snabbkoll, riktad; testkedjan efter
+// v530): efter en rättning körs då bara det röda och det rättningen kan ha påverkat (npm run riktad -- --mot <testad commit> --roda).
+// --visa skriver bara vilka scenarier som skulle köras. Kartan byggs under det stora testets scenarier (npm run koll, kartan.ts);
+// npm run riktad -- --karta bygger den ensam: alla scenarier körs en gång med V8:s täckning, ca 30 min datortid.
 // Så väljs scenarierna: en ändrad rad hör till den innersta funktionen med namn runt den; de scenarier som körde den funktionen
 // körs. En rad utanför alla funktioner (ett register, ett balansblock) eller i en funktion som kartan inte känner (en ny)
 // väljer alla scenarier som körde någon funktion i filen. En ändring inne i ett scenario väljer det scenariot, och scenarier
@@ -10,10 +12,11 @@
 import './scenarier/storlek'; // först: scenariernas byar på 120 × 120
 import './utc';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
+import { ALLVARLIGT, RODA, korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
+import { KARTA, Karta, lasTackning, sparaKarta, tackningsMapp } from './kartan';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // klocktiden och den aktiva tiden per kärna sist (steg 10.2.65)
 import './scenarier/grund';
@@ -37,11 +40,7 @@ import './scenarier/fas10';
 import { SCENARIER } from './scenarier/hjalp';
 
 const ROT = fileURLToPath(new URL('../../', import.meta.url));
-const CACHE = ROT + 'node_modules/.cache/riktad/', KARTA = CACHE + 'karta.json';
 const BYAR = [0, 1, 2, 3].map(seedAv), DAGAR = 12;
-// funktioner som V8 räknar men som inte är koden: modulen själv, tsx:s hjälpare och klassernas initierare
-const BRUS = new Set(['', '__name', '<static_initializer>']);
-interface Karta { commit: string; funk: string[]; scen: Record<string, { f: number[] }> } // funk: "fil#namn"
 
 const git = (...a: string[]) => execFileSync('git', a, { cwd: ROT, encoding: 'utf8' });
 const arg = process.argv.slice(2), t0 = Date.now();
@@ -49,35 +48,22 @@ const arg = process.argv.slice(2), t0 = Date.now();
 if (arg[0] === '--karta') {
   // alla scenarier, de långa först, med täckningen i en egen mapp per scenario som läses och tas bort direkt
   const namn = Object.keys(SCENARIER).sort((a, b) => Number(!!SCENARIER[b]!.lang) - Number(!!SCENARIER[a]!.lang));
-  const funk: string[] = [], nr = new Map<string, number>(), scen: Karta['scen'] = {}, fel: string[] = [];
+  const scen: Record<string, Set<string>> = {}, fel: string[] = [];
   await pool(namn.map(n => async () => {
-    const dir = `${CACHE}tmp/${n}`;
-    rmSync(dir, { recursive: true, force: true }); mkdirSync(dir, { recursive: true });
+    const dir = tackningsMapp(n);
     const u = await korSkript('scenario.ts', [n], { ...SCENARIER[n]!.env, NODE_V8_COVERAGE: dir });
     if (u.code) fel.push(n);
-    const f = new Set<number>();
-    for (const fil of readdirSync(dir)) for (const r of JSON.parse(readFileSync(dir + '/' + fil, 'utf8')).result) {
-      const m = /^file:\/\/.*?\/(src\/.*\.ts)$/.exec(r.url);
-      if (!m || m[1].startsWith('src/test/')) continue; // testernas egna funktioner körs av alla (läsningen av scenarierna)
-      for (const fn of r.functions) if (!BRUS.has(fn.functionName) && fn.ranges[0].count > 0) {
-        const k = `${m[1]}#${fn.functionName}`;
-        if (!nr.has(k)) { nr.set(k, funk.length); funk.push(k); }
-        f.add(nr.get(k)!);
-      }
-    }
-    rmSync(dir, { recursive: true, force: true });
-    scen[n] = { f: [...f].sort((a, b) => a - b) };
+    scen[n] = lasTackning(dir);
   }));
-  rmSync(CACHE + 'tmp', { recursive: true, force: true });
-  writeFileSync(KARTA, JSON.stringify({ commit: git('rev-parse', '--short', 'HEAD').trim(), funk, scen } satisfies Karta));
-  console.log(`Kartan byggd: ${namn.length} scenarier och ${funk.length} funktioner (${sek(t0)} s, datorns tid).${fel.length ? ` Misslyckades (kartan har dem ändå): ${fel.join(', ')}` : ''}`);
+  const k = sparaKarta(scen);
+  console.log(`Kartan byggd: ${k.scenarier} scenarier och ${k.funktioner} funktioner (${sek(t0)} s, datorns tid).${fel.length ? ` Misslyckades (kartan har dem ändå): ${fel.join(', ')}` : ''}`);
   process.exit(0);
 }
 
 if (!existsSync(KARTA)) { console.log('Ingen karta ännu. Bygg den med: npm run riktad -- --karta'); process.exit(1); }
 const karta: Karta = JSON.parse(readFileSync(KARTA, 'utf8'));
 const mi = arg.indexOf('--mot'), mot = mi >= 0 ? arg[mi + 1] : 'HEAD';
-const visa = arg.includes('--visa'), namnda = arg.filter((a, i) => a !== '--mot' && a !== '--visa' && (mi < 0 || i !== mi + 1));
+const visa = arg.includes('--visa'), roda = arg.includes('--roda'), namnda = arg.filter((a, i) => !['--mot', '--visa', '--roda'].includes(a) && (mi < 0 || i !== mi + 1));
 
 // de ändrade raderna per fil (i den nya versionen) sedan mot, och de nya filerna som inte är med i git än. En rad som bara är
 // en kommentar eller tom räknas inte; borttagna rader räknas på raden där de stod
@@ -127,6 +113,8 @@ function funktioner(path: string) {
 // scenarierna som körde någon av funktionerna (index i karta.funk)
 const korde = (f: Set<number>) => Object.keys(karta.scen).filter(n => karta.scen[n]!.f.some(i => f.has(i)));
 const valda = new Set<string>(namnda.filter(n => SCENARIER[n]));
+const rodaNu: string[] = roda && existsSync(RODA) ? (JSON.parse(readFileSync(RODA, 'utf8')) as string[]).filter(n => SCENARIER[n]) : [];
+rodaNu.forEach(n => valda.add(n));
 const skal: string[] = [], otackt: string[] = [];
 let alla = false, sim = false;
 for (const [f, rader] of andrat) {
@@ -168,7 +156,7 @@ const kor = alla ? Object.keys(SCENARIER) : Object.keys(SCENARIER).filter(n => v
 const bakom = Number(git('rev-list', '--count', `${karta.commit}..HEAD`).trim());
 console.log(`Ändrat sedan ${mot}: ${[...andrat.keys()].filter(f => f.endsWith('.ts')).join(', ') || 'inget'}. Kartan är från ${karta.commit}${bakom ? `, ${bakom} commits sedan` : ''}.`);
 if (process.env.ALLA) console.log(skal.join('\n'));
-console.log(`Scenarier: ${kor.length} av ${Object.keys(SCENARIER).length}${nya.length ? `, nya som kartan inte känner: ${nya.join(', ')}` : ''}.`);
+console.log(`Scenarier: ${kor.length} av ${Object.keys(SCENARIER).length}${nya.length ? `, nya som kartan inte känner: ${nya.join(', ')}` : ''}${roda ? `, röda förra gången: ${rodaNu.join(', ') || 'inga'}` : ''}.`);
 if (otackt.length) console.log(`Inget scenario kör: ${[...new Set(otackt)].slice(0, 12).join(', ')}`);
 if (visa) { console.log(kor.join(' ')); process.exit(0); } // --visa: bara vilka som skulle köras
 const [typ, scen, byar] = await Promise.all([
@@ -186,4 +174,5 @@ for (const [i, r] of byar.entries()) {
 }
 if (sim) console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : `Vakter: inga fel (${BYAR.length} byar i ${DAGAR} dygn).`);
 console.log(`(${sek(t0)} s, datorns tid)`);
-if (typ.code || scen?.code || krasch || vakter.length) process.exitCode = 1;
+// typfel, en krasch eller ett vaktlarm gör resten meningslöst: kedjan stannar (ALLVARLIGT); ett rött scenario samlas
+process.exitCode = typ.code || krasch || vakter.length ? ALLVARLIGT : scen?.code ? 1 : 0;

@@ -8,7 +8,7 @@ import './utc';
 import { createHash } from 'node:crypto';
 import { createState, step, living, serialize, spar, State, foodOf, fuelStock, TalkEvent } from '../sim';
 import { START, STEG_TIM } from './kor';
-import { kanonisk, korJson, pool, sek } from './pool';
+import { ALLVARLIGT, kanonisk, korJson, pool, sek } from './pool';
 import { matUnderTestet } from './matare';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
@@ -44,5 +44,6 @@ if (i >= 0) { // en by i en egen process
   }
   const dygn = +(timmar / 24).toFixed(1);
   console.log(`${lika} av ${antal} byar exakt lika i spelet och ikappräkningen under ${timmar} timmar (${dygn} dygn, ${dygn} år i spelet). (${sek(t0)} s, datorns tid)`);
-  if (lika < antal) process.exitCode = 1;
+  // en by som kraschade: kedjan stannar (ALLVARLIGT); en by som inte är lika samlas
+  process.exitCode = svar.some(r => r instanceof Error) ? ALLVARLIGT : lika < antal ? 1 : 0;
 }
