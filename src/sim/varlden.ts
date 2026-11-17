@@ -20,7 +20,7 @@ export interface Varlden {
   ko?: import('./varldslag').KoPost[]; nastaKo?: number; // det som händer vid en känd tid, sorterat på tiden
   vagar?: import('./vagval').VarldVag[]; // de vägar som räknats (steg 11.2.20, vagval.ts)
   kronika?: import('./varldkronika').VarldHandelse[]; nastaHandelse?: number; // världens krönika (steg 11.2.19, varldkronika.ts)
-  rel?: Record<string, number>; slakt?: Record<string, number>; mutor?: Record<string, number>; // relationerna "a>b", släktbanden "a-b" och mutorna (steg 11.3.4, byrel.ts)
+  rel?: Record<string, number>; slakt?: Record<string, number>; mutor?: Record<string, number>; tillHuvud?: number[]; // relationerna "a>b", släktbanden "a-b" och mutorna (steg 11.3.4, byrel.ts); de som flyttat till huvudbyn och väntar på att komma in, numret på byn de kom ifrån (steg 11.3.5, byflytt.ts)
 }
 export const varldFro = (seed: number) => Math.floor(hash3(seed, 0x5741524c, 0x11207) * 2 ** 31);
 

@@ -779,3 +779,49 @@ SCENARIER.byrelation = {
     ];
   },
 };
+
+SCENARIER.byflytt = {
+  text: 'Flytten mellan byarna (steg 11.3.5, byflytt.ts): de som lämnar en trång eller hungrig by väljer bland byarna inom räckhåll efter trängsel, avstånd och relation, kommer fram efter restiden i hela tal, och till huvudbyn kommer de som främlingar',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!, v = SIM.varldMark(s)!;
+    const levande = vl.rader!.filter(r => SIM.lever(vl, r));
+    // den trängsta byn: dubbelt så många som marken föder och ingen mat
+    const tr = levande.find(r => SIM.flyttMal(vl, v, r).length >= 2 && r.syn)!;
+    tr.tal.folk = Math.round(SIM.barkraft(v, tr) * 2); tr.tal.mat = 0;
+    const mal = SIM.flyttMal(vl, v, tr), huvudMal = mal.some(m => m.r.nr === vl.huvud);
+    const annan = mal.find(m => m.r.nr !== vl.huvud)!, vanlig = annan.vikt;
+    SIM.mots(vl, tr.nr, annan.r.nr); vl.rel![`${tr.nr}>${annan.r.nr}`] = -80;
+    const ovan = SIM.flyttMal(vl, v, tr).find(m => m.r.nr === annan.r.nr)?.vikt ?? 0;
+    delete vl.rel![`${tr.nr}>${annan.r.nr}`]; delete vl.rel![`${annan.r.nr}>${tr.nr}`];
+    const summa = () => vl.rader!.reduce((a, r) => a + (r.nr === vl.huvud ? 0 : r.tal.folk), 0) + (vl.ko ?? []).filter(p => p.typ === 'flytt').reduce((a, p) => a + p.data!.n, 0) + (vl.tillHuvud?.length ?? 0);
+    const per = SIM.flyttPerDygn(tr), stor = levande.find(r => r !== tr)!, perStor = SIM.flyttPerDygn({ ...stor, tal: { ...stor.tal, folk: 12, mat: 1000 } });
+    // bara flytten: maten och folket står still
+    const fore = summa(), folk0 = tr.tal.folk, utan = vl.rader!.filter(r => r !== tr && r.nr !== vl.huvud).map(r => r.tal.folk);
+    let ut = 0, hela = true, framlingar = 0;
+    for (let n = 0; n < 72; n++) {
+      const f = tr.tal.folk; SIM.radFlytt(s, vl, tr, 1000 + n); ut += f - tr.tal.folk;
+      hela &&= Number.isInteger(tr.tal.folk) && tr.tal.folk >= 0;
+    }
+    const iKo = (vl.ko ?? []).filter(p => p.typ === 'flytt').length, mitt = summa();
+    // tiden går tills alla kommit fram
+    for (const p of [...vl.ko ?? []].filter(q => q.typ === 'flytt')) { vl.ko = vl.ko!.filter(q => q !== p); SIM.KOHANDELSER.flytt(s, vl, p); }
+    framlingar = vl.tillHuvud?.length ?? 0;
+    const efter = summa(), fram = vl.rader!.filter(r => r !== tr && r.nr !== vl.huvud).reduce((a, r, i) => a + r.tal.folk - utan[i], 0);
+    const band = mal.some(m => SIM.slaktband(vl, tr.nr, m.r.nr) > (tr.fran === m.r.nr || m.r.fran === tr.nr ? SIM.BYREL.moderby : 0));
+    // främlingarna kommer in i huvudbyn, och den som visas bort går hem igen
+    const t0 = tr.tal.folk, gaster0 = s.people.filter(p => p.gast?.sort === 'framling').length;
+    vl.tillHuvud = [tr.nr, tr.nr]; SIM.regulate(s, 1);
+    const gaster = s.people.filter(p => p.gast?.sort === 'framling' && p.gast.hemRad === tr.nr);
+    const g = gaster[0]; if (g) { g.gast!.ja = false; SIM.framlingBeslut(s, g); }
+    return [
+      [`en trång och hungrig by vill flytta mer (${per.toFixed(2)} per dygn) än en mätt och liten (${perStor.toFixed(2)})`, per > perStor * 3],
+      [`byarna inom räckhåll (${mal.length}), huvudbyn är en av dem`, mal.length >= 2 && huvudMal],
+      [`en by man inte tycker om väger mindre (${ovan.toFixed(2)} mot ${vanlig.toFixed(2)})`, ovan < vanlig / 2],
+      [`på tre dygn flyttade ${ut} av ${folk0}, i ${iKo} grupper, i hela tal`, ut > 0 && iKo > 0 && hela],
+      [`ingen försvinner på vägen (${fore} = ${mitt} = ${efter})`, fore === mitt && mitt === efter],
+      [`de kom fram: ${fram} till byarna i världen och ${framlingar} till huvudbyn`, fram + framlingar === ut],
+      ['varje flytt är ett släktband mellan byarna', band],
+      [`till huvudbyn kommer de som främlingar (${gaster.length} av 2, ${gaster0} före), och den som visas bort går hem igen (${t0} → ${tr.tal.folk})`, gaster.length === 2 && tr.tal.folk === t0 + 1],
+    ];
+  },
+};

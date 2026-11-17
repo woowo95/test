@@ -2377,7 +2377,7 @@ SCENARIER.utbrytning = {
 
 SCENARIER.framling = {
   lang: true,
-  text: 'Invandring (steg 4.4.4.2 och 9.2.115, framling i liv.ts): en sällsynt främling kommer från en grannklan som inte tycker illa om byn. Hen är en gäst som går in på kartan från kanten, går fram till ledaren och pratar med hen en stund, och stannar sedan som bybo (samma person) eller går igen. Hen kan ofta en teknik som ingen i byn kan, men vars krav byn kan. Byn (ledaren, annars de vuxna) avgör; klanen blir vänligare om hen får stanna och mindre vänlig om hen visas bort. En fientlig klan skickar ingen.',
+  text: 'Invandring (steg 4.4.4.2, 9.2.115 och 11.3.5, framling i liv.ts): en främling kommer från en grannby (den som flyttat hit, byflytt.ts) som inte tycker illa om byn. Hen är en gäst som går in på kartan från kanten, går fram till ledaren och pratar med hen en stund, och stannar sedan som bybo (samma person) eller går igen. Hen kan ofta en teknik som ingen i byn kan, men vars krav byn kan. Byn (ledaren, annars de vuxna) avgör; klanen blir vänligare om hen får stanna och mindre vänlig om hen visas bort. En fientlig klan skickar ingen.',
   kor: () => {
     const s = createState(6, START); rikBy(s); setFood(s, 300);
     const folk = living(s), kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => SIM.knows(p, id))));
@@ -2400,7 +2400,7 @@ SCENARIER.framling = {
     kor(s, 40);
     const bort = !s.people.some(q => q.id === bid || q.id === b.id) && (s.stat?.framlingNej ?? 0) >= 1 && inst().some((v, i) => v < i1[i]) && !s.people.some(q => q.name === bnamn && q.gast);
     for (const c of SIM.klanerOf(s)) c.inst = -80;
-    const fientlig = SIM.framling(s) === undefined && s.stat?.framlingNej === 1;
+    const nej0 = s.stat?.framlingNej, fientlig = SIM.framling(s) === undefined && s.stat?.framlingNej === nej0;
     for (const c of SIM.klanerOf(s)) c.inst = 20;
     let ja = 0, nej = 0;
     for (let i = 0; i < 40; i++) { const q = SIM.framling(s); if (!q) continue; if (SIM.framlingBeslut(s, q)) ja++; else nej++; }
@@ -2412,7 +2412,6 @@ SCENARIER.framling = {
       ['visar byn bort hen går hen igen, och klanen blir mindre vänlig', bort],
       ['en fientlig klan skickar ingen', fientlig],
       [`byn avgör själv: av 40 främlingar fick ${ja} stanna och ${nej} visades bort`, ja > 0 && nej > 0],
-      ['främlingar är sällsynta: de flesta i byn är barn till dem som redan bor där', SIM.KLAN.framling <= 0.1],
     ];
   },
 };

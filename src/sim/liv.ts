@@ -229,17 +229,20 @@ export function regulate(s: State, dtSec: number) {
     if (chance(s, rate / 86400, HOUR_S, 'flytt')) emigrate(s);
   }
   if (chance(s, immigrationRate(pop) * (LIV.nybyggareMatMin + LIV.nybyggareMat * matGott(s)) / 86400, dtSec, 'flytt')) immigrate(s, false);
-  if (klanerOf(s).length && chance(s, KLAN.framling / 86400, dtSec, 'klan')) framling(s);
+  // de som flyttat hit från en by i världen kommer som främlingar (flytten, byflytt.ts, steg 11.3.5)
+  for (const fran of s.varld?.tillHuvud?.splice(0) ?? []) framling(s, undefined, fran);
 }
-// en främling från en grannby som inte tycker illa om byn (steg 4.4.4.2), oftare från en som ligger nära (narhet). Hen kan ofta en teknik som ingen i byn kan, men
+// en främling från en grannby: den som flyttat hit från byn fran (flytten, byflytt.ts, steg 11.3.5), annars (scenarierna) från
+// en grannby som inte tycker illa om byn (steg 4.4.4.2), oftare från en som ligger nära (narhet). Hen kan ofta en teknik som ingen i byn kan, men
 // vars krav byn kan, och tekniken under den. Främlingen kommer gående (steg 9.2.115): hen är en gäst som går in på kartan
 // från kanten som pekar mot grannbyn (steg 11.2.22), mot ledaren (eller elden när byn saknar ledare), pratar med hen en stund och stannar som bybo eller
 // går igen (framlingSteg). Byn avgör: ledaren, eller de vuxna om byn saknar ledare. Det väger tekniken, klanens inställning,
 // seden Förnyelse – Tradition, trängseln och maten. Klanen minns hur det gick
-export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
+export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }, fran?: number) {
   const kan = klanerOf(s).filter(k => k.inst > KLAN.handelMin);
-  if (!kan.length) return undefined;
-  const k = pickViktat(s, kan, kan.map(narhet), 'klan'), folk = living(s);
+  const egen = fran === undefined ? undefined : s.varld?.rader?.find(r => r.nr === fran)?.syn;
+  if (!egen && !kan.length) return undefined;
+  const k = egen ?? pickViktat(s, kan, kan.map(narhet), 'klan'), folk = living(s);
   const kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => knows(p, id))));
   const nya = TEKNIK.filter(t => !kunnat.has(t.id) && t.krav.every(id => kunnat.has(id)));
   const tek = tvinga ? tvinga.tek : nya.length && rnd(s, 'klan') < KLAN.framlingTek ? pick(s, nya, 'klan').id : undefined;
@@ -251,7 +254,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   // gästen: id som en gäst, och bybons id väntar tills hen får stanna
   const blir = p.id, ut = kantMot(s, k.id) ?? kanten(s, p.x, p.y);
   p.id = nyttGastId(s); p.x = ut.x; p.y = ut.y;
-  p.gast = { sort: 'framling', klan: k.id, hem: k.hem, blir, fas: 'kommer', ...(tek ? { tek } : {}), ...(tvinga?.ja !== undefined ? { ja: tvinga.ja } : {}) };
+  p.gast = { sort: 'framling', klan: k.id, hem: k.hem, blir, fas: 'kommer', ...(tek ? { tek } : {}), ...(tvinga?.ja !== undefined ? { ja: tvinga.ja } : {}), ...(egen ? { hemRad: fran } : {}) };
   s.people.push(p);
   count(s, 'framlingKommer');
   log(s, `En främling från ${k.namn} kommer gående mot byn.`, 'move', [p.id]);
@@ -295,6 +298,8 @@ export function framlingBeslut(s: State, p: Person) {
   const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
   if (!ja) {
     klanHandelse(s.varld, k, 'bortvisad'); count(s, 'framlingNej');
+    const hem = g.hemRad === undefined ? undefined : s.varld?.rader?.find(r => r.nr === g.hemRad);
+    if (hem && hem.tal.folk >= 0 && hem.sort === 'by') hem.tal.folk += 1; // den som flyttat hit går hem igen (byflytt.ts)
     g.fas = 'gar'; g.path = undefined; g.pk = undefined;
     log(s, `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att ${honom(p)} skulle stanna, och ${p.sex === 'k' ? 'hon' : 'han'} går vidare.`, 'move', [p.id]);
     return undefined;
