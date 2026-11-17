@@ -1285,6 +1285,7 @@ SCENARIER.handelsko = {
     const k = 'torrkott';
     h.varor = [{ k, n: 2 }]; h.silver = 20;
     const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) hk.pris = { ...hk.pris, [k]: 1, skinn: 1 }; // (klanens priser som grundvärdet: kön prövas, inte priset)
+    SIM.hp(s, h).skill.handel = 0; // (en ovan handlare: det prövade beror inte på vem som kom)
     SIM.put(s, 'skinn', 6, { [a.id]: 6 }); for (const p of [a, b]) SIM.put(s, 'silver', 20, { [p.id]: 20 }); // b har bara silver: inget att sälja, så det enda b vill är köttet
     const uppgift = (p: Person, v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; };
     const va = SIM.handlaVal(s, a)!; uppgift(a, va);
@@ -1548,6 +1549,7 @@ SCENARIER.forhandling = {
     const [a, b] = andra, k = 'torrkott';
     h.varor = [{ k, n: 2 }, { k: 'rep', n: 3 }]; h.silver = 20;
     const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) hk.pris = { ...hk.pris, [k]: 1, rep: 1, skinn: 1 }; // (klanens priser som grundvärdet: förhandlingen prövas, inte priset)
+    SIM.hp(s, h).skill.handel = 0; // (en ovan handlare: det prövade beror inte på vem som kom)
     for (const p of [a, b]) { SIM.put(s, 'skinn', 6, { [p.id]: 6 }); SIM.put(s, 'silver', 20, { [p.id]: 20 }); }
     const aff = () => s.handlare?.affar;
     const uppgift = (p: Person, v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { p.x = v.spot.x; p.y = v.spot.y; p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; return v; };
@@ -1948,13 +1950,14 @@ SCENARIER.handslag = {
 };
 
 SCENARIER.grannklaner = {
-  text: 'Grannklanerna (steg 4.4.3, klaner.ts): en ny by har några grannklaner med namn, folk, styrka, resurser, inställning till byn och namngivna personer, och en sparad by från före v242 får dem. Klanerna växer och krymper en gång om dygnet (ett år i spelet), och inställningen glöms mot det neutrala. Handlaren kommer från en klan som inte tycker illa om byn; en fientlig klan skickar ingen. Ett byte med handlaren gör klanen vänligare, och märker hen att byn lurat hen blir den mindre vänlig.',
+  text: 'Grannklanerna (steg 4.4.3, klaner.ts): en ny by har grannar, byarna i dess grannät i världen (steg 11.2.15), med namn, folk, styrka, resurser, inställning till byn och namngivna personer, och i en sparad by från före v531 blir grannklanerna byar i världen med allt de visste. Klanerna växer och krymper en gång om dygnet (ett år i spelet), och inställningen glöms mot det neutrala. Handlaren kommer från en klan som inte tycker illa om byn; en fientlig klan skickar ingen. Ett byte med handlaren gör klanen vänligare, och märker hen att byn lurat hen blir den mindre vänlig.',
   kor: () => {
     const s = createState(6, START), k = SIM.klanerOf(s);
-    const finns = k.length === SIM.KLAN.antal && k.every(c => c.folk > 0 && c.styrka > 0 && c.personer.some(p => p.roll === 'hovding'));
+    const huvud = s.varld!.platser!.find(p => p.by === s.varld!.huvud)!;
+    const finns = k.length > 0 && k.length === huvud.grannar!.length && k.every(c => c.folk > 0 && c.styrka > 0 && c.personer.some(p => p.roll === 'hovding'));
     const unika = new Set(k.map(c => c.namn)).size === k.length;
-    const g = cloneState(s); delete g.klaner; g.v = 19; SIM.migrate(g);
-    const migr = SIM.klanerOf(g).length === SIM.KLAN.antal;
+    const g = cloneState(s); g.klaner = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: SIM.KLAN_HEM_NAMN[0] })); delete g.varld; g.v = 55; SIM.migrate(g);
+    const migr = !g.klaner && SIM.klanerOf(g).length === k.length && SIM.klanerOf(g).every((c, i) => c.namn === k[i].namn && c.rad !== undefined && c.dygn !== undefined);
     // alla tycker illa om byn: ingen handlare
     const f = cloneState(s); rikBy(f);
     for (const c of SIM.klanerOf(f)) c.inst = -80;
@@ -1984,7 +1987,7 @@ SCENARIER.grannklaner = {
     const instOrd = SIM.instText(60) === 'vänner' && SIM.instText(-80) === 'fientliga';
     // priserna (steg 10.5.14): startvärdena, driften, handeln och handlarens värdering
     const pr = createState(6, START), pk = SIM.klanerOf(pr);
-    const start = pk.every(c => SIM.KLAN_HEM.find(x => x.namn === c.hem)!.sallsynt.every(j => SIM.klanPris(c, j) === 1 + SIM.KLAN.prisSallsynt) && SIM.klanPris(c, 'yxa') === (SIM.KLAN_HEM.find(x => x.namn === c.hem)!.sallsynt.includes('yxa') ? 1 + SIM.KLAN.prisSallsynt : 1));
+    const start = pk.every(c => c.sallsynt!.every(j => SIM.klanPris(c, j) === 1 + SIM.KLAN.prisSallsynt) && SIM.klanPris(c, 'yxa') === (c.sallsynt!.includes('yxa') ? 1 + SIM.KLAN.prisSallsynt : 1));
     const dygn = (v: State, n: number) => { for (let d = 0; d < n; d++) { v.now += SIM.DAY; SIM.klanSteg(v, SIM.DAY / SIM.SEC); } };
     const kopia = cloneState(pr), sald = cloneState(pr);
     let inom = true, avv = 0, nn = 0;
@@ -2036,9 +2039,9 @@ SCENARIER.grannklaner = {
       ['Omvärlden har en ?-knapp som säger vad hållningen är, vad som ändrar den och vad vakten gör', knapp],
       ['raden om hållningen förklaras vid ett tryck, också att en fientlig klan inte skickar handlare', forkl],
       ['Handlarna, Räderna och Försvaret: rubriken Sedan byn grundades, nästa handlare om ungefär N år, Rövare som kommit, Vaktade i natt och Vaktar nu, och länkarna till krönikan (steg 11.1.40)', omv40],
-      [`en ny by har ${SIM.KLAN.antal} grannklaner med folk, styrka och en hövding`, finns],
+      [`en ny by har ${k.length} grannar, byarna i grannätet, med folk, styrka och en hövding`, finns],
       ['klanerna har olika namn', unika],
-      ['en sparad by från före v242 får grannklaner', migr],
+      ['i en sparad by från före v531 blir grannklanerna byar i världen, med samma namn', migr],
       ['en klan som tycker illa om byn skickar ingen handlare', ingen],
       ['handlaren kommer från en vänlig klan och är en av dess namngivna personer', fran],
       ['ett byte med handlaren gör klanen vänligare', vanligare],

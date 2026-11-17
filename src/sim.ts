@@ -163,3 +163,4 @@ export * from './sim/bin';
 export * from './sim/djurflykt';
 export * from './sim/vattenho';
 export * from './sim/djurtorst';
+export * from './sim/grannbyar';

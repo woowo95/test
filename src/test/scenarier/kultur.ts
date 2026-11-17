@@ -2684,7 +2684,7 @@ SCENARIER.rader = {
   text: 'Steg 8.8–8.9: en räd från en grannklan har ett skäl, plundra, hämnd eller heligt krig. Klanen minns sina döda, hämnden riktar sig mot den som dödade, det heliga kriget river hovet, den som ger upp svär trohet, en stor räd stannar ikappräkningen, och en stängd dörr huggs sönder och larmar byn',
   kor: () => {
     const { s, v, tr } = medTro(6, 4);
-    const k = SIM.nyKlan(s, 8, -40); (s.klaner ??= []).push(k); k.styrka = 8; k.krigisk = 90;
+    const k = SIM.nyGrannby(s, 8, -40); k.styrka = 8; k.krigisk = 90;
     // hämnd
     (k.doda ??= []).push({ namn: 'Bror', av: v[1].id, t: s.now });
     SIM.radDygn(s, 'hamnd', k);
@@ -2720,7 +2720,7 @@ SCENARIER.rader = {
       bom = SIM.bommad(hs, dorrBit);
     }
     const by = medTro(7, 2), d = by.s; const h = SIM.newTing; void h;
-    SIM.radDygn(d, 'hamnd', (() => { const c = SIM.nyKlan(d, 8, -40); (d.klaner ??= []).push(c); c.styrka = 4; (c.doda ??= []).push({ namn: 'X', av: by.v[1].id, t: d.now }); return c; })());
+    SIM.radDygn(d, 'hamnd', (() => { const c = SIM.nyGrannby(d, 8, -40); c.styrka = 4; (c.doda ??= []).push({ namn: 'X', av: by.v[1].id, t: d.now }); return c; })());
     return [
       [`hämnden riktar sig mot den som dödade (${mal})`, mal && anh],
       [`en räd med minst fyra är en stor strid (${stor})`, stor],
@@ -2873,7 +2873,7 @@ SCENARIER.heligting = {
     const med = bon(); byns.helig = undefined; const utan = bon(); byns.helig = tr.id;
     const starkare = Math.abs(med / utan - 1.5) < 0.01;
     // det heliga kriget: anfallarna tar tinget först, och budet faller vid nästa timme
-    const k = SIM.nyKlan(s, 8, -40); (s.klaner ??= []).push(k); k.styrka = 8; k.krigisk = 90;
+    const k = SIM.nyGrannby(s, 8, -40); k.styrka = 8; k.krigisk = 90;
     SIM.radDygn(s, 'heligt', k);
     const g = s.rovare!; SIM.radSeger(s, g);
     const tagen = !s.ting!.includes(byns) && (s.gastTing ?? []).some(t => t.k === 'yxa' && t.q === 4 && g.folk.includes(t.agare));
@@ -3372,7 +3372,7 @@ SCENARIER.skandning = {
     const d1 = vux[1]; d1.brottsling = true; SIM.die(s, d1, 'alderdom');
     const k1 = s.kvarlevor!.find(k => k.vem === d1.id)!; k1.naraT = k1.annanT = s.now - 1;
     const tk1 = begrav(p, k1), dit = { x: Math.floor(tk1.tx!), y: Math.floor(tk1.ty!) }, ut = SIM.utanforByn(s, dit.x, dit.y);
-    const klan = SIM.nyKlan(s, 20, 10), g = SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: 'Gäst', sex: 'm', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare', klan: klan.id }, x: dit.x + 1.5, y: dit.y + 0.5, nyckel: 4243 }); s.people.push(g);
+    const klan = SIM.nyGrannby(s, 20, 10), g = SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: 'Gäst', sex: 'm', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare', klan: klan.id }, x: dit.x + 1.5, y: dit.y + 0.5, nyckel: 4243 }); s.people.push(g);
     w.x = dit.x + 0.5; w.y = dit.y + 1.5; p.x = tk1.tx!; p.y = tk1.ty!; const inst0 = klan.inst;
     SIM.gravKlar(s, p, tk1); p.task = undefined;
     const kvar = s.kvarlevor!.find(k => k.vem === d1.id), sag = !!w.sedSkand?.includes(k1.id) && w.thoughts.some(t => /skänd/.test(t.text));
@@ -3866,10 +3866,10 @@ function utifran(): [string, boolean][] {
   const texter = Array.from({ length: 24 }, (_, nr) => SIM.handelBerattelse(s, minne(nr, ['behov', 'fint', 'irriterad'])));
   const med = texter.filter(x => x.includes('Granåsen'));
   const repliker = med.every(x => !x.replace(/"[^"]*"/g, '').includes('Granåsen')); // namnet står bara i det handlaren säger
-  const k = SIM.nyKlan(s, 8, -40); (s.klaner ??= []).push(k); k.styrka = 4;
+  const k = SIM.nyGrannby(s, 8, -40); k.styrka = 4;
   SIM.radDygn(s, 'plundra', k);
   const anfall = s.log.map(l => l.text).find(x => x.includes('plundra')) ?? '';
-  const n = createState(9, START), kn = SIM.nyKlan(n, 8, -40); (n.klaner ??= []).push(kn); kn.styrka = 4;
+  const n = createState(9, START), kn = SIM.nyGrannby(n, 8, -40); kn.styrka = 4;
   SIM.radDygn(n, 'plundra', kn);
   const anfallN = n.log.map(l => l.text).find(x => x.includes('plundra')) ?? '';
   return [
@@ -3907,9 +3907,9 @@ function namnmallar(): [string, boolean][] {
   const nS = q.name; q.name = 'Torgils'; const ks = SIM.kandidater(s, p).filter(k => k.om === q.id).map(k => k.namn); q.name = nS;
   // en grannklans namn hoppas över
   const forsta = SIM.kandidater(s, p).find(k => k.rad === 'gran')!;
-  s.klaner = [{ namn: forsta.namn + 's folk' } as never];
+  const varldForr = JSON.stringify(s.varld); SIM.nyGrannby(s, 10, 0, { namn: forsta.namn + 's folk' });
   const hoppas = !SIM.kandidater(s, p).some(k => k.namn === forsta.namn);
-  s.klaner = undefined;
+  s.varld = JSON.parse(varldForr);
   const bast = SIM.bastaNamn(s, p);
   if (process.env.ALLA) for (let by = 1; by <= 20; by++) {
     const t = createState(by, START), v = SIM.living(t).filter(o => SIM.ageOf(o, t.now) >= SIM.ALDER.vuxen);

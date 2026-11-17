@@ -13,7 +13,7 @@ import { count, stat } from './folk';
 import { SAMTAL } from './samtal';
 import { clamp, hash3 } from './slump';
 import { gastNyckel } from './gastliv';
-import { KlanPerson, klanById } from './klaner';
+import { KlanPerson, klanById, klanerOf } from './klaner';
 import type { Handlare } from './handel';
 
 export const GASTREL = balans('gastrel', {
@@ -92,5 +92,5 @@ export function glomIrritation(s: State, h: Handlare) {
 }
 // alla gästrelationer en bybo har (bybons relationsflik): personen i grannklanen, klanens namn och relationen
 export function gastRelationer(s: State, p: Person) {
-  return (s.klaner ?? []).flatMap(k => k.personer.flatMap(q => q.rel?.[p.id] ? [{ q, klan: k.namn, r: q.rel[p.id] }] : []));
+  return klanerOf(s).flatMap(k => k.personer.flatMap(q => q.rel?.[p.id] ? [{ q, klan: k.namn, r: q.rel[p.id] }] : []));
 }

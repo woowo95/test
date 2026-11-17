@@ -2345,7 +2345,7 @@ SCENARIER.relationstext = {
 };
 
 SCENARIER.utbrytning = {
-  text: 'Utbrytningar (steg 4.4.4.1, klaner.ts): när en familj flyttar ur en mycket stor by (KLAN.utbrytFran invånare eller fler) blir den en ny grannklan, uppkallad efter grundaren. De som flyttade är klanens namngivna personer, klanen tycker om byn och syns i fliken Grannar. Ur en mindre by flyttar familjen som förut, utan att bli en klan.',
+  text: 'Utbrytningar (steg 4.4.4.1, klaner.ts): när en familj flyttar ur en mycket stor by (KLAN.utbrytFran invånare eller fler) blir den en ny by i världen på den närmaste lediga byplatsen (steg 11.2.15), uppkallad efter grundaren. De som flyttade är klanens namngivna personer, klanen tycker om byn och syns i fliken Grannar. Ur en mindre by flyttar familjen som förut, utan att bli en klan.',
   kor: () => {
     const ny = (fler: number) => {
       const s = createState(6, START); rikBy(s); setFood(s, 300); s.ting = [];
@@ -2363,7 +2363,7 @@ SCENARIER.utbrytning = {
     const personer = !!k && [a, b, c].every(p => k.personer.some(x => x.id === p.id && x.namn === p.name)) && k.personer.find(x => x.id === c.id)?.roll === 'barn';
     const van = !!k && k.inst === SIM.KLAN.utbrytInst && k.folk === 3 && k.styrka === 2 && k.grundad === s.now - HOUR;
     const liten = ny(10);
-    const ingen = !!liten.s.stat?.utvandrade && !SIM.klanerOf(liten.s).some(x => x.utbrytare) && SIM.klanerOf(liten.s).length === SIM.KLAN.antal;
+    const ingen = !!liten.s.stat?.utvandrade && !SIM.klanerOf(liten.s).some(x => x.utbrytare) && SIM.klanerOf(liten.s).length === SIM.klanerOf(createState(6, START)).length;
     return [
       [`familjen flyttade ur en by på ${pop} (${s.stat?.utvandrade ?? 0} flyttade)`, (s.stat?.utvandrade ?? 0) === 3 && pop >= SIM.KLAN.utbrytFran],
       [`de blir en ny grannklan, uppkallad efter grundaren (${k?.namn})`, namn],

@@ -312,7 +312,7 @@ function kommer(s: State, tvinga?: boolean) {
 
 // testläget (steg 4.5.4.4): en handlare skickas till byn nu, från vilken grannklan som helst, och en rad i Händelser säger
 // varifrån (steg 4.5.6.4). Svarar med raden, eller skälet till att ingen kan komma just nu (handlarHinder)
-export const handlarHinder = (s: State) => s.handlare ? 'Det finns redan en handlare i byn' : !klanerOf(s).length ? 'Byn har inga grannklaner än' : undefined;
+export const handlarHinder = (s: State) => s.handlare ? 'Det finns redan en handlare i byn' : !klanerOf(s).length ? 'Byn har inga grannar än' : undefined;
 export function skickaHandlare(s: State): { ok: boolean; text: string } {
   const h = handlarHinder(s);
   if (h) return { ok: false, text: h };

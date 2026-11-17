@@ -6,7 +6,7 @@ import { kronika } from './historik';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, newPerson, raddAkt, relKey, startSkills, think, uppkalladLogg } from './folk';
 import { pair } from './varld';
 import { avgMood } from './humor';
-import { chance, clamp, pick, rnd } from './slump';
+import { chance, clamp, pick, pickViktat, rnd } from './slump';
 import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
 import { vattenNu } from './sjo';
 import { tileOf } from './mark';
@@ -18,7 +18,8 @@ import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
-import { KLAN, andraInst, klanById, klanerOf, utbrytning } from './klaner';
+import { KLAN, andraInst, klanById, klanerOf, narhet } from './klaner';
+import { utbrytning } from './grannbyar';
 import { prisIPrat } from './handel';
 import { gaMot } from './rovare';
 import { kanterna } from './varg';
@@ -223,9 +224,9 @@ export function regulate(s: State, dtSec: number) {
     if (chance(s, rate / 86400, HOUR_S, 'flytt')) emigrate(s);
   }
   if (chance(s, immigrationRate(pop) * (LIV.nybyggareMatMin + LIV.nybyggareMat * matGott(s)) / 86400, dtSec, 'flytt')) immigrate(s, false);
-  if (s.klaner?.length && chance(s, KLAN.framling / 86400, dtSec, 'klan')) framling(s);
+  if (klanerOf(s).length && chance(s, KLAN.framling / 86400, dtSec, 'klan')) framling(s);
 }
-// en främling från en grannklan som inte tycker illa om byn (steg 4.4.4.2). Hen kan ofta en teknik som ingen i byn kan, men
+// en främling från en grannby som inte tycker illa om byn (steg 4.4.4.2), oftare från en som ligger nära (narhet). Hen kan ofta en teknik som ingen i byn kan, men
 // vars krav byn kan, och tekniken under den. Främlingen kommer gående (steg 9.2.115): hen är en gäst som går in på kartan
 // från närmaste kanten, mot ledaren (eller elden när byn saknar ledare), pratar med hen en stund och stannar som bybo eller
 // går igen (framlingSteg). Byn avgör: ledaren, eller de vuxna om byn saknar ledare. Det väger tekniken, klanens inställning,
@@ -233,7 +234,7 @@ export function regulate(s: State, dtSec: number) {
 export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   const kan = klanerOf(s).filter(k => k.inst > KLAN.handelMin);
   if (!kan.length) return undefined;
-  const k = pick(s, kan, 'klan'), folk = living(s);
+  const k = pickViktat(s, kan, kan.map(narhet), 'klan'), folk = living(s);
   const kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => knows(p, id))));
   const nya = TEKNIK.filter(t => !kunnat.has(t.id) && t.krav.every(id => kunnat.has(id)));
   const tek = tvinga ? tvinga.tek : nya.length && rnd(s, 'klan') < KLAN.framlingTek ? pick(s, nya, 'klan').id : undefined;
@@ -365,7 +366,7 @@ function emigrate(s: State) {
   count(s, 'utvandrade', group.length);
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));
   for (const q of living(s)) for (const g of group) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > REL.saknar) { think(q, `Saknar ${g.name}`, LIV.saknarFlytt, now, LIV.saknarFlyttDygn * DAY); break; } }
-  utbrytning(s, group, pop); // ur en mycket stor by blir de en ny grannklan (steg 4.4.4.1)
+  utbrytning(s, group, pop); // ur en mycket stor by blir de en ny by i världen (steg 4.4.4.1, grannbyar.ts)
 }
 
 // sorgen i stadier (steg 9.2.33): q förlorade p. Först förlusten, och sorgTimme byter till sorgen och saknaden

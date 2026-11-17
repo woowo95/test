@@ -13,7 +13,7 @@ import { hash3 } from './slump';
 import { EGENSKAP, count } from './folk';
 import { SAKER } from './saker';
 import type { KlanPerson } from './klaner';
-const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : s.klaner?.find(k => k.id === id); // som i klaner.ts, utan att importera den (cirkeln gastliv–klaner)
+const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : s.varld?.rader?.find(r => r.syn?.id === id)?.syn; // som i klaner.ts, utan att importera den (cirkeln gastliv–klaner)
 
 export const GASTSORTER = {
   handlare: { namn: 'Handlare' },

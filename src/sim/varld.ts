@@ -1,7 +1,7 @@
 import { balans } from './balans';
 import { TROSHUS_DELAR, planRutor, vaggSorter, vuxnaTroende } from './troshus';
 import { delarAv, delarIRad, rivStation, stationDef } from './stationer';
-import { nyaKlaner } from './klaner';
+import { nyaGrannbyar } from './grannbyar';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
 import { migrateTek } from './teknik';
@@ -51,7 +51,7 @@ function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): 
   if (START.klader) for (const p of s.people) for (const pl of START_KLADER) newTing(s, kladNyckel(pl, 'kaninskinn'), 1, p.id).bar = p.id;
   s.seder.v = sederTarget(s);
   stepDelning(s); // en ny by är fattig och delar nästan allt
-  nyaKlaner(s); // grannklanerna (steg 4.4.3)
+  nyaGrannbyar(s); // byn får sin värld, och grannarna är byarna i dess grannät (steg 4.4.3, 11.2.15)
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');
   return s;
 }
@@ -224,7 +224,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [19, 'v240: färdigheten Handel (steg 4.4.1.4) börjar av berättandet och hantverket för dem som redan finns', s => {
     for (const p of s.people) if (p.skill.handel === undefined) p.skill.handel = handelStart(p);
   }],
-  [20, 'v242: grannklanerna (steg 4.4.3)', s => { if (!s.klaner) nyaKlaner(s); }],
+  [20, 'v242: grannklanerna (steg 4.4.3; från v531 uppgradering 56)', () => {}],
   [21, 'v263: sederna formas bara av personerna (steg 4.5.4.9): händelsernas egna drag tas bort', s => { const sd = s.seder as { ev?: unknown; log?: unknown }; delete sd.ev; delete sd.log; }],
   [22, 'v284: varje färdig brasa blir en lägereld på samma plats (steg 4.5.6.8, eld.ts), med samma nummer så att den som bär ved dit fortsätter', s => {
     type Gammal = { id: number; k: string; x: number; y: number; kvar: number; klar?: number; eld?: { fuel: number; lit?: 1; litAt?: number; ut?: number; folk?: number[] } };
@@ -428,6 +428,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const t of [...(s.stationer ?? [])]) if (!t.inne && delarAv(t).some(q => { for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) if (isWall(s, x + 0.5, y + 0.5)) return true; return false; }))
       rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs, eftersom ett hus byggts ut över den.`);
   }],
+  [56, 'v531: grannklanerna blir byar i världen (steg 11.2.15)', s => { nyaGrannbyar(s, s.klaner); delete s.klaner; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

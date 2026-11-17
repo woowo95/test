@@ -7,7 +7,7 @@ import { chance, clamp, rnd } from './slump';
 import { ALDER, ageOf, alive, byId, count, isKin, living, log, paKartan } from './folk';
 import { kronika } from './historik';
 import { notis } from './notiser';
-import { Klan, klanById, klanerOf } from './klaner';
+import { Klan, klanById, klanerOf, narhet } from './klaner';
 import { rikedom } from './varde';
 import { Rovarflock, forsvaret, rovarnaKommer } from './rovare';
 import { gastAv } from './gast';
@@ -67,7 +67,7 @@ export function radDygn(s: State, tvingaSkal?: RadSkal, tvingaKlan?: Klan) {
     const skal = (Object.keys(SKAL) as RadSkal[]).filter(q => SKAL[q].galler(s, k));
     if (!skal.length && !tvingaSkal) continue;
     const skydd = k.radT === undefined ? 1 : 1 - Math.exp(-(s.now - k.radT) / (RADER.skyddDygn * DAY));
-    if (!tvingaSkal && rnd(s, 'rovare') >= RADER.chans * lock / RADER.lockPer * skydd) continue;
+    if (!tvingaSkal && rnd(s, 'rovare') >= RADER.chans * lock / RADER.lockPer * skydd * narhet(k)) continue; // en by långt bort kommer mer sällan
     const tot = skal.reduce((a, q) => a + SKAL[q].vikt(), 0); let x = rnd(s, 'rovare') * tot, val = skal[0] ?? 'plundra';
     for (const q of skal) { x -= SKAL[q].vikt(); if (x <= 0) { val = q; break; } }
     val = tvingaSkal ?? val;

@@ -22,6 +22,7 @@ import { ledareOf } from './styre';
 import { kronika } from './historik';
 import { notis } from './notiser';
 import { balans } from './balans';
+import { klanerOf } from './klaner';
 import type { UpplevelseTyp } from './uppvaxt';
 import type { IntryckTyp } from './rykten';
 
@@ -161,7 +162,7 @@ export function kandidater(s: State, p: Person): Kandidat[] {
     else if (d.slag === 'nybygget') ut.push({ namn: NYBYGGET, rad });
     else ut.push({ namn: bygg(s, rad, d.forled!), rad });
   }
-  return ut.filter(k => !(s.klaner ?? []).some(c => c.namn.startsWith(k.namn)));
+  return ut.filter(k => !klanerOf(s).some(c => c.namn.startsWith(k.namn)));
 }
 // hur sant namnet är för byn i dag
 export const sant = (s: State, k: { rad: string; om?: number }) => DEF[k.rad] ? DEF[k.rad].sant(s, k.om) : 0;
