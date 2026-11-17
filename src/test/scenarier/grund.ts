@@ -3,6 +3,7 @@ import { KARTA, createState, growGround, step, living, temperature, coldOf, ageI
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { T } from '../../sim/typer';
 import * as SIM from '../../sim';
+import { readFileSync } from 'node:fs';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
 import { START, STEG_TIM } from '../kor';
@@ -1626,7 +1627,11 @@ SCENARIER.testknappar = {
     // steg 9.2.24: testelden säger hur torr marken är och hur fort den sprider sig, och knappen torkar marken helt, också i istiden
     const z = cloneState(s); angSlag(z, mitt, 'hog'); if (z.vader) { z.vader.torr = 0; z.vader.fukt = 1; }
     const fore = SIM.torrhet(z), tork = SIM.torkaTest(z), efter = SIM.torrhet(z), eld = SIM.tandTest(z, mitt % W, Math.floor(mitt / W));
+    // inställningarna (steg 11.1.63): två block med rubriker, Byn med Ny by sist bakom ett streck och Testläge, och farten i ord
+    const mall = readFileSync(new URL('../../template.html', import.meta.url), 'utf8'), inst = mall.slice(mall.indexOf('id="installningar"'), mall.indexOf('<div id="loading">'));
+    const block = /<h4>Byn<\/h4>[\s\S]*id="temaKnapp"[\s\S]*id="byar"[\s\S]*<hr>[\s\S]*id="newVillage"[\s\S]*<h4>Testläge<\/h4>[\s\S]*id="speeds"/.test(inst) && inst.includes('>1 år per sekund<');
     return [
+      ['inställningarna har två block med rubriker: Byn (tema, byarna och Ny by bakom ett streck) och Testläge, och farten skrivs 1 år per sekund (steg 11.1.63)', block],
       [`knappen torkar marken helt (torrhet ${Math.round(fore * 100)} % → ${Math.round(efter * 100)} %): "${tork.text}"`, fore < 1 && efter === 1],
       [`testelden säger torrheten och farten: "${eld.text}"`, eld.ok && /torrhet 100 %/.test(eld.text) && /en ruta på ungefär/.test(eld.text)],
       [`tornadon kommer: "${r.text}"`, r.ok && !!t?.test && /från (norr|söder|öster|väster|nordost|nordväst|sydost|sydväst)/.test(r.text)],

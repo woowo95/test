@@ -501,6 +501,7 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 #speeds button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 .primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; padding: 7px 14px; font-size: 15px; }
 .spacer { flex: 1; }
+.installblock { flex: 1 1 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; } .installblock + .installblock { margin-top: 10px; } .installblock h4 { margin: 0; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; } .installblock hr { align-self: stretch; border: 0; border-top: 1px solid var(--line); margin: 4px 0; } /* steg 11.1.63 */
 /* kvalitetens namn i sin färg (steg 9.2.18): usel mörk, normal inget, mästerverk ljusast */
 .kvo { font-size: 0.92em; white-space: nowrap; }
 .kvo.kv0 { color: var(--muted); opacity: 0.75; } .kvo.kv1 { color: var(--muted); } .kvo.kv3 { color: var(--g-skiffer); }
@@ -611,24 +612,28 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
     <nav class="tabs" role="tablist" aria-label="Flikarna"></nav>
     <button type="button" class="stenvert" id="installKnapp" aria-label="Inställningar" title="Testläget och ny by">⚙</button>
     <div class="controls" id="installningar" hidden>
-        <label class="switch"><input type="checkbox" id="testToggle"> Testläge</label>
-        <div id="speeds" hidden>
-          <button type="button" data-v="1">1×</button>
-          <button type="button" data-v="60">1 min/s</button>
-          <button type="button" data-v="3600">1 tim/s</button>
-          <button type="button" data-v="86400">1 år/s</button>
-        </div>
-        <div id="testSkicka" hidden></div>
-        <button type="button" class="ghost" id="arenaKnapp" title="Arenan: prova strider utan att byn påverkas">⚔️</button>
+        <!-- två block med rubriker (steg 11.1.63): Byn (tema, byarna och Ny by sist bakom ett streck) och Testläge -->
+        <section class="installblock"><h4>Byn</h4>
         <button type="button" class="ghost" id="temaKnapp" title="Ljust eller mörkt läge">◐ Datorn</button>
         <div id="byar"></div>
-        <span class="spacer"></span>
+        <hr>
         <button type="button" class="ghost" id="newVillage">Ny by</button>
         <div id="confirmNew" hidden>
           <span>Den nuvarande byn försvinner för gott.</span>
           <button type="button" class="ghost" id="cancelNew">Avbryt</button>
           <button type="button" class="primary" id="okNew">Starta ny by</button>
+        </div></section>
+        <section class="installblock"><h4>Testläge</h4>
+        <label class="switch"><input type="checkbox" id="testToggle"> Testläge</label>
+        <div id="speeds" hidden>
+          <button type="button" data-v="1">1×</button>
+          <button type="button" data-v="60">1 minut per sekund</button>
+          <button type="button" data-v="3600">1 timme per sekund</button>
+          <button type="button" data-v="86400">1 år per sekund</button>
         </div>
+        <div id="testSkicka" hidden></div>
+        <button type="button" class="ghost" id="arenaKnapp" title="Arenan: prova strider utan att byn påverkas">⚔️</button>
+        </section>
     </div>
 </div>
 <div id="loading"><div class="card"><h2>Samhällssimulatorn</h2><p class="muted">Letar efter din by…</p></div></div>
