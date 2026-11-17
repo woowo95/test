@@ -16,6 +16,7 @@ export * from './sim/varlden';
 export * from './sim/varldslag';
 export * from './sim/varldkronika';
 export * from './sim/vagval';
+export * from './sim/grannat';
 export * from './sim/landmarken';
 export * from './sim/radtal';
 export * from './sim/varldnamn';
