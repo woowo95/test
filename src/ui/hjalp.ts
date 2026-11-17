@@ -13,7 +13,7 @@ export const times = (n: number) => `${n} ${n === 1 ? 'gång' : 'gånger'}`;
 export function durTxt(ms: number) {
   const h = ms / HOUR;
   const min = Math.max(1, Math.round(ms / MIN));
-  return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
+  return h >= 24 ? `${num(h / 24)} år` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
 }
 export function clockTxt(t: number) { const d = new Date(t); return `${timeLabel(s, t)}, kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 
@@ -107,7 +107,7 @@ const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; forkl:
   { har: p => ledareOf(s)?.id === p.id, namn: () => 'Byns ledare', forkl: 'Lägger fram påbud och lagar och väger tyngst i sederna och omröstningarna', ikon: () => 'ledarskap' },
   { har: p => !!p.skador?.length, namn: p => `Skadad: ${skadeLista(p, s.now).map(r => r.namn.toLowerCase()).join(', ')}`, forkl: 'Går och arbetar sämre tills skadorna läkt', ikon: p => skadeLista(p, s.now)[0].ikon },
   { har: p => isSick(p, s.now), namn: () => 'Sjuk', forkl: 'Vilar mer och orkar mindre tills hen blivit frisk', ikon: () => 's_inf' },
-  { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds inom några dygn. Tryck för att se hur långt det gått', ikon: () => 's_barn', oppnar: 'kropp' },
+  { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds inom några år. Tryck för att se hur långt det gått', ikon: () => 's_barn', oppnar: 'kropp' },
 ];
 // märkena som symboler med namnet och förklaringen vid musen (steg 9.2.6); ord = ordet skrivs också ut (rutan i hörnet, som inte går
 // att hålla musen över)

@@ -52,7 +52,7 @@ function rikTopp() {
 
 // fönstret per graf (steg 9.2.8): hur lång tid grafen visar (Allt = hela tiden sedan byns början), och tiden där man tryckt
 // eller drar längs grafen (visa), vars värden står under grafen
-const LANGD = { allt: { namn: 'Allt', t: Infinity }, dygn: { namn: '1 dygn', t: DAY }, sasong: { namn: '1 säsong', t: WEEK }, ar: { namn: '4 säsonger', t: 4 * WEEK } } as const;
+const LANGD = { allt: { namn: 'Allt', t: Infinity }, dygn: { namn: '1 år', t: DAY }, sasong: { namn: '1 tidsålder', t: WEEK }, ar: { namn: '4 tidsåldrar', t: 4 * WEEK } } as const;
 type Langd = keyof typeof LANGD;
 const fonster: Record<string, { langd?: Langd; visa?: number; start?: number }> = {}; // start: grafens första mätpunkt (steg 9.2.124)
 const B = 300, H = 70; // ritytan i SVG:ns enheter
