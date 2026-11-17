@@ -44,13 +44,15 @@ export function packaVarld(fro: number, v: VarldMark): Varlden {
 }
 
 // byn får sin värld, räknad ur byns frö (en gång; en by som har en värld behåller den)
-export function medVarld(s: State) {
+// fore: det som görs före huvudbyn (förhistorien, forhistoria.ts, steg 11.3.13)
+export function medVarld(s: State, fore?: (s: State, vl: Varlden, v: VarldMark) => void) {
   if (s.varld) return s.varld;
   const fro = varldFro(s.seed), v = skapaVarldMark(fro);
   s.varld = packaVarld(fro, v);
   uppackad.set(s.varld, v);
   laggByar(s.varld, v); // byarna, de övriga platserna och sist huvudbyn med samma regler (placering.ts, steg 11.2.13–11.2.14)
   laggOvriga(s.varld, v);
+  fore?.(s, s.varld, v);
   laggHuvudby(s);
   laggGrannat(s.varld, v, s.founded); // varje bys närmaste grannar med väg och restid (grannat.ts, steg 11.2.21)
   return s.varld;

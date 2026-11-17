@@ -11,7 +11,7 @@ import { balans } from './balans';
 import { ledarBytet } from './byrel';
 import { KROPP, egenskaperUr, namnUr } from './folk';
 import { lever } from './rad';
-import { BYSORTER, FastPerson, VarldRad } from './radtal';
+import { BYSORTER, FastPerson, radNr, VarldRad } from './radtal';
 import { hash3 } from './slump';
 import { KOHANDELSER, PERIODRADER, laggIKo, periodSlut } from './varldslag';
 import { varldHandelse } from './varldkronika';
@@ -63,7 +63,7 @@ export function tillsatt(vl: Varlden, r: VarldRad, t: number, forsta = false): F
 
 // ledaren dör vid sin tid: en ny tillsätts i en by som lever, och mutorna förlorar hälften av sin verkan
 KOHANDELSER.ledare = (_s: State, vl: Varlden, p) => {
-  const r = vl.rader?.find(x => x.nr === p.sak), l = r && radLedare(r);
+  const r = radNr(vl, p.sak), l = r && radLedare(r);
   if (!r || !l || l.nyckel !== p.data?.nyckel) return;
   r.fasta.splice(r.ledare!, 1); delete r.ledare;
   ledarBytet(vl, r.nr);

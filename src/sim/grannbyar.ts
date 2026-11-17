@@ -13,7 +13,8 @@ import { eldPlats, getMap } from './karta';
 import { byGrannar } from './grannat';
 import { hinder, laggPlats, VarldPlats } from './landmarken';
 import { byRutor } from './placering';
-import { radKrok, VarldRad } from './radtal';
+import { BYSORTER, radKrok, VarldRad } from './radtal';
+import { FORHIST, forhistoria } from './forhistoria';
 import { narmasteMal } from './vagval';
 import { varldHandelse } from './varldkronika';
 import { medVarld, varldMark } from './varlden';
@@ -64,15 +65,32 @@ function nyPlats(s: State, namn: string): { p: VarldPlats; dygn: number } | unde
 
 // grannbyarna: varje by i huvudbyns grannät som inte har en rad får en, och en förbindelse med byn. Gamla klaner (en sparad by
 // från före v531) tar byarna i ordning efter avståndet; de som blir över får en ny plats
-export function nyaGrannbyar(s: State, gamla: Klan[] = []) {
-  const vl = medVarld(s), h = huvudPlats(s), kvar = [...gamla];
+// forhist: en ny värld får sin förhistoria (forhistoria.ts, steg 11.3.13; ingen när åldern är 0), och byarna i grannätet som lever efter den får en
+// förbindelse med huvudbyn: namnet, folket, styrkan och rikedomen ur raden, ledaren som hövding och läggningen ur tron
+export function nyaGrannbyar(s: State, gamla: Klan[] = [], forhist = true) {
+  const vl = medVarld(s, forhist && FORHIST.ar > 0 ? forhistoria : undefined), h = huvudPlats(s), kvar = [...gamla];
   for (const g of h?.grannar ?? []) {
     const p = vl.platser?.find(q => q.nr === g.nr);
-    if (!p || p.by !== undefined) continue;
+    if (!p) continue;
+    const r = p.by !== undefined ? vl.rader?.find(x => x.nr === p.by) : undefined;
+    if (r && !r.syn && r.nr !== vl.huvud && BYSORTER[r.sort].folk && r.tal.folk > 0) { synFor(s, r, p, g.dygn); continue; }
+    if (p.by !== undefined) continue;
     const k = kvar.shift() ?? nyKlan(s, klanMellan(s, KLAN.folk), klanMellan(s, KLAN.inst), p.namn, '');
     placera(s, k, p, g.dygn);
   }
   for (const k of kvar) { const n = nyPlats(s, k.namn); placera(s, k, n?.p, n?.dygn); }
+}
+// huvudbyns förbindelse med en by som redan finns i världen (förhistorien)
+function synFor(s: State, r: VarldRad, p: VarldPlats, dygn: number) {
+  const k = nyKlan(s, r.tal.folk, klanMellan(s, KLAN.inst), r.namn, '');
+  k.styrka = r.tal.styrka; k.resurser = r.tal.rikedom; k.rad = r.nr;
+  if (r.tro) k.krigisk = r.tro.krig;
+  const l = r.ledare !== undefined ? r.fasta[r.ledare] : undefined, hv = k.personer.find(q => q.roll === 'hovding');
+  if (l && hv) { hv.namn = l.namn; hv.sex = l.kon; hv.fodd = l.fodd; }
+  const v = varldMark(s);
+  if (v) { const h = hemAv(v, huvudPlats(s), p); k.hem = h.hem; k.sallsynt = h.sallsynt; }
+  k.dygn = dygn;
+  r.syn = k;
 }
 // en ny grannby (scenarierna och utbrytningen): på den närmaste lediga byplatsen
 export function nyGrannby(s: State, folk: number, inst: number, o: { namn?: string; personer?: KlanPerson[] } = {}): Klan {

@@ -6,4 +6,7 @@ const p = (globalThis as { process?: { env: Record<string, string | undefined> }
 if (p && !/karta\./.test(p.env.BALANS ?? '')) p.env.BALANS = ['karta.bredd=120,karta.hojd=120', p.env.BALANS].filter(Boolean).join(',');
 // scenarierna skrevs utan kläderna från början (steg 10.2.73) och prövar annat: de börjar utan, och scenariot klader slår på dem
 if (p && !/start\.klader/.test(p.env.BALANS ?? '')) p.env.BALANS = [p.env.BALANS, 'start.klader=0'].filter(Boolean).join(',');
+// scenarierna skrevs före förhistorien (steg 11.3.13) och prövar annat: deras världar har ingen förhistoria (en ålder på 0 år),
+// och scenariot forhistoria anger åldern själv
+if (p && !/forhist\.ar/.test(p.env.BALANS ?? '')) p.env.BALANS = [p.env.BALANS, 'forhist.ar=0'].filter(Boolean).join(',');
 export {};

@@ -47,16 +47,18 @@ export function laggIKo(vl: Varlden, t: number, typ: string, o: { sak?: number; 
 }
 
 // världen fram till nu: det som ligger först i tiden räknas först, kön före perioderna vid samma tid och timmen före dygnet
-export function varldSteg(s: State) {
+export const varldSteg = (s: State) => varldTill(s, s.now);
+// världen räknas fram till tiden till (förhistorien, forhistoria.ts, räknar fram till huvudbyns grundande)
+export function varldTill(s: State, till: number) {
   const vl = s.varld;
   if (!vl) return;
   borjan(s, vl);
   const klar = vl.perioder ??= { timme: 0, dygn: 0 };
   for (let varv = 0; varv < 1e6; varv++) {
     const ko = vl.ko?.[0];
-    let nasta: PeriodId | 'ko' | undefined, t = s.now;
+    let nasta: PeriodId | 'ko' | undefined, t = till;
     if (ko && ko.t <= t) { nasta = 'ko'; t = ko.t; }
-    for (const k of PERIOD_IDS) { const ts = periodSlut(vl, k, klar[k]); if (ts <= s.now && (nasta === undefined || ts < t)) { nasta = k; t = ts; } }
+    for (const k of PERIOD_IDS) { const ts = periodSlut(vl, k, klar[k]); if (ts <= till && (nasta === undefined || ts < t)) { nasta = k; t = ts; } }
     if (!nasta) return;
     if (nasta === 'ko') { vl.ko!.shift(); KOHANDELSER[ko!.typ]?.(s, vl, ko!); continue; }
     const n = klar[nasta]++;

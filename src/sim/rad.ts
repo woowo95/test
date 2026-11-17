@@ -27,7 +27,8 @@ import { TEK, TEKNIK, TEKTAL } from './teknik';
 import { relation } from './byrel';
 import { TRONAMN } from './religion';
 import { MARK_IDS, VARLDMARK, VarldMark } from './varldmark';
-import { BYSORTER, radKrok, VarldRad } from './radtal';
+import { BYSORTER, radKrok, radNr, VarldRad } from './radtal';
+import { byPlats, varldPlatsNr } from './landmarken';
 import { KROPP } from './folk';
 import { barnMatAv, matGottAv } from './liv';
 import { fodslarPerAr, fodVilja } from './steg';
@@ -74,9 +75,13 @@ export const RAD = balans('rad', {
 
 export type RadKolumn = 'barkraft' | 'forvaring' | 'styrka' | 'rikedom';
 // teknikernas tillskott i en kolumn: summan av andelarna för det byn kan (0 = inget)
+// (räknas en gång per lista: raden får en ny lista när teknikerna ändras)
+const tillskott = new WeakMap<string[], Partial<Record<RadKolumn, number>>>();
 export function tekTillskott(r: VarldRad, k: RadKolumn): number {
-  let n = 0;
-  for (const id of r.tek) n += TEK[id]?.rad?.[k] ?? 0;
+  let m = tillskott.get(r.tek);
+  if (!m) tillskott.set(r.tek, m = {});
+  let n = m[k];
+  if (n === undefined) { n = 0; for (const id of r.tek) n += TEK[id]?.rad?.[k] ?? 0; m[k] = n; }
   return n;
 }
 // platsens grundtal: vad marken på rutan och de åtta runt den föder, och floderna
@@ -147,8 +152,8 @@ const K = { ny: 1 << 16, tappa: 2 << 16, sprid: 3 << 16, tro: 4 << 16 };
 const nivaMal = (niva: number) => TEKTAL.nivaDygn[Math.min(TEKTAL.nivaDygn.length, niva) - 1];
 // grannarna inom räckhåll (grannätet på byns plats)
 export function grannRader(vl: Varlden, r: VarldRad, dygn: number): VarldRad[] {
-  const p = vl.platser?.find(q => q.by === r.nr);
-  return (p?.grannar ?? []).filter(g => g.dygn <= dygn).flatMap(g => { const q = vl.platser?.find(x => x.nr === g.nr); const m = q?.by !== undefined ? vl.rader?.find(x => x.nr === q.by) : undefined; return m && BYSORTER[m.sort].folk ? [m] : []; });
+  const p = byPlats(vl, r.nr);
+  return (p?.grannar ?? []).filter(g => g.dygn <= dygn).flatMap(g => { const m = radNr(vl, varldPlatsNr(vl, g.nr)?.by); return m && BYSORTER[m.sort].folk ? [m] : []; });
 }
 // ett dygn: nya tekniker, spridda tekniker och tappade tekniker
 export function radKunskap(vl: Varlden, r: VarldRad, n: number) {

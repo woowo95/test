@@ -428,7 +428,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const t of [...(s.stationer ?? [])]) if (!t.inne && delarAv(t).some(q => { for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) if (isWall(s, x + 0.5, y + 0.5)) return true; return false; }))
       rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs, eftersom ett hus byggts ut över den.`);
   }],
-  [56, 'v531: grannklanerna blir byar i världen (steg 11.2.15)', s => { nyaGrannbyar(s, s.klaner); delete s.klaner; }],
+  [56, 'v531: grannklanerna blir byar i världen (steg 11.2.15)', s => { nyaGrannbyar(s, s.klaner, false); delete s.klaner; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

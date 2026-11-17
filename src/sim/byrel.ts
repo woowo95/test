@@ -10,6 +10,7 @@ import { balans } from './balans';
 import { Klan, andraInst } from './klaner';
 import { clamp } from './slump';
 import { Varlden } from './varlden';
+import { radNr } from './radtal';
 
 export const BYREL = balans('byrel', {
   glom: 0.03, // så stor del av avståndet till grundläget glöms per dygn (ett år i spelet), minst ett steg
@@ -46,7 +47,7 @@ export type ByHandelseId = keyof typeof BYHANDELSER;
 
 const nyckel = (a: number, b: number) => `${a}>${b}`;
 const par = (a: number, b: number) => a < b ? `${a}-${b}` : `${b}-${a}`;
-const rad = (vl: Varlden, nr: number) => vl.rader?.find(r => r.nr === nr);
+const rad = (vl: Varlden, nr: number) => radNr(vl, nr);
 // huvudbyns förbindelse med byn a bär a:s syn på huvudbyn
 const synMot = (vl: Varlden, a: number, b: number) => b === vl.huvud ? rad(vl, a)?.syn : undefined;
 

@@ -56,8 +56,38 @@ export interface VarldPlats {
   grannar?: import('./grannat').Granne[]; // byns grannät (steg 11.2.21, grannat.ts)
 }
 export const varldPlatser = (vl: Varlden) => vl.platser ??= [];
-export const varldPlatsNr = (vl: Varlden, nr: number) => vl.platser?.find(p => p.nr === nr);
-export const varldPlatserPa = (vl: Varlden, x: number, y: number) => (vl.platser ?? []).filter(p => p.x === x && p.y === y);
+// platserna efter numret och efter byns rad, räknade en gång per lista och längd; en plats får sin rad (p.by) efter att den
+// lagts till, så en saknad eller ändrad rad söks på nytt
+const register = new WeakMap<VarldPlats[], { n: number; nr: Map<number, VarldPlats>; by: Map<number, VarldPlats> }>();
+function reg(l: VarldPlats[]) {
+  let c = register.get(l);
+  if (!c || c.n !== l.length) { c = { n: l.length, nr: new Map(l.map(p => [p.nr, p])), by: new Map() }; register.set(l, c); }
+  return c;
+}
+export const varldPlatsNr = (vl: Varlden, nr: number) => vl.platser ? reg(vl.platser).nr.get(nr) : undefined;
+export function byPlats(vl: Varlden, rad: number): VarldPlats | undefined {
+  const l = vl.platser;
+  if (!l) return undefined;
+  const c = reg(l), p = c.by.get(rad);
+  if (p && p.by === rad && p.k !== undefined) return p;
+  const q = l.find(x => x.by === rad);
+  if (q) c.by.set(rad, q); else c.by.delete(rad);
+  return q;
+}
+// platserna per ruta, räknade en gång per lista och längd (en plats läggs till med push, och tas bort med en ny lista)
+const perRuta = new WeakMap<VarldPlats[], { n: number; m: Map<number, VarldPlats[]> }>();
+const TOMT: VarldPlats[] = [];
+export function varldPlatserPa(vl: Varlden, x: number, y: number): VarldPlats[] {
+  const l = vl.platser;
+  if (!l) return TOMT;
+  let c = perRuta.get(l);
+  if (!c || c.n !== l.length) {
+    c = { n: l.length, m: new Map() };
+    for (const p of l) { const k = p.x * 65536 + p.y, a = c.m.get(k); if (a) a.push(p); else c.m.set(k, [p]); }
+    perRuta.set(l, c);
+  }
+  return c.m.get(x * 65536 + y) ?? TOMT;
+}
 
 // varför en plats inte får ligga där (undefined: den får det)
 export function hinder(vl: Varlden, v: VarldMark, k: LandmarkId, x: number, y: number): string | undefined {

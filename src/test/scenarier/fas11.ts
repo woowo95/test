@@ -1111,3 +1111,27 @@ SCENARIER.splittring = {
     ];
   },
 };
+
+SCENARIER.forhistoria = {
+  text: 'Förhistorien (steg 11.3.13, forhistoria.ts): världen har levt FORHIST.ar år när huvudbyn grundas, med byar som vuxit, delats och gått under efter radens regler, en krönika och grannbyar som lever',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=100' },
+  kor: () => {
+    const s = SIM.createState(7, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const fore = (vl.kronika ?? []).filter(h => h.t < s.founded), antal = (k: string) => fore.filter(h => h.k === k).length;
+    const levande = vl.rader!.filter(r => SIM.lever(vl, r)), ruiner = vl.rader!.filter(r => r.nr !== vl.huvud && !SIM.lever(vl, r));
+    // en gammal by kan mindre än en yngre: kunskapen följer slumpen, inte bara åldern
+    const gamla = [...levande].sort((a, b) => a.grundad - b.grundad);
+    const omvant = gamla.some((a, i) => gamla.slice(i + 1).some(b => b.grundad > a.grundad && b.tek.length > a.tek.length));
+    const klaner = SIM.klanerOf(s), radAv = (k: SIM.Klan) => vl.rader!.find(r => r.nr === k.rad);
+    const levandeKlaner = klaner.length > 0 && klaner.every(k => { const r = radAv(k); return !!r && SIM.lever(vl, r) && k.namn === r.namn; });
+    // samma frö ger samma förhistoria
+    const t = SIM.createState(7, Date.UTC(2026, 0, 1)), lika = JSON.stringify(t.varld!.rader) === JSON.stringify(vl.rader) && JSON.stringify(t.varld!.kronika) === JSON.stringify(vl.kronika);
+    return [
+      [`världen började ${SIM.FORHIST.ar} år före grundandet (${Math.round((s.founded - (vl.borjan ?? s.founded)) / SIM.DAY)} år)`, vl.borjan !== undefined && Math.round((s.founded - vl.borjan) / SIM.DAY) === SIM.FORHIST.ar],
+      [`vid grundandet finns ${levande.length} byar och ${ruiner.length} ruiner, och krönikan har ${fore.length} händelser (grundad ${antal('grundad')}, delad ${antal('delad')}, gått under ${antal('gattUnder')})`, levande.length > 0 && ruiner.length > 0 && antal('delad') > 0 && antal('gattUnder') > 0],
+      [`en gammal by kan mindre än en yngre (${gamla.length} byar med ${Math.min(...levande.map(r => r.tek.length))}–${Math.max(...levande.map(r => r.tek.length))} tekniker)`, omvant],
+      [`huvudbyn har förbindelse med ${klaner.length} grannbyar, alla levande byar ur raden`, levandeKlaner],
+      ['samma frö ger samma förhistoria', lika],
+    ];
+  },
+};

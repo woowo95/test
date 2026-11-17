@@ -86,6 +86,15 @@ export function lasRad(s: State): Record<RadtalId, number> {
   for (const k of RADTAL_IDS) tal[k] = RADTAL[k].las(s);
   return tal;
 }
+// raden med numret nr, ur ett register som räknas en gång per lista och längd (rader läggs bara till)
+const radReg = new WeakMap<VarldRad[], { n: number; m: Map<number, VarldRad> }>();
+export function radNr(vl: { rader?: VarldRad[] }, nr: number | undefined): VarldRad | undefined {
+  const l = vl.rader;
+  if (!l || nr === undefined) return undefined;
+  let c = radReg.get(l);
+  if (!c || c.n !== l.length) radReg.set(l, c = { n: l.length, m: new Map(l.map(r => [r.nr, r])) });
+  return c.m.get(nr);
+}
 // huvudbyns rad i världen (den första gången får den ett nummer)
 export function huvudRad(s: State): VarldRad | undefined {
   const vl = s.varld;

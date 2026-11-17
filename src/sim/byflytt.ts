@@ -21,13 +21,13 @@ import { balans } from './balans';
 import { mots, nyttSlaktband, relation, grundlage } from './byrel';
 import { emigrationRate, hungerFlyttAv, LIV, matGottAv } from './liv';
 import { barkraft, lever, matDygn } from './rad';
-import { BYSORTER, radKrok, VarldRad } from './radtal';
+import { BYSORTER, radKrok, radNr, VarldRad } from './radtal';
 import { clamp } from './slump';
 import { KOHANDELSER, PERIODRADER, antalUr, laggIKo, periodSlut, varldSlump } from './varldslag';
 import { Varlden, varldMark } from './varlden';
 import { VARLD, VarldMark } from './varldmark';
 import { byRutor } from './placering';
-import { hinder, laggPlats } from './landmarken';
+import { byPlats, hinder, laggPlats, varldPlatsNr } from './landmarken';
 import { narmasteMal } from './vagval';
 import { byGrannar } from './grannat';
 import { varldHandelse } from './varldkronika';
@@ -56,8 +56,7 @@ export const NYBY = balans('nyby', {
 });
 // ärendena i världens slump (timmen; rad.ts har 1–6)
 const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15, ruin: 16 };
-const radNr = (vl: Varlden, nr: number) => vl.rader?.find(r => r.nr === nr);
-const platsAv = (vl: Varlden, r: VarldRad) => vl.platser?.find(p => p.k === 'by' && p.by === r.nr);
+const platsAv = (vl: Varlden, r: VarldRad) => { const p = byPlats(vl, r.nr); return p?.k === 'by' ? p : undefined; };
 
 // hur många som vill flytta ur raden per dygn (ett år i spelet): trängseln och hungern, med huvudbyns regler
 export const flyttPerDygn = (r: VarldRad) => emigrationRate(r.tal.folk, LIV.nojd) + hungerFlyttAv(matGottAv(matDygn(r)), r.tal.folk);
@@ -67,7 +66,7 @@ export function flyttMal(vl: Varlden, v: VarldMark | undefined, r: VarldRad): { 
   const ut: { r: VarldRad; dygn: number; vikt: number }[] = [];
   for (const g of platsAv(vl, r)?.grannar ?? []) {
     if (g.dygn > FLYTT.dygn) continue;
-    const p = vl.platser?.find(q => q.nr === g.nr), m = p?.by !== undefined ? radNr(vl, p.by) : undefined;
+    const p = varldPlatsNr(vl, g.nr), m = radNr(vl, p?.by);
     if (!m || m.nr === r.nr || !BYSORTER[m.sort].folk || (m.tal.folk <= 0 && m.nr !== vl.huvud)) continue;
     if (m.nr === vl.huvud && !r.syn) continue; // till huvudbyn flyttar den som har en förbindelse dit
     const tr = clamp(FLYTT.trang - m.tal.folk / Math.max(1, barkraft(v, m)), 0, FLYTT.trang);
@@ -100,7 +99,9 @@ export function nyBy(s: State, vl: Varlden, r: VarldRad, grupp: number, t: numbe
   const v = varldMark(s), hem = platsAv(vl, r);
   if (!v || !hem) return undefined;
   let alla = rutor.get(v); if (!alla) rutor.set(v, alla = byRutor(v));
-  const lediga = new Set(alla.filter(i => !hinder(vl, v, 'by', i % v.w, Math.floor(i / v.w))));
+  // bara rutorna inom räckhåll: varje steg kostar minst 1, så en ruta längre bort i x eller y än räckhållet nås inte
+  const nar = FLYTT.dygn * VARLD.gangPerDygn, inom = (i: number) => Math.abs(i % v.w - hem.x) <= nar && Math.abs(Math.floor(i / v.w) - hem.y) <= nar;
+  const lediga = new Set(alla.filter(i => inom(i) && !hinder(vl, v, 'by', i % v.w, Math.floor(i / v.w))));
   const [f] = narmasteMal(vl, v, hem.y * v.w + hem.x, lediga, 1, 'fots');
   if (!f || f.kostnad / VARLD.gangPerDygn > FLYTT.dygn) return undefined;
   const p = laggPlats(vl, v, 'by', f.till % v.w, Math.floor(f.till / v.w), t);
