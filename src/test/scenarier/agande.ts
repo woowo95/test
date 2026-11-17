@@ -10,6 +10,7 @@ import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
 import { person } from '../../ui/flikar/person';
+import { grannar as grannarFlik } from '../../ui/flikar/grannar';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
 import { hjalpKlick, linkify } from '../../ui/hjalp';
@@ -1929,7 +1930,7 @@ SCENARIER.grannklaner = {
     for (let d = 0; d < 3; d++) { s.now += SIM.DAY; SIM.klanSteg(s, SIM.DAY / SIM.SEC); }
     const andras = k.map(c => c.folk).join() !== folk0;
     const glomt = Math.abs(k[0].inst) < Math.abs(inst0);
-    const ui = SIM.instText(60) === 'vänner' && SIM.instText(-80) === 'fientliga';
+    const instOrd = SIM.instText(60) === 'vänner' && SIM.instText(-80) === 'fientliga';
     // priserna (steg 10.5.14): startvärdena, driften, handeln och handlarens värdering
     const pr = createState(6, START), pk = SIM.klanerOf(pr);
     const start = pk.every(c => SIM.KLAN_HEM.find(x => x.namn === c.hem)!.sallsynt.every(j => SIM.klanPris(c, j) === 1 + SIM.KLAN.prisSallsynt) && SIM.klanPris(c, 'yxa') === (SIM.KLAN_HEM.find(x => x.namn === c.hem)!.sallsynt.includes('yxa') ? 1 + SIM.KLAN.prisSallsynt : 1));
@@ -1959,7 +1960,25 @@ SCENARIER.grannklaner = {
     // en sparad by utan priser laddas och börjar på startvärdena
     const u = cloneState(a1); for (const c of SIM.klanerOf(u)) delete c.pris; SIM.migrate(u);
     const utan = SIM.klanerOf(u).every(c => SIM.klanPris(c, 'yxa') === SIM.prisStart(c, 'yxa'));
+    // fliken Omvärlden (steg 11.1.39): hållningen som en stapel från mitten (rost åt det fientliga hållet), rikedomen med vågens
+    // symbol och en ?-knapp som förklarar hållningen
+    utanWebblasare();
+    const fl = createState(6, START), fk = SIM.klanerOf(fl);
+    fk[0].inst = -60; fk[1].inst = 40;
+    setByn(fl); ui.omvDel = 'grannar';
+    const stangd = grannarFlik.html();
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: 'omvarlden' } }) } as unknown as HTMLElement);
+    const oppen = grannarFlik.html();
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: 'omvarlden' } }) } as unknown as HTMLElement);
+    const staplar = (stangd.match(/class="sbar hall neg"><span style="left:20%;width:30%"/g) ?? []).length === 1 && (stangd.match(/class="sbar hall"><span style="left:50%;width:20%"/g) ?? []).length === 1;
+    const vag = (stangd.match(/sym_vag|⚖/g) ?? []).length >= fk.length;
+    const knapp = /data-hjalp="omvarlden"/.test(stangd) && !/Vakten håller sig vaken/.test(stangd) && /Vakten håller sig vaken/.test(oppen) && /fientligare/.test(oppen);
+    const forkl = /title="Hur de ser på byn: fientliga \(-60 av −100 till 100\)\. De skickar ingen handlare"/.test(stangd);
     return [
+      [`hållningen ritas som en stapel från mitten, åt vänster när klanen är fientlig och åt höger när den är vänlig`, staplar],
+      ['klanens rikedom har vågens symbol, som byns', vag],
+      ['Omvärlden har en ?-knapp som säger vad hållningen är, vad som ändrar den och vad vakten gör', knapp],
+      ['raden om hållningen förklaras vid ett tryck, också att en fientlig klan inte skickar handlare', forkl],
       [`en ny by har ${SIM.KLAN.antal} grannklaner med folk, styrka och en hövding`, finns],
       ['klanerna har olika namn', unika],
       ['en sparad by från före v242 får grannklaner', migr],
@@ -1969,7 +1988,7 @@ SCENARIER.grannklaner = {
       ['märker handlaren att byn lurat hen blir klanen mindre vänlig', lurad],
       ['klanerna växer eller krymper med dygnen', andras],
       ['inställningen glöms mot det neutrala', glomt],
-      ['inställningen har ord (vänner … fientliga)', ui],
+      ['inställningen har ord (vänner … fientliga)', instOrd],
       ['priserna börjar på 1, och det som är sällsynt på klanens hemort dyrare', start],
       [`priserna håller sig inom gränserna i 200 dygn (200 år i spelet), i snitt nära startvärdet (${avv.toFixed(3)})`, inom && Math.abs(avv) < 0.05],
       [`en försäljning värd 20 silver sänker priset ${sankt.toFixed(2)}, och efter 60 dygn är ${kvar.toFixed(3)} kvar`, Math.abs(sankt - 0.2) < 1e-6 && Math.abs(kvar) < 0.06],
