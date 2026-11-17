@@ -1,11 +1,11 @@
 // Scenarier. Kulturen (fas 4.3): sporten, framträdandena, konsten i sakerna och pyntet i hemmen.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createState, Person, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, utanWebblasare } from './hjalp';
+import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -1145,6 +1145,53 @@ SCENARIER.pilar = {
       [`varje rad som går att fälla ut har pilen (${r0.length} rader${utanPil.length ? `; utan: ${utanPil.slice(0, 2).join(' ')}` : ''})`, r0.length >= 10 && !utanPil.length],
       ['pilen byts när raden fälls ut', stangd && oppen],
       ['pilen kommer från ett ställe: regeln för klassen falla i template.html', regel && !/<span class="pil">/.test(fore)],
+    ];
+  },
+};
+SCENARIER.tidsord = {
+  text: 'Steg 11.1.4: tiden skrivs på ett sätt i hela gränssnittet: långa spann i år och tidsåldrar, datum som "År 12, vårtid", och "tryck" i stället för "klicka". Ingen text i gränssnittets kod eller i panelerna i en testby innehåller "dygn", "säsong" eller "klicka"',
+  kor: () => {
+    utanWebblasare();
+    const ord = /dygn|säsong|klicka/i;
+    // gränssnittets kod: texten i varje sträng, utan kommentarerna och utan namnen i koden
+    const rot = new URL('../../ui/', import.meta.url), filer: string[] = [];
+    const las = (u: URL) => { for (const f of readdirSync(u, { withFileTypes: true })) { if (f.isDirectory()) las(new URL(f.name + '/', u)); else if (f.name.endsWith('.ts')) filer.push(new URL(f.name, u).pathname); } };
+    las(rot);
+    const fel: string[] = [];
+    // texten i strängarna: en enkel läsare som håller reda på strängar, mallar (`…${kod}…`, också inuti varandra) och kommentarer
+    const strangar = (kod: string) => {
+      const ut: string[] = [], stack: ('kod' | 'mall')[] = ['kod'], djup: number[] = [0];
+      let i = 0, buf = '';
+      while (i < kod.length) {
+        const c = kod[i], lage = stack[stack.length - 1];
+        if (lage === 'mall') {
+          if (c === '\\') { buf += kod[i + 1] ?? ''; i += 2; continue; }
+          if (c === '`') { ut.push(buf); buf = ''; stack.pop(); i++; continue; }
+          if (c === '$' && kod[i + 1] === '{') { ut.push(buf); buf = ''; stack.push('kod'); djup.push(0); i += 2; continue; }
+          buf += c; i++; continue;
+        }
+        if (c === '/' && kod[i + 1] === '/') { while (i < kod.length && kod[i] !== '\n') i++; continue; }
+        if (c === '/' && kod[i + 1] === '*') { i = kod.indexOf('*/', i + 2) + 2; if (i < 2) break; continue; }
+        if (c === "'" || c === '"') { let j = i + 1, s = ''; while (j < kod.length && kod[j] !== c && kod[j] !== '\n') { if (kod[j] === '\\') j++; s += kod[j]; j++; } ut.push(s); i = j + 1; continue; }
+        if (c === '`') { stack.push('mall'); i++; continue; }
+        if (c === '{') djup[djup.length - 1]++;
+        if (c === '}') { if (djup[djup.length - 1] === 0 && stack.length > 1) { stack.pop(); djup.pop(); i++; continue; } djup[djup.length - 1]--; }
+        i++;
+      }
+      return ut;
+    };
+    for (const f of filer) for (const txt of strangar(readFileSync(f, 'utf8'))) {
+      if (ord.test(txt) && !/^[\w.$\[\]-]*$/.test(txt)) fel.push(`${f.split('/ui/')[1]}: ${txt.match(/[^.]{0,30}(dygn|säsong|klicka)[^.]{0,20}/i)?.[0]}`);
+    }
+    // panelerna i en testby
+    const s = testBy(40); setByn(s);
+    const sidor = [sederFlik.html(), styreFlik.html(), kronikaFlik.html()];
+    for (const p of SIM.living(s).slice(0, 4)) for (const d of ['om', 'egen', 'kropp', 'saker', 'folk', 'kun', 'logg']) { ui.selected = p.id; ui.personDel = d; sidor.push(personFlik.html()); }
+    const text = sidor.join(' ').replace(/<[^>]+>/g, ' ') + sidor.map(h => [...h.matchAll(/title="([^"]*)"/g)].map(m => m[1]).join(' ')).join(' ');
+    const iPanel = text.match(/[^.]{0,40}(dygn|säsong|klicka)[^.]{0,20}/i)?.[0];
+    return [
+      [`ingen sträng i gränssnittets kod säger dygn, säsong eller klicka${fel.length ? `: ${fel.slice(0, 3).join('; ')}` : ''}`, !fel.length],
+      [`panelerna i en testby säger inte dygn, säsong eller klicka${iPanel ? `: ${iPanel}` : ''}`, !iPanel],
     ];
   },
 };

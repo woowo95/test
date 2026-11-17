@@ -41,7 +41,7 @@ function fireHtml() {
       <dt>Tändes</dt><dd>${f.litAt !== undefined ? clockTxt(f.litAt) : '–'}</dd>
       <dt>Tänd av</dt><dd>${f.litBy !== undefined ? pLink(byId(s, f.litBy)) : forsta ? 'Byns grundare' : '–'}</dd>
       <dt>Trä använt</dt><dd>${fmtN(f.burned)}</dd></dl>` : ''}
-    ${forsta ? '' : `<h3>Sover nära</h3><p class="muted">När ingen sover nära den och den är släckt tas den isär efter ${BRASA.tomDygn} dygn, och stenarna läggs i en hög.</p>${(f.folk ?? []).map(id => byId(s, id)).filter(p => p).map(p => pLink(p)).join(' ') || '<span class="muted">Ingen</span>'}`}
+    ${forsta ? '' : `<h3>Sover nära</h3><p class="muted">När ingen sover nära den och den är släckt tas den isär efter ${BRASA.tomDygn} år, och stenarna läggs i en hög.</p>${(f.folk ?? []).map(id => byId(s, id)).filter(p => p).map(p => pLink(p)).join(' ') || '<span class="muted">Ingen</span>'}`}
     <h3>Tändning</h3><dl class="kv fam">
       <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${fmtN(amountOf(s, ig.id))} i förrådet)` : 'Inget. Någon måste hitta en flinta.'}</dd>
       <dt>Stenring</dt><dd>${f.ring || !forsta ? 'Ligger runt eldplatsen' : `Behövs till den första elden: ${fmtN(amountOf(s, 'sten'))} av ${ELD.ring} stenar`}</dd>

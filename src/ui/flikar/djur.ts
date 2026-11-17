@@ -30,13 +30,13 @@ function tamHtml() {
   return `
     <div class="phead">${levande({ art: a.ikon, id: d.id })}<div><h2>${esc(tamNamn(d))}</h2></div></div>
     <dl class="kv">
-      ${rd('🕓', `${alder} år gammal (ett dygn är ett år i spelet). ${tamNamn(d)} lever högst ${a.liv} år`, `${alder} år`)}
+      ${rd('🕓', `${alder} år gammal. ${tamNamn(d)} lever högst ${a.liv} år`, `${alder} år`)}
       ${rad('🍖', d.hunger, pr(d.hunger), d.hunger >= 1 ? 'Svälter' : d.hunger >= 0.5 ? 'Hungrig: behöver mat' : 'Mätt', d.hunger > 0.6 ? 'low' : '')}
       ${rad(iconImg('a_vatten', 14), 1 - (d.torst ?? 0), d.torstTim ? `${Math.floor(d.torstTim)} h utan` : pr(1 - (d.torst ?? 0)), d.torstTim ? `Har inte fått vatten på ${Math.floor(d.torstTim)} timmar och ger ingen mjölk` : 'Vätskan: djuret dricker när den är slut, vid stranden, ur vattenhon eller snö', d.torstTim ? 'low' : 'skill', true)}
       ${rd('🧑', d.agare !== undefined ? 'Ägaren. Djuret ärvs och matas av hen' : 'Byn äger djuret', q ? pLink(q) : d.agare !== undefined ? '–' : 'Byn')}
       ${d.art === 'hund' && d.lojal !== undefined ? rad('❤', d.lojal, pr(d.lojal), 'Lojalitet mot ägaren: växer när ägaren matar och är nära, sjunker när hen är långt borta och när hunden är hungrig', 'skill') : ''}
       ${tamArt(d.art).ull ? rad(iconImg('ull', 14), d.ull ?? 0, pr(d.ull ?? 0), (d.ull ?? 0) >= 1 ? 'Ullen är full och kan klippas' : 'Ullen växer ut och klipps med kniven', 'skill', true) : ''}
-      ${tamArt(d.art).mjolk ? rad('💧', d.mjolk ?? 0, pr(d.mjolk ?? 0), (d.mjolk ?? 0) >= 1 ? 'Full av mjölk och kan mjölkas' : `Mjölken växer till, och ${tamArt(d.art).ord[3]} mjölkas två gånger om dygnet`, 'skill') : ''}
+      ${tamArt(d.art).mjolk ? rad('💧', d.mjolk ?? 0, pr(d.mjolk ?? 0), (d.mjolk ?? 0) >= 1 ? 'Full av mjölk och kan mjölkas' : `Mjölken växer till, och ${tamArt(d.art).ord[3]} mjölkas två gånger om året`, 'skill') : ''}
       ${d.art !== 'hund' ? plats : ''}
       ${egRader(tamEg(d), tamEg({ art: d.art }), !!tamArt(d.art).styrka)}
     </dl>`;
@@ -61,7 +61,7 @@ function honsHtml() {
     <dl class="kv">
       ${rd('🐔', 'Så många hönor går i flocken. De letar mat själva, så ingen matar dem', `${h.n} st`)}
       ${rd('🧑', h.agare !== undefined ? 'Ägaren. Äggen blir hens' : 'Byn äger flocken', q ? pLink(q) : h.agare !== undefined ? '–' : 'Byn')}
-      ${rd(iconImg('agg', 14), agg === 0 ? 'Inga ägg i istiden' : 'Ägg om dygnet (ett dygn är ett år i spelet): en per höna, utom i istiden', `${kortTal(agg)} ägg/dygn`)}
+      ${rd(iconImg('agg', 14), agg === 0 ? 'Inga ägg i istiden' : 'Ägg om året: en per höna, utom i istiden', `${kortTal(agg)} ägg/år`)}
     </dl>`;
 }
 function djurHtml() {

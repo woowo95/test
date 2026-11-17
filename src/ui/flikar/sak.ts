@@ -104,7 +104,7 @@ function hage(id: number) {
     <dl class="kv">
       <dt>Storlek</dt><dd>${h.w} × ${h.h} rutor</dd>
       <dt title="Gräset (rutor fulla med gräs), buskarna och ungträden som djuren kan äta">Bete</dt><dd>🍃 ${kortTal(b.gras)} · 🌳 ${b.buskar} · 🌲 ${b.unga}</dd>
-      <dt title="Hur länge betet räcker för djuren som går där, utan att det växer igen">Räcker</dt><dd>${dygn === Infinity ? 'inga djur går här' : `${Math.floor(dygn)} dygn`}</dd>
+      <dt title="Hur länge betet räcker för djuren som går där, utan att det växer igen">Räcker</dt><dd>${dygn === Infinity ? 'inga djur går här' : `${Math.floor(dygn)} år`}</dd>
       <dt>Staket</dt><dd>${hela === kant.length ? 'helt' : `${kant.length - hela} av ${kant.length} rutor saknas`}</dd>
       <dt>Djuren</dt><dd class="rader">${djur || 'inga'}</dd>
     </dl>`;
@@ -184,7 +184,7 @@ function slitageAvSlag(k: string) {
   const platsAv = (sl: Slitage) => sl.orsak === 'ruttnar' ? (fryst() ? '❄ Fryst' : sl.smuts ? 'Ruttnar fortare i smuts' : 'Ruttnar') : PLATS[sl.orsak] ?? ORSAK[sl.orsak];
   if (isTool(k)) for (const t of tingOf(s)) { if (t.k !== k || t.halv) continue; const sl = slitageNu(s, t, t); lagg(platsAv(sl), 1, t.c, sl.per); }
   else for (const p of piles()) if (p.k === k && p.stored && p.n > 0) { const sl = slitageNu(s, p); lagg(platsAv(sl), p.n, p.c, sl.per); }
-  return [...g].sort((a, b) => b[1].n - a[1].n).map(([namn, r]) => `<div>${esc(namn)}: ${Math.round(r.n)} st, ${Math.round(r.c / r.n * 100)} %${r.per > 0 ? `, ${perDygn(r.per / r.n)} % per dygn` : ''}</div>`).join('');
+  return [...g].sort((a, b) => b[1].n - a[1].n).map(([namn, r]) => `<div>${esc(namn)}: ${Math.round(r.n)} st, ${Math.round(r.c / r.n * 100)} %${r.per > 0 ? `, ${perDygn(r.per / r.n)} % per år` : ''}</div>`).join('');
 }
 // ett slag i förrådet (steg 5.3.5.2): hur mycket byn har, vad det är värt och väger, vad det används till och hur man skaffar det
 function slagIForradet(k: string) {
@@ -244,7 +244,7 @@ export const sak: Flik = {
     <dl class="kv">
       <dt>Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>
       ${kv}
-      <dt>Slitage</dt><dd>${esc(orsak)}${sl.per > 0 ? ` (${perDygn(sl.per)} % per dygn)` : ''}</dd>
+      <dt>Slitage</dt><dd>${esc(orsak)}${sl.per > 0 ? ` (${perDygn(sl.per)} % per år)` : ''}</dd>
       ${haller}${mangd}${varde}<dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg${!t && p && p.n >= 2 ? `, ${kortTal(viktOf(k) * Math.round(p.n))} kg alla` : ''}</dd>${klad}
       ${t ? `<dt>Var</dt><dd>${var_(t, p)}</dd><dt>Ägare</dt><dd>${agare}</dd>` : p ? `<dt>Ägare</dt><dd class="rader">${agarRader(p.ag, Math.round(p.n))}</dd>` : ''}
       ${gjord}${klen}

@@ -53,11 +53,11 @@ export async function bytTill(id: string | undefined) {
 // sist i listan och väljs
 export async function laggTillTestby(seed: number, dag: number) {
   ui.byFel = '';
-  if (!Number.isInteger(seed) || !Number.isInteger(dag) || dag < 0 || dag > 400) { ui.byFel = 'Fröet och dygnet ska vara hela tal (dygnet 0–400).'; return; }
+  if (!Number.isInteger(seed) || !Number.isInteger(dag) || dag < 0 || dag > 400) { ui.byFel = 'Fröet och året ska vara hela tal (året 0–400).'; return; }
   const id = `t${seed}-${dag}-${Date.now().toString(36)}`, by = createState(seed, TEST_START);
   try { await sparaBy(webbBas, byKey(id), by, { mal: TEST_START + dag * DAY } satisfies Tid); }
   catch { ui.byFel = 'Byn gick inte att spara i webbläsaren: ta bort en by först.'; return; }
-  sattLista([...byarna(), { id, namn: `By ${seed}, dygn ${dag}`, seed, dag }]);
+  sattLista([...byarna(), { id, namn: `By ${seed}, år ${dag}`, seed, dag }]);
   await bytTill(id);
 }
 export function taBort(id: string) {
@@ -78,6 +78,6 @@ export async function testbyIAdressen() {
 export function byarHtml() {
   const rad = (id: string | undefined, namn: string) => `<li${id === ui.annanBy ? ' class="vald"' : ''}><button type="button" class="ghost" data-by="${id ?? ''}" ${id === ui.annanBy ? 'aria-pressed="true"' : ''}>${id === ui.annanBy ? '▸ ' : ''}${esc(namn)}</button>${id && id !== ui.annanBy ? `<button type="button" class="ghost" data-bort="${id}" title="Ta bort byn ur listan">✕</button>` : ''}</li>`;
   return `<ul class="byar">${rad(undefined, 'Den egna byn')}${byarna().map(b => rad(b.id, b.namn)).join('')}</ul>`
-    + (ui.testMode ? `<div class="nyTestby"><input id="tbFro" inputmode="numeric" placeholder="Frö" size="6"><input id="tbDag" inputmode="numeric" placeholder="Dygn" size="4"><button type="button" class="ghost" id="tbLagg" title="Lägg till en by ur testerna, räknad fram till dygnet">+ By ur testerna</button></div>` : '')
+    + (ui.testMode ? `<div class="nyTestby"><input id="tbFro" inputmode="numeric" placeholder="Frö" size="6"><input id="tbDag" inputmode="numeric" placeholder="År" size="4"><button type="button" class="ghost" id="tbLagg" title="Lägg till en by ur testerna, räknad fram till året">+ By ur testerna</button></div>` : '')
     + (ui.byFel ? `<p class="muted">${esc(ui.byFel)}</p>` : '');
 }

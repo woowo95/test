@@ -25,7 +25,7 @@ export const person: Flik = {
     const g = gastById(ui.selected); // handlaren eller en rövare (steg 4.5.4.12): en person med alla flikar (steg 9.2.114)
     const p = g?.p ?? byId(s, ui.selected);
     if ((!p || (p.gast && !g)) && ui.selected !== undefined && ui.selected < 0) return '<p class="muted">Hen har lämnat byn.</p>';
-    if (!p) return `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`;
+    if (!p) return `<p class="muted">Tryck på en person på kartan eller i listan för att se allt om hen.</p>`;
     const lever = g ? gastLever(p) : alive(p);
     const { flikar, flik, delar } = valda(d => lever || !d.levande);
     const med = alive(p) ? pratarMed(s, p) : undefined;
@@ -342,7 +342,7 @@ function gorHtml(rader: string[], nu: string, extra = '') {
 function gjortHtml(p: Person, k: Skill) {
   const tal = (v: number) => String(Math.round(v)), rader = SKILL_STAT[k].filter(r => p.gjort?.n[r.k]);
   if (!rader.length) return '';
-  return `<p class="muted">Det senaste dygnet (24 timmar, ett år i spelet) och totalt:</p><ul class="thoughts">${rader.map(r => {
+  return `<p class="muted">Det senaste året och totalt:</p><ul class="thoughts">${rader.map(r => {
     const d = gjortDygn(s, p, r.k), n = p.gjort!.n[r.k], av = r.av ? gjortDygn(s, p, r.av) : 0, avN = r.av ? p.gjort!.n[r.av] ?? 0 : 0;
     const del = (x: number, y: number) => y > 0 ? ` av ${tal(y)} (${Math.min(100, Math.round(100 * x / y))} %)` : '';
     return `<li>${esc(r.namn)}: ${tal(d)}${del(d, av)}, totalt ${tal(n)}${del(n, avN)}</li>`;
@@ -609,7 +609,7 @@ function tidHtml(p: Person) {
   return `<div class="tid${vald ? ' har-vald' : ''}">${tart}
     <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}><span class="fg" style="background:${farg(i)}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
     ${p.pratArbete ? `<p class="muted small">${iconImg('a_prata', 12)} ${p.pratArbete} samtal under arbetet</p>` : ''}
-    <p class="muted small">Den vakna tiden de senaste dygnen. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.</p>`;
+    <p class="muted small">Den vakna tiden de senaste åren. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.</p>`;
 }
 
 // överst i personrutan (steg 6.9.1, Sammanfattningen överst i personrutan): aktivitetens symbol och handlingen, och medan hen
