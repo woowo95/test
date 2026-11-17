@@ -3305,6 +3305,8 @@ SCENARIER.bihandel = {
     // en by utan honung och utan mat nog byter till sig kakor: honungen är mat, och en by med mat nog köper ingen
     setAmount(s, 'honung', 0); setAmount(s, 'bivax', 0); setMat(s, {});
     h.bynKlar = undefined; h.varor = [{ k: 'honung', n: 4 }]; h.silver = 0;
+    const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) hk.pris = { ...hk.pris, honung: 1, bivax: 1 }; // (klanens priser som grundvärdet: honungen prövas, inte priset)
+    SIM.hp(s, h).skill.handel = 0; // (en ovan handlare: det prövade beror inte på vem som kom)
     SIM.put(s, 'silver', 300, { [BYN]: 300 }); // byns silver
     const ka = helAffar(s, a, true).forsta;
     const kopt = amountOf(s, 'honung');

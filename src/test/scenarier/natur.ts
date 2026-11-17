@@ -40,7 +40,7 @@ SCENARIER.djur = {
       const v0 = amountOf(s, 'vilt');
       step(s, BEAT);
       const d = (amountOf(s, 'vilt')) - v0;
-      if (d > 0.05 && Math.abs(d - KANIN) > 0.05) hela = false; // det som kommer in är hela kaniner
+      if (d > 0.05 && Math.abs(d / KANIN - Math.round(d / KANIN)) * KANIN > 0.05) hela = false; // det som kommer in är hela kaniner (två jägare kan komma hem samma slag)
     }
     const kaniner = s.stat?.kaniner ?? 0;
     // den som fångat en kanin bär hem den hel (små steg, så att vägen hem syns)
