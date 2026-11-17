@@ -1986,3 +1986,57 @@ SCENARIER.vaghandelser = {
     ];
   },
 };
+
+SCENARIER.matslut = {
+  text: 'När maten tar slut på vägen (steg 11.5.15, MATSLUT i resa.ts): ledaren väger att leta, vända, hungra eller slakta ett packdjur med en poäng: värdet av det som återstår av resan minus hungern minus det utvägen kostar. Nära hemmet med lite att vinna vänder sällskapet, långt bort i kylan slaktar en omtänksam ledare fåret, och en varm dag letar det; allt i hela saker',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, [a, b] = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!, v0 = SIM.varldMark(s0)!;
+    // det mål som ligger längst bort och går att nå
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl0, g.nr)!).filter(p => p && SIM.vagMellan(vl0, v0, hb.y * v0.w + hb.x, p.y * v0.w + p.x, 'fots', s0.now)).sort((x, y) => Math.hypot(y.x - hb.x, y.y - hb.y) - Math.hypot(x.x - hb.x, x.y - hb.y))[0]!;
+    const varm = (warm: boolean) => { for (let d = 1; d < 400; d++) { const t = (Math.floor(s0.now / SIM.DAY) + d) * SIM.DAY + 12 * SIM.HOUR; if ((SIM.temperature(s0, t) >= SIM.RESA.fyndVarm + 5) === warm && (warm || SIM.temperature(s0, t) < SIM.RESA.fyndVarm - 3)) return t; } return s0.now; };
+    const ny = (t: number, o: { del: number; varde: number; far?: boolean; hemat?: boolean }) => {
+      const s = SIM.cloneState(s0); s.now = t;
+      const p = s.people.find(q => q.id === a!.id)!, q = s.people.find(x => x.id === b!.id)!;
+      const sl = SIM.nyttSallskap(s, p, mal.nr, 'handel')!; SIM.foljMed(s.varld!, sl, q);
+      for (const x of [p, q]) SIM.gaBort(s, x);
+      const v = SIM.varldMark(s)!, h = hb.y * v.w + hb.x, m = mal.y * v.w + mal.x;
+      const vag = o.hemat ? SIM.vagMellan(s.varld!, v, m, h, 'fots', s.now)! : SIM.vagMellan(s.varld!, v, h, m, 'fots', s.now)!;
+      sl.skede = o.hemat ? 'hemat' : 'ute'; sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg };
+      const r = SIM.vagenRutor(s, sl); sl.pos = Math.min(r.length - 2, Math.floor((r.length - 1) * o.del)); sl.ruta = r[sl.pos]; sl.gang = 0;
+      sl.varde = o.varde; sl.pack = {}; sl.behov = { matt: 0.05, vatska: 1, ork: 1, fulla: 0, foder: 0 };
+      if (o.far) {
+        const d: SIM.Tamdjur = { ...(s.tamdjur?.[0] ?? {}), id: 900001, art: 'far', x: p.x, y: p.y, fodd: s.now - 3 * SIM.DAY } as SIM.Tamdjur;
+        delete (d as { dog?: number }).dog; (s.tamdjur ??= []).push(d); SIM.djurMed(sl, d.id);
+      }
+      return { s, sl, p };
+    };
+    const forst = (x: { s: SIM.State; sl: SIM.Sallskap }) => SIM.matslutVal(x.s, x.sl).val[0]?.id;
+    const nara = ny(varm(true), { del: 0.02, varde: 0 });
+    const kallt = ny(varm(false), { del: 0.3, varde: 200, far: true }); kallt.p.pot.empati = 20; // en ledare som bryr sig om de andras hunger
+    const leta = ny(varm(true), { del: 0.3, varde: 200 });
+    const hemat = ny(varm(true), { del: 0.9, varde: 200, hemat: true });
+    const val = [nara, kallt, leta, hemat].map(forst);
+    // empatin väger hungern tyngre
+    const e = ny(varm(true), { del: 0.3, varde: 200 }); e.p.pot.empati = 3; const hk3 = SIM.matLage(e.s, e.sl).hk; e.p.pot.empati = 18; const hk18 = SIM.matLage(e.s, e.sl).hk;
+    // utfallen genom resaBehov: maten är slut och sällskapet är hungrigt
+    const kor = (x: { s: SIM.State; sl: SIM.Sallskap }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    const pos0 = nara.sl.pos; kor(nara, 1);
+    kor(kallt, 1); const farDog = !!kallt.s.tamdjur!.find(d => d.id === 900001)?.dog;
+    const kott = Object.entries(kallt.sl.pack).filter(([k]) => SIM.FOOD.includes(k));
+    kor(leta, 1); const letat = leta.sl.dagbok.filter(d => d[1].includes('letade')).length;
+    const beslut0 = leta.sl.dagbok.length; kor(leta, 3); const igen = leta.sl.dagbok.filter(d => d[1].startsWith('Maten tog slut')).length;
+    return [
+      [`ett mål långt bort (${mal.namn}, ${Math.round(Math.hypot(mal.x - hb.x, mal.y - hb.y))} rutor)`, !!mal],
+      [`nära hemmet med lite att vinna vänder sällskapet (${val[0]}: ${SIM.matslutVal(nara.s, nara.sl).val.map(x => `${x.id} ${Math.round(x.sc)}`).join(', ')})`, val[0] === 'vanda' || nara.sl.skede !== 'ute'],
+      [`långt bort i kylan slaktar en omtänksam ledare fåret (${val[1]}: ${SIM.matslutVal(kallt.s, kallt.sl).val.map(x => `${x.id} ${Math.round(x.sc)}`).join(', ')}, ${SIM.matLage(kallt.s, kallt.sl).kvar} dygn kvar)`, val[1] === 'slakta'],
+      [`en varm dag letar det (${val[2]})`, val[2] === 'leta'],
+      [`på väg hem kan det inte vända (${val[3]})`, val[3] !== 'vanda'],
+      [`en ledare med empati väger hungern tyngre (${hk3.toFixed(1)} → ${hk18.toFixed(1)})`, hk18 > hk3],
+      [`vände: sällskapet går hem (${nara.sl.skede}, ${pos0} → ${nara.sl.pos})`, nara.sl.skede === 'hemat' || nara.sl.skede === 'hemma'],
+      [`slaktade: fåret är dött och köttet i hela saker i packningen (${kott.map(([k, n]) => `${n} ${k}`).join(', ')})`, farDog && kott.length > 0 && kott.every(([, n]) => Number.isInteger(n))],
+      [`letade: tiden går förlorad (${letat} gång)`, letat === 1],
+      [`ledaren väger inte igen förrän efter ${SIM.RESA.matOmTim} timmar (${beslut0} → ${leta.sl.dagbok.length} rader, ${igen} beslut)`, igen <= 1 + (leta.sl.pack.bar ? 0 : 0)],
+    ];
+  },
+};

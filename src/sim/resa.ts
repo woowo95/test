@@ -45,6 +45,8 @@ import { SEC } from './typer';
 import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { trorPris } from './minne';
+import { DJUR } from './redskap';
+import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
 import { log } from './folk';
 import { notis } from './notiser';
@@ -98,6 +100,13 @@ export const RESA = balans('resa', {
   tappadLast: 2, // risken att tappa något gånger (1 + så här mycket gånger lasten delat med bärförmågan)
   fyndMat: 0.5, // portioner per resenär i ett fynd av mat (minst en hel)
   fyndVarm: 5, fyndKall: 0.3, // under så många grader hittar sällskapet bara så stor del så ofta
+  // när maten tar slut (steg 11.5.15)
+  hungerKost: 5, // det ett dygn utan mat kostar en resenär, i värde (samma skala som resans värde)
+  tidKost: 3, // det ett dygn längre resa kostar en resenär, i värde
+  matEmpati: 0.5, matTycke: 0.5, // ledarens omtanke väger hungern tyngre: empatin och tycket om de andra resenärerna
+  letaTim: 6, letaMat: 0.8, // timmar sällskapet letar mat, och portionerna per resenär det väntar sig hitta (färdigheten Samla och kylan som för ett fynd)
+  matOmTim: 12, // timmar innan ledaren väger igen, om det fortfarande inte finns mat
+  orkSvalt: 0.02, // så mycket ork per timme drar hungern när mättnaden är slut
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
@@ -134,6 +143,7 @@ export interface Sallskap {
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
   krav?: number; // kraften sällskapet behöver mot ledens fara (steg 11.5.11)
   berattad?: number; // när resan berättades hemma (steg 11.5.13)
+  varde?: number; matNasta?: number; // resans väntade värde (resaPlan), och när ledaren väger nästa gång om maten tar slut (steg 11.5.15)
   forlorat?: number; // timmar i gång som går förlorade: vilse eller ett oväder som väntas ut (steg 11.5.14)
 }
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
@@ -372,12 +382,13 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   b.vatska = clamp(b.vatska - tim / TORST.tim * (dag ? 1 : TORST.somn), 0, 1);
   if (dag && !framme) b.ork -= tim * RESA.orkGang;
   else if (!dag) b.ork += tim * RESA.orkVila - (framme ? 0 : tim * nattTapp(s, sl, t));
+  if (b.matt <= 0) b.ork -= tim * RESA.orkSvalt; // den som inte ätit orkar mindre (steg 11.5.15)
   b.ork = clamp(b.ork, 0, 1);
   // äta: en portion per resenär, den mat som håller kortast först
   while (b.matt < KROPP.hungrig) {
     let at = 0;
     for (let k = kortastMat(sl); k && at < n; k = kortastMat(sl)) { const m = Math.min(n - at, Math.floor(sl.pack[k]!)); tappa(sl, k, m); at += m; }
-    if (!at) { count(s, 'resa utan mat'); break; }
+    if (!at) { count(s, 'resa utan mat'); if (t >= (sl.matNasta ?? 0)) { sl.matNasta = t + RESA.matOmTim * HOUR; matSlut(s, sl, t); if (kortastMat(sl)) continue; } break; }
     b.matt = clamp(b.matt + KROPP.mattar * at / n, 0, 1);
     count(s, 'resa måltid');
   }
@@ -645,7 +656,7 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
 export function samlaResa(s: State, p: Person, r: ResPlan): Sallskap | undefined {
   const sl = nyttSallskap(s, p, r.mal, r.skal);
   if (!sl) return undefined;
-  sl.varor = r.varor.map(([k, n]) => [k, n]);
+  sl.varor = r.varor.map(([k, n]) => [k, n]); sl.varde = r.varde;
   sl.ut = utgang(s, sl);
   if (!sl.ut) { stallIn(s, sl); return undefined; }
   dagbok(s, sl, 'samlas', `${p.name} samlar till en resa till ${r.namn}.`);
@@ -833,4 +844,82 @@ export function vagHandelser(s: State, sl: Sallskap, t: number, dt: number) {
     const p = 1 - Math.exp(-vagRisk(s, sl, id, t) * dt / DAY);
     if (rnd(s, 'resa') < p) { VAGHANDELSER[id]!.gor(s, sl, t); count(s, `resa ${VAGHANDELSER[id]!.namn.toLowerCase()}`); }
   }
+}
+
+// ---------- när maten tar slut (steg 11.5.15, Flera samhällen: Farten i tal) ----------
+// Har sällskapet ingen mat kvar och är hungrigt väger ledaren fyra utvägar i registret MATSLUT med en poäng: värdet av det
+// som återstår av resan (resans väntade värde, eller inget om sällskapet vänder) minus hungern (dygnen utan mat gånger
+// resenärerna gånger RESA.hungerKost) minus det utvägen kostar. Hungern väger tyngre för en ledare med empati och som tycker
+// om de andra. Att leta kostar tid och ger det väntade fyndet, att vända gör vägen kortare men resan värdelös, att slakta ett
+// packdjur ger köttet (som vid slaktbänken) men kostar djuret, och att hungra kostar bara hungern. Ledaren väger igen efter
+// RESA.matOmTim timmar om maten fortfarande är slut. Ett dygn helt utan mat drar ork (RESA.orkSvalt), så att farten sjunker.
+export interface MatLage { n: number; kvar: number; hem: number; hk: number; varde: number; leta: number; djur?: { id: number; kott: string; m: number; varde: number } }
+export interface MatslutDef { namn: string; kan?: (l: MatLage, sl: Sallskap) => boolean; sc: (l: MatLage) => number; gor: (s: State, sl: Sallskap, l: MatLage, t: number) => void }
+const matDygn = (l: MatLage, m: number) => m / Math.max(1, l.n * RESA.matPerDygn); // dygn som m portioner räcker sällskapet
+export const MATSLUT: Record<string, MatslutDef> = {
+  hungra: { namn: 'Hungra', sc: l => l.varde - l.kvar * l.n * l.hk, gor: (s, sl, _l, t) => dagbok(s, sl, 'mat', 'Maten tog slut; sällskapet går vidare hungrigt.', t) },
+  leta: {
+    namn: 'Leta mat', sc: l => l.varde - Math.max(0, l.kvar - matDygn(l, l.leta)) * l.n * l.hk - RESA.letaTim / 24 * l.n * RESA.tidKost,
+    gor: (s, sl, l, t) => {
+      const m = Math.floor(l.leta + rnd(s, 'resa'));
+      sl.forlorat = (sl.forlorat ?? 0) + RESA.letaTim;
+      if (m > 0) sl.pack.bar = (sl.pack.bar ?? 0) + m;
+      count(s, 'resa letade mat'); dagbok(s, sl, 'mat', m > 0 ? `Maten tog slut; letade i ${RESA.letaTim} timmar och hittade ${m} ${m === 1 ? 'portion' : 'portioner'}.` : `Maten tog slut; letade i ${RESA.letaTim} timmar men hittade inget.`, t);
+    },
+  },
+  vanda: {
+    namn: 'Vända hem', kan: (_l, sl) => sl.skede === 'ute', sc: l => -l.hem * l.n * l.hk,
+    gor: (s, sl, _l, t) => { vandHem(s, sl); count(s, 'resa vände'); dagbok(s, sl, 'ut', 'Maten tog slut; sällskapet vände hem.', t); },
+  },
+  slakta: {
+    namn: 'Slakta ett packdjur', kan: l => !!l.djur, sc: l => l.varde - Math.max(0, l.kvar - matDygn(l, l.djur!.m)) * l.n * l.hk - l.djur!.varde,
+    gor: (s, sl, l, t) => {
+      const d = (s.tamdjur ?? []).find(x => x.id === l.djur!.id);
+      if (!d) return;
+      d.dog = t; sl.djur = sl.djur.filter(id => id !== d.id);
+      sl.pack[l.djur!.kott] = (sl.pack[l.djur!.kott] ?? 0) + l.djur!.m;
+      count(s, 'resa slaktade'); dagbok(s, sl, 'mat', `Maten tog slut; slaktade ${tamArt(d.art).ord[3]} och fick ${l.djur!.m} kött.`, t);
+    },
+  },
+};
+export const MATSLUT_IDS = Object.keys(MATSLUT);
+// läget när maten tagit slut: dygnen kvar av resan och hem härifrån, hungerns vikt, resans värde, väntat fynd och djuret
+export function matLage(s: State, sl: Sallskap, t = s.now): MatLage {
+  const folk = resenarer(s, sl), n = Math.max(1, folk.length), led = folk.find(p => p.id === sl.ledare) ?? folk[0];
+  const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
+  const lage = sallskapLage(s, sl), nu = v && sl.ruta !== undefined ? { x: sl.ruta % v.w, y: Math.floor(sl.ruta / v.w) } : hem;
+  const tillbaka = hem && mal ? dygnDit(s, { x: mal.x, y: mal.y }, { x: hem.x, y: hem.y }) : 0;
+  const harifran = hem && nu ? dygnDit(s, nu, { x: hem.x, y: hem.y }) : 0;
+  const kvar = sl.skede === 'hemat' ? (lage?.kvar ?? harifran) : (lage?.kvar ?? 0) + RESMAL[sl.skal].stannar + tillbaka;
+  const andra = folk.filter(p => p !== led), tycke = led && andra.length ? andra.reduce((a, p) => a + getRel(s, led, p).op, 0) / andra.length : 0;
+  const hk = RESA.hungerKost * (led ? Math.max(0, 1 + RESA.matEmpati * (stat(led, 'empati', s.now) - 10) / 10) : 1) * Math.max(0, 1 + RESA.matTycke * tycke / 100);
+  const samla = Math.max(0, ...folk.map(p => p.skill.samla ?? 0)) / 20 * RESA.fardSank;
+  const leta = n * RESA.letaMat * (1 + samla) * (temperature(s, t) >= RESA.fyndVarm ? 1 : RESA.fyndKall);
+  let djur: MatLage['djur'];
+  for (const d of (s.tamdjur ?? []).filter(x => sl.djur.includes(x.id) && x.dog === undefined)) {
+    const e = Object.values(DJUR).find(x => 'kott' in x && x.sak === SLAKTAD[d.art]) as { kott: string; slakt: Record<string, number> } | undefined;
+    if (!e) continue; // hästen slaktas inte
+    const varde = tamArt(d.art).varde, m = e.slakt[e.kott] ?? 0;
+    if (m > 0 && (!djur || varde / m < djur.varde / djur.m)) djur = { id: d.id, kott: e.kott, m, varde }; // det billigaste köttet
+  }
+  return { n, kvar: Math.round(kvar * 100) / 100, hem: Math.round((sl.skede === 'ute' ? harifran : kvar) * 100) / 100, hk, varde: sl.varde ?? RESA.seVarde, leta, djur };
+}
+// poängen för varje utväg som går
+export function matslutVal(s: State, sl: Sallskap, t = s.now) {
+  const l = matLage(s, sl, t);
+  return { l, val: MATSLUT_IDS.filter(id => MATSLUT[id]!.kan?.(l, sl) ?? true).map(id => ({ id, sc: MATSLUT[id]!.sc(l) })).sort((a, b) => b.sc - a.sc) };
+}
+function matSlut(s: State, sl: Sallskap, t: number) {
+  const { l, val } = matslutVal(s, sl, t), bast = val[0];
+  if (!bast) return;
+  MATSLUT[bast.id]!.gor(s, sl, l, t);
+}
+// sällskapet vänder och går hem från rutan det står på
+function vandHem(s: State, sl: Sallskap) {
+  const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by);
+  sl.skede = 'hemat';
+  if (!vl || !v || !hem || sl.ruta === undefined) return;
+  const vag = sl.ruta !== hem.y * v.w + hem.x ? vagMellan(vl, v, sl.ruta, hem.y * v.w + hem.x, 'fots', s.now) : undefined;
+  sl.vag = vag ? { fran: vag.fran, till: vag.till, steg: vag.steg } : undefined; sl.pos = 0; sl.gang = 0;
+  if (!vag) hemkomst(s, sl, s.now); // redan vid byn (eller ingen väg): hemma
 }
