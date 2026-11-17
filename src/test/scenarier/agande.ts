@@ -2924,6 +2924,7 @@ SCENARIER.kronikalista = {
     Object.assign(kronikaVal, { viktigt: true, ar: undefined, kat: undefined });
     const forst = alla.indexOf(`${b.name}</button> och`), sen = alla.indexOf(`${a.name}</button> hittade`);
     return [
+      ['raderna ur händelseloggen har tiden i en egen kolumn utan året, som står i rubriken (steg 11.1.35)', /<ol class="logg kron">/.test(allt) && /class="when">(vårtid|sommartid|hösttid|istid), kl\. \d\d:\d\d</.test(allt) && !/class="when">År /.test(allt)],
       [`Stort visar hela krönikan (${rader(alla)} rader av ${K.length})`, rader(alla) === K.length],
       ['senast först, med en rubrik per år', forst >= 0 && sen > forst && /<h4 class="kar">År \d+<\/h4>/.test(alla)],
       ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
