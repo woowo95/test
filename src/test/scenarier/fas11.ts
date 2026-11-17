@@ -1756,7 +1756,7 @@ SCENARIER.radbesok = {
       [`sällskapet sålde skinnen mot silver (${12 - (sl.pack.skinn ?? 0)} skinn, byns silver ${fore.silver} → ${r.tal.silver})`, (sl.pack.skinn ?? 0) < 12],
       [`och köpte mat för vägen hem (${mat} portioner, byns mat ${fore.mat} → ${r.tal.mat})`, mat > 1 && r.tal.mat < fore.mat],
       ['radens tal och packningen är hela saker', heltal],
-      ['platsen är besökt för huvudbyn och resenärerna', !!SIM.radNr(vl, vl.huvud)!.besokt?.includes(mal.nr) && [a!, b!].every(p => SIM.ortNiva(p, mal.nr) === SIM.O_BESOKT)],
+      ['platsen är besökt för resenärerna (byns rad får veta det vid hemkomsten, steg 11.5.13)', [a!, b!].every(p => SIM.ortNiva(p, mal.nr) === SIM.O_BESOKT)],
       [`byn minns att den mött huvudbyns folk (${mott0} → ${r.fasta.filter(f => f.roll === 'mott').length})`, r.fasta.filter(f => f.roll === 'mott').length === Math.min(SIM.RESA.mott, mott0 + 1)],
       [`inställningen blev bättre (${inst0} → ${r.syn?.inst})`, !r.syn || r.syn.inst > inst0 || inst0 >= 100],
       [`dagboken har besöket (${sl.dagbok.length} rader)`, sl.dagbok.length >= 3],
@@ -1893,6 +1893,40 @@ SCENARIER.sallskapkarta = {
       [`det rör sig när det går (${l0.kvar} → ${l1.kvar} dygn kvar)`, l1.kvar < l0.kvar && (l1.x !== l0.x || l1.y !== l0.y)],
       [`rutan: ${r.titel}, ${r.skede}, ${r.ledare} med ${r.medl.join(', ')}, ${r.pack.map(([k, n]) => `${n} ${k}`).join(', ')}`, r.titel.includes(malP.namn) && r.skede === 'På väg dit' && r.ledare === a!.name && r.medl.includes(b!.name) && r.pack.length === 2 && r.kvar !== undefined],
       ['bilden är 16 × 16 punkter i paletten', iPal],
+    ];
+  },
+};
+
+SCENARIER.redogorelse = {
+  text: 'Resans dagbok och redogörelsen (steg 11.5.13, dagbok och redogorelse i resa.ts): dagboken får raden när händelsen sker, och det stora en notis; byn hemma vet inget om resan förrän någon kommit hem, och då berättas den med en knapp till dagboken och delningen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0)!;
+    const rad = SIM.radNr(vl, vl.huvud)!; rad.besokt = (rad.besokt ?? []).filter(n => n !== mal.nr);
+    const sl = SIM.nyttSallskap(s, a!, mal.nr, 'handel')!; SIM.foljMed(vl, sl, b!);
+    sl.pack = { skinn: 6 }; sl.insatser = [{ agare: a!.id, sak: 'skinn', n: 6, varde: 18 }]; sl.skede = 'framme';
+    const resaRader = () => s.log.filter(l => l.resa === sl.id).length;
+    const notisRader = () => (s.notiser?.lista ?? []).filter(n => n.id === 'resa').reduce((t, n) => t + n.n, 0);
+    s.now += SIM.HOUR; const t1 = s.now;
+    SIM.radBesok(s, sl, t1);
+    const fram = sl.dagbok.find(d => d[2] === 'fram'), notis0 = notisRader();
+    s.now += SIM.HOUR;
+    SIM.dagbok(s, sl, 'fynd', 'Hittade en gammal kniv vid vägen.');
+    const fynd = sl.dagbok[sl.dagbok.length - 1]!, notis1 = notisRader();
+    const fore = { besokt: !!rad.besokt?.includes(mal.nr), logg: resaRader(), kand: !!SIM.redogorelseAv(s, sl.id) };
+    s.now += SIM.HOUR;
+    SIM.hemkomst(s, sl, s.now);
+    const r = SIM.redogorelseAv(s, sl.id), rader = s.log.filter(l => l.resa === sl.id);
+    const n = (s.notiser?.lista ?? []).find(x => x.id === 'resa' && x.resa?.includes(sl.id));
+    return [
+      [`dagboken fick besöket när det skedde (${fram ? 'ja' : 'nej'})`, !!fram && fram[0] === t1],
+      [`ett vanligt besök ger ingen notis, ett fynd ger en (${notis0} → ${notis1})`, notis0 === 0 && notis1 === 1 && fynd[0] === s.now - SIM.HOUR && fynd[2] === 'fynd'],
+      [`före hemkomsten vet byn inget: platsen är inte besökt för raden, ingen rad i händelserna, ingen redogörelse`, !fore.besokt && fore.logg === 0 && !fore.kand],
+      [`vid hemkomsten blir platsen besökt för byns rad`, !!rad.besokt?.includes(mal.nr)],
+      [`och resan berättas: en rad i händelserna och en notis med knappen till resan (${rader.length} rad${rader.length === 1 ? '' : 'er'}: ${rader[0]?.text ?? ''})`, rader.length === 1 && !!n],
+      [`redogörelsen har dagboken och delningen (${r?.dagbok.length ?? 0} rader, bytet ${r?.delning?.varde ?? '–'})`, !!r && r.dagbok.length >= 4 && !!r.delning && r.dagbok.some(d => d[2] === 'hem')],
+      [`allt i dagboken står i tidsordning`, sl.dagbok.every((d, i) => i === 0 || d[0] >= sl.dagbok[i - 1]![0])],
     ];
   },
 };

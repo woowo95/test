@@ -45,6 +45,8 @@ import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { trorPris } from './minne';
 import { handelsPris } from './handel';
+import { log } from './folk';
+import { notis } from './notiser';
 
 export const RESA = balans('resa', {
   samlaSek: 3600, // så länge (sekunder i verkligheten) ledaren får samla sällskapet innan resan ställs in (en timme, ett kvarts dygn i spelet)
@@ -84,6 +86,8 @@ export const RESA = balans('resa', {
   foljMod: 0.4, foljTycke: 0.4, foljNyfiken: 0.3, foljSlump: 0.6, // viljan att följa med: modet, tycket om ledaren, nyfikenheten och slumpen ...
   foljVinst: 0.05, // ... och den egna delen av resans väntade värde per dygn (värdet delat med resenärerna) ...
   folj: 0.35, // ... över så mycket följer man med
+  // dagboken och redogörelsen (steg 11.5.13)
+  minns: 20, // så många resor som kommit hem minns byn (redogörelsen), de äldsta glöms
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
@@ -112,13 +116,14 @@ export interface Sallskap {
   ruta?: number; vag?: { fran: number; till: number; steg: string }; pos?: number; // rutan sällskapet är på, vägen och hur långt längs den (rutor)
   pack: Record<string, number>; // den gemensamma packningen, hela saker
   insatser: Insats[];
-  dagbok: [number, string][]; // resans dagbok (steg 11.5.13)
+  dagbok: [number, string, DagbokId?][]; // resans dagbok: tiden, texten och händelsens slag (steg 11.5.13)
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
   behov?: ResBehov; // mättnaden, vätskan och orken på vägen, för hela gruppen (steg 11.5.6)
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
   delning?: Andelar; // hur det delades hemma (steg 11.5.9)
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
   krav?: number; // kraften sällskapet behöver mot ledens fara (steg 11.5.11)
+  berattad?: number; // när resan berättades hemma (steg 11.5.13)
 }
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
 export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number }
@@ -310,6 +315,7 @@ export function resaSteg(s: State, p: Person, tk: Task) {
     const hem = byPlats(s.varld!, sl.by), v = varldMark(s);
     sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0; sl.gang = 0;
     satVag(s, sl, true);
+    dagbok(s, sl, 'ut', 'Gav sig av.');
   }
 }
 
@@ -346,7 +352,7 @@ export function nattTapp(s: State, sl: Sallskap, t = s.now) {
 // en bit av tiden (dt sekunder, kortare än en timme) för ett sällskap på vägen
 function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (sl.skede !== 'framme' && isLight(t)) ga(s, sl, t, dt);
-  else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= RESMAL[sl.skal].stannar * 24 * HOUR) { sl.skede = 'hemat'; satVag(s, sl, false); }
+  else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= RESMAL[sl.skal].stannar * 24 * HOUR) { sl.skede = 'hemat'; satVag(s, sl, false); dagbok(s, sl, 'ut', 'Vänder hem.', t); }
   if (!PA_VAGEN.includes(sl.skede)) return;
   const b = behovOf(sl), tim = dt / HOUR, dag = isLight(t), framme = sl.skede === 'framme', r = rutaNu(s, sl), n = sl.medl.length;
   b.matt = clamp(b.matt - tim / KROPP.hungerTim, 0, 1);
@@ -437,6 +443,7 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   delaHemma(s, sl);
   sl.skede = 'hemma'; sl.t = t;
   count(s, 'resa hemma');
+  redogorelse(s, sl, t);
 }
 
 // ---------- besöket hos en rad (steg 11.5.8, Besöket hos en rad) ----------
@@ -448,11 +455,10 @@ const varde1 = (k: string) => grundvarde(k);
 export function radBesok(s: State, sl: Sallskap, t: number) {
   const vl = s.varld, plats = vl?.platser?.find(p => p.nr === sl.mal);
   if (!vl || !plats) return;
-  radBesoker(vl, vl.huvud, sl.mal);
   const folk = resenarer(s, sl);
   for (const p of folk) larOrt(s, p, sl.mal, O_BESOKT, 1, { t });
   const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
-  sl.dagbok.push([t, `Kom fram till ${plats.namn}.`]);
+  dagbok(s, sl, 'fram', `Kom fram till ${plats.namn}.`, t);
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   const k = r.syn;
   // sälja: varorna mot byns silver
@@ -467,7 +473,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
     r.tal.rikedom += Math.round(m * varde1(sak)) - pay;
     if (k) prisAndras(k, sak, pay, -1);
   }
-  if (fick) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; sl.dagbok.push([t, `Sålde ${salda} saker i ${r.namn} för ${fick} silver.`]); count(s, 'resa sålde', salda); }
+  if (fick) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; dagbok(s, sl, 'handel', `Sålde ${salda} saker i ${r.namn} för ${fick} silver.`, t); count(s, 'resa sålde', salda); }
   // köpa: mat för vägen hem
   const v = varldMark(s), hem = byPlats(vl, sl.by), vd = v && hem ? vagDygn(s, plats.y * v.w + plats.x, hem.y * v.w + hem.x) : undefined;
   const led = folk.find(p => p.id === sl.ledare) ?? folk[0];
@@ -482,7 +488,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
       tappa(sl, 'silver', pay); sl.pack[kop] = (sl.pack[kop] ?? 0) + m;
       r.tal.mat -= m; r.tal.silver += pay; r.tal.rikedom += pay - Math.round(m * varde1(kop));
       if (k) prisAndras(k, kop, pay, 1);
-      sl.dagbok.push([t, `Köpte ${m} ${SAKER[kop]!.namn.toLowerCase()} för ${pay} silver till vägen hem.`]); count(s, 'resa köpte', m);
+      dagbok(s, sl, 'handel', `Köpte ${m} ${SAKER[kop]!.namn.toLowerCase()} för ${pay} silver till vägen hem.`, t); count(s, 'resa köpte', m);
     }
   }
   // mötet: byn minns resenärerna som mött huvudbyn, och inställningen blir lite bättre
@@ -492,7 +498,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
     r.fasta.push({ namn: makeName(s, kon, 'resa'), kon, fodd: Math.round(t - (18 + rnd(s, 'resa') * 30) * DAY), roll: 'mott' });
   }
   if (k) k.inst = Math.min(100, k.inst + RESA.besokInst);
-  sl.dagbok.push([t, `Mötte folket i ${r.namn}.`]); count(s, 'resa besök');
+  dagbok(s, sl, 'mote', `Mötte folket i ${r.namn}.`, t); count(s, 'resa besök');
 }
 
 // ---------- hemkomsten och andelarna (steg 11.5.9, Andelarna i tal) ----------
@@ -558,7 +564,7 @@ function delaHemma(s: State, sl: Sallskap) {
   for (const [ag, sak, n] of a.byte) laggIn(s, sak, n, agareI(ag));
   sl.pack = {}; sl.delning = a;
   count(s, 'resa bytets värde', Math.round(a.varde));
-  sl.dagbok.push([s.now, `Hemma: bytet var värt ${Math.round(a.varde)}, det som gått åt ${Math.round(a.gatt)}.`]);
+  dagbok(s, sl, 'hem', `Hemma: bytet var värt ${Math.round(a.varde)}, det som gått åt ${Math.round(a.gatt)}.`);
 }
 
 // ---------- att samla till en resa (steg 11.5.10, Flera samhällen: Sällskapet) ----------
@@ -628,7 +634,7 @@ export function samlaResa(s: State, p: Person, r: ResPlan): Sallskap | undefined
   sl.varor = r.varor.map(([k, n]) => [k, n]);
   sl.ut = utgang(s, sl);
   if (!sl.ut) { stallIn(s, sl); return undefined; }
-  sl.dagbok.push([s.now, `${p.name} samlar till en resa till ${r.namn}.`]);
+  dagbok(s, sl, 'samlas', `${p.name} samlar till en resa till ${r.namn}.`);
   count(s, 'resa samlas');
   kallelse(s, sl, r);
   return sl;
@@ -655,7 +661,7 @@ export function kallelse(s: State, sl: Sallskap, r: ResPlan) {
     if (x.v + RESA.foljVinst * r.varde / r.dygn / (sl.medl.length + 1) <= RESA.folj) continue;
     if (foljMed(vl, sl, x.q)) count(s, 'resa följer med');
   }
-  if (sl.medl.length > 1) sl.dagbok.push([s.now, `${sl.medl.length - 1} följer med.`]);
+  if (sl.medl.length > 1) dagbok(s, sl, 'samlas', `${sl.medl.length - 1} följer med.`);
 }
 // den som är vid samlingsplatsen medan sällskapet samlas: ledaren väntar in de andra
 function samlasSteg(s: State, sl: Sallskap, p: Person) {
@@ -701,4 +707,54 @@ export function sallskapRuta(s: State, sl: Sallskap): SallskapRuta {
     djur, pack: Object.entries(sl.pack).filter(([, n]) => n >= 1).map(([k, n]) => [SAKER[k]?.namn ?? k, Math.floor(n)] as [string, number]).sort((a, b) => b[1] - a[1]),
     ...(lage && sl.skede !== 'framme' ? { kvar: lage.kvar } : {}), ...(lage && sl.skede === 'framme' ? { stannar: lage.kvar } : {}),
   };
+}
+
+// ---------- resans dagbok och redogörelsen (steg 11.5.13, Flera samhällen: Resor, Besöket hos en rad) ----------
+// Spelaren följer resan medan den pågår: varje händelse skrivs i sällskapets dagbok i samma stund som den sker, med sitt slag
+// (en rad i registret DAGBOK), och det stora ger också en notis. Byn hemma vet inget om resan förrän någon kommit hem: först
+// då blir målet besökt för byns rad, och resan berättas som en redogörelse, en rad i byns händelser och en notis med knappen
+// till hela resan (dagboken och hur bytet delades). Byn minns de senaste RESA.minns resorna som kommit hem.
+export interface DagbokDef { namn: string; sym: string; stor?: true }
+export const DAGBOK = {
+  samlas: { namn: 'Samlas', sym: '🎒' },
+  ut: { namn: 'På väg', sym: '🚶' },
+  fram: { namn: 'Framme', sym: '📍' },
+  handel: { namn: 'Handel', sym: '⚖️' },
+  mote: { namn: 'Möte', sym: '🤝' },
+  fynd: { namn: 'Fynd', sym: '💎', stor: true },
+  ran: { namn: 'Rån', sym: '🗡️', stor: true },
+  strid: { namn: 'Strid', sym: '⚔️', stor: true },
+  skada: { namn: 'Skada', sym: '🩹', stor: true },
+  dod: { namn: 'Död', sym: '✝️', stor: true },
+  hem: { namn: 'Hemma', sym: '🏠' },
+} as const satisfies Record<string, DagbokDef>;
+export type DagbokId = keyof typeof DAGBOK;
+export function dagbok(s: State, sl: Sallskap, slag: DagbokId, text: string, t = s.now) {
+  sl.dagbok.push([t, text, slag]);
+  if ((DAGBOK[slag] as DagbokDef).stor) notis(s, 'resa', `${RESMAL[sl.skal].namn}, ${malNamn(s, sl)}: ${text}`, sl.medl, undefined, { resa: sl.id });
+}
+const malNamn = (s: State, sl: Sallskap) => s.varld?.platser?.find(p => p.nr === sl.mal)?.namn ?? '';
+// hemkomsten: byn får veta om resan
+function redogorelse(s: State, sl: Sallskap, t: number) {
+  const vl = s.varld;
+  if (!vl) return;
+  radBesoker(vl, vl.huvud, sl.mal);
+  const folk = resenarer(s, sl), led = folk.find(p => p.id === sl.ledare) ?? folk[0];
+  const dygn = Math.max(1, Math.round((t - sl.borjan) / DAY));
+  const text = `${led?.name ?? 'Sällskapet'}${folk.length > 1 ? ` och ${folk.length - 1} till` : ''} kom hem från ${RESMAL[sl.skal].namn.toLowerCase()} till ${malNamn(s, sl)} efter ${dygn} dygn.`;
+  sl.berattad = t;
+  log(s, text, 'world', folk.map(p => p.id)).resa = sl.id;
+  notis(s, 'resa', text, folk.map(p => p.id), undefined, { resa: sl.id });
+  count(s, 'resa redogörelse');
+  // byn minns de senaste resorna; de äldsta som kommit hem glöms
+  const hemma = (vl.sallskap ?? []).filter(x => x.skede === 'hemma');
+  if (hemma.length > RESA.minns) { const glom = new Set(hemma.slice(0, hemma.length - RESA.minns)); vl.sallskap = vl.sallskap!.filter(x => !glom.has(x)); }
+}
+// resan som byn känner till: bara den som kommit hem och berättats
+export const resaAv = (s: State, id: number) => s.varld?.sallskap?.find(x => x.id === id && x.berattad !== undefined);
+export interface Redogorelse { titel: string; borjan: number; hem: number; ledare: number; medl: number[]; dagbok: [number, string, DagbokId?][]; delning?: Andelar }
+export function redogorelseAv(s: State, id: number): Redogorelse | undefined {
+  const sl = resaAv(s, id);
+  if (!sl) return undefined;
+  return { titel: `${RESMAL[sl.skal].namn}: ${malNamn(s, sl)}`, borjan: sl.borjan, hem: sl.berattad!, ledare: sl.ledare, medl: sl.medl, dagbok: sl.dagbok, delning: sl.delning };
 }

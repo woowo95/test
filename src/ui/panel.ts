@@ -13,6 +13,7 @@ import { teknik } from './flikar/teknik';
 import { sak } from './flikar/sak';
 import { filt } from './flikar/filt';
 import { fram } from './flikar/fram';
+import { resa } from './flikar/resa';
 import { match } from './flikar/match';
 import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
@@ -39,7 +40,7 @@ export interface Flik {
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
 // runstenarna uppifrån (steg 9.3.1–9.3.2, 11.1.17): Seder, Styre, Tro, Teknik, Krönika, Byns tal och Omvärlden
-const FLIKAR = { seder, styre, religion, teknik, kronika, tal, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match, forrad } satisfies Record<string, Flik>;
+const FLIKAR = { seder, styre, religion, teknik, kronika, tal, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match, resa, forrad } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -105,7 +106,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
 satRitaOm(() => renderPanel(true));
 // bakåtknappen (steg 6.9.5): panelerna minns vad man tittat på. Det som bestämmer vad panelerna visar sparas när det ändras,
 // och ← (bredvid krysset) går tillbaka ett steg, så att man kommer tillbaka till personen, fliken eller saken man såg
-const VY = ['tab', 'hoger', 'selected', 'styreDel', 'omvDel', 'personDel', 'eld', 'husId', 'stationId', 'sjoNr', 'faltId', 'faltRuta', 'hogAt', 'filtAt', 'framNr', 'matchNr', 'byteNr', 'djurId', 'sak', 'lagerNr'] as const;
+const VY = ['tab', 'hoger', 'selected', 'styreDel', 'omvDel', 'personDel', 'eld', 'husId', 'stationId', 'sjoNr', 'faltId', 'faltRuta', 'hogAt', 'filtAt', 'framNr', 'matchNr', 'resaNr', 'byteNr', 'djurId', 'sak', 'lagerNr'] as const;
 const BAKAT_MAX = 30;
 const bakat: string[] = [];
 let vyNu = '';

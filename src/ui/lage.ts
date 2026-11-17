@@ -11,7 +11,7 @@ export let ritaOm = () => {};
 export const satRitaOm = (f: () => void) => { ritaOm = f; };
 export function setByn(n: State) {
   s = n; medVarld(n); /* byn får sin värld (steg 11.2.7) */ ui.nu = n.now; useMap(n); nyBild();
-  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttaDel = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.framNr = -1; ui.matchNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1; ui.djurHover = -1; ui.eld = undefined; ui.sjoNr = 0; ui.lagerNr = 0; // de pekade in i den förra byn
+  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttaDel = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.framNr = -1; ui.matchNr = -1; ui.resaNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1; ui.djurHover = -1; ui.eld = undefined; ui.sjoNr = 0; ui.lagerNr = 0; // de pekade in i den förra byn
   for (const f of vidNyBy) f();
 }
 export const ui = {
@@ -53,6 +53,7 @@ export const ui = {
   filtAt: { x: 0, y: 0 }, // platsen man tryckte på en filt (flikar/filt.ts, steg 4.5.4.13)
   framNr: -1, // framträdandet som visas i fliken Framträdandet (steg 5.4.7.1)
   matchNr: -1, // matchen som visas i fliken Matchen (steg 5.4.8.1)
+  resaNr: -1, // resan som visas i fliken Resan (steg 11.5.13)
   byteNr: -1, // bytet som visas i filtfliken (ett minne, steg 4.5.4.17), eller -1 för filten man tryckte på
   djurId: -1, // djuret som visas i panelen (flikar/djur.ts)
   djurHover: -1, // djuret under musen (den vita kanten, vaxter.ts)

@@ -8,7 +8,7 @@ interface El { closest(sel: string): El | null; getAttribute(n: string): string 
 
 // förklaringen för det man tryckte på: närmaste title, eller texten i en ritad symbols <title>. Inget när trycket öppnar något
 // (en knapp, en person, en rad som fälls ut): då är det handen och inte frågetecknet
-export const OPPNAR = 'button, a, input, select, textarea, [data-id], [data-hjalp], [data-pdel], [data-sak], [data-fram], [role="button"], .klick';
+export const OPPNAR = 'button, a, input, select, textarea, [data-id], [data-hjalp], [data-pdel], [data-sak], [data-fram], [data-resa], [role="button"], .klick';
 // det som fälls ut vid ett tryck (steg 11.1.1): ingen bubbla ens med fingret, för trycket visar redan det som står under raden
 export const FALLER = '[data-hjalp], [aria-expanded], [data-pfall], summary';
 export function forklaringAv(el: El, aven_knappar = false): { text: string; vid: El } | undefined {

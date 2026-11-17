@@ -55,7 +55,8 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   skrift: { slag: 'folk', rubrik: 'En ny bok', vikt: 2 }, // bokens första del (steg 10.6.8)
   byte: { slag: 'handel', rubrik: 'Byte med handlaren', vikt: 1 },
   gast: { slag: 'handel', rubrik: 'En gäst', vikt: 1 },
-  nyhet: { slag: 'handel', rubrik: 'Nyheter från världen', vikt: 2 }, // en nyhet om en by som når byn (steg 11.4.13, ort.ts)
+  nyhet: { slag: 'handel', rubrik: 'Nyheter från världen', vikt: 2 },
+  resa: { slag: 'handel', rubrik: 'En resa', vikt: 2 }, // det stora i resans dagbok och redogörelsen när den kommit hem (steg 11.5.13, resa.ts) // en nyhet om en by som når byn (steg 11.4.13, ort.ts)
   sjuk: { slag: 'folk', rubrik: 'Sjukdom', vikt: 2 }, // någon insjuknar, blir sämre eller frisk (steg 9.5.4, sjukdom.ts)
   djurtorst: { slag: 'fara', rubrik: 'Ett djur dog av törst', vikt: 2 }, // steg 10.10.31
   retat: { slag: 'fara', rubrik: 'Uppretade bin', vikt: 2 }, // ett bo som retats upp och den som dött av bistick (steg 10.10.27)
@@ -73,10 +74,11 @@ export interface Notis {
   ids: number[]; plats?: { x: number; y: number }; last?: boolean; // vem den gäller, var, och om spelaren läst den
   fram?: number[]; // framträdandets nummer för varje rad (steg 5.4.7.1), 0 = inget
   match?: number[]; // matchens nummer för varje rad (steg 5.4.8.1), 0 = ingen
+  resa?: number[]; // sällskapets nummer för varje rad (steg 11.5.13), 0 = inget
 }
 export interface Notiser { nr: number; lista: Notis[] }
 
-export function notis(s: State, id: string, text: string, ids: number[] = [], plats?: { x: number; y: number }, ref: { fram?: number; match?: number } = {}) { // ref: framträdandet eller matchen raden pekar på
+export function notis(s: State, id: string, text: string, ids: number[] = [], plats?: { x: number; y: number }, ref: { fram?: number; match?: number; resa?: number } = {}) { // ref: framträdandet eller matchen raden pekar på
   if (!NOTISER[id]) throw new Error(`okänd notis: ${id}`);
   const N = (s.notiser ??= { nr: 0, lista: [] }), ar = kalender(s, s.now).ar;
   let n = N.lista.find(x => x.id === id && x.ar === ar);
@@ -86,8 +88,8 @@ export function notis(s: State, id: string, text: string, ids: number[] = [], pl
     if (N.lista.length > NOTIS.max) { const i = N.lista.findIndex(x => x.last); N.lista.splice(i < 0 ? 0 : i, 1); }
   }
   n.t = s.now; n.n++; n.last = undefined;
-  for (const k of ['fram', 'match'] as const) if (ref[k] || n[k]) { const v = (n[k] ??= n.rader.map(() => 0)); v.push(ref[k] ?? 0); }
-  n.rader.push(text); if (n.rader.length > NOTIS.rader) { n.rader.shift(); n.fram?.shift(); n.match?.shift(); }
+  for (const k of ['fram', 'match', 'resa'] as const) if (ref[k] || n[k]) { const v = (n[k] ??= n.rader.map(() => 0)); v.push(ref[k] ?? 0); }
+  n.rader.push(text); if (n.rader.length > NOTIS.rader) { n.rader.shift(); n.fram?.shift(); n.match?.shift(); n.resa?.shift(); }
   for (const i of ids) if (!n.ids.includes(i)) n.ids.push(i);
   if (plats) n.plats = plats;
   personNotis(s, id, text, ids); // en rad hos dem den gäller (steg 9.2.107)
