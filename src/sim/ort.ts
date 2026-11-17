@@ -6,11 +6,16 @@
 import { balans } from './balans';
 import { byId } from './folk';
 import { findL, MINNE, trimLardomar } from './minne';
-import { LANDMARKEN, varldPlatsNr } from './landmarken';
+import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
+import { VARLD } from './varldmark';
+import { klanById } from './klaner';
 import { Lardom, Person, State } from './typer';
 
 export const ORT = balans('ort', {
   max: 10, // så många platser i världen minns en person högst (utöver de andra lärdomarna); det minst säkra trängs undan
+  narDygn: 1, // närområdet: platserna utan folk inom så många dygns gång (fågelvägen i obanad slätt) från byn är kända för alla som bor där (steg 11.4.2)
+  prat: 0.6, // en gäst som berättar om sin hemby i småpratet ger platsen som känd så här säkert; i en affär eller med ledaren helt säkert
+  anfall: 0.5, // den som ser rövare från en grannby får ett rykte om byn de kom ifrån så här säkert
 });
 
 // nivåerna: vad personen vet om platsen. Ett led i berättandet tar bort en nivå (steg 11.4.4)
@@ -37,8 +42,40 @@ export function larOrt(s: State, p: Person, nr: number, niva: number, c: number,
   trimLardomar(s, p);
   return l;
 }
-// nivån p har för platsen nr (undefined: okänd)
+// nivån p har i minnet för platsen nr (undefined: okänd)
 export const ortNiva = (p: Person, nr: number): number | undefined => findL(p, 'ort', nr)?.v;
+
+// ---------- närområdet (steg 11.4.2) ----------
+// Marken och naturen inom ORT.narDygn dygns gång från byn är känd för var och en som bor där, utan att sparas hos personen.
+// Platser med folk (folk i LANDMARKEN) hör inte dit: en ny by känner inga byar eller läger och får veta om dem genom en
+// besökare, en handlare, ett anfall eller en upphittad karta. Byns egen plats är besökt
+export function iNaromradet(s: State, nr: number): boolean {
+  const vl = s.varld, q = vl && varldPlatsNr(vl, nr), h = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
+  if (!q || !h || (LANDMARKEN[q.k] as LandmarkDef).folk) return false;
+  return Math.hypot(q.x - h.x, q.y - h.y) <= ORT.narDygn * VARLD.gangPerDygn;
+}
+// det en bybo vet om platsen nr: minnet, närområdet (känt) och byns egen plats (besökt); undefined: okänd
+export function kannerOrt(s: State, p: Person, nr: number): number | undefined {
+  const vl = s.varld, egen = !p.gast && vl?.huvud !== undefined && byPlats(vl, vl.huvud)?.nr === nr;
+  if (egen) return O_BESOKT;
+  const m = ortNiva(p, nr), n = !p.gast && iNaromradet(s, nr) ? O_KANT : undefined;
+  return m === undefined ? n : n === undefined ? m : Math.max(m, n);
+}
+// platsen gästen g kommer ifrån: klanens by eller byn i världen hen flyttade ifrån
+export function gastHemOrt(s: State, g: Person): number | undefined {
+  const vl = s.varld, rad = klanById(s, g.gast?.klan)?.rad ?? g.gast?.hemRad;
+  return vl && rad !== undefined ? byPlats(vl, rad)?.nr : undefined;
+}
+// gästen g berättar för bybon p var hen bor: p känner platsen med säkerheten c
+export function horOmGast(s: State, p: Person, g: Person, c: number) {
+  const nr = p.gast ? undefined : gastHemOrt(s, g);
+  if (nr !== undefined) larOrt(s, p, nr, O_KANT, c, { src: g.id });
+}
+// bybon p ser rövare från klanen och får ett rykte om byn de kom ifrån; p är den som först berättar det
+export function rovareSedda(s: State, p: Person, klan: number | undefined) {
+  const vl = s.varld, rad = klanById(s, klan)?.rad, nr = vl && rad !== undefined ? byPlats(vl, rad)?.nr : undefined;
+  if (nr !== undefined && !p.gast) larOrt(s, p, nr, O_RYKTE, ORT.anfall, { fr: p.id });
+}
 
 // lärdomen i ord (describe i minne.ts)
 export function describeOrt(s: State, l: Lardom) {

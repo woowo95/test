@@ -1,4 +1,5 @@
 import { honom } from './ord';
+import { horOmGast } from './ort';
 import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
@@ -278,7 +279,7 @@ export function framlingSteg(s: State, dtSec: number) {
       if (kvar <= KLAN.framlingNara) {
         g.fas = 'pratar'; g.till = s.now + KLAN.framlingPrat * MIN; g.path = undefined; g.pk = undefined;
         log(s, `${p.name} från ${klanById(s, g.klan)?.namn ?? 'en grannklan'} pratar med ${l ? l.name : 'byn'}.`, 'move', [p.id, ...(l ? [l.id] : [])]);
-        if (l) { think(l, 'Pratade med en främling', 0.05, s.now, 6 * HOUR); prisIPrat(s, l, p); } // främlingen berättar vad något kostar (steg 10.5.15)
+        if (l) { think(l, 'Pratade med en främling', 0.05, s.now, 6 * HOUR); prisIPrat(s, l, p); horOmGast(s, l, p, 1); } // främlingen berättar vad något kostar (steg 10.5.15) och var hen kommer ifrån (steg 11.4.2)
       }
     } else if (g.fas === 'pratar') {
       if (s.now >= (g.till ?? 0)) framlingBeslut(s, p);

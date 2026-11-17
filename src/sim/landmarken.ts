@@ -22,14 +22,15 @@ export interface LandmarkDef {
   flodFri?: true; // tar bort flodens kostnad och släpper över vagnen (bron)
   blir?: Partial<Record<MarkId, MarkId>>; // gör rutans mark till en annan när man går (den röjda passagen)
   kostnad?: Partial<Record<MarkId, number>>; // kostnaden att gå på marken, utan att fler färdsätt kommer fram (spången)
+  folk?: true; // en plats med folk (en by, ett läger): inte känd i närområdet, byn får veta om den genom någon (ort.ts, steg 11.4.2)
   tathet?: number; // chansen per landruta att platsen finns när världen skapas (placering.ts, steg 11.2.14); utan: den uppstår i spelet
 }
 const LAND: readonly MarkId[] = ['slatt', 'skog', 'tat', 'myr', 'berg'];
 export const LANDMARKEN = {
-  by: { namn: 'By', tecken: 'hus', mark: ['slatt', 'skog'], avst: 1 }, // inte på en annan bys karta; hur nära grannen ligger säger ingen regel
-  handelslager: { namn: 'Handelsläger', tecken: 'talt', mark: ['slatt', 'skog'], avst: 4, tillfallig: true },
-  rovarlager: { namn: 'Rövarläger', tecken: 'eldstad', mark: ['skog', 'tat', 'berg'], avst: 4, tillfallig: true },
-  utpost: { namn: 'Utpost', tecken: 'torn', mark: ['slatt', 'skog', 'berg'], avst: 3, projekt: true },
+  by: { namn: 'By', tecken: 'hus', mark: ['slatt', 'skog'], avst: 1, folk: true }, // inte på en annan bys karta; hur nära grannen ligger säger ingen regel
+  handelslager: { namn: 'Handelsläger', tecken: 'talt', mark: ['slatt', 'skog'], avst: 4, tillfallig: true, folk: true },
+  rovarlager: { namn: 'Rövarläger', tecken: 'eldstad', mark: ['skog', 'tat', 'berg'], avst: 4, tillfallig: true, folk: true },
+  utpost: { namn: 'Utpost', tecken: 'torn', mark: ['slatt', 'skog', 'berg'], avst: 3, projekt: true, folk: true },
   ruin: { namn: 'Ruin', tecken: 'ruin', mark: LAND, avst: 3, fynd: true },
   helig: { namn: 'Helig plats', tecken: 'sten', mark: LAND, avst: 3, tathet: 0.004 },
   gravhog: { namn: 'Gravhög', tecken: 'hog', mark: ['slatt', 'skog'], avst: 2, tathet: 0.005 },

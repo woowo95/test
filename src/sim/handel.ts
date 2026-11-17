@@ -1,4 +1,5 @@
 import { honom } from './ord';
+import { horOmGast, ORT } from './ort';
 import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
@@ -454,7 +455,7 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
     const out = (stat(p, 'empati', s.now) + hp(s, h).skill.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
     think(p, out > 0 ? `Småpratade med ${hp(s, h).name}` : `Småpratet med ${hp(s, h).name} gick trögt`, out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, s.now, HANDEL.pratTim * HOUR);
     events?.push({ a: p.id, b: h.id, kind: 'småprat', good: out > 0, t: s.now });
-    if (out > 0) prisIPrat(s, p, hp(s, h), h.varor.map(w => w.k)); // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15)
+    if (out > 0) { prisIPrat(s, p, hp(s, h), h.varor.map(w => w.k)); horOmGast(s, p, hp(s, h), ORT.prat); } // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15) och var hen bor (steg 11.4.2)
     count(s, 'handlarPrat');
   }
 }
@@ -528,6 +529,7 @@ vidByte.push((s, m, g, fatt, betal, minne) => {
   // den som handlade lär sig klanens pris på det som byttes (steg 10.5.15), före prisets ändring: det var det priset som gällde
   const kund = kop ? g : m, kp = kund.p ?? (h.affar?.vem !== undefined ? byId(s, h.affar.vem) : undefined);
   if (k && kp) for (const w of [...fatt, ...betal]) if (w.k !== 'silver' && grundvarde(w.k) > 0) larPris(s, kp, k.id, w.k, 1);
+  if (kp) horOmGast(s, kp, hp(s, h), 1); // och var handlaren bor (steg 11.4.2)
   // det handlaren köpte blir billigare hos klanen och det hen sålde dyrare (steg 10.5.14)
   if (k) for (const [v, upp] of [[kop ? fatt : betal, -1], [kop ? betal : fatt, 1]] as const) for (const w of v) prisAndras(k, w.k, (w.t ? 1 : w.n) * vardeOf(w), upp);
 });

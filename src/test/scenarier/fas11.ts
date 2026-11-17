@@ -1188,3 +1188,36 @@ SCENARIER.ort = {
     ];
   },
 };
+
+SCENARIER.naromrade = {
+  text: 'Närområdet (steg 11.4.2, ort.ts): platserna utan folk inom ORT.narDygn dygns gång är kända för var och en i byn utan att sparas, byns egen plats är besökt, en ny by känner inga andra byar, och den första handlaren gör sin hemby känd för den som pratar eller handlar med hen',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 18)!;
+    const avst = (q: SIM.VarldPlats) => Math.hypot(q.x - hem.x, q.y - hem.y) / SIM.VARLD.gangPerDygn;
+    const natur = vl.platser!.filter(q => !(SIM.LANDMARKEN[q.k] as SIM.LandmarkDef).folk);
+    const nara = natur.filter(q => avst(q) <= SIM.ORT.narDygn), langt = natur.filter(q => avst(q) > SIM.ORT.narDygn);
+    const byar = vl.platser!.filter(q => q.k === 'by' && q !== hem);
+    const sparat = (p.lardomar ?? []).filter(l => l.k === 'ort').length;
+    const ingaByar = byar.every(q => SIM.living(s).every(b => SIM.kannerOrt(s, b, q.nr) === undefined));
+    // handlaren kommer: den som pratar eller handlar med hen känner sedan hens hemby
+    s.delning = { andel: 0 }; Object.assign(s.fire, { lit: true, fuel: 4, ring: true }); SIM.setAmount(s, 'ved', 40); s.nastaHandlare = s.now;
+    for (let i = 0; i < 3000 && !(s.handlare && (s.handlare.fas === 'vantar' || s.handlare.fas === 'handlar')); i++) SIM.step(s, SIM.BEAT);
+    const h = s.handlare, hemOrt = h && SIM.gastHemOrt(s, SIM.hp(s, h));
+    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    for (let i = 0; h && i < 20 && hemOrt !== undefined && !SIM.living(s).some(b => SIM.ortNiva(b, hemOrt) !== undefined); i++) {
+      const a = vuxna[i % vuxna.length]!, g = SIM.hp(s, h);
+      a.x = g.x + 1; a.y = g.y + 1; a.task = { act: 'samtal', phase: 'do', tx: a.x, ty: a.y, until: s.now + SIM.HOUR, carry: 0, dark: false, why: '' } as SIM.Task;
+      SIM.pratMedHandlare(s, SIM.HANDEL.pratSek * 2);
+    }
+    const kanner = hemOrt === undefined ? [] : SIM.living(s).filter(b => SIM.ortNiva(b, hemOrt!) === SIM.O_KANT);
+    return [
+      [`byns egen plats är besökt`, SIM.kannerOrt(s, p, hem.nr) === SIM.O_BESOKT],
+      [`platserna utan folk i närområdet är kända (${nara.length}) utan att sparas (${sparat} lärdomar)`, nara.every(q => SIM.kannerOrt(s, p, q.nr) === SIM.O_KANT) && sparat === 0],
+      [`platserna längre bort är okända (${langt.length})`, langt.length > 0 && langt.every(q => SIM.kannerOrt(s, p, q.nr) === undefined)],
+      [`en ny by känner ingen av de ${byar.length} andra byarna`, byar.length > 0 && ingaByar],
+      [`handlaren kommer från en by i världen`, hemOrt !== undefined],
+      [`den som pratat eller handlat med handlaren känner hens hemby (${kanner.map(b => b.name).join(', ')})`, kanner.length > 0],
+    ];
+  },
+};

@@ -1,4 +1,5 @@
 import { antal, lista, och, stor, tal } from './ord';
+import { rovareSedda } from './ort';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
@@ -310,6 +311,7 @@ function seSteg(s: State, f: Rovarflock, folk: Person[]) {
       const n = f.folk.length, fel = ROVARE.gissFel * Math.min(1, narmast(s, f, q) / Math.max(1, synhall(s, f, q))) * (rnd(s, 'rovare') * 2 - 1);
       f.sedd = s.now; f.gissning = Math.max(1, Math.round(n * (1 + fel))); f.sx = f.x; f.sy = f.y; // där flocken sågs (steg 9.2.122)
       count(s, 'rovarSedda');
+      rovareSedda(s, q, f.klan); // ett rykte om byn de kom ifrån (steg 11.4.2)
       const text = `${q.name} såg rövare ${f.anfaller ? 'på väg mot byn' : 'utanför byn'}, ungefär ${f.gissning} (${fran(s, f)}).`;
       log(s, text, 'world', [q.id]); notis(s, 'anfall', text, [q.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
     }

@@ -378,7 +378,8 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
     const w = a.lardomar.map(l => (l.k === 'ort' ? 0 : l.k === 'fara' ? MINNE.delaFara : l.k === 'pris' ? (nyhet(s, l) ? 2 : 1) : l.k === 'flinta' || l.k === 'vatten' || l.k === 'flod' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
-    tell(s, a, b, pickViktat(s, a.lardomar, w, 'minne', a), r);
+    const l = pickViktat(s, a.lardomar, w, 'minne', a);
+    if (l.k !== 'ort') tell(s, a, b, l, r);
   }
   skvaller(s, a, b, r, slag.dela === 'delaBerattelse'); // och om vad hen tycker om andra (steg 3.3, rykten.ts)
   if (a.varsel) delaVarsel(s, a, b, r); // och om en motgång som kommer (steg 3.8.1, motgang.ts)
