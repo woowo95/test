@@ -66,7 +66,7 @@ export const styre: Flik = {
 const ordAv = (v: number, ord: string[]) => { const x = Math.max(0, v); return x < 0.05 ? ord[0] : ord[Math.min(ord.length - 1, 1 + Math.floor((x - 0.05) / (0.95 / (ord.length - 1))))]; };
 // tystnaden (steg 10.4.10): vem den gäller och hur hårt
 const tystVarde = (v: number) => v < 0.05 || !s.styre?.tystnad ? 'ingen' : `${s.styre.tystnad.namn} nämns ${v < 0.4 ? 'mer sällan' : v < 0.75 ? 'sällan' : 'nästan aldrig'}`;
-const varde = (k: Pabud, v: number) => k === 'tystnad' ? tystVarde(v) : k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} år`;
+const varde = (k: Pabud, v: number) => k === 'tystnad' ? tystVarde(v) : k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${k === 'vedlager' ? 'ved' : 'mat'} för ${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} år`; // förrådsmålen i år (steg 11.1.65)
 // lagar och påbud ser likadana ut (steg 11.1.29): kort i en och samma lista, med namnet, vad det säger med sitt tal och ett litet
 // ord om det är en lag eller ett påbud. Ett tryck fäller ut resten: straffet och vem som lade fram lagen, och vad ledaren vill mot
 // vad byn själv vill för påbudet
@@ -145,13 +145,15 @@ function rattegangar() {
     return `<li class="klick falla" ${fallUt(id, 'ratt-')} title="Tryck för hela rättegången"><span class="when">${timeLabel(s, r.t)}</span>${esc(r.namn)} ${esc(x.brott)}: ${esc(STRAFF_NAMN[r.steg].toLowerCase())}${r.oratt ? ' <span class="oratt">orättvis</span>' : ''}</li>${hjalpText(id, rattMer(r, x))}`;
   }).join('')}</ol>`;
 }
+// rättegångens hårdhet i ett ord (steg 11.1.65): 1 är lagom; delarna står i förklaringen
+const hardOrd = (h: number) => h < 0.8 ? 'mild' : h < 1.25 ? 'lagom' : h < 1.6 ? 'sträng' : 'hård';
 function rattMer(r: Rattegang, x: ReturnType<typeof rattegang>) {
   return `<li class="small"><p>${esc(x.berattelse)}</p><dl class="kv">
     <dt>Brottet</dt><dd>${esc(`${r.namn} ${x.brott}`)}${r.b.falsk ? ' (inte sant)' : ''}</dd>
     <dt>${esc(r.ledNamn)}</dt><dd>${r.b.sett ? 'såg det själv' : 'hörde det som rykte'}</dd>
     <dt>Såg det</dt><dd>${esc(x.sett || 'ingen annan')}</dd>
     <dt>Hörde det</dt><dd>${esc(x.hort || 'ingen annan')}</dd>
-    <dt title="Hur hårt ledaren dömer: 1 plus det sederna och ledaren lägger till">Hårdheten</dt><dd>${num(r.hard)} (Envälde ${plus(r.rang)}, empati ${plus(r.emp)}, humör ${plus(r.hum)}, aggression ${plus(r.agg)})${r.nara ? `, mildare mot sina nära (× ${num(STR.nara)})` : ''}</dd>
+    <dt>Hårdheten</dt><dd title="${esc(`Hur hårt ledaren dömer: ${num(r.hard)}, det vill säga 1 plus det sederna och ledaren lägger till: Envälde ${plus(r.rang)}, empati ${plus(r.emp)}, humör ${plus(r.hum)}, temperament ${plus(r.agg)}${r.nara ? `, och mildare mot sina nära (× ${num(STR.nara)})` : ''}`)}">${hardOrd(r.hard)}</dd>
     <dt>Straffet</dt><dd>${STRAFF_NAMN[r.steg]}</dd>
     <dt title="Det straff som sederna godtar">Lagom</dt><dd>${STRAFF_NAMN[r.lagom]}</dd>
     ${r.oratt ? `<dt>Orättvist</dt><dd>legitimiteten −${Math.round((r.leg ?? 0) * 100)} %${r.van ? `, ${r.van} tyckte sämre om ${esc(r.ledNamn)}` : ''}</dd>` : ''}

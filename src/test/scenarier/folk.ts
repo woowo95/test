@@ -7,8 +7,11 @@ import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
-import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank } from './hjalp';
+import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
 import { stalle, SITTA, vidArbetet } from '../../ui/stalle';
+import { styre as styreFlikF } from '../../ui/flikar/styre';
+import { setByn, ui as uiLage } from '../../ui/lage';
+import { hjalpKlick } from '../../ui/hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.befolkning = {
@@ -950,7 +953,14 @@ SCENARIER.rattegang = {
     SIM.handelse(t, tjuv, 'sla', offer);
     klockan(t, SIM.STR.timme + 48);
     SIM.stepStyre(t);
+    // hårdheten som ett ord, med delarna i förklaringen (steg 11.1.65)
+    utanWebblasare(); setByn(t); uiLage.styreDel = 'styre';
+    const rid = `ratt-${r?.t}-${r?.om}`;
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: rid, hjalpGrupp: 'ratt-' } }) } as unknown as HTMLElement);
+    const rattH = styreFlikF.html(); hjalpKlick({ closest: () => ({ dataset: { hjalp: rid, hjalpGrupp: 'ratt-' } }) } as unknown as HTMLElement);
+    const hardOrd = /<dt>Hårdheten<\/dt><dd title="Hur hårt ledaren dömer: [^"]*Envälde[^"]*">(mild|lagom|sträng|hård)<\/dd>/.test(rattH);
     return [
+      ['rättegångens hårdhet står som ett ord (mild, lagom, sträng, hård), och delarna i förklaringen (steg 11.1.65)', hardOrd],
       [`domen sparas: ${r ? `${r.namn} ${x!.brott}, ${SIM.STRAFF_NAMN[r.steg].toLowerCase()}` : 'ingen'}`, !!r && r.om === tjuv.id && r.led === l.id && r.b.h === 'stold' && r.b.mot === offer.id],
       [`ledaren såg det själv, och de som såg och hörde finns med (såg: ${x?.sett}; hörde: ${x?.hort})`, !!r && !!r.b.sett && r.sett.includes(offer.id) && r.hort.includes(langt.id) && !r.sett.includes(langt.id) && !r.sett.includes(l.id)],
       [`hårdheten och dess delar sparas (${r?.hard.toFixed(2)}: ${[r?.rang, r?.emp, r?.hum, r?.agg].map(v => v?.toFixed(2)).join(', ')})`, !!r && Math.abs(Math.min(SIM.STR.max, Math.max(SIM.STR.min, 1 + r.rang + r.emp + r.hum + r.agg)) - r.hard) < 1e-9],
