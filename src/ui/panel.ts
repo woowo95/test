@@ -2,7 +2,7 @@ import { FOLDERS, amountOf, grundvarde, isTool, kortTal, ownedSum, sakNamn, worn
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
 import { forrad } from './flikar/forrad';
-import { kronika } from './flikar/kronika';
+import { kronika, val as kronikaVal } from './flikar/kronika';
 import { hog, lager } from './flikar/lager';
 import { hus } from './flikar/hus';
 import { sjo } from './flikar/sjo';
@@ -169,7 +169,7 @@ document.addEventListener('click', e => {
   if (hjalpKlick(el)) { renderPanel(true); return; }
   if (el.closest('[data-kvsort]')) { ui.kvSort = !ui.kvSort; renderPanel(true); return; } // stackarna efter kvalitet (steg 9.2.18)
   const lv = el.closest<HTMLElement>('[data-visa]'); // en länk till en annan flik (flikLank i hjalp.ts)
-  if (lv && (ALLA[lv.dataset.visa as FlikId]?.syns?.() ?? true)) { visa(lv.dataset.visa as FlikId); renderPanel(true); return; }
+  if (lv && (ALLA[lv.dataset.visa as FlikId]?.syns?.() ?? true)) { if (lv.dataset.kkatLank) Object.assign(kronikaVal, { del: 'handelser', viktigt: false, kat: lv.dataset.kkatLank, ar: undefined }); visa(lv.dataset.visa as FlikId); renderPanel(true); return; }
   for (const id of IDS) if (ALLA[id].klick?.(el)) { renderPanel(true); return; }
   const tb = el.closest<HTMLElement>('.tabs button');
   if (tb?.getAttribute('aria-disabled') === 'true') return; // en blek sten öppnar inget; bubblan har sagt vad som krävs

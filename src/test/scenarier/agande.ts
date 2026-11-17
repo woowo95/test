@@ -1973,12 +1973,18 @@ SCENARIER.grannklaner = {
     const staplar = (stangd.match(/class="sbar hall neg"><span style="left:20%;width:30%"/g) ?? []).length === 1 && (stangd.match(/class="sbar hall"><span style="left:50%;width:20%"/g) ?? []).length === 1;
     const vag = (stangd.match(/sym_vag|⚖/g) ?? []).length >= fk.length;
     const knapp = /data-hjalp="omvarlden"/.test(stangd) && !/Vakten håller sig vaken/.test(stangd) && /Vakten håller sig vaken/.test(oppen) && /fientligare/.test(oppen);
+    // Handlarna, Räderna och Försvaret (steg 11.1.40): rubriken över räknarna, länkarna till krönikan och vaktraderna
+    fl.handlarNr = 2; fl.rovarNr = 1; fl.nastaHandlare = fl.now + 2 * SIM.DAY;
+    ui.omvDel = 'handlare'; const hH = grannarFlik.html(); ui.omvDel = 'rader'; const rH = grannarFlik.html(); ui.omvDel = 'forsvar'; const fH = grannarFlik.html(); ui.omvDel = 'grannar';
+    const omv40 = /<h4>Sedan byn grundades<\/h4>/.test(hH) && /Nästa väntas om ungefär 2 år/.test(hH) && /data-kkat-lank="grannar">Bytena i krönikan</.test(hH)
+      && /Rövare som kommit/.test(rH) && /data-kkat-lank="strid">Striderna i krönikan</.test(rH) && /Vaktade i natt/.test(fH) && /Vaktar nu/.test(fH);
     const forkl = /title="Hur de ser på byn: fientliga \(-60 av −100 till 100\)\. De skickar ingen handlare"/.test(stangd);
     return [
       [`hållningen ritas som en stapel från mitten, åt vänster när klanen är fientlig och åt höger när den är vänlig`, staplar],
       ['klanens rikedom har vågens symbol, som byns', vag],
       ['Omvärlden har en ?-knapp som säger vad hållningen är, vad som ändrar den och vad vakten gör', knapp],
       ['raden om hållningen förklaras vid ett tryck, också att en fientlig klan inte skickar handlare', forkl],
+      ['Handlarna, Räderna och Försvaret: rubriken Sedan byn grundades, nästa handlare om ungefär N år, Rövare som kommit, Vaktade i natt och Vaktar nu, och länkarna till krönikan (steg 11.1.40)', omv40],
       [`en ny by har ${SIM.KLAN.antal} grannklaner med folk, styrka och en hövding`, finns],
       ['klanerna har olika namn', unika],
       ['en sparad by från före v242 får grannklaner', migr],

@@ -1,6 +1,6 @@
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
+import { DAY, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -59,6 +59,13 @@ export const merKnapp = (id: string, n: number) => `<button type="button" class=
 // namn. attr = attributet som väljer delen (data-sdel, data-odel …)
 export const delRad = (attr: string, delar: readonly { id: string; tecken: string; namn: string }[], vald: string) =>
   `<div class="pdelar namngivna" role="tablist">${delar.map(d => `<button type="button" role="tab" ${attr}="${d.id}" aria-selected="${d.id === vald}" title="${esc(d.namn)}"><span class="deltecken">${d.tecken}</span><span class="delnamn">${esc(d.namn)}</span></button>`).join('')}</div>`;
+// en länk till en kategori i Krönikan (steg 11.1.40): öppnar Krönikan med kategorin vald (panel.ts)
+export const kronikaLank = (kat: string, text: string) => `<button type="button" class="lank" data-visa="kronika" data-kkat-lank="${kat}">${esc(text)}</button>`;
+// hur länge det är kvar, i spelets ord (steg 11.1.40): "ungefär 2 år", "en tidsålder", "några timmar"
+export function omUngefar(ms: number) {
+  const ar = ms / DAY;
+  return ar >= 7 ? `${Math.round(ar / 7)} ${Math.round(ar / 7) === 1 ? 'tidsålder' : 'tidsåldrar'}` : ar >= 1.5 ? `${Math.round(ar)} år` : ar >= 0.75 ? 'ett år' : durTxt(Math.max(0, ms));
+}
 // en länk till en annan flik (steg 11.1.15): ett tryck öppnar den (panel.ts)
 export const flikLank = (flik: string, text: string) => `<button type="button" class="lank" data-visa="${flik}">${esc(text)}</button>`;
 export const hjalpKnapp = (id: string, title: string) => `<button type="button" class="hjalp" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">?</button>`;

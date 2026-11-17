@@ -1,6 +1,6 @@
-import { hp, KLAN, KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
+import { hp, rovarna, KLAN, KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
-import { delRad, esc, hjalpKnapp, hjalpText } from '../hjalp';
+import { delRad, esc, hjalpKnapp, hjalpText, kronikaLank, omUngefar, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -37,23 +37,24 @@ function grannarHtml() {
 function handlareHtml() {
   const h = s.handlare, n = s.handlarNr ?? 0;
   if (!n && !h) return '<p class="muted">Ingen handlare har kommit än.</p>';
-  const nu = h ? `<p>${iconImg('handlare', 16)} <b>${esc(hp(s, h).name)}</b> från ${esc(hp(s, h).gast!.hem!)} ${h.fas === 'kommer' ? 'är på väg hit' : h.fas === 'gar' ? 'går hem' : 'är här'}.</p>` : '';
-  return `${nu}<dl class="kv smal"><dt>Handlare som kommit</dt><dd>${n}</dd>${!h && s.nastaHandlare ? `<dt>Nästa väntas</dt><dd>${esc(timeLabel(s, s.nastaHandlare))}</dd>` : ''}</dl>`;
+  const nu = h ? `<p>${iconImg('handlare', 16)} ${pLink(hp(s, h))} från ${esc(hp(s, h).gast!.hem!)} ${h.fas === 'kommer' ? 'är på väg hit' : h.fas === 'gar' ? 'går hem' : 'är här'}.</p>` : '';
+  const nasta = !h && s.nastaHandlare ? `<p title="${esc(timeLabel(s, s.nastaHandlare))}">Nästa väntas om ungefär ${esc(omUngefar(s.nastaHandlare - s.now))}.</p>` : '';
+  return `${nu}${nasta}<h4>Sedan byn grundades</h4><dl class="kv smal"><dt>Handlare som kommit</dt><dd>${n}</dd></dl><p>${kronikaLank('grannar', 'Bytena i krönikan')}</p>`;
 }
 // räderna (steg 4.4.5, rovare.ts): flocken som är här nu och det som hänt
 function raderHtml() {
   const st = s.stat ?? {}, n = s.rovarNr ?? 0, f = s.rovare;
   if (!n && !f) return '<p class="muted">Inga rövare har kommit än.</p>';
-  const nu = f ? `<p class="low">⚔️ ${f.folk.length} rövare är vid byn.</p>` : '';
+  const nu = f ? `<p class="low">⚔️ ${f.folk.length} rövare är vid byn: ${rovarna(s, f).map(p => pLink(p)).join(', ')}.</p>` : '';
   const rad = (namn: string, v: unknown) => `<dt>${namn}</dt><dd>${Number(v ?? 0)}</dd>`;
-  return `${nu}<dl class="kv smal">${rad('Flockar som kommit', n)}${rad('Rövare', st.rovare)}${rad('Strider', st.rovarStrid)}${rad('Rövare som dött', st.rovarDoda)}${rad('Gånger vakten väckte byn', st.rovarVackt)}</dl>`;
+  return `${nu}<h4>Sedan byn grundades</h4><dl class="kv smal">${rad('Flockar som kommit', n)}${rad('Rövare som kommit', st.rovare)}${rad('Strider', st.rovarStrid)}${rad('Rövare som dött', st.rovarDoda)}${rad('Gånger vakten väckte byn', st.rovarVackt)}</dl><p>${kronikaLank('strid', 'Striderna i krönikan')}</p>`;
 }
 // byns försvar: vakten i natt, de som håller vakt nu och vapnen i förrådet (strid.ts VAPEN)
 function forsvarHtml() {
   const vakter = living(s).filter(p => p.guardDay !== undefined && p.guardDay === s.lastGuardDay), nu = living(s).filter(p => p.task?.act === 'vakt');
   const vapen = Object.keys(VAPEN).filter(k => k !== 'hand').map(k => [k, isTool(k) ? nTools(s, k) : Math.floor(amountOf(s, k) + 1e-9)] as const).filter(([, n]) => n > 0);
-  return `<dl class="kv smal"><dt>Vakten i natt</dt><dd>${vakter.length ? vakter.map(p => esc(p.name)).join(', ') : '<span class="muted">ingen</span>'}</dd>
-    <dt>Håller vakt nu</dt><dd>${nu.length ? nu.map(p => esc(p.name)).join(', ') : '<span class="muted">ingen</span>'}</dd></dl>
+  return `<dl class="kv smal"><dt>Vaktade i natt</dt><dd>${vakter.length ? vakter.map(p => pLink(p)).join(', ') : '<span class="muted">ingen</span>'}</dd>
+    <dt>Vaktar nu</dt><dd>${nu.length ? nu.map(p => pLink(p)).join(', ') : '<span class="muted">ingen</span>'}</dd></dl>
     <h4>Vapnen</h4>${vapen.length ? `<ul class="bytt">${vapen.map(([k, n]) => `<li title="${esc(sakNamn(k))}">${iconImg(k, 12)} ${esc(sakNamn(k))} ${n}</li>`).join('')}</ul>` : '<p class="muted">Byn har inga vapen.</p>'}`;
 }
 
