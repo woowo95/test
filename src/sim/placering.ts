@@ -10,6 +10,7 @@ import { balans } from './balans';
 import { hash3 } from './slump';
 import { LANDMARK_IDS, LANDMARKEN, LandmarkDef, hinder, laggPlats, VarldPlats } from './landmarken';
 import { huvudRad } from './radtal';
+import { varldHandelse } from './varldkronika';
 import { State } from './typer';
 import { MARK_IDS, VARLDMARK, VarldMark } from './varldmark';
 import { Varlden, varldMark } from './varlden';
@@ -50,7 +51,7 @@ export function laggHuvudby(s: State): VarldPlats | undefined {
   if (!lediga.length) return undefined;
   const i = lediga[Math.floor(hash3(vl.fro, 0x48554644, 1) * lediga.length)]!;
   const p = laggPlats(vl, v, 'by', i % v.w, Math.floor(i / v.w), s.founded, { by: r.nr, namn: r.namn });
-  if (p) { r.x = p.x; r.y = p.y; }
+  if (p) { r.x = p.x; r.y = p.y; varldHandelse(vl, 'grundad', s.founded, { by: r.nr }); } // huvudbyns grundande står först i världens krönika
   return p;
 }
 // de övriga platserna i en ny värld: heliga platser, gravhögar, runstenar, fyndplatser och rastplatser (de rader i LANDMARKEN

@@ -455,3 +455,34 @@ SCENARIER.varldslag = {
     }
   },
 };
+
+SCENARIER.varldskronika = {
+  text: 'Världens krönika (steg 11.2.19): registret VARLDSHANDELSER och krönikan där världens händelser skrivs i tidsordning, de stora för alltid och de små med ett tak',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = SIM.medVarld(s), r = vl.rader!.find(x => x.nr === vl.huvud)!;
+    SIM.skrivHuvudRad(s);
+    const forsta = vl.kronika?.[0], grundad = forsta?.k === 'grundad' && forsta.by === vl.huvud && forsta.t === s.founded;
+    const text = forsta ? SIM.varldHandelseText(vl, forsta) : '';
+    // många händelser: de stora står kvar, de små stannar vid taket och de äldsta små försvinner
+    const by = vl.platser!.filter(p => p.k === 'by' && p.by === undefined).slice(0, 2);
+    const t0 = s.now, tak = SIM.VARLDKRONIKA.smaTak;
+    for (let i = 0; i < tak + 50; i++) SIM.varldHandelse(vl, i % 2 ? 'svalt' : 'farsot', t0 + i * 3600e3, { by: vl.huvud });
+    for (let i = 0; i < 20; i++) SIM.varldHandelse(vl, 'krig', t0 + i * 7200e3, { by: vl.huvud, mot: 999 });
+    SIM.varldHandelse(vl, 'karavan', t0 + (tak + 40) * 3600e3 - 1000, { plats: by[0]?.nr }); // i efterhand, mellan två andra
+    const kr = vl.kronika!, sma = kr.filter(h => !SIM.VARLDSHANDELSER[h.k].stor), stora = kr.filter(h => SIM.VARLDSHANDELSER[h.k].stor);
+    const iOrdning = kr.every((h, i) => i === 0 || h.t >= kr[i - 1].t);
+    const aldstaBort = !sma.some(h => h.t < t0 + 50 * 3600e3 && h.k !== 'karavan') || sma.length === tak;
+    const karavan = SIM.varldHandelseText(vl, kr.find(h => h.k === 'karavan') ?? kr[0]);
+    const alla = SIM.VARLDHANDELSE_IDS.length === 12 && ['grundad', 'gattUnder', 'delad', 'nyLedare', 'krig', 'fred', 'forbund', 'svalt', 'farsot', 'rad', 'karavan', 'uppdrag'].every(k => k in SIM.VARLDSHANDELSER);
+    // sparas med världen
+    const igen = JSON.parse(JSON.stringify(vl)) as SIM.Varlden;
+    return [
+      ['registret har slagen grundad, gått under, delad, ny ledare, krig, fred, förbund, svält, farsot, räd, plundrad karavan och uppdrag', alla],
+      [`huvudbyns grundande står först i världens krönika ("${text}")`, grundad && text.includes(r.namn) && !!r.namn],
+      [`de stora sparas för alltid (${stora.length} stora)`, stora.length === 21],
+      [`de små har ett tak (${sma.length} av högst ${tak}), och de äldsta försvinner först`, sma.length === tak && aldstaBort],
+      [`krönikan står i tidsordning, också när en händelse skrivs i efterhand ("${karavan}")`, iOrdning && karavan.startsWith('En karavan plundras vid')],
+      ['krönikan sparas med världen', igen.kronika?.length === kr.length],
+    ];
+  },
+};
