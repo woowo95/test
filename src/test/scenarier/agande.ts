@@ -2879,6 +2879,7 @@ SCENARIER.forvarlista = {
       ['kistan visar yxan i lagrets lista med skicket', /<dl class="kv stk">/.test(k) && k.includes(SIM.sakNamn('yxa')) && k.includes(`data-sak="t:${yxa.id}"`) && k.includes('50 %')],
       ['hyllan visar stenarna med antalet, som i lagret', /<dl class="kv stk">/.test(h) && /Sten 3 st/.test(h) && h.includes('100 %')],
       ['en tom kista säger att den är tom', t.includes('tom') && !/<dl class="kv stk">/.test(t)],
+      ['rubrikerna står i samma ordning för alla stationer (Här görs, Material, Redskap, Förvaring, Platser, Sovplats, Tillbehör), och arbetstiden på en egen rad (steg 11.1.56)', [k, h].every(x => { const ord = ['Här görs', 'Material', 'Redskap', 'Förvaring', 'Platser', 'Sovplats', 'Tillbehör'].map(r => x.search(new RegExp(`<h3[^>]*>${r}`))).filter(i => i >= 0); return ord.every((v, i) => i === 0 || v > ord[i - 1]) && /<p>Arbete \d+ min<\/p>/.test(x); })],
     ];
   },
 };

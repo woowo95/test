@@ -100,7 +100,7 @@ export const station: Flik = {
       : [...har].sort((a, b) => kvOrdning(a, b) || sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a)).map(a => rad(sakAttr(a), pileTxt(a), condOf(a), a.k))).join('');
     // smutsen (steg 2.7.1): blodet vid slaktbänken, som bleknar på ett par dygn. Bara utseende
     const { w: bw, h: bh } = storlekAv(st), bv = blodVid(s, st, bw, bh);
-    const smuts = (bv > 0 ? `<span ${tip(`Blod runt omkring, ${Math.round(bv * 100)} % färskt. Det bleknar bort på ett par år`)}>🩸 ${Math.round(bv * 100)} %</span> ` : '') + Object.entries(smutsVid(s, st)).filter(([, v]) => v > 0).map(([k, v]) => { const fd = (FLACKAR as Record<string, { namn: string; bleknar: number }>)[k]; return fd ? `<span ${tip(`${fd.namn} runt omkring, ${Math.round(v * 100)} %. Det bleknar bort på ${Math.round(fd.bleknar / 24)} år`)}>· ${Math.round(v * 100)} %</span>` : ''; }).join(' ');
+    const smuts = (bv > 0 ? `<span ${tip(`Blod runt omkring, ${Math.round(bv * 100)} % färskt. Det bleknar bort på ett par år`)}>Blod ${Math.round(bv * 100)} %</span> ` : '') + Object.entries(smutsVid(s, st)).filter(([, v]) => v > 0).map(([k, v]) => { const fd = (FLACKAR as Record<string, { namn: string; bleknar: number }>)[k]; return fd ? `<span ${tip(`${fd.namn} runt omkring, ${Math.round(v * 100)} %. Det bleknar bort på ${Math.round(fd.bleknar / 24)} år`)}>Smuts ${Math.round(v * 100)} %</span>` : ''; }).join(' ');
     // latrinen (steg 2.7.2): hur full den är. När den är full fylls den igen och byn gräver en ny
     // det som hänger på torkställningen (steg 2.8.2): råvaran, hur många bitar (steg 4.5.3.1) och hur långt torkningen kommit
     const hangSlag = st.k === 'rokeri' ? 'rokeri' : 'tork', hangNamn = (k: string) => k === 'maltkorn' ? 'blött korn' : sakNamn(k).toLowerCase(); // det blötta kornet (malt) är ingen sak i registret
@@ -108,7 +108,7 @@ export const station: Flik = {
     // talgljuset på bordet eller hyllan (ljus.ts, steg 6.3.8): om det brinner och hur mycket som är kvar
     const tl = s.ljus?.find(q => q.st === st.id);
     const ljuset = tl ? `<p ${tip(`${sakNamn(ljusSort(tl))}, ${tl.tand ? 'tänt' : 'släckt'}, ${Math.round(tl.c * 100)} % kvar`)}>${iconImg(ljusSort(tl))} ${tl.tand ? 'Tänt' : 'Släckt'} ${condBar(tl.c)}<span>${Math.round(tl.c * 100)} %</span></p>` : '';
-    const fyllt = ljuset + (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
+    const fyllt = ljuset + (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} Full ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
     // det som används just nu (steg 3.6.6): den som arbetar, sakerna på bänken och hur långt arbetet kommit
     const ib = klar ? iBruk(st) : undefined;
     const bruk = ib ? `<h3>Används nu</h3><p>${pLink(ib.p)} ${esc(verbOf(ib.p.task!.act))} ${ib.saker.map(k => `<span ${tip(sakNamn(k))}>${iconImg(k)}</span>`).join('')}${ib.gor ? ` → <span ${tip(sakNamn(ib.gor))}>${iconImg(ib.gor)}</span>` : ''}</p>`
@@ -116,16 +116,18 @@ export const station: Flik = {
     const av = Object.entries(d.av).map(([k, n]) => `<span ${tip(`${fmtN(n)} ${sakNamn(k).toLowerCase()}`)}>${iconImg(k)}${fmtN(n)}</span>`).join(' ');
     return `
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${st.ber?.namn ? `★ ${esc(st.ber.namn)}: ` : ''}${esc(d.namn)}</h2><p class="muted">${status}${st.q !== undefined ? ` ${kvMark(st, 12)} ${esc(kvText(st))}.` : ''} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${st.ber ? `<p class="besk">${esc(sakBerattelse(s, st, d.namn))}</p>` : ''}${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${d.pynt && klar ? `<p ${tip(`Pynt: ägaren trivs i rummet med det (humör +${Math.round(PYNT.glad[kvOf(st)] * 100)} %), och de som ser det där tycker bättre om hen. Ju finare det är, desto mer`)}>😊 +${Math.round(PYNT.glad[kvOf(st)] * 100)} % 🏺</p>` : ''}${agare ? `<p>Ägs av ${pLink(agare)}.</p>` : ''}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div>${hjalpKnapp('st-om', 'Vad gör stationen?')}</div>${hjalpText('st-om', `<p class="muted small">${d.mobel ? 'En möbel i huset.' : 'En plats där man arbetar.'} Det som görs här står under Här görs. Den slits när den används och lagas av den som kan, och en bättre station ger oftare bra kvalitet.</p>`)}
+    // rubrikerna i samma ordning för alla stationer (steg 11.1.56): Används nu, Här görs, Material, Redskap, Förvaring, Platser,
+    // Sovplats, Tillbehör, Framträdanden här. Ordet står före talet, och arbetstiden på en egen rad
     ${bruk}
     ${d.utkant?.drag ? dragRad(st) : ''}
-    ${st.k === 'scen' && fritidLista({ scen: st.id }) ? `<h3>Framträdanden här</h3>${fritidLista({ scen: st.id, antal: 10 })}` : ''}
     ${d.gor.length ? `<h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>` : ''}
-    ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
-    ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}
-    ${tb ? `<h3>Tillbehör</h3><dl class="kv">${tb}</dl>` : ''}
-    ${d.forvar ? `${kvRubrik('Förvaring')}${inne ? `<dl class="kv stk">${inne}</dl>` : '<p class="muted">tom</p>'}<p class="muted">${forvar}</p>` : ''}
+    <h3>Material</h3><p ${tip(`${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av}</p><p>Arbete ${d.min} min</p>
     ${platser ? `<h3>Redskap</h3><dl class="kv">${platser}</dl>` : ''}
-    <h3>Material</h3><p ${tip(`${d.min} minuters arbete. ${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av} <span class="muted">· ${d.min} min</span></p>
+    ${d.forvar ? `${kvRubrik('Förvaring')}${inne ? `<dl class="kv stk">${inne}</dl>` : '<p class="muted">tom</p>'}<p class="muted">${forvar}</p>` : ''}
+    ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}
+    ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
+    ${tb ? `<h3>Tillbehör</h3><dl class="kv">${tb}</dl>` : ''}
+    ${st.k === 'scen' && fritidLista({ scen: st.id }) ? `<h3>Framträdanden här</h3>${fritidLista({ scen: st.id, antal: 10 })}` : ''}
     ${testRad(st.id)}`;
   },
 };
