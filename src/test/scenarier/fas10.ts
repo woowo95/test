@@ -192,7 +192,7 @@ SCENARIER.byggsten = {
       if (medKalke) { const g = newTing(s, 'kalke', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y); }
       const frakt = stenFrakt(s);
       let tim = 0;
-      for (; tim < 24 && !(medKalke ? amountOf(s, 'byggsten') >= 1 : (s.stat?.byggstenBruten ?? 0) >= 1); tim++) kor(s, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno: 0 } as typeof x.vader; });
+      for (; tim < 48 && !(medKalke ? amountOf(s, 'byggsten') >= 1 : (s.stat?.byggstenBruten ?? 0) >= 1); tim++) kor(s, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno: 0 } as typeof x.vader; });
       kor(s, 1);
       // stenen vid berget räknas för sig: ligger berget nära byn är högen där en del av byns förråd, fast ingen kört den
       const t = SIM.groundOf(s).tiles, vidBerget = (x: number, y: number) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => t[(y + dy) * SIM.W + x + dx] === SIM.T.Sten);
