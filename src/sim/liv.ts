@@ -19,6 +19,7 @@ import { rykteDod, startSmak } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, klanById, klanerOf, narhet } from './klaner';
+import { radKrok } from './radtal';
 import { klanHandelse } from './byrel';
 import { kantMot, utbrytning } from './grannbyar';
 import { prisIPrat } from './handel';
@@ -366,6 +367,7 @@ function emigrate(s: State) {
     const ut = `${p.name} lämnade byn${med.length > 1 ? ` med ${med.length - 1} barn` : ''} för att söka lyckan på annat håll.`;
     log(s, ut, 'move', med.map(g => g.id)); notis(s, 'utflytt', ut, med.map(g => g.id));
     count(s, 'utvandrade', med.length);
+    radKrok.utflytt(s, med.length); // de går till en by i världen (byflytt.ts, steg 11.3.5)
     return;
   }
   const a = pick(s, cands, 'flytt'), b = byId(s, a.partner);
@@ -376,7 +378,7 @@ function emigrate(s: State) {
   count(s, 'utvandrade', group.length);
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));
   for (const q of living(s)) for (const g of group) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > REL.saknar) { think(q, `Saknar ${g.name}`, LIV.saknarFlytt, now, LIV.saknarFlyttDygn * DAY); break; } }
-  utbrytning(s, group, pop); // ur en mycket stor by blir de en ny by i världen (steg 4.4.4.1, grannbyar.ts)
+  if (!utbrytning(s, group, pop)) radKrok.utflytt(s, group.length); // ur en mycket stor by blir de en ny by i världen (steg 4.4.4.1, grannbyar.ts), annars går de till en by i världen (byflytt.ts, steg 11.3.5)
 }
 
 // sorgen i stadier (steg 9.2.33): q förlorade p. Först förlusten, och sorgTimme byter till sorgen och saknaden
