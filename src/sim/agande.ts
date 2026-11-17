@@ -62,7 +62,7 @@ function usable(s: State, p: Person, t: Ting) {
   if (t.lass !== undefined || (t.bar !== undefined && t.bar !== p.id) || (t.krok !== undefined && t.krok !== p.id)) return false;
   if (t.hos !== undefined && t.hos !== p.id) {
     const q = byId(s, t.hos);
-    if (q && alive(q) && usesTool(q.task) === t.k) return false;
+    if (q && (q.ute !== undefined || alive(q) && usesTool(q.task) === t.k)) return false; // den som är borta har det med sig (steg 11.2.3)
   }
   return lends(s, t.agare, p);
 }

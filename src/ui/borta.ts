@@ -5,7 +5,7 @@
 // mallarna b_* i BERATTELSER. Hur lång texten blir beror på hur länge man varit borta (BORTA_LANGD).
 // ui/spara.ts räknar ikapp och visar rutan; den här filen bygger bara innehållet, så att ett scenario kan läsa det.
 import { ARSTIDER, Borta, DAY, HOUR, MallId, State, WEEK, berattelse, kalender, ledareOf, living, olasta, talOrd } from '../sim';
-import { durTxt, esc, num } from './hjalp';
+import { esc, num } from './hjalp';
 import { s } from './lage';
 
 // registret: kronikans slag (raden får mallens id eller ett eget slag) och hur viktiga de är i berättelsen, högst först.
@@ -99,6 +99,11 @@ export function ikappHtml(spola: boolean, kanSpola = true) {
   return `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>${kanSpola ? `<div class="ovKnappar"><button id="ovSpola" type="button" aria-pressed="${spola}">${spolaText(spola)}</button></div>` : ''}`;
 }
 
+// tiden i verkligheten (en dag är ett år i spelet), efter tiden i spelet i sammanfattningen
+function verkligTid(ms: number) {
+  const h = ms / HOUR, min = Math.max(1, Math.round(ms * 60 / HOUR));
+  return h >= 24 ? `${num(h / 24)} ${h < 36 ? 'dag' : 'dagar'}` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
+}
 export function bortaHtml(b: Borta) {
   const years = (s.now - b.fran) / DAY;
   const fodda = (s.stat?.fodda ?? 0) - b.fodda, doda = (s.stat?.doda ?? 0) - b.doda;
@@ -108,7 +113,7 @@ export function bortaHtml(b: Borta) {
   const n = olasta(s);
   const ber = bortaBerattelse(s, b).map(p => `<p class="ovBer">${p.split('\n').map(esc).join('<br>')}</p>`).join('');
   return `
-    <p class="ovLead">Medan du var borta gick ${durTxt(s.now - b.fran)} (${yrs} i spelet).</p>
+    <p class="ovLead">Medan du var borta gick ${yrs} i spelet (${verkligTid(s.now - b.fran)} i verkligheten).</p>
     <div class="ovBerattelse">${ber}</div>
     <p class="muted">${fodda} födda · ${doda} döda · ${living(s).length} lever nu i byn</p>
     <p class="ovNotiser">{sym_notis} ${n ? `${n} ${n === 1 ? 'ny notis' : 'nya notiser'}` : 'Inga nya notiser'}</p>
