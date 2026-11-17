@@ -213,7 +213,8 @@ function gangRad(p: Person) {
 }
 // Livet (steg 4.1.1.2): upplevelserna från barndomen och från vuxenlivet, var för sig
 function livet(p: Person) {
-  const ande = (u: Upplevelse) => u.n ? `${u.e && Object.keys(u.e).length ? ', ' : ''}Andlighet ${u.n > 0 ? '+' : '−'}${Math.abs(u.n)}` : ''; // syns från början (steg 4.5.3.4)
+  // andligheten på egenskapernas skala 0 till 10 (steg 11.1.52), som i Egenskaper
+  const ande = (u: Upplevelse) => u.n ? `${u.e && Object.keys(u.e).length ? ', ' : ''}Andlighet ${u.n > 0 ? '+' : '−'}${visa(Math.abs(u.n) / 5)}` : ''; // syns från början (steg 4.5.3.4)
   const rad = (u: Upplevelse) => `<li>${u.a} år: ${esc(upplevelseText(u))} <span class="muted">${esc(effektText(u.e) + ande(u))}</span></li>`;
   const barn = (p.upp ?? []).filter(u => !vuxenUpp(u)), vuxen = (p.upp ?? []).filter(vuxenUpp);
   if (!barn.length && !vuxen.length) return '<p class="muted">Inget som format hen ännu.</p>';
@@ -402,7 +403,7 @@ function egenHtml(p: Person) {
   };
   // andligheten (steg 4.1.1.1) syns från början, så att man ser den växa (steg 4.5.3.4)
   const ande = (() => {
-    const v = andlighet(s, p), id = `e-andlig-${p.id}`, rader = ['Hur viktigt det heliga är för hen, inte vad hen tror på', 'Ärvs delvis från föräldrarna och flyttas av det hen är med om', ...(p.upp ?? []).filter(u => u.n).map(u => `${upplevelseText(u)} (${u.a} år), ${u.n! > 0 ? '+' : '−'}${Math.abs(u.n!)}`)];
+    const v = andlighet(s, p), id = `e-andlig-${p.id}`, rader = ['Hur viktigt det heliga är för hen, inte vad hen tror på', 'Ärvs delvis från föräldrarna och flyttas av det hen är med om', ...(p.upp ?? []).filter(u => u.n).map(u => `${upplevelseText(u)} (${u.a} år), ${u.n! > 0 ? '+' : '−'}${visa(Math.abs(u.n!) / 5)}`)];
     return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join(', '))}">Andlighet</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 100)}<span>${visa(v / 5)}</span></dd>${hjalpText(id, gorHtml(rader, 'Skalan går från 0 till 10, som egenskaperna.'))}`;
   })();
   // tron hen har (steg 4.1.2.1): vem som står bakom, och vid tryck tolkningen och tecknet den kom ur
