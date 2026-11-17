@@ -2750,3 +2750,50 @@ SCENARIER.bygava = {
     ];
   },
 };
+
+SCENARIER.muta = {
+  text: 'Mutan och fjäsket (steg 11.6.15): en by med silver mutar en starkare grannes ledare när relationen är låg; silvret går till ledaren själv och inte till byns förråd, mutan verkar när den kommit fram, och hälften av verkan faller bort när ledaren byts. Fjäsket kostar inget silver',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare))!;
+    const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare)!;
+    SIM.mots(vl, r.nr, mot.nr);
+    r.tal.silver = 200;
+    const c = SIM.byCtx(s, vl, r, mot);
+    c.rel = -20; const lag = SIM.BYHANDLINGAR.muta.poang(c);
+    c.rel = 80; const hog = SIM.BYHANDLINGAR.muta.poang(c);
+    c.rel = 0; c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), intelligens: 2 }; const dum = SIM.BYHANDLINGAR.muta.poang(c);
+    c.led = { ...c.led, intelligens: 19 }; const listig = SIM.BYHANDLINGAR.muta.poang(c);
+    const fattig = SIM.BYHANDLINGAR.muta.poang({ ...c, r: { ...r, tal: { ...r.tal, silver: 0, mat: 0 }, varor: {} } });
+    // mutan ges: silvret lämnar byn genast, mottagarens syn ändras först när den kommit fram
+    const s0 = r.tal.silver, ms0 = mot.tal.silver, rel0 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
+    vl.mutor = {};
+    SIM.BYHANDLINGAR.muta.gor(c);
+    const ut = r.tal.silver === s0 - SIM.BYHANDLING.muta, fore = SIM.relation(vl, mot.nr, r.nr) === rel0;
+    const p = vl.ko!.find(q => q.typ === 'muta' && q.sak === mot.nr)!;
+    SIM.KOHANDELSER.muta(s, vl, p);
+    const rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0, d = rel1 - rel0;
+    const ledaren = mot.tal.silver === ms0 && (vl.mutor?.[`${mot.nr}>${r.nr}`] ?? 0) === d;
+    // ledaren byts: hälften faller bort
+    SIM.ledarBytet(vl, mot.nr);
+    const rel2 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
+    // utan silver mutar byn med det den har mest över, i hela saker
+    const r3 = SIM.cloneState(testBy(10)), vl3 = r3.varld!, q = vl3.rader!.find(x => x.nr === r.nr)!, qm = vl3.rader!.find(x => x.nr === mot.nr)!;
+    SIM.mots(vl3, q.nr, qm.nr); q.tal.silver = 0; SIM.radVaror(q); for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') q.varor![g] = Math.round(SIM.radVill(q, g, SIM.rikMal(q))); q.tal.mat = Math.round(SIM.radVill(q, 'mat', SIM.rikMal(q))); q.varor!.virke = Math.round(SIM.radVill(q, 'virke', SIM.rikMal(q))) + 50; q.tal.rikedom = SIM.radRikedomUr(q);
+    const qv0 = q.varor!.virke!;
+    SIM.BYHANDLINGAR.muta.gor(SIM.byCtx(r3, vl3, q, qm));
+    const medVaror = q.varor!.virke === qv0 - SIM.BYHANDLING.muta && q.tal.silver === 0 && vl3.ko!.some(x => x.typ === 'muta' && x.sak === qm.nr);
+    // en värld i 30 dygn: byarna mutar
+    const w = SIM.cloneState(testBy(10)); w.now += 30 * 86400e3; SIM.varldSteg(w);
+    const f2 = (x: number) => x.toFixed(2);
+    return [
+      [`mutan lönar sig vid låg relation (${f2(lag)}) men inte vid hög (${f2(hog)}) eller utan något att muta med (${f2(fattig)})`, lag > 0 && hog <= 0 && fattig < 0],
+      [`utan silver mutar byn med det den har mest över (${qv0} → ${q.varor!.virke} virke)`, medVaror],
+      [`en listig ledare mutar mer (${f2(dum)} → ${f2(listig)})`, listig > dum],
+      [`silvret lämnar byn genast (${s0} → ${r.tal.silver}), men grannens syn ändras först när mutan kommit fram`, ut && fore],
+      [`mutan höjer grannens syn med ${d}, och silvret går till ledaren, inte byns förråd`, d === Math.min(SIM.BYREL.muta, 100 - rel0) && ledaren],
+      [`när ledaren byts faller hälften bort (${rel1} → ${rel2})`, rel2 === rel1 - Math.trunc(d / 2)],
+      [`byarna i en värld mutar på 30 dygn (${w.stat?.radmuta_fram ?? 0} mutor fram, ${w.stat?.byhandling_fjask ?? 0} fjäsk)`, (w.stat?.radmuta_fram ?? 0) > 0],
+    ];
+  },
+};

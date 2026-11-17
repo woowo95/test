@@ -43,6 +43,10 @@ export const BYHANDLING = balans('byhandling', {
   gava: 40, // så mycket (i grundvärde) av det byn har över ger den bort
   gavaMal: 40, // gåvan lönar sig tills relationen nått hit
   gavaKostnad: 0.1, // det gåvan kostar i poäng (bärarnas tid, det som kunde bytts)
+  // mutan (steg 11.6.15)
+  muta: 20, // så mycket en muta är värd (i silver eller grundvärde)
+  mutaMal: 40, // mutan lönar sig tills relationen nått hit
+  mutaKostnad: 0.15, // det mutan kostar i poäng utöver silvret (risken, äran)
 });
 
 // det poängen räknas ur: byn som gör (r), grannen (mot), hur r ser på mot, ledarens egenskaper (1–20) och trons krigiskhet (0–1)
@@ -68,6 +72,20 @@ export const BYHANDLINGAR = {
     namn: 'Gåva',
     poang: c => { const a = gavaAffar(c); return a ? Math.max(0, BYHANDLING.gavaMal - c.rel) / 100 * (0.5 + ledDrag(c, 'empati')) * radsla(c) * (1 - c.krig / 2) * Math.min(2, gavaRel(a.n * enhet(a.g)) / BYREL.fjask) - BYHANDLING.gavaKostnad : -1; },
     gor: c => { const a = gavaAffar(c); if (a) skickaFard(c, a, true); },
+  },
+  // mutan (steg 11.6.15): silver, eller det byn har mest över när silvret inte räcker, till grannens ledare själv, av en ledare
+  // med list (intelligens) och lite empati, mot en starkare granne; den går fram med ett bud och verkar när den kommit fram. Hälften av verkan faller bort när
+  // mottagarens ledare byts (ledarBytet i byrel.ts). Inte till eller från huvudbyn
+  muta: {
+    namn: 'Muta',
+    poang: c => mutaKan(c) ? Math.max(0, BYHANDLING.mutaMal - c.rel) / 100 * (0.5 + ledDrag(c, 'intelligens')) * (1.5 - ledDrag(c, 'empati')) * radsla(c) * Math.min(1, mutaRikedom(c.r) / (4 * BYHANDLING.muta)) - BYHANDLING.mutaKostnad : -1,
+    gor: c => {
+      if (!mutaKan(c)) return;
+      const dygn = restid(c.vl, c.r, c.mot)!;
+      const m = mutaMed(c.r)!;
+      if (m === 'silver') radTar(c.r, 'silver', -BYHANDLING.muta); else taUr(c.r, m, Math.ceil(BYHANDLING.muta / enhet(m)));
+      laggIKo(c.vl, c.t + dygn * DAY, 'muta', { sak: c.mot.nr, data: { fran: c.r.nr, n: BYHANDLING.muta } });
+    },
   },
   // handelsfärden (steg 11.6.6): byn säljer det den har överflöd av där det är dyrast, när vinsten är större än resans kostnad
   handel: {
@@ -179,6 +197,23 @@ export function gavaAffar(c: ByCtx): FardAffar | undefined {
   }
   return bast;
 }
+// mutan går att ge: byn har silvret, grannen har en ledare och ligger inom räckhåll, och ingen av dem är huvudbyn
+// det byn mutar med: silvret om det räcker, annars den grupp den har mest över (i grundvärde) om den räcker
+function mutaMed(r: VarldRad): 'silver' | VarugruppId | undefined {
+  if (r.tal.silver >= BYHANDLING.muta) return 'silver';
+  let bast: VarugruppId | undefined, v = 0;
+  for (const g of VARUGRUPP_IDS) { const x = overskott(r, g) * enhet(g); if (x > v) { bast = g; v = x; } }
+  return bast && overskott(r, bast) >= Math.ceil(BYHANDLING.muta / enhet(bast)) ? bast : undefined;
+}
+const mutaRikedom = (r: VarldRad) => Math.max(r.tal.silver, ...VARUGRUPP_IDS.map(g => Math.max(0, overskott(r, g)) * enhet(g)));
+const mutaKan = (c: ByCtx) => c.r.nr !== c.vl.huvud && c.mot.nr !== c.vl.huvud && !!mutaMed(c.r) && BYSORTER[c.mot.sort].ledare && restid(c.vl, c.r, c.mot) !== undefined;
+// mutan kommer fram: ledaren tar den själv (den går inte till byns förråd), och byns syn på givaren höjs
+KOHANDELSER.muta = (s, vl, p) => {
+  const mot = radNr(vl, p.sak), fran = p.data?.fran;
+  if (!mot || fran === undefined || !lever(vl, mot)) return;
+  byHandelse(vl, 'muta', fran, mot.nr, (p.data?.n ?? BYHANDLING.muta) / BYHANDLING.muta);
+  count(s, 'radmuta_fram');
+};
 // lasten tas ur byns förråd och färden ger sig av
 const taUr = (r: VarldRad, g: VarugruppId, n: number) => {
   if (g === 'mat') { r.tal.mat = Math.max(0, r.tal.mat - n); return; }
