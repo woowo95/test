@@ -7,6 +7,7 @@
 import { hash3 } from './slump';
 import { VarldMark, skapaVarldMark } from './varldmark';
 import { State } from './typer';
+import { laggByar, laggHuvudby, laggOvriga } from './placering';
 
 export interface Varlden {
   fro: number; // världens frö
@@ -38,8 +39,13 @@ export function packaVarld(fro: number, v: VarldMark): Varlden {
 // byn får sin värld, räknad ur byns frö (en gång; en by som har en värld behåller den)
 export function medVarld(s: State) {
   if (s.varld) return s.varld;
-  const fro = varldFro(s.seed);
-  return s.varld = packaVarld(fro, skapaVarldMark(fro));
+  const fro = varldFro(s.seed), v = skapaVarldMark(fro);
+  s.varld = packaVarld(fro, v);
+  uppackad.set(s.varld, v);
+  laggByar(s.varld, v); // byarna, de övriga platserna och sist huvudbyn med samma regler (placering.ts, steg 11.2.13–11.2.14)
+  laggOvriga(s.varld, v);
+  laggHuvudby(s);
+  return s.varld;
 }
 // världens mark som rutnät, packad upp en gång per värld
 const uppackad = new WeakMap<Varlden, VarldMark>();
