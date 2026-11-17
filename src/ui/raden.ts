@@ -4,7 +4,7 @@
 import { AGES, ALDER, SKATT, VADERLAGE, ageOf, kalender, lagGaller, living, rikedomDelar, temperature, vaderNu, vindFran } from '../sim';
 import { tecknet } from '../ikoner';
 import { GUI } from '../guibilder';
-import { $ } from './hjalp';
+import { $, tidForklaring } from './hjalp';
 import { s, ui } from './lage';
 import { renderPanel, visa } from './panel';
 import { talVal } from './flikar/tal';
@@ -57,8 +57,8 @@ const skriv = (el: HTMLElement, html: string) => { if (el.dataset.v !== html) { 
 export function renderRaden(t = ui.nu) {
   const k = kalender(s, t), age = $('calAge');
   skriv(age, stav(t));
-  age.title = `${AGES[k.ai]}, dag ${k.dag} av ${k.av}`;
-  age.setAttribute('aria-label', age.title);
+  age.title = $('calYear').title = tidForklaring(t); // samma förklaring för året och tidsstaven (steg 11.1.5)
+  age.setAttribute('aria-label', `${AGES[k.ai]}, dag ${k.dag} av ${k.av}`);
   for (const [id, r] of Object.entries(RUTOR)) { const el = $(id); el.hidden = r.syns ? !r.syns() : false; skriv(el, r.html(t)); el.title = r.title(t); }
   const ruta = $('notisRuta'), oppen = notisVal.oppen && harNotiser();
   ruta.hidden = !oppen; $('calNotis').setAttribute('aria-expanded', String(oppen));

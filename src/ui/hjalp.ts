@@ -1,6 +1,6 @@
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
+import { kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -14,6 +14,11 @@ export function durTxt(ms: number) {
   const h = ms / HOUR;
   const min = Math.max(1, Math.round(ms / MIN));
   return h >= 24 ? `${num(h / 24)} år` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
+}
+// året och tidsstaven i sidhuvudet har samma förklaring (steg 11.1.5): kopplingen till den riktiga klockan, dagen i tidsåldern och klockan
+export function tidForklaring(t: number) {
+  const k = kalender(s, t), d = new Date(t);
+  return `${timeLabel(s, t)}, dag ${k.dag} av ${k.av}, kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}.\nEtt år i spelet är ett dygn i verkligheten, och en tidsålder är en vecka.`;
 }
 export function clockTxt(t: number) { const d = new Date(t); return `${timeLabel(s, t)}, kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 

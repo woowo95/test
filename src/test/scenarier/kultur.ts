@@ -13,7 +13,7 @@ import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kroni
 import { styre as styreFlik } from '../../ui/flikar/styre';
 import { seder as sederFlik } from '../../ui/flikar/seder';
 import { OPPNAR, bubblaKlick, bubblaText, forklaringAv } from '../../ui/bubbla';
-import { esc, hjalpKlick } from '../../ui/hjalp';
+import { esc, hjalpKlick, tidForklaring } from '../../ui/hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
 export function rikDag(seed = 3, mer: Record<string, number> = {}): State {
@@ -1149,7 +1149,7 @@ SCENARIER.pilar = {
   },
 };
 SCENARIER.tidsord = {
-  text: 'Steg 11.1.4: tiden skrivs på ett sätt i hela gränssnittet: långa spann i år och tidsåldrar, datum som "År 12, vårtid", och "tryck" i stället för "klicka". Ingen text i gränssnittets kod eller i panelerna i en testby innehåller "dygn", "säsong" eller "klicka"',
+  text: 'Steg 11.1.4–11.1.5: tiden skrivs på ett sätt i hela gränssnittet, och året och tidsstaven i sidhuvudet har samma förklaring med kopplingen till den riktiga klockan: långa spann i år och tidsåldrar, datum som "År 12, vårtid", och "tryck" i stället för "klicka". Ingen text i gränssnittets kod eller i panelerna i en testby innehåller "dygn", "säsong" eller "klicka"',
   kor: () => {
     utanWebblasare();
     const ord = /dygn|säsong|klicka/i;
@@ -1181,15 +1181,20 @@ SCENARIER.tidsord = {
       return ut;
     };
     for (const f of filer) for (const txt of strangar(readFileSync(f, 'utf8'))) {
-      if (ord.test(txt) && !/^[\w.$\[\]-]*$/.test(txt)) fel.push(`${f.split('/ui/')[1]}: ${txt.match(/[^.]{0,30}(dygn|säsong|klicka)[^.]{0,20}/i)?.[0]}`);
+      if (ord.test(txt.replace(/ett dygn i verkligheten/g, '')) && !/^[\w.$\[\]-]*$/.test(txt)) fel.push(`${f.split('/ui/')[1]}: ${txt.match(/[^.]{0,30}(dygn|säsong|klicka)[^.]{0,20}/i)?.[0]}`);
     }
     // panelerna i en testby
     const s = testBy(40); setByn(s);
     const sidor = [sederFlik.html(), styreFlik.html(), kronikaFlik.html()];
     for (const p of SIM.living(s).slice(0, 4)) for (const d of ['om', 'egen', 'kropp', 'saker', 'folk', 'kun', 'logg']) { ui.selected = p.id; ui.personDel = d; sidor.push(personFlik.html()); }
-    const text = sidor.join(' ').replace(/<[^>]+>/g, ' ') + sidor.map(h => [...h.matchAll(/title="([^"]*)"/g)].map(m => m[1]).join(' ')).join(' ');
+    const text = sidor.join(' ').replace(/ett dygn i verkligheten/g, '').replace(/<[^>]+>/g, ' ') + sidor.map(h => [...h.matchAll(/title="([^"]*)"/g)].map(m => m[1]).join(' ')).join(' ');
     const iPanel = text.match(/[^.]{0,40}(dygn|säsong|klicka)[^.]{0,20}/i)?.[0];
+    // året och tidsstaven har samma förklaring, med kopplingen till den riktiga klockan (steg 11.1.5)
+    const forkl = tidForklaring(s.now), k = SIM.kalender(s, s.now);
+    const raden = readFileSync(new URL('../../ui/raden.ts', import.meta.url), 'utf8');
+    const samma = /age\.title = \$\('calYear'\)\.title = tidForklaring\(t\)/.test(raden);
     return [
+      [`året och tidsstaven har samma förklaring: ett år är ett dygn och en tidsålder en vecka, med dagen och klockan ("${forkl.replace(/\n/g, ' ')}")`, samma && /Ett år i spelet är ett dygn i verkligheten, och en tidsålder är en vecka/.test(forkl) && forkl.includes(`dag ${k.dag} av ${k.av}`) && /kl\. \d\d:\d\d/.test(forkl) && forkl.startsWith(SIM.timeLabel(s, s.now))],
       [`ingen sträng i gränssnittets kod säger dygn, säsong eller klicka${fel.length ? `: ${fel.slice(0, 3).join('; ')}` : ''}`, !fel.length],
       [`panelerna i en testby säger inte dygn, säsong eller klicka${iPanel ? `: ${iPanel}` : ''}`, !iPanel],
     ];
