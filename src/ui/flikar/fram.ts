@@ -21,7 +21,7 @@ export const fram: Flik = {
 };
 
 // ändringen som tal och pil
-const andring = (a: number, b: number) => { const d = b - a; return d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} ${d}` : '='; };
+const andring = (a: number, b: number) => { const d = b - a; return d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} −${-d}` : '='; }; // minustecknet är − (steg 11.1.60)
 const medel = (v: number[]) => v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0;
 
 export function framHtml(m?: FramMinne) {
@@ -47,7 +47,7 @@ export function framHtml(m?: FramMinne) {
     m.rykte?.length ? `<li title="${esc(`Ryktet om ${m.om ?? 'någon'} spreds till ${m.rykte.join(', ')}`)}">Ryktet till ${esc(m.rykte.join(', '))}</li>` : '',
     m.tro?.length ? `<li title="${esc(`Tron övertygade ${m.tro.join(', ')}`)}">Tron övertygade ${esc(m.tro.join(', '))}</li>` : '',
   ].join('');
-  const lista = pub.map(x => `<li title="${esc(`${x.namn} gillar ${m.namn}: ${x.r0} före, ${x.r1} efter${x.l0 !== undefined ? `; ledaren: ${x.l0} före, ${x.l1} efter` : ''}`)}">${vemLank(x.id, x.namn)} <span class="muted">${x.r0} → ${x.r1}</span> ${andring(x.r0, x.r1)}</li>`).join('');
+  const lista = pub.map(x => `<li title="${esc(`${x.namn} gillar ${m.namn}: ${x.r0} före, ${x.r1} efter${x.l0 !== undefined ? `; ledaren: ${x.l0} före, ${x.l1} efter` : ''}`)}">${vemLank(x.id, x.namn)} <span class="muted" tabindex="0" title="${esc(`Hur mycket ${x.namn} gillar ${m.namn} (−100 till 100): ${x.r0} före, ${x.r1} efter`)}">${x.r0} → ${x.r1}</span> ${andring(x.r0, x.r1)}</li>`).join('');
   return `${huvud}${text}<ul class="fame">${fakta}</ul><h3>Mottagningen</h3><ul class="fame">${mott}</ul><h3>Publiken (${m.n})</h3><ul class="fame">${lista}</ul>`;
 }
 

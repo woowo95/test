@@ -967,7 +967,13 @@ SCENARIER.matchrapport = {
     const hel = (x: string) => x.length > 0 && !/\{|undefined|NaN/.test(x);
     const ber = m ? SIM.matchBerattelse(s, m) : '', iber = im ? SIM.matchBerattelse(e, im) : '';
     const sk = m ? { ...m, nr: 7, vinnare: b.id, vnamn: b.name, spelare: m.spelare.map(x => ({ ...x, v: x.id === b.id ? 20 : 19.5 })) } : undefined, sber = sk ? SIM.matchBerattelse(s, sk) : '';
+    // filten, bytet, framträdandet och matchen (steg 11.1.60): Publiken (N) i båda, minustecknet −, och relationens tal och det
+    // genomstrukna budet förklaras vid ett tryck
+    const kalla = (f: string) => readFileSync(new URL(`../../ui/flikar/${f}.ts`, import.meta.url), 'utf8');
+    const rutor60 = kalla('match').includes('>Publiken (${m.publik.length})</h3>') && kalla('fram').includes('<h3>Publiken (${m.n})</h3>') && !/\} -\$\{|: -\$\{|`\{sym_pil_ned\} \$\{d\}`/.test(kalla('match') + kalla('fram') + kalla('filt'))
+      && /<s tabindex="0" title=/.test(kalla('filt'));
     return [
+      ['filten, bytet, framträdandet och matchen: Publiken (N) i båda, minustecknet −, och relationens tal och det genomstrukna budet förklaras vid ett tryck (steg 11.1.60)', rutor60],
       [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length >= 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
       [`matchen varade ${m ? ((m.slut - m.t) / SIM.MIN).toFixed(0) : '?'} minuter från att den började (steg 10.7.13)`, !!m && m.slut - m.t >= 10 * SIM.MIN - 1 && m.slut - m.t <= 20 * SIM.MIN + 1],
       [`${vq.name} tänker ${vt?.text ?? 'inget'} (${vt?.v}), ${fq.name} ${ft?.text ?? 'inget'} (${ft?.v}), och båda är borta en timme efter matchen`, !!vt && vt.v > 0 && !!ft && ft.v < 0 && ft.v > -vt.v && borta],
