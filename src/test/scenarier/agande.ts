@@ -1416,8 +1416,16 @@ SCENARIER.gastsida = {
     ui.personDel = 'egen'; const re = person.html();
     const knappar = (x: string) => [...x.matchAll(/data-pdel="(\w+)"/g)].map(m => m[1]).join(',');
     const by = living(s)[0]!; ui.selected = by.id; const bybo = person.html();
+    // huvudet står still (steg 11.1.41): lika många rader för bybon och gästen, raden för öknamnet finns när den är tom, åldern
+    // står med yrket, och det hen gör klipps tills man trycker, då skälet kommer fram
+    const rader = (x: string) => (x.split('class="phuvud"')[1] ?? '').split('</div></div>')[0].match(/<(h2|p)[ >]/g)?.length ?? 0;
+    const tomtBi = /class="binamnrad">&nbsp;</.test(bybo) || /class="binamn /.test(bybo), alder = new RegExp(`class="pfakta">${Math.floor(SIM.ageOf(by, s.now))} år`).test(bybo);
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: `pstat-${by.id}` } }) } as unknown as HTMLElement); const helStatus = person.html();
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: `pstat-${by.id}` } }) } as unknown as HTMLElement);
+    const huvud = rader(bybo) === 5 && rader(pres) === 5 && tomtBi && alder && !/status klick hel/.test(bybo) && /status klick hel/.test(helStatus);
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['huvudet står still: namnet, öknamnet (raden finns också tom), ålder och yrke, märkena och det hen gör, fem rader för både bybon och gästen, och det hen gör visas helt vid ett tryck (steg 11.1.41)', huvud],
       [`handlaren och ${r.length} rövare är gäster med var sitt negativa id`, !!h && r.length === 2 && g.every(x => x.id < 0) && new Set(g.map(x => x.id)).size === g.length],
       [`handlarens sida har namnet, vad hen gör och flikarna ${knappar(pres)}`, !!h && pres.includes(h.namn) && pres.includes(h.gor)],
       ['samma flikknappar som för en bybo, alla sju flikar (steg 4.5.7.6, 5.3.4.1, 6.9.10 och Händelser i 10.2.61)', knappar(pres) === knappar(bybo) && knappar(pres).split(',').length === 7],

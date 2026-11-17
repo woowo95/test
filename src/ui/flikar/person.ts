@@ -30,9 +30,17 @@ export const person: Flik = {
     const { flikar, flik, delar } = valda(d => lever || !d.levande);
     const med = alive(p) ? pratarMed(s, p) : undefined;
     const status = g ? (lever ? `${statusRad(p, undefined)} <span class="muted">· ${esc(g.gor)}</span>` : `Dog ${p.cause ?? ''}`) : alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
+    // huvudet står still (steg 11.1.41): namnet, öknamnet eller titeln, ålder och yrke, märkena och det hen gör, en rad var och
+    // alltid lika många rader, så att inget flyttar sig när man byter person. Det hen gör klipps med tre punkter, och ett tryck
+    // visar hela texten och skälet
+    const sid = `pstat-${p.id}`, hel = hjalpOppen(sid), why = lever && !g ? uppgiftVid(p)?.why : undefined;
+    const bi = g ? `<span class="muted small">${esc(g.sort.toLowerCase())}</span>` : binamnHtml(p).trim();
+    const marken = `${alive(p) ? prickar(p) : ''}${g ? '' : anseende(p)}`.trim();
     return `
-      <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div><h2><span class="pnamn"${namnStorlek(p.name)}>${esc(p.name)}</span>${g ? ` <span class="muted small">${esc(g.sort.toLowerCase())}</span>` : binamnHtml(p)}${alive(p) ? prickar(p) : ''}${g ? '' : anseende(p)}</h2>${g ? '' : binamnForkl(p)}
-      <p class="pfakta">${pFakta(p)}${g?.fran ? ` · från ${esc(g.fran)}` : ''}</p><p class="status">${status}</p></div></div>
+      <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div class="phuvud"><h2><span class="pnamn"${namnStorlek(p.name)}>${esc(p.name)}</span></h2>
+      <p class="binamnrad">${bi || '&nbsp;'}</p>${g ? '' : binamnForkl(p)}
+      <p class="pfakta">${pFakta(p)}${g?.fran ? ` · från ${esc(g.fran)}` : ''}</p><p class="pmarken">${marken || '&nbsp;'}</p>
+      <p class="status klick${hel ? ' hel' : ''}" ${fallUt(sid)} title="${esc(hel ? 'Tryck för att korta' : 'Tryck för hela texten och skälet')}">${status}</p>${hel && why ? `<p class="muted small pskal">${esc(why)}</p>` : ''}</div></div>
       ${flikRad(flikar, flik)}
       ${delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p) + (g && d.gast ? d.gast(g) : ''))).join('')}`;
   },
@@ -161,9 +169,10 @@ function gastRelRad(namn: string, r: GastRel, g?: number, gast?: boolean, klan?:
 const namnStorlek = (namn: string) => namn.length <= 10 ? '' : ` style="font-size:${Math.max(14, Math.round(24 * 10 / namn.length))}px"`;
 // bredvid porträttet (steg 9.2.95): kön, ålder och yrke, och partnern om det finns en ("med …")
 // raden bredvid porträttet: yrket och partnern. Kön och ålder står under Presentation (steg 10.2.53)
+// raden i huvudet (steg 11.1.41): åldern först, sedan yrket och partnern
 function pFakta(p: Person) {
-  const y = yrkeNamn(s, p), q = byId(s, p.partner);
-  return [y ? esc(y) : '', q ? `med ${pLink(q)}` : ''].filter(Boolean).join(' · ');
+  const y = yrkeNamn(s, p), q = byId(s, p.partner), a = Math.floor(ageOf(p, p.died ?? p.left ?? s.now));
+  return [`${a} år`, y ? esc(y) : '', q ? `med ${pLink(q)}` : ''].filter(Boolean).join(' · ');
 }
 // en övertygelse: personen drar en sed minst så här mycket åt ena hållet (ett helt steg är 1, seder.ts)
 const OVERTYGAD = 0.35;

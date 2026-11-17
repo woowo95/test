@@ -360,6 +360,13 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .phead > div { min-width: 0; } /* namnet klipps aldrig (steg 9.2.128) */
 .pnamn { white-space: nowrap; }
 .phead p { margin: 2px 0 0; }
+/* huvudet står still (steg 11.1.41): namnet på en rad som krymper, och varje rad finns också när den är tom */
+.phuvud { flex: 1; }
+.phuvud h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+.phuvud .binamnrad, .phuvud .pmarken { min-height: 1.25em; line-height: 1.25; }
+.phuvud .binamnrad .binamn { font-size: 15px; }
+.phuvud .status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.phuvud .status.hel { white-space: normal; }
 .phead > .hjalp { margin-left: auto; flex: none; }
 .pfakta { font-size: 13px; color: var(--muted); }
 .status { font-weight: 500; font-size: 15px; margin: 2px 0; }
