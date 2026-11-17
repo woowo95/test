@@ -20,7 +20,7 @@ import { freeTools, take } from './agande';
 import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
 import { bjornjaktVal } from './bjorn';
-import { resaVal } from './resa';
+import { RESA, resaPlan, resaVal, samlaResa } from './resa';
 import { tornadoSkydd } from './tornado';
 import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './brand';
 import { foodDays, foodDaysAll } from './ekonomi';
@@ -589,6 +589,12 @@ export const FORBATTRA: readonly ForbRad[] = [
   } },
   // vården på en grav (steg 10.4.2): den som minns den döda, mest den som stod hen nära
   { id: 'gravvard', kand: c => { const g = gravvardVal(c.s, c.p); if (!g) return undefined; return { sc: GRAV.vard * g.w * brus(c), gor: () => projektVal(c.v, g.uppgift, 'Byn har det den behöver') }; } },
+  // att samla till en resa (steg 11.5.10, resa.ts): resans väntade värde per dygn och resenär, lusten och ledens fara
+  { id: 'samlaResa', kand: (c, d) => {
+    if (c.a < ALDER.vuxen || !kanGa(c.p)) return undefined;
+    const r = resaPlan(c.s, c.p, d.fd, d.wd); if (!r) return undefined;
+    return { sc: r.sc * brus(c), gor: () => { const sl = samlaResa(c.s, c.p, r); set(c.v, 'resa', `Samlar till en resa till ${r.namn}`); if (sl?.ut) { c.v.spot = sl.ut.samla; c.v.dur = RESA.packTim * HOUR; c.v.ref = sl.id; } else c.v.dur = 0; } };
+  } },
   { id: 'lara', kand: c => { const lv = laraVal(c.s, c.p); if (!lv) return undefined; return { sc: VAL.forbLara * brus(c), gor: () => { set(c.v, 'lara', `Byn har det den behöver. Går i lära hos ${lv.m.name}.`); c.v.spot = lv.spot; c.v.dur = lv.min * MIN; } }; } },
   // förråden mot taket: behovet över bufferten (dag: wBy och wWood sjunker mot taket) gånger lusten för det bästa arbetet
   { id: 'fyllaMat', fylla: true, kand: (c, d) => {
@@ -613,6 +619,11 @@ export const FORBATTRA: readonly ForbRad[] = [
     return { sc: VAL.forbFylla * kvar * brus(c), gor: () => arbeta(c, 'samla', `Mer ${k === 'grenar' ? 'grenar' : 'hö'} till förrådet`, { hamtar: k }) };
   } })),
 ];
+// raderna på Förbättra för en person, med poängen och det som görs (för scenarierna; valet går genom ARBETEN)
+export function forbattraKandidater(s: State, p: Person): { id: string; sc: number; gor: () => Val }[] {
+  const v: Val = { act: 'vila', why: '', dur: 0 }, c: Ctx = { s, p, v, a: ageOf(p, s.now), lazy: 0, light: isLight(s.now) };
+  return FORBATTRA.flatMap(f => { const k = forbKandidat(c, f); return k ? [{ id: f.id, sc: k.sc, gor: () => { k.gor(); return v; } }] : []; });
+}
 function forbKandidat(c: Ctx, f: ForbRad) {
   const m = c.fb ??= {};
   if (!(f.id in m)) m[f.id] = f.kand(c, dag(c));

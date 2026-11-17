@@ -1793,3 +1793,39 @@ SCENARIER.andelar = {
     ];
   },
 };
+
+SCENARIER.samlaresa = {
+  lang: true,
+  text: 'Att samla till en resa (steg 11.5.10, resaPlan och raden samlaResa i val.ts): en nyfiken och modig bybo som hört rykten om en plats samlar till en resa dit, med en poäng som vägs mot byns andra arbeten; en försiktig får lägre poäng, och i en by i nöd reser ingen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(30)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s.now));
+    const a = vuxna[0]!, b = vuxna[1]!;
+    // en plats längre bort som ingen känner till, och som a hör rykten om
+    const mal = vl.platser!.filter(q => q.nr !== hem.nr && (SIM.RESMAL.se.mal as readonly string[]).includes(q.k) && SIM.kannerOrt(s, a, q.nr) === undefined)
+      .sort((x, y) => Math.hypot(x.x - hem.x, x.y - hem.y) - Math.hypot(y.x - hem.x, y.y - hem.y))[0]!;
+    for (const p of SIM.living(s)) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'ort' || l.v !== SIM.O_RYKTE);
+    for (const p of [a, b]) SIM.larOrt(s, p, mal.nr, SIM.O_RYKTE, 1);
+    a.pot.nyfikenhet = 18; a.pot.mod = 18; b.pot.nyfikenhet = 18; b.pot.mod = 3;
+    const modig = SIM.resaPlan(s, a, 99, 99), forsiktig = SIM.resaPlan(s, b, 99, 99), nod = SIM.resaPlan(s, a, SIM.resaPlan(s, a, 99, 99)!.dygn * 0.1, 99);
+    // a väger raderna på Förbättra: resan vinner, och a samlar och går till samlingsplatsen, där sällskapet packar
+    const s1 = SIM.cloneState(s), a1 = s1.people.find(q => q.id === a.id)!;
+    for (const f of SIM.FOOD) if (SIM.amountOf(s1, f) > 0) SIM.setAmount(s1, f, Math.max(SIM.amountOf(s1, f), 60));
+    const kand = SIM.forbattraKandidater(s1, a1).sort((x, y) => y.sc - x.sc), vann = kand[0];
+    if (vann?.id === 'samlaResa') vann.gor(); // valet: nästa gång a väljer går hen till samlingsplatsen (resaVal, nivån Tillfälle)
+    const sl = s1.varld!.sallskap?.find(x => x.ledare === a1.id);
+    korTills(s1, () => sl?.skede !== 'samlas', 12 * 3600);
+    // samma by i nöd: maten är slut
+    const s2 = SIM.cloneState(s);
+    for (const f of SIM.FOOD) SIM.setAmount(s2, f, 0);
+    korTills(s2, () => !!s2.varld!.sallskap?.length, 24 * 3600);
+    return [
+      [`a vill se ${mal.namn}, ${modig?.dygn} dygn borta (poäng ${modig?.sc.toFixed(3)})`, modig?.skal === 'se' && modig.mal === mal.nr && modig.sc > 0],
+      [`den försiktiga får lägre poäng (${forsiktig?.sc.toFixed(3)})`, !!forsiktig && forsiktig.sc < modig!.sc],
+      [`med mat för en kort tid hemma blir poängen låg (${nod?.sc.toFixed(3) ?? 0})`, (nod?.sc ?? 0) < modig!.sc * 0.2],
+      [`resan vinner över de andra raderna på Förbättra (${kand.slice(0, 3).map(k => `${k.id} ${k.sc.toFixed(2)}`).join(', ')})`, vann?.id === 'samlaResa'],
+      [`a samlade till resan och gick till samlingsplatsen, där sällskapet packade (${sl?.skede ?? 'inget sällskap'})`, !!sl && sl.mal === mal.nr && sl.skal === 'se' && (sl.skede === 'packar' || sl.skede === 'gar' || sl.skede === 'ute')],
+      [`i en by utan mat samlar ingen till en resa (${s2.varld!.sallskap?.length ?? 0} sällskap)`, !s2.varld!.sallskap?.length],
+    ];
+  },
+};
