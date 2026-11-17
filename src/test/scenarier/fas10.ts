@@ -194,8 +194,11 @@ SCENARIER.byggsten = {
       let tim = 0;
       for (; tim < 24 && !(medKalke ? amountOf(s, 'byggsten') >= 1 : (s.stat?.byggstenBruten ?? 0) >= 1); tim++) kor(s, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno: 0 } as typeof x.vader; });
       kor(s, 1);
-      const liggande = (s.stackar ?? []).filter(q => q.k === 'byggsten').reduce((a, q) => a + q.n, 0);
-      return { tim, frakt, bruten: s.stat?.byggstenBruten ?? 0, hemma: amountOf(s, 'byggsten'), liggande, turer: s.stat?.fordonTur_kalke ?? 0 };
+      // stenen vid berget räknas för sig: ligger berget nära byn är högen där en del av byns förråd, fast ingen kört den
+      const t = SIM.groundOf(s).tiles, vidBerget = (x: number, y: number) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => t[(y + dy) * SIM.W + x + dx] === SIM.T.Sten);
+      const vid = (s.stackar ?? []).filter(q => q.k === 'byggsten' && vidBerget(q.x, q.y)), liggande = vid.reduce((a, q) => a + q.n, 0);
+      const hemma = amountOf(s, 'byggsten') - vid.filter(q => SIM.isStored(s, q.x, q.y)).reduce((a, q) => a + q.n, 0);
+      return { tim, frakt, bruten: s.stat?.byggstenBruten ?? 0, hemma, liggande, turer: s.stat?.fordonTur_kalke ?? 0 };
     };
     STENBEHOV.scenario = () => 2;
     let med, utan, inget;

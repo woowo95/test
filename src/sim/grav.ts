@@ -1,7 +1,7 @@
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
 import { DAY, H, HOUR, MIN, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { byId, count, isParent, living, log, relKey, think, paKartan } from './folk';
+import { byId, count, isParent, living, log, relKey, think } from './folk';
 import { rnd } from './slump';
 import { getMap } from './karta';
 import { sjoVid } from './sjo';
@@ -262,7 +262,7 @@ function skandaKlar(s: State, p: Person, q: Kvarleva) {
   let k = q.ode as SkandId;
   if (k === 'balRit') { if (amountOf(s, 'ved') >= ODEN.balRit.ved!) takeMaterial(s, p, 'ved', ODEN.balRit.ved!, true); else k = 'djuren'; }
   q.x = Math.floor(p.x); q.y = Math.floor(p.y); q.bars = undefined; q.ode = undefined;
-  for (const o of s.people) if (paKartan(o) && o !== p && Math.hypot(o.x - p.x, o.y - p.y) <= KVAR.seR) sagSkandad(s, o, q);
+  for (const o of s.people) if (o.died === undefined && o.ute === undefined && o !== p && Math.hypot(o.x - p.x, o.y - p.y) <= KVAR.seR) sagSkandad(s, o, q); // också gästerna, inte den som är borta
   if (ODEN[k].kvar) { q.k = 'skandad'; q.utburen = true; q.t = s.now; }
   else s.kvarlevor = s.kvarlevor!.filter(x => x !== q);
   count(s, 'skandad'); count(s, 'skandad_' + k);
