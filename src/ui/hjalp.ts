@@ -55,6 +55,10 @@ const oppna = new Set<string>();
 export const berattelseKnapp = (id: string, title: string) => `<button type="button" class="hjalp bok" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">${tecknet('berattelse', '📜', 14)}</button>`;
 // fler rader som visas vid ett tryck (steg 11.1.3): "▸ Visa N till"
 export const merKnapp = (id: string, n: number) => `<button type="button" class="lank falla mer" ${fallUt(id)}>${oppna.has(id) ? 'Visa färre' : `Visa ${n} till`}</button>`;
+// delraden överst i en flik (steg 11.1.25): symbolen med namnet under, som runstenarna, så att ingen rubrik behöver upprepa delens
+// namn. attr = attributet som väljer delen (data-sdel, data-odel …)
+export const delRad = (attr: string, delar: readonly { id: string; tecken: string; namn: string }[], vald: string) =>
+  `<div class="pdelar namngivna" role="tablist">${delar.map(d => `<button type="button" role="tab" ${attr}="${d.id}" aria-selected="${d.id === vald}" title="${esc(d.namn)}"><span class="deltecken">${d.tecken}</span><span class="delnamn">${esc(d.namn)}</span></button>`).join('')}</div>`;
 // en länk till en annan flik (steg 11.1.15): ett tryck öppnar den (panel.ts)
 export const flikLank = (flik: string, text: string) => `<button type="button" class="lank" data-visa="${flik}">${esc(text)}</button>`;
 export const hjalpKnapp = (id: string, title: string) => `<button type="button" class="hjalp" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">?</button>`;
