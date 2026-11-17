@@ -2355,3 +2355,46 @@ SCENARIER.prisminne = {
     ];
   },
 };
+
+SCENARIER.byhandlingar = {
+  text: 'Byarnas handlingar (steg 11.6.5): varje by i världen med en ledare väljer en gång om dygnet det den gör mot en granne efter poäng, vägd av ledarens egenskaper och tron, och relationen ändras',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).length >= 2)!;
+    const gr = SIM.radGrannar(vl, r), mot = gr[0];
+    const har = !!r && gr.length >= 2;
+    // låg relation mot en granne: fjäsket lönar sig, och relationen hos grannen stiger
+    for (const g of gr) { SIM.mots(vl, r.nr, g.nr); }
+    const c = SIM.byCtx(s, vl, r, mot);
+    c.rel = -20;
+    const lag = SIM.BYHANDLINGAR.fjask.poang(c);
+    c.rel = 60;
+    const hog = SIM.BYHANDLINGAR.fjask.poang(c);
+    // karisma väger: samma läge med en ledare utan och med karisma
+    c.rel = 0; c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), karisma: 2 }; const utan = SIM.BYHANDLINGAR.fjask.poang(c);
+    c.led = { ...c.led, karisma: 19 }; const med = SIM.BYHANDLINGAR.fjask.poang(c);
+    // krigisk tro fjäskar mindre
+    c.krig = 0; const frid = SIM.BYHANDLINGAR.fjask.poang(c); c.krig = 1; const krigisk = SIM.BYHANDLINGAR.fjask.poang(c);
+    // en period: byn gör det den valt, och grannens syn på byn ändras
+    const fore = gr.map(g => SIM.relation(vl, g.nr, r.nr) ?? 0);
+    const val = SIM.byVal(s, vl, r, 5);
+    SIM.byarnasHandlingar(s, vl, 5);
+    const efter = gr.map(g => SIM.relation(vl, g.nr, r.nr) ?? 0);
+    const andrad = val ? efter[gr.indexOf(val.c.mot)] === fore[gr.indexOf(val.c.mot)] + SIM.BYREL.fjask || efter[gr.indexOf(val.c.mot)] === 100 : true;
+    // samma värld väljer samma sak
+    const a = SIM.cloneState(testBy(10)), b = SIM.cloneState(testBy(10));
+    const valen = (x: SIM.State) => JSON.stringify((x.varld!.rader ?? []).filter(q => SIM.lever(x.varld!, q)).map(q => { const v = SIM.byVal(x, x.varld!, q, 7); return v ? [v.id, v.c.mot.nr] : 0; }));
+    // många byar fjäskar under 20 dygn i en hel värld
+    const w = SIM.cloneState(testBy(10)); for (let n = 0; n < 20; n++) SIM.byarnasHandlingar(w, w.varld!, 100 + n);
+    const f = (x: number) => x.toFixed(2);
+    return [
+      ['byn har grannar i grannätet', har],
+      [`fjäsket lönar sig vid låg relation (${f(lag)}) men inte vid hög (${f(hog)})`, lag > 0 && hog <= 0],
+      [`en ledare med karisma fjäskar mer (${f(utan)} → ${f(med)})`, med > utan],
+      [`en krigisk tro fjäskar mindre (${f(frid)} → ${f(krigisk)})`, krigisk < frid],
+      [`det valda ändrar grannens syn på byn (${val?.id ?? 'inget'})`, andrad],
+      ['samma värld väljer samma sak', valen(a) === valen(b)],
+      [`byarna fjäskar under 20 dygn (${w.stat?.byhandling_fjask ?? 0} gånger)`, (w.stat?.byhandling_fjask ?? 0) > 0],
+    ];
+  },
+};
