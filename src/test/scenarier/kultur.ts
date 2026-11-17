@@ -1027,6 +1027,7 @@ SCENARIER.omrostning = {
       [`alla vuxna röstar, och varje röst har ett skäl (${o.roster.length})`, allaVuxna],
       ['samma fråga läggs inte fram två gånger', iKo === 1],
       ['frågan avgörs vid elden och ett ja gör det raden säger', satt],
+      [`omröstningen sparar vad som ändras, från vad och till vad (${JSON.stringify(o.andr)}, steg 11.1.28)`, o.andr?.k === 'pabud:matlager' && o.andr.fran === 0 && o.andr.till === 0.9],
     ];
   },
 };
