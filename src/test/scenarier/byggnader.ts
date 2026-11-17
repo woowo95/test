@@ -1026,6 +1026,47 @@ SCENARIER.strakprov = {
   },
 };
 
+SCENARIER.fangelse = {
+  lang: true,
+  text: 'Fängelset (steg 11.12.1, fangelse.ts): ett hus med en trädörr, som byn vill bygga när påbudet Fängelse gäller. Den som sitter inne går inte ut, en annan går in och ut, med lågt humör slår fången sönder dörren på 20 minuter, larmet rymning går, och byn hänger en ny dörr',
+  kor: () => {
+    const s = createState(6, START); klockan(s, 10); medHus(s);
+    // påbudet: utan Rang vill byn inget fängelse, med Rang gäller påbudet och byggbehovet finns
+    const l0 = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    s.seder.v.rang = 1; const utanLedare = SIM.fangelseAkut(s).v; s.seder.v.rang = 0;
+    s.styre = { historia: [{ id: l0.id, namn: l0.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l0.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never };
+    const utan = SIM.fangelseAkut(s).v; s.seder.v.rang = 1; s.styre.pabud = { fangelse: 1 } as never; const med = SIM.fangelseAkut(s);
+    const h = housesOf(s)[0]; h.fn = 'fangelse';
+    const dorr = SIM.fangelseDorr(s, h)!; dorr.dorr = 'tradorr'; SIM.touch(s);
+    const klart = SIM.fangelseKlart(s, h);
+    const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), [p, q] = vuxna as [SIM.Person, SIM.Person];
+    SIM.satt(s, p, h, 'Dömd i scenariot', s.now + 3 * SIM.DAY);
+    const inne = (r: SIM.Person) => SIM.roomAt(s, r.x, r.y)?.hus === h.id;
+    // gott humör: hen sitter kvar inne i sex timmar
+    const mat = () => Object.assign(p, { hunger: 1, torst: 1, warm: 1, rest: 1, social: 1, toa: 1 }); // 11.12.2 bär dit mat och vatten; här fylls behoven
+    p.thoughts = [{ text: 'Mår bra', v: 1, until: s.now + 30 * SIM.DAY }];
+    let alltidInne = true; kor(s, 6, () => { mat(); if (!inne(p)) alltidInne = false; });
+    const satt6 = alltidInne && !!p.fange;
+    const qUte = !inne(q) || q.task?.act !== 'fangen';
+    // lågt humör: dörren är sönder efter 20 minuter, larmet har gått och hen är fri
+    p.thoughts = [{ text: 'Vill ut', v: -1, until: s.now + 30 * SIM.DAY }];
+    const t0 = s.now; let sonder = -1;
+    kor(s, 2, v => { if (sonder < 0 && !SIM.fangelseDorr(v, h)!.dorr) sonder = v.now; });
+    const min = (sonder - t0) / SIM.MIN, fri = !p.fange, larm = p.larm?.vad === 'rymning';
+    // byn hänger en ny trädörr: den som kan tekniken och har materialet
+    q.tek = { ...(q.tek ?? {}), tradorr: 1 }; SIM.setAmount(s, 'plankor', 10); SIM.setAmount(s, 'rep', 5);
+    let ny = false; kor(s, 24, v => { if (SIM.fangelseDorr(v, h)?.dorr === 'tradorr') ny = true; }); // ett helt dygn: dörrar hängs på dagen
+    return [
+      [`utan ledare vill byn inget fängelse (${utanLedare}), inte heller med en ledare utan seden Rang (${utan}), och när ledaren påbjuder det vill byn bygga ett (${med.v}, ${med.plats} plats)`, utanLedare === 0 && utan === 0 && med.v > 0 && med.plats >= 1],
+      ['fängelset räknas som byggt när huset är klart och trädörren hänger', klart],
+      ['den som sitter inne med gott humör går inte ut på sex timmar', satt6],
+      ['en annan går in och ut som vanligt (sitter inte fast)', qUte],
+      [`med lågt humör är dörren sönder efter ${min.toFixed(0)} minuter (20 och vägen till dörren, och hen väljer om när halvtimmen inne är slut), larmet rymning har gått och hen är fri`, sonder > 0 && min >= 20 && min <= 60 && fri && larm],
+      ['byn hänger en ny trädörr i fängelset', ny],
+    ];
+  },
+};
+
 SCENARIER.vilafart = {
   text: 'Vilan går fortare (steg 11.1.72): den som sover i en bädd är utvilad på ungefär en åttondel av dygnet (tre timmar, en och en halv månad i spelet), golvet och marken ger mindre i samma förhållande, och vilan räknas i sömn, trötthet och pauser när inget annat lockar',
   kor: () => {
