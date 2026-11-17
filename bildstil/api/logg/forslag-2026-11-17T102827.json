@@ -1,0 +1,17 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f9_korn_stack",
+  "f10_vaxljus=Ljuset ska vara väldigt litet"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.88,
+  "hog": 1.89
+ },
+ "dollar": 0.64,
+ "rapport": [
+  "f9_korn_stack: 3 versioner",
+  "f10_vaxljus: 3 versioner; kontrollerna varnar fortfarande: version 2: olika"
+ ]
+}

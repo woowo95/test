@@ -8,167 +8,196 @@
   {
    "bilder": [
     {
-     "namn": "korn_en",
-     "rader": [
-      ".IIII....IIII.",
-      "IKLKLIIrrIJKJI",
-      "ILKLKJKtsJKJJI",
-      "IKLKJKJtsKJKJI",
-      "IJKJKJKtsJJKJI",
-      "IJJKJIIrrIJJII",
-      ".IIII....IIII."
-     ]
-    },
-    {
-     "namn": "korn_nagra",
-     "rader": [
-      "........IIII....IIII........",
-      ".......IKLKLIIrrIJKJI.......",
-      ".......ILKLKJKtsJKJJI.......",
-      ".......IKLKJKJtsKJKJI.......",
-      ".......IJKJKJKtsJJKJI.......",
-      ".IIII..IJJKJIIrrIJJII..IIII.",
-      "IKLKLIIrIIIIJIIKIIIIIrrIJKJI",
-      "ILKLKJKtsJKJJIILKLKJKtsJKJJI",
-      "IKLKJKJtsKJKJIIKLKJKJtsKJKJI",
-      "IJKJKJKtsJJKJIIJKJKJKtsJJKJI",
-      "IJJKJIIrrIJJIIIJJKJIIrrIJJII",
-      ".IIII....IIII..IIII....IIII."
-     ]
-    },
-    {
-     "namn": "korn_manga",
-     "rader": [
-      "...............IIII....IIII...............",
-      "..............IKLKLIIrrIJKJI..............",
-      "..............ILKLKJKtsJKJJI..............",
-      "..............IKLKJKJtsKJKJI..............",
-      "..............IJKJKJKtsJJKJI..............",
-      "........IIII..IJJKJIIrrIJJII..IIII........",
-      ".......IKLKLIIrIIIIJIIKIIIIIrrIJKJI.......",
-      ".......ILKLKJKtsJKJJIILKLKJKtsJKJJI.......",
-      ".......IKLKJKJtsKJKJIIKLKJKJtsKJKJI.......",
-      ".......IJKJKJKtsJJKJIIJKJKJKtsJJKJI.......",
-      ".IIII..IJJKJIIrrIJJIIIJJKJIIrrIJJII..IIII.",
-      "IKLKLIIrIIIIJIIKIIIIIrIIIIJIIKIIIIIrrIJKJI",
-      "ILKLKJKtsJKJJIILKLKJKtsJKJJIILKLKJKtsJKJJI",
-      "IKLKJKJtsKJKJIIKLKJKJtsKJKJIIKLKJKJtsKJKJI",
-      "IJKJKJKtsJJKJIIJKJKJKtsJJKJIIJKJKJKtsJJKJI",
-      "IJJKJIIrrIJJIIIJJKJIIrrIJJIIIJJKJIIrrIJJII",
-      ".IIII....IIII..IIII....IIII..IIII....IIII."
-     ]
-    }
-   ],
-   "anteckning": "Kornet ritas som en liggande, bunden kärve (14 × 7): axen i senap åt vänster, stråna åt höger, och ett rostband runt midjan. Ljuset faller från vänster och uppifrån, och konturen är senap0. Jag har inte sett version 1 och har därför tolkat den som en sådan kärve; stämmer den inte med version 1 måste staplarna byggas om med rätt bild. Kärven är kopierad oförändrad och travad som en vedtrave, vågrätt med ändarna mot varandra. Varje rad ligger 5 punkter högre än raden under och är förskjuten en halv bredd (7 punkter), så att den övre kärven vilar i skarven mellan de två under. Den övre kärvens nedre kontur täcker överkanten på de undre, så att varje kärve läses för sig. Silhuetten blir en låg, tydlig trekant: tre kärvar ger 28 × 12 och sex ger 42 × 17. Ingen behållare används, eftersom kärvarna ligger direkt på marken i förrådet. Granskningen: Granskad, inget rättat; versionen lämnas oförändrad. Storlek: kornet är 14 × 7 punkter som i version 1. Tre korn blir 28 × 12 och sex blir 42 × 17, under gränsen på 64 × 64. Bredvid kolonisten (14 × 20) ser sex korn ut som en rimlig hög. Idén: kornet är oförändrat i storlek och vinkel. Tre ligger två och ett, och sex ligger tre, två och ett, med varje rad förskjuten en halv bredd (7 punkter). Den övre radens nedre kontur ligger över den undre radens översta rad. Alla överlappsrader är kontrollerade punkt för punkt och stämmer med kopiorna. Konturen i senap0 skiljer bitarna åt, så att varje korn läses för sig och silhuetten blir en tydlig trekant. Ljuset kommer uppifrån vänster i varje korn och mörknar nedåt höger. Senap mot oliv- och barrgräset syns väl. Rosten i bandet är mättad, vilket passar eftersom det är en sak som går att ta. Inga nya behållare, och ingen sak bärs. Anmärkning utan rättning: bandet i kornet från version 1 ligger en punkt till höger om mitten (kolumn 7–8 i stället för 6–7). Eftersom stacken ska använda kornet oförändrat har jag inte ändrat det här; ska det rättas bör det göras i saken först och sedan i alla tre stackarna samtidigt.",
-   "ide": "Upptravad på höjden som vedtrave: kornet från version 1 ritas oförändrat i samma storlek och vinkel, och kopiorna ställs i rader ovanpå varandra. Med tre ligger två sida vid sida på marken och en ovanpå i skarven mellan dem. Med sex ligger tre i botten, två i mitten och en överst, varje rad förskjuten en halv bredd, och en kontur i materialets mörkaste ton skiljer bitarna åt så att varje korn läses för sig och silhuetten blir en hög, tydlig trekant."
-  },
-  {
-   "bilder": [
-    {
      "namn": "korn_1",
      "rader": [
-      ".IIII.........",
-      "ILLKLIttIIIII.",
-      "ILKLKJtsKJKJKI",
-      "IKLKJKtsJKJJJI",
-      "IKJKJJssJJJJJI",
-      ".IJJJIssIIIII.",
-      "..III........."
+      "..EE.EE.EE..",
+      ".ELKELKEKJE.",
+      "EKLKKLKJKJJE",
+      "ELKJKKJKJJIE",
+      ".EKJKJKJJIE.",
+      "..EJKJJKIE..",
+      "..EGHGGGFE..",
+      "..EFGFFFFE..",
+      "..EKJKJJIE..",
+      ".EKJKJJIJIE.",
+      ".EJKJJIJIIE.",
+      "EKJKJIJIJIIE",
+      "EJIJIIJIIIIE",
+      ".EEEEEEEEEE."
      ]
     },
     {
      "namn": "korn_3",
      "rader": [
-      "........IIII................",
-      ".......IKKJKIssIIIII........",
-      ".......IKJKJJsrJJJJJI.......",
-      ".......IJKJJJsrJJJJJI.......",
-      ".IIII..IJJJJJrrIIIIJI.......",
-      "ILLKLIttIIIIIrILLKLIttIIIII.",
-      "ILKLKJtsKJKJKIILKLKJtsKJKJKI",
-      "IKLKJKtsJKJJJIIKLKJKtsJKJJJI",
-      "IKJKJJssJJJJJIIKJKJJssJJJJJI",
-      ".IJJJIssIIIII..IJJJIssIIIII.",
-      "..III...........III........."
+      "........EE.EE.EE........",
+      ".......ELKELKEKJE.......",
+      "......EKLKKLKJKJJE......",
+      "......ELKJKKJKJJIE......",
+      ".......EKJKJKJJIE.......",
+      "........EJKJJKIE........",
+      "........EGHGGGFE........",
+      "........EFGFFFFE........",
+      "..EE.EE.EKJKJJIE.EE.EE..",
+      ".ELKELKEKJKJJIJIELKEKJE.",
+      "EKLKKLKEJKJJIJIIELKJKJJE",
+      "ELKJKKEKJKJIJIJIIEJKJJIE",
+      ".EKJKJEJIJIIJIIIIEKJJIE.",
+      "..EJKJJEEEEEEEEEEJJKIE..",
+      "..EGHGGGFE....EGHGGGFE..",
+      "..EFGFFFFE....EFGFFFFE..",
+      "..EKJKJJIE....EKJKJJIE..",
+      ".EKJKJJIJIE..EKJKJJIJIE.",
+      ".EJKJJIJIIE..EJKJJIJIIE.",
+      "EKJKJIJIJIIEEKJKJIJIJIIE",
+      "EJIJIIJIIIIEEJIJIIJIIIIE",
+      ".EEEEEEEEEE..EEEEEEEEEE."
      ]
     },
     {
      "namn": "korn_6",
      "rader": [
-      "...............IIII.......................",
-      "..............IKKJKIssIIIII...............",
-      "..............IKJKJJsrJJJJJI..............",
-      "..............IJKJJJsrJJJJJI..............",
-      "........IIII..IJJJJJrrIIIIJI..............",
-      ".......IKKJKIssIIIIIrIKKJKIssIIIII........",
-      ".......IKJKJJsrJJJJJIIKJKJJsrJJJJJI.......",
-      ".......IJKJJJsrJJJJJIIJKJJJsrJJJJJI.......",
-      ".IIII..IJJJJJrrIIIIJIIJJJJJrrIIIIJI.......",
-      "ILLKLIttIIIIIrILLKLIttIIIIIrILLKLIttIIIII.",
-      "ILKLKJtsKJKJKIILKLKJtsKJKJKIILKLKJtsKJKJKI",
-      "IKLKJKtsJKJJJIIKLKJKtsJKJJJIIKLKJKtsJKJJJI",
-      "IKJKJJssJJJJJIIKJKJJssJJJJJIIKJKJJssJJJJJI",
-      ".IJJJIssIIIII..IJJJIssIIIII..IJJJIssIIIII.",
-      "..III...........III...........III........."
+      ".............EE.EE.EE.............",
+      "............ELKELKEKJE............",
+      "...........EKLKKLKJKJJE...........",
+      "...........ELKJKKJKJJIE...........",
+      "............EKJKJKJJIE............",
+      ".............EJKJJKIE.............",
+      ".............EGHGGGFE.............",
+      ".............EFGFFFFE.............",
+      "........EE.EEEKJKJJIE.EE.EE.......",
+      ".......ELKELEKJKJJIJIELKEKJE......",
+      "......EKLKKLEJKJJIJIIELKJKJJE.....",
+      "......ELKJKEKJKJIJIJIIEJKJJIE.....",
+      ".......EKJKEJIJIIJIIIIEKJJIE......",
+      "........EJKJEEEEEEEEEEJJKIE.......",
+      "........EGHGGGFE...EGHGGGFE.......",
+      "........EFGFFFFE...EFGFFFFE.......",
+      "..EE.EE.EKJKJJIEEE.EKJKJJIEEE.EE..",
+      ".ELKELKEKJKJJIJIEKEKJKJJIJIEKEKJE.",
+      "EKLKKLKEJKJJIJIIEKEJKJJIJIIEKJKJJE",
+      "ELKJKKEKJKJIJIJIIEKJKJIJIJIIEKJJIE",
+      ".EKJKJEJIJIIJIIIIEJIJIIJIIIIEJJIE.",
+      "..EJKJJEEEEEEEEEEJEEEEEEEEEEJKIE..",
+      "..EGHGGGFE...EGHGGGFE...EGHGGGFE..",
+      "..EFGFFFFE...EFGFFFFE...EFGFFFFE..",
+      "..EKJKJJIE...EKJKJJIE...EKJKJJIE..",
+      ".EKJKJJIJIE.EKJKJJIJIE.EKJKJJIJIE.",
+      ".EJKJJIJIIE.EJKJJIJIIE.EJKJJIJIIE.",
+      "EKJKJIJIJIIEKJKJIJIJIIEKJKJIJIJIIE",
+      "EJIJIIJIIIIEJIJIIJIIIIEJIJIIJIIIIE",
+      ".EEEEEEEEEE.EEEEEEEEEE.EEEEEEEEEE."
      ]
     }
    ],
-   "anteckning": "Kornet är kärven från version 1: den ligger platt på marken med axen åt vänster, rostbandet i midjan och de avskurna stråna åt höger. Ljuset kommer uppifrån vänster, så axen är ljusast i senap3 och mörknar nedåt höger. Konturen är senap0, aldrig svart. Stackarna läggs i djupled, låga och breda, och ingen kärve lyfts från marken. Med tre ligger en kärve bakom och två framför, och de främre täcker den bakres nederkant. Med sex ligger en bak, två i mitten och tre fram, så att högen blir en kil som breddas mot betraktaren. Kärvarna bakom tar en ton mörkare, eftersom de ligger i skuggan av de främre. Mellan de främre kärvarna skymtar bara den bakres band. Granskningen: Granskad utan ändringar. Raderna har rätt längd (korn_1 14 × 7, korn_3 28 × 11, korn_6 42 × 15). Kärven är ungefär lika bred som kolonisten (14 punkter) och låg, och den största bilden ryms gott inom 64 × 64. Vinkeln följer idén: kärvarna ligger platt i rader bakifrån och framåt, en bakom två i treavet och 1–2–3 som en kil i sexan. De främre täcker de bakres nederkant, och ingen kärve lyfts från marken. De bakre har ett mörkare toppband (K/J i stället för L/K), och rostbandet skymtar i springorna mellan de främre. Ljuset kommer från övre vänstra hörnet: ljusast i axen uppe till vänster och mörkast i stråna nere till höger. Konturen är senap0, materialets mörkaste ton, och kol används inte. Uppställningen är spegelsymmetrisk kring mitten. Den gyllene senapen med rostband syns tydligt mot oliv- och barrgräset. Bandets rost är den enda starka färgen och är rimlig eftersom kornet är mat.",
-   "ide": "Utlagd på marken i djupled, låg och bred: eftersom allt ses snett uppifrån läggs kornen platt bredvid varandra i rader bakifrån och framåt i stället för på höjden. Med tre ligger en bakom och två framför, och de främre täcker den bakres nedre kant. Med sex ligger en rad med en längst bak, två i mitten och tre längst fram, så att högen blir en kil som breddas mot betraktaren. De bakre kornen tar en ton mörkare i skuggan av de främre, och ingen bit lyfts från marken."
+   "anteckning": "Kornet ligger som en kärve: axen uppåt, ett jordband om midjan och de avskurna stråna nedtill, ljust uppe till vänster och mörkt nere till höger, med kontur i jord0. Kärven är oförändrad i alla tre bilderna, 12 × 14 punkter. Tre: två kärvar ligger sida vid sida och den tredje ligger ovanpå, mitt över glipan. Den övre är helt synlig och ligger 8 punkter högre, så den täcker de undres ax, ungefär en tredjedel av dem. Bilden blir 24 × 22. Sex: raderna 3-2-1 med samma förskjutning, 34 × 30. Varje kärve behåller sin mörka kontur och sitt band, så de syns var för sig. Ingen behållare används, eftersom kärvarna ligger fritt i förrådet. Granskningen: Granskat mot reglerna: kornet är 12 × 14 punkter och står rimligt mot kolonisten (14 × 20). Stackarna är 24 × 22 och 34 × 30 punkter som idén säger, spegelsymmetriska och centrerade. Kontur i jord0, ljuset uppifrån vänster, och de varma senapstonerna syns tydligt på gräset. Varje kopia är identisk med version 1 och de övre ligger ovanpå de undre. Ett fel är rättat: i korn_3 var rad 4 i den översta kärven förskjuten en punkt åt höger (\"........EKJKJKJJIE......\"). Den är nu \".......EKJKJKJJIE.......\", som i originalkärven. Korn_1 och korn_6 är oförändrade.",
+   "ide": "Staplad på höjden: kornet från version 1 kopieras oförändrat, med samma ljus uppifrån vänster och samma jord- och senapstoner. Tre ligger som två bredvid varandra med ett ovanpå, nedsänkt i glipan mellan dem, och sex ligger i raderna 3-2-1. Varje övre kopia ligger helt synlig och täcker ungefär en tredjedel av de undre, så att bilden blir en spetsig triangel, cirka 24 × 22 respektive 34 × 30 punkter. Varje kopia behåller sin mörka kontur och syns därför för sig."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "korn_en",
+     "rader": [
+      "................",
+      "..IIIIIEEEIIII..",
+      ".ILKLKKGGFJKJKI.",
+      ".IKLKJKGFEKJKJI.",
+      ".IKJKJJFFEJJJJI.",
+      ".IJKJJIFEEJIJII.",
+      "..IIIIIEEEIIII..",
+      "................"
+     ]
+    },
+    {
+     "namn": "korn_nagra",
+     "rader": [
+      "........IIIIIEEEIIII........",
+      ".......ILKLKKGGFJKJKI.......",
+      ".......IKLKJKGFEKJKJI.......",
+      ".IIIIIEEEIIIIFFIIIIIEEEIIII.",
+      "ILKLKKGGFJKJKIILKLKKGGFJKJKI",
+      "IKLKJKGFEKJKJIIKLKJKGFEKJKJI",
+      "IKJKJJFFEJJJJIIKJKJJFFEJJJJI",
+      "IJKJJIFEEJIJIIIJKJJIFEEJIJII",
+      ".IIIIIEEEIIII..IIIIIEEEIIII."
+     ]
+    },
+    {
+     "namn": "korn_manga",
+     "rader": [
+      "...............IIIIIEEEIIII...............",
+      "..............ILKLKKGGFJKJKI..............",
+      "..............IKLKJKGFEKJKJI..............",
+      "........IIIIIEEEIIIIFFIIIIIEEEIIII........",
+      ".......ILKLKKGGFJKJKIILKLKKGGFJKJKI.......",
+      ".......IKLKJKGFEKJKJIIKLKJKGFEKJKJI.......",
+      ".IIIIIEEEIIIIFFIIIIIEEEIIIIFFIIIIIEEEIIII.",
+      "ILKLKKGGFJKJKIILKLKKGGFJKJKIILKLKKGGFJKJKI",
+      "IKLKJKGFEKJKJIIKLKJKGFEKJKJIIKLKJKGFEKJKJI",
+      "IKJKJJFFEJJJJIIKJKJJFFEJJJJIIKJKJJFFEJJJJI",
+      "IJKJJIFEEJIJIIIJKJJIFEEJIJIIIJKJJIFEEJIJII",
+      ".IIIIIEEEIIII..IIIIIEEEIIII..IIIIIEEEIIII."
+     ]
+    }
+   ],
+   "anteckning": "Kornet är kärven från version 1: ett buntat knippe strån som ligger ner på förrådsgolvet med axen åt vänster, bandet av jord-toner i midjan och de avskurna stråändarna åt höger. Kärven ses snett ovanifrån, så ovansidan syns och konturen är senap0. Stackarna lägger kärvarna i rader bakåt på golvet i stället för på varandra. Den bakre raden ligger 3 punkter högre i bilden, och den främre raden skymmer dess nedre halva, så bara axen, bandet och stråna överst syns där bak. Tre blir en bak och två fram. Sex blir en, två och tre i en låg, bred trappa. Alla rader har samma toner, så ljuset från övre vänstra hörnet är detsamma överallt. Granskningen: Granskat utan rättelser; versionen är oförändrad. Måtten stämmer: alla rader i varje bild är lika långa (16, 28 och 42 punkter breda), och ingen bild är större än 64 × 64. Kärven är 14 punkter bred, ungefär som kolonisten, vilket passar en liggande kornkärve. Storleken är densamma som i den godkända version 1. Idén följs. Raderna ligger bakåt i djup med 3 punkters förskjutning. Den bakre raden skyms av den främre, och mellan de främre kärvarna syns bakre kärvens nedre del (FF) på rätt ställe. Tre ligger som 1 bakom och 2 framför, sex som 1, 2 och 3. Ingen rad är mörkare än en annan, så ljuset är detsamma överallt. Ljuset kommer uppifrån vänster, med L och K uppe till vänster och I och E nere till höger. Konturen är materialets mörkaste ton: senap0 runt kärven och jord0 runt bandet. Ingen kol0 används. Kärven är spegelsymmetrisk med bandet i mitten. De varma senapstonerna med mörk kontur syns tydligt mot det olivgröna gräset, och mättnaden hör hemma här eftersom kornet är mat som går att ta. Kärvarna är ritade snett uppifrån med låg och bred silhuett. Ingen behållare är påhittad.",
+   "ide": "Utspridd på golvet i djup: eftersom förrådet ses snett ovanifrån ligger kopiorna i rader bakåt i stället för på varandra. Den bakre raden ritas högre upp i bilden och skyms delvis av den främre, så tre blir en bakom och två framför, och sex blir 1 längst bak, 2 i mitten och 3 längst fram. Silhouetten blir låg och bred, en trappa som stiger bakåt, med bara några punkters förskjutning mellan raderna. Den bakre raden får inte göras mörkare, så att ljuset förblir detsamma överallt."
   },
   {
    "bilder": [
     {
      "namn": "korn_stack_1",
      "rader": [
-      ".IIII.........",
-      "IKLKLIEE.IIII.",
-      "ILKLKJGFIKLKKI",
-      "IKLKJKGFJKJKJI",
-      "IJKJKJFEJJKJJI",
-      ".IJJJIEEIIIIII",
-      "..III........."
+      ".......IIIIII..",
+      "IIIIIEIKLKLKKI.",
+      "IKJKJFJLKLKJKJI",
+      "IJKJKFKKLKJKJJI",
+      "IJIJIFJKJKJJJI.",
+      "IIIIIEIJJJJJI..",
+      ".......IIIII..."
      ]
     },
     {
      "namn": "korn_stack_3",
      "rader": [
-      "........IIII................",
-      ".......IKLKLIEE.IIII........",
-      ".......ILKLKJGFIKLKKI.......",
-      ".......IKLKJKGFJKJKJI.......",
-      ".IIII..IJKJKJFEJJKJJI..IIII.",
-      "IKLKLIEEIIIIIEEIIIIIEEILKLKI",
-      "ILKLKJGFIKLKKIIKLKKIGFJLKLKI",
-      "IKLKJKGFJKJKJIIKJKJJGFKKLKJI",
-      "IJKJKJFEJJKJJIIJJKJJFEJKJKJI",
-      ".IJJJIEEIIIIIIIIIIIIEEIJJJI.",
-      "..III..................III.."
+      ".............IIIIII.........",
+      "......IIIIIEIKLKLKKI........",
+      "......IKJKJFJLKLKJKJI.......",
+      "......IJKJKFKKLKJKJJI.......",
+      "......IJIJIFJKJKJJJI........",
+      "......IIIIIIIJJIIIIII.......",
+      "IIIIIEIKLKLKKIILKLKKKIEIIIII",
+      "IKJKJFJLKLKJKILKLKJKJJFKJKJI",
+      "IJKJKFKKLKJKJIKLKJKJKJFKJKJI",
+      "IJIJIFJKJKJJJIIKJKJJJJFIJIJI",
+      "IIIIIEIJJJJJI..IJJJJJIEIIIII",
+      ".......IIIII....IIIII......."
      ]
     },
     {
      "namn": "korn_stack_6",
      "rader": [
-      "...............IIII.......................",
-      "..............IKLKLIEE.IIII...............",
-      "..............ILKLKJGFIKLKKI..............",
-      "..............IKLKJKGFJKJKJI..............",
-      "........IIII..IJKJKJFEJJKJJI..IIII........",
-      ".......IKLKLIEEIIIIIEEIIIIIEEILKLKI.......",
-      ".......ILKLKJGFIKLKKIIKLKKIGFJLKLKI.......",
-      ".......IKLKJKGFJKJKJIIKJKJJGFKKLKJI.......",
-      ".IIII..IJKJKJFEIIIIJIIJJKJJFEJKJKJI..IIII.",
-      "IKLKLIEEIIIIIEIKLKLIEEIIIIIEEIIIIIEEILKLKI",
-      "ILKLKJGFIKLKKIILKLKJGFIKLKKIIKLKKIGFJLKLKI",
-      "IKLKJKGFJKJKJIIKLKJKGFJKJKJIIKJKJJGFKKLKJI",
-      "IJKJKJFEJJKJJIIJKJKJFEJJKJJIIJJKJJFEJKJKJI",
-      ".IJJJIEEIIIIII.IJJJIEEIIIIIIIIIIIIEEIJJJI.",
-      "..III...........III..................III.."
+      "...................IIIIII................",
+      "............IIIIIEIKLKLKKI...............",
+      "............IKJKJFJLKLKJKJI..............",
+      "............IJKJKFKKLKJKJJI..............",
+      "............IJIJIFJKJKJJJI...............",
+      "............IIIIIIIJJIIIIII..............",
+      "......IIIIIEIKLKLKKIILKLKKKIEIIIII.......",
+      "......IKJKJFJLKLKJKILKLKJKJJFKJKJI.......",
+      "......IJKJKFKKLKJKJIKLKJKJKJFKJKJI.......",
+      "......IJIJIFJKJKJJJIIKJKJJJJFIJIJI.......",
+      "......IIIIIIIJJJJJIIIIIIIIJIIIIIII.......",
+      "IIIIIEIKLKLKKIIIIIEIKLKLKKIILKLKKKIEIIIII",
+      "IKJKJFJLKLKJKIKJKJFJLKLKJKILKLKJKJJFKJKJI",
+      "IJKJKFKKLKJKJIJKJKFKKLKJKJIKLKJKJKJFKJKJI",
+      "IJIJIFJKJKJJJIJIJIFJKJKJJJIIKJKJJJJFIJIJI",
+      "IIIIIEIJJJJJIIIIIIEIJJJJJI..IJJJJJIEIIIII",
+      ".......IIIII........IIIII....IIIII......."
      ]
     }
    ],
-   "anteckning": "Kornet är här en liten bunden kärve som ligger ner i förrådet, sedd snett uppifrån: axen åt ena hållet, ett band av jord i midjan och de avskurna stråna åt andra hållet. Den ligger löst, utan behållare. I traven ligger varannan kärve spegelvänd, så att de yttre kärvarna har axen utåt på båda sidor och kullen blir symmetrisk. Ljuset kommer ändå uppifrån vänster på varje kärve, så på de spegelvända är det bara formen som är vänd, inte skuggan. Kärvarna högre upp ligger ovanpå och framför de undre och täcker deras översta rader. Där en kärve ligger på en annan syns bara en tunn mörk kontur, som ett skuggband i senap0. Konturen är senap0 och bandet jord0 till jord2, och ingen sittplats eller behållare hör till bilden. Granskningen: Rättat: (1) Versionen hade två bilder med namnet korn_stack_3, varav den första var ofärdig (nästan tom), och raderna var ojämnt långa (13–31 punkter i samma bild); den trasiga bilden är borttagen och alla rader är nu lika långa (enda 14 × 7, tre 28 × 11, sex 42 × 15, alla mindre än 64 och i rimlig storlek mot kolonisten 14 × 20). (2) Idén följdes inte: ingen bit låg spegelvänd, och mellanraderna var hopklippta så att kärvarna gick in i varandra (t.ex. ”IIIIKIILKK”). Nu finns en spegelvänd kopia av kornet där den stora, ljusa änden pekar åt höger. Den har samma band (G till vänster, F till höger, E nederst) och samma ljus uppifrån vänster: L och K uppe till vänster på varje del, J och I nere till höger. Bara formen är speglad, inte skuggan. (3) Travarna är omlagda så att de yttre kärvarna har den ljusa änden utåt på båda sidor. Tre: en vanlig nere till vänster, en spegelvänd nere till höger och en vanlig överst. Sex: nederst vanlig, vanlig och spegelvänd, i mitten vanlig och spegelvänd, en vanlig överst. Silhuetten blir då en spegelsymmetrisk, rundad kulle. Varje kärve ligger hel framför den bakom, med konturen I (senap0) där de möts. Sexstacken är byggd av trestacken med en rad till framför, så att de två stämmer ihop. Den enda kärven är oförändrad. Inget bärs, så det finns ingen fråga om huvud eller ansikte. Senap med kontur och jordband är ljusare än gräset och syns tydligt.",
-   "ide": "Travad med varannan vänd, som kärvar i en skyl: samma pyramid med tre i botten, två i mitten och en överst (en triangel med två och en för tre), men varannan kopia av kornet ligger spegelvänd, så att den ljusa änden pekar omväxlande åt vänster och höger. Silhuetten blir en spegelsymmetrisk, rundad kulle med ljusa toppar utåt på båda sidor i stället för en trave som lutar åt ett håll. Ljuset kommer ändå uppifrån vänster på varje bit, så bara formen speglas, inte skuggan."
+   "anteckning": "Kornet ligger som en liten kärve på marken i förrådet, sedd snett uppifrån: halmändarna åt ena hållet, ett mörkt band av jord i mitten och de fylliga senapsgula axen åt andra hållet. Axen är den mättade delen, eftersom det är maten man ska se. Vid tre ligger två kärvar speglade mot varandra med axen möts i mitten och en rak kärve ovanpå. Vid sex ligger de i raderna 3-2-1, och de främre ligger över de bakre så att deras övre kontur täcker de bakre. Halmändarna hamnar längst ut och axen inåt, så att högen blir en rundad kulle. På de speglade kärvarna är ljuset ritat om så att det ljusa senap3 fortfarande sitter uppe till vänster på axen. Konturen är senap0 runt strån och ax och jord0 i bandet, och ingen behållare används. Mittkärven i nedersta raden kan inte peka inåt åt båda hållen, så den ligger som den vanliga. Granskningen: Granskat: storleken (en kärve 15 × 7, stacken med sex 41 × 17) passar mot kolonisten och ryms inom 64 × 64. Vinkeln är snett uppifrån. Bara paletten används, med konturen i senap0 och bandet i jord. Ljuset faller uppifrån vänster även på de speglade kärvarna. Idén följs: axen pekar inåt, tre blir två speglade med en rak ovanpå, sex blir 3-2-1 och ytterformen är en symmetrisk kulle. Mättad senap passar, eftersom det är mat. En sak rättades: i korn_stack_6 fanns ett genomskinligt hål inne i högen (rad 10, punkt 19), mellan mittradens två kärvar och ovanför den nedre mittkärven. Idén säger tätt packat utan luckor, så hålet är fyllt med konturtonen I. Allt annat är oförändrat.",
+   "ide": "Tät hög med axen inåt: kopiorna läggs omväxlande vanlig och spegelvänd, så att axen (eller den fylldaste änden) pekar in mot mitten, som när säd läggs i stack. Tre blir två speglade mot varandra med en rak ovanpå i mitten, och sex blir raderna 3-2-1 tätt packade utan luckor. Ytterkonturen blir en rundad, symmetrisk kulle i stället för en spetsig trappa. Ljuset ritas om på de speglade kopiorna, så att det fortfarande faller uppifrån vänster och bara formen speglas."
   }
  ]
 }
