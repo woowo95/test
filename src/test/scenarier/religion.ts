@@ -334,7 +334,7 @@ SCENARIER.religionsflik = {
     const html = religion.html();
     hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement); // som ett tryck på knappen
     const oppen = religion.html();
-    const minst = SIM.troNamn(andra[2].tr), tron = (h: string) => h.split('<h3>Personer</h3>')[0]; // trosriktningarna, utan listan över personer
+    const minst = SIM.troNamn(andra[2].tr), tron = (h: string) => h.split('<h3>Andligheten i byn</h3>')[0]; // trosriktningarna, utan listan över personer
     return [
       ['fliken syns inte innan någon tror, sedan syns den', !fore && religion.syns!()],
       [`den största tron står med namn och antal troende (${stor.tr.namn})`, html.includes(stor.tr.namn!) && html.includes('👥 5')],
@@ -342,7 +342,8 @@ SCENARIER.religionsflik = {
       ['skalorna Natur – Människa och Många – En syns', html.includes('Natur') && html.includes('Människa') && html.includes('Många')],
       ['upplevelsen som rör tron syns', html.includes('en blixt som slog ner i granen')],
       [`den minsta tron (${minst}) ligger under Övriga trosriktningar och syns när man öppnar dem`, html.includes('Övriga trosriktningar') && !tron(html).includes(minst) && tron(oppen).includes(minst)],
-      ['alla i byn står med andlighet och tro', html.includes('<h3>Personer</h3>') && SIM.living(s).every(p => html.includes(`data-id="${p.id}"`))],
+      [`rubrikerna: De troende (N) i varje tro och Andligheten i byn sist (steg 11.1.19)`, html.includes('<h3>De troende (5)</h3>') && html.includes('<h3>Andligheten i byn</h3>') && !html.includes('<h3>Personer</h3>')],
+      ['alla i byn står med andlighet och tro', html.includes('<h3>Andligheten i byn</h3>') && SIM.living(s).every(p => html.includes(`data-id="${p.id}"`))],
     ];
   },
 };
@@ -399,7 +400,7 @@ SCENARIER.trostyngd = {
       [`egendomen ger upp till ${SIM.TYNGD.egendom}, fullt vid värdet av ${SIM.TYNGD.egendomVed} ved (${f(halvEgendom)}, ${f(fullEgendom)})`, Math.abs(halvEgendom - SIM.TYNGD.egendom / 2) < 1e-6 && fullEgendom === SIM.TYNGD.egendom],
       [`bara ett färdigt hus väger (${halvbyggt} → ${klart})`, halvbyggt === 0 && klart === SIM.TYNGD.hus],
       ['tyngden är summan av delarna', summa],
-      [`etiketterna: ${[kyrka, prast, seder, vanhelgad, delad, personlig].join(', ')}`, kyrka === 'Kyrka' && prast === 'Präst' && seder === 'Seder' && vanhelgad === 'Personlig tro' && delad === 'Delad tro' && personlig === 'Personlig tro'],
+      [`etiketterna: ${[kyrka, prast, seder, vanhelgad, delad, personlig].join(', ')}`, kyrka === 'Kyrka' && prast === 'Präst' && seder === 'Helig plats' && vanhelgad === 'Personlig tro' && delad === 'Delad tro' && personlig === 'Personlig tro'],
       ['ett antaget bud står kvar när tyngden sjunker', kvar],
       [`Var och en – Präster låses upp med den första prästen (${prastFore} → ${prastEfter})`, !prastFore && prastEfter],
       [`Öppen – Sluten låses upp när en andra tro finns (${oppenFore} → ${oppen})`, !oppenFore && oppen],

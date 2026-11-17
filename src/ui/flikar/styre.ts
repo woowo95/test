@@ -116,7 +116,7 @@ function ministrar() {
 // trons krets visar sina egna i fliken Religion (steg 10.3.2)
 export function omrostningar(lista = s.styre?.roster, rubrik = 'Omröstningar') {
   if (!lista?.length) return '';
-  return `<h3>${esc(rubrik)}</h3><ol class="logg">${lista.slice().reverse().map(o => {
+  return `${rubrik ? `<h3>${esc(rubrik)}</h3>` : ''}<ol class="logg">${lista.slice().reverse().map(o => {
     const id = `rost-${o.t}-${o.f}-${o.fram}`, val = o.f === 'ledare';
     return `<li class="klick falla" ${fallUt(id, 'rost-')} title="Tryck för alla röster"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? 'ja' : 'nej'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, rostMer(o))}`;
   }).join('')}</ol>`;
