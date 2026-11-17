@@ -26,6 +26,12 @@ export const VARLD = balans('varld', {
   lagland: 0.2, // under så högt över havet kan det bli myr
   myrFran: 0.58, tatFran: 0.6, skogFran: 0.44, // fukten där myr, tät skog och skog börjar
   forsok: 40, // så många delfrön prövas innan den bästa formen tas
+  // vattnet (steg 11.2.6)
+  sjoDjup: 0.03, sjoMin: 3, // en sänka som fylls minst så djupt blir sjö, om sjön får minst så många rutor
+  kallor: 0.025, kallAvst: 8, // floder per bergsruta, och minst så många rutor mellan två källor
+  flodMin: 8, // en flod som är kortare än så många rutor torkar ut och ritas inte
+  bredFran: 140, // när så många rutor rinner till en flodruta är den det breda nedre loppet
+  flodOvre: 3, flodNedre: 6, // det kostar extra att vada över floden (slätt = 1); en vagn kommer inte över det nedre loppet utan bro
 });
 // generatorns version: höjs när landet räknas annorlunda, så att en sparad värld behåller sitt land
 export const VARLD_GEN = 1;
@@ -60,8 +66,12 @@ export interface VarldMark {
   gen: number; fro: number; delfro: number; // generatorns version, världens frö och delfröet som gav formen
   w: number; h: number;
   mark: Uint8Array; // rutans nummer i MARK_IDS
-  hojd: Float32Array; // höjden över havet (negativ i havet), för floderna i steg 11.2.6
+  hojd: Float32Array; // höjden över havet (negativ i havet)
+  flod: Uint8Array; // 0 ingen flod, FLOD_OVRE det övre loppet, FLOD_NEDRE det breda nedre (steg 11.2.6)
+  ned: Int32Array; // rutan vattnet rinner till (-1 i havet och från en sjö ut i havet), för att rita floderna
 }
+export const FLOD_OVRE = 1, FLOD_NEDRE = 2;
+export const flodAt = (v: VarldMark, x: number, y: number) => v.flod[y * v.w + x];
 export const markAt = (v: VarldMark, x: number, y: number): MarkId => MARK_IDS[v.mark[y * v.w + x]];
 export const arLand = (v: VarldMark, i: number) => VARLDMARK[MARK_IDS[v.mark[i]]].land;
 
@@ -135,12 +145,75 @@ export function formen(v: { mark: Uint8Array; w: number; h: number }) {
 }
 const godForm = (f: ReturnType<typeof formen>) => f.andel >= VARLD.storAndel && f.mitten && f.oar >= VARLD.minOar && f.havRunt;
 
+// ---------- vattnet (steg 11.2.6) ----------
+// Vattnet rinner från varje ruta mot havet. Det räknas som en översvämning från havet och inåt (den lägsta rutan först):
+// varje ruta får vattnet från den granne som nådde den, och en sänka fylls upp till där den rinner över. En sänka som fylls
+// minst VARLD.sjoDjup blir en sjö. Floderna börjar vid källor i bergen och följer vattnet tills de når havet, en sjö eller en
+// annan flod. Där tillräckligt många rutor rinner till floden är den det breda nedre loppet.
+class Hog { // en enkel minsta-först-kö på höjden
+  private h: number[] = []; private i: number[] = [];
+  get n() { return this.i.length; }
+  lagg(i: number, h: number) { const a = this.h, b = this.i; let k = b.length; a.push(h); b.push(i); while (k > 0) { const p = (k - 1) >> 1; if (a[p] < h || (a[p] === h && b[p] < i)) break; a[k] = a[p]; b[k] = b[p]; k = p; } a[k] = h; b[k] = i; }
+  ta(): number { const a = this.h, b = this.i, ut = b[0], h = a.pop()!, i = b.pop()!; if (b.length) { let k = 0; for (;;) { let c = 2 * k + 1; if (c >= b.length) break; if (c + 1 < b.length && (a[c + 1] < a[c] || (a[c + 1] === a[c] && b[c + 1] < b[c]))) c++; if (a[c] > h || (a[c] === h && b[c] > i)) break; a[k] = a[c]; b[k] = b[c]; k = c; } a[k] = h; b[k] = i; } return ut; }
+}
+const grannar = (i: number, w: number, n: number) => { const x = i % w; return [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w].filter(j => j >= 0 && j < n); };
+// sjöarna och vattnets väg: fylld höjd och rutan vattnet rinner till
+function avrinning(hj: Float32Array, w: number, h: number) {
+  const n = w * h, fylld = new Float32Array(n), ned = new Int32Array(n).fill(-1), sett = new Uint8Array(n), ordning: number[] = [], q = new Hog();
+  for (let i = 0; i < n; i++) { const x = i % w, y = (i / w) | 0; if (x === 0 || y === 0 || x === w - 1 || y === h - 1) { sett[i] = 1; fylld[i] = hj[i]; q.lagg(i, hj[i]); } }
+  while (q.n) {
+    const c = q.ta(); ordning.push(c);
+    for (const j of grannar(c, w, n)) {
+      if (sett[j]) continue;
+      sett[j] = 1; fylld[j] = Math.max(hj[j], fylld[c] + 1e-5); ned[j] = fylld[c] <= 0 && hj[j] <= 0 ? -1 : c; q.lagg(j, fylld[j]);
+    }
+  }
+  return { fylld, ned, ordning };
+}
+function vatten(d: number, v: VarldMark) {
+  const V = VARLD, { w, h, hojd, mark } = v, n = w * h, { fylld, ned, ordning } = avrinning(hojd, w, h);
+  // sjöarna: sänkor som fylls djupt nog (också en sänka under havet inne i landet), om de är stora nog
+  const sank = new Uint8Array(n);
+  for (let i = 0; i < n; i++) if (fylld[i] > 0 && fylld[i] - hojd[i] >= V.sjoDjup) sank[i] = 1;
+  const sett = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    if (!sank[i] || sett[i]) continue;
+    const sjo = [i]; sett[i] = 1;
+    for (let k = 0; k < sjo.length; k++) for (const j of grannar(sjo[k], w, n)) if (sank[j] && !sett[j]) { sett[j] = 1; sjo.push(j); }
+    for (const j of sjo) mark[j] = NR[sjo.length >= V.sjoMin ? 'sjo' : hojd[j] <= 0 ? 'slatt' : MARK_IDS[mark[j]]]; // en liten sänka under havet blir slätt
+  }
+  // hur många rutor som rinner till varje ruta
+  const till = new Float32Array(n).fill(1);
+  for (let k = ordning.length - 1; k >= 0; k--) { const c = ordning[k]; if (ned[c] >= 0) till[ned[c]] += till[c]; }
+  // källorna i bergen, i en ordning ur fröet, med avstånd emellan
+  const berg = [] as number[];
+  for (let i = 0; i < n; i++) if (MARK_IDS[mark[i]] === 'berg') berg.push(i);
+  berg.sort((a, b) => slump(d, a, 11) - slump(d, b, 11));
+  const kallor: number[] = [], antal = Math.round(berg.length * V.kallor);
+  for (const b of berg) {
+    if (kallor.length >= antal) break;
+    if (kallor.every(k => Math.abs(k % w - b % w) + Math.abs(((k / w) | 0) - ((b / w) | 0)) >= V.kallAvst)) kallor.push(b);
+  }
+  const flod = v.flod, vatt = (i: number) => { const m = MARK_IDS[mark[i]]; return m === 'hav' || m === 'sjo'; };
+  for (const k of kallor) {
+    const vag: number[] = [];
+    for (let c = k; c >= 0 && !vatt(c) && !flod[c] && vag.length < n; c = ned[c]) vag.push(c);
+    const slut = ned[vag[vag.length - 1]] ?? -1;
+    if (vag.length < V.flodMin && !(slut >= 0 && flod[slut])) continue; // en kort bäck som inte når en flod torkar ut
+    for (const c of vag) flod[c] = FLOD_OVRE;
+  }
+  for (let i = 0; i < n; i++) if (flod[i] && till[i] >= V.bredFran) flod[i] = FLOD_NEDRE;
+  v.ned = ned;
+}
+
 // världens land ur fröet: delfrö efter delfrö tills formen håller (eller det som kom närmast efter VARLD.forsok försök)
 export function skapaVarldMark(fro: number): VarldMark {
   const w = VARLD.bredd, h = VARLD.hojd;
   let bast: { v: VarldMark; poang: number } | undefined;
   for (let k = 0; k < VARLD.forsok; k++) {
-    const d = Math.floor(slump(fro, k, 0) * 2 ** 31), hojd = hojder(d, w, h), v: VarldMark = { gen: VARLD_GEN, fro, delfro: k, w, h, mark: marker(d, hojd, w, h), hojd };
+    const d = Math.floor(slump(fro, k, 0) * 2 ** 31), hojd = hojder(d, w, h);
+    const v: VarldMark = { gen: VARLD_GEN, fro, delfro: k, w, h, mark: marker(d, hojd, w, h), hojd, flod: new Uint8Array(w * h), ned: new Int32Array(0) };
+    vatten(d, v); // sjöarna ändrar landet, så de läggs före kontrollen av formen
     const f = formen(v);
     if (godForm(f)) return v;
     const poang = Math.min(1, f.andel / VARLD.storAndel) + (f.mitten ? 1 : 0) + Math.min(1, f.oar / VARLD.minOar) + (f.havRunt ? 1 : 0);

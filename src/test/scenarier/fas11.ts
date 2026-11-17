@@ -99,3 +99,45 @@ SCENARIER.varldmark = {
     ];
   },
 };
+
+SCENARIER.floder = {
+  text: 'Floder och sjöar (steg 11.2.6): floderna börjar i bergen och rinner nedåt till havet eller en sjö, det övre loppet kommer före det breda nedre, och sjöarna ligger inne i landet',
+  kor: () => {
+    const varldar = Array.from({ length: 12 }, (_, i) => SIM.skapaVarldMark(2000 + i * 7919));
+    let iVatten = 0, utan = 0, uppfor = 0, nedreForst = 0, kallaUtanBerg = 0, sjoVidKant = 0, nedre = 0, ovre = 0;
+    const vatt = (v: SIM.VarldMark, i: number) => { const m = SIM.MARK_IDS[v.mark[i]]; return m === 'hav' || m === 'sjo'; };
+    for (const v of varldar) {
+      const n = v.w * v.h, fran = new Uint8Array(n);
+      for (let i = 0; i < n; i++) if (v.flod[i] && v.ned[i] >= 0 && v.flod[v.ned[i]]) fran[v.ned[i]] = 1;
+      for (let i = 0; i < n; i++) {
+        const m = SIM.MARK_IDS[v.mark[i]];
+        if (m === 'sjo' && (i % v.w === 0 || i < v.w)) sjoVidKant++;
+        if (!v.flod[i]) continue;
+        if (v.flod[i] === SIM.FLOD_NEDRE) nedre++; else ovre++;
+        if (vatt(v, i)) iVatten++;
+        if (!fran[i] && m !== 'berg') kallaUtanBerg++; // en källa (ingen flod rinner hit) ligger i bergen
+        // följ vattnet: det når havet eller en sjö, rinner aldrig uppför (den fyllda höjden) och blir aldrig smalt igen
+        let c = i, steg = 0;
+        while (c >= 0 && !vatt(v, c) && steg++ < n) {
+          const d = v.ned[c];
+          if (d >= 0 && !vatt(v, d) && v.hojd[d] > v.hojd[c] + 0.6) uppfor++; // en sänka får fyllas, men inte ett berg
+          if (d >= 0 && v.flod[c] === SIM.FLOD_NEDRE && v.flod[d] === SIM.FLOD_OVRE) nedreForst++;
+          c = d;
+        }
+        if (c < 0 || !vatt(v, c)) utan++;
+      }
+    }
+    const medSjo = varldar.filter(v => v.mark.some(m => SIM.MARK_IDS[m] === 'sjo')).length;
+    const igen = SIM.skapaVarldMark(2000), lika = igen.flod.every((f, i) => f === varldar[0].flod[i]);
+    return [
+      [`floderna finns, med ett övre (${ovre} rutor) och ett brett nedre lopp (${nedre} rutor)`, ovre > 0 && nedre > 0],
+      [`varje flod börjar i bergen (${kallaUtanBerg} källor utanför)`, kallaUtanBerg === 0],
+      [`varje flod når havet eller en sjö (${utan} gör det inte)`, utan === 0],
+      [`ingen flod rinner i havet eller i en sjö (${iVatten})`, iVatten === 0],
+      [`ingen flod rinner uppför (${uppfor} gånger)`, uppfor === 0],
+      [`det breda loppet blir aldrig smalt igen (${nedreForst} gånger)`, nedreForst === 0],
+      [`sjöar finns i de flesta världar (${medSjo} av ${varldar.length}) och ligger inne i landet`, medSjo >= varldar.length / 2 && sjoVidKant === 0],
+      ['samma frö ger samma floder', lika],
+    ];
+  },
+};
