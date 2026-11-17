@@ -12,6 +12,7 @@ import { clamp, hash3 } from './slump';
 import { lognFaktor } from './rykten';
 import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
 import { VARLD } from './varldmark';
+import type { Varlden } from './varlden';
 import { klanById } from './klaner';
 import { DAY, Lardom, Person, Rel, State } from './typer';
 import { BYSORTER, radNr, RadtalId, VarldRad } from './radtal';
@@ -256,5 +257,24 @@ export function storForandring(s: State, nr: number, t0: number, t1: number): bo
   if ((s.varld!.rader ?? []).some(x => x.fran === r.nr && x.grundad > t0 && x.grundad <= t1)) return true; // byn har delats
   if (a === b) return false;
   return !!a.borta !== !!b.borta || a.led !== b.led || a.lyder !== b.lyder || Math.abs(b.tal.folk - a.tal.folk) > ORT.nyStor * Math.max(1, a.tal.folk);
+}
+
+// ---------- radens kunskap om platser (steg 11.4.10, Flera samhällen: Uppgifterna om en by och nyheterna) ----------
+// En by i världen har ingen kunskap per person. Den känner byarna i sitt grannät, har rykten om grannarnas grannar och har
+// besökt sin egen plats och det dess sällskap och handlare besökt (VarldRad.besokt, radBesoker). Det räknas när det frågas
+export function radBesoker(vl: Varlden, radNr_: number | undefined, nr: number) {
+  const r = radNr(vl, radNr_);
+  if (!r) return;
+  const b = r.besokt ??= [];
+  if (!b.includes(nr)) b.push(nr);
+}
+export function radKanner(vl: Varlden, r: VarldRad, nr: number): number | undefined {
+  const egen = byPlats(vl, r.nr);
+  if (!egen) return undefined;
+  if (egen.nr === nr || r.besokt?.includes(nr)) return O_BESOKT;
+  const g = egen.grannar ?? [];
+  if (g.some(x => x.nr === nr)) return O_KANT;
+  for (const x of g) if (varldPlatsNr(vl, x.nr)?.grannar?.some(y => y.nr === nr)) return O_RYKTE;
+  return undefined;
 }
 
