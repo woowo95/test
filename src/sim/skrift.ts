@@ -313,7 +313,7 @@ export function skrivLust(s: State, p: Person): SkrivLust | undefined {
   }
   let lar: Lardom | undefined, lw = 0;
   for (const l of p.lardomar ?? []) {
-    if (l.k === 'flod') continue;
+    if (l.k === 'flod' || l.k === 'ort') continue; // platserna i världen skrivs på kartor (fas 11)
     const w = SKRIFT.lardom * l.c * (l.k === 'fara' ? SKRIFT.lardomFara : Math.min(1, l.v));
     if (w > lw && !harBlad(s, k => !!k.lar && sammaLar(k.lar, l))) { lw = w; lar = l; }
   }

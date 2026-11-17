@@ -85,6 +85,7 @@ export * from './sim/skog';
 export * from './sim/fynd';
 export * from './sim/kunskap';
 export * from './sim/minne';
+export * from './sim/ort';
 export * from './sim/vader';
 export * from './sim/motgang';
 export * from './sim/torka';

@@ -1158,3 +1158,33 @@ SCENARIER.radvakt = {
     ];
   },
 };
+
+SCENARIER.ort = {
+  text: 'Platsen i minnet (steg 11.4.1, ort.ts): en plats i världen är en lärdom av slaget ort med nivåerna rykte, känt och besökt; en högre nivå ersätter en lägre, att höra om platsen igen stärker minnet, och en person minns högst ORT.max platser utöver de andra lärdomarna',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 18)!;
+    const andra = () => (p.lardomar ?? []).filter(l => l.k !== 'ort').length, andraFore = andra();
+    const pl = vl.platser!.filter(q => q.by !== vl.huvud).slice(0, SIM.ORT.max + 2);
+    const a = pl[0]!.nr;
+    SIM.larOrt(s, p, a, SIM.O_RYKTE, 0.4, { src: 999, fr: 999 });
+    const rykte = SIM.ortNiva(p, a) === SIM.O_RYKTE && SIM.findL(p, 'ort', a)?.fr === 999;
+    SIM.larOrt(s, p, a, SIM.O_KANT, 0.3);
+    const kant = SIM.ortNiva(p, a) === SIM.O_KANT && SIM.findL(p, 'ort', a)!.c >= 0.4 && SIM.findL(p, 'ort', a)?.fr === undefined;
+    const c0 = SIM.findL(p, 'ort', a)!.c;
+    SIM.larOrt(s, p, a, SIM.O_RYKTE, 0.2);
+    const starkt = SIM.ortNiva(p, a) === SIM.O_KANT && SIM.findL(p, 'ort', a)!.c > c0;
+    // fler platser än taket: de minst säkra trängs undan
+    pl.slice(1).forEach((q, i) => SIM.larOrt(s, p, q.nr, SIM.O_BESOKT, 0.5 + i * 0.01));
+    const orter = p.lardomar!.filter(l => l.k === 'ort');
+    const minst = orter.every(l => l.a !== pl[1]!.nr && l.a !== a) || orter.every(l => l.a !== pl[1]!.nr && l.a !== pl[2]!.nr);
+    const d = SIM.describe(s, orter.find(l => l.v === SIM.O_BESOKT)!);
+    return [
+      [`ett rykte är en lärdom av slaget ort med den som först berättade`, rykte],
+      ['en högre nivå ersätter en lägre och tar bort ryktets förskjutning', kant],
+      ['att höra om platsen igen på en lägre nivå sänker inte nivån men stärker minnet', starkt],
+      [`högst ${SIM.ORT.max} platser (${orter.length}), och de minst säkra trängs undan`, orter.length === SIM.ORT.max && minst],
+      [`de andra lärdomarna är kvar (${andra()} av ${andraFore})`, andra() === andraFore],
+      [`lärdomen i ord: "${d.what}", ${d.src}`, d.what.includes(vl.platser!.find(q => q.nr === orter.find(l => l.v === SIM.O_BESOKT)!.a)!.namn) && d.src === 'egen resa'],
+    ];
+  },
+};
