@@ -325,6 +325,7 @@ export interface State {
   v: number; // numret på den senaste uppgraderingen av sparfilen (UPPGRADERINGAR i varld.ts)
   seed: number; founded: number; now: number;
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
+  varld?: import('./varlden').Varlden; // världen byn ligger i (steg 11.2.7, varlden.ts); testbyarna har ingen
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
   textminne?: Record<string, string[]>; // textminnet (steg 6.7.3): början på de tre senaste krönikaraderna per mall, utan historiken
   notiser?: import('./notiser').Notiser; // notiserna som spelaren inte tagit bort (notiser.ts, steg 5.4.3)

@@ -1586,7 +1586,7 @@ export const cloneState = (s: State) => migrate(JSON.parse(serialize(s)));
 
 // sparfilen i delar, så att varje del ryms i ett dokument i artefaktens databas (högst 256 KB). Det som inte står här är byn.
 // Varje del skrivs direkt med samma avrundning, så texten blir densamma som om hela byn skrivits och delats upp efteråt
-export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['mark', 'skog', 'tradAlder', 'tradSort', 'buskar', 'barbuskar', 'stubbar'], fynden: ['fynd'], loggen: ['log'], notiser: ['notiser'] };
+export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['mark', 'skog', 'tradAlder', 'tradSort', 'buskar', 'barbuskar', 'stubbar'], fynden: ['fynd'], loggen: ['log'], notiser: ['notiser'], varlden: ['varld'] };
 export function serializeParts(s: State): Record<string, string> {
   packGround(s); packFynd(s); skrivVanor();
   const o = s as unknown as Record<string, unknown>, ut: Record<string, string> = {}, bort = new Set<string>();
@@ -1602,7 +1602,7 @@ export function serializeParts(s: State): Record<string, string> {
 }
 // Gränsen för varje del av sparfilen i KB (steg 11.2.2, Världens kostnad och lagringen): vakten för storleken i det stora
 // testet larmar när en del växer över sin gräns. "historik" gäller varje veckas del. En ny del får en rad här
-export const SPARGRANS: Record<string, number> = { byn: 1536, folket: 1536, kartor: 512, fynden: 256, loggen: 128, notiser: 256, historik: 512 };
+export const SPARGRANS: Record<string, number> = { byn: 1536, folket: 1536, kartor: 512, fynden: 256, loggen: 128, notiser: 256, historik: 512, varlden: 256 };
 export const delGrans = (d: string) => SPARGRANS[d.startsWith('historik-') ? 'historik' : d];
 // varje del av sparfilen: storleken i KB (byte i UTF-8, som databaserna räknar) och gränsen
 export const sparStorlek = (s: State) => Object.entries(serializeParts(s)).map(([del, txt]) => ({ del, kb: new TextEncoder().encode(txt).length / 1024, grans: delGrans(del) }));
