@@ -114,6 +114,13 @@ function ministrar() {
 }
 // omröstningarna (steg 8.3.3): frågan, vem som la fram den och utfallet. Ett tryck visar varje röst som en symbol med vikten och varför
 // trons krets visar sina egna i fliken Religion (steg 10.3.2)
+// vad omröstningen ändrar, från vad och till vad (steg 11.1.28): "Torkat: från 30 % till 50 %", med påbudets eller lagtalets egna ord
+function andrText(a: NonNullable<Omrostning['andr']>) {
+  const [slag, id, k] = a.k.split(':');
+  if (slag === 'pabud' && PABUD[id as Pabud]) return `${PABUD[id as Pabud].namn}: från ${varde(id as Pabud, a.fran)} till ${varde(id as Pabud, a.till)}`;
+  const td = slag === 'lagtal' ? LAGAR[id]?.tal?.[k] : undefined;
+  return td ? `${td.namn}: från ${td.visa(a.fran)} till ${td.visa(a.till)}` : '';
+}
 export function omrostningar(lista = s.styre?.roster, rubrik = 'Omröstningar') {
   if (!lista?.length) return '';
   return `${rubrik ? `<h3>${esc(rubrik)}</h3>` : ''}<ol class="logg">${lista.slice().reverse().map(o => {
@@ -133,7 +140,7 @@ function rostMer(o: Omrostning) {
     const mark = (r.id === o.fram ? ` <span title="Lade fram frågan">${iconImg('r_fram', 12)}</span>` : '') + (l?.id === r.id ? ` <span title="Byns ledare">${iconImg('ledarskap', 12)}</span>` : '');
     return `<li class="klick falla" ${fallUt(id, 'rr-')} title="${esc(r.why)}">${sym}<span class="rnamn">${esc(r.namn)}${mark}</span><span class="rostw" title="Väger ${Math.round(r.w * 100)} %">${bar(r.w / max)}</span></li>${hjalpText(id, `<li class="small muted rvarfor">${esc(r.why)}</li>`)}`;
   }).join('');
-  return `<li class="small">${o.om ? `<p>${esc(o.om)}</p>` : ''}<p class="muted">${val ? `Byn valde ${esc(o.framNamn)}.` : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p>${stapel}<ul class="roster">${rader}</ul></li>`;
+  return `<li class="small">${o.andr && andrText(o.andr) ? `<p><b>${esc(andrText(o.andr))}</b></p>` : ''}${o.om ? `<p>${esc(o.om)}</p>` : ''}<p class="muted">${val ? `Byn valde ${esc(o.framNamn)}.` : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p>${stapel}<ul class="roster">${rader}</ul></li>`;
 }
 // rättegångarna (steg 3.10.17): en rad per dom, nyast först. Ett tryck visar berättelsen och hur domen gick till
 const plus = (v: number) => `${v < 0 ? '−' : '+'}${num(Math.abs(v))}`;

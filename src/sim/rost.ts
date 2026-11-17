@@ -106,12 +106,15 @@ function kretsVikter(s: State, tr: Tro) {
 }
 // ---------- registret ----------
 export interface Rost { id: number; namn: string; w: number; ja: boolean; why: string; }
-export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; varfor?: string; om?: string } // om: vad lagen eller påbudet gör (steg 10.2.58)
+export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; varfor?: string; om?: string; andr?: RostAndring } // om: vad lagen eller påbudet gör (steg 10.2.58)
 export interface Fraga { f: string; d: FragaData; fram: number; prio?: number }
+// vad en omröstning ändrar, från vad och till vad (steg 11.1.28): k = 'pabud:<påbud>' eller 'lagtal:<lag>:<tal>', så att fliken skriver talen
+export interface RostAndring { k: string; fran: number; till: number }
 export type FragaData = Record<string, string | number | undefined>;
 export interface FragaDef {
   namn(s: State, d: FragaData): string;
   om?(s: State, d: FragaData): string; // vad lagen eller påbudet gör, som fliken Lagar visar när man trycker på omröstningen (steg 10.2.58)
+  andr?(s: State, d: FragaData): RostAndring | undefined; // vad som ändras, från vad och till vad (steg 11.1.28)
   krets: 'byn' | 'tro'; // vilka som röstar: byn, eller en tros troende (8.6.7)
   rost(s: State, p: Person, d: FragaData): { v: number; why: string }; // −1 till 1: åsikten och intresset
   gor(s: State, d: FragaData, fram: Person | undefined): void; // vad ett ja gör
@@ -123,6 +126,7 @@ export const FRAGOR: Record<string, FragaDef> = {
   // påbuden som finns blir de första frågorna (steg 8.3.1)
   pabud: {
     namn: (_s, d) => `${PABUD[d.k as Pabud].namn}${d.namn ? ` om ${d.namn}` : ''}: ändra påbudet`, om: (_s, d) => PABUD[d.k as Pabud].text, krets: 'byn',
+    andr: (s, d) => { const om = d.om as number | undefined; return { k: `pabud:${d.k}`, fran: om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[d.k as Pabud] ?? 0 : 0, till: d.v as number }; },
     rost: (s, p, d) => {
       const k = d.k as Pabud, om = d.om as number | undefined, egen = PABUD[k].asikt(s, p, om), nytt = d.v as number, gamla = om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[k] ?? 0 : 0;
       const v = Math.abs(egen - gamla) - Math.abs(egen - nytt);
@@ -161,10 +165,10 @@ export function rostaOm(s: State, fr: Fraga) {
     return { id: p.id, namn: p.name, w: andel, ja: r.v + gillar > 0, why: fram === p ? 'La fram frågan' : r.why };
   });
   const ja = roster.reduce((a, r) => a + (r.ja ? r.w : 0), 0), nej = roster.reduce((a, r) => a + (r.ja ? 0 : r.w), 0), gick = ja > nej;
-  const om = def.om?.(s, fr.d);
+  const om = def.om?.(s, fr.d), andr = def.andr?.(s, fr.d);
   // trons omröstningar sparas på tron, och trons krets skapar aldrig byns styre (steg 10.3.2)
   const lista = tr ? (tr.roster ??= []) : def.utanStyre && !s.styre ? [] : (styreAv(s).roster ??= []);
-  lista.push({ t: s.now, f: fr.f, namn: def.namn(s, fr.d), fram: fr.fram, framNamn: fram?.name ?? '', roster, ja, nej, gick, ...(om ? { om } : {}) });
+  lista.push({ t: s.now, f: fr.f, namn: def.namn(s, fr.d), fram: fr.fram, framNamn: fram?.name ?? '', roster, ja, nej, gick, ...(om ? { om } : {}), ...(andr ? { andr } : {}) });
   if (lista.length > ROST.sparas) lista.splice(0, lista.length - ROST.sparas);
   count(s, 'omrostning'); count(s, gick ? 'omrostning_ja' : 'omrostning_nej');
   const envalde = Math.max(0, s.seder.v.rang ?? 0);

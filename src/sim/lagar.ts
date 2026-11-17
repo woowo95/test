@@ -257,6 +257,7 @@ FRAGOR.bortlag = {
 // ett tal i en lag (steg 10.5.4): var och en röstar efter om det nya ligger närmare det hen vill än det gamla
 FRAGOR.lagtal = {
   namn: (_s, d) => { const td = LAGAR[d.id as string].tal![d.k as string]; return `${LAGAR[d.id as string].namn}: ${td.namn} ${td.visa(d.v as number)}`; }, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
+  andr: (s, d) => ({ k: `lagtal:${d.id}:${d.k}`, fran: lagTalRa(s, d.id as string, d.k as string), till: d.v as number }), // från vad och till vad (steg 11.1.28)
   rost: (s, p, d) => {
     const td = LAGAR[d.id as string].tal![d.k as string], iE = talPlats(td, td.vill(s, p)), iO = td.stege.indexOf(lagTalRa(s, d.id as string, d.k as string)), iN = td.stege.indexOf(d.v as number);
     const v = Math.abs(iE - iO) > Math.abs(iE - iN) ? 0.5 : Math.abs(iE - iO) < Math.abs(iE - iN) ? -0.5 : -0.05;

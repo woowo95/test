@@ -180,7 +180,7 @@ const PDEF = {
   // de skrivna lagarna (steg 10.6.10, skrift.ts): ledaren vill ha mer ju närmare taket byn är
   lagskrift: { ruta: 'Arbetet', namn: 'Skriv ner lagarna', text: 'Hur gärna lagarna skrivs ner, så att byn klarar fler', asikt: s => clamp(lagarNu(s).length / Math.max(1, lagTak(s)), 0, 1) }, // 0 utan lagar, 1 vid taket
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
-  han: { namn: 'Hån', text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
+  han: { namn: 'Hån mot ledaren', /* steg 11.1.29 */ text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
   // tystnaden (steg 10.4.10): en person, levande eller död, som inte ska nämnas
   tystnad: { namn: 'Tystnad', text: 'Att en viss person inte ska nämnas', vem: (s, l) => tystVem(s, l),
     asikt: (s, l, om) => om === undefined || om === l.id ? 0 : clamp(-asiktOm(s, l, om) / 100 * PAB.tystOp + (PAB.tystEmp - stat(l, 'empati', s.now)) / PAB.tystDiv, 0, 1) },
