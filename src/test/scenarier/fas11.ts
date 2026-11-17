@@ -172,3 +172,48 @@ SCENARIER.varldtillstand = {
     ];
   },
 };
+
+SCENARIER.landmarken = {
+  text: 'Landmärkena (steg 11.2.8): registret LANDMARKEN, platsen som en post i världen, var den får ligga, och bron, spången och den röjda passagen som ändrar kostnaden',
+  kor: () => {
+    const fro = SIM.varldFro(7), v = SIM.skapaVarldMark(fro), vl = SIM.packaVarld(fro, v), V = SIM.VARLD;
+    const forst = (pass: (i: number) => boolean) => { for (let i = 0; i < v.w * v.h; i++) if (pass(i)) return { i, x: i % v.w, y: Math.floor(i / v.w) }; return undefined; };
+    const m = (i: number) => SIM.MARK_IDS[v.mark[i]];
+    const rader = SIM.LANDMARK_IDS.every(k => { const d = SIM.LANDMARKEN[k] as SIM.LandmarkDef; return d.mark.length > 0 && d.mark.every(x => SIM.VARLDMARK[x].land) && d.avst >= 1 && !!d.tecken; });
+    const slatt = forst(i => m(i) === 'slatt' && !v.flod[i])!;
+    const by = SIM.laggPlats(vl, v, 'by', slatt.x, slatt.y, 0);
+    const forNara = !SIM.laggPlats(vl, v, 'by', slatt.x + 1, slatt.y, 0) && !!SIM.hinder(vl, v, 'by', slatt.x + 1, slatt.y);
+    const hav = forst(i => m(i) === 'hav')!, iHavet = !SIM.laggPlats(vl, v, 'by', hav.x, hav.y, 0);
+    const spangSlatt = !!SIM.hinder(vl, v, 'spang', slatt.x + 10, slatt.y);
+    // bron över det breda loppet
+    const ledig = (i: number) => (vl.platser ?? []).every(p => Math.max(Math.abs(p.x - i % v.w), Math.abs(p.y - Math.floor(i / v.w))) >= 4);
+    const fl = forst(i => v.flod[i] === SIM.FLOD_NEDRE && (m(i) === 'slatt' || m(i) === 'skog') && ledig(i))!;
+    const fore = { vagn: SIM.rutKostnad(vl, v, fl.i, 'vagn'), fots: SIM.rutKostnad(vl, v, fl.i, 'fots') };
+    const bro = SIM.laggPlats(vl, v, 'bro', fl.x, fl.y, 0);
+    const efter = { vagn: SIM.rutKostnad(vl, v, fl.i, 'vagn'), fots: SIM.rutKostnad(vl, v, fl.i, 'fots') }, bas = SIM.VARLDMARK[m(fl.i)].kostnad;
+    // spången över myren och den röjda passagen genom tät skog
+    const myr = forst(i => m(i) === 'myr' && !v.flod[i] && ledig(i));
+    const myrFore = myr ? SIM.rutKostnad(vl, v, myr.i, 'fots') : 0, myrVagn = myr ? SIM.rutKostnad(vl, v, myr.i, 'vagn') : 0;
+    const spang = myr && SIM.laggPlats(vl, v, 'spang', myr.x, myr.y, 0);
+    const tat = forst(i => m(i) === 'tat' && !v.flod[i] && ledig(i))!;
+    const tatFore = SIM.rutKostnad(vl, v, tat.i, 'fots');
+    SIM.laggPlats(vl, v, 'passage', tat.x, tat.y, 0);
+    // en tillfällig plats upphör, och platserna följer med världen
+    const sl2 = forst(i => m(i) === 'slatt' && !v.flod[i] && ledig(i))!;
+    const lager = SIM.laggPlats(vl, v, 'handelslager', sl2.x, sl2.y, 0, { till: 100 });
+    const antal = vl.platser!.length;
+    SIM.platserUpphor(vl, 50); const kvar50 = vl.platser!.length;
+    SIM.platserUpphor(vl, 100);
+    const igen = JSON.parse(JSON.stringify(vl)) as SIM.Varlden;
+    return [
+      ['raderna i LANDMARKEN: marken finns och är land, avståndet och tecknet finns', rader],
+      ['en by läggs på slätten, med nummer, frö och tid', !!by && by.nr === 1 && by.fro > 0 && by.fran === 0 && SIM.varldPlatsNr(vl, 1) === by],
+      ['en plats får inte ligga för nära en annan, i havet eller på fel mark', forNara && iHavet && spangSlatt],
+      [`bron släpper över vagnen och tar bort flodens kostnad (vagn ${fore.vagn} → ${efter.vagn}, till fots ${fore.fots} → ${efter.fots})`, !!bro && fore.vagn === Infinity && efter.vagn === bas && fore.fots === bas + V.flodNedre && efter.fots === bas],
+      [`spången tar bort myrens kostnad (${myrFore} → ${myr ? SIM.rutKostnad(vl, v, myr.i, 'fots') : '–'}) men vagnen kommer inte fram`, !!spang && myrFore === 3 && myrVagn === Infinity && SIM.rutKostnad(vl, v, myr!.i, 'fots') === 1 && SIM.rutKostnad(vl, v, myr!.i, 'vagn') === Infinity],
+      [`den röjda passagen gör tät skog till skog (${tatFore} → ${SIM.rutKostnad(vl, v, tat.i, 'fots')})`, tatFore === 2.5 && SIM.rutKostnad(vl, v, tat.i, 'fots') === 1.4 && SIM.rutKostnad(vl, v, tat.i, 'vagn') === 1.4],
+      ['en tillfällig plats upphör vid sin tid', !!lager && kvar50 === antal && vl.platser!.length === antal - 1],
+      ['platserna sparas med världen', JSON.stringify(igen.platser) === JSON.stringify(vl.platser) && igen.nastaPlats === vl.nastaPlats],
+    ];
+  },
+};
