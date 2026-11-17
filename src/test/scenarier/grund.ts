@@ -6,7 +6,9 @@ import * as SIM from '../../sim';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
 import { START, STEG_TIM } from '../kor';
-import { setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus, medBank } from './hjalp';
+import { eld as eldFlik } from '../../ui/flikar/eld';
+import { setByn, ui } from '../../ui/lage';
+import { setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, medBank } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.glanta = {
@@ -135,7 +137,13 @@ SCENARIER.egnaeldar = {
     b.x = at.x + 0.5; b.y = at.y + 2;
     stepFire(s, 1, ppl);
     const eldare = ppl.filter(p => p.task?.act === 'elda'), tillForsta = eldare.filter(p => p.task!.ref === undefined).length, tillBrasan = eldare.filter(p => p.task!.ref === br.id).length;
+    // eldens ruta (steg 11.1.53): Sedan byn grundades med samma radnamn som under den här elden, veden som 4 av 6 ved, ingen
+    // rad Mest trä, tändningen hopfälld under ▸ och pricken förklarad
+    utanWebblasare(); setByn(s); ui.eld = undefined; const er = eldFlik.html!();
+    const eldRuta = /<h3>Sedan byn grundades<\/h3>/.test(er) && /<dt>Brunnit i<\/dt>[\s\S]*<dt>Trä använt<\/dt>[\s\S]*<h3>Sedan byn grundades<\/h3>[\s\S]*<dt>Brunnit i<\/dt>[\s\S]*<dt>Trä använt<\/dt>/.test(er)
+      && / av \d+ ved<\/span>/.test(er) && !/Mest trä|Totalt/.test(er) && /class="klick falla"[^>]*>Tändning<\/h3>/.test(er) && !/Tänddon/.test(er) && /class="dot big"[^>]*title="Brinner\./.test(er);
     return [
+      ['eldens ruta: Sedan byn grundades med samma radnamn, veden som N av M ved, ingen rad Mest trä, tändningen hopfälld och pricken förklarad (steg 11.1.53)', eldRuta],
       ['en varm natt hittades', varmNatt],
       [`ingen vid elden: ingen trivsam önskan (${langtBort.toFixed(2)} ved) och ingen hämtar ved`, langtBort < 1 && ingenHamtar],
       [`${a.name} vid elden vill ha en trivsam eld (${vid.toFixed(2)} ved: ${why.toLowerCase()})`, vid > langtBort && /trivsam/.test(why)],
