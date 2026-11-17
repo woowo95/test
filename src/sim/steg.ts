@@ -41,9 +41,9 @@ import { tittaSteg } from './sport';
 import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
-import { needLadder, noticeTheft, stole, takeMaterial, getable } from './behov';
-import { lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf } from './lager';
-import { SAKER, viktOf } from './saker';
+import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
+import { stacksOf, isStored, lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf } from './lager';
+import { FOOD, SAKER, isFood, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
@@ -102,7 +102,7 @@ import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
-import { brytKlar, fangelseKrok } from './fangelse';
+import { brytKlar, fangelseKrok, matFram, matTagen } from './fangelse';
 import { akel, latrinLedigNara, latrinUpptagen, latrinVanta, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
@@ -245,10 +245,15 @@ const KLAR: Partial<Record<Act, Krok>> = {
   be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, runsten: runstenKlar, skriva: (s, p) => skrivKlar(s, p), lasa: lasKlar, // skriva och läsa (steg 10.6.5) // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
   rymma: (s, p, t) => brytKlar(s, p, t.ref), // fångens dörr är sönder (fangelse.ts, steg 11.12.1)
+  barmat: matTagen, // maten till fången är tagen ur förrådet och bärs dit (fangelse.ts, steg 11.12.2)
 };
 fangelseKrok.larma = (s, p) => { larma(s, 'rymning', 1, [p]); };
 fangelseKrok.brott = (s, p) => { handelse(s, p, 'rymning'); };
 fangelseKrok.brinner = (s, x, y) => brandHetta(s, x, y) > 0;
+// maten till fången (steg 11.12.2): den närmaste stacken med mat, en hel portion av det som finns (hela resurser), och måltiden
+fangelseKrok.matStack = (s, p) => { let b: { x: number; y: number } | undefined, bd = Infinity; for (const a of stacksOf(s)) if (isFood(a.k) && a.n >= 1 && isStored(s, a.x, a.y)) { const d = Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y); if (d < bd) { bd = d; b = { x: a.x + 0.5, y: a.y + 0.5 }; } } return b; };
+fangelseKrok.taMat = (s, p) => { const k = FOOD.find(f => amountOf(s, f) >= 1); if (!k) return undefined; use(s, p, k, 1, true); return k; };
+fangelseKrok.ata = (s, q, k) => ataPortion(s, q, k);
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
@@ -347,6 +352,7 @@ KLAR.slackaSig = slackaSigKlar; KLAR.hjalpaBrinnande = hjalpaKlar; // den som br
 const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
   varda: lamnaAv, // hemma med den som bars (halsa.ts)
   vatten: vattenFram, // vattnet i säcken till den som inte kan gå (torst.ts)
+  barmat: matFram, // maten till fången (fangelse.ts, steg 11.12.2)
   slacka: slackaFram, // vattnet i säcken på elden (brand.ts)
   plantera: plantaSatt, // plantan sätts i jorden (skogsvard.ts)
   krukaHem: krukaNer, // lerkrukan ställs i sovrummet (kruka.ts)
