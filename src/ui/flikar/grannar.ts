@@ -1,25 +1,34 @@
-import { hp, KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
-import { iconImg } from '../../ikoner';
-import { bar, esc } from '../hjalp';
+import { hp, KLAN, KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
+import { iconImg, tecknet } from '../../ikoner';
+import { esc, hjalpKnapp, hjalpText } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
 // grannklanerna (steg 4.4.3, klaner.ts), en del i stenen Omvärlden (steg 9.3.3): en lista utan karta (världskartan är steg 11.1.3). Namn, var de bor, hur många de
 // är, hur många som kan slåss, hur mycket de har, hur de ser på byn och de namngivna personerna. Texten syns med musen över
 const ROLL_IKON: Record<string, string> = { hovding: 'ledarskap', handlare: 'handlare', aldste: 'i_legend', jagare: 'i_vargdodare', grundare: 'i_rik' };
+// klanens hållning mot byn (steg 11.1.39): en stapel från mitten, som vågarna i Seder, rost åt det fientliga hållet och grönt åt
+// det vänliga, så att fientlig inte ser ut som lite
+const hallBar = (v: number) => { const w = Math.round(Math.min(1, Math.abs(v) / 100) * 50); return `<span class="sbar hall${v < 0 ? ' neg' : ''}"><span style="${v >= 0 ? `left:50%;width:${w}%` : `left:${50 - w}%;width:${w}%`}"></span></span>`; };
+// vad hållningen är, vad som ändrar den och vad vakten gör (?-knappen i fliken)
+const hallText = () => `<p class="muted small">Hållningen är hur klanen ser på byn, från fientlig till vänner. Den blir vänligare när byn byter med klanens handlare och när en främling från klanen får stanna, och fientligare när handlaren märker att byn lurat hen, när en främling visas bort och när klanens rövare dör vid byn. Med åren glöms det, och hållningen går tillbaka mot det neutrala.</p>
+  <p class="muted small">En klan som är för fientlig skickar ingen handlare, och rövarna kommer från den klan som tycker sämst om byn. Vakten håller sig vaken om natten och väcker byn när rövare kommer.</p>`;
 function grannarHtml() {
   const k = klanerOf(s);
   if (!k.length) return '<p class="muted">Byn känner inga grannar.</p>';
   // en ruta per klan med namnet överst i mitten, som påbuden i Styre (steg 4.5.4.2)
   return `<div class="rutor">${k.map(c => {
-    const t = instText(c.inst), cls = c.inst <= -15 ? 'low' : '';
+    const t = instText(c.inst);
+    const folk = `Så många är de: ${c.folk}, barn och gamla medräknade`, slass = `Så många av dem kan slåss: ${c.styrka}`;
+    const rik = `Så mycket har de: ${c.resurser}, räknat som byns rikedom (ungefär arbetstimmar)`;
+    const hall = `Hur de ser på byn: ${t} (${c.inst} av −100 till 100)${c.inst < KLAN.handelMin ? '. De skickar ingen handlare' : ''}`;
     const per = c.personer.map(p => `<li title="${esc(`${KLAN_ROLLER[p.roll]?.namn ?? p.roll}: ${p.namn}`)}">${iconImg(ROLL_IKON[p.roll] ?? '', 12)} ${esc(p.namn)}</li>`).join('');
     return `<div class="ruta"><div class="rutnamn" title="${esc(`${c.namn} bor vid ${c.hem}${c.utbrytare ? '. Grundad av några som lämnade byn' : ''}`)}"><b>${esc(c.namn)}</b><div class="small muted">${esc(c.hem)}</div></div>
     <dl class="kv smal">
-      <dt title="Så många är de">👥</dt><dd title="Så många är de"><span>${c.folk}</span></dd>
-      <dt title="Så många kan slåss">⚔️</dt><dd title="Så många kan slåss"><span>${c.styrka}</span></dd>
-      <dt title="Så mycket har de (ungefär arbetstimmar)">${iconImg('i_rik', 12)}</dt><dd title="Så mycket har de (ungefär arbetstimmar)"><span>${c.resurser}</span></dd>
-      <dt title="${esc(`Hur de ser på byn: ${t} (${c.inst} av −100 till 100)`)}">♥</dt><dd title="${esc(`Hur de ser på byn: ${t} (${c.inst} av −100 till 100)`)}">${bar((c.inst + 100) / 200, cls)}<span>${esc(t)}</span></dd>
+      <dt title="${esc(folk)}">👥</dt><dd title="${esc(folk)}"><span>${c.folk}</span></dd>
+      <dt title="${esc(slass)}">⚔️</dt><dd title="${esc(slass)}"><span>${c.styrka}</span></dd>
+      <dt title="${esc(rik)}">${tecknet('sym_vag', '⚖', 12)}</dt><dd title="${esc(rik)}"><span>${c.resurser}</span></dd>
+      <dt title="${esc(hall)}">♥</dt><dd title="${esc(hall)}">${hallBar(c.inst)}<span>${esc(t)}</span></dd>
     </dl>
     <ul class="bytt">${per}</ul></div>`;
   }).join('')}</div>`;
@@ -64,7 +73,7 @@ export const grannar: Flik = {
   html() {
     const del = oppen();
     return `<div class="pdelar" role="tablist">${DELAR.map(d => `<button type="button" role="tab" data-odel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>
-      <h3>${del.namn}</h3>${del.html()}`;
+      <div class="phead"><div><h3>${del.namn}</h3></div>${hjalpKnapp('omvarlden', 'Vad är klanernas hållning?')}</div>${hjalpText('omvarlden', hallText())}${del.html()}`;
   },
   klick(el) {
     const b = el.closest<HTMLButtonElement>('[data-odel]');
