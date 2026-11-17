@@ -597,3 +597,65 @@
     ]),
   );
 })();
+
+// fas 11: grundarnas trasiga vagn (steg 11.6.13). Grundarna kom långt bortifrån med en vagn som gick sönder där byn ligger;
+// den står i lagret på startplatsen med de första sakerna i och är förvaring. Ingen bygger en sådan. En ruta (16 × 16 punkter),
+// snett ovanifrån som stationerna, på gräs.
+(() => {
+  const L = { k: 'kol0', K: 'kol3', j: 'jord1', J: 'jord2', l: 'jord3', y: 'senap3', Y: 'senap1', r: 'rost2', R: 'rost1', g: 'oliv1', G: 'oliv3', b: 'barr1', B: 'barr3', d: 'skiffer1', s: 'skiffer2', S: 'skiffer3', w: 'ben3', W: 'ben1' };
+  const PA = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
+    const g = B.P.i('oliv', 2); for (let y = 0; y < 24; y++) for (let x = 0; x < 24; x++) B.satt(x, y, g);
+    ritaSprite(B, rader, L, 4, 4);
+  } });
+  VAL.push({ id: 'f11_vagnsvrak', namn: 'Grundarnas trasiga vagn', typ: 'tre', slag: ['station'], vad: 'Steg 11.6.13: grundarna kom långt bortifrån, och deras vagn gick sönder där byn ligger. Den står i lagret på startplatsen med de första sakerna i och rymmer tre stackar. Ingen bygger en sådan. En ruta stor, snett ovanifrån som stationerna, på gräs', versioner: [
+    PA('En tvåhjulig kärra som tappat ena hjulet och lutar på axeln; hjulet ligger bredvid, och en säck ligger kvar på flaket.', [
+      '', '', '',
+      '.kkkkkkkkkk.....',
+      '.kJJJJJJJJk.....',
+      '.kJkkwwkJJk.....',
+      '.kJkwWwwkJk.....',
+      '.kJkkkkkkJk.....',
+      '.kJJJyyJJJk.....',
+      '.kjjjjjjjjkkkkk.',
+      '.kkkkkkkkkkjjjjk',
+      'kJJk......kkkkk.',
+      'kjlk............',
+      'kJJk..kkk.......',
+      '.kk..kjJjk......',
+      '......kkk.......',
+    ]),
+    PA('En liten fyrhjulig vagn med ett tak av ljust tyg; framaxeln har gått av så att framänden sjunkit, och en bit av hjulet ligger i gräset.', [
+      '',
+      '...kkkkkkk......',
+      '..kwwwwwwwk.....',
+      '.kwWwwwwWwwk....',
+      '.kwwwwkkwwwk....',
+      '.kwwwk..kwwk....',
+      '.kkkkkkkkkkkk...',
+      '.kJJJJJJJJJJk...',
+      '.kJlJJJJJJlJk...',
+      '.kjjjjjjjjjjkk..',
+      '.kkkkkkkkkkkjjk.',
+      'kJk.kJk..kjjjjk.',
+      'klk.klk...kkkk..',
+      'kJk.kJk.........',
+      '.k...k...kJJJk..',
+      '.........kkkkk..',
+    ]),
+    PA('Ett lågt flak som vilar på ett hjul och en sten; det andra hjulet har lossnat och lutar mot kanten. Ett knyte och en säck ombundna med rep.', [
+      '', '', '', '',
+      '...kkk..kkkk....',
+      '..kwwWk.kJJJk...',
+      '..kwWWkkyJlJk...',
+      'kkkkkkkkkkkkkkk.',
+      'kJJJJJJJJJJJJJk.',
+      'kJlJJJJJJJJlJJk.',
+      'kjjjjjjjjjjjjjk.',
+      'kkkkkkkkkkkkkkk.',
+      '.kJk....kSdk..kk',
+      '.kjk...kSSddkkJk',
+      '.kJk...kkkkkkJjk',
+      '..k.........kkk.',
+    ]),
+  ] });
+})();
