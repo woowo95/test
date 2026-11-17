@@ -14,6 +14,9 @@
 // mer med teknikerna). Tar maten slut dör en del av dem som blir utan (RAD.svaltDod), och världens krönika får raden Svält.
 // Födda räknas med huvudbyns regler för lusten till barn, maten och trängseln (fodVilja och fodslarPerAr i steg.ts, barnMatAv i
 // liv.ts), och döda av ålder och olyckor med RAD.dod. Allt blir hela tal ur det väntade antalet (antalUr).
+//
+// Rikedomen och styrkan (steg 11.3.3) räknas samma timme: rikedomen går mot ett mål som teknikerna sätter (RAD.rikPer per
+// person) och sjunker i nöd, och styrkan går mot folket gånger andelen som kan slåss (RAD.styrka), mer med vapen och sköld.
 import { balans } from './balans';
 import { TEK } from './teknik';
 import { MARK_IDS, VARLDMARK, VarldMark } from './varldmark';
@@ -39,6 +42,12 @@ export const RAD = balans('rad', {
   modrar: 0.2, // så stor del av folket är kvinnor som kan få barn och har en partner
   dod: 0.03, // så stor del dör av ålder och olyckor per dygn (ett år i spelet)
   startMat: 1, // en ny by har så många dygns mat
+  // rikedom och styrka (steg 11.3.3)
+  rikPer: 20, // rikedomen går mot så mycket per person (ungefär arbetstimmar), gånger 1 + teknikernas rikedom ...
+  rikDygn: 0.5, // ... och kommer så stor del av vägen dit per dygn (ett år i spelet)
+  rikNod: 0.02, // en timme i nöd (maten slut) tar så stor del av rikedomen
+  styrka: 0.35, // styrkan går mot folket gånger så stor del (de som kan slåss), gånger 1 + teknikernas styrka, högst folket ...
+  styrkaDygn: 0.5, // ... och kommer så stor del av vägen dit per dygn
 });
 
 export type RadKolumn = 'barkraft' | 'forvaring' | 'styrka' | 'rikedom';
@@ -73,7 +82,7 @@ export const lever = (vl: Varlden, r: VarldRad) => r.nr !== vl.huvud && BYSORTER
 export const matDygn = (r: VarldRad) => r.tal.folk ? r.tal.mat / (r.tal.folk * portionerPerDygn()) : 0;
 export const forradTak = (r: VarldRad) => Math.round(r.tal.folk * portionerPerDygn() * RAD.forvaringDygn * (1 + tekTillskott(r, 'forvaring')));
 // ärendena i världens slump för raden
-const A = { mat: 1, svalt: 2, fodda: 3, doda: 4 };
+const A = { mat: 1, svalt: 2, fodda: 3, doda: 4, rik: 5, styrka: 6 };
 
 // en timme (ungefär 15 dagar i spelet) för raden: maten, svälten, födda och döda
 export function radMat(s: State, vl: Varlden, r: VarldRad, n: number) {
@@ -93,8 +102,22 @@ export function radMat(s: State, vl: Varlden, r: VarldRad, n: number) {
   doda += antalUr((folk - doda) * RAD.dod / 24, varldSlump(vl, r.nr, n, A.doda));
   r.tal.folk = Math.max(0, folk - Math.min(folk, doda) + fodda);
   r.tal.mat = Math.min(mat, forradTak(r));
+  radRikedom(vl, r, n, mat === 0);
   r.t = t;
-  if (r.syn) r.syn.folk = r.tal.folk; // huvudbyns förbindelse med byn följer
+  if (r.syn) { r.syn.folk = r.tal.folk; r.syn.styrka = r.tal.styrka; r.syn.resurser = r.tal.rikedom; } // huvudbyns förbindelse med byn följer
+}
+
+// rikedomens och styrkans mål
+export const rikMal = (r: VarldRad) => r.tal.folk * RAD.rikPer * (1 + tekTillskott(r, 'rikedom'));
+export const styrkaMal = (r: VarldRad) => Math.min(r.tal.folk, Math.round(r.tal.folk * RAD.styrka * (1 + tekTillskott(r, 'styrka'))));
+// så stor del av vägen en timme tar, när en hel dygns väg är del
+const perTimme = (del: number) => 1 - (1 - del) ** (1 / 24);
+// en timme: rikedomen går mot teknikernas mål och sjunker i nöd, och styrkan går mot folket
+function radRikedom(vl: Varlden, r: VarldRad, n: number, nod: boolean) {
+  const rik = r.tal.rikedom, steg = nod ? -rik * RAD.rikNod : (rikMal(r) - rik) * perTimme(RAD.rikDygn);
+  r.tal.rikedom = Math.max(0, rik + antalUr(steg, varldSlump(vl, r.nr, n, A.rik)));
+  const st = r.tal.styrka;
+  r.tal.styrka = Math.min(r.tal.folk, Math.max(0, st + antalUr((styrkaMal(r) - st) * perTimme(RAD.styrkaDygn), varldSlump(vl, r.nr, n, A.styrka))));
 }
 
 radKrok.startMat = folk => Math.round(folk * portionerPerDygn() * RAD.startMat);

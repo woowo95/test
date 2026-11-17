@@ -713,3 +713,29 @@ SCENARIER.radmat = {
     ];
   },
 };
+
+SCENARIER.radrikedom = {
+  text: 'Rikedom och styrka i raden (steg 11.3.3, rad.ts): rikedomen går mot teknikernas mål och sjunker i nöd, och styrkan går mot folket gånger andelen som kan slåss, mer med vapen och sköld och aldrig fler än folket',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!, v = SIM.varldMark(s)!;
+    const [fattig, rustad, nod] = vl.rader!.filter(r => SIM.lever(vl, r));
+    for (const r of [fattig, rustad]) { r.tal.folk = Math.round(SIM.barkraft(v, r) * 0.8); r.tal.mat = SIM.forradTak(r); r.tal.rikedom = 0; r.tal.styrka = 0; }
+    rustad.tek = ['timmervagg', 'skold', 'flintspjut'];
+    nod.tal.folk = Math.round(SIM.barkraft(v, nod) * 3); nod.tal.mat = 0; nod.tal.rikedom = 2000;
+    const tid = (dygn: number, fn?: () => void) => { for (let h = 0; h < dygn * 24; h++) { s.now += 3600e3; SIM.varldSteg(s); fn?.(); } };
+    let aldrigFler = true;
+    tid(4, () => { for (const r of vl.rader!) if (r.tal.styrka > r.tal.folk) aldrigFler = false; });
+    const nara = (r: SIM.VarldRad) => Math.abs(r.tal.rikedom - SIM.rikMal(r)) <= SIM.rikMal(r) * 0.2;
+    const st = (r: SIM.VarldRad) => Math.abs(r.tal.styrka - SIM.styrkaMal(r)) <= 2;
+    const hela = vl.rader!.every(r => Number.isInteger(r.tal.rikedom) && Number.isInteger(r.tal.styrka));
+    const foljer = [fattig, rustad, nod].every(r => !r.syn || (r.syn.styrka === r.tal.styrka && r.syn.resurser === r.tal.rikedom));
+    return [
+      [`rikedomen går mot målet på några dygn (${fattig.tal.rikedom} av ${Math.round(SIM.rikMal(fattig))})`, nara(fattig)],
+      [`hus och redskap sätter ett högre mål per person (${Math.round(SIM.rikMal(rustad) / rustad.tal.folk)} mot ${Math.round(SIM.rikMal(fattig) / fattig.tal.folk)})`, SIM.rikMal(rustad) / rustad.tal.folk > SIM.rikMal(fattig) / fattig.tal.folk && nara(rustad)],
+      [`i nöd sjunker rikedomen (2000 → ${nod.tal.rikedom})`, nod.tal.rikedom < 1000],
+      [`styrkan går mot folket gånger andelen som kan slåss (${fattig.tal.styrka} av ${fattig.tal.folk}), mer med vapen och sköld (${rustad.tal.styrka} av ${rustad.tal.folk})`, st(fattig) && st(rustad) && rustad.tal.styrka / rustad.tal.folk > fattig.tal.styrka / fattig.tal.folk],
+      ['styrkan är aldrig fler än folket, och talen är hela', aldrigFler && hela],
+      ['grannbyns styrka och resurser följer raden', foljer],
+    ];
+  },
+};
