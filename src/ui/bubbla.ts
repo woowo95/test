@@ -12,7 +12,8 @@ export const OPPNAR = 'button, a, input, select, textarea, [data-id], [data-hjal
 // det som fälls ut vid ett tryck (steg 11.1.1): ingen bubbla ens med fingret, för trycket visar redan det som står under raden
 export const FALLER = '[data-hjalp], [aria-expanded], [data-pfall], summary';
 export function forklaringAv(el: El, aven_knappar = false): { text: string; vid: El } | undefined {
-  if (el.closest('#map canvas') || el.closest(FALLER) || (!aven_knappar && el.closest(OPPNAR))) return undefined;
+  // en blek runsten öppnar inget: ett tryck visar vad som krävs (steg 11.1.8)
+  if (el.closest('#map canvas') || el.closest(FALLER) || (!aven_knappar && el.closest(OPPNAR) && !el.closest('[aria-disabled="true"]'))) return undefined;
   const t = el.closest('[title]'), text = t?.getAttribute('title')?.trim();
   if (t && text) return { text, vid: t };
   const svg = el.closest('svg'), st = svg?.querySelector?.(':scope > title')?.textContent?.trim();

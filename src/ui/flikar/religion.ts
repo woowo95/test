@@ -67,6 +67,7 @@ function troHtml(tr: Tro) {
 export const religion: Flik = {
   namn: 'Tro',
   syns: () => andligSyns(s),
+  krav: 'öppnas när byn har fått sin första tro',
   html() {
     const tron = (s.tron ?? []).filter(tr => tr.slut === undefined).sort((a, b) => troende(s, b).length - troende(s, a).length || a.id - b.id);
     const stora = tron.slice(0, STORA), ovriga = tron.slice(STORA), glomda = (s.tron ?? []).filter(tr => tr.slut !== undefined);

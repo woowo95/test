@@ -179,13 +179,13 @@ body.vOppen .owned { display: none; }
 .tabs button.runsten[aria-selected="true"] { background: none; }
 .runsten .sten { display: none; image-rendering: pixelated; width: 44px; height: 56px; } /* stenen i dubbel skala (steg 9.2.2) */
 .runsten .sten.stangd { display: block; }
-.runsten[aria-selected="true"] .sten.stangd, .runsten:disabled .sten.stangd { display: none; }
+.runsten[aria-selected="true"] .sten.stangd, .runsten[aria-disabled="true"] .sten.stangd { display: none; }
 .runsten[aria-selected="true"] .sten.oppen { display: block; }
-.runsten:disabled .sten.blek { display: block; }
-.runsten:disabled { cursor: default; }
-.runsten:not(:disabled):hover .sten { filter: brightness(1.12) drop-shadow(0 1px 1px rgba(36,32,29,0.55)); }
+.runsten[aria-disabled="true"] .sten.blek { display: block; }
+.runsten[aria-disabled="true"] { cursor: default; }
+.runsten:not([aria-disabled="true"]):hover .sten { filter: brightness(1.12) drop-shadow(0 1px 1px rgba(36,32,29,0.55)); }
 .runsten .stennamn { display: block; margin-top: 1px; font-size: 10px; line-height: 1.1; white-space: nowrap; color: #dad0bb; text-shadow: 1px 0 0 #24201d, -1px 0 0 #24201d, 0 1px 0 #24201d, 0 -1px 0 #24201d; } /* namnet under stenen, ljust med mörk kant (steg 11.1.7) */
-.runsten:disabled .stennamn { opacity: 0.7; }
+.runsten[aria-disabled="true"] .stennamn { opacity: 0.7; }
 /* bandet överst i en flik */
 /* bandet dubbelt så stort, och remsan ut till panelens kanter (steg 6.9.3): sju punkter i dubbel skala mitt i bandet */
 .band { display: flex; justify-content: center; margin: 2px -14px 8px; background: linear-gradient(to bottom, transparent 19px, var(--bk) 19px, var(--bk) 21px, var(--bf) 21px, var(--bf) 33px, var(--bk) 33px, var(--bk) 35px, transparent 35px); }

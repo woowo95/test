@@ -69,6 +69,7 @@ const DELAR: Del[] = [
 const oppen = () => DELAR.find(d => d.id === ui.omvDel) ?? DELAR[0];
 export const grannar: Flik = {
   namn: 'Omvärlden',
+  krav: 'öppnas när byn känner en klan eller har haft handlare eller rövare',
   syns: () => !!s.klaner?.length || !!s.handlarNr || !!s.rovarNr || !!s.handlare || !!s.rovare,
   html() {
     const del = oppen();

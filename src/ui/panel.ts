@@ -33,7 +33,8 @@ export interface Flik {
   knapp?: string; // visas under en annan flikknapp i stället för en egen (elden, lagret och högen öppnas från kartan)
   html(): string; // innehållet; byggs om ett par gånger i sekunden
   klick?(el: HTMLElement): boolean; // tryck i sidan som fliken tar hand om, även när den inte är öppen; true = klart
-  syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
+  syns?(): boolean; // annars är knappen en blek sten (grannarna när byn har grannar) ...
+  krav?: string; // ... och ett tryck på den säger vad som krävs för att den ska öppnas (steg 11.1.8)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
 // runstenarna uppifrån (steg 9.3.1–9.3.2): Seder, Tro, Styre, Teknik, Krönika, Byns tal och Omvärlden
@@ -50,6 +51,8 @@ const nav = document.querySelector<HTMLElement>('.tabs')!;
 nav.innerHTML = IDS.filter(id => !ALLA[id].knapp && id !== 'person').map(id => `<button type="button" role="tab" class="runsten" data-tab="${id}" aria-selected="false" title="${ALLA[id].namn}" aria-label="${ALLA[id].namn}">${stenHtml(id, ALLA[id].namn)}</button>`).join('');
 
 // flikarna som visas i personens panel (personen, elden, lagret, högen, huset, stationen, sjön, fältet, saken, djuret)
+// vad som krävs för att en blek sten ska öppnas, ur flikens rad (steg 11.1.8)
+export const stenKrav = (f: Flik) => `${f.namn}: ${f.krav ?? 'går inte att öppna än'}`;
 export const ärPersonflik = (id: FlikId | undefined) => !!id && (ALLA[id].knapp ?? id) === 'person';
 // det man trycker på (elden, högen, huset, stationen, sjön, fältet, saken, djuret …) visas i en mindre ruta där man tryckte, och
 // personens panel står kvar (steg 5.3.5.1)
@@ -128,9 +131,9 @@ export function renderPanel(force = false) {
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {
     const id = b.dataset.tab as FlikId;
     b.setAttribute('aria-selected', String(id === ui.hoger));
-    // en flik som inte går att öppna än står kvar som en blek sten (steg 5.3.3.1)
-    const kan = ALLA[id].syns?.() ?? true;
-    if (b.disabled === kan) { b.disabled = !kan; b.title = kan ? ALLA[id].namn : `${ALLA[id].namn}: går inte att öppna än`; }
+    // en flik som inte går att öppna än står kvar som en blek sten (steg 5.3.3.1); ett tryck på den säger vad som krävs (steg 11.1.8)
+    const kan = ALLA[id].syns?.() ?? true, blek = String(!kan);
+    if (b.getAttribute('aria-disabled') !== blek) { b.setAttribute('aria-disabled', blek); b.title = kan ? ALLA[id].namn : stenKrav(ALLA[id]); }
   }
   const vanster = ui.tab === 'person' || (ärRuta(ui.tab) && ui.selected !== undefined) ? 'person' : undefined;
   document.body.classList.toggle('vOppen', !!vanster);
@@ -156,7 +159,7 @@ document.addEventListener('pointerdown', e => {
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
   // förklaringen i en bubbla (steg 9.2.68): ett tryck på det som inte öppnar något visar den, och nästa tryck stänger den
-  if (bubblaKlick(el) && !el.closest(OPPNAR)) return;
+  if (bubblaKlick(el) && (!el.closest(OPPNAR) || el.closest('[aria-disabled="true"]'))) return;
   if (el.closest('.panel > .bakat')) { tillbaka(); return; }
   const x = el.closest<HTMLElement>('[data-stang]');
   if (x) { stang(x.dataset.stang as 'v' | 'h' | 'r'); return; }
@@ -166,6 +169,7 @@ document.addEventListener('click', e => {
   if (el.closest('[data-kvsort]')) { ui.kvSort = !ui.kvSort; renderPanel(true); return; } // stackarna efter kvalitet (steg 9.2.18)
   for (const id of IDS) if (ALLA[id].klick?.(el)) { renderPanel(true); return; }
   const tb = el.closest<HTMLElement>('.tabs button');
+  if (tb?.getAttribute('aria-disabled') === 'true') return; // en blek sten öppnar inget; bubblan har sagt vad som krävs
   if (tb) { const id = tb.dataset.tab as FlikId; if (ui.hoger === id) stang('h'); else visa(id); }
 });
 

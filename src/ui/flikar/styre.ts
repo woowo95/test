@@ -46,6 +46,7 @@ const oppen = () => DELAR.find(d => d.id === ui.styreDel) ?? DELAR[0];
 export const styre: Flik = {
   namn: 'Styre',
   syns: harHaft,
+  krav: 'öppnas när byn har haft en ledare',
   html() {
     const del = oppen();
     return `<div class="pdelar" role="tablist">${DELAR.map(d => `<button type="button" role="tab" data-sdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>
