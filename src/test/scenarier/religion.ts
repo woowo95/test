@@ -342,6 +342,8 @@ SCENARIER.religionsflik = {
       ['skalorna Natur – Människa och Många – En syns', html.includes('Natur') && html.includes('Människa') && html.includes('Många')],
       ['upplevelsen som rör tron syns', html.includes('en blixt som slog ner i granen')],
       [`den minsta tron (${minst}) ligger under Övriga trosriktningar och syns när man öppnar dem`, html.includes('Övriga trosriktningar') && !tron(html).includes(minst) && tron(oppen).includes(minst)],
+      ['trons tyngd står inte som tal: etiketten står ensam, och talet med delarna i förklaringen (steg 11.1.20)', !html.includes('· tyngd') && new RegExp(`title="[^"]*Tyngd [^"]*"><b>${SIM.troEtikett(s, stor.tr).namn}</b></p>`).test(html)],
+      ['andligheten och trons styrka förklaras som 0 till 10, utan talet 0 till 100 (steg 11.1.21)', /title="Tron är [\d,]+ av 10 stark hos/.test(html) && /title="Andlighet [\d,]+ av 10:/.test(html) && !/av 100 stark/.test(html)],
       [`rubrikerna: De troende (N) i varje tro och Andligheten i byn sist (steg 11.1.19)`, html.includes('<h3>De troende (5)</h3>') && html.includes('<h3>Andligheten i byn</h3>') && !html.includes('<h3>Personer</h3>')],
       ['alla i byn står med andlighet och tro', html.includes('<h3>Andligheten i byn</h3>') && SIM.living(s).every(p => html.includes(`data-id="${p.id}"`))],
     ];
@@ -404,7 +406,7 @@ SCENARIER.trostyngd = {
       ['ett antaget bud står kvar när tyngden sjunker', kvar],
       [`Var och en – Präster låses upp med den första prästen (${prastFore} → ${prastEfter})`, !prastFore && prastEfter],
       [`Öppen – Sluten låses upp när en andra tro finns (${oppenFore} → ${oppen})`, !oppenFore && oppen],
-      ['etiketten och tyngden står i fliken', (() => { utanWebblasare(); setByn(s); return religion.html().includes('tyngd'); })()],
+      ['etiketten står i fliken, och tyngden i förklaringen (steg 11.1.20)', (() => { utanWebblasare(); setByn(s); const h = religion.html(); return /title="[^"]*Tyngd [^"]*"><b>[^<]+<\/b><\/p>/.test(h); })()],
     ];
   },
 };

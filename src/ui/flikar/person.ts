@@ -373,11 +373,11 @@ function egenHtml(p: Person) {
   // andligheten (steg 4.1.1.1) syns från början, så att man ser den växa (steg 4.5.3.4)
   const ande = (() => {
     const v = andlighet(s, p), id = `e-andlig-${p.id}`, rader = ['Hur viktigt det heliga är för hen, inte vad hen tror på', 'Ärvs delvis från föräldrarna och flyttas av det hen är med om', ...(p.upp ?? []).filter(u => u.n).map(u => `${upplevelseText(u)} (${u.a} år), ${u.n! > 0 ? '+' : '−'}${Math.abs(u.n!)}`)];
-    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join(', '))}">Andlighet</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 100)}<span>${Math.round(v)}</span></dd>${hjalpText(id, gorHtml(rader, 'Skalan går från 0 till 100.'))}`;
+    return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join(', '))}">Andlighet</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 100)}<span>${visa(v / 5)}</span></dd>${hjalpText(id, gorHtml(rader, 'Skalan går från 0 till 10, som egenskaperna.'))}`;
   })();
   // tron hen har (steg 4.1.2.1): vem som står bakom, och vid tryck tolkningen och tecknet den kom ur
   const tr = troOf(s, p.tro), tro = tr ? (() => {
-    const id = `e-tro-${p.id}`, rader = [...tr.ber ? [tr.ber] : [tolkning(tr)], `${tr.grundare === p.id ? 'Hen' : tr.gnamn} tolkade ${teckenText(tr.k, tr.om)} som ett tecken`, `Tron är ${Math.round(p.troStyrka ?? 0)} av 100 stark hos hen`];
+    const id = `e-tro-${p.id}`, rader = [...tr.ber ? [tr.ber] : [tolkning(tr)], `${tr.grundare === p.id ? 'Hen' : tr.gnamn} tolkade ${teckenText(tr.k, tr.om)} som ett tecken`, `Tron är ${visa((p.troStyrka ?? 0) / 5)} av 10 stark hos hen`];
     return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join('. '))}">Tro</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join('. '))}">${bar((p.troStyrka ?? 0) / 100)}<span>${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${esc(troNamn(tr))}</span></dd>${hjalpText(id, gorHtml(rader.slice(1), rader[0]))}`;
   })() : '';
   return `<dl class="kv">${STATS.map(statRad).join('')}${ande}${tro}
