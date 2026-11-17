@@ -1,4 +1,4 @@
-import { DAY, MIN, Person, State, W } from './typer';
+import { DAY, HOUR, MIN, Person, State, W } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
 import { REL, byId, count, log, relKey, stat, think } from './folk';
@@ -31,9 +31,18 @@ export const FANG = balans('fangelse', {
   // straffet Fängelse (steg 11.12.3): domen är 1 till 5 hela dygn (år i spelet) efter brottets vikt
   domPerVikt: 5, // dygn per vikt (dråp 1 ger fem dygn, en stöld 0,5 tre)
   dom: 0.75, // i en dom utan lag blir det fängelse från så här mycket (händelsens vikt gånger hårdheten), mellan slag och utvisning
+  // fångens dygn (steg 11.12.4): tanken Sitter inlåst är bas och dygn per helt dygn inne, högst tak, och bleknar så här många dygn efter
+  tankeBas: 0.05, tankeDygn: 0.05, tankeTak: 0.3, tankeEfter: 2,
+  besok: 0.4, // lusten att gå till dörren och prata på fritiden: närheten (bara familj och vänner) gånger detta, bredvid vilan och umgänget
+  besokMin: 20, // ett besök vid dörren tar så här många minuter
+  eld: 0.3, // elden: fångens köld (1 − värmen) gånger närheten gånger detta ska nå hjalp, så det händer sällan
+  eldTim: 6, // en ved brinner så här många timmar i fängelset ...
+  eldHeat: 0.6, // ... och värmer den som sitter där som en eld på så här stor styrka
+  uppDygn: 0.5, // upplevelsen när fången släpps: 1 + så här mycket per dygn efter det första gånger effekten
+  domareOp: 4, // och synen på den som dömde sjunker så här mycket per dygn inne
 });
 // larmet, brottet och branden sätts av steg.ts, så att den här filen inte drar in dem (och importerna inte går runt)
-export const fangelseKrok: { larma(s: State, p: Person): void; brott(s: State, p: Person): void; brinner(s: State, x: number, y: number): boolean; matStack(s: State, p: Person): { x: number; y: number } | undefined; taMat(s: State, p: Person): string | undefined; ata(s: State, q: Person, k: string): void } = { larma: () => undefined, brott: () => undefined, brinner: () => false, matStack: () => undefined, taMat: () => undefined, ata: () => undefined };
+export const fangelseKrok: { larma(s: State, p: Person): void; brott(s: State, p: Person): void; brinner(s: State, x: number, y: number): boolean; matStack(s: State, p: Person, ved?: boolean): { x: number; y: number } | undefined; taMat(s: State, p: Person, ved?: boolean): string | undefined; ata(s: State, q: Person, k: string): void; upplev(s: State, p: Person, om: string, ggr: number): void } = { larma: () => undefined, brott: () => undefined, brinner: () => false, matStack: () => undefined, taMat: () => undefined, ata: () => undefined, upplev: () => undefined };
 const HARDA = new Set([2, 3, 6, 9]); // Slag, Utvisning, Döden och Fängelse i STRAFF_REG (styre.ts)
 export const hardaDomar = (s: State) => (s.styre?.ratt ?? []).filter(r => s.now - r.t < FANG.domDygn * DAY && HARDA.has(r.steg)).length;
 // hur mycket ledaren l vill ha ett fängelse (påbudet Fängelse i styre.ts), −1 till 1
@@ -79,8 +88,10 @@ export function fangeVal(s: State, p: Person): boolean {
   const f = p.fange;
   if (!f) return false;
   const h = husById(s, f.hus), dorr = h && fangelseDorr(s, h);
-  if (!h || !dorr || !dorrDef(dorr.dorr)?.stanger) { p.fange = undefined; count(s, 'fangelse_ut_oppet'); return false; }
-  if (f.till !== undefined && s.now >= f.till) { p.fange = undefined; count(s, 'fangelse_slappt'); log(s, `${p.name} släpptes ur fängelset.`, 'world', [p.id]); return false; }
+  if (!h || !dorr || !dorrDef(dorr.dorr)?.stanger) { slapps(s, p); count(s, 'fangelse_ut_oppet'); return false; }
+  if (f.till !== undefined && s.now >= f.till) { slapps(s, p); count(s, 'fangelse_slappt'); log(s, `${p.name} släpptes ur fängelset.`, 'world', [p.id]); return false; }
+  // tanken Sitter inlåst växer för varje helt dygn inne och bleknar efter frigivningen (steg 11.12.4)
+  think(p, 'Sitter inlåst', -Math.min(FANG.tankeTak, FANG.tankeBas + FANG.tankeDygn * Math.floor((s.now - f.t) / DAY)), s.now, FANG.tankeEfter * DAY);
   const rutor = rutorI(s, h);
   if (!rutor.length) { p.fange = undefined; return false; }
   if (utVilja(s, p) >= FANG.bryt) {
@@ -100,11 +111,40 @@ export function brytKlar(s: State, p: Person, ref?: number) {
   if (!b || !p.fange) return;
   b.dorr = undefined; count(s, 'dorr_sonder'); count(s, 'rymning');
   const h = husById(s, p.fange.hus);
-  p.fange = undefined;
+  slapps(s, p);
   log(s, `${p.name} slog sönder dörren och rymde ur ${h ? h.namn.toLowerCase() : 'fängelset'}.`, 'world', [p.id]);
   fangelseKrok.larma(s, p);
   if (!p.gast) fangelseKrok.brott(s, p);
 }
+// fången kommer ut (steg 11.12.4): tiden inne blir en upplevelse, starkare ju fler dygn, och synen på den som dömde sjunker
+export function slapps(s: State, p: Person) {
+  const f = p.fange;
+  p.fange = undefined;
+  if (!f) return;
+  const dygn = (s.now - f.t) / DAY;
+  if (dygn < 0.5) return;
+  const n = Math.max(1, Math.round(dygn));
+  fangelseKrok.upplev(s, p, `i ${n} år`, 1 + Math.max(0, dygn - 1) * FANG.uppDygn);
+  if (f.av !== undefined && f.av !== p.id) { const r = s.rels[relKey(p.id, f.av)]; if (r) r.op = clamp(r.op - FANG.domareOp * dygn, -100, 100); }
+}
+// ---------- besöket vid dörren (steg 11.12.4) ----------
+// rutan utanför fängelsets dörr
+export function utanforDorr(s: State, h: Hus) {
+  const d = fangelseDorr(s, h), inne = new Set(rutorI(s, h));
+  if (!d) return undefined;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const i = (d.y + dy) * W + d.x + dx; if (!inne.has(i - 2 * (dy * W + dx)) || inne.has(i)) continue; return { x: d.x + dx + 0.5, y: d.y + dy + 0.5 }; }
+  return undefined;
+}
+// lusten att gå till dörren och prata (leisure i val.ts): den fånge p står närmast, bara familj och vänner
+export function besokVal(s: State, p: Person): { w: number; spot: { x: number; y: number }; ref: number; why: string } | undefined {
+  if (p.fange) return undefined;
+  let best: Person | undefined, bn = 0;
+  for (const q of fangar(s)) { const n = fangNarhet(s, p, q); if (q !== p && n >= FANG.van && n > bn) { best = q; bn = n; } }
+  const h = best && husById(s, best.fange!.hus), spot = h && utanforDorr(s, h);
+  return best && spot ? { w: bn * FANG.besok, spot, ref: best.id, why: `Går till fängelset och pratar med ${best.name} genom dörren` } : undefined;
+}
+// den lilla elden i fängelset brinner (värmen i steg.ts)
+export const fangEldBrinner = (s: State, hus: number) => (s.fangEld?.[hus] ?? 0) > s.now;
 // ---------- mat och vatten till fången (steg 11.12.2) ----------
 // hur nära p står fången q: familj och partner 1, en vän FANG.van, annars FANG.framling
 export function fangNarhet(s: State, p: Person, q: Person) {
@@ -117,30 +157,31 @@ export function fangNarhet(s: State, p: Person, q: Person) {
 export const hjalperFange = (s: State, p: Person, q: Person, nod: number) => nod * fangNarhet(s, p, q) >= FANG.hjalp;
 // maten till fången (ARBETEN i val.ts): den hungrigaste fången som p går till och som ingen annan bär mat till, och det
 // närmaste i förrådet där det finns mat
-export function matTillFange(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string } | undefined {
+// Ved till en liten eld (steg 11.12.4) är en rad i samma arbete: fångens köld gånger närheten gånger FANG.eld, så det händer sällan
+export function matTillFange(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; ved?: true } | undefined {
   if (p.fange) return undefined;
-  let best: Person | undefined, bn = 0;
+  let best: Person | undefined, bn = 0, ved = false;
   for (const q of fangar(s)) {
-    const nod = 1 - q.hunger;
-    if (q === p || nod <= bn || !hjalperFange(s, p, q, nod) || s.people.some(o => o !== p && o.task?.act === 'barmat' && o.task.ref === q.id)) continue;
-    best = q; bn = nod;
+    if (q === p || s.people.some(o => o !== p && o.task?.act === 'barmat' && o.task.ref === q.id)) continue;
+    const nod = 1 - q.hunger, kold = fangEldBrinner(s, q.fange!.hus) ? 0 : (1 - q.warm) * FANG.eld;
+    if (nod > bn && hjalperFange(s, p, q, nod)) { best = q; bn = nod; ved = false; }
+    if (kold > bn && hjalperFange(s, p, q, kold)) { best = q; bn = kold; ved = true; }
   }
   if (!best) return undefined;
-  const spot = matStack(s, p);
-  return spot ? { spot, ref: best.id, why: `Hämtar mat åt ${best.name}, som sitter i fängelset` } : undefined;
+  const spot = fangelseKrok.matStack(s, p, ved); // det närmaste i förrådet där det ligger mat eller ved (sätts av steg.ts)
+  return spot ? { spot, ref: best.id, why: ved ? `Hämtar ved åt ${best.name}, som fryser i fängelset` : `Hämtar mat åt ${best.name}, som sitter i fängelset`, ...(ved ? { ved: true as const } : {}) } : undefined;
 }
-// det närmaste i förrådet där det ligger mat (fangelseKrok.matStack sätts av steg.ts)
-const matStack = (s: State, p: Person) => fangelseKrok.matStack(s, p);
-// maten är tagen (KLAR i steg.ts): en hel portion av det som finns, och den bärs till fången
+// maten eller veden är tagen (KLAR i steg.ts): en hel portion av det som finns, eller en ved, och den bärs till fången
 export function matTagen(s: State, p: Person, t: import('./typer').Task) {
-  const q = byId(s, t.ref), k = q ? fangelseKrok.taMat(s, p) : undefined;
+  const ved = t.tool === 'ved', q = byId(s, t.ref), k = q ? fangelseKrok.taMat(s, p, ved) : undefined;
   if (!q || !k) { t.until = s.now; return; }
-  t.tool = k; t.phase = 'back'; t.tx = q.x; t.ty = q.y; t.why = `Bär mat till ${q.name}`;
+  t.tool = k; t.phase = 'back'; t.tx = q.x; t.ty = q.y; t.why = ved ? `Bär ved till ${q.name}` : `Bär mat till ${q.name}`;
 }
-// framme hos fången (LAMNA i steg.ts): hen äter portionen
+// framme hos fången (LAMNA i steg.ts): hen äter portionen, eller veden tänds och brinner FANG.eldTim timmar
 export function matFram(s: State, p: Person, t: import('./typer').Task) {
   const q = byId(s, t.ref);
-  if (q && t.tool && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { fangelseKrok.ata(s, q, t.tool); think(q, `${p.name} bar mat till mig`, 0.1, s.now, 12 * 3600 * 1000); count(s, 'bar mat till fangen'); }
+  if (q?.fange && t.tool === 'ved' && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { (s.fangEld ??= {})[q.fange.hus] = s.now + FANG.eldTim * HOUR; think(q, `${p.name} tände en eld åt mig`, 0.1, s.now, 12 * HOUR); count(s, 'eld at fangen'); }
+  else if (q && t.tool && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { fangelseKrok.ata(s, q, t.tool); think(q, `${p.name} bar mat till mig`, 0.1, s.now, 12 * HOUR); count(s, 'bar mat till fangen'); }
   p.task = undefined;
 }
 // den som sitter inne och de som vill ut (gränssnittet och scenarierna)

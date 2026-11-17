@@ -1,4 +1,4 @@
-import { KOM, NYSS_HUS, husVisas, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
+import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
 import { cap, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -51,8 +51,15 @@ export const hus: Flik = {
       const txt = Object.entries(per).map(([k, n]) => `${fmtN(n)} ${sakNamn(k).toLowerCase()}`).join(', ');
       return `<p>${esc(`${HUR[hur]}: ${txt}`)}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</p>`;
     }).join('');
+    // fångarna (steg 11.12.4): namnet och dygnen kvar, och varför när man trycker
+    const fang = h.fn === 'fangelse' ? fangar(s, h).map(p => {
+      const f = p.fange!, kvar = f.till !== undefined ? Math.max(1, Math.ceil((f.till - s.now) / DAY)) : undefined, id = `fange-${p.id}`;
+      const om = `${f.varfor}. ${kvar !== undefined ? `Släpps om ${kvar} dygn (${kvar} år i spelet).` : 'Ledaren har inte avgjort hur länge än.'}`;
+      return `<li>🔒 ${pLink(p)} <span class="muted">${kvar !== undefined ? `⏳ ${kvar}` : '⏳ ?'}</span> ${hjalpKnapp(id, 'Varför och hur länge')}${hjalpText(id, `<p class="small">${esc(om)}</p>`)}</li>`;
+    }).join('') : '';
+    const fangHtml = h.fn === 'fangelse' ? `<h3>Fångar${fangEldBrinner(s, h.id) ? ' <span title="En liten eld brinner därinne" aria-label="En liten eld brinner">🔥</span>' : ''}</h3>${fang ? `<ul class="fangar">${fang}</ul>` : '<p class="muted">Ingen sitter här nu.</p>'}` : '';
     return `
     <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${anv ? `<p><span class="etik">Används till</span> ${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p><span class="etik">Rummen</span> ${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p><span class="etik">${dorrar.includes(', ') ? 'Dörrarna' : 'Dörren'}</span> ${dorrar}</p>` : ''}</div>${hjalpKnapp('hus-om', 'Vad gör huset?')}</div>${hjalpText('hus-om', `<p class="muted small">Huset håller värmen och skyddar mot väder och kyla. Rummen används till det byn behöver, och den som äger huset bor där med familjen.</p>`)}
-    <h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
+    ${fangHtml}<h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
   },
 };

@@ -527,7 +527,7 @@ function doma(s: State, l: Person) {
     if (steg === 8) q.utanVard = now + STR.vardDygn * DAY; // ingen vårdar hen under tiden (vardRatt i halsa.ts)
     if (steg === 6) { r.dog = true; q.brottsling = true; kronika(s, `${q.name} dömdes till döden.`, 'ledare'); die(s, q, 'avrattad'); continue; }
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
-    if (steg === 9) { const h = fangelseLedigt(s); if (h) { const dygn = fangelseDygn(vikt); r.dygn = dygn; satt(s, q, h, `Dömd för att ${hon(q)} ${brottText(b)}`, now + dygn * DAY, true); } }
+    if (steg === 9) { const h = fangelseLedigt(s); if (h) { const dygn = fangelseDygn(vikt); r.dygn = dygn; satt(s, q, h, `Dömd för att ${hon(q)} ${brottText(b)}`, now + dygn * DAY, true); q.fange!.av = l.id; } }
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }
     if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad ur byn av ${l.name}.`, [q.id, l.id]); leave(s, q); }
     if (orattvist) {

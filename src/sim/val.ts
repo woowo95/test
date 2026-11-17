@@ -1,4 +1,4 @@
-import { fangeVal, matTillFange } from './fangelse';
+import { FANG, besokVal, fangeVal, matTillFange } from './fangelse';
 import { heligtAvstar } from './kultlatt';
 import { hoVal } from './djurtorst';
 import { TATU, TATUERINGAR, tatVal } from './tatuering';
@@ -662,7 +662,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'fryserFarligtInne', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && bedTile(s, p) !== undefined && set(v, 'vila', 'Fryser farligt och går in i huset') },
   { id: 'varda', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
   { id: 'vatten', niva: 2, prova: ({ s, p, v }) => hamtaVatten(s, p, v) }, // vatten i säcken åt den som inte kan gå (steg 2.10.1)
-  { id: 'barmat', niva: 2, prova: ({ s, p, v }) => { const d = matTillFange(s, p); if (!d) return false; v.spot = d.spot; v.ref = d.ref; v.dur = MIN; return set(v, 'barmat', d.why); } }, // mat till fången (steg 11.12.2, fangelse.ts)
+  { id: 'barmat', niva: 2, prova: ({ s, p, v }) => { const d = matTillFange(s, p); if (!d) return false; v.spot = d.spot; v.ref = d.ref; v.dur = MIN; if (d.ved) v.tool = 'ved'; return set(v, 'barmat', d.why); } }, // mat till fången (steg 11.12.2, fangelse.ts)
   // 3 Tillfälle (steg 6.1.14): det som går förlorat om ingen tar det nu. Den som ska följa med på vargjakten (varg.ts) går
   { id: 'vargjakt', niva: 3, prova: ({ s, p, v }) => {
     const j = vargjaktVal(s, p);
@@ -1357,6 +1357,9 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const wt = tittaVikt(s, p, calm); // att titta på matchen (steg 10.7.16)
   // besöket vid graven (steg 10.4.8): lusten är bandet till den döda, bredvid vilan och umgänget
   const gb = gravbesokVal(s, p);
+  // besöket vid fängelsets dörr (steg 11.12.4): familj och vänner går dit och pratar, bredvid vilan och umgänget
+  const fb = besokVal(s, p);
+  if (fb && rnd(s, 'val', p) < fb.w / (fb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'besokFange', fb.why); v.spot = fb.spot; v.ref = fb.ref; v.dur = FANG.besokMin * MIN; return; }
   if (gb && rnd(s, 'val', p) < gb.w / (gb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'gravbesok', gb.why); v.spot = gb.spot; v.ref = gb.vem; v.tool = gb.laga ? 'laga' : undefined; v.dur = gb.min * MIN; return; }
   // bönen (steg 8.5.2): lusten följer andligheten, bredvid vilan och umgänget
   if (rnd(s, 'val', p) < bonVikt(s, p) / (bonVikt(s, p) + wv + wh + wsoc + wp + 1e-9)) {

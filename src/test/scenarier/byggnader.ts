@@ -1111,6 +1111,52 @@ SCENARIER.fangemat = {
   },
 };
 
+SCENARIER.fangeliv = {
+  env: { BALANS: 'fangelse.bryt=99' }, // ingen rymmer: här prövas dygnen inne
+  text: 'Fångens dygn (steg 11.12.4, fangelse.ts): tanken Sitter inlåst växer för varje dygn inne, en vän går till dörren och pratar genom den, den som bryr sig om en fånge som fryser bär dit ved och tänder en liten eld (en främling gör det inte), tiden inne blir en upplevelse som är starkare ju fler dygn, och huset visar vem som sitter där, varför och hur länge till',
+  kor: () => {
+    const s = createState(6, START); klockan(s, 10); medHus(s);
+    const h = housesOf(s)[0]!; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; touch(s);
+    setFood(s, 30); tandEld(s); setAmount(s, 'ved', 10); nyInvanare(s, 'm', 30); nyInvanare(s, 'k', 30);
+    const vuxna = living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen), [a, mor, van] = vuxna as [Person, Person, Person];
+    a.mother = mor.id; a.partner = undefined; mor.partner = undefined; van.partner = undefined;
+    const fr = vuxna.filter(q => q !== a && q !== mor && q !== van);
+    SIM.satt(s, a, h, 'Dömd för att hen slog ihjäl någon', s.now + 3 * DAY);
+    // tanken: efter ett dygn inne väger den mer
+    SIM.fangeVal(s, a); const t0 = a.thoughts.find(x => x.text === 'Sitter inlåst')?.v ?? 0;
+    a.fange!.t = s.now - 1.2 * DAY; SIM.fangeVal(s, a); const t1 = a.thoughts.find(x => x.text === 'Sitter inlåst')?.v ?? 0;
+    a.fange!.t = s.now;
+    // vännen går till dörren och pratar
+    const rel = (SIM.getRel(s, a, van)); rel.op = 60;
+    const b = SIM.besokVal(s, van), bf = fr.every(q => !SIM.besokVal(s, q));
+    const talks0 = rel.talks;
+    if (b) van.task = { act: 'besokFange', phase: 'go', tx: b.spot.x, ty: b.spot.y, until: s.now + 20 * MIN, carry: 0, ref: b.ref, why: b.why, dark: false } as Task;
+    kor(s, 0.5);
+    const pratade = rel.talks - talks0;
+    // elden: modern bär ved åt sonen som fryser, en främling inte
+    a.warm = 0.2; a.hunger = 1;
+    const vMor = SIM.matTillFange(s, mor), vFr = fr.map(q => SIM.matTillFange(s, q)).filter(x => x?.ref === a.id);
+    let eld = false;
+    kor(s, 3, v => { if (SIM.fangEldBrinner(v, h.id)) eld = true; a.hunger = 1; });
+    // rutan
+    utanWebblasare(); setByn(s); ui.husId = h.id;
+    const html = husFlik.html();
+    // upplevelsen: samma person fem dygn inne och ett dygn inne (i en kopia av byn, så att slumpen väljer samma slag)
+    const x = fr[0]!;
+    SIM.satt(s, x, h, 'Dömd', s.now + DAY);
+    const s2 = cloneState(s), y = s2.people.find(q => q.id === x.id)!;
+    x.fange!.t = s.now - 5 * DAY; y.fange!.t = s2.now - DAY;
+    SIM.slapps(s, x); SIM.slapps(s2, y);
+    const st = (q: Person) => Object.values(q.upp?.find(u => u.k === 'fangelse')?.e ?? {}).reduce((n, v) => n + Math.abs(v ?? 0), 0);
+    return [
+      [`tanken Sitter inlåst väger mer efter ett dygn (${t0} → ${t1})`, t0 < 0 && t1 < t0],
+      [`en vän vill gå till dörren, en främling inte, och samtalet räknas (${pratade} samtal genom dörren)`, !!b && bf && pratade >= 1],
+      [`modern bär ved åt sonen som fryser, en främling inte, och en liten eld brinner i fängelset`, vMor?.ved === true && !vFr.length && eld],
+      [`den som suttit fem dygn får en starkare upplevelse (${st(x)}) än den som suttit ett (${st(y)})`, st(y) > 0 && st(x) > st(y)],
+      ['rutan visar fången, dygnen kvar och varför vid tryck', html.includes(a.name) && /⏳ 3/.test(html) && html.includes('data-hjalp="fange-')],
+    ];
+  },
+};
 SCENARIER.vilafart = {
   text: 'Vilan går fortare (steg 11.1.72): den som sover i en bädd är utvilad på ungefär en åttondel av dygnet (tre timmar, en och en halv månad i spelet), golvet och marken ger mindre i samma förhållande, och vilan räknas i sömn, trötthet och pauser när inget annat lockar',
   kor: () => {

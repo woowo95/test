@@ -111,6 +111,7 @@ export const UPPLEVELSER = {
   byggdeHus: { text: 'Byggde {om} tillsammans med andra', chans: 0.5, e: [{ empati: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 1 }, kort: 'Byggde ett hus tillsammans med andra' },
   forstaMastare: { text: 'Såg {om} bli byns första mästare', chans: 0.3, e: [{ nyfikenhet: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { nyfikenhet: 1 }, kort: 'Såg någon bli byns första mästare' },
   overflod: { text: 'Levde i överflöd', chans: 0.01, e: [{ flit: -1 }, { karisma: 1 }], vem: 'bada', vuxenTal: true, sed: { arbete: -1 } },
+  fangelse: { text: 'Satt i fängelset {om}', kort: 'Satt i fängelset', chans: 1, e: [{ mod: -1 }, { aggression: 1, empati: -1 }, { flit: 1 }, { mod: -1, karisma: -1 }], vem: 'bada', sed: { forsiktighet: 1, rang: -1 }, vuxenTal: true, ande: true, tung: true }, // tiden inne när fången släpps (steg 11.12.4, fangelse.ts): en kan bli försiktigare, en annan bittrare
   sorjde: { text: 'Sörjde {om}', chans: 0.5, e: [{ empati: 1 }, { mod: -1 }], vem: 'bada', vuxenTal: true, ande: true, sed: { forsiktighet: 1 }, kort: 'Sörjde någon' },
 } satisfies Record<string, UpplevelseDef>;
 export type UpplevelseTyp = keyof typeof UPPLEVELSER;
@@ -154,13 +155,15 @@ function effektFor(d: UpplevelseDef, e: Partial<Record<Stat, number>>, vuxen: bo
 // p var med om k (om = vad eller vem det gällde). Barn och vuxna formas efter raden (vem), varje slag en gång i barndomen och en
 // gång i vuxenlivet; det fastnar med chansen i registret. Drar ur personens egen slumpföljd, så att inget annat ändras
 export const tatKrok = { upplev: (_s: State, _p: Person, _k: string) => {}, vuxen: (_s: State, _p: Person) => {} };
-export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string) {
+// ggr (steg 11.12.4): en starkare upplevelse, effekten gånger så här mycket (fängelset efter dygnen inne)
+export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr = 1) {
   const d: UpplevelseDef = DEF[k];
   if (!alive(p)) return;
   const vuxen = !formas(s, p);
   if (d.vem === (vuxen ? 'barn' : 'vuxen') || (!vuxen && !d.tidig && ageOf(p, s.now) < UPPV.fran) || p.upp?.some(u => u.k === k && vuxenUpp(u) === vuxen)) return;
   if (rnd(s, 'uppvaxt', p) >= chansFor(d, vuxen)) return;
-  const u: Upplevelse = { k, a: Math.floor(ageOf(p, s.now)), e: effektFor(d, pick(s, d.e, 'uppvaxt', p), vuxen), ...om ? { om } : {}, ...vuxen ? { v: 1 as const, t: s.now } : {} };
+  const e0 = effektFor(d, pick(s, d.e, 'uppvaxt', p), vuxen), e = ggr === 1 ? e0 : Object.fromEntries(Object.entries(e0).map(([x, v]) => [x, Math.round((v ?? 0) * ggr)])) as typeof e0;
+  const u: Upplevelse = { k, a: Math.floor(ageOf(p, s.now)), e, ...om ? { om } : {}, ...vuxen ? { v: 1 as const, t: s.now } : {} };
   if (d.ande) u.n = andeRiktning(s, p, vuxen); // andligheten (steg 4.1.1.3)
   const lista = [...p.upp ?? [], u];
   if (lista.filter(x => vuxenUpp(x) === vuxen).length > (vuxen ? UPPV.vuxenMax : UPPV.max)) {

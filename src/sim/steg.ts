@@ -103,7 +103,7 @@ import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
-import { brytKlar, fangelseKrok, matFram, matTagen } from './fangelse';
+import { FANG, brytKlar, fangEldBrinner, fangelseKrok, matFram, matTagen } from './fangelse';
 import { akel, latrinLedigNara, latrinUpptagen, latrinVanta, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
@@ -252,9 +252,10 @@ fangelseKrok.larma = (s, p) => { larma(s, 'rymning', 1, [p]); };
 fangelseKrok.brott = (s, p) => { handelse(s, p, 'rymning'); };
 fangelseKrok.brinner = (s, x, y) => brandHetta(s, x, y) > 0;
 // maten till fången (steg 11.12.2): den närmaste stacken med mat, en hel portion av det som finns (hela resurser), och måltiden
-fangelseKrok.matStack = (s, p) => { let b: { x: number; y: number } | undefined, bd = Infinity; for (const a of stacksOf(s)) if (isFood(a.k) && a.n >= 1 && isStored(s, a.x, a.y)) { const d = Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y); if (d < bd) { bd = d; b = { x: a.x + 0.5, y: a.y + 0.5 }; } } return b; };
-fangelseKrok.taMat = (s, p) => { const k = FOOD.find(f => amountOf(s, f) >= 1); if (!k) return undefined; use(s, p, k, 1, true); return k; };
+fangelseKrok.matStack = (s, p, ved) => { let b: { x: number; y: number } | undefined, bd = Infinity; for (const a of stacksOf(s)) if ((ved ? a.k === 'ved' : isFood(a.k)) && a.n >= 1 && isStored(s, a.x, a.y)) { const d = Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y); if (d < bd) { bd = d; b = { x: a.x + 0.5, y: a.y + 0.5 }; } } return b; };
+fangelseKrok.taMat = (s, p, ved) => { const k = ved ? (amountOf(s, 'ved') >= 1 ? 'ved' : undefined) : FOOD.find(f => amountOf(s, f) >= 1); if (!k) return undefined; use(s, p, k, 1, true); return k; };
 fangelseKrok.ata = (s, q, k) => ataPortion(s, q, k);
+fangelseKrok.upplev = (s, p, om, ggr) => upplev(s, p, 'fangelse', om, ggr); // tiden inne (steg 11.12.4)
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
@@ -644,7 +645,7 @@ export const takEffekt = (s: State, p: Person, tak: ReturnType<typeof viloTak>) 
 // värmen per timme: elden, kylan (det huset, skinnfällen och kläderna skyddar är borta) och milt väder. inRum = hur många som är i varje rum.
 // Över idealet (steg 2.3.4): solen (inte i skugga: i ett hus eller under ett träd), kläderna när det är milt och elden tätt intill
 export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>, temp = temperature(s)) {
-  const rum = roomAt(s, p.x, p.y), brand = rum ? 0 : brandHetta(s, p.x, p.y), heat = Math.max(heatAt(s, p.x, p.y), brand), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0; // branden värmer som lägerelden tätt intill (steg 9.2.135)
+  const rum = roomAt(s, p.x, p.y), brand = rum ? 0 : brandHetta(s, p.x, p.y), heat = Math.max(heatAt(s, p.x, p.y), brand, rum?.hus !== undefined && s.fangEld && fangEldBrinner(s, rum.hus) ? FANG.eldHeat : 0), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0; // branden värmer som lägerelden tätt intill (steg 9.2.135)
   const fall = tillbehorVarme(s, p, rum); // skinnfällen i bädden (steg 2.2.14)
   const klad = kladVarme(s, p); // kläderna (steg 2.3.2)
   const skugga = !!rum || groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga;

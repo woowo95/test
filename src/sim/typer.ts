@@ -244,7 +244,7 @@ export interface Person {
   byteNej?: Record<number, number>; // den som sagt nej till ett byte, och till när man inte frågar hen igen (steg 10.2.102)
   langtan?: Partial<Record<import('./naring').Naring, number>>; // vad andra berättat att de längtar efter, och till när man minns det (steg 2.6.2)
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
-  fange?: { hus: number; t: number; varfor: string; till?: number }; // sitter i fängelset (steg 11.12.1, fangelse.ts): huset, sedan när, varför och när hen släpps
+  fange?: { hus: number; t: number; varfor: string; till?: number; av?: number }; // sitter i fängelset (steg 11.12.1, fangelse.ts): huset, sedan när, varför, när hen släpps och vem som dömde (steg 11.12.4)
   paus?: number; // timmarna av vilan som var pauser när inget annat lockade, bleknar som vanorna (steg 11.1.72; resten av vilan är trötthet)
   sjuk?: import('./sjukdom').Sjuk; immun?: Record<string, 1>; // sjukdomen hen har och de hen är immun mot (steg 9.5.1, sjukdom.ts)
   sickUntil?: number; sickWhy?: string; poisonUntil?: number; stulet?: { av: number; k: string; n: number; l?: boolean }[]; pregnantSince?: number; pregnantBy?: number; lastBirth?: number; guardDay?: number; // pregnantBy: barnets far; guardDay: dygnet hen valdes till nattens vakt
@@ -409,6 +409,7 @@ export interface State {
   vader?: import('./vader').VaderMinne; // fukten och snön på marken (steg 2.11.1, vader.ts)
   is?: import('./is').IsMinne; // vattnets temperatur och isens tjocklek (steg 2.11.3, is.ts)
   brasa?: { vill: number; x: number; y: number }; // byn vill ha en lägereld till (0 till 1) nära mitten av sovplatserna x, y (brasor.ts, räknas varje timme)
+  fangEld?: Record<number, number>; // den lilla elden i fängelset (steg 11.12.4, fangelse.ts): huset → när den brunnit ut
   eldar?: Fire[]; // lägereldarna efter den första (s.fire), med plats (at) och nummer (id), steg 4.5.6.8 (eld.ts, brasor.ts)
   flackar?: import('./smuts').Flack[]; // fläckar på marken som bleknar: toa-smutsen (smuts.ts)
   smutsMat?: Record<string, number>; // så mycket av förrådets mat (saken → mängd, vägd efter smutsen) som plockats där det var toa-smuts (steg 10.11.14)
