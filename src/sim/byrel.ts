@@ -87,6 +87,16 @@ export function klanHandelse(vl: Varlden | undefined, k: Klan, id: ByHandelseId,
   if (vl && vl.huvud !== undefined && k.rad !== undefined) byHandelse(vl, id, vl.huvud, k.rad, mangd);
   else { const h: ByHandelse = BYHANDELSER[id]; andraInst(k, h.tecken * BYREL[h.tal] * mangd); }
 }
+// ledaren i byn nr byts (radperson.ts, steg 11.3.10): hälften av mutornas verkan på byns syn faller bort
+export function ledarBytet(vl: Varlden, nr: number) {
+  for (const k of Object.keys(vl.mutor ?? {})) {
+    const [a, b] = k.split('>').map(Number);
+    if (a !== nr) continue;
+    const m = vl.mutor![k], bort = Math.trunc(m / 2), v = relation(vl, a, b);
+    if (v !== undefined) satt(vl, a, b, v - bort);
+    if (m - bort) vl.mutor![k] = m - bort; else delete vl.mutor![k];
+  }
+}
 // en gång om dygnet (ett år i spelet): varje relation glöms mot grundläget, minst ett steg
 const glom = (v: number, mal: number) => v === mal ? v : v - Math.sign(v - mal) * Math.min(Math.abs(v - mal), Math.max(1, Math.round(Math.abs(v - mal) * BYREL.glom)));
 export function relGlom(vl: Varlden) {

@@ -321,6 +321,16 @@ const nyEgenskap = (s: State, f: Strom) => {
 // egenskaperna som kom senare slumpas ur en egen följd, så att följden folk (och alla nya människor) blev som förut
 const SENARE: Stat[] = ['smidighet', 'aggression'];
 
+// en persons egenskaper och namn ur ett slumptal 0–1 (r), utan någon av byns slumpföljder: en fast person i världen
+// (radperson.ts, steg 11.3.10) byggs så ur sin nyckel, med samma fördelning som en nykomling i byn
+export function egenskaperUr(r: () => number): Record<Stat, number> {
+  const pot = {} as Record<Stat, number>, balanserad = r() < EGENSKAP.balanserad;
+  const g = () => Math.sqrt(-2 * Math.log(Math.max(1e-12, r()))) * Math.cos(2 * Math.PI * r());
+  for (const k of STATS) pot[k] = clamp(balanserad ? EGENSKAP.mitt + g() * EGENSKAP.balanseradVidd : EGENSKAP.mitt + (r() < 0.5 ? -1 : 1) * Math.pow(r(), EGENSKAP.utprag) * EGENSKAP.vidd, 1, 20);
+  return pot;
+}
+export const namnUr = (sex: 'm' | 'k', r: () => number) => { const p = <X>(l: X[]) => l[Math.floor(r() * l.length)]; return stor(foga(p(N1), r() < 0.7 ? p(N2) : '', p(sex === 'k' ? NK : NM))); };
+
 export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Person, father?: Person): Person {
   const pot = {} as Record<Stat, number>;
   const balanserad = !mother || !father ? rnd(s, 'folk') < EGENSKAP.balanserad : false;

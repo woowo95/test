@@ -42,7 +42,7 @@ export const BYSORT_IDS = Object.keys(BYSORTER) as BysortId[];
 
 // en fast person i liten form: namn, kön, född och roll (ledaren, en handlare eller någon huvudbyn träffat); id när personen
 // finns i en by som går i simuleringen. Resten byggs ur raden när personen behövs (fas 11.3)
-export interface FastPerson { namn: string; kon: 'm' | 'k'; fodd: number; roll: 'ledare' | 'handlare' | 'mott'; id?: number }
+export interface FastPerson { namn: string; kon: 'm' | 'k'; fodd: number; roll: 'ledare' | 'handlare' | 'mott'; id?: number; nyckel?: number; dor?: number } // nyckel och dor (dödsdagen): en fast person i en by i världen (radperson.ts, steg 11.3.10)
 // tron i raden: namnet, andelen troende i procent och läggningen från fridsam (0) till krigisk (100)
 export interface RadTro { namn: string; andel: number; krig: number }
 

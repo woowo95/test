@@ -168,3 +168,4 @@ export * from './sim/rad';
 export * from './sim/byrel';
 export * from './sim/byflytt';
 export * from './sim/giftermal';
+export * from './sim/radperson';

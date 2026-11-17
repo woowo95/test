@@ -979,3 +979,47 @@ SCENARIER.radkunskap = {
     ];
   },
 };
+
+SCENARIER.radledare = {
+  text: 'Ledaren och de fasta personerna (steg 11.3.10, radperson.ts): ledaren med en bybos egenskaper ur sin nyckel, bytet vid en känd tid och mutorna som förlorar hälften av sin verkan',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    // samma nyckel ger samma person
+    const a = SIM.fastUr(12345, s.now, 'ledare'), b = SIM.fastUr(12345, s.now, 'ledare'), c = SIM.fastUr(54321, s.now, 'ledare');
+    const lika = JSON.stringify([a, SIM.fastEgenskaper(a)]) === JSON.stringify([b, SIM.fastEgenskaper(b)]);
+    const olika = JSON.stringify([a, SIM.fastEgenskaper(a)]) !== JSON.stringify([c, SIM.fastEgenskaper(c)]);
+    const eg = SIM.fastEgenskaper(a)!, egOk = SIM.STATS.every(k => eg[k] >= 1 && eg[k] <= 20);
+    // hur gamla ledarna blir: 400 nycklar
+    const aldrar = Array.from({ length: 400 }, (_, i) => { const f = SIM.fastUr(i * 7919 + 1, 0, 'ledare'); return (f.dor! - f.fodd) / SIM.DAY; }).sort((x, y) => x - y);
+    const median = aldrar[200];
+    // världen: varje by med en ledare får en efter en timme, den första är hövdingen huvudbyn känner
+    s.now += 3600e3; SIM.varldSteg(s);
+    const med = vl.rader!.filter(r => SIM.lever(vl, r) && SIM.BYSORTER[r.sort].ledare);
+    const alla = med.every(r => SIM.radLedare(r)?.roll === 'ledare');
+    const r = med.find(x => x.syn)!, l0 = SIM.radLedare(r)!;
+    const hovding = r.syn!.personer.find(q => q.roll === 'hovding');
+    // en muta före bytet
+    SIM.byHandelse(vl, 'muta', vl.huvud!, r.nr, 4);
+    const muta = vl.mutor![`${r.nr}>${vl.huvud}`], inst0 = r.syn!.inst;
+    // hållningen direkt: bytet tar bort hälften av mutan
+    const kopia = structuredClone({ rader: vl.rader, mutor: vl.mutor, huvud: vl.huvud }) as typeof vl, kr = kopia.rader!.find(x => x.nr === r.nr)!;
+    SIM.ledarBytet(kopia, r.nr);
+    const instDirekt = kr.syn!.inst;
+    // ledaren dör vid sin tid
+    const k0 = (vl.kronika ?? []).length;
+    s.now = l0.dor! + 1; r.tal.folk = Math.max(r.tal.folk, 10);
+    SIM.varldSteg(s);
+    const l1 = SIM.radLedare(r);
+    const krona = (vl.kronika ?? []).slice(k0).some(h => h.k === 'nyLedare' && h.by === r.nr);
+    const nyH = r.syn!.personer.filter(q => q.roll === 'hovding');
+    return [
+      ['samma nyckel ger samma person, en annan nyckel en annan', lika && olika],
+      [`egenskaperna är en bybos (1–20): ${SIM.STATS.slice(0, 4).map(k => `${k} ${Math.round(eg[k])}`).join(', ')} …`, egOk],
+      [`ledarna blir som byborna gamla: median ${Math.round(median)} år (fjärdedelarna ${Math.round(aldrar[100])}–${Math.round(aldrar[300])})`, median > 50 && median < 90 && aldrar[0] >= SIM.RADPERSON.ledareFran],
+      [`varje by som ska ha en ledare har en efter en timme (${med.length} byar), och den första är hövdingen huvudbyn känner (${l0.namn})`, alla && !!hovding && hovding.namn === l0.namn],
+      [`ledaren byts när hen dör (${l0.namn} → ${l1?.namn}), vid den kända tiden, och världens krönika får Ny ledare`, !!l1 && l1.nyckel !== l0.nyckel && l1.fodd < s.now && krona && r.fasta.length === 1],
+      [`den nya ledaren är hövding i huvudbyns förbindelse (${nyH.map(q => q.namn).join(', ')})`, nyH.length === 1 && nyH[0].namn === l1?.namn],
+      [`mutan förlorar hälften av sin verkan (${muta} → ${vl.mutor?.[`${r.nr}>${vl.huvud}`] ?? 0}, hållningen ${inst0} → ${instDirekt})`, (vl.mutor?.[`${r.nr}>${vl.huvud}`] ?? 0) === muta - Math.trunc(muta / 2) && instDirekt === inst0 - Math.trunc(muta / 2)],
+    ];
+  },
+};
