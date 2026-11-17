@@ -3,7 +3,7 @@ import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER } from './klocka';
-import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think, paKartan } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
@@ -445,7 +445,7 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
   const h = s.handlare;
   if (!h || (h.fas !== 'vantar' && h.fas !== 'handlar')) return;
   for (const p of s.people) {
-    if (!alive(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - hp(s, h).x, p.y - hp(s, h).y) >= SAMTAL.radie) continue;
+    if (!paKartan(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - hp(s, h).x, p.y - hp(s, h).y) >= SAMTAL.radie) continue;
     if (!isSocial(p) || h.affar) continue; // den som handlar och handlaren pratar bara om affären (steg 4.5.7.5)
     if (rnd(s, 'handel', p) >= dtSec / HANDEL.pratSek) continue;
     const out = (stat(p, 'empati', s.now) + hp(s, h).skill.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;

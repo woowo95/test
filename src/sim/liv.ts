@@ -215,7 +215,7 @@ export const barnMat = (s: State, pop: number) => 1 - LIV.barnMatTapp * (1 - mat
 export const hungerFlytt = (s: State, pop: number) => LIV.hungerTakt * (1 - matGott(s)) * clamp((pop - LIV.hungerFran) / LIV.hungerSpann, 0, 1); // flyttar per dygn
 export function regulate(s: State, dtSec: number) {
   const pop = living(s).length;
-  if (pop === 0) { refound(s); return; }
+  if (pop === 0) { if (!s.people.some(alive)) refound(s); return; } // byn är tom bara när ingen bybo lever, inte när alla är borta (steg 11.2.4)
   const fd = foodDays(s);
   s.matSnitt = s.matSnitt === undefined ? fd : s.matSnitt + (fd - s.matSnitt) * Math.min(1, dtSec * SEC / (LIV.matSnittDygn * DAY));
   if (rnd(s, 'flytt') < dtSec / HOUR_S) { // humöret räknas om ungefär en gång i timmen

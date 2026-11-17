@@ -6,7 +6,7 @@
 import { DAY, Person, State } from './typer';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, stat, think, paKartan } from './folk';
 import { kronika } from './historik';
 import { ljugOm } from './rykten';
 import { SED_LIST, drar, influence } from './seder';
@@ -81,7 +81,7 @@ type Viktad = { p: Person; w: number; andel: number };
 export function vikter(s: State): Viktad[] {
   const sv = s.seder.v, st = s.styre, key = `${Math.floor(s.now / 3600000)}:${st?.ledare}:${st?.oppna.length}:${Object.keys(st?.ministrar ?? {}).length}:${sv.rang}:${sv.fortjanst}:${sv.fejd}:${sv.gemenskap}:${sv.andlig}:${s.people.length}:${st?.lagar?.length}:${s.tron?.length}`; // de döda och de som flyttat sållas bort nedan
   const c = vikterCache.get(s);
-  if (c?.key === key && c.v.every(x => alive(x.p))) return c.v;
+  if (c?.key === key && c.v.every(x => paKartan(x.p))) return c.v; // också den som gått bort ur byn (steg 11.2.4)
   const v = raknaVikter(s);
   vikterCache.set(s, { key, v });
   return v;

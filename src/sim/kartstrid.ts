@@ -15,7 +15,7 @@ import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
 import { GANG } from './gang';
 import { blocked, freeNear } from './byggnad';
-import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat } from './folk';
+import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat, paKartan } from './folk';
 import { KROPPSDELAR, forlora, skada } from './halsa';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
@@ -361,7 +361,7 @@ export function lekSteg(s: State, p: Person, dtSec: number) {
   const h = dtSec / 3600;
   ovning(p, 'traff', SLAGSMAL.kast * h);
   if (rnd(s, 'strid', p) >= SLAGSMAL.lek * h || kartStridAv(s, p)) return;
-  const andra = s.people.filter(q => q !== p && q.health > 0 && alive(q) && q.task?.act === 'leka' && q.task.phase === 'do' && Math.hypot(q.x - p.x, q.y - p.y) <= SLAGSMAL.lekNara && !kartStridAv(s, q));
+  const andra = s.people.filter(q => q !== p && q.health > 0 && paKartan(q) && q.task?.act === 'leka' && q.task.phase === 'do' && Math.hypot(q.x - p.x, q.y - p.y) <= SLAGSMAL.lekNara && !kartStridAv(s, q));
   if (!andra.length) return;
   kartStridBorja(s, 'lek', [[p], [andra[Math.floor(rnd(s, 'strid', p) * andra.length)]]], 'på lek');
 }

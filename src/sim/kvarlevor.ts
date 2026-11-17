@@ -3,7 +3,7 @@
 // (`se`, svagare för en kroppsdel än för en kropp).
 import { DAY, HOUR, Person, State } from './typer';
 import { balans } from './balans';
-import { alive, byId, isParent, living, relKey, think } from './folk';
+import { alive, byId, isParent, living, relKey, think, paKartan } from './folk';
 import { upplev } from './uppvaxt';
 
 export const KVAR = balans('kvar', {
@@ -45,7 +45,7 @@ export function kvarTimme(s: State) {
   for (const q of s.kvarlevor) {
     const d: KvarDef = KVARLEVOR[q.k];
     if (q.bars !== undefined) continue;
-    if (q.k === 'skandad') { for (const p of s.people) if (p.died === undefined && p.id !== q.vem && Math.hypot(p.x - q.x, p.y - q.y) <= KVAR.seR) sagSkandad(s, p, q); continue; }
+    if (q.k === 'skandad') { for (const p of s.people) if (paKartan(p) && p.id !== q.vem && Math.hypot(p.x - q.x, p.y - q.y) <= KVAR.seR) sagSkandad(s, p, q); continue; }
     for (const p of living(s)) if (p.id !== q.vem && Math.hypot(p.x - q.x, p.y - q.y) <= KVAR.seR) {
       const nar = nara(s, p, q.vem); // mer för den som stod den döda nära (steg 8.5.1)
       think(p, nar ? `Såg ${q.namn} ligga där` : d.tanke, d.se * (nar ? KVAR.nara : 1), s.now, KVAR.seTim * HOUR);

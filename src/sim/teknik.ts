@@ -3,7 +3,7 @@ import { personHand } from './personlogg';
 import { TROSKEL } from './forradsmal';
 import { delade, fyll, kronikaBer, larFalt, loggBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, ageOf, alive, byId, count, living, log, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, living, log, stat, think, paKartan } from './folk';
 import { rnd } from './slump';
 import { amountOf, use } from './lager';
 import { SAKER, isTool } from './saker';
@@ -396,7 +396,7 @@ export function arbetaBredvid(s: State, p: Person, tk: Task, dtSec: number) {
     if (mastare && p.lar?.tek !== t.id) continue;
     const m = mastare ? byId(s, p.lar!.av) : undefined;
     const vid = mastare ? (m && alive(m) ? m : undefined)
-      : s.people.find(q => q !== p && alive(q) && knows(q, t.id) && arbetarMed(q, t) && nara(p, q));
+      : s.people.find(q => q !== p && paKartan(q) && knows(q, t.id) && arbetarMed(q, t) && nara(p, q));
     if (!vid) continue;
     p.tek ??= {};
     const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / (mastare ? TEKTAL.larlingTim : TEKTAL.bredvidTim) * (TEKTAL.larBas + stat(p, 'intelligens', s.now) / 20));

@@ -5,7 +5,7 @@ import { overskott } from './teknik';
 // En match i taget: den som har fritid börjar en på en plats i byn eller går med i den som väntar på spelare, och den spelas på
 // dagen. Sporterna är rader i registret SPORTER; föremålen de kräver är saker i saker.ts som byn måste ha.
 import { personHand } from './personlogg';
-import { ALDER, ageOf, alive, byId, count, getRel, living, log, ovning, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, getRel, living, log, ovning, stat, think, paKartan } from './folk';
 import { SAKER, isTool } from './saker';
 import { nTools, ownsFree, tingOf, wearTool } from './agande';
 import { kronika } from './historik';
@@ -228,7 +228,7 @@ export function sportListaVal(s: State, p: Person) {
 // inte ens ett larm avbryter, och är inte rädd för att spela
 function horRopet(s: State, p: Person, q: Person) {
   const a = ageOf(q, s.now), t = q.task;
-  return alive(q) && !q.gast && a >= ALDER.vuxen && a <= SPORT.alderTill && Math.hypot(q.x - p.x, q.y - p.y) <= SPORT.nara && kanGa(q)
+  return paKartan(q) && !q.gast && a >= ALDER.vuxen && a <= SPORT.alderTill && Math.hypot(q.x - p.x, q.y - p.y) <= SPORT.nara && kanGa(q)
     && !(t && (t.act === 'sport' || t.act === 'sova' || t.act === 'badd' || ACTS[t.act]?.fortsatter?.length)) && !kartStridAv(s, q) && !raddFor(s, q, 'sport');
 }
 // chansen att q vill vara med när p samlar: överskottet, kroppen, tycket om p och, för den som arbetar, pliktkänslan

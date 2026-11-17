@@ -1,5 +1,5 @@
 import { liten, talOrd } from './ord';
-import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log } from './folk';
+import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log, paKartan } from './folk';
 import { pick, rnd } from './slump';
 import { DAY, Person, STATS, Stat, State, Upplevelse } from './typer';
 import { roomAt } from './byggnad';
@@ -233,7 +233,7 @@ function blekna(s: State, p: Person) {
 export function stepUppvaxt(s: State) {
   const overflod = foodDays(s) > UPPV.overflodDygn;
   for (const p of s.people) {
-    if (alive(p)) { // det hen överlevt, i alla åldrar (steg 3.9.8)
+    if (paKartan(p)) { // det hen överlevt (i byn; den som är borta, steg 11.2.4), i alla åldrar (steg 3.9.8)
       if (p.hunger <= 0 && p.health < UPPV.naraHalsa) livet(s, p, 'svalt', true);
       if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) livet(s, p, 'frys', true);
       if (svartSjukNu(p, s.now) || isSick(p, s.now) && p.health < UPPV.sjukHalsa) livet(s, p, 'sjuk', true);

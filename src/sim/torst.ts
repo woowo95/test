@@ -8,7 +8,7 @@
 // spädbarnet dricker av sin mor (modern törstar för två), och de små barnen dricker byns drycker när en vuxen av familjen är nära
 import { strandNu } from './sjo';
 import { ACTS } from './handlingar';
-import { ALDER, KROPP, ageOf, alive, byId, count, enTillDar, familjOf, forstaGang, isSick, living, log, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, enTillDar, familjOf, forstaGang, isSick, living, log, think, paKartan } from './folk';
 import { areaOf, findL, observe } from './minne';
 import { magont, vattenSmuts } from './smuts';
 import { getMap, perKarta } from './karta';
@@ -100,7 +100,7 @@ export function torstSteg(s: State, p: Person, a: number, dtSec: number) {
 }
 function smabarnDricker(s: State, p: Person, a: number) {
   const mor = p.mother !== undefined ? byId(s, p.mother) : undefined;
-  if (a < TORST.ammaAr && mor && alive(mor) && Math.hypot(mor.x - p.x, mor.y - p.y) <= TORST.ammaNara) { // modern törstar för två
+  if (a < TORST.ammaAr && mor && paKartan(mor) && Math.hypot(mor.x - p.x, mor.y - p.y) <= TORST.ammaNara) { // modern törstar för två
     mor.torst = Math.max(0, mor.torst - (1 - p.torst) * KROPP.portionBarn); p.torst = 1; count(s, 'ammade'); return;
   }
   if (!hemma(s, p) || !dryckKrok.finns(s)) return;
@@ -233,7 +233,7 @@ const villFylla = (s: State, p: Person) => !fylldSack(s) && enTillDar(s, 'vatten
 // det kärl p bär vatten i (steg 9.4.12): vattensäcken, eller annars en mellanstor lerkruka som i säcken
 export const vattenKarl = (s: State, p: Person) => freeTools(s, p, 'vattensack') >= 1 ? 'vattensack' : freeTools(s, p, 'lerkruka_mellan') >= 1 ? 'lerkruka_mellan' : undefined;
 // spädbarnet vars mor är nära dricker av henne och behöver inget vatten (smabarnDricker)
-const ammas = (s: State, q: Person) => { const m = q.mother !== undefined ? byId(s, q.mother) : undefined; return !!m && alive(m) && Math.hypot(m.x - q.x, m.y - q.y) <= TORST.ammaNara; };
+const ammas = (s: State, q: Person) => { const m = q.mother !== undefined ? byId(s, q.mother) : undefined; return !!m && paKartan(m) && Math.hypot(m.x - q.x, m.y - q.y) <= TORST.ammaNara; };
 export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; falt?: true; karl?: string } | undefined {
   const karl = vattenKarl(s, p); // utan säck eller kruka bärs vattnet i händerna, bara åt en törstig (steg 10.2.35)
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p)) return undefined;
@@ -290,7 +290,7 @@ export function vattenFram(s: State, p: Person, t: Task) {
     p.task = undefined; return;
   }
   const q = byId(s, t.ref);
-  if (q && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
+  if (q && paKartan(q) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
     q.torst = t.tool ? 1 : Math.min(1, q.torst + TORST.hander); // (forstaGang räknar 'bar vatten' varje gång)
     think(q, `${p.name} gav mig vatten`, 0.1, s.now, 12 * HOUR); count(s, t.tool ? 'bar vatten' : 'bar vatten i handerna');
     if (forstaGang(s, 'bar vatten')) log(s, `${p.name} bar vatten ${t.tool === 'vattensack' ? 'i säcken' : t.tool ? 'i en kruka' : 'i händerna'} till ${q.name}, ${ageOf(q, s.now) < ALDER.smabarn ? 'som var för liten att gå själv' : 'som inte kunde gå'}.`, 'world', [p.id, q.id]);

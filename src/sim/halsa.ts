@@ -20,7 +20,7 @@ import { gebinamn } from './berattelser';
 // vilar eller sover, och fortare inne. Smuts och hygien kommer med hygienen (2.7). Fliken Hälsa (steg 2.5.3) läser skadeLista,
 // delSkada och förmågorna (FORMAGOR)
 import { ACTS } from './handlingar';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isParent, livet, living, log, ovning, raddAkt, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isParent, livet, living, log, ovning, raddAkt, think, paKartan } from './folk';
 import { amountOf, avbryt, fetchSpot } from './lager';
 import { fearPlace } from './minne';
 import { SJUK, foljd, ligger } from './sjukdom';
@@ -711,7 +711,7 @@ export function vardMal(s: State, tk: Task) {
 // klart (KLAR i steg.ts): såren trycks på, förband läggs och infekterade sår rengörs. Den som inte kan gå bärs sedan hem
 export function vardKlar(s: State, p: Person, t: Task) {
   const q = byId(s, t.ref);
-  if (!q || !(alive(q) || gastLever(q)) || Math.hypot(q.x - p.x, q.y - p.y) > 2) return;
+  if (!q || !(paKartan(q) || gastLever(q)) || Math.hypot(q.x - p.x, q.y - p.y) > 2) return;
   const b = vardBehov(s, q, p);
   if (!b) return;
   // behandlingarna i registrets ordning: först det som görs på varje sår (dra ut, trycka, förband), sedan amputationen och sist

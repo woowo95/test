@@ -34,3 +34,42 @@ SCENARIER.bortafalt = {
     ];
   },
 };
+
+SCENARIER.borta = {
+  text: 'Borta från byn, genomgången (steg 11.2.4): den som är borta äter, dricker, röstar, smittas och väljs inte i byn, ingen finns på två ställen, och byn grundas inte om när alla är borta',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), folk = SIM.living(s).sort((a, b) => a.id - b.id);
+    const borta = folk.filter((_, i) => i % 2 === 1);
+    for (const p of borta) SIM.gaBort(s, p);
+    const fore = borta.map(p => ({ p, hunger: p.hunger, torst: p.torst, sjuk: JSON.stringify(p.sjuk ?? null), x: p.x, y: p.y }));
+    const roster = () => SIM.vikter(s).map(v => v.p);
+    let pekas = 0, tva = 0, roster0 = 0;
+    const ids = new Set(borta.map(p => p.id));
+    kor(s, 12, () => {
+      for (const q of SIM.living(s)) {
+        if (ids.has(q.id)) tva++;
+        const t = q.task;
+        if (t && [t.med, t.fran, t.bar, t.ref].some(id => ids.has(id as number))) pekas++;
+      }
+      if (roster().some(p => ids.has(p.id))) roster0++;
+    });
+    const orort = fore.every(f => f.p.hunger === f.hunger && f.p.torst === f.torst && JSON.stringify(f.p.sjuk ?? null) === f.sjuk && f.p.x === f.x && f.p.y === f.y);
+    const lever = borta.every(p => SIM.alive(p) && SIM.ute(p) && s.people.includes(p));
+    // alla går bort: byn är inte tom, för byborna lever
+    const alla = SIM.living(s).concat(borta), nr = s.people.length; // också de som fötts medan hälften var borta
+    for (const p of alla) SIM.gaBort(s, p);
+    kor(s, 2);
+    const inteOmgrundad = s.people.length === nr && alla.every(p => SIM.alive(p)) && SIM.living(s).length === 0;
+    for (const p of alla) SIM.kommHem(p, p.x, p.y);
+    kor(s, 1);
+    return [
+      ['de som är borta lever och är bybor', lever],
+      [`den som är borta finns inte bland dem i byn (${tva} gånger)`, tva === 0],
+      [`ingen i byn har ett arbete som pekar på den som är borta (${pekas} gånger)`, pekas === 0],
+      [`den som är borta röstar inte i byn (${roster0} gånger)`, roster0 === 0],
+      ['den som är borta äter, dricker, smittas och flyttar sig inte i byn', orort],
+      ['när alla är borta grundas byn inte om och ingen ny kommer', inteOmgrundad],
+      ['alla kommer hem och är i byn igen', SIM.living(s).length === alla.length],
+    ];
+  },
+};

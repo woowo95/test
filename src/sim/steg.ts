@@ -541,7 +541,7 @@ export const TAKTER: Takt[] = [
   { namn: 'handlarprat', sek: 0, fn: (s, dt, c) => pratMedHandlare(s, dt, c.events) }, // småprat med handlaren (steg 4.5.4.15, handel.ts)
   // relationer bleknar långsamt utan umgänge
   { namn: 'relationerna', sek: 600, fn: (s, dt) => { const k = Math.exp(-STEG.blek * dt / 86400); for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; } } },
-  { namn: 'flytt och nybyggare', sek: 60, fn: (s, dt) => { if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world'); regulate(s, dt); } },
+  { namn: 'flytt och nybyggare', sek: 60, fn: (s, dt) => { if (!s.people.some(alive)) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world'); regulate(s, dt); } },
   { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
   { namn: 'ängen i vägen', sek: 3600, fn: s => { angIVagen(s); } }, // ängen som byn eller ett stråk når flyttas (slatter.ts, steg 10.10.28); sist, så att de andra radernas förskjutning är som förut
   { namn: 'vattenhon', sek: 600, fn: (s, dt) => hoRegn(s, dt) }, // regnet fyller vattenhon (vattenho.ts, steg 10.10.30)

@@ -4,7 +4,7 @@
 import { DAY, MIN, Person, State, W } from './typer';
 import { balans } from './balans';
 import { chance, clamp, rnd } from './slump';
-import { ALDER, ageOf, alive, byId, count, isKin, living, log } from './folk';
+import { ALDER, ageOf, alive, byId, count, isKin, living, log, paKartan } from './folk';
 import { kronika } from './historik';
 import { notis } from './notiser';
 import { Klan, klanById, klanerOf } from './klaner';
@@ -105,7 +105,7 @@ export function radSeger(s: State, f: Rovarflock): boolean {
   const k = klanById(s, f.klan);
   if (f.skal === 'hamnd') {
     const m = byId(s, f.mal);
-    if (m && alive(m) && Math.hypot(m.x - f.x, m.y - f.y) > RADER.hittaNara) { if (f.letat) f.gor = 'letar'; else borjaLeta(s, f, m); return true; } // hen är inte här: hus för hus
+    if (m && alive(m) && (!paKartan(m) || Math.hypot(m.x - f.x, m.y - f.y) > RADER.hittaNara)) { if (f.letat) f.gor = 'letar'; else borjaLeta(s, f, m); return true; } // hen är inte här: hus för hus
     hamndKlar(s, f, m, true);
     return true;
   }
