@@ -2094,3 +2094,63 @@ SCENARIER.vagsjuk = {
     ];
   },
 };
+
+SCENARIER.utvagar = {
+  text: 'När någon blir långsam (steg 11.5.17, UTVAGAR i resa.ts): ledaren väger utvägarna (åka på vagnen, rida på ett djur, bår, släppa utrustning, rasta, vända, lämna personen, fortsätta) med en poäng: resans värde minus dygnen i den fart utvägen ger minus det den kostar. Med en häst rider den skadade, med tre friska bärs hen på en bår, en kall ledare lämnar den hen inte tycker om, och det som släpps blir en gömma på kartan som ligger kvar 20 dygn',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!, v0 = SIM.varldMark(s0)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl0, g.nr)!).filter(p => p && SIM.vagMellan(vl0, v0, hb.y * v0.w + hb.x, p.y * v0.w + p.x, 'fots', s0.now)).sort((x, y) => Math.hypot(y.x - hb.x, y.y - hb.y) - Math.hypot(x.x - hb.x, x.y - hb.y))[0]!;
+    const ny = (antal: number, o: { hast?: boolean; pack?: Record<string, number> } = {}) => {
+      const s = SIM.cloneState(s0), folk = vuxna.slice(0, antal).map(q => s.people.find(x => x.id === q.id)!);
+      const sl = SIM.nyttSallskap(s, folk[0]!, mal.nr, 'handel')!; for (const q of folk.slice(1)) SIM.foljMed(s.varld!, sl, q);
+      for (const x of folk) { SIM.gaBort(s, x); delete x.skador; delete x.sjuk; x.blod = 1; }
+      const v = SIM.varldMark(s)!, vag = SIM.vagMellan(s.varld!, v, hb.y * v.w + hb.x, mal.y * v.w + mal.x, 'fots', s.now)!;
+      sl.skede = 'ute'; sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg };
+      const r = SIM.vagenRutor(s, sl); sl.pos = Math.floor((r.length - 1) * 0.3); sl.ruta = r[sl.pos]; sl.gang = 0;
+      sl.varde = 200; sl.pack = { brod: 60, vattensack: 4, ...o.pack }; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 4, foder: 0 };
+      if (o.hast) {
+        const d: SIM.Tamdjur = { ...(s.tamdjur?.[0] ?? {}), id: 900002, art: 'hast', x: folk[0]!.x, y: folk[0]!.y, fodd: s.now - 5 * SIM.DAY } as SIM.Tamdjur;
+        delete (d as { dog?: number }).dog; (s.tamdjur ??= []).push(d); SIM.djurMed(sl, d.id);
+      }
+      // den sista bröt båda benen
+      const sk = folk[antal - 1]!; for (const del of ['benV', 'benH'] as const) SIM.skada(s, sk, del, 'benbrott', 0.9, 'olycka', 'på resan');
+      return { s, sl, folk, sk };
+    };
+    const forst = (x: { s: SIM.State; sl: SIM.Sallskap }) => SIM.utvagVal(x.s, x.sl)?.val[0]?.id;
+    const visa = (x: { s: SIM.State; sl: SIM.Sallskap }) => SIM.utvagVal(x.s, x.sl)?.val.map(v => `${v.id} ${Math.round(v.sc)}`).join(', ');
+    const hast = ny(2, { hast: true }), bar = ny(4), kall = ny(2), varm = ny(2);
+    const fartSkadad = SIM.personFart(bar.s, bar.sk);
+    kall.folk[0]!.pot.empati = 0; SIM.getRel(kall.s, kall.folk[0]!, kall.sk).op = -100;
+    varm.folk[0]!.pot.empati = 20; SIM.getRel(varm.s, varm.folk[0]!, varm.sk).op = 80;
+    const val = [hast, bar, kall, varm].map(forst), texter = [hast, bar, kall, varm].map(visa);
+    // utfallen genom spelets eget steg
+    const f0 = SIM.sallskapFart(bar.s, bar.sl);
+    const kor = (x: { s: SIM.State }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    kor(bar, 1); const f1 = SIM.sallskapFart(bar.s, bar.sl), buren = bar.sl.buren?.map(b => b[1]).join(',');
+    kor(kall, 1); const ensam = kall.s.varld!.sallskap!.find(x => x !== kall.sl && x.medl.includes(kall.sk.id));
+    // den som läkt går själv igen
+    delete bar.sk.skador; bar.sk.men = []; kor(bar, 1); const gar = !bar.sl.buren;
+    // släppa: en tung last, och det släppta blir en gömma
+    const tung = ny(2, { pack: { sten: 30 } }); delete tung.sk.skador; tung.sl.pack.brod = 6;
+    const lage = SIM.utvagLage(tung.s, tung.sl)!;
+    SIM.UTVAGAR.slappa!.gor(tung.s, tung.sl, lage, tung.s.now);
+    const gm = tung.s.varld!.gommor ?? [];
+    const lastEfter = SIM.lastFart(tung.s, tung.sl);
+    tung.s.now += 21 * SIM.DAY; SIM.resaBehov(tung.s, 600 * SIM.SEC);
+    return [
+      [`ett mål långt bort (${mal.namn})`, !!mal],
+      [`den med brutna ben är långsam (${fartSkadad.toFixed(2)} mot gränsen ${SIM.RESA.langsam})`, fartSkadad < SIM.RESA.langsam],
+      [`med en häst rider den skadade (${val[0]}: ${texter[0]})`, val[0] === 'djur'],
+      [`med tre friska bärs hen på en bår (${val[1]}: ${texter[1]})`, val[1] === 'bar'],
+      [`en kall ledare som inte tycker om hen lämnar hen (${val[2]}: ${texter[2]})`, val[2] === 'lamna'],
+      [`en omtänksam ledare som tycker om hen lämnar hen inte (${val[3]}: ${texter[3]})`, val[3] !== 'lamna'],
+      [`båren: sällskapet går fortare än i den skadades takt (${f0.toFixed(2)} → ${f1.toFixed(2)}, ${buren})`, buren === 'bar' && f1 > f0],
+      [`den som lämnades går hem ensam (${ensam?.skede}, ${kall.sl.medl.includes(kall.sk.id) ? 'kvar' : 'ute ur sällskapet'})`, !!ensam && ensam.skede === 'hemat' && !kall.sl.medl.includes(kall.sk.id)],
+      [`den som läkt går själv igen`, gar],
+      [`den tunga lasten: ${Object.entries(lage.slapp).map(([k, n]) => `${n} ${k}`).join(', ')} släpps (värde ${Math.round(lage.slappVarde)}), lasten bromsar inte längre (${lastEfter.toFixed(2)})`, Object.keys(lage.slapp).length > 0 && lastEfter === 1 && Object.values(lage.slapp).every(Number.isInteger)],
+      [`det släppta blir en gömma på rutan (${gm.length})`, gm.length === 1 && gm[0]!.ruta === tung.sl.ruta],
+      [`gömman är borta efter ${SIM.RESA.gommaDygn} dygn (${tung.s.varld!.gommor?.length ?? 0} kvar)`, !(tung.s.varld!.gommor?.length)],
+    ];
+  },
+};

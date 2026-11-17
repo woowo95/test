@@ -2,7 +2,7 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { s } from './lage';
 import { omUngefar } from './hjalp';
@@ -78,8 +78,21 @@ function sprite(vanster: boolean) {
   return spritar[nyckel] = c;
 }
 const vandrar = new Map<number, boolean>(); // åt vänster senast (står kvar när sällskapet går rakt upp eller ner)
+// gömmorna (steg 11.5.17, platshållare: packningens tecken) under sällskapen
+let gommaBild: HTMLCanvasElement | undefined;
+function ritaGommor(g: CanvasRenderingContext2D) {
+  const vl = s?.varld, v = s && varldMark(s);
+  if (!vl?.gommor?.length || !v) return;
+  if (!gommaBild) {
+    gommaBild = document.createElement('canvas'); gommaBild.width = gommaBild.height = VK;
+    const c = gommaBild.getContext('2d')!, r = TECKEN.packning;
+    for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++) { const k = r[y]?.[x]; if (k && k !== '.') { c.fillStyle = TECKENPAL[k]; c.fillRect(x, y, 1, 1); } }
+  }
+  for (const gm of vl.gommor) g.drawImage(gommaBild, (gm.ruta % v.w) * VK, Math.floor(gm.ruta / v.w) * VK);
+}
 function ritaSallskap(g: CanvasRenderingContext2D) {
   if (!s) return;
+  ritaGommor(g);
   for (const sl of sallskapNu(s.varld)) {
     const l = sallskapLage(s, sl);
     if (!l) continue;
@@ -185,6 +198,11 @@ function rutaHtml(x: number, y: number): string {
     const tab = r.rader.length ? `<table><tr><th></th><th>Byn tror</th><th>Sant nu</th></tr>${r.rader.map(d => `<tr><th>${esc(d.namn)}</th><td>${esc(d.tror ?? '–')}</td><td>${esc(d.sant)}</td></tr>`).join('')}</table>` : '';
     const vem = r.vem.length ? `<div>Vet: ${r.vem.map(esc).join(', ')}</div>` : '';
     delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
+  }
+  const vm = varldMark(s!);
+  for (const gm of vl.gommor ?? []) { // en gömma på rutan (steg 11.5.17)
+    if (!vm || gm.ruta !== y * vm.w + x) continue;
+    delar.push(`<div class="vkPlats"><b>🎒 Gömma</b>: ${Object.entries(gm.saker).map(([k, n]) => `${n} ${esc((SAKER[k]?.namn ?? k).toLowerCase())}`).join(', ')}<div>Gömdes år ${kalender(s!, gm.t).ar}</div></div>`);
   }
   for (const sl of sallskapNu(vl)) { // sällskapet på rutan (steg 11.5.12)
     const l = sallskapLage(s, sl);

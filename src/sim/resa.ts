@@ -113,6 +113,14 @@ export const RESA = balans('resa', {
   orkSvalt: 0.02, // så mycket ork per timme drar hungern när mättnaden är slut
   olyckaObanad: 2, // en olycka är så här mycket vanligare på obanad mark än på stig, led och väg (steg 11.5.16)
   olyckaMin: 0.2, olyckaMax: 0.7, // hur svår skadan blir (som i OLYCKOR: de flesta lätta)
+  langsam: 0.7, // en resenär under den här farten är långsam, och ledaren väger utvägarna i UTVAGAR (steg 11.5.17)
+  utvagOmTim: 12, // så många timmar innan ledaren väger igen
+  personVikt: 60, // en människa som åker på ett djur eller en vagn väger så här mycket (som packningen)
+  barFart: 0.75, // ett sällskap som bär en bår går så här mycket långsammare
+  rastTim: 24, // en rast för att vila upp sig
+  lamnaKost: 150, // det kostar ledaren så mycket att lämna någon (i värde), mer för den som bryr sig och om hen tycker om personen
+  lamnaEmpati: 0.5, lamnaTycke: 1,
+  gommaDygn: 20, // det som släpps ligger i en gömma så här många dygn (år i spelet)
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
@@ -151,7 +159,9 @@ export interface Sallskap {
   berattad?: number; // när resan berättades hemma (steg 11.5.13)
   varde?: number; matNasta?: number; // resans väntade värde (resaPlan), och när ledaren väger nästa gång om maten tar slut (steg 11.5.15)
   forlorat?: number; // timmar i gång som går förlorade: vilse eller ett oväder som väntas ut (steg 11.5.14)
+  buren?: [number, BurenSatt][]; utvagNasta?: number; // de som bärs och hur, och när ledaren väger nästa gång om någon är långsam (steg 11.5.17)
 }
+export type BurenSatt = 'vagn' | 'djur' | 'bar';
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
 export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number }
 
@@ -366,8 +376,8 @@ function rutaNu(s: State, sl: Sallskap) {
 const kortastMat = (sl: Sallskap) => FOOD.filter(k => (sl.pack[k] ?? 0) >= 1).sort((a, b) => (SAKER[a]!.haller ?? 99) - (SAKER[b]!.haller ?? 99))[0];
 function tappa(sl: Sallskap, k: string, n: number) { sl.pack[k] = (sl.pack[k] ?? 0) - n; if (sl.pack[k]! <= 0) delete sl.pack[k]; }
 // sällskapets fart efter orken (en faktor i Farten i tal)
-export const orkFart = (sl: Sallskap) => {
-  const o = sl.behov?.ork ?? 1;
+export const orkFart = (sl: Sallskap, ork?: number) => {
+  const o = ork ?? sl.behov?.ork ?? 1;
   return o >= RESA.orkFartFran ? 1 : RESA.orkFartMin + (1 - RESA.orkFartMin) * Math.max(0, o) / RESA.orkFartFran;
 };
 // tappet i ork per timme en natt utan tak, för hela gruppen (tälten skyddar fyra var)
@@ -384,6 +394,9 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (sl.skede !== 'framme') vagHandelser(s, sl, t, dt);
   if (!PA_VAGEN.includes(sl.skede)) return;
   kropparPaVagen(s, sl, t, dt);
+  if (!PA_VAGEN.includes(sl.skede)) return;
+  if (sl.skede !== 'framme') langsamma(s, sl, t);
+  if (!PA_VAGEN.includes(sl.skede)) return;
   const b = behovOf(sl), tim = dt / HOUR, dag = isLight(t), framme = sl.skede === 'framme', r = rutaNu(s, sl), n = sl.medl.length;
   b.matt = clamp(b.matt - tim / KROPP.hungerTim, 0, 1);
   b.vatska = clamp(b.vatska - tim / TORST.tim * (dag ? 1 : TORST.somn), 0, 1);
@@ -412,6 +425,8 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
 }
 // var tionde minut (TAKTER): sällskapen på vägen, i bitar om högst tio minuter (dt i millisekunder, som s.now)
 export function resaBehov(s: State, dt: number) {
+  const vl = s.varld;
+  if (vl?.gommor?.length) vl.gommor = vl.gommor.filter(g => s.now - g.t < RESA.gommaDygn * DAY); // gömmorna ligger kvar en tid (steg 11.5.17)
   for (const sl of sallskapNu(s.varld)) {
     if (!PA_VAGEN.includes(sl.skede)) continue;
     for (let gjort = 0; gjort < dt - 1e-9;) { const d = Math.min(600 * SEC, dt - gjort); behovBit(s, sl, s.now - dt + gjort + d, d); gjort += d; }
@@ -429,16 +444,23 @@ export function personFart(s: State, p: Person) {
   return Math.min(a < ALDER.vuxen ? RESA.fartBarn : a >= ALDER.gammal ? RESA.fartGammal : 1, 1 - (1 - RESA.fartBen) * ben);
 }
 // packningens vikt (maten väger en per portion, som i packbehov)
-export const packVikt = (sl: Sallskap) => Object.entries(sl.pack).reduce((a, [k, n]) => a + n * (FOOD.includes(k) ? 1 : viktOf(k)), 0);
-export function lastFart(s: State, sl: Sallskap) {
-  const bar = resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
-  const x = bar > 0 ? packVikt(sl) / bar : 1;
+export const packVikt = (sl: Sallskap, pack = sl.pack) => Object.entries(pack).reduce((a, [k, n]) => a + n * (FOOD.includes(k) ? 1 : viktOf(k)), 0);
+// en utväg som prövas (UTVAGAR, steg 11.5.17): de som bärs, den som lämnas, packningen och orken som de blir om den väljs
+export interface FartOm { buren?: [number, BurenSatt][]; utan?: number; pack?: Record<string, number>; ork?: number }
+export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
+  const buren = om.buren ?? sl.buren ?? [], bars = new Set(buren.map(b => b[0])), bar_ = buren.filter(b => b[1] === 'bar').length;
+  const folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id));
+  // den som bärs bär inget; en bår tar två bärares händer, och den som åker på djuret eller vagnen väger som packning
+  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+  const vikt = packVikt(sl, om.pack ?? sl.pack) + RESA.personVikt * (buren.length - bar_);
+  const x = bar > 0 ? vikt / bar : 1;
   return x <= RESA.lastFran ? 1 : Math.max(RESA.lastMin, 1 - (1 - RESA.lastMin) * (x - RESA.lastFran) / (1 - RESA.lastFran));
 }
-export function sallskapFart(s: State, sl: Sallskap) {
-  const folk = resenarer(s, sl), djur = (s.tamdjur ?? []).filter(d => sl.djur.includes(d.id) && d.dog === undefined);
+export function sallskapFart(s: State, sl: Sallskap, om: FartOm = {}) {
+  const buren = om.buren ?? sl.buren ?? [], bars = new Set(buren.map(b => b[0]));
+  const folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id)), djur = (s.tamdjur ?? []).filter(d => sl.djur.includes(d.id) && d.dog === undefined);
   const lang = Math.min(1, ...folk.map(p => personFart(s, p)), ...djur.map(d => tamArt(d.art).snabb ?? 1));
-  return lang * lastFart(s, sl) * (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * orkFart(sl);
+  return lang * (buren.some(b => b[1] === 'bar') ? RESA.barFart : 1) * lastFart(s, sl, om) * (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * orkFart(sl, om.ork);
 }
 // vägen bort till målet eller hem igen
 function satVag(s: State, sl: Sallskap, bort: boolean) {
@@ -1000,4 +1022,118 @@ function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Parameters<typeof 
   die(s, p, orsak);
   count(s, 'resa död');
   dagbok(s, sl, 'dod', `${p.name} dog ${p.cause ?? ''} på vägen.`, t);
+}
+
+// ---------- när någon blir långsam (steg 11.5.17, Flera samhällen: Farten i tal) ----------
+// Sällskapet går i den långsammaste medlemmens fart. Blir någon långsam (under RESA.langsam, t.ex. med skadade ben) väger
+// ledaren utvägarna i registret UTVAGAR med en poäng, som när maten tar slut: värdet av det som återstår av resan minus tiden
+// det tar (dygnen gånger resenärerna gånger RESA.tidKost) minus det utvägen kostar. Varje utväg prövas med den fart den ger
+// (sallskapFart med FartOm). Att lämna någon kostar efter ledarens empati och vad hen tycker om personen. Det som släpps blir
+// en gömma på världskartan, som ligger kvar RESA.gommaDygn dygn. Den som bärs går själv igen när den inte längre är långsam.
+export interface Gomma { ruta: number; saker: Record<string, number>; t: number; by: number }
+export interface UtvagLage { n: number; varde: number; kvar: number; hem: number; f0: number; langsam: Person; led?: Person; slapp: Record<string, number>; slappVarde: number }
+export interface UtvagDef { namn: string; kan?: (s: State, sl: Sallskap, l: UtvagLage) => boolean; om?: (s: State, sl: Sallskap, l: UtvagLage) => FartOm; kost?: (s: State, sl: Sallskap, l: UtvagLage) => number; gor: (s: State, sl: Sallskap, l: UtvagLage, t: number) => void }
+const bara = (sl: Sallskap, l: UtvagLage, hur: BurenSatt): FartOm => ({ buren: [...(sl.buren ?? []), [l.langsam.id, hur]] });
+const bars = (sl: Sallskap, id: number) => sl.buren?.some(b => b[0] === id);
+// ett djur som kan bära en människa till (lasten räknas i lastFart)
+const barDjurFor = (s: State, sl: Sallskap) => sl.djur.some(id => barDjur(s, id) >= RESA.personVikt);
+export const UTVAGAR: Record<string, UtvagDef> = {
+  fortsatta: { namn: 'Fortsätta', gor: (s, sl, l, t) => dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt; sällskapet fortsätter i hens takt.`, t) },
+  vagn: {
+    namn: 'Åka på vagnen', kan: (_s, sl) => sl.fordon.length > 0, om: (_s, sl, l) => bara(sl, l, 'vagn'),
+    gor: (s, sl, l, t) => { (sl.buren ??= []).push([l.langsam.id, 'vagn']); dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt och får åka på vagnen.`, t); },
+  },
+  djur: {
+    namn: 'Rida på ett djur', kan: (s, sl) => barDjurFor(s, sl), om: (_s, sl, l) => bara(sl, l, 'djur'),
+    gor: (s, sl, l, t) => { (sl.buren ??= []).push([l.langsam.id, 'djur']); dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt och får sitta på ett av djuren.`, t); },
+  },
+  bar: {
+    namn: 'Bära på en bår', kan: (s, sl, l) => resenarer(s, sl).filter(p => p !== l.langsam && !bars(sl, p.id) && kanGa(p) && personFart(s, p) >= RESA.langsam).length >= 2 && !sl.buren?.some(b => b[1] === 'bar'),
+    om: (_s, sl, l) => bara(sl, l, 'bar'),
+    gor: (s, sl, l, t) => { (sl.buren ??= []).push([l.langsam.id, 'bar']); dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt; två bär hen på en bår.`, t); },
+  },
+  slappa: {
+    namn: 'Släppa utrustning', kan: (_s, _sl, l) => Object.keys(l.slapp).length > 0, om: (_s, sl, l) => { const pack = { ...sl.pack }; for (const [k, n] of Object.entries(l.slapp)) { pack[k] = (pack[k] ?? 0) - n; if (pack[k]! <= 0) delete pack[k]; } return { pack }; },
+    kost: (_s, _sl, l) => l.slappVarde,
+    gor: (s, sl, l, t) => {
+      const vl = s.varld;
+      if (!vl || sl.ruta === undefined || !Object.keys(l.slapp).length) return;
+      for (const [k, n] of Object.entries(l.slapp)) tappa(sl, k, n);
+      (vl.gommor ??= []).push({ ruta: sl.ruta, saker: { ...l.slapp }, t, by: sl.by });
+      count(s, 'resa gömma');
+      dagbok(s, sl, 'ut', `Lasten var för tung; sällskapet gömde ${Object.entries(l.slapp).map(([k, n]) => `${n} ${(SAKER[k]?.namn ?? k).toLowerCase()}`).join(', ')} vid vägen.`, t);
+    },
+  },
+  rasta: {
+    namn: 'Rasta', kan: (_s, sl) => (sl.behov?.ork ?? 1) < RESA.orkFartFran, om: () => ({ ork: 1 }), kost: (_s, _sl, l) => RESA.rastTim / 24 * l.n * RESA.tidKost,
+    gor: (s, sl, _l, t) => { sl.forlorat = (sl.forlorat ?? 0) + RESA.rastTim; behovOf(sl).ork = 1; dagbok(s, sl, 'ut', `Sällskapet rastade i ${RESA.rastTim} timmar för att vila upp sig.`, t); },
+  },
+  vanda: {
+    namn: 'Vända hem', kan: (_s, sl) => sl.skede === 'ute', kost: (_s, _sl, l) => l.varde + l.hem / Math.max(1e-9, l.f0) * l.n * RESA.tidKost - l.kvar / Math.max(1e-9, l.f0) * l.n * RESA.tidKost, // resan ger inget, och vägen hem kostar i stället
+    gor: (s, sl, l, t) => { vandHem(s, sl); count(s, 'resa vände'); dagbok(s, sl, 'ut', `${l.langsam.name} går för långsamt; sällskapet vände hem.`, t); },
+  },
+  lamna: {
+    namn: 'Lämna personen', kan: (_s, sl, l) => l.langsam.id !== sl.ledare && l.n >= 2, om: (_s, _sl, l) => ({ utan: l.langsam.id }),
+    kost: (s, _sl, l) => RESA.lamnaKost * (l.led ? Math.max(0, 1 + RESA.lamnaEmpati * (stat(l.led, 'empati', s.now) - 10) / 10) * Math.max(0, 1 + RESA.lamnaTycke * getRel(s, l.led, l.langsam).op / 100) : 1),
+    gor: (s, sl, l, t) => lamnaKvar(s, sl, l.langsam, t),
+  },
+};
+export const UTVAG_IDS = Object.keys(UTVAGAR);
+// läget när någon är långsam: den långsammaste som går själv, dygnen kvar (i fart 1) och hem, och det som kan släppas
+export function utvagLage(s: State, sl: Sallskap, t = s.now): UtvagLage | undefined {
+  const folk = resenarer(s, sl).filter(p => !bars(sl, p.id)), langsam = folk.reduce<Person | undefined>((a, p) => !a || personFart(s, p) < personFart(s, a) ? p : a, undefined);
+  if (!langsam) return undefined;
+  const m = matLage(s, sl, t), f0 = sallskapFart(s, sl);
+  const vagKvar = sl.skede === 'hemat' ? m.kvar : m.kvar - RESMAL[sl.skal].stannar; // dygnen i gång, utan tiden framme
+  // det som kan släppas: inte maten, vattnet eller fodret; det som är värt minst per vikt först, tills lasten inte bromsar
+  const slapp: Record<string, number> = {}; let slappVarde = 0;
+  const pack = { ...sl.pack }, saker = Object.keys(pack).filter(k => !FOOD.includes(k) && !['vattensack', 'torrgras', 'talt'].includes(k)).sort((a, b) => grundvarde(a) / Math.max(1e-9, viktOf(a)) - grundvarde(b) / Math.max(1e-9, viktOf(b)) || (a < b ? -1 : 1));
+  for (const k of saker) {
+    while ((pack[k] ?? 0) >= 1 && lastFart(s, sl, { pack }) < 1) { pack[k]! -= 1; slapp[k] = (slapp[k] ?? 0) + 1; slappVarde += grundvarde(k); }
+  }
+  if (lastFart(s, sl, { pack }) < 1) { for (const k of Object.keys(slapp)) delete slapp[k]; slappVarde = 0; } // hjälper det inte släpps inget
+  return { n: folk.length + (sl.buren?.length ?? 0), varde: m.varde, kvar: Math.max(0, vagKvar * f0), hem: m.hem * f0, f0, langsam, led: resenarer(s, sl).find(p => p.id === sl.ledare), slapp, slappVarde };
+}
+// poängen för varje utväg som går: resans värde minus dygnen i den fart utvägen ger minus det den kostar
+export function utvagVal(s: State, sl: Sallskap, t = s.now) {
+  const l = utvagLage(s, sl, t);
+  if (!l) return undefined;
+  const val = UTVAG_IDS.filter(id => UTVAGAR[id]!.kan?.(s, sl, l) ?? true).map(id => {
+    const u = UTVAGAR[id]!, om = u.om?.(s, sl, l) ?? {}, f = sallskapFart(s, sl, om), n = om.utan !== undefined ? l.n - 1 : l.n;
+    return { id, sc: l.varde - l.kvar / Math.max(1e-9, f) * n * RESA.tidKost - (u.kost?.(s, sl, l) ?? 0) };
+  }).sort((a, b) => b.sc - a.sc || (a.id < b.id ? -1 : 1));
+  return { l, val };
+}
+// varje bit: den som bärs och inte längre är långsam går själv, och är någon långsam väger ledaren utvägarna (högst var
+// RESA.utvagOmTim timme)
+function langsamma(s: State, sl: Sallskap, t: number) {
+  if (sl.buren?.length) {
+    sl.buren = sl.buren.filter(([id]) => { const p = s.people.find(q => q.id === id); return !!p && alive(p) && sl.medl.includes(id) && personFart(s, p) < RESA.langsam; });
+    if (!sl.buren.length) delete sl.buren;
+  }
+  if (t < (sl.utvagNasta ?? 0)) return;
+  const folk = resenarer(s, sl).filter(p => !bars(sl, p.id));
+  if (!folk.some(p => personFart(s, p) < RESA.langsam)) return;
+  sl.utvagNasta = t + RESA.utvagOmTim * HOUR;
+  const v = utvagVal(s, sl, t), bast = v?.val[0];
+  if (!v || !bast) return;
+  count(s, `resa utväg ${UTVAGAR[bast.id]!.namn.toLowerCase()}`);
+  UTVAGAR[bast.id]!.gor(s, sl, v.l, t);
+}
+// den långsamma lämnas: hen går hem ensam i sitt eget sällskap, med en del av maten och vattnet
+function lamnaKvar(s: State, sl: Sallskap, p: Person, t: number) {
+  const vl = s.varld;
+  if (!vl) return;
+  sl.medl = sl.medl.filter(id => id !== p.id);
+  if (sl.buren) { sl.buren = sl.buren.filter(b => b[0] !== p.id); if (!sl.buren.length) delete sl.buren; }
+  const ny = nyttSallskap(s, p, sl.mal, sl.skal);
+  if (!ny) return;
+  ny.skede = 'hemat'; ny.ruta = sl.ruta; ny.ut = sl.ut; ny.borjan = sl.borjan; ny.behov = { ...behovOf(sl), fulla: 0, foder: 0 };
+  const n = sl.medl.length + 1;
+  for (const k of [...FOOD, 'vattensack']) { const m = Math.floor((sl.pack[k] ?? 0) / n); if (m > 0) { tappa(sl, k, m); ny.pack[k] = m; } }
+  ny.behov.fulla = Math.floor(ny.pack.vattensack ?? 0);
+  vandHem(s, ny);
+  count(s, 'resa lämnade');
+  dagbok(s, sl, 'ut', `${p.name} gick för långsamt och lämnades att gå hem ensam.`, t);
+  dagbok(s, ny, 'ut', `Lämnades av sällskapet och går hem ensam.`, t);
 }
