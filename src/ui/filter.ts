@@ -41,7 +41,10 @@ forklaring.addEventListener('click', e => {
 function visaForklaring() {
   forklaring.hidden = !ui.filter;
   if (!ui.filter) return;
-  forklaring.innerHTML = FYND_IDS.filter(k => FYND[k].grupp === ui.filter).map(k => `<button type="button" data-k="${k}" aria-pressed="${ui.filterArt === k}" title="${esc(FYND[k].namn)}" aria-label="${esc(FYND[k].namn)}"><i style="background:${cssFarg(FYND[k].farg)}"></i>${iconImg(FYND[k].ikon, 14)}</button>`).join('');
+  // tre små tecken först (steg 11.1.62): ringen med prick växer här, pricken finns kvar och den tomma ringen är plockat
+  const tecken = (inre: string, ord: string, title: string) => `<span class="legtecken" title="${esc(title)}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">${inre}</svg>${ord}</span>`;
+  const rad = `<div class="legrad">${tecken('<circle cx="6" cy="6" r="5" fill="none" stroke="#dad0bb" stroke-width="1"/><circle cx="6" cy="6" r="2.5" fill="#dad0bb"/>', 'växer här', 'Ringen är hur mycket som kan växa på rutan')}${tecken('<circle cx="6" cy="6" r="3.5" fill="#dad0bb"/>', 'finns kvar', 'Pricken är det som finns kvar nu')}${tecken('<circle cx="6" cy="6" r="5" fill="none" stroke="#dad0bb" stroke-width="1"/>', 'plockat', 'En tom ring: här har någon plockat, och det växer igen')}</div>`;
+  forklaring.innerHTML = rad + FYND_IDS.filter(k => FYND[k].grupp === ui.filter).map(k => `<button type="button" data-k="${k}" aria-pressed="${ui.filterArt === k}" title="${esc(FYND[k].namn)}" aria-label="${esc(FYND[k].namn)}"><i style="background:${cssFarg(FYND[k].farg)}"></i>${iconImg(FYND[k].ikon, 14)}</button>`).join('');
 }
 
 // lagren växer en gång i timmen och töms när någon tar ur dem (plockOf), så kartan ritas om när timmen, uttagen eller filtret ändras
