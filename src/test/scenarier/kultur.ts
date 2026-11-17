@@ -1074,12 +1074,17 @@ SCENARIER.sedlista = {
     const styreH = styreFlik.html(), iStyre = /data-hjalp="sed-rang"[^>]*>[\s\S]*?<div class="sedlista">/.test(styreH);
     tryck('sed-rang');
     const igen = styreFlik.html().includes('class="sedlista"');
+    const lagg = SIM.sedLaggning(s), drag = SIM.sedDrag(s), mal = SIM.sederTarget(s);
+    const summa = SIM.SED_LIST.filter(x => SIM.sedOppen(s, x) && Math.abs(mal[x]) < 1).map(x => ({ k: x, rad: lagg[x] + drag.reduce((a, r) => a + r.d[x], 0), mal: mal[x] }));
     return [
       [`sederna går att trycka på och listan är stängd från början (${SIM.SEDER[k].neg} – ${SIM.SEDER[k].pos})`, stangd.includes(`data-hjalp="sed-${k}"`) && !stangd.includes('class="sedlista"')],
       ['listan säger vad seden gör', lista.includes(esc(SIM.SEDER[k].effect))],
       [`en rad för upplevelsen: "${namn}: drar mot ${mot.toLowerCase()}, N av 100"`, lista.includes(esc(namn)) && new RegExp(`drar mot ${mot.toLowerCase()}, \\d+ av 100`).test(lista)],
       [`hur många och vilka som minns den (${v.length})`, lista.includes(`${v.length} minns det`) && alla],
       ['vågskålen i Styre öppnar samma lista, och ett tryck till stänger', iStyre && !igen],
+      // steg 11.1.11: läggningen är en egen rad, och raderna under en sed summerar till byns mål för seden
+      [`invånarnas läggning är en egen rad i listan`, lista.includes('Invånarnas läggning')],
+      [`raderna under en sed summerar till byns mål (${summa.map(x => `${x.k} ${x.rad.toFixed(3)}/${x.mal.toFixed(3)}`).join(', ')})`, summa.length > 0 && summa.every(x => Math.abs(x.rad - x.mal) < 1e-9)],
     ];
   },
 };

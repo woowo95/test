@@ -1,4 +1,4 @@
-import { MAKT_SEDER, SEDER, SED_LIST, type Sed, ageOf, byId, roster, sedDrag, sedOppen, upplevelseKort, yrkeNamn } from '../../sim';
+import { MAKT_SEDER, SEDER, SED_LIST, type Sed, ageOf, byId, roster, sedDrag, sedLaggning, sedOppen, upplevelseKort, yrkeNamn } from '../../sim';
 import { tecknet } from '../../ikoner';
 import { esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -47,22 +47,30 @@ const UPP_IKON: Partial<Record<string, string>> = {
   byggdeHus: 'a_bygga', forstaMastare: 'i_skicklig', overflod: 'a_gott', sorjde: 's_dod',
 };
 // sammanfattningen under symbolerna (steg 10.2.57): allt som drar vågen åt varje håll, i hundradelar, så att man ser varför den lutar
-function sedSumma(k: Sed, alla: ReturnType<typeof sedDrag>) {
+function sedSumma(k: Sed, alla: { d: Record<Sed, number> }[]) {
   let neg = 0, pos = 0;
   for (const r of alla) { const d = r.d[k]; if (d < 0) neg -= d; else pos += d; }
   const del = (x: number) => Math.round(x * 100);
   return `<div class="sedsumma muted small"><span>← ${esc(SEDER[k].neg.toLowerCase())} ${del(neg)}</span><span>${esc(SEDER[k].pos.toLowerCase())} ${del(pos)} →</span></div>`;
 }
 // raden är en upplevelse eller minnet av en död (steg 10.4.9)
-const radNamn = (r: ReturnType<typeof sedDrag>[number]) => r.om ? `Minnet av ${r.om.namn}` : upplevelseKort(r.k!);
-const radIkon = (r: ReturnType<typeof sedDrag>[number]) => r.om ? 'i_' + r.om.i : UPP_IKON[r.k!] ?? 'i_okand';
+// invånarnas läggning (steg 11.1.11) är en rad som upplevelserna: personligheten, och föräldraskapet där det räknas
+type Rad = { k?: string; om?: { id: number; namn: string; i: string }; lagg?: true; n: number; vem: number[]; d: Record<Sed, number> };
+const radNamn = (r: Rad) => r.lagg ? 'Invånarnas läggning' : r.om ? `Minnet av ${r.om.namn}` : upplevelseKort(r.k! as never);
+const radIkon = (r: Rad) => r.om ? 'i_' + r.om.i : UPP_IKON[r.k!] ?? 'i_okand';
+const radTecken = (r: Rad) => r.lagg ? '{sym_egenskaper}' : tecknet(radIkon(r), '•');
+// allt som drar seden: läggningen först, sedan upplevelserna och minnena, så att raderna tillsammans är det vågen går mot
+function sedRader(): Rad[] {
+  const l = sedLaggning(s), vuxna = roster(s).filter(x => x.w > 0).map(x => x.p.id);
+  return [{ lagg: true, n: vuxna.length, vem: vuxna, d: l }, ...sedDrag(s)];
+}
 export function sedFormat(k: Sed) {
-  const alla = sedDrag(s).filter(r => Math.abs(r.d[k]) >= 0.005), rader = alla.slice().sort((a, b) => Math.abs(b.d[k]) - Math.abs(a.d[k])).slice(0, 5);
+  const alla = sedRader().filter(r => Math.abs(r.d[k]) >= 0.005), rader = alla.slice().sort((a, b) => +!!b.lagg - +!!a.lagg || Math.abs(b.d[k]) - Math.abs(a.d[k])).slice(0, 5);
   if (!rader.length) return '';
   return `<div class="sedformat">${rader.map(r => {
     const d = r.d[k], m = Math.abs(d), pil = (d > 0 ? '→' : '←').repeat(m >= 0.15 ? 3 : m >= 0.05 ? 2 : 1), mot = d > 0 ? SEDER[k].pos : SEDER[k].neg;
-    const text = `${radNamn(r)}: drar mot ${mot.toLowerCase()} (${Math.max(1, Math.round(m * 100))} av 100), ${r.n} ${r.n === 1 ? 'minns' : 'minns'} det`;
-    return `<span class="sedupp" title="${esc(text)}">${tecknet(radIkon(r), '•')}<b>${pil}</b><span class="muted">${r.n}</span></span>`;
+    const text = `${radNamn(r)}: drar mot ${mot.toLowerCase()} (${Math.max(1, Math.round(m * 100))} av 100)${r.lagg ? '' : `, ${r.n} ${r.n === 1 ? 'minns' : 'minns'} det`}`;
+    return `<span class="sedupp" title="${esc(text)}">${radTecken(r)}<b>${pil}</b><span class="muted">${r.n}</span></span>`;
   }).join('')}</div>${sedSumma(k, alla)}`;
 }
 
@@ -72,10 +80,10 @@ export function sedFormat(k: Sed) {
 export const sedKlick = (k: Sed) => `class="klick falla" ${fallUt(`sed-${k}`, 'sed-')} title="${esc(SEDER[k].effect)}"`;
 export function sedLista(k: Sed) {
   if (!hjalpOppen(`sed-${k}`)) return '';
-  const rader = sedDrag(s).filter(r => Math.abs(r.d[k]) >= 0.005).sort((a, b) => Math.abs(b.d[k]) - Math.abs(a.d[k]));
+  const rader = sedRader().filter(r => Math.abs(r.d[k]) >= 0.005).sort((a, b) => +!!b.lagg - +!!a.lagg || Math.abs(b.d[k]) - Math.abs(a.d[k]));
   const rad = (r: (typeof rader)[number]) => {
     const d = r.d[k], mot = (d > 0 ? SEDER[k].pos : SEDER[k].neg).toLowerCase(), vem = r.vem.map(id => byId(s, id)).filter(p => !!p);
-    return `<li>${tecknet(radIkon(r), '•')}<span><b>${esc(radNamn(r))}</b>: drar mot ${esc(mot)}, ${Math.max(1, Math.round(Math.abs(d) * 100))} av 100. <span class="muted">${r.n} minns det: ${vem.map(p => pLink(p)).join(', ')}</span></span></li>`;
+    return `<li>${radTecken(r)}<span><b>${esc(radNamn(r))}</b>: drar mot ${esc(mot)}, ${Math.max(1, Math.round(Math.abs(d) * 100))} av 100. <span class="muted">${r.lagg ? 'Personligheten hos dem som har inflytande, och föräldraskapet där det räknas' : `${r.n} minns det: ${vem.map(p => pLink(p)).join(', ')}`}</span></span></li>`;
   };
   return `<div class="sedlista"><p class="muted small">${esc(SEDER[k].effect)}</p>${rader.length ? `<ul>${rader.map(rad).join('')}</ul>` : '<p class="muted small">Inget som invånarna varit med om drar den här seden just nu.</p>'}</div>`;
 }

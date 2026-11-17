@@ -158,6 +158,18 @@ export function sedDrag(s: State) {
   const storst = (r: { d: Record<Sed, number> }) => Math.max(...SED_LIST.map(k => Math.abs(r.d[k])));
   return [...m.values()].map(r => ({ k: r.k, om: r.om, n: r.n.size, vem: [...r.n], d: r.d })).filter(r => storst(r) > 0).sort((a, b) => storst(b) - storst(a));
 }
+// invånarnas läggning (steg 11.1.11, bara för fliken Seder): det personligheten, föräldraskapet och andligheten drar varje sed,
+// vägt som i sederTarget. Tillsammans med raderna i sedDrag är det byns mål för seden (innan det hålls inom −1 till 1)
+export function sedLaggning(s: State): Record<Sed, number> {
+  const t = nollor(), barn = foraldrar(s);
+  for (const { p, andel } of vikter(s)) {
+    if (!andel) continue;
+    for (const k of SED_LIST) t[k] += SEDER[k].dra(p.pot, barn.has(p.id)) * andel;
+    t.andlig += (andlighet(s, p) - 50) / 50 * andel;
+  }
+  for (const k of SED_LIST) t[k] = sedOppen(s, k) ? t[k] * SED.snittVikt : 0;
+  return t;
+}
 export function sederTarget(s: State): Record<Sed, number> {
   const t = nollor();
   // varje persons vikt (steg 8.3.2, rost.ts), med ledaren och de andra som sederna flyttar vikt till
