@@ -706,7 +706,7 @@ export interface Larm { t: number; vad: string; storlek: number; led: number; fa
 // ett larm om vad (storleken: hur många eller hur farligt). ropare ropar först (de vet redan). Returnerar de
 // som hörde det
 // vad ett larm gällde, med ord (l_larm, steg 6.7.7); nycklarna är vad i larma()
-export const LARM_VAD: Record<string, string> = { 'slagsmål': 'det slåss i byn', fara: 'det är fara på väg', varg: 'vargarna kommer', rovare: 'rövare är på väg', brand: 'det brinner', tornado: 'en storm är på väg' };
+export const LARM_VAD: Record<string, string> = { 'slagsmål': 'det slåss i byn', fara: 'det är fara på väg', varg: 'vargarna kommer', rovare: 'rövare är på väg', brand: 'det brinner', tornado: 'en storm är på väg', rymning: 'någon slår på fängelsets dörr' }; // rymningen (steg 11.12.5)
 export function larma(s: State, vad: string, storlek: number, ropare: Person[], falskt = false): Person[] {
   // hornet hörs över hela kartan och trumman längre än ett rop (steg 8.7.11–8.7.12)
   const harHorn = ropare.some(p => (s.ting ?? []).some(t => t.k === 'horn' && (t.hos === p.id || t.agare === p.id || t.agare === undefined))), harTrumma = !harHorn && ropare.some(p => (s.ting ?? []).some(t => t.k === 'trumma' && (t.hos === p.id || t.agare === p.id)));

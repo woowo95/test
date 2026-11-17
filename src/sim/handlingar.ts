@@ -147,6 +147,8 @@ const DEF = {
   forlossa: { namn: 'Hjälper till vid en förlossning', tecken: '🩹', stilla: true }, // steg 9.5.29
   barmat: { namn: 'Bär mat till fången', tecken: '🍽️', under: { go: 'hämtar mat', back: 'bär mat' }, framme: true }, // steg 11.12.2 (fangelse.ts)
   fangen: { namn: 'Sitter i fängelset', tecken: '🚪', ikon: 'fangelse', stilla: true, dygn: true, social: true }, // pratar genom dörren (steg 11.12.4)
+  fangvakt: { namn: 'Vaktar fängelset', yrke: 'Väktare', tecken: '👁️', ikon: 'fangelse', stilla: true, vapen: true, dygn: true }, // steg 11.12.5 (fangelse.ts)
+  stoppa: { namn: 'Går för att stoppa fången', tecken: '🚪', ikon: 'fangelse', framme: true }, // steg 11.12.5: larmet rymning
   besokFange: { namn: 'Pratar med fången genom dörren', tecken: '🚪', ikon: 'fangelse', framme: true, stilla: true, social: true }, // steg 11.12.4 (fangelse.ts) // steg 11.12.1 (fangelse.ts)
   rymma: { namn: 'Slår sönder fängelsets dörr', tecken: '🚪', ikon: 'fangelse', framme: true }, // steg 11.12.1: trädörrens 20 minuter
   medvetslos: { namn: 'Ligger medvetslös', tecken: '✨', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },

@@ -1027,6 +1027,7 @@ SCENARIER.strakprov = {
 };
 
 SCENARIER.fangelse = {
+  env: { BALANS: 'fangelse.vakt=0,fangelse.stoppBas=-9' }, // ingen vaktar och ingen går dit (det prövar fangvakt)
   lang: true,
   text: 'Fängelset (steg 11.12.1, fangelse.ts): ett hus med en trädörr, som byn vill bygga när påbudet Fängelse gäller. Den som sitter inne går inte ut, en annan går in och ut, med lågt humör slår fången sönder dörren på 20 minuter, larmet rymning går, och byn hänger en ny dörr',
   kor: () => {
@@ -1052,7 +1053,7 @@ SCENARIER.fangelse = {
     p.thoughts = [{ text: 'Vill ut', v: -1, until: s.now + 30 * SIM.DAY }];
     const t0 = s.now; let sonder = -1;
     kor(s, 2, v => { if (sonder < 0 && !SIM.fangelseDorr(v, h)!.dorr) sonder = v.now; });
-    const min = (sonder - t0) / SIM.MIN, fri = !p.fange, larm = p.larm?.vad === 'rymning';
+    const min = (sonder - t0) / SIM.MIN, fri = !p.fange, larm = s.people.some(q => q.larm?.vad === 'rymning');
     // byn hänger en ny trädörr: den som kan tekniken och har materialet
     q.tek = { ...(q.tek ?? {}), tradorr: 1 }; SIM.setAmount(s, 'plankor', 10); SIM.setAmount(s, 'rep', 5);
     let ny = false; kor(s, 24, v => { if (SIM.fangelseDorr(v, h)?.dorr === 'tradorr') ny = true; }); // ett helt dygn: dörrar hängs på dagen
@@ -1154,6 +1155,49 @@ SCENARIER.fangeliv = {
       [`modern bär ved åt sonen som fryser, en främling inte, och en liten eld brinner i fängelset`, vMor?.ved === true && !vFr.length && eld],
       [`den som suttit fem dygn får en starkare upplevelse (${st(x)}) än den som suttit ett (${st(y)})`, st(y) > 0 && st(x) > st(y)],
       ['rutan visar fången, dygnen kvar och varför vid tryck', html.includes(a.name) && /⏳ 3/.test(html) && html.includes('data-hjalp="fange-')],
+    ];
+  },
+};
+SCENARIER.fangvakt = {
+  text: 'Vakten vid fängelset (steg 11.12.5, fangelse.ts): att vakta är en rad med poäng i Försörjningen, dag och natt, mer ju farligare fången är. En vakt vid dörren sänker fångens vilja att bryta sig ut, och börjar hen ändå blir det ett slagsmål med vakten. Utan vakt och utan någon som hör går dörren sönder, och i en by i nöd vinner maten över vakten',
+  kor: () => {
+    const by = (food: number) => {
+      const s = createState(6, START); klockan(s, 10); medHus(s); tandEld(s);
+      const h = housesOf(s)[0]!; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; touch(s);
+      setFood(s, food);
+      const q = SIM.newPerson(s, 'm', s.now - 30 * DAY); s.people.push(q); Object.assign(q, { x: living(s)[0]!.x, y: living(s)[0]!.y, hunger: 1, torst: 1, warm: 1, rest: 1 });
+      q.pot.aggression = 18; q.pot.mod = 8; SIM.satt(s, q, h, 'Dömd', s.now + 5 * DAY);
+      return { s, h, q };
+    };
+    // poängen: en aggressiv fånge lockar mer än en lugn
+    const a = by(40), v = living(a.s).find(x => x !== a.q && ageOf(x, a.s.now) >= ALDER.vuxen)!;
+    const hog = SIM.fangvaktPoang(a.s, v); a.q.pot.aggression = 4; const lag = SIM.fangvaktPoang(a.s, v); a.q.pot.aggression = 18;
+    // med mat i förrådet tar någon vakten, och då vill fången mindre (samma ögonblick med och utan vakten)
+    let vakt: Person | undefined, u0 = 0, u1 = 0, kvar = false;
+    kor(a.s, 4, w => {
+      if (!vakt && SIM.vakterVid(w, a.h.id).length) {
+        vakt = SIM.vakterVid(w, a.h.id)[0]!; u1 = SIM.utVilja(w, a.q); vakt.task!.act = 'vila'; u0 = SIM.utVilja(w, a.q); vakt.task!.act = 'fangvakt';
+        // fången vill ut ändå (lågt humör och modig): med vakt blir det ett slagsmål och hen sitter kvar
+        a.q.thoughts.push({ text: 'Förtvivlad', v: -3, until: w.now + DAY }); a.q.pot.mod = 20;
+      }
+      if (!kvar && (w.stat?.fangelse_stoppad ?? 0) >= 1 && a.q.task?.act !== 'strid') kvar = !!a.q.fange && !w.stat?.rymning; // efter det första slagsmålet
+    });
+    const strid = (a.s.stat?.fangelse_stoppad ?? 0) >= 1 && (a.s.stat?.strid_slagsmal ?? 0) >= 1;
+    // utan vakt och utan någon som hör: alla andra långt borta, dörren går sönder
+    const b = by(40);
+    b.s.people = [b.q]; touch(b.s);
+    b.q.thoughts.push({ text: 'Förtvivlad', v: -3, until: b.s.now + DAY }); b.q.pot.mod = 20;
+    kor(b.s, 1);
+    const ute = !b.q.fange && (b.s.stat?.rymning ?? 0) >= 1;
+    // i en by i nöd (ingen mat): ingen vaktar
+    const c = by(0); let vaktNod = 0;
+    kor(c.s, 2, w => { if (w.people.some(x => x.task?.act === 'fangvakt')) vaktNod++; });
+    return [
+      [`poängen följer fångens aggression (${lag.toFixed(1)} för en lugn, ${hog.toFixed(1)} för en aggressiv)`, hog > lag && lag > 0],
+      [`med mat i förrådet tar ${vakt?.name ?? 'ingen'} vakten, och fångens vilja att komma ut sjunker (${u0.toFixed(2)} → ${u1.toFixed(2)})`, !!vakt && u1 < u0],
+      ['när fången börjar ändå går vakten emot hen i ett slagsmål, och hen sitter kvar', strid && kvar],
+      ['utan vakt och utan någon som hör går dörren sönder', ute],
+      [`i en by utan mat tar ingen vakten (${vaktNod} gånger på två timmar)`, vaktNod === 0],
     ];
   },
 };

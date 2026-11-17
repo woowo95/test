@@ -34,7 +34,7 @@ import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
-import { bildKrok, gralBlirSlagsmal, lekSteg, kartStridSteg, nastaSteg, serStriden } from './kartstrid';
+import { bildKrok, gralBlirSlagsmal, kartStridBorja, lekSteg, kartStridSteg, nastaSteg, serStriden } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { tittaSteg } from './sport';
@@ -103,7 +103,7 @@ import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
-import { FANG, brytKlar, fangEldBrinner, fangelseKrok, matFram, matTagen } from './fangelse';
+import { FANG, brytKlar, fangEldBrinner, fangelseKrok, matFram, matTagen, stoppaFram, stoppaVal } from './fangelse';
 import { akel, latrinLedigNara, latrinUpptagen, latrinVanta, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
@@ -113,7 +113,7 @@ import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
 import { lagRegister } from './lagar';
 import { oppnaSed } from './rost';
-import { handelse, larma } from './rykten';
+import { LARM, handelse, larma } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
@@ -248,7 +248,9 @@ const KLAR: Partial<Record<Act, Krok>> = {
   rymma: (s, p, t) => brytKlar(s, p, t.ref), // fångens dörr är sönder (fangelse.ts, steg 11.12.1)
   barmat: matTagen, // maten till fången är tagen ur förrådet och bärs dit (fangelse.ts, steg 11.12.2)
 };
-fangelseKrok.larma = (s, p) => { larma(s, 'rymning', 1, [p]); };
+// den vakna som står närmast hör slagen och ropar (steg 11.12.5); den som vill stoppa fången väljer på nytt
+fangelseKrok.larma = (s, p) => { const r = living(s).filter(q => q !== p && !q.fange && q.task?.act !== 'sova' && Math.hypot(q.x - p.x, q.y - p.y) <= LARM.hor).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0]; if (r) for (const q of [r, ...larma(s, 'rymning', 1, [r])]) if (q.task && stoppaVal(s, q) && !ACTS[q.task.act].vapen) { avbryt(s, q); q.task = undefined; } }; // den som vill stoppa fången väljer på nytt (steg 11.12.5)
+fangelseKrok.slass = (s, vakter, q) => { kartStridBorja(s, 'slagsmal', [vakter, [q]], 'vid fängelsets dörr'); };
 fangelseKrok.brott = (s, p) => { handelse(s, p, 'rymning'); };
 fangelseKrok.brinner = (s, x, y) => brandHetta(s, x, y) > 0;
 // maten till fången (steg 11.12.2): den närmaste stacken med mat, en hel portion av det som finns (hela resurser), och måltiden
@@ -356,6 +358,7 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
   varda: lamnaAv, // hemma med den som bars (halsa.ts)
   vatten: vattenFram, // vattnet i säcken till den som inte kan gå (torst.ts)
   barmat: matFram, // maten till fången (fangelse.ts, steg 11.12.2)
+  stoppa: stoppaFram, // framme vid fängelsets dörr när fången slår på den (fangelse.ts, steg 11.12.5)
   slacka: slackaFram, // vattnet i säcken på elden (brand.ts)
   plantera: plantaSatt, // plantan sätts i jorden (skogsvard.ts)
   krukaHem: krukaNer, // lerkrukan ställs i sovrummet (kruka.ts)

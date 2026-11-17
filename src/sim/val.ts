@@ -1,4 +1,5 @@
-import { FANG, besokVal, fangeVal, matTillFange } from './fangelse';
+import { FANG, besokVal, fangar, fangeVal, fangvaktFull, fangvaktPlats, fangvaktPoang, matTillFange, stoppaVal } from './fangelse';
+import { taVapen } from './vakt';
 import { heligtAvstar } from './kultlatt';
 import { hoVal } from './djurtorst';
 import { TATU, TATUERINGAR, tatVal } from './tatuering';
@@ -633,6 +634,8 @@ export const ARBETEN: readonly Arbete[] = [
   // 1 Fara: vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4), det brinner (steg 3.8.5) eller vattnet stiger (steg 3.8.7)
   // den som brinner släcker sig själv först, och de som står nära hjälper hen före allt annat (steg 6.4.16)
   { id: 'brinner', niva: 1, prova: ({ s, p, v }) => { const m = slackaSigVal(s, p); if (!m) return false; set(v, m.act, m.why); v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
+  // larmet rymning (steg 11.12.5, fangelse.ts): den som hört det och är modig nog går till fängelsets dörr
+  { id: 'stoppa', niva: 1, prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const d = stoppaVal(s, p); if (!d) return false; set(v, 'stoppa', d.why); v.spot = d.spot; v.ref = d.ref; v.dur = FANG.stoppMin * MIN; return true; } },
   { id: 'hjalpBrinnande', niva: 1, prova: ({ s, p, v }) => { const m = hjalpaVal(s, p); if (!m) return false; set(v, m.act, m.why); v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
   // den som blöder trycker på sitt sår också när faran pågår, och hjälparna bakom kämparna vårdar den som blöder (steg 9.9.4):
   // förut stod alla kvar i försvaret medan de sårade förblödde på en halvtimme
@@ -854,6 +857,10 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'tand', niva: 6, nar: 'dag', kort: true, poang: c => { const d = dag(c); return d.works && needTinder(c.s) ? Math.max(d.wBy, d.wEgen) * d.rad.tand.sc : 0; },
     full: c => radFull(c.s, c.p, 'tand'),
     prova: c => { forByn(c); arbeta(c, dag(c).rad.tand.act, 'Byn behöver tändmaterial till elden', { tandmat: true }); return true; } },
+  // vakten vid fängelset (steg 11.12.5, fangelse.ts): dag och natt, med poäng bland maten och veden, mer ju farligare fången är
+  { id: 'fangvakt', niva: 6, kort: true, poang: c => c.a >= ALDER.vuxen && kanGa(c.p) && !isSick(c.p, c.s.now) && (!c.light || dag(c).works) ? fangvaktPoang(c.s, c.p) : 0,
+    full: c => fangvaktFull(c.s, c.p),
+    prova: c => { const at = fangvaktPlats(c.s); if (!at) return false; set(c.v, 'fangvakt', 'Vaktar fängelset'); c.v.spot = at; c.v.dur = FANG.vaktPass * MIN; taVapen(c.s, c.p); return true; } },
   // 6 Försörjning: att vittja en mjärde med fisk i (steg 7.4.2)
   { id: 'vittja', niva: 6, nar: 'dag', kort: true, prova: c => {
     const { s, p, v, a } = c;
@@ -1423,7 +1430,7 @@ function skrift(s: State, p: Person, v: Val, at: { x: number; y: number }, annan
 // ett varsel om en motgång, och påbudet om nattvakten. Så många håller vakt (avrundat), aldrig fler än hälften av de vuxna som orkar
 export function vaktHot(s: State) {
   const varg = (s.vargar ?? []).some(f => f.sedd !== undefined && f.vargar.length > 0) ? 1 : 0;
-  return VAL.vaktBas + VAL.vaktVarg * varg + VAL.vaktRovare * (1 - efterAnfall(s)) + VAL.vaktVarsel * (living(s).some(q => q.varsel) ? 1 : 0) + VAL.vaktPabud * pabud(s, 'vakt');
+  return VAL.vaktBas + VAL.vaktVarg * varg + VAL.vaktRovare * (1 - efterAnfall(s)) + VAL.vaktVarsel * (living(s).some(q => q.varsel) ? 1 : 0) + VAL.vaktPabud * pabud(s, 'vakt') + FANG.nattVakt * fangar(s).length; // fångarna (steg 11.12.5)
 }
 // nattens vakter: de modigaste av de vuxna som orkar, med lite slump, byts varje natt
 function vaktVal(s: State, p: Person, v: Val, a: number) {

@@ -40,9 +40,17 @@ export const FANG = balans('fangelse', {
   eldHeat: 0.6, // ... och värmer den som sitter där som en eld på så här stor styrka
   uppDygn: 0.5, // upplevelsen när fången släpps: 1 + så här mycket per dygn efter det första gånger effekten
   domareOp: 4, // och synen på den som dömde sjunker så här mycket per dygn inne
+  // vakten vid fängelset (steg 11.12.5): en rad med poäng i Försörjningen, dag och natt, poängen vakt gånger fångens aggression / 10
+  vakt: 3, // (maten i nöd har poäng kring 20, så i en by i nöd tar ingen vakten)
+  vaktPass: 60, // ett vaktpass i minuter
+  vaktSank: 0.35, // en vakt vid dörren sänker fångens vilja att komma ut så här mycket
+  vaktNara: 3, // vakten står vid dörren: så här nära (rutor) räknas
+  stoppBas: -0.1, stoppMod: 0.04, stoppNara: 0.3, // den som hör larmet går dit när bas + (modet − 10) × mod − närheten × nara > 0
+  stoppMin: 15, // larmet räknas så här många minuter
+  nattVakt: 0.5, // varje fånge räknas som så här mycket mer hot när byn väljer nattens vakter (vaktHot i val.ts)
 });
 // larmet, brottet och branden sätts av steg.ts, så att den här filen inte drar in dem (och importerna inte går runt)
-export const fangelseKrok: { larma(s: State, p: Person): void; brott(s: State, p: Person): void; brinner(s: State, x: number, y: number): boolean; matStack(s: State, p: Person, ved?: boolean): { x: number; y: number } | undefined; taMat(s: State, p: Person, ved?: boolean): string | undefined; ata(s: State, q: Person, k: string): void; upplev(s: State, p: Person, om: string, ggr: number): void } = { larma: () => undefined, brott: () => undefined, brinner: () => false, matStack: () => undefined, taMat: () => undefined, ata: () => undefined, upplev: () => undefined };
+export const fangelseKrok: { larma(s: State, p: Person): void; brott(s: State, p: Person): void; brinner(s: State, x: number, y: number): boolean; matStack(s: State, p: Person, ved?: boolean): { x: number; y: number } | undefined; slass(s: State, vakter: Person[], q: Person): void; taMat(s: State, p: Person, ved?: boolean): string | undefined; ata(s: State, q: Person, k: string): void; upplev(s: State, p: Person, om: string, ggr: number): void } = { larma: () => undefined, brott: () => undefined, brinner: () => false, matStack: () => undefined, taMat: () => undefined, ata: () => undefined, upplev: () => undefined, slass: () => undefined };
 const HARDA = new Set([2, 3, 6, 9]); // Slag, Utvisning, Döden och Fängelse i STRAFF_REG (styre.ts)
 export const hardaDomar = (s: State) => (s.styre?.ratt ?? []).filter(r => s.now - r.t < FANG.domDygn * DAY && HARDA.has(r.steg)).length;
 // hur mycket ledaren l vill ha ett fängelse (påbudet Fängelse i styre.ts), −1 till 1
@@ -80,7 +88,7 @@ export function satt(s: State, p: Person, h: Hus, varfor: string, till?: number,
 // viljan att komma ut: modet, lågt humör, dygnen som återstår och mycket vid brand
 export function utVilja(s: State, p: Person) {
   const f = p.fange!, kvar = f.till !== undefined ? Math.max(0, f.till - s.now) / DAY : 1;
-  return (stat(p, 'mod', s.now) - 10) * FANG.modV + (1 - moodOf(p, s.now)) * FANG.humorV + kvar * FANG.dygnV + (fangelseKrok.brinner(s, p.x, p.y) ? FANG.brandV : 0);
+  return (stat(p, 'mod', s.now) - 10) * FANG.modV + (1 - moodOf(p, s.now)) * FANG.humorV + kvar * FANG.dygnV + (fangelseKrok.brinner(s, p.x, p.y) ? FANG.brandV : 0) - (vakterVid(s, f.hus).length ? FANG.vaktSank : 0);
 }
 // fångens val (chooseTask i val.ts frågar först): sitta kvar inne, eller slå sönder dörren när viljan går över FANG.bryt.
 // Saknas fängelset eller dörren, eller har tiden gått, är hen fri och väljer som vanligt (false)
@@ -95,10 +103,14 @@ export function fangeVal(s: State, p: Person): boolean {
   const rutor = rutorI(s, h);
   if (!rutor.length) { p.fange = undefined; return false; }
   if (utVilja(s, p) >= FANG.bryt) {
+    // en vakt vid dörren går emot hen i ett slagsmål (steg 11.12.5): ger fången upp sitter hen kvar
+    const vakter = vakterVid(s, h.id);
+    if (vakter.length) { count(s, 'fangelse_stoppad'); fangelseKrok.slass(s, vakter, p); return true; }
     // på rutan inne vid dörren
     const inne = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => (dorr.y + dy) * W + dorr.x + dx).find(i => rutor.includes(i)) ?? rutor[0];
     p.task = { act: 'rymma', phase: 'go', tx: inne % W + 0.5, ty: Math.floor(inne / W) + 0.5, until: s.now + FANG.brytMin * MIN, arbTid: FANG.brytMin * MIN, carry: 0, why: 'Vill ut ur fängelset', dark: false, ref: dorr.id };
     count(s, 'fangelse_bryter');
+    fangelseKrok.larma(s, p); // slagen mot dörren hörs (steg 11.12.5)
     return true;
   }
   const i = rutor[p.id % rutor.length];
@@ -109,6 +121,9 @@ export function fangeVal(s: State, p: Person): boolean {
 export function brytKlar(s: State, p: Person, ref?: number) {
   const b = bitsOf(s).find(q => q.id === ref);
   if (!b || !p.fange) return;
+  // en vakt som står vid dörren när den ger vika går emot fången (steg 11.12.5)
+  const vakter = vakterVid(s, p.fange.hus);
+  if (vakter.length) { count(s, 'fangelse_stoppad'); fangelseKrok.slass(s, vakter, p); return; }
   b.dorr = undefined; count(s, 'dorr_sonder'); count(s, 'rymning');
   const h = husById(s, p.fange.hus);
   slapps(s, p);
@@ -126,6 +141,43 @@ export function slapps(s: State, p: Person) {
   const n = Math.max(1, Math.round(dygn));
   fangelseKrok.upplev(s, p, `i ${n} år`, 1 + Math.max(0, dygn - 1) * FANG.uppDygn);
   if (f.av !== undefined && f.av !== p.id) { const r = s.rels[relKey(p.id, f.av)]; if (r) r.op = clamp(r.op - FANG.domareOp * dygn, -100, 100); }
+}
+// ---------- vakten (steg 11.12.5) ----------
+// de som vaktar fängelset hus just nu, vid dörren
+export function vakterVid(s: State, hus: number) {
+  const h = husById(s, hus), d = h && fangelseDorr(s, h);
+  return d ? s.people.filter(q => q.task?.act === 'fangvakt' && q.task.phase === 'do' && Math.hypot(q.x - d.x - 0.5, q.y - d.y - 0.5) <= FANG.vaktNara) : [];
+}
+// poängen för att vakta (raden fangvakt i ARBETEN): den farligaste fången, efter aggressionen
+export function fangvaktPoang(s: State, p: Person) {
+  if (p.fange) return 0;
+  let f = 0;
+  for (const q of fangar(s)) if (q !== p) f = Math.max(f, stat(q, 'aggression', s.now) / 10);
+  return f * FANG.vakt;
+}
+// någon annan vaktar redan (raden har sin arbetare)
+export const fangvaktFull = (s: State, p: Person) => s.people.some(q => q !== p && q.task?.act === 'fangvakt');
+// platsen för vakten: utanför dörren till det fängelse där den farligaste fången sitter
+export function fangvaktPlats(s: State) {
+  const q = fangar(s).sort((a, b) => stat(b, 'aggression', s.now) - stat(a, 'aggression', s.now))[0], h = q && husById(s, q.fange!.hus);
+  return h ? utanforDorr(s, h) : undefined;
+}
+// den som hör larmet rymning går dit när modet räcker, mindre villigt om hen står fången nära
+export function stoppaVilja(s: State, p: Person, q: Person) {
+  return FANG.stoppBas + (stat(p, 'mod', s.now) - 10) * FANG.stoppMod - (fangNarhet(s, p, q) - FANG.framling) * FANG.stoppNara;
+}
+// den som slår på dörren just nu och som p hört larmet om (raden stoppa i ARBETEN)
+export function stoppaVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string } | undefined {
+  if (p.fange || p.larm?.vad !== 'rymning' || s.now - p.larm.t > FANG.stoppMin * MIN) return undefined;
+  const q = s.people.find(o => o.fange && o.task?.act === 'rymma');
+  const h = q && husById(s, q.fange!.hus), spot = h && utanforDorr(s, h);
+  return q && spot && stoppaVilja(s, p, q) > 0 ? { spot, ref: q.id, why: `Hör att ${q.name} slår på fängelsets dörr och går dit` } : undefined;
+}
+// framme vid dörren (LAMNA i steg.ts): slår fången fortfarande blir det ett slagsmål
+export function stoppaFram(s: State, p: Person, t: import('./typer').Task) {
+  const q = byId(s, t.ref);
+  p.task = undefined;
+  if (q?.fange && q.task?.act === 'rymma') { count(s, 'fangelse_stoppad'); fangelseKrok.slass(s, [p], q); }
 }
 // ---------- besöket vid dörren (steg 11.12.4) ----------
 // rutan utanför fängelsets dörr
