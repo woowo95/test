@@ -7,7 +7,7 @@ import { balans } from './balans';
 import { findL, MINNE, trimLardomar } from './minne';
 import { delade } from './berattelser';
 import { byId, count, gjort } from './folk';
-import { clamp } from './slump';
+import { clamp, hash3 } from './slump';
 import { lognFaktor } from './rykten';
 import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
 import { VARLD } from './varldmark';
@@ -21,6 +21,8 @@ export const ORT = balans('ort', {
   anfall: 0.5, // den som ser rövare från en grannby får ett rykte om byn de kom ifrån så här säkert
   // platserna bleknar (steg 11.4.3): så här många gånger personens vanliga tid för en lärdom, per nivå
   glomRykte: 4, glomKant: 10, glomBesokt: 25,
+  ryktRadie: 0.5, // ett rykte är ett område med den här radien i dygns gång (steg 11.4.5) ...
+  ryktFran: 0.3, ryktTill: 0.85, // ... och mitten ligger så här långt från platsen, i andelar av radien
   dela: 1, // hur gärna man berättar om en plats i världen i ett samtal, gånger säkerheten (som en plats med värdet 1, steg 11.4.4)
   nedC: 0.5, // en plats vars säkerhet sjunkit under MINNE.glomGrans sjunker en nivå och får den här säkerheten; ett rykte glöms
 });
@@ -74,6 +76,17 @@ export function berattaOrt(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   const niva = Math.max(O_RYKTE, l.v - 1), fore = findL(b, 'ort', l.a);
   larOrt(s, b, l.a, niva, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1, fr: l.v === O_RYKTE ? (l.fr ?? a.id) : a.id });
   if (!fore) { count(s, 'ortBerattad'); gjort(s, a, 'berattat'); }
+}
+// ---------- ryktets läge (steg 11.4.5) ----------
+// Ett rykte är ett område i världen (i världsrutor): radien ORT.ryktRadie dygns gång, och mitten förskjuten från platsen åt ett
+// håll och ett avstånd som räknas ur världens frö, platsen och den som först berättade, så att platsen alltid ligger inom
+// området men inte i mitten. Samma rykte ligger på samma ställe hos alla som hört det av samma första berättare
+export function ryktesLage(s: State, l: Lardom): { x: number; y: number; r: number } | undefined {
+  const vl = s.varld, q = vl && varldPlatsNr(vl, l.a);
+  if (!q) return undefined;
+  const r = ORT.ryktRadie * VARLD.gangPerDygn, fr = l.fr ?? l.src ?? 0;
+  const vinkel = hash3(vl.fro, l.a, 0x4f52 + fr * 7) * 2 * Math.PI, d = r * (ORT.ryktFran + (ORT.ryktTill - ORT.ryktFran) * hash3(vl.fro, fr, 0x5259 + l.a * 3));
+  return { x: q.x + 0.5 + Math.cos(vinkel) * d, y: q.y + 0.5 + Math.sin(vinkel) * d, r };
 }
 // nivån p har i minnet för platsen nr (undefined: okänd)
 export const ortNiva = (p: Person, nr: number): number | undefined => findL(p, 'ort', nr)?.v;

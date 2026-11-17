@@ -1278,3 +1278,26 @@ SCENARIER.fjarran = {
     ];
   },
 };
+
+SCENARIER.ryktlage = {
+  text: 'Ryktets läge (steg 11.4.5, ryktesLage i ort.ts): ett rykte är ett område med en radie och en förskjuten mitt, så att platsen alltid ligger inom området men inte i mitten; mitten räknas ur världens frö, platsen och den som först berättade',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 18)!;
+    const pl = vl.platser!.filter(x => x.by !== vl.huvud).slice(0, 20);
+    let inom = 0, inteMitt = 0, n = 0, olika = 0;
+    for (const q of pl) for (const fr of [3, 17, 41]) {
+      const l = { k: 'ort', a: q.nr, v: SIM.O_RYKTE, c: 1, t: s.now, fr } as SIM.Lardom, o = SIM.ryktesLage(s, l)!, d = Math.hypot(q.x + 0.5 - o.x, q.y + 0.5 - o.y);
+      n++; if (d < o.r) inom++; if (d >= SIM.ORT.ryktFran * o.r - 1e-9) inteMitt++;
+      const o2 = SIM.ryktesLage(s, { ...l, fr: fr + 1 })!;
+      if (Math.hypot(o2.x - o.x, o2.y - o.y) > 0.1) olika++;
+    }
+    const l = SIM.larOrt(s, p, pl[0]!.nr, SIM.O_RYKTE, 0.5, { fr: 5 }), a = SIM.ryktesLage(s, l)!, b = SIM.ryktesLage(s, { ...l })!;
+    return [
+      [`radien är en halv dags gång (${SIM.ryktesLage(s, l)!.r} världsrutor)`, a.r === SIM.ORT.ryktRadie * SIM.VARLD.gangPerDygn],
+      [`platsen ligger alltid inom området (${inom} av ${n})`, inom === n],
+      [`och aldrig i mitten (${inteMitt} av ${n})`, inteMitt === n],
+      [`en annan första berättare ger en annan mitt (${olika} av ${n})`, olika > n * 0.9],
+      ['samma rykte ligger på samma ställe', a.x === b.x && a.y === b.y],
+    ];
+  },
+};
