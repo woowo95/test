@@ -1,7 +1,7 @@
 const kortTyngd = (v: number) => (Math.round(v * 10) / 10).toLocaleString('sv-SE');
 import { GUD_OMR, Gud, Person, troEtikett, tyngd, tyngdDelar, formNamn, gudarOf, SKALA_IDS, SKALOR, Tro, UPPV, skalaSyns, skalaV, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, tolkning, troNamn, troende, upplevelseText } from '../../sim';
 import { tecknet } from '../../ikoner';
-import { bar, esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
+import { bar, berattelseKnapp, esc, hjalpKnapp, hjalpText, merKnapp, pLink } from '../hjalp';
 import { s } from '../lage';
 import { sedBar } from './seder';
 import { omrostningar } from './styre';
@@ -43,7 +43,7 @@ function upplevHtml(folk: Person[]) {
 // trons gudar (steg 4.1.5): symbol, namn, form och område; berättelsen om hur guden kom till vid tryck. De glömda sist, utan berättelse
 function gudHtml(tr: Tro, g: Gud, i: number) {
   const id = `gud-${tr.id}-${i}`, sym = GUD_OMR[g.omr[0]].sym;
-  return `<li>${tecknet(sym, '✨')}<span><b>${esc(g.namn)}</b> <small class="muted">${esc(formNamn(g.form))}</small></span><span class="small">${esc(g.omr.map(o => GUD_OMR[o].namn).join(', '))}</span><span>${hjalpKnapp(id, 'Hur guden kom till')}</span></li>${hjalpText(id, `<p class="muted">${esc(g.ber)}</p>`)}`;
+  return `<li>${tecknet(sym, '✨')}<span><b>${esc(g.namn)}</b> <small class="muted">${esc(formNamn(g.form))}</small></span><span class="small">${esc(g.omr.map(o => GUD_OMR[o].namn).join(', '))}</span><span>${berattelseKnapp(id, 'Hur guden kom till')}</span></li>${hjalpText(id, `<p class="muted">${esc(g.ber)}</p>`)}`;
 }
 function gudarHtml(tr: Tro) {
   const alla = tr.gudar ?? [], nu = gudarOf(tr), glomda = alla.filter(g => g.slut !== undefined);
@@ -54,7 +54,7 @@ function gudarHtml(tr: Tro) {
 function troHtml(tr: Tro) {
   const folk = troende(s, tr).sort((a, b) => (b.troStyrka ?? 0) - (a.troStyrka ?? 0)), g = byId(s, tr.grundare), id = `tro-${tr.id}`;
   const grundare = g && alive(g) ? pLink(g) : `${esc(tr.gnamn)} <small class="muted">(lever inte längre)</small>`;
-  return `<div class="tekhead">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">👥 ${folk.length}</span> ${hjalpKnapp(id, 'Berättelsen om tron')}</div>
+  return `<div class="tekhead">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">👥 ${folk.length}</span> ${berattelseKnapp(id, 'Berättelsen om tron')}</div>
     <p class="small" title="${esc(`${troEtikett(s, tr).text} Tyngd ${kortTyngd(tyngd(s, tr))}: ` + tyngdDelar(s, tr).map(d => `${d.namn} ${kortTyngd(d.v)}`).join(', ') + '.')}"><b>${esc(troEtikett(s, tr).namn)}</b> · tyngd ${kortTyngd(tyngd(s, tr))}</p>
     ${hjalpText(id, `<p class="muted">${esc(tr.ber ?? tolkning(tr))}</p>`)}
     <p class="small">Grundare: ${grundare}, år ${tr.ar}</p>
@@ -70,7 +70,7 @@ export const religion: Flik = {
   html() {
     const tron = (s.tron ?? []).filter(tr => tr.slut === undefined).sort((a, b) => troende(s, b).length - troende(s, a).length || a.id - b.id);
     const stora = tron.slice(0, STORA), ovriga = tron.slice(STORA), glomda = (s.tron ?? []).filter(tr => tr.slut !== undefined);
-    const ovr = ovriga.length ? `<div class="tekhead"><b>Övriga trosriktningar</b> <span>👥 ${ovriga.reduce((n, tr) => n + troende(s, tr).length, 0)}</span> ${hjalpKnapp('tro-ovriga', 'Visa de mindre trosriktningarna')}</div>${hjalpText('tro-ovriga', ovriga.map(troHtml).join(''))}` : '';
+    const ovr = ovriga.length ? `<div class="tekhead"><b>Övriga trosriktningar</b> <span>👥 ${ovriga.reduce((n, tr) => n + troende(s, tr).length, 0)}</span> ${merKnapp('tro-ovriga', ovriga.length)}</div>${hjalpText('tro-ovriga', ovriga.map(troHtml).join(''))}` : '';
     const glo = glomda.length ? `<h3>Trosriktningar som dött ut</h3><ul class="rels">${glomda.map(tr => `<li>${tr.sym ? tecknet(tr.sym, '✨') : '✨'}<span>${esc(troNamn(tr))}</span><span></span><span class="muted">${timeLabel(s, tr.slut!)}</span></li>`).join('')}</ul>` : '';
     const folk = living(s).filter(p => ageOf(p, s.now) >= UPPV.fran).sort((a, b) => andlighet(s, b) - andlighet(s, a));
     const personer = `<h3>Personer</h3><ul class="rels">${folk.map(p => { const tr = s.tron?.find(t => t.id === p.tro); return `<li>${pLink(p)}<span title="Andlighet">${bar(andlighet(s, p) / 100)}</span><span>${tr ? `${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${esc(troNamn(tr))}` : '<span class="muted">–</span>'}</span><span class="muted">${Math.round(andlighet(s, p))}</span></li>`; }).join('')}</ul>`;
