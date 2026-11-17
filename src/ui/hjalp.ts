@@ -60,7 +60,7 @@ export const merKnapp = (id: string, n: number) => `<button type="button" class=
 export const delRad = (attr: string, delar: readonly { id: string; tecken: string; namn: string }[], vald: string) =>
   `<div class="pdelar namngivna" role="tablist">${delar.map(d => `<button type="button" role="tab" ${attr}="${d.id}" aria-selected="${d.id === vald}" title="${esc(d.namn)}"><span class="deltecken">${d.tecken}</span><span class="delnamn">${esc(d.namn)}</span></button>`).join('')}</div>`;
 // en länk till en kategori i Krönikan (steg 11.1.40): öppnar Krönikan med kategorin vald (panel.ts)
-export const kronikaLank = (kat: string, text: string) => `<button type="button" class="lank" data-visa="kronika" data-kkat-lank="${kat}">${esc(text)}</button>`;
+export const kronikaLank = (kat: string, text: string, ar?: number) => `<button type="button" class="lank" data-visa="kronika" data-kkat-lank="${kat}"${ar !== undefined ? ` data-kar-lank="${ar}"` : ''}>${esc(text)}</button>`; // ar = krönikan öppnas på det året (steg 11.1.64)
 // hur länge det är kvar, i spelets ord (steg 11.1.40): "ungefär 2 år", "en tidsålder", "några timmar"
 export function omUngefar(ms: number) {
   const ar = ms / DAY;

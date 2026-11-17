@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
 import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
@@ -8,7 +8,7 @@ import { lasBy } from '../delby';
 import { testBy, rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
-import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
+import { bortaBerattelse, bortaHtml, ikappHtml, spolaText } from '../../ui/borta';
 import { person } from '../../ui/flikar/person';
 import { grannar as grannarFlik } from '../../ui/flikar/grannar';
 import { gaster } from '../../ui/gaster';
@@ -3047,7 +3047,12 @@ SCENARIER.sammanfattning = {
     Object.assign(notisVal, { oppen: false, nr: undefined, fraga: false });
     notisKlick('visa');
     const ren = (h: string) => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    // ikappräkningen (steg 11.1.64): länken I krönikan på året byn lämnades, knappen Se byn spolas fram och förloppet i år
+    const lank64 = new RegExp(`data-visa="kronika" data-kkat-lank="" data-kar-lank="${SIM.kalender(s, b.fran).ar}">I krönikan<`).test(html);
+    const spara64 = readFileSync(new URL('../../ui/spara.ts', import.meta.url), 'utf8');
+    const ikapp64 = lank64 && spolaText(false).includes('Se byn spolas fram') && spara64.includes('`${arN >= 2 ? `År ${arK} av ${arN} · ` : \'\'}${Math.round(f * 100)} %`');
     return [
+      ['sammanfattningen har länken I krönikan på året byn lämnades, knappen heter Se byn spolas fram och förloppet skrivs År 3 av 5 · 60 % (steg 11.1.64)', ikapp64],
       [`tiden i verkligheten och i spelet (${ren(html).slice(0, 60)}…)`, /gick 2(,0)? år i spelet \(2(,0)? dagar i verkligheten\)/.test(html)],
       ['talen: födda, döda och invånare', /1 födda · 0 döda · \d+ lever nu i byn/.test(html)],
       [`antalet nya notiser och en knapp till dem (${ren(html).match(/\d+ nya notiser/)?.[0]})`, /2 nya notiser/.test(html) && html.includes('data-notis="visa"')],

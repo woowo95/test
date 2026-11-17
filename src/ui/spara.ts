@@ -1,4 +1,4 @@
-import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serializeParts, step, timeLabel } from '../sim';
+import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serializeParts, step, DAY } from '../sim';
 import { gammalNyckel, lasEllerFlytta, sparaBy, tolkaText, webbBas } from './lagring';
 import { $, esc } from './hjalp';
 import { bortaHtml, ikappHtml, spolaText } from './borta';
@@ -171,7 +171,9 @@ export async function catchUp(target: number) {
       if (showOverlay) {
         const f = Math.min(1, (s.now - from) / span);
         const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';
-        const pt = document.getElementById('progTxt'); if (pt) pt.textContent = `${timeLabel(s, s.now)} · ${Math.round(f * 100)} %`;
+        // förloppet i år (steg 11.1.64): År 3 av 5 · 60 %, och bara procenten när det är mindre än ett år
+        const arN = Math.ceil(span / DAY), arK = Math.min(arN, Math.floor((s.now - from) / DAY) + 1);
+        const pt = document.getElementById('progTxt'); if (pt) pt.textContent = `${arN >= 2 ? `År ${arK} av ${arN} · ` : ''}${Math.round(f * 100)} %`;
         // kartan som den ser ut nu: byn spolas fram medan den räknas (högst åtta bilder i sekunden, så att räknandet går fort)
         if (spolar() && performance.now() - senastRitad > 120) { rita!(); senastRitad = performance.now(); }
       }
@@ -196,4 +198,5 @@ function showSummary(b: Borta) {
   $('ovClose').onclick = stang;
   // knappen öppnar notiserna (ui/notiser.ts tar hand om data-notis) och stänger sammanfattningen
   const nb = document.getElementById('ovNotiser'); if (nb) nb.addEventListener('click', stang);
+  for (const l of document.querySelectorAll('#ovBody [data-kar-lank]')) l.addEventListener('click', stang); // I krönikan (steg 11.1.64) stänger också
 }

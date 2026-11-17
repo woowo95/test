@@ -172,7 +172,7 @@ document.addEventListener('click', e => {
   if (fo) { const id = Number(fo.dataset.folj); if (ui.follow === id) stopFollow(); else startFollow(id, gaster().find(g => g.id === id)?.namn); renderPanel(true); return; }
   if (el.closest('[data-kvsort]')) { ui.kvSort = !ui.kvSort; renderPanel(true); return; } // stackarna efter kvalitet (steg 9.2.18)
   const lv = el.closest<HTMLElement>('[data-visa]'); // en länk till en annan flik (flikLank i hjalp.ts)
-  if (lv && (ALLA[lv.dataset.visa as FlikId]?.syns?.() ?? true)) { if (lv.dataset.kkatLank) Object.assign(kronikaVal, { del: 'handelser', viktigt: false, kat: lv.dataset.kkatLank, ar: undefined }); visa(lv.dataset.visa as FlikId); renderPanel(true); return; }
+  if (lv && (ALLA[lv.dataset.visa as FlikId]?.syns?.() ?? true)) { if (lv.dataset.kkatLank !== undefined) Object.assign(kronikaVal, { del: 'handelser', viktigt: false, kat: lv.dataset.kkatLank || undefined, ar: lv.dataset.karLank ? Number(lv.dataset.karLank) : undefined }); visa(lv.dataset.visa as FlikId); renderPanel(true); return; }
   for (const id of IDS) if (ALLA[id].klick?.(el)) { renderPanel(true); return; }
   const tb = el.closest<HTMLElement>('.tabs button');
   if (tb?.getAttribute('aria-disabled') === 'true') return; // en blek sten öppnar inget; bubblan har sagt vad som krävs

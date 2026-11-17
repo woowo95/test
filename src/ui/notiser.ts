@@ -3,7 +3,7 @@
 // föregående, ta bort och ta bort alla. Namnen i texten öppnar personen (panel.ts tar hand om data-id), och en notis som
 // gäller en plats har en knapp som visar platsen på kartan (interaktion.ts sätter `visaPlats`). Den som visas är läst.
 import { NOTISER, NOTIS_SLAG, type LogEntry, kalender, lasNotis, notiserNu, olasta, taBortNotis } from '../sim';
-import { esc, linkify } from './hjalp';
+import { esc, kronikaLank, linkify } from './hjalp';
 import { ritaOm, s } from './lage';
 
 export const notisVal: { oppen: boolean; nr?: number; fraga?: boolean } = { oppen: false }; // fraga: "ta bort alla?" väntar på ja
@@ -33,7 +33,7 @@ export function notisHtml() {
   const rader = n.rader.map((text, i) => `<li>${linkify({ t: n.t, text, ids: n.ids, fram: n.fram?.[i] || undefined, match: n.match?.[i] || undefined } as LogEntry)}</li>`).join('');
   const fler = n.n > n.rader.length ? `<p class="muted">och ${n.n - n.rader.length} till samma år</p>` : '';
   const plats = n.plats ? `<button type="button" data-notis="plats" title="Visa platsen på kartan" aria-label="Visa platsen på kartan">{sym_oga}</button>` : '';
-  return `<div class="notishuvud notis-${typ.slag}" title="${slag.namn}">{${slag.bild}}<b>${esc(typ.rubrik)}</b><span class="muted">År ${k.ar}</span><span class="notisnr">${i + 1} / ${lista.length}</span></div>
+  return `<div class="notishuvud notis-${typ.slag}" title="${slag.namn}">{${slag.bild}}<b>${esc(typ.rubrik)}</b><span class="muted">År ${k.ar}</span>${kronikaLank('', 'I krönikan', k.ar)}<span class="notisnr">${i + 1} / ${lista.length}</span></div>
     <ul class="notisrader">${rader}</ul>${fler}
     <div class="notisknappar">
       <button type="button" data-notis="forra" ${i === 0 ? 'disabled' : ''} aria-label="Föregående" title="Föregående">◀</button>

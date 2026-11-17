@@ -5,7 +5,7 @@
 // mallarna b_* i BERATTELSER. Hur lång texten blir beror på hur länge man varit borta (BORTA_LANGD).
 // ui/spara.ts räknar ikapp och visar rutan; den här filen bygger bara innehållet, så att ett scenario kan läsa det.
 import { ARSTIDER, Borta, DAY, HOUR, MallId, State, WEEK, berattelse, kalender, ledareOf, living, olasta, talOrd } from '../sim';
-import { esc, num } from './hjalp';
+import { esc, kronikaLank, num } from './hjalp';
 import { s } from './lage';
 
 // registret: kronikans slag (raden får mallens id eller ett eget slag) och hur viktiga de är i berättelsen, högst först.
@@ -94,7 +94,7 @@ export function bortaBerattelse(st: State, b: Borta): string[] {
 
 // rutan medan byn räknas ikapp (steg 5.4.5.1): förloppet, och en knapp som visar kartan under tiden som en snabbspolning
 // (rutan flyttas ner och bakgrunden blir genomskinlig; ui/spara.ts ritar kartan efter varje bit som räknats)
-export const spolaText = (pa: boolean) => pa ? '{sym_oga} Dölj byn' : '{sym_oga} Se byn under tiden';
+export const spolaText = (pa: boolean) => pa ? '{sym_oga} Dölj byn' : '{sym_oga} Se byn spolas fram'; // (steg 11.1.64)
 export function ikappHtml(spola: boolean, kanSpola = true) {
   return `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>${kanSpola ? `<div class="ovKnappar"><button id="ovSpola" type="button" aria-pressed="${spola}">${spolaText(spola)}</button></div>` : ''}`;
 }
@@ -115,7 +115,7 @@ export function bortaHtml(b: Borta) {
   return `
     <p class="ovLead">Medan du var borta gick ${yrs} i spelet (${verkligTid(s.now - b.fran)} i verkligheten).</p>
     <div class="ovBerattelse">${ber}</div>
-    <p class="muted">${fodda} födda · ${doda} döda · ${living(s).length} lever nu i byn</p>
+    <p class="muted">${fodda} födda · ${doda} döda · ${living(s).length} lever nu i byn · ${kronikaLank('', 'I krönikan', kalender(s, b.fran).ar)}</p>
     <p class="ovNotiser">{sym_notis} ${n ? `${n} ${n === 1 ? 'ny notis' : 'nya notiser'}` : 'Inga nya notiser'}</p>
     <div class="ovKnappar">${n ? '<button id="ovNotiser" class="primary" type="button" data-notis="visa">Läs notiserna</button>' : ''}
     <button id="ovClose" class="${n ? '' : 'primary'}" type="button">Till byn</button></div>`;
