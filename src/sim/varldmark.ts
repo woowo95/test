@@ -66,7 +66,7 @@ export interface VarldMark {
   gen: number; fro: number; delfro: number; // generatorns version, världens frö och delfröet som gav formen
   w: number; h: number;
   mark: Uint8Array; // rutans nummer i MARK_IDS
-  hojd: Float32Array; // höjden över havet (negativ i havet)
+  hojd?: Float32Array; // höjden över havet (negativ i havet); bara när landet räknas fram, den sparas inte
   flod: Uint8Array; // 0 ingen flod, FLOD_OVRE det övre loppet, FLOD_NEDRE det breda nedre (steg 11.2.6)
   ned: Int32Array; // rutan vattnet rinner till (-1 i havet och från en sjö ut i havet), för att rita floderna
 }
@@ -171,7 +171,7 @@ function avrinning(hj: Float32Array, w: number, h: number) {
   return { fylld, ned, ordning };
 }
 function vatten(d: number, v: VarldMark) {
-  const V = VARLD, { w, h, hojd, mark } = v, n = w * h, { fylld, ned, ordning } = avrinning(hojd, w, h);
+  const V = VARLD, { w, h, mark } = v, hojd = v.hojd!, n = w * h, { fylld, ned, ordning } = avrinning(hojd, w, h);
   // sjöarna: sänkor som fylls djupt nog (också en sänka under havet inne i landet), om de är stora nog
   const sank = new Uint8Array(n);
   for (let i = 0; i < n; i++) if (fylld[i] > 0 && fylld[i] - hojd[i] >= V.sjoDjup) sank[i] = 1;

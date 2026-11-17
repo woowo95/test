@@ -2,6 +2,7 @@
 import * as SIM from '../../sim';
 import { SCENARIER, kor, testBy } from './hjalp';
 import { farg, iPaletten } from '../../palett';
+import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
 
 SCENARIER.bortafalt = {
   text: 'Borta från byn, fältet (steg 11.2.3): den som är borta är fortfarande bybo och äger sitt, men finns inte på bykartan, ritas inte och väljs inte till något, och kommer tillbaka med allt sitt',
@@ -120,7 +121,7 @@ SCENARIER.floder = {
         let c = i, steg = 0;
         while (c >= 0 && !vatt(v, c) && steg++ < n) {
           const d = v.ned[c];
-          if (d >= 0 && !vatt(v, d) && v.hojd[d] > v.hojd[c] + 0.6) uppfor++; // en sänka får fyllas, men inte ett berg
+          if (d >= 0 && !vatt(v, d) && v.hojd![d] > v.hojd![c] + 0.6) uppfor++; // en sänka får fyllas, men inte ett berg
           if (d >= 0 && v.flod[c] === SIM.FLOD_NEDRE && v.flod[d] === SIM.FLOD_OVRE) nedreForst++;
           c = d;
         }
@@ -138,6 +139,36 @@ SCENARIER.floder = {
       [`det breda loppet blir aldrig smalt igen (${nedreForst} gånger)`, nedreForst === 0],
       [`sjöar finns i de flesta världar (${medSjo} av ${varldar.length}) och ligger inne i landet`, medSjo >= varldar.length / 2 && sjoVidKant === 0],
       ['samma frö ger samma floder', lika],
+    ];
+  },
+};
+
+SCENARIER.varldtillstand = {
+  text: 'Världen bredvid byn (steg 11.2.7): byn utvecklas exakt som utan värld, världens frö rör inte byns slump, och världen sparas och laddas med byn',
+  kor: async () => {
+    const utan = SIM.cloneState(testBy(10)), med = SIM.cloneState(testBy(10));
+    const slumpFore = JSON.stringify(med.rngs);
+    SIM.medVarld(med);
+    const slumpEfter = JSON.stringify(med.rngs), fro = med.varld!.fro;
+    kor(utan, 6); kor(med, 6);
+    const byn = (s: SIM.State) => { const o = JSON.parse(SIM.serialize(s)); delete o.varld; return JSON.stringify(o); };
+    const lika = byn(utan) === byn(med);
+    // världen följer med i sparningen, som en egen del inom sin gräns
+    const delar = SIM.serializeParts(med), kb = new TextEncoder().encode(delar.varlden ?? '').length / 1024;
+    const bas = minnesBas(); await sparaBy(bas, 'b', med);
+    const ny = (await lasBy(bas, 'b'))!.by, a = SIM.varldMark(med)!, b = SIM.varldMark(ny)!;
+    const ratt = SIM.skapaVarldMark(fro), samma = (x: SIM.VarldMark, y: SIM.VarldMark) => x.gen === y.gen && x.delfro === y.delfro && x.mark.every((m, i) => m === y.mark[i]) && x.flod.every((f, i) => f === y.flod[i]) && x.ned.every((n, i) => n === y.ned[i]);
+    // en värld som sparats med en äldre generator behåller sitt land
+    const gammal = SIM.cloneState(ny); gammal.varld!.mark.gen = 0;
+    const kvar = SIM.varldMark(gammal)!;
+    return [
+      ['en testby har ingen värld', !testBy(10).varld && !SIM.varldMark(testBy(10))],
+      ['världens frö räknas ur byns utan att röra byns slump', slumpFore === slumpEfter && fro === SIM.varldFro(med.seed) && fro !== med.seed],
+      ['byn utvecklas exakt som utan värld (6 timmar)', lika],
+      [`världen sparas som en egen del inom sin gräns (${kb.toFixed(0)} KB av ${SIM.delGrans('varlden')})`, kb > 0 && kb <= SIM.delGrans('varlden')],
+      ['världen laddas med byn, exakt som den räknades fram', samma(a, ratt) && samma(b, ratt) && ny.varld!.fro === fro],
+      ['en sparad värld behåller sitt land och sin version', kvar.gen === 0 && samma({ ...kvar, gen: ratt.gen }, ratt)],
+      ['medVarld ger en by som har en värld samma värld', SIM.medVarld(ny) === ny.varld],
     ];
   },
 };
