@@ -235,8 +235,10 @@ function formogenhetLista(p: Person) {
   const sum = formogenhetDelar(s, p.id).sum;
   const skuld = p.skatteskuld ? ` <span title="Skatten hen inte kunde betala; den läggs på nästa års skatt">Skatteskuld ${v(p.skatteskuld)}.</span>` : ''; // steg 10.5.5
   if (!rader.length) return `<p class="muted">Äger inget.${skuld}</p>`;
-  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${v(sum)} sammanlagt.${skuld} <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
-    <table class="agtab"><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
+  // kolumnrubriker och vågens symbol vid värdet (steg 11.1.49)
+  const vag = tecknet('sym_vag', '⚖', 12);
+  return `<p class="muted small" title="Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna">Värt ${vag} ${v(sum)} sammanlagt.${skuld} <span class="tryck" data-kvsort="1">${ui.kvSort ? '↓ kvalitet' : 'Sortera efter kvalitet'}</span></p>
+    <table class="agtab"><thead><tr><th></th><th>Sak</th><th class="tal">Antal</th><th>Kvalitet</th><th title="Hur mycket som är kvar innan den är utsliten">Skick</th><th class="tal" title="Värde, ungefär i arbetstimmar">${vag}</th></tr></thead><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
 }
 // egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras
 const SKALA = 2;
@@ -514,7 +516,7 @@ function gearHtml(p: Person) {
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
   const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.krok !== undefined ? `i ${byId(s, t.krok)?.name ?? 'någon'}s bälte` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
   const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 4)}</span>` : ''}${skickRing(t.c, cls.includes('hand'), px > 20)}</span>`;
-  const t = uppgiftVid(p), borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), ih = bordaIHander(s, p, t, u), kg = (n: number) => `${kortTal(n)} vikt`;
+  const t = uppgiftVid(p), borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), ih = bordaIHander(s, p, t, u), kg = (n: number) => `${kortTal(n)} kg`; // vikten i kg överallt (steg 11.1.49)
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
   // den som äter vid bordet har maten i den första fria handen (steg 3.10.3)
   const mal = vidBordet(p) ? t?.mal : undefined, malHand = mal ? (['hoger', 'vanster'] as const).find(k => !u[k].ting && !u[k].borda) : undefined;
@@ -547,8 +549,8 @@ function gearHtml(p: Person) {
   const paSig = paSigVikt(s, p); // samma vikt som simuleringen räknar mot det hen orkar (utrustning.ts)
   const rad = PLATS_LIST.filter(k => !PLATSER[k].hand).map(k => ruta(k)).join('');
   return `<div class="utrhander"><div class="utrhand">${ruta('hoger', true)}${handKg('hoger')}</div>${utrGubbe(p, u, ih)}<div class="utrhand">${ruta('vanster', true)}${handKg('vanster')}</div></div>
-    <div class="tekrad utrrad">${rad}</div><p class="small muted utrkg">På sig <b>${kg(paSig)}</b>${bar ? ` · börda <b>${kg(borda)}</b>` : ''} · orkar <b>${kg(orkar)}</b></p>
-    <div class="tekrad">${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, väger ${kg(viktOf(t.k))}, ${where(t)}`, 'pa')).join('')}</div>${stockHtml(p)}`;
+    <p class="utretik">På kroppen</p><div class="tekrad utrrad">${rad}</div><p class="small muted utrkg">På sig <b>${kg(paSig)}</b>${bar ? ` · börda <b>${kg(borda)}</b>` : ''} · orkar <b>${kg(orkar)}</b></p>
+    ${own.length ? `<p class="utretik">Äger, bär inte</p><div class="tekrad">${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, väger ${kg(viktOf(t.k))}, ${where(t)}`, 'pa')).join('')}</div>` : ''}${stockHtml(p)}`;
 }
 // människan i utrustningen (steg 5.3.4.3): samma figur som på kartan (folkbild.ts), med kläderna på, och redskapen i
 // händerna (och i bältet) som små bilder ovanpå, där platserna är
@@ -566,7 +568,7 @@ function stockHtml(p: Person) {
   const own = Object.entries(ownedStock(s, p)).filter(([k, n]) => n >= 0.5 && STACK[k]).sort((a, b) => b[1] - a[1]);
   if (!own.length) return '';
   const txt = fmtN;
-  return `<div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${txt(n)} ${sakNamn(k).toLowerCase()}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
+  return `<p class="utretik">Hens del i förrådet</p><div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${txt(n)} ${sakNamn(k).toLowerCase()}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
 }
 let kunTek: string | undefined; // tekniken vars ruta är öppen i kunskapen
 // kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.

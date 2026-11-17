@@ -1444,8 +1444,12 @@ SCENARIER.gastsida = {
     // Hälsa (steg 11.1.48): figuren med H och V, Förmågor med gångfarten, och Näring utan vätskan
     ui.personDel = 'halsa'; const ha = person.html();
     const halsaFlik = /class="hv"[^>]*>H</.test(ha) && /class="hv"[^>]*>V</.test(ha) && /<h3>Förmågor<\/h3>[\s\S]*Gångfart[\s\S]*<h3>Näring<\/h3>/.test(ha) && !/Vätska/.test(ha.split('<h3>Näring</h3>')[1] ?? '');
+    // Saker (steg 11.1.49): etiketter i Utrustning, vikten i kg och kolumnrubriker i Förmögenhet
+    SIM.newTing(s, 'yxa', 0, by.id); ui.personDel = 'utr'; ui.personFall['form'] = true; const sk = person.html(); delete ui.personFall['form'];
+    const sakerFlik = /class="utretik">På kroppen</.test(sk) && / kg</.test(sk) && !/ vikt</.test(sk) && /<th>Sak<\/th>/.test(sk);
     s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
     return [
+      ['Saker: etiketten På kroppen i Utrustning, vikten i kg och kolumnrubriker i Förmögenhet (steg 11.1.49)', sakerFlik],
       ['Hälsa: figuren med H och V, Förmågor med gångfarten och Näring utan vätskan (steg 11.1.48)', halsaFlik],
       ['Egenskaper: Temperament i stället för Aggression, och ingen pliktkänsla där (steg 11.1.47)', egenFlik],
       ['Behov: Vätska står efter Mättnad, takten skrivs i % per timme, tårtan har De senaste N åren och pliktkänslan står med flit, empati och seden (steg 11.1.46)', behovFlik],
