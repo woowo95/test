@@ -1,6 +1,7 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
 import { SCENARIER, kor, testBy } from './hjalp';
+import { farg, iPaletten } from '../../palett';
 
 SCENARIER.bortafalt = {
   text: 'Borta från byn, fältet (steg 11.2.3): den som är borta är fortfarande bybo och äger sitt, men finns inte på bykartan, ritas inte och väljs inte till något, och kommer tillbaka med allt sitt',
@@ -70,6 +71,31 @@ SCENARIER.borta = {
       ['den som är borta äter, dricker, smittas och flyttar sig inte i byn', orort],
       ['när alla är borta grundas byn inte om och ingen ny kommer', inteOmgrundad],
       ['alla kommer hem och är i byn igen', SIM.living(s).length === alla.length],
+    ];
+  },
+};
+
+SCENARIER.varldmark = {
+  text: 'Världens mark (steg 11.2.5): samma frö ger samma land, havet omger allt, den största landmassan är stor nog och över mitten, småöarna finns, och raderna i VARLDMARK är hela',
+  kor: () => {
+    const fron = Array.from({ length: 20 }, (_, i) => 1000 + i * 7919), V = SIM.VARLD;
+    const varldar = fron.map(f => SIM.skapaVarldMark(f));
+    const igen = SIM.skapaVarldMark(fron[0]), lika = igen.delfro === varldar[0].delfro && igen.mark.every((m, i) => m === varldar[0].mark[i]);
+    const annan = varldar[1].mark.some((m, i) => m !== varldar[0].mark[i]);
+    const former = varldar.map(v => SIM.formen(v));
+    const kantHav = varldar.every(v => { for (let x = 0; x < v.w; x++) for (const y of [0, v.h - 1]) if (SIM.markAt(v, x, y) !== 'hav') return false; for (let y = 0; y < v.h; y++) for (const x of [0, v.w - 1]) if (SIM.markAt(v, x, y) !== 'hav') return false; return true; });
+    const sorter = new Set(varldar.flatMap(v => [...new Set(v.mark)].map(m => SIM.MARK_IDS[m])));
+    const rader = Object.values(SIM.VARLDMARK) as SIM.MarkDef[];
+    const ratt = rader.every(r => [...r.vanligt, ...r.sallsynt].every(k => !!SIM.SAKER[k]) && iPaletten(farg(r.farg[0], r.farg[1])) && (r.land ? r.kostnad >= 1 && r.fram.includes('fots') : r.fram.length === 0));
+    const minA = Math.min(...former.map(f => f.andel)), minO = Math.min(...former.map(f => f.oar));
+    return [
+      ['samma frö ger samma land, och ett annat frö ett annat', lika && annan],
+      ['generatorns version sparas med marken', varldar.every(v => v.gen === SIM.VARLD_GEN && v.w === V.bredd && v.h === V.hojd)],
+      ['havet omger allt: kanten är hav och ingen landmassa når den', kantHav && former.every(f => f.havRunt)],
+      [`den största landmassan är minst ${V.storAndel * 100} % av kartan och över mitten (minst ${Math.round(minA * 100)} %)`, former.every(f => f.andel >= V.storAndel && f.mitten)],
+      [`minst ${V.minOar} småöar i varje värld (minst ${minO})`, minO >= V.minOar],
+      [`alla landets sorter finns (${[...sorter].join(', ')})`, ['hav', 'slatt', 'skog', 'tat', 'myr', 'berg'].every(k => sorter.has(k as SIM.MarkId))],
+      ['raderna i VARLDMARK: sakerna finns, färgen är ur paletten, landet går att gå på och havet inte', ratt],
     ];
   },
 };
