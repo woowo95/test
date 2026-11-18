@@ -4411,3 +4411,59 @@ SCENARIER.fangar = {
     ];
   },
 };
+
+SCENARIER.fangeval = {
+  env: { BALANS: 'klan.taEmot=5' }, // fången vill stanna (avgörs som för främlingen)
+  text: 'Vad byn gör med fången (steg 11.12.7, FANGERADER i fangeval.ts): ett dygn efter att fången togs väljer ledaren raden med högst poäng ur seden Förlikning – Fejd, hårdheten och vad fången gjort. Förlikning släpper hen hem, Fejd dödar hen, en by i världen som kan betala skickar ett sändebud med lösen i silver och fången följer med hem, uteblir lösen väljs på nytt utan raden, och utan lösen och med en fånge som vill stanna tas hen upp i byn',
+  kor: () => {
+    // en rövare från klanen klan som byn tagit för ett dygn sedan
+    const fange = (s: SIM.State, klan?: number) => {
+      const z = SIM.zoneOf(s)!, f = rovarGang(s, 1, { x: z.x + z.w / 2 + 6, y: z.y + z.h / 2 }, klan === undefined ? {} : { klan });
+      const r = SIM.gastAv(s, f.folk[0])!; SIM.geUpp(s, r);
+      const h = SIM.fangelseLedigt(s)!; SIM.satt(s, r, h, 'Tagen i scenariot'); r.gast!.tagen = s.now - SIM.DAY - 1;
+      if (s.rovare && !s.rovare.folk.length) s.rovare = undefined;
+      return r;
+    };
+    const liten = (sed: number, utanVarld = false) => {
+      const s = SIM.createState(6, START); klockan(s, 10); medHus(s);
+      const h = SIM.housesOf(s)[0]; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s);
+      s.seder.v.fejd = sed; s.styre = undefined;
+      const r = fange(s); if (utanVarld) SIM.klanById(s, r.gast!.klan)!.rad = undefined; // hembyn finns inte i världen: ingen lösen
+      SIM.fangeOde(s); return { s, r };
+    };
+    const f = liten(-1), fe = liten(1), n = liten(0, true);
+    const slappt = (f.s.stat?.fange_val_slapps ?? 0) > 0 && !f.r.fange;
+    korTills(f.s, () => !f.s.people.includes(f.r), 2 * 3600);
+    const hem = !f.s.people.includes(f.r);
+    const dod = (fe.s.stat?.fange_val_dodas ?? 0) > 0 && fe.r.died !== undefined;
+    const upp = (n.s.stat?.fange_val_tasUpp ?? 0) > 0 && !n.r.gast && n.r.id >= 0 && SIM.living(n.s).includes(n.r);
+    // lösen: en by i världen som kan betala
+    const bas = testBy(3), vl = bas.varld!;
+    const klan = SIM.klanerOf(bas).find(k => k.rad !== undefined && vl.rader?.some(r => r.nr === k.rad && SIM.lever(vl, r) && r.sort === 'by'))!;
+    const forbered = () => {
+      const s = SIM.cloneState(bas); s.seder.v.fejd = 0; s.styre = undefined;
+      const h = SIM.housesOf(s).find(q => SIM.fangelseDorr(s, q))!; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s);
+      for (const q of SIM.living(s)) q.task = undefined;
+      const r = fange(s, klan.id); SIM.fangeOde(s); r.gast!.losen && (r.gast!.losen.t = s.now); return { s, r };
+    };
+    const l = forbered(), silver0 = SIM.amountOf(l.s, 'silver');
+    const valdLosen = (l.s.stat?.fange_val_losen ?? 0) > 0;
+    let bud: SIM.Person | undefined;
+    korTills(l.s, () => !l.r.fange, 8 * 3600, () => { bud ??= l.s.people.find(q => q.gast?.losenFor === l.r.id); });
+    const losen = !!bud && !l.r.fange && (l.s.stat?.fange_losen ?? 0) > 0 && SIM.amountOf(l.s, 'silver') - silver0 >= SIM.FANGEVAL.losen;
+    // budet dör på vägen: ledaren väljer på nytt utan lösen
+    const u = forbered();
+    korTills(u.s, () => u.s.people.some(q => q.gast?.losenFor === u.r.id), 3600);
+    const ub = u.s.people.find(q => q.gast?.losenFor === u.r.id);
+    if (ub) SIM.gastDor(u.s, ub, 'i scenariot');
+    u.s.now = u.r.gast!.losen!.till; SIM.fangeOde(u.s);
+    const igen = (u.s.stat?.fange_losen_uteblev ?? 0) > 0 && !u.r.gast?.losen && ((u.s.stat?.fange_val_tasUpp ?? 0) + (u.s.stat?.fange_val_slapps ?? 0)) > 0;
+    return [
+      [`med seden Förlikning släpps fången (${Object.keys(f.s.stat ?? {}).filter(k => k.startsWith('fange_val_'))}) och går hem`, slappt && hem],
+      [`med seden Fejd dödas fången`, dod],
+      [`utan by i världen och med en fånge som vill stanna tas hen upp i byn`, upp],
+      [`en by i världen som kan betala ger lösen (vald: ${valdLosen}): ett sändebud kommer med ${SIM.FANGEVAL.losen} silver, som hamnar i förrådet, och fången följer med hem`, valdLosen && losen],
+      [`dör budet väljer ledaren på nytt utan lösen`, !!ub && igen],
+    ];
+  },
+};

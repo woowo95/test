@@ -21,7 +21,7 @@ export const BYREL = balans('byrel', {
   moderby: 3, // en by och dess moderby har så många släktband från början
   // verkan av handlingarna i BYHANDELSER
   handel: 2, gava: 1, muta: 4, fjask: 2, turne: 5, besked: 3, ovanligt: 6, mottagen: 3, bortvisad: 6,
-  lurad: 10, ran: 10, plundring: 20, dodade: 15, skandad: 5, bruten: 25,
+  lurad: 10, ran: 10, plundring: 20, dodade: 15, skandad: 5, bruten: 25, slappt: 6, avrattad: 20,
   turneMinns: 6, // en by minns den från huvudbyn som uppträtt där så många dygn (år i spelet), och dess handlare talar om hen så länge (steg 11.8.18)
 });
 type Tal = keyof typeof BYREL;
@@ -43,6 +43,8 @@ export const BYHANDELSER = {
   dodade: { namn: 'dödade', tal: 'dodade', tecken: -1 },
   skandad: { namn: 'skändad död', tal: 'skandad', tecken: -1 },
   bruten: { namn: 'bruten överenskommelse', tal: 'bruten', tecken: -1 },
+  slappt: { namn: 'släppt fånge', tal: 'slappt', tecken: 1 }, // steg 11.12.7 (fangeval.ts)
+  avrattad: { namn: 'dödad fånge', tal: 'avrattad', tecken: -1 },
 } as const satisfies Record<string, ByHandelse>;
 export type ByHandelseId = keyof typeof BYHANDELSER;
 

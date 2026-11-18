@@ -107,6 +107,7 @@ import { akel, latrinLedigNara, latrinUpptagen, latrinVanta, latrinerVaxerIgen, 
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
+import { fangeOde } from './fangeval';
 import { avrustaKlar, gravDygn, gravKlar, gravaMedan, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
@@ -564,6 +565,7 @@ export const TAKTER: Takt[] = [
   } },
   { namn: 'striden', sek: 0, fn: (s, dt) => { kartStridSteg(s, dt); serStriden(s); } }, // striderna på kartan stegas med byn, och de som ser dem väljer på nytt (kartstrid.ts, steg 10.1.4)
   // gästernas vardag (steg 9.2.113, gastvardag.ts): värmen räknas som en bybos, men reskläderna tar det mesta av kylan
+  { namn: 'fångarnas öde', sek: 3600, fn: s => fangeOde(s) }, // vad byn gör med fången (fangeval.ts, steg 11.12.7)
   { namn: 'gästerna', sek: 30, fn: (s, dt, c) => { const temp = temperature(s), coldRate = coldOf(temp), inRum = rumAntal(s, c); gastVardag(s, dt, g => { const v = varmeDelar(s, g, coldRate, inRum, temp); v.kyla *= 1 - GASTVARD.klad; return nyVarme(g.warm, v, dt / HOUR_S); }); } },
   { namn: 'handlarprat', sek: 0, fn: (s, dt, c) => pratMedHandlare(s, dt, c.events) }, // småprat med handlaren (steg 4.5.4.15, handel.ts)
   // relationer bleknar långsamt utan umgänge

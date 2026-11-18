@@ -19,7 +19,7 @@ import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
-import { KLAN, klanById, klanerOf, narhet } from './klaner';
+import { KLAN, klanById, klanerOf, narhet, type Klan } from './klaner';
 import { radKrok } from './radtal';
 import { BYREL, byHandelse, gavaRel, klanHandelse } from './byrel';
 import { kantMot, utbrytning } from './grannbyar';
@@ -258,9 +258,12 @@ export function sandebud(s: State, fran: number, ton: import('./byhandling').Bes
   return p;
 }
 // samtalet är slut: sändebudets besked verkar, gåvan läggs i förrådet, och budet går hem
+// budet med lösen för en fånge (steg 11.12.7): fangeval.ts sätter kroken
+export const budKrok: { losen?: (s: State, bud: Person) => void; blirBybo?: (s: State, p: Person, k?: Klan) => void } = {};
 export function beskedVerkar(s: State, p: Person) {
   const g = p.gast!, vl = s.varld, k = klanById(s, g.klan), r = vl?.rader?.find(x => x.nr === g.hemRad);
   g.fas = 'gar'; g.path = undefined; g.pk = undefined;
+  if (g.losenFor !== undefined) { budKrok.losen?.(s, p); return; }
   if (!vl || !r || vl.huvud === undefined || !g.besked) return;
   byHandelse(vl, g.besked, r.nr, vl.huvud);
   let varde = 0;
@@ -329,13 +332,29 @@ export function framlingSteg(s: State, dtSec: number) {
     }
   }
 }
+// hur gärna byn tar emot någon från klanen k (främlingen, och fången som vill stanna, steg 11.12.7): tekniken, klanens
+// inställning, seden Förnyelse – Tradition, trängseln och maten
+export function taEmotVilja(s: State, k: Klan, tek?: string) {
+  return KLAN.taEmot + (tek ? KLAN.taEmotTek : 0) + k.inst / 100 * KLAN.taEmotInst + (s.seder.v.nyfikenhet ?? 0) * KLAN.taEmotSed
+    - Math.min(1, crowd(living(s).length)) * KLAN.taEmotTrang - (1 - matGott(s)) * KLAN.taEmotMat;
+}
+// fången som tas upp i byn (steg 11.12.7, fangeval.ts): gästen blir bybo med ett nytt id, och plaggen hen bär blir hens
+budKrok.blirBybo = (s, p, k) => {
+  const gid = p.id, id = s.nextId++;
+  for (const t of (s.gastTing ?? []).filter(t => t.agare === gid)) (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: t.k, c: t.c, agare: id, ...(t.bar !== undefined ? { bar: id } : {}), ...(t.hos !== undefined ? { hos: id } : {}), ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}) });
+  s.gastTing = s.gastTing?.filter(t => t.agare !== gid); if (!s.gastTing?.length) delete s.gastTing;
+  p.id = id; p.gast = undefined; p.task = undefined; p.fange = undefined; if (k) p.fran = k.id;
+  if (isWall(s, p.x, p.y) || vattenNu(s)[tileOf(p.x, p.y)] === T.Vatten) { const f = freeNear(s, Math.floor(p.x), Math.floor(p.y)); p.x = f.x + 0.5; p.y = f.y + 0.5; }
+  upplev(s, p, 'flyttade');
+  if (k) klanHandelse(s.varld, k, 'mottagen');
+  const text = `${p.name}, som satt fången i byn, fick stanna och blev en av byns folk.`;
+  log(s, text, 'move', [p.id]); notis(s, 'inflytt', text, [p.id]); kronika(s, text, 'flytt');
+};
 // samtalet är slut: byn avgör om främlingen får stanna
 export function framlingBeslut(s: State, p: Person) {
   const g = p.gast!, k = klanById(s, g.klan);
   if (!k) { g.fas = 'gar'; return undefined; }
-  const pop = living(s).length, tek = g.tek;
-  const v = KLAN.taEmot + (tek ? KLAN.taEmotTek : 0) + k.inst / 100 * KLAN.taEmotInst + (s.seder.v.nyfikenhet ?? 0) * KLAN.taEmotSed
-    - Math.min(1, crowd(pop)) * KLAN.taEmotTrang - (1 - matGott(s)) * KLAN.taEmotMat;
+  const tek = g.tek, v = taEmotVilja(s, k, tek);
   const ja = g.ja ?? rnd(s, 'klan') < v;
   const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
   if (!ja) {

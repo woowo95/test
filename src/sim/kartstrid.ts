@@ -173,6 +173,7 @@ function varldAv(s: State, g: KartStrid): StridVarld {
       if (h !== 'dod' || !p || p.died !== undefined) return;
       const hit = [...g.st.logg].reverse().find(q => (q.h === 'traff' || q.h === 'hugg') && q.b === k.id), av = hit ? personAv(s, g.st.kampar.find(o => o.id === hit.a)!) : undefined;
       if (p.gast) { gastKrok.dod?.(s, p, av); if (p.died === undefined) { p.died = s.now; p.cause = 'i en strid'; } return; } // en gäst (rövaren): kroken i rovare.ts
+      if (av?.gast) av.gast.dodat = (av.gast.dodat ?? 0) + 1; // gästen som dödat en bybo (vad byn gör med fången, steg 11.12.7)
       const slag = g.efter ? STRIDSLAG[g.efter.typ] : undefined;
       if (slag) { slag.dod?.(s, p); if (p.died === undefined) die(s, p, slag.orsak as Parameters<typeof die>[2]); return; }
       count(s, 'drap'); die(s, p, 'drap');

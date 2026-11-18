@@ -46,6 +46,7 @@ export * from './sim/uppvaxt';
 export * from './sim/religion';
 export * from './sim/trotext';
 export * from './sim/fangelse';
+export * from './sim/fangeval';
 export * from './sim/val';
 export * from './sim/samtal';
 export * from './sim/humor';
