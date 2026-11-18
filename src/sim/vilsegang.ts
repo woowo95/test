@@ -12,7 +12,10 @@ import { count, isKin, living } from './folk';
 import { put } from './lager';
 import { laggUndan, overVarde, styretNod } from './utlysa';
 import { dagbok, hittadDod, resenarer, resenarNamn, SAKNADKROK, Sallskap, sallskapFor, vandHem, vantadDygn } from './resa';
-import { avslutaUppdrag, belonVarde, larUppdrag, uppdragen, utlys } from './uppdrag';
+import { avslutaUppdrag, belonVarde, larUppdrag, uppdragen, utlys, type Utlyst } from './uppdrag';
+import { radTar } from './priser';
+import { radNr } from './radtal';
+import type { Varlden } from './varlden';
 import { DAY, Person, State } from './typer';
 
 export const VILSEGANG = balans('vilsegang', {
@@ -47,10 +50,9 @@ SAKNADKROK.koll = (s, sl) => {
 // två av byns sällskap på samma ruta under timmen (vagmote.ts): den som letar hittar den saknade
 SAKNADKROK.mots = (s, a, b, t) => { hitta(s, a, b, t) || hitta(s, b, a, t); };
 const kanner = (s: State, sl: Sallskap, id: number) => sl.uppdrag === id || resenarer(s, sl).some(p => p.lardomar?.some(l => l.k === 'uppdrag' && l.a === id));
-export function hitta(s: State, finn: Sallskap, vilse: Sallskap, t: number): boolean {
-  const vl = s.varld, u = vl && vilseFor(s, vilse.id);
-  if (!vl || !u || !resenarer(s, finn).length || !kanner(s, finn, u.id)) return false;
-  const finnare = resenarNamn(s, finn), levande = resenarer(s, vilse).length;
+// den saknade är hittad av finnare: lever någon får de vägen visad och vänder hem, annars kommer beskedet hem; belöningen ges
+function hittad(s: State, vl: Varlden, u: Utlyst, vilse: Sallskap, finnare: string, t: number): Record<string, number> {
+  const levande = resenarer(s, vilse).length;
   if (levande) {
     vilse.forlorat = 0;
     dagbok(s, vilse, 'uppdrag', `${finnare} hittade sällskapet och visade vägen hem.`, t);
@@ -59,10 +61,24 @@ export function hitta(s: State, finn: Sallskap, vilse: Sallskap, t: number): boo
   const fick = { ...u.belon };
   u.belon = {};
   avslutaUppdrag(s, vl, u, true);
+  count(s, levande ? 'vilse hittad' : 'vilse hittad död');
+  return fick;
+}
+export function hitta(s: State, finn: Sallskap, vilse: Sallskap, t: number): boolean {
+  const vl = s.varld, u = vl && vilseFor(s, vilse.id);
+  if (!vl || !u || !resenarer(s, finn).length || !kanner(s, finn, u.id)) return false;
+  const dod = !resenarer(s, vilse).length, namn = resenarNamn(s, vilse), fick = hittad(s, vl, u, vilse, resenarNamn(s, finn), t);
   for (const [k, n] of Object.entries(fick)) if (n >= 1) finn.pack[k] = (finn.pack[k] ?? 0) + n;
   finn.utfall = { namn: 'Vilsegången', hur: 'klart', fick };
-  dagbok(s, finn, 'uppdrag', `Hittade ${resenarNamn(s, vilse)}${levande ? '' : ' döda'} vid leden. Belöningen: ${Object.entries(fick).map(([k, n]) => `${n} ${k}`).join(', ') || 'ingen'}.`, t);
+  dagbok(s, finn, 'uppdrag', `Hittade ${namn}${dod ? ' döda' : ''} vid leden. Belöningen: ${Object.entries(fick).map(([k, n]) => `${n} ${k}`).join(', ') || 'ingen'}.`, t);
   if (finn.skede === 'ute' || finn.skede === 'framme') vandHem(s, finn);
-  count(s, levande ? 'vilse hittad' : 'vilse hittad död');
   return true;
 }
+// en färd från en by som budbäraren nått möter den saknade (steg 11.8.13): belöningen följer med färden hem
+SAKNADKROK.fard = (s, sl, f, t) => {
+  const vl = s.varld, u = vl && vilseFor(s, sl.id), r = vl && radNr(vl, f.fran);
+  if (!vl || !u || !r || !u.kand?.includes(f.fran)) return;
+  const fick = hittad(s, vl, u, sl, `Folk från ${r.namn}`, t);
+  for (const [k, n] of Object.entries(fick)) { if (k === 'silver') f.silver = (f.silver ?? 0) + n; else radTar(r, k, n); }
+  count(s, 'vilse hittad av by');
+};

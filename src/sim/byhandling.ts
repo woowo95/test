@@ -201,7 +201,7 @@ function uppdragAffar(c: ByCtx): { id: number; varde: number; dygn: number } | u
     return v > 0 ? { id: fyndId(q.nr), varde: Math.min(BYHANDLING.last, v), dygn } : undefined;
   }
   let bast: { id: number; varde: number; dygn: number } | undefined;
-  for (const u of vl.uppdrag ?? []) if (u.mal === q.nr && u.av.rad !== r.nr && uppdragDef(u.k).gor === 'hjalpa') {
+  for (const u of vl.uppdrag ?? []) if (u.mal === q.nr && u.av.rad !== r.nr && (uppdragDef(u.k).gor === 'hjalpa' || (uppdragDef(u.k).gor === 'strida' && !!u.kand?.includes(r.nr)))) { // det vaktade som budbäraren berättat om (steg 11.8.13)
     const v = belonVarde(u);
     if (!bast || v > bast.varde) bast = { id: u.id, varde: v, dygn };
   }
@@ -209,11 +209,13 @@ function uppdragAffar(c: ByCtx): { id: number; varde: number; dygn: number } | u
 }
 // färden kommer fram till uppdraget: den tar det som finns kvar i ruinen (så mycket bärarna bär) eller belöningen för hjälpen,
 // och bär det hem som byte; har någon hunnit före finns inget
+// det vaktade (steg 11.8.13, utlysa.ts): färden tar det stulna i fick och säger om den vann
+export const RADUPPDRAGKROK: { strida?: (s: State, vl: Varlden, f: RadFard, u: import('./uppdrag').Utlyst, fick: Record<string, number>) => boolean } = {};
 function uppdragFardFram(s: State, vl: Varlden, f: RadFard) {
   const q = byPlats(vl, f.till), fick: Record<string, number> = {};
   if (!q) return;
   if (f.uppdrag! < 0) { const ruin = ruinRad(vl, q.nr); if (ruin) Object.assign(fick, taRuin(s, vl, ruin, f.t1, BYHANDLING.last, k => grundvarde(k))); }
-  else { const u = uppdragNr(vl, f.uppdrag!); if (u && u.mal === q.nr) { Object.assign(fick, u.belon); u.belon = {}; avslutaUppdrag(s, vl, u, true); } }
+  else { const u = uppdragNr(vl, f.uppdrag!); if (u && u.mal === q.nr && (uppdragDef(u.k).gor !== 'strida' || RADUPPDRAGKROK.strida?.(s, vl, f, u, fick))) { Object.assign(fick, u.belon); u.belon = {}; avslutaUppdrag(s, vl, u, true); } }
   const byte: Partial<Record<VarugruppId, number>> = {};
   for (const [k, n] of Object.entries(fick)) { if (k === 'silver') { f.silver = (f.silver ?? 0) + Math.floor(n); continue; } const g = gruppAv(k) ?? 'redskap'; byte[g] = (byte[g] ?? 0) + n * grundvarde(k) / enhet(g); }
   for (const g of Object.keys(byte) as VarugruppId[]) { byte[g] = Math.floor(byte[g]! + 1e-9); if (!byte[g]) delete byte[g]; }

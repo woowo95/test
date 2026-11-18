@@ -89,7 +89,7 @@ export const uppdragDef = (k: UppdragId): UppdragDef => UPPDRAG[k];
 export interface Utlysare { k: UtlysarId; person?: number; rad?: number; tro?: number /* kyrkans tro (steg 11.13.29) */ }
 // ett utlyst uppdrag: sorten, platsen (världsplatsens nummer), vem som utlyst, belöningen som lagts undan i hela saker, när det
 // utlystes och när det tar slut; om = den saknade (vilsegången), sak = det som ska föras dit (leveransen)
-export interface Utlyst { id: number; k: UppdragId; mal: number; av: Utlysare; belon: Record<string, number>; t: number; slut: number; om?: number; sak?: [string, number] }
+export interface Utlyst { id: number; k: UppdragId; mal: number; av: Utlysare; belon: Record<string, number>; t: number; slut: number; om?: number; sak?: [string, number]; kand?: number[] /* byarna i världen budbäraren nått (steg 11.8.13) */ }
 
 const uppdragTid = (k: UppdragId) => UPPDRAGTAL[uppdragDef(k).tid ?? 'tid'] * DAY;
 // utlys ett uppdrag: belöningen har redan lagts undan av den som utlyser (steg 11.8.11–12), i hela saker. Slutet läggs i

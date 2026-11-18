@@ -36,7 +36,7 @@ import { ledKlass, sallskapTyngd, trampa } from './leder';
 import type { Skill } from './typer';
 import { kommHem } from './ute';
 import { larOrt, O_BESOKT, radBesoker } from './ort';
-import { BYSORTER, radNr } from './radtal';
+import { BYSORTER, radNr, type VarldRad } from './radtal';
 import { byPaslag, gruppAv, radHar, radPaslag, radPrisAndras, radTar } from './priser';
 import { makeName } from './folk';
 import { rnd } from './slump';
@@ -150,6 +150,7 @@ export const RESMAL = {
   slakt: { namn: 'Besök hos släkt', mal: ['by'], stannar: 2 },
   se: { namn: 'Se en plats', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
   sandebud: { namn: 'Sändebud', mal: ['by'], stannar: 1 },
+  budbarare: { namn: 'Budbärare', mal: ['by'], stannar: 0.25 }, // den som utlyst ett uppdrag skickar det till en grannby (steg 11.8.13, utlysa.ts)
   hamta: { namn: 'Hämta', mal: ['silvergruva'], stannar: 1 }, // det en plats ger: silvret i gruvan; tiden nere väljs i packskedet (steg 11.10.1)
 } as const satisfies Record<string, ResmalDef>;
 export type ResmalId = keyof typeof RESMAL;
@@ -691,6 +692,8 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   HEMKROK.f?.(s, sl, t); // den som förlorat något på vägen utlyser (steg 11.8.11, utlysa.ts)
 }
 export const HEMKROK: { f?: (s: State, sl: Sallskap, t: number) => void } = {};
+// budbäraren (steg 11.8.13, utlysa.ts): vilket uppdrag p vill bära till byn rad och värdet, och vad som sker framme
+export const BUDBARKROK: { f?: (s: State, p: Person, rad: number) => { id: number; varde: number } | undefined; fram?: (s: State, sl: Sallskap, r: VarldRad, t: number) => void } = {};
 
 // sändebudet framme (steg 11.6.23): beskedet verkar hos byn, och ett vänligt bud lämnar det det bär (utom det som behövs för
 // vägen och maten) som gåva, i hela saker i byns förråd; byns syn går upp efter gåvans värde
@@ -751,6 +754,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   const k = r.syn;
   if (sl.skal === 'sandebud') budFram(s, sl, r, t);
   if (sl.skal === 'turne') turneFram(s, sl, r, t);
+  if (sl.skal === 'budbarare') BUDBARKROK.fram?.(s, sl, r, t);
   // sälja: varorna mot byns silver
   let fick = 0, salda = 0;
   for (const sak of Object.keys(sl.pack).sort()) {
@@ -951,6 +955,9 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     }
     // ett uppdrag personen tror på (steg 11.8.4): den trodda belöningen gånger tilltron, mot samma kostnad och risk som annat
     let uid: number | undefined;
+    // budbäraren (steg 11.8.13): ett uppdrag som p:s hushåll eller styre utlyst, till en grannby som inte vet om det
+    const bud = skal !== 'sandebud' && q.k === 'by' && r && BYSORTER[r.sort].folk && r.tal.folk > 0 ? BUDBARKROK.f?.(s, p, r.nr) : undefined;
+    if (bud && (!skal || bud.varde > varde)) { skal = 'budbarare'; varde = bud.varde; uid = bud.id; varor = []; kop = []; }
     const upp = skal !== 'sandebud' && ((RESMAL.uppdrag.mal as readonly string[]).includes(q.k) || vilseVid(p, q.nr)) ? uppdragVid(s, p, q.nr) : undefined; // en vilsegång längs vägen till vilket mål som helst (steg 11.8.6)
     if (upp && (!skal || upp.varde > varde)) { skal = 'uppdrag'; varde = upp.varde; uid = upp.id; varor = []; kop = []; }
     // silvergruvan (steg 11.10.1): silvret personen väntar sig bära hem efter den bästa tiden nere, mindre för ett rykte
@@ -1453,7 +1460,7 @@ export function vantadDygn(s: State, sl: Sallskap) {
   return (hem && mal ? 2 * dygnDit(s, { x: hem.x, y: hem.y }, { x: mal.x, y: mal.y }) : 0) + stannarFor(sl);
 }
 // den saknade (steg 11.8.6, vilsegang.ts): kroken väger om någon hemma utlyser en vilsegång, och mötet säger när sällskapet hittas
-export const SAKNADKROK: { koll?: (s: State, sl: Sallskap) => void; mots?: (s: State, a: Sallskap, b: Sallskap, t: number) => void } = {};
+export const SAKNADKROK: { koll?: (s: State, sl: Sallskap) => void; mots?: (s: State, a: Sallskap, b: Sallskap, t: number) => void; fard?: (s: State, sl: Sallskap, f: import('./byhandling').RadFard, t: number) => void } = {};
 function forsvunnet(s: State, sl: Sallskap, hittad?: string) {
   if (!hittad && s.now - sl.borjan < RESA.forsvunnen * Math.max(1, vantadDygn(s, sl)) * DAY) return;
   const namn = resenarNamn(s, sl);

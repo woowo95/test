@@ -5585,3 +5585,32 @@ SCENARIER.styretutlyser = {
     ];
   },
 };
+SCENARIER.budbarare = {
+  text: 'Budbäraren (steg 11.8.13, utlysa.ts): den som utlyst ett uppdrag kan skicka en ur sitt hushåll med det till en grannby, som framme vet om uppdraget; en färd därifrån kan hämta det vaktade när bärarna är minst lika många som vakterna',
+  kor: () => {
+    const { s, vl, folk, L, sl } = ranatSallskap(true), a = folk[1]!;
+    SIM.HEMKROK.f!(s, sl, s.now);
+    const u = SIM.uppdragen(vl).find(x => x.k === 'vaktat' && x.av.person === a.id)!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && x.nr !== vl.huvud && x.nr !== L.nr)!;
+    const annan = SIM.living(s).find(p => !p.gast && !SIM.familjOf(s, a.id).some(q => q.id === p.id))!;
+    const bud = SIM.BUDBARKROK.f!(s, a, r.nr), frammande = SIM.BUDBARKROK.f!(s, annan, r.nr);
+    const b = { ...sl, uppdrag: u?.id, dagbok: [] as typeof sl.dagbok };
+    SIM.BUDBARKROK.fram!(s, b, r, s.now);
+    const vet = !!u?.kand?.includes(r.nr), igen = SIM.BUDBARKROK.f!(s, a, r.nr);
+    const f = { id: 1, fran: r.nr, till: L.nr, g: 'redskap', n: 0, t0: s.now, t1: s.now } as unknown as Parameters<NonNullable<typeof SIM.RADUPPDRAGKROK.strida>>[2];
+    const fa: Record<string, number> = {}, fb: Record<string, number> = {};
+    const sparat = { ...L.stulet }, folkFore = L.tal.folk, vakt = () => Math.max(1, Math.round(L.tal.folk * SIM.VAKTAT.vakter));
+    L.tal.folk = Math.ceil((SIM.BYHANDLING.barare + 1) / SIM.VAKTAT.vakter); const manga = vakt();
+    const forlorar = !SIM.RADUPPDRAGKROK.strida!(s, vl, f, u, fa);
+    L.tal.folk = 0; const vinner = SIM.RADUPPDRAGKROK.strida!(s, vl, f, u, fb);
+    L.tal.folk = folkFore;
+    return [
+      [`den som utlyste kan skicka ett bud till ${r.namn} (värt ${bud?.varde.toFixed(1)})`, !!u && bud?.id === u.id && bud.varde > 0],
+      ['den utanför hushållet bär inte budet', !frammande],
+      [`framme vet ${r.namn} om uppdraget (${b.dagbok.map(d => d[1]).join(' / ')})`, vet],
+      ['en by som redan vet behöver inget bud', !igen],
+      [`färre bärare (${SIM.BYHANDLING.barare}) än vakterna (${manga}) tar inte det vaktade`, forlorar && !Object.keys(fa).length],
+      [`fler bärare än vakterna tar det (${Object.entries(fb).map(([k, n]) => `${n} ${k}`).join(', ')})`, vinner && Object.keys(sparat).every(k => fb[k] === sparat[k]) && !L.stulet],
+    ];
+  },
+};

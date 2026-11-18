@@ -14,7 +14,12 @@ import { alive, count } from './folk';
 import { ownedStock, use } from './lager';
 import { byPlats } from './landmarken';
 import { radNr } from './radtal';
-import { HEMKROK } from './resa';
+import { BUDBARKROK, dagbok, HEMKROK } from './resa';
+import { familjOf } from './folk';
+import { RADUPPDRAGKROK } from './byhandling';
+import { lagerVid, stulVarde, VAKTAT } from './vaktat';
+import { uppdragNr } from './uppdrag';
+import { BYHANDLING } from './byhandling';
 import { isFood } from './saker';
 import { ledareOf } from './styre';
 import { belonVarde, larUppdrag, UppdragId, uppdragen, UPPDRAGTAL, utlys } from './uppdrag';
@@ -27,6 +32,7 @@ import { DAY, Person, State } from './typer';
 export const UTLYSA = balans('utlysa', {
   andel: 0.5, // den som blivit rånad lägger undan så stor del av det förlorades värde ...
   styre: 0.5, // ... och styret så stor del av byns förlust (i silver)
+  bud: 0.3, // det är värt så stor del av belöningen att en grannby får veta om uppdraget (budbäraren)
 });
 
 // det p har över: det hen äger i förrådet utom maten, i hela saker
@@ -108,3 +114,41 @@ BUDGET.uppdrag = {
   vill: () => 0.5,
 };
 if (!BUDGET_LIST.includes('uppdrag')) BUDGET_LIST.push('uppdrag');
+
+// ---------- budbäraren (steg 11.8.13) ----------
+// Den som utlyst ett uppdrag i byn (en person, eller styret) kan skicka en bybo ur sitt hushåll (för styret ledarens) till en
+// grannby med det: resan väger som andra resor (resaPlan), med värdet UTLYSA.bud gånger belöningen för varje by som inte vet om
+// det. Framme vet byn om uppdraget (Utlyst.kand), och den kan själv ge sig av efter det vaktade (en färd mot lägret, som vinner
+// när bärarna är minst lika många som vakterna) eller hitta den saknade när en färd därifrån möter den på vägen (vilsegang.ts)
+const hushall = (s: State, u: { av: { k: string; person?: number } }): number[] => {
+  const id = u.av.person ?? (u.av.k === 'styre' ? ledareOf(s)?.id : undefined);
+  return id === undefined ? [] : familjOf(s, id).map(p => p.id);
+};
+BUDBARKROK.f = (s, p, rad) => {
+  const vl = s.varld;
+  if (!vl) return undefined;
+  let bast: { id: number; varde: number } | undefined;
+  for (const u of uppdragen(vl)) {
+    if (u.av.rad !== undefined || u.kand?.includes(rad) || !hushall(s, u).includes(p.id)) continue;
+    const varde = UTLYSA.bud * belonVarde(u);
+    if (varde > 0 && (!bast || varde > bast.varde)) bast = { id: u.id, varde };
+  }
+  return bast;
+};
+BUDBARKROK.fram = (s, sl, r, t) => {
+  const vl = s.varld, u = vl && sl.uppdrag !== undefined ? uppdragNr(vl, sl.uppdrag) : undefined;
+  if (!u) { dagbok(s, sl, 'uppdrag', `Uppdraget fanns inte längre när budet kom fram till ${r.namn}.`, t); return; }
+  if (!(u.kand ??= []).includes(r.nr)) u.kand.push(r.nr);
+  dagbok(s, sl, 'uppdrag', `Berättade i ${r.namn} om uppdraget och belöningen.`, t);
+  count(s, 'budbarare fram');
+};
+RADUPPDRAGKROK.strida = (s, vl, f, _u, fick) => {
+  const L = lagerVid(vl, byPlats(vl, f.till)?.nr ?? -1);
+  if (!L?.stulet || stulVarde(L) <= 0) return false;
+  const vakter = Math.max(1, Math.round(L.tal.folk * VAKTAT.vakter));
+  if (BYHANDLING.barare < vakter) { count(s, 'raduppdrag vaktat förlorat'); return false; }
+  for (const [k, n] of Object.entries(L.stulet)) fick[k] = (fick[k] ?? 0) + n;
+  delete L.stulet;
+  count(s, 'raduppdrag vaktat');
+  return true;
+};
