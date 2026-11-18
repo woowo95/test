@@ -4829,3 +4829,34 @@ SCENARIER.somna = {
     ];
   },
 };
+
+SCENARIER.fastaforst = {
+  text: 'De fasta personerna först (steg 11.13.13, byggFasta, fastaRelIn och fastaRelUt i vacktfasta.ts): de huvudbyn känner och radens ledare finns i den väckta byn som samma personer, ledaren med egenskaperna ur sin nyckel. Bybor på besök har sina relationer med dem, och det som hänt följer med hem',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, [a] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 2 && SIM.radNr(vl, p.by)!.syn)!;
+    const r = SIM.radNr(vl, mal.by!)!, kp = r.syn!.personer[0]!;
+    kp.rel = { [a!.id]: { chem: 0.8, op: 0.9, irr: 0, n: 5 } };
+    const fasta = SIM.fastaI(r, s.now);
+    const b = SIM.vackTest(s, r.nr)!;
+    const finns = fasta.filter(q => b.people.some(p => p.name === q.namn && p.fastRoll === q.roll));
+    const led = r.ledare !== undefined ? r.fasta[r.ledare] : undefined, lp = led && b.people.find(p => p.name === led.namn);
+    const eg = led && SIM.fastEgenskaper(led);
+    const sl = SIM.nyttSallskap(s, a!, mal.nr, 'handel')!;
+    sl.pack = {}; sl.skede = 'framme'; sl.framme = s.now;
+    SIM.gaBort(s, a!);
+    SIM.besokIn(s, sl);
+    const gid = sl.gaster![0]![1], f = b.people.find(p => p.name === kp.namn && p.fastRoll !== undefined)!;
+    const rel = b.rels[SIM.relKey(f.id, gid)];
+    const relIn = rel?.chem === 0.8 && rel.talks === 5;
+    if (rel) rel.chem = 0.2;
+    SIM.besokUt(s, sl, s.now);
+    return [
+      [`de fasta finns i byn (${finns.length} av ${fasta.length}: ${fasta.map(q => `${q.namn} ${q.roll}`).join(', ')})`, fasta.length > 0 && finns.length === Math.min(fasta.length, r.tal.folk)],
+      [`folket är radens antal (${SIM.living(b).filter(p => !p.gast).length} av ${r.tal.folk})`, SIM.living(b).filter(p => !p.gast).length === r.tal.folk],
+      [`ledaren har egenskaperna ur sin nyckel (${led?.namn ?? 'ingen ledare'})`, !led || !eg || (!!lp && SIM.STATS.every(k => lp.pot[k] === eg[k]))],
+      ['besökaren har sin relation med den fasta', relIn],
+      [`det som hänt följer med hem (${kp.rel?.[a!.id]?.chem})`, kp.rel?.[a!.id]?.chem === 0.2],
+    ];
+  },
+};

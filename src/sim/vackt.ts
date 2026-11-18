@@ -41,6 +41,7 @@ import { varldMark } from './varlden';
 import { MARK_IDS } from './varldmark';
 import { KARTA } from './kartflytt';
 import { byggMinne, somna } from './vacktsomna';
+import { byggFasta } from './vacktfasta';
 
 export const VACKT = balans('vackt', {
   inkorning: 6, // timmar i verkligheten som byn går i simuleringen före ankomsten (ett kvarts år i spelet), steg 11.13.8
@@ -57,6 +58,7 @@ export const VACKT = balans('vackt', {
 // en byggare lägger en del av byn på plats: b = den väckta byn, s = huvudbyn, r = raden
 export interface Byggare { namn: string; bygg: (b: State, s: State, r: VarldRad) => void }
 export const BYGGARE: Byggare[] = [
+  { namn: 'de fasta', bygg: (b, _s, r) => byggFasta(b, r) }, // de huvudbyn känner och radens fasta personer först (steg 11.13.13)
   { namn: 'folket', bygg: (b, _s, r) => byggFolk(b, r) }, // radens antal, med åldrar, kön och släkt
   { namn: 'kunskapen', bygg: (b, _s, r) => byggKunskap(b, r) }, // radens tekniker spridda på folket (steg 11.13.4)
   { namn: 'minnet', bygg: (b, _s, r) => byggMinne(b, r.minne, byggFardigt) }, // husen, gravarna och de heliga platserna från förra besöket (steg 11.13.12)
@@ -160,7 +162,7 @@ export function byggFolk(b: State, r: VarldRad) {
     const barn = Math.min(n - b.people.length, Math.floor(rnd(b, 'vackt') * (VACKT.barnMax + 1)), Math.max(0, Math.floor(ka - VACKT.modersAlder)));
     for (let i = 0; i < barn; i++) ny(rnd(b, 'vackt') < 0.5 ? 'm' : 'k', mellan(b, 0, ka - VACKT.modersAlder), k, m);
   }
-  for (const p of b.people) { startSkills(b, p, ageOf(p, b.now)); startSmak(b, p); }
+  for (const p of b.people) if (!p.fastRoll || !Object.values(p.skill).some(v => v > 0)) { startSkills(b, p, ageOf(p, b.now)); startSmak(b, p); } // (den som kom med hela sin person kan redan det hen kan)
 }
 
 // kunskapen: varje teknik i raden kan en del av folket, fler ju lägre nivån och ju äldre man är, som i en by där man lärt av

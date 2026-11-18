@@ -17,6 +17,8 @@ import { count } from './folk';
 import { freeNear } from './byggnad';
 import { FOOD, SAKER } from './saker';
 import { DODSORSAKER, type Dodsorsak } from './liv';
+import { fastaRelIn, fastaRelUt } from './vacktfasta';
+import { radNr } from './radtal';
 import { dorPaVagen, resenarer, Sallskap, sallskapNu, tappa, vackKrok } from './resa';
 
 export const VACKTGAST = {
@@ -51,6 +53,7 @@ export function besokIn(s: State, sl: Sallskap) {
     for (const t of s.ting ?? []) if (t.bar === p.id) (b.gastTing ??= []).push({ ...JSON.parse(JSON.stringify(t)), agare: g.id, bar: g.id });
     sl.gaster.push([p.id, g.id]);
   }
+  fastaRelIn(b, radNr(vl, b.vackt), sl.gaster); // relationerna med de fasta (steg 11.13.13)
   count(s, 'besok in', folk.length); count(b, 'besökare kom', folk.length);
 }
 // sällskapet vänder hem: var och en tar med sig det som ändrats tillbaka, och maten som är kvar går i packningen
@@ -59,6 +62,7 @@ export function besokUt(s: State, sl: Sallskap, t: number) {
   if (!par) return;
   delete sl.gaster;
   const b = vacktBy(s, sl);
+  if (b && s.varld) fastaRelUt(b, radNr(s.varld, b.vackt), par);
   let kvar = 0;
   for (const [mid, gid] of par) {
     const p = s.people.find(q => q.id === mid), g = b && gastAv(b, gid);
