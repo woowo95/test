@@ -94,6 +94,7 @@ import { vaggRensa, husKlart, avail, takeForHouse, buildJob, finishDorr, needOf,
 import { Bit, bitAt, bitsOf, husById, MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, roofed, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
+import { besokSteg } from './vacktgast';
 import { stepDelning } from './delning';
 import { omtankeTimme } from './omtanke';
 import { lonDygn, lonOmtanke, lonRakna, lonRegister } from './lon';
@@ -419,6 +420,7 @@ export const TAKTER: Takt[] = [
   { namn: 'björnen', sek: 0, fn: s => bjornSteg(s) }, // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
   { namn: 'rövarna', sek: 0, fn: (s, dt, c) => rovarSteg(s, dt, c.events) }, // rövarflocken (rovare.ts, steg 4.4.5)
   { namn: 'främlingen', sek: 0, fn: (s, dt) => framlingSteg(s, dt) }, // som kommer gående (liv.ts, steg 9.2.115)
+  { namn: 'besökarna', sek: 0, fn: (s, dt) => besokSteg(s, dt) }, // huvudbyns resenärer i en väckt by (vacktgast.ts, steg 11.13.10)
   { namn: 'tornadon', sek: 0, fn: s => tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }) }, // drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
   { namn: 'branden', sek: 0, fn: (s, dt) => { brandSteg(s, dt); brinnerSteg(s, dt); } }, // gnistor, blixten, elden som sprider sig och den som brinner (brand.ts)
   { namn: 'förrådets slitage', sek: 60, fn: (s, dt) => { wearStore(s, dt); stepBlotVed(s, dt); } }, // slitage, fortare utanför lagret, och veden som blir blöt och torkar (steg 7.3.4)

@@ -25,6 +25,7 @@ export const GASTSORTER = {
   sandebud: { namn: 'Sändebud', efter: 'besked' },
   fange: { namn: 'Fånge' }, // en motståndare som gett upp eller låg kvar när byn kuvade (steg 11.12.6, fangeSteg i rovare.ts)
   folje: { namn: 'Följe' }, // karavanens följe, som sitter i lägret utanför byn (steg 11.11.6, handel.ts)
+  besok: { namn: 'Besökare' }, // huvudbyns resenärer i en väckt by, med hela sin person (steg 11.13.10, vacktgast.ts)
 } as const satisfies Record<string, GastSortDef>;
 export type GastSort = keyof typeof GASTSORTER;
 // mat är portionerna kvar i packningen och sover att gästen sover (steg 9.2.113, gastvardag.ts).
@@ -59,6 +60,7 @@ export const GASTUTRUSTNING: Record<GastSort, GastUtrustning> = {
     arr: 0.1,
   },
   fange: { vapen: [[null, 1]], reserv: [[null, 1]], plagg: {}, arr: 0 }, // fången kommer inte ny: hen är en rövare som tagits (steg 11.12.6)
+  besok: { vapen: [[null, 1]], reserv: [[null, 1]], plagg: {}, arr: 0 }, // besökaren har det hen bär hemifrån (vacktgast.ts)
   folje: { // karavanens folk går klädda för vägen, med en kniv eller ett spjut mot vägens faror (steg 11.11.6)
     vapen: [['kniv', 2], ['flintspjut', 1], [null, 2]], reserv: [[null, 1]],
     plagg: { rock: [['rock_kaninskinn', 3], ['kappa_ylle', 1], [null, 1]], byxor: [['byxor_kaninskinn', 2], ['byxor_lader', 1], [null, 1]], skor: [['skor_kaninskinn', 4], [null, 1]], mossa: [['mossa_kaninskinn', 1], [null, 3]], balte: [['balte_rep', 2], [null, 1]] },
@@ -152,7 +154,7 @@ export function gastGar(s: State, id: number, hem?: boolean) {
 // hos sin klan som hela personen (kroppen, minnena, det hen kan och tänker), utom det som hör till besöket (id, platsen,
 // handlingen och gästraden). Hemma åldras hen (födelsen står kvar) och lever förenklat: skadorna läker, sjukdomen går över
 // och behoven är fyllda när hen kommer igen, och tankar som hunnit blekna är borta. Samma person kommer tillbaka (gastTillbaka)
-const BESOKET = ['id', 'x', 'y', 'task', 'gast', 'died', 'cause', 'left'] as const;
+export const BESOKET = ['id', 'x', 'y', 'task', 'gast', 'died', 'cause', 'left'] as const;
 export function gastHem(s: State, p: Person) {
   const k = klanById(s, p.gast?.klan);
   if (!k || p.died !== undefined) return;

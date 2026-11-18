@@ -186,6 +186,7 @@ export interface Sallskap {
   spar?: number[]; mott?: string[]; // rutorna sällskapet gått sedan förra timmen, och de sällskap det mött (steg 11.6.12)
   buren?: [number, BurenSatt][]; utvagNasta?: number; // de som bärs och hur, och när ledaren väger nästa gång om någon är långsam (steg 11.5.17)
   nere?: number; silverArb?: number; // dygnen nere i gruvan, valda i packskedet, och arbetet mot nästa silver (steg 11.10.1)
+  gaster?: [number, number][]; vacktMat?: [string, number][]; // resenärerna som gäster i den väckta byn (personens id och gästens), och maten de tog med sig dit (steg 11.13.10, vacktgast.ts)
 }
 export type BurenSatt = 'vagn' | 'djur' | 'bar';
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
@@ -471,7 +472,7 @@ export function resaSteg(s: State, p: Person, tk: Task) {
 // vädret inte. Låg ork sänker farten (orkFart, steg 11.5.7).
 export const PA_VAGEN: readonly Skede[] = ['ute', 'framme', 'hemat'];
 // väckningen av byn dit (vackt.ts sätter den, så att resa.ts inte importerar vackt.ts)
-export const vackKrok: { borja?: (s: State, nr: number, t0: number, dygn: number) => unknown } = {};
+export const vackKrok: { borja?: (s: State, nr: number, t0: number, dygn: number) => unknown; framme?: (s: State, sl: Sallskap) => void; vander?: (s: State, sl: Sallskap, t: number) => void } = {}; // framme och vander: resenärerna kliver in i och ut ur den väckta byn (vacktgast.ts, steg 11.13.10)
 const behovOf = (sl: Sallskap) => sl.behov ??= { matt: 1, vatska: 1, ork: 1, fulla: sl.pack.vattensack ?? 0, foder: 0 };
 // rutan sällskapet är på (i världen), och om det går att beta och finns vatten där
 function rutaNu(s: State, sl: Sallskap) {
@@ -499,11 +500,13 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (sl.skede !== 'framme' && isLight(t)) ga(s, sl, t, dt);
   else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= stannarFor(sl) * 24 * HOUR) {
     if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Kom upp ur gruvan med ${sl.pack.silver ?? 0} silver.`, t);
+    vackKrok.vander?.(s, sl, t); // ut ur den väckta byn, med det som ändrats (steg 11.13.10)
     sl.skede = 'hemat'; satVag(s, sl, false); dagbok(s, sl, 'ut', 'Vänder hem.', t);
   }
   if (!PA_VAGEN.includes(sl.skede)) return;
   if (sl.skede !== 'framme') vagHandelser(s, sl, t, dt);
   if (!PA_VAGEN.includes(sl.skede)) return;
+  if (sl.skede === 'framme' && sl.gaster) return; // i den väckta byn räknar byn kropparna och behoven (steg 11.13.10)
   kropparPaVagen(s, sl, t, dt);
   if (!PA_VAGEN.includes(sl.skede)) return;
   if (sl.skede === 'framme' && sl.skal === 'hamta') gruvBit(s, sl, t, dt);
@@ -667,7 +670,7 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
   sl.pos = pos;
   if (pos < rutor.length - 1) return;
   sl.gang = 0;
-  if (sl.skede === 'ute') { sl.skede = 'framme'; sl.framme = t; count(s, 'resa framme'); radBesok(s, sl, t); }
+  if (sl.skede === 'ute') { sl.skede = 'framme'; sl.framme = t; count(s, 'resa framme'); radBesok(s, sl, t); vackKrok.framme?.(s, sl); }
   else if (sl.skede === 'hemat') hemkomst(s, sl, t);
 }
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem

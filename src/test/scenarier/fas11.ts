@@ -4700,3 +4700,45 @@ SCENARIER.vacktspar = {
     ];
   },
 };
+
+SCENARIER.vacktgast = {
+  text: 'Bybor på besök som gäster (steg 11.13.10, besokIn, besokSteg och besokUt i vacktgast.ts): sällskapet som kommer fram till en väckt by kliver in i den med hela sin person, kommer in från kanten mot hembyn, går till elden och lever där som gäster på sin del av maten. När sällskapet vänder hem tar var och en med sig det som ändrats, maten som är kvar går tillbaka i hela saker, och den som dog i byn är död på vägen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0)!;
+    const bv = SIM.vackTest(s, mal.by!)!;
+    const sl = SIM.nyttSallskap(s, a!, mal.nr, 'handel')!; SIM.foljMed(vl, sl, b!);
+    const kost = SIM.FOOD.filter(k => SIM.SAKER[k]?.haller).sort((x, y) => (SIM.SAKER[y]!.haller ?? 0) - (SIM.SAKER[x]!.haller ?? 0))[0]!;
+    sl.pack = { [kost]: 9 }; sl.skede = 'framme'; sl.framme = s.now;
+    SIM.gaBort(s, a!); SIM.gaBort(s, b!);
+    SIM.besokIn(s, sl);
+    const gaster = () => bv.people.filter(p => p.gast?.sort === 'besok');
+    SIM.useMap(bv); const eld = SIM.eldPlats(bv); SIM.useMap(s);
+    const g0 = gaster(), inPos = g0.map(g => Math.hypot(g.x - eld.x, g.y - eld.y));
+    const namn = g0.map(g => g.name).sort().join() === [a!.name, b!.name].sort().join();
+    const packMat = sl.pack[kost] ?? 0, per = g0[0]?.gast?.mat ?? 0;
+    kor(s, 4);
+    const framme = gaster().every(g => g.gast?.fas === 'pratar' && Math.hypot(g.x - eld.x, g.y - eld.y) < 4);
+    const ejBybor = !SIM.living(bv).some(p => p.gast);
+    const [ga, gb] = [a!, b!].map(p => gaster().find(g => g.name === p.name)!);
+    SIM.think(ga, 'Såg den andra byn', 0.1, bv.now, 48 * SIM.HOUR);
+    SIM.useMap(bv); SIM.gastDor(bv, gb, 'av kyla'); SIM.useMap(s); // gb dör i byn
+    kor(s, 1);
+    const atit = (ga.gast?.mat ?? per) <= per;
+    SIM.besokUt(s, sl, s.now);
+    const kvarMat = sl.pack[kost] ?? 0;
+    return [
+      [`resenärerna kliver in som gäster med sina namn (${g0.length})`, g0.length === 2 && namn],
+      [`de kommer in vid kanten (${inPos.map(d => Math.round(d)).join(', ')} rutor från elden)`, inPos.every(d => d > 8)],
+      [`de fick lika delar av maten i hela portioner (${per} var, ${packMat} kvar i packningen)`, per >= 1 && Number.isInteger(per) && packMat === 9 - 2 * per],
+      ['de går till elden och stannar där', framme],
+      ['gästerna räknas inte som byns folk', ejBybor],
+      ['de lever på sin mat', atit],
+      [`den som levde tar med sig det som hänt hem (${a!.thoughts.map(t => t.text).join(', ')})`, a!.thoughts.some(t => t.text === 'Såg den andra byn')],
+      ['den som dog i byn är död på vägen', !!b!.dodVag],
+      [`maten som är kvar går tillbaka i hela saker (${kvarMat})`, Number.isInteger(kvarMat) && kvarMat >= packMat],
+      ['gästerna har lämnat byn, den döda ligger kvar', !gaster().some(g => g.died === undefined) && gaster().length === 1 && !sl.gaster],
+    ];
+  },
+};

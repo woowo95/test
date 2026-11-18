@@ -60,7 +60,7 @@ function gastAkt(s: State, p: Person): Act {
     if (!h?.folj?.includes(p.id)) return 'gaHem';
     return h.fas === 'kommer' ? 'gastKommer' : h.fas === 'gar' ? 'gaHem' : 'gastLager';
   }
-  if (g.sort === 'framling') return g.fas === 'pratar' ? 'gastVantar' : g.fas === 'gar' ? 'gaHem' : 'gastKommer';
+  if (g.sort === 'framling' || g.sort === 'besok') return g.fas === 'pratar' ? 'gastVantar' : g.fas === 'gar' ? 'gaHem' : 'gastKommer';
   return 'gastKommer';
 }
 function satt(s: State, p: Person, act: Act) {
@@ -74,6 +74,7 @@ function kanSova(s: State, p: Person) {
   const h = s.handlare;
   if (p.gast!.sort === 'folje') return !!h?.folj?.includes(p.id) && (h.fas === 'vantar' || h.fas === 'handlar'); // följet sover i lägret
   if (p.gast!.sort === 'fange') return !!p.fange && p.task?.act === 'fangen' && p.task.phase === 'do'; // fången sover i fängelset
+  if (p.gast!.sort === 'besok') return p.gast!.fas === 'pratar'; // besökaren sover i byn hen besöker (steg 11.13.10)
   if (p.gast!.sort !== 'handlare') return false;
   return !!h && h.id === p.id && (h.fas === 'vantar' || (h.fas === 'handlar' && !h.affar && !h.ko?.length));
 }
