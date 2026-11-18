@@ -4490,3 +4490,27 @@ SCENARIER.tvabyar = {
     ];
   },
 };
+
+SCENARIER.vackt = {
+  text: 'Den väckta byn (steg 11.13.2, VACKT och BYGGARE i vackt.ts): byn byggs ur radens tal, med marken ur byns frö och världsrutans marksort och folket i radens antal i hushåll med åldrar, kön och släkt. Samma rad ger samma by',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const r = vl.rader!.filter(q => q.sort === 'by' && SIM.lever(vl, q)).sort((a, b) => b.tal.folk - a.tal.folk)[0];
+    const b1 = SIM.vackBy(s, r.nr)!, b2 = SIM.vackBy(s, r.nr)!;
+    const hash = (b: SIM.State) => { const j = JSON.parse(kanonisk(SIM.serialize(b))); delete j.varld; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
+    const id = new Set(b1.people.map(p => p.id));
+    const barn = b1.people.filter(p => p.mother !== undefined);
+    const alder = b1.people.map(p => SIM.ageOf(p, b1.now));
+    SIM.useMap(b1); const tiles = SIM.getMap(b1.seed).tiles; SIM.useMap(s);
+    return [
+      ['samma rad ger samma by', hash(b1) === hash(b2)],
+      ['invånarna är radens antal (' + b1.people.length + ' av ' + Math.round(r.tal.folk) + ')', b1.people.length === Math.round(r.tal.folk)],
+      ['barnens föräldrar finns i byn', barn.length > 0 && barn.every(p => id.has(p.mother!) && id.has(p.father!))],
+      ['paren är gifta med varandra', b1.people.filter(p => p.partner !== undefined).every(p => b1.people.find(q => q.id === p.partner)?.partner === p.id)],
+      ['både barn och vuxna', alder.some(a => a < 14) && alder.some(a => a >= 18)],
+      ['byn är väckt ur raden och delar världen', b1.vackt === r.nr && b1.varld === vl],
+      ['en egen karta', tiles.length === b1.W! * b1.H! && b1.seed !== s.seed],
+      ['huvudbyns karta är kvar efteråt', SIM.getMap(s.seed) !== SIM.getMap(b1.seed) || b1.varldmark === undefined],
+    ];
+  },
+};

@@ -187,3 +187,4 @@ export * from './sim/utpost';
 export * from './sim/platsbygge';
 export * from './sim/gruva';
 export * from './sim/forhistoria';
+export * from './sim/vackt';

@@ -20,10 +20,12 @@ export let H = 40;
 export let OX = 0, OY = 0, W0 = 64, H0 = 40;
 export interface Kart { x: number; y: number; w: number; h: number } // den gamla kartans hörn och storlek
 let KARTA = '64x40';
-export function useMap(s: { W?: number; H?: number; kart?: Kart }) {
-  W = s.W ?? 64; H = s.H ?? 40;
+let MARK: string | undefined;
+export const markNu = () => MARK; // världsrutans marksort för en väckt by (steg 11.13.2); huvudbyn har ingen
+export function useMap(s: { W?: number; H?: number; kart?: Kart; varldmark?: string }) {
+  W = s.W ?? 64; H = s.H ?? 40; MARK = s.varldmark;
   OX = s.kart?.x ?? 0; OY = s.kart?.y ?? 0; W0 = s.kart?.w ?? W; H0 = s.kart?.h ?? H;
-  KARTA = s.kart ? `${W}x${H}+${OX},${OY},${W0}x${H0}` : `${W}x${H}`;
+  KARTA = (s.kart ? `${W}x${H}+${OX},${OY},${W0}x${H0}` : `${W}x${H}`) + (MARK ? `:${MARK}` : '');
 }
 export const kartNamn = () => KARTA; // kartans storlek och den gamla kartans plats: samma namn = samma karta för samma frö
 export const mapKey = (seed: number) => `${seed}:${KARTA}`;
@@ -337,6 +339,7 @@ export interface State {
   textminne?: Record<string, string[]>; // textminnet (steg 6.7.3): början på de tre senaste krönikaraderna per mall, utan historiken
   notiser?: import('./notiser').Notiser; // notiserna som spelaren inte tagit bort (notiser.ts, steg 5.4.3)
   W?: number; H?: number; // kartans storlek (saknas i de äldsta byarna: 64×40)
+  varldmark?: import('./varldmark').MarkId; // en väckt by: världsrutans marksort, som flyttar kartans trösklar (steg 11.13.2, kartrecept.ts)
   kart?: Kart; // var den gamla kartan ligger i en äldre by som fått den stora kartan (steg 2.10.9, kartflytt.ts)
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   food?: number; wood?: number; // äldre sparfiler (före v40): maten och veden i förrådet, nu räknade ur stackarna

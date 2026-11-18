@@ -44,10 +44,15 @@ export function stallVagn(s: State) {
   (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vagn', x, y, kvar: 0 });
   s.byggV = (s.byggV ?? 0) + 1;
 }
+// en by utan folk och saker: grunden för en ny by och för en väckt by (vackt.ts, steg 11.13.2)
+export function tomBy(seed: number, founded: number, now: number, storlek: { W: number; H: number }, mer: Partial<State> = {}): State {
+  const s: State = { v: SPARVERSION, seed, founded, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, fire: newFire(), seder: newSeder(), W: storlek.W, H: storlek.H, kal: nyKalender(now), ...mer };
+  useMap(s);
+  return s;
+}
 function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
-  const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, fire: newFire(), seder: newSeder(), W: storlek.W, H: storlek.H, kal: nyKalender(now) };
-  useMap(s);
+  const s = tomBy(seed, now, now, storlek);
   setStock(s, { bar: 30, grenar: 20 });
   stallVagn(s);
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
