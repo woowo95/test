@@ -647,8 +647,16 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
   const k = kostnader(vl, v, 'fots'), tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length);
   sl.gang = (sl.gang ?? 0) + VARLD.gangPerDygn / RESA.dagTim * sallskapFart(s, sl) * dt / HOUR;
   let pos = sl.pos ?? 0;
-  while (pos < rutor.length - 1 && sl.gang >= k[rutor[pos + 1]] - 1e-9) {
-    sl.gang -= k[rutor[pos + 1]];
+  // isen har gått (steg 11.11.8): den som står på land och har vatten framför sig tar en ny väg därifrån; den som är ute på isen
+  // har hunnit över och går vidare som på slätt
+  if (pos < rutor.length - 1 && !isFinite(k[rutor[pos + 1]]) && isFinite(k[rutor[pos]])) {
+    const vag = vagMellan(vl, v, rutor[pos], rutor[rutor.length - 1], 'fots', t);
+    const r2 = vag && vagRutor(vag, v.w);
+    if (vag && r2!.length > 1 && isFinite(k[r2![1]])) { sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg }; sl.pos = 0; count(s, 'resa isen gick'); return ga(s, sl, t, 0); }
+  }
+  const kost = (i: number) => isFinite(k[i]) ? k[i] : 1;
+  while (pos < rutor.length - 1 && sl.gang >= kost(rutor[pos + 1]) - 1e-9) {
+    sl.gang -= kost(rutor[pos + 1]);
     trampa(vl, [rutor[pos], rutor[pos + 1]], tyngd, t);
     pos++; sl.ruta = rutor[pos]; (sl.spar ??= []).push(sl.ruta); // rutorna sedan sist, för mötena (steg 11.6.12)
   }

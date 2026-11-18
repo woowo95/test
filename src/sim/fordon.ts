@@ -55,6 +55,8 @@ export function fordonI(s: State, t?: Task): IBordan | undefined {
   return undefined;
 }
 // lasset (vikt) för fordonet med djuret d
+// dragfordonet som tar mest, i fart gånger lass, på underlaget u bland dem som finns (steg 11.11.8): i snö släden före vagnen
+export const valjDragfordon = (har: string[], u: Underlag) => [...har].sort((a, b) => FORDON[b].lassPerStyrka * FORDON[b].fart[u] - FORDON[a].lassPerStyrka * FORDON[a].fart[u])[0];
 export const lassAv = (f: FordonRad, d?: Pick<Tamdjur, 'art'> & { id?: number }) => f.drar === 'djur' ? (d && tamArt(d.art).styrka ? tamEg(d).styrka * f.lassPerStyrka : 0) : f.lass; // individens styrka (steg 10.10.29)
 // underlaget på rutan (x, y) utan snön: isen, en lagd väg, en stig (gångstråket eller bar jord) eller terrängen
 export function underlag(s: State, x: number, y: number): Exclude<Underlag, 'sno'> {

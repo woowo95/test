@@ -4329,3 +4329,42 @@ SCENARIER.karavanattack = {
     ];
   },
 };
+
+SCENARIER.vintervag = {
+  text: 'Frusen mark på världskartan (steg 11.11.8, frysMark i leder.ts, rutKostnad i landmarken.ts och valjDragfordon i fordon.ts): i istiden går sjö, myr och det breda flodloppet att korsa som slätt, så samma resa blir kortare över den frusna sjön; i snö väljs släden före vagnen; och när isen går räknas vägen om runt sjön',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, v = SIM.varldMark(s)!;
+    delete vl.frusen; vl.ledVer = (vl.ledVer ?? 0) + 1;
+    const sjo = SIM.MARK_IDS.indexOf('sjo'), land = (i: number) => SIM.VARLDMARK[SIM.MARK_IDS[v.mark[i]]].land && SIM.MARK_IDS[v.mark[i]] !== 'myr';
+    // en sjö med land på båda sidor i en rad: resan går från landet väster om sjön till landet öster om den
+    let a = -1, b = -1;
+    for (let y = 2; y < v.h - 2 && a < 0; y++) for (let x = 2; x < v.w - 12 && a < 0; x++) {
+      const i = y * v.w + x;
+      if (!land(i) || v.mark[i + 1] !== sjo) continue;
+      let n = 1; while (n < 10 && v.mark[i + n] === sjo) n++;
+      if (n >= 3 && n < 10 && land(i + n)) { a = i; b = i + n; }
+    }
+    if (a < 0) return [['en sjö med land på båda sidor finns i världen', false]];
+    const sommar = SIM.billigasteVag(vl, v, a, b, 'fots');
+    vl.frusen = true; vl.ledVer++;
+    const vinter = SIM.billigasteVag(vl, v, a, b, 'fots');
+    const overSjon = !!vinter?.rutor.some(i => v.mark[i] === sjo);
+    // när isen går: vägen som räknats på vintern räknas om runt sjön
+    delete vl.frusen; vl.ledVer++;
+    const ist = SIM.ageStart(s, SIM.ISTID), var_ = SIM.ageStart(s, SIM.VAR);
+    SIM.frysMark(s, vl, v, ist + SIM.HOUR); // istiden börjar: marken fryser och vägen sparas över isen
+    const vag = SIM.vagMellan(vl, v, a, b, 'fots', ist + SIM.HOUR)!, fore = SIM.vagRutor(vag, v.w).some(i => v.mark[i] === sjo), frusen = !!vl.frusen;
+    SIM.frysMark(s, vl, v, var_ + SIM.HOUR); // vårtiden: isen går
+    const efter = SIM.vagRutor(vag, v.w).some(i => v.mark[i] === sjo);
+    // släden i snö
+    const r = vl.rader!.find(x => x.sort === 'by' && x.nr !== vl.huvud)!;
+    r.tal.folk = 40; r.tal.rikedom = 100000; r.tek = [...new Set([...r.tek, 'ryggsack', 'vagn', 'slade'])];
+    const snoLast = SIM.packaRad(r, mulberry(3), () => 100000, 'vagn', 'oxe', true), barLast = SIM.packaRad(r, mulberry(3), () => 100000, 'vagn', 'oxe', false);
+    return [
+      [`samma resa är kortare i istiden, över den frusna sjön (${sommar?.kostnad.toFixed(1)} mot ${vinter?.kostnad.toFixed(1)}, över sjön: ${overSjon})`, !!vinter && (!sommar || vinter.kostnad < sommar.kostnad) && overSjon],
+      [`istiden fryser marken, och den sparade vägen går över isen (${frusen}, ${fore})`, frusen && fore],
+      [`när isen går räknas vägen om runt sjön (${!efter}, frusen: ${!!vl.frusen})`, !efter && !vl.frusen],
+      [`i snö väljs släden före vagnen (${snoLast.fordon ?? 'vagn'} i snö, ${barLast.fordon ?? 'vagn'} på barmark)`, snoLast.fordon === 'slade' && !barLast.fordon],
+    ];
+  },
+};

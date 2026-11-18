@@ -7,7 +7,7 @@
 // till skog. Var platserna läggs ut
 // avgörs i steg 11.2.13 och 11.2.14.
 import { hash3 } from './slump';
-import { FLOD_NEDRE, FLOD_OVRE, Fardsatt, MARK_IDS, MarkId, VARLD, VARLDMARK, VarldMark } from './varldmark';
+import { FLOD_NEDRE, FLOD_OVRE, Fardsatt, MARK_IDS, MarkDef, MarkId, VARLD, VARLDMARK, VarldMark } from './varldmark';
 import { Varlden } from './varlden';
 import { NAMNSLAG, varldNamn } from './varldnamn';
 
@@ -121,12 +121,13 @@ export function rutKostnad(vl: Varlden, v: VarldMark, i: number, fs: Fardsatt, e
   const x = i % v.w, y = Math.floor(i / v.w), pl0 = varldPlatserPa(vl, x, y), pl: readonly { k: LandmarkId }[] = extra ? [...pl0, { k: extra }] : pl0;
   let m = MARK_IDS[v.mark[i]];
   for (const p of pl) m = def(p.k).blir?.[m] ?? m;
+  if (vl.frusen && (VARLDMARK[m] as MarkDef).frys) m = 'slatt'; // den frusna marken i istiden (steg 11.11.8)
   const r = VARLDMARK[m];
   if (!(r.fram as readonly Fardsatt[]).includes(fs)) return Infinity;
   let k: number = r.kostnad;
   for (const p of pl) k = Math.min(k, def(p.k).kostnad?.[m] ?? k);
   const f = v.flod[i];
-  if (!f || pl.some(p => def(p.k).flodFri)) return k;
+  if (!f || vl.frusen || pl.some(p => def(p.k).flodFri)) return k; // floden är frusen i istiden (steg 11.11.8)
   if (f === FLOD_NEDRE && fs === 'vagn') return Infinity; // vagnen kommer inte över det breda loppet utan bro
   return k + (f === FLOD_OVRE ? VARLD.flodOvre : VARLD.flodNedre);
 }

@@ -13,6 +13,7 @@ import { VarldMark } from './varldmark';
 import { billigasteVag, packaVag, vagMellan, vagRutor } from './vagval';
 import { byPlats } from './landmarken';
 import { State } from './typer';
+import { ageIndex, iIstiden } from './tid';
 
 export const LEDTAL = balans('leder', {
   halvering: 20, // dygn tills slitaget är hälften (20 år i spelet, knappt tre veckor i verkligheten)
@@ -82,5 +83,19 @@ export function raknaLeder(vl: Varlden, v: VarldMark, t: number) {
     vag.steg = packaVag(r.rutor, v.w); vag.kostnad = Math.round(r.kostnad * 1000) / 1000; vag.t = t;
   }
 }
+// den frusna marken (steg 11.11.8, Flera samhällen: Frusen mark): i istiden går sjö, myr och floder att korsa som slätt. När
+// istiden börjar och slutar ändras kostnaderna, och alla sparade vägar räknas om
+export function frysMark(s: State, vl: Varlden, v: VarldMark, t: number) {
+  const fr = iIstiden(ageIndex(s, t));
+  if (!!vl.frusen === fr) return;
+  if (fr) vl.frusen = true; else delete vl.frusen;
+  vl.ledVer = (vl.ledVer ?? 0) + 1;
+  for (const vag of vl.vagar ?? []) {
+    const r = billigasteVag(vl, v, vag.fran, vag.till, vag.fs);
+    if (!r) continue;
+    vag.steg = packaVag(r.rutor, v.w); vag.kostnad = Math.round(r.kostnad * 1000) / 1000; vag.t = t;
+  }
+}
+PERIODRADER.push({ namn: 'frusen mark', period: 'timme', fn: (s, vl, n) => { const v = varldMarkFor(s); if (v) frysMark(s, vl, v, periodSlut(vl, 'timme', n)); } });
 // marken behövs för vägarna; världslagen ger bara världen, så den packas upp här (en gång per värld, varlden.ts)
 PERIODRADER.push({ namn: 'lederna', period: 'dygn', fn: (s, vl, n) => { const v = varldMarkFor(s); if (v) raknaLeder(vl, v, periodSlut(vl, 'dygn', n)); } });

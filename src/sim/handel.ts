@@ -222,6 +222,7 @@ export interface Handlare {
   utr: string; // utrustningen (HANDLAR_UTR)
   sort?: string; // vilken sorts handlare (HANDLARSORTER); saknas i sparade byar från före v270: vandrande
   djur?: TamArtId; // packdjurets art, häst eller oxe som hembyn har (steg 11.11.5); djuret är hens utrustning och inget djur i byn
+  fordon?: string; // släden i snö (steg 11.11.8)
   vagnar?: number; folj?: number[]; lager?: { x: number; y: number }; // karavanen (steg 11.11.6): vagnarna, följets id och lägret
   varor: HVara[];
   silver: number;
@@ -254,11 +255,11 @@ const mellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + r
 const heltMellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + Math.floor(rnd(s, 'handel') * (b - a + 1));
 export const kgOf = (v: HVara[]) => v.reduce((a, w) => a + w.n * viktOf(w.k), 0);
 // det utrustningen rymmer: med ett djur (steg 11.11.5) ryggsäcken plus djurets lass med fordonet (FORDON i fordon.ts)
-export function utrVikt(utr: string, djur?: TamArtId, vagnar = 1) {
-  const u = HANDLAR_UTR[utr], f = u?.fordon && FORDON[u.fordon];
+export function utrVikt(utr: string, djur?: TamArtId, vagnar = 1, fordon?: string) {
+  const u = HANDLAR_UTR[utr], f = (fordon ?? u?.fordon) && FORDON[fordon ?? u!.fordon!]; // fordon: släden i stället för vagnen i snö (steg 11.11.8)
   return f && djur ? HANDLAR_UTR.ryggsack.vikt + vagnar * lassAv(f, { art: djur }) : u?.vikt ?? 0;
 }
-export const rymmer = (h: Handlare) => utrVikt(h.utr, h.djur, h.vagnar);
+export const rymmer = (h: Handlare) => utrVikt(h.utr, h.djur, h.vagnar, h.fordon);
 // handlarens fart: med packdjur djurets (artens snabbhet), så oxen kommer senare fram (steg 11.11.5)
 export const handlarFart = (h: Pick<Handlare, 'djur'>) => HANDEL.fart * (h.djur ? tamArt(h.djur).snabb ?? 1 : 1);
 // var packdjuret står (steg 11.11.5): en ruta från filten medan hen väntar och handlar, annars bakom hen på vägen
@@ -292,7 +293,7 @@ export function packa(s: State, kg: number, sort: string): HVara[] {
 }
 
 // lasten ur byns rad (steg 11.6.9): packas i byhandling.ts (packaRad), och det hen har kvar och har köpt går hem till raden
-export interface HandlarLast { varor: HVara[]; silver: number; sort: string; djur?: TamArtId; vagnar?: number; folk?: number } // djur: packdjurets art (steg 11.11.5); vagnar och folk: karavanen (steg 11.11.6)
+export interface HandlarLast { varor: HVara[]; silver: number; sort: string; djur?: TamArtId; vagnar?: number; folk?: number; fordon?: string } // djur: packdjurets art (steg 11.11.5); vagnar och folk: karavanen (steg 11.11.6)
 // det handlaren bär hem till raden: varorna och silvret (fardHem i byhandling.ts)
 export const handlarHemLast = (h: Handlare): HandlarLast => ({ varor: h.varor.map(w => ({ ...w })), silver: Math.floor(h.silver), sort: h.sort ?? 'vandrande', ...h.djur ? { djur: h.djur } : {}, ...h.vagnar ? { vagnar: h.vagnar, folk: 1 + (h.folj?.length ?? 0) } : {} });
 
@@ -340,6 +341,7 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
     fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: last ? last.silver : heltMellan(s, HANDLARSORTER[sort].silver),
     ...last?.djur && HANDLAR_UTR[utr]?.fordon ? { djur: last.djur } : {}, // packdjuret hembyn gav hen (steg 11.11.5)
     ...last?.vagnar && last.djur ? { vagnar: last.vagnar } : {}, // karavanens vagnar (steg 11.11.6)
+    ...last?.fordon ? { fordon: last.fordon } : {}, // släden i snö (steg 11.11.8)
   };
   h.framme = s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / handlarFart(h) * SEC;
   h.sort = sort;
