@@ -155,7 +155,7 @@ export const RESMAL = {
 export type ResmalId = keyof typeof RESMAL;
 export const RESMAL_IDS = Object.keys(RESMAL) as ResmalId[];
 // dygnen sällskapet stannar framme: tiden nere i gruvan när den är vald, annars skälets
-export const stannarFor = (sl: { skal: ResmalId; nere?: number }) => sl.nere ?? RESMAL[sl.skal].stannar;
+export const stannarFor = (sl: { skal: ResmalId; nere?: number; hjalp?: 1 }) => sl.nere ?? (sl.hjalp ? UPPDRAGTAL.hjalpDygn : RESMAL[sl.skal].stannar); // hjälpen tar några dygn (steg 11.13.23)
 
 export type Skede = 'samlas' | 'packar' | 'gar' | 'ute' | 'framme' | 'hemat' | 'hemma' | 'forsvunnet'; // forsvunnet: ingen kom hem (steg 11.5.18) // gar: på väg ut ur byn
 // en insats i boken: vem som äger den, saken (eller djuret) och hur många, i hela saker, och värdet när resan började
@@ -167,6 +167,7 @@ export interface Sallskap {
   borjan: number; t: number; // när ledaren började samla, och tiden sällskapet räknats till
   ruta?: number; vag?: { fran: number; till: number; steg: string }; pos?: number; // rutan sällskapet är på, vägen och hur långt längs den (rutor)
   pack: Record<string, number>; // den gemensamma packningen, hela saker
+  hjalp?: 1; hjalpTim?: number; // uppdraget är att hjälpa en by, och timmarna sällskapet arbetat i den väckta byn (steg 11.13.23)
   insatser: Insats[];
   dagbok: [number, string, DagbokId?][]; // resans dagbok: tiden, texten och händelsens slag (steg 11.5.13)
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
@@ -501,6 +502,7 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= stannarFor(sl) * 24 * HOUR) {
     if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Kom upp ur gruvan med ${sl.pack.silver ?? 0} silver.`, t);
     vackKrok.vander?.(s, sl, t); // ut ur den väckta byn, med det som ändrats (steg 11.13.10)
+    if (sl.hjalp) hjalpSlut(s, sl, t);
     sl.skede = 'hemat'; satVag(s, sl, false); dagbok(s, sl, 'ut', 'Vänder hem.', t);
   }
   if (!PA_VAGEN.includes(sl.skede)) return;
@@ -1000,7 +1002,7 @@ export function samlaResa(s: State, p: Person, r: ResPlan): Sallskap | undefined
   const vl = s.varld!;
   if (r.skal === 'sandebud' && vl.bud) { sl.ton = vl.bud.ton; sl.av = vl.bud.av; vl.bud = undefined; } // budet är sänt
   if (r.kop?.length) sl.kop = r.kop.map(([k, n]) => [k, n]);
-  if (r.uppdrag !== undefined) sl.uppdrag = r.uppdrag;
+  if (r.uppdrag !== undefined) { sl.uppdrag = r.uppdrag; const u = uppdragNr(vl, r.uppdrag); if (u && uppdragDef(u.k).gor === 'hjalpa') sl.hjalp = 1; }
   sl.ut = utgang(s, sl);
   if (!sl.ut) { stallIn(s, sl); return undefined; }
   dagbok(s, sl, 'samlas', `${p.name} samlar till en resa till ${r.namn}.`);
@@ -1130,8 +1132,8 @@ export function uppdragFram(s: State, sl: Sallskap, t: number) {
     text = 'Uppdraget fanns inte längre: någon hade hunnit före, eller tiden var ute.';
   } else {
     const gor = uppdragDef(u.k).gor;
+    if (gor === 'hjalpa') { dagbok(s, sl, 'uppdrag', `Började hjälpa ${malNamn(s, sl)}.`, t); return; } // avgörs när sällskapet vänder (hjalpSlut)
     if (gor === 'leverera' && u.sak && (sl.pack[u.sak[0]] ?? 0) >= u.sak[1]) { tappa(sl, u.sak[0], u.sak[1]); hur = 'klart'; }
-    else if (gor === 'hjalpa') hur = 'klart';
     else hur = 'misslyckat';
     if (hur === 'klart') {
       Object.assign(fick, u.belon); u.belon = {};
@@ -1139,10 +1141,24 @@ export function uppdragFram(s: State, sl: Sallskap, t: number) {
       text = `${namn} är gjort. Belöningen: ${sakLista(fick) || 'ingen'}.`;
     } else text = `${namn} gick inte att göra${gor === 'leverera' ? ': saken fanns inte i packningen' : ''}.`;
   }
+  uppdragUtfall(s, sl, namn, hur, fick, text, t);
+}
+function uppdragUtfall(s: State, sl: Sallskap, namn: string, hur: UppdragUtfall['hur'], fick: Record<string, number>, text: string, t: number) {
   for (const [k, n] of Object.entries(fick)) if (n >= 1) sl.pack[k] = (sl.pack[k] ?? 0) + Math.floor(n);
   sl.utfall = { namn, hur, fick };
   dagbok(s, sl, 'uppdrag', text, t);
   count(s, `uppdrag ${hur}`);
+}
+// hjälpen avgörs när sällskapet vänder (steg 11.13.23): i en väckt by har resenärerna arbetat i byn (vackthjalp.ts), och har de
+// arbetat UPPDRAGTAL.hjalpTim timmar var är hjälpen given. Utan en väckt by räknas dygnen de stannat som hjälpen
+export function hjalpSlut(s: State, sl: Sallskap, t: number) {
+  const vl = s.varld!, u = sl.uppdrag !== undefined ? uppdragNr(vl, sl.uppdrag) : undefined, folk = resenarer(s, sl).length;
+  if (!u || u.mal !== sl.mal) { uppdragUtfall(s, sl, 'Hjälp på en plats', 'tomt', {}, 'Byn behövde ingen hjälp längre: någon hade hunnit före, eller tiden var ute.', t); return; }
+  const namn = uppdragDef(u.k).namn, tim = sl.hjalpTim, fick: Record<string, number> = {};
+  if (tim !== undefined && tim < UPPDRAGTAL.hjalpTim * Math.max(1, folk)) { uppdragUtfall(s, sl, namn, 'misslyckat', fick, `Hjälpte bara till i ${Math.round(tim)} timmar, och byn gav ingen belöning.`, t); return; }
+  Object.assign(fick, u.belon); u.belon = {};
+  avslutaUppdrag(s, vl, u, true);
+  uppdragUtfall(s, sl, namn, 'klart', fick, `${namn} är gjort${tim !== undefined ? ` efter ${Math.round(tim)} timmars arbete` : ''}. Belöningen: ${sakLista(fick) || 'ingen'}.`, t);
 }
 const sakLista = (x: Record<string, number>) => Object.entries(x).filter(([, n]) => n >= 1).map(([k, n]) => `${n} ${k}`).join(', ');
 // hemkomsten: byn får veta om resan

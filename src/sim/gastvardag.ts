@@ -60,6 +60,7 @@ function gastAkt(s: State, p: Person): Act {
     if (!h?.folj?.includes(p.id)) return 'gaHem';
     return h.fas === 'kommer' ? 'gastKommer' : h.fas === 'gar' ? 'gaHem' : 'gastLager';
   }
+  if (g.sort === 'besok' && g.fas === 'pratar' && g.gor === 'hjalper') return 'bygga'; // besökaren hjälper byn att bygga (steg 11.13.23)
   if (g.sort === 'framling' || g.sort === 'besok') return g.fas === 'pratar' ? 'gastVantar' : g.fas === 'gar' ? 'gaHem' : 'gastKommer';
   return 'gastKommer';
 }

@@ -19,6 +19,7 @@ import { FOOD, SAKER } from './saker';
 import { DODSORSAKER, type Dodsorsak } from './liv';
 import { fastaRelIn, fastaRelUt } from './vacktfasta';
 import { radNr } from './radtal';
+import { hjalpBygge, hjalpSteg } from './vackthjalp';
 import { dorPaVagen, resenarer, Sallskap, sallskapNu, tappa, vackKrok } from './resa';
 
 export const VACKTGAST = {
@@ -47,7 +48,7 @@ export function besokIn(s: State, sl: Sallskap) {
     for (const f of BESOKET) delete (g as unknown as Record<string, unknown>)[f];
     delete g.ute; delete g.dodVag;
     g.id = nyttGastId(b); g.x = kant.x; g.y = kant.y;
-    g.gast = { sort: 'besok', hemRad: vl.huvud, fas: 'kommer', mat: per, vatten: GASTVARD.sack };
+    g.gast = { sort: 'besok', hemRad: vl.huvud, fas: 'kommer', mat: per, vatten: GASTVARD.sack, ...(sl.hjalp ? { hjalp: 1 as const } : {}) };
     b.people.push(g);
     // det hen bär följer med som gästens ting
     for (const t of s.ting ?? []) if (t.bar === p.id) (b.gastTing ??= []).push({ ...JSON.parse(JSON.stringify(t)), agare: g.id, bar: g.id });
@@ -55,6 +56,7 @@ export function besokIn(s: State, sl: Sallskap) {
     (b.besokare ??= {})[g.id] = p.id;
   }
   fastaRelIn(b, radNr(vl, b.vackt), sl.gaster); // relationerna med de fasta (steg 11.13.13)
+  if (sl.hjalp) { useMap(b); hjalpBygge(b); useMap(s); sl.hjalpTim = 0; } // bygget byn behöver hjälp med (steg 11.13.23)
   count(s, 'besok in', folk.length); count(b, 'besökare kom', folk.length);
 }
 // sällskapet vänder hem: var och en tar med sig det som ändrats tillbaka, och maten som är kvar går i packningen
@@ -69,6 +71,7 @@ export function besokUt(s: State, sl: Sallskap, t: number) {
     const p = s.people.find(q => q.id === mid), g = b && gastAv(b, gid);
     if (!p || !g) continue; // byn somnade medan de var där: personen är som när hen gick in
     kvar += Math.floor(g.gast?.mat ?? 0);
+    if (sl.hjalp) sl.hjalpTim = (sl.hjalpTim ?? 0) + (g.gast?.hjalpTim ?? 0);
     if (g.died !== undefined) dorPaVagen(s, sl, p, dodsorsak(g.cause), Math.min(g.died, t));
     else {
       skrivVanor();
@@ -94,6 +97,7 @@ function dodsorsak(cause: string | undefined): Dodsorsak {
 // besökarna i byn: de går från kanten till elden och stannar där (TAKTER i steg.ts)
 export function besokSteg(s: State, dtSec: number) {
   const t0 = s.now - dtSec * SEC;
+  hjalpSteg(s, dtSec);
   for (const p of s.people) {
     const g = p.gast;
     if (g?.sort !== 'besok' || p.died !== undefined || g.fas !== 'kommer') continue;

@@ -3598,7 +3598,7 @@ SCENARIER.uppdragminne = {
     SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
     const sl = SIM.samlaResa(s, p, SIM.resaPlan(s, p, 99, 99)!)!;
     const silver0 = sl.pack.silver ?? 0;
-    SIM.uppdragFram(s, sl, s.now);
+    SIM.uppdragFram(s, sl, s.now); SIM.hjalpSlut(s, sl, s.now); // hjälpen avgörs när sällskapet vänder (steg 11.13.23)
     const klart = sl.utfall?.hur === 'klart' && (sl.pack.silver ?? 0) - silver0 === 30 && !SIM.uppdragNr(vl, u.id);
     const dag = sl.dagbok.some(d => d[2] === 'uppdrag');
     // ett andra sällskap som kommer sent finner inget
@@ -3801,7 +3801,7 @@ SCENARIER.uppdragrykte = {
     const u = SIM.utlys(vl, 'hjalp', q.nr, { k: 'styre', rad: q.by }, { silver: 30 }, s.now)!;
     SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
     const sl = SIM.samlaResa(s, p, SIM.resaPlan(s, p, 99, 99)!)!;
-    SIM.uppdragFram(s, sl, s.now);
+    SIM.uppdragFram(s, sl, s.now); SIM.hjalpSlut(s, sl, s.now);
     // en bybo hemma står bredvid när sällskapet kommer hem
     const w = vuxna.find(x => x.id !== p.id && !sl.medl.includes(x.id))!;
     w.x = p.x; w.y = p.y; w.task = undefined;
@@ -5163,6 +5163,56 @@ SCENARIER.aterbygge = {
       ['hagen ligger kvar med staketet runt om', lika(a.hagar, c.hagar) && c.hel],
       [`de fasta personerna finns kvar (${fasta.length})`, fasta.every(n => c.namn.has(n))],
       [`inget nytt förrådshus vid varje besök (${a.forrad}, ${c.forrad}, ${d.forrad})`, c.forrad === a.forrad && d.forrad === a.forrad],
+    ];
+  },
+};
+
+SCENARIER.hjalpplats = {
+  text: 'Hjälp på en plats (steg 11.13.23, vackthjalp.ts och hjalpSlut i resa.ts): sällskapet som kommer för att hjälpa en by stannar UPPDRAGTAL.hjalpDygn dygn och arbetar i den väckta byn. Byn har ett bygge som behöver hjälp, besökarna går dit, tar materialet ur byns förråd och bygger. När sällskapet vänder avgör timmarna om hjälpen är given: då får det belöningen, annars ingen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && q.health > 0.8);
+    const hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0 && SIM.radNr(vl, p.by)!.tek.includes('timmervagg'))!;
+    const r = SIM.radNr(vl, mal.by!)!;
+    const bv = SIM.vackTest(s, mal.by!)!;
+    const u = SIM.utlys(vl, 'hjalp', mal.nr, { k: 'styre', rad: r.nr }, { silver: 4 }, s.now)!;
+    const sl = SIM.nyttSallskap(s, a!, mal.nr, 'uppdrag')!; SIM.foljMed(vl, sl, b!);
+    sl.uppdrag = u.id; sl.hjalp = 1;
+    const kost = SIM.FOOD.filter(k => SIM.SAKER[k]?.haller).sort((x, y) => (SIM.SAKER[y]!.haller ?? 0) - (SIM.SAKER[x]!.haller ?? 0))[0]!;
+    sl.pack = { [kost]: 20 }; sl.skede = 'framme'; sl.framme = s.now;
+    SIM.gaBort(s, a!); SIM.gaBort(s, b!);
+    SIM.uppdragFram(s, sl, s.now);
+    const vantar = !sl.utfall && SIM.uppdragNr(vl, u.id) !== undefined;
+    SIM.besokIn(s, sl);
+    SIM.useMap(bv);
+    for (const m of new Set(SIM.bitsOf(bv).filter(q => q.b < 1).map(q => SIM.MATERIAL[q.m].item).filter(Boolean))) SIM.laggIn(bv, m!, 40); // byn ber om händer, materialet har den
+    const ofardiga = () => SIM.housesOf(bv).filter(h => h.klar === undefined && SIM.bitsOf(bv).some(q => q.hus === h.id && q.b < 1));
+    const bygge = ofardiga()[0], byggt0 = SIM.bitsOf(bv).filter(q => q.hus === bygge?.id).reduce((x, q) => x + q.b, 0);
+    SIM.useMap(s);
+    kor(s, 10);
+    SIM.useMap(bv);
+    const hjalpare = bv.people.filter(p => p.gast?.hjalp), tim = hjalpare.reduce((x, p) => x + (p.gast?.hjalpTim ?? 0), 0);
+    const byggt1 = SIM.bitsOf(bv).filter(q => q.hus === bygge?.id).reduce((x, q) => x + q.b, 0), byggde = bv.stat?.['hjälpen byggde'] ?? 0;
+    SIM.useMap(s);
+    SIM.besokUt(s, sl, s.now);
+    const raknat = sl.hjalpTim ?? 0;
+    sl.hjalpTim = SIM.UPPDRAGTAL.hjalpTim * 2; // som efter dygnen i byn
+    SIM.hjalpSlut(s, sl, s.now);
+    const klart = sl.utfall?.hur === 'klart' && (sl.pack.silver ?? 0) === 4 && SIM.uppdragNr(vl, u.id) === undefined;
+    // för få timmar: ingen belöning
+    const u2 = SIM.utlys(vl, 'hjalp', mal.nr, { k: 'styre', rad: r.nr }, { silver: 4 }, s.now)!;
+    sl.uppdrag = u2.id; sl.hjalpTim = 1; sl.utfall = undefined;
+    SIM.hjalpSlut(s, sl, s.now);
+    const fatt = (sl.utfall as { hur?: string } | undefined)?.hur === 'misslyckat' && (sl.pack.silver ?? 0) === 4;
+    return [
+      [`sällskapet stannar ${SIM.stannarFor(sl)} dygn för att hjälpa`, SIM.stannarFor(sl) === SIM.UPPDRAGTAL.hjalpDygn],
+      ['framme börjar hjälpen, och uppdraget avgörs först när sällskapet vänder', vantar],
+      [`byn har ett bygge som behöver hjälp (${bygge?.fn ?? 'inget'})`, !!bygge],
+      [`besökarna hjälper och arbetar vid bygget (${hjalpare.length} hjälper, ${tim.toFixed(1)} timmar, ${byggde} delar byggda)`, hjalpare.length === 2 && tim > 1],
+      [`bygget kommer framåt (${byggt0.toFixed(1)} → ${byggt1.toFixed(1)})`, byggt1 > byggt0],
+      [`timmarna följer med hem (${raknat.toFixed(1)})`, Math.abs(raknat - tim) < 1e-6],
+      ['med timmarna gjorda är hjälpen given och belöningen i packningen', klart],
+      ['med för få timmar ges ingen belöning', fatt],
     ];
   },
 };

@@ -34,6 +34,8 @@ export const UPPDRAGTAL = balans('uppdrag', {
   glad: 0.12, // humöret för den som var med och klarade ett uppdrag (steg 11.8.17) ...
   besviken: 0.06, // ... och för den som kom fram till en tom plats eller inte kunde göra det
   tanke: 2, // så många dygn (år i spelet) sitter upplevelsen i humöret
+  hjalpDygn: 2, // så många dygn (år i spelet) stannar sällskapet för att hjälpa en by (steg 11.13.23) ...
+  hjalpTim: 6, // ... och så många timmar arbete per person räknas som att byn fått hjälp
   vittra: 0.03, // det i en ruin som inte ruttnar vittrar bort med så stor del per dygn (det som ruttnar: 1 / SAKER.haller per dygn)
 });
 
