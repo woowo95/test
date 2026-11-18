@@ -659,3 +659,63 @@
     ]),
   ] });
 })();
+
+// fas 11: sändebudets symbol (steg 11.6.23). Ett bud bär byns besked till en granne, och en granne skickar sina bud hit.
+// Symbolen står i resans dagbok när beskedet framförs, i gästens ruta och i notisen. I spelet är den nu en emoji (📜).
+// Visad som en knapp i panelen.
+(() => {
+  const L = { k: 'kol0', K: 'kol3', j: 'jord1', J: 'jord2', l: 'jord3', r: 'rost2', R: 'rost1', w: 'ben3', W: 'ben1' };
+  const fyll = (B, w, h, f, i) => { const c = B.P.i(f, i); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, c); };
+  const KNAPP = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
+    fyll(B, 24, 24, 'kol', 1); const ram = B.P.i('kol', 2);
+    for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
+    ritaSprite(B, rader, L, 4, 4);
+  } });
+  VAL.push({ id: 'f11_sandebud', namn: 'Sändebudets symbol', typ: 'tre', slag: ['symbol'], vad: 'Steg 11.6.23: byns sändebud bär ett vänligt eller ovänligt besked till en grannby, och grannbyarnas bud kommer hit som gäster. Symbolen står i resans dagbok, i gästens ruta och i notisen. Bilden visar den som en knapp i panelen.', versioner: [
+    KNAPP('En budkavle: en snidad trästav med skåror, snett över rutan, med en röd snodd knuten runt mitten.', [
+      '.............kk.',
+      '............kllk',
+      '...........klJk.',
+      '..........kjJk..',
+      '.........klJk...',
+      '........kRRkr...',
+      '.......kRrk.r...',
+      '......klJk..r...',
+      '.....kjJk.......',
+      '....klJk........',
+      '...kjJk.........',
+      '..klJk..........',
+      '.kJJk...........',
+      '..kk............',
+    ]),
+    KNAPP('En hoprullad näverrulle, vit med näverns mörka streck, ombunden med en röd snodd vars ändar hänger ner.', [
+      '', '', '', '',
+      '...kkkkkkkkkkk..',
+      '..kwwkwwRrwwwkk.',
+      '.kWwwwwwRrwkwkWk',
+      '.kwwwkwwRrwwwkwk',
+      '.kWwwwwwRrwwwkWk',
+      '..kwwwkwRrwkwkk.',
+      '...kkkkkkkkkkk..',
+      '........rr......',
+      '.......r..r.....',
+    ]),
+    KNAPP('En liten träbricka med inristade runor och ett hål upptill, där en röd snodd är trädd att bära den i.', [
+      '',
+      '.......rr.......',
+      '......r..r......',
+      '......r..r......',
+      '...kkkkkkkkkk...',
+      '..kJJJJrrJJJJk..',
+      '..kJlJJJJJJlJk..',
+      '..kJkJkJJkJkJk..',
+      '..kJkkJJJkkJJk..',
+      '..kJkJkJJkJkJk..',
+      '..kJJJJJJJJJJk..',
+      '..kJkJJkJkJJJk..',
+      '..kJkkJkkJkJJk..',
+      '..kjjjjjjjjjjk..',
+      '...kkkkkkkkkk...',
+    ]),
+  ] });
+})();

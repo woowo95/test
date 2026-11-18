@@ -3088,3 +3088,77 @@ SCENARIER.bykrig = {
     ];
   },
 };
+
+SCENARIER.sandebud = {
+  text: 'Sändebudet (steg 11.6.23): staten eller kyrkan i huvudbyn sänder en bybo med ett vänligt (+3) eller ovänligt (−6) besked till en granne, med eller utan gåva; beskedet verkar först när budet kommit fram. Grannbyarnas bud kommer ur världens kö som gäster och verkar efter samtalet med ledaren. Raden besked i BYHANDLINGAR, RESMAL.sandebud, GASTSORTER.sandebud',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, hb = SIM.byPlats(vl0, vl0.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl0, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl0, p.by)!.tal.folk > 0 && SIM.radNr(vl0, p.by)!.syn)!;
+    const rnr = mal.by!;
+    const bud = (ton: SIM.BeskedTon | undefined, pack: Record<string, number> = { brod: 2 }) => {
+      const s = SIM.cloneState(s0), vl = s.varld!, r = SIM.radNr(vl, rnr)!, a = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 18)!;
+      SIM.mots(vl, vl.huvud!, rnr);
+      const sl = SIM.nyttSallskap(s, a, mal.nr, ton ? 'sandebud' : 'handel')!;
+      sl.pack = { ...pack }; sl.skede = 'framme'; if (ton) sl.ton = ton;
+      const hos0 = SIM.relation(vl, rnr, vl.huvud!) ?? 0, egen0 = SIM.relation(vl, vl.huvud!, rnr) ?? 0, varor0 = { ...SIM.radVaror(r) };
+      SIM.radBesok(s, sl, s.now);
+      return { hos: (SIM.relation(vl, rnr, vl.huvud!) ?? 0) - hos0, egen: (SIM.relation(vl, vl.huvud!, rnr) ?? 0) - egen0, r, varor0, sl, s };
+    };
+    const utan = bud(undefined), van = bud('besked'), ovan = bud('ovanligt');
+    const gava = bud('besked', { brod: 2, skinn: 4 });
+    const gavaVarde = gava.hos - van.hos, skinnFram = Math.round((SIM.radVaror(gava.r)[SIM.gruppAv('skinn')!]! - (gava.varor0[SIM.gruppAv('skinn')!] ?? 0)) / SIM.grundvarde('skinn'));
+    // ruinen ändrar inget
+    const sr = SIM.cloneState(s0), vr = sr.varld!; SIM.radNr(vr, rnr)!.tal.folk = 0;
+    const slr = SIM.nyttSallskap(sr, SIM.living(sr).find(q => SIM.ageOf(q, sr.now) >= 18)!, mal.nr, 'sandebud')!; slr.skede = 'framme'; slr.ton = 'besked';
+    const ruin0 = SIM.relation(vr, rnr, vr.huvud!); SIM.radBesok(sr, slr, sr.now); const ruin = SIM.relation(vr, rnr, vr.huvud!) === ruin0;
+    // huvudbyns bud väljs som en resa och väntar inte på vägen: relationen ändras inte förrän budet är framme
+    const sp = SIM.cloneState(s0), vp = sp.varld!; vp.bud = { mot: rnr, ton: 'besked', av: 'staten', t: sp.now };
+    for (const q of SIM.living(sp)) SIM.larOrt(sp, q, mal.nr, SIM.O_BESOKT, 1, { t: sp.now }); // byn känner grannen
+    const plan = SIM.living(sp).map(q => SIM.resaPlan(sp, q, 99, 99)).find(x => x?.skal === 'sandebud');
+    const folj = SIM.living(sp).find(q => SIM.resaPlan(sp, q, 99, 99)?.skal === 'sandebud');
+    const rp0 = SIM.relation(vp, rnr, vp.huvud!);
+    const slp = plan && folj ? SIM.samlaResa(sp, folj, plan) : undefined;
+    const vagen = !!slp && slp.ton === 'besked' && !vp.bud && SIM.relation(vp, rnr, vp.huvud!) === rp0;
+    // grannens bud i huvudbyn: verkar efter samtalet med ledaren, inte när det kommer fram
+    const sg = SIM.cloneState(s0), vg = sg.varld!; SIM.mots(vg, rnr, vg.huvud!);
+    const g = SIM.sandebud(sg, rnr, 'ovanligt', [{ k: 'skinn', n: 3 }])!;
+    const l = SIM.ledarenNu(sg) ?? SIM.living(sg)[0]!;
+    g.x = l.x; g.y = l.y + 0.8;
+    const rg0 = SIM.relation(vg, vg.huvud!, rnr) ?? 0, skinn0 = SIM.amountOf(sg, 'skinn');
+    SIM.framlingSteg(sg, 1);
+    const prat = g.gast?.fas === 'pratar', rgPrat = (SIM.relation(vg, vg.huvud!, rnr) ?? 0) - rg0;
+    sg.now = (g.gast!.till ?? sg.now) + 1; SIM.framlingSteg(sg, 1);
+    const rgEfter = (SIM.relation(vg, vg.huvud!, rnr) ?? 0) - rg0, skinnIn = SIM.amountOf(sg, 'skinn') - skinn0;
+    // ett bud som dör innan samtalet ändrar inget
+    const sd = SIM.cloneState(s0), vd = sd.varld!; SIM.mots(vd, rnr, vd.huvud!);
+    const gd = SIM.sandebud(sd, rnr, 'besked')!, rd0 = SIM.relation(vd, vd.huvud!, rnr);
+    SIM.die(sd, gd, 'varg'); for (let i = 0; i < 5; i++) { sd.now += SIM.HOUR; SIM.framlingSteg(sd, 3600); }
+    const dod = SIM.relation(vd, vd.huvud!, rnr) === rd0;
+    // två byar i världen: beskedet verkar hos mottagaren när budet kommit fram
+    const sw = SIM.cloneState(s0), vw = sw.varld!;
+    const a = vw.rader!.find(x => SIM.lever(vw, x) && x.nr !== vw.huvud && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vw, x).some(y => y.nr !== vw.huvud))!;
+    const b = SIM.radGrannar(vw, a).find(y => y.nr !== vw.huvud)!;
+    SIM.mots(vw, a.nr, b.nr);
+    const cw = SIM.byCtx(sw, vw, a, b), w0 = SIM.relation(vw, b.nr, a.nr) ?? 0;
+    const tonLag = SIM.beskedTon({ ...cw, rel: -90 }).ton, tonHog = SIM.beskedTon({ ...cw, rel: 0 }).ton;
+    SIM.BYHANDLINGAR.besked.gor({ ...cw, rel: 0 });
+    const f = vw.farder!.find(x => x.besked && x.fran === a.nr)!, wVag = (SIM.relation(vw, b.nr, a.nr) ?? 0) - w0;
+    SIM.KOHANDELSER.fardFram!(sw, vw, { t: f.t1, typ: 'fardFram', sak: f.id } as never);
+    const wFram = (SIM.relation(vw, b.nr, a.nr) ?? 0) - w0;
+    // en värld i 40 dygn (40 år i spelet)
+    const v = SIM.cloneState(testBy(10)); v.now += 40 * SIM.DAY; SIM.varldSteg(v);
+    const st = v.stat ?? {};
+    return [
+      [`huvudbyns vänliga besked: +${van.hos - utan.hos} hos mottagaren, ${van.egen - utan.egen} hos avsändaren`, van.hos - utan.hos === SIM.BYREL.besked && van.egen === utan.egen],
+      [`det ovänliga: ${ovan.hos - utan.hos} hos mottagaren`, ovan.hos - utan.hos === -SIM.BYREL.ovanligt],
+      [`gåvan läggs i byns förråd (${skinnFram} skinn) och höjer synen mer (+${gavaVarde})`, skinnFram === 4 && gavaVarde > 0 && !gava.sl.pack.skinn],
+      ['en ruin ändrar inget', ruin],
+      [`budet väljs som en resa (${plan ? `värde ${plan.varde}` : 'ingen'}), budet är sänt och relationen är densamma medan det är på väg`, vagen],
+      [`grannens bud i huvudbyn: ingen ändring när det kommit fram (${rgPrat}), ${rgEfter} efter samtalet`, prat && rgPrat === 0 && rgEfter < 0],
+      [`gåvan från grannen kommer i hela saker i förrådet (${skinnIn} skinn)`, skinnIn === 3],
+      ['ett bud som dör innan samtalet ändrar inget', dod],
+      [`i världen: tonen är ovänlig mot den byn ser ner på (${tonLag}) och vänlig annars (${tonHog}), ingen ändring på vägen (${wVag}), +${wFram} framme${f.gava ? ` med en gåva (${f.n} ${f.g})` : ''}`, tonLag === 'ovanligt' && tonHog === 'besked' && wVag === 0 && (f.gava ? wFram > SIM.BYREL.besked : wFram === SIM.BYREL.besked)],
+      [`i en värld i 40 dygn: ${st.radbesked_ut ?? 0} bud ut, ${st.radbesked_fram ?? 0} framme, ${st.sandebudKommer ?? 0} till huvudbyn, huvudbyn ville sända ${(st.huvudbud_staten ?? 0) + (st.huvudbud_kyrkan ?? 0)} (information)`, true],
+    ];
+  },
+};

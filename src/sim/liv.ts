@@ -4,7 +4,7 @@ import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, paKartan, newPerson, raddAkt, relKey, startSkills, think, uppkalladLogg } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, makeName, paKartan, newPerson, raddAkt, relKey, startSkills, think, uppkalladLogg } from './folk';
 import { pair, stallVagn } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, pick, pickViktat, rnd } from './slump';
@@ -21,14 +21,17 @@ import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, klanById, klanerOf, narhet } from './klaner';
 import { radKrok } from './radtal';
-import { klanHandelse } from './byrel';
+import { BYREL, byHandelse, gavaRel, klanHandelse } from './byrel';
 import { kantMot, utbrytning } from './grannbyar';
 import { handlarenDog, prisIPrat } from './handel';
 import { gaMot } from './rovare';
 import { kanterna } from './varg';
 import { eldPlats, getMap } from './karta';
 import { freeNear, isWall } from './byggnad';
-import { gastGar, nyttGastId } from './gast';
+import { GASTSORTER, GastSortDef, gastGar, nyGast, nyttGastId } from './gast';
+import { laggIn } from './lager';
+import { grundvarde } from './varde';
+import { SAKER } from './saker';
 import { notis } from './notiser';
 import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
@@ -236,6 +239,39 @@ export function regulate(s: State, dtSec: number) {
   if (chance(s, immigrationRate(pop) * (LIV.nybyggareMatMin + LIV.nybyggareMat * matGott(s)) / 86400, dtSec, 'flytt')) immigrate(s, false);
   // de som flyttat hit från en by i världen kommer som främlingar (flytten, byflytt.ts, steg 11.3.5)
   for (const fran of s.varld?.tillHuvud?.splice(0) ?? []) framling(s, undefined, fran);
+  // grannbyarnas sändebud kommer som gäster (steg 11.6.23)
+  for (const b of s.varld?.budTillHuvud?.splice(0) ?? []) sandebud(s, b.fran, b.ton, b.gava);
+}
+// ---------- sändebudet från en grannby (steg 11.6.23, Flera samhällen: Sändebudet) ----------
+// Budet går in på kartan från kanten mot grannbyn, går till ledaren (eller elden), pratar med hen en stund som främlingen gör,
+// och efter samtalet verkar beskedet: huvudbyns syn på grannbyn går upp (vänligt) eller ner (ovänligt). En gåva läggs i
+// förrådet, som hela saker. Dör budet eller går det innan samtalet är klart ändrar det inget. Sedan går hen hem igen
+export function sandebud(s: State, fran: number, ton: import('./byhandling').BeskedTon, gava?: import('./handel').HVara[]) {
+  const rad = s.varld?.rader?.find(r => r.nr === fran), k = rad?.syn;
+  if (!k) return undefined;
+  const sex = rnd(s, 'klan') < 0.5 ? 'm' as const : 'k' as const, namn = makeName(s, sex, 'klan'), age = 25 + rnd(s, 'klan') * 20;
+  const id = nyttGastId(s), ut = kantMot(s, k.id) ?? kanten(s, W / 2, 0);
+  const p = nyGast(s, { id, namn, sex, fodd: s.now - age * DAY, rad: { sort: 'sandebud', klan: k.id, hem: k.hem, fas: 'kommer', besked: ton, hemRad: fran, ...gava?.length ? { gava } : {} }, x: ut.x, y: ut.y, nyckel: (s.gastNr ?? 0) * 7919 + fran, skill: { handel: Math.round(5 + rnd(s, 'klan') * 10) } });
+  s.people.push(p);
+  count(s, 'sandebudKommer');
+  log(s, `Ett sändebud från ${k.namn} kommer gående mot byn.`, 'move', [p.id]);
+  return p;
+}
+// samtalet är slut: sändebudets besked verkar, gåvan läggs i förrådet, och budet går hem
+export function beskedVerkar(s: State, p: Person) {
+  const g = p.gast!, vl = s.varld, k = klanById(s, g.klan), r = vl?.rader?.find(x => x.nr === g.hemRad);
+  g.fas = 'gar'; g.path = undefined; g.pk = undefined;
+  if (!vl || !r || vl.huvud === undefined || !g.besked) return;
+  byHandelse(vl, g.besked, r.nr, vl.huvud);
+  let varde = 0;
+  for (const w of g.gava ?? []) { laggIn(s, w.k, w.n); varde += w.n * grundvarde(w.k); }
+  if (varde > 0) byHandelse(vl, 'gava', r.nr, vl.huvud, gavaRel(varde) / BYREL.gava);
+  const l = ledarenNu(s), vem = l ? l.name : 'byn', vanligt = g.besked === 'besked';
+  const gavaText = g.gava?.length ? `, och lämnade ${g.gava.map(w => `${w.n} ${SAKER[w.k]?.namn.toLowerCase() ?? w.k}`).join(', ')} som gåva` : '';
+  const text = `${p.name}, sändebud från ${k?.namn ?? 'en grannby'}, bar ${vanligt ? 'ett vänligt' : 'ett ovänligt'} besked till ${vem}${gavaText}.`;
+  g.gava = undefined;
+  count(s, vanligt ? 'sandebudVanligt' : 'sandebudOvanligt');
+  log(s, text, 'move', [p.id, ...l ? [l.id] : []]); notis(s, 'sandebud', text, [p.id]); kronika(s, text, 'sandebud');
 }
 // en främling från en grannby: den som flyttat hit från byn fran (flytten, byflytt.ts, steg 11.3.5), annars (scenarierna) från
 // en grannby som inte tycker illa om byn (steg 4.4.4.2), oftare från en som ligger nära (narhet). Hen kan ofta en teknik som ingen i byn kan, men
@@ -271,11 +307,11 @@ function kanten(s: State, x: number, y: number) {
   const m = getMap(s.seed);
   return kanterna(x, y).find(k => m.tiles[Math.floor(k.y) * W + Math.floor(k.x)] !== T.Vatten) ?? kanterna(x, y)[0];
 }
-const ledarenNu = (s: State) => { const lid = s.styre?.ledare, l = lid === undefined ? undefined : byId(s, lid); return l && alive(l) ? l : undefined; };
+export const ledarenNu = (s: State) => { const lid = s.styre?.ledare, l = lid === undefined ? undefined : byId(s, lid); return l && alive(l) ? l : undefined; };
 // främlingarna går, pratar och går igen (steg.ts, varje slag)
 export function framlingSteg(s: State, dtSec: number) {
   const t0 = s.now - dtSec * SEC;
-  for (const p of s.people.filter(q => q.gast?.sort === 'framling' && q.died === undefined && q.left === undefined)) {
+  for (const p of s.people.filter(q => q.gast && (GASTSORTER[q.gast.sort] as GastSortDef).efter && q.died === undefined && q.left === undefined)) { // främlingar och sändebud (GASTSORTER.efter)
     const g = p.gast!;
     if (g.fas === 'kommer') {
       const l = ledarenNu(s), mal = l ?? eldPlats(s), kvar = gaMot(s, p, mal.x, mal.y + (l ? 0.8 : 1.2), dtSec, t0);
@@ -283,10 +319,10 @@ export function framlingSteg(s: State, dtSec: number) {
       if (kvar <= KLAN.framlingNara) {
         g.fas = 'pratar'; g.till = s.now + KLAN.framlingPrat * MIN; g.path = undefined; g.pk = undefined;
         log(s, `${p.name} från ${klanById(s, g.klan)?.namn ?? 'en grannklan'} pratar med ${l ? l.name : 'byn'}.`, 'move', [p.id, ...(l ? [l.id] : [])]);
-        if (l) { think(l, 'Pratade med en främling', 0.05, s.now, 6 * HOUR); prisIPrat(s, l, p); horOmGast(s, l, p, 1); } // främlingen berättar vad något kostar (steg 10.5.15) och var hen kommer ifrån (steg 11.4.2)
+        if (l) { think(l, g.sort === 'sandebud' ? 'Pratade med ett sändebud' : 'Pratade med en främling', 0.05, s.now, 6 * HOUR); prisIPrat(s, l, p); horOmGast(s, l, p, 1); } // främlingen berättar vad något kostar (steg 10.5.15) och var hen kommer ifrån (steg 11.4.2)
       }
     } else if (g.fas === 'pratar') {
-      if (s.now >= (g.till ?? 0)) framlingBeslut(s, p);
+      if (s.now >= (g.till ?? 0)) { if ((GASTSORTER[g.sort] as GastSortDef).efter === 'besked') beskedVerkar(s, p); else framlingBeslut(s, p); }
     } else if (g.fas === 'gar') {
       const ut = kantMot(s, g.klan) ?? kanten(s, p.x, p.y), kvar = gaMot(s, p, ut.x, ut.y, dtSec, t0); // hem mot grannbyn (steg 11.2.22)
       if (kvar >= 0 && kvar < 0.5 || kvar < 0) gastGar(s, p.id, true);

@@ -56,6 +56,7 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   byte: { slag: 'handel', rubrik: 'Byte med handlaren', vikt: 1 },
   gast: { slag: 'handel', rubrik: 'En gäst', vikt: 1 },
   nyhet: { slag: 'handel', rubrik: 'Nyheter från världen', vikt: 2 },
+  sandebud: { slag: 'handel', rubrik: 'Ett sändebud', vikt: 2 }, // en grannbys besked som nått byn (steg 11.6.23, liv.ts)
   resa: { slag: 'handel', rubrik: 'En resa', vikt: 2 }, // det stora i resans dagbok och redogörelsen när den kommit hem (steg 11.5.13, resa.ts) // en nyhet om en by som når byn (steg 11.4.13, ort.ts)
   sjuk: { slag: 'folk', rubrik: 'Sjukdom', vikt: 2 }, // någon insjuknar, blir sämre eller frisk (steg 9.5.4, sjukdom.ts)
   djurtorst: { slag: 'fara', rubrik: 'Ett djur dog av törst', vikt: 2 }, // steg 10.10.31

@@ -20,7 +20,7 @@ export const BYREL = balans('byrel', {
   slaktTak: 30, // ... högst så mycket
   moderby: 3, // en by och dess moderby har så många släktband från början
   // verkan av handlingarna i BYHANDELSER
-  handel: 2, gava: 1, muta: 4, fjask: 2, turne: 5, besked: 3, ovanligt: 5, mottagen: 3, bortvisad: 6,
+  handel: 2, gava: 1, muta: 4, fjask: 2, turne: 5, besked: 3, ovanligt: 6, mottagen: 3, bortvisad: 6,
   lurad: 10, ran: 10, plundring: 20, dodade: 15, skandad: 5, bruten: 25,
 });
 type Tal = keyof typeof BYREL;

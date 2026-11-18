@@ -89,6 +89,18 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       liv: livFor(s, g.klan, p.name, p.sex, 'gast', p.born),
     };
   }),
+  // sändebudet från en grannby (steg 11.6.23, sandebud i liv.ts)
+  s => s.people.filter(p => p.gast?.sort === 'sandebud' && gastLever(p)).map(p => {
+    const g = p.gast!, k = klanById(s, g.klan);
+    return {
+      id: p.id, namn: p.name, sex: p.sex, sort: 'Sändebud', farg: 0x7a5a8e, ...rovarPlats(p, ui.nu), p,
+      gor: g.fas === 'pratar' ? 'Framför beskedet' : g.fas === 'gar' ? 'Går hem' : 'På väg mot byn',
+      fran: k ? `${k.namn} vid ${k.hem}` : undefined,
+      rader: [{ namn: 'Besked', varde: g.besked === 'ovanligt' ? '📜 Ovänligt' : '📜 Vänligt', title: 'Beskedet budet bär; det verkar efter samtalet med ledaren' },
+        ...g.gava?.length ? [{ namn: 'Gåva', varde: esc(g.gava.map(w => `${w.n} ${w.k}`).join(', ')), title: 'Det budet bär som gåva' }] : []],
+      liv: livFor(s, g.klan, p.name, p.sex, 'gast', p.born),
+    };
+  }),
 ];
 export const gaster = (t = ui.nu) => GASTER.flatMap(f => f(s, t));
 export const gastById = (id: number | undefined) => id !== undefined && id < 0 ? gaster().find(g => g.id === id) : undefined;
