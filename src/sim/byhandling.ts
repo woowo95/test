@@ -29,6 +29,7 @@ import { anfallUtfall, BYANFALL, flockStorlek, forsvarare, vinstChans } from './
 import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
 import { radKommer } from './rader';
+import { VAKTKROK } from './vagran';
 import { avslutaUppdrag, belonVarde, fyndId, ruinKvar, ruinRad, taRuin, uppdragDef, uppdragNr } from './uppdrag';
 import { valjDragfordon } from './fordon';
 import { ageIndex, iIstiden } from './tid';
@@ -483,7 +484,7 @@ function beskedFram(s: State, vl: Varlden, f: RadFard, r: VarldRad | undefined, 
   count(s, 'radbesked_fram');
 }
 // färden kommer hem med betalningen
-KOHANDELSER.fardHem = (_s, vl, p) => {
+KOHANDELSER.fardHem = (s, vl, p) => {
   const i = vl.farder?.findIndex(x => x.id === p.sak) ?? -1;
   if (i < 0) return;
   const f = vl.farder![i], r = radNr(vl, f.fran);
@@ -494,6 +495,7 @@ KOHANDELSER.fardHem = (_s, vl, p) => {
   for (const w of f.hem ?? []) radTar(r, w.k, w.n); // handlarens varor (steg 11.6.9)
   for (const w of f.besked ? f.last?.varor ?? [] : []) radTar(r, w.k, w.n); // gåvan som inte kom fram
   for (const [g, n] of Object.entries(f.byte ?? {}) as [VarugruppId, number][]) laggTill(r, g, n); // bytet (steg 11.6.16)
+  if (f.anfall && f.till === vl.huvud && f.hem?.length) VAKTKROK.plundrad(s, r); // ledaren får veta vart det stulna tog vägen (steg 11.13.27)
 };
 // flocken kommer fram (steg 11.6.16): uträkningen i radanfall.ts, de döda dras ur båda byarna, bytet tas ur försvararnas förråd
 // och bärs hem, och försvararnas syn på anfallarna sjunker för plundringen och för varje dödad

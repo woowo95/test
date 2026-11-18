@@ -26,6 +26,8 @@ import { ageIndex, iIstiden } from './tid';
 import { byId, stat } from './folk';
 import { Person, State } from './typer';
 
+// de rånade vet var rövarna kom ifrån (vaktat.ts sätter kroken)
+export const VAKTKROK = { ranad: (_s: State, _sl: Sallskap, _L: VarldRad, _t: number) => {}, plundrad: (_s: State, _L: VarldRad) => {} };
 export const VAGRAN = balans('vagran', {
   dygn: 0.4, // risken per dygn för ett rån vid ett läger med lagerFolk rövare ...
   lagerFolk: 10,
@@ -58,10 +60,10 @@ function lagerNara(s: State, sl: Sallskap): [VarldRad, number][] {
   }
   return ut;
 }
-const packVarde = (sl: Sallskap) => Object.entries(sl.pack).reduce((a, [k, n]) => a + Math.floor(n ?? 0) * grundvarde(k), 0);
+export const packVarde = (sl: Sallskap) => Object.entries(sl.pack).reduce((a, [k, n]) => a + Math.floor(n ?? 0) * grundvarde(k), 0);
 const ledare = (s: State, sl: Sallskap) => byId(s, sl.ledare) ?? resenarer(s, sl)[0];
 // modet och aggressionen hos ledaren, 0 = lagom
-const djarv = (s: State, sl: Sallskap) => { const p = ledare(s, sl); return p ? (stat(p, 'mod', s.now) + stat(p, 'aggression', s.now) - 20) / 20 : 0; };
+export const djarv = (s: State, sl: Sallskap) => { const p = ledare(s, sl); return p ? (stat(p, 'mod', s.now) + stat(p, 'aggression', s.now) - 20) / 20 : 0; };
 // chansen att sällskapet vinner mot fienden (kraften i kvadrat, som anfallen mellan byarna)
 function vinst(s: State, sl: Sallskap, fiende: number) {
   const ka = resenarer(s, sl).filter(p => kanGa(p)).length;
@@ -79,7 +81,7 @@ export function vagValen(s: State, sl: Sallskap, fiende: number, krav: number): 
 }
 const basta = (v: Record<VagVal, number>): VagVal => (['betala', 'fly', 'slass'] as VagVal[]).reduce((a, b) => v[b] < v[a] ? b : a);
 // det mest värda först, i hela saker, tills värdet v är nått; ut = bara de här sakerna
-function taUrPack(sl: Sallskap, v: number, ut?: (k: string) => boolean): [string, number][] {
+export function taUrPack(sl: Sallskap, v: number, ut?: (k: string) => boolean): [string, number][] {
   const tog: [string, number][] = [];
   for (const k of Object.keys(sl.pack).filter(k => (!ut || ut(k)) && Math.floor(sl.pack[k] ?? 0) >= 1).sort((a, b) => grundvarde(b) - grundvarde(a) || a.localeCompare(b))) {
     if (v <= 0) break;
@@ -88,10 +90,10 @@ function taUrPack(sl: Sallskap, v: number, ut?: (k: string) => boolean): [string
   }
   return tog;
 }
-const lista = (t: [string, number][]) => t.map(([k, n]) => `${n} ${(SAKER[k]?.namn ?? k).toLowerCase()}`).join(', ');
+export const lista = (t: [string, number][]) => t.map(([k, n]) => `${n} ${(SAKER[k]?.namn ?? k).toLowerCase()}`).join(', ');
 
 // striden på vägen: sällskapet (sida 0) mot fienderna (sida 1); svarar med vinnaren och hur många fiender som dog
-function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar'], slag: string, t: number): { vann: boolean; doda: number } {
+export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar'], slag: string, t: number): { vann: boolean; doda: number } {
   const folk = resenarer(s, sl).filter(p => kanGa(p));
   const kampar = [...folk.map((p, i) => personKampe(s, p, i + 1, 0, 4, 3 + i)), ...fiender.map((k, j) => ({ ...k, id: 1000 + j, x: 16, y: 3 + j }))];
   const st = nyStrid({ avsikt: 'skada', w: 20, h: Math.max(10, kampar.length + 4), kampar }, Math.floor(rnd(s, 'resa') * 2 ** 31));
@@ -114,7 +116,7 @@ function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar'], slag:
 }
 // en rövare ur lägret L som kämpe (rövarnas kropp ur ROVARE, vapnet efter lägrets utrustning)
 const mitt = ([a, b]: readonly number[]) => (a + b) / 2;
-function rovarKampe(L: VarldRad): Uppstallning['kampar'][number] {
+export function rovarKampe(L: VarldRad): Uppstallning['kampar'][number] {
   const vapen = anfallUtr(L) >= 1.5 ? 'yxa' : anfallUtr(L) >= 1.2 ? 'flintspjut' : 'kniv';
   return { id: 0, namn: 'Rövare', sida: 1, gast: 1, vapen, klader: [], fart: 1, x: 0, y: 0,
     st: { styrka: mitt(ROVARE.styrka), uthallighet: mitt(ROVARE.uthallighet), mod: mitt(ROVARE.mod), smidighet: mitt(ROVARE.smidighet), skicklighet: 5 + Math.max(0, (mitt(ROVARE.skicklighet) - 5) * 2) / 2 } };
@@ -132,7 +134,7 @@ VAGHANDELSER.ran = {
     if (n <= 0) return;
     const krav = Math.min(packVarde(sl), n * VAGRAN.krav), val = basta(vagValen(s, sl, n * anfallUtr(L), krav));
     count(s, 'resa rån'); count(s, `resa rån ${val}`);
-    const ge = (tog: [string, number][]) => { for (const [k, m] of tog) radTar(L, k, m); }; // bytet går till lägret
+    const ge = (tog: [string, number][]) => { for (const [k, m] of tog) radTar(L, k, m); VAKTKROK.ranad(s, sl, L, t); }; // bytet går till lägret, och det värdefulla vaktas där (steg 11.13.27)
     if (val === 'betala') {
       const tog = taUrPack(sl, krav); ge(tog);
       dagbok(s, sl, 'ran', `${n} rövare från ${L.namn} stoppade sällskapet. De betalade ${tog.length ? lista(tog) : 'inget, för de hade inget'} och fick gå.`, t);

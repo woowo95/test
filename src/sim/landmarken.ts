@@ -31,7 +31,7 @@ const LAND: readonly MarkId[] = ['slatt', 'skog', 'tat', 'myr', 'berg'];
 export const LANDMARKEN = {
   by: { namn: 'By', tecken: 'hus', mark: ['slatt', 'skog'], avst: 1, folk: true }, // inte på en annan bys karta; hur nära grannen ligger säger ingen regel
   handelslager: { namn: 'Handelsläger', tecken: 'talt', mark: ['slatt', 'skog'], avst: 4, tillfallig: true, folk: true },
-  rovarlager: { namn: 'Rövarläger', tecken: 'eldstad', mark: ['skog', 'tat', 'berg'], avst: 4, tillfallig: true, folk: true },
+  rovarlager: { namn: 'Rövarläger', tecken: 'eldstad', mark: ['skog', 'tat', 'berg'], avst: 4, tillfallig: true, folk: true, karta: true },
   utpost: { namn: 'Utpost', tecken: 'torn', mark: ['slatt', 'skog', 'berg'], avst: 3, projekt: true, folk: true },
   ruin: { namn: 'Ruin', tecken: 'ruin', mark: LAND, avst: 3, fynd: true, karta: true },
   helig: { namn: 'Helig plats', tecken: 'sten', mark: LAND, avst: 3, tathet: 0.004, karta: true },

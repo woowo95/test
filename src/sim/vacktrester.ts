@@ -44,6 +44,18 @@ export function byggRester(b: State, p: { nr: number; k: string; by?: number }) 
     }
     return;
   }
+  if (p.k === 'rovarlager') { // det stulna ligger vid lägrets mitt (steg 11.13.27)
+    const L = p.by !== undefined ? radNr(vl, p.by) : undefined, stackar = (b.stackar ??= []);
+    let i = 0;
+    for (const [k, m0] of Object.entries(L?.stulet ?? {}).sort((a, c) => a[0].localeCompare(c[0]))) for (let m = m0; m >= 1 && i < 40; i++) {
+      const x = mitt.x - 3 + (i % 7), y = mitt.y - 1 + Math.floor(i / 7), n1 = Math.min(m, rutaOf(k));
+      if (!land(x, y)) continue;
+      stackar.push({ k, n: n1, c: 1, x, y }); m -= n1;
+    }
+    if (!stackar.length) delete b.stackar;
+    changed(b);
+    return;
+  }
   if (p.k !== 'ruin') return;
   const r = p.by !== undefined ? radNr(vl, p.by) : undefined;
   const n = Math.max(VACKTRESTER.husMin, Math.min(VACKTRESTER.husMax, Math.round(r?.hus ?? r?.minne?.hus.length ?? VACKTRESTER.husMin)));

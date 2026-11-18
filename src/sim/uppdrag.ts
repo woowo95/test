@@ -75,7 +75,7 @@ export const UPPDRAG = {
   ruinskatt: { namn: 'Ruinskatten', utlosare: 'undergang', plats: ['ruin'], utlysare: ['ingen'], belon: 'innehall', krav: 'bara', gor: 'ta', text: 'det som finns kvar i ruinen vid {plats}' },
   karavan: { namn: 'Den plundrade karavanen', utlosare: 'karavanran', plats: ['karavanrest'], utlysare: ['ingen'], belon: 'innehall', krav: 'bara', gor: 'ta', text: 'det rövarna lämnade kvar vid {plats}' },
   grav: { namn: 'Graven', utlosare: 'gravlagd', plats: ['gravhog'], utlysare: ['ingen'], belon: 'innehall', krav: 'mod', gor: 'ta', text: 'gravgåvorna i högen vid {plats}' },
-  vaktat: { namn: 'Det vaktade föremålet', utlosare: 'gomd', plats: ['gomma', 'ruin'], utlysare: ['ingen'], belon: 'innehall', krav: 'styrka', gor: 'strida', text: 'det som vaktas vid {plats}' },
+  vaktat: { namn: 'Det vaktade föremålet', utlosare: 'ran', plats: ['rovarlager'], utlysare: ['ingen'], belon: 'innehall', krav: 'styrka', gor: 'strida', text: 'det som vaktas vid {plats}' },
   hjalp: { namn: 'Hjälp på en plats', utlosare: 'nod', plats: ['by'], utlysare: ['styre', 'kyrka'], belon: 'utlyst', krav: 'styrka', gor: 'hjalpa', text: 'att hjälpa {plats}' },
   leverans: { namn: 'Leveransen', utlosare: 'brist', plats: ['by'], utlysare: ['person', 'styre'], belon: 'utlyst', krav: 'sparning', gor: 'leverera', text: 'att föra en sak till {plats}' },
 } as const satisfies Record<string, UppdragDef>;

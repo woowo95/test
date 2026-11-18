@@ -182,6 +182,7 @@ export * from './sim/resa';
 export * from './sim/vagmote';
 export * from './sim/radanfall';
 export * from './sim/vagran';
+export * from './sim/vaktat';
 export * from './sim/sandebud';
 export * from './sim/utpost';
 export * from './sim/platsbygge';

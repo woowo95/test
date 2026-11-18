@@ -60,6 +60,7 @@ export interface VarldRad {
   egen?: Record<string, number>; // de saker vars pris avviker från gruppen: sakens eget påslag (steg 11.6.3, priser.ts)
   turne?: { id: number; namn: string; t: number }; // den från huvudbyn som senast uppträdde här (steg 11.8.18, resa.ts turneFram)
   syn?: import('./klaner').Klan; // huvudbyns förbindelse med byn: hållningen, de namngivna personerna och priserna (steg 11.2.15, grannbyar.ts)
+  stulet?: Record<string, number>; // det ett rövarläger tagit och behållit som det är, i hela saker (steg 11.13.27, vaktat.ts)
   vaken?: 1; minne?: import('./vacktsomna').VacktMinne; // byn är väckt och raden står still för sina regler, och minnesbilden från förra besöket (steg 11.13.12, vacktsomna.ts)
 }
 // det radens regler (rad.ts) säger om en ny rad; rad.ts sätter det när den laddas, så att filerna som skapar rader inte

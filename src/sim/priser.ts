@@ -232,8 +232,11 @@ PERIODRADER.push({ namn: 'radens priser', period: 'dygn', fn: (s, vl) => radPris
 export const radNrPaslag = (s: State, nr: number | undefined, k: string) => { const r = radNr(s.varld ?? {}, nr); return r ? radPaslag(s, r, k) : 1; };
 // raden r får n av saken k (n < 0: ger bort): maten i portioner, det andra i gruppens tillgång efter grundvärdet, och
 // rikedomen följer. Silvret är radens silver
+// ett rövarläger behåller det värdefulla det tagit som det är (steg 11.13.27, vaktat.ts)
+export const radTarKrok = { behall: (_r: VarldRad, _k: string, _n: number) => false };
 export function radTar(r: VarldRad, k: string, n: number) {
   if (!n) return;
+  if (n > 0 && radTarKrok.behall(r, k, n)) return;
   if (k === 'silver') { r.tal.silver = Math.max(0, r.tal.silver + n); return; }
   const g = gruppAv(k);
   if (!g) return;

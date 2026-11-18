@@ -5323,3 +5323,58 @@ SCENARIER.ruinkarta = {
     ];
   },
 };
+
+SCENARIER.vaktatting = {
+  text: 'Det vaktade föremålet (steg 11.13.27, vaktat.ts): ett rövarläger behåller det värdefulla det rånat som det är, de rånade minns var det finns, och sällskapet som kommer dit smyger in, köper tillbaka, slåss eller går därifrån efter det som kostar minst. Den lilla kartan visar det stulna',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, w = vl.mark.w;
+    const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= 20 && SIM.ageOf(p, s.now) < 50).slice(0, 3);
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+    const L = SIM.nyttLager(s, vl, r, 10, s.now)!, lp = SIM.byPlats(vl, L.nr)!;
+    const sl = SIM.nyttSallskap(s, folk[0]!, lp.nr, 'uppdrag')!; for (const q of folk.slice(1)) SIM.foljMed(vl, sl, q);
+    sl.skede = 'ute'; sl.ruta = lp.y * w + lp.x;
+    // rånet på vägen: det värdefulla går till lägrets stulna saker, resten till varorna
+    sl.pack = { tunika_ylle: 1, skinn: 4 };
+    for (let i = 0; i < 30 && !L.stulet; i++) SIM.VAGHANDELSER.ran!.gor(s, sl, s.now);
+    const stulet = { ...(L.stulet ?? {}) }, varde = SIM.stulVarde(L);
+    const vet = folk.filter(p => SIM.uppdragVid(s, p, lp.nr)?.varde).length;
+    const om = folk.map(p => p.lardomar?.find(l => l.k === 'uppdrag' && l.g === lp.nr)?.om)[0];
+    // den lilla kartan visar det stulna
+    const b = SIM.vackPlats(s, lp.nr), paKartan = (b?.stackar ?? []).filter(a => a.k in stulet).reduce((x, a) => x + a.n, 0);
+    SIM.useMap(s);
+    // valen: med silver nog köper man tillbaka; utan något att betala med smyger, slåss eller går man
+    const rik = SIM.cloneState(s), slr = rik.varld!.sallskap!.find(x => x.id === sl.id)!, Lr = SIM.radNr(rik.varld!, L.nr)!;
+    slr.pack = { silver: Math.ceil(varde * SIM.VAKTAT.pris) + 5 };
+    const vr = SIM.vaktValen(rik, slr, Lr), fattig = SIM.cloneState(s), slf = fattig.varld!.sallskap!.find(x => x.id === sl.id)!, Lf = SIM.radNr(fattig.varld!, L.nr)!;
+    slf.pack = {};
+    const vf = SIM.vaktValen(fattig, slf, Lf);
+    // framme: köpet ger tillbaka sakerna och betalningen går till lägret
+    slr.skal = 'uppdrag'; slr.uppdrag = undefined;
+    SIM.uppdragFram(rik, slr, rik.now);
+    const tillbaka = Object.entries(stulet).every(([k, n]) => (slr.pack[k] ?? 0) >= n) && !Lr.stulet;
+    // utan pengar avgörs det av smygandet eller striden, flera gånger med olika slump
+    const utfall: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const f = SIM.cloneState(s); f.seed = 1000 + i; const fl = f.varld!.sallskap!.find(x => x.id === sl.id)!; fl.pack = {}; fl.skal = 'uppdrag'; fl.uppdrag = undefined;
+      SIM.uppdragFram(f, fl, f.now);
+      const LL = SIM.radNr(f.varld!, L.nr)!;
+      utfall.push(`${fl.utfall?.hur}${fl.utfall?.hur === 'klart' ? (Object.keys(stulet).every(k => (fl.pack[k] ?? 0) >= 1) && !LL.stulet ? '+' : '!') : LL.stulet ? '' : '!'}`);
+    }
+    // plundringen: ledaren får veta vart det stulna tog vägen
+    const led = SIM.ledareOf(s);
+    SIM.VAKTKROK.plundrad(s, L);
+    const ledVet = !!led && !!SIM.uppdragVid(s, led, lp.nr);
+    const hela = Object.values(stulet).every(n => Number.isInteger(n)) && Object.values(slr.pack).every(n => Number.isInteger(n));
+    return [
+      [`lägret behöll det värdefulla som det är (${Object.entries(stulet).map(([k, n]) => `${n} ${k}`).join(', ')}, värt ${Math.round(varde)})`, (stulet.tunika_ylle ?? 0) >= 1 && !('skinn' in stulet)],
+      [`de rånade minns det som det vaktade föremålet (${vet}/${folk.length}, ${om})`, vet === folk.length && om === 'vaktat'],
+      [`det stulna ligger på den lilla kartan (${paKartan})`, paKartan >= 1],
+      [`med silver köper man tillbaka (${(Object.keys(vr.kost) as SIM.VaktVal[]).map(k => `${k} ${Math.round(vr.kost[k])}`).join(', ')})`, vr.kost.kopa <= Math.min(vr.kost.smyga, vr.kost.slass, vr.kost.ga)],
+      [`utan något att betala med går köpet inte (smyga ${Math.round(vf.kost.smyga)}, chansen ${vf.smyg.toFixed(2)} mot ${vf.vakter} vakter)`, vf.kost.kopa === Infinity && vf.smyg > 0 && vf.smyg < 1],
+      [`köpet gav tillbaka sakerna (${rik.varld!.sallskap!.find(x => x.id === sl.id)!.utfall?.hur})`, tillbaka],
+      [`utan pengar: ${utfall.join(', ')} (klart+ = sakerna tillbaka)`, utfall.every(u => u === 'klart+' || u === 'misslyckat')],
+      ['ledaren får veta vart det stulna tog vägen när lägret plundrat byn', ledVet],
+      ['allt är hela saker', hela],
+    ];
+  },
+};

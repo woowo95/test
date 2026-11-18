@@ -145,7 +145,7 @@ export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
 export interface ResmalDef { namn: string; mal: readonly LandmarkId[]; stannar: number }
 export const RESMAL = {
   handel: { namn: 'Handel', mal: ['by', 'handelslager'], stannar: 1 },
-  uppdrag: { namn: 'Uppdrag', mal: ['by', 'ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'utpost'], stannar: 1 },
+  uppdrag: { namn: 'Uppdrag', mal: ['by', 'ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'utpost', 'rovarlager'], stannar: 1 },
   turne: { namn: 'Turné', mal: ['by'], stannar: 1 },
   slakt: { namn: 'Besök hos släkt', mal: ['by'], stannar: 2 },
   se: { namn: 'Se en plats', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
@@ -1119,8 +1119,12 @@ const malNamn = (s: State, sl: Sallskap) => s.varld?.platser?.find(p => p.nr ===
 // vars tid är ute finns inte längre, och platsen är tom. Belöningen läggs i packningen och delas hemma som allt annat (Andelar).
 // Det som sker står i dagboken, och utfallet berättas i redogörelsen hemma.
 export interface UppdragUtfall { namn: string; hur: 'klart' | 'tomt' | 'misslyckat'; fick: Record<string, number> }
+// det vaktade föremålet i ett rövarläger (steg 11.13.27): vaktat.ts sätter kroken
+export const UPPDRAGFRAM: { vaktat?: (s: State, sl: Sallskap, t: number) => (UppdragUtfall & { text: string }) | undefined } = {};
 export function uppdragFram(s: State, sl: Sallskap, t: number) {
   const vl = s.varld!, u = sl.uppdrag !== undefined ? uppdragNr(vl, sl.uppdrag) : undefined, ruin = ruinRad(vl, sl.mal);
+  const vk = !u || u.mal !== sl.mal ? UPPDRAGFRAM.vaktat?.(s, sl, t) : undefined;
+  if (vk) { uppdragUtfall(s, sl, vk.namn, vk.hur, vk.fick, vk.text, t); return; }
   const fick: Record<string, number> = {};
   let namn = u ? uppdragDef(u.k).namn : ruin ? 'Ruinskatten' : 'Uppdraget', hur: UppdragUtfall['hur'] = 'tomt', text: string;
   if (ruin && (!u || u.mal !== sl.mal)) {
