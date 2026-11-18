@@ -756,6 +756,7 @@ function fangeSteg(s: State, dtSec: number) {
       if (kvar === 0 || Math.min(p.x, W - p.x, p.y, H - p.y) <= 0.31) { gastGar(s, p.id, true); count(s, 'fange_gick'); }
       continue;
     }
+    if (p.task?.act === 'buren') continue; // bärs till fängelset (vardVal i halsa.ts)
     if (!p.task || s.now >= p.task.until || (p.task.act !== 'fangen' && p.task.act !== 'rymma')) {
       if (!fangeVal(s, p)) continue;
     }
@@ -769,6 +770,13 @@ function fangeSteg(s: State, dtSec: number) {
       if (kvar === 0) { p.x = t.tx; p.y = t.ty; t.phase = 'do'; spara(s, p, s.now); count(s, 'fange_in'); }
     } else if (t.act === 'rymma' && s.now >= t.until) brytKlar(s, p, t.ref);
   }
+}
+// fången som inte kan gå bärs till rutan inne vid fängelsets dörr (bara i halsa.ts); undefined = hen är redan inne
+export function fangeMal(s: State, q: Person): { x: number; y: number } | undefined {
+  const h = q.fange && husById(s, q.fange.hus), d = h && fangelseDorr(s, h);
+  if (!h || !d || roomAt(s, Math.floor(q.x), Math.floor(q.y))?.hus === h.id) return undefined;
+  const inne = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: d.x + dx, y: d.y + dy })).find(t => roomAt(s, t.x, t.y)?.hus === h.id);
+  return inne && { x: inne.x + 0.5, y: inne.y + 0.5 };
 }
 // striden med rövarna är slut (EFTER i efterstrid.ts): raden om den, klanen och tankarna. Såren och de döda är redan på riktigt
 EFTER.rovare = (s, e, vinnare, strid) => {

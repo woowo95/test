@@ -48,6 +48,7 @@ import { SAKER } from './saker';
 import { nyttILarmet } from './roller';
 import { toaNara } from './smuts';
 import { kn, learnK } from './kunskap';
+import { fangeMal } from './rovare'; // fången bärs till fängelset (steg 11.12.6)
 
 // ---------- balanstal (regel 8) ----------
 export const HALSA = balans('halsa', {
@@ -652,7 +653,8 @@ export function vardBehov(s: State, q: Person, g: Person) {
   if (!sk.length && !protes && !(g !== q && !kanGa(q) && !hemma(s, q))) return undefined; // den som svimmat bärs hem också utan sår
   const n = vardNasta(s, q, g), har = (k: string) => n.some(x => x.k === k);
   const blod = har('trycka'), forband = har('forband') || har('salva') || har('satta') || har('spala'), rengor = har('skolja'), amputera = har('amputera');
-  const bara = g !== q && !q.gast && !kanGa(q) && !hemma(s, q) && q.task?.act !== 'buren';
+  const fmal = q.fange ? fangeMal(s, q) : undefined; // fången bärs till fängelset (steg 11.12.6)
+  const bara = g !== q && (!q.gast || !!fmal) && !kanGa(q) && (q.fange ? !!fmal : !hemma(s, q)) && q.task?.act !== 'buren';
   return blod || forband || rengor || bara || amputera || protes ? { blod, forband, rengor, bara, protes } : undefined;
 }
 // den med kortast tid kvar till förblödning vårdas först (steg 9.5.18): avståndet räknas så här mycket kortare
@@ -735,12 +737,12 @@ export function vardKlar(s: State, p: Person, t: Task) {
   if (q !== p) { count(s, 'vard av andra'); livet(s, p, 'vardat'); think(q, `${p.name} tog hand om mig`, 0.1, s.now, 12 * HOUR); }
   if (b.bara) bara(s, p, q, t);
 }
-// att bära hem den som inte kan gå: till sovplatsen, annars vid elden. Den skadade följer med (barMed)
+// att bära hem den som inte kan gå: till sovplatsen, annars vid elden, och fången till fängelset. Den skadade följer med (barMed)
 function bara(s: State, p: Person, q: Person, t: Task) {
   avbryt(s, q);
-  const f = eldPlats(s), mal = bedFor(s, q) ?? freeNear(s, f.x + 0.5, f.y + 1.6);
-  q.task = { act: 'buren', phase: 'do', tx: q.x, ty: q.y, until: s.now + HALSA.buren * HOUR, carry: 0, ref: p.id, why: `Bärs hem av ${p.name}` };
-  t.phase = 'back'; t.bar = q.id; t.tx = mal.x; t.ty = mal.y; t.why = `Bär hem ${q.name}`;
+  const f = eldPlats(s), fm = q.fange ? fangeMal(s, q) : undefined, mal = fm ?? bedFor(s, q) ?? freeNear(s, f.x + 0.5, f.y + 1.6);
+  q.task = { act: 'buren', phase: 'do', tx: q.x, ty: q.y, until: s.now + HALSA.buren * HOUR, carry: 0, ref: p.id, why: fm ? `Bärs till fängelset av ${p.name}` : `Bärs hem av ${p.name}` };
+  t.phase = 'back'; t.bar = q.id; t.tx = mal.x; t.ty = mal.y; t.why = fm ? `Bär ${q.name} till fängelset` : `Bär hem ${q.name}`;
   if (forstaGang(s, 'buren hem')) log(s, `${p.name} bar hem ${q.name}, som inte kunde gå.`, 'world', [p.id, q.id]);
 }
 // den som bärs följer med den som bär. false = bäraren bär inte längre någon (den skadade dog eller slutade vänta)
