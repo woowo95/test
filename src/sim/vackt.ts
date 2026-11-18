@@ -42,6 +42,8 @@ import { MARK_IDS } from './varldmark';
 import { KARTA } from './kartflytt';
 import { byggMinne, somna } from './vacktsomna';
 import { byggFasta } from './vacktfasta';
+import { larOrt, ORT, O_BESOKT, O_KANT, radKanner } from './ort';
+import { varldPlatsNr } from './landmarken';
 
 export const VACKT = balans('vackt', {
   inkorning: 6, // timmar i verkligheten som byn går i simuleringen före ankomsten (ett kvarts år i spelet), steg 11.13.8
@@ -53,6 +55,8 @@ export const VACKT = balans('vackt', {
   kunskap: 0.7, // chansen att en vuxen kan en teknik på nivå 1; varje nivå högre gånger detta igen (steg 11.13.4)
   lar: 6, larVuxen: 20, // åldern då man börjar kunna tekniker och då man kan dem som en vuxen
   stationer: 0.4, // stationerna och möblerna kostar högst så stor del av radens rikedom, i grundvärdet av materialet (steg 11.13.6)
+  ort: 0.6, // chansen att en vuxen minns en plats byn känner (steg 11.13.15) ...
+  ortBesokt: 0.3, // ... och att den som minns en plats byn besökt själv varit där; annars känner hen den
 });
 
 // en byggare lägger en del av byn på plats: b = den väckta byn, s = huvudbyn, r = raden
@@ -61,6 +65,7 @@ export const BYGGARE: Byggare[] = [
   { namn: 'de fasta', bygg: (b, _s, r) => byggFasta(b, r) }, // de huvudbyn känner och radens fasta personer först (steg 11.13.13)
   { namn: 'folket', bygg: (b, _s, r) => byggFolk(b, r) }, // radens antal, med åldrar, kön och släkt
   { namn: 'kunskapen', bygg: (b, _s, r) => byggKunskap(b, r) }, // radens tekniker spridda på folket (steg 11.13.4)
+  { namn: 'platserna', bygg: (b, _s, r) => byggPlatser(b, r) }, // det byn vet om platserna i världen, spritt på de vuxna (steg 11.13.15)
   { namn: 'minnet', bygg: (b, _s, r) => byggMinne(b, r.minne, byggFardigt) }, // husen, gravarna och de heliga platserna från förra besöket (steg 11.13.12)
   { namn: 'husen', bygg: (b, _s, r) => byggHus(b, r) }, // de gemensamma husen, stationerna och möblerna (steg 11.13.6)
   { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll runt det som redan står (steg 11.13.5)
@@ -189,6 +194,25 @@ export function byggKunskap(b: State, r: VarldRad) {
   }
 }
 
+// platserna: varje vuxen minns en plats byn känner (radKanner i ort.ts) med chansen VACKT.ort, på radens nivå, utom att bara en
+// del av dem som minns en plats byn besökt själva varit där (VACKT.ortBesokt). Uppgifterna är från i dag, säkra som en gästs
+// (ORT.gastKant och gastRykte). Byns egen plats och närområdet känner alla ändå (kannerOrt). Så kan de berätta om världen
+export function byggPlatser(b: State, r: VarldRad) {
+  const vl = b.varld, egen = vl && byPlats(vl, r.nr);
+  if (!vl || !egen) return;
+  const nr = new Set<number>(r.besokt ?? []);
+  for (const x of egen.grannar ?? []) { nr.add(x.nr); for (const y of varldPlatsNr(vl, x.nr)?.grannar ?? []) nr.add(y.nr); }
+  nr.delete(egen.nr);
+  const platser = [...nr].sort((a, c) => a - c).map(n => [n, radKanner(vl, r, n)] as const).filter(([n, v]) => v !== undefined && varldPlatsNr(vl, n));
+  for (const p of b.people) {
+    if (ageOf(p, b.now) < ALDER.vuxen) continue;
+    for (const [n, v] of platser) {
+      if (rnd(b, 'vackt') >= VACKT.ort) continue;
+      const niva = v === O_BESOKT && rnd(b, 'vackt') >= VACKT.ortBesokt ? O_KANT : v!;
+      larOrt(b, p, n, niva, niva === O_BESOKT ? 1 : niva === O_KANT ? ORT.gastKant : ORT.gastRykte);
+    }
+  }
+}
 // ett planerat hus byggs färdigt på en gång: träden och stubbarna på platsen är borta, alla delar är klara, och den sista byggs
 // av en bybo som vanligt (workOn), så att huset blir färdigt som andra hus
 export function byggFardigt(b: State, h: Hus) {

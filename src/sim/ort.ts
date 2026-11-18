@@ -112,13 +112,13 @@ export const ortNiva = (p: Person, nr: number): number | undefined => findL(p, '
 // Platser med folk (folk i LANDMARKEN) hör inte dit: en ny by känner inga byar eller läger och får veta om dem genom en
 // besökare, en handlare, ett anfall eller en upphittad karta. Byns egen plats är besökt
 export function iNaromradet(s: State, nr: number): boolean {
-  const vl = s.varld, q = vl && varldPlatsNr(vl, nr), h = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
+  const vl = s.varld, q = vl && varldPlatsNr(vl, nr), hem = s.vackt ?? vl?.huvud, h = vl && hem !== undefined ? byPlats(vl, hem) : undefined; // en väckt by har sin egen plats (steg 11.13.15)
   if (!q || !h || (LANDMARKEN[q.k] as LandmarkDef).folk) return false;
   return Math.hypot(q.x - h.x, q.y - h.y) <= ORT.narDygn * VARLD.gangPerDygn;
 }
 // det en bybo vet om platsen nr: minnet, närområdet (känt) och byns egen plats (besökt); undefined: okänd
 export function kannerOrt(s: State, p: Person, nr: number): number | undefined {
-  const vl = s.varld, egen = !p.gast && vl?.huvud !== undefined && byPlats(vl, vl.huvud)?.nr === nr;
+  const vl = s.varld, hem = s.vackt ?? vl?.huvud, egen = !p.gast && !!vl && hem !== undefined && byPlats(vl, hem)?.nr === nr;
   if (egen) return O_BESOKT;
   const m = ortNiva(p, nr), n = !p.gast && iNaromradet(s, nr) ? O_KANT : undefined;
   return m === undefined ? n : n === undefined ? m : Math.max(m, n);

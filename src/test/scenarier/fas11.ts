@@ -4888,3 +4888,28 @@ SCENARIER.nyafasta = {
     ];
   },
 };
+
+SCENARIER.vacktort = {
+  text: 'Radens kunskap om platser delas ut (steg 11.13.15, byggPlatser i vackt.ts): de vuxna i den väckta byn minns platserna byn känner, på radens nivå eller lägre, så att de kan berätta om dem; byns egen plats är besökt för alla, och barnen minns inga',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 4)!;
+    const r = SIM.radNr(vl, mal.by!)!;
+    const b = SIM.vackTest(s, r.nr)!;
+    const folk = SIM.living(b), vuxna = folk.filter(p => SIM.ageOf(p, b.now) >= SIM.ALDER.vuxen), barn = folk.filter(p => SIM.ageOf(p, b.now) < SIM.ALDER.vuxen);
+    const orter = (p: SIM.Person) => (p.lardomar ?? []).filter(l => l.k === 'ort');
+    const alla = vuxna.flatMap(orter);
+    const ratt = alla.every(l => { const v = SIM.radKanner(vl, r, l.a!); return v !== undefined && l.v <= v; });
+    const egen = folk.every(p => SIM.kannerOrt(b, p, mal.nr) === SIM.O_BESOKT);
+    const text = alla[0] ? SIM.describeOrt(b, alla[0]).text : '';
+    const n2 = SIM.vackBy(s, r.nr)!.people.flatMap(orter).length;
+    return [
+      [`de vuxna minns platser (${alla.length} minnen hos ${vuxna.filter(p => orter(p).length).length} av ${vuxna.length})`, alla.length > 0 && vuxna.filter(p => orter(p).length).length >= vuxna.length / 2],
+      ['bara platser byn känner, på radens nivå eller lägre', ratt],
+      ['barnen minns inga platser', barn.every(p => !orter(p).length)],
+      ['byns egen plats är besökt för alla', egen],
+      [`de kan berätta om platsen (${text})`, text.length > 0],
+      ['samma rad ger samma minnen', n2 === folk.flatMap(orter).length],
+    ];
+  },
+};
