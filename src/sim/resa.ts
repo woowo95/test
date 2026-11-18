@@ -167,6 +167,7 @@ export interface Sallskap {
   borjan: number; t: number; // när ledaren började samla, och tiden sällskapet räknats till
   ruta?: number; vag?: { fran: number; till: number; steg: string }; pos?: number; // rutan sällskapet är på, vägen och hur långt längs den (rutor)
   pack: Record<string, number>; // den gemensamma packningen, hela saker
+  forlust?: [number | 'by', number, number][]; // det rövarna tog: ägaren, värdet och lägrets rad, för utlysningen hemma (steg 11.8.11, utlysa.ts)
   hjalp?: 1; hjalpTim?: number; // uppdraget är att hjälpa en by, och timmarna sällskapet arbetat i den väckta byn (steg 11.13.23)
   insatser: Insats[];
   dagbok: [number, string, DagbokId?][]; // resans dagbok: tiden, texten och händelsens slag (steg 11.5.13)
@@ -687,7 +688,9 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   sl.skede = 'hemma'; sl.t = t;
   count(s, 'resa hemma');
   redogorelse(s, sl, t);
+  HEMKROK.f?.(s, sl, t); // den som förlorat något på vägen utlyser (steg 11.8.11, utlysa.ts)
 }
+export const HEMKROK: { f?: (s: State, sl: Sallskap, t: number) => void } = {};
 
 // sändebudet framme (steg 11.6.23): beskedet verkar hos byn, och ett vänligt bud lämnar det det bär (utom det som behövs för
 // vägen och maten) som gåva, i hela saker i byns förråd; byns syn går upp efter gåvans värde
@@ -1131,7 +1134,7 @@ export const FYNDSETT: { grav?: (s: State, p: Person, nr: number, t: number) => 
 const vilseVid = (p: Person, nr: number) => !!p.lardomar?.some(l => l.k === 'uppdrag' && l.om === 'vilsegang' && l.g === nr);
 export function uppdragFram(s: State, sl: Sallskap, t: number) {
   const vl = s.varld!, u = sl.uppdrag !== undefined ? uppdragNr(vl, sl.uppdrag) : undefined, ruin = ruinRad(vl, sl.mal);
-  const vk = !u || u.mal !== sl.mal ? UPPDRAGFRAM.vaktat?.(s, sl, t) ?? UPPDRAGFRAM.grav?.(s, sl, t) : undefined;
+  const vk = !u || u.mal !== sl.mal || u.k === 'vaktat' ? UPPDRAGFRAM.vaktat?.(s, sl, t) ?? UPPDRAGFRAM.grav?.(s, sl, t) : undefined; // det vaktade också när någon utlyst en belöning för det (steg 11.8.11)
   if (vk) { uppdragUtfall(s, sl, vk.namn, vk.hur, vk.fick, vk.text, t); return; }
   const fick: Record<string, number> = {};
   let namn = u ? uppdragDef(u.k).namn : ruin ? 'Ruinskatten' : 'Uppdraget', hur: UppdragUtfall['hur'] = 'tomt', text: string;

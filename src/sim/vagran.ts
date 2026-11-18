@@ -27,7 +27,7 @@ import { byId, stat } from './folk';
 import { Person, State } from './typer';
 
 // de rånade vet var rövarna kom ifrån (vaktat.ts sätter kroken)
-export const VAKTKROK = { ranad: (_s: State, _sl: Sallskap, _L: VarldRad, _t: number) => {}, plundrad: (_s: State, _L: VarldRad) => {} };
+export const VAKTKROK = { ranad: (_s: State, _sl: Sallskap, _L: VarldRad, _t: number) => {}, plundrad: (_s: State, _L: VarldRad, _tog: [string, number][]) => {}, forlorat: (_s: State, _sl: Sallskap, _L: VarldRad, _tog: [string, number][]) => {} }; // forlorat: de rånade minns vad de förlorat (steg 11.8.11, utlysa.ts)
 export const VAGRAN = balans('vagran', {
   dygn: 0.4, // risken per dygn för ett rån vid ett läger med lagerFolk rövare ...
   lagerFolk: 10,
@@ -134,7 +134,7 @@ VAGHANDELSER.ran = {
     if (n <= 0) return;
     const krav = Math.min(packVarde(sl), n * VAGRAN.krav), val = basta(vagValen(s, sl, n * anfallUtr(L), krav));
     count(s, 'resa rån'); count(s, `resa rån ${val}`);
-    const ge = (tog: [string, number][]) => { for (const [k, m] of tog) radTar(L, k, m); VAKTKROK.ranad(s, sl, L, t); }; // bytet går till lägret, och det värdefulla vaktas där (steg 11.13.27)
+    const ge = (tog: [string, number][]) => { for (const [k, m] of tog) radTar(L, k, m); VAKTKROK.ranad(s, sl, L, t); VAKTKROK.forlorat(s, sl, L, tog); }; // bytet går till lägret, och det värdefulla vaktas där (steg 11.13.27)
     if (val === 'betala') {
       const tog = taUrPack(sl, krav); ge(tog);
       dagbok(s, sl, 'ran', `${n} rövare från ${L.namn} stoppade sällskapet. De betalade ${tog.length ? lista(tog) : 'inget, för de hade inget'} och fick gå.`, t);

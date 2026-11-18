@@ -5362,7 +5362,7 @@ SCENARIER.vaktatting = {
     }
     // plundringen: ledaren får veta vart det stulna tog vägen
     const led = SIM.ledareOf(s);
-    SIM.VAKTKROK.plundrad(s, L);
+    SIM.VAKTKROK.plundrad(s, L, []);
     const ledVet = !!led && !!SIM.uppdragVid(s, led, lp.nr);
     const hela = Object.values(stulet).every(n => Number.isInteger(n)) && Object.values(slr.pack).every(n => Number.isInteger(n));
     return [
@@ -5517,6 +5517,71 @@ SCENARIER.vilsegang = {
       [`den saknade får vägen visad och vänder hem (${sl.skede}, förlorat ${sl.forlorat})`, sl.skede === 'hemat' && sl.forlorat === 0],
       [`och finnaren vänder hem (${f.skede})`, f.skede === 'hemat'],
       [`är alla döda kommer beskedet hem med finnarna (${d.sl.skede}, ${SIM.alive(dod) ? 'lever' : 'död'})`, d.sl.skede === 'forsvunnet' && !SIM.alive(dod) && d.f.utfall?.hur === 'klart'],
+    ];
+  },
+};
+
+// rånet på vägen för utlysningarna (steg 11.8.11–12): sällskapet vid ett nytt rövarläger, med en tunika som ägs av ins (eller byns)
+function ranatSallskap(ins: boolean) {
+  const s = SIM.cloneState(testBy(10)), vl = s.varld!, w = vl.mark.w;
+  const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= 20 && SIM.ageOf(p, s.now) < 50 && !p.gast).slice(0, 3);
+  const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+  const L = SIM.nyttLager(s, vl, r, 10, s.now)!, lp = SIM.byPlats(vl, L.nr)!;
+  const sl = SIM.nyttSallskap(s, folk[0]!, lp.nr, 'handel')!; for (const q of folk.slice(1)) SIM.foljMed(vl, sl, q);
+  sl.skede = 'ute'; sl.ruta = lp.y * w + lp.x; sl.pack = { tunika_ylle: 1 };
+  if (ins) sl.insatser.push({ agare: folk[1]!.id, sak: 'tunika_ylle', n: 1, varde: SIM.grundvarde('tunika_ylle') });
+  SIM.put(s, 'silver', 40, { [folk[1]!.id]: 40 });
+  for (let i = 0; i < 40 && !L.stulet; i++) SIM.VAGHANDELSER.ran!.gor(s, sl, s.now);
+  return { s, vl, folk, L, lp, sl };
+}
+SCENARIER.utlysa = {
+  text: 'Egna byn utlyser, privatpersoner (steg 11.8.11, utlysa.ts): den som blivit rånad på vägen lägger hemma undan en belöning ur det hen har över, silvret först, och utlyser det vaktade föremålet; den som hämtar tillbaka det får belöningen, och tar tiden slut går den tillbaka',
+  kor: () => {
+    const { s, vl, folk, L, lp, sl } = ranatSallskap(true), a = folk[1]!;
+    const minns = (sl.forlust ?? []).filter(f => f[0] === a.id).length, fore = SIM.ownedStock(s, a).silver ?? 0;
+    SIM.HEMKROK.f!(s, sl, s.now);
+    const u = SIM.uppdragen(vl).find(x => x.k === 'vaktat' && x.av.person === a.id), efter = SIM.ownedStock(s, a).silver ?? 0;
+    const vet = !!a.lardomar?.some(l => l.k === 'uppdrag' && l.a === u?.id), belon = u?.belon.silver ?? 0;
+    // den som köper tillbaka det stulna får belöningen
+    const rik = SIM.cloneState(s), slr = SIM.nyttSallskap(rik, SIM.living(rik).find(p => !p.gast && SIM.ageOf(p, rik.now) >= 20 && !SIM.sallskapFor(rik.varld, p.id))!, lp.nr, 'uppdrag');
+    let fick = 0, kvar = true;
+    if (slr && u) {
+      slr.skede = 'framme'; slr.ruta = sl.ruta; slr.pack = { silver: Math.ceil(SIM.stulVarde(SIM.radNr(rik.varld!, L.nr)!) * SIM.VAKTAT.pris) + 5 }; slr.uppdrag = u.id;
+      const fore2 = slr.pack.silver!;
+      SIM.uppdragFram(rik, slr, rik.now);
+      fick = (slr.pack.silver ?? 0) - (fore2 - Math.ceil(SIM.stulVarde({ ...SIM.radNr(s.varld!, L.nr)!, stulet: { tunika_ylle: 1 } }) * SIM.VAKTAT.pris));
+      kvar = SIM.uppdragen(rik.varld!).some(x => x.id === u.id);
+    }
+    // tiden är ute: belöningen tillbaka till den som utlyste
+    if (u) SIM.avslutaUppdrag(s, vl, u, false);
+    const tillbaka = SIM.ownedStock(s, a).silver ?? 0;
+    return [
+      [`den rånade minns vad rövarna behöll (${minns})`, minns >= 1 && !!L.stulet],
+      [`hemma lade ${a.name} undan ${belon} silver (${fore} → ${efter}) och utlyste det vaktade föremålet`, !!u && belon >= 1 && efter === fore - belon && !sl.forlust],
+      ['och vet själv om uppdraget', vet],
+      [`den som köpte tillbaka det fick belöningen (${fick} silver) och uppdraget är klart (${slr?.utfall?.hur}, ${slr?.dagbok.map(d => d[1]).join(' / ')})`, !!u && !kvar && fick === belon && slr?.utfall?.hur === 'klart'],
+      [`när tiden är ute går belöningen tillbaka (${tillbaka})`, tillbaka === fore],
+    ];
+  },
+};
+SCENARIER.styretutlyser = {
+  text: 'Styret utlyser (steg 11.8.12, utlysa.ts): det rövarna tog av byns saker och den saknade som ingen anhörig saknar står i byns nöd, och budgetens del Uppdrag saknar en del av värdet i silver; det delen får läggs undan och utlyses av styret, och ledaren vet om det',
+  kor: () => {
+    const { s, vl, sl } = ranatSallskap(false);
+    const tom = SIM.BUDGET.uppdrag!.finns(SIM.cloneState(s));
+    SIM.HEMKROK.f!(s, sl, s.now);
+    const nod = SIM.nodNu(s).length, finns = SIM.BUDGET.uppdrag!.finns(s), saknar = SIM.BUDGET.uppdrag!.saknar(s).silver ?? 0;
+    SIM.setAmount(s, 'silver', SIM.amountOf(s, 'silver') + saknar);
+    const fore = SIM.amountOf(s, 'silver');
+    SIM.BUDGET.uppdrag!.ge!(s, 'silver', saknar);
+    const u = SIM.uppdragen(vl).find(x => x.av.k === 'styre'), led = SIM.ledareOf(s);
+    const vet = !!led && !!led.lardomar?.some(l => l.k === 'uppdrag' && l.a === u?.id);
+    return [
+      [`utan nöd finns ingen del för uppdrag (${tom})`, !tom],
+      [`byns förlorade saker står i nöden (${nod}), och delen saknar ${saknar} silver`, nod === 1 && finns && saknar >= 1],
+      [`styret lade undan ${u?.belon.silver ?? 0} silver (${fore} → ${SIM.amountOf(s, 'silver')}) och utlyste ${u ? SIM.uppdragDef(u.k).namn.toLowerCase() : 'inget'} av ${u ? SIM.utlysarNamn(s, vl, u.av) : ''}`, !!u && u.k === 'vaktat' && u.belon.silver === saknar && SIM.amountOf(s, 'silver') === fore - saknar],
+      [`ledaren vet om det (${led?.name})`, vet],
+      ['nöden är utlyst', SIM.nodNu(s).length === 0 && !SIM.BUDGET.uppdrag!.finns(s)],
     ];
   },
 };

@@ -77,7 +77,7 @@ export const UPPDRAG = {
   ruinskatt: { namn: 'Ruinskatten', utlosare: 'undergang', plats: ['ruin'], utlysare: ['ingen'], belon: 'innehall', krav: 'bara', gor: 'ta', text: 'det som finns kvar i ruinen vid {plats}' },
   karavan: { namn: 'Den plundrade karavanen', utlosare: 'karavanran', plats: ['karavanrest'], utlysare: ['ingen'], belon: 'innehall', krav: 'bara', gor: 'ta', text: 'det rövarna lämnade kvar vid {plats}' },
   grav: { namn: 'Graven', utlosare: 'gravlagd', plats: ['gravhog'], utlysare: ['ingen'], belon: 'innehall', krav: 'mod', gor: 'ta', text: 'gravgåvorna i högen vid {plats}' },
-  vaktat: { namn: 'Det vaktade föremålet', utlosare: 'ran', plats: ['rovarlager'], utlysare: ['ingen'], belon: 'innehall', krav: 'styrka', gor: 'strida', text: 'det som vaktas vid {plats}' },
+  vaktat: { namn: 'Det vaktade föremålet', utlosare: 'ran', plats: ['rovarlager'], utlysare: ['ingen', 'person', 'styre'], belon: 'innehall', krav: 'styrka', gor: 'strida', text: 'det som vaktas vid {plats}' },
   hjalp: { namn: 'Hjälp på en plats', utlosare: 'nod', plats: ['by'], utlysare: ['styre', 'kyrka'], belon: 'utlyst', krav: 'styrka', gor: 'hjalpa', text: 'att hjälpa {plats}' },
   leverans: { namn: 'Leveransen', utlosare: 'brist', plats: ['by'], utlysare: ['person', 'styre'], belon: 'utlyst', krav: 'sparning', gor: 'leverera', text: 'att föra en sak till {plats}' },
 } as const satisfies Record<string, UppdragDef>;
@@ -95,7 +95,7 @@ const uppdragTid = (k: UppdragId) => UPPDRAGTAL[uppdragDef(k).tid ?? 'tid'] * DA
 // utlys ett uppdrag: belöningen har redan lagts undan av den som utlyser (steg 11.8.11–12), i hela saker. Slutet läggs i
 // världens kö, så att det räknas vid den tiden och inte varje gång
 export function utlys(vl: Varlden, k: UppdragId, mal: number, av: Utlysare, belon: Record<string, number>, t: number, o: { om?: number; sak?: [string, number] } = {}): Utlyst | undefined {
-  if (uppdragDef(k).belon !== 'utlyst' || !varldPlatsNr(vl, mal)) return undefined;
+  if ((uppdragDef(k).belon !== 'utlyst' && av.k === 'ingen') || !varldPlatsNr(vl, mal)) return undefined; // ett fynd utlyses bara när någon lägger undan en belöning för det (steg 11.8.11)
   const hela: Record<string, number> = {};
   for (const [sak, n] of Object.entries(belon)) if (Math.floor(n) >= 1) hela[sak] = Math.floor(n);
   const u: Utlyst = { id: vl.nastaUppdrag = (vl.nastaUppdrag ?? 0) + 1, k, mal, av, belon: hela, t, slut: t + uppdragTid(k), ...o };

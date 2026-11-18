@@ -13,6 +13,7 @@ import { laggGruvor } from './gruva';
 import { laggGrannat } from './grannat';
 
 export interface Varlden {
+  nod?: import('./utlysa').Nod[]; // det byn förlorat som styret kan utlysa (steg 11.8.12, utlysa.ts)
   fro: number; // världens frö
   mark: { gen: number; delfro: number; w: number; h: number; mark: string; flod: string; ned: string }; // marken packad (base64)
   platser?: import('./landmarken').VarldPlats[]; nastaPlats?: number; // platserna i världen (steg 11.2.8, landmarken.ts)

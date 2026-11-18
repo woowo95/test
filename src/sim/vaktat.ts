@@ -17,7 +17,7 @@ import { radNr, VarldRad } from './radtal';
 import { resenarer, Sallskap, UPPDRAGFRAM } from './resa';
 import { isFood, SAKER } from './saker';
 import { clamp, rnd } from './slump';
-import { fyndId, larUppdrag } from './uppdrag';
+import { avslutaUppdrag, fyndId, larUppdrag, uppdragen } from './uppdrag';
 import { grundvarde } from './varde';
 import { lista, packVarde, rovarKampe, taUrPack, VAKTKROK, vagStrid, vagValen } from './vagran';
 import { kanGa } from './halsa';
@@ -34,7 +34,7 @@ export const VAKTAT = balans('vaktat', {
   pris: 1.5, // rövarna säljer tillbaka sakerna för så många gånger värdet
 });
 
-const behalls = (k: string) => k !== 'silver' && !isFood(k) && !k.startsWith('lev') && !!SAKER[k] && grundvarde(k) >= VAKTAT.minVarde;
+export const behalls = (k: string) => k !== 'silver' && !isFood(k) && !k.startsWith('lev') && !!SAKER[k] && grundvarde(k) >= VAKTAT.minVarde;
 radTarKrok.behall = (r, k, n) => {
   if (r.sort !== 'rovarlager' || !behalls(k)) return false;
   (r.stulet ??= {})[k] = (r.stulet[k] ?? 0) + Math.floor(n);
@@ -56,7 +56,8 @@ export function saStulet(s: State, vl: Varlden, p: import('./typer').Person, L: 
 }
 // de rånade på vägen vet var rövarna kom ifrån (vagran.ts anropar efter att bytet gått till lägret)
 VAKTKROK.ranad = (s, sl, L, t) => ranadesAv(s, sl, L, t);
-VAKTKROK.plundrad = (s, L) => plundradAv(s, L);
+VAKTKROK.plundrad = (s, L, tog) => { plundradAv(s, L); PLUNDRADKROK.f?.(s, L, tog); };
+export const PLUNDRADKROK: { f?: (s: State, L: VarldRad, tog: [string, number][]) => void } = {}; // byns saker som lägret tog: styret utlyser (steg 11.8.12, utlysa.ts)
 export function ranadesAv(s: State, sl: Sallskap, L: VarldRad, t: number) {
   const vl = s.varld;
   if (!vl || !L.stulet) return;
@@ -84,7 +85,11 @@ UPPDRAGFRAM.vaktat = (s, sl, t) => {
   const vl = s.varld, L = vl && lagerVid(vl, sl.mal);
   if (!vl || !L) return undefined;
   const namn = 'Det vaktade föremålet', fick: Record<string, number> = {};
-  const klar = (hur: 'klart' | 'tomt' | 'misslyckat', text: string) => { for (const p of resenarer(s, sl)) saStulet(s, vl, p, L, t); return { namn, hur, fick, text }; };
+  const klar = (hur: 'klart' | 'tomt' | 'misslyckat', text: string) => {
+    if (hur === 'klart') for (const u of uppdragen(vl).filter(x => x.k === 'vaktat' && x.mal === sl.mal)) { for (const [k, n] of Object.entries(u.belon)) fick[k] = (fick[k] ?? 0) + n; u.belon = {}; avslutaUppdrag(s, vl, u, true); } // belöningarna som utlysts för det (steg 11.8.11)
+    for (const p of resenarer(s, sl)) saStulet(s, vl, p, L, t);
+    return { namn, hur, fick, text };
+  };
   if (!L.stulet || L.tal.folk <= 0) { delete L.stulet; return klar('tomt', 'Lägret hade inget kvar av det som stulits.'); }
   const val = vaktValen(s, sl, L), ta = () => { Object.assign(fick, L.stulet); delete L.stulet; };
   let gjort = forst(val.kost);

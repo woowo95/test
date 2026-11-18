@@ -495,7 +495,7 @@ KOHANDELSER.fardHem = (s, vl, p) => {
   for (const w of f.hem ?? []) radTar(r, w.k, w.n); // handlarens varor (steg 11.6.9)
   for (const w of f.besked ? f.last?.varor ?? [] : []) radTar(r, w.k, w.n); // gåvan som inte kom fram
   for (const [g, n] of Object.entries(f.byte ?? {}) as [VarugruppId, number][]) laggTill(r, g, n); // bytet (steg 11.6.16)
-  if (f.anfall && f.till === vl.huvud && f.hem?.length) VAKTKROK.plundrad(s, r); // ledaren får veta vart det stulna tog vägen (steg 11.13.27)
+  if (f.anfall && f.till === vl.huvud && f.hem?.length) VAKTKROK.plundrad(s, r, f.hem.map(w => [w.k, w.n] as [string, number])); // ledaren får veta vart det stulna tog vägen (steg 11.13.27)
 };
 // flocken kommer fram (steg 11.6.16): uträkningen i radanfall.ts, de döda dras ur båda byarna, bytet tas ur försvararnas förråd
 // och bärs hem, och försvararnas syn på anfallarna sjunker för plundringen och för varje dödad
