@@ -24,7 +24,7 @@ const ar = (p: Person, t: number) => Math.max(0, Math.floor((t - p.born) / DAY))
 const radNamn = (b: State, nr?: number) => b.varld?.rader?.find(r => r.nr === nr)?.namn ?? 'en by';
 
 // när paret gifte sig: före det första barnet, och tidigast när båda var vuxna
-function giftNar(b: State, p: Person, q: Person): number {
+export function giftNar(b: State, p: Person, q: Person): number {
   const barn = [...childrenOf(b, p), ...childrenOf(b, q)].map(c => c.born), forst = barn.length ? Math.min(...barn) : undefined;
   const hi = forst !== undefined ? forst - DAY : b.now, lo = Math.min(Math.max(p.born, q.born) + VACKTLIV.gift * DAY, hi);
   return Math.floor(lo + tal(b, Math.min(p.id, q.id), 1) * (hi - lo));

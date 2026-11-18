@@ -4942,3 +4942,27 @@ SCENARIER.vacktliv = {
     ];
   },
 };
+SCENARIER.vacktkronika = {
+  text: 'Byns krönika bakåt (steg 11.13.17, vacktkronika.ts): den väckta byns krönika har världens händelser om byn och byns historik ur folkets liv (födda, gifta och döda), i tidsordning före väckningen och med sina slag, så att de hamnar i krönikans kategorier',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 4)!;
+    const r = SIM.radNr(vl, mal.by!)!;
+    const b = SIM.vackTest(s, r.nr)!;
+    const k = b.hist?.kronika ?? [];
+    const varld = (vl.kronika ?? []).filter(h => (h.by === r.nr || h.mot === r.nr) && h.t <= b.now);
+    const fore = k.filter(x => x[0] < b.now - SIM.DAY);
+    const fodda = SIM.living(b).filter(p => p.born >= r.grundad);
+    const iOrdning = k.every((x, i) => i === 0 || k[i - 1][0] <= x[0]);
+    const kat = fore.every(x => x[2] !== undefined && SIM.kronikaKat(x[2]) !== undefined);
+    const samma = JSON.stringify(SIM.vackBy(s, r.nr)!.hist?.kronika) === JSON.stringify(k);
+    return [
+      [`världens händelser om byn står i krönikan (${varld.length} st: ${varld.slice(0, 3).map(h => SIM.varldHandelseText(vl, h)).join('; ')})`, varld.every(h => k.some(x => x[0] === Math.round(h.t) && x[1] === SIM.varldHandelseText(vl, h)))],
+      [`de som föddes i byn står där (${fodda.length})`, fodda.every(p => k.some(x => x[2] === 'k_fodd' && x[1].startsWith(p.name + ' föddes')))],
+      [`paren och de döda står där (${fore.filter(x => x[2] === 'k_gift').length} bröllop, ${fore.filter(x => x[2] === 'k_dog').length} döda)`, fore.some(x => x[2] === 'k_gift' || x[2] === 'k_dog')],
+      ['i tidsordning', iOrdning],
+      [`raderna bakåt har en kategori (${fore.length} rader)`, fore.length > 0 && kat],
+      ['samma rad ger samma krönika', samma],
+    ];
+  },
+};

@@ -63,8 +63,10 @@ export const KRONIKA_KAT: KronikaKat[] = [
 const KAT_AV = new Map(KRONIKA_KAT.flatMap(k => k.slag.map(sl => [sl, k.id] as const)));
 // kategorin för ett slag av krönikerad (undefined = ingen, t.ex. en rad i en gammal sparfil utan slag)
 export const kronikaKat = (slag?: string) => slag === undefined ? undefined : KAT_AV.get(slag);
-export function kronika(s: State, text: string, slag?: string) {
-  const k = histOf(s).kronika, t = Math.round(s.now);
+export const kronika = (s: State, text: string, slag?: string) => kronikaVid(s, s.now, text, slag);
+// en rad vid en annan tid än nu (den väckta byns krönika bakåt, steg 11.13.17)
+export function kronikaVid(s: State, tid: number, text: string, slag?: string) {
+  const k = histOf(s).kronika, t = Math.round(tid);
   let i = k.length;
   while (i > 0 && k[i - 1][0] > t) i--;
   k.splice(i, 0, slag ? [t, text, slag] : [t, text]);

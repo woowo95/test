@@ -33,6 +33,7 @@ import { rnd } from './slump';
 import { stepDelning } from './delning';
 import { DAY, HOUR, Person, State, useMap } from './typer';
 import { byggLiven } from './vacktliv';
+import { byggKronika } from './vacktkronika';
 import { count } from './folk';
 import { KOHANDELSER, laggIKo, PERIODRADER } from './varldslag';
 import { lever } from './rad';
@@ -72,6 +73,7 @@ export const BYGGARE: Byggare[] = [
   { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll runt det som redan står (steg 11.13.5)
   { namn: 'förråden', bygg: (b, _s, r) => byggForrad(b, r) }, // radens mat och rikedom i hela saker, hos ägare (steg 11.13.7)
   { namn: 'liven', bygg: (b, _s, r) => byggLiven(b, r) }, // ett liv bakåt för var och en, med den riktiga släkten och de dödas gravar (steg 11.13.16)
+  { namn: 'krönikan', bygg: (b, _s, r) => byggKronika(b, r) }, // byns krönika bakåt ur världens krönika och folkets liv (steg 11.13.17)
 ];
 
 // byns frö: ur huvudbyns frö och radens nummer, så att samma rad alltid får samma karta
