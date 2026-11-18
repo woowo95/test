@@ -58,6 +58,7 @@ export interface VarldRad {
   hist?: import('./ort').RadBild[]; // byns tal sparade glest, de senaste tätt (steg 11.4.8, ort.ts)
   varor?: Partial<Record<string, number>>; hus?: number; // rikedomen: tillgången per varugrupp utom maten, och husen (steg 11.6.3, priser.ts)
   egen?: Record<string, number>; // de saker vars pris avviker från gruppen: sakens eget påslag (steg 11.6.3, priser.ts)
+  turne?: { id: number; namn: string; t: number }; // den från huvudbyn som senast uppträdde här (steg 11.8.18, resa.ts turneFram)
   syn?: import('./klaner').Klan; // huvudbyns förbindelse med byn: hållningen, de namngivna personerna och priserna (steg 11.2.15, grannbyar.ts)
 }
 // det radens regler (rad.ts) säger om en ny rad; rad.ts sätter det när den laddas, så att filerna som skapar rader inte

@@ -5,7 +5,7 @@ import { NORMAL } from './kvalitet';
 import { byPlats } from './landmarken';
 import { sallskapTyngd, trampaFard } from './leder';
 import { bynsMitt, utanforByn } from './omrade';
-import { ByteForsok, ByteMinne, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
+import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER } from './klocka';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think, paKartan } from './folk';
@@ -34,7 +34,9 @@ import { kantMot } from './grannbyar';
 import { larPris, MINNE, trorPris } from './minne';
 import { KLAN, handlarKlan, klanHandlare, klanById, klanPris, klanerOf, prisAndras, prisKrok } from './klaner';
 const gruppAvKrok = (k: string) => prisKrok.grupp(k);
-import { klanHandelse } from './byrel';
+import { BYREL, klanHandelse } from './byrel';
+import { handelse } from './rykten';
+import { radNr } from './radtal';
 import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
 import { handelsArg } from './handelsber';
@@ -318,6 +320,7 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   gastensPlatser(s, s.people[s.people.length - 1]); // det hens by känner (steg 11.4.11)
   h.varor = last ? last.varor : packa(s, rymmer(h), sort);
   handlarKarta(s, h); // ibland en karta över det hens by känner (steg 11.7.5)
+  turnePrat(s, kh.klan.rad, hp(s, h)); // hen talar om den som uppträdde i hens by (steg 11.8.18)
   if (fard) delete fard.last; // lasten bärs nu av hen
   const smitta = barSmitta(s); if (smitta) hp(s, h).smitta = smitta; // ibland bär hen en sjukdom utifrån (steg 9.5.5)
   s.handlare = h;
@@ -326,6 +329,12 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   return true;
 }
 
+// turnén (steg 11.8.18): en handlare från en by där någon från huvudbyn nyss uppträtt har sett det och talar om det som ett rykte
+export function turnePrat(s: State, rad: number | undefined, h: Person) {
+  const r = rad !== undefined && s.varld ? radNr(s.varld, rad) : undefined, tu = r?.turne, p = tu ? s.people.find(x => x.id === tu.id && alive(x)) : undefined;
+  if (!r || !tu || !p || s.now - tu.t > BYREL.turneMinns * DAY) return;
+  handelse(s, p, 'turne', undefined, r.namn, h);
+}
 // handlarens karta (steg 11.7.5): med chansen HANDEL.karta per besök bär hen en karta, ritad i hens by, över platserna hen känner
 // (gastensPlatser), högst SKRIFT.kartMax, de säkraste först, i vanlig kvalitet
 function handlarKarta(s: State, h: Handlare) {

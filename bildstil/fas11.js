@@ -783,3 +783,113 @@
     ]),
   ] });
 })();
+
+// Steg 11.8.16 och 11.8.17: märket för ett uppdrag på världskartan och ryktet äventyrare. Platshållarna i spelet är en liten
+// rulle med rött sigill (varldbild.ts, TECKEN.uppdrag) och i_aventyrare (ikoner.ts). Visade som knappar i panelen
+(() => {
+  const L = { k: 'kol0', w: 'ben3', W: 'ben2', j: 'jord1', J: 'jord2', r: 'rost1', R: 'rost2', g: 'oliv2', s: 'skiffer2', S: 'skiffer1', h: 'hud2' };
+  const fyll = (B, w, h, f, i) => { const c = B.P.i(f, i); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, c); };
+  const KNAPP = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
+    fyll(B, 24, 24, 'kol', 1); const ram = B.P.i('kol', 2);
+    for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
+    ritaSprite(B, rader, L, 4, 4);
+  } });
+  VAL.push({ id: 'f11_uppdragmarke', namn: 'Uppdragets märke på världskartan', typ: 'tre', slag: ['symbol'], vad: 'Steg 11.8.16: på världskartan får en plats med ett uppdrag som byn känner till ett litet märke, så att man ser var det finns något att hämta eller någon att hjälpa. Märket ligger ovanpå platsens tecken och måste synas på både skog, slätt och berg. Bilden visar det som en knapp i panelen.', versioner: [
+    KNAPP('En hoprullad pergamentsrulle snett över rutan, knuten med ett rött band och ett runt rött sigill i mitten.', [
+      '................',
+      '..........kkk...',
+      '.........kwwWk..',
+      '........kwwWWk..',
+      '.......kwwWWk...',
+      '......kwwRRk....',
+      '.....kwwRrrRk...',
+      '....kwwWRrrRk...',
+      '...kwwWWkRRk....',
+      '..kwwWWk........',
+      '.kwwWWk.........',
+      '.kWWWk..........',
+      '..kkk...........',
+    ]),
+    KNAPP('En hög, smal stång nedstucken i marken med en röd vimpel i toppen, som en flagga där uppdraget väntar.', [
+      '................',
+      '....kk..........',
+      '....kJkkkkk.....',
+      '....kJrrrrRk....',
+      '....kJrrrRRRk...',
+      '....kJrrrrRk....',
+      '....kJkkkkk.....',
+      '....kJk.........',
+      '....kJk.........',
+      '....kJk.........',
+      '....kJk.........',
+      '...kkJkk........',
+      '..kjjjjjk.......',
+      '...kkkkk........',
+    ]),
+    KNAPP('Ett rött runt sigill av vax med ett utropstecken i ljust, som om det var en stämpel på kartan.', [
+      '................',
+      '.....kkkkkk.....',
+      '....kRrrrrRk....',
+      '...kRrrwwrrRk...',
+      '..kRrrrwwrrrRk..',
+      '..kRrrrwwrrrRk..',
+      '..kRrrrwwrrrRk..',
+      '..kRrrrwwrrrRk..',
+      '..kRrrrrrrrrRk..',
+      '..kRrrrwwrrrRk..',
+      '...kRrrwwrrRk...',
+      '....kRRRRRRk....',
+      '.....kkkkkk.....',
+    ]),
+  ] });
+  VAL.push({ id: 'f11_aventyrare', namn: 'Ryktet äventyrare', typ: 'tre', slag: ['symbol'], vad: 'Steg 11.8.17: den som klarat ett uppdrag ute i världen får ryktet äventyrare i byn. Symbolen står vid ryktet i personens ruta och i berättelserna. Bilden visar den som en knapp i panelen.', versioner: [
+    KNAPP('En vandringsstav med en knut i toppen och en liten knyte hängande från den, som den som varit långt borta bär.', [
+      '................',
+      '.........kkk....',
+      '........kJjJk...',
+      '........kjJjk...',
+      '.........kJkk...',
+      '.........kJkwk..',
+      '........kJkwWwk.',
+      '........kJkwWwk.',
+      '.......kJk.kwk..',
+      '.......kJk..k...',
+      '......kJk.......',
+      '......kJk.......',
+      '.....kJk........',
+      '.....kkk........',
+    ]),
+    KNAPP('En stig som slingrar sig från rutans nedre kant upp mot ett berg med snö på toppen, och en liten röd flagga på toppen.', [
+      '................',
+      '........k.......',
+      '.......krk......',
+      '.......kRrk.....',
+      '.......kk.......',
+      '......kwwk......',
+      '.....kwSwwk.....',
+      '....kSSsSwSk....',
+      '...kSsSSsSsSk...',
+      '..kssSjjSsssSk..',
+      '..kkkkjkkkkkkk..',
+      '.....kjk........',
+      '......kjk.......',
+      '.......kjk......',
+    ]),
+    KNAPP('En öppnad rulle med en bock i rött på, ett uppdrag som är klart.', [
+      '................',
+      '..kkkkkkkkkkk...',
+      '.kWwwwwwwwwwWk..',
+      '.kkwwwwwwwwwkk..',
+      '..kwwwwwwwwrk...',
+      '..kwwwwwwwrRk...',
+      '..kwwwwwwrRwk...',
+      '..kwrwwwrRwwk...',
+      '..kwRrwrRwwwk...',
+      '..kwwRrRwwwwk...',
+      '..kwwwRwwwwwk...',
+      '.kkwwwwwwwwwkk..',
+      '.kWwwwwwwwwwWk..',
+      '..kkkkkkkkkkk...',
+    ]),
+  ] });
+})();

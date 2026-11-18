@@ -47,7 +47,7 @@ import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
 import { PAB, pabud } from './styre';
 import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid, UPPDRAGTAL } from './uppdrag';
-import { handelse } from './rykten';
+import { handelse, ryktbarhet } from './rykten';
 import { think } from './folk';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
@@ -96,6 +96,9 @@ export const RESA = balans('resa', {
   bud: 20, // äran av att bära byns besked, för en medelmåttigt lämplig (arbetstimmar; lämpligheten: karisma, Handel och släkt i byn, steg 11.6.23)
   budSlakt: 0.5, // så mycket mer lämplig är den som har släkt i byn (kommer därifrån)
   budGava: 40, // så mycket (i grundvärde) av det byn har över bär ett vänligt bud som gåva
+  // turnén (steg 11.8.18)
+  turneGava: 30, // gåvan (i grundvärde, hela saker) en grannby ger den bästa, som hela byn talar om, efter ett framträdande; mindre för den mindre kända och skickliga
+  turneVan: 10, // grannbyn måste tycka så här bra om byn (hållningen, -100 till 100) för att ta emot en turné
   seVarde: 15, // det väntade värdet av att se en plats man bara hört rykten om, för en medelmåttigt nyfiken (arbetstimmar)
   omvag: 1.5, // en väg ingen gått räknas som fågelvägen gånger så här mycket
   faraDygn: 0.04, // ledens fara per dygn på vägen (tills vägens händelser finns, steg 11.5.14)
@@ -168,6 +171,7 @@ export interface Sallskap {
   delning?: Andelar; // hur det delades hemma (steg 11.5.9)
   uppdrag?: number; // uppdraget sällskapet reser för (steg 11.8.4)
   utfall?: UppdragUtfall; // hur det gick på platsen (steg 11.8.7)
+  turne?: number; // turnén är gjord: silvret grannbyn gav (steg 11.8.18)
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
   kop?: [string, number][]; // det ledaren tänkt köpa hem, det byn har brist på (steg 11.6.11)
   krav?: number; // kraften sällskapet behöver mot ledens fara (steg 11.5.11)
@@ -541,6 +545,21 @@ function budFram(s: State, sl: Sallskap, r: import('./radtal').VarldRad, t: numb
   count(s, sl.ton === 'besked' ? 'sandebud ut vänligt' : 'sandebud ut ovänligt');
   sl.ton = undefined; // beskedet är framfört
 }
+// turnén framme (steg 11.8.18): ledaren uppträder eller tävlar, grannbyn tycker bättre om byn (BYHANDELSER.turne), minns hen en
+// tid (VarldRad.turne) och ger en gåva i hela silver ur det den har, så mycket hen är värd (turneKraft)
+function turneFram(s: State, sl: Sallskap, r: import('./radtal').VarldRad, t: number) {
+  const vl = s.varld!, led = resenarer(s, sl).find(p => p.id === sl.ledare);
+  if (!led || vl.huvud === undefined) return;
+  byHandelse(vl, 'turne', vl.huvud, r.nr);
+  r.turne = { id: led.id, namn: led.name, t };
+  const n = Math.max(0, Math.min(Math.floor(r.tal.silver), Math.floor(RESA.turneGava * turneKraft(s, led) / Math.max(1e-9, varde1('silver')) + 1e-9)));
+  if (n > 0) { radTar(r, 'silver', n); sl.pack.silver = (sl.pack.silver ?? 0) + n; }
+  const vad = led.skill.skaldskap / 20 >= (led.bedrift?.h === 'tavling' ? 1 : 0) ? 'uppträdde' : 'tävlade';
+  const text = `${led.name} ${vad} i ${r.namn}${n > 0 ? ` och fick ${n} silver i gåva` : ''}.`;
+  dagbok(s, sl, 'turne', text, t);
+  sl.turne = n;
+  count(s, 'turne framme');
+}
 // ---------- besöket hos en rad (steg 11.5.8, Besöket hos en rad) ----------
 // Sällskapet som kommer fram: platsen blir besökt för huvudbyns rad och för var och en av resenärerna. Är platsen en by med
 // folk säljer sällskapet det det har med sig att byta (allt utom maten och det som behövs för vägen) mot byns silver, efter
@@ -560,6 +579,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   const k = r.syn;
   if (sl.skal === 'sandebud') budFram(s, sl, r, t);
+  if (sl.skal === 'turne') turneFram(s, sl, r, t);
   // sälja: varorna mot byns silver
   let fick = 0, salda = 0;
   for (const sak of Object.keys(sl.pack).sort()) {
@@ -752,6 +772,11 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
       const h = resaVaror(s, p, r.nr);
       if (h.vinst > 0) { skal = 'handel'; varde = h.vinst * (1 + p.skill.handel / 20); varor = h.varor; kop = h.kop; }
     }
+    // turnén (steg 11.8.18): till en grannby som tycker om byn, för den som är skicklig och känd; gåvan väger som handelns vinst
+    if (skal !== 'sandebud' && q.k === 'by' && r && BYSORTER[r.sort].folk && r.tal.folk > 0 && (r.syn?.inst ?? -100) >= RESA.turneVan) {
+      const g = RESA.turneGava * turneKraft(s, p);
+      if (g > varde) { skal = 'turne'; varde = g; varor = []; kop = []; }
+    }
     // ett uppdrag personen tror på (steg 11.8.4): den trodda belöningen gånger tilltron, mot samma kostnad och risk som annat
     let uid: number | undefined;
     const upp = skal !== 'sandebud' && (RESMAL.uppdrag.mal as readonly string[]).includes(q.k) ? uppdragVid(s, p, q.nr) : undefined;
@@ -768,6 +793,12 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
 }
 // hur lämplig p är att bära byns besked (1 för en medelmåttig): karismen, Handel och släkt i byn (den hen kommer ifrån)
 export const budLamplig = (s: State, p: Person, klan: number | undefined) => stat(p, 'karisma', s.now) / 10 * (1 + p.skill.handel / 20) * (klan !== undefined && p.fran === klan ? 1 + RESA.budSlakt : 1);
+// turnén (steg 11.8.18): hur skicklig p är som skald eller i sporten (skaldskapen, eller den senaste bedriften en vunnen tävling)
+// gånger hur mycket byn talar om hen (ryktbarheten per bybo), 0 till 1. Gåvan grannbyn ger är RESA.turneGava gånger det
+export function turneKraft(s: State, p: Person) {
+  const konst = Math.max(p.skill.skaldskap / 20, p.bedrift?.h === 'tavling' ? 1 : 0), folk = living(s).length;
+  return clamp(konst, 0, 1) * clamp(ryktbarhet(s, p.id).r / Math.max(1, folk), 0, 1);
+}
 // gåvan med ett vänligt bud: det byn har mest över (över förrådsmålen), störst värde först, tills den är värd RESA.budGava
 export function budGava(s: State): [string, number][] {
   const over = (Object.keys(MATERIALMAL) as (keyof typeof MATERIALMAL)[]).filter(k => !BEHALL.includes(k) && !FOOD.includes(k) && grundvarde(k) > 0)
@@ -901,6 +932,7 @@ export const DAGBOK = {
   dod: { namn: 'Död', sym: '✝️', stor: true },
   besked: { namn: 'Beskedet', sym: '📜', stor: true }, // sändebudets besked (steg 11.6.23)
   uppdrag: { namn: 'Uppdraget', sym: '📜', stor: true }, // det som sker på uppdragets plats (steg 11.8.7)
+  turne: { namn: 'Turnén', sym: '⭐', stor: true }, // framträdandet i grannbyn (steg 11.8.18)
   hem: { namn: 'Hemma', sym: '🏠' },
 } as const satisfies Record<string, DagbokDef>;
 export type DagbokId = keyof typeof DAGBOK;
@@ -958,6 +990,11 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
   if (u) { kronika(s, `${text}${upp}`, 'uppdrag'); count(s, 'uppdrag berättat'); } // uppdragets redogörelse (steg 11.8.7)
   // ryktet och upplevelsen (steg 11.8.17): de som ser sällskapet komma hem med ett klarat uppdrag får intrycket äventyrare om var
   // och en som var med, och det sprids som andra rykten. Resan sitter en tid i humöret, glad eller besviken efter hur det gick
+  if (sl.turne !== undefined) { // turnén (steg 11.8.18): den som uppträdde får en bedrift, och krönikan en rad
+    const p = folk.find(x => x.id === sl.ledare);
+    const r = vl.platser?.find(x => x.nr === sl.mal);
+    if (p) { handelse(s, p, 'turne', undefined, r?.namn ?? 'grannbyn'); kronika(s, `${p.name} kom hem från en turné till ${r?.namn ?? 'grannbyn'}${sl.turne ? ` med ${sl.turne} silver i gåva` : ''}.`, 'grannar'); }
+  }
   if (u) for (const p of folk) {
     if (u.hur === 'klart') { handelse(s, p, 'uppdrag', undefined, u.namn.toLowerCase()); think(p, `Klarade ${u.namn.toLowerCase()}`, UPPDRAGTAL.glad, t, UPPDRAGTAL.tanke * DAY); }
     else think(p, u.hur === 'tomt' ? 'Kom fram till en tom plats' : 'Uppdraget gick inte', -UPPDRAGTAL.besviken, t, UPPDRAGTAL.tanke * DAY);

@@ -1701,7 +1701,9 @@ SCENARIER.vagbehov = {
 SCENARIER.resfart = {
   text: 'Farten (steg 11.5.7, sallskapFart och gången i resa.ts): den långsammaste medlemmens fart gånger lastens, årstidens och orkens; ledens fart ligger i rutans kostnad. Ett sällskap med ett barn går långsammare, en stig går fortare än obanad mark, lasten bromsar, och sällskapet går fram, stannar och kommer hem',
   kor: () => {
-    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50 && SIM.personFart(s0, q) === 1);
+    // en by med ett barn som går själv men långsammare än en vuxen
+    const gaBarn = (s: SIM.State, q: SIM.Person) => SIM.ageOf(q, s.now) < SIM.ALDER.vuxen && SIM.ageOf(q, s.now) >= SIM.ALDER.gangBarn;
+    const s0 = SIM.cloneState(testBy(3, s => SIM.living(s).some(q => gaBarn(s, q)))), vl0 = s0.varld!, vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50 && SIM.personFart(s0, q) === 1);
     const barn = SIM.living(s0).find(q => SIM.ageOf(q, s0.now) < SIM.ALDER.vuxen && SIM.ageOf(q, s0.now) >= SIM.ALDER.gangBarn);
     const hb = SIM.byPlats(vl0, vl0.huvud!)!, mal = hb.grannar![0]!.nr;
     const dag0 = Math.floor(s0.now / SIM.DAY) * SIM.DAY + SIM.DAY + 7 * SIM.HOUR;
@@ -2578,6 +2580,7 @@ const mulberry = (frö: number) => () => { frö = (frö + 0x6D2B79F5) | 0; let t
 
 SCENARIER.handelsresa = {
   text: 'Huvudbyns handelsresa (steg 11.6.11, resaVaror och resaPlan i resa.ts): byn reser för att sälja det den har över till den by där den tror att varorna är värda mest, efter prisminnena, och inte till en by den inget vet om. Det byn har brist på köps där det tros vara billigare än hemma, för byns silver, och tas hem',
+  env: { BALANS: 'resa.turneGava=0' }, // turnén (steg 11.8.18) prövas i scenariot turne
   kor: () => {
     const s = SIM.cloneState(testBy(30)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
     const a = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q))[0]!;
@@ -3810,6 +3813,50 @@ SCENARIER.uppdragrykte = {
       [`${p.name} blir gladare efter ett klarat uppdrag (${m0.toFixed(2)} → ${m1.toFixed(2)})`, harTanke && m1 > m0],
       ['den som kom fram till en tom plats blir besviken', besviken],
       [`intrycket har ett hedersnamn (${SIM.BINAMN.aventyrare.namn[0][0]})`, SIM.BINAMN.aventyrare.namn.length > 0],
+    ];
+  },
+};
+
+SCENARIER.turne = {
+  text: 'Turnén (steg 11.8.18, RESMAL.turne och turneFram i resa.ts): den som är skicklig som skald eller i sporten och som byn talar om reser till en vänlig grannby, uppträder och kommer hem med en gåva i hela silver; grannbyn tycker bättre om byn och minns hen, handlare därifrån talar om hen, och hen får en bedrift och en rad i krönikan',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const vuxna = s.people.filter(x => SIM.alive(x) && !x.gast && SIM.ageOf(x, s.now) >= 18);
+    const p = vuxna.sort((a, b) => SIM.stat(b, 'mod', s.now) - SIM.stat(a, 'mod', s.now))[0]!;
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    const q = (vl.platser ?? []).filter(x => x.nr !== hem.nr && x.k === 'by' && x.by !== undefined && SIM.radNr(vl, x.by)?.syn && SIM.radNr(vl, x.by)!.tal.folk > 0)
+      .sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y))[0]!;
+    const r = SIM.radNr(vl, q.by!)!;
+    SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+    r.syn!.inst = 40; r.tal.silver = Math.max(r.tal.silver, 100);
+    const okand = SIM.turneKraft(s, p);
+    // hen blir skicklig och känd: skaldskapen och tävlingen som hela byn sett
+    p.skill.skaldskap = 20;
+    for (const x of SIM.living(s)) if (x !== p) SIM.handelse(s, p, 'tavling', undefined, 'löpning', x);
+    const kand = SIM.turneKraft(s, p);
+    const plan = SIM.resaPlan(s, p, 99, 99);
+    // en ovänlig grannby tar inte emot en turné
+    const s2 = SIM.cloneState(s); SIM.radNr(s2.varld!, r.nr)!.syn!.inst = -20;
+    const ovan = SIM.resaPlan(s2, SIM.byId(s2, p.id)!, 99, 99);
+    const sl = SIM.samlaResa(s, p, plan!)!;
+    const rel0 = SIM.relation(vl, r.nr, vl.huvud!)!;
+    SIM.radBesok(s, sl, s.now);
+    const gava = sl.turne ?? 0, rel1 = SIM.relation(vl, r.nr, vl.huvud!)!;
+    const krn0 = s.hist?.kronika.length ?? 0;
+    SIM.redogorelse(s, sl, s.now + SIM.DAY);
+    const krn = (s.hist?.kronika ?? []).slice(krn0).find(k => String(k[1]).includes('turné'));
+    // en handlare från grannbyn talar om hen
+    const h = vuxna.find(x => x !== p && !sl.medl.includes(x.id))!;
+    h.intryck = (h.intryck ?? []).filter(i => !(i.om === p.id && i.k === 'skicklig'));
+    s.now += SIM.DAY; SIM.turnePrat(s, r.nr, h);
+    const prat = (h.intryck ?? []).some(i => i.om === p.id && i.k === 'skicklig');
+    return [
+      [`den okände reser inte på turné (${okand.toFixed(2)}), den skicklige och kände vill (${kand.toFixed(2)}: ${plan?.skal} till ${plan?.namn})`, okand < kand && plan?.skal === 'turne' && plan.mal === q.nr],
+      [`en ovänlig grannby tar inte emot en turné (${ovan?.skal ?? 'ingen resa'})`, ovan?.skal !== 'turne' || ovan.mal !== q.nr],
+      [`gåvan är hela silver ur grannbyns silver (${gava}), i packningen och dagboken`, gava > 0 && Number.isInteger(gava) && sl.dagbok.some(d => d[2] === 'turne')],
+      [`grannbyn tycker bättre om byn (${rel0} → ${rel1}) och minns ${p.name}`, rel1 > rel0 && r.turne?.id === p.id],
+      [`${p.name} får bedriften och en rad i krönikan ("${krn?.[1] ?? ''}")`, p.bedrift?.h === 'turne' && !!krn],
+      ['en handlare därifrån talar om hen', prat],
     ];
   },
 };

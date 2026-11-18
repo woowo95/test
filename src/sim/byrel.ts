@@ -22,6 +22,7 @@ export const BYREL = balans('byrel', {
   // verkan av handlingarna i BYHANDELSER
   handel: 2, gava: 1, muta: 4, fjask: 2, turne: 5, besked: 3, ovanligt: 6, mottagen: 3, bortvisad: 6,
   lurad: 10, ran: 10, plundring: 20, dodade: 15, skandad: 5, bruten: 25,
+  turneMinns: 6, // en by minns den från huvudbyn som uppträtt där så många dygn (år i spelet), och dess handlare talar om hen så länge (steg 11.8.18)
 });
 type Tal = keyof typeof BYREL;
 export interface ByHandelse { namn: string; tal: Tal; tecken: 1 | -1; ledare?: true }

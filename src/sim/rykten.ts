@@ -197,6 +197,7 @@ const HDEF = {
   pahittig: { i: 'pahittig', vikt: 0.5, text: 'kom på {sak}', prestation: true }, // steg 10.4.9
   forutseende: { i: 'forutseende', vikt: 0.5, text: 'tog byn väl genom vintern' }, // steg 10.4.9
   bjorndodare: { i: 'bjorndodare', vikt: 1, text: 'dödade en björn', prestation: true }, // steg 6.6.6
+  turne: { i: 'skicklig', vikt: 0.4, text: 'uppträdde i {sak}', prestation: true }, // steg 11.8.18: turnén, berättad när hen kommer hem eller av handlare därifrån
   uppdrag: { i: 'aventyrare', vikt: 0.5, text: 'klarade uppdraget {sak}', prestation: true }, // steg 11.8.17: berättas när sällskapet kommer hem
   pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat sin sovplats med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
 } satisfies Record<string, HandelseDef>;
