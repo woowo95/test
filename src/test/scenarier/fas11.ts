@@ -5120,3 +5120,49 @@ SCENARIER.vacktskog = {
     ];
   },
 };
+
+SCENARIER.aterbygge = {
+  text: 'Återbygget (steg 11.13.22, minnesbild och byggMinne i vacktsomna.ts): när byn väcks igen byggs den efter raden med minnesbilden som grund. Platsen, husen, gravarna, lagerplatserna, fälten och hagen är desamma, fälten får ägare bland hushållen som kan odla, de fasta personerna finns kvar och byn lägger inget nytt förrådshus vid varje besök',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const r = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).filter(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0).map(p => SIM.radNr(vl, p!.by!)!).sort((a, c) => c.tek.length - a.tek.length)[0]!;
+    const bild = (b: SIM.State) => {
+      SIM.useMap(b);
+      const o = {
+        eld: SIM.eldPlats(b), folk: SIM.living(b).filter(p => !p.gast).length,
+        hus: SIM.housesOf(b).filter(h => h.klar !== undefined).map(h => `${h.x},${h.y},${h.w},${h.h}`).sort(),
+        forrad: SIM.housesOf(b).filter(h => h.fn === 'forrad').length,
+        falt: SIM.faltOf(b).map(f => `${f.x},${f.y},${f.w},${f.n}`).sort(), hagar: (b.hagar ?? []).map(h => `${h.x},${h.y},${h.w},${h.h}`),
+        lager: (b.lagren ?? []).filter(z => z.hus === undefined).map(z => `${z.x},${z.y},${z.w},${z.h}`).sort(),
+        gravar: (b.gravar ?? []).map(g => `${g.x},${g.y},${g.namn}`).sort(), namn: new Set(b.people.map(p => p.name)),
+        agare: SIM.faltOf(b).filter(f => f.agare !== 0).every(f => { const p = b.people.find(q => q.id === f.agare); return !!p && SIM.knows(p, 'odling'); }),
+        agda: SIM.faltOf(b).filter(f => f.agare !== 0).length,
+        hel: (b.hagar ?? []).every(h => SIM.hageHel(b, h)),
+      };
+      SIM.useMap(s);
+      return o;
+    };
+    const b1 = SIM.vackTest(s, r.nr)!;
+    SIM.step(b1, 2 * 3600);
+    const a = bild(b1);
+    SIM.vackTest(s, r.nr); // somnar
+    const fasta = r.fasta.filter(f => f.dor === undefined).map(f => f.namn);
+    const b2 = SIM.vackTest(s, r.nr)!, c = bild(b2);
+    SIM.step(b2, 2 * 3600);
+    SIM.vackTest(s, r.nr);
+    const d = bild(SIM.vackTest(s, r.nr)!);
+    const lika = (x: string[], y: string[]) => JSON.stringify(x) === JSON.stringify(y);
+    return [
+      ['platsen är densamma', a.eld.x === c.eld.x && a.eld.y === c.eld.y],
+      [`invånarna är radens antal (${c.folk} mot ${Math.round(r.tal.folk)})`, Math.abs(c.folk - Math.round(r.tal.folk)) <= 1],
+      [`husen står kvar på samma platser (${a.hus.filter(h => c.hus.includes(h)).length} av ${a.hus.length})`, a.hus.length > 0 && a.hus.every(h => c.hus.includes(h))],
+      ['gravarna ligger kvar', a.gravar.every(g => c.gravar.includes(g))],
+      [`lagerplatserna ligger kvar (${a.lager.length})`, a.lager.length > 0 && a.lager.every(z => c.lager.includes(z))],
+      [`fälten ligger kvar (${a.falt.length})`, a.falt.length > 0 && lika(a.falt, c.falt)],
+      [`fälten har ägare som kan odla (${c.agda} av ${c.falt.length})`, c.agda > 0 && c.agare],
+      ['hagen ligger kvar med staketet runt om', lika(a.hagar, c.hagar) && c.hel],
+      [`de fasta personerna finns kvar (${fasta.length})`, fasta.every(n => c.namn.has(n))],
+      [`inget nytt förrådshus vid varje besök (${a.forrad}, ${c.forrad}, ${d.forrad})`, c.forrad === a.forrad && d.forrad === a.forrad],
+    ];
+  },
+};

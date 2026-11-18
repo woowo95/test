@@ -8,8 +8,8 @@
 // Byggaren körs före förråden, så att djuren och fröna räknas in i rikedomen (rikedomDelar) och förråden får resten
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, familjOf } from './folk';
-import { faltBehov, faltFardigt, faltOf, faltRiktning, faltSite, GRODOR, grodorNu, ODLING, type Ruta } from './odling';
-import { HAGE, hageKant, hageSida } from './hage';
+import { faltBehov, faltFardigt, faltOf, faltRiktning, faltSite, GRODOR, grodorNu, ODLING, sammanfatta, type Ruta } from './odling';
+import { HAGE, hageKant, hagarOf, hageSida } from './hage';
 import { HONS } from './hons';
 import { laggIn } from './lager';
 import { bynsMitt } from './omrade';
@@ -54,14 +54,22 @@ function byggFalten(b: State) {
     const fam = [h, ...familjOf(b, h.id).filter(q => q !== h)], odlare = fam.find(q => ageOf(q, b.now) >= ALDER.vuxen && knows(q, 'odling'));
     if (!odlare || faltOf(b).some(f => fam.some(q => q.id === f.agare))) continue;
     const n = faltBehov(b, odlare), g = grodor.length ? grodor[Math.floor(rnd(b, 'vackt') * Math.min(2, grodor.length))] : undefined;
-    const v = rnd(b, 'vackt') * VACKTDJUR.vuxit;
-    const f = faltFardigt(b, odlare, n, (): Ruta => (g ? { st: 'vaxer', g, v } : { st: 'sa' }));
+    const v = rnd(b, 'vackt') * VACKTDJUR.vuxit, ruta = (): Ruta => (g ? { st: 'vaxer', g, v } : { st: 'sa' });
+    const f = minnesFalt(b, odlare, ruta) ?? faltFardigt(b, odlare, n, ruta);
     if (!f) continue;
     const fro = GRODOR[g ?? grodorNu(b)[0] ?? 'rovor'].fro;
     laggIn(b, fro, f.n * ODLING.froPerRuta, odlare.id); // frön till nästa sådd
   }
 }
 
+// ett fält ur minnesbilden som ingen äger (steg 11.13.22, byggMinne i vacktsomna.ts), det närmaste lägret först
+function minnesFalt(b: State, p: Person, ruta: () => Ruta) {
+  const f = faltOf(b).find(q => q.agare === 0);
+  if (!f) return undefined;
+  f.agare = p.id; f.r = Array.from({ length: f.n }, ruta);
+  sammanfatta(f);
+  return f;
+}
 // djuren ur en andel av rikedomen, i hela djur
 function byggDjuren(b: State, r: VarldRad) {
   const vuxna = b.people.filter(p => alive(p) && !p.gast && ageOf(p, b.now) >= ALDER.vuxen);
@@ -88,6 +96,8 @@ function byggDjuren(b: State, r: VarldRad) {
     budget -= tamArt(a).varde;
   }
   if (!nya.length) return;
+  const gammal = hagarOf(b)[0]; // hagen ur minnesbilden (steg 11.13.22)
+  if (gammal) { for (const d of nya) { d.hage = gammal.id; d.x = gammal.x + 0.5 + Math.floor(rnd(b, 'vackt') * gammal.w); d.y = gammal.y + 0.5 + Math.floor(rnd(b, 'vackt') * gammal.h); } return; }
   // hagen så stor som djuren behöver, eller så stor som får plats (byn gör den större när den lever)
   let n = hageSida(b), at = faltSite(b, n, n * n);
   while (!at && n > HAGE.minSida) { n--; at = faltSite(b, n, n * n); }

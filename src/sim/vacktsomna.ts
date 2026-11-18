@@ -3,8 +3,8 @@
 // raden (r.vaken), medan det världen gör mot byn (anfall, handel, gåvor) fortsätter att ändra raden. När byn somnar läggs det
 // byn själv ändrat sedan den byggts (talen i byn nu mot talen när den var byggd, lasRad) till raden, så att båda delarna finns kvar, och
 // teknikerna någon i byn kan blir radens. Tillgången per varugrupp räknas om ur rikedomen (radVaror). Sist sparas en minnesbild:
-// husen med väggarna, gravarna och de heliga platserna. Vid nästa väckning byggs husen ur minnesbilden först, på samma platser,
-// och gravarna och de heliga platserna ligger kvar; resten byggs på nytt ur raden som vanligt (BYGGARE i vackt.ts)
+// husen med väggarna, gravarna, de heliga platserna, lagerplatserna, fälten och hagarna. Vid nästa väckning byggs husen ur minnesbilden
+// först, på samma platser, och resten av det som fanns ligger kvar (återbygget, steg 11.13.22); resten byggs på nytt ur raden som vanligt (BYGGARE i vackt.ts)
 import type { Fn } from './byggnader';
 import type { GravStil } from './kvarlevor';
 import type { HeligSlag } from './kult';
@@ -12,6 +12,10 @@ import { bitsOf, housesOf, Hus, MATERIAL } from './byggnad';
 import { count } from './folk';
 import { lasRad, radNr, RADTAL_IDS } from './radtal';
 import { State, useMap } from './typer';
+import { faltOf, faltRutor, sammanfatta, type Falt, type Ruta } from './odling';
+import { hageKant, hagarOf } from './hage';
+import { changed } from './lager';
+import { groundOf } from './mark';
 import { nyaFasta } from './vacktfasta';
 
 export interface VacktMinne {
@@ -19,6 +23,9 @@ export interface VacktMinne {
   hus: { fn?: string; namn: string; x: number; y: number; w: number; h: number; rumFn?: Record<string, string>; vaggar: [number, number, string, string?][] }[]; // väggarna: x, y, material och dörren
   gravar: { x: number; y: number; t: number; namn: string; stil: GravStil }[];
   heliga: { x: number; y: number; k: HeligSlag; t: number; om: string }[];
+  lager?: { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }[]; // lagerplatserna ute (steg 11.13.22)
+  falt?: { x: number; y: number; w: number; dir: number; n: number }[]; // fälten, utan ägare och gröda
+  hagar?: { x: number; y: number; w: number; h: number }[];
 }
 // minnesbilden ur byn: de färdiga husen, gravarna och de heliga platserna som inte vanhelgats
 export function minnesbild(b: State): VacktMinne {
@@ -31,6 +38,9 @@ export function minnesbild(b: State): VacktMinne {
     })),
     gravar: (b.gravar ?? []).map(g => ({ x: g.x, y: g.y, t: g.t, namn: g.namn, stil: g.stil })),
     heliga: (b.heliga ?? []).filter(q => !q.skandad).map(q => ({ x: q.x, y: q.y, k: q.k, t: q.t, om: q.om })),
+    lager: (b.lagren ?? []).filter(z => z.hus === undefined).map(z => ({ x: z.x, y: z.y, w: z.w, h: z.h, ...(z.namn ? { namn: z.namn } : {}), ...(z.slag ? { slag: z.slag } : {}), ...(z.prio !== undefined ? { prio: z.prio } : {}) })),
+    falt: faltOf(b).map(f => ({ x: f.x, y: f.y, w: f.w, dir: f.dir, n: f.n })),
+    hagar: hagarOf(b).map(h => ({ x: h.x, y: h.y, w: h.w, h: h.h })),
   };
 }
 // byn somnar: det byn ändrat läggs till raden, och minnesbilden sparas
@@ -65,4 +75,20 @@ export function byggMinne(b: State, m: VacktMinne | undefined, fardigt: (b: Stat
   }
   for (const g of m.gravar) (b.gravar ??= []).push({ ...g, vem: 0 }); // (ingen i byn: vem 0 är ingen person)
   for (const q of m.heliga) (b.heliga ??= []).push({ ...q, tro: -1 }); // trons plats får sin tro när tron byggs (steg 11.13.19)
+  // återbygget (steg 11.13.22): lagerplatserna, fälten och hagarna där de låg. Fälten står utan ägare (agare 0) och utan gröda, så
+  // att byggaren för fälten ger dem till hushållen (vacktfalt.ts) innan den lägger nya, och hagen får staketet runt om
+  if (m.lager?.length) { const inne = (b.lagren ?? []).filter(z => z.hus !== undefined); b.lagren = [...m.lager.map(z => ({ ...z })), ...inne]; changed(b); }
+  const g = groundOf(b);
+  for (const q of m.falt ?? []) {
+    const f: Falt = { id: b.nextFalt = (b.nextFalt ?? 0) + 1, ...q, agare: 0, steg: 'bereda', klara: 0, kvar: 0, rord: b.now, r: Array.from({ length: q.n }, (): Ruta => ({ st: 'sa' })) };
+    (b.falt ??= []).push(f);
+    for (const i of faltRutor(f)) { g.trees[i] = 0; g.cover[i] = 0; }
+    sammanfatta(f);
+  }
+  for (const q of m.hagar ?? []) {
+    const h = { id: (b.hagar?.length ?? 0) + 1, ...q };
+    (b.hagar ??= []).push(h);
+    for (const i of hageKant(b, h)) if (!(b.staket ?? []).includes(i)) (b.staket ??= []).push(i);
+  }
+  b.byggV = (b.byggV ?? 0) + 1;
 }

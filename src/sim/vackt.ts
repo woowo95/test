@@ -362,7 +362,8 @@ function iLagret(b: State, hus = true) {
     for (const a of ute) put(b, a.k, a.n, a.ag, a.c);
   }
   const a = BYGGNADER.forrad.akut(b);
-  if (hus && a.v > 0 && b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) { const h = planeraHus(b, 'forrad', a); if (h) byggFardigt(b, h); }
+  // byggaren lägger förrådshuset en gång; att det byggs ut eller får sällskap sker när byn lever, så att återbygget (steg 11.13.22) inte lägger ett nytt vid varje besök
+  if (hus && a.v > 0 && !housesOf(b).some(h => h.fn === 'forrad') && b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) { const h = planeraHus(b, 'forrad', a); if (h) byggFardigt(b, h); }
 }
 // testknappen Väck: den närmaste levande grannbyn till huvudbyn väcks, eller somnar om den redan är väckt
 export function vackTestNarmast(s: State): { ok: boolean; text: string } {
