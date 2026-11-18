@@ -6,7 +6,7 @@
 // (VarldPlats.inne) och finns så länge det finns kvar. Bara det som någon utlyst är en egen post (Utlyst, vl.uppdrag), och den
 // tar slut av sin tid: belöningen som lagts undan går då tillbaka till den som utlyste. Talen står i blocket UPPDRAGTAL.
 import { balans } from './balans';
-import { alive, byId, count } from './folk';
+import { alive, byId, count, stat } from './folk';
 import { delade } from './berattelser';
 import { findL, MINNE, trimLardomar, UPPDRAGKROK } from './minne';
 import { lognFaktor } from './rykten';
@@ -29,6 +29,7 @@ export const UPPDRAGTAL = balans('uppdrag', {
   max: 6, // så många uppdrag minns en person som mest
   dela: 1.5, // vikten för att berätta om ett uppdrag i ett samtal (en plats väger ORT.dela)
   glom: 2, // ett uppdrag glöms så här mycket långsammare än en vanlig lärdom
+  krav: 1, // vikten för hur väl en bybo passar uppdragets krav när ledaren kallar (steg 11.8.5), mot modet och tycket
   tilltro: 3, // tilltron till en uppgift halveras på så många dygn (år i spelet) efter att den utlystes
   vittra: 0.03, // det i en ruin som inte ruttnar vittrar bort med så stor del per dygn (det som ruttnar: 1 / SAKER.haller per dygn)
 });
@@ -38,6 +39,19 @@ export const UPPDRAGTAL = balans('uppdrag', {
 export type UtlysarId = 'anhorig' | 'person' | 'styre' | 'kyrka' | 'ingen';
 // det som avgör vilka ledaren kallar (steg 11.8.5)
 export type UppdragKrav = 'bara' | 'styrka' | 'mod' | 'sparning';
+// hur väl en bybo passar kravet (steg 11.8.5): 0 för en medelmåttig, mer för den som passar. Bära: styrkan och uthålligheten;
+// styrka: styrkan och närstriden; mod: modet; spårning: jakten (den som kan läsa spår) och minnet
+export const KRAV: Record<UppdragKrav, (s: State, p: Person) => number> = {
+  bara: (s, p) => (stat(p, 'styrka', s.now) + stat(p, 'uthallighet', s.now) - 20) / 20,
+  styrka: (s, p) => (stat(p, 'styrka', s.now) - 10) / 10 + p.skill.narstrid / 20,
+  mod: (s, p) => (stat(p, 'mod', s.now) - 10) / 10,
+  sparning: (s, p) => p.skill.jakt / 20 + (stat(p, 'minne', s.now) - 10) / 20,
+};
+// hur väl q passar kravet för uppdraget ledaren tror på (det ledaren minns om det)
+export function kravPassar(s: State, led: Person, id: number, q: Person) {
+  const k = findL(led, 'uppdrag', id)?.om as UppdragId | undefined;
+  return k && UPPDRAG[k] ? UPPDRAGTAL.krav * KRAV[uppdragDef(k).krav](s, q) : 0;
+}
 // det som sker på platsen
 export type UppdragGor = 'leta' | 'ta' | 'strida' | 'hjalpa' | 'leverera';
 export interface UppdragDef {
@@ -140,10 +154,10 @@ export function taRuin(s: State, vl: Varlden, r: VarldRad, t: number, bar: numbe
 // lärdomar (UPPDRAGTAL.glom gånger långsammare) och berättas i samtal (UPPDRAGTAL.dela). Tilltron är säkerheten gånger en halvering
 // med uppgiftens ålder (UPPDRAGTAL.tilltro dygn). Den som hört om det vet inte om det redan är taget eller utgånget.
 // v = den trodda belöningens värde, g = platsens nummer: båda är det personen tror, och finns kvar när uppdraget är taget eller slut
-export function larUppdrag(s: State, p: Person, id: number, c: number, o: { t: number; v: number; mal: number; src?: number; led?: number }): Lardom {
+export function larUppdrag(s: State, p: Person, id: number, c: number, o: { t: number; v: number; mal: number; k: UppdragId; src?: number; led?: number }): Lardom {
   const e = findL(p, 'uppdrag', id);
   if (e) { e.c = Math.max(e.c, c, Math.min(1, e.c + MINNE.berattaStark * (1 - e.c))); return e; }
-  const l: Lardom = { k: 'uppdrag', a: id, v: Math.round(o.v), g: o.mal, c, t: o.t, led: o.led ?? (o.src === undefined ? 0 : 1), ...(o.src !== undefined ? { src: o.src } : {}) };
+  const l: Lardom = { k: 'uppdrag', a: id, v: Math.round(o.v), g: o.mal, om: o.k, c, t: o.t, led: o.led ?? (o.src === undefined ? 0 : 1), ...(o.src !== undefined ? { src: o.src } : {}) };
   (p.lardomar ??= []).push(l);
   trimLardomar(s, p);
   return l;
@@ -163,7 +177,7 @@ export function berattaUppdrag(s: State, a: Person, b: Person, l: Lardom, r: Rel
   const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = u && vl && varldPlatsNr(vl, u.mal);
   delade('fjarran', 'karta', u ? `${uppdragDef(u.k).namn.toLowerCase()}${q ? ` vid ${q.namn}` : ''}` : 'ett uppdrag');
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a), fore = findL(b, 'uppdrag', l.a);
-  larUppdrag(s, b, l.a, l.c * trust * MINNE.troDel, { t: l.t, v: l.v, mal: l.g ?? -1, src: a.id, led: (l.led ?? 0) + 1 });
+  larUppdrag(s, b, l.a, l.c * trust * MINNE.troDel, { t: l.t, v: l.v, mal: l.g ?? -1, k: (l.om ?? 'leverans') as UppdragId, src: a.id, led: (l.led ?? 0) + 1 });
   if (!fore) count(s, 'uppdragBerattat');
 }
 UPPDRAGKROK.tal = UPPDRAGTAL;

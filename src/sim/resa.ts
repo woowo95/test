@@ -45,7 +45,7 @@ import { SEC } from './typer';
 import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
-import { uppdragVid } from './uppdrag';
+import { kravPassar, uppdragVid } from './uppdrag';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -814,7 +814,7 @@ export function kallelse(s: State, sl: Sallskap, r: ResPlan) {
   if (!led) return;
   sl.krav = Math.round(RESA.kraftPerFara * r.fara * 100) / 100;
   const kan = living(s).filter(q => q !== led && !q.gast && ageOf(q, s.now) >= ALDER.vuxen && kanGa(q) && !isSick(q, s.now) && !ute(q) && !sallskapFor(vl, q.id));
-  const vilja = kan.map(q => ({ q, v: RESA.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + RESA.foljTycke * getRel(s, q, led).op / 100 + RESA.foljNyfiken * (stat(q, 'nyfikenhet', s.now) - 10) / 10 + RESA.foljSlump * (rnd(s, 'resa', q) - 0.5) }))
+  const vilja = kan.map(q => ({ q, v: RESA.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + RESA.foljTycke * getRel(s, q, led).op / 100 + RESA.foljNyfiken * (stat(q, 'nyfikenhet', s.now) - 10) / 10 + RESA.foljSlump * (rnd(s, 'resa', q) - 0.5) + (sl.uppdrag !== undefined ? kravPassar(s, led, sl.uppdrag, q) : 0) }))
     .sort((a, b) => b.v - a.v || a.q.id - b.q.id);
   for (const x of vilja) {
     const pb = packbehov(s, sl);

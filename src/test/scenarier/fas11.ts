@@ -3496,7 +3496,7 @@ SCENARIER.uppdragkunskap = {
     const [a, b] = vuxna;
     a.lardomar = (a.lardomar ?? []).filter(l => l.k !== 'uppdrag');
     b.lardomar = (b.lardomar ?? []).filter(l => l.k !== 'uppdrag');
-    const la = SIM.larUppdrag(s, a, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal });
+    const la = SIM.larUppdrag(s, a, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
     const rel: SIM.Rel = { chem: 0, op: 40, rom: 0, talks: 0, flags: 0 };
     SIM.berattaUppdrag(s, a, b, la, rel);
     const lb = SIM.findL(b, 'uppdrag', u.id);
@@ -3530,7 +3530,7 @@ SCENARIER.uppdragmal = {
     SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
     const fore = SIM.resaPlan(s, p, 99, 99);
     const u = SIM.utlys(vl, 'leverans', q.nr, { k: 'styre', rad: q.by }, { silver: 400 }, s.now)!;
-    const l = SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal });
+    const l = SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
     const med = SIM.resaPlan(s, p, 99, 99);
     // samma uppgift, gammal: tilltron har sjunkit och poängen med den
     const s2 = SIM.cloneState(s); s2.now += 4 * SIM.UPPDRAGTAL.tilltro * SIM.DAY;
@@ -3544,5 +3544,31 @@ SCENARIER.uppdragmal = {
       [`en gammal uppgift lockar mindre (${sc(gammal)})`, !gammal || gammal.skal !== 'uppdrag' || gammal.sc < med!.sc],
       [`en liten belöning lockar knappt (${sc(liten)}), och vägs i valet av aktivitet mot allt annat`, !liten || liten.skal !== 'uppdrag' || liten.sc < med!.sc / 10],
     ];
+  },
+};
+
+SCENARIER.uppdragkrav = {
+  text: 'Kravet samlar sällskapet (steg 11.8.5): uppdragets krav (bära, styrka, mod eller spårning, registret KRAV) avgör vilka ledaren kallar, som en del av viljan att följa med',
+  kor: () => {
+    const ut: [string, boolean][] = [];
+    for (const k of ['hjalp', 'leverans'] as const) {
+      const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+      const vuxna = s.people.filter(x => SIM.alive(x) && !x.gast && SIM.ageOf(x, s.now) >= 18);
+      const p = vuxna.sort((a, b) => SIM.stat(b, 'mod', s.now) - SIM.stat(a, 'mod', s.now))[0]!;
+      p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+      const q = (vl.platser ?? []).filter(x => x.nr !== hem.nr && x.k === 'by').sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y))[0]!;
+      SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+      const u = SIM.utlys(vl, k, q.nr, { k: 'styre', rad: q.by }, { silver: 400 }, s.now)!;
+      SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
+      const plan = SIM.resaPlan(s, p, 99, 99)!;
+      const sl = SIM.samlaResa(s, p, plan);
+      const krav = SIM.UPPDRAG[k].krav, fit = (x: SIM.Person) => SIM.KRAV[krav](s, x);
+      const andra = vuxna.filter(x => x !== p), med = (sl?.medl ?? []).filter(id => id !== p.id).map(id => SIM.byId(s, id)!);
+      const snitt = (xs: SIM.Person[]) => xs.reduce((a, x) => a + fit(x), 0) / Math.max(1, xs.length);
+      const b = vuxna.filter(x => x !== p).sort((a, c) => fit(c) - fit(a));
+      ut.push([`${SIM.UPPDRAG[k].namn} (kravet ${krav}): de som följer med passar bättre (${snitt(med).toFixed(2)}) än de vuxna i snitt (${snitt(andra).toFixed(2)}), ${med.length} följer med`, med.length > 0 && snitt(med) > snitt(andra)]);
+      ut.push([`den som passar bäst (${b[0].name}, ${fit(b[0]).toFixed(2)}) vill mer än den som passar sämst (${b[b.length - 1].name}, ${fit(b[b.length - 1]).toFixed(2)})`, SIM.kravPassar(s, p, u.id, b[0]) > SIM.kravPassar(s, p, u.id, b[b.length - 1])]);
+    }
+    return ut;
   },
 };
