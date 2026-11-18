@@ -45,6 +45,7 @@ import { SEC } from './typer';
 import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
+import { uppdragVid } from './uppdrag';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -162,6 +163,7 @@ export interface Sallskap {
   behov?: ResBehov; // mättnaden, vätskan och orken på vägen, för hela gruppen (steg 11.5.6)
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
   delning?: Andelar; // hur det delades hemma (steg 11.5.9)
+  uppdrag?: number; // uppdraget sällskapet reser för (steg 11.8.4)
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
   kop?: [string, number][]; // det ledaren tänkt köpa hem, det byn har brist på (steg 11.6.11)
   krav?: number; // kraften sällskapet behöver mot ledens fara (steg 11.5.11)
@@ -723,7 +725,7 @@ function dygnDit(s: State, fran: { x: number; y: number }, till: { x: number; y:
   const sparad = vl.vagar?.find(x => x.fs === 'fots' && x.fran === a && x.till === b);
   return (sparad ? sparad.kostnad : Math.hypot(till.x - fran.x, till.y - fran.y) * RESA.omvag) / VARLD.gangPerDygn;
 }
-export interface ResPlan { mal: number; namn: string; skal: ResmalId; varde: number; dygn: number; fara: number; sc: number; varor: [string, number][]; kop?: [string, number][] }
+export interface ResPlan { mal: number; namn: string; skal: ResmalId; uppdrag?: number; varde: number; dygn: number; fara: number; sc: number; varor: [string, number][]; kop?: [string, number][] }
 // den resa personen helst skulle samla till och dess poäng (utan bruset); fd och wd är dygnen byns mat och ved räcker
 export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan | undefined {
   const vl = s.varld, v = varldMark(s), hem = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
@@ -743,13 +745,17 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
       const h = resaVaror(s, p, r.nr);
       if (h.vinst > 0) { skal = 'handel'; varde = h.vinst * (1 + p.skill.handel / 20); varor = h.varor; kop = h.kop; }
     }
+    // ett uppdrag personen tror på (steg 11.8.4): den trodda belöningen gånger tilltron, mot samma kostnad och risk som annat
+    let uid: number | undefined;
+    const upp = skal !== 'sandebud' && (RESMAL.uppdrag.mal as readonly string[]).includes(q.k) ? uppdragVid(s, p, q.nr) : undefined;
+    if (upp && (!skal || upp.varde > varde)) { skal = 'uppdrag'; varde = upp.varde; uid = upp.id; varor = []; kop = []; }
     if (!skal && niva === O_RYKTE && (RESMAL.se.mal as readonly string[]).includes(q.k)) { skal = 'se'; varde = RESA.seVarde * ny / 10; }
     if (!skal) continue;
     const dygn = 2 * dygnDit(s, hem, q) + RESMAL[skal].stannar;
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
     const lust = (ny + mod) / 20, hemma = clamp(Math.min(fd, wd) / dygn, 0, 1);
     const sc = RESA.vikt * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
-    if (sc > 0 && (!bast || sc > bast.sc)) bast = { mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: Math.round(dygn * 100) / 100, fara: Math.round(fara * 1000) / 1000, sc, varor, kop };
+    if (sc > 0 && (!bast || sc > bast.sc)) bast = { mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: Math.round(dygn * 100) / 100, fara: Math.round(fara * 1000) / 1000, sc, varor, kop, ...(uid !== undefined ? { uppdrag: uid } : {}) };
   }
   return bast;
 }
@@ -786,6 +792,7 @@ export function samlaResa(s: State, p: Person, r: ResPlan): Sallskap | undefined
   const vl = s.varld!;
   if (r.skal === 'sandebud' && vl.bud) { sl.ton = vl.bud.ton; sl.av = vl.bud.av; vl.bud = undefined; } // budet är sänt
   if (r.kop?.length) sl.kop = r.kop.map(([k, n]) => [k, n]);
+  if (r.uppdrag !== undefined) sl.uppdrag = r.uppdrag;
   sl.ut = utgang(s, sl);
   if (!sl.ut) { stallIn(s, sl); return undefined; }
   dagbok(s, sl, 'samlas', `${p.name} samlar till en resa till ${r.namn}.`);

@@ -139,13 +139,23 @@ export function taRuin(s: State, vl: Varlden, r: VarldRad, t: number, bar: numbe
 // Ett utlyst uppdrag är en lärdom (k = 'uppdrag', a = uppdragets nummer, t = när det utlystes): det minns och bleknar som andra
 // lärdomar (UPPDRAGTAL.glom gånger långsammare) och berättas i samtal (UPPDRAGTAL.dela). Tilltron är säkerheten gånger en halvering
 // med uppgiftens ålder (UPPDRAGTAL.tilltro dygn). Den som hört om det vet inte om det redan är taget eller utgånget.
-export function larUppdrag(s: State, p: Person, id: number, c: number, o: { t: number; src?: number; led?: number }): Lardom {
+// v = den trodda belöningens värde, g = platsens nummer: båda är det personen tror, och finns kvar när uppdraget är taget eller slut
+export function larUppdrag(s: State, p: Person, id: number, c: number, o: { t: number; v: number; mal: number; src?: number; led?: number }): Lardom {
   const e = findL(p, 'uppdrag', id);
   if (e) { e.c = Math.max(e.c, c, Math.min(1, e.c + MINNE.berattaStark * (1 - e.c))); return e; }
-  const l: Lardom = { k: 'uppdrag', a: id, v: 1, c, t: o.t, led: o.led ?? (o.src === undefined ? 0 : 1), ...(o.src !== undefined ? { src: o.src } : {}) };
+  const l: Lardom = { k: 'uppdrag', a: id, v: Math.round(o.v), g: o.mal, c, t: o.t, led: o.led ?? (o.src === undefined ? 0 : 1), ...(o.src !== undefined ? { src: o.src } : {}) };
   (p.lardomar ??= []).push(l);
   trimLardomar(s, p);
   return l;
+}
+// ett uppdrag personen tror på, som mål för en resa (steg 11.8.4): den trodda belöningen gånger tilltron, för platsen nr
+export function uppdragVid(s: State, p: Person, nr: number): { id: number; varde: number } | undefined {
+  let bast: { id: number; varde: number } | undefined;
+  for (const l of p.lardomar ?? []) if (l.k === 'uppdrag' && l.g === nr) {
+    const varde = l.v * tilltro(s, l);
+    if (varde > 0 && (!bast || varde > bast.varde)) bast = { id: l.a, varde };
+  }
+  return bast;
 }
 export const tilltro = (s: State, l: Lardom) => l.c * 0.5 ** (Math.max(0, s.now - l.t) / (UPPDRAGTAL.tilltro * DAY));
 export function berattaUppdrag(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
@@ -153,14 +163,14 @@ export function berattaUppdrag(s: State, a: Person, b: Person, l: Lardom, r: Rel
   const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = u && vl && varldPlatsNr(vl, u.mal);
   delade('fjarran', 'karta', u ? `${uppdragDef(u.k).namn.toLowerCase()}${q ? ` vid ${q.namn}` : ''}` : 'ett uppdrag');
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a), fore = findL(b, 'uppdrag', l.a);
-  larUppdrag(s, b, l.a, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1 });
+  larUppdrag(s, b, l.a, l.c * trust * MINNE.troDel, { t: l.t, v: l.v, mal: l.g ?? -1, src: a.id, led: (l.led ?? 0) + 1 });
   if (!fore) count(s, 'uppdragBerattat');
 }
 UPPDRAGKROK.tal = UPPDRAGTAL;
 UPPDRAGKROK.beratta = (s, a, b, l, r) => berattaUppdrag(s, a, b, l, r);
 UPPDRAGKROK.describe = (s, l) => describeUppdrag(s, l);
 export function describeUppdrag(s: State, l: Lardom) {
-  const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = u && vl && varldPlatsNr(vl, u.mal);
+  const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = vl && l.g !== undefined ? varldPlatsNr(vl, l.g) : undefined;
   const what = u ? `${uppdragDef(u.k).namn}${q ? ` vid ${q.namn}` : ''}` : 'Ett uppdrag';
   const src = l.src === undefined ? 'hörde det själv' : `hört av ${byId(s, l.src)?.name ?? 'någon'}`;
   const tt = tilltro(s, l), sure = tt >= 0.6 ? 'tror på det' : tt >= 0.25 ? 'tror kanske på det' : 'tvivlar';

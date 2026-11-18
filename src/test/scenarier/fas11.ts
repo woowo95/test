@@ -3496,7 +3496,7 @@ SCENARIER.uppdragkunskap = {
     const [a, b] = vuxna;
     a.lardomar = (a.lardomar ?? []).filter(l => l.k !== 'uppdrag');
     b.lardomar = (b.lardomar ?? []).filter(l => l.k !== 'uppdrag');
-    const la = SIM.larUppdrag(s, a, u.id, 1, { t: s.now });
+    const la = SIM.larUppdrag(s, a, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal });
     const rel: SIM.Rel = { chem: 0, op: 40, rom: 0, talks: 0, flags: 0 };
     SIM.berattaUppdrag(s, a, b, la, rel);
     const lb = SIM.findL(b, 'uppdrag', u.id);
@@ -3515,6 +3515,34 @@ SCENARIER.uppdragkunskap = {
       [`${a.name} berättar för ${b.name}, som tror mindre (${f2(lb?.c ?? 0)} mot ${f2(la.c)}) och vet var hen hört det`, !!lb && lb.c < la.c && lb.src === a.id],
       [`tilltron halveras på ${SIM.UPPDRAGTAL.tilltro} dygn (${f2(t0)} → ${f2(t1)})`, Math.abs(t1 - t0 / 2) < 0.01],
       [`det bleknar i minnet (${f2(c0)} → ${f2(c1)} på tio dagar)`, c1 < c0],
+    ];
+  },
+};
+
+SCENARIER.uppdragmal = {
+  text: 'Uppdraget som mål för en resa (steg 11.8.4): den trodda belöningen gånger tilltron vägs mot resans kostnad och risk, som allt annat i RESMAL',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const p = s.people.filter(x => SIM.alive(x) && !x.gast && SIM.ageOf(x, s.now) >= 18).sort((a, b) => SIM.stat(b, 'mod', s.now) - SIM.stat(a, 'mod', s.now))[0]!;
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    const q = (vl.platser ?? []).filter(x => x.nr !== hem.nr && x.k === 'by')
+      .sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y))[0]!;
+    SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+    const fore = SIM.resaPlan(s, p, 99, 99);
+    const u = SIM.utlys(vl, 'leverans', q.nr, { k: 'styre', rad: q.by }, { silver: 400 }, s.now)!;
+    const l = SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal });
+    const med = SIM.resaPlan(s, p, 99, 99);
+    // samma uppgift, gammal: tilltron har sjunkit och poängen med den
+    const s2 = SIM.cloneState(s); s2.now += 4 * SIM.UPPDRAGTAL.tilltro * SIM.DAY;
+    const gammal = SIM.resaPlan(s2, SIM.byId(s2, p.id)!, 99, 99);
+    // en liten belöning är inte värd resan
+    l.v = 1;
+    const liten = SIM.resaPlan(s, p, 99, 99);
+    const sc = (x?: SIM.ResPlan) => x ? `${x.skal} till ${x.namn}, ${x.sc.toFixed(2)}` : 'ingen resa';
+    return [
+      [`${p.name} vill resa för uppdraget till ${q.namn} (före: ${sc(fore)}, med uppdraget: ${sc(med)})`, med?.skal === 'uppdrag' && med.mal === q.nr && med.uppdrag === u.id],
+      [`en gammal uppgift lockar mindre (${sc(gammal)})`, !gammal || gammal.skal !== 'uppdrag' || gammal.sc < med!.sc],
+      [`en liten belöning lockar knappt (${sc(liten)}), och vägs i valet av aktivitet mot allt annat`, !liten || liten.skal !== 'uppdrag' || liten.sc < med!.sc / 10],
     ];
   },
 };
