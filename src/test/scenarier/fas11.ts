@@ -5378,3 +5378,50 @@ SCENARIER.vaktatting = {
     ];
   },
 };
+
+SCENARIER.gravplats = {
+  text: 'Graven (steg 11.13.28, gravfynd.ts): en gravhög i världen har gravgåvor i hela saker ur platsens frö, den som kommer dit minns dem som ett fynd, och ledaren tar dem bara när värdet är större än det tron, seden och ryktet säger att det kostar; de andra i sällskapet ser det och tänker tjuv. Högen står på den lilla kartan',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const q = vl.platser!.find(p => p.k === 'gravhog')!;
+    const inne = { ...SIM.gravInne(q) }, igen = JSON.stringify(SIM.gravInne({ ...q, inne: undefined }));
+    const hela = Object.values(inne).every(n => Number.isInteger(n) && n >= 1);
+    const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= 20 && SIM.ageOf(p, s.now) < 50).slice(0, 3);
+    const resa = (st: SIM.State) => {
+      st.varld!.sallskap = [];
+      const f = folk.map(p => st.people.find(x => x.id === p.id)!);
+      const sl = SIM.nyttSallskap(st, f[0]!, q.nr, 'uppdrag')!; for (const x of f.slice(1)) SIM.foljMed(st.varld!, sl, x);
+      sl.skede = 'ute';
+      return { sl, led: f[0]!, andra: f.slice(1) };
+    };
+    // skammen: mer med en andlig sed och fler som ser det
+    const led0 = folk[0]!, varlds = SIM.cloneState(s), andl = SIM.cloneState(s);
+    varlds.seder.v.andlig = -1; andl.seder.v.andlig = 1;
+    const sk1 = SIM.gravSkam(varlds, led0, 1), sk2 = SIM.gravSkam(andl, led0, 1), sk3 = SIM.gravSkam(varlds, led0, 3);
+    // en världslig by tar gåvorna, och de andra ser det
+    const a = SIM.cloneState(s); a.seder.v.andlig = -1;
+    const ra = resa(a), varde = SIM.gravVarde(SIM.varldPlatsNr(a.varld!, q.nr)!);
+    SIM.radBesok(a, ra.sl, a.now);
+    const tog = Object.entries(inne).every(([k, n]) => (ra.sl.pack[k] ?? 0) >= n), qa = SIM.varldPlatsNr(a.varld!, q.nr)!;
+    const sag = ra.andra.every(p => SIM.intryckOm(p, ra.led.id, 'tjuv'));
+    const minns = ra.led.lardomar?.find(l => l.k === 'uppdrag' && l.g === q.nr);
+    // nästa som kommer finner den tom
+    const rb2 = resa(a); SIM.radBesok(a, rb2.sl, a.now);
+    // en hög med lite i lämnas
+    const c = SIM.cloneState(s); SIM.varldPlatsNr(c.varld!, q.nr)!.inne = { silver: 1 };
+    const rc = resa(c); SIM.radBesok(c, rc.sl, c.now);
+    // den lilla kartan
+    const b = SIM.vackPlats(s, q.nr), hog = SIM.resterOf(b!).filter(x => x.k === 'hog').length;
+    SIM.useMap(s);
+    return [
+      [`högen har gravgåvor i hela saker (${Object.entries(inne).map(([k, n]) => `${n} ${k}`).join(', ')}), samma varje gång`, hela && 'silver' in inne && igen === JSON.stringify(inne)],
+      [`skammen är större med en andlig sed (${Math.round(sk1)} → ${Math.round(sk2)}) och fler som ser det (${Math.round(sk3)})`, sk2 > sk1 && sk3 > sk1],
+      [`en världslig ledare tar gåvorna värda ${Math.round(varde)} (${ra.sl.utfall?.hur}) och högen blir tom`, tog && ra.sl.utfall?.hur === 'klart' && SIM.gravVarde(qa) === 0],
+      [`de andra i sällskapet ser det och tänker tjuv`, sag],
+      [`ledaren minns högen som tom efteråt (${minns?.om}, värt ${minns?.v})`, minns?.om === 'grav' && minns.v === 0],
+      [`nästa sällskap finner högen tom (${rb2.sl.utfall?.hur})`, rb2.sl.utfall?.hur === 'tomt'],
+      [`en hög med lite i lämnas (${rc.sl.utfall?.hur})`, rc.sl.utfall?.hur === 'misslyckat' && (rc.sl.pack.silver ?? 0) === 0],
+      [`högen står på den lilla kartan (${hog} rutor)`, hog >= 4],
+    ];
+  },
+};

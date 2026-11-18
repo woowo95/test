@@ -17,9 +17,10 @@ export interface PlatsRestDef { namn: string }
 export const PLATSRESTER = {
   mur: { namn: 'Rasad mur' }, // en ruta av ett hus som står kvar
   vagn: { namn: 'Trasig vagn' }, // en vagn som lämnats
+  hog: { namn: 'Gravhög' }, // en ruta av en gravhög (steg 11.13.28)
 } as const satisfies Record<string, PlatsRestDef>;
 export type PlatsRestId = keyof typeof PLATSRESTER;
-export interface PlatsRest { x: number; y: number; k: PlatsRestId }
+export interface PlatsRest { x: number; y: number; k: PlatsRestId; m?: 1 /* högens mitt */ }
 
 export const VACKTRESTER = balans('vacktrester', {
   husMin: 2, husMax: 6, // så många hus som minst och mest står kvar i en ruin
@@ -42,6 +43,11 @@ export function byggRester(b: State, p: { nr: number; k: string; by?: number }) 
       const x = mitt.x - 2 + i * 3 + Math.floor(hash3(fro, i, 1, 0x7a61) * 2), y = mitt.y + Math.floor(hash3(fro, i, 2, 0x7a61) * 3) - 1;
       if (land(x, y)) rester.push({ x, y, k: 'vagn' });
     }
+    return;
+  }
+  if (p.k === 'gravhog') { // högen vid mitten, 3 × 2 rutor; gåvorna ligger i den och syns inte (steg 11.13.28)
+    for (let y = mitt.y - 1; y <= mitt.y; y++) for (let x = mitt.x - 1; x <= mitt.x + 1; x++) if (land(x, y)) rester.push({ x, y, k: 'hog', ...(x === mitt.x ? { m: 1 as const } : {}) });
+    changed(b);
     return;
   }
   if (p.k === 'rovarlager') { // det stulna ligger vid lägrets mitt (steg 11.13.27)

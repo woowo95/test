@@ -741,6 +741,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Gick ner i gruvan för ${Math.round(stannarFor(sl) * 24)} timmar.`, t);
   const ruin = ruinRad(vl, sl.mal);
   if (ruin) for (const p of folk) saFynd(s, vl, p, ruin, sl.mal, t); // de som sett ruinen minns det som finns kvar (steg 11.8.8)
+  if (plats.k === 'gravhog') for (const p of folk) FYNDSETT.grav?.(s, p, sl.mal, t); // och gravgåvorna i högen (steg 11.13.28)
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   const k = r.syn;
   if (sl.skal === 'sandebud') budFram(s, sl, r, t);
@@ -1119,11 +1120,14 @@ const malNamn = (s: State, sl: Sallskap) => s.varld?.platser?.find(p => p.nr ===
 // vars tid är ute finns inte längre, och platsen är tom. Belöningen läggs i packningen och delas hemma som allt annat (Andelar).
 // Det som sker står i dagboken, och utfallet berättas i redogörelsen hemma.
 export interface UppdragUtfall { namn: string; hur: 'klart' | 'tomt' | 'misslyckat'; fick: Record<string, number> }
-// det vaktade föremålet i ett rövarläger (steg 11.13.27): vaktat.ts sätter kroken
-export const UPPDRAGFRAM: { vaktat?: (s: State, sl: Sallskap, t: number) => (UppdragUtfall & { text: string }) | undefined } = {};
+// fynden med egna filer: det vaktade föremålet i ett rövarläger (steg 11.13.27, vaktat.ts) och gravgåvorna (steg 11.13.28, gravfynd.ts)
+type FramKrok = (s: State, sl: Sallskap, t: number) => (UppdragUtfall & { text: string }) | undefined;
+export const UPPDRAGFRAM: { vaktat?: FramKrok; grav?: FramKrok } = {};
+// den som kommer till en plats ser fyndet där (steg 11.13.28): gravfynd.ts sätter kroken
+export const FYNDSETT: { grav?: (s: State, p: Person, nr: number, t: number) => void } = {};
 export function uppdragFram(s: State, sl: Sallskap, t: number) {
   const vl = s.varld!, u = sl.uppdrag !== undefined ? uppdragNr(vl, sl.uppdrag) : undefined, ruin = ruinRad(vl, sl.mal);
-  const vk = !u || u.mal !== sl.mal ? UPPDRAGFRAM.vaktat?.(s, sl, t) : undefined;
+  const vk = !u || u.mal !== sl.mal ? UPPDRAGFRAM.vaktat?.(s, sl, t) ?? UPPDRAGFRAM.grav?.(s, sl, t) : undefined;
   if (vk) { uppdragUtfall(s, sl, vk.namn, vk.hur, vk.fick, vk.text, t); return; }
   const fick: Record<string, number> = {};
   let namn = u ? uppdragDef(u.k).namn : ruin ? 'Ruinskatten' : 'Uppdraget', hur: UppdragUtfall['hur'] = 'tomt', text: string;

@@ -1081,7 +1081,7 @@
 // trasiga vagnarna. En ruta (16 × 16 punkter) per murbit och vagn, snett ovanifrån som kartan, på gräs. Muren visas som ett
 // helt hus på 5 × 4 rutor med luckor, som spelet lägger den.
 (() => {
-  const L = { k: 'kol0', K: 'kol1', j: 'jord1', J: 'jord2', l: 'jord3', y: 'senap3', g: 'oliv1', G: 'oliv2', d: 'skiffer1', s: 'skiffer2', S: 'skiffer3', w: 'ben3', '^': 'skugga' };
+  const L = { k: 'kol0', K: 'kol1', j: 'jord1', J: 'jord2', l: 'jord3', y: 'senap3', g: 'oliv1', G: 'oliv2', O: 'oliv3', d: 'skiffer1', s: 'skiffer2', S: 'skiffer3', w: 'ben3', '^': 'skugga' };
   const gras = (B, w, h) => { const g = B.P.i('oliv', 2); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, g); };
   const LUCKA = [0, 3, 8, 11]; // rutorna runt huset där muren rasat (i ordningen medurs från hörnet uppe till vänster)
   const HUS = (text, rader) => ({ text, w: 96, h: 80, rita: (B) => {
@@ -1133,6 +1133,29 @@
       '..^^^^^^^^^^^^..',
       '',
     ]),
+  ] });
+  // gravhögen (steg 11.13.28): 3 × 2 rutor vid mitten av den lilla kartan, gåvorna ligger inne i den. Raderna räknas ur formen,
+  // som är symmetrisk kring mitten
+  const HOG = (text, rader) => ({ text, w: 64, h: 48, rita: (B) => { gras(B, 64, 48); ritaSprite(B, rader, L, 8, 8); } });
+  const kupol = (W, H, cy, rx, ry, extra) => {
+    const g = Array.from({ length: H }, () => Array(W).fill('.')), cx = (W - 1) / 2, fot = ry * 0.4; // foten är en ellips sedd snett ovanifrån
+    const inne = (x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / (y < cy ? ry : fot)) ** 2 <= 1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (inne(x, y)) {
+        const lj = ((x - cx + rx * 0.2) / (rx * 0.55)) ** 2 + ((y - cy + ry * 0.55) / (ry * 0.35)) ** 2 <= 1; // ljuset på toppen
+        const nere = y >= cy + fot - 2;
+        g[y][x] = lj ? 'O' : nere ? 'j' : y > cy - ry * 0.1 ? 'g' : 'G';
+      } else if (inne(x, y - 1) || inne(x, y + 1) || inne(x - 1, y) || inne(x + 1, y)) g[y][x] = 'k';
+    }
+    for (let x = 0; x < W; x++) for (let y = H - 1; y > 0; y--) if (g[y - 1][x] === 'k' && g[y][x] === '.') { g[y][x] = '^'; break; }
+    if (extra) extra(g, cx, cy, fot);
+    return g.map(r => r.join(''));
+  };
+  const sten = (g, x, y, w, h) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) g[y + j][x + i] = j === 0 ? 'S' : i === 0 || i === w - 1 || j === h - 1 ? 'k' : j < 2 ? 'S' : 's'; };
+  VAL.push({ id: 'f11_gravhog', namn: 'Gravhögen i världen', typ: 'tre', slag: [], vad: 'Steg 11.13.28: på den lilla kartan för en gravhög står högen vid mitten, 3 × 2 rutor. Gravgåvorna ligger inne i den och syns inte. Den som kommer dit kan bryta upp den och ta gåvorna, om tron, seden och ryktet tillåter. Snett ovanifrån som kartan, på gräs', versioner: [
+    HOG('En rund kupol av torv, gräsbevuxen, högst i mitten och ljusast där solen når toppen, med en mörk jordkant vid foten.', kupol(48, 32, 20, 21, 17)),
+    HOG('En flatare hög med en krans av gråsten runt foten, som hålls på plats av stenarna; gräset växer mellan dem.', kupol(48, 32, 19, 19, 13, (g, cx, cy, fot) => { for (let i = 0; i <= 8; i++) { const a = Math.PI * i / 8, x = Math.round(cx - 2 + Math.cos(a) * 20), y = Math.round(cy + Math.sin(a) * (fot + 1)) - 1; if (y >= 0 && y + 3 < 32 && x >= 0 && x + 4 < 48) sten(g, x, y, 4, 3); } })),
+    HOG('En låg och lång hög, som en uppochnedvänd båt, med en upprest sten mitt på toppen som märker graven.', kupol(48, 32, 22, 23, 9, (g, cx, cy) => { sten(g, Math.round(cx) - 2, cy - 19, 5, 13); })),
   ] });
   const VAGN = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => { gras(B, 24, 24); ritaSprite(B, rader, L, 4, 4); } });
   VAL.push({ id: 'f11_vagnrest', namn: 'Karavanens trasiga vagn', typ: 'tre', slag: [], vad: 'Steg 11.13.26: där rövare plundrat en karavan ligger vagnarna kvar, och det rövarna lämnade ligger bredvid. Den lilla kartan för karavanresten har två vagnar. En ruta stor, snett ovanifrån som kartan, på gräs. Den ska se annorlunda ut än grundarnas vagn i byn, som gått sönder av sig själv', versioner: [

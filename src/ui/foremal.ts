@@ -422,6 +422,12 @@ function runstenBild(x: number, y: number, bild = false) {
 function restBild(q: { x: number; y: number; k: string }) {
   const X = q.x * TS, Y = q.y * TS, gr = structG, u = TS / 16;
   gr.beginFill(0x24201d, 0.3).drawRect(X, Y + 13 * u, TS, 2 * u).endFill();
+  if (q.k === 'hog') { // en ruta av gravhögen: torv i en kupol, högst i mitten (steg 11.13.28, platshållare)
+    const mitt = (q as { m?: number }).m ?? 0;
+    gr.beginFill(0x4f6b3a).drawEllipse(X + TS / 2, Y + 11 * u, 8 * u, (mitt ? 7 : 4) * u).endFill();
+    gr.beginFill(0x6b8a4a).drawEllipse(X + TS / 2, Y + 9 * u, 6 * u, (mitt ? 5 : 2.5) * u).endFill();
+    return;
+  }
   if (q.k === 'mur') {
     const lag = 1 + ((q.x * 7 + q.y * 3) % 3); // så många rader står kvar
     for (let r = 0; r < lag; r++) for (let c = 0; c < 3; c++) {
