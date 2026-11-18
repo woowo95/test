@@ -983,6 +983,9 @@ SCENARIER.oversvamning = {
     s.falt = [{ id: 1, x: pf.x, y: pf.y, w: 1, dir: 1, n: 1, agare: -1, steg: 'vaxer', klara: 0, kvar: 0, sadda: 1, groda: 'arter', vuxit: 0, rord: s.now } as SIM.Falt];
     s.nextFalt = 1; s.byggV = (s.byggV ?? 0) + 1;
     const hog = (k: string, p: { x: number; y: number }) => (s.stackar ?? []).find(a => a.k === k && a.x === p.x && a.y === p.y);
+    // all sten i byn: på marken, i lagren och den som bärs (byn kan bära in stenen; vattnet ska inte ta den)
+    const allSten = () => (s.stackar ?? []).reduce((a, q) => a + (q.k === 'sten' ? q.n : 0), 0) + living(s).reduce((a, p) => a + ((p.task?.items as Record<string, number> | undefined)?.sten ?? 0), 0);
+    const sten0 = allSten();
     const slit0 = wearMult(s, ps.x, ps.y);
     // tills vattnet står som högst
     let hogst = 0, iVattnet = 0, slit1 = 0, q2: State | undefined;
@@ -1003,7 +1006,7 @@ SCENARIER.oversvamning = {
       iVattnet = Math.max(iVattnet, living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length);
     }
     const vatten1 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
-    const barKvar = hog('rotter', pb)?.n ?? 0, grenKvar = hog('grenar', pg)?.n ?? 0, stenKvar = hog('sten', ps)?.n ?? 0;
+    const barKvar = hog('rotter', pb)?.n ?? 0, grenKvar = hog('grenar', pg)?.n ?? 0, stenKvar = allSten() - sten0 + 3;
     const faltDog = (s.stat?.['drankt falt'] ?? 0) >= 1, frost = s.stat?.frostdod ?? 0;
     // efter tidsåldern: vattnet är tillbaka vid stranden och stenen ligger kvar
     kor(s, (m.slut - s.now) / HOUR + 1);
@@ -1075,7 +1078,7 @@ SCENARIER.oversvamning = {
       [`sjön svämmar över ${hogst} rutor upp på land (${vatten0} → ${vatten1} rutor vatten)`, hogst >= 2 && vatten1 > vatten0],
       [`maten på stranden förstördes (${s.stat?.['flod mat'] ?? 0} rötter; resten bars in innan, ${barKvar} kvar av 200)`, barKvar === 0 && (s.stat?.['flod mat'] ?? 0) > 0],
       [`grenarna flöt bort (${grenKvar} kvar av 8)`, grenKvar === 0],
-      [`stenen ligger kvar (${stenKvar} av 3) och slits fortare i vattnet (${slit0.toFixed(2)} → ${slit1.toFixed(2)})`, stenKvar === 3 && slit1 > slit0 * 2],
+      [`vattnet tog ingen sten (${stenKvar} av 3 kvar i byn) och den slits fortare i vattnet (${slit0.toFixed(2)} → ${slit1.toFixed(2)})`, stenKvar === 3 && slit1 > slit0 * 2],
       [`ärterna på fältet under vatten dog${frost ? ` (frosten tog ${frost})` : ''}`, faltDog],
       [`ingen står i vattnet (högst ${iVattnet}) eller går ut i det för att bära något (${malIVatten} steg)`, iVattnet === 0 && malIVatten === 0],
       [`stenen som ligger i vattnet väljs inte för att bäras in medan vattnet står där${hjVatten ? ' (väljs)' : ''}`, !hjVatten],

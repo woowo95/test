@@ -192,6 +192,12 @@ export const SALLSYNT: Record<string, string> = {
   undanStrid: 'man går undan bara när två slåss nära en (steg 10.1.4); scenariot stridkarta prövar det',
   hjalpaRovare: 'man håller sig bakom kämparna bara när rövare eller vargar är nära byn (steg 9.2.116 och 9.2.121); scenarierna rovarforsvar och vargskydd prövar det',
   forsvarRovare: 'man väntar på rövarna med vapen bara när rövare är nära byn (steg 9.2.74), och de kommer bara till en rik by; scenariot rovarforsvar prövar det',
+  ridning: 'ridningen (steg 11.11.4) är en teknik på nivå 5 som öppnas först efter tio körningar med häst, och hästen köps sällan på 50 dygn; scenariot ridning prövar den',
+  ridsadel: 'ridsadeln (steg 11.11.4) kräver ridningen; scenariot ridning prövar den', sy_ridsadel: 'som ridsadel; scenariot ridning prövar den',
+  packsadel: 'packsadeln (steg 11.11.4) görs när byn ska resa med packdjur, och resorna är sällsynta på 50 dygn; scenariot packsadel prövar den', sy_packsadel: 'som packsadel; scenariot packsadel prövar den',
+  talt: 'tältet (steg 11.11.2) görs när byn ska resa och sova ute, och resorna är sällsynta på 50 dygn; scenariot talt prövar det', sy_talt: 'som talt; scenariot talt prövar det',
+  vagn: 'vagnen (steg 11.11.3) byggs när byn ska frakta mycket på en resa, och resorna är sällsynta på 50 dygn; scenarierna vagn och karavan prövar den',
+  fangelse: 'fängelset (system 11.12) byggs först när ledaren gett påbudet om fängelse, som sällan händer på 50 dygn; scenarierna fangelse och fangar prövar det',
 };
 // fas 8 (system 8.2, 8.3, 8.5 och 8.6): det som kräver en ledare, en präst eller en tro på en viss nivå hinner sällan komma på 35 dygn
 for (const k of ['medvetslos', 'mantel', 'prastdrakt', 'tecken', 'mask', 'koka_rokelse', 'koka_olja', 'rokelse', 'brannolja', 'rustning', 'hjalm', 'skold', 'bage', 'slunga', 'horn', 'pilar', 'gor_pilar', 'avrusta', 'rusta']) SALLSYNT[k] ??= 'kräver en ledare eller en tro på en viss nivå; scenarierna mantel, ritualer och kyrkan prövar det';

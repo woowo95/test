@@ -140,11 +140,11 @@ export const NAMNZOOM = 0.75; // namnen syns när en bildpunkt är minst så må
 export interface KartNamn { x: number; y: number; namn: string; egen: boolean }
 export function namnPaKartan(vl: Varlden, kn?: BynsKarta): KartNamn[] {
   const hb = huvudbynsPlats(vl), ut: KartNamn[] = [];
-  for (const p of vl.platser ?? []) {
-    if (!p.namn || !syns(kn, p)) continue;
-    const egen = p === hb;
-    if (!egen && kn && (kn.niva(p.nr) ?? -1) < O_KANT) continue;
-    ut.push({ x: p.x, y: p.y, namn: p.namn, egen });
+  for (const pl of vl.platser ?? []) {
+    if (!pl.namn || !syns(kn, pl)) continue;
+    const egen = pl === hb;
+    if (!egen && kn && (kn.niva(pl.nr) ?? -1) < O_KANT) continue;
+    ut.push({ x: pl.x, y: pl.y, namn: pl.namn, egen });
   }
   return ut;
 }
