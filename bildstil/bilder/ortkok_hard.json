@@ -1,0 +1,22 @@
+{
+"id": "ortkok_hard",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 18,
+"h": 12,
+"rader": [
+"....QQ..QQ..QQ....",
+"...QTSQQTSQQTSQ...",
+"...QSRQQSRQQSRQ...",
+".QQ.QQmmQQmmQQ.QQ.",
+"QTSQnmlsttslmnQSRQ",
+"QSRQmlstLutslmQRRQ",
+".QQnmlstuutslmnQQ.",
+"QSRQnmlsttslmnQSRQ",
+"QRRQQQnnQQnnQQQRRQ",
+".QQQTSQQTSQQTSQQQ.",
+"...QSRQQSRQQSRQ...",
+"....QQ..QQ..QQ...."
+],
+"pal": {"Q":"#233035","T":"#8a9c9e","S":"#61767a","R":"#3e5156","m":"#372f25","n":"#474138","l":"#2f261d","s":"#742a01","t":"#a14808","L":"#d8b25f","u":"#bd753e"}
+}

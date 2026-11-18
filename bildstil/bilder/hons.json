@@ -1,0 +1,26 @@
+{
+"id": "hons",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 24,
+"h": 16,
+"rader": [
+"...................tt...",
+"..................EHGE..",
+".........oo.......EJmGK.",
+"........oqpo..EE..EGGE..",
+".....oooqqpo.EJGE.EJGE..",
+"....oqqwqqpo.EHGGJJGGE..",
+"...oqwqqpqpo.EJJGJGGGE..",
+"..oqqqpqqppo.EJJGJGGGFE.",
+".ttoqqpqpppo.EGJGGGGFFE.",
+"oqmqqpqpppo...EGGGFFFE..",
+"Kqoooooooo......EEFFEE..",
+".P.X.J.J........J..J....",
+"PXOXJJ.JJP.P....J..J.P.P",
+"XOXX.GF..POXP..JJ.JJPOPX",
+"..G......XOOX.P..FG.XOXX",
+"..........FG..OX........"
+],
+"pal": {"t":"#a14808","E":"#3f2415","H":"#987e62","G":"#7d5b40","o":"#7e7362","J":"#906f0f","m":"#372f25","K":"#b2921b","q":"#bdb39b","p":"#a0947d","w":"#dad0bb","F":"#5e3c24","P":"#898b4c","X":"#505e3e","O":"#647025"}
+}

@@ -1,0 +1,26 @@
+{
+"id": "vattenho",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 32,
+"h": 16,
+"rader": [
+".oooooooooooooooooooooooooooooo.",
+"oddddddddddddddddddddddddddddddo",
+"oddddddddddddddddddddddddddddddo",
+"oddllllmlllllmlllllmlllllmlllddo",
+"oddllmlllllmlllllmlllllmlllllddo",
+"oddlmlllllmlllllmlllllmlllllmddo",
+"oddlllllmlllllmlllllmlllllmllddo",
+"oddllllmlllllmlllllmlllllmlllddo",
+"oddllmlllllmlllllmlllllmlllllddo",
+"oddddddddddddddddddddddddddddddo",
+"obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo",
+"obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo",
+"obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo",
+".oooaaaooooooooooooooooooaaaooo.",
+"...oaaao................oaaao...",
+"...oaaao................oaaao..."
+],
+"pal": {"o":"#24201d","d":"#987e62","l":"#61767a","m":"#8a9c9e","b":"#5e3c24","a":"#3f2415"}
+}

@@ -8,8 +8,10 @@ import type { Flik } from '../panel';
 // ett djur (steg 3.7.13): öppnas genom att trycka på det på kartan. Egenskaperna som staplar, som människornas (Björn efter
 // v159): namnet, stapeln och talet, och texten syns när man håller musen över raden. Stapeln för styrka och snabbhet är full
 // för den starkaste och snabbaste av arten (artens värde plus spannet mellan individerna, INDIVID.spann)
+// egenskapernas symboler (steg 11.14.1): styrkan musklen, snabbheten tassen, tåligheten skölden, modet svärdet och tamheten sin egen
+const EG_SYM: Record<string, string> = { Styrka: 'kb_sym_muskel', Snabbhet: 'kb_sym_tass', Tålighet: 'kb_sym_skold', Mod: 'kb_sym_svard', Tamhet: 'tamhet' };
 const rad = (namn: string, andel: number, varde: string, text: string, cls = '', sym = false) =>
-  `<dt title="${esc(text)}">${sym ? namn : esc(namn)}</dt><dd title="${esc(text)}">${cls === 'cond' ? condBar(andel) : bar(andel, cls)}<span>${varde}</span></dd>`;
+  `<dt title="${esc(text)}">${sym ? namn : EG_SYM[namn] && hasIcon(EG_SYM[namn]) ? `<span aria-label="${esc(namn)}">${iconImg(EG_SYM[namn], 16)}</span>` : esc(namn)}</dt><dd title="${esc(text)}">${cls === 'cond' ? condBar(andel) : bar(andel, cls)}<span>${varde}</span></dd>`;
 // porträttet på kortet (steg 9.2.51): det levande djuret från sidan, helt och i sina egna proportioner (bilden på kartan), aldrig
 // den döda bilden, som bara är kadavret på kartan. Gånger två, högst 64 punkter brett
 function levande(d: { art: string; id: number }) {

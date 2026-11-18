@@ -30,7 +30,7 @@ export const SLAG = {
 type Slag = keyof typeof SLAG;
 export const slagIkon = (k: Slag) => k === 'vila' ? 'zzz' : k === 'prata' ? undefined : 'a_' + k;
 // pixelsymbolen över huvudet: slagets, annars handlingens egen (ikon)
-export const actIkon = (a: Act) => { const sl = ACTS[a].slag; return sl ? slagIkon(sl) : ACTS[a].ikon; };
+export const actIkon = (a: Act) => { const sl = ACTS[a].slag; return ACTS[a].ikon ?? (sl ? slagIkon(sl) : undefined); }; // en egen symbol går före slagets (skattningen, steg 11.14.1)
 // tecknet för ett slag som inte har en pixelbild (personrutans tårtdiagram); handlingar utan slag har sitt eget (tecken)
 export const SLAG_TECKEN: Partial<Record<Slag, string>> = { vila: '💤', prata: '💬' };
 
@@ -45,7 +45,7 @@ interface ActDef {
   yrke?: string; // den som gör detta klart mer än andra kallas så (yrkestaggarna, YRKEN i seder.ts)
   slag?: Slag; // slaget av arbete, som syns som en symbol över huvudet medan den görs (SLAG)
   tecken?: string; // symbolen för en handling utan slag (personrutans tårtdiagram över tiden)
-  ikon?: string; // pixelsymbolen över huvudet för en handling utan slag (ikoner.ts), t.ex. toa (steg 3.10.3)
+  ikon?: string; // pixelsymbolen över huvudet (ikoner.ts), t.ex. toa (steg 3.10.3); går före slagets symbol (skattningen, steg 11.14.1)
   verb?: string; // vid en bänk (steg 3.10.3): det man gör, kort, som i "Arkiv rensar" och saken bredvid. Saknas = gör
   under?: Partial<Record<Task['phase'], string>>; // undertexten efter namnet på väg dit, där och på väg hem (underText, steg 3.10.3)
   // arbete för byn: färdigheten som övas. Är den samma som handlingen väljs arbetet i val.ts efter byns behov
@@ -143,7 +143,7 @@ const DEF = {
   runsten: { namn: 'Reser en runsten', slag: 'bygga', framme: true, stilla: true }, // steg 10.6.1 (skrift.ts)
   gravvard: { namn: 'Gör vården på en grav', slag: 'bygga', framme: true, stilla: true }, // steg 10.4.2
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' } },
-  foder: { namn: 'Föder barn', tecken: '🧒', stilla: true, nodFri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 9.5.29
+  foder: { namn: 'Föder barn', tecken: '🧒', ikon: 'foder', stilla: true, nodFri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 9.5.29
   forlossa: { namn: 'Hjälper till vid en förlossning', tecken: '🩹', stilla: true }, // steg 9.5.29
   barmat: { namn: 'Bär mat till fången', tecken: '🍽️', under: { go: 'hämtar mat', back: 'bär mat' }, framme: true }, // steg 11.12.2 (fangelse.ts)
   fangen: { namn: 'Sitter i fängelset', tecken: '🚪', ikon: 'fangelse', stilla: true, dygn: true, social: true }, // pratar genom dörren (steg 11.12.4)
@@ -261,7 +261,7 @@ const DEF = {
   ortSatta: { namn: 'Sätter en växt i krukan', slag: 'odla', verb: 'sätter en växt i krukan' }, // kruka.ts (steg 10.10.11)
   krukaHem: { namn: 'Bär sin lerkruka hem', slag: 'hantverk', verb: 'bär krukan hem', under: { go: 'går till krukan', do: 'tar upp krukan', back: 'bär krukan' } }, // kruka.ts (steg 10.11.17)
   mjolka: { namn: 'Mjölkar getterna', slag: 'odla', verb: 'mjölkar', yrke: 'Herde' }, // boskap.ts (steg 9.8.8)
-  skatta: { namn: 'Skattar bikupan', slag: 'odla', verb: 'skattar bikupan', yrke: 'Biodlare', redskap: { fackla: { namn: 'Skattar bikupan med en rykande fackla', tar: 'Tar en fackla för röken.', haller: 40 } }, slits: { enhet: 'skattningar', per: 'gang' } }, // bin.ts (steg 10.10.20)
+  skatta: { namn: 'Skattar bikupan', slag: 'odla', ikon: 'skatta', verb: 'skattar bikupan', yrke: 'Biodlare', redskap: { fackla: { namn: 'Skattar bikupan med en rykande fackla', tar: 'Tar en fackla för röken.', haller: 40 } }, slits: { enhet: 'skattningar', per: 'gang' } }, // bin.ts (steg 10.10.20)
   tatuera: { namn: 'Tatuerar', slag: 'hantverk', verb: 'tatuerar', framme: true, stilla: true }, // tatuering.ts (steg 10.7.5)
   klippa: { namn: 'Klipper fåren', slag: 'odla', verb: 'klipper', yrke: 'Herde' }, // boskap.ts (steg 9.8.5)
   hamla: { namn: 'Hamlar en björk', slag: 'odla', verb: 'hamlar', yrke: 'Herde' }, // lövtäkten (steg 9.8.16, slatter.ts)

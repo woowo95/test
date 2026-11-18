@@ -1,0 +1,29 @@
+{
+"id": "tam_hund_2_fram",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 10,
+"h": 19,
+"rader": [
+"..o.......",
+".omo..oo..",
+".okooomko.",
+".okmmmmko.",
+"ommmmmmmo.",
+"olllllllo.",
+"olklllklo.",
+".olckcllo.",
+"oddcccldo.",
+"oddddddddo",
+"oddmccmdo.",
+"oddmcmmdo.",
+"oddmcmmdo.",
+"oddmcmmdo.",
+"oddmommdo.",
+"oddmommdo.",
+"oddmommdo.",
+"oddlolldo.",
+"odololldo."
+],
+"pal": {"o":"#3f2415","m":"#7e7362","k":"#24201d","l":"#a0947d","c":"#bdb39b","d":"#5e3c24"}
+}

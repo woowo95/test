@@ -1,0 +1,22 @@
+{
+"id": "djurhorn",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 14,
+"h": 12,
+"rader": [
+"......ooooooo.",
+"....oommmmmmgo",
+"..oommmmmmmmmo",
+".ommmmmmooooo.",
+"olllkloo......",
+"ollklo........",
+"olkllo........",
+"oklllo........",
+"olkklo........",
+"okggko........",
+"olkklo........",
+".oklo........."
+],
+"pal": {"o":"#24201d","m":"#dad0bb","g":"#3f2415","l":"#bdb39b","k":"#a0947d"}
+}

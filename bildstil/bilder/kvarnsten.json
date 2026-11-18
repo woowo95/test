@@ -1,0 +1,20 @@
+{
+"id": "kvarnsten",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 16,
+"h": 10,
+"rader": [
+"...QQQQQQQQQQ...",
+".QTSTSSTSSSSRRQ.",
+"QTSRJKJLKJKJRSRQ",
+"QTSTJQQQQQQJTSRQ",
+"QSSTTQTTTSQTTSRQ",
+"QSSTTQTSSRQTSSRQ",
+"QSSTqQQQQQQqTRRQ",
+"QSSqwqwqqwqpqRRQ",
+".QRRSqwqqpqRRRQ.",
+"...QQQqpqpQQQ..."
+],
+"pal": {"Q":"#233035","T":"#8a9c9e","S":"#61767a","R":"#3e5156","J":"#906f0f","K":"#b2921b","L":"#d8b25f","q":"#bdb39b","w":"#dad0bb","p":"#a0947d"}
+}

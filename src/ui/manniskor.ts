@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { tidKvar, HALSA, ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, paKartan, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart, festNu, SPORT_AV, type SportDef } from '../sim';
+import { fordonI, tidKvar, HALSA, ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, paKartan, bordVid, byId, homeKind, bordaIHander, utrustning, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt, blocked, stationAt, isKlar, stationDef, soverNu, lekGang, kroppFart, festNu, SPORT_AV, type SportDef } from '../sim';
 // lågorna på den som brinner (steg 6.4.16, Björns val f6_brinner i steg 8.10.1): en låga med foten i (x, y) och längden l i
 // bilden f (0–3): ljus kärna, gul mitt och röd spets, en tunga vid sidan som byter sida, och ibland en lös flamma överst
 const BRAND_TAKT = 140, HOJD = [0, 2, 1, -1], SVAJ = [0, 1, 0, -1];
@@ -460,6 +460,14 @@ export function drawPeople(t: number) {
       const fx = fh ? sp.position.x + fh[0] + 0.5 : x, fy = fh ? sp.position.y + fh[1] + 0.5 : y - r * 0.4;
       if (ih.hoger && ih.vanster && ih.hoger.k !== ih.vanster.k) { bar(ih.hoger.k, fx + 2.5 * sv, fy, 4.8); bar(ih.vanster.k, fx - 2.5 * sv, fy, 4.8); }
       else bar(ih.hoger?.k ?? ih.vanster?.k ?? homeKind(tk), fx, fy, 4.8);
+    }
+    // fordonet (steg 10.10.2–10.10.3; Björns val, steg 11.14.1): kälken eller släden efter den som drar, vänd åt det håll hen går.
+    // Bilderna är vridna och speglade i ikoner.ts (kb_kalke_sida, _vast, _fram och _bak)
+    const fd = tk && !ligger ? fordonI(s, tk) : undefined;
+    if (fd && hasIcon('kb_' + fd.g.k + '_' + rikt)) {
+      const k = 'kb_' + fd.g.k + '_' + rikt, c = iconCanvas(k), fot = Math.round(y + r * 0.9);
+      const [kx, ky] = rikt === 'sida' ? [x - 5 - c.width, fot - c.height] : rikt === 'vast' ? [x + 5, fot - c.height] : rikt === 'bak' ? [x - c.width / 2, fot + 1] : [x - c.width / 2, fot - 18 - c.height];
+      markIcons.add(k, Math.round(kx), Math.round(ky), 1);
     }
     const mal = tk?.act === 'maltid' && tk.phase === 'do' && tk.mal, bord = mal && hasIcon(mal) ? bordVid(s, q) : undefined; // (vid bordet där hen syns sitta)
     if (mal && bord) { // den som äter vid bordet har maten i händerna och framför sig på bordet (steg 3.10.3)

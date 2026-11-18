@@ -1,24 +1,20 @@
 {
 "id": "tunika_ylle",
 "ritad": 1,
-"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
-"w": 16,
-"h": 14,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 14,
+"h": 10,
 "rader": [
-".rrrrrrrrrrrrrr.",
-"ruututurrtttstsr",
-"rututturrttsttsr",
-"rtututtsstttstsr",
-"rttuttttttsttssr",
-"rrrrtuttsttsrrrr",
-"...ruttutttsr...",
-"...rtutttstsr...",
-"...rttutsttsr...",
-"...ruttttstsr...",
-"...rttstttssr...",
-"...rtttststsr...",
-"...rssssssssr...",
-"...rrrrrrrrrr..."
+".EEEEEEEEEEEE.",
+"EpqpppEqppppoE",
+"EqppopEppoppoE",
+"EppopoEpopoooE",
+"EEEEEEFEEEEEEE",
+"EppoppEppopooE",
+"EpopooEpoooooE",
+"EoooooEooooooE",
+"EGGFGGEGFGGFFE",
+".EEEEEEEEEEEE."
 ],
-"pal": {"r": "#3f2415", "s": "#5e3c24", "t": "#7d5b40", "u": "#987e62"}
+"pal": {"E":"#3f2415","p":"#a0947d","q":"#bdb39b","o":"#7e7362","F":"#5e3c24","G":"#7d5b40"}
 }

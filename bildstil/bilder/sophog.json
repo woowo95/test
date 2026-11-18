@@ -1,0 +1,26 @@
+{
+"id": "sophog",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"................",
+"................",
+"...w....O.......",
+"...qo..PNO......",
+"...qo...N...O...",
+"....qoEENEEN....",
+"...EHqoHNGHGE...",
+"..EHGHoGHwGGqE..",
+".EGHGGHGFqqqpFE.",
+".EHGGFGHGooooGE.",
+".EGttsGFGGFPOFE.",
+".EFssrrGFGFNFFE.",
+".EFGFFGFFGFFFEE.",
+"..EFFGFFFFFFFE..",
+"...EEEEEEEEEE...",
+"................"
+],
+"pal": {"w":"#dad0bb","O":"#647025","q":"#bdb39b","o":"#7e7362","P":"#898b4c","N":"#4b4f00","E":"#3f2415","H":"#987e62","G":"#7d5b40","F":"#5e3c24","p":"#a0947d","t":"#a14808","s":"#742a01","r":"#521100"}
+}

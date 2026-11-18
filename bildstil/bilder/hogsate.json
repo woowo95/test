@@ -1,0 +1,26 @@
+{
+"id": "hogsate",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"..EEE......EEE..",
+".EHHGE....EHHGE.",
+".EHGFEEEEEEHGFE.",
+"..EGEGFGFGFEGE..",
+"..EGEFFFFFFEFE..",
+".EEGEEEEEEEEFEE.",
+".EHHHGHHHHGHHGE.",
+".EHGHHHHGHHHGGE.",
+".EGGHGGHGGGHGGE.",
+".EHGGGHGGHGGGGE.",
+".EGGGHGGGGGHGFE.",
+".EFFFFFFFFFFFFE.",
+".EFFFFFFFFFFFFE.",
+".EFFEEEEEEEEFFE.",
+".EFFE......EFFE.",
+".EEEE......EEEE."
+],
+"pal": {"E":"#3f2415","H":"#987e62","G":"#7d5b40","F":"#5e3c24"}
+}

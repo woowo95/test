@@ -1,0 +1,26 @@
+{
+"id": "tam_get_1",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 19,
+"h": 16,
+"rader": [
+"......FE...........",
+".....GF............",
+"...oGFo............",
+"..oqwqpo.........o.",
+".oqlqqpo........oqo",
+"oqqqqpqpo.......opo",
+".ooo.opqqoooooooooo",
+"..po.oqwqwqqwqqwqqo",
+"...o.opqqqwqqqwqqpo",
+".....opqpqpqpqpqppo",
+"......oppppppppppo.",
+"......oooooooooooo.",
+".......qpo....qpo..",
+".......qpo....qpo..",
+".......qpE....qpE..",
+".......EE.....EE..."
+],
+"pal": {"F":"#5e3c24","E":"#3f2415","G":"#7d5b40","o":"#7e7362","q":"#bdb39b","w":"#dad0bb","p":"#a0947d","l":"#2f261d"}
+}

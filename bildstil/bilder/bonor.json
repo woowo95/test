@@ -1,0 +1,17 @@
+{
+"id": "bonor",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 14,
+"h": 7,
+"rader": [
+".EEE..........",
+"EHHHEEEE......",
+"EGGGFHHGEEE...",
+".EEFFGGGFHHE..",
+"...EEEFFFGGGE.",
+"......EEEFFFFE",
+".........EEEE."
+],
+"pal": {"E":"#3f2415","H":"#987e62","G":"#7d5b40","F":"#5e3c24"}
+}
