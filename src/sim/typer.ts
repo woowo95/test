@@ -341,7 +341,7 @@ export interface State {
   log: LogEntry[];
   lastAgeIdx: number; lastGuardDay?: number; // lastGuardDay: kalenderns dygn då nattens vakt senast valdes (val.ts)
   arbBehov?: { mat: number; ved: number; arb: Record<'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol', number>; mal?: Record<string, { b: number; t: number }>; brist?: Record<string, number>; bv?: number }; // byns behov för arbetsordningen och arbetarna för varje rad, räknat en gång i timmen (dygn mat och ved, val.ts steg 6.1.12–6.1.13; materialens buffert och lagrets plats, forradsmal.ts steg 6.2.14)
-  taltBehov?: [number, number][]; // tälten resorna med en natt på vägen behövde när de packades: tiden och antalet (steg 11.11.1, taltVill i forradsmal.ts)
+  taltBehov?: [number, number][]; sadelBehov?: [number, number][]; // tälten resorna med en natt på vägen behövde när de packades: tiden och antalet (steg 11.11.1, taltVill i forradsmal.ts)
   forbruk?: Record<string, number>; // materialen som tagits ur förrådet, ett glidande medel över FORRAD.forbrukDygn (forradsmal.ts, steg 6.2.14)
   items?: Record<string, number>; // äldre sparfiler (före v40): sakerna och redskapen i förrådet som summor
   fire: Fire;

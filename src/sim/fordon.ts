@@ -32,11 +32,13 @@ export const FORDON_TAL = balans('fordon', {
   vagnLassPerStyrka: 120, // vagnens lass per steg av styrka: dubbelt så stort som slädens (steg 11.11.2)
   vagnTerrang: 0.5, // vagnens fart i terrängen (på väg och stig: 1)
   vagnSno: 0.1, // vagnens fart i full snö
+  packPerStyrka: 20, // packsadelns lass per steg av djurets styrka: hästen (3) 60, oxen (4) 80 (steg 11.11.3)
 });
 const medar = { vag: FORDON_TAL.kalkeBar, stig: FORDON_TAL.kalkeBar, terrang: FORDON_TAL.kalkeBar, sno: 1, is: 1 };
 export const FORDON: Record<string, FordonRad> = {
   kalke: { sak: 'kalke', namn: 'Kälke', drar: 'manniska', lass: FORDON_TAL.kalkeLass, lassPerStyrka: 0, fart: medar, tar: true },
   slade: { sak: 'slade', namn: 'Släde', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.lassPerStyrka, fart: medar, tar: true },
+  packsadel: { sak: 'packsadel', namn: 'Packsadel', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.packPerStyrka, fart: { vag: 1, stig: 1, terrang: 1, sno: 1, is: 1 }, tar: false, fardsatt: 'packdjur' }, // på resorna, aldrig i byn (steg 11.11.3)
   vagn: { sak: 'vagn', namn: 'Vagn', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.vagnLassPerStyrka, fart: { vag: 1, stig: 1, terrang: FORDON_TAL.vagnTerrang, sno: FORDON_TAL.vagnSno, is: FORDON_TAL.vagnTerrang }, tar: true, fardsatt: 'vagn' }, // byns egen vagn (steg 11.11.2)
 };
 export const fordonRad = (k: string) => Object.values(FORDON).find(f => f.sak === k);

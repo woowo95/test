@@ -2122,7 +2122,8 @@ SCENARIER.utvagar = {
       const r = SIM.vagenRutor(s, sl); sl.pos = Math.floor((r.length - 1) * 0.3); sl.ruta = r[sl.pos]; sl.gang = 0;
       sl.varde = 200; sl.pack = { brod: 60, vattensack: 4, ...o.pack }; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 4, foder: 0 };
       if (o.hast) {
-        const d: SIM.Tamdjur = { ...(s.tamdjur?.[0] ?? {}), id: 900002, art: 'hast', x: folk[0]!.x, y: folk[0]!.y, fodd: s.now - 5 * SIM.DAY } as SIM.Tamdjur;
+        let id = 900002; while (SIM.lassAv(SIM.FORDON.packsadel!, { art: 'hast', id }) < SIM.RESA.personVikt) id++; // en häst som orkar bära en människa (individens styrka, steg 10.10.29)
+        const d: SIM.Tamdjur = { ...(s.tamdjur?.[0] ?? {}), id, art: 'hast', x: folk[0]!.x, y: folk[0]!.y, fodd: s.now - 5 * SIM.DAY } as SIM.Tamdjur;
         delete (d as { dog?: number }).dog; (s.tamdjur ??= []).push(d); SIM.djurMed(sl, d.id);
       }
       // den sista bröt båda benen
@@ -4078,6 +4079,59 @@ SCENARIER.vagn = {
       [`lasset är dubbelt med samma djur (${lV} mot ${lS})`, lV === 2 * lS && lV > 0],
       [`i terrängen är farten hälften av farten på stig, på samma ruta (${terr.toFixed(2)} mot ${stig.toFixed(2)}, ${stigU})`, i >= 0 && stigU === 'stig' && Math.abs(terr * 2 - stig) < 1e-9],
       [`i full snö går vagnen en tiondel (${fSno.toFixed(2)}) och släden tas (${valSno?.g.k})`, Math.abs(fSno - SIM.FORDON_TAL.vagnSno * SIM.tamEg(hast).snabbhet) < 1e-9 && valSno?.g.k === 'slade'],
+    ];
+  },
+};
+
+SCENARIER.packsadel = {
+  text: 'Packsadeln (steg 11.11.3, FORDON.packsadel och valjPackdjur i resa.ts): en häst eller oxe med packsadel bär styrkan gånger 20 på resan och går i sin egen fart överallt; packskedet tar djur med sadel så länge packningen väger mer än sällskapet bär, det som lyfts med båda händerna läggs aldrig på sadeln, och i byn väljs sadeln aldrig',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr, m = SIM.bynsMitt(s);
+    const p = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q))[0]!;
+    for (const d of SIM.tamdjurOf(s)) d.agare = -1; // byns egna dragdjur räknas inte; bara djuren nedan
+    const hast = SIM.nyttTamdjur(s, 'hast', m.x, m.y, undefined, s.now - 5 * SIM.DAY); hast.agare = undefined;
+    const oxe = SIM.nyttTamdjur(s, 'oxe', m.x, m.y, undefined, s.now - 5 * SIM.DAY); oxe.agare = -1;
+    const ps = SIM.FORDON.packsadel!, r = SIM.RECEPT.packsadel;
+    const vanligHast = SIM.lassAv(ps, { art: 'hast' }), vanligOxe = SIM.lassAv(ps, { art: 'oxe' });
+    // bärförmågan: en resenär och hästen, utan och med sadel
+    const sl = SIM.nyttSallskap(s, p, mal, 'handel')!;
+    SIM.djurMed(sl, hast.id);
+    const utanSadel = SIM.packbehov(s, sl)!.bar, ensam = SIM.barResenar(s, p);
+    sl.pack = { packsadel: 1 };
+    const medSadel = SIM.packbehov(s, sl)!.bar;
+    // lastens broms: samma packning mot hela bärförmågan
+    sl.pack = { packsadel: 1, skinn: Math.floor(0.75 * medSadel / SIM.viktOf('skinn')) };
+    const x = SIM.packVikt(sl) / medSadel, lf = SIM.lastFart(s, sl), vantat = x <= SIM.RESA.lastFran ? 1 : Math.max(SIM.RESA.lastMin, 1 - (1 - SIM.RESA.lastMin) * (x - SIM.RESA.lastFran) / (1 - SIM.RESA.lastFran));
+    // en packoxe sänker farten till oxens
+    sl.pack = { packsadel: 1 }; sl.djur = [];
+    const f0 = SIM.sallskapFart(s, sl); sl.djur = [oxe.id]; const f1 = SIM.sallskapFart(s, sl);
+    const lang = Math.min(1, SIM.personFart(s, p)), oxFart = SIM.tamEg(oxe).snabbhet;
+    // packskedet: mycket skinn att sälja, en sadel i byn och hästen ledig
+    const s2 = SIM.cloneState(testBy(3)), p2 = s2.people.find(q => q.id === p.id)!;
+    for (const d of SIM.tamdjurOf(s2)) d.agare = -1;
+    const h2 = SIM.nyttTamdjur(s2, 'hast', m.x, m.y, undefined, s2.now - 5 * SIM.DAY); h2.agare = undefined;
+    SIM.setAmount(s2, 'packsadel', 1); SIM.setAmount(s2, 'skinn', 200); SIM.setAmount(s2, 'virke', 20); SIM.setAmount(s2, 'brod', 60);
+    const vill0 = SIM.tillverkVill(s2, SIM.TILLVERKA.sy_packsadel!);
+    const sl2 = SIM.nyttSallskap(s2, p2, mal, 'handel')!;
+    sl2.varor = [['virke', 5], ['skinn', 60]];
+    const ok = SIM.borjaPacka(s2, sl2), bar2 = SIM.packbehov(s2, sl2)!.bar;
+    const vill1 = SIM.tillverkVill(s2, SIM.TILLVERKA.sy_packsadel!);
+    // i byn: bara en packsadel som ting
+    const s3 = SIM.cloneState(testBy(3)), p3 = s3.people.find(q => q.id === p.id)!;
+    for (const g of SIM.tingOf(s3)) if (SIM.fordonRad(g.k)) g.hos = -99;
+    const h3 = SIM.nyttTamdjur(s3, 'hast', m.x, m.y, undefined, s3.now - 5 * SIM.DAY); h3.agare = undefined;
+    const t3 = SIM.newTing(s3, 'packsadel', 1, SIM.BYN); t3.x = Math.floor(m.x); t3.y = Math.floor(m.y);
+    const iByn = SIM.valjFordon(s3, p3, 'virke', m.x + 3, m.y, 1);
+    return [
+      [`packsadeln sys vid slöjdbänken av 3 skinn, 2 rep och 2 grenar på 5 minuter, med ryggsäckens teknik`, r.av.skinn === 3 && r.av.rep === 2 && r.av.grenar === 2 && r.min === 5 && r.tek === 'ryggsack' && SIM.STATIONER.flatarbank.gor.includes('sy_packsadel')],
+      [`en vanlig häst bär 60 och en vanlig oxe 80 med sadeln (${vanligHast}, ${vanligOxe}), full fart på alla underlag`, vanligHast === 60 && vanligOxe === 80 && Object.values(ps.fart).every(v => v === 1)],
+      [`med ryggsäck och en vanlig häst växer en resenärs bärförmåga från 40 till ${SIM.RESA.hander + SIM.RESA.rygg + vanligHast}; här ${ensam} blir ${utanSadel} med hästen utan sadel och ${medSadel.toFixed(1)} med (${SIM.lassAv(ps, hast).toFixed(1)} för just den hästen)`, SIM.RESA.hander + SIM.RESA.rygg === 40 && SIM.RESA.hander + SIM.RESA.rygg + vanligHast === 100 && utanSadel === ensam && Math.abs(medSadel - ensam - SIM.lassAv(ps, hast)) < 1e-9],
+      [`lasten bromsar efter hela packningen mot hela bärförmågan (${lf.toFixed(3)} vid ${(x * 100).toFixed(0)} %)`, x > SIM.RESA.lastFran && Math.abs(lf - vantat) < 1e-9 && lf < 1],
+      [`en packoxe sänker farten till oxens (${f0.toFixed(3)} → ${f1.toFixed(3)}, oxen ${oxFart.toFixed(3)})`, oxFart < lang && Math.abs(f1 / f0 - oxFart / lang) < 1e-9],
+      [`packskedet tar hästen med sadeln när skinnet inte ryms (${sl2.djur.length} djur, ${sl2.pack.packsadel ?? 0} sadel, ${sl2.pack.skinn ?? 0} skinn, bär ${bar2.toFixed(0)})`, ok && sl2.djur.includes(h2.id) && sl2.pack.packsadel === 1 && (sl2.pack.skinn ?? 0) * SIM.viktOf('skinn') > SIM.barResenar(s2, p2) && sl2.insatser.some(i => i.djur === h2.id)],
+      [`virket läggs inte på sadeln: en resenär bär bara det som ryms i händerna (${sl2.pack.virke ?? 0} virke)`, (sl2.pack.virke ?? 0) * SIM.viktOf('virke') <= SIM.RESA.hander],
+      [`byn vill ha packsadlar när ett sällskap ville lasta djur (${vill0} → ${vill1})`, vill0 === 0 && vill1 >= 1],
+      [`i byn väljs sadeln aldrig för körningarna (${iByn?.g.k ?? 'händerna'})`, iByn?.g.k !== 'packsadel' && !ps.tar],
     ];
   },
 };

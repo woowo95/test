@@ -22,7 +22,8 @@ import { Varlden, varldMark } from './varlden';
 import { byPlats, varldPlatserPa } from './landmarken';
 import { clamp } from './slump';
 import { ryggsack } from './utrustning';
-import { tamArt, tamdjurOf } from './tamdjur';
+import { Tamdjur, tamArt, tamdjurOf, tamEg } from './tamdjur';
+import { FORDON, lassAv, lediga } from './fordon';
 import { viktOf } from './saker';
 import { grundvarde } from './varde';
 import { SILVER, silverMellan } from './gruva';
@@ -72,7 +73,6 @@ export const RESA = balans('resa', {
   utanVatten: 0.5, // en sträcka utan vatten längre än så många dygn kräver en vattensäck per resenär
   foderPerDygn: 2, // hö per djur och dygn där det inte går att beta
   hander: 20, rygg: 20, // vikt en resenär bär i händerna och i en ryggsäck
-  packPerStyrka: 20, // ett packdjurs last för varje steg av dess styrka
   andelVarde: 40, // en andel per så mycket i värde för varje insats (Andelarna i tal)
   packTim: 6, // timmar en resenär väntar vid samlingsplatsen innan hen väljer om (sällskapet ställs in i steg 11.5.11)
   // behoven på vägen (steg 11.5.6): orken per timme i gång och i nattens rast, och tappet en natt utan tak
@@ -247,7 +247,13 @@ export function vagDygn(s: State, fran: number, till: number): VagDygn | undefin
 }
 // vad en resenär bär och vad ett djur bär
 export const barResenar = (s: State, p: Person) => RESA.hander + (ryggsack(s, p) ? RESA.rygg : 0);
-export const barDjur = (s: State, id: number) => { const d = tamdjurOf(s).find(q => q.id === id); return d ? (tamArt(d.art).styrka ?? 0) * RESA.packPerStyrka : 0; };
+// ett djur bär med packsadel (FORDON.packsadel, steg 11.11.3); utan sadel bär det inget
+export const barDjur = (s: State, id: number) => { const d = (s.tamdjur ?? []).find(q => q.id === id && q.dog === undefined); return d ? lassAv(FORDON.packsadel!, d) : 0; };
+// djuren i sällskapet bär: lika många som det finns packsadlar i packningen, de starkaste först
+export function barDjurAlla(s: State, sl: Sallskap, pack = sl.pack) {
+  const lass = sl.djur.map(id => barDjur(s, id)).sort((a, b) => b - a);
+  return lass.slice(0, Math.floor((pack.packsadel ?? 0) + 1e-9)).reduce((a, n) => a + n, 0);
+}
 
 // har en resa som börjar t0 och tar dygn dygn en natt (klockan 19–7, som isLight)? En resa på tolv timmar eller mer har alltid det
 export function harNatt(t0: number, dygn: number) {
@@ -257,7 +263,7 @@ export function harNatt(t0: number, dygn: number) {
 }
 // packningens behov för en resa: maten, vattensäckarna och fodret i hela saker, dygnen och bärförmågan. Går inte allt in tas
 // maten före fodret, och vattnet först (utan vatten kommer ingen fram)
-export interface Packbehov { dygn: number; mat: number; vatten: number; foder: number; talt: number; taltBehov: number; bar: number; vikt: number; ryms: boolean } // talt: tälten som packas (de byn har), taltBehov: de som behövs (steg 11.11.1)
+export interface Packbehov { dygn: number; mat: number; vatten: number; foder: number; talt: number; taltBehov: number; bar: number; vikt: number; behov: number; ryms: boolean } // talt: tälten som packas (de byn har), taltBehov: de som behövs (steg 11.11.1)
 export function packbehov(s: State, sl: Sallskap): Packbehov | undefined {
   const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
   if (!vl || !v || !hem || !mal) return undefined;
@@ -265,7 +271,7 @@ export function packbehov(s: State, sl: Sallskap): Packbehov | undefined {
   if (!vd) return undefined;
   const folk = sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p), led = folk.find(p => p.id === sl.ledare) ?? folk[0];
   const n = folk.length, dygn = 2 * vd.dygn + stannarFor(sl);
-  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) + barDjurAlla(s, sl);
   const vatten = vd.torr > RESA.utanVatten ? n : 0;
   let mat = Math.ceil(n * RESA.matPerDygn * dygn * (led ? marginal(led) : RESA.margMitt) - 1e-9);
   let foder = Math.ceil(sl.djur.length * RESA.foderPerDygn * 2 * vd.utanBete - 1e-9);
@@ -280,7 +286,7 @@ export function packbehov(s: State, sl: Sallskap): Packbehov | undefined {
     talt = Math.max(0, Math.min(talt, Math.floor(rum / vTalt))); rum -= talt * vTalt;
     foder = Math.max(0, Math.min(foder, Math.floor(rum / vFoder)));
   }
-  return { dygn: Math.round(dygn * 100) / 100, mat, vatten, foder, talt, taltBehov, bar, vikt: mat * vMat + vatten * vVatten + foder * vFoder + talt * vTalt, ryms };
+  return { dygn: Math.round(dygn * 100) / 100, mat, vatten, foder, talt, taltBehov, bar, behov, vikt: mat * vMat + vatten * vVatten + foder * vFoder + talt * vTalt, ryms };
 }
 
 // ---------- boken över insatserna (steg 11.5.4, Andelarna i tal) ----------
@@ -333,11 +339,38 @@ function taIPackning(s: State, sl: Sallskap, k: string, n: number, led?: Person)
   const ag = use(s, led, k, n);
   for (const o in ag) { const m = Math.floor(ag[o] + 1e-9); if (m > 0) satsa(sl, o === String(BYN) ? 'by' : +o, k, m); }
 }
+// vikten av det ledaren tänkt sälja som finns i byn och inte lyfts med båda händerna (det bärs i händerna)
+const varorVikt = (s: State, sl: Sallskap) => (sl.varor ?? []).reduce((a, [k, n]) => a + (SAKER[k]?.lyft ? 0 : Math.min(n, Math.floor(amountOf(s, k) + 1e-9)) * viktOf(k)), 0);
+// packdjuren (steg 11.11.3): de lediga hästarna och oxarna resenärerna får ta (egna, familjens och byns), mest lass per tid
+// först, tas med en packsadel var så länge packningen och varorna väger mer än sällskapet bär. Djuret och sadeln skrivs
+// som insatser. De djur som skulle behövts men inte fick någon sadel räknas i det byn vill ha (sadelVill)
+function valjPackdjur(s: State, sl: Sallskap, led?: Person) {
+  const upptagna = new Set(sallskapNu(s.varld).flatMap(x => x.djur)), sedda = new Set<number>();
+  const kand: Tamdjur[] = [];
+  for (const id of sl.medl) {
+    const p = s.people.find(q => q.id === id);
+    if (p) for (const d of lediga(s, p)) if (!upptagna.has(d.id) && !sedda.has(d.id)) { sedda.add(d.id); kand.push(d); }
+  }
+  const varde = (d: Tamdjur) => lassAv(FORDON.packsadel!, d) * tamEg(d).snabbhet;
+  kand.sort((a, b) => varde(b) - varde(a) || a.id - b.id);
+  let sadlar = Math.floor(amountOf(s, 'packsadel') + 1e-9), utan = 0, behov = 0;
+  for (const d of kand) {
+    const pb = packbehov(s, sl);
+    if (!pb || pb.behov + varorVikt(s, sl) <= pb.bar + utan + 1e-9) break;
+    behov++;
+    if (sadlar > 0) { satsaDjur(s, sl, d.id); taIPackning(s, sl, 'packsadel', 1, led); sadlar--; }
+    else utan += lassAv(FORDON.packsadel!, d);
+  }
+  if (behov > 0 && sl.by === s.varld?.huvud) (s.sadelBehov = (s.sadelBehov ?? []).filter(([t]) => t > s.now - DAY)).push([s.now, behov]);
+}
 export function borjaPacka(s: State, sl: Sallskap): boolean {
-  if (sl.skal === 'hamta' && sl.skede === 'samlas') sl.nere = gruvPlanFor(s, sl)?.nere ?? RESMAL.hamta.stannar; // tiden nere (steg 11.10.1)
-  const pb = packbehov(s, sl), ut = utgang(s, sl);
-  if (sl.skede !== 'samlas' || !pb || !ut) return false;
+  const ut0 = sl.skede === 'samlas' ? utgang(s, sl) : undefined;
+  if (!ut0) return false;
   const led = s.people.find(p => p.id === sl.ledare);
+  valjPackdjur(s, sl, led);
+  if (sl.skal === 'hamta') sl.nere = gruvPlanFor(s, sl)?.nere ?? RESMAL.hamta.stannar; // tiden nere (steg 11.10.1)
+  const pb = packbehov(s, sl), ut = ut0;
+  if (!pb) return false;
   let mat = pb.mat;
   for (const k of [...FOOD].sort((a, b) => amountOf(s, b) - amountOf(s, a))) {
     if (mat <= 0) break;
@@ -349,10 +382,11 @@ export function borjaPacka(s: State, sl: Sallskap): boolean {
   if (pb.talt > 0) taIPackning(s, sl, 'talt', pb.talt, led); // tälten (steg 11.11.1)
   if (pb.taltBehov > 0 && sl.by === s.varld?.huvud) (s.taltBehov = (s.taltBehov ?? []).filter(([t]) => t > s.now - DAY)).push([s.now, pb.taltBehov]); // det byn vill ha
   // varorna att sälja i den bärförmåga som blir över (steg 11.5.10)
-  let rum = pb.bar - packVikt(sl);
+  // det som lyfts med båda händerna bärs bara i händerna, aldrig på en packsadel (steg 11.11.3)
+  let rum = pb.bar - packVikt(sl), hander = sl.medl.length * RESA.hander;
   for (const [k, n] of sl.varor ?? []) {
-    const m = Math.min(n, Math.floor(amountOf(s, k) + 1e-9), Math.floor(rum / Math.max(1e-9, viktOf(k))));
-    if (m > 0) { taIPackning(s, sl, k, m, led); rum -= m * viktOf(k); }
+    const lyft = !!SAKER[k]?.lyft, m = Math.min(n, Math.floor(amountOf(s, k) + 1e-9), Math.floor(Math.min(rum, lyft ? hander : Infinity) / Math.max(1e-9, viktOf(k))));
+    if (m > 0) { taIPackning(s, sl, k, m, led); rum -= m * viktOf(k); if (lyft) hander -= m * viktOf(k); }
   }
   sl.skede = 'packar'; sl.ut = ut; sl.vid = []; sl.packar = s.now;
   return true;
@@ -495,7 +529,7 @@ export function gruvPlanFor(s: State, sl: Sallskap) {
   return silverPlan(sl.medl.length, pb.bar - pb.vatten * viktOf('vattensack') - pb.foder * viktOf('torrgras') - pb.talt * viktOf('talt'), vag, led ? marginal(led) : RESA.margMitt);
 }
 // sällskapets bärförmåga nu: resenärerna och djuren
-const barNu = (s: State, sl: Sallskap) => resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+const barNu = (s: State, sl: Sallskap) => resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + barDjurAlla(s, sl);
 // en bit nere i gruvan: varje resenär bryter silver i takten efter timmarna nere (silverMellan), och silvret läggs i packningen i hela saker så länge
 // det ryms; när sällskapet bär fullt är tiden nere slut. Arbetet har en risk för olycka per person och timme (SILVER.olycka)
 function gruvBit(s: State, sl: Sallskap, t: number, dt: number) {
@@ -546,7 +580,7 @@ export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
   const buren = om.buren ?? sl.buren ?? [], bars = new Set(buren.map(b => b[0])), bar_ = buren.filter(b => b[1] === 'bar').length;
   const folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id));
   // den som bärs bär inget; en bår tar två bärares händer, och den som åker på djuret eller vagnen väger som packning
-  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + barDjurAlla(s, sl);
   const vikt = packVikt(sl, om.pack ?? sl.pack) + RESA.personVikt * (buren.length - bar_);
   const x = bar > 0 ? vikt / bar : 1;
   return x <= RESA.lastFran ? 1 : Math.max(RESA.lastMin, 1 - (1 - RESA.lastMin) * (x - RESA.lastFran) / (1 - RESA.lastFran));
@@ -554,7 +588,7 @@ export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
 export function sallskapFart(s: State, sl: Sallskap, om: FartOm = {}) {
   const buren = om.buren ?? sl.buren ?? [], bars = new Set(buren.map(b => b[0]));
   const folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id)), djur = (s.tamdjur ?? []).filter(d => sl.djur.includes(d.id) && d.dog === undefined);
-  const lang = Math.min(1, ...folk.map(p => personFart(s, p)), ...djur.map(d => tamArt(d.art).snabb ?? 1));
+  const lang = Math.min(1, ...folk.map(p => personFart(s, p)), ...djur.map(d => tamEg(d).snabbhet)); // djurets egen snabbhet (steg 11.11.3)
   return lang * (buren.some(b => b[1] === 'bar') ? RESA.barFart : 1) * lastFart(s, sl, om) * (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * orkFart(sl, om.ork);
 }
 // vägen bort till målet eller hem igen
@@ -1033,7 +1067,7 @@ export function uppdragFram(s: State, sl: Sallskap, t: number) {
   const fick: Record<string, number> = {};
   let namn = u ? uppdragDef(u.k).namn : ruin ? 'Ruinskatten' : 'Uppdraget', hur: UppdragUtfall['hur'] = 'tomt', text: string;
   if (ruin && (!u || u.mal !== sl.mal)) {
-    const bar = resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+    const bar = resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + barDjurAlla(s, sl);
     Object.assign(fick, taRuin(s, vl, ruin, t, Math.max(0, bar - packVikt(sl)), viktOf));
     hur = Object.keys(fick).length ? 'klart' : 'tomt'; namn = 'Ruinskatten';
     text = hur === 'klart' ? `Tog det som fanns kvar i ruinen: ${sakLista(fick)}.` : 'Ruinen var tom: någon hade hunnit före, eller allt hade vittrat.';
@@ -1118,7 +1152,7 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
   },
   tappad: {
     namn: 'Tappad utrustning', dygn: 0.03, fardighet: 'hantverk',
-    risk: (s, sl) => { const bar = resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0); return 1 + RESA.tappadLast * (bar > 0 ? Math.min(1, packVikt(sl) / bar) : 0); },
+    risk: (s, sl) => { const bar = resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + barDjurAlla(s, sl); return 1 + RESA.tappadLast * (bar > 0 ? Math.min(1, packVikt(sl) / bar) : 0); },
     gor: (s, sl, t) => {
       const saker = Object.keys(sl.pack).filter(k => !FOOD.includes(k) && (sl.pack[k] ?? 0) >= 1).sort();
       const alla = saker.reduce((a, k) => a + Math.floor(sl.pack[k]!), 0);

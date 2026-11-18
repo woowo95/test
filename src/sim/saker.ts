@@ -175,6 +175,7 @@ const DEF = {
   leksak: { namn: 'Leksak', skaffa: RECEPT.leksak, stack: 10, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.4
   snara: { namn: 'Snara', skaffa: RECEPT.snara, stack: 5, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.10
   bur: { namn: 'Bur', skaffa: RECEPT.bur, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 10.10.13
+  packsadel: { namn: 'Packsadel', skaffa: RECEPT.packsadel, stack: 1, vikt: 6, mapp: 'Redskap' }, // packsadeln (steg 11.11.3): läggs på hästen eller oxen på en resa
   talt: { namn: 'Tält', skaffa: RECEPT.talt, stack: 1, vikt: 10, mapp: 'Redskap' }, // tältet (steg 11.11.1): rymmer fyra en natt på resan
   grop: { namn: 'Fångstgrop', skaffa: RECEPT.grop, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 7.5.11
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)

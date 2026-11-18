@@ -274,9 +274,11 @@ export const villAv = (s: State, g: string) => { const n = REDSKAPMAL[g](s); ret
 export const tillverkVill = (s: State, d: TillverkDef) => arMaterial(d.ger) ? villHaAv(s, d.ger) : TILLVERKVILL[d.ger]?.(s) ?? d.vill;
 // det tillverkade vars antal räknas ur byn och inte är ett fast tal i TILLVERKA
 const TILLVERKVILL: Record<string, (s: State) => number> = {
+  packsadel: s => behovVill(s.sadelBehov, s.now), // packsadlarna: så många djur som byns största sällskap ville lasta det senaste året (steg 11.11.3)
   talt: taltVill, // tälten: så många som byns största sällskap med en natt på vägen behövde det senaste året (steg 11.11.1)
 };
 // tälten byn vill ha: det största behovet bland resorna med en natt som packats det senaste året (ett dygn)
+export function behovVill(b: [number, number][] | undefined, nu: number) { let n = 0; for (const [t, m] of b ?? []) if (t > nu - DAY) n = Math.max(n, m); return n; }
 export function taltVill(s: State) { let n = 0; for (const [t, m] of s.taltBehov ?? []) if (t > s.now - DAY) n = Math.max(n, m); return n; }
 // en station av sorten k: bufferten är en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5): en per den som sover
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
