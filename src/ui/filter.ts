@@ -20,7 +20,7 @@ knappar.addEventListener('click', e => {
   if (b.dataset.stam) {
     ui.stammar = !ui.stammar;
     b.setAttribute('aria-pressed', String(ui.stammar));
-    if (visaStammar(ui.stammar)) drawTerrain(true);
+    if (visaStammar(ui.stammar)) drawTerrain(true, false);
     return;
   }
   const g = b.dataset.g as Grupp;

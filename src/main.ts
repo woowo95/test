@@ -74,13 +74,13 @@ function nyBy() {
   ui.annanBy = undefined; ui.forskjut = 0; // en ny by ersätter den egna byn
   setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
   cam.x = -1; layout();
-  drawTerrain(true); drawPlants(true); saveLocal(); saveDb();
+  drawTerrain(true, false); drawPlants(true); saveLocal(); saveDb(); // kartan ritas efter hand, det som syns först
 }
-// en inläst by, räknad ikapp till nu
+// en inläst by, räknad ikapp till nu. Kartan ritas först när byn är ikapp (catchUp), och då efter hand i bildrutorna,
+// det som syns först: en stor by tar annars flera sekunder att rita, och en minut i en mobil
 async function laddaIn(by: State) {
   setByn(by);
   cam.x = -1; layout();
-  drawTerrain(true); drawPlants(true);
   renderClock(); renderPanel(true);
   await catchUp(klockan());
 }
@@ -109,7 +109,6 @@ $('testToggle').addEventListener('change', async e => {
   } else {
     leaveTest();
     if (realState) { testBortaIByn(realState); bytBy(realState); realState = null; } // det som togs bort i testläget tas bort i byn (steg 4.5.7.8)
-    drawTerrain(true); drawPlants(true);
     await catchUp(klockan());
   }
   renderClock(); renderPanel(true); renderByar();
@@ -272,6 +271,7 @@ async function boot() {
   if (annan) { $('loading').hidden = true; await bytTill(annan); }
   if (!ui.annanBy) {
     const loaded = await loadSaves(nyareIMolnet);
+    $('loading').hidden = true; // byn är hittad: förloppet för ikappräkningen syns direkt
     if (loaded) await laddaIn(loaded);
     else nyBy();
   }
