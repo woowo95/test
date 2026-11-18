@@ -79,7 +79,7 @@ import { arbetsTimme, chooseTask, nastaBuske, nastaRedskap, spotFor } from './va
 import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
-import { resaSteg, resaBehov } from './resa';
+import { resaSteg, resaBehov, ridBredvid } from './resa';
 import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
 import { skrivHuvudRad } from './radtal';
 import { varldSteg } from './varldslag';
@@ -887,8 +887,8 @@ function walk(s: State, p: Person, tk: Task, left: number) {
     if (gangVakt.lyss) gangVakt.lyss(s, p, fart * sp, morkFart(s, p) < 1); // vakten i testerna (steg 9.2.101)
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
-    if (d > can) { p.x += dx / d * can; p.y += dy / d * can; if (fo) dragdjurBredvid(p, fo); return { used: left, framme: false }; } // tiden räckte inte hela vägen; dragdjuret går bredvid (steg 10.10.3)
-    p.x = wx; p.y = wy; budget -= d / sp; if (fo) dragdjurBredvid(p, fo);
+    if (d > can) { p.x += dx / d * can; p.y += dy / d * can; if (fo) dragdjurBredvid(p, fo); if (tk.act === 'resa') ridBredvid(s, p); return { used: left, framme: false }; } // tiden räckte inte hela vägen; dragdjuret går bredvid (steg 10.10.3)
+    p.x = wx; p.y = wy; budget -= d / sp; if (fo) dragdjurBredvid(p, fo); if (tk.act === 'resa') ridBredvid(s, p); // ryttaren sitter på hästen ut ur byn (steg 11.11.4)
     if (sist) { tk.path = undefined; tk.pk = undefined; spara(s, p, klocka()); return { used: left - budget / fart, framme: true }; }
     tk.path!.shift(); spara(s, p, klocka());
     if (budget <= 0) return { used: left, framme: false };

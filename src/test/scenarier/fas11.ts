@@ -4135,3 +4135,56 @@ SCENARIER.packsadel = {
     ];
   },
 };
+
+SCENARIER.ridning = {
+  text: 'Ridningen (steg 11.11.4, FORDON.ridsadel och valjPackdjur i resa.ts): den som reser ut med häst och ridsadel rider i en och en halv gång hästens snabbhet på världskartan; sällskapet går som den långsammaste, oxen rids aldrig, packskedet prövar varje delning av hästarna och tar den där packningen ryms och resan går fortast, och i byn sitter ingen på hästen förrän sällskapet går ut',
+  kor: () => {
+    const bas = testBy(3), vl0 = bas.varld!, hb = SIM.byPlats(vl0, vl0.huvud!)!, mal = hb.grannar![0]!.nr, m = SIM.bynsMitt(bas);
+    const vuxna = SIM.living(bas).filter(q => SIM.ageOf(q, bas.now) >= 18 && SIM.ageOf(q, bas.now) < 50 && SIM.kanGa(q)).map(q => q.id);
+    const ny = (o: { hastar?: number; oxar?: number; rid?: number; pack?: number; skinn?: number; folk?: number } = {}) => {
+      const s = SIM.cloneState(bas);
+      for (const d of SIM.tamdjurOf(s)) d.agare = -1;
+      const djur: SIM.Tamdjur[] = [];
+      for (let i = 0; i < (o.hastar ?? 0); i++) { const d = SIM.nyttTamdjur(s, 'hast', m.x, m.y, undefined, s.now - 5 * SIM.DAY); d.agare = undefined; djur.push(d); }
+      for (let i = 0; i < (o.oxar ?? 0); i++) { const d = SIM.nyttTamdjur(s, 'oxe', m.x, m.y, undefined, s.now - 5 * SIM.DAY); d.agare = undefined; djur.push(d); }
+      SIM.setAmount(s, 'ridsadel', o.rid ?? 0); SIM.setAmount(s, 'packsadel', o.pack ?? 0); SIM.setAmount(s, 'skinn', 300); SIM.setAmount(s, 'brod', 60);
+      const folk = vuxna.slice(0, o.folk ?? 1).map(id => s.people.find(q => q.id === id)!);
+      const sl = SIM.nyttSallskap(s, folk[0]!, mal, 'handel')!;
+      for (const q of folk.slice(1)) SIM.foljMed(s.varld!, sl, q);
+      if (o.skinn) sl.varor = [['skinn', o.skinn]];
+      return { s, sl, folk, djur };
+    };
+    // farten: en ensam ryttare mot samma person till fots, två hästar med olika snabbhet
+    const a = ny({ hastar: 2 }), p = a.folk[0]!;
+    const [h1, h2] = [...a.djur].sort((x, y) => SIM.tamEg(x).snabbhet - SIM.tamEg(y).snabbhet);
+    const fots = SIM.sallskapFart(a.s, a.sl);
+    SIM.djurMed(a.sl, h1!.id); a.sl.rider = [[p.id, h1!.id]]; const lang = SIM.sallskapFart(a.s, a.sl);
+    a.sl.djur = [h2!.id]; a.sl.rider = [[p.id, h2!.id]]; const snabb = SIM.sallskapFart(a.s, a.sl);
+    const vanlig = Math.min(1, SIM.personFart(a.s, p)) / SIM.FORDON.ridsadel!.fart.terrang;
+    // ett sällskap där någon går till fots
+    const b = ny({ hastar: 1, rid: 1, folk: 2 });
+    SIM.djurMed(b.sl, b.djur[0]!.id); b.sl.rider = [[b.folk[0]!.id, b.djur[0]!.id]];
+    const tva = SIM.sallskapFart(b.s, b.sl), gaende = Math.min(1, SIM.personFart(b.s, b.folk[1]!));
+    // packskedet: lite packning och en häst, en ridsadel → hen rider
+    const c = ny({ hastar: 1, rid: 1, pack: 1 }); const okC = SIM.borjaPacka(c.s, c.sl);
+    // mycket att bära → hästen får packsadeln i stället
+    const d = ny({ hastar: 1, rid: 1, pack: 1, skinn: 80 }); SIM.borjaPacka(d.s, d.sl);
+    // oxen rids aldrig
+    const e = ny({ oxar: 1, rid: 1 }); SIM.borjaPacka(e.s, e.sl);
+    // i byn: medan sällskapet packar står hästen kvar, när det går ut följer hästen ryttaren
+    const cp = c.folk[0]!, ch = c.s.tamdjur!.find(x => x.id === c.djur[0]!.id)!;
+    cp.x = ch.x + 5; cp.y = ch.y; SIM.ridBredvid(c.s, cp); const kvar = ch.x !== cp.x;
+    c.sl.skede = 'gar'; SIM.ridBredvid(c.s, cp); const foljer = ch.x === cp.x && ch.y === cp.y;
+    const r = SIM.RECEPT.ridsadel, t = SIM.TEKNIK.find(x => x.id === 'ridning')!;
+    return [
+      [`ridsadeln sys vid slöjdbänken av 2 skinn och 2 rep på 5 minuter; tekniken Ridning kräver Släde, nivå 5, och öppnas efter 10 körningar med häst`, r.av.skinn === 2 && r.av.rep === 2 && r.min === 5 && r.tek === 'ridning' && t.krav.includes('slade') && t.niva === 5 && t.tidigast?.[0]?.stat === 'korningarHast' && t.tidigast[0].n === 10 && SIM.STATIONER.flatarbank.gor.includes('sy_ridsadel')],
+      [`en ensam ryttare på en vanlig häst är framme på ${(vanlig * 100).toFixed(0)} % av tiden till fots, ungefär två tredjedelar (${fots.toFixed(2)} till fots, ${lang.toFixed(2)} och ${snabb.toFixed(2)} ridande)`, Math.abs(vanlig - 2 / 3) < 0.05 && lang > fots && Math.abs(lang - SIM.ryttarFart(h1!)) < 1e-9],
+      [`en snabbare häst är fortare framme (${SIM.tamEg(h1!).snabbhet.toFixed(2)} → ${SIM.tamEg(h2!).snabbhet.toFixed(2)})`, snabb > lang],
+      [`ett sällskap där någon går till fots går i gångfart (${tva.toFixed(3)} mot ${gaende.toFixed(3)})`, Math.abs(tva - gaende) < 1e-9],
+      [`med lite att bära rider resenären (${c.sl.rider?.length ?? 0} ryttare, ${c.sl.pack.ridsadel ?? 0} ridsadel)`, okC && c.sl.rider?.length === 1 && c.sl.pack.ridsadel === 1 && !c.sl.pack.packsadel],
+      [`räcker inte bärförmågan får hästen packsadeln i stället (${d.sl.rider?.length ?? 0} ryttare, ${d.sl.pack.packsadel ?? 0} packsadel)`, !d.sl.rider?.length && d.sl.pack.packsadel === 1 && d.sl.djur.length === 1],
+      [`en oxe rids aldrig (${e.sl.rider?.length ?? 0} ryttare)`, !e.sl.rider?.length && !e.sl.pack.ridsadel],
+      [`ingen sitter på hästen inne i byn: medan sällskapet packar står hästen kvar, och när det går ut följer den ryttaren`, kvar && foljer],
+    ];
+  },
+};

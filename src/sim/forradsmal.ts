@@ -11,7 +11,7 @@
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { hoBrist } from './vattenho';
 import { stenTillPlan } from './byggsten';
-import { tamArt, tamdjurOf } from './tamdjur';
+import { tamAlder, tamArt, tamdjurOf } from './tamdjur';
 import { SKRIFT } from './skriftTal';
 import { trosMobelBrist } from './troshus';
 import { balans } from './balans';
@@ -274,6 +274,7 @@ export const villAv = (s: State, g: string) => { const n = REDSKAPMAL[g](s); ret
 export const tillverkVill = (s: State, d: TillverkDef) => arMaterial(d.ger) ? villHaAv(s, d.ger) : TILLVERKVILL[d.ger]?.(s) ?? d.vill;
 // det tillverkade vars antal räknas ur byn och inte är ett fast tal i TILLVERKA
 const TILLVERKVILL: Record<string, (s: State) => number> = {
+  ridsadel: s => tamdjurOf(s).filter(d => tamArt(d.art).rids && tamAlder(s, d) >= tamArt(d.art).vuxen).length, // en ridsadel per vuxen häst (steg 11.11.4)
   packsadel: s => behovVill(s.sadelBehov, s.now), // packsadlarna: så många djur som byns största sällskap ville lasta det senaste året (steg 11.11.3)
   talt: taltVill, // tälten: så många som byns största sällskap med en natt på vägen behövde det senaste året (steg 11.11.1)
 };

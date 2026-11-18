@@ -162,7 +162,7 @@ export type Skede = 'samlas' | 'packar' | 'gar' | 'ute' | 'framme' | 'hemat' | '
 export interface Insats { agare: number | 'by'; sak: string; n: number; varde: number; djur?: number }
 export interface Sallskap {
   id: number; by: number; // sällskapets nummer och raden det kommer från
-  ledare: number; medl: number[]; djur: number[]; fordon: string[]; // personernas och djurens id (ledaren är en av medlemmarna)
+  ledare: number; medl: number[]; djur: number[]; fordon: string[]; rider?: [number, number][]; // rider: ryttaren och hästen (steg 11.11.4) // personernas och djurens id (ledaren är en av medlemmarna)
   mal: number; skal: ResmalId; skede: Skede; // målets plats i världen, skälet och skedet
   borjan: number; t: number; // när ledaren började samla, och tiden sällskapet räknats till
   ruta?: number; vag?: { fran: number; till: number; steg: string }; pos?: number; // rutan sällskapet är på, vägen och hur långt längs den (rutor)
@@ -250,8 +250,17 @@ export const barResenar = (s: State, p: Person) => RESA.hander + (ryggsack(s, p)
 // ett djur bär med packsadel (FORDON.packsadel, steg 11.11.3); utan sadel bär det inget
 export const barDjur = (s: State, id: number) => { const d = (s.tamdjur ?? []).find(q => q.id === id && q.dog === undefined); return d ? lassAv(FORDON.packsadel!, d) : 0; };
 // djuren i sällskapet bär: lika många som det finns packsadlar i packningen, de starkaste först
+// hästen personen rider på i sällskapet, om den lever och följer med (steg 11.11.4)
+export function ridHast(s: State, sl: Sallskap, pid: number) {
+  const r = sl.rider?.find(x => x[0] === pid);
+  return r && sl.djur.includes(r[1]) ? (s.tamdjur ?? []).find(d => d.id === r[1] && d.dog === undefined) : undefined;
+}
+const ridna = (sl: Sallskap) => new Set((sl.rider ?? []).map(x => x[1]));
+// en ryttares fart: ridsadelns gånger hästens snabbhet
+export const ryttarFart = (d: Tamdjur) => FORDON.ridsadel!.fart.terrang * tamEg(d).snabbhet;
 export function barDjurAlla(s: State, sl: Sallskap, pack = sl.pack) {
-  const lass = sl.djur.map(id => barDjur(s, id)).sort((a, b) => b - a);
+  const rid = ridna(sl);
+  const lass = sl.djur.filter(id => !rid.has(id)).map(id => barDjur(s, id)).sort((a, b) => b - a);
   return lass.slice(0, Math.floor((pack.packsadel ?? 0) + 1e-9)).reduce((a, n) => a + n, 0);
 }
 
@@ -354,7 +363,29 @@ function valjPackdjur(s: State, sl: Sallskap, led?: Person) {
   const varde = (d: Tamdjur) => lassAv(FORDON.packsadel!, d) * tamEg(d).snabbhet;
   kand.sort((a, b) => varde(b) - varde(a) || a.id - b.id);
   let sadlar = Math.floor(amountOf(s, 'packsadel') + 1e-9), utan = 0, behov = 0;
+  // ridningen (steg 11.11.4): varje delning av hästarna prövas, från ingen ryttare till så många som det finns ridsadlar, och
+  // den där packningen ryms och resan går fortast tas. De långsammaste resenärerna sitter upp först
+  const pb0 = packbehov(s, sl), folk = sl.medl.map(id => s.people.find(q => q.id === id)).filter((p): p is Person => !!p && alive(p)).sort((a, b) => personFart(s, a) - personFart(s, b) || a.id - b.id);
+  const hastar = kand.filter(d => tamArt(d.art).rids).sort((a, b) => tamEg(b).snabbhet - tamEg(a).snabbhet || a.id - b.id);
+  const maxR = Math.min(hastar.length, folk.length, Math.floor(amountOf(s, 'ridsadel') + 1e-9));
+  if (pb0 && maxR > 0) {
+    const need = pb0.behov + varorVikt(s, sl);
+    let bast: { r: number; ryms: boolean; bar: number; fart: number } | undefined;
+    for (let r = 0; r <= maxR; r++) {
+      const rid = hastar.slice(0, r), farter = [...rid.map(ryttarFart), ...folk.slice(r).map(p => Math.min(1, personFart(s, p)))];
+      let bar = folk.reduce((a, p) => a + barResenar(s, p), 0), sd = sadlar;
+      for (const d of kand) { if (bar >= need - 1e-9 || sd <= 0) break; if (rid.includes(d)) continue; bar += lassAv(FORDON.packsadel!, d); sd--; farter.push(tamEg(d).snabbhet); }
+      const x = { r, ryms: bar >= need - 1e-9, bar, fart: Math.min(...farter) };
+      // packningen som ryms går först, sedan farten; ryms den i ingen delning, den som bär mest
+      if (!bast || (x.ryms && !bast.ryms) || (x.ryms && bast.ryms && x.fart > bast.fart + 1e-9) || (!x.ryms && !bast.ryms && x.bar > bast.bar + 1e-9)) bast = x;
+    }
+    for (let i = 0; i < bast!.r; i++) {
+      const h = hastar[i]!;
+      satsaDjur(s, sl, h.id); taIPackning(s, sl, 'ridsadel', 1, led); (sl.rider ??= []).push([folk[i]!.id, h.id]);
+    }
+  }
   for (const d of kand) {
+    if (sl.djur.includes(d.id)) continue; // hästen rids
     const pb = packbehov(s, sl);
     if (!pb || pb.behov + varorVikt(s, sl) <= pb.bar + utan + 1e-9) break;
     behov++;
@@ -551,6 +582,13 @@ function gruvBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (fick > 0) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; sl.silverArb -= fick; }
   if (m > rum) { sl.silverArb = 0; sl.nere = Math.min(stannarFor(sl), (t - (sl.framme ?? t)) / DAY); } // fullt: tiden nere är slut
 }
+// på väg ut ur byn sitter ryttaren på hästen: hästen följer hen till kanten (steg 11.11.4)
+export function ridBredvid(s: State, p: Person) {
+  const sl = sallskapFor(s.varld, p.id);
+  if (sl?.skede !== 'gar') return;
+  const h = ridHast(s, sl, p.id);
+  if (h) { h.x = p.x; h.y = p.y; }
+}
 // var tionde minut (TAKTER): sällskapen på vägen, i bitar om högst tio minuter (dt i millisekunder, som s.now)
 export function resaBehov(s: State, dt: number) {
   const vl = s.varld;
@@ -587,8 +625,10 @@ export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
 }
 export function sallskapFart(s: State, sl: Sallskap, om: FartOm = {}) {
   const buren = om.buren ?? sl.buren ?? [], bars = new Set(buren.map(b => b[0]));
-  const folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id)), djur = (s.tamdjur ?? []).filter(d => sl.djur.includes(d.id) && d.dog === undefined);
-  const lang = Math.min(1, ...folk.map(p => personFart(s, p)), ...djur.map(d => tamEg(d).snabbhet)); // djurets egen snabbhet (steg 11.11.3)
+  const rid = ridna(sl), folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id)), djur = (s.tamdjur ?? []).filter(d => sl.djur.includes(d.id) && d.dog === undefined && !rid.has(d.id));
+  // den långsammaste: den som går (högst gångfarten), ryttaren i hästens fart (steg 11.11.4) och packdjuret i sin egen snabbhet (steg 11.11.3)
+  const farter = [...folk.map(p => { const h = ridHast(s, sl, p.id); return h ? ryttarFart(h) : Math.min(1, personFart(s, p)); }), ...djur.map(d => tamEg(d).snabbhet)];
+  const lang = farter.length ? Math.min(...farter) : 1;
   return lang * (buren.some(b => b[1] === 'bar') ? RESA.barFart : 1) * lastFart(s, sl, om) * (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * orkFart(sl, om.ork);
 }
 // vägen bort till målet eller hem igen

@@ -175,6 +175,7 @@ const DEF = {
   leksak: { namn: 'Leksak', skaffa: RECEPT.leksak, stack: 10, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.4
   snara: { namn: 'Snara', skaffa: RECEPT.snara, stack: 5, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.10
   bur: { namn: 'Bur', skaffa: RECEPT.bur, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 10.10.13
+  ridsadel: { namn: 'Ridsadel', skaffa: RECEPT.ridsadel, stack: 1, vikt: 4, mapp: 'Redskap' }, // ridsadeln (steg 11.11.4): läggs på hästen för den som rider ut på en resa
   packsadel: { namn: 'Packsadel', skaffa: RECEPT.packsadel, stack: 1, vikt: 6, mapp: 'Redskap' }, // packsadeln (steg 11.11.3): läggs på hästen eller oxen på en resa
   talt: { namn: 'Tält', skaffa: RECEPT.talt, stack: 1, vikt: 10, mapp: 'Redskap' }, // tältet (steg 11.11.1): rymmer fyra en natt på resan
   grop: { namn: 'Fångstgrop', skaffa: RECEPT.grop, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 7.5.11
