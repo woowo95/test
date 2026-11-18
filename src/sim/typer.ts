@@ -330,6 +330,8 @@ export interface State {
   seed: number; founded: number; now: number;
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   varld?: import('./varlden').Varlden; // världen byn ligger i (steg 11.2.7, varlden.ts); testbyarna har ingen
+  vackta?: State[]; // de väckta byarna, som går i samma slag som huvudbyn mot samma värld (steg 11.13.1, steg.ts)
+  vackt?: number; // i en väckt by: radens nummer i världen; världens perioder räknas bara av huvudbyn
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
   bynVet?: import('./ort').BynVet; // det byn vet om platserna i världen (steg 11.4.6, ort.ts)
   textminne?: Record<string, string[]>; // textminnet (steg 6.7.3): början på de tre senaste krönikaraderna per mall, utan historiken

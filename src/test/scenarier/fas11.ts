@@ -4467,3 +4467,26 @@ SCENARIER.fangeval = {
     ];
   },
 };
+
+SCENARIER.tvabyar = {
+  lang: true,
+  text: 'Två byar i takt (steg 11.13.1, step och stegBy i steg.ts): en väckt by går efter huvudbyn i samma anrop, i fast ordning och med sina egna slag, och båda byarna utvecklas exakt som när de går var för sig. Världens perioder räknas bara av huvudbyn',
+  kor: () => {
+    const t0 = Date.UTC(2026, 0, 1), timmar = 30;
+    const hash = (s: SIM.State) => { const j = JSON.parse(kanonisk(SIM.serialize(s))); delete j.skuld; delete j.stegRest; delete j.vackt; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
+    const nyB = () => { const b = SIM.createState(1511, t0); delete b.varld; b.vackt = 1; return b; };
+    const a1 = SIM.createState(6, t0), b1 = nyB();
+    kor(a1, timmar); kor(b1, timmar);
+    const a2 = SIM.createState(6, t0), b2 = nyB();
+    a2.vackta = [b2];
+    kor(a2, timmar);
+    const varldA = SIM.createState(6, t0), timme0 = varldA.varld?.perioder?.timme ?? 0; varldA.vackt = 1; kor(varldA, 2);
+    return [
+      ['huvudbyn går som för sig', hash(a1) === hash(a2)],
+      ['den väckta byn går som för sig', hash(b1) === hash(b2)],
+      ['båda har gått lika långt', b2.now === a2.now && a2.now === a1.now],
+      ['den väckta byn sparas inte med huvudbyn ännu', !SIM.serialize(a2).includes('"vackta"')],
+      ['en väckt by räknar inte världens perioder', (varldA.varld?.perioder?.timme ?? 0) === timme0 && (a1.varld?.perioder?.timme ?? 0) > timme0],
+    ];
+  },
+};

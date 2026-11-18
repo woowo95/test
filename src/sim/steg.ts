@@ -372,18 +372,24 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
 // följd av slag. events = samtalen, för att visa dem
 // testerna lyssnar efter slagen för att se att en process inte hängt sig (src/test/puls.ts); i spelet finns ingen lyssnare
 declare global { var slagPuls: (() => void) | undefined }
+// De väckta byarna (s.vackta, steg 11.13.1) går efter huvudbyn i samma anrop, i fast ordning, var och en med sina egna slag mot
+// samma värld, så att varje by utvecklas exakt som om den gått för sig. Världens perioder räknas bara av huvudbyn
 export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också när gränssnittet räknar (typer.ts)
   simulera(() => {
-    if (s.stegRest !== undefined) delete s.stegRest; // (en äldre sparning)
-    let skuld = (s.skuld ?? 0) + dtSec;
-    for (let n = 0; n < 1e6; n++) {
-      const plan = nastaSteg(s);
-      if (skuld < plan - 1e-9) break;
-      slag(s, plan, events); skuld -= plan;
-      globalThis.slagPuls?.();
-    }
-    if (skuld > 1e-9) s.skuld = Math.round(skuld * 1000) / 1000; else delete s.skuld;
+    stegBy(s, dtSec, events);
+    if (s.vackta?.length) { for (const v of s.vackta) stegBy(v, dtSec); useMap(s); }
   });
+}
+function stegBy(s: State, dtSec: number, events?: TalkEvent[]) {
+  if (s.stegRest !== undefined) delete s.stegRest; // (en äldre sparning)
+  let skuld = (s.skuld ?? 0) + dtSec;
+  for (let n = 0; n < 1e6; n++) {
+    const plan = nastaSteg(s);
+    if (skuld < plan - 1e-9) break;
+    slag(s, plan, events); skuld -= plan;
+    globalThis.slagPuls?.();
+  }
+  if (skuld > 1e-9) s.skuld = Math.round(skuld * 1000) / 1000; else delete s.skuld;
 }
 // två rövare som pratar på rastplatsen samtalar som byborna (steg 10.2.24)
 rovarPrat.prata = (s, a, b, ev) => { converse(s, a, [b], ev); count(s, 'rovarPrat'); };
@@ -460,7 +466,7 @@ export const TAKTER: Takt[] = [
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
   { namn: 'sällskapen på vägen', sek: 600, fn: (s, dt) => resaBehov(s, dt * SEC) }, // mättnaden, vätskan och orken (resa.ts, steg 11.5.6)
-  { namn: 'världen', sek: 300, fn: s => { varldSteg(s); } }, // världens perioder och kön, räknade mot klockan (varldslag.ts, steg 11.2.17)
+  { namn: 'världen', sek: 300, fn: s => { if (s.vackt === undefined) varldSteg(s); } }, // världens perioder och kön, räknade mot klockan (varldslag.ts, steg 11.2.17)
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
@@ -1604,6 +1610,7 @@ function byggMer(s: State, b: Bit, k: string) {
 // talen i sparfilen avrundas till tre decimaler. En stacks ägardelar avrundas nedåt om de annars blir mer än stacken
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
 function avrunda(this: unknown, k: string, v: unknown) {
+  if (k === 'vackta') return undefined; // de väckta byarna sparas för sig (steg 11.13.9)
   if (typeof v === 'number') return Number.isInteger(v) ? v : v < 1 && r3(v) >= 1 ? 0.999 : r3(v); // det som är under 1 (det påbörjade, s.delar) blir aldrig 1 av avrundningen
   const st = this as { n?: unknown } | null;
   if (k === 'ag' && v && typeof v === 'object' && typeof st?.n === 'number') {
