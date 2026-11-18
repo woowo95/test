@@ -10,7 +10,7 @@ import { vaderMork } from './vaderbild';
 import { DJUPNATT } from '../palett';
 import { animMark, markytaLayer, ritaMark, stallMark } from './mark';
 import { animBild } from './animation';
-import { type Lov, stallTrad, tradBild, tradSkuggor } from './trad';
+import { fortsattTrad, type Lov, stallTrad, tradBild, tradSkuggor } from './trad';
 import { buskBild } from './buske';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
@@ -52,8 +52,11 @@ function coverSig() {
   return h;
 }
 const jord = (t: number) => t === T.Gras || t === T.Skog;
-export function drawTerrain(force = false) {
+// force: allt ställs om nu; alla: och ritas på en gång (annars det som syns först, och resten efter hand i bildrutorna)
+export function drawTerrain(force = false, alla = force) {
   const ai = ageIndex(s), now = performance.now();
+  const a = world.toLocal({ x: 0, y: 0 }), b = world.toLocal({ x: app.screen.width, y: app.screen.height });
+  const syn = { x0: a.x, y0: a.y, x1: b.x, y1: b.y }, synR = { x0: Math.floor(a.x / 16) - 1, y0: Math.floor(a.y / 16) - 1, x1: Math.ceil(b.x / 16) + 1, y1: Math.ceil(b.y / 16) + 2 };
   let sig = drawnSig;
   if (force || now - lastSigCheck > OMRITA_MS) { lastSigCheck = now; sig = coverSig(); }
   const is = isNiva();
@@ -71,15 +74,16 @@ export function drawTerrain(force = false) {
     let svart: Map<number, number> | undefined;
     for (const [i, t] of s.aska ?? []) (svart ??= new Map()).set(i, Math.max(0, 0.75 * (1 - (s.now - t) / (BRAND.svart * DAY))));
     stallMark({ W, H, tiles: g.tiles, cover: g.cover, trees: g.trees, vatten: T.Vatten, sand: T.Sand, sten: T.Sten, lera: T.Lera, jord }, mt, sno, is, `${s.seed}|${vat}`, svart);
-    ritaTrad(g, sno);
-  }
-  ritaMark(6, force);
+    ritaTrad(g, sno, alla ? Infinity : TRAD_MS, synR);
+  } else fortsattTrad(TRAD_MS);
+  ritaMark(6, alla, syn);
   // vågorna och stranden (steg 5.1.9.2) i den del av kartan som syns
-  const a = world.toLocal({ x: 0, y: 0 }), b = world.toLocal({ x: app.screen.width, y: app.screen.height });
   animMark(animBild('vagor'), a.x, a.y, b.x, b.y);
 }
-// träden: ett träd per ruta efter sitt stadium, och unga granar i den orörda skogskanten
-function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
+// träden: ett träd per ruta efter sitt stadium, och unga granar i den orörda skogskanten; högst ms millisekunder (datorns
+// tid) per bildruta, det som syns (syn, i rutor) först
+const TRAD_MS = 6;
+function ritaTrad(g: ReturnType<typeof groundOf>, sno: number, ms: number, syn: { x0: number; y0: number; x1: number; y1: number }) {
   const tr = (i: number) => jord(g.tiles[i]) ? g.trees[i] : 0;
   const skog = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && tr(y * W + x) >= 0.5;
   const kant = (i: number) => {
@@ -99,7 +103,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {
     if (b && st === 'torraka' && kol.has(i)) b.kol = true;
     if (b && ham.has(i)) b.hamlad = true; // den hamlade björken (steg 9.8.16)
     return b;
-  }, sno);
+  }, sno, ms, syn);
 }
 function kantHash(x: number, y: number) {
   let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ 610;

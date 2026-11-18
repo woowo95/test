@@ -1166,15 +1166,26 @@ export function avbryt(s: State, p: Person) {
 export function haulJob(s: State, near?: number, baraMat = false) {
   placeTools(s);
   const taken = paVagAttBara(s);
-  // finns det slaget på rutan ännu? Frågas bara för de rader som klarat de andra villkoren (stackarna, sedan redskapen)
-  const finns = (x: number, y: number, k: string) => stacksOf(s).some(q => q.x === x && q.y === y && q.k === k) || tingOf(s).some(t => ligger(t) && t.x === x && t.y === y && t.k === k);
+  // finns det slaget på rutan ännu? Frågas bara för de rader som klarat de andra villkoren; stackarna och tingen på marken
+  // samlas första gången det frågas, så att varje fråga inte går igenom alla stackar
+  let pa: Set<string> | undefined;
+  const finns = (x: number, y: number, k: string) => {
+    if (!pa) { pa = new Set(); for (const q of stacksOf(s)) pa.add(`${q.x},${q.y},${q.k}`); for (const t of tingOf(s)) if (ligger(t)) pa.add(`${t.x},${t.y},${t.k}`); }
+    return pa.has(`${x},${y},${k}`);
+  };
+  const ok = (a: Bara) => !(taken.has(key(a.x, a.y)) || near !== undefined && a.d > near)
+    && !(s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) // inte det som ligger i översvämningen eller bakom den (flod.ts)
+    && !blocked(s, a.x, a.y) // det som ligger i vattnet eller i en vägg når ingen
+    && finns(a.x, a.y, a.k); // det har burits sedan listan räknades
+  const lista = barLista(s);
+  if (!baraMat && lista.sorterad) { // listan i poängens ordning (lika poäng i listans ordning): den första som går att bära är den bästa
+    for (const a of lista.sorterad) { if (!(a.sc < Infinity)) break; if (ok(a)) return { x: a.x + 0.5, y: a.y + 0.5, why: a.why, k: a.k }; }
+    return undefined;
+  }
   let best: { x: number; y: number; why: string; k: string } | undefined, bs = Infinity;
-  for (const a of barLista(s)) {
+  for (const a of lista.l) {
     const sc = a.sc + (baraMat && !isFood(a.k) ? LAGER.svaltOmvag : 0); // vid svält bärs maten först (steg 10.2.6)
-    if (sc >= bs || taken.has(key(a.x, a.y)) || near !== undefined && a.d > near) continue;
-    if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte det som ligger i översvämningen eller bakom den (flod.ts)
-    if (blocked(s, a.x, a.y)) continue; // det som ligger i vattnet eller i en vägg når ingen
-    if (!finns(a.x, a.y, a.k)) continue; // det har burits sedan listan räknades
+    if (sc >= bs || !ok(a)) continue;
     bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why: a.why, k: a.k };
   }
   return best;
@@ -1183,10 +1194,11 @@ export function haulJob(s: State, near?: number, baraMat = false) {
 // bärande). Den räknas en gång i timmen och när något byggs, så att alla som väljer att bära (och alla lägen) frågar samma
 // lista; haulJob tar bort det som någon redan är på väg till och det som burits sedan dess
 interface Bara { x: number; y: number; k: string; d: number; sc: number; why: string }
-const barCache = new WeakMap<State, { key: string; l: Bara[] }>();
+// sorterad: samma lista i poängens ordning (stabilt, så att lika poäng står i listans ordning), om ingen poäng är NaN
+const barCache = new WeakMap<State, { key: string; l: Bara[]; sorterad?: Bara[] }>();
 function barLista(s: State) {
   const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${zonesOf(s).length}`, c = barCache.get(s);
-  if (c && c.key === key) return c.l;
+  if (c && c.key === key) return c;
   const zs = zonesOf(s), occ = occupancy(s), l: Bara[] = [];
   // zoneSpot frågas för varje stack, men svaret beror bara på slaget och prioriteten: en gång per par räcker
   const plats = new Map<string, ReturnType<typeof zoneSpot>>(), spot = (k: string, prio: number) => {
@@ -1211,8 +1223,9 @@ function barLista(s: State) {
     else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; }
     if (why) l.push({ x: a.x, y: a.y, k: a.k, d, sc, why });
   }
-  barCache.set(s, { key, l });
-  return l;
+  const ut = { key, l, ...(l.some(a => Number.isNaN(a.sc)) ? {} : { sorterad: [...l].sort((a, b) => a.sc - b.sc) }) };
+  barCache.set(s, ut);
+  return ut;
 }
 // medan vattnet stiger (steg 3.8.7, flod.ts): maten på en lagerplats som vattnet kan nå (flodHotad i sjo.ts), närmast lägret
 // först. Den bärs till en plats som vattnet inte når (roomIn). Det som ligger i en kista eller på en hylla klarar sig

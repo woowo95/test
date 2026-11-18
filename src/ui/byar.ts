@@ -23,10 +23,11 @@ const sattLista = (l: ByRad[]) => { try { localStorage.setItem(LISTA_KEY, JSON.s
 export const aktivBy = () => { try { const v = localStorage.getItem(AKTIV_KEY); return v && byarna().some(b => b.id === v) ? v : undefined; } catch { return undefined; } };
 const sattAktiv = (id: string | undefined) => { try { if (id) localStorage.setItem(AKTIV_KEY, id); else localStorage.removeItem(AKTIV_KEY); } catch { /* ignoreras */ } };
 
-// den valda andra byn sparas i webbläsaren (saveLocal i spara.ts). false = det gick inte
+// den valda andra byn sparas i webbläsaren (saveLocal i spara.ts). false = det gick inte. Klockan sparas som byns tid plus
+// hur långt efter den ligger (ui.forskjut), så att en by som sparas mitt i en ikappräkning räknas vidare efter en omladdning
 export async function sparaAnnan(): Promise<boolean> {
   if (!ui.annanBy || !s) return true;
-  try { await sparaBy(webbBas, byKey(ui.annanBy), s, { vagg: Date.now() } satisfies Tid); return true; } catch { return false; }
+  try { await sparaBy(webbBas, byKey(ui.annanBy), s, { vagg: s.now + ui.forskjut } satisfies Tid); return true; } catch { return false; }
 }
 // en annan by ur webbläsaren, och hur långt efter klockan den ligger (ui.forskjut)
 async function lasAnnan(id: string): Promise<{ by: State; forskjut: number } | undefined> {

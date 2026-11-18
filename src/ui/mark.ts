@@ -366,12 +366,21 @@ function uppdatera(i: number, a: number) {
   ASKA[i] = a;
 }
 // ritar om de bitar som ändrats, högst ms millisekunder (datorns tid) per bildruta; alla = alla på en gång
-export function ritaMark(ms: number, alla = false) {
+// syn: den del av kartan som syns (världens punkter), som ritas först, så att det man ser kommer fram först efter en ny by
+export function ritaMark(ms: number, alla = false, syn?: { x0: number; y0: number; x1: number; y1: number }) {
   if (!smutsiga.size) return;
-  const t0 = performance.now();
+  const t0 = performance.now(), slut = () => !alla && performance.now() - t0 > ms;
+  if (syn && !alla) {
+    for (let by = Math.max(0, Math.floor(syn.y0 / BP)); by < Math.min(bh, Math.ceil(syn.y1 / BP)); by++) for (let bx = Math.max(0, Math.floor(syn.x0 / BP)); bx < Math.min(bw, Math.ceil(syn.x1 / BP)); bx++) {
+      const k = by * bw + bx;
+      if (!smutsiga.has(k)) continue;
+      smutsiga.delete(k); ritaBit(bx, by);
+      if (slut()) return;
+    }
+  }
   for (const k of smutsiga) {
     smutsiga.delete(k);
     ritaBit(k % bw, (k / bw) | 0);
-    if (!alla && performance.now() - t0 > ms) break;
+    if (slut()) break;
   }
 }

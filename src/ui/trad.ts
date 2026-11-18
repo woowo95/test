@@ -300,9 +300,26 @@ const sprites = new Map<number, { sp: PIXI.Sprite; k: string; b: TradBild; x: nu
 let skuggaAndrad = true;
 // bild(i): trädet på rutan i (eller null), sno: hur mycket snö som ligger på grenarna (0–1, steg 5.1.13)
 // lager: figurLayer (scen.ts), där träden står i ordning söderut med folket och djuren
-export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i: number) => TradBild | null, sno: number) {
-  for (let i = 0; i < W * H; i++) {
-    const b = bild(i), x = i % W, y = (i / W) | 0, stam = stammar && !!b && b.h >= 8, k = b ? (stam ? 'S|' : '') + nyckel(b, sno) : '';
+// Träden ställs i bitar (ms millisekunder datortid per bildruta, Infinity = alla på en gång): det som syns (syn, i rutor)
+// först och sedan resten, så att en stor by syns direkt och resten av skogen kommer efter hand (fortsattTrad i varje bildruta)
+let vantar: { lager: PIXI.Container; bild: (i: number) => TradBild | null; sno: number; W: number; ordning: Int32Array; pos: number } | undefined;
+export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i: number) => TradBild | null, sno: number, ms = Infinity, syn?: { x0: number; y0: number; x1: number; y1: number }) {
+  const ordning = new Int32Array(W * H);
+  let n = 0;
+  const x0 = Math.max(0, syn?.x0 ?? 0), x1 = Math.min(W - 1, syn?.x1 ?? -1), y0 = Math.max(0, syn?.y0 ?? 0), y1 = Math.min(H - 1, syn?.y1 ?? -1);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) ordning[n++] = y * W + x;
+  for (let i = 0; i < W * H; i++) { const x = i % W, y = (i / W) | 0; if (x < x0 || x > x1 || y < y0 || y > y1) ordning[n++] = i; }
+  vantar = { lager, bild, sno, W, ordning, pos: 0 };
+  return fortsattTrad(ms);
+}
+// fortsätter med träden som väntar; true när alla är ställda
+export function fortsattTrad(ms: number) {
+  const v = vantar;
+  if (!v) return true;
+  const t0 = performance.now(), { lager, bild, sno, W, ordning } = v;
+  for (; v.pos < ordning.length; v.pos++) {
+    if ((v.pos & 63) === 0 && performance.now() - t0 > ms) return false;
+    const i = ordning[v.pos], b = bild(i), x = i % W, y = (i / W) | 0, stam = stammar && !!b && b.h >= 8, k = b ? (stam ? 'S|' : '') + nyckel(b, sno) : '';
     const f = sprites.get(i);
     if (f?.k === k) continue;
     skuggaAndrad = true;
@@ -314,6 +331,8 @@ export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i:
     if (!f) lager.addChild(sp);
     sprites.set(i, { sp, k, b, x: bx, y: by });
   }
+  vantar = undefined;
+  return true;
 }
 // trädens skuggor på marken (steg 5.1.8, ui/skugga.ts): bildstilens oval vid foten, ungefär så bred som kronan (den döda
 // granen har tunna grenar och en smalare skugga). Ritas om bara när träden ändras, eller när skuggan blir längre
