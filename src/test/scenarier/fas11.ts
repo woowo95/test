@@ -4783,3 +4783,49 @@ SCENARIER.vacktvy = {
     ];
   },
 };
+
+SCENARIER.somna = {
+  text: 'Byn somnar (steg 11.13.12, somna, minnesbild och byggMinne i vacktsomna.ts): medan byn är väckt står radens egna regler still, och det världen gör mot raden fortsätter. När byn somnar läggs det byn ändrat till raden, teknikerna byn kan blir radens och en minnesbild sparas. Nästa väckning bygger husen, gravarna och de heliga platserna ur minnesbilden på samma platser',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const rader = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).filter(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0).map(p => SIM.radNr(vl, p!.by!)!);
+    const r = rader.sort((a, c) => c.tek.length - a.tek.length)[0]!;
+    const b = SIM.vackTest(s, r.nr)!;
+    const fore = { ...r.tal }, vaken = r.vaken === 1;
+    // radens regler står still medan byn är väckt
+    const rm = SIM.PERIODRADER.find(q => q.namn === 'radens mat')!;
+    const t0 = JSON.stringify(r.tal);
+    for (let n = 0; n < 6; n++) rm.fn(s, vl, Math.floor(s.now / SIM.HOUR) + n);
+    const still = JSON.stringify(r.tal) === t0;
+    // byn ändrar sig: mer mat, en ny teknik och en grav; världen ger raden silver under tiden
+    SIM.useMap(b);
+    const mat = SIM.FOOD.find(k => SIM.SAKER[k]?.haller && (SIM.SAKER[k]!.haller ?? 0) > 100) ?? SIM.FOOD[0];
+    const m0 = SIM.lasRad(b).mat;
+    SIM.laggIn(b, mat, 30, SIM.living(b)[0]!.id);
+    const m1 = SIM.lasRad(b).mat;
+    const ny = Object.keys(SIM.TEK).find(id => !r.tek.includes(id) && SIM.TEK[id].krav.every(k => r.tek.includes(k)))!;
+    (SIM.living(b)[0]!.tek ??= {})[ny] = 1;
+    const eld = SIM.eldPlats(b);
+    (b.gravar ??= []).push({ x: eld.x + 6, y: eld.y + 6, t: b.now, vem: SIM.living(b)[1]?.id ?? 1, namn: 'Provgraven', stil: 'jord' });
+    SIM.useMap(s);
+    r.tal.silver += 5;
+    SIM.vackTest(s, r.nr); // somnar
+    const minne = r.minne;
+    const husFore = SIM.housesOf(b).filter(h => h.klar !== undefined).map(h => `${h.x},${h.y},${h.w},${h.h}`).sort();
+    const b2 = SIM.vackTest(s, r.nr)!;
+    const husEfter = new Set(SIM.housesOf(b2).map(h => `${h.x},${h.y},${h.w},${h.h}`));
+    const klara = SIM.housesOf(b2).filter(h => husFore.includes(`${h.x},${h.y},${h.w},${h.h}`)).every(h => h.klar !== undefined);
+    return [
+      ['raden är vaken medan byn lever', vaken],
+      ['radens regler står still medan byn är väckt', still],
+      [`det byn ändrat läggs till raden (mat ${fore.mat} → ${r.tal.mat}, byn fick ${m1 - m0})`, r.tal.mat === fore.mat + (m1 - m0)],
+      [`det världen gjorde finns kvar (silver ${fore.silver} → ${r.tal.silver})`, r.tal.silver === fore.silver + 5],
+      [`tekniken byn kom på blir radens (${ny})`, r.tek.includes(ny)],
+      ['talen är hela', SIM.RADTAL_IDS.every(k => Number.isInteger(r.tal[k]) && r.tal[k] >= 0)],
+      [`minnesbilden har husen och graven (${minne?.hus.length} hus, ${minne?.gravar.length} gravar)`, !!minne && minne.hus.length === husFore.length && minne.gravar.some(g => g.namn === 'Provgraven')],
+      [`husen står på samma platser nästa gång (${husFore.filter(h => husEfter.has(h)).length} av ${husFore.length})`, husFore.length > 0 && husFore.every(h => husEfter.has(h)) && klara],
+      ['graven ligger kvar', !!b2.gravar?.some(g => g.namn === 'Provgraven')],
+      ['raden är vaken igen', r.vaken === 1],
+    ];
+  },
+};

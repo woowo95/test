@@ -26,7 +26,7 @@ import { ACTS } from './handlingar';
 import { TEK } from './teknik';
 import { clamp } from './slump';
 import { byPlats } from './landmarken';
-import { radNr, VarldRad } from './radtal';
+import { lasRad, radNr, VarldRad } from './radtal';
 import { startSmak } from './rykten';
 import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
@@ -40,6 +40,7 @@ import { pair, tomBy } from './varld';
 import { varldMark } from './varlden';
 import { MARK_IDS } from './varldmark';
 import { KARTA } from './kartflytt';
+import { byggMinne, somna } from './vacktsomna';
 
 export const VACKT = balans('vackt', {
   inkorning: 6, // timmar i verkligheten som byn går i simuleringen före ankomsten (ett kvarts år i spelet), steg 11.13.8
@@ -58,6 +59,7 @@ export interface Byggare { namn: string; bygg: (b: State, s: State, r: VarldRad)
 export const BYGGARE: Byggare[] = [
   { namn: 'folket', bygg: (b, _s, r) => byggFolk(b, r) }, // radens antal, med åldrar, kön och släkt
   { namn: 'kunskapen', bygg: (b, _s, r) => byggKunskap(b, r) }, // radens tekniker spridda på folket (steg 11.13.4)
+  { namn: 'minnet', bygg: (b, _s, r) => byggMinne(b, r.minne, byggFardigt) }, // husen, gravarna och de heliga platserna från förra besöket (steg 11.13.12)
   { namn: 'husen', bygg: (b, _s, r) => byggHus(b, r) }, // de gemensamma husen, stationerna och möblerna (steg 11.13.6)
   { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll runt det som redan står (steg 11.13.5)
   { namn: 'förråden', bygg: (b, _s, r) => byggForrad(b, r) }, // radens mat och rikedom i hela saker, hos ägare (steg 11.13.7)
@@ -79,6 +81,7 @@ export function vackBy(s: State, nr: number): State | undefined {
   const r = s.varld && radNr(s.varld, nr);
   if (!r) return undefined;
   const b = vacktGrund(s, r);
+  b.vackRad = JSON.parse(JSON.stringify(r));
   for (const g of BYGGARE) { useMap(b); g.bygg(b, s, r); }
   vackKlar(s, b);
   return b;
@@ -88,10 +91,13 @@ function vackKlar(s: State, b: State) {
   useMap(b);
   b.seder.v = sederTarget(b);
   stepDelning(b);
+  b.vackFore = lasRad(b); // det byn ändrar från och med nu läggs till raden när den somnar (steg 11.13.12)
   delete b.vackI;
   useMap(s);
 }
 
+// byn går i slagen: raden står still för sina regler medan byn lever (steg 11.13.12)
+function vaknar(s: State, b: State) { const r = s.varld && radNr(s.varld, b.vackt); if (r) r.vaken = 1; }
 // ---------- väckningen i skeden (steg 11.13.8) ----------
 // När ett sällskap ger sig av mot en by i världen börjar byn väckas: radens tal fryses (en kopia i byn), och varje rad i BYGGARE
 // räknas vid en känd tid under resan, jämnt fördelade från avfärden till starten. Starten är den väntade ankomsten (vägens dygn,
@@ -115,15 +121,16 @@ KOHANDELSER.vackSteg = (s, _vl, p) => {
   useMap(b);
   BYGGARE[b.vackI!].bygg(b, s, b.vackRad);
   b.vackI!++;
-  if (b.vackI! >= BYGGARE.length) { vackKlar(s, b); count(s, 'vackt'); }
+  if (b.vackI! >= BYGGARE.length) { vackKlar(s, b); vaknar(s, b); count(s, 'vackt'); }
   useMap(s);
 };
-// en väckt by somnar när inget sällskap längre är på väg dit eller där (steg 11.13.12 skriver talen tillbaka)
+// en väckt by somnar när inget sällskap längre är på väg dit eller där, och det byn ändrat skrivs till raden (somna i vacktsomna.ts)
 export function vacktSomna(s: State) {
   const vl = s.varld;
   if (!vl || !s.vackta?.length) return;
   const mal = new Set(sallskapNu(vl).filter(sl => sl.skede !== 'hemat').map(sl => vl.platser?.find(q => q.nr === sl.mal)?.by));
   const fore = s.vackta.length;
+  for (const b of s.vackta) if (!(b.vackt === undefined || mal.has(b.vackt) || b.vackHall)) somna(s, b);
   s.vackta = s.vackta.filter(b => b.vackt === undefined || mal.has(b.vackt) || b.vackHall);
   if (s.vackta.length < fore) count(s, 'vackt_somnat', fore - s.vackta.length);
   if (!s.vackta.length) delete s.vackta;
@@ -132,9 +139,9 @@ vackKrok.borja = borjaVacka;
 PERIODRADER.push({ namn: 'väckta byar som somnar', period: 'timme', fn: s => vacktSomna(s) });
 // testknappen: raden nr väcks genast och går i slagen med huvudbyn tills den somnar av sig själv eller testknappen trycks igen
 export function vackTest(s: State, nr: number) {
-  if (s.vackta?.some(b => b.vackt === nr)) { s.vackta = s.vackta.filter(b => b.vackt !== nr); if (!s.vackta.length) delete s.vackta; return undefined; }
+  if (s.vackta?.some(b => b.vackt === nr)) { for (const b of s.vackta.filter(x => x.vackt === nr)) somna(s, b); s.vackta = s.vackta.filter(b => b.vackt !== nr); if (!s.vackta.length) delete s.vackta; return undefined; }
   const b = vackBy(s, nr);
-  if (b) { b.vackHall = 1; (s.vackta ??= []).push(b); }
+  if (b) { b.vackHall = 1; (s.vackta ??= []).push(b); vaknar(s, b); }
   return b;
 }
 
@@ -207,6 +214,8 @@ export function byggHem(b: State) {
     if (!pa || !alive(pa) || pa.id < o.id) continue;
     const folk = familjOf(b, o.id);
     if (folk.length < HUS.familjMin || housesOf(b).some(h => h.ag === o.id || h.ag === pa.id)) continue;
+    const tomt = housesOf(b).find(h => h.fn === 'familjehus' && h.ag === undefined); // ett familjehus ur minnet som ingen äger (steg 11.13.12)
+    if (tomt) { tomt.ag = o.id; continue; }
     const h = planeraHus(b, 'familjehus', { v: 1, plats: folk.length, ag: o.id });
     if (h) byggFardigt(b, h);
   }

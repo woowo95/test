@@ -219,14 +219,15 @@ export function radTro(vl: Varlden, r: VarldRad, n: number) {
 radKrok.startTek = startTek;
 radKrok.startMat = folk => Math.round(folk * portionerPerDygn() * RAD.startMat);
 
-// varje timme: radens regler för varje by i världen som lever efter dem, i ordning efter numret
+// varje timme: radens regler för varje by i världen som lever efter dem, i ordning efter numret; en väckt by (r.vaken) lever i
+// simuleringen i stället (steg 11.13.12)
 // varje dygn (ett år i spelet): kunskapen i varje by i världen som lever efter radens regler
-PERIODRADER.push({ namn: 'radens kunskap', period: 'dygn', fn: (_s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radKunskap(vl, r, n); } });
+PERIODRADER.push({ namn: 'radens kunskap', period: 'dygn', fn: (_s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r) && !r.vaken) radKunskap(vl, r, n); } });
 // varje dygn: tron i varje by i världen som lever efter radens regler (steg 11.3.11)
-PERIODRADER.push({ namn: 'radens tro', period: 'dygn', fn: (_s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radTro(vl, r, n); } });
+PERIODRADER.push({ namn: 'radens tro', period: 'dygn', fn: (_s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r) && !r.vaken) radTro(vl, r, n); } });
 // varje dygn (ett år i spelet): relationerna mellan byarna glöms mot grundläget (byrel.ts, steg 11.3.4)
 PERIODRADER.push({ namn: 'relationerna glöms', period: 'dygn', fn: (_s, vl) => relGlom(vl) });
-PERIODRADER.push({ namn: 'radens mat', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r)) radMat(s, vl, r, n); } });
+PERIODRADER.push({ namn: 'radens mat', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) if (lever(vl, r) && !r.vaken) radMat(s, vl, r, n); } });
 
 // ---------- vakten för raden (steg 11.3.14, Flera samhällen: Raden mäts mot testbyarna) ----------
 // Det stora testet (vakta i src/test/kor.ts, en gång i timmen) larmar om något som inte får finnas i världen: ett tal i en rad
