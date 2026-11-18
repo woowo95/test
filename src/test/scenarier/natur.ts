@@ -2214,7 +2214,9 @@ SCENARIER.tradorr = {
     const rum = gridOf(s).rooms.find(r => r.hus === hus.id && r.tiles.length)!, inneX = rum.tiles[0] % W + 0.5, inneY = Math.floor(rum.tiles[0] / W) + 0.5;
     // en vuxen gömmer sig i huset, de andra är långt borta och elden har slocknat; en hungrig flock kommer nära
     const prov = (dorr: string, mod: number, ensam = false) => {
-      const q = cloneState(s);
+      const q = cloneState(s); // (en brottning eller ett slagsmål som pågår i byn tar slut först och hör inte till provet)
+      for (let n = 0; q.kartStrider?.length && n < 3000; n++) { q.now += 1000; SIM.kartStridSteg(q, 1); }
+      q.sport = undefined; const fore = new Set(q.stridRapporter ?? []); // (en brottning eller ett slagsmål som pågår i byn hör inte till provet)
       for (const b of bitsOf(q)) if (b.hus === hus.id && b.k === 'oppning') b.dorr = dorr;
       SIM.touch(q); q.fire.lit = false; q.fire.fuel = 0; SIM.setAmount(q, 'flinta', 0); // (ingen kan tända elden igen och gå ut ensam dit)
       const folk = living(q).filter(x => ageOf(x, q.now) >= SIM.ALDER.vuxen), p = folk[0], ute = folk[1];
@@ -2237,7 +2239,7 @@ SCENARIER.tradorr = {
         if (nu && roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY)) inne++; // (i dörröppningen, när den modiga går ut, är vargen inte inne)
         if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (står kvar ensam ute tills flocken anfaller) */ const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
       });
-      slutStrider(q); const strider = (q.stridRapporter ?? []).filter(x => x.t >= t0).map(x => x.orsak); // (bara provets strider, inte byns förra) // striderna på kartan (steg 10.1.17) står i rapporterna
+      slutStrider(q); const strider = (q.stridRapporter ?? []).filter(x => x.t >= t0 && !fore.has(x)).map(x => x.orsak); // (bara provets strider, inte byns förra) // striderna på kartan (steg 10.1.17) står i rapporterna
       return { inne, vantade, gomde, seen, strider, dorrStrid: (q.stat?.vargDorrStrid ?? 0) - dorr0, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
     };
     const tra = prov('tradorr', 0), modig = prov('tradorr', 20), annan = prov('tradorr', 0, true), skinn = prov('skinndorr', 0);
@@ -2248,7 +2250,7 @@ SCENARIER.tradorr = {
       [`dörren stängs när någon gömmer sig i huset`, tra.stangd],
       [`flocken väntar utanför den stängda dörren (${tra.vantade} slag) och den som gömmer sig stannar inne (${tra.gomde} slag)`, tra.vantade > 0 && tra.gomde === tra.vantade],
       [`vargarna kommer aldrig in i det stängda huset (${tra.inne + modig.inne + annan.inne} slag)`, tra.inne + modig.inne + annan.inne === 0],
-      [`efter ett tag tröttnar flocken (${tra.st.vargTrottnade ?? 0}) och ingen strid blir av (${tra.strider.length})`, (tra.st.vargTrottnade ?? 0) > 0 && tra.strider.length === 0],
+      [`efter ett tag tröttnar flocken (${tra.st.vargTrottnade ?? 0}) och ingen strid blir av (${tra.strider.length}${tra.strider.length ? ": " + tra.strider.join(", ") : ""})`, (tra.st.vargTrottnade ?? 0) > 0 && tra.strider.length === 0],
       [`den som vågar går ut och slåss (${modig.strider.join(', ') || 'ingen strid'})`, modig.dorrStrid > 0], // (räknas i statistiken: rapporterna har ett tak, och den som förlorat anfalls igen)
       [`ser flocken någon ensam ute jagar den hellre den (${[...annan.seen].join(', ')}; ${annan.strider.join(', ') || 'ingen strid'})`, annan.strider.includes('vargar när vargarna anföll')], // (anfallet går fort: striden visar att det hände, också när stickproven var femte minut inte ser det)
       [`en skinndörr stoppar ingen: dörren stängs inte (${skinn.stangd ? 'stängd' : 'öppen'}), och vargarna går in och anfaller den som är ensam där (${skinn.strider.join(', ') || 'ingen strid'})`, !skinn.stangd && skinn.vantade === 0 && skinn.strider.includes('vargar när vargarna anföll')],

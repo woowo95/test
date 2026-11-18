@@ -53,14 +53,15 @@ export function trampa(vl: Varlden, rutor: number[], tyngd: number, t: number) {
 // sällskapets tyngd: människorna, packdjuren och vagnarna
 export const sallskapTyngd = (manniskor: number, packdjur = 0, vagnar = 0) => manniskor * LEDTAL.manniska + packdjur * LEDTAL.packdjur + vagnar * LEDTAL.vagn;
 
-// en färd mellan två byars platser (raderna fran och till) trampar vägen dit till fots, till exempel handlaren som kommer
-export function trampaFard(s: State, fran: number | undefined, till: number | undefined, tyngd: number) {
+// en färd mellan två byars platser (raderna fran och till) trampar vägen dit till fots vid tiden t, till exempel handlaren som
+// kommer (i världens kö är t händelsens tid, så att ikappräkningen trampar som det levande läget)
+export function trampaFard(s: State, fran: number | undefined, till: number | undefined, tyngd: number, t = s.now) {
   const vl = s.varld, v = vl && varldMarkFor(s);
   if (!vl || !v || fran === undefined || till === undefined) return;
   const a = byPlats(vl, fran), b = byPlats(vl, till);
   if (!a || !b || a === b) return;
-  const vag = vagMellan(vl, v, a.y * v.w + a.x, b.y * v.w + b.x, 'fots', s.now);
-  if (vag) trampa(vl, vagRutor(vag, v.w), tyngd, s.now);
+  const vag = vagMellan(vl, v, a.y * v.w + a.x, b.y * v.w + b.x, 'fots', t);
+  if (vag) trampa(vl, vagRutor(vag, v.w), tyngd, t);
 }
 // klasserna räknas om vid tiden t: de rutor som bytt klass ger en ny version av kostnaderna, och vägarna genom dem räknas om
 export function raknaLeder(vl: Varlden, v: VarldMark, t: number) {

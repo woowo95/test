@@ -33,7 +33,7 @@ import { KROPP } from './folk';
 import { barnMatAv, matGottAv } from './liv';
 import { fodslarPerAr, fodVilja } from './steg';
 import { ageIndex, iIstiden } from './tid';
-import { PERIODRADER, antalUr, periodSlut, varldSlump } from './varldslag';
+import { EFTERSTEG, PERIODRADER, antalUr, periodSlut, varldSlump } from './varldslag';
 import { varldHandelse } from './varldkronika';
 import { relGlom } from './byrel';
 import { Varlden, varldMark } from './varlden';
@@ -135,8 +135,9 @@ export function radMat(s: State, vl: Varlden, r: VarldRad, n: number) {
   r.tal.mat = Math.min(mat, forradTak(r));
   radRikedom(s, vl, r, n, mat === 0);
   r.t = t;
-  if (r.syn) { r.syn.folk = r.tal.folk; r.syn.styrka = r.tal.styrka; r.syn.resurser = r.tal.rikedom; } // huvudbyns förbindelse med byn följer
 }
+// huvudbyns förbindelse med byn följer raden, när alla världens rader räknat
+EFTERSTEG.push((_s, vl) => { for (const r of vl.rader ?? []) if (r.syn) { r.syn.folk = r.tal.folk; r.syn.styrka = r.tal.styrka; r.syn.resurser = r.tal.rikedom; } });
 
 // rikedomens och styrkans mål
 export const rikMal = (r: VarldRad) => r.tal.folk * RAD.rikPer * (1 + tekTillskott(r, 'rikedom'));
@@ -248,7 +249,7 @@ export function radVakt(s: State): [string, string][] {
     }
     if (r.nr === vl.huvud) continue;
     if (BYSORTER[r.sort].folk) {
-      byar++;
+      if (r.sort === 'by') byar++; // läger och utposter är inga byar som kan gå under
       const tak = RADVAKT.barkraft * barkraft(v, r) + RADVAKT.folk;
       if (r.tal.folk > tak) fel.push(['raden växer utan gräns', `${r.namn} (${r.nr}) folk ${r.tal.folk}, bärkraften ${Math.round(barkraft(v, r))}`]);
     } else if (r.sort === 'ruin') { byar++; ruiner++; }

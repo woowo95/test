@@ -46,6 +46,9 @@ export function laggIKo(vl: Varlden, t: number, typ: string, o: { sak?: number; 
   return p;
 }
 
+// det som görs efter varje period och varje post i kön, när alla rader räknat (t.ex. att huvudbyns förbindelser följer raderna)
+export const EFTERSTEG: ((s: State, vl: Varlden) => void)[] = [];
+
 // världen fram till nu: det som ligger först i tiden räknas först, kön före perioderna vid samma tid och timmen före dygnet
 export const varldSteg = (s: State) => varldTill(s, s.now);
 // världen räknas fram till tiden till (förhistorien, forhistoria.ts, räknar fram till huvudbyns grundande)
@@ -60,9 +63,10 @@ export function varldTill(s: State, till: number) {
     if (ko && ko.t <= t) { nasta = 'ko'; t = ko.t; }
     for (const k of PERIOD_IDS) { const ts = periodSlut(vl, k, klar[k]); if (ts <= till && (nasta === undefined || ts < t)) { nasta = k; t = ts; } }
     if (!nasta) return;
-    if (nasta === 'ko') { vl.ko!.shift(); KOHANDELSER[ko!.typ]?.(s, vl, ko!); continue; }
+    if (nasta === 'ko') { vl.ko!.shift(); KOHANDELSER[ko!.typ]?.(s, vl, ko!); for (const f of EFTERSTEG) f(s, vl); continue; }
     const n = klar[nasta]++;
     for (const r of PERIODRADER) if (r.period === nasta) r.fn(s, vl, n);
+    for (const f of EFTERSTEG) f(s, vl);
   }
 }
 

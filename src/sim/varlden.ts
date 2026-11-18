@@ -57,10 +57,10 @@ export function medVarld(s: State, fore?: (s: State, vl: Varlden, v: VarldMark) 
   uppackad.set(s.varld, v);
   laggByar(s.varld, v); // byarna, de övriga platserna och sist huvudbyn med samma regler (placering.ts, steg 11.2.13–11.2.14)
   laggOvriga(s.varld, v);
-  laggGruvor(s.varld, v); // silvergruvorna (gruva.ts, steg 11.10.1)
   fore?.(s, s.varld, v);
   laggHuvudby(s);
   laggGrannat(s.varld, v, s.founded); // varje bys närmaste grannar med väg och restid (grannat.ts, steg 11.2.21)
+  laggGruvor(s.varld, v); // silvergruvorna sist, som i en värld från före gruvorna (gruva.ts, steg 11.10.1)
   return s.varld;
 }
 // världens mark som rutnät, packad upp en gång per värld

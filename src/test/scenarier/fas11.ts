@@ -156,7 +156,9 @@ SCENARIER.varldtillstand = {
     const slumpFore = JSON.stringify(med.rngs);
     SIM.medVarld(med);
     const slumpEfter = JSON.stringify(med.rngs), fro = med.varld!.fro;
-    const lika = JSON.stringify(har.varld!.mark) === JSON.stringify(med.varld!.mark) && JSON.stringify(har.varld!.platser!.map(p => [p.k, p.x, p.y])) === JSON.stringify(med.varld!.platser!.map(p => [p.k, p.x, p.y]));
+    // platserna som fanns när byn grundades (byar som grundats sedan har fran efter grundandet)
+    const fran0 = (x: SIM.State) => x.varld!.platser!.filter(p => !(p.fran! > x.founded)).map(p => [p.k, p.x, p.y]);
+    const lika = JSON.stringify(har.varld!.mark) === JSON.stringify(med.varld!.mark) && JSON.stringify(fran0(har)) === JSON.stringify(fran0(med));
     kor(med, 6);
     // världen följer med i sparningen, som en egen del inom sin gräns
     const delar = SIM.serializeParts(med), kb = new TextEncoder().encode(delar.varlden ?? '').length / 1024;
@@ -424,13 +426,13 @@ SCENARIER.varldslag = {
     SIM.KOHANDELSER.prov = (_s, vl, p) => { skriv(vl, `k${p.sak}@${p.t}`); if ((p.sak ?? 0) % 2) SIM.laggIKo(vl, p.t + 1800e3, 'prov', { sak: (p.sak ?? 0) + 1000 }); };
     try {
       const ny = () => { const s = SIM.cloneState(testBy(10)); SIM.medVarld(s); return s; };
-      const levande = ny(), ikapp = ny(), slut = levande.now + 4 * 86400e3 + 1234e3; // fyra dygn (fyra år i spelet)
+      const levande = ny(), ikapp = ny(), p0 = { ...levande.varld!.perioder }, slut = levande.now + 4 * 86400e3 + 1234e3; // fyra dygn (fyra år i spelet)
       while (levande.now < slut) { levande.now = Math.min(slut, levande.now + 300e3); SIM.varldSteg(levande); }
       ikapp.now = slut; SIM.varldSteg(ikapp);
       const a = logg.get(levande.varld!) ?? [], b = logg.get(ikapp.varld!) ?? [];
       const lika = a.length > 0 && JSON.stringify(a) === JSON.stringify(b) && JSON.stringify(levande.varld!.ko ?? []) === JSON.stringify(ikapp.varld!.ko ?? []);
       const vl = levande.varld!, timmar = SIM.periodNu(vl, 'timme', slut), dygn = SIM.periodNu(vl, 'dygn', slut);
-      const antal = vl.perioder!.timme === timmar && vl.perioder!.dygn === dygn && a.filter(x => x[0] === 't').length === timmar && a.filter(x => x[0] === 'd').length === dygn;
+      const antal = vl.perioder!.timme === timmar && vl.perioder!.dygn === dygn && a.filter(x => x[0] === 't').length === timmar - (p0.timme ?? 0) && a.filter(x => x[0] === 'd').length === dygn - (p0.dygn ?? 0); // de som inte räknats före
       // ordningen: varje post i kön räknas vid sin tid, efter perioderna som slutat före den
       const tider = a.map(x => x[0] === 'k' ? Number(x.split('@')[1]) : SIM.periodSlut(vl, x[0] === 't' ? 'timme' : 'dygn', Number(x.slice(1).split(':')[0])));
       const iOrdning = tider.every((t, i) => i === 0 || t >= tider[i - 1]), poster = a.filter(x => x[0] === 'k').length;
@@ -536,7 +538,8 @@ SCENARIER.vagval = {
 SCENARIER.grannat = {
   text: 'Grannätet (steg 11.2.21): varje by får sina närmaste byar som går att nå, räknat i vägens kostnad, med väg och restid',
   kor: () => {
-    const s = SIM.cloneState(testBy(10)), t0 = performance.now(), vl = SIM.medVarld(s), tid = performance.now() - t0, v = SIM.varldMark(s)!;
+    const s = SIM.cloneState(testBy(10)); delete s.varld; // en ny värld: grannätet som det räknas när världen skapas
+    const t0 = performance.now(), vl = SIM.medVarld(s), tid = performance.now() - t0, v = SIM.varldMark(s)!;
     const byar = vl.platser!.filter(p => p.k === 'by'), N = SIM.GRANNAT.antal;
     const alla = byar.every(p => Array.isArray(p.grannar) && p.grannar.length <= N);
     const fulla = byar.filter(p => p.grannar!.length === N).length;
@@ -786,6 +789,7 @@ SCENARIER.byrelation = {
 
 SCENARIER.byflytt = {
   text: 'Flytten mellan byarna (steg 11.3.5, byflytt.ts): de som lämnar en trång eller hungrig by väljer bland byarna inom räckhåll efter trängsel, avstånd och relation, kommer fram efter restiden i hela tal, och till huvudbyn kommer de som främlingar',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,rovarlager.chans=0,nyby.chans=0' }, // bara flytten: ingen slår läger eller grundar en by (de prövas i rovarlager och nyby)
   kor: () => {
     const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!, v = SIM.varldMark(s)!;
     const levande = vl.rader!.filter(r => SIM.lever(vl, r));

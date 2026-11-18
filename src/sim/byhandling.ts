@@ -138,7 +138,7 @@ export const BYHANDLINGAR = {
       if (!n || dygn === undefined) return;
       const f: RadFard = { id: c.vl.nastaFard = (c.vl.nastaFard ?? 0) + 1, fran: c.r.nr, till: c.mot.nr, g: 'mat', n: 0, anfall: n, t0: c.t, t1: c.t + dygn * DAY };
       (c.vl.farder ??= []).push(f);
-      trampaFard(c.s, c.r.nr, c.mot.nr, sallskapTyngd(n));
+      trampaFard(c.s, c.r.nr, c.mot.nr, sallskapTyngd(n), c.t);
       laggIKo(c.vl, f.t1, 'fardFram', { sak: f.id });
       count(c.s, 'radanfall_ut');
     },
@@ -180,7 +180,7 @@ export const BYHANDLINGAR = {
       if (!a) return;
       const f: RadFard = { id: c.vl.nastaFard = (c.vl.nastaFard ?? 0) + 1, fran: c.r.nr, till: c.mot.nr, g: 'mat', n: 0, uppdrag: a.id, t0: c.t, t1: c.t + a.dygn * DAY };
       (c.vl.farder ??= []).push(f);
-      trampaFard(c.s, c.r.nr, c.mot.nr, sallskapTyngd(BYHANDLING.barare));
+      trampaFard(c.s, c.r.nr, c.mot.nr, sallskapTyngd(BYHANDLING.barare), c.t);
       laggIKo(c.vl, f.t1, 'fardFram', { sak: f.id });
       count(c.s, 'raduppdrag_ut');
     },
@@ -292,7 +292,7 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
     else { f.g = a.g; f.n = a.n; taUr(r, a.g, a.n); f.gava = true; }
   }
   (vl.farder ??= []).push(f);
-  trampaFard(s, r.nr, mot.nr, sallskapTyngd(1));
+  trampaFard(s, r.nr, mot.nr, sallskapTyngd(1), t0);
   laggIKo(vl, f.t1, 'fardFram', { sak: f.id });
   count(s, 'radbesked_ut');
 }
@@ -386,7 +386,7 @@ function skickaFard(c: ByCtx, a: FardAffar, gava = false) {
   const f: RadFard = { id: vl.nastaFard = (vl.nastaFard ?? 0) + 1, fran: r.nr, till: mot.nr, g: a.g, n, t0, t1: t0 + a.dygn * DAY, ...huvud ? { handlare: true as const } : {}, ...gava ? { gava: true as const } : {} };
   if (huvud) { let i = 0; f.last = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x484c + i++), g => overskott(r, g), radHandlarSort(s, r), radDjur(s, r)); } // handlarens varor ur raden (steg 11.6.9)
   (vl.farder ??= []).push(f);
-  trampaFard(s, r.nr, mot.nr, sallskapTyngd(BYHANDLING.barare));
+  trampaFard(s, r.nr, mot.nr, sallskapTyngd(BYHANDLING.barare), t0);
   laggIKo(vl, f.t1, 'fardFram', { sak: f.id });
   count(s, gava ? 'radgava_ut' : huvud ? 'handlare_skickad' : 'radhandel_ut');
 }
@@ -438,10 +438,10 @@ KOHANDELSER.fardFram = (s, vl, p) => {
   if (!f) return;
   const r = radNr(vl, f.fran), mot = radNr(vl, f.till);
   if (f.handlare) { handlarFram(s, f.fran); return; }
-  if (f.uppdrag !== undefined) { f.t2 = f.t1 + (f.t1 - f.t0); uppdragFardFram(s, vl, f); trampaFard(s, f.till, f.fran, sallskapTyngd(BYHANDLING.barare)); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; } // handlaren väntar vid kartans kant och går in när det är fritt (handel.ts)
+  if (f.uppdrag !== undefined) { f.t2 = f.t1 + (f.t1 - f.t0); uppdragFardFram(s, vl, f); trampaFard(s, f.till, f.fran, sallskapTyngd(BYHANDLING.barare), p.t); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; } // handlaren väntar vid kartans kant och går in när det är fritt (handel.ts)
   f.t2 = f.t1 + (f.t1 - f.t0);
   if (f.besked) beskedFram(s, vl, f, r, mot); // sändebudet (steg 11.6.23): en gåva läggs i förrådet nedan
-  if (f.besked && mot?.nr === vl.huvud) { trampaFard(s, f.till, f.fran, sallskapTyngd(1)); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; }
+  if (f.besked && mot?.nr === vl.huvud) { trampaFard(s, f.till, f.fran, sallskapTyngd(1), p.t); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; }
   if (f.anfall && mot?.nr === vl.huvud) { if (r) { huvudAnfall(s, f, r); return; } } // flocken går in på huvudbyns karta och kommer hem när den lämnat den
   else if (f.anfall) { if (r && mot) anfallFram(s, vl, f, r, mot); }
   else if (f.gava && mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) { // gåvan läggs i förrådet och mottagaren ser bättre på givaren
@@ -461,7 +461,7 @@ KOHANDELSER.fardFram = (s, vl, p) => {
     if (r) { byHandelse(vl, 'handel', r.nr, mot.nr); byHandelse(vl, 'handel', mot.nr, r.nr); }
     count(s, 'radhandel_fram');
   } else { f.h = f.g; f.hn = f.n; } // byn finns inte längre: lasten bärs hem igen
-  trampaFard(s, f.till, f.fran, sallskapTyngd(BYHANDLING.barare));
+  trampaFard(s, f.till, f.fran, sallskapTyngd(BYHANDLING.barare), p.t);
   laggIKo(vl, f.t2, 'fardHem', { sak: f.id });
 };
 // sändebudet kommer fram: till huvudbyn går budet in som en gäst (liv.ts, efter samtalet), annars verkar beskedet genast hos
