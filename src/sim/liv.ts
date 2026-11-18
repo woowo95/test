@@ -23,7 +23,7 @@ import { KLAN, klanById, klanerOf, narhet } from './klaner';
 import { radKrok } from './radtal';
 import { klanHandelse } from './byrel';
 import { kantMot, utbrytning } from './grannbyar';
-import { prisIPrat } from './handel';
+import { handlarenDog, prisIPrat } from './handel';
 import { gaMot } from './rovare';
 import { kanterna } from './varg';
 import { eldPlats, getMap } from './karta';
@@ -140,6 +140,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   const { text: cause, sorg } = DODSORSAKER[orsak], akt = p.task?.act;
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;
+  if (p.gast?.sort === 'handlare' && s.handlare?.id === p.id) handlarenDog(s, s.handlare); // handlaren som dör (i en brand, ett slagsmål) avslutar besöket, som i gastDor
   raddAkt(s, p, akt, `${p.name} dog ${cause}`, orsak); // de som såg det blir rädda för det hen gjorde (steg 8.4.10)
   if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)
   const a = Math.floor(ageOf(p, s.now));

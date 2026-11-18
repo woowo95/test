@@ -299,6 +299,7 @@ SCENARIER.paborjat = {
     // ett träd: den som börjar fälla det lämnar det halvfällt, och nästa fäller det färdigt
     addTool(s, 'yxa', p);
     const g = groundOf(s), c = bynsMitt(s);
+    for (const i of SIM.skaRojas(s)) g.trees[i] = 0; // (träden som ska röjas, som vid grundarnas vagn, fälls före det halvfällda)
     let ti = -1;
     for (let d = 1; d < 30 && ti < 0; d++) for (let y = c.y - d; y <= c.y + d && ti < 0; y++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[y * W + x] >= 0.95) { ti = y * W + x; break; }
     const ft = uppgift(p, 'falla'); ft.tx = (ti % W) + 0.5; ft.ty = Math.floor(ti / W) + 0.5; startWork(s, p, ft);

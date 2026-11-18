@@ -1835,9 +1835,9 @@ SCENARIER.brand = {
       SIM.tand(s, mitt, 'blixt', 0);
       kor(s, 18, torr);
       // brandens spår prövas i en kopia där ingen finns som släcker: en ruta som släckts innan den brunnit klart får behålla sitt träd (steg 9.9.4), och med den nya långsamma elden hinner byborna släcka drygt hundra rutor av 18 timmars brand
-      const ko = cloneState(s0); ko.people = [];
+      const ko = cloneState(s0); ko.people = []; ko.handlare = undefined;
       SIM.tand(ko, mitt, 'blixt', 0);
-      kor(ko, 18, x => { torr(x); x.people = []; });
+      kor(ko, 18, x => { torr(x); x.people = []; x.handlare = undefined; });
       const rutor = s.stat?.['brand ruta'] ?? 0, trad = s.stat?.['brand trad'] ?? 0;
       const brunnen = [...new Set((ko.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
       // brandens spår (steg 9.2.26): där skogen brann står kolnade stammar som torrakor
@@ -1867,7 +1867,7 @@ SCENARIER.brand = {
       SIM.addTool(by, 'vattensack', vuxen);
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) SIM.tand(by, (pv.y + dy) * W + pv.x + dx, 'gnista', 0);
       // säcken prövas i en kopia där bara hen finns: i byn släcker de andra de nio rutorna med händerna på någon minut, innan säcken hunnit fyllas
-      const ensam = cloneState(by); ensam.people = ensam.people.filter(p => p.id === vuxen.id);
+      const ensam = cloneState(by); ensam.people = ensam.people.filter(p => p.id === vuxen.id); ensam.handlare = undefined;
       kor(ensam, 2, torr);
       const ensamSack = ensam.stat?.['brand sack'] ?? 0;
       const t0 = by.now;

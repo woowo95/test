@@ -554,21 +554,21 @@ SCENARIER.slaktbank = {
     setMat(s, { bar: 200 }); s.delning = { andel: 1 }; setAmount(s, 'ved', 60); setAmount(s, 'virke', 6); setAmount(s, 'flinta', 3); setAmount(s, 'grenar', 10);
     const ved0 = amountOf(s, 'virke');
     let h = 0, byggare = '';
-    while (!stationerOf(s).some(isKlar) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; }
-    const st = stationerOf(s)[0], klar = !!st && isKlar(st);
+    while (!stationerOf(s).some(t => t.k !== 'vagn' && isKlar(t)) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; }
+    const st = stationerOf(s).find(t => t.k !== 'vagn'), klar = !!st && isKlar(st);
     const logg = s.log.some(l => l.text.includes('första slaktbänk'));
     for (const r of living(s)) r.task = undefined; // (ingen står vid bänken när den prövas, och det som lagts ner framför den bärs bort)
     if (st) { const fr = SIM.framfor(st); s.stackar = (s.stackar ?? []).filter(a => !fr.some(q => q.x === a.x && q.y === a.y)); SIM.touch(s); }
     const sz = st ? SIM.storlekAv(st) : { w: 0, h: 0 }, rutor = Array.from({ length: sz.w * sz.h }, (_, i) => ({ x: st!.x + i % sz.w, y: st!.y + Math.floor(i / sz.w) }));
     const avElden = st ? Math.min(...rutor.map(r => SIM.utanforByn(s, r.x, r.y))) : 0; // till lägret och husen (steg 2.10.16)
     const bredd = STATIONER.slaktbank.w, ingenAnnan = !!st && rutor.every(r => !usable(s, r.x, r.y) && SIM.stationAt(s, r.x, r.y) === st) && !SIM.stationAt(s, st.x + sz.w, st.y);
-    const enda = stationerOf(s).length === 1;
+    const enda = stationerOf(s).filter(t => t.k !== 'vagn').length === 1;
     // en kniv blir bänkens: den är byns och ligger vid bänken
     const p = living(s).find(r => ageOf(r, s.now) >= 18)!;
     const tomma = tommaKnivplatser(s);
     if (klar && tomma) { const k = addTool(s, 'kniv', p); k.agare = BYN; stepStationer(s); }
     const bankKniv = tingOf(s).find(k => k.k === 'kniv' && k.vid === st?.id);
-    const ligger = !!bankKniv && bankKniv.x === st.x && bankKniv.y === st.y && bankKniv.agare === BYN && tommaKnivplatser(s) === 0;
+    const ligger = !!bankKniv && !!st && bankKniv.x === st.x && bankKniv.y === st.y && bankKniv.agare === BYN && tommaKnivplatser(s) === 0;
     // den som slaktar tar bänkens kniv om hen inte har en egen, och kniven läggs tillbaka vid bänken
     for (const k of tingOf(s)) if (k.k === 'kniv' && k !== bankKniv) k.agare = BYN, k.vid = undefined, k.c = 0; // (bara bänkens kniv är hel)
     s.ting = tingOf(s).filter(k => k.k !== 'kniv' || k === bankKniv);
@@ -641,8 +641,8 @@ SCENARIER.flatarbank = {
     const ved0 = amountOf(s, 'virke');
     let h = 0, byggare = '', hantverk = 0, tvinnar = 0;
     let logg = false; // (loggen rymmer de senaste 400 raderna, så raden ses medan det händer)
-    while (!stationerOf(s).some(isKlar) && h < 72) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; logg ||= s.log.some(l => l.text.includes('första slöjdbänk')); }
-    const st = stationerOf(s).find(isKlar), klar = !!st && st.k === 'flatarbank';
+    while (!stationerOf(s).some(t => t.k !== 'vagn' && isKlar(t)) && h < 72) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; logg ||= s.log.some(l => l.text.includes('första slöjdbänk')); }
+    const st = stationerOf(s).find(t => t.k !== 'vagn' && isKlar(t)), klar = !!st && st.k === 'flatarbank';
     const tog = ved0 - amountOf(s, 'virke') >= RT.flatarbankVirke - 1e-9; // (grenarna plockas samtidigt, så de räknas inte här)
     // korgen: utan bänk vill ingen fläta en, med bänken görs den där
     const u = createState(1, START), uq = living(u).find(r => ageOf(r, u.now) >= 18)!;
@@ -657,7 +657,7 @@ SCENARIER.flatarbank = {
       const w = createState(1, START), q = living(w).find(r => ageOf(r, w.now) >= 18)!;
       q.tek = { rep: 1 }; setAmount(w, 'torrgras', 40); setAmount(w, 'rep', 0);
       medBank(w, 'flatarbank');
-      const p0 = vidBanken ? vidStation(w.stationer![0]) : getMap(w.seed).fire;
+      const p0 = vidBanken ? vidStation(w.stationer!.find(t => t.k !== 'vagn')!) : getMap(w.seed).fire;
       q.x = p0.x; q.y = p0.y + (vidBanken ? 0 : 1);
       twineRope(w, q, 0.1); // sex minuter: ett och ett halvt rep för hand sedan steg 2.3.8
       return amountOf(w, 'rep') + (q.delar?.rep ?? 0); // och arbetet mot nästa hela rep (steg 2.10.7)
@@ -668,7 +668,7 @@ SCENARIER.flatarbank = {
       const w = createState(1, START), q = living(w).find(r => ageOf(r, w.now) >= 18)!;
       q.tek = { kniv: 1 }; setAmount(w, 'flinta', 10); setAmount(w, 'grenar', 10);
       if (bank) medBank(w, 'flatarbank');
-      const o = spotFor(w, 'kniv', q), vid = bank ? vidStation(w.stationer![0]) : undefined;
+      const o = spotFor(w, 'kniv', q), vid = bank ? vidStation(w.stationer!.find(t => t.k !== 'vagn')!) : undefined;
       q.x = o.x; q.y = o.y;
       const tk = { act: 'kniv' as SIM.Act, phase: 'do' as const, tx: o.x, ty: o.y, until: 0, carry: 0 };
       startWork(w, q, tk);
@@ -2541,7 +2541,7 @@ SCENARIER.virke = {
     // virket ärver slaktbänkens nivå (steg 6.2.19): det är det som fattas till bänken, inte en buffert för sig
     const brist0 = SIM.fattas(s, vuxna[0], 'slaktbank', SIM.dangers(s)) === 'virke' ? 1 : 0;
     let klov = 0, h = 0;
-    while (!stationerOf(s).some(isKlar) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'klyva') klov++; }); h++; }
+    while (!stationerOf(s).some(t => t.k !== 'vagn' && isKlar(t)) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'klyva') klov++; }); h++; }
     const st = stationerOf(s).find(t => t.k === 'slaktbank'), klar = !!st && isKlar(st);
     return [
       [`ved: 20 i en stack à 5 vikt; virke: 2 i en stack à 16 vikt`, vikt],
