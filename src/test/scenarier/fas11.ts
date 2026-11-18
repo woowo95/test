@@ -5026,3 +5026,56 @@ SCENARIER.vackttro = {
     ];
   },
 };
+
+SCENARIER.vacktfalt = {
+  text: 'Fälten och djuren i den väckta byn (steg 11.13.20, vacktfalt.ts): varje hushåll där någon kan odla har ett fält med röjd mark, med en gröda som växer utanför istiden och frön till nästa sådd; djuren är en del av rikedomen i hela djur, betesdjuren i en hage med staket runt om bara där någon kan sätta staket. En by utan odling och staket får inga fält och inga betesdjur',
+  kor: () => {
+    const vacka = (niva: number, dag: number) => {
+      const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+      s.now += dag * SIM.DAY;
+      const r = vl.rader!.filter(q => q.sort === 'by' && SIM.lever(vl, q)).sort((a, b) => b.tal.folk - a.tal.folk)[0];
+      r.tal.folk = 24; r.tek = Object.values(SIM.TEK).filter(t => t.niva <= niva).map(t => t.id); r.tal.rikedom = 6000; r.tal.mat = 1200;
+      if (niva < 1) r.tek = r.tek.filter(t => t !== 'odling' && t !== 'staket');
+      const b = SIM.vackBy(s, r.nr)!;
+      return { s, r, b };
+    };
+    const { s, r, b } = vacka(3, 0);
+    SIM.useMap(b);
+    const hush = SIM.hushallen(b), odlar = hush.filter(h => [h, ...SIM.familjOf(b, h.id)].some(q => SIM.ageOf(q, b.now) >= SIM.ALDER.vuxen && SIM.knows(q, 'odling')));
+    const falt = SIM.faltOf(b), g = SIM.groundOf(b);
+    const rojd = falt.every(f => SIM.faltRutor(f).every(i => g.trees[i] === 0));
+    const vaxer = falt.some(f => SIM.rutorAv(f).every(x => x.st === 'vaxer' && x.g));
+    const fron = falt.every(f => { const gr = SIM.GRODOR[SIM.rutorAv(f)[0].g ?? 'rovor']; return SIM.amountOf(b, gr.fro) >= 1; });
+    const djur = SIM.tamdjurOf(b), bete = SIM.betesdjurOf(b), hagar = SIM.hagarOf(b);
+    const iHagen = bete.every(d => d.hage !== undefined && SIM.hagarOf(b).some(h => h.id === d.hage && d.x >= h.x && d.x < h.x + h.w && d.y >= h.y && d.y < h.y + h.h));
+    const hel = hagar.every(h => SIM.hageHel(b, h)), agare = djur.every(d => b.people.some(p => p.id === d.agare));
+    const djurV = SIM.djurVarde(b) + (b.hons ? b.hons.n * SIM.HONS.varde : 0), rik = SIM.rikedom(b);
+    const mat = SIM.SAK_LIST.filter(k => SIM.isFood(k)).reduce((a, k) => a + SIM.amountOf(b, k), 0);
+    SIM.useMap(s);
+    const t = vacka(3, 0).b, lika = JSON.stringify(SIM.faltOf(t)) === JSON.stringify(falt) && JSON.stringify((t.tamdjur ?? []).map(d => [d.art, d.x, d.y])) === JSON.stringify(djur.map(d => [d.art, d.x, d.y]));
+    // istiden: jorden väntar
+    let dag = 0; while (dag < 28 && !SIM.iIstiden(SIM.kalender(b, b.now + dag * SIM.DAY).ai)) dag++;
+    let vinter = vacka(3, dag).b;
+    for (let d = dag + 1; d < dag + 8 && !SIM.iIstiden(SIM.kalender(vinter).ai); d++) vinter = vacka(3, d).b;
+    SIM.useMap(vinter);
+    const istid = SIM.iIstiden(SIM.kalender(vinter).ai), tomma = SIM.faltOf(vinter).every(f => SIM.rutorAv(f).every(x => x.st === 'sa'));
+    // en by som inte kan odla eller sätta staket
+    const ung = vacka(0, 0).b;
+    SIM.useMap(ung);
+    const ingaFalt = SIM.faltOf(ung).length === 0, ingaBete = SIM.betesdjurOf(ung).length === 0;
+    SIM.useMap(s);
+    return [
+      ['varje hushåll som kan odla har ett fält, och ägarna kan odla (' + falt.length + ' fält, ' + odlar.length + ' av ' + hush.length + ' hushåll odlar)', falt.length >= odlar.length && odlar.every(h => falt.some(f => [h, ...SIM.familjOf(b, h.id)].some(q => q.id === f.agare))) && falt.every(f => { const p = b.people.find(q => q.id === f.agare); return !!p && SIM.knows(p, 'odling'); })],
+      ['marken på fälten är röjd', rojd],
+      ['grödan växer utanför istiden', vaxer],
+      ['ägarna har frön till nästa sådd', fron],
+      ['djuren är en del av rikedomen (' + djur.length + ' djur, ' + (b.hons?.n ?? 0) + ' höns, värda ' + djurV + ' av ' + Math.round(rik) + ')', djur.length > 0 && djurV <= r.tal.rikedom * SIM.VACKTDJUR.andel && Math.abs(rik - r.tal.rikedom) <= r.tal.rikedom * 0.15],
+      ['betesdjuren står i en hage med staket runt om (' + bete.length + ' betesdjur, ' + hagar.length + ' hage)', bete.length > 0 && hagar.length === 1 && iHagen && hel],
+      ['alla djur har en ägare i byn', agare],
+      ['maten ligger nära raden, fröna medräknade (' + mat + ' mot ' + r.tal.mat + ')', mat <= r.tal.mat && mat >= r.tal.mat * 0.9],
+      ['samma rad ger samma fält och djur', lika],
+      ['i istiden väntar den uppgrävda jorden på sådd (dygn ' + dag + ', ' + SIM.faltOf(vinter).length + ' fält, istid ' + istid + ', ' + [...new Set(SIM.faltOf(vinter).flatMap(f => SIM.rutorAv(f).map(x => x.st)))].join('/') + ')', istid && SIM.faltOf(vinter).length > 0 && tomma],
+      ['en by utan odling och staket har inga fält och inga betesdjur', ingaFalt && ingaBete],
+    ];
+  },
+};

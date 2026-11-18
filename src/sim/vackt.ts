@@ -11,9 +11,9 @@ import { nyKvalitet } from './kvalitet';
 import { nyEld } from './brasor';
 import { grundvarde, rikedomDelar } from './varde';
 import { radVaror, sakerIGrupp, VARUGRUPP_IDS, VarugruppId } from './priser';
-import { isFood, SAKER } from './saker';
+import { isFood, SAK_LIST, SAKER } from './saker';
 import { ar_vatska } from './vatskor';
-import { isStored, laggIn, lagerNy, lagerStorre, stacksOf } from './lager';
+import { amountOf, isStored, laggIn, lagerNy, lagerStorre, stacksOf } from './lager';
 import { newTing } from './agande';
 import { planeraHus } from './byggplan';
 import { bitsOf, housesOf, Hus, MATERIAL, touch } from './byggnad';
@@ -35,6 +35,8 @@ import { DAY, HOUR, Person, State, useMap } from './typer';
 import { byggLiven } from './vacktliv';
 import { byggRelationer } from './vacktrel';
 import { byggTro } from './vacktro';
+import { byggFalt } from './vacktfalt';
+import { inFas, kalender } from './tid';
 import { byggKronika } from './vacktkronika';
 import { count } from './folk';
 import { KOHANDELSER, laggIKo, PERIODRADER } from './varldslag';
@@ -70,11 +72,12 @@ export const BYGGARE: Byggare[] = [
   { namn: 'folket', bygg: (b, _s, r) => byggFolk(b, r) }, // radens antal, med åldrar, kön och släkt
   { namn: 'kunskapen', bygg: (b, _s, r) => byggKunskap(b, r) }, // radens tekniker spridda på folket (steg 11.13.4)
   { namn: 'platserna', bygg: (b, _s, r) => byggPlatser(b, r) }, // det byn vet om platserna i världen, spritt på de vuxna (steg 11.13.15)
+  { namn: 'relationerna', bygg: (b, _s, r) => byggRelationer(b, r) }, // vänner, ovänner och par som i en by i samma ålder (steg 11.13.18), före husen så att hemmen byggs för paren
   { namn: 'minnet', bygg: (b, _s, r) => byggMinne(b, r.minne, byggFardigt) }, // husen, gravarna och de heliga platserna från förra besöket (steg 11.13.12)
   { namn: 'husen', bygg: (b, _s, r) => byggHus(b, r) }, // de gemensamma husen, stationerna och möblerna (steg 11.13.6)
   { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll runt det som redan står (steg 11.13.5)
+  { namn: 'fälten', bygg: (b, _s, r) => byggFalt(b, r) }, // fälten och djuren efter teknikerna, före förråden så att de räknas i rikedomen (steg 11.13.20)
   { namn: 'förråden', bygg: (b, _s, r) => byggForrad(b, r) }, // radens mat och rikedom i hela saker, hos ägare (steg 11.13.7)
-  { namn: 'relationerna', bygg: (b, _s, r) => byggRelationer(b, r) }, // vänner, ovänner och par som i en by i samma ålder (steg 11.13.18)
   { namn: 'tron', bygg: (b, _s, r) => byggTro(b, r) }, // radens tro och ledare (steg 11.13.19)
   { namn: 'liven', bygg: (b, _s, r) => byggLiven(b, r) }, // ett liv bakåt för var och en, med den riktiga släkten och de dödas gravar (steg 11.13.16)
   { namn: 'krönikan', bygg: (b, _s, r) => byggKronika(b, r) }, // byns krönika bakåt ur världens krönika och folkets liv (steg 11.13.17)
@@ -87,8 +90,8 @@ export const vacktFro = (s: State, nr: number) => ((s.seed * 7919 + nr * 104729)
 export function vacktGrund(s: State, r: VarldRad, now = s.now): State {
   const vl = s.varld, v = varldMark(s), p = vl && byPlats(vl, r.nr);
   const mark = v && p ? MARK_IDS[v.mark[p.y * v.w + p.x]] : undefined;
-  const b = tomBy(vacktFro(s, r.nr), r.grundad, now, { W: KARTA.bredd, H: KARTA.hojd }, { varld: vl, vackt: r.nr, ...(mark && mark !== 'hav' && mark !== 'sjo' ? { varldmark: mark } : {}) });
-  b.seder = newSeder();
+  const b = tomBy(vacktFro(s, r.nr), r.grundad, now, { W: KARTA.bredd, H: KARTA.hojd }, { varld: vl, vackt: r.nr, kal: { ...(s.kal ?? inFas(s)) }, lastAgeIdx: kalender(s, now).ai, ...(mark && mark !== 'hav' && mark !== 'sjo' ? { varldmark: mark } : {}) });
+  b.seder = newSeder(); // (kalendern är huvudbyns: hela världen har samma årstid)
   return b;
 }
 // väck raden nr: byn byggs med alla rader i BYGGARE
@@ -338,7 +341,8 @@ export function byggForrad(b: State, r: VarldRad) {
       budget -= n * per(k);
     }
   };
-  dra('mat', Math.floor(r.tal.mat), () => 1, k => SAKER[k]!.haller ?? 10);
+  const redan = SAK_LIST.filter(k => isFood(k)).reduce((a, k) => a + amountOf(b, k), 0); // fröna som är mat (fälten, steg 11.13.20)
+  dra('mat', Math.floor(r.tal.mat - redan), () => 1, k => SAKER[k]!.haller ?? 10);
   iLagret(b, false); // det som ligger utanför lagret räknas inte i rikedomen
   const d = rikedomDelar(b), kvar = Math.max(0, r.tal.rikedom - d.hus - d.forrad - d.redskap); // det som inte redan står i husen och maten
   for (const g of ovriga) dra(g, radSum > 0 ? kvar * (varor[g] ?? 0) / radSum : 0, grundvarde, () => 1);

@@ -267,6 +267,24 @@ function nyttFalt(s: State, p: Person) {
   for (const w of bredder(s, (s.nextFalt ?? 0) + 1, faltBehov(s, p))) { const at = faltSite(s, w, iRader(w, n)); if (at) return { ...at, w, n: iRader(w, n) }; }
   return undefined;
 }
+// ett färdigt fält åt p med n rutor, där ett nytt fält skulle läggas, med rutorna ur ruta(k): marken är röjd (den väckta byn,
+// steg 11.13.20, vacktfalt.ts)
+export function faltFardigt(s: State, p: Person, n: number, ruta: (k: number) => Ruta): Falt | undefined {
+  for (const w of bredder(s, (s.nextFalt ?? 0) + 1, n)) {
+    const m = iRader(w, n), at = faltSite(s, w, m);
+    if (!at) continue;
+    const f: Falt = { id: s.nextFalt = (s.nextFalt ?? 0) + 1, x: at.x, y: at.y, w, dir: faltRiktning(s, at.y), n: m, agare: p.id, steg: 'bereda', klara: 0, kvar: 0, rord: s.now };
+    f.r = Array.from({ length: m }, (_, k) => ruta(k));
+    (s.falt ??= []).push(f);
+    noteraFore(s, f, 0);
+    const g = groundOf(s);
+    for (const i of faltRutor(f)) { g.trees[i] = 0; g.cover[i] = 0; tabortBuske(g, i); }
+    s.byggV = (s.byggV ?? 0) + 1;
+    sammanfatta(f);
+    return f;
+  }
+  return undefined;
+}
 // åt vilket håll raderna växer från första raden y: bort från lägret
 export const faltRiktning = (s: State, y: number) => y + 0.5 >= bynsMitt(s).y ? 1 : -1;
 // byns gräns för fälten (steg 3.10.14, byns område från steg 6.2.4): ett fält ligger utanför byns område (omrade.ts) och
