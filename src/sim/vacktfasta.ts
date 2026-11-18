@@ -72,3 +72,23 @@ export function fastaRelUt(b: State, r: VarldRad | undefined, par: [number, numb
     }
   }
 }
+
+// ---------- nya fasta personer (steg 11.13.14) ----------
+// När byn somnar blir de som besökarna mött (pratat med) fasta personer i förbindelsen, med hela sin person och sina relationer
+// med huvudbyns folk, så att de finns där nästa gång och kan komma på besök själva. De fasta som redan fanns sparas som de är nu
+const kroppAv = (p: Person) => { const k = JSON.parse(JSON.stringify(p)) as Record<string, unknown>; for (const f of ['id', 'x', 'y', 'task', 'gast', 'fastRoll', 'path', 'pk']) delete k[f]; return k as KlanPerson['kropp']; };
+export function nyaFasta(b: State, r: VarldRad) {
+  const bes = b.besokare ?? {}, gids = Object.keys(bes).map(Number);
+  if (!gids.length && !r.syn) return;
+  for (const p of b.people) {
+    if (p.gast || p.died !== undefined) continue;
+    const rel: Record<number, GastRel> = {};
+    for (const gid of gids) { const q = b.rels[relKey(p.id, gid)]; if (q && q.talks > 0) rel[bes[gid]] = { chem: q.chem, op: q.op, irr: 0, n: q.talks }; }
+    const kp = r.syn?.personer.find(q => q.namn === p.name && p.fastRoll !== undefined);
+    if (kp) { kp.kropp = kroppAv(p); kp.fodd = p.born; for (const [m, g] of Object.entries(rel)) (kp.rel ??= {})[+m] = { ...(kp.rel?.[+m] ?? {}), ...g }; continue; }
+    if (!Object.keys(rel).length || p.fastRoll !== undefined) continue;
+    if (r.syn) r.syn.personer.push({ namn: p.name, sex: p.sex, roll: 'mott', fodd: p.born, rel, kropp: kroppAv(p) });
+    else if (!r.fasta.some(q => q.namn === p.name)) r.fasta.push({ namn: p.name, kon: p.sex, fodd: p.born, roll: 'mott' });
+    p.fastRoll = 'mott';
+  }
+}

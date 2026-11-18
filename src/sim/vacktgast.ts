@@ -52,6 +52,7 @@ export function besokIn(s: State, sl: Sallskap) {
     // det hen bär följer med som gästens ting
     for (const t of s.ting ?? []) if (t.bar === p.id) (b.gastTing ??= []).push({ ...JSON.parse(JSON.stringify(t)), agare: g.id, bar: g.id });
     sl.gaster.push([p.id, g.id]);
+    (b.besokare ??= {})[g.id] = p.id;
   }
   fastaRelIn(b, radNr(vl, b.vackt), sl.gaster); // relationerna med de fasta (steg 11.13.13)
   count(s, 'besok in', folk.length); count(b, 'besökare kom', folk.length);

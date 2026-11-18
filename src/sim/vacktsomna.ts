@@ -12,6 +12,7 @@ import { bitsOf, housesOf, Hus, MATERIAL } from './byggnad';
 import { count } from './folk';
 import { lasRad, radNr, RADTAL_IDS } from './radtal';
 import { State, useMap } from './typer';
+import { nyaFasta } from './vacktfasta';
 
 export interface VacktMinne {
   t: number;
@@ -43,6 +44,7 @@ export function somna(s: State, b: State) {
   for (const p of b.people) if (p.died === undefined && !p.gast) for (const [id, n] of Object.entries(p.tek ?? {})) if (n >= 1) kan.add(id);
   for (const id of [...kan].sort()) if (!r.tek.includes(id)) r.tek.push(id);
   delete r.varor; delete r.hus; // tillgången räknas om ur rikedomen (radVaror i priser.ts)
+  nyaFasta(b, r); // de besökarna mött blir fasta (steg 11.13.14)
   r.minne = minnesbild(b);
   r.t = b.now;
   delete r.vaken;

@@ -4860,3 +4860,31 @@ SCENARIER.fastaforst = {
     ];
   },
 };
+
+SCENARIER.nyafasta = {
+  text: 'Nya fasta personer (steg 11.13.14, nyaFasta i vacktfasta.ts): de som besökarna pratat med blir fasta när byn somnar, med hela sin person och relationen till besökaren, och finns i byn som samma personer nästa gång',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, [a] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 4 && SIM.radNr(vl, p.by)!.syn)!;
+    const r = SIM.radNr(vl, mal.by!)!;
+    const b = SIM.vackTest(s, r.nr)!;
+    const sl = SIM.nyttSallskap(s, a!, mal.nr, 'handel')!;
+    sl.pack = {}; sl.skede = 'framme'; sl.framme = s.now;
+    SIM.gaBort(s, a!);
+    SIM.besokIn(s, sl);
+    const gid = sl.gaster![0]![1], c = SIM.living(b).find(p => !p.gast && p.fastRoll === undefined)!, ej = SIM.living(b).find(p => !p.gast && p.fastRoll === undefined && p !== c)!;
+    b.rels[SIM.relKey(c.id, gid)] = { chem: 0.5, op: 0.6, rom: 0, talks: 3, flags: 0 };
+    const pot = JSON.stringify(c.pot);
+    SIM.besokUt(s, sl, s.now);
+    SIM.vackTest(s, r.nr); // somnar
+    const kp = r.syn!.personer.find(q => q.namn === c.name);
+    const b2 = SIM.vackTest(s, r.nr)!;
+    const c2 = b2.people.find(p => p.name === c.name && p.fastRoll === 'mott');
+    return [
+      [`den besökaren mött blir fast (${c.name})`, kp?.roll === 'mott' && !!kp.kropp],
+      ['med relationen till besökaren', kp?.rel?.[a!.id]?.n === 3 && kp.rel[a!.id]!.chem === 0.5],
+      [`den som inte mött någon blir inte fast (${ej.name})`, !r.syn!.personer.some(q => q.namn === ej.name)],
+      ['nästa gång finns hen i byn som samma person', !!c2 && JSON.stringify(c2.pot) === pot],
+    ];
+  },
+};
