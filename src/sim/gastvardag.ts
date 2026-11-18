@@ -55,6 +55,11 @@ function gastAkt(s: State, p: Person): Act {
     if (!f) return 'gaHem';
     return f.gor === 'kommer' ? 'gastKommer' : f.gor === 'vantar' ? 'gastVantar' : f.gor === 'flyr' ? 'gastFly' : 'plundra';
   }
+  if (g.sort === 'folje') { // karavanens följe går när ledaren går (steg 11.11.6)
+    const h = s.handlare;
+    if (!h?.folj?.includes(p.id)) return 'gaHem';
+    return h.fas === 'kommer' ? 'gastKommer' : h.fas === 'gar' ? 'gaHem' : 'gastLager';
+  }
   if (g.sort === 'framling') return g.fas === 'pratar' ? 'gastVantar' : g.fas === 'gar' ? 'gaHem' : 'gastKommer';
   return 'gastKommer';
 }
@@ -66,8 +71,9 @@ function satt(s: State, p: Person, act: Act) {
 
 // sover handlaren? När hen väntar eller sitter vid filten och ingen handlar eller står i kö
 function kanSova(s: State, p: Person) {
-  if (p.gast!.sort !== 'handlare') return false;
   const h = s.handlare;
+  if (p.gast!.sort === 'folje') return !!h?.folj?.includes(p.id) && (h.fas === 'vantar' || h.fas === 'handlar'); // följet sover i lägret
+  if (p.gast!.sort !== 'handlare') return false;
   return !!h && h.id === p.id && (h.fas === 'vantar' || (h.fas === 'handlar' && !h.affar && !h.ko?.length));
 }
 

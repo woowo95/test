@@ -30,7 +30,8 @@ import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
 import { radKommer } from './rader';
 import { avslutaUppdrag, belonVarde, fyndId, ruinKvar, ruinRad, taRuin, uppdragDef, uppdragNr } from './uppdrag';
-import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, handlarFram, handlarKrok, kgOf, utrVikt } from './handel';
+import { FORDON } from './fordon';
+import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, KARAVAN, handlarFram, handlarKrok, kgOf, utrVikt } from './handel';
 import type { TamArtId } from './tamdjur';
 
 export const BYHANDLING = balans('byhandling', {
@@ -408,14 +409,17 @@ handlarKrok.sorter = s => { const vl = s.varld, h = vl && radNr(vl, vl.huvud); r
 // (over, i grundvärde och maten i portioner), och dras ur raden genast; silvret tas ur radens silver. Slumpen är världens
 // (rand), så att det blir lika i det levande läget och ikappräkningen. Det hen har kvar och har köpt går hem till raden (fardHem)
 export function packaRad(r: VarldRad, rand: () => number, over: (g: VarugruppId) => number, sort = 'vandrande', djur?: TamArtId): HandlarLast {
-  const utr = HANDLARSORTER[sort].utr, d = HANDLAR_UTR[utr]?.fordon ? djur : undefined, kg = utrVikt(utr, d); // packdjuret (steg 11.11.5)
+  const utr = HANDLARSORTER[sort].utr, f = HANDLAR_UTR[utr]?.fordon, d = f ? djur : undefined; // packdjuret (steg 11.11.5)
+  // karavanen (steg 11.11.6): så många vagnar som byn kan avvara folk till, och lasten efter dem
+  const karavan = f && d && FORDON[f]?.fardsatt === 'vagn', vmax = karavan ? Math.max(1, Math.min(KARAVAN.maxVagnar, Math.floor(r.tal.folk * KARAVAN.folkAndel / KARAVAN.folkPerVagn))) : 1;
+  const kg = utrVikt(utr, d, vmax);
   const helt = ([a, b]: readonly [number, number] | number[]) => a + Math.floor(rand() * (b - a + 1));
-  const [a0, b0] = HANDEL.vardeVaror, mal = a0 + rand() * (b0 - a0), ut: HVara[] = [];
+  const [a0, b0] = HANDEL.vardeVaror, mal = (a0 + rand() * (b0 - a0)) * vmax, ut: HVara[] = [];
   const kvar: Partial<Record<VarugruppId, number>> = {};
   const rader = HANDLARVAROR.filter(v => v.sort.includes(sort) && SAKER[v.k] && gruppAv(v.k) && (!SAKER[v.k]!.skaffa?.tek || r.tek.includes(SAKER[v.k]!.skaffa!.tek!)));
   const per = (k: string) => gruppAv(k) === 'mat' && isFood(k) ? 1 : grundvarde(k);
   let varde = 0;
-  for (let i = 0; i < 30 && varde < mal && rader.length; i++) {
+  for (let i = 0; i < 30 * vmax && varde < mal && rader.length; i++) {
     const tot = rader.reduce((x, v) => x + v.vikt, 0);
     let x = rand() * tot, rad = rader[0];
     for (const v of rader) { x -= v.vikt; if (x < 0) { rad = v; break; } }
@@ -430,7 +434,9 @@ export function packaRad(r: VarldRad, rand: () => number, over: (g: VarugruppId)
   }
   const silver = Math.min(Math.floor(r.tal.silver), helt(HANDLARSORTER[sort].silver));
   radTar(r, 'silver', -silver);
-  return { varor: ut, silver, sort, ...d ? { djur: d } : {} };
+  if (!karavan) return { varor: ut, silver, sort, ...d ? { djur: d } : {} };
+  const vagnar = Math.max(1, Math.min(vmax, Math.ceil(varde / Math.max(1, mal / vmax)))); // en vagn för varje handlarlast av värdet
+  return { varor: ut, silver, sort, djur: d, vagnar, folk: vagnar * KARAVAN.folkPerVagn };
 }
 // färden kommer fram: lasten läggs i mottagarens förråd och mottagaren betalar efter sitt pris
 KOHANDELSER.fardFram = (s, vl, p) => {

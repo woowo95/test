@@ -70,12 +70,12 @@ function bilden() {
 }
 
 // sällskapets bild (steg 11.5.12), åt höger och spegelvänd åt vänster
-const spritar: Partial<Record<'h' | 'v', HTMLCanvasElement>> = {};
-function sprite(vanster: boolean) {
-  const nyckel = vanster ? 'v' : 'h';
+const spritar: Record<string, HTMLCanvasElement> = {};
+function sprite(vanster: boolean, namn: 'sallskap' | 'karavan' = 'sallskap') { // karavanen: en handelsfärd med vagnar (steg 11.11.6)
+  const nyckel = namn + (vanster ? 'v' : 'h');
   if (spritar[nyckel]) return spritar[nyckel]!;
   const c = document.createElement('canvas'); c.width = c.height = VK;
-  const g = c.getContext('2d')!, r = TECKEN.sallskap;
+  const g = c.getContext('2d')!, r = TECKEN[namn];
   for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++) { const k = r[y][vanster ? VK - 1 - x : x]; if (k !== '.') { g.fillStyle = TECKENPAL[k]; g.fillRect(x, y, 1, 1); } }
   return spritar[nyckel] = c;
 }
@@ -107,7 +107,7 @@ function ritaSallskap(g: CanvasRenderingContext2D) {
   const vl = s.varld, v = varldMark(s);
   if (vl && v) for (const f of vl.farder ?? []) { // byarnas handelsfärder (steg 11.6.6), med sällskapets bild
     const l = fardLage(vl, f, s.now, v.w);
-    if (l) g.drawImage(sprite(l.dx < 0), Math.round(l.x * VK), Math.round(l.y * VK));
+    if (l) g.drawImage(sprite(l.dx < 0, f.last?.vagnar ? 'karavan' : 'sallskap'), Math.round(l.x * VK), Math.round(l.y * VK));
   }
 }
 

@@ -4231,3 +4231,51 @@ SCENARIER.handlardjur = {
     ];
   },
 };
+
+SCENARIER.karavan = {
+  text: 'Karavanen (steg 11.11.6, KARAVAN, packaRad och karavanFolje i handel.ts): en handelsfärd med vagnar är en karavan; en by med stort överflöd och oxar skickar fler vagnar, fler folk och större last än en fattig, lasten dras ur byns rad, följet slår läger utanför byns område med ett tält per fyra, bara ledaren står vid filten, byns djur och ting är oförändrade och alla lämnar kartan tillsammans',
+  kor: () => {
+    const bas = testBy(3), vl0 = bas.varld!;
+    const rad = SIM.klanerOf(bas).map(k => k.rad).find(nr => nr !== undefined && vl0.rader?.some(r => r.nr === nr))!;
+    const kom = (folk: number, over: number) => {
+      const s = SIM.cloneState(bas), djur0 = JSON.stringify((s.tamdjur ?? []).map(d => d.id)), ting0 = JSON.stringify((s.ting ?? []).map(t => t.id));
+      const r = s.varld!.rader!.find(x => x.nr === rad)!;
+      r.tal.folk = folk; r.tal.rikedom = 100000; r.tek = [...new Set([...r.tek, 'ryggsack', 'vagn'])];
+      const fore = Object.values(SIM.radVaror(r)).reduce((a: number, n) => a + (n ?? 0), 0);
+      const last = SIM.packaRad(r, mulberry(7), () => over, 'vagn', 'oxe');
+      const efter = Object.values(SIM.radVaror(r)).reduce((a: number, n) => a + (n ?? 0), 0);
+      (s.varld!.farder ??= []).push({ id: 99001, fran: rad, till: s.varld!.huvud!, g: 'mat', n: 0, t0: s.now, t1: s.now, handlare: true, last } as SIM.RadFard);
+      delete s.handlare; (s as { infart?: unknown }).infart = { klar: true };
+      SIM.handlarFram(s, rad);
+      s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
+      SIM.handelSteg(s, 2);
+      return { s, h: s.handlare as SIM.Handlare | undefined, last, djur0, ting0, dragit: fore - efter };
+    };
+    const rik = kom(80, 100000), fattig = kom(8, 400);
+    const h = rik.h!, s = rik.s, kg = (x: typeof rik) => SIM.kgOf(x.last.varor);
+    const folje = () => s.people.filter(p => p.gast?.sort === 'folje' && p.died === undefined);
+    const n0 = folje().length;
+    // i lägret: ledaren vid filten, följet i lägret
+    h.fas = 'handlar'; h.gar = s.now + 10 * SIM.HOUR; h.affar = undefined; h.ko = [];
+    SIM.handelSteg(s, 2);
+    const l = SIM.karavanLagret(h)!, filt = SIM.handlarPlats(s, h, s.now);
+    const vidFilt = folje().filter(p => Math.hypot(p.x - filt.x, p.y - filt.y) < 2).length;
+    const iLagret = folje().every(p => Math.hypot(p.x - h.lager!.x, p.y - h.lager!.y) < 2);
+    const utanfor = SIM.utanforByn(s, Math.floor(h.lager!.x), Math.floor(h.lager!.y));
+    // ut: alla lämnar kartan i samma slag
+    h.gar = s.now;
+    let foreUt = -1, efterUt = -1;
+    for (let i = 0; i < 4000 && s.handlare; i++) { foreUt = folje().length; s.now += SIM.SEC; SIM.handelSteg(s, 1); }
+    efterUt = folje().length;
+    return [
+      [`karavanen från den rika byn har fler vagnar, folk och större last än den fattiga (vagnar ${rik.last.vagnar} mot ${fattig.last.vagnar}, folk ${rik.last.folk} mot ${fattig.last.folk}, ${kg(rik)} kg mot ${kg(fattig)} kg)`, (rik.last.vagnar ?? 0) > (fattig.last.vagnar ?? 0) && (rik.last.folk ?? 0) > (fattig.last.folk ?? 0) && kg(rik) > kg(fattig)],
+      [`lasten dras ur byns rad (${rik.dragit} och ${fattig.dragit})`, rik.dragit > 0 && fattig.dragit > 0],
+      [`lasten ryms i vagnarna (${kg(rik)} av ${SIM.rymmer(h)})`, kg(rik) <= SIM.rymmer(h)],
+      [`följet kom med (${n0} av ${(rik.last.folk ?? 0) - 1})`, n0 === (rik.last.folk ?? 0) - 1 && n0 > 0],
+      [`lägret ligger utanför byns område (${utanfor.toFixed(1)} rutor) med ett tält per fyra (${l.talt.length} tält för ${n0 + 1})`, utanfor >= SIM.KARAVAN.lager && l.talt.length === Math.ceil((n0 + 1) / SIM.KARAVAN.taltPer)],
+      [`bara ledaren står vid filten (${vidFilt} av följet där), och följet sitter i lägret (${iLagret})`, vidFilt === 0 && iLagret],
+      [`byns djur och ting är oförändrade`, [rik, fattig].every(x => JSON.stringify((x.s.tamdjur ?? []).map(d => d.id)) === x.djur0 && JSON.stringify((x.s.ting ?? []).map(t => t.id)) === x.ting0)],
+      [`alla lämnar kartan tillsammans (följet ${foreUt} slaget innan ledaren gick ut, ${efterUt} efter)`, !s.handlare && foreUt === n0 && efterUt === 0],
+    ];
+  },
+};

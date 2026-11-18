@@ -8,7 +8,7 @@ import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER } from './klocka';
-import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think, paKartan } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, makeName, stat, think, paKartan } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
@@ -42,7 +42,7 @@ import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, 
 import { handelsArg } from './handelsber';
 import { notis } from './notiser';
 import { barSmitta } from './sjukdom';
-import { gastGar, gastTillbaka, hp, nyGast } from './gast';
+import { gastGar, gastTillbaka, hp, nyGast, nyttGastId } from './gast';
 import { valkomnaHandlare } from './kyrka';
 import { FORDON, lassAv } from './fordon';
 import { tamArt, type TamArtId } from './tamdjur';
@@ -97,8 +97,17 @@ export const HANDEL = balans('handel', {
 export const HANDLAR_UTR: Record<string, { namn: string; vikt: number; fordon?: string }> = {
   ryggsack: { namn: 'Ryggsäck', vikt: 40 },
   packdjur: { namn: 'Packdjur', vikt: 100, fordon: 'packsadel' }, // vikt: utan känd art (äldre sparade byar); annars ryggsäcken plus djurets lass med packsadel (steg 11.11.5)
-  vagn: { namn: 'Vagn', vikt: 300 },
+  vagn: { namn: 'Vagn', vikt: 300, fordon: 'vagn' }, // vikt: utan känd art; annars ryggsäcken plus vagnarnas lass (steg 11.11.6)
 };
+// karavanen (steg 11.11.6, Ekonomi och handel: Karavaner): handlaren med vagn tar så många vagnar som lasten kräver och byn
+// kan avvara folk till. Ledaren handlar; de andra är följet, som slår läger strax utanför byns område
+export const KARAVAN = balans('karavan', {
+  folkPerVagn: 2, // så många går med varje vagn, ledaren inräknad
+  maxVagnar: 4, // högst så många vagnar i en karavan
+  folkAndel: 0.1, // byn kan avvara så stor del av sitt folk till karavanen
+  taltPer: 4, // ett tält per så många i karavanen
+  lager: 3, // lägret ligger så många rutor utanför byns område
+});
 
 // ---------- handelsvarorna (steg 10.5.13, "Ekonomi och handel (Handelsvarorna)" i designdokumentet) ----------
 // Byn gör varor att byta med handlaren i tiden som blir över, sist på Förbättra (raden handelVara i FORBATTRA, val.ts), och
@@ -213,6 +222,7 @@ export interface Handlare {
   utr: string; // utrustningen (HANDLAR_UTR)
   sort?: string; // vilken sorts handlare (HANDLARSORTER); saknas i sparade byar från före v270: vandrande
   djur?: TamArtId; // packdjurets art, häst eller oxe som hembyn har (steg 11.11.5); djuret är hens utrustning och inget djur i byn
+  vagnar?: number; folj?: number[]; lager?: { x: number; y: number }; // karavanen (steg 11.11.6): vagnarna, följets id och lägret
   varor: HVara[];
   silver: number;
   bynKlar?: true; // byn har handlat med hen på det här besöket
@@ -244,18 +254,18 @@ const mellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + r
 const heltMellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + Math.floor(rnd(s, 'handel') * (b - a + 1));
 export const kgOf = (v: HVara[]) => v.reduce((a, w) => a + w.n * viktOf(w.k), 0);
 // det utrustningen rymmer: med ett djur (steg 11.11.5) ryggsäcken plus djurets lass med fordonet (FORDON i fordon.ts)
-export function utrVikt(utr: string, djur?: TamArtId) {
+export function utrVikt(utr: string, djur?: TamArtId, vagnar = 1) {
   const u = HANDLAR_UTR[utr], f = u?.fordon && FORDON[u.fordon];
-  return f && djur ? HANDLAR_UTR.ryggsack.vikt + lassAv(f, { art: djur }) : u?.vikt ?? 0;
+  return f && djur ? HANDLAR_UTR.ryggsack.vikt + vagnar * lassAv(f, { art: djur }) : u?.vikt ?? 0;
 }
-export const rymmer = (h: Handlare) => utrVikt(h.utr, h.djur);
+export const rymmer = (h: Handlare) => utrVikt(h.utr, h.djur, h.vagnar);
 // handlarens fart: med packdjur djurets (artens snabbhet), så oxen kommer senare fram (steg 11.11.5)
 export const handlarFart = (h: Pick<Handlare, 'djur'>) => HANDEL.fart * (h.djur ? tamArt(h.djur).snabb ?? 1 : 1);
 // var packdjuret står (steg 11.11.5): en ruta från filten medan hen väntar och handlar, annars bakom hen på vägen
 export function handlarDjur(s: State, h: Handlare, t: number): { x: number; y: number; art: TamArtId; full: boolean } | undefined {
   if (!h.djur) return undefined;
   const p = handlarPlats(s, h, t), full = kgOf(h.varor) > HANDLAR_UTR.ryggsack.vikt;
-  if (h.fas === 'handlar' || h.fas === 'vantar') return { x: p.x + 1, y: p.y, art: h.djur, full };
+  if (h.fas === 'handlar' || h.fas === 'vantar') return h.vagnar ? undefined : { x: p.x + 1, y: p.y, art: h.djur, full }; // karavanens djur står i lägret (steg 11.11.6)
   const dx = h.mx - h.fran.x, dy = h.my - h.fran.y, d = Math.hypot(dx, dy) || 1;
   return { x: p.x - dx / d * 0.8, y: p.y - dy / d * 0.8, art: h.djur, full };
 }
@@ -282,9 +292,9 @@ export function packa(s: State, kg: number, sort: string): HVara[] {
 }
 
 // lasten ur byns rad (steg 11.6.9): packas i byhandling.ts (packaRad), och det hen har kvar och har köpt går hem till raden
-export interface HandlarLast { varor: HVara[]; silver: number; sort: string; djur?: TamArtId } // djur: packdjurets art (steg 11.11.5)
+export interface HandlarLast { varor: HVara[]; silver: number; sort: string; djur?: TamArtId; vagnar?: number; folk?: number } // djur: packdjurets art (steg 11.11.5); vagnar och folk: karavanen (steg 11.11.6)
 // det handlaren bär hem till raden: varorna och silvret (fardHem i byhandling.ts)
-export const handlarHemLast = (h: Handlare): HandlarLast => ({ varor: h.varor.map(w => ({ ...w })), silver: Math.floor(h.silver), sort: h.sort ?? 'vandrande', ...h.djur ? { djur: h.djur } : {} });
+export const handlarHemLast = (h: Handlare): HandlarLast => ({ varor: h.varor.map(w => ({ ...w })), silver: Math.floor(h.silver), sort: h.sort ?? 'vandrande', ...h.djur ? { djur: h.djur } : {}, ...h.vagnar ? { vagnar: h.vagnar, folk: 1 + (h.folj?.length ?? 0) } : {} });
 
 // platsen för handeln (steg 4.5.7.3): där handlaren står, med hens filt framför sig, bybons filt mitt emot och den som handlar
 // bakom den (BYTE.bakom, FILT_MOT). Allt det ska ligga på fri mark: ingen byggnad, station, möbel, lagerplats, hög, fält, stock
@@ -329,6 +339,7 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
     id: -nr, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: 0,
     fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: last ? last.silver : heltMellan(s, HANDLARSORTER[sort].silver),
     ...last?.djur && HANDLAR_UTR[utr]?.fordon ? { djur: last.djur } : {}, // packdjuret hembyn gav hen (steg 11.11.5)
+    ...last?.vagnar && last.djur ? { vagnar: last.vagnar } : {}, // karavanens vagnar (steg 11.11.6)
   };
   h.framme = s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / handlarFart(h) * SEC;
   h.sort = sort;
@@ -336,7 +347,8 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   // handlaren är en person bland folket (steg 9.2.111, gast.ts), med samma id som i bytena
   s.people.push(nyGast(s, { id: h.id, namn: kh.person.namn, sex, fodd, rad: { sort: 'handlare', klan: kh.klan.id, hem: kh.klan.hem }, x: ut.x, y: ut.y, nyckel, skill: { handel: heltMellan(s, HANDEL.handel) } }));
   gastTillbaka(s, s.people[s.people.length - 1]); // samma person som förra gången, om hen varit här (steg 9.2.114)
-  if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); trampaFard(s, kh.klan.rad, s.varld.huvud, sallskapTyngd(1)); } // handlarens by har besökt huvudbyn (steg 11.4.10), och hen trampade vägen (steg 11.5.1)
+  if (h.vagnar) karavanFolje(s, h, kh.klan.id, kh.klan.hem, (last?.folk ?? 1) - 1, mal, ut); // följet och lägret (steg 11.11.6)
+  if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); trampaFard(s, kh.klan.rad, s.varld.huvud, sallskapTyngd(last?.folk ?? 1)); } // handlarens by har besökt huvudbyn (steg 11.4.10), och hen trampade vägen (steg 11.5.1)
   gastensPlatser(s, s.people[s.people.length - 1]); // det hens by känner (steg 11.4.11)
   h.varor = last ? last.varor : packa(s, rymmer(h), sort);
   handlarKarta(s, h); // ibland en karta över det hens by känner (steg 11.7.5)
@@ -373,7 +385,7 @@ export function handlarFram(s: State, rad: number) { (s.handlarVantar ??= []).pu
 // handlaren har gått från byn: färden hem på världskartan börjar (krok, så att handel.ts inte laddar byhandling.ts)
 export const handlarKrok = { hem: (_s: State, _rad: number, _last?: HandlarLast) => {}, borta: (_s: State, _rad: number) => {}, sorter: (_s: State): string[] => [] }; // borta: hen dog i byn; last: det hen bär hem; sorter: de sorter grannbyarna skulle skicka (steg 11.6.10)
 const handlarHem = (s: State, rad: number, h?: Handlare) => handlarKrok.hem(s, rad, h ? handlarHemLast(h) : undefined);
-const handlarBorta = (s: State, h: Handlare) => { const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined; if (rad !== undefined) handlarKrok.borta(s, rad); };
+const handlarBorta = (s: State, h: Handlare) => { const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined; if (rad !== undefined) handlarKrok.borta(s, rad); foljetGar(s, h); };
 
 // testläget (steg 4.5.4.4): en handlare skickas till byn nu, från vilken grannklan som helst, och en rad i Händelser säger
 // varifrån (steg 4.5.6.4). Svarar med raden, eller skälet till att ingen kan komma just nu (handlarHinder)
@@ -453,6 +465,57 @@ export function handlarenDog(s: State, h: Handlare) {
   s.handlare = undefined;
 }
 
+// ---------- karavanen (steg 11.11.6) ----------
+// lägret: från filten mot kanten där karavanen kom in, den första fria rutan på land minst KARAVAN.lager rutor utanför byns
+// område; finns ingen, vid kanten
+export function karavanLager(s: State, mal: { x: number; y: number }, ut: { x: number; y: number }) {
+  const m = getMap(s.seed), d = Math.hypot(ut.x - mal.x, ut.y - mal.y) || 1;
+  for (let k = 0; k <= d; k += 0.5) {
+    const x = mal.x + (ut.x - mal.x) * k / d, y = mal.y + (ut.y - mal.y) * k / d, X = Math.floor(x), Y = Math.floor(y);
+    if (!inMap(X, Y) || m.tiles[Y * W + X] === T.Vatten || m.tiles[Y * W + X] === T.Sten || bitAt(s, X, Y)) continue;
+    if (utanforByn(s, X, Y) >= KARAVAN.lager) return { x: X + 0.5, y: Y + 0.5 };
+  }
+  return { x: ut.x, y: ut.y };
+}
+// följet är gäster av sorten folje ur samma by som ledaren, och lägret läggs ut
+function karavanFolje(s: State, h: Handlare, klan: number, hem: string, n: number, mal: { x: number; y: number }, ut: { x: number; y: number }) {
+  h.lager = karavanLager(s, mal, ut); h.folj = [];
+  for (let i = 0; i < n; i++) {
+    const sex = rnd(s, 'handel') < 0.5 ? 'm' as const : 'k' as const, namn = makeName(s, sex, 'handel'), age = 18 + rnd(s, 'handel') * 30;
+    const id = nyttGastId(s), p = nyGast(s, { id, namn, sex, fodd: s.now - age * DAY, rad: { sort: 'folje', klan, hem }, x: ut.x, y: ut.y, nyckel: (s.gastNr ?? 0) * 7919 + i });
+    s.people.push(p); h.folj.push(id);
+  }
+  count(s, 'karavan_kom'); count(s, 'karavan_folje', n);
+}
+// lägret i bilden och i striden: tälten, vagnarna med sina djur och följets platser runt lägret (i rutor)
+export function karavanLagret(h: Handlare) {
+  if (!h.lager || !h.vagnar) return undefined;
+  const { x, y } = h.lager, folk = 1 + (h.folj?.length ?? 0), talt = Math.ceil(folk / KARAVAN.taltPer);
+  return {
+    talt: Array.from({ length: talt }, (_, i) => ({ x: x - 1.5 + i * 1.6, y: y - 1.2 })),
+    vagnar: Array.from({ length: h.vagnar }, (_, i) => ({ x: x - 1.5 + i * 1.6, y: y + 1.4, art: h.djur })),
+    platser: (h.folj ?? []).map((_, i) => { const v = i / Math.max(1, folk - 1) * Math.PI * 2; return { x: x + Math.cos(v) * 0.9, y: y + Math.sin(v) * 0.6 }; }),
+  };
+}
+// följet går in bakom ledaren till lägret, sitter där medan hen väntar och handlar, och går ut när hen gått förbi lägret
+function foljeSteg(s: State, h: Handlare) {
+  const l = karavanLagret(h); if (!l) return;
+  const vag = (fran: { x: number; y: number }, till: { x: number; y: number }, t0: number) => { const d = Math.hypot(till.x - fran.x, till.y - fran.y) || 1, f = clamp((s.now - t0) / (d / handlarFart(h) * SEC), 0, 1); return { x: fran.x + (till.x - fran.x) * f, y: fran.y + (till.y - fran.y) * f }; };
+  h.folj!.forEach((id, i) => {
+    const p = s.people.find(q => q.id === id && q.gast && q.died === undefined); if (!p) return;
+    const plats = l.platser[i], bakom = (i + 1) * 0.6 * SEC / handlarFart(h) * 1.6;
+    const q = h.fas === 'kommer' ? vag(h.ut, plats, h.fran.t + bakom)
+      : h.fas === 'gar' ? vag(plats, h.ut, h.fran.t + Math.hypot(h.lager!.x - h.fran.x, h.lager!.y - h.fran.y) / handlarFart(h) * SEC + bakom)
+      : plats;
+    p.x = q.x; p.y = q.y;
+  });
+}
+// följet lämnar kartan: när ledaren gått ut, dött eller gått hem
+function foljetGar(s: State, h: Handlare) {
+  for (const id of h.folj ?? []) gastGar(s, id);
+  h.folj = [];
+}
+
 // var handlaren är vid tiden t när hen går: rakt från där hen började mot målet (hen går runt det som är i vägen, men det
 // syns inte i byn). Bilden frågar samma sak med sin tid
 export function handlarPlats(s: State, h: Handlare, t: number) {
@@ -483,9 +546,11 @@ export function handelSteg(s: State, dtSec: number) {
   else if (gaSteg(s, h)) {
     const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined;
     gastGar(s, h.id, true); // hen har lämnat kartan (steg 9.2.111) och klanen sparar hen till nästa gång (steg 9.2.114)
+    foljetGar(s, h); // och följet med hen (steg 11.11.6)
     s.handlare = undefined;
     if (rad !== undefined) handlarHem(s, rad, h); // och går hem till sin by på världskartan med det hen har kvar och köpt (steg 11.6.8 och 11.6.9)
   }
+  if (h.folj?.length && s.handlare === h) foljeSteg(s, h); // karavanens följe (steg 11.11.6)
 }
 
 // filtarna mitt emot varandra (steg 4.5.4.13 och 4.5.7.4): handlaren lägger det kunden vill köpa på sin filt, och kunden lägger

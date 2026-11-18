@@ -1,4 +1,4 @@
-import { handlarDjur, hasselVaxer, richness } from '../sim';
+import { handlarDjur, hasselVaxer, karavanLagret, richness } from '../sim';
 import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden, vildboSyns, samhallen } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
@@ -168,6 +168,16 @@ export function drawAnimals() {
     const bx = Math.round(hd.x * TS), by = Math.round(hd.y * TS) - 9;
     djurFx.beginFill(0x7d5b40).drawRect(bx - 5, by, 3, hd.full ? 5 : 3).drawRect(bx + 2, by, 3, hd.full ? 5 : 3).endFill();
     if (hd.full) djurFx.beginFill(0xbd753e).drawRect(bx - 2, by - 3, 4, 3).endFill();
+  }
+  // karavanens läger (steg 11.11.6, platshållare): tälten, vagnarna med lasten och dragdjuren framför
+  const kh = s.handlare, kl = kh && (kh.fas === 'vantar' || kh.fas === 'handlar') ? karavanLagret(kh) : undefined;
+  if (kl) {
+    for (const t of kl.talt) { const tx = Math.round(t.x * TS), ty = Math.round(t.y * TS); djurFx.beginFill(fargTal(farg('ben', 3))).moveTo(tx - 7, ty + 4).lineTo(tx, ty - 7).lineTo(tx + 7, ty + 4).closePath().endFill().beginFill(fargTal(farg('kol', 0))).drawRect(tx - 1, ty - 1, 2, 5).endFill(); }
+    kl.vagnar.forEach((v, i) => {
+      const vx = Math.round(v.x * TS), vy = Math.round(v.y * TS);
+      djurFx.beginFill(fargTal(farg('jord', 2))).drawRect(vx - 6, vy - 5, 12, 5).endFill().beginFill(fargTal(farg('kol', 0))).drawCircle(vx - 4, vy + 1, 2).drawCircle(vx + 4, vy + 1, 2).endFill().beginFill(fargTal(farg('rost', 2))).drawRect(vx - 5, vy - 8, 10, 3).endFill();
+      if (v.art) { const ikon = TAMDJUR[v.art].ikon as Djur['art'], dx = v.x + 0.9; ritaDjur(ikon, HANDLARDJUR_ID - 1 - i, dx, v.y, riktade); ut.push({ id: HANDLARDJUR_ID - 1 - i, art: ikon, x: dx, y: v.y, grupp: -1, tam: v.art }); }
+    });
   }
   const hons = honsOf(s); // hönsflocken (steg 9.8.10): hönorna runt flockens plats, platshållare tills Björn valt i bildstilen
   if (hons) for (let i = 0; i < hons.n; i++) { const v = i * 2.4, r = 0.4 + (i % 4) * 0.35; const hx = hons.x + Math.cos(v) * r, hy = hons.y + Math.sin(v) * r; ritaDjur('fagel', HONS_ID0 + i, hx, hy, riktade); ut.push({ id: HONS_ID0 + i, art: 'fagel', x: hx, y: hy, grupp: -1, tam: 'hons' }); } // de tama djuren (steg 9.8.1): platshållare tills Björn valt i bildstilen

@@ -49,6 +49,8 @@ export const TECKEN: Record<string, string[]> = {
   eld: t('', '', '', '', '', '.......y', '......yry', '......rYr', '.....yrRry', '.....jkkkj'),
   // sällskapet på vägen (steg 11.5.12, platshållare): två vandrare åt höger, den första med en packning på ryggen
   sallskap: t('', '', '.....kk.....kk', '....kwwk...kwwk', '....kwwk...kwwk', '..jj.kk.....kk', '.jJJkrrk...krrk', '.jJlkrrk...krrk', '.jJJkrrk...krrk', '..jjkrrk...krrk', '.....kjk....kjk', '.....k.k....k.k', '.....k.k....k.k', '....kk.kk..kk.kk'),
+  // karavanen (steg 11.11.6, platshållare): en vagn med last, ett dragdjur framför och en vandrare
+  karavan: t('', '', '...kk', '..kwwk', '..kwwk..kkkkkkk', '...kk..kJJJJJJk', '..kJJk.kJJJJJJk', '..kJJk.kjjjjjjk..kk', '..kJJkkkkkkkkkkkkJJk', '..kJJk.k.kk..kk.kJJk', '..kjjk..kWWk.kWWkkk', '..k.k....kk...kk.k.k', '..k.k............k.k'),
   // uppdragets märke (steg 11.8.16, platshållare): en liten rulle med ett rött sigill i rutans övre högra hörn, över platsens tecken
   uppdrag: t('..........kkkk', '.........kwwwWk', '.........kwrrWk', '.........kwrRWk', '.........kwwwWk', '..........kkkk'),
   karta: t('', '', '..kkkkkkkkkkkk', '..kwwwWwwwwwWk', '..kwGGwwssswWk', '..kwGGGwssswWk', '..kwwGwwwsswWk', '..kwwwwJJwwwWk', '..kwwSwJJwwwWk', '..kwSSSwwwGGWk', '..kwwwwwwwGGWk', '..kkkkkkkkkkkk'),

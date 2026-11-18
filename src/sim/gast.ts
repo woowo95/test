@@ -23,6 +23,7 @@ export const GASTSORTER = {
   rovare: { namn: 'Rövare' },
   framling: { namn: 'Främling', efter: 'beslut' },
   sandebud: { namn: 'Sändebud', efter: 'besked' },
+  folje: { namn: 'Följe' }, // karavanens följe, som sitter i lägret utanför byn (steg 11.11.6, handel.ts)
 } as const satisfies Record<string, GastSortDef>;
 export type GastSort = keyof typeof GASTSORTER;
 // mat är portionerna kvar i packningen och sover att gästen sover (steg 9.2.113, gastvardag.ts).
@@ -54,6 +55,11 @@ export const GASTUTRUSTNING: Record<GastSort, GastUtrustning> = {
   sandebud: { // budet går lätt klätt, med en kniv ibland (steg 11.6.23)
     vapen: [['kniv', 1], [null, 3]], reserv: [[null, 1]],
     plagg: { rock: [['rock_kaninskinn', 2], ['kappa_ylle', 1], [null, 1]], byxor: [['byxor_kaninskinn', 1], ['byxor_lader', 1], [null, 1]], skor: [['skor_kaninskinn', 3], [null, 1]], balte: [['balte_rep', 1], [null, 1]] },
+    arr: 0.1,
+  },
+  folje: { // karavanens folk går klädda för vägen, med en kniv eller ett spjut mot vägens faror (steg 11.11.6)
+    vapen: [['kniv', 2], ['flintspjut', 1], [null, 2]], reserv: [[null, 1]],
+    plagg: { rock: [['rock_kaninskinn', 3], ['kappa_ylle', 1], [null, 1]], byxor: [['byxor_kaninskinn', 2], ['byxor_lader', 1], [null, 1]], skor: [['skor_kaninskinn', 4], [null, 1]], mossa: [['mossa_kaninskinn', 1], [null, 3]], balte: [['balte_rep', 2], [null, 1]] },
     arr: 0.1,
   },
   framling: {
