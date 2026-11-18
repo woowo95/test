@@ -1209,7 +1209,7 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
   }
   count(s, 'resa redogörelse');
   // byn minns de senaste resorna; de äldsta som kommit hem glöms
-  const hemma = (vl.sallskap ?? []).filter(x => x.skede === 'hemma');
+  const hemma = (vl.sallskap ?? []).filter(x => x.skede === 'hemma' || x.skede === 'forsvunnet').sort((a, b) => (a.t ?? 0) - (b.t ?? 0) || a.id - b.id); // också de försvunna, efter när de kom hem eller försvann
   if (hemma.length > RESA.minns) { const glom = new Set(hemma.slice(0, hemma.length - RESA.minns)); vl.sallskap = vl.sallskap!.filter(x => !glom.has(x)); }
 }
 // resan som byn känner till: bara den som kommit hem och berättats
@@ -1466,6 +1466,7 @@ function forsvunnet(s: State, sl: Sallskap, hittad?: string) {
   const namn = resenarNamn(s, sl);
   beskedet(s, sl, 'forsvunnen');
   sl.skede = 'forsvunnet'; sl.t = s.now;
+  if (s.tamdjur && sl.djur.length) s.tamdjur = s.tamdjur.filter(d => !(sl.djur.includes(d.id) && d.ute !== undefined)); // djuren som följde med är borta med sällskapet
   count(s, 'resa försvunnet');
   const text = hittad ? `${hittad} hittade ${namn} döda vid leden till ${malNamn(s, sl)}.` : `${namn} kom aldrig hem från ${RESMAL[sl.skal].namn.toLowerCase()} till ${malNamn(s, sl)} och räknas som försvunna.`;
   log(s, text, 'world', sl.medl);

@@ -373,26 +373,27 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
 // följd av slag. events = samtalen, för att visa dem
 // testerna lyssnar efter slagen för att se att en process inte hängt sig (src/test/puls.ts); i spelet finns ingen lyssnare
 declare global { var slagPuls: (() => void) | undefined }
-// De väckta byarna (s.vackta, steg 11.13.1) går efter huvudbyn i samma anrop, i fast ordning, var och en med sina egna slag mot
-// samma värld, så att varje by utvecklas exakt som om den gått för sig. Världens perioder räknas bara av huvudbyn
-// visad = byn som visas (en väckt by som spelaren gått in i, steg 11.13.11): samtalen (events) är dess
+// De väckta byarna (s.vackta, steg 11.13.1) går med huvudbyn, i fast ordning, var och en med sina egna slag mot samma värld, så
+// att varje by utvecklas exakt som om den gått för sig. Efter varje slag i huvudbyn räknas de fram till huvudbyns tid, så att
+// huvudbyn alltid ser dem lika långt fram hur anropen än delas (sällskapet som går därifrån läser byn). Världens perioder räknas
+// bara av huvudbyn. visad = byn som visas (en väckt by som spelaren gått in i, steg 11.13.11): samtalen (events) är dess
 export function step(s: State, dtSec: number, events?: TalkEvent[], visad: State = s) { // också när gränssnittet räknar (typer.ts)
   simulera(() => {
-    stegBy(s, dtSec, visad === s ? events : undefined);
-    if (s.vackta?.length) { // var och en räknas fram till samma tid som huvudbyn (en by som väckts under steget börjar vid sin tid)
-      const T = s.now + (s.skuld ?? 0) * 1000;
-      for (const v of s.vackta) if (v.vackI === undefined) stegBy(v, (T - v.now) / 1000 - (v.skuld ?? 0), visad === v ? events : undefined);
-      useMap(visad);
-    }
+    stegBy(s, dtSec, visad === s ? events : undefined, () => { // en by som väckts under slaget börjar vid sin tid
+      if (!s.vackta?.length) return;
+      for (const v of s.vackta) if (v.vackI === undefined) stegBy(v, (s.now - v.now) / SEC - (v.skuld ?? 0), visad === v ? events : undefined);
+    });
+    if (s.vackta?.length) useMap(visad);
   });
 }
-function stegBy(s: State, dtSec: number, events?: TalkEvent[]) {
+function stegBy(s: State, dtSec: number, events?: TalkEvent[], efter?: () => void) {
   if (s.stegRest !== undefined) delete s.stegRest; // (en äldre sparning)
   let skuld = (s.skuld ?? 0) + dtSec;
   for (let n = 0; n < 1e6; n++) {
     const plan = nastaSteg(s);
     if (skuld < plan - 1e-9) break;
     slag(s, plan, events); skuld -= plan;
+    efter?.();
     globalThis.slagPuls?.();
   }
   if (skuld > 1e-9) s.skuld = Math.round(skuld * 1000) / 1000; else delete s.skuld;
@@ -474,7 +475,7 @@ export const TAKTER: Takt[] = [
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
   { namn: 'sällskapen på vägen', sek: 600, fn: (s, dt) => resaBehov(s, dt * SEC) }, // mättnaden, vätskan och orken (resa.ts, steg 11.5.6)
   { namn: 'världen', sek: 300, fn: s => { if (s.vackt === undefined && s.vacktPlats === undefined) varldSteg(s); } }, // världens perioder och kön, räknade mot klockan (varldslag.ts, steg 11.2.17)
-  { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
+  { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld && s.vackt === undefined && s.vacktPlats === undefined) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)

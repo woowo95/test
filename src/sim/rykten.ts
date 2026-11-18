@@ -354,7 +354,7 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel, vFas
   const ny = intryckOm(b, e.om, e.k);
   if (vFast !== undefined && ny && ny.v > vb) ny.v -= (ny.v - vb) * RYKTE.scenNed; // scenens mindre version drar ner
   if (ny && ex) for (const x of e.bev!.slice(1)) addBevis(ny, { ...x, sett: undefined } as Bevis);
-  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) loggBer(s, 'l_rykte', e.om * 31 + e.k.length, { namn: e.namn, hen: q.sex === 'm' ? 'han' : 'hon', rykte: d.som ?? d.namn, heder: d.tecken > 0 }, 'rel', [e.om]);
+  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) loggBer(s, 'l_rykte', e.om * 31 + e.k.length, { namn: q.name, hen: q.sex === 'm' ? 'han' : 'hon', rykte: d.som ?? d.namn, heder: d.tecken > 0 }, 'rel', [e.om]);
 }
 // Skvallerbyttor (steg 10.8.6): den som berättar ett dåligt rykte om en annan, sant eller påhittat, får lite av intrycket
 // skvallerbytta hos den som lyssnar. Det väger mindre i en pratsam by (inget vid full Pratsamhet) och upp till dubbelt i en
