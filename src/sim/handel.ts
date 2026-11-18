@@ -44,6 +44,8 @@ import { notis } from './notiser';
 import { barSmitta } from './sjukdom';
 import { gastGar, gastTillbaka, hp, nyGast } from './gast';
 import { valkomnaHandlare } from './kyrka';
+import { FORDON, lassAv } from './fordon';
+import { tamArt, type TamArtId } from './tamdjur';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // En handlare kommer när en by i världen skickat hen (byhandling.ts, steg 11.6.8): hen går över världskartan, väntar vid
@@ -92,9 +94,9 @@ export const HANDEL = balans('handel', {
 
 // handlarens utrustning: det hen bär varorna i, i vikt (saker.ts). Den vandrande bär som en resenär: 20 i händerna och 20 i
 // ryggsäcken (steg 11.6.10). Packdjuret bär sitt lass med packsadel ovanpå (hästen 60, steg 11.11.3), och vagnen sitt lass
-export const HANDLAR_UTR: Record<string, { namn: string; vikt: number }> = {
+export const HANDLAR_UTR: Record<string, { namn: string; vikt: number; fordon?: string }> = {
   ryggsack: { namn: 'Ryggsäck', vikt: 40 },
-  packdjur: { namn: 'Packdjur', vikt: 100 },
+  packdjur: { namn: 'Packdjur', vikt: 100, fordon: 'packsadel' }, // vikt: utan känd art (äldre sparade byar); annars ryggsäcken plus djurets lass med packsadel (steg 11.11.5)
   vagn: { namn: 'Vagn', vikt: 300 },
 };
 
@@ -210,6 +212,7 @@ export interface Handlare {
   ut: { x: number; y: number }; // där hen kom in på kartan och går ut igen
   utr: string; // utrustningen (HANDLAR_UTR)
   sort?: string; // vilken sorts handlare (HANDLARSORTER); saknas i sparade byar från före v270: vandrande
+  djur?: TamArtId; // packdjurets art, häst eller oxe som hembyn har (steg 11.11.5); djuret är hens utrustning och inget djur i byn
   varor: HVara[];
   silver: number;
   bynKlar?: true; // byn har handlat med hen på det här besöket
@@ -240,7 +243,22 @@ export function handlarFas(h: Handlare) {
 const mellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + rnd(s, 'handel') * (b - a);
 const heltMellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + Math.floor(rnd(s, 'handel') * (b - a + 1));
 export const kgOf = (v: HVara[]) => v.reduce((a, w) => a + w.n * viktOf(w.k), 0);
-export const rymmer = (h: Handlare) => HANDLAR_UTR[h.utr]?.vikt ?? 0;
+// det utrustningen rymmer: med ett djur (steg 11.11.5) ryggsäcken plus djurets lass med fordonet (FORDON i fordon.ts)
+export function utrVikt(utr: string, djur?: TamArtId) {
+  const u = HANDLAR_UTR[utr], f = u?.fordon && FORDON[u.fordon];
+  return f && djur ? HANDLAR_UTR.ryggsack.vikt + lassAv(f, { art: djur }) : u?.vikt ?? 0;
+}
+export const rymmer = (h: Handlare) => utrVikt(h.utr, h.djur);
+// handlarens fart: med packdjur djurets (artens snabbhet), så oxen kommer senare fram (steg 11.11.5)
+export const handlarFart = (h: Pick<Handlare, 'djur'>) => HANDEL.fart * (h.djur ? tamArt(h.djur).snabb ?? 1 : 1);
+// var packdjuret står (steg 11.11.5): en ruta från filten medan hen väntar och handlar, annars bakom hen på vägen
+export function handlarDjur(s: State, h: Handlare, t: number): { x: number; y: number; art: TamArtId; full: boolean } | undefined {
+  if (!h.djur) return undefined;
+  const p = handlarPlats(s, h, t), full = kgOf(h.varor) > HANDLAR_UTR.ryggsack.vikt;
+  if (h.fas === 'handlar' || h.fas === 'vantar') return { x: p.x + 1, y: p.y, art: h.djur, full };
+  const dx = h.mx - h.fran.x, dy = h.my - h.fran.y, d = Math.hypot(dx, dy) || 1;
+  return { x: p.x - dx / d * 0.8, y: p.y - dy / d * 0.8, art: h.djur, full };
+}
 
 
 // sorten när ingen by gett hen en last (testläget): den vandrande
@@ -264,9 +282,9 @@ export function packa(s: State, kg: number, sort: string): HVara[] {
 }
 
 // lasten ur byns rad (steg 11.6.9): packas i byhandling.ts (packaRad), och det hen har kvar och har köpt går hem till raden
-export interface HandlarLast { varor: HVara[]; silver: number; sort: string }
+export interface HandlarLast { varor: HVara[]; silver: number; sort: string; djur?: TamArtId } // djur: packdjurets art (steg 11.11.5)
 // det handlaren bär hem till raden: varorna och silvret (fardHem i byhandling.ts)
-export const handlarHemLast = (h: Handlare): HandlarLast => ({ varor: h.varor.map(w => ({ ...w })), silver: Math.floor(h.silver), sort: h.sort ?? 'vandrande' });
+export const handlarHemLast = (h: Handlare): HandlarLast => ({ varor: h.varor.map(w => ({ ...w })), silver: Math.floor(h.silver), sort: h.sort ?? 'vandrande', ...h.djur ? { djur: h.djur } : {} });
 
 // platsen för handeln (steg 4.5.7.3): där handlaren står, med hens filt framför sig, bybons filt mitt emot och den som handlar
 // bakom den (BYTE.bakom, FILT_MOT). Allt det ska ligga på fri mark: ingen byggnad, station, möbel, lagerplats, hög, fält, stock
@@ -308,9 +326,11 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   const sex = kh.person.sex, sort = last?.sort ?? sortFor(s), utr = HANDLARSORTER[sort].utr;
   const nr = s.handlarNr = (s.handlarNr ?? 0) + 1;
   const h: Handlare = {
-    id: -nr, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / HANDEL.fart * SEC,
+    id: -nr, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: 0,
     fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: last ? last.silver : heltMellan(s, HANDLARSORTER[sort].silver),
+    ...last?.djur && HANDLAR_UTR[utr]?.fordon ? { djur: last.djur } : {}, // packdjuret hembyn gav hen (steg 11.11.5)
   };
+  h.framme = s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / handlarFart(h) * SEC;
   h.sort = sort;
   const nyckel = gastNyckel(kh.klan.id, kh.person.namn), fodd = kh.person.fodd ??= foddNar(s.seed, nyckel, 'handlare', s.now); // samma person varje gång, drar ingen slump
   // handlaren är en person bland folket (steg 9.2.111, gast.ts), med samma id som i bytena
@@ -392,7 +412,7 @@ function lagUt(s: State, h: Handlare) {
 // handlaren går: filten plockas ihop och hen går tillbaka mot kanten
 function gar(s: State, h: Handlare, tyst = false) {
   packaIhop(s, h);
-  h.fas = 'gar'; h.mx = h.ut.x; h.my = h.ut.y; h.fran = { x: hp(s, h).x, y: hp(s, h).y, t: s.now }; h.framme = s.now + Math.hypot(h.mx - hp(s, h).x, h.my - hp(s, h).y) / HANDEL.fart * SEC;
+  h.fas = 'gar'; h.mx = h.ut.x; h.my = h.ut.y; h.fran = { x: hp(s, h).x, y: hp(s, h).y, t: s.now }; h.framme = s.now + Math.hypot(h.mx - hp(s, h).x, h.my - hp(s, h).y) / handlarFart(h) * SEC;
   if (!tyst) log(s, `${hp(s, h).name} plockade ihop sin filt och gick hemåt.`, 'world');
 }
 // affären som pågår slutar och filtarna plockas ihop

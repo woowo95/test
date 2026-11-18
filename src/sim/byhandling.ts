@@ -30,7 +30,8 @@ import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
 import { radKommer } from './rader';
 import { avslutaUppdrag, belonVarde, fyndId, ruinKvar, ruinRad, taRuin, uppdragDef, uppdragNr } from './uppdrag';
-import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, handlarFram, handlarKrok, kgOf } from './handel';
+import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, handlarFram, handlarKrok, kgOf, utrVikt } from './handel';
+import type { TamArtId } from './tamdjur';
 
 export const BYHANDLING = balans('byhandling', {
   slump: 0.1, // så mycket kan slumpen flytta en poäng åt varje håll
@@ -287,7 +288,7 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
   const t0 = c.t, f: RadFard = { id: vl.nastaFard = (vl.nastaFard ?? 0) + 1, fran: r.nr, till: mot.nr, g: 'mat', n: 0, t0, t1: t0 + dygn * DAY, besked: ton };
   const a = ton === 'besked' && r.tal.folk >= BYHANDLING.barare * 2 ? gavaGrupp(r) : undefined; // gåvan: det byn har mest över
   if (a) {
-    if (mot.nr === vl.huvud) { let i = 0; const l = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x4247 + i++), g => g === a.g ? a.n : 0, radHandlarSort(s, r)); if (l.varor.length) f.last = { ...l, silver: 0 }; } // till huvudbyn: hela saker som budet bär
+    if (mot.nr === vl.huvud) { let i = 0; const l = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x4247 + i++), g => g === a.g ? a.n : 0, radHandlarSort(s, r), radDjur(s, r)); if (l.varor.length) f.last = { ...l, silver: 0 }; } // till huvudbyn: hela saker som budet bär
     else { f.g = a.g; f.n = a.n; taUr(r, a.g, a.n); f.gava = true; }
   }
   (vl.farder ??= []).push(f);
@@ -383,7 +384,7 @@ function skickaFard(c: ByCtx, a: FardAffar, gava = false) {
   const { s, vl, r, mot } = c, t0 = c.t, huvud = mot.nr === vl.huvud, n = huvud ? 0 : a.n; // till huvudbyn går handlaren (lasten: 11.6.9)
   taUr(r, a.g, n);
   const f: RadFard = { id: vl.nastaFard = (vl.nastaFard ?? 0) + 1, fran: r.nr, till: mot.nr, g: a.g, n, t0, t1: t0 + a.dygn * DAY, ...huvud ? { handlare: true as const } : {}, ...gava ? { gava: true as const } : {} };
-  if (huvud) { let i = 0; f.last = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x484c + i++), g => overskott(r, g), radHandlarSort(s, r)); } // handlarens varor ur raden (steg 11.6.9)
+  if (huvud) { let i = 0; f.last = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x484c + i++), g => overskott(r, g), radHandlarSort(s, r), radDjur(s, r)); } // handlarens varor ur raden (steg 11.6.9)
   (vl.farder ??= []).push(f);
   trampaFard(s, r.nr, mot.nr, sallskapTyngd(BYHANDLING.barare));
   laggIKo(vl, f.t1, 'fardFram', { sak: f.id });
@@ -406,8 +407,8 @@ handlarKrok.sorter = s => { const vl = s.varld, h = vl && radNr(vl, vl.huvud); r
 // dras varorna ur HANDLARVAROR bland det byns tekniker kan göra (sakens tek), högst det byn har över i sakens varugrupp
 // (over, i grundvärde och maten i portioner), och dras ur raden genast; silvret tas ur radens silver. Slumpen är världens
 // (rand), så att det blir lika i det levande läget och ikappräkningen. Det hen har kvar och har köpt går hem till raden (fardHem)
-export function packaRad(r: VarldRad, rand: () => number, over: (g: VarugruppId) => number, sort = 'vandrande'): HandlarLast {
-  const kg = HANDLAR_UTR[HANDLARSORTER[sort].utr]?.vikt ?? 0;
+export function packaRad(r: VarldRad, rand: () => number, over: (g: VarugruppId) => number, sort = 'vandrande', djur?: TamArtId): HandlarLast {
+  const utr = HANDLARSORTER[sort].utr, d = HANDLAR_UTR[utr]?.fordon ? djur : undefined, kg = utrVikt(utr, d); // packdjuret (steg 11.11.5)
   const helt = ([a, b]: readonly [number, number] | number[]) => a + Math.floor(rand() * (b - a + 1));
   const [a0, b0] = HANDEL.vardeVaror, mal = a0 + rand() * (b0 - a0), ut: HVara[] = [];
   const kvar: Partial<Record<VarugruppId, number>> = {};
@@ -429,7 +430,7 @@ export function packaRad(r: VarldRad, rand: () => number, over: (g: VarugruppId)
   }
   const silver = Math.min(Math.floor(r.tal.silver), helt(HANDLARSORTER[sort].silver));
   radTar(r, 'silver', -silver);
-  return { varor: ut, silver, sort };
+  return { varor: ut, silver, sort, ...d ? { djur: d } : {} };
 }
 // färden kommer fram: lasten läggs i mottagarens förråd och mottagaren betalar efter sitt pris
 KOHANDELSER.fardFram = (s, vl, p) => {

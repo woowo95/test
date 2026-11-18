@@ -1,4 +1,4 @@
-import { hasselVaxer, richness } from '../sim';
+import { handlarDjur, hasselVaxer, richness } from '../sim';
 import { BJORNJAKT, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden, vildboSyns, samhallen } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
@@ -111,6 +111,7 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
 export const djurSynliga = () => synliga;
 // ett tamt djur eller en höna i listan över det som syns (steg 9.8.1, 9.8.10): art = bilden som ritas (för kanten), tam = vad det är
 export interface SynligtDjur { id: number; art: Djur['art']; x: number; y: number; grupp: number; u?: number; tam?: string }
+export const HANDLARDJUR_ID = 949_999_999; // handlarens packdjur på kartan (steg 11.11.5)
 export const HONS_ID0 = 950_000_000; // hönornas id på kartan (ritas runt flockens plats); varje höna är flocken
 export const arHona = (id: number) => id >= HONS_ID0;
 export const arTamt = (id: number) => id >= TAM_ID0 && id < HONS_ID0;
@@ -159,6 +160,14 @@ export function drawAnimals() {
   for (const d of s.tamdjur ?? []) { // läser listan utan att skriva (tamdjurOf gör s.tamdjur ??= []); de döda står inte kvar i den
     if (d.dog !== undefined) continue;
     const ikon = TAMDJUR[d.art].ikon as Djur['art']; ritaDjur(ikon, d.id, d.x, d.y, riktade); ut.push({ id: d.id, art: ikon, x: d.x, y: d.y, grupp: -1, tam: d.art });
+  }
+  // handlarens packdjur (steg 11.11.5): en ruta från filten eller bakom hen på vägen, med full eller lätt last (platshållare: väskorna på ryggen)
+  const hd = s.handlare && handlarDjur(s, s.handlare, ui.nu);
+  if (hd) {
+    const ikon = TAMDJUR[hd.art].ikon as Djur['art']; ritaDjur(ikon, HANDLARDJUR_ID, hd.x, hd.y, riktade); ut.push({ id: HANDLARDJUR_ID, art: ikon, x: hd.x, y: hd.y, grupp: -1, tam: hd.art });
+    const bx = Math.round(hd.x * TS), by = Math.round(hd.y * TS) - 9;
+    djurFx.beginFill(0x7d5b40).drawRect(bx - 5, by, 3, hd.full ? 5 : 3).drawRect(bx + 2, by, 3, hd.full ? 5 : 3).endFill();
+    if (hd.full) djurFx.beginFill(0xbd753e).drawRect(bx - 2, by - 3, 4, 3).endFill();
   }
   const hons = honsOf(s); // hönsflocken (steg 9.8.10): hönorna runt flockens plats, platshållare tills Björn valt i bildstilen
   if (hons) for (let i = 0; i < hons.n; i++) { const v = i * 2.4, r = 0.4 + (i % 4) * 0.35; const hx = hons.x + Math.cos(v) * r, hy = hons.y + Math.sin(v) * r; ritaDjur('fagel', HONS_ID0 + i, hx, hy, riktade); ut.push({ id: HONS_ID0 + i, art: 'fagel', x: hx, y: hy, grupp: -1, tam: 'hons' }); } // de tama djuren (steg 9.8.1): platshållare tills Björn valt i bildstilen

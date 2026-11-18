@@ -4188,3 +4188,42 @@ SCENARIER.ridning = {
     ];
   },
 };
+
+SCENARIER.handlardjur = {
+  text: 'Handlarens packdjur (steg 11.11.5, utrVikt, handlarFart och handlarDjur i handel.ts): en handlare med packdjur leder hembyns häst eller oxe, rymmer ryggsäcken plus djurets lass med packsadel och går i djurets snabbhet; djuret står vid filten under handeln, följer med ut och finns inte bland byns djur',
+  kor: () => {
+    const bas = testBy(3), vl0 = bas.varld!;
+    const rad = SIM.klanerOf(bas).map(k => k.rad).find(nr => nr !== undefined && vl0.rader?.some(r => r.nr === nr))!;
+    // en handlare med packdjur från byn rad, med djuret art, genom spelets egen väg in (handlarFram och handelSteg)
+    const kom = (art?: SIM.TamArtId) => {
+      const s = SIM.cloneState(bas), djur0 = JSON.stringify((s.tamdjur ?? []).map(d => d.id));
+      const r = s.varld!.rader!.find(x => x.nr === rad)!;
+      r.tal.rikedom = 10000; r.tek = [...new Set([...r.tek, 'ryggsack'])];
+      const last = SIM.packaRad(r, mulberry(7), () => 10000, art ? 'packdjur' : 'vandrande', art);
+      (s.varld!.farder ??= []).push({ id: 99001, fran: rad, till: s.varld!.huvud!, g: 'mat', n: 0, t0: s.now, t1: s.now, handlare: true, last } as SIM.RadFard);
+      delete s.handlare; (s as { infart?: unknown }).infart = { klar: true };
+      SIM.handlarFram(s, rad);
+      s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
+      SIM.handelSteg(s, 2);
+      return { s, h: s.handlare as SIM.Handlare | undefined, last, djur0 };
+    };
+    const hast = kom('hast'), oxe = kom('oxe'), vand = kom();
+    const tid = (x: typeof hast) => x.h ? (x.h.framme - x.h.fran.t) / SIM.SEC : NaN;
+    const h = hast.h!;
+    // vid filten
+    h.fas = 'handlar'; const vid = SIM.handlarDjur(hast.s, h, hast.s.now)!, filt = SIM.handlarPlats(hast.s, h, hast.s.now);
+    // på väg ut: när hen är framme vid kanten står djuret där med hen
+    h.fas = 'gar'; h.fran = { x: filt.x, y: filt.y, t: hast.s.now }; h.mx = h.ut.x; h.my = h.ut.y; h.framme = hast.s.now + 60 * SIM.SEC;
+    const ute = SIM.handlarDjur(hast.s, h, h.framme)!;
+    const fullSida = SIM.kgOf(h.varor) > SIM.HANDLAR_UTR.ryggsack.vikt;
+    return [
+      [`handlaren kom in med packdjur (${hast.h?.djur}, ${oxe.h?.djur}) och den vandrande utan (${vand.h?.djur ?? 'inget'})`, hast.h?.djur === 'hast' && oxe.h?.djur === 'oxe' && !vand.h?.djur],
+      [`med packdjur rymmer hen mer än den vandrande (häst ${SIM.rymmer(hast.h!)}, oxe ${SIM.rymmer(oxe.h!)}, vandrande ${SIM.rymmer(vand.h!)})`, SIM.rymmer(hast.h!) === 100 && SIM.rymmer(oxe.h!) === 120 && SIM.rymmer(vand.h!) === 40],
+      [`lasten är aldrig tyngre än hen rymmer (${SIM.kgOf(hast.last.varor)} av 100, ${SIM.kgOf(oxe.last.varor)} av 120, ${SIM.kgOf(vand.last.varor)} av 40)`, SIM.kgOf(hast.last.varor) <= 100 && SIM.kgOf(oxe.last.varor) <= 120 && SIM.kgOf(vand.last.varor) <= 40],
+      [`djuret står inom två rutor från filten under handeln (${Math.hypot(vid.x - filt.x, vid.y - filt.y).toFixed(1)})`, Math.hypot(vid.x - filt.x, vid.y - filt.y) <= 2],
+      [`djuret lämnar kartan med hen (${Math.hypot(ute.x - h.ut.x, ute.y - h.ut.y).toFixed(1)} från kanten när hen går ut), och bilden visar ${fullSida ? 'full' : 'lätt'} last`, Math.hypot(ute.x - h.ut.x, ute.y - h.ut.y) <= 1 && ute.full === fullSida],
+      [`byns djur är oförändrade`, [hast, oxe].every(x => JSON.stringify((x.s.tamdjur ?? []).map(d => d.id)) === x.djur0)],
+      [`med oxe tar vägen in längre tid än med häst (${tid(oxe).toFixed(0)} s mot ${tid(hast).toFixed(0)} s)`, tid(oxe) > tid(hast)],
+    ];
+  },
+};
