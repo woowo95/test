@@ -4652,7 +4652,7 @@ SCENARIER.vackning = {
     bk.vackHall = 1; k.r.tal.folk = 3; k.r.tal.rikedom = 10;
     SIM.step(k.s, 30 * 3600);
     const kl = l.s.vackta?.[0], kk = k.s.vackta?.[0];
-    SIM.step(b0, (l.s.now - b0.now) / 1000); // den genast väckta byn går lika länge för sig
+    SIM.step(b0, ((kl?.now ?? l.s.now) - b0.now) / 1000); // den genast väckta byn går lika länge för sig (till den väckta byns tid, som kan ligga ett slag före huvudbyns)
     const hl = kl ? hash(kl) : '', hk = kk ? hash(kk) : '', h0 = hash(b0), nl = kl?.people.length, tl = kl?.now;
     // somnar: ingen är på väg dit
     delete kl!.vackHall; kor(l.s, 2);
