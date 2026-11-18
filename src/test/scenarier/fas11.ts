@@ -3682,3 +3682,37 @@ SCENARIER.uppdragbyar = {
     ];
   },
 };
+
+SCENARIER.kartmarke = {
+  text: 'Kartan med märke (steg 11.8.14): den som ritar en karta sätter ett märke för de uppdrag och fynd hen tror på vid platserna, och den som läser kartan känner till uppdraget, med uppgiftens ålder',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const v = SIM.living(s).filter(r => !r.gast && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q] = v as [SIM.Person, SIM.Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    s.ting = SIM.tingOf(s).filter(t => !t.skrift && !t.delar && t.k !== 'bok');
+    const nr = hb.grannar!.find(g => varldBy(g.nr))!.nr;
+    function varldBy(n: number) { return SIM.varldPlatsNr(vl, n)?.k === 'by'; }
+    SIM.larOrt(s, p, nr, SIM.O_BESOKT, 1, { t: s.now - SIM.DAY });
+    const u = SIM.utlys(vl, 'hjalp', nr, { k: 'styre', rad: SIM.varldPlatsNr(vl, nr)!.by }, { silver: 50 }, s.now)!;
+    SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: nr, k: u.k });
+    p.skill.berattande = 15;
+    while (SIM.lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    SIM.setAmount(s, 'pergament', 3);
+    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
+    SIM.placeTools(s);
+    SIM.skrivVal(s, p, { x: p.x, y: p.y });
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+    SIM.skrivKlar(s, p);
+    SIM.placeTools(s);
+    const blad = SIM.tingOf(s).find(t => t.skrift?.slag === 'karta');
+    const marke = blad?.skrift?.platser?.find(x => x.nr === nr)?.m?.find(y => y.a === u.id);
+    const fore = SIM.findL(q, 'uppdrag', u.id);
+    if (blad) SIM.lasKlar(s, q, { act: 'lasa', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: blad.id });
+    const efter = SIM.findL(q, 'uppdrag', u.id);
+    return [
+      [`kartan bär ett märke för uppdraget vid ${SIM.varldPlatsNr(vl, nr)!.namn} (${marke ? `värt ${marke.v}` : 'inget märke'})`, !!marke && marke.v === SIM.belonVarde(u)],
+      [`${q.name} läser kartan och känner till uppdraget (före: ${fore ? 'ja' : 'nej'}, efter: ${efter ? SIM.describe(s, efter).text : 'nej'}), med uppgiftens tid`, !fore && !!efter && efter.t === u.t && efter.g === nr],
+    ];
+  },
+};

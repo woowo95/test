@@ -10,6 +10,7 @@ import { Bevis, HANDELSER, Intryck, bevisText, kandVikt, lasIntryck, paminn } fr
 import { Ting, newTing, tingOf } from './agande';
 import { taVatska, vatskaAv } from './vatskor';
 import { LARDOMAR, describe, findL, lasLardom } from './minne';
+import { larUppdrag, tilltro, type UppdragId } from './uppdrag';
 import { lightLevel } from './tid';
 import { NORMAL, nyKvalitet } from './kvalitet';
 import { clamp, rnd } from './slump';
@@ -273,7 +274,10 @@ export const heligaStenar = (s: State, tr: Tro) => (s.runstenar ?? []).filter(r 
 // tek = handbokens teknik och tro = de heliga kvädenas tro (i boken, steg 10.6.6); ensam = krönikan har sagt att ingen längre kan tekniken
 export interface Skrift { lag?: SkriftLag; slag: SkriftSlag; av: { id: number; namn: string }; t: number; titel: string; text: string; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; ensam?: true; q?: number; fel?: number; platser?: KartPlats[]; kid?: number } // kid = kartans nummer, samma i alla avskrifter (steg 11.7.3) // q = kvaliteten (steg 10.6.7), fel = överdriften eller underdriften gånger värdet
 // en plats på kartan (steg 11.7.1): platsens nummer i världen, nivån den ritades med (högst känd) och tiden för uppgifterna
-export interface KartPlats { nr: number; v: number; t: number }
+export interface KartPlats { nr: number; v: number; t: number; m?: KartMarke[] } // m = märkena vid platsen (steg 11.8.14)
+// ett märke på kartan (steg 11.8.14): ett uppdrag eller ett fynd ritaren trodde på, med numret, det trodda värdet, när
+// uppgiften var ny och uppdragets sort
+export interface KartMarke { a: number; v: number; t: number; k: string }
 interface SkrivLust { platser?: KartPlats[]; fran?: Skrift; lag?: SkriftLag; w: number; slag: SkriftSlag; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; bok?: Ting }
 export const bladen = (s: State) => tingOf(s).filter(t => t.skrift);
 // böckerna (steg 10.6.6): 8 blad mellan 2 plankor, som fylls del för del, högst SKRIFT.bokDelar delar av samma slag (bokens genre)
@@ -393,7 +397,12 @@ function kartLust(s: State, p: Person): SkrivLust | undefined {
   const har = iSkrift(s), egen = s.varld.huvud !== undefined ? byPlats(s.varld, s.varld.huvud)?.nr : undefined;
   const nya = (p.lardomar ?? []).filter(l => l.k === 'ort' && l.a !== egen && !har.has(l.a)).sort((a, b) => b.c - a.c || b.v - a.v).slice(0, SKRIFT.kartMax);
   if (!nya.length) return undefined;
-  return { w: SKRIFT.karta * nya.length / SKRIFT.kartMax, slag: 'karta', platser: nya.map(l => ({ nr: l.a, v: Math.min(O_KANT, l.v), t: l.t })) };
+  return { w: SKRIFT.karta * nya.length / SKRIFT.kartMax, slag: 'karta', platser: nya.map(l => { const m = marken(s, p, l.a); return { nr: l.a, v: Math.min(O_KANT, l.v), t: l.t, ...(m.length ? { m } : {}) }; }) };
+}
+// märkena ritaren sätter vid platsen nr (steg 11.8.14): de uppdrag och fynd där hen tror på uppgiften (tilltron minst
+// SKRIFT.marke), och ett tomt fynd som tomt
+function marken(s: State, p: Person, nr: number): KartMarke[] {
+  return (p.lardomar ?? []).filter(l => l.k === 'uppdrag' && l.g === nr && tilltro(s, l) >= SKRIFT.marke).map(l => ({ a: l.a, v: l.v, t: l.t, k: l.om ?? 'leverans' }));
 }
 // avskriften (steg 11.7.3): den som kommer åt en karta i byn kan skriva av den på SKRIFT.kopiaMin minuter. Lusten är SKRIFT.kopia
 // gånger andelen av ett fullt blad, delat med antalet exemplar som finns av kartan (samma kid), och avskriften får sin egen
@@ -405,7 +414,7 @@ function kopiaLust(s: State): SkrivLust | undefined {
     const k = t.skrift;
     if (k?.slag !== 'karta' || !k.platser?.length || t.lass !== undefined || !tingXY(s, t)) continue;
     const w = SKRIFT.kopia * k.platser.length / SKRIFT.kartMax / (k.kid === undefined ? 1 : exemplar(s, k.kid)); // ett original som ingen skrivit av är ett exemplar
-    if (!best || w > best.w) best = { w, slag: 'karta', platser: k.platser.map(x => ({ ...x })), fran: k.kid === undefined ? { ...k, kid: t.id } : k };
+    if (!best || w > best.w) best = { w, slag: 'karta', platser: k.platser.map(x => ({ ...x, ...(x.m ? { m: x.m.map(y => ({ ...y })) } : {}) })), fran: k.kid === undefined ? { ...k, kid: t.id } : k };
   }
   return best;
 }
@@ -419,7 +428,9 @@ const platsNamn = (s: State, nr: number) => (s.varld && varldPlatsNr(s.varld, nr
 const kartNamn = (s: State, pl: KartPlats[]) => { const n = pl.map(x => platsNamn(s, x.nr)); return n.length <= 2 ? n.join(' och ') : `${n.slice(0, 2).join(', ')} och ${n.length - 2} till`; };
 // det nya på kartan för q: platserna q känner sämre än de är ritade
 // det på kartan som q inte känner, och i boken om en by (steg 11.7.7) också uppgifter som är nyare än de q har
-const kartNya = (s: State, q: Person, k: Skrift) => (k.platser ?? []).filter(x => (kannerOrt(s, q, x.nr) ?? -1) < x.v || k.slag === 'byn' && (findL(q, 'ort', x.nr)?.t ?? -Infinity) < x.t);
+const kartNya = (s: State, q: Person, k: Skrift) => (k.platser ?? []).filter(x => (kannerOrt(s, q, x.nr) ?? -1) < x.v || k.slag === 'byn' && (findL(q, 'ort', x.nr)?.t ?? -Infinity) < x.t || nyaMarken(q, x).length > 0);
+// märkena q inte känner, eller känner med en äldre uppgift (steg 11.8.14)
+const nyaMarken = (q: Person, x: KartPlats) => (x.m ?? []).filter(y => (findL(q, 'uppdrag', y.a)?.t ?? -Infinity) < y.t);
 // ljuset att skriva och läsa i på (x, y): dagsljuset, annars elden, facklan och ljusen (ljus.ts)
 export const skrivLjus = (s: State, x: number, y: number) => Math.max(lightLevel(s.now), Math.min(1, ljusAt(s, x, y)));
 const harAtt = (s: State) => vatskaAv(s, 'black') >= 1;
@@ -522,7 +533,10 @@ export function lasKlar(s: State, q: Person, t: Task) {
   }
   if (k.tro !== undefined) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR);
   if (k.lar) lasLardom(s, q, { ...k.lar, c: k.lar.c * nar }, k.av.id);
-  for (const x of k.platser ? kartNya(s, q, k) : []) { larOrt(s, q, x.nr, x.v, SKRIFT.kartaC * nar, { t: x.t, src: k.av.id, fr: k.av.id }); count(s, 'kartLast'); } // kartan (steg 11.7.1)
+  for (const x of k.platser ? kartNya(s, q, k) : []) {
+    for (const y of nyaMarken(q, x)) { const l = larUppdrag(s, q, y.a, SKRIFT.kartaC * nar, { t: y.t, v: y.v, mal: x.nr, k: y.k as UppdragId, src: k.av.id }); if (l.t < y.t) { l.t = y.t; l.v = y.v; } count(s, 'kartMarkeLast'); } // märkena (steg 11.8.14)
+    if ((kannerOrt(s, q, x.nr) ?? -1) < x.v || k.slag === 'byn') { larOrt(s, q, x.nr, x.v, SKRIFT.kartaC * nar, { t: x.t, src: k.av.id, fr: k.av.id }); count(s, 'kartLast'); } // kartan (steg 11.7.1)
+  }
   if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt * nar * (k.fel ?? 1));
   if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id, k.bev);
   if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, (k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer) * nar, s.now, SKRIFT.gladjeTim * HOUR);

@@ -37,6 +37,7 @@ export const SKRIFT = balans('skrift', {
   lag: 0.8, // lusten att skriva ner en lag, gånger andelen oskrivna, hur nära taket byn är och påbudet (steg 10.6.10)
   // kartan (steg 11.7.1): lusten att rita ett fullt blad, platserna på ett blad, läsvikten och säkerheten läsaren får (gånger kvaliteten)
   karta: 0.5, kartMax: 6, lasKarta: 1, kartaC: 0.8,
+  marke: 0.3, // ritaren sätter ett märke för ett uppdrag eller ett fynd hen tror så här mycket på (tilltron, steg 11.8.14)
   kopia: 0.3, kopiaMin: 3, // lusten att skriva av en full karta (delat med antalet exemplar) och minuterna (steg 11.7.3)
   bybok: 0.3, // lusten att skriva en bok om en by man besökt (steg 11.7.7)
   kartRykte: [0.5, 0.25], // chansen att en känd plats ritas som ett rykte på en usel och en slarvig karta (steg 11.7.2)
