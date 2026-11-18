@@ -893,3 +893,14 @@
     ]),
   ] });
 })();
+
+// Steg 11.9.2: världskartan på pergament. Ett utsnitt av spelets riktiga världskarta (värld 7), överst som den ritas nu och
+// nederst på pergament (src/ui/pergament.ts). Punkterna kommer från spelets kod: npx tsx bildstil/varldkarta.ts ger
+// varldkarta.json, där varje punkt är färgens nummer i paletten.
+(() => {
+  const RAMPER = ['kol', 'jord', 'senap', 'rost', 'oliv', 'barr', 'skiffer', 'ben'], K = VARLDKARTA;
+  VAL.push({ id: 'f11_pergament', namn: 'Världskartan på pergament', typ: 'janej', slag: [], vad: 'Steg 11.9.2: världskartan ritas som en gammal karta på pergament: landet ljust, kusten ett bläckstreck med ett eko ute i havet, havet blått med vågstreck, floderna som slingrande linjer, lövträd i skogen, granar tätt i den täta skogen, tuvor och vattenstreck på myren och berg med en skuggsida. Rutorna syns inte längre, kusten och kanterna mellan marksorterna är rundade. Överst som kartan ser ut i spelet nu, nederst förslaget, samma utsnitt av en värld ur spelet. Platsernas tecken, namnen, kompassrosen och ramen kommer i nästa steg. Ja eller nej?', versioner: [{ text: 'Överst den nuvarande världskartan, nederst samma utsnitt på pergament.', w: K.w, h: K.h * 2 + 4, rita: B => {
+    const rad = (rader, y0) => rader.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const n = parseInt(r[x], 32); B.satt(x, y0 + y, B.P.i(RAMPER[n >> 2], n & 3)); } });
+    rad(K.nu, 0); rad(K.ny, K.h + 4);
+  } }] });
+})();

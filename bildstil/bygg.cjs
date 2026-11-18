@@ -20,6 +20,7 @@ ${fs.readdirSync(d + '/fas7').filter(f => f.endsWith('.js')).sort((a, b) => a.lo
 ${fs.readdirSync(d + '/fas8').filter(f => f.endsWith('.js')).sort((a, b) => a.localeCompare(b, 'sv', { numeric: true })).map(f => `<script>${fs.readFileSync(d + '/fas8/' + f, 'utf8')}</script>`).join('\n')}
 ${fs.readdirSync(d + '/fas9').filter(f => f.endsWith('.js')).sort((a, b) => a.localeCompare(b, 'sv', { numeric: true })).map(f => `<script>${fs.readFileSync(d + '/fas9/' + f, 'utf8')}</script>`).join('\n')}
 ${fs.readdirSync(d + '/svar').filter(f => f.endsWith('.js')).sort().map(f => `<script>${fs.readFileSync(d + '/svar/' + f, 'utf8')}</script>`).join('\n')}
+<script>const VARLDKARTA = ${fs.readFileSync(d + '/varldkarta.json', 'utf8')};</script>
 <script>${fs.readFileSync(d + '/fas11.js', 'utf8')}</script>
 <script>const PORTRATT = ${fs.readFileSync(d + '/portratt.json', 'utf8')};</script>
 <script>const DELAR = ${JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/delar').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/delar/' + f, 'utf8')); return [o.id, o]; })))};</script>
