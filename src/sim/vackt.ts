@@ -28,6 +28,7 @@ import { clamp } from './slump';
 import { byPlats } from './landmarken';
 import { lasRad, radNr, VarldRad } from './radtal';
 import { startSmak } from './rykten';
+import { byggSkog } from './vacktskog';
 import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
 import { stepDelning } from './delning';
@@ -78,6 +79,7 @@ export const BYGGARE: Byggare[] = [
   { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll runt det som redan står (steg 11.13.5)
   { namn: 'fälten', bygg: (b, _s, r) => byggFalt(b, r) }, // fälten och djuren efter teknikerna, före förråden så att de räknas i rikedomen (steg 11.13.20)
   { namn: 'förråden', bygg: (b, _s, r) => byggForrad(b, r) }, // radens mat och rikedom i hela saker, hos ägare (steg 11.13.7)
+  { namn: 'skogen', bygg: (b, _s, r) => byggSkog(b, r) }, // den röjda skogen, stubbarna och stigarna efter byns ålder och folk (steg 11.13.21)
   { namn: 'tron', bygg: (b, _s, r) => byggTro(b, r) }, // radens tro och ledare (steg 11.13.19)
   { namn: 'liven', bygg: (b, _s, r) => byggLiven(b, r) }, // ett liv bakåt för var och en, med den riktiga släkten och de dödas gravar (steg 11.13.16)
   { namn: 'krönikan', bygg: (b, _s, r) => byggKronika(b, r) }, // byns krönika bakåt ur världens krönika och folkets liv (steg 11.13.17)
