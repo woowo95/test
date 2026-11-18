@@ -5216,3 +5216,77 @@ SCENARIER.hjalpplats = {
     ];
   },
 };
+
+SCENARIER.vakengrans = {
+  text: 'Gränsen för hur länge en by är väckt (steg 11.13.24, VACKT.vakenMax och vacktSomna i vackt.ts): en väckt by kostar datortid som en by till i ikappräkningen (npm run varldkostnad mäter det), så en by som varit väckt längre än gränsen somnar även om besökarna är kvar, och besökarna går hem som de gick in. Varje vanligt besök i en by ryms inom gränsen med inkörningen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && q.health > 0.8);
+    const hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0)!;
+    const r = SIM.radNr(vl, mal.by!)!;
+    const bv = SIM.vackTest(s, mal.by!)!;
+    delete bv.vackHall;
+    const sl = SIM.nyttSallskap(s, a!, mal.nr, 'slakt')!;
+    sl.skede = 'framme'; sl.framme = s.now;
+    SIM.gaBort(s, a!);
+    SIM.besokIn(s, sl);
+    const inne = !!sl.gaster?.length, x0 = a!.x, y0 = a!.y;
+    SIM.vacktSomna(s);
+    const kvar = s.vackta?.includes(bv) ?? false;
+    bv.vackFran = s.now - (SIM.VACKT.vakenMax + 0.1) * SIM.DAY; // som när byn varit väckt för länge
+    SIM.vacktSomna(s);
+    const somnat = !s.vackta?.includes(bv) && !!r.minne && (s.stat?.vackt_for_lange ?? 0) === 1;
+    SIM.besokUt(s, sl, s.now);
+    const hem = a!.died === undefined && a!.x === x0 && a!.y === y0 && !sl.gaster;
+    const langst = Math.max(...Object.values(SIM.RESMAL).filter(m => (m.mal as readonly string[]).includes('by')).map(m => m.stannar), SIM.UPPDRAGTAL.hjalpDygn) + SIM.VACKT.inkorning / 24;
+    return [
+      ['besökaren är inne i den väckta byn', inne],
+      ['byn är vaken medan besöket är inom gränsen', kvar],
+      [`byn somnar när den varit väckt längre än ${SIM.VACKT.vakenMax} dygn, och raden får minnesbilden`, somnat],
+      ['besökaren går hem som hen gick in', hem],
+      [`det längsta vanliga besöket (${langst.toFixed(2)} dygn med inkörningen) ryms inom gränsen`, langst <= SIM.VACKT.vakenMax],
+    ];
+  },
+};
+
+SCENARIER.litenkarta = {
+  text: 'Den lilla kartan utan by (steg 11.13.25, vacktplats.ts och receptet plats i KARTRECEPT): när sällskapet kommer fram till en plats med en liten karta (en ruin, en gravhög …) skapas kartan i receptets storlek ur platsens frö, utan byplats och med världsrutans mark. Sällskapet kliver in som besökare och går in på kartan, spelaren kan gå in och se den, samma plats får samma karta, kartan sparas med byn, och den somnar när sällskapet vänt hem',
+  kor: async () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && q.health > 0.8);
+    const plats = vl.platser!.find(p => (SIM.LANDMARKEN[p.k] as SIM.LandmarkDef).karta)!;
+    const ingen = vl.platser!.find(p => !(SIM.LANDMARKEN[p.k] as SIM.LandmarkDef).karta && p.k !== 'by');
+    const sl = SIM.nyttSallskap(s, a!, plats.nr, 'se')!;
+    sl.skede = 'framme'; sl.framme = s.now;
+    SIM.gaBort(s, a!);
+    SIM.vackKrok.framme!(s, sl);
+    const b = s.vackta?.find(x => x.vacktPlats === plats.nr);
+    const r = SIM.KARTRECEPT.plats;
+    SIM.useMap(b!); const tiles = Array.from(SIM.getMap(b!.seed).tiles).join(''), land = tiles.split('').filter(c => +c !== SIM.T.Vatten).length; SIM.useMap(s);
+    const andra = SIM.cloneState(testBy(3)); andra.now = s.now;
+    const b2 = SIM.vackPlats(andra, plats.nr)!; SIM.useMap(b2); const tiles2 = Array.from(SIM.getMap(b2.seed).tiles).join(''); SIM.useMap(s);
+    const inne = b?.people.filter(p => p.gast?.sort === 'besok').length ?? 0, ingetFolk = b?.people.every(p => p.gast) ?? false;
+    const g = b?.people.find(p => p.gast?.sort === 'besok'), x0 = g?.x ?? 0, y0 = g?.y ?? 0;
+    kor(s, 2);
+    const gick = !!g && Math.hypot(g.x - x0, g.y - y0) > 1;
+    const syns = SIM.vacktMedBesok(s, plats.nr) === b;
+    const bas = minnesBas();
+    await sparaBy(bas, 'test', s);
+    const post = await bas.las('test'), sparad = Object.keys(post!.delar).includes(`vacktp${plats.nr}-byn`);
+    const inl = (await lasBy(bas, 'test'))!.by, last = inl.vackta?.some(x => x.vacktPlats === plats.nr && x.W === r.bredd);
+    SIM.besokUt(s, sl, s.now); sl.skede = 'hemat';
+    SIM.vacktSomna(s);
+    const somnat = !s.vackta?.some(x => x.vacktPlats === plats.nr);
+    const utan = ingen ? SIM.vackPlats(s, ingen.nr) === undefined : true;
+    return [
+      [`platsen (${plats.k}) får en liten karta när sällskapet kommer fram`, !!b],
+      [`kartan har receptets storlek (${b?.W}×${b?.H}) och mest land (${land} av ${tiles.length} rutor)`, b?.W === r.bredd && b?.H === r.hojd && land > tiles.length / 2],
+      ['samma plats får samma karta', tiles === tiles2],
+      ['kartan har ingen by: inget folk utom besökarna', ingetFolk],
+      [`besökaren är inne på kartan (${inne}) och går där`, inne === 1 && gick],
+      ['spelaren kan gå in och se kartan medan de egna är där', syns],
+      ['kartan sparas med byn och läses in igen', sparad && !!last],
+      ['kartan somnar när sällskapet vänt hem', somnat],
+      [`en plats utan liten karta (${ingen?.k ?? 'ingen'}) får ingen`, utan],
+    ];
+  },
+};

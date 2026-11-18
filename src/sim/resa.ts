@@ -460,7 +460,7 @@ export function resaSteg(s: State, p: Person, tk: Task) {
     satVag(s, sl, true);
     dagbok(s, sl, 'ut', 'Gav sig av.');
     const mal = s.varld!.platser?.find(q => q.nr === sl.mal), vd = hem && v && mal ? vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x) : undefined;
-    if (mal?.by !== undefined && vd) vackKrok.borja?.(s, mal.by, s.now, vd.dygn / Math.max(0.05, sallskapFart(s, sl))); // byn dit börjar väckas (vackt.ts, steg 11.13.8)
+    if (mal?.k === 'by' && mal.by !== undefined && vd) vackKrok.borja?.(s, mal.by, s.now, vd.dygn / Math.max(0.05, sallskapFart(s, sl))); // byn dit börjar väckas (vackt.ts, steg 11.13.8)
   }
 }
 

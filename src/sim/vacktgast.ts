@@ -20,12 +20,13 @@ import { DODSORSAKER, type Dodsorsak } from './liv';
 import { fastaRelIn, fastaRelUt } from './vacktfasta';
 import { radNr } from './radtal';
 import { hjalpBygge, hjalpSteg } from './vackthjalp';
+import { vackPlats } from './vacktplats';
 import { dorPaVagen, resenarer, Sallskap, sallskapNu, tappa, vackKrok } from './resa';
 
 export const VACKTGAST = {
   nara: 1.5, // så nära elden stannar besökaren (rutor)
 };
-const vacktBy = (s: State, sl: Sallskap) => { const nr = s.varld?.platser?.find(p => p.nr === sl.mal)?.by; return nr === undefined ? undefined : s.vackta?.find(b => b.vackt === nr && b.vackI === undefined); };
+const vacktBy = (s: State, sl: Sallskap) => { const nr = s.varld?.platser?.find(p => p.nr === sl.mal && p.k === 'by')?.by; return nr === undefined ? s.vackta?.find(b => b.vacktPlats === sl.mal) : s.vackta?.find(b => b.vackt === nr && b.vackI === undefined); }; // en by, eller platsens lilla karta (steg 11.13.25)
 // sällskapet framme: resenärerna kliver in i den väckta byn, om byn dit är väckt och färdig
 export function besokIn(s: State, sl: Sallskap) {
   const b = vacktBy(s, sl), vl = s.varld;
@@ -55,7 +56,7 @@ export function besokIn(s: State, sl: Sallskap) {
     sl.gaster.push([p.id, g.id]);
     (b.besokare ??= {})[g.id] = p.id;
   }
-  fastaRelIn(b, radNr(vl, b.vackt), sl.gaster); // relationerna med de fasta (steg 11.13.13)
+  fastaRelIn(b, (b.vackt === undefined ? undefined : radNr(vl, b.vackt)), sl.gaster); // relationerna med de fasta (steg 11.13.13)
   if (sl.hjalp) { useMap(b); hjalpBygge(b); useMap(s); sl.hjalpTim = 0; } // bygget byn behöver hjälp med (steg 11.13.23)
   count(s, 'besok in', folk.length); count(b, 'besökare kom', folk.length);
 }
@@ -65,7 +66,7 @@ export function besokUt(s: State, sl: Sallskap, t: number) {
   if (!par) return;
   delete sl.gaster;
   const b = vacktBy(s, sl);
-  if (b && s.varld) fastaRelUt(b, radNr(s.varld, b.vackt), par);
+  if (b && s.varld) fastaRelUt(b, (b.vackt === undefined ? undefined : radNr(s.varld, b.vackt)), par);
   let kvar = 0;
   for (const [mid, gid] of par) {
     const p = s.people.find(q => q.id === mid), g = b && gastAv(b, gid);
@@ -111,5 +112,5 @@ export function vacktMedBesok(s: State, nr: number): State | undefined {
   for (const sl of sallskapNu(s.varld)) if (sl.mal === nr && sl.gaster?.length) { const b = vacktBy(s, sl); if (b) return b; }
   return undefined;
 }
-vackKrok.framme = besokIn;
+vackKrok.framme = (s, sl) => { vackPlats(s, sl.mal); besokIn(s, sl); }; // en plats får sin lilla karta när sällskapet kommer fram (steg 11.13.25)
 vackKrok.vander = besokUt;

@@ -23,7 +23,7 @@ import { encodeCover } from './vag';
 // varje lärdom gäller samma rutor som förut. Kartan räknas från den gamla kartans hörn (karta.ts), så det gamla ser ut som
 // förut, och utanför den fortsätter samma brus med orörd mark: gräs och skog som när byn grundades.
 // Det görs först av allt när byn laddas (varld.ts), innan något har räknats på den gamla kartan
-export const behoverStorreKarta = (s: State) => (s.W ?? 64) < KARTA.bredd || (s.H ?? 40) < KARTA.hojd;
+export const behoverStorreKarta = (s: State) => !s.recept && ((s.W ?? 64) < KARTA.bredd || (s.H ?? 40) < KARTA.hojd); // en liten karta efter ett recept har sin storlek (steg 11.13.25)
 
 // det som har en plats i byn: x och y, och målen (tx, ty), dit en flock går (mx, my) och varifrån något flyger (fx, fy).
 // Allt i byn flyttas utom kartans hörn, historiken (bilderna av kartan visas där den gamla kartan låg, ui/kartminne.ts),

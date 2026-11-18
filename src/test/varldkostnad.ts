@@ -2,11 +2,13 @@
 // (steg 11.2.18, Flera samhällen: Världens kostnad och lagringen). De sparade testbyarna (test/facit-byar/) får var sin värld
 // och stegas [timmar] timmar som spelet gör det. Tiden för varje rad i PERIODRADER och varje sort i kön (KOHANDELSER) mäts per
 // period, och världen tillsammans jämförs med byns tid. Över gränsen (VARLDKOSTNAD.andel) larmar kommandot och felkoden blir 1.
-// Ikappräkningen från byns grundande till nu (en sparad by som öppnas) mäts för sig.
+// Ikappräkningen från byns grundande till nu (en sparad by som öppnas) mäts för sig. Sist väcks grannbyn närmast varje testby
+// (steg 11.13.24), och lika många timmar till mäts med den väckta byn, så att det syns vad en väckt by kostar i ikappräkningen
+// och vad den längsta tiden en by får vara väckt (VACKT.vakenMax) kostar.
 import './utc';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { KOHANDELSER, PERIODRADER, VARLDKOSTNAD, medVarld, nastaSteg, step, varldSteg } from '../sim';
+import { KOHANDELSER, PERIODRADER, VACKT, VARLDKOSTNAD, medVarld, nastaSteg, step, vackTestNarmast, varldSteg } from '../sim';
 import { lasBy } from './delby';
 
 const DIR = fileURLToPath(new URL('../../test/facit-byar/', import.meta.url));
@@ -40,3 +42,21 @@ else {
   for (const [k, v] of rader) console.log(`${k}\t${(v / (n.get(k) || 1)).toFixed(3)}\t${n.get(k)}\t${(100 * v / byn).toFixed(2)} %`);
 }
 if (andel > VARLDKOSTNAD.andel) { console.log(`LARM: världen kostar ${(100 * andel).toFixed(2)} % av byns datortid, över gränsen ${100 * VARLDKOSTNAD.andel} %.`); process.exitCode = 1; }
+
+// med en väckt by (steg 11.13.24): samma by två gånger från filen, lika många timmar, den ena med grannbyn närmast väckt
+let med = 0, utan = 0, vackta = 0;
+for (const f of readdirSync(DIR).filter(f => f.endsWith('.json.gz')).sort()) {
+  const a = lasBy(DIR + f), b = lasBy(DIR + f);
+  for (const s of [a, b]) { medVarld(s); varldSteg(s); }
+  if (!vackTestNarmast(b).ok) continue;
+  vackta++;
+  for (const [s, sum] of [[a, 0], [b, 1]] as const) {
+    const t0 = performance.now(), slut = s.now + timmar * 3600e3;
+    while (s.now < slut) step(s, nastaSteg(s));
+    if (sum) med += performance.now() - t0; else utan += performance.now() - t0;
+  }
+}
+if (vackta) {
+  const per = Math.max(0, med - utan) / vackta / (timmar / 24); // ms per dygn för den väckta byn
+  console.log(`Med en väckt by (${vackta} byar): ${(med / vackta / 1000).toFixed(1)} s mot ${(utan / vackta / 1000).toFixed(1)} s utan, för ${timmar} timmar. Den väckta byn kostar ${(per / 1000).toFixed(1)} s datortid per dygn (år i spelet), ${(100 * (med - utan) / utan).toFixed(0)} % av huvudbyn, och den längsta tiden väckt (${VACKT.vakenMax} dygn) ${(per * VACKT.vakenMax / 1000).toFixed(1)} s i ikappräkningen.`);
+}

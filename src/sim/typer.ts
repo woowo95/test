@@ -22,14 +22,16 @@ export interface Kart { x: number; y: number; w: number; h: number } // den gaml
 let KARTA = '64x40';
 let MARK: string | undefined;
 export const markNu = () => MARK; // världsrutans marksort för en väckt by (steg 11.13.2); huvudbyn har ingen
-type KartAgare = { W?: number; H?: number; kart?: Kart; varldmark?: string };
+let RECEPT: string | undefined;
+export const receptNu = () => RECEPT; // kartreceptet för en liten karta (steg 11.13.25); en by har inget (receptet by)
+type KartAgare = { W?: number; H?: number; kart?: Kart; varldmark?: string; recept?: string };
 let KART_AV: KartAgare = {};
 export const kartAv = () => KART_AV; // byn vars karta gäller nu (useMap), så att den kan väljas igen efteråt
 export function useMap(s: KartAgare) {
   KART_AV = s;
-  W = s.W ?? 64; H = s.H ?? 40; MARK = s.varldmark;
+  W = s.W ?? 64; H = s.H ?? 40; MARK = s.varldmark; RECEPT = s.recept;
   OX = s.kart?.x ?? 0; OY = s.kart?.y ?? 0; W0 = s.kart?.w ?? W; H0 = s.kart?.h ?? H;
-  KARTA = (s.kart ? `${W}x${H}+${OX},${OY},${W0}x${H0}` : `${W}x${H}`) + (MARK ? `:${MARK}` : '');
+  KARTA = (s.kart ? `${W}x${H}+${OX},${OY},${W0}x${H0}` : `${W}x${H}`) + (MARK ? `:${MARK}` : '') + (RECEPT ? `#${RECEPT}` : '');
 }
 export const kartNamn = () => KARTA; // kartans storlek och den gamla kartans plats: samma namn = samma karta för samma frö
 export const mapKey = (seed: number) => `${seed}:${KARTA}`;
@@ -343,6 +345,8 @@ export interface State {
   besokare?: Record<number, number>; // en väckt by: besökarnas id i byn och deras id i huvudbyn, så att de de mött kan bli fasta (steg 11.13.14)
   vackFore?: Record<string, number>; // en väckt by: talen när den var byggd, så att det byn ändrat sedan kan läggas till raden när den somnar (steg 11.13.12)
   vackI?: number; vackRad?: import('./radtal').VarldRad; // en by som väcks: nästa byggare i BYGGARE (byn går inte förrän den är byggd) och radens tal som de var när väckningen började (steg 11.13.8)
+  vacktPlats?: number; recept?: string; // en liten karta för platsen nr i världen, efter kartreceptet (steg 11.13.25, vacktplats.ts)
+  vackFran?: number; // en väckt by: när den började gå i slagen (steg 11.13.24, gränsen VACKT.vakenMax)
   vackHall?: 1; // väckt med testknappen: somnar inte förrän knappen trycks igen
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
   bynVet?: import('./ort').BynVet; // det byn vet om platserna i världen (steg 11.4.6, ort.ts)

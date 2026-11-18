@@ -8,6 +8,7 @@ import { gaHem, hem, s, vidVy } from './lage';
 // namnet i sidhuvudet: den väckta byns plats i världen, annars byns eget namn
 export function visatNamn(b: State = s): string {
   if (hem && b.vackt !== undefined && b.varld) return byPlats(b.varld, b.vackt)?.namn ?? bynsNamn(b);
+  if (hem && b.vacktPlats !== undefined && b.varld) return b.varld.platser?.find(p => p.nr === b.vacktPlats)?.namn ?? 'Platsen'; // en liten karta (steg 11.13.25)
   return bynsNamn(b);
 }
 

@@ -24,6 +24,7 @@ export interface LandmarkDef {
   kostnad?: Partial<Record<MarkId, number>>; // kostnaden att gå på marken, utan att fler färdsätt kommer fram (spången)
   hemlig?: true; // syns inte på världskartan förrän byn har ett rykte om den (ort.ts, steg 11.4.7)
   folk?: true; // en plats med folk (en by, ett läger): inte känd i närområdet, byn får veta om den genom någon (ort.ts, steg 11.4.2)
+  karta?: true; // sällskapet som kommer fram går in på en liten karta för platsen (kartreceptet plats, vacktplats.ts, steg 11.13.25)
   tathet?: number; // chansen per landruta att platsen finns när världen skapas (placering.ts, steg 11.2.14); utan: den uppstår i spelet
 }
 const LAND: readonly MarkId[] = ['slatt', 'skog', 'tat', 'myr', 'berg'];
@@ -32,17 +33,17 @@ export const LANDMARKEN = {
   handelslager: { namn: 'Handelsläger', tecken: 'talt', mark: ['slatt', 'skog'], avst: 4, tillfallig: true, folk: true },
   rovarlager: { namn: 'Rövarläger', tecken: 'eldstad', mark: ['skog', 'tat', 'berg'], avst: 4, tillfallig: true, folk: true },
   utpost: { namn: 'Utpost', tecken: 'torn', mark: ['slatt', 'skog', 'berg'], avst: 3, projekt: true, folk: true },
-  ruin: { namn: 'Ruin', tecken: 'ruin', mark: LAND, avst: 3, fynd: true },
-  helig: { namn: 'Helig plats', tecken: 'sten', mark: LAND, avst: 3, tathet: 0.004 },
-  gravhog: { namn: 'Gravhög', tecken: 'hog', mark: ['slatt', 'skog'], avst: 2, tathet: 0.005 },
-  runsten: { namn: 'Runsten', tecken: 'runsten', mark: ['slatt', 'skog'], avst: 2, projekt: true, tathet: 0.003 },
-  fyndplats: { namn: 'Fyndplats', tecken: 'kors', mark: LAND, avst: 2, fynd: true, tillfallig: true, tathet: 0.004 },
-  karavanrest: { namn: 'Karavanrest', tecken: 'vagn', mark: LAND, avst: 1, fynd: true, tillfallig: true },
-  gomma: { namn: 'Gömma', tecken: 'packning', mark: LAND, avst: 1, fynd: true, tillfallig: true, hemlig: true },
+  ruin: { namn: 'Ruin', tecken: 'ruin', mark: LAND, avst: 3, fynd: true, karta: true },
+  helig: { namn: 'Helig plats', tecken: 'sten', mark: LAND, avst: 3, tathet: 0.004, karta: true },
+  gravhog: { namn: 'Gravhög', tecken: 'hog', mark: ['slatt', 'skog'], avst: 2, tathet: 0.005, karta: true },
+  runsten: { namn: 'Runsten', tecken: 'runsten', mark: ['slatt', 'skog'], avst: 2, projekt: true, tathet: 0.003, karta: true },
+  fyndplats: { namn: 'Fyndplats', tecken: 'kors', mark: LAND, avst: 2, fynd: true, tillfallig: true, tathet: 0.004, karta: true },
+  karavanrest: { namn: 'Karavanrest', tecken: 'vagn', mark: LAND, avst: 1, fynd: true, tillfallig: true, karta: true },
+  gomma: { namn: 'Gömma', tecken: 'packning', mark: LAND, avst: 1, fynd: true, tillfallig: true, hemlig: true, karta: true },
   bro: { namn: 'Bro', tecken: 'bro', mark: ['slatt', 'skog', 'tat', 'myr'], avst: 1, projekt: true, flodFri: true },
   spang: { namn: 'Spång', tecken: 'spang', mark: ['myr'], avst: 1, projekt: true, kostnad: { myr: 1 } },
   passage: { namn: 'Röjd passage', tecken: 'stubbe', mark: ['tat'], avst: 1, projekt: true, blir: { tat: 'skog' } },
-  rastplats: { namn: 'Rastplats', tecken: 'eld', mark: ['slatt', 'skog'], avst: 2, tathet: 0.003 },
+  rastplats: { namn: 'Rastplats', tecken: 'eld', mark: ['slatt', 'skog'], avst: 2, tathet: 0.003, karta: true },
   silvergruva: { namn: 'Silvergruva', tecken: 'gruva', mark: ['berg'], avst: 3 }, // läggs ut av laggGruvor (gruva.ts, steg 11.10.1)
 } as const satisfies Record<string, LandmarkDef>;
 export type LandmarkId = keyof typeof LANDMARKEN;

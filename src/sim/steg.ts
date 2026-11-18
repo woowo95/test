@@ -473,7 +473,7 @@ export const TAKTER: Takt[] = [
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
   { namn: 'kvarTimme', sek: 3600, fn: s => { kvarTimme(s); } },
   { namn: 'sällskapen på vägen', sek: 600, fn: (s, dt) => resaBehov(s, dt * SEC) }, // mättnaden, vätskan och orken (resa.ts, steg 11.5.6)
-  { namn: 'världen', sek: 300, fn: s => { if (s.vackt === undefined) varldSteg(s); } }, // världens perioder och kön, räknade mot klockan (varldslag.ts, steg 11.2.17)
+  { namn: 'världen', sek: 300, fn: s => { if (s.vackt === undefined && s.vacktPlats === undefined) varldSteg(s); } }, // världens perioder och kön, räknade mot klockan (varldslag.ts, steg 11.2.17)
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
@@ -1658,13 +1658,13 @@ function serializeDelar(s: State): Record<string, string> {
 }
 // de väckta byarna (steg 11.13.9): var och en i egna delar med förledet vackt<nr>-, med samma delar och gränser som huvudbyn,
 // utan världen som de delar med huvudbyn
-const VACKT_DEL = /^vackt(\d+)-(.+)$/;
+const VACKT_DEL = /^vackt(p?\d+)-(.+)$/; // en liten karta för en plats: vacktp<nr> (steg 11.13.25)
 function vacktaParts(s: State): Record<string, string> {
   const ut: Record<string, string> = {};
   for (const b of s.vackta ?? []) {
     const vl = b.varld;
     delete b.varld; useMap(b);
-    try { for (const [d, t] of Object.entries(serializeParts(b))) if (d !== 'varlden') ut[`vackt${b.vackt}-${d}`] = t; }
+    try { for (const [d, t] of Object.entries(serializeParts(b))) if (d !== 'varlden') ut[`vackt${b.vackt ?? 'p' + b.vacktPlats}-${d}`] = t; }
     finally { if (vl) b.varld = vl; useMap(s); }
   }
   return ut;
@@ -1672,8 +1672,8 @@ function vacktaParts(s: State): Record<string, string> {
 export const arVacktDel = (d: string) => VACKT_DEL.test(d);
 // de väckta byarna läses ur sina delar och delar huvudbyns värld igen
 export function lasVackta(s: State, delar: Record<string, string>) {
-  const per = new Map<number, Record<string, string>>();
-  for (const [d, t] of Object.entries(delar)) { const m = VACKT_DEL.exec(d); if (m) { const o = per.get(+m[1]) ?? {}; o[m[2]] = t; per.set(+m[1], o); } }
+  const per = new Map<string, Record<string, string>>();
+  for (const [d, t] of Object.entries(delar)) { const m = VACKT_DEL.exec(d); if (m) { const o = per.get(m[1]) ?? {}; o[m[2]] = t; per.set(m[1], o); } }
   for (const o of per.values()) { // i den ordning de sparades, som är ordningen de går i slagen
     if (!o.byn) continue;
     const namn = Object.keys(o).filter(d => d !== 'byn').sort();

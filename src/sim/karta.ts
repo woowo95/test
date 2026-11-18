@@ -1,6 +1,6 @@
-import { State, kartNamn, mapKey, markNu } from './typer';
+import { State, kartNamn, mapKey, markNu, receptNu } from './typer';
 import type { MarkId } from './varldmark';
-import { skapaKarta, type KartData } from './kartrecept';
+import { skapaKarta, type KartData, type KartReceptId } from './kartrecept';
 
 // ---------- karta ----------
 export function hash(seed: number, x: number, y: number) {
@@ -38,7 +38,7 @@ type MapData = KartData;
 
 // byns karta: receptet by (kartrecept.ts) på den här kartans storlek och den gamla kartans hörn, utan marksort, så att den
 // är densamma som den alltid varit
-export const getMap = perKarta((seed): MapData => skapaKarta(seed, 'by', markNu() as MarkId | undefined)); // en väckt by får sin världsrutas mark (steg 11.13.2)
+export const getMap = perKarta((seed): MapData => skapaKarta(seed, (receptNu() ?? 'by') as KartReceptId, markNu() as MarkId | undefined)); // en väckt by får sin världsrutas mark (steg 11.13.2), en plats sin lilla karta (steg 11.13.25)
 // var elden står nu: där kartan lade den, eller dit byn flyttat den (steg 2.10.4, eldflytt.ts)
 export const eldPlats = (s: State) => s.fire.at ?? getMap(s.seed).fire;
 // åt vilket håll (x, y) ligger sett från elden: norr, nordost … (testlägets rader, steg 4.5.6.4)

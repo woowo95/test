@@ -64,6 +64,7 @@ export const VACKT = balans('vackt', {
   stationer: 0.4, // stationerna och möblerna kostar högst så stor del av radens rikedom, i grundvärdet av materialet (steg 11.13.6)
   ort: 0.6, // chansen att en vuxen minns en plats byn känner (steg 11.13.15) ...
   ortBesokt: 0.3, // ... och att den som minns en plats byn besökt själv varit där; annars känner hen den
+  vakenMax: 3, // så många dygn (år i spelet) får en by vara väckt; sedan somnar den, med besökarna kvar som när de gick in (steg 11.13.24)
 });
 
 // en byggare lägger en del av byn på plats: b = den väckta byn, s = huvudbyn, r = raden
@@ -111,6 +112,7 @@ function vackKlar(s: State, b: State) {
   useMap(b);
   b.seder.v = sederTarget(b);
   stepDelning(b);
+  b.vackFran = b.now; // (steg 11.13.24)
   b.vackFore = lasRad(b); // det byn ändrar från och med nu läggs till raden när den somnar (steg 11.13.12)
   delete b.vackI;
   useMap(s);
@@ -148,10 +150,14 @@ KOHANDELSER.vackSteg = (s, _vl, p) => {
 export function vacktSomna(s: State) {
   const vl = s.varld;
   if (!vl || !s.vackta?.length) return;
-  const mal = new Set(sallskapNu(vl).filter(sl => sl.skede !== 'hemat').map(sl => vl.platser?.find(q => q.nr === sl.mal)?.by));
+  const mal = new Set(sallskapNu(vl).filter(sl => sl.skede !== 'hemat').map(sl => vl.platser?.find(q => q.nr === sl.mal && q.k === 'by')?.by)); // (en ruin eller annan plats hör till en by med by, men är ingen by)
   const fore = s.vackta.length;
-  for (const b of s.vackta) if (!(b.vackt === undefined || mal.has(b.vackt) || b.vackHall)) somna(s, b);
-  s.vackta = s.vackta.filter(b => b.vackt === undefined || mal.has(b.vackt) || b.vackHall);
+  // en by som varit väckt längre än VACKT.vakenMax somnar också: den kostar datortid som en by till (steg 11.13.24)
+  const platser = new Set(sallskapNu(vl).filter(sl => sl.skede !== 'hemat').map(sl => sl.mal)); // de små kartorna (steg 11.13.25)
+  const dit = (b: State) => b.vacktPlats !== undefined ? platser.has(b.vacktPlats) : b.vackt === undefined || mal.has(b.vackt);
+  const vaken = (b: State) => b.vackHall || dit(b) && (b.vackFran === undefined || s.now - b.vackFran <= VACKT.vakenMax * DAY);
+  for (const b of s.vackta) if (!vaken(b)) { if (dit(b)) count(s, 'vackt_for_lange'); somna(s, b); }
+  s.vackta = s.vackta.filter(vaken);
   if (s.vackta.length < fore) count(s, 'vackt_somnat', fore - s.vackta.length);
   if (!s.vackta.length) delete s.vackta;
 }

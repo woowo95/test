@@ -22,7 +22,7 @@ import { MARK_IDS, VARLD, VARLDMARK, VarldMark } from './varldmark';
 import { H, Person, State, T, W } from './typer';
 
 const RIKTNING = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
-const huvudPlats = (s: State) => s.varld?.platser?.find(p => p.k === 'by' && p.by === (s.vackt ?? s.varld!.huvud)); // byns egen plats: den väckta byns rad (steg 11.13.10)
+const huvudPlats = (s: State) => s.vacktPlats !== undefined ? s.varld?.platser?.find(p => p.nr === s.vacktPlats) : s.varld?.platser?.find(p => p.k === 'by' && p.by === (s.vackt ?? s.varld!.huvud)); // byns egen plats: den väckta byns rad (steg 11.13.10)
 // var en plats ligger sett från huvudbyn: marken där och väderstrecket
 function hemAv(v: VarldMark, h: VarldPlats | undefined, p: VarldPlats) {
   const m = VARLDMARK[MARK_IDS[v.mark[p.y * v.w + p.x]]];
