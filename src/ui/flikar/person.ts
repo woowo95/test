@@ -200,7 +200,7 @@ function presHtml(p: Person) {
       ${lever ? `<dt>Gör nu</dt><dd>${statusRad(p, pratarMed(s, p))}${t?.why ? `<br><span class="muted small">${esc(t.why)}</span>` : ''}</dd>
       <dt>Humör</dt><dd>${esc(moodWord(moodOf(p, s.now)))}</dd>
       <dt>Hälsa</dt><dd><span class="lank" data-pdel="halsa" role="button" tabindex="0" title="Öppna Hälsa">${esc(cap(h))} ▸</span></dd>` : ''}</dl>
-      <h3>Familjen</h3>${famHtml ? `<div class="famrad">${famHtml}</div>` : `<p class="muted">${p.mother || p.father ? '–' : 'Bland de första i byn, utan familj här'}</p>`}
+      <h3>Familjen</h3>${famHtml ? `<div class="famrad">${famHtml}</div>` : ''}${forrFam(p) || (famHtml ? '' : `<p class="muted">${p.mother || p.father ? '–' : 'Bland de första i byn, utan familj här'}</p>`)}
       <h3>Seder hen håller</h3>${tro.length ? `<p class="trorad">${tro.join('')}</p>` : '<p class="muted">Inga seder hen håller hårt på.</p>'}`;
 }
 // gångfarten (steg 3.10.10, i presentationen sedan steg 9.2.28): som del av en frisk vuxens på en stig, och raderna i
@@ -211,6 +211,9 @@ function gangRad(p: Person) {
   return rad(p, 'gang', '🚶 Gångfart', `${bar(gf.fart, gf.fart < LAG.halsa ? 'low' : '')}<span>${Math.round(gf.fart * 100)} %</span>`, gf.delar.map(d => ({ namn: `${d.tecken} ${d.namn}`, v: d.v })), ' %',
     'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten tas gånger varandra.');
 }
+// livet före besöket hos en invånare i en väckt by (steg 11.13.16, vacktliv.ts): de döda föräldrarna och händelserna, senaste först
+const forrFam = (p: Person) => p.forr?.familj.length ? `<p class="muted">${p.forr.familj.map(f => `${esc(f.namn)} (${f.roll === 'mor' ? 'mor' : f.roll === 'far' ? 'far' : f.roll}, död)`).join(', ')}</p>` : '';
+const forrHtml = (p: Person) => p.forr?.liv.length ? `<h3>Livet förut</h3><ul class="fame">${p.forr.liv.slice().reverse().map(l => `<li><span class="muted">${l.ar} år</span> ${esc(l.text)}</li>`).join('')}</ul>` : '';
 // Livet (steg 4.1.1.2): upplevelserna från barndomen och från vuxenlivet, var för sig
 function livet(p: Person) {
   // andligheten på egenskapernas skala 0 till 10 (steg 11.1.52), som i Egenskaper
@@ -627,7 +630,7 @@ let tidVald: string | undefined; // namnet på delen som är markerad med ett tr
 // Händelser (steg 11.1.45 och 11.1.52): det viktiga, framträdandena och matcherna och bytena står här och inte i Översikt
 function handHtml(p: Person) {
   const r = personRader(s, p);
-  const extra = `${p.fame.length ? `<h3>Viktiga händelser</h3><ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : ''}
+  const extra = `${forrHtml(p)}${p.fame.length ? `<h3>Viktiga händelser</h3><ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : ''}
       ${fritidLista({ person: p.id }) ? `<h3>Framträdanden och matcher</h3>${fritidLista({ person: p.id, antal: 8 })}` : ''}${bytenHtml(p.byten)}`;
   if (!r.length) return '<p class="muted">Inget särskilt har hänt ännu.</p>' + extra;
   return extra + `<h3>Dag för dag</h3><ul class="fame phand">${r.map(x => `<li${x.alla.length > 1 ? ` title="${esc(x.alla.join(' '))}"` : ''}><span title="${esc(PERSONLOGG[x.k].namn)}">${PERSONLOGG[x.k].ikon}</span> <span class="muted">${esc(clockTxt(x.t))}</span> ${esc(x.text)}</li>`).join('')}</ul>`;

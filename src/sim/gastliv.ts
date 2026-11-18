@@ -9,13 +9,13 @@ import { DAY } from './typer';
 import { N1, N2, NK, NM } from './folk';
 import { KLAN_HEM_NAMN } from './klaner';
 
-export type Roll = 'handlare' | 'rovare' | 'gast';
+export type Roll = 'handlare' | 'rovare' | 'gast' | 'bybo'; // bybo: en invånare i en väckt by (steg 11.13.16, vacktliv.ts), vars släkt och byns händelser finns på riktigt
 export interface Slakting { roll: 'mor' | 'far' | 'syskon' | 'partner' | 'barn'; namn: string; sex: 'm' | 'k'; ar: number; dog?: number } // ar = gästens ålder när hen föddes eller kom in i livet (föräldrarna: 0), dog = gästens ålder när hen dog
 export interface LivRad { ar: number; k: string; text: string }
 export interface GastLiv { alder: number; familj: Slakting[]; liv: LivRad[]; humor: number; kan: string[]; beskrivning: string }
 
 // åldern när gästen först kommer, efter rollen (år, ett dygn = ett år i spelet)
-const ALDRAR: Record<Roll, [number, number]> = { handlare: [24, 56], rovare: [18, 42], gast: [18, 60] };
+const ALDRAR: Record<Roll, [number, number]> = { handlare: [24, 56], rovare: [18, 42], gast: [18, 60], bybo: [18, 60] };
 const HANTVERK = ['garva skinn', 'fläta korgar', 'tälja i trä', 'sy kläder', 'fiska med nät', 'spåra vilt', 'göra rep', 'slå flinta'];
 const PLATSER = KLAN_HEM_NAMN; // man reser till där klanerna bor (klaner.ts)
 const DELAR = ['armen', 'benet', 'handen', 'axeln', 'foten'];
@@ -29,13 +29,13 @@ const hen = (sex: 'm' | 'k') => sex === 'k' ? 'hon' : 'han';
 // det inte går, t.ex. ingen förälder kvar). en = högst en gång i livet
 interface Handelse { fran: number; till: number; chans: Partial<Record<Roll, number>> & { annars: number }; en?: true; gor(c: Liv): string | undefined }
 export const LIVSHANDELSER: Record<string, Handelse> = {
-  syskon: { fran: 1, till: 16, chans: { annars: 0.12 }, gor: c => {
+  syskon: { fran: 1, till: 16, chans: { bybo: 0, annars: 0.12 }, gor: c => {
     if (lever(c, 'mor').length === 0 || c.familj.filter(f => f.roll === 'syskon').length >= 4) return undefined;
     const sex = c.r(1) < 0.5 ? 'm' : 'k', namn = c.namn(sex, 2);
     c.familj.push({ roll: 'syskon', namn, sex, ar: c.ar });
     return `Fick ${sex === 'k' ? 'en lillasyster' : 'en lillebror'}, ${namn}`;
   } },
-  hantverk: { fran: 11, till: 22, chans: { annars: 0.2 }, gor: c => {
+  hantverk: { fran: 11, till: 22, chans: { bybo: 0, annars: 0.2 }, gor: c => {
     if (c.kan.length >= 2) return undefined;
     const h = HANTVERK.filter(x => !c.kan.includes(x))[Math.floor(c.r(3) * (HANTVERK.length - c.kan.length))];
     c.kan.push(h);
@@ -43,31 +43,31 @@ export const LIVSHANDELSER: Record<string, Handelse> = {
   } },
   forstaResa: { fran: 13, till: 22, en: true, chans: { handlare: 0.3, annars: 0 }, gor: c => `Följde med på sin första handelsresa, till ${PLATSER[Math.floor(c.r(4) * PLATSER.length)]}` },
   forstaRan: { fran: 15, till: 25, en: true, chans: { rovare: 0.25, annars: 0 }, gor: () => 'Lämnade klanen och slöt sig till en flock rövare' },
-  gift: { fran: 18, till: 38, en: true, chans: { rovare: 0.06, annars: 0.14 }, gor: c => {
+  gift: { fran: 18, till: 38, en: true, chans: { bybo: 0, rovare: 0.06, annars: 0.14 }, gor: c => {
     const sex = c.sex === 'k' ? 'm' : 'k', namn = c.namn(sex, 5);
     c.familj.push({ roll: 'partner', namn, sex, ar: c.ar });
     return `Gifte sig med ${namn}`;
   } },
-  barn: { fran: 19, till: 46, chans: { annars: 0.16 }, gor: c => {
+  barn: { fran: 19, till: 46, chans: { bybo: 0, annars: 0.16 }, gor: c => {
     if (!lever(c, 'partner').length || c.familj.filter(f => f.roll === 'barn').length >= 5) return undefined;
     const sex = c.r(6) < 0.5 ? 'm' : 'k', namn = c.namn(sex, 7);
     c.familj.push({ roll: 'barn', namn, sex, ar: c.ar });
     return `Fick ${sex === 'k' ? 'en dotter' : 'en son'}, ${namn}`;
   } },
-  foralder: { fran: 6, till: 99, chans: { annars: 0.035 }, gor: c => {
+  foralder: { fran: 6, till: 99, chans: { bybo: 0, annars: 0.035 }, gor: c => {
     const f = [...lever(c, 'mor'), ...lever(c, 'far')];
     if (!f.length || c.ar < 30 && c.r(8) < 0.6) return undefined; // föräldrarna dör oftast när man själv är vuxen
     const q = f[Math.floor(c.r(9) * f.length)];
     q.dog = c.ar;
     return `Förlorade ${q.roll === 'mor' ? 'sin mor' : 'sin far'}, ${q.namn}`;
   } },
-  partnerDog: { fran: 22, till: 99, chans: { annars: 0.012 }, gor: c => {
+  partnerDog: { fran: 22, till: 99, chans: { bybo: 0, annars: 0.012 }, gor: c => {
     const q = lever(c, 'partner')[0];
     if (!q) return undefined;
     q.dog = c.ar;
     return `Förlorade ${q.sex === 'k' ? 'sin hustru' : 'sin man'}, ${q.namn}`;
   } },
-  barnDog: { fran: 20, till: 99, chans: { annars: 0.012 }, gor: c => {
+  barnDog: { fran: 20, till: 99, chans: { bybo: 0, annars: 0.012 }, gor: c => {
     const b = lever(c, 'barn');
     if (!b.length) return undefined;
     const q = b[Math.floor(c.r(10) * b.length)];
@@ -76,7 +76,7 @@ export const LIVSHANDELSER: Record<string, Handelse> = {
   } },
   skadad: { fran: 8, till: 99, chans: { rovare: 0.05, annars: 0.02 }, gor: c => `Skadade ${DELAR[Math.floor(c.r(11) * DELAR.length)]} ${c.r(12) < 0.5 ? 'i ett fall' : c.roll === 'rovare' ? 'i ett slagsmål' : 'på en jakt'}` },
   resa: { fran: 16, till: 99, chans: { handlare: 0.12, annars: 0.015 }, gor: c => `Gjorde en lång resa till ${PLATSER[Math.floor(c.r(13) * PLATSER.length)]}${c.roll === 'handlare' ? ' och kom hem med mycket silver' : ''}` },
-  vinter: { fran: 4, till: 99, chans: { annars: 0.03 }, gor: () => `Klarade en sträng vinter då många i klanen svalt` },
+  vinter: { fran: 4, till: 99, chans: { bybo: 0, annars: 0.03 }, gor: () => `Klarade en sträng vinter då många i klanen svalt` },
   strid: { fran: 15, till: 99, chans: { rovare: 0.14, annars: 0.015 }, gor: c => c.roll === 'rovare' ? (c.r(14) < 0.5 ? 'Var med och plundrade en by' : 'Slogs mot en annan flock och klarade sig') : `Slogs mot rövare som anföll ${c.klan}` },
 };
 

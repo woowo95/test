@@ -32,6 +32,7 @@ import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
 import { stepDelning } from './delning';
 import { DAY, HOUR, Person, State, useMap } from './typer';
+import { byggLiven } from './vacktliv';
 import { count } from './folk';
 import { KOHANDELSER, laggIKo, PERIODRADER } from './varldslag';
 import { lever } from './rad';
@@ -70,6 +71,7 @@ export const BYGGARE: Byggare[] = [
   { namn: 'husen', bygg: (b, _s, r) => byggHus(b, r) }, // de gemensamma husen, stationerna och möblerna (steg 11.13.6)
   { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll runt det som redan står (steg 11.13.5)
   { namn: 'förråden', bygg: (b, _s, r) => byggForrad(b, r) }, // radens mat och rikedom i hela saker, hos ägare (steg 11.13.7)
+  { namn: 'liven', bygg: (b, _s, r) => byggLiven(b, r) }, // ett liv bakåt för var och en, med den riktiga släkten och de dödas gravar (steg 11.13.16)
 ];
 
 // byns frö: ur huvudbyns frö och radens nummer, så att samma rad alltid får samma karta

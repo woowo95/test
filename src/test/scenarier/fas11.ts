@@ -4913,3 +4913,32 @@ SCENARIER.vacktort = {
     ];
   },
 };
+SCENARIER.vacktliv = {
+  text: 'Liven bakåt (steg 11.13.16, vacktliv.ts): varje invånare i den väckta byn har ett liv med LIVSHANDELSER i rollen bybo, där syskonen, partnern och barnen i byn är de som står i livet, föräldrarna som inte finns i byn är döda och de som dog efter grundandet ligger begravda',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 4)!;
+    const r = SIM.radNr(vl, mal.by!)!;
+    const b = SIM.vackTest(s, r.nr)!;
+    const folk = SIM.living(b);
+    const liv = (p: SIM.Person) => p.forr?.liv ?? [];
+    const barnRatt = folk.every(p => SIM.childrenOf(b, p).every(c => liv(p).some(l => l.k === 'barn' && l.text.endsWith(c.name))));
+    const partnerRatt = folk.every(p => { const pa = SIM.byId(b, p.partner); if (!pa) return !liv(p).some(l => l.k === 'gift'); const a = liv(p).find(l => l.k === 'gift'), c = liv(pa).find(l => l.k === 'gift'); return !!a && !!c && Math.abs((p.born + a.ar * SIM.DAY) - (pa.born + c.ar * SIM.DAY)) <= SIM.DAY * 1.01; });
+    const foraldrar = folk.every(p => (p.forr?.familj ?? []).length === [p.mother, p.father].filter(id => !SIM.byId(b, id)).length && (p.forr?.familj ?? []).every(f => f.dog !== undefined));
+    const iOrdning = folk.every(p => liv(p).every((l, i, a) => i === 0 || a[i - 1].ar <= l.ar) && liv(p)[0]?.k === 'fodd' && liv(p).every(l => l.ar <= SIM.ageOf(p, b.now)));
+    const gravar = (b.gravar ?? []).filter(g => g.vem === 0);
+    const doda = folk.flatMap(p => (p.forr?.familj ?? []).filter(f => p.born + f.dog! * SIM.DAY >= r.grundad).map(f => f.namn));
+    const b2 = SIM.vackBy(s, r.nr)!;
+    const samma = JSON.stringify(b2.people.map(p => p.forr)) === JSON.stringify(b.people.map(p => p.forr));
+    const exempel = folk.find(p => liv(p).length >= 3) ?? folk[0];
+    return [
+      [`alla har ett liv (${folk.filter(p => liv(p).length).length} av ${folk.length})`, folk.every(p => liv(p).length > 0)],
+      [`livet börjar med födseln, i ordning och inte efter i dag (${exempel.name}: ${liv(exempel).map(l => `${l.ar} år ${l.text}`).join('; ')})`, iOrdning],
+      ['barnen i byn står i föräldrarnas liv', barnRatt],
+      ['paret gifte sig samtidigt i bådas liv', partnerRatt],
+      ['föräldrarna som inte finns i byn är döda', foraldrar],
+      [`de döda efter grundandet ligger begravda (${doda.length} döda, ${gravar.length} gravar)`, doda.every(n => gravar.some(g => g.namn === n))],
+      ['samma rad ger samma liv', samma],
+    ];
+  },
+};
