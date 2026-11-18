@@ -175,6 +175,7 @@ export interface Sallskap {
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
   delning?: Andelar; // hur det delades hemma (steg 11.5.9)
   uppdrag?: number; // uppdraget sällskapet reser för (steg 11.8.4)
+  vilse?: 1; // sällskapet är saknat och vägt för en vilsegång (steg 11.8.6, vilsegang.ts)
   utfall?: UppdragUtfall; // hur det gick på platsen (steg 11.8.7)
   turne?: number; // turnén är gjord: silvret grannbyn gav (steg 11.8.18)
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
@@ -604,6 +605,7 @@ export function resaBehov(s: State, dt: number) {
   if (vl?.gommor?.length) vl.gommor = vl.gommor.filter(g => s.now - g.t < RESA.gommaDygn * DAY); // gömmorna ligger kvar en tid (steg 11.5.17)
   for (const sl of sallskapNu(s.varld)) {
     if (!PA_VAGEN.includes(sl.skede)) continue;
+    SAKNADKROK.koll?.(s, sl); // den som inte kommit hem i tid blir saknad (steg 11.8.6, vilsegang.ts)
     if (!resenarer(s, sl).length) { forsvunnet(s, sl); continue; } // alla är döda: sällskapet står, och efter en tid räknas det som försvunnet (steg 11.5.18)
     for (let gjort = 0; gjort < dt - 1e-9;) { const d = Math.min(600 * SEC, dt - gjort); behovBit(s, sl, s.now - dt + gjort + d, d); gjort += d; }
   }
@@ -946,7 +948,7 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     }
     // ett uppdrag personen tror på (steg 11.8.4): den trodda belöningen gånger tilltron, mot samma kostnad och risk som annat
     let uid: number | undefined;
-    const upp = skal !== 'sandebud' && (RESMAL.uppdrag.mal as readonly string[]).includes(q.k) ? uppdragVid(s, p, q.nr) : undefined;
+    const upp = skal !== 'sandebud' && ((RESMAL.uppdrag.mal as readonly string[]).includes(q.k) || vilseVid(p, q.nr)) ? uppdragVid(s, p, q.nr) : undefined; // en vilsegång längs vägen till vilket mål som helst (steg 11.8.6)
     if (upp && (!skal || upp.varde > varde)) { skal = 'uppdrag'; varde = upp.varde; uid = upp.id; varor = []; kop = []; }
     // silvergruvan (steg 11.10.1): silvret personen väntar sig bära hem efter den bästa tiden nere, mindre för ett rykte
     let nere: number | undefined;
@@ -1125,6 +1127,8 @@ type FramKrok = (s: State, sl: Sallskap, t: number) => (UppdragUtfall & { text: 
 export const UPPDRAGFRAM: { vaktat?: FramKrok; grav?: FramKrok } = {};
 // den som kommer till en plats ser fyndet där (steg 11.13.28): gravfynd.ts sätter kroken
 export const FYNDSETT: { grav?: (s: State, p: Person, nr: number, t: number) => void } = {};
+// p känner till en vilsegång på vägen till platsen nr (steg 11.8.6)
+const vilseVid = (p: Person, nr: number) => !!p.lardomar?.some(l => l.k === 'uppdrag' && l.om === 'vilsegang' && l.g === nr);
 export function uppdragFram(s: State, sl: Sallskap, t: number) {
   const vl = s.varld!, u = sl.uppdrag !== undefined ? uppdragNr(vl, sl.uppdrag) : undefined, ruin = ruinRad(vl, sl.mal);
   const vk = !u || u.mal !== sl.mal ? UPPDRAGFRAM.vaktat?.(s, sl, t) ?? UPPDRAGFRAM.grav?.(s, sl, t) : undefined;
@@ -1364,7 +1368,7 @@ function matSlut(s: State, sl: Sallskap, t: number) {
   MATSLUT[bast.id]!.gor(s, sl, l, t);
 }
 // sällskapet vänder och går hem från rutan det står på
-function vandHem(s: State, sl: Sallskap) {
+export function vandHem(s: State, sl: Sallskap) {
   const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by);
   sl.skede = 'hemat';
   if (!vl || !v || !hem || sl.ruta === undefined) return;
@@ -1445,17 +1449,21 @@ export function vantadDygn(s: State, sl: Sallskap) {
   const vl = s.varld, hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
   return (hem && mal ? 2 * dygnDit(s, { x: hem.x, y: hem.y }, { x: mal.x, y: mal.y }) : 0) + stannarFor(sl);
 }
-function forsvunnet(s: State, sl: Sallskap) {
-  if (s.now - sl.borjan < RESA.forsvunnen * Math.max(1, vantadDygn(s, sl)) * DAY) return;
+// den saknade (steg 11.8.6, vilsegang.ts): kroken väger om någon hemma utlyser en vilsegång, och mötet säger när sällskapet hittas
+export const SAKNADKROK: { koll?: (s: State, sl: Sallskap) => void; mots?: (s: State, a: Sallskap, b: Sallskap, t: number) => void } = {};
+function forsvunnet(s: State, sl: Sallskap, hittad?: string) {
+  if (!hittad && s.now - sl.borjan < RESA.forsvunnen * Math.max(1, vantadDygn(s, sl)) * DAY) return;
   const namn = resenarNamn(s, sl);
   beskedet(s, sl, 'forsvunnen');
   sl.skede = 'forsvunnet'; sl.t = s.now;
   count(s, 'resa försvunnet');
-  const text = `${namn} kom aldrig hem från ${RESMAL[sl.skal].namn.toLowerCase()} till ${malNamn(s, sl)} och räknas som försvunna.`;
+  const text = hittad ? `${hittad} hittade ${namn} döda vid leden till ${malNamn(s, sl)}.` : `${namn} kom aldrig hem från ${RESMAL[sl.skal].namn.toLowerCase()} till ${malNamn(s, sl)} och räknas som försvunna.`;
   log(s, text, 'world', sl.medl);
   notis(s, 'resa', text, sl.medl, undefined, { resa: sl.id });
 }
-const resenarNamn = (s: State, sl: Sallskap) => { const n = sl.medl.map(id => s.people.find(p => p.id === id)?.name).filter(Boolean) as string[]; return n.length > 1 ? `${n.slice(0, -1).join(', ')} och ${n[n.length - 1]}` : n[0] ?? 'Sällskapet'; };
+// sällskapet där alla dött hittas av dem som letar (steg 11.8.6): beskedet kommer hem med dem
+export const hittadDod = (s: State, sl: Sallskap, av: string) => forsvunnet(s, sl, av);
+export const resenarNamn = (s: State, sl: Sallskap) => { const n = sl.medl.map(id => s.people.find(p => p.id === id)?.name).filter(Boolean) as string[]; return n.length > 1 ? `${n.slice(0, -1).join(', ')} och ${n[n.length - 1]}` : n[0] ?? 'Sällskapet'; };
 
 // ---------- när någon blir långsam (steg 11.5.17, Flera samhällen: Farten i tal) ----------
 // Sällskapet går i den långsammaste medlemmens fart. Blir någon långsam (under RESA.langsam, t.ex. med skadade ben) väger

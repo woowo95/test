@@ -64,7 +64,7 @@ export type UppdragGor = 'leta' | 'ta' | 'strida' | 'hjalpa' | 'leverera';
 export interface UppdragDef {
   namn: string;
   utlosare: string; // händelsen där uppdraget uppstår
-  plats: readonly (LandmarkId | 'narhet')[]; // var det är: landmärkets sorter, eller närområdet runt den egna byn
+  plats: readonly (LandmarkId | 'narhet')[]; // var det är: landmärkets sorter, eller närområdet: längs vägen den saknade tog mot sitt mål (vilsegang.ts)
   utlysare: readonly UtlysarId[];
   belon: 'utlyst' | 'innehall'; // det som lagts undan, eller platsens innehåll i hela saker
   krav: UppdragKrav;

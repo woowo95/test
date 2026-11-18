@@ -5464,3 +5464,59 @@ SCENARIER.kyrkanutlyser = {
     ];
   },
 };
+
+SCENARIER.vilsegang = {
+  text: 'Vilsegången (steg 11.8.6, vilsegang.ts): ett sällskap som inte kommit hem i tid är saknat, och en anhörig hemma lägger undan en belöning ur det hen har över och utlyser vilsegången; ett sällskap som vet om den och möter den saknade längs vägen hittar den, får belöningen och båda vänder hem; är alla döda kommer beskedet hem med finnarna',
+  kor: () => {
+    const bygg = () => {
+      const s = SIM.cloneState(testBy(3)), vl = s.varld!, v = SIM.varldMark(s)!;
+      const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && !q.gast);
+      const a = vuxna.find(q => vuxna.some(r => r !== q && (r.partner === q.id || SIM.isKin(r, q))))!;
+      const anh = vuxna.find(r => r !== a && (r.partner === a.id || SIM.isKin(r, a)))!;
+      const c = vuxna.find(q => q !== a && q !== anh)!;
+      const hb = SIM.byPlats(vl, vl.huvud!)!, malP = vl.platser!.find(p => p.nr === hb.grannar![0]!.nr)!, ruta = malP.y * v.w + malP.x;
+      SIM.put(s, 'silver', 20, { [anh.id]: 20 });
+      const sl = SIM.nyttSallskap(s, a, malP.nr, 'handel')!;
+      sl.skede = 'ute'; sl.ruta = ruta; sl.borjan = s.now - 20 * SIM.DAY;
+      const f = SIM.nyttSallskap(s, c, malP.nr, 'handel')!;
+      f.skede = 'ute'; f.ruta = ruta;
+      return { s, vl, a, anh, c, sl, f };
+    };
+    const { s, vl, anh, c, sl, f } = bygg();
+    const ung = { ...sl, borjan: s.now };
+    SIM.SAKNADKROK.koll!(s, ung as typeof sl);
+    const ingenFore = SIM.uppdragen(vl).filter(u => u.k === 'vilsegang').length;
+    const silverFore = SIM.ownedStock(s, anh).silver ?? 0;
+    SIM.SAKNADKROK.koll!(s, sl);
+    const u = SIM.uppdragen(vl).find(x => x.k === 'vilsegang' && x.om === sl.id), silverEfter = SIM.ownedStock(s, anh).silver ?? 0;
+    const belon = u?.belon.silver ?? 0, vet = !!anh.lardomar?.some(l => l.k === 'uppdrag' && l.a === u?.id);
+    SIM.SAKNADKROK.koll!(s, sl);
+    const igen = SIM.uppdragen(vl).filter(x => x.k === 'vilsegang').length;
+    // den som inte känner till vilsegången hittar inget
+    SIM.SAKNADKROK.mots!(s, f, sl, s.now);
+    const ovetande = !!SIM.uppdragen(vl).find(x => x.id === u?.id);
+    if (u) SIM.larUppdrag(s, c, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: 'vilsegang' });
+    sl.forlorat = 4;
+    SIM.SAKNADKROK.mots!(s, f, sl, s.now);
+    const klar = !SIM.uppdragen(vl).find(x => x.id === u?.id);
+    // alla döda: beskedet kommer med finnarna
+    const d = bygg();
+    d.s.people.find(q => q.id === d.a.id)!.dodVag = { orsak: 'svalt', t: d.s.now - SIM.DAY };
+    SIM.SAKNADKROK.koll!(d.s, d.sl);
+    const ud = SIM.uppdragen(d.vl).find(x => x.k === 'vilsegang' && x.om === d.sl.id);
+    if (ud) SIM.larUppdrag(d.s, d.c, ud.id, 1, { t: d.s.now, v: SIM.belonVarde(ud), mal: ud.mal, k: 'vilsegang' });
+    SIM.SAKNADKROK.mots!(d.s, d.sl, d.f, d.s.now);
+    const dod = d.s.people.find(q => q.id === d.a.id)!;
+    return [
+      [`ett sällskap som inte är försenat saknas inte (${ingenFore})`, ingenFore === 0],
+      [`den anhöriga ${anh.name} lade undan ${belon} silver (${silverFore} → ${silverEfter}) och utlyste vilsegången`, !!u && belon >= 1 && silverEfter === silverFore - belon && u.av.person === anh.id],
+      [`den anhöriga vet om uppdraget`, vet],
+      [`samma sällskap utlyses inte två gånger (${igen})`, igen === 1],
+      ['den som inte vet om vilsegången hittar inget', ovetande],
+      [`den som vet hittar den saknade: uppdraget klart, belöningen i packningen (${f.pack.silver ?? 0} silver)`, klar && (f.pack.silver ?? 0) === belon && f.utfall?.hur === 'klart'],
+      [`den saknade får vägen visad och vänder hem (${sl.skede}, förlorat ${sl.forlorat})`, sl.skede === 'hemat' && sl.forlorat === 0],
+      [`och finnaren vänder hem (${f.skede})`, f.skede === 'hemat'],
+      [`är alla döda kommer beskedet hem med finnarna (${d.sl.skede}, ${SIM.alive(dod) ? 'lever' : 'död'})`, d.sl.skede === 'forsvunnet' && !SIM.alive(dod) && d.f.utfall?.hur === 'klart'],
+    ];
+  },
+};

@@ -13,7 +13,7 @@ import { larPris } from './minne';
 import { larOrt, O_KANT, O_RYKTE } from './ort';
 import { gruppSlag, radPaslag } from './priser';
 import { BYSORTER, radNr } from './radtal';
-import { BEHALL, dagbok, resenarer, Sallskap, sallskapNu, tappa } from './resa';
+import { BEHALL, dagbok, resenarer, SAKNADKROK, Sallskap, sallskapNu, tappa } from './resa';
 import { FOOD } from './saker';
 import { grundvarde } from './varde';
 import { PERIODER, PERIODRADER, periodSlut } from './varldslag';
@@ -45,7 +45,7 @@ export function vagMoten(s: State, vl: Varlden, n: number) {
   }
   for (let i = 0; i < delar.length; i++) for (let j = i + 1; j < delar.length; j++) {
     const a = delar[i], b = delar[j];
-    if (a.k === 's' && b.k === 's') continue; // huvudbyns egna sällskap möter inte varandra
+    if (a.k === 's' && b.k === 's') { if (SAKNADKROK.mots && [...a.rutor].some(r => b.rutor.has(r))) SAKNADKROK.mots(s, a.sl, b.sl, tb); continue; } // huvudbyns egna sällskap handlar inte med varandra, men den som letar hittar den saknade (steg 11.8.6)
     if (harMott(a).includes(nyckel(b)) || ![...a.rutor].some(r => b.rutor.has(r))) continue;
     harMott(a).push(nyckel(b)); harMott(b).push(nyckel(a));
     if (a.k === 'f' && b.k === 'f') { if (a.f.fran !== b.f.fran) mote2(s, vl, a.f, b.f); }

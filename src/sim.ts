@@ -185,6 +185,7 @@ export * from './sim/vagran';
 export * from './sim/vaktat';
 export * from './sim/gravfynd';
 export * from './sim/kyrkuppdrag';
+export * from './sim/vilsegang';
 export * from './sim/sandebud';
 export * from './sim/utpost';
 export * from './sim/platsbygge';
