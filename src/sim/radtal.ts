@@ -51,6 +51,7 @@ export interface RadTro { namn: string; andel: number; krig: number; annan?: Rad
 export interface VarldRad {
   nr: number; sort: BysortId; namn: string; x?: number; y?: number; grundad: number; fran?: number; lyder?: number;
   t: number; tal: Record<RadtalId, number>; tek: string[]; tro?: RadTro; ledare?: number; fasta: FastPerson[];
+  kalla?: number; // fyndplatsen utposten bryter ur (steg 11.6.18, utpost.ts)
   svalt?: number; // senaste svälten (steg 11.3.2, rad.ts)
   kvar?: Record<string, number>; // det som finns kvar i en ruin, i hela saker (steg 11.3.8, byflytt.ts)
   besokt?: number[]; // platserna byns sällskap och handlare besökt (steg 11.4.10, ort.ts)

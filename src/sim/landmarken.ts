@@ -55,6 +55,7 @@ export interface VarldPlats {
   fro: number; // platsens eget frö, ur världens frö och numret
   fran: number; till?: number; // när den uppstod och när den upphör (tillfälliga platser)
   by?: number; // platsens nummer för byn den hör till
+  inne?: Record<string, number>; // innehållet i hela saker (fyndplatsen, steg 11.6.18, utpost.ts)
   grannar?: import('./grannat').Granne[]; // byns grannät (steg 11.2.21, grannat.ts)
 }
 export const varldPlatser = (vl: Varlden) => vl.platser ??= [];

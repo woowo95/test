@@ -2889,3 +2889,67 @@ SCENARIER.rovarlager = {
     ];
   },
 };
+
+SCENARIER.utpost = {
+  text: 'Utposten och handelslägret (steg 11.6.18): en by skickar folk till en fyndplats inom räckhåll när det de bryter är värt mer än arbetet hemma, utposten lägger det i moderbyns förråd och överges när fyndplatsen är tom eller moderbyn borta; en by med stort överskott slår upp ett handelsläger som bryts upp vid sin tid, och handlarna bär hem det som är kvar',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, v = SIM.varldMark(s)!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+    r.tal.folk = 40; r.tal.mat = 4000;
+    // en fyndplats med flinta nära byn
+    const hem = SIM.byPlats(vl, r.nr)!;
+    let f: SIM.VarldPlats | undefined;
+    for (let d = 2; d <= 7 && !f; d++) for (let dy = -d; dy <= d && !f; dy++) for (let dx = -d; dx <= d && !f; dx++) {
+      const x = hem.x + dx, y = hem.y + dy;
+      if (x < 0 || y < 0 || x >= v.w || y >= v.h || !['berg', 'skog', 'tat'].includes(SIM.MARK_IDS[v.mark[y * v.w + x]])) continue;
+      f = SIM.laggPlats(vl, v, 'fyndplats', x, y, s.now);
+    }
+    if (f) f.inne = { flinta: 12 };
+    const vinst = f ? SIM.utpostVinst(vl, v, f) : -1, leraVinst = SIM.UTPOST.folk * (SIM.UTPOST.perDygn * SIM.grundvarde('lera') - SIM.UTPOST.arbete);
+    const folk0 = r.tal.folk, u = f ? SIM.nyUtpost(s, vl, r, f, s.now) : undefined;
+    const up = u && SIM.byPlats(vl, u.nr), gick = !!u && u.tal.folk === SIM.UTPOST.folk && r.tal.folk === folk0 - SIM.UTPOST.folk;
+    const kron = (vl.kronika ?? []).some(h => h.k === 'utpost' && h.by === r.nr && h.mot === u?.nr);
+    // brytningen: flintan går till moderbyns förråd tills fyndplatsen är tom
+    const sten0 = SIM.radHar(r, 'sten'), n0 = Math.floor(s.now / 3600e3);
+    for (let n = 0; n < 24 * 6 && u && u.tal.folk > 0; n++) SIM.utpostTimme(s, vl, u, n0 + n);
+    const sten1 = SIM.radHar(r, 'sten'), fick = Math.round((sten1 - sten0) / SIM.grundvarde('flinta'));
+    const tom = !!u && u.tal.folk === 0 && !(vl.platser ?? []).includes(f!) && !(up && (vl.platser ?? []).includes(up));
+    const hemKo = (vl.ko ?? []).find(k => k.typ === 'hemTill' && k.data?.fran === u?.nr);
+    if (hemKo) SIM.KOHANDELSER.hemTill(s, vl, hemKo);
+    const hemma = r.tal.folk === folk0;
+    // moderbyn borta: utposten överges och folket går till en by intill
+    const r2 = vl.rader!.find(x => x !== r && SIM.lever(vl, x) && x.sort === 'by' && x.tal.folk >= 5 && SIM.byPlats(vl, x.nr))!;
+    const f2 = SIM.laggPlats(vl, v, 'fyndplats', SIM.byPlats(vl, r2.nr)!.x, SIM.byPlats(vl, r2.nr)!.y, s.now) ?? [...vl.platser!].find(p => p.k === 'fyndplats' && p !== f)!;
+    f2.inne = { flinta: 50 }; r2.tal.folk = 40;
+    const u2 = SIM.nyUtpost(s, vl, r2, f2, s.now);
+    if (u2) { r2.tal.folk = 0; SIM.utpostTimme(s, vl, u2, n0 + 500); }
+    const moderBorta = !!u2 && u2.tal.folk === 0 && (vl.ko ?? []).some(k => k.typ === 'hemTill' && k.data?.fran === u2.nr && k.sak !== r2.nr);
+    // handelslägret
+    const rv = SIM.radVaror(r); rv.redskap = (rv.redskap ?? 0) + 400; r.tal.rikedom = SIM.radRikedomUr(r);
+    const ov = SIM.overskottVarde(r), red0 = SIM.radHar(r, 'redskap');
+    const h = SIM.nyttHandelslager(s, vl, r, s.now);
+    const hp = h && SIM.byPlats(vl, h.nr);
+    const bar = h ? SIM.radHar(h, 'redskap') : 0, hemRed = SIM.radHar(r, 'redskap');
+    const slut = (vl.ko ?? []).find(k => k.typ === 'handelslagerSlut' && k.sak === h?.nr);
+    const tid = !!slut && !!hp && hp.till === slut.t && slut.t - s.now === SIM.HLAGER.dygn * 86400e3;
+    if (slut) SIM.KOHANDELSER.handelslagerSlut(s, vl, slut);
+    const hk = (vl.ko ?? []).find(k => k.typ === 'hemTill' && k.data?.fran === h?.nr);
+    const bryts = !!h && h.tal.folk === 0 && !(vl.platser ?? []).includes(hp!) && !!hk && (hk.data?.v_redskap ?? 0) > 0;
+    if (hk) SIM.KOHANDELSER.hemTill(s, vl, hk);
+    const tillbaka = SIM.radHar(r, 'redskap') - hemRed;
+    // en värld i 20 dygn (20 år i spelet)
+    const w = SIM.cloneState(testBy(10)); w.now += 20 * 86400e3; SIM.varldSteg(w);
+    const kw = (k: string) => (w.varld!.kronika ?? []).filter(x => x.k === k).length;
+    const f2s = (x: number) => x.toFixed(1);
+    return [
+      [`en utpost vid flinta lönar sig (${f2s(vinst)} per dygn), vid lera inte (${f2s(leraVinst)})`, vinst > 0 && leraVinst < 0],
+      [`byn skickar ${SIM.UTPOST.folk} till utposten ${up ? 'på ' + SIM.MARK_IDS[v.mark[up.y * v.w + up.x]] : '(ingen)'}, och krönikan får det`, gick && !!up && kron],
+      [`flintan går till moderbyn (${fick} av 12) tills fyndplatsen är tom; då överges utposten och platserna försvinner`, fick === 12 && tom],
+      ['folket i utposten går hem', hemma],
+      ['när moderbyn är borta överges utposten och folket går till en by intill', moderBorta],
+      [`en by med överskott (${Math.round(ov)}) slår upp ett handelsläger och bär dit ${Math.round(bar)} i redskap`, !!h && h.sort === 'handelslager' && !!hp && bar > 0 && hemRed < red0],
+      [`lägret bryts upp vid sin tid (${SIM.HLAGER.dygn} dygn) och handlarna bär hem det som är kvar (${Math.round(tillbaka)})`, tid && bryts && tillbaka > 0],
+      [`i en värld i 20 dygn: ${kw('utpost')} utposter, ${kw('handelslager')} handelsläger, ${kw('upplost')} övergivna`, kw('utpost') + kw('handelslager') > 0],
+    ];
+  },
+};
