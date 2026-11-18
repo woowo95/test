@@ -3310,3 +3310,40 @@ SCENARIER.kartkunskap = {
     ];
   },
 };
+
+SCENARIER.kartvarde = {
+  text: 'Kartans värde (steg 11.7.5): en karta är värd bladet och platserna på den, mer för en känd plats än för ett rykte, och för den som köper bara det hen inte redan känner; handlaren bär ibland en karta över det hens by känner, och en rövare som stjäl en karta lär sig platserna',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=0,handel.karta=1' },
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    for (const r of s.people) r.lardomar = (r.lardomar ?? []).filter(l => l.k !== 'ort');
+    const p = SIM.living(s).filter(r => !r.gast && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0]!;
+    const [a, b] = hb.grannar!.slice(0, 2).map(g => g.nr) as [number, number];
+    const skrift: SIM.Skrift = { slag: 'karta', av: { id: p.id, namn: p.name }, t: s.now, titel: 'Kartan', text: '', q: SIM.NORMAL, platser: [{ nr: a, v: SIM.O_KANT, t: s.now }, { nr: b, v: SIM.O_RYKTE, t: s.now }] };
+    const blad = SIM.newTing(s, 'blad', 1, p.id); blad.skrift = skrift;
+    const tom = SIM.grundvarde('blad'), full = SIM.kartVarde(skrift);
+    const bara = SIM.kartVarde({ ...skrift, platser: [skrift.platser![1]!] });
+    // köparen räknar bara det hen inte känner
+    const w: SIM.Vara = { k: 'blad', n: 1, t: blad };
+    const P = SIM.personPart(s, p), fore = SIM.vardeAv(w, P, true);
+    SIM.larOrt(s, p, a, SIM.O_KANT, 1);
+    const efter = SIM.vardeAv(w, P, true), salj = SIM.vardeAv(w, P, false);
+    // handlarens karta
+    const sh = SIM.cloneState(s); SIM.skickaHandlare(sh); // handel.karta=1 i env
+    const hk = sh.handlare?.varor.find(x => x.skrift?.platser), byn = SIM.bynPart(sh, p.x, p.y);
+    const hkv = hk ? SIM.vardeAv({ k: hk.k, n: 1, q: hk.q, skrift: hk.skrift }, byn, true) : 0;
+    // rövaren
+    const sr = SIM.cloneState(s); SIM.skickaRovare(sr, 2);
+    const r = sr.rovare!.folk.map(id => sr.people.find(q => q.id === id)!).find(Boolean)!;
+    r.lardomar = (r.lardomar ?? []).filter(l => l.k !== 'ort'); // det rövaren visste förut
+    const rf = SIM.kannerOrt(sr, r, a); SIM.stulenKarta(sr, r, SIM.tingOf(sr).find(t => t.id === blad.id)!);
+    const re = SIM.kannerOrt(sr, r, a), rb = SIM.kannerOrt(sr, r, b);
+    const f1 = (x: number) => x.toFixed(1);
+    return [
+      [`kartan är värd bladet och platserna (${f1(tom)} → ${f1(full)}), en känd plats mer än ett rykte (bara ryktet: ${f1(bara)})`, full > bara && bara > tom],
+      [`köparen betalar bara för det hen inte känner (${f1(fore)} → ${f1(efter)} när hen känner den ena platsen), säljaren räknar hela (${f1(salj)})`, fore === full && efter === bara && salj === full],
+      [`handlaren bär ibland en karta (${hk ? hk.skrift!.platser!.length + ' platser' : 'ingen'}), värd ${f1(hkv)} för byn som inte känner platserna`, !!hk && hkv > tom],
+      [`rövaren som stjäl kartan lär sig platserna (${rf ?? 'okänd'} → ${re}, ryktet ${rb})`, rf === undefined && re !== undefined && rb !== undefined],
+    ];
+  },
+};

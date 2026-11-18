@@ -28,7 +28,8 @@ import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { dampning, handelse, smakMat } from './rykten';
 import { VED, vedPerDygn } from './eld';
-import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
+import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf, vardeAv, kartOf } from './byte';
+import { bynKanner, kannerOrt } from './ort';
 import { SJUK, insjukna } from './sjukdom';
 import { smutsigtAtit } from './smuts';
 import { budHindrar } from './kyrka';
@@ -576,7 +577,7 @@ export function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
 }
 // bybon p som part i ett byte (byte.ts). Silver går att betala med också inom byn (steg 7.2.13), värt sitt grundvärde för alla
 export function personPart(s: State, p: Person, silver = true): Part {
-  return { id: p.id, namn: p.name, p, x: p.x, y: p.y, handel: p.skill.handel ?? 0, varde: k => behovAv(s, p, k), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };
+  return { id: p.id, namn: p.name, p, x: p.x, y: p.y, handel: p.skill.handel ?? 0, varde: k => behovAv(s, p, k), kanner: nr => kannerOrt(s, p, nr), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };
 }
 // byn (det gemensamma förrådet) som part i ett byte med handlaren (steg 4.4.1.3). Byn värderar och bjuder efter förrådsmålen
 // (steg 10.5.12): mat och ved efter bufferten i FORRADSMAL (för den mat byn äger: så stor del av bufferten som byn delar),
@@ -642,9 +643,9 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
 // bud = den som handlar för byn: hen förhandlar med sin färdighet i Handel, och övar och minns som i ett eget byte
 export function bynPart(s: State, x: number, y: number, bud?: Person): Part {
   return {
-    id: BYN, namn: bud ? `${bud.name} för byn` : 'Byn', p: bud, x, y, handel: bud?.skill.handel ?? 0, varde: k => bynBehov(s, k), over: utom => bynOver(s, utom),
+    id: BYN, namn: bud ? `${bud.name} för byn` : 'Byn', p: bud, x, y, handel: bud?.skill.handel ?? 0, varde: k => bynBehov(s, k), kanner: nr => bynKanner(s, nr)?.v, over: utom => bynOver(s, utom),
     lamna: w => { if (w.t) { w.t.agare = BYN; return w; } use(s, undefined, w.k, w.n, true); return w; },
-    ta: w => { if (w.t) { w.t.agare = BYN; w.t.hos = undefined; } else if (isTool(w.k)) for (let i = 0; i < w.n; i++) { const t = newTing(s, w.k, 1, BYN); if (w.q !== undefined) t.q = w.q; } else put(s, w.k, w.n); },
+    ta: w => { if (w.t) { w.t.agare = BYN; w.t.hos = undefined; } else if (isTool(w.k)) for (let i = 0; i < w.n; i++) { const t = newTing(s, w.k, 1, BYN); if (w.q !== undefined) t.q = w.q; if (w.skrift) t.skrift = w.skrift; } else put(s, w.k, w.n); },
   };
 }
 // färdigheten Handel i bytet (steg 4.4.1.4): den skickligare får en större del av vinsten när båda ska tjäna på bytet
@@ -734,8 +735,8 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   vill = vill.map(w => w.t ? w : { ...w, n: Math.ceil(w.n - 1e-6) }).filter(w => w.n > 0); // hela saker (steg 2.10.7)
   if (!vill.length) return 0;
   // det G nyss fått av M behöver G mer än annars: G vill ha mer för att ge tillbaka det (steg 10.2.43)
-  const ger = vill.reduce((x, w) => x + w.n * vardeOf(w) * G.varde(w.k) * (nyssBytt(s, w.k, M.id, G.id) ? 1 + BYTE.nyssFatt : 1), 0); // det G ger, för G
-  const far = vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * v.behov; // det M får, för M
+  const ger = vill.reduce((x, w) => x + w.n * vardeAv(w, G, false) * (nyssBytt(s, w.k, M.id, G.id) ? 1 + BYTE.nyssFatt : 1), 0); // det G ger, för G
+  const far = vill.reduce((x, w) => x + w.n * (kartOf(w) ? vardeAv(w, M, true) : vardeOf(w)), 0) * v.behov; // det M får, för M (en karta: platserna M inte känner)
   if (ger <= 1e-9) return 0;
   const varor = betalVaror(M, G, v.utom), betala = (mal: number) => betalaAv(varor, G, mal);
   let { betal, fick, kost } = betala(ger);
@@ -743,7 +744,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   const desperat = v.fara > 0, nara = (a: Part, b: Part) => !!a.p && !!b.p && willing(s, a.p, b.p) >= DELA.nara;
   let del = 1; // så stor del av vill som byts
   if (fick < (1 - DELA.ojamn) * ger) {
-    const kan = vill.some(w => w.t) ? 0 : fick / ger, hela = vill.reduce((x, w) => x + helt(w.n * kan) * vardeOf(w) * G.varde(w.k), 0) / ger;
+    const kan = vill.some(w => w.t) ? 0 : fick / ger, hela = vill.reduce((x, w) => x + helt(w.n * kan) * vardeAv(w, G, false), 0) / ger;
     if (hela * enheter(vill) >= v.minst && hela > 0) { del = hela; ({ betal, fick, kost } = betala(ger * del)); } // M får det M kan betala, i hela saker
     else if (!desperat && !nara(G, M)) return 0;
   }
@@ -770,7 +771,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
 }
 // det M kan betala G med: det som är värt mest för G och minst för M först (ut = värt för G, in = värt för M)
 export function betalVaror(M: Part, G: Part, utom: readonly string[]) {
-  return M.over(utom).map(w => ({ ...w, ut: vardeOf(w) * G.varde(w.k), in: Math.max(1e-9, vardeOf(w) * M.varde(w.k)) }))
+  return M.over(utom).map(w => ({ ...w, ut: vardeAv(w, G, true), in: Math.max(1e-9, vardeAv(w, M, false)) }))
     .filter(w => w.ut > 1e-9).sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
 }
 // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7). fick = värt för G, kost = värt för M

@@ -1,5 +1,6 @@
 import { antal, lista, och, stor, tal } from './ord';
-import { kartaBorta, rovareSedda, gastensPlatser } from './ort';
+import { kartaBorta, larOrt, rovareSedda, gastensPlatser } from './ort';
+import { SKRIFT } from './skriftTal';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
@@ -39,7 +40,7 @@ import { kvarlevor } from './kvarlevor';
 import { RADER, hamndKlar, huggDorr, iFarten, klanMinns, overtygelse, radSeger, svarTrohet, tandaHus } from './rader';
 import { bjornarOf } from './djur';
 import { bjornStrid } from './bjorn';
-import { tingOf } from './agande';
+import { tingOf, type Ting } from './agande';
 import { viktOf } from './saker';
 import { LARMHOT, rollVid, viljaKrok } from './roller';
 import { KartStrid, djurIKartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
@@ -588,13 +589,15 @@ function taSteg(c: RCtx) {
   }
 }
 // rövaren tar en sak: det dyraste per vikt som hen orkar bära, redskapen inräknade (steg 8.7.16). Svarar om något togs
+// en stulen karta (steg 11.7.5): rövaren lär sig platserna på den
+export function stulenKarta(s: State, r: Person, t: Ting) { for (const x of t.skrift?.platser ?? []) larOrt(s, r, x.nr, x.v, SKRIFT.kartaC, { t: x.t }); }
 function taEn(s: State, f: Rovarflock, r: Person) {
   const gavUpp = living(s).some(p => p.task?.act === 'fly' && ageOf(p, s.now) >= ALDER.vuxen); // att fly är att ge upp (steg 8.7.17)
   const bar = ROVARE.bar * (gavUpp ? ROVARE.gerUpp : 1), vikt = lastAv(r);
   const fritt = (k: string) => tingOf(s).find(q => q.k === k && q.bar === undefined && q.hos === undefined && q.lass === undefined);
   const k = SAK_LIST.filter(q => vikt + viktOf(q) <= bar && (SAKER[q]!.redskap ? !!fritt(q) : amountOf(s, q) >= 1)).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a)))[0];
   if (!k) return false;
-  if (SAKER[k]!.redskap) { const t = fritt(k)!; s.ting = s.ting!.filter(q => q !== t); kartaBorta(s, t); } else addTo(s, k, -1);
+  if (SAKER[k]!.redskap) { const t = fritt(k)!; s.ting = s.ting!.filter(q => q !== t); kartaBorta(s, t); stulenKarta(s, r, t); } else addTo(s, k, -1);
   (gr(r).bar ??= {})[k] = (gr(r).bar![k] ?? 0) + 1;
   (f.tagit ??= {})[k] = (f.tagit[k] ?? 0) + 1;
   count(s, 'rovat');

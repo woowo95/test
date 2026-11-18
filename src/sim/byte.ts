@@ -8,7 +8,8 @@ import { ownMove, zoneAt } from './lager';
 import { bitAt, blocked } from './byggnad';
 import { stationAt } from './stationer';
 import { W, H, inMap } from './typer';
-import { grundvarde } from './varde';
+import { grundvarde, kartVarde } from './varde';
+import type { Skrift } from './skrift';
 import { kvVarde } from './kvalitet';
 import { kronika } from './historik';
 import { balans } from './balans';
@@ -39,7 +40,7 @@ export const BYTE = balans('byte', {
   bakom: 1,
 });
 
-export interface Vara { k: string; n: number; t?: Ting; q?: number; hus?: number; varde?: number } // hus = huset som byts (k = 'hus', en symbol på filten, steg 7.2.12), varde = vad det är värt i bytet
+export interface Vara { k: string; n: number; t?: Ting; q?: number; hus?: number; varde?: number; skrift?: Skrift } // skrift = kartan på handlarens blad (steg 11.7.5) // hus = huset som byts (k = 'hus', en symbol på filten, steg 7.2.12), varde = vad det är värt i bytet
 // // q = kvaliteten på handlarens redskap, som inte är ett ting i byn än
 // en part i ett byte. id = personens id, BYN för byn och ett negativt tal för handlaren. p = personen (bybon eller ingen)
 export interface Part {
@@ -48,13 +49,22 @@ export interface Part {
   p?: Person;
   x: number; y: number;
   varde(k: string): number; // hur mycket parten behöver en till av slaget k, gånger grundvärdet (behovAv i behov.ts)
+  kanner?(nr: number): number | undefined; // det parten vet om platsen nr i världen, som en karta värderas efter (steg 11.7.5)
   over(utom: readonly string[]): Vara[]; // det parten kan byta bort, utom slagen i utom
   lamna?(w: Vara): Vara; // saken lämnar parten (handlarens packning, byns förråd): ger det som lämnade
   ta?(w: Vara, fran: Part): void; // saken kommer till parten
   handel?: number; // färdigheten Handel hos den som förhandlar (steg 4.4.1.4; bybon, den som handlar för byn, handlaren)
   rymmer?(): number; // så många kg till kan parten ta emot (handlarens packning); saknas = hur mycket som helst
 }
-export const vardeOf = (v: Vara) => v.varde ?? grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
+export const vardeOf = (v: Vara) => { const k = kartOf(v); return v.varde ?? (k ? kartVarde(k) * (v.t?.c ?? 1) : grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1)); };
+// kartan i en vara (steg 11.7.5): ett blad med platser, i byn eller i handlarens packning
+export const kartOf = (v: Vara) => v.skrift?.platser ? v.skrift : v.t?.skrift?.platser ? v.t.skrift : undefined;
+// vad varan är värd för parten P: grundvärdet gånger behovet, och en karta platserna. Köparen (kop) räknar bara de platser hen
+// inte känner; den som ger bort kartan räknar alla
+export function vardeAv(w: Vara, P: Part, kop: boolean) {
+  const k = kartOf(w);
+  return k ? kartVarde(k, kop ? P.kanner : undefined) * (w.t?.c ?? 1) : vardeOf(w) * P.varde(w.k);
+}
 // varorna i en mening (ordlagret, steg 6.7.1): "ett träspjut", "tre rötter och en flintkniv"
 export const varorText = (v: Vara[]) => och(v.map(x => antal(x.t ? 1 : x.n, x.k)));
 

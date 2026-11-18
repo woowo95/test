@@ -20,10 +20,11 @@ import { balans } from './balans';
 
 export const ARBETE = 1; // värdet av en arbetstimme
 // Balanstalen (regel 8). Läses bara inne i funktionerna: varde.ts ingår i en ring av importer
-const VARDE = balans('varde', {
+export const VARDE = balans('varde', {
   nivaPaslag: 0.25, // så mycket mer en sak är värd för varje teknisk nivå
   sallsynt: 1.5, // så mycket mer en sällsynt råvara är värd
   konst: 0.5, // så mycket mer ett mästerverk med ristningar eller en målning är värt (steg 4.3.3)
+  kartKand: 3, kartRykte: 1, // en karta är värd bladet plus så mycket för varje känd plats och varje rykte, gånger kvaliteten (steg 11.7.5)
 });
 
 // den tekniska nivån: en teknik utan krav är nivå 1, och varje teknik den bygger på lägger till en
@@ -93,7 +94,14 @@ export function varuVarde(o: Record<string, number>, start = 0) { let v = start;
 interface Rikedom { forrad: number; redskap: number; hus: number }
 // vad ett ting är värt: ett påbörjat redskap (paborjat.ts) är värt sitt material, ett redskap grundvärdet gånger skicket
 // och kvaliteten (kvalitet.ts)
-export const tingVarde = (t: Ting) => t.halv ? Object.entries(t.halv.av).reduce((a, [k, n]) => a + n * grundvarde(k), 0) : grundvarde(t.k) * t.c * kvVarde(t) * (t.ber?.mo ? 1 + VARDE.konst : 1);
+// kartans värde (steg 11.7.5): bladet plus VARDE.kartKand för varje känd plats och VARDE.kartRykte för varje rykte, gånger
+// kvaliteten. kanner = det köparen redan vet om en plats (nivån, undefined: okänd): hen räknar bara platser hen känner sämre
+export function kartVarde(k: { platser?: { nr: number; v: number }[]; q?: number }, kanner?: (nr: number) => number | undefined) {
+  let v = grundvarde('blad');
+  for (const x of k.platser ?? []) if (!kanner || (kanner(x.nr) ?? -1) < x.v) v += x.v >= 1 ? VARDE.kartKand : VARDE.kartRykte;
+  return v * kvVarde(k);
+}
+export const tingVarde = (t: Ting) => t.skrift?.platser ? kartVarde(t.skrift) * t.c : t.halv ? Object.entries(t.halv.av).reduce((a, [k, n]) => a + n * grundvarde(k), 0) : grundvarde(t.k) * t.c * kvVarde(t) * (t.ber?.mo ? 1 + VARDE.konst : 1);
 export function rikedomDelar(s: State): Rikedom {
   let forrad = 0, redskap = 0, hus = 0;
   for (const k of SAK_LIST) if (!SAKER[k]!.redskap) forrad += wornOf(s, k) * grundvarde(k);
