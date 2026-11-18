@@ -17,7 +17,7 @@ import { count } from './folk';
 import { freeNear } from './byggnad';
 import { FOOD, SAKER } from './saker';
 import { DODSORSAKER, type Dodsorsak } from './liv';
-import { dorPaVagen, resenarer, Sallskap, tappa, vackKrok } from './resa';
+import { dorPaVagen, resenarer, Sallskap, sallskapNu, tappa, vackKrok } from './resa';
 
 export const VACKTGAST = {
   nara: 1.5, // så nära elden stannar besökaren (rutor)
@@ -96,6 +96,11 @@ export function besokSteg(s: State, dtSec: number) {
     if (kvar < 0) { const f = freeNear(s, mal.x, mal.y + 2); p.x = f.x + 0.5; p.y = f.y + 0.5; }
     if (kvar <= VACKTGAST.nara) { g.fas = 'pratar'; g.path = undefined; g.pk = undefined; }
   }
+}
+// den väckta byn på världsplatsen nr som spelaren kan gå in i: där egna bybor är på besök just nu (steg 11.13.11, ui/vacktvy.ts)
+export function vacktMedBesok(s: State, nr: number): State | undefined {
+  for (const sl of sallskapNu(s.varld)) if (sl.mal === nr && sl.gaster?.length) { const b = vacktBy(s, sl); if (b) return b; }
+  return undefined;
 }
 vackKrok.framme = besokIn;
 vackKrok.vander = besokUt;

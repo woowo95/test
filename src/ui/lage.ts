@@ -9,7 +9,25 @@ export const vidNyBy: (() => void)[] = [];
 // panelen ritas om (panel.ts sätter den); för det som ändras utan ett tryck, t.ex. ett drag i en graf eller ett val i en lista
 export let ritaOm = () => {};
 export const satRitaOm = (f: () => void) => { ritaOm = f; };
+// en väckt by som spelaren gått in i (steg 11.13.11): den visas i hela spelet som s, och huvudbyn står här och räknas som förut
+// (den räknar den väckta byn, main.ts), sparas och räknas ikapp
+export let hem: State | undefined;
+export const huvud = () => hem ?? s;
+export const vidVy: (() => void)[] = []; // (vyns rad överst, ui/vacktvy.ts)
+export function gaIn(b: State) {
+  const h = huvud();
+  if (b === h) return;
+  setByn(b); hem = h;
+  for (const f of vidVy) f();
+}
+export function gaHem() {
+  if (!hem) return;
+  const h = hem; hem = undefined;
+  setByn(h);
+  for (const f of vidVy) f();
+}
 export function setByn(n: State) {
+  hem = undefined;
   s = n; medVarld(n); /* byn får sin värld (steg 11.2.7) */ ui.nu = n.now; useMap(n); nyBild();
   ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttaDel = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.framNr = -1; ui.matchNr = -1; ui.resaNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1; ui.djurHover = -1; ui.eld = undefined; ui.sjoNr = 0; ui.lagerNr = 0; // de pekade in i den förra byn
   for (const f of vidNyBy) f();

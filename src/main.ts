@@ -1,10 +1,11 @@
-import { bynsNamn, nyttSlag, nastaSteg, stridBild, testSlagsmal, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
+import { nyttSlag, nastaSteg, stridBild, testSlagsmal, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
 import { iconImg, tecknet } from './ikoner';
 import { vackTestNarmast } from './sim/vackt';
-import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
+import { s, setByn, ui, nyBild, vidNyBy, huvud, hem, gaHem } from './ui/lage';
+import { visatNamn } from './ui/vacktvy'; // en väckt by visas i hela spelet (steg 11.13.11)
 import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawSkuggor, drawTerrain } from './ui/terrang';
 import { sattSkuggLangd, skuggLangdAv } from './ui/skugga';
@@ -37,7 +38,7 @@ function renderClock() {
   const d = new Date(t);
   const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
   $('calYear').textContent = `År ${yearNo(s, t)}`;
-  { const n = bynsNamn(s); if ($('bynamn').textContent !== n) { $('bynamn').textContent = n; document.title = n; } } // byns namn (steg 10.9.1)
+  { const n = visatNamn(); if ($('bynamn').textContent !== n) { $('bynamn').textContent = n; document.title = n; } } // byns namn (steg 10.9.1)
   renderRaden(t); // årstiden, tidsstaven och nyckeltalen (ui/raden.ts, steg 5.3.1.2)
   { // motgången som pågår, eller som någon i byn anar (steg 3.8.1, motgang.ts): symbolen, och vad den gör när musen är över den
     const nu = motgangNu(s, t), na = nu ? undefined : motgangNasta(s, t), n = na ? varslade(s, na.start) : 0, el = $('calMotgang');
@@ -99,6 +100,7 @@ function bytBy(n: State) {
 $('testToggle').addEventListener('change', async e => {
   const on = (e.target as HTMLInputElement).checked;
   if (on) {
+    gaHem(); // testläget gäller huvudbyn (steg 11.13.11)
     saveLocal(); await saveDb();
     realState = s; ui.testBorta = { st: [], lager: [] };
     bytBy(cloneState(s));
@@ -230,16 +232,18 @@ function tick() {
   if (!s || ui.busy) return;
   const realDt = Math.min(0.25, app.ticker.deltaMS / 1000);
   let vt: number;
-  if (ui.testMode) vt = Math.max(ui.nu, s.now - BEAT * SEC) + realDt * speed * SEC;
+  const h = huvud(); // huvudbyn räknas också när en väckt by visas: den räknar den väckta byn (steg 11.13.11)
+  if (ui.testMode) vt = Math.max(ui.nu, h.now - BEAT * SEC) + realDt * speed * SEC;
   else {
     vt = klockan();
-    if (vt - s.now > IKAPP_EFTER && !storStridNu(s)) { catchUp(vt); return; } // en stor strid visas i levande läge (steg 8.8.9)
+    if (vt - h.now > IKAPP_EFTER && !storStridNu(h)) { catchUp(vt); return; } // en stor strid visas i levande läge (steg 8.8.9)
   }
   // spar.pa är på också här: varje slag börjar om vägen (steg.ts), så bara det sista slaget sparas och ritas
   const t0 = performance.now();
   // så långt som nästa slag är (nastaSteg, kartstrid.ts, steg 10.2.14)
-  for (let n = 0; s.now < vt && n < MAX_SLAG && (!n || performance.now() - t0 < RAKNA_MS); n++) step(s, nastaSteg(s), events);
-  ui.nu = Math.min(vt, s.now);
+  for (let n = 0; h.now < vt && n < MAX_SLAG && (!n || performance.now() - t0 < RAKNA_MS); n++) step(h, nastaSteg(h), events, s);
+  if (hem && !hem.vackta?.includes(s)) gaHem(); // byn somnade: tillbaka hem
+  ui.nu = Math.min(vt, h.now);
   nyBild();
   const now = performance.now();
   addTalks(events, now, ui.nu);

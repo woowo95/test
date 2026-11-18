@@ -8,7 +8,8 @@ import { readFileSync } from 'node:fs';
 import * as VB from '../../ui/varldbild';
 import { createHash } from 'node:crypto';
 import { kanonisk } from '../pool';
-import { setByn, ui } from '../../ui/lage';
+import { setByn, ui, gaIn, gaHem, huvud, hem } from '../../ui/lage';
+import * as LAGE from '../../ui/lage';
 import { grannar as grannarFlik } from '../../ui/flikar/grannar';
 
 SCENARIER.bortafalt = {
@@ -4739,6 +4740,46 @@ SCENARIER.vacktgast = {
       ['den som dog i byn är död på vägen', !!b!.dodVag],
       [`maten som är kvar går tillbaka i hela saker (${kvarMat})`, Number.isInteger(kvarMat) && kvarMat >= packMat],
       ['gästerna har lämnat byn, den döda ligger kvar', !gaster().some(g => g.died === undefined) && gaster().length === 1 && !sl.gaster],
+    ];
+  },
+};
+
+SCENARIER.vacktvy = {
+  text: 'Vyn i en väckt by (steg 11.13.11, vacktMedBesok i vacktgast.ts, gaIn och gaHem i ui/lage.ts): medan egna bybor är på besök går det att gå in i byn, som då visas i hela spelet medan huvudbyn räknas och sparas som förut. Hem visar huvudbyn igen, och när besöket är slut går det inte längre',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).find(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0)!;
+    const bv = SIM.vackTest(s, mal.by!)!;
+    const fore = SIM.vacktMedBesok(s, mal.nr);
+    const sl = SIM.nyttSallskap(s, a!, mal.nr, 'handel')!;
+    sl.pack = {}; sl.skede = 'framme'; sl.framme = s.now;
+    SIM.gaBort(s, a!);
+    SIM.besokIn(s, sl);
+    const kan = SIM.vacktMedBesok(s, mal.nr) === bv;
+    setByn(s);
+    gaIn(bv);
+    const visas = LAGE.s === bv && huvud() === s && hem === s;
+    // huvudbyn räknas och räknar den väckta byn; kartan är den visade byns efteråt
+    const t0 = s.now, tb = bv.now, ev: SIM.TalkEvent[] = [];
+    for (let i = 0; i < 600; i++) SIM.step(huvud(), SIM.nastaSteg(huvud()), ev, LAGE.s);
+    const gar = s.now > t0 && bv.now > tb && Math.abs(bv.now - s.now) < 60 * SIM.SEC;
+    const kartan = SIM.W === (bv.W ?? 64) && SIM.kartAv() === bv;
+    const delar = SIM.serializeParts(huvud());
+    const sparas = !!delar.byn && Object.keys(delar).some(d => d.startsWith(`vackt${bv.vackt}-`)) && SIM.kartAv() === bv;
+    gaHem();
+    const hemma = LAGE.s === s && hem === undefined && huvud() === s;
+    SIM.besokUt(s, sl, s.now);
+    const sedan = SIM.vacktMedBesok(s, mal.nr);
+    return [
+      ['utan besök går det inte att gå in', fore === undefined],
+      ['medan de egna är där går det att gå in', kan],
+      ['Gå in visar den väckta byn, och huvudbyn står kvar', visas],
+      [`huvudbyn och den väckta byn räknas båda (${Math.round((s.now - t0) / SIM.SEC)} s)`, gar],
+      ['kartan är den visade byns efter slagen', kartan],
+      ['huvudbyn sparas med den väckta, och kartan är kvar', sparas],
+      ['Hem visar huvudbyn igen', hemma],
+      ['efter besöket går det inte längre att gå in', sedan === undefined],
     ];
   },
 };

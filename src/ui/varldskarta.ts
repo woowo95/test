@@ -2,9 +2,9 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
-import { s } from './lage';
+import { gaIn, huvud, s } from './lage';
 import { omUngefar } from './hjalp';
 import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
 
@@ -22,6 +22,7 @@ stil.textContent = `
 .vkInfo table { border-collapse: collapse; margin-top: 2px; }
 .vkInfo th, .vkInfo td { padding: 1px 8px 1px 0; text-align: left; font-weight: normal; }
 .vkInfo th { color: ${farg('ben', 1)}; }
+.vkInfo .vkGaIn { font: inherit; margin-left: 6px; padding: 1px 6px; border-radius: 3px; border: 1px solid ${farg('kol', 3)}; background: ${farg('kol', 2)}; color: ${farg('ben', 3)}; cursor: pointer; }
 .vkInfo .vkVarna { color: ${farg('rost', 3)}; }
 .vkKronika { position: absolute; top: 8px; left: 8px; max-width: min(420px, calc(100% - 70px)); max-height: 45%; overflow: auto; padding: 4px 8px;
   background: ${farg('kol', 1)}; color: ${farg('ben', 3)}; border: 1px solid ${farg('kol', 3)}; border-radius: 3px; }
@@ -206,6 +207,12 @@ const slapp = (e: PointerEvent) => {
   }
 };
 duk.addEventListener('pointerup', slapp);
+// Gå in (steg 11.13.11): världskartan stängs och den väckta byn visas
+info.addEventListener('click', e => {
+  const nr = (e.target as HTMLElement).closest<HTMLElement>('[data-gain]')?.dataset.gain;
+  const b = nr !== undefined ? vacktMedBesok(huvud(), Number(nr)) : undefined;
+  if (b) { stang(); gaIn(b); }
+});
 duk.addEventListener('pointercancel', e => { pekare.delete(e.pointerId); if (!pekare.size) duk.classList.remove('drar'); });
 
 // ---------- byns ruta (steg 11.4.12): det byn tror bredvid det som är sant, vilka som vet och varningen Bara en vet ----------
@@ -239,7 +246,8 @@ function rutaHtml(x: number, y: number): string {
     if (!l || Math.round(l.x) !== x || Math.round(l.y) !== y) continue;
     const r = sallskapRuta(s, sl), dygn = (d: number) => omUngefar(d * DAY);
     const kvar = r.kvar !== undefined ? `, ${dygn(r.kvar)} kvar` : r.stannar !== undefined ? `, stannar ${dygn(r.stannar)} till` : '';
-    delar.push(`<div class="vkPlats"><b>🎒 ${esc(r.titel)}</b>: ${esc(r.skede)}${kvar}<div>${esc(r.ledare)}${r.medl.length ? ` med ${r.medl.map(esc).join(', ')}` : ''}${r.djur.length ? ` och ${r.djur.map(d => esc(d.toLowerCase())).join(', ')}` : ''}</div>${r.pack.length ? `<div>Packning: ${r.pack.map(([k, n]) => `${n} ${esc(k.toLowerCase())}`).join(', ')}</div>` : ''}${sl.dagbok.length ? `<ul class="vkBok">${sl.dagbok.slice(-5).reverse().map(([t, text, slag]) => `<li>År ${kalender(s!, t).ar}: ${slag ? DAGBOK[slag].sym : ''} ${esc(text)}</li>`).join('')}</ul>` : ''}</div>`); // dagboken, det senaste först (steg 11.5.13)
+    const inKnapp = vacktMedBesok(huvud(), sl.mal) && vacktMedBesok(huvud(), sl.mal) !== s ? `<button type="button" class="vkGaIn" data-gain="${sl.mal}" title="Gå in: visa byn medan de egna är där">🚪 Gå in</button>` : ''; // steg 11.13.11
+    delar.push(`<div class="vkPlats"><b>🎒 ${esc(r.titel)}</b>: ${esc(r.skede)}${kvar} ${inKnapp}<div>${esc(r.ledare)}${r.medl.length ? ` med ${r.medl.map(esc).join(', ')}` : ''}${r.djur.length ? ` och ${r.djur.map(d => esc(d.toLowerCase())).join(', ')}` : ''}</div>${r.pack.length ? `<div>Packning: ${r.pack.map(([k, n]) => `${n} ${esc(k.toLowerCase())}`).join(', ')}</div>` : ''}${sl.dagbok.length ? `<ul class="vkBok">${sl.dagbok.slice(-5).reverse().map(([t, text, slag]) => `<li>År ${kalender(s!, t).ar}: ${slag ? DAGBOK[slag].sym : ''} ${esc(text)}</li>`).join('')}</ul>` : ''}</div>`); // dagboken, det senaste först (steg 11.5.13)
   }
   return delar.join('');
 }

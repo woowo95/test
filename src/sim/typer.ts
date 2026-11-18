@@ -22,7 +22,11 @@ export interface Kart { x: number; y: number; w: number; h: number } // den gaml
 let KARTA = '64x40';
 let MARK: string | undefined;
 export const markNu = () => MARK; // världsrutans marksort för en väckt by (steg 11.13.2); huvudbyn har ingen
-export function useMap(s: { W?: number; H?: number; kart?: Kart; varldmark?: string }) {
+type KartAgare = { W?: number; H?: number; kart?: Kart; varldmark?: string };
+let KART_AV: KartAgare = {};
+export const kartAv = () => KART_AV; // byn vars karta gäller nu (useMap), så att den kan väljas igen efteråt
+export function useMap(s: KartAgare) {
+  KART_AV = s;
   W = s.W ?? 64; H = s.H ?? 40; MARK = s.varldmark;
   OX = s.kart?.x ?? 0; OY = s.kart?.y ?? 0; W0 = s.kart?.w ?? W; H0 = s.kart?.h ?? H;
   KARTA = (s.kart ? `${W}x${H}+${OX},${OY},${W0}x${H0}` : `${W}x${H}`) + (MARK ? `:${MARK}` : '');

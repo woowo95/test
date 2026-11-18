@@ -2,7 +2,7 @@ import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serialize
 import { gammalNyckel, lasEllerFlytta, sparaBy, tolkaText, webbBas } from './lagring';
 import { $, esc } from './hjalp';
 import { bortaHtml, ikappHtml, spolaText } from './borta';
-import { s, ui } from './lage';
+import { gaHem, huvud, s, ui } from './lage';
 import { drawTerrain } from './terrang';
 import { drawPlants } from './vaxter';
 import { sparaAnnan } from './byar';
@@ -13,6 +13,7 @@ import { sparaAnnan } from './byar';
 const SAVE_KEY = 'samhalle-save-v1', EGEN = 'egen';
 let lokalLarm = false; // felet skrivs i konsolen en gång, inte var tjugonde sekund
 export function saveLocal() {
+  const s = huvud(); // huvudbyn också när en väckt by visas (steg 11.13.11)
   if (ui.testMode || !s) return;
   if (ui.annanBy) { void sparaAnnan().then(ok => { ui.lokalFel = !ok; }); return; } // en annan by sparas för sig (steg 9.2.16, byar.ts)
   sparaBy(webbBas, EGEN, s).then(() => { ui.lokalFel = lokalLarm = false; }, e => {
@@ -34,6 +35,7 @@ const isHist = (d: string) => d.startsWith('historik-');
 const docOf = (d: any, id: string, namn: string) => d.doc(`data/users/${id}/${namn}`);
 const delNamn = (sl: string, d: string, i: number) => (isHist(d) ? `${d}-${i}` : `del-${sl}-${d}-${i}`);
 export async function saveDb() {
+  const s = huvud();
   if (ui.testMode || !s || !db || !uid || sparar || ui.annanBy) return; // i molnet bara den egna byn (steg 9.2.16)
   sparar = true;
   try {
@@ -144,6 +146,7 @@ export const ikapp: { rita?: () => void } = {};
 const SPOLA_NYCKEL = 'samhallssimulatorn.spola';
 try { ui.spola = localStorage.getItem(SPOLA_NYCKEL) === '1'; } catch { /* utan webbläsarens lagring: av */ }
 export async function catchUp(target: number) {
+  gaHem(); // ikappräkningen visar huvudbyn (steg 11.13.11)
   const span = target - s.now;
   if (span <= 0) { if (s.borta) { $('overlay').hidden = false; showSummary(s.borta); } return; }
   const showOverlay = span > 10 * MIN || !!s.borta; // efter mer än tio minuter visas en sammanställning

@@ -71,7 +71,7 @@ import { PLATS } from './plats';
 import { chance, clamp, hash3, rnd } from './slump';
 import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
-import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
+import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, kartAv, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
 import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
@@ -375,13 +375,14 @@ const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
 declare global { var slagPuls: (() => void) | undefined }
 // De väckta byarna (s.vackta, steg 11.13.1) går efter huvudbyn i samma anrop, i fast ordning, var och en med sina egna slag mot
 // samma värld, så att varje by utvecklas exakt som om den gått för sig. Världens perioder räknas bara av huvudbyn
-export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också när gränssnittet räknar (typer.ts)
+// visad = byn som visas (en väckt by som spelaren gått in i, steg 11.13.11): samtalen (events) är dess
+export function step(s: State, dtSec: number, events?: TalkEvent[], visad: State = s) { // också när gränssnittet räknar (typer.ts)
   simulera(() => {
-    stegBy(s, dtSec, events);
+    stegBy(s, dtSec, visad === s ? events : undefined);
     if (s.vackta?.length) { // var och en räknas fram till samma tid som huvudbyn (en by som väckts under steget börjar vid sin tid)
       const T = s.now + (s.skuld ?? 0) * 1000;
-      for (const v of s.vackta) if (v.vackI === undefined) stegBy(v, (T - v.now) / 1000 - (v.skuld ?? 0));
-      useMap(s);
+      for (const v of s.vackta) if (v.vackI === undefined) stegBy(v, (T - v.now) / 1000 - (v.skuld ?? 0), visad === v ? events : undefined);
+      useMap(visad);
     }
   });
 }
@@ -1636,7 +1637,13 @@ export const cloneState = (s: State) => migrate(JSON.parse(serialize(s)));
 // sparfilen i delar, så att varje del ryms i ett dokument i artefaktens databas (högst 256 KB). Det som inte står här är byn.
 // Varje del skrivs direkt med samma avrundning, så texten blir densamma som om hela byn skrivits och delats upp efteråt
 export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['mark', 'skog', 'tradAlder', 'tradSort', 'buskar', 'barbuskar', 'stubbar'], fynden: ['fynd'], loggen: ['log'], notiser: ['notiser'], varlden: ['varld'] };
+// med byns karta, och kartan som gällde förut väljs igen efteråt (en väckt by kan visas medan huvudbyn sparas, steg 11.13.11)
 export function serializeParts(s: State): Record<string, string> {
+  const fore = kartAv();
+  useMap(s);
+  try { return serializeDelar(s); } finally { useMap(fore); }
+}
+function serializeDelar(s: State): Record<string, string> {
   packGround(s); packFynd(s); skrivVanor();
   const o = s as unknown as Record<string, unknown>, ut: Record<string, string> = {}, bort = new Set<string>();
   for (const [d, keys] of Object.entries(DELAR)) {
