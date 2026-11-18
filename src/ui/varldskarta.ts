@@ -2,7 +2,7 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { fardLage, bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { s } from './lage';
 import { omUngefar } from './hjalp';
@@ -52,17 +52,19 @@ document.body.appendChild(ruta);
 const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement>('.vkInfo')!, kronLista = ruta.querySelector('.vkKronika ol')!;
 
 // bilden räknas en gång per värld och när platserna ändrats
-let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1, bildLed = -1;
+let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1, bildLed = -1, bildMark = '';
+// platserna med ett uppdrag eller fynd som byn känner till och tror på (steg 11.8.16)
+const markNr = () => [...new Set(bynsUppdrag(s!).filter(u => u.nr !== undefined && !u.tomt && u.tilltro >= 0.25).map(u => u.nr!))].sort((a, b) => a - b);
 function bilden() {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return undefined;
-  const n = vl.platser?.length ?? 0, vet = s!.bynVet?.t ?? 0, led = vl.ledVer ?? 0;
-  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet || bildLed !== led) { // och när en led bytt klass (steg 11.5.1) // och när det byn vet räknats om (steg 11.4.7)
-    const b = ritaVarld(vl, v, bynsKarta(s!));
+  const n = vl.platser?.length ?? 0, vet = s!.bynVet?.t ?? 0, led = vl.ledVer ?? 0, mk = markNr(), mks = mk.join(',');
+  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet || bildLed !== led || bildMark !== mks) { // och när en led bytt klass (steg 11.5.1) // och när det byn vet räknats om (steg 11.4.7)
+    const b = ritaVarld(vl, v, bynsKarta(s!), mk);
     bild = document.createElement('canvas'); bild.width = b.w; bild.height = b.h;
     const g = bild.getContext('2d')!, id = g.createImageData(b.w, b.h);
     id.data.set(b.data); g.putImageData(id, 0, 0);
-    bildFor = vl; bildPlatser = n; bildVet = vet; bildLed = led;
+    bildFor = vl; bildPlatser = n; bildVet = vet; bildLed = led; bildMark = mks;
   }
   return bild;
 }
@@ -207,6 +209,11 @@ function rutaHtml(x: number, y: number): string {
     const vem = r.vem.length ? `<div>Vet: ${r.vem.map(esc).join(', ')}</div>` : '';
     const kartor = r.kartor.length ? `<div>Kartor: ${r.kartor.map(esc).join(', ')}</div>` : ''; // steg 11.7.4
     delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${kartor}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
+  }
+  for (const u of bynsUppdrag(s)) { // uppdragen och fynden byn känner till på rutan (steg 11.8.16)
+    const q = u.nr !== undefined ? vl.platser?.find(p => p.nr === u.nr) : undefined;
+    if (!q || q.x !== x || q.y !== y) continue;
+    delar.push(`<div class="vkPlats"><b>📜 ${esc(u.namn)}</b>: ${u.tomt ? 'tomt' : `värt ${u.varde} silver`}${u.fynd ? '' : `, utlyst av ${esc(u.av)}`}<div>Vet: ${u.vet.map(esc).join(', ')}</div></div>`);
   }
   const vm = varldMark(s!);
   for (const gr of vl.gravar ?? []) if (vm && gr.ruta === y * vm.w + x) delar.push(`<div class="vkPlats"><b>✝ Grav</b>: ${esc(gr.namn)}<div>Begravd vid leden år ${kalender(s!, gr.t).ar}</div></div>`); // steg 11.5.18

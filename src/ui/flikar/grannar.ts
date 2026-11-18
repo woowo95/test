@@ -1,4 +1,4 @@
-import { hp, rovarna, KLAN, KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
+import { bynsUppdrag, hp, rovarna, KLAN, KLAN_ROLLER, VAPEN, amountOf, isTool, nTools, instText, klanerOf, living, sakNamn, timeLabel } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
 import { delRad, esc, hjalpKnapp, hjalpText, kronikaLank, omUngefar, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -60,6 +60,20 @@ function forsvarHtml() {
     <h4>Vapnen</h4>${vapen.length ? `<ul class="bytt">${vapen.map(([k, n]) => `<li title="${esc(sakNamn(k))}">${iconImg(k, 12)} ${esc(sakNamn(k))} ${n}</li>`).join('')}</ul>` : '<p class="muted">Byn har inga vapen.</p>'}`;
 }
 
+// uppdragen (steg 11.8.16, uppdrag.ts bynsUppdrag): det byn känner till, säkrast först: vad och var, vem som utlyst, den
+// trodda belöningen och hur gammal uppgiften är. Vilka som vet och hur säkra de är syns med musen över
+export function uppdragHtml() {
+  const lista = bynsUppdrag(s);
+  if (!lista.length) return '<p class="muted">Byn känner inte till något uppdrag.</p>';
+  const sak = (u: ReturnType<typeof bynsUppdrag>[number]) => u.tilltro >= 0.6 ? 'tror på det' : u.tilltro >= 0.25 ? 'tror kanske på det' : 'tvivlar';
+  return `<ul class="fame">${lista.map(u => {
+    const title = `Vet: ${u.vet.join(', ')}. Den säkraste ${sak(u)}.`;
+    const belon = u.tomt ? '<span class="muted">tomt</span>' : `${u.varde} ${iconImg('silver', 12)}`;
+    const av = u.fynd ? 'fynd' : `utlyst av ${esc(u.av)}`;
+    return `<li title="${esc(title)}" class="${u.tilltro < 0.25 ? 'muted' : ''}">📜 <b>${esc(u.namn)}</b> vid ${esc(u.plats)}: ${belon} <span class="muted small">${av}, uppgiften ${esc(omUngefar(s.now - u.t))} gammal</span></li>`;
+  }).join('')}</ul>`;
+}
+
 // stenen Omvärlden (steg 9.3.3): grannklanerna, handlarna, räderna och byns försvar i delar överst. Blek tills byn känner någon
 // utanför. Registret: en ny del är en rad i DELAR
 interface Del { id: string; tecken: string; namn: string; html(): string }
@@ -68,12 +82,13 @@ const DELAR: Del[] = [
   { id: 'handlare', tecken: '⚖️', namn: 'Handlarna', html: handlareHtml },
   { id: 'rader', tecken: '⚔️', namn: 'Räderna', html: raderHtml },
   { id: 'forsvar', tecken: '🛡️', namn: 'Försvaret', html: forsvarHtml },
+  { id: 'uppdrag', tecken: '📜', namn: 'Uppdragen', html: uppdragHtml }, // steg 11.8.16
 ];
 const oppen = () => DELAR.find(d => d.id === ui.omvDel) ?? DELAR[0];
 export const grannar: Flik = {
   namn: 'Omvärlden',
-  krav: 'öppnas när byn känner en klan eller har haft handlare eller rövare',
-  syns: () => !!klanerOf(s).length || !!s.handlarNr || !!s.rovarNr || !!s.handlare || !!s.rovare,
+  krav: 'öppnas när byn känner en klan, har haft handlare eller rövare eller känner till ett uppdrag',
+  syns: () => !!klanerOf(s).length || !!s.handlarNr || !!s.rovarNr || !!s.handlare || !!s.rovare || !!bynsUppdrag(s).length,
   html() {
     const del = oppen();
     return `${delRad('data-odel', DELAR, del.id)}

@@ -1,12 +1,14 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { SCENARIER, kor, korTills, testBy } from './hjalp';
+import { SCENARIER, kor, korTills, testBy, utanWebblasare } from './hjalp';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
 import { readFileSync } from 'node:fs';
 import * as VB from '../../ui/varldbild';
 import { createHash } from 'node:crypto';
 import { kanonisk } from '../pool';
+import { setByn, ui } from '../../ui/lage';
+import { grannar as grannarFlik } from '../../ui/flikar/grannar';
 
 SCENARIER.bortafalt = {
   text: 'Borta från byn, fältet (steg 11.2.3): den som är borta är fortfarande bybo och äger sitt, men finns inte på bykartan, ritas inte och väljs inte till något, och kommer tillbaka med allt sitt',
@@ -3743,6 +3745,36 @@ SCENARIER.utfarder = {
       [`påbudet finns i registret (${SIM.PABUD.utfarder.namn})`, SIM.PABUD_LIST.includes('utfarder')],
       [`den nyfikna och modiga ${djarv.name} vill resa mer (${aD.toFixed(2)}) än den försiktiga ${rädd.name} (${aR.toFixed(2)})`, aD > aR],
       [`fler utfärder ger högre poäng för resan (${sc(ned)} < ${sc(mitt)} < ${sc(upp)})`, !!upp && !!mitt && upp.sc > mitt.sc && (!ned || ned.sc < mitt.sc)],
+    ];
+  },
+};
+
+SCENARIER.uppdragflik = {
+  text: 'Uppdragen i gränssnittet (steg 11.8.16, bynsUppdrag i uppdrag.ts, delen Uppdragen i Omvärlden och märket i ui/varldbild.ts): det byn känner till, vem som utlyst, belöningen och hur gammal uppgiften är, och ett märke på världskartan där uppdraget är',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!, v = SIM.varldMark(s)!;
+    for (const p of s.people) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    const tom = SIM.bynsUppdrag(s).length;
+    const vuxna = s.people.filter(x => SIM.alive(x) && !x.gast && SIM.ageOf(x, s.now) >= 18), p = vuxna[0], p2 = vuxna[1];
+    const q = (vl.platser ?? []).filter(x => x.nr !== hem.nr && x.k === 'by').sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y))[0]!;
+    const u = SIM.utlys(vl, 'hjalp', q.nr, { k: 'styre', rad: q.by }, { silver: 30 }, s.now - 2 * SIM.DAY)!;
+    SIM.larUppdrag(s, p, u.id, 1, { t: u.t, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
+    SIM.larUppdrag(s, p2, u.id, 0.5, { t: u.t, v: SIM.belonVarde(u), mal: u.mal, k: u.k, src: p.id });
+    const lista = SIM.bynsUppdrag(s), b = lista[0];
+    utanWebblasare(); setByn(s); ui.omvDel = 'uppdrag';
+    const html = grannarFlik.html();
+    const utan = VB.ritaVarld(vl, v, SIM.bynsKarta(s)), med = VB.ritaVarld(vl, v, SIM.bynsKarta(s), [q.nr]);
+    let skiljer = 0, utanfor = 0;
+    for (let i = 0; i < utan.data.length; i += 4) if (utan.data[i] !== med.data[i] || utan.data[i + 1] !== med.data[i + 1] || utan.data[i + 2] !== med.data[i + 2]) {
+      const x = Math.floor((i / 4) % utan.w / VB.VK), y = Math.floor(i / 4 / utan.w / VB.VK);
+      skiljer++; if (x !== q.x || y !== q.y) utanfor++;
+    }
+    return [
+      [`utan något känt är listan tom (${tom})`, tom === 0],
+      [`byn känner till ${b?.namn} vid ${b?.plats}, utlyst av ${b?.av}, värt ${b?.varde}, ${b?.vet.length} vet`, lista.length === 1 && b.id === u.id && b.plats === q.namn && b.av.includes(q.namn) && b.vet.length === 2 && b.varde === SIM.belonVarde(u)],
+      ['delen Uppdragen i Omvärlden visar uppdraget, belöningen och hur gammal uppgiften är', html.includes('Hjälp på en plats') && html.includes(q.namn) && html.includes('gammal') && (grannarFlik.syns?.() ?? true)],
+      [`märket ritas på platsens ruta (${skiljer} punkter, ${utanfor} utanför)`, skiljer > 0 && utanfor === 0],
+      ['märket har bara färger ur paletten', VB.TECKEN.uppdrag.every(r => [...r].every(c => c === '.' || iPaletten(VB.TECKENPAL[c])))],
     ];
   },
 };

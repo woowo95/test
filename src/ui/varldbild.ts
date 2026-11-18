@@ -47,6 +47,8 @@ export const TECKEN: Record<string, string[]> = {
   eld: t('', '', '', '', '', '.......y', '......yry', '......rYr', '.....yrRry', '.....jkkkj'),
   // sällskapet på vägen (steg 11.5.12, platshållare): två vandrare åt höger, den första med en packning på ryggen
   sallskap: t('', '', '.....kk.....kk', '....kwwk...kwwk', '....kwwk...kwwk', '..jj.kk.....kk', '.jJJkrrk...krrk', '.jJlkrrk...krrk', '.jJJkrrk...krrk', '..jjkrrk...krrk', '.....kjk....kjk', '.....k.k....k.k', '.....k.k....k.k', '....kk.kk..kk.kk'),
+  // uppdragets märke (steg 11.8.16, platshållare): en liten rulle med ett rött sigill i rutans övre högra hörn, över platsens tecken
+  uppdrag: t('..........kkkk', '.........kwwwWk', '.........kwrrWk', '.........kwrRWk', '.........kwwwWk', '..........kkkk'),
   karta: t('', '', '..kkkkkkkkkkkk', '..kwwwWwwwwwWk', '..kwGGwwssswWk', '..kwGGGwssswWk', '..kwwGwwwsswWk', '..kwwwwJJwwwWk', '..kwwSwJJwwwWk', '..kwSSSwwwGGWk', '..kwwwwwwwGGWk', '..kkkkkkkkkkkk'),
 };
 
@@ -90,7 +92,8 @@ export function lager(kn: BynsKarta, kand: Set<number>, w: number, x: number, y:
   if (kn.nara(x, y) || kand.has(y * w + x)) return 'kant';
   return kn.rykten.some(o => Math.hypot(x + 0.5 - o.x, y + 0.5 - o.y) < o.r) ? 'rykte' : 'blek';
 }
-export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta): VarldBild {
+// marken = platserna (världsplatsens nummer) där byn känner till ett uppdrag eller ett fynd (steg 11.8.16)
+export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?: number[]): VarldBild {
   const b: VarldBild = { w: v.w * VK, h: v.h * VK, data: new Uint8ClampedArray(v.w * VK * v.h * VK * 4) };
   for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {
     const c = MARKRGB[v.mark[ry * v.w + rx]];
@@ -118,6 +121,7 @@ export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta): VarldBild 
         if (l === 'rykte' ? (x + y) % 2 === 0 : x % 2 === 0 && y % 2 === 0) punkt(b, rx * VK + x, ry * VK + y, l === 'rykte' ? rc : bc);
     }
   }
+  for (const nr of marken ?? []) { const p = vl.platser?.find(q => q.nr === nr); if (p) ritaTecken(b, 'uppdrag', p.x, p.y); }
   const hb = huvudbynsPlats(vl);
   if (hb) {
     const rc = rgb(RAMFARG);

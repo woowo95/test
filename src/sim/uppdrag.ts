@@ -201,3 +201,32 @@ export function describeUppdrag(s: State, l: Lardom) {
   const tt = tilltro(s, l), sure = tt >= 0.6 ? 'tror på det' : tt >= 0.25 ? 'tror kanske på det' : 'tvivlar';
   return { text: what, what, place: q?.namn ?? 'okänd plats', src, sure, wrong: '' };
 }
+
+// ---------- det byn känner till (steg 11.8.16, delen Uppdrag i Omvärlden och märkena på världskartan) ----------
+// Varje uppdrag och fynd som någon levande bybo vet om, med den säkraste uppgiften: sorten, platsen, vem som utlyst (bara det
+// den som vet kan veta: posten om den finns kvar), den trodda belöningen, hur gammal uppgiften är och vilka som vet
+export interface BynsUppdrag { id: number; k?: UppdragId; namn: string; nr?: number; plats: string; av: string; varde: number; t: number; tilltro: number; vet: string[]; fynd: boolean; tomt: boolean }
+export function utlysarNamn(s: State, vl: Varlden, a: Utlysare): string {
+  if (a.person !== undefined) return byId(s, a.person)?.name ?? 'en bybo';
+  if (a.rad !== undefined) { const r = radNr(vl, a.rad); return r ? `${a.k === 'kyrka' ? 'kyrkan i' : 'styret i'} ${r.namn}` : 'en by'; }
+  return a.k === 'kyrka' ? 'byns kyrka' : a.k === 'styre' ? 'byns styre' : 'ingen';
+}
+export function bynsUppdrag(s: State): BynsUppdrag[] {
+  const vl = s.varld;
+  if (!vl) return [];
+  const per = new Map<number, { l: Lardom; tt: number; vet: string[] }>();
+  for (const p of s.people) {
+    if (!alive(p) || p.gast) continue;
+    for (const l of p.lardomar ?? []) {
+      if (l.k !== 'uppdrag') continue;
+      const tt = tilltro(s, l), f = per.get(l.a);
+      if (!f) per.set(l.a, { l, tt, vet: [p.name] });
+      else { f.vet.push(p.name); if (tt > f.tt) { f.l = l; f.tt = tt; } }
+    }
+  }
+  return [...per.entries()].map(([id, { l, tt, vet }]) => {
+    const u = uppdragNr(vl, id), k = (u?.k ?? l.om) as UppdragId | undefined, def = k && UPPDRAG[k] ? uppdragDef(k) : undefined;
+    const nr = u?.mal ?? l.g, q = nr !== undefined ? varldPlatsNr(vl, nr) : undefined, fynd = id < 0;
+    return { id, k, namn: def?.namn ?? 'Ett uppdrag', nr, plats: q?.namn ?? 'okänd plats', av: u ? utlysarNamn(s, vl, u.av) : fynd ? 'ingen' : 'okänt', varde: l.v, t: l.t, tilltro: tt, vet, fynd, tomt: fynd && l.v <= 0 };
+  }).sort((a, b) => b.varde * b.tilltro - a.varde * a.tilltro);
+}
