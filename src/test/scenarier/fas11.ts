@@ -3716,3 +3716,33 @@ SCENARIER.kartmarke = {
     ];
   },
 };
+
+SCENARIER.utfarder = {
+  text: 'Påbudet Utfärder (steg 11.8.15): ledaren kan höja eller sänka hur gärna byn ger sig ut på resor och uppdrag; en nyfiken och modig ledare vill resa mer, en försiktig mindre',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const vuxna = s.people.filter(x => SIM.alive(x) && !x.gast && SIM.ageOf(x, s.now) >= 18);
+    const lust = (x: SIM.Person) => SIM.stat(x, 'nyfikenhet', s.now) + SIM.stat(x, 'mod', s.now);
+    vuxna.sort((a, b) => lust(b) - lust(a));
+    const djarv = vuxna[0], rädd = vuxna[vuxna.length - 1];
+    const aD = SIM.PABUD.utfarder.asikt(s, djarv), aR = SIM.PABUD.utfarder.asikt(s, rädd);
+    const p = djarv;
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    const q = (vl.platser ?? []).filter(x => x.nr !== hem.nr && x.k === 'by').sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y))[0]!;
+    SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+    const u = SIM.utlys(vl, 'leverans', q.nr, { k: 'styre', rad: q.by }, { silver: 400 }, s.now)!;
+    SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
+    const plan = (v: number) => {
+      s.styre = { historia: [{ id: p.id, namn: p.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: p.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { utfarder: v } as never } as never;
+      s.seder.v.rang = 1;
+      return SIM.resaPlan(s, p, 99, 99);
+    };
+    const mitt = plan(0), upp = plan(1), ned = plan(-1);
+    const sc = (x?: SIM.ResPlan) => x ? x.sc.toFixed(2) : 'ingen resa';
+    return [
+      [`påbudet finns i registret (${SIM.PABUD.utfarder.namn})`, SIM.PABUD_LIST.includes('utfarder')],
+      [`den nyfikna och modiga ${djarv.name} vill resa mer (${aD.toFixed(2)}) än den försiktiga ${rädd.name} (${aR.toFixed(2)})`, aD > aR],
+      [`fler utfärder ger högre poäng för resan (${sc(ned)} < ${sc(mitt)} < ${sc(upp)})`, !!upp && !!mitt && upp.sc > mitt.sc && (!ned || ned.sc < mitt.sc)],
+    ];
+  },
+};

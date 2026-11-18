@@ -78,6 +78,9 @@ export const PAB = balans('pabud', {
   // från 0 till 1, om den hen tycker sämst om bland de tystTopp som byn talar mest om. Påbudet gånger tystMax är hur mycket mer
   // sällan minnen om personen berättas, mindre ju mer den som berättar tyckte om hen
   tystOp: 1, tystEmp: 10, tystDiv: 10, tystTopp: 3, tystMax: 0.9,
+  // Utfärder (steg 11.8.15, resa.ts): ledarens åsikt = ((nyfikenheten + modet) / 2 − 10) / utfarDiv, från -1 till 1; påbudet
+  // gånger utfarMax flyttar vikten för resor (1 + påbudet × utfarMax)
+  utfarDiv: 5, utfarMax: 0.5,
 });
 export const FORM = balans('form', {
   starkt: 0.7, lut: 0.25, mitt: 0.1, // gränserna mellan styrelseformerna, i sederna (steg 8.3.7)
@@ -187,6 +190,8 @@ const PDEF = {
   // tystnaden (steg 10.4.10): en person, levande eller död, som inte ska nämnas
   tystnad: { namn: 'Tystnad', text: 'Att en viss person inte ska nämnas', vem: (s, l) => tystVem(s, l),
     asikt: (s, l, om) => om === undefined || om === l.id ? 0 : clamp(-asiktOm(s, l, om) / 100 * PAB.tystOp + (PAB.tystEmp - stat(l, 'empati', s.now)) / PAB.tystDiv, 0, 1) },
+  // Utfärder (steg 11.8.15, resaPlan i resa.ts): en nyfiken och modig ledare vill att byn reser mer, en försiktig mindre
+  utfarder: { ruta: 'Arbetet', namn: 'Utfärder', text: 'Hur gärna byn ger sig ut på resor och uppdrag', asikt: (s, l) => clamp(((stat(l, 'nyfikenhet', s.now) + stat(l, 'mod', s.now)) / 2 - 10) / PAB.utfarDiv, -1, 1) },
 } satisfies Record<string, PabudDef>;
 export type Pabud = keyof typeof PDEF;
 export const PABUD: Record<Pabud, PabudDef> = PDEF;

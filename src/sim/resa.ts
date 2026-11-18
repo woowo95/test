@@ -45,6 +45,7 @@ import { SEC } from './typer';
 import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
+import { PAB, pabud } from './styre';
 import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid } from './uppdrag';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
@@ -734,7 +735,7 @@ export interface ResPlan { mal: number; namn: string; skal: ResmalId; uppdrag?: 
 export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan | undefined {
   const vl = s.varld, v = varldMark(s), hem = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
   if (!vl || !v || !hem || p.gast || ute(p) || sallskapFor(vl, p.id)) return undefined;
-  const ny = stat(p, 'nyfikenhet', s.now), mod = stat(p, 'mod', s.now);
+  const ny = stat(p, 'nyfikenhet', s.now), mod = stat(p, 'mod', s.now), utfar = Math.max(0, 1 + pabud(s, 'utfarder') * PAB.utfarMax); // påbudet Utfärder (steg 11.8.15)
   let bast: ResPlan | undefined;
   for (const q of vl.platser ?? []) {
     if (q.nr === hem.nr) continue;
@@ -758,7 +759,7 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     const dygn = 2 * dygnDit(s, hem, q) + RESMAL[skal].stannar;
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
     const lust = (ny + mod) / 20, hemma = clamp(Math.min(fd, wd) / dygn, 0, 1);
-    const sc = RESA.vikt * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
+    const sc = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
     if (sc > 0 && (!bast || sc > bast.sc)) bast = { mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: Math.round(dygn * 100) / 100, fara: Math.round(fara * 1000) / 1000, sc, varor, kop, ...(uid !== undefined ? { uppdrag: uid } : {}) };
   }
   return bast;
