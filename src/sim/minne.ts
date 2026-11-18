@@ -119,6 +119,8 @@ export const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + A
 // kat 'tro': rädslor och föreställningar, som personrutan visar under Tro i stället för bland lärdomarna (steg 4.1.2.4)
 // tak: slaget har ett eget tak för hur många man minns, utöver max (priserna och platserna i världen)
 interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true; ikon: string; tecken: string; kat?: 'tro'; tak?: () => number }
+// uppdragen som lärdomar (steg 11.8.3): uppdrag.ts fyller i talen och funktionerna, så att minne.ts inte importerar den
+export const UPPDRAGKROK: { tal?: { max: number; dela: number; glom: number }; beratta?: (s: State, a: Person, b: Person, l: Lardom, r: Rel) => void; describe?: (s: State, l: Lardom) => ReturnType<typeof describeOrt> } = {};
 const LDEF = {
   samla: { vad: 'bär och rötter', namn: 'bär och rötter', inga: 'Inga bär och rötter', fynd: true, ikon: 'bar', tecken: '🫐' },
   jakt: { vad: 'harar', namn: 'vilt', inga: 'Inga harar', fynd: true, ikon: 'kanin', tecken: '🐇' },
@@ -129,6 +131,7 @@ const LDEF = {
   flod: { vad: 'högvattnet', namn: 'högvattnet', ikon: 'm_oversvamning', tecken: '🌊' }, // hur högt en översvämning nådde (steg 3.8.7, flod.ts): v = rutor upp på land
   pris: { vad: 'priser', namn: 'priser hos grannklanerna', ikon: 'silver', tecken: '💰', tak: () => MINNE.prisMax }, // vad en grannklan betalar (steg 10.5.15): a = klanens id, sl = slaget, v = påslaget på grundvärdet
   ort: { vad: 'platser i världen', namn: 'platser i världen', ikon: 'karta', tecken: '📍', tak: () => ORT.max }, // en plats i världen (steg 11.4.1, ort.ts): a = platsens nummer, v = nivån (ORTNIVA)
+  uppdrag: { vad: 'uppdrag', namn: 'uppdrag', ikon: 'karta', tecken: '📜', tak: () => UPPDRAGKROK.tal?.max ?? 0 }, // ett utlyst uppdrag (steg 11.8.3, uppdrag.ts): a = uppdragets nummer, t = när det utlystes
 } satisfies Record<string, LardomDef>;
 export type LKind = keyof typeof LDEF;
 export const LARDOMAR: Record<LKind, LardomDef> = LDEF;
@@ -161,7 +164,7 @@ function iTopp(v: number) {
 function areaCalc(s: State, k: LKind, a: number, mode: Mode) {
   const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA, x1 = Math.min(W, x0 + AREA), y1 = Math.min(H, y0 + AREA);
   if (k === 'flinta') { const sd = stoneDist(s.seed); let v = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sd[y * W + x] <= FANGST.stenNara) v = 1; return v; }
-  if (k === 'fara' || k === 'flod' || k === 'pris' || k === 'ort') return 0;
+  if (k === 'fara' || k === 'flod' || k === 'pris' || k === 'ort' || k === 'uppdrag') return 0;
   if (k === 'vatten') { const sh = shoreOf(s.seed); let v = 0, n = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sh[y * W + x]) { v += vattenSmuts(s, y * W + x); n++; } return n ? v / n : 0; } // snittet längs stranden, med toa-smutsen (steg 2.7.2)
   const fn = mode === 'nu' ? undefined : mode === 'vaxer' ? (i: number) => vaxerAt(s, k, i) : (i: number) => synsOf(s, k, i);
   nTopp = 0;
@@ -378,9 +381,9 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   const talk = (MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (slag.dela ? MINNE[slag.dela] : 0)) * (arBast(a, b) ? RELT.bastBerattar : 1);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
-    const w = a.lardomar.map(l => (l.k === 'ort' ? ORT.dela * (nyhet(s, l) ? ORT.nyVikt : 1) : l.k === 'fara' ? MINNE.delaFara : l.k === 'pris' ? (nyhet(s, l) ? 2 : 1) : l.k === 'flinta' || l.k === 'vatten' || l.k === 'flod' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
+    const w = a.lardomar.map(l => (l.k === 'ort' ? ORT.dela * (nyhet(s, l) ? ORT.nyVikt : 1) : l.k === 'uppdrag' ? (UPPDRAGKROK.tal?.dela ?? 0) : l.k === 'fara' ? MINNE.delaFara : l.k === 'pris' ? (nyhet(s, l) ? 2 : 1) : l.k === 'flinta' || l.k === 'vatten' || l.k === 'flod' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
     const l = pickViktat(s, a.lardomar, w, 'minne', a);
-    if (l.k === 'ort') berattaOrt(s, a, b, l, r); else tell(s, a, b, l, r);
+    if (l.k === 'ort') berattaOrt(s, a, b, l, r); else if (l.k === 'uppdrag') UPPDRAGKROK.beratta?.(s, a, b, l, r); else tell(s, a, b, l, r);
   }
   skvaller(s, a, b, r, slag.dela === 'delaBerattelse'); // och om vad hen tycker om andra (steg 3.3, rykten.ts)
   if (a.varsel) delaVarsel(s, a, b, r); // och om en motgång som kommer (steg 3.8.1, motgang.ts)
@@ -445,7 +448,7 @@ export function forget(s: State, hours: number) {
       const tau = 24 * (MINNE.glomBas + m / MINNE.glomMinne); // 3–13 dygn
       p.lardomar = p.lardomar.filter(l => {
         if (l.k === 'ort') { if (ortBleknar(l, hours, tau)) return true; count(s, 'glomt'); return false; } // en nivå i taget (steg 11.4.3)
-        l.c *= Math.exp(-hours / (tau * (l.k === 'fara' ? MINNE.glomFara : l.k === 'flod' ? MINNE.glomFlod : l.k === 'pris' ? MINNE.prisGlom : 1)));
+        l.c *= Math.exp(-hours / (tau * (l.k === 'fara' ? MINNE.glomFara : l.k === 'flod' ? MINNE.glomFlod : l.k === 'pris' ? MINNE.prisGlom : l.k === 'uppdrag' ? (UPPDRAGKROK.tal?.glom ?? 1) : 1)));
         if (l.c >= MINNE.glomGrans) return true;
         count(s, 'glomt'); return false;
       });
@@ -481,6 +484,7 @@ const amount = (v: number) => v >= 0.7 ? 'Gott om' : v >= 0.35 ? 'En del' : v >=
 export function describe(s: State, l: Lardom) {
   if (l.k === 'pris') return describePris(s, l);
   if (l.k === 'ort') return describeOrt(s, l);
+  if (l.k === 'uppdrag' && UPPDRAGKROK.describe) return UPPDRAGKROK.describe(s, l);
   const place = placeName(s, l.a);
   const rel = (v: number) => relOf(l.k, v);
   const what0 = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns' : l.k === 'vatten' ? vattenOrd(l.v)

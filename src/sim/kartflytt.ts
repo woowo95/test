@@ -99,7 +99,7 @@ export function storreKarta(s: State) {
       delete t.pk; // vägen räknas om
       if (t.vatten !== undefined) t.vatten = ny(t.vatten);
     }
-    for (const l of p.lardomar ?? []) if (l.k !== 'pris' && l.k !== 'ort') l.a = omArea(l.a); // priserna gäller en klan och platserna i världen en plats i världen, inte en ruta (steg 10.5.15, 11.4.1)
+    for (const l of p.lardomar ?? []) if (l.k !== 'pris' && l.k !== 'ort' && l.k !== 'uppdrag') l.a = omArea(l.a); // priserna gäller en klan och platserna i världen en plats i världen, inte en ruta (steg 10.5.15, 11.4.1)
   }
   for (const f of s.flackar ?? []) f.i = ny(f.i);
   if (s.halvfallt) s.halvfallt = Object.fromEntries(Object.entries(s.halvfallt).map(([i, v]) => [ny(Number(i)), v]));

@@ -6,7 +6,11 @@
 // (VarldPlats.inne) och finns så länge det finns kvar. Bara det som någon utlyst är en egen post (Utlyst, vl.uppdrag), och den
 // tar slut av sin tid: belöningen som lagts undan går då tillbaka till den som utlyste. Talen står i blocket UPPDRAGTAL.
 import { balans } from './balans';
-import { alive, count } from './folk';
+import { alive, byId, count } from './folk';
+import { delade } from './berattelser';
+import { findL, MINNE, trimLardomar, UPPDRAGKROK } from './minne';
+import { lognFaktor } from './rykten';
+import { clamp } from './slump';
 import { put } from './lager';
 import { LandmarkId, varldPlatsNr } from './landmarken';
 import { radNr } from './radtal';
@@ -14,7 +18,7 @@ import { laggTillRad, tillGrupp } from './utpost';
 import { grundvarde } from './varde';
 import { KOHANDELSER, antalUr, laggIKo, varldSlump } from './varldslag';
 import { Varlden } from './varlden';
-import { DAY, State } from './typer';
+import { DAY, Lardom, Person, Rel, State } from './typer';
 import { SAKER } from './saker';
 import { VarldRad } from './radtal';
 import { lever } from './rad';
@@ -22,6 +26,10 @@ import { lever } from './rad';
 export const UPPDRAGTAL = balans('uppdrag', {
   tid: 5, // ett utlyst uppdrag gäller så många dygn (år i spelet) om inte raden säger annat
   vilseTid: 1, // vilsegången gäller ett dygn: sedan finns inget att leta efter
+  max: 6, // så många uppdrag minns en person som mest
+  dela: 1.5, // vikten för att berätta om ett uppdrag i ett samtal (en plats väger ORT.dela)
+  glom: 2, // ett uppdrag glöms så här mycket långsammare än en vanlig lärdom
+  tilltro: 3, // tilltron till en uppgift halveras på så många dygn (år i spelet) efter att den utlystes
   vittra: 0.03, // det i en ruin som inte ruttnar vittrar bort med så stor del per dygn (det som ruttnar: 1 / SAKER.haller per dygn)
 });
 
@@ -125,4 +133,36 @@ export function taRuin(s: State, vl: Varlden, r: VarldRad, t: number, bar: numbe
   if (Object.keys(kvar).length) { r.kvar = kvar; r.kvarT = t; } else { delete r.kvar; delete r.kvarT; }
   if (Object.keys(tagit).length) count(s, 'ruinTagit', Object.values(tagit).reduce((a, n) => a + n, 0));
   return tagit;
+}
+
+// ---------- uppdraget är kunskap (steg 11.8.3, Platsen i minnet) ----------
+// Ett utlyst uppdrag är en lärdom (k = 'uppdrag', a = uppdragets nummer, t = när det utlystes): det minns och bleknar som andra
+// lärdomar (UPPDRAGTAL.glom gånger långsammare) och berättas i samtal (UPPDRAGTAL.dela). Tilltron är säkerheten gånger en halvering
+// med uppgiftens ålder (UPPDRAGTAL.tilltro dygn). Den som hört om det vet inte om det redan är taget eller utgånget.
+export function larUppdrag(s: State, p: Person, id: number, c: number, o: { t: number; src?: number; led?: number }): Lardom {
+  const e = findL(p, 'uppdrag', id);
+  if (e) { e.c = Math.max(e.c, c, Math.min(1, e.c + MINNE.berattaStark * (1 - e.c))); return e; }
+  const l: Lardom = { k: 'uppdrag', a: id, v: 1, c, t: o.t, led: o.led ?? (o.src === undefined ? 0 : 1), ...(o.src !== undefined ? { src: o.src } : {}) };
+  (p.lardomar ??= []).push(l);
+  trimLardomar(s, p);
+  return l;
+}
+export const tilltro = (s: State, l: Lardom) => l.c * 0.5 ** (Math.max(0, s.now - l.t) / (UPPDRAGTAL.tilltro * DAY));
+export function berattaUppdrag(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
+  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
+  const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = u && vl && varldPlatsNr(vl, u.mal);
+  delade('fjarran', 'karta', u ? `${uppdragDef(u.k).namn.toLowerCase()}${q ? ` vid ${q.namn}` : ''}` : 'ett uppdrag');
+  const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a), fore = findL(b, 'uppdrag', l.a);
+  larUppdrag(s, b, l.a, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1 });
+  if (!fore) count(s, 'uppdragBerattat');
+}
+UPPDRAGKROK.tal = UPPDRAGTAL;
+UPPDRAGKROK.beratta = (s, a, b, l, r) => berattaUppdrag(s, a, b, l, r);
+UPPDRAGKROK.describe = (s, l) => describeUppdrag(s, l);
+export function describeUppdrag(s: State, l: Lardom) {
+  const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = u && vl && varldPlatsNr(vl, u.mal);
+  const what = u ? `${uppdragDef(u.k).namn}${q ? ` vid ${q.namn}` : ''}` : 'Ett uppdrag';
+  const src = l.src === undefined ? 'hörde det själv' : `hört av ${byId(s, l.src)?.name ?? 'någon'}`;
+  const tt = tilltro(s, l), sure = tt >= 0.6 ? 'tror på det' : tt >= 0.25 ? 'tror kanske på det' : 'tvivlar';
+  return { text: what, what, place: q?.namn ?? 'okänd plats', src, sure, wrong: '' };
 }

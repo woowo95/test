@@ -3484,3 +3484,37 @@ SCENARIER.ruinskatt = {
     ];
   },
 };
+
+SCENARIER.uppdragkunskap = {
+  text: 'Uppdraget är kunskap (steg 11.8.3): ett utlyst uppdrag minns, bleknar och sprids i samtal som en plats, och tilltron sjunker med uppgiftens ålder',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const by = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].folk)!;
+    const mal = SIM.byPlats(vl, by.nr)!.nr;
+    const u = SIM.utlys(vl, 'leverans', mal, { k: 'styre', rad: by.nr }, { brod: 3 }, s.now)!;
+    const vuxna = s.people.filter(p => SIM.alive(p) && SIM.ageOf(p, s.now) >= 16);
+    const [a, b] = vuxna;
+    a.lardomar = (a.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    b.lardomar = (b.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    const la = SIM.larUppdrag(s, a, u.id, 1, { t: s.now });
+    const rel: SIM.Rel = { chem: 0, op: 40, rom: 0, talks: 0, flags: 0 };
+    SIM.berattaUppdrag(s, a, b, la, rel);
+    const lb = SIM.findL(b, 'uppdrag', u.id);
+    const t0 = SIM.tilltro(s, la);
+    const s2 = SIM.cloneState(s);
+    s2.now += SIM.UPPDRAGTAL.tilltro * SIM.DAY;
+    const a2 = SIM.byId(s2, a.id)!, l2 = SIM.findL(a2, 'uppdrag', u.id)!;
+    const t1 = SIM.tilltro(s2, l2);
+    const c0 = l2.c;
+    SIM.forget(s2, 24 * 10);
+    const c1 = SIM.findL(a2, 'uppdrag', u.id)?.c ?? 0;
+    const text = SIM.describe(s, la).text;
+    const f2 = (x: number) => x.toFixed(2);
+    return [
+      [`${a.name} vet om uppdraget (${text})`, !!la && /vid|uppdrag/i.test(text)],
+      [`${a.name} berättar för ${b.name}, som tror mindre (${f2(lb?.c ?? 0)} mot ${f2(la.c)}) och vet var hen hört det`, !!lb && lb.c < la.c && lb.src === a.id],
+      [`tilltron halveras på ${SIM.UPPDRAGTAL.tilltro} dygn (${f2(t0)} → ${f2(t1)})`, Math.abs(t1 - t0 / 2) < 0.01],
+      [`det bleknar i minnet (${f2(c0)} → ${f2(c1)} på tio dagar)`, c1 < c0],
+    ];
+  },
+};
