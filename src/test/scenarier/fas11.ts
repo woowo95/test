@@ -4538,3 +4538,27 @@ SCENARIER.vacktkunskap = {
     ];
   },
 };
+
+SCENARIER.vackthem = {
+  text: 'Hemmen i den väckta byn (steg 11.13.5, byggHem i vackt.ts och planeraHus i byggplan.ts): som i en riktig by har varje familj ett eget familjehus och alla andra en sovplats i byns sovsalar, i färdiga hus av det material teknikerna ger. En by som inte kan bygga väggar har inga hus',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const r = vl.rader!.filter(q => q.sort === 'by' && SIM.lever(vl, q)).sort((a, b) => b.tal.folk - a.tal.folk)[0];
+    r.tal.folk = 24; r.tek = Object.values(SIM.TEK).filter(t => t.niva <= 3).map(t => t.id);
+    const b = SIM.vackBy(s, r.nr)!;
+    SIM.useMap(b);
+    const hus = SIM.housesOf(b), utan = b.people.filter(p => !SIM.bedFor(b, p));
+    const familjer = b.people.filter(p => p.partner !== undefined && p.id < p.partner && SIM.familjOf(b, p.id).length >= SIM.HUS.familjMin);
+    const egna = familjer.filter(p => hus.some(h => h.ag === p.id || h.ag === p.partner));
+    SIM.useMap(s);
+    r.tek = SIM.startTek(); r.tal.folk = 6;
+    const c = SIM.vackBy(s, r.nr)!;
+    return [
+      ['husen är byggda (' + hus.length + ')', hus.length > 0 && hus.every(h => h.klar)],
+      ['alla har en sovplats under tak (' + utan.length + ' utan)', utan.length === 0],
+      ['varje familj har ett eget hus (' + egna.length + ' av ' + familjer.length + ')', familjer.length > 0 && egna.length === familjer.length],
+      ['de andra sover i en sovsal', hus.some(h => h.fn === 'sovsal')],
+      ['utan timmerväggen finns inga hus', SIM.housesOf(c).length === 0],
+    ];
+  },
+};

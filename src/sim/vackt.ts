@@ -3,7 +3,15 @@
 // en del av byn på plats, i registrets ordning. Allt dras ur byns frö och radens tal som de är när väckningen börjar, så att
 // samma rad alltid ger samma by. Den väckta byn går sedan i samma slag som huvudbyn (s.vackta, steg 11.13.1)
 import { balans } from './balans';
-import { ALDER, ageOf, newPerson, startSkills } from './folk';
+import { ALDER, ageOf, alive, byId, familjOf, living, newPerson, startSkills } from './folk';
+import { HUS, homeless } from './byggnader';
+import { planeraHus } from './byggplan';
+import { bitsOf, housesOf, Hus, MATERIAL, touch } from './byggnad';
+import { workOn } from './bygg';
+import { groundOf } from './mark';
+import { kronaOver } from './skog';
+import { changed, put } from './lager';
+import { W } from './typer';
 import { ACTS } from './handlingar';
 import { TEK } from './teknik';
 import { clamp } from './slump';
@@ -35,6 +43,7 @@ export interface Byggare { namn: string; bygg: (b: State, s: State, r: VarldRad)
 export const BYGGARE: Byggare[] = [
   { namn: 'folket', bygg: (b, _s, r) => byggFolk(b, r) }, // radens antal, med åldrar, kön och släkt
   { namn: 'kunskapen', bygg: (b, _s, r) => byggKunskap(b, r) }, // radens tekniker spridda på folket (steg 11.13.4)
+  { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll (steg 11.13.5)
 ];
 
 // byns frö: ur huvudbyns frö och radens nummer, så att samma rad alltid får samma karta
@@ -100,5 +109,42 @@ export function byggKunskap(b: State, r: VarldRad) {
       const k = ACTS[act]?.arbete;
       if (k) p.skill[k] = Math.max(p.skill[k] ?? 0, clamp((a - ALDER.skickFran) * 0.25 * (0.4 + rnd(b, 'vackt')) * (p.pot.intelligens / 12), 0, 12));
     }
+  }
+}
+
+// ett planerat hus byggs färdigt på en gång: träden och stubbarna på platsen är borta, alla delar är klara, och den sista byggs
+// av en bybo som vanligt (workOn), så att huset blir färdigt som andra hus
+export function byggFardigt(b: State, h: Hus) {
+  const bs = bitsOf(b).filter(q => q.hus === h.id), p = living(b)[0];
+  if (!bs.length || !p) return;
+  const g = groundOf(b);
+  for (const i of kronaOver(b, h)) g.trees[i] = 0;
+  for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) g.trees[y * W + x] = 0;
+  b.stubbar = b.stubbar?.filter(k => !(k.x >= h.x && k.y >= h.y && k.x < h.x + h.w && k.y < h.y + h.h));
+  for (const q of bs) { q.mat = MATERIAL[q.m]?.n ?? 0; q.b = q === bs[bs.length - 1] ? 0.999 : 1; }
+  touch(b);
+  workOn(b, p, bs[bs.length - 1], 3600);
+  const inne = (b.stackar ?? []).filter(a => a.x >= h.x && a.y >= h.y && a.x < h.x + h.w && a.y < h.y + h.h);
+  b.stackar = (b.stackar ?? []).filter(a => !inne.includes(a));
+  for (const a of inne) put(b, a.k, a.n, a.ag, a.c);
+  changed(b); h.barUt = undefined; touch(b);
+}
+// hemmen: som i en riktig by har en familj (ett par med minst HUS.familjMin) ett eget familjehus, och alla andra sover i byns
+// sovsalar. Husen är av det material teknikerna ger, som när byn bygger själv (planeraHus i byggplan.ts). Utan väggar att bygga
+// med (timmerväggen) finns inga hus, som i en by som inte kommit så långt
+export function byggHem(b: State) {
+  if (!b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) return;
+  for (const o of [...b.people].sort((a, c) => a.id - c.id)) {
+    const pa = byId(b, o.partner);
+    if (!pa || !alive(pa) || pa.id < o.id) continue;
+    const folk = familjOf(b, o.id);
+    if (folk.length < HUS.familjMin || housesOf(b).some(h => h.ag === o.id || h.ag === pa.id)) continue;
+    const h = planeraHus(b, 'familjehus', { v: 1, plats: folk.length, ag: o.id });
+    if (h) byggFardigt(b, h);
+  }
+  for (let n = 0; n < 20 && homeless(b) > 0; n++) {
+    const h = planeraHus(b, 'sovsal', { v: 1, plats: homeless(b) });
+    if (!h) break;
+    byggFardigt(b, h);
   }
 }

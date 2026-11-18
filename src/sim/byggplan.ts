@@ -869,6 +869,17 @@ export function planBuild(s: State) {
     if (f) utfor(s, f, u, byggare, ppl);
   }
 }
+// ett nytt hus för behovet fn planeras direkt, som planBuild gör det, utan att vänta på byggare (den väckta byn, steg 11.13.5);
+// ger huset, eller undefined om inget nytt hus får plats
+export function planeraHus(s: State, fn: Fn, a: Akut): Hus | undefined {
+  const ppl = living(s);
+  if (!ppl.length) return undefined;
+  const { okAt } = byggbart(s), u: ByggBehov = { fn, a, sc: 0 }, f = valj(s, u, okAt);
+  if (!f || f.at !== 'nyttHus' || f.ny) return undefined; // (elden flyttas inte för en by som byggs)
+  const n0 = housesOf(s).length;
+  utfor(s, f, u, ppl.filter(p => canBuildWalls(p, s)), ppl);
+  return housesOf(s).length > n0 ? housesOf(s)[housesOf(s).length - 1] : undefined;
+}
 // förslaget med mest värde per kostnad; varje steg längre ner i ordningen kostar mer (Vägarna till mer plats)
 function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
   let bast: Forslag | undefined, bs = -Infinity;
