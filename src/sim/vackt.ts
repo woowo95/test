@@ -3,7 +3,10 @@
 // en del av byn på plats, i registrets ordning. Allt dras ur byns frö och radens tal som de är när väckningen börjar, så att
 // samma rad alltid ger samma by. Den väckta byn går sedan i samma slag som huvudbyn (s.vackta, steg 11.13.1)
 import { balans } from './balans';
-import { ageOf, newPerson, startSkills } from './folk';
+import { ALDER, ageOf, newPerson, startSkills } from './folk';
+import { ACTS } from './handlingar';
+import { TEK } from './teknik';
+import { clamp } from './slump';
 import { byPlats } from './landmarken';
 import { radNr, VarldRad } from './radtal';
 import { startSmak } from './rykten';
@@ -23,12 +26,15 @@ export const VACKT = balans('vackt', {
   modersAlder: 17, // modern är minst så mycket äldre än barnet
   ensam: 0.15, // chansen att ett hushåll är en ensam äldre
   aldreFran: 50, aldreTill: 72, // den ensammas ålder
+  kunskap: 0.7, // chansen att en vuxen kan en teknik på nivå 1; varje nivå högre gånger detta igen (steg 11.13.4)
+  lar: 6, larVuxen: 20, // åldern då man börjar kunna tekniker och då man kan dem som en vuxen
 });
 
 // en byggare lägger en del av byn på plats: b = den väckta byn, s = huvudbyn, r = raden
 export interface Byggare { namn: string; bygg: (b: State, s: State, r: VarldRad) => void }
 export const BYGGARE: Byggare[] = [
   { namn: 'folket', bygg: (b, _s, r) => byggFolk(b, r) }, // radens antal, med åldrar, kön och släkt
+  { namn: 'kunskapen', bygg: (b, _s, r) => byggKunskap(b, r) }, // radens tekniker spridda på folket (steg 11.13.4)
 ];
 
 // byns frö: ur huvudbyns frö och radens nummer, så att samma rad alltid får samma karta
@@ -71,4 +77,28 @@ export function byggFolk(b: State, r: VarldRad) {
     for (let i = 0; i < barn; i++) ny(rnd(b, 'vackt') < 0.5 ? 'm' : 'k', mellan(b, 0, ka - VACKT.modersAlder), k, m);
   }
   for (const p of b.people) { startSkills(b, p, ageOf(p, b.now)); startSmak(b, p); }
+}
+
+// kunskapen: varje teknik i raden kan en del av folket, fler ju lägre nivån och ju äldre man är, som i en by där man lärt av
+// varandra. Den äldsta vuxna som fått flest tekniker kan den om ingen annan gör det, så att byn inte glömt något. Den som kan en
+// teknik har färdigheten i arbetet där man kommer på den efter sin ålder, som de andra färdigheterna (startSkills)
+export function byggKunskap(b: State, r: VarldRad) {
+  const folk = b.people, alder = new Map(folk.map(p => [p.id, ageOf(p, b.now)]));
+  const vuxen = (p: Person) => clamp((alder.get(p.id)! - VACKT.lar) / (VACKT.larVuxen - VACKT.lar), 0, 1);
+  const tekn = r.tek.filter(id => TEK[id]).sort((a, c) => TEK[a].niva - TEK[c].niva || (a < c ? -1 : 1));
+  for (const id of tekn) {
+    const chans = VACKT.kunskap ** (TEK[id].niva - 1);
+    let kan = 0;
+    for (const p of folk) if (rnd(b, 'vackt') < chans * vuxen(p) && TEK[id].krav.every(k => (p.tek?.[k] ?? 0) >= 1)) { (p.tek ??= {})[id] = 1; kan++; }
+    if (kan) continue;
+    const vem = folk.filter(p => vuxen(p) >= 1).sort((a, c) => Object.keys(c.tek ?? {}).length - Object.keys(a.tek ?? {}).length || alder.get(c.id)! - alder.get(a.id)!)[0] ?? folk[0];
+    if (vem) { vem.tek ??= {}; for (const k of [...TEK[id].krav, id]) vem.tek[k] = 1; }
+  }
+  for (const p of folk) {
+    const a = alder.get(p.id)!;
+    for (const id in p.tek ?? {}) for (const act of TEK[id]?.omr ?? []) {
+      const k = ACTS[act]?.arbete;
+      if (k) p.skill[k] = Math.max(p.skill[k] ?? 0, clamp((a - ALDER.skickFran) * 0.25 * (0.4 + rnd(b, 'vackt')) * (p.pot.intelligens / 12), 0, 12));
+    }
+  }
 }

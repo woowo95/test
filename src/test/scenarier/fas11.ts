@@ -4514,3 +4514,27 @@ SCENARIER.vackt = {
     ];
   },
 };
+
+SCENARIER.vacktkunskap = {
+  text: 'Kunskapen i den väckta byn (steg 11.13.4, byggKunskap i vackt.ts): radens tekniker sprids på folket som i en riktig by, fler kan det som ligger på en låg nivå och de äldre kan mer, ingen teknik glöms, den som kan något kan det den kräver, och färdigheten i arbetet följer åldern',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const r = vl.rader!.filter(q => q.sort === 'by' && SIM.lever(vl, q)).sort((a, b) => b.tal.folk - a.tal.folk)[0];
+    r.tal.folk = 30; r.tek = Object.values(SIM.TEK).filter(t => t.niva <= 3).map(t => t.id); // utan förhistoria har raden bara början
+    const b = SIM.vackBy(s, r.nr)!, folk = b.people, alder = (p: SIM.Person) => SIM.ageOf(p, b.now);
+    const kan = (id: string) => folk.filter(p => (p.tek?.[id] ?? 0) >= 1).length;
+    const tek = r.tek.filter(id => SIM.TEK[id]);
+    const andel = (n: number) => { const l = tek.filter(id => SIM.TEK[id].niva === n); return l.length ? l.reduce((a, id) => a + kan(id), 0) / l.length / folk.length : NaN; };
+    const vuxna = folk.filter(p => alder(p) >= 20), unga = folk.filter(p => alder(p) < 6);
+    const medel = (l: SIM.Person[]) => l.reduce((a, p) => a + Object.keys(p.tek ?? {}).length, 0) / Math.max(1, l.length);
+    return [
+      ['ingen av radens tekniker är glömd', tek.every(id => kan(id) > 0)],
+      ['den som kan något kan det den kräver', folk.every(p => Object.keys(p.tek ?? {}).every(id => SIM.TEK[id].krav.every(k => (p.tek?.[k] ?? 0) >= 1)))],
+      ['fler kan nivå 1 än nivå 3 (' + Math.round(andel(1) * 100) + ' % mot ' + Math.round(andel(3) * 100) + ' %)', !(andel(1) <= andel(3))],
+      ['de små barnen kan inget', unga.every(p => !Object.keys(p.tek ?? {}).length)],
+      ['de vuxna kan mer än barnen', medel(vuxna) > medel(folk.filter(p => alder(p) < 14))],
+      ['den vuxna som kan en teknik har färdigheten i arbetet där man kommer på den', folk.filter(p => alder(p) >= 20).every(p => Object.keys(p.tek ?? {}).every(id => SIM.TEK[id].omr.every(a => !SIM.ACTS[a]?.arbete || (p.skill[SIM.ACTS[a].arbete!] ?? 0) > 0)))],
+      ['byn kan inget som raden inte kan', folk.every(p => Object.keys(p.tek ?? {}).every(id => r.tek.includes(id)))],
+    ];
+  },
+};
