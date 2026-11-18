@@ -4562,3 +4562,33 @@ SCENARIER.vackthem = {
     ];
   },
 };
+
+SCENARIER.vackthus = {
+  text: 'De gemensamma husen och stationerna i den väckta byn (steg 11.13.6, byggHus i vackt.ts): varje station och möbel som någon i byn kan bygga står färdig, den billigaste först, tills materialet i dem är en del av radens rikedom (VACKT.stationer). En station som står inne har ett hus, och en fattigare by har färre stationer',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const r = vl.rader!.filter(q => q.sort === 'by' && SIM.lever(vl, q)).sort((a, b) => b.tal.folk - a.tal.folk)[0];
+    r.tal.folk = 24; r.tek = Object.values(SIM.TEK).filter(t => t.niva <= 3).map(t => t.id); r.tal.rikedom = 3000;
+    const kostnad = (b: SIM.State) => SIM.stationerOf(b).reduce((a, t) => a + Object.entries(SIM.stationDef(t.k)!.av).reduce((n, [m, c]) => n + c * SIM.grundvarde(m), 0), 0);
+    const b = SIM.vackBy(s, r.nr)!;
+    SIM.useMap(b);
+    const st = SIM.stationerOf(b), rutor = new Map<number, number>();
+    let krock = 0;
+    for (const t of st) { const { w, h } = SIM.storlek(t.k, t.rot); for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) { const i = y * b.W! + x; if (rutor.has(i) && !SIM.stationDef(t.k)?.golv) krock++; rutor.set(i, t.id); } }
+    const inne = st.filter(t => SIM.stationDef(t.k)?.inne), kanAlla = st.every(t => b.people.some(p => SIM.stationDef(t.k)!.tek.some(k => SIM.knows(p, k))));
+    const kr = kostnad(b), rik = st.length;
+    SIM.useMap(s);
+    r.tal.rikedom = 100;
+    const c = SIM.vackBy(s, r.nr)!;
+    SIM.useMap(c); const fattig = SIM.stationerOf(c).length, krc = kostnad(c); SIM.useMap(s);
+    return [
+      ['stationerna står färdiga (' + st.length + ': ' + [...new Set(st.map(t => t.k))].join(', ') + ')', st.length > 0 && st.every(t => SIM.isKlar(t) && t.klar !== undefined)],
+      ['någon i byn kan bygga varje station', kanAlla],
+      ['materialet i dem ryms i rikedomen (' + Math.round(kr) + ' av ' + Math.round(3000 * SIM.VACKT.stationer) + ')', kr <= 3000 * SIM.VACKT.stationer],
+      ['inga två stationer på samma ruta', krock === 0],
+      ['de som står inne står under tak (' + inne.length + ')', inne.every(t => { SIM.useMap(b); const ok = SIM.roofed(b, t.x, t.y); SIM.useMap(s); return ok; })],
+      ['en fattigare by har färre stationer (' + fattig + ' mot ' + rik + ')', fattig < rik && krc <= 100 * SIM.VACKT.stationer],
+      ['alla har ändå en sovplats under tak', (() => { SIM.useMap(b); const ok = b.people.every(p => SIM.bedFor(b, p)); SIM.useMap(s); return ok; })()],
+    ];
+  },
+};

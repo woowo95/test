@@ -4,7 +4,12 @@
 // samma rad alltid ger samma by. Den väckta byn går sedan i samma slag som huvudbyn (s.vackta, steg 11.13.1)
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, familjOf, living, newPerson, startSkills } from './folk';
-import { HUS, homeless } from './byggnader';
+import { BYGGNADER, Fn, HUS, homeless } from './byggnader';
+import { delarIRad, fyllPlatser, STATIONER, StationDef, StationSlag, stationSite, storlek } from './stationer';
+import { knows } from './teknik';
+import { nyKvalitet } from './kvalitet';
+import { nyEld } from './brasor';
+import { grundvarde } from './varde';
 import { planeraHus } from './byggplan';
 import { bitsOf, housesOf, Hus, MATERIAL, touch } from './byggnad';
 import { workOn } from './bygg';
@@ -36,6 +41,7 @@ export const VACKT = balans('vackt', {
   aldreFran: 50, aldreTill: 72, // den ensammas ålder
   kunskap: 0.7, // chansen att en vuxen kan en teknik på nivå 1; varje nivå högre gånger detta igen (steg 11.13.4)
   lar: 6, larVuxen: 20, // åldern då man börjar kunna tekniker och då man kan dem som en vuxen
+  stationer: 0.4, // stationerna och möblerna kostar högst så stor del av radens rikedom, i grundvärdet av materialet (steg 11.13.6)
 });
 
 // en byggare lägger en del av byn på plats: b = den väckta byn, s = huvudbyn, r = raden
@@ -43,7 +49,8 @@ export interface Byggare { namn: string; bygg: (b: State, s: State, r: VarldRad)
 export const BYGGARE: Byggare[] = [
   { namn: 'folket', bygg: (b, _s, r) => byggFolk(b, r) }, // radens antal, med åldrar, kön och släkt
   { namn: 'kunskapen', bygg: (b, _s, r) => byggKunskap(b, r) }, // radens tekniker spridda på folket (steg 11.13.4)
-  { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll (steg 11.13.5)
+  { namn: 'husen', bygg: (b, _s, r) => byggHus(b, r) }, // de gemensamma husen, stationerna och möblerna (steg 11.13.6)
+  { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll runt det som redan står (steg 11.13.5)
 ];
 
 // byns frö: ur huvudbyns frö och radens nummer, så att samma rad alltid får samma karta
@@ -142,9 +149,62 @@ export function byggHem(b: State) {
     const h = planeraHus(b, 'familjehus', { v: 1, plats: folk.length, ag: o.id });
     if (h) byggFardigt(b, h);
   }
-  for (let n = 0; n < 20 && homeless(b) > 0; n++) {
-    const h = planeraHus(b, 'sovsal', { v: 1, plats: homeless(b) });
+  sovsalar(b);
+}
+// sovsalar tills alla har en sovplats under tak, och familjehus som byggs ut när familjen inte ryms (BYGGNADER.familjehus)
+function sovsalar(b: State) {
+  if (!b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) return;
+  for (let n = 0; n < 20; n++) {
+    const f = BYGGNADER.familjehus.akut(b), u = homeless(b);
+    const h = f.v > 0 && f.hus !== undefined ? planeraHus(b, 'familjehus', f) : u > 0 ? planeraHus(b, 'sovsal', { v: 1, plats: u }) : undefined;
     if (!h) break;
     byggFardigt(b, h);
   }
+}
+
+// de gemensamma husen och stationerna: varje station och möbel som någon i byn kan bygga står där en gång, den billigaste först,
+// tills materialet i dem är VACKT.stationer av radens rikedom. En station som står inne och inte får plats i något hus får en
+// verkstad, som när byn bygger själv (BYGGNADER.verkstad). Sedan byggs de gemensamma hus som byn vill ha efter det som står
+// (samlingshuset när scenen finns), med samma behov som i en by som bygger själv. Hemmen byggs efter, runt det som redan står. Det någon äger (kistor, pynt, bäddar),
+// djurens stationer och trons möbler hör till senare byggare
+const GEMENSAMMA: Fn[] = ['samling', 'torkhus', 'vedbod'];
+const kostnad = (d: StationDef) => Object.entries(d.av).reduce((a, [m, n]) => a + n * grundvarde(m), 0);
+const gemensam = (d: StationDef) => !d.tro && !d.brasa && !d.vrak && !d.hage && !d.fahus && !d.sover && !d.golv && !d.pynt && !d.enda && !d.forvar?.privat;
+export function byggHus(b: State, r: VarldRad) {
+  let kvar = r.tal.rikedom * VACKT.stationer;
+  const slag = (Object.keys(STATIONER) as StationSlag[]).filter(k => gemensam(STATIONER[k])).sort((a, c) => kostnad(STATIONER[a]) - kostnad(STATIONER[c]) || (a < c ? -1 : 1));
+  for (const k of slag) {
+    const d: StationDef = STATIONER[k], kr = kostnad(d);
+    const p = b.people.filter(q => d.tek.some(t => knows(q, t))).sort((a, c) => a.id - c.id)[0];
+    if (!p || kr > kvar) continue;
+    let at = stationSite(b, k, p);
+    if (!at && d.inne && b.people.some(q => (q.tek?.timmervagg ?? 0) >= 1)) { // en verkstad åt den
+      const { w, h } = storlek(k), hus = planeraHus(b, 'verkstad', { v: HUS.verkstadAkut, plats: w * (h + 1) + HUS.verkstadExtra });
+      if (hus) { byggFardigt(b, hus); at = stationSite(b, k, p); }
+    }
+    if (!at) continue;
+    stallStation(b, p, k, at);
+    kvar -= kr;
+  }
+  for (const fn of GEMENSAMMA) {
+    const a = BYGGNADER[fn].akut(b);
+    if (a.v <= 0) continue;
+    const h = planeraHus(b, fn, a);
+    if (h) byggFardigt(b, h);
+  }
+  fyllPlatser(b);
+}
+// stationen står färdig på platsen at, byggd av p: som när den byggs i byn (startStation och finishStation i stationer.ts)
+function stallStation(b: State, p: Person, k: StationSlag, at: { x: number; y: number; rot?: 1 }) {
+  const d: StationDef = STATIONER[k];
+  const t: State['stationer'] extends (infer U)[] | undefined ? U : never = { id: b.nextStation = (b.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: 0, klar: b.now };
+  if (at.rot) t.rot = 1;
+  if ('inne' in at) t.inne = 1;
+  const delar = delarIRad(k, at.x, at.y, at.rot); if (delar) t.delar = delar;
+  if (d.agd) t.ag = p.id;
+  (b.stationer ??= []).push(t);
+  if (d.hard) { nyEld(b, t); const f = (b.eldar ?? []).find(q => q.id === t.id); if (f) { f.hearth = 'hard'; f.ring = undefined; } }
+  if (d.mobel) nyKvalitet(b, p, t, 0, d.namn.toLowerCase());
+  b.byggV = (b.byggV ?? 0) + 1;
+  touch(b);
 }
