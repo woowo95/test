@@ -35,5 +35,7 @@ export const SKRIFT = balans('skrift', {
   // usel och en slarvig skrift får ett fel när den skrivs, och felet: värdet gånger felOver eller felUnder (lika ofta)
   nar: [0.3, 0.6, 1, 1, 1, 1], felChans: [0.5, 0.25], felOver: 2, felUnder: 0.5,
   lag: 0.8, // lusten att skriva ner en lag, gånger andelen oskrivna, hur nära taket byn är och påbudet (steg 10.6.10)
+  // kartan (steg 11.7.1): lusten att rita ett fullt blad, platserna på ett blad, läsvikten och säkerheten läsaren får (gånger kvaliteten)
+  karta: 0.5, kartMax: 6, lasKarta: 1, kartaC: 0.8,
   ljusMin: 0.3, // i mindre ljus än så här varken skrivs eller läses det
 });

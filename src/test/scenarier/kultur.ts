@@ -1930,7 +1930,7 @@ SCENARIER.skriftkvalitet = {
     const hb = SIM.newTing(s, 'blad', 1, p.id);
     hb.skrift = { slag: 'kunskap', av: { id: p.id, namn: p.name }, t: s.now, titel: 'Om garvning', text: '', tek: 'garvning', q: 0 };
     SIM.placeTools(s);
-    let m = 0; while (SIM.lasNytta(r2, hb.skrift) > 0 && m < 100) { las(r2, hb.id); m++; }
+    let m = 0; while (SIM.lasNytta(s, r2, hb.skrift) > 0 && m < 100) { las(r2, hb.id); m++; }
     const del = r2.tek?.garvning ?? 0;
     return [
       [`en usel skrift ger lärdomen med lägre säkerhet än en fin (${cU.toFixed(2)} mot ${cF.toFixed(2)})`, cU > 0 && cU < cF && Math.abs(cU - lar.c * SKRIFT.nar[0]!) < 1e-9],

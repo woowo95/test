@@ -1422,7 +1422,7 @@ function skrift(s: State, p: Person, v: Val, at: { x: number; y: number }, annan
   if (w <= 0) return false;
   const r = rnd(s, 'val', p) * (w + annan);
   if (r >= w) return false;
-  if (sk && r < sk.w) { const pl = skrivPlats(s, p, at); set(v, 'skriva', sk.why); v.spot = pl.spot; v.dur = pl.dur; } // vid en ledig skrivpulpet, annars för hand där hen är (steg 10.6.11)
+  if (sk && r < sk.w) { const pl = skrivPlats(s, p, at, sk.slag); set(v, 'skriva', sk.why); v.spot = pl.spot; v.dur = pl.dur; } // vid en ledig skrivpulpet, annars för hand där hen är (steg 10.6.11)
   else { set(v, 'lasa', la!.why); v.spot = la!.spot; v.ref = la!.ref; v.dur = SKRIFT.lasMin * MIN; }
   return true;
 }

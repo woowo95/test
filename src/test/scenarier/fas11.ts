@@ -3162,3 +3162,46 @@ SCENARIER.sandebud = {
     ];
   },
 };
+
+SCENARIER.kartblad = {
+  text: 'Kartan (steg 11.7.1): den som minns platser i världen som ingen skrift i byn bär ritar dem på ett blad (1 pergament och 1 dos bläck, 4 minuter, högst sex platser, högst känd), och den som läser kartan (2 minuter) känner sedan platserna, med ritaren som källa',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const v = SIM.living(s).filter(r => !r.gast && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q] = v as [SIM.Person, SIM.Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    s.ting = SIM.tingOf(s).filter(t => !t.skrift && !t.delar);
+    const nr = hb.grannar!.slice(0, 2).map(g => g.nr);
+    const t0 = s.now - SIM.DAY; SIM.larOrt(s, p, nr[0]!, SIM.O_BESOKT, 1, { t: t0 });
+    SIM.larOrt(s, p, nr[1]!, SIM.O_KANT, 0.8);
+    p.skill.berattande = 15;
+    while (SIM.lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const at = { x: p.x, y: p.y };
+    SIM.setAmount(s, 'pergament', 2);
+    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
+    const lust = SIM.skrivLust(s, p), val = SIM.skrivVal(s, p, at);
+    const tid = SIM.skrivPlats(s, p, at, 'karta').dur / SIM.skrivPlats(s, p, at).dur;
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+    SIM.skrivKlar(s, p);
+    SIM.placeTools(s);
+    const blad = SIM.tingOf(s).find(t => t.k === 'blad' && t.skrift?.slag === 'karta');
+    const pl = blad?.skrift?.platser ?? [];
+    const igen = SIM.skrivLust(s, p);
+    const vill = SIM.lasVal(s, q);
+    const fore = nr.map(n => SIM.kannerOrt(s, q, n));
+    SIM.lasKlar(s, q, { act: 'lasa', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: blad?.id });
+    const efter = nr.map(n => SIM.findL(q, 'ort', n));
+    const nytta = blad?.skrift ? SIM.lasNytta(s, q, blad.skrift) : 1;
+    const rad = SIM.skriftLista(s).find(r => r.id === `ting-${blad?.id}`);
+    return [
+      [`den som minns två platser som ingen skrift bär vill rita en karta (${lust?.slag ?? 'inget'}: ${val?.why ?? 'vill inte'})`, lust?.slag === 'karta' && val?.why === 'Vill rita en karta'],
+      [`en karta tar 4 minuter mot 3 för ett annat blad (${tid.toFixed(2)} gånger så lång tid)`, Math.abs(tid - 4 / 3) < 1e-9],
+      [`kartan blev ett blad med ${pl.length} platser, högst kända (${blad?.skrift?.titel ?? 'ingen'}), och 1 blad och 1 bläck gick åt`, pl.length === 2 && pl.every(x => x.v <= SIM.O_KANT) && SIM.amountOf(s, 'pergament') === 1 && SIM.vatskaAv(s, 'black') === 1 && blad?.agare === p.id],
+      ['uppgifternas tid står kvar på kartan', pl.find(x => x.nr === nr[0])?.t === t0],
+      [`platserna som en skrift redan bär ritas inte igen (${igen?.slag ?? 'ingen lust'})`, igen?.slag !== 'karta'],
+      [`en annan vill läsa kartan (${vill?.why ?? 'vill inte'}) och känner sedan platserna (${fore.join(',')} → ${efter.map(l => l?.v).join(',')}, källa ${efter[0]?.src === p.id ? 'ritaren' : efter[0]?.src})`, !!vill && fore.every(x => x === undefined) && efter.every(l => l?.v === SIM.O_KANT && l.src === p.id)],
+      [`den som läst den har inget mer att hämta (${nytta})`, nytta === 0],
+      [`kartan står bland skrifterna med kartans symbol (${rad?.ikon ?? 'ingen'})`, rad?.ikon === 'karta'],
+    ];
+  },
+};

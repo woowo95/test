@@ -719,3 +719,67 @@
     ]),
   ] });
 })();
+
+// fas 11: kartbladet (steg 11.7.1). En karta är ett blad pergament med platser i världen som ritaren känner: en sjö, en stig och
+// märken där byarna ligger. Symbolen står i listan över skrifterna i krönikan och på bladet i förrådet. I spelet är den nu
+// platshållaren karta. Visad som en knapp i panelen.
+(() => {
+  const L = { k: 'kol0', w: 'ben3', W: 'ben2', b: 'skiffer2', B: 'skiffer1', j: 'jord1', r: 'rost1', g: 'oliv2' };
+  const fyll = (B, w, h, f, i) => { const c = B.P.i(f, i); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, c); };
+  const KNAPP = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
+    fyll(B, 24, 24, 'kol', 1); const ram = B.P.i('kol', 2);
+    for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
+    ritaSprite(B, rader, L, 4, 4);
+  } });
+  VAL.push({ id: 'f11_kartblad', namn: 'Kartbladet', typ: 'tre', slag: ['symbol'], vad: 'Steg 11.7.1: den som minns platser i världen ritar dem på ett blad pergament, högst sex platser, och den som läser kartan känner sedan platserna. Symbolen står i listan över skrifterna och på bladet i förrådet. Bilden visar den som en knapp i panelen.', versioner: [
+    KNAPP('Ett platt blad med det övre högra hörnet vikt, och på bladet en sjö, en slingrande stig, en dunge och tre röda kryss där platserna ligger.', [
+      '................',
+      '.kkkkkkkkkkkk...',
+      '.kwwwwwwwwwwWk..',
+      '.kwwbbbwwwwwWWk.',
+      '.kwbbBbbwwwkkkk.',
+      '.kwwbbbwwwwwwwk.',
+      '.kwwwwwjwwwgwwk.',
+      '.kwwwwjwwwgggwk.',
+      '.kwwwjwwwwwgwwk.',
+      '.kwwjwwwwwwwwwk.',
+      '.kwwjjwwwwrwrwk.',
+      '.kwwwwjjjwwrwwk.',
+      '.kwwwwwwwjrwrwk.',
+      '.kWwwwwwwwwwwWk.',
+      '.kkkkkkkkkkkkkk.',
+    ]),
+    KNAPP('En halvt utrullad karta: bladet rullat runt en stav i var ände, och mellan rullarna en sjö, en skog, en stig och en röd prick.', [
+      '',
+      '',
+      '.kkk........kkk.',
+      'kWwWkkkkkkkkWwWk',
+      'kWwWwwwwbbbwWwWk',
+      'kWwWwgwwbBbwWwWk',
+      'kWwWgggwwbwwWwWk',
+      'kWwWwgwjwwwwWwWk',
+      'kWwWwwjwjwwwWwWk',
+      'kWwWwjwwwjwrWwWk',
+      'kWwWwrwwwwjwWwWk',
+      'kWwWwwwwwwwwWwWk',
+      'kWwWkkkkkkkkWwWk',
+      '.kkk........kkk.',
+    ]),
+    KNAPP('Ett blad vikt i tre delar, där mittdelen ligger lite lägre och i skugga, och en stig som går över vecken mellan tre röda märken.', [
+      '',
+      '',
+      '.kkkkkk....kkkk.',
+      '.kwwwwwkkkkwwwk.',
+      '.kwrwwwWWbbwwwk.',
+      '.kwwjwwWbbbbwwk.',
+      '.kwwwjwWWbbwrwk.',
+      '.kwwwjjWWWWjwwk.',
+      '.kwwwwwjjWjwwwk.',
+      '.kwgwwwWWjWwwwk.',
+      '.kgggwwWWWjwrwk.',
+      '.kwgwwwWWWWwwwk.',
+      '.kwwwwwkkkkwwwk.',
+      '.kkkkkk....kkkk.',
+    ]),
+  ] });
+})();

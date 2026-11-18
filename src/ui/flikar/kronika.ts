@@ -61,7 +61,7 @@ function skriftHtml() {
     const d = STADIER.find(x => x.id === r.stadium)!, oppen = val.skrift === r.id;
     const plats = r.x !== undefined ? `<button type="button" class="lank" data-kplats="${r.x},${r.y}" title="Visa platsen på kartan">${esc(r.plats)}</button>` : esc(r.plats);
     const text = !oppen ? '' : `<div class="skrifttext">${r.runor ? `<p class="runor">${esc(r.runor)}</p>` : ''}<p>${esc(r.text)}</p>${r.delar?.length ? `<ol class="bokdelar">${r.delar.map(k => `<li>${kvMark(k) ?? ''}<b>${esc(k.titel)}</b>: ${esc(k.text)}</li>`).join('')}</ol>` : ''}</div>`;
-    return `<li class="skriftrad"><button type="button" class="falla" data-kskrift="${r.id}" aria-expanded="${oppen}" title="${esc(r.titel)}">${tecknet(d.ikon, d.tecken, 16)}${kvMark(r) ?? ''} ${esc(r.titel)}</button> <span class="muted small">${plats}</span>${text}</li>`;
+    return `<li class="skriftrad"><button type="button" class="falla" data-kskrift="${r.id}" aria-expanded="${oppen}" title="${esc(r.titel)}">${tecknet(r.ikon ?? d.ikon, d.tecken, 16)}${kvMark(r) ?? ''} ${esc(r.titel)}</button> <span class="muted small">${plats}</span>${text}</li>`;
   };
   return `<div class="pdelar kstad" role="toolbar" aria-label="Stadium">${knappar}</div><h4 class="kar">Skrifter i byn</h4>${lista.length ? `<ul class="skriftlista">${lista.map(rad).join('')}</ul>` : '<p class="muted">Inga skrifter här än.</p>'}`;
 }
