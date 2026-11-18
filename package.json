@@ -37,7 +37,8 @@
     "texter": "tsx src/test/texter.ts",
     "utseende": "tsx src/test/utseende.ts",
     "svavar": "tsx src/test/svavar.ts",
-    "radhandel": "tsx src/test/radhandel.ts"
+    "radhandel": "tsx src/test/radhandel.ts",
+    "radanfall": "tsx src/test/radanfall.ts"
   },
   "repository": {
     "type": "git",

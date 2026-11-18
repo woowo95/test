@@ -25,7 +25,7 @@ import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
 import { trampaFard, sallskapTyngd } from './leder';
 import { vagRutor } from './vagval';
-import { anfallUtfall, BYANFALL, flockStorlek, vinstChans } from './radanfall';
+import { anfallUtfall, BYANFALL, flockStorlek, forsvarare, vinstChans } from './radanfall';
 import { varldHandelse } from './varldkronika';
 import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, handlarFram, handlarKrok, kgOf } from './handel';
 
@@ -349,6 +349,7 @@ KOHANDELSER.fardHem = (_s, vl, p) => {
 function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRad) {
   if (!BYSORTER[mot.sort].folk || mot.tal.folk <= 0) return; // byn finns inte längre: flocken går hem
   const u = anfallUtfall(r, mot, f.anfall!, i => varldSlump(vl, r.nr, f.id, 0x414e + i), enhet);
+  count(s, 'radanfall_med', f.anfall! + forsvarare(mot)); // alla som var med, för andelen döda (steg 11.6.19)
   const dra = (x: VarldRad, n: number) => { x.tal.folk = Math.max(0, x.tal.folk - n); x.tal.styrka = Math.max(0, Math.min(x.tal.styrka, x.tal.folk) - n); };
   dra(r, u.dodaA); dra(mot, u.dodaF);
   f.anfall! -= u.dodaA;

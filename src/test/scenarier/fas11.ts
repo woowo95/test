@@ -2835,11 +2835,11 @@ SCENARIER.radanfall = {
       [`chansen följer antal och utrustning (${f2(p)} med ${n} mot 10, ${f2(pLika)} lika många, ${f2(pFattig)} fattigt och ${f2(pRik)} rikt utrustade), och skyddet gör lika många svagare`, p > pLika && pRik > pFattig && pLika < 0.5],
       ['en för svag by anfaller inte', svag === 0],
       [`byn plundrar inte en vän (${f2(van)}), men en aggressiv ledare plundrar en svagare granne den ser ner på (${f2(ovan)})`, van < 0 && ovan > 0],
-      [`flocken kommer fram: ${dodaA} anfallare och ${dodaF} försvarare dog, ${tagit} saker togs, allt i hela tal`, hela && dodaA + dodaF > 0 && (tagit > 0) === (f.byte !== undefined && tagit > 0)],
+      [`flocken kommer fram: ${dodaA} anfallare och ${dodaF} försvarare dog, ${tagit} saker togs, allt i hela tal`, hela && (tagit > 0) === (f.byte !== undefined && tagit > 0)],
       [`försvararnas syn på anfallarna sjunker (${rel0} → ${rel1})`, rel1 < rel0],
       ['bytet tas ur försvararnas förråd och läggs hemma när flocken kommer hem', hem],
       ['världens krönika får en räd', kron],
-      [`många anfall: ${vinst} av 200 vunna, förlorarna dör mer (${dA} anfallare, ${dF} försvarare)`, vinst > 0 && vinst < 200],
+      [`många anfall: ${vinst} av 200 vunna, några dör (${dA} anfallare, ${dF} försvarare)`, vinst > 0 && vinst < 200 && dA + dF > 0],
     ];
   },
 };
@@ -2910,9 +2910,9 @@ SCENARIER.utpost = {
     const up = u && SIM.byPlats(vl, u.nr), gick = !!u && u.tal.folk === SIM.UTPOST.folk && r.tal.folk === folk0 - SIM.UTPOST.folk;
     const kron = (vl.kronika ?? []).some(h => h.k === 'utpost' && h.by === r.nr && h.mot === u?.nr);
     // brytningen: flintan går till moderbyns förråd tills fyndplatsen är tom
-    const sten0 = SIM.radHar(r, 'sten'), n0 = Math.floor(s.now / 3600e3);
+    const sten0 = SIM.radHar(r, 'sten'), b0 = s.stat?.utpost_brutet ?? 0, n0 = Math.floor(s.now / 3600e3);
     for (let n = 0; n < 24 * 6 && u && u.tal.folk > 0; n++) SIM.utpostTimme(s, vl, u, n0 + n);
-    const sten1 = SIM.radHar(r, 'sten'), fick = Math.round((sten1 - sten0) / SIM.grundvarde('flinta'));
+    const fick = (s.stat?.utpost_brutet ?? 0) - b0, okade = SIM.radHar(r, 'sten') > sten0;
     const tom = !!u && u.tal.folk === 0 && !(vl.platser ?? []).includes(f!) && !(up && (vl.platser ?? []).includes(up));
     const hemKo = (vl.ko ?? []).find(k => k.typ === 'hemTill' && k.data?.fran === u?.nr);
     if (hemKo) SIM.KOHANDELSER.hemTill(s, vl, hemKo);
@@ -2944,7 +2944,7 @@ SCENARIER.utpost = {
     return [
       [`en utpost vid flinta lönar sig (${f2s(vinst)} per dygn), vid lera inte (${f2s(leraVinst)})`, vinst > 0 && leraVinst < 0],
       [`byn skickar ${SIM.UTPOST.folk} till utposten ${up ? 'på ' + SIM.MARK_IDS[v.mark[up.y * v.w + up.x]] : '(ingen)'}, och krönikan får det`, gick && !!up && kron],
-      [`flintan går till moderbyn (${fick} av 12) tills fyndplatsen är tom; då överges utposten och platserna försvinner`, fick === 12 && tom],
+      [`flintan går till moderbyn (${fick} av 12) tills fyndplatsen är tom; då överges utposten och platserna försvinner`, fick === 12 && okade && tom],
       ['folket i utposten går hem', hemma],
       ['när moderbyn är borta överges utposten och folket går till en by intill', moderBorta],
       [`en by med överskott (${Math.round(ov)}) slår upp ett handelsläger och bär dit ${Math.round(bar)} i redskap`, !!h && h.sort === 'handelslager' && !!hp && bar > 0 && hemRed < red0],

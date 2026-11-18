@@ -4,7 +4,8 @@
 // utrustningen, och chansen att vinna är den egna kraften i kvadrat delad med båda sidornas (ju fler, desto mer avgör antalet).
 // Utfallet är hela döda på båda sidor (förlorarna förlorar mer) och, när anfallarna vinner, hela saker som de överlevande bär
 // hem: en del av det försvararna har, högst det de orkar bära. Slumpen är världens, så att det blir lika i det levande läget och
-// ikappräkningen. Talen ställs mot striderna i testbyarna i steg 11.6.19. Vem som anfaller och varför står i BYHANDLINGAR
+// ikappräkningen. Talen är ställda mot striderna i testbyarna (steg 11.6.19, npm run radanfall och npm run strid): där dör
+// knappt en av hundra som är med när rövare kommer, och den som är fler vinner nästan alltid. Vem som anfaller och varför står i BYHANDLINGAR
 // (plundringen i byhandling.ts); det här är bara uträkningen.
 import { balans } from './balans';
 import { RAD, tekTillskott } from './rad';
@@ -18,8 +19,8 @@ export const BYANFALL = balans('byanfall', {
   hemma: 1.5, // försvararnas skydd: de slåss hemma, vid husen och med det de har till hands
   rikVikt: 0.3, // utrustningen ur rikedomen: så mycket mer per RAD.rikPer per person ...
   rikTak: 1, // ... högst så många RAD.rikPer
-  dod: 0.3, // så stor del av förlorarna dör
-  dodVinnare: 0.08, // så stor del av vinnarna dör
+  dod: 0.03, // så stor del av förlorarna dör (de flesta flyr eller skadas, som i testbyarnas strider med rövare)
+  dodVinnare: 0.005, // så stor del av vinnarna dör
   bar: 10, // så mycket (i grundvärde) bär varje överlevande anfallare hem
   byte: 0.3, // högst så stor del av försvararnas förråd i varje grupp tas
 });

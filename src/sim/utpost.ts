@@ -133,7 +133,7 @@ export function utpostTimme(s: State, vl: Varlden, u: VarldRad, n: number) {
   const m = Math.min(inne[sak], antalUr(u.tal.folk * UTPOST.perDygn / 24, varldSlump(vl, u.nr, n, A.bryt)));
   if (m <= 0) return;
   inne[sak] -= m;
-  laggTillRad(moder, tillGrupp(sak), m * grundvarde(sak));
+  laggTillRad(moder, tillGrupp(sak), Math.round(m * grundvarde(sak))); // hela värden (radens tal är hela)
   count(s, 'utpost_brutet', m);
   if (inne[sak] <= 0 && innehall(kalla) <= 0) { taBortPlats(vl, kalla); overge(s, vl, u, t); }
 }
