@@ -3385,3 +3385,46 @@ SCENARIER.kartbok = {
     ];
   },
 };
+
+SCENARIER.bybok = {
+  text: 'Boken om en by (steg 11.7.7): den som besökt en by skriver om den i en bok, med folket, ledaren och tron från den tid hen var där; den som läser boken känner byn och får uppgifterna från den tiden, och den som redan har nyare uppgifter har ingen nytta av den',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const v = SIM.living(s).filter(r => !r.gast && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q, r2] = v as [SIM.Person, SIM.Person, SIM.Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    s.ting = SIM.tingOf(s).filter(t => !t.skrift && !t.delar && t.k !== 'bok');
+    const byar = hb.grannar!.map(g => g.nr).filter(n => SIM.varldPlatsNr(vl, n)?.k === 'by');
+    const [a, b] = byar as [number, number];
+    const t1 = s.now - SIM.DAY;
+    SIM.larOrt(s, p, a, SIM.O_BESOKT, 1, { t: t1 });
+    p.skill.berattande = 15;
+    while (SIM.lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const at = { x: p.x, y: p.y };
+    SIM.setAmount(s, 'pergament', 0);
+    // en bok om en annan by finns redan, så att boken har en ledig del av slaget byn
+    const bok = SIM.newTing(s, 'bok', 1, p.id);
+    bok.delar = [{ slag: 'byn', av: { id: r2.id, namn: r2.name }, t: s.now, titel: 'Boken om grannen', text: '', q: SIM.NORMAL, platser: [{ nr: b ?? hb.nr, v: SIM.O_KANT, t: s.now }] }];
+    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
+    SIM.placeTools(s);
+    const val = SIM.skrivVal(s, p, at);
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+    SIM.skrivKlar(s, p);
+    const del = bok.delar[1], titel = SIM.bokTitel(bok), igen = SIM.skrivLust(s, p);
+    // läsaren har ett gammalt rykte om byn
+    SIM.larOrt(s, q, a, SIM.O_RYKTE, 0.5, { t: t1 - 5 * SIM.DAY });
+    if (b !== undefined) SIM.larOrt(s, q, b, SIM.O_KANT, 1, { t: s.now }); // den andra delen vet hen redan
+    const nytta = SIM.lasNytta(s, q, del!);
+    SIM.lasKlar(s, q, { act: 'lasa', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: bok.id });
+    const lq = SIM.findL(q, 'ort', a);
+    // den som har nyare uppgifter
+    SIM.larOrt(s, r2, a, SIM.O_KANT, 1, { t: s.now });
+    const nyare = SIM.lasNytta(s, r2, del!);
+    return [
+      [`hen skriver om byn hen besökt i bokens lediga del (${val?.why ?? 'ingen lust'}): "${del?.titel ?? ''}": ${del?.text ?? ''}`, del?.slag === 'byn' && del.platser?.[0]?.nr === a && del.platser[0].t === t1 && /invånare/.test(del.text)],
+      [`boken med två byar heter "${titel}", och hen skriver inte samma bok igen`, titel === 'Boken om byarna' && igen?.slag !== 'byn'],
+      [`läsaren med ett gammalt rykte har nytta av boken (${nytta}) och känner sedan byn med uppgifterna från besöket (nivå ${lq?.v}, tid ${lq?.t === t1 ? 'besökets' : lq?.t})`, nytta > 0 && lq?.v === SIM.O_KANT && lq.t === t1],
+      [`den som har nyare uppgifter har ingen nytta av boken (${nyare})`, nyare === 0],
+    ];
+  },
+};
