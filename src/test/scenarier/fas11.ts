@@ -4013,3 +4013,36 @@ SCENARIER.silvergruva = {
     ];
   },
 };
+
+SCENARIER.talt = {
+  text: 'Tältet (steg 11.11.1): saken tält sys vid slöjdbänken av skinn, grenar och rep och rymmer fyra; tälten packas när resan har en natt på vägen, nattens tapp av ork gäller bara dem som inte ryms i tälten, och byn vill ha så många tält som dess största sällskap med en natt behövde det senaste året',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
+    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q)).slice(0, 5);
+    const sl = SIM.nyttSallskap(s, vuxna[0]!, mal, 'handel')!;
+    for (const q of vuxna.slice(1)) SIM.foljMed(vl, sl, q);
+    // en kall natt
+    let natt = 0;
+    for (let d = 1; d < 60 && !natt; d++) { const t = (Math.floor(s.now / SIM.DAY) + d) * SIM.DAY + 3 * SIM.HOUR; if (SIM.temperature(s, t) < SIM.RESA.koldFran - 6) natt = t; }
+    sl.pack = {}; const utan = SIM.nattTapp(s, sl, natt);
+    sl.pack = { talt: 1 }; const ett = SIM.nattTapp(s, sl, natt);
+    sl.pack = { talt: 2 }; const tva = SIM.nattTapp(s, sl, natt);
+    sl.pack = {};
+    const vill0 = SIM.taltVill(s);
+    SIM.setAmount(s, 'talt', 2);
+    const pb = SIM.packbehov(s, sl)!;
+    const atta = new Date(s.now); atta.setHours(8, 0, 0, 0);
+    const dag = SIM.harNatt(atta.getTime(), 2 / 24), lang = SIM.harNatt(atta.getTime(), 0.6);
+    SIM.setAmount(s, 'brod', 60);
+    const ok = SIM.borjaPacka(s, sl);
+    const r = SIM.RECEPT.talt;
+    return [
+      [`tältet sys vid slöjdbänken av 4 skinn, 4 grenar och 2 rep på 5 minuter och väger 10`, r.av.skinn === 4 && r.av.grenar === 4 && r.av.rep === 2 && r.min === 5 && SIM.viktOf('talt') === 10 && SIM.STATIONER.flatarbank.gor.includes('sy_talt')],
+      [`samma natt i köld kostar mindre ork med tält (${utan.toFixed(3)} utan, ${ett.toFixed(3)} med ett, ${tva.toFixed(3)} med två)`, utan > 0 && ett < utan && tva === 0],
+      [`fem resenärer med ett tält tappar en femtedel (${(ett / utan).toFixed(2)})`, Math.abs(ett / utan - 0.2) < 1e-9],
+      [`två tält packas för fem när byn har två (${pb.talt} av ${pb.taltBehov})`, pb.talt === 2 && pb.taltBehov === 2 && ok && (sl.pack.talt ?? 0) === 2],
+      [`en resa på två timmar mitt på dagen har ingen natt och får inget tält, en på drygt ett halvt dygn har det (${dag}, ${lang})`, !dag && lang],
+      [`en by som aldrig rest vill ha noll tält, och efter resan två (${vill0} → ${SIM.taltVill(s)})`, vill0 === 0 && SIM.taltVill(s) === 2],
+    ];
+  },
+};

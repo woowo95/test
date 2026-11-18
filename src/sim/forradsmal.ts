@@ -270,7 +270,13 @@ const redskapBuffert = (s: State, g: string) => Math.ceil((s.forbruk?.['@' + g] 
 // hur många byn vill ha av gruppen g: de som används och de som går åt (bara när byn vill ha något av gruppen)
 export const villAv = (s: State, g: string) => { const n = REDSKAPMAL[g](s); return n > 0 ? n + redskapBuffert(s, g) : 0; };
 // hur många byn vill ha av det tillverkade (tillverka.ts): materialen efter förbrukningen, det andra efter radens tal
-export const tillverkVill = (s: State, d: TillverkDef) => arMaterial(d.ger) ? villHaAv(s, d.ger) : d.vill;
+export const tillverkVill = (s: State, d: TillverkDef) => arMaterial(d.ger) ? villHaAv(s, d.ger) : TILLVERKVILL[d.ger]?.(s) ?? d.vill;
+// det tillverkade vars antal räknas ur byn och inte är ett fast tal i TILLVERKA
+const TILLVERKVILL: Record<string, (s: State) => number> = {
+  talt: taltVill, // tälten: så många som byns största sällskap med en natt på vägen behövde det senaste året (steg 11.11.1)
+};
+// tälten byn vill ha: det största behovet bland resorna med en natt som packats det senaste året (ett dygn)
+export function taltVill(s: State) { let n = 0; for (const [t, m] of s.taltBehov ?? []) if (t > s.now - DAY) n = Math.max(n, m); return n; }
 // en station av sorten k: bufferten är en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5): en per den som sover
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)

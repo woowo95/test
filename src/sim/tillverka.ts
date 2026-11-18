@@ -41,6 +41,7 @@ export const TILLVERKA: Record<string, TillverkDef> = {
   vava_ull: { act: 'vava_ull', ger: 'ylle', n: 1, av: RECEPT.ylle.av!, min: RECEPT.ylle.min, tek: 'vavstol', vill: 6, text: 'Väver ylletyg.', forsta: '{namn} vävde byns första ylletyg.' },
   koka_rokelse: { act: 'koka_rokelse', ger: 'rokelse', n: 1, av: RECEPT.rokelse.av!, min: RECEPT.rokelse.min, tek: 'ortkok', vill: 2, text: 'Kokar rökelse till tron.', forsta: '{namn} kokade byns första rökelse.' }, koka_olja: { act: 'koka_olja', ger: 'brannolja', n: 1, av: RECEPT.brannolja.av!, min: RECEPT.brannolja.min, tek: 'ortkok', vill: 2, text: 'Kokar brännolja till lamporna.', forsta: '{namn} kokade byns första brännolja.' },
   gor_pilar: { act: 'gor_pilar', ger: 'pilar', n: 4, av: RECEPT.pilar.av!, min: RECEPT.pilar.min, tek: 'bage', vill: 12, text: 'Gör pilar av ved och flinta.', forsta: '{namn} gjorde byns första pilar.' }, // steg 8.7.6
+  sy_talt: { act: 'sy_talt', ger: 'talt', n: 1, av: RECEPT.talt.av!, min: RECEPT.talt.min, tek: 'talt', vill: 0, text: 'Syr ett tält av skinn till resorna.', forsta: '{namn} sydde byns första tält. Nu kan resenärerna sova under tak.' }, // steg 11.11.1: så många som byn vill ha (taltVill)
   gor_leksak: { act: 'gor_leksak', ger: 'leksak', n: 1, av: RECEPT.leksak.av!, min: RECEPT.leksak.min, tek: 'leksak', vill: 3, text: 'Täljer en leksak till barnen.', forsta: '{namn} täljde byns första leksak.' },
 };
 export const TILLVERKA_LIST = Object.keys(TILLVERKA);

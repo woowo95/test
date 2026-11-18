@@ -138,6 +138,8 @@ export const TEKNIK: Tek[] = [
   // vattensäcken (steg 2.10.1): sys av skinn som kläderna. Man kommer på den när man ger vatten åt den som inte kan gå
   { id: 'fackla', namn: 'Fackla', text: 'En käpp som klyvs i toppen, med torrt gräs och talg i klykan.', effekt: 'Den som går ut i mörkret tänder en fackla vid elden och ser vart den går.',
     omr: ['jakt', 'hantverk'], krav: ['slaktbank'], niva: 3, tid: 4 },
+  { id: 'talt', namn: 'Tält', text: 'Fyra skinn sydda ihop och spända över grenar, bundna med rep.', effekt: 'På resorna sover fyra under tältet en natt i regn, snö och köld och tappar ingen ork.',
+    omr: ['hantverk'], krav: ['skinnklader', 'ryggsack'], niva: 6, tid: 6, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man syr ett tält som håller vinden ute' }, episk: 'Vinden slet tältet av grenarna natt efter natt. Men {namn} sydde och spände om det tills det stod, och {hen} sov torr i regnet.' }, // steg 11.11.1
   { id: 'vattensack', namn: 'Vattensäck', text: 'Ett skinn som sys ihop till en säck och knyts med rep.', effekt: 'Man kan bära vatten till den som inte kan gå till vattnet.',
     omr: ['hantverk', 'dricka', 'varda'], krav: ['skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man syr en säck som håller vatten' }, episk: 'Vattnet rann ut genom varje söm {namn} sydde. Men till sist höll säcken tätt, och {hen} bar vatten utan att spilla en droppe.' },
   // bältet (steg 2.3.3): kommer man på när man bär hem både redskap och börda, ganska tidigt
