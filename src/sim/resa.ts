@@ -45,7 +45,7 @@ import { SEC } from './typer';
 import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
-import { avslutaUppdrag, kravPassar, ruinRad, taRuin, uppdragDef, uppdragNr, uppdragVid } from './uppdrag';
+import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid } from './uppdrag';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -552,6 +552,8 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
   dagbok(s, sl, 'fram', `Kom fram till ${plats.namn}.`, t);
   if (sl.skal === 'uppdrag') uppdragFram(s, sl, t);
+  const ruin = ruinRad(vl, sl.mal);
+  if (ruin) for (const p of folk) saFynd(s, vl, p, ruin, sl.mal, t); // de som sett ruinen minns det som finns kvar (steg 11.8.8)
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   const k = r.syn;
   if (sl.skal === 'sandebud') budFram(s, sl, r, t);

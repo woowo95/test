@@ -171,6 +171,16 @@ export function uppdragVid(s: State, p: Person, nr: number): { id: number; varde
   }
   return bast;
 }
+// ---------- fyndet berättas (steg 11.8.8) ----------
+// Ett fynd (det som finns kvar i en ruin) är ingen utlyst post, men den som sett det minns det som ett uppdrag med numret
+// fyndId(platsen): det trodda värdet av det som finns kvar, platsen och när hen såg det. Det berättas och väger som mål för en
+// resa som ett utlyst uppdrag. Den som ser att det är tomt minns det (värdet 0) och berättar det också.
+export const fyndId = (nr: number) => -(nr + 1);
+export function saFynd(s: State, vl: Varlden, p: Person, r: VarldRad, nr: number, t: number) {
+  const v = Math.round(Object.entries(ruinKvar(vl, r, t)).reduce((a, [k, n]) => a + n * grundvarde(k), 0));
+  const l = larUppdrag(s, p, fyndId(nr), 1, { t, v, mal: nr, k: 'ruinskatt' });
+  l.v = v; l.t = t; l.c = 1; l.src = undefined; l.led = 0;
+}
 export const tilltro = (s: State, l: Lardom) => l.c * 0.5 ** (Math.max(0, s.now - l.t) / (UPPDRAGTAL.tilltro * DAY));
 export function berattaUppdrag(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
@@ -185,7 +195,8 @@ UPPDRAGKROK.beratta = (s, a, b, l, r) => berattaUppdrag(s, a, b, l, r);
 UPPDRAGKROK.describe = (s, l) => describeUppdrag(s, l);
 export function describeUppdrag(s: State, l: Lardom) {
   const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = vl && l.g !== undefined ? varldPlatsNr(vl, l.g) : undefined;
-  const what = u ? `${uppdragDef(u.k).namn}${q ? ` vid ${q.namn}` : ''}` : 'Ett uppdrag';
+  const k = (u?.k ?? l.om) as UppdragId | undefined, def = k && UPPDRAG[k] ? uppdragDef(k) : undefined;
+  const what = def ? `${def.namn}${q ? ` vid ${q.namn}` : ''}${l.a < 0 ? (l.v > 0 ? `, värt ${l.v}` : ', tomt') : ''}` : 'Ett uppdrag';
   const src = l.src === undefined ? 'hörde det själv' : `hört av ${byId(s, l.src)?.name ?? 'någon'}`;
   const tt = tilltro(s, l), sure = tt >= 0.6 ? 'tror på det' : tt >= 0.25 ? 'tror kanske på det' : 'tvivlar';
   return { text: what, what, place: q?.namn ?? 'okänd plats', src, sure, wrong: '' };

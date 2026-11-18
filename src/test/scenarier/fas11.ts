@@ -3609,3 +3609,33 @@ SCENARIER.uppdragminne = {
     ];
   },
 };
+
+SCENARIER.fyndprat = {
+  text: 'Fyndet berättas (steg 11.8.8): den som sett en ruin minns det som finns kvar som ett uppdrag (fyndId), berättar det hemma, och fyndet blir ett resmål för andra; den som tömt den minns att den är tom',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const r = vl.rader!.filter(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].folk).sort((a, b) => b.tal.rikedom - a.tal.rikedom)[0]!;
+    SIM.undergang(s, vl, r, s.now);
+    const nr = SIM.byPlats(vl, r.nr)!.nr;
+    const vuxna = s.people.filter(x => SIM.alive(x) && !x.gast && SIM.ageOf(x, s.now) >= 18).sort((a, b) => SIM.stat(b, 'mod', s.now) - SIM.stat(a, 'mod', s.now));
+    const [a, b] = vuxna;
+    for (const p of [a, b]) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    // a har sett ruinen (en resa för att se platsen)
+    const sl = SIM.nyttSallskap(s, a, nr, 'se')!;
+    SIM.radBesok(s, sl, s.now);
+    const la = SIM.findL(a, 'uppdrag', SIM.fyndId(nr));
+    SIM.berattaUppdrag(s, a, b, la!, { chem: 0, op: 40, rom: 0, talks: 0, flags: 0 });
+    const lb = SIM.findL(b, 'uppdrag', SIM.fyndId(nr)), cb = lb?.c ?? 0, ca = la?.c ?? 0, va = la?.v ?? 0;
+    SIM.larOrt(s, b, nr, SIM.O_KANT, 1);
+    const plan = SIM.resaPlan(s, b, 99, 99);
+    const sl2 = plan && SIM.samlaResa(s, b, plan);
+    if (sl2) SIM.radBesok(s, sl2, s.now + SIM.HOUR);
+    const efter = SIM.findL(b, 'uppdrag', SIM.fyndId(nr));
+    return [
+      [`${a.name} såg ruinen och minns det som finns kvar (${la ? SIM.describe(s, la).text : 'inget'})`, !!la && la.v > 0],
+      [`${a.name} berättar för ${b.name}, som tror mindre (${cb.toFixed(2)})`, !!lb && cb < ca],
+      [`för ${b.name} blir ruinen ett resmål (${plan ? `${plan.skal} till ${plan.namn}` : 'ingen resa'})`, plan?.skal === 'uppdrag' && plan.mal === nr],
+      [`${b.name}s sällskap tar det som finns kvar (${sl2?.utfall?.hur}) och minns sedan att det är tomt eller nästan (${efter?.v ?? '–'} mot ${va})`, sl2?.utfall?.hur === 'klart' && (efter?.v ?? 1e9) < va],
+    ];
+  },
+};
