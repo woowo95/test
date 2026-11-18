@@ -3860,3 +3860,25 @@ SCENARIER.turne = {
     ];
   },
 };
+
+SCENARIER.kartrecept = {
+  text: 'Kartreceptet (steg 11.9.1, kartrecept.ts): registret KARTRECEPT, där receptet by ger exakt den karta byarna alltid haft och världsrutans marksort flyttar trösklarna (MARKTROSKEL), så att en by i bergen får mer sten, en by på myren mer vatten och en by i den täta skogen mer skog; receptet plats ger en liten karta utan byplats',
+  kor: () => {
+    const lage = { w: 64, h: 40, ox: 0, oy: 0, w0: 64, h0: 40 }; // testbyarnas kartstorlek, som när kontrollsummorna räknades
+    const sum = (k: SIM.KartData) => createHash('sha1').update(Buffer.from(k.tiles)).update(JSON.stringify([k.fire, k.stock])).digest('hex').slice(0, 16);
+    const forut: Record<number, string> = { 1: 'afcb435de58f706a', 1511: 'a90e44e88d817325', 4634: '9d279923336ae5e7' };
+    const lika = Object.entries(forut).filter(([f, h]) => sum(SIM.skapaKarta(+f, 'by', undefined, lage)) === h).length;
+    const fron = [1, 2, 3, 5, 8, 13, 21, 34], T = SIM.T;
+    const mer = (a: SIM.MarkId, t: SIM.T) => fron.filter(f => SIM.kartAndel(SIM.skapaKarta(f, 'by', a, lage), t) > SIM.kartAndel(SIM.skapaKarta(f, 'by', 'slatt', lage), t)).length;
+    const berg = mer('berg', T.Sten), myr = mer('myr', T.Vatten), tat = mer('tat', T.Skog);
+    const pl = SIM.skapaKarta(7, 'plats', 'skog'), r = SIM.KARTRECEPT.plats;
+    const land = 1 - SIM.kartAndel(pl, T.Vatten);
+    return [
+      [`receptet by utan marksort ger exakt dagens karta (${lika} av 3 frön)`, lika === 3],
+      [`en by i bergen har mer sten än på slätten (${berg} av ${fron.length} frön)`, berg === fron.length],
+      [`en by på myren har mer vatten (${myr} av ${fron.length})`, myr === fron.length],
+      [`en by i den täta skogen har mer skog (${tat} av ${fron.length})`, tat === fron.length],
+      [`receptet plats ger en liten karta, ${pl.w} × ${pl.h} rutor, mest land (${Math.round(land * 100)} %)`, pl.w === r.bredd && pl.h === r.hojd && land > 0.5],
+    ];
+  },
+};
