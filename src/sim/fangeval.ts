@@ -52,7 +52,7 @@ export const FANGERADER = {
     p.gast!.losen = { t: s.now + Math.max(1, Math.ceil(slump(s, p, 1) * FANGEVAL.losenDygn * 24)) * DAY / 24, till: s.now + (FANGEVAL.losenDygn + 1) * DAY };
     count(s, 'fange_losen_begard');
   } },
-  slapps: { namn: 'Släpps', tecken: '🕊️', lage: -1, bas: 0, kan: () => true, gor: (s, p) => {
+  slapps: { namn: 'Släpps', tecken: '🚪', lage: -1, bas: 0, kan: () => true, gor: (s, p) => {
     const h = hemby(s, p); if (h) klanHandelse(s.varld, h.k, 'slappt');
     slapps(s, p); count(s, 'fange_slappt_ledare');
     skriv(s, p, `${ledarText(s)} släppte ${p.name}, och ${p.sex === 'k' ? 'hon' : 'han'} går hem.`);
