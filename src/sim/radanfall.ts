@@ -29,8 +29,8 @@ export const BYANFALL = balans('byanfall', {
 export const anfallUtr = (r: VarldRad) => 1 + tekTillskott(r, 'styrka') + Math.min(BYANFALL.rikTak, r.tal.rikedom / Math.max(1, r.tal.folk) / RAD.rikPer) * BYANFALL.rikVikt;
 // försvararna: de som kan slåss
 export const forsvarare = (r: VarldRad) => Math.max(0, Math.min(r.tal.folk, Math.round(r.tal.styrka)));
-// så många skickar byn r i ett anfall, 0 om den är för svag
-export const flockStorlek = (r: VarldRad) => { const n = Math.floor(Math.min(r.tal.folk, r.tal.styrka) * BYANFALL.skicka); return n >= BYANFALL.minst ? n : 0; };
+// så många skickar byn r i ett anfall, 0 om den är för svag; ute = de som redan är ute i ett anfall (steg 11.6.20)
+export const flockStorlek = (r: VarldRad, ute = 0) => { const n = Math.floor(Math.min(r.tal.folk, r.tal.styrka) * BYANFALL.skicka) - ute; return n >= BYANFALL.minst ? n : 0; };
 // chansen att n anfallare från a vinner mot f
 export function vinstChans(a: VarldRad, f: VarldRad, n: number): number {
   const ka = n * anfallUtr(a), kf = forsvarare(f) * anfallUtr(f) * BYANFALL.hemma;

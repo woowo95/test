@@ -2953,3 +2953,48 @@ SCENARIER.utpost = {
     ];
   },
 };
+
+SCENARIER.varldsanfall = {
+  lang: true,
+  text: 'Anfallet mot huvudbyn ur världen (steg 11.6.20): rövare kommer bara när en by eller ett läger skickar dem; flocken är högst så stor som raden har styrka till, går på världskartan, kommer in på huvudbyns karta, och de döda och det de bär hem skrivs tillbaka till byn som skickade den',
+  kor: () => {
+    // en granne med en klan skickar en flock till huvudbyn
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, h = SIM.huvudRad(s)!;
+    s.rovare = undefined; s.rovareFler = undefined;
+    const flockar = (q: SIM.State): SIM.Rovarflock[] => [q.rovare, ...(q.rovareFler ?? [])].filter((x): x is SIM.Rovarflock => !!x);
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.syn && SIM.byPlats(vl, x.nr)?.grannar?.some(g => g.nr === SIM.byPlats(vl, vl.huvud!)?.nr))!;
+    r.tal.folk = 40; r.tal.styrka = 20;
+    const c = SIM.byCtx(s, vl, r, h);
+    c.rel = -80; c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), aggression: 19 }; c.krig = 1;
+    const sty = h.tal.styrka; h.tal.styrka = 2; const pSvag = SIM.BYHANDLINGAR.plundra.poang(c); h.tal.styrka = 40; const pStark = SIM.BYHANDLINGAR.plundra.poang(c); h.tal.styrka = sty;
+    const n0 = SIM.flockStorlek(r);
+    const u = SIM.cloneState(s); u.varld!.farder = []; u.varld!.ko = (u.varld!.ko ?? []).filter(q => q.typ !== 'fardFram'); const r0 = u.stat?.rovarflockar ?? 0;
+    for (const x of u.varld!.rader ?? []) if (x.nr !== u.varld!.huvud) x.tal.styrka = 0; // ingen by orkar skicka någon
+    kor(u, 24); const kom = (u.stat?.rovarflockar ?? 0) - r0;
+    SIM.BYHANDLINGAR.plundra.gor(c);
+    const f = vl.farder!.find(x => x.fran === r.nr && x.anfall)!;
+    const syns = !!f && SIM.fardLage(vl, f, (f.t0 + f.t1) / 2, vl.mark.w) !== undefined;
+    const n1 = SIM.flockStorlek(r, SIM.anfallUte(vl, r.nr));
+    // flocken kommer fram och går in på kartan
+    s.now = Math.max(s.now, f.t1);
+    SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!);
+    const fl = flockar(s).find(x => x?.fard === f.id);
+    const folk0 = r.tal.folk, n = f.anfall!, inne = fl?.folk.length;
+    korTills(s, () => !flockar(s).some(x => x?.fard === f.id), 3 * 86400);
+    const hemN = fl?.hemN ?? 0, doda = n - hemN, borta = !flockar(s).some(x => x?.fard === f.id);
+    const hemBar = Object.values(fl?.hemBar ?? {}).reduce((a, x) => a + x, 0), iFard = (f.hem ?? []).reduce((a, x) => a + x.n, 0);
+    const rik0 = SIM.radRikedomUr(r);
+    const hemPost = vl.ko!.find(q => q.typ === 'fardHem' && q.sak === f.id);
+    if (hemPost) SIM.KOHANDELSER.fardHem(s, vl, hemPost);
+    const rik1 = SIM.radRikedomUr(r);
+    return [
+      [`rövarna kommer bara när världen skickar dem: ${kom} flockar på ett dygn utan färder`, kom === 0],
+      [`huvudbyn lockar mer när den är svagt försvarad (poängen ${pSvag.toFixed(2)} mot ${pStark.toFixed(2)})`, pSvag > pStark],
+      [`flocken är högst så stor som byns styrka räcker till (${f?.anfall} av ${n0}), och de som är ute kan inte gå igen (${n1} kvar)`, !!f && f.anfall! <= n0 && n1 < n0],
+      ['flocken syns på världskartan på vägen', syns],
+      [`flocken kommer in på huvudbyns karta med lika många (${inne} av ${n}) från byns klan`, !!fl && inne === n && fl.klan === r.syn!.id],
+      [`flocken lämnar kartan (${borta ? 'ja' : 'nej'}): ${doda} döda dras ur byn (${folk0} → ${r.tal.folk})`, borta && r.tal.folk === folk0 - doda],
+      [`det de bar kommer hem (${hemBar} saker buret, ${iFard} i färden${hemPost ? `, rikedomen ${rik0} → ${rik1}` : ''})`, hemBar === iFard && (!iFard || (!!hemPost && rik1 >= rik0))],
+    ];
+  },
+};

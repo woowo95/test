@@ -1,15 +1,15 @@
 // Räderna från grannklanerna (system 8.8), som bygger på rövarflocken (rovare.ts). En räd är en flock från en klan byn känner, med ett skäl: plundra,
 // personlig hämnd eller heligt krig. Registret SKAL har en rad per skäl: när det gäller (`galler`), vikten i lottningen och vad flocken gör efter segern.
 // Talen står i balansregistret RADER. Dörrarna mot anfallare (system 8.9) står här också.
-import { DAY, MIN, Person, State, W } from './typer';
+import { MIN, Person, State, W } from './typer';
 import { balans } from './balans';
 import { chance, clamp, rnd } from './slump';
 import { ALDER, ageOf, alive, byId, count, isKin, living, log, paKartan } from './folk';
 import { kronika } from './historik';
 import { notis } from './notiser';
-import { Klan, klanById, klanerOf, narhet } from './klaner';
+import { Klan, klanById } from './klaner';
 import { rikedom } from './varde';
-import { Rovarflock, forsvaret, rovarnaKommer } from './rovare';
+import { Rovarflock, rovarnaKommer } from './rovare';
 import { gastAv } from './gast';
 import { vanhelgaPlats } from './kultlatt';
 import { andlighet, troNamn, troende } from './religion';
@@ -28,11 +28,7 @@ import { tand } from './brand';
 import { bynsNamn } from './bynamn';
 
 export const RADER = balans('rader', {
-  forsvar: 0.2, // lockelsen är rikedomen minus så här stor del av försvaret
-  chans: 0.01, // chansen per dygn, för varje lockPer i lockelse och för varje klan som har ett skäl
-  lockPer: 500, // lockelsen som ger chansen ovan
-  skyddDygn: 3, // chansen efter en räd stiger igen med den här tidskonstanten (ingen fast vila)
-  per: 150, // en anfallare för varje så här mycket i rikedom
+  per: 150, // scenariernas räd: en anfallare för varje så här mycket i rikedom
   viktPlundra: 1, viktHamnd: 0.2, viktHeligt: 0.1, // skälet lottas med vikter
   ifarten: 0.7, // chansen per sekund att den som flyr griper en sak hen passerar (steg 10.2.15: per tid, inte per steg)
   anhorig: 0.7, // chansen att en till tre av anfallarna i en hämndräd är anhöriga till den döde
@@ -48,7 +44,6 @@ export const RADER = balans('rader', {
   tandaMin: 30, tandaChans: 0.2, tandaInst: -60, // att tända ett hus (steg 8.9.3): tid, chans och hur illa klanen ska tycka om byn
 });
 export type RadSkal = 'plundra' | 'hamnd' | 'heligt';
-const lockelse = (s: State) => rikedom(s) - RADER.forsvar * forsvaret(s);
 const perPerson = (s: State) => rikedom(s) / Math.max(1, living(s).length);
 const klanPerPerson = (k: Klan) => k.resurser * 50 / Math.max(1, k.folk);
 // skälen (registret). galler = skälet gäller för klanen (steg 8.8.2, 8.8.4, 8.8.6)
@@ -57,32 +52,28 @@ const SKAL: Record<RadSkal, { vikt(): number; galler(s: State, k: Klan): boolean
   hamnd: { vikt: () => RADER.viktHamnd, galler: (s, k) => !!k.doda?.some(d => { const m = byId(s, d.av); return m && alive(m); }) },
   heligt: { vikt: () => RADER.viktHeligt, galler: (_s, k) => (k.krigisk ?? 0) > RADER.krigiskFran },
 };
-// en spridning kring 1 där det dubbla är ovanligt och det tredubbla sällsynt
-const spridning = (s: State) => { const r = rnd(s, 'rovare'); return r < 0.04 ? 3 : r < 0.15 ? 2 : r < 0.3 ? 0.5 : 0.7 + rnd(s, 'rovare') * 0.6; };
-// en gång per dygn (från rovarSteg)
-export function radDygn(s: State, tvingaSkal?: RadSkal, tvingaKlan?: Klan) {
-  const lock = lockelse(s);
-  if (!tvingaSkal && s.rovare) return; // en flock i taget; chansen växer med lockelsen (rikedomen minus försvaret, steg 10.2.45)
-  for (const k of tvingaKlan ? [tvingaKlan] : klanerOf(s)) {
-    const skal = (Object.keys(SKAL) as RadSkal[]).filter(q => SKAL[q].galler(s, k));
-    if (!skal.length && !tvingaSkal) continue;
-    const skydd = k.radT === undefined ? 1 : 1 - Math.exp(-(s.now - k.radT) / (RADER.skyddDygn * DAY));
-    if (!tvingaSkal && rnd(s, 'rovare') >= RADER.chans * lock / RADER.lockPer * skydd * narhet(k)) continue; // en by långt bort kommer mer sällan
-    const tot = skal.reduce((a, q) => a + SKAL[q].vikt(), 0); let x = rnd(s, 'rovare') * tot, val = skal[0] ?? 'plundra';
-    for (const q of skal) { x -= SKAL[q].vikt(); if (x <= 0) { val = q; break; } }
-    val = tvingaSkal ?? val;
-    const n = clamp(Math.round(rikedom(s) / RADER.per * spridning(s)), 2, Math.max(2, k.styrka));
-    const forra = s.rovare;
-    rovarnaKommer(s, n, false, k.id);
-    const f = forra ? s.rovareFler![s.rovareFler!.length - 1] : s.rovare!; // fanns redan en flock väntar den nya bland flockarna (steg 8.7.18)
-    f.skal = val; f.rad = true; k.radT = s.now;
-    if (val === 'hamnd') hamndForbered(s, f, k);
-    count(s, 'rad'); count(s, 'rad_' + val);
-    const text = { plundra: `${k.namn} kommer för att plundra ${bynsNamn(s)}.`, // grannklanen säger byns namn (steg 10.9.5)
-      hamnd: `${k.namn} kommer för att hämnas.`, heligt: `${k.namn} kommer i sin guds namn.` }[val];
-    log(s, text, 'world'); notis(s, 'anfall', text, []);
-    return;
-  }
+// en flock från klanen k kommer till byn (steg 11.6.20: världens plundring skickar den, byhandling.ts; scenarierna med tvingaSkal):
+// n anfallare, och skälet lottas bland dem som gäller för klanen (plundring när inget annat gäller)
+export function radKommer(s: State, k: Klan | undefined, n: number, tvingaSkal?: RadSkal): Rovarflock {
+  const skal = k ? (Object.keys(SKAL) as RadSkal[]).filter(q => SKAL[q].galler(s, k)) : [];
+  const tot = skal.reduce((a, q) => a + SKAL[q].vikt(), 0); let x = rnd(s, 'rovare') * tot, val: RadSkal = skal[0] ?? 'plundra';
+  for (const q of skal) { x -= SKAL[q].vikt(); if (x <= 0) { val = q; break; } }
+  val = tvingaSkal ?? val;
+  const forra = s.rovare;
+  rovarnaKommer(s, n, false, k?.id ?? -1);
+  const f = forra ? s.rovareFler![s.rovareFler!.length - 1] : s.rovare!; // fanns redan en flock väntar den nya bland flockarna (steg 8.7.18)
+  if (!k) return f;
+  f.skal = val; f.rad = true; k.radT = s.now;
+  if (val === 'hamnd') hamndForbered(s, f, k);
+  count(s, 'rad'); count(s, 'rad_' + val);
+  const text = { plundra: `${k.namn} kommer för att plundra ${bynsNamn(s)}.`, // grannklanen säger byns namn (steg 10.9.5)
+    hamnd: `${k.namn} kommer för att hämnas.`, heligt: `${k.namn} kommer i sin guds namn.` }[val];
+  log(s, text, 'world'); notis(s, 'anfall', text, []);
+  return f;
+}
+// scenarierna: en räd med skälet skal från klanen k, så stor som byns rikedom drar
+export function radDygn(s: State, skal: RadSkal, k: Klan) {
+  radKommer(s, k, clamp(Math.round(rikedom(s) / RADER.per), 2, Math.max(2, k.styrka)), skal);
 }
 // personlig hämnd (steg 8.8.4): klanen minns sina döda med namn, och en till tre av anfallarna är anhöriga, med högst mod
 function hamndForbered(s: State, f: Rovarflock, k: Klan) {

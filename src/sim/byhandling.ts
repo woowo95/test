@@ -27,6 +27,8 @@ import { trampaFard, sallskapTyngd } from './leder';
 import { vagRutor } from './vagval';
 import { anfallUtfall, BYANFALL, flockStorlek, forsvarare, vinstChans } from './radanfall';
 import { varldHandelse } from './varldkronika';
+import { flockKrok } from './rovare';
+import { radKommer } from './rader';
 import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, handlarFram, handlarKrok, kgOf } from './handel';
 
 export const BYHANDLING = balans('byhandling', {
@@ -100,7 +102,7 @@ export const BYHANDLINGAR = {
   plundra: {
     namn: 'Plundring',
     poang: c => {
-      const n = c.r.nr === c.vl.huvud || c.mot.nr === c.vl.huvud ? 0 : flockStorlek(c.r);
+      const n = c.r.nr === c.vl.huvud ? 0 : flockStorlek(c.r, anfallUte(c.vl, c.r.nr)); // också mot huvudbyn: då kommer flocken som rövare (steg 11.6.20)
       if (!n || restid(c.vl, c.r, c.mot) === undefined) return -1;
       const fejd = clamp((-c.rel - BYHANDLING.plundraRel) / BYHANDLING.plundraFull, 0, 1);
       const svalt = c.rel < BYHANDLING.plundraVan ? clamp(1 - c.r.tal.mat / Math.max(1, radVill(c.r, 'mat', rikMal(c.r))), 0, 1) : 0;
@@ -110,7 +112,7 @@ export const BYHANDLINGAR = {
       return vilja * (p * byte - doda * BYHANDLING.dodVarde) / BYHANDLING.skala - BYHANDLING.plundraKostnad;
     },
     gor: c => {
-      const n = flockStorlek(c.r), dygn = restid(c.vl, c.r, c.mot);
+      const n = flockStorlek(c.r, anfallUte(c.vl, c.r.nr)), dygn = restid(c.vl, c.r, c.mot);
       if (!n || dygn === undefined) return;
       const f: RadFard = { id: c.vl.nastaFard = (c.vl.nastaFard ?? 0) + 1, fran: c.r.nr, till: c.mot.nr, g: 'mat', n: 0, anfall: n, t0: c.t, t1: c.t + dygn * DAY };
       (c.vl.farder ??= []).push(f);
@@ -175,6 +177,8 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
 export interface RadFard { gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+// så många ur byn nr är ute i ett anfall (de kan inte gå med i ett till)
+export const anfallUte = (vl: Varlden, nr: number) => (vl.farder ?? []).reduce((a, f) => a + (f.anfall && f.fran === nr ? f.anfall : 0), 0);
 const enhet = (g: VarugruppId) => g === 'mat' ? BYHANDLING.portion : 1; // en enhet i gruppens tillgång, i grundvärde
 const overskott = (r: VarldRad, g: VarugruppId) => Math.floor(radHar(r, g) - radVill(r, g, rikMal(r)));
 const restid = (vl: Varlden, r: VarldRad, mot: VarldRad) => {
@@ -311,7 +315,8 @@ KOHANDELSER.fardFram = (s, vl, p) => {
   const r = radNr(vl, f.fran), mot = radNr(vl, f.till);
   if (f.handlare) { handlarFram(s, f.fran); return; } // handlaren väntar vid kartans kant och går in när det är fritt (handel.ts)
   f.t2 = f.t1 + (f.t1 - f.t0);
-  if (f.anfall) { if (r && mot) anfallFram(s, vl, f, r, mot); }
+  if (f.anfall && mot?.nr === vl.huvud) { if (r) { huvudAnfall(s, f, r); return; } } // flocken går in på huvudbyns karta och kommer hem när den lämnat den
+  else if (f.anfall) { if (r && mot) anfallFram(s, vl, f, r, mot); }
   else if (f.gava && mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) { // gåvan läggs i förrådet och mottagaren ser bättre på givaren
     laggTill(mot, f.g, f.n);
     if (r) byHandelse(vl, 'gava', r.nr, mot.nr, gavaRel(f.n * enhet(f.g)) / BYREL.gava);
@@ -360,6 +365,29 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
   varldHandelse(vl, 'rad', f.t1, { by: r.nr, mot: mot.nr });
   count(s, 'radanfall_fram'); if (u.vann) count(s, 'radanfall_vann'); count(s, 'radanfall_doda', u.dodaA + u.dodaF);
 }
+// flocken kommer till huvudbyn (steg 11.6.20): rövarna går in från kanten mot byn som skickade dem, så många som flocken är,
+// och skälet kommer ur klanens syn på huvudbyn (rader.ts). Färden väntar tills flocken lämnat kartan (flockKrok.slut)
+function huvudAnfall(s: State, f: RadFard, r: VarldRad) {
+  const fl = radKommer(s, r.syn, f.anfall!);
+  fl.fard = f.id;
+  count(s, 'varldsanfall');
+}
+// flocken är borta från huvudbyns karta: de som inte kom hem är döda, och det de bar går hem till byn
+flockKrok.slut = (s, fl) => {
+  const vl = s.varld, f = vl?.farder?.find(x => x.id === fl.fard), r = f && radNr(vl!, f.fran);
+  if (!vl || !f) return;
+  const hem = fl.hemN ?? 0, doda = Math.max(0, f.anfall! - hem);
+  if (r) { r.tal.folk = Math.max(0, r.tal.folk - doda); r.tal.styrka = Math.max(0, Math.min(r.tal.styrka, r.tal.folk) - doda); }
+  count(s, 'varldsanfall_doda', doda);
+  f.anfall = hem;
+  f.hem = Object.entries(fl.hemBar ?? {}).filter(([k, n]) => k in SAKER && n > 0).map(([k, n]) => ({ k: k as HVara['k'], n }));
+  if (r && f.hem.length) varldHandelse(vl, 'rad', s.now, { by: r.nr, mot: vl.huvud });
+  if (!hem) { vl.farder = vl.farder!.filter(x => x !== f); return; }
+  const dygn = f.t1 - f.t0;
+  f.t0 = s.now - dygn; f.t1 = s.now; f.t2 = s.now + dygn;
+  trampaFard(s, f.till, f.fran, sallskapTyngd(hem));
+  laggIKo(vl, f.t2, 'fardHem', { sak: f.id });
+};
 // byns handlare är på väg till huvudbyn, väntar vid kanten eller är där
 const handlarUte = (s: State, nr: number) => !!s.varld?.farder?.some(f => f.handlare && f.fran === nr) || !!s.handlarVantar?.includes(nr);
 // handlaren har gått från huvudbyn (handel.ts): färden hem börjar, lika lång som dit; dog hen kommer färden aldrig hem
