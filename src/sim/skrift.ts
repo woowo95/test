@@ -270,10 +270,10 @@ export const heligaStenar = (s: State, tr: Tro) => (s.runstenar ?? []).filter(r 
 // (2 minuter) när det har något nytt för dem: en lärdom de inte har, eller ett intryck de inte hört; nyttan är noll när de redan
 // vet det, så ingen lista över det lästa behövs
 // tek = handbokens teknik och tro = de heliga kvädenas tro (i boken, steg 10.6.6); ensam = krönikan har sagt att ingen längre kan tekniken
-export interface Skrift { lag?: SkriftLag; slag: SkriftSlag; av: { id: number; namn: string }; t: number; titel: string; text: string; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; ensam?: true; q?: number; fel?: number; platser?: KartPlats[] } // q = kvaliteten (steg 10.6.7), fel = överdriften eller underdriften gånger värdet
+export interface Skrift { lag?: SkriftLag; slag: SkriftSlag; av: { id: number; namn: string }; t: number; titel: string; text: string; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; ensam?: true; q?: number; fel?: number; platser?: KartPlats[]; kid?: number } // kid = kartans nummer, samma i alla avskrifter (steg 11.7.3) // q = kvaliteten (steg 10.6.7), fel = överdriften eller underdriften gånger värdet
 // en plats på kartan (steg 11.7.1): platsens nummer i världen, nivån den ritades med (högst känd) och tiden för uppgifterna
 export interface KartPlats { nr: number; v: number; t: number }
-interface SkrivLust { platser?: KartPlats[]; lag?: SkriftLag; w: number; slag: SkriftSlag; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; bok?: Ting }
+interface SkrivLust { platser?: KartPlats[]; fran?: Skrift; lag?: SkriftLag; w: number; slag: SkriftSlag; om?: { id: number; namn: string }; bev?: Bevis[]; lar?: Lardom; tek?: string; tro?: number; bok?: Ting }
 export const bladen = (s: State) => tingOf(s).filter(t => t.skrift);
 // böckerna (steg 10.6.6): 8 blad mellan 2 plankor, som fylls del för del, högst SKRIFT.bokDelar delar av samma slag (bokens genre)
 export const bockerna = (s: State) => tingOf(s).filter(t => t.k === 'bok');
@@ -349,6 +349,8 @@ export function skrivLust(s: State, p: Person): SkrivLust | undefined {
   if (lg) c.push({ w: lg.w, slag: 'lag', lag: lg.lag });
   const kt = kartLust(s, p);
   if (kt) c.push(kt);
+  const ko = kopiaLust(s);
+  if (ko) c.push(ko);
   const avtar = SKRIFT.avtar ** skrifter(s).filter(k => k.av.id === p.id).length, blad = getable(s, p, 'pergament') >= 1;
   let best: SkrivLust | undefined;
   for (const l of c) {
@@ -372,6 +374,20 @@ function kartLust(s: State, p: Person): SkrivLust | undefined {
   if (!nya.length) return undefined;
   return { w: SKRIFT.karta * nya.length / SKRIFT.kartMax, slag: 'karta', platser: nya.map(l => ({ nr: l.a, v: Math.min(O_KANT, l.v), t: l.t })) };
 }
+// avskriften (steg 11.7.3): den som kommer åt en karta i byn kan skriva av den på SKRIFT.kopiaMin minuter. Lusten är SKRIFT.kopia
+// gånger andelen av ett fullt blad, delat med antalet exemplar som finns av kartan (samma kid), och avskriften får sin egen
+// kvalitet, så att en dålig avskrivare gör fler platser till rykten
+const exemplar = (s: State, kid: number) => skrifter(s).filter(k => k.kid === kid).length;
+function kopiaLust(s: State): SkrivLust | undefined {
+  let best: SkrivLust | undefined;
+  for (const t of tingOf(s)) {
+    const k = t.skrift;
+    if (k?.slag !== 'karta' || !k.platser?.length || t.lass !== undefined || !tingXY(s, t)) continue;
+    const w = SKRIFT.kopia * k.platser.length / SKRIFT.kartMax / (k.kid === undefined ? 1 : exemplar(s, k.kid)); // ett original som ingen skrivit av är ett exemplar
+    if (!best || w > best.w) best = { w, slag: 'karta', platser: k.platser.map(x => ({ ...x })), fran: k.kid === undefined ? { ...k, kid: t.id } : k };
+  }
+  return best;
+}
 // kartans kvalitet (steg 11.7.2): på en usel eller slarvig karta ritas en känd plats som ett rykte med chansen SKRIFT.kartRykte
 // för kvaliteten, slaget en gång när kartan ritas
 export function kartRykten(s: State, p: Person, pl: KartPlats[], q: number): KartPlats[] {
@@ -390,7 +406,7 @@ export function skrivVal(s: State, p: Person, at: { x: number; y: number }) {
   const ljus = skrivLjus(s, at.x, at.y);
   if (ljus < SKRIFT.ljusMin || !harAtt(s)) return undefined;
   const l = skrivLust(s, p);
-  return l && l.w > 0 ? { w: l.w * ljus * SKRIFT.fritid, slag: l.slag, why: l.slag === 'karta' ? 'Vill rita en karta' : l.slag === 'lardom' ? 'Vill skriva ner det hen vet' : l.lag ? `Vill skriva ner lagen ${LAGAR[l.lag.id]!.namn.toLowerCase()}` : l.om ? `Vill skriva om ${l.om.namn}` : 'Vill skriva' } : undefined;
+  return l && l.w > 0 ? { w: l.w * ljus * SKRIFT.fritid, slag: l.slag, min: l.fran ? SKRIFT.kopiaMin : SKRIFTER[l.slag].min ?? SKRIFT.skrivMin, why: l.fran ? 'Vill skriva av en karta' : l.slag === 'karta' ? 'Vill rita en karta' : l.slag === 'lardom' ? 'Vill skriva ner det hen vet' : l.lag ? `Vill skriva ner lagen ${LAGAR[l.lag.id]!.namn.toLowerCase()}` : l.om ? `Vill skriva om ${l.om.namn}` : 'Vill skriva' } : undefined;
 }
 const tingXY = (s: State, t: Ting) => { const q = t.hos !== undefined ? byId(s, t.hos) : undefined; return q ? { x: q.x, y: q.y } : t.x !== undefined ? { x: t.x + 0.5, y: t.y! + 0.5 } : undefined; };
 const kanBev = (q: Person, om: number, b: Bevis) => !!q.intryck?.some(e => e.om === om && e.bev?.some(x => x.h === b.h && x.t === b.t));
@@ -436,14 +452,15 @@ function skriv(s: State, p: Person, l: SkrivLust): { titel: string; text: string
   if (l.slag === 'poesi') return { titel: `Kvädet om ${om}`, text: `Hör om ${om}, som ${vad}.` };
   if (l.slag === 'lag' && l.lag) return { titel: LAGAR[l.lag.id]!.namn, text: lagText(l.lag) };
   if (l.slag === 'kunskap') { const t = TEK[l.tek!]!; return { titel: `Om ${t.namn.toLowerCase()}`, text: `${t.text} ${t.effekt}` }; }
+  if (l.slag === 'karta' && l.fran) return { titel: `${l.fran.titel.replace(/ \(avskrift\)$/, '')} (avskrift)`, text: `${p.name} skrev av ${gen(l.fran.av.namn)} karta: ${l.platser!.map(x => platsNamn(s, x.nr)).join(', ')}.` };
   if (l.slag === 'karta') return { titel: `Kartan över ${kartNamn(s, l.platser!)}`, text: `${p.name} ritade ${l.platser!.map(x => platsNamn(s, x.nr)).join(', ')}.` };
   if (l.slag === 'helig') return { titel: `De heliga kvädena (${om.toLowerCase()})`, text: troOf(s, l.tro!)?.kvade?.text ?? '' };
   return { titel: `Berättelsen om ${om}`, text: `${om} ${vad}.` };
 }
 // var och hur länge hen skriver (steg 10.6.11): vid en ledig skrivpulpet fortare, annars för hand där hen är (at, vid elden)
-export function skrivPlats(s: State, p: Person, at: { x: number; y: number }, slag?: SkriftSlag) {
+export function skrivPlats(s: State, p: Person, at: { x: number; y: number }, min: number = SKRIFT.skrivMin) {
   const st = stationFor(s, 'skriva', p);
-  return { spot: st ? vidStation(st) : at, dur: (slag && SKRIFTER[slag].min || SKRIFT.skrivMin) * MIN / (st ? stationDef(st.k)?.fart?.skriva ?? 1 : 1), st };
+  return { spot: st ? vidStation(st) : at, dur: min * MIN / (st ? stationDef(st.k)?.fart?.skriva ?? 1 : 1), st };
 }
 // när bladet är skrivet: 1 blad pergament och 1 dos bläck går åt, och bladet ligger i förrådet och är skrivarens
 export function skrivKlar(s: State, p: Person) {
@@ -457,12 +474,15 @@ export function skrivKlar(s: State, p: Person) {
   if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, l.lar.k === 'fara' ? MINNE.vMaxFara : l.lar.k === 'vatten' ? 1 : l.lar.k === 'pris' ? Infinity : MINNE.vMax) };
   if (fel && l.lar) tx.text = describe(s, l.lar).text;
   if (l.platser) l.platser = kartRykten(s, p, l.platser, q);
-  const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(l.platser ? { platser: l.platser } : {}) };
+  const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(l.platser ? { platser: l.platser } : {}), ...(l.fran?.kid !== undefined ? { kid: l.fran.kid } : {}) };
   if (l.bok) {
     (l.bok.delar ??= []).push(k); count(s, 'bokdel');
     if (l.bok.delar.length === 1) { const rad = `${p.name} skrev den första delen i en bok: ${tx.titel.toLowerCase()}.`, at = tingXY(s, l.bok); log(s, rad, 'skill', [p.id]); notis(s, 'skrift', rad, [p.id], at ? { x: Math.floor(at.x), y: Math.floor(at.y) } : undefined); kronika(s, rad, 'skrift'); } // steg 10.6.8
   }
-  else { takeMaterial(s, p, 'pergament', 1, true, {}); const t = newTing(s, 'blad', 1, p.id); t.skrift = k; t.av = p.id; t.gjord = s.now; }
+  else {
+    takeMaterial(s, p, 'pergament', 1, true, {}); const t = newTing(s, 'blad', 1, p.id); t.skrift = k; t.av = p.id; t.gjord = s.now;
+    if (l.fran) { const o = tingOf(s).find(x => x.skrift && x.skrift.kid === undefined && x.id === l.fran!.kid); if (o) o.skrift!.kid = o.id; count(s, 'kartKopia'); } // originalet får sitt nummer när det skrivs av första gången
+  }
   count(s, 'skrivet'); count(s, 'skrivet_' + l.slag);
   think(p, `Skrev ${tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1)}`, 0.02, s.now, 6 * HOUR);
   if (forstaGang(s, 'skrivet')) log(s, `${p.name} skrev byns första blad: ${tx.titel.toLowerCase()}.`, 'skill', [p.id]);
