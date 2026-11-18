@@ -12,14 +12,17 @@ import { LandmarkId, varldPlatsNr } from './landmarken';
 import { radNr } from './radtal';
 import { laggTillRad, tillGrupp } from './utpost';
 import { grundvarde } from './varde';
-import { KOHANDELSER, laggIKo } from './varldslag';
+import { KOHANDELSER, antalUr, laggIKo, varldSlump } from './varldslag';
 import { Varlden } from './varlden';
 import { DAY, State } from './typer';
+import { SAKER } from './saker';
+import { VarldRad } from './radtal';
 import { lever } from './rad';
 
 export const UPPDRAGTAL = balans('uppdrag', {
   tid: 5, // ett utlyst uppdrag gäller så många dygn (år i spelet) om inte raden säger annat
   vilseTid: 1, // vilsegången gäller ett dygn: sedan finns inget att leta efter
+  vittra: 0.03, // det i en ruin som inte ruttnar vittrar bort med så stor del per dygn (det som ruttnar: 1 / SAKER.haller per dygn)
 });
 
 // vem som utlyser: en anhörig eller en annan person (ur det hen har över), styret (ur budgetens del för uppdrag), kyrkan (ur
@@ -95,3 +98,31 @@ function aterLamna(s: State, vl: Varlden, u: Utlyst) {
 }
 // tiden är ute
 KOHANDELSER.uppdragSlut = (s, vl, p) => { const u = p.sak !== undefined ? uppdragNr(vl, p.sak) : undefined; if (u) avslutaUppdrag(s, vl, u, false); };
+
+// ---------- ruinskatten (steg 11.8.2) ----------
+// En ruin har det som fanns kvar när byn gick under (VarldRad.kvar, byflytt.ts), i hela saker. Det vittrar per tid: det som
+// ruttnar med 1 / SAKER.haller per dygn, annat med UPPDRAGTAL.vittra. Det som finns kvar vid tiden t räknas ur det som fanns vid
+// kvarT: det väntade antalet (n gånger andelen kvar) avrundat med ett fast slumptal per sak, så att det är samma vid samma tid,
+// aldrig ökar, och inte ändrar något förrän någon tar något (då blir det som är kvar den nya grunden)
+const VITTRA = 21; // ärendet i världens slump
+const vittrarPerDygn = (k: string) => { const h = SAKER[k]?.haller; return h ? 1 / h : UPPDRAGTAL.vittra; };
+export function ruinKvar(vl: Varlden, r: VarldRad, t: number): Record<string, number> {
+  const ut: Record<string, number> = {}, dygn = Math.max(0, t - (r.kvarT ?? r.t)) / DAY;
+  Object.entries(r.kvar ?? {}).forEach(([k, n], i) => { const m = antalUr(n * Math.exp(-vittrarPerDygn(k) * dygn), varldSlump(vl, r.nr, i, VITTRA)); if (m > 0) ut[k] = Math.min(n, m); });
+  return ut;
+}
+export const ruinRad = (vl: Varlden, nr: number) => { const p = varldPlatsNr(vl, nr), r = p?.by !== undefined ? radNr(vl, p.by) : undefined; return p?.k === 'ruin' && r ? r : undefined; };
+// den som når ruinen vid tiden t tar det som finns kvar, högst bar i vikt (viktAv); det som blir kvar är den nya grunden
+export function taRuin(s: State, vl: Varlden, r: VarldRad, t: number, bar: number, viktAv: (k: string) => number): Record<string, number> {
+  const kvar = ruinKvar(vl, r, t), tagit: Record<string, number> = {};
+  let plats = bar;
+  for (const k of Object.keys(kvar).sort((a, b) => grundvarde(b) / Math.max(0.1, viktAv(b)) - grundvarde(a) / Math.max(0.1, viktAv(a)))) {
+    const n = Math.min(kvar[k]!, Math.floor(plats / Math.max(1e-9, viktAv(k))));
+    if (n < 1) continue;
+    tagit[k] = n; kvar[k]! -= n; plats -= n * viktAv(k);
+    if (kvar[k]! <= 0) delete kvar[k];
+  }
+  if (Object.keys(kvar).length) { r.kvar = kvar; r.kvarT = t; } else { delete r.kvar; delete r.kvarT; }
+  if (Object.keys(tagit).length) count(s, 'ruinTagit', Object.values(tagit).reduce((a, n) => a + n, 0));
+  return tagit;
+}

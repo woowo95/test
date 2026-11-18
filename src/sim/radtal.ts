@@ -53,7 +53,7 @@ export interface VarldRad {
   t: number; tal: Record<RadtalId, number>; tek: string[]; tro?: RadTro; ledare?: number; fasta: FastPerson[];
   kalla?: number; // fyndplatsen utposten bryter ur (steg 11.6.18, utpost.ts)
   svalt?: number; // senaste svälten (steg 11.3.2, rad.ts)
-  kvar?: Record<string, number>; // det som finns kvar i en ruin, i hela saker (steg 11.3.8, byflytt.ts)
+  kvar?: Record<string, number>; kvarT?: number; // det som finns kvar i en ruin, i hela saker (steg 11.3.8, byflytt.ts), och när det räknades (vittringen, steg 11.8.2)
   besokt?: number[]; // platserna byns sällskap och handlare besökt (steg 11.4.10, ort.ts)
   hist?: import('./ort').RadBild[]; // byns tal sparade glest, de senaste tätt (steg 11.4.8, ort.ts)
   varor?: Partial<Record<string, number>>; hus?: number; // rikedomen: tillgången per varugrupp utom maten, och husen (steg 11.6.3, priser.ts)

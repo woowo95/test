@@ -3458,3 +3458,29 @@ SCENARIER.uppdrag = {
     ];
   },
 };
+
+SCENARIER.ruinskatt = {
+  text: 'Ruinskatten (steg 11.8.2): en by som gått under lämnar saker i ruinen, i hela saker, som vittrar per tid (det som ruttnar fortare); den som når ruinen tar det som finns kvar, och den som kommer för sent finner mindre eller inget',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const r = vl.rader!.filter(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].folk).sort((a, b) => b.tal.rikedom - a.tal.rikedom)[0]!;
+    const t = s.now;
+    SIM.undergang(s, vl, r, t);
+    const nr = SIM.byPlats(vl, r.nr)!.nr, ruin = SIM.ruinRad(vl, nr)!;
+    const summa = (x: Record<string, number>) => Object.values(x).reduce((a, n) => a + n, 0);
+    const k0 = SIM.ruinKvar(vl, ruin, t), k1 = SIM.ruinKvar(vl, ruin, t + 2 * SIM.DAY), k1b = SIM.ruinKvar(vl, ruin, t + 2 * SIM.DAY), k2 = SIM.ruinKvar(vl, ruin, t + 30 * SIM.DAY);
+    const hela = [k0, k1, k2].every(x => Object.values(x).every(n => Number.isInteger(n)));
+    // den första tar det hen kan bära, den som kommer senare finner det som är kvar
+    const forst = SIM.taRuin(s, vl, ruin, t + SIM.DAY, 20, SIM.viktOf);
+    const kvarSen = SIM.ruinKvar(vl, ruin, t + 3 * SIM.DAY);
+    const sen = SIM.taRuin(s, vl, ruin, t + 3 * SIM.DAY, 1000, SIM.viktOf);
+    const sist = SIM.taRuin(s, vl, ruin, t + 4 * SIM.DAY, 1000, SIM.viktOf);
+    const vikt = Object.entries(forst).reduce((a, [k, n]) => a + n * SIM.viktOf(k), 0);
+    return [
+      [`byn som gick under lämnade ${summa(k0)} saker i ruinen (${Object.entries(k0).slice(0, 5).map(([k, n]) => `${n} ${k}`).join(', ')}), i hela saker`, summa(k0) > 0 && hela],
+      [`det vittrar: ${summa(k0)} → ${summa(k1)} efter 2 dygn → ${summa(k2)} efter 30 dygn, och samma tid ger samma svar`, summa(k1) <= summa(k0) && summa(k2) < summa(k0) && JSON.stringify(k1) === JSON.stringify(k1b)],
+      [`den första tar det hen kan bära (${summa(forst)} saker, vikt ${vikt.toFixed(1)} av 20)`, summa(forst) > 0 && vikt <= 20],
+      [`den som kommer senare finner mindre (${summa(kvarSen)}) och tar resten (${summa(sen)}), och den sista finner inget (${summa(sist)})`, summa(kvarSen) < summa(k0) && summa(sist) === 0],
+    ];
+  },
+};
