@@ -28,7 +28,7 @@ import { LAGAR, type Lag, lagTak, lagarNu, skrivenLag } from './lagar';
 import { pabud } from './styre';
 import { STRAFF_NAMN } from './styre';
 import { kvVid, stationDef, stationFor, vidStation } from './stationer';
-import { O_KANT, kannerOrt, larOrt } from './ort';
+import { O_KANT, O_RYKTE, kannerOrt, larOrt } from './ort';
 import { byPlats, varldPlatsNr } from './landmarken';
 
 // ---------- skriften (system 10.6) ----------
@@ -372,6 +372,12 @@ function kartLust(s: State, p: Person): SkrivLust | undefined {
   if (!nya.length) return undefined;
   return { w: SKRIFT.karta * nya.length / SKRIFT.kartMax, slag: 'karta', platser: nya.map(l => ({ nr: l.a, v: Math.min(O_KANT, l.v), t: l.t })) };
 }
+// kartans kvalitet (steg 11.7.2): på en usel eller slarvig karta ritas en känd plats som ett rykte med chansen SKRIFT.kartRykte
+// för kvaliteten, slaget en gång när kartan ritas
+export function kartRykten(s: State, p: Person, pl: KartPlats[], q: number): KartPlats[] {
+  const ch = SKRIFT.kartRykte[q] ?? 0;
+  return pl.map(x => x.v > O_RYKTE && ch > 0 && rnd(s, 'kunskap', p) < ch ? { ...x, v: O_RYKTE } : x);
+}
 const platsNamn = (s: State, nr: number) => (s.varld && varldPlatsNr(s.varld, nr)?.namn) ?? 'en plats';
 const kartNamn = (s: State, pl: KartPlats[]) => { const n = pl.map(x => platsNamn(s, x.nr)); return n.length <= 2 ? n.join(' och ') : `${n.slice(0, 2).join(', ')} och ${n.length - 2} till`; };
 // det nya på kartan för q: platserna q känner sämre än de är ritade
@@ -450,6 +456,7 @@ export function skrivKlar(s: State, p: Person) {
   const fel = fc > 0 && rnd(s, 'kunskap', p) < fc ? (rnd(s, 'kunskap', p) < 0.5 ? SKRIFT.felOver : SKRIFT.felUnder) : undefined; // slås en gång och står kvar i texten
   if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, l.lar.k === 'fara' ? MINNE.vMaxFara : l.lar.k === 'vatten' ? 1 : l.lar.k === 'pris' ? Infinity : MINNE.vMax) };
   if (fel && l.lar) tx.text = describe(s, l.lar).text;
+  if (l.platser) l.platser = kartRykten(s, p, l.platser, q);
   const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(l.platser ? { platser: l.platser } : {}) };
   if (l.bok) {
     (l.bok.delar ??= []).push(k); count(s, 'bokdel');
@@ -472,7 +479,7 @@ export function lasKlar(s: State, q: Person, t: Task) {
   }
   if (k.tro !== undefined) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR);
   if (k.lar) lasLardom(s, q, { ...k.lar, c: k.lar.c * nar }, k.av.id);
-  for (const x of k.platser ? kartNya(s, q, k) : []) { larOrt(s, q, x.nr, x.v, SKRIFT.kartaC * nar, { t: x.t, src: k.av.id }); count(s, 'kartLast'); } // kartan (steg 11.7.1)
+  for (const x of k.platser ? kartNya(s, q, k) : []) { larOrt(s, q, x.nr, x.v, SKRIFT.kartaC * nar, { t: x.t, src: k.av.id, fr: k.av.id }); count(s, 'kartLast'); } // kartan (steg 11.7.1)
   if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt * nar * (k.fel ?? 1));
   if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id, k.bev);
   if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, (k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer) * nar, s.now, SKRIFT.gladjeTim * HOUR);

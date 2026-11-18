@@ -3205,3 +3205,40 @@ SCENARIER.kartblad = {
     ];
   },
 };
+
+SCENARIER.kartkvalitet = {
+  text: 'Kartans kvalitet (steg 11.7.2): på en usel karta ritas en känd plats som ett rykte med 50 % chans, på en slarvig med 25 %, slaget när kartan ritas; en skickligare ritare gör bättre kartor, och vid skrivpulpeten går det fortare och blir bättre',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const v = SIM.living(s).filter(r => !r.gast && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q] = v as [SIM.Person, SIM.Person];
+    const pl: SIM.KartPlats[] = hb.grannar!.slice(0, 4).map(g => ({ nr: g.nr, v: SIM.O_KANT, t: s.now }));
+    const andel = (k: number) => { let n = 0, m = 0; for (let i = 0; i < 300; i++) for (const x of SIM.kartRykten(s, p, pl, k)) { m++; if (x.v === SIM.O_RYKTE) n++; } return n / m; };
+    const a0 = andel(0), a1 = andel(1), a2 = andel(2), a4 = andel(4);
+    // hela kedjan: en ritare utan färdighet och en mästare ritar många kartor
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; }
+    s.ting = SIM.tingOf(s).filter(t => !t.skrift && !t.delar);
+    while (SIM.lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined;
+    const rykten = (r: SIM.Person, skill: number) => {
+      r.skill.berattande = skill; let n = 0, m = 0;
+      for (let i = 0; i < 60; i++) {
+        r.lardomar = []; for (const x of pl) SIM.larOrt(s, r, x.nr, SIM.O_KANT, 1);
+        s.ting = SIM.tingOf(s).filter(t => !t.skrift);
+        SIM.setAmount(s, 'pergament', 1); SIM.fyllVatska(s, 'black', 2, kr);
+        r.task = { act: 'skriva', phase: 'do', tx: r.x, ty: r.y, until: s.now, carry: 0, why: '' };
+        SIM.skrivKlar(s, r);
+        for (const x of SIM.tingOf(s).find(t => t.skrift?.slag === 'karta')?.skrift?.platser ?? []) { m++; if (x.v === SIM.O_RYKTE) n++; }
+      }
+      return n / Math.max(1, m);
+    };
+    const novis = rykten(p, 0), mastare = rykten(q, 20);
+    const d = SIM.stationDef('skrivpulpet')!, fart = d.fart?.skriva ?? 1;
+    const f = (x: number) => `${Math.round(x * 100)} %`;
+    return [
+      [`usel: ${f(a0)} rykten, slarvig: ${f(a1)}, normal: ${f(a2)}, utmärkt: ${f(a4)}`, Math.abs(a0 - 0.5) < 0.08 && Math.abs(a1 - 0.25) < 0.06 && a2 === 0 && a4 === 0],
+      [`en ritare utan färdighet ritar fler rykten än en mästare (${f(novis)} mot ${f(mastare)})`, novis > mastare],
+      [`vid skrivpulpeten går en karta fortare (${(4 / fart).toFixed(1)} minuter mot 4) och blir bättre (kvalitetstillägg ${d.kv})`, fart > 1 && (d.kv ?? 0) > 0],
+    ];
+  },
+};
