@@ -28,6 +28,7 @@
     "lardom": "tsx src/test/lardom.ts",
     "radmatt": "tsx src/test/radmatt.ts",
     "radregler": "tsx src/test/radregler.ts",
+    "vacktmatt": "tsx src/test/vacktmatt.ts",
     "hus": "tsx src/test/hus.ts",
     "strid": "tsx src/test/strid.ts",
     "prov": "tsx src/test/prov.ts",
