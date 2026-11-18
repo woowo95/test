@@ -59,7 +59,7 @@ SCENARIER['ingen-yxa'] = {
   lang: true,
   text: 'Byn har bara en flinta, som behövs till elden: ingen yxa görs, inga träd fälls och elden hålls vid liv med grenar',
   kor: () => {
-    const s = createState(16, START); // by 14 har någon som fryser ihjäl efter system 10.3, by 13 och 15 har någon som fryser ihjäl under den första vintern efter system 10.1 (byarna utan yxa står nära gränsen); by 12 dör ut tidigt av svält sedan kaninerna håller sig längre från byn (1.5.5), och saknar sedan torrt gräs att tända med
+    const s = createState(20, START); // by 16 har två som fryser ihjäl i slutet av den första vintern efter system 11.12; by 14 har någon som fryser ihjäl efter system 10.3, by 13 och 15 har någon som fryser ihjäl under den första vintern efter system 10.1 (byarna utan yxa står nära gränsen); by 12 dör ut tidigt av svält sedan kaninerna håller sig längre från byn (1.5.5), och saknar sedan torrt gräs att tända med
     setAmount(s, 'flinta', 1);
     // flintan i en påbörjad yxa räknas inte i förrådet (materialet tas när arbetet börjar, 1.5.14), så den tas bort också
     // handlaren säljer ingen yxa här: sedan steg 4.5.4.16 köper byn ett redskap den saknar
