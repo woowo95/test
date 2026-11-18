@@ -106,7 +106,7 @@ UPPDRAGFRAM.vaktat = (s, sl, t) => {
     gjort = 'slass';
   }
   const u = vagStrid(s, sl, Array.from({ length: val.vakter }, () => rovarKampe(L)), 'rovare', t);
-  L.tal.folk = Math.max(0, L.tal.folk - u.doda); L.tal.styrka = Math.max(0, Math.min(L.tal.styrka, L.tal.folk) - u.doda);
+  L.tal.folk = Math.max(0, L.tal.folk - u.doda); L.tal.styrka = Math.max(0, Math.min(L.tal.styrka - u.doda, L.tal.folk));
   const forst2 = val.kost.smyga < val.kost.slass ? 'Vakterna såg dem. ' : '';
   if (u.vann) { ta(); count(s, 'vaktat vann'); return klar('klart', `${forst2}Sällskapet slogs mot ${val.vakter} rövare i ${L.namn} och vann${u.doda ? `, och ${u.doda} rövare dog` : ''}. De tog tillbaka det stulna.`); }
   const tog = taUrPack(sl, (val.vakter - u.doda) * BYANFALL.bar);

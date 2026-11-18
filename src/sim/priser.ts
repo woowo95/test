@@ -119,7 +119,6 @@ export function byPaslag(s: State, k: string): number {
   return clamp(gp * sakPaslag(s, k, gp), PRIS.min, PRIS.max);
 }
 // priset i silver
-export const byPris = (s: State, k: string) => grundvarde(k) * byPaslag(s, k);
 
 // ---------- bristen i raden (steg 11.6.3) ----------
 // En by i världen sparar gruppernas tillgång (r.varor, i grundvärde, utom maten som är radens mat i portioner) och husen
@@ -138,6 +137,7 @@ import { portionerPerDygn, rikMal } from './rad';
 
 export const RADPRIS = balans('radpris', {
   husAndel: 0.5, // så stor del av en rads rikedom är husen
+  portion: 0.5, // en portion mat i grundvärde
   matDygn: 20, // en by i världen vill ha mat för så många dygn (år i spelet)
   sallsynt: 0.5, // det som är sällsynt på byns mark kostar så här mycket mer
   vanligt: 0.25, // det marken ger mycket av kostar så här mycket mindre
@@ -229,7 +229,6 @@ export function radPrisGlom(s: State, vl: Varlden) {
 }
 PERIODRADER.push({ namn: 'radens priser', period: 'dygn', fn: (s, vl) => radPrisGlom(s, vl) });
 // priset i en rad med numret nr
-export const radNrPaslag = (s: State, nr: number | undefined, k: string) => { const r = radNr(s.varld ?? {}, nr); return r ? radPaslag(s, r, k) : 1; };
 // raden r får n av saken k (n < 0: ger bort): maten i portioner, det andra i gruppens tillgång efter grundvärdet, och
 // rikedomen följer. Silvret är radens silver
 // ett rövarläger behåller det värdefulla det tagit som det är (steg 11.13.27, vaktat.ts)
@@ -240,7 +239,7 @@ export function radTar(r: VarldRad, k: string, n: number) {
   if (k === 'silver') { r.tal.silver = Math.max(0, r.tal.silver + n); return; }
   const g = gruppAv(k);
   if (!g) return;
-  if (g === 'mat' && isFood(k)) { r.tal.mat = Math.max(0, r.tal.mat + n); return; }
+  if (g === 'mat') { r.tal.mat = Math.max(0, r.tal.mat + (isFood(k) ? n : Math.round(n * grundvarde(k) / RADPRIS.portion))); return; } // utsäde, plantor och levande djur räknas i portioner efter värdet
   const v = radVaror(r);
   v[g] = Math.max(0, (v[g] ?? 0) + Math.round(n * grundvarde(k)));
   r.tal.rikedom = radRikedomUr(r);

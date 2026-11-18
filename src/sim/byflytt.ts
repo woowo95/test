@@ -29,6 +29,7 @@ import { MARK_IDS, VARLD, VarldMark } from './varldmark';
 import { byRutor } from './placering';
 import { byPlats, hinder, LANDMARKEN, laggPlats, varldPlatsNr } from './landmarken';
 import { narmasteMal } from './vagval';
+import { overge } from './utpost';
 import { byGrannar } from './grannat';
 import { varldHandelse } from './varldkronika';
 import { TEK } from './teknik';
@@ -273,4 +274,5 @@ PERIODRADER.push({ namn: 'undergången', period: 'timme', fn: (s, vl, n) => { fo
   if (r.nr === vl.huvud || r.tal.folk > 0) continue;
   if (r.sort === 'by') undergang(s, vl, r, periodSlut(vl, 'timme', n));
   else if ((BYSORTER[r.sort] as BysortDef).slut === 'folk' && byPlats(vl, r.nr)) lagerUpplost(vl, r, periodSlut(vl, 'timme', n));
+  else if ((BYSORTER[r.sort] as BysortDef).slut && byPlats(vl, r.nr)) overge(s, vl, r, periodSlut(vl, 'timme', n)); // en utpost eller ett handelsläger där alla dött
 } } });

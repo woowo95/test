@@ -41,7 +41,7 @@ export function hjalpSteg(s: State, dtSec: number) {
     for (const q of bitsOf(s)) if (q.hus !== undefined && hus.has(q.hus) && q.b < 1) { const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y); if (d < bd) { bd = d; bit = q; } }
     g.gor = undefined;
     if (!bit) continue;
-    if (bd > VACKTHJALP.nara) { if (gaMot(s, p, bit.x + 0.5, bit.y + 0.5, dtSec, t0) > VACKTHJALP.nara) continue; }
+    if (bd > VACKTHJALP.nara) { const d = gaMot(s, p, bit.x + 0.5, bit.y + 0.5, dtSec, t0); if (d < 0 || d > VACKTHJALP.nara) continue; } // -1: dit går det inte att gå
     const M = MATERIAL[bit.m];
     if (M.item && bit.mat < M.n) { // materialet ur byns förråd, i hela saker
       const beh = Math.ceil(M.n - bit.mat - 1e-9);

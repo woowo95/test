@@ -2,7 +2,7 @@ import { DAY, HOUR, MIN, Person, State, W } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
 import { REL, byId, count, log, relKey, stat, think } from './folk';
-import { bitsOf, dorrDef, gridOf, housesOf, husById, roomAt, type Hus } from './byggnad';
+import { bitsOf, dorrDef, gridOf, housesOf, husById, type Hus } from './byggnad';
 import { moodOf } from './humor';
 
 // ---------- fängelset (steg 11.12.1, Fångar och fängelset i designdokumentet) ----------
@@ -239,5 +239,3 @@ export function matFram(s: State, p: Person, t: import('./typer').Task) {
   p.task = undefined;
 }
 // den som sitter inne och de som vill ut (gränssnittet och scenarierna)
-export const fangeI = (s: State, x: number, y: number) => { const r = roomAt(s, x, y); return r ? fangar(s).filter(p => p.fange!.hus === r.hus) : []; };
-export const fangeNamn = (s: State, id: number) => byId(s, id)?.name;

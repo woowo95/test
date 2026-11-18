@@ -139,7 +139,7 @@ export const RESA = balans('resa', {
   forsvunnen: 3, // kommer ingen hem räknas resenärerna som försvunna efter så många gånger den väntade tiden (steg 11.5.18)
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
-export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver'];
+export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver', 'packsadel', 'ridsadel', 'vagn'];
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
 export interface ResmalDef { namn: string; mal: readonly LandmarkId[]; stannar: number }
@@ -725,7 +725,7 @@ function turneFram(s: State, sl: Sallskap, r: import('./radtal').VarldRad, t: nu
   byHandelse(vl, 'turne', vl.huvud, r.nr);
   r.turne = { id: led.id, namn: led.name, t };
   const n = Math.max(0, Math.min(Math.floor(r.tal.silver), Math.floor(RESA.turneGava * turneKraft(s, led) / Math.max(1e-9, varde1('silver')) + 1e-9)));
-  if (n > 0) { radTar(r, 'silver', n); sl.pack.silver = (sl.pack.silver ?? 0) + n; }
+  if (n > 0) { radTar(r, 'silver', -n); sl.pack.silver = (sl.pack.silver ?? 0) + n; }
   const vad = led.skill.skaldskap / 20 >= (led.bedrift?.h === 'tavling' ? 1 : 0) ? 'uppträdde' : 'tävlade';
   const text = `${led.name} ${vad} i ${r.namn}${n > 0 ? ` och fick ${n} silver i gåva` : ''}.`;
   dagbok(s, sl, 'turne', text, t);
@@ -1448,7 +1448,7 @@ function beskedet(s: State, sl: Sallskap, orsak?: Dodsorsak) {
   for (const id of sl.medl) {
     const p = s.people.find(q => q.id === id);
     if (!p || !alive(p) || (!p.dodVag && !orsak)) continue;
-    const t = p.dodVag?.t ?? s.now, o = (orsak ?? p.dodVag!.orsak) as Dodsorsak;
+    const t = p.dodVag?.t ?? s.now, o = (p.dodVag?.orsak ?? orsak) as Dodsorsak;
     delete p.dodVag;
     die(s, p, o); p.died = Math.min(t, s.now); // hen dog när hen dog, även om byn får veta det nu
     count(s, 'resa besked');
@@ -1538,7 +1538,7 @@ export function utvagLage(s: State, sl: Sallskap, t = s.now): UtvagLage | undefi
   const vagKvar = sl.skede === 'hemat' ? m.kvar : m.kvar - stannarFor(sl); // dygnen i gång, utan tiden framme
   // det som kan släppas: inte maten, vattnet eller fodret; det som är värt minst per vikt först, tills lasten inte bromsar
   const slapp: Record<string, number> = {}; let slappVarde = 0;
-  const pack = { ...sl.pack }, saker = Object.keys(pack).filter(k => !FOOD.includes(k) && !['vattensack', 'torrgras', 'talt'].includes(k)).sort((a, b) => grundvarde(a) / Math.max(1e-9, viktOf(a)) - grundvarde(b) / Math.max(1e-9, viktOf(b)) || (a < b ? -1 : 1));
+  const pack = { ...sl.pack }, saker = Object.keys(pack).filter(k => !FOOD.includes(k) && !BEHALL.includes(k) || k === 'silver').sort((a, b) => grundvarde(a) / Math.max(1e-9, viktOf(a)) - grundvarde(b) / Math.max(1e-9, viktOf(b)) || (a < b ? -1 : 1));
   for (const k of saker) {
     while ((pack[k] ?? 0) >= 1 && lastFart(s, sl, { pack }) < 1) { pack[k]! -= 1; slapp[k] = (slapp[k] ?? 0) + 1; slappVarde += grundvarde(k); }
   }

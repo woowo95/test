@@ -2740,7 +2740,7 @@ SCENARIER.bygava = {
     SIM.BYHANDLINGAR.gava.gor(c);
     const f = vl.farder?.find(x => x.fran === r.nr && x.gava)!;
     const ut = !!f && f.g === 'virke' && r.varor!.virke === v0 - f.n && Number.isInteger(f.n) && f.n > 0;
-    const n = f?.n ?? 0, varde = n * (f?.g === 'mat' ? SIM.BYHANDLING.portion : 1), vantad = Math.max(1, Math.round(SIM.BYREL.gava * varde / 10));
+    const n = f?.n ?? 0, varde = n * (f?.g === 'mat' ? SIM.RADPRIS.portion : 1), vantad = Math.max(1, Math.round(SIM.BYREL.gava * varde / 10));
     SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
     const fram = (mot.varor!.virke ?? 0) === mv0 + n, rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
     const hemKo = vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id);
@@ -2841,7 +2841,7 @@ SCENARIER.radanfall = {
     const kron = (vl.kronika ?? []).some(h => h.k === 'rad' && h.by === r.nr && h.mot === mot.nr);
     // samma anfall ger samma utfall, och många anfall: förlorarna dör mer
     let vinst = 0, dA = 0, dF = 0;
-    for (let i = 0; i < 200; i++) { const u = SIM.anfallUtfall(r, mot, n, j => SIM.varldSlump(vl, i, 7, j), g => g === 'mat' ? SIM.BYHANDLING.portion : 1); if (u.vann) vinst++; dA += u.dodaA; dF += u.dodaF; }
+    for (let i = 0; i < 200; i++) { const u = SIM.anfallUtfall(r, mot, n, j => SIM.varldSlump(vl, i, 7, j), g => g === 'mat' ? SIM.RADPRIS.portion : 1); if (u.vann) vinst++; dA += u.dodaA; dF += u.dodaF; }
     const f2 = (x: number) => x.toFixed(2);
     return [
       [`chansen följer antal och utrustning (${f2(p)} med ${n} mot 10, ${f2(pLika)} lika många, ${f2(pFattig)} fattigt och ${f2(pRik)} rikt utrustade), och skyddet gör lika många svagare`, p > pLika && pRik > pFattig && pLika < 0.5],

@@ -146,7 +146,7 @@ VAGHANDELSER.ran = {
       return;
     }
     const u = vagStrid(s, sl, Array.from({ length: n }, () => rovarKampe(L)), 'rovare', t);
-    L.tal.folk = Math.max(0, L.tal.folk - u.doda); L.tal.styrka = Math.max(0, Math.min(L.tal.styrka, L.tal.folk) - u.doda);
+    L.tal.folk = Math.max(0, L.tal.folk - u.doda); L.tal.styrka = Math.max(0, Math.min(L.tal.styrka - u.doda, L.tal.folk));
     if (u.vann) { dagbok(s, sl, 'strid', `${n} rövare från ${L.namn} anföll${val === 'fly' ? ' när sällskapet försökte fly' : ''}. Sällskapet slog dem tillbaka${u.doda ? ` och ${u.doda} rövare dog` : ''}.`, t); return; }
     const tog = taUrPack(sl, (n - u.doda) * BYANFALL.bar); ge(tog);
     dagbok(s, sl, 'strid', `${n} rövare från ${L.namn} anföll och vann striden. De tog ${tog.length ? lista(tog) : 'inget'}.`, t);

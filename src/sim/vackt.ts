@@ -114,7 +114,7 @@ function vackKlar(s: State, b: State) {
   stepDelning(b);
   b.vackFran = b.now; // (steg 11.13.24)
   b.vackFore = lasRad(b); // det byn ändrar från och med nu läggs till raden när den somnar (steg 11.13.12)
-  delete b.vackI;
+  delete b.vackI; delete b.vackRad; // radens tal behövdes bara medan byn byggdes
   useMap(s);
 }
 

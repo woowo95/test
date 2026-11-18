@@ -21,7 +21,10 @@ export interface Bas {
 export function tolka(post: Post<unknown> | undefined): State | null {
   if (!post?.delar.byn) return null;
   const namn = Object.keys(post.delar).filter(d => d !== 'byn' && !arVacktDel(d)).sort();
-  try { const s = tolkaText(joinParts([post.delar.byn, ...namn.map(d => post.delar[d])])); if (s) lasVackta(s, post.delar); return s; } catch { return null; } // de väckta byarna i egna delar (steg 11.13.9)
+  let s: State | null;
+  try { s = tolkaText(joinParts([post.delar.byn, ...namn.map(d => post.delar[d])])); } catch { return null; }
+  if (s) try { lasVackta(s, post.delar); } catch { /* en trasig väckt by tappas; huvudbyn läses ändå */ }
+  return s; // de väckta byarna i egna delar (steg 11.13.9)
 }
 export function tolkaText(txt: string | null | undefined): State | null {
   if (!txt) return null;

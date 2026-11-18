@@ -1,6 +1,6 @@
 // ---------- ruinen och karavanresten på den lilla kartan (steg 11.13.26, Flera samhällen: Uppdragen i tal) ----------
 // Resterna är rader i registret PLATSRESTER: det som står kvar av ett hus (den rasade muren) och av en vagn. När den lilla kartan
-// för en ruin skapas (vacktplats.ts) står byns hus kvar som murar med luckor där de rasat, så många som byn hade (VarldRad.hus,
+// för en ruin skapas (vacktplats.ts) står byns hus kvar som murar med luckor där de rasat, så många som byn hade (minnesbilden, annars värdet VarldRad.hus delat med VACKTRESTER.husVarde,
 // inom VACKTRESTER.husMin–husMax), runt mitten av kartan. Det som finns kvar i ruinen (ruinKvar i uppdrag.ts, i hela saker,
 // efter vittringen och det andra redan tagit) ligger inne i husen, där det lämnades. Karavanresten har sina trasiga vagnar.
 // Allt räknas ur platsens frö med hash3, så att samma plats ser likadan ut vid varje besök
@@ -26,6 +26,7 @@ export const VACKTRESTER = balans('vacktrester', {
   husMin: 2, husMax: 6, // så många hus som minst och mest står kvar i en ruin
   kvar: 0.6, // så stor del av murarna står kvar; resten har rasat
   vagnar: 2, // så många vagnar ligger vid en karavanrest
+  husVarde: 400, // ett hus värde i radens rikedom (VarldRad.hus är värdet av husen, inte antalet), när byn inte har en minnesbild
 });
 const HUS_B = 5, HUS_H = 4; // husets storlek i rutor (som ett litet hus, byggnader.ts)
 
@@ -64,7 +65,7 @@ export function byggRester(b: State, p: { nr: number; k: string; by?: number }) 
   }
   if (p.k !== 'ruin') return;
   const r = p.by !== undefined ? radNr(vl, p.by) : undefined;
-  const n = Math.max(VACKTRESTER.husMin, Math.min(VACKTRESTER.husMax, Math.round(r?.hus ?? r?.minne?.hus.length ?? VACKTRESTER.husMin)));
+  const n = Math.max(VACKTRESTER.husMin, Math.min(VACKTRESTER.husMax, r?.minne?.hus.length ?? Math.round((r?.hus ?? 0) / VACKTRESTER.husVarde)));
   // husen på land närmast mitten, med en ruta mellan sig (lite spridda ur platsens frö)
   const inne: { x: number; y: number }[] = [], tagen = new Set<number>(), kand: { x: number; y: number; d: number }[] = [];
   for (let y0 = 1; y0 + HUS_H < H; y0++) for (let x0 = 1; x0 + HUS_B < W; x0++) kand.push({ x: x0, y: y0, d: Math.hypot(x0 + HUS_B / 2 - mitt.x, (y0 + HUS_H / 2 - mitt.y) * 1.4) + hash3(fro, x0, y0, 0x7a61) * 4 });

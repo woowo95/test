@@ -46,7 +46,7 @@ function losenKan(s: State, p: Person) {
   const vr = radVaror(h.r);
   return VARUGRUPP_IDS.reduce((a, g) => a + (g === 'mat' ? 0 : vr[g] ?? 0), 0) >= losenVarde();
 }
-const slump = (s: State, p: Person, salt: number) => hash3(s.seed, p.id, Math.floor((p.gast!.tagen ?? 0) / 1000), salt) / 4294967296;
+const slump = (s: State, p: Person, salt: number) => hash3(s.seed, p.id, Math.floor((p.gast!.tagen ?? 0) / 1000), salt);
 export const FANGERADER = {
   losen: { namn: 'Lösen', tecken: '💰', lage: 0, bas: 0.4, kan: losenKan, gor: (s, p) => {
     p.gast!.losen = { t: s.now + Math.max(1, Math.ceil(slump(s, p, 1) * FANGEVAL.losenDygn * 24)) * DAY / 24, till: s.now + (FANGEVAL.losenDygn + 1) * DAY };
@@ -96,10 +96,12 @@ function losenSteg(s: State, p: Person) {
     const h = hemby(s, p);
     if (!h?.r || !losenKan(s, p)) { g.losen = undefined; (g.utan ??= []).push('losen'); count(s, 'fange_losen_uteblev'); valj(s, p); return; }
     // hembyn betalar ur det den har mest av
-    const vr = radVaror(h.r), grupp = VARUGRUPP_IDS.filter(x => x !== 'mat').sort((a, b) => (vr[b] ?? 0) - (vr[a] ?? 0))[0];
-    vr[grupp] = (vr[grupp] ?? 0) - losenVarde(); h.r.tal.rikedom = radRikedomUr(h.r);
     const bud = sandebud(s, h.r.nr, 'besked', [{ k: 'silver', n: FANGEVAL.losen }]);
     if (!bud) { g.losen = undefined; (g.utan ??= []).push('losen'); valj(s, p); return; }
+    const vr = radVaror(h.r);
+    let kvar = losenVarde();
+    for (const grupp of VARUGRUPP_IDS.filter(x => x !== 'mat').sort((a, b) => (vr[b] ?? 0) - (vr[a] ?? 0))) { const n = Math.min(kvar, vr[grupp] ?? 0); vr[grupp] = (vr[grupp] ?? 0) - n; kvar -= n; if (kvar <= 0) break; }
+    h.r.tal.rikedom = radRikedomUr(h.r);
     bud.gast!.losenFor = p.id; l.bud = bud.id;
     count(s, 'fange_losen_bud');
     return;

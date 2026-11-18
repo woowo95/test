@@ -68,9 +68,10 @@ export function besokUt(s: State, sl: Sallskap, t: number) {
   const b = vacktBy(s, sl);
   if (b && s.varld) fastaRelUt(b, (b.vackt === undefined ? undefined : radNr(s.varld, b.vackt)), par);
   let kvar = 0;
+  const per = par.length ? Math.floor((sl.vacktMat ?? []).reduce((a, [, n]) => a + n, 0) / par.length) : 0; // var och ens del när de gick in
   for (const [mid, gid] of par) {
     const p = s.people.find(q => q.id === mid), g = b && gastAv(b, gid);
-    if (!p || !g) continue; // byn somnade medan de var där: personen är som när hen gick in
+    if (!p || !g) { if (p) kvar += per; continue; } // byn somnade medan de var där: personen är som när hen gick in, och har sin mat kvar
     kvar += Math.floor(g.gast?.mat ?? 0);
     if (sl.hjalp) sl.hjalpTim = (sl.hjalpTim ?? 0) + (g.gast?.hjalpTim ?? 0);
     if (g.died !== undefined) dorPaVagen(s, sl, p, dodsorsak(g.cause), Math.min(g.died, t));

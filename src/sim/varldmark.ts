@@ -73,7 +73,6 @@ export interface VarldMark {
   ned: Int32Array; // rutan vattnet rinner till (-1 i havet och från en sjö ut i havet), för att rita floderna
 }
 export const FLOD_OVRE = 1, FLOD_NEDRE = 2;
-export const flodAt = (v: VarldMark, x: number, y: number) => v.flod[y * v.w + x];
 export const markAt = (v: VarldMark, x: number, y: number): MarkId => MARK_IDS[v.mark[y * v.w + x]];
 export const arLand = (v: VarldMark, i: number) => VARLDMARK[MARK_IDS[v.mark[i]]].land;
 

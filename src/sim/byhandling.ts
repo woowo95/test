@@ -19,7 +19,7 @@ import { SAKER, isFood, viktOf } from './saker';
 import { grundvarde } from './varde';
 import { Varlden } from './varlden';
 import { DAY, Stat, State } from './typer';
-import { gruppAv, radMarkId, radGruppPaslag, radHar, radRikedomUr, radTar, radVaror, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
+import { gruppAv, radMarkId, radGruppPaslag, radHar, radRikedomUr, radTar, radVaror, radVill, VARUGRUPP_IDS, VarugruppId, RADPRIS } from './priser';
 import { RAD, rikMal } from './rad';
 import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
@@ -46,7 +46,6 @@ export const BYHANDLING = balans('byhandling', {
   last: 80, // så mycket (i grundvärde) bär en handelsfärd (ställt i steg 11.6.7 med npm run radhandel)
   barare: 2, // så många går med en handelsfärd
   dygnKostnad: 0.3, // det en bärare kostar per dygn på vägen, i grundvärde (maten och arbetet hemma)
-  portion: 0.5, // en portion mat i grundvärde
   minRel: -10, // byarna handlar inte med den de ser lägre på än så
   skala: 20, // en vinst på så mycket (i grundvärde) är en poäng
   // gåvan (steg 11.6.14)
@@ -306,7 +305,7 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
 const krigUte = (c: ByCtx) => c.r.nr === c.vl.huvud || c.mot.nr === c.vl.huvud;
 // så många ur byn nr är ute i ett anfall (de kan inte gå med i ett till)
 export const anfallUte = (vl: Varlden, nr: number) => (vl.farder ?? []).reduce((a, f) => a + (f.anfall && f.fran === nr ? f.anfall : 0), 0);
-const enhet = (g: VarugruppId) => g === 'mat' ? BYHANDLING.portion : 1; // en enhet i gruppens tillgång, i grundvärde
+const enhet = (g: VarugruppId) => g === 'mat' ? RADPRIS.portion : 1; // en enhet i gruppens tillgång, i grundvärde
 const overskott = (r: VarldRad, g: VarugruppId) => Math.floor(radHar(r, g) - radVill(r, g, rikMal(r)));
 const restid = (vl: Varlden, r: VarldRad, mot: VarldRad) => {
   const p = byPlats(vl, r.nr), q = byPlats(vl, mot.nr);
@@ -455,8 +454,8 @@ KOHANDELSER.fardFram = (s, vl, p) => {
   f.t2 = f.t1 + (f.t1 - f.t0);
   if (f.besked) beskedFram(s, vl, f, r, mot); // sändebudet (steg 11.6.23): en gåva läggs i förrådet nedan
   if (f.besked && mot?.nr === vl.huvud) { trampaFard(s, f.till, f.fran, sallskapTyngd(1), p.t); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; }
-  if (f.anfall && mot?.nr === vl.huvud) { if (r) { huvudAnfall(s, f, r); return; } } // flocken går in på huvudbyns karta och kommer hem när den lämnat den
-  else if (f.anfall) { if (r && mot) anfallFram(s, vl, f, r, mot); }
+  if (f.anfall && mot?.nr === vl.huvud) { if (r && lever(vl, r)) { huvudAnfall(s, f, r); return; } } // flocken går in på huvudbyns karta och kommer hem när den lämnat den
+  else if (f.anfall) { if (r && mot && lever(vl, r)) anfallFram(s, vl, f, r, mot); }
   else if (f.gava && mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) { // gåvan läggs i förrådet och mottagaren ser bättre på givaren
     laggTill(mot, f.g, f.n);
     if (r) byHandelse(vl, 'gava', r.nr, mot.nr, gavaRel(f.n * enhet(f.g)) / BYREL.gava);
