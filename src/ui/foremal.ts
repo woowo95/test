@@ -324,7 +324,8 @@ export function drawStructures(t: number) {
   for (const q of s.kvarlevor ?? []) if (q.bars === undefined) stubbIkoner.add(KVARLEVOR[q.k].ikon, q.x * TS, q.y * TS, 1); // det som blivit kvar av en människa (steg 8.2.3)
   // graven (steg 10.4.2, platshållare tills Björn valt i bildstilen): en jordhög, och vården som står på den
   for (const g of s.gravar ?? []) { gravPlats(g); if (gravSkick(s, g) < BESOK.laga) igenvuxen(g); } // den slitna graven växer igen (steg 10.4.8)
-  for (const r of s.runstenar ?? []) runstenBild(r.x, r.y, r.bild === 1); // runstenen (steg 10.6.1, platshållare tills Björn valt i bildstilen)
+  for (const r of s.runstenar ?? []) runstenBild(r.x, r.y, r.bild === 1);
+  for (const q of s.rester ?? []) restBild(q); // ruinens murar och karavanens vagnar på den lilla kartan (steg 11.13.26, platshållare tills Björn valt i bildstilen) // runstenen (steg 10.6.1, platshållare tills Björn valt i bildstilen)
   for (const h of s.heliga ?? []) stubbIkoner.add(HELIGA_PLATSER[h.k].ikon, h.x * TS, h.y * TS, 1); // de heliga platserna (steg 8.5.5)
   stubbIkoner.end();
   pileIcons.end();
@@ -415,6 +416,25 @@ function runstenBild(x: number, y: number, bild = false) {
     return;
   }
   gr.lineStyle(u, 0xa14808).moveTo(X + 6 * u, Y + TS - 3 * u).lineTo(X + 6 * u, Y + 4 * u).quadraticCurveTo(X + 8 * u, Y + 2.5 * u, X + 10 * u, Y + 4 * u).lineTo(X + 10 * u, Y + TS - 3 * u).lineStyle(0);
+}
+// resterna på den lilla kartan (steg 11.13.26): en platshållare i paletten, 16 punkter per ruta. Muren är tre rader huggna
+// stenar med en skugga under, lägre där den rasat; vagnen ligger på sidan med brädorna isär och ett hjul
+function restBild(q: { x: number; y: number; k: string }) {
+  const X = q.x * TS, Y = q.y * TS, gr = structG, u = TS / 16;
+  gr.beginFill(0x24201d, 0.3).drawRect(X, Y + 13 * u, TS, 2 * u).endFill();
+  if (q.k === 'mur') {
+    const lag = 1 + ((q.x * 7 + q.y * 3) % 3); // så många rader står kvar
+    for (let r = 0; r < lag; r++) for (let c = 0; c < 3; c++) {
+      const x = X + c * 5 * u + (r % 2 ? 2 * u : 0), y = Y + (12 - (r + 1) * 3.5) * u;
+      gr.beginFill(0x8a9c9e).drawRect(x, y, 4.5 * u, 3 * u).endFill();
+      gr.beginFill(0x61767a).drawRect(x, y + 2.2 * u, 4.5 * u, 0.8 * u).endFill();
+    }
+    return;
+  }
+  gr.beginFill(0x3f2415).drawRect(X + 1 * u, Y + 8 * u, 9 * u, 2 * u).drawRect(X + 3 * u, Y + 5 * u, 8 * u, 1.5 * u).drawRect(X + 11 * u, Y + 9 * u, 4 * u, 1.5 * u).endFill();
+  gr.beginFill(0x474138).drawRect(X + 2 * u, Y + 10 * u, 6 * u, u).endFill();
+  gr.lineStyle(u, 0x3f2415).drawCircle(X + 12 * u, Y + 5 * u, 2.5 * u).lineStyle(0); // hjulet
+  gr.beginFill(0x3f2415).drawRect(X + 11.5 * u, Y + 4.5 * u, u, u).endFill();
 }
 function gravPlats(g: { x: number; y: number; vard?: string }) {
   const X = g.x * TS, Y = g.y * TS, gr = structG;

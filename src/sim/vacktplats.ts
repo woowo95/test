@@ -11,6 +11,7 @@ import { inFas, kalender } from './tid';
 import { State, useMap } from './typer';
 import { tomBy } from './varld';
 import { varldMark } from './varlden';
+import { byggRester } from './vacktrester';
 import { MARK_IDS } from './varldmark';
 
 // platsens frö: ur huvudbyns frö och platsens nummer, så att samma plats alltid får samma karta
@@ -25,6 +26,7 @@ export function vackPlats(s: State, nr: number): State | undefined {
   const v = varldMark(s), mark = v ? MARK_IDS[v.mark[p.y * v.w + p.x]] : undefined, r = KARTRECEPT.plats;
   const b = tomBy(platsFro(s, nr), s.now, s.now, { W: r.bredd, H: r.hojd }, { varld: vl, vacktPlats: nr, recept: 'plats', kal: { ...(s.kal ?? inFas(s)) }, lastAgeIdx: kalender(s, s.now).ai, ...(mark && mark !== 'hav' && mark !== 'sjo' ? { varldmark: mark } : {}) });
   b.vackFran = b.now;
+  byggRester(b, p); // ruinens hus och det som är kvar i dem, karavanens vagnar (steg 11.13.26)
   (s.vackta ??= []).push(b);
   useMap(s);
   count(s, 'plats_karta');

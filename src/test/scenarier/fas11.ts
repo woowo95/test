@@ -5290,3 +5290,36 @@ SCENARIER.litenkarta = {
     ];
   },
 };
+
+SCENARIER.ruinkarta = {
+  text: 'Ruinen och karavanresten på den lilla kartan (steg 11.13.26, vacktrester.ts): på ruinens lilla karta står byns hus kvar som murar med luckor där de rasat, och det som finns kvar i ruinen ligger inne i husen i hela saker, så mycket som ruinKvar säger. Karavanresten har sina trasiga vagnar. Samma plats ser likadan ut vid varje besök',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const ruin = vl.platser!.find(p => p.k === 'ruin' && p.by !== undefined && SIM.radNr(vl, p.by))!;
+    const r = SIM.radNr(vl, ruin.by!)!;
+    r.kvar = { grenar: 30, flinta: 4 }; r.kvarT = s.now;
+    const b = SIM.vackPlats(s, ruin.nr)!;
+    const murar = SIM.resterOf(b).filter(q => q.k === 'mur'), st = b.stackar ?? [];
+    const kvar = SIM.ruinKvar(vl, r, s.now), ligger = (k: string) => st.filter(a => a.k === k).reduce((x, a) => x + a.n, 0);
+    const helt = st.every(a => Number.isInteger(a.n) && a.n >= 1);
+    const iHus = st.every(a => !murar.some(m => m.x === a.x && m.y === a.y));
+    // samma plats en gång till
+    const s2 = SIM.cloneState(testBy(3)), r2 = SIM.radNr(s2.varld!, ruin.by!)!; r2.kvar = { grenar: 30, flinta: 4 }; r2.kvarT = s2.now;
+    const b2 = SIM.vackPlats(s2, ruin.nr)!;
+    const lika = JSON.stringify(SIM.resterOf(b2)) === JSON.stringify(SIM.resterOf(b)) && JSON.stringify(b2.stackar) === JSON.stringify(b.stackar);
+    // karavanresten
+    const kr = { ...ruin, nr: 99999, k: 'karavanrest' as const, by: undefined };
+    vl.platser!.push(kr);
+    const bk = SIM.vackPlats(s, kr.nr)!;
+    const vagnar = SIM.resterOf(bk).filter(q => q.k === 'vagn').length;
+    SIM.useMap(s);
+    return [
+      [`ruinens hus står kvar som murar (${murar.length} rutor)`, murar.length >= SIM.VACKTRESTER.husMin * 5],
+      [`det som är kvar ligger på kartan (${Object.entries(kvar).map(([k, n]) => `${ligger(k)}/${n} ${k}`).join(', ')})`, Object.keys(kvar).length > 0 && Object.entries(kvar).every(([k, n]) => ligger(k) === n)],
+      ['sakerna ligger i hela saker', helt],
+      ['sakerna ligger inne i husen, inte på murarna', iHus],
+      ['samma plats ser likadan ut vid varje besök', lika],
+      [`karavanresten har sina vagnar (${vagnar})`, vagnar >= 1],
+    ];
+  },
+};

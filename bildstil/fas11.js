@@ -1075,3 +1075,110 @@
     VERSION('Ett band av brunt flätverk runt kanten, solkorset i guld som kompass med en röd spets mot norr, och en val som blåser.', v3),
   ] });
 })();
+
+// fas 11: ruinens murar och karavanens vagnrest på den lilla kartan (steg 11.13.26). När ett sällskap kommer till en ruin står
+// byns hus kvar som murar med luckor där de rasat, och det som finns kvar ligger inne i husen; vid en karavanrest ligger de
+// trasiga vagnarna. En ruta (16 × 16 punkter) per murbit och vagn, snett ovanifrån som kartan, på gräs. Muren visas som ett
+// helt hus på 5 × 4 rutor med luckor, som spelet lägger den.
+(() => {
+  const L = { k: 'kol0', K: 'kol1', j: 'jord1', J: 'jord2', l: 'jord3', y: 'senap3', g: 'oliv1', G: 'oliv2', d: 'skiffer1', s: 'skiffer2', S: 'skiffer3', w: 'ben3', '^': 'skugga' };
+  const gras = (B, w, h) => { const g = B.P.i('oliv', 2); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, g); };
+  const LUCKA = [0, 3, 8, 11]; // rutorna runt huset där muren rasat (i ordningen medurs från hörnet uppe till vänster)
+  const HUS = (text, rader) => ({ text, w: 96, h: 80, rita: (B) => {
+    gras(B, 96, 80);
+    const kant = []; for (let x = 0; x < 5; x++) kant.push([x, 0]); for (let y = 1; y < 4; y++) kant.push([4, y]); for (let x = 3; x >= 0; x--) kant.push([x, 3]); for (let y = 2; y >= 1; y--) kant.push([0, y]);
+    kant.forEach(([x, y], i) => { if (!LUCKA.includes(i)) ritaSprite(B, rader, L, 8 + x * 16, 4 + y * 16); });
+  } });
+  VAL.push({ id: 'f11_ruinmur', namn: 'Ruinens rasade mur', typ: 'tre', slag: [], vad: 'Steg 11.13.26: på den lilla kartan för en ruin står byns hus kvar som murar, med luckor där de rasat. Det som finns kvar av byns saker ligger inne i husen. En ruta per murbit, snett ovanifrån som kartan, på gräs; här ett helt hus på 5 × 4 rutor med fyra luckor', versioner: [
+    HUS('En torrmur av gråsten: kantiga stenar staplade i två lager med fogar, ovansidan ljus och framsidan mörkare, och en sten som fallit ner framför.', [
+      '', '', '', '',
+      '..kkkk.kkkkk....',
+      '.kSSSSkSSSSSk.kk',
+      'kSSsSSkSsSSSkkSk',
+      'kssssskssssskSsk',
+      'kkkkkkkkkkkkkkkk',
+      'kdsdkdsddkdsdkdk',
+      'kddkdddkddddkddk',
+      'kkkkkkkkkkkkkkkk',
+      'kdddkdsddkddsddk',
+      'kkkkkkkkkkkkkkkk',
+      '.^^^^^^^^^^kkk^.',
+      '..........kSsk..',
+    ]),
+    HUS('Murkna timmerstockar som legat i knut: tre stockar på varandra, den mittersta avbruten, med mossa på den översta och i springorna.', [
+      '', '', '', '',
+      '.gGgg...........',
+      'kkkkkkkkkkkkkkk.',
+      'kJJlJJJJJlJJJJJk',
+      'kjjjjjjjjjjjjjjk',
+      'kkkkkkkkkkkkkkk.',
+      '.kJJJJlJJJJk....',
+      '.kjjjjjjjjjk.gG.',
+      'kkkkkkkkkkkkkkkk',
+      'kJJJJJJJlJJJJJJk',
+      'kjjjjjjjjjjjjjjk',
+      'kkkkkkkkkkkkkkkk',
+      '.^^^^^^^^^^^^^^.',
+    ]),
+    HUS('En låg vall av jord och torv där väggen stått, övervuxen med gräs, med en och annan sten som sticker upp ur jorden.', [
+      '', '', '', '', '', '',
+      '....kkkkkkk.....',
+      '..kkGGgGGGGkk...',
+      '.kGGgGGGGgGGGk..',
+      'kGgGGGkkGGGgGGk.',
+      'kgggggkSkggggggk',
+      'kJJjJJkskJJJjJJk',
+      'kjJJjJJkJjJJJjjk',
+      '.kkkkkkkkkkkkkk.',
+      '..^^^^^^^^^^^^..',
+      '',
+    ]),
+  ] });
+  const VAGN = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => { gras(B, 24, 24); ritaSprite(B, rader, L, 4, 4); } });
+  VAL.push({ id: 'f11_vagnrest', namn: 'Karavanens trasiga vagn', typ: 'tre', slag: [], vad: 'Steg 11.13.26: där rövare plundrat en karavan ligger vagnarna kvar, och det rövarna lämnade ligger bredvid. Den lilla kartan för karavanresten har två vagnar. En ruta stor, snett ovanifrån som kartan, på gräs. Den ska se annorlunda ut än grundarnas vagn i byn, som gått sönder av sig själv', versioner: [
+    VAGN('Vagnen har vält på sidan: botten med de två axlarna vänd mot betraktaren, ett hjul uppe i luften och det andra under, och en sönderslagen låda bredvid.', [
+      '', '',
+      '...........kkk..',
+      '..........kJ.Jk.',
+      '.kkkkkkkkkkkJk..',
+      '.kJJJJJJJJk.Jk..',
+      '.kkkkkkkkkkkkk..',
+      '.kjjjjjjjjjjk...',
+      '.kkkkkkkkkkkk...',
+      '.kJJJJJJJJJJk...',
+      '.kkkkkkkkkkkkkk.',
+      '.^^^^^^^^^^kJJk.',
+      '..........kjJjk.',
+      '...........kkk..',
+    ]),
+    VAGN('En bränd vagn: svarta bräder som ligger isär i en fyrkant, ett halvt hjul och grå aska mellan dem, och ett järnbeslag som blivit kvar.', [
+      '', '', '',
+      '..kKKKk..kKKk...',
+      '..kkkkk..kkkk...',
+      '.kK.sss.s.ssKk..',
+      '.kK.s.sss.s.Kk..',
+      '.kK..ss.sss.Kk..',
+      '.kK.sss.s.dsKk..',
+      '..kkk.kKKKkk....',
+      '.kKk...kkkk.....',
+      'kKkKk...........',
+      'kk.kk...........',
+      '.^^^^^^^^^......',
+    ]),
+    VAGN('Vagnen står kvar men är plundrad: flaket är tomt och sidobrädan nerslagen, skakeln bruten och liggande i gräset, och en tom säck hänger över kanten.', [
+      '', '',
+      '.kkkkkkkkkkk....',
+      '.kJJJJJJJJJk....',
+      '.kJjjjjjjjJk....',
+      '.kJjjjjjjjJkw...',
+      '.kJjjjjjjjJkww..',
+      '.kJJJJJJJJJkwk..',
+      '.kkkkkkkkkkkk...',
+      'kJk.....kJk.....',
+      'klk.....klk.kkkk',
+      'kJk.....kJkkJJJk',
+      '.k.......k..kkkk',
+      '.^^^^^^^^^......',
+    ]),
+  ] });
+})();

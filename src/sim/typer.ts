@@ -345,6 +345,7 @@ export interface State {
   besokare?: Record<number, number>; // en väckt by: besökarnas id i byn och deras id i huvudbyn, så att de de mött kan bli fasta (steg 11.13.14)
   vackFore?: Record<string, number>; // en väckt by: talen när den var byggd, så att det byn ändrat sedan kan läggas till raden när den somnar (steg 11.13.12)
   vackI?: number; vackRad?: import('./radtal').VarldRad; // en by som väcks: nästa byggare i BYGGARE (byn går inte förrän den är byggd) och radens tal som de var när väckningen började (steg 11.13.8)
+  rester?: import('./vacktrester').PlatsRest[]; // resterna på en liten karta: rasade murar och trasiga vagnar (steg 11.13.26)
   vacktPlats?: number; recept?: string; // en liten karta för platsen nr i världen, efter kartreceptet (steg 11.13.25, vacktplats.ts)
   vackFran?: number; // en väckt by: när den började gå i slagen (steg 11.13.24, gränsen VACKT.vakenMax)
   vackHall?: 1; // väckt med testknappen: somnar inte förrän knappen trycks igen

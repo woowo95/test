@@ -189,6 +189,7 @@ export * from './sim/gruva';
 export * from './sim/forhistoria';
 export * from './sim/vackt';
 export * from './sim/vacktplats';
+export * from './sim/vacktrester';
 export * from './sim/vacktgast';
 export * from './sim/vacktsomna';
 export * from './sim/vacktfasta';
