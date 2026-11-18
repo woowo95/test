@@ -193,3 +193,4 @@ export * from './sim/vacktsomna';
 export * from './sim/vacktfasta';
 export * from './sim/vacktliv';
 export * from './sim/vacktkronika';
+export * from './sim/vacktrel';

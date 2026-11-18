@@ -5,7 +5,7 @@
 // dog de efter att byn grundades ligger de begravda på byns gravplats. Byns historik i världens krönika (grundandet, svälten,
 // farsoten, krigen, de nya ledarna) står i livet hos dem som levde då. Allt räknas ur byns frö och personens id med hash3, utan
 // spelets slump, så att samma rad ger samma liv
-import { ageOf, byId, childrenOf } from './folk';
+import { ageOf, byId, childrenOf, relKey } from './folk';
 import { gastLiv, type LivRad, type Slakting } from './gastliv';
 import { gravarOf, gravPlats } from './grav';
 import { hash3 } from './slump';
@@ -66,7 +66,9 @@ export function bybosLiv(b: State, r: VarldRad, p: Person): ForrLiv {
   const mor = byId(b, p.mother);
   if (mor) for (const q of childrenOf(b, mor)) if (q.id !== p.id && q.born > p.born) liv.push({ ar: ar(p, q.born), k: 'syskon', text: `Fick ${q.sex === 'k' ? 'en lillasyster' : 'en lillebror'}, ${q.name}` });
   const pa = byId(b, p.partner);
-  if (pa) liv.push({ ar: ar(p, giftNar(b, p, pa)), k: 'gift', text: `Gifte sig med ${pa.name}` });
+  const rp = pa && b.rels[relKey(p.id, pa.id)];
+  if (pa && rp?.gift === undefined && rp?.par !== undefined) liv.push({ ar: ar(p, rp.par), k: 'par', text: `Blev tillsammans med ${pa.name}` }); // ett par som inte gift sig än (vacktrel.ts)
+  else if (pa) liv.push({ ar: ar(p, giftNar(b, p, pa)), k: 'gift', text: `Gifte sig med ${pa.name}` });
   for (const c of childrenOf(b, p)) liv.push({ ar: ar(p, c.born), k: 'barn', text: `Fick ${c.sex === 'k' ? 'en dotter' : 'en son'}, ${c.name}` });
   // byns historik
   for (const h of vl?.kronika ?? []) {

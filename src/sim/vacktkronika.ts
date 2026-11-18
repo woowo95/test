@@ -7,6 +7,7 @@ import { byId } from './folk';
 import { kronikaVid } from './historik';
 import type { VarldRad } from './radtal';
 import { DAY, type State } from './typer';
+import { relKey } from './folk';
 import { giftNar } from './vacktliv';
 import { varldHandelseText, type VarldHandelseId } from './varldkronika';
 
@@ -23,7 +24,7 @@ export function byggKronika(b: State, r: VarldRad) {
     const mor = byId(b, p.mother)?.name ?? p.forr?.familj.find(f => f.roll === 'mor')?.namn, far = byId(b, p.father)?.name ?? p.forr?.familj.find(f => f.roll === 'far')?.namn;
     if (p.born >= r.grundad && p.born <= b.now) rader.push([p.born, `${p.name} föddes, ${p.sex === 'k' ? 'dotter' : 'son'} till ${[mor, far].filter(Boolean).join(' och ') || 'okända föräldrar'}.`, 'k_fodd']);
     const pa = byId(b, p.partner);
-    if (pa && p.id < pa.id) { const t = giftNar(b, p, pa); if (t >= r.grundad) rader.push([t, `${p.name} och ${pa.name} gifte sig.`, 'k_gift']); }
+    if (pa && p.id < pa.id && b.rels[relKey(p.id, pa.id)]?.gift !== undefined) { const t = giftNar(b, p, pa); if (t >= r.grundad) rader.push([t, `${p.name} och ${pa.name} gifte sig.`, 'k_gift']); }
     for (const f of p.forr?.familj ?? []) {
       const t = p.born + (f.dog ?? 0) * DAY;
       if (f.dog === undefined || t < r.grundad || t > b.now || doda.has(f.namn)) continue;

@@ -4966,3 +4966,36 @@ SCENARIER.vacktkronika = {
     ];
   },
 };
+SCENARIER.vacktrel = {
+  text: 'Relationerna i den väckta byn (steg 11.13.18, vacktrel.ts): varje par har en relation som i en by i samma ålder, med vänner, nära vänner, osams och ovänner i ungefär testbyarnas andelar, släkten närmare, bästa vänner och ärkefiender ur relationerna och par som ännu inte gift sig',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    // många väckta byar: andelarna över alla par i dem
+    const byar = (vl.rader ?? []).filter(r => r.sort === 'by' && r.nr !== vl.huvud && r.tal.folk >= 6 && SIM.lever(vl, r)).slice(0, 6).map(r => [r, SIM.vackBy(s, r.nr)!] as const);
+    let n = 0, van = 0, nara = 0, osams = 0, ovan = 0, slaktOk = 0, slakt = 0, bast = 0, folk = 0, ogift = 0, ratt = true;
+    for (const [r, b] of byar) {
+      const ppl = SIM.living(b);
+      folk += ppl.length;
+      for (let i = 0; i < ppl.length; i++) for (let j = i + 1; j < ppl.length; j++) {
+        const p = ppl[i], q = ppl[j], rel = b.rels[SIM.relKey(p.id, q.id)];
+        if (!rel) { ratt = false; continue; }
+        if (Math.min(SIM.ageOf(p, b.now), SIM.ageOf(q, b.now), (b.now - r.grundad) / SIM.DAY) < SIM.VACKT_REL.ar) continue; // de som bott ihop länge
+        n++; if (rel.op > SIM.REL.vanOrd) van++; if (rel.op > SIM.REL.naraVan) nara++; if (rel.op < SIM.REL.osams) osams++; if (rel.op < SIM.REL.ovan) ovan++;
+        if (SIM.isKin(p, q)) { slakt++; if (rel.op >= SIM.REL.osams) slaktOk++; }
+      }
+      bast += ppl.filter(p => p.bast !== undefined && SIM.byId(b, p.bast)?.bast === p.id).length;
+      ogift += ppl.filter(p => p.partner !== undefined && b.rels[SIM.relKey(p.id, p.partner)]?.gift === undefined).length;
+    }
+    const a = (x: number) => x / Math.max(1, n), pr = (x: number) => `${Math.round(a(x) * 100)} %`;
+    const b0 = byar[0][1], samma = JSON.stringify(SIM.vackBy(s, byar[0][0].nr)!.rels) === JSON.stringify(b0.rels);
+    return [
+      [`alla par har en relation (${byar.length} byar, ${folk} invånare)`, ratt && byar.length >= 3],
+      [`vänner ${pr(van)} (testbyarna 25–35 %), nära vänner ${pr(nara)} (12–20 %)`, a(van) > 0.18 && a(van) < 0.45 && a(nara) > 0.07 && a(nara) < 0.28],
+      [`osams ${pr(osams)} (10–20 %), ovänner ${pr(ovan)} (2–5 %)`, a(osams) > 0.05 && a(osams) < 0.3 && a(ovan) < 0.1],
+      [`släkten är sällan osams (${slaktOk} av ${slakt})`, slaktOk >= slakt * 0.85],
+      [`bästa vänner finns, ömsesidigt (${bast} av ${folk})`, bast > 0],
+      [`par som inte gift sig (${ogift / 2})`, ogift >= 0],
+      ['samma rad ger samma relationer', samma],
+    ];
+  },
+};
