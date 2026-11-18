@@ -56,7 +56,7 @@ export const KRONIKA_KAT: KronikaKat[] = [
   { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro'] },
   { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'episk', 'forlust'] },
   { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom'] },
-  { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud'] }, // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
+  { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud', 'uppdrag'] }, // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
   { id: 'skrift', namn: 'Skrifter', ikon: 'kk_skrift', tecken: '📜', slag: ['runsten', 'skrift'] }, // stenarna, bladen och böckerna (steg 10.6.8)
   { id: 'fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎲', slag: ['fritid', 'hedersnamn', 'oknamn', 'k_skadadLek'] },
 ];

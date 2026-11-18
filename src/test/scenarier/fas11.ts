@@ -3572,3 +3572,40 @@ SCENARIER.uppdragkrav = {
     return ut;
   },
 };
+
+SCENARIER.uppdragminne = {
+  text: 'Uppdraget på platsen, minnet och redogörelsen (steg 11.8.7): framme gör sällskapet uppdraget (hjälpen, leveransen, ruinen), det står i dagboken, belöningen läggs i packningen, och hemma berättas det med rad i krönikan, notis och en rad i loggen hos dem som var med',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const vuxna = s.people.filter(x => SIM.alive(x) && !x.gast && SIM.ageOf(x, s.now) >= 18);
+    const p = vuxna.sort((a, b) => SIM.stat(b, 'mod', s.now) - SIM.stat(a, 'mod', s.now))[0]!;
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    const q = (vl.platser ?? []).filter(x => x.nr !== hem.nr && x.k === 'by').sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y))[0]!;
+    SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+    const u = SIM.utlys(vl, 'hjalp', q.nr, { k: 'styre', rad: q.by }, { silver: 30 }, s.now)!;
+    SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
+    const sl = SIM.samlaResa(s, p, SIM.resaPlan(s, p, 99, 99)!)!;
+    const silver0 = sl.pack.silver ?? 0;
+    SIM.uppdragFram(s, sl, s.now);
+    const klart = sl.utfall?.hur === 'klart' && (sl.pack.silver ?? 0) - silver0 === 30 && !SIM.uppdragNr(vl, u.id);
+    const dag = sl.dagbok.some(d => d[2] === 'uppdrag');
+    // ett andra sällskap som kommer sent finner inget
+    const sl2 = { ...sl, pack: {}, dagbok: [], utfall: undefined } as SIM.Sallskap;
+    SIM.uppdragFram(s, sl2, s.now + SIM.HOUR);
+    const krn0 = (s.hist?.kronika.length ?? 0), log0 = s.stat?.['uppdrag berättat'] ?? 0;
+    SIM.redogorelse(s, sl, s.now + SIM.DAY);
+    const krn = (s.hist?.kronika ?? []).slice(krn0).find(k => k[2] === 'uppdrag');
+    // ruinen: sällskapet tar det som finns kvar
+    const r = vl.rader!.filter(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].folk).sort((a, b) => b.tal.rikedom - a.tal.rikedom)[0]!;
+    SIM.undergang(s, vl, r, s.now);
+    const sl3 = { ...sl, mal: SIM.byPlats(vl, r.nr)!.nr, uppdrag: undefined, pack: {}, dagbok: [], utfall: undefined } as SIM.Sallskap;
+    SIM.uppdragFram(s, sl3, s.now + SIM.HOUR);
+    return [
+      [`hjälpen ges framme och belöningen (30 silver) läggs i packningen; uppdraget är borta`, klart],
+      ['det står i dagboken', dag],
+      [`den som kommer sent finner inget (${sl2.utfall?.hur})`, sl2.utfall?.hur === 'tomt'],
+      [`hemma berättas det i krönikan: "${krn?.[1] ?? ''}"`, !!krn && (s.stat?.['uppdrag berättat'] ?? 0) > log0],
+      [`i ruinen tar sällskapet det som finns kvar (${Object.entries(sl3.utfall?.fick ?? {}).map(([k, n]) => `${n} ${k}`).join(', ')})`, sl3.utfall?.hur === 'klart' && Object.keys(sl3.pack).length > 0],
+    ];
+  },
+};

@@ -45,7 +45,7 @@ import { SEC } from './typer';
 import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
-import { kravPassar, uppdragVid } from './uppdrag';
+import { avslutaUppdrag, kravPassar, ruinRad, taRuin, uppdragDef, uppdragNr, uppdragVid } from './uppdrag';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -164,6 +164,7 @@ export interface Sallskap {
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
   delning?: Andelar; // hur det delades hemma (steg 11.5.9)
   uppdrag?: number; // uppdraget sällskapet reser för (steg 11.8.4)
+  utfall?: UppdragUtfall; // hur det gick på platsen (steg 11.8.7)
   varor?: [string, number][]; // det ledaren tänkt sälja, som tas i packningen (steg 11.5.10)
   kop?: [string, number][]; // det ledaren tänkt köpa hem, det byn har brist på (steg 11.6.11)
   krav?: number; // kraften sällskapet behöver mot ledens fara (steg 11.5.11)
@@ -550,6 +551,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   for (const p of folk) larOrt(s, p, sl.mal, O_BESOKT, 1, { t });
   const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
   dagbok(s, sl, 'fram', `Kom fram till ${plats.namn}.`, t);
+  if (sl.skal === 'uppdrag') uppdragFram(s, sl, t);
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   const k = r.syn;
   if (sl.skal === 'sandebud') budFram(s, sl, r, t);
@@ -893,6 +895,7 @@ export const DAGBOK = {
   skada: { namn: 'Skada', sym: '🩹', stor: true },
   dod: { namn: 'Död', sym: '✝️', stor: true },
   besked: { namn: 'Beskedet', sym: '📜', stor: true }, // sändebudets besked (steg 11.6.23)
+  uppdrag: { namn: 'Uppdraget', sym: '📜', stor: true }, // det som sker på uppdragets plats (steg 11.8.7)
   hem: { namn: 'Hemma', sym: '🏠' },
 } as const satisfies Record<string, DagbokDef>;
 export type DagbokId = keyof typeof DAGBOK;
@@ -901,8 +904,42 @@ export function dagbok(s: State, sl: Sallskap, slag: DagbokId, text: string, t =
   if ((DAGBOK[slag] as DagbokDef).stor) notis(s, 'resa', `${RESMAL[sl.skal].namn}, ${malNamn(s, sl)}: ${text}`, sl.medl, undefined, { resa: sl.id });
 }
 const malNamn = (s: State, sl: Sallskap) => s.varld?.platser?.find(p => p.nr === sl.mal)?.namn ?? '';
+// ---------- uppdraget på platsen (steg 11.8.7, Flera samhällen: Uppdragen i tal) ----------
+// Framme gör sällskapet det uppdraget säger: i en ruin tar det det som finns kvar så långt bärförmågan räcker, en hjälp ges
+// under dagen det stannar och en leverans lämnas om saken finns i packningen. Ett utlyst uppdrag som någon redan tagit eller
+// vars tid är ute finns inte längre, och platsen är tom. Belöningen läggs i packningen och delas hemma som allt annat (Andelar).
+// Det som sker står i dagboken, och utfallet berättas i redogörelsen hemma.
+export interface UppdragUtfall { namn: string; hur: 'klart' | 'tomt' | 'misslyckat'; fick: Record<string, number> }
+export function uppdragFram(s: State, sl: Sallskap, t: number) {
+  const vl = s.varld!, u = sl.uppdrag !== undefined ? uppdragNr(vl, sl.uppdrag) : undefined, ruin = ruinRad(vl, sl.mal);
+  const fick: Record<string, number> = {};
+  let namn = u ? uppdragDef(u.k).namn : ruin ? 'Ruinskatten' : 'Uppdraget', hur: UppdragUtfall['hur'] = 'tomt', text: string;
+  if (ruin && (!u || u.mal !== sl.mal)) {
+    const bar = resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+    Object.assign(fick, taRuin(s, vl, ruin, t, Math.max(0, bar - packVikt(sl)), viktOf));
+    hur = Object.keys(fick).length ? 'klart' : 'tomt'; namn = 'Ruinskatten';
+    text = hur === 'klart' ? `Tog det som fanns kvar i ruinen: ${sakLista(fick)}.` : 'Ruinen var tom: någon hade hunnit före, eller allt hade vittrat.';
+  } else if (!u || u.mal !== sl.mal) {
+    text = 'Uppdraget fanns inte längre: någon hade hunnit före, eller tiden var ute.';
+  } else {
+    const gor = uppdragDef(u.k).gor;
+    if (gor === 'leverera' && u.sak && (sl.pack[u.sak[0]] ?? 0) >= u.sak[1]) { tappa(sl, u.sak[0], u.sak[1]); hur = 'klart'; }
+    else if (gor === 'hjalpa') hur = 'klart';
+    else hur = 'misslyckat';
+    if (hur === 'klart') {
+      Object.assign(fick, u.belon); u.belon = {};
+      avslutaUppdrag(s, vl, u, true);
+      text = `${namn} är gjort. Belöningen: ${sakLista(fick) || 'ingen'}.`;
+    } else text = `${namn} gick inte att göra${gor === 'leverera' ? ': saken fanns inte i packningen' : ''}.`;
+  }
+  for (const [k, n] of Object.entries(fick)) if (n >= 1) sl.pack[k] = (sl.pack[k] ?? 0) + Math.floor(n);
+  sl.utfall = { namn, hur, fick };
+  dagbok(s, sl, 'uppdrag', text, t);
+  count(s, `uppdrag ${hur}`);
+}
+const sakLista = (x: Record<string, number>) => Object.entries(x).filter(([, n]) => n >= 1).map(([k, n]) => `${n} ${k}`).join(', ');
 // hemkomsten: byn får veta om resan
-function redogorelse(s: State, sl: Sallskap, t: number) {
+export function redogorelse(s: State, sl: Sallskap, t: number) {
   const vl = s.varld;
   if (!vl) return;
   radBesoker(vl, vl.huvud, sl.mal);
@@ -910,8 +947,10 @@ function redogorelse(s: State, sl: Sallskap, t: number) {
   const dygn = Math.max(1, Math.round((t - sl.borjan) / DAY));
   const text = `${led?.name ?? 'Sällskapet'}${folk.length > 1 ? ` och ${folk.length - 1} till` : ''} kom hem från ${RESMAL[sl.skal].namn.toLowerCase()} till ${malNamn(s, sl)} efter ${dygn} dygn.`;
   sl.berattad = t;
-  log(s, text, 'world', folk.map(p => p.id)).resa = sl.id;
-  notis(s, 'resa', text, folk.map(p => p.id), undefined, { resa: sl.id });
+  const u = sl.utfall, upp = u ? ` ${u.namn}: ${u.hur === 'klart' ? `klart${sakLista(u.fick) ? `, med ${sakLista(u.fick)}` : ''}` : u.hur === 'tomt' ? 'platsen var tom' : 'gick inte'}.` : '';
+  log(s, text + upp, 'world', folk.map(p => p.id)).resa = sl.id; // minnet hos dem som var med (personens logg)
+  notis(s, 'resa', text + upp, folk.map(p => p.id), undefined, { resa: sl.id });
+  if (u) { kronika(s, `${text}${upp}`, 'uppdrag'); count(s, 'uppdrag berättat'); } // uppdragets redogörelse (steg 11.8.7)
   count(s, 'resa redogörelse');
   // byn minns de senaste resorna; de äldsta som kommit hem glöms
   const hemma = (vl.sallskap ?? []).filter(x => x.skede === 'hemma');
