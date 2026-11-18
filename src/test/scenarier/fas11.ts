@@ -4592,3 +4592,33 @@ SCENARIER.vackthus = {
     ];
   },
 };
+
+SCENARIER.vacktforrad = {
+  text: 'Förråden och ägandet i den väckta byn (steg 11.13.7, byggForrad i vackt.ts): radens mat och rikedom blir hela saker i förrådet och hos ägare, bland det byn kan göra, som i ruinen och handlarens last. Rikedomen och maten ligger nära raden, allt är hela saker och har en ägare, och raden ändras inte',
+  kor: () => {
+    const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
+    const r = vl.rader!.filter(q => q.sort === 'by' && SIM.lever(vl, q)).sort((a, b) => b.tal.folk - a.tal.folk)[0];
+    r.tal.folk = 24; r.tek = Object.values(SIM.TEK).filter(t => t.niva <= 3).map(t => t.id); r.tal.rikedom = 6000; r.tal.mat = 1200; r.tal.silver = 40; // som en testby med 24 invånare (test/radfacit.json)
+    const fore = JSON.stringify(r);
+    const b = SIM.vackBy(s, r.nr)!;
+    SIM.useMap(b);
+    const rik = SIM.rikedom(b), mat = SIM.SAK_LIST.filter(k => SIM.isFood(k)).reduce((a, k) => a + SIM.amountOf(b, k), 0);
+    const st = b.stackar ?? [], hela = st.every(a => Number.isInteger(a.n)) && SIM.SAK_LIST.every(k => Number.isInteger(SIM.amountOf(b, k)));
+    const agda = st.filter(a => a.k !== 'silver').every(a => Object.values(a.ag ?? {}).every(n => Number.isInteger(n)));
+    const agdaN = st.filter(a => Object.keys(a.ag ?? {}).length).length;
+    const ting = SIM.tingOf(b), utanAgare = ting.filter(t => !b.people.some(p => p.id === t.agare)).length;
+    const vatska = SIM.SAK_LIST.some(k => SIM.ar_vatska(k) && SIM.amountOf(b, k) > 0);
+    const kan = SIM.SAK_LIST.filter(k => SIM.amountOf(b, k) > 0 && SIM.SAKER[k]!.skaffa?.tek).every(k => r.tek.includes(SIM.SAKER[k]!.skaffa!.tek!));
+    SIM.useMap(s);
+    return [
+      ['rikedomen ligger nära raden (' + Math.round(rik) + ' mot ' + r.tal.rikedom + ')', Math.abs(rik - r.tal.rikedom) <= r.tal.rikedom * 0.15],
+      ['maten ligger nära raden (' + mat + ' mot ' + r.tal.mat + ' portioner)', mat <= r.tal.mat && mat >= r.tal.mat * 0.9],
+      ['silvret är radens (' + SIM.amountOf(b, 'silver') + ')', SIM.amountOf(b, 'silver') === 40],
+      ['allt är hela saker, också ägarnas delar (' + agdaN + ' av ' + st.length + ' stackar har ägare)', hela && agda && agdaN > st.length / 2],
+      ['redskapen har en ägare i byn (' + ting.length + ' redskap)', ting.length > 0 && utanAgare === 0],
+      ['inga vätskor utan behållare', !vatska],
+      ['byn har bara det den kan göra', kan],
+      ['raden ändras inte', JSON.stringify(r) === fore],
+    ];
+  },
+};

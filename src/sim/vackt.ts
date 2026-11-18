@@ -9,7 +9,12 @@ import { delarIRad, fyllPlatser, STATIONER, StationDef, StationSlag, stationSite
 import { knows } from './teknik';
 import { nyKvalitet } from './kvalitet';
 import { nyEld } from './brasor';
-import { grundvarde } from './varde';
+import { grundvarde, rikedomDelar } from './varde';
+import { radVaror, sakerIGrupp, VARUGRUPP_IDS, VarugruppId } from './priser';
+import { isFood, SAKER } from './saker';
+import { ar_vatska } from './vatskor';
+import { isStored, laggIn, lagerNy, lagerStorre, stacksOf } from './lager';
+import { newTing } from './agande';
 import { planeraHus } from './byggplan';
 import { bitsOf, housesOf, Hus, MATERIAL, touch } from './byggnad';
 import { workOn } from './bygg';
@@ -51,6 +56,7 @@ export const BYGGARE: Byggare[] = [
   { namn: 'kunskapen', bygg: (b, _s, r) => byggKunskap(b, r) }, // radens tekniker spridda på folket (steg 11.13.4)
   { namn: 'husen', bygg: (b, _s, r) => byggHus(b, r) }, // de gemensamma husen, stationerna och möblerna (steg 11.13.6)
   { namn: 'hemmen', bygg: b => byggHem(b) }, // ett hem per hushåll runt det som redan står (steg 11.13.5)
+  { namn: 'förråden', bygg: (b, _s, r) => byggForrad(b, r) }, // radens mat och rikedom i hela saker, hos ägare (steg 11.13.7)
 ];
 
 // byns frö: ur huvudbyns frö och radens nummer, så att samma rad alltid får samma karta
@@ -207,4 +213,50 @@ function stallStation(b: State, p: Person, k: StationSlag, at: { x: number; y: n
   if (d.mobel) nyKvalitet(b, p, t, 0, d.namn.toLowerCase());
   b.byggV = (b.byggV ?? 0) + 1;
   touch(b);
+}
+
+// förråden och ägandet: radens mat (portioner) och rikedom (grundvärde) blir hela saker, som i ruinen och handlarens last: bland
+// det byn kan göra (sakens tek) dras saker med byns slump, tills gruppens del är slut. Rikedomen som inte redan står i husen och
+// maten delas på varugrupperna som radens tillgång (radVaror). Maten väljs efter hur länge den håller: det som ligger i ett förråd är
+// det som inte ruttnat. Varje sak ägs av en vuxen, dragen efter slumpen; redskapen blir ting hos sin ägare. Silvret är radens.
+// Delningen (stepDelning) räknas efteråt, som i en by som lever. Raden ändras inte
+const VACKSAK = (k: string, tek: Set<string>) => { const d = SAKER[k]; return !!d && !d.mark && !d.dold && !d.i && !d.fordon && !ar_vatska(k) && k !== 'silver' && (!d.skaffa?.tek || tek.has(d.skaffa.tek)); };
+export function byggForrad(b: State, r: VarldRad) {
+  const tek = new Set(r.tek), vuxna = b.people.filter(p => ageOf(p, b.now) >= ALDER.vuxen);
+  const agare = () => (vuxna.length ? vuxna[Math.floor(rnd(b, 'vackt') * vuxna.length)] : b.people[0])?.id;
+  const varor = radVaror({ ...r, varor: r.varor ? { ...r.varor } : undefined });
+  const ovriga = VARUGRUPP_IDS.filter(g => g !== 'mat'), radSum = ovriga.reduce((a, g) => a + (varor[g] ?? 0), 0);
+  const dra = (g: VarugruppId, budget: number, per: (k: string) => number, vikt: (k: string) => number) => {
+    const l = sakerIGrupp(g).filter(k => VACKSAK(k, tek) && (g !== 'mat' || isFood(k)) && per(k) > 0);
+    for (let i = 0; i < 400 && l.length && budget > 0; i++) {
+      const tot = l.reduce((a, k) => a + vikt(k), 0);
+      let x = rnd(b, 'vackt') * tot, k = l[0];
+      for (const q of l) { x -= vikt(q); if (x < 0) { k = q; break; } }
+      const n = Math.min(1 + Math.floor(rnd(b, 'vackt') * (SAKER[k]!.redskap ? 1 : SAKER[k]!.stack ?? 5)), Math.floor(budget / per(k)));
+      if (n <= 0) { l.splice(l.indexOf(k), 1); continue; }
+      const ag = agare();
+      if (ag === undefined) return;
+      if (SAKER[k]!.redskap) for (let j = 0; j < n; j++) newTing(b, k, 1, ag); else laggIn(b, k, n, ag);
+      budget -= n * per(k);
+    }
+  };
+  dra('mat', Math.floor(r.tal.mat), () => 1, k => SAKER[k]!.haller ?? 10);
+  iLagret(b, false); // det som ligger utanför lagret räknas inte i rikedomen
+  const d = rikedomDelar(b), kvar = Math.max(0, r.tal.rikedom - d.hus - d.forrad - d.redskap); // det som inte redan står i husen och maten
+  for (const g of ovriga) dra(g, radSum > 0 ? kvar * (varor[g] ?? 0) / radSum : 0, grundvarde, () => 1);
+  if (r.tal.silver >= 1) laggIn(b, 'silver', Math.floor(r.tal.silver), agare());
+  iLagret(b);
+}
+// det som inte fått plats i lagret ligger bredvid: byn gör lagret större eller en ny lagerplats, som när den lever (lagerStorre
+// och lagerNy), och lägger in det som låg utanför. Sedan ett förrådshus om byn vill ha ett (BYGGNADER.forrad)
+function iLagret(b: State, hus = true) {
+  for (let n = 0; n < 40; n++) {
+    const ute = stacksOf(b).filter(a => !isStored(b, a.x, a.y));
+    if (!ute.length) break;
+    if (!lagerStorre(b) && !lagerNy(b)) break;
+    b.stackar = (b.stackar ?? []).filter(a => !ute.includes(a));
+    for (const a of ute) put(b, a.k, a.n, a.ag, a.c);
+  }
+  const a = BYGGNADER.forrad.akut(b);
+  if (hus && a.v > 0 && b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) { const h = planeraHus(b, 'forrad', a); if (h) byggFardigt(b, h); }
 }
