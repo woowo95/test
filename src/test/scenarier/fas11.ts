@@ -1,6 +1,6 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { SCENARIER, kor, korTills, testBy, utanWebblasare } from './hjalp';
+import { SCENARIER, kor, korTills, rovarGang, testBy, utanWebblasare } from './hjalp';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
 import { readFileSync } from 'node:fs';
@@ -4276,6 +4276,56 @@ SCENARIER.karavan = {
       [`bara ledaren står vid filten (${vidFilt} av följet där), och följet sitter i lägret (${iLagret})`, vidFilt === 0 && iLagret],
       [`byns djur och ting är oförändrade`, [rik, fattig].every(x => JSON.stringify((x.s.tamdjur ?? []).map(d => d.id)) === x.djur0 && JSON.stringify((x.s.ting ?? []).map(t => t.id)) === x.ting0)],
       [`alla lämnar kartan tillsammans (följet ${foreUt} slaget innan ledaren gick ut, ${efterUt} efter)`, !s.handlare && foreUt === n0 && efterUt === 0],
+    ];
+  },
+};
+
+SCENARIER.karavanattack = {
+  text: 'Anfall mot karavanen (steg 11.11.7, handlarLast och taEn i rovare.ts, handlarenDog i handel.ts): rövare som vinner tar ur handlarens last som annat byte efter värde per vikt, lasten efter en död handlare är herrelös och hamnar i byns förråd, en levande handlares last är orörd, och lägrets djur och vagnar tas inte',
+  kor: () => {
+    const bas = testBy(3), vl0 = bas.varld!;
+    const rad = SIM.klanerOf(bas).map(k => k.rad).find(nr => nr !== undefined && vl0.rader?.some(r => r.nr === nr))!;
+    // en karavan vid filten, och byn sover långt bort
+    const karavan = () => {
+      const s = SIM.cloneState(bas), r = s.varld!.rader!.find(x => x.nr === rad)!;
+      r.tal.folk = 80; r.tal.rikedom = 100000; r.tek = [...new Set([...r.tek, 'ryggsack', 'vagn'])];
+      const last = SIM.packaRad(r, mulberry(7), () => 100000, 'vagn', 'oxe');
+      (s.varld!.farder ??= []).push({ id: 99001, fran: rad, till: s.varld!.huvud!, g: 'mat', n: 0, t0: s.now, t1: s.now, handlare: true, last } as SIM.RadFard);
+      delete s.handlare; delete s.rovare; delete s.rovareFler; (s as { infart?: unknown }).infart = { klar: true };
+      SIM.handlarFram(s, rad);
+      s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
+      SIM.handelSteg(s, 2);
+      const h = s.handlare!; h.fas = 'handlar'; h.gar = s.now + 20 * SIM.HOUR; h.affar = undefined; h.ko = [];
+      const P = SIM.gastAv(s, h.id)!, filt = SIM.handlarPlats(s, h, s.now); P.x = filt.x; P.y = filt.y;
+      for (const p of SIM.living(s)) { if (p.gast) continue; Object.assign(p, SIM.freeNear(s, filt.x + 40, filt.y + 40)); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * SIM.HOUR, carry: 0 }; }
+      // det dyraste per vikt finns bara i handlarens last
+      const k = SIM.SAK_LIST.filter(q => !SIM.SAKER[q]!.redskap && !SIM.SAKER[q]!.klad && !q.startsWith('lev') && SIM.grundvarde(q) > 0).sort((a, b) => SIM.grundvarde(b) / Math.max(0.1, SIM.viktOf(b)) - SIM.grundvarde(a) / Math.max(0.1, SIM.viktOf(a)))[0];
+      SIM.setAmount(s, k, 0); h.varor.push({ k, n: 6 });
+      return { s, h, P, k, djur0: JSON.stringify((s.tamdjur ?? []).map(d => d.id)) };
+    };
+    const lastN = (h: SIM.Handlare, k?: string) => h.varor.filter(w => !k || w.k === k).reduce((a, w) => a + w.n, 0);
+    // 1. rövarna kommer till filten
+    const a = karavan(), n0 = lastN(a.h, a.k), vagnar0 = a.h.vagnar, djur0 = a.h.djur;
+    rovarGang(a.s, 3, { x: a.P.x + 2, y: a.P.y }, { anfaller: true });
+    korTills(a.s, () => !a.s.rovare || !!a.s.rovare.klar, 1800);
+    const rovat = a.s.stat?.rovatHandlare ?? 0, n1 = a.s.handlare ? lastN(a.s.handlare, a.k) : -1;
+    const kvar = a.s.handlare?.vagnar === vagnar0 && a.s.handlare?.djur === djur0 && JSON.stringify((a.s.tamdjur ?? []).map(d => d.id)) === a.djur0;
+    // 2. en levande handlare som ingen anfaller: lasten är orörd
+    const b = karavan(), b0 = JSON.stringify(b.h.varor);
+    korTills(b.s, () => false, 1800);
+    const orord = !!b.s.handlare && JSON.stringify(b.s.handlare.varor) === b0;
+    // 3. handlaren dör: lasten ligger herrelös där hen föll, och byn bär in den
+    const c = karavan(), plats = { x: Math.floor(c.P.x), y: Math.floor(c.P.y) }, i0 = SIM.amountOf(c.s, c.k);
+    SIM.die(c.s, c.P, 'olycka');
+    const pa = SIM.pilesOf(c.s).filter(p => p.k === c.k).reduce((x, p) => x + p.n, 0);
+    for (const p of SIM.living(c.s)) if (!p.gast) p.task = undefined;
+    korTills(c.s, () => SIM.amountOf(c.s, c.k) - i0 >= 6, 12 * 3600);
+    const inne = SIM.amountOf(c.s, c.k) - i0;
+    return [
+      [`rövarna tog ur handlarens last (${rovat} saker, ${c.k} ${n0} → ${n1})`, rovat > 0 && n1 < n0],
+      [`lägrets djur och vagnar är kvar (${a.s.handlare?.vagnar} vagnar, ${a.s.handlare?.djur})`, kvar],
+      [`en levande handlares last är orörd när ingen anfaller`, orord],
+      [`lasten efter den döda handlaren ligger på marken (${pa} ${c.k} vid ${plats.x},${plats.y}) och hamnar i byns förråd (${inne} av 6)`, pa >= 6 && inne >= 6 && !c.s.handlare],
     ];
   },
 };

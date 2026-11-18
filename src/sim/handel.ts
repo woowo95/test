@@ -27,7 +27,7 @@ import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, logg
 import type { Skrift } from './skrift';
 import { newTing, tingOf } from './agande';
 import { knows } from './teknik';
-import { dropSpot, put, stacksOf, use } from './lager';
+import { dropLoad, dropSpot, put, stacksOf, use } from './lager';
 import { sumOf } from './egendom';
 import { kanterna } from './varg';
 import { kantMot } from './grannbyar';
@@ -42,7 +42,7 @@ import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, 
 import { handelsArg } from './handelsber';
 import { notis } from './notiser';
 import { barSmitta } from './sjukdom';
-import { gastGar, gastTillbaka, hp, nyGast, nyttGastId } from './gast';
+import { gastAv, gastGar, gastTillbaka, hp, nyGast, nyttGastId } from './gast';
 import { valkomnaHandlare } from './kyrka';
 import { FORDON, lassAv } from './fordon';
 import { tamArt, type TamArtId } from './tamdjur';
@@ -462,6 +462,12 @@ export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number,
 export function handlarenDog(s: State, h: Handlare) {
   handlarBorta(s, h);
   packaIhop(s, h);
+  // lasten är herrelös där hen dog, och byn får ta den (steg 11.11.7); djuren och vagnarna går hem med följet
+  const P = gastAv(s, h.id), items: Record<string, number> = {};
+  for (const w of h.varor) if (w.n >= 1) items[w.k] = (items[w.k] ?? 0) + Math.floor(w.n);
+  if (h.silver >= 1 && SAKER.silver) items.silver = (items.silver ?? 0) + Math.floor(h.silver);
+  if (P && Object.keys(items).length) { dropLoad(s, { act: 'bara', phase: 'do', tx: P.x, ty: P.y, until: s.now, carry: 0, items } as Task, P.x, P.y); count(s, 'handlarlast_herrelos'); }
+  h.varor = []; h.silver = 0;
   s.handlare = undefined;
 }
 
