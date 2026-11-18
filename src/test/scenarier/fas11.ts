@@ -5425,3 +5425,42 @@ SCENARIER.gravplats = {
     ];
   },
 };
+
+SCENARIER.kyrkanutlyser = {
+  text: 'Kyrkan utlyser (steg 11.13.29, kyrkuppdrag.ts): när en by i världen med samma tro har svultit nyligen och en troende känner till den, kan kyrkan lägga undan en belöning ur sitt förråd och utlysa hjälpen dit; den som talar för tron vet om uppdraget, och tar tiden slut går belöningen tillbaka till förrådet',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    let tr = s.tron?.find(t => t.slut === undefined && SIM.troende(s, t).length);
+    if (!tr) return [['byn har en tro', false]];
+    tr.sk = { ...(tr.sk ?? {}), oppen: 20 };
+    const r = vl.rader!.find(x => x.nr !== vl.huvud && x.sort === 'by' && SIM.lever(vl, x) && SIM.byPlats(vl, x.nr))!, q = SIM.byPlats(vl, r.nr)!;
+    const fore = SIM.KYRKUTGIFTER.uppdrag!.vikt(s, tr);
+    // en trosfrände som svultit, som en troende känner till, och kyrkans förråd
+    r.tro = { namn: SIM.troNamn(tr), andel: 80, krig: 50 }; r.svalt = s.now - SIM.DAY;
+    const p = SIM.troende(s, tr)[0]!;
+    SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+    SIM.put(s, 'skinn', 10, { [SIM.kyrkaId(tr.id)]: 10 });
+    const vikt = SIM.KYRKUTGIFTER.uppdrag!.vikt(s, tr), forradFore = SIM.kyrkansAv(s, tr, 'skinn');
+    SIM.KYRKUTGIFTER.uppdrag!.gor(s, tr);
+    const u = SIM.uppdragen(vl).find(x => x.av.tro === tr!.id)!;
+    const forradEfter = SIM.kyrkansAv(s, tr, 'skinn'), talare = SIM.trosTalare(s, tr), belon = u?.belon.skinn;
+    const vet = !!talare && !!talare.lardomar?.some(l => l.k === 'uppdrag' && l.a === u?.id);
+    const igen = SIM.KYRKUTGIFTER.uppdrag!.vikt(s, tr);
+    const av = u ? SIM.utlysarNamn(s, vl, u.av) : '';
+    // tiden tar slut: belöningen går tillbaka
+    if (u) SIM.avslutaUppdrag(s, vl, u, false);
+    const tillbaka = SIM.kyrkansAv(s, tr, 'skinn');
+    // en by som svalt för länge sedan behöver ingen hjälp
+    r.svalt = s.now - (SIM.KYRKUPPDRAG.nodDygn + 1) * SIM.DAY;
+    const gammal = SIM.trosfrander(s, tr).length;
+    return [
+      [`utan en trosfrände i nöd utlyser kyrkan inget (${fore})`, fore === 0],
+      [`med en trosfrände som svultit väger det (${vikt.toFixed(2)})`, vikt > 0],
+      [`kyrkan lade undan belöningen (${forradFore} → ${forradEfter} skinn) och utlyste ${u ? SIM.uppdragDef(u.k).namn.toLowerCase() : 'inget'} av ${av}`, !!u && u.k === 'hjalp' && forradEfter === forradFore - SIM.KYRKUPPDRAG.belon && belon === SIM.KYRKUPPDRAG.belon],
+      [`den som talar för tron vet om uppdraget (${talare?.name})`, vet],
+      [`samma by utlyses inte två gånger (${igen})`, igen === 0],
+      [`när tiden är ute går belöningen tillbaka till förrådet (${tillbaka})`, tillbaka === forradFore],
+      ['en by som svalt för länge sedan behöver ingen hjälp', gammal === 0],
+    ];
+  },
+};

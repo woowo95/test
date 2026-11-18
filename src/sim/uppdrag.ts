@@ -12,6 +12,8 @@ import { findL, MINNE, trimLardomar, UPPDRAGKROK } from './minne';
 import { lognFaktor } from './rykten';
 import { clamp } from './slump';
 import { put } from './lager';
+import { kyrkaId } from './egendom';
+import { troNamn } from './religion';
 import { LandmarkId, varldPlatsNr } from './landmarken';
 import { radNr } from './radtal';
 import { laggTillRad, tillGrupp } from './utpost';
@@ -84,7 +86,7 @@ export const UPPDRAG_IDS = Object.keys(UPPDRAG) as UppdragId[];
 export const uppdragDef = (k: UppdragId): UppdragDef => UPPDRAG[k];
 
 // den som utlyst: en person i huvudbyn (id), huvudbyns styre eller kyrka, eller en by i världen (radens nummer)
-export interface Utlysare { k: UtlysarId; person?: number; rad?: number }
+export interface Utlysare { k: UtlysarId; person?: number; rad?: number; tro?: number /* kyrkans tro (steg 11.13.29) */ }
 // ett utlyst uppdrag: sorten, platsen (världsplatsens nummer), vem som utlyst, belöningen som lagts undan i hela saker, när det
 // utlystes och när det tar slut; om = den saknade (vilsegången), sak = det som ska föras dit (leveransen)
 export interface Utlyst { id: number; k: UppdragId; mal: number; av: Utlysare; belon: Record<string, number>; t: number; slut: number; om?: number; sak?: [string, number] }
@@ -118,6 +120,7 @@ function aterLamna(s: State, vl: Varlden, u: Utlyst) {
   for (const [k, n] of Object.entries(u.belon)) {
     if (n < 1) continue;
     if (r) { if (lever(vl, r)) laggTillRad(r, tillGrupp(k), Math.round(n * grundvarde(k))); continue; } // en by i världen: i radens varor
+    if (u.av.tro !== undefined && s.tron?.some(t => t.id === u.av.tro && t.slut === undefined)) { put(s, k, n, { [kyrkaId(u.av.tro)]: n }); continue; } // tillbaka till kyrkans förråd
     const agare = u.av.person !== undefined && s.people.some(p => p.id === u.av.person && alive(p)) ? u.av.person : undefined;
     put(s, k, n, agare !== undefined ? { [agare]: n } : undefined); // huvudbyn: tillbaka till personen, annars till byn
   }
@@ -214,6 +217,7 @@ export interface BynsUppdrag { id: number; k?: UppdragId; namn: string; nr?: num
 export function utlysarNamn(s: State, vl: Varlden, a: Utlysare): string {
   if (a.person !== undefined) return byId(s, a.person)?.name ?? 'en bybo';
   if (a.rad !== undefined) { const r = radNr(vl, a.rad); return r ? `${a.k === 'kyrka' ? 'kyrkan i' : 'styret i'} ${r.namn}` : 'en by'; }
+  if (a.tro !== undefined) { const tr = s.tron?.find(t => t.id === a.tro); if (tr) return `kyrkan för ${troNamn(tr).toLowerCase()}`; }
   return a.k === 'kyrka' ? 'byns kyrka' : a.k === 'styre' ? 'byns styre' : 'ingen';
 }
 export function bynsUppdrag(s: State): BynsUppdrag[] {
