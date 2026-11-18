@@ -11,7 +11,7 @@
 import { balans } from './balans';
 import { BUDGET, BUDGET_LIST } from './budget';
 import { alive, count } from './folk';
-import { ownedStock, use } from './lager';
+import { ownedStock, put, use } from './lager';
 import { byPlats } from './landmarken';
 import { radNr } from './radtal';
 import { BUDBARKROK, dagbok, HEMKROK } from './resa';
@@ -79,6 +79,7 @@ HEMKROK.f = (s, sl, t) => {
     if (!Object.keys(belon).length) { count(s, 'utlysa inget över'); continue; }
     const u = utlys(vl, 'vaktat', q.nr, { k: 'person', person: p.id }, belon, t);
     if (u) { larUppdrag(s, p, u.id, 1, { t, v: belonVarde(u), mal: u.mal, k: 'vaktat' }); count(s, 'utlysa person'); }
+    else for (const [k, n] of Object.entries(belon)) put(s, k, n, { [p.id]: n }); // ingen plats att utlysa mot: belöningen tillbaka
   }
 };
 
@@ -105,7 +106,7 @@ BUDGET.uppdrag = {
       if (m < 1) continue;
       use(s, undefined, k, m, true);
       const u = utlys(vl, x.k, x.mal, { k: 'styre' }, { [k]: m }, s.now, x.om !== undefined ? { om: x.om } : {});
-      if (!u) continue;
+      if (!u) { put(s, k, m); continue; } // ingen plats att utlysa mot: silvret tillbaka i byns förråd
       if (led) larUppdrag(s, led, u.id, 1, { t: s.now, v: belonVarde(u), mal: u.mal, k: u.k });
       count(s, 'utlysa styret');
     }
