@@ -238,7 +238,7 @@ export function runstenTimme(s: State) {
 // rivits försvinner ur listan. En gång i timmen jämförs stenarna och böckerna med förra timmen, och för den som är borta skrivs en
 // rad i krönikan
 export interface SkriftRad { ikon?: string; id: string; stadium: SkriftStadium; t: number; q?: number; titel: string; text: string; runor?: string; delar?: { titel: string; text: string; q?: number }[]; plats: string; x?: number; y?: number }
-export const bokTitel = (t: Ting) => { const d = t.delar ?? [], g = d[0]?.slag; return !g ? 'En tom bok' : g === 'kunskap' ? (d.length === 1 ? d[0]!.titel : 'Handboken') : g === 'helig' ? 'De heliga kvädena' : `Boken med ${SKRIFTER[g].namn.toLowerCase()}`; };
+export const bokTitel = (t: Ting) => { const d = t.delar ?? [], g = d[0]?.slag; return !g ? 'En tom bok' : g === 'kunskap' ? (d.length === 1 ? d[0]!.titel : 'Handboken') : g === 'helig' ? 'De heliga kvädena' : g === 'karta' ? 'Kartboken' : `Boken med ${SKRIFTER[g].namn.toLowerCase()}`; };
 function tingPlats(s: State, t: Ting) {
   const q = t.hos !== undefined ? byId(s, t.hos) : undefined, at = tingXY(s, t);
   return { plats: q ? `Bärs av ${q.name}` : t.vid !== undefined ? 'Vid en station' : at ? 'I byn' : 'Okänd plats', ...(at ? { x: Math.floor(at.x), y: Math.floor(at.y) } : {}) };

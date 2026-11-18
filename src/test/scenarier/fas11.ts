@@ -3347,3 +3347,41 @@ SCENARIER.kartvarde = {
     ];
   },
 };
+
+SCENARIER.kartbok = {
+  text: 'Kartboken (steg 11.7.6): finns en kartbok med en ledig del (eller en tom bok som ingen annan skrift vill ha) ritar den som rest sin karta i boken i stället för på ett blad; boken heter Kartboken, och den som läser den känner platserna och kan resa dit, fast hen aldrig varit där',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const v = SIM.living(s).filter(r => !r.gast && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    const [p, q] = v as [SIM.Person, SIM.Person];
+    for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
+    s.ting = SIM.tingOf(s).filter(t => !t.skrift && !t.delar && t.k !== 'bok'); // (q ritade bokens första del men minns inte platserna)
+    const nr = hb.grannar!.slice(0, 3).map(g => g.nr);
+    for (const n of nr) SIM.larOrt(s, p, n, SIM.O_BESOKT, 1, { t: s.now - SIM.DAY });
+    p.skill.berattande = 15;
+    while (SIM.lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const at = { x: p.x, y: p.y };
+    SIM.setAmount(s, 'pergament', 0);
+    // en kartbok med en del redan (en annan plats, ritad av en annan), så att boken är en kartbok med en ledig del
+    const bok = SIM.newTing(s, 'bok', 1, p.id), annan = hb.grannar![3]?.nr ?? hb.nr;
+    bok.delar = [{ slag: 'karta', av: { id: q.id, namn: q.name }, t: s.now, titel: 'Kartan', text: '', q: SIM.NORMAL, platser: [{ nr: annan, v: SIM.O_KANT, t: s.now }] }];
+    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
+    SIM.placeTools(s);
+    const val = SIM.skrivVal(s, p, at);
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+    SIM.skrivKlar(s, p);
+    const del = bok.delar?.[1], blad = SIM.tingOf(s).some(t => t.k === 'blad' && t.skrift);
+    const titel = SIM.bokTitel(bok);
+    const vill = SIM.lasVal(s, q);
+    const fore = nr.map(n => SIM.kannerOrt(s, q, n));
+    SIM.lasKlar(s, q, { act: 'lasa', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: bok.id });
+    const efter = nr.map(n => SIM.kannerOrt(s, q, n));
+    const plan = SIM.resaPlan(s, q, 99, 99);
+    return [
+      [`kartan ritas i boken utan pergament (${val?.why ?? 'ingen lust'}; ${del?.platser?.length ?? 0} platser i boken, inget blad: ${!blad})`, del?.slag === 'karta' && (del.platser?.length ?? 0) === nr.length && !blad],
+      [`boken heter "${titel}"`, titel === 'Kartboken'],
+      [`den som aldrig varit där vill läsa boken (${vill?.why ?? 'nej'}) och känner sedan platserna (${fore.join('/')} → ${efter.join('/')})`, !!vill && fore.every(x => x === undefined) && efter.every(x => x !== undefined)],
+      [`och kan planera en resa dit (${plan ? `${plan.skal} till ${plan.namn}` : 'ingen plan, information'})`, !plan || nr.includes(plan.mal)],
+    ];
+  },
+};
