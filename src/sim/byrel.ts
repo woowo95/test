@@ -77,6 +77,24 @@ export function mots(vl: Varlden, a: number, b: number) {
   if (relation(vl, b, a) === undefined) satt(vl, b, a, grundlage(vl, b, a));
 }
 // byn gor gör något mot byn mot: mot:s syn på gor ändras
+// ---------- läget mellan två byar (steg 11.6.22): registret BYLAGEN ----------
+// Ett par byar har ett läge åt båda hållen: fred (inget sparat), krig eller lyder under (kungadömena, senare). Läget säger
+// vad som gäller mellan dem: om de handlar med varandra och hur mycket de vill plundra varandra (fejden, byhandling.ts).
+// Kriget börjar och slutar med raderna krig och fred i BYHANDLINGAR, när poängen går över noll
+export interface ByLageDef { namn: string; sym: string; handel: boolean; fejd: number }
+export const BYLAGEN = {
+  fred: { namn: 'Fred', sym: '🕊️', handel: true, fejd: 0 },
+  krig: { namn: 'Krig', sym: '⚔️', handel: false, fejd: 1 }, // i krig vill båda plundra den andra fullt ut
+  lyder: { namn: 'Lyder under', sym: '👑', handel: true, fejd: 0 },
+} as const satisfies Record<string, ByLageDef>;
+export type ByLageId = keyof typeof BYLAGEN;
+const lageNyckel = (a: number, b: number) => a < b ? `${a}>${b}` : `${b}>${a}`;
+export const byLage = (vl: Varlden, a: number, b: number): ByLageId => vl.lage?.[lageNyckel(a, b)]?.k ?? 'fred';
+export const lageSedan = (vl: Varlden, a: number, b: number) => vl.lage?.[lageNyckel(a, b)]?.t;
+export function sattLage(vl: Varlden, a: number, b: number, k: ByLageId, t: number) {
+  const n = lageNyckel(a, b);
+  if (k === 'fred') { if (vl.lage) delete vl.lage[n]; } else (vl.lage ??= {})[n] = { k, t };
+}
 export function byHandelse(vl: Varlden, id: ByHandelseId, gor: number, mot: number, mangd = 1) {
   const h: ByHandelse = BYHANDELSER[id], d = Math.round(h.tecken * BYREL[h.tal] * mangd);
   mots(vl, gor, mot);

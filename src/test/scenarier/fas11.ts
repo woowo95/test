@@ -3042,3 +3042,49 @@ SCENARIER.vagran = {
     ];
   },
 };
+
+SCENARIER.bykrig = {
+  text: 'Kriget mellan två byar (steg 11.6.22): en by går i krig mot en granne den ser långt ner på, mer med en aggressiv ledare; i krig handlar byarna inte med varandra och vill plundra varandra fullt ut, och freden kommer när tröttheten väger mer än fejden. Läget står i registret BYLAGEN',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    // två grannbyar som skulle handla med varandra i fred
+    const par: [SIM.VarldRad, SIM.VarldRad][] = [];
+    for (const x of vl.rader!) if (SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare) for (const g of SIM.radGrannar(vl, x)) if (g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare) par.push([x, g]);
+    for (const [x, g] of par) SIM.mots(vl, x.nr, g.nr);
+    const [r, mot] = par.find(([x, g]) => SIM.fardAffar({ ...SIM.byCtx(s, vl, x, g), rel: 50 })) ?? par[0]!;
+    const c = SIM.byCtx(s, vl, r, mot);
+    const med = (rel: number, agg?: number) => SIM.BYHANDLINGAR.krig.poang({ ...c, rel, ...(agg !== undefined ? { led: { ...(c.led ?? {} as Record<SIM.Stat, number>), aggression: agg } } : {}) });
+    const vanner = med(20), fiender = med(-95), lugn = med(-95, 2), arg = med(-95, 19);
+    // i fred: plundringen och handeln som vanligt
+    const pl0 = SIM.BYHANDLINGAR.plundra.poang({ ...c, rel: 0 });
+    const affar0 = !!SIM.fardAffar({ ...c, rel: 50 });
+    SIM.BYHANDLINGAR.krig.gor({ ...c, rel: -95 });
+    const iKrig = SIM.byLage(vl, r.nr, mot.nr) === 'krig' && SIM.byLage(vl, mot.nr, r.nr) === 'krig';
+    const igen = SIM.BYHANDLINGAR.krig.poang({ ...c, rel: -95 });
+    const pl1 = SIM.BYHANDLINGAR.plundra.poang({ ...c, rel: 0 });
+    const affar1 = !!SIM.fardAffar({ ...c, rel: 50 });
+    // freden: genast efter kriget vill ingen ha fred, efter länge och med en låg fejd vill man det
+    const t0 = SIM.lageSedan(vl, r.nr, mot.nr)!;
+    const fredNu = SIM.BYHANDLINGAR.fred.poang({ ...c, rel: -95, t: t0 });
+    const fredSen = SIM.BYHANDLINGAR.fred.poang({ ...c, rel: -40, t: t0 + 3 * SIM.BYHANDLING.fredDygn * SIM.DAY });
+    SIM.BYHANDLINGAR.fred.gor({ ...c, t: t0 + 3 * SIM.BYHANDLING.fredDygn * SIM.DAY });
+    const fred = SIM.byLage(vl, r.nr, mot.nr) === 'fred' && !vl.lage?.[`${Math.min(r.nr, mot.nr)}>${Math.max(r.nr, mot.nr)}`];
+    // huvudbyn går inte i krig av raden (den väljer själv, senare)
+    const hv = vl.rader!.find(x => x.nr === vl.huvud)!, hg = SIM.radGrannar(vl, hv).find(g => SIM.BYSORTER[g.sort].ledare);
+    const huvudUte = !hg || SIM.BYHANDLINGAR.krig.poang({ ...SIM.byCtx(s, vl, hg, hv), rel: -100 }) < 0;
+    // en värld i 40 dygn (40 år i spelet): krigen kommer och går ur poängen
+    const w = SIM.cloneState(testBy(10)); w.now += 40 * SIM.DAY; SIM.varldSteg(w);
+    const lagst = Math.min(...Object.values(w.varld?.rel ?? {}));
+    const f2 = (x: number) => x.toFixed(2);
+    return [
+      [`kriget lönar sig mot en granne byn ser långt ner på (${f2(fiender)}) men inte mot en vän (${f2(vanner)})`, fiender > 0 && vanner < 0],
+      [`en aggressiv ledare vill mer (${f2(lugn)} → ${f2(arg)})`, arg > lugn],
+      ['kriget gäller åt båda hållen, och ingen förklarar krig igen mitt i ett', iKrig && igen < 0],
+      [`i krig vill byn plundra grannen fullt ut (${f2(pl0)} → ${f2(pl1)} vid relationen 0)`, pl1 > pl0],
+      [`i krig handlar byarna inte (före: ${affar0 ? 'affär' : 'ingen'}, i krig: ${affar1 ? 'affär' : 'ingen'})`, affar0 && !affar1],
+      [`freden: genast inte (${f2(fredNu)}), efter ${3 * SIM.BYHANDLING.fredDygn} dygn ja (${f2(fredSen)}), och läget tas bort`, fredNu < 0 && fredSen > 0 && fred],
+      ['huvudbyn går inte i krig av världens rader', huvudUte],
+      [`i en värld i 40 dygn: ${w.stat?.bykrig ?? 0} krig och ${w.stat?.byfred ?? 0} fredsslut, ${w.stat?.byhandling_plundra ?? 0} räder, den lägsta relationen ${lagst} (information)`, true],
+    ];
+  },
+};

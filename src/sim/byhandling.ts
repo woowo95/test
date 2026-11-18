@@ -7,7 +7,7 @@
 // Fler rader kommer med sina steg: handelsfärden (11.6.6), gåvan (11.6.14), mutan (11.6.15), anfallen (11.6.16), kriget
 // (11.6.22) och sändebudet (11.6.23). Huvudbyn väljer ur samma register när handlingen kan bli en resa med verkliga bybor.
 import { balans } from './balans';
-import { BYREL, byHandelse, gavaRel, relation } from './byrel';
+import { BYLAGEN, BYREL, byHandelse, byLage, gavaRel, lageSedan, relation, sattLage } from './byrel';
 import { count } from './folk';
 import { varldPlatsNr } from './landmarken';
 import { lever } from './rad';
@@ -57,6 +57,11 @@ export const BYHANDLING = balans('byhandling', {
   plundraVan: 20, // svälten: en by som saknar mat plundrar en granne den inte ser så här väl på
   dodVarde: 20, // en död egen väger så mycket (i grundvärde) mot bytet
   plundraKostnad: 0.2, // det anfallet kostar i poäng (tiden, risken för hämnd)
+  // kriget (steg 11.6.22)
+  krigRel: 30, // byn vill gå i krig mot den den ser lägre på än minus så mycket ...
+  krigFull: 50, // ... och vill det fullt ut vid minus så mycket mer
+  krigKostnad: 0.3, // det kriget kostar i poäng (de döda och arbetet hemma)
+  fredDygn: 8, // efter så många dygn (år i spelet) i krig väger tröttheten lika mycket som fejden
 });
 
 // det poängen räknas ur: byn som gör (r), grannen (mot), hur r ser på mot, ledarens egenskaper (1–20) och trons krigiskhet (0–1)
@@ -104,7 +109,7 @@ export const BYHANDLINGAR = {
     poang: c => {
       const n = c.r.nr === c.vl.huvud ? 0 : flockStorlek(c.r, anfallUte(c.vl, c.r.nr)); // också mot huvudbyn: då kommer flocken som rövare (steg 11.6.20)
       if (!n || restid(c.vl, c.r, c.mot) === undefined) return -1;
-      const fejd = clamp((-c.rel - BYHANDLING.plundraRel) / BYHANDLING.plundraFull, 0, 1);
+      const fejd = Math.max(BYLAGEN[byLage(c.vl, c.r.nr, c.mot.nr)].fejd, clamp((-c.rel - BYHANDLING.plundraRel) / BYHANDLING.plundraFull, 0, 1)); // i krig vill byn plundra fullt ut
       const svalt = c.rel < BYHANDLING.plundraVan ? clamp(1 - c.r.tal.mat / Math.max(1, radVill(c.r, 'mat', rikMal(c.r))), 0, 1) : 0;
       const vilja = Math.max(fejd, svalt) * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig);
       const p = vinstChans(c.r, c.mot, n), byte = Math.min(n * BYANFALL.bar, VARUGRUPP_IDS.reduce((x, g) => x + radHar(c.mot, g) * enhet(g) * BYANFALL.byte, 0));
@@ -120,6 +125,27 @@ export const BYHANDLINGAR = {
       laggIKo(c.vl, f.t1, 'fardFram', { sak: f.id });
       count(c.s, 'radanfall_ut');
     },
+  },
+  // kriget (steg 11.6.22): en by går i krig mot en granne den ser långt ner på, mer av en aggressiv ledare och en krigisk tro och
+  // när den själv är starkare. Kriget är ett läge mellan byarna (BYLAGEN i byrel.ts): de handlar inte och vill plundra varandra
+  krig: {
+    namn: 'Krig',
+    poang: c => {
+      if (krigUte(c) || byLage(c.vl, c.r.nr, c.mot.nr) !== 'fred') return -1;
+      const fejd = clamp((-c.rel - BYHANDLING.krigRel) / BYHANDLING.krigFull, 0, 1);
+      return fejd * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig) / radsla(c) - BYHANDLING.krigKostnad;
+    },
+    gor: c => { sattLage(c.vl, c.r.nr, c.mot.nr, 'krig', c.t); varldHandelse(c.vl, 'krig', c.t, { by: c.r.nr, mot: c.mot.nr }); count(c.s, 'bykrig'); },
+  },
+  // freden: tröttheten växer med tiden i krig och med en ledare med empati, och fejden och aggressionen håller kriget igång
+  fred: {
+    namn: 'Fred',
+    poang: c => {
+      if (krigUte(c) || byLage(c.vl, c.r.nr, c.mot.nr) !== 'krig') return -1;
+      const dygn = (c.t - (lageSedan(c.vl, c.r.nr, c.mot.nr) ?? c.t)) / DAY, fejd = clamp((-c.rel - BYHANDLING.krigRel) / BYHANDLING.krigFull, 0, 1);
+      return dygn / BYHANDLING.fredDygn * (0.5 + ledDrag(c, 'empati')) * radsla(c) - fejd * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig);
+    },
+    gor: c => { sattLage(c.vl, c.r.nr, c.mot.nr, 'fred', c.t); varldHandelse(c.vl, 'fred', c.t, { by: c.r.nr, mot: c.mot.nr }); count(c.s, 'byfred'); },
   },
   // handelsfärden (steg 11.6.6): byn säljer det den har överflöd av där det är dyrast, när vinsten är större än resans kostnad
   handel: {
@@ -177,6 +203,8 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
 export interface RadFard { gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+// kriget gäller två byar i världen, inte huvudbyn (den väljer själv, senare)
+const krigUte = (c: ByCtx) => c.r.nr === c.vl.huvud || c.mot.nr === c.vl.huvud;
 // så många ur byn nr är ute i ett anfall (de kan inte gå med i ett till)
 export const anfallUte = (vl: Varlden, nr: number) => (vl.farder ?? []).reduce((a, f) => a + (f.anfall && f.fran === nr ? f.anfall : 0), 0);
 const enhet = (g: VarugruppId) => g === 'mat' ? BYHANDLING.portion : 1; // en enhet i gruppens tillgång, i grundvärde
@@ -199,7 +227,7 @@ export interface FardAffar { g: VarugruppId; n: number; dygn: number; vinst: num
 // den bästa affären för byn c.r hos grannen c.mot: gruppen, lasten i enheter och vinsten i grundvärde efter resans kostnad
 export function fardAffar(c: ByCtx): FardAffar | undefined {
   const { s, vl, r, mot } = c;
-  if (c.rel < BYHANDLING.minRel || (relation(vl, mot.nr, r.nr) ?? 0) < BYHANDLING.minRel) return undefined;
+  if (c.rel < BYHANDLING.minRel || (relation(vl, mot.nr, r.nr) ?? 0) < BYHANDLING.minRel || !BYLAGEN[byLage(vl, r.nr, mot.nr)].handel) return undefined;
   const huvud = mot.nr === vl.huvud;
   if (huvud && (!r.syn || handlarUte(s, r.nr))) return undefined; // byns handlare är redan på väg till huvudbyn eller där
   if (r.tal.folk < BYHANDLING.barare * 2) return undefined;
