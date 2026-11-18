@@ -4473,11 +4473,12 @@ SCENARIER.tvabyar = {
   text: 'Två byar i takt (steg 11.13.1, step och stegBy i steg.ts): en väckt by går efter huvudbyn i samma anrop, i fast ordning och med sina egna slag, och båda byarna utvecklas exakt som när de går var för sig. Världens perioder räknas bara av huvudbyn',
   kor: () => {
     const t0 = Date.UTC(2026, 0, 1), timmar = 30;
-    const hash = (s: SIM.State) => { const j = JSON.parse(kanonisk(SIM.serialize(s))); delete j.skuld; delete j.stegRest; delete j.vackt; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
+    const hash = (s: SIM.State) => { const j = JSON.parse(kanonisk(SIM.serialize(s))); delete j.skuld; delete j.stegRest; delete j.vackt; delete j.vackHall; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
     const nyB = () => { const b = SIM.createState(1511, t0); delete b.varld; b.vackt = 1; return b; };
     const a1 = SIM.createState(6, t0), b1 = nyB();
     kor(a1, timmar); kor(b1, timmar);
     const a2 = SIM.createState(6, t0), b2 = nyB();
+    b2.vackHall = 1; // hålls vaken som med testknappen: inget sällskap är på väg dit (steg 11.13.8)
     a2.vackta = [b2];
     kor(a2, timmar);
     const varldA = SIM.createState(6, t0), timme0 = varldA.varld?.perioder?.timme ?? 0; varldA.vackt = 1; kor(varldA, 2);
@@ -4619,6 +4620,49 @@ SCENARIER.vacktforrad = {
       ['inga vätskor utan behållare', !vatska],
       ['byn har bara det den kan göra', kan],
       ['raden ändras inte', JSON.stringify(r) === fore],
+    ];
+  },
+};
+
+SCENARIER.vackning = {
+  lang: true,
+  text: 'Väckningen i skeden och inkörningen (steg 11.13.8, borjaVacka och vackSteg i vackt.ts): när ett sällskap ger sig av räknas byggstegen vid kända tider i världens kö, radens tal fryses när väckningen börjar, och byn går i slagen med huvudbyn en inkörning före ankomsten. Levande läge och ikappräkning ger samma by, och byn somnar när ingen är på väg dit',
+  kor: () => {
+    const t0 = Date.UTC(2026, 0, 1);
+    const hash = (b: SIM.State) => { const j = JSON.parse(kanonisk(SIM.serialize(b))); for (const k of ['varld', 'skuld', 'stegRest', 'vackHall', 'vackRad', 'vackI']) delete j[k]; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
+    const nyVarld = () => {
+      const s = SIM.createState(6, t0), vl = s.varld!;
+      const r = vl.rader!.filter(q => q.sort === 'by' && SIM.lever(vl, q)).sort((a, b) => b.tal.folk - a.tal.folk)[0];
+      r.tal.folk = 16; r.tek = Object.values(SIM.TEK).filter(t => t.niva <= 2).map(t => t.id); r.tal.rikedom = 2000; r.tal.mat = 400;
+      return { s, r };
+    };
+    // den genast väckta byn vid samma tid som skedena startar byn
+    const a = nyVarld(), start = t0 + SIM.DAY - SIM.VACKT.inkorning * SIM.HOUR;
+    a.s.now = start; const b0 = SIM.vackBy(a.s, a.r.nr)!; a.s.now = t0;
+    // levande läge: slag för slag
+    const l = nyVarld(), bl = SIM.borjaVacka(l.s, l.r.nr, t0, 1)!;
+    bl.vackHall = 1;
+    const fore = bl.people.length;
+    l.r.tal.folk = 3; l.r.tal.rikedom = 10; // raden ändras under resan, men byn byggs ur det frysta
+    let delvis = false;
+    kor(l.s, 30, s => { const b = s.vackta?.[0]; if (b && b.vackI !== undefined && b.vackI > 0) delvis = true; });
+    // ikappräkning: hela tiden i ett anrop
+    const k = nyVarld(), bk = SIM.borjaVacka(k.s, k.r.nr, t0, 1)!;
+    bk.vackHall = 1; k.r.tal.folk = 3; k.r.tal.rikedom = 10;
+    SIM.step(k.s, 30 * 3600);
+    const kl = l.s.vackta?.[0], kk = k.s.vackta?.[0];
+    SIM.step(b0, (l.s.now - b0.now) / 1000); // den genast väckta byn går lika länge för sig
+    const hl = kl ? hash(kl) : '', hk = kk ? hash(kk) : '', h0 = hash(b0), nl = kl?.people.length, tl = kl?.now;
+    // somnar: ingen är på väg dit
+    delete kl!.vackHall; kor(l.s, 2);
+    return [
+      ['byn börjar som en tom by (' + fore + ' invånare)', fore === 0],
+      ['byggstegen räknas i skeden under resan', delvis],
+      ['byn är densamma som den genast väckta som gått lika länge', hl !== '' && hl === h0 && b0.now === tl],
+      ['raden frystes när väckningen började (' + (nl ?? 0) + ' invånare)', nl === 16],
+      ['byn har gått med huvudbyn sedan starten', tl !== undefined && tl > start],
+      ['levande läge och ikappräkning ger samma by', hk !== '' && hk === hl && kk!.now === tl],
+      ['byn somnar när ingen är på väg dit', !l.s.vackta?.length],
     ];
   },
 };

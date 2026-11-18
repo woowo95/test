@@ -334,6 +334,8 @@ export interface State {
   varld?: import('./varlden').Varlden; // världen byn ligger i (steg 11.2.7, varlden.ts); testbyarna har ingen
   vackta?: State[]; // de väckta byarna, som går i samma slag som huvudbyn mot samma värld (steg 11.13.1, steg.ts)
   vackt?: number; // i en väckt by: radens nummer i världen; världens perioder räknas bara av huvudbyn
+  vackI?: number; vackRad?: import('./radtal').VarldRad; // en by som väcks: nästa byggare i BYGGARE (byn går inte förrän den är byggd) och radens tal som de var när väckningen började (steg 11.13.8)
+  vackHall?: 1; // väckt med testknappen: somnar inte förrän knappen trycks igen
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
   bynVet?: import('./ort').BynVet; // det byn vet om platserna i världen (steg 11.4.6, ort.ts)
   textminne?: Record<string, string[]>; // textminnet (steg 6.7.3): början på de tre senaste krönikaraderna per mall, utan historiken

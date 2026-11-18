@@ -31,7 +31,11 @@ import { startSmak } from './rykten';
 import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
 import { stepDelning } from './delning';
-import { DAY, Person, State, useMap } from './typer';
+import { DAY, HOUR, Person, State, useMap } from './typer';
+import { count } from './folk';
+import { KOHANDELSER, laggIKo, PERIODRADER } from './varldslag';
+import { lever } from './rad';
+import { sallskapNu, vackKrok } from './resa';
 import { pair, tomBy } from './varld';
 import { varldMark } from './varlden';
 import { MARK_IDS } from './varldmark';
@@ -63,10 +67,10 @@ export const BYGGARE: Byggare[] = [
 export const vacktFro = (s: State, nr: number) => ((s.seed * 7919 + nr * 104729) % 2147483646) + 1;
 
 // den tomma byn: marken ur byns frö och världsrutans marksort
-export function vacktGrund(s: State, r: VarldRad): State {
+export function vacktGrund(s: State, r: VarldRad, now = s.now): State {
   const vl = s.varld, v = varldMark(s), p = vl && byPlats(vl, r.nr);
   const mark = v && p ? MARK_IDS[v.mark[p.y * v.w + p.x]] : undefined;
-  const b = tomBy(vacktFro(s, r.nr), r.grundad, s.now, { W: KARTA.bredd, H: KARTA.hojd }, { varld: vl, vackt: r.nr, ...(mark && mark !== 'hav' && mark !== 'sjo' ? { varldmark: mark } : {}) });
+  const b = tomBy(vacktFro(s, r.nr), r.grundad, now, { W: KARTA.bredd, H: KARTA.hojd }, { varld: vl, vackt: r.nr, ...(mark && mark !== 'hav' && mark !== 'sjo' ? { varldmark: mark } : {}) });
   b.seder = newSeder();
   return b;
 }
@@ -76,10 +80,61 @@ export function vackBy(s: State, nr: number): State | undefined {
   if (!r) return undefined;
   const b = vacktGrund(s, r);
   for (const g of BYGGARE) { useMap(b); g.bygg(b, s, r); }
+  vackKlar(s, b);
+  return b;
+}
+// byn är byggd: sederna och delningen räknas, och byn går i slagen
+function vackKlar(s: State, b: State) {
   useMap(b);
   b.seder.v = sederTarget(b);
   stepDelning(b);
+  delete b.vackI;
   useMap(s);
+}
+
+// ---------- väckningen i skeden (steg 11.13.8) ----------
+// När ett sällskap ger sig av mot en by i världen börjar byn väckas: radens tal fryses (en kopia i byn), och varje rad i BYGGARE
+// räknas vid en känd tid under resan, jämnt fördelade från avfärden till starten. Starten är den väntade ankomsten (vägens dygn,
+// vagDygn) minus inkörningen (VACKT.inkorning), eller avfärden om resan är kortare. Sedan går byn i slagen med huvudbyn, så att
+// den har levt en stund när sällskapet kommer. Tiderna ligger i världens kö, så levande läge och ikappräkning ger samma by
+export function borjaVacka(s: State, nr: number, t0: number, dygn: number) {
+  const vl = s.varld, r = vl && radNr(vl, nr);
+  if (!vl || !r || r.nr === vl.huvud || r.sort !== 'by' || !lever(vl, r) || r.tal.folk < 1 || s.vackta?.some(b => b.vackt === nr)) return undefined;
+  const start = Math.max(t0, t0 + dygn * DAY - VACKT.inkorning * HOUR);
+  const b = vacktGrund(s, r, start);
+  b.vackI = 0; b.vackRad = JSON.parse(JSON.stringify(r));
+  (s.vackta ??= []).push(b);
+  useMap(s);
+  BYGGARE.forEach((_, i) => laggIKo(vl, Math.round(t0 + (start - t0) * (i + 1) / BYGGARE.length), 'vackSteg', { sak: nr, data: { i } }));
+  count(s, 'vackning_borjad');
+  return b;
+}
+KOHANDELSER.vackSteg = (s, _vl, p) => {
+  const b = s.vackta?.find(x => x.vackt === p.sak && x.vackI === p.data?.i);
+  if (!b || !b.vackRad) return;
+  useMap(b);
+  BYGGARE[b.vackI!].bygg(b, s, b.vackRad);
+  b.vackI!++;
+  if (b.vackI! >= BYGGARE.length) { vackKlar(s, b); count(s, 'vackt'); }
+  useMap(s);
+};
+// en väckt by somnar när inget sällskap längre är på väg dit eller där (steg 11.13.12 skriver talen tillbaka)
+export function vacktSomna(s: State) {
+  const vl = s.varld;
+  if (!vl || !s.vackta?.length) return;
+  const mal = new Set(sallskapNu(vl).filter(sl => sl.skede !== 'hemat').map(sl => vl.platser?.find(q => q.nr === sl.mal)?.by));
+  const fore = s.vackta.length;
+  s.vackta = s.vackta.filter(b => b.vackt === undefined || mal.has(b.vackt) || b.vackHall);
+  if (s.vackta.length < fore) count(s, 'vackt_somnat', fore - s.vackta.length);
+  if (!s.vackta.length) delete s.vackta;
+}
+vackKrok.borja = borjaVacka;
+PERIODRADER.push({ namn: 'väckta byar som somnar', period: 'timme', fn: s => vacktSomna(s) });
+// testknappen: raden nr väcks genast och går i slagen med huvudbyn tills den somnar av sig själv eller testknappen trycks igen
+export function vackTest(s: State, nr: number) {
+  if (s.vackta?.some(b => b.vackt === nr)) { s.vackta = s.vackta.filter(b => b.vackt !== nr); if (!s.vackta.length) delete s.vackta; return undefined; }
+  const b = vackBy(s, nr);
+  if (b) { b.vackHall = 1; (s.vackta ??= []).push(b); }
   return b;
 }
 
@@ -259,4 +314,16 @@ function iLagret(b: State, hus = true) {
   }
   const a = BYGGNADER.forrad.akut(b);
   if (hus && a.v > 0 && b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) { const h = planeraHus(b, 'forrad', a); if (h) byggFardigt(b, h); }
+}
+// testknappen Väck: den närmaste levande grannbyn till huvudbyn väcks, eller somnar om den redan är väckt
+export function vackTestNarmast(s: State): { ok: boolean; text: string } {
+  const vl = s.varld, h = vl && radNr(vl, vl.huvud);
+  if (!vl || !h) return { ok: false, text: 'Det finns ingen värld runt byn' };
+  const hem = byPlats(vl, h.nr), avst = (r: VarldRad) => { const p = byPlats(vl, r.nr); return hem && p ? Math.max(Math.abs(p.x - hem.x), Math.abs(p.y - hem.y)) : Infinity; };
+  const r = (vl.rader ?? []).filter(q => q.nr !== vl.huvud && q.sort === 'by' && lever(vl, q) && q.tal.folk >= 1).sort((a, c) => avst(a) - avst(c) || a.nr - c.nr)[0];
+  if (!r) return { ok: false, text: 'Ingen by i världen lever' };
+  const namn = byPlats(vl, r.nr)?.namn ?? 'byn';
+  const b = vackTest(s, r.nr);
+  if (!b) return { ok: true, text: `${namn} somnade` };
+  return { ok: true, text: `${namn} väcktes: ${b.people.length} invånare, ${housesOf(b).length} hus och ${(b.stationer ?? []).length} stationer` };
 }

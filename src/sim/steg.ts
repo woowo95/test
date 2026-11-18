@@ -377,7 +377,11 @@ declare global { var slagPuls: (() => void) | undefined }
 export function step(s: State, dtSec: number, events?: TalkEvent[]) { // också när gränssnittet räknar (typer.ts)
   simulera(() => {
     stegBy(s, dtSec, events);
-    if (s.vackta?.length) { for (const v of s.vackta) stegBy(v, dtSec); useMap(s); }
+    if (s.vackta?.length) { // var och en räknas fram till samma tid som huvudbyn (en by som väckts under steget börjar vid sin tid)
+      const T = s.now + (s.skuld ?? 0) * 1000;
+      for (const v of s.vackta) if (v.vackI === undefined) stegBy(v, (T - v.now) / 1000 - (v.skuld ?? 0));
+      useMap(s);
+    }
   });
 }
 function stegBy(s: State, dtSec: number, events?: TalkEvent[]) {

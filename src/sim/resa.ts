@@ -457,6 +457,8 @@ export function resaSteg(s: State, p: Person, tk: Task) {
     sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0; sl.gang = 0;
     satVag(s, sl, true);
     dagbok(s, sl, 'ut', 'Gav sig av.');
+    const mal = s.varld!.platser?.find(q => q.nr === sl.mal), vd = hem && v && mal ? vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x) : undefined;
+    if (mal?.by !== undefined && vd) vackKrok.borja?.(s, mal.by, s.now, vd.dygn / Math.max(0.05, sallskapFart(s, sl))); // byn dit börjar väckas (vackt.ts, steg 11.13.8)
   }
 }
 
@@ -468,6 +470,8 @@ export function resaSteg(s: State, p: Person, tk: Task) {
 // en natt utan tak drar ork efter kölden och regnet eller snön för den del av gruppen som inte ryms i tälten. Framme tär
 // vädret inte. Låg ork sänker farten (orkFart, steg 11.5.7).
 export const PA_VAGEN: readonly Skede[] = ['ute', 'framme', 'hemat'];
+// väckningen av byn dit (vackt.ts sätter den, så att resa.ts inte importerar vackt.ts)
+export const vackKrok: { borja?: (s: State, nr: number, t0: number, dygn: number) => unknown } = {};
 const behovOf = (sl: Sallskap) => sl.behov ??= { matt: 1, vatska: 1, ork: 1, fulla: sl.pack.vattensack ?? 0, foder: 0 };
 // rutan sällskapet är på (i världen), och om det går att beta och finns vatten där
 function rutaNu(s: State, sl: Sallskap) {
