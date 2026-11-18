@@ -1,5 +1,5 @@
 import { antal, lista, och, stor, tal } from './ord';
-import { rovareSedda, gastensPlatser } from './ort';
+import { kartaBorta, rovareSedda, gastensPlatser } from './ort';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
@@ -594,7 +594,7 @@ function taEn(s: State, f: Rovarflock, r: Person) {
   const fritt = (k: string) => tingOf(s).find(q => q.k === k && q.bar === undefined && q.hos === undefined && q.lass === undefined);
   const k = SAK_LIST.filter(q => vikt + viktOf(q) <= bar && (SAKER[q]!.redskap ? !!fritt(q) : amountOf(s, q) >= 1)).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a)))[0];
   if (!k) return false;
-  if (SAKER[k]!.redskap) { const t = fritt(k)!; s.ting = s.ting!.filter(q => q !== t); } else addTo(s, k, -1);
+  if (SAKER[k]!.redskap) { const t = fritt(k)!; s.ting = s.ting!.filter(q => q !== t); kartaBorta(s, t); } else addTo(s, k, -1);
   (gr(r).bar ??= {})[k] = (gr(r).bar![k] ?? 0) + 1;
   (f.tagit ??= {})[k] = (f.tagit[k] ?? 0) + 1;
   count(s, 'rovat');

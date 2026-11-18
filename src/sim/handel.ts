@@ -1,5 +1,5 @@
 import { honom } from './ord';
-import { gastensPlatser, horOmGast, ORT, radBesoker } from './ort';
+import { gastensPlatser, horOmGast, kartaBorta, ORT, radBesoker } from './ort';
 import { byPlats } from './landmarken';
 import { sallskapTyngd, trampaFard } from './leder';
 import { bynsMitt, utanforByn } from './omrade';
@@ -511,7 +511,7 @@ export function handlarPart(s: State, h: Handlare): Part {
     lamna: w => { if (w.k === 'silver') h.silver -= w.n; else taBort(h, w); return w; },
     ta: w => {
       if (w.k === 'silver') { h.silver += w.n; return; }
-      if (isTool(w.k)) { const q = w.t?.q ?? w.q; if (w.t) s.ting = tingOf(s).filter(t => t !== w.t); for (let i = 0; i < (w.t ? 1 : w.n); i++) h.varor.push({ k: w.k, n: 1, q }); return; }
+      if (isTool(w.k)) { const q = w.t?.q ?? w.q; if (w.t) { s.ting = tingOf(s).filter(t => t !== w.t); kartaBorta(s, w.t); } for (let i = 0; i < (w.t ? 1 : w.n); i++) h.varor.push({ k: w.k, n: 1, q }); return; }
       const f = h.varor.find(x => x.k === w.k);
       if (f) f.n += w.n; else h.varor.push({ k: w.k, n: w.n });
     },

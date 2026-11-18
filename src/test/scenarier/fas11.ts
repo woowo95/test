@@ -3275,3 +3275,38 @@ SCENARIER.kartkopia = {
     ];
   },
 };
+
+SCENARIER.kartkunskap = {
+  text: 'Kartan i byns kunskap (steg 11.7.4): det byn vet räknar med kartorna och böckerna i byn, också när ingen minns platsen; kartan hos den som är ute på resa är med på resan, och när kartan brinner, säljs eller stjäls försvinner kunskapen genast, med en rad i krönikan',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    for (const r of s.people) r.lardomar = (r.lardomar ?? []).filter(l => l.k !== 'ort');
+    s.ting = SIM.tingOf(s).filter(t => !t.skrift && !t.delar);
+    const v = SIM.living(s).filter(r => !r.gast && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen), p = v[0]!;
+    const [a, b, c] = hb.grannar!.slice(0, 3).map(g => g.nr) as [number, number, number];
+    const skrift = (platser: SIM.KartPlats[]): SIM.Skrift => ({ slag: 'karta', av: { id: p.id, namn: p.name }, t: s.now, titel: 'Kartan', text: '', platser });
+    const blad = SIM.newTing(s, 'blad', 1, p.id); blad.skrift = skrift([{ nr: a, v: SIM.O_KANT, t: s.now }, { nr: c, v: SIM.O_RYKTE, t: s.now }]);
+    const bok = SIM.newTing(s, 'bok', 1, p.id); bok.delar = [skrift([{ nr: b, v: SIM.O_KANT, t: s.now }])];
+    SIM.placeTools(s);
+    SIM.raknaBynVet(s);
+    const ka = SIM.bynKanner(s, a), kb = SIM.bynKanner(s, b), kc = SIM.bynKanner(s, c), ruta = SIM.platsRuta(s, a);
+    const rykte = !!SIM.bynsKarta(s)?.rykten.some(x => x.nr === c);
+    // kartan följer med på resan
+    blad.hos = p.id; blad.x = undefined; blad.y = undefined;
+    SIM.gaBort(s, p);
+    const ute = SIM.bynKanner(s, a);
+    SIM.kommHem(s, p, p.x, p.y);
+    const hemma = SIM.bynKanner(s, a);
+    // kartan brinner
+    const k0 = (s.hist?.kronika ?? []).length;
+    s.ting = SIM.tingOf(s).filter(t => t !== blad); SIM.kartaBorta(s, blad);
+    const brunnen = SIM.bynKanner(s, a), rad = (s.hist?.kronika ?? []).slice(k0).map(x => x[1]).find(x => /minns längre/.test(x));
+    return [
+      [`platserna på kartan och i boken är kända för byn fast ingen minns dem (${ka?.v}, ${kb?.v}; ingen vet: ${!ka?.vem.length})`, ka?.v === SIM.O_KANT && kb?.v === SIM.O_KANT && !ka.vem.length],
+      [`ett rykte på kartan är ett rykte för byn och ritas som ett område (${kc?.v}, ${rykte ? 'område' : 'inget område'})`, kc?.v === SIM.O_RYKTE && rykte],
+      [`rutan visar kartan som bär platsen och varnar för att bara den finns (${ruta?.kartor.join(', ')}; ${ruta?.baraEn ? 'bara en' : 'fler'}; källa ${ruta?.kalla})`, ruta?.kartor.length === 1 && ruta.baraEn && ruta.kalla === 'en karta'],
+      [`kartan hos den som är ute är med på resan (${ute?.v ?? 'okänd'}) och kommer hem med hen (${hemma?.v ?? 'okänd'})`, ute === undefined && hemma?.v === SIM.O_KANT],
+      [`när kartan brinner försvinner platsen ur byns kunskap genast (${brunnen?.v ?? 'okänd'}): "${rad ?? ''}"`, brunnen === undefined && !!rad],
+    ];
+  },
+};

@@ -205,7 +205,8 @@ function rutaHtml(x: number, y: number): string {
     const huvud = `<b>${esc(r.sort)} ${esc(r.namn)}</b>: ${r.niva ? esc(r.niva) : 'okänd för byn'}${r.ar !== undefined ? `, uppgifter från år ${r.ar} (${esc(r.kalla ?? '')})` : ''}`;
     const tab = r.rader.length ? `<table><tr><th></th><th>Byn tror</th><th>Sant nu</th></tr>${r.rader.map(d => `<tr><th>${esc(d.namn)}</th><td>${esc(d.tror ?? '–')}</td><td>${esc(d.sant)}</td></tr>`).join('')}</table>` : '';
     const vem = r.vem.length ? `<div>Vet: ${r.vem.map(esc).join(', ')}</div>` : '';
-    delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
+    const kartor = r.kartor.length ? `<div>Kartor: ${r.kartor.map(esc).join(', ')}</div>` : ''; // steg 11.7.4
+    delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${kartor}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
   }
   const vm = varldMark(s!);
   for (const gr of vl.gravar ?? []) if (vm && gr.ruta === y * vm.w + x) delar.push(`<div class="vkPlats"><b>✝ Grav</b>: ${esc(gr.namn)}<div>Begravd vid leden år ${kalender(s!, gr.t).ar}</div></div>`); // steg 11.5.18

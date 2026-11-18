@@ -1,3 +1,4 @@
+import { kartaBorta } from './ort';
 import { han, mark, tal } from './ord';
 import { tabortBuske } from './buskar';
 import { freeTools, tingOf } from './agande';
@@ -447,11 +448,11 @@ function slocknar(s: State, b: Brand) {
     // stationen eller möbeln brinner upp, med redskapen i den, och redskapen som ligger på marken
     const st = s.stationer?.length ? stationAt(s, x, y) : undefined;
     if (upp && st && stationBrinner(st)) {
-      for (const k of tingOf(s).filter(q => q.vid === st.id && q.hos === undefined && q.lass === undefined && !SAKER[q.k]?.brinnerInte)) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); }
+      for (const k of tingOf(s).filter(q => q.vid === st.id && q.hos === undefined && q.lass === undefined && !SAKER[q.k]?.brinnerInte)) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); kartaBorta(s, k); }
       brann(b, stationDef(st.k)?.namn ?? st.k); count(s, 'brand station'); taBort(s, st); flytt = true;
     }
     if (upp && s.staket?.length && harStaket(s, i)) { s.staket = s.staket.filter(j => j !== i); brann(b, 'Staket'); count(s, 'brand staket'); }
-    if (upp) for (const k of tingPaMarken(s)) if (Math.floor(k.x!) === x && Math.floor(k.y!) === y) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); count(s, 'brand redskap'); }
+    if (upp) for (const k of tingPaMarken(s)) if (Math.floor(k.x!) === x && Math.floor(k.y!) === y) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); kartaBorta(s, k); count(s, 'brand redskap'); }
     // sakerna brinner upp, och grödan
     for (const st of stacksOf(s)) {
       if (st.x !== x || st.y !== y || st.n < 1 || SAKER[st.k]?.brinnerInte) continue;
@@ -602,7 +603,7 @@ export function brinnerSteg(s: State, dtSec: number) {
     const pl = paSig(s, p).filter(t => !SAKER[t.k]?.brinnerInte);
     if (pl.length && ur(s, p.id, 3874) < chans(BRAND.plaggBrinner, dtSec)) {
       const t = pl[Math.floor(ur(s, p.id, 3875) * pl.length)];
-      s.ting = tingOf(s).filter(q => q !== t);
+      s.ting = tingOf(s).filter(q => q !== t); kartaBorta(s, t);
       count(s, 'brinner plagg');
       log(s, `${p.name}s ${SAKER[t.k]?.namn ?? t.k} brann upp.`, 'world', [p.id]);
     }
