@@ -468,7 +468,7 @@ SCENARIER.varldskronika = {
     const text = forsta ? SIM.varldHandelseText(vl, forsta) : '';
     // många händelser: de stora står kvar, de små stannar vid taket och de äldsta små försvinner
     const by = vl.platser!.filter(p => p.k === 'by' && p.by === undefined).slice(0, 2);
-    const t0 = s.now, tak = SIM.VARLDKRONIKA.smaTak;
+    const t0 = s.now, tak = SIM.VARLDKRONIKA.smaTak, stora0 = (vl.kronika ?? []).filter(h => SIM.VARLDSHANDELSER[h.k].stor).length;
     for (let i = 0; i < tak + 50; i++) SIM.varldHandelse(vl, i % 2 ? 'svalt' : 'farsot', t0 + i * 3600e3, { by: vl.huvud });
     for (let i = 0; i < 20; i++) SIM.varldHandelse(vl, 'krig', t0 + i * 7200e3, { by: vl.huvud, mot: 999 });
     SIM.varldHandelse(vl, 'karavan', t0 + (tak + 40) * 3600e3 - 1000, { plats: by[0]?.nr }); // i efterhand, mellan två andra
@@ -476,13 +476,13 @@ SCENARIER.varldskronika = {
     const iOrdning = kr.every((h, i) => i === 0 || h.t >= kr[i - 1].t);
     const aldstaBort = !sma.some(h => h.t < t0 + 50 * 3600e3 && h.k !== 'karavan') || sma.length === tak;
     const karavan = SIM.varldHandelseText(vl, kr.find(h => h.k === 'karavan') ?? kr[0]);
-    const alla = SIM.VARLDHANDELSE_IDS.length === 12 && ['grundad', 'gattUnder', 'delad', 'nyLedare', 'krig', 'fred', 'forbund', 'svalt', 'farsot', 'rad', 'karavan', 'uppdrag'].every(k => k in SIM.VARLDSHANDELSER);
+    const alla = ['grundad', 'gattUnder', 'delad', 'nyLedare', 'krig', 'fred', 'forbund', 'svalt', 'farsot', 'rad', 'karavan', 'uppdrag'].every(k => k in SIM.VARLDSHANDELSER);
     // sparas med världen
     const igen = JSON.parse(JSON.stringify(vl)) as SIM.Varlden;
     return [
       ['registret har slagen grundad, gått under, delad, ny ledare, krig, fred, förbund, svält, farsot, räd, plundrad karavan och uppdrag', alla],
       [`huvudbyns grundande står först i världens krönika ("${text}")`, grundad && text.includes(r.namn) && !!r.namn],
-      [`de stora sparas för alltid (${stora.length} stora)`, stora.length === 21],
+      [`de stora sparas för alltid (${stora0} + 20 = ${stora.length} stora)`, stora.length === stora0 + 20],
       [`de små har ett tak (${sma.length} av högst ${tak}), och de äldsta försvinner först`, sma.length === tak && aldstaBort],
       [`krönikan står i tidsordning, också när en händelse skrivs i efterhand ("${karavan}")`, iOrdning && karavan.startsWith('En karavan plundras vid')],
       ['krönikan sparas med världen', igen.kronika?.length === kr.length],
@@ -3899,6 +3899,59 @@ SCENARIER.kartnamn = {
       [`platsen byn bara hört rykten om (${rykt.namn}) har inget namn`, !har(rykt.namn) || rykt.namn === kand.namn],
       ['den hemliga platsen har inget namn', !har('Gömman')],
       [`utan byns kunskap har alla platser namn (${VB.namnPaKartan(vl).length} av ${vl.platser!.filter(p => p.namn).length})`, VB.namnPaKartan(vl).length === vl.platser!.filter(p => p.namn).length],
+    ];
+  },
+};
+
+SCENARIER.bro = {
+  text: 'Byggda platser på leden (steg 11.9.5, PLATSBYGGE i platsbygge.ts): en by med mycket folk som vadar över floden nära sig betalar materialet och dagsverkena för en bro när det de sparar är värt mer; bron kommer när dagsverkena är gjorda, släpper över vagnen och kortar vägen över floden. Lite folk på leden ger ingen bro',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, v = SIM.varldMark(s)!;
+    // en by med en flod (det nedre loppet) på en ruta nära sig där en bro får ligga
+    let r: SIM.VarldRad | undefined, i = -1;
+    for (const q of vl.rader!) {
+      if (q.sort !== 'by' || !SIM.lever(vl, q)) continue;
+      const hem = SIM.byPlats(vl, q.nr);
+      if (!hem) continue;
+      for (let d = 1; d <= 4 && i < 0; d++) for (let dy = -d; dy <= d && i < 0; dy++) for (let dx = -d; dx <= d && i < 0; dx++) {
+        const x = hem.x + dx, y = hem.y + dy, j = y * v.w + x;
+        if (x < 0 || y < 0 || x >= v.w || y >= v.h || v.flod[j] !== SIM.FLOD_NEDRE || SIM.hinder(vl, v, 'bro', x, y)) continue;
+        if (vl.platser!.some(p => p.by !== undefined && p !== hem && Math.max(Math.abs(p.x - x), Math.abs(p.y - y)) <= d)) continue; // byn är den närmaste
+        i = j;
+      }
+      if (i >= 0) { r = q; break; }
+    }
+    if (!r) return [['en by med en flod nära sig', false]];
+    r.tal.folk = 30; r.tal.mat = 500;
+    const vr = SIM.radVaror(r); vr.virke = 40; vr.sten = 20;
+    const x = i % v.w, y = Math.floor(i / v.w), t = s.now;
+    // lite folk på leden: ingen bro
+    vl.leder = { [i]: [1, t, 0] };
+    const ingen = SIM.bastaBygge(vl, v, r, t);
+    // mycket folk (en led): bron lönar sig
+    vl.leder = { [i]: [60, t, 2] };
+    const b = SIM.bastaBygge(vl, v, r, t);
+    const fots0 = SIM.rutKostnad(vl, v, i, 'fots'), vagn0 = SIM.rutKostnad(vl, v, i, 'vagn');
+    const over = (dx: number, dy: number) => { const a = (y - dy) * v.w + x - dx, c = (y + dy) * v.w + x + dx; return SIM.billigasteVag(vl, v, a, c, 'fots')?.kostnad ?? Infinity; };
+    const kors0 = Math.min(over(2, 0), over(0, 2));
+    const virke0 = SIM.radHar(r, 'virke');
+    if (b) SIM.byggPlats(s, vl, r, b.i, b.k, t);
+    const betalt = SIM.radHar(r, 'virke') === virke0 - SIM.PLATSBYGGE.bro.varor.virke;
+    const ko = (vl.ko ?? []).find(k => k.typ === 'platsKlar' && k.sak === r!.nr);
+    const tid = ko ? (ko.t - t) / SIM.DAY : 0;
+    if (ko) SIM.KOHANDELSER.platsKlar(s, vl, ko);
+    const bro = (vl.platser ?? []).find(p => p.k === 'bro' && p.x === x && p.y === y);
+    const fots1 = SIM.rutKostnad(vl, v, i, 'fots'), vagn1 = SIM.rutKostnad(vl, v, i, 'vagn'), kors1 = Math.min(over(2, 0), over(0, 2));
+    const kron = (vl.kronika ?? []).some(h => h.k === 'platsbygge' && h.by === r!.nr && h.plats === bro?.nr);
+    return [
+      [`lite folk på leden ger ingen bro (${ingen ? ingen.k : 'inget'})`, !ingen],
+      [`mycket folk ger en bro på floden (${b?.k ?? 'inget'}, netto ${b ? Math.round(b.netto) : '–'})`, b?.k === 'bro' && b.i === i],
+      [`byn betalar virket (${virke0} → ${SIM.radHar(r, 'virke')})`, betalt],
+      [`bron kommer när dagsverkena är gjorda (${tid} dygn)`, tid === Math.ceil(SIM.PLATSBYGGE.bro.dagsverken / SIM.PLATSTAL.folk) && !!bro],
+      [`vagnen kommer över (${vagn0} → ${vagn1})`, vagn0 === Infinity && isFinite(vagn1)],
+      [`det kostar mindre att gå över (${fots0} → ${fots1}) och vägen över floden blir kortare (${kors0.toFixed(2)} → ${kors1.toFixed(2)})`, fots1 < fots0 && kors1 < kors0],
+      ['krönikan skriver bygget', kron],
+      ['bron hör inte till byn: byns plats är fortfarande byn', SIM.byPlats(vl, r.nr)?.k !== 'bro'],
     ];
   },
 };

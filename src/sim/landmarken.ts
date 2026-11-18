@@ -114,9 +114,10 @@ export function platserUpphor(vl: Varlden, nu: number) {
   if (vl.platser?.some(p => p.till !== undefined && p.till <= nu)) vl.platser = vl.platser.filter(p => p.till === undefined || p.till > nu);
 }
 
-// vad det kostar att gå in på rutan med ett färdsätt, med platserna där (Infinity: det kommer inte fram)
-export function rutKostnad(vl: Varlden, v: VarldMark, i: number, fs: Fardsatt): number {
-  const x = i % v.w, y = Math.floor(i / v.w), pl = varldPlatserPa(vl, x, y);
+// vad det kostar att gå in på rutan med ett färdsätt, med platserna där (Infinity: det kommer inte fram); med extra som om en
+// plats av den sorten också låg där (en by som väger om den ska bygga en bro, platsbygge.ts)
+export function rutKostnad(vl: Varlden, v: VarldMark, i: number, fs: Fardsatt, extra?: LandmarkId): number {
+  const x = i % v.w, y = Math.floor(i / v.w), pl0 = varldPlatserPa(vl, x, y), pl: readonly { k: LandmarkId }[] = extra ? [...pl0, { k: extra }] : pl0;
   let m = MARK_IDS[v.mark[i]];
   for (const p of pl) m = def(p.k).blir?.[m] ?? m;
   const r = VARLDMARK[m];

@@ -24,6 +24,7 @@ export const VARLDSHANDELSER = {
   handelslager: { namn: 'Handelsläger', stor: false, text: '{by} slår upp handelslägret {mot}' },
   rad: { namn: 'Räd', stor: false, text: '{by} gör en räd mot {mot}' },
   karavan: { namn: 'Plundrad karavan', stor: false, text: 'En karavan plundras vid {plats}' },
+  platsbygge: { namn: 'Bygge på leden', stor: false, text: '{by} bygger {plats}' },
   uppdrag: { namn: 'Uppdrag', stor: false, text: '{by} sänder ut ett uppdrag till {plats}' },
 } as const satisfies Record<string, VarldHandelseDef>;
 export type VarldHandelseId = keyof typeof VARLDSHANDELSER;

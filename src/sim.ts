@@ -183,4 +183,5 @@ export * from './sim/radanfall';
 export * from './sim/vagran';
 export * from './sim/sandebud';
 export * from './sim/utpost';
+export * from './sim/platsbygge';
 export * from './sim/forhistoria';
