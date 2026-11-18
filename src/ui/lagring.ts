@@ -6,7 +6,7 @@
 // En by som sparats på det gamla sättet (hela byn som en text i det enkla minnet) läses därifrån och flyttas över första
 // gången: den skrivs i databasen och tas sedan bort ur det enkla minnet.
 // Filen frågar bara simuleringen, så att scenariot sparbas kan pröva den med en databas i minnet (minnesBas).
-import { State, joinParts, migrate, serializeParts } from '../sim';
+import { State, arVacktDel, joinParts, lasVackta, migrate, serializeParts } from '../sim';
 
 // en by i databasen: delarnas texter och det som hör till byn utöver den (en annan bys tid, byar.ts)
 export interface Post<E> { delar: Record<string, string>; extra?: E }
@@ -20,8 +20,8 @@ export interface Bas {
 // ur delarna (byn först, sedan resten i namnordning) blir byn som den sparades; undefined om den inte går att tolka
 export function tolka(post: Post<unknown> | undefined): State | null {
   if (!post?.delar.byn) return null;
-  const namn = Object.keys(post.delar).filter(d => d !== 'byn').sort();
-  try { return tolkaText(joinParts([post.delar.byn, ...namn.map(d => post.delar[d])])); } catch { return null; }
+  const namn = Object.keys(post.delar).filter(d => d !== 'byn' && !arVacktDel(d)).sort();
+  try { const s = tolkaText(joinParts([post.delar.byn, ...namn.map(d => post.delar[d])])); if (s) lasVackta(s, post.delar); return s; } catch { return null; } // de väckta byarna i egna delar (steg 11.13.9)
 }
 export function tolkaText(txt: string | null | undefined): State | null {
   if (!txt) return null;

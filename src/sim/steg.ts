@@ -1645,13 +1645,40 @@ export function serializeParts(s: State): Record<string, string> {
   // historiken delas efter de avrundade tiderna, som i en inläst sparfil
   if (s.hist) { for (const [d, h] of Object.entries(histParts(s, JSON.parse(JSON.stringify(s.hist, avrunda))))) ut[d] = JSON.stringify({ hist: h }); bort.add('hist'); }
   const byn = JSON.stringify(s, function (this: unknown, k: string, v: unknown) { return this === s && bort.has(k) ? undefined : avrunda.call(this, k, v); });
-  return { byn, ...ut };
+  return { byn, ...ut, ...vacktaParts(s) };
+}
+// de väckta byarna (steg 11.13.9): var och en i egna delar med förledet vackt<nr>-, med samma delar och gränser som huvudbyn,
+// utan världen som de delar med huvudbyn
+const VACKT_DEL = /^vackt(\d+)-(.+)$/;
+function vacktaParts(s: State): Record<string, string> {
+  const ut: Record<string, string> = {};
+  for (const b of s.vackta ?? []) {
+    const vl = b.varld;
+    delete b.varld; useMap(b);
+    try { for (const [d, t] of Object.entries(serializeParts(b))) if (d !== 'varlden') ut[`vackt${b.vackt}-${d}`] = t; }
+    finally { if (vl) b.varld = vl; useMap(s); }
+  }
+  return ut;
+}
+export const arVacktDel = (d: string) => VACKT_DEL.test(d);
+// de väckta byarna läses ur sina delar och delar huvudbyns värld igen
+export function lasVackta(s: State, delar: Record<string, string>) {
+  const per = new Map<number, Record<string, string>>();
+  for (const [d, t] of Object.entries(delar)) { const m = VACKT_DEL.exec(d); if (m) { const o = per.get(+m[1]) ?? {}; o[m[2]] = t; per.set(+m[1], o); } }
+  for (const o of per.values()) { // i den ordning de sparades, som är ordningen de går i slagen
+    if (!o.byn) continue;
+    const namn = Object.keys(o).filter(d => d !== 'byn').sort();
+    const b = migrate(JSON.parse(joinParts([o.byn, ...namn.map(d => o[d])])));
+    if (s.varld) b.varld = s.varld;
+    (s.vackta ??= []).push(b);
+  }
+  useMap(s);
 }
 // Gränsen för varje del av sparfilen i KB (steg 11.2.2, Världens kostnad och lagringen): vakten för storleken i det stora
 // testet larmar när en del växer över sin gräns. "historik" gäller varje veckas del. En ny del får en rad här. Världen bär
 // sedan steg 11.2.15 grannbyarnas priser (en per sak) och personer, som förut låg i byn: de växer med grannarna, inte med tiden
 export const SPARGRANS: Record<string, number> = { byn: 1536, folket: 1536, kartor: 512, fynden: 256, loggen: 128, notiser: 256, historik: 512, varlden: 512 };
-export const delGrans = (d: string) => SPARGRANS[d.startsWith('historik-') ? 'historik' : d];
+export const delGrans = (d0: string) => { const d = d0.replace(VACKT_DEL, '$2'); return SPARGRANS[d.startsWith('historik-') ? 'historik' : d]; }; // en väckt bys delar har huvudbyns gränser
 // varje del av sparfilen: storleken i KB (byte i UTF-8, som databaserna räknar) och gränsen
 export const sparStorlek = (s: State) => Object.entries(serializeParts(s)).map(([del, txt]) => ({ del, kb: new TextEncoder().encode(txt).length / 1024, grans: delGrans(del) }));
 export const joinParts = (delar: string[]) => {

@@ -4666,3 +4666,37 @@ SCENARIER.vackning = {
     ];
   },
 };
+
+SCENARIER.vacktspar = {
+  text: 'Den väckta byn sparas (steg 11.13.9, vacktaParts och lasVackta i steg.ts): varje väckt by sparas med huvudbyn som egna delar (vackt<nr>-byn, -folket …), utan världen som den delar med huvudbyn, och varje del håller sig inom gränsen för sin storlek. En by mitt i väckningen sparas också, de inlästa byarna är desamma och i samma ordning, och de går vidare med huvudbyn',
+  kor: async () => {
+    const t0 = Date.UTC(2026, 0, 1);
+    let s: SIM.State;
+    const hash = (b: SIM.State) => { SIM.useMap(b); const j = JSON.parse(kanonisk(SIM.serialize(b))); SIM.useMap(s); for (const k of ['varld', 'skuld', 'stegRest']) delete j[k]; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
+    s = SIM.createState(6, t0); const vl = s.varld!;
+    const rader = vl.rader!.filter(q => q.sort === 'by' && SIM.lever(vl, q) && q.nr !== vl.huvud).sort((a, b) => b.tal.folk - a.tal.folk);
+    for (const r of rader.slice(0, 2)) { r.tal.folk = 12; r.tek = Object.values(SIM.TEK).filter(t => t.niva <= 2).map(t => t.id); r.tal.rikedom = 1500; r.tal.mat = 300; }
+    SIM.vackTest(s, rader[0].nr);
+    const halv = SIM.borjaVacka(s, rader[1].nr, s.now, 0.6)!; halv.vackHall = 1; // starten efter 8,4 timmar: sparas mitt i väckningen
+    kor(s, 6);
+    const bas = minnesBas();
+    await sparaBy(bas, 'test', s);
+    const post = await bas.las('test'), delar = Object.keys(post!.delar);
+    const inl = (await lasBy(bas, 'test'))!.by, inl2 = (await lasBy(bas, 'test'))!.by;
+    const vSt = SIM.sparStorlek(s).filter(d => d.del.startsWith('vackt'));
+    const fore = (s.vackta ?? []).map(hash), efter = (inl.vackta ?? []).map(hash);
+    kor(inl, 3); kor(inl2, 3); // talen avrundas när de sparas, så den inlästa byn jämförs med en annan inläsning
+    const il = (inl.vackta ?? []).map(hash).join(), il2 = (inl2.vackta ?? []).map(hash).join(), tid = (b: SIM.State) => b.now + (b.skuld ?? 0) * 1000, klara = (inl.vackta ?? []).every(b => b.vackI === undefined && Math.abs(tid(b) - tid(inl)) < 1); // skulden är det som ännu inte räknats av slaget
+    return [
+      ['två väckta byar, en mitt i väckningen (' + (s.vackta ?? []).map(b => b.vackI ?? 'klar').join(', ') + ')', s.vackta?.length === 2],
+      ['de väckta byarna har egna delar (' + delar.filter(d => d.startsWith('vackt')).length + ')', delar.includes(`vackt${rader[0].nr}-byn`) && delar.includes(`vackt${rader[0].nr}-folket`) && delar.includes(`vackt${rader[1].nr}-byn`)],
+      ['huvudbyns del bär inte de väckta byarna', !post!.delar.byn.includes('"vackta"')],
+      ['världen sparas en gång', delar.filter(d => d.startsWith('vackt')).every(d => !d.endsWith('-varlden') && JSON.parse(post!.delar[d]).varld === undefined)],
+      ['varje del är inom sin gräns (' + vSt.map(d => d.del + ' ' + Math.round(d.kb) + '/' + d.grans).join(', ') + ')', vSt.length > 0 && vSt.every(d => d.grans !== undefined && d.kb <= d.grans)],
+      ['de inlästa byarna är desamma', fore.length === 2 && fore.join() === efter.join()],
+      ['de inlästa byarna delar huvudbyns värld', (inl.vackta ?? []).every(b => b.varld === inl.varld)],
+      ['de inlästa byarna går vidare lika varje gång', il !== '' && il === il2],
+      ['de går med huvudbyn, och den halvt väckta blev färdig (' + (inl.vackta ?? []).map(b => (b.vackI ?? 'klar') + ' ' + Math.round((tid(inl) - tid(b)) / 1000) + ' s efter').join(', ') + ')', klara],
+    ];
+  },
+};
