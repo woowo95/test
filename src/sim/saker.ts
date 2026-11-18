@@ -126,7 +126,7 @@ const DEF = {
   farskinn: { namn: 'Fårskinn', ett: true, skaffa: RECEPT.farskinn, stack: 10, mapp: 'Material', slits: 0.0006 }, // fårets och getens egna skinn (steg 10.3.14)
   getskinn: { namn: 'Getskinn', ett: true, skaffa: RECEPT.getskinn, stack: 10, mapp: 'Material', slits: 0.0006 },
   svinskinn: { namn: 'Svinskinn', ett: true, skaffa: RECEPT.svinskinn, stack: 10, mapp: 'Material', slits: 0.0005 }, // vildsvinets borstiga skinn (steg 10.10.4)
-  kohud: { namn: 'Kohud', ett: true, skaffa: RECEPT.kohud, stack: 10, mapp: 'Material', slits: 0.0005 }, // kons tjocka hud (steg 10.10.1)
+  kohud: { namn: 'Kohud', skaffa: RECEPT.kohud, stack: 10, mapp: 'Material', slits: 0.0005 }, // kons tjocka hud (steg 10.10.1)
   vitskinn: { namn: 'Vitt harskinn', ett: true, skaffa: RECEPT.vitskinn, stack: 30, mapp: 'Material', slits: 0.0006 }, // harens vinterpäls (steg 10.7.22): en hare som slaktas under istiden
   vargkott: { namn: 'Vargkött', ett: true, skaffa: RECEPT.vargkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', ett: true, skaffa: RECEPT.vargskinn, stack: 5, mapp: 'Material', slits: 0.0006 },

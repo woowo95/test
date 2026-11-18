@@ -65,8 +65,9 @@ export const STIL: Kontroll[] = [
 const meningar = (t: string) => t.split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(Boolean);
 
 // könet hos den som heter namn i byn, om alla med det namnet har samma
+// folket i huvudbyn och i de väckta byarna (steg 11.13.1), vars texter också hörs: samma namn med olika kön ger inget svar
 export function konI(s: State) {
-  return (namn: string) => { const l = s.people.filter(p => p.name === namn); return l.length && l.every(p => p.sex === l[0].sex) ? l[0].sex : undefined; };
+  return (namn: string) => { const l = [s, ...s.vackta ?? []].flatMap(b => b.people).filter(p => p.name === namn); return l.length && l.every(p => p.sex === l[0].sex) ? l[0].sex : undefined; };
 }
 // felen i en text: kontrollernas id och det som hittades
 // start: texten är en hel mening som ska börja med stor bokstav (beskrivningen och dess delar får den i mening())
