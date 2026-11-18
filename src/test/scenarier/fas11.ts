@@ -3639,3 +3639,46 @@ SCENARIER.fyndprat = {
     ];
   },
 };
+
+SCENARIER.uppdragbyar = {
+  text: 'Andra byar tar uppdrag (steg 11.8.9): raden uppdrag i BYHANDLINGAR, en by ger sig av mot det som finns kvar i en ruin i grannätet eller ett utlyst uppdrag hos grannen, och den som kommer först tar det',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud && SIM.BYSORTER[g.sort].folk))!;
+    const [d, m] = SIM.radGrannar(vl, r).filter(g => g.nr !== vl.huvud);
+    // ruinen: grannen går under
+    SIM.undergang(s, vl, d, s.now);
+    const ruin = SIM.ruinRad(vl, SIM.byPlats(vl, d.nr)!.nr)!;
+    const c = SIM.byCtx(s, vl, r, ruin, s.now), p = SIM.BYHANDLINGAR.uppdrag.poang(c);
+    const v = SIM.byVal(s, vl, r, 0);
+    const kvar0 = Object.values(SIM.ruinKvar(vl, ruin, s.now)).reduce((a, n) => a + n, 0);
+    SIM.BYHANDLINGAR.uppdrag.gor(c);
+    const f = vl.farder!.find(x => x.fran === r.nr && x.uppdrag !== undefined)!;
+    SIM.KOHANDELSER.fardFram(s, vl, { sak: f.id } as never);
+    const kvar1 = Object.values(SIM.ruinKvar(vl, ruin, f.t1)).reduce((a, n) => a + n, 0);
+    const byte = { ...f.byte };
+    const rik0 = r.tal.rikedom + r.tal.mat;
+    SIM.KOHANDELSER.fardHem(s, vl, { sak: f.id } as never);
+    const rik1 = r.tal.rikedom + r.tal.mat;
+    // ett utlyst uppdrag hos grannen: byn hinner före, och uppdraget är borta
+    let hjalp = true, txt = 'ingen levande granne';
+    if (m) {
+      const u = SIM.utlys(vl, 'hjalp', SIM.byPlats(vl, m.nr)!.nr, { k: 'styre', rad: m.nr }, { silver: 300 }, s.now)!;
+      const c2 = SIM.byCtx(s, vl, r, m, s.now);
+      const p2 = SIM.BYHANDLINGAR.uppdrag.poang(c2);
+      SIM.BYHANDLINGAR.uppdrag.gor(c2);
+      const f2 = vl.farder!.find(x => x.fran === r.nr && x.uppdrag === u.id);
+      if (f2) SIM.KOHANDELSER.fardFram(s, vl, { sak: f2.id } as never);
+      hjalp = p2 > 0 && !!f2 && !SIM.uppdragNr(vl, u.id) && (f2.silver ?? 0) > 0;
+      txt = `poängen ${p2.toFixed(2)}, silvret ${f2?.silver ?? 0}`;
+    }
+    // en värld i 20 dygn: hur ofta byarna tar uppdrag (information)
+    const w = SIM.cloneState(testBy(3)); w.now += 20 * SIM.DAY; SIM.varldSteg(w);
+    return [
+      [`${r.namn} vill till ruinen efter ${d.namn} (poängen ${p.toFixed(2)}; valet i dag: ${v?.id ?? 'inget'})`, p > 0],
+      [`färden tar det som finns kvar (${kvar0} → ${kvar1} saker) och bär hem ${JSON.stringify(byte)}`, kvar1 < kvar0 && Object.keys(byte).length > 0 && rik1 > rik0],
+      [`ett utlyst uppdrag hos ${m?.namn ?? '–'}: byn tar det (${txt})`, hjalp],
+      [`i en värld i 20 dygn: ${w.stat?.raduppdrag_ut ?? 0} färder mot uppdrag, ${w.stat?.raduppdrag_klart ?? 0} klara och ${w.stat?.raduppdrag_tomt ?? 0} tomma (information)`, true],
+    ];
+  },
+};

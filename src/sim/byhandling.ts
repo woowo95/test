@@ -29,6 +29,7 @@ import { anfallUtfall, BYANFALL, flockStorlek, forsvarare, vinstChans } from './
 import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
 import { radKommer } from './rader';
+import { avslutaUppdrag, belonVarde, fyndId, ruinKvar, ruinRad, taRuin, uppdragDef, uppdragNr } from './uppdrag';
 import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, handlarFram, handlarKrok, kgOf } from './handel';
 
 export const BYHANDLING = balans('byhandling', {
@@ -65,6 +66,7 @@ export const BYHANDLING = balans('byhandling', {
   beskedRel: 20, // det ovänliga beskedet: byn vill skicka det till den den ser lägre på än minus så mycket ...
   beskedFull: 50, // ... och vill det fullt ut vid minus så mycket mer
   beskedKostnad: 0.15, // det sändebudet kostar i poäng (budets tid på vägen)
+  uppdragKostnad: 0.2, // det ett uppdrag kostar i poäng utöver resan (risken, arbetet hemma) (steg 11.8.9)
   krigKostnad: 0.3, // det kriget kostar i poäng (de döda och arbetet hemma)
   fredDygn: 8, // efter så många dygn (år i spelet) i krig väger tröttheten lika mycket som fejden
 });
@@ -167,7 +169,52 @@ export const BYHANDLINGAR = {
     poang: c => { const a = fardAffar(c); return a ? a.vinst / BYHANDLING.skala : -1; },
     gor: c => { const a = fardAffar(c); if (a) skickaFard(c, a); },
   },
+  // uppdraget (steg 11.8.9): byn ger sig av mot ett uppdrag den känner till, ett utlyst uppdrag i grannbyn (hjälpen) eller det
+  // som finns kvar i en ruin i grannätet, när det väntade bytet är värt mer än resan; den som kommer först tar det
+  uppdrag: {
+    namn: 'Uppdrag',
+    poang: c => { const a = uppdragAffar(c); return a ? (a.varde - BYHANDLING.barare * 2 * a.dygn * BYHANDLING.dygnKostnad) / BYHANDLING.skala - BYHANDLING.uppdragKostnad : -1; },
+    gor: c => {
+      const a = uppdragAffar(c);
+      if (!a) return;
+      const f: RadFard = { id: c.vl.nastaFard = (c.vl.nastaFard ?? 0) + 1, fran: c.r.nr, till: c.mot.nr, g: 'mat', n: 0, uppdrag: a.id, t0: c.t, t1: c.t + a.dygn * DAY };
+      (c.vl.farder ??= []).push(f);
+      trampaFard(c.s, c.r.nr, c.mot.nr, sallskapTyngd(BYHANDLING.barare));
+      laggIKo(c.vl, f.t1, 'fardFram', { sak: f.id });
+      count(c.s, 'raduppdrag_ut');
+    },
+  },
 } as const satisfies Record<string, ByHandlingDef>;
+// det byn r väntar sig av ett uppdrag hos grannen mot (en levande by med ett utlyst uppdrag, eller en ruin): numret (fyndId för
+// ruinen), värdet (i grundvärde, högst det bärarna bär) och dygnen dit. Huvudbyn reser med verkliga bybor (resa.ts)
+function uppdragAffar(c: ByCtx): { id: number; varde: number; dygn: number } | undefined {
+  const { vl, r, mot } = c, dygn = restid(vl, r, mot), q = byPlats(vl, mot.nr);
+  if (r.nr === vl.huvud || dygn === undefined || !q || vl.farder?.some(f => f.fran === r.nr && f.uppdrag !== undefined)) return undefined;
+  const ruin = ruinRad(vl, q.nr);
+  if (ruin) {
+    const v = Object.entries(ruinKvar(vl, ruin, c.t)).reduce((a, [k, n]) => a + n * grundvarde(k), 0);
+    return v > 0 ? { id: fyndId(q.nr), varde: Math.min(BYHANDLING.last, v), dygn } : undefined;
+  }
+  let bast: { id: number; varde: number; dygn: number } | undefined;
+  for (const u of vl.uppdrag ?? []) if (u.mal === q.nr && u.av.rad !== r.nr && uppdragDef(u.k).gor === 'hjalpa') {
+    const v = belonVarde(u);
+    if (!bast || v > bast.varde) bast = { id: u.id, varde: v, dygn };
+  }
+  return bast;
+}
+// färden kommer fram till uppdraget: den tar det som finns kvar i ruinen (så mycket bärarna bär) eller belöningen för hjälpen,
+// och bär det hem som byte; har någon hunnit före finns inget
+function uppdragFardFram(s: State, vl: Varlden, f: RadFard) {
+  const q = byPlats(vl, f.till), fick: Record<string, number> = {};
+  if (!q) return;
+  if (f.uppdrag! < 0) { const ruin = ruinRad(vl, q.nr); if (ruin) Object.assign(fick, taRuin(s, vl, ruin, f.t1, BYHANDLING.last, k => grundvarde(k))); }
+  else { const u = uppdragNr(vl, f.uppdrag!); if (u && u.mal === q.nr) { Object.assign(fick, u.belon); u.belon = {}; avslutaUppdrag(s, vl, u, true); } }
+  const byte: Partial<Record<VarugruppId, number>> = {};
+  for (const [k, n] of Object.entries(fick)) { if (k === 'silver') { f.silver = (f.silver ?? 0) + Math.floor(n); continue; } const g = gruppAv(k) ?? 'redskap'; byte[g] = (byte[g] ?? 0) + n * grundvarde(k) / enhet(g); }
+  for (const g of Object.keys(byte) as VarugruppId[]) { byte[g] = Math.floor(byte[g]! + 1e-9); if (!byte[g]) delete byte[g]; }
+  f.byte = byte;
+  count(s, Object.keys(byte).length || f.silver ? 'raduppdrag_klart' : 'raduppdrag_tomt');
+}
 export type ByHandlingId = keyof typeof BYHANDLINGAR;
 export const BYHANDLING_IDS = Object.keys(BYHANDLINGAR) as ByHandlingId[];
 const DEF: Record<ByHandlingId, ByHandlingDef> = BYHANDLINGAR;
@@ -197,6 +244,12 @@ export function byVal(s: State, vl: Varlden, r: VarldRad, n: number): { id: ByHa
       if (p > 0 && (!bast || p > bast.poang)) bast = { id, c, poang: p };
     });
   }
+  // ruinerna i grannätet: bara uppdraget (steg 11.8.9)
+  const ruiner = (byPlats(vl, r.nr)?.grannar ?? []).map(g => varldPlatsNr(vl, g.nr)).map(q => q && ruinRad(vl, q.nr)).filter((x): x is VarldRad => !!x);
+  ruiner.forEach((m, i) => {
+    const c = byCtx(s, vl, r, m, t), p = DEF.uppdrag.poang(c) + (varldSlump(vl, r.nr, n, 0x5255 + i) - 0.5) * 2 * BYHANDLING.slump;
+    if (p > 0 && (!bast || p > bast.poang)) bast = { id: 'uppdrag', c, poang: p };
+  });
   return bast;
 }
 // en gång om dygnet: varje by i världen med en ledare gör det den valt
@@ -216,7 +269,7 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // mottagaren betalar med silver och, när silvret inte räcker, med det den själv har mest överflöd av. Betalningen bärs hem och
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
-export interface RadFard { besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+export interface RadFard { uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 // tonen i beskedet och dess poäng: det vänliga eller det ovänliga, det som lönar sig mest (huvudbyns stat och kyrka väljer
 // likadant, sandebud.ts)
 export function beskedTon(c: ByCtx): { ton: BeskedTon; p: number } {
@@ -383,7 +436,8 @@ KOHANDELSER.fardFram = (s, vl, p) => {
   const f = vl.farder?.find(x => x.id === p.sak);
   if (!f) return;
   const r = radNr(vl, f.fran), mot = radNr(vl, f.till);
-  if (f.handlare) { handlarFram(s, f.fran); return; } // handlaren väntar vid kartans kant och går in när det är fritt (handel.ts)
+  if (f.handlare) { handlarFram(s, f.fran); return; }
+  if (f.uppdrag !== undefined) { f.t2 = f.t1 + (f.t1 - f.t0); uppdragFardFram(s, vl, f); trampaFard(s, f.till, f.fran, sallskapTyngd(BYHANDLING.barare)); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; } // handlaren väntar vid kartans kant och går in när det är fritt (handel.ts)
   f.t2 = f.t1 + (f.t1 - f.t0);
   if (f.besked) beskedFram(s, vl, f, r, mot); // sändebudet (steg 11.6.23): en gåva läggs i förrådet nedan
   if (f.besked && mot?.nr === vl.huvud) { trampaFard(s, f.till, f.fran, sallskapTyngd(1)); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; }
