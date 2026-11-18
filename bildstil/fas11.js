@@ -904,3 +904,70 @@
     rad(K.nu, 0); rad(K.ny, K.h + 4);
   } }] });
 })();
+
+// Steg 11.9.3: platsernas tecken på pergamentkartan (en per sort i LANDMARKEN), tre idéer: bläckbilder från sidan,
+// kartsymboler som på gamla kartor och små sköldar med sortens färg och ett märke. Alla femton på ett stycke pergament,
+// i ordningen by, handelsläger, rövarläger, utpost, ruin, helig plats, gravhög, runsten, fyndplats, karavanrest, gömma,
+// bro, spång, röjd passage och rastplats.
+(() => {
+  const L = { o: 'kol1', a: 'ben3', b: 'ben1', r: 'rost1', R: 'rost2', j: 'jord2', J: 'jord1', g: 'oliv2', G: 'oliv1', s: 'skiffer2', d: 'skiffer1', y: 'senap2' };
+  const SORTER = ['by', 'handelslager', 'rovarlager', 'utpost', 'ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'gomma', 'bro', 'spang', 'passage', 'rastplats'];
+  const BLACK = {
+    by: ['.....oo.....', '....oaao....', '...oaaaao...', '..oaaaaaao..', '.oaaaaaaaao.', 'oooooooooooo', '.oaaaaaaaao.', '.oaaarraaao.', '.oaaarraaao.', '.oooooooooo.'],
+    handelslager: ['.....r......', '.....rr.....', '.....o......', '....oao.....', '...oaoao....', '..oaaoaao...', '.oaaaoaaao..', 'oaaaaoaaaao.', 'ooooooooooo.'],
+    rovarlager: ['o.........o.', '.o.......o..', '..o.....o...', '...o...o....', '....o.o.....', '.....o......', '....oro.....', '...orrro....', '..o.rrr.o...', '.o..ooo..o..'],
+    utpost: ['..o.o.o.o...', '..ooooooo...', '..oaaaaao...', '..ooooooo...', '...oa.ao....', '...o.o.o....', '...oo.oo....', '...o.o.o....', '..oo...oo...', '.oo.....oo..'],
+    ruin: ['..oo........', '..oao...oo..', '..oao...oao.', '..oaoo..oao.', '..oaaoooaao.', '..oaoaaoaao.', '..oooooooooo', '.b...b...b..'],
+    helig: ['.....oo.....', '..o.oaao.o..', '....oaao....', '.o..oaro..o.', '....oaao....', '....oaao....', '...oaaaao...', '..oooooooo..'],
+    gravhog: ['.....o......', '....oao.....', '...ooooo....', '..oagagao...', '.oaaaaaaao..', 'oaagaaagaao.', 'oooooooooooo'],
+    runsten: ['...oooo.....', '..oaaaao....', '..oaraao....', '..oarrao....', '..oaraao....', '..oaarao....', '..oaraao....', '..oaaaao....', '.oooooooo...'],
+    fyndplats: ['.r.......r..', '..r.....r...', '...r...r....', '....r.r.....', '.....r......', '....r.r.....', '...r...r....', '..r.....r...', '.r.......r..'],
+    karavanrest: ['...ooooo....', '..o..o..o...', '.o...o...o..', '.o.o.o.o.o..', '.ooooooooo..', '.o.o.o.o.o..', '.o...o...o..', '..o..o..o...', '...ooooo....'],
+    gomma: ['....o.o.....', '.....o......', '....ooo.....', '...oaaao....', '..oaaaaao...', '..oaajaao...', '..oaaaaao...', '...ooooo....'],
+    bro: ['oooooooooooo', 'oaoaoaoaoaoa', 'oooooooooooo', 'oo........oo', 'o..........o', '.ssss..ssss.'],
+    spang: ['............', 'oooooooooooo', 'oajojaojajoo', 'oooooooooooo', '.o...o...o..', 'ss.ss.ss.ss.'],
+    passage: ['......oo....', '.....oaao...', '....o.ooo...', '...o..oo....', '..o.........', '.oooooooo...', '.ojjjjjjo...', '.ojjjjjjo...', 'oooooooooo..'],
+    rastplats: ['.....r......', '....rr......', '....rrr.....', '...rryrr....', '...o.o.o....', '..o.o.o.o...', '.oo.ooo.oo..'],
+  };
+  const SYMBOL = {
+    by: ['...oooo...', '..o....o..', '.o..oo..o.', '.o.oooo.o.', '.o.oooo.o.', '.o..oo..o.', '..o....o..', '...oooo...'],
+    handelslager: ['....o.....', '...o.o....', '..o...o...', '.o..o..o..', 'o.......o.', 'ooooooooo.'],
+    rovarlager: ['...rrrr...', '..r....r..', '.r.o..o.r.', '.r..oo..r.', '.r..oo..r.', '.r.o..o.r.', '..r....r..', '...rrrr...'],
+    utpost: ['.o........', '.orr......', '.or.......', '.o........', 'oooooo....', 'o....o....', 'o.oo.o....', 'o....o....', 'oooooo....'],
+    ruin: ['oo.oo.oo', 'o......o', '........', 'o......o', 'o......o', '........', 'o......o', 'oo.oo.oo'],
+    helig: ['....o....', '.o..o..o.', '..o.o.o..', '...ooo...', 'oooo.oooo', '...ooo...', '..o.o.o..', '.o..o..o.', '....o....'],
+    gravhog: ['...ooo...', '.ooooooo.', 'ooooooooo', '.........', 'ooooooooo'],
+    runsten: ['..ooo..', '..o.o..', '..ooo..', '..o.o..', '..ooo..', '..o.o..', 'ooooooo'],
+    fyndplats: ['o.....o', '.o...o.', '..o.o..', '...r...', '..o.o..', '.o...o.', 'o.....o'],
+    karavanrest: ['..ooo..', '.o.o.o.', 'o..o..o', 'ooooooo', 'o..o..o', '.o.o.o.', '..ooo..'],
+    gomma: ['...o...', '..o.o..', '.o.o.o.', 'o.ooo.o', '.o.o.o.', '..o.o..', '...o...'],
+    bro: ['o........o', '.oooooooo.', '..........', '.oooooooo.', 'o........o'],
+    spang: ['o.o.o.o.o.o', 'ooooooooooo', 'o.o.o.o.o.o'],
+    passage: ['o.......o', 'oo.....oo', 'o.o...o.o', 'o..o.o..o', 'o...o...o'],
+    rastplats: ['...r...', '..rrr..', '.rrrrr.', 'ooooooo'],
+  };
+  const SKOLD = ['ooooooooooo', 'offfffffffo', 'offfffffffo', 'offfffffffo', 'offfffffffo', 'offfffffffo', 'offfffffffo', '.offfffffo.', '.offfffffo.', '..offfffo..', '...offfo...', '....ooo....'];
+  const MARKE = {
+    by: ['r', ['..a..', '.aaa.', 'aaaaa', '.a.a.', '.aaa.']], handelslager: ['y', ['..a..', '.a.a.', 'a...a', 'aaaaa', '.....']],
+    rovarlager: ['d', ['a...a', '.a.a.', '..a..', '.a.a.', 'a...a']], utpost: ['j', ['a.a.a', 'aaaaa', '.aaa.', '.a.a.', '.a.a.']],
+    ruin: ['s', ['a...a', 'a.a.a', 'a.a.a', 'aaaaa', '.....']], helig: ['g', ['..a..', '.a.a.', 'a.a.a', '.a.a.', '..a..']],
+    gravhog: ['G', ['.....', '.aaa.', 'aaaaa', '.....', 'aaaaa']], runsten: ['s', ['.aa..', '.a.a.', '.aa..', '.a.a.', '.aa..']],
+    fyndplats: ['y', ['.....', '..a..', '.aaa.', '..a..', '.....']], karavanrest: ['j', ['.aaa.', 'a.a.a', 'aaaaa', 'a.a.a', '.aaa.']],
+    gomma: ['J', ['.a.a.', '..a..', '.aaa.', 'aaaaa', '.aaa.']], bro: ['j', ['aaaaa', 'a...a', 'a...a', '.....', '.....']],
+    spang: ['s', ['.....', 'a.a.a', 'aaaaa', 'a.a.a', '.....']], passage: ['G', ['...aa', '..aaa', '.a.a.', 'a....', '.....']],
+    rastplats: ['r', ['..a..', '.aa..', '.aaa.', 'aaaaa', 'a.a.a']],
+  };
+  const skold = k => { const [f, m] = MARKE[k]; return SKOLD.map((r, y) => [...r].map((c, x) => { if (c !== 'f') return c; const mc = m[y - 2]?.[x - 3]; return mc === 'a' ? 'a' : f; }).join('')); };
+  // ett tecken mitt i en ruta på 16 × 16 punkter
+  const mitt = (B, rader, cx, cy) => { const h = rader.length, w = Math.max(...rader.map(r => r.length)); ritaSprite(B, rader, L, cx + ((16 - w) >> 1), cy + ((16 - h) >> 1)); };
+  const VERSION = (text, rad) => ({ text, w: 5 * 20 + 4, h: 3 * 20 + 4, rita: B => {
+    const P = B.P;
+    for (let y = 0; y < 64; y++) for (let x = 0; x < 104; x++) { const g = ((x * 374761393 + y * 668265263) >>> 0) % 97; B.satt(x, y, g < 3 ? P.i('ben', 1) : P.i('ben', 2)); }
+    SORTER.forEach((k, i) => mitt(B, rad(k), 4 + (i % 5) * 20, 4 + Math.floor(i / 5) * 20));
+  } });
+  VAL.push({ id: 'f11_platstecken', namn: 'Platsernas tecken på pergamentkartan', typ: 'tre', slag: [], vad: 'Steg 11.9.3: varje sort av plats i världen får ett eget tecken på pergamentkartan. Alla femton på ett stycke pergament, från vänster och nedåt: by, handelsläger, rövarläger, utpost, ruin, helig plats, gravhög, runsten, fyndplats, karavanrest, gömma, bro, spång, röjd passage och rastplats. Namnen står under tecknen på kartan.', versioner: [
+    VERSION('Bläckbilder från sidan: ett hus, ett tält med vimpel, korsade spjut över en eld, ett vakttorn, en rasad mur, en rest sten, en hög, en runsten, ett rött kryss, ett vagnshjul, ett knyte, en bro, en spång, en yxa i en stubbe och en lägereld, i bläck med lite rött.', k => BLACK[k]),
+    VERSION('Kartsymboler som på gamla kartor: ringar, trianglar, streck och prickar i bläck, med rött för rövarna, fynden och elden.', k => SYMBOL[k]),
+    VERSION('Små sköldar i sortens färg med ett ljust märke: röd för byn, gul för handeln och fynden, mörk för rövarna, brun för det som byggs, grön för de heliga platserna och gravarna.', skold),
+  ] });
+})();

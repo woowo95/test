@@ -6,7 +6,7 @@ import { bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kal
 import { farg } from '../palett';
 import { s } from './lage';
 import { omUngefar } from './hjalp';
-import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
+import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
 
 const stil = document.createElement('style');
 stil.textContent = `
@@ -125,6 +125,19 @@ function rita() {
   g.setTransform(vy.z * dpr, 0, 0, vy.z * dpr, -vy.x * vy.z * dpr, -vy.y * vy.z * dpr);
   g.drawImage(b, 0, 0);
   ritaSallskap(g);
+  ritaNamn(g, dpr);
+}
+// platsernas namn (steg 11.9.3) i skärmens storlek under tecknet, i bläck med en ljus kant, när kartan är inzoomad
+function ritaNamn(g: CanvasRenderingContext2D, dpr: number) {
+  const vl = s?.varld; if (!vl || !vy || vy.z < NAMNZOOM) return;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.textAlign = 'center'; g.textBaseline = 'top'; g.lineJoin = 'round'; g.lineWidth = 3;
+  for (const n of namnPaKartan(vl, bynsKarta(s!))) {
+    const sx = ((n.x + 0.5) * VK - vy.x) * vy.z, sy = ((n.y + 1) * VK - vy.y) * vy.z + 1;
+    g.font = `${n.egen ? 700 : 500} 12px "Pixelify Sans", system-ui, sans-serif`;
+    g.strokeStyle = farg('ben', 3); g.strokeText(n.namn, sx, sy);
+    g.fillStyle = n.egen ? farg('rost', 0) : farg('kol', 1); g.fillText(n.namn, sx, sy);
+  }
 }
 const senare = () => { if (!ritas) { ritas = true; requestAnimationFrame(rita); } };
 

@@ -130,6 +130,21 @@ export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?: nu
   return b;
 }
 
+// platsernas namn på kartan (steg 11.9.3): huvudbyn och de platser byn känner (minst känd, inte bara ett rykte), med
+// namnet under tecknet; ui/varldskarta.ts skriver dem i bläck med en ljus kant när kartan är så inzoomad att de går att läsa
+export const NAMNZOOM = 0.75; // namnen syns när en bildpunkt är minst så många skärmpunkter
+export interface KartNamn { x: number; y: number; namn: string; egen: boolean }
+export function namnPaKartan(vl: Varlden, kn?: BynsKarta): KartNamn[] {
+  const hb = huvudbynsPlats(vl), ut: KartNamn[] = [];
+  for (const p of vl.platser ?? []) {
+    if (!p.namn || !syns(kn, p)) continue;
+    const egen = p === hb;
+    if (!egen && kn && (kn.niva(p.nr) ?? -1) < O_KANT) continue;
+    ut.push({ x: p.x, y: p.y, namn: p.namn, egen });
+  }
+  return ut;
+}
+
 // lederna (steg 11.5.1): en trampad ruta binds ihop med de trampade grannarna med ett streck, tunt för en stig och bredare
 // för en led och en väg; platshållare i paletten tills bildstilen ritat lederna
 export const LEDFARG: Record<LedId, string> = { obanad: '', stig: farg('jord', 2), led: farg('jord', 3), vag: farg('ben', 2) };

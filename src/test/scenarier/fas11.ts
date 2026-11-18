@@ -3882,3 +3882,23 @@ SCENARIER.kartrecept = {
     ];
   },
 };
+
+SCENARIER.kartnamn = {
+  text: 'Platsernas namn på världskartan (steg 11.9.3, namnPaKartan i ui/varldbild.ts): huvudbyn och de platser byn känner får sitt namn under tecknet, men inte en plats som byn bara hört rykten om eller en hemlig plats som byn inte vet om',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const langt = vl.platser!.filter(x => x.by !== vl.huvud && !SIM.iNaromradet(s, x.nr) && !(SIM.LANDMARKEN[x.k] as SIM.LandmarkDef).folk), kand = langt[0]!, rykt = langt.find(x => x !== kand)!;
+    SIM.larOrt(s, a!, kand.nr, SIM.O_KANT, 1); SIM.larOrt(s, b!, rykt.nr, SIM.O_RYKTE, 1, { fr: b!.id });
+    const gom = { ...kand, nr: 99999, k: 'gomma' as const, namn: 'Gömman' };
+    vl.platser!.push(gom);
+    SIM.raknaBynVet(s);
+    const namn = VB.namnPaKartan(vl, SIM.bynsKarta(s)), hb = vl.platser!.find(x => x.by === vl.huvud)!, har = (n: string) => namn.some(x => x.namn === n);
+    return [
+      [`huvudbyn ${hb.namn} har sitt namn, i byns färg`, namn.some(x => x.namn === hb.namn && x.egen)],
+      [`den kända platsen ${kand.namn} har sitt namn`, har(kand.namn)],
+      [`platsen byn bara hört rykten om (${rykt.namn}) har inget namn`, !har(rykt.namn) || rykt.namn === kand.namn],
+      ['den hemliga platsen har inget namn', !har('Gömman')],
+      [`utan byns kunskap har alla platser namn (${VB.namnPaKartan(vl).length} av ${vl.platser!.filter(p => p.namn).length})`, VB.namnPaKartan(vl).length === vl.platser!.filter(p => p.namn).length],
+    ];
+  },
+};
