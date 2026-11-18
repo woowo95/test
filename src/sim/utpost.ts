@@ -59,8 +59,8 @@ export function fyndInne(_vl: Varlden, v: VarldMark | undefined, p: VarldPlats):
 }
 const innehall = (p: VarldPlats) => Object.values(p.inne ?? {}).reduce((a, n) => a + (n ?? 0), 0);
 // varugruppen i moderbyn för en sak, och värdet i gruppens mått
-const tillGrupp = (sak: string): VarugruppId => gruppAv(sak) ?? 'redskap';
-function laggTillRad(r: VarldRad, g: VarugruppId, n: number) {
+export const tillGrupp = (sak: string): VarugruppId => gruppAv(sak) ?? 'redskap';
+export function laggTillRad(r: VarldRad, g: VarugruppId, n: number) {
   if (g === 'mat') { r.tal.mat += n; return; }
   const v = radVaror(r); v[g] = (v[g] ?? 0) + n; r.tal.rikedom = radRikedomUr(r);
 }

@@ -23,6 +23,7 @@ export interface Varlden {
   kronika?: import('./varldkronika').VarldHandelse[]; nastaHandelse?: number; // världens krönika (steg 11.2.19, varldkronika.ts)
   rel?: Record<string, number>; lage?: Record<string, { k: import('./byrel').ByLageId; t: number }>; slakt?: Record<string, number>; mutor?: Record<string, number>; tillHuvud?: number[]; budTillHuvud?: { fran: number; ton: import('./byhandling').BeskedTon; gava?: import('./handel').HVara[] }[]; bud?: { mot: number; ton: import('./byhandling').BeskedTon; av: 'staten' | 'kyrkan'; t: number }; // sändebuden (steg 11.6.23)
   farder?: import('./byhandling').RadFard[]; nastaFard?: number; // byarnas handelsfärder (steg 11.6.6, byhandling.ts)
+  uppdrag?: import('./uppdrag').Utlyst[]; nastaUppdrag?: number; // de utlysta uppdragen (steg 11.8.1, uppdrag.ts)
   // relationerna "a>b", släktbanden "a-b" och mutorna (steg 11.3.4, byrel.ts); de som flyttat till huvudbyn och väntar på att komma in, numret på byn de kom ifrån (steg 11.3.5, byflytt.ts)
 }
 export const varldFro = (seed: number) => Math.floor(hash3(seed, 0x5741524c, 0x11207) * 2 ** 31);

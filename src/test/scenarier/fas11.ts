@@ -3428,3 +3428,33 @@ SCENARIER.bybok = {
     ];
   },
 };
+
+SCENARIER.uppdrag = {
+  text: 'Uppdragen (steg 11.8.1, uppdrag.ts): registret UPPDRAG säger för varje uppdrag utlösaren, platsen, vem som utlyser, belöningen, kravet, tiden och vad som sker; ett utlyst uppdrag är en post med belöningen i hela saker, och när tiden är ute går belöningen tillbaka till den som utlyste',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const rader = SIM.UPPDRAG_IDS.map(k => SIM.uppdragDef(k));
+    const hela = rader.every(d => d.namn && d.utlosare && d.plats.length && d.utlysare.length && d.krav && d.gor && d.plats.every(x => x === 'narhet' || x in SIM.LANDMARKEN));
+    const utlosare = new Set(rader.map(d => d.utlosare)).size === rader.length;
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const mal = hb.grannar![0]!.nr, fore = SIM.amountOf(s, 'flintkniv');
+    const u = SIM.utlys(vl, 'leverans', mal, { k: 'person', person: p.id }, { flintkniv: 2.7, skinn: 0.4 }, s.now, { sak: ['torkatKott', 3] })!;
+    const belon = { ...u.belon };
+    const fynd = SIM.utlys(vl, 'ruinskatt', mal, { k: 'ingen' }, { silver: 3 }, s.now);
+    const ko = vl.ko!.find(x => x.typ === 'uppdragSlut' && x.sak === u.id);
+    // tiden är ute
+    SIM.KOHANDELSER.uppdragSlut!(s, vl, ko!);
+    const efter = SIM.amountOf(s, 'flintkniv'), kvar = SIM.uppdragen(vl).length;
+    // en by i världen som utlyst
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud)!, rik = r.tal.rikedom;
+    const u2 = SIM.utlys(vl, 'hjalp', mal, { k: 'styre', rad: r.nr }, { silver: 4 }, s.now)!;
+    SIM.avslutaUppdrag(s, vl, u2, false);
+    return [
+      [`registret har ${rader.length} rader med utlösare, plats, utlysare, belöning, krav och vad som sker, och varje utlösare är en händelse för sig`, hela && utlosare && rader.length >= 7],
+      [`ett utlyst uppdrag är en post med belöningen i hela saker (${Object.entries(belon).map(([k, n]) => `${n} ${k}`).join(', ')}), som slutar efter ${(u.slut - u.t) / SIM.DAY} dygn`, belon.flintkniv === 2 && belon.skinn === undefined && u.slut - u.t === SIM.UPPDRAGTAL.tid * SIM.DAY],
+      ['ett fynd är ingen post (platsens innehåll är belöningen)', fynd === undefined],
+      [`slutet ligger i världens kö, och när tiden är ute går belöningen tillbaka (flintknivar ${fore} → ${efter}, uppdrag kvar ${kvar})`, !!ko && ko.t === u.slut && efter === fore + 2 && kvar === 0],
+      [`en by i världen får tillbaka det den lagt undan (rikedomen ${rik} → ${r.tal.rikedom})`, r.tal.rikedom > rik],
+    ];
+  },
+};
