@@ -140,6 +140,7 @@ const IDEF = {
   bjorndodare: { namn: 'björndödare', tecken: 1, op: 10, sym: '🐾', sed: { fejd: 1, krig: 1 }, som: 'en björndödare', betyder: 'Har dödat en björn.' }, // dödade en björn (steg 6.6.6, bjorn.ts)
   pahittig: { namn: 'påhittig', tecken: 1, op: 8, sym: '{sym_hjarna}', sed: { nyfikenhet: 2 }, betyder: 'Har kommit på något nytt.' }, // steg 10.4.9 (symbolen är en platshållare)
   skvaller: { namn: 'skvallerbytta', tecken: -1, op: -6, sym: '🗣️', som: 'en skvallerbytta', betyder: 'Berättar dåliga rykten om andra.' }, // steg 10.8.6 (symbolen är en platshållare)
+  aventyrare: { namn: 'äventyrare', tecken: 1, op: 8, sym: '📜', sed: { nyfikenhet: 1 }, som: 'en äventyrare', betyder: 'Har klarat ett uppdrag ute i världen.' }, // steg 11.8.17 (symbolen är en platshållare)
   forutseende: { namn: 'förutseende', tecken: 1, op: 8, sym: '{sym_oga}', sed: { forsiktighet: 2 }, betyder: 'Har som ledare tagit byn väl genom vintern.' }, // steg 10.4.9 (symbolen är en platshållare)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
@@ -196,6 +197,7 @@ const HDEF = {
   pahittig: { i: 'pahittig', vikt: 0.5, text: 'kom på {sak}', prestation: true }, // steg 10.4.9
   forutseende: { i: 'forutseende', vikt: 0.5, text: 'tog byn väl genom vintern' }, // steg 10.4.9
   bjorndodare: { i: 'bjorndodare', vikt: 1, text: 'dödade en björn', prestation: true }, // steg 6.6.6
+  uppdrag: { i: 'aventyrare', vikt: 0.5, text: 'klarade uppdraget {sak}', prestation: true }, // steg 11.8.17: berättas när sällskapet kommer hem
   pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat sin sovplats med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;

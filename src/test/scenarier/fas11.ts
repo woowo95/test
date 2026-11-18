@@ -3778,3 +3778,38 @@ SCENARIER.uppdragflik = {
     ];
   },
 };
+
+SCENARIER.uppdragrykte = {
+  text: 'Rykten och upplevelser av uppdrag (steg 11.8.17): när sällskapet kommer hem med ett klarat uppdrag får de som ser dem intrycket äventyrare (HANDELSER.uppdrag), och resan sitter en tid i humöret, glad efter ett klarat uppdrag och besviken efter en tom plats',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const vuxna = s.people.filter(x => SIM.alive(x) && !x.gast && SIM.ageOf(x, s.now) >= 18);
+    const p = vuxna.sort((a, b) => SIM.stat(b, 'mod', s.now) - SIM.stat(a, 'mod', s.now))[0]!;
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    const q = (vl.platser ?? []).filter(x => x.nr !== hem.nr && x.k === 'by').sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y))[0]!;
+    SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+    const u = SIM.utlys(vl, 'hjalp', q.nr, { k: 'styre', rad: q.by }, { silver: 30 }, s.now)!;
+    SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
+    const sl = SIM.samlaResa(s, p, SIM.resaPlan(s, p, 99, 99)!)!;
+    SIM.uppdragFram(s, sl, s.now);
+    // en bybo hemma står bredvid när sällskapet kommer hem
+    const w = vuxna.find(x => x.id !== p.id && !sl.medl.includes(x.id))!;
+    w.x = p.x; w.y = p.y; w.task = undefined;
+    const r0 = s.stat?.rykte_uppdrag ?? 0, m0 = SIM.moodOf(p, s.now + SIM.DAY);
+    SIM.redogorelse(s, sl, s.now + SIM.DAY);
+    s.now += SIM.DAY;
+    const m1 = SIM.moodOf(p, s.now), harTanke = p.thoughts.some(t => t.text.startsWith('Klarade') && t.v > 0);
+    const intryck = (w.intryck ?? []).some(i => i.om === p.id && i.k === 'aventyrare');
+    // ett sällskap som fann platsen tom blir besviket
+    const sl2 = { ...sl, id: sl.id + 1000, uppdrag: undefined, pack: {}, dagbok: [], utfall: undefined, berattad: undefined } as SIM.Sallskap;
+    SIM.uppdragFram(s, sl2, s.now);
+    SIM.redogorelse(s, sl2, s.now);
+    const besviken = p.thoughts.some(t => t.v < 0 && t.text.includes('tom'));
+    return [
+      [`ryktet om ${p.name} räknas (${(s.stat?.rykte_uppdrag ?? 0) - r0} gånger) och ${w.name}, som såg det, får intrycket äventyrare`, (s.stat?.rykte_uppdrag ?? 0) > r0 && intryck],
+      [`${p.name} blir gladare efter ett klarat uppdrag (${m0.toFixed(2)} → ${m1.toFixed(2)})`, harTanke && m1 > m0],
+      ['den som kom fram till en tom plats blir besviken', besviken],
+      [`intrycket har ett hedersnamn (${SIM.BINAMN.aventyrare.namn[0][0]})`, SIM.BINAMN.aventyrare.namn.length > 0],
+    ];
+  },
+};

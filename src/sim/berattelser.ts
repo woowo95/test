@@ -114,6 +114,7 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   bjorndodare: { namn: [['Björndödaren', 'Björndödaren'], ['Björnbane', 'Björnbane'], ['den orädde', 'den orädda'], ['Björnfällen', 'Björnfällen']] }, // steg 6.6.6
   pahittig: { namn: [['den kloke', 'den kloka'], ['Finurlig', 'Finurlig'], ['den listige', 'den listiga'], ['Hittaren', 'Hittaren']] }, // steg 10.4.9
   skvaller: { namn: [['Skvallret', 'Skvallerbyttan'], ['Pratmakaren', 'Pratmakerskan'], ['Sladdertacka', 'Sladdertacka'], ['den lösmynte', 'den lösmynta']] }, // steg 10.8.6
+  aventyrare: { namn: [['Äventyraren', 'Äventyrerskan'], ['Vägfararen', 'Vägfarerskan'], ['den bereste', 'den beresta'], ['Vidfamnaren', 'Vidfamnerskan']] }, // steg 11.8.17
   forutseende: { namn: [['den framsynte', 'den framsynta'], ['Förrådsvakt', 'Förrådsvakt'], ['den vise', 'den visa'], ['Vinterhövding', 'Vinterhövding']] },
 };
 export const BINAMN: Record<IntryckTyp, BinamnDef> = BDEF;

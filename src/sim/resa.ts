@@ -46,7 +46,9 @@ import { kannerOrt, O_RYKTE } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
 import { PAB, pabud } from './styre';
-import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid } from './uppdrag';
+import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid, UPPDRAGTAL } from './uppdrag';
+import { handelse } from './rykten';
+import { think } from './folk';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -954,6 +956,12 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
   log(s, text + upp, 'world', folk.map(p => p.id)).resa = sl.id; // minnet hos dem som var med (personens logg)
   notis(s, 'resa', text + upp, folk.map(p => p.id), undefined, { resa: sl.id });
   if (u) { kronika(s, `${text}${upp}`, 'uppdrag'); count(s, 'uppdrag berättat'); } // uppdragets redogörelse (steg 11.8.7)
+  // ryktet och upplevelsen (steg 11.8.17): de som ser sällskapet komma hem med ett klarat uppdrag får intrycket äventyrare om var
+  // och en som var med, och det sprids som andra rykten. Resan sitter en tid i humöret, glad eller besviken efter hur det gick
+  if (u) for (const p of folk) {
+    if (u.hur === 'klart') { handelse(s, p, 'uppdrag', undefined, u.namn.toLowerCase()); think(p, `Klarade ${u.namn.toLowerCase()}`, UPPDRAGTAL.glad, t, UPPDRAGTAL.tanke * DAY); }
+    else think(p, u.hur === 'tomt' ? 'Kom fram till en tom plats' : 'Uppdraget gick inte', -UPPDRAGTAL.besviken, t, UPPDRAGTAL.tanke * DAY);
+  }
   count(s, 'resa redogörelse');
   // byn minns de senaste resorna; de äldsta som kommit hem glöms
   const hemma = (vl.sallskap ?? []).filter(x => x.skede === 'hemma');

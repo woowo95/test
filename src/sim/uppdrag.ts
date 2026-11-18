@@ -31,6 +31,9 @@ export const UPPDRAGTAL = balans('uppdrag', {
   glom: 2, // ett uppdrag glöms så här mycket långsammare än en vanlig lärdom
   krav: 1, // vikten för hur väl en bybo passar uppdragets krav när ledaren kallar (steg 11.8.5), mot modet och tycket
   tilltro: 3, // tilltron till en uppgift halveras på så många dygn (år i spelet) efter att den utlystes
+  glad: 0.12, // humöret för den som var med och klarade ett uppdrag (steg 11.8.17) ...
+  besviken: 0.06, // ... och för den som kom fram till en tom plats eller inte kunde göra det
+  tanke: 2, // så många dygn (år i spelet) sitter upplevelsen i humöret
   vittra: 0.03, // det i en ruin som inte ruttnar vittrar bort med så stor del per dygn (det som ruttnar: 1 / SAKER.haller per dygn)
 });
 

@@ -83,7 +83,7 @@ export function mots(vl: Varlden, a: number, b: number) {
 // Kriget börjar och slutar med raderna krig och fred i BYHANDLINGAR, när poängen går över noll
 export interface ByLageDef { namn: string; sym: string; handel: boolean; fejd: number }
 export const BYLAGEN = {
-  fred: { namn: 'Fred', sym: '🕊️', handel: true, fejd: 0 },
+  fred: { namn: 'Fred', sym: '🤝', handel: true, fejd: 0 },
   krig: { namn: 'Krig', sym: '⚔️', handel: false, fejd: 1 }, // i krig vill båda plundra den andra fullt ut
   lyder: { namn: 'Lyder under', sym: '👑', handel: true, fejd: 0 },
 } as const satisfies Record<string, ByLageDef>;
