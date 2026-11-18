@@ -2998,3 +2998,47 @@ SCENARIER.varldsanfall = {
     ];
   },
 };
+
+SCENARIER.vagran = {
+  text: 'Rån och rovdjur på vägen (steg 11.6.21, vagran.ts): faran för en sträcka räknas ur de rövarläger som finns nära den, rövarna tas ur lägret och bytet går dit, och sällskapet väljer mellan att betala, fly och slåss; vargar oftare på obanad mark och i istiden',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, w = vl.mark.w;
+    // ett sällskap på väg, och ett läger nära
+    const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= 20 && SIM.ageOf(p, s.now) < 50).slice(0, 3);
+    const mal = SIM.byPlats(vl, vl.huvud!)!.grannar![0]!.nr;
+    const sl = SIM.nyttSallskap(s, folk[0]!, mal, 'handel')!; for (const q of folk.slice(1)) SIM.foljMed(vl, sl, q);
+    const hp = SIM.byPlats(vl, vl.huvud!)!;
+    sl.skede = 'ute'; sl.ruta = hp.y * w + hp.x;
+    const fore = SIM.vagRisk(s, sl, 'ran');
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+    const L = SIM.nyttLager(s, vl, r, 10, s.now)!;
+    const lp = SIM.byPlats(vl, L.nr)!;
+    sl.ruta = lp.y * w + lp.x; const nara = SIM.vagRisk(s, sl, 'ran');
+    sl.ruta = (lp.y) * w + Math.min(w - 1, lp.x + 12); const langre = SIM.vagRisk(s, sl, 'ran');
+    sl.ruta = lp.y * w + lp.x;
+    // valen: med en full packning och ett litet krav betalar man; utan något att betala med flyr eller slåss man
+    sl.pack = { flintkniv: 3, skinn: 6, torkatKott: 10 };
+    const v1 = SIM.vagValen(s, sl, 3, 10), v2 = SIM.vagValen(s, sl, 3, 10000);
+    const val1 = (Object.keys(v1) as SIM.VagVal[]).reduce((a, b) => v1[b] < v1[a] ? b : a), val2 = (Object.keys(v2) as SIM.VagVal[]).reduce((a, b) => v2[b] < v2[a] ? b : a);
+    // rånet: bytet går till lägret, och döda rövare dras ur lägret
+    const lagerFore = SIM.radRikedomUr(L) + (L.tal.mat ?? 0), packFore = Object.values(sl.pack).reduce((a, x) => a + (x ?? 0), 0), lf = L.tal.folk;
+    let ran = 0;
+    for (let i = 0; i < 30 && Object.keys(sl.pack).length; i++) { SIM.VAGHANDELSER.ran!.gor(s, sl, s.now); ran++; }
+    const packEfter = Object.values(sl.pack).reduce((a, x) => a + (x ?? 0), 0), lagerEfter = SIM.radRikedomUr(L) + (L.tal.mat ?? 0);
+    const dag = sl.dagbok.filter(d => d[2] === 'ran' || d[2] === 'strid').map(d => d[1]);
+    const hela = Object.values(sl.pack).every(x => Number.isInteger(x)) && Number.isInteger(L.tal.folk);
+    // vargarna
+    const sv = SIM.cloneState(s), slv = sv.varld!.sallskap!.find(x => x.id === sl.id)!;
+    const obanad = SIM.vagRisk(sv, slv, 'rovdjur');
+    for (let i = 0; i < 10; i++) SIM.VAGHANDELSER.rovdjur!.gor(sv, slv, sv.now);
+    const vdag = slv.dagbok.filter(d => /vargar/.test(d[1])).length;
+    return [
+      [`faran för rån kommer ur lägren: ${fore.toFixed(3)} per dygn utan läger nära, ${nara.toFixed(3)} vid lägret och ${langre.toFixed(3)} 12 rutor bort`, nara > fore && nara > langre && langre >= fore],
+      [`ledaren betalar ett litet krav (${val1}) och betalar inte ett för stort (${val2})`, val1 === 'betala' && val2 !== 'betala'],
+      [`${ran} rån: packningen ${packFore} → ${packEfter}, lägret har ${lagerFore} → ${lagerEfter} och folket ${lf} → ${L.tal.folk}`, packEfter < packFore && lagerEfter > lagerFore && L.tal.folk <= lf],
+      [`rånen står i dagboken (${dag.length}): "${dag[0] ?? ''}"`, dag.length > 0],
+      ['allt är hela saker och hela rövare', hela],
+      [`vargarna kommer (${obanad.toFixed(3)} per dygn) och står i dagboken (${vdag})`, obanad > 0 && vdag > 0],
+    ];
+  },
+};

@@ -943,14 +943,16 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
     },
   },
 };
-export const VAGHANDELSE_IDS = Object.keys(VAGHANDELSER).sort();
+// (raderna kan läggas till från andra filer, som vagran.ts, så listan görs första gången den behövs)
+let vagIds: string[] | undefined;
+export const vagHandelseIds = () => vagIds ??= Object.keys(VAGHANDELSER).sort();
 // risken per dygn för en händelse just nu
 export function vagRisk(s: State, sl: Sallskap, id: string, t = s.now) {
   const h = VAGHANDELSER[id]!, f = h.fardighet ? basta(s, sl, h.fardighet) / 20 * RESA.fardSank : 0;
   return h.dygn * (h.risk?.(s, sl, t) ?? 1) * (h.okar ? 1 + f : Math.max(0, 1 - f));
 }
 export function vagHandelser(s: State, sl: Sallskap, t: number, dt: number) {
-  for (const id of VAGHANDELSE_IDS) {
+  for (const id of vagHandelseIds()) {
     const p = 1 - Math.exp(-vagRisk(s, sl, id, t) * dt / DAY);
     if (rnd(s, 'resa') < p) { VAGHANDELSER[id]!.gor(s, sl, t); count(s, `resa ${VAGHANDELSER[id]!.namn.toLowerCase()}`); }
   }
@@ -1070,7 +1072,7 @@ export function vardaPaVagen(s: State, sl: Sallskap, q: Person, folk = resenarer
   ovning(g, 'lakekonst', HALSA.lakeOvning);
 }
 // en resenär dör på vägen: hen dör som hemma (die), men kroppen ligger inte på byns karta; sällskapet går vidare utan hen
-function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Dodsorsak, t: number) {
+export function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Dodsorsak, t: number) {
   if (!alive(p) || p.dodVag) return;
   p.dodVag = { orsak, t }; delete p.sjuk;
   if (sl.ledare === p.id) { const ny = resenarer(s, sl)[0]; if (ny) sl.ledare = ny.id; } // den som är kvar leder

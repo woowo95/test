@@ -178,5 +178,6 @@ export * from './sim/leder';
 export * from './sim/resa';
 export * from './sim/vagmote';
 export * from './sim/radanfall';
+export * from './sim/vagran';
 export * from './sim/utpost';
 export * from './sim/forhistoria';
