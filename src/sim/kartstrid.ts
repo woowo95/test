@@ -216,7 +216,8 @@ export function kartStridSteg(s: State, dtSec: number) {
         if (sport) continue; // brottaren har matchen som uppgift
         if (k.lage === 'ger' || k.lage === 'borta') { // har lämnat striden: väljer på nytt
           (g.fri ??= []).push(p.id);
-          if (g.efter?.typ === 'rovare' && !p.gast) p.gavSig = s.now; // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
+          if (g.efter?.typ === 'rovare' && !p.gast) p.gavSig = s.now;
+          if (p.gast && k.lage === 'ger') gastKrok.ger?.(s, p, st.avsikt); // gästen som gett upp för den som kuvar (steg 11.12.6, rovare.ts) // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
           if (p.task?.act === 'strid') p.task.until = s.now;
         } else if (k.lage === 'strid' || k.lage === 'flykt') { // den som står eller flyr är kvar i striden, också när en skada avbrutit det hen gjorde
           if (p.task?.act !== 'strid') { avbryt(s, p); stridsUppgift(s, p, g.orsak); } else { p.task.tx = p.x; p.task.ty = p.y; }

@@ -64,6 +64,8 @@ export const fangelseDorr = (s: State, h: Hus) => bitsOf(s).find(b => b.hus === 
 export const fangelseKlart = (s: State, h: Hus) => !!h.klar && !!dorrDef(fangelseDorr(s, h)?.dorr)?.stanger;
 export const fangar = (s: State, h?: Hus) => s.people.filter(p => p.fange && (!h || p.fange.hus === h.id));
 // rutorna inne i fängelset
+// fångens ruta bland n: gästernas id är negativa (steg 11.12.6)
+const platsNr = (p: Person, n: number) => ((p.id % Math.max(1, n)) + Math.max(1, n)) % Math.max(1, n);
 const rutorI = (s: State, h: Hus) => gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles);
 // platserna: så många som sitter där nu och en till (ett tomt fängelse har en plats), så att det byggs ut när det är fullt
 export const fangelsePlatser = (s: State) => Math.max(1, fangar(s).length + 1);
@@ -81,7 +83,7 @@ export const fangelseDygn = (v: number) => clamp(Math.round(v * FANG.domPerVikt)
 // går dit själv (ga), annars hamnar p inne direkt
 export function satt(s: State, p: Person, h: Hus, varfor: string, till?: number, ga = false) {
   p.fange = { hus: h.id, t: s.now, varfor, ...(till !== undefined ? { till } : {}) };
-  const i = rutorI(s, h)[p.id % Math.max(1, rutorI(s, h).length)];
+  const i = rutorI(s, h)[platsNr(p, rutorI(s, h).length)];
   if (i !== undefined && !ga) { p.x = i % W + 0.5; p.y = Math.floor(i / W) + 0.5; }
   p.task = undefined; count(s, 'fangelse_in');
 }
@@ -113,7 +115,7 @@ export function fangeVal(s: State, p: Person): boolean {
     fangelseKrok.larma(s, p); // slagen mot dörren hörs (steg 11.12.5)
     return true;
   }
-  const i = rutor[p.id % rutor.length];
+  const i = rutor[platsNr(p, rutor.length)];
   p.task = { act: 'fangen', phase: 'go', tx: i % W + 0.5, ty: Math.floor(i / W) + 0.5, until: s.now + 30 * MIN, carry: 0, why: f.varfor, dark: false };
   return true;
 }

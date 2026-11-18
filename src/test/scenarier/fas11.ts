@@ -1,6 +1,7 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { SCENARIER, kor, korTills, rovarGang, testBy, utanWebblasare } from './hjalp';
+import { SCENARIER, klockan, kor, korTills, medHus, rovarGang, testBy, utanWebblasare } from './hjalp';
+import { START } from '../kor';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
 import { readFileSync } from 'node:fs';
@@ -4365,6 +4366,48 @@ SCENARIER.vintervag = {
       [`istiden fryser marken, och den sparade vägen går över isen (${frusen}, ${fore})`, frusen && fore],
       [`när isen går räknas vägen om runt sjön (${!efter}, frusen: ${!!vl.frusen})`, !efter && !vl.frusen],
       [`i snö väljs släden före vagnen (${snoLast.fordon ?? 'vagn'} i snö, ${barLast.fordon ?? 'vagn'} på barmark)`, snoLast.fordon === 'slade' && !barLast.fordon],
+    ];
+  },
+};
+
+SCENARIER.fangar = {
+  text: 'Fångar tas (steg 11.12.6, avsikten kuva i strid.ts och geUpp, tasTillFange och fangeSteg i rovare.ts): när fängelset har ledig plats och seden lutar mot Förlikning slåss byn för att kuva, och rövarna ger upp i stället för att fly. Den som gett upp lägger ner vapnen och det hen bär, som blir byns, och när byn vunnit går hen till fängelset och sitter där. Utan fängelse slåss byn för att skada och tar ingen, och en bybo som tappar modet flyr som förut',
+  kor: () => {
+    // i arenan: den som möter den som kuvar ger upp, den som kuvar flyr när modet tar slut
+    const a = SIM.createState(6, START), [p0, p1] = SIM.living(a).filter(q => SIM.ageOf(q, a.now) >= SIM.ALDER.vuxen) as [SIM.Person, SIM.Person];
+    const arena = (avsikt: SIM.Avsikt, svag: 0 | 1) => {
+      const k = [SIM.personKampe(a, p0, 1, 0, 3, 4), SIM.personKampe(a, p1, 2, 1, 5, 4)];
+      const st0 = SIM.nyStrid({ avsikt, w: 10, h: 8, kampar: k }, 7); st0.kampar[svag].modNu = 0.001; // den svaga har inget mod kvar
+      const st = SIM.stridTillSlut(st0);
+      return st.kampar[svag].lage;
+    };
+    const rovGer = arena('kuva', 1), byFly = arena('kuva', 0), skadaFly = arena('skada', 1);
+    // byn med ett fängelse och seden Förlikning, och två rövare som anfaller
+    const by = (fangelse: boolean) => {
+      const s = SIM.createState(6, START); klockan(s, 10); medHus(s);
+      for (const c of SIM.klanerOf(s)) c.inst = -60;
+      s.seder.v.fejd = -1;
+      if (fangelse) { const h = SIM.housesOf(s)[0]; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s); }
+      const z = SIM.zoneOf(s)!, f = rovarGang(s, 2, { x: z.x + z.w / 2 + 10, y: z.y + z.h / 2 }, { anfaller: true });
+      for (const id of f.folk) { const r = s.people.find(q => q.id === id)!; r.pot.mod = 3; } // rädda rövare: modet tar slut fort
+      let avsikt: string | undefined;
+      korTills(s, () => (s.stat?.fange_tagen ?? 0) > 0 || (s.stat?.kartStridSlut ?? 0) > 0 && !SIM.kartStrider(s).length && !(s.rovare?.folk.length), 6 * 3600, () => { for (const g of SIM.kartStrider(s)) if (g.efter?.typ === 'rovare') avsikt ??= g.st.avsikt; });
+      return { s, avsikt };
+    };
+    const m = by(true), ms = m.s;
+    const fangar = SIM.gasterNu(ms, 'fange'), tagen = fangar.find(q => q.fange);
+    const vapen = (ms.stat?.fange_vapen ?? 0) > 0 || (ms.ting ?? []).some(t => t.agare === 0);
+    let inne = false;
+    if (tagen) korTills(ms, () => (inne = SIM.roomAt(ms, Math.floor(tagen.x), Math.floor(tagen.y))?.hus === tagen.fange?.hus), 3 * 3600);
+    const kvar = !!tagen?.fange && tagen.task?.act !== 'gaHem';
+    const u = by(false), us = u.s;
+    return [
+      [`i arenan ger den som möter den som kuvar upp (${rovGer}), den som kuvar flyr när modet tar slut (${byFly}), och vid Skada flyr den svaga som förut (${skadaFly})`, rovGer === 'ger' && (byFly === 'flykt' || byFly === 'borta') && (skadaFly === 'flykt' || skadaFly === 'borta')],
+      [`med ledigt fängelse och Förlikning slåss byn för att kuva (${m.avsikt})`, m.avsikt === 'kuva'],
+      [`rövare gav upp (${ms.stat?.fange_gav ?? 0}) och en togs till fånga (${ms.stat?.fange_tagen ?? 0})`, (ms.stat?.fange_gav ?? 0) > 0 && !!tagen],
+      [`vapnen och bytet hen bar blev byns (${ms.stat?.fange_vapen ?? 0} ting, ${ms.stat?.rovarTappat ?? 0} saker)`, vapen || (ms.stat?.rovarTappat ?? 0) > 0],
+      [`fången gick till fängelset och sitter inne (${tagen?.task?.act})`, inne && kvar],
+      [`utan fängelse slåss byn för att skada (${u.avsikt}) och tar ingen (${us.stat?.fange_tagen ?? 0})`, u.avsikt === 'skada' && !(us.stat?.fange_tagen) && !SIM.gasterNu(us, 'fange').some(q => q.fange)],
     ];
   },
 };

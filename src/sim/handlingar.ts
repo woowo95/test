@@ -328,7 +328,8 @@ const DEF = {
   gastHandla: { namn: 'Handlar vid filten', slag: 'prata', stilla: true, gast: ['handlare'] as const },
   plundra: { namn: 'Plundrar byn', tecken: '💰', gast: ['rovare'] as const },
   gastFly: { namn: 'Flyr från byn', tecken: '🏃', gast: ['rovare', 'framling'] as const },
-  gaHem: { namn: 'Går hem', tecken: '🚶', gast: ['handlare', 'rovare', 'framling', 'folje'] as const },
+  gaHem: { namn: 'Går hem', tecken: '🚶', gast: ['handlare', 'rovare', 'framling', 'folje', 'fange'] as const },
+  fangeVantar: { namn: 'Har gett upp', tecken: '🏳️', ikon: 'fangelse', stilla: true, gast: ['fange'] as const }, // steg 11.12.6 (rovare.ts): väntar på hur striden slutar
   skrika: { namn: 'Skriker och gråter', tecken: '😭', ikon: 'utb1', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;
 

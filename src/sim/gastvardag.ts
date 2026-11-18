@@ -73,6 +73,7 @@ function satt(s: State, p: Person, act: Act) {
 function kanSova(s: State, p: Person) {
   const h = s.handlare;
   if (p.gast!.sort === 'folje') return !!h?.folj?.includes(p.id) && (h.fas === 'vantar' || h.fas === 'handlar'); // följet sover i lägret
+  if (p.gast!.sort === 'fange') return !!p.fange && p.task?.act === 'fangen' && p.task.phase === 'do'; // fången sover i fängelset
   if (p.gast!.sort !== 'handlare') return false;
   return !!h && h.id === p.id && (h.fas === 'vantar' || (h.fas === 'handlar' && !h.affar && !h.ko?.length));
 }
@@ -114,7 +115,7 @@ export function gastVardag(s: State, dtSec: number, varme: (p: Person) => number
     const sjukDod = sjukSteg(s, p, dtSec, !!g.sover, false);
     if (!p.sjuk && chance(s, (iIstiden(ageIndex(s)) ? ARSTID.sjukIstid : ARSTID.sjuk) * SJUK.kyla / 86400, dtSec, 'halsa', p)) insjukna(s, p, 'forkylning');
     if (sjukDod || p.health <= 0) { gastDor(s, p, sjukDod ? 'av sjukdom' : p.hunger <= 0 ? 'av svält' : 'av kyla'); continue; }
-    satt(s, p, gastAkt(s, p));
+    if (g.sort !== 'fange') satt(s, p, gastAkt(s, p)); // fången styrs av fangeSteg i rovare.ts (steg 11.12.6)
   }
 }
 

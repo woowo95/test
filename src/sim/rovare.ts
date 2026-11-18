@@ -30,7 +30,8 @@ import { grundvarde, rikedom } from './varde';
 import { husPlats, iHus, kanterna, setHotVilja, setRovarVal, skyddVidElden, vargIStrid, vargStrid } from './varg';
 import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
-import { gastAv, gastGar, gastTillbaka, gastTingOf, nyGast, nyttGastId } from './gast';
+import { gastAv, gastAvvapna, gastGar, gastTillbaka, gastTingOf, gasterNu, nyGast, nyttGastId } from './gast';
+import { brytKlar, fangeVal, fangelseDorr, fangelseLedigt, satt as sattIFangelset } from './fangelse';
 import { notis } from './notiser';
 import type { TalkEvent } from './samtal';
 import { groundOf, tileOf } from './mark';
@@ -568,7 +569,9 @@ function slaSteg(c: RCtx) {
   if (!mot.length) return;
   for (const p of mot) taVapen(s, p); // var och en tar det bästa lediga vapnet, sitt eget eller byns (vakt.ts)
   if (f.sedd === undefined) { f.sedd = s.now; f.gissning = f.folk.length; f.sx = f.x; f.sy = f.y; } // en flock som ingen sett är sedd när striden börjar
-  const ny = kartStridBorja(s, 'skada', [mot, rov], f.anfall ? 'rövare i byn' : 'rövare vid byn', { typ: 'rovare', egen: true, flock: f.id });
+  // byn kuvar när fängelset har ledig plats och seden lutar mot Förlikning (steg 11.12.6): då ger rövarna upp i stället för att fly
+  const avsikt = fangelseLedigt(s) && s.seder.v.fejd < 0 ? 'kuva' : 'skada';
+  const ny = kartStridBorja(s, avsikt, [mot, rov], f.anfall ? 'rövare i byn' : 'rövare vid byn', { typ: 'rovare', egen: true, flock: f.id });
   for (const k of ny.st.kampar) { const p = k.pid !== undefined ? byId(s, k.pid) : undefined; if (p && !p.gast) k.st.mod += 20 * overtygelse(s, f, p); if (p?.gast && f.mal !== undefined) k.jagar = f.mal; } // övertygelsen (steg 8.8.8), och hämnden riktar sig mot målet (steg 8.8.5)
   f.strider = (f.strider ?? 0) + 1;
   count(s, 'rovarStrid');
@@ -717,11 +720,71 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   const mest = (ks: string[]) => ks.reduce((a, k) => a + (lagen[k] ?? 0), 0);
   if ((f.gor as string) !== 'letar' || f.klar) f.gor = !kvar.length || mest(['fly', 'baraHem']) >= kvar.length ? 'flyr' : flockStrid(s, f) ? 'slass' : mest(['ta']) ? 'rotar' : f.anfaller ? 'kommer' : f.vantat ? 'vantar' : 'kommer';
 }
+// ---------- fångarna (steg 11.12.6, "Fångar från striden" i fliken Människan) ----------
+// rövaren r ger upp (eller ligger kvar) i en strid där byn kuvar: hen lämnar gänget, lägger ner vapnen och det hen bär, som blir
+// byns byte där hen står, och väntar på hur striden slutar
+export function geUpp(s: State, r: Person) {
+  const g = r.gast; if (!g || g.sort === 'fange') return;
+  const f = flockar(s).find(q => q.folk.includes(r.id));
+  if (f) f.folk = f.folk.filter(id => id !== r.id);
+  tappar(s, r);
+  count(s, 'fange_vapen', gastAvvapna(s, r));
+  g.sort = 'fange'; g.gor = undefined; g.flytt = undefined; g.ledare = undefined; g.path = undefined; g.pk = undefined; g.ut = undefined;
+  r.task = { act: 'fangeVantar', phase: 'do', tx: r.x, ty: r.y, until: s.now + HOUR, carry: 0, why: 'Har gett upp' };
+  count(s, 'fange_gav');
+}
+// striden är slut: vann byn förs de som gett upp till fängelset så länge det har plats; de övriga släpps och går
+function tasTillFange(s: State, r: Person, vann: boolean) {
+  const h = vann ? fangelseLedigt(s) : undefined;
+  if (!h) { r.gast!.fas = 'gar'; count(s, 'fange_slappt'); return; }
+  sattIFangelset(s, r, h, 'Tagen till fånga i en strid med rövare', undefined, true);
+  r.gast!.tagen = s.now;
+  count(s, 'fange_tagen');
+}
+// fångarnas slag: den som väntar står kvar, den som tagits går till fängelset (till rutan utanför dörren och in) och sitter
+// sedan inne som en bybo (fangeVal i fangelse.ts), och den som släppts eller rymt går ut ur byn och hem
+function fangeSteg(s: State, dtSec: number) {
+  for (const p of gasterNu(s, 'fange')) {
+    const g = p.gast!;
+    if (!p.fange && g.tagen !== undefined) g.fas = 'gar'; // släppt eller rymd
+    if (!p.fange) {
+      if (g.fas !== 'gar') continue; // väntar på hur striden slutar
+      if (p.task?.act !== 'gaHem') p.task = { act: 'gaHem', phase: 'go', tx: p.x, ty: p.y, until: s.now + DAY, carry: 0, why: 'Går hem' };
+      if (!kanGa(p)) continue;
+      g.ut ??= kantMot(s, g.klan) ?? kanterna(p.x, p.y)[0];
+      const kvar = gaMot(s, p, g.ut.x, g.ut.y, dtSec, s.now - dtSec * SEC);
+      if (kvar === 0 || Math.min(p.x, W - p.x, p.y, H - p.y) <= 0.31) { gastGar(s, p.id, true); count(s, 'fange_gick'); }
+      continue;
+    }
+    if (!p.task || s.now >= p.task.until || (p.task.act !== 'fangen' && p.task.act !== 'rymma')) {
+      if (!fangeVal(s, p)) continue;
+    }
+    const t = p.task!;
+    if (t.phase === 'go') {
+      const h = husById(s, p.fange.hus), d = h && fangelseDorr(s, h);
+      if (!d || roomAt(s, Math.floor(p.x), Math.floor(p.y))?.hus === h!.id) { p.x = t.tx; p.y = t.ty; t.phase = 'do'; spara(s, p, s.now); continue; }
+      if (!kanGa(p)) continue; // den sårade ligger tills hen kan gå
+      const ute = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: d.x + dx, y: d.y + dy })).find(q => inMap(q.x, q.y) && roomAt(s, q.x, q.y)?.hus !== h!.id && !bitAt(s, q.x + 0.5, q.y + 0.5)) ?? { x: d.x, y: d.y + 1 };
+      const kvar = gaMot(s, p, ute.x + 0.5, ute.y + 0.5, dtSec, s.now - dtSec * SEC);
+      if (kvar === 0) { p.x = t.tx; p.y = t.ty; t.phase = 'do'; spara(s, p, s.now); count(s, 'fange_in'); }
+    } else if (t.act === 'rymma' && s.now >= t.until) brytKlar(s, p, t.ref);
+  }
+}
 // striden med rövarna är slut (EFTER i efterstrid.ts): raden om den, klanen och tankarna. Såren och de döda är redan på riktigt
 EFTER.rovare = (s, e, vinnare, strid) => {
   const g = strid as KartStrid, st = g.st, f = flockar(s).find(q => q.id === e.flock);
   const bybor = st.kampar.filter(k => k.sida === 0).map(k => ({ k, p: k.pid !== undefined ? byId(s, k.pid) : undefined })), rov = st.kampar.filter(k => k.sida === 1);
   const doda = rov.filter(k => k.lage === 'dod').length, svara: string[] = [];
+  if (st.avsikt === 'kuva') { // fångarna (steg 11.12.6): de som gett upp eller ligger kvar
+    let tagna = 0;
+    for (const k of rov) {
+      const r = k.pid !== undefined ? gastAv(s, k.pid) : undefined;
+      if (!r || r.died !== undefined || (k.lage !== 'ger' && k.lage !== 'nere' && r.gast!.sort !== 'fange')) continue;
+      geUpp(s, r); tasTillFange(s, r, vinnare === 0);
+      if (r.fange) tagna++;
+    }
+    if (tagna) log(s, `Byn tog ${tal(tagna)} rövare till fånga.`, 'world');
+  }
   for (const { k, p } of bybor) {
     if (!p || !alive(p)) continue;
     if (f && k.lage === 'ger') svarTrohet(s, f, p); // heligt krig (steg 8.8.6)
@@ -754,6 +817,7 @@ gastKrok.dod = (s, r, av) => {
   gastGar(s, r.id);
 };
 gastKrok.spara = (s, r, t) => spara(s, r, t ?? s.now);
+gastKrok.ger = (s, r, avsikt) => { if (avsikt === 'kuva') geUpp(s, r); };
 // rövare och bybor som kan nå varandra under ett slag, plus synhållet: då går byn i korta steg (FAROR i efterstrid.ts, kanNa i klocka.ts)
 // (också medan byn vet om ett gäng som väntar: larmet går led för led och budbäraren springer, och det ska inte ta fem minuter per led)
 FAROR.push(s => flockar(s).some(f => f.folk.length > 0 && (!!f.anfaller || (f.sedd !== undefined && !f.klar) || rovarna(s, f).some(r => living(s).some(q => kanNa(avst(q, r), GANG.fart, GANG.fart))))));
@@ -802,6 +866,7 @@ function flockTom(s: State, f: Rovarflock) { if (f.fard === undefined) return; f
 
 // varje slag (steg.ts): en flock kommer, ses, går in mot byn och flyr
 export function rovarSteg(s: State, dtSec: number, ev?: TalkEvent[]) {
+  fangeSteg(s, dtSec);
   if (!s.rovare && !s.rovareFler?.length) return;
   // alla flockar på kartan går samtidigt (steg 8.7.18): den första (s.rovare) och de som kom medan den var här (rovareFler).
   // Var och en har sin egen strid; den som redan slåss i en strid ger sig inte in i en annan
