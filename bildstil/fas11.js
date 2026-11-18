@@ -971,3 +971,107 @@
     VERSION('Små sköldar i sortens färg med ett ljust märke: röd för byn, gul för handeln och fynden, mörk för rövarna, brun för det som byggs, grön för de heliga platserna och gravarna.', skold),
   ] });
 })();
+
+// Steg 11.9.4: kartans utsmyckning: ramen, kompassrosen och bilderna i havet, tre idéer, ritade på samma utsnitt av
+// pergamentkartan som kortet f11_pergament (en värld ur spelet). Kompassrosen står i havet uppe till vänster och bilden i
+// havet uppe till höger.
+(() => {
+  const RAMPER = ['kol', 'jord', 'senap', 'rost', 'oliv', 'barr', 'skiffer', 'ben'], K = VARLDKARTA, W = K.w, H = K.h;
+  const bas = B => K.ny.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const n = parseInt(r[x], 32); B.satt(x, y, B.P.i(RAMPER[n >> 2], n & 3)); } });
+  const linje = (B, x0, y0, x1, y1, f) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let t = 0; t <= n; t++) B.satt(Math.round(x0 + (x1 - x0) * t / n), Math.round(y0 + (y1 - y0) * t / n), f); };
+  const ring = (B, cx, cy, r, f, gles = 1) => { const n = Math.ceil(r * 8); for (let a = 0; a < n; a++) if (a % gles === 0) B.satt(Math.round(cx + Math.cos(a / n * 2 * Math.PI) * r), Math.round(cy + Math.sin(a / n * 2 * Math.PI) * r), f); };
+  const skiva = (B, cx, cy, r, f) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) B.satt(cx + x, cy + y, f); };
+  const sprite = (B, rader, leg, x0, y0) => rader.forEach((r, y) => [...r].forEach((c, x) => { if (leg[c] !== undefined) B.satt(x0 + x, y0 + y, leg[c]); }));
+  const RUNOR = [['#.#', '##.', '#.#', '#..', '#..'], ['##.', '#.#', '#.#', '#.#', '#.#'], ['#..', '##.', '#.#', '##.', '#..'], ['##.', '#.#', '##.', '#.#', '#.#'], ['#.#', '##.', '#..', '#..', '#..'], ['#.#', '.#.', '###', '.#.', '#.#'], ['.#.', '.##', '##.', '.#.', '.#.'], ['.#.', '.#.', '.#.', '.#.', '.#.'], ['..#', '.#.', '#..', '.#.', '..#'], ['##.', '#.#', '##.', '#.#', '##.']];
+  const CX = 44, CY = 72, SX = 262, SY = 14; // kompassrosen och havets bild
+
+  // version 1: runbandet, en åttauddig ros med röd nordspets och en havsorm
+  function v1(B) {
+    const P = B.P, BL = P.i('kol', 1), PA = P.i('ben', 2), LJ = P.i('ben', 3), RO = P.i('rost', 1), SK = P.i('jord', 2);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k < 9) B.satt(x, y, k === 0 || k === 8 ? BL : k === 1 ? P.i('senap', 3) : PA); }
+    let i = 0;
+    for (let x = 12; x < W - 14; x += 4) RUNOR[(i++ * 7) % RUNOR.length].forEach((r, dy) => [...r].forEach((c, dx) => { if (c === '#') { B.satt(x + dx, 2 + dy, BL); B.satt(x + dx, H - 7 + dy, BL); } }));
+    for (let y = 12; y < H - 14; y += 4) RUNOR[(i++ * 3) % RUNOR.length].forEach((r, dy) => [...r].forEach((c, dx) => { if (c === '#') { B.satt(2 + dy, y + dx, BL); B.satt(W - 7 + dy, y + dx, BL); } }));
+    for (const [x, y] of [[4, 4], [W - 5, 4], [4, H - 5], [W - 5, H - 5]]) { skiva(B, x, y, 3, RO); ring(B, x, y, 3, BL); B.satt(x, y, LJ); }
+    ring(B, CX, CY, 9, BL, 2);
+    for (let k = 0; k < 8; k++) { // åtta uddar: de fyra stora längre, ljus och mörk halva
+      const a = k / 8 * 2 * Math.PI - Math.PI / 2, L = k % 2 ? 9 : 15, w = k % 2 ? 2 : 3;
+      const ex = CX + Math.cos(a) * L, ey = CY + Math.sin(a) * L, px = -Math.sin(a) * w, py = Math.cos(a) * w;
+      for (let t = 0; t <= 1; t += 0.04) for (let s = 0; s <= 1; s += 0.1) {
+        const bx = CX + px * (1 - s) * (1 - t), by = CY + py * (1 - s) * (1 - t);
+        B.satt(Math.round(bx + (ex - CX) * t * (1 - s * 0) ), Math.round(by + (ey - CY) * t), k === 0 ? RO : LJ);
+        B.satt(Math.round(CX - px * (1 - s) * (1 - t) + (ex - CX) * t), Math.round(CY - py * (1 - s) * (1 - t) + (ey - CY) * t), k === 0 ? P.i('rost', 0) : SK);
+      }
+      linje(B, Math.round(CX + px), Math.round(CY + py), Math.round(ex), Math.round(ey), BL); linje(B, Math.round(CX - px), Math.round(CY - py), Math.round(ex), Math.round(ey), BL);
+    }
+    skiva(B, CX, CY, 1, BL);
+    // havsormen: tre bågar och ett huvud
+    const G = P.i('barr', 2);
+    for (let k = 0; k < 3; k++) for (let a = 0; a <= 10; a++) { const x = SX + k * 11 + a, y = SY + 8 - Math.round(Math.sin(a / 10 * Math.PI) * 6); B.satt(x, y, BL); B.satt(x, y + 1, G); B.satt(x, y + 2, BL); }
+    sprite(B, ['..ooo.', '.oggro', 'oggggo', '.ooggo', '...oo.'], { o: BL, g: G, r: RO }, SX + 33, SY + 2);
+    for (let x = SX - 2; x < SX + 40; x += 3) B.satt(x, SY + 11, P.i('skiffer', 2));
+  }
+  // version 2: en dubbel bläcklinje med små rutor i hörnen, en ros som en ring med kors och röd pil, och ett långskepp
+  function v2(B) {
+    const P = B.P, BL = P.i('kol', 1), PA = P.i('ben', 3), RO = P.i('rost', 1);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k < 6) B.satt(x, y, k === 1 || k === 4 ? BL : PA); }
+    for (const [x, y] of [[0, 0], [W - 6, 0], [0, H - 6], [W - 6, H - 6]]) for (let dy = 0; dy < 6; dy++) for (let dx = 0; dx < 6; dx++) B.satt(x + dx, y + dy, dx === 0 || dy === 0 || dx === 5 || dy === 5 ? BL : dx > 1 && dx < 4 && dy > 1 && dy < 4 ? RO : PA);
+    skiva(B, CX, CY, 11, PA); ring(B, CX, CY, 11, BL); ring(B, CX, CY, 7, BL, 3);
+    linje(B, CX - 15, CY, CX + 15, CY, BL); linje(B, CX, CY + 15, CX, CY - 4, BL);
+    sprite(B, ['...o...', '..oro..', '..oro..', '.orrro.', '.orrro.', 'orrrrro', '...o...'], { o: BL, r: RO }, CX - 3, CY - 18);
+    for (const [x, y] of [[CX + 16, CY - 2], [CX - 19, CY - 2], [CX - 1, CY + 16]]) skiva(B, x + 1, y + 2, 1, BL);
+    // långskeppet: skrovet med drakhuvud, masten och ett randigt segel
+    const J = P.i('jord', 2), JM = P.i('jord', 1), W3 = P.i('ben', 3);
+    sprite(B, [
+      '..............o..............',
+      '.........ooooooooooooo.......',
+      '.........oRwRwRwRwRwRo.......',
+      '.........oRwRwRwRwRwRo.......',
+      '.........oRwRwRwRwRwRo.......',
+      '.........oRwRwRwRwRwRo.......',
+      '.........ooooooooooooo.......',
+      'oo............o.............o',
+      'ojo...........o............oj',
+      '.ojoooooooooooooooooooooooojo.',
+      '..ojJjJjJjJjJjJjJjJjJjJjJjo..',
+      '...oooooooooooooooooooooooo...',
+    ], { o: BL, R: RO, w: W3, j: J, J: JM }, SX, SY);
+    for (let x = SX - 3; x < SX + 34; x++) if (x % 4 !== 0) B.satt(x, SY + 12, P.i('skiffer', 2));
+  }
+  // version 3: ett band av flätverk i brunt, solkorset som kompass och en val som blåser
+  function v3(B) {
+    const P = B.P, BL = P.i('kol', 1), J = P.i('jord', 2), JL = P.i('jord', 3), JM = P.i('jord', 1), PA = P.i('ben', 2), Y = P.i('senap', 2), YL = P.i('senap', 3);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = Math.min(x, y, W - 1 - x, H - 1 - y); if (k >= 8) continue;
+      const u = (k === Math.min(y, H - 1 - y)) ? x : y; // längs bandet
+      const a = (u + k) % 8, b = (u - k + 64) % 8; // två strängar som korsar varandra
+      B.satt(x, y, k === 0 || k === 7 ? BL : a < 2 ? (Math.floor((u + k) / 8) % 2 ? JL : J) : b < 2 ? JM : PA);
+    }
+    skiva(B, CX, CY, 12, PA); ring(B, CX, CY, 12, BL); ring(B, CX, CY, 11, Y);
+    for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) for (let t = -11; t <= 11; t++) { B.satt(CX + dx * t, CY + dy * t, BL); B.satt(CX + dx * t + dy, CY + dy * t + dx, YL); }
+    sprite(B, ['..o..', '.oyo.', 'oyyyo', '.ooo.'], { o: BL, y: P.i('rost', 1) }, CX - 2, CY - 17);
+    skiva(B, CX, CY, 2, Y); ring(B, CX, CY, 2, BL);
+    // valen med en stråle
+    const S = P.i('skiffer', 1), SL = P.i('skiffer', 3), V = P.i('ben', 3);
+    sprite(B, [
+      '......v.v.v.................',
+      '.......vvv..................',
+      '........v...................',
+      '......oooooo................',
+      '...oooSSSSSSoooo............',
+      '..oSSSSSSSSSSSSSooo.....oo..',
+      '.oSSoSSSSSSSSSSSSSSoo..oSo..',
+      '.oSSSSSSSSSSSSSSSSSSSooSo...',
+      '.oLLLLLLLLLSSSSSSSSSSSSo....',
+      '..ooLLLLLLLLLLLLSSSSoo.oSo..',
+      '....oooooooooooooooo....oo..',
+    ], { o: BL, S, L: SL, v: V }, SX, SY);
+    for (let x = SX - 2; x < SX + 30; x += 2) B.satt(x, SY + 12, P.i('skiffer', 2));
+  }
+  const VERSION = (text, f) => ({ text, w: W, h: H, rita: B => { bas(B); f(B); } });
+  VAL.push({ id: 'f11_utsmyckning', namn: 'Pergamentkartans ram, kompassros och havets bilder', typ: 'tre', slag: [], vad: 'Steg 11.9.4: pergamentkartan får en ram runt kanten, en kompassros och bilder ute i havet, som på gamla kartor. Samma utsnitt av en värld ur spelet i alla tre; rosen står i havet uppe till vänster och bilden i havet uppe till höger. I spelet står rosen och bilderna där det finns öppet hav.', versioner: [
+    VERSION('Ett runband runt kanten med runor mellan två bläcklinjer och röda knutar i hörnen, en åttauddig ros med röd nordspets och en havsorm.', v1),
+    VERSION('En enkel dubbel bläcklinje med små rutor i hörnen, en ros som en ring med kors och en röd pil mot norr, och ett långskepp med randigt segel.', v2),
+    VERSION('Ett band av brunt flätverk runt kanten, solkorset i guld som kompass med en röd spets mot norr, och en val som blåser.', v3),
+  ] });
+})();
