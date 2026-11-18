@@ -646,3 +646,13 @@ EFTER.holmgang = (s, e, vinnare) => {
 
 // påbudet Fängelse gäller (steg 11.12.1): fangelse.ts frågar, så att filerna inte importerar varandra
 fangelsePabud.galler = s => !!ledareOf(s) && pabud(s, 'fangelse') > FANG.galler; // bara med en ledare: styret vill ha det
+// ledaren i en väckt by (steg 11.13.19, vacktro.ts): radens ledare har lett byn sedan sedan, med titeln som passar byn nu.
+// Utan rader i loggen och notiser: det hände före besöket
+export function ledareUrRad(s: State, l: Person, sedan: number) {
+  const st = styreOf(s), vuxna = vuxnaOf(s);
+  st.ledare = l.id; l.ledde = true; st.sedan = sedan; st.vintrar = 0; st.vunna = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s);
+  const titel = st.titel = titelFor(s, l, vuxna);
+  st.historia.push({ id: l.id, namn: l.name, titel, fran: sedan });
+  if (!st.oppna.includes('rang')) st.oppna.push('rang');
+  return titel;
+}

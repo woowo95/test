@@ -4999,3 +4999,30 @@ SCENARIER.vacktrel = {
     ];
   },
 };
+SCENARIER.vackttro = {
+  text: 'Tron, sederna och styret i den väckta byn (steg 11.13.19, vacktro.ts): byn har radens tro med namnet, läggningen och andelen troende (de mest andliga), en gud och en berättelse, den näst största tron bland resten, de heliga platserna ur minnet hör till den största tron, och radens ledare leder byn med en titel, utan rader i loggen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const rader = (vl.rader ?? []).filter(r => r.sort === 'by' && r.nr !== vl.huvud && r.tal.folk >= 6 && SIM.lever(vl, r) && r.tro);
+    const r = rader[0];
+    if (!r) return [['en by i världen med en tro', false]];
+    r.minne = { ...(r.minne ?? { hus: [], gravar: [], heliga: [] } as unknown as SIM.VacktMinne), heliga: [{ x: 5, y: 5, t: s.now - SIM.DAY, k: 'vatten' as SIM.HeligSlag, om: 'där stenen står' }] };
+    const b = SIM.vackTest(s, r.nr)!, folk = SIM.living(b), tr = b.tron?.[0];
+    const troende = folk.filter(p => p.tro === tr?.id), andra = r.tro!.annan && b.tron?.[1];
+    const mestAndliga = troende.every(p => folk.filter(q => q.tro !== tr?.id && q.tro === undefined).every(q => SIM.andlighet(b, q) <= SIM.andlighet(b, p) + 1e-9));
+    const l = SIM.ledareOf(b), fl = folk.find(p => p.fastRoll === 'ledare');
+    const logg = (b.log ?? []).some(e => /tror nu|har fått en|ledare/.test(e.text));
+    const samma = JSON.stringify(SIM.vackBy(s, r.nr)!.tron) === JSON.stringify(b.tron);
+    return [
+      [`radens tro med namn och läggning (${tr?.namn}, krig ${tr?.sk?.krig}, raden ${r.tro!.namn} ${r.tro!.krig})`, tr?.namn === r.tro!.namn && tr?.sk?.krig === Math.round(r.tro!.krig)],
+      [`andelen troende (${troende.length} av ${folk.length}, raden ${r.tro!.andel} %)`, troende.length === Math.min(folk.length, Math.round(r.tro!.andel / 100 * folk.length))],
+      ['de mest andliga tror', mestAndliga],
+      [`en gud och en berättelse (${tr?.gudar?.[0]?.namn})`, !!tr?.gudar?.length && !!tr?.ber],
+      [`den näst största tron (${r.tro!.annan?.namn ?? 'ingen'})`, !r.tro!.annan || !!andra || Math.round(r.tro!.annan.andel / 100 * folk.length) === 0],
+      ['de heliga platserna ur minnet hör till tron', (b.heliga ?? []).every(h => h.tro !== -1)],
+      [`radens ledare leder byn (${l?.name ?? '–'}, ${b.styre?.titel ?? '–'})`, !fl || (l === fl && !!b.styre?.titel)],
+      ['inga rader i loggen om det som hände före besöket', !logg],
+      ['samma rad ger samma tro', samma],
+    ];
+  },
+};

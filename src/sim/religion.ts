@@ -478,3 +478,31 @@ export function stepReligion(s: State) {
     log(s, `Tron i byn har fått en ny sida: ${SDEF[k].namn[0]} – ${SDEF[k].namn[1]}.`, 'rel', []);
   }
 }
+
+// ---------- en tro ur en rad i världen (steg 11.13.19, vacktro.ts) ----------
+// den väckta byns tro byggs ur radens: namnet, läggningen (krig) och de troende. Tecknet väljs ur namnet (det tecken vars
+// namn tron bär, annars ur namnets bokstäver), grundaren är den äldsta troende och tron började när byn grundades eller när
+// grundaren blev vuxen. Den första guden kommer ur tecknet som vanligt, men utan rader i loggen: det hände före besöket
+export function troUrRad(s: State, rt: { namn: string; krig: number }, folk: Person[], t: number): Tro | undefined {
+  const p = folk.slice().sort((a, b) => a.born - b.born || a.id - b.id)[0];
+  if (!p) return undefined;
+  const ids = Object.keys(TDEF) as TeckenTyp[];
+  let h = 0; for (let i = 0; i < rt.namn.length; i++) h = (h * 31 + rt.namn.charCodeAt(i)) >>> 0;
+  const k = ids.find(x => TDEF[x].namn.includes(rt.namn)) ?? ids[h % ids.length], d = TDEF[k], tron = (s.tron ??= []);
+  const fran = Math.min(s.now, Math.max(t, p.born + ALDER.vuxen * DAY)), ar = yearNo(s, fran);
+  const tr: Tro = {
+    id: tron.length + 1, grundare: p.id, gnamn: p.name, t: fran, ar, k,
+    bakom: pick(s, d.bakom, 'tro', p), vill: pick(s, d.vill, 'tro', p), svek: pick(s, d.svek, 'tro', p),
+    natur: Math.round(clamp(d.natur + gauss(s, 'tro', p) * TRO.skalaSlump, 0, 100)), manga: Math.round(clamp(rnd(s, 'tro', p) * 100, 0, 100)), bekr: s.now, x: Math.floor(p.x), y: Math.floor(p.y),
+  };
+  tron.push(tr);
+  for (const sk of s.troSkalor ?? []) satSkala(s, tr, sk);
+  (tr.sk ??= {}).krig = Math.round(rt.krig); // läggningen ur raden
+  tr.namn = rt.namn; tr.sym = d.sym; tr.ber = berattelse(s, tr, p);
+  const g = GUD_OMR[d.omr], namn = gudNamn(s, d.omr, p), hh = teckenText(k);
+  const i = tr.natur < GUD.ande ? pick(s, g.i, 'tro', p) : undefined;
+  tr.gudar = [i ? { omr: [d.omr], namn, form: 'ande', i, t: fran, ar, bekr: s.now, ber: `Det började med ${hh}, år ${ar}. De som tror på ${liten(rt.namn)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${g.om}.` }
+    : { omr: [d.omr], namn, form: 'gud', t: fran, ar, bekr: s.now, ber: `År ${ar}, med ${hh}, visade sig ${namn} för dem som tror på ${liten(rt.namn)}. ${namn} ser ut som en människa och råder över ${g.om}.` }];
+  for (const q of folk) { q.tro = tr.id; q.troStyrka = TRO.styrka; }
+  return tr;
+}
