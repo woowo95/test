@@ -43,6 +43,7 @@ export const LANDMARKEN = {
   spang: { namn: 'Spång', tecken: 'spang', mark: ['myr'], avst: 1, projekt: true, kostnad: { myr: 1 } },
   passage: { namn: 'Röjd passage', tecken: 'stubbe', mark: ['tat'], avst: 1, projekt: true, blir: { tat: 'skog' } },
   rastplats: { namn: 'Rastplats', tecken: 'eld', mark: ['slatt', 'skog'], avst: 2, tathet: 0.003 },
+  silvergruva: { namn: 'Silvergruva', tecken: 'gruva', mark: ['berg'], avst: 3 }, // läggs ut av laggGruvor (gruva.ts, steg 11.10.1)
 } as const satisfies Record<string, LandmarkDef>;
 export type LandmarkId = keyof typeof LANDMARKEN;
 export const LANDMARK_IDS = Object.keys(LANDMARKEN) as LandmarkId[];

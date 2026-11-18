@@ -32,7 +32,7 @@ export type NamnSlag = keyof typeof VARLDNAMN;
 // vilken sorts namn en plats får
 export const NAMNSLAG: Record<LandmarkId, NamnSlag> = {
   by: 'by', handelslager: 'lager', rovarlager: 'lager', utpost: 'lager', ruin: 'ruin', helig: 'helig', gravhog: 'grav', runsten: 'runsten',
-  fyndplats: 'plats', karavanrest: 'plats', gomma: 'plats', rastplats: 'plats', bro: 'bro', spang: 'bro', passage: 'bro',
+  fyndplats: 'plats', karavanrest: 'plats', gomma: 'plats', rastplats: 'plats', bro: 'bro', spang: 'bro', passage: 'bro', silvergruva: 'plats',
 };
 
 const gen = (n: string) => /s$/.test(n) ? n : n + 's';

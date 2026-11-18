@@ -3955,3 +3955,61 @@ SCENARIER.bro = {
     ];
   },
 };
+
+SCENARIER.silvergruva = {
+  text: 'Silvergruvan (steg 11.10.1, gruva.ts och RESMAL.hamta i resa.ts): silvergruvorna ligger i bergen i världen; ett sällskap som hämtar silver väljer i packskedet den tid nere som ger mest silver per dygn borta, bryter silver i hela saker så länge det ryms, kan skada sig i gruvan och delar silvret hemma',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, v = SIM.varldMark(s)!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const gruvor = (vl.platser ?? []).filter(q => q.k === 'silvergruva');
+    const iBerg = gruvor.every(q => SIM.MARK_IDS[v.mark[q.y * v.w + q.x]] === 'berg');
+    // planen: mer bärförmåga ger mer silver, en längre väg en längre tid nere, och resan slår arbetet hemma
+    const p1 = SIM.silverPlan(2, 25, 2, 1.25)!, p2 = SIM.silverPlan(2, 120, 2, 1.25)!, kort = SIM.silverPlan(2, 120, 1, 1.25)!, lang = SIM.silverPlan(2, 120, 6, 1.25)!;
+    const perDygn = p2.silver * SIM.grundvarde('silver') / 2 / (2 * 2 + p2.nere);
+    // ett sällskap vid gruvan
+    const g = gruvor.sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s, hem.y * v.w + hem.x, q.y * v.w + q.x));
+    const [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50 && SIM.kanGa(q));
+    const ny = (nere?: number) => {
+      const s2 = SIM.cloneState(s), sl = SIM.nyttSallskap(s2, s2.people.find(q => q.id === a!.id)!, g!.nr, 'hamta')!;
+      SIM.foljMed(s2.varld!, sl, s2.people.find(q => q.id === b!.id)!);
+      sl.nere = SIM.gruvPlanFor(s2, sl)?.nere;
+      const plan = (sl.nere ?? 0) * 24;
+      const pb = SIM.packbehov(s2, sl)!;
+      const vag = (pb.dygn - (sl.nere ?? 0)) / 2;
+      sl.pack = { brod: Math.ceil(pb.mat * (vag + (sl.nere ?? 0)) / pb.dygn) }; // maten för vägen dit är uppäten
+      if (nere) sl.nere = nere; // länge nere: olyckorna, en på 125 timmar per person
+      sl.skede = 'framme'; sl.framme = s2.now; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 0, foder: 0 };
+      const silver: number[] = [], rum: boolean[] = [];
+      const skador = () => sl.medl.reduce((x, id) => { const q = s2.people.find(y => y.id === id); return x + (q?.skador?.length ?? 0) + (q && !SIM.alive(q) ? 99 : 0); }, 0);
+      let skadad = false;
+      for (let h = 0; h < (nere ? nere * 24 : 80) && sl.skede === 'framme'; h++) {
+        if (nere) sl.pack = { brod: 10 }; // packningen blir aldrig full: tiden nere tar inte slut
+        const o0 = s2.stat?.['gruva olycka'] ?? 0, k0 = skador();
+        s2.now += SIM.HOUR; SIM.resaBehov(s2, SIM.HOUR);
+        if ((s2.stat?.['gruva olycka'] ?? 0) > o0 && skador() > k0) skadad = true;
+        silver.push(sl.pack.silver ?? 0);
+        rum.push(SIM.packVikt(sl) <= SIM.resenarer(s2, sl).reduce((x, q) => x + SIM.barResenar(s2, q), 0) + 1e-6);
+      }
+      return { s: s2, sl, pb, silver, rum, skadad, brod0: Math.ceil(pb.mat * (vag + (sl.nere ?? 0)) / pb.dygn), skede: sl.skede as string, plan, fullt: (sl.nere ?? 0) * 24 < plan - 1e-6 };
+    };
+    const r = ny(), farlig = ny(60);
+    const vaxer = r.silver.every((x, i) => Number.isInteger(x) && (i === 0 || x >= r.silver[i - 1]!)) && r.silver[r.silver.length - 1]! > r.silver[0]!;
+    const skadad = farlig.skadad;
+    const atit = (r.sl.pack.brod ?? 0) < r.brod0;
+    // hemma delas silvret i hela saker
+    const silver0 = SIM.amountOf(r.s, 'silver'), fick = r.sl.pack.silver ?? 0;
+    SIM.hemkomst(r.s, r.sl, r.s.now);
+    const hemma = Math.round(SIM.amountOf(r.s, 'silver') - silver0);
+    return [
+      [`silvergruvorna ligger bara i bergen (${gruvor.length} gruvor)`, gruvor.length >= 1 && iBerg],
+      [`fler bärare ger mer silver (${p1.silver} → ${p2.silver})`, p2.silver > p1.silver],
+      [`en längre väg ger en längre tid nere (${(kort.nere * 24).toFixed(0)} → ${(lang.nere * 24).toFixed(0)} timmar)`, lang.nere > kort.nere],
+      [`resan ger mer än arbetet hemma (${perDygn.toFixed(2)} mot ${SIM.UTPOST.arbete} per person och dygn)`, perDygn > SIM.UTPOST.arbete],
+      [`ett sällskap till ${g?.namn}: silvret växer med timmarna nere i hela saker (${r.silver.slice(0, 6).join(', ')} … ${r.silver[r.silver.length - 1]})`, !!g && vaxer],
+      ['silvret ryms alltid i det sällskapet bär', r.rum.every(x => x)],
+      [`sällskapet vände hem efter tiden nere (${r.skede}, ${r.silver.length} av ${r.plan.toFixed(0)} timmar)`, r.skede === 'hemat' && (r.fullt || Math.abs(r.silver.length - r.plan) <= 1)],
+      [`maten för tiden framme har ätits (${r.sl.pack.brod ?? 0} av ${r.brod0} bröd kvar)`, atit],
+      [`en olycka i gruvan ger en skada (${farlig.silver.length} timmar, ${farlig.s.stat?.['gruva olycka'] ?? 0} olyckor)`, skadad],
+      [`hemma delas silvret i hela saker (${hemma} av ${fick})`, fick > 0 && hemma === fick && (r.s.stat?.['silver hämtat'] ?? 0) === fick],
+    ];
+  },
+};

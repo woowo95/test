@@ -26,6 +26,8 @@ import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
 import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
 import { historikKolumner } from './historik';
+import { laggGruvor } from './gruva';
+import { varldMark } from './varlden';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får KARTA.bredd × KARTA.hojd, kartflytt.ts)
@@ -446,6 +448,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const p of s.people) if (p.lardomar) p.lardomar = om(p.lardomar);
     for (const r of s.varld?.rader ?? []) for (const k of r.syn?.personer ?? []) if (k.kropp?.lardomar) k.kropp.lardomar = om(k.kropp.lardomar);
   }],
+  [59, 'v533: världen får sina silvergruvor (steg 11.10.1)', s => { const v = varldMark(s); if (s.varld && v) laggGruvor(s.varld, v, s.now); }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

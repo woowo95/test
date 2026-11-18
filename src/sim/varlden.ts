@@ -9,6 +9,7 @@ import { hash3 } from './slump';
 import { VarldMark, skapaVarldMark } from './varldmark';
 import { State } from './typer';
 import { laggByar, laggHuvudby, laggOvriga } from './placering';
+import { laggGruvor } from './gruva';
 import { laggGrannat } from './grannat';
 
 export interface Varlden {
@@ -56,6 +57,7 @@ export function medVarld(s: State, fore?: (s: State, vl: Varlden, v: VarldMark) 
   uppackad.set(s.varld, v);
   laggByar(s.varld, v); // byarna, de övriga platserna och sist huvudbyn med samma regler (placering.ts, steg 11.2.13–11.2.14)
   laggOvriga(s.varld, v);
+  laggGruvor(s.varld, v); // silvergruvorna (gruva.ts, steg 11.10.1)
   fore?.(s, s.varld, v);
   laggHuvudby(s);
   laggGrannat(s.varld, v, s.founded); // varje bys närmaste grannar med väg och restid (grannat.ts, steg 11.2.21)

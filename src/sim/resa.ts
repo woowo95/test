@@ -25,6 +25,7 @@ import { ryggsack } from './utrustning';
 import { tamArt, tamdjurOf } from './tamdjur';
 import { viktOf } from './saker';
 import { grundvarde } from './varde';
+import { SILVER, silverMellan } from './gruva';
 import { VARLD, VARLDMARK, MARK_IDS, VarldMark } from './varldmark';
 import { kostnader, vagMellan, vagRutor, VarldVag } from './vagval';
 import { delFel, GADELAR } from './halsa';
@@ -54,7 +55,7 @@ import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
 import { log } from './folk';
 import { notis } from './notiser';
-import { ARMAR, BEN, FOTTER, HALSA, VARD, halsaSteg, skada, vardKalla, vardKan, type Kroppsdel, type SkadaTyp } from './halsa';
+import { ARMAR, BEN, FOTTER, HANDER, HALSA, VARD, halsaSteg, skada, vardKalla, vardKan, type Kroppsdel, type SkadaTyp } from './halsa';
 import { SJUK_DOD, insjukna, sjukSteg, type SjukId } from './sjukdom';
 import { DODSORSAKER, die, type Dodsorsak } from './liv';
 import { ovning } from './folk';
@@ -149,9 +150,12 @@ export const RESMAL = {
   slakt: { namn: 'Besök hos släkt', mal: ['by'], stannar: 2 },
   se: { namn: 'Se en plats', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
   sandebud: { namn: 'Sändebud', mal: ['by'], stannar: 1 },
+  hamta: { namn: 'Hämta', mal: ['silvergruva'], stannar: 1 }, // det en plats ger: silvret i gruvan; tiden nere väljs i packskedet (steg 11.10.1)
 } as const satisfies Record<string, ResmalDef>;
 export type ResmalId = keyof typeof RESMAL;
 export const RESMAL_IDS = Object.keys(RESMAL) as ResmalId[];
+// dygnen sällskapet stannar framme: tiden nere i gruvan när den är vald, annars skälets
+export const stannarFor = (sl: { skal: ResmalId; nere?: number }) => sl.nere ?? RESMAL[sl.skal].stannar;
 
 export type Skede = 'samlas' | 'packar' | 'gar' | 'ute' | 'framme' | 'hemat' | 'hemma' | 'forsvunnet'; // forsvunnet: ingen kom hem (steg 11.5.18) // gar: på väg ut ur byn
 // en insats i boken: vem som äger den, saken (eller djuret) och hur många, i hela saker, och värdet när resan började
@@ -181,6 +185,7 @@ export interface Sallskap {
   forlorat?: number; // timmar i gång som går förlorade: vilse eller ett oväder som väntas ut (steg 11.5.14)
   spar?: number[]; mott?: string[]; // rutorna sällskapet gått sedan förra timmen, och de sällskap det mött (steg 11.6.12)
   buren?: [number, BurenSatt][]; utvagNasta?: number; // de som bärs och hur, och när ledaren väger nästa gång om någon är långsam (steg 11.5.17)
+  nere?: number; silverArb?: number; // dygnen nere i gruvan, valda i packskedet, och arbetet mot nästa silver (steg 11.10.1)
 }
 export type BurenSatt = 'vagn' | 'djur' | 'bar';
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
@@ -253,7 +258,7 @@ export function packbehov(s: State, sl: Sallskap): Packbehov | undefined {
   const vd = vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x);
   if (!vd) return undefined;
   const folk = sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p), led = folk.find(p => p.id === sl.ledare) ?? folk[0];
-  const n = folk.length, dygn = 2 * vd.dygn + RESMAL[sl.skal].stannar;
+  const n = folk.length, dygn = 2 * vd.dygn + stannarFor(sl);
   const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
   const vatten = vd.torr > RESA.utanVatten ? n : 0;
   let mat = Math.ceil(n * RESA.matPerDygn * dygn * (led ? marginal(led) : RESA.margMitt) - 1e-9);
@@ -319,6 +324,7 @@ function taIPackning(s: State, sl: Sallskap, k: string, n: number, led?: Person)
   for (const o in ag) { const m = Math.floor(ag[o] + 1e-9); if (m > 0) satsa(sl, o === String(BYN) ? 'by' : +o, k, m); }
 }
 export function borjaPacka(s: State, sl: Sallskap): boolean {
+  if (sl.skal === 'hamta' && sl.skede === 'samlas') sl.nere = gruvPlanFor(s, sl)?.nere ?? RESMAL.hamta.stannar; // tiden nere (steg 11.10.1)
   const pb = packbehov(s, sl), ut = utgang(s, sl);
   if (sl.skede !== 'samlas' || !pb || !ut) return false;
   const led = s.people.find(p => p.id === sl.ledare);
@@ -410,11 +416,16 @@ export function nattTapp(s: State, sl: Sallskap, t = s.now) {
 // en bit av tiden (dt millisekunder, högst tio minuter) för ett sällskap på vägen
 function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (sl.skede !== 'framme' && isLight(t)) ga(s, sl, t, dt);
-  else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= RESMAL[sl.skal].stannar * 24 * HOUR) { sl.skede = 'hemat'; satVag(s, sl, false); dagbok(s, sl, 'ut', 'Vänder hem.', t); }
+  else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= stannarFor(sl) * 24 * HOUR) {
+    if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Kom upp ur gruvan med ${sl.pack.silver ?? 0} silver.`, t);
+    sl.skede = 'hemat'; satVag(s, sl, false); dagbok(s, sl, 'ut', 'Vänder hem.', t);
+  }
   if (!PA_VAGEN.includes(sl.skede)) return;
   if (sl.skede !== 'framme') vagHandelser(s, sl, t, dt);
   if (!PA_VAGEN.includes(sl.skede)) return;
   kropparPaVagen(s, sl, t, dt);
+  if (!PA_VAGEN.includes(sl.skede)) return;
+  if (sl.skede === 'framme' && sl.skal === 'hamta') gruvBit(s, sl, t, dt);
   if (!PA_VAGEN.includes(sl.skede)) return;
   if (sl.skede !== 'framme') langsamma(s, sl, t);
   if (!PA_VAGEN.includes(sl.skede)) return;
@@ -443,6 +454,56 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
     b.foder += sl.djur.length * RESA.foderPerDygn * tim / 24;
     while (b.foder >= 1 - 1e-9) { if ((sl.pack.torrgras ?? 0) < 1) { count(s, 'resa djur utan foder'); b.foder = 0; break; } tappa(sl, 'torrgras', 1); b.foder = Math.max(0, b.foder - 1); }
   }
+}
+// ---------- silvergruvan (steg 11.10.1, Flera samhällen: Silvergruvan i tal) ----------
+// Hur länge sällskapet stannar nere väljs i packskedet: den tid (i hela timmar, högst SILVER.maxDygn dygn) som ger mest silver
+// per dygn borta. Takten faller ju längre de är nere (kroppen tröttnar, silverMellan i gruva.ts), så en lång väg dit gör en
+// längre tid nere värd det, där resan dit och hem räknas med och maten för hela tiden tar plats som silvret annars fått. n resenärer,
+// rum = bärförmågan som blir över när vattnet och fodret är packade, vag = dygnen dit, marg = ledarens marginal
+export function silverPlan(n: number, rum: number, vag: number, marg: number): { nere: number; silver: number } | undefined {
+  const vs = viktOf('silver');
+  let bast: { nere: number; silver: number; v: number } | undefined;
+  for (let h = 1; h <= SILVER.maxDygn * 24; h++) {
+    const dygn = 2 * vag + h / 24, mat = Math.ceil(n * RESA.matPerDygn * (h / 24 + vag) * marg - 1e-9); // maten för vägen dit är uppäten framme
+    const silver = Math.min(Math.floor(n * silverMellan(0, h) + 1e-9), Math.floor((rum - mat) / vs + 1e-9));
+    if (silver <= 0) continue;
+    const v = silver / dygn;
+    if (!bast || v > bast.v + 1e-9) bast = { nere: h / 24, silver, v };
+  }
+  return bast && { nere: bast.nere, silver: bast.silver };
+}
+// planen för ett sällskap som samlats: dess resenärer, bärförmåga och väg
+export function gruvPlanFor(s: State, sl: Sallskap) {
+  const nere = sl.nere;
+  sl.nere = 0;
+  const pb = packbehov(s, sl);
+  sl.nere = nere;
+  if (!pb) return undefined;
+  const led = s.people.find(p => p.id === sl.ledare), vag = pb.dygn / 2;
+  return silverPlan(sl.medl.length, pb.bar - pb.vatten * viktOf('vattensack') - pb.foder * viktOf('torrgras'), vag, led ? marginal(led) : RESA.margMitt);
+}
+// sällskapets bärförmåga nu: resenärerna och djuren
+const barNu = (s: State, sl: Sallskap) => resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + sl.djur.reduce((a, id) => a + barDjur(s, id), 0);
+// en bit nere i gruvan: varje resenär bryter silver i takten efter timmarna nere (silverMellan), och silvret läggs i packningen i hela saker så länge
+// det ryms; när sällskapet bär fullt är tiden nere slut. Arbetet har en risk för olycka per person och timme (SILVER.olycka)
+function gruvBit(s: State, sl: Sallskap, t: number, dt: number) {
+  const folk = resenarer(s, sl), tim = dt / HOUR;
+  for (const p of folk) {
+    if (rnd(s, 'resa') >= 1 - Math.exp(-SILVER.olycka * tim)) continue;
+    const typer: SkadaTyp[] = ['krossar', 'benbrott', 'skarsar'], delar: Kroppsdel[] = [...BEN, ...FOTTER, ...ARMAR, ...HANDER, 'huvud'];
+    const k = typer[Math.floor(rnd(s, 'resa') * typer.length)]!, d = delar[Math.floor(rnd(s, 'resa') * delar.length)]!, u = rnd(s, 'resa');
+    const dod = skada(s, p, d, k, RESA.olyckaMin + u * u * (RESA.olyckaMax - RESA.olyckaMin), 'olycka', 'i gruvan');
+    count(s, 'gruva olycka');
+    dagbok(s, sl, 'skada', `${p.name} skadade sig i gruvan.`, t);
+    if (dod) dorPaVagen(s, sl, p, dod, t);
+  }
+  const n = resenarer(s, sl).length;
+  if (!n) return;
+  const h1 = (t - (sl.framme ?? t)) / HOUR;
+  sl.silverArb = (sl.silverArb ?? 0) + n * silverMellan(Math.max(0, h1 - tim), h1);
+  const m = Math.floor(sl.silverArb + 1e-9), rum = Math.floor((barNu(s, sl) - packVikt(sl)) / viktOf('silver') + 1e-9), fick = Math.max(0, Math.min(m, rum));
+  if (fick > 0) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; sl.silverArb -= fick; }
+  if (m > rum) { sl.silverArb = 0; sl.nere = Math.min(stannarFor(sl), (t - (sl.framme ?? t)) / DAY); } // fullt: tiden nere är slut
 }
 // var tionde minut (TAKTER): sällskapen på vägen, i bitar om högst tio minuter (dt i millisekunder, som s.now)
 export function resaBehov(s: State, dt: number) {
@@ -574,6 +635,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
   dagbok(s, sl, 'fram', `Kom fram till ${plats.namn}.`, t);
   if (sl.skal === 'uppdrag') uppdragFram(s, sl, t);
+  if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Gick ner i gruvan för ${Math.round(stannarFor(sl) * 24)} timmar.`, t);
   const ruin = ruinRad(vl, sl.mal);
   if (ruin) for (const p of folk) saFynd(s, vl, p, ruin, sl.mal, t); // de som sett ruinen minns det som finns kvar (steg 11.8.8)
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
@@ -611,7 +673,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   // köpa: mat för vägen hem
   const v = varldMark(s), hem = byPlats(vl, sl.by), vd = v && hem ? vagDygn(s, plats.y * v.w + plats.x, hem.y * v.w + hem.x) : undefined;
   const led = folk.find(p => p.id === sl.ledare) ?? folk[0];
-  const behov = vd ? Math.ceil(folk.length * RESA.matPerDygn * (vd.dygn + RESMAL[sl.skal].stannar) * (led ? marginal(led) : RESA.margMitt) - 1e-9) : 0;
+  const behov = vd ? Math.ceil(folk.length * RESA.matPerDygn * (vd.dygn + stannarFor(sl)) * (led ? marginal(led) : RESA.margMitt) - 1e-9) : 0;
   const har = FOOD.reduce((a, f) => a + Math.floor(sl.pack[f] ?? 0), 0), kop = FOOD.filter(f => varde1(f) > 0).sort((a, b) => (SAKER[b]!.haller ?? 0) - (SAKER[a]!.haller ?? 0))[0];
   if (kop && behov > har) {
     const per = varde1(kop) * radPaslag(s, r, kop);
@@ -698,6 +760,7 @@ function delaHemma(s: State, sl: Sallskap) {
   for (const [ag, sak, n] of a.byte) laggIn(s, sak, n, agareI(ag));
   sl.pack = {}; sl.delning = a;
   count(s, 'resa bytets värde', Math.round(a.varde));
+  if (sl.skal === 'hamta') count(s, 'silver hämtat', a.byte.reduce((x, [, sak, n]) => x + (sak === 'silver' ? n : 0), 0)); // silvret ur gruvan (steg 11.10.1)
   dagbok(s, sl, 'hem', `Hemma: bytet var värt ${Math.round(a.varde)}, det som gått åt ${Math.round(a.gatt)}.`);
 }
 
@@ -781,9 +844,15 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     let uid: number | undefined;
     const upp = skal !== 'sandebud' && (RESMAL.uppdrag.mal as readonly string[]).includes(q.k) ? uppdragVid(s, p, q.nr) : undefined;
     if (upp && (!skal || upp.varde > varde)) { skal = 'uppdrag'; varde = upp.varde; uid = upp.id; varor = []; kop = []; }
+    // silvergruvan (steg 11.10.1): silvret personen väntar sig bära hem efter den bästa tiden nere, mindre för ett rykte
+    let nere: number | undefined;
+    if (!skal && (RESMAL.hamta.mal as readonly string[]).includes(q.k)) {
+      const g = silverPlan(1, barResenar(s, p), dygnDit(s, hem, q), marginal(p));
+      if (g) { skal = 'hamta'; nere = g.nere; varde = g.silver * grundvarde('silver') * (niva === O_RYKTE ? SILVER.rykte : 1); }
+    }
     if (!skal && niva === O_RYKTE && (RESMAL.se.mal as readonly string[]).includes(q.k)) { skal = 'se'; varde = RESA.seVarde * ny / 10; }
     if (!skal) continue;
-    const dygn = 2 * dygnDit(s, hem, q) + RESMAL[skal].stannar;
+    const dygn = 2 * dygnDit(s, hem, q) + (nere ?? RESMAL[skal].stannar);
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
     const lust = (ny + mod) / 20, hemma = clamp(Math.min(fd, wd) / dygn, 0, 1);
     const sc = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
@@ -886,7 +955,7 @@ export function sallskapLage(s: State, sl: Sallskap): SallskapLage | undefined {
   if (sl.skede === 'framme' || !rutor.length) {
     const i = sl.skede === 'framme' && rutor.length ? rutor[rutor.length - 1] : sl.ruta;
     if (i === undefined) return undefined;
-    const kvar = sl.skede === 'framme' ? Math.max(0, RESMAL[sl.skal].stannar - (s.now - (sl.framme ?? s.now)) / DAY) : 0;
+    const kvar = sl.skede === 'framme' ? Math.max(0, stannarFor(sl) - (s.now - (sl.framme ?? s.now)) / DAY) : 0;
     return { x: i % v.w, y: Math.floor(i / v.w), dx: 0, dy: 0, kvar: Math.round(kvar * 100) / 100 };
   }
   const k = kostnader(vl, v, 'fots'), a = rutor[pos], b = rutor[Math.min(pos + 1, rutor.length - 1)];
@@ -1145,7 +1214,7 @@ export function matLage(s: State, sl: Sallskap, t = s.now): MatLage {
   const lage = sallskapLage(s, sl), nu = v && sl.ruta !== undefined ? { x: sl.ruta % v.w, y: Math.floor(sl.ruta / v.w) } : hem;
   const tillbaka = hem && mal ? dygnDit(s, { x: mal.x, y: mal.y }, { x: hem.x, y: hem.y }) : 0;
   const harifran = hem && nu ? dygnDit(s, nu, { x: hem.x, y: hem.y }) : 0;
-  const kvar = sl.skede === 'hemat' ? (lage?.kvar ?? harifran) : (lage?.kvar ?? 0) + RESMAL[sl.skal].stannar + tillbaka;
+  const kvar = sl.skede === 'hemat' ? (lage?.kvar ?? harifran) : (lage?.kvar ?? 0) + stannarFor(sl) + tillbaka;
   const andra = folk.filter(p => p !== led), tycke = led && andra.length ? andra.reduce((a, p) => a + getRel(s, led, p).op, 0) / andra.length : 0;
   const hk = RESA.hungerKost * (led ? Math.max(0, 1 + RESA.matEmpati * (stat(led, 'empati', s.now) - 10) / 10) : 1) * Math.max(0, 1 + RESA.matTycke * tycke / 100);
   const samla = Math.max(0, ...folk.map(p => p.skill.samla ?? 0)) / 20 * RESA.fardSank;
@@ -1249,7 +1318,7 @@ function beskedet(s: State, sl: Sallskap, orsak?: Dodsorsak) {
 // den väntade tiden för resan, i dygn: dit och hem och tiden framme
 export function vantadDygn(s: State, sl: Sallskap) {
   const vl = s.varld, hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
-  return (hem && mal ? 2 * dygnDit(s, { x: hem.x, y: hem.y }, { x: mal.x, y: mal.y }) : 0) + RESMAL[sl.skal].stannar;
+  return (hem && mal ? 2 * dygnDit(s, { x: hem.x, y: hem.y }, { x: mal.x, y: mal.y }) : 0) + stannarFor(sl);
 }
 function forsvunnet(s: State, sl: Sallskap) {
   if (s.now - sl.borjan < RESA.forsvunnen * Math.max(1, vantadDygn(s, sl)) * DAY) return;
@@ -1323,7 +1392,7 @@ export function utvagLage(s: State, sl: Sallskap, t = s.now): UtvagLage | undefi
   const folk = resenarer(s, sl).filter(p => !bars(sl, p.id)), langsam = folk.reduce<Person | undefined>((a, p) => !a || personFart(s, p) < personFart(s, a) ? p : a, undefined);
   if (!langsam) return undefined;
   const m = matLage(s, sl, t), f0 = sallskapFart(s, sl);
-  const vagKvar = sl.skede === 'hemat' ? m.kvar : m.kvar - RESMAL[sl.skal].stannar; // dygnen i gång, utan tiden framme
+  const vagKvar = sl.skede === 'hemat' ? m.kvar : m.kvar - stannarFor(sl); // dygnen i gång, utan tiden framme
   // det som kan släppas: inte maten, vattnet eller fodret; det som är värt minst per vikt först, tills lasten inte bromsar
   const slapp: Record<string, number> = {}; let slappVarde = 0;
   const pack = { ...sl.pack }, saker = Object.keys(pack).filter(k => !FOOD.includes(k) && !['vattensack', 'torrgras', 'talt'].includes(k)).sort((a, b) => grundvarde(a) / Math.max(1e-9, viktOf(a)) - grundvarde(b) / Math.max(1e-9, viktOf(b)) || (a < b ? -1 : 1));
