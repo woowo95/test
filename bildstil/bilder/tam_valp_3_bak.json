@@ -1,0 +1,23 @@
+{
+"id": "tam_valp_3_bak",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 7,
+"h": 13,
+"rader": [
+"..o..o.",
+".odoodo",
+"odmmmmo",
+"ommmmmo",
+"ommdmmo",
+"ommmmmo",
+".ommmo.",
+"ommmmmo",
+".ommmmo",
+"ommmmmo",
+".omoomo",
+".omoomo",
+".olo.o."
+],
+"pal": {"o":"#24201d","d":"#2f261d","m":"#372f25","l":"#7d5b40"}
+}

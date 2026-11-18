@@ -1,0 +1,33 @@
+{
+"id": "ortkok_bank_vaster",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 14,
+"h": 23,
+"rader": [
+".EEEEEEEEEEEE.",
+"EHHGHGHHGHGHGE",
+"EHooooooooooGE",
+"EHoqwqqpqqpoGE",
+"EHoqWOPqXOpoGE",
+"EGopXPOWpqpoGE",
+"EHoqpOXqTTSoFE",
+"EHoppqpppppoGE",
+"EGooooooooooFE",
+"EHGHGHGGHGGFGE",
+"EGHGHQQQQGqGFE",
+"EHGHQTSSSqQFGE",
+"EGHQTRQQpSQGGE",
+"EHGQSQQoQRQGFE",
+"EGHQSRQQRRQFGE",
+"EGGHQRRRRQGGFE",
+"EGHGGQQQQGGFFE",
+"EFGFFGFFGFFFFE",
+"EFFEFFFFEFFFFE",
+"EEEEEEEEEEEEEE",
+".EGE......EFE.",
+".EFE......EFE.",
+".EEE......EEE."
+],
+"pal": {"E":"#3f2415","H":"#987e62","G":"#7d5b40","o":"#7e7362","q":"#bdb39b","w":"#dad0bb","p":"#a0947d","W":"#324726","O":"#647025","P":"#898b4c","X":"#505e3e","T":"#8a9c9e","S":"#61767a","F":"#5e3c24","Q":"#233035","R":"#3e5156"}
+}

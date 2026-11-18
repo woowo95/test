@@ -1,0 +1,24 @@
+{
+"id": "altare_3",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 30,
+"h": 14,
+"rader": [
+".......oooooooooooooooo.......",
+".....ooKKllllKKKKllllKKoo.....",
+"...ooKKllllmmmmmmmmKKKKlloo...",
+"..oKKlllmmmmmmmmmmmmmmlllKKo..",
+".oKlllllllllqqqqqqlllllKKKKlo.",
+"ollllKKlllllqqqqqqlllllKKllllo",
+"ollKKKKlllllllllllllllKllllKKo",
+"oKKKKllllKKllllllllKKllllKKKKo",
+"oKKllllKKKKllllKKKKllllKKKKllo",
+".oKKkkkKKKkkkKKKkkkKKKkkkKKKo.",
+"..okKKKkkkKKKkkkKKKkkkKKKkko..",
+"...ookkKKKkkkKKKkkkKKKkkkoo...",
+".....ookkkKKKkkkKKKkkkKoo.....",
+".......oooooooooooooooo......."
+],
+"pal": {"o":"#24201d","K":"#3e5156","l":"#61767a","m":"#8a9c9e","q":"#a14808","k":"#233035"}
+}

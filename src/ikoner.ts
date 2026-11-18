@@ -4205,6 +4205,7 @@ for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_kart
 PIX.vildrova = PIX.rovor; PAL.vildrova = PAL.rovor;
 PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka;
 PIX.snickarbank = PIX.flatarbank; PAL.snickarbank = PAL.flatarbank;
+PIX.snickarbank_karta_v = PIX.flatarbank_karta_v; PAL.snickarbank_karta_v = PAL.flatarbank_karta; // stående snickarbänk: slöjdbänkens stående bild tills bildstilen har en stående (Björns snickarbänk ligger, steg 11.14.1)
 PIX.naverask = PIX.korg; PAL.naverask = PAL.korg;
 PIX.orte = PIX.kruka; PAL.orte = PAL.kruka;
 PAL.s_bistick = { o: '#24201d', y: '#d8b25f', k: '#24201d', r: '#a14808', R: '#bd753e' }; // platshållare för bisticket i hälsofliken (steg 10.10.22): ett litet bi och en röd svullnad
@@ -4421,8 +4422,6 @@ for (const k in PIX) if (k.endsWith('_v')) PAL[k] ??= PAL[k.slice(0, -2)];
 // bildstilens godkända bilder (kartbilder.ts, steg 5.2.4) som PIX och PAL med id:t kb_<id>. kartbild(k) ger id:t för sakens
 // kartbild, som ritas i sin naturliga storlek, aldrig förstorad eller förminskad (steg 5.1.2.1)
 for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; PAL['kb_' + id] = b.pal; }
-// björnens anfall västerut (steg 10.11.1): sidans ramar speglade
-for (let n = 0; n < 4; n++) { const b = KARTBILDER['bjorn_anfall_sida_' + n]; if (b) { PIX['kb_bjorn_anfall_vast_' + n] = b.rader.map(r => [...r].reverse().join('')); PAL['kb_bjorn_anfall_vast_' + n] = b.pal; } }
 // vaxljuset (steg 10.10.24, platshållare): talgljusets bilder med det gula vaxet i stället för den vita talgen
 { const VAX: Record<string, string> = { '#dad0bb': '#d8b25f', '#bdb39b': '#b2921b', '#a0947d': '#906f0f' };
   const gul = (p: Record<string, string>) => Object.fromEntries(Object.entries(p).map(([c, f]) => [c, VAX[f] ?? f]));
@@ -4535,6 +4534,68 @@ PIX.ull = PIX.skinn; PAL.ull = PAL.skinn; PIX.vitskinn = PIX.skinn; PAL.vitskinn
  PIX.levfar = PIX.radjur; PAL.levfar = PAL.radjur; PIX.levget = PIX.radjur; PAL.levget = PAL.radjur; PIX.levko = PIX.radjur; PAL.levko = PAL.radjur; PIX.levoxe = PIX.radjur; PAL.levoxe = PAL.radjur; PIX.levhast = PIX.radjur; PAL.levhast = PAL.radjur; PIX.slaktko = PIX.radjur; PAL.slaktko = PAL.radjur; PIX.levhons = PIX.fagel; PAL.levhons = PAL.fagel; // platshållare (steg 9.8.5, 9.8.10)
 PIX.skara = PIX.kniv; PAL.skara = PAL.kniv; PIX.fahus = PIX.hogolv; PAL.fahus = PAL.hogolv; // platshållare (steg 9.8.9)
 PIX.far = PIX.radjur; PAL.far = PAL.radjur; PIX.get = PIX.radjur; PAL.get = PAL.radjur; PIX.ko = PIX.radjur; PAL.ko = PAL.radjur; PIX.oxe = PIX.radjur; PAL.oxe = PAL.radjur; PIX.hast = PIX.radjur; PAL.hast = PAL.radjur; // platshållare för djuren som slaktas (steg 9.8.7)
+// Björns val ur fas 9 och 10 (steg 11.14.1). Symbolen i listorna är bilden mitt i rutan på 16 × 16 punkter, förminskad om den
+// är större; på kartan ritas bilden i sin naturliga storlek (kb_<id>)
+{
+  const ruta = (b: { w: number; h: number; rader: string[] }) => { const w = 16, f = Math.min(1, w / Math.max(b.w, b.h)), x0 = (w - f * b.w) / 2, y0 = (w - f * b.h) / 2; return Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => { const yy = Math.floor((y - y0) / f), xx = Math.floor((x - x0) / f); return yy >= 0 && xx >= 0 ? b.rader[yy]?.[xx] ?? '.' : '.'; }).join('')); };
+  const LISTA: [string, string][] = [
+    ['ved', 'ved'], ['malt', 'malt'], ['bonor', 'bonor'], ['vaxtrest', 'vaxtrest'], ['skara', 'skara'], ['ull', 'ull'], ['ulltrad', 'ulltrad'], ['ylle', 'ylle'],
+    ['djurhorn', 'djurhorn'], ['farskinn', 'farskinn'], ['getskinn', 'getskinn'], ['byggsten', 'byggsten'], ['kalke', 'kalke'], ['slade', 'slade'],
+    ['snickarbank', 'snickarbank'], ['rokeri', 'rokeri'], ['kvarnsten', 'kvarnsten'], ['bakugn', 'bakugn'], ['vattenho', 'vattenho'],
+    ['stekhall', 'stekhall'], ['hogsate', 'hogsate'], ['bank', 'bank'], ['krubba', 'krubba'], ['altare', 'altare'], ['stenvag', 'stenvag'], ['appelplanta', 'appeltrad'],
+    ['far', 'tam_far_1'], ['get', 'tam_get_1'], ['levfar', 'tam_far_1'], ['levget', 'tam_get_1'], ['hons', 'hons'], ['hund', 'tam_hund_1_sida'],
+    ['foder', 'sym_foder'], ['skatta', 'sym_skatta'], ['s_bistick', 'sym_bistick'], ['heligt', 'sym_gnistor'],
+  ];
+  for (const [k, id] of LISTA) { const b = KARTBILDER[id]; if (b) { PIX[k] = ruta(b); PAL[k] = b.pal; } }
+  // de som ritas i sin egen storlek: lerkrukorna (i förrådet, kruka.ts), bisymbolen på fältet och krönikans strid (24 punkter)
+  for (const [k, id] of [['lerkruka_liten', 'lerkruka_liten'], ['lerkruka_mellan', 'lerkruka_mellan'], ['lerkruka_stor', 'lerkruka_stor'], ['bisymbol', 'sym_bi'], ['kk_strid', 'sym_kk_strid']]) { const b = KARTBILDER[id]; if (b) { PIX[k] = b.rader; PAL[k] = b.pal; } }
+  // vridna och speglade bilder (steg 11.14.1): vattenhon står lodrätt, kälken och släden dras åt alla fyra håll, molnet av bin och
+  // de tama djuren västerut
+  const spegla = (r: string[]) => r.map(x => [...x].reverse().join(''));
+  const vand = (r: string[]) => [...r].reverse();
+  const medsols = (r: string[]) => Array.from({ length: r[0].length }, (_, y) => Array.from({ length: r.length }, (_, x) => r[r.length - 1 - x][y]).join(''));
+  const motsols = (r: string[]) => Array.from({ length: r[0].length }, (_, y) => Array.from({ length: r.length }, (_, x) => r[x][r[0].length - 1 - y]).join(''));
+  const lagg = (k: string, rader: string[], pal: Record<string, string>) => { PIX[k] = rader; PAL[k] = pal; };
+  const ho = KARTBILDER.vattenho;
+  if (ho) {
+    const tom = ho.rader.map(r => r.replace(/[lm]/g, 'b')); // utan vatten syns botten
+    lagg('kb_vattenho_v', medsols(ho.rader), ho.pal); lagg('kb_vattenho_tom', tom, ho.pal); lagg('kb_vattenho_v_tom', medsols(tom), ho.pal);
+  }
+  // kälken är ritad med fören uppåt (den dras norrut), släden med skaklarna åt höger (österut)
+  const ka = KARTBILDER.kalke, sl = KARTBILDER.slade;
+  if (ka) { lagg('kb_kalke_bak', ka.rader, ka.pal); lagg('kb_kalke_fram', vand(ka.rader), ka.pal); lagg('kb_kalke_sida', medsols(ka.rader), ka.pal); lagg('kb_kalke_vast', motsols(ka.rader), ka.pal); }
+  if (sl) { lagg('kb_slade_sida', sl.rader, sl.pal); lagg('kb_slade_vast', spegla(sl.rader), sl.pal); lagg('kb_slade_bak', motsols(sl.rader), sl.pal); lagg('kb_slade_fram', medsols(sl.rader), sl.pal); }
+  // stenvägen är 2 × 2 rutor: varje ruta tar den fjärdedel som hör till dess plats, så att mönstret går ihop
+  const sv = KARTBILDER.stenvag;
+  if (sv) for (let q = 0; q < 4; q++) lagg('kb_stenvag_' + q, sv.rader.slice((q >> 1) * 16, (q >> 1) * 16 + 16).map(r => r.slice((q & 1) * 16, (q & 1) * 16 + 16)), sv.pal);
+  const moln = KARTBILDER.biarg_moln; if (moln) lagg('kb_biarg_moln_v', spegla(moln.rader), moln.pal);
+  const hons = KARTBILDER.hons; if (hons) lagg('kb_hons_vast', spegla(hons.rader), hons.pal);
+  // de tama djuren: hunden och valpen från tre håll, fåret och geten bara från sidan (framåt och bakåt syns de från sidan)
+  for (let v = 1; v <= 3; v++) {
+    for (const a of ['hund', 'valp']) { const sida = KARTBILDER[`tam_${a}_${v}_sida`]; if (!sida) continue; lagg(`kb_tam_${a}_${v}_vast`, spegla(sida.rader), sida.pal); }
+    for (const a of ['far', 'get']) { const b = KARTBILDER[`tam_${a}_${v}`]; if (!b) continue; lagg(`kb_tam_${a}_${v}_sida`, b.rader, b.pal); lagg(`kb_tam_${a}_${v}_fram`, b.rader, b.pal); lagg(`kb_tam_${a}_${v}_vast`, spegla(b.rader), b.pal); lagg(`kb_tam_${a}_${v}_bak`, spegla(b.rader), b.pal); }
+  }
+}
+// tamheten bland djurets egenskaper (steg 11.14.1, platshållare tills Björn valt f10_tamhet i bildstilen): ett halsband med ett rep
+PIX.tamhet = [
+  '................',
+  '................',
+  '.....oooooo.....',
+  '....odddddo.....',
+  '...od....dodo...',
+  '...od.....odo...',
+  '...od.....odo...',
+  '...od....doo....',
+  '....odddddo.....',
+  '.....oooooo.....',
+  '..........oc....',
+  '...........oc...',
+  '............oc..',
+  '.............oc.',
+  '..............o.',
+  '................',
+];
+PAL.tamhet = { o: '#24201d', d: '#7d5b40', c: '#bdb39b' };
 // djuren på kartan (steg 5.1.11, ritade i bildstilen i 5.2.4.6): varje art har en eller flera ritningar (vargen en, haren två)
 // och fyra pälsar, och varje ritning tre håll; västerut är sidan speglad. Bilden heter djur_<art>_<ritning>_<päls>_<håll>,
 // där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)

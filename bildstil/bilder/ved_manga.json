@@ -1,0 +1,26 @@
+{
+"id": "ved_manga",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"......EEE.......",
+".....EwqpE......",
+"....EEqpqEE.....",
+"...EGEppHEFE....",
+"...EFEHGHEFE....",
+"...EGEGpGEFE....",
+"..EEFEHGGEFEE...",
+".EGEGFEEEFFEFE..",
+".EFEpGHEHGHEFE..",
+".EGEGpGEGpGEFE..",
+".EFEHGHEHGGEFE..",
+".EGFEEEGEEEFFE..",
+".EpGHEHGHEHGHE..",
+".EGpGEGpGEGpGE..",
+".EHGHEHGGEHGGE..",
+"..EEE.EEE.EEE..."
+],
+"pal": {"E":"#3f2415","w":"#dad0bb","q":"#bdb39b","p":"#a0947d","G":"#7d5b40","H":"#987e62","F":"#5e3c24"}
+}

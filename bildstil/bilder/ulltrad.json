@@ -1,0 +1,21 @@
+{
+"id": "ulltrad",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 12,
+"h": 11,
+"rader": [
+"...ooooo....",
+"..oefeefo...",
+".odfeefeeo..",
+"ofddfeefeeo.",
+"oddfddfeefo.",
+"ofddfddfeeo.",
+"oddfddfdefo.",
+"ofddfddfdeo.",
+".odfddfddeo.",
+"..odfddfooeo",
+"...ooooo.oeo"
+],
+"pal": {"o":"#24201d","e":"#61767a","f":"#3e5156","d":"#8a9c9e"}
+}

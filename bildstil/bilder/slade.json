@@ -1,0 +1,25 @@
+{
+"id": "slade",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 41,
+"h": 15,
+"rader": [
+".oooooooooooooooooooooooooo............o.",
+"oaaaaaaaaaaaaaaaaaaaaaaaaaaoooooooooooobo",
+"oadcdddcdddcdddcdddcdddcddbbbbbbbbbbbbbbo",
+".odcdddcdddcdddcdddcdddcddbooooooooooooo.",
+".odcdddcdddcdddcdddcdddcddo..............",
+".odcdddcdddcdddcdddcdddcddo..............",
+".odcdddcdddcdddcdddcdddcddo..............",
+".odcdddcdddcdddcdddcdddcddo..............",
+".odcdddcdddcdddcdddcdddcddo..............",
+".odcdddcdddcdddcdddcdddcddo..............",
+".odcdddcdddcdddcdddcdddcddo..............",
+".obbbbbbbbbbbbbbbbbbbbbbbbbooooooooooooo.",
+"oabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo",
+"oaaaaaaaaaaaaaaaaaaaaaaaaaaoooooooooooobo",
+".oooooooooooooooooooooooooo............o."
+],
+"pal": {"o":"#24201d","a":"#3f2415","b":"#5e3c24","d":"#987e62","c":"#7d5b40"}
+}

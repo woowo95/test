@@ -1,0 +1,26 @@
+{
+"id": "sym_bi",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"................",
+"................",
+"................",
+"....oooo........",
+"...onnnno.......",
+"..onnnnnno......",
+"..onnnnnnoo..o..",
+"...onnpggpgoopo.",
+"...oggpggpggpppo",
+".oooggpggpggpppo",
+"oppoggpggpggppo.",
+".oooggpggpggpo..",
+"....oopggpgoo...",
+"......ooooo.....",
+"................",
+"................"
+],
+"pal": {"o":"#24201d","n":"#dad0bb","p":"#2f261d","g":"#d8b25f"}
+}

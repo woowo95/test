@@ -1,20 +1,18 @@
 {
 "id": "sjal_ylle",
 "ritad": 1,
-"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
 "w": 16,
-"h": 10,
+"h": 8,
 "rader": [
-".oooooooooooooo.",
-"oqqwqqqpqqpqqppo",
-"oppppppppppppppo",
-".oqqpqqpqqpqppo.",
-"..oqpqqpqpqppo..",
-"...oqqpqpqppo...",
-"....oqpqpppo....",
-".....opqppo.....",
-"......oppo......",
-".......oo......."
+".EEEEEEEEEEEEEE.",
+"EEHKHHGHHGHGKGEE",
+".EHKHGHHGHGGKGE.",
+"EEGKHHGHGGHGJGEE",
+".EHJGHGGHGGFJFE.",
+"EEGJGGFGGFGFJFEE",
+".EFIFFFFFFFFIFE.",
+".EEEEEEEEEEEEEE."
 ],
-"pal": {"o": "#694902", "p": "#906f0f", "q": "#b2921b", "w": "#d8b25f"}
+"pal": {"E":"#3f2415","H":"#987e62","K":"#b2921b","G":"#7d5b40","J":"#906f0f","F":"#5e3c24","I":"#694902"}
 }

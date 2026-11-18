@@ -1,0 +1,24 @@
+{
+"id": "farskinn",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 16,
+"h": 14,
+"rader": [
+".o....oooo....o.",
+"obo.oobcbdoo.odo",
+".ococbcbddbdodo.",
+".obcbccbdbdbddo.",
+"..ocbcbcbddddo..",
+"..obcbccddbdbo..",
+"..occccbdbdddo..",
+"..ocbcbcdddbdo..",
+"..obccccbdbddo..",
+"..occbcbddddbo..",
+".obcbcccdbdbdbo.",
+".ococcbcbdbdobo.",
+"oco.oocbddoo.obo",
+".o....oooo....o."
+],
+"pal": {"o":"#24201d","b":"#bdb39b","c":"#dad0bb","d":"#dad0bb"}
+}

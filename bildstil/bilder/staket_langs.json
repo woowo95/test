@@ -1,0 +1,23 @@
+{
+"id": "staket_langs",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 16,
+"h": 13,
+"rader": [
+"HHE.............",
+"HGE.....EEEE....",
+"GFEEEEEEGHGGEEEE",
+"GGEGHGGGFGFFGGHG",
+"FGEFGFFGEEEEFFGF",
+"GFEEEEEE....EEEE",
+"GGE.............",
+"FGEEE....EEEEEEE",
+"GFEGHEEEEGGHGGGH",
+"GGEFGGHGGFGFFGFF",
+"FGEEEFFGFEEEEEEE",
+"GFE..EEEE.......",
+"EEE............."
+],
+"pal": {"H":"#987e62","E":"#3f2415","G":"#7d5b40","F":"#5e3c24"}
+}

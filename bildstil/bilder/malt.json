@@ -1,0 +1,21 @@
+{
+"id": "malt",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 20,
+"h": 11,
+"rader": [
+"..EEEEEEEEEEEEEEEE..",
+"..EHHHGHHHGHHHGHGE..",
+".EEHLKLKKLKJKKJKGEE.",
+"EHEHKLKJKKJKGKJJGEGE",
+"EGEGKKJKJKGJKJIJFEFE",
+".EEHJKJKGJKJIJJIFEE.",
+"..EGJJIJGIJIJIGJFE..",
+"..EGGFGGFGGFGGFGFE..",
+"..EFFFFEFFFFEFFFFE..",
+"..EFFFFEFFFFEFFFEE..",
+"..EEEEEEEEEEEEEEEE.."
+],
+"pal": {"E":"#3f2415","H":"#987e62","G":"#7d5b40","L":"#d8b25f","K":"#b2921b","J":"#906f0f","I":"#694902","F":"#5e3c24"}
+}

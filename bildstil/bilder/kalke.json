@@ -1,0 +1,32 @@
+{
+"id": "kalke",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 14,
+"h": 22,
+"rader": [
+"......oo......",
+".....ohho.....",
+"....ohooho....",
+".oooho..ohooo.",
+"obbho....ohbbo",
+"obboooooooobbo",
+"obbccccccccbbo",
+"obbddddddddbbo",
+"obbddddddddbbo",
+"obbccccccccbbo",
+"obbddddddddbbo",
+"obbddddddddbbo",
+"obbccccccccbbo",
+"obbddddddddbbo",
+"obbddddddddbbo",
+"obbccccccccbbo",
+"obbddddddddbbo",
+"obbbbbbbbbbbbo",
+"obbbbbbbbbbbbo",
+"obboooooooobbo",
+"obbo......obbo",
+".oo........oo."
+],
+"pal": {"o":"#24201d","h":"#906f0f","b":"#5e3c24","c":"#7d5b40","d":"#987e62"}
+}

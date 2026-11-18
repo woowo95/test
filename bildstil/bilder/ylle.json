@@ -1,0 +1,29 @@
+{
+"id": "ylle",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 13,
+"h": 19,
+"rader": [
+"..IIIIIIIII..",
+".IKKLKKKKJJI.",
+"IKKKKKKKKKJJI",
+"IJJKJJJJKJJJI",
+"IKKKKKKKKKJJI",
+"IKKKKKKKKJJJI",
+"IJJJKJJJJJJJI",
+"IKKKKKKKKKJJI",
+"IKLKKKKKKKKJI",
+"IKKIIIIIIIJJI",
+"IKIKKKKKKJIJI",
+"IKIKIIIIJJIJI",
+"IKIKIJJJIJIJI",
+"IKIKIJIJIJIJI",
+"IKIKJJJJJIIJI",
+"IKIJIIIIIIJJI",
+".IKJJJJJJJJI.",
+"....IIJJJJJII",
+"....IIIII...."
+],
+"pal": {"I":"#694902","K":"#b2921b","L":"#d8b25f","J":"#906f0f"}
+}

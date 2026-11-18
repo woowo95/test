@@ -6,7 +6,7 @@
 // graferna också (steg 9.3.2). Öppnas med runstenen Krönika.
 import { AGES, KRONIKA_KAT, type LogEntry, type Person, type SkriftStadium, kalender, kronikaKat, skriftLista } from '../../sim';
 import { visaPaKartan } from '../notiser';
-import { tecknet } from '../../ikoner';
+import { tecknet, hasIcon, iconCanvas } from '../../ikoner';
 import { fritidLista } from './fram';
 import { delRad, esc, kvMark, linkify, namnI } from '../hjalp';
 import { s } from '../lage';
@@ -44,7 +44,7 @@ function symbolRad(aren: number[]) {
   const i = val.ar === undefined ? -1 : aren.indexOf(val.ar);
   const aldre = i < 0 ? aren.at(-1) : aren[i - 1], nyare = i < 0 ? undefined : aren[i + 1];
   const pil = (dit: number | undefined, tecken: string, namn: string) => `<button type="button" data-kar="${dit ?? ''}" ${dit === undefined ? 'disabled' : ''} title="${namn}" aria-label="${namn}">${tecken}</button>`;
-  const kat = KAT_RAD.map(k => `<button type="button" data-kkat="${k.id}" aria-pressed="${k.id === val.kat}" title="${k.namn}" aria-label="${k.namn}">${tecknet(k.ikon, k.tecken, 16)}</button>`).join('');
+  const kat = KAT_RAD.map(k => `<button type="button" data-kkat="${k.id}" aria-pressed="${k.id === val.kat}" title="${k.namn}" aria-label="${k.namn}">${tecknet(k.ikon, k.tecken, Math.max(16, hasIcon(k.ikon) ? iconCanvas(k.ikon).width : 16))}</button>`).join(''); // en symbol som är större än 16 punkter (strid, steg 11.14.1) ritas i sin egen storlek
   const forkl = val.forkl ? FORKL[val.forkl] ?? KRONIKA_KAT.find(k => k.id === val.forkl)?.namn : undefined;
   return `<div class="pdelar kfilter" role="toolbar" aria-label="Visa">${knapp('data-kvis="viktigt"', val.viktigt && val.kat === undefined, 'sym_stjarna', '⭐', 'Bara det viktiga')}${kat}${knapp('data-kvis="allt"', !val.viktigt && val.kat === undefined, 'sym_skriftrulle', '📜', 'Allt')}</div>
     <div class="kblad">${pil(aldre, tecknet('sym_pil_vanster', '◀', 12), 'Året före')}<button type="button" data-kar="alla" aria-pressed="${val.ar === undefined}" title="${val.ar === undefined ? 'Alla år' : 'Visa alla år'}">${val.ar === undefined ? 'Alla år' : `År ${val.ar}`}</button>${pil(nyare, tecknet('sym_pil_hoger', '▶', 12), 'Året efter')}</div>

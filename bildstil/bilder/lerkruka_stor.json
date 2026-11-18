@@ -1,0 +1,28 @@
+{
+"id": "lerkruka_stor",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 11.14.1)",
+"w": 14,
+"h": 18,
+"rader": [
+"....rrrrrr....",
+"...ruEEEEsr...",
+"....ruttsr....",
+".....rtsr.....",
+".rrr.rtsr.rrr.",
+"r...rutssr...r",
+"r..ruttttsr..r",
+"r.ruttttttsr.r",
+".ruuttttttssr.",
+"ruttttttttttsr",
+"rKKJJJJJJJJJIr",
+"rutttttttttssr",
+"rtttttttttttsr",
+"rKJJJJJJJJJJIr",
+".rtttttttttsr.",
+"..rttttttssr..",
+"...rttttssr...",
+"....rrrrrr...."
+],
+"pal": {"r":"#521100","u":"#bd753e","E":"#3f2415","s":"#742a01","t":"#a14808","K":"#b2921b","J":"#906f0f","I":"#694902"}
+}
