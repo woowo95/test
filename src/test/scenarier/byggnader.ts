@@ -2077,6 +2077,7 @@ SCENARIER.skjul = {
   text: 'Steg 7.3.2–7.3.6 och 9.2.137: jordgolvet som en stig, blöt ved, torkhuset och vedboden. Det som går förlorat utan tak (maten som ruttnar, den blöta veden) ger ett torkhus eller en vedbod (steg 10.11.6): ett vanligt hus med timmerväggar, en dörr och jordgolv runt det som redan står, och där inne blir veden aldrig blöt. Stolpen och skjulen finns inte längre',
   kor: () => {
     const s = createState(6, START);
+    s.stationer = (s.stationer ?? []).filter(q => q.k !== 'vagn'); // grundarnas vagn (steg 11.6.13) står inte där torkhuset prövas
     klockan(s); byggare(s);
     const ingenStolpe = !SIM.MATERIAL.stolpe;
     SIM.planBuild(s); byggKlart(s);

@@ -2843,3 +2843,49 @@ SCENARIER.radanfall = {
     ];
   },
 };
+
+SCENARIER.rovarlager = {
+  text: 'Rövarlägret som rad (steg 11.6.17): de som flyttar för hunger kan slå läger som rövare på skog, tät skog eller berg; lägret skaffar ingen egen mat och föder inga barn, lever på det flocken tar och löses upp när folket är slut',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+    r.tal.folk = 40; r.tal.mat = 0;
+    const hd = SIM.hungerDel(r), ch = SIM.lagerChans(r), mett = SIM.lagerChans({ ...r, tal: { ...r.tal, mat: 40 * 400 } });
+    // gruppen slår läger
+    const t = s.now, kr0 = (vl.kronika ?? []).length;
+    const l = SIM.nyttLager(s, vl, r, 8, t)!;
+    const p = l && SIM.byPlats(vl, l.nr);
+    const mark = p ? SIM.MARK_IDS[SIM.varldMark(s)!.mark[p.y * SIM.varldMark(s)!.w + p.x]] : undefined;
+    const kron = (vl.kronika ?? []).some(h => h.k === 'lager' && h.by === r.nr && h.mot === l?.nr) && (vl.kronika ?? []).length > kr0;
+    // de hungriga i byn intill dras dit
+    const mal = SIM.flyttMal(vl, SIM.varldMark(s), r).some(m => m.r.nr === l?.nr);
+    // en tid utan byte: ingen egen mat och inga barn
+    l.tal.mat = 0; const f0 = l.tal.folk;
+    for (let n = 0; n < 48; n++) SIM.radMat(s, vl, l, Math.floor(t / 3600e3) + n);
+    const f1 = l.tal.folk, svalt = f1 < f0;
+    // lägret vill plundra när det saknar mat
+    l.tal.folk = 12; l.tal.styrka = SIM.styrkaMal(l); l.tal.mat = 0;
+    const g = SIM.radGrannar(vl, l).find(x => x.nr !== vl.huvud);
+    const pl = g ? SIM.BYHANDLINGAR.plundra.poang(SIM.byCtx(s, vl, l, { ...g, tal: { ...g.tal, styrka: 2, mat: 400 } })) : -1;
+    // folket slut: lägret löses upp, platsen försvinner och raden finns kvar för krönikan
+    l.tal.folk = 0;
+    const rad = SIM.PERIODRADER.find(x => x.namn === 'undergången')!;
+    rad.fn(s, vl, Math.floor(s.now / 3600e3));
+    const borta = !SIM.byPlats(vl, l.nr) && vl.rader!.includes(l) && l.sort === 'rovarlager' && (vl.kronika ?? []).some(h => h.k === 'upplost' && h.by === l.nr);
+    // en by i nöd i en levande värld (trångt och förrådet tomt), i 10 dygn (10 år i spelet): läger uppstår ur flytten
+    const w = SIM.cloneState(testBy(10)), wv = w.varld!, q = wv.rader!.find(x => x.nr === r.nr)!;
+    q.tal.folk = Math.round(2 * SIM.barkraft(SIM.varldMark(w), q)); q.tal.mat = 0;
+    w.now += 10 * 86400e3; SIM.varldSteg(w);
+    const lager = (wv.rader ?? []).filter(x => x.sort === 'rovarlager' && x.fran === q.nr).length, upplosta = (wv.kronika ?? []).filter(h => h.k === 'upplost').length;
+    const f2 = (x: number) => x.toFixed(2);
+    return [
+      [`hungern driver flytten (${f2(hd)} av den), så en grupp slår läger med chansen ${f2(ch)}; en mätt by ${f2(mett)}`, hd > 0.5 && ch > 0 && mett < ch],
+      [`lägret ligger på ${mark ?? 'ingen plats'} med ett grannät, och krönikan får det`, !!l && l.sort === 'rovarlager' && ['skog', 'tat', 'berg'].includes(mark ?? '') && !!p?.grannar?.length && kron],
+      ['hungriga ur byn intill dras till lägret', mal],
+      [`utan byte svälter lägret (${f0} → ${f1} på två dygn), och inga barn föds`, svalt],
+      [`ett hungrigt läger vill plundra en svag granne med mat (${f2(pl)})`, pl > 0],
+      ['när folket är slut löses lägret upp: platsen försvinner, raden finns kvar och krönikan får det', borta],
+      [`ur en by i nöd i en levande värld uppstod ${lager} rövarläger på 10 dygn, ${upplosta} löstes upp`, lager > 0],
+    ];
+  },
+};

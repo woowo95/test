@@ -20,14 +20,14 @@
 import { balans } from './balans';
 import { mots, nyttSlaktband, relation, grundlage } from './byrel';
 import { emigrationRate, hungerFlyttAv, LIV, matGottAv } from './liv';
-import { barkraft, lever, matDygn } from './rad';
-import { BYSORTER, radKrok, radNr, VarldRad } from './radtal';
+import { barkraft, lever, matDygn, styrkaMal } from './rad';
+import { BYSORTER, BysortDef, radKrok, radNr, VarldRad } from './radtal';
 import { clamp } from './slump';
 import { KOHANDELSER, PERIODRADER, antalUr, laggIKo, periodSlut, varldSlump } from './varldslag';
 import { Varlden, varldMark } from './varlden';
-import { VARLD, VarldMark } from './varldmark';
+import { MARK_IDS, VARLD, VarldMark } from './varldmark';
 import { byRutor } from './placering';
-import { byPlats, hinder, laggPlats, varldPlatsNr } from './landmarken';
+import { byPlats, hinder, LANDMARKEN, laggPlats, varldPlatsNr } from './landmarken';
 import { narmasteMal } from './vagval';
 import { byGrannar } from './grannat';
 import { varldHandelse } from './varldkronika';
@@ -55,11 +55,22 @@ export const NYBY = balans('nyby', {
   tro: 2, // chansen blir 1 + så här mycket gånger andelen med en annan tro än byns gånger större (steg 11.3.12)
 });
 // ärendena i världens slump (timmen; rad.ts har 1–6)
-const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15, ruin: 16, in: 17 };
+const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15, ruin: 16, in: 17, lager: 18 };
 const platsAv = (vl: Varlden, r: VarldRad) => { const p = byPlats(vl, r.nr); return p?.k === 'by' ? p : undefined; };
 
 // hur många som vill flytta ur raden per dygn (ett år i spelet): trängseln och hungern, med huvudbyns regler
 export const flyttPerDygn = (r: VarldRad) => emigrationRate(r.tal.folk, LIV.nojd) + hungerFlyttAv(matGottAv(matDygn(r)), r.tal.folk);
+// så stor del av dem som flyttar gör det för hungern (0 till 1)
+export const hungerDel = (r: VarldRad) => { const a = flyttPerDygn(r); return a > 0 ? hungerFlyttAv(matGottAv(matDygn(r)), r.tal.folk) / a : 0; };
+
+// rövarlägret (steg 11.6.17): de som flyttar för hunger kan slå läger som rövare i stället för att söka sig till en by, och
+// hungriga ur byarna intill dras dit; lägret skaffar ingen egen mat och föder inga barn (BYSORTER), så det lever på det
+// flocken tar (plundringen i byhandling.ts) och löses upp när folket är slut
+export const ROVLAGER = balans('rovarlager', {
+  chans: 0.5, // chansen att en grupp som flyttar slår läger som rövare, gånger hur stor del av flytten som är hunger
+  dras: 0.6, // ett läger inom räckhåll väger så här mycket för den som flyttar, gånger hungerns del av flytten
+});
+export const lagerChans = (r: VarldRad) => ROVLAGER.chans * hungerDel(r);
 
 // byarna inom räckhåll från raden, med vikten för den som flyttar dit
 export function flyttMal(vl: Varlden, v: VarldMark | undefined, r: VarldRad): { r: VarldRad; dygn: number; vikt: number }[] {
@@ -73,6 +84,13 @@ export function flyttMal(vl: Varlden, v: VarldMark | undefined, r: VarldRad): { 
     const rel = relation(vl, r.nr, m.nr) ?? grundlage(vl, r.nr, m.nr);
     const vikt = tr * (1 + rel / 100) / 2 / (1 + g.dygn / FLYTT.narDygn);
     if (vikt > 0) ut.push({ r: m, dygn: g.dygn, vikt });
+  }
+  // rövarlägren inom räckhåll (lägrets grannät går till byarna omkring), för den som flyttar för hunger
+  const hem = platsAv(vl, r), hd = hungerDel(r);
+  if (hem && hd > 0) for (const m of vl.rader ?? []) {
+    if (m.sort !== 'rovarlager' || m.tal.folk <= 0) continue;
+    const g = byPlats(vl, m.nr)?.grannar?.find(q => q.nr === hem.nr);
+    if (g && g.dygn <= FLYTT.dygn) ut.push({ r: m, dygn: g.dygn, vikt: hd * ROVLAGER.dras / (1 + g.dygn / FLYTT.narDygn) });
   }
   return ut;
 }
@@ -123,10 +141,42 @@ export function nyBy(s: State, vl: Varlden, r: VarldRad, grupp: number, t: numbe
   return ny;
 }
 
+// rutorna där ett rövarläger får ligga (räknas en gång per värld)
+const lagerRutor = new WeakMap<VarldMark, number[]>();
+// gruppen slår läger som rövare på den närmaste lediga platsen inom räckhåll; undefined om ingen finns
+export function nyttLager(s: State, vl: Varlden, r: VarldRad, grupp: number, t: number): VarldRad | undefined {
+  const v = varldMark(s), hem = platsAv(vl, r);
+  if (!v || !hem) return undefined;
+  let alla = lagerRutor.get(v);
+  if (!alla) { const mk = LANDMARKEN.rovarlager.mark as readonly string[]; alla = []; for (let i = 0; i < v.w * v.h; i++) if (mk.includes(MARK_IDS[v.mark[i]])) alla.push(i); lagerRutor.set(v, alla); }
+  const nar = FLYTT.dygn * VARLD.gangPerDygn, inom = (i: number) => Math.abs(i % v.w - hem.x) <= nar && Math.abs(Math.floor(i / v.w) - hem.y) <= nar;
+  const lediga = new Set(alla.filter(i => inom(i) && !hinder(vl, v, 'rovarlager', i % v.w, Math.floor(i / v.w))));
+  const [f] = narmasteMal(vl, v, hem.y * v.w + hem.x, lediga, 1, 'fots');
+  if (!f || f.kostnad / VARLD.gangPerDygn > FLYTT.dygn) return undefined;
+  const p = laggPlats(vl, v, 'rovarlager', f.till % v.w, Math.floor(f.till / v.w), t);
+  if (!p) return undefined;
+  const nr = vl.nastaRad = (vl.nastaRad ?? 0) + 1;
+  const mat = Math.min(r.tal.mat, Math.round(r.tal.mat * grupp / Math.max(1, r.tal.folk + grupp))); // sin del av maten
+  r.tal.mat -= mat;
+  const ny: VarldRad = { nr, sort: 'rovarlager', namn: p.namn, x: p.x, y: p.y, grundad: t, fran: r.nr, t, tal: { folk: grupp, mat, rikedom: 0, silver: 0, styrka: 0 }, tek: [...r.tek], fasta: [] };
+  ny.tal.styrka = styrkaMal(ny); // de som ger sig av är de som orkar
+  vl.rader!.push(ny);
+  p.by = nr;
+  p.grannar = byGrannar(vl, v, p, t);
+  mots(vl, r.nr, nr);
+  varldHandelse(vl, 'lager', t, { by: r.nr, mot: nr });
+  return ny;
+}
+
 // en timme: de som flyttar ur raden grundar en egen by eller ger sig av tillsammans mot en by
 export function radFlytt(s: State, vl: Varlden, r: VarldRad, n: number) {
   const ant = Math.min(r.tal.folk, antalUr(flyttPerDygn(r) / 24, varldSlump(vl, r.nr, n, A.flytt)));
   if (!ant) return;
+  if (varldSlump(vl, r.nr, n, A.lager) < lagerChans(r)) {
+    r.tal.folk -= ant;
+    if (nyttLager(s, vl, r, ant, periodSlut(vl, 'timme', n))) return;
+    r.tal.folk += ant; // ingen ledig plats: de gör som de andra
+  }
   if (varldSlump(vl, r.nr, n, A.ny) < nyChans(r, ant)) {
     r.tal.folk -= ant;
     if (nyBy(s, vl, r, ant, periodSlut(vl, 'timme', n))) return;
@@ -208,7 +258,19 @@ export function undergang(s: State, vl: Varlden, r: VarldRad, t: number) {
   }
 }
 
+// rövarlägret löses upp när folket är slut: platsen försvinner från kartan, och raden finns kvar för krönikan
+export function lagerUpplost(vl: Varlden, r: VarldRad, t: number) {
+  r.t = t; r.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; delete r.varor; delete r.ledare;
+  const p = byPlats(vl, r.nr);
+  if (p) vl.platser = vl.platser!.filter(q => q !== p);
+  varldHandelse(vl, 'upplost', t, { by: r.nr });
+}
+
 // varje timme, efter maten: flytten ur varje by i världen som lever efter radens regler
 PERIODRADER.push({ namn: 'flytten', period: 'timme', fn: (s, vl, n) => { for (const r of [...vl.rader ?? []]) if (lever(vl, r)) radFlytt(s, vl, r, n); } });
 // varje timme, sist: en by utan folk går under (huvudbyn grundas på nytt i stället, liv.ts)
-PERIODRADER.push({ namn: 'undergången', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) if (r.sort === 'by' && r.nr !== vl.huvud && r.tal.folk <= 0) undergang(s, vl, r, periodSlut(vl, 'timme', n)); } });
+PERIODRADER.push({ namn: 'undergången', period: 'timme', fn: (s, vl, n) => { for (const r of vl.rader ?? []) {
+  if (r.nr === vl.huvud || r.tal.folk > 0) continue;
+  if (r.sort === 'by') undergang(s, vl, r, periodSlut(vl, 'timme', n));
+  else if ((BYSORTER[r.sort] as BysortDef).slut === 'folk' && byPlats(vl, r.nr)) lagerUpplost(vl, r, periodSlut(vl, 'timme', n));
+} } });

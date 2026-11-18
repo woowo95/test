@@ -18,6 +18,8 @@ export const VARLDSHANDELSER = {
   forbund: { namn: 'Förbund', stor: true, text: '{by} och {mot} sluter förbund' },
   svalt: { namn: 'Svält', stor: false, text: 'Svält i {by}' },
   farsot: { namn: 'Farsot', stor: false, text: 'En farsot går genom {by}' },
+  lager: { namn: 'Rövarläger', stor: false, text: 'Hungriga ur {by} slår läger som rövare: {mot}' },
+  upplost: { namn: 'Upplöst', stor: false, text: 'Rövarlägret {by} löses upp' },
   rad: { namn: 'Räd', stor: false, text: '{by} gör en räd mot {mot}' },
   karavan: { namn: 'Plundrad karavan', stor: false, text: 'En karavan plundras vid {plats}' },
   uppdrag: { namn: 'Uppdrag', stor: false, text: '{by} sänder ut ett uppdrag till {plats}' },

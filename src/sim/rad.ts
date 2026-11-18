@@ -58,6 +58,7 @@ export const RAD = balans('rad', {
   rikNod: 0.02, // en timme i nöd (maten slut) tar så stor del av rikedomen
   styrka: 0.35, // styrkan går mot folket gånger så stor del (de som kan slåss), gånger 1 + teknikernas styrka, högst folket ...
   styrkaDygn: 0.5, // ... och kommer så stor del av vägen dit per dygn
+  styrkaUtanBarn: 0.8, // i en rad utan barn (ett läger, BYSORTER) kan så stor del slåss
   // kunskapen (steg 11.3.9)
   troghet: 2.5, // en öppen teknik tar så många gånger nivåns mål i testbyarna (TEKTAL.nivaDygn) i snitt ...
   kunskapFolk: 15, // ... i en by med så många eller fler; en mindre by i proportion
@@ -139,7 +140,7 @@ export function radMat(s: State, vl: Varlden, r: VarldRad, n: number) {
 
 // rikedomens och styrkans mål
 export const rikMal = (r: VarldRad) => r.tal.folk * RAD.rikPer * (1 + tekTillskott(r, 'rikedom'));
-export const styrkaMal = (r: VarldRad) => Math.min(r.tal.folk, Math.round(r.tal.folk * RAD.styrka * (1 + tekTillskott(r, 'styrka'))));
+export const styrkaMal = (r: VarldRad) => Math.min(r.tal.folk, Math.round(r.tal.folk * (BYSORTER[r.sort].barn ? RAD.styrka : RAD.styrkaUtanBarn) * (1 + tekTillskott(r, 'styrka'))));
 // så stor del av vägen en timme tar, när en hel dygns väg är del
 const perTimme = (del: number) => 1 - (1 - del) ** (1 / 24);
 // en timme: rikedomen går mot teknikernas mål och sjunker i nöd, och styrkan går mot folket
