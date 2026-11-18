@@ -52,7 +52,7 @@ function sokBerg(s: State) {
 export function storstaLass(s: State) {
   let l = 0;
   for (const f of Object.values(FORDON)) {
-    if (!tingOf(s).some(g => g.k === f.sak)) continue;
+    if (!f.tar || !tingOf(s).some(g => g.k === f.sak)) continue;
     if (f.drar === 'djur') for (const d of tamdjurOf(s)) { if (tamArt(d.art).styrka) l = Math.max(l, lassAv(f, d)); }
     else l = Math.max(l, lassAv(f));
   }

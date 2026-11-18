@@ -148,6 +148,7 @@ export const PAL: Record<string, Record<string, string>> = {
   karta: { w: '#dad0bb', k: '#bdb39b', d: '#5e3c24', r: '#a14808', b: '#61767a', o: '#24201d' }, // platserna i världen (steg 11.4.4, platshållare)
   blad: { w: '#dad0bb', k: '#bdb39b', d: '#24201d' },
   kalke: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.2, platshållare
+  vagn: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 11.11.2, platshållare (också tekniken Vagn)
   slade: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.10.3, platshållare (också tekniken Släde)
   bagborr: { o: '#24201d', a: '#5e3c24', b: '#987e62', r: '#bdb39b', z: 'rgba(36,32,29,.30)' }, // steg 10.6.13, platshållare
   bisymbol: { o: '#24201d', y: '#b2921b' }, // steg 10.10.25, platshållare: ett bi på fältrutan
@@ -2755,6 +2756,24 @@ export const PIX: Record<string, string[]> = {
     '...ooooooooooooo',
     '....ooooooooooo.',
     '.....zzzzzzzzzz.',
+    '................',
+  ],
+  vagn: [ // platshållare (steg 11.11.2): ett flak på två hjul med ekrar, och två skaklar framåt
+    '................',
+    '................',
+    'r...............',
+    '.rr.............',
+    '...rr...........',
+    '....rroooooooooo',
+    '....oaaaaaaaaaao',
+    '....obbbbbbbbbbo',
+    '....oooooooooooo',
+    '......ooo...ooo.',
+    '.....obaboobabo.',
+    '.....oabaooabao.',
+    '.....obaboobabo.',
+    '......ooo...ooo.',
+    '.....zzzzzzzzzzz',
     '................',
   ],
   slade: [ // platshållare (steg 10.10.3): ett långt flak på två medar, och två skaklar framåt

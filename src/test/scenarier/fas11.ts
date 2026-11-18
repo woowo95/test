@@ -4046,3 +4046,38 @@ SCENARIER.talt = {
     ];
   },
 };
+
+SCENARIER.vagn = {
+  text: 'Byns egen vagn (steg 11.11.2, FORDON i fordon.ts): görs vid snickarbänken och dras av oxen eller hästen, med dubbelt så stort lass som släden; full fart på väg och stig, halv fart i terrängen och en tiondel i full snö, så släden tas på vintern utan egen regel',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), m = SIM.bynsMitt(s), g = SIM.groundOf(s);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0]!;
+    for (const d of SIM.tamdjurOf(s)) d.agare = -1; // byns egna dragdjur räknas inte; bara hästen nedan
+    const hast = SIM.nyttTamdjur(s, 'hast', m.x, m.y, undefined, s.now - 5 * SIM.DAY); hast.agare = undefined;
+    for (const k of ['slade', 'vagn']) { const t = SIM.newTing(s, k, 1, SIM.BYN); t.x = Math.floor(m.x); t.y = Math.floor(m.y); }
+    // en gräsruta i terrängen nära byn, utan träd, stråk eller väg
+    let i = -1;
+    for (let r = 4; r < 20 && i < 0; r++) for (let dy = -r; dy <= r && i < 0; dy++) for (let dx = -r; dx <= r && i < 0; dx++) {
+      const x = Math.floor(m.x) + dx, y = Math.floor(m.y) + dy;
+      if (SIM.inMap(x, y) && SIM.underlag(s, x + 0.5, y + 0.5) === 'terrang' && g.trees[y * SIM.W + x] === 0 && g.tiles[y * SIM.W + x] !== 0) i = y * SIM.W + x;
+    }
+    const x = i % SIM.W + 0.5, y = Math.floor(i / SIM.W) + 0.5;
+    const snoNu = (v: number) => { s.vader = { ...(s.vader ?? { fukt: 0.5 }), sno: v } as typeof s.vader; };
+    snoNu(0);
+    const vagn = SIM.FORDON.vagn!, slade = SIM.FORDON.slade!;
+    const lV = SIM.lassAv(vagn, hast), lS = SIM.lassAv(slade, hast);
+    const terr = SIM.fordonFart(s, vagn, x, y, hast);
+    const c0 = g.cover[i]!; g.cover[i] = 0; const stigU = SIM.underlag(s, x, y), stig = SIM.fordonFart(s, vagn, x, y, hast); g.cover[i] = c0;
+    const valBar = SIM.valjFordon(s, p, 'virke', x, y, 1);
+    snoNu(1);
+    const valSno = SIM.valjFordon(s, p, 'virke', x, y, 1), fSno = SIM.fordonFart(s, vagn, x, y, hast);
+    const r = SIM.RECEPT.vagn;
+    return [
+      [`vagnen görs vid snickarbänken av 6 virke och 4 rep på 5 minuter`, r.bank === 'snickarbank' && r.av.virke === 6 && r.av.rep === 4 && r.min === 5],
+      [`utan snö tas vagnen före släden (${valBar?.g.k})`, valBar?.g.k === 'vagn' && valBar.d?.id === hast.id],
+      [`lasset är dubbelt med samma djur (${lV} mot ${lS})`, lV === 2 * lS && lV > 0],
+      [`i terrängen är farten hälften av farten på stig, på samma ruta (${terr.toFixed(2)} mot ${stig.toFixed(2)}, ${stigU})`, i >= 0 && stigU === 'stig' && Math.abs(terr * 2 - stig) < 1e-9],
+      [`i full snö går vagnen en tiondel (${fSno.toFixed(2)}) och släden tas (${valSno?.g.k})`, Math.abs(fSno - SIM.FORDON_TAL.vagnSno * SIM.tamEg(hast).snabbhet) < 1e-9 && valSno?.g.k === 'slade'],
+    ];
+  },
+};

@@ -7,7 +7,10 @@
 // gånger FORDON_TAL.lassPerStyrka och farten gånger djurets snabbhet. Den som hämtar något tungt tar händerna eller det fordon
 // och det djur som ger mest per tid (valjFordon)
 import { Ting, tingOf, ledigtTing, spand } from './agande';
-import { roofed } from './byggnad';
+import { MATERIAL, gridOf, roofed } from './byggnad';
+import { markslag } from './mark';
+import { paStrak } from './strak';
+import type { Fardsatt } from './varldmark';
 import { snoSmalt } from './brand';
 import { groundOf, tileOf } from './mark';
 import { SAKER, viktOf } from './saker';
@@ -17,15 +20,24 @@ import { balans } from './balans';
 import { familjOf } from './folk';
 import { Tamdjur, tamArt, tamEg, tamdjurOf } from './tamdjur';
 
-export interface FordonRad { sak: string; drar: 'manniska' | 'djur'; lass: number; bar: number; namn: string }
+// underlaget fordonet går på: en lagd väg, en stig (gångstråket eller bar jord), terrängen, snö och is (steg 11.11.2)
+export type Underlag = 'vag' | 'stig' | 'terrang' | 'sno' | 'is';
+// en rad: vem som drar, lasset (för den som drar själv) eller lasset per steg av dragdjurets styrka, farten på varje underlag som del
+// av gångfarten, om den tar det som körs i byn (det tunga, lyft i SAKER) och färdsättet på världskartan (Fardsatt i varldmark.ts)
+export interface FordonRad { sak: string; drar: 'manniska' | 'djur'; lass: number; lassPerStyrka: number; fart: Record<Underlag, number>; tar: boolean; fardsatt?: Fardsatt; namn: string }
 export const FORDON_TAL = balans('fordon', {
   kalkeLass: 60, // så mycket vikt kälken rymmer: 3 virke
   kalkeBar: 0.4, // kälkens och slädens fart på barmark, som del av gångfarten (på snö och is: 1)
   lassPerStyrka: 60, // slädens lass för varje steg av dragdjurets styrka: oxen (4) 240, hästen (3) 180 (steg 10.10.3)
+  vagnLassPerStyrka: 120, // vagnens lass per steg av styrka: dubbelt så stort som slädens (steg 11.11.2)
+  vagnTerrang: 0.5, // vagnens fart i terrängen (på väg och stig: 1)
+  vagnSno: 0.1, // vagnens fart i full snö
 });
+const medar = { vag: FORDON_TAL.kalkeBar, stig: FORDON_TAL.kalkeBar, terrang: FORDON_TAL.kalkeBar, sno: 1, is: 1 };
 export const FORDON: Record<string, FordonRad> = {
-  kalke: { sak: 'kalke', namn: 'Kälke', drar: 'manniska', lass: FORDON_TAL.kalkeLass, bar: FORDON_TAL.kalkeBar },
-  slade: { sak: 'slade', namn: 'Släde', drar: 'djur', lass: 0, bar: FORDON_TAL.kalkeBar },
+  kalke: { sak: 'kalke', namn: 'Kälke', drar: 'manniska', lass: FORDON_TAL.kalkeLass, lassPerStyrka: 0, fart: medar, tar: true },
+  slade: { sak: 'slade', namn: 'Släde', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.lassPerStyrka, fart: medar, tar: true },
+  vagn: { sak: 'vagn', namn: 'Vagn', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.vagnLassPerStyrka, fart: { vag: 1, stig: 1, terrang: FORDON_TAL.vagnTerrang, sno: FORDON_TAL.vagnSno, is: FORDON_TAL.vagnTerrang }, tar: true, fardsatt: 'vagn' }, // byns egen vagn (steg 11.11.2)
 };
 export const fordonRad = (k: string) => Object.values(FORDON).find(f => f.sak === k);
 // fordonet i en börda: raden, tinget och dragdjuret som är spänt för
@@ -39,13 +51,24 @@ export function fordonI(s: State, t?: Task): IBordan | undefined {
   return undefined;
 }
 // lasset (vikt) för fordonet med djuret d
-export const lassAv = (f: FordonRad, d?: Pick<Tamdjur, 'art'> & { id?: number }) => f.drar === 'djur' ? (d && tamArt(d.art).styrka ? tamEg(d).styrka * FORDON_TAL.lassPerStyrka : 0) : f.lass; // individens styrka (steg 10.10.29)
-// fordonets fart på rutan (x, y), som del av gångfarten: full på is och på snö som inte smält, annars barmarkens; gånger djurets snabbhet
+export const lassAv = (f: FordonRad, d?: Pick<Tamdjur, 'art'> & { id?: number }) => f.drar === 'djur' ? (d && tamArt(d.art).styrka ? tamEg(d).styrka * f.lassPerStyrka : 0) : f.lass; // individens styrka (steg 10.10.29)
+// underlaget på rutan (x, y) utan snön: isen, en lagd väg, en stig (gångstråket eller bar jord) eller terrängen
+export function underlag(s: State, x: number, y: number): Exclude<Underlag, 'sno'> {
+  const fx = Math.floor(x), fy = Math.floor(y);
+  if (!inMap(fx, fy)) return 'terrang';
+  const i = tileOf(x, y), g = groundOf(s);
+  if (g.tiles[i] === 0) return 'is'; // den som går på vattnet går på is
+  const m = gridOf(s).at.get(i)?.m;
+  if (m && MATERIAL[m]?.vag) return 'vag';
+  return paStrak(s, fx, fy) || markslag(g, i) === 'bar' ? 'stig' : 'terrang';
+}
+// fordonets fart på rutan (x, y), som del av gångfarten: underlagets, och snöns där det ligger snö som inte smält; gånger djurets snabbhet
 export function fordonFart(s: State, f: FordonRad, x: number, y: number, d?: Tamdjur) {
-  const fx = Math.floor(x), fy = Math.floor(y), djur = f.drar === 'djur' ? (d ? tamEg(d).snabbhet : 1) : 1; // individens snabbhet (steg 10.10.29)
-  if (inMap(fx, fy) && groundOf(s).tiles[tileOf(x, y)] === 0) return djur; // isen (den som går på vattnet går på is)
+  const djur = f.drar === 'djur' ? (d ? tamEg(d).snabbhet : 1) : 1; // individens snabbhet (steg 10.10.29)
+  const u = underlag(s, x, y);
+  if (u === 'is') return f.fart.is * djur;
   const sno = roofed(s, x, y) ? 0 : Math.min(1, snoPaMarken(s)) * (1 - snoSmalt(s, x, y));
-  return (f.bar + (1 - f.bar) * sno) * djur;
+  return (f.fart[u] * (1 - sno) + f.fart.sno * sno) * djur;
 }
 export const fartI = (s: State, b: IBordan, x: number, y: number) => fordonFart(s, b.f, x, y, b.d);
 // ryms bördan b på ett lass: bara det som lyfts med båda händerna, och högst lasset
@@ -64,6 +87,7 @@ export function valjFordon(s: State, p: Person, k: string, x: number, y: number,
   if (!SAKER[k]?.lyft) return undefined;
   let bast: { g: Ting; d?: Tamdjur; v: number } | undefined;
   for (const f of Object.values(FORDON)) {
+    if (!f.tar) continue; // packsadeln och ridsadeln kör inget i byn
     const g = ledigtTing(s, p, f.sak);
     if (!g) continue;
     for (const d of f.drar === 'djur' ? lediga(s, p) : [undefined]) {

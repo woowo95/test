@@ -169,6 +169,7 @@ const DEF = {
   krycka: { var: 'sak', av: { virke: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true }, traben: { var: 'sak', av: { virke: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true },
   kalke: { var: 'sak', av: { virke: 2, rep: 2 }, min: 5, slag: 'stor', tek: 'slade', bank: 'snickarbank', bara: true }, // steg 10.10.2: två medar och ett flak
   slade: { var: 'sak', av: { virke: 4, rep: 4 }, min: 5, slag: 'stor', tek: 'slade', bank: 'snickarbank', bara: true }, // steg 10.10.3: större, med skaklar för ett dragdjur
+  vagn: { var: 'sak', av: { virke: 6, rep: 4 }, min: 5, slag: 'stor', tek: 'vagn', bank: 'snickarbank', bara: true }, // steg 11.11.2: ett flak på två hjul, med skaklar
   bagborr: { var: 'sak', av: { ved: 1, grenar: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'bagborr', bank: 'snickarbank', bara: true }, // steg 10.6.13: en båge av gren och rep, en pinne och en skiva
   krok: { var: 'sak', av: { virke: 1 }, min: 3, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true }, ogonlapp: { var: 'sak', av: { skinn: 1 }, min: 3, slag: 'liten' },
   // förbanden (steg 9.5.15): remsor av skinn eller lin (två av varje), och nålen av ben som såret sys med
