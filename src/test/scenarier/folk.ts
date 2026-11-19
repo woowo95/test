@@ -13,6 +13,9 @@ import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
 import { hjalpKlick } from '../../ui/hjalp';
 
+// by 4 efter den första timmen (timmar), innan rövarna skickas
+const rovarBy = (timmar = 1) => { const s = createState(4, START); for (let i = 0; i < timmar * 12; i++) step(s, 300); return s; };
+
 SCENARIER.befolkning = {
   lang: true,
   text: 'En stor by blir trång och folk flyttar, en liten by får nybyggare, och en tom by grundas på nytt',
@@ -2601,8 +2604,7 @@ SCENARIER.faran = {
 SCENARIER.rovarinne = {
   text: 'Rövarna kommer in i bild (steg 10.2.23): från testknappen går gänget in från kartans kant steg för steg mot rastplatsen, och bilden visar dem gå hela vägen (rovarPlats) i stället för att stå i kanten',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     const ok = SIM.skickaRovare(s, 3).ok, f = s.rovare!, t0 = s.now;
     const start = SIM.rovarna(s, f).map(r => ({ x: r.x!, y: r.y! }));
     let narmare = 0, prov = 0;
@@ -2626,8 +2628,7 @@ SCENARIER.rovarinne = {
 SCENARIER.rovarrast = {
   text: 'Livet på rastplatsen (steg 10.2.24): rövarna sprider ut sig, vilar, går omkring och pratar med varandra i samma samtalssystem som byn, med pratbubbla, och var och en har sin egen handling (panelen visar den)',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     SIM.rovarnaKommer(s, 3);
     const f = s.rovare!, ids = new Set(f.folk), handlingar = new Set<string>(), olika = { ja: 0, prov: 0 };
     let prat = 0, rastTid = 0, isar = 0;
@@ -2655,8 +2656,7 @@ SCENARIER.rovarrast = {
 SCENARIER.rovarbredvid = {
   text: 'Rövarna går som människor, utan ledare (steg 10.2.25): gänget på väg mot byn går bredvid varandra, var och en sin väg och lite olika fort, inte i samma rutor på en rad; ingen i gänget leder, och flockens plats är mitten av gänget',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     SIM.skickaRovare(s, 4);
     const f = s.rovare!;
     let prov = 0, sammaRuta = 0, mitt = 0;
@@ -2678,8 +2678,7 @@ SCENARIER.rovarbredvid = {
 SCENARIER.rovarmotet = {
   text: 'Mötet på vägen (steg 10.2.26): en kolonist på promenad längs vägen när gänget går mot byn. Rövarna väljer med poäng att slå, hota, ta det hen bär eller gå förbi, och kolonisten ser dem, varnar och går undan eller slåss; ingen går rakt igenom en fiende',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     SIM.skickaRovare(s, 4);
     const f = s.rovare!, fo = SIM.rovarna(s, f);
     const e = SIM.eldPlats(s), mx = (fo[0].x! + e.x) / 2, my = (fo[0].y! + e.y) / 2;
@@ -2705,8 +2704,7 @@ SCENARIER.rovarmotet = {
 SCENARIER.rovarmote = {
   text: 'Försvararna går dit rövarna är (steg 10.2.27): de som ska slåss går mot de rövare de ser, eller dit larmet säger att de är på väg, i stället för att vänta vid huvudförrådet, och striden börjar där de möts',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     SIM.skickaRovare(s, 3);
     const f = s.rovare!, hem = SIM.malet(s);
     let gick = 0, strid: { x: number; y: number } | undefined;
@@ -2726,8 +2724,7 @@ SCENARIER.rovarmote = {
 SCENARIER.plundring = {
   text: 'Plundringen syns (steg 10.2.28): gänget tar saker ur en lagerplats tills var och en bär så mycket hen orkar (vikten i SAKER), och går sedan hem med bördan, som syns på figuren och i panelen',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     SIM.setAmount(s, 'ved', 60); SIM.setAmount(s, 'flinta', 10);
     SIM.skickaRovare(s, 3);
     const f = s.rovare!, ids = [...f.folk];
@@ -2755,8 +2752,7 @@ SCENARIER.plundring = {
 SCENARIER.rovardjur = {
   text: 'Rövare mot djur på kartan (steg 10.2.29): en björn på rövarnas väg ger en strid på kartan som rövarna reagerar på, var och en med sitt eget val (slåss eller fly), utan tärningskast vid sidan av kartan',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     SIM.skickaRovare(s, 3);
     const f = s.rovare!, ids = new Set(f.folk);
     step(s, 20);
@@ -2782,8 +2778,7 @@ SCENARIER.anfallet = {
   lang: true,
   text: 'Hela anfallet från testknappen till slutet (steg 10.2.31): gänget syns komma, rör sig och pratar på rastplatsen, någon ser dem och varnar, försvararna gör sig redo och möter dem, striden eller plundringen syns, och gänget går hem eller dör',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 24; i++) step(s, 300);
+    const s = rovarBy(2);
     const ok = SIM.skickaRovare(s, 4).ok, f = s.rovare!;
     const st = (k: string) => (s.stat?.[k] as number | undefined) ?? 0, fore = { ...s.stat };
     const ny = (k: string) => st(k) - ((fore[k] as number | undefined) ?? 0);
@@ -2881,8 +2876,7 @@ SCENARIER.vilan = {
 SCENARIER.rovarprat = {
   text: 'Steg 10.2.94: rövarna pratar mer och går mindre på rastplatsen. De står eller sitter mest och pratar, två eller fler i taget, och går omkring bara ibland; pratbubblorna syns ofta, och de går en mindre del av tiden än de står',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     SIM.rovarnaKommer(s, 4);
     const f = s.rovare!, ids = new Set(f.folk);
     let prat = 0, rastSek = 0, gar = 0, star = 0;
@@ -2922,8 +2916,7 @@ SCENARIER.stridansikte = {
 SCENARIER.rovarhopp = {
   text: 'Steg 10.2.96: rövarna hoppar inte i bilden. Bilden visar rövarna längs vägen de faktiskt gått, också när striden på kartan flyttar dem, och mellan två bilder flyttar sig ingen rövare längre än hen hinner gå eller springa',
   kor: () => {
-    const s = createState(4, START);
-    for (let i = 0; i < 12; i++) step(s, 300);
+    const s = rovarBy();
     const f = rovarGang(s, 4, undefined, { anfaller: true });
     const t0 = s.now, max = SIM.GANG.fart * 0.1 * 1.6 + 0.05;
     let hopp = 0, prov = 0, fel = 0;
