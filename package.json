@@ -19,6 +19,7 @@
     "by": "tsx src/test/by.ts",
     "rapport": "tsx src/test/rapport.ts",
     "rimligt": "tsx src/test/rimligtkor.ts",
+    "granska": "tsx src/test/granska.ts",
     "teknik": "tsx src/test/teknik.ts",
     "likhet": "bash src/test/likhet.sh",
     "koll": "tsx src/test/koll.ts",
