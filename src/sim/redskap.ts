@@ -5,8 +5,8 @@ import { Act, HOUR, State, Person } from './typer';
 import { ACTS, ACT_LIST, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
-import { amountOf, gain, put, use } from './lager';
-import { getable, Recept, saknatAv, takeMaterial, takeRecipe } from './behov';
+import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
+import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
 import { addDel } from './egendom';
 import { sparas, villAv, villHaAv } from './forradsmal';
 import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
@@ -72,12 +72,13 @@ export function wearUsed(s: State, p: Person, n: number) {
 // Rep tvinnas av växtfibrer (hö) av den som kan det, vid slöjdbänken (stationer.ts) och fortare där, annars för hand vid
 // elden, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
-const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
+export const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
 export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < villHaAv(s, 'rep') && getable(s, p, 'torrgras') >= REP.torrgras + sparas(s, 'torrgras'); // eldens del sparas (steg 10.2.7)en
 export function twineRope(s: State, p: Person, hours: number, vill: number = villHaAv(s, 'rep')) { // vill: så många rep byn vill ha (fler att byta med handlaren, steg 6.2.11)
   const f = fartVid(s, p, 'tvinna'), bank = f > 1; // vid slöjdbänken
-  const n = Math.min(hours * REP_TIMME * f, (getable(s, p, 'torrgras') - sparas(s, 'torrgras')) / REP.torrgras, vill - amountOf(s, 'rep'));
-  if (n <= 0) return;
+  // höet hen har till hands: det hen hämtat och det som ligger inom räckhåll (steg 11.1.74). Är det slut är arbetet klart
+  const n = Math.min(hours * REP_TIMME * f, tillHands(s, p, 'torrgras') / REP.torrgras, vill - amountOf(s, 'rep'));
+  if (n <= 1e-9) { if (p.task?.act === 'tvinna') p.task.until = s.now; return; }
   takeMaterial(s, p, 'torrgras', n * REP.torrgras);
   gain(s, p, 'rep', n);
   const first = !(s.stat?.rep);
@@ -156,7 +157,7 @@ export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.m
 export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && t.k === 'kniv')) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && (ACTS[art.act]?.plats === 'station' ? !!stationFor(s, art.act, p) : enTill(s, art.act, p)); // en bänk rymmer sin arbetare (steg 10.2.5)
 // slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
 export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
-  const n = Math.min(hours * art.timme, djurKvar(s, art));
+  const n = Math.min(hours * art.timme, harTillHands(s, p, art.sak) / art.mat); // det hen har till hands (steg 11.1.74)
   if (n <= 0 || art.kniv && knives(s) < 1 || !kanGoras(s, art.act)) { if (p.task) p.task.until = s.now; return; }
   const vems = stycka(s, p, art, n);
   heligtBrutet(s, p, art.art); // det heliga djuret slaktas bara i nöd (steg 10.3.15)
@@ -215,7 +216,7 @@ const ordFor = (s: State, k: string) => { const m = verktygFor(s, k); return m ?
 // p kan få tag i det som behövs till k: verktyget och materialet, och en flinta över att tända eld med.
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
 const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k))
-  && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m) - 1e-9); // 1e-9: avrundningen i förrådet
+  && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + (iBordan(p, m) >= n ? 0 : sparas(s, m)) - 1e-9); // 1e-9: avrundningen i förrådet; det hen hämtat till arbetet sparas inte (steg 11.1.74)
 // p kan tekniken och kan få tag i det som behövs
 export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k); };
 // det slag i gruppen g som p gör: det hen redan har påbörjat, annars det bästa hen kan göra (ett plagg: det material hen

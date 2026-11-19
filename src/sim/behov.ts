@@ -16,7 +16,7 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, use } from './lager';
+import { amountOf, helt, iBordan, iRackhall, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -389,12 +389,15 @@ export function noticeTheft(s: State, p: Person, key: string) {
 // tar aldrig av andras och gör då inte arbetet.
 const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
 // så mycket av slaget k som p kan få till ett arbete
-export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k);
+export const getable = (s: State, p: Person, k: string) => (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
+// det p har till hands till sitt arbete av slaget k (steg 11.1.74): det hen bär dit och det som ligger inom räckhåll, utom det
+// som sparas (till elden)
+export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - sparas(s, k));
 // det första material i receptet av som p inte kan få tag i (med det som sparas till elden, sparas i ekonomi.ts), annars undefined (steg 6.1.17)
 // receptet till ett projekt när p kunde göra det om materialet eller redskapet fanns (steg 6.2.19): materialet, redskapet
 // som behövs och hur mycket av varje som sparas (annars sparas() i forradsmal.ts)
 export interface Recept { av: Record<string, number>; verktyg?: string; spar?: (m: string) => number }
-export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(s, _m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + extra(m) - 1e-9)?.[0];
+export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(s, _m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + (iBordan(p, m) >= n ? 0 : extra(m)) - 1e-9)?.[0];
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};
@@ -407,6 +410,10 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   const ag: Del = {};
   if (n <= 1e-12) return ag;
   const not = (hur: string, d: Del) => { if (kom) for (const o in d) if (d[o] > 1e-9) { const h = +o === BYN ? 'byn' : +o === p.id ? 'eget' : hur; const key = `${h}:${h === 'byn' ? BYN : o}:${k}`; kom[key] = (kom[key] ?? 0) + d[o]; } };
+  // det hen hämtat och bär till arbetet först (steg 11.1.74): det har redan tagits, som eget, byns, gåva eller stöld
+  const bar = urBordan(s, p, k, n, common);
+  addDel(ag, bar); not('familj', bar); n -= sumOf(bar);
+  if (n <= 1e-12) return ag;
   // ett byte före byns förråd, när det är till ens eget arbete
   if (!common && ownsAmount(s, p, k) < n - 1e-9) tradeMaterial(s, p, k, n - ownsAmount(s, p, k));
   const egen = Math.min(n, mayTake(s, p, k));

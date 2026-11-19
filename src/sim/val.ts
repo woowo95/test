@@ -52,7 +52,7 @@ const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, 
 // hur många av saken k p bär i händerna på en tur (det tunga: så många som ryms, steg 10.10.2)
 const iHandenAv = (s: State, p: Person, k: string) => { const r = ryms(s, p), w = viktOf(k); let n = 0; while (n < 20 && r({ [k]: (n + 1) * w })) n++; return n; };
 const stackPa = (s: State, x: number, y: number, k: string) => Math.floor((s.stackar ?? []).filter(q => q.x === Math.floor(x) && q.y === Math.floor(y) && q.k === k).reduce((a, q) => a + q.n, 0) + 1e-9);
-import { allows, amountOf, avbryt, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
+import { allows, amountOf, avbryt, iHelaForradet, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
@@ -60,6 +60,7 @@ import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
 import { SKOG, axeTask, egenStock, fallTid, stockOverHus, stocks } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
+import { hamtaForst } from './hamtning';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
 import { samtalMed } from './samtal';
@@ -940,7 +941,8 @@ function vinnare(c: Ctx, rader: Arbete[]) {
   return ledig ? bast : undefined;
 }
 
-export function chooseTask(s: State, p: Person) {
+export function chooseTask(s: State, p: Person) { iHelaForradet(() => valjTask(s, p)); } // valet ser hela förrådet (steg 11.1.74)
+function valjTask(s: State, p: Person) {
   if (fangeVal(s, p)) return; // den som sitter i fängelset (steg 11.12.1, fangelse.ts)
   if (p.svimmat) { p.task = { act: 'medvetslos', phase: 'do', tx: p.x, ty: p.y, until: s.now + 30 * MIN, carry: 0, dark: false, why: 'Har svimmat' }; return; } // kan inte göra något (steg 8.2.6)
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
@@ -1341,6 +1343,8 @@ export function nastaRedskap(s: State, p: Person, tk: Task) {
   const m = projektNu(s, p, tk.act, f); // samma projekt (steg 6.2.17)
   if (!m) return;
   tk.tool = m.tool; tk.ref = undefined;
+  if (!tk.items) tk.hamtad = undefined; // materialet till nästa hämtas (steg 11.1.74, hamtning.ts)
+  if (hamtaForst(s, p, tk)) { tk.until = Math.max(tk.until, tk.pass); return; }
   startWork(s, p, tk);
   if (tk.until > s.now) count(s, 'iSammaPass'); // byns statistik: redskap som gjordes efter ett annat i samma pass
 }

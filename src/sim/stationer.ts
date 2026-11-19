@@ -13,7 +13,7 @@ import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool } from './agan
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
 import { troshusRum, trosMobelBrist } from './troshus';
-import { Zone, amountOf, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
+import { Zone, amountOf, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
@@ -1075,7 +1075,7 @@ krubbaKrok.iRum = (s, r) => stationerOf(s).some(t => stationDef(t.k)?.fahus && s
 // ---------- att bygga en station ----------
 // (en kista: p:s egen, steg 2.10.18)
 // (ingen bygger vidare i någon annans hus, steg 3.10.2)
-const halvbyggd = (s: State, k: string, p?: Person) => stationerOf(s).find(t => t.k === k && !isKlar(t) && (t.ag === undefined || t.ag === p?.id) && (t.tro === undefined || !p || t.tro === p.tro) && (!p || farBygga(s, husAv(s, t), p)));
+export const halvbyggd = (s: State, k: string, p?: Person) => stationerOf(s).find(t => t.k === k && !isKlar(t) && (t.ag === undefined || t.ag === p?.id) && (t.tro === undefined || !p || t.tro === p.tro) && (!p || farBygga(s, husAv(s, t), p)));
 // en annan än p har tagit uppgiften att bygga en ny station av sorten k och har inte börjat på den än (steg 10.2.5)
 const nyPaVag = (s: State, k: string, p?: Person) => living(s).some(q => q !== p && q.task?.act === 'station' && q.task.tool === k);
 // p kan bygga (eller bygga vidare på) en station av sorten k som byn saknar (det byn kan ha flera av: om projektet säger att byn
@@ -1127,8 +1127,8 @@ export function startStation(s: State, p: Person, tk: Task) {
   if (d && !t && (d.flera || !stationerOf(s).some(q => q.k === k))) {
     const at = stationSite(s, k, p);
     const tro = d.tro ? troOf(s, p.tro) : undefined, kyrka = tro && kyrkaId(tro.id); // trons möbler av det kyrkan äger (steg 10.3.19)
-    if (at && (!d.tro || kyrka !== undefined) && Object.entries(d.av).every(([m, n]) => (kyrka !== undefined ? ownsId(s, kyrka, m) : getable(s, p, m)) >= n)) {
-      for (const [m, n] of Object.entries(d.av)) if (kyrka !== undefined) use(s, undefined, m, n, true, kyrka); else takeMaterial(s, p, m, n);
+    if (at && (!d.tro || kyrka !== undefined) && Object.entries(d.av).every(([m, n]) => (kyrka !== undefined ? ownsId(s, kyrka, m) + bordanAv(p, kyrka, m) : getable(s, p, m)) >= n)) {
+      for (const [m, n] of Object.entries(d.av)) if (kyrka !== undefined) use(s, p, m, n, true, kyrka); else takeMaterial(s, p, m, n); // det hen bär hit (steg 11.1.74)
       t = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: d.min * MIN };
       if (at.rot) t.rot = 1;
       if ('inne' in at) t.inne = 1;

@@ -99,6 +99,7 @@ export * from './sim/berattelser';
 export * from './sim/is';
 export * from './sim/redskap';
 export * from './sim/paborjat';
+export * from './sim/hamtning';
 export * from './sim/stationer';
 export * from './sim/recept';
 export * from './sim/smuts';

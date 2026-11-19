@@ -2189,7 +2189,7 @@ SCENARIER.torget = {
 };
 
 SCENARIER.hamtning = {
-  text: 'Steg 9.2.43: inget flyttas av sig självt. Den som ska göra en yxa går först till lagret där flintan och grenarna ligger, tar dem och bär dem till platsen där hen arbetar, och börjar först där',
+  text: 'Steg 9.2.43 och 11.1.74: inget svävar. Den som ska göra en yxa går först till stacken där flintan ligger, tar det som ligger inom räckhåll, går till nästa stack efter resten, bär det till platsen och börjar först där; det påbörjade får materialet hen bär',
   kor: () => {
     const s = createState(3, START);
     const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
@@ -2198,23 +2198,29 @@ SCENARIER.hamtning = {
     const stack = SIM.stacksOf(s).find(a => a.k === 'flinta')!;
     const e = SIM.eldPlats(s), spot = { x: e.x + 0.5, y: e.y + 3.5 };
     p.x = spot.x + 6; p.y = spot.y; // en bit från både lagret och platsen
-    const tk = p.task = { act: 'yxa', phase: 'go', tx: spot.x, ty: spot.y, until: s.now + 3 * SIM.HOUR, carry: 0, why: 'Gör en yxa' } as SIM.Task;
+    const tk = p.task = { act: 'yxa', phase: 'go', tx: spot.x, ty: spot.y, until: s.now + 3 * SIM.HOUR, carry: 0, why: 'Gör en yxa', dark: !SIM.isLight(s.now) } as SIM.Task;
     const flinta0 = SIM.amountOf(s, 'flinta');
-    // framme vid platsen utan material: först till lagret
-    const tillLagret = SIM.hamtaForst(s, p, tk) && Math.hypot(tk.tx - stack.x - 0.5, tk.ty - stack.y - 0.5) < 1.5;
+    // framme vid platsen utan material: först till en stack
+    p.x = spot.x; p.y = spot.y;
+    const tillLagret = SIM.hamtaForst(s, p, tk) && SIM.stacksOf(s).some(a => (a.k === 'flinta' || a.k === 'grenar') && Math.hypot(tk.tx - a.x - 0.5, tk.ty - a.y - 0.5) < 0.01);
     const orortFore = SIM.amountOf(s, 'flinta') === flinta0;
-    // vid lagret: materialet tas och bärs mot platsen
-    p.x = tk.tx; p.y = tk.ty;
-    SIM.hamtat(s, p, tk);
-    const tagits = SIM.amountOf(s, 'flinta') === flinta0 - 1 && SIM.tingOf(s).some(x => x.k === 'paborjat' && x.halv?.ag === p.id);
-    const bar = !!tk.hamtat?.flinta && tk.phase === 'go' && Math.hypot(tk.tx - spot.x, tk.ty - spot.y) < 0.01;
+    // vid stackarna: materialet tas, stack för stack, och bärs mot platsen
+    const uttag: number[] = [];
+    SIM.lyssnaPaUttag((_s, q, _k, _n, x, y) => { if (q === p) uttag.push(Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y)); });
+    for (let i = 0; i < 6 && tk.hamta; i++) { p.x = tk.tx; p.y = tk.ty; SIM.hamtat(s, p, tk); }
+    SIM.lyssnaPaUttag(undefined);
+    const av = SIM.SAKER.yxa!.skaffa!.av!;
+    const tagits = SIM.amountOf(s, 'flinta') === flinta0 - av.flinta && Object.entries(av).every(([k, n]) => (tk.items?.[k] ?? 0) === n) && !SIM.tingOf(s).some(x => x.k === 'paborjat');
+    const bar = !!tk.hamtad && tk.phase === 'go' && Math.hypot(tk.tx - spot.x, tk.ty - spot.y) < 0.01;
     let borjade = false, borjadeVid: number | undefined;
     for (let i = 0; i < 12 && !borjade; i++) { step(s, 300); if (p.task?.act === 'yxa' && p.task.phase === 'do') { borjade = true; borjadeVid = Math.hypot(p.x - spot.x, p.y - spot.y); } }
+    const halv = SIM.tingOf(s).find(x => x.k === 'paborjat' && x.halv?.ag === p.id);
+    void stack;
     return [
-      ['framme vid platsen utan material går hen först till lagret, och inget har flyttats än', tillLagret && orortFore],
-      ['vid lagret tas materialet (det påbörjade skapas där)', tagits],
+      ['framme vid platsen utan material går hen först till en stack, och inget har flyttats än', tillLagret && orortFore],
+      [`vid stackarna tas materialet ur stackar inom räckhåll (längst ${Math.max(0, ...uttag).toFixed(1)} rutor) och bärs`, tagits && uttag.length > 0 && uttag.every(d => d <= 2)],
       ['och bärs till platsen', bar],
-      [`arbetet börjar först framme vid platsen (${borjadeVid?.toFixed(1)} rutor därifrån), och då bärs inget längre`, borjade && borjadeVid !== undefined && borjadeVid < 1.5 && !p.task?.hamtat],
+      [`arbetet börjar först framme vid platsen (${borjadeVid?.toFixed(1)} rutor därifrån) med det hen bar, och då bärs inget längre`, borjade && borjadeVid !== undefined && borjadeVid < 1.5 && !p.task?.items && !!halv && Object.entries(av).every(([k, n]) => (halv.halv!.av[k] ?? 0) === n)],
     ];
   },
 };

@@ -1,9 +1,9 @@
 import { matAvstar } from './kultlatt';
-import { DAY, HOUR, MIN, Person, State } from './typer';
+import { DAY, HOUR, MIN, Person, State, Task } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
-import { amountOf, put, skickAv, use } from './lager';
+import { amountOf, harTillHands, iHelaForradet, put, skickAv, use } from './lager';
 import { grundvarde } from './varde';
 import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
 import { matPerDygn } from './ekonomi';
@@ -59,7 +59,8 @@ export const RATTER: readonly Ratt[] = [
 export const ravaraPoang = (s: State, k: string, n = amountOf(s, k)) => n * grundvarde(k) * (1 + MATLAG.ruttna * (1 - skickAv(s, k)));
 // det som grillas nu: råvaran med högst poäng av dem det finns tillräckligt av (gränssnittet visar den på spettet)
 // den troende kocken grillar inte det tron förbjuder (steg 10.3.16)
-export const grillVara = (s: State, p?: Person) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if (amountOf(s, r.ra) < MATLAG.min || p && matAvstar(s, p, r.ra)) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
+// hand = vid grillen: det hen bär dit och det som ligger inom räckhåll (steg 11.1.74)
+export const grillVara = (s: State, p?: Person, hand = false) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if ((hand && p ? harTillHands(s, p, r.ra) : amountOf(s, r.ra)) < MATLAG.min || p && matAvstar(s, p, r.ra)) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
 export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s, p) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
 // hur länge ett pass vid grillen varar
@@ -70,9 +71,9 @@ export const brannDel = (p: Person) => MATLAG.brann * clamp(1 - (p.skill.matlagn
 // grilla i hours timmar. Arbetet går mot nästa hela bit (p.delar), och varje hel bit bränns eller inte (steg 9.6.4): chansen
 // sjunker med färdigheten Matlagning. Rätten är deras som ägde råvaran; det som bränns är förstört
 export function grilla(s: State, p: Person, hours: number) {
-  const r = grillVara(s, p);
+  const r = grillVara(s, p, true);
   if (!r || !s.fire.lit || !kanGoras(s, 'grilla')) { if (p.task) p.task.until = s.now; return; }
-  const d = (p.delar ??= {}), t = (d[GRILL] ?? 0) + hours * MATLAG.timme, hela = Math.min(Math.floor(t + 1e-9), Math.floor(amountOf(s, r.ra) + 1e-9));
+  const d = (p.delar ??= {}), t = (d[GRILL] ?? 0) + hours * MATLAG.timme, hela = Math.min(Math.floor(t + 1e-9), Math.floor(harTillHands(s, p, r.ra) + 1e-9));
   d[GRILL] = Math.min(t - Math.floor(t + 1e-9), 0.999);
   if (d[GRILL] <= 1e-9) delete d[GRILL];
   if (!Object.keys(d).length) delete p.delar;
@@ -88,6 +89,8 @@ export function grilla(s: State, p: Person, hours: number) {
   if (forstaGang(s, 'grillForsta')) log(s, `${p.name} grillade byns första ${SAKER[r.ra]!.namn.toLowerCase()} på spettet över elden.`, 'world', [p.id]);
 }
 const GRILL = 'grill:'; // arbetet mot nästa grillade bit (p.delar)
+// det grillaren hämtar till grillen (HAMTAS, hamtning.ts): råvaran, så mycket som hinns i passet
+export const grillHamtas = (s: State, p: Person, tk: Task) => { const r = grillVara(s, p), n = r ? Math.ceil(Math.min(amountOf(s, r.ra), (tk.until - s.now) / HOUR * MATLAG.timme) - 1e-9) : 0; return n > 0 ? { [r!.ra]: n } : undefined; };
 // kockens hand (steg 9.6.4): en skicklig kock ger maten en liten humörhöjning. Varje slag av lagad mat i förrådet minns hur
 // skicklig kocken var (s.kockHand, medelvärdet efter mängden), och den som äter den får tanken (behov.ts)
 export function kockensHand(s: State, p: Person, k: string, n: number) {
@@ -178,6 +181,15 @@ function ratOver(s: State, k: TorkSlag = 'tork') {
   const spara = torkVinter(s) ? 0 : matPerDygn(s) * (haller === Infinity ? 1 : haller);
   return Math.max(0, Math.floor((mat - spara) / (mat / n)));
 }
+// det som hämtas till torkställningen eller rökeriet (HAMTAS, hamtning.ts): det råa som får plats och hinns hängas upp i passet
+export function torkHamtas(s: State, tk: Task, k: TorkSlag = 'tork') {
+  const ts = torkarna(s, k);
+  if (!ts.length) return undefined;
+  let kan = (tk.until - s.now) / HOUR * TORK.timme, plats = ts.reduce((n, t) => n + TORK.rymd - hangtSumma(t), 0), over = ratOver(s, k);
+  const av: Record<string, number> = {};
+  for (const r of TORK_RAD[k]()) { const n = Math.floor(Math.min(kan, plats, over, amountOf(s, r.ra)) + 1e-9); if (n < 1) continue; av[r.ra] = n; kan -= n; plats -= n; over -= n; }
+  return Object.keys(av).length ? av : undefined;
+}
 // byn vill ha mer torkad mat inför vintern: inför och under istiden, och den torkade och rökta maten räcker kortare än TORK.vinterDygn
 function torkVinter(s: State) {
   if (!kallTid(ageIndex(s))) return false;
@@ -220,7 +232,7 @@ export const torkTid = (s: State, k: TorkSlag = 'tork') => { const a = torkArbet
 export function torka(s: State, p: Person, hours: number, k: TorkSlag = 'tork') {
   const ts = torkarna(s, k), RAD = TORK_RAD[k]();
   if (!ts.length) { if (p.task) p.task.until = s.now; return; }
-  let kan = hours * TORK.timme, over = ratOver(s, k);
+  let kan = hours * TORK.timme, over = iHelaForradet(() => ratOver(s, k)); // det byn har över räknas på hela förrådet
   for (const h of ts.map(hangOf)) for (let i = 0; i < h.length && kan > 1e-9;) {
     const q = h[i];
     if (!klar(s, q, k)) { i++; continue; }
@@ -236,7 +248,7 @@ export function torka(s: State, p: Person, hours: number, k: TorkSlag = 'tork') 
     let plats = TORK.rymd - hangtSumma(t);
     for (const r of RAD) {
       if (kan <= 1e-9 || plats <= 1e-9 || over < 1e-6) break;
-      const n = Math.min(kan, plats, over, amountOf(s, r.ra));
+      const n = Math.min(kan, plats, over, harTillHands(s, p, r.ra));
       if (n <= 1e-6) continue;
       const vems = use(s, p, r.ra, n), sist = h[h.length - 1];
       if (sist && sist.k === r.ra && s.now - sist.t < HOUR) { sist.n += n; sist.ag = addDel(sist.ag ?? {}, vems); }

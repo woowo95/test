@@ -477,6 +477,16 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
   if (k < 0) tk.until = s.now; else tk.fr = k;
   sammanfatta(f);
 }
+// det odlaren hämtar till fältet (HAMTAS, hamtning.ts): komposten till de rutor som bereds och fröna till dem som sås, så många
+// som hinns i passet
+export function odlaHamtas(s: State, p: Person, tk: Task) {
+  const f = faltById(s, tk.ref), st = tk.tool as FaltSteg;
+  if (!f || (st !== 'bereda' && st !== 'sa')) return undefined;
+  const hinner = Math.max(1, Math.ceil((tk.until - s.now) * fart(s, p, st) / minPer(st) - 1e-9));
+  if (st === 'bereda') { const n = Math.min(hinner, rutorAv(f).filter((r, k) => r.st === 'bereda' && bordighet(s, faltRuta(f, k)) < 1 - REST.godsla / 2).length); return n > 0 ? { kompost: n } : undefined; }
+  const g = grodaRuta(s, p), n = Math.min(hinner, rutorAv(f).filter(r => r.st === 'sa').length) * ODLING.froPerRuta;
+  return g && n > 0 ? { [GRODOR[g].fro]: n } : undefined;
+}
 // ruta k är klar i sitt steg och går till nästa (steg 9.7.1)
 function rutaKlar(s: State, p: Person, f: Falt, k: number) {
   gjort(s, p, 'odlat', 1);
@@ -809,15 +819,16 @@ function skadedjur(s: State, f: Falt) {
   if (fagel.size) forlorad(s, f, 'Fåglarna', fagel);
   if (hare.size) forlorad(s, f, 'Hararna', hare);
 }
+export const skrammaHar = { grenar: 2, torrgras: 2 }; // det fågelskrämman görs av
 // fågelskrämman: den som kan tekniken sätter upp en vid familjens fält som saknar en
 export function skrammaVal(s: State, p: Person) {
-  if (!knows(p, 'fagelskramma') || getable(s, p, 'grenar') < 2 || getable(s, p, 'torrgras') < 2 || !isLight(s.now)) return undefined;
+  if (!knows(p, 'fagelskramma') || getable(s, p, 'grenar') < skrammaHar.grenar || getable(s, p, 'torrgras') < skrammaHar.torrgras || !isLight(s.now)) return undefined;
   return familjensFalt(s, p).find(f => !harSkramma(s, f) && rutorAv(f).some(r => r.st === 'sa' || r.st === 'vaxer'));
 }
 export function skrammaKlar(s: State, p: Person, id?: number) {
   const f = faltById(s, id);
-  if (!f || harSkramma(s, f) || getable(s, p, 'grenar') < 2 || getable(s, p, 'torrgras') < 2) return;
-  takeMaterial(s, p, 'grenar', 2); takeMaterial(s, p, 'torrgras', 2);
+  if (!f || harSkramma(s, f) || getable(s, p, 'grenar') < skrammaHar.grenar || getable(s, p, 'torrgras') < skrammaHar.torrgras) return;
+  takeMaterial(s, p, 'grenar', skrammaHar.grenar); takeMaterial(s, p, 'torrgras', skrammaHar.torrgras);
   (s.skramma ??= []).push(f.id); count(s, 'skramma');
   if (forstaGang(s, 'skramma')) log(s, `${p.name} satte upp byns första fågelskrämma vid fältet.`, 'world', [p.id]);
 }

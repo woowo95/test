@@ -5,7 +5,7 @@ import { delade, fyll, kronikaBer, larFalt, loggBer, personFalt } from './beratt
 import { kronika } from './historik';
 import { ALDER, ageOf, alive, byId, count, living, log, stat, think, paKartan } from './folk';
 import { rnd } from './slump';
-import { amountOf, use } from './lager';
+import { amountOf, harTillHands, use } from './lager';
 import { SAKER, isTool } from './saker';
 import { STATIONER, TILLBEHOR, framFri, isKlar, stationerOf, vidStation } from './stationer';
 import { DORRAR, MATERIAL } from './byggnad';
@@ -342,6 +342,8 @@ export function forsokVal(s: State, p: Person): { id: string; spot?: { x: number
   const st = bast.forsok!.vid.length ? stationForsok(s, bast) : undefined;
   return { id: bast.id, spot: st && vidStation(st), min: TEKTAL.forsokMin };
 }
+// det som hämtas till försöket (HAMTAS, hamtning.ts): en av det som går åt, det byn har mest av
+export const forsokHamtas = (s: State, tk: Task) => { const t = tk.tool ? TEK[tk.tool] : undefined, k = t?.forsok ? forbrukas(t).filter(q => amountOf(s, q) >= 1).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0] : undefined; return k ? { [k]: 1 } : undefined; };
 export function forsokSteg(s: State, p: Person, tk: Task, dtSec: number) {
   const t = tk.tool ? TEK[tk.tool] : undefined;
   if (!t?.forsok) return;
@@ -352,7 +354,7 @@ export function forsokSteg(s: State, p: Person, tk: Task, dtSec: number) {
 export function forsokKlar(s: State, p: Person, tk: Task) {
   const t = tk.tool ? TEK[tk.tool] : undefined;
   if (!t?.forsok) return;
-  const kan = forbrukas(t).filter(k => amountOf(s, k) >= 1);
+  const kan = forbrukas(t).filter(k => harTillHands(s, p, k) >= 1); // det hen bär dit och det som ligger inom räckhåll (steg 11.1.74)
   if (kan.length) use(s, p, kan[Math.floor(rnd(s, 'kunskap', p) * kan.length)], 1); // materialet går åt, och inget blir kvar (latrinen tar inget: en grop som grävs igen)
   count(s, 'forsok'); count(s, 'forsok_' + t.id);
 }

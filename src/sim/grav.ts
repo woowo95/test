@@ -15,7 +15,7 @@ import { hourOf } from './tid';
 import { Grav, GravStil, GravVard, KVAR, Kvarleva, gravAt, kroppKrok, kvarById, nara, sagSkandad } from './kvarlevor';
 import { BUD, BudId, KYRKA, budBrutet, budIn, foljer, foljerStorlek, harBud, satSkand } from './kyrka';
 import { SkalaId, Tro, rymsBud, skalaV, troOf } from './religion';
-import { amountOf, put } from './lager';
+import { amountOf, harTillHands, put } from './lager';
 import { SAKER } from './saker';
 import { kladAv } from './klader';
 import { getable, takeMaterial } from './behov';
@@ -241,7 +241,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
   const bud = kroppBud(s, q, tr), vag = q.vag ?? (bud.includes('bal') ? 'bal' : 'jord');
   let stil: GravStil = vag === 'vatten' ? 'vatten' : 'jord';
   if (vag === 'bal') { // bålet (steg 10.4.5): saknas veden blir det jorden, och den troende som begraver har brutit budet
-    if (amountOf(s, 'ved') >= BEGRAVNINGAR.bal.ved!) { takeMaterial(s, p, 'ved', BEGRAVNINGAR.bal.ved!, true); stil = 'bal'; }
+    if (harTillHands(s, p, 'ved') >= BEGRAVNINGAR.bal.ved!) { takeMaterial(s, p, 'ved', BEGRAVNINGAR.bal.ved!, true); stil = 'bal'; }
     else if (tr && p.tro === tr.id) budBrutet(s, p, 'bal');
   }
   const stor = !ovardig && !!d && storDod(s, d, tr);
@@ -267,7 +267,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
 // en skändad kropp. De som ser det får upplevelsen, och en gäst som ser det gör sin klan ovänligare
 function skandaKlar(s: State, p: Person, q: Kvarleva) {
   let k = q.ode as SkandId;
-  if (k === 'balRit') { if (amountOf(s, 'ved') >= ODEN.balRit.ved!) takeMaterial(s, p, 'ved', ODEN.balRit.ved!, true); else k = 'djuren'; }
+  if (k === 'balRit') { if (harTillHands(s, p, 'ved') >= ODEN.balRit.ved!) takeMaterial(s, p, 'ved', ODEN.balRit.ved!, true); else k = 'djuren'; }
   q.x = Math.floor(p.x); q.y = Math.floor(p.y); q.bars = undefined; q.ode = undefined;
   for (const o of s.people) if (o.died === undefined && o.ute === undefined && o !== p && Math.hypot(o.x - p.x, o.y - p.y) <= KVAR.seR) sagSkandad(s, o, q); // också gästerna, inte den som är borta
   if (ODEN[k].kvar) { q.k = 'skandad'; q.utburen = true; q.t = s.now; }
@@ -525,6 +525,17 @@ export function gravbesokVal(s: State, p: Person) {
 }
 // det som får läggas på en grav: kolumnen gravgava i SAKER, och maten
 let GAVOR: string[] | undefined;
+// det som bärs till graven (HAMTAS, hamtning.ts): materialet till vården, och vid besöket gåvan (den minst värda saken hen får
+// ta) och det som lagar en sliten grav
+export const gravvardHamtas = (_s: State, tk: Task) => { const k = tk.tool as GravVard; return GRAVAR[k] ? { ...GRAVAR[k].mat } : undefined; };
+export function gravbesokHamtas(s: State, p: Person, tk: Task) {
+  const g = gravAv(s, tk.ref ?? -1), av: Record<string, number> = {};
+  let k: string | undefined, kv = Infinity;
+  for (const o of gavor()) { if (getable(s, p, o) < 1) continue; const v = grundvarde(o); if (v < kv) { kv = v; k = o; } }
+  if (k) av[k] = 1;
+  if (g && tk.tool === 'laga' && gravSkick(s, g) < BESOK.laga) for (const [m, n] of Object.entries(lagaMat(g))) av[m] = (av[m] ?? 0) + n;
+  return Object.keys(av).length ? av : undefined;
+}
 const gavor = () => (GAVOR ??= Object.keys(SAKER).filter(k => SAKER[k]!.gravgava || SAKER[k]!.mat !== undefined));
 export function gravbesokKlar(s: State, p: Person, t: Task) {
   const vem = t.ref ?? -1, g = gravAv(s, vem), q = g ? undefined : sanktAv(s, vem);

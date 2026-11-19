@@ -168,8 +168,8 @@ export interface Task {
   res?: { x: number; y: number; until: number }; // var och till när arbetet fortsätter efter att bördan bärts hem
   site?: { x: number; y: number }; // bygget (eller platsen för arbetet, steg 9.2.43) man går till efter att ha hämtat material
   mx?: number; my?: number; // där man står för att arbeta på rutan (tx, ty), en grannruta (steg 9.2.47)
-  hamta?: 1; // på väg till lagret efter materialet (steg 9.2.43)
-  hamtat?: Record<string, number>; // materialet till ett hantverk som bärs från lagret till platsen (steg 9.2.43); det ligger redan i det påbörjade
+  hamta?: Record<string, number>; // på väg till förrådet efter materialet till arbetet vid site, så här mycket av varje (steg 11.1.74, hamtning.ts)
+  hamtad?: 1; // materialet är hämtat och bärs i items (ägarna i ag): arbetet tar det först (steg 11.1.74)
   mask?: number; // fiske: maskar på kroken till metspöet
   hal?: number; // fiske: sekunder kvar att hugga på hålet i isen (steg 2.11.3, is.ts); 0 = hålet är upphugget
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)

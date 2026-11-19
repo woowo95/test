@@ -4,7 +4,7 @@
 // bort när de stör och får ligga när annat är viktigare. Sophögen är en plats och ingen station (s.sophog); resterna ruttnar bort där.
 import { balans } from './balans';
 import { count, forstaGang, log } from './folk';
-import { amountOf, use } from './lager';
+import { amountOf, harTillHands, use } from './lager';
 import { bynsMitt, utanforByn } from './omrade';
 import { stationDef, stationerOf } from './stationer';
 import { DAY, H, HOUR, Person, State, T, W, inMap } from './typer';
@@ -54,9 +54,11 @@ export function sophog(s: State) {
 export function soporKlar(s: State, p: Person) {
   const ko = komposten(s);
   const h = ko ? { n: 0 } : sophog(s);
-  let kvar = Math.min(REST.bar, Math.floor(resterOver(s)));
+  // resterna hen bär hit (steg 11.1.74, hamtning.ts), annars de som ligger inom räckhåll
+  const har = (k: string) => harTillHands(s, p, k);
+  let kvar = Math.min(REST.bar, Math.floor(RESTER.reduce((n, k) => n + har(k), 0)));
   const bar0 = kvar;
-  for (const k of RESTER) { const n = Math.min(kvar, Math.floor(amountOf(s, k))); if (n <= 0) continue; use(s, p, k, n, true); if (ko) ko.kompost = { rest: (ko.kompost?.rest ?? 0) + n, mogna: ko.kompost?.mogna ?? 0 }; else h.n += n; kvar -= n; } // till komposten när byn har en (steg 9.7.6)
+  for (const k of RESTER) { const n = Math.min(kvar, Math.floor(har(k))); if (n <= 0) continue; use(s, p, k, n, true); if (ko) ko.kompost = { rest: (ko.kompost?.rest ?? 0) + n, mogna: ko.kompost?.mogna ?? 0 }; else h.n += n; kvar -= n; } // till komposten när byn har en (steg 9.7.6)
   if (kvar < bar0) { count(s, 'soporBurna', bar0 - kvar); if (forstaGang(s, 'sophog')) log(s, `${p.name} bar resterna från slakten och skörden till en sophög i utkanten av byn.`, 'world', [p.id]); }
 }
 // en gång i timmen (steg.ts): resterna på sophögen ruttnar bort

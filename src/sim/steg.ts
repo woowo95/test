@@ -8,7 +8,7 @@ import { stenBruten } from './byggsten';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
 import { personHand } from './personlogg';
-import { hamtaForst, hamtat } from './paborjat';
+import { hamtaForst, hamtat } from './hamtning';
 import { sorgTimme } from './liv';
 import { lagerIStraket } from './strak';
 import { angIVagen, angMark } from './slatter';
@@ -42,9 +42,9 @@ import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
-import { stacksOf, isStored, lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf } from './lager';
+import { stacksOf, isStored, lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
-import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
+import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
@@ -298,7 +298,7 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
 // det heliga djuret slaktas inte, utom i svält (steg 10.3.15): finns bara det kvar är arbetet slut
 for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => {
-  const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === art.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt));
+  const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === art.act && harTillHands(s, p, q.sak) > 1e-9 && !heligtAvstar(s, p, q.art, svalt)); // det hen har till hands (steg 11.1.74)
   if (!a) { if (p.task) p.task.until = s.now; return; }
   bearbeta(s, p, a, dtSec / HOUR_S);
 };
@@ -787,7 +787,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     s.now = t1 - left * SEC;
     const now = s.now, light = isLight(now), t = p.task;
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
-    if (t && t.phase === 'do' && t.until <= now) KLAR[t.act]?.(s, p, t, 0); // ett träd som fällts färdigt, en yxa som gjorts klar
+    if (t && t.phase === 'do' && t.until <= now) iRackhall(p.x, p.y, () => KLAR[t.act]?.(s, p, t, 0)); // ett träd som fällts färdigt, en yxa som gjorts klar
     const tf = t?.act === 'tanda' ? eldById(s, t.ref) : undefined, lightDone = t?.act === 'tanda' && (!tf || tf.lit || !t.brand && !canLight(s, p, tf));
     const mustGo = t && p.toa < KROPP.toaAvbryt && !ACTS[t.act].nodFri && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
@@ -812,8 +812,11 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       const kvar = d.fart && d.arbete && tk.phase === 'do' ? tidTillTom(s, p, tk) : Infinity, tom = kvar > 0 && kvar <= used;
       if (tom) used = Math.max(1, kvar);
       s.now = t1 - (left - used) * SEC;
-      MEDAN[tk.act]?.(s, p, tk, used);
-      if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn, tom);
+      // arbetet når bara det som ligger inom räckhåll och det hen bär dit (steg 11.1.74, Hämtningen)
+      iRackhall(p.x, p.y, () => {
+        MEDAN[tk.act]?.(s, p, tk, used);
+        if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn, tom);
+      });
       // (bygget kan just ha skickat iväg personen efter mer material)
       if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * STEG.ovningHant * learn);
       if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), MARK.nott * STEG.markNot * STEG.vandraNot * d.vandra.v * used); // man rör sig på platsen
@@ -1007,7 +1010,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       for (const id in ag) mitt[id] = (mitt[id] ?? 0) + ag[id];
       tk.items = { ...tk.items, [k]: har + sumOf(ag) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
     }
-  } else if (tk.hamta && tk.site && tk.phase === 'go') hamtat(s, p, tk); // vid lagret: materialet till hantverket (steg 9.2.43)
+  } else if (tk.hamta && tk.site && tk.phase === 'go') hamtat(s, p, tk); // vid stacken: materialet till arbetet (steg 11.1.74, hamtning.ts)
   else if (tk.phase === 'back' && LAMNA[tk.act]) LAMNA[tk.act]!(s, p, tk); // framme hos den man bär till (LAMNA)
   else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y, tk.lon === 'forradet' ? BYN : p.id); // det som bärs hem i arbete för byns förråd mot lön blir byns (steg 10.5.9)
@@ -1016,7 +1019,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     if (r && r.until > now + 2 * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
     else p.task = undefined;
   } else {
-    if (hamtaForst(s, p, tk)) return; // materialet hämtas först (steg 9.2.43)
+    if (hamtaForst(s, p, tk)) return; // materialet hämtas först (steg 11.1.74, hamtning.ts)
     tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { const fo = fordonI(s, tk); pickUp(s, p, tk, fo ? rymsI(fo) : ryms(s, p)); tk.until = now; }
     if (tk.act === 'flyttaeld') tk.until = now + eldFlyttKvar(s, p); // vid elden: släcka den och bära de stenar som är kvar (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
@@ -1031,7 +1034,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
   // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
   fiske: (s, p, tk, { rd, dtSec, a, bar }) => {
     tk.prog = (tk.prog ?? 0) + dtSec;
-    if (tk.mortBete === undefined) { const agn = mayTake(s, p, 'fiskrens') >= 1; tk.mortBete = agn || ownsAmount(s, p, 'mort') >= 1 ? 1 : 0; if (tk.mortBete) { use(s, p, agn ? 'fiskrens' : 'mort', 1); count(s, agn ? 'fiskrensBete' : 'mortBete'); } } // en mört per fisketur (steg 7.4.4), eller fiskrens som agn (steg 9.8.7)
+    if (tk.mortBete === undefined) { const agn = mayTake(s, p, 'fiskrens') + iBordan(p, 'fiskrens') >= 1; tk.mortBete = agn || ownsAmount(s, p, 'mort') + bordanAv(p, p.id, 'mort') >= 1 ? 1 : 0; if (tk.mortBete) { use(s, p, agn ? 'fiskrens' : 'mort', 1); count(s, agn ? 'fiskrensBete' : 'mortBete'); } } // en mört per fisketur (steg 7.4.4), eller fiskrens som agn (steg 9.8.7)
     // ligger isen hugger man först upp ett hål (is.ts), och sedan pimplar man genom det. Går det inte slutar man
     if (tk.hal === undefined && islagt(s)) {
       const h = halVal(s, p);
