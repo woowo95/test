@@ -1355,6 +1355,11 @@ SCENARIER.mantel = {
 const blixtTro = (s: SIM.State, g: SIM.Person, sk?: SIM.Tro['sk']) => {
   s.tron = [{ id: 1, grundare: g.id, gnamn: g.name, t: s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: s.now, ar: 0, ...(sk ? { sk } : {}) } as SIM.Tro];
 };
+// a och b lämnar sina partner och blir ett par
+const gift = (s: SIM.State, a: SIM.Person, b: SIM.Person) => {
+  for (const x of [a, b]) if (x.partner !== undefined) { const o = SIM.byId(s, x.partner); if (o) o.partner = undefined; x.partner = undefined; }
+  SIM.pair(s, a, b, true);
+};
 // alla i folk tycker om varandra fullt ut
 const allaGillar = (s: SIM.State, folk: SIM.Person[]) => { for (const q of folk) for (const r of folk) if (q !== r) SIM.getRel(s, q, r).op = 100; };
 function satLedare(s: SIM.State, l: SIM.Person, mer: Partial<NonNullable<SIM.State['styre']>> = {}): asserts s is SIM.State & { styre: NonNullable<SIM.State['styre']> } {
@@ -1709,9 +1714,7 @@ SCENARIER.gravtext = {
   kor: () => {
     const a = medLedare(), s = a.s, d = a.v[1], w = a.v[2], fram = a.v[3];
     klockan(s, 9); SIM.setAmount(s, 'virke', 6);
-    if (w.partner !== undefined) { const o = SIM.byId(s, w.partner); if (o) o.partner = undefined; w.partner = undefined; }
-    if (d.partner !== undefined) { const o = SIM.byId(s, d.partner); if (o) o.partner = undefined; d.partner = undefined; }
-    SIM.pair(s, w, d, true);
+    gift(s, w, d);
     SIM.handelse(s, d, 'bjorndodare', undefined, undefined, w, 2); SIM.handelse(s, d, 'vargdodare', undefined, undefined, w, 2); SIM.handelse(s, d, 'gava', w, 'en fisk', w, 2);
     const g = begrav(s, a.v[0], d), jord = g.text;
     const tk = { act: 'gravvard', phase: 'do', tx: g.x, ty: g.y, until: s.now, carry: 0, tool: 'gravstolpe', ref: g.vem, why: '' } as SIM.Task;
@@ -1738,9 +1741,7 @@ SCENARIER.runsten = {
     const a = medLedare(), s = a.s, d = a.v[1], w = a.v[2], annan = a.v[3];
     klockan(s, 8); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'huggen_sten', 3);
     for (const p of a.v) (p.tek ??= {}).stenhuggarplats = 1;
-    if (w.partner !== undefined) { const o = SIM.byId(s, w.partner); if (o) o.partner = undefined; w.partner = undefined; }
-    if (d.partner !== undefined) { const o = SIM.byId(s, d.partner); if (o) o.partner = undefined; d.partner = undefined; }
-    SIM.pair(s, w, d, true);
+    gift(s, w, d);
     SIM.handelse(s, d, 'bjorndodare', undefined, undefined, w, 2);
     const utan = SIM.runstenLust(s, annan) === undefined && SIM.runstenLust(s, w) === undefined;
     SIM.die(s, d, 'alderdom');
@@ -3457,9 +3458,7 @@ SCENARIER.skandning = {
     // den illa ansedda: bara den med gott namn får en grav; partnern räknar budet en storlek större
     tr.bud = tr.bud.filter(b => b.id !== 'skanda'); // utan budet om de ovärdiga: den illa ansedda är ingen skändning
     const e = vux[4], f = vux[5];
-    if (f.partner !== undefined) { const o = SIM.byId(s, f.partner); if (o) o.partner = undefined; f.partner = undefined; }
-    if (e.partner !== undefined) { const o = SIM.byId(s, e.partner); if (o) o.partner = undefined; e.partner = undefined; }
-    SIM.pair(s, f, e, true); f.troStyrka = 60;
+    gift(s, f, e); f.troStyrka = 60;
     for (const q of SIM.living(s)) if (q !== e) (q.intryck ??= []).push({ om: e.id, namn: e.name, k: 'elak', v: 1, c: 1, t: s.now });
     const an = SIM.ryktbarhet(s, e.id).a; SIM.die(s, e, 'alderdom'); const ke = s.kvarlevor!.find(k => k.vem === e.id)!;
     const illaF = SIM.odeVal(s, p, ke), illaP = SIM.odeVal(s, f, ke);
