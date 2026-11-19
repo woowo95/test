@@ -417,7 +417,7 @@
         for (const x of [x0 - 1, x0, x1, x1 + 1]) fot.push([x, 19]);
       } else {
         const lyft = s => (ben === 'gang1' && s === 0) || (ben === 'gang2' && s === 1) ? 1 : 0;
-        const par = barn ? [[x0, x0 + 1], [x1 - 1, x1]] : [[x0, x0 + 1], [x1 - 1, x1]];
+        const par = [[x0, x0 + 1], [x1 - 1, x1]];
         par.forEach((xs, s) => { for (let y = l0; y <= l1 - lyft(s); y++) xs.forEach(x => benL.push([x, y])); xs.forEach(x => fot.push([x, l1 + 1 - lyft(s)])); fot.push([s ? xs[1] + 1 : xs[0] - 1, l1 + 1 - lyft(s)]); });
         for (let y = l0; y <= l0 + 1; y++) for (let x = x0 + 2; x <= x1 - 2; x++) benL.push([x, y]);
       }
@@ -554,7 +554,7 @@
       if (bonad === 'huva') {
         // rövarluvan (förslag): ingen ljus kant, och öppningen är bara en smal springa över ögonen
         const rov = del.huvudbonad === 'bonad-9', kant = del.huvudbonad === 'bonad-3' ? 'senap2' : rov ? mat + 1 : mat + 3, ned = rov ? h + 2 : h + 5;
-        const x1 = rikt === 'sida' ? 10 : 10, x0 = rikt === 'sida' ? 4 : 3;
+        const x1 = 10, x0 = rikt === 'sida' ? 4 : 3;
         for (let y = h - 1; y <= h + 7; y++) for (let x = x0; x <= x1; x++) {
           if (y === h - 1 && (x === x0 || x === x1)) continue;
           if (y === h + 7 && rikt === 'sida' && x > 8) continue;

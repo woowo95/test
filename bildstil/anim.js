@@ -142,7 +142,7 @@
         for (let i = 0; i < langd; i++) {
           const yy = hojd * S, R = bredd(yy) + ut * S, a = v * m + hojd * 0.7 - i * 0.9 / R * Math.sign(m), si = Math.sin(a); if ((si < 0) !== bak) continue;
           const x = x0 + mitt(yy) + Math.cos(a) * R, y = y0 + yy + si * 1.6 - i * 0.1;
-          prick(B, x, y, ljus ? 'ben' : 'skiffer', ljus ? (i < langd / 2 ? 3 : 2) : (i < langd / 2 ? 3 : 2));
+          prick(B, x, y, ljus ? 'ben' : 'skiffer', i < langd / 2 ? 3 : 2);
         }
       }
       for (let k = 0; k < 48; k++) { // dammet som stiger längs tratten

@@ -12,11 +12,7 @@
     ritaSprite(B, TRAD, L, 4, 4); ritaSprite(B, rader, L, 20, 4); ritaSprite(B, BERG, L, 36, 4);
   } });
   // knappen: en ruta i panelens mörka färg med en ram
-  const KNAPP = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
-    fyll(B, 24, 24, 'kol', 1); const ram = B.P.i('kol', 2);
-    for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
-    ritaSprite(B, rader, L, 4, 4);
-  } });
+  const KNAPP = (text, rader) => symbolKnapp(text, rader, L);
   const KORT = (id, namn, vad, versioner) => ({ id, namn, typ: 'tre', vad, versioner });
 
   VAL.push(
@@ -115,12 +111,7 @@
 // Visad som en knapp i panelen.
 (() => {
   const L = { k: 'kol0', K: 'kol3', j: 'jord1', J: 'jord2', l: 'jord3', r: 'rost2', R: 'rost1', w: 'ben3', W: 'ben1' };
-  const fyll = (B, w, h, f, i) => { const c = B.P.i(f, i); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, c); };
-  const KNAPP = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
-    fyll(B, 24, 24, 'kol', 1); const ram = B.P.i('kol', 2);
-    for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
-    ritaSprite(B, rader, L, 4, 4);
-  } });
+  const KNAPP = (text, rader) => symbolKnapp(text, rader, L);
   VAL.push({ id: 'f11_sandebud', namn: 'Sändebudets symbol', typ: 'tre', slag: ['symbol'], vad: 'Steg 11.6.23: byns sändebud bär ett vänligt eller ovänligt besked till en grannby, och grannbyarnas bud kommer hit som gäster. Symbolen står i resans dagbok, i gästens ruta och i notisen. Bilden visar den som en knapp i panelen.', versioner: [
     KNAPP('En budkavle: en snidad trästav med skåror, snett över rutan, med en röd snodd knuten runt mitten.', [
       '.............kk.',
@@ -175,12 +166,7 @@
 // platshållaren karta. Visad som en knapp i panelen.
 (() => {
   const L = { k: 'kol0', w: 'ben3', W: 'ben2', b: 'skiffer2', B: 'skiffer1', j: 'jord1', r: 'rost1', g: 'oliv2' };
-  const fyll = (B, w, h, f, i) => { const c = B.P.i(f, i); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, c); };
-  const KNAPP = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
-    fyll(B, 24, 24, 'kol', 1); const ram = B.P.i('kol', 2);
-    for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
-    ritaSprite(B, rader, L, 4, 4);
-  } });
+  const KNAPP = (text, rader) => symbolKnapp(text, rader, L);
   VAL.push({ id: 'f11_kartblad', namn: 'Kartbladet', typ: 'tre', slag: ['symbol'], vad: 'Steg 11.7.1: den som minns platser i världen ritar dem på ett blad pergament, högst sex platser, och den som läser kartan känner sedan platserna. Symbolen står i listan över skrifterna och på bladet i förrådet. Bilden visar den som en knapp i panelen.', versioner: [
     KNAPP('Ett platt blad med det övre högra hörnet vikt, och på bladet en sjö, en slingrande stig, en dunge och tre röda kryss där platserna ligger.', [
       '................',
@@ -238,12 +224,7 @@
 // rulle med rött sigill (varldbild.ts, TECKEN.uppdrag) och i_aventyrare (ikoner.ts). Visade som knappar i panelen
 (() => {
   const L = { k: 'kol0', w: 'ben3', W: 'ben2', j: 'jord1', J: 'jord2', r: 'rost1', R: 'rost2', g: 'oliv2', s: 'skiffer2', S: 'skiffer1', h: 'hud2' };
-  const fyll = (B, w, h, f, i) => { const c = B.P.i(f, i); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, c); };
-  const KNAPP = (text, rader) => ({ text, w: 24, h: 24, rita: (B) => {
-    fyll(B, 24, 24, 'kol', 1); const ram = B.P.i('kol', 2);
-    for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
-    ritaSprite(B, rader, L, 4, 4);
-  } });
+  const KNAPP = (text, rader) => symbolKnapp(text, rader, L);
   VAL.push({ id: 'f11_uppdragmarke', namn: 'Uppdragets märke på världskartan', typ: 'tre', slag: ['symbol'], vad: 'Steg 11.8.16: på världskartan får en plats med ett uppdrag som byn känner till ett litet märke, så att man ser var det finns något att hämta eller någon att hjälpa. Märket ligger ovanpå platsens tecken och måste synas på både skog, slätt och berg. Bilden visar det som en knapp i panelen.', versioner: [
     KNAPP('En hoprullad pergamentsrulle snett över rutan, knuten med ett rött band och ett runt rött sigill i mitten.', [
       '................',

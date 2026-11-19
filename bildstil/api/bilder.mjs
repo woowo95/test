@@ -27,14 +27,13 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
 import Anthropic from '@anthropic-ai/sdk';
 import { guideText } from './guide.mjs';
+import { MODELL, PRIS, TOMT_NEJ, klient, batch, bildBlock, utanBilder, sidan } from './gemensamt.mjs';
 
 const HAR = path.dirname(fileURLToPath(import.meta.url)), BILDSTIL = path.resolve(HAR, '..');
 const REGISTER = path.join(BILDSTIL, 'bilder.json'), FILER = path.join(BILDSTIL, 'bilder'), UT = path.join(HAR, 'ut');
-const MODELL = 'claude-opus-5-5', INSATS = 'high', MAXTOKENS = 32000, VERSIONER = 3;
-const PRIS = { in: 2, ut: 10, cacheLas: 0.1, cacheSkriv: 2.5 }; // per miljon tokens med batch
+const INSATS = 'high', MAXTOKENS = 32000, VERSIONER = 3;
 const PT = JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'portratt.json'), 'utf8')).tecken;
 
 let BR = JSON.parse(fs.readFileSync(REGISTER, 'utf8'));
@@ -57,18 +56,7 @@ function skrivRegister() {
 }
 
 // ---------- bilderna: sidan öppnas i en webbläsare ----------
-let webblasare = null, sida = null;
-async function oppnaSidan() {
-  if (sida) return sida;
-  const require = createRequire(import.meta.url);
-  const pw = require('playwright');
-  const html = path.join(BILDSTIL, 'bildstil.html');
-  if (!fs.existsSync(html)) throw new Error('Bygg sidan först: node bildstil/bygg.cjs');
-  webblasare = await pw.chromium.launch(); sida = await webblasare.newPage();
-  await sida.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await sida.goto('file://' + html); await sida.waitForFunction(() => window.BILDERNA && window.KONTROLL);
-  return sida;
-}
+const { oppna: oppnaSidan, stang: stangSidan } = sidan(() => window.BILDERNA && window.KONTROLL);
 const sammanhang = async (id, data) => (await oppnaSidan()).evaluate(([i, d]) => window.BILDERNA.sammanhang(i, d), [id, data]);
 const gammal = async id => (await oppnaSidan()).evaluate(i => window.BILDERNA.gammal(i), id);
 // spelets bild i dag (bildstil/gamla.json, från npx tsx bildstil/gamla.ts): den nya ritas om efter den (Björn efter version 83
@@ -81,10 +69,8 @@ const gammalText = b => { const g = GAMLA[b.id]; if (!g || b.utanGammal) return 
   return `Den sista bilden är ${b.namn} som den ser ut i spelet i dag, ${Math.max(...g.rader.map(r => r.length))} × ${g.rader.length} punkter, åtta gånger större. Den nya bilden ska vara den bilden omgjord: samma sak, samma form och delar, samma idé och samma färger så nära paletten tillåter, bara i den nya storleken och med bildstilens kontur, ljus och korn. Hitta inte på en ny bild. Punkterna i dag (punkt är genomskinlig): ${JSON.stringify(g.rader)}, färgerna: ${JSON.stringify(g.pal)}.`; };
 const scen = async () => (await oppnaSidan()).evaluate(() => window.BILDERNA.scen());
 const hexar = async () => (await oppnaSidan()).evaluate(() => window.BILDERNA.hex());
-async function stangSidan() { if (webblasare) await webblasare.close(); webblasare = sida = null; }
 
 // ---------- frågan ----------
-const bildBlock = b64 => ({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: b64 } });
 async function system() {
   const H = await hexar();
   const tecken = [...BR.tecken].map(ch => `${ch} = ${PT[ch]} (${H[ch]})`).join(', ');
@@ -97,7 +83,6 @@ const beskriv = b => `"${b.namn}" (${b.id}): ${b.vad}. Storlek: högst ${b.w} pu
 let SYS = null;
 const utanForlaga = k => !!k && /utan förlaga|utan att utgå|helt ny|från början|gör om (hela )?(symbolen |bilden )?helt|nya (versioner|idéer|förslag)/i.test(k);
 // läget: "ändra" utgår från den nuvarande ritningen och kommentaren; annars ritas nya idéer utan förlaga
-const TOMT_NEJ = 'Björn sa nej till förra ritningen utan att skriva varför: rita en bättre.';
 const lageAv = (kommentar, forra) => kommentar && forra && !utanForlaga(kommentar) && kommentar !== TOMT_NEJ ? 'andra' : 'nya';
 async function fraga(b, { kommentar = null, forra = null, version = null, ide = null, lage = 'nya' } = {}) {
   if (lage === 'nya') forra = null;
@@ -198,34 +183,6 @@ async function kontrolleraAllt(b, svar) {
 const olikaPar = async lista => (await oppnaSidan()).evaluate(l => window.KONTROLL.olikaRader(l), lista);
 const iSpeletPng = async rader => (await oppnaSidan()).evaluate(r => window.KONTROLL.iSpeletPng(r), rader);
 
-// ---------- API:t ----------
-const ADRESS = 'https://api.anthropic.com';
-function klient() {
-  const nyckel = process.env.BJORN_API_NYCKEL;
-  if (!nyckel) { console.error('BJORN_API_NYCKEL saknas i miljön.'); process.exit(1); }
-  return new Anthropic({ apiKey: nyckel, baseURL: ADRESS });
-}
-const svarText = m => m.content.filter(c => c.type === 'text').map(c => c.text).join('');
-const kostnad = u => ((u.input_tokens || 0) * PRIS.in + (u.output_tokens || 0) * PRIS.ut + (u.cache_read_input_tokens || 0) * PRIS.cacheLas + (u.cache_creation_input_tokens || 0) * PRIS.cacheSkriv) / 1e6;
-async function batch(client, fragor, namn) {
-  console.log(`Skickar ${fragor.length} frågor i en batch (${namn}) …`);
-  const bt = await client.messages.batches.create({ requests: fragor });
-  for (;;) {
-    const st = await client.messages.batches.retrieve(bt.id);
-    if (st.processing_status === 'ended') break;
-    console.log(`  ${namn}: ${st.request_counts.succeeded} klara, ${st.request_counts.processing} kvar …`);
-    await new Promise(r => setTimeout(r, 30_000));
-  }
-  const ut = {}; let summa = 0;
-  for await (const r of await client.messages.batches.results(bt.id)) {
-    if (r.result.type !== 'succeeded') { ut[r.custom_id] = { fel: r.result.type }; continue; }
-    const m = r.result.message; summa += kostnad(m.usage);
-    if (m.stop_reason !== 'end_turn') { ut[r.custom_id] = { fel: m.stop_reason }; continue; }
-    try { ut[r.custom_id] = { svar: JSON.parse(svarText(m)) }; } catch (e) { ut[r.custom_id] = { fel: 'svaret var inte JSON' }; }
-  }
-  console.log(`  ${namn} klar: ungefär ${summa.toFixed(2)} dollar.`);
-  return { ut, summa };
-}
 // tre: versionerna sparas i bilder/<id>.json (versioner: [{ ide, rader, om }]) och blir ett kort i valdelen; den
 // nuvarande ritningen (rader) står kvar tills Björn valt, så att spelet och sidan har en bild under tiden
 async function sparaTre(b, bra, kommentar) {
@@ -287,10 +244,10 @@ try {
     const vanliga = args.filter(a => !a.includes('='));
     const { ut: bilder, vantar } = vanliga.length || !om.length ? attRita(vanliga) : { ut: [], vantar: [] };
     const kommentarer = {};
-    for (const [id, k] of om) { const b = BR.bilder.find(x => x.id === id); if (!b) throw new Error('Okänd bild: ' + id); if (!bilder.includes(b)) bilder.push(b); kommentarer[id] = k.trim() || 'Björn sa nej till förra ritningen utan att skriva varför: rita en bättre.'; }
+    for (const [id, k] of om) { const b = BR.bilder.find(x => x.id === id); if (!b) throw new Error('Okänd bild: ' + id); if (!bilder.includes(b)) bilder.push(b); kommentarer[id] = k.trim() || TOMT_NEJ; }
     // en bild som redan är ritad och nämns vid namn ritas om: Björns kommentar på raden (forra) följer alltid med, och utan
     // kommentar räknas det som ett nej (förut följde kommentaren bara med som id="kommentar", och glömdes annars; Björn efter bildstil v96)
-    for (const b of bilder) if (!kommentarer[b.id] && b.ritad > 0 && lasBild(b.id) && vanliga.includes(b.id)) kommentarer[b.id] = b.forra || 'Björn sa nej till förra ritningen utan att skriva varför: rita en bättre.';
+    for (const b of bilder) if (!kommentarer[b.id] && b.ritad > 0 && lasBild(b.id) && vanliga.includes(b.id)) kommentarer[b.id] = b.forra || TOMT_NEJ;
     for (const b of bilder) console.log(`${b.id}: ${kommentarer[b.id] ? 'kommentar: ' + kommentarer[b.id] : 'ny bild'}`);
     for (const v of vantar) console.log(v);
     if (!bilder.length) { console.log('Inget att rita.'); process.exit(0); }
@@ -303,7 +260,7 @@ try {
       fs.writeFileSync(path.join(UT, 'idefraga.json'), JSON.stringify(i0, null, 1));
       console.log(`Läget för ${b0.id}: ${l0 === 'andra' ? 'ändra (från den nuvarande ritningen och kommentaren, utan idéer)' : 'nya idéer utan förlaga'}. Idéfrågan står i ${path.relative(process.cwd(), path.join(UT, 'idefraga.json'))}.`);
       const f = await fraga(b0, { ...(kommentarer[b0.id] ? { kommentar: kommentarer[b0.id], forra: lasBild(b0.id) } : {}), lage: l0, version: 1, ide: l0 === 'nya' ? '(idé 1 från idéfrågan)' : null });
-      fs.writeFileSync(path.join(UT, 'bildfraga.json'), JSON.stringify({ ...f, params: { ...f.params, messages: f.params.messages.map(m => ({ ...m, content: m.content.map(c => c.type === 'image' ? { type: 'image', bild: `${c.source.data.length} tecken base64` } : c) })) } }, null, 1));
+      fs.writeFileSync(path.join(UT, 'bildfraga.json'), JSON.stringify(utanBilder(f), null, 1));
       console.log(`En fråga (utan bilderna) står i ${path.relative(process.cwd(), path.join(UT, 'bildfraga.json'))}.`);
     } else {
       const client = klient(); // tre versioner till valdelen; API:t väljer inte den bästa (Björn efter bildstil v236)

@@ -1,4 +1,7 @@
 const fs = require('fs'), d = __dirname;
+// skripten i en mapp, var och en i en egen <script> (numeriskt: 7.10 efter 7.9), och json-filerna i en mapp som ett objekt per nyckel
+const skript = (mapp, numeriskt) => fs.readdirSync(d + '/' + mapp).filter(f => f.endsWith('.js')).sort(numeriskt ? (a, b) => a.localeCompare(b, 'sv', { numeric: true }) : undefined).map(f => `<script>${fs.readFileSync(d + '/' + mapp + '/' + f, 'utf8')}</script>`).join('\n');
+const jsonMapp = (mapp, nyckel) => JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/' + mapp).filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/' + mapp + '/' + f, 'utf8')); return [o[nyckel], o]; })));
 // avsnittet om gränssnittet, med bilderna inbakade, före Björns beslut
 const granssnitt = fs.readFileSync(d + '/granssnitt.html', 'utf8').replace(/src="(granssnitt\/[^"]+\.png)"/g, (m, f) => `src="data:image/png;base64,${fs.readFileSync(d + '/' + f).toString('base64')}"`);
 const html = `<title>Samhällssimulatorns bildstil</title>
@@ -15,22 +18,22 @@ ${fs.readFileSync(d + '/kropp.html', 'utf8').replace('<section aria-labelledby="
 <script>${fs.readFileSync(d + '/gui.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/anim.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/fas7.js', 'utf8')}</script>
-${fs.readdirSync(d + '/fas7').filter(f => f.endsWith('.js')).sort((a, b) => a.localeCompare(b, 'sv', { numeric: true })).map(f => `<script>${fs.readFileSync(d + '/fas7/' + f, 'utf8')}</script>`).join('\n')}
-${fs.readdirSync(d + '/fas8').filter(f => f.endsWith('.js')).sort((a, b) => a.localeCompare(b, 'sv', { numeric: true })).map(f => `<script>${fs.readFileSync(d + '/fas8/' + f, 'utf8')}</script>`).join('\n')}
-${fs.readdirSync(d + '/fas9').filter(f => f.endsWith('.js')).sort((a, b) => a.localeCompare(b, 'sv', { numeric: true })).map(f => `<script>${fs.readFileSync(d + '/fas9/' + f, 'utf8')}</script>`).join('\n')}
-${fs.readdirSync(d + '/svar').filter(f => f.endsWith('.js')).sort().map(f => `<script>${fs.readFileSync(d + '/svar/' + f, 'utf8')}</script>`).join('\n')}
+${skript('fas7', true)}
+${skript('fas8', true)}
+${skript('fas9', true)}
+${skript('svar')}
 <script>const VARLDKARTA = ${fs.readFileSync(d + '/varldkarta.json', 'utf8')};</script>
 <script>${fs.readFileSync(d + '/fas11.js', 'utf8')}</script>
 <script>const PORTRATT = ${fs.readFileSync(d + '/portratt.json', 'utf8')};</script>
-<script>const DELAR = ${JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/delar').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/delar/' + f, 'utf8')); return [o.id, o]; })))};</script>
+<script>const DELAR = ${jsonMapp('delar', 'id')};</script>
 <script>const BILDER = ${fs.readFileSync(d + '/bilder.json', 'utf8')};</script>
 <script>const GAMLA = ${fs.existsSync(d + '/gamla.json') ? fs.readFileSync(d + '/gamla.json', 'utf8') : '{}'};</script>
-<script>const BILDFILER = ${JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/bilder').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/bilder/' + f, 'utf8')); return [o.id, o]; })))};</script>
+<script>const BILDFILER = ${jsonMapp('bilder', 'id')};</script>
 <script>${fs.readFileSync(d + '/skapare.js', 'utf8')}</script>
-<script>const BESTDATA = ${JSON.stringify(fs.existsSync(d + '/bestar') ? Object.fromEntries(fs.readdirSync(d + '/bestar').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/bestar/' + f, 'utf8')); return [o.lager, o]; })) : {})};</script>
+<script>const BESTDATA = ${jsonMapp('bestar', 'lager')};</script>
 <script>${fs.readFileSync(d + '/bestskapare.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/rita.js', 'utf8')}</script>
-<script>const FORSLAG = ${JSON.stringify(fs.existsSync(d + '/forslag') ? Object.fromEntries(fs.readdirSync(d + '/forslag').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/forslag/' + f, 'utf8')); return [o.kort, o]; })) : {})};</script>
+<script>const FORSLAG = ${jsonMapp('forslag', 'kort')};</script>
 <script>${fs.readFileSync(d + '/forslag.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/kontroll.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/stackar.js', 'utf8')}</script>`;

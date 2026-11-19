@@ -332,15 +332,17 @@
     const G = 4, W = Math.max(...bitar.map(B => B.w)), H = bitar.reduce((n, B) => n + B.h + G, 0), A = Bild(W, H, P);
     for (let i = 0; i < A.px.length; i++) A.px[i] = P.i('kol', 0);
     let y = 0; for (const B of bitar) { klistra(A, B, 0, y); y += B.h + G; }
-    const c = document.createElement('canvas'); tillCanvas(A, c, 0); const t = document.createElement('canvas'); t.width = A.w * skala; t.height = A.h * skala;
+    return png(A, skala);
+  }
+  // en bild förstorad skala gånger som PNG (base64), för API-skripten och kontrollen
+  function png(B, skala) {
+    const c = document.createElement('canvas'); tillCanvas(B, c, 0); const t = document.createElement('canvas'); t.width = B.w * skala; t.height = B.h * skala;
     const g = t.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, t.width, t.height); return t.toDataURL('image/png').split(',')[1];
   }
 
   // en API-ritning (rader) i sitt sammanhang som PNG: på gräset bredvid en kolonist och godkända saker (bilder.mjs granskning)
   function iSpeletPng(rader, skala = 4, slag = []) {
-    const M = iSpelet(bildAvRader(rader), P0(), slag), c = document.createElement('canvas'); tillCanvas(M, c, 0);
-    const t = document.createElement('canvas'); t.width = M.w * skala; t.height = M.h * skala;
-    const g = t.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, t.width, t.height); return t.toDataURL('image/png').split(',')[1];
+    return png(iSpelet(bildAvRader(rader), P0(), slag), skala);
   }
 
   // ---------- API:ts tre versioner som valkort (node bildstil/api/bilder.mjs tre …) ----------
@@ -352,5 +354,5 @@
       versioner: d.versioner.map(v => ({ text: v.ide || '', w: Math.max(...v.rader.map(r => r.length)) + 4, h: v.rader.length + 4, rita: B => klistra(B, bildAvRader(v.rader), 2, 2) })) });
   }
 
-  window.KONTROLL = { SLAG, KONTROLLNAMN, GRANS, slagAv, symmetri, perspektiv, likhet, olika, bildAvRader, kort, rader, olikaRader, sammanhang, storsta, iSpelet, iSpeletPng, visa, allt, kortPng };
+  window.KONTROLL = { SLAG, KONTROLLNAMN, GRANS, slagAv, symmetri, perspektiv, likhet, olika, bildAvRader, kort, rader, olikaRader, sammanhang, storsta, iSpelet, iSpeletPng, visa, allt, kortPng, png };
 })();

@@ -18,34 +18,23 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
 import Anthropic from '@anthropic-ai/sdk';
 import { guideText } from './guide.mjs';
+import { MODELL, PRIS, klient, batch as batchen, bildBlock, utanBilder, sidan } from './gemensamt.mjs';
 
 const HAR = path.dirname(fileURLToPath(import.meta.url)), BILDSTIL = path.resolve(HAR, '..');
 const UT = path.join(BILDSTIL, 'forslag'), TORRT = path.join(HAR, 'ut');
-const MODELL = 'claude-opus-5-5', INSATS = 'high', MAXTOKENS = 48000, VERSIONER = +process.env.VERSIONER || 3; // VERSIONER=9: fler att välja de tre bästa ur (Björn efter bildstil v238)
-const PRIS = { in: 2, ut: 10, cacheLas: 0.1, cacheSkriv: 2.5 }; // per miljon tokens med batch
+const INSATS = 'high', MAXTOKENS = 48000, VERSIONER = +process.env.VERSIONER || 3; // VERSIONER=9: fler att välja de tre bästa ur (Björn efter bildstil v238)
 const PT = JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'portratt.json'), 'utf8')).tecken;
 const TECKEN = [...JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'bilder.json'), 'utf8')).tecken];
 const ARMAR = ['hanga', 'framfor', 'lyfta', 'bara'];
 
 // ---------- sidan ----------
-let webblasare = null, sida = null;
-async function oppna() {
-  if (sida) return sida;
-  const pw = createRequire(import.meta.url)('playwright'), html = path.join(BILDSTIL, 'bildstil.html');
-  if (!fs.existsSync(html)) throw new Error('Bygg sidan först: node bildstil/bygg.cjs');
-  webblasare = await pw.chromium.launch(); sida = await webblasare.newPage();
-  await sida.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await sida.goto('file://' + html); await sida.waitForFunction(() => window.FORSLAGEN && window.KONTROLL && window.BILDERNA);
-  return sida;
-}
+const { oppna, stang } = sidan(() => window.FORSLAGEN && window.KONTROLL && window.BILDERNA);
 const pa = async (f, a) => (await oppna()).evaluate(f, a);
 const hexar = () => pa(() => window.BILDERNA.hex());
 
 // ---------- frågorna ----------
-const bildBlock = b64 => ({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: b64 } });
 let SYS = null;
 async function system() {
   if (SYS) return SYS;
@@ -131,33 +120,9 @@ const kontroll = async (k, v) => (await pa(d => window.FORSLAGEN.kontroll(d), { 
 const olika = async (k, lista) => (await pa(d => window.FORSLAGEN.kontroll(d), { kort: k.id, namn: k.namn, slag: k.slag, versioner: lista })).filter(x => x.kontroll === 'olika');
 
 // ---------- API:t ----------
-function klient() {
-  const nyckel = process.env.BJORN_API_NYCKEL;
-  if (!nyckel) { console.error('BJORN_API_NYCKEL saknas i miljön.'); process.exit(1); }
-  return new Anthropic({ apiKey: nyckel, baseURL: 'https://api.anthropic.com' });
-}
-const kostnad = u => ((u.input_tokens || 0) * PRIS.in + (u.output_tokens || 0) * PRIS.ut + (u.cache_read_input_tokens || 0) * PRIS.cacheLas + (u.cache_creation_input_tokens || 0) * PRIS.cacheSkriv) / 1e6;
+// en batch ger svaren per kort, och vad den kostade läggs till SUMMA
 let SUMMA = 0;
-async function batch(client, fragor, namn) {
-  if (!fragor.length) return {};
-  console.log(`Skickar ${fragor.length} frågor i en batch (${namn}) …`);
-  const bt = await client.messages.batches.create({ requests: fragor });
-  for (;;) {
-    const st = await client.messages.batches.retrieve(bt.id);
-    if (st.processing_status === 'ended') break;
-    console.log(`  ${namn}: ${st.request_counts.succeeded} klara, ${st.request_counts.processing} kvar …`);
-    await new Promise(r => setTimeout(r, 30_000));
-  }
-  const ut = {}; let summa = 0;
-  for await (const r of await client.messages.batches.results(bt.id)) {
-    if (r.result.type !== 'succeeded') { ut[r.custom_id] = { fel: r.result.type }; continue; }
-    const m = r.result.message; summa += kostnad(m.usage);
-    if (m.stop_reason !== 'end_turn') { ut[r.custom_id] = { fel: m.stop_reason }; continue; }
-    try { ut[r.custom_id] = { svar: JSON.parse(m.content.filter(c => c.type === 'text').map(c => c.text).join('')) }; } catch (e) { ut[r.custom_id] = { fel: 'svaret var inte JSON' }; }
-  }
-  SUMMA += summa; console.log(`  ${namn} klar: ungefär ${summa.toFixed(2)} dollar.`);
-  return ut;
-}
+const batch = async (client, fragor, namn) => { const r = await batchen(client, fragor, namn); SUMMA += r.summa; return r.ut; };
 // en grov uppskattning per kort: idéerna, tre ritningar, omtag för ungefär hälften och tre granskningar; det som bärs har
 // lagren på kolonisten och i porträttet och kostar ungefär tre gånger så mycket ut
 const uppskattning = kort => { const per = k => ((2000 * PRIS.in + 3000 * PRIS.ut) + VERSIONER * 1.5 * (6000 * PRIS.in + (k.bars ? 20000 : 7000) * PRIS.ut) + VERSIONER * (8000 * PRIS.in + (k.bars ? 18000 : 6000) * PRIS.ut)) / 1e6;
@@ -189,7 +154,6 @@ try {
     if (kommando === 'torrt') {
       fs.mkdirSync(TORRT, { recursive: true });
       const k = kort[0], f = [await ideer(k, k.kommentar), await rita(k, 1, { ide: '(idé 1 från idéfrågan)', kommentar: k.kommentar, lage: k.lage })];
-      const utanBilder = q => ({ ...q, params: { ...q.params, messages: q.params.messages.map(m => ({ ...m, content: m.content.map(c => c.type === 'image' ? { type: 'image', bild: `${c.source.data.length} tecken base64` } : c) })) } });
       fs.writeFileSync(path.join(TORRT, 'forslagfraga.json'), JSON.stringify(f.map(utanBilder), null, 1));
       console.log(`Frågorna för ${k.id} (utan bilderna) står i ${path.relative(process.cwd(), path.join(TORRT, 'forslagfraga.json'))}.`);
     } else {
@@ -234,4 +198,4 @@ try {
   if (e instanceof Anthropic.APIError) console.error(`API:t svarade med fel ${e.status}: ${e.message}`);
   else console.error(e.stack || e.message || e);
   process.exitCode = 1;
-} finally { if (webblasare) await webblasare.close(); }
+} finally { await stang(); }

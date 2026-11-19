@@ -114,6 +114,13 @@ function ritaSprite(B, rader, legend, x0, y0, lyser = '') {
     B.satt(x0 + x, y0 + y, B.P.i(t.slice(0, -1), +t.slice(-1)), lyser.includes(ch));
   }));
 }
+// en symbol på en knapp: 24 × 24 punkter i panelens färg med en ram, och bilden (16 × 16, färgerna i L) i mitten
+const symbolKnapp = (text, rader, L) => ({ text, w: 24, h: 24, rita: (B) => {
+  const bg = B.P.i('kol', 1), ram = B.P.i('kol', 2);
+  for (let y = 0; y < 24; y++) for (let x = 0; x < 24; x++) B.satt(x, y, bg);
+  for (let i = 0; i < 24; i++) { B.satt(i, 0, ram); B.satt(i, 23, ram); B.satt(0, i, ram); B.satt(23, i, ram); }
+  ritaSprite(B, rader, L, 4, 4);
+} });
 
 // ---------- folket: fem personer, en figur på kartan (14 × 20 punkter) och ett porträtt (64 × 64) ----------
 // figuren är framifrån och ungefär en ruta bred. Färgerna byts mot närmaste färg i paletten, konturen är kolets
