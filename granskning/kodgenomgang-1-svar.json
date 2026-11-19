@@ -1,0 +1,725 @@
+[
+ {
+  "nr": 497,
+  "svar": "ja",
+  "skal": "Mekanismen finns bara för två rader, och jakten, resan och ritualen klarar sig utan den. Dokumentet säger redan att ett tillfälle går före vanlig hunger, och den som är i nöd går ändå först.",
+  "gor": "Ta bort fältet bradska, funktionen tillfalle, talet VAL.tillfalleMin och listan senare i valet (val.ts 138-140, 540-541, 559, 712-714, 721, 956-972), så att handla och lyssna prövas på sin plats på nivå 3 som de andra tillfällena. Ta bort lyssnaBradska om inget annat använder den, och rätta scenariot tillfalle. Skriv om meningen om att behovet stiger i Arbetsordningen (Tillfälle) och i steg 6.1.14.",
+  "markbart": "Den som vill handla eller lyssna går dit direkt också i början av besöket, i stället för att ibland äta eller vila först. Knappt märkbart.",
+  "b": "b1"
+ },
+ {
+  "nr": 515,
+  "svar": "nej",
+  "skal": "Dokumentet säger att bästa vänner helst sitter bredvid varandra, och avståndet vid elden är ett byggt steg (3.6.8) som syns i bilden. Utan det står folk på varandra igen, och vinsten är bara 18 rader.",
+  "markbart": "inget",
+  "b": "b1"
+ },
+ {
+  "nr": 555,
+  "svar": "ja",
+  "skal": "Två av reglerna är spärrar om människornas val som systemen redan klarar: flintan och påbudet vid svält. Vakten, nattens ordning och den gamla som sover beskriver hur byn och kroppen fungerar på natten och får stå.",
+  "gor": "Flintan: ta bort villkoret !fara.svalt i flintaTillElden (val.ts 1262); matens poäng är redan mycket högre än flintans när byn svälter, så maten vinner ändå. Påbudet Bygg före allt (val.ts 838): byt spärren !faror(c).svalt mot att chansen pb gångras med byggDampning(faror(c), d.utanYxa), samma dämpning som raden bygga har. Lämna vaktVal, night och gammalSover som de är.",
+  "markbart": "Nästan inget. I en svältande by kan någon enstaka gång en person leta flinta eller bygga på ledarens påbud.",
+  "b": "b1"
+ },
+ {
+  "nr": 545,
+  "svar": "ja",
+  "skal": "Riktlinjen är Björns egen och säger högst 5 minuter för en stor sak. Slaget bearbeta är ett förslag som aldrig blev bestämt, och bara fem av ungefär fyrtio recept ligger över 5 minuter.",
+  "gor": "Ta bort slaget bearbeta ur TIDSLAG (tider.ts rad 22-23). Ge recepten slaget liten när tiden är 2 till 4 minuter och stor när den är 5. Korta de fem recept som ligger över 5 minuter (fyra på 7,5 minuter, bland dem grillningen, och plankorna på 8 minuter) till 5 minuter med slaget stor. Kör scenariot tider.",
+  "markbart": "Att grilla en bit och att klyva plankor går lite fortare: 5 minuter i stället för 7,5 och 8 (en minut är ungefär sex timmar i spelet).",
+  "b": "b1"
+ },
+ {
+  "nr": 494,
+  "svar": "fraga",
+  "skal": "Byn utvecklas likadant åt båda hållen, men det som tas bort är större delen av eldfliken, som Björn ser. Dokumentet säger inget om eldens historik, och regeln att elden är ett verktyg avgör inte om den får ha en egen historia.",
+  "markbart": "Vid ja visar eldfliken bara läget just nu. Historiken, vem som fyller på oftast, bränd ved, brinntid och hur ofta elden slocknat försvinner.",
+  "fragan": "Vill du ha kvar eldens historik i eldfliken (loggen, vem som fyller på oftast, bränd ved, brinntid, antal gånger den slocknat)? Svar: behåll historiken, eller ta bort den (30 rader kod mindre).",
+  "b": "b1"
+ },
+ {
+  "nr": 519,
+  "svar": "nej",
+  "skal": "Spridningen och de tappade teknikerna är nyss byggda steg (11.3.9, v531) som dokumentet vill ha, och de ger grannbyarna en egen historia. Vinsten är bara tio rader, och den andra tron behövs för splittringen.",
+  "markbart": "inget",
+  "b": "b1"
+ },
+ {
+  "nr": 526,
+  "svar": "nej",
+  "skal": "Dokumentet och steg 8.8.9 säger uttryckligen att en stor strid inte ska missas. Det är något spelaren ser och som ger berättelse, och vinsten är bara åtta rader.",
+  "markbart": "inget",
+  "b": "b1"
+ },
+ {
+  "nr": 488,
+  "svar": "nej",
+  "skal": "Det långa slaget står i dokumentet som en del av klockan, och ikappräkningen efter en vecka borta (sju dygn, sju år i spelet) klarar sin gräns på 3 minuter datortid bara knappt. Fler slag på natten gör den långsammare, och risken för nya fel är stor mot 35 rader.",
+  "markbart": "inget",
+  "b": "b1"
+ },
+ {
+  "nr": 492,
+  "svar": "nej",
+  "skal": "Att maten går före flintan, kolet och vakten är menat: hungern är en fara och elden ett verktyg. Flintans poäng görs redan om i steg 12.1.39, och en gemensam skala sparar inga rader men kräver att balanstalen ställs om.",
+  "markbart": "inget",
+  "b": "b1"
+ },
+ {
+  "nr": 549,
+  "svar": "nej",
+  "skal": "Dokumentet säger just så: först projekten, sedan vägs raderna med poäng. Att göra om det ändrar byns vardag märkbart, kräver ny balans och sparar bara tio rader. Kommentaren i projekt.ts rad 124-125 är däremot fel och ska rättas vid tillfälle, så att den säger att projektet tas före poängraderna.",
+  "markbart": "inget",
+  "b": "b1"
+ },
+ {
+  "nr": 521,
+  "svar": "ja",
+  "skal": "Åtta balanstal styr bara hur akut dagen känns, medan raden bygga redan avgör om någon bygger. Det är ett system till för något som knappt märks.",
+  "gor": "Ta bort viktformeln för bygget i dag() (val.ts 1067-1073), så att burg bara är w.burg från maten och veden; job och utanYxa räknas som förut. Ta bort talen VAL.byggLaga, byggHalvt, byggNytt, byggUtan, ARSTID.byggKall och TROSKEL.byggMatFran, byggMatSpann och byggMatMin om inget annat läser dem (STYRE.byggUtan i styre.ts är ett annat tal och står kvar). Raden bygga med byggDampning lämnas orörd.",
+  "markbart": "De lata och barnen arbetar lite mindre de dagar då bara ett bygge väntar, så ett hus kan bli klart något senare. Syns det i fasens Balans rättas det där.",
+  "b": "b1"
+ },
+ {
+  "nr": 537,
+  "svar": "ja",
+  "skal": "Samma buffert ska inte räknas på tre sätt. Dokumentet säger att ett påbud ger raden fler händer, och i dag ger påbudet om större lager ett behov som bara en person får fylla.",
+  "gor": "Låt arbetsTimme (val.ts 512) räkna det som fattas för raderna mat och ved mot bufferten med ledarens påbud, samma buffert som vedradens villkor (rad 860) och behovet använder. Personens aning om en hård vinter är personlig och ligger kvar som en faktor på personens eget behov. Rätta kommentaren om bufferten utan förrådsseden.",
+  "markbart": "I en by där ledaren påbjudit större mat- eller vedlager samlar fler samtidigt, så förråden växer lite fortare.",
+  "b": "b1"
+ },
+ {
+  "nr": 504,
+  "svar": "nej",
+  "skal": "Dokumentet säger uttryckligen nio nivåer i fast ordning. Att göra om hela valet är det största och mest riskabla förslaget, med en hel balansomgång, och de små fynden kan göras utan det.",
+  "markbart": "inget",
+  "b": "b1"
+ },
+ {
+  "nr": 483,
+  "svar": "ja",
+  "skal": "Flytten är ett eget system med sökning var fjärde timme för en vinst som knappt syns. Nya lagerplatser dras redan mot mitten, och en lagerplats i vägen för ett hus flyttas ändå.",
+  "gor": "Ta bort flytten mot mitten i lager.ts (hamtatI, hamtatNu, narmareLager, lagerFlyttTimme, lagerFlyttVal, lagerFlyttBast, lagerFlytta, fälten hamtat, hamtatT och s.lagerFlytt), projektet och handlingen flyttLager, raden i steg.ts, scenariot mittenlager och de fem balanstalen flyttFull, flyttMin, flyttPer, flyttMinste och hamtatDygn. Behåll mittVikt för nya lagerplatser och flytten för ett hus. Stryk orden om att flytta en lagerplats i avsnittet Dragningen mot mitten och i steg 9.4.7.",
+  "markbart": "En lagerplats ligger kvar där den lades tills ett hus behöver platsen. I en by som vuxit åt ett håll blir vägen till ett gammalt lager lite längre.",
+  "b": "b2"
+ },
+ {
+  "nr": 552,
+  "svar": "ja",
+  "skal": "Del 1 och 2 görs, del 3 står kvar. Designdokumentet beskriver valet av mat som en poäng där skicket sänker värdet, inte som en spärr, och taket på två nät är en hård regel som antalet fiskare redan sköter.",
+  "gor": "(1) Ta bort spärren skickKrav i takeFood och låt skicket vara en faktor i matens ordning (matOrdning eller sorteringen i takeFood): värdet sjunker med skicket och hungern väger upp det, så att skämd mat tas sist. (2) Ta bort Math.min(2, …) för nät i REDSKAPMAL, så att det är ett nät per tre spjut. (3) Gränsen för vad som bärs in när förrådet är fullt lämnas.",
+  "markbart": "Den som är lite hungrig äter ibland skämd mat när inget annat finns, så något fler blir magsjuka. Byar med över tjugo vuxna gör fler än två nät.",
+  "b": "b2"
+ },
+ {
+  "nr": 536,
+  "svar": "ja",
+  "skal": "Det är ett fel: designdokumentet säger att lönen i andra hand betalas i mat som byn har över. Väg A lagar felet, väg B går emot dokumentet.",
+  "gor": "Väg A: låt lönen i lon.ts ta maten också ur det som ligger hos ägaren KVAR (maten ingen matdel fick), med samma villkor som i dag (hela saker, bara över bufferten). Lägg till en kontroll i lönens scenario med en by som har en matdel.",
+  "markbart": "I byar med en matdel i budgeten får den som arbetar för byn mat när silvret inte räcker, och missnöjet över obetald lön blir mindre.",
+  "b": "b2"
+ },
+ {
+  "nr": 510,
+  "svar": "nej",
+  "skal": "Spelaren ser kunden hämta sitt bud och bära hem det köpta, och designdokumentet säger att bybon hämtar budet och lägger det på sin filt. Det är byggt så med avsikt och ger liv åt handeln.",
+  "markbart": "inget",
+  "b": "b2"
+ },
+ {
+  "nr": 505,
+  "svar": "nej",
+  "skal": "Priser som rykten står utförligt i designdokumentet och ger berättelse: gamla rykten, fel bud och rättelser som sprids. Handelsresorna (steg 11.6.11) ska bygga på dem.",
+  "markbart": "inget",
+  "b": "b2"
+ },
+ {
+  "nr": 523,
+  "svar": "ja",
+  "skal": "Två tal för samma sak är ett fel i ordningen: ändras hungern följer det fasta talet inte med. Ändringen i byn är liten.",
+  "gor": "Ta bort EKONOMI.matPerDygn. MAT.kvar i behov.ts frågar kroppensMat för personen, och faltBehov i odling.ts summerar kroppensMat över familjen. Ändra scenariot agande så att det läser kroppensMat. Kontrollera gränserna i nästa Balans.",
+  "markbart": "Vuxna behåller ungefär två portioner i stället för 1,6 innan de ger bort eller byter bort mat. Familjens fält blir upp till en fjärdedel större.",
+  "b": "b2"
+ },
+ {
+  "nr": 553,
+  "svar": "ja",
+  "skal": "Bara den minsta delen görs. Att byn handlar först och att man ger upp efter tre nej står i designdokumentet, och taken på slag håller varor kvar åt dem längre bak i kön.",
+  "gor": "Ge talet två på rad 779 i handel.ts ett namn i HANDEL (t.ex. egnaAntal: 2, högst så många av varje slag) och använd det. Inget annat ändras.",
+  "markbart": "inget",
+  "b": "b2"
+ },
+ {
+  "nr": 525,
+  "svar": "nej",
+  "skal": "Designdokumentet säger uttryckligen att en hård by kan ge mindre mat till den som inte kan arbeta. Det är en följd av sederna som ger byarna olika karaktär, och vinsten är bara tio rader.",
+  "markbart": "inget",
+  "b": "b2"
+ },
+ {
+  "nr": 509,
+  "svar": "nej",
+  "skal": "Att luras står i designdokumentet och ger berättelse: sura tankar, sämre relationer och en handlare som minns. Det är ett litet system som spelaren ser.",
+  "markbart": "inget",
+  "b": "b2"
+ },
+ {
+  "nr": 559,
+  "svar": "ja",
+  "skal": "Designdokumentet säger att hjälpen vid en förlossning är vård i valet av aktivitet, med samma brådska som en blödning när det gått fel och annars som att se till en sjuk. Koden tvingar i stället dit den bästa, också från en brand eller en blödande.",
+  "gor": "Gör hjälpen till en rad i vårdregistret VARD (halsa.ts) som valet av aktivitet väger: brådskan som en blödning vid ett svårt förlopp och som att se till en sjuk annars, och vårdkvaliteten väger i poängen för vem som går. Ta bort att borjaForlossning avbryter hjälparen och sätter uppgiften direkt; m.foder.hjalp sätts när någon kommer fram. Scenariot forlossning rättas efter det.",
+  "markbart": "Ibland hjälper en annan än den bästa vårdaren, eller ingen, när byn har något mer akut. Riskerna vid födseln blir lite högre de gångerna.",
+  "b": "b2"
+ },
+ {
+  "nr": 511,
+  "svar": "nej",
+  "skal": "Valet står punkt för punkt i designdokumentet och byggdes nyligen om till en summa på Björns begäran (steg 10.2.38). Det är redan en poäng i systemen och ingen hård regel.",
+  "markbart": "inget",
+  "b": "b2"
+ },
+ {
+  "nr": 550,
+  "svar": "nej",
+  "skal": "Utflyttningen kommer av att byn blivit trång, inte av att någon vantrivs, och att det är en familj som går är grunden för hur nya byar uppstår. Vinsten är åtta rader mot en ny balans av befolkningen och världens byar.",
+  "markbart": "inget",
+  "b": "b2"
+ },
+ {
+  "nr": 516,
+  "svar": "ja",
+  "skal": "Två system för samma sak. Att en gröda utan vatten dör är en regel om världen och kan gälla ruta för ruta. Fukten finns redan.",
+  "gor": "Ta bort Falt.vatten, TORKA.falt och grenen i stepOdling (odling.ts:590-594). En växande ruta med fukt noll vissnar (forlorad med 'Torkan' för just de rutorna), och under torkan sjunker fukten så att en ovattnad ruta når noll på ungefär 24 timmar (ett balanstal). vattenFram, faltTorrt och torrtFalt i torst.ts använder bara torraRutor och vattnaRutor, och hemmaForlust i resa.ts räknar rutorna som hinner bli torra. Skriv om stycket Torka i fliken Världen och rätta scenariot torka.",
+  "markbart": "I torkan vissnar rutorna en efter en i stället för hela fältet på en gång. Den som vattnar räddar just de rutorna.",
+  "b": "b3"
+ },
+ {
+  "nr": 543,
+  "svar": "ja",
+  "skal": "Riktlinjen är Björns egen: arbetena tar för lång tid. 15 minuter för att mjölka en get är fyra dygn i spelet. Dokumentet säger också att styckningen tar en kort stund per del.",
+  "gor": "Sänk tiderna till riktlinjen och lägg dem i allaTider() med slag: mjölka 3, stycka 3 per del och tömma latrinen 4 (slag liten), klippa 5, avliva 5 och valla 5 (slag stor), slå äng 4 per ruta (slag falt). Inget nytt slag för djurskötsel. Rätta tiderna i designdokumentet där de står.",
+  "markbart": "Djurskötsel, styckning och slåtter går tre till fem gånger fortare. Djuren blir billigare att hålla.",
+  "b": "b3"
+ },
+ {
+  "nr": 531,
+  "svar": "nej",
+  "skal": "Kaninsystemet är byggt med avsikt i flera steg och bär viltkartan som jägarna och fällorna använder. Kaninen är byns första kött, så risken är stor och jakten måste balanseras om.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 556,
+  "svar": "nej",
+  "skal": "Hönsen äter inget, så inget system kan avgöra antalet i dag. Ett foder eller ett förrådsmål för ägg vore ett nytt system där en enkel regel räcker, och dokumentet säger högst ett par tiotal djur.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 454,
+  "svar": "ja",
+  "skal": "Provet är klart sedan v401 och stråken är alltid på. Brytaren och testskripten finns bara kvar av historiska skäl.",
+  "gor": "Ta bort STRAK.pa och de fem villkoren (strak.ts, skog.ts), prov.ts, prov-en.ts, scenariot strakprov och kommandot prov i package.json. Ta bort raderna om npm run prov och strakprov i CLAUDE.md och ARKITEKTUR.md, och skriv i steg 6.2.6 att provet är gjort och borttaget.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 561,
+  "svar": "fraga",
+  "skal": "Taket är gaffatejp enligt Kärnan, men det står uttryckligen i designdokumentet, och utan det kan en brand i torkan ta mycket mer skog och by. Följden syns tydligt åt båda hållen.",
+  "markbart": "Utan taket kan en brand en torr och blåsig sommar bli mycket större än 40 rutor åt varje håll.",
+  "fragan": "Ska elden få sprida sig hur långt som helst, så att bara regn, torrhet, bränsle, vind och släckning stoppar den? Ja: ta bort taket och pröva i en balanskörning. Nej: behåll 40 rutor.",
+  "b": "b3"
+ },
+ {
+  "nr": 517,
+  "svar": "ja",
+  "skal": "Två vägar till samma brännskada. Den som står i elden tar ändå eld nästan säkert, så det räcker att brinna skadar.",
+  "gor": "Ta bort den första slingan i iElden (brand.ts:547-558) och talen iElden, iEldenGrad och tarEld. Flytta b.skadade, räknaren 'brand skadad' och upplevelsen eldsvådan till brinnerSteg när den som brinner får en skada. Behåll vaggEld och bredvidEld som de är. Blir bränderna för milda i fasens Balans höjs brinnGrad.",
+  "markbart": "Den som står i elden får något färre och lindrigare brännskador, så lite färre dör i bränder.",
+  "b": "b3"
+ },
+ {
+  "nr": 544,
+  "svar": "ja",
+  "skal": "En hård regel bredvid ett system som redan avgör samma val. Dokumentet säger att var och en tar sin ruta i eldens kant.",
+  "gor": "Låt den med vattensäck få sitt mål av bastSlack i brandMal (ref = den rutan) och ta bort narmastByn. slackaFylld behåller sin reserv: finns rutan inte kvar väljs med bastSlack igen, annars den närmaste.",
+  "markbart": "Knappt något. Den med vattensäck släcker där mest värde hotas, vilket oftast är samma eld.",
+  "b": "b3"
+ },
+ {
+  "nr": 482,
+  "svar": "ja",
+  "skal": "Vägningen är tom: samma kostnad och värde, så den större vinner alltid. Ordningen större först, annars ny, är en enkel regel som räcker.",
+  "gor": "Ta bort lagerStorreA och lagerNyA ur BYGGATGARDER och raden i ritningOk. planLager blir: if (!lagerStorre(s)) lagerNy(s). Skriv om meningen i Byggplanen (Behov, inte bygge) så att lagret görs större, och ett nytt läggs när det inte går.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 538,
+  "svar": "ja",
+  "skal": "Raden träffar aldrig och kan tas bort. Att bära vatten för att släcka en lägereld under ett nytt hus är mer system än saken är värd; lägerelden tas redan isär av brasor.ts när ingen sover nära.",
+  "gor": "Ta bort den döda raden i rivStation (stationer.ts:1642). Rätta stycket Det som står ute rivs för husen och steg 10.2.77 i designdokumentet så att de säger det som händer: möbler och stationer rivs, och en lägereld som hamnar under ett hus tas isär av sig själv och stenarna läggs bredvid.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 485,
+  "svar": "nej",
+  "skal": "Flytten av stationer är nybyggd (steg 9.4.8, v521) och står som önskad i designdokumentet. Den går genom projektens värde och kostnad, alltså ett system och ingen hård regel.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 560,
+  "svar": "nej",
+  "skal": "Designdokumentet (Arbetarna växer med byn) räknar just detta som en regel för världen: en station som någon är på väg att bygga är under arbete. Inga rader sparas.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 455,
+  "svar": "ja",
+  "skal": "Koden är död sedan väggarna blev av virke. Träden på tomten ger ändå virke till bygget genom lagret, så en egen väg behövs inte.",
+  "gor": "Ta bort toWalls och de två anropen i steg.ts, nyckeln 'fallt' i KOM och texten i husfliken, och de döda jämförelserna med ved i tramat (bygg.ts:255) och vedRacker (byggplan.ts:357). Stryk meningen om att stockarna läggs direkt i väggarna i Byggarbete i designdokumentet och rätta scenariot i byggnader.ts:441.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 495,
+  "svar": "ja",
+  "skal": "Två register säger samma sak, och designdokumentet beskriver bara taggarna. Taggarna har redan sovrum, förråd och verkstad per rum.",
+  "gor": "Ta bort RUMSFUNKTIONER, RUMSFUNKTION_LIST och rumsFunktioner, och raden 'anv' i husfliken och i rutan under musen (interaktion.ts:258). Behåll harArbete som en vanlig funktion och låt kopbart i byggplan.ts fråga den. Skriv om scenariot funktion mot taggarna i RUMSTYPER.",
+  "markbart": "Husfliken och rutan under musen visar en rad om vad rummen är i stället för två.",
+  "b": "b3"
+ },
+ {
+  "nr": 547,
+  "svar": "ja",
+  "skal": "Riktlinjen och stycket Rätterna och tillagningen säger 2–4 minuter per arbetsdel, och Björn tycker att arbetena tar för lång tid. Slaget 2–8 minuter var bara ett förslag i koden.",
+  "gor": "Sätt grillningen till 4 minuter per bit och torkningen till 4. Plankor får slaget stor och 5 minuter. Sätt slaget bearbeta till 2–4 minuter i TIDSLAG, ta bort kommentaren om förslaget och rätta det som då larmar i scenariot tider.",
+  "markbart": "Grillad och torkad mat och plankor blir klara fortare, så byn får lite mer tid över.",
+  "b": "b3"
+ },
+ {
+  "nr": 540,
+  "svar": "ja",
+  "skal": "Byn sparar inte till det bästa bygget, den bara låter bli. Att välja det bästa den har råd med är det kommentaren menar och kostar ett villkor.",
+  "gor": "Flytta villkoret harRad(r, k) in i slingan i bastaBygge (platsbygge.ts), så att bara byggen byn har material till tävlar. Rad 87 (maten) lämnas som den är.",
+  "markbart": "Byarna ute i världen bygger lite fler spänger och röjda passager när bron är för dyr.",
+  "b": "b3"
+ },
+ {
+  "nr": 464,
+  "svar": "nej",
+  "skal": "Spelaren ser eldens historik och vem som oftast fyller på i fliken Elden. Vinsten är 30 rader mot att fyra tester skrivs om och något synligt försvinner.",
+  "markbart": "inget",
+  "b": "b3"
+ },
+ {
+  "nr": 506,
+  "svar": "ja",
+  "skal": "Reglerna säger att elden är ett verktyg som inte får styra andra system, och dokumentet säger att en släckt eld inte är en egen fara. Ett eget urval som rycker folk ur arbetet går emot det.",
+  "gor": "Gör 'lägg ved på elden' och 'tänd elden' till rader i valet av aktivitet (ARBETEN), med eldens önskan, plikten och avståndet som poäng. Ta bort fyllare, tandare, awake, assign, iNod och urvalet i eldflytt.ts, så att stepFire bara låter elden brinna och räknar önskan. Gör det som ett eget steg med nytt facit och npm run likhet, och se elden och kylan i fasens Balans.",
+  "markbart": "Ingen rycks ur sitt arbete för att lägga ved på elden. Elden kan slockna lite oftare, och den som fryser tänder eller fyller på den.",
+  "b": "b3"
+ },
+ {
+  "nr": 466,
+  "svar": "fraga",
+  "skal": "Koden stämmer: bara scenariot sätter flaggan hjalp, så hjälparna drar aldrig undan någon i spelet. Designdokumentet säger att Undsättningen är bestämd, så att ta bort den är att ändra spelet, och att koppla in den är nytt bygge.",
+  "markbart": "Inget om det tas bort. Kopplas det in dras fallna undan under striden och färre förblöder.",
+  "fragan": "Ska hjälparna gå in under striden och dra undan de fallna, som designdokumentet säger? Svar 1: bygg in det. Svar 2: ta bort den döda koden (kämpar med empati räddar ändå fallna).",
+  "b": "b4"
+ },
+ {
+  "nr": 486,
+  "svar": "nej",
+  "skal": "Budbäraren och barnens rop är byggda steg som syns i spelet och ger berättelse. Utan dem missar de som arbetar långt bort anfallet, och det märks.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 489,
+  "svar": "nej",
+  "skal": "Tappade vapen syns i stridsloggen och ger variation i striden, och designdokumentet vill ha dem. Att göra vapnet till en sak på kartan är mer kod och större risk än det är värt nu.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 522,
+  "svar": "ja",
+  "skal": "Två system avgör samma sak vid samma träff. Striden känner vapnet och skyddet, och designdokumentet säger att olyckshugget avgör i strid.",
+  "gor": "Låt skada() i halsa.ts få veta att såret kommer från en strid (kartstrid.ts rad 163 skickar med det) och hoppa då över regeln med HALSA.forloraGrad och forloraChans på rad 411. Regeln gäller kvar för sår utanför strid (olyckor, bett utanför strid). Olyckshugget i strid.ts och forlora i kartstrid.ts rad 166 ändras inte.",
+  "markbart": "Något färre avhuggna händer och fötter i strid. Den som får en del avhuggen faller alltid ur striden.",
+  "b": "b4"
+ },
+ {
+  "nr": 524,
+  "svar": "nej",
+  "skal": "Steg 10.2.25 säger just att rövarna går bredvid varandra och inte i samma ruta, och det syns på kartan. Vinsten är bara tio rader.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 514,
+  "svar": "nej",
+  "skal": "Vådaskottet ger berättelse: skytten minns det, de som såg det tycker hen är en klåpare, och det blir en händelse. Designdokumentet vill ha det, och det kostar bara 20 rader.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 546,
+  "svar": "ja",
+  "skal": "Bara regel 2 görs om: två fasta timmar gömd oavsett mod är en hård regel om ett val. Regel 1 är ett rop på några sekunder som ingen märker skillnad på, och regel 3 och 4 beskriver hur världen är.",
+  "gor": "Regel 2: ta bort tvånget 'gomd' på rovare.ts rad 430 och gavSigNyss på rad 462-463. Lägg i stället ett avdrag i rovarVilja för den som har gavSig, störst direkt efteråt och jämnt ner till noll efter ROVARE.gavSigTim timmar (ett nytt balanstal för avdragets storlek, satt så högt att ingen går rakt tillbaka in i striden). Regel 1, 3 och 4 står kvar.",
+  "markbart": "En modig bybo som blivit bortskrämd kan ställa upp igen före två timmar (ett halvt dygn i spelet). Knappt märkbart.",
+  "b": "b4"
+ },
+ {
+  "nr": 484,
+  "svar": "ja",
+  "skal": "60 rader för något som kräver många saker samtidigt. Händer det nästan aldrig är det dött gods, händer det ibland är det en bra berättelse. Mätningen får avgöra, räknarna finns redan.",
+  "gor": "Läs räknarna vargVantar, vargDorrStrid och vargTrottnade i nästa balanskörning (24 byar i 35 dygn, 35 år i spelet, fem veckor i verkligheten). Väntar vargarna utanför en dörr i färre än var fjärde by: ta bort väntan (varg.ts 448-496, VARG.vantaTim, fälten dorr, vantar och trottnat, scenariot) och stycket i designdokumentet. Annars lämnas den som den är.",
+  "markbart": "Om den tas bort: vargarna ger upp direkt vid en stängd dörr, och händelsen 'Vargarna väntar utanför dörren' försvinner.",
+  "b": "b4"
+ },
+ {
+  "nr": 498,
+  "svar": "ja",
+  "skal": "Tre räkningar för samma sak, och designdokumentet säger att rollen mot vargarna väljs som mot rövarna. Ett system ska avgöra.",
+  "gor": "Låt modiga (varg.ts 472-475) och vagar för vargjakten (rad 536) fråga rollVid(s, q, 'varg') === 'kampe' i stället för mod / 20, och räkna dem som kan slåss med vuxenKan. Krymp skyddas till samma förlager som mot rövarna (under vaktåldern eller för svag, och den som inte kan gå); gamla och sjuka vuxna får sin roll ur viljan, som redan drar av för ålder och sjukdom.",
+  "markbart": "Lite: seder, familj och hälsa väger in i vem som går ut mot vargarna. En gammal eller sjuk med stor vilja kan stå vid elden som kämpe eller hjälpare.",
+  "b": "b4"
+ },
+ {
+  "nr": 558,
+  "svar": "nej",
+  "skal": "Designdokumentet säger uttryckligen att björnen bara jagas av en grupp med spjut. Det sparar en rad och ger fler skadade.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 462,
+  "svar": "nej",
+  "skal": "Det syns direkt när man går in i en annan by: utan stubbar och stigar står husen i orörd skog och byn ser inte bebodd ut. Designdokumentet vill ha det, och koden är samlad i en fil.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 465,
+  "svar": "nej",
+  "skal": "Talen är tio rader i ett register och kostar nästan ingen kod. Tas de bort går historien inte att få tillbaka, och designdokumentet vill ha fler grafer som går tillbaka till byns början.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 500,
+  "svar": "ja",
+  "skal": "Namnen är önskade och ger variation, men i dag blir texten fel: namnet handlar om släkten och skälet om en stöld. Det är ett fel som ska rättas, inte tas bort.",
+  "gor": "När lekNamn ger ett namn i gebinamn: använd en egen mallgrupp (till exempel slaktnamn) med några varianter som säger att hen heter så efter sin förälder eller sitt barn med samma namnslut, och spara det som skälet i stället för intryckets skäl. Skicka med den andres namn i fyllningen. Rätta testet i folk.ts 1937-1944 så att det prövar texten.",
+  "markbart": "Texten om Lillbjörn och Storbjörn handlar om släkten i stället för om en stöld eller annat som inte hör dit.",
+  "b": "b4"
+ },
+ {
+  "nr": 470,
+  "svar": "ja",
+  "skal": "Inget i spelet skriver de fyra händelserna, så raderna är byggda i förväg. Reglerna säger att sådant står i designdokumentet tills steget byggs.",
+  "gor": "Ta bort raderna forbund, farsot, karavan och uppdrag ur VARLDSHANDELSER, grenarna som läser dem i vacktliv.ts 40-41 och den oanvända listan VARLDHANDELSE_IDS. Låt testet i fas11.ts 476-483 använda slag som finns. Skriv i designdokumentet (Världens krönika) att de fyra slagen kommer med sina steg.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 473,
+  "svar": "ja",
+  "skal": "Mutan rör aldrig spelarens by och gör nästan samma sak som gåvan: höjer grannens syn. Spelaren ser den bara som en rad i världens krönika.",
+  "gor": "Ta bort raden muta i BYHANDLINGAR med mutaKan, mutaMed och mutaRikedom, de tre balanstalen, raden muta i BYHANDELSER, listan vl.mutor och ledarbytets halvering i byrel.ts, raderna i radperson.ts och varlden.ts och de tre scenarierna. Stryk mutan mellan byar i designdokumentet (Relationen och läget mellan två byar, Byarna i världen).",
+  "markbart": "Grannbyarnas syn på varandra rör sig lite annorlunda. Raden om muta försvinner ur världens krönika.",
+  "b": "b4"
+ },
+ {
+  "nr": 527,
+  "svar": "ja",
+  "skal": "Fjäsket har samma formel som det vänliga beskedet men verkar genast utan att någon reser. Beskedet gör samma sak på riktigt, med ett bud som går leden.",
+  "gor": "Ta bort raden fjask i BYHANDLINGAR och talen fjaskMal och fjaskKostnad. Behåll talet BYREL.fjask om gåvan och beskedet använder det som mått, men ge det ett namn som passar. Rätta testerna och stryk fjäsket i designdokumentet (Relationen och läget mellan två byar, Byarna i världen).",
+  "markbart": "Grannbyar skickar fler bud, och relationerna rör sig lite långsammare. Ingen grannes syn på byn ändras längre utan att ett bud kommit.",
+  "b": "b4"
+ },
+ {
+  "nr": 508,
+  "svar": "nej",
+  "skal": "Alla åtta utvägarna står i designdokumentet, registret väljer med poäng som reglerna vill, och två kommande steg (12.1.9 och 12.1.10) bygger vidare på vagnen och gömman. Att lämna någon ensam är också en berättelse.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 530,
+  "svar": "ja",
+  "skal": "Ett fast tal räcker: en fara räknad ur varje led är mer kod och ändrar vilka som reser, utan att någon märker varför. Bara kommentaren är fel.",
+  "gor": "Låt RESA.faraDygn stå som det är. Ändra bara kommentaren på resa.ts rad 105 så att den inte säger att talet är tillfälligt (till exempel 'ledens fara per dygn på vägen, ett fast tal').",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 520,
+  "svar": "ja",
+  "skal": "Handlaren är en riktig person med egna egenskaper, så en andra uppsättning egenskaper ur ett annat frö är två system för samma sak. Fältet humor läses inte av någon.",
+  "gor": "Ta bort fältet humor ur GastLiv och raden som räknar det (gastliv.ts 15, 131, 139). I gillar (gastrel.ts 54-63): läs hp(s, h).pot[k] och stat(hp(s, h), 'empati', now) i stället för gastStat, och ta bort gastStat. Livshistorien behålls som den är.",
+  "markbart": "En gång ändras vilka bybor varje handlare tycker om, och därmed lite vad hen kräver i byten. Sedan stämmer tycket med egenskaperna i personrutan.",
+  "b": "b4"
+ },
+ {
+  "nr": 541,
+  "svar": "ja",
+  "skal": "Väg B: nyheter ska kunna gå i flera led som i dag, annars vet byarna nästan inget om varandra. Men den som själv varit på platsen ska inte få sin källa överskriven av ett rykte.",
+  "gor": "I larOrt (ort.ts 58-63): behåll att tiden och nyheten följer med på alla nivåer, men skriv inte över src och led när den nivå som hörs är lägre än den man har och man har platsen från egen resa (e.src saknas). Korta rad 58 till Math.max(c, x) där det är samma sak.",
+  "markbart": "Texten om varifrån man vet något säger 'egen resa' även efter att man hört ett rykte om platsen. Annars inget.",
+  "b": "b4"
+ },
+ {
+  "nr": 503,
+  "svar": "ja",
+  "skal": "Fältet flyttar bara en grå fläck på kartan, och kartan visar ändå bara ett rykte per plats. Ingen märker skillnaden.",
+  "gor": "Räkna förskjutningen i ryktesLage ur världens frö och platsens nummer. Ta bort fr ur lärdomen (typer.ts 316) och de ställen i ort.ts och skrift.ts som sätter, ärver och tar bort det. Skriv om meningen i designdokumentet (Platsen i minnet) och kontrollen i scenariot för steg 11.4.5.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 501,
+  "svar": "nej",
+  "skal": "Talen beskriver hur världen är: ved torkar fortare vid elden och i värme, och en kort skur blöter inte en hög. De står i designdokumentet, och vinsten är nio rader.",
+  "markbart": "inget",
+  "b": "b4"
+ },
+ {
+  "nr": 456,
+  "svar": "ja",
+  "skal": "Designdokumentet (steg 8.3.9) säger att tiden vid makten ska bort och att vunna strider ska räknas. Koden gör bara det första till hälften, så det är ett fel i bygget och ingen smaksak.",
+  "gor": "Ta bort LED.wTid och LED.tidDygn och rätta kommentarerna på rad 40 och 61 i styre.ts. Höj st.vunna med 1 när byns sida vinner en strid mot rövare (EFTER.rovare i rovare.ts) medan byn har en ledare. Stryk orden om tid vid makten 0,2 i stycket Ledarskapet i fliken Samhället.",
+  "markbart": "Lite: en ledare vars by slår tillbaka rövare sitter säkrare.",
+  "b": "b5"
+ },
+ {
+  "nr": 542,
+  "svar": "ja",
+  "skal": "Vedskatten ur ett överskott är gjord med avsikt (steg 10.2.43) och är enkel. En bredare skatt vore mer kod, så bara texten och den döda raden rättas.",
+  "gor": "Ta bort variabeln l och dess villkor på rad 368 i kyrka.ts. Ändra lagens text till \"En del av byns ved går till kyrkan\" och skriv i designdokumentet att kyrkskatten är ved ur ett överskott.",
+  "markbart": "Bara lagens text: den säger ved i stället för förråd.",
+  "b": "b5"
+ },
+ {
+  "nr": 539,
+  "svar": "nej",
+  "skal": "Koden gör som designdokumentet säger, och en flagga är det enklaste. Förslaget lägger till kod och ett balanstal, och att ett hårt straff följer en hela livet ger berättelse.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 512,
+  "svar": "ja",
+  "skal": "Flytten är ofarlig och gör att rädslan räknas också i byar utan ledare. Att bygga om rädslan på minnena är mycket arbete med risk för nya fel och görs inte.",
+  "gor": "Flytta rädslan för handlingar (raderna 37-44 och 202-256 i lagar.ts) till en egen fil, till exempel src/sim/radsla.ts, med ett eget block balanstal och en egen rad i TAKTER i stället för anropet från stepStyre. Spridningen mellan goda vänner lämnas som den är.",
+  "markbart": "inget, utom att balanstalen byter namn i npm run talen och att byar utan ledare också får rädslor",
+  "b": "b5"
+ },
+ {
+  "nr": 518,
+  "svar": "nej",
+  "skal": "Vinsten är omkring tio rader, och yrkestitlarna syns och styr rivaler och titlar. Dagens regel ger skilda yrken i byn; den enklare skulle ge många med samma titel.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 554,
+  "svar": "ja",
+  "skal": "Designdokumentet säger att vardagsbönen ger sitt högst en gång om dagen. Det är en regel om vad bönen ger, så den står kvar. Bara det lösa talet i koden rättas.",
+  "gor": "Gör den ledda bönens mellanrum på två dygn (två år i spelet) till ett balanstal i KULT (kult.ts rad 438). Spärrarna i bonFritid och bonNod lämnas som de är.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 532,
+  "svar": "nej",
+  "skal": "Gravplatserna, skändningarna och gravvårdarna står rad för rad i designdokumentet (stegen 10.4.2 till 10.4.13) och ger variation och berättelse. Inget är fel i koden och risken med att riva i den är stor.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 533,
+  "svar": "nej",
+  "skal": "Smaken för arbeten står i designdokumentet (steg 3.3.5), koden är liten och fungerar. Femton rader är inte värda att människorna mister sina favoritarbeten.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 469,
+  "svar": "nej",
+  "skal": "Vinsten är åtta rader, och ordet halvminne med sin förklaring i teknikrutan är ett eget steg i Färdplanen (11.1.32). Det syns för spelaren och berättar något.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 557,
+  "svar": "ja",
+  "skal": "En fast åldersgräns är en hård regel om människornas val. Styrka och smidighet väger redan in i viljan att spela, och den som inte kan gå utesluts.",
+  "gor": "Ta bort SPORT.alderTill och villkoren på raderna 177, 182 och 232 i sport.ts, så att alla vuxna räknas och kroppens egenskaper avgör. Rätta scenariot om publiken (kultur.ts rad 212) och texten i steg 10.7.16 om dem över 50: den som inte spelar kan titta.",
+  "markbart": "Lite: en stark och smidig äldre kan vara med i en match, och byar med många äldre får oftare ihop spelare.",
+  "b": "b5"
+ },
+ {
+  "nr": 513,
+  "svar": "nej",
+  "skal": "Björn har bett om just detta: steg 9.2.92 säger att brottningen ska ske med samma system och animation som striden. Den riktiga kampen syns och ger blåmärken och berättelse.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 507,
+  "svar": "nej",
+  "skal": "Designdokumentet beskriver kunskap som ett eget slag av vetande som glöms långsamt och där svampkännedomen växer gradvis. Ombygget rör ett tiotal filer med stor risk för nya fel, och det tar bort saker spelaren ser.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 499,
+  "svar": "nej",
+  "skal": "Felen i dåliga skrifter står i designdokumentet (\"tre vargar blir sex\") och kartans rykten är ett eget steg (11.7.2). De ger berättelse, och vinsten är bara omkring tio rader.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 548,
+  "svar": "ja",
+  "skal": "\"En lag i taget\" är en hård regel om människornas val som designdokumentet inte nämner. Systemet reder ut det själv: lusten frågas igen när stenen ska resas, och inga stenar går åt i onödan.",
+  "gor": "Ta bort villkoret living(s).some(... 'runsten' ... 'lag') på rad 118 i skrift.ts, så att lagLust bara ser på vikten och vilka lagar som är oskrivna.",
+  "markbart": "Knappt: två kan någon gång börja rista samma lag, och den som blir klar sist har då arbetat en kvart förgäves.",
+  "b": "b5"
+ },
+ {
+  "nr": 502,
+  "svar": "ja",
+  "skal": "Ett system som nästan aldrig används är ett fel som rättas i systemet. Kol finns bara när en eld har slocknat, och ett förrådsmål kan inte ordna det, så det enklaste är att bennålen räcker (förslag A).",
+  "gor": "Ta bort kolkravet: TATU.kol, kontrollerna av kol i tatVal och tatKlar och takeMaterial för kol i tatuering.ts. Rätta listan över arbeten som inte händer i scenariot iakttagare och texten i designdokumentet (steg 10.7.5 och Tatueringar) till bara en bennål.",
+  "markbart": "Fler får tatueringar i porträttet efter stora händelser. I dag händer det nästan aldrig.",
+  "b": "b5"
+ },
+ {
+  "nr": 491,
+  "svar": "ja",
+  "skal": "Både påbudet och förbudet står som önskade i designdokumentet, så förbudet stryks inte. Att det gäller för alltid och också nästa ledare är ett fel i koden (förslag B).",
+  "gor": "Nollställ s.styre.hanForbud när ledaren byts, på de två ställen i styre.ts där en ny ledare sätts (rad 378 och 653). Ta bort det oanvända fältet hanSedd. Lägg till en kontroll i scenariot i kultur.ts att förbudet är borta efter ett ledarbyte.",
+  "markbart": "Lite: efter ett ledarbyte får man håna ledaren igen tills byn röstar om ett nytt förbud.",
+  "b": "b5"
+ },
+ {
+  "nr": 481,
+  "svar": "nej",
+  "skal": "Beställda minnen är ett byggt steg (10.7.30) och står i avsnittet Framträdanden. Att en ledare eller präst betalar för att svärta ner eller hylla någon annan ger berättelse som spelaren ser.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 551,
+  "svar": "nej",
+  "skal": "Designdokumentet säger regeln uttryckligen två gånger, också att den gäller när framträdandet ställs in. Vinsten är tre rader, och utan gränsen ändras publikens glädje så att talen måste balanseras om.",
+  "markbart": "inget",
+  "b": "b5"
+ },
+ {
+  "nr": 496,
+  "svar": "nej",
+  "skal": "Källkoden under kalla/ är önskad i arbetsreglerna och i Läget, och bygget är bara 14 rader. Mellanvägen håller inte: utan testerna är det ändå 304 filer plus fyra, alltså fler än 255.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 528,
+  "svar": "nej",
+  "skal": "Designdokumentet säger att tornadons storlek ska synas på bilden. 70 KB är lite i en spelfil på flera MB, och att peka om rökens kopior ger mer kod i skriptet än det sparar.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 460,
+  "svar": "ja",
+  "skal": "forhistmatt går inte att starta och nämns ingenstans. De tre andra är mätverktyg som Färdplanen beställt och som behövs när världens balans ställs in i fasens Balans.",
+  "gor": "Ta bort src/test/forhistmatt.ts. Behåll radhandel, radanfall och vacktmatt med raderna i package.json och CLAUDE.md.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 461,
+  "svar": "ja",
+  "skal": "Lärdomarnas prov är gjort och resultatet står i Färdplanen. Stråkens prov behålls, för steg 6.2.6 säger att det körs igen om stråkens regler ändras, och prov-en.ts måste ändå vara kvar.",
+  "gor": "Ta bort src/test/lardom.ts och src/test/lardom-en.ts med raden i package.json och raden i CLAUDE.md. Kontrollera först att inget annat importerar lardom-en.ts. Behåll prov.ts och prov-en.ts.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 493,
+  "svar": "nej",
+  "skal": "Steg 10.2.105 säger att npm run samma finns kvar för ombyggnad, och tre obyggda steg räknar med den. Den är kortare än npm test och har egna byar.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 467,
+  "svar": "nej",
+  "skal": "Filen väntar på Björns ja eller nej i bildstilens valdel (steg 11.9.2). Där finns inget svar än, så inget görs nu. Samma sak som fråga 450.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 490,
+  "svar": "ja",
+  "skal": "Utfällningen med sammanfattning är beställd i steg 5.3.4.2 och behålls. Men de två egna variablerna kan använda samma minne som resten av rutan.",
+  "gor": "Behåll FLIKAR, DELAR och ui.personFall. Ta bort variablerna kunTek och tidVald i src/ui/flikar/person.ts och låt teknikrutan och den markerade delen i tidscirkeln använda hjalpOppen med data-hjalp och en grupp, som lärdomarna på rad 602 gör.",
+  "markbart": "Knappt något: den öppna teknikrutan och den markerade delen i tidscirkeln minns per person i stället för gemensamt.",
+  "b": "b6"
+ },
+ {
+  "nr": 535,
+  "svar": "nej",
+  "skal": "Bara fyra rader sparas och ändringen syns i rutan. Björn har tidigare sagt nej till att ändra en lista som var som han ville.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 529,
+  "svar": "nej",
+  "skal": "Designdokumentet säger att Översikt visar det hen gör och varför. Bara tre rader sparas.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 468,
+  "svar": "ja",
+  "skal": "Raderna används inte av någon handling i spelet, och det som inte behövs än byggs inte i förväg. De finns kvar i bildstilens anim.js som förlaga.",
+  "gor": "I src/ui/arbetsbild.ts: ta bort rörelserna pyssla och kasta, redskapen nal och snoboll, materialen vatten och sno, fältet hand, fältet sitta och de grenar i ritaArbete som bara de använde (huvudet nal, snoboll och det lilla splittret). Låt dorr peka på samma rad som bygga. Rör inte bildstil/anim.js. Den som bygger ett steg med sömnad eller snöbollskast lägger tillbaka raden då.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 475,
+  "svar": "fraga",
+  "skal": "Björn har sagt ja till att ta bort stödet för gamla sparade byar, men här kan en by försvinna för gott om den aldrig öppnats sedan v531. Bara Björn vet om alla hans byar har öppnats sedan dess.",
+  "markbart": "En by som bara finns i den gamla sparningen och inte öppnats sedan v531 går inte längre att läsa.",
+  "fragan": "Har du öppnat alla byar du vill ha kvar, också de andra i bylistan, sedan v531? Ja: flytten tas bort nu. Nej eller osäker: den ligger kvar.",
+  "b": "b6"
+ },
+ {
+  "nr": 450,
+  "svar": "nej",
+  "skal": "Pergamentkartan är ett byggt steg (11.9.2) som väntar på Björns ja eller nej i bildstilens valdel. Där finns inget svar än, så inget görs i koden nu.",
+  "markbart": "inget",
+  "b": "b6"
+ },
+ {
+  "nr": 487,
+  "svar": "nej",
+  "skal": "Designdokumentet vill ha just detta: kronor tonas framför folk, djur, saker och hus (steg 5.1.4.6) och tonar ut mot kanten så att det inte blinkar (9.2.88). Förslaget ger blinkande träd och gömmer hus och högar bakom kronorna.",
+  "markbart": "inget",
+  "b": "b6"
+ }
+]
