@@ -30,7 +30,7 @@ const PIL_SKILLNAD = 0.5 / VIKTER;
 export function sedVag(v: number, neg = '', pos = '', mal?: number) {
   const n = Math.min(VIKTER, Math.round(Math.abs(v) * VIKTER));
   const d = mal === undefined ? 0 : mal - v, pil = Math.abs(d) >= PIL_SKILLNAD
-    ? `<span class="sedmot" title="${esc(`På väg mot ${(d > 0 ? pos : neg).replace(/&shy;/g, '').toLowerCase()}: det som drar seden pekar dit, men sederna rör sig långsamt, så vågen följer efter en tid`)}">${d > 0 ? '→' : '←'}</span>` : '';
+    ? `<span class="sedmot" title="${esc(`På väg mot ${(d > 0 ? pos : neg).replace(/&shy;/g, '').toLowerCase()}: det som drar seden pekar dit, men sederna rör sig långsamt, så vågen följer efter en tid`)}">${d > 0 ? tecknet('sym_pil_hoger', '→') : tecknet('sym_pil_vanster', '←')}</span>` : '';
   return `<div class="sedvag"><span class="sedord">${bryt(neg)}</span><span class="vag" role="img" aria-label="${n ? `${n} av ${VIKTER} åt ${v < 0 ? 'vänster' : 'höger'}` : 'i jämvikt'}">${d < 0 ? pil : ''}${vagSvg(n, v < 0 ? -1 : 1)}${d > 0 ? pil : ''}</span><span class="sedord">${bryt(pos)}</span></div>`;
 }
 export function sedBar(v: number) {
@@ -65,7 +65,7 @@ export function sedFormat(k: Sed) {
   const alla = sedRader().filter(r => Math.abs(r.d[k]) >= 0.005), rader = alla.slice().sort((a, b) => +!!b.lagg - +!!a.lagg || Math.abs(b.d[k]) - Math.abs(a.d[k])).slice(0, 5);
   if (!rader.length) return '';
   return `<div class="sedformat">${rader.map(r => {
-    const d = r.d[k], m = Math.abs(d), pil = (d > 0 ? '→' : '←').repeat(m >= 0.15 ? 3 : m >= 0.05 ? 2 : 1), mot = d > 0 ? SEDER[k].pos : SEDER[k].neg;
+    const d = r.d[k], m = Math.abs(d), pil = (d > 0 ? tecknet('sym_pil_hoger', '→') : tecknet('sym_pil_vanster', '←')).repeat(m >= 0.15 ? 3 : m >= 0.05 ? 2 : 1), mot = d > 0 ? SEDER[k].pos : SEDER[k].neg;
     const text = `${radNamn(r)}: drar mot ${mot.toLowerCase()} (${Math.max(1, Math.round(m * 100))} av 100)${r.lagg ? '' : `, ${r.n} ${r.n === 1 ? 'minns' : 'minns'} det`}`;
     return `<span class="sedupp" title="${esc(text)}">${radTecken(r)}<b>${pil}</b><span class="muted">${r.n}</span></span>`;
   }).join('')}</div>`;
@@ -75,7 +75,7 @@ export function sedFormat(k: Sed) {
 // drar den: symbolen, namnet, åt vilket håll och hur mycket den drar, och hur många och vilka som minns den. Ett tryck till stänger.
 // Samma i Seder och i Styres vågskålar; en sed i taget är öppen (gruppen sed-)
 // en sed som inte är upplåst (steg 11.1.14): en grå rad sist, likadant i Seder och Styre, utan att säga när den kommer
-export const lastSed = (namn: string) => `<li class="muted lastsed" title="Inte upplåst än">❔ ${esc(namn)}</li>`;
+export const lastSed = (namn: string) => `<li class="muted lastsed" title="Inte upplåst än">{sym_fragetecken} ${esc(namn)}</li>`;
 export const sedKlick = (k: Sed) => `class="klick falla" ${fallUt(`sed-${k}`, 'sed-')} title="${esc(SEDER[k].effect)}"`;
 export function sedLista(k: Sed) {
   if (!hjalpOppen(`sed-${k}`)) return '';

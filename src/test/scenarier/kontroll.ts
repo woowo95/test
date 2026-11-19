@@ -93,6 +93,17 @@ SCENARIER.ikoner = {
       return a !== 'sova' && !(px && hasIcon(px)) && !(sl ? SIM.SLAG_TECKEN[sl] : ACTS[a].tecken);
     });
     del.push(['handlingar i personens tid', utan]);
+    // panelerna (steg 11.1.22): ingen emoji står kvar, och varje symbol som en panel ber om (tecknet('sym_…') eller {sym_…})
+    // har en bild i spelet eller väntar på Björns val i bildstilens valdel (kortets sym)
+    const filer = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? filer(path.join(d, e.name)) : /\.(ts|js)$/.test(e.name) ? [path.join(d, e.name)] : []);
+    const bild = filer('bildstil').filter(f => !/kontroll-ut|[\\/](bilder|forslag|svar)[\\/]/.test(f)).map(f => fs.readFileSync(f, 'utf8')).join('\n');
+    const emojier = new Set<string>(), vantar = new Set<string>();
+    for (const f of filer('src/ui')) {
+      const t = fs.readFileSync(f, 'utf8');
+      for (const m of t.matchAll(/\p{Extended_Pictographic}\uFE0F?/gu)) if (!symDelar(m[0]).some(x => typeof x !== 'string')) emojier.add(m[0]);
+      for (const m of t.matchAll(/tecknet\('(sym_[a-z0-9_]+)'|\{(sym_[a-z0-9_]+)\}/g)) { const id = m[1] ?? m[2]; if (!KARTBILDER[id] && !bild.includes(`'${id}'`)) vantar.add(id); }
+    }
+    del.push(['emojier i panelerna', [...emojier]], ['panelernas symboler (utan bild och utan kort i valdelen)', [...vantar]]);
     return del.map(([namn, m]) => [m.length ? `${namn} utan symbol: ${m.join(', ')}` : `alla ${namn} har en symbol`, !m.length] as Koll);
   },
 };

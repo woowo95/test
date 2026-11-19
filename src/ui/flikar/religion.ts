@@ -19,13 +19,13 @@ function kultHtml(tr: Tro) {
   // som går åt (BUD[...].om), ett bud vad det säger, och båda varför tron antog det (steg 10.3.3)
   (tr.bud ?? []).forEach((b, i) => {
     const d = BUD[b.id] as { text: string; om?(s: unknown, tr: Tro, b: unknown): string }, id = `bud-${tr.id}-${i}`;
-    rad.push(`<li class="klick falla" ${fallUt(id)} title="${esc(budNamn(s, b))}">📜 ${esc(budNamn(s, b))}${hjalpText(id, `<p class="muted small budmer">${d.om ? esc(d.om(s, tr, b)) + ' ' : ''}Varför tron antog det: ${esc(d.text.toLowerCase())}.</p>`)}</li>`);
+    rad.push(`<li class="klick falla" ${fallUt(id)} title="${esc(budNamn(s, b))}">${tecknet('sym_bud', '📜')} ${esc(budNamn(s, b))}${hjalpText(id, `<p class="muted small budmer">${d.om ? esc(d.om(s, tr, b)) + ' ' : ''}Varför tron antog det: ${esc(d.text.toLowerCase())}.</p>`)}</li>`);
   });
-  if (tr.plan) rad.push(`<li title="${esc(planKlar(s, tr) ? 'Planen är klar' : 'Planen bestäms del för del i trons krets')}">📜 Trons hus${planKlar(s, tr) ? ` (${esc(troshusNamn(s, tr))})` : ''}: ${esc(planText(s, tr))}${planKlar(s, tr) ? ` · ${troshusKlart(s, tr) ? 'står klart' : troshusAv(s, tr).length ? 'byggs' : 'väntar på kyrkans egendom'}` : ''}</li>`); // planen (steg 10.3.18)
-  if (forradSum(s, tr)) rad.push(`<li title="${esc(Object.entries(kyrkansForrad(s, tr)).filter(([, n]) => n >= 1).map(([k, n]) => `${Math.floor(n + 1e-9)} ${k}`).join(', '))}">📜 Kyrkans förråd: ${forradSum(s, tr)}</li>`);
-  for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">✨ Helgonet ${esc(h.namn)}</li>`);
+  if (tr.plan) rad.push(`<li title="${esc(planKlar(s, tr) ? 'Planen är klar' : 'Planen bestäms del för del i trons krets')}">${tecknet('sym_troshus', '📜')} Trons hus${planKlar(s, tr) ? ` (${esc(troshusNamn(s, tr))})` : ''}: ${esc(planText(s, tr))}${planKlar(s, tr) ? ` · ${troshusKlart(s, tr) ? 'står klart' : troshusAv(s, tr).length ? 'byggs' : 'väntar på kyrkans egendom'}` : ''}</li>`); // planen (steg 10.3.18)
+  if (forradSum(s, tr)) rad.push(`<li title="${esc(Object.entries(kyrkansForrad(s, tr)).filter(([, n]) => n >= 1).map(([k, n]) => `${Math.floor(n + 1e-9)} ${k}`).join(', '))}">${tecknet('sym_kyrkoforrad', '📜')} Kyrkans förråd: ${forradSum(s, tr)}</li>`);
+  for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">${tecknet('sym_helgon', '✨')} Helgonet ${esc(h.namn)}</li>`);
   const sten = heligaStenar(s, tr)[0]; // ristat på en sten (steg 10.6.2): stensymbolen, och den ristade texten vid tryck
-  if (tr.kvade) rad.push(sten ? `<li title="${esc(`Ristat: ${sten.text}`)}" tabindex="0">📜🪨 Heliga kväden</li>` : `<li title="${esc(tr.kvade.text)}">📜 Heliga kväden</li>`);
+  if (tr.kvade) rad.push(sten ? `<li title="${esc(`Ristat: ${sten.text}`)}" tabindex="0">${tecknet('sym_kvade', '📜')}🪨 Heliga kväden</li>` : `<li title="${esc(tr.kvade.text)}">${tecknet('sym_kvade', '📜')} Heliga kväden</li>`);
   if (s.ritual?.tro === tr.id) rad.push(`<li>Just nu: ${esc(s.ritual.namn ?? RITUALER[s.ritual.k].namn)}</li>`);
   return rad.length ? `<h3>Prästen, platserna och högtiderna</h3><ul class="rels">${rad.join('')}</ul>` : '';
 }
@@ -63,7 +63,7 @@ function troHtml(tr: Tro, storst = false) {
   const folk = troende(s, tr).sort((a, b) => (b.troStyrka ?? 0) - (a.troStyrka ?? 0)), g = byId(s, tr.grundare), id = `tro-${tr.id}`;
   const grundare = g && alive(g) ? pLink(g) : `${esc(tr.gnamn)} <small class="muted">(lever inte längre)</small>`;
   const fid = storst ? `troihop-${tr.id}` : `troupp-${tr.id}`, ut = storst ? !hjalpOppen(fid) : hjalpOppen(fid);
-  const huvud = `<div class="tekhead klick falla" data-hjalp="${fid}" aria-expanded="${ut}" tabindex="0" role="button" title="${ut ? 'Tryck för att fälla ihop' : 'Tryck för att fälla ut'}">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">👥 ${folk.length}</span> ${berattelseKnapp(id, 'Berättelsen om tron')}</div>`;
+  const huvud = `<div class="tekhead klick falla" data-hjalp="${fid}" aria-expanded="${ut}" tabindex="0" role="button" title="${ut ? 'Tryck för att fälla ihop' : 'Tryck för att fälla ut'}">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">${tecknet('sym_troende', '👥')} ${folk.length}</span> ${berattelseKnapp(id, 'Berättelsen om tron')}</div>`;
   if (!ut) return huvud + hjalpText(id, `<p class="muted">${esc(trosBerattelse(s, tr))}</p>`);
   return `${huvud}
     <p class="small" title="${esc(`${troEtikett(s, tr).text} Tyngd ${kortTyngd(tyngd(s, tr))}: ` + tyngdDelar(s, tr).map(d => `${d.namn} ${kortTyngd(d.v)}`).join(', ') + '.')}"><b>${esc(troEtikett(s, tr).namn)}</b></p>
@@ -82,7 +82,7 @@ export const religion: Flik = {
   html() {
     const tron = (s.tron ?? []).filter(tr => tr.slut === undefined).sort((a, b) => troende(s, b).length - troende(s, a).length || a.id - b.id);
     const stora = tron.slice(0, STORA), ovriga = tron.slice(STORA), glomda = (s.tron ?? []).filter(tr => tr.slut !== undefined);
-    const ovr = ovriga.length ? `<div class="tekhead klick falla" ${fallUt('tro-ovriga')} title="De mindre trosriktningarna"><b>Övriga trosriktningar</b> <span>👥 ${ovriga.reduce((n, tr) => n + troende(s, tr).length, 0)}</span></div>${hjalpText('tro-ovriga', ovriga.map(tr => troHtml(tr)).join(''))}` : '';
+    const ovr = ovriga.length ? `<div class="tekhead klick falla" ${fallUt('tro-ovriga')} title="De mindre trosriktningarna"><b>Övriga trosriktningar</b> <span>${tecknet('sym_troende', '👥')} ${ovriga.reduce((n, tr) => n + troende(s, tr).length, 0)}</span></div>${hjalpText('tro-ovriga', ovriga.map(tr => troHtml(tr)).join(''))}` : '';
     const glo = glomda.length ? `<h3>Trosriktningar som dött ut</h3><ul class="rels">${glomda.map(tr => `<li>${tr.sym ? tecknet(tr.sym, '✨') : '✨'}<span>${esc(troNamn(tr))}</span><span></span><span class="muted">${timeLabel(s, tr.slut!)}</span></li>`).join('')}</ul>` : '';
     const folk = living(s).filter(p => ageOf(p, s.now) >= UPPV.fran).sort((a, b) => andlighet(s, b) - andlighet(s, a));
     const personer = `<h3>Andligheten i byn</h3><ul class="rels">${folk.map(p => { const tr = s.tron?.find(t => t.id === p.tro); return `<li>${pLink(p)}<span title="${esc(`Andlighet ${tioDel(andlighet(s, p))} av 10: hur viktigt det heliga är för ${p.name}, inte vad hen tror på`)}">${bar(andlighet(s, p) / 100)}</span><span>${tr ? `${tr.sym ? tecknet(tr.sym, '') + ' ' : ''}${esc(troNamn(tr))}` : '<span class="muted">–</span>'}</span><span class="muted">${Math.round(andlighet(s, p))}</span></li>`; }).join('')}</ul>`;

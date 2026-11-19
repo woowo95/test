@@ -1205,3 +1205,40 @@
     ]),
   ] });
 })();
+
+// steg 11.1.16 och 11.1.22: symbolerna i panelerna som delade en annan betydelses symbol (en symbol per betydelse): pilarna åt
+// sidorna i Seder (pilen upp vriden ett kvarts varv) och Trons bud, trons hus, kyrkans förråd, de troende, helgonen och de
+// heliga kvädena. En version av varje, ja eller nej
+(() => {
+  const L = { o: 'kol0', k: 'kol2', r: 'rost2', R: 'rost3', d: 'rost1', y: 'senap2', Y: 'senap3', z: 'senap1', j: 'jord1', J: 'jord2', b: 'jord3', w: 'ben3', W: 'ben2', s: 'skiffer2', S: 'skiffer3', q: 'skiffer1' };
+  const botten = (B, w, h) => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, B.P.i('ben', 2)); };
+  const ruta = (B, rader) => { botten(B, 20, 20); ritaSprite(B, rader, L, 2, 2); };
+  // pilen upp (godkänd, sym_pil_upp) vriden ett kvarts varv medsols: pilen åt höger; speglad: åt vänster
+  const UPP = { rader: ['.......M.......', '......MPM......', '.....MOOPM.....', '....MOOONNM....', '...MOOOONNNM...', '..MOOOOONNNNM..', '.MOOOOOONNNNNM.', 'MMMMMMMMMMMMMMM', '...............'], pal: { M: '#353204', P: '#898b4c', O: '#647025', N: '#4b4f00' } };
+  const H0 = UPP.rader.length, W0 = UPP.rader[0].length;
+  const hoger = Array.from({ length: W0 }, (_, y) => Array.from({ length: H0 }, (_, x) => UPP.rader[H0 - 1 - x][y]).join(''));
+  const vanster = hoger.map(r => [...r].reverse().join(''));
+  const pil = (B, rader, x0, y0) => rader.forEach((r, y) => [...r].forEach((ch, x) => { const c = UPP.pal[ch]; if (c) B.satt(x0 + x, y0 + y, B.P.fran(c)); }));
+  const S = 'Steg 11.1.22: en symbol per betydelse. I Tro delade den här saken symbol med något annat (skriftrullen, folket eller gnistorna), och nu får den en egen. Symbolen i 16 punkter på panelens botten. Ja eller nej?';
+  VAL.push(
+    { id: 'f11_pil_sidor', sym: ['sym_pil_vanster', 'sym_pil_hoger'], namn: 'Pilarna åt sidorna i Seder', typ: 'janej', vad: 'Steg 11.1.16: pilarna vid upplevelserna i Seder (åt vilket håll en upplevelse drar seden, en till tre pilar) blir pixelsymboler. De är den godkända pilen upp, vriden ett kvarts varv: till vänster en pil åt vänster, sedan en åt höger och sist tre i rad, som när en upplevelse drar starkt. Ja eller nej?', versioner: [{ text: 'Pilen upp vriden ett kvarts varv: åt vänster, åt höger och tre åt höger i rad.', w: 72, h: 20, rita: B => { botten(B, 72, 20); pil(B, vanster, 2, 2); pil(B, hoger, 16, 2); for (let i = 0; i < 3; i++) pil(B, hoger, 34 + i * 12, 2); } }] },
+    { id: 'f11_sym_bud', sym: 'sym_bud', namn: 'Trons bud', typ: 'janej', vad: S, versioner: [{ text: 'En rundad stenhäll med ristade runor i rader.', w: 20, h: 20, rita: B => ruta(B, [
+      '................', '.....oooooo.....', '...ooSSSSSSoo...', '..oSSSSSSSSSso..', '..oSqqSqSqqsso..', '..oSSSSSSSSsso..', '..oSqSqqSqSsso..', '..oSSSSSSSssso..',
+      '..oSqqSSqqssso..', '..oSSSSSSsssso..', '..oSqSqqSqssso..', '..oSSSSssssssso..', '..osssssssssso..', '...oooooooooo...', '................', '................']) }] },
+    { id: 'f11_sym_troshus', sym: 'sym_troshus', namn: 'Trons hus', typ: 'janej', vad: S, versioner: [{ text: 'Ett litet gudahus med brant tak av rött trä, ett guldtecken i nocken och en mörk dörr.', w: 20, h: 20, rita: B => ruta(B, [
+      '................', '.......oo.......', '......oYyo......', '.......oo.......', '......oRro......', '.....oRrrdo.....', '....oRrrrrdo....', '...oRrrrrrrdo...',
+      '..oooooooooooo..', '...obJJJJJJjo...', '...obJoooJJjo...', '...obJokoJJjo...', '...obJokoJJjo...', '...obJokoJJjo...', '...oooooooooo...', '................']) }] },
+    { id: 'f11_sym_kyrkoforrad', sym: 'sym_kyrkoforrad', namn: 'Kyrkans förråd', typ: 'janej', vad: S, versioner: [{ text: 'En kista av trä med järnband och ett guldtecken på framsidan.', w: 20, h: 20, rita: B => ruta(B, [
+      '................', '................', '...oooooooooo...', '..obbbbbbbbbJo..', '..obJJJJJJJJjo..', '..okkkkkkkkkko..', '..obbbboobbbjo..', '..obbboYyobbjo..',
+      '..obbboyzobbjo..', '..oJJJJooJJJjo..', '..okkkkkkkkkko..', '..ojjjjjjjjjjo..', '..oooooooooooo..', '................', '................', '................']) }] },
+    { id: 'f11_sym_troende', sym: 'sym_troende', namn: 'De troende', typ: 'janej', vad: S, versioner: [{ text: 'En människa i lång dräkt med båda armarna lyfta mot himlen.', w: 20, h: 20, rita: B => ruta(B, [
+      '.o............o.', 'owo..........owo', 'owo...oooo...owo', '.owo.oRRRro.owo.', '.owo.oRRrro.owo.', '..owo.orro.owo..', '..obJooooooJjo..', '...obJbbbbJjo...',
+      '....obbbbbjo....', '....obbbbJjo....', '...obbbbbJJjo...', '...obbbbJJjjo...', '..obbbbJJJjjjo..', '..oooooooooooo..', '................', '................']) }] },
+    { id: 'f11_sym_helgon', sym: 'sym_helgon', namn: 'Helgonet', typ: 'janej', vad: S, versioner: [{ text: 'Ett huvud med en gyllene ring ovanför.', w: 20, h: 20, rita: B => ruta(B, [
+      '....oooooooo....', '...oYYyyyyyzo...', '...oyoooooozo...', '....oooooooo....', '.....oooooo.....', '....oWwwwWWo....', '....owwwwWWo....', '....owowwoWo....',
+      '....owwwwWWo....', '....oWwwwWWo....', '.....oWWWWo.....', '...oooooooooo...', '..obbbbbbbbJJo..', '..obbbbbbbJJjo..', '..oooooooooooo..', '................']) }] },
+    { id: 'f11_sym_kvade', sym: 'sym_kvade', namn: 'De heliga kvädena', typ: 'janej', vad: S, versioner: [{ text: 'En lyra av trä med strängar.', w: 20, h: 20, rita: B => ruta(B, [
+      '................', '.oooooooooooooo.', '.obbbbbbbbbbbJo.', '.oboooooooooJjo.', '.obo.w.w.w.oJjo.', '.obo.w.w.w.oJjo.', '.obo.w.w.w.oJjo.', '.obo.w.w.w.oJjo.',
+      '..obow.w.woJjo..', '..obow.w.woJjo..', '...obowwwoJjo...', '...obooooJJjo...', '....obbbbJjo....', '.....oooooo.....', '................', '................']) }] },
+  );
+})();

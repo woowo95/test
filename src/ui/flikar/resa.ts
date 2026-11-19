@@ -34,7 +34,7 @@ export function resaHtml(r?: Redogorelse) {
   if (!d) return huvud + folk + bok;
   const rad = (l: [Agare, string, number][]) => l.length ? l.map(([a, k, n]) => `<li>${vem(a)}: ${sak(k, n)}</li>`).join('') : '<li class="muted">Inget</li>';
   const delning = `<h3>Hur bytet delades</h3>
-    <ul class="fame"><li title="Värdet av det sällskapet hade med sig hem, utöver insatserna">💰 Bytet ${Math.round(d.varde)}</li><li title="Värdet av det som satsades och gick åt">⬇ Gått åt ${Math.round(d.gatt)}</li><li title="Bytet minus det som gått åt">${d.vinst >= 0 ? '{sym_pil_upp}' : '{sym_pil_ned}'} Vinst ${Math.round(d.vinst)}</li></ul>
+    <ul class="fame"><li title="Värdet av det sällskapet hade med sig hem, utöver insatserna">💰 Bytet ${Math.round(d.varde)}</li><li title="Värdet av det som satsades och gick åt">{sym_pil_ned} Gått åt ${Math.round(d.gatt)}</li><li title="Bytet minus det som gått åt">${d.vinst >= 0 ? '{sym_pil_upp}' : '{sym_pil_ned}'} Vinst ${Math.round(d.vinst)}</li></ul>
     <h3>Tillbaka till ägarna</h3><ul class="fame">${rad(d.tillbaka)}</ul>
     <h3>Bytet</h3><ul class="fame">${rad(d.byte)}</ul>
     <h3>Andelarna</h3><ul class="fame">${d.andelar.map(([a, n]) => `<li title="${esc(`Andelar (en per resenär och en per ${RESA.andelVarde} i värde som satsats) och fordran: det som gått åt av insatsen plus delen av vinsten`)}">${vem(a)}: ${n} ${n === 1 ? 'andel' : 'andelar'}, fordran ${Math.round(d.fordran.find(f => f[0] === a)?.[1] ?? 0)}</li>`).join('')}</ul>`;
