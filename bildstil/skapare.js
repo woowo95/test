@@ -1,8 +1,8 @@
 // ---------- karaktärsskaparen och granskningsläget (steg 5.2.2.1) ----------
 // Porträttet (64 × 64) och kartfiguren (14 × 20) byggs av delarna i registret PORTRATT (portratt.json) i lager, med
-// masker och färgbyte, så som Porträttens byggsätt säger. Inga delar är ritade än: varje del ritas här som en grå
-// platshållare (enkla former) med färgnummer, så att lagren, maskerna och färgbytet går att pröva. När en del ritas på
-// riktigt (5.2.2.3–5.2.2.7) får dess rad en bild och ett högre "ritad", och platshållaren används inte längre.
+// masker och färgbyte, så som Porträttens byggsätt säger. Varje del är en ritad bild (delar/<id>.json, 5.2.2.3–5.2.2.7);
+// en del i registret som inte har någon bild än ritas inte. Mallarna (skallen och kroppen), remmarna, blodet och
+// ögonlappen ritas här ur former (RITA).
 // Granskningsläget visar ett kort per del; Björns svar sparas i databasens samling 'val' som 'del-<id>'.
 // Allt ligger i en funktion, så att namnen inte krockar med sida.js (som den läser: PAL, Bild, tillCanvas, markBild, hash, vn).
 (() => {
@@ -173,7 +173,7 @@
     };
   };
 
-  // ---------- porträttet: mallarna (ritade, steg 5.2.2.2) och de grå platshållarna för resten ----------
+  // ---------- porträttet: mallarna (ritade, steg 5.2.2.2) och det som ritas utan en del: remmarna, blodet och ögonlappen ----------
   const RITA = {
     // mallens kropp: halsen i skugga under hakan med en ljusare kant till vänster, axlarna och bröstet i ljuset uppifrån
     // vänster, halsgropen, nyckelbenen hos de vuxna och adamsäpplet hos mannen
@@ -195,243 +195,17 @@
     },
     // skallen: överdelen av huvudet ner till ögonlinjen, densamma i alla mallar
     skalle(dk, G) { const inne = G.huvud('rund'); fyll(dk, (x, y) => y + 0.5 <= G.ey + 0.5 && inne(x, y), 'hud', [12, 6, 52, G.ey], { mitt: G.skugga }); },
-    huvudform(dk, G, d) {
-      const inne = G.huvud(d.form);
-      fyll(dk, (x, y) => y > G.ey && inne(x, y), 'hud', [12, G.ey, 52, 58], { mitt: G.skugga });
-      for (const [x, y] of [[22, 37], [23, 37], [22, 38], [23, 38], [40, 37], [41, 37], [40, 38], [41, 38]]) { const v = dk.get(x, y); if (v) dk.satt(x, y, 'kind' + v.slice(-1)); }
-    },
-    ora(dk, G, d) {
-      const v = nr(d) % 3, [rx, ry] = [[2.4, 4.2], [2.9, 5], [3.8, 5.4]][v];
-      G.ora.forEach(([ex, ey], s) => {
-        const cx = ex + (v === 2 ? (s ? 1 : -1) : 0), inne = (x, y) => ellips(cx, ey, rx, ry)(x, y) && (s ? x + 0.5 >= 45 : x + 0.5 <= 19);
-        fyll(dk, inne, 'hud', [cx - 5, ey - 6, cx + 5, ey + 6], { mitt: [cx, ey - 1, rx, ry], forskj: s ? -1 : 0 });
-        linje(dk, cx + (s ? -0.6 : 0.4), ey - 2, cx + (s ? -0.6 : 0.4), ey + 1, 'hud0');
-      });
-    },
-    nasa(dk, G, d) {
-      const v = nr(d) % 10, barn = G.barn;
-      const len = [6, 6, 6, 5, 8, 5, 7, 8, 5, 7][v] - (barn ? 2 : 0), b = Math.max(1, [2, 1, 3, 2, 2, 2, 2, 3, 3, 1][v] - (barn ? 1 : 0));
-      const top = G.nasa[1], yb = top + len;
-      linje(dk, 33, top + 1, 33 + (v === 6 ? 1 : 0), yb - 1, 'hud1');
-      if (v === 6) { dk.satt(31, top + 3, 'hud3'); dk.satt(34, top + 3, 'hud1'); }
-      dk.satt(31, yb - 1, 'hud3');
-      for (let x = 32 - b; x <= 31 + b; x++) dk.satt(x, yb, 'hud1');
-      dk.satt(32 - b - 1, yb, 'hud0'); dk.satt(32 + b, yb, 'hud0');
-      if (v === 5) { dk.satt(32 - b, yb, 'hud0'); dk.satt(31 + b, yb, 'hud0'); }
-      if (v === 7) { dk.satt(30, yb - 1, 'hud3'); dk.satt(34, yb - 1, 'hud1'); }
-    },
-    oga(dk, G, d, p) {
-      const v = nr(d) % 6, lage = lageAv(p, 'oga');
-      const w = [6, 6, 5, 7, 6, 6][v], h = [4, 3, 2, 4, 3, 3][v];
-      G.oga.forEach(([ex, ey], s) => {
-        const x0 = ex - Math.floor(w / 2), x1 = x0 + w - 1, yt = ey - Math.ceil(h / 2), yb = yt + h - 1;
-        const yttre = s ? x1 : x0, lyft = v === 5 ? 1 : 0;
-        if (v === 4) for (let x = x0; x <= x1; x++) dk.satt(x, yt - 1, 'hud1');
-        if (lage === 'slutna') { for (let x = x0; x <= x1; x++) dk.satt(x, ey, 'hud0'); dk.satt(yttre, ey + 1, 'hud0'); return; }
-        if (lage === 'glada') {
-          for (let x = x0; x <= x1; x++) { const u = Math.abs(x + 0.5 - ex) / (w / 2); dk.satt(x, ey - (u < 0.7 ? 1 : 0), 'hud0'); }
-          dk.satt(ex - 1, ey, 'oga1'); dk.satt(ex, ey, 'oga0'); return;
-        }
-        const ledsen = lage === 'ledsna';
-        for (let y = yt + (ledsen ? 1 : 0); y <= yb; y++) for (let x = x0; x <= x1; x++) {
-          const u = (x + 0.5 - ex) / (w / 2), vv = (y + 0.5 - (yt + yb + 1) / 2) / (h / 2 + 0.3);
-          if (u * u + vv * vv <= 1.15) dk.satt(x, y, 'vit');
-        }
-        for (let y = yt + (ledsen ? 1 : 0); y <= yb; y++) { dk.satt(ex - 1, y, 'oga1'); dk.satt(ex, y, 'oga0'); }
-        if (h >= 3) dk.satt(ex, Math.min(yb, ey), 'kol0');
-        for (let x = x0; x <= x1; x++) {
-          const yl = ledsen ? yt + ((s ? x1 - x : x - x0) < w / 2 ? 1 : 0) + (x === yttre ? 1 : 0) : yt - (x === yttre ? lyft : 0);
-          dk.satt(x, yl, 'hud0');
-        }
-      });
-    },
-    ogonbryn(dk, G, d, p) {
-      const v = nr(d) % 5, lage = lageAv(p, 'ogonbryn');
-      const len = [7, 7, 8, 6, 8][v], tjock = [1, 1, 2, 1, 2][v], bage = [0, 1, 0, 0, 1][v];
-      G.bryn.forEach(([bx, by], s) => {
-        const x0 = bx - Math.floor(len / 2);
-        for (let i = 0; i < len; i++) {
-          const t = i / (len - 1), inre = s ? 1 - t : t, mitt = Math.abs(t - 0.5) < 0.3 ? 1 : 0;
-          const dy = lage === 'arga' ? Math.round(2 * inre) : lage === 'ledsna' ? -Math.round(2 * inre) : lage === 'forvanade' ? -2 - mitt : 0;
-          const y = by + dy - bage * mitt;
-          dk.satt(x0 + i, y, tjock > 1 ? 'har2' : 'har1');
-          if (tjock > 1) dk.satt(x0 + i, y + 1, 'har1');
-          if (v === 4 && hash(x0 + i, y, 3) > 0.6) dk.satt(x0 + i, y - 1, 'har2');
-        }
-      });
-    },
-    mun(dk, G, d, p) {
-      const v = nr(d) % 6, lage = lageAv(p, 'mun'), base = G.mun[1];
-      const w = [8, 10, 8, 8, 6, 8][v] - (G.barn ? 2 : 0), tjock = [1, 1, 2, 0, 1, 1][v];
-      const x0 = 32 - w / 2, x1 = 31 + w / 2;
-      if (lage === 'oppen') {
-        fyll(dk, ellips(32, base + 0.5, 2.6, 2), 'kol', [28, base - 2, 35, base + 2], { forskj: -1 });
-        for (let x = 30; x <= 33; x++) dk.satt(x, base + 2, 'hud1');
-        return;
-      }
-      const off = t => {
-        const a = Math.abs(t);
-        if (lage === 'glad') return a > 0.65 ? -1 : a < 0.35 ? 1 : 0;
-        if (lage === 'nojd') return a > 0.7 ? -1 : 0;
-        if (lage === 'ledsen' || lage === 'arg') return a > 0.65 ? 1 : 0;
-        return 0;
-      };
-      for (let x = x0; x <= x1; x++) {
-        const t = (x + 0.5 - 32) / (w / 2), y = base + off(t) + (v === 5 && t > 0.6 ? 1 : 0);
-        dk.satt(x, y, lage === 'arg' ? 'kol0' : 'hud0');
-        if (Math.abs(t) < 0.6) for (let k = 1; k <= tjock; k++) dk.satt(x, y + k, 'hud1');
-      }
-      if (lage === 'glad') for (let x = 30; x <= 33; x++) dk.satt(x, base, 'ben2');
-    },
-    bakhar(dk, G, d) {
-      const v = nr(d) + 1, form = d.karta;
-      if (form === 'halvlangt' || v === 23) fyll(dk, (x, y) => y >= 24 && y <= 52 && ellips(32, 36, 19.5, 19)(x, y), 'har', [11, 18, 53, 53], { forskj: -1 });
-      if (form === 'langt' && v !== 19) fyll(dk, (x, y) => y >= 22 && Math.abs(x + 0.5 - 32) <= 19.5 - Math.max(0, 24 - y) * 0.5, 'har', [11, 22, 53, 63], { forskj: -1 });
-      if (v === 19) fyll(dk, (x, y) => x >= 48 && x <= 52 && ellips(50, 42, 3, 15)(x, y), 'har', [46, 26, 54, 58]);
-      if (v === 13) fyll(dk, (x, y) => x >= 47 && x <= 50 && y >= 40 && y <= 61, 'har', [47, 40, 50, 61]);
-      if (v === 17) fyll(dk, ellips(32, 48, 15, 5), 'har', [16, 42, 48, 54], { forskj: -1 });
-    },
-    framhar(dk, G, d) {
-      const v = nr(d) + 1, form = d.karta;
-      if (form === 'flint') return;
-      const lugg = [2, 7, 15].includes(v) ? 1 : [6, 10, 13].includes(v) ? 2 : [12, 17, 18, 19, 20, 22].includes(v) ? 3 : 0;
-      const lockig = [4, 8, 11, 7].includes(v), tunt = v === 21, snagg = v === 3 || v === 22;
-      const kort = form === 'kort' || form === 'knut' || form === 'flata';
-      const harfaste = x => {
-        const dx = Math.abs(x + 0.5 - 32);
-        if (dx >= 13.5) return snagg ? 24 : kort ? 29 : 32;
-        if (dx >= 10.5) return 23;
-        if (lugg === 1) return 24;
-        if (lugg === 3) return 18;
-        if (lugg === 0) return Math.min(23, 19 + Math.max(0, x - 20) * 0.25);
-        return 21;
-      };
-      const brus = (x, y) => lockig ? (vn(x, y, 2.5, 11) - 0.5) * 2.4 : 0;
-      const kalufs = v === 23 ? 3 : 0;
-      const kapa = (x, y) => y < harfaste(x) && ((x + 0.5 - 32) / (16.5 + brus(x, y) * 0.4)) ** 2 + ((y + 0.5 - 29.5 + (y < 18 ? kalufs : 0)) / (21.5 + brus(x, y) * 0.4 + (snagg ? -1.5 : 0))) ** 2 <= 1
-        && !(v === 22 && Math.abs(x + 0.5 - 32) > 10) && !(tunt && hash(x, y, 5) < 0.42);
-      fyll(dk, kapa, 'har', [13, 4, 51, 33], { mitt: [32, 22, 17, 14] });
-      if (v === 22) for (let y = 19; y <= 30; y++) for (const x of [17, 18, 46, 47]) if (hash(x, y, 9) < 0.5) dk.satt(x, y, 'har1');
-      if (lugg === 2) for (let y = 11; y <= 20; y++) dk.satt(31, y, 'har0');
-      // sidorna: halvlångt till hakan, långt framöver bröstet
-      if (form === 'halvlangt' || form === 'langt') {
-        const slut = form === 'langt' ? (v === 19 ? 36 : 62) : 50;
-        const sida = (x, y) => { const dx = Math.abs(x + 0.5 - 32) + brus(x, y) * 0.5; return y >= 19 && y <= slut - Math.max(0, dx - 15) && dx >= 12 && dx <= 18.5 - Math.max(0, y - slut + 3); };
-        fyll(dk, sida, 'har', [12, 19, 52, slut], { mitt: [32, 30, 18, 24] });
-      }
-      // flätor: en lång rad små flätdelar med växlande toner
-      const flata = (x0, y0, x1, y1) => { for (let i = 0; i <= 11; i++) { const t = i / 11, x = Math.round(x0 + (x1 - x0) * t), y = Math.round(y0 + (y1 - y0) * t); fyll(dk, ellips(x + 0.5, y + 0.5, 2.2, 1.7), 'har', [x - 3, y - 2, x + 3, y + 2]); } };
-      if (v === 14) { flata(18, 34, 17, 62); flata(46, 34, 47, 62); }
-      if (v === 15) flata(19, 34, 15, 62);
-      if (v === 16) for (let x = 18; x <= 46; x += 3) fyll(dk, ellips(x + 0.5, 15.5 + Math.abs(x - 32) * 0.2, 2.2, 1.7), 'har', [x - 3, 11, x + 3, 22]);
-      if (v === 18 || v === 20) fyll(dk, ellips(32, 9, 6.5, 4.5), 'har', [24, 3, 40, 14]);
-      if (v === 20) for (let x = 26; x <= 38; x++) dk.satt(x, 13, x % 2 ? 'senap2' : 'senap1');
-    },
-    skagg(dk, G, d) {
-      const v = nr(d) + 1, inne = G.huvud('rund'), hy = G.mun[1], hake = G.hake('rund');
-      const kak = (x, y, tj) => inne(x, y) && y >= 35 && !inne(x + (x < 32 ? tj : -tj), y - tj);
-      if ([1, 4, 5, 10].includes(v)) {
-        const ned = v === 4 ? 62 : v === 5 ? 60 : 54, bred = v === 10 ? 1.5 : 0;
-        const form = (x, y) => { const dx = Math.abs(x + 0.5 - 32); return (inne(x, y) && y >= 35 && (dx > 7 || y >= hy - 3)) || (y >= hake - 3 && y <= ned && dx <= 12 + bred - (y - hake + 3) * 0.45 + (v === 10 ? (hash(x, y, 4) - 0.5) * 2 : 0)); };
-        fyll(dk, form, 'har', [14, 35, 50, ned], { mitt: [32, 44, 15, 12] });
-        if (v === 5) for (let y = hake + 1; y <= 59; y++) dk.satt(y % 2 ? 31 : 32, y, 'har0');
-      }
-      if (v === 2 || v === 6 || v === 8) {
-        const form = (x, y) => v === 2 ? kak(x, y, 3) : (y >= hy + 4 && y <= hy + 9 && Math.abs(x + 0.5 - 32) <= 4.5 - (y - hy - 4) * 0.6);
-        fyll(dk, form, 'har', [14, 35, 50, 54]);
-      }
-      if (v === 7) for (let y = 35; y <= 52; y++) for (let x = 14; x <= 50; x++) if (kak(x, y, 3) && hash(x, y, 8) < 0.45) dk.satt(x, y, 'har1');
-      if (v === 3 || v === 8) fyll(dk, (x, y) => y >= hy - 4 && y <= hy - 3 && Math.abs(x + 0.5 - 32) <= 6 - (y === hy - 3 ? 0 : 1), 'har', [25, hy - 4, 39, hy - 3]);
-      if (v === 9) fyll(dk, (x, y) => y >= 24 && y <= 42 && Math.abs(x + 0.5 - 32) >= 11.5 && Math.abs(x + 0.5 - 32) <= 14.5 && inne(x, y), 'har', [16, 24, 48, 42]);
-    },
-    huvudbonad(dk, G, d) {
-      const v = nr(d) + 1;
-      if (v === 1) { fyll(dk, (x, y) => y <= 18 && ellips(32, 24, 17.5, 15.5)(x, y), 'skiffer', [13, 7, 51, 18]); fyll(dk, (x, y) => y >= 18 && y <= 22 && Math.abs(x + 0.5 - 32) <= 17.2, 'jord', [14, 18, 50, 22]); }
-      if (v === 2) { fyll(dk, (x, y) => y <= 19 && ellips(32, 14, 11, 8)(x, y), 'jord', [20, 5, 44, 19]); fyll(dk, (x, y) => y >= 17 && y <= 23 && ellips(32, 20.5, 22, 2.8)(x, y), 'jord', [9, 17, 55, 23]); }
-      if (v === 3 || v === 7) {
-        const ram = v === 3 ? [21, 25, 12.5, 16.5] : [20, 23.5, 13, 17.5];
-        fyll(dk, (x, y) => y <= 58 && ellips(32, 31, ram[0], ram[1])(x, y) && !(y >= 21 && ellips(32, 35, ram[2], ram[3])(x, y)), v === 3 ? 'jord' : 'oliv', [10, 5, 54, 58]);
-      }
-      if (v === 4) fyll(dk, (x, y) => y >= 19 && y <= 21 && ellips(32, 30, 16, 21)(x, y), 'rost', [15, 19, 49, 21]);
-      if (v === 5) { fyll(dk, (x, y) => y >= 14 && y <= 15 && ellips(32, 29.5, 16.5, 21.5)(x, y), 'senap', [14, 14, 50, 15]); linje(dk, 48, 16, 50, 26, 'senap1'); linje(dk, 49, 16, 52, 24, 'senap2'); }
-      if (v === 6) fyll(dk, (x, y) => (y <= 24 && ellips(32, 21, 19 + (hash(x, y, 6) - 0.5), 14)(x, y)) || (y >= 23 && y <= 38 && Math.abs(x + 0.5 - 32) >= 14.5 && Math.abs(x + 0.5 - 32) <= 19), 'ben', [12, 6, 52, 38]);
-      if (v === 8) for (let x = 16; x <= 47; x++) { const y = 14 + Math.round(Math.abs(x + 0.5 - 32) * 0.17); dk.satt(x, y, 'oliv' + (x % 3 ? 1 : 2)); dk.satt(x, y + 1, 'oliv0'); if (x % 4 === 1) dk.satt(x, y - 1, 'senap3'); }
-    },
-    smycke(dk, G, d) {
-      const v = nr(d) + 1;
-      if (d.plats === 'hals') for (let x = 21; x <= 42; x++) {
-        const y = G.halsband + Math.round(((x + 0.5 - 32) / 10) ** 2 * 3);
-        if (v === 1) dk.satt(x, y, x % 2 ? 'ben3' : 'rost2');
-        if (v === 2) { dk.satt(x, y, x % 3 ? 'jord0' : 'ben2'); if (x % 3 === 0) dk.satt(x, y + 1, 'ben1'); }
-        if (v === 3) { dk.satt(x, y, 'jord1'); if (x % 3 === 1) { dk.satt(x, y + 1, 'ben3'); dk.satt(x, y + 2, 'ben2'); } }
-      }
-      if (v === 4) { punkter(dk, [[17, 27], [16, 30], [17, 33], [18, 36]], 'ben3'); punkter(dk, [[18, 29], [17, 32]], 'rost3'); }
-      if (v === 5) for (const x of [17, 19]) linje(dk, x, 23, x - 1, 34, 'rost2');
-      if (v === 6) { linje(dk, 38, 11, 47, 6, 'ben2'); linje(dk, 38, 12, 47, 7, 'ben1'); }
-      if (v === 7) punkter(dk, [[15, 40], [15, 41], [15, 42]], 'ben2');
-      if (v === 8) { dk.satt(15, 40, 'kol0'); dk.satt(15, 41, 'rost3'); dk.satt(15, 42, 'ben3'); }
-    },
-    rynkor(dk, G, steg) {
-      [[22, 29, 20, 28], [22, 31, 20, 32], [41, 29, 43, 28], [41, 31, 43, 32]].forEach(([a, b, c, e]) => linje(dk, a, b, c, e, 'hud1'));
-      for (let x = 26; x <= 37; x++) dk.satt(x, 21, 'hud1');
-      if (steg > 1) {
-        for (let x = 27; x <= 36; x++) dk.satt(x, 23, 'hud1');
-        const nb = G.nasa[1] + 6, mb = G.mun[1];
-        linje(dk, 28, nb, 26, mb, 'hud1'); linje(dk, 35, nb, 37, mb, 'hud1');
-        for (let x = 23; x <= 28; x++) dk.satt(x, 33, 'hud1');
-        for (let x = 35; x <= 40; x++) dk.satt(x, 33, 'hud1');
-      }
-    },
-    arr(dk, G, d) {
-      const L = [[[35, 23, 37, 27]], [[39, 34, 42, 38]], [[29, 32, 35, 34]], [[34, 39, 35, 44]], [[30, 45, 33, 45]], [[25, 18, 30, 20]], [[24, 25, 27, 34]], [[20, 38, 25, 43]], [[22, 34, 25, 37], [25, 34, 22, 37]], [[23, 26, 40, 40]]][nr(d)];
-      L.forEach(([a, b, c, e]) => { const [x0, y0] = S(a, b), [x1, y1] = S(c, e); linje(dk, x0, y0 + 1, x1, y1 + 1, 'hud1'); linje(dk, x0, y0, x1, y1, 'hud3'); });
-    },
-    blamarke(dk, G, d) {
-      const ring = nr(d) === 0 ? (x, y) => ellips(38, 30, 5.5, 4.5)(x, y) && !ellips(38, 30, 4, 3)(x, y) : ellips(...S(23, 37), 2.9, 2.5);
-      for (let y = 22; y <= 46; y++) for (let x = 16; x <= 48; x++) if (ring(x, y)) dk.satt(x, y, hash(x, y, 2) < 0.5 ? 'skiffer1' : 'rost1');
-    },
     blod(dk, G) {
       punkter(dk, [[24, 17], [24, 18], [23, 19], [23, 20], [23, 21], [23, 22]], 'rost1'); dk.satt(22, 23, 'rost0');
       const nb = G.nasa[1] + 7; dk.satt(31, nb, 'rost1'); dk.satt(31, nb + 1, 'rost0'); dk.satt(36, G.mun[1] + 1, 'rost1');
     },
-    forband(dk, G, d) {
-      const hake = G.hake('rund');
-      if (d.id === 'forband-huvud') { fyll(dk, (x, y) => y >= 18 && y <= 21 && ellips(32, 30, 16.5, 21.5)(x, y), 'ben', [14, 18, 50, 21]); punkter(dk, [[26, 19], [27, 19]], 'rost1'); }
-      if (d.id === 'forband-oga') fyll(dk, (x, y) => { const ax = 33, ay = 18, bx = 46, by = 40, t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2))); return Math.hypot(x - (ax + (bx - ax) * t), y - (ay + (by - ay) * t)) <= 2.3 && ellips(32, 31, 16.5, 21)(x, y); }, 'ben', [28, 14, 50, 44]);
-    },
     ogonlapp(dk) { linje(dk, 34, 28, 18, 21, 'jord0'); linje(dk, 42, 28, 47, 26, 'jord0'); fyll(dk, ellips(38, 30, 4.5, 3.5), 'kol', [33, 26, 44, 34], { forskj: -1 }); },
-    klader(dk, G, p) {
-      if (!p.klader.rock) return;
-      const k = kroppInne(G), s0 = G.K.axel0;
-      fyll(dk, (x, y) => y >= s0 - 1 && k(x, y) && !(y < s0 + 8 && Math.abs(x + 0.5 - 32) < 2 + (y - s0 + 1) * 0.6), p.klader.rock, [0, s0 - 1, 63, 63], { mitt: [32, s0 + 8, G.K.bredd, 9] });
-    },
     // axelremmen och ryggsäckens remmar i porträttet (steg 7.1.4, platshållare): remmen från höger axel ner mot bröstets
     // mitt, och ryggsäckens två remmar rakt ner över axlarna
     remmar(dk, G, p) {
       const k = kroppInne(G), s0 = G.K.axel0, B = G.K.bredd;
       if (p.klader.ryggsack) for (const sx of [-1, 1]) fyll(dk, (x, y) => y >= s0 && k(x, y) && Math.abs((x + 0.5 - 32) * sx - B * 0.6) <= 1.6, 'jord', [0, s0, 63, 63], { forskj: -1 });
       if (p.klader.axelrem) fyll(dk, (x, y) => y >= s0 && k(x, y) && Math.abs(x + 0.5 - (32 + B * 0.6 - (y - s0) * 0.7)) <= 1.8, 'jord', [0, s0, 63, 63]);
-    },
-    redskap(dk, G, d, fram) {
-      const lang = !!d.lang;
-      if (lang !== !fram) return;
-      if (lang) {
-        linje(dk, 59, 63, 49, 3, 'jord2'); linje(dk, 60, 63, 50, 3, 'jord1');
-        if (d.form === 'spjut') fyll(dk, (x, y) => y >= 0 && y <= 5 && Math.abs(x + 0.5 - 49.5 - y * 0.15) <= (y + 1) * 0.35, d.sak === 'flintspjut' ? 'skiffer' : 'jord', [47, 0, 52, 5]);
-        if (d.form === 'spo') linje(dk, 49, 3, 43, 22, 'ben1');
-        return;
-      }
-      if (d.form === 'yxa') { linje(dk, 51, 63, 56, 47, 'jord2'); linje(dk, 52, 63, 57, 47, 'jord1'); fyll(dk, (x, y) => x >= 53 && x <= 60 && y >= 42 && y <= 48, 'skiffer', [53, 42, 60, 48]); }
-      if (d.form === 'kniv') { linje(dk, 53, 63, 55, 57, 'jord1'); linje(dk, 55, 56, 58, 49, 'skiffer3'); linje(dk, 56, 56, 59, 50, 'skiffer1'); }
-      if (d.form === 'spade') { linje(dk, 51, 63, 55, 48, 'ben1'); fyll(dk, ellips(56.5, 44, 3, 4), 'ben', [53, 40, 60, 48]); }
-      if (d.form === 'tra') for (let k = 0; k < 3; k++) linje(dk, 50 + k, 63, 56 + k, 44, 'jord' + (k + 1));
-    },
-    skonhet(dk, G, d, p) {
-      if (d.id === 'skon-fransar') G.oga.forEach(([ex, ey], s) => { const x = s ? ex + 3 : ex - 4; dk.satt(x, ey - 2, 'kol0'); dk.satt(x + (s ? 1 : -1), ey - 3, 'kol0'); });
-      if (d.id === 'skon-glans') punkter(dk, [[24, 13], [25, 12], [26, 12]], 'ben3');
-      if (d.id === 'skon-tander' && ['glad', 'oppen'].includes(lageAv(p, 'mun'))) { const b = G.mun[1]; dk.satt(31, b, 'kol0'); dk.satt(33, b + (lageAv(p, 'mun') === 'oppen' ? -1 : 0), 'kol0'); }
-      if (d.id === 'skon-varta') { const [x, y] = S(39, 38).map(Math.round); dk.satt(x, y, 'jord1'); dk.satt(x + 1, y, 'jord0'); dk.satt(x, y - 1, 'jord2'); }
-      if (d.id === 'skon-hud') punkter(dk, [[22, 34], [24, 38], [41, 33], [39, 37], [36, 22], [27, 21], [25, 40]].map(([x, y]) => S(x, y)), 'rost1');
     },
   };
 
@@ -450,10 +224,10 @@
       dk.satt(x, y, skifta(v, forskj));
     }));
   }
-  // en sorts del: den ritade bilden om den finns, annars platshållaren
+  // en sorts del: den ritade bilden; en del som inte har någon bild (inte ritad än) ritas inte
   function delen(dk, G, d, p, sort) {
     const R0 = SORT[sort].ritas, f = G.m.fast, mall = G.m.id;
-    if (!DELAR[d.id] || !R0) return RITA[sort](dk, G, d, p);
+    if (!DELAR[d.id] || !R0) return;
     // smyckena sitter på olika platser (hals, hår, öra) med egen fästpunkt (5.2.2.4)
     const R2 = R0.plats?.[d.plats] ? { ...R0, ...R0.plats[d.plats] } : R0;
     const lage = SORT[sort].lagen ? lageAv(p, sort) : null, bild = ritadBild(d.id, mall, lage);
@@ -473,10 +247,10 @@
     lagg('huvud', dk => RITA.skalle(dk, G));
     lagg('huvud', dk => delen(dk, G, hf, p, 'huvudform'));
     if (opt.bara) return B;
-    lagg('klader', dk => p.klader.rock && DELAR['plagg-rock'] ? delen(dk, G, DEL['plagg-rock'], p, 'klader') : RITA.klader(dk, G, p));
+    lagg('klader', dk => { if (p.klader.rock) delen(dk, G, DEL['plagg-rock'], p, 'klader'); });
     if (p.klader.axelrem || p.klader.ryggsack) lagg('klader', dk => RITA.remmar(dk, G, p));
     lagg('oron', dk => delen(dk, G, D('ora'), p, 'ora'), { maskbar: true });
-    const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => DELAR['rynkor-' + rs] ? delen(dk, G, DEL['rynkor-' + rs], p, 'rynkor') : RITA.rynkor(dk, G, rs));
+    const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => { if (DEL['rynkor-' + rs]) delen(dk, G, DEL['rynkor-' + rs], p, 'rynkor'); });
     for (const t of ['tatPanna', 'tatKind', 'tatHals']) if (D(t)) lagg('tatuering', dk => delen(dk, G, D(t), p, t)); // tatueringarna (steg 10.7.5)
     if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
     if (D('blamarke')) lagg('blamarke', dk => delen(dk, G, D('blamarke'), p, 'blamarke'));
@@ -487,22 +261,19 @@
     if (D('skagg')) lagg('skagg', dk => delen(dk, G, D('skagg'), p, 'skagg'), { utom: SORT.skagg.utom });
     lagg('mun', dk => delen(dk, G, D('mun'), p, 'mun'));
     const fr = D('frisyr');
-    // en ritad frisyr har två lager (bilder.bakhar och bilder.framhar, steg 5.2.2.4) från fästpunkten har; annars platshållaren
+    // en ritad frisyr har två lager (bilder.bakhar och bilder.framhar, steg 5.2.2.4) från fästpunkten har
     const frD = fr && SORT.frisyr.ritas ? DELAR[fr.id] : null;
     if (frD) { lagg('bakhar', dk => ritaBild(dk, frD.bilder.bakhar, G.m.fast.har), { maskbar: true, har: true }); lagg('framhar', dk => ritaBild(dk, frD.bilder.framhar, G.m.fast.har), { maskbar: true, har: true }); }
-    else if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true, har: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true, har: true }); }
     for (const id of skonLager(p)) {
       const d = DEL[id]; if (!d.lager || (id === 'skon-glans' && (!fr || fr.karta === 'flint'))) continue;
       // ett ritat lager (5.2.2.5) ritas från sin plats; tänderna syns bara när munnen är glad eller öppen
-      if (DELAR[id] && d.plats) { if (id !== 'skon-tander' || ['glad', 'oppen'].includes(lageAv(p, 'mun'))) lagg(d.lager, dk => delen(dk, G, d, p, 'skonhet'), { maskbar: !!d.maskbar }); continue; }
-      lagg(d.lager, dk => RITA.skonhet(dk, G, d, p), { maskbar: !!d.maskbar });
+      if (DELAR[id] && d.plats && (id !== 'skon-tander' || ['glad', 'oppen'].includes(lageAv(p, 'mun')))) lagg(d.lager, dk => delen(dk, G, d, p, 'skonhet'), { maskbar: !!d.maskbar });
     }
     if (D('smycke')) lagg('smycke', dk => delen(dk, G, D('smycke'), p, 'smycke'), { maskbar: !!D('smycke').maskbar });
     if (D('huvudbonad')) lagg('huvudbonad', dk => delen(dk, G, D('huvudbonad'), p, 'huvudbonad'));
     for (const id of p.forband) if (DEL[id]) lagg('forband', dk => delen(dk, G, DEL[id], p, 'forband'));
     if (p.ogonlapp) lagg('ogonlapp', dk => RITA.ogonlapp(dk));
-    if (D('redskap') && DELAR[del.redskap]) lagg('redskapBak', dk => delen(dk, G, D('redskap'), p, 'redskap')); // ritat: på ryggen, bakom personen (Björn efter 5.2.2.7)
-    else if (D('redskap')) { lagg('redskapBak', dk => RITA.redskap(dk, G, D('redskap'), false)); lagg('redskapFram', dk => RITA.redskap(dk, G, D('redskap'), true)); }
+    if (D('redskap')) lagg('redskapBak', dk => delen(dk, G, D('redskap'), p, 'redskap')); // på ryggen, bakom personen (Björn efter 5.2.2.7)
     return B;
   }
 
@@ -1463,7 +1234,7 @@
   };
   // en bybo på kartan till sidans bilder (sporterna och dragkampen i valdelen): samma person för samma frö
   // rövaren på kartan: en vuxen ur samma frö, med rock (så att bålen och armarna är kläder), utan huvudbonad och redskap;
-  // efter ritar det som gör honom till rövare (fas6.js)
+  // efter ritar det som gör honom till rövare
   // småbarnet i hel skala (steg 5.5.5), med SMABARN_KARTA ovan
   window.SMABARN = (fro, rikt, ben, arm, liten = true) => { const p = slumpPerson(slumpFran(fro), { alder: 'barn' }); return kartFigur(p, rikt, ben, arm, { smabarn: liten }); };
   // rövaren (förslag, steg 6.6.12): en bybo med rövarens luva eller duk, ett mörkt slitet skinn och ibland ett ärr,

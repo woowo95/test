@@ -5,21 +5,7 @@
 // gräs är aldrig lika. Kanterna mellan gräs, vatten, strand, stig och skog räknas ur avståndet till det andra, inte
 // ur rutans form, så att de slingrar sig tvärs över rutorna.
 (() => {
-  const W = 320, H = 192; // 20 × 12 rutor
   const I = (P, r, t) => P.i(r, t);
-  const SCEN = (w, h, rita) => ({ w, h, stor: true, rita });
-  const fyll = (B, f) => { for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, f(x, y)); };
-  const ar = (B, v, ...ramper) => ramper.some(r => v >= B.P.i(r, 0) && v <= B.P.i(r, 3));
-  // avståndet från en punkt till en linje av punkter
-  function linjeAvst(x, y, L) {
-    let best = 1e9;
-    for (let i = 0; i < L.length - 1; i++) {
-      const [ax, ay] = L[i], [bx, by] = L[i + 1], dx = bx - ax, dy = by - ay;
-      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
-      best = Math.min(best, Math.hypot(x - ax - t * dx, y - ay - t * dy));
-    }
-    return best;
-  }
 
   // ---------- gräset ----------
   // tre sätt att räkna en punkt gräs ur platsen. fält = de stora ljusare och mörkare fälten
@@ -66,14 +52,13 @@
       }
     }
   }
-  // folket på bilden: de vanliga kartfigurerna, i ordning efter hur långt ner de står
+  // en kartfigur framifrån (svar/c-stationer.js ställer folk på sina bilder med den)
   let FN = 0;
   function fram(B, x, fot) { // en kartfigur framifrån
     if (!window.BYBO) return; const F = window.BYBO(3000 + (FN++ % 30) * 7919, 'fram', 'sta', 'hanga');
     for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const v = F.px[y * F.w + dx]; if (v >= 0) B.satt(Math.round(x) - (F.w >> 1) + dx, fot - F.h + 1 + y, v); }
     for (let dx = -4; dx <= 4; dx++) B.morka(Math.round(x) + dx + 1, fot + 1);
   }
-  const folk = (B, lista) => lista.forEach(([x, fot, vast]) => vast ? spelare(B, x, fot, 1, 'oliv') : fram(B, x, fot));
 
   // ---------- granen: tre sätt att rita den ----------
   // h = höjden i punkter, sno = hur mycket snö på grenarna (0 till 1), v = versionen
@@ -153,27 +138,6 @@
         }
       }
       B.satt(cx, topp, ton(3)); B.satt(cx, topp + 1, ton(2)); B.satt(cx - 1, topp + 2, ton(2)); B.satt(cx + 1, topp + 2, ton(1));
-    }
-  }
-  // torrakan: en död gran med alla grenar kvar men inga barr: grå stam, kransar av kala grenar som hänger ned
-  // mot spetsarna, kortare uppåt, och en avbruten topp (Björn efter bildstil v112)
-  function torraka(B, cx, by, h) {
-    const P = B.P, w2 = Math.round(h * 0.3);
-    for (let dx = 0; dx <= w2; dx++) B.morka(cx + dx, by + 1);
-    for (let y = 0; y < h; y++) { const yy = by - y; B.satt(cx - 1, yy, I(P, 'ben', 0)); B.satt(cx, yy, I(P, 'kol', 3)); }
-    B.satt(cx, by - h, I(P, 'ben', 0)); B.satt(cx + 1, by - h + 1, I(P, 'kol', 3)); // den avbrutna toppen
-    const n = Math.round(h / 4.5);
-    for (let k = 0; k < n; k++) {
-      const y = by - Math.round(h * 0.14) - Math.round(k * (h * 0.82) / n), f = 1 - k / n;
-      for (const sida of [-1, 1]) {
-        if (hash(k, sida + cx, 421) < 0.14) continue; // en gren som fallit av
-        const lang = Math.max(2, Math.round(w2 * (0.35 + f * 0.75) * (0.75 + hash(k, sida, 422) * 0.5)));
-        for (let i = 1; i <= lang; i++) {
-          const x = cx + (sida < 0 ? -1 : 0) + sida * i, yy = y + Math.round(i * i / (lang * 2.2)); // grenen böjer sig nedåt
-          B.satt(x, yy, i > lang - 2 ? I(P, 'jord', 1) : I(P, 'kol', 3));
-          if (i > 2 && i % 3 === 0 && i < lang - 1) { B.satt(x + sida, yy + 1, I(P, 'jord', 1)); } // små kvistar
-        }
-      }
     }
   }
 
@@ -270,27 +234,9 @@
     }
     for (const [k, c] of K) { const [x, y] = k.split(",").map(Number); const luft = !K.has(x + 1 + "," + y) || !K.has(x + "," + (y + 1)) || (!K.has(x - 1 + "," + y) && hash(x, y, 520) < 0.5); B.satt(x, y, luft ? L(0) : c); }
   }
-  // en torr björk: stammen och alla grenar utan löv, toppen avbruten, några grenar brutna, barken flagnar och
-  // tickor på stammen (Björn efter bildstil v112)
-  function torrBjork(B, cx, by, h) {
-    const P = B.P, top = by - Math.round(h * 0.6);
-    for (let dx = 0; dx <= 8; dx++) B.morka(cx + dx, by + 1);
-    bjorkStam(B, cx, by, h, by - Math.round(h * 0.88));
-    for (let y = by - Math.round(h * 0.88); y < by; y += 3) if (hash(cx, y, 523) < 0.3) B.satt(cx, y, I(P, 'jord', 1)); // barken flagnar
-    for (const [dy, l] of [[0.3, 1], [0.42, 2]]) { const y = by - Math.round(h * dy); B.satt(cx + l % 2 + 1, y, I(P, 'jord', 2)); B.satt(cx + l % 2 + 2, y, I(P, 'jord', 1)); B.satt(cx + l % 2 + 1, y + 1, I(P, 'jord', 0)); } // tickor
-    grenar(B, cx, top, Math.PI / 2 + 0.3, h * 0.26, 3, 530);
-    grenar(B, cx, top, Math.PI / 2 - 0.4, h * 0.24, 3, 540);
-    grenar(B, cx, top + h * 0.14, Math.PI / 2 + 0.95, h * 0.14, 1, 550); // en bruten gren
-    grenar(B, cx, top + h * 0.1, Math.PI / 2 - 1.0, h * 0.18, 2, 560);
-  }
 
-
-  // ---------- en rad träd i alla stadier, med folk framför och bakom ----------
-  const STADIER = [['planta', 6], ['ungträd', 15], ['vuxet', 31], ['gammalt', 46], ['jätteträd', 62]];
-  // ---------- vattnet och stranden ----------
-  function sjoAvst(x, y) { return ((x - 236) / 118) ** 2 + ((y - 128) / 78) ** 2 + (vn(x, y, 22, 541) - 0.5) * 0.3 + (vn(x, y, 7, 542) - 0.5) * 0.08; }
   // vattnet och stranden som i spelet (src/ui/mark.ts, version 1, sommar): sd är avståndet till stranden i rutor,
-  // positivt i vattnet. Ger null där det är gräs. Animationernas kort (anim.js) ritar sjön med den här.
+  // positivt i vattnet. Ger null där det är gräs. Fas 7:s kort ritar sjön med den här.
   // spelSd: kanten slingrar sig som i spelet; spelVatten tar det slingrade avståndet
   const spelSd = (x, y, sd) => (sd > -1.8 && sd < 2.6 ? sd + (vn(x, y, 22, 541) - 0.5) * 0.9 + (vn(x, y, 7, 542) - 0.5) * 0.25 : sd);
   function spelVatten(x, y, sd, P) {
@@ -304,250 +250,8 @@
     if (sd > -0.75 && hash(x, y, 549) < 0.5) return I(P, 'senap', 0);
     return null;
   }
-  function vatten(B, v) {
-    const P = B.P;
-    const kant = v === 0 ? 1.14 : v === 1 ? 1.2 : 1.08;
-    fyll(B, (x, y) => {
-      const vd = sjoAvst(x, y), r = hash(x, y, 543);
-      if (vd < 1) {
-        if (v === 0) { // som i moodboarden
-          const djup = vd < 0.55 ? (bayer(x, y) < (0.55 - vd) * 3 ? I(P, 'barr', 0) : I(P, 'skiffer', 0)) : vd < 0.85 ? I(P, 'skiffer', 1) : I(P, 'skiffer', 2);
-          if (y % 5 === 0 && vn(x, y, 4, 33) > 0.62) return vd < 0.6 ? I(P, 'skiffer', 1) : I(P, 'skiffer', 3);
-          return djup;
-        }
-        if (v === 1) { // grunt vatten med sten som syns genom ytan
-          if (vd > 0.82 && vn(x, y, 3, 544) > 0.66) return vd > 0.92 ? I(P, 'skiffer', 3) : I(P, 'skiffer', 2);
-          const t = vd < 0.5 ? 0 : vd < 0.8 ? 1 : 2, gl = vn(x, y, 5, 545) > 0.7 && (y + Math.floor(x / 6)) % 4 === 0;
-          return gl ? I(P, 'skiffer', Math.min(3, t + 1)) : t === 0 ? (r < 0.3 ? I(P, 'barr', 0) : I(P, 'skiffer', 0)) : I(P, 'skiffer', t);
-        }
-        // mörkt och djupt, och en ljus rand längs stranden
-        if (vd > 0.9 && vd < 0.95 && hash(Math.floor(x / 3), y, 546) < 0.7) return I(P, 'skiffer', 3);
-        if (vd > 0.95) return I(P, 'jord', 0);
-        const t = vd < 0.65 ? 0 : 1;
-        if (y % 4 === 0 && vn(x, y, 6, 547) > 0.6) return I(P, 'skiffer', t + 1);
-        return t === 0 ? (bayer(x, y) < 0.6 ? I(P, 'barr', 0) : I(P, 'skiffer', 0)) : (bayer(x, y) < 0.3 ? I(P, 'skiffer', 0) : I(P, 'skiffer', 1));
-      }
-      if (vd < kant) {
-        if (v === 0) return r < 0.24 ? I(P, 'jord', 2) : r > 0.8 ? I(P, 'senap', 1) : I(P, 'senap', 0);
-        if (v === 1) { const sten = vn(x, y, 3, 548); if (sten > 0.62) return sten > 0.72 ? I(P, 'skiffer', 3) : I(P, 'skiffer', 2); return r < 0.3 ? I(P, 'jord', 2) : r < 0.85 ? I(P, 'senap', 0) : I(P, 'jord', 3); }
-        return r < 0.4 ? I(P, 'jord', 1) : r < 0.8 ? I(P, 'jord', 0) : I(P, 'oliv', 0); // lerig strand
-      }
-      if (vd < kant + 0.08 && hash(x, y, 549) < 0.5) return v === 2 ? I(P, 'oliv', 0) : I(P, 'senap', 0);
-      return grasPunkt(x, y, P, 0);
-    });
-    tuvor(B, 0, (x, y) => sjoAvst(x, y) > kant + 0.06);
-    if (v === 1 || v === 2) { // vass i strandkanten
-      for (let k = 0; k < 7000; k++) {
-        const x = Math.floor(hash(k, 1, 550) * W), y = Math.floor(hash(k, 2, 550) * H), vd = sjoAvst(x, y);
-        if (vd < (v === 1 ? 0.9 : 0.86) || vd > (v === 1 ? 1.0 : 1.04) || vn(x, y, 14, 551) < 0.55) continue;
-        const hh = 4 + Math.floor(hash(k, 3) * 4);
-        for (let j = 0; j < hh; j++) B.satt(x + (j > hh - 3 && k % 2 ? 1 : 0), y - j, j === hh - 1 ? I(P, 'senap', 1) : j > hh - 3 ? I(P, 'oliv', 2) : I(P, 'oliv', 0));
-        if (v === 2 && k % 3 === 0) { B.satt(x, y - hh, I(P, 'jord', 1)); B.satt(x, y - hh - 1, I(P, 'jord', 0)); } // kaveldun
-      }
-    }
-    const ting = [];
-    for (const [x, y, h] of [[20, 60, 30], [44, 40, 24], [64, 82, 34], [30, 120, 22]]) ting.push([y, () => gran(B, x, y, h, 0)]);
-    ting.push([98, () => spelare(B, 120, 98, 0, 'oliv')]);
-    ting.push([180, () => spelare(B, 96, 180, 1, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
 
-  // ---------- stigarna ----------
-  const STIGAR = [[[160, 96], [196, 80], [250, 70], [330, 60]], [[160, 96], [130, 130], [110, 170], [100, 200]], [[160, 96], [120, 84], [60, 90], [-10, 80]], [[160, 96], [210, 128], [250, 170], [270, 200]]];
-  const stigAvst2 = (x, y) => Math.min(...STIGAR.map(L => linjeAvst(x, y, L)));
-  // ---------- skogskanten i steg ----------
-  // hur långt in i skogen en punkt är: över 0 i skogen, under 0 ute på gräset
-  const skogE = (x, y) => 140 - (y - 96) * 0.35 + (vn(x, y, 46, 581) - 0.5) * 110 + (vn(x, y, 9, 582) - 0.5) * 12 - x;
-  // ---------- renare (Björn efter bildstil v111: "för smutsigt, pixligt och prickigt") ----------
-  // Inga lösa punkter med slump i varje punkt: ytorna är hela och lugna, och skillnaderna kommer av stora fläckar med
-  // en ren kant (en långsam våg som skärs av) och av små saker som ritas hela (tuvor, strån, blommor).
-  const flack = (x, y, sk, s, grans) => vn(x, y, sk, s) * 0.75 + vn(x, y, sk / 3, s + 1) * 0.25 > grans;
-  // ett kort streck i stället för en lös punkt: lodrätt (strån) eller vågrätt (jord, sten, barr), två punkter långt
-  const strack = (x, y, s, p) => hash(x, y, s) < p ? 1 : hash(x, y - 1, s) < p ? 2 : 0;
-  const vagstreck = (x, y, s, p) => hash(x, y, s) < p || hash(x - 1, y, s) < p;
-  function grasRen(x, y, P, niva = 1) { // gräset du valde (version 2): fält med ren men ojämn kant, och korta strån i stället för korn
-    const lo = I(P, 'oliv', 1), mid = I(P, 'oliv', 2), hi = I(P, 'oliv', 3);
-    if (niva === 0) { // som i bildstil v112: nästan utan korn
-      if (flack(x, y, 44, 301, 0.64)) return hash(x, y, 303) < 0.004 ? mid : lo;
-      return hash(x, y, 303) < 0.004 ? hi : hash(x, y - 1, 303) < 0.004 ? lo : mid;
-    }
-    const kant = (vn(x, y, 4, 305) - 0.5) * 0.05; // kanten fransar sig lite, utan lösa punkter
-    if (flack(x, y, 44, 301, 0.64 + kant)) { // mörkare fält
-      const st = strack(x, y, 306, 0.014); if (st) return st === 1 ? mid : I(P, 'oliv', 0);
-      return lo;
-    }
-    const tat = 0.008 + vn(x, y, 20, 307) * 0.02; // tätare strån på sina ställen
-    const st = strack(x, y, 303, tat); if (st) return st === 1 ? hi : lo;
-    return mid;
-  }
-  function tuvorRen(B, ok, tat = 1, niva = 1) { // klungor av högt gräs, ett och annat strå och en vit blomma
-    const P = B.P, gx = niva ? 11 : 12, gy = niva ? 10 : 11;
-    if (!niva) tat *= 0.8;
-    for (let cy = 0; cy * gy < B.h + gy; cy++) for (let cx = 0; cx * gx < B.w + gx; cx++) {
-      const x = cx * gx + Math.floor(hash(cx, cy, 311) * gx), y = cy * gy + Math.floor(hash(cx, cy, 312) * gy);
-      if (!ok(x, y)) continue;
-      const r = hash(cx, cy, 313);
-      if (vn(x, y, 30, 314) > 0.62 && r < 0.75 * tat) { // klunga av högt gräs: fyra strån
-        for (let k = 0; k < 4; k++) { const xx = x + k - 1, hh = 2 + ((k * 3 + cx) % 3 === 0 ? 2 : 1); for (let j = 0; j < hh; j++) B.satt(xx + (j === hh - 1 ? (k < 2 ? -1 : 1) * (hh > 3 ? 1 : 0) : 0), y - j, j === 0 ? I(P, 'oliv', 0) : j === hh - 1 ? I(P, 'oliv', 3) : I(P, 'oliv', 1)); }
-      } else if (r < 0.2 * tat) { // en tuva: två strån
-        B.satt(x, y, I(P, 'oliv', 0)); B.satt(x, y - 1, I(P, 'oliv', 3)); B.satt(x + 1, y, I(P, 'oliv', 0)); B.satt(x + 1, y - 1, I(P, 'oliv', 1)); B.satt(x + 1, y - 2, I(P, 'oliv', 3));
-      } else if (r < 0.23 * tat) { // en vit blomma
-        B.satt(x, y, I(P, 'oliv', 0)); B.satt(x, y - 1, I(P, 'ben', 3)); B.satt(x - 1, y - 1, I(P, 'ben', 2)); B.satt(x + 1, y - 1, I(P, 'ben', 2)); B.satt(x, y - 2, I(P, 'ben', 2));
-      }
-    }
-  }
-  // stigarna (version 1): jämn bar jord med en ren kant, en mörkare rand av nött gräs längs kanten och få stenar
-  function stigarRen(B) {
-    const P = B.P;
-    fyll(B, (x, y) => {
-      const sd = stigAvst2(x, y) - (vn(x, y, 10, 561) - 0.5) * 3 - (Math.hypot(x - 160, y - 96) < 20 ? 7 : 0);
-      if (sd < 3.5) { const r = hash(x, y, 562); return r < 0.1 ? I(P, 'jord', 1) : r > 0.93 ? I(P, 'jord', 3) : flack(x, y, 9, 562, 0.68) ? I(P, 'jord', 3) : I(P, 'jord', 2); } // korn lika tätt som i gräset
-      if (sd < 4.5) return I(P, 'jord', 1);
-      return grasPunkt(x, y, P, 1);
-    });
-    for (let k = 0; k < 40; k++) { // några stenar i stigen
-      const x = Math.floor(hash(k, 1, 567) * W), y = Math.floor(hash(k, 2, 567) * H);
-      if (stigAvst2(x, y) > 1.5 || Math.hypot(x - 160, y - 96) < 24) continue;
-      B.satt(x, y, I(P, 'jord', 0)); B.satt(x + 1, y, I(P, 'jord', 0)); B.satt(x, y - 1, I(P, 'jord', 1));
-    }
-    tuvor(B, 1, (x, y) => stigAvst2(x, y) > 9);
-    ritaEld(B, 160, 92, B.P, {});
-    folk(B, [[214, 92, 0], [120, 150, 1], [70, 104, 0]]);
-  }
-  // snön (version 2): drivor med hela blågrå skuggor på läsidan, slät is och en jämn stig
-  function snoRen(B) {
-    const P = B.P;
-    const GR = [[20, 60, 30], [44, 40, 24], [64, 82, 34], [30, 120, 22], [100, 30, 28], [130, 56, 20]];
-    fyll(B, (x, y) => {
-      const vd = sjoAvst(x, y);
-      if (vd < 1) { // isen: slät, med ljusare fläckar där snön blåst upp
-        if (vd > 0.93) return I(P, 'skiffer', 2);
-        { const r = hash(x, y, 571); return r < 0.06 ? I(P, 'skiffer', 2) : r > 0.96 ? I(P, 'ben', 1) : flack(x, y, 20, 571, 0.7) ? I(P, 'skiffer', 2) : I(P, 'skiffer', 3); }
-      }
-      if (vd < 1.08) return I(P, 'ben', 1); // stranden under snön
-      const sd = linjeAvst(x, y, [[-10, 150], [80, 130], [150, 110], [210, 50], [240, -10]]) - (vn(x, y, 8, 572) - 0.5) * 3;
-      if (sd < 3) return I(P, 'ben', 0);
-      if (sd < 4) return I(P, 'ben', 1);
-      if (GR.some(([gx, gy, h]) => ((x - gx - 2) / (h * 0.38)) ** 2 + ((y - gy) / 3.5) ** 2 < 1)) return I(P, 'ben', 1); // skuggan under granarna
-      const driva = (x, y) => vn(x * 0.45, y, 18, 573) > 0.62; // drivorna: långa och smala, i blåstens riktning
-      if (driva(x, y)) return I(P, 'ben', 3);
-      if (driva(x, y - 1) || driva(x, y - 2)) return I(P, 'ben', 1); // skuggan under drivan
-      if (vagstreck(x, y, 574, 0.02)) return I(P, 'ben', 1); // små skavlar
-      const r = hash(x, y, 575); return r < 0.08 ? I(P, 'ben', 1) : r > 0.95 ? I(P, 'ben', 3) : I(P, 'ben', 2); // korn lika tätt som i gräset
-    });
-    // sprickor i isen: få, raka och sammanhängande
-    for (let k = 0; k < 4; k++) {
-      let x = 170 + hash(k, 1, 580) * 130, y = 80 + hash(k, 2, 580) * 90, a = hash(k, 3, 580) * 6.28;
-      for (let i = 0; i < 26 + hash(k, 4, 580) * 26; i++) { if (sjoAvst(x, y) > 0.9) break; B.satt(x, y, I(P, 'skiffer', 1)); if (i % 9 === 8) a += (hash(i, k, 582) - 0.5) * 1.1; x += Math.cos(a); y += Math.sin(a) * 0.8; }
-    }
-    const ting = GR.map(([x, y, h], i) => [y, () => gran(B, x, y, h, 3, 0.8, i)]);
-    ting.push([126, () => spelare(B, 92, 126, 1, 'oliv')]);
-    ting.push([104, () => spelare(B, 150, 104, 0, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
-  // skogskanten (version 1): lika breda steg, varje steg en hel yta med en slingrande kant
-  function skogskantRen(B) {
-    const P = B.P, steg = [10, 0, -12, -28];
-    fyll(B, (x, y) => {
-      const e = skogE(x, y) + (vn(x, y, 7, 590) - 0.5) * 8; // kanten mellan stegen slingrar sig i stora bågar
-      const skogsmark = () => vagstreck(x, y, 588, 0.02) ? I(P, 'jord', 0) : strack(x, y, 589, 0.012) === 1 ? I(P, 'oliv', 1) : flack(x, y, 14, 584, 0.62) ? I(P, 'oliv', 0) : I(P, 'barr', 1);
-      const mork = () => { const st = strack(x, y, 591, 0.015); return st === 1 ? I(P, 'oliv', 3) : st === 2 ? I(P, 'oliv', 0) : flack(x, y, 16, 585, 0.66) ? I(P, 'oliv', 2) : I(P, 'oliv', 1); };
-      if (e > steg[0]) return skogsmark();
-      if (e > steg[1]) return flack(x, y, 11, 586, 0.5) ? mork() : skogsmark(); // skogsmark med fläckar av gräs
-      if (e > steg[2]) return mork();
-      if (e > steg[3]) return flack(x, y, 11, 587, 0.5) ? mork() : grasPunkt(x, y, P, 1); // fläckar av mörkt gräs i gräset
-      return grasPunkt(x, y, P, 1);
-    });
-    // högt mörkt gräs längs kanten, i klungor
-    for (let k = 0; k < 900; k++) {
-      const x = Math.floor(hash(k, 5, 593) * W), y = Math.floor(hash(k, 6, 594) * H), e = skogE(x, y);
-      if (e > steg[1] + 1 || e < steg[3] + 2 || vn(x, y, 12, 595) < 0.5) continue;
-      const top = hash(k, 7) < 0.2 ? I(P, 'senap', 0) : I(P, 'oliv', 2);
-      B.satt(x, y, I(P, 'oliv', 0)); B.satt(x, y - 1, I(P, 'oliv', 0)); B.satt(x, y - 2, top);
-      B.satt(x + 1, y, I(P, 'oliv', 0)); B.satt(x + 1, y - 1, top);
-    }
-    tuvor(B, 1, (x, y) => skogE(x, y) < steg[3] - 6);
-    const ting = [];
-    for (let cy = 0; cy < 14; cy++) for (let cx = 0; cx < 12; cx++) {
-      const x = cx * 14 + Math.floor(hash(cx, cy, 595) * 10), y = cy * 15 + Math.floor(hash(cx, cy, 596) * 8), e = skogE(x, y);
-      if (e > 8 && hash(cx, cy, 597) < 0.62) ting.push([y, () => gran(B, x, y, 24 + Math.floor(hash(cx, cy, 598) * 14), 3, 0, cx * 13 + cy)]);
-      else if (e > steg[2] && e < 8 && hash(cx, cy, 599) < 0.7) ting.push([y, () => gran(B, x, y, 8 + Math.floor(hash(cx, cy, 600) * 6), 3, 0, cx * 13 + cy)]);
-    }
-    ting.push([150, () => bjork(B, 150, 150, 30, 3)]);
-    ting.push([132, () => spelare(B, 212, 132, 1, 'oliv')]);
-    ting.push([86, () => spelare(B, 176, 86, 0, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
-  // träden i alla stadier på det renare gräset
-  function stadierRen(B, sort) {
-    const P = B.P, fot = 100;
-    fyll(B, (x, y) => grasPunkt(x, y, P, 1));
-    tuvor(B, 1, () => true);
-    const xs = [18, 46, 92, 156, 232], ting = [];
-    STADIER.forEach(([, h], i) => { const x = xs[i], f = h > 40 ? 1 + hash(i, 3, 530) * 0.08 : 1; ting.push([fot, () => sort === 'gran' ? gran(B, x, fot, Math.round(h * f), 3, 0, i) : bjork(B, x, fot, Math.round(h * f), 3, 'sommar', i)]); });
-    ting.push([fot, () => sort === 'gran' ? torraka(B, 296, fot, 40) : torrBjork(B, 296, fot, 34)]);
-    ting.push([fot + 10, () => fram(B, 100, fot + 10)]);
-    ting.push([fot - 12, () => spelare(B, 162, fot - 12, 1, 'oliv')]);
-    ting.push([fot + 2, () => spelare(B, 258, fot + 2, 1, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
-
-
-  // ---------- årstiderna (Björn efter bildstil v116): varje godkänt träd på våren, hösten och vintern ----------
-  // Sommaren är det godkända. Marken följer gräset som är referensen; på hösten vissnar det i fläckar och löven
-  // ligger under björkarna, och på vintern ligger snön som på kortet Snön.
-  function tidMark(B, tid) {
-    const P = B.P;
-    if (tid === 'vinter') return fyll(B, (x, y) => { const driva = (x, y) => vn(x * 0.45, y, 18, 573) > 0.64; if (driva(x, y)) return I(P, 'ben', 3); if (driva(x, y - 1) || driva(x, y - 2)) return I(P, 'ben', 1); const r = hash(x, y, 575); return r < 0.08 ? I(P, 'ben', 1) : r > 0.95 ? I(P, 'ben', 3) : I(P, 'ben', 2); });
-    fyll(B, (x, y) => {
-      const c = grasPunkt(x, y, P, 1);
-      if (tid === 'host' && flack(x, y, 16, 720, 0.68)) return I(P, 'senap', Math.max(0, tonAv(c) - 1)); // vissnat gräs
-      return c;
-    });
-    tuvor(B, 1, () => true);
-    if (tid === 'var') for (let k = 0; k < 160; k++) { const x = Math.floor(hash(k, 1, 721) * B.w), y = Math.floor(hash(k, 2, 721) * B.h); B.satt(x, y, I(P, k % 3 ? 'senap' : 'ben', 3)); } // vårblommor
-  }
-  // snö på allt som vänder sig uppåt (grenar och kvistar), eller ljusa skott i spetsarna på granen
-  function tidTrad(B, rita, tid, sort) {
-    const L = lager({ ...B, morka: B.morka }, rita), P = B.P, M = L.M;
-    for (const [k, c] of M) {
-      const [x, y] = k.split(',').map(Number);
-      let n = c;
-      if (tid === 'vinter' && !M.has(x + ',' + (y - 1)) && !somRamp(P, c, 'ben') && hash(x, y, 722) < 0.75) n = I(P, 'ben', 3);
-      if (tid === 'var' && sort === 'gran' && somRamp(P, c, 'barr') && (!M.has((x - 1) + ',' + y) || !M.has((x + 1) + ',' + y)) && hash(x, y, 723) < 0.7) n = I(P, 'oliv', 3); // årets nya skott
-      B.satt(x, y, n);
-    }
-  }
-  function stadierTid(B, sort, tid) {
-    const P = B.P, fot = 100;
-    tidMark(B, tid);
-    const xs = [18, 46, 92, 156, 232], ting = [];
-    const lov = tid === 'vinter' ? 'vinter' : tid; // björkens löv: ljusa på våren, gula och några röda på hösten, inga på vintern
-    STADIER.forEach(([, h], i) => {
-      const x = xs[i], f = h > 40 ? 1 + hash(i, 3, 530) * 0.08 : 1, hh = Math.round(h * f);
-      ting.push([fot, () => {
-        if (sort === 'gran') tidTrad(B, D => gran(D, x, fot, hh, 3, tid === 'vinter' ? 0.8 : 0, i), tid, 'gran');
-        else {
-          tidTrad(B, D => bjork(D, x, fot, hh, 3, lov, i), tid, 'bjork');
-          if (tid === 'host' && hh > 8) for (let k = 0; k < hh * 1.5; k++) { const a = hash(k, i, 724) * 6.28, d = Math.sqrt(hash(k, i, 725)) * hh * 0.4; B.satt(Math.round(x + Math.cos(a) * d), Math.round(fot + 2 + Math.sin(a) * d * 0.35), I(P, hash(k, i, 726) < 0.25 ? 'rost' : 'senap', 2 + (k % 2))); } // fallna löv
-        }
-      }]);
-    });
-    ting.push([fot, () => tidTrad(B, D => sort === 'gran' ? torraka(D, 296, fot, 40) : torrBjork(D, 296, fot, 34), tid, sort)]);
-    ting.push([fot + 10, () => fram(B, 100, fot + 10)]);
-    ting.push([fot - 12, () => spelare(B, 162, fot - 12, 1, 'oliv')]);
-    ting.push([fot + 2, () => spelare(B, 258, fot + 2, 1, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
-  const TIDNAMN = { var: 'våren', host: 'hösten', vinter: 'vintern' };
-  const TIDTEXT = {
-    gran: { var: 'Barren som på sommaren, med ljusa nya skott ytterst på grenarna. Marken med vårblommor.', host: 'Granen är som på sommaren; gräset har vissnat i fläckar.', vinter: 'Snö på våningarna och på torrakans grenar, och marken under snö.' },
-    bjork: { var: 'Ljusa nyutslagna löv.', host: 'Gula löv och några röda björkar, löv som fallit under kronan, och vissnat gräs i fläckar.', vinter: 'Kala grenar med snö ovanpå, och marken under snö.' },
-  };
-
-  // ---------- årstiderna för de fallna träden, stubbarna och skogen efter en brand (Björn efter bildstil v118) ----------
-  // Samma modeller som du valde (fallet träd version 2, stubbe version 1, brandens version 1); på hösten har den
-  // fallna björken gula löv, på vintern ligger snö ovanpå allt, och stubbarna får en mössa av snö.
+  // ---------- snön på stubbarna (Björn efter bildstil v118): på vintern får stubbarna en mössa av snö ----------
   function snoMossa(B, cx, by, d) { // snön på snittytan: samma ellips som ytan, lite större, ljus ovanpå och grå i kanten nedtill
     const P = B.P, r = d / 2 + 0.6, hh = Math.max(2, Math.round(d * 0.5)), ey = Math.max(1, d * 0.28) + 0.6;
     for (let y = -Math.ceil(ey) - 1; y <= Math.ceil(ey); y++) for (let x = Math.floor(-r); x <= Math.ceil(r); x++) {
@@ -555,36 +259,7 @@
       B.satt(cx + x, by - hh + y, y > ey * 0.4 ? I(P, 'ben', 2) : I(P, 'ben', 3));
     }
   }
-  function fallnaTid(B, tid) {
-    const P = B.P;
-    tidMark(B, tid);
-    const st = (x, y, d, sort) => { stubbe(B, x, y, d, sort, 0); if (tid === 'vinter') snoMossa(B, x, y, d); };
-    const ting = [];
-    ting.push([70, () => { st(40, 70, 7, 'gran'); fallet(B, 44, 66, 46, 'gran', 1, 1, 2, tid); }]);
-    ting.push([150, () => { st(170, 150, 5, 'bjork'); fallet(B, 174, 147, 40, 'bjork', 1, 1, 4, tid); }]);
-    ting.push([120, () => { st(300, 120, 4, 'gran'); fallet(B, 296, 117, 26, 'gran', 1, -1, 5, tid); }]);
-    STUBBAR.forEach(([, d], i) => ting.push([176, () => st(30 + i * 22, 176, d, i % 2 ? 'bjork' : 'gran')]));
-    ting.push([104, () => fram(B, 120, 104)]);
-    ting.push([176, () => spelare(B, 250, 176, 1, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
-  function brandVinter(B) { // vintern efter branden: snö över askan, svarta torrakor med snö på grenarna, levande skog till vänster
-    const P = B.P, brant = (x, y) => (x - 70) * 0.9 + (vn(x, y, 40, 680) - 0.5) * 90 + (vn(x, y, 9, 681) - 0.5) * 10;
-    tidMark(B, 'vinter');
-    fyll(B, (x, y) => { const c = B.get(x, y); return brant(x, y) > 0 && vagstreck(x, y, 683, 0.01) && hash(x, y, 684) < 0.25 ? I(P, 'kol', hash(x, y, 686) < 0.5 ? 0 : 1) : c; }); // förkolnade kvistar som sticker upp ur snön
-    const ting = [];
-    for (let cy = 0; cy < 8; cy++) for (let cx = 0; cx < 11; cx++) {
-      const x = cx * 30 + Math.floor(hash(cx, cy, 695) * 18), y = 30 + cy * 24 + Math.floor(hash(cx, cy, 696) * 10), b = brant(x, y);
-      if (hash(cx, cy, 697) > 0.55 || y > 196) continue;
-      const h = 26 + Math.floor(hash(cx, cy, 698) * 22), bj = hash(cx, cy, 699) < 0.35, s = cx * 11 + cy;
-      if (b > 4) ting.push([y, () => tidTrad(B, D => bj ? brandBjork(D, x, y, Math.round(h * 0.85), 0, s) : brandGran(D, x, y, h, 0, s), 'vinter', 'bjork')]);
-      else if (b < -14) ting.push([y, () => bj ? tidTrad(B, D => bjork(D, x, y, Math.round(h * 0.85), 3, 'vinter', s), 'vinter', 'bjork') : gran(B, x, y, h, 3, 0.8, s)]);
-    }
-    ting.push([150, () => spelare(B, 190, 150, 1, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
-  const T = 'Steg 5.2.4.5, till ';
-  // ---------- fler träd (Björn efter bildstil v114): varianter, brända träd, stubbar och fallna träd ----------
+  // ---------- fler träd (Björn efter bildstil v114): varianter, stubbar och fallna träd ----------
   // Ett träd ritas först i ett eget lager (en karta från punkt till färg) och läggs sedan ut med en ändring:
   // bredare eller smalare, högre eller lägre, lutande, ljusare eller mörkare barr och blad, eller liggande.
   function lager(B, rita) {
@@ -651,72 +326,6 @@
     }
     utLager(B, L, cx, by, o);
   }
-  function lund(B, sort, niva) { // en dunge där inget träd är likt ett annat
-    const P = B.P;
-    fyll(B, (x, y) => grasPunkt(x, y, P, 1)); tuvor(B, 1, () => true);
-    const ting = [];
-    const pl = [[16, 62, 30], [52, 70, 38], [92, 58, 28], [128, 74, 44], [170, 64, 32], [206, 76, 40], [244, 60, 30], [284, 72, 42], [30, 128, 46], [74, 134, 34], [118, 126, 30], [160, 138, 48], [204, 130, 36], [248, 136, 44], [296, 128, 32]];
-    pl.forEach(([x, y, h], i) => ting.push([y, () => sort === 'gran' ? granVariant(B, x, y, h, niva, i * 17 + 3) : bjorkVariant(B, x, y, Math.round(h * 0.9), niva, i * 17 + 3)]));
-    ting.push([100, () => spelare(B, 140, 100, 1, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
-
-  // ---------- efter en skogsbrand ----------
-  // marken: svart och grå aska i hela fläckar, förkolnade kvistar som korta streck, och bränt gult gräs i kanten
-  function brandMark(B, v) {
-    const P = B.P;
-    const brant = (x, y) => (x - 70) * 0.9 + (vn(x, y, 40, 680) - 0.5) * 90 + (vn(x, y, 9, 681) - 0.5) * 10; // över 0 är bränt
-    fyll(B, (x, y) => {
-      const b = brant(x, y);
-      if (b < -10) return grasPunkt(x, y, P, 1);
-      if (b < 0) return flack(x, y, 10, 682, 0.5) ? I(P, 'senap', 0) : I(P, 'jord', 1); // svett gräs
-      if (vagstreck(x, y, 683, 0.012)) return I(P, 'kol', 0); // förkolnade kvistar
-      if (v === 2 && hash(x, y, 684) < 0.0015 && b > 30) return I(P, 'rost', 3); // glöd
-      return flack(x, y, 18, 685, 0.6) ? I(P, 'ben', 0) : flack(x, y, 26, 686, 0.6) ? I(P, 'kol', 2) : I(P, 'kol', 3); // grå aska och svart jord
-    });
-    return brant;
-  }
-  const svart = (P, c) => I(P, 'kol', tonAv(c) >= 3 ? 1 : 0);
-  function brandGran(B, cx, by, h, v, s) {
-    const P = B.P;
-    if (v === 0) { const L = lager(B, D => torraka(D, cx, by, h)); utLager(B, L, cx, by, { farg: c => svart(P, c) }); return; } // helt svart, alla grenar kvar
-    if (v === 1) { // svart nedtill, bruna döda barr kvar upptill
-      const L = lager(B, D => gran(D, cx, by, h, 3, 0, s)), T = lager(B, D => torraka(D, cx, by, h));
-      utLager(B, T, cx, by, { farg: (c, x, y, f) => f > 0.55 ? null : svart(P, c) });
-      utLager(B, L, cx, by, { farg: (c, x, y, f) => f < 0.5 ? (somRamp(P, c, 'jord') ? I(P, 'kol', 1) : null) : f < 0.6 ? (hash(x, y, 690) < 0.5 ? I(P, 'kol', 1) : I(P, 'jord', 0)) : somRamp(P, c, 'barr') ? I(P, tonAv(c) > 1 ? 'rost' : 'jord', tonAv(c) > 2 ? 1 : 0) : I(P, 'kol', 1) });
-      return;
-    }
-    // avbruten och svart, med glöd kvar vid foten
-    const kvar = 0.4 + hash(cx, s, 691) * 0.25, L = lager(B, D => torraka(D, cx, by, h));
-    utLager(B, L, cx, by, { farg: (c, x, y, f) => f > kvar + (hash(x, 0, 692) - 0.5) * 0.08 ? null : svart(P, c) });
-    B.satt(cx, by - Math.round(h * kvar) - 1, I(P, 'kol', 0));
-    for (const [dx, dy] of [[-1, 0], [1, -1], [0, -3]]) B.satt(cx + dx, by + dy, I(P, dy ? 'rost' : 'senap', 3));
-  }
-  function brandBjork(B, cx, by, h, v, s) {
-    const P = B.P;
-    if (v === 0) { const L = lager(B, D => torrBjork(D, cx, by, h)); utLager(B, L, cx, by, { farg: c => svart(P, c) }); return; }
-    if (v === 1) { // stammen svart nedtill och vit upptill, några bruna blad kvar
-      const T = lager(B, D => torrBjork(D, cx, by, h)), L = lager(B, D => bjork(D, cx, by, h, 3, 'sommar', s));
-      utLager(B, T, cx, by, { farg: (c, x, y, f) => f < 0.45 ? svart(P, c) : c });
-      utLager(B, L, cx, by, { farg: (c, x, y) => somRamp(P, c, 'oliv') && vn(x, y, 4, 693 + s) > 0.55 ? I(P, 'jord', tonAv(c) > 2 ? 2 : tonAv(c) > 1 ? 1 : 0) : null });
-      return;
-    }
-    const kvar = 0.45 + hash(cx, s, 694) * 0.2, L = lager(B, D => torrBjork(D, cx, by, h));
-    utLager(B, L, cx, by, { farg: (c, x, y, f) => f > kvar ? null : svart(P, c) });
-    for (const [dx, dy] of [[1, 0], [-1, -2]]) B.satt(cx + dx, by + dy, I(P, 'rost', 3));
-  }
-  function brand(B, v) {
-    const brant = brandMark(B, v), ting = [];
-    for (let cy = 0; cy < 8; cy++) for (let cx = 0; cx < 11; cx++) {
-      const x = cx * 30 + Math.floor(hash(cx, cy, 695) * 18), y = 30 + cy * 24 + Math.floor(hash(cx, cy, 696) * 10), b = brant(x, y);
-      if (hash(cx, cy, 697) > 0.55 || y > 196) continue;
-      const h = 26 + Math.floor(hash(cx, cy, 698) * 22), bj = hash(cx, cy, 699) < 0.35, s = cx * 11 + cy;
-      if (b > 4) ting.push([y, () => bj ? brandBjork(B, x, y, Math.round(h * 0.85), v, s) : brandGran(B, x, y, h, v, s)]);
-      else if (b < -14) ting.push([y, () => bj ? bjorkVariant(B, x, y, Math.round(h * 0.85), 0, s) : granVariant(B, x, y, h, 0, s)]);
-    }
-    ting.push([150, () => spelare(B, 190, 150, 1, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
 
   // ---------- stubbar ----------
   // d = stammens bredd. Granen har brun bark, björken vit med svarta märken; snittytan är gråbrun med årsringar
@@ -745,13 +354,6 @@
     }
     if (v === 2 && d > 4) { B.satt(cx - r + 1, by - 1, I(P, 'oliv', 2)); B.satt(cx - r + 1, by, I(P, 'oliv', 1)); B.satt(cx + r - 1, by - hh + 1, I(P, 'oliv', 2)); } // mossa
   }
-  const STUBBAR = [['ungträd', 3], ['vuxet', 5], ['gammalt', 8], ['jätteträd', 12]];
-  function stubbar(B, v) {
-    const P = B.P;
-    fyll(B, (x, y) => grasPunkt(x, y, P, 1)); tuvor(B, 1, () => true);
-    STUBBAR.forEach(([, d], i) => { stubbe(B, 30 + i * 38, 50, d, 'gran', v); stubbe(B, 30 + i * 38, 100, d, 'bjork', v); stubbe(B, 220 + (i % 2) * 50, 50 + Math.floor(i / 2) * 50, d, i % 2 ? 'bjork' : 'gran', v); });
-    folk(B, [[180, 100, 0]]);
-  }
 
   // ---------- fallna träd: samma bild om det huggits ner eller blåst omkull ----------
   // Trädet ligger med foten vid stubben och toppen åt sidan. v 0: rakt åt sidan; 1: åt sidan och tillplattat (kronan
@@ -772,18 +374,6 @@
     for (const [x, y] of ut) if (!har.has(x + ',' + (y + 2))) { B.morka(x, y + 2); B.morka(x + 1, y + 2); } // skuggan under stocken och kronan
     for (const [x, y, c] of ut) B.satt(x, y, tid === 'vinter' && !har.has(x + ',' + (y - 1)) && !somRamp(P, c, 'ben') && hash(x, y, 730) < 0.8 ? I(P, 'ben', 3) : c); // på vintern snö ovanpå stocken och grenarna
   }
-  function fallna(B, v) {
-    const P = B.P;
-    fyll(B, (x, y) => grasPunkt(x, y, P, 1)); tuvor(B, 1, () => true);
-    const ting = [];
-    ting.push([70, () => { stubbe(B, 40, 70, 7, 'gran', 0); fallet(B, 44, 66, 46, 'gran', v, 1, 2); }]);
-    ting.push([150, () => { stubbe(B, 170, 150, 5, 'bjork', 0); fallet(B, 174, 147, 40, 'bjork', v, 1, 4); }]);
-    ting.push([120, () => { stubbe(B, 300, 120, 4, 'gran', 0); fallet(B, 296, 117, 26, 'gran', v, -1, 5); }]);
-    ting.push([60, () => granVariant(B, 150, 60, 34, 0, 9)]);
-    ting.push([104, () => fram(B, 120, 104)]);
-    ting.push([176, () => spelare(B, 250, 176, 1, 'oliv')]);
-    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
-  }
 
-  window.MARK = { grasPunkt, tuvor, tidMark, fram, granVariant, bjorkVariant, stubbe, fallet, snoMossa, spelSd, spelVatten }; // marken och kartfiguren till djurens kort (djur.js)
+  window.MARK = { grasPunkt, tuvor, fram, granVariant, bjorkVariant, stubbe, fallet, snoMossa, spelSd, spelVatten }; // marken och kartfiguren till djurens kort (djur.js)
 })();

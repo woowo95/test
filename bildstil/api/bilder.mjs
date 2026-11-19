@@ -90,10 +90,8 @@ async function system() {
   const tecken = [...BR.tecken].map(ch => `${ch} = ${PT[ch]} (${H[ch]})`).join(', ');
   return guideText(tecken);
 }
-function schema(valet = false) {
-  const props = { rader: { type: 'array', items: { type: 'string' } }, anteckning: { type: 'string' } }, req = ['rader', 'anteckning'];
-  if (valet) { props.val = { type: 'integer' }; req.unshift('val'); }
-  return { type: 'object', properties: props, required: req, additionalProperties: false };
+function schema() {
+  return { type: 'object', properties: { rader: { type: 'array', items: { type: 'string' } }, anteckning: { type: 'string' } }, required: ['rader', 'anteckning'], additionalProperties: false };
 }
 const beskriv = b => `"${b.namn}" (${b.id}): ${b.vad}. Storlek: högst ${b.w} punkter bred och ${b.h} hög, och den ska fylla ungefär den rutan (raderna är ${b.h} eller färre, och ingen rad är längre än ${b.w} tecken).`;
 let SYS = null;
@@ -169,26 +167,6 @@ async function granskning(b, v) {
   return { custom_id: `${b.id}__g${v.nr}`, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: schema(false) } },
     system: [{ type: 'text', text: SYS, cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: [...bilder.map(bildBlock), { type: 'text', text }] }] } };
 }
-// valet: API:t ser versionerna som i spelet (och förebilden, eller scenen för en förebild) och väljer den bästa
-async function valet(b, versioner, { kommentar = null } = {}) {
-  const fb = forebildAv(b.sort), arForebild = fb.id === b.id;
-  const bilder = [arForebild ? (arSymbol(b) ? await symboler() : await scen()) : await sammanhang(fb.id, null)];
-  for (const v of versioner) bilder.push(await sammanhang(b.id, { id: b.id, rader: v.svar.rader }));
-  const gt = !utanForlaga(kommentar) && gammalText(b); if (gt) bilder.push(await gammal(b.id));
-  const text = [
-    arForebild ? (arSymbol(b) ? 'Den första bilden är spelets symboler som Björn redan valt. Du väljer förebilden för symbolerna.' : `Den första bilden är byns scen med de godkända bilderna i stilen. Du väljer förebilden för sorten ${sortAv(b.sort).namn}.`) : `Den första bilden är förebilden, ${fb.namn}, som i spelet.`,
-    `Sedan kommer ${versioner.length === 1 ? 'den enda versionen' : versioner.length + ' versioner'} av ${beskriv(b)} i ordningen ${versioner.map(v => 'version ' + v.nr).join(', ')}, var och en som i spelet: ${arSymbol(b) ? 'i panelen på mörk och ljus bakgrund och bredvid andra symboler' : 'ensam på marken, på högen, på slöjdbänken och när den bärs'}, fyra gånger större.`,
-    arSymbol(b) ? symbolText(b) : '',
-    ...versioner.map(v => `Version ${v.nr}: ${JSON.stringify(v.svar.rader)}`),
-    kommentar ? `Björns kommentar om förra ritningen, som ska följas: ${kommentar}` : '',
-    gt ? gt + ' Välj den version som är mest lik den bilden.' : '',
-    'Tänk på logiken: hur saken bärs, hålls eller står och vad som då syns, symmetrin och vinkeln.',
-    `Välj den version som ${arForebild ? 'passar bäst i scenen' : 'hör bäst ihop med förebilden'}, stämmer bäst med beskrivningen och läses tydligast i spelets storlek. Svara med val (versionens nummer) och dess punkter. Rätta det som inte stämmer, och skriv i anteckningen varför du valde den och vad du ändrade. Passar ingen: svara val 0, rita en ny och förklara.`,
-  ].filter(Boolean).join('\n\n');
-  return { custom_id: b.id, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: schema(true) } },
-    system: [{ type: 'text', text: SYS, cache_control: { type: 'ephemeral' } }],
-    messages: [{ role: 'user', content: [...bilder.map(bildBlock), { type: 'text', text }] }] } };
-}
 
 // ---------- koden kontrollerar varje ritning: tecknen och storleken ----------
 function kontrollera(b, svar) {
@@ -248,15 +226,6 @@ async function batch(client, fragor, namn) {
   console.log(`  ${namn} klar: ungefär ${summa.toFixed(2)} dollar.`);
   return { ut, summa };
 }
-async function spara(b, ritning, av) {
-  const gammal = lasBild(b.id), H = await hexar();
-  const pal = Object.fromEntries([...new Set(ritning.rader.join('').replace(/\./g, ''))].sort().map(ch => [ch, H[ch]]));
-  const o = { id: b.id, ritad: (b.ritad || 0) + 1, av, om: ritning.anteckning || '', w: ritning.rader[0].length, h: ritning.rader.length, rader: ritning.rader, pal, ...(gammal ? { forra: { ritad: gammal.ritad, rader: gammal.rader } } : {}) };
-  fs.mkdirSync(FILER, { recursive: true });
-  fs.writeFileSync(path.join(FILER, b.id + '.json'), JSON.stringify(o, null, 1) + '\n');
-  b.ritad = o.ritad;
-}
-
 // tre: versionerna sparas i bilder/<id>.json (versioner: [{ ide, rader, om }]) och blir ett kort i valdelen; den
 // nuvarande ritningen (rader) står kvar tills Björn valt, så att spelet och sidan har en bild under tiden
 async function sparaTre(b, bra, kommentar) {
@@ -296,11 +265,10 @@ function attRita(args) {
   return { ut, vantar };
 }
 // en grov uppskattning: idéerna ungefär 2 000 tokens in och 3 000 ut, en ritfråga 5 000 in (bilderna inräknade) och 6 000
-// ut med tänkandet, ett omtag för ungefär var tredje version, och sist valet (9 000 in, 6 000 ut) eller i tre en granskning
-// per version (6 000 in, 5 000 ut)
-const uppskattning = (n, tre = false) => { const rit = 5000 * PRIS.in + 6000 * PRIS.ut;
-  const per = (2000 * PRIS.in + 3000 * PRIS.ut + VERSIONER * rit * 1.33 + (tre ? VERSIONER * (6000 * PRIS.in + 5000 * PRIS.ut) : 9000 * PRIS.in + 6000 * PRIS.ut)) / 1e6;
-  return { lag: n * per * 0.7, hog: n * per * 1.5, text: `${n} bilder, ${tre ? 'tre versioner till valdelen' : 'bästa av ' + VERSIONER}: ungefär ${(n * per * 0.7).toFixed(2)}–${(n * per * 1.5).toFixed(2)} dollar med batch` }; };
+// ut med tänkandet, ett omtag för ungefär var tredje version, och en granskning per version (6 000 in, 5 000 ut)
+const uppskattning = n => { const rit = 5000 * PRIS.in + 6000 * PRIS.ut;
+  const per = (2000 * PRIS.in + 3000 * PRIS.ut + VERSIONER * rit * 1.33 + VERSIONER * (6000 * PRIS.in + 5000 * PRIS.ut)) / 1e6;
+  return { lag: n * per * 0.7, hog: n * per * 1.5, text: `${n} bilder, tre versioner till valdelen: ungefär ${(n * per * 0.7).toFixed(2)}–${(n * per * 1.5).toFixed(2)} dollar med batch` }; };
 
 // ---------- kommandona ----------
 const [kommando, ...args] = process.argv.slice(2);
@@ -326,7 +294,7 @@ try {
     for (const b of bilder) console.log(`${b.id}: ${kommentarer[b.id] ? 'kommentar: ' + kommentarer[b.id] : 'ny bild'}`);
     for (const v of vantar) console.log(v);
     if (!bilder.length) { console.log('Inget att rita.'); process.exit(0); }
-    const fore = uppskattning(bilder.length, true);
+    const fore = uppskattning(bilder.length);
     console.log(`Att rita: ${bilder.map(b => b.id + (forebildAv(b.sort).id === b.id ? ' (förebild)' : '')).join(', ')}`);
     console.log(`Uppskattat före: ${fore.text}`);
     if (kommando === 'torrt') {
@@ -338,7 +306,7 @@ try {
       fs.writeFileSync(path.join(UT, 'bildfraga.json'), JSON.stringify({ ...f, params: { ...f.params, messages: f.params.messages.map(m => ({ ...m, content: m.content.map(c => c.type === 'image' ? { type: 'image', bild: `${c.source.data.length} tecken base64` } : c) })) } }, null, 1));
       console.log(`En fråga (utan bilderna) står i ${path.relative(process.cwd(), path.join(UT, 'bildfraga.json'))}.`);
     } else {
-      const client = klient(), tre = true; // tre versioner till valdelen; API:t väljer inte den bästa (Björn efter bildstil v236)
+      const client = klient(); // tre versioner till valdelen; API:t väljer inte den bästa (Björn efter bildstil v236)
       const lage = {}, opts = b => kommentarer[b.id] ? { kommentar: kommentarer[b.id], forra: lasBild(b.id), lage: lage[b.id] } : { lage: 'nya' };
       for (const b of bilder) lage[b.id] = lageAv(kommentarer[b.id], lasBild(b.id));
       let summa = 0;
@@ -370,36 +338,18 @@ try {
         for (const b of bilder) for (const v of versioner[b.id]) { const r = o.ut[`${b.id}__o${v.nr}`]; if (!r?.svar) continue; const fel = await kontrolleraAllt(b, r.svar); if (fel.length <= v.fel.length) Object.assign(v, { svar: r.svar, fel }); }
         for (const b of bilder) { for (const v of versioner[b.id]) v.fel = v.fel.filter(x => !x.startsWith('olika')); await olikaFel(b); }
       }
-      if (tre) {
-        // 4. granskningen i sammanhanget, och alla versionerna sparas för Björn att välja bland
-        const gr = []; for (const b of bilder) for (const v of versioner[b.id]) if (v.svar && !v.fel.some(x => !x.startsWith('olika'))) gr.push(await granskning(b, v));
-        const r4 = gr.length ? await batch(client, gr, 'granskningen') : { ut: {}, summa: 0 }; summa += r4.summa;
-        const rapport = [];
-        for (const b of bilder) {
-          for (const v of versioner[b.id]) { const g = r4.ut[`${b.id}__g${v.nr}`]?.svar; if (g && !(await kontrolleraAllt(b, g)).length) { v.svar = { rader: g.rader, anteckning: [v.svar.anteckning, g.anteckning].filter(Boolean).join(' Granskningen: ') }; } }
-          const bra = versioner[b.id].filter(v => v.svar && !v.fel.some(x => !x.startsWith('olika')));
-          if (!bra.length) { rapport.push(`${b.id}: inte ritad (${[...new Set(versioner[b.id].flatMap(x => x.fel))].slice(0, 3).join('; ')})`); continue; }
-          await sparaTre(b, bra, kommentarer[b.id] || null);
-          const kvar = bra.flatMap(v => v.fel); rapport.push(`${b.id}: ${bra.length} versioner till valdelen (kortet bild_${b.id})${kvar.length ? '; kvar: ' + kvar.join('; ') : ''}`);
-        }
-        slutet(bilder, rapport, summa, fore);
-      } else {
-      const valfragor = [];
-      for (const b of bilder) { const ok = versioner[b.id].filter(x => !x.fel.length); if (ok.length) valfragor.push(await valet(b, ok, { kommentar: kommentarer[b.id] || null })); }
-      const r3 = valfragor.length ? await batch(client, valfragor, 'valet') : { ut: {}, summa: 0 };
-      summa += r3.summa;
+      // 4. granskningen i sammanhanget, och alla versionerna sparas för Björn att välja bland
+      const gr = []; for (const b of bilder) for (const v of versioner[b.id]) if (v.svar && !v.fel.some(x => !x.startsWith('olika'))) gr.push(await granskning(b, v));
+      const r4 = gr.length ? await batch(client, gr, 'granskningen') : { ut: {}, summa: 0 }; summa += r4.summa;
       const rapport = [];
       for (const b of bilder) {
-        const ok = versioner[b.id].filter(x => !x.fel.length), g = r3.ut[b.id]?.svar;
-        let slut = null, hur = '';
-        if (g && !kontrollera(b, g).length) { slut = g; hur = g.val > 0 ? `version ${g.val} vald` : 'ingen passade, en ny ritad i valet'; }
-        else if (ok.length) { const v = ok.find(x => x.nr === g?.val) || ok[0]; slut = v.svar; hur = `version ${v.nr} (valet gick inte igenom koden)`; }
-        if (!slut) { rapport.push(`${b.id}: inte ritad (${[...new Set(versioner[b.id].flatMap(x => x.fel))].slice(0, 3).join('; ')})`); continue; }
-        await spara(b, slut, `API:t (${MODELL}), bästa av ${ok.length}${kommentarer[b.id] ? ', omritad efter Björns svar' : ''}`);
-        rapport.push(`${b.id}: ritad, ${hur}${g?.anteckning ? ': ' + g.anteckning : ''}`);
+        for (const v of versioner[b.id]) { const g = r4.ut[`${b.id}__g${v.nr}`]?.svar; if (g && !(await kontrolleraAllt(b, g)).length) { v.svar = { rader: g.rader, anteckning: [v.svar.anteckning, g.anteckning].filter(Boolean).join(' Granskningen: ') }; } }
+        const bra = versioner[b.id].filter(v => v.svar && !v.fel.some(x => !x.startsWith('olika')));
+        if (!bra.length) { rapport.push(`${b.id}: inte ritad (${[...new Set(versioner[b.id].flatMap(x => x.fel))].slice(0, 3).join('; ')})`); continue; }
+        await sparaTre(b, bra, kommentarer[b.id] || null);
+        const kvar = bra.flatMap(v => v.fel); rapport.push(`${b.id}: ${bra.length} versioner till valdelen (kortet bild_${b.id})${kvar.length ? '; kvar: ' + kvar.join('; ') : ''}`);
       }
       slutet(bilder, rapport, summa, fore);
-      }
     }
   } else console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(0, 9).join('\n'));
 } catch (e) {
