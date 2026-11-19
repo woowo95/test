@@ -292,20 +292,22 @@ export function ritualTimme(s: State) {
 }
 // det den som går till ritualen tar med sig (HAMTAS.ritual i hamtning.ts, steg 11.1.77): en portion till måltiden, vid högtiden
 // ur kyrkans egendom (fran) eller den egna, och den mat hen offrar
-export function ritualMat(s: State, p: Person): { av: Record<string, number>; fran?: number } | undefined {
+export function ritualMat(s: State, p: Person): { av: Record<string, number>; fran?: Record<string, [number, number]> } | undefined {
   const r = s.ritual;
   if (!r) return undefined;
   const mat = !!RDEF[r.k].mat?.(r), av: Record<string, number> = {};
+  let fran: Record<string, [number, number]> | undefined;
   if (r.k === 'hogtid') {
     const tr = troOf(s, r.tro);
     if (!tr) return undefined;
+    // måltiden ur kyrkans egendom först, annars den egna; offret alltid ur den egna
     const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = mat ? ord.find(q => kyrkansAv(s, tr, q) >= 1) : undefined;
-    if (k) return { av: { [k]: 1 }, fran: kyrkaId(tr.id) };
-    const m = mat ? ord.filter(q => ownsAmount(s, p, q) >= 1).sort((a, b) => (hogtidKrav(tr, b) ? 1 : 0) - (hogtidKrav(tr, a) ? 1 : 0) || ownsAmount(s, p, b) - ownsAmount(s, p, a))[0] : undefined;
+    const m = mat && !k ? ord.filter(q => ownsAmount(s, p, q) >= 1).sort((a, b) => (hogtidKrav(tr, b) ? 1 : 0) - (hogtidKrav(tr, a) ? 1 : 0) || ownsAmount(s, p, b) - ownsAmount(s, p, a))[0] : undefined;
+    if (k) { av[k] = 1; fran = { [k]: [kyrkaId(tr.id), 1] }; }
     if (m) av[m] = 1;
-    if (p.tro === tr.id && budIn(tr, 'offer') && foljer(p, 'offer')) { const o = FOOD.filter(q => ownsAmount(s, p, q) >= 1 + (av[q] ?? 0)).sort((a, b) => ownsAmount(s, p, b) - ownsAmount(s, p, a))[0]; if (o) av[o] = (av[o] ?? 0) + 1; }
+    if (p.tro === tr.id && budIn(tr, 'offer') && foljer(p, 'offer')) { const o = FOOD.filter(q => ownsAmount(s, p, q) >= 1 + (q === k ? 0 : av[q] ?? 0)).sort((a, b) => ownsAmount(s, p, b) - ownsAmount(s, p, a))[0]; if (o) av[o] = (av[o] ?? 0) + 1; }
   } else if (mat) { const k = FOOD.filter(q => mayTake(s, p, q) >= 1).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0]; if (k) av[k] = 1; }
-  return Object.keys(av).length ? { av } : undefined;
+  return Object.keys(av).length ? { av, fran } : undefined;
 }
 // bröllopets fest (steg 8.5.13, 10.11.10): när den är slut äter var och en som var med en portion ur förrådet, av det byn har mest av, som vid gillet (ata);
 // när maten tar slut äter resten inte

@@ -544,12 +544,13 @@ SCENARIER.kista = {
   text: 'Kistan i sovrummet (steg 2.10.18): den som sover inne och har egna redskap och kläder som ingen använder bygger en kista i rummet där hen sover. Det egna läggs i den och tillbaka dit efter användning, annat tas ur den, och när ägaren dör tar någon i samma rum över kistan',
   kor: () => {
     const { STATION, PROJEKT, LAGER, isKlar, villKista, kistaOf, bedTile, stationRum, stepStationer, placeTools, take, tidyTools, slitageNu, wearMult, groundOf, newTing, BYN } = SIM;
-    // en by med ett hus, där alla kan bygga förvaring och har gott om trä. p äger en yxa och en kniv som ingen använder
+    // en by med ett hus, där alla kan bygga förvaring och har gott om trä. p äger två yxor och två knivar
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
     for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10); setAmount(s, 'plankor', 10);
     const p = living(s)[0], q = living(s)[1];
-    const egna = [newTing(s, 'yxa', 1, p.id), newTing(s, 'kniv', 1, p.id)], byns = newTing(s, 'spjut', 1, BYN);
+    // en yxa och en kniv till, så att två av p:s egna ligger oanvända också när p hugger eller slaktar med den ena
+    const egna = [newTing(s, 'yxa', 1, p.id), newTing(s, 'kniv', 1, p.id), newTing(s, 'yxa', 1, p.id), newTing(s, 'kniv', 1, p.id)], byns = newTing(s, 'spjut', 1, BYN);
     placeTools(s);
     const vill = villKista(s, p), andra = living(s).filter(r => r !== p && villKista(s, r)).length, brist = PROJEKT.kista!.brist(s);
     // kistan väger lite mot arbetet om maten; här väger den mer, så att p bygger den snart

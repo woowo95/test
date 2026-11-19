@@ -3,7 +3,7 @@ import { DAY, HOUR, MIN, Person, State, Task } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
-import { amountOf, harTillHands, iHelaForradet, iRackhall, put, skickAv, use } from './lager';
+import { amountOf, harTillHands, iHelaForradet, put, skickAv, use } from './lager';
 import { grundvarde } from './varde';
 import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
 import { matPerDygn } from './ekonomi';
@@ -458,10 +458,11 @@ export function gropKlar(s: State, p: Person, ref?: number) {
   if (forstaGang(s, 'gropForsta')) log(s, `${p.name} lade byns första festmåltid i kokgropen bland de heta stenarna.`, 'world', [p.id]);
 }
 // satsen läggs i förrådet som en vanlig rätt, med kockens hand och ägarna efter råvarorna
-function gropUpp(s: State, t: Station) {
-  const g = t.grop!, tot = Object.values(g.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {};
-  for (const o in g.ag) { const q = byId(s, Number(o)); if (q && alive(q)) ag[o] = g.ag[o] / tot * g.n; }
-  if (g.n > 0) { const h = (s.kockHand ??= {}), har = amountOf(s, g.r); h[g.r] = har > 0 ? ((h[g.r] ?? 0) * har + (g.h ?? 0) * g.n) / (har + g.n) : g.h ?? 0; put(s, g.r, g.n, ag); }
+function gropUpp(s: State, t: Station, at = 0) {
+  const g = t.grop!, tot = Object.values(g.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {}, n = g.n - at;
+  if (g.n > 0) { const h = (s.kockHand ??= {}), har = amountOf(s, g.r); h[g.r] = har > 0 ? ((h[g.r] ?? 0) * har + (g.h ?? 0) * g.n) / (har + g.n) : g.h ?? 0; }
+  for (const o in g.ag) { const q = byId(s, Number(o)); if (q && alive(q)) ag[o] = g.ag[o] / tot * n; }
+  if (n > 0) put(s, g.r, n, ag);
   count(s, 'ratter', g.n);
   t.grop = undefined;
 }
@@ -477,12 +478,11 @@ function stepGrop(s: State) {
 festKrok.servera = (s, med) => {
   const t = kokgropar(s).find(q => q.grop && q.grop.kvar <= 0), at = new Set<number>();
   if (!t) return at;
-  const k = t.grop!.r;
-  gropUpp(s, t);
-  for (const p of med) iRackhall(p.x, p.y, () => { // den som står vid gropen (steg 11.1.77)
-    if (amountOf(s, k) < 1) return;
-    use(s, p, k, 1); ataPortion(s, p, k); at.add(p.id);
-  });
+  // satsen bärs från gropen till festen och delas där (steg 11.1.77): var och en som är med äter en portion, och det som
+  // blir över läggs i förrådet
+  const k = t.grop!.r, med1 = med.slice(0, Math.floor(t.grop!.n + 1e-9));
+  gropUpp(s, t, med1.length);
+  for (const p of med1) { ataPortion(s, p, k); at.add(p.id); }
   count(s, 'festmaltid', at.size);
   return at;
 };

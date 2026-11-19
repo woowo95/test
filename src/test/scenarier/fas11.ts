@@ -4476,6 +4476,7 @@ SCENARIER.tvabyar = {
     const t0 = Date.UTC(2026, 0, 1), timmar = 30;
     const hash = (s: SIM.State) => { const j = JSON.parse(kanonisk(SIM.serialize(s))); delete j.skuld; delete j.stegRest; delete j.vackt; delete j.vackHall; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
     const nyB = () => { const b = SIM.createState(1511, t0); delete b.varld; b.vackt = 1; return b; };
+    const tid = (s: SIM.State) => Math.round(s.now + (s.skuld ?? 0) * 1000);
     const a1 = SIM.createState(6, t0), b1 = nyB();
     kor(a1, timmar); kor(b1, timmar);
     const a2 = SIM.createState(6, t0), b2 = nyB();
@@ -4486,7 +4487,9 @@ SCENARIER.tvabyar = {
     return [
       ['huvudbyn går som för sig', hash(a1) === hash(a2)],
       ['den väckta byn går som för sig', hash(b1) === hash(b2)],
-      ['båda har gått lika långt', b2.now === a2.now && a2.now === a1.now],
+      // (tiden som inte räckt till ett helt slag, skulden, räknas med: slagen har olika längd i byarna, och den väckta byn går
+      // fram till huvudbyns klocka)
+      ['båda har gått lika långt', tid(b2) === a2.now && tid(a2) === tid(a1)],
       ['den väckta byn sparas inte med huvudbyn ännu', !SIM.serialize(a2).includes('"vackta"')],
       ['en väckt by räknar inte världens perioder', (varldA.varld?.perioder?.timme ?? 0) === timme0 && (a1.varld?.perioder?.timme ?? 0) > timme0],
     ];

@@ -35,7 +35,12 @@ import { ortSattaVal } from './kruka';
 import { BRYGD, BRYGG, bryggVal } from './brygg';
 import { SKRIFT } from './skriftTal';
 
-export interface Hamtas { av: (s: State, p: Person, tk: Task) => Record<string, number> | undefined; byns?: boolean; fran?: (s: State, p: Person, tk: Task) => number | undefined } // fran = den som äger det (en tro, steg 10.3.19)
+export interface Hamtas { av: (s: State, p: Person, tk: Task) => Record<string, number> | undefined; byns?: boolean; fran?: (s: State, p: Person, tk: Task) => Fran } // fran = den som äger det (en tro, steg 10.3.19), för alla slag eller per slag
+// vems det som hämtas är: en ägare för allt, eller per slag en ägare och hur många av dem som är hens (resten tas som vanligt)
+export type Fran = number | Record<string, [number, number]> | undefined;
+// ägaren att leta efter i stackarna: den vars del av slaget k ännu inte hämtats
+const agareAv = (fran: Fran, k: string, tk: Task) => typeof fran !== 'object' ? fran : fran[k] && (tk.ag?.[k]?.[fran[k]![0]] ?? 0) < fran[k]![1] - 1e-9 ? fran[k]![0] : undefined;
+const agareAlla = (fran: Fran, slag: string[], tk: Task) => typeof fran !== 'object' ? fran : Object.fromEntries(slag.flatMap(k => { const a = agareAv(fran, k, tk); return a === undefined ? [] : [[k, a]]; }));
 export const HAMTAS: Partial<Record<Act, Hamtas>> = {};
 // ett hantverk (GORS): materialet efter receptet, när hen inte redan påbörjat det (det påbörjade har materialet i sig)
 for (const act of Object.keys(GORS) as Act[]) HAMTAS[act] = { av: (s, p, tk) => { if (halvOf(s, p, GORS[act]!)) return undefined; const k = borjaTool(s, p, act, tk.tool); return k ? SAKER[k]?.skaffa?.av : undefined; } };
@@ -119,7 +124,7 @@ function hamtaForstNu(s: State, p: Person, tk: Task) {
   // fler vändor: det som bars hit läggs vid platsen, där det ligger inom räckhåll, och hen går efter resten. Hamnade det
   // inte inom räckhåll (rutan var full) börjar arbetet med det som finns
   if (tk.vanda) { const fore = sumOf(sak); laggVid(s, p, tk); sak = saknas(s, p, av); if (sumOf(sak) > fore + 1e-9) return false; }
-  const dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak), hamtasFor(tk.act)?.fran?.(s, p, tk)) : undefined;
+  const dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak), agareAlla(hamtasFor(tk.act)?.fran?.(s, p, tk), Object.keys(sak), tk)) : undefined;
   if (!dit) return false; // det finns inom räckhåll, eller inte i någon stack (hos någon, i en kista): arbetet börjar som det är
   tk.site = { x: tk.tx, y: tk.ty }; tk.tx = dit.x; tk.ty = dit.y; tk.phase = 'go'; tk.hamta = sak;
   count(s, 'hamtar');
@@ -147,13 +152,16 @@ export function hamtat(s: State, p: Person, tk: Task) {
       const v = Math.min(Math.ceil(n - (tk.items?.[k] ?? 0) - 1e-9), Math.max(tk.items ? 0 : 1, Math.floor((capacity(s, p) - load(tk, s)) / viktOf(k) + 1e-9)));
       if (v <= 0) continue;
       // bara hela saker bärs, för varje ägare: en ägares del av en sak (påbörjad) blir kvar som påbörjad
-      const d = helaAv(s, k, fran !== undefined ? use(s, p, k, v, true, fran) : takeMaterial(s, p, k, v, byns)), g = sumOf(d);
+      // det som är en annan ägares (kyrkans mat vid högtiden) tas av hens, resten som vanligt
+      const fk = agareAv(fran, k, tk), nf = fk === undefined ? 0 : typeof fran === 'object' ? Math.min(v, Math.ceil(fran[k]![1] - (tk.ag?.[k]?.[fk] ?? 0) - 1e-9)) : v;
+      const a = nf > 0 ? use(s, p, k, nf, true, fk) : {}, b = v - sumOf(a) > 1e-9 && (typeof fran === 'object' || fk === undefined) ? takeMaterial(s, p, k, v - sumOf(a), byns) : {};
+      const d = helaAv(s, k, { ...a, ...Object.fromEntries(Object.entries(b).map(([o, x]) => [o, x + (a[+o] ?? 0)])) }), g = sumOf(d);
       if (g <= 1e-9) continue;
       (tk.items ??= {})[k] = (tk.items[k] ?? 0) + g; addDel((tk.ag ??= {})[k] ??= {}, d); fick += g;
     }
   });
   const fattas = Object.keys(av).filter(k => av[k] - (tk.items?.[k] ?? 0) > 1e-9), ryms = (k: string) => load(tk, s) + viktOf(k) <= capacity(s, p) + 1e-9;
-  const kvar = fattas.filter(ryms), nasta = fick > 0 && kvar.length ? narmasteMed(s, p, kvar, fran) : undefined;
+  const kvar = fattas.filter(ryms), nasta = fick > 0 && kvar.length ? narmasteMed(s, p, kvar, agareAlla(fran, kvar, tk)) : undefined;
   if (nasta) { tk.tx = nasta.x; tk.ty = nasta.y; tk.hamtad = 1; return; } // det hen redan bär räknas på vägen till nästa stack
   const site = tk.site!;
   tk.tx = site.x; tk.ty = site.y; tk.site = undefined; tk.hamta = undefined; tk.phase = 'go';
@@ -162,6 +170,6 @@ export function hamtat(s: State, p: Person, tk: Task) {
 }
 // det som bars till platsen läggs ner där (med ägarna), och bördan är tom
 function laggVid(s: State, p: Person, tk: Task) {
+  if (tk.items) dropLoad(s, tk, p.x, p.y); // (med hamtad kvar: det som läggs ner är inte förbrukat, lager.ts)
   tk.vanda = undefined; tk.hamtad = undefined;
-  if (tk.items) dropLoad(s, tk, p.x, p.y);
 }

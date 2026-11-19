@@ -5,7 +5,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed } from './hjalp';
+import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -410,7 +410,8 @@ SCENARIER.lagskrift = {
     s.styre = { historia: [], oppna: [] } as NonNullable<State['styre']>;
     s.styre!.lagar = ids.slice(0, 6).map(lag);
     const tak0 = SIM.lagTak(s);
-    const rista = () => { const l = SIM.runstenLust(s, p), at = SIM.runstenPlats(s)!; if (l?.slag !== 'lag') return; SIM.runstenKlar(s, p, { act: 'runsten', phase: 'do', tx: at.x + 0.5, ty: at.y + 0.5, until: s.now, carry: 0, why: '', tool: 'lag', ref: l.om.id }); };
+    // stenarna tas när stenen reses (steg 11.1.75): ristaren står vid dem
+    const rista = () => { const l = SIM.runstenLust(s, p), at = SIM.runstenPlats(s)!; if (l?.slag !== 'lag') return; SIM.setAmount(s, 'huggen_sten', SIM.amountOf(s, 'huggen_sten') + SIM.SKRIFT.stenar); vidStack(s, p, 'huggen_sten'); SIM.runstenKlar(s, p, { act: 'runsten', phase: 'do', tx: at.x + 0.5, ty: at.y + 0.5, until: s.now, carry: 0, why: '', tool: 'lag', ref: l.om.id }); };
     rista(); rista();
     const stenar = (s.runstenar ?? []).filter(r => r.lag).length, tak2 = SIM.lagTak(s);
     s.runstenar = s.runstenar!.slice(1);
@@ -1082,7 +1083,7 @@ SCENARIER.sedlista = {
     tryck('sed-rang');
     const igen = styreFlik.html().includes('class="sedlista"');
     // de låsta sederna sist (steg 11.1.14): efter den första grå raden kommer ingen upplåst
-    const lastSist = (h: string) => { const i = h.indexOf('class="muted lastsed"'); return i > 0 && !/data-hjalp="sed-/.test(h.slice(i).split('</ul>')[0]) && /❔ /.test(h.slice(i)); };
+    const lastSist = (h: string) => { const i = h.indexOf('class="muted lastsed"'); return i > 0 && !/data-hjalp="sed-/.test(h.slice(i).split('</ul>')[0]) && /(❔|sym_fragetecken)/.test(h.slice(i)); };
     const lagg = SIM.sedLaggning(s), drag = SIM.sedDrag(s), mal = SIM.sederTarget(s);
     const summa = SIM.SED_LIST.filter(x => SIM.sedOppen(s, x) && Math.abs(mal[x]) < 1).map(x => ({ k: x, rad: lagg[x] + drag.reduce((a, r) => a + r.d[x], 0), mal: mal[x] }));
     // vågen visar vart den är på väg (steg 11.1.12): pilen när vågen lutar åt andra hållet, ingen när den står vid målet
@@ -1099,7 +1100,7 @@ SCENARIER.sedlista = {
       // steg 11.1.11: läggningen är en egen rad, och raderna under en sed summerar till byns mål för seden
       [`vågen har en pil åt det håll den är på väg när det som drar pekar åt andra hållet, och ingen när den står vid målet`, pilen && ingen],
       ['rubrikerna heter Störst inflytande i Seder och Maktens seder i Styre, med en länk till fliken Seder (steg 11.1.15)', sederFlik.html().includes('<h3>Störst inflytande</h3>') && !sederFlik.html().includes('Tyngsta röster') && /<h3>Maktens seder<\/h3><\/div><button type="button" class="lank" data-visa="seder">/.test(styreH) && !styreH.includes('Vågskålar')],
-      [`en sed som inte är upplåst står sist som en grå rad "❔ Namn", i Seder och Styre, utan att säga när den kommer`, lastSist(sederFlik.html()) && lastSist(styreH) && !/Kommer senare/.test(sederFlik.html() + styreH)],
+      [`en sed som inte är upplåst står sist som en grå rad med frågetecken och namnet, i Seder och Styre, utan att säga när den kommer`, lastSist(sederFlik.html()) && lastSist(styreH) && !/Kommer senare/.test(sederFlik.html() + styreH)],
       [`invånarnas läggning är en egen rad i listan`, lista.includes('Invånarnas läggning')],
       [`raderna under en sed summerar till byns mål (${summa.map(x => `${x.k} ${x.rad.toFixed(3)}/${x.mal.toFixed(3)}`).join(', ')})`, summa.length > 0 && summa.every(x => Math.abs(x.rad - x.mal) < 1e-9)],
     ];
@@ -2041,7 +2042,7 @@ SCENARIER.ritualer = {
     const pr = SIM.prastOf(s, tr);
     // ritualen körs till slut: alla i v är med
     const hogtidNu = () => [s.ritual, ...(s.ritualKo ?? [])].find(r => r?.k === 'hogtid');
-    const korRitual = () => { if (!s.ritual) { const k = s.ritualKo?.find(r => r.k === 'hogtid'); if (k?.fran) { s.now = Math.max(s.now, k.fran); SIM.ritualTimme(s); } } const r = s.ritual as SIM.Ritual | undefined; if (r?.k !== 'hogtid') return undefined; for (const p of SIM.living(s)) if (p.tro === r.tro) p.task = { act: 'ritual', phase: 'do', tx: r.x, ty: r.y, until: r.slut, carry: 0, why: '' } as SIM.Task; s.now = r.slut; SIM.ritualTimme(s); return r; };
+    const korRitual = () => { if (!s.ritual) { const k = s.ritualKo?.find(r => r.k === 'hogtid'); if (k?.fran) { s.now = Math.max(s.now, k.fran); SIM.ritualTimme(s); } } const r = s.ritual as SIM.Ritual | undefined; if (r?.k !== 'hogtid') return undefined; for (const p of SIM.living(s)) if (p.tro === r.tro) { p.task = { act: 'ritual', phase: 'do', tx: r.x, ty: r.y, until: r.slut, carry: 0, why: '' } as SIM.Task; hamtatSomISpelet(s, p); } s.now = r.slut; SIM.ritualTimme(s); return r; };
     const tom = () => { s.ritualKo = []; s.ritual = undefined; tr.hogtid = undefined; };
     // ingen högtid utan bud
     tom(); SIM.kultTimme(s); const utanBud = !hogtidNu();
@@ -3027,8 +3028,8 @@ SCENARIER.matbud = {
     // högtiden: budets ingrediens först
     tr.bud.push({ id: 'matKrav', v: 'bar', t: s.now });
     satKyrka(s, tr, { kott: 20, bar: 20 });
-    const n0 = s.stat?.hogtid_ratt ?? 0;
-    SIM.hogtidSlut(s, tr, { k: 'hogtid', start: s.now, slut: s.now, x: 0, y: 0, tro: tr.id, form: 'gille' }, SIM.troende(s, tr));
+    const n0 = s.stat?.hogtid_ratt ?? 0, rh = { k: 'hogtid', start: s.now, slut: s.now, x: 0, y: 0, tro: tr.id, form: 'gille' } as SIM.Ritual;
+    SIM.hogtidSlut(s, tr, rh, ritualMed(s, rh, SIM.troende(s, tr)));
     const hogtid = (s.stat?.hogtid_ratt ?? 0) > n0 && SIM.kyrkansAv(s, tr, 'kott') === 20 && SIM.kyrkansAv(s, tr, 'bar') < 20;
     // Inget kött på heliga dagar: bara den heliga dagen
     tr.bud = [{ id: 'prast', t: s.now }, { id: 'kottHelg', t: s.now }];

@@ -19,7 +19,9 @@ import { ELD, eldarOf, hearthOf, woodDays } from './eld';
 import { foodDaysAll } from './ekonomi';
 import { isFood } from './saker';
 import { ljusPlatser } from './ljus';
-import { allows, amountOf, rymd, zonesOf } from './lager';
+import { allows, amountOf as iForradet, iHelaForradet, rymd, zonesOf } from './lager';
+// förrådsmålen gäller hela byns förråd, också när frågan ställs mitt i ett arbete där bara det inom räckhåll nås (steg 11.1.74)
+const amountOf = (s: State, k: string) => iHelaForradet(() => iForradet(s, k));
 import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { sportFor } from './sport';

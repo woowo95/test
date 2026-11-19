@@ -2,7 +2,7 @@
 import { createState, Person, State, Task } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, medBank, utanWebblasare } from './hjalp';
+import { SCENARIER, medBank, utanWebblasare, vidStack } from './hjalp';
 import { setByn } from '../../ui/lage';
 import { tekInfo, teknik } from '../../ui/flikar/teknik';
 
@@ -32,7 +32,7 @@ SCENARIER.forsok = {
     const vidBank = !!v?.spot && Math.hypot(v.spot.x - at.x, v.spot.y - at.y) < 0.5;
     const fore = SIM.amountOf(s, 'skinn') + SIM.amountOf(s, 'rep');
     const tk = forsokTask(s, 'skinnklader', v?.min ?? 90);
-    let n = 0;
+    let n = 0; vidStack(s, p, 'skinn'); // den som prövar sig fram når materialet (steg 11.1.74)
     while (!SIM.knows(p, 'skinnklader') && n < 200) { SIM.forsokSteg(s, p, tk, 3600); SIM.forsokKlar(s, p, tk); n++; }
     const efter = SIM.amountOf(s, 'skinn') + SIM.amountOf(s, 'rep');
     const hela = Number.isInteger(efter) && fore - efter === Math.min(n, fore);

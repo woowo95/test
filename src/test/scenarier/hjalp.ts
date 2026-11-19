@@ -22,6 +22,27 @@ export function harHamtat(s: State, p: Person, act: Act, av: Record<string, numb
   for (const [k, n] of Object.entries(av)) { const d = SIM.use(s, p, k, n, common), g = Object.values(d).reduce((a, b) => a + b, 0); if (g <= 0) continue; (tk.items ??= {})[k] = (tk.items[k] ?? 0) + g; (tk.ag ??= {})[k] = d; }
   tk.hamtad = 1; p.task = tk;
 }
+// det arbetet hämtar (HAMTAS i hamtning.ts, steg 11.1.77), taget som i spelet och lagt i bördan, för ett scenario som ställer
+// folk på platsen utan att låta dem gå dit
+export function hamtatSomISpelet(s: State, p: Person, tk: Task = p.task!) {
+  const h = SIM.HAMTAS[tk.act], av = h?.av(s, p, tk);
+  if (!h || !av) return;
+  const fran = h.fran?.(s, p, tk); p.task = tk;
+  for (const [k, n] of Object.entries(av)) {
+    const [fk, nf] = typeof fran === 'object' ? fran[k] ?? [undefined, 0] : [fran, fran === undefined ? 0 : n], d1 = fk !== undefined && nf > 0 ? SIM.use(s, p, k, Math.min(n, nf), true, fk) : {}, n1 = Object.values(d1).reduce((a, b) => a + b, 0);
+    const d2 = n - n1 > 1e-9 && (typeof fran === 'object' || fk === undefined) ? SIM.takeMaterial(s, p, k, n - n1, h.byns ?? false) : {}, d: Record<number, number> = { ...d1 }; for (const [o, v] of Object.entries(d2)) d[+o] = (d[+o] ?? 0) + v;
+    const g = Object.values(d).reduce((a, b) => a + b, 0);
+    if (g <= 0) continue; (tk.items ??= {})[k] = (tk.items[k] ?? 0) + g; const ag = ((tk.ag ??= {})[k] ??= {}); for (const [o, v] of Object.entries(d)) ag[+o] = (ag[+o] ?? 0) + v;
+  }
+  tk.hamtad = 1;
+}
+// en ritual i ett scenario: de som är med har tagit med maten till måltiden och offret (HAMTAS.ritual), som i spelet
+export function ritualMed(s: State, r: SIM.Ritual, med: Person[]) {
+  const f = s.ritual; s.ritual = r;
+  for (const p of med) { p.task = { act: 'ritual', phase: 'do', tx: r.x, ty: r.y, until: r.slut, carry: 0, why: '' } as Task; hamtatSomISpelet(s, p); }
+  s.ritual = f;
+  return med;
+}
 // graven i ett scenario: den som begraver har hämtat veden till bålet (HAMTAS.grava), som i spelet
 export function gravKlarMed(s: State, p: Person, t: Task) { const av = SIM.HAMTAS.grava!.av(s, p, t); const f = p.task; if (av) { p.task = t; harHamtat(s, p, t.act, av); } SIM.gravKlar(s, p, t); if (av) p.task = f === t ? t : f; }
 // alla står mitt i byns första lagerplats, där maten läggs (inget svävar, steg 11.1.77)

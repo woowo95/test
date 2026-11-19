@@ -572,11 +572,12 @@ export const iRackvidd = (p: { x: number; y: number }, a: { x: number; y: number
 // den närmaste stacken i förrådet utom räckhåll från p med något av slagen (det gömda i sin värdstack)
 // (med ägaren fran: bara stackar där fran äger något, som kyrkans mat till högtiden)
 // ok: stacken duger (t.ex. att p får ta något där, steg 11.1.77); frågas bara om den som är närmast hittills
-export function narmasteMed(s: State, p: { x: number; y: number }, slag: string[], fran?: number, ok?: (x: number, y: number) => boolean) { return iHelaForradet(() => narmaste(s, p, slag, fran, ok)); }
-function narmaste(s: State, p: { x: number; y: number }, slag: string[], fran?: number, ok?: (x: number, y: number) => boolean) {
+// fran = den som äger det, för alla slag eller per slag (vid högtiden kyrkans mat och den egna till offret)
+export function narmasteMed(s: State, p: { x: number; y: number }, slag: string[], fran?: number | Record<string, number>, ok?: (x: number, y: number) => boolean) { return iHelaForradet(() => narmaste(s, p, slag, fran, ok)); }
+function narmaste(s: State, p: { x: number; y: number }, slag: string[], franAlla?: number | Record<string, number>, ok?: (x: number, y: number) => boolean) {
   let bast: { x: number; y: number } | undefined, bd = Infinity;
   for (const k of slag) {
-    const h = SAKER[k]?.i;
+    const h = SAKER[k]?.i, fran = typeof franAlla === 'object' ? franAlla[k] : franAlla;
     for (const a of stored(s, h ?? k)) {
       if ((h ? a.dold ?? 0 : a.n) <= 1e-9 || iRackvidd(p, a) || fran !== undefined && !((a.ag?.[fran] ?? 0) > 1e-9)) continue;
       const d = Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y);

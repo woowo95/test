@@ -390,7 +390,7 @@ SCENARIER.vardval = {
     const lang = vardVal(s, g, false);
     // remsan i bältet
     const t = SIM.cloneState(s), tp = t.people.find(r => r.id === g.id)!;
-    SIM.balteForband(t, tp, 'jakt');
+    vidStack(t, tp, 'remsa'); SIM.balteForband(t, tp, 'jakt'); // hen tar remsan när hen går förbi förrådet (steg 11.1.74)
     return [
       [`den skadade ropar (${ropat ? 'ja' : 'nej'}) och hörs längre bort än vanligt (${hord ? 'en kom' : 'ingen kom'})`, ropat && hord],
       [`den skadade trycker själv på såret (${sjalv})`, sjalv.includes('Trycker')],
