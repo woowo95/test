@@ -1011,9 +1011,13 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     else { // det som togs, inte mer, till det man redan har i händerna. Byggaren tar också till nästa bitar av samma material i
       // samma hus, så mycket hen orkar bära (steg 10.2.21 C), så att hen inte går till lagret för varje bit
       const mer = Math.max(0, Math.min(byggMer(s, b, k), Math.floor(capacity(s, p) / viktOf(k)) - har - n, Math.floor(avail(s, k, p, b.hus, b) - n)));
-      tk.kom ??= {}; const ag = takeForHouse(s, p, b.hus, k, n + mer, tk.kom, b), mitt = (tk.ag ??= {})[k] ??= {};
+      // ur stackarna hen står vid (steg 11.1.76); räckte de inte till biten går hen till nästa stack med materialet
+      tk.kom ??= {}; const kom = tk.kom, ag = iRackhall(p.x, p.y, () => takeForHouse(s, p, b.hus, k, n + mer, kom, b)), mitt = (tk.ag ??= {})[k] ??= {};
       for (const id in ag) mitt[id] = (mitt[id] ?? 0) + ag[id];
-      tk.items = { ...tk.items, [k]: har + sumOf(ag) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
+      tk.items = { ...tk.items, [k]: har + sumOf(ag) };
+      const nasta = sumOf(ag) > 0 && har + sumOf(ag) < needOf(b) - 1e-9 ? narmasteMed(s, p, [k]) : undefined;
+      if (nasta) { tk.tx = nasta.x; tk.ty = nasta.y; return; }
+      tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
     }
   } else if (tk.hamta && tk.site && tk.phase === 'go') hamtat(s, p, tk); // vid stacken: materialet till arbetet (steg 11.1.74, hamtning.ts)
   else if (tk.phase === 'back' && LAMNA[tk.act]) LAMNA[tk.act]!(s, p, tk); // framme hos den man bär till (LAMNA)
