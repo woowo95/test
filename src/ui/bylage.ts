@@ -1,9 +1,8 @@
 // Byns läge i text (steg 12.1.40): vad var och en gör, förråden mot sina mål och de öppna behoven. npm run by och granskaren
-// (12.1.44) skriver det
+// (12.1.44) skriver det, och rapporten Det här är konstigt (12.1.41) sparar det
 import { ACTS, MATERIAL_LIST, Person, State, ageOf, amountOf, bordSlag, buffert, byggbehov, foodDays, living, lyxtak, materialBuffert, materialTak, sakNamn, tingOf, woodDays } from '../sim';
 
 export const r1 = (v: number) => Math.round(v * 10) / 10, pr = (v: number) => `${Math.round(v * 100)}`;
-export const tid = (t: number) => new Date(t).toLocaleString('sv-SE', { timeZone: process.env.TZ });
 
 // det p bär: bördan (bordSlag) och tingen i handen, i bördan och på kroppen
 export function bar(s: State, p: Person) {

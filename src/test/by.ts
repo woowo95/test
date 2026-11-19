@@ -6,7 +6,8 @@ import './svensktid';
 import { readFileSync } from 'node:fs';
 import { ACTS, MIN, living, nastaSteg, step } from '../sim';
 import { lasByfil } from '../ui/byfil';
-import { behovNu, folkNu, forradNu, pr, tid } from './bylage';
+import { behovNu, folkNu, forradNu, pr } from '../ui/bylage';
+const tid = (t: number) => new Date(t).toLocaleString('sv-SE', { timeZone: process.env.TZ });
 
 const [fil, minArg] = process.argv.slice(2);
 if (!fil) { console.log('Användning: npm run by -- fil [minuter]'); process.exit(1); }

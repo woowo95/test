@@ -1,8 +1,13 @@
 import { build } from 'esbuild';
 import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
+import { execSync } from 'child_process';
 
-const r = await build({ entryPoints: ['src/main.ts'], bundle: true, minify: true, format: 'iife', target: 'es2020', write: false, legalComments: 'none' });
+// versionen i rapporten Det här är konstigt (steg 12.1.41, ui/konstigt.ts): den senaste publicerade versionen och committen
+const git = (c) => { try { return execSync(c, { encoding: 'utf8' }).trim(); } catch { return ''; } };
+const spelVersion = `${git("git log -1 --format=%s --grep='(v[0-9]*)'").match(/\(v\d+\)/)?.[0]?.slice(1, -1) ?? '?'} ${git('git rev-parse --short HEAD')}`;
+
+const r = await build({ entryPoints: ['src/main.ts'], bundle: true, minify: true, format: 'iife', target: 'es2020', write: false, legalComments: 'none', define: { __SPELVERSION__: JSON.stringify(spelVersion) } });
 const js = r.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 const html = readFileSync('src/template.html', 'utf8').replace('/*BUNDLE*/', () => js);
 writeFileSync('samhallssimulatorn.html', html);
