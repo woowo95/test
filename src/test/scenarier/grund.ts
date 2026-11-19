@@ -6,11 +6,10 @@ import * as SIM from '../../sim';
 import { readFileSync } from 'node:fs';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
-import { START, STEG_TIM } from '../kor';
+import { BEAT, START, STEG_TIM } from '../kor';
 import { eld as eldFlik } from '../../ui/flikar/eld';
 import { setByn, ui } from '../../ui/lage';
 import { medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.glanta = {
   lang: true,

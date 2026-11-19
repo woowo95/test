@@ -6,7 +6,7 @@ import { Person, createState, step, living, serializeParts, serialize, isLight, 
 import * as SIM from '../../sim';
 import { hasIcon, PAL } from '../../ikoner';
 import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../palett';
-import { START } from '../kor';
+import { BEAT, START } from '../kor';
 import { KARNA } from '../../portrattkarna';
 import { KARTBILDER, SYMNAMN } from '../../kartbilder';
 import { symDelar, symUtan } from '../../ui/symboler';
@@ -18,7 +18,6 @@ import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar, utanWebblas
 import { setByn, ui } from '../../ui/lage';
 import { sak as sakFlik } from '../../ui/flikar/sak';
 import { lagstBehov } from '../../ui/hjalp';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER['ui-ren'] = {
   lang: true,

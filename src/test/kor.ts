@@ -12,7 +12,7 @@ import { gastLever } from '../sim/gast';
 import { radVakt } from '../sim/rad';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { kollaText, konI, titta } from './textkoll';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
+export const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
 export const START = Date.parse('2026-10-20T08:00:00+02:00');

@@ -2,7 +2,7 @@
 import { createState, living, DAY, type Person } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER } from './hjalp';
+import { SCENARIER, kor } from './hjalp';
 
 SCENARIER.sjukdom = {
   text: 'Steg 9.5.1–9.5.2 och 10.10.12: varje sjukdom är en rad i SJUKDOMAR med orsak, smitta, inkubation, längd, stadier, följder, vård, dödlighet per ålder och immunitet. Sjukdomen och motståndet växer båda; vinner sjukdomen dör man av den, annars blir man frisk, och immun efter mässlingen och kopporna. Den som förlorar mot förkylningen får lunginflammation i stället för att dö',
@@ -73,13 +73,13 @@ SCENARIER.smitta = {
     imm.immun = { massling: 1 };
     insjukna(s, p, 'massling');
     let doldSmittad = 0;
-    kor2(s, 48, () => { for (const q of living(s)) if (q.sjuk?.av !== undefined && !SIM.isSick(q, s.now)) doldSmittad = Math.max(doldSmittad, 1); });
+    kor(s, 48, () => { for (const q of living(s)) if (q.sjuk?.av !== undefined && !SIM.isSick(q, s.now)) doldSmittad = Math.max(doldSmittad, 1); });
     const smittade = Number(s.stat?.smittad_massling ?? 0);
     const immunFri = imm.sjuk?.k !== 'massling';
     // matförgiftningen smittar inte
     const m = createState(5, START), [mp] = living(m).filter(q => SIM.ageOf(q, m.now) >= 18);
     insjukna(m, mp, 'matforgiftning');
-    kor2(m, 24);
+    kor(m, 24);
     const ingen = (m.stat?.smittad_matforgiftning ?? 0) === 0;
     return [
       [`mässlingen sprids i byn (${smittade} smittade, ${folk.length} i byn från början)`, smittade >= 2],
@@ -90,7 +90,6 @@ SCENARIER.smitta = {
   },
 };
 // kör byn h timmar, med fn efter varje timme
-function kor2(s: SIM.State, h: number, fn?: () => void) { for (let i = 0; i < h; i++) { for (let k = 0; k < 12; k++) SIM.step(s, 300); fn?.(); } }
 
 SCENARIER.sjukfoljd = {
   text: 'Steg 9.5.4: febern sänker medvetandet, hostan orken och diarrén ökar törsten; den sjuke vilar när tecknen är tydliga och lägger sig med hög feber; kortet säger stadiet, notiserna följer insjuknandet, när det blir sämre och när hen blir frisk, och kopporna lämnar ärr',

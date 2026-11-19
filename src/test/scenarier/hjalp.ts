@@ -4,9 +4,8 @@ import { Person, Act, ownedBy, tidyTools, heldBy, isTool, step, living, temperat
 import * as SIM from '../../sim';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { STEG_TIM, korBy } from '../kor';
+import { BEAT, STEG_TIM, korBy } from '../kor';
 import { lasBy } from '../delby';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 export const setItems = (s: State, m: Record<string, number>) => {
@@ -86,6 +85,15 @@ export const jaktFran = (s: State, p: Person, verktyg: string | undefined, mal: 
   if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
   const m = typeof mal === 'function' ? mal() : mal;
   return { act: 'jakt', phase: 'do', tx: m.x, ty: m.y, until: s.now + HOUR, carry: 0, tool: verktyg } as Task;
+};
+// ett tomt styre utan ledare, med lagarna
+export const medLagar = (s: State, lagar: { id: string; t: number; straff: number; av: number; om: string }[]) => {
+  s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar } as unknown as State['styre'];
+};
+// familjen: invånarna efter id, det första barnet c, dess förälder a med lägst id och a:s partner b
+export const familjen = (s: State) => {
+  const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+  return { ppl, a, b: ppl.find(q => q.id === a.partner)!, c };
 };
 // slakten: en slaktbänk, kniven som teknik hos alla och den enda kniven i p:s hand
 export const slakteri = (s: State, p: Person) => {

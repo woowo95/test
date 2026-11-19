@@ -3,8 +3,7 @@
 // Ordet live eller snabb får stå med, men betyder inget sedan v29: levande läge och snabbläget räknar likadant (npm run likhet)
 import './utc';
 import { ACTS, Act, createState, step, living } from '../sim';
-import { START, STEG_TIM, markStat } from './kor';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
+import { BEAT, START, STEG_TIM, markStat } from './kor';
 
 const arg = process.argv.slice(2).filter(a => a !== 'live' && a !== 'snabb');
 const [seed, timmar] = [Number(arg[0] ?? 3), Number(arg[1] ?? 24)];

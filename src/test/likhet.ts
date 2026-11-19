@@ -7,10 +7,9 @@
 import './utc';
 import { createHash } from 'node:crypto';
 import { createState, step, living, serialize, spar, State, foodOf, fuelStock, TalkEvent, ageOf, kanGa, byPlats, varldMark, vagDygn, samlaResa } from '../sim';
-import { START, STEG_TIM } from './kor';
+import { BEAT, START, STEG_TIM } from './kor';
 import { ALLVARLIGT, kanonisk, korJson, pool, sek } from './pool';
 import { matUnderTestet } from './matare';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
 const kort = (s: State) => ({ folk: living(s).length, mat: Math.round(foodOf(s)), bransle: Math.round(fuelStock(s)) });

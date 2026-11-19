@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medHus, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { SCENARIER, kor, klockan, medBank, medHus, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
@@ -181,13 +181,12 @@ SCENARIER.lera = {
 function naveraskan(): [string, boolean][] {
   const { RECEPT: R, TEKNIK, STATIONER, fartVid, kvVid } = SIM;
   const r = R.naverask, tek = TEKNIK.find(t => t.id === 'naverask');
-  const s = createState(1, START), b = SIM.vidStation(medBankFas9(s));
+  const s = createState(1, START), b = SIM.vidStation(medBank(s, 'flatarbank'));
   return [
     [`näveraskan är en sak av ${JSON.stringify(r.av)} på ${r.min} minuter, med en egen teknik (${tek?.namn ?? 'ingen'})`, r.av.naver === 1 && r.av.rep === 1 && r.min >= 2 && r.min <= 4 && !!tek],
     [`den görs fortare och bättre vid slöjdbänken (${fartVid(s, b, 'naverask').toFixed(2)} gånger, kvalitet +${kvVid(s, b, 'naverask')})`, STATIONER.flatarbank.gor.includes('naverask') && fartVid(s, b, 'naverask') > 1 && kvVid(s, b, 'naverask') > 0],
   ];
 }
-const medBankFas9 = (s: SIM.State) => { const at = SIM.stationSite(s, 'flatarbank') ?? { x: 10, y: 10 }; const t: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: at.x, y: at.y, kvar: 0 }; (s.stationer ??= []).push(t); SIM.touch(s); return t; };
 
 // steg 9.4.14: tjäran kokas bara när det finns en ledig behållare, och läggs i den; när den används blir behållaren kvar tom; i en
 // sparad by läggs tjäran i stora lerkrukor och salvan i näveraskar, och en fylld vattensäck har vatten i sig
@@ -2308,13 +2307,13 @@ SCENARIER.stationseld = {
 };
 
 // ett färdigt fähus med en krubba (steg 10.2.88): Byggplanen bygger hus tills det finns ett fähus, och krubban ställs där den vill
-export function medFahus(s: SIM.State) {
+const byggFahus = (s: SIM.State) => { for (let i = 0; i < 6 && !SIM.fahusHus(s).length; i++) { s.byggSok = undefined; medHus(s); } return SIM.fahusHus(s)[0]; };
+const stallKrubba = (s: SIM.State, at: ReturnType<typeof SIM.stationSite> | undefined) => { if (at) { s.stationer = [...(s.stationer ?? []), { id: 989, k: 'krubba', x: at.x, y: at.y, kvar: 0, inne: 1, ...(at.rot ? { rot: 1 } : {}) } as SIM.Station]; SIM.touch(s); } };
+function medFahus(s: SIM.State) {
   const forut = SIM.kalender(s).ai;
   s.kal = SIM.nyKalender(s.now, SIM.HOST);
-  for (let i = 0; i < 6 && !SIM.fahusHus(s).length; i++) { s.byggSok = undefined; medHus(s); }
-  const h = SIM.fahusHus(s)[0];
-  const at = h && SIM.stationSite(s, 'krubba');
-  if (at) { s.stationer = [...(s.stationer ?? []), { id: 989, k: 'krubba', x: at.x, y: at.y, kvar: 0, inne: 1, ...(at.rot ? { rot: 1 } : {}) } as SIM.Station]; SIM.touch(s); }
+  const h = byggFahus(s);
+  stallKrubba(s, h && SIM.stationSite(s, 'krubba'));
   s.kal = SIM.nyKalender(s.now, forut);
   return h;
 }
@@ -2322,21 +2321,20 @@ export function medFahus(s: SIM.State) {
 SCENARIER.krubba = {
   text: 'Steg 10.2.88: fähuset får sin funktion av krubban. Byggplanen bygger fähuset som andra hus, med väggar, dörr och golv, och byn ställer en krubba där; rummet med krubban får taggen Fähus, och där står djuren i istiden. Utan krubba står inga djur där',
   kor: () => {
-    const { nyttTamdjur, stepVinter, tamdjurOf, fahusHus, fahusOf, stationBrist, DAY } = SIM;
+    const { nyttTamdjur, stepVinter, tamdjurOf, fahusOf, stationBrist, DAY } = SIM;
     const s = createState(5, START); klockan(s, 10);
     for (const p of SIM.living(s)) (p.tek ??= {}).staket = 1;
     const m = SIM.bynsMitt(s);
     for (let i = 0; i < 3; i++) nyttTamdjur(s, 'far', m.x + i, m.y, undefined, s.now - 3 * DAY);
     s.kal = SIM.nyKalender(s.now, SIM.HOST);
-    for (let i = 0; i < 6 && !fahusHus(s).length; i++) { s.byggSok = undefined; medHus(s); }
-    const h = fahusHus(s)[0];
+    const h = byggFahus(s);
     const vill = stationBrist(s, 'krubba');
     s.kal = SIM.nyKalender(s.now, SIM.ISTID);
     stepVinter(s);
     const utanKrubba = !!h && tamdjurOf(s).every(d => d.fahus === undefined) && !fahusOf(s).length;
     const at = h && SIM.stationSite(s, 'krubba');
     const iHuset = !!at && at.x > h.x && at.y > h.y && at.x < h.x + h.w - 1 && at.y < h.y + h.h - 1;
-    if (at) { s.stationer = [...(s.stationer ?? []), { id: 989, k: 'krubba', x: at.x, y: at.y, kvar: 0, inne: 1, ...(at.rot ? { rot: 1 } : {}) } as SIM.Station]; SIM.touch(s); }
+    stallKrubba(s, at);
     const rum = h && SIM.gridOf(s).rooms.find(r => r.hus === h.id), tagg = !!rum && SIM.rumTaggar(s, rum).has('fahus');
     stepVinter(s);
     const inne = tamdjurOf(s).filter(d => d.fahus === h?.id);

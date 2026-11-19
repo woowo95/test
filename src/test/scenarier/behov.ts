@@ -2,9 +2,8 @@
 import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
-import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { medTal, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta, vidForradet } from './hjalp';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
+import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
+import { medLagar, medTal, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta, vidForradet } from './hjalp';
 
 SCENARIER.behov = {
   text: 'Behovsstegen: den som behöver något tar sitt eget, sedan byns, ber sedan någon i närheten om det, och stjäl först när hen håller på att dö. Hög empati stjäl aldrig, man stjäl helst av den man inte tycker om, och den bestulne märker det.',
@@ -1042,7 +1041,7 @@ SCENARIER.tiggare = {
     // inget material: utan nöd ger en främling inget
     const material = SIM.willing(s, b, a, 3);
     // med stöd till fattiga äter den fattiga ur byns förråd, men inte en som inte är fattig
-    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now, straff: 4, av: b.id, om: '' }] } as unknown as SIM.State['styre'];
+    medLagar(s, [{ id: 'skatt', t: s.now, straff: 4, av: b.id, om: '' }]);
     s.people.forEach(q => { q.forv = { w: q === a ? 1 : 200 } as never; });
     s.budget = { delar: [{ id: 'fattiga', vikt: 1 }] };
     SIM.put(s, 'bar', 50); SIM.budgetDygn(s);

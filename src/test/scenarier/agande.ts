@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { Person, Act, Task, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
-import { START, STEG_DYGN, STEG_TIM } from '../kor';
+import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import { lasBy } from '../delby';
 import { testBy, rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader, bearbetaVid, vidForradet, vidStack } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
@@ -20,7 +20,6 @@ import { lager as lagerFlik } from '../../ui/flikar/lager';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
 import { tal as talFlik, talVal } from '../../ui/flikar/tal';
 import { rikVal } from '../../ui/graf';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 // handlaren lägger ut filten i slutet av nästa anrop av step, så att byn inte hinner handla innan scenariot ställt i ordning
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now + (BEAT - 2) * SIM.SEC; };

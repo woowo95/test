@@ -3,11 +3,10 @@ import { FANGST, createState, canProcess, makeTool, step, living, cloneState, ag
 import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
-import { START, STEG_DYGN, STEG_TIM } from '../kor';
+import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
 import { jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',

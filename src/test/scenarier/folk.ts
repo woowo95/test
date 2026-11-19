@@ -4,7 +4,7 @@ import { Person, createState, tidyTools, addTool, getRel, step, living, temperat
 import * as SIM from '../../sim';
 import { STRIDANSIKTE, stridAnsikte } from '../../ui/stridansikte';
 import { byId, isSocial, TalkEvent } from '../../sim';
-import { START, STEG_DYGN, STEG_TIM } from '../kor';
+import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { medTal, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
@@ -12,7 +12,6 @@ import { stalle, SITTA, vidArbetet } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
 import { hjalpKlick } from '../../ui/hjalp';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.befolkning = {
   lang: true,

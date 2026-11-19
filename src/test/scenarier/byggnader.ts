@@ -9,7 +9,7 @@ import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
 import { hus as husFlik } from '../../ui/flikar/hus';
 import { setByn, ui } from '../../ui/lage';
-import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
+import { familjen, medLagar, setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -101,8 +101,7 @@ SCENARIER.familjehus = {
     byggare(s);
     planBuild(s); byggKlart(s); // först en sovsal åt alla
     // grundarna: ett par med ett barn, och ett par utan barn
-    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
-    const b = ppl.find(q => q.id === a.partner)!, d = ppl.find(q => q !== a && q !== b && q !== c)!;
+    const { ppl, a, b, c } = familjen(s), d = ppl.find(q => q !== a && q !== b && q !== c)!;
     const fam = familjOf(s, a.id).map(q => q.id);
     const fattig = mostUrgent(s)?.fn !== 'familjehus';
     put(s, 'virke', 30 * MATERIAL.timmer!.n, { [b.id]: 30 * MATERIAL.timmer!.n }); // familjen blir rik nog (timret är virke, steg 10.2.70)
@@ -160,8 +159,7 @@ SCENARIER.agandet = {
     const baddar = () => stationerOf(s).filter(t => t.k === 'halmbadd' && isKlar(t)), ruta = (t: SIM.Station) => t.y * W + t.x;
     const b0 = baddar(), agare = b0.map(t => t.ag), egen = b0.every(t => { const o = s.people.find(q => q.id === t.ag); return !!o && sovPlats(s, o) === ruta(t); });
     // familjen bygger ett eget hus
-    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
-    const b = ppl.find(q => q.id === a.partner)!;
+    const { ppl, a, b } = familjen(s);
     put(s, 'silver', 200, { [b.id]: 200 }); // familjen har råd (förut ved till väggarna; timret är virke sedan steg 10.2.70, och virket fyller förrådet)
     planBuild(s);
     const h = housesOf(s).find(q => q.fn === 'familjehus')!;
@@ -1024,6 +1022,12 @@ SCENARIER.strakprov = {
   },
 };
 
+// en by med sex personer klockan tio och ett hus som är fängelse, med en trädörr (system 11.12)
+const fangelseBy = () => {
+  const s = createState(6, START); klockan(s, 10); medHus(s);
+  const h = housesOf(s)[0]!; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s);
+  return { s, h };
+};
 SCENARIER.fangelse = {
   env: { BALANS: 'fangelse.vakt=0,fangelse.stoppBas=-9' }, // ingen vaktar och ingen går dit (det prövar fangvakt)
   lang: true,
@@ -1070,8 +1074,7 @@ SCENARIER.fangemat = {
   env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,fangelse.bryt=99' }, // ingen rymmer: här prövas bara maten
   text: 'Mat och vatten till fången (steg 11.12.2, fangelse.ts): den som sitter inne får vatten buret som den som inte kan gå, och arbetet barmat bär hela portioner mat till dörren. Var och en går när fångens hunger eller törst gånger närheten är stor nog: familj och partner tidigt, vänner senare och en främling först när nöden är stor',
   kor: () => {
-    const s = createState(6, START); klockan(s, 10); medHus(s);
-    const h = housesOf(s)[0]; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s);
+    const { s, h } = fangelseBy();
     setFood(s, 30);
     const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), [a, mor] = vuxna as [SIM.Person, SIM.Person];
     const b = SIM.newPerson(s, 'm', s.now - 30 * DAY); s.people.push(b); Object.assign(b, { x: a.x, y: a.y }); // en främling utan släkt i byn
@@ -1114,8 +1117,7 @@ SCENARIER.fangeliv = {
   env: { BALANS: 'fangelse.bryt=99' }, // ingen rymmer: här prövas dygnen inne
   text: 'Fångens dygn (steg 11.12.4, fangelse.ts): tanken Sitter inlåst växer för varje dygn inne, en vän går till dörren och pratar genom den, den som bryr sig om en fånge som fryser bär dit ved och tänder en liten eld (en främling gör det inte), tiden inne blir en upplevelse som är starkare ju fler dygn, och huset visar vem som sitter där, varför och hur länge till',
   kor: () => {
-    const s = createState(6, START); klockan(s, 10); medHus(s);
-    const h = housesOf(s)[0]!; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; touch(s);
+    const { s, h } = fangelseBy();
     setFood(s, 30); tandEld(s); setAmount(s, 'ved', 10); nyInvanare(s, 'm', 30); nyInvanare(s, 'k', 30);
     const vuxna = living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen), [a, mor, van] = vuxna as [Person, Person, Person];
     a.mother = mor.id; a.partner = undefined; mor.partner = undefined; van.partner = undefined;
@@ -1160,8 +1162,7 @@ SCENARIER.fangvakt = {
   text: 'Vakten vid fängelset (steg 11.12.5, fangelse.ts): att vakta är en rad med poäng i Försörjningen, dag och natt, mer ju farligare fången är. En vakt vid dörren sänker fångens vilja att bryta sig ut, och börjar hen ändå blir det ett slagsmål med vakten. Utan vakt och utan någon som hör går dörren sönder, och i en by i nöd vinner maten över vakten',
   kor: () => {
     const by = (food: number) => {
-      const s = createState(6, START); klockan(s, 10); medHus(s); tandEld(s);
-      const h = housesOf(s)[0]!; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; touch(s);
+      const { s, h } = fangelseBy(); tandEld(s);
       setFood(s, food);
       const q = SIM.newPerson(s, 'm', s.now - 30 * DAY); s.people.push(q); Object.assign(q, { x: living(s)[0]!.x, y: living(s)[0]!.y, hunger: 1, torst: 1, warm: 1, rest: 1 });
       q.pot.aggression = 18; q.pot.mod = 8; SIM.satt(s, q, h, 'Dömd', s.now + 5 * DAY);
@@ -1571,8 +1572,7 @@ SCENARIER.husmarknad = {
     const s = createState(6, START); utanStartKlader(s); // utan kläderna från början (steg 10.2.73): familjens förmögenhet som när provet skrevs
     klockan(s); byggare(s);
     planBuild(s); byggKlart(s); // en sovsal åt alla
-    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
-    const b = ppl.find(q => q.id === a.partner)!;
+    const { a, b } = familjen(s);
     nyInvanare(s, 'm', 30); const d = living(s)[living(s).length - 1]; // en ensam bybo
     const h = housesOf(s)[0];
     // byns sovsal där alla sover: den går att köpa, men den kostar mer än att bygga ett nytt lika stort hus
@@ -1616,13 +1616,12 @@ SCENARIER.skatteskuld = {
     const s = createState(6, START); utanStartKlader(s);
     klockan(s); byggare(s);
     planBuild(s); byggKlart(s); // en sovsal åt alla
-    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
-    const b = ppl.find(q => q.id === a.partner)!;
+    const { a, b, c } = familjen(s);
     nyInvanare(s, 'm', 30); const d = living(s)[living(s).length - 1]; // en ensam husägare utan lösa saker
     const h = housesOf(s)[0];
     h.ag = d.id; h.fn = 'familjehus'; touch(s);
     for (const t of tingOf(s)) if (t.agare === d.id) t.agare = BYN;
-    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: a.id, om: '' }] } as unknown as State['styre'];
+    medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: a.id, om: '' }]);
     const silverVarde0 = SIM.behovAv(s, d, 'silver'), pris0 = SIM.saljPris(s, h);
     SIM.skattDygn(s, DAY); const skuld1 = d.skatteskuld ?? 0;
     SIM.skattDygn(s, DAY); const skuld2 = d.skatteskuld ?? 0;
@@ -1666,10 +1665,9 @@ SCENARIER.arvsskatt = {
   kor: () => {
     const s = createState(6, START); utanStartKlader(s);
     klockan(s);
-    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
-    const b = ppl.find(q => q.id === a.partner)!;
+    const { ppl, a, b, c } = familjen(s);
     a.partner = undefined; b.partner = undefined;
-    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [] } as unknown as State['styre'];
+    medLagar(s, []);
     // en ojämn by väcker frågan, och de andra (som lutar mot Sammanhållning) röstar in lagen utan skattelagen
     put(s, 'silver', 300, { [a.id]: 300 });
     s.seder.v.gemenskap = 1;
@@ -1732,7 +1730,7 @@ SCENARIER.budget = {
     for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, brygga: 1, lag: 1 });
     planBuild(s); byggKlart(s);
     const h0 = housesOf(s).find(h => h.ag === undefined && h.tro === undefined)!;
-    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }] } as unknown as State['styre'];
+    medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }]);
     const virkeByn = (n: number) => { setAmount(s, 'virke', 0); put(s, 'virke', n); };
     const del = (id: string) => Math.floor(SIM.ownsId(s, SIM.budgetId(id), 'virke') + 1e-9);
     // utan delar är allt som förut
@@ -1801,7 +1799,7 @@ SCENARIER.matbudget = {
   kor: () => {
     const s = createState(6, START); utanStartKlader(s);
     klockan(s);
-    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }] } as unknown as State['styre'];
+    medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }]);
     const ppl = living(s), barn = ppl.find(q => ageOf(q, s.now) < 14)!, vuxen = ppl.find(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 60 && !SIM.ligger(q, s.now))!;
     const maten = (n: number) => { for (const k of SIM.FOOD) setAmount(s, k, 0); put(s, 'bar', n); };
     const tot = (id: string) => Object.values(s.budget?.fick?.[id] ?? {}).reduce((a, n) => a + n, 0);
@@ -1837,7 +1835,7 @@ SCENARIER.lon = {
   kor: () => {
     const s = createState(6, START); utanStartKlader(s);
     klockan(s);
-    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }] } as unknown as State['styre'];
+    medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }]);
     const [vakt, barare] = living(s).filter(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 60);
     const arbeta = () => {
       vakt.task = { act: 'vakt', phase: 'do', tx: vakt.x, ty: vakt.y, until: s.now + DAY, carry: 0 };
@@ -1900,7 +1898,7 @@ SCENARIER.forsorjning = {
     const medPartner = SIM.overOf(s, g, SIM.MAT, c) < barnOver;
     c.partner = undefined;
     // barnets lön hamnar hos föräldern
-    s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar: [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: g.id, om: '' }, { id: 'lon', t: s.now, straff: 0, av: g.id, om: '' }] } as unknown as State['styre'];
+    medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: g.id, om: '' }, { id: 'lon', t: s.now, straff: 0, av: g.id, om: '' }]);
     s.budget = { delar: [{ id: 'forradet', vikt: 1 }] };
     setAmount(s, 'silver', 0); put(s, 'silver', 20);
     c.lonTim = { forradet: 10 };

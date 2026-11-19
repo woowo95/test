@@ -5,9 +5,8 @@
 import './utc';
 import { step, createState } from '../sim';
 import { lyssnaPaTexter } from '../sim/berattelser';
-import { START, STEG_DYGN, STEG_TIM } from './kor';
+import { BEAT, START, STEG_DYGN, STEG_TIM } from './kor';
 import { kollaText, konI, titta } from './textkoll';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 export const TITTA_TIM = 24;
 export const EXEMPEL = 4; // så många olika ifyllda texter sparas per variant
