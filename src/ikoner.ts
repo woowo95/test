@@ -3218,6 +3218,73 @@ export const PIX: Record<string, string[]> = {
   amne_gral: ['........', '.r...r..', 'rrr.rrr.', '.r...r..', '........', '.r...r..', '........', '........'],
   // krönikans kategorier (steg 9.2.73) och omröstningens ja, nej och den som lade fram frågan (steg 9.2.65): platshållare tills Björn valt i bildstilen
 };
+// stationerna och möblerna som blir oläsliga förminskade (steg 12.1.72) behåller sin handritade symbol i listorna
+PIX.grill = [
+    'w.w.w.w.',
+    'OLLOLLLL',
+    '.w...w.L',
+    '.W...W.q',
+    '.w.f.w..',
+    '.wfFfw..',
+    '.WFfFW..',
+    '.wgGgw..',
+  ];
+PAL.grill = { w: '#5e3c24', O: '#a0947d', L: '#987e62', W: '#7d5b40', q: '#5e3c24', f: '#bd753e', F: '#d8b25f', g: '#987e62', G: '#3e5156' };
+PIX.tork = [
+    'w.w..w.w',
+    'OLOLLOLO',
+    '.wMmMmw.',
+    'w.mMmM.w',
+    'w.MmMc.w',
+    'w.wM.m.w',
+    'w.wm.w.w',
+    'W.W..W.W',
+  ];
+PAL.tork = { w: '#5e3c24', O: '#a0947d', L: '#987e62', M: '#bd753e', m: '#742a01', c: '#3f2415', W: '#7d5b40' };
+PIX.slaktbank = [
+    '........',
+    '........',
+    'BBBrBBBB',
+    'bbbbbbbb',
+    '.d....d.',
+    '.d....d.',
+    '.d....d.',
+    '.d....d.',
+  ];
+PAL.slaktbank = { b: '#694902', B: '#987e62', d: '#372f25', r: '#742a01' };
+PIX.stall = [
+    '..G..g..',
+    '.gGg.g..',
+    'WWGWWgWW',
+    '..L..L..',
+    '..L..L..',
+    'WWLWWLWW',
+    '..L..L..',
+    '.w....w.',
+  ];
+PAL.stall = { w: '#5e3c24', W: '#7d5b40', L: '#987e62', g: '#7e7362', G: '#8a9c9e' };
+PIX.hylla = [
+    'W......W',
+    'WyyrgryW',
+    'WLLLLLLW',
+    'WgyyrygW',
+    'WLLLLLLW',
+    'WryygyrW',
+    'WLLLLLLW',
+    'w......w',
+  ];
+PAL.hylla = { w: '#5e3c24', W: '#7d5b40', L: '#987e62', y: '#b2921b', g: '#7e7362', r: '#a0947d' };
+PIX.timmervagg = [
+    'eBbbbbBe',
+    'dddddddd',
+    'eBbbbbBe',
+    'dddddddd',
+    'eBbbbbBe',
+    'dddddddd',
+    'eBbbbbBe',
+    'dddddddd',
+  ];
+PAL.timmervagg = { d: '#372f25', b: '#7d5b40', B: '#987e62', e: '#bdb39b' };
 // listornas symboler följer kartans bild (steg 12.1.72): en sak utan egen symbol får sin godkända kartbild (kartbilder.ts) som
 // symbol, mitt i rutan på 16 × 16 punkter, förminskad om den är större än rutan och dubbelt så stor om den ryms. På kartan ritas
 // bilden i sin naturliga storlek (kb_<id>). Regeln går före raderna som lånar en annan saks bild (slaktfåret = rådjuret)
