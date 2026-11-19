@@ -9,7 +9,7 @@ import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
 import { hus as husFlik } from '../../ui/flikar/hus';
 import { setByn, ui } from '../../ui/lage';
-import { familjen, medLagar, setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
+import { familjen, iRing, medLagar, setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -744,14 +744,14 @@ SCENARIER.heltal = {
   },
 };
 
-// ett hus med yttermåtten w×h och hörnet (x, y), som planBuild gör det: timmerväggar, en öppning mitt på södra sidan och trägolv.
-// klar = färdigbyggt
-function husPa(s: SIM.State, x: number, y: number, w: number, h: number, klar: boolean) {
-  const hus: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Hydda', x, y, w, h, fn: 'sovsal' };
+// ett hus med yttermåtten w×h och hörnet (x, y), som planBuild gör det: timmerväggar, en öppning på södra sidan (i kolumnen dorr,
+// mitt på om inget anges) och golvet av trä om inget annat anges. klar = färdigbyggt
+function husPa(s: SIM.State, x: number, y: number, w: number, h: number, klar: boolean, val: { golv?: string; dorr?: number; namn?: string; fn?: SIM.Hus['fn'] } = {}) {
+  const hus: SIM.Hus = { id: (s.nextBit ??= 1), namn: val.namn ?? 'Hydda', x, y, w, h, fn: val.fn ?? 'sovsal' };
   s.nextBit++;
   for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {
-    const edge = xx === x || yy === y || xx === x + w - 1 || yy === y + h - 1, open = xx === x + Math.floor(w / 2) && yy === y + h - 1;
-    const m = open ? 'oppning' : edge ? 'timmer' : 'tra';
+    const edge = xx === x || yy === y || xx === x + w - 1 || yy === y + h - 1, open = xx === x + (val.dorr ?? Math.floor(w / 2)) && yy === y + h - 1;
+    const m = open ? 'oppning' : edge ? 'timmer' : val.golv ?? 'tra';
     SIM.bitsOf(s).push({ id: s.nextBit++, x: xx, y: yy, k: SIM.MATERIAL[m].k, m, b: open || klar ? 1 : 0, mat: klar ? SIM.MATERIAL[m].n : 0, c: 1, hus: hus.id });
   }
   if (klar) hus.klar = s.now;
@@ -1345,13 +1345,7 @@ SCENARIER.scenflytt = {
       if (ok) { bd = d; pl = { x, y }; }
     }
     if (!pl) return [['en plats för salen', false]];
-    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Samlingshus', x: pl.x, y: pl.y, w: 7, h: 6, fn: 'verkstad', klar: s.now };
-    s.nextBit++;
-    for (let yy = pl.y; yy < pl.y + 6; yy++) for (let xx = pl.x; xx < pl.x + 7; xx++) {
-      const kant = xx === pl.x || yy === pl.y || xx === pl.x + 6 || yy === pl.y + 5, m = xx === pl.x + 3 && yy === pl.y + 5 ? 'oppning' : kant ? 'timmer' : 'tra';
-      SIM.bitsOf(s).push({ id: s.nextBit++, x: xx, y: yy, k: SIM.MATERIAL[m].k, m, b: 1, mat: SIM.MATERIAL[m].n, c: 1, hus: h.id });
-    }
-    housesOf(s).push(h); SIM.touch(s);
+    const h = husPa(s, pl.x, pl.y, 7, 6, true, { namn: 'Samlingshus', fn: 'verkstad' });
     const sc = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'scen', x: pl.x - 6, y: pl.y - 4, kvar: 0 } as SIM.Station;
     (s.stationer ??= []).push(sc); SIM.touch(s);
     SIM.stepStationer(s);
@@ -1387,13 +1381,8 @@ SCENARIER.stockihus = {
       if (ok) pl = { x: c.x + dx, y: c.y + dy };
     }
     if (!pl) return [['en plats för huset', false]];
-    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Hydda', x: pl.x, y: pl.y, w: 4, h: 4, fn: 'sovsal' };
-    s.nextBit++;
-    for (let y = pl.y; y < pl.y + 4; y++) for (let x = pl.x; x < pl.x + 4; x++) {
-      const kant = x === pl.x || y === pl.y || x === pl.x + 3 || y === pl.y + 3, m = x === pl.x + 1 && y === pl.y + 3 ? 'oppning' : kant ? 'timmer' : 'jord';
-      SIM.bitsOf(s).push({ id: s.nextBit++, x, y, k: SIM.MATERIAL[m].k, m, b: 1, mat: SIM.MATERIAL[m].n, c: 1, hus: h.id });
-    }
-    housesOf(s).push(h); SIM.touch(s);
+    const h = husPa(s, pl.x, pl.y, 4, 4, false, { golv: 'jord', dorr: 1 });
+    for (const b of SIM.bitsOf(s)) if (b.hus === h.id) { b.b = 1; b.mat = SIM.MATERIAL[b.m].n; } // färdiga väggar, men huset är inte klart
     const k: SIM.Stock = { id: 99, x: pl.x + 1.5, y: pl.y + 1.5, ved: 4, grenar: 0 };
     (s.stockar ??= []).push(k);
     const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, annan = living(s).filter(q => q !== p);
@@ -2352,27 +2341,18 @@ SCENARIER.skrivpulpet = {
 SCENARIER.mitten = {
   text: 'Steg 9.4.6: ett hus som skadats byggs upp där det står eller på en ny plats närmare mitten, efter vad som är mest värt per kostnad. Med en rasad vägg lagas det där det står; när allt rasat i ett hus långt från mitten byggs ett nytt närmare, och när det är klart rivs det gamla',
   kor: () => {
-    const { skadatVal, byggbart, rasar, bitsOf: bits, housesOf: hus, husKlart, lage, MATERIAL: M } = SIM;
+    const { skadatVal, byggbart, rasar, bitsOf: bits, housesOf: hus, husKlart, lage } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     byggare(s); planBuild(s); byggKlart(s);
     for (const q of s.people) q.tek = { ...q.tek, timmervagg: 1, yxa: 1 };
     // ett hus långt från mitten, byggt för hand: 5 × 5 rutor med väggar av timmer och jordgolv
     const c = bynsMitt(s), { okAt } = byggbart(s);
-    let at: { x: number; y: number } | undefined;
-    for (let r = 14; r < 30 && !at; r++) for (let k = 0; k < 32 && !at; k++) {
-      const x = Math.round(c.x + Math.cos(k / 32 * 6.283) * r), y = Math.round(c.y + Math.sin(k / 32 * 6.283) * r);
-      let ok = true;
-      for (let j = -1; j < 6 && ok; j++) for (let i = -1; i < 6 && ok; i++) if (!SIM.inMap(x + i, y + j) || !okAt((y + j) * W + x + i) || gridOf(s).at.has((y + j) * W + x + i)) ok = false;
-      if (ok) at = { x, y };
-    }
+    const at = iRing(c, 14, 30, 32, (x, y) => {
+      for (let j = -1; j < 6; j++) for (let i = -1; i < 6; i++) if (!SIM.inMap(x + i, y + j) || !okAt((y + j) * W + x + i) || gridOf(s).at.has((y + j) * W + x + i)) return undefined;
+      return { x, y };
+    });
     if (!at) return [['en plats för huset långt från mitten', false]];
-    s.nextBit ??= 1;
-    const H0: SIM.Hus = { id: s.nextBit++, namn: 'Det gamla huset', x: at.x, y: at.y, w: 5, h: 5, fn: 'sovsal', klar: s.now };
-    for (let y = at.y; y < at.y + 5; y++) for (let x = at.x; x < at.x + 5; x++) {
-      const kant = x === at.x || y === at.y || x === at.x + 4 || y === at.y + 4, m = x === at.x + 2 && y === at.y + 4 ? 'oppning' : kant ? 'timmer' : 'jord';
-      bits(s).push({ id: s.nextBit++, x, y, k: M[m].k, m, b: 1, mat: M[m].n, c: 1, hus: H0.id });
-    }
-    hus(s).push(H0); touch(s);
+    const H0 = husPa(s, at.x, at.y, 5, 5, true, { golv: 'jord', namn: 'Det gamla huset' });
     const vaggar = bits(s).filter(b => b.hus === H0.id && b.k === 'vagg');
     // en vägg rasar: den lagas där huset står
     rasar(s, vaggar[0]);
@@ -2402,11 +2382,10 @@ SCENARIER.mittenlager = {
     const s = createState(1, START); klockan(s); tandEld(s);
     // en lagerplats långt från mitten, med saker i
     const m = omrade(s).mitt;
-    let z: SIM.Zone | undefined;
-    for (let r = 9; r < 20 && !z; r++) for (let k = 0; k < 32 && !z; k++) {
-      const x = Math.round(m.x + Math.cos(k / 32 * 6.283) * r), y = Math.round(m.y + Math.sin(k / 32 * 6.283) * r), c = { x, y, w: 2, h: 2, namn: 'Långt bort' };
-      if (SIM.allUsable(s, c) && !zs(s).some(q => SIM.overlaps(c, q, 2)) && !SIM.strakI(s, x, y, 2, 2)) z = c;
-    }
+    const z: SIM.Zone | undefined = iRing(m, 9, 20, 32, (x, y) => {
+      const c = { x, y, w: 2, h: 2, namn: 'Långt bort' };
+      return SIM.allUsable(s, c) && !zs(s).some(q => SIM.overlaps(c, q, 2)) && !SIM.strakI(s, x, y, 2, 2) && c;
+    });
     if (!z) return [['en plats för lagerplatsen långt bort', false]];
     zs(s).push(z);
     const utan = (lagerFlyttTimme(s), lagerFlyttVal(s));
@@ -2434,8 +2413,7 @@ SCENARIER.mittenstation = {
     byggare(s); planBuild(s); byggKlart(s);
     const t = medBank(s, 'stenhuggarplats'), m = bynsMitt(s);
     // stationen flyttas långt bort, där inga hus eller lager finns
-    let langt = false;
-    for (let r = 16; r < 30 && !langt; r++) for (let k = 0; k < 32 && !langt; k++) langt = flyttaStation(s, t, Math.round(m.x + Math.cos(k / 32 * 6.283) * r), Math.round(m.y + Math.sin(k / 32 * 6.283) * r));
+    const langt = !!iRing(m, 16, 30, 32, (x, y) => flyttaStation(s, t, x, y));
     if (!langt) return [['en plats långt bort för stationen', false]];
     const d = () => { const { w, h } = st(t); return Math.hypot(t.x + w / 2 - m.x - 0.5, t.y + h / 2 - m.y - 0.5); };
     stationFlyttTimme(s);

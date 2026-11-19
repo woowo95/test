@@ -86,6 +86,11 @@ export const jaktFran = (s: State, p: Person, verktyg: string | undefined, mal: 
   const m = typeof mal === 'function' ? mal() : mal;
   return { act: 'jakt', phase: 'do', tx: m.x, ty: m.y, until: s.now + HOUR, carry: 0, tool: verktyg } as Task;
 };
+// den första platsen i ring runt mitten, varv för varv från radien rMin upp till rMax med n punkter per varv, där duger ger något
+export const iRing = <T>(mitt: { x: number; y: number }, rMin: number, rMax: number, n: number, duger: (x: number, y: number) => T | undefined | false): T | undefined => {
+  for (let r = rMin; r < rMax; r++) for (let k = 0; k < n; k++) { const v = duger(Math.round(mitt.x + Math.cos(k / n * 6.283) * r), Math.round(mitt.y + Math.sin(k / n * 6.283) * r)); if (v) return v; }
+  return undefined;
+};
 // ett tomt styre utan ledare, med lagarna
 export const medLagar = (s: State, lagar: { id: string; t: number; straff: number; av: number; om: string }[]) => {
   s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar } as unknown as State['styre'];

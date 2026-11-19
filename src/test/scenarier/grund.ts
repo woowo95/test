@@ -1541,6 +1541,8 @@ function torrAng(): { s: State; mitt: number } | string {
     if (mitt < 0) return 'en plats för ängen';
     return { s, mitt };
 }
+// marken helt torr efter en lång torka
+const torka = (x: State, torr = 240) => { if (x.vader) { x.vader.torr = torr; x.vader.fukt = 0; } };
 // sätter markslaget i cirkeln kring mitt (radien 12) i byn x
 function angSlag(x: State, mitt: number, slag: 'hog' | 'kort' | 'skog') {
   const g = groundOf(x), cx = mitt % W, cy = Math.floor(mitt / W);
@@ -1577,17 +1579,16 @@ SCENARIER.brandslag = {
       if (!SIM.inMap(cx + dx, cy + dy) || !fri(i)) continue;
       if (r <= 7) { g.trees[i] = 0; g.cover[i] = 1; } else if (r <= 10 && Math.hypot(cx + dx - e.x, cy + dy - e.y) > 6) { g.trees[i] = SIM.FOREST + 0.5; g.cover[i] = 0.6; skog++; }
     }
-    const torr = (y: State) => { if (y.vader) { y.vader.torr = 240; y.vader.fukt = 0; } };
-    torr(x);
+    torka(x);
     // utan någon som släcker (alla sover och ser den inte): hur fort den sprids
     const tom = cloneState(x);
     for (const p of living(tom)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: tom.now + HOUR, carry: 0, why: 'prov' };
     SIM.tand(tom, mitt, 'blixt', 0);
-    for (let i = 0; i < 20; i++) { step(tom, 30); torr(tom); } // tio minuter, torrt hela tiden
+    for (let i = 0; i < 20; i++) { step(tom, 30); torka(tom); } // tio minuter, torrt hela tiden
     const fem = tom.stat?.['brand ruta'] ?? 0;
     SIM.tand(x, mitt, 'blixt', 0);
     let tid = 0;
-    while (x.brand && tid < 180) { for (let i = 0; i < 10; i++) { step(x, 30); torr(x); } tid += 5; }
+    while (x.brand && tid < 180) { for (let i = 0; i < 10; i++) { step(x, 30); torka(x); } tid += 5; }
     const slackt = x.stat?.['brand slackt'] ?? 0, trad = x.stat?.['brand trad'] ?? 0, sack = x.stat?.['brand sack'] ?? 0;
     return [
       [`elden syns sprida sig: ${fem} rutor efter tio minuter när ingen släcker`, fem >= 3 && fem <= 80],
@@ -1611,7 +1612,7 @@ SCENARIER.testknappar = {
     for (let h = 0; h < 8 && x.tornado; h++) step(x, 3600);
     const y = cloneState(s);
     angSlag(y, mitt, 'hog');
-    if (y.vader) { y.vader.torr = 240; y.vader.fukt = 0; }
+    torka(y);
     const g = groundOf(y);
     let vatten = -1;
     for (let i = 0; i < g.tiles.length && vatten < 0; i++) if (g.tiles[i] === T.Vatten) vatten = i;
@@ -1647,7 +1648,7 @@ SCENARIER.brandkant = {
     if (typeof a === 'string') return [[a, false]];
     const { s, mitt } = a, x = cloneState(s);
     angSlag(x, mitt, 'hog');
-    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    torka(x);
     SIM.tand(x, mitt, 'blixt', 0);
     for (let k = 0; k < 6; k++) step(x, 300); // en halvtimme: sex steg om fem minuter
     const alla = SIM.brinnande(x).length, kant = SIM.brandKant(x);
@@ -1671,7 +1672,7 @@ SCENARIER.brandfart = {
       const x = cloneState(s), cx = mitt % W, cy = Math.floor(mitt / W);
       if (k) step(x, 60 * k);
       angSlag(x, mitt, slag);
-      if (x.vader) { x.vader.torr = torr; x.vader.fukt = 0; }
+      torka(x, torr);
       SIM.tand(x, mitt, 'blixt', 0);
       const fore = SIM.brinnande(x).length;
       step(x, 600); // tio minuter: 120 delsteg
@@ -1732,7 +1733,7 @@ SCENARIER.brinnerupp = {
     const yxa = SIM.newTing(x, 'yxa', 1, 0); yxa.x = cx; yxa.y = cy - 3;
     (x.stackar ??= []).push({ k: 'skinn', n: 5, c: 1, x: cx + 2, y: cy + 2 }, { k: 'flinta', n: 4, c: 1, x: cx - 2, y: cy + 2 });
     SIM.touch(x);
-    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    torka(x);
     for (const q of living(x)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: x.now + 5 * HOUR, carry: 0, why: 'prov' }; // ingen släcker (byn reagerar inom ett slag, steg 10.2.17)
     SIM.tand(x, mitt, 'blixt', 0);
     const flintor = () => (x.stackar ?? []).filter(q => q.k === 'flinta').reduce((n, q) => n + q.n, 0) + (living(x).reduce((n, p) => n + (p.task?.items?.flinta ?? 0), 0));
@@ -1765,7 +1766,7 @@ SCENARIER.vind = {
     let vrid = 0;
     for (let h = 0; h < 48; h++) { const d = Math.abs(vaderNu(s, s.now + (h + 1) * HOUR).rikt - vaderNu(s, s.now + h * HOUR).rikt); vrid = Math.max(vrid, Math.min(d, 2 * Math.PI - d)); }
     const x = cloneState(s); x.now = t; angSlag(x, mitt, 'hog');
-    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    torka(x);
     const v = vaderNu(x), vx = Math.cos(v.rikt), vy = Math.sin(v.rikt), cx = mitt % W, cy = Math.floor(mitt / W);
     SIM.tand(x, mitt, 'blixt', 0);
     step(x, 900);
@@ -1796,16 +1797,15 @@ SCENARIER.brand = {
     if (!v) return [['en by på sommaren med en torr dag', false]];
     const s = v;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
-    const torr = (x: State) => { if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; } };
     {
-      kor(s, h0, torr);
-      while (!SIM.isLight(s.now)) kor(s, 1, torr);
+      kor(s, h0, torka);
+      while (!SIM.isLight(s.now)) kor(s, 1, torka);
       // gnistorna: i en by med torr mark tänder lägerelden förr eller senare marken (en gnista i timmen är ovanlig: vänta upp till 720 timmar, 30 dygn)
       const gn = cloneState(s);
       let gnistTim = 0;
       // (runt elden är marken ofta stig, sand eller strand där inget brinner: hö på marken nära elden är det gnistorna tänder)
       { const e = SIM.eldPlats(gn), tl = getMap(gn.seed).tiles; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = e.x + dx, y = e.y + dy; if ((dx || dy) && tl[y * W + x] !== T.Vatten && tl[y * W + x] !== T.Sten && !SIM.bitAt(gn, x + 0.5, y + 0.5)) gn.stackar!.push({ k: 'torrgras', n: 3, c: 1, x, y }); } SIM.touch(gn); }
-      while (!(gn.stat?.['brand gnista']) && gnistTim < 720) { kor(gn, 1, torr); gnistTim++; }
+      while (!(gn.stat?.['brand gnista']) && gnistTim < 720) { kor(gn, 1, torka); gnistTim++; }
       // skogsbranden: en ruta mitt i tät skog 25 till 35 rutor från elden (gnistor från lägerelden blir en del av samma brand)
       const e = SIM.eldPlats(s), g = groundOf(s);
       const tat = (i: number) => { let n = 0; const x = i % W, y = Math.floor(i / W); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.inMap(x + dx, y + dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) n++; return n; };
@@ -1821,16 +1821,16 @@ SCENARIER.brand = {
       for (let i = 0; i < W * W && andra < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 20 && d <= 60 && Math.hypot(i % W - mitt % W, Math.floor(i / W) - Math.floor(mitt / W)) > SIM.BRAND.maxR + 5 && g.trees[i] >= FOREST && tat(i) >= 24) andra = i; }
       const t2 = andra >= 0 ? SIM.tandTest(tb, andra % W, Math.floor(andra / W)) : { ok: false, text: 'ingen andra skog' };
       const testRad = tb.log.filter(l => l.text.startsWith('Testläget: en brand tändes')).length; // (direkt, innan loggen fylls)
-      kor(tb, 6, torr);
+      kor(tb, 6, torka);
       const vidAndra = andra < 0 ? 0 : (tb.brand?.r ?? []).filter(r => Math.hypot(r[0] % W - andra % W, Math.floor(r[0] / W) - Math.floor(andra / W)) <= 6).length + (tb.aska ?? []).filter(a => Math.hypot(a[0] % W - andra % W, Math.floor(a[0] / W) - Math.floor(andra / W)) <= 6).length;
       const skog0 = new Set<number>(); for (let i = 0; i < W * W; i++) if (g.trees[i] >= FOREST) skog0.add(i);
       const s0 = cloneState(s);
       SIM.tand(s, mitt, 'blixt', 0);
-      kor(s, 18, torr);
+      kor(s, 18, torka);
       // brandens spår prövas i en kopia där ingen finns som släcker: en ruta som släckts innan den brunnit klart får behålla sitt träd (steg 9.9.4), och med den nya långsamma elden hinner byborna släcka drygt hundra rutor av 18 timmars brand
       const ko = cloneState(s0); ko.people = []; ko.handlare = undefined;
       SIM.tand(ko, mitt, 'blixt', 0);
-      kor(ko, 18, x => { torr(x); x.people = []; x.handlare = undefined; });
+      kor(ko, 18, x => { torka(x); x.people = []; x.handlare = undefined; });
       const rutor = s.stat?.['brand ruta'] ?? 0, trad = s.stat?.['brand trad'] ?? 0;
       const brunnen = [...new Set((ko.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
       // brandens spår (steg 9.2.26): där skogen brann står kolnade stammar som torrakor
@@ -1861,7 +1861,7 @@ SCENARIER.brand = {
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) SIM.tand(by, (pv.y + dy) * W + pv.x + dx, 'gnista', 0);
       // säcken prövas i en kopia där bara hen finns: i byn släcker de andra de nio rutorna med händerna på någon minut, innan säcken hunnit fyllas
       const ensam = cloneState(by); ensam.people = ensam.people.filter(p => p.id === vuxen.id); ensam.handlare = undefined;
-      kor(ensam, 2, torr);
+      kor(ensam, 2, torka);
       const ensamSack = ensam.stat?.['brand sack'] ?? 0;
       const t0 = by.now;
       let iVagg = 0, iVattnet = 0, sack = 0, hand = 0, risC = 1, tim = 0;
@@ -1869,7 +1869,7 @@ SCENARIER.brand = {
       // elden nära byn är släckt: inget brinner längre inom BRAND.hot rutor från byns eld (den som nått en dunge längre bort får brinna)
       const naraByn = () => { const e2 = SIM.eldPlats(by); return SIM.brinnande(by).some(q => Math.hypot(q[0] % W - e2.x, Math.floor(q[0] / W) - e2.y) <= SIM.BRAND.hot); };
       for (; tim < 12 * 12 && by.brand && naraByn(); tim++) {
-        kor(by, 1 / 12, torr);
+        kor(by, 1 / 12, torka);
         risC = Math.min(risC, ris.b < 1 ? 0 : ris.c);
         for (const p of living(by)) {
           if (SIM.isWall(by, p.x, p.y)) iVagg++;
