@@ -4,7 +4,7 @@ import { Person, Act, ownedBy, tidyTools, heldBy, isTool, step, living, temperat
 import * as SIM from '../../sim';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { BEAT, STEG_TIM, korBy } from '../kor';
+import { BEAT, START, STEG_TIM, korBy } from '../kor';
 import { lasBy } from '../delby';
 
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
@@ -62,6 +62,13 @@ export const testBy = (minDygn: number, villkor?: (s: State) => boolean): State 
   for (const f of filer) { const b = lasBy(dir + f![0]); if (!villkor || villkor(b)) return b; }
   return korBy(1, minDygn).s;
 };
+// testbyn efter minDygn med världen dygn fram i tiden: räknas en gång per process och delas av scenarierna (en kopia var)
+const VARLDAR = new Map<string, State>();
+export const varldEfter = (minDygn: number, dygn: number): State => {
+  const k = `${minDygn}:${dygn}`;
+  if (!VARLDAR.has(k)) { const w = SIM.cloneState(testBy(minDygn)); w.now += dygn * DAY; SIM.varldSteg(w); VARLDAR.set(k, w); }
+  return SIM.cloneState(VARLDAR.get(k)!);
+};
 export const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * STEG_TIM; i++) { step(s, BEAT); varje?.(s); } };
 // klockan h samma dag, i testernas tidszon (UTC, se utc.ts; ett scenario med env: STOCKHOLM får svensk tid)
 export const klockan = (s: State, h = 10) => { s.now = new Date(s.now).setHours(h, 0, 0, 0); };
@@ -89,6 +96,11 @@ export const jaktFran = (s: State, p: Person, verktyg: string | undefined, mal: 
 // den första platsen i ring runt mitten, varv för varv från radien rMin upp till rMax med n punkter per varv, där duger ger något
 export const iRing = <T>(mitt: { x: number; y: number }, rMin: number, rMax: number, n: number, duger: (x: number, y: number) => T | undefined | false): T | undefined => {
   for (let r = rMin; r < rMax; r++) for (let k = 0; k < n; k++) { const v = duger(Math.round(mitt.x + Math.cos(k / n * 6.283) * r), Math.round(mitt.y + Math.sin(k / n * 6.283) * r)); if (v) return v; }
+  return undefined;
+};
+// den första byn (fröna 1 upp till hogst) som är tjugo dygn gammal, med tidsåldern ai som började sedan ms före nu, där duger stämmer
+export const hittaBy = (hogst: number, sedan: number, ai: number, duger: (b: State, seed: number) => boolean) => {
+  for (let seed = 1; seed < hogst; seed++) { const b = SIM.createState(seed, START); b.founded -= 20 * DAY; b.kal = SIM.nyKalender(b.now - sedan, ai); if (duger(b, seed)) return b; }
   return undefined;
 };
 // ett tomt styre utan ledare, med lagarna

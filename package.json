@@ -10,7 +10,6 @@
     "scenario": "tsx src/test/scenario.ts",
     "detaljer": "tsx src/test/detaljer.ts",
     "check": "tsc -p .",
-    "kortsteg": "tsx src/test/kortsteg.ts",
     "kostnad": "tsx src/test/kostnad.ts",
     "varldkostnad": "tsx src/test/varldkostnad.ts",
     "ikapp": "tsx src/test/ikapp.ts",

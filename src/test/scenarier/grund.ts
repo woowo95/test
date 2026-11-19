@@ -9,7 +9,7 @@ import { nyKalender } from '../../sim';
 import { BEAT, START, STEG_TIM } from '../kor';
 import { eld as eldFlik } from '../../ui/flikar/eld';
 import { setByn, ui } from '../../ui/lage';
-import { medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
+import { hittaBy, medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
 
 SCENARIER.glanta = {
   lang: true,
@@ -782,13 +782,7 @@ SCENARIER.kloka = {
   text: 'Steg 3.8.6: den klokaste i byn anar en hård vinter eller en torka tidigare än den äldsta, ju klokare desto tidigare (upp till tre dygn före, mot ett till två för den äldsta) och säkrare. Varslet sprids i samtal som förut, och i en by där ingen är klok nog anar bara den äldsta',
   kor: () => {
     // en by vars nästa tidsålder har en hård vinter, som börjar om tre till sex dygn
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - 3 * DAY, 3); };
-    let v: State | undefined;
-    for (let seed = 1; seed < 600 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const m = SIM.motgangNasta(b);
-      if (m?.id === 'hardVinter' && m.start - b.now > 3.2 * DAY && m.start - b.now < 6 * DAY) v = b;
-    }
+    const v = hittaBy(600, 3 * DAY, 3, b => { const m = SIM.motgangNasta(b); return m?.id === 'hardVinter' && m.start - b.now > 3.2 * DAY && m.start - b.now < 6 * DAY; });
     if (!v) return [['en by med en hård vinter några dygn framför sig', false]];
     const start = SIM.motgangNasta(v)!.start;
     // en klok, en gammal och de andra mindre kloka än klokFran
@@ -838,13 +832,7 @@ SCENARIER.torka = {
   text: 'Steg 3.8.2: torkan kommer ibland på sommaren. Nästan inget regn, marken torkar, sjöarna drar sig tillbaka till torr sjöbotten som går att gå på och små tjärnar torkar ut. Folk kan ändå dricka, grödor som inte vattnas vissnar och ägaren vattnar sitt fält med vattensäcken. När torkan är över och det har regnat kommer vattnet tillbaka',
   kor: () => {
     // en by med en tjärn, mitt i en torka som just börjat (sommaren slutar om sju dygn)
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - DAY / 2, 2); };
-    let v: State | undefined;
-    for (let seed = 1; seed < 600 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const m = SIM.motgangNu(b);
-      if (m?.id === 'torka' && SIM.sjoarna(seed).rutor.some((r, n) => n > 0 && r.length <= SIM.TORKA.liten)) v = b;
-    }
+    const v = hittaBy(600, DAY / 2, 2, (b, seed) => SIM.motgangNu(b)?.id === 'torka' && SIM.sjoarna(seed).rutor.some((r, n) => n > 0 && r.length <= SIM.TORKA.liten));
     if (!v) return [['en by med en tjärn mitt i en torka', false]];
     const s = v, m = SIM.motgangNu(s)!;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
@@ -933,21 +921,20 @@ SCENARIER.avskuren = {
   },
 };
 
+// en by på våren med en översvämning där vattnet stiger minst två rutor (scenarierna oversvamning och flodrest)
+const flodBy = () => hittaBy(800, HOUR, 1, b => {
+  const m = SIM.motgangNu(b);
+  if (m?.id !== 'oversvamning') return false;
+  let topp = 0;
+  for (let t = m.start; t < m.slut; t += HOUR) topp = Math.max(topp, SIM.flodNiva(b, t));
+  return topp >= 2;
+});
 SCENARIER.oversvamning = {
   lang: true,
   text: 'Steg 3.8.3: översvämningen kommer ibland på våren och hösten. Efter ett långt regn stiger sjön en ruta i taget en till tre rutor upp på land, står kvar ett par dygn och sjunker. Maten under vatten förstörs, lätta saker (grenar) flyter bort ute, tunga saker (sten) ligger kvar och slits fortare, fält under vatten dör och ingen står i vattnet. Efteråt är stranden som förut',
   kor: () => {
     // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 1); };
-    let v: State | undefined;
-    for (let seed = 1; seed < 800 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const m = SIM.motgangNu(b);
-      if (m?.id !== 'oversvamning') continue;
-      let topp = 0;
-      for (let t = m.start; t < m.slut; t += HOUR) topp = Math.max(topp, SIM.flodNiva(b, t));
-      if (topp >= 2) v = b;
-    }
+    const v = flodBy();
     if (!v) return [['en by med en översvämning på våren', false]];
     const s = v, m = SIM.motgangNu(s)!;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
@@ -1084,16 +1071,7 @@ SCENARIER.flodrest = {
   text: 'Steg 3.8.7: medan vattnet stiger bär de vuxna undan maten från lagerplatserna som vattnet kan nå; när vattnet sjunker minns byn hur högt det nådde (en lärdom) och bygger inte där; ett jordgolv under vatten blir lera och torkar till jordgolv igen; en vägg i vattnet slits fortare; ingen sover på en blöt ruta; en brasa i vattnet slocknar',
   kor: () => {
     // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 1); };
-    let v: State | undefined;
-    for (let seed = 1; seed < 800 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const m = SIM.motgangNu(b);
-      if (m?.id !== 'oversvamning') continue;
-      let topp = 0;
-      for (let t = m.start; t < m.slut; t += HOUR) topp = Math.max(topp, SIM.flodNiva(b, t));
-      if (topp >= 2) v = b;
-    }
+    const v = flodBy();
     if (!v) return [['en by med en översvämning på våren', false]];
     const s = v, m = SIM.motgangNu(s)!;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
@@ -1233,15 +1211,8 @@ SCENARIER.tornado = {
   text: 'Steg 3.8.4 och 6.4.8: tornadon kommer ibland på sommaren och hösten och går på en bana som svänger, fäller träd till liggande stammar, river en risvägg men inte en ny timmervägg, lyfter saker som ligger ute (en del går sönder, resten hamnar några rutor från banan) och det blåser hårt. Folk ser den, ropar och går undan, ingen står i en vägg eller i vattnet, och efteråt bärs det som spridits in i lagret',
   kor: () => {
     // en by vars sommar just börjat och som får en tornado tidigt i den, med en bana som går nära elden
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 2); };
     const naraElden = (x: State, b: number[]) => { const e = SIM.eldPlats(x); for (let q = 2; q < b.length; q += 2) for (let f = 0; f <= 1; f += 0.02) if (Math.hypot(b[q - 2] + (b[q] - b[q - 2]) * f - e.x, b[q - 1] + (b[q + 1] - b[q - 1]) * f - e.y) < 12) return true; return false; };
-    let v: State | undefined;
-    for (let seed = 1; seed < 4000 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const k = kalender(b);
-      if (SIM.motgangVid(b, k.start, k.ai) !== 'tornado' || SIM.tornadoTid(b, k.start).fran - k.start > 30 * HOUR || !naraElden(b, SIM.tornadoBana(b, k.start))) continue;
-      v = b;
-    }
+    const v = hittaBy(4000, HOUR, 2, b => { const k = kalender(b); return SIM.motgangVid(b, k.start, k.ai) === 'tornado' && SIM.tornadoTid(b, k.start).fran - k.start <= 30 * HOUR && naraElden(b, SIM.tornadoBana(b, k.start)); });
     if (!v) return [['en by med en tornado tidigt på sommaren som går nära elden', false]];
     const s = v, k0 = kalender(s), tid = SIM.tornadoTid(s, k0.start);
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
@@ -1786,14 +1757,9 @@ SCENARIER.brand = {
   text: 'Steg 3.8.5: eldsvådor och skogsbrand. När marken är torr på sommaren tar elden sig från ruta till ruta i skogen och träden dör; när marken är blöt tar den sig inte vidare. Gnistor från lägerelden tänder ibland marken. Elden nära byn: folk ser den och ropar, de vuxna släcker med vattensäcken och med händerna, en risvägg brinner, ingen står i en vägg eller i vattnet, och elden slocknar. Där skogen brann kommer plantor, som växer upp när gräset kommit tillbaka, och det svarta försvinner efter några dygn',
   kor: () => {
     // en by på sommaren, vid en sjö, med en torr dag utan regn framför sig
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 2); };
     const torrDag = (x: State, h0: number) => { for (let h = 0; h < 30; h++) if (vaderNu(x, x.now + (h0 + h) * HOUR).nb > 0) return false; return true; };
-    let v: State | undefined, h0 = 0;
-    for (let seed = 1; seed < 400 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      for (h0 = 0; h0 < 48 && !torrDag(b, h0); h0++);
-      if (h0 < 48 && living(b).some(p => SIM.naVattnet(b, p))) v = b;
-    }
+    let h0 = 0;
+    const v = hittaBy(400, HOUR, 2, b => { for (h0 = 0; h0 < 48 && !torrDag(b, h0); h0++); return h0 < 48 && living(b).some(p => SIM.naVattnet(b, p)); });
     if (!v) return [['en by på sommaren med en torr dag', false]];
     const s = v;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });

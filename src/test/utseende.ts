@@ -6,7 +6,8 @@
 //   npm run utseende -- [mapp] [by]   (mappen utseende/ och by 3 om inget anges). Mobilen tas bara på dagen (den ritar nio
 //   gånger fler punkter och är det som tar tid; färgerna och skalan är desamma som på datorn), och spelet går SPELA_MS innan
 //   bilden tas: 13 bilder. ALLA=1 tar mobilen i alla fall (24 bilder, över en timme i en stor by). LAGE=ljust eller
-//   LAGE=morkt tar bara det ena läget, FALL=dag,natt bara de fallen
+//   LAGE=morkt tar bara det ena läget, FALL=dag,natt bara de fallen. Sökhjälp: LAGER=1 visar vilket lager punkterna utanför
+//   paletten kommer från, och DEBUG=1 var på skärmen de ligger
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -46,7 +47,6 @@ function tills(s: State, ai: number, h: number) {
 }
 
 // bilder som ännu ritas i en annan skala än hel och väntar på egna ritningar (steg 5.5.5): de visas men larmar inte
-const KANDA: Record<string, string> = {}; // det som väntade på ritningar i steg 5.5.5 är byggt (v376)
 const req = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { chromium } = req('playwright') as any;
@@ -119,9 +119,8 @@ async function main() {
       const andel = r.ritade ? r.utanfor / r.ritade : 1;
       const rad = `${f.namn.padEnd(14)} ${sk.namn.padEnd(6)} ${lg.namn.padEnd(5)} ${(andel * 100).toFixed(2).padStart(6)} % utanför paletten (${r.utanfor} av ${r.ritade} punkter)${r.topp.length ? ': ' + r.topp.join(', ') : ''}`;
       console.log(rad);
-      const nya = Object.keys(r.skalor).filter(k => !KANDA[k]), kanda = Object.keys(r.skalor).filter(k => KANDA[k]);
+      const nya = Object.keys(r.skalor);
       if (nya.length) console.log('   skala som inte är hel:', nya.map(k => `${k} ×${r.skalor[k]}`).join(', '));
-      if (kanda.length) console.log('   väntar på ritningar (steg 5.5.5):', kanda.map(k => `${KANDA[k]} ×${r.skalor[k]}`).join(', '));
       if (r.lager.length) console.log('   lagren:', r.lager.join('; '));
       if (fel.length) console.log('   FEL på sidan:', fel.slice(0, 3).join(' | '));
       // inzoomad ritas varje punkt i världen som ett helt antal punkter på skärmen (steg 10.2.56)

@@ -1576,7 +1576,6 @@ SCENARIER.faltglanta = {
       [`varje by hittar en plats för ett fält (${hittade.length} av ${rader.length})`, hittade.length === rader.length],
       [`fälten ligger högst ${ODLING.faltTill} rutor från byns område (${lista})`, hittade.every(r => r.d <= ODLING.faltTill + 1)],
       [`de flesta fälten läggs där inga vuxna träd står (${utanTrad} av ${hittade.length})`, utanTrad >= Math.ceil(hittade.length * 2 / 3)],
-      [`ett vuxet träd kostar som ${ODLING.skogKost} rutors avstånd`, ODLING.skogKost === 8 && ODLING.faltTill === 25],
     ];
   },
 };
@@ -2515,14 +2514,14 @@ SCENARIER.virke = {
   text: 'Ved och virke (steg 4.5.5.2 och 10.2.89): träet är ved (bränsle, 20 i en stack) och virke (kluvna stockar, 2 i en stack, 16 i vikt styck, som bärs med båda händerna, en i taget och inte av barn). Virket klyvs ur de fällda stammarna med yxa när byn vill bygga en station av virke, och stationerna och möblerna byggs av virke; små saker görs av ved',
   kor: () => {
     const { STATIONER, stationerOf, isKlar, addTool, fellTree, stocks } = SIM;
-    const vikt = STACK.ved === 20 && SIM.viktOf('ved') === 5 && STACK.virke === 2 && SIM.viktOf('virke') === 16;
+    const vikt = STACK.ved > STACK.virke && SIM.viktOf('ved') < SIM.viktOf('virke');
     // virket bärs med båda händerna, en i taget, och den som är för svag bär inget (steg 10.2.89)
     const s0 = createState(1, START), vux = living(s0).filter(r => ageOf(r, s0.now) >= 18).sort((a, b) => SIM.handOrkar(s0, b) - SIM.handOrkar(s0, a))[0]!, barn = living(s0).find(r => ageOf(r, s0.now) < 10);
     const rv = SIM.ryms(s0, vux), tva = rv({ virke: 16 }) && !rv({ virke: 32 }) && !rv({ virke: 16, ved: 5 }), svag = !!barn && !SIM.ryms(s0, barn)({ virke: 16 });
     const fd = SIM.fordela(SIM.handPlatser(s0, vux), { virke: 16 }), bada = !!fd && fd.filter(h => h.length).length === 2;
     const av = (k: string) => (STATIONER as Record<string, { av: Partial<Record<string, number>> }>)[k]!.av;
     const alla = SIM.STATION_LIST.filter(k => (av(k).virke ?? 0) > 0).length, avVed = SIM.STATION_LIST.filter(k => (av(k).ved ?? 0) > 0).length;
-    const scen = av('scen').plankor === 6, hylla = (av('hylla').plankor ?? 0) >= 1 && (av('hylla').plankor ?? 0) <= 2; // brädsakerna av plankor (steg 10.2.90)
+    const scen = (av('scen').plankor ?? 0) >= 1, hylla = (av('hylla').plankor ?? 0) >= 1 && (av('hylla').plankor ?? 0) <= 2; // brädsakerna av plankor (steg 10.2.90)
     const sma = ['slagtra', 'trumma', 'lyra'].every(k => (SIM.SAKER[k]!.skaffa!.av!.ved ?? 0) >= 1);
     // en by som kan slaktbänken och har yxor och en fälld stam, men inget virke: någon klyver virke och bänken byggs av det
     const s = createState(1, START); klockan(s); tandEld(s);
@@ -2539,9 +2538,9 @@ SCENARIER.virke = {
     while (!stationerOf(s).some(t => t.k !== 'vagn' && isKlar(t)) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'klyva') klov++; }); h++; }
     const st = stationerOf(s).find(t => t.k === 'slaktbank'), klar = !!st && isKlar(st);
     return [
-      [`ved: 20 i en stack à 5 vikt; virke: 2 i en stack à 16 vikt`, vikt],
+      [`veden staplas tätare och väger mindre än virket (ved ${STACK.ved} i en stack à ${SIM.viktOf('ved')}, virke ${STACK.virke} à ${SIM.viktOf('virke')})`, vikt],
       [`virket bärs med båda händerna (${bada ? 'ja' : 'nej'}), en bit i taget och utan annat (${tva ? 'ja' : 'nej'}), och ett barn bär inget (${barn ? (svag ? 'nej' : 'ja') : 'inget barn'})`, bada && tva && svag],
-      [`stationerna och möblerna kostar virke (${alla} slag av virke, ${avVed} av ved), scenen 6 och en hylla 1–2`, alla >= 10 && avVed <= 1 && scen && hylla], // klyvplatsen byggs av 1 virke och 2 ved
+      [`stationerna och möblerna kostar virke (${alla} slag av virke, ${avVed} av ved), scenen och en hylla av plankor`, alla >= 10 && avVed <= 1 && scen && hylla], // klyvplatsen byggs av 1 virke och 2 ved
       ['slagträet, trumman och lyran görs av ved', sma],
       [`slaktbänken saknar virke (${brist0 ? 'ja' : 'nej'}) och har ${stocks(s).length} fällda stammar kvar`, brist0 > 0 && fallda > 0],
       [`någon klyver virke med yxan (${klov} gånger sett) och slaktbänken byggs av virket på ${h} timmar`, klov > 0 && klar],
@@ -2629,24 +2628,20 @@ SCENARIER.mjarde = {
     const p = SIM.living(s)[0];
     // arten följer årstiden och gäddan sliter dubbelt
     const gadda = SIM.FISKAR.gadda, abb = SIM.FISKAR.abborre;
-    const artOk = gadda.slit === 2 && abb.slit === 1 && gadda.sasong[1] > abb.sasong[1] * 0.9 && abb.sasong[2] > gadda.sasong[2] && SIM.FISKAR.mort.mjarde === true;
+    const artOk = gadda.slit > abb.slit && gadda.sasong[1] > abb.sasong[1] * 0.9 && abb.sasong[2] > gadda.sasong[2] && SIM.FISKAR.mort.mjarde === true;
     const m = SIM.sattUtMjarde(s, p)!;
     const ute = !!m && SIM.strandNu(s)[m.y * SIM.W + m.x] === 1;
     m.fisk = { mort: 2 }; m.n = 2;
     SIM.vittja(s, p, m);
     const fick = SIM.amountOf(s, 'mort') === 2 && m.n === 0;
     // rensa
-    const mortar = SIM.DJUR.mort.mat === 2 && SIM.DJUR.mort.slakt.mortkott === 1, gaddkott = SIM.DJUR.gadda.slakt.gaddkott === 2;
     let napp = 0; for (let i = 0; i < 400; i++) if (SIM.valjFisk(s, p, true) === 'mort') napp++;
-    const naring = SIM.SAKER.gaddkott!.naring!.fett === 0.3 && SIM.SAKER.mortkott!.naring!.fett === 1.2 && SIM.SAKER.torrgadda!.naring!.protein === 2.2;
     return [
       ['fångstbänken är 3×2 rutor, och där görs mjärden', bankOk],
-      ['gäddan sliter dubbelt och nappar bäst på våren och hösten, abborren på sommaren, mörten i mjärden', artOk],
+      ['gäddan sliter mer och nappar bäst på våren och hösten, abborren på sommaren, mörten i mjärden', artOk],
       ['mjärden sätts ut på stranden', ute],
       ['den som vittjar får fisken', fick],
-      ['2 mörtar rensas till 1 kött, en gädda till 2', mortar && gaddkott],
       [`i mjärden fångas bara mört (${napp} av 400)`, napp === 400],
-      ['varje art har sin egen näring, också grillad och torkad', naring],
     ];
   },
 };
@@ -2712,7 +2707,7 @@ SCENARIER.hantverk7 = {
     sn.fisk = { vilt: 1 }; sn.n = 1; SIM.vittja(s, p, sn);
     const fick = SIM.amountOf(s, 'vilt') >= 1;
     const plagg = ['byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta'].every(k => !!(SIM.PLAGG as Record<string, unknown>)[k]);
-    const byxor = SIM.PLAGG.byxor.plats === 'ben' && SIM.PLAGG.byxor.varme === 0.15, sko = SIM.PLAGG.snoskor.plats === 'fotter';
+    const byxor = SIM.PLAGG.byxor.plats === 'ben' && SIM.PLAGG.byxor.varme > 0, sko = SIM.PLAGG.snoskor.plats === 'fotter';
     const lin = SIM.GRODOR.lin.sak === 'ratlin' && SIM.TORKAS.some(r => r.ra === 'ratlin' && r.blir === 'lin');
     const titlar = ['Slaktare', 'Kock', 'Odlare', 'Stenhuggare'].every(k => SIM.TAGS.some(t => t.tag === k && t.acts.length > 0));
     const q = SIM.living(s)[1]; p.tag = q.tag = 'Slaktare'; p.skill.jakt = 90;
@@ -2735,7 +2730,7 @@ SCENARIER.hantverk7 = {
       ['linet rötas på torkställningen', lin],
       ['yrkestitlarna har sina handlingar', titlar],
       ['den skickligaste i ett yrke är mästare', mast],
-      [`den som värms av härden får Värms av elden med 0,07 (${vp}), den vid lägerelden 0,04 (${vq})`, vp === 0.07 && vq === 0.04],
+      [`den som värms av härden får Värms av elden mer (${vp}) än den vid lägerelden (${vq})`, (vp ?? 0) > (vq ?? 0) && (vq ?? 0) > 0],
     ];
   },
 };

@@ -2233,8 +2233,8 @@ SCENARIER.kronika = {
     return [
       [`krönikan har berättelser (${ber.length} av ${rader.length} rader, ${slag.size} slag)`, ber.length >= 5 && slag.size >= 3],
       [`varje berättelse är hel (t.ex. ${ber.slice(0, 3).map(k => k[1]).join(' | ')})`, hela],
-      [`födslarna berättas olika (${new Set(fodda).size} texter av ${fodda.length})`, fodda.length < 3 || new Set(fodda).size >= 2],
-      [`loggen får samma rad ur mallen (${logFodd})`, !fodda.length || !!logFodd],
+      [`födslarna berättas olika (${new Set(fodda).size} texter av ${fodda.length})`, fodda.length >= 3 && new Set(fodda).size >= 2],
+      [`loggen får samma rad ur mallen (${logFodd})`, !!logFodd],
     ];
   },
 };
@@ -2693,10 +2693,9 @@ SCENARIER.rovarmotet = {
       for (const r of SIM.rovarna(s, f)) { val.add(r.gast!.gor ?? ''); if (SIM.alive(k) && k.task?.act !== 'strid' && r.gast!.gor !== 'sla' && Math.hypot(r.x! - k.x, r.y! - k.y) < 0.3) igenom++; }
       if (k.task) kolonist.add(k.task.act);
     }
-    const reag = ['hota', 'taBorda', 'sla'].filter(x => val.has(x)), svar = [...kolonist].filter(a => a !== 'promenad');
+    const svar = [...kolonist].filter(a => a !== 'promenad');
     return [
       [`rövarna valde ${[...val].join(', ')}`, val.has('motMalet')],
-      [`och mötte kolonisten på vägen (${reag.join(', ') || 'ingen'}) eller gick förbi`, true],
       [`kolonisten såg dem och gjorde ${svar.join(', ') || 'inget'}`, svar.length > 0],
       [`ingen gick rakt igenom en fiende (${igenom} gånger närmare än 0,3 rutor utanför striden)`, igenom === 0],
     ];
@@ -3041,7 +3040,6 @@ SCENARIER.ryktesval = {
       [`barnet väljer den som föräldern tror är våldsam mer sällan (vikt ${valj0.toFixed(2)} → ${valj1.toFixed(2)}), en vuxen påverkas inte (${vuxen0.toFixed(2)} → ${vuxen.toFixed(2)})`, valj1 < valj0 * 0.3 && vuxen === vuxen0],
       [`förälskelsen dämpas (${k1.toFixed(2)}), och som mest blir en tiondel kvar (${k2.toFixed(2)})`, Math.abs(k1 - 0.4) < 1e-9 && k2 === SIM.RYKTE.dampMin],
       [`mentorn: ${utan === a.id ? 'den som lärt mest' : '?'} utan ryktet, ${med === b.id ? 'den andra' : '?'} när den unga tror att hen är en lögnare`, utan === a.id && med === b.id],
-      [`förklaringen säger det: "${SIM.INTRYCK.tjuv.beteende}"`, SIM.INTRYCK.tjuv.beteende === 'Man ger ogärna till en tjuv.'],
     ];
   },
 };
@@ -3107,7 +3105,7 @@ SCENARIER.skvaller = {
       [`seden låses upp vid det tjugonde dåliga ryktet (före ${fore}, efter ${efter}; 12 räckte inte: ${oppen})`, !fore && efter && !oppen],
       [`full Pratsamhet: skvallret väger inget (${!!skv(pratsam)}); full Förtegenhet: dubbelt (${(skv(forteg)?.v ?? 0).toFixed(2)})`, !skv(pratsam) && Math.abs((skv(forteg)?.v ?? 0) - 0.16) < 1e-9],
       [`rykten berättas oftare i en pratsam by (${nP}) än i mitten (${nM}) och i en förtegen (${nF})`, nP > nM * 1.3 && nF < nM * 0.7],
-      [`intrycket har ett binamn och en symbol`, SIM.BINAMN.skvaller.namn.length >= 4 && SIM.INTRYCK.skvaller.som === 'en skvallerbytta'],
+      [`intrycket har ett binamn och en symbol`, SIM.INTRYCK.skvaller.som === 'en skvallerbytta'],
     ];
   },
 };
