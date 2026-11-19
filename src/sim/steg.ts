@@ -8,7 +8,7 @@ import { stenBruten } from './byggsten';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
 import { personHand } from './personlogg';
-import { hamtaForst, hamtat } from './hamtning';
+import { hamtaForst, hamtat, taMed } from './hamtning';
 import { sorgTimme } from './liv';
 import { lagerIStraket } from './strak';
 import { angIVagen, angMark } from './slatter';
@@ -42,7 +42,7 @@ import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
-import { stacksOf, isStored, lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed } from './lager';
+import { stacksOf, isStored, lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -223,7 +223,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
     if (t.brand || !canLight(s, p, f)) return; // med en brand tänds elden när hen kommer fram (steg 10.6.12)
     f.tryProg += dtSec;
     const per = igniterOf(s, p)!.minutes * 60;
-    while (f.tryProg >= per && canLight(s, p, f) && !f.lit) { f.tryProg -= per; if (tryLight(s, p, f)) { p.task = undefined; break; } }
+    while (f.tryProg >= per && canLight(s, p, f) && !f.lit) { f.tryProg -= per; if (tryLight(s, p, f)) { t.until = s.now; break; } } // det som blev över bärs tillbaka
   },
 };
 // det som händer när en handling är klar
@@ -378,6 +378,10 @@ declare global { var slagPuls: (() => void) | undefined }
 // huvudbyn alltid ser dem lika långt fram hur anropen än delas (sällskapet som går därifrån läser byn). Världens perioder räknas
 // bara av huvudbyn. visad = byn som visas (en väckt by som spelaren gått in i, steg 11.13.11): samtalen (events) är dess
 export function step(s: State, dtSec: number, events?: TalkEvent[], visad: State = s) { // också när gränssnittet räknar (typer.ts)
+  uttagVakt.i++; // vakten för det som svävar ser bara uttagen i spelets slag, inte det testerna ställer i ordning (steg 11.1.77)
+  try { stepNu(s, dtSec, events, visad); } finally { uttagVakt.i--; }
+}
+function stepNu(s: State, dtSec: number, events: TalkEvent[] | undefined, visad: State) {
   simulera(() => {
     stegBy(s, dtSec, visad === s ? events : undefined, () => { // en by som väckts under slaget börjar vid sin tid
       if (!s.vackta?.length) return;
@@ -974,16 +978,17 @@ function vidElden(s: State, p: Person, at: { x: number; y: number }) {
 // framme vid målet: vid förrådet, vid bygget, hemma med bördan eller på platsen där arbetet görs
 function arrive(s: State, p: Person, tk: Task, light: boolean) {
   const now = s.now;
-  if (tk.act === 'tanda' && tk.brand && tk.phase === 'go') {
+  if (tk.act === 'tanda' && tk.brand && tk.phase === 'go' && !(tk.hamta && tk.site)) { // (vid stacken hämtas först, nedan)
     // eld från en eld som brinner (steg 10.6.12): vid elden som brinner tänds 1 gren, och vid eldstaden tar den fyr direkt
     const f = eldById(s, tk.ref);
     if (tk.brand === 'hamta') {
       if (hamtaForst(s, p, tk)) return; // grenen bärs från förrådet (steg 11.1.75)
+      taMed(s, p, tk); if (tk.site) return; // det som behövs vid den nya elden tas med härifrån, och saknas något går hen till nästa stack
       const e = tk.kalla === -1 ? s.fire : eldById(s, tk.kalla);
       if (!f || f.lit || !e?.lit || iRackhall(p.x, p.y, () => getable(s, p, 'grenar')) < 1) { p.task = undefined; return; }
       iRackhall(p.x, p.y, () => takeMaterial(s, p, 'grenar', 1, true));
       tk.brand = 'bar'; const at = vidEld(s, f, sida(p, 0.6), 1.3); tk.tx = at.x; tk.ty = at.y;
-    } else { if (f) brandTand(s, p, f, tk.kalla === undefined ? undefined : tk.kalla === -1 ? s.fire : eldById(s, tk.kalla)); p.task = undefined; }
+    } else { if (f) iRackhall(p.x, p.y, () => brandTand(s, p, f, tk.kalla === undefined ? undefined : tk.kalla === -1 ? s.fire : eldById(s, tk.kalla))); p.task = undefined; } // med det hen bär (steg 11.1.75)
     return;
   }
   if (tk.act === 'elda') {

@@ -170,6 +170,7 @@ export interface Task {
   mx?: number; my?: number; // där man står för att arbeta på rutan (tx, ty), en grannruta (steg 9.2.47)
   hamta?: Record<string, number>; // på väg till förrådet efter materialet till arbetet vid site, så här mycket av varje (steg 11.1.74, hamtning.ts)
   hamtad?: 1; // materialet är hämtat och bärs i items (ägarna i ag): arbetet tar det först (steg 11.1.74)
+  vanda?: 1; // allt fick inte plats i bördan: det burna läggs vid platsen och hen går efter resten (hamtning.ts)
   mask?: number; // fiske: maskar på kroken till metspöet
   hal?: number; // fiske: sekunder kvar att hugga på hålet i isen (steg 2.11.3, is.ts); 0 = hålet är upphugget
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)

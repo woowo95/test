@@ -164,7 +164,7 @@ const BEHOV = () => behovLista ??= [MAT, VED];
 
 // det p själv har och får ta av byns
 const perOf = (b: Behov, k: string) => b.per?.[k] ?? 1;
-function hasFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += mayTake(s, p, k) * perOf(b, k); return n; }
+function hasFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += (mayTake(s, p, k) + iBordan(p, k)) * perOf(b, k); return n; } // med det hen bär (steg 11.1.77)
 export function ownFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += ownsAmount(s, p, k) * perOf(b, k); return n; }
 // p behöver det och har inget eget eller av byns att ta
 const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && hasFor(s, p, b) < b.minst;
@@ -195,14 +195,19 @@ export function egnaMatDygn(s: State, p: Person) {
 export function needLadder(s: State, p: Person, dtSec: number) {
   for (const b of BEHOV()) {
     if (!b.behover(s, p)) continue;
-    const byns = hasFor(s, p, b) >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
-    if (ownFor(s, p, b) < b.minst && (fraga || (byns && b.genast))) tradeAround(s, p, b); // ett byte, före byns förråd
-    if (fraga && hasFor(s, p, b) < b.minst) askAround(s, p, b);
-    if (hasFor(s, p, b) >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); continue; }
-    if (desperat(s, p, b) && ran(s, p, b, dtSec)) return;
-    const v = victimOf(s, p, b);
-    if (v) stole(s, p, v, b.id, b.anvand(s, p, v));
+    // det man tar själv på en gång (maten) tas ur förrådet man står vid eller det man bär (steg 11.1.77); den som är hungrig
+    // långt från maten går dit (raden ata i val.ts)
+    if ((b.genast ? iRackhall(p.x, p.y, () => behovSteg(s, p, b, dtSec)) : behovSteg(s, p, b, dtSec)) === 'ran') return;
   }
+}
+function behovSteg(s: State, p: Person, b: Behov, dtSec: number) {
+  const byns = hasFor(s, p, b) >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
+  if (ownFor(s, p, b) < b.minst && (fraga || (byns && b.genast))) tradeAround(s, p, b); // ett byte, före byns förråd
+  if (fraga && hasFor(s, p, b) < b.minst) askAround(s, p, b);
+  if (hasFor(s, p, b) >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); return; }
+  if (desperat(s, p, b) && ran(s, p, b, dtSec)) return 'ran';
+  const v = victimOf(s, p, b);
+  if (v) stole(s, p, v, b.id, b.anvand(s, p, v));
 }
 // rån (steg 3.7.17): den som är desperat nog att stjäla och aggressiv (DELA.ranAgg) tar hellre med våld av någon i närheten
 // än ur förrådet, helst av den hen tycker minst om. Det blir ett slagsmål (strid.ts); vinner hen tar hen saken. De som såg

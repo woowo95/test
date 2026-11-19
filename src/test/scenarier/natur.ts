@@ -6,7 +6,7 @@ import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
-import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy } from './hjalp';
+import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.djur = {
@@ -1226,6 +1226,7 @@ SCENARIER.grill = {
     s.fire.lit = false; const slackt = !kanGrilla(s, p); s.fire.lit = true;
     // en ovan kock bränner en del, en skicklig ingenting
     p.skill.matlagning = 0; q.skill.matlagning = MATLAG.brannFull;
+    vidStack(s, p, 'fisk'); vidStack(s, q, 'fisk'); // kocken når fisken (steg 11.1.74)
     const f0 = amountOf(s, 'fisk'), m0 = p.skill.matlagning;
     grilla(s, p, 1);
     const ovan = amountOf(s, 'grillfisk'), anv = f0 - amountOf(s, 'fisk');
@@ -1280,11 +1281,12 @@ SCENARIER.tork = {
     const t = medBank(s, 'tork'), ute = !t.inne;
     const kan = kanTorka(s, p);
     const f0 = amountOf(s, 'fisk');
+    vidStack(s, p, 'fisk'); // den som hänger upp når fisken (steg 11.1.74)
     torka(s, p, 1);
     const hangt = (t.tork ?? []).reduce((a, q) => a + q.n, 0), upp = Math.abs(hangt - Math.min(TORK.timme, TORK.rymd)) < 1e-6 && Math.abs(f0 - amountOf(s, 'fisk') - hangt) < 1e-6;
     // ställningen är full och det finns mer över: byn vill ha en till, och med två hängs det upp på båda (steg 2.10.22)
     const full = hangt === TORK.rymd && !kanTorka(s, p), villFler = torkBrist(s) > 0;
-    const t2 = medBank(s, 'tork'); setMat(s, { fisk: 40 }); torka(s, p, 1);
+    const t2 = medBank(s, 'tork'); setMat(s, { fisk: 40 }); vidStack(s, p, 'fisk'); torka(s, p, 1);
     const pa2 = (t2.tork ?? []).reduce((a, q) => a + q.n, 0), tva = torkarna(s).length === 2 && Math.abs(pa2 - TORK.rymd) < 1e-6;
     s.stationer = s.stationer!.filter(x => x !== t2); SIM.touch(s);
     // det som hänger ruttnar inte, och det tas inte ner förrän det har torkat

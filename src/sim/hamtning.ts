@@ -9,12 +9,12 @@ import { Act, HOUR, Person, State, Task } from './typer';
 import { getable, takeMaterial } from './behov';
 import { count } from './folk';
 import { halvOf } from './agande';
-import { amountOf, capacity, iHelaForradet, iRackhall, load, mayTake, narmasteMed, ownsAmount, use } from './lager';
+import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, narmasteMed, ownsAmount, use } from './lager';
 import { fartVid, halvbyggd, stationDef, tillbehorDef } from './stationer';
 import { PROJEKT } from './projekt';
 import { troOf } from './religion';
 import { addDel, kyrkaId, sumOf } from './egendom';
-import { SAKER, viktOf } from './saker';
+import { FOOD, SAKER, viktOf } from './saker';
 import { DJURARTER, GORS, REP_TIMME, borjaTool, djurKvar } from './redskap';
 import { REST, RESTER, resterOver } from './rester';
 import { farorNu, heligtAvstar } from './kultlatt';
@@ -84,6 +84,9 @@ HAMTAS.fiske = { av: (s, p): Record<string, number> | undefined => mayTake(s, p,
 // elden som ska tändas (eld.ts, steg 11.1.75): tändmaterialet, bränslet och stenarna, av byns först
 HAMTAS.tanda = { av: (s, p, tk) => tandHamtas(s, p, tk), byns: true };
 
+// måltiden vid bordet (val.ts, steg 11.1.77): en portion av den första maten hen får ta, bärd till bordet
+HAMTAS.maltid = { av: (s, p) => { const k = FOOD.find(q => mayTake(s, p, q) >= 1); return k ? { [k]: 1 } : undefined; } };
+
 // det andra som görs efter ett projekt (PROJEKT i projekt.ts: tillverkningen vid stationerna, fällorna): receptet
 const INGEN_FARA = { kyla: false, gras: 0 };
 const hamtasFor = (act: Act): Hamtas | undefined => HAMTAS[act] ?? (PROJEKT[act]?.recept ? { av: (s, p) => PROJEKT[act]!.recept!(s, p, INGEN_FARA)?.av } : undefined);
@@ -97,15 +100,28 @@ function saknas(s: State, p: Person, av: Record<string, number>) {
 // framme vid arbetet: ligger materialet inte inom räckhåll går hen först till förrådet. Svarar true när hen gick dit
 export const hamtaForst = (s: State, p: Person, tk: Task) => iHelaForradet(() => hamtaForstNu(s, p, tk));
 function hamtaForstNu(s: State, p: Person, tk: Task) {
-  if (tk.site || tk.hamtad) return false;
+  if (tk.site || tk.hamtad && !tk.vanda) return false;
   // och veden till stationens eld, när arbetet görs vid en station med eld (stationseld.ts, steg 11.1.75)
   const av0 = hamtasFor(tk.act)?.av(s, p, tk), ved = eldaVed(s, p, tk), av = ved > 0 ? { ...av0, ved: (av0?.ved ?? 0) + ved } : av0;
-  if (!av) return false;
-  const sak = saknas(s, p, av), dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak)) : undefined;
+  if (!av) { if (tk.vanda) laggVid(s, p, tk); return false; }
+  let sak = saknas(s, p, av);
+  // fler vändor: det som bars hit läggs vid platsen, där det ligger inom räckhåll, och hen går efter resten. Hamnade det
+  // inte inom räckhåll (rutan var full) börjar arbetet med det som finns
+  if (tk.vanda) { const fore = sumOf(sak); laggVid(s, p, tk); sak = saknas(s, p, av); if (sumOf(sak) > fore + 1e-9) return false; }
+  const dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak)) : undefined;
   if (!dit) return false; // det finns inom räckhåll, eller inte i någon stack (hos någon, i en kista): arbetet börjar som det är
-  tk.site = { x: tk.tx, y: tk.ty }; tk.tx = dit.x; tk.ty = dit.y; tk.phase = 'go'; tk.hamta = av;
+  tk.site = { x: tk.tx, y: tk.ty }; tk.tx = dit.x; tk.ty = dit.y; tk.phase = 'go'; tk.hamta = sak;
   count(s, 'hamtar');
   return true;
+}
+// det arbetet behöver på en annan plats tas med från där p står (branden som bärs till en ny eld): det som ligger inom räckhåll
+// läggs i det hen bär, och fattas något går hen till nästa stack och sedan tillbaka hit
+export function taMed(s: State, p: Person, tk: Task) {
+  if (tk.site || tk.hamtad) return;
+  const av = hamtasFor(tk.act)?.av(s, p, tk);
+  if (!av) return;
+  tk.site = { x: tk.tx, y: tk.ty }; tk.hamta = av;
+  hamtat(s, p, tk);
 }
 // vid stacken: det som behövs tas ur stackarna inom räckhåll och läggs i det hen bär. Räckte det inte och fick hen något går
 // hen till nästa stack, annars till platsen
@@ -122,9 +138,16 @@ export function hamtat(s: State, p: Person, tk: Task) {
       (tk.items ??= {})[k] = (tk.items[k] ?? 0) + g; addDel((tk.ag ??= {})[k] ??= {}, d); fick += g;
     }
   });
-  const kvar = Object.keys(av).filter(k => av[k] - (tk.items?.[k] ?? 0) > 1e-9 && load(tk, s) + viktOf(k) <= capacity(s, p) + 1e-9), nasta = fick > 0 && kvar.length ? narmasteMed(s, p, kvar) : undefined;
+  const fattas = Object.keys(av).filter(k => av[k] - (tk.items?.[k] ?? 0) > 1e-9), ryms = (k: string) => load(tk, s) + viktOf(k) <= capacity(s, p) + 1e-9;
+  const kvar = fattas.filter(ryms), nasta = fick > 0 && kvar.length ? narmasteMed(s, p, kvar) : undefined;
   if (nasta) { tk.tx = nasta.x; tk.ty = nasta.y; return; }
   const site = tk.site!;
   tk.tx = site.x; tk.ty = site.y; tk.site = undefined; tk.hamta = undefined; tk.phase = 'go';
   if (tk.items) tk.hamtad = 1;
+  if (tk.items && fick > 0 && fattas.some(k => !ryms(k))) tk.vanda = 1; // bördan är full: det som inte fick plats hämtas i nästa vända
+}
+// det som bars till platsen läggs ner där (med ägarna), och bördan är tom
+function laggVid(s: State, p: Person, tk: Task) {
+  tk.vanda = undefined; tk.hamtad = undefined;
+  if (tk.items) dropLoad(s, tk, p.x, p.y);
 }

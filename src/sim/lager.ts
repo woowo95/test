@@ -547,7 +547,7 @@ export const fetchSpot = (s: State, k: string) => {
 // stackarna av ett slag i förrådet, sämst skick först
 function stored(s: State, k: string) {
   const ut: Stack[] = [];
-  for (const a of stacksOf(s)) if (a.k === k && isStored(s, a.x, a.y) && nas(a)) ut.push(a);
+  for (const a of stacksOf(s)) if (a.k === k && (nara ? nas(a) : isStored(s, a.x, a.y))) ut.push(a); // inom räckhåll också det som ligger utanför lagret (vid arbetet)
   return ut.sort((a, b) => condOf(a) - condOf(b));
 }
 // ---------- räckhållet (steg 11.1.74, Hämtningen i designdokumentet) ----------
@@ -642,6 +642,10 @@ function hide(s: State, host: string, n: number, at?: { x: number; y: number }) 
 // vakten för det som svävar (steg 11.1.74): testerna lyssnar på varje uttag ur en stack, med den som tar och stackens ruta
 let uttagLyss: ((s: State, p: Person | undefined, k: string, n: number, x: number, y: number) => void) | undefined;
 export const lyssnaPaUttag = (f: typeof uttagLyss) => { uttagLyss = f; };
+// vakten i npm test och scenarierna (steg 11.1.77): lyss hör uttagen medan spelet räknar ett slag (i > 0, step i steg.ts)
+// stacken på rutan x,y ligger utom räckhåll för p (en liten marginal för avrundningen)
+export const svavar = (p: { x: number; y: number }, x: number, y: number) => !iRackvidd(p, { x, y }) && Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) > LAGER.rackvidd + 0.01;
+export const uttagVakt: { lyss?: typeof uttagLyss; i: number } = { i: 0 };
 function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fran?: number, baraBordan = false) {
   const ag: Del = {};
   let got = 0, cw = 0, tagna = 0, urB = 0;
@@ -668,6 +672,7 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
         else {
           hamtatI(s, a.x, a.y, v); // hur mycket som hämtas på lagerplatsen (steg 9.4.7)
           uttagLyss?.(s, p, k, v, a.x, a.y); // vakten för det som svävar (steg 11.1.74), bara i testerna
+          if (uttagVakt.i) uttagVakt.lyss?.(s, p, k, v, a.x, a.y);
         }
         w -= v; tog += v; cw += v * a.c;
       }
@@ -748,7 +753,7 @@ export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
     if (krav > 0 && skickAv(s, k) < krav) continue; // för skämd för den som inte är hungrig nog (steg 9.6.24)
     if (p && SAK_ART[k] && heligtFor(s, p, SAK_ART[k]) && !farorNu(s).svalt) continue; // det heliga djurets kött, utom när byn svälter (steg 10.3.15, 10.11.18)
     if (p && matAvstar(s, p, k)) continue; // maten tron förbjuder, utom i svält (steg 10.3.16)
-    const v = Math.min(n - got, amountOf(s, k), takeLimit(s, k, p, fran));
+    const hand = fran ? 0 : iBordan(p, k), v = Math.min(n - got, amountOf(s, k) + hand, takeLimit(s, k, p, fran) + hand); // med det hen bär (steg 11.1.77)
     if (v > 1e-12) { const r = takeOwn(s, k, v, p, false, fran?.id); got += r.n; cw += r.n * r.c; per[k] = (per[k] ?? 0) + r.n; }
     if (p && !fran && budgetMatKrok.f) for (const o of budgetMatKrok.f(s, p)) { // sedan ur en matdel som ger p mat
       if (n - got <= 1e-12) break;

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medHus, setFood, tandEld, utanWebblasare } from './hjalp';
+import { SCENARIER, kor, klockan, medHus, setFood, tandEld, utanWebblasare, vidStack } from './hjalp';
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
@@ -849,7 +849,7 @@ SCENARIER.rokeri = {
     s.stationer = [...(s.stationer ?? []), { id: 998, k: 'rokeri', x: 2, y: 2, kvar: 0 } as SIM.Station];
     p.tek = { ...(p.tek ?? {}), rokeri: 1 };
     const kan = kanTorka(s, p, 'rokeri');
-    torka(s, p, 1, 'rokeri'); const uppe = 30 - amountOf(s, 'fisk');
+    vidStack(s, p, 'fisk'); torka(s, p, 1, 'rokeri'); const uppe = 30 - amountOf(s, 'fisk'); // fiskaren når fisken (steg 11.1.74)
     const rok = SIM.stationerOf(s).find(t => t.k === 'rokeri')!; setAmount(s, 'ved', 20); // elden i rökeriet brinner hela dygnet (steg 10.2.85)
     for (let h = 0; h <= ROK.dygn * 24; h++) { SIM.elda(s, p, rok, 24); s.now += SIM.HOUR; SIM.stepStationsEld(s, 3600); }
     torka(s, p, 1, 'rokeri');
@@ -2273,7 +2273,7 @@ SCENARIER.stationseld = {
     tim(STATIONSELD.glodTim + 1); const kall = !ugn.eld?.lit && ugn.eld?.glod === undefined;
     // rökeriet: fisken hänger men röks inte förrän elden brinner
     for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'fisk', 10); setAmount(s, 'ved', 0);
-    torka(s, p, 1, 'rokeri'); const uppe = rok.tork?.[0];
+    vidStack(s, p, 'fisk'); torka(s, p, 1, 'rokeri'); const uppe = rok.tork?.[0]; // fiskaren når fisken (steg 11.1.74)
     tim(30);
     const intRokt = !!uppe && torrDel(s, uppe, 'rokeri') === 0 && amountOf(s, 'rokfisk') === 0;
     setAmount(s, 'ved', 20); const vill = kanTorka(s, p, 'rokeri');

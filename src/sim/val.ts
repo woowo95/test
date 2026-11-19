@@ -31,7 +31,7 @@ import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, l
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardBehov, vardVal, vilaHellre } from './halsa';
-import { bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial } from './behov';
+import { MAT, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness } from './fynd';
 import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
@@ -52,7 +52,7 @@ const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, 
 // hur många av saken k p bär i händerna på en tur (det tunga: så många som ryms, steg 10.10.2)
 const iHandenAv = (s: State, p: Person, k: string) => { const r = ryms(s, p), w = viktOf(k); let n = 0; while (n < 20 && r({ [k]: (n + 1) * w })) n++; return n; };
 const stackPa = (s: State, x: number, y: number, k: string) => Math.floor((s.stackar ?? []).filter(q => q.x === Math.floor(x) && q.y === Math.floor(y) && q.k === k).reduce((a, q) => a + q.n, 0) + 1e-9);
-import { allows, amountOf, avbryt, iHelaForradet, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
+import { allows, amountOf, avbryt, iHelaForradet, iRackhall, narmasteMed, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
@@ -66,7 +66,7 @@ import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
 import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
-import { SAKER, isFood, sakNamn, viktOf } from './saker';
+import { FOOD, SAKER, isFood, sakNamn, viktOf } from './saker';
 import { TILLVERKA } from './tillverka';
 import { materialBuffert } from './forradsmal';
 import { balans } from './balans';
@@ -192,6 +192,7 @@ export const VAL = balans('val', {
   nattSamtal: 0.9, // annars umgås man tills detta, sedan vilar man
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
+  ataMin: 3, // den som går till förrådet och äter stannar där så länge (steg 11.1.77)
   bryggaSitt: 0.6, // finns en brygga sitter man eller badar där med denna chans (steg 7.3.11)
   vittjaMin: 5, // så många minuter det tar att vittja en mjärde
   salMote: 0.7, // året runt är samlingssalen mötesplatsen med denna chans, när byn har en (steg 7.2.7)
@@ -658,8 +659,10 @@ export const ARBETEN: readonly Arbete[] = [
   // 2 Nöd och vård (sjuk, svag, fryser farligt, måste på toa genast)
   // den som ser ett slagsmål går emellan eller går undan (steg 10.1.4, narStridVal i kartstrid.ts)
   { id: 'slagsmal', niva: 2, prova: ({ s, p, v }) => { const d = narStridVal(s, p); if (!d) return false; set(v, d.act, d.why); v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return true; } },
+  { id: 'smabarnMat', niva: 2, prova: ({ s, p, v, a }) => a < ALDER.smabarn && ataVal(s, p, v) }, // också det lilla barnet går till maten när det är hungrigt (steg 11.1.77)
   { id: 'smabarn', niva: 2, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
   { id: 'toaGenast', niva: 2, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
+  { id: 'svalter', niva: 2, prova: ({ s, p, v }) => p.hunger <= 0 && ataVal(s, p, v) }, // den som svälter går till maten först
   { id: 'torstFarligt', niva: 2, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
   { id: 'vardaSig', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
   { id: 'sjuk', niva: 2, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
@@ -754,6 +757,8 @@ export const ARBETEN: readonly Arbete[] = [
     if (!bord) return false;
     v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet');
   } },
+  // hungrig, och maten ligger inte där hen står: hen går till den närmaste stacken med mat hen får ta och äter där (steg 11.1.77)
+  { id: 'ata', niva: 4, prova: ({ s, p, v }) => ataVal(s, p, v) },
   { id: 'utbrott', niva: 4, nar: 'dag', prova: ({ s, p, v }) => utbrottVal(s, p, v) },
   // nattens vakt (byts varje natt kl. 7)
   { id: 'vakt', niva: 6, nar: 'natt', prova: ({ s, p, v, a }) => vaktVal(s, p, v, a) },
@@ -1029,6 +1034,12 @@ function hamtaVatten(s: State, p: Person, v: Val) {
 }
 
 // törst (steg 2.4.1): vid vattnet, eller snö som smälts vid elden i istiden (torst.ts). false = inget vatten att nå
+function ataVal(s: State, p: Person, v: Val) {
+  if (!MAT.behover(s, p) || !harMat(s, p) || iRackhall(p.x, p.y, () => harMat(s, p))) return false;
+  const dit = narmasteMed(s, p, FOOD);
+  if (!dit || !iRackhall(dit.x, dit.y, () => harMat(s, p))) return false;
+  v.spot = dit; v.dur = VAL.ataMin * MIN; return set(v, 'ata', 'Är hungrig och går till maten');
+}
 function dricka(s: State, p: Person, v: Val) {
   const d = drickVal(s, p);
   if (!d) return false;

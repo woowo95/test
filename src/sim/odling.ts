@@ -18,7 +18,7 @@ import { freeTools, nTools, wearTool } from './agande';
 import { SAKER } from './saker';
 import { PLATS } from './plats';
 import { ledig, stationerOf, storlekAv } from './stationer';
-import { amountOf, gain } from './lager';
+import { amountOf, gain, iHelaForradet } from './lager';
 import { temperature, vaxtFaktor } from './vader';
 import { TORKA } from './torka';
 import { iVattnetNu } from './sjo';
@@ -431,26 +431,29 @@ function nastaI(s: State, p: Person, f: Falt, st: FaltSteg, k: number) {
   }
   return -1;
 }
+// ett nytt fält röjs där uppgiften pekar, om hen och familjen inte har något och storleken räcker
+function nyttFaltHar(s: State, p: Person, tk: Task): Falt | undefined {
+  if (faltOf(s).some(q => q.agare === p.id) || familjFalt(s, p) || storlek(s, p) < ODLING.faltMin) return undefined;
+  const x = Math.floor(tk.tx), y = Math.floor(tk.ty), gr = byGrans(s), at = nyttFalt(s, p);
+  const passar = (w: number) => {
+    const ny: Falt = { id: 0, x, y, w, dir: faltRiktning(s, y), n: iRader(w, storlek(s, p)), agare: p.id, steg: 'roja', klara: 0, kvar: minPer('roja'), rord: s.now };
+    for (let k = 0; k < ny.n; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) return undefined; }
+    ny.r = Array.from({ length: ny.n }, () => ({ st: 'roja' as FaltSteg }));
+    return ny;
+  };
+  const ny = at && at.x === x && at.y === y ? passar(at.w) : bredder(s, (s.nextFalt ?? 0) + 1, faltBehov(s, p)).map(passar).find(q => q);
+  if (!ny) return undefined;
+  ny.id = s.nextFalt = (s.nextFalt ?? 0) + 1;
+  (s.falt ??= []).push(ny);
+  noteraFore(s, ny, 0);
+  s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: platserna räknas om
+  return ny;
+}
 // framme (paborjat.ts): arbeta på rutan, eller röja ett nytt fält där det ska ligga, med den bredd som platsen valdes för
 // (eller den första som får plats där, om något ändrats sedan). Den som arbetar på ett fält som ingen äger blir ägare
 export function startOdla(s: State, p: Person, tk: Task) {
-  let f = faltById(s, tk.ref);
-  if (!f && tk.tool === 'roja' && !faltOf(s).some(q => q.agare === p.id) && !familjFalt(s, p) && storlek(s, p) >= ODLING.faltMin) {
-    const x = Math.floor(tk.tx), y = Math.floor(tk.ty), gr = byGrans(s), at = nyttFalt(s, p);
-    const passar = (w: number) => {
-      const ny: Falt = { id: 0, x, y, w, dir: faltRiktning(s, y), n: iRader(w, storlek(s, p)), agare: p.id, steg: 'roja', klara: 0, kvar: minPer('roja'), rord: s.now };
-      for (let k = 0; k < ny.n; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) return undefined; }
-      ny.r = Array.from({ length: ny.n }, () => ({ st: 'roja' as FaltSteg }));
-      return ny;
-    };
-    const ny = at && at.x === x && at.y === y ? passar(at.w) : bredder(s, (s.nextFalt ?? 0) + 1, faltBehov(s, p)).map(passar).find(q => q);
-    if (ny) {
-      f = ny; f.id = s.nextFalt = (s.nextFalt ?? 0) + 1;
-      (s.falt ??= []).push(f);
-      noteraFore(s, f, 0);
-      s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: platserna räknas om
-    }
-  }
+  // ett nytt fält planeras efter fröna i hela förrådet, som valet av arbetet (steg 11.1.74): arbetet tar dem sedan inom räckhåll
+  const f = faltById(s, tk.ref) ?? (tk.tool === 'roja' ? iHelaForradet(() => nyttFaltHar(s, p, tk)) : undefined);
   const fam = f && (f.agare === p.id || familjOf(s, p.id).some(q => q.id === f!.agare));
   if (!f || tk.tool === 'vaxer' || (!fam && agareLever(s, f))) { tk.ref = undefined; tk.until = s.now; return; }
   const k = nastaI(s, p, f, tk.tool as FaltSteg, tk.fr ?? 0);

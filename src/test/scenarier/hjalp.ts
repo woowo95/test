@@ -13,6 +13,8 @@ export const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
   for (const k of STACK_ORDER) if (isTool(k)) setAmount(s, k, m[k] ?? 0);
 };
+// p står vid den största stacken av k: det hen tar ur förrådet ligger inom räckhåll (steg 11.1.74)
+export const vidStack = (s: State, p: Person, k: string) => { const a = (s.stackar ?? []).filter(q => q.k === k).sort((x, y) => y.n - x.n)[0]; if (a) { p.x = a.x + 0.5; p.y = a.y + 0.5; } };
 export const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 export const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };

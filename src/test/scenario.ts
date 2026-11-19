@@ -26,6 +26,7 @@ import './scenarier/fas10';
 import './scenarier/fas11';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { gangLangsam, gangVakt } from '../sim/gang';
+import { svavar, uttagVakt } from '../sim/lager';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { RODA, Utfall, korSkript, pool, prioAv } from './pool';
@@ -59,11 +60,15 @@ async function korHar(namn: string) {
   // vakten för långsam gång (steg 9.2.101): ett larm blir en kontroll som inte går igenom
   let langsam: string | undefined, nLangsam = 0;
   gangVakt.lyss = (s, p, rutor, mork) => { const t = gangLangsam(s, p, rutor, mork); if (t) { nLangsam++; langsam ??= t; } };
+  // vakten för det som svävar (steg 11.1.77): ett uttag ur en stack som den som tar inte står vid
+  let svav: string | undefined, nSvav = 0;
+  uttagVakt.lyss = (_s, p, k, _n, x, y) => { if (p && svavar(p, x, y)) { nSvav++; svav ??= `${p.name} (${p.task?.act ?? 'ingen uppgift'}) tog ${k} ${Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y).toFixed(0)} rutor bort`; } };
   // gränssnittets läge börjar som i ett nytt spel: i en grupp lämnade ett scenario annars kvar en vald flik åt nästa (handlarrel
   // lämnade relationerna öppna, och handslag såg då inte bytena)
   Object.assign(ui, structuredClone(UI_START));
   const cpu0 = process.threadCpuUsage(), k = await sc.kor(); // ett scenario får vänta på något (sparbas: databasen)
-  gangVakt.lyss = undefined;
+  gangVakt.lyss = undefined; uttagVakt.lyss = undefined;
+  if (svav) k.push([`vakten: något svävar (${nSvav} ggr), första: ${svav}`, false]);
   if (langsam) k.push([`vakten: någon går mycket långsamt utan flera skäl (${nLangsam} ggr), första: ${langsam}`, false]);
   const ok = k.every(([, b]) => b);
   const cpu = process.threadCpuUsage(cpu0), tid = ((cpu.user + cpu.system) / 1e6).toFixed(0);
