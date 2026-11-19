@@ -98,6 +98,7 @@ function bytBy(n: State) {
 }
 $('testToggle').addEventListener('change', async e => {
   const on = (e.target as HTMLInputElement).checked;
+  if (ui.busy) { (e.target as HTMLInputElement).checked = !on; return; } // inte medan byn räknas ikapp (som bytet av by)
   if (on) {
     gaHem(); // testläget gäller huvudbyn (steg 11.13.11)
     saveLocal(); await saveDb();
@@ -192,6 +193,7 @@ $('installKnapp').addEventListener('click', renderByar);
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
 $('okNew').addEventListener('click', () => {
+  if (ui.busy) return; // inte medan byn räknas ikapp (som bytet av by)
   $('confirmNew').hidden = true;
   dropTest(); nyByVald();
   ui.selected = undefined; ui.tab = undefined;

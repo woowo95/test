@@ -12,7 +12,6 @@ export interface Gast {
   id: number; // negativt, så att det aldrig är en bybos id
   namn: string; sex: 'm' | 'k';
   sort: string; // som yrket hos en bybo
-  farg: number; // färgen på cirkeln på kartan
   x: number; y: number; // där hen ritas vid tiden som visas
   gor: string; // vad hen gör just nu (som status hos en bybo)
   fran?: string; // varifrån hen kommer
@@ -20,9 +19,7 @@ export interface Gast {
   p: Person; // gästen själv (steg 9.2.114)
   byten?: ByteMinne[]; // bytena hen gjort med byn (steg 4.5.4.17)
   liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna, humöret och det hen kan
-  blod?: number; // blodet kvar (rövarna, 0–1)
-  ligger?: boolean; // har fallit i striden (rövarna, steg 6.6.10)
-  rovare?: Person; // rövaren själv: ritas som en figur ur skaparen (steg 6.6.12, ui/manniskor.ts), de andra gästerna som en cirkel
+  rovare?: Person; // rövaren själv: ritas som en figur ur skaparen (steg 6.6.12, ui/manniskor.ts)
   rel?: { p: Person; r: GastRel; g: number }[]; // relationerna till byborna (handlaren, steg 4.5.7.11): g = hur mycket hen gillar bybon, −1 till 1
 }
 // gästens liv, räknat ur byns frö och hens namn och klan (drar ingen slump)
@@ -42,7 +39,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     if (!h) return [];
     const p = handlarPlats(s, h, t), utr = HANDLAR_UTR[h.utr]?.namn ?? h.utr, ko = h.ko?.length ?? 0;
     return [{
-      id: h.id, namn: hp(s, h).name, sex: hp(s, h).sex, sort: 'Handlare', farg: 0x4e6a8a, x: p.x, y: p.y, gor: handlarFas(h), // (platsen i bilden: handlarPlats)
+      id: h.id, namn: hp(s, h).name, sex: hp(s, h).sex, sort: 'Handlare', x: p.x, y: p.y, gor: handlarFas(h), // (platsen i bilden: handlarPlats)
       fran: `${klanById(s, hp(s, h).gast!.klan)?.namn ?? 'en grannklan'} vid ${hp(s, h).gast!.hem!}`,
       rader: [
         { namn: 'Silver', varde: `${iconImg('silver', 12)} ${Math.round(h.silver)}`, title: 'Silvret handlaren har med sig' },
@@ -64,16 +61,16 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     return rovarna(s, r).map((q, i) => {
       const sk = kartKampe(s, q); // i striden på kartan (steg 10.1.14): kämpens läge
       return {
-      id: rovarGastId(r.id, i), namn: q.name, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare', farg: 0x5a5040,
+      id: rovarGastId(r.id, i), namn: q.name, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare',
       ...rovarPlats(q, t), // var och en går för sig (steg 6.6.9)
-      rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : (q.gast?.gor && ROVARHANDLINGAR[q.gast.gor as RovarGor]?.namn) || gor, // var och ens handling (steg 10.2.24) ligger: sk?.ligger,
+      rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : (q.gast?.gor && ROVARHANDLINGAR[q.gast.gor as RovarGor]?.namn) || gor, // var och ens handling (steg 10.2.24)
       fran: klanById(s, r.klan)?.namn,
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` },
         // det hen bär (steg 10.1.8): vapnet i handen och resten, som saker
         ...gastTingOf(s, q).length ? [{ namn: 'Bär', varde: gastTingOf(s, q).map(t => `<span title="${esc(sakNamn(t.k))}${t.hos === q.id ? ' (i handen)' : t.bar === q.id ? ' (på sig)' : ''}">${iconImg(t.k, 12)}</span>`).join(' '), title: 'Vapnen och kläderna hen bär' }] : [],
         ...Object.keys(q.gast?.bar ?? {}).length ? [{ namn: 'Bytet', varde: Object.entries(q.gast!.bar!).map(([k, m]) => `${iconImg(k, 12)}${m > 1 ? m : ''}`).join(' '), title: 'Det hen tagit ur byns förråd' }] : [], // bytet (steg 6.6.11)
         ...q.gast?.anhorig ? [{ namn: 'Hämnas', varde: esc(q.gast.anhorig), title: 'Anhörig till den som hämnas (steg 8.8.4)' }] : []],
-      p: q, liv: livFor(s, r.klan, q.name, q.sex, 'rovare', q.born), blod: q.blod, // anhörig till den som hämnas (steg 8.8.4)
+      p: q, liv: livFor(s, r.klan, q.name, q.sex, 'rovare', q.born)
       };
     });
     });
@@ -82,7 +79,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
   s => s.people.filter(p => p.gast?.sort === 'framling' && gastLever(p)).map(p => {
     const g = p.gast!, k = klanById(s, g.klan);
     return {
-      id: p.id, namn: p.name, sex: p.sex, sort: 'Främling', farg: 0x6a7a4e, ...rovarPlats(p, ui.nu), p, // där hen syns i bilden (steg 10.2.19)
+      id: p.id, namn: p.name, sex: p.sex, sort: 'Främling', ...rovarPlats(p, ui.nu), p, // där hen syns i bilden (steg 10.2.19)
       gor: g.fas === 'pratar' ? 'Pratar med ledaren' : g.fas === 'gar' ? 'Går vidare' : 'På väg mot byn',
       fran: k ? `${k.namn} vid ${k.hem}` : undefined,
       rader: g.tek ? [{ namn: 'Kan', varde: esc(TEK[g.tek]?.namn ?? g.tek), title: 'Det främlingen kan som ingen i byn kan' }] : [],
@@ -93,7 +90,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
   s => s.people.filter(p => p.gast?.sort === 'sandebud' && gastLever(p)).map(p => {
     const g = p.gast!, k = klanById(s, g.klan);
     return {
-      id: p.id, namn: p.name, sex: p.sex, sort: 'Sändebud', farg: 0x7a5a8e, ...rovarPlats(p, ui.nu), p,
+      id: p.id, namn: p.name, sex: p.sex, sort: 'Sändebud', ...rovarPlats(p, ui.nu), p,
       gor: g.fas === 'pratar' ? 'Framför beskedet' : g.fas === 'gar' ? 'Går hem' : 'På väg mot byn',
       fran: k ? `${k.namn} vid ${k.hem}` : undefined,
       rader: [{ namn: 'Besked', varde: g.besked === 'ovanligt' ? '📜 Ovänligt' : '📜 Vänligt', title: 'Beskedet budet bär; det verkar efter samtalet med ledaren' },

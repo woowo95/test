@@ -1,4 +1,4 @@
-import { BUDGET, sederTarget, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { BUDGET, FANG, sederTarget, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, delRad, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -66,7 +66,23 @@ export const styre: Flik = {
 const ordAv = (v: number, ord: string[]) => { const x = Math.max(0, v); return x < 0.05 ? ord[0] : ord[Math.min(ord.length - 1, 1 + Math.floor((x - 0.05) / (0.95 / (ord.length - 1))))]; };
 // tystnaden (steg 10.4.10): vem den gäller och hur hårt
 const tystVarde = (v: number) => v < 0.05 || !s.styre?.tystnad ? 'ingen' : `${s.styre.tystnad.namn} nämns ${v < 0.4 ? 'mer sällan' : v < 0.75 ? 'sällan' : 'nästan aldrig'}`;
-const varde = (k: Pabud, v: number) => k === 'tystnad' ? tystVarde(v) : k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${k === 'vedlager' ? 'ved' : 'mat'} för ${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} år`; // förrådsmålen i år (steg 11.1.65)
+// varje påbuds värde i ord, en rad per påbud (kodgenomgången 283: ett nytt påbud utan egen rad syns som typfel)
+const lager = (k: 'ved' | 'mat') => (v: number) => `${k} för ${num(onskatDygn(k, v))} år`; // förrådsmålen i år (steg 11.1.65)
+const tre = (v: number, ord: [string, string, string]) => v < -0.33 ? ord[0] : v > 0.33 ? ord[2] : ord[1];
+const VARDE: Record<Pabud, (v: number) => string> = {
+  matlager: lager('mat'),
+  vedlager: lager('ved'),
+  torkat: v => `${Math.round(torkAndel(v) * 100)} %`,
+  bygg: v => ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']),
+  vinter: v => ordAv(v, ['som vanligt', 'några fler', 'många fler']),
+  vakt: v => tre(v, ['färre', 'som vanligt', 'fler']),
+  lagskrift: v => v < 0 ? 'inte alls' : ordAv(v, ['knappt', 'ibland', 'gärna', 'mycket gärna']),
+  han: v => tre(v, ['förbjudet', 'ogillas', 'tillåtet']),
+  fangelse: v => v > FANG.galler ? 'ja' : 'nej',
+  tystnad: tystVarde,
+  utfarder: v => tre(v, ['mer sällan', 'som vanligt', 'oftare']),
+};
+const varde = (k: Pabud, v: number) => VARDE[k](v);
 // lagar och påbud ser likadana ut (steg 11.1.29): kort i en och samma lista, med namnet, vad det säger med sitt tal och ett litet
 // ord om det är en lag eller ett påbud. Ett tryck fäller ut resten: straffet och vem som lade fram lagen, och vad ledaren vill mot
 // vad byn själv vill för påbudet

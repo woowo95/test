@@ -352,7 +352,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
   for (const g of gaster()) {
     // i striden på kartan (steg 10.1.14): kämpen är personen, och armen gör slagets rörelse just när ett slag sker (ui/stridbild.ts)
     const gp = s.people.find(q => q.id === g.id && q.gast), kk = gp && kartKampe(s, gp), sl = kk ? slagAv(g.id, ui.nu) : undefined;
-    const r = g.rovare, sk = kk ? { k: kk.k, mot: sl?.mot ?? kk.mot } : undefined, ligger = !!g.ligger || !!kk?.ligger, x = g.x * TS, y = g.y * TS;
+    const r = g.rovare, sk = kk ? { k: kk.k, mot: sl?.mot ?? kk.mot } : undefined, ligger = !!kk?.ligger, x = g.x * TS, y = g.y * TS;
     let rikt = riktning(g.id, g.x, g.y);
     const strid = sk && !ligger ? STRIDBILD[sk.k.vapen as string] ?? STRIDBILD.hand : undefined, ab = strid ? arbetsBild(strid, kk ? (sl ? Math.min(3, Math.floor(sl.andel * 4)) : 0) : slag() - g.id) : undefined;
     if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';

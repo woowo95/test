@@ -105,8 +105,11 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
   if (Math.hypot(dx, dy) > 0.01) h = Math.abs(dx) >= Math.abs(dy) * 0.8 ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
   hallar.set(id, { x, y, h }); sedd.add(id);
   const k = bild?.(h) ?? (art === 'fagel' ? fagelBild(u, h) : djurBild(art, id, h, art === 'kanin' && iIstiden(ageIndex(s, ui.nu)))), c = iconCanvas(k); // fågeln i platsens utseende (steg 6.6.3) // foten nära rutans punkt, mitt under djuret
-  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' || art === 'bjornunge' || art === 'vildsvin' ? 4 : 3) - c.height), 1);
+  const fot = art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' || art === 'bjornunge' || art === 'vildsvin' ? 4 : 3;
+  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + fot - c.height), 1);
+  lador.set(id, { w: c.width, h: c.height, fot }); // bildens mått, för den vita kanten när djuret är markerat
 }
+const lador = new Map<number, { w: number; h: number; fot: number }>();
 // de tama djurens bilder (Björns val, steg 11.14.1): hunden (valpen tills den är vuxen), fåret och geten i tre utseenden efter id:t;
 // de andra har en platshållare (TAMDJUR.ikon)
 const TAMBILD: Record<string, string> = { hund: 'hund', far: 'far', get: 'get' };
@@ -191,6 +194,7 @@ export function drawAnimals() {
   const hons = honsOf(s); // hönsflocken (steg 9.8.10): hönorna runt flockens plats, två höns i varje bild (Björns val, steg 11.14.1)
   if (hons) for (let i = 0; i < hons.n; i++) { const v = i * 2.4, r = 0.4 + (i % 4) * 0.35; const hx = hons.x + Math.cos(v) * r, hy = hons.y + Math.sin(v) * r; if (!KARTBILDER.hons || i % 2 === 0) ritaDjur('fagel', HONS_ID0 + i, hx, hy, riktade, 1, KARTBILDER.hons ? (h => h === 'vast' || h === 'bak' ? 'kb_hons_vast' : 'kb_hons') : undefined); ut.push({ id: HONS_ID0 + i, art: 'fagel', x: hx, y: hy, grupp: -1, tam: 'hons' }); } // de tama djuren (steg 9.8.1): platshållare tills Björn valt i bildstilen
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
+  for (const id of lador.keys()) if (!riktade.has(id)) lador.delete(id);
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna
   if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)), st = s.tornado.storlek ?? 'medel', f = tornadoFot(st); djurIkoner.add(tornadoBild(undefined, st), Math.round(p.x * TS - f.cx), Math.round(p.y * TS - f.fot), 1); } // i sin storlek (steg 6.4.15)
@@ -209,8 +213,8 @@ export function drawAnimals() {
   }
   // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
   // (de tama djuren och hönsflocken markeras på samma sätt, och när musen är över dem; en höna är hela flocken)
-  const kant = (d: SynligtDjur) => { const b = d.art === 'varg' ? { w: 28, h: 19, fot: 5 } : d.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : d.art === 'bjornunge' || d.art === 'vildsvin' ? { w: 25, h: 18, fot: 4 } : d.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : d.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
-    djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(d.x * TS - b.w / 2, d.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); };
+  const kant = (d: SynligtDjur) => { const b = lador.get(d.id); if (!b) return; // runt djurets bild som den ritas just nu
+    djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(Math.round(d.x * TS - b.w / 2) - 1, Math.round(d.y * TS + b.fot - b.h) - 1, b.w + 2, b.h + 2, 3).lineStyle(0); };
   const markerade = new Set<number>();
   for (const id of [ui.tab === 'djur' ? ui.djurId : -1, ui.djurHover]) { if (arHona(id)) honsIdn(hons?.n ?? 0).forEach(q => markerade.add(q)); else markerade.add(id); }
   for (const d of ut) if (markerade.has(d.id)) kant(d);

@@ -13,15 +13,17 @@ export const STRIDANSIKTE = {
 const ARG = new Set(['strid', 'forsvar', 'forsvarRovare', 'hjalpaRovare', 'sla', 'hota', 'ta', 'taBorda', 'larmStrid']);
 const ALLVAR = new Set(['vakt', 'varna', 'patrull', 'motMalet', 'tillRast']);
 const RADD = new Set(['fly', 'gomma', 'baraHem']);
-const senast = new Map<number, number>(); // när var och en senast slogs (bara för bilden)
+// när var och en senast slogs (bara för bilden), per by: varje by numrerar sina personer från 1
+const senastIByn = new WeakMap<State, Map<number, number>>();
 // ansiktet striden ger p just nu, eller undefined när humöret får bestämma. gor = handlingen (rövarens egen för en rövare)
 export function stridAnsikte(s: State, p: Person, gor?: string): 'arg' | 'lugn' | 'radd' | undefined {
   if (gor && RADD.has(gor)) return 'radd';
+  let senast = senastIByn.get(s); if (!senast) senastIByn.set(s, senast = new Map());
   const kk = kartKampe(s, p);
   if (kk || gor && ARG.has(gor)) { senast.set(p.id, s.now); return 'arg'; }
   if (gor && ALLVAR.has(gor)) return 'lugn';
   const t = senast.get(p.id);
-  if (t !== undefined && s.now - t < STRIDANSIKTE.minne) return 'arg';
+  if (t !== undefined && s.now >= t && s.now - t < STRIDANSIKTE.minne) return 'arg';
   if (t !== undefined) senast.delete(p.id);
   return undefined;
 }

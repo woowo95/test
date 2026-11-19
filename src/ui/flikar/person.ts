@@ -625,6 +625,13 @@ const HABIT_GROUPS = () => habitGroups ??= (() => {
 // till Annat (steg 3.10.5)
 const SMA = 0.01;
 let tidVald: string | undefined; // namnet på delen som är markerad med ett tryck
+// musen över en del av tårtan eller en rad: båda lyser och resten bleknar, hur många delar det än är
+if (typeof document !== 'undefined') document.addEventListener('mouseover', e => {
+  const t = e.target instanceof Element ? e.target : null, el = t?.closest<HTMLElement>('.tid [data-i]'), tid = el?.closest('.tid');
+  for (const x of document.querySelectorAll('.tid .peka')) if (x.parentElement?.closest('.tid') !== tid || x.getAttribute('data-i') !== el?.dataset.i) x.classList.remove('peka');
+  for (const d of document.querySelectorAll('.tid.har-peka')) if (d !== tid) d.classList.remove('har-peka');
+  if (el && tid) { tid.classList.add('har-peka'); for (const x of tid.querySelectorAll(`[data-i="${el.dataset.i}"]`)) x.classList.add('peka'); }
+});
 // personens händelser (steg 9.2.108, personlogg.ts): senaste först, med slagets symbol och när det hände; en ihopslagen rad
 // visar alla sina texter när man håller musen över den
 // Händelser (steg 11.1.45 och 11.1.52): det viktiga, framträdandena och matcherna och bytena står här och inte i Översikt
