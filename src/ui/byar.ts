@@ -60,6 +60,15 @@ export async function laggTillTestby(seed: number, dag: number) {
   sattLista([...byarna(), { id, namn: `By ${seed}, år ${dag}`, seed, dag }]);
   await bytTill(id);
 }
+// en by ur en fil (steg 12.1.40, byfil.ts): den läggs sist i listan och väljs, och går vidare från tiden den sparades
+export async function laggTillBy(by: State, namn: string) {
+  ui.byFel = '';
+  const id = `f${by.seed}-${Date.now().toString(36)}`;
+  try { await sparaBy(webbBas, byKey(id), by, { vagg: Date.now() } satisfies Tid); }
+  catch { ui.byFel = 'Byn gick inte att spara i webbläsaren: ta bort en by först.'; return; }
+  sattLista([...byarna(), { id, namn, seed: by.seed, dag: Math.floor((by.now - by.founded) / DAY) }]);
+  await bytTill(id);
+}
 export function taBort(id: string) {
   if (id === ui.annanBy) return; // den valda byn tas inte bort; byt först
   gammalNyckel(byKey(id)).glom(); void webbBas.taBort(byKey(id)).catch(() => { /* ignoreras */ });
@@ -78,6 +87,6 @@ export async function testbyIAdressen() {
 export function byarHtml() {
   const rad = (id: string | undefined, namn: string) => `<li${id === ui.annanBy ? ' class="vald"' : ''}><button type="button" class="ghost" data-by="${id ?? ''}" ${id === ui.annanBy ? 'aria-pressed="true"' : ''}>${id === ui.annanBy ? '▸ ' : ''}${esc(namn)}</button>${id && id !== ui.annanBy ? `<button type="button" class="ghost" data-bort="${id}" title="Ta bort byn ur listan">✕</button>` : ''}</li>`;
   return `<ul class="byar">${rad(undefined, 'Den egna byn')}${byarna().map(b => rad(b.id, b.namn)).join('')}</ul>`
-    + (ui.testMode ? `<div class="nyTestby"><input id="tbFro" inputmode="numeric" placeholder="Frö" size="6"><input id="tbDag" inputmode="numeric" placeholder="År" size="4"><button type="button" class="ghost" id="tbLagg" title="Lägg till en by ur testerna, räknad fram till året">+ By ur testerna</button></div>` : '')
+    + (ui.testMode ? `<div class="nyTestby"><input id="tbFro" inputmode="numeric" placeholder="Frö" size="6"><input id="tbDag" inputmode="numeric" placeholder="År" size="4"><button type="button" class="ghost" id="tbLagg" title="Lägg till en by ur testerna, räknad fram till året">+ By ur testerna</button><button type="button" class="ghost" id="byfilSpara" title="Spara byn som den är just nu till en fil" aria-label="Spara byn till en fil">⤓</button><button type="button" class="ghost" id="byfilLas" title="Läs in en by ur en fil, som en ny by i listan" aria-label="Läs in en by ur en fil">⤒</button></div>` : '')
     + (ui.byFel ? `<p class="muted">${esc(ui.byFel)}</p>` : '');
 }

@@ -20,7 +20,8 @@ import { renderRaden } from './ui/raden';
 import { renderPorts, startFollow, stopFollow } from './ui/portratt';
 import { gaster, rovarGastId } from './ui/gaster';
 import { catchUp, ikapp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
-import { aktivBy, byarHtml, byte, bytTill, laggTillTestby, taBort, testbyIAdressen } from './ui/byar';
+import { aktivBy, byarHtml, byte, bytTill, laggTillBy, laggTillTestby, taBort, testbyIAdressen } from './ui/byar';
+import { laddaNer, lasByfil, listnamn, valjFil } from './ui/byfil';
 import './ui/interaktion';
 import './ui/ram';
 import './ui/symboler'; // emojierna blir pixelsymboler (steg 5.3.2.1)
@@ -183,6 +184,13 @@ $('byar').addEventListener('click', async e => {
   if (b.id === 'tbLagg') {
     const fro = Number(($('tbFro') as HTMLInputElement).value), dag = Number(($('tbDag') as HTMLInputElement).value);
     await laggTillTestby(fro, dag); renderByar(); return;
+  }
+  if (b.id === 'byfilSpara') { laddaNer(s); return; } // byn som fil (steg 12.1.40, ui/byfil.ts)
+  if (b.id === 'byfilLas') {
+    const txt = await valjFil();
+    if (!txt) return;
+    try { const by = lasByfil(txt); await laggTillBy(by, listnamn(by)); } catch { ui.byFel = 'Filen gick inte att läsa som en by.'; }
+    renderByar(); return;
   }
   if (b.dataset.by !== undefined) { await bytTill(b.dataset.by || undefined); renderByar(); }
 });

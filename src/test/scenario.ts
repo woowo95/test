@@ -24,6 +24,7 @@ import './scenarier/kultur';
 import './scenarier/fas9';
 import './scenarier/fas10';
 import './scenarier/fas11';
+import './scenarier/felsok'; // verktygen för att hitta felen (steg 12.1.40–12.1.44)
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
