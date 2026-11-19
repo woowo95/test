@@ -18,7 +18,7 @@ export function ritaSlagen(gr: PIXI.Graphics, nu: number, TS: number) {
 }
 
 // djuret i en strid på kartan (steg 10.1.17–10.1.18): platsen, om det ligger, och den det slår mot
-export function djuretNu(art: 'bjorn' | 'varg', id: number, _nu?: number) {
+export function djuretNu(art: 'bjorn' | 'varg', id: number) {
   // striden på kartan (steg 10.1.17–10.1.18): djuret står där kämpen står
   for (const g of s.kartStrider ?? []) {
     const d = g.djur?.find(q => q.art === art && q.id === id);

@@ -20,6 +20,10 @@ function levande(d: { art: string; id: number }) {
   const c = iconCanvas(k), sk = Math.max(1, Math.min(4, Math.floor(64 / Math.max(c.width, c.height))));
   return `<img class="ikon" src="${c.toDataURL()}" width="${c.width * sk}" height="${c.height * sk}" alt="" style="image-rendering: pixelated">`;
 }
+// rutornas rader: symbolen och värdet med texten när musen är över, jämförelsen med de flesta av arten och procenten
+const rd = (sym: string, text: string, inre: string) => `<dt title="${esc(text)}">${sym}</dt><dd title="${esc(text)}">${inre}</dd>`;
+const jfr = (v: number, bas: number) => v > bas * 1.08 ? 'mer än de flesta' : v < bas * 0.92 ? 'mindre än de flesta' : 'som de flesta';
+const pr = (v: number) => `${Math.round(v * 100)} %`;
 // ett tamt djur (hund, får eller get, steg 9.8.1): porträttet, och raderna med samma etiketter i ord som de vilda djuren (steg 11.1.59:
 // Ålder, Mättnad, Vätska, Ägare, och Lojalitet, Ull, Mjölk och Plats); texten kommer fram när man håller musen över raden.
 // Allt läses ur simuleringens värden (tamAlder, hagen och fähusen); inget räknas om här
@@ -27,7 +31,7 @@ function tamHtml() {
   const d = (s.tamdjur ?? []).find(x => x.id === ui.djurId && x.dog === undefined);
   if (!d) return '<p class="muted">Djuret finns inte längre.</p>';
   const a = TAMDJUR[d.art], alder = Math.floor(tamAlder(s, d)), q = byId(s, d.agare), hage = hageById(s, d.hage), fahus = d.fahus !== undefined ? fahusOf(s).find(h => h.id === d.fahus) : undefined;
-  const ho = hage ? hoI(s, hage) : undefined, pr = (v: number) => `${Math.round(v * 100)} %`, rd = (sym: string, text: string, inre: string) => `<dt title="${esc(text)}">${sym}</dt><dd title="${esc(text)}">${inre}</dd>`;
+  const ho = hage ? hoI(s, hage) : undefined;
   const plats = fahus ? rd('Plats', 'Står i fähuset under istiden', 'Fähuset') : hage ? rd('Plats', ho ? `Går i hagen och betar. Vattenhon har ${ho.vatten ?? 0} av ${HO.rymmer} vatten` : hageVidVatten(s, hage) ? 'Går i hagen och betar, och dricker vid stranden' : 'Går i hagen och betar', `Hagen ${hage.w} × ${hage.h}${ho ? ` · ${ho.vatten ?? 0}/${HO.rymmer}` : ''}`) : rd('🍃', 'Går lös och betar där det finns bete', 'Lös');
   return `
     <div class="phead">${levande({ art: a.ikon, id: d.id })}<div><h2>${esc(tamNamn(d))}</h2></div></div>
@@ -45,7 +49,7 @@ function tamHtml() {
 }
 // djurets egenskaper (steg 10.10.29): styrka och snabbhet (bara dragdjuren, där de ger lasset och farten), tålighet, mod och tamhet; stapeln är full för den bästa av arten, och texten kommer fram när man håller musen över raden
 function egRader(e: { styrka: number; snabbhet: number; talighet: number; mod: number; tamhet: number }, bas: typeof e, drag: boolean) {
-  const topp = 1 + INDIVID.spann, jfr = (v: number, b: number) => v > b * 1.08 ? 'mer än de flesta' : v < b * 0.92 ? 'mindre än de flesta' : 'som de flesta';
+  const topp = 1 + INDIVID.spann;
   // samma etiketter i ord som de vilda djuren (steg 11.1.59); styrkan och snabbheten mot artens bästa
   const r = (namn: string, k: keyof typeof e, text: string) => { const v = k === 'mod' ? e.mod : e[k] / (bas[k] * topp), bast = k === 'styrka' || k === 'snabbhet'; return rad(namn, v, bast ? `${Math.round(v * 100)} % av artens bästa` : `${Math.round(e[k] / bas[k] * 100)} %`, `${text}, ${jfr(e[k], bas[k])} av arten`, 'skill'); };
   return (drag ? r('Styrka', 'styrka', 'Styrka: hur tungt lass släden tar') + r('Snabbhet', 'snabbhet', 'Snabbhet: hur fort släden går') : '')
@@ -57,7 +61,6 @@ function honsHtml() {
   const h = honsOf(s);
   if (!h) return '<p class="muted">Hönsen finns inte längre.</p>';
   const q = byId(s, h.agare), agg = iIstiden(kalender(s).ai) ? 0 : h.n * HONS.agg * (DAY / HOUR);
-  const rd = (sym: string, text: string, inre: string) => `<dt title="${esc(text)}">${sym}</dt><dd title="${esc(text)}">${inre}</dd>`;
   return `
     <div class="phead">${levande({ art: 'fagel', id: HONS_ID0 })}<div><h2>Höns</h2></div></div>
     <dl class="kv">
@@ -73,8 +76,6 @@ function djurHtml() {
   if (!d) return '<p class="muted">Djuret syns inte längre här.</p>';
   const art = stridOf(d.art), drag = dragOf(d.art, d.id), h = halsaOf(s, d.id), g = d.art === 'kanin' ? grupperOf(s, ui.nu).find(x => x.id === d.grupp) : FLOCKARTER[d.art] ? flockGrupper(s, FLOCKARTER[d.art], ui.nu).find(x => x.id === d.grupp) : d.art === 'fagel' ? fagelFlockar(s, ui.nu).find(x => x.id === d.grupp) : undefined;
   const f = d.art === 'varg' ? s.vargar?.find(x => x.id === d.grupp) : undefined, topp = 1 + INDIVID.spann;
-  const jfr = (v: number, bas: number) => v > bas * 1.08 ? 'mer än de flesta' : v < bas * 0.92 ? 'mindre än de flesta' : 'som de flesta';
-  const pr = (v: number) => `${Math.round(v * 100)} %`;
   return `
     <div class="phead">${levande(d)}<div><h2>${esc(art.art)}</h2></div></div>
     <dl class="kv">
@@ -88,7 +89,7 @@ function djurHtml() {
       ${rad('Tamhet', 0, '0 %', 'Ett vilt djur är inte tamt alls', 'skill')}
       ${f ? rad('Mättnad', 1 - f.hunger, pr(1 - f.hunger), 'Flockens mättnad: full stapel är mätt. En hungrig flock jagar harar, smyger till förrådet på natten och kan anfalla den som är ensam', f.hunger > 0.6 ? 'low' : '') : ''}
       ${f ? `<dt>Flock</dt><dd title="${esc(f.vargar.length > 1 ? `Flocken har ${f.vargar.length} vargar${f.vargar[0] === d.id ? '. Den här är ledarvargen' : ''}` : 'En ensam varg')}"><span>${f.vargar.length} ${f.vargar.length === 1 ? 'varg' : 'vargar'}</span></dd>` : ''}
-      ${g ? `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar'} just nu"><span>${g.n} ${FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar'}</span></dd>` : ''}
+      ${g ? (gr => `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${gr} just nu"><span>${g.n} ${gr}</span></dd>`)(FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar') : ''}
     </dl>`;
 }
 export const djur: Flik = { namn: 'Djuret', knapp: 'person', html: djurHtml };

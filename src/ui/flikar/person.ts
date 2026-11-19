@@ -1,6 +1,6 @@
 import { areaCenter, larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { vana, pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, arvAnseende, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
+import { vana, pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, arvAnseende, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
 import { figurSvg, portrattImg } from '../folkbild';
 import { FARGER, farg } from '../../palett';
@@ -8,7 +8,7 @@ import { skapad } from '../utseende';
 import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { framstegSvg, ringSvg, tartFarg, tartSvg, vagSvg } from '../framsteg';
 import { gravidDel, gravidKvar } from '../../sim/steg';
-import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, kvKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, kvKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD, opOrd, tioSkala, varorSym } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { pliktDelar, VANA_AR } from '../../sim';
@@ -96,16 +96,16 @@ const flikRad = (delar: PFlik[], del: PFlik, p: Person) => `<div class="pdelar" 
 // en flik med bara en del (steg 11.1.44): ingen delrubrik, flikens namn står som rubrik och delen är alltid utfälld
 const ensamDel = (f: PFlik, html: string) => `<h3 class="flikrub">${esc(f.namn)}</h3><div class="delinne">${html}</div>`;
 const DELAR: Del[] = [
-  { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml, kort: p => `${Math.floor(ageOf(p, s.now))} år · ${esc(yrkeNamn(s, p) ?? '–')}`, gast: gastPres },
+  { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml, gast: gastPres },
   { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, kort: p => moodWord(moodOf(p, s.now)) },
-  { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, kort: halsaKort },
-  { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort },
+  { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml },
+  { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml },
   { id: 'liv', tecken: '🍃', namn: 'Livet', html: livet, kort: p => { const n = p.upp?.length ?? 0; return n ? `${n} ${n === 1 ? 'upplevelse' : 'upplevelser'}` : 'Inget ännu'; } }, // barndomen och vuxenlivet (steg 11.1.45)
   { id: 'hand', tecken: '📜', namn: 'Händelser', html: handHtml, kort: p => { const n = personRader(s, p).length; return n ? `${n} ${n === 1 ? 'händelse' : 'händelser'}` : 'Inget ännu'; } }, // steg 9.2.108
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml, kort: tidKort, gast: gastTid },
   { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => gearHtml(p), kort: p => { const u = utrustning(s, p, false), n = PLATS_LIST.filter(k => u[k].ting).length; return n ? `${n} på sig` : 'Inget på sig'; } },
   { id: 'form', tecken: '💰', namn: 'Förmögenhet', html: formogenhetLista, kort: p => String(Math.round(formogenhetDelar(s, p.id).sum)) },
-  { id: 'kun', tecken: '🧠', namn: 'Kunskap', html: knowledgeHtml, kort: p => { const n = Object.values(p.tek ?? {}).filter(v => v >= 1).length; return n === 1 ? '1 teknik' : `${n} tekniker`; }, gast: gastKun },
+  { id: 'kun', tecken: '🧠', namn: 'Kunskap', html: knowledgeHtml, gast: gastKun },
   { id: 'rel', tecken: '👥', namn: 'Relationer', html: relHtml, kort: p => { const n = s.people.filter(q => q.id !== p.id && alive(q) && s.rels[relKey(p.id, q.id)]).length; return `känner ${n}`; }, gast: gastRel },
   { id: 'ryk', tecken: '🗣️', namn: 'Rykten', html: ryktenHtml, kort: p => { const a = anseendeSym(s, p.id); return a === '😇' ? 'Gott anseende' : a === '😈' ? 'Dåligt anseende' : a ? 'Blandat anseende' : 'Inget rykte'; } },
 ];
@@ -125,10 +125,6 @@ function halsaKort(p: Person) {
   const n = skadeLista(p, s.now).length, l = halsaLage(p, s.now);
   const lage = l === 'svalt' ? 'svälter' : l === 'frys' ? 'fryser' : l === 'torst' ? 'törstar' : l === 'laker' ? 'läker' : '';
   return [n ? `${n} ${n === 1 ? 'skada' : 'skador'}` : '', lage, gravidText(p)].filter(Boolean).join(' · ') || 'Frisk';
-}
-function egenKort(p: Person) {
-  const k = STATS.slice().sort((a, b) => stat(p, b, s.now) - stat(p, a, s.now))[0];
-  return k ? `Bäst: ${STAT_NAMES[k].toLowerCase()}` : '';
 }
 function tidKort(p: Person) {
   const tot = habitTotal(p) - vana(p, 'sova');
@@ -153,7 +149,7 @@ function gastPres(g: Gast) {
 // bytena hen var med i (steg 4.5.4.17), de senaste först: vem som gav vad, som symboler. Handslaget visar hela bytet
 function bytenHtml(b: ByteMinne[] | undefined) {
   if (!b?.length) return '';
-  const sida = (namn: string, v: ByteMinne['ag']) => `${esc(namn)} ${v.map(w => `<span title="${esc(`${w.n} ${sakNamn(w.k).toLowerCase()}`)}">${iconImg(w.k, 12)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–'}`;
+  const sida = (namn: string, v: ByteMinne['ag']) => `${esc(namn)} ${varorSym(v, 12)}`;
   return `<h3>Byten</h3><ul class="fame">${b.slice().reverse().map(m => `<li><span class="muted">${esc(clockTxt(m.t))}</span> ${m.avbruten ? `${esc(m.an)} {sym_nej} ${esc(m.bn)}` : `${sida(m.an, m.ag)} ⇄ ${sida(m.bn, m.bg)}`}${byteKnapp(m.nr)}</li>`).join('')}</ul>`;
 }
 // relationerna: familjen i hemklanen (de levande först)
@@ -165,7 +161,6 @@ function gastRel(g: Gast) {
 }
 // en relation mellan en gäst och en bybo (steg 4.5.7.11, gastrel.ts): ordet för vad de tycker, irritationen och lurendrejeriet,
 // och vid musen hur mycket handlaren gillar bybon
-const opOrd = (op: number) => op > REL.naraVan ? 'Nära vän' : op > REL.vanOrd ? 'Vän' : op > REL.osams ? 'Bekant' : op > REL.ovan ? 'Ogillar' : 'Ovän';
 function gastRelRad(namn: string, r: GastRel, g?: number, gast?: boolean, klan?: string) {
   const mer = [r.irr > 0.05 ? 'irriterad' : '', r.lurad ? `lurade bybon ${r.lurad} ${r.lurad === 1 ? 'gång' : 'gånger'}` : '', r.lurat ? `blev lurad ${r.lurat} ${r.lurat === 1 ? 'gång' : 'gånger'}` : ''].filter(Boolean).join(', ');
   const title = `${opOrd(r.op)}${g === undefined ? '' : `. Handlaren ${g > 0.25 ? 'gillar' : g < -0.25 ? 'ogillar' : 'har inget särskilt emot'} bybon${g > 0.25 ? ' och kräver lite mindre' : g < -0.25 ? ' och kräver mer' : ''}`}`;
@@ -245,8 +240,7 @@ function formogenhetLista(p: Person) {
     <table class="agtab"><thead><tr><th></th><th>Sak</th><th class="tal">Antal</th><th>Kvalitet</th><th title="Hur mycket som är kvar innan den är utsliten">Skick</th><th class="tal" title="Värde, ungefär i arbetstimmar">${vag}</th></tr></thead><tbody>${rader.map(r => `<tr><td>${r.ikon}</td><td>${esc(r.namn)}</td><td class="tal">${r.n}</td><td>${r.kv}</td><td>${r.c === undefined ? '' : hallCirkel(r.c)}</td><td class="tal" title="Värde, ungefär i arbetstimmar">${v(r.varde)}</td></tr>`).join('')}</tbody></table>`;
 }
 // egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras
-const SKALA = 2;
-const visa = (v: number, d = 1) => { const x = v / SKALA; return Number.isInteger(x) ? String(x) : num(x, d); };
+const visa = tioSkala;
 // det en upplevelse gjorde med egenskaperna (steg 3.1.2, uppvaxt.ts), till exempel "Mod −1, Uthållighet +0,5"
 const plusMinus = (v: number) => (v > 0 ? '+' : '−') + visa(Math.abs(v));
 const effektText = (e: Partial<Record<Stat, number>>) => (Object.entries(e) as [Stat, number][]).map(([k, v]) => `${STAT_NAMES[k]} ${plusMinus(v)}`).join(', ');
@@ -300,13 +294,12 @@ function behovHtml(p: Person) {
     ...p.warm > KROPP.extremVarm ? [{ namn: 'Slut av hettan', v: -KROPP.varmTrott * (p.warm - 1) }] : []]; // samma delar som needsStep i steg.ts
   const hl = halsaLage(p, now);
   const halsaDelar: Orsak[] = [...hl === 'svalt' ? [{ namn: 'Svälter', v: -1 / KROPP.svaltTim }] : hl === 'frys' ? [{ namn: 'Fryser farligt', v: -1 / KROPP.frysTim }] : hl === 'torst' ? [{ namn: 'Törstar ihjäl', v: -1 / TORST.tomTim }] : hl === 'laker' ? [{ namn: 'Mätt, otörstig och frisk: läker', v: 1 / KROPP.lakerTim }] : [],
-    ...sickNow(p) && !p.sjuk ? [{ namn: p.sickWhy ?? 'Sjuk', v: -1 / KROPP.sjukTim }] : [], // den gamla klockan; en sjukdom ur registret tar inte hälsan (steg 9.5.2)
     // kroppen (steg 2.5.1): blodet som rinner ut, och det som håller hälsan nere
     ...blodning(p) > 0 ? [{ namn: 'Blöder', v: -blodning(p) }] : [],
     ...skorbjugg(p) > 0 ? [{ namn: 'Skörbjugg (brist på vitaminer)', v: -skorbjugg(p) }] : []];
   const vatska = rad(p, 'torst', 'Vätska', `${bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst))}<span>${Math.round(p.torst * 100)} %</span>`, torstRad(p), ' % per timme', 'Att dricka fyller den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.');
   const skador = [...skadeText(p, now), ...(p.blod ?? 1) < 1 ? [`Har förlorat ${Math.round((1 - (p.blod ?? 1)) * 100)} % av blodet`] : [], ...smarta(p) > HALSA.ontGrans ? ['Har ont'] : []];
-  return `${sickNow(p) ? `<p class="why">${p.sjuk ? esc(sjukText(p)) : `${esc(p.sickWhy ?? 'Sjuk')}, ${durTxt(p.sickUntil! - now)} kvar`}</p>` : ''}<dl class="kv">
+  return `${sickNow(p) && p.sjuk ? `<p class="why">${esc(sjukText(p))}</p>` : ''}<dl class="kv">
       ${rad(p, 'humor', 'Humör', `${bar(m, '', trend(p, 'humor', m))}<span>${moodWord(m)}</span>`, humor, '', 'Tankarna försvinner med tiden.')}
       ${rad(p, 'hunger', 'Mättnad', bar(p.hunger, '', trend(p, 'hunger', p.hunger)), [{ namn: 'Hungern växer', v: -1 / KROPP.hungerTim * (a < ALDER.matBarn ? KROPP.hungerBarn : 1) }], ' % per timme', 'Maten hen äter höjer den. Mättnaden är en sammanfattning av näringen (fliken Hälsa).')}
       ${vatska}
@@ -637,7 +630,7 @@ if (typeof document !== 'undefined') document.addEventListener('mouseover', e =>
 // Händelser (steg 11.1.45 och 11.1.52): det viktiga, framträdandena och matcherna och bytena står här och inte i Översikt
 function handHtml(p: Person) {
   const r = personRader(s, p);
-  const extra = `${forrHtml(p)}${p.fame.length ? `<h3>Viktiga händelser</h3><ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : ''}
+  const extra = `${forrHtml(p)}${p.fame.length ? `<h3>Viktiga händelser</h3><ul class="fame">${p.fame.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
       ${fritidLista({ person: p.id }) ? `<h3>Framträdanden och matcher</h3>${fritidLista({ person: p.id, antal: 8 })}` : ''}${bytenHtml(p.byten)}`;
   if (!r.length) return '<p class="muted">Inget särskilt har hänt ännu.</p>' + extra;
   return extra + `<h3>Dag för dag</h3><ul class="fame phand">${r.map(x => `<li${x.alla.length > 1 ? ` title="${esc(x.alla.join(' '))}"` : ''}><span title="${esc(PERSONLOGG[x.k].namn)}">${PERSONLOGG[x.k].ikon}</span> <span class="muted">${esc(clockTxt(x.t))}</span> ${esc(x.text)}</li>`).join('')}</ul>`;

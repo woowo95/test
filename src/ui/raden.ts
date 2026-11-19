@@ -9,6 +9,7 @@ import { s, ui } from './lage';
 import { renderPanel, visa } from './panel';
 import { talVal } from './flikar/tal';
 import { harNotiser, notisHtml, notisKlick, notisKnapp, notisTitel, notisVal } from './notiser';
+import { bildDuk } from './bildduk';
 
 interface Ruta {
   html(t: number): string; // symbolen och talet
@@ -67,10 +68,7 @@ export function renderRaden(t = ui.nu) {
 
 // vågbandet (Björns ja till g_vag): rutan på 8 × 7 punkter upprepas över hela bredden, i hel skala, på grundens beige
 {
-  const V = GUI.vag, c = document.createElement('canvas'); c.width = V.w; c.height = V.h;
-  const g = c.getContext('2d')!;
-  g.fillStyle = V.bg; g.fillRect(0, 0, V.w, V.h);
-  V.rader.forEach((rad, y) => [...rad].forEach((k, x) => { const f = V.pal[k]; if (f) { g.fillStyle = f; g.fillRect(x, y, 1, 1); } }));
+  const V = GUI.vag, c = bildDuk(V, { bakgrund: V.bg });
   const rot = document.documentElement.style;
   rot.setProperty('--vag', `url(${c.toDataURL()})`); rot.setProperty('--vag-h', `${V.h}px`);
 }

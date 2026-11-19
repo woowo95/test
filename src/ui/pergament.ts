@@ -10,6 +10,7 @@ import { hash3 } from '../sim/slump';
 import { farg } from '../palett';
 import { VK, VarldBild, ritaTecken, lager, huvudbynsPlats, RYKTFARG, BLEKFARG, RAMFARG, LEDFARG } from './varldbild';
 import { ledKlass } from '../sim';
+import { rgb255 } from './pixel';
 
 // ett tecken: rader där o = bläck, a = fyllning, b = ljus sida, c = skuggsida (punkt = inget)
 type Glyf = string[];
@@ -42,7 +43,7 @@ const PAPPER = { mork: farg('ben', 1), mitt: farg('ben', 2), ljus: farg('ben', 3
 const VATTEN = { botten: farg('skiffer', 3), vag: farg('skiffer', 2), eko: farg('skiffer', 2), flod: farg('skiffer', 1) };
 const BLACK = farg('kol', 1);
 const KUST = 1, EKO = 4; // kustens bläck är punkterna närmast landet, ekot så långt ut i havet
-const rgb = (hex: string) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+const rgb = rgb255;
 
 // ett mjukt brus mellan 0 och 1 ur världens frö, i punkter med rutnätet s
 function brus(fro: number, x: number, y: number, s: number, salt: number) {

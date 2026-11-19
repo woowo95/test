@@ -9,6 +9,7 @@
 import * as PIXI from 'pixi.js';
 import { iconCanvas } from '../ikoner';
 import { FARGER, MORKARE, LITE_MORKARE } from '../palett';
+import { platt } from './pixel';
 
 // ---------- bilderna med och utan sin egen skugga ----------
 // en ikon på kartan: de halvgenomskinliga punkterna (den ritade skuggan) tas bort ur bilden och blir skuggan
@@ -108,8 +109,6 @@ void main() {
   }
   gl_FragColor = vec4(o * c.a, c.a);
 }`;
-const rgb = (h: string) => { const n = parseInt(h.slice(1), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
-const platt = (fs: readonly string[]) => new Float32Array(fs.flatMap(rgb));
 let rt: PIXI.RenderTexture | undefined, rtTak: PIXI.RenderTexture | undefined;
 let filter: PIXI.Filter | undefined; // görs först i webbläsaren (testerna läser träden utan att rita)
 const skuggFilter = () => filter ??= new PIXI.Filter(undefined, FRAG, {

@@ -16,11 +16,12 @@ export function durTxt(ms: number) {
   return h >= 24 ? `${num(h / 24)} år` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
 }
 // året och tidsstaven i sidhuvudet har samma förklaring (steg 11.1.5): kopplingen till den riktiga klockan, dagen i tidsåldern och klockan
+const klSlag = (t: number) => { const d = new Date(t); return `kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 export function tidForklaring(t: number) {
-  const k = kalender(s, t), d = new Date(t);
-  return `${timeLabel(s, t)}, dag ${k.dag} av ${k.av}, kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}.\nEtt år i spelet är ett dygn i verkligheten, och en tidsålder är en vecka.`;
+  const k = kalender(s, t);
+  return `${timeLabel(s, t)}, dag ${k.dag} av ${k.av}, ${klSlag(t)}.\nEtt år i spelet är ett dygn i verkligheten, och en tidsålder är en vecka.`;
 }
-export function clockTxt(t: number) { const d = new Date(t); return `${timeLabel(s, t)}, kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+export function clockTxt(t: number) { return `${timeLabel(s, t)}, ${klSlag(t)}`; }
 
 // färger
 export function hsl(h: number, sat: number, l: number) {
@@ -31,7 +32,6 @@ export function hsl(h: number, sat: number, l: number) {
 export const cssFarg = (c: number) => '#' + c.toString(16).padStart(6, '0');
 // personens egen färg, blekare när hen sover (figuren på kartan), och samma som css
 export const personFarg = (p: Person, sover = false) => hsl(p.hue, sover ? 0.15 : 0.5, sover ? 0.5 : 0.58);
-export const hex = (p: Person) => cssFarg(personFarg(p));
 
 // staplar
 // en stapel i tio rutor (steg 5.3.2.4, som personrutan i bildstilen): en ruta lyser för var tionde del, avrundat
@@ -53,8 +53,6 @@ export const condBar = (c: number) => bar(c, c < LAG.skick ? 'low' : '');
 const oppna = new Set<string>();
 // en berättelse som fälls ut (steg 11.1.3): boksymbolen i stället för ?-knappen, som bara är till för förklaringar
 export const berattelseKnapp = (id: string, title: string) => `<button type="button" class="hjalp bok" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">${tecknet('berattelse', '📜', 14)}</button>`;
-// fler rader som visas vid ett tryck (steg 11.1.3): "▸ Visa N till"
-export const merKnapp = (id: string, n: number) => `<button type="button" class="lank falla mer" ${fallUt(id)}>${oppna.has(id) ? 'Visa färre' : `Visa ${n} till`}</button>`;
 // delraden överst i en flik (steg 11.1.25): symbolen med namnet under, som runstenarna, så att ingen rubrik behöver upprepa delens
 // namn. attr = attributet som väljer delen (data-sdel, data-odel …)
 export const delRad = (attr: string, delar: readonly { id: string; tecken: string; namn: string }[], vald: string) =>
@@ -115,8 +113,18 @@ export function relWord(p: Person, q: Person, op: number) {
   if (isParent(p, q)) return 'Barn';
   if (isParent(q, p)) return 'Förälder';
   if ((p.mother !== undefined && p.mother === q.mother) || (p.father !== undefined && p.father === q.father)) return 'Syskon';
-  return op > REL.naraVan ? 'Nära vän' : op > REL.vanOrd ? 'Vän' : op > REL.osams ? 'Bekant' : op > REL.ovan ? 'Ogillar' : 'Ovän';
+  return opOrd(op);
 }
+// vad man tycker om någon i ett ord (relWord utan släkten)
+export const opOrd = (op: number) => op > REL.naraVan ? 'Nära vän' : op > REL.vanOrd ? 'Vän' : op > REL.osams ? 'Bekant' : op > REL.ovan ? 'Ogillar' : 'Ovän';
+// egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5 och 11.1.47): bara visningen ändras
+export const tioSkala = (v: number, d = 1) => { const x = v / 2; return Number.isInteger(x) ? String(x) : num(x, d); };
+// en stapel från mitten, −1 till 1 (sederna, hållningen och anseendet); cls = klasserna efter sbar
+export const mittStapel = (v: number, cls = '') => { const w = Math.round(Math.min(1, Math.abs(v)) * 50); return `<span class="sbar${cls}"><span style="${v >= 0 ? `left:50%;width:${w}%` : `left:${50 - w}%;width:${w}%`}"></span></span>`; };
+// pilen med ändringen från a till b (minustecknet är −, steg 11.1.60); lika = det som står när inget ändrats
+export const andring = (a: number, b: number, lika = '=') => { const d = b - a; return d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} −${-d}` : lika; };
+// varorna som symboler med antalet, och namnet när musen är över
+export const varorSym = (v: readonly { k: string; n: number }[], storlek = 14) => v.map(w => `<span title="${esc(`${w.n} ${sakNamn(w.k).toLowerCase()}`)}">${iconImg(w.k, storlek)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–';
 export const sickNow = (p: Person) => isSick(p, s.now);
 // det behov som är lägst (steg 11.1.43): av mat, värme, hälsa och humör under sin gräns det som ligger längst under, och dess
 // symbol står vid namnet i stället för ett utropstecken. Gränserna är desamma som förut (LAG och KROPP.svag)
@@ -150,8 +158,8 @@ export const ansTecken = (a: string, px = 16) => tecknet(ANS_IKON[a] ?? '', a, p
 // knappt är känd står nära mitten (ANS_KAND läggs till ryktbarheten)
 const ANS_KAND = 3;
 export function ansStapel(om: number) {
-  const { r, a } = anseende(s, om), v = clamp(a / (r + ANS_KAND), -1, 1), w = Math.round(Math.abs(v) * 50);
-  return `<span class="sbar ans${v < 0 ? ' neg' : ''}"><span style="${v >= 0 ? `left:50%;width:${w}%` : `left:${50 - w}%;width:${w}%`}"></span></span>`;
+  const { r, a } = anseende(s, om), v = clamp(a / (r + ANS_KAND), -1, 1);
+  return mittStapel(v, ` ans${v < 0 ? ' neg' : ''}`);
 }
 // en stack i en lista: symbolen och namnet. Ett påbörjat redskap har det det ska bli med timglaset bredvid
 // kvaliteten (steg 2.2.2): nivån och vad den gör jämfört med en normal sak, för texten när musen är över märket (kvSvg)
@@ -204,11 +212,10 @@ export function linkify(l: LogEntry) {
   for (const b of bitar.sort((a, b) => a.i - b.i)) { ut += esc(txt.slice(fran, b.i)) + pLink(b.p); fran = b.i + b.n; }
   return ut + esc(txt.slice(fran)) + (l.byte ? byteKnapp(l.byte.nr) : l.bnr !== undefined ? byteKnapp(l.bnr) : '') + (l.fram ? framKnapp(l.fram) : '') + (l.match ? matchKnapp(l.match) : '') + (l.resa ? resaKnapp(l.resa) : '');
 }
-// knappen som visar hela bytet (steg 4.5.4.17): i loggen och bland en persons byten. Trycket tas om hand i flikar/filt.ts
-// knappen som visar hela framträdandet (steg 5.4.7.1): i loggen och i notisen. Trycket tas om hand i flikar/fram.ts
-// knappen som visar hela matchen (steg 5.4.8.1), som framKnapp. Trycket tas om hand i flikar/match.ts
-export const matchKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-match="${nr}" title="Visa hela matchen" aria-label="Visa hela matchen">${iconImg('boll', 14)}</button>`;
-export const framKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-fram="${nr}" title="Visa hela framträdandet" aria-label="Visa hela framträdandet">${iconImg('scen', 14)}</button>`;
-// knappen som visar hela resan (steg 11.5.13): redogörelsen med dagboken och delningen. Trycket tas om hand i flikar/resa.ts
-export const resaKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-resa="${nr}" title="Visa hela resan" aria-label="Visa hela resan">🎒</button>`;
-export const byteKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-byte="${nr}" title="Visa hela bytet" aria-label="Visa hela bytet">${iconImg('handslag', 14)}</button>`;
+// knappen som visar en hel redogörelse: bytet (steg 4.5.4.17; i loggen och bland en persons byten), framträdandet (steg 5.4.7.1)
+// och matchen (steg 5.4.8.1; i loggen och i notisen) och resan (steg 11.5.13). Trycket tas om hand av redogKlick (notiser.ts) i fliken
+const redogKnapp = (slag: string, nr: number, text: string, sym: string) => ` <button type="button" class="byteknapp" data-${slag}="${nr}" title="${text}" aria-label="${text}">${sym}</button>`;
+export const matchKnapp = (nr: number) => redogKnapp('match', nr, 'Visa hela matchen', iconImg('boll', 14));
+export const framKnapp = (nr: number) => redogKnapp('fram', nr, 'Visa hela framträdandet', iconImg('scen', 14));
+export const resaKnapp = (nr: number) => redogKnapp('resa', nr, 'Visa hela resan', '🎒');
+export const byteKnapp = (nr: number) => redogKnapp('byte', nr, 'Visa hela bytet', iconImg('handslag', 14));

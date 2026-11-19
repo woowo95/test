@@ -4,9 +4,18 @@
 // gäller en plats har en knapp som visar platsen på kartan (interaktion.ts sätter `visaPlats`). Den som visas är läst.
 import { NOTISER, NOTIS_SLAG, type LogEntry, kalender, lasNotis, notiserNu, olasta, taBortNotis } from '../sim';
 import { esc, kronikaLank, linkify } from './hjalp';
-import { ritaOm, s } from './lage';
+import { ritaOm, s, ui } from './lage';
+import type { FlikId } from './panel';
 
 export const notisVal: { oppen: boolean; nr?: number; fraga?: boolean } = { oppen: false }; // fraga: "ta bort alla?" väntar på ja
+// trycket på knappen som visar en hel redogörelse (bytet, framträdandet, matchen, resan; knapparna i hjalp.ts): numret ur
+// data-<slag>, fliken öppnas och (utom för bytet) notisen stängs. Fliken har det som klick
+export const redogKlick = (slag: 'byte' | 'fram' | 'match' | 'resa', flik: FlikId, satt: (nr: number) => void, stang = true) => (el: HTMLElement) => {
+  const b = el.closest<HTMLElement>(`[data-${slag}]`);
+  if (!b) return false;
+  satt(Number(b.dataset[slag])); ui.tab = flik; if (stang) notisVal.oppen = false;
+  return true;
+};
 let visaPlats = (_x: number, _y: number, _zoom?: number) => {};
 export const satVisaPlats = (f: (x: number, y: number, zoom?: number) => void) => { visaPlats = f; };
 export const visaPaKartan = (x: number, y: number, zoom?: number) => visaPlats(x, y, zoom); // kameran till platsen (lärdomarna, steg 10.2.63)

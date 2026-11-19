@@ -9,6 +9,8 @@ import type { Flik } from '../panel';
 // Fältet: ägaren, storleken, steget och hur långt det kommit, grödan och vem som arbetar där. Rutan: grödan om något växer
 // där (hur långt den vuxit, vad den ger vid skörden och när frosten tar den) och marken (steg 3.10.6): vad som växte där
 // innan, när rutan bereddes och när den sist sköttes. Fukten (3.8.2) och bördigheten (8.3.1) kommer i samma ruta
+// fältets ?-knapp och förklaringen, samma i alla tre rutorna
+const faltOm = () => `${hjalpKnapp('falt-om', 'Vad gör fältet?')}</div>${hjalpText('falt-om', `<p class="muted small">På fältet odlas grödor av frön. Jorden bereds, sås, vattnas och sköts, och den mogna grödan skördas innan den blir övermogen.</p>`)}`;
 export const falt: Flik = { namn: 'Fältet', knapp: 'person', html: () => (ui.faltRuta >= 0 ? rutaHtml() : faltHtml()) };
 
 function faltHtml() {
@@ -18,7 +20,7 @@ function faltHtml() {
   const antal = f.steg === 'mogen' ? f.sadda ?? f.n : f.n, arbetar = living(s).filter(p => p.task?.act === 'odla' && p.task.ref === f.id);
   return `
     <div class="phead">${iconImg(d ? (f.steg === 'mogen' ? d.sak : 'grodd') : 'odling', 32)}<div><h2>Fält</h2>
-    <p class="muted">${ag ? `${pLink(ag)}s familj` : 'Ingen äger det'} · ${f.n} rutor (${Math.min(f.w, f.n)} × ${rader})</p></div>${hjalpKnapp('falt-om', 'Vad gör fältet?')}</div>${hjalpText('falt-om', `<p class="muted small">På fältet odlas grödor av frön. Jorden bereds, sås, vattnas och sköts, och den mogna grödan skördas innan den blir övermogen.</p>`)}
+    <p class="muted">${ag ? `${pLink(ag)}s familj` : 'Ingen äger det'} · ${f.n} rutor (${Math.min(f.w, f.n)} × ${rader})</p></div>${faltOm()}
     <h3>Just nu</h3><dl class="kv">
       <dt>${esc(FALT_STEG[f.steg].namn)}</dt><dd>${bar(faltKlar(f))}<span>${Math.round(faltKlar(f) * 100)} %</span></dd>
       ${f.steg !== 'vaxer' ? `<dt>Rutor klara</dt><dd>${f.klara} av ${antal}</dd>` : ''}
@@ -48,7 +50,7 @@ function rutaHtml() {
   const ru = rutorAv(f)[k];
   if (!ru?.g || !grodaPa(f, k)) return `
     <div class="phead">${iconImg('odling', 32)}<div><h2>Ruta på fältet</h2>
-    <p class="muted">${vid} · ruta ${k + 1} av ${f.n}</p></div>${hjalpKnapp('falt-om', 'Vad gör fältet?')}</div>${hjalpText('falt-om', `<p class="muted small">På fältet odlas grödor av frön. Jorden bereds, sås, vattnas och sköts, och den mogna grödan skördas innan den blir övermogen.</p>`)}
+    <p class="muted">${vid} · ruta ${k + 1} av ${f.n}</p></div>${faltOm()}
     <p class="muted">${ru?.st === 'sa' ? 'Inget är sått här.' : 'Här växer inget.'}</p>${markHtml(f, k)}`;
   const d = GRODOR[ru.g], mogen = ru.st === 'mogen', a = mogen ? skordAndel(s, f, k) : 1, vuxit = ru.v ?? 0; // rutans egen gröda (steg 9.7.1)
   // mogen om: som stepOdling i odling.ts: grödan växer vaxtFaktor × fuktFaktor × kravFaktor delat med d.dygn × 24 i timmen, när det är varmt nog och inte istid, och inte alls när den är sjuk
@@ -61,7 +63,7 @@ function rutaHtml() {
   const over = mogen && ru.m !== undefined ? ODLING.overDygn * DAY - (s.now - ru.m) : 0;
   return `
     <div class="phead">${iconImg(mogen ? d.sak : 'grodd', 32)}<div><h2>${esc(d.namn)}</h2>
-    <p class="muted">${vid} · ruta ${k + 1} av ${f.n}</p></div>${hjalpKnapp('falt-om', 'Vad gör fältet?')}</div>${hjalpText('falt-om', `<p class="muted small">På fältet odlas grödor av frön. Jorden bereds, sås, vattnas och sköts, och den mogna grödan skördas innan den blir övermogen.</p>`)}
+    <p class="muted">${vid} · ruta ${k + 1} av ${f.n}</p></div>${faltOm()}
     <dl class="kv">
       <dt>Mogen</dt><dd>${bar(mogen ? 1 : vuxit)}<span>${Math.round((mogen ? 1 : vuxit) * 100)} %</span></dd>
       ${mogen ? `<dt>Skörda</dt><dd>${over > 0 ? `inom ${durTxt(over)}, sedan blir den övermogen` : `övermogen, ${Math.round(a * 100)} % kvar`}</dd>`

@@ -7,8 +7,9 @@
 // Mörkret ligger i hela steg över kartan (steg 6.8.17): rastret används bara i kanten av ljuset och i en smal rand (RAND, en
 // del av kartans bredd) som sveper över kartan från öster till väster under SVEP_MS (datorns tid) när mörkret går ett steg.
 import * as PIXI from 'pixi.js';
-import { FARGER, MORKARE } from '../palett';
+import { FARGER, MORKARE, BAYER } from '../palett';
 import { W } from '../sim';
+import { platt } from './pixel';
 
 const RAND = 0.03, KART = W * 16, SVEP_MS = 60000; // randens bredd som del av kartan, kartans bredd i världens punkter, svepets tid
 
@@ -70,12 +71,10 @@ void main() {
   gl_FragColor = vec4(o * c.a, c.a);
 }`;
 
-const rgb = (h: string) => { const n = parseInt(h.slice(1), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
-const platt = (fs: readonly string[]) => new Float32Array(fs.flatMap(rgb));
 
 export const nattFilter = new PIXI.Filter(undefined, FRAG, {
   uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uM3: platt(MORKARE[3]),
-  uBayer: new Float32Array([0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]),
+  uBayer: new Float32Array(BAYER),
   uFran: 0, uTill: 0, uSvep: 1, uPos: new Float32Array(2), uSkala: 1, uEld: new Float32Array(MAX_ELDAR * 4), uFolk: new Float32Array(MAX_FOLK * 3), uKart: KART, uRand: RAND,
 });
 

@@ -1,15 +1,13 @@
-import { fargTal, narmast, rasterPa } from '../palett';
-import { FLACKAR, HOUR, W, blodOf, flackNu, flackarOf } from '../sim';
+import { rasterPa } from '../palett';
+import { HOUR, W, blodOf, flackNu, flackarOf } from '../sim';
 import { ritaBlod } from './blod';
 import { s, ui } from './lage';
 import { TS, flackG } from './scen';
 
-// fläckarna på marken (smuts.ts): några oregelbundna prickar i fläckens färg, svagare ju mer den bleknat (platshållare).
-// Toa-fläcken har en egen bild (TOA), och blodet ritas av blod.ts. Ritas om varje kvart i spelet och när en fläck tillkommit
+// fläckarna på marken (smuts.ts): toa-fläcken, den enda sorten, har en egen bild (TOA), och blodet ritas av blod.ts. En ny sorts
+// fläck får sin bild när den byggs. Ritas om varje kvart i spelet och när en fläck tillkommit
 // eller blivit starkare
 let ritad = '';
-const plats = (i: number, j: number) => { const h = Math.sin(i * 39.3467 + j * 11.135) * 24634.6345; return h - Math.floor(h); };
-const DEF: Record<string, { farg: number }> = FLACKAR;
 // toa-fläcken (Björn valde stankslingan efter v89): en brun hög med en grön lukt som stiger upp när den är färsk, sedan bara
 // en brun fläck utan lukt som bleknar. Från den starkaste: från vilken styrka bilden gäller, raderna (8 × 8 punkter på rutan)
 // och färgerna med genomskinlighet
@@ -31,12 +29,7 @@ export function drawFlackar() {
   flackG.clear();
   ritaBlod(flackG);
   for (const f of fl) {
-    const v = flackNu(f, ui.nu), d = DEF[f.k];
-    if (v <= 0 || !d) continue;
-    const x = (f.i % W) * TS, y = Math.floor(f.i / W) * TS, n = 1 + Math.round(v * 4);
-    if (f.k === 'toa') { toaBild(x, y, v); continue; }
-    flackG.beginFill(fargTal(narmast('#' + d.farg.toString(16).padStart(6, '0')))); // närmaste färg i paletten; en blek fläck har färre och mindre prickar
-    for (let j = 0; j < n; j++) flackG.drawEllipse(x + 2 + plats(f.i, j) * (TS - 4), y + 2 + plats(f.i, j + 9) * (TS - 4), 0.8 + v * 1.6 * plats(f.i, j + 3) + 0.6, 0.6 + v * 1.1 * plats(f.i, j + 5) + 0.4);
-    flackG.endFill();
+    const v = flackNu(f, ui.nu);
+    if (v > 0 && f.k === 'toa') toaBild((f.i % W) * TS, Math.floor(f.i / W) * TS, v);
   }
 }

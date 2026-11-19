@@ -59,8 +59,6 @@ function tekHtml() {
 // raden ovanför trädet som alltid syns (steg 11.1.30): symbol och ett ord för varje tecken på noderna
 const TECKENRAD = `<div class="tforkl" aria-label="Tecknen i trädet"><span title="Någon i byn kan tekniken"><i class="tf kan"></i>Kan</span><span title="Någon funderar på den: ringen fylls"><i class="tf pa"></i>Funderar</span><span title="Ingen kan den eller funderar på den"><i class="tf ok"></i>Ingen</span><span title="Bara en kan den: dör hen försvinner kunskapen"><i class="tf ensam">1</i>Bara en</span><span title="Ingen kan komma på den nu, för det som behövs finns inte i byn"><i class="tf brist">!</i>Material saknas</span></div>`;
 const namnAv = (ppl: Person[], id: number) => ppl.find(p => p.id === id)?.name ?? '';
-// hur kunskapen sprids, efter nivå (steg 4.2.3)
-const sprids = (t: Tek) => t.niva <= TEKTAL.larNiva ? 'Den som kan lär ut det i samtal.' : t.niva === 3 ? 'Man lär sig det genom att arbeta bredvid någon som kan.' : 'Man lär sig det bara som lärling hos en mästare, en lärling i taget.';
 const lista = (xs: string[], och = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${och} ` + xs[xs.length - 1] : xs[0] ?? '';
 // det som saknas i byn för att någon ska kunna komma på tekniken
 const saknas = (t: Tek) => lista(materialOf(t).filter(g => !g.some(k => harSak(s, k))).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
@@ -72,7 +70,7 @@ function recept(t: Tek): { k: string; n: number; per?: string }[] {
 }
 // det som visas när man tryckt på en symbol i trädet, eller på en teknik i personens kunskap (flikar/person.ts)
 // hur tekniken lärs, efter nivå (steg 11.1.32): "Nivå 3: lärs genom att arbeta bredvid någon"
-const larsText = (t: Tek) => `Nivå ${t.niva}: lärs ${t.niva <= TEKTAL.larNiva ? 'i samtal med den som kan' : t.niva === 3 ? 'genom att arbeta bredvid någon' : 'som lärling hos en mästare'}`;
+const larsText = (t: Tek) => `Nivå ${t.niva}: lärs ${t.niva <= TEKTAL.larNiva ? 'i samtal med den som kan' : t.niva === 3 ? 'genom att arbeta bredvid någon' : 'som lärling hos en mästare, en lärling i taget'}`; // hur kunskapen sprids, efter nivå (steg 4.2.3)
 export function tekInfo(ppl: Person[], id: string | undefined, rullaHit = false) {
   const t = id ? TEK[id] : undefined;
   if (!t) return '';
@@ -88,7 +86,7 @@ export function tekInfo(ppl: Person[], id: string | undefined, rullaHit = false)
   return `<div class="tinfo"${rullaHit ? ' data-rulla' : ''}><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b>${r.length ? `<span class="tmat" title="${esc(rtext)}">${mat}</span>` : ''}</div>
     <p class="small"><b>${esc(larsText(t))}</b></p>
     <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
-    <p class="small muted">${t.forsok ? `Den som är skicklig i ${esc(SKILL_ORD[t.forsok.skill])} kan pröva sig fram till det vid ${esc(t.forsok.vid.length ? lista([...new Set(t.forsok.vid.map(k => stationDef(k)?.namn.toLowerCase() ?? k))], 'eller') : 'elden')}${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}. Varje försök tar en sak av materialet.` : `Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.`} ${esc(sprids(t))}</p>
+    <p class="small muted">${t.forsok ? `Den som är skicklig i ${esc(SKILL_ORD[t.forsok.skill])} kan pröva sig fram till det vid ${esc(t.forsok.vid.length ? lista([...new Set(t.forsok.vid.map(k => stationDef(k)?.namn.toLowerCase() ?? k))], 'eller') : 'elden')}${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}. Varje försök tar en sak av materialet.` : `Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.`}</p>
     ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}${kan.length === 1 ? `<p class="small varn">⚠ Bara ${esc(kan[0].name)} kan det.</p>` : ''}
     ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}<small>${Math.round(p.tek![t.id] * 100)} %</small>${p.lar?.tek === t.id ? `<small class="muted">lärling hos ${esc(namnAv(ppl, p.lar.av))}</small>` : p.halvminne?.includes(t.id) ? '<small class="muted" title="Halvminne: hen var lärling men miste sin mästare innan hen lärt sig klart. Det hen hann lära sig gör det lättare att komma på det igen eller att lära sig klart hos en annan mästare">halvminne</small>' : ''}`).join('')}</div>` : ''}</div>`;
 }

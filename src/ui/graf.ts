@@ -29,14 +29,24 @@ vidNyBy.push(() => { rikVal.person = undefined; rikVal.sak = undefined; }); // p
 const RIK_VY = { byn: 'Hela byn', person: 'En person', sak: 'En sak' } as const;
 // de som finns i rikedomens rader eller lever nu, och de saker byn haft
 const rikFolk = () => { const ids = new Set(living(s).map(p => p.id)); for (const r of s.hist?.rik ?? []) for (const id in r[4]) ids.add(Number(id)); return s.people.filter(p => ids.has(p.id)).sort((a, b) => a.name.localeCompare(b.name, 'sv') || a.born - b.born); };
-const rikSaker = () => { const k = new Set<string>(); for (const r of s.hist?.rik ?? []) for (const x in r[5]) k.add(x); return [...k].sort((a, b) => sakNamn(a).localeCompare(sakNamn(b), 'sv')); };
+let sakerMinne: { rik?: unknown; n: number; saker: string[] } = { n: -1, saker: [] }; // räknas om när en rad tillkommit
+const rikSaker = () => {
+  const rik = s.hist?.rik ?? [];
+  if (sakerMinne.rik !== rik || sakerMinne.n !== rik.length) {
+    const k = new Set<string>(); for (const r of rik) for (const x in r[5]) k.add(x);
+    sakerMinne = { rik, n: rik.length, saker: [...k].sort((a, b) => sakNamn(a).localeCompare(sakNamn(b), 'sv')) };
+  }
+  return sakerMinne.saker;
+};
+// saken som visas: den valda, annars veden om byn haft ved, annars den första
+const forvaldSak = () => rikVal.sak ?? (rikSaker().includes('ved') ? 'ved' : rikSaker()[0]);
 function rikSerier(): Serie[] {
   if (rikVal.vy === 'person') {
     const folk = rikFolk(), p = folk.find(q => q.id === rikVal.person) ?? living(s)[0] ?? folk[0];
     return p ? [rik(p.name, 'senap', r => r[4][p.id])] : [];
   }
   if (rikVal.vy === 'sak') {
-    const k = rikVal.sak ?? (rikSaker().includes('ved') ? 'ved' : rikSaker()[0]);
+    const k = forvaldSak();
     return k ? [rik(sakNamn(k), 'oliv', r => r[5][k] ?? 0)] : [];
   }
   return [rik('Hela byn', 'senap', r => r[1] + r[2] + r[3]), rik('Förrådet', 'oliv', r => r[1]), rik('Redskapen', 'skiffer', r => r[2]), rik('Husen', 'jord', r => r[3])];
@@ -46,7 +56,7 @@ function rikTopp() {
   if (rikVal.vy === 'byn') return `<div class="grafval">${vy}</div>`;
   const val = rikVal.vy === 'person'
     ? rikFolk().map(p => `<option value="${p.id}"${p.id === (rikVal.person ?? living(s)[0]?.id) ? ' selected' : ''}>${esc(p.name)}${p.died !== undefined ? ' †' : ''}</option>`)
-    : (k => rikSaker().map(x => `<option value="${x}"${x === k ? ' selected' : ''}>${esc(sakNamn(x))}</option>`))(rikVal.sak ?? (rikSaker().includes('ved') ? 'ved' : rikSaker()[0]));
+    : (k => rikSaker().map(x => `<option value="${x}"${x === k ? ' selected' : ''}>${esc(sakNamn(x))}</option>`))(forvaldSak());
   const namn = rikVal.vy === 'person' ? 'Person' : 'Sak';
   return `<div class="grafval">${vy}<select data-rikval aria-label="${namn}" title="${rikVal.vy === 'person' ? 'Välj personen här eller tryck på hen i porträttraden' : 'Välj saken'}">${val.join('')}</select></div>`;
 }

@@ -1,6 +1,6 @@
 import { MAKT_SEDER, SEDER, SED_LIST, type Sed, ageOf, byId, roster, sedDrag, sedLaggning, sedOppen, sederTarget, upplevelseKort, yrkeNamn } from '../../sim';
 import { tecknet } from '../../ikoner';
-import { esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, pLink } from '../hjalp';
+import { esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, pLink, mittStapel } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
 import { vagSvg } from '../framsteg';
@@ -33,10 +33,7 @@ export function sedVag(v: number, neg = '', pos = '', mal?: number) {
     ? `<span class="sedmot" title="${esc(`På väg mot ${(d > 0 ? pos : neg).replace(/&shy;/g, '').toLowerCase()}: det som drar seden pekar dit, men sederna rör sig långsamt, så vågen följer efter en tid`)}">${d > 0 ? tecknet('sym_pil_hoger', '→') : tecknet('sym_pil_vanster', '←')}</span>` : '';
   return `<div class="sedvag"><span class="sedord">${bryt(neg)}</span><span class="vag" role="img" aria-label="${n ? `${n} av ${VIKTER} åt ${v < 0 ? 'vänster' : 'höger'}` : 'i jämvikt'}">${d < 0 ? pil : ''}${vagSvg(n, v < 0 ? -1 : 1)}${d > 0 ? pil : ''}</span><span class="sedord">${bryt(pos)}</span></div>`;
 }
-export function sedBar(v: number) {
-  const w = Math.round(Math.abs(v) * 50);
-  return `<span class="sbar"><span style="${v >= 0 ? `left:50%;width:${w}%` : `left:${50 - w}%;width:${w}%`}"></span></span>`;
-}
+export const sedBar = (v: number) => mittStapel(v);
 
 // det som format seden k (steg 9.2.5): de upplevelser invånarna minns som drar den, under vågen. Symbolen, en till tre pilar åt
 // det håll den drar (fler drar mer) och hur många som minns; texten när musen är över. Symbolerna är de som redan finns
@@ -66,7 +63,7 @@ export function sedFormat(k: Sed) {
   if (!rader.length) return '';
   return `<div class="sedformat">${rader.map(r => {
     const d = r.d[k], m = Math.abs(d), pil = (d > 0 ? tecknet('sym_pil_hoger', '→') : tecknet('sym_pil_vanster', '←')).repeat(m >= 0.15 ? 3 : m >= 0.05 ? 2 : 1), mot = d > 0 ? SEDER[k].pos : SEDER[k].neg;
-    const text = `${radNamn(r)}: drar mot ${mot.toLowerCase()} (${Math.max(1, Math.round(m * 100))} av 100)${r.lagg ? '' : `, ${r.n} ${r.n === 1 ? 'minns' : 'minns'} det`}`;
+    const text = `${radNamn(r)}: drar mot ${mot.toLowerCase()} (${Math.max(1, Math.round(m * 100))} av 100)${r.lagg ? '' : `, ${r.n} minns det`}`;
     return `<span class="sedupp" title="${esc(text)}">${radTecken(r)}<b>${pil}</b><span class="muted">${r.n}</span></span>`;
   }).join('')}</div>`;
 }

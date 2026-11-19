@@ -60,6 +60,6 @@ export const hus: Flik = {
     const fangHtml = h.fn === 'fangelse' ? `<h3>Fångar${fangEldBrinner(s, h.id) ? ' <span title="En liten eld brinner därinne" aria-label="En liten eld brinner">🔥</span>' : ''}</h3>${fang ? `<ul class="fangar">${fang}</ul>` : '<p class="muted">Ingen sitter här nu.</p>'}` : '';
     return `
     <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${anv ? `<p><span class="etik">Används till</span> ${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p><span class="etik">Rummen</span> ${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p><span class="etik">${dorrar.includes(', ') ? 'Dörrarna' : 'Dörren'}</span> ${dorrar}</p>` : ''}</div>${hjalpKnapp('hus-om', 'Vad gör huset?')}</div>${hjalpText('hus-om', `<p class="muted small">Huset håller värmen och skyddar mot väder och kyla. Rummen används till det byn behöver, och den som äger huset bor där med familjen.</p>`)}
-    ${fangHtml}<h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
+    ${fangHtml}<h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Inget material än.</p>'}`;
   },
 };

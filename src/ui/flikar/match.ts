@@ -2,21 +2,16 @@
 // som framträdandet (fram.ts). Allt läses ur minnet som sparades när matchen avgjordes (matchMinneAv i sim/sport.ts): sporten,
 // platsen och hur länge den varade, spelarna med färdigheten i sportens färdighet och summan, vem som vann och glädjen.
 // I en lagsport (steg 10.7.14) visas de två lagen med summan och vinnarlaget. Publiken (steg 10.7.16) står sist, med glädjen de fick. Symbolerna först; texten kommer fram när man håller över raden
-import { MIN, MatchMinne, num, SKILL_NAMES, SPORT, SPORT_AV, matchBerattelse, matchMinneAv } from '../../sim';
+import { MIN, MatchMinne, SKILL_NAMES, SPORT, SPORT_AV, matchBerattelse, matchMinneAv } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { clockTxt, esc, vemLank } from '../hjalp';
+import { clockTxt, esc, vemLank, tioSkala } from '../hjalp';
 import { s, ui } from '../lage';
-import { notisVal } from '../notiser';
+import { redogKlick } from '../notiser';
 import type { Flik } from '../panel';
 
 export const match: Flik = {
   namn: 'Matchen', knapp: 'person', html: () => matchHtml(matchMinneAv(s, ui.matchNr)),
-  klick(el) {
-    const b = el.closest<HTMLElement>('[data-match]');
-    if (!b) return false;
-    ui.matchNr = Number(b.dataset.match); ui.tab = 'match'; notisVal.oppen = false;
-    return true;
-  },
+  klick: redogKlick('match', 'match', nr => { ui.matchNr = nr; }),
 };
 
 const minuter = (a: number, b: number) => Math.max(1, Math.round((b - a) / MIN));
@@ -37,8 +32,7 @@ export function matchHtml(m?: MatchMinne) {
   ].join('');
   const grupp = (sp: MatchMinne['spelare'], rubrik: string, vann: boolean) => {
     const sum = sp.reduce((a, x) => a + x.f, 0);
-    // färdigheten 0 till 10, som i personens Egenskaper (steg 11.1.47): talen räknas 0–20 och visas halverade
-    const tio = (v: number) => Number.isInteger(v / 2) ? String(v / 2) : num(v / 2, 1);
+    const tio = (v: number) => tioSkala(v); // färdigheten 0 till 10, som i personens Egenskaper (steg 11.1.47)
     const lista = sp.slice().sort((a, b) => b.f - a.f).map(x => `<li title="${esc(`${x.namn}: ${fard.toLowerCase()} ${tio(x.f)} av 10`)}">${!vann && x.id === m.vinnare && m.vinnLag === undefined ? '{sym_medalj} ' : ''}${vemLank(x.id, x.namn)} <span class="muted">${tio(x.f)}</span></li>`).join('');
     return `<h3 title="${esc(`Var och ens färdighet i ${fard.toLowerCase()} (0–10) och summan`)}">${vann ? '{sym_medalj} ' : ''}${rubrik} (${sp.length}) <span class="muted">${esc(fard)} ${tio(sum)}</span></h3><ul class="fame">${lista}</ul>`;
   };

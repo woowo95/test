@@ -3,6 +3,7 @@ import { lightLevel, vaderNu } from '../sim';
 import { BAYER, DJUPNATT, rasterSteg } from '../palett';
 import { s, ui } from './lage';
 import { TS, app, world } from './scen';
+import { sinHash3 } from './pixel';
 
 // vädret på kartan (steg 2.11.4): molnen gör bilden mörkare, regnet och snön faller, och i åskan blixtrar det ibland.
 // Det ritas ovanpå hela kartan i skärmens punkter (inte världens), så att det ser likadant ut hur långt man än zoomat.
@@ -53,7 +54,7 @@ function tackRaster(sp: PIXI.TilingSprite, del: number, w: number, h: number) {
 export function vaderMork(t: number) { const v = vaderNu(s, t); return v.moln * BILD.molnMork + v.nb * BILD.nbMork + v.dimma * BILD.dimmaMork; }
 
 // en fast slumpsiffra 0–1 för droppe i (samma droppe på samma ställe varje bildruta)
-const fast = (i: number, salt: number) => { const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return x - Math.floor(x); };
+const fast = (i: number, salt: number) => sinHash3(i, salt);
 let blixtTill = 0, nastaBlixt = 0;
 
 // blixtens nedslag (steg 9.2.21, Björns val i steg 9.9.1: version 2): en bred blixt i ben 3 med skiffer 3 som kant, med en tunn gren

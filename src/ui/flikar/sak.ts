@@ -10,10 +10,8 @@ import { skaffasRader } from '../skaffas';
 // en sak eller en hög (steg 2.3.5): öppnas genom att trycka på den i lagret, en hög, personens utrustning eller en
 // stations redskapsplats. Symbolen och namnet, skicket, vad som sliter på den just nu och hur länge den håller i den
 // takten, vem som gjorde den och när, och kvaliteten (steg 2.2.2).
-// Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
-// En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
-// Kvarlevorna efter en människa (steg 8.2.3) öppnas som "q:<id>" (kvarleva). Ett slag i förrådet (listan till vänster, steg 5.3.5.2) öppnas som "k:<slaget>" (slagIForradet)
-// En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe), ett träd (steg 5.1.4.3) som "r:<rutan>" (trad) och en buske (steg 6.5.3) som "b:<rutan>"
+// Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack, och
+// det andra på kartan en bokstav och ett kolon (registret SAK_SLAG, sist i filen)
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
 // maten fryser i frost och ruttnar då nästan inte (LAGER.frost, steg 2.8.2): i lagret får symbolen en vit kant av rimfrost
@@ -205,18 +203,8 @@ export const sak: Flik = {
   knapp: 'person',
   html() {
     if (ui.sak === 'tornado') return tornadoRuta(); // (steg 9.2.22)
-    if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('H:')) return hage(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('q:')) return kvarleva(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('R:')) return runsten(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('g:')) return grav(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('h:')) return heligPlats(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('b:')) return buske(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('a:')) return fackla(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('v:')) return stock(Number(ui.sak.slice(2)));
-    if (ui.sak.startsWith('k:')) return slagIForradet(ui.sak.slice(2));
+    const [slag, rest] = ui.sak.split(/:(.*)/s), egen = rest !== undefined ? SAK_SLAG[slag] : undefined;
+    if (egen) return egen(rest);
     const { t, p } = hitta(), a = t ?? p;
     if (!a) return '<p class="muted">Den finns inte längre.</p>';
     const k = t?.halv?.gor ?? p?.gor ?? a.k, c = t ? t.c : condOf(p!), sl = slitageNu(s, { k: a.k, x: t ? t.x ?? p?.x : p!.x, y: t ? t.y ?? p?.y : p!.y }, t);
@@ -274,3 +262,18 @@ function tornadoRuta() {
     <dl class="kv"><dt>Kom från</dt><dd>Kartans kant ${esc(vaderstreck(s, fx, fy))} om elden</dd><dt>Kvar</dt><dd>${kvar} rutor, ${durTxt(tid)}</dd></dl>
     <h3>Hittills</h3>${gjort ? `<dl class="kv">${gjort}</dl>` : '<p class="muted">Inget än.</p>'}`;
 }
+// det på kartan som har en egen ruta: bokstaven före kolonet och rutan, med texten efter kolonet (oftast ett tal)
+const SAK_SLAG: Record<string, (rest: string) => string> = {
+  f: r => toaHog(Number(r)), // en toa-hög på kartan (steg 2.10.5): rutan
+  u: r => stubbe(Number(r)), // en stubbe (steg 3.10.6): rutan
+  H: r => hage(Number(r)), // hagen: id:t
+  q: r => kvarleva(Number(r)), // kvarlevorna efter en människa (steg 8.2.3): id:t
+  R: r => runsten(Number(r)), // runstenen (steg 10.6.1): id:t
+  g: r => grav(Number(r)), // graven (steg 8.5.1): rutan
+  h: r => heligPlats(Number(r)), // den heliga platsen (steg 8.5.5): rutan
+  r: r => trad(Number(r)), // ett träd (steg 5.1.4.3): rutan
+  b: r => buske(Number(r)), // en buske (steg 6.5.3): rutan
+  a: r => fackla(Number(r)), // den uppsatta facklan (steg 6.3.7): rutan
+  v: r => stock(Number(r)), // stocken: id:t
+  k: r => slagIForradet(r), // ett slag i förrådet (listan till vänster, steg 5.3.5.2): slaget
+};

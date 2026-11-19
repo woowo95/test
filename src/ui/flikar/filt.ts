@@ -1,6 +1,7 @@
-import { ByteMinne, ByteVara, Filt, byId, filtMot, grundvarde, handelBerattelse, handlarVarde, sakNamn } from '../../sim';
+import { redogKlick } from '../notiser';
+import { ByteMinne, ByteVara, Filt, byId, filtMot, grundvarde, handelBerattelse, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { clockTxt, esc, pLink } from '../hjalp';
+import { clockTxt, esc, pLink, andring, varorSym } from '../hjalp';
 import { s, ui } from '../lage';
 import { gastById, handlarPris } from '../gaster';
 import type { Flik } from '../panel';
@@ -11,12 +12,7 @@ import type { Flik } from '../panel';
 // raden i loggen eller bland en persons byten: vem, vad var och en gav och fick och priserna i silver när bytet gjordes
 export const filt: Flik = {
   namn: 'Filten', knapp: 'person', html: () => ui.byteNr >= 0 ? minneHtml() : filtHtml(),
-  klick(el) {
-    const b = el.closest<HTMLElement>('[data-byte]');
-    if (!b) return false;
-    ui.byteNr = Number(b.dataset.byte); ui.tab = 'filt';
-    return true;
-  },
+  klick: redogKlick('byte', 'filt', nr => { ui.byteNr = nr; }, false),
 };
 // bytet med numret nr: med raden i loggen, hos en bybo eller hos handlaren
 export function byteMinne(nr: number): ByteMinne | undefined {
@@ -42,7 +38,6 @@ function minneHtml() {
 }
 // förhandlingen med handlaren (steg 5.4.6.1): varje bud som symboler (det kunden ville ha ⇐ det hen bjöd), vad budet var värt
 // och vad handlaren krävde i silver, ja eller nej, och hur relationen ändrades. Texten kommer fram när man håller över raden
-const varorSym = (v: { k: string; n: number }[]) => v.map(w => `<span title="${esc(`${w.n} ${sakNamn(w.k).toLowerCase()}`)}">${iconImg(w.k, 14)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–';
 function forsokHtml(b: ByteMinne) {
   if (!b.forsok?.length) return '';
   const rader = b.forsok.map((f, i) => {
@@ -50,7 +45,7 @@ function forsokHtml(b: ByteMinne) {
     return `<li class="bud ${f.ja ? 'ja' : 'nej'}" title="${esc(t)}"><span class="muted">${i + 1}</span> ${varorSym(f.vill)} ⇐ ${varorSym(f.bud)} <span class="muted">${f.tro !== undefined && f.tro !== f.bjod ? `<s tabindex="0" title="${esc(`${b.an} trodde att budet var värt ${f.tro} silver, men för ${b.bn} var det värt ${f.bjod}`)}">${f.tro}</s> ` : ''}${f.bjod}/${f.krav}</span>${iconImg('silver', 12)} ${f.ja ? '{sym_handslag}' : '{sym_nej}'}</li>`;
   }).join('');
   const r = b.rel, d = r ? r[1] - r[0] : 0;
-  const rel = r ? `<p title="${esc(`Hur mycket ${b.bn} gillar ${b.an} (−100 till 100): ${r[0]} före affären, ${r[1]} efter. ${d > 0 ? 'En affär som var bra för handlaren gör hen lite vänligare.' : d < 0 ? 'Ett för dåligt bud irriterar handlaren.' : ''}`)}">{sym_hjarta_rott} <span tabindex="0">${r[0]} → ${r[1]}</span> ${d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} −${-d}` : ''}</p>` : '';
+  const rel = r ? `<p title="${esc(`Hur mycket ${b.bn} gillar ${b.an} (−100 till 100): ${r[0]} före affären, ${r[1]} efter. ${d > 0 ? 'En affär som var bra för handlaren gör hen lite vänligare.' : d < 0 ? 'Ett för dåligt bud irriterar handlaren.' : ''}`)}">{sym_hjarta_rott} <span tabindex="0">${r[0]} → ${r[1]}</span> ${andring(r[0], r[1], '')}</p>` : '';
   return `<h3>Förhandlingen</h3><ol class="fame forsok">${rader}</ol>${rel}`;
 }
 
@@ -75,8 +70,7 @@ function vem(id: number, byn?: boolean) {
 // grundvärdet mellan bybor. Hela silver, minst ett
 function pris(f: Filt, mot: Filt | undefined, k: string) {
   const h = s.handlare;
-  if (h && f.handlare === h.id) return handlarPris(k);
-  if (h && mot?.handlare === h.id) return Math.max(1, Math.round(grundvarde(k) * handlarVarde(s, h, k)));
+  if (h && (f.handlare === h.id || mot?.handlare === h.id)) return handlarPris(k); // samma pris åt båda hållen
   return Math.max(1, Math.round(grundvarde(k)));
 }
 // en sida av bytet: vems, sakerna och (när det är ett byte) priserna och summan
@@ -98,10 +92,7 @@ function filtHtml() {
     const [a, b] = f.handlare !== undefined || m.handlare === undefined && f.y <= m.y ? [f, m] : [m, f]; // handlarens (eller den övre) först
     return `<h2>Bytet</h2>${affarHtml(f, m)}<div class="filtpar">${sida(a, a.vem ?? a.varor[0]?.fran ?? 0, a.varor, b, true)}${sida(b, b.vem ?? b.varor[0]?.fran ?? 0, b.varor, a, true)}</div>`;
   }
-  // en filt ensam; en filt från före v267 har båda parternas saker: en sida per part
-  const vems = f.vem !== undefined ? [f.vem] : [...new Set(f.varor.map(v => v.fran))];
-  if (vems.length > 1) return `<h2>Bytet</h2><div class="filtpar">${vems.map(id => sida(f, id, f.varor.filter(v => v.fran === id), undefined, true)).join('')}</div>`;
-  return `<h2>Filten</h2>${sida(f, vems[0] ?? 0, f.varor)}`;
+  return `<h2>Filten</h2>${sida(f, f.vem ?? f.varor[0]?.fran ?? 0, f.varor)}`; // en filt ensam: en part per filt (steg 4.5.4.13)
 }
 
 // bytet som pågår vid handlarens filt (steg 9.2.45): vem som började och vad hen ville ha, buden hittills och hur förhandlingen
@@ -112,6 +103,6 @@ function affarHtml(f: Filt, m: Filt) {
   if (!h || !a || (f.handlare !== h.id && m.handlare !== h.id)) return '';
   const vill = a.kop.length ? varorSym(a.kop.map(v => ({ k: v.k, n: v.n }))) : a.salj ? iconImg('silver', 14) : '–';
   const bud = a.forsok ?? [], senast = bud[bud.length - 1];
-  const gar = !bud.length ? 'Inget bud än' : senast.ja ? 'De är överens' : `${bud.length} ${bud.length === 1 ? 'bud' : 'bud'}, ${a.nej} nej: senast ${senast.bjod} av ${senast.krav} silver som handlaren krävde`;
+  const gar = !bud.length ? 'Inget bud än' : senast.ja ? 'De är överens' : `${bud.length} bud, ${a.nej} nej: senast ${senast.bjod} av ${senast.krav} silver som handlaren krävde`;
   return `<dl class="kv"><dt>Började</dt><dd>${vem(a.vem, a.byn)}</dd><dt>Vill ha</dt><dd>${vill}</dd><dt>Buden</dt><dd>${esc(gar)}</dd><dt>Nu</dt><dd>${esc(FAS[a.fas] ?? a.fas)}${a.fas === 'hamta' && a.hamta.length ? `: ${a.hamta.flatMap(x => x.k).map(k => iconImg(k, 14)).join('')}` : ''}</dd></dl>`;
 }

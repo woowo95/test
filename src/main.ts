@@ -1,9 +1,8 @@
-import { nyttSlag, nastaSteg, stridBild, testSlagsmal, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
+import { vackTestNarmast, nyttSlag, nastaSteg, stridBild, testSlagsmal, torkaTest, storStridNu, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, spar, step, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, skickaTornado, tornadoHinder, lightLevel, rovarna } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
 import { iconImg, tecknet } from './ikoner';
-import { vackTestNarmast } from './sim/vackt';
 import { s, setByn, ui, nyBild, vidNyBy, huvud, hem, gaHem } from './ui/lage';
 import { visatNamn } from './ui/vacktvy'; // en väckt by visas i hela spelet (steg 11.13.11)
 import { TS, app, cam, layout, view, world } from './ui/scen';
@@ -152,7 +151,7 @@ function testKnappar() {
   for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : b.dataset.handlare ? handlarHinder(s) : b.dataset.tornado ? tornadoHinder(s) : undefined));
 }
 // inställningarna (testläget och ny by) öppnas med kugghjulet längst ner bland flikknapparna (steg 5.3.1.1)
-$('installKnapp').addEventListener('click', () => { const r = $('installningar'); r.hidden = !r.hidden; $('installKnapp').setAttribute('aria-expanded', String(!r.hidden)); });
+$('installKnapp').addEventListener('click', () => { const r = $('installningar'); r.hidden = !r.hidden; $('installKnapp').setAttribute('aria-expanded', String(!r.hidden)); renderByar(); }); // och byarna under (renderByar)
 // ljust eller mörkt läge (steg 5.3.1.3): data-tema på html byter grundens färger i template.html. Läget följer datorns
 // inställning och byter direkt när datorn byter (steg 6.9.16); knappen ◐ växlar mellan Datorn, Ljust och Mörkt, och valet
 // sparas i webbläsaren. Står det på Ljust eller Mörkt följer spelet inte datorn förrän man väljer Datorn igen
@@ -189,7 +188,6 @@ $('byar').addEventListener('click', async e => {
   }
   if (b.dataset.by !== undefined) { await bytTill(b.dataset.by || undefined); renderByar(); }
 });
-$('installKnapp').addEventListener('click', renderByar);
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
 $('okNew').addEventListener('click', () => {
@@ -275,7 +273,6 @@ async function boot() {
     if (loaded) await laddaIn(loaded);
     else nyBy();
   }
-  $('loading').hidden = true;
   await testbyIAdressen(); // #testby=frö:dygn: en by ur testerna läggs till och väljs (steg 9.2.16)
   renderClock(); renderPanel(true);
   app.ticker.add(tick);

@@ -5,8 +5,9 @@
 import { vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
-import { omUngefar } from './hjalp';
-import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
+import { esc, omUngefar } from './hjalp';
+import { TECKEN, TECKENPAL, VK, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
+import { bildDuk } from './bildduk';
 
 const stil = document.createElement('style');
 stil.textContent = `
@@ -32,18 +33,19 @@ stil.textContent = `
 `;
 document.head.appendChild(stil);
 
-// tecknet som en liten bild (knappen)
-function teckenUrl(namn: string, storlek = 16) {
-  const c = document.createElement('canvas'); c.width = c.height = VK;
-  const g = c.getContext('2d')!, r = TECKEN[namn];
-  for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++) { const k = r[y][x]; if (k !== '.') { g.fillStyle = TECKENPAL[k]; g.fillRect(x, y, 1, 1); } }
-  return `<img src="${c.toDataURL()}" width="${storlek}" height="${storlek}" alt="">`;
+// ett tecken ur TECKEN som en liten bild, åt höger eller spegelvänt åt vänster, en sparad duk per tecken (knappen, sällskapen,
+// karavanen, gömmorna och gravarna)
+const teckenDukar: Record<string, HTMLCanvasElement> = {};
+function teckenBild(namn: string, spegel = false) {
+  const nyckel = namn + (spegel ? 'v' : 'h');
+  if (teckenDukar[nyckel]) return teckenDukar[nyckel];
+  return teckenDukar[nyckel] = bildDuk({ w: VK, h: VK, rader: TECKEN[namn]!, pal: TECKENPAL }, { speglaX: spegel });
 }
 
 const knapp = document.createElement('button');
 knapp.type = 'button'; knapp.id = 'calVarld'; knapp.className = 'nyckel calknapp';
 knapp.title = 'Världskartan'; knapp.setAttribute('aria-label', 'Världskartan'); knapp.setAttribute('aria-expanded', 'false');
-knapp.innerHTML = teckenUrl('karta');
+knapp.innerHTML = `<img src="${teckenBild('karta').toDataURL()}" width="16" height="16" alt="">`;
 (document.querySelector('.cal .nycklar') ?? document.querySelector('.cal'))?.appendChild(knapp);
 
 const ruta = document.createElement('div');
@@ -70,31 +72,13 @@ function bilden() {
   return bild;
 }
 
-// sällskapets bild (steg 11.5.12), åt höger och spegelvänd åt vänster
-const spritar: Record<string, HTMLCanvasElement> = {};
-function sprite(vanster: boolean, namn: 'sallskap' | 'karavan' = 'sallskap') { // karavanen: en handelsfärd med vagnar (steg 11.11.6)
-  const nyckel = namn + (vanster ? 'v' : 'h');
-  if (spritar[nyckel]) return spritar[nyckel]!;
-  const c = document.createElement('canvas'); c.width = c.height = VK;
-  const g = c.getContext('2d')!, r = TECKEN[namn];
-  for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++) { const k = r[y][vanster ? VK - 1 - x : x]; if (k !== '.') { g.fillStyle = TECKENPAL[k]; g.fillRect(x, y, 1, 1); } }
-  return spritar[nyckel] = c;
-}
 const vandrar = new Map<number, boolean>(); // åt vänster senast (står kvar när sällskapet går rakt upp eller ner)
 // gömmorna (steg 11.5.17, platshållare: packningens tecken) under sällskapen
-const tecknBild: Record<string, HTMLCanvasElement> = {};
-function tecken(namn: 'packning' | 'kors') {
-  if (tecknBild[namn]) return tecknBild[namn];
-  const b = tecknBild[namn] = document.createElement('canvas'); b.width = b.height = VK;
-  const c = b.getContext('2d')!, r = TECKEN[namn];
-  for (let y = 0; y < VK; y++) for (let x = 0; x < VK; x++) { const k = r[y]?.[x]; if (k && k !== '.') { c.fillStyle = TECKENPAL[k]; c.fillRect(x, y, 1, 1); } }
-  return b;
-}
 function ritaGommor(g: CanvasRenderingContext2D) {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return;
-  for (const gr of vl.gravar ?? []) g.drawImage(tecken('kors'), (gr.ruta % v.w) * VK, Math.floor(gr.ruta / v.w) * VK); // gravarna vid leden (steg 11.5.18, platshållare: korset)
-  for (const gm of vl.gommor ?? []) g.drawImage(tecken('packning'), (gm.ruta % v.w) * VK, Math.floor(gm.ruta / v.w) * VK);
+  for (const gr of vl.gravar ?? []) g.drawImage(teckenBild('kors'), (gr.ruta % v.w) * VK, Math.floor(gr.ruta / v.w) * VK); // gravarna vid leden (steg 11.5.18, platshållare: korset)
+  for (const gm of vl.gommor ?? []) g.drawImage(teckenBild('packning'), (gm.ruta % v.w) * VK, Math.floor(gm.ruta / v.w) * VK);
 }
 function ritaSallskap(g: CanvasRenderingContext2D) {
   if (!s) return;
@@ -103,12 +87,12 @@ function ritaSallskap(g: CanvasRenderingContext2D) {
     const l = sallskapLage(s, sl);
     if (!l) continue;
     if (l.dx) vandrar.set(sl.id, l.dx < 0);
-    g.drawImage(sprite(vandrar.get(sl.id) ?? false), Math.round(l.x * VK), Math.round(l.y * VK));
+    g.drawImage(teckenBild('sallskap', vandrar.get(sl.id) ?? false), Math.round(l.x * VK), Math.round(l.y * VK));
   }
   const vl = s.varld, v = varldMark(s);
   if (vl && v) for (const f of vl.farder ?? []) { // byarnas handelsfärder (steg 11.6.6), med sällskapets bild
     const l = fardLage(vl, f, s.now, v.w);
-    if (l) g.drawImage(sprite(l.dx < 0, f.last?.vagnar ? 'karavan' : 'sallskap'), Math.round(l.x * VK), Math.round(l.y * VK));
+    if (l) g.drawImage(teckenBild(f.last?.vagnar ? 'karavan' : 'sallskap', l.dx < 0), Math.round(l.x * VK), Math.round(l.y * VK));
   }
 }
 
@@ -148,7 +132,7 @@ function oppna() {
   kronLista.innerHTML = kronikaHtml();
   vy = undefined; rita();
   // börja vid huvudbyn, lite inzoomat
-  const b = bilden(), vl = s.varld, hb = vl.platser?.find(p => p.by === vl.huvud);
+  const b = bilden(), vl = s.varld, hb = huvudbynsPlats(vl);
   if (b && hb && vy) {
     const { sw, sh } = matt(), z = Math.min(ZOOM_MAX, Math.max(zoomMin(b.width, b.height, sw, sh), 1));
     vy = begransa({ x: (hb.x + 0.5) * VK - sw / 2 / z, y: (hb.y + 0.5) * VK - sh / 2 / z, z }, b.width, b.height, sw, sh); rita();
@@ -216,7 +200,6 @@ info.addEventListener('click', e => {
 duk.addEventListener('pointercancel', e => { pekare.delete(e.pointerId); if (!pekare.size) duk.classList.remove('drar'); });
 
 // ---------- byns ruta (steg 11.4.12): det byn tror bredvid det som är sant, vilka som vet och varningen Bara en vet ----------
-const esc = (x: string) => x.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 function rutaHtml(x: number, y: number): string {
   const vl = s?.varld, v = s && varldMark(s);
   if (!s || !vl || !v) return '';
