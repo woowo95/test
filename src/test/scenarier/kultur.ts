@@ -3899,12 +3899,12 @@ SCENARIER.bynamn = {
     const med = createState(9, START); med.bynamn = { namn: 'Granåsen', rad: 'gran', t: med.now };
     const sparad = SIM.migrate(JSON.parse(SIM.serialize(ny)));
     const medSparad = SIM.migrate(JSON.parse(SIM.serialize(med)));
-    const mall = readFileSync('src/template.html', 'utf8'), main = readFileSync('src/main.ts', 'utf8');
+    const mall = readFileSync('src/template.html', 'utf8'), main = readFileSync('src/main.ts', 'utf8'), vy = readFileSync('src/ui/vacktvy.ts', 'utf8');
     return [
       [`en ny by heter ${SIM.bynsNamn(ny)}`, SIM.bynsNamn(ny) === 'Nybygget'],
       [`en by med ett namn visar det (${SIM.bynsNamn(med)}), och det finns kvar efter sparningen (${SIM.bynsNamn(medSparad)}, rad ${medSparad.bynamn?.rad})`, SIM.bynsNamn(med) === 'Granåsen' && SIM.bynsNamn(medSparad) === 'Granåsen' && medSparad.bynamn?.rad === 'gran'],
       [`en sparad by utan namn heter ${SIM.bynsNamn(sparad)}`, SIM.bynsNamn(sparad) === 'Nybygget'],
-      ['rubriken och flikens titel frågar bynsNamn, och laddningskortet behåller spelets namn', /<h1 id="bynamn">/.test(mall) && /document\.title = n/.test(main) && /bynsNamn\(s\)/.test(main) && /<h2>Samhällssimulatorn<\/h2>/.test(mall)],
+      ['rubriken och flikens titel frågar visatNamn, som frågar bynsNamn (en väckt by visar sitt namn, steg 11.13.11), och laddningskortet behåller spelets namn', /<h1 id="bynamn">/.test(mall) && /document\.title = n/.test(main) && /visatNamn\(\)/.test(main) && /return bynsNamn\(b\)/.test(vy) && /<h2>Samhällssimulatorn<\/h2>/.test(mall)],
       ...namnmallar(),
       ...utifran(),
     ];
