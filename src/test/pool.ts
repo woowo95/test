@@ -21,7 +21,7 @@ const TIDSGRANS_MIN = 150;
 // HANGT_MIN minuter, i processen eller något den startat, har den hängt sig och stoppas. En långsam process stoppas aldrig så
 // länge spelets klocka går. En process som inte kör spelet (typkontrollen, en äldre version i jamfor) har ingen puls, och då
 // gäller bara TIDSGRANS_MIN
-export const HANGT_MIN = 10;
+const HANGT_MIN = 10;
 // i sekunder; provet för pulsen (processgrupp.ts) sätter en kortare tid med HANGT_S
 const hangtMs = () => Number(process.env.HANGT_S ?? HANGT_MIN * 60) * 1000;
 const PULS = fileURLToPath(new URL('./puls.ts', import.meta.url));
@@ -37,7 +37,8 @@ function senastePuls(dir: string): number | undefined {
 // Kärnorna till de långa jobben (steg 9.2.64): ett jobb som tog kortare tid än LANGT_JOBB_S förra gången körs med lägre
 // prioritet (LAG_PRIO, som nice), så att de långa jobben, som avgör när testet blir klart, får hela kärnor och de korta fyller
 // det som blir över. Mätt på Macen: med 25 processer på 10 kärnor fick varje jobb under en halv kärna
-export const LANGT_JOBB_S = 100, LAG_PRIO = 10;
+const LANGT_JOBB_S = 100;
+export const LAG_PRIO = 10;
 export const prioAv = (forraS: number | undefined) => forraS !== undefined && forraS >= LANGT_JOBB_S ? 0 : LAG_PRIO;
 // ett skript i src/test, kört med tsx i en egen process (env läggs till datorns miljö, t.ex. { TIDSZON: 'Europe/Stockholm' }).
 // prio: 0 vanlig, högre är lägre prioritet (som nice)
@@ -118,6 +119,20 @@ export async function korJson<T>(fil: string, args: string[], namn: string, env:
 export const sek = (t0: number) => ((Date.now() - t0) / 1000).toFixed(0);
 // testbyarnas frön (balans, jamfor, natur och snabbkoll): by nummer i, räknat från 0
 export const seedAv = (i: number) => 1001 + i * 7919;
+// vakterna i fyra byar under de första 12 dygnen (12 år i spelet), som snabbkoll och riktad kör: texten att skriva ut och
+// om en by kraschade eller en vakt larmade
+export async function vaktByar() {
+  const seeds = [0, 1, 2, 3].map(seedAv), dygn = 12;
+  const byar = await pool(seeds.map(seed => () => korJson<{ vakter: string[] }>('en.ts', [String(seed), String(dygn)], `BY ${seed}`).catch((e: Error) => e)), 2);
+  const vakter: string[] = [], rader: string[] = [];
+  let krasch = false;
+  for (const [i, r] of byar.entries()) {
+    if (r instanceof Error) { krasch = true; rader.push(r.message); continue; }
+    vakter.push(...r.vakter.map(v => `by ${seeds[i]}: ${v}`));
+  }
+  rader.push(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : `Vakter: inga fel (${seeds.length} byar i ${dygn} dygn).`);
+  return { text: rader.join('\n'), fel: krasch || vakter.length > 0 };
+}
 
 const rader = (t: string) => t.split('\n').filter(r => r.trim());
 // typkontrollen (tsc) av hela projektet

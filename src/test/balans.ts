@@ -17,9 +17,9 @@ type Ut = { seed: number; n: Nyckeltal; vakter: string[]; stat?: Record<string, 
 
 const t0 = Date.now();
 const fil = process.env.BALANS?.trim() ? undefined : byCacheFil(kodHash(), '', dagar), sparade = fil ? lasByCache<Ut>(fil) : {};
+const fran = seeds.filter(seed => sparade[seed]).length;
 const res = await pool(seeds.map(seed => () => sparade[seed] ? Promise.resolve(sparade[seed]) : korJson<Ut>('en.ts', [String(seed), String(dagar)], `by ${seed}`)
   .then(r => (sparade[seed] = r)).catch((e: Error) => { console.log(e.message); process.exit(ALLVARLIGT); }))); // en krasch: kedjan stannar
-const fran = seeds.filter(seed => lasByCache<Ut>(fil ?? '')[seed]).length;
 if (fil) writeFileSync(fil, JSON.stringify(sparade));
 if (fran) console.log(`(${fran} byar fanns redan sparade av jamfor eller en tidigare balans med samma kod)`);
 

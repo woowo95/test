@@ -15,7 +15,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { ALLVARLIGT, RODA, korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
+import { ALLVARLIGT, RODA, korSkript, pool, scenarioSammanfattning, sek, typkontroll, typRad, vaktByar } from './pool';
 import { KARTA, Karta, lasTackning, sparaKarta, tackningsMapp } from './kartan';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // klocktiden och den aktiva tiden per kärna sist (steg 10.2.65)
@@ -23,7 +23,6 @@ import './scenarier/alla';
 import { SCENARIER } from './scenarier/hjalp';
 
 const ROT = fileURLToPath(new URL('../../', import.meta.url));
-const BYAR = [0, 1, 2, 3].map(seedAv), DAGAR = 12;
 
 const git = (...a: string[]) => execFileSync('git', a, { cwd: ROT, encoding: 'utf8' });
 const arg = process.argv.slice(2), t0 = Date.now();
@@ -145,17 +144,11 @@ if (visa) { console.log(kor.join(' ')); process.exit(0); } // --visa: bara vilka
 const [typ, scen, byar] = await Promise.all([
   typkontroll(),
   kor.length ? korSkript('scenario.ts', kor) : Promise.resolve(undefined),
-  sim ? pool(BYAR.map(seed => () => korJson<{ vakter: string[] }>('en.ts', [String(seed), String(DAGAR)], `BY ${seed}`).catch((e: Error) => e)), 2) : Promise.resolve([]),
+  sim ? vaktByar() : Promise.resolve(undefined),
 ]);
 console.log(typRad(typ));
 if (scen) console.log(scenarioSammanfattning(scen));
-const vakter: string[] = [];
-let krasch = false;
-for (const [i, r] of byar.entries()) {
-  if (r instanceof Error) { krasch = true; console.log(r.message); continue; }
-  vakter.push(...r.vakter.map(v => `by ${BYAR[i]}: ${v}`));
-}
-if (sim) console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : `Vakter: inga fel (${BYAR.length} byar i ${DAGAR} dygn).`);
+if (byar) console.log(byar.text);
 console.log(`(${sek(t0)} s, datorns tid)`);
 // typfel, en krasch eller ett vaktlarm gör resten meningslöst: kedjan stannar (ALLVARLIGT); ett rött scenario samlas
-process.exitCode = typ.code || krasch || vakter.length ? ALLVARLIGT : scen?.code ? 1 : 0;
+process.exitCode = typ.code || byar?.fel ? ALLVARLIGT : scen?.code ? 1 : 0;

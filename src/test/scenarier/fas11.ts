@@ -36,6 +36,14 @@ const utlysFor = (s: SIM.State, p: SIM.Person, k: SIM.UppdragId, q: SIM.VarldPla
   SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
   return u;
 };
+// en handlare från byn rad med lasten last kommer genom spelets egen väg in (handlarFram och handelSteg), förbi infarten
+const handlarenKommer = (s: SIM.State, rad: number, last: SIM.RadFard['last']) => {
+  (s.varld!.farder ??= []).push({ id: 99001, fran: rad, till: s.varld!.huvud!, g: 'mat', n: 0, t0: s.now, t1: s.now, handlare: true, last } as SIM.RadFard);
+  delete s.handlare; (s as { infart?: unknown }).infart = { klar: true };
+  SIM.handlarFram(s, rad);
+  s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
+  SIM.handelSteg(s, 2);
+};
 const f2 = (x: number) => x.toFixed(2); // två decimaler i texterna
 
 SCENARIER.bortafalt = {
@@ -4219,11 +4227,7 @@ SCENARIER.handlardjur = {
       const r = s.varld!.rader!.find(x => x.nr === rad)!;
       r.tal.rikedom = 10000; r.tek = [...new Set([...r.tek, 'ryggsack'])];
       const last = SIM.packaRad(r, mulberry(7), () => 10000, art ? 'packdjur' : 'vandrande', art);
-      (s.varld!.farder ??= []).push({ id: 99001, fran: rad, till: s.varld!.huvud!, g: 'mat', n: 0, t0: s.now, t1: s.now, handlare: true, last } as SIM.RadFard);
-      delete s.handlare; (s as { infart?: unknown }).infart = { klar: true };
-      SIM.handlarFram(s, rad);
-      s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
-      SIM.handelSteg(s, 2);
+      handlarenKommer(s, rad, last);
       return { s, h: s.handlare as SIM.Handlare | undefined, last, djur0 };
     };
     const hast = kom('hast'), oxe = kom('oxe'), vand = kom();
@@ -4259,11 +4263,7 @@ SCENARIER.karavan = {
       const fore = Object.values(SIM.radVaror(r)).reduce((a: number, n) => a + (n ?? 0), 0);
       const last = SIM.packaRad(r, mulberry(7), () => over, 'vagn', 'oxe');
       const efter = Object.values(SIM.radVaror(r)).reduce((a: number, n) => a + (n ?? 0), 0);
-      (s.varld!.farder ??= []).push({ id: 99001, fran: rad, till: s.varld!.huvud!, g: 'mat', n: 0, t0: s.now, t1: s.now, handlare: true, last } as SIM.RadFard);
-      delete s.handlare; (s as { infart?: unknown }).infart = { klar: true };
-      SIM.handlarFram(s, rad);
-      s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
-      SIM.handelSteg(s, 2);
+      handlarenKommer(s, rad, last);
       return { s, h: s.handlare as SIM.Handlare | undefined, last, djur0, ting0, dragit: fore - efter };
     };
     const rik = kom(80, 100000), fattig = kom(8, 400);
@@ -4305,11 +4305,8 @@ SCENARIER.karavanattack = {
       const s = SIM.cloneState(bas), r = s.varld!.rader!.find(x => x.nr === rad)!;
       r.tal.folk = 80; r.tal.rikedom = 100000; r.tek = [...new Set([...r.tek, 'ryggsack', 'vagn'])];
       const last = SIM.packaRad(r, mulberry(7), () => 100000, 'vagn', 'oxe');
-      (s.varld!.farder ??= []).push({ id: 99001, fran: rad, till: s.varld!.huvud!, g: 'mat', n: 0, t0: s.now, t1: s.now, handlare: true, last } as SIM.RadFard);
-      delete s.handlare; delete s.rovare; delete s.rovareFler; (s as { infart?: unknown }).infart = { klar: true };
-      SIM.handlarFram(s, rad);
-      s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
-      SIM.handelSteg(s, 2);
+      delete s.rovare; delete s.rovareFler;
+      handlarenKommer(s, rad, last);
       const h = s.handlare!; h.fas = 'handlar'; h.gar = s.now + 20 * SIM.HOUR; h.affar = undefined; h.ko = [];
       const P = SIM.gastAv(s, h.id)!, filt = SIM.handlarPlats(s, h, s.now); P.x = filt.x; P.y = filt.y;
       for (const p of SIM.living(s)) { if (p.gast) continue; Object.assign(p, SIM.freeNear(s, filt.x + 40, filt.y + 40)); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * SIM.HOUR, carry: 0 }; }

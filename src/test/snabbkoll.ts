@@ -3,26 +3,19 @@
 // fyra byar under de första 12 dygnen (12 år i spelet, knappt två veckor i verkligheten). Den hittar fel medan de är färska.
 // Den mäter inte balansen och jämför inget med facit: det gör det stora testet efter en grupp steg (npm run koll, jamfor, likhet).
 import './utc';
-import { ALLVARLIGT, korJson, korSkript, pool, scenarioSammanfattning, seedAv, sek, typkontroll, typRad } from './pool';
+import { ALLVARLIGT, korSkript, scenarioSammanfattning, sek, typkontroll, typRad, vaktByar } from './pool';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
-const BYAR = [0, 1, 2, 3].map(seedAv), DAGAR = 12;
 const t0 = Date.now();
 const [typ, scen, byar] = await Promise.all([
   typkontroll(),
   korSkript('scenario.ts', ['--snabb', ...process.argv.slice(2)]),
-  pool(BYAR.map(seed => () => korJson<{ vakter: string[] }>('en.ts', [String(seed), String(DAGAR)], `BY ${seed}`).catch((e: Error) => e)), 2),
+  vaktByar(),
 ]);
 console.log(typRad(typ));
 console.log(scenarioSammanfattning(scen));
-const vakter: string[] = [];
-let krasch = false;
-for (const [i, r] of byar.entries()) {
-  if (r instanceof Error) { krasch = true; console.log(r.message); continue; }
-  vakter.push(...r.vakter.map(v => `by ${BYAR[i]}: ${v}`));
-}
-console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : `Vakter: inga fel (${BYAR.length} byar i ${DAGAR} dygn).`);
+console.log(byar.text);
 console.log(`(${sek(t0)} s, datorns tid)`);
 // typfel, en krasch eller ett vaktlarm gör resten meningslöst: kedjan stannar (ALLVARLIGT); ett rött scenario samlas
-process.exitCode = typ.code || krasch || vakter.length ? ALLVARLIGT : scen.code ? 1 : 0;
+process.exitCode = typ.code || byar.fel ? ALLVARLIGT : scen.code ? 1 : 0;

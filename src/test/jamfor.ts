@@ -25,12 +25,12 @@
 // 35 dygn räcker för grundandet och den första vintern (istiden tar slut efter 34 dygn).
 import './utc';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ALLVARLIGT, korProcess, pool, seedAv, sek, sistaJson } from './pool';
-import { byCacheFil, kodHash } from './bycache';
+import { byCacheFil, kodHash, lasByCache } from './bycache';
 import { NYCKELTAL, Matt, Nyckeltal, STOR, median, medel, snittTal, vardeAv } from './nyckeltal';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
@@ -96,7 +96,7 @@ type Ut = { seed: number; n: Nyckeltal; vakter: string[] };
 interface Sida { namn: string; dir: string; balans: string; fil: string; ut: Record<number, Ut> }
 function sida(namn: string, dir: string, kod: string, balans: string): Sida {
   const fil = byCacheFil(kod, balans, dagar);
-  return { namn, dir, balans, fil, ut: existsSync(fil) ? JSON.parse(readFileSync(fil, 'utf8')) : {} };
+  return { namn, dir, balans, fil, ut: lasByCache<Ut>(fil) };
 }
 let korda = 0;
 // kör de byar som inte redan är sparade, för alla sidor samtidigt, och sparar dem (också om någon by kraschar)
