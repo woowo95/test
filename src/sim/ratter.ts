@@ -106,20 +106,20 @@ export const KATEGORIER = {
   soppa: { namn: 'soppa', tecken: '🍽', passiv: 15 },
   grot: { namn: 'gröt', tecken: '🍽', passiv: 5 },
   stek: { namn: 'stek', tecken: '🔥', passiv: 0 }, // på stekhällen (steg 9.6.21)
-  brod: { namn: 'bröd', tecken: '🍽', passiv: 25 },
+  brod: { namn: 'bröd', tecken: '🍽', passiv: 25, ett: true },
   grop: { namn: 'gropbakat', tecken: '🔥', passiv: 30 }, // i kokgropen med heta stenar (steg 10.7.28): bara på nivån Fest // degen jäser 20 minuter och gräddas 5 i bakugnen (steg 9.6.23)
-} satisfies Record<string, { namn: string; tecken: string; passiv: number }>;
+} satisfies Record<string, { namn: string; tecken: string; passiv: number; ett?: true }>;
 export type Kategori = keyof typeof KATEGORIER;
 // huvudingredienserna (den som byn har mest av i värde väljs först, ravaraPoang i matlagning.ts, steg 10.2.37) och kategorierna de kan bli i krukan (den första när rätten har stärkelse,
 // annars den sista)
 export const RATT_HUVUD = {
-  kott: { namn: 'Kött', kat: ['gryta', 'soppa'], grop: 'Gropbakat kött' },
+  kott: { namn: 'Kött', kat: ['gryta', 'soppa'], grop: 'Gropbakat kött', gropEtt: true },
   fisk: { namn: 'Fisk', kat: ['gryta', 'soppa'], grop: 'Gropbakad fisk' },
-  sad: { namn: 'Korn', kat: ['grot'], grop: 'Gropbakat korn' }, // steg 9.6.11
+  sad: { namn: 'Korn', kat: ['grot'], grop: 'Gropbakat korn', gropEtt: true }, // steg 9.6.11
   rot: { namn: 'Rot', kat: ['grot'], grop: 'Gropbakade rötter' },
   svamp: { namn: 'Svamp', kat: ['soppa'], grop: 'Gropbakad svamp' },
   bar: { namn: 'Bär', kat: ['grot'], grop: 'Gropbakade bär' },
-} satisfies Record<string, { namn: string; kat: Kategori[]; grop: string }>; // grop = festmåltidens namn (steg 10.7.28)
+} satisfies Record<string, { namn: string; kat: Kategori[]; grop: string; gropEtt?: true }>; // grop = festmåltidens namn (steg 10.7.28), gropEtt: namnet är ett ett-ord
 export type RattHuvud = keyof typeof RATT_HUVUD;
 export const RATT_HUVUD_LIST = Object.keys(RATT_HUVUD) as RattHuvud[];
 
@@ -156,7 +156,7 @@ const NARING: Record<RattHuvud, SakDef['naring']> = {
 };
 export function rattSaker(): Record<string, SakDef> {
   const ut: Record<string, SakDef> = {};
-  const rad = (h: RattHuvud, k: Kategori, n: Maltidsniva, haller: number) => { ut[rattId(h, k, n, haller)] = { namn: rattNamn(h, k, n), varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: rattMat(haller), naring: NARING[h], haller }; };
+  const rad = (h: RattHuvud, k: Kategori, n: Maltidsniva, haller: number) => { const ett = k === 'grop' ? (RATT_HUVUD[h] as { gropEtt?: true }).gropEtt : (KATEGORIER[k] as { ett?: true }).ett; ut[rattId(h, k, n, haller)] = { namn: rattNamn(h, k, n), ...(ett ? { ett } : {}), varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: rattMat(haller), naring: NARING[h], haller }; };
   for (const haller of HALLER_STEG) for (const n of ['lagad', 'fin'] as Maltidsniva[]) {
     for (const h of ['kott', 'fisk'] as RattHuvud[]) rad(h, 'stek', n, haller); // steken (steg 9.6.21)
     for (const h of RATT_HUVUD_LIST) for (const k of RATT_HUVUD[h].kat) rad(h, k, n, haller);
