@@ -18,6 +18,7 @@
     "takt": "tsx src/test/takt.ts",
     "by": "tsx src/test/by.ts",
     "rapport": "tsx src/test/rapport.ts",
+    "rimligt": "tsx src/test/rimligtkor.ts",
     "teknik": "tsx src/test/teknik.ts",
     "likhet": "bash src/test/likhet.sh",
     "koll": "tsx src/test/koll.ts",
