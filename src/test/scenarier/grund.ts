@@ -2585,7 +2585,9 @@ SCENARIER.bjornjakt = {
       strider += s.stat?.bjornstrid ? 1 : 0; gick += s.stat?.bjornjaktGick ? 1 : 0; nadd += s.stat?.bjornstrid || s.stat?.bjornjaktGick ? 1 : 0;
       if (s.bjornFalld !== undefined) {
         falld++;
-        if (!SIM.bjornarOf(s).length && !SIM.bjornarOf(s, s.now + 30 * HOUR * 0 + 2 * HOUR).length) borta++;
+        let sent = s.now; // den sista timmen samma år i spelet
+        while (SIM.yearNo(s, sent + HOUR) === SIM.yearNo(s, s.now)) sent += HOUR;
+        if (!SIM.bjornarOf(s).length && !SIM.bjornarOf(s, s.now + 2 * HOUR).length && !SIM.bjornarOf(s, sent).length) borta++;
         if (living(s).some(q => SIM.ryktbarhet(s, q.id) && (q.liv?.bjornar ?? 0) > 0)) dodare++;
         const ute = SIM.pilesOf(s).reduce((a, h) => a + (h.k === 'bjorndel' ? h.n : 0), 0) + living(s).reduce((a, q) => a + (q.task?.items?.bjorndel ?? 0), 0) + amountOf(s, 'bjorndel');
         if (ute > 0) delar++;

@@ -983,7 +983,7 @@ SCENARIER.matchrapport = {
       [`för få: ${ilog?.text ?? 'ingen rad'}, och ingen blev glad eller ledsen`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog && ingenTanke],
       [`berättelsen: ${ber}`, hel(ber) && ber.includes(a.name) && ber === SIM.matchBerattelse(s, m!)],
       [`när den svagare vinner jämnt: ${sber}`, hel(sber) && sber.includes(b.name) && sber.includes(a.name)],
-      [`när det kom för få: ${iber}`, hel(iber) && iber.includes(ep.name) || /ingen|för få|tom/.test(iber)],
+      [`när det kom för få: ${iber}`, hel(iber) && (iber.includes(ep.name) || /ingen|för få|tom/.test(iber))],
     ];
   },
 };
@@ -1333,19 +1333,19 @@ SCENARIER.mantel = {
     SIM.laggFram(s, 'hanforbud', { led: l.id }, l); SIM.rostKvall(s);
     const forbud = !!s.styre.hanForbud && SIM.hanTillat(s) === 0 && t0 >= 0;
     // manteln
-    const m = SIM.newTing(s, 'mantel_kaninskinn', 1, -1), man = () => s.ting!.find(t => t.k === 'mantel_kaninskinn')!;
+    SIM.newTing(s, 'mantel_kaninskinn', 1, -1); const man = () => s.ting!.find(t => t.k === 'mantel_kaninskinn')!;
     SIM.stepKlader(s); const paLedaren = man().bar === l.id;
     s.styre.ledare = q.id; SIM.stepKlader(s); const nasta = man().bar === q.id;
     // halsbandet
     const a0 = SIM.ryktbarhet(s, v[2].id).a;
-    const h = SIM.newTing(s, 'halsband_benband', 1, -1); const hb = s.ting!.filter(t => t.k === 'halsband_benband').pop()!; hb.bar = v[2].id; hb.x = hb.y = undefined;
+    SIM.newTing(s, 'halsband_benband', 1, -1); const hb = s.ting!.filter(t => t.k === 'halsband_benband').pop()!; hb.bar = v[2].id; hb.x = hb.y = undefined;
     const a1 = SIM.ryktbarhet(s, v[2].id).a;
     hb.k = 'halsband_tandband'; const a2 = SIM.ryktbarhet(s, v[2].id).a;
     return [
       ['förbudet mot hån går igenom och stoppar hånet', forbud],
-      ['ledaren har på sig manteln', paLedaren && !!m],
+      ['ledaren har på sig manteln', paLedaren],
       ['manteln går till nästa ledare', nasta],
-      [`ett halsband ger anseende, ett finare mer (${a0.toFixed(2)} → ${a1.toFixed(2)} → ${a2.toFixed(2)})`, a1 > a0 && a2 > a1 && !!h],
+      [`ett halsband ger anseende, ett finare mer (${a0.toFixed(2)} → ${a1.toFixed(2)} → ${a2.toFixed(2)})`, a1 > a0 && a2 > a1],
     ];
   },
 };
@@ -1439,6 +1439,7 @@ SCENARIER.lagar = {
   },
 };
 SCENARIER.tinget = {
+  env: { BALANS: 'lag.bas=2' }, // lagen efterlevs alltid: här prövas domen och böterna
   text: 'Steg 8.4.7–8.4.10: tinget avgör skulden, straffet står i lagen och blir likadant varje gång, och den som sett någon dö av en farlig handling blir rädd för den',
   kor: () => {
     const { s, v, l } = medLedare(), q = v[1], d = v[2];
@@ -1448,7 +1449,7 @@ SCENARIER.tinget = {
     SIM.handelse(s, q, 'stold', d, 'en yxa');
     for (const p of v) p.intryck = p.intryck ?? [];
     (l.intryck ??= []).push({ om: q.id, namn: q.name, k: 'tjuv', v: 1, c: 1, t: s.now, bev: [{ h: 'stold', t: s.now, mot: d.id, motNamn: d.name, sett: true }] });
-    const yxa = SIM.newTing(s, 'yxa', 1, q.id), fore = yxa.agare;
+    const yxa = SIM.newTing(s, 'yxa', 1, q.id);
     klockan(s);
     s.now = s.now - (s.now % 86400000) + 20 * 3600000;
     for (let i = 0; i < 20 && !(s.styre!.ratt?.length); i++) { SIM.stepStyre(s); }
@@ -1463,8 +1464,8 @@ SCENARIER.tinget = {
     SIM.lagDygn(s2);
     const kvar = SIM.living(s2)[0]; kvar.pot.mod = 1; // (den fega låter bli det hen är rädd för)
     return [
-      [`rättegången gäller lagens straff (${r ? SIM.STRAFF_NAMN[r.steg] : 'ingen'}) eller så efterlevdes lagen inte (${s.stat?.lag_ej_efterlevd ?? 0})`, !!r && r.steg === 4 || (s.stat?.lag_ej_efterlevd ?? 0) > 0],
-      [`böterna går till den drabbade (${yxa.agare === d.id ? d.name : 'ingen'})`, !r || yxa.agare === d.id || yxa.agare === fore],
+      [`rättegången gäller lagens straff (${r ? SIM.STRAFF_NAMN[r.steg] : 'ingen'})`, !!r && r.steg === 4],
+      [`böterna går till den drabbade (${yxa.agare === d.id ? d.name : 'ingen'})`, !!r && yxa.agare === d.id],
       [`de som såg björnen döda ${offer.name} blir rädda för att jaga björn (${radda})`, radda === SIM.living(s2).length],
       [`den som är rädd nog låter bli det (${SIM.raddFor(s2, kvar, 'bjornjakt')}), men inte annat (steg 10.2.41: inget tabu för hela byn)`, SIM.raddFor(s2, kvar, 'bjornjakt') === 'jaga björn' && !SIM.raddFor(s2, kvar, 'fiske') && !('tabuAkt' in s2)],
     ];
@@ -1572,7 +1573,7 @@ SCENARIER.sederfas8 = {
     s.seder.v.nyfikenhet = -1; l.pot.nyfikenhet = 2; const ring = SIM.byplanNu(s).form;
     return [
       ['Värna – Bruka är låst tills träd fälls', !l0],
-      ['den som drar åt Värna blir ledsen av ett fällt träd', !varna || ledsen],
+      [`den som drar åt Värna blir ledsen av ett fällt träd (${varna?.name ?? 'ingen drar åt Värna'})`, !!varna && ledsen],
       [`husen tätt eller glest följer sederna (${tat.toFixed(2)}, ${gles.toFixed(2)})`, tat > gles],
       [`formen läser sederna (${rader}, ${ring})`, !!rader && !!ring],
     ];
@@ -2054,7 +2055,7 @@ SCENARIER.ritualer = {
     satKyrka(s, tr, { bar: 20 });
     const [q, svag] = v.filter(p => p !== pr); q.troStyrka = 60; svag.troStyrka = 5;
     for (const p of v) SIM.put(s, 'bar', 5, { [p.id]: 5 });
-    const egen0 = SIM.ownedStock(s, q).bar ?? 0, svag0 = SIM.ownedStock(s, svag).bar ?? 0, gille0 = s.stat?.gille_mat ?? 0, mat0 = q.hunger;
+    const egen0 = SIM.ownedStock(s, q).bar ?? 0, svag0 = SIM.ownedStock(s, svag).bar ?? 0, gille0 = s.stat?.gille_mat ?? 0;
     q.hunger = 0.2; const h0 = q.hunger;
     const rg = korRitual();
     const gille = (s.stat?.gille_mat ?? 0) - gille0, kyrkanTom = 20 - SIM.kyrkansAv(s, tr, 'bar') === gille;
@@ -2073,7 +2074,7 @@ SCENARIER.ritualer = {
       [`prästen utses (${pr?.name}), ${pr ? SIM.prastSort(tr, pr.sex) : ''}`, !!pr],
       ['ingen högtid utan bud', utanBud],
       [`högtiden firas i sin tidsålder (${ratt?.namn}), inte i en annan`, fel && !!ratt && ratt.namn === SIM.hogtidNamn(SIM.hogtidVarde(ai, 'gille'))],
-      [`gillet: en hel mat per närvarande, ur kyrkans egendom först (${gille} mat, ${q.name} ${h0.toFixed(2)} → ${q.hunger.toFixed(2)})`, !!rg && gille >= v.length && kyrkanTom && q.hunger > h0 && mat0 >= 0],
+      [`gillet: en hel mat per närvarande, ur kyrkans egendom först (${gille} mat, ${q.name} ${h0.toFixed(2)} → ${q.hunger.toFixed(2)})`, !!rg && gille >= v.length && kyrkanTom && q.hunger > h0],
       [`offret tar en hel mat av den som följer budet (${offrat}), inte av den svagt troende (${svagOffrat})`, offrat === 1 && svagOffrat === 0],
       [`fastan: ett dygn utan mat och tron ${troFasta.toFixed(0)}`, !!rf && fastar && (troFasta >= 4 || q.troStyrka! >= 100)],
       [`bröllopet utan bud är byns fest vid elden utan tron (${utan?.namn})`, utan?.k === 'brollop' && utan.tro === undefined && !!val],
@@ -2422,7 +2423,7 @@ SCENARIER.helgonminne = {
 SCENARIER.kyrkan = {
   text: 'Steg 8.6: seden Världslig – Andlig, kyrkans förråd, trons hus (steg 10.3.19), buden med trons krets, att bryta ett bud ger skuld, ett bud kan bli lag, helgon, kväden och översteprästen',
   kor: () => {
-    const { s, v, l, tr } = medTro(6, 4);
+    const { s, v, tr } = medTro(6, 4);
     SIM.kultTimme(s);
     const pr = SIM.prastOf(s, tr)!;
     SIM.oppnaSed(s, 'andlig');
@@ -2502,7 +2503,7 @@ SCENARIER.kyrkan = {
       [`högtiden hålls vid altaret (${vidAltaret})`, vidAltaret],
       [`huset heter ${namn} efter tron`, ratt && namn.length > 0],
       [`en sparad by med ett hov får en klar plan att bygga (${hovPlan})`, hovPlan],
-      ['översteprästen finns', SIM.overstePrast(s) === pr && !!l],
+      ['översteprästen finns', SIM.overstePrast(s) === pr],
       [`kyrkans förråd är saker i lagret som tron äger, och ingen annan tar av dem (${egenBar}, kvar ${kyrkansKvar})`, egenBar && kyrkansKvar === 5],
       [`när tron dör ut blir kyrkans del byns (${utdod})`, utdod],
       [`en sparad by får kyrkans tal som saker som tron äger (${gammalVed})`, gammalVed === 7],
@@ -2647,9 +2648,9 @@ SCENARIER.buden = {
     kr4.inne = undefined; SIM.hogtidOlKvade(s4, tr4, vux4);
     const saknas = vux4.some(p => p.thoughts?.some(t => t.text === 'Ölet saknades vid högtiden'));
     // kväden vid högtiden
-    vux4[1].skill.skaldskap = 12; const kt0 = vux4[0].troStyrka!; vux4[0].troStyrka = 50;
+    vux4[1].skill.skaldskap = 12; vux4[0].troStyrka = 50;
     SIM.hogtidOlKvade(s4, tr4, vux4);
-    const kvad = (s4.stat?.hogtid_kvade ?? 0) === 1 && vux4[0].troStyrka! > 50; void kt0;
+    const kvad = (s4.stat?.hogtid_kvade ?? 0) === 1 && vux4[0].troStyrka! > 50;
     // den första skörden offras
     const falt: { offrat?: number } = {}; SIM.put(s4, 'korn', 5, { [f4.id]: 5 });
     const k0 = SIM.kyrkansAv(s4, tr4, 'korn');
@@ -2742,7 +2743,7 @@ SCENARIER.rader = {
     // hämnd
     (k.doda ??= []).push({ namn: 'Bror', av: v[1].id, t: s.now });
     SIM.radDygn(s, 'hamnd', k);
-    const f = s.rovare!, mal = f.mal === v[1].id, anh = SIM.rovarna(s, f).some(r => r.gast?.anhorig) || true;
+    const f = s.rovare!, mal = f.mal === v[1].id, anh = SIM.rovarna(s, f).some(r => r.gast?.anhorig);
     const stor = SIM.storRad({ ...f, folk: [...f.folk, ...f.folk, ...f.folk, ...f.folk, ...f.folk] });
     // långt bort: flocken letar hus för hus; byn har inga hus, så de ger sig av utan hen
     f.x = v[1].x + 20; f.y = v[1].y;
@@ -2773,8 +2774,6 @@ SCENARIER.rader = {
       const inne = SIM.living(hs)[0], i0 = rum.tiles[0]; inne.x = i0 % SIM.W + 0.5; inne.y = Math.floor(i0 / SIM.W) + 0.5;
       bom = SIM.bommad(hs, dorrBit);
     }
-    const by = medTro(7, 2), d = by.s; const h = SIM.newTing; void h;
-    SIM.radDygn(d, 'hamnd', (() => { const c = SIM.nyGrannby(d, 8, -40); c.styrka = 4; (c.doda ??= []).push({ namn: 'X', av: by.v[1].id, t: d.now }); return c; })());
     return [
       [`hämnden riktar sig mot den som dödade (${mal})`, mal && anh],
       [`en räd med minst fyra är en stor strid (${stor})`, stor],
@@ -2808,7 +2807,7 @@ SCENARIER.fritidlista = {
     const kron = kronikaFlik.html().includes(`data-fram="${m.nr}"`);
     kronikaVal.del = 'handelser';
     return [
-      [`${m.namn} uppträdde på scenen (${SIM.FRAM_AV[m.k]!.namn})`, true],
+      [`${m.namn} uppträdde på scenen (${SIM.FRAM_AV[m.k]?.namn})`, !!SIM.FRAM_AV[m.k]],
       ['scenens ruta visar framträdandet som just slutat, med knappen till redogörelsen', scen],
       ['det står under Händelser hos den som uppträdde', pres],
       ['Krönikans Fritid listar det', kron],
@@ -3129,7 +3128,7 @@ SCENARIER.troshusplan = {
     ];
   },
 };
-SCENARIER.gravplats = {
+SCENARIER.gravsed = {
   text: 'Steg 10.4.6: gravplatsen efter tron. Raderna i GRAVPLATSER (nära byn, i skogsbrynet, nära sjön, djupt i skogen, långt från byn, vid den heliga platsen) är bud som blir trons sed när den första troende dör, så att också hen hamnar där; avståndet märks bara som gångtid',
   kor: () => {
     const plats = (natur: number, sk: Partial<Record<SIM.SkalaId, number>>) => {

@@ -2559,7 +2559,7 @@ SCENARIER.virke = {
   },
 };
 
-SCENARIER.trad = {
+SCENARIER.urskog = {
   text: 'Träden (steg 5.1.4.1–5.1.4.2, 5.1.4.4, 5.1.4.5 och 5.1.6, gran och björk): urskogen står i dungar med gläntor på ungefär hälften av jorden, och varje träd har art, ålder och stadium: ett vuxet träd blir gammalt om det står fritt och torkar i en tät dunge, en torraka faller och lämnar en glänta, och åldern följer med i sparfilen; ett större träd ger mer trä när det fälls',
   kor: () => {
     const s = createState(3, START), g = groundOf(s);
@@ -2668,7 +2668,7 @@ SCENARIER.ortvatten = {
     klockan(s);
     const p = living(s)[0];
     p.x = 30; p.y = 30; p.tek = { ...p.tek, ortkok: 1 } as typeof p.tek;
-    (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k: 'ortkok', x: Math.floor(s.fire.at?.x ?? 30) + 4, y: Math.floor(s.fire.at?.y ?? 30) + 4, kvar: 0 } as SIM.Station); s.nextBit++; SIM.touch(s);
+    (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'ortkok', x: Math.floor(s.fire.at?.x ?? 30) + 4, y: Math.floor(s.fire.at?.y ?? 30) + 4, kvar: 0 } as SIM.Station); SIM.touch(s);
     SIM.put(s, 'ben', 4, { [p.id]: 4 }); SIM.put(s, 'ved', 4, { [p.id]: 4 });
     const utan = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 });
     const sack = newTing(s, 'vattensack', 1, p.id);
@@ -2699,7 +2699,7 @@ SCENARIER.slanda = {
     const utan = PROJEKT.spinna.kan(s, p, { kyla: false, gras: 0 });
     const t = newTing(s, 'slanda', 1, p.id);
     const med = PROJEKT.spinna.kan(s, p, { kyla: false, gras: 0 }), upp = PROJEKT.spinna.uppgift(s, p)!;
-    const v = { id: (s.nextBit ??= 1), k: 'vavstol', x: 34, y: 34, kvar: 0 } as SIM.Station; s.nextBit++;
+    const v = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vavstol', x: 34, y: 34, kvar: 0 } as SIM.Station;
     (s.stationer ??= []).push(v); SIM.touch(s);
     nyttVid(s, t);
     const iStol = PROJEKT.spinna.uppgift(s, p)!;

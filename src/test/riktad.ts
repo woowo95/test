@@ -19,24 +19,7 @@ import { ALLVARLIGT, RODA, korJson, korSkript, pool, scenarioSammanfattning, see
 import { KARTA, Karta, lasTackning, sparaKarta, tackningsMapp } from './kartan';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // klocktiden och den aktiva tiden per kärna sist (steg 10.2.65)
-import './scenarier/grund';
-import './scenarier/sparning';
-import './scenarier/redskap';
-import './scenarier/projekt';
-import './scenarier/agande';
-import './scenarier/behov';
-import './scenarier/natur';
-import './scenarier/samlande';
-import './scenarier/stationsdelar';
-import './scenarier/sjukdom';
-import './scenarier/byggnader';
-import './scenarier/folk';
-import './scenarier/kontroll';
-import './scenarier/religion';
-import './scenarier/mastare';
-import './scenarier/kultur';
-import './scenarier/fas9';
-import './scenarier/fas10';
+import './scenarier/alla';
 import { SCENARIER } from './scenarier/hjalp';
 
 const ROT = fileURLToPath(new URL('../../', import.meta.url));

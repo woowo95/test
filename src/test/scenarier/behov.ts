@@ -633,9 +633,10 @@ SCENARIER.luften = {
     return [
       [`spädbarnet dricker av sin mor, som blir törstigare (modern ${mor.torst.toFixed(2)})`, ammad],
       [`det lilla barnet blir törstigt (${barn.torst.toFixed(2)}) och en vuxen hämtar vatten åt det (${val?.why ?? 'inget'})`, torstigt && val?.ref === barn.id],
-      ['gästen dricker ur sin säck', drack],
-      ['när säcken är tom släcks inte gästens törst långt från vattnet', tom],
-      ['vid vattnet fylls säcken och gästen dricker', fylld],
+      [`en torr ruta och en strandruta hittades (${torr}, ${strand})`, torr >= 0 && strand >= 0],
+      ['gästen dricker ur sin säck', torr >= 0 && drack],
+      ['när säcken är tom släcks inte gästens törst långt från vattnet', torr >= 0 && tom],
+      ['vid vattnet fylls säcken och gästen dricker', strand >= 0 && fylld],
     ];
   },
 };

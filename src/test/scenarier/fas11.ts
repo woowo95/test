@@ -478,7 +478,7 @@ SCENARIER.varldskronika = {
     SIM.varldHandelse(vl, 'karavan', t0 + (tak + 40) * 3600e3 - 1000, { plats: by[0]?.nr }); // i efterhand, mellan två andra
     const kr = vl.kronika!, sma = kr.filter(h => !SIM.VARLDSHANDELSER[h.k].stor), stora = kr.filter(h => SIM.VARLDSHANDELSER[h.k].stor);
     const iOrdning = kr.every((h, i) => i === 0 || h.t >= kr[i - 1].t);
-    const aldstaBort = !sma.some(h => h.t < t0 + 50 * 3600e3 && h.k !== 'karavan') || sma.length === tak;
+    const aldstaBort = !sma.some(h => h.t < t0 + 50 * 3600e3 && h.k !== 'karavan');
     const karavan = SIM.varldHandelseText(vl, kr.find(h => h.k === 'karavan') ?? kr[0]);
     const alla = ['grundad', 'gattUnder', 'delad', 'nyLedare', 'krig', 'fred', 'forbund', 'svalt', 'farsot', 'rad', 'karavan', 'uppdrag'].every(k => k in SIM.VARLDSHANDELSER);
     // sparas med världen
@@ -911,7 +911,7 @@ SCENARIER.nyby = {
       [`en stor grupp ur en stor by grundar oftare en egen by (${stor.toFixed(2)} mot ${liten.toFixed(2)})`, stor > liten * 4],
       [`gruppen fick en plats och en rad (${n0} → ${vl.rader!.length} rader), med 4 personer`, !!ny && !!plats && vl.rader!.length === n0 + 1 && ny.tal.folk === 4],
       [`den nya byn minns sin moderby och de två är släkt (${SIM.slaktband(vl, ny.nr, r.nr)} band)`, ny.fran === r.nr && SIM.slaktband(vl, ny.nr, r.nr) > 0],
-      [`den kan en del av moderbyns tekniker (${ny.tek.length} av ${r.tek.length}), och bara det vars krav den kan`, tekOk && ny.tek.length < r.tek.length + 1],
+      [`den kan en del av moderbyns tekniker (${ny.tek.length} av ${r.tek.length}), och bara det vars krav den kan`, tekOk && ny.tek.length < r.tek.length],
       [`den tog sin del av maten (${mat0} → ${r.tal.mat} + ${ny.tal.mat})`, r.tal.mat + ny.tal.mat === mat0 && ny.tal.mat > 0],
       ['den ligger inom räckhåll och moderbyn kan flytta dit', !!dagar],
       ['världens krönika: Delad', krona],
@@ -1341,7 +1341,7 @@ SCENARIER.bynvet = {
       [`en gång i timmen kommer nya minnen med (${!!timme})`, !!timme && !fore],
       [`när den enda som vet dör försvinner platsen, med en rad i krönikan ("${rad?.[1]}")`, !efter && !!rad],
       ['byns egen plats är besökt', hemma?.v === SIM.O_BESOKT],
-      ['närområdet är känt', !nara || (SIM.bynKanner(s, nara.nr)?.v ?? -1) >= SIM.O_KANT],
+      ['närområdet är känt', !!nara && (SIM.bynKanner(s, nara.nr)?.v ?? -1) >= SIM.O_KANT],
     ];
   },
 };
@@ -1444,8 +1444,10 @@ SCENARIER.radort = {
   text: 'Radens kunskap om platser (steg 11.4.10, radKanner i ort.ts): en by i världen känner byarna i sitt grannät, har rykten om grannarnas grannar och har besökt sin egen plats och det dess handlare besökt',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!;
-    const r = vl.rader!.find(x => SIM.lever(vl, x) && (SIM.byPlats(vl, x.nr)?.grannar?.length ?? 0) > 1)!, egen = SIM.byPlats(vl, r.nr)!;
-    const g = egen.grannar![0]!, gg = SIM.varldPlatsNr(vl, g.nr)!.grannar!.map(y => y.nr).find(n => n !== egen.nr && !egen.grannar!.some(x => x.nr === n));
+    // en by med en granne som har en granne utanför byns eget grannät
+    const ggAv = (e: SIM.VarldPlats, g: { nr: number }) => SIM.varldPlatsNr(vl, g.nr)!.grannar!.map(y => y.nr).find(n => n !== e.nr && !e.grannar!.some(x => x.nr === n));
+    const r = vl.rader!.find(x => { const e = SIM.byPlats(vl, x.nr); return SIM.lever(vl, x) && (e?.grannar?.length ?? 0) > 1 && ggAv(e!, e!.grannar![0]!) !== undefined; })!, egen = SIM.byPlats(vl, r.nr)!;
+    const g = egen.grannar![0]!, gg = ggAv(egen, g);
     const langt = vl.platser!.find(q => q.nr !== egen.nr && !egen.grannar!.some(x => x.nr === q.nr) && !egen.grannar!.some(x => SIM.varldPlatsNr(vl, x.nr)?.grannar?.some(y => y.nr === q.nr)))!;
     const fore = SIM.radKanner(vl, r, langt.nr);
     SIM.radBesoker(vl, r.nr, langt.nr); SIM.radBesoker(vl, r.nr, langt.nr);
@@ -1457,7 +1459,7 @@ SCENARIER.radort = {
     return [
       ['byns egen plats är besökt', SIM.radKanner(vl, r, egen.nr) === SIM.O_BESOKT],
       ['byarna i grannätet är kända', SIM.radKanner(vl, r, g.nr) === SIM.O_KANT],
-      [`grannarnas grannar är rykten (${gg !== undefined ? 'finns' : 'ingen'})`, gg === undefined || SIM.radKanner(vl, r, gg) === SIM.O_RYKTE],
+      [`grannarnas grannar är rykten (${gg !== undefined ? 'finns' : 'ingen'})`, gg !== undefined && SIM.radKanner(vl, r, gg) === SIM.O_RYKTE],
       [`en plats långt borta är okänd tills någon från byn besökt den (${fore} → ${SIM.radKanner(vl, r, langt.nr)})`, fore === undefined && SIM.radKanner(vl, r, langt.nr) === SIM.O_BESOKT && r.besokt!.length === 1],
       [`handlarens by har besökt huvudbyn (${hr?.namn})`, !!hr && SIM.radKanner(vl2, hr, hb.nr) === SIM.O_BESOKT && !!hr.besokt?.includes(hb.nr)],
     ];
@@ -1481,7 +1483,7 @@ SCENARIER.gastort = {
       [`och känner det hens by känner (${ortL.length} platser, högst ${SIM.ORT.max})`, ortL.length > 1 && ortL.length <= SIM.ORT.max && somByn],
       ['uppgifterna är från i dag', ortL.every(l => l.t === s.now)],
       [`en bybo hör om en plats hen inte sett (${ny ? SIM.ortNiva(b, ny.a) : 'ingen'})`, !!ny && SIM.ortNiva(b, ny.a) !== undefined],
-      [`en främling känner också sin bys platser (${fOrt.length})`, !f || fOrt.length > 0],
+      [`en främling känner också sin bys platser (${fOrt.length})`, !!f && fOrt.length > 0],
     ];
   },
 };
@@ -1764,13 +1766,12 @@ SCENARIER.radbesok = {
     const heltal = Object.values(r.tal).every(Number.isInteger) && Object.values(sl.pack).every(Number.isInteger);
     const mat = SIM.FOOD.reduce((t, f) => t + (sl.pack[f] ?? 0), 0);
     return [
-      [`en granne med folk (${mal.namn})`, !!mal],
-      [`sällskapet sålde skinnen mot silver (${12 - (sl.pack.skinn ?? 0)} skinn, byns silver ${fore.silver} → ${r.tal.silver})`, (sl.pack.skinn ?? 0) < 12],
+      [`sällskapet sålde skinnen mot silver i ${mal.namn} (${12 - (sl.pack.skinn ?? 0)} skinn, byns silver ${fore.silver} → ${r.tal.silver})`, (sl.pack.skinn ?? 0) < 12],
       [`och köpte mat för vägen hem (${mat} portioner, byns mat ${fore.mat} → ${r.tal.mat})`, mat > 1 && r.tal.mat < fore.mat],
       ['radens tal och packningen är hela saker', heltal],
       ['platsen är besökt för resenärerna (byns rad får veta det vid hemkomsten, steg 11.5.13)', [a!, b!].every(p => SIM.ortNiva(p, mal.nr) === SIM.O_BESOKT)],
       [`byn minns att den mött huvudbyns folk (${mott0} → ${r.fasta.filter(f => f.roll === 'mott').length})`, r.fasta.filter(f => f.roll === 'mott').length === Math.min(SIM.RESA.mott, mott0 + 1)],
-      [`inställningen blev bättre (${inst0} → ${r.syn?.inst})`, !r.syn || r.syn.inst > inst0 || inst0 >= 100],
+      [`inställningen blev bättre (${inst0} → ${r.syn?.inst})`, !!r.syn && (r.syn.inst > inst0 || inst0 >= 100)],
       [`dagboken har besöket (${sl.dagbok.length} rader)`, sl.dagbok.length >= 3],
     ];
   },
@@ -2046,8 +2047,7 @@ SCENARIER.matslut = {
     kor(leta, 1); const letat = leta.sl.dagbok.filter(d => d[1].includes('letade')).length;
     const beslut0 = leta.sl.dagbok.length; kor(leta, 3); const igen = leta.sl.dagbok.filter(d => d[1].startsWith('Maten tog slut')).length;
     return [
-      [`ett mål långt bort (${mal.namn}, ${Math.round(Math.hypot(mal.x - hb.x, mal.y - hb.y))} rutor)`, !!mal],
-      [`nära hemmet med lite att vinna vänder sällskapet (${val[0]}: ${SIM.matslutVal(nara.s, nara.sl).val.map(x => `${x.id} ${Math.round(x.sc)}`).join(', ')})`, val[0] === 'vanda' || nara.sl.skede !== 'ute'],
+      [`nära hemmet, med ett mål långt bort (${mal.namn}, ${Math.round(Math.hypot(mal.x - hb.x, mal.y - hb.y))} rutor), med lite att vinna vänder sällskapet (${val[0]}: ${SIM.matslutVal(nara.s, nara.sl).val.map(x => `${x.id} ${Math.round(x.sc)}`).join(', ')})`, val[0] === 'vanda' || nara.sl.skede !== 'ute'],
       [`långt bort i kylan slaktar en omtänksam ledare fåret (${val[1]}: ${SIM.matslutVal(kallt.s, kallt.sl).val.map(x => `${x.id} ${Math.round(x.sc)}`).join(', ')}, ${SIM.matLage(kallt.s, kallt.sl).kvar} dygn kvar)`, val[1] === 'slakta'],
       [`en varm dag letar det (${val[2]})`, val[2] === 'leta'],
       [`på väg hem kan det inte vända (${val[3]})`, val[3] !== 'vanda'],
@@ -2055,7 +2055,7 @@ SCENARIER.matslut = {
       [`vände: sällskapet går hem (${nara.sl.skede}, ${pos0} → ${nara.sl.pos})`, nara.sl.skede === 'hemat' || nara.sl.skede === 'hemma'],
       [`slaktade: fåret är dött och köttet i hela saker i packningen (${kott.map(([k, n]) => `${n} ${k}`).join(', ')})`, farDog && kott.length > 0 && kott.every(([, n]) => Number.isInteger(n))],
       [`letade: tiden går förlorad (${letat} gång)`, letat === 1],
-      [`ledaren väger inte igen förrän efter ${SIM.RESA.matOmTim} timmar (${beslut0} → ${leta.sl.dagbok.length} rader, ${igen} beslut)`, igen <= 1 + (leta.sl.pack.bar ? 0 : 0)],
+      [`ledaren väger inte igen förrän efter ${SIM.RESA.matOmTim} timmar (${beslut0} → ${leta.sl.dagbok.length} rader, ${igen} beslut)`, igen <= 1],
     ];
   },
 };
@@ -2158,8 +2158,7 @@ SCENARIER.utvagar = {
     const lastEfter = SIM.lastFart(tung.s, tung.sl);
     tung.s.now += 21 * SIM.DAY; SIM.resaBehov(tung.s, 600 * SIM.SEC);
     return [
-      [`ett mål långt bort (${mal.namn})`, !!mal],
-      [`den med brutna ben är långsam (${fartSkadad.toFixed(2)} mot gränsen ${SIM.RESA.langsam})`, fartSkadad < SIM.RESA.langsam],
+      [`på väg mot ${mal.namn} är den med brutna ben långsam (${fartSkadad.toFixed(2)} mot gränsen ${SIM.RESA.langsam})`, fartSkadad < SIM.RESA.langsam],
       [`med en häst rider den skadade (${val[0]}: ${texter[0]})`, val[0] === 'djur'],
       [`med tre friska bärs hen på en bår (${val[1]}: ${texter[1]})`, val[1] === 'bar'],
       [`en kall ledare som inte tycker om hen lämnar hen (${val[2]}: ${texter[2]})`, val[2] === 'lamna'],
@@ -2830,8 +2829,9 @@ SCENARIER.radanfall = {
     const folk0 = [r.tal.folk, mot.tal.folk], rel0 = SIM.relation(vl, mot.nr, r.nr) ?? 0, mat0 = mot.tal.mat;
     SIM.BYHANDLINGAR.plundra.gor(c);
     const f = vl.farder!.find(x => x.fran === r.nr && x.anfall)!;
+    const vann0 = s.stat?.radanfall_vann ?? 0;
     SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!);
-    const dodaA = folk0[0] - r.tal.folk, dodaF = folk0[1] - mot.tal.folk;
+    const vann = (s.stat?.radanfall_vann ?? 0) > vann0, dodaA = folk0[0] - r.tal.folk, dodaF = folk0[1] - mot.tal.folk;
     const tagit = Object.values(f.byte ?? {}).reduce((a, x) => a + (x ?? 0), 0);
     const hela = [dodaA, dodaF, ...Object.values(f.byte ?? {})].every(x => Number.isInteger(x));
     const rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
@@ -2847,7 +2847,7 @@ SCENARIER.radanfall = {
       [`chansen följer antal och utrustning (${f2(p)} med ${n} mot 10, ${f2(pLika)} lika många, ${f2(pFattig)} fattigt och ${f2(pRik)} rikt utrustade), och skyddet gör lika många svagare`, p > pLika && pRik > pFattig && pLika < 0.5],
       ['en för svag by anfaller inte', svag === 0],
       [`byn plundrar inte en vän (${f2(van)}), men en aggressiv ledare plundrar en svagare granne den ser ner på (${f2(ovan)})`, van < 0 && ovan > 0],
-      [`flocken kommer fram: ${dodaA} anfallare och ${dodaF} försvarare dog, ${tagit} saker togs, allt i hela tal`, hela && (tagit > 0) === (f.byte !== undefined && tagit > 0)],
+      [`flocken kommer fram: ${dodaA} anfallare och ${dodaF} försvarare dog, ${tagit} saker togs${vann ? ' när anfallet vann' : ', och anfallet förlorade'}, allt i hela tal`, hela && (vann ? tagit > 0 : tagit === 0)],
       [`försvararnas syn på anfallarna sjunker (${rel0} → ${rel1})`, rel1 < rel0],
       ['bytet tas ur försvararnas förråd och läggs hemma när flocken kommer hem', hem],
       ['världens krönika får en räd', kron],

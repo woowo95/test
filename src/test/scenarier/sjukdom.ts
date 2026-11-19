@@ -163,7 +163,7 @@ SCENARIER.lakekonst = {
     q.x = p.x; q.y = p.y;
     q.skador = [sar(0.1)];
     SIM.vardKlar(s, p, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, ref: q.id });
-    const ren0 = (q.skador[0].ren ?? s.now) - s.now, vaxte = p.skill.lakekonst > fore;
+    const ren0 = (q.skador[0].ren ?? s.now) - s.now, efter = p.skill.lakekonst, vaxte = efter > fore;
     p.skill.lakekonst = 16; q.skador = [sar(0.1)];
     SIM.vardKlar(s, p, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, ref: q.id });
     const ren1 = (q.skador[0].ren ?? s.now) - s.now;
@@ -173,7 +173,7 @@ SCENARIER.lakekonst = {
     const noll = m.people.every(x => x.skill.lakekonst === 0);
     return [
       ['Läkekonst finns i registret över färdigheter', iReg],
-      [`den som vårdar får mer läkekonst (${fore.toFixed(2)} → ${p.skill.lakekonst === 16 ? '' : ''}${vaxte ? 'mer' : 'lika'})`, vaxte],
+      [`den som vårdar får mer läkekonst (${fore.toFixed(2)} → ${efter.toFixed(2)})`, vaxte],
       [`den skicklige håller såret rent längre (${(ren0 / 3600e3).toFixed(1)} mot ${(ren1 / 3600e3).toFixed(1)} timmar)`, ren1 > ren0],
       ['en äldre sparning får läkekonsten med noll', noll],
     ];

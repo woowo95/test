@@ -1249,7 +1249,7 @@ SCENARIER.rumstyper = {
     const gammal = SIM.rumFnId(s, rum) === SIM.fnId(h) && h.rumFn === undefined;
     const sov = SIM.rumTaggar(s, rum).has('sovsal') && SIM.sovplatser(s, rum) === SIM.sovPersoner(rum.tiles.length);
     const vilaFore = SIM.rumVila(s, rum);
-    const stall = (k: string, i: number) => { (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k, x: i % SIM.W, y: Math.floor(i / SIM.W), kvar: 0, inne: 1 } as SIM.Station); s.nextBit++; SIM.touch(s); };
+    const stall = (k: string, i: number) => { (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: i % SIM.W, y: Math.floor(i / SIM.W), kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s); };
     stall('bord', rum.tiles[0]);
     const matsal = SIM.rumTaggar(s, r()).has('matsal');
     stall('flatarbank', rum.tiles[rum.tiles.length - 1]);
@@ -1357,7 +1357,7 @@ SCENARIER.scenflytt = {
       SIM.bitsOf(s).push({ id: s.nextBit++, x: xx, y: yy, k: SIM.MATERIAL[m].k, m, b: 1, mat: SIM.MATERIAL[m].n, c: 1, hus: h.id });
     }
     housesOf(s).push(h); SIM.touch(s);
-    const sc = { id: s.nextBit++, k: 'scen', x: pl.x - 6, y: pl.y - 4, kvar: 0 } as SIM.Station;
+    const sc = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'scen', x: pl.x - 6, y: pl.y - 4, kvar: 0 } as SIM.Station;
     (s.stationer ??= []).push(sc); SIM.touch(s);
     SIM.stepStationer(s);
     const uteUtanSal = s.stationer.includes(sc);
@@ -1653,6 +1653,7 @@ SCENARIER.skatteskuld = {
     a.skatteskuld = 12;
     die(s, a, 'drap');
     const arv = ownsAmount(s, c, 'silver') - c0;
+    const iSkuld = s.log.findIndex(e => e.text.includes('skatteskuld')), iArvet = s.log.findIndex(e => e.text.includes('ärvde') && e.text.includes(a.name));
     return [
       [`en husägare utan lösa saker får en skuld som växer (${skuld1.toFixed(1)} → ${skuld2.toFixed(1)} på två år)`, skuld1 > 0 && skuld2 > skuld1 * 1.5],
       [`hen värderar silver högre (${silverVarde0.toFixed(2)} → ${silverVarde.toFixed(2)})`, silverVarde > silverVarde0],
@@ -1661,7 +1662,7 @@ SCENARIER.skatteskuld = {
       ['krönikan skriver att hen sålde sitt hus för att betala skatten', salde],
       [`efter köpet betalas skulden (${skuldKopt.toFixed(1)} → ${(d.skatteskuld ?? 0).toFixed(1)})`, betald],
       ['skulden stryks när lagen tas bort', struken],
-      [`den dödas skuld betalas före arvingarna (byn fick ${Math.round(s.stat?.skuldDod ?? 0)}, barnet ärvde ${arv} silver av ${aSilver + 200})`, Math.abs((s.stat?.skuldDod ?? 0) - 12) <= 0.5 && arv > 0 && a.skatteskuld === undefined && s.log.findIndex(e => e.text.includes('skatteskuld')) < s.log.findIndex(e => e.text.includes(`ärvde`) && e.text.includes(a.name))],
+      [`den dödas skuld betalas före arvingarna (byn fick ${Math.round(s.stat?.skuldDod ?? 0)}, barnet ärvde ${arv} silver av ${aSilver + 200})`, Math.abs((s.stat?.skuldDod ?? 0) - 12) <= 0.5 && arv > 0 && a.skatteskuld === undefined && iSkuld >= 0 && iArvet >= 0 && iSkuld < iArvet],
     ];
   },
 };
@@ -1999,13 +2000,13 @@ SCENARIER.samlingssal = {
     for (let i = 0; i < 8; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
     SIM.planBuild(s); byggKlart(s);
     const inget = !SIM.byggbehov(s).some(b => b.fn === 'samling');
-    (s.stationer ??= []).push({ id: (s.nextBit ??= 1), k: 'scen', x: housesOf(s)[0].x - 6, y: housesOf(s)[0].y - 6, kvar: 0 } as SIM.Station); s.nextBit++; SIM.touch(s);
+    (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'scen', x: housesOf(s)[0].x - 6, y: housesOf(s)[0].y - 6, kvar: 0 } as SIM.Station); SIM.touch(s);
     const behov = SIM.byggbehov(s).find(b => b.fn === 'samling');
     const h = housesOf(s)[0];
     h.fn = 'samling'; h.rumFn = undefined; SIM.touch(s);
     const sal = SIM.samlingRum(s)!, salenFinns = !!sal && !SIM.byggbehov(s).some(b => b.fn === 'samling');
     const bord = SIM.stationSite(s, 'bord'), bordInne = !!bord && !!SIM.roomAt(s, bord.x, bord.y);
-    s.stationer.push({ id: s.nextBit++, k: 'bord', x: bord!.x, y: bord!.y, kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s);
+    s.stationer.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bord', x: bord!.x, y: bord!.y, kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s);
     const matsal = SIM.rumTaggar(s, sal).has('matsal') || SIM.rumTaggar(s, gridOf(s).rooms.find(r => r.hus === h.id && r.tiles.length)!).has('matsal');
     const p = living(s)[0], plats = SIM.ledigPlats(s, p);
     const inneScen = () => SIM.scenen(s);
@@ -2015,7 +2016,7 @@ SCENARIER.samlingssal = {
     h.fn = 'verkstad'; SIM.touch(s);
     const r = gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length)!;
     s.stationer = s.stationer.filter(t => t.k === 'bord');
-    s.stationer.push({ id: s.nextBit++, k: 'flatarbank', x: r.tiles[0] % SIM.W, y: Math.floor(r.tiles[0] / SIM.W), kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s);
+    s.stationer.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'flatarbank', x: r.tiles[0] % SIM.W, y: Math.floor(r.tiles[0] / SIM.W), kvar: 0, inne: 1 } as SIM.Station); SIM.touch(s);
     SIM.stepByggnader(s);
     const hylla = SIM.zonesOf(s).filter(z => z.hus === h.id && z.slag === 'material').length;
     return [
@@ -2083,7 +2084,7 @@ SCENARIER.skjul = {
     const ingenStolpe = !SIM.MATERIAL.stolpe;
     SIM.planBuild(s); byggKlart(s);
     const hu = housesOf(s)[0], z = SIM.zonesOf(s)[0];
-    (s.stationer ??= []).push({ id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 6, y: hu.y, kvar: 0 } as SIM.Station, { id: s.nextBit!++, k: 'tork', x: hu.x + hu.w + 9, y: hu.y, kvar: 0 } as SIM.Station);
+    (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'tork', x: hu.x + hu.w + 6, y: hu.y, kvar: 0 } as SIM.Station, { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'tork', x: hu.x + hu.w + 9, y: hu.y, kvar: 0 } as SIM.Station);
     SIM.touch(s);
     // utan förlust vill byn inget torkhus; när maten ruttnar (steg 10.11.6) vill den
     s.ruttet = undefined; const utanForlust = !SIM.byggbehov(s).find(b => b.fn === 'torkhus');

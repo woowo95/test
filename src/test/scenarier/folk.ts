@@ -167,13 +167,13 @@ SCENARIER.samtal = {
     let samtal = 0;
     while (!findL(j, 'samla', area) && samtal < 300) { prata(i, j, 1); samtal++; }
     const fick = findL(j, 'samla', area);
-    if (fick && (l.t !== t0 || fick.t !== t0)) console.log(`VARNING: samtal: att berätta om platsen gjorde den nyss sedd: berättarens tid flyttades ${((l.t - t0) / HOUR).toFixed(0)} timmar och hoppet om återväxt föll från ${hopp0.toFixed(2)} till ${hoped(s, l).toFixed(2)}, och den som lyssnade fick ${fick.t === t0 ? 'samma tid' : 'tiden nu'}. tell i minne.ts sätter l.t = now (samhalle-49)`);
     return [
       [`tio samtal räknas (${r1.talks}), umgänget fylls på (${a.social.toFixed(2)}) och vänskapen ändras (10 → ${r1.op.toFixed(1)}, ${ev1.filter(x => x.good).length} av 10 gick bra)`, r1.talks === 10 && ev1.length === 10 && a.social > 0.8 && b.social > 0.8 && r1.op !== 10],
       [`två som är osams grälar ibland (${gral} av 200 samtal)${gralSanker ? '' : ', men ett gräl gjorde dem inte mer osams'}`, gral >= 3 && gral <= 60 && gralSanker],
       [`ett par som blivit ovänner går isär${e.partner === undefined && f.partner === undefined ? '' : ' (de är kvar som par)'}`, e.partner === undefined && f.partner === undefined && r3.rom === SIM.SAMTAL.skiltRom],
       [`två förälskade goda vänner blir ett par${g.partner === h.id && h.partner === g.id ? '' : ' (de blev det inte)'}`, g.partner === h.id && h.partner === g.id],
       [`en lärdom sprids i ett samtal: ${j.name} kan platsen efter ${samtal} samtal${fick ? ` (${fick.led} led från källan)` : ''}`, !!fick && fick.src === i.id],
+      [`att berätta om platsen gör den inte nyss sedd: berättarens tid flyttades ${((l.t - t0) / HOUR).toFixed(0)} timmar, hoppet om återväxt ${hopp0.toFixed(2)} → ${hoped(s, l).toFixed(2)}, och den som lyssnade fick ${fick?.t === t0 ? 'samma tid' : 'en annan tid'}`, !(fick && (l.t !== t0 || fick.t !== t0))],
     ];
   },
 };
@@ -194,20 +194,19 @@ SCENARIER.liv = {
       if (w.died !== undefined) efter = w.task ? `${w.task.act} (${w.task.why ?? ''})` : '';
     }
     const barn = s.people.find(c => c.mother === w.id);
-    if (efter) console.log(`VARNING: liv: ${w.name} dog i barnsäng men fick en ny uppgift i samma steg: ${efter}. Personslingan i steg.ts går vidare till taskStep efter pregnancy() utan att fråga alive (motor-2)`);
     // hon blev gravid med en, och har en annan partner när barnet föds
     const w2 = nyInvanare(s, 'k', 25), m1 = nyInvanare(s, 'm', 27), m2 = nyInvanare(s, 'm', 29);
     w2.partner = m2.id; m2.partner = w2.id; w2.pregnantSince = s.now - DAY; w2.pregnantBy = m1.id;
     SIM.birth(s, w2);
     const barn2 = s.people.find(c => c.mother === w2.id);
-    if (barn2 && barn2.father !== m1.id) console.log(`VARNING: liv: barnets far blev ${barn2.father === m2.id ? 'moderns partner när barnet föddes' : `nr ${barn2.father}`} och inte den hon blev gravid med. birth i liv.ts tar partnern före pregnantBy (samhalle-54)`);
     // styrkan efter åldern: ett barn, en vuxen och en gammal (samma person)
     const st = (alder: number) => stat(m, 'styrka', m.born + alder * DAY);
     return [
       [`${w.name} blev gravid med sin partner ${m.name}`, gravidMed === m.id],
       [`ett barn föddes efter ${(steg / STEG_DYGN).toFixed(1)} dygn (år i spelet)${barn ? `: ${barn.name}, med rätt mor och far` : ''}, och byn räknade det (${s.stat?.fodda ?? 0})`, !!barn && barn.father === m.id && (s.stat?.fodda ?? 0) >= 1],
       [`modern dog i barnsäng (${w.cause ?? 'lever'}) och är inte längre bland de levande`, w.cause === 'i barnsäng' && !living(s).includes(w)],
-      [`ett barn som föds medan modern har en ny partner får en mor${barn2 ? ` (${barn2.father === m1.id ? 'och den far hon blev gravid med' : 'men fel far, se VARNING'})` : ''}`, !!barn2 && barn2.mother === w2.id],
+      [`en mor som dör i barnsäng får ingen ny uppgift i samma steg${efter ? ` (${w.name} fick ${efter})` : ''}`, !efter],
+      [`ett barn som föds medan modern har en ny partner får sin mor och den far hon blev gravid med${barn2 && barn2.father !== m1.id ? ` (fadern blev ${barn2.father === m2.id ? 'moderns partner när barnet föddes' : `nr ${barn2.father}`})` : ''}`, !!barn2 && barn2.mother === w2.id && barn2.father === m1.id],
       [`styrkan växer upp i åren och avtar på äldre dagar: ${st(5).toFixed(1)} vid 5 år, ${st(30).toFixed(1)} vid 30 och ${st(75).toFixed(1)} vid 75`, st(5) < st(30) && st(75) < st(30)],
       [`åldern följer tiden: ${m.name} är ${ageOf(m, s.now).toFixed(1)} år efter ${(steg / STEG_DYGN).toFixed(1)} dygn`, Math.abs(ageOf(m, s.now) - (26 + steg / STEG_DYGN)) < 1e-3], // (klockan kan ligga en bit av ett slag efter: s.skuld, steg 10.2.14)
     ];
@@ -240,7 +239,7 @@ SCENARIER.utflyttning = {
     const grupp = [a, b, litet, mellan], kvar = living(s);
     const tog = kott0 - amountOf(s, 'kott');
     const agt = grupp.filter(q => Object.values(SIM.ownedAll(s, q.id)).some(v => v > 1e-9) || tingOf(s).some(t => t.agare === q.id)).map(q => q.name);
-    if (Math.abs(grenarUte(s) - grenar0 - 2) > 1e-6) console.log(`VARNING: utflyttning: ${a.name} bar två grenar när familjen flyttade, och de försvann (${(grenarUte(s) - grenar0).toFixed(2)} grenar till på marken och i förrådet). leave i liv.ts sätter p.task = undefined utan att lägga ner bördan (samhalle-48, fynd 37)`);
+    const lagdaGrenar = grenarUte(s) - grenar0;
     // inget ungt par: en ensam ung vuxen ger sig av
     const e = ny();
     e.a.partner = e.b.partner = undefined;
@@ -253,6 +252,7 @@ SCENARIER.utflyttning = {
       [`byn är trång (${pop0} invånare) och missnöjd, och efter ${((s.now - START) / HOUR).toFixed(0)} timmar flyttade ${s.stat?.utvandrade ?? 0}`, (s.stat?.utvandrade ?? 0) > 0],
       [`det unga paret flyttade med sina två barn under 14 år (${grupp.filter(q => q.left !== undefined).length} av 4), och barnet på 15,5 år och det äldre paret blev kvar`, grupp.every(q => q.left !== undefined && !kvar.includes(q)) && s.stat?.utvandrade === 4 && kvar.includes(stor) && kvar.includes(c) && kvar.includes(d) && kvar.length === pop0 - 4],
       [`de som flyttade har ingen uppgift kvar`, grupp.every(q => q.task === undefined)],
+      [`det de bar på lades ner: ${a.name} bar två grenar, och ${lagdaGrenar.toFixed(2)} grenar till ligger på marken och i förrådet`, Math.abs(lagdaGrenar - 2) <= 1e-6],
       [`de tog med sig ${tog.toFixed(1)} av sitt eget kött (de ägde 40), resten blev byns${agt.length ? ` (äger fortfarande: ${agt.join(', ')})` : ''}`, tog > 0 && tog <= 40 + 1e-6 && !agt.length && ownedSum(s, 'kott') < 1e-9 && ownedSum(s, 'bar') < 1e-9],
       [`utan ungt par gav sig en ensam ung vuxen av, med sina barn under 14 år (${gick.map(q => `${q.name}, ${ageOf(q, q.left!).toFixed(1)} år`).join('; ') || 'ingen'})`, vuxna.length === 1 && vuxna[0]!.partner === undefined && ageOf(vuxna[0]!, vuxna[0]!.left!) >= 16 && ageOf(vuxna[0]!, vuxna[0]!.left!) < 40 && gick.every(q => q === vuxna[0] || SIM.isParent(vuxna[0]!, q) && ageOf(q, q.left!) < SIM.ALDER.vuxen) && e.s.stat?.utvandrade === gick.length && !living(e.s).some(q => SIM.isParent(vuxna[0]!, q) && ageOf(q, e.s.now) < SIM.ALDER.vuxen)],
       [`paret som flyttade tillsammans är fortfarande ett par, och den som blir kvar när partnern utvisas släpper hen (${u.d.partner === undefined ? 'släppte' : 'har kvar ' + u.c.name})`, a.partner === b.id && b.partner === a.id && u.d.partner === undefined],
@@ -1083,7 +1083,8 @@ SCENARIER.blockera = {
     }
     // samma dörr som riktiga rutor på kartan (steg 10.1.6, testarenans plats): väggen är rutorna x = 27 utom rutan y = 19, och
     // striden frågar världen om dem (provVarld). Samma sak ska gälla: ingen förbi den som står i öppningen, ingen i en vägg
-    const X0 = 20, Y0 = 15, rutor = new Set<number>(); // inne på den minsta kartan (64 × 40 när ingen by är laddad) for (let y = 0; y < 9; y++) if (y !== 4) rutor.add((Y0 + y) * SIM.W + X0 + 7);
+    const X0 = 20, Y0 = 15, rutor = new Set<number>(); // inne på den minsta kartan (64 × 40 när ingen by är laddad)
+    for (let y = 0; y < 9; y++) if (y !== 4) rutor.add((Y0 + y) * SIM.W + X0 + 7);
     const varld = SIM.provVarld(undefined, rutor), iRuta = (x: number, y: number) => rutor.has(Math.floor(y) * SIM.W + Math.floor(x));
     let kForbi = 0, kVagg = 0, kIgenom = 0, kN = 0;
     for (let fro = 1; fro <= 40; fro++) {

@@ -206,7 +206,15 @@ function uiLasNu(s: State, t: number) {
 // (testerna i övrigt körs i datorns tidszon, här UTC, där byn startar 06:00)
 export const LANG_S = 13;
 export const STOCKHOLM = { TIDSZON: 'Europe/Stockholm' };
-export const SCENARIER: Record<string, { text: string; lang?: boolean; env?: Record<string, string>; kor: () => Koll[] | Promise<Koll[]> }> = {};
+type Scenario = { text: string; lang?: boolean; env?: Record<string, string>; kor: () => Koll[] | Promise<Koll[]> };
+// ett namn som sätts två gånger skriver över det första scenariot, som då aldrig körs: det larmar direkt
+export const SCENARIER: Record<string, Scenario> = new Proxy({} as Record<string, Scenario>, {
+  set(m, n, v) {
+    if (n in m) throw new Error(`Scenariot ${String(n)} finns två gånger`);
+    m[n as string] = v;
+    return true;
+  },
+});
 
 export const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;
 
