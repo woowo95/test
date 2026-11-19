@@ -65,6 +65,13 @@ const forstaByMedAffar = (s: SIM.State, mat: boolean) => {
   }
   return { huvud, r: undefined, c: undefined };
 };
+// resans behov räknas en timme i taget i tim timmar
+const resaTimmar = (s: SIM.State, tim: number) => { for (let h = 0; h < tim; h++) { s.now += SIM.HOUR; SIM.resaBehov(s, SIM.HOUR); } };
+// den grannby som ligger längst bort från platsen hb och har en väg dit till fots
+const langstaMal = (s: SIM.State, hb: SIM.VarldPlats) => {
+  const vl = s.varld!, v = SIM.varldMark(s)!;
+  return hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)!).filter(p => p && SIM.vagMellan(vl, v, hb.y * v.w + hb.x, p.y * v.w + p.x, 'fots', s.now)).sort((x, y) => Math.hypot(y.x - hb.x, y.y - hb.y) - Math.hypot(x.x - hb.x, x.y - hb.y))[0]!;
+};
 const f2 = (x: number) => x.toFixed(2); // två decimaler i texterna
 
 SCENARIER.bortafalt = {
@@ -1783,7 +1790,7 @@ SCENARIER.resfart = {
       if (stig) { const l = s.varld!.leder ??= {}; for (const i of SIM.vagenRutor(s, sl)) l[i] = [20, s.now, 1]; s.varld!.ledVer = (s.varld!.ledVer ?? 0) + 1; }
       return { s, sl, folk };
     };
-    const kor = (x: { s: SIM.State }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    const kor = (x: { s: SIM.State }, tim: number) => resaTimmar(x.s, tim);
     const vuxen = ny([vuxna[0]!.id, vuxna[1]!.id]), medBarn = barn ? ny([vuxna[0]!.id, barn.id]) : undefined, stig = ny([vuxna[0]!.id, vuxna[1]!.id], true);
     const fV = SIM.sallskapFart(vuxen.s, vuxen.sl), fB = medBarn ? SIM.sallskapFart(medBarn.s, medBarn.sl) : 1;
     kor(vuxen, 2); if (medBarn) kor(medBarn, 2); kor(stig, 2);
@@ -2066,9 +2073,9 @@ SCENARIER.matslut = {
   text: 'När maten tar slut på vägen (steg 11.5.15, MATSLUT i resa.ts): ledaren väger att leta, vända, hungra eller slakta ett packdjur med en poäng: värdet av det som återstår av resan minus hungern minus det utvägen kostar. Nära hemmet med lite att vinna vänder sällskapet, långt bort i kylan slaktar en omtänksam ledare fåret, och en varm dag letar det; allt i hela saker',
   kor: () => {
     const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, [a, b] = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
-    const hb = SIM.byPlats(vl0, vl0.huvud!)!, v0 = SIM.varldMark(s0)!;
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!;
     // det mål som ligger längst bort och går att nå
-    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl0, g.nr)!).filter(p => p && SIM.vagMellan(vl0, v0, hb.y * v0.w + hb.x, p.y * v0.w + p.x, 'fots', s0.now)).sort((x, y) => Math.hypot(y.x - hb.x, y.y - hb.y) - Math.hypot(x.x - hb.x, x.y - hb.y))[0]!;
+    const mal = langstaMal(s0, hb);
     const varm = (warm: boolean) => { for (let d = 1; d < 400; d++) { const t = (Math.floor(s0.now / SIM.DAY) + d) * SIM.DAY + 12 * SIM.HOUR; if ((SIM.temperature(s0, t) >= SIM.RESA.fyndVarm + 5) === warm && (warm || SIM.temperature(s0, t) < SIM.RESA.fyndVarm - 3)) return t; } return s0.now; };
     const ny = (t: number, o: { del: number; varde: number; far?: boolean; hemat?: boolean }) => {
       const s = SIM.cloneState(s0); s.now = t;
@@ -2095,7 +2102,7 @@ SCENARIER.matslut = {
     // empatin väger hungern tyngre
     const e = ny(varm(true), { del: 0.3, varde: 200 }); e.p.pot.empati = 3; const hk3 = SIM.matLage(e.s, e.sl).hk; e.p.pot.empati = 18; const hk18 = SIM.matLage(e.s, e.sl).hk;
     // utfallen genom resaBehov: maten är slut och sällskapet är hungrigt
-    const kor = (x: { s: SIM.State; sl: SIM.Sallskap }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    const kor = (x: { s: SIM.State }, tim: number) => resaTimmar(x.s, tim);
     const pos0 = nara.sl.pos; kor(nara, 1);
     kor(kallt, 1); const farDog = !!kallt.s.tamdjur!.find(d => d.id === 900001)?.dog;
     const kott = Object.entries(kallt.sl.pack).filter(([k]) => SIM.FOOD.includes(k));
@@ -2128,7 +2135,7 @@ SCENARIER.vagsjuk = {
       const v = SIM.varldMark(s)!; sl.ruta = hb.y * v.w + hb.x;
       return { s, sl, p, q };
     };
-    const kor = (x: { s: SIM.State }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    const kor = (x: { s: SIM.State }, tim: number) => resaTimmar(x.s, tim);
     // riskerna: sjukdom 0,03 per dygn och olycka 0,02 på stig, dubbelt på obanad mark
     const r = ny({}); r.p.skill.lakekonst = 0; r.q.skill.lakekonst = 0;
     delete r.s.varld!.leder?.[r.sl.ruta!]; r.s.varld!.ledVer = (r.s.varld!.ledVer ?? 0) + 1;
@@ -2172,8 +2179,8 @@ SCENARIER.utvagar = {
   text: 'När någon blir långsam (steg 11.5.17, UTVAGAR i resa.ts): ledaren väger utvägarna (åka på vagnen, rida på ett djur, bår, släppa utrustning, rasta, vända, lämna personen, fortsätta) med en poäng: resans värde minus dygnen i den fart utvägen ger minus det den kostar. Med en häst rider den skadade, med tre friska bärs hen på en bår, en kall ledare lämnar den hen inte tycker om, och det som släpps blir en gömma på kartan som ligger kvar 20 dygn',
   kor: () => {
     const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
-    const hb = SIM.byPlats(vl0, vl0.huvud!)!, v0 = SIM.varldMark(s0)!;
-    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl0, g.nr)!).filter(p => p && SIM.vagMellan(vl0, v0, hb.y * v0.w + hb.x, p.y * v0.w + p.x, 'fots', s0.now)).sort((x, y) => Math.hypot(y.x - hb.x, y.y - hb.y) - Math.hypot(x.x - hb.x, x.y - hb.y))[0]!;
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!;
+    const mal = langstaMal(s0, hb);
     const ny = (antal: number, o: { hast?: boolean; pack?: Record<string, number> } = {}) => {
       const s = SIM.cloneState(s0), folk = vuxna.slice(0, antal).map(q => s.people.find(x => x.id === q.id)!);
       const sl = SIM.nyttSallskap(s, folk[0]!, mal.nr, 'handel')!; for (const q of folk.slice(1)) SIM.foljMed(s.varld!, sl, q);
@@ -2200,7 +2207,7 @@ SCENARIER.utvagar = {
     const val = [hast, bar, kall, varm].map(forst), texter = [hast, bar, kall, varm].map(visa);
     // utfallen genom spelets eget steg
     const f0 = SIM.sallskapFart(bar.s, bar.sl);
-    const kor = (x: { s: SIM.State }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    const kor = (x: { s: SIM.State }, tim: number) => resaTimmar(x.s, tim);
     kor(bar, 1); const f1 = SIM.sallskapFart(bar.s, bar.sl), buren = bar.sl.buren?.map(b => b[1]).join(',');
     kor(kall, 1); const ensam = kall.s.varld!.sallskap!.find(x => x !== kall.sl && x.medl.includes(kall.sk.id));
     // den som läkt går själv igen
@@ -2241,7 +2248,7 @@ SCENARIER.forsvunnen = {
       const v = SIM.varldMark(s)!; sl.ruta = hb.y * v.w + hb.x;
       return { s, sl, folk };
     };
-    const kor = (x: { s: SIM.State }, tim: number) => { for (let h = 0; h < tim; h++) { x.s.now += SIM.HOUR; SIM.resaBehov(x.s, SIM.HOUR); } };
+    const kor = (x: { s: SIM.State }, tim: number) => resaTimmar(x.s, tim);
     const dodas = (x: { s: SIM.State }, p: SIM.Person) => { SIM.skada(x.s, p, 'huvud', 'krossar', 0.3, 'olycka', 'på resan'); p.blod = 0.01; };
     // ledaren dör på vägen: de andra begraver hen, och en annan leder
     const a = ny(3), d = a.folk[0]!, partner = d.partner;
