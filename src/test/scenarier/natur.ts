@@ -37,10 +37,9 @@ SCENARIER.djur = {
       // samma uppgift hela tiden (jakten är försök som tar en stund, steg 3.7.3); den som fångat börjar om på platsen
       if (p.task?.act !== 'jakt' || p.task.carry > 0 || p.task.phase !== 'do') { p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + 24 * HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) }; p.x = bx; p.y = by; }
       for (const r of living(s)) r.hunger = 1; // ingen äter av viltet under provet (då syns inte om det kom in helt)
-      const v0 = amountOf(s, 'vilt');
       step(s, BEAT);
-      const d = (amountOf(s, 'vilt')) - v0;
-      if (d > 0.05 && Math.abs(d / KANIN - Math.round(d / KANIN)) * KANIN > 0.05) hela = false; // det som kommer in är hela kaniner (två jägare kan komma hem samma slag)
+      // det jägarna bär hem är hela kaniner (det som bärs in från marken av någon annan är ingen jakt: en hand rymmer ett slag)
+      for (const r of living(s)) if (r.task?.act === 'jakt' && r.task.carry > 0.05 && Math.abs(r.task.carry / KANIN - Math.round(r.task.carry / KANIN)) * KANIN > 0.05) hela = false;
     }
     const kaniner = s.stat?.kaniner ?? 0;
     // den som fångat en kanin bär hem den hel (små steg, så att vägen hem syns)

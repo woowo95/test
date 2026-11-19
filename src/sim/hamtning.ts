@@ -48,7 +48,8 @@ HAMTAS.dorr = { av: (_s, _p, tk) => DORRAR[tk.tool as DorrSlag]?.av };
 // att slakta och rensa (redskap.ts bearbeta): den första arten som finns, så mycket som hinns
 const djurHamtas: Hamtas = { av: (s, p, tk) => {
   const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === tk.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt));
-  const n = a ? Math.ceil(Math.min((tk.until - s.now) / HOUR * a.timme, djurKvar(s, a)) * a.mat - 1e-9) : 0;
+  // hela djur: det som hinns, avrundat uppåt till ett helt djur (en del av ett djur går inte att slakta)
+  const n = a ? Math.ceil(Math.min((tk.until - s.now) / HOUR * a.timme, djurKvar(s, a)) - 1e-9) * a.mat : 0;
   return n > 0 ? { [a!.sak]: n } : undefined;
 } };
 for (const a of DJURARTER) HAMTAS[a.act] ??= djurHamtas;
@@ -138,6 +139,8 @@ export function taMed(s: State, p: Person, tk: Task) {
 export function hamtat(s: State, p: Person, tk: Task) {
   const av = tk.hamta!, h = hamtasFor(tk.act), byns = h?.byns ?? false, fran = h?.fran?.(s, p, tk);
   let fick = 0;
+  // vid stacken tas det ur stackarna, inte ur det hen redan bär (annars går det ur bördan och tillbaka i den, om och om igen)
+  tk.hamtad = undefined;
   iRackhall(p.x, p.y, () => {
     for (const [k, n] of Object.entries(av)) {
       // så mycket hen orkar bära, och en sak i taget också när den är tyngre än så (ett helt djur dras)
