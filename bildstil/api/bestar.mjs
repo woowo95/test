@@ -58,7 +58,9 @@ async function oppnaSidan() {
   if (!fs.existsSync(html)) throw new Error('Bygg sidan först: node bildstil/bygg.cjs');
   webblasare = await pw.chromium.launch(); sida = await webblasare.newPage();
   await sida.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await sida.setContent('<meta charset="utf-8">' + fs.readFileSync(html, 'utf8'), { waitUntil: 'load' }); // utan charset gissar Chromium ibland fel på filen await sida.waitForFunction(() => window.BESTAR?.prov);
+  // utan charset gissar Chromium ibland fel på filen
+  await sida.setContent('<meta charset="utf-8">' + fs.readFileSync(html, 'utf8'), { waitUntil: 'load' });
+  await sida.waitForFunction(() => window.BESTAR?.prov);
   return sida;
 }
 const stangSidan = async () => { if (webblasare) await webblasare.close(); webblasare = sida = null; };

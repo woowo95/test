@@ -993,8 +993,8 @@
   function prov(lager, d, over = {}, skala = 4, spegel = false) {
     const L = LAGER.find(x => x.id === lager), fel = [];
     let del;
-    try { del = apiDel(lager, d); } catch (e) { return { fel: ['kunde inte läsas: ' + e.message] }; }
-    L.delar.push(del);
+    try { del = apiDel(lager, d); if (lager === 'kropp') nerOY(del); } catch (e) { return { fel: ['kunde inte läsas: ' + e.message] }; }
+    L.delar.push(del); // en kropp flyttas ner OY som kropparna vid start, så att prov ritar samma bild som sidan
     try {
       const v = { ...val, ...over, [lager]: del.id }, B = Bild(W, H, P);
       const fr = dels(v, 'farg');
