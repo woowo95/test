@@ -44,6 +44,27 @@ const handlarenKommer = (s: SIM.State, rad: number, last: SIM.RadFard['last']) =
   s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
   SIM.handelSteg(s, 2);
 };
+// byn har ganger gånger det den vill ha av varje varugrupp (och av maten när mat är satt), och rikedomen räknas om
+const fyllEfterVilja = (r: SIM.VarldRad, ganger = 1, mat = true) => {
+  for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') r.varor![g] = ganger * Math.round(SIM.radVill(r, g, SIM.rikMal(r)));
+  if (mat) r.tal.mat = ganger * Math.round(SIM.radVill(r, 'mat', SIM.rikMal(r)));
+  r.tal.rikedom = SIM.radRikedomUr(r);
+};
+// den första byn med syn på huvudbyn som får en affär där, när den har minst 20 invånare och tre gånger det den vill ha (också
+// av maten och 100 silver när mat är satt)
+const forstaByMedAffar = (s: SIM.State, mat: boolean) => {
+  const vl = s.varld!, huvud = vl.rader!.find(x => x.nr === vl.huvud)!;
+  for (const x of vl.rader!) {
+    if (!SIM.lever(vl, x) || !x.syn || x.nr === vl.huvud) continue;
+    x.tal.folk = Math.max(x.tal.folk, 20); SIM.radVaror(x);
+    fyllEfterVilja(x, 3, mat);
+    if (mat) { x.tal.silver = 100; x.tal.rikedom = SIM.radRikedomUr(x); }
+    SIM.mots(vl, x.nr, huvud.nr);
+    const c = SIM.byCtx(s, vl, x, huvud);
+    if (SIM.fardAffar(c)) return { huvud, r: x as SIM.VarldRad | undefined, c: c as SIM.ByCtx | undefined };
+  }
+  return { huvud, r: undefined, c: undefined };
+};
 const f2 = (x: number) => x.toFixed(2); // två decimaler i texterna
 
 SCENARIER.bortafalt = {
@@ -2455,8 +2476,7 @@ SCENARIER.handelsfard = {
     // byn har precis det den vill ha av allt utom virket, som den har dubbelt så mycket av som den vill; grannen dyr har inget
     // virke men silver, och grannen billig har tre gånger så mycket
     const vill = (x: typeof r, g: SIM.VarugruppId) => Math.round(SIM.radVill(x, g, SIM.rikMal(x)));
-    for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') r.varor![g] = vill(r, g);
-    r.tal.mat = vill(r, 'mat');
+    fyllEfterVilja(r);
     r.varor!.virke = 2 * vill(r, 'virke'); r.tal.rikedom = SIM.radRikedomUr(r);
     dyr.varor!.virke = 0; dyr.tal.silver = 200; dyr.tal.rikedom = SIM.radRikedomUr(dyr);
     billig.varor!.virke = 3 * vill(billig, 'virke'); billig.tal.rikedom = SIM.radRikedomUr(billig);
@@ -2499,18 +2519,8 @@ SCENARIER.handlarby = {
   kor: () => {
     const s = SIM.cloneState(testBy(10)), vl = s.varld!;
     s.handlare = undefined; delete s.handlarVantar; vl.farder = [];
-    const huvud = vl.rader!.find(x => x.nr === vl.huvud)!;
     // den första byn med syn på huvudbyn som får en affär där när den har tre gånger så mycket som den vill av allt
-    let r: SIM.VarldRad | undefined, c: SIM.ByCtx | undefined;
-    for (const x of vl.rader!) {
-      if (!SIM.lever(vl, x) || !x.syn || x.nr === vl.huvud) continue;
-      x.tal.folk = Math.max(x.tal.folk, 20); SIM.radVaror(x);
-      for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') x.varor![g] = 3 * Math.round(SIM.radVill(x, g, SIM.rikMal(x)));
-      x.tal.rikedom = SIM.radRikedomUr(x);
-      SIM.mots(vl, x.nr, huvud.nr);
-      const cx = SIM.byCtx(s, vl, x, huvud);
-      if (SIM.fardAffar(cx)) { r = x; c = cx; break; }
-    }
+    const { huvud, r, c } = forstaByMedAffar(s, false);
     if (!r || !c) return [['en by kan skicka en handlare till huvudbyn', false]];
     SIM.BYHANDLINGAR.handel.gor(c);
     const f = vl.farder!.find(x => x.fran === r!.nr)!;
@@ -2546,18 +2556,7 @@ SCENARIER.handlarlast = {
   kor: () => {
     const s = SIM.cloneState(testBy(10)), vl = s.varld!;
     s.handlare = undefined; delete s.handlarVantar; vl.farder = [];
-    const huvud = vl.rader!.find(x => x.nr === vl.huvud)!;
-    let r: SIM.VarldRad | undefined, c: SIM.ByCtx | undefined;
-    for (const x of vl.rader!) {
-      if (!SIM.lever(vl, x) || !x.syn || x.nr === vl.huvud) continue;
-      x.tal.folk = Math.max(x.tal.folk, 20); SIM.radVaror(x);
-      for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') x.varor![g] = 3 * Math.round(SIM.radVill(x, g, SIM.rikMal(x)));
-      x.tal.mat = 3 * Math.round(SIM.radVill(x, 'mat', SIM.rikMal(x)));
-      x.tal.silver = 100; x.tal.rikedom = SIM.radRikedomUr(x);
-      SIM.mots(vl, x.nr, huvud.nr);
-      const cx = SIM.byCtx(s, vl, x, huvud);
-      if (SIM.fardAffar(cx)) { r = x; c = cx; break; }
-    }
+    const { r, c } = forstaByMedAffar(s, true);
     if (!r || !c) return [['en by kan skicka en handlare till huvudbyn', false]];
     const har0 = Object.fromEntries(SIM.VARUGRUPP_IDS.map(g => [g, SIM.radHar(r!, g)])), sv0 = r.tal.silver;
     SIM.BYHANDLINGAR.handel.gor(c);
@@ -2753,9 +2752,7 @@ SCENARIER.bygava = {
     const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud)!;
     SIM.mots(vl, r.nr, mot.nr);
     r.tal.folk = Math.max(r.tal.folk, 20); SIM.radVaror(r); SIM.radVaror(mot);
-    const vill = (x: typeof r, g: SIM.VarugruppId) => Math.round(SIM.radVill(x, g, SIM.rikMal(x)));
-    for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') r.varor![g] = vill(r, g);
-    r.tal.mat = vill(r, 'mat'); r.varor!.virke = vill(r, 'virke') + 100; r.tal.rikedom = SIM.radRikedomUr(r);
+    fyllEfterVilja(r); r.varor!.virke = Math.round(SIM.radVill(r, 'virke', SIM.rikMal(r))) + 100; r.tal.rikedom = SIM.radRikedomUr(r);
     const c = SIM.byCtx(s, vl, r, mot);
     c.rel = -10; const lag = SIM.BYHANDLINGAR.gava.poang(c);
     c.rel = 80; const hog = SIM.BYHANDLINGAR.gava.poang(c);
@@ -2822,7 +2819,7 @@ SCENARIER.muta = {
     const rel2 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
     // utan silver mutar byn med det den har mest över, i hela saker
     const r3 = SIM.cloneState(testBy(10)), vl3 = r3.varld!, q = vl3.rader!.find(x => x.nr === r.nr)!, qm = vl3.rader!.find(x => x.nr === mot.nr)!;
-    SIM.mots(vl3, q.nr, qm.nr); q.tal.silver = 0; SIM.radVaror(q); for (const g of SIM.VARUGRUPP_IDS) if (g !== 'mat') q.varor![g] = Math.round(SIM.radVill(q, g, SIM.rikMal(q))); q.tal.mat = Math.round(SIM.radVill(q, 'mat', SIM.rikMal(q))); q.varor!.virke = Math.round(SIM.radVill(q, 'virke', SIM.rikMal(q))) + 50; q.tal.rikedom = SIM.radRikedomUr(q);
+    SIM.mots(vl3, q.nr, qm.nr); q.tal.silver = 0; SIM.radVaror(q); fyllEfterVilja(q); q.varor!.virke = Math.round(SIM.radVill(q, 'virke', SIM.rikMal(q))) + 50; q.tal.rikedom = SIM.radRikedomUr(q);
     const qv0 = q.varor!.virke!;
     SIM.BYHANDLINGAR.muta.gor(SIM.byCtx(r3, vl3, q, qm));
     const medVaror = q.varor!.virke === qv0 - SIM.BYHANDLING.muta && q.tal.silver === 0 && vl3.ko!.some(x => x.typ === 'muta' && x.sak === qm.nr);
