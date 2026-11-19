@@ -3,7 +3,7 @@ import { iconCanvas } from '../ikoner';
 
 // Spelets emojier som pixelsymboler (steg 5.3.2.1). Texterna i spelet skriver fortfarande emojin (eller {sym_…} där samma
 // emoji har flera betydelser, t.ex. {sym_toa} för toan och 💧 för vattnet), och här byts den mot bildstilens symbol när texten
-// kommer in i sidan: i panelerna, loggen, ryktena, tipsrutorna och arenan. Symbolerna är 16 punkter höga och visas i hel
+// kommer in i sidan: i panelerna, loggen, ryktena och tipsrutorna. Symbolerna är 16 punkter höga och visas i hel
 // skala, också mitt i en textrad. Registret är SYMTECKEN i kartbilder.ts (ur bildstilens tecken, 5.2.4.2). I en tipsruta
 // (title) och i en rullista går ingen bild: där stryks emojin, och står den ensam blir den symbolens namn
 const EXTRA: Record<string, string> = { '★': 'sym_stjarna' }; // det perfekta mästerverket och legenden i texterna

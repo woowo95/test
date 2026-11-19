@@ -28,7 +28,6 @@ import './ui/ram';
 import './ui/symboler'; // emojierna blir pixelsymboler (steg 5.3.2.1)
 import './ui/varldskarta'; // världskartan (steg 11.2.16)
 import './ui/ark'; // panelerna som ark nerifrån på en liten skärm (steg 5.3.7)
-import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
 import { drawOmrade } from './ui/omradebild';
 
@@ -64,7 +63,7 @@ function setSpeed(v: number) {
   speed = v;
   for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === v));
 }
-function leaveTest() { testSvara(''); ui.brandTest = false; ui.blixtTest = false; brandKnapp(); ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
+function leaveTest() { testSvara(''); ui.brandTest = false; ui.blixtTest = false; brandKnapp(); ui.testMode = false; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
 // testläget stängs utan att den verkliga byn kommer tillbaka (en annan by tar dess plats)
 function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; ui.testBorta = { st: [], lager: [] }; leaveTest(); } }
 // en ny by med slumpat frö, sparad direkt
@@ -114,7 +113,6 @@ $('testToggle').addEventListener('change', async e => {
   renderClock(); renderPanel(true); renderByar();
 });
 for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.addEventListener('click', () => setSpeed(Number(b.dataset.v)));
-$('arenaKnapp').addEventListener('click', oppnaArena);
 // testläget (steg 4.5.4.4): en rövarflock (liten, mellan, stor) eller en handlare kommer nu. Bara i kopian av byn
 {
   const flock: [keyof typeof ROVARFLOCK, string][] = [['liten', 'En liten rövarflock'], ['mellan', 'En mellanstor rövarflock'], ['stor', 'En stor rövarflock']];
@@ -218,7 +216,7 @@ function ritaKartan(now: number) {
   drawTerrain();
   drawPlants(); drawFlackar(); drawAnimals();
   drawStructures(now);
-  drawPeople(now); drawHandel(); drawArena(); drawTona();
+  drawPeople(now); drawHandel(); drawTona();
   drawSkuggor();
   drawNight(ui.nu);
   drawFilter();

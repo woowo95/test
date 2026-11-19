@@ -296,8 +296,6 @@ const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.
 // tiden kvar till förblödning (steg 9.5.14): en röd siffra i minuter över huvudet när den är kort (HALSA.kortTim)
 const blodStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 20, fill: 0xa14808, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
 const blodTexter: PIXI.Text[] = [];
-// de ur byn som slåss i testarenan: de syns bara i striden (ui/arena.ts)
-export const dolda = new Set<number>();
 // figurerna, en sprite per person som återanvänds
 const figurer = new Map<number, PIXI.Sprite>(), sedd = new Set<number>();
 function figurAv(id: number) {
@@ -383,7 +381,7 @@ export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   sedd.clear();
   const skugga = skuggFolk().clear().beginFill(0xffffff); // skuggorna vid fötterna (steg 5.1.8, ui/skugga.ts)
-  const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
+  const ppl = living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
   { const nu = performance.now(); for (const [id, q] of synlig) synlig.set(id, glid(id, q, nu)); }
   markIcons.start();
@@ -531,7 +529,7 @@ export function drawPeople(t: number) {
   let b = 0;
   for (const p of living(s)) {
     const kvar = tidKvar(p);
-    if (kvar >= HALSA.kortTim || dolda.has(p.id)) continue;
+    if (kvar >= HALSA.kortTim) continue;
     const tx = blodTexter[b] ?? (blodTexter[b] = (() => { const t2 = new PIXI.Text('', blodStyle); t2.scale.set(0.5); t2.anchor.set(0.5, 1); labels.addChild(t2); return t2; })());
     b++;
     const txt = `${Math.max(1, Math.round(kvar * 60))} min`; // med enhet (steg 11.1.61)
