@@ -36,6 +36,7 @@ if (avbrutet) {
   if (avbrutet !== 'typfel') console.log(test.out.split('\n').filter(r => !r.startsWith('@@jobb ')).join('\n').trim() || 'TESTET KRASCHADE:\n' + test.err.slice(-1500));
   console.log(`AVBRUTET efter ${sek(t0)} s (datorns tid): ${avbrutet}. Scenarierna stoppades, eftersom resten inte säger något förrän det är rättat. Facit sparas inte.`);
   rmSync(FACIT, { force: true }); rmSync(FACIT + '.byar/', { recursive: true, force: true });
+  await new Promise(r => process.stdout.write('', r)); // utskriften till en pipe hinner annars inte ut före exit (den tappade allt efter 64 kB)
   process.exit(ALLVARLIGT);
 }
 const jobbRad = test.out.split('\n').find(r => r.startsWith('@@jobb '));

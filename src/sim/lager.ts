@@ -571,15 +571,16 @@ const nas = (a: Stack) => !nara || Math.hypot(a.x + 0.5 - nara.x, a.y + 0.5 - na
 export const iRackvidd = (p: { x: number; y: number }, a: { x: number; y: number }) => Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y) <= LAGER.rackvidd;
 // den närmaste stacken i förrådet utom räckhåll från p med något av slagen (det gömda i sin värdstack)
 // (med ägaren fran: bara stackar där fran äger något, som kyrkans mat till högtiden)
-export function narmasteMed(s: State, p: { x: number; y: number }, slag: string[], fran?: number) { return iHelaForradet(() => narmaste(s, p, slag, fran)); }
-function narmaste(s: State, p: { x: number; y: number }, slag: string[], fran?: number) {
+// ok: stacken duger (t.ex. att p får ta något där, steg 11.1.77); frågas bara om den som är närmast hittills
+export function narmasteMed(s: State, p: { x: number; y: number }, slag: string[], fran?: number, ok?: (x: number, y: number) => boolean) { return iHelaForradet(() => narmaste(s, p, slag, fran, ok)); }
+function narmaste(s: State, p: { x: number; y: number }, slag: string[], fran?: number, ok?: (x: number, y: number) => boolean) {
   let bast: { x: number; y: number } | undefined, bd = Infinity;
   for (const k of slag) {
     const h = SAKER[k]?.i;
     for (const a of stored(s, h ?? k)) {
       if ((h ? a.dold ?? 0 : a.n) <= 1e-9 || iRackvidd(p, a) || fran !== undefined && !((a.ag?.[fran] ?? 0) > 1e-9)) continue;
       const d = Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y);
-      if (d < bd) { bd = d; bast = { x: a.x + 0.5, y: a.y + 0.5 }; }
+      if (d < bd && (!ok || ok(a.x + 0.5, a.y + 0.5))) { bd = d; bast = { x: a.x + 0.5, y: a.y + 0.5 }; }
     }
   }
   return bast;

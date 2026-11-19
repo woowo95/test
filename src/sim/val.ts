@@ -30,7 +30,7 @@ import { canLight, eldFor, eldXY, nagonEld, nagonGlod, eldarOf, emberOn, vidEld,
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
-import { halsa, hemma, kanGa, vardBehov, vardVal, vilaHellre } from './halsa';
+import { VARDRATT, halsa, hemma, kanGa, vardBehov, vardVal, vilaHellre } from './halsa';
 import { MAT, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness } from './fynd';
 import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
@@ -659,10 +659,11 @@ export const ARBETEN: readonly Arbete[] = [
   // 2 Nöd och vård (sjuk, svag, fryser farligt, måste på toa genast)
   // den som ser ett slagsmål går emellan eller går undan (steg 10.1.4, narStridVal i kartstrid.ts)
   { id: 'slagsmal', niva: 2, prova: ({ s, p, v }) => { const d = narStridVal(s, p); if (!d) return false; set(v, d.act, d.why); v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return true; } },
-  { id: 'smabarnMat', niva: 2, prova: ({ s, p, v, a }) => a < ALDER.smabarn && ataVal(s, p, v) }, // också det lilla barnet går till maten när det är hungrigt (steg 11.1.77)
+  // den som är mycket hungrig (under det man äter av även när maten ska räcka, VARDRATT.snal) går till maten före vilan, och
+  // det lilla barnet och den som ligger sjuk eller svag går dit så fort hen är hungrig och kan gå (steg 11.1.77)
+  { id: 'hungrig', niva: 2, prova: ({ s, p, v, a }) => (p.hunger < KROPP.hungrig * VARDRATT.snal || a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) && kanGa(p) && ataVal(s, p, v) },
   { id: 'smabarn', niva: 2, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
   { id: 'toaGenast', niva: 2, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
-  { id: 'svalter', niva: 2, prova: ({ s, p, v }) => p.hunger <= 0 && ataVal(s, p, v) }, // den som svälter går till maten först
   { id: 'torstFarligt', niva: 2, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
   { id: 'vardaSig', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
   { id: 'sjuk', niva: 2, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
@@ -1036,8 +1037,8 @@ function hamtaVatten(s: State, p: Person, v: Val) {
 // törst (steg 2.4.1): vid vattnet, eller snö som smälts vid elden i istiden (torst.ts). false = inget vatten att nå
 function ataVal(s: State, p: Person, v: Val) {
   if (!MAT.behover(s, p) || !harMat(s, p) || iRackhall(p.x, p.y, () => harMat(s, p))) return false;
-  const dit = narmasteMed(s, p, FOOD);
-  if (!dit || !iRackhall(dit.x, dit.y, () => harMat(s, p))) return false;
+  const dit = narmasteMed(s, p, FOOD, undefined, (x, y) => iRackhall(x, y, () => harMat(s, p))); // den närmaste stacken där hen får ta mat
+  if (!dit) return false;
   v.spot = dit; v.dur = VAL.ataMin * MIN; return set(v, 'ata', 'Är hungrig och går till maten');
 }
 function dricka(s: State, p: Person, v: Val) {
