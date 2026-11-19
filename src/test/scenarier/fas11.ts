@@ -72,6 +72,15 @@ const langstaMal = (s: SIM.State, hb: SIM.VarldPlats) => {
   const vl = s.varld!, v = SIM.varldMark(s)!;
   return hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)!).filter(p => p && SIM.vagMellan(vl, v, hb.y * v.w + hb.x, p.y * v.w + p.x, 'fots', s.now)).sort((x, y) => Math.hypot(y.x - hb.x, y.y - hb.y) - Math.hypot(x.x - hb.x, x.y - hb.y))[0]!;
 };
+// p skriver vid at: en liten lerkruka med bläck, redskapen på plats, valet av vad som skrivs (det som ges tillbaka) och arbetet klart
+const skrivNu = (s: SIM.State, p: SIM.Person, at = { x: p.x, y: p.y }) => {
+  const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
+  SIM.placeTools(s);
+  const val = SIM.skrivVal(s, p, at);
+  p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
+  SIM.skrivKlar(s, p);
+  return val;
+};
 const f2 = (x: number) => x.toFixed(2); // två decimaler i texterna
 
 SCENARIER.bortafalt = {
@@ -3409,11 +3418,7 @@ SCENARIER.kartbok = {
     // en kartbok med en del redan (en annan plats, ritad av en annan), så att boken är en kartbok med en ledig del
     const bok = SIM.newTing(s, 'bok', 1, p.id), annan = hb.grannar![3]?.nr ?? hb.nr;
     bok.delar = [{ slag: 'karta', av: { id: q.id, namn: q.name }, t: s.now, titel: 'Kartan', text: '', q: SIM.NORMAL, platser: [{ nr: annan, v: SIM.O_KANT, t: s.now }] }];
-    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
-    SIM.placeTools(s);
-    const val = SIM.skrivVal(s, p, at);
-    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
-    SIM.skrivKlar(s, p);
+    const val = skrivNu(s, p, at);
     const del = bok.delar?.[1], blad = SIM.tingOf(s).some(t => t.k === 'blad' && t.skrift);
     const titel = SIM.bokTitel(bok);
     const vill = SIM.lasVal(s, q);
@@ -3449,11 +3454,7 @@ SCENARIER.bybok = {
     // en bok om en annan by finns redan, så att boken har en ledig del av slaget byn
     const bok = SIM.newTing(s, 'bok', 1, p.id);
     bok.delar = [{ slag: 'byn', av: { id: r2.id, namn: r2.name }, t: s.now, titel: 'Boken om grannen', text: '', q: SIM.NORMAL, platser: [{ nr: b ?? hb.nr, v: SIM.O_KANT, t: s.now }] }];
-    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
-    SIM.placeTools(s);
-    const val = SIM.skrivVal(s, p, at);
-    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
-    SIM.skrivKlar(s, p);
+    const val = skrivNu(s, p, at);
     const del = bok.delar[1], titel = SIM.bokTitel(bok), igen = SIM.skrivLust(s, p);
     // läsaren har ett gammalt rykte om byn
     SIM.larOrt(s, q, a, SIM.O_RYKTE, 0.5, { t: t1 - 5 * SIM.DAY });
@@ -3739,11 +3740,7 @@ SCENARIER.kartmarke = {
     p.skill.berattande = 15;
     while (SIM.lightLevel(s.now) < 1) s.now += SIM.HOUR;
     SIM.setAmount(s, 'pergament', 3);
-    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
-    SIM.placeTools(s);
-    SIM.skrivVal(s, p, { x: p.x, y: p.y });
-    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
-    SIM.skrivKlar(s, p);
+    skrivNu(s, p);
     SIM.placeTools(s);
     const blad = SIM.tingOf(s).find(t => t.skrift?.slag === 'karta');
     const marke = blad?.skrift?.platser?.find(x => x.nr === nr)?.m?.find(y => y.a === u.id);
