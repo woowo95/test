@@ -9,7 +9,7 @@ import { nyKalender } from '../../sim';
 import { START, STEG_TIM } from '../kor';
 import { eld as eldFlik } from '../../ui/flikar/eld';
 import { setByn, ui } from '../../ui/lage';
-import { setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, medBank } from './hjalp';
+import { setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, medBank, bearbetaVid } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.glanta = {
@@ -268,10 +268,10 @@ SCENARIER.talg = {
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
     s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, p.id);
     setMat(s, {}); setMat(s, { vilt: 3 * SIM.KANIN }); setAmount(s, 'talg', 0);
-    SIM.bearbeta(s, p, SIM.DJUR.kanin, 1);
+    bearbetaVid(s, p, SIM.DJUR.kanin, 1);
     const kanin = amountOf(s, 'talg');
     setAmount(s, 'talg', 0); setAmount(s, 'varg', 1);
-    SIM.bearbeta(s, p, SIM.DJUR.varg, 1);
+    bearbetaVid(s, p, SIM.DJUR.varg, 1);
     const varg = amountOf(s, 'talg');
     return [
       [`tre kaniner gav ${kanin} talg`, kanin === 3],
@@ -2287,7 +2287,7 @@ SCENARIER.styckning = {
     const hog = hogar();
     // delarna slaktas vid bänken
     setMat(s, {}); setAmount(s, 'vargkott', 0); setAmount(s, 'vargdel', 2);
-    SIM.bearbeta(s, svag, SIM.DJUR.vargdel, 2);
+    bearbetaVid(s, svag, SIM.DJUR.vargdel, 2);
     const kott = amountOf(s, 'vargkott');
     return [
       [`den starka (orkar ${SIM.bordPlats(s, stark).toFixed(0)}) bär vargen hel`, kvarStark === 0 && tStark.carry === 1 && !tStark.items],
@@ -2345,7 +2345,7 @@ SCENARIER.radjur = {
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
     s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
     setMat(s, {}); for (const k of ['kott', 'ben', 'radjursskinn', 'talg']) setAmount(s, k, 0); setAmount(s, 'radjur', 1);
-    SIM.bearbeta(s, q, SIM.DJUR.radjur, 1);
+    bearbetaVid(s, q, SIM.DJUR.radjur, 1);
     const fick = ['radjurkott', 'ben', 'radjursskinn', 'talg'].map(k => `${k} ${amountOf(s, k)}`).join(', ');
     return [
       [`rådjursgrupper på kartan (${g.length}, ${g.reduce((a, x) => a + x.n, 0)} djur)`, g.length >= 1 && g.every(x => x.n >= SIM.RADJUR.storlek[0])],
@@ -2403,7 +2403,7 @@ SCENARIER.faglar = {
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
     s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
     setMat(s, {}); for (const k of ['kott', 'fjadrar']) setAmount(s, k, 0); setAmount(s, 'fagel', 1);
-    SIM.bearbeta(s, q, SIM.DJUR.fagel, 1);
+    bearbetaVid(s, q, SIM.DJUR.fagel, 1);
     // äggen: en by på våren några dygn
     const sv = createState(4, START);
     const varen = ageIndex(sv) === 1;

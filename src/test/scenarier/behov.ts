@@ -3,7 +3,7 @@ import { Person, createState, getRel, step, living, temperature, nyKalender, amo
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta } from './hjalp';
+import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta, vidForradet } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.behov = {
@@ -14,6 +14,7 @@ SCENARIER.behov = {
       rikBy(s); setMat(s, {});
       const [a, b, c] = treVuxna(s, 0.3);
       s.people = [a, b, c];
+      vidForradet(s, a, b, c); // maten tas ur förrådet man står vid (steg 11.1.77)
       return { s, a, b, c };
     };
     // a är hungrig, b har mat men är ingen släkt och ovän: a tar inte b:s mat förrän nöden är stor
@@ -1038,7 +1039,7 @@ SCENARIER.tiggare = {
       const [a, b, c] = treVuxna(s, 0.3);
       s.people = [a, b, c]; c.x = 90;
       a.bast = b.bast = undefined; getRel(s, a, b).op = 0; // a och b är främlingar
-      b.pot.empati = 20; gain(s, b, 'bar', 20);
+      b.pot.empati = 20; gain(s, b, 'bar', 20); vidForradet(s, a, b);
       return { s, a, b, c };
     };
     // en empatisk främling med överflöd ger

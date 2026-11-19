@@ -3,7 +3,7 @@ import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
-import { addTo, amountOf, avbryt, fetchSpot, iBordan, takeLimit, use } from './lager';
+import { addTo, amountOf, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken } from './lager';
 import { Materialslag, forbrukat, overOchUnder, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
@@ -210,7 +210,8 @@ function fireWish(s: State, p: Person, vc: number, f: Fire, vid: boolean): Wish 
 export const tinderShort = (s: State, tk?: Task) => underBuffert(s, 'torrgras', tk?.items?.torrgras ?? 0) || underBuffert(s, 'grenar', tk?.items?.grenar ?? 0);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat. Stenar behövs också till en lägereld till (brasor.ts).
 // Båda är förrådsmålet för stenen (steg 10.11.4). Stenarna som någon bär hem räknas, så att ingen samlar fler än ringen behöver
-const stenarHem = (s: State) => living(s).reduce((n, q) => n + (q.task?.items?.sten ?? 0), 0);
+// och de som ligger på marken utanför lagret (burna till eldplatsen i flera vändor, eller från en lägereld som tagits isär)
+const stenarHem = (s: State) => living(s).reduce((n, q) => n + (q.task?.items?.sten ?? 0), 0) + paMarken(s, 'sten');
 export const needStones = (s: State) => underBuffert(s, 'sten', stenarHem(s));
 // kan elden tändas (av p: med det p kan få, behov.ts)? Bränslet räknas efter att grenarna till tändningen tagits (tryLight)
 export function canLight(s: State, p?: Person, f = s.fire) {
@@ -249,11 +250,16 @@ export function needTinder(s: State) {
   return !igniterOf(s) || needStones(s) || tinderShort(s); // med en bågborr behövs ingen flinta (steg 10.6.13)
 }
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
+// ringen av stenar runt eldplatsen läggs av den som tänder, med stenarna hen bär eller når
+function laggRing(s: State, p: Person, f: Fire) {
+  if (f.ring || getable(s, p, 'sten') < ELD.ring) return;
+  takeMaterial(s, p, 'sten', ELD.ring, true); f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]);
+}
 function lightFire(s: State, p: Person, f: Fire, brand?: string) {
   const start = takeFuel(s, ELD.tandBransle, p), onCoal = (f.ash ?? 0) >= 1;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
   f.lightings++;
-  if (!f.ring) { takeMaterial(s, p, 'sten', ELD.ring, true); f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
+  laggRing(s, p, f);
   if (onCoal) { f.ash = 0; f.ashUntil = undefined; } // kolet i den gamla högen tar fyr och blir en del av den nya elden
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries }, f);
   if (brand) log(s, `${p.name} tände ${eldOrd(s, f)} med en brand från ${brand}.`, 'world', [p.id]); // steg 10.6.12
@@ -312,6 +318,7 @@ export function brandTand(s: State, p: Person, f: Fire, fran?: Fire) {
 export function tryLight(s: State, p: Person, f = s.fire) {
   const ig = igniterOf(s, p)!;
   // en näver ersätter höet (steg 6.3.3); finns ingen täljs fyra ur en ved med kniven eller yxan
+  laggRing(s, p, f); // ringen läggs före det första försöket
   if (getable(s, p, 'naver') < 1 && getable(s, p, 'torrgras') < ig.grass && kanTalja(s) && getable(s, p, 'ved') >= 1) taljaNaver(s, p);
   const naver = getable(s, p, 'naver') >= 1;
   if (naver) takeMaterial(s, p, 'naver', 1, true);

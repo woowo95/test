@@ -17,9 +17,10 @@ import { groundOf } from './mark';
 import { FOREST } from './vag';
 import { freeNear, roomAt } from './byggnad';
 import { eldPlats } from './karta';
-import { addTo, amountOf, ownedStock, use } from './lager';
+import { amountOf, bordanAv, iBordan, iRackhall, mayTake, ownsAmount, ownsId, use } from './lager';
+import { kyrkaId } from './egendom';
 import { ata } from './naring';
-import { budIn, foljer, gravolKan, gravolSlut, hogtidKrav, hogtidMat, hogtidOlKvade, kyrkansAv, kyrkanTar, sorgkvade } from './kyrka';
+import { budIn, foljer, gravolKan, gravolSlut, hogtidKrav, hogtidMat, hogtidOlKvade, kyrkansAv, sorgkvade } from './kyrka';
 import { kvarById, nara } from './kvarlevor';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
@@ -289,16 +290,34 @@ export function ritualTimme(s: State) {
   log(s, `${n.namn ?? d.namn} samlar byn.`, 'rel', []);
   if (n.k === 'begravning' && !s.stat?.ritual_begravning) count(s, 'ritual_forsta_begravning');
 }
+// det den som går till ritualen tar med sig (HAMTAS.ritual i hamtning.ts, steg 11.1.77): en portion till måltiden, vid högtiden
+// ur kyrkans egendom (fran) eller den egna, och den mat hen offrar
+export function ritualMat(s: State, p: Person): { av: Record<string, number>; fran?: number } | undefined {
+  const r = s.ritual;
+  if (!r) return undefined;
+  const mat = !!RDEF[r.k].mat?.(r), av: Record<string, number> = {};
+  if (r.k === 'hogtid') {
+    const tr = troOf(s, r.tro);
+    if (!tr) return undefined;
+    const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = mat ? ord.find(q => kyrkansAv(s, tr, q) >= 1) : undefined;
+    if (k) return { av: { [k]: 1 }, fran: kyrkaId(tr.id) };
+    const m = mat ? ord.filter(q => ownsAmount(s, p, q) >= 1).sort((a, b) => (hogtidKrav(tr, b) ? 1 : 0) - (hogtidKrav(tr, a) ? 1 : 0) || ownsAmount(s, p, b) - ownsAmount(s, p, a))[0] : undefined;
+    if (m) av[m] = 1;
+    if (p.tro === tr.id && budIn(tr, 'offer') && foljer(p, 'offer')) { const o = FOOD.filter(q => ownsAmount(s, p, q) >= 1 + (av[q] ?? 0)).sort((a, b) => ownsAmount(s, p, b) - ownsAmount(s, p, a))[0]; if (o) av[o] = (av[o] ?? 0) + 1; }
+  } else if (mat) { const k = FOOD.filter(q => mayTake(s, p, q) >= 1).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0]; if (k) av[k] = 1; }
+  return Object.keys(av).length ? { av } : undefined;
+}
 // bröllopets fest (steg 8.5.13, 10.11.10): när den är slut äter var och en som var med en portion ur förrådet, av det byn har mest av, som vid gillet (ata);
 // när maten tar slut äter resten inte
 function festMat(s: State, med: Person[]) {
   if (festKrok.servera(s, med).size) return; // festmåltiden ur kokgropen (steg 10.7.28)
   let n = 0;
-  for (const p of med) {
-    const k = FOOD.filter(q => amountOf(s, q) >= 1).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0];
-    if (!k) break;
-    addTo(s, k, -1); ata(p, { [k]: KROPP.mattar }); count(s, 'atit', 1); n++;
-  }
+  // var och en äter det hen har med sig eller når där hen står (steg 11.1.77; ritualMat ger det hen tar med)
+  for (const p of med) iRackhall(p.x, p.y, () => {
+    const k = FOOD.filter(q => mayTake(s, p, q) + iBordan(p, q) >= 1).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0];
+    if (!k) return;
+    use(s, p, k, 1); ata(p, { [k]: KROPP.mattar }); count(s, 'atit', 1); n++;
+  });
   if (n) count(s, 'festmat');
 }
 // bröllopet (steg 10.3.3): byns fest hålls alltid. Har båda i paret samma tro och den har budet Bröllopet välsignas, hålls det vid trons
@@ -375,24 +394,27 @@ export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
     if (d) { d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d); count(s, 'heligtOffer'); for (const p of med) if (p.tro === tr.id) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KULT.offerTro); }
   }
   const grop = r.form === 'fasta' ? new Set<number>() : festKrok.servera(s, med.filter(p => !(p.tro === tr.id && budIn(tr, 'matKrav') && foljer(p, 'matKrav')))); // festmåltiden ur kokgropen (steg 10.7.28); den som följer budet om högtidens mat äter den
-  for (const p of med) {
+  // var och en äter och offrar det hen har med sig eller når där hen står (steg 11.1.77; ritualMat ger det hen tar med)
+  const kid = kyrkaId(tr.id), kyrkans = (p: Person, q: string) => Math.floor(ownsId(s, kid, q) + bordanAv(p, kid, q) + 1e-9);
+  const egen = (p: Person, q: string) => ownsAmount(s, p, q) + bordanAv(p, p.id, q);
+  for (const p of med) iRackhall(p.x, p.y, () => {
     if (r.form === 'fasta') { if (p.tro === tr.id) p.fasta = s.now + DAY; }
     else if (grop.has(p.id)) { count(s, 'gille_mat'); if (s.fest?.tro === tr.id) s.fest.at++; }
     else { // gillet: en hel mat, ur kyrkans egendom först och annars ur den egna maten; den som inget har äter inte. Med budet
       // Högtidens mat tas budets ingrediens först, och ingen äter det tron förbjuder hen (steg 10.3.16)
-      const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = ord.find(q => kyrkansAv(s, tr, q) >= 1);
+      const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = ord.find(q => kyrkans(p, q) >= 1);
       let at = k;
-      if (k && kyrkanTar(s, tr, k, 1)) { ata(p, { [k]: KROPP.mattar }); count(s, 'gille_mat'); count(s, 'atit', 1); if (s.fest?.tro === tr.id) s.fest.at++; } // en måltid som andra (atit, steg 10.7.19)
-      else { const e = ownedStock(s, p), m = ord.filter(q => (e[q] ?? 0) >= 1).sort((a, b) => (hogtidKrav(tr, b) ? 1 : 0) - (hogtidKrav(tr, a) ? 1 : 0) || (e[b] ?? 0) - (e[a] ?? 0))[0]; at = m; if (m) { use(s, p, m, 1); ata(p, { [m]: KROPP.mattar }); count(s, 'gille_mat'); count(s, 'atit', 1); if (s.fest?.tro === tr.id) s.fest.at++; } }
+      if (k) { use(s, p, k, 1, true, kid); ata(p, { [k]: KROPP.mattar }); count(s, 'gille_mat'); count(s, 'atit', 1); if (s.fest?.tro === tr.id) s.fest.at++; } // en måltid som andra (atit, steg 10.7.19)
+      else { const m = ord.filter(q => egen(p, q) >= 1).sort((a, b) => (hogtidKrav(tr, b) ? 1 : 0) - (hogtidKrav(tr, a) ? 1 : 0) || egen(p, b) - egen(p, a))[0]; at = m; if (m) { use(s, p, m, 1); ata(p, { [m]: KROPP.mattar }); count(s, 'gille_mat'); count(s, 'atit', 1); if (s.fest?.tro === tr.id) s.fest.at++; } }
       if (p.tro === tr.id && budIn(tr, 'matKrav') && foljer(p, 'matKrav') && !(at && hogtidKrav(tr, at))) think(p, 'Högtidens mat saknades', KULT.offerInget, s.now, 12 * HOUR);
       else if (at && hogtidKrav(tr, at)) count(s, 'hogtid_ratt');
     }
     // offret: den som följer budet lägger en hel mat, den hen äger mest av, på den heliga platsen, och den är borta
-    if (p.tro !== tr.id || !budIn(tr, 'offer') || !foljer(p, 'offer')) continue;
-    const e = ownedStock(s, p), m = FOOD.filter(q => (e[q] ?? 0) >= 1).sort((a, b) => (e[b] ?? 0) - (e[a] ?? 0))[0];
+    if (p.tro !== tr.id || !budIn(tr, 'offer') || !foljer(p, 'offer')) return;
+    const m = FOOD.filter(q => egen(p, q) >= 1).sort((a, b) => egen(p, b) - egen(p, a))[0];
     if (m) { use(s, p, m, 1); p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KULT.offerTro); count(s, 'offer'); }
     else think(p, 'Hade inget att offra', KULT.offerInget, s.now, 12 * HOUR);
-  }
+  });
   if (r.form !== 'fasta') hogtidOlKvade(s, tr, med); // ölet och kvädet (steg 10.3.23)
 }
 // de som vann flest matcher under festen, högst tre

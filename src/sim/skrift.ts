@@ -173,17 +173,18 @@ laggTillProjekt({
     uppgift: (s, p) => uppgift(s, p),
   } satisfies ProjektDef,
 });
-// medan man ristar (MEDAN): stenarna tas när arbetet börjar (t.kom säger varifrån de kom); saknas de, eller lusten är borta,
-// blir det ingen sten
+// medan man ristar (MEDAN): stenarna ska finnas när arbetet börjar, i bördan eller bredvid; saknas de, eller lusten är borta,
+// blir det ingen sten. De tas när stenen reses, så att den som avbryts lägger ner dem där hen står
 export function runstenBorja(s: State, p: Person, t: Task) {
   if (t.kom) return;
   const l = runstenLust(s, p);
   if (!l || l.slag !== t.tool || l.om.id !== t.ref || getable(s, p, 'huggen_sten') < SKRIFT.stenar || !ledigRuta(s, Math.floor(t.tx), Math.floor(t.ty), p)) { p.task = undefined; return; }
-  t.kom = {}; takeMaterial(s, p, 'huggen_sten', SKRIFT.stenar, true, t.kom);
+  t.kom = {};
 }
 export function runstenKlar(s: State, p: Person, t: Task) {
   const l = runstenLust(s, p), x = Math.floor(t.tx), y = Math.floor(t.ty);
-  if (!l || l.slag !== t.tool || l.om.id !== t.ref || runstenAt(s, x, y)) return;
+  if (!l || l.slag !== t.tool || l.om.id !== t.ref || runstenAt(s, x, y) || getable(s, p, 'huggen_sten') < SKRIFT.stenar) return;
+  takeMaterial(s, p, 'huggen_sten', SKRIFT.stenar, true, t.kom ??= {});
   let text: string, bev = l.bev;
   if (l.slag === 'minne') {
     const d = byId(s, l.om.id), r = s.rels[relKey(p.id, l.om.id)];

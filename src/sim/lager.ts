@@ -184,7 +184,7 @@ function agOf(s: State, k: string) {
 export function amountOf(s: State, k: string) {
   if (isTool(k)) { let n = 0; for (const t of tingOf(s)) if (t.k === k) n += t.c; return n; }
   if (nara) { const h = SAKER[k]?.i; let n = 0; for (const a of stored(s, h ?? k)) n += h ? a.dold ?? 0 : a.n; return n; } // i räckhåll
-  return summa(s).n[k] ?? 0;
+  return (summa(s).n[k] ?? 0) + (vidPlats ? vidArbetet(s, k) : 0);
 }
 // mängden gånger skicket (för värdet, varde.ts)
 export const wornOf = (s: State, k: string) => isTool(k) ? amountOf(s, k) : summa(s).w[k] ?? 0;
@@ -350,6 +350,13 @@ function hela(s: State, k: string, n: number, ag?: Del) {
   for (const o in ag) if (+o !== BYN && ag[o] > HEL) { lagg(+o, ag[o]); egna += ag[o]; }
   lagg(BYN, Math.max(0, n - egna));
   return { n: tot, ag: Object.keys(d).length ? d : undefined };
+}
+// det som tagits (ägarnas delar i d) i hela saker per ägare: en bruten del går tillbaka till ägarens påbörjade, där den kom
+// ifrån, så att det som bärs är hela saker (steg 11.1.74)
+export function helaAv(s: State, k: string, d: Del): Del {
+  const h = hela(s, k, sumOf(d), d), ut: Del = { ...h.ag }, byn = h.n - sumOf(h.ag);
+  if (byn > 1e-9) ut[BYN] = byn;
+  return ut;
 }
 // n av slaget k försvinner i delar: det som blivit hela saker
 function forlorat(s: State, k: string, n: number) {
@@ -556,17 +563,21 @@ function stored(s: State, k: string) {
 let nara: { x: number; y: number } | undefined;
 export function iRackhall<T>(x: number, y: number, f: () => T): T { const f0 = nara; nara = { x, y }; try { return f(); } finally { nara = f0; } }
 // det som väljs och planeras (valet av arbete, vad som ska hämtas och var) ser hela förrådet, också mitt i ett arbete
-export function iHelaForradet<T>(f: () => T): T { const f0 = nara; nara = undefined; try { return f(); } finally { nara = f0; } }
+// (vid: platsen för arbetet, där det som burits dit i flera vändor ligger utanför lagret: det räknas med, hamtning.ts)
+let vidPlats: { x: number; y: number } | undefined;
+export function iHelaForradet<T>(f: () => T, vid?: { x: number; y: number }): T { const f0 = nara, v0 = vidPlats; nara = undefined; vidPlats = vid; try { return f(); } finally { nara = f0; vidPlats = v0; } }
+const vidArbetet = (s: State, k: string) => { let n = 0; for (const a of stacksOf(s)) if (a.k === k && !isStored(s, a.x, a.y) && iRackvidd(vidPlats!, a)) n += a.n; return n; };
 const nas = (a: Stack) => !nara || Math.hypot(a.x + 0.5 - nara.x, a.y + 0.5 - nara.y) <= LAGER.rackvidd;
 export const iRackvidd = (p: { x: number; y: number }, a: { x: number; y: number }) => Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y) <= LAGER.rackvidd;
 // den närmaste stacken i förrådet utom räckhåll från p med något av slagen (det gömda i sin värdstack)
-export function narmasteMed(s: State, p: { x: number; y: number }, slag: string[]) { return iHelaForradet(() => narmaste(s, p, slag)); }
-function narmaste(s: State, p: { x: number; y: number }, slag: string[]) {
+// (med ägaren fran: bara stackar där fran äger något, som kyrkans mat till högtiden)
+export function narmasteMed(s: State, p: { x: number; y: number }, slag: string[], fran?: number) { return iHelaForradet(() => narmaste(s, p, slag, fran)); }
+function narmaste(s: State, p: { x: number; y: number }, slag: string[], fran?: number) {
   let bast: { x: number; y: number } | undefined, bd = Infinity;
   for (const k of slag) {
     const h = SAKER[k]?.i;
     for (const a of stored(s, h ?? k)) {
-      if ((h ? a.dold ?? 0 : a.n) <= 1e-9 || iRackvidd(p, a)) continue;
+      if ((h ? a.dold ?? 0 : a.n) <= 1e-9 || iRackvidd(p, a) || fran !== undefined && !((a.ag?.[fran] ?? 0) > 1e-9)) continue;
       const d = Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y);
       if (d < bd) { bd = d; bast = { x: a.x + 0.5, y: a.y + 0.5 }; }
     }
@@ -715,6 +726,8 @@ export function laggIn(s: State, k: string, n: number, agare?: number) { n = Mat
 export function gain(s: State, p: Person, k: string, n: number) { const w = n > 0 ? arbete(p, k, n) : 0; if (w > 0) place(s, k, w, 1, shareOf(undefined, w, p.id, s, k)); }
 // p tar n av slaget k ur förrådet; common = till byns eld eller hus, fran = av den personens först (stöld). Ger vems det var
 export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number) { return takeOwn(s, k, n, p, common, fran).ag; }
+// det av slaget k som ligger i högar på marken utanför lagret (amountOf räknar lagret)
+export const paMarken = (s: State, k: string) => (s.stackar ?? []).reduce((n, a) => a.k === k && !isStored(s, a.x, a.y) ? n + a.n : n, 0);
 // för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
 // (i hela saker, steg 2.10.7)
 export function setAmount(s: State, k: string, n: number) {
@@ -1160,7 +1173,13 @@ const paVagAttBara = (s: State) => new Set(living(s).filter(p => p.task?.act ===
 const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items ?? {}) }; if (t.carry) all[carryKind(t.act)] = (all[carryKind(t.act)] ?? 0) + t.carry; return all; };
 // lägg det som bärs i förrådet, helst där man står. Det är ägarnas i t.ag, resten är dens som skaffade det (owner);
 // det som bärs mellan lagerplatser har alltid sina ägare med sig
+// det som hämtats ur förrådet till ett arbete (hamtning.ts) och läggs ner igen är inte förbrukat: förbrukningen räknades när det
+// togs ur stacken, och räknas igen när det tas till arbetet (forradsmal.ts, steg 6.2.14)
+function aterlagt(s: State, t: Task) {
+  if (t.hamtad) for (const k in t.items ?? {}) forbrukat(s, k, -t.items![k]);
+}
 export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN) {
+  aterlagt(s, t);
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
   if ((all.virke ?? 0) > 1e-9) count(s, 'virkeBuret', all.virke); // virket som burits hem: släden prövas fram av den som ofta bär virke (steg 10.10.2)
   const fo = t.ting?.map(id => tingOf(s).find(g => g.id === id)).find(g => g && SAKER[g.k]?.fordon);
@@ -1173,6 +1192,7 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
 export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   const tx = Math.floor(x), ty = Math.floor(y);
   if (isStored(s, tx, ty)) { storeLoad(s, t, x, y, owner); return; }
+  aterlagt(s, t);
   const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner;
   for (const k in all) {
     if (all[k] < 1e-6) continue;
@@ -1216,6 +1236,10 @@ export function avbryt(s: State, p: Person) {
 export function haulJob(s: State, near?: number, baraMat = false) {
   placeTools(s);
   const taken = paVagAttBara(s);
+  // det som bärs till ett arbete i flera vändor läggs vid platsen (hamtning.ts, steg 11.1.77): det hör till arbetet och bärs
+  // inte in medan det pågår
+  const arbeten = living(s).flatMap(p => { const t = p.task; return t && (t.hamtad || t.vanda || t.site) ? [t.site ?? { x: t.tx, y: t.ty }] : []; });
+  const vidArbete = (a: Bara) => arbeten.some(w => Math.hypot(a.x + 0.5 - w.x, a.y + 0.5 - w.y) <= LAGER.rackvidd + 0.5) && !isStored(s, a.x, a.y);
   // finns det slaget på rutan ännu? Frågas bara för de rader som klarat de andra villkoren; stackarna och tingen på marken
   // samlas första gången det frågas, så att varje fråga inte går igenom alla stackar
   let pa: Set<string> | undefined;
@@ -1229,7 +1253,7 @@ export function haulJob(s: State, near?: number, baraMat = false) {
     if (!plats.has(q)) plats.set(q, !!zoneSpot(s, k, min, occ ??= occupancy(s)));
     return plats.get(q)!;
   };
-  const ok = (a: Bara) => !(taken.has(key(a.x, a.y)) || near !== undefined && a.d > near)
+  const ok = (a: Bara) => !(taken.has(key(a.x, a.y)) || near !== undefined && a.d > near || vidArbete(a))
     && !(s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) // inte det som ligger i översvämningen eller bakom den (flod.ts)
     && !blocked(s, a.x, a.y) // det som ligger i vattnet eller i en vägg når ingen
     && finns(a.x, a.y, a.k) // det har burits sedan listan räknades

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medHus, setFood, tandEld, utanWebblasare, vidStack } from './hjalp';
+import { SCENARIER, kor, klockan, medHus, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
@@ -769,7 +769,7 @@ SCENARIER.kocken = {
     s.fire.lit = true; s.stationer = [...(s.stationer ?? []), { id: 999, k: 'grill', x: 1, y: 1, kvar: 0 } as SIM.Station];
     const prov = (skill: number) => {
       for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'fisk', 40); s.stat = {};
-      p.skill.matlagning = skill; for (let i = 0; i < 10; i++) grilla(s, p, 0.5);
+      p.skill.matlagning = skill; vidStack(s, p, 'fisk'); for (let i = 0; i < 10; i++) grilla(s, p, 0.5);
       return { grillat: amountOf(s, 'grillfisk'), brant: s.stat.brant as number ?? 0, kvar: amountOf(s, 'fisk') };
     };
     const ovan = prov(0), skicklig = prov(MATLAG.brannFull);
@@ -1322,16 +1322,17 @@ SCENARIER.vattning = {
 SCENARIER.sophog = {
   text: 'Steg 9.7.5: resterna och sophögen. All slakt ger slaktrens och all skörd ger växtrester, som ruttnar bort med tiden; i byn ger de smuts, och de bärs till sophögen i utkanten, där de ruttnar bort',
   kor: () => {
-    const { bearbeta, DJUR, setAmount, amountOf, smutsIByn, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
+    const { DJUR, setAmount, amountOf, smutsIByn, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     setAmount(s, 'vilt', 4); setAmount(s, 'kniv', 1); (p.tek ??= {}).kniv = 1; // viltet: fisken ger fiskrens sedan steg 9.8.7
     s.stationer = [...(s.stationer ?? []), { id: 991, k: 'slaktbank', x: 3, y: 3, kvar: 0 } as SIM.Station];
-    bearbeta(s, p, DJUR.kanin, 1);
+    bearbetaVid(s, p, DJUR.kanin, 1);
     const rens = amountOf(s, 'slaktrens');
     setAmount(s, 'vaxtrest', 6);
     const fore = smutsIByn(s).punkter.length;
     s.now += SIM.HOUR; const smuts = smutsIByn(s).punkter.length;
+    harHamtat(s, p, 'sopor', { slaktrens: amountOf(s, 'slaktrens'), vaxtrest: amountOf(s, 'vaxtrest') });
     soporKlar(s, p);
     const h = sophog(s), kvar = resterIByn(s), pa = h.n;
     for (let i = 0; i < 24 * 4; i++) stepSophog(s);
@@ -1858,7 +1859,7 @@ SCENARIER.hagflytt = {
 SCENARIER.tamslakt = {
   text: 'Steg 9.8.7: slakt av tamdjur och slaktrens. Ett gammalt får, en hane när flocken blivit för stor och djur när byn svälter avlivas och slaktas vid slaktbänken som viltet; slakten ger slaktrens som hunden äter, och fiskrensen blir agn',
   kor: () => {
-    const { nyttTamdjur, avlivaVal, avlivaKlar, slaktOrsak, setAmount, amountOf, DJUR, canProcess, bearbeta, mataVal, tamdjurOf, hona, DAY } = SIM;
+    const { nyttTamdjur, avlivaVal, avlivaKlar, slaktOrsak, setAmount, amountOf, DJUR, canProcess, mataVal, tamdjurOf, hona, DAY } = SIM;
     const s = createState(3, START); klockan(s, 10);
     const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
     (s.stationer ??= []).push({ id: 9901, k: 'slaktbank', x: Math.floor(p.x) + 2, y: Math.floor(p.y), kvar: 0 }); SIM.touch(s);
@@ -1871,14 +1872,14 @@ SCENARIER.tamslakt = {
     const kropp = amountOf(s, 'slaktfar');
     const rens0 = amountOf(s, 'slaktrens'), horn0 = amountOf(s, 'djurhorn'), skinn0 = amountOf(s, 'farskinn');
     const kan = canProcess(s, p, DJUR.far);
-    if (kan) bearbeta(s, p, DJUR.far, 2);
+    if (kan) bearbetaVid(s, p, DJUR.far, 2);
     const rens1 = amountOf(s, 'slaktrens');
     // hunden äter slaktrensen
     const hund = nyttTamdjur(s, 'hund', p.x, p.y, p.id); hund.hunger = 0.9;
     const mat = mataVal(s, p) === hund && SIM.foderFor(s, p, hund) === 'slaktrens';
     // fisken ger fiskrens, inte slaktrens
     setAmount(s, 'abborre', 2);
-    bearbeta(s, p, DJUR.abborre, 1);
+    bearbetaVid(s, p, DJUR.abborre, 1);
     const fiskrens = amountOf(s, 'fiskrens'), rens2 = amountOf(s, 'slaktrens');
     // flera djur: det som är minst värt att behålla slaktas först, en hane före en hona (steg 10.2.33)
     const flock = [ung]; for (let i = 0; flock.length < 8; i++) flock.push(nyttTamdjur(s, 'far', p.x, p.y, undefined, s.now - 2 * DAY));
@@ -1898,7 +1899,7 @@ SCENARIER.tamslakt = {
 SCENARIER.ko = {
   text: 'Steg 10.10.1: kon. Handlaren säljer kon dyrare än fåret; hon blir hungrig dubbelt så fort, betar av hagen dubbelt så fort och behöver dubbelt så mycket hö över istiden. Hon ger 4 mjölk i den minsta krukan som rymmer allt (annars den största, och resten stannar i henne), och slakten ger mycket kött, ben, hud, talg och horn',
   kor: () => {
-    const { nyttTamdjur, stepTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, setAmount, amountOf, tamdjurOf, hoRacker, betesTal, HANDLARVAROR, DJUR, canProcess, bearbeta, tamArt, DAY, VINTER } = SIM;
+    const { nyttTamdjur, stepTamdjur, stepBoskap, mjolkaVal, mjolkaKlar, addTool, setAmount, amountOf, tamdjurOf, hoRacker, betesTal, HANDLARVAROR, DJUR, canProcess, tamArt, DAY, VINTER } = SIM;
     const s = createState(4, START); klockan(s, 10);
     const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
     const iHandeln = HANDLARVAROR.some(w => w.k === 'levko'), pris = SIM.SAKER.levko?.varde ?? 0;
@@ -1930,7 +1931,7 @@ SCENARIER.ko = {
     (s.stationer ??= []).push({ id: 9902, k: 'slaktbank', x: Math.floor(p.x) + 2, y: Math.floor(p.y), kvar: 0 }); SIM.touch(s);
     p.skill.jakt = 0; // köttet följer jakten (kottFaktor)
     const kan = canProcess(s, p, DJUR.ko);
-    if (kan) bearbeta(s, p, DJUR.ko, DJUR.ko.maxTim);
+    if (kan) bearbetaVid(s, p, DJUR.ko, DJUR.ko.maxTim);
     const kott = amountOf(s, 'kokott'), hud = amountOf(s, 'kohud'), ben = amountOf(s, 'ben'), talg = amountOf(s, 'talg');
     return [
       [`handlaren säljer kor, dyrare än fåren (${pris} mot ${SIM.SAKER.levfar?.varde})`, iHandeln && pris > (SIM.SAKER.levfar?.varde ?? 0)],

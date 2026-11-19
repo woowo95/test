@@ -3,7 +3,7 @@ import { DAY, HOUR, MIN, Person, State, Task } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
-import { amountOf, harTillHands, iHelaForradet, put, skickAv, use } from './lager';
+import { amountOf, harTillHands, iHelaForradet, iRackhall, put, skickAv, use } from './lager';
 import { grundvarde } from './varde';
 import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
 import { matPerDygn } from './ekonomi';
@@ -479,10 +479,10 @@ festKrok.servera = (s, med) => {
   if (!t) return at;
   const k = t.grop!.r;
   gropUpp(s, t);
-  for (const p of med) {
-    if (amountOf(s, k) < 1) break;
+  for (const p of med) iRackhall(p.x, p.y, () => { // den som står vid gropen (steg 11.1.77)
+    if (amountOf(s, k) < 1) return;
     use(s, p, k, 1); ataPortion(s, p, k); at.add(p.id);
-  }
+  });
   count(s, 'festmaltid', at.size);
   return at;
 };

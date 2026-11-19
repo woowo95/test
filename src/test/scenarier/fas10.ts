@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, byggKlart, byggare, kor, klockan, medBank, setMat, tandEld, testBy } from './hjalp';
+import { SCENARIER, byggKlart, byggare, kor, klockan, medBank, setMat, tandEld, testBy, bearbetaVid, harHamtat } from './hjalp';
 
 // en landruta i byns närhet, d rutor öster om mitten (eller närmast efter)
 const landVid = (s: SIM.State, d: number) => {
@@ -160,7 +160,7 @@ SCENARIER.vildsvin = {
       for (const r of b.people) r.tek = { ...r.tek, kniv: 1 };
       b.ting = (b.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(b, 'kniv', 1, q.id);
       setMat(b, {}); for (const x of ['svinkott', 'ben', 'svinskinn', 'talg']) setAmount(b, x, 0); setAmount(b, k, 1);
-      SIM.bearbeta(b, q, (SIM.DJUR as Record<string, SIM.Djurart>)[k], 1);
+      bearbetaVid(b, q, (SIM.DJUR as Record<string, SIM.Djurart>)[k], 1);
       return [...['svinkott', 'ben', 'svinskinn', 'talg'].map(x => amountOf(b, x)), SIM.kottAv(q, (SIM.DJUR as Record<string, SIM.Djurart>)[k].slakt.svinkott)];
     };
     const hel = slakta('vildsvin'), del = slakta('vildsvindel');
@@ -457,7 +457,7 @@ SCENARIER.bur = {
 SCENARIER.gris = {
   text: 'Steg 10.10.13: grisen. Ägaren ger den resterna från slakten och skörden före rötterna; de rester grisarna behöver bärs inte till sophögen. Den slaktas när den blir gammal och på hösten när fodret inte räcker över istiden, och slakten ger hela saker',
   kor: () => {
-    const { nyttTamdjur, foderFor, mataVal, setAmount, amountOf, slaktOrsak, avlivaKlar, canProcess, bearbeta, DJUR, resterMal, resterOver, soporKlar, DAY, living, ageOf, ALDER } = SIM;
+    const { nyttTamdjur, foderFor, mataVal, setAmount, amountOf, slaktOrsak, avlivaKlar, canProcess, DJUR, resterMal, resterOver, soporKlar, DAY, living, ageOf, ALDER } = SIM;
     const s = createState(3, START); klockan(s, 10);
     const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
     for (const k of ['slaktrens', 'vaxtrest', 'rotter']) setAmount(s, k, 0);
@@ -468,7 +468,7 @@ SCENARIER.gris = {
     const f3 = foderFor(s, p, g), vald = mataVal(s, p) === g;
     // förrådsmålet för resterna
     const mal = resterMal(s);
-    setAmount(s, 'slaktrens', mal + 5); soporKlar(s, p);
+    setAmount(s, 'slaktrens', mal + 5); harHamtat(s, p, 'sopor', SIM.HAMTAS.sopor!.av(s, p, p.task!)!); soporKlar(s, p);
     const kvarEfter = amountOf(s, 'slaktrens');
     setAmount(s, 'slaktrens', mal); const inget = resterOver(s) === 0;
     // slakten: den unga grisen bara på hösten utan foder, den gamla alltid
@@ -483,7 +483,7 @@ SCENARIER.gris = {
     const fore = { k: amountOf(s, 'svinkott'), b: amountOf(s, 'ben'), sk: amountOf(s, 'svinskinn'), t: amountOf(s, 'talg') };
     avlivaKlar(s, p, g.id);
     const kropp = amountOf(s, 'slaktgris');
-    if (canProcess(s, p, DJUR.gris)) bearbeta(s, p, DJUR.gris, 2);
+    if (canProcess(s, p, DJUR.gris)) bearbetaVid(s, p, DJUR.gris, 2);
     const fick = { k: amountOf(s, 'svinkott') - fore.k, b: amountOf(s, 'ben') - fore.b, sk: amountOf(s, 'svinskinn') - fore.sk, t: amountOf(s, 'talg') - fore.t };
     const hela = Object.values(fick).every(n => Number.isInteger(n));
     return [

@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
+import { Person, Act, Task, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { lasBy } from '../delby';
-import { testBy, rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader } from './hjalp';
+import { testBy, rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader, bearbetaVid, vidForradet, vidStack } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, ikappHtml, spolaText } from '../../ui/borta';
@@ -180,7 +180,7 @@ SCENARIER.byte = {
       rikBy(s); tomtForrad(s); s.ting = [];
       const [a, b, c] = treVuxna(s, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
       for (const q of [a, b, c]) for (const r of [a, b, c]) if (q !== r) getRel(s, q, r).op = 0; // inga vänner
-      s.people = [a, b, c]; c.x = 90;
+      s.people = [a, b, c]; vidForradet(s, a, b); c.x = 90; // bytet görs vid förrådet, där sakerna ligger (steg 11.1.77)
       return { s, a, b, c };
     };
     const byns = (s: State, k: string) => amountOf(s, k) - living(s).reduce((n, q) => n + ownsAmount(s, q, k), 0);
@@ -285,7 +285,7 @@ SCENARIER.egendom = {
     addTo(s, 'bar', -foodOf(s) / 2); const rutten = ownsAmount(s, a, 'bar');
     // slakt: a äger två kaniner, c slaktar dem med en kniv
     gain(s, a, 'vilt', KANIN * 2); setAmount(s, 'kniv', 1); tidyTools(s); medBank(s); c.tek = { ...(c.tek ?? {}), kniv: 1 };
-    bearbeta(s, c, DJUR.kanin, 1);
+    bearbetaVid(s, c, DJUR.kanin, 1);
     const kott = ownsAmount(s, a, 'kott'), slaktarens = ownsAmount(s, c, 'kott');
     const andra = living(s).filter(q => q !== a), deras = andra.map(q => ownedStock(s, q));
     die(s, a, 'sjukdom'); const arv = !Object.keys(ownedStock(s, a)).length && andra.every((q, i) => isDeepStrictEqual(ownedStock(s, q), deras[i]));
@@ -905,7 +905,7 @@ SCENARIER.bytessystem = {
       rikBy(s); tomtForrad(s); s.ting = [];
       const [a, b, c] = treVuxna(s, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
       for (const q of [a, b, c]) for (const r of [a, b, c]) if (q !== r) getRel(s, q, r).op = 0;
-      s.people = [a, b, c]; c.x = 90;
+      s.people = [a, b, c]; vidForradet(s, a, b); c.x = 90;
       return { s, a, b, c };
     };
     // krönikans rader av ett slag ('byte', 'gava') och loggens rader ur en mall (steg 6.7.7: texten varierar)
@@ -1041,7 +1041,7 @@ SCENARIER.handelsvaror = {
     const m = t.handelsMal, mal = m ? { ...m } : undefined;
     const varde = (mal?.n ?? 0) * SIM.grundvarde('rep') * SIM.handelsPris(t, 'rep');
     const forst = SIM.handlarVaraVal(t, q);
-    SIM.twineRope(t, q, 50, SIM.villHaAv(t, 'rep') + SIM.handelsTill(t, 'rep'));
+    vidStack(t, q, 'torrgras'); SIM.twineRope(t, q, 50, SIM.villHaAv(t, 'rep') + SIM.handelsTill(t, 'rep'));
     const repN = amountOf(t, 'rep'), egna = SIM.ownsAmount(t, q, 'rep');
     SIM.handelsMalRakna(t); const sedan = t.handelsMal, efter = SIM.handlarVaraVal(t, q);
     // en by som redan har yxor över bufferten, värda mer än silvret

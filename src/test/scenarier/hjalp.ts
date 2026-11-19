@@ -14,6 +14,18 @@ export const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (isTool(k)) setAmount(s, k, m[k] ?? 0);
 };
 // p står vid den största stacken av k: det hen tar ur förrådet ligger inom räckhåll (steg 11.1.74)
+// slakten i ett scenario: slaktaren står vid stacken med djuret, som i spelet (inget svävar, steg 11.1.74)
+export const bearbetaVid = (s: State, p: Person, art: SIM.Djurart, h: number) => { vidStack(s, p, art.sak); SIM.bearbeta(s, p, art, h); };
+// den som ska göra act har hämtat av ur förrådet och bär det (HAMTAS i hamtning.ts), som när hen kommit fram i spelet
+export function harHamtat(s: State, p: Person, act: Act, av: Record<string, number>, common = true) {
+  const tk: Task = p.task?.act === act ? p.task : { act, phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0 };
+  for (const [k, n] of Object.entries(av)) { const d = SIM.use(s, p, k, n, common), g = Object.values(d).reduce((a, b) => a + b, 0); if (g <= 0) continue; (tk.items ??= {})[k] = (tk.items[k] ?? 0) + g; (tk.ag ??= {})[k] = d; }
+  tk.hamtad = 1; p.task = tk;
+}
+// graven i ett scenario: den som begraver har hämtat veden till bålet (HAMTAS.grava), som i spelet
+export function gravKlarMed(s: State, p: Person, t: Task) { const av = SIM.HAMTAS.grava!.av(s, p, t); const f = p.task; if (av) { p.task = t; harHamtat(s, p, t.act, av); } SIM.gravKlar(s, p, t); if (av) p.task = f === t ? t : f; }
+// alla står mitt i byns första lagerplats, där maten läggs (inget svävar, steg 11.1.77)
+export const vidForradet = (s: State, ...folk: Person[]) => { const z = zonesOf(s)[0]; if (z) for (const p of folk) { p.x = z.x + z.w / 2; p.y = z.y + z.h / 2; } };
 export const vidStack = (s: State, p: Person, k: string) => { const a = (s.stackar ?? []).filter(q => q.k === k).sort((x, y) => y.n - x.n)[0]; if (a) { p.x = a.x + 0.5; p.y = a.y + 0.5; } };
 export const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)

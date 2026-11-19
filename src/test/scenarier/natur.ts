@@ -1,12 +1,12 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, matGott, barnMat, hungerFlytt, regulate, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
+import { FANGST, createState, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, utanforByn, bynsMitt, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, matGott, barnMat, hungerFlytt, regulate, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, fullBorda } from '../../sim';
 import * as SIM from '../../sim';
 const { RT, STATION } = SIM;
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
-import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack } from './hjalp';
+import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.djur = {
@@ -62,10 +62,10 @@ SCENARIER.djur = {
     // allt vilt är byns: med jägarens kaniner bland byns delas det upp på flera ägare, och var och en får bara hela saker (steg 2.10.7)
     setMat(s, {}); setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
-    bearbeta(s, p, DJUR.kanin, 1);
+    bearbetaVid(s, p, DJUR.kanin, 1);
     const slakt = amountOf(s, 'kott') === 3 * SIM.kottAv(p, SLAKT.kott) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
     // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
-    const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbeta(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
+    const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbetaVid(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
     const medRep = repAv(true), utanRep = repAv(false);
     // receptet i saker.ts (för värdet) och DJUR (det som händer) säger samma sak, inom 10 %, för de arter vars delar har ett
     // recept av djuret (fisken av en abborre). Kött, ben och skinn har inget: de är värda golvet för sin nivå (varde.ts)
@@ -99,14 +99,14 @@ SCENARIER.abborre = {
     setMat(s, {}); gain(s, a, 'abborre', 6); medBank(s);
     const egen = ownsAmount(s, a, 'abborre'); // det som inte delats med byn
     const kan = canProcess(s, c, DJUR.abborre);
-    bearbeta(s, c, DJUR.abborre, 0.1); // tre abborrar på sex minuter
+    bearbetaVid(s, c, DJUR.abborre, 0.1); // tre abborrar på sex minuter
     const halv = Math.abs(amountOf(s, 'abborre') - 3) < 1e-9 && Math.abs(amountOf(s, 'fisk') - 3) < 1e-9;
-    bearbeta(s, c, DJUR.abborre, 1);
+    bearbetaVid(s, c, DJUR.abborre, 1);
     const klar = amountOf(s, 'abborre') < 1e-9 && Math.abs(amountOf(s, 'fisk') - 6) < 1e-9;
     const agare = egen > 0 && Math.abs(ownsAmount(s, a, 'fisk') - egen) < 1e-9 && ownsAmount(s, c, 'fisk') === 0;
     // en vanlig by: fisket ger abborrar, och de rensas till fiskkött
     // (alla byar börjar inte fiska de första dygnen; den första av några byar som fiskar räknas)
-    // (rensat räknas i bearbeta(); en abborre rensas på ett par minuter och syns sällan som uppgift var femte minut)
+    // (rensat räknas i bearbetaVid(); en abborre rensas på ett par minuter och syns sällan som uppgift var femte minut)
     let abborreSedd = 0, fangat = 0, rensat = 0;
     for (const seed of [3, 1, 2, 4, 5]) {
       const v = createState(seed, START); medBank(v);
@@ -602,15 +602,15 @@ SCENARIER.slaktbank = {
     for (const r of u.people) r.tek = { ...r.tek, kniv: 1 };
     setAmount(u, 'kniv', 1); tidyTools(u); setMat(u, { vilt: 3 * KANIN, abborre: 3 });
     const ingenSlakt = !canProcess(u, uq, DJUR.kanin) && !canProcess(u, uq, DJUR.abborre);
-    bearbeta(u, uq, DJUR.kanin, 1);
-    bearbeta(u, uq, DJUR.abborre, 1);
+    bearbetaVid(u, uq, DJUR.kanin, 1);
+    bearbetaVid(u, uq, DJUR.abborre, 1);
     const kvar = Math.abs(amountOf(u, 'vilt') - 3 * KANIN) < 1e-9 && amountOf(u, 'kott') < 1e-9 && Math.abs(amountOf(u, 'abborre') - 3) < 1e-9 && amountOf(u, 'fisk') < 1e-9;
     // jaktfärdigheten: mer kött för den som jagat mycket
-    const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); };
+    const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); bearbetaVid(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); };
     const ny = kott(0), van = kott(REDSKAP.kottFull);
     // vargen (steg 3.7.14): eget kött och skinn, samma ben
     setMat(s, { vilt: 0 }); const k0 = amountOf(s, 'kott'), b0 = amountOf(s, 'ben'), vk0 = amountOf(s, 'vargkott');
-    setAmount(s, 'varg', 1); bearbeta(s, p, DJUR.varg, 1);
+    setAmount(s, 'varg', 1); bearbetaVid(s, p, DJUR.varg, 1);
     const varg = { kott: amountOf(s, 'vargkott') - vk0, skinn: amountOf(s, 'vargskinn'), ben: amountOf(s, 'ben') - b0 };
     const vargOk = amountOf(s, 'varg') === 0 && varg.kott >= DJUR.varg.slakt.vargkott * REDSKAP.kottMin - 1 && varg.skinn === 1 && varg.ben === DJUR.varg.slakt.ben && amountOf(s, 'kott') === k0;
     const kottOk = ny === 3 * Math.max(1, Math.round(SLAKT.kott * REDSKAP.kottMin)) && van === 3 * Math.max(1, Math.round(SLAKT.kott * REDSKAP.kottMax)) && van > ny && Math.abs(kottFaktor(p) - REDSKAP.kottMax) < 1e-9; // i hela saker (steg 2.10.7)
@@ -659,7 +659,7 @@ SCENARIER.flatarbank = {
       medBank(w, 'flatarbank');
       const p0 = vidBanken ? vidStation(w.stationer!.find(t => t.k !== 'vagn')!) : getMap(w.seed).fire;
       q.x = p0.x; q.y = p0.y + (vidBanken ? 0 : 1);
-      twineRope(w, q, 0.1); // sex minuter: ett och ett halvt rep för hand sedan steg 2.3.8
+      harHamtat(w, q, 'tvinna', { torrgras: 10 }); twineRope(w, q, 0.1); // sex minuter: ett och ett halvt rep för hand sedan steg 2.3.8
       return amountOf(w, 'rep') + (q.delar?.rep ?? 0); // och arbetet mot nästa hela rep (steg 2.10.7)
     };
     const hand = rep(false), vidB = rep(true);
@@ -872,7 +872,7 @@ SCENARIER.skinnfall = {
     while (!b.med?.includes('skinnfall') && h < 72) { kor(s, 1); h++; }
     // ibland hinner byn bygga en bädd till och göra en fäll i den också: varje fäll tar sitt skinn och räknas en gång
     const fallar = SIM.stationerOf(s).filter(t => t.med?.includes('skinnfall')).length;
-    const tog = Math.abs(amountOf(s, 'skinn') - (10 - RT.fallSkinn * fallar)) < 0.5; // (skinnet slits lite under tiden)
+    const buret = living(s).reduce((n, q) => n + (q.task?.items?.skinn ?? 0), 0), tog = Math.abs(amountOf(s, 'skinn') + buret - (10 - RT.fallSkinn * fallar)) < 0.5; // (också det som är på väg till en bädd, steg 11.1.74) // (skinnet slits lite under tiden)
     const brist1 = PROJEKT.skinnfall!.brist(s);
     // kylan för den som sover i bädden, med och utan fällen
     const kyla = (med: boolean) => {
@@ -984,10 +984,10 @@ SCENARIER.blod = {
     const { w, h } = storlekAv(t);
     const nara = (b: SIM.Blodflack) => b.x >= t.x - 1.5 && b.x <= t.x + w + 1.5 && b.y >= t.y - 0.5 && b.y <= t.y + h + 1.5;
     // fisken rensas vid samma bänk men blöder inte
-    setMat(s, { abborre: 3 }); bearbeta(s, p, DJUR.abborre, 1);
+    setMat(s, { abborre: 3 }); bearbetaVid(s, p, DJUR.abborre, 1);
     const rensaRent = blodOf(s).length === 0 && amountOf(s, 'fisk') > 0;
     // slakten gör en pöl och stänk vid bänken
-    setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1);
+    setMat(s, { vilt: 3 * KANIN }); bearbetaVid(s, p, DJUR.kanin, 1);
     const fl = blodOf(s), slakt = fl.some(b => b.f === 'pol') && fl.some(b => b.f === 'stank') && fl.every(nara);
     const vid = blodVid(s, t, w, h);
     // fläckarna bleknar jämnt och är borta efter bleknar timmar
@@ -2325,7 +2325,8 @@ SCENARIER.ran = {
       for (const k of SIM.FOOD) setAmount(s, k, 0);
       gain(s, b, 'bar', 6);
       a.pot.aggression = agg; a.pot.empati = 1; a.hunger = 0; a.health = 0.7; a.task = undefined; b.task = undefined; d.task = undefined;
-      b.x = a.x + 2; b.y = a.y; d.x = a.x - 2; d.y = a.y;
+      const st = (s.stackar ?? []).find(q => q.k === 'bar' && (q.ag?.[b.id] ?? 0) > 0); if (st) { a.x = st.x + 0.5; a.y = st.y + 0.5; } // vid bs mat, som ligger där den ligger (steg 11.1.77)
+      b.x = a.x + 1.5; b.y = a.y; d.x = a.x - 2; d.y = a.y;
       for (const q of living(s)) if (q !== a && q !== b && q !== d) { q.x = a.x + 60; q.y = a.y + 60; }
       for (const q of [b, d]) { SIM.getRel(s, a, q).op = 0; q.partner = undefined; }
       return { s, a, b, d };
@@ -2414,6 +2415,7 @@ SCENARIER.arbete = {
     const plats = SIM.ledigPlats(b, bp)!;
     Object.assign(bp, { x: plats.x, y: plats.y, hunger: 0.1 });
     bp.task = { act: 'maltid', phase: 'do', tx: plats.x, ty: plats.y, until: b.now + HOUR, carry: 0 } as SIM.Task;
+    harHamtat(b, bp, 'maltid', SIM.HAMTAS.maltid!.av(b, bp, bp.task)!); // maten bärs till bordet (steg 11.1.77)
     needLadder(b, bp, 60);
     const mal = bp.task?.mal;
     // verben vid bänkarna och undertexterna

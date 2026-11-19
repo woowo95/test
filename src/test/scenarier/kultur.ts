@@ -5,7 +5,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare } from './hjalp';
+import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -1622,7 +1622,7 @@ SCENARIER.graven = {
 function begrav(s: State, p: Person, d: Person) {
   SIM.die(s, d, 'alderdom');
   const kr = s.kvarlevor!.find(k => k.k === 'kropp' && k.vem === d.id)!;
-  SIM.gravKlar(s, p, { act: 'grava', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task);
+  gravKlarMed(s, p, { act: 'grava', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task);
   return s.gravar!.find(g => g.vem === d.id)!;
 }
 SCENARIER.gravvard = {
@@ -1970,7 +1970,7 @@ function begravHela(s: State, p: Person, d: Person) {
   const tk = { act: 'begrava', phase: 'do', tx: kr.x, ty: kr.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task;
   p.task = tk; SIM.kroppUpp(s, p, tk); p.x = tk.tx; p.y = tk.ty;
   const tid = tk.arbTid ?? 0; s.ritualKo = [];
-  SIM.gravKlar(s, p, tk); p.task = undefined;
+  gravKlarMed(s, p, tk); p.task = undefined;
   return { kr, tid, g: s.gravar?.find(g => g.vem === d.id), r: s.ritualKo[0] };
 }
 SCENARIER.begravning = {
@@ -2667,7 +2667,7 @@ SCENARIER.buden = {
     let valt: ReturnType<typeof SIM.begravaVal>;
     const annanV = SIM.odeFor(s4, utanTro, s4.kvarlevor[0]) === 'skogen'; // den utan budet bär ut hen i skogen (steg 10.4.7)
     for (let i = 0; i < 200 && !valt; i++) { s4.now += 60000; valt = SIM.begravaVal(s4, f4); }
-    if (valt) { const t = { act: 'begrava', phase: 'do', ref: valt.ref, until: s4.now, carry: 0, dark: false, why: '' } as SIM.Task; SIM.kroppUpp(s4, f4, t); SIM.gravKlar(s4, f4, t); }
+    if (valt) { const t = { act: 'begrava', phase: 'do', ref: valt.ref, until: s4.now, carry: 0, dark: false, why: '' } as SIM.Task; SIM.kroppUpp(s4, f4, t); gravKlarMed(s4, f4, t); }
     const gravd = SIM.gravarOf(s4).find(g => g.namn === 'Rövaren Ulf');
     return [
       [`öl vid högtiden: den som följer budet tappar ölet åt kyrkan (${olTr === tr4.id}), byn dricker inte ur kyrkans kruka (${!byOl}), de ${vux4.length} vuxna drack ${drack}, och utan öl saknas det (${saknas})`, olTr === tr4.id && !byOl && drack === Math.min(vux4.length, ol0) && saknas],
@@ -3170,7 +3170,7 @@ SCENARIER.utburen = {
     const valt = SIM.begravaVal(s, p);
     const t = { act: 'begrava', phase: 'do', ref: 901, until: s.now, carry: 0, why: '' } as SIM.Task;
     p.task = t; SIM.kroppUpp(s, p, t); const min = Math.round((t.arbTid ?? 0) / SIM.MIN), dit = { x: Math.floor(t.tx!), y: Math.floor(t.ty!) };
-    p.x = t.tx!; p.y = t.ty!; SIM.gravKlar(s, p, t); p.task = undefined;
+    p.x = t.tx!; p.y = t.ty!; gravKlarMed(s, p, t); p.task = undefined;
     const k = s.kvarlevor!.find(q => q.id === 901), ut = k ? SIM.utanforByn(s, k.x, k.y) : -1, skog = k ? SIM.isForest(s, k.y * SIM.W + k.x) : false;
     const igen = SIM.begravaVal(s, a.v[1]);
     // den ruttnar bort som förut
@@ -3374,7 +3374,7 @@ SCENARIER.gravol = {
     const efter = SIM.begravaVal(s, barare);
     // begravningen: samlingen och gravölet i kön
     const tk = { act: 'begrava', phase: 'do', tx: kr.x, ty: kr.y, until: s.now, carry: 0, ref: kr.id, why: '' } as SIM.Task;
-    barare.task = tk; SIM.kroppUpp(s, barare, tk); barare.x = tk.tx!; barare.y = tk.ty!; s.ritualKo = []; SIM.gravKlar(s, barare, tk); barare.task = undefined;
+    barare.task = tk; SIM.kroppUpp(s, barare, tk); barare.x = tk.tx!; barare.y = tk.ty!; s.ritualKo = []; gravKlarMed(s, barare, tk); barare.task = undefined;
     const ko = (s.ritualKo ?? []).map(r => r.k).join(', ');
     // sorgkvädet: skaldens minne till alla i samlingen
     const lyss = vux.filter(p => p !== skald && p !== d && p.died === undefined), visste = lyss.filter(p => p.intryck?.some(e => e.om === d.id)).length;
@@ -3427,7 +3427,7 @@ SCENARIER.skandning = {
     const tk1 = begrav(p, k1), dit = { x: Math.floor(tk1.tx!), y: Math.floor(tk1.ty!) }, ut = SIM.utanforByn(s, dit.x, dit.y);
     const klan = SIM.nyGrannby(s, 20, 10), g = SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: 'Gäst', sex: 'm', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare', klan: klan.id }, x: dit.x + 1.5, y: dit.y + 0.5, nyckel: 4243 }); s.people.push(g);
     w.x = dit.x + 0.5; w.y = dit.y + 1.5; p.x = tk1.tx!; p.y = tk1.ty!; const inst0 = klan.inst;
-    SIM.gravKlar(s, p, tk1); p.task = undefined;
+    gravKlarMed(s, p, tk1); p.task = undefined;
     const kvar = s.kvarlevor!.find(k => k.vem === d1.id), sag = !!w.sedSkand?.includes(k1.id) && w.thoughts.some(t => /skänd/.test(t.text));
     const inst1 = klan.inst; SIM.sagSkandad(s, g, kvar!); const inst2 = klan.inst;
     // den som går förbi ser den
@@ -3438,7 +3438,7 @@ SCENARIER.skandning = {
     tr.natur = 80; tr.sk = { ...tr.sk, krig: 60, oppen: 60 }; const sk3: SIM.AntagetBud = { id: 'skanda', t: s.now }; SIM.BUD.skanda.antas!(s, tr, sk3); sk.v = sk3.v;
     SIM.setAmount(s, 'ved', 10); const ved0 = SIM.amountOf(s, 'ved');
     s.kvarlevor!.push({ id: 991, k: 'fiende', x: Math.floor(p.x) + 2, y: Math.floor(p.y), t: s.now, vem: -1, namn: 'Rövaren Ulf', text: 'Rövaren Ulf' });
-    const tk3 = begrav(p, s.kvarlevor!.find(k => k.id === 991)!); p.x = tk3.tx!; p.y = tk3.ty!; SIM.gravKlar(s, p, tk3); p.task = undefined;
+    const tk3 = begrav(p, s.kvarlevor!.find(k => k.id === 991)!); p.x = tk3.tx!; p.y = tk3.ty!; gravKlarMed(s, p, tk3); p.task = undefined;
     const bal = !s.kvarlevor!.some(k => k.id === 991) && ved0 - SIM.amountOf(s, 'ved') === 4 && !s.gravar?.some(x => x.namn === 'Rövaren Ulf');
     // främlingen: bara byns egna får en grav
     const g2 = SIM.nyGast(s, { id: SIM.nyttGastId(s), namn: 'Främling', sex: 'k', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare', klan: klan.id }, x: p.x, y: p.y, nyckel: 4244 }); s.people.push(g2);
@@ -3581,7 +3581,7 @@ SCENARIER.vinterpals = {
       const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
       SIM.setAmount(s, 'vilt', 2); SIM.setAmount(s, 'kniv', 1); SIM.setAmount(s, 'skinn', 0); (p.tek ??= {}).kniv = 1;
       s.stationer = [...(s.stationer ?? []), { id: 991, k: 'slaktbank', x: 3, y: 3, kvar: 0 } as SIM.Station];
-      SIM.bearbeta(s, p, SIM.DJUR.kanin, 1);
+      bearbetaVid(s, p, SIM.DJUR.kanin, 1);
       return { s, p, vit: SIM.amountOf(s, 'vitskinn'), brun: SIM.amountOf(s, 'skinn') };
     };
     const vinter = slakta(true), sommar = slakta(false);

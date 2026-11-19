@@ -217,6 +217,13 @@ export function gravaMedan(s: State, _p: Person, t: Task, dtSec: number) {
   const q = t.phase === 'do' ? kvarById(s, t.ref ?? -1) : undefined;
   if (q?.grav) q.grav.del = Math.min(1, q.grav.del + dtSec * SEC / q.grav.hel);
 }
+// det den som bär kroppen hämtar till graven (HAMTAS.grava i hamtning.ts, steg 11.1.77): veden till bålet
+export function gravaHamtas(s: State, t: Task): Record<string, number> | undefined {
+  const q = kvarById(s, t.ref ?? -1);
+  if (!q) return undefined;
+  if (q.ode === 'balRit') return { ved: ODEN.balRit.ved! };
+  return q.vag === 'bal' && q.ode !== 'skogen' && !(q.ode && arSkand(q.ode)) ? { ved: BEGRAVNINGAR.bal.ved! } : undefined;
+}
 // graven är klar: kroppen är borta, och är den döde troende samlas trosfränderna (steg 8.5.6). Den som dog som brottsling begravs ovärdigt (steg 8.4.8)
 export function gravKlar(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);

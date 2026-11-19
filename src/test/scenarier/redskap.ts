@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import { tekInfo } from '../../ui/flikar/teknik';
 import { setByn } from '../../ui/lage';
-import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus, testBy, utanWebblasare } from './hjalp';
+import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus, testBy, utanWebblasare, vidStack } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.stenring = {
@@ -12,8 +12,10 @@ SCENARIER.stenring = {
   kor: () => {
     const s = createState(1, START);
     let h = 0;
-    while (!s.fire.lightings && h < 24 * 4) { kor(s, 1); h++; }
-    const tand = s.fire.lightings > 0, ring = !!s.fire.ring, kvar = amountOf(s, 'sten');
+    let kvar = Infinity; // stenarna i förrådet när ringen lades (den läggs före det första försöket)
+    while (!s.fire.lightings && h < 24 * 4 * 12) { kor(s, 1 / 12); h++; if (s.fire.ring && kvar === Infinity) kvar = amountOf(s, 'sten'); }
+    h /= 12;
+    const tand = s.fire.lightings > 0, ring = !!s.fire.ring;
     Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined }); // elden slocknar
     kor(s, 2);
     // en äldre sparfil med gniststen: den blir flinta, och byn som haft eld har sin ring
@@ -153,7 +155,7 @@ SCENARIER.redskap = {
     tandEld(s);
     for (const q of s.people) q.tek = { fiskespjut: 1, rep: 1, flintspjut: 1, metspo: 1 };
     const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
-    twineRope(s, p, 2 / 15); // femton rep i timmen sedan steg 2.3.8: två på åtta minuter
+    vidStack(s, p, 'torrgras'); twineRope(s, p, 2 / 15); // femton rep i timmen sedan steg 2.3.8: två på åtta minuter
     const rep = amountOf(s, 'rep') === 2 && amountOf(s, 'torrgras') === 36;
     makeTool(s, p, 'spjut');
     for (const x of tingOf(s)) if (x.k === 'flintspjut') x.q = undefined; // ett normalt spjut (kvaliteten slumpas, steg 2.2.2)

@@ -629,6 +629,22 @@ export const VARD_LIST = Object.keys(VARD);
 // kan g göra behandlingen v: materialet och redskapet finns, och färdigheten räcker
 const plaggAtt = (s: State, q: Person, g: Person) => tingOf(s).some(k => (k.bar === q.id || k.bar === g.id) && !!SAKER[k.k]?.klad && k.c > 0.3);
 export const vardKan = (s: State, g: Person, v: VardDef, q?: Person) => (!v.andra || q !== g) && (v !== VARD.amputera || har(s, g, 'kniv') >= 1 || har(s, g, 'yxa') >= 1) && (v !== VARD.salva || salvaKrok.har(s) > 0) && (v !== VARD.forband || (g.forbandMed ?? 0) > 0 || (har(s, g, 'remsa') >= 1 || har(s, g, 'mossa') >= 1) && !g.task?.stanna || !!q && plaggAtt(s, q, g)) && Object.entries(v.material ?? {}).every(([m, n]) => har(s, g, m) >= n) && (!v.redskap || har(s, g, v.redskap) >= 1) && (v.fardighet === undefined || g.skill.lakekonst >= v.fardighet);
+// det vårdaren bär till den skadade (HAMTAS.varda i hamtning.ts, steg 11.1.74): ett förband (en remsa, annars mossa) till
+// varje sår som behöver ett, och materialet till behandlingarna. På resan tas det ur packningen
+export function vardHamtas(s: State, g: Person, t: Task) {
+  const q = vardKalla.pack ? undefined : byId(s, t.ref);
+  if (!q) return undefined;
+  const av: Record<string, number> = {};
+  for (const w of q.skador ?? []) for (const k of ['sy', 'forband', 'spala']) {
+    const v = VARD[k];
+    if (!v.krav(s, q, w, g)) continue;
+    if (k !== 'forband') { for (const [m, n] of Object.entries(v.material ?? {})) av[m] = (av[m] ?? 0) + n; continue; }
+    if ((g.forbandMed ?? 0) > 0) continue;
+    const m = ['remsa', 'mossa'].find(x => amountOf(s, x) >= (av[x] ?? 0) + 1);
+    if (m) av[m] = (av[m] ?? 0) + 1;
+  }
+  return Object.keys(av).length ? av : undefined;
+}
 // vem som vårdat såret, och om hen kan Rena händer (steg 9.5.25)
 function vardadAv(w: Skada, g: Person) { w.vardare = g.id; if (kn(g, 'renahander') >= 0.5) w.rh = 1; }
 // vattnet till sköljningen (vatskor.ts sätter kroken): kokt vatten om det finns, annars vanligt vatten i en behållare

@@ -4,7 +4,7 @@ import { balans } from './balans';
 import { eldPlats } from './karta';
 import { count, living, log } from './folk';
 import { coldOf, temperature } from './vader';
-import { changed, isStored, enPerRuta } from './lager';
+import { changed, enPerRuta, paMarken } from './lager';
 import { bedTile } from './byggnader';
 import { newFire, woodDays } from './eld';
 import { Station } from './stationer';
@@ -50,7 +50,7 @@ const langt = (s: State) => BRASA.langt - BRASA.langtGem * Math.max(0, -s.seder.
 // hur många dygn bränslet räcker för varje eld, med extra eldar till
 export const vedPerEld = (s: State, extra: number) => woodDays(s) / (brasorOf(s).length + 1 + extra);
 // stenar som ligger i högar på marken (de från en lägereld som tagits isär), på väg in i lagret
-const stenPaMarken = (s: State) => (s.stackar ?? []).reduce((n, a) => a.k === 'sten' && !isStored(s, a.x, a.y) ? n + a.n : n, 0); // utanför lagret: amountOf räknar lagret
+const stenPaMarken = (s: State) => paMarken(s, 'sten');
 // stenarna som lägereldarna byn planerar saknar (steg 10.11.4): ringen till en lägereld till, när byn vill ha en och ingen är
 // påbörjad, utan de stenar som redan ligger på marken på väg in. Det blir förrådsmålet för stenen (forradsmal.ts), och stenarna
 // samlas som annat material
