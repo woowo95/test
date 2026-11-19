@@ -194,10 +194,15 @@ SCENARIER.vardratt = {
     sed('gemenskap', 1); const lika = vardRatt(s, p, frammande) === 1 && vardRatt(s, p, syster) === 1;
     sed('gemenskap', -1); const egen = vardRatt(s, p, syster) > vardRatt(s, p, frammande);
     sed('barn', 1); const barnFore = vardRatt(s, p, barn) > vardRatt(s, p, frammande);
+    // en ledare som inte är släkt med den som vårdar
+    const l = living(s).find(x => x !== p && SIM.ageOf(x, s.now) >= 20)!;
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Hövding', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Hövding', satt: 1 };
+    sed('rang', 1); const ledareFore = vardRatt(s, p, l) > vardRatt(s, p, frammande);
     return [
       ['vid Sammanhållning vårdas alla lika', lika],
       ['vid Självförsörjning vårdas släkten först', egen],
       ['vid Ättens växt vårdas barnen först', barnFore],
+      ['vid Envälde vårdas ledaren först', ledareFore],
     ];
   },
 };

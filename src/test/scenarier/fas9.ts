@@ -179,14 +179,13 @@ SCENARIER.lera = {
 
 // vätskorna och behållarna (steg 9.4.13–9.4.14)
 function naveraskan(): [string, boolean][] {
-  const { RECEPT: R, TEKNIK, STATIONER, fartVid, kvVid, vidStation } = SIM;
+  const { RECEPT: R, TEKNIK, STATIONER, fartVid, kvVid } = SIM;
   const r = R.naverask, tek = TEKNIK.find(t => t.id === 'naverask');
   const s = createState(1, START), b = SIM.vidStation(medBankFas9(s));
   return [
     [`näveraskan är en sak av ${JSON.stringify(r.av)} på ${r.min} minuter, med en egen teknik (${tek?.namn ?? 'ingen'})`, r.av.naver === 1 && r.av.rep === 1 && r.min >= 2 && r.min <= 4 && !!tek],
     [`den görs fortare och bättre vid slöjdbänken (${fartVid(s, b, 'naverask').toFixed(2)} gånger, kvalitet +${kvVid(s, b, 'naverask')})`, STATIONER.flatarbank.gor.includes('naverask') && fartVid(s, b, 'naverask') > 1 && kvVid(s, b, 'naverask') > 0],
   ];
-  void vidStation;
 }
 const medBankFas9 = (s: SIM.State) => { const at = SIM.stationSite(s, 'flatarbank') ?? { x: 10, y: 10 }; const t: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: at.x, y: at.y, kvar: 0 }; (s.stationer ??= []).push(t); SIM.touch(s); return t; };
 
@@ -311,7 +310,7 @@ SCENARIER.protes = {
 
 // förbanden (steg 9.5.15): remsan före mossan, en remsa ur ett plagg i nöd, avsnörningen och sömnaden
 function forbanden(): [string, boolean][] {
-  const { HALSA, RECEPT: R, vardKlar, halsaSteg, addTool, setAmount, tingOf } = SIM;
+  const { HALSA, RECEPT: R, vardKlar, halsaSteg, addTool, setAmount } = SIM;
   const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
   const vard = (c: SIM.State, gg: SIM.Person, qq: SIM.Person) => { gg.x = qq.x; gg.y = qq.y; vardKlar(c, gg, { act: 'varda', phase: 'do', tx: qq.x, ty: qq.y, until: c.now, carry: 0, why: '', ref: qq.id }); };
   const recept = R.remsa.av.skinn === 1 && R.remsa.ger === 2 && R.remsa_lin.av.lintyg === 1;
@@ -337,7 +336,6 @@ function forbanden(): [string, boolean][] {
   const utanKonst = !tq.skador![0].sydd;
   tq.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, b: 1 }]; tg.skill.lakekonst = HALSA.syLak; vard(t, tg, tq);
   const sydd = !!tq.skador![0].sydd && tq.skador![0].g < HALSA.storSar;
-  void tingOf;
   return [
     [`remsorna skärs två av ett skinn eller lintyg (${recept ? 'ja' : 'nej'})`, recept],
     [`remsan läggs före mossan och skyddar bättre mot infektion (${HALSA.remsa} mot ${HALSA.forband})`, remsa],
@@ -464,7 +462,7 @@ SCENARIER.roller = {
       [`den modiga strider och den rädda gömmer sig (${r1}, ${r2})`, r1 === 'kampe' && r2 !== 'kampe'],
       [`rollen står kvar tills något händer, och syns i kortet (${larmRollNu(s, rädd)?.roll ?? 'ingen'})`, samma && !!larmRollNu(s, rädd)],
       [`när den modiga skadas svårt väljs rollen om (${r1} → ${om})`, om !== 'kampe'],
-      [`barnen gömmer sig (${barn ? rollVid(s, barn, 'varg') : 'inget barn'})`, !barn || rollVid(s, barn, 'varg') === 'gomd'],
+      [`barnen gömmer sig (${barn ? rollVid(s, barn, 'varg') : 'inget barn'})`, !!barn && rollVid(s, barn, 'varg') === 'gomd'],
     ];
   },
 };
@@ -513,7 +511,7 @@ SCENARIER.pilisaret = {
 SCENARIER.olyckshugg = {
   text: 'Steg 9.5.22: olyckshugget. Vid varje hård träff finns en risk av vapnets skärpa, slagets kraft och skyddet på delen: en arm, ett ben, en hand eller en fot huggs av, och huvudet eller bålen dödar direkt',
   kor: () => {
-    const { VAPEN, nyStrid, traffa, STRID } = SIM;
+    const { VAPEN, nyStrid, traffa } = SIM;
     const skarpa = VAPEN.yxa.skarpa > VAPEN.kniv.skarpa && VAPEN.kniv.skarpa > VAPEN.hand.skarpa && VAPEN.hand.skarpa === 0;
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen) => ({ id, namn: `K${id}`, sida, st: { styrka: 14, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [], fart: 1, x: 8 + sida * 2, y: 7 });
     let avArm = 0, dodBal = 0, hand = 0;
@@ -531,7 +529,6 @@ SCENARIER.olyckshugg = {
       [`vapnen har en skärpa (yxa ${VAPEN.yxa.skarpa}, kniv ${VAPEN.kniv.skarpa}, händerna ${VAPEN.hand.skarpa})`, skarpa],
       [`en hård träff med yxan hugger ibland av armen (${avArm} av 200) och dödar ibland i bålen (${dodBal} av 200)`, avArm > 0 && dodBal > 0 && avArm < 200],
       [`händerna hugger aldrig av något (${hand} av 400)`, hand === 0],
-      [`bara hårda träffar kan hugga (från graden ${STRID.huggMin})`, STRID.huggMin > 0],
     ];
   },
 };
@@ -557,11 +554,22 @@ SCENARIER.infektion = {
 };
 
 SCENARIER.infbalans = {
-  text: 'Steg 9.5.26: infektionens balans. Ett ovårdat bett eller sticksår infekteras i ungefär hälften av fallen, ett skärsår med en remsa nästan aldrig, och den som sköljer och vilar klarar sig nästan alltid (räknat ur risken per timme och sårets läketid)',
+  text: 'Steg 9.5.26: infektionens balans. Ett ovårdat bett eller sticksår infekteras i ungefär hälften av fallen, ett skärsår med en remsa nästan aldrig, och den som sköljer och vilar klarar sig nästan alltid (spelets hälsa på 200 likadana sår, tills de läkt eller blivit infekterade)',
   kor: () => {
-    const { HALSA, SKADOR } = SIM;
-    const p = (k: 'bett' | 'sticksar' | 'skarsar', g: number, f = 1) => 1 - Math.exp(-HALSA.infRisk * (SKADOR[k].inf ?? 1) * f * g * SKADOR[k].lakTim);
-    const bett = p('bett', 0.5), stick = p('sticksar', 0.5), remsa = p('skarsar', 0.5, HALSA.remsa), skoljt = p('bett', 0.5, HALSA.infRen * HALSA.remsa);
+    const { halsaSteg } = SIM;
+    const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    // andelen av 200 likadana sår som infekteras innan de läkt, timme för timme i spelets egen hälsa
+    const andel = (k: 'bett' | 'sticksar' | 'skarsar', f?: 2, skoljt = false) => {
+      let inf = 0;
+      for (let i = 0; i < 200; i++) {
+        p.skador = [{ d: 'armV', k, g: 0.5, b: 0, ...(f ? { f, fT: s.now } : {}), ...(skoljt ? { ren: s.now + 1000 * SIM.HOUR } : {}) }];
+        for (let h = 0; h < 200 && p.skador?.length && p.skador[0].inf === undefined; h++) { p.hunger = 1; p.task = undefined; halsaSteg(s, p, 3600); }
+        if (p.skador?.[0]?.inf !== undefined) inf++;
+      }
+      p.skador = undefined;
+      return inf / 200;
+    };
+    const bett = andel('bett'), stick = andel('sticksar'), remsa = andel('skarsar', 2), skoljt = andel('bett', 2, true);
     const pr = (x: number) => `${Math.round(x * 100)} %`;
     return [
       [`ett ovårdat bett infekteras i ${pr(bett)} och ett sticksår i ${pr(stick)} av fallen (ungefär hälften)`, bett > 0.3 && bett < 0.7 && stick > 0.3 && stick < 0.7],
@@ -603,12 +611,15 @@ SCENARIER.benbrott = {
     for (let i = 0; i < 200; i++) { p.skador = undefined; skada(s, p, 'benV', 'benbrott', 0.6, 'olycka', ''); if (p.skador!.some(w => w.oppet) && p.skador!.some(w => w.k === 'skarsar')) oppna++; }
     const lak = (alder: number, snett: boolean) => { const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!; q.born = c.now - alder * SIM.DAY; q.skador = [{ d: 'benV', k: 'benbrott', g: 0.6, b: 0, t0: c.now, ...(snett ? { snett: 1 } : { satt: 1 }) }]; halsaSteg(c, q, 24 * 3600); return 0.6 - (q.skador?.[0]?.g ?? 0); };
     const vuxen = lak(30, false), snett = lak(30, true), barn = lak(8, false), gammal = lak(70, false);
+    // ett brott som väntat en timme längre än tiden att sätta det, och ett som väntat en timme kortare
+    const vantat = (tim: number) => { const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!; q.skador = [{ d: 'benV', k: 'benbrott', g: 0.6, b: 0, t0: c.now - tim * SIM.HOUR }]; halsaSteg(c, q, 60); return !!q.skador.find(w => w.k === 'benbrott')?.snett; };
+    const sent = vantat(HALSA.sattTim + 1), itid = vantat(HALSA.sattTim - 1);
     return [
       [`ett benbrott är ibland öppet med ett stort sår (${oppna} av 200)`, oppna > 20 && oppna < 100],
       [`revbenen och skallen vilas bara (${[...BARA_VILA].join(', ')})`, BARA_VILA.has('bal') && BARA_VILA.has('huvud')],
       [`ett snett brott läker hälften så fort (${snett.toFixed(3)} mot ${vuxen.toFixed(3)} på ett dygn)`, Math.abs(snett - vuxen / 2) < 0.01],
       [`barn läker fortare och gamla långsammare (${barn.toFixed(3)}, ${vuxen.toFixed(3)}, ${gammal.toFixed(3)})`, barn > vuxen && vuxen > gammal],
-      [`ett brott som inte sätts inom ${HALSA.sattTim} timmar läker snett`, HALSA.sattTim > 0],
+      [`ett brott som inte sätts inom ${HALSA.sattTim} timmar läker snett (${sent ? 'snett' : 'rakt'}), inom tiden inte än (${itid ? 'snett' : 'rakt'})`, sent && !itid],
       ...sattaBenet(),
     ];
   },
@@ -940,7 +951,6 @@ SCENARIER.vin = {
     let svVal = 0; const akt = (q: SIM.Person) => q.task?.act; for (let i = 0; i < 40; i++) { ps.task = undefined; SIM.chooseTask(sv, ps); if (akt(ps) === 'brygga') svVal++; }
     setAmount(s, 'torrkott', 400); // byn har mat över bufferten
     const vald = bryggVal(s, p), mat = SIM.foodDays(s).toFixed(1);
-    const val = vald;
     bryggKlar(s, p, kar.id);
     const isats = kar.sats?.v === 'vin' && SIM.amountOf(s, 'bar') === 2;
     const tid = (h: number) => { for (let i = 0; i < h; i++) { s.now += SIM.HOUR; stepBrygg(s); } };
@@ -953,11 +963,11 @@ SCENARIER.vin = {
     const q0 = vinKvalitet(s, kr); s.now += 16 * SIM.DAY; const q1 = vinKvalitet(s, kr);
     return [
       [`tekniken ${TEK.bryggkar.namn} kommer genom matlagningen (${TEK.bryggkar.omr.join(', ')}), och bryggkaret är en station (${STATIONER.bryggkar.namn})`, TEK.bryggkar.omr.includes('koka_mat') && !!STATIONER.bryggkar],
-      [`bären och vattnet läggs i karet (${val?.act}, ${isats ? 'satsen ligger i karet' : 'ingen sats'})`, val?.act === 'brygga' && isats],
+      [`bären och vattnet läggs i karet (${vald?.act}, ${isats ? 'satsen ligger i karet' : 'ingen sats'})`, vald?.act === 'brygga' && isats],
       [`en svältande by brygger inte: med maten under bufferten (${svalt ? 'svälter' : 'svälter inte'}) blir det ingen sats (${svBrygg?.act ?? 'ingen'}) och raden väljs ${svVal} av 40 gånger; med mat för ${mat} dygn bryggs det`, svalt && !svBrygg && svVal === 0],
       [`satsen jäser på ${BRYGD.vin.dygn} dygn inne (${jast ? 'klar' : 'inte klar'})`, jast],
       [`vinet hälls upp i en stor lerkruka (${tappa ? 'ja' : 'nej'}, ${vin} vin) och karet är tomt (${tomt ? 'ja' : 'nej'})`, tappa && vin === BRYGD.vin.ger && tomt],
-      [`vinet blir bättre med tiden (${q0} → ${q1}) och håller ${VATSKOR.vin.haller} dygn`, q1 > q0 && VATSKOR.vin.haller === 40],
+      [`vinet blir bättre med tiden (${q0} → ${q1}) och håller ${VATSKOR.vin.haller} dygn`, q1 > q0],
     ];
   },
 };
@@ -1031,7 +1041,6 @@ SCENARIER.bakfylla = {
       [`supandet är ett utbrott (${UTBROTT.supa.text}), och den som super blir full (${full.toFixed(2)})`, !!UTBROTT.supa && full >= RUS.fylla],
       [`när ruset gått över är hen bakfull: tanken och sämre förmågor (${g0.toFixed(2)} → ${gBak.toFixed(2)})`, bak && gBak < g0],
       [`bakfyllan går över (${over ? 'ja' : 'nej'})`, over],
-      [`den berusade grälar och flirtar oftare och slår hellre (gräl ×${(1 + RUS.gral).toFixed(1)}, slag ×${(1 + RUS.slag).toFixed(1)} per hel rus)`, RUS.gral > 0 && RUS.flirt > 0 && RUS.slag > 0],
     ];
   },
 };
@@ -1072,7 +1081,7 @@ SCENARIER.braxen = {
 SCENARIER.snoata = {
   text: 'Steg 9.6.18: snö att äta. När snön ligger äter den törstige snö när inget bättre finns nära: snön släcker törsten sämre än vatten och kyler kroppen. Då kan också den som är ensam i en by som grundats mitt i istiden, utan redskap och ved, dricka',
   kor: () => {
-    const { drickVal, drick, TORST } = SIM;
+    const { drickVal, drick } = SIM;
     const s = createState(1, START), [p, ...andra] = SIM.living(s);
     for (const q of andra) SIM.die(s, q, 'kyla');
     s.ting = []; s.fire.lit = false;
@@ -1086,7 +1095,7 @@ SCENARIER.snoata = {
     const utanSno = drickVal(s, p);
     return [
       [`ensam på tjock is utan eld och redskap äter hen snö (${d?.act ?? 'inget'})`, d?.act === 'ata_sno'],
-      [`snön släcker törsten sämre än vatten (${t0} → ${p.torst.toFixed(2)}, vatten ger 1) och kyler kroppen (${varm0.toFixed(2)} → ${p.warm.toFixed(2)})`, slackt && kallare && TORST.snoSlacker < 1],
+      [`snön släcker törsten sämre än vatten (${t0} → ${p.torst.toFixed(2)}, vatten ger 1) och kyler kroppen (${varm0.toFixed(2)} → ${p.warm.toFixed(2)})`, slackt && kallare],
       [`utan snö finns inget att dricka (${utanSno?.act ?? 'inget'})`, !utanSno],
     ];
   },
@@ -1314,7 +1323,6 @@ SCENARIER.vattning = {
     return [
       [`den som sköter fältet hämtar vatten i krukan till de torra rutorna (${v?.why ?? 'inget'})`, !!v?.falt && v.karl === 'lerkruka_mellan'],
       [`en kruka räcker till ${JORD.karlRutor} rutor, de torraste först (${vattnade} vattnade, ${f.r!.map(r => r.fu?.toFixed(1)).join(' ')})`, vattnade === JORD.karlRutor && f.r![7].fu === 0.9],
-      [`ett fält nära vatten är värt mer när platsen väljs (${JORD.vattenKost} rutor längre bort per ruta från vattnet)`, JORD.vattenKost > 0],
     ];
   },
 };
@@ -1414,7 +1422,6 @@ SCENARIER.grodor = {
       [`kål och bönor är grödor (${GRODOR.kal.namn}, ${GRODOR.bonor.namn}), och fröna finns hos handlarna`, !!GRODOR.kal && !!GRODOR.bonor && HANDLARVAROR.some(v => v.k === 'kalfron') && HANDLARVAROR.some(v => v.k === 'bonor')],
       [`kålen växer inte på mager jord (${mager}) men på bördig (${bordig}), och tål kyla (frost ${GRODOR.kal.frost} grader)`, mager === 0 && bordig === 1 && GRODOR.kal.frost < GRODOR.rovor.frost],
       [`bönorna växer långsamt i kyla (${kallBona}) och bra i värme (${varmBona})`, kallBona < varmBona],
-      [`de vill ha olika fukt (kål ${GRODOR.kal.fukt}, bönor ${GRODOR.bonor.fukt})`, GRODOR.kal.fukt !== GRODOR.bonor.fukt],
     ];
   },
 };
@@ -1535,7 +1542,7 @@ SCENARIER.rollekavild = {
     const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 2);
     let rutor = 0; for (let i = 0; i < SIM.W * SIM.H; i++) if (richness(s, 'rolleka', i % SIM.W, Math.floor(i / SIM.W)) > 0.25) rutor++;
     s.kal = SIM.nyKalender(s.now, 0); let istid = 0; for (let i = 0; i < SIM.W * SIM.H; i++) if (richness(s, 'rolleka', i % SIM.W, Math.floor(i / SIM.W)) > 0) istid++;
-    const b = createState(3, START); b.kal = SIM.nyKalender(b.now, 2); b.now += 0;
+    const b = createState(3, START); b.kal = SIM.nyKalender(b.now, 2);
     for (let i = 0; i < 24 * 12 * 6; i++) step(b, 300);
     return [
       [`röllekan är ett lager på kartan (${FYND.rolleka.namn}) och växer på ${rutor} rutor på sommaren`, rutor > 50],

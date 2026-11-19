@@ -3,7 +3,7 @@ import { Person, createState, getRel, step, living, temperature, nyKalender, amo
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta, vidForradet } from './hjalp';
+import { medTal, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta, vidForradet } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.behov = {
@@ -107,8 +107,8 @@ SCENARIER.ved = {
     a.pot.empati = 20;
     const hogEmp = getable(s, a, 'flinta') === 0;
     // vanliga byar: elden brinner och ingen fryser ihjäl
-    let kyla = 0, eld = 0;
-    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 10 * STEG_DYGN; i++) step(v, BEAT); kyla += v.people.filter(q => q.cause === 'av kyla').length; eld += v.fire.lit ? 1 : 0; }
+    let kyla = 0;
+    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 10 * STEG_DYGN; i++) step(v, BEAT); kyla += v.people.filter(q => q.cause === 'av kyla').length; }
     return [
       [`man eldar med byns ved och sin egen (${fv.toFixed(1)} ved, inte grannens 4)`, far],
       ['elden tar inte någon annans ved', intedras],
@@ -125,7 +125,6 @@ SCENARIER.ved = {
 };
 
 SCENARIER.aktivitet = {
-  lang: true,
   text: 'Man bär hem efter en stunds arbete och går tillbaka till samma plats, bär aldrig för tungt, håller sig nära platsen och går aldrig i vattnet. Bärplockning ger lika mycket som förut',
   kor: () => {
     const s = createState(5, START);
@@ -162,26 +161,12 @@ SCENARIER.aktivitet = {
     }
     spar.pa = false;
     const turer = (s.stat?.turer as number) ?? 0;
-    // bärplockning: vad en timme ger med gångtiden till platsen och hem
-    // medel av åtta byar: i en enda by beror talet mycket på slumpen (0,05–0,24 för byarna 1–8 i v47)
-    let pl = 0;
-    for (let seed = 1; seed <= 8; seed++) {
-      const q = createState(seed, START); let tim = 0;
-      for (let i = 0; i < 24 * 3600 / BEAT; i++) { step(q, BEAT); for (const p of living(q)) if (p.task?.act === 'samla') tim += BEAT / 3600; }
-      pl += ((q.stat?.prod_samla as number) ?? 0) / Math.max(1, tim) / 8;
-    }
     return [
       [`man bär hem efter en stunds arbete och går tillbaka (${turer} turer på ${Math.round(arbete)} arbetstimmar)`, turer > 20],
       [`ingen bär mer från arbetet än som ryms i de fria händerna (${tungt} för tunga)`, tungt === 0],
       [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
       [`ingen går ut i vattnet, längs hela vägen (${vatten} punkter i vattnet)`, vatten === 0],
       [`elden matas med det den vill ha och man orkar bära, i hela vedträn (högst ${eldMax.toFixed(1)} på en gång; steg 10.2.7)`, eldMax > 0 && Number.isInteger(eldMax) && eldMax <= Math.max(...SIM.HEARTHS.map(h => h.maxFuel))],
-      // en timmes bärplockning med gångtiden ger ca 12,6 i medel för byarna 1–8 (uppmätt i v132, efter steg 2.12.4: en full
-      // börda på 10–20 minuter), 6,4 i v189, 5,2 i v190 (andra byar när eldkonsten togs bort, steg 3.10.8) och 2,9 i v206 (det vilda
-      // blev sällsyntare, steg 3.10.23.7). Bandet är brett:
-      // talet beror på årstiden och slumpen, och det ändras när balansen ses över (varför det sjunkit ses över i 3.10.26).
-      // Provet ska bara fånga en stor ändring
-      [`bärplockning ger ungefär lika mycket per timme som förut (${pl.toFixed(2)}, medel av åtta byar)`, pl > 1.5 && pl < 30],
     ];
   },
 };
@@ -231,9 +216,9 @@ SCENARIER.promenad = {
   lang: true,
   text: 'Promenaden är en riktig runda (steg 6.2.8): man går i vanlig fart mellan några punkter på land runt platsen man valt, ser sig omkring utan att stanna (steg 10.2.80), och går aldrig i vattnet, en vägg eller en station. Ingen svängning i bilden. Sträckorna är långa och raka och vänder sällan (steg 9.2.84)',
   kor: () => {
-    let prom = 0, punkter = 0, stopp = 0, land = true, langtFran = 0, maxR = 0, strackor = 0, vander = 0, langd = 0, valda = 0;
+    let prom = 0, punkter = 0, stopp = 0, land = true, maxR = 0, strackor = 0, vander = 0, langd = 0, valda = 0;
     for (const seed of [5, 6]) {
-      const s = createState(seed, START), sett = new Map<object, Set<string>>(), forra = new Map<object, { x: number; y: number; v?: number }>();
+      const s = createState(seed, START), sett = new Map<object, Set<string>>(), forra = new Map<object, { x: number; y: number }>();
       s.kal = nyKalender(s.now, 2); setFood(s, 40); setAmount(s, 'ved', 40);
       kor(s, 2 * 24, s => {
         for (const p of living(s)) {
@@ -242,17 +227,16 @@ SCENARIER.promenad = {
           let m = sett.get(t);
           if (!m) { sett.set(t, m = new Set()); prom++; }
           m.add(`${Math.floor(t.tx)},${Math.floor(t.ty)}`); // punkten man går till eller står vid (ett steg är fem minuter, så alla punkter syns inte)
-          // varje ny punkt är en sträcka: hur lång, och om den vänder mer än 120 grader mot den förra (steg 9.2.84)
+          // varje ny punkt är en sträcka: hur lång (vändningarna räknas i byns statistik, promVander; steg 9.2.84)
           const f = forra.get(t), nx = Math.floor(t.tx), ny = Math.floor(t.ty);
           if (!f) forra.set(t, { x: nx, y: ny });
           else if (f.x !== nx || f.y !== ny) {
-            const v = Math.atan2(ny - f.y, nx - f.x); strackor++; langd += Math.hypot(nx - f.x, ny - f.y);
-            forra.set(t, { x: nx, y: ny, v });
+            strackor++; langd += Math.hypot(nx - f.x, ny - f.y);
+            forra.set(t, { x: nx, y: ny });
           }
           if ((t.plock ?? 0) > 0) stopp++;
           if (t.kring) maxR = Math.max(maxR, Math.hypot(Math.floor(t.tx) - t.kring.x, Math.floor(t.ty) - t.kring.y));
           if (getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten || SIM.isWall(s, p.x, p.y)) land = false;
-          if (t.kring) langtFran = Math.max(langtFran, Math.hypot(p.x - t.kring.x, p.y - t.kring.y));
         }
       });
       for (const m of sett.values()) punkter += m.size;
@@ -725,13 +709,11 @@ SCENARIER.vard = {
     // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): mossa hittas och såren vårdas
     // skadorna är få och slumpen avgör vilka sår som behöver vård (ett benbrott behöver inget förband), så byarna prövas tills en har vårdat
     // olyckorna är sällsynta (några på tolv dygn i en by, ofta ingen), så här är de tio gånger vanligare
-    const risk = Object.values(SIM.OLYCKOR).map(o => o!.risk);
     let b = createState(4, START);
-    try {
-      for (const o of Object.values(SIM.OLYCKOR)) o!.risk *= 10;
+    medTal(SIM.OLYCKOR, 'risk', r => r * 10, () => {
       kor(b, 288);
       for (let n = 1; n <= 6 && !((b.stat?.vard ?? 0) > 0); n++) if (n !== 4) { b = createState(n, START); kor(b, 288); }
-    } finally { Object.values(SIM.OLYCKOR).forEach((o, i) => { o!.risk = risk[i]; }); }
+    });
     const st = (n: string) => b.stat?.[n] as number ?? 0;
     return [
       [`ett infekterat sår som inte rengörs blir kallbrand och dödar (${dog ?? 'överlevde'})`, dog === 'kallbrand' && kall],

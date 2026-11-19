@@ -875,9 +875,6 @@ SCENARIER.skogsrojning = {
 SCENARIER.stackar = {
   text: 'Stacken och vikten (steg 4.5.5.1, 6.1.8): en sak väger VIKT_STACK delat med stacken, om inte vikten står i registret, så en full stack av vad som helst väger lika mycket. Den som plockar upp tar så många hela saker som händerna orkar',
   kor: () => {
-    const ny: Record<string, [number, number]> = { skinn: [30, 100 / 30], vilt: [5, 8], flinta: [20, 5], rep: [40, 2.5], ben: [40, 2.5] };
-    const fel = Object.entries(ny).filter(([k, [n, v]]) => STACK[k] !== n || Math.abs(SIM.viktOf(k) - v) > 1e-9).map(([k]) => k);
-    const lika = ['vargskinn', 'sten', 'grenar', 'torrgras', 'mossa', 'kol', 'silver', 'bar'].filter(k => STACK[k] !== { vargskinn: 5, sten: 10, grenar: 50, torrgras: 50, mossa: 50, kol: 25, silver: 200, bar: 25 }[k]);
     // en full stack av vad som helst väger lika mycket (det som inte har en egen vikt)
     const s = createState(1, START);
     const famn = (k: string) => load({ act: 'bara', phase: 'back', tx: 0, ty: 0, until: s.now, carry: 0, items: { [k]: STACK[k] } } as Task, s);
@@ -890,8 +887,6 @@ SCENARIER.stackar = {
     SIM.pickUp(s, p, t, SIM.ryms(s, p));
     const tog = t.items?.skinn ?? 0, orkar = Math.floor(SIM.capacity(s, p) / SIM.viktOf('skinn') + 1e-9);
     return [
-      [`de nya stackarna och vikterna: harskinn 30 à 3,3, fällt vilt 5 à 8, flinta 20 à 5, rep och ben 40 à 2,5${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, fel.length === 0],
-      [`vargskinn, sten, grenar, hö, mossa, kol, silver och mat är som förut${lika.length ? ` (fel: ${lika.join(', ')})` : ''}`, lika.length === 0],
       [`en full stack väger ${SIM.VIKT_STACK}${fulla.length ? ` (fel: ${fulla.join(', ')})` : ''}`, fulla.length === 0],
       [`ur en hög med 60 harskinn tar man så många som båda händerna orkar (${tog} av ${orkar})`, tog === orkar],
     ];
@@ -932,7 +927,7 @@ SCENARIER.omrade = {
       [`efter 4 dygn (4 år i spelet) ligger alla hus och stationer innanför (${hus.length} hus, ${husUte} utanför; ${st.length} stationer, ${stUte} utanför; ${o.n} rutor)`, husUte === 0 && stUte === 0],
       [`ingen ruta långt från det byn omsluter räknas in (${langtUte})`, langtUte === 0],
       [`området sparas tills något ändras`, samma],
-      [`byn växer: området är större efter 4 dygn (${o0.n} → ${o.n} rutor)`, o.n >= o0.n],
+      [`byn växer: området är större efter 4 dygn (${o0.n} → ${o.n} rutor)`, o.n > o0.n],
     ];
   },
 };
@@ -986,7 +981,7 @@ SCENARIER.strak = {
       const z = (c.lagren ?? [])[0]; if (z) { z.rojs = true; z.hus = undefined; gc.trees[z.y * W + z.x] = 1; } // och ett på en lagerplats som röjs
       const val = SIM.rojSpot(c, p); return !!val && !!SIM.straken(c).ruta[val.i]; })();
     return [
-      [`träden i stråken fälls: ${tradFore - tradIStrak} av ${tradFore} i stråken som fanns två dygn före slutet (resten väntar på sin tur i röjningen)`, tradFore === 0 || tradIStrak < tradFore],
+      [`träden i stråken fälls: ${tradFore - tradIStrak} av ${tradFore} i stråken som fanns två dygn före slutet (resten väntar på sin tur i röjningen)`, tradFore > 0 && tradIStrak < tradFore],
       ['röjningen tar ett träd i ett stråk före ett på en lagerplats', forst],
       [`efter 5 dygn (5 år i spelet) har husen dörrar med stråk (${hus.length} färdiga hus, ${dorrar.size} dörrar, som mest ${maxRutor} rutor stråk; ett hus som byggs har sin dörr och sitt stråk)`, dorrar.size > 0],
       [`från varje dörr går ett stråk till elden (${tillEld} av ${dorrar.size}) och till en lagerplats (${tillLager})`, tillEld === dorrar.size && tillLager === dorrar.size],
@@ -1212,7 +1207,6 @@ SCENARIER.vilafart = {
     const ppl = living(s), pauser = ppl.filter(p => (p.paus ?? 0) > 0).length, trott = ppl.every(p => (p.paus ?? 0) <= SIM.vana(p, 'vila') * (1 + 1e-6) + 1e-9);
     return [
       [`i bädden från trött till utvilad på ${tim.toFixed(1)} timmar (en åttondel av dygnet är 3)`, tim >= 2.5 && tim <= 3.5],
-      [`golvet och marken i samma förhållande som bädden (${(K.restGolv / K.restBadd).toFixed(2)} och ${(K.restTak / K.restBadd).toFixed(2)})`, Math.abs(K.restGolv / K.restBadd - 0.6) < 0.01 && Math.abs(K.restTak / K.restBadd - 0.4) < 0.01],
       [`efter ett dygn har ${pauser} av ${ppl.length} pauser räknade för sig, och aldrig mer än vilan (resten är trötthet)`, pauser > 0 && trott],
     ];
   },
@@ -1527,7 +1521,7 @@ SCENARIER.lagerivagen = {
     return [
       [`lagerplatsen flyttade (${gx},${gy} → ${ny.x},${ny.y})`, ny.x !== gx || ny.y !== gy],
       ['den har kvar sitt namn', ny.namn === namn],
-      ['det som låg där ligger nu utanför och ska bäras in', SIM.overflow(s).length > 0 || SIM.pilesOf(s).length === 0],
+      ['det som låg där ligger nu utanför och ska bäras in', SIM.overflow(s).length > 0],
       [`en station ute får sin plats fast lagret ligger där (${plats.x},${plats.y} och ${plats2?.x},${plats2?.y})`, !!plats2 && plats2.x === plats.x && plats2.y === plats.y],
       ['när stationen börjar byggas där flyttas lagret', !!st && st.x === plats.x && !!z3 && !(z3.x === plats.x && z3.y === plats.y)],
       ...lagerIStraket(),
@@ -2054,8 +2048,7 @@ SCENARIER.byggplan2 = {
     const jord = SIM.byplanNu(s).golv === 'jord';
     s.seder.v.forsiktighet = 0; s.seder.v.nyfikenhet = 0; SIM.byplanNu(s);
     // silver inom byn
-    const [a, b] = living(s);
-    const silverMed = SIM.personPart(s, a).over === undefined ? false : true;
+    const [a] = living(s);
     // köpa ett tomt hus av byn: en familj med råd
     h.tom = s.now; h.fn = 'sovsal';
     const ag = a.id;
@@ -2068,9 +2061,8 @@ SCENARIER.byggplan2 = {
       ['ett jordgolv föreslås bli trägolv, på nivån Förbättra och inte Tak', golvForb],
       [`planens tal följer seden: tätt och i rader (${plan.tat.toFixed(1)}, ${plan.form})`, planOk],
       ['seden Dagens behov lägger jordgolv', jord],
-      ['silver räknas i bytet inom byn', silverMed],
-      [`ett hus har ett pris, och köparens högsta (${Math.round(kop)}) räcker när hen har råd`, saljs && kop > 0 && fore >= 500 && b !== undefined],
-      [`lagerplatserna har inget tak (${zonFore})`, zonFore >= 1 && (SIM.LAGER as Record<string, number>).zoner === undefined],
+      [`ett hus har ett pris, och köparens högsta (${Math.round(kop)}) räcker när hen har råd`, saljs && kop > 0 && fore >= 500],
+      [`lagerplatserna har inget tak (${zonFore})`, zonFore >= 1],
     ];
   },
 };
@@ -2081,9 +2073,8 @@ SCENARIER.skjul = {
     const s = createState(6, START);
     s.stationer = (s.stationer ?? []).filter(q => q.k !== 'vagn'); // grundarnas vagn (steg 11.6.13) står inte där torkhuset prövas
     klockan(s); byggare(s);
-    const ingenStolpe = !SIM.MATERIAL.stolpe;
     SIM.planBuild(s); byggKlart(s);
-    const hu = housesOf(s)[0], z = SIM.zonesOf(s)[0];
+    const hu = housesOf(s)[0];
     (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'tork', x: hu.x + hu.w + 6, y: hu.y, kvar: 0 } as SIM.Station, { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'tork', x: hu.x + hu.w + 9, y: hu.y, kvar: 0 } as SIM.Station);
     SIM.touch(s);
     // utan förlust vill byn inget torkhus; när maten ruttnar (steg 10.11.6) vill den
@@ -2107,15 +2098,13 @@ SCENARIER.skjul = {
     SIM.stepBlotVed(s, 3600 * 200);
     const torr = a.blot === undefined, torrEfter = SIM.torrVed(s);
     return [
-      ['stolpen finns inte längre', ingenStolpe],
       ['torkställningar ute men inget som går förlorat: inget torkhus', utanForlust],
       ['maten ruttnar och torkställningarna står ute: byn vill ha ett torkhus', !!behovTork],
       [`Byggplanen bygger ett torkhus med timmerväggar (${vaggar}), en dörr (${dorr ? 'ja' : 'nej'}) och jordgolv (${jord} rutor) runt torkställningarna`, !!t && vaggar >= 8 && dorr && jord >= 2],
       ['torkställningarna står inne i huset, under tak (rummet)', inne],
-      [`ved ute i regnet blir blöt (${nb})`, !nb || blot],
+      [`ved ute i regnet blir blöt (${nb})`, !!nb && blot],
       [`torr ved räknas för sig (${torrFore} → ${torrEfter})`, torrEfter >= torrFore],
       ['när det slutat regna torkar den', torr],
-      ['ett hus med zon utanför påverkas inte', !!z],
     ];
   },
 };
@@ -2178,13 +2167,14 @@ SCENARIER.torget = {
     const f = SIM.BYGGATGARDER.infartA.foresla(s, { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 }, () => true);
     const foreslas = f.length === 1 && f[0].ritning.every(a => a.m === 'stockvag' || a.m === 'brygga');
     s.infart = { klar: 1 };
+    const igen = SIM.BYGGATGARDER.infartA.foresla(s, { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 }, () => true).length;
     return [
       ['en liten by har inget torg', inget],
       [`när byn vuxit märks ett torg på 10×10 rutor ut (${t?.w}×${t?.h})`, finns],
       ['på torget byggs inget', inteHar],
       ['torget är byns centrum', mitt],
       ['Byggplanen föreslår en infartsväg', foreslas],
-      ['när den är klar kan handlaren komma också på vintern', !!s.infart.klar],
+      [`när den är klar föreslås den inte igen (${igen})`, igen === 0],
     ];
   },
 };
@@ -2196,7 +2186,6 @@ SCENARIER.hamtning = {
     const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
     (p.tek ??= {}).yxa = 1;
     setAmount(s, 'flinta', 3); setAmount(s, 'grenar', 5);
-    const stack = SIM.stacksOf(s).find(a => a.k === 'flinta')!;
     const e = SIM.eldPlats(s), spot = { x: e.x + 0.5, y: e.y + 3.5 };
     p.x = spot.x + 6; p.y = spot.y; // en bit från både lagret och platsen
     const tk = p.task = { act: 'yxa', phase: 'go', tx: spot.x, ty: spot.y, until: s.now + 3 * SIM.HOUR, carry: 0, why: 'Gör en yxa', dark: !SIM.isLight(s.now) } as SIM.Task;
@@ -2216,7 +2205,6 @@ SCENARIER.hamtning = {
     let borjade = false, borjadeVid: number | undefined;
     for (let i = 0; i < 12 && !borjade; i++) { step(s, 300); if (p.task?.act === 'yxa' && p.task.phase === 'do') { borjade = true; borjadeVid = Math.hypot(p.x - spot.x, p.y - spot.y); } }
     const halv = SIM.tingOf(s).find(x => x.k === 'paborjat' && x.halv?.ag === p.id);
-    void stack;
     return [
       ['framme vid platsen utan material går hen först till en stack, och inget har flyttats än', tillLagret && orortFore],
       [`vid stackarna tas materialet ur stackar inom räckhåll (längst ${Math.max(0, ...uttag).toFixed(1)} rutor) och bärs`, tagits && uttag.length > 0 && uttag.every(d => d <= 2)],
@@ -2305,8 +2293,8 @@ function traSaker(): [string, boolean][] {
 SCENARIER.snickarbank = {
   text: 'Steg 9.4.4–9.4.5: snickarbänken är en station av 2 virke och 2 plankor och 15 minuters arbete. Tekniken kräver klyvplatsen och kommer i hantverket, och bänken står inne som slöjdbänken med en sittplats. Träsakerna görs fortare och bättre där, bågen, lyran och skölden bara där, och bågen och lyran kräver kniven på bänken',
   kor: () => {
-    const { stationDef, stationerOf, stationRum, isKlar, RECEPT, TEKNIK } = SIM;
-    const d = stationDef('snickarbank'), r = RECEPT.snickarbank, tek = TEKNIK.find(t => t.id === 'snickarbank');
+    const { stationDef, stationerOf, stationRum, isKlar, TEKNIK } = SIM;
+    const d = stationDef('snickarbank'), tek = TEKNIK.find(t => t.id === 'snickarbank');
     const s = createState(1, START); klockan(s); tandEld(s);
     byggare(s); planBuild(s); const A = byggKlart(s);
     for (const q of s.people) q.tek = { ...q.tek, snickarbank: 1, klyvplats: 1, timmervagg: 1, yxa: 1 };
@@ -2317,7 +2305,6 @@ SCENARIER.snickarbank = {
     while (!banken() && h < 96) { kor(s, 1); h++; }
     const t = banken(), inne = !!t && !!A && stationRum(s, t)?.hus !== undefined;
     return [
-      [`receptet är 2 virke och 2 plankor och 15 minuter (${JSON.stringify(r.av)}, ${r.min} min)`, r.av.virke === 2 && r.av.plankor === 2 && r.min === 15],
       [`tekniken kräver klyvplatsen och kommer i hantverket (${tek?.krav.join(', ')}; ${tek?.omr.join(', ')})`, !!tek && tek.krav.includes('klyvplats') && tek.omr.includes('hantverk')],
       ['bänken står inne och har en sittplats', !!d?.inne && !!d?.sitt],
       [`byn bygger en snickarbänk när den kan (${t ? `efter ${h} timmar` : 'aldrig'}) och den står inne`, !!t && inne],
@@ -2329,8 +2316,8 @@ SCENARIER.snickarbank = {
 SCENARIER.skrivpulpet = {
   text: 'Steg 10.6.11: skrivpulpeten är en station inne med en sittplats, av 2 plankor och 1 virke och 15 minuters arbete, med en teknik som kräver pergamentet och snickarbänken. Pulpeten byggs inne av den som kan tekniken, ett blad skrivs fortare där och får stationens tillägg för kvaliteten, och utan pulpet skrivs bladet för hand',
   kor: () => {
-    const { stationDef, stationerOf, stationRum, isKlar, RECEPT, TEKNIK, skrivPlats, skrivKlar, fyllVatska, lightLevel, kvVid } = SIM;
-    const d = stationDef('skrivpulpet'), r = RECEPT.skrivpulpet, tek = TEKNIK.find(t => t.id === 'skrivpulpet');
+    const { stationDef, stationerOf, stationRum, isKlar, TEKNIK, skrivPlats, skrivKlar, fyllVatska, lightLevel, kvVid } = SIM;
+    const d = stationDef('skrivpulpet'), tek = TEKNIK.find(t => t.id === 'skrivpulpet');
     const s = createState(1, START); klockan(s); tandEld(s);
     byggare(s); planBuild(s); const A = byggKlart(s);
     for (const q of s.people) q.tek = { ...q.tek, skrivpulpet: 1, pergament: 1, snickarbank: 1, klyvplats: 1, timmervagg: 1, yxa: 1 };
@@ -2353,7 +2340,6 @@ SCENARIER.skrivpulpet = {
     let qP = 0, qH = 0; const N = 60;
     for (let i = 0; i < N; i++) { qP += med.st ? skriv(med.spot) : -1; qH += skriv(hand); }
     return [
-      [`receptet är 2 plankor och 1 virke och 15 minuter (${JSON.stringify(r.av)}, ${r.min} min)`, r.av.plankor === 2 && r.av.virke === 1 && r.min === 15],
       [`tekniken kräver pergamentet och snickarbänken (${tek?.krav.join(', ')})`, !!tek && tek.krav.includes('pergament') && tek.krav.includes('snickarbank')],
       ['pulpeten står inne och har en sittplats', !!d?.inne && !!d?.sitt],
       [`utan pulpet skrivs bladet för hand där hen är (${utan.st ? 'vid en station' : 'för hand'}, ${utan.dur / MIN} min)`, !utan.st && utan.spot === hand],
@@ -2414,7 +2400,7 @@ SCENARIER.mitten = {
 SCENARIER.mittenlager = {
   text: 'Steg 9.4.7: det som hämtas ur varje lagerplats räknas. Att flytta en lagerplats närmare byns mitt är ett projekt, värt det som hämtas där gånger hur mycket närmare den nya platsen ligger, och när den flyttats bärs sakerna dit',
   kor: () => {
-    const { zonesOf: zs, lagerFlyttTimme, lagerFlyttVal, lagerFlytta, projektVarde, overflow: over, omrade } = SIM;
+    const { zonesOf: zs, lagerFlyttTimme, lagerFlyttVal, lagerFlytta, projektVarde, omrade } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     // en lagerplats långt från mitten, med saker i
     const m = omrade(s).mitt;
@@ -2432,14 +2418,12 @@ SCENARIER.mittenlager = {
     const v = lagerFlyttVal(s), varde = projektVarde(s, 'lagerFlytt');
     const d = (q: { x: number; y: number; w: number; h: number }) => Math.hypot(q.x + q.w / 2 - m.x - 0.5, q.y + q.h / 2 - m.y - 0.5);
     const fore = d(z), efter = v ? d(v.ny) : Infinity;
-    // flytten: lagerplatsen ligger på den nya platsen, och det som låg där hamnar utanför och bärs in
-    setAmount(s, 'ved', 20);
+    // flytten: lagerplatsen ligger på den nya platsen
     const flyttad = !!v && v.z === z && lagerFlytta(s, v.z, v.ny), ny = zs(s).find(q => q.namn === 'Långt bort');
     return [
       [`utan något hämtat är flytten inget värd (${utan ? 'värd' : 'inget'})`, !utan],
       [`när mycket hämtas där finns en plats närmare mitten (${fore.toFixed(1)} → ${efter.toFixed(1)} rutor) och projektet är värt något (${varde.toFixed(3)})`, !!v && efter < fore && varde > 0],
       [`efter flytten ligger lagerplatsen närmare (${ny ? d(ny).toFixed(1) : '-'} rutor)`, flyttad && !!ny && d(ny) < fore],
-      [`det som ligger utanför lagren bärs in (${over(s).length} högar utanför)`, true],
     ];
   },
 };

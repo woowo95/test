@@ -79,6 +79,20 @@ export const medBank = (s: State, k = 'slaktbank') => {
   (s.stationer ??= []).push(t); SIM.touch(s);
   return t;
 };
+// ett jaktförsök från början: djuren som förut (inga döda, skadade, skrämda eller flyende, och det i extra), inget annat
+// flintspjut än verktyget i jägarens hand, och uppgiften mot målet (som söks när djuren nollställts)
+export const jaktFran = (s: State, p: Person, verktyg: string | undefined, mal: { x: number; y: number } | (() => { x: number; y: number }), extra: Partial<State> = {}) => {
+  Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, ...extra }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+  if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
+  const m = typeof mal === 'function' ? mal() : mal;
+  return { act: 'jakt', phase: 'do', tx: m.x, ty: m.y, until: s.now + HOUR, carry: 0, tool: verktyg } as Task;
+};
+// slakten: en slaktbänk, kniven som teknik hos alla och den enda kniven i p:s hand
+export const slakteri = (s: State, p: Person) => {
+  medBank(s);
+  for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
+  s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, p.id);
+};
 // bygger färdigt det hus som är planerat: alla delar utom den sista klara, den sista byggs som vanligt (workOn)
 export function byggKlart(s: State, h0?: SIM.Hus) {
   const h = h0 ?? housesOf(s).find(q => !q.klar);
@@ -216,6 +230,13 @@ export const SCENARIER: Record<string, Scenario> = new Proxy({} as Record<string
   },
 });
 
+// sätter fältet f i varje rad i registret (en tom rad hoppas över) till v, eller v(det gamla), kör provet och ställer alltid tillbaka
+// de gamla talen. Ett register med bara några rader: { hardVinter: SIM.MOTGANGAR.hardVinter }
+export function medTal<T>(reg: Record<string, object | undefined>, f: string, v: number | ((gammalt: number) => number), prov: () => T): T {
+  const rader = Object.values(reg).filter(r => r !== undefined) as Record<string, number>[], gamla = rader.map(r => r[f]!);
+  rader.forEach((r, i) => { r[f] = typeof v === 'number' ? v : v(gamla[i]!); });
+  try { return prov(); } finally { rader.forEach((r, i) => { r[f] = gamla[i]!; }); }
+}
 export const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;
 
 // ---------- system som saknade prov: faror, seder, samtal, liv, utflyttning, vakt och det i registren som aldrig händer ----------

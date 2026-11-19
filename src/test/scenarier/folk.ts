@@ -7,7 +7,7 @@ import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
-import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
+import { medTal, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
 import { stalle, SITTA, vidArbetet } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
@@ -334,9 +334,7 @@ SCENARIER.uppvaxt = {
   text: 'Uppväxten (steg 3.1.2): ett barn som mister sina föräldrar minns det och blir föräldralöst, en vuxen minns det också men blir inte föräldralös (steg 4.1.1.2), samma slag fastnar bara en gång, högst UPPV.max upplevelser och högst UPPV.tak åt varje håll, nära svält blir ett minne, egenskaperna är anlagen plus upplevelserna, och barnen ärver anlagen, inte det föräldrarna varit med om',
   kor: () => {
     const s = createState(9, START);
-    const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
-    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 3; // allt fastnar, också för en vuxen (en tredjedel av chansen), så att provet inte beror på slumpen
-    try {
+    return medTal(SIM.UPPLEVELSER, 'chans', 3, () => { // allt fastnar, också för en vuxen (en tredjedel av chansen), så att provet inte beror på slumpen
       const mor = nyInvanare(s, 'k', 35), far = nyInvanare(s, 'm', 37), barn = nyInvanare(s, 'm', 8), vuxen = nyInvanare(s, 'k', 20);
       barn.mother = mor.id; barn.father = far.id; vuxen.mother = mor.id; vuxen.father = far.id;
       const fore = { ...barn.pot };
@@ -378,9 +376,7 @@ SCENARIER.uppvaxt = {
         [`att mista en förälder formar en vuxen mindre än ett barn (${mindre(sv.upp?.[0])} mot ${mindre(sb.upp?.[0])})`, mindre(sv.upp?.[0]) > 0 && mindre(sv.upp?.[0]) < mindre(sb.upp?.[0])],
         [`barnen ärver anlagen (10), inte det upplevelserna gjort (20): medel ${medel.toFixed(1)}`, medel < 13],
       ];
-    } finally {
-      for (const [k, d] of Object.entries(SIM.UPPLEVELSER)) d.chans = chans[k];
-    }
+    });
   },
 };
 

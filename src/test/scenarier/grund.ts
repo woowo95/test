@@ -9,7 +9,7 @@ import { nyKalender } from '../../sim';
 import { START, STEG_TIM } from '../kor';
 import { eld as eldFlik } from '../../ui/flikar/eld';
 import { setByn, ui } from '../../ui/lage';
-import { setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, medBank, bearbetaVid } from './hjalp';
+import { medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.glanta = {
@@ -264,9 +264,7 @@ SCENARIER.talg = {
   kor: () => {
     const s = createState(3, START);
     const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar)!;
-    medBank(s);
-    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
-    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, p.id);
+    slakteri(s, p);
     setMat(s, {}); setMat(s, { vilt: 3 * SIM.KANIN }); setAmount(s, 'talg', 0);
     bearbetaVid(s, p, SIM.DJUR.kanin, 1);
     const kanin = amountOf(s, 'talg');
@@ -487,8 +485,7 @@ SCENARIER.knapphet = {
 };
 
 // vår, sommar och höst i två byar: kantareller plockas, och giftsvamp kommer med i korgen eller känns igen och lämnas. I en by är
-// det mycket slump, och sedan steg 2.3.9 är svampen ovanligare. Byarna går i två scenarier (svamp och svampbyar), så att inget av
-// dem blir det längsta jobbet i det stora testet (steg 10.11.24)
+// det mycket slump, och sedan steg 2.3.9 är svampen ovanligare
 const svampByar = (fron: number[]) => {
   const byar = fron.map(f => { const b = createState(f, START); kor(b, 21 * 24); return b; });
   const sum = (k: string) => byar.reduce((a, b) => a + ((b.stat as Record<string, number> | undefined)?.[k] ?? 0), 0);
@@ -498,12 +495,6 @@ const svampKoll = (v: ReturnType<typeof svampByar>): Koll[] => [
   [`kantareller plockade i två byar (${v.svamp}, minst 5: hur många beror mycket på slumpen)`, v.svamp >= 5],
   [`giftsvamp med i korgen (${v.st.giftsvamp}) eller känd och lämnad (${v.st.giftsvampKand})`, v.st.giftsvamp + v.st.giftsvampKand > 0],
   ['byarna lever', v.byar.every(b => living(b).length > 0)]];
-
-SCENARIER.svampbyar = {
-  lang: true,
-  text: 'På hösten plockas kantareller i två byar till, och giftsvamp kommer med i korgen eller känns igen och lämnas',
-  kor: () => svampKoll(svampByar([21, 22])),
-};
 
 SCENARIER.svamp = {
   lang: true,
@@ -750,7 +741,7 @@ SCENARIER.hardvinter = {
     const start = v ? SIM.motgangNasta(v)!.start : 0;
     if (!v) return [['en by med en hård vinter strax framför sig', false]];
     // samma tid utan den hårda vintern: kallare, mer snö, mer ved
-    const mitt = start + 3 * DAY, utan = <T>(f: () => T) => { const c = SIM.MOTGANGAR.hardVinter.chans; SIM.MOTGANGAR.hardVinter.chans = 0; try { return f(); } finally { SIM.MOTGANGAR.hardVinter.chans = c; } };
+    const mitt = start + 3 * DAY, utan = <T>(f: () => T) => medTal({ hardVinter: SIM.MOTGANGAR.hardVinter }, 'chans', 0, f);
     const kallare = utan(() => temperature(v!, mitt)) - temperature(v, mitt);
     let sno = 0, snoUtan = 0;
     const vu = cloneState(v); // en egen by, så att vädret inte hämtas ur det sparade svaret för samma timme
@@ -964,8 +955,8 @@ SCENARIER.oversvamning = {
     const vatten0 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
     // regnet innan och medan vattnet stiger
     let regn = 0, regnUtan = 0;
-    const vu = cloneState(s), c0 = SIM.MOTGANGAR.oversvamning.chans;
-    for (let h = 0; h < 2 * 24; h++) { const t = m.start + h * HOUR; if (vaderNu(s, t).nb > 0) regn++; SIM.MOTGANGAR.oversvamning.chans = 0; try { if (vaderNu(vu, t).nb > 0) regnUtan++; } finally { SIM.MOTGANGAR.oversvamning.chans = c0; } }
+    const vu = cloneState(s);
+    for (let h = 0; h < 2 * 24; h++) { const t = m.start + h * HOUR; if (vaderNu(s, t).nb > 0) regn++; if (medTal({ oversvamning: SIM.MOTGANGAR.oversvamning }, 'chans', 0, () => vaderNu(vu, t).nb > 0)) regnUtan++; }
     // fram till timmen innan vattnet börjar stiga
     let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
     kor(s, (b0 - s.now) / HOUR);
@@ -2274,9 +2265,7 @@ SCENARIER.styckning = {
   kor: () => {
     const s = createState(3, START);
     const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar);
-    medBank(s);
-    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
-    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, vuxna[0].id);
+    slakteri(s, vuxna[0]);
     const svag = vuxna[0], stark = vuxna[1];
     svag.pot = { ...svag.pot, styrka: 1 }; stark.pot = { ...stark.pot, styrka: 20 };
     const x = 5, y = 5;
@@ -2320,10 +2309,8 @@ SCENARIER.radjur = {
       if (styrka !== undefined) p.pot = { ...p.pot, styrka };
       p.tek = { ...p.tek, kniv: 1 }; SIM.newTing(s, 'kniv', 1, p.id);
       for (let i = 0; i < n; i++) {
-        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, stackar: [] }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
-        if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
+        const tk = jaktFran(s, p, verktyg, r0, { stackar: [] });
         p.x = r0.x - 8; p.y = r0.y;
-        const tk = { act: 'jakt', phase: 'do', tx: r0.x, ty: r0.y, until: s.now + HOUR, carry: 0, tool: verktyg } as SIM.Task;
         SIM.jaktForsok(s, p, tk);
         if (!tk.jf) continue;
         if (SIM.arRadjur(tk.jf.id)) ut.radmal++;
@@ -2340,10 +2327,8 @@ SCENARIER.radjur = {
     const spjut = prova('flintspjut', 150), sten = prova(undefined, 60), stark = prova('flintspjut', 150, 20);
     // slakten
     const s = createState(3, START);
-    medBank(s);
     const q = living(s).find(x => SIM.ageOf(x, s.now) >= 16)!;
-    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
-    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
+    slakteri(s, q);
     setMat(s, {}); for (const k of ['kott', 'ben', 'radjursskinn', 'talg']) setAmount(s, k, 0); setAmount(s, 'radjur', 1);
     bearbetaVid(s, q, SIM.DJUR.radjur, 1);
     const fick = ['radjurkott', 'ben', 'radjursskinn', 'talg'].map(k => `${k} ${amountOf(s, k)}`).join(', ');
@@ -2383,10 +2368,8 @@ SCENARIER.faglar = {
     if (mal) {
       const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
       for (let i = 0; i < 200; i++) {
-        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, faglarBorta: undefined, stackar: [] }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
-        const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id;
+        const tk = jaktFran(s, p, 'flintspjut', mal, { faglarBorta: undefined, stackar: [] });
         p.x = mal.x - 6; p.y = mal.y;
-        const tk = { act: 'jakt', phase: 'do', tx: mal.x, ty: mal.y, until: s.now + HOUR, carry: 0, tool: 'flintspjut' } as SIM.Task;
         SIM.jaktForsok(s, p, tk);
         if (!tk.jf) continue;
         ut.forsok++;
@@ -2398,10 +2381,8 @@ SCENARIER.faglar = {
     }
     // slakten
     const s = createState(3, START);
-    medBank(s);
     const q = living(s).find(x => SIM.ageOf(x, s.now) >= 16)!;
-    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
-    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
+    slakteri(s, q);
     setMat(s, {}); for (const k of ['kott', 'fjadrar']) setAmount(s, k, 0); setAmount(s, 'fagel', 1);
     bearbetaVid(s, q, SIM.DJUR.fagel, 1);
     // äggen: en by på våren några dygn

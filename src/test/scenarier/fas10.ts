@@ -2,7 +2,7 @@
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, byggKlart, byggare, kor, klockan, medBank, setMat, tandEld, testBy, bearbetaVid, harHamtat } from './hjalp';
+import { SCENARIER, medTal, jaktFran, byggKlart, byggare, kor, klockan, medBank, setMat, tandEld, testBy, bearbetaVid, harHamtat } from './hjalp';
 
 // en landruta i byns närhet, d rutor öster om mitten (eller närmast efter)
 const landVid = (s: SIM.State, d: number) => {
@@ -131,10 +131,8 @@ SCENARIER.vildsvin = {
     const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
     p.tek = { ...p.tek, kniv: 1 }; SIM.newTing(s, 'kniv', 1, p.id);
     for (let i = 0; i < 200; i++) {
-      Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, stackar: [], kartStrider: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
-      const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id;
+      const tk = jaktFran(s, p, 'flintspjut', v0, { stackar: [], kartStrider: undefined });
       p.x = v0.x - 7; p.y = v0.y; p.skador?.splice(0); p.health = 1; p.died = undefined;
-      const tk = { act: 'jakt', phase: 'do', tx: v0.x, ty: v0.y, until: s.now + SIM.HOUR, carry: 0, tool: 'flintspjut' } as SIM.Task;
       p.task = tk;
       SIM.jaktForsok(s, p, tk);
       if (!tk.jf) continue;
@@ -501,7 +499,7 @@ SCENARIER.drag = {
   text: 'Steg 10.10.14: binas drag. Ängsblommor, bärbuskar och ett bönfält inom räckhåll höjer draget var för sig, utom räckhåll gör de det inte, rovor ger inget, hösten och istiden ger noll, torkan sänker och talet stannar vid 1. Scenariot skriver ut draget i utkanten av de sparade testbyarna',
   kor: () => {
     const { BIN, drag, dragDelar, takenOf, groundOf, BUSKE, BARBUSKE, nyKalender, VAR, SOMMAR, HOST, ISTID, inMap } = SIM;
-    const s = createState(4, START); let W = SIM.W; W = SIM.W;
+    const s = createState(4, START); let W = SIM.W;
     s.kal = nyKalender(s.now, VAR);
     // en ruta där ängsblommor växer, med land 15 rutor åt väster: punkten P ligger 5 rutor väster om den
     takenOf(s).blomma!.fill(0);
@@ -537,18 +535,6 @@ SCENARIER.drag = {
     takenOf(s).blomma!.fill(0); for (let i = 0; i < W * SIM.H; i++) if (inMap(i % W, Math.floor(i / W))) g.buske![i] = BUSKE + BARBUSKE;
     const fullt = drag(s, px, py);
     if (b0) g.buske!.set(b0);
-    // draget i utkanten av de sparade testbyarna, på våren och sommaren (för att kunna sätta BIN.dragFullt)
-    const ut: string[] = [];
-    for (const dygn of [10, 30]) {
-      const t = SIM.cloneState(testBy(dygn)); W = SIM.W;
-      const m = SIM.bynsMitt(t), R = Math.ceil(Math.sqrt(SIM.omrade(t).n / Math.PI)) + 3;
-      for (const ai of [VAR, SOMMAR]) {
-        t.kal = nyKalender(t.now, ai);
-        const v = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => { const x = Math.floor(m.x + dx * R), y = Math.floor(m.y + dy * R); return inMap(x, y) ? drag(t, x, y) : 0; });
-        ut.push(`${dygn} dygn ${ai === VAR ? 'vår' : 'sommar'}: ${v.map(x => x.toFixed(2)).join(' ')}`);
-      }
-    }
-    console.log(`     draget i utkanten (BIN.dragFullt ${BIN.dragFullt}): ${ut.join('; ')}`);
     return [
       [`utan blommor, buskar och fält är draget noll (${tom})`, tom === 0],
       [`en ruta ängsblommor inom räckhåll ger det den har (${blomNara.toFixed(2)}), utom räckhåll inget (${blomLangt})`, blomNara > 0 && Math.abs(blomNara - blomVid) < 1e-9 && blomLangt === 0],
@@ -697,9 +683,8 @@ SCENARIER.binasar = {
     DRAG_LIST.push('prov');
     const sparat = SIM.takenOf(s).blomma!.slice(); SIM.takenOf(s).blomma!.fill(1);
     const g = SIM.groundOf(s), buskar = g.buske?.slice(); g.buske?.fill(0); s.falt = [];
-    const harda = (pa: boolean) => { for (const k of Object.keys(MOTGANGAR) as (keyof typeof MOTGANGAR)[]) (MOTGANGAR[k] as { chans: number }).chans = pa && k === 'hardVinter' ? 1 : 0; };
-    const chanser = Object.fromEntries(Object.entries(MOTGANGAR).map(([k, v]) => [k, (v as { chans: number }).chans]));
-    try {
+    const harda = (pa: boolean) => { MOTGANGAR.hardVinter.chans = pa ? 1 : 0; };
+    try { return medTal(MOTGANGAR, 'chans', 0, () => {
       // tidsåldern ai börjar nu, och de följande är hela veckor: börja i tidsåldern före och vänta tills ai börjar
       const borja = (ai: number) => { s.kal = nyKalender(s.now, (ai + 3) % 4); while (kalender(s).ai !== ai) s.now += 3600 * 1000; s.now = kalender(s).start; };
       const kupa = (bi: number, x = 60, y = 60): SIM.Station => { const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x, y, kvar: 0, bi }; s.stationer = [...(s.stationer ?? []).filter(q => q.k !== 'bikupa'), t]; return t; };
@@ -730,9 +715,8 @@ SCENARIER.binasar = {
         [`honungen ändras lika mycket med 10 minuters slag (${kort?.toFixed(3)}) som med fyra timmars (${lang?.toFixed(3)})`, kort !== undefined && lang !== undefined && Math.abs(kort - lang) < 0.01],
         [`den tomma kupan får en ny svärm på sommaren (${ny ?? 'ingen'})`, ny !== undefined],
       ];
-    } finally {
+    }); } finally {
       DRAG_LIST.splice(DRAG_LIST.indexOf('prov'), 1); delete (DRAGKALLOR as Record<string, unknown>).prov;
-      for (const k in chanser) (MOTGANGAR as Record<string, { chans: number }>)[k].chans = chanser[k];
       SIM.takenOf(s).blomma!.set(sparat); if (buskar) g.buske!.set(buskar);
     }
   },
@@ -822,9 +806,7 @@ SCENARIER.vinterhonung = {
     const s = createState(5, START); klockan(s, 0); s.founded -= 100 * DAY;
     const [p, o, q] = SIM.living(s).filter(x => ageOf(x, s.now) >= ALDER.vuxen);
     for (const x of [p, o, q]) delete x.kunskap?.vinterhonung;
-    const chanser = Object.fromEntries(Object.entries(MOTGANGAR).map(([k, v]) => [k, (v as { chans: number }).chans]));
-    for (const k in chanser) (MOTGANGAR as Record<string, { chans: number }>)[k].chans = 0;
-    try {
+    return medTal(MOTGANGAR, 'chans', 0, () => {
       const borja = (ai: number) => { s.kal = nyKalender(s.now, (ai + 3) % 4); while (kalender(s).ai !== ai) s.now += 3600 * 1000; s.now = kalender(s).start + 10 * 3600 * 1000; };
       const kupa = (bi: number, ag?: number): SIM.Station => { const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bikupa', x: 60, y: 60, kvar: 0, bi, ag }; s.stationer = [...(s.stationer ?? []).filter(x => x.k !== 'bikupa'), t]; return t; };
       const kor = (dagar: number) => { for (let t = 0; t < dagar * 86400; t += 14400) { s.now += 14400 * 1000; binSteg(s, 14400); } };
@@ -851,9 +833,7 @@ SCENARIER.vinterhonung = {
         [`kunskapen går vidare i ett samtal (${kanQEfter.toFixed(2)})`, kanQEfter >= BIN.kan],
         [`den bleknar inte hos den som äger ett levande samhälle (${oT === s.now ? 'använd nu' : 'gammal'}), men hos den som inte gör det (${qT === s.now ? 'använd nu' : 'gammal'})`, oT === s.now && qT < s.now],
       ];
-    } finally {
-      for (const k in chanser) (MOTGANGAR as Record<string, { chans: number }>)[k].chans = chanser[k];
-    }
+    });
   },
 };
 SCENARIER.bistick = {

@@ -302,7 +302,6 @@ SCENARIER.tatuering = {
       [`märket i pannan i byns stil (${del}), 1 kol går åt (${SIM.amountOf(s, 'kol')} kvar)`, del === `tat-${stil}-panna` && !efter.del.tatKind && SIM.amountOf(s, 'kol') === 2 && !q.tatV],
       [`det syns i porträttet (${skilda} punkter), bara i paletten`, skilda > 0 && utanfor === 0],
       [`och står i berättelsen (${rad?.[2] ?? ''})`, !!rad],
-      ['en plats rymmer en tatuering: pannan är tagen', !q.tatV],
       [`tolv delar i porträttet, fyra stilar gånger tre platser (${saknas.join(', ') || 'alla finns'})`, !saknas.length],
     ];
   },

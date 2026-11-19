@@ -25,7 +25,6 @@
     "samma": "tsx src/test/samma.ts",
     "jamfor": "tsx src/test/jamfor.ts",
     "natur": "tsx src/test/natur.ts",
-    "lardom": "tsx src/test/lardom.ts",
     "radmatt": "tsx src/test/radmatt.ts",
     "radregler": "tsx src/test/radregler.ts",
     "vacktmatt": "tsx src/test/vacktmatt.ts",

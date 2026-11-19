@@ -6,7 +6,7 @@ import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
-import { stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.djur = {
@@ -1838,10 +1838,8 @@ SCENARIER.kaninjakt = {
       const ut = { fangst: 0, skadad: 0, borta: 0, skramd: 0, sar: 0, sett: 0, ratt: 0 };
       const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
       for (let i = 0; i < n; i++) {
-        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
-        if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
-        const k = djurOf(s).find(d => d.id === k0.id) ?? djurOf(s)[0];
-        const tk = { act: 'jakt', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, tool: verktyg } as SIM.Task;
+        let k!: ReturnType<typeof djurOf>[number];
+        const tk = jaktFran(s, p, verktyg, () => k = djurOf(s).find(d => d.id === k0.id) ?? djurOf(s)[0]);
         const sar = (p.skador ?? []).length;
         SIM.jaktForsok(s, p, tk);
         const f = tk.jf!; // försöket planeras när det börjar (Björn efter v159), och inget händer förrän det är slut
@@ -1896,13 +1894,10 @@ SCENARIER.motvind = {
       const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
       p.kunskap = kan ? { motvind: { v: kan, t: s.now } } : undefined;
       for (let i = 0; i < n; i++) {
-        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
-        const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id;
-        const k = djurOf(s).find(d => d.id === alla[i % alla.length]) ?? djurOf(s)[0]; // kaninerna i tur och ordning, i olika terräng
+        const tk = jaktFran(s, p, 'flintspjut', () => djurOf(s).find(d => d.id === alla[i % alla.length]) ?? djurOf(s)[0]); // kaninerna i tur och ordning, i olika terräng
         // vinden blåser rakt från jägaren mot kaninen (medvind) eller tvärtom (motvind)
-        const v = SIM.vaderNu(s), r = Math.atan2(k.y - p.y, k.x - p.x);
+        const v = SIM.vaderNu(s), r = Math.atan2(tk.ty - p.y, tk.tx - p.x);
         v.vind = 1; v.rikt = vind === 'med' ? r : r + Math.PI;
-        const tk = { act: 'jakt', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, tool: 'flintspjut' } as SIM.Task;
         SIM.jaktForsok(s, p, tk);
         const f = tk.jf!;
         if (f.sett) ut.sett++;
@@ -2443,11 +2438,7 @@ SCENARIER.harflykt = {
     const p = living(s).find(q => ageOf(q, s.now) >= 16)!;
     let n = 0, bort = 0, ihop = 0, stilla = 0, harBort = 0, sikta = 0, smyg = 0, kortast = Infinity, langst = 0;
     for (let i = 0; i < 40; i++) {
-      Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined });
-      s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
-      if (i % 2) { const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id; }
-      const k = djurOf(s, s.now, [])[i % 3] ?? djurOf(s, s.now, [])[0];
-      const tk = { act: 'jakt', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, tool: i % 2 ? 'flintspjut' : undefined } as SIM.Task;
+      const tk = jaktFran(s, p, i % 2 ? 'flintspjut' : undefined, () => djurOf(s, s.now, [])[i % 3] ?? djurOf(s, s.now, [])[0]);
       SIM.jaktForsok(s, p, tk);
       const f = tk.jf;
       if (!f) continue;
