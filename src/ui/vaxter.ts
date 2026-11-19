@@ -141,7 +141,7 @@ export function drawAnimals() {
     visad.set(k.id, e); sedda.add(k.id);
     const art = k.art, fallt = art === 'radjur' ? kartbild('radjur') : art === 'vildsvin' ? 'vildsvin' : art === 'fagel' ? kartbild(FALLD[k.u ?? 1]) : undefined; // det fällda rådjuret (steg 6.6.2) och fågeln (steg 6.6.3)
     if (k.ligger && fallt) { const c = iconCanvas(fallt); djurIkoner.add(fallt, Math.round(k.x * TS - c.width / 2), Math.round(k.y * TS + 2 - c.height), 1); }
-    else if (k.ligger) djurIkoner.add('kanin_dod', k.x * TS - 4, k.y * TS - 6, 1); else ritaDjur(art, k.id, k.x, k.y, riktade, k.u);
+    else if (k.ligger) djurIkoner.add('kanin_dod', Math.round(k.x * TS - iconCanvas('kanin_dod').width / 2), Math.round(k.y * TS + 2 - iconCanvas('kanin_dod').height), 1); else ritaDjur(art, k.id, k.x, k.y, riktade, k.u);
     if (!k.ligger) ut.push({ id: k.id, art, x: k.x, y: k.y, grupp: -1, u: k.u });
     if (e.larm > ui.nu) larm(k.x, k.y);
   }
