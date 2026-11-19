@@ -43,31 +43,33 @@
     {
      "namn": "vaxljus_slackt",
      "rader": [
-      "...",
-      "...",
-      ".F.",
-      "LLK",
-      "LKI",
-      "KJI",
-      "LJI",
-      "III"
+      ".....",
+      ".....",
+      "..F..",
+      ".LLK.",
+      ".LKI.",
+      ".KJI.",
+      ".LJI.",
+      "GGGFE",
+      ".FFE."
      ]
     },
     {
      "namn": "vaxljus_tant",
      "rader": [
-      ".u.",
-      ".L.",
-      ".t.",
-      "LLK",
-      "LKI",
-      "KJI",
-      "LJI",
-      "III"
+      "..u..",
+      "..L..",
+      "..t..",
+      ".LLK.",
+      ".LKI.",
+      ".KJI.",
+      ".LJI.",
+      "GGGFE",
+      ".FFE."
      ]
     }
    ],
-   "anteckning": "Vaxljuset står upprätt på ett bord eller en hylla och ses snett ovanifrån, så den översta raden är ljusets topp. Efter Björns kommentar är det mycket mindre än förut: bara 3 punkter brett och 5 högt, ungefär som en tumme mot en människa på 14 × 20. Bivaxet har senaptoner som är ljusast uppe till vänster, och kontur och skugga ligger i senap0 till höger och nertill. Både stilen och mörkret runt det är oförändrade. Det släckta ljuset har en liten veke av hö i jord2 som sticker upp mitt på. På det tända ljuset står i stället en liten låga på tre punkter: rost2 nertill, rost3 i mitten och en senap3-spets. Lågan är det enda starka i bilden. Båda bilderna är 3 × 8 punkter, så ljusen står i samma höjd. Granskningen: Storleken (3 × 8 punkter) och vinkeln behålls, i samma storlek som talgljuset bredvid kolonisten. Formen är fortfarande spegelsymmetrisk med veken i mitten, och vaxet i senap syns på gräset. Tre rättelser: 1) Ljusets översta rad är nu en ljus yta ovanifrån (LLK) i stället för samma ton som sidan, så att toppen syns snett uppifrån. 2) Den släckta veken av hö är brunnen och ritas därför mörk (jord1) i stället för jord2, som såg ut som ett obränt strå. 3) Lågan har den ljusaste tonen i kärnan (senap3), rost3 i spetsen och rost2 nertill vid veken, så att den lyser starkast i mitten. Den mörka högerkanten och botten i senap0 fungerar som kontur. Kroppen har korn med två till tre toner och ljuset från vänster.",
+   "anteckning": "Ett litet vaxljus, 3 punkter brett, som står på ett lågt fat av bränd lera, 5 punkter brett, som fångar vaxet som rinner. Fatet gör formen bredare nertill än de andra versionerna. Den släckta veken av hö är mörk; det tända ljuset har en liten låga i rost med ljus kärna. Ritad om av programmeringschatten, eftersom version 2 var nästan samma form som version 1.",
    "ide": ""
   },
   {
