@@ -470,7 +470,8 @@ function ryktenHtml(p: Person) {
   const arv = arvAnseende(s, p.id).a, fo = [p.father, p.mother].map(id => id !== undefined ? byId(s, id) : undefined).filter((q): q is Person => !!q);
   const arvRad = Math.abs(arv) >= 0.05 ? `<p class="muted small ansarv" title="${esc(`En del av det byn tycker om ${fo.map(q => q.name).join(' och ')} räknas i ${p.name}s anseende`)}"><span class="riktn${arv > 0 ? '' : ' ned'}">${arv > 0 ? '▲' : '▼'}</span> Ärvt från föräldrarna: ${fo.map(q => pLink(q)).join(' och ')}</p>` : '';
   const bid = (k: IntryckTyp) => `by-${p.id}-${k}`, upp = (k: IntryckTyp) => INTRYCK[k].tecken > 0;
-  const vem = (k: IntryckTyp) => living(s).flatMap(q => { const e = intryckOm(q, p.id, k); return e ? [{ q, e }] : []; }).sort((a, b) => b.e.v * b.e.c - a.e.v * a.e.c);
+  const vemMinne = new Map<IntryckTyp, { q: Person; e: NonNullable<ReturnType<typeof intryckOm>> }[]>(); // en gång per intryck och omritning
+  const vem = (k: IntryckTyp) => { let v = vemMinne.get(k); if (!v) vemMinne.set(k, v = living(s).flatMap(q => { const e = intryckOm(q, p.id, k); return e ? [{ q, e }] : []; }).sort((a, b) => b.e.v * b.e.c - a.e.v * a.e.c)); return v; };
   const syms = byn.map(([k]) => {
     const title = `${cap(INTRYCK[k].namn)}: ${vem(k).length} i byn tycker så. Drar anseendet ${upp(k) ? 'uppåt' : 'nedåt'}`;
     return `<button type="button" class="tnod liten ryk" data-hjalp="${bid(k)}" data-hjalp-grupp="by-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${ikTecken(k)}<span class="riktn${upp(k) ? '' : ' ned'}">${upp(k) ? '▲' : '▼'}</span><span class="antal" title="${vem(k).length} tycker så">${vem(k).length}</span></button>`;
@@ -631,7 +632,7 @@ if (typeof document !== 'undefined') document.addEventListener('mouseover', e =>
 function handHtml(p: Person) {
   const r = personRader(s, p);
   const extra = `${forrHtml(p)}${p.fame.length ? `<h3>Viktiga händelser</h3><ul class="fame">${p.fame.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
-      ${fritidLista({ person: p.id }) ? `<h3>Framträdanden och matcher</h3>${fritidLista({ person: p.id, antal: 8 })}` : ''}${bytenHtml(p.byten)}`;
+      ${(f => f ? `<h3>Framträdanden och matcher</h3>${f}` : '')(fritidLista({ person: p.id, antal: 8 }))}${bytenHtml(p.byten)}`;
   if (!r.length) return '<p class="muted">Inget särskilt har hänt ännu.</p>' + extra;
   return extra + `<h3>Dag för dag</h3><ul class="fame phand">${r.map(x => `<li${x.alla.length > 1 ? ` title="${esc(x.alla.join(' '))}"` : ''}><span title="${esc(PERSONLOGG[x.k].namn)}">${PERSONLOGG[x.k].ikon}</span> <span class="muted">${esc(clockTxt(x.t))}</span> ${esc(x.text)}</li>`).join('')}</ul>`;
 }

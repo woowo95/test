@@ -9,9 +9,12 @@ const PA_BANKEN: Partial<Record<Act, string>> = { ...Object.fromEntries(Object.v
 // det som används vid stationen just nu (steg 3.6.6): den som arbetar där, sakerna på bänken och hur långt arbetet kommit.
 // Ett påbörjat redskap (paborjat.ts) visar sitt material och sin framsteg; viltet visar hur långt slakten kommit av
 // den längsta tiden (maxTim). Annars saken ur PA_BANKEN och ingen stapel. Bara utseende
-export function iBruk(st: Station) {
+// de levande som har en uppgift, med platsen där de syns i bilden (steg 10.2.19). Kartan räknar listan en gång per bildruta och
+// ger den till varje station (kodgenomgången 414)
+export const arbetandeNu = () => living(s).flatMap(q => q.task ? [{ q, v: sparPlats(q, ui.nu) ?? q }] : []);
+export function iBruk(st: Station, folk = arbetandeNu()) {
   const d = stationDef(st.k), at = vidStation(st);
-  const p = d && living(s).find(q => { const v = sparPlats(q, ui.nu) ?? q; return q.task && d.gor.includes(q.task.act) && Math.hypot(v.x - at.x, v.y - at.y) < STATION.vidBank; }); // där hen syns i bilden (steg 10.2.19)
+  const p = d && folk.find(({ q, v }) => d.gor.includes(q.task!.act) && Math.hypot(v.x - at.x, v.y - at.y) < STATION.vidBank)?.q; // den första i listan
   const tk = p?.task;
   if (!p || !tk) return undefined;
   const h = tk.ref !== undefined ? tingOf(s).find(t => t.id === tk.ref && t.halv)?.halv : undefined;

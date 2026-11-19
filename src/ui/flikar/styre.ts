@@ -2,7 +2,7 @@ import { BUDGET, FANG, sederTarget, budgetAndel, budgetNu, sakNamn, type Omrostn
 import { iconImg } from '../../ikoner';
 import { bar, delRad, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
-import { lastSed, sedFormat, sedKlick, sedLista, sedVag } from './seder';
+import { lastSed, sedFormat, sedKlick, sedLista, sedRader, sedVag } from './seder';
 import type { Flik } from '../panel';
 
 // styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, vågskålarna, rättegångarna och de ledare byn haft.
@@ -28,10 +28,11 @@ function styretHtml() {
       : '<p class="muted">Byn har ingen ledare just nu. Ingen vuxen som kan ledarskap är vald ännu.</p>';
     // en sed som inte är upplåst står sist som en grå rad (steg 11.1.14), som i Seder
     const oppenSkal = (v: (typeof VAGSKALAR)[number]) => v.sed ? st.oppna.includes(v.id) : false;
+    const mal = sederTarget(s), dragen = sedRader(); // en gång för alla vågskålar
     const skalar = [...VAGSKALAR.filter(oppenSkal), ...VAGSKALAR.filter(v => !oppenSkal(v))].map(v => {
       if (!oppenSkal(v)) return lastSed(v.namn);
       const d = SEDER[v.sed!], x = s.seder.v[v.sed!] ?? 0;
-      return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos), sederTarget(s)[v.sed!])}${sedFormat(v.sed!)}${sedLista(v.sed!)}</li>`;
+      return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos), mal[v.sed!])}${sedFormat(v.sed!, dragen)}${sedLista(v.sed!, dragen)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
     return `${ledare}<div class="phead"><div><h3>Maktens seder</h3></div>${flikLank('seder', 'Alla seder')}</div><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;

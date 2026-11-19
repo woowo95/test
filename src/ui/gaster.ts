@@ -99,7 +99,17 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     };
   }),
 ];
-export const gaster = (t = ui.nu) => GASTER.flatMap(f => f(s, t));
+// listan byggs en gång per bildruta (kodgenomgången 433): i webbläsaren sparas den för samma by, tid i byn och visad tid tills
+// det som ritas just nu är klart (en mikrouppgift tömmer den). Testerna (utan bildrutor) bygger den varje gång
+let gastMinne: { s: State; now: number; t: number; lista: Gast[] } | undefined;
+export const gaster = (t = ui.nu): Gast[] => {
+  if (typeof requestAnimationFrame === 'undefined') return GASTER.flatMap(f => f(s, t));
+  if (gastMinne && gastMinne.s === s && gastMinne.now === s.now && gastMinne.t === t) return gastMinne.lista;
+  const lista = GASTER.flatMap(f => f(s, t));
+  if (!gastMinne) queueMicrotask(() => { gastMinne = undefined; });
+  gastMinne = { s, now: s.now, t, lista };
+  return lista;
+};
 export const gastById = (id: number | undefined) => id !== undefined && id < 0 ? gaster().find(g => g.id === id) : undefined;
 // för sidan: html för en gästs rader
 export const gastRad = (r: Gast['rader'][number]) => `<dt title="${esc(r.title)}">${esc(r.namn)}</dt><dd title="${esc(r.title)}">${r.varde}</dd>`;

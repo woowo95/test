@@ -35,8 +35,8 @@ const figurer = new Map<string, PIXI.Texture>(), portratt = new Map<string, stri
 // handen i figurens bild (punkter från övre vänstra hörnet), till redskapen i arbetena (steg 5.1.9.4, ui/arbetsbild.ts)
 const hander = new WeakMap<PIXI.Texture, [number, number]>();
 export const figurHand = (t: PIXI.Texture) => hander.get(t);
-export function figurTex(q: Skapad, l: Lage, vald: boolean) {
-  const k = JSON.stringify(q) + JSON.stringify(l) + vald;
+export function figurTex(q: Skapad, l: Lage, vald: boolean, qNyckel = JSON.stringify(q)) { // qNyckel: utseendet som text, när den redan finns
+  const k = qNyckel + JSON.stringify(l) + vald;
   let t = figurer.get(k);
   if (!t) {
     if (figurer.size > MAX) figurer.clear();

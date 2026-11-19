@@ -12,19 +12,19 @@ import { delRad, esc, kvMark, linkify, namnI } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
 
-interface Rad { t: number; text: string; slag?: string; kind?: LogEntry['kind']; viktig?: boolean; ids: number[]; byte?: LogEntry['byte']; bnr?: number; fram?: number; match?: number } // byte och fram ger knappen till redogörelsen
-// var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet
+interface Rad { t: number; text: string; slag?: string; kind?: LogEntry['kind']; viktig?: boolean; ids?: number[]; byte?: LogEntry['byte']; bnr?: number; fram?: number; match?: number } // byte och fram ger knappen till redogörelsen
+// var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet (bara i raderna som visas)
 const iText = (text: string, folk: Person[]) => folk.filter(p => namnI(text, p.name) >= 0).map(p => p.id);
 // symbolen som är vald: kat (en kategori), annars viktigt (bara krönikan) eller allt (krönikan och händelseloggen); forkl: symbolen vars förklaring visas
 export const val: { del: 'handelser' | 'skrifter' | 'fritid'; viktigt: boolean; ar?: number; kat?: string; forkl?: string; stad?: SkriftStadium; skrift?: string } = { del: 'handelser', viktigt: true }; // stad = stadiet i listan över skrifterna, skrift = raden som är öppen (steg 10.6.8) // (exporterat för scenarierna)
 function rader(): Rad[] {
-  const krona: Rad[] = (s.hist?.kronika ?? []).map(([t, text, slag]) => ({ t, text, slag, viktig: true, ids: iText(text, s.people) }))
+  const krona: Rad[] = (s.hist?.kronika ?? []).map(([t, text, slag]) => ({ t, text, slag, viktig: true }))
     .filter(r => val.kat === undefined || kronikaKat(r.slag) === val.kat).sort((a, b) => a.t - b.t);
   if (val.viktigt || val.kat !== undefined) return krona; // en kategori finns bara i krönikan
   // allt: loggens rader, och krönikans rader som inte redan står i loggen (samma text vid samma tid)
   const logg: Rad[] = s.log.map(l => ({ t: l.t, text: l.text, kind: l.kind, ids: l.ids, byte: l.byte, bnr: l.bnr, fram: l.fram, match: l.match }));
-  const iLoggen = new Set(logg.map(r => `${r.t}|${r.text}`));
-  for (const r of logg) if (krona.some(k => k.t === r.t && k.text === r.text)) r.viktig = true;
+  const iLoggen = new Set(logg.map(r => `${r.t}|${r.text}`)), iKronan = new Set(krona.map(k => `${k.t}|${k.text}`));
+  for (const r of logg) if (iKronan.has(`${r.t}|${r.text}`)) r.viktig = true;
   return [...krona.filter(k => !iLoggen.has(`${k.t}|${k.text}`)), ...logg].sort((a, b) => a.t - b.t);
 }
 // symbolerna överst och vad de betyder (förklaringen kommer fram när man trycker)
@@ -68,6 +68,10 @@ function skriftHtml() {
 export const kronika: Flik = {
   namn: 'Krönika',
   html() {
+    const rad = delRad('data-kdel', DELAR, val.del);
+    if (val.del === 'skrifter') return rad + skriftHtml();
+    // Fritid (steg 9.2.67): de senaste framträdandena och matcherna, med knappen till redogörelsen
+    if (val.del === 'fritid') { const f = fritidLista(); return rad + (f ? `<h4 class="kar">Framträdanden och matcher</h4>${f}` : '<p class="muted">Inga framträdanden eller matcher än.</p>'); }
     const alla = rader(), ar = (t: number) => kalender(s, t).ar;
     const aren = [...new Set(alla.map(r => ar(r.t)))].sort((a, b) => a - b);
     if (val.ar !== undefined && !aren.includes(val.ar)) val.ar = aren.length ? aren.reduce((b, a) => Math.abs(a - val.ar!) < Math.abs(b - val.ar!) ? a : b) : undefined;
@@ -78,12 +82,8 @@ export const kronika: Flik = {
       const a = ar(r.t);
       if (a !== forra) { html += `${forra === undefined ? '' : '</ol>'}<h4 class="kar">År ${a}</h4><ol class="logg kron">`; forra = a; }
       const k = kalender(s, r.t), cls = [r.kind ? `k-${r.kind}` : '', r.viktig && !val.viktigt ? 'viktig' : ''].filter(Boolean).join(' ');
-      html += `<li${cls ? ` class="${cls}"` : ''}><span class="when">${r.kind ? `${AGES[k.ai].toLowerCase()}, kl. ${klocka(r.t)}` : AGES[k.ai]}</span>${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids, byte: r.byte, bnr: r.bnr, fram: r.fram, match: r.match })}</li>`;
+      html += `<li${cls ? ` class="${cls}"` : ''}><span class="when">${r.kind ? `${AGES[k.ai].toLowerCase()}, kl. ${klocka(r.t)}` : AGES[k.ai]}</span>${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids ?? iText(r.text, s.people), byte: r.byte, bnr: r.bnr, fram: r.fram, match: r.match })}</li>`;
     }
-    const rad = delRad('data-kdel', DELAR, val.del);
-    if (val.del === 'skrifter') return rad + skriftHtml();
-    // Fritid (steg 9.2.67): de senaste framträdandena och matcherna, med knappen till redogörelsen
-    if (val.del === 'fritid') { const f = fritidLista(); return rad + (f ? `<h4 class="kar">Framträdanden och matcher</h4>${f}` : '<p class="muted">Inga framträdanden eller matcher än.</p>'); }
     return rad + symbolRad(aren) + (html ? html + '</ol>' : '<p class="muted">Inget har hänt här än.</p>');
   },
   klick(el) {
