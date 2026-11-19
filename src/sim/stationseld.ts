@@ -48,6 +48,13 @@ export function elda(s: State, p: Person, t: Station, timmar: number) {
   if (kall) { count(s, 'stationsEldTand'); if (forstaGang(s, 'stationsEld_' + t.k)) log(s, `${p.name} tände elden i byns ${stationDef(t.k)?.namn.toLowerCase() ?? t.k}.`, 'world', [p.id]); }
   return kall ? STATIONSELD.tandMin : 0;
 }
+// veden som bärs till stationens eld (hamtning.ts): så mycket som elda lägger i, räknat på hela förrådet
+export function eldaVed(s: State, p: Person, tk: Task) {
+  const t = eldStationVid(s, p, tk.act), d = t && eldDef(t);
+  if (!t || !d) return 0;
+  const e = t.eld ?? { ved: 0 }, arb = Math.max(0, tk.until - s.now, tk.arbTid ?? 0) / HOUR + (d.tim?.(s, t) ?? 0);
+  return Math.min(Math.max(Math.ceil(Math.max(0, arb * d.burn - e.ved) - 1e-9), e.lit || e.ved > 0 ? 0 : 1), Math.floor(d.max - e.ved + 1e-9));
+}
 // framme vid arbetet (paborjat.ts): vid en station med eld eldar man först. Brinner den inte, och arbetet kräver den, blir det
 // inget arbete. Svarar med minuterna det tog att tända, eller false när arbetet inte går
 export function eldaForst(s: State, p: Person, tk: Task): number | false {

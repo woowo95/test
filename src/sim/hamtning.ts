@@ -20,6 +20,8 @@ import { REST, RESTER, resterOver } from './rester';
 import { farorNu, heligtAvstar } from './kultlatt';
 import { villHaAv } from './forradsmal';
 import { handelsTill } from './handel';
+import { tandHamtas } from './eld';
+import { eldaVed } from './stationseld';
 import { BAK, festRecept, grillHamtas, kokRecept, STEK, stekRecept, torkHamtas } from './matlagning';
 import { RATT } from './ratter';
 import { GRODOR, odlaHamtas, STAKET, skrammaHar } from './odling';
@@ -79,6 +81,9 @@ HAMTAS.skriva = { av: () => ({ pergament: 1 }), byns: true };
 // betet till fisket: fiskrens, eller en mört hen äger (steg.ts UTFALL.fiske)
 HAMTAS.fiske = { av: (s, p): Record<string, number> | undefined => mayTake(s, p, 'fiskrens') >= 1 ? { fiskrens: 1 } : ownsAmount(s, p, 'mort') >= 1 ? { mort: 1 } : undefined };
 
+// elden som ska tändas (eld.ts, steg 11.1.75): tändmaterialet, bränslet och stenarna, av byns först
+HAMTAS.tanda = { av: (s, p, tk) => tandHamtas(s, p, tk), byns: true };
+
 // det andra som görs efter ett projekt (PROJEKT i projekt.ts: tillverkningen vid stationerna, fällorna): receptet
 const INGEN_FARA = { kyla: false, gras: 0 };
 const hamtasFor = (act: Act): Hamtas | undefined => HAMTAS[act] ?? (PROJEKT[act]?.recept ? { av: (s, p) => PROJEKT[act]!.recept!(s, p, INGEN_FARA)?.av } : undefined);
@@ -93,7 +98,8 @@ function saknas(s: State, p: Person, av: Record<string, number>) {
 export const hamtaForst = (s: State, p: Person, tk: Task) => iHelaForradet(() => hamtaForstNu(s, p, tk));
 function hamtaForstNu(s: State, p: Person, tk: Task) {
   if (tk.site || tk.hamtad) return false;
-  const av = hamtasFor(tk.act)?.av(s, p, tk);
+  // och veden till stationens eld, när arbetet görs vid en station med eld (stationseld.ts, steg 11.1.75)
+  const av0 = hamtasFor(tk.act)?.av(s, p, tk), ved = eldaVed(s, p, tk), av = ved > 0 ? { ...av0, ved: (av0?.ved ?? 0) + ved } : av0;
   if (!av) return false;
   const sak = saknas(s, p, av), dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak)) : undefined;
   if (!dit) return false; // det finns inom räckhåll, eller inte i någon stack (hos någon, i en kista): arbetet börjar som det är

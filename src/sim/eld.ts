@@ -3,7 +3,7 @@ import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
-import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
+import { addTo, amountOf, avbryt, fetchSpot, iBordan, takeLimit, use } from './lager';
 import { Materialslag, forbrukat, overOchUnder, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
@@ -64,6 +64,7 @@ export const ELD = balans('eld', {
   // tända
   ring: 6, // stenar i ringen runt eldplatsen
   tandBransle: 2, // bränsle som läggs i när elden tänds
+  hamtaForsok: 3, // till så många försök bär den som tänder tändmaterialet från förrådet (steg 11.1.75)
   tandVedMin: 1, // minst så mycket bränsle krävs för att tända
   tandVill: 0.1, tandKandidat: 0.05, // någon tänder när byns önskan är över Vill gånger eldstadens max; den som tänder har själv över Kandidat
   tandFlit: 2, tandBrus: 3, // vem som tänder: hantverket plus flit delad med Flit plus slump gånger Brus
@@ -120,7 +121,7 @@ const kanTeknik = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
 export const igniterOf = (s: State, p?: Person) => {
   for (let i = IGNITERS.length - 1; i >= 0; i--) {
     const ig = IGNITERS[i];
-    if (!SAKER[ig.id]?.redskap) { if (amountOf(s, ig.id) >= 1) return ig; continue; }
+    if (!SAKER[ig.id]?.redskap) { if (amountOf(s, ig.id) + iBordan(p, ig.id) >= 1) return ig; continue; } // med det hen bär dit (steg 11.1.75)
     if (nTools(s, ig.id) >= 1 && (p ? kanTeknik(p, ig.id) : living(s).some(q => kanTeknik(q, ig.id)))) return ig;
   }
   return undefined;
@@ -129,14 +130,14 @@ export const igniterOf = (s: State, p?: Person) => {
 export const fuelStock = (s: State) => amountOf(s, 'ved') + amountOf(s, 'grenar') * GREN;
 // Elden ägs av hela byn, men veden följer ägandet: man eldar med byns och sin egen. fran = den man stjäl av (behov.ts)
 // bränslet p får elda med, räknat i ved
-export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved', p, fran) + takeLimit(s, 'grenar', p, fran) * GREN;
+export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved', p, fran) + takeLimit(s, 'grenar', p, fran) * GREN + (fran ? 0 : iBordan(p, 'ved') + iBordan(p, 'grenar') * GREN); // med det hen bär dit
 // ta bränsle ur förrådet, ved först och sedan grenar; ger hur mycket som togs
 // p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
 export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Person) {
-  const v = Math.min(n, takeLimit(s, 'ved', p, fran));
+  const v = Math.min(n, takeLimit(s, 'ved', p, fran) + (fran ? 0 : iBordan(p, 'ved')));
   if (p?.task && v > 0) p.task.blotVed = Math.min(1, Math.max(0, v - torrVed(s)) / v); // torr ved tas först (steg 7.3.4)
   const w = use(s, p, 'ved', v, true, fran?.id);
-  const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + 1e-9), Math.ceil((n - v) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
+  const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9), Math.ceil((n - v) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
   if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
   if (ag) addDel(ag, w);
   return v + g * GREN;
@@ -218,6 +219,21 @@ export function canLight(s: State, p?: Person, f = s.fire) {
   const pinnar = has('grenar') >= ig.sticks; // annars ersätter kol grenarna
   const naver = has('naver') >= 1, talja = !naver && kanTalja(s) && has('ved') >= 1; // nävern täljs ur en ved som annars hade brunnit
   return (!!f.ring || has('sten') >= ELD.ring) && (naver || talja || has('torrgras') >= ig.grass) && (pinnar || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) - (pinnar ? ig.sticks * GREN : 0) - (talja && !(has('torrgras') >= ig.grass) ? 1 : 0) >= ELD.tandVedMin;
+}
+// det som bärs till elden som ska tändas (HAMTAS, hamtning.ts, steg 11.1.75): tändmaterialet till ELD.hamtaForsok försök,
+// bränslet som läggs i och stenarna till ringen. Med en brand från en eld som brinner bara grenen som tänds där
+export function tandHamtas(s: State, p: Person, tk: Task) {
+  if (tk.brand) return tk.brand === 'hamta' ? { grenar: 1 } : undefined;
+  const f = eldById(s, tk.ref), ig = igniterOf(s, p);
+  if (!f || f.lit || !ig) return undefined;
+  const k = ELD.hamtaForsok, av: Record<string, number> = { ved: ELD.tandBransle };
+  if (amountOf(s, 'naver') >= 1) av.naver = k;
+  else if (amountOf(s, 'torrgras') >= ig.grass) av.torrgras = ig.grass * k;
+  else if (kanTalja(s)) av.ved += 1;
+  if (amountOf(s, 'grenar') >= ig.sticks) av.grenar = ig.sticks * k; else av.kol = k;
+  if (!SAKER[ig.id]?.redskap) av[ig.id] = 1;
+  if (!f.ring) av.sten = ELD.ring;
+  return av;
 }
 // en näver (steg 6.3.3) täljs ur en ved med kniv eller yxa: med ett blad och ved behövs inget hö till tändningen
 export const kanTalja = (s: State) => nTools(s, 'kniv') + nTools(s, 'yxa') > 0;

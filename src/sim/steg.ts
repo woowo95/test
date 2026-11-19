@@ -42,7 +42,7 @@ import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
-import { stacksOf, isStored, lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv } from './lager';
+import { stacksOf, isStored, lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -978,9 +978,10 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     // eld från en eld som brinner (steg 10.6.12): vid elden som brinner tänds 1 gren, och vid eldstaden tar den fyr direkt
     const f = eldById(s, tk.ref);
     if (tk.brand === 'hamta') {
+      if (hamtaForst(s, p, tk)) return; // grenen bärs från förrådet (steg 11.1.75)
       const e = tk.kalla === -1 ? s.fire : eldById(s, tk.kalla);
-      if (!f || f.lit || !e?.lit || getable(s, p, 'grenar') < 1) { p.task = undefined; return; }
-      takeMaterial(s, p, 'grenar', 1, true);
+      if (!f || f.lit || !e?.lit || iRackhall(p.x, p.y, () => getable(s, p, 'grenar')) < 1) { p.task = undefined; return; }
+      iRackhall(p.x, p.y, () => takeMaterial(s, p, 'grenar', 1, true));
       tk.brand = 'bar'; const at = vidEld(s, f, sida(p, 0.6), 1.3); tk.tx = at.x; tk.ty = at.y;
     } else { if (f) brandTand(s, p, f, tk.kalla === undefined ? undefined : tk.kalla === -1 ? s.fire : eldById(s, tk.kalla)); p.task = undefined; }
     return;
@@ -991,11 +992,15 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       // till elden task.ref (den första när ref saknas)
       const fran = byId(s, tk.fran), e = eldById(s, tk.ref);
       // så mycket elden vill ha, som p orkar bära och kan få (steg 10.2.7), i hela vedträn
-      const n = !e || e.fuel >= fireWant(s, e) ? 0 : Math.max(Math.min(1, fuelFor(s, p, fran)), Math.floor(Math.min(fireWant(s, e) - e.fuel, capacity(s, p) / viktOf('ved'), fuelFor(s, p, fran))));
+      // ur stackarna hen står vid (steg 11.1.75)
+      const bransle = iRackhall(p.x, p.y, () => fuelFor(s, p, fran));
+      const dit = bransle < 1 && e && !fran && fuelFor(s, p) >= 1 ? narmasteMed(s, p, ['ved', 'grenar']) : undefined;
+      if (dit) { tk.tx = dit.x; tk.ty = dit.y; return; } // stacken här är tom: till nästa stack med ved eller grenar
+      const n = !e || e.fuel >= fireWant(s, e) ? 0 : Math.max(Math.min(1, bransle), Math.floor(Math.min(fireWant(s, e) - e.fuel, capacity(s, p) / viktOf('ved'), bransle)));
       if (n <= 0 || !e) p.task = undefined;
       else {
         const at = eldXY(s, e);
-        tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved, fran); tk.phase = 'back'; const v = vidElden(s, p, at); tk.tx = v.x; tk.ty = v.y;
+        tk.ag = { ved: {} }; tk.carry = iRackhall(p.x, p.y, () => takeFuel(s, n, p, tk.ag!.ved, fran)); tk.phase = 'back'; const v = vidElden(s, p, at); tk.tx = v.x; tk.ty = v.y;
         if (fran) stole(s, p, fran, VED.id, tk.carry); else if ((tk.ag.ved[p.id] ?? 0) > 1e-9) noticeTheft(s, p, VED.id);
       }
     } else { const e = eldById(s, tk.ref); if (e) addFuel(s, p, tk.carry, e); else giveBack(s, tk.carry); tk.carry = 0; p.task = undefined; }
@@ -1022,7 +1027,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     if (hamtaForst(s, p, tk)) return; // materialet hämtas först (steg 11.1.74, hamtning.ts)
     tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { const fo = fordonI(s, tk); pickUp(s, p, tk, fo ? rymsI(fo) : ryms(s, p)); tk.until = now; }
     if (tk.act === 'flyttaeld') tk.until = now + eldFlyttKvar(s, p); // vid elden: släcka den och bära de stenar som är kvar (eldflytt.ts)
-    startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
+    iRackhall(p.x, p.y, () => startWork(s, p, tk)); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter (med det som ligger inom räckhåll, steg 11.1.74)
   }
 }
 
