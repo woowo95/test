@@ -69,7 +69,7 @@ SCENARIER.rimligt = {
     for (let i = 0; i < 4 * 60; i++) { s.now += 60e3; p.hunger = 0.1; r.prov(60); }
     const nod = larm('nod').some(l => l.vem === p.name && /hungrig/.test(l.text));
     // ett förråd långt över taket
-    SIM.setAmount(s, 'grenar', SIM.materialTak(s, 'grenar') * 10 + 100); s.now += 3600e3; r.prov(60);
+    SIM.setAmount(s, 'grenar', 10); s.now += SIM.DAY; r.prov(60); SIM.setAmount(s, 'grenar', SIM.materialTak(s, 'grenar') * 10 + 100); s.now += SIM.DAY; r.prov(60); // ett dygn senare har grenarna vuxit långt över taket
     const tak = larm('tak').some(l => /grenar/.test(l.text));
     // många gör samma arbete av samma skäl
     for (const q of folk) q.task = { ...uppgift('ved', 'Mer ved till förrådet'), tx: q.x, ty: q.y } as SIM.Task;

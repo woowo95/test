@@ -28,7 +28,11 @@ if (i >= 0) { // en by i en egen process: larmen som JSON
   for (const v of RIMLIGT) {
     const l = alla.filter(x => x.vakt === v.id), per = new Set(l.map(x => x.by));
     console.log(`${l.length ? 'LARM' : 'OK  '} ${v.id} (${v.namn}): ${l.length} larm i ${per.size} av ${byar.length} byar`);
-    for (const x of l.slice(0, 6)) console.log(`       by ${x.by}, ${tid(x)}${x.vem ? `, ${x.vem}` : ''}: ${x.text}`);
+    const grupper: Record<string, number> = {};
+    for (const x of l) grupper[x.grupp ?? '–'] = (grupper[x.grupp ?? '–'] ?? 0) + 1;
+    if (Object.keys(grupper).length > 1) console.log(`       slagen: ${Object.entries(grupper).sort((a, b) => b[1] - a[1]).map(([g, n]) => `${g} ${n}`).join(', ')}`);
+    const exempel = Object.keys(grupper).length > 1 ? Object.keys(grupper).slice(0, 10).map(g => l.find(x => (x.grupp ?? '–') === g)!) : l.slice(0, 6);
+    for (const x of exempel) console.log(`       by ${x.by}, ${tid(x)}${x.vem ? `, ${x.vem}` : ''}: ${x.text}`);
   }
   console.log(`\n(${Math.round((Date.now() - t0) / 1000)} s datortid)`);
   if (alla.length) process.exitCode = 1;
