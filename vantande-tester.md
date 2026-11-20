@@ -134,3 +134,7 @@
 - 9c0ae22 (12.1.151): en slaktad kanin ger två ben. Skyldig koll med nytt facit.
 - 12.1.126 ändrade bara designdokumentet.
 - c1eb08d (12.1.174): röjningens och stubbarnas brist följer det som är kvar per plats. Ändrar vad byarna gör på Förbättra: skyldig koll med nytt facit, `npm run likhet` och en titt i fasens Balans (`npm run balans -- 24 35`) på att byarna fortfarande röjer.
+## Grenen par-roda (12.1.123, 12.1.124, 12.1.167 utom knapphet)
+
+- 12.1.123 ändrar spelet: jakten efter skinn väntar när ett fällt djur ligger oslaktat (då fattas stationen eller kniven) eller när någon redan jagar efter skinnet (`arv` i projekt.ts; jägaren har nu `hamtar` som samlaren). Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit.
+- 12.1.167 och 12.1.124 ändrar bara scenarier (slump, ui-ren, fangar, varm, fritid, kista). De 28 scenarierna kördes ensamma i molnet på grenens sista commit; knapphet är kvar röd (frågan till Björn i steget).

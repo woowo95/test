@@ -1050,7 +1050,7 @@ function arbeta(c: Ctx, act: Act, what: string, o: { tandmat?: boolean; hamtar?:
   set(v, act, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [act], tot) > 0.25 ? '. Brukar göra det.' : p.skill[act as Skill] > 10 ? '. Skicklig på det.' : '.'));
   v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
   if (o.tandmat) v.tandmat = true;
-  if (v.act === 'samla' && !o.leta) v.hamtar = o.hamtar;
+  if ((v.act === 'samla' || v.act === 'jakt') && !o.leta) v.hamtar = o.hamtar; // det jägaren hämtar (skinnet) syns för de andra (arv i projekt.ts)
   withTools(s, p, v, act, what, faror(c), !!o.leta, !!o.matLeta);
   if (v.act === 'fiske' && islagt(s)) v.why = `${v.why} Hugger upp ett hål i isen och pimplar.`;
   if (o.job && v.act === 'falla') { v.ref = o.job.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
