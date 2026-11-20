@@ -92,7 +92,11 @@ SCENARIER.samlarklunga = {
   text: 'Samlare i klunga (steg 12.1.33, strackaFran i steg.ts och bilden i ui/manniskor.ts): fem samlare som börjar på samma ruta vid en strand med bärbuskar sprider sig, i stället för att stå på samma ruta, och ingen står kvar på en tom ruta; den som står på samma ruta som en annan ritas bredvid',
   kor: () => {
     let samSek = 0, delad = 0, tomStill = 0, langstTom = 0, fall = 0;
-    for (const seed of [42, 7, 3]) {
+    // bären och rötterna är glesa i världen (FYND saker: några hundradelar av en sak på en full ruta), och med en enda sak inom
+    // synhåll går alla dit. Här har en full ruta en hel sak, så att det finns rutor att sprida sig mellan
+    const LAG = ['bar', 'rotter'] as const, saker0 = LAG.map(j => SIM.FYND[j].saker);
+    for (const j of LAG) SIM.FYND[j].saker = 1;
+    try { for (const seed of [42, 7, 3]) {
       const s = createState(seed, START), tiles = getMap(s.seed).tiles, m = bynsMitt(s);
       for (let k = 0; k < 24 * 60 && Math.floor(SIM.hourOf(s.now)) !== 9; k++) step(s, 60); // på förmiddagen
       // stranden närmast byn med flest bär och rötter inom tre rutor (det samlaren ser och plockar)
@@ -126,7 +130,7 @@ SCENARIER.samlarklunga = {
           if (n > 3) tomStill++; langstTom = Math.max(langstTom, n);
         }
       }
-    }
+    } } finally { LAG.forEach((j, n) => { SIM.FYND[j].saker = saker0[n]; }); }
     // två som fäller samma träd ritas på var sin sida om det (vidArbetet med samRuta, ui/stalle.ts), och bilden skickar med samRuta
     const kod = readFileSync(new URL('../../ui/manniskor.ts', import.meta.url), 'utf8');
     const s2 = createState(42, START), m2 = bynsMitt(s2), samRuta = new Set<number>(), fri = (x: number, y: number) => !SIM.blocked(s2, x + 0.5, y + 0.5);
