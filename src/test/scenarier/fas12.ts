@@ -283,6 +283,10 @@ SCENARIER.jarnredskap = {
     const i = SIM.tileOf(p.x, p.y), fall = (k: string) => { const q: SIM.Task = { act: 'falla', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: k } as SIM.Task; SIM.startWork(s, p, q); return q.until - s.now; };
     const sten = fall('yxa'), jarn = fall('jarnyxa');
     void i;
+    // det som täljs med kniven blir oftare bra med järnkniven
+    const utanKniv = SIM.knivKv(s, p, 'slagtra');
+    SIM.addTool(s, 'jarnkniv', p);
+    const medKniv = SIM.knivKv(s, p, 'slagtra'), ejKniv = SIM.knivKv(s, p, 'korg');
     return [
       [`recepten: järnyxa ${JSON.stringify(R.jarnyxa.av)} ${R.jarnyxa.min} min, järnkniv ${JSON.stringify(R.jarnkniv.av)} ${R.jarnkniv.min} min, lie ${JSON.stringify(R.lie.av)} ${R.lie.min} min`, R.jarnyxa.av.jarn === 2 && R.jarnyxa.av.grenar === 1 && R.jarnyxa.min === 5 && R.jarnkniv.av.jarn === 1 && R.jarnkniv.min === 4 && R.lie.av.jarn === 2 && R.lie.min === 5],
       [`de ligger i grupperna yxa, kniv och skära med högre rang än stensaken`, SIM.gruppOf('jarnyxa') === 'yxa' && SIM.gruppOf('jarnkniv') === 'kniv' && SIM.gruppOf('lie') === 'skara' && (SIM.SAKER.jarnyxa!.rang ?? 0) > (SIM.SAKER.yxa!.rang ?? 0)],
@@ -291,6 +295,7 @@ SCENARIER.jarnredskap = {
       [`järnyxan tas före flintyxan (${tagen?.k})`, tagen?.k === 'jarnyxa'],
       [`järnyxan fäller ett träd på en tredjedel av tiden (${Math.round(sten / 1000)} s mot ${Math.round(jarn / 1000)} s)`, Math.abs(sten / jarn - 3) < 1e-6],
       [`hugga och klyva ger tre gånger så mycket med järnyxan, slakten går tre gånger så fort med järnkniven`, A.hugga.redskap!.jarnyxa.ger === 3 && A.klyva.redskap!.jarnyxa.ger === 3 && A.slakta.redskap!.jarnkniv.fart === 3 && A.falla.redskap!.jarnyxa.fart === 3],
+      [`det som täljs med kniven får oftare bra kvalitet med järnkniven (+${medKniv.toFixed(2)}, utan ${utanKniv}, korgen ${ejKniv})`, medKniv > 0 && utanKniv === 0 && ejKniv === 0],
       [`järnsakerna håller fyra till fem gånger så länge (yxan ${A.falla.redskap!.jarnyxa.haller} träd mot ${A.falla.redskap!.yxa.haller}, kniven ${A.slakta.redskap!.jarnkniv.haller} mot ${A.slakta.redskap!.kniv.haller})`, A.falla.redskap!.jarnyxa.haller! / A.falla.redskap!.yxa.haller! >= 4 && A.slakta.redskap!.jarnkniv.haller! / A.slakta.redskap!.kniv.haller! >= 4],
     ];
   },
@@ -390,7 +395,7 @@ SCENARIER.isborr = {
   text: 'Isborren (steg 12.2.11): smids av 1 järn och 1 grenar på 4 minuter i smedjan och borrar genom den tjockaste isen tre gånger så fort som yxan; yxan, spjutet och spaden tar sig bara genom is upp till 30 cm',
   kor: () => {
     const R = SIM.RECEPT.isborr;
-    const hal = (borr: boolean) => {
+    const halet = (borr: boolean) => {
       const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
       s.is = { vatten: 0, cm: 40 } as typeof s.is;
       SIM.addTool(s, 'yxa', p); SIM.addTool(s, 'flintspjut', p);
@@ -398,11 +403,18 @@ SCENARIER.isborr = {
       const h = SIM.halVal(s, p);
       return { h: h?.id, min: h ? SIM.halMin(s, p) : undefined };
     };
-    const med = hal(true), utan = hal(false);
+    const med = halet(true), utan = halet(false);
+    // borren slits: den håller 200 hål
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    s.is = { vatten: 0, cm: 40 } as typeof s.is;
+    SIM.addTool(s, 'isborr', p);
+    let hal = 0;
+    while (SIM.nTools(s, 'isborr') > 0 && hal < 1000) { SIM.halGjort(s, p); hal++; }
     return [
       [`isborren: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan`, R.av.jarn === 1 && R.av.grenar === 1 && R.min === 4 && R.tek === 'smedja' && !!SIM.JARNSAKER.isborr],
       [`genom 40 cm is får byn med borr upp hålet på 4 minuter (${med.h}, ${med.min} minuter)`, med.h === 'isborr' && Math.abs((med.min ?? 0) - 4) < 1e-9],
       [`byn utan borr får inte upp något (${utan.h ?? 'inget'})`, !utan.h],
+      [`isborren håller ${SIM.IS.borrHal} hål (${hal})`, hal === SIM.IS.borrHal],
     ];
   },
 };
