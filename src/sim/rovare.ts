@@ -437,7 +437,7 @@ function rovarSkydd(s: State, p: Person, _storlek: number, dur: number) {
   }
   if (p.task?.act === 'sova' && iHus(s, p)) return undefined;
   const hus = husPlats(s, p);
-  return { act: 'gomma' as const, why: hus ? 'Rövare är nära, gömmer sig i huset' : 'Rövare är nära, håller sig vid elden nära de vuxna', spot: hus ?? skyddVidElden(s), dur };
+  return { act: 'gomma' as const, why: hus ? 'Rövare är nära, gömmer sig i huset' : 'Rövare är nära, håller sig vid elden nära de vuxna', hot: 'rovare' as const, spot: hus ?? skyddVidElden(s), dur };
 }
 setRovarVal(rovarSkydd);
 setHotVilja(rovarVilja);

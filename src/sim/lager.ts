@@ -772,14 +772,21 @@ export function skickAv(s: State, k: string) { let n = 0, c = 0; for (const a of
 export const skickKrav = (p: Person) => SKAMD.matt * clamp(p.hunger / KROPP.hungrig, 0, 1);
 // budgetens matdelar (steg 10.5.8): ägarna i förrådet som p får äta ur, utöver sitt eget och byns (budget.ts)
 export const budgetMatKrok: { f?: (s: State, p: Person) => number[] } = {};
+// äter p maten k? Inte för skämd mat för den som inte är hungrig nog (steg 9.6.24), inte det heliga djurets kött utom när byn
+// svälter (steg 10.3.15, 10.11.18) och inte maten tron förbjuder, utom i svält (steg 10.3.16)
+function ataKan(s: State, p: Person, k: string, krav = skickKrav(p)) {
+  if (krav > 0 && skickAv(s, k) < krav) return false;
+  if (SAK_ART[k] && heligtFor(s, p, SAK_ART[k]) && !farorNu(s).svalt) return false;
+  return !matAvstar(s, p, k);
+}
+// den mat p tar först, i samma ordning och med samma undantag som takeFood: det som bärs till bordet (HAMTAS.maltid, steg 12.1.56)
+export const forstaMat = (s: State, p: Person) => matOrdning(p).find(k => mayTake(s, p, k) >= 1 && ataKan(s, p, k));
 export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
   let got = 0, cw = 0; const per: Record<string, number> = {};
   const krav = p ? skickKrav(p) : 0;
   for (const k of p ? matOrdning(p) : FOOD) { // den som har brist på något tar helst mat som har det (steg 2.6.2)
     if (n - got <= 1e-12) break;
-    if (krav > 0 && skickAv(s, k) < krav) continue; // för skämd för den som inte är hungrig nog (steg 9.6.24)
-    if (p && SAK_ART[k] && heligtFor(s, p, SAK_ART[k]) && !farorNu(s).svalt) continue; // det heliga djurets kött, utom när byn svälter (steg 10.3.15, 10.11.18)
-    if (p && matAvstar(s, p, k)) continue; // maten tron förbjuder, utom i svält (steg 10.3.16)
+    if (p && !ataKan(s, p, k, krav)) continue;
     const hand = fran ? 0 : iBordan(p, k), v = Math.min(n - got, amountOf(s, k) + hand, takeLimit(s, k, p, fran) + hand); // med det hen bär (steg 11.1.77)
     if (v > 1e-12) { const r = takeOwn(s, k, v, p, false, fran?.id); got += r.n; cw += r.n * r.c; per[k] = (per[k] ?? 0) + r.n; }
     if (p && !fran && budgetMatKrok.f) for (const o of budgetMatKrok.f(s, p)) { // sedan ur en matdel som ger p mat

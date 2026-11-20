@@ -30,7 +30,7 @@ import { FALLOR, fallPlats, fallorAv, mjardarVill } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST, tillverkAv } from './tillverka';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
-import { STATION, kanGoras, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
+import { STATION, kanGoras, stationSomFattas, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
 import { LJUS, LJUSSORTER, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
@@ -402,6 +402,9 @@ export const projekt = (s: State) => PROJEKT_LIST.map(k => ({ k, d: PROJEKT[k], 
 // det som fattas till projektet k (steg 6.2.19): redskapet som behövs och inte finns ledigt, annars det första materialet
 // som p inte kan få tag på
 export function fattas(s: State, p: Person, k: string, f: ProjektFara) {
+  // det som bara görs vid en station som byn inte har (plankorna vid klyvplatsen): stationen fattas, och den ärver värdet (steg 12.1.56)
+  const tv = TILLVERKA[k], st = tv && knows(p, tv.tek) ? stationSomFattas(s, tv.act) : undefined;
+  if (st && PROJEKT[st]) return st;
   const r = PROJEKT[k]?.recept?.(s, p, f);
   if (!r) return undefined;
   if (r.verktyg && !freeTools(s, p, r.verktyg)) return r.verktyg;

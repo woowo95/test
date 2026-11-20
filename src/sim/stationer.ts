@@ -580,6 +580,8 @@ const framLand = (s: State, x: number, y: number, w: number, h: number) => Array
 const BARA = new Set<Act>(STATION_LIST.flatMap(k => (STATIONER[k] as StationDef).bara ?? []));
 // handlingen kan göras: den kräver ingen station, eller byn har en färdig (och redskapet som handlingen kräver ligger där)
 // (med p: och det finns plats åt p vid en av stationerna, steg 4.5.3.6)
+// stationen som act bara görs vid, när byn inte har någon sådan station alls (en upptagen station fattas inte)
+export const stationSomFattas = (s: State, act: Act): StationSlag | undefined => !BARA.has(act) || stationerOf(s).some(t => stationDef(t.k)?.gor.includes(act)) ? undefined : STATION_LIST.find(k => (STATIONER[k] as StationDef).bara?.includes(act));
 export function kanGoras(s: State, act: Act, p?: Person) {
   if (!BARA.has(act)) return true;
   const t = stationFor(s, act, p), k = t && stationDef(t.k)?.kraver?.[act];

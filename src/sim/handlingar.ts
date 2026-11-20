@@ -359,14 +359,14 @@ export const WORK = ACT_LIST.filter(a => ACTS[a].arbete === a);
 // den som prövar sig fram säger vad hen försöker komma på (steg 9.2.106; teknik.ts sätter texterna när modulen laddas)
 export const forsokVad: Record<string, string> = {};
 // den som gömmer sig gör det för hotet (steg 9.2.121), som står först i skälet (vargSkydd i varg.ts)
-const gomFor = (why = '') => /^Rövar/.test(why) ? 'Gömmer sig för rövarna' : /^Varg/.test(why) ? 'Gömmer sig för vargarna' : /^Björn/.test(why) ? 'Gömmer sig för björnen' : undefined;
+const gomFor = (t: Task) => t.hot === 'rovare' ? 'Gömmer sig för rövarna' : t.hot === 'varg' ? 'Gömmer sig för vargarna' : undefined; // hotet står på uppgiften (steg 12.1.56)
 // den som går till en död säger vems kropp (steg 9.2.130): skälet är "Bär Kamar till graven"
 const tillKroppen = (why = '') => { const m = /^Bär (.+) till graven/.exec(why); return m ? `Går till ${/[sxz]$/i.test(m[1]) ? m[1] : m[1] + 's'} kropp` : undefined; };
 // den som sitter vid stranden ser ut över sjön eller tjärnen hen sitter vid, eller isen (steg 9.2.131; skälet sätts i val.ts)
 const strandVy = (why = '') => /^Ser ut över /.test(why) ? `Sitter vid stranden och ${why.charAt(0).toLowerCase()}${why.slice(1)}` : undefined;
 // samlandet efter tändmaterial, flinta eller stenar (steg 12.1.39): målets rad i handlingens register (mal)
 const malAv = (t: Task) => t.tandmat ? ACTS[t.act].mal?.tand : t.sok ? ACTS[t.act].mal?.[t.sok === 'sten' ? 'sten' : 'flinta'] : undefined;
-export const taskName = (t: Task) => malAv(t)?.namn || (t.act === 'gomma' ? gomFor(t.why) : t.act === 'strand' ? strandVy(t.why) : t.act === 'begrava' && t.phase === 'go' ? tillKroppen(t.why) : undefined) || (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
+export const taskName = (t: Task) => malAv(t)?.namn || (t.act === 'gomma' ? gomFor(t) : t.act === 'strand' ? strandVy(t.why) : t.act === 'begrava' && t.phase === 'go' ? tillKroppen(t.why) : undefined) || (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
 // undertexten (steg 3.10.3): det uppgiften är i just nu, kort, som i "Jagar: letar efter byte". Handlingens rad (under) först,
 // annars på väg dit, med material till bygget och hem med det som bärs. Jakten efter försöket (jakt.ts)
 export function underText(t: Task): string | undefined {
