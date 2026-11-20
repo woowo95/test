@@ -1682,12 +1682,12 @@ export const cloneState = (s: State) => migrate(JSON.parse(serialize(s)));
 // Varje del skrivs direkt med samma avrundning, så texten blir densamma som om hela byn skrivits och delats upp efteråt
 export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['mark', 'skog', 'tradAlder', 'tradSort', 'buskar', 'barbuskar', 'stubbar'], fynden: ['fynd'], loggen: ['log'], notiser: ['notiser'], varlden: ['varld'] };
 // med byns karta, och kartan som gällde förut väljs igen efteråt (en väckt by kan visas medan huvudbyn sparas, steg 11.13.11)
-export function serializeParts(s: State): Record<string, string> {
+export function serializeParts(s: State, tal: typeof avrunda = avrunda): Record<string, string> {
   const fore = kartAv();
   useMap(s);
-  try { return serializeDelar(s); } finally { useMap(fore); }
+  try { return serializeDelar(s, tal); } finally { useMap(fore); }
 }
-function serializeDelar(s: State): Record<string, string> {
+function serializeDelar(s: State, avrunda: (this: unknown, k: string, v: unknown) => unknown): Record<string, string> {
   packGround(s); packFynd(s); skrivVanor();
   const o = s as unknown as Record<string, unknown>, ut: Record<string, string> = {}, bort = new Set<string>();
   for (const [d, keys] of Object.entries(DELAR)) {
@@ -1698,17 +1698,27 @@ function serializeDelar(s: State): Record<string, string> {
   // historiken delas efter de avrundade tiderna, som i en inläst sparfil
   if (s.hist) { for (const [d, h] of Object.entries(histParts(s, JSON.parse(JSON.stringify(s.hist, avrunda))))) ut[d] = JSON.stringify({ hist: h }); bort.add('hist'); }
   const byn = JSON.stringify(s, function (this: unknown, k: string, v: unknown) { return this === s && bort.has(k) ? undefined : avrunda.call(this, k, v); });
-  return { byn, ...ut, ...vacktaParts(s) };
+  return { byn, ...ut, ...vacktaParts(s, avrunda) };
+}
+// Överlämningen mellan sidan och arbetaren som räknar ikapp (steg 12.1.178, ui/ikappkarna.ts): delarna i sparfilen med talen
+// oavrundade, så att byn som läses in ur dem är exakt den by som skrevs (utom cacherna, regel 4)
+function exakt(k: string, v: unknown) { return k === 'vackta' ? undefined : v; }
+export const overlamna = (s: State) => serializeParts(s, exakt);
+export function franOverlamning(delar: Record<string, string>): State {
+  const namn = Object.keys(delar).filter(d => d !== 'byn' && !arVacktDel(d)).sort();
+  const s = migrate(JSON.parse(joinParts([delar.byn, ...namn.map(d => delar[d])])));
+  lasVackta(s, delar);
+  return s;
 }
 // de väckta byarna (steg 11.13.9): var och en i egna delar med förledet vackt<nr>-, med samma delar och gränser som huvudbyn,
 // utan världen som de delar med huvudbyn
 const VACKT_DEL = /^vackt(p?\d+)-(.+)$/; // en liten karta för en plats: vacktp<nr> (steg 11.13.25)
-function vacktaParts(s: State): Record<string, string> {
+function vacktaParts(s: State, tal: typeof avrunda): Record<string, string> {
   const ut: Record<string, string> = {};
   for (const b of s.vackta ?? []) {
     const vl = b.varld;
     delete b.varld; useMap(b);
-    try { for (const [d, t] of Object.entries(serializeParts(b))) if (d !== 'varlden') ut[`vackt${b.vackt ?? 'p' + b.vacktPlats}-${d}`] = t; }
+    try { for (const [d, t] of Object.entries(serializeParts(b, tal))) if (d !== 'varlden') ut[`vackt${b.vackt ?? 'p' + b.vacktPlats}-${d}`] = t; }
     finally { if (vl) b.varld = vl; useMap(s); }
   }
   return ut;

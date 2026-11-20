@@ -1,6 +1,11 @@
 // Scenarier för fas 12: myren och järnet.
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, setItems, setMat, tandEld, tandOchFlinta } from './hjalp';
+import { SCENARIER, klockan, kor, testBy, medBank, medHus, nyInvanare, setFood, setItems, setMat, tandEld, tandOchFlinta } from './hjalp';
 import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
@@ -1321,6 +1326,31 @@ SCENARIER.bladkand = {
     return [
       [`bladet skrivs om den som byn minns (${kA.blad === a.id ? a.name : '–'}, sedan ${kB.blad === b.id ? b.name : '–'})`, kA.blad === a.id && kB.blad === b.id],
       [`stenen ristas om samma (${kA.sten === a.id ? a.name : '–'}, sedan ${kB.sten === b.id ? b.name : '–'})`, kA.sten === a.id && kB.sten === b.id],
+    ];
+  },
+};
+
+// arbetaren som räknar ikapp (steg 12.1.178): samma by räknad i bitar med ögonblicksbilder, som arbetaren räknar den, och i ett
+// svep, som sidan räknar den, var och en i en egen process (modulerna nyss inlästa, som i en Web Worker)
+SCENARIER.ikapparbetare = {
+  text: 'Ikappräkningen i en arbetare (steg 12.1.178): byn lämnas över till arbetaren med talen oavrundade och kommer tillbaka exakt som sidan själv hade räknat fram den, också när arbetaren räknar i bitar och skickar ögonblicksbilder under tiden',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), delar = SIM.overlamna(s), mal = s.now + 3 * SIM.HOUR;
+    const igen = SIM.overlamna(SIM.franOverlamning(delar));
+    const dir = mkdtempSync(join(tmpdir(), 'ikapp-')), in_ = join(dir, 'in.json');
+    writeFileSync(in_, JSON.stringify({ delar, mal }));
+    const prov = fileURLToPath(new URL('../arbetarprov.ts', import.meta.url));
+    const korProv = (ut: string, ...satt: string[]) => { execFileSync(process.execPath, ['--import', 'tsx', prov, in_, join(dir, ut), ...satt]); return JSON.parse(readFileSync(join(dir, ut), 'utf8')) as { delar: Record<string, string>; bitar: number; bilder: number }; };
+    const hel = korProv('hel.json', 'hel'), bit = korProv('bit.json');
+    rmSync(dir, { recursive: true, force: true });
+    const lika = (a: Record<string, string>, b: Record<string, string>) => { const k = Object.keys(a).sort(); return k.join() === Object.keys(b).sort().join() && k.every(d => a[d] === b[d]); };
+    const olika = Object.keys(hel.delar).filter(d => hel.delar[d] !== bit.delar[d]);
+    const fram = SIM.franOverlamning(bit.delar);
+    return [
+      ['byn som läses ur överlämningen lämnas över likadant igen', lika(delar, igen)],
+      [`arbetaren räknade i ${bit.bitar} bitar och skickade ${bit.bilder} ögonblicksbilder`, bit.bitar >= 2 && bit.bilder >= 1],
+      [`byn från arbetaren är exakt den som räknats i ett svep${olika.length ? ' (skiljer: ' + olika.join(', ') + ')' : ''}`, lika(hel.delar, bit.delar)],
+      [`arbetaren räknade ikapp (${((fram.now - s.now) / SIM.HOUR).toFixed(2)} timmar)`, fram.now >= mal || SIM.storStridNu(fram)],
     ];
   },
 };
