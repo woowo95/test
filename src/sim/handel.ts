@@ -23,7 +23,7 @@ import { amountOf } from './lager';
 import { arMaterial, villHaAv } from './forradsmal';
 import { ARBETE } from './varde';
 import { DELA, bynKopAntal, forByn, villGrupp, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
-import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, loggaByte, nyttPar, satPersonFlytt, vardeAv, vardeOf, vidByte, vidLura, varorText } from './byte';
+import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, loggaByte, nyttPar, satPersonFlytt, vardeAv, vardeOf, gerVarde, vidByte, vidLura, varorText } from './byte';
 import type { Skrift } from './skrift';
 import { newTing, tingOf } from './agande';
 import { knows } from './teknik';
@@ -714,7 +714,10 @@ function saljaAv(s: State, h: Handlare, M: Part, tro: Person) {
   // det som ger mest silver per vikt först (steg 10.5.17)
   const per = (k: string) => grundvarde(k) * handlarVarde(s, h, k, tro) / Math.max(1e-9, viktOf(k));
   for (const w of M.over(['silver']).sort((a, b) => per(b.k) - per(a.k))) {
-    const v = handlarVarde(s, h, w.k, tro), n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9)); // det kunden tror handlaren ger (steg 10.5.16)
+    const v = handlarVarde(s, h, w.k, tro); // det kunden tror handlaren ger (steg 10.5.16)
+    let n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9));
+    // byn säljer inte det som är värt mer för den än handlaren ger: ju färre kvar, desto mer värd, och den sista mest (steg 12.1.188)
+    if (M.kvar) while (n >= 1 && grundvarde(w.k) * v < gerVarde(w, M, n) - gerVarde(w, M, n - 1)) n--;
     if (v <= 0 || n < 1 || n * grundvarde(w.k) * v < 1) continue; // det som är värt minst ett helt silver (steg 10.5.12)
     ut.push({ ...w, n }); plats -= n * viktOf(w.k);
   }

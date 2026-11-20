@@ -28,7 +28,7 @@ import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { dampning, handelse, smakMat, RYKTE } from './rykten';
 import { VED, vedPerDygn } from './eld';
-import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf, vardeAv, kartOf } from './byte';
+import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf, vardeAv, kartOf, gerVarde } from './byte';
 import { bynKanner, kannerOrt } from './ort';
 import { SJUK, insjukna } from './sjukdom';
 import { smutsigtAtit } from './smuts';
@@ -619,6 +619,18 @@ function bynBuffert(s: State, b: Behov) {
 // redskapen i gruppen g som byn har, och hur många den vill ha
 const iGruppen = (s: State, g: string) => tingOf(s).filter(t => gruppOf(t.k) === g && t.halv === undefined);
 export const villGrupp = (s: State, g: string) => REDSKAPMAL[g]?.(s) ?? 1;
+// vad den i:te av slaget k som byn ger bort är värd, gånger grundvärdet (steg 12.1.188): samma tre steg som bynBehovUtan, men
+// för det som blir kvar när den är borta. Den som lämnar byn utan saken är värd DELA.saknar, den under bufferten 1 och den över
+// DELA.over. Så säljs den sista bara när någon betalar riktigt bra, och det byn nyss köpt för att den saknade det säljs inte
+// tillbaka till samma pris
+export function bynKvar(s: State, k: string, i: number) {
+  if (k === 'silver') return 1;
+  if (isTool(k)) { const g = gruppOf(k), n = iGruppen(s, g).length - i; return n < 1 ? DELA.saknar : n < (REDSKAPMAL[g]?.(s) ?? 0) ? 1 : DELA.over; }
+  const b = behovMed(k);
+  if (!b) { const n = amountOf(s, k) - i; return n < 1 - 2e-6 ? DELA.saknar : n < behalla(s, k) ? 1 : DELA.over; }
+  const { har, behover } = bynNod(s, b), { har: hb, buf } = bynBuffert(s, b), d = i * perOf(b, k);
+  return har - d < behover ? DELA.saknar : hb - d < buf ? 1 : DELA.over;
+}
 export function bynBehov(s: State, k: string) {
   if (k === 'silver') return 1;
   // det byns projekt saknar (steg 10.5.17, projekt.ts): från grundvärdet upp till DELA.saknar efter projektets brist
@@ -640,7 +652,7 @@ function bynBehovUtan(s: State, k: string) {
 export function bynKopAntal(s: State, k: string) {
   if (isTool(k)) return 1;
   const minst = bynBehovUtan(s, k) >= DELA.saknar ? 1 : 0, b = behovMed(k);
-  if (!b) return Math.max(minst, Math.ceil(Math.max(1, behalla(s, k)) - amountOf(s, k) - 1e-9));
+  if (!b) return Math.max(minst, Math.ceil(behalla(s, k) - amountOf(s, k) - 1e-9));
   const { har, buf } = bynBuffert(s, b);
   return Math.max(minst, Math.ceil((buf - har) / perOf(b, k) - 1e-9));
 }
@@ -649,9 +661,9 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
   for (const k of SAK_LIST) {
     if (utom.includes(k) || !grundvarde(k)) continue;
     if (isTool(k)) {
-      // byns redskap av slaget, så länge gruppen har fler än den behöver; det sista behålls
+      // byns redskap av slaget, så länge gruppen har fler än målet (REDSKAPMAL); utan mål också det sista, som då är värt mest (bynKvar, steg 12.1.188)
       const g = gruppOf(k), egna = tingOf(s).filter(t => t.k === k && t.agare === BYN && t.halv === undefined && t.hos === undefined && t.bar === undefined && t.krok === undefined);
-      let over = grupper.get(g) ?? iGruppen(s, g).length - villGrupp(s, g);
+      let over = grupper.get(g) ?? iGruppen(s, g).length - (REDSKAPMAL[g]?.(s) ?? 0);
       for (const t of egna) { if (over < 1) break; ut.push({ k, n: 1, t }); over--; }
       grupper.set(g, over);
       continue;
@@ -664,7 +676,7 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
       const r = rest.get(b) ?? (() => { const { har, buf } = bynBuffert(s, b); return har - buf; })();
       n = Math.min(n, helt(r / perOf(b, k)));
       rest.set(b, r - Math.max(0, n) * perOf(b, k));
-    } else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - Math.max(1, behalla(s, k)))); // det sista behålls, som redskapen: utan det saknar byn saken (bynBehovUtan, steg 12.1.48)
+    } else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - behalla(s, k))); // över bufferten; utan buffert också det sista, som då är värt mest (bynKvar, steg 12.1.188)
     if (n >= 1) ut.push({ k, n });
   }
   return ut;
@@ -672,7 +684,7 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
 // bud = den som handlar för byn: hen förhandlar med sin färdighet i Handel, och övar och minns som i ett eget byte
 export function bynPart(s: State, x: number, y: number, bud?: Person): Part {
   return {
-    id: BYN, namn: bud ? `${bud.name} för byn` : 'Byn', p: bud, x, y, handel: bud?.skill.handel ?? 0, varde: k => bynBehov(s, k), kanner: nr => bynKanner(s, nr)?.v, over: utom => bynOver(s, utom),
+    id: BYN, namn: bud ? `${bud.name} för byn` : 'Byn', p: bud, x, y, handel: bud?.skill.handel ?? 0, varde: k => bynBehov(s, k), kvar: (k, i) => bynKvar(s, k, i), kanner: nr => bynKanner(s, nr)?.v, over: utom => bynOver(s, utom),
     lamna: w => { if (w.t) { w.t.agare = BYN; return w; } use(s, undefined, w.k, w.n, true); return w; },
     ta: w => { if (w.t) { w.t.agare = BYN; w.t.hos = undefined; } else if (isTool(w.k)) for (let i = 0; i < w.n; i++) { const t = newTing(s, w.k, 1, BYN); if (w.q !== undefined) t.q = w.q; if (w.skrift) t.skrift = w.skrift; } else put(s, w.k, w.n); },
   };
@@ -773,7 +785,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   vill = vill.map(w => w.t ? w : { ...w, n: Math.ceil(w.n - 1e-6) }).filter(w => w.n > 0); // hela saker (steg 2.10.7)
   if (!vill.length) return 0;
   // det G nyss fått av M behöver G mer än annars: G vill ha mer för att ge tillbaka det (steg 10.2.43)
-  const ger = vill.reduce((x, w) => x + w.n * vardeAv(w, G, false) * (nyssBytt(s, w.k, M.id, G.id) ? 1 + BYTE.nyssFatt : 1), 0); // det G ger, för G
+  const ger = vill.reduce((x, w) => x + gerVarde(w, G) * (nyssBytt(s, w.k, M.id, G.id) ? 1 + BYTE.nyssFatt : 1), 0); // det G ger, för G (det sista mest, steg 12.1.188)
   const far = vill.reduce((x, w) => x + w.n * (kartOf(w) ? vardeAv(w, M, true) : vardeOf(w)), 0) * v.behov; // det M får, för M (en karta: platserna M inte känner)
   if (ger <= 1e-9) return 0;
   const varor = betalVaror(M, G, v.utom), betala = (mal: number) => betalaAv(varor, G, mal);
@@ -782,7 +794,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   const desperat = v.fara > 0, nara = (a: Part, b: Part) => !!a.p && !!b.p && willing(s, a.p, b.p) >= DELA.nara;
   let del = 1; // så stor del av vill som byts
   if (fick < (1 - DELA.ojamn) * ger) {
-    const kan = vill.some(w => w.t) ? 0 : fick / ger, hela = vill.reduce((x, w) => x + helt(w.n * kan) * vardeAv(w, G, false), 0) / ger;
+    const kan = vill.some(w => w.t) ? 0 : fick / ger, hela = vill.reduce((x, w) => x + gerVarde(w, G, helt(w.n * kan)), 0) / ger;
     if (hela * enheter(vill) >= v.minst && hela > 0) { del = hela; ({ betal, fick, kost } = betala(ger * del)); } // M får det M kan betala, i hela saker
     else if (!desperat && !nara(G, M)) return 0;
   }
@@ -809,7 +821,8 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
 }
 // det M kan betala G med: det som är värt mest för G och minst för M först (ut = värt för G, in = värt för M)
 export function betalVaror(M: Part, G: Part, utom: readonly string[]) {
-  return M.over(utom).map(w => ({ ...w, ut: vardeAv(w, G, true), in: Math.max(1e-9, vardeAv(w, M, false)) }))
+  // in = den första som M ger; kostar de följande M mer (byn, steg 12.1.188) räknar inN det som går åt
+  return M.over(utom).map(w => ({ ...w, ut: vardeAv(w, G, true), in: Math.max(1e-9, gerVarde(w, M, 1)), ...M.kvar && !w.t ? { inN: (n: number) => gerVarde(w, M, n) } : {} }))
     .filter(w => w.ut > 1e-9).sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
 }
 // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7). fick = värt för G, kost = värt för M
@@ -828,7 +841,7 @@ export function betalaAv(varor: ReturnType<typeof betalVaror>, G: Part, mal: num
     rum -= n * vikt;
     const x = ut.find(y => y.k === w.k && y.t === w.t);
     if (x) x.n += n; else ut.push({ k: w.k, n, t: w.t });
-    f += n * w.ut; k += n * w.in;
+    f += n * w.ut; k += w.inN ? w.inN(fore + n) - w.inN(fore) : n * w.in;
   };
   const tat = isFinite(rum);
   for (const w of varor) { if (f >= mal - 1e-9) break; ta(w, tat); }
