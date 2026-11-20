@@ -933,6 +933,7 @@ SCENARIER.undergang = {
     r.tek = ['korg', 'yxa', 'rep', 'kniv'].filter(id => SIM.SAKER[id]); r.tal.rikedom = 600; r.tal.silver = 7; r.tal.mat = 50;
     const kl0 = SIM.klanerOf(s).length, k0 = (vl.kronika ?? []).length;
     r.tal.folk = 0;
+    const tek0 = [...r.tek]; // utan folk kan ingen något (steg 12.1.8): teknikerna töms när byn går under
     s.now += 3600e3; SIM.varldSteg(s);
     const plats = vl.platser!.find(p => p.by === r.nr);
     const kvar = r.kvar ?? {}, hela = Object.values(kvar).every(n => Number.isInteger(n) && n > 0);
@@ -945,8 +946,8 @@ SCENARIER.undergang = {
     const tillRuin = SIM.flyttMal(vl, SIM.varldMark(s), annan).some(m => m.r.nr === r.nr);
     return [
       [`byn är en ruin, raden och platsen (${r.sort}, ${plats?.k})`, r.sort === 'ruin' && plats?.k === 'ruin' && !SIM.lever(vl, r)],
-      [`det som fanns kvar är hela saker: ${Object.entries(kvar).map(([k, n]) => `${n} ${k}`).join(', ')}`, hela && kvar.silver === 7 && saker.length > 0 && saker.every(k => r.tek.includes(k))],
-      ['maten har ruttnat och talen är noll', r.tal.mat === 0 && r.tal.rikedom === 0],
+      [`det som fanns kvar är hela saker: ${Object.entries(kvar).map(([k, n]) => `${n} ${k}`).join(', ')}`, hela && kvar.silver === 7 && saker.length > 0 && saker.every(k => tek0.includes(k))],
+      ['maten har ruttnat, talen är noll och ingen kan något', r.tal.mat === 0 && r.tal.rikedom === 0 && r.tek.length === 0],
       ['världens krönika: Gått under', krona],
       ['huvudbyn förlorar förbindelsen med byn', borta],
       [`ingen flyttar dit, och de som var på väg går hem igen (${hem0} → ${annan.tal.folk})`, !tillRuin && annan.tal.folk === hem0 + 2],
