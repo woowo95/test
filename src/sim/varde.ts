@@ -129,11 +129,13 @@ export function formogenheter(s: State) {
   let sum = 0; for (const v of egen.values()) sum += v;
   return { egen, byn: Math.max(0, rikedom(s) - sum) };
 }
+// djuren id äger: tamdjuren, hönsen och bisamhällena, som räknas med redskapen och aldrig är betalning (skatten)
+export const agdaDjur = (s: State, id: number) => djurVarde(s, id) + (s.hons?.agare === id ? honsVarde(s) : 0) + samhallen(s).filter(t => t.ag === id).length * BIN.varde;
 // en persons förmögenhet i delar (steg 3.6.4): redskapen, kläderna (var de än ligger, också i kistan), andelarna i förrådet och egna hus
 export function formogenhetDelar(s: State, id: number) {
   let redskap = 0, klader = 0, hus = 0;
   for (const t of tingOf(s)) if (t.agare === id) { if (SAKER[t.k]?.klad) klader += tingVarde(t); else redskap += tingVarde(t); }
-  redskap += djurVarde(s, id); // djuren (steg 9.8.1)
+  redskap += agdaDjur(s, id); // djuren (steg 9.8.1), hönsen och bisamhällena (steg 12.1.60)
   const forrad = agarVarde(s, grundvarde).get(id) ?? 0;
   for (const h of housesOf(s)) if (h.ag === id) hus += husVarde(s, h);
   return { redskap, klader, forrad, hus, sum: redskap + klader + forrad + hus };

@@ -1,7 +1,7 @@
 import { FANG, fangelseDygn, fangelseLedigt, satt } from './fangelse';
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think } from './folk';
-import { efterlevs, lagDygn, lagForBrott, straffNu, tasUppKvall } from './lagar';
+import { efterlevs, lagForBrott, straffNu, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
@@ -92,6 +92,7 @@ export const TRON = balans('tron', {
   utse: 0.4, // ... så här mycket Envälde att ledaren utser sin efterträdare
   strid: 0.4, // ... så här mycket Fejd en strid om makten
   kris: 0.15, // två sätt väger ungefär lika mycket: mindre än så här skiljer, och olika kandidater ger en tronföljdskris
+  sattTom: 0.2, // ... och när sättet sederna vill ha inte gav någon och byns röst fick avgöra, så här mycket mer
   sattFel: 0.3, // en ledare som kom till makten på ett sätt sederna inte godtar börjar med så här mycket av den delen av legitimiteten
   krisMiss: 0.15, // tronföljdskrisen gör byn så här missnöjd
 });
@@ -391,8 +392,9 @@ function valj(s: State) {
       log(s, text, 'world', [best.id, valet.id]); kronika(s, text, 'ledare');
       for (const p of vuxna) p.missnoje = clamp((p.missnoje ?? 0) + TRON.krisMiss, 0, 1);
     }
+    const tom = !best; // sättet gav ingen kandidat (steg 12.1.60: den som både ärver och vinner omröstningen börjar inte lågt)
     best ??= valet;
-    if (best && best === valet && satet !== 'val') satt = TRON.sattFel + 0.2; // det passade inte sederna
+    if (tom && best && satet !== 'val') satt = TRON.sattFel + TRON.sattTom; // det passade inte sederna
     const rec = stn.roster?.[stn.roster.length - 1];
     if (rec?.f === 'ledare' && rec.t === s.now) rec.gick = best === valet; // omröstningen avgjorde bara om den valda blev ledare
   }
@@ -645,7 +647,7 @@ export function stepStyre(s: State) {
   if (!s.styre!.oppna.includes('natur') && (s.fallda ?? 0) > 0) oppnaSed(s, 'natur');
   missnojeTimme(s);
   if (!ledareOf(s)) return;
-  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); lagDygn(s); }
+  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); }
 }
 // skammen: den straffade håller sig undan bordet och elden (val.ts)
 export const skams = (p: Person, now: number) => p.skam !== undefined && p.skam > now;

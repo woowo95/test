@@ -40,7 +40,7 @@ import { askaSteg, brandHetta, brandSteg, snoSmalt, brinnerSteg, hjalpaKlar, sla
 import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
-import { stepStyre } from './styre';
+import { STR, stepStyre } from './styre';
 import { bildKrok, gralBlirSlagsmal, kartStridBorja, lekSteg, kartStridSteg, nastaSteg, serStriden } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
@@ -119,7 +119,7 @@ import { fangeOde } from './fangeval';
 import { avrustaKlar, gravDygn, gravKlar, gravaMedan, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
-import { lagRegister } from './lagar';
+import { lagDygn, lagRegister } from './lagar';
 import { oppnaSed } from './rost';
 import { LARM, handelse, larma } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
@@ -500,6 +500,7 @@ export const TAKTER: Takt[] = [
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld && s.vackt === undefined && s.vacktPlats === undefined) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
+  { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: s => { lagDygn(s); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (lagar.ts, steg 12.1.60)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },

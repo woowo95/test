@@ -127,9 +127,11 @@ const DELAR: Record<string, BudgetDef> = {
     finns: lonNu, saknar: s => { const n = vuxna(s).length * LON.medborgar; const m: Record<string, number> = {}; if (n > 0) m.silver = n; return m; },
     ge: (s, k, n) => {
       const vv = vuxna(s), per = Math.floor(n / Math.max(1, vv.length));
-      if (per < 1) return;
-      for (const p of vv) count(s, 'medborgarlon', fromByn(s, k, per, p.id));
-      log(s, `Varje vuxen fick ${per} silver i medborgarlön ur byns förråd.`, 'world');
+      if (per < 1) return 0;
+      let gav = 0;
+      for (const p of vv) { const m = fromByn(s, k, per, p.id); count(s, 'medborgarlon', m); gav += m; }
+      if (gav >= 1) log(s, `Varje vuxen fick ${per} silver i medborgarlön ur byns förråd.`, 'world');
+      return gav;
     },
     vill: (s, p) => fjardedel(0.25 + 0.5 * lutning(s, p)),
   },

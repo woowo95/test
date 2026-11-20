@@ -49,7 +49,7 @@ export interface BudgetDef {
   finns(s: State): boolean; // det delen gäller finns i byn
   saknar(s: State): Record<string, number>; // det delens arbeten saknar, per material
   bit?(s: State, b: Bit): boolean; // byggena som hör till delen (de tar av det delen fått)
-  ge?(s: State, k: string, n: number): void; // delen lämnar det den fått vidare med en gång (kyrkan, gåvorna)
+  ge?(s: State, k: string, n: number): number; // delen lämnar det den fått vidare med en gång (kyrkan, gåvorna), och svarar hur mycket som lämnades
   vill(s: State, p: Person): number; // vikten p vill ge delen (0 till 1)
   mat?: { vem(s: State, p: Person): boolean; behov(s: State): number }; // en matdel (steg 10.5.8): vem som äter ur den, och hur mycket den högst får
 }
@@ -115,7 +115,7 @@ export const BUDGET: Record<string, BudgetDef> = {
     finns: s => tronMedHus(s).length > 0,
     saknar: s => { const m: Record<string, number> = {}; for (const tr of tronMedHus(s)) for (const [k, n] of Object.entries(troshusSaknar(s, tr))) lagg(m, k, Math.floor(n)); return m; },
     // till den tro som saknar mest av materialet först
-    ge: (s, k, n) => { let kvar = n; for (const tr of tronMedHus(s).sort((a, b) => (troshusSaknar(s, b)[k] ?? 0) - (troshusSaknar(s, a)[k] ?? 0) || a.id - b.id)) { const m = Math.min(kvar, Math.floor(troshusSaknar(s, tr)[k] ?? 0)); if (m >= 1) { kvar -= fromByn(s, k, m, kyrkaId(tr.id)); count(s, 'budgetKyrkan', m); } if (kvar < 1) break; } },
+    ge: (s, k, n) => { let kvar = n; for (const tr of tronMedHus(s).sort((a, b) => (troshusSaknar(s, b)[k] ?? 0) - (troshusSaknar(s, a)[k] ?? 0) || a.id - b.id)) { const m = Math.min(kvar, Math.floor(troshusSaknar(s, tr)[k] ?? 0)); if (m >= 1) { kvar -= fromByn(s, k, m, kyrkaId(tr.id)); count(s, 'budgetKyrkan', m); } if (kvar < 1) break; } return n - kvar; },
     vill: (s, p) => { const tr = (s.tron ?? []).find(t => t.id === p.tro); return tr && tronMedHus(s).includes(tr) ? fjardedel(0.5 + 0.5 * Math.max(0, s.seder.v.andlig ?? 0)) : 0; },
   },
   gavor: {
@@ -123,11 +123,14 @@ export const BUDGET: Record<string, BudgetDef> = {
     finns: s => !!ledareOf(s), saknar: s => { const n = stodjer(s).length * BUDG.gava; const m: Record<string, number> = {}; if (n > 0) m.silver = n; return m; },
     ge: (s, k, n) => {
       const l = ledareOf(s), ss = stodjer(s);
-      if (!l || !ss.length) return;
+      if (!l || !ss.length) return 0;
       const per = Math.floor(n / ss.length);
-      if (per < 1) return;
-      for (const p of ss) { const m = fromByn(s, k, per, p.id); if (m >= 1) { const r = getRel(s, p, l); r.op = clamp(r.op + BUDG.gavaOp * m, -100, 100); count(s, 'budgetGava', m); } }
+      if (per < 1) return 0;
+      let gav = 0;
+      for (const p of ss) { const m = fromByn(s, k, per, p.id); if (m >= 1) { const r = getRel(s, p, l); r.op = clamp(r.op + BUDG.gavaOp * m, -100, 100); count(s, 'budgetGava', m); gav += m; } }
+      if (gav < 1) return 0;
       log(s, `${l.name} gav ${ss.length === 1 ? ss[0].name : `${ss.length} av sitt folk`} ${per} ${sakNamn(k).toLowerCase()} var ur byns förråd.`, 'world', [l.id]);
+      return gav;
     },
     vill: (s, p) => { const l = ledareOf(s); if (!l) return 0; return p === l ? 1 : stodjer(s).includes(p) ? 0.75 : 0; },
   },
@@ -178,9 +181,10 @@ export function budgetDygn(s: State) {
     delar.forEach((d, i) => {
       if (f[i] < 1) return;
       const def = BUDGET[d.id];
-      if (def.ge) def.ge(s, k, f[i]); else fromByn(s, k, f[i], budgetId(d.id));
-      (fick[d.id] ??= {})[k] = f[i];
-      count(s, 'budgetVarde', f[i]);
+      const g = def.ge ? def.ge(s, k, f[i]) : fromByn(s, k, f[i], budgetId(d.id)); // det som verkligen lämnades (steg 12.1.60)
+      if (g < 1) return;
+      (fick[d.id] ??= {})[k] = g;
+      count(s, 'budgetVarde', g);
     });
   }
   matDygn(s, fick);

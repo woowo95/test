@@ -13,13 +13,12 @@ import { heirsOf } from './arv';
 import { LAGAR, LagTalDef, efterlevs, lagGaller, lagTal, talPlats } from './lagar';
 import { drar } from './seder';
 import { clamp } from './slump';
-import { formogenhetDelar, grundvarde, tingVarde } from './varde';
+import { agdaDjur, formogenhetDelar, grundvarde, tingVarde } from './varde';
 import { payable } from './behov';
 import { ownMove, ownedStock } from './lager';
 import { Ting, tingOf } from './agande';
 import { BYN } from './egendom';
-import { djurVarde } from './tamdjur';
-const djurAv = (s: State, p: Person) => djurVarde(s, p.id);
+const djurAv = (s: State, p: Person) => agdaDjur(s, p.id); // djuren, hönsen och bisamhällena är aldrig betalning
 import { skuldKrok } from './liv';
 
 export const SKATT = balans('skatt', {
