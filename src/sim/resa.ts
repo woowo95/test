@@ -23,7 +23,9 @@ import { byPlats, varldPlatserPa } from './landmarken';
 import { clamp } from './slump';
 import { ryggsack } from './utrustning';
 import { Tamdjur, tamArt, tamdjurOf, tamEg } from './tamdjur';
-import { FORDON, lassAv, lediga } from './fordon';
+import { FORDON, lassAv, lediga, taFordon, valjDragfordon, type FordonRad, type Underlag } from './fordon';
+import { ledigtTing, tingOf, type Ting } from './agande';
+import type { Fardsatt } from './varldmark';
 import { viktOf } from './saker';
 import { grundvarde } from './varde';
 import { SILVER, silverMellan } from './gruva';
@@ -160,7 +162,7 @@ export const stannarFor = (sl: { skal: ResmalId; nere?: number; hjalp?: 1 }) => 
 
 export type Skede = 'samlas' | 'packar' | 'gar' | 'ute' | 'framme' | 'hemat' | 'hemma' | 'forsvunnet'; // forsvunnet: ingen kom hem (steg 11.5.18) // gar: på väg ut ur byn
 // en insats i boken: vem som äger den, saken (eller djuret) och hur många, i hela saker, och värdet när resan började
-export interface Insats { agare: number | 'by'; sak: string; n: number; varde: number; djur?: number }
+export interface Insats { agare: number | 'by'; sak: string; n: number; varde: number; djur?: number; ting?: number } // ting: vagnen eller släden (steg 12.1.10)
 export interface Sallskap {
   id: number; by: number; // sällskapets nummer och raden det kommer från
   ledare: number; medl: number[]; djur: number[]; fordon: string[]; rider?: [number, number][]; // rider: ryttaren och hästen (steg 11.11.4) // personernas och djurens id (ledaren är en av medlemmarna)
@@ -191,6 +193,7 @@ export interface Sallskap {
   spar?: number[]; mott?: string[]; // rutorna sällskapet gått sedan förra timmen, och de sällskap det mött (steg 11.6.12)
   buren?: [number, BurenSatt][]; utvagNasta?: number; // de som bärs och hur, och när ledaren väger nästa gång om någon är långsam (steg 11.5.17)
   nere?: number; silverArb?: number; // dygnen nere i gruvan, valda i packskedet, och arbetet mot nästa silver (steg 11.10.1)
+  drag?: { g: number; d: number; p: number; ting?: Ting }; // vagnen eller släden (steg 12.1.10): tinget, dragdjuret och den som kör; tinget självt medan det är ute ur byn
   gaster?: [number, number][]; vacktMat?: [string, number][]; // resenärerna som gäster i den väckta byn (personens id och gästens), och maten de tog med sig dit (steg 11.13.10, vacktgast.ts)
 }
 export type BurenSatt = 'vagn' | 'djur' | 'bar';
@@ -237,12 +240,12 @@ function vattenVid(v: VarldMark, i: number) {
 // vägen dit räknad i dygn: hela sträckan, den längsta sträckan utan vatten och dygnen där djuren inte kan beta (i en frisk
 // vuxens gångfart; farten kommer i steg 11.5.7)
 export interface VagDygn { rutor: number[]; dygn: number; torr: number; utanBete: number }
-export function vagDygn(s: State, fran: number, till: number): VagDygn | undefined {
+export function vagDygn(s: State, fran: number, till: number, fs: Fardsatt = 'fots'): VagDygn | undefined {
   const vl = s.varld, v = varldMark(s);
   if (!vl || !v) return undefined;
-  const vag = vagMellan(vl, v, fran, till, 'fots', s.now);
+  const vag = vagMellan(vl, v, fran, till, fs, s.now);
   if (!vag) return undefined;
-  const rutor = vagRutor(vag, v.w), k = kostnader(vl, v, 'fots');
+  const rutor = vagRutor(vag, v.w), k = kostnader(vl, v, fs);
   let torr = 0, hit = 0, utanBete = 0;
   for (let n = 1; n < rutor.length; n++) {
     const i = rutor[n], d = k[i] / VARLD.gangPerDygn;
@@ -261,7 +264,7 @@ export function ridHast(s: State, sl: Sallskap, pid: number) {
   const r = sl.rider?.find(x => x[0] === pid);
   return r && sl.djur.includes(r[1]) ? (s.tamdjur ?? []).find(d => d.id === r[1] && d.dog === undefined) : undefined;
 }
-const ridna = (sl: Sallskap) => new Set((sl.rider ?? []).map(x => x[1]));
+const ridna = (sl: Sallskap) => new Set([...(sl.rider ?? []).map(x => x[1]), ...sl.drag ? [sl.drag.d] : []]); // ryttarnas hästar och dragdjuret bär ingen packsadel
 // en ryttares fart: ridsadelns gånger hästens snabbhet
 export const ryttarFart = (d: Tamdjur) => FORDON.ridsadel!.fart.terrang * tamEg(d).snabbhet;
 export function barDjurAlla(s: State, sl: Sallskap, pack = sl.pack) {
@@ -269,6 +272,22 @@ export function barDjurAlla(s: State, sl: Sallskap, pack = sl.pack) {
   const lass = sl.djur.filter(id => !rid.has(id)).map(id => barDjur(s, id)).sort((a, b) => b - a);
   const sadlar = Math.max(pack.packsadel ?? 0, pack === sl.pack ? sl.att?.packsadel ?? 0 : 0); // medan sällskapet packar: de sadlar ledaren bestämt (steg 12.1.8)
   return lass.slice(0, Math.floor(sadlar + 1e-9)).reduce((a, n) => a + n, 0);
+}
+
+// ---------- vagnen eller släden på resan (steg 12.1.10, Flera samhällen: Packningen i tal och Farten i tal) ----------
+// Färdsättet på världskartan: med vagn eller släde vagnens (runt myr, berg och tät skog), med djur packdjurens, annars till fots
+export const fardsatt = (sl: Sallskap): Fardsatt => sl.fordon.length ? FORDON[sl.fordon[0]!]?.fardsatt ?? 'vagn' : sl.djur.length ? 'packdjur' : 'fots';
+// dragdjuret som drar vagnen, om det lever och följer med
+const dragdjur = (s: State, sl: Sallskap) => sl.drag && sl.djur.includes(sl.drag.d) ? (s.tamdjur ?? []).find(d => d.id === sl.drag!.d && d.dog === undefined) : undefined;
+const vagnRad = (sl: Sallskap) => sl.fordon.length ? FORDON[sl.fordon[0]!] : undefined;
+// vagnens lass: dragdjurets styrka gånger fordonets lass per styrka (FORDON)
+export const vagnLass = (s: State, sl: Sallskap) => { const f = vagnRad(sl), d = f && dragdjur(s, sl); return f && d ? lassAv(f, d) : 0; };
+// underlaget på världsrutan i för ett fordon: en väg, en stig eller led, annars terrängen
+const ledUnderlag = (vl: Varlden, i: number): Underlag => { const k = ledKlass(vl, i); return k === 'vag' ? 'vag' : k === 'obanad' ? 'terrang' : 'stig'; };
+// fordonets fart på världsrutan i med dragdjuret d, som i byn (fordonFart): underlagets och snöns, gånger djurets snabbhet
+export function vagnFartPa(s: State, f: FordonRad, d: Tamdjur, i: number) {
+  const sno = Math.min(1, snoPaMarken(s)), u = ledUnderlag(s.varld!, i);
+  return (f.fart[u] * (1 - sno) + f.fart.sno * sno) * tamEg(d).snabbhet;
 }
 
 // har en resa som börjar t0 och tar dygn dygn en natt (klockan 19–7, som isLight)? En resa på tolv timmar eller mer har alltid det
@@ -283,11 +302,11 @@ export interface Packbehov { dygn: number; mat: number; vatten: number; foder: n
 export function packbehov(s: State, sl: Sallskap): Packbehov | undefined {
   const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
   if (!vl || !v || !hem || !mal) return undefined;
-  const vd = vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x);
+  const vd = vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x, fardsatt(sl));
   if (!vd) return undefined;
   const folk = sl.medl.map(id => s.people.find(p => p.id === id)).filter((p): p is Person => !!p), led = folk.find(p => p.id === sl.ledare) ?? folk[0];
   const n = folk.length, dygn = 2 * vd.dygn + stannarFor(sl);
-  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) + barDjurAlla(s, sl);
+  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) + barDjurAlla(s, sl) + vagnLass(s, sl);
   const vatten = vd.torr > RESA.utanVatten ? n : 0;
   let mat = Math.ceil(n * RESA.matPerDygn * dygn * (led ? marginal(led) : RESA.margMitt) - 1e-9);
   let foder = Math.ceil(sl.djur.length * RESA.foderPerDygn * 2 * vd.utanBete - 1e-9);
@@ -384,6 +403,7 @@ const varorVikt = (s: State, sl: Sallskap) => (sl.varor ?? []).reduce((a, [k, n]
 // packdjuren (steg 11.11.3): de lediga hästarna och oxarna resenärerna får ta (egna, familjens och byns), mest lass per tid
 // först, tas med en packsadel var så länge packningen och varorna väger mer än sällskapet bär. Djuret och sadeln skrivs
 // som insatser. De djur som skulle behövts men inte fick någon sadel räknas i det byn vill ha (sadelVill)
+const packdjurFram = (s: State, sl: Sallskap) => { const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal); return !!(v && hem && mal && vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x, 'packdjur')); };
 function valjPackdjur(s: State, sl: Sallskap, led?: Person) {
   const upptagna = new Set(sallskapNu(s.varld).flatMap(x => x.djur)), sedda = new Set<number>();
   const kand: Tamdjur[] = [];
@@ -391,6 +411,7 @@ function valjPackdjur(s: State, sl: Sallskap, led?: Person) {
     const p = s.people.find(q => q.id === id);
     if (p) for (const d of lediga(s, p)) if (!upptagna.has(d.id) && !sedda.has(d.id)) { sedda.add(d.id); kand.push(d); }
   }
+  if (kand.length && !packdjurFram(s, sl)) kand.length = 0; // packdjuren kommer inte fram (myren): sällskapet går till fots
   const varde = (d: Tamdjur) => lassAv(FORDON.packsadel!, d) * tamEg(d).snabbhet;
   kand.sort((a, b) => varde(b) - varde(a) || a.id - b.id);
   let sadlar = Math.floor(amountOf(s, 'packsadel') + 1e-9), utan = 0, behov = 0;
@@ -415,8 +436,9 @@ function valjPackdjur(s: State, sl: Sallskap, led?: Person) {
       satsaDjur(s, sl, h.id); taIPackning(s, sl, 'ridsadel', 1, led); (sl.rider ??= []).push([folk[i]!.id, h.id]);
     }
   }
+  valjVagn(s, sl, led, kand, sadlar);
   for (const d of kand) {
-    if (sl.djur.includes(d.id)) continue; // hästen rids
+    if (sl.djur.includes(d.id)) continue; // hästen rids, eller drar vagnen
     const pb = packbehov(s, sl);
     if (!pb || pb.behov + varorVikt(s, sl) <= pb.bar + utan + 1e-9) break;
     behov++;
@@ -424,6 +446,48 @@ function valjPackdjur(s: State, sl: Sallskap, led?: Person) {
     else utan += lassAv(FORDON.packsadel!, d);
   }
   if (behov > 0 && sl.by === s.varld?.huvud) (s.sadelBehov = (s.sadelBehov ?? []).filter(([t]) => t > s.now - DAY)).push([s.now, behov]);
+}
+// vagnen eller släden (steg 12.1.10): räcker inte det sällskapet bär, väger ledaren byns vagn (i snö släden, valjDragfordon) med
+// det starkaste lediga dragdjuret mot packdjuren. Det som får plats går först, sedan den kortaste tiden på vägen: vagnens väg går
+// runt myr, berg och tät skog, och dess fart följer ledens underlag (vagnFartPa). Djuret och vagnen skrivs som insatser
+function valjVagn(s: State, sl: Sallskap, led: Person | undefined, kand: Tamdjur[], sadlar: number) {
+  const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal), pb = packbehov(s, sl);
+  if (!led || !vl || !v || !hem || !mal || !pb) return;
+  const need = pb.behov + varorVikt(s, sl);
+  if (need <= pb.bar + 1e-9) return; // det ryms utan
+  const har = ['vagn', 'slade'].filter(k => ledigtTing(s, led, k));
+  if (!har.length) return;
+  const k = valjDragfordon(har, snoPaMarken(s) >= RESA.snoFran ? 'sno' : 'stig'), f = FORDON[k]!, g = ledigtTing(s, led, k)!;
+  const fria = kand.filter(d => !sl.djur.includes(d.id));
+  const d = [...fria].sort((a, b) => lassAv(f, b) * tamEg(b).snabbhet - lassAv(f, a) * tamEg(a).snabbhet || a.id - b.id)[0];
+  if (!d) return;
+  const a = hem.y * v.w + hem.x, b = mal.y * v.w + mal.x;
+  const gang = Math.min(1, ...resenarer(s, sl).map(p => { const h = ridHast(s, sl, p.id); return h ? ryttarFart(h) : Math.min(1, personFart(s, p)); }));
+  // tiden på vägen i dygn: varje rutas kostnad delat med den långsammaste farten där
+  const tid = (fs: Fardsatt, fart: (i: number) => number) => {
+    const vd = vagDygn(s, a, b, fs);
+    if (!vd) return undefined;
+    const kk = kostnader(vl, v, fs);
+    let x = 0;
+    for (let n = 1; n < vd.rutor.length; n++) x += kk[vd.rutor[n]!]! / Math.max(0.05, fart(vd.rutor[n]!));
+    return x / VARLD.gangPerDygn;
+  };
+  // packdjuren: en packsadel var, de som bär mest först, tills det ryms
+  let barA = pb.bar, fartA = gang, nA = 0;
+  for (const x of [...fria].sort((p, q) => lassAv(FORDON.packsadel!, q) - lassAv(FORDON.packsadel!, p) || p.id - q.id)) {
+    if (barA >= need - 1e-9 || nA >= sadlar) break;
+    barA += lassAv(FORDON.packsadel!, x); fartA = Math.min(fartA, tamEg(x).snabbhet); nA++;
+  }
+  const tidA = tid(nA || sl.djur.length ? 'packdjur' : 'fots', () => fartA);
+  const barB = pb.bar + lassAv(f, d), tidB = tid(f.fardsatt ?? 'vagn', i => Math.min(gang, vagnFartPa(s, f, d, i)));
+  if (tidB === undefined) return; // vagnen kommer inte fram
+  const rymsA = barA >= need - 1e-9 && tidA !== undefined, rymsB = barB >= need - 1e-9;
+  if (rymsA && !rymsB) return;
+  if (rymsA === rymsB && (rymsA ? tidB >= tidA! - 1e-9 : barB <= barA + 1e-9)) return;
+  satsaDjur(s, sl, d.id);
+  sl.fordon = [k]; sl.drag = { g: g.id, d: d.id, p: led.id };
+  sl.insatser.push({ agare: g.agare === BYN ? 'by' : g.agare, sak: k, n: 1, varde: Math.round(grundvarde(k)), ting: g.id });
+  count(s, 'resa med vagn');
 }
 export function borjaPacka(s: State, sl: Sallskap): boolean {
   const ut0 = sl.skede === 'samlas' ? utgang(s, sl) : undefined;
@@ -473,6 +537,7 @@ export function resaSteg(s: State, p: Person, tk: Task) {
   if (!sl?.ut || !sl.medl.includes(p.id)) { tk.until = s.now; return; }
   if (sl.skede === 'samlas') { samlasSteg(s, sl, p); return; }
   if (sl.skede === 'packar') {
+    if (hamtaVagn(s, sl, p, tk)) return;
     // det hen bar läggs i packningen, och finns mer att hämta går hen en vända till (MEDAN.resa i steg.ts hämtar först)
     if (tk.items) { iPackningen(sl, tk); if (resaHamtas(s, p, tk)) { tk.hamtad = undefined; sl.vid = sl.vid!.filter(id => id !== p.id); return; } }
     if (!sl.vid!.includes(p.id)) sl.vid!.push(p.id);
@@ -484,17 +549,58 @@ export function resaSteg(s: State, p: Person, tk: Task) {
     return;
   }
   if (sl.skede !== 'gar' || Math.hypot(p.x - sl.ut.kant.x, p.y - sl.ut.kant.y) > 1.5) return;
+  vagnUt(s, sl, p, tk);
   gaBort(s, p);
   const utanfor = (id: number) => { const q = s.people.find(x => x.id === id); return !q || !alive(q) || ute(q); };
   if (sl.medl.every(utanfor) || utanDeSomInteKom(s, sl, p, id => { const q = s.people.find(x => x.id === id); return !!q && alive(q) && ute(q); }, sl.t)) {
+    if (sl.drag && !sl.drag.ting) utanVagn(s, sl); // vagnen kom aldrig med ut
     for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.dog === undefined) d.ute = s.now; // djuren följer med ut
     const hem = byPlats(s.varld!, sl.by), v = varldMark(s);
     sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0; sl.gang = 0;
     satVag(s, sl, true);
     dagbok(s, sl, 'ut', 'Gav sig av.');
-    const mal = s.varld!.platser?.find(q => q.nr === sl.mal), vd = hem && v && mal ? vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x) : undefined;
+    const mal = s.varld!.platser?.find(q => q.nr === sl.mal), vd = hem && v && mal ? vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x, fardsatt(sl)) : undefined;
     if (mal?.k === 'by' && mal.by !== undefined && vd) vackKrok.borja?.(s, mal.by, s.now, vd.dygn / Math.max(0.05, sallskapFart(s, sl))); // byn dit börjar väckas (vackt.ts, steg 11.13.8)
   }
+}
+
+// den som kör (steg 12.1.10) går först till vagnen, spänner för dragdjuret (taFordon, som i byn) och kör den till samlingsplatsen.
+// Svarar true när hen är på väg. Finns vagnen eller djuret inte längre går resan utan vagn
+function hamtaVagn(s: State, sl: Sallskap, p: Person, tk: Task) {
+  const dr = sl.drag;
+  if (!dr || dr.p !== p.id || tk.ting?.includes(dr.g)) return false;
+  const g = tingOf(s).find(q => q.id === dr.g), d = tamdjurOf(s).find(q => q.id === dr.d);
+  if (!g || !d || g.lass !== undefined || g.hos !== undefined || g.x === undefined || g.y === undefined) { utanVagn(s, sl); return false; }
+  if (Math.hypot(p.x - g.x, p.y - g.y) > 1.5) { tk.tx = g.x; tk.ty = g.y; tk.phase = 'go'; sl.vid = sl.vid?.filter(id => id !== p.id); return true; }
+  taFordon(s, p, tk, g.id, d.id);
+  tk.tx = sl.ut!.samla.x; tk.ty = sl.ut!.samla.y; tk.phase = 'go';
+  return true;
+}
+// vid kanten lämnar vagnen byn med den som kör: tinget följer sällskapet (sl.drag.ting) och finns inte i byn medan resan pågår
+function vagnUt(s: State, sl: Sallskap, p: Person, tk: Task) {
+  const dr = sl.drag;
+  if (!dr || dr.p !== p.id || dr.ting || !tk.ting?.includes(dr.g)) return;
+  const g = tingOf(s).find(q => q.id === dr.g);
+  if (!g) return;
+  tk.ting = tk.ting.filter(id => id !== g.id);
+  s.ting = tingOf(s).filter(q => q !== g);
+  g.lass = undefined; g.djur = undefined; g.x = g.y = undefined;
+  dr.ting = g;
+}
+// resan går utan vagnen: djuret som skulle dra den följer med som de andra djuren, och vagnen räknas inte längre
+function utanVagn(s: State, sl: Sallskap) {
+  if (sl.drag?.ting && PA_VAGEN.includes(sl.skede)) count(s, 'resa vagn lämnad');
+  else vagnTillbaka(s, sl); // den som skulle köra ställer den där hen står
+  sl.insatser = sl.insatser.filter(x => !(x.ting !== undefined && x.ting === sl.drag?.g && !sl.drag.ting)); // den som aldrig kom med är ingen insats
+  sl.drag = undefined; sl.fordon = [];
+}
+// hemma: vagnen ställs vid kanten där sällskapet kommer in, och bärs till förrådet som andra redskap (placeTools)
+function vagnHem(s: State, sl: Sallskap, x: number, y: number) {
+  const g = sl.drag?.ting;
+  if (!g) return;
+  g.x = Math.floor(x); g.y = Math.floor(y);
+  tingOf(s).push(g);
+  sl.drag!.ting = undefined;
 }
 
 // ---------- behoven på vägen (steg 11.5.6, Packningen i tal och Orken och tälten på resan) ----------
@@ -531,6 +637,7 @@ export function nattTapp(s: State, sl: Sallskap, t = s.now) {
 }
 // en bit av tiden (dt millisekunder, högst tio minuter) för ett sällskap på vägen
 function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
+  if (sl.drag?.ting && !dragdjur(s, sl)) { dagbok(s, sl, 'tappad', `${SAKER[sl.fordon[0] ?? '']?.namn ?? 'Vagnen'} fick lämnas kvar vid leden när djuret som drog den inte längre fanns.`, t); utanVagn(s, sl); } // (steg 12.1.10)
   if (sl.skede !== 'framme' && isLight(t)) ga(s, sl, t, dt);
   else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= stannarFor(sl) * 24 * HOUR) {
     if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Kom upp ur gruvan med ${sl.pack.silver ?? 0} silver.`, t);
@@ -669,7 +776,7 @@ export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
   const buren = om.buren ?? sl.buren ?? [], bars = new Set(buren.map(b => b[0])), bar_ = buren.filter(b => b[1] === 'bar').length;
   const folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id));
   // den som bärs bär inget; en bår tar två bärares händer, och den som åker på djuret eller vagnen väger som packning
-  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + barDjurAlla(s, sl);
+  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + barDjurAlla(s, sl) + vagnLass(s, sl);
   const vikt = packVikt(sl, om.pack ?? sl.pack) + RESA.personVikt * (buren.length - bar_);
   const x = bar > 0 ? vikt / bar : 1;
   return x <= RESA.lastFran ? 1 : Math.max(RESA.lastMin, 1 - (1 - RESA.lastMin) * (x - RESA.lastFran) / (1 - RESA.lastFran));
@@ -679,6 +786,8 @@ export function sallskapFart(s: State, sl: Sallskap, om: FartOm = {}) {
   const rid = ridna(sl), folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id)), djur = (s.tamdjur ?? []).filter(d => sl.djur.includes(d.id) && d.dog === undefined && !rid.has(d.id));
   // den långsammaste: den som går (högst gångfarten), ryttaren i hästens fart (steg 11.11.4) och packdjuret i sin egen snabbhet (steg 11.11.3)
   const farter = [...folk.map(p => { const h = ridHast(s, sl, p.id); return h ? ryttarFart(h) : Math.min(1, personFart(s, p)); }), ...djur.map(d => tamEg(d).snabbhet)];
+  const dd = dragdjur(s, sl), f = vagnRad(sl);
+  if (dd && f && sl.ruta !== undefined) farter.push(vagnFartPa(s, f, dd, sl.ruta)); // vagnen i sin fart på rutans underlag (steg 12.1.10)
   const lang = farter.length ? Math.min(...farter) : 1;
   return lang * (buren.some(b => b[1] === 'bar') ? RESA.barFart : 1) * lastFart(s, sl, om) * (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * orkFart(sl, om.ork);
 }
@@ -686,7 +795,7 @@ export function sallskapFart(s: State, sl: Sallskap, om: FartOm = {}) {
 function satVag(s: State, sl: Sallskap, bort: boolean) {
   const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by), mal = vl?.platser?.find(p => p.nr === sl.mal);
   if (!vl || !v || !hem || !mal) return;
-  const a = hem.y * v.w + hem.x, b = mal.y * v.w + mal.x, vag = vagMellan(vl, v, bort ? a : b, bort ? b : a, 'fots', s.now);
+  const a = hem.y * v.w + hem.x, b = mal.y * v.w + mal.x, vag = vagMellan(vl, v, bort ? a : b, bort ? b : a, fardsatt(sl), s.now);
   sl.vag = vag ? { fran: vag.fran, till: vag.till, steg: vag.steg } : undefined; sl.pos = 0; sl.gang = 0; sl.ruta = bort ? a : b;
 }
 export const vagenRutor = (s: State, sl: Sallskap) => { const v = varldMark(s); return v && sl.vag ? vagRutor(sl.vag as VarldVag, v.w) : []; };
@@ -695,13 +804,13 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
   const vl = s.varld, v = varldMark(s), rutor = vagenRutor(s, sl);
   if (!vl || !v || !rutor.length) return;
   if (sl.forlorat && sl.forlorat > 0) { const d = Math.min(dt, sl.forlorat * HOUR); sl.forlorat = Math.max(0, sl.forlorat - d / HOUR); dt -= d; if (dt <= 0) return; } // vilse eller väntar ut ett oväder (steg 11.5.14)
-  const k = kostnader(vl, v, 'fots'), tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length);
+  const fs = fardsatt(sl), k = kostnader(vl, v, fs), tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length - (sl.drag ? 1 : 0), sl.drag ? 1 : 0);
   sl.gang = (sl.gang ?? 0) + VARLD.gangPerDygn / RESA.dagTim * sallskapFart(s, sl) * dt / HOUR;
   let pos = sl.pos ?? 0;
   // isen har gått (steg 11.11.8): den som står på land och har vatten framför sig tar en ny väg därifrån; den som är ute på isen
   // har hunnit över och går vidare som på slätt
   if (pos < rutor.length - 1 && !isFinite(k[rutor[pos + 1]]) && isFinite(k[rutor[pos]])) {
-    const vag = vagMellan(vl, v, rutor[pos], rutor[rutor.length - 1], 'fots', t);
+    const vag = vagMellan(vl, v, rutor[pos], rutor[rutor.length - 1], fs, t);
     const r2 = vag && vagRutor(vag, v.w);
     if (vag && r2!.length > 1 && isFinite(k[r2![1]])) { sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg }; sl.pos = 0; count(s, 'resa isen gick'); return ga(s, sl, t, 0); }
   }
@@ -722,6 +831,7 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   const in_ = sl.ut?.kant ?? bynsMitt(s);
   for (const p of resenarer(s, sl)) if (ute(p)) kommHem(s, p, in_.x, in_.y);
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
+  vagnHem(s, sl, in_.x, in_.y);
   delaHemma(s, sl);
   beskedet(s, sl); // den som dog på vägen: arvet delas nu (steg 11.5.18)
   sl.skede = 'hemma'; sl.t = t;
@@ -857,7 +967,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
 // värda först till den som har störst fordran kvar.
 export type Agare = number | 'by';
 export interface Andelar { tillbaka: [Agare, string, number][]; byte: [Agare, string, number][]; gatt: number; varde: number; vinst: number; fordran: [Agare, number][]; andelar: [Agare, number][] }
-export function delaAndelar(insatser: Insats[], resenarer: number[], kvar: Record<string, number>, djurLever: (id: number) => boolean, varde: (k: string) => number = grundvarde): Andelar {
+export function delaAndelar(insatser: Insats[], resenarer: number[], kvar: Record<string, number>, djurLever: (id: number) => boolean, varde: (k: string) => number = grundvarde, tingKvar: (id: number) => boolean = () => true): Andelar {
   const pack: Record<string, number> = {};
   for (const k in kvar) { const n = Math.floor(kvar[k]! + 1e-9); if (n > 0) pack[k] = n; }
   const tillbaka: [Agare, string, number][] = [], gattPer = new Map<Agare, number>(), andel = new Map<Agare, number>();
@@ -866,10 +976,12 @@ export function delaAndelar(insatser: Insats[], resenarer: number[], kvar: Recor
   for (const x of insatser) { const a = Math.floor(x.varde / RESA.andelVarde); if (a > 0) lagg(andel, x.agare, a); }
   // djuren: det levande går tillbaka, det döda ersätts inte
   for (const x of insatser) if (x.djur !== undefined && djurLever(x.djur)) tillbaka.push([x.agare, x.sak, 1]);
+  // vagnen (steg 12.1.10): den som kom hem står i byn igen, och den som blev kvar på vägen har gått åt
+  for (const x of insatser) if (x.ting !== undefined && !tingKvar(x.ting)) lagg(gattPer, x.agare, x.varde);
   // sakerna: det som är kvar av varje sak delas efter insatserna, i hela saker (störst rest först)
-  const saker = [...new Set(insatser.filter(x => x.djur === undefined).map(x => x.sak))].sort();
+  const saker = [...new Set(insatser.filter(x => x.djur === undefined && x.ting === undefined).map(x => x.sak))].sort();
   for (const sak of saker) {
-    const ins = insatser.filter(x => x.djur === undefined && x.sak === sak), N = ins.reduce((a, x) => a + x.n, 0), har = Math.min(pack[sak] ?? 0, N);
+    const ins = insatser.filter(x => x.djur === undefined && x.ting === undefined && x.sak === sak), N = ins.reduce((a, x) => a + x.n, 0), har = Math.min(pack[sak] ?? 0, N);
     const del = ins.map(x => ({ x, n: Math.floor(har * x.n / N), rest: har * x.n / N - Math.floor(har * x.n / N) }));
     let over = har - del.reduce((a, d) => a + d.n, 0);
     for (const d of [...del].sort((a, b) => b.rest - a.rest)) { if (over <= 0) break; d.n++; over--; }
@@ -905,7 +1017,7 @@ export function delaAndelar(insatser: Insats[], resenarer: number[], kvar: Recor
 // hemma: insatserna tillbaka och bytet delat, i förrådet hos ägarna (byns det som är byns, och den döda ägarens går till byn)
 function delaHemma(s: State, sl: Sallskap) {
   const lever = (id: number) => (s.tamdjur ?? []).some(d => d.id === id && d.dog === undefined);
-  const a = delaAndelar(sl.insatser, sl.medl, sl.pack, lever);
+  const a = delaAndelar(sl.insatser, sl.medl, sl.pack, lever, grundvarde, id => tingOf(s).some(g => g.id === id));
   const agareI = (x: Agare) => { if (x === 'by') return undefined; const p = s.people.find(q => q.id === x); return p && alive(p) ? x : undefined; };
   const djurArt = new Set(sl.insatser.filter(x => x.djur !== undefined).map(x => x.sak)); // djuret går själv hem (hemkomst)
   for (const [ag, sak, n] of a.tillbaka) if (!djurArt.has(sak)) laggIn(s, sak, n, agareI(ag));
@@ -924,11 +1036,22 @@ function delaHemma(s: State, sl: Sallskap) {
 // Handel på en handelsresa), gånger hur väl förråden hemma räcker resan ut (bristen hemma), och ledens fara drar ner det för
 // den försiktiga. Dygnen är den sparade vägens, annars fågelvägen gånger omvag; ingen väg räknas i valet.
 const ingenDod = (s: State, a: number | 'by') => { if (a === 'by') return undefined; const p = s.people.find(q => q.id === a); return p && alive(p) ? a : undefined; }; // den dödes del går till byn
+// resan ställs in: den som kör ställer vagnen där hen står (eller vid kanten, om den redan var ute), och den bärs till förrådet
+function vagnTillbaka(s: State, sl: Sallskap) {
+  const dr = sl.drag, kor = dr && s.people.find(q => q.id === dr.p);
+  if (dr?.ting && sl.ut) vagnHem(s, sl, sl.ut.kant.x, sl.ut.kant.y);
+  else if (dr && kor?.task?.ting?.includes(dr.g)) {
+    kor.task.ting = kor.task.ting.filter(id => id !== dr.g);
+    const g = tingOf(s).find(q => q.id === dr.g);
+    if (g) { g.lass = undefined; g.djur = undefined; g.x = Math.floor(kor.x); g.y = Math.floor(kor.y); }
+  }
+}
 export function stallIn(s: State, sl: Sallskap) {
   const vl = s.varld;
   // det som packats går tillbaka till ägarna (steg 12.1.8): ingen resa ställs in med packningen kvar på samlingsplatsen
   // (det läggs på samlingsplatsen, där det bärs in som annat som ligger på marken)
-  for (const x of sl.insatser) if (x.djur === undefined && (sl.pack[x.sak] ?? 0) >= 1) {
+  vagnTillbaka(s, sl);
+  for (const x of sl.insatser) if (x.djur === undefined && x.ting === undefined && (sl.pack[x.sak] ?? 0) >= 1) {
     const n = Math.min(x.n, Math.floor(sl.pack[x.sak]! + 1e-9)), o = ingenDod(s, x.agare);
     if (sl.ut) dropLoad(s, { act: 'resa', items: { [x.sak]: n }, ag: { [x.sak]: { [o ?? BYN]: n } } } as unknown as Task, sl.ut.samla.x, sl.ut.samla.y, o ?? BYN);
     else laggIn(s, x.sak, n, o);
@@ -1137,7 +1260,7 @@ export function sallskapLage(s: State, sl: Sallskap): SallskapLage | undefined {
     const kvar = sl.skede === 'framme' ? Math.max(0, stannarFor(sl) - (s.now - (sl.framme ?? s.now)) / DAY) : 0;
     return { x: i % v.w, y: Math.floor(i / v.w), dx: 0, dy: 0, kvar: Math.round(kvar * 100) / 100 };
   }
-  const k = kostnader(vl, v, 'fots'), a = rutor[pos], b = rutor[Math.min(pos + 1, rutor.length - 1)];
+  const k = kostnader(vl, v, fardsatt(sl)), a = rutor[pos], b = rutor[Math.min(pos + 1, rutor.length - 1)];
   const f = a === b ? 0 : clamp((sl.gang ?? 0) / k[b], 0, 1), ax = a % v.w, ay = Math.floor(a / v.w), bx = b % v.w, by = Math.floor(b / v.w);
   let kvar = -(sl.gang ?? 0);
   for (let n = pos + 1; n < rutor.length; n++) kvar += k[rutor[n]];
@@ -1148,7 +1271,7 @@ export interface SallskapRuta { titel: string; skede: string; ledare: string; me
 export function sallskapRuta(s: State, sl: Sallskap): SallskapRuta {
   const mal = s.varld?.platser?.find(p => p.nr === sl.mal)?.namn ?? '', lage = sallskapLage(s, sl);
   const namn = (id: number) => s.people.find(p => p.id === id)?.name ?? '';
-  const djur = sl.djur.map(id => s.tamdjur?.find(d => d.id === id)).filter(d => !!d).map(d => tamArt(d!.art).namn);
+  const djur = [...sl.djur.map(id => s.tamdjur?.find(d => d.id === id)).filter(d => !!d).map(d => tamArt(d!.art).namn), ...sl.fordon.map(k => SAKER[k]?.namn ?? k)]; // och vagnen (steg 12.1.10)
   return {
     titel: `${RESMAL[sl.skal].namn}: ${mal}`, skede: SKEDEN[sl.skede], ledare: namn(sl.ledare), medl: sl.medl.filter(id => id !== sl.ledare).map(namn).filter(Boolean),
     djur, pack: Object.entries(sl.pack).filter(([, n]) => n >= 1).map(([k, n]) => [SAKER[k]?.namn ?? k, Math.floor(n)] as [string, number]).sort((a, b) => b[1] - a[1]),
@@ -1447,7 +1570,7 @@ export function vandHem(s: State, sl: Sallskap) {
   const vl = s.varld, v = varldMark(s), hem = vl && byPlats(vl, sl.by);
   sl.skede = 'hemat';
   if (!vl || !v || !hem || sl.ruta === undefined) return;
-  const vag = sl.ruta !== hem.y * v.w + hem.x ? vagMellan(vl, v, sl.ruta, hem.y * v.w + hem.x, 'fots', s.now) : undefined;
+  const vag = sl.ruta !== hem.y * v.w + hem.x ? vagMellan(vl, v, sl.ruta, hem.y * v.w + hem.x, fardsatt(sl), s.now) : undefined;
   sl.vag = vag ? { fran: vag.fran, till: vag.till, steg: vag.steg } : undefined; sl.pos = 0; sl.gang = 0;
   if (!vag) hemkomst(s, sl, s.now); // redan vid byn (eller ingen väg): hemma
 }

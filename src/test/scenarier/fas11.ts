@@ -4315,6 +4315,76 @@ SCENARIER.ridning = {
   },
 };
 
+SCENARIER.resvagn = {
+  text: 'Vagnen på resorna (steg 12.1.10, valjVagn i resa.ts): när packningen inte ryms väger ledaren byns vagn med det starkaste lediga dragdjuret mot packdjuren, det som ryms först och sedan den kortaste tiden; den som kör hämtar vagnen och kör den till samlingsplatsen, vagnen lämnar byn med sällskapet, leden räknas för vagnen och vagnen kommer hem igen. Dör dragdjuret blir vagnen kvar vid leden och räknas som det som gått åt',
+  kor: () => {
+    const bas = testBy(3), vl0 = bas.varld!, v0 = SIM.varldMark(bas)!, hb = SIM.byPlats(vl0, vl0.huvud!)!, m = SIM.bynsMitt(bas), a = hb.y * v0.w + hb.x;
+    // ett mål vagnen kommer fram till
+    const mal = (hb.grannar ?? []).map(g => vl0.platser!.find(q => q.nr === g.nr)!).find(q => q && SIM.vagDygn(bas, a, q.y * v0.w + q.x, 'vagn'))?.nr;
+    const p0 = SIM.living(bas).filter(q => SIM.ageOf(q, bas.now) >= 18 && SIM.ageOf(q, bas.now) < 50 && SIM.kanGa(q))[0]!;
+    const ny = (sadlar: number, skinn: number) => {
+      const s = SIM.cloneState(bas), p = s.people.find(q => q.id === p0.id)!;
+      for (const d of SIM.tamdjurOf(s)) d.agare = -1; // byns egna djur räknas inte; bara hästen nedan
+      for (const g of SIM.tingOf(s)) if (SIM.fordonRad(g.k)) g.hos = -99;
+      const hast = SIM.nyttTamdjur(s, 'hast', m.x, m.y, undefined, s.now - 5 * SIM.DAY); hast.agare = undefined;
+      const g = SIM.newTing(s, 'vagn', 1, SIM.BYN); g.x = Math.floor(m.x) + 2; g.y = Math.floor(m.y);
+      SIM.setAmount(s, 'packsadel', sadlar); SIM.setAmount(s, 'skinn', 300); SIM.setAmount(s, 'brod', 60);
+      const sl = SIM.nyttSallskap(s, p, mal!, 'handel')!;
+      sl.varor = [['skinn', skinn]];
+      const ok = packatSomISpelet(s, sl);
+      return { s, p, hast, g, sl, ok };
+    };
+    // mycket skinn: vagnen tas, också när det finns en packsadel
+    const A = ny(1, 60), barA = SIM.packbehov(A.s, A.sl)!.bar, lass = SIM.lassAv(SIM.FORDON.vagn!, A.hast);
+    // lite mer än en resenär bär: packsadeln räcker och går fortare än vagnen i terrängen
+    const B = ny(1, Math.floor((SIM.barResenar(A.s, A.p) * 0.5) / SIM.viktOf('skinn')) + 2);
+    // den som kör hämtar vagnen och kör den till samlingsplatsen
+    const { s, p, g, sl, hast } = A, ut = sl.ut!;
+    p.x = ut.samla.x; p.y = ut.samla.y;
+    const tk = { act: 'resa', phase: 'do', tx: ut.samla.x, ty: ut.samla.y, until: s.now + 2 * SIM.HOUR, carry: 0, why: '', ref: sl.id } as unknown as SIM.Task;
+    p.task = tk;
+    SIM.resaSteg(s, p, tk);
+    const tillVagnen = tk.phase === 'go' && tk.tx === g.x && tk.ty === g.y;
+    p.x = g.x! + 0.5; p.y = g.y! + 0.5;
+    SIM.resaSteg(s, p, tk);
+    const spand = !!tk.ting?.includes(g.id) && g.lass === p.id && g.djur === hast.id && tk.tx === ut.samla.x;
+    // vid samlingsplatsen: alla är där och sällskapet går mot kanten; vid kanten lämnar vagnen byn
+    p.x = ut.samla.x; p.y = ut.samla.y; tk.phase = 'do';
+    SIM.resaSteg(s, p, tk);
+    const gar = sl.skede === 'gar';
+    const iByn0 = SIM.amountOf(s, 'vagn');
+    p.x = ut.kant.x; p.y = ut.kant.y;
+    SIM.resaSteg(s, p, tk);
+    const iByn1 = SIM.amountOf(s, 'vagn'), ute = sl.skede === 'ute' && !!sl.drag?.ting && !SIM.tingOf(s).includes(g) && iByn1 === iByn0 - 1;
+    const v = SIM.varldMark(s)!, vagen = s.varld!.vagar?.find(x => x.fran === sl.vag?.fran && x.till === sl.vag?.till && x.steg === sl.vag?.steg);
+    const f = SIM.sallskapFart(s, sl), vf = SIM.vagnFartPa(s, SIM.FORDON.vagn!, hast, sl.ruta!), gang = Math.min(1, SIM.personFart(s, p));
+    // ute: dragdjuret dör, och vagnen blir kvar vid leden
+    const C = SIM.cloneState(s), slC = C.varld!.sallskap!.find(x => x.id === sl.id)!, hC = (C.tamdjur ?? []).find(d => d.id === hast.id)!;
+    const lam0 = C.stat?.['resa vagn lämnad'] ?? 0;
+    hC.dog = C.now;
+    SIM.resaBehov(C, 600 * SIM.SEC);
+    const kvar = !slC.drag && !slC.fordon.length && (C.stat?.['resa vagn lämnad'] ?? 0) === lam0 + 1;
+    // hemma igen: vagnen står i byn, och den räknas inte som något som gått åt
+    SIM.hemkomst(s, sl, s.now);
+    const hemma = SIM.tingOf(s).includes(g) && !sl.drag?.ting && SIM.amountOf(s, 'vagn') === iByn0;
+    const ins: SIM.Insats[] = [{ agare: 'by', sak: 'vagn', n: 1, varde: 50, ting: 7 }];
+    const dKvar = SIM.delaAndelar(ins, [1], {}, () => true, SIM.grundvarde, () => true), dBorta = SIM.delaAndelar(ins, [1], {}, () => true, SIM.grundvarde, () => false);
+    return [
+      [`ett mål vagnen kommer fram till (${mal})`, mal !== undefined],
+      [`mycket att sälja: vagnen tas med hästen (${A.sl.fordon.join(',')}, ${SIM.fardsatt(A.sl)}), lasset ${lass} räknas i bärförmågan (${barA.toFixed(0)}) och vagnen är en insats`, A.ok && A.sl.fordon[0] === 'vagn' && A.sl.drag?.d === A.hast.id && SIM.fardsatt(A.sl) === 'vagn' && SIM.vagnLass(A.s, A.sl) === lass && barA >= lass && A.sl.insatser.some(x => x.ting === A.g.id) && (A.sl.pack.packsadel ?? 0) === 0],
+      [`lite att sälja: packsadeln räcker och går fortare (${B.sl.fordon.join(',') || 'ingen vagn'}, ${B.sl.pack.packsadel ?? 0} sadel, ${SIM.fardsatt(B.sl)})`, B.ok && !B.sl.fordon.length && B.sl.pack.packsadel === 1 && SIM.fardsatt(B.sl) === 'packdjur'],
+      [`den som kör går först till vagnen och spänner för hästen, sedan till samlingsplatsen`, tillVagnen && spand],
+      [`vid kanten lämnar vagnen byn med sällskapet (${iByn0} → ${iByn1} i byn)`, gar && ute],
+      [`vägen räknas för vagnen (${vagen?.fs})`, vagen?.fs === 'vagn' && !!v],
+      [`sällskapet går i vagnens fart på rutans underlag (${f.toFixed(3)}; vagnen ${vf.toFixed(3)}, gången ${gang.toFixed(3)})`, f <= Math.min(vf, gang) + 1e-9],
+      [`att åka på vagnen är en utväg medan vagnen är med`, !!SIM.UTVAGAR.vagn!.kan!(s, sl, {} as SIM.UtvagLage)],
+      [`dör dragdjuret blir vagnen kvar vid leden`, kvar],
+      [`hemma står vagnen i byn igen`, hemma],
+      [`en vagn som kom hem har inte gått åt, en som blev kvar har det (${dKvar.gatt} och ${dBorta.gatt})`, dKvar.gatt === 0 && dBorta.gatt === 50],
+    ];
+  },
+};
+
 SCENARIER.handlardjur = {
   text: 'Handlarens packdjur (steg 11.11.5, utrVikt, handlarFart och handlarDjur i handel.ts): en handlare med packdjur leder hembyns häst eller oxe, rymmer ryggsäcken plus djurets lass med packsadel och går i djurets snabbhet; djuret står vid filten under handeln, följer med ut och finns inte bland byns djur',
   kor: () => {
