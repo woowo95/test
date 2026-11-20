@@ -532,7 +532,10 @@ SCENARIER.varldslag = {
       // slumpen
       const sl = [0, 1, 2].map(i => SIM.varldSlump(vl, 7, 3, i)), igen = SIM.varldSlump(vl, 7, 3, 0) === sl[0];
       let summa = 0; for (let n = 0; n < 4000; n++) summa += SIM.antalUr(1.25, SIM.varldSlump(vl, 9, n, 5));
-      const rng = JSON.stringify(levande.rngs) === JSON.stringify(ny().rngs);
+      // byns slump dras bara när något ur världen går in i byn (en flock som anfaller huvudbyn, steg 11.6.20: då är det byns
+      // händelse), och då likadant i levande läge och ikappräkningen; utan det är byns slump orörd
+      const inne = levande.stat?.varldsanfall ?? 0, rngLika = JSON.stringify(levande.rngs) === JSON.stringify(ikapp.rngs);
+      const rng = rngLika && (inne > 0 || JSON.stringify(levande.rngs) === JSON.stringify(ny().rngs));
       // en by utan värld
       const utan = SIM.cloneState(testBy(10)); delete utan.varld; utan.now += 86400e3; SIM.varldSteg(utan);
       const takt = SIM.TAKTER.some(r => r.namn === 'världen');
@@ -542,7 +545,7 @@ SCENARIER.varldslag = {
         [`kön räknas vid sin tid och i tidsordning med perioderna (${poster} poster)`, poster > 0 && iOrdning && kvar],
         ['slumpen är en hash: samma frö, sak, period och ärende ger samma tal, ett annat ärende ett annat', igen && sl[0] !== sl[1] && sl[1] !== sl[2]],
         [`ett väntat antal blir hela händelser (1,25 i snitt: ${(summa / 4000).toFixed(3)})`, Math.abs(summa / 4000 - 1.25) < 0.03],
-        ['världen rör inte byns slump', rng],
+        [`världen rör inte byns slump, utom när något ur världen går in i byn, och då likadant i båda lägena (${inne} anfall in i byn)`, rng],
         ['en by utan värld får ingen', !utan.varld],
         ['världen har sin rad i TAKTER', takt],
       ];
