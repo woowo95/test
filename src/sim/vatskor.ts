@@ -65,20 +65,20 @@ export const DRYCK = balans('dryck', {
 export interface DryckDef { slacker: number; ren?: true; varm?: number; torst?: number; kvall?: number; alkohol?: number; mat?: { protein?: number; fett?: number }; tanke?: [string, number, number]; stat: string; forsta?: string }
 export interface VatskaDef { namn: string; farg: number; i: string[]; haller?: number; dryck?: DryckDef; sar?: 'kokt' | 'vatten' | 'sprit' } // sar = balanstalet i HALSA för hur länge ett sår tvättat med den håller sig rent // haller = så många dygn den håller i krukan; sedan hälls den ut (saften blir sur)
 export const VATSKOR = {
-  vatten: { namn: 'Vatten', farg: 0x3b6ea5, i: ['vattensack', 'lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'], dryck: { slacker: 1, torst: DRYCK.vattenVarde, stat: 'krukvattenDrucket' }, sar: 'vatten' }, // som dryck bara i en lerkruka (dryckKarl)
+  vatten: { namn: 'Vatten', farg: 0x3b6ea5, i: ['vattensack', 'lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor', 'tunna'], dryck: { slacker: 1, torst: DRYCK.vattenVarde, stat: 'krukvattenDrucket' }, sar: 'vatten' }, // som dryck bara i en lerkruka (dryckKarl)
   tjara: { namn: 'Tjära', farg: 0x24201d, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] },
   salva: { namn: 'Salva', farg: 0x647025, i: ['naverask', 'lerkruka_liten'] },
   benlim: { namn: 'Benlim', farg: 0xbdb39b, i: ['naverask', 'lerkruka_liten'] },
   kokt: { namn: 'Kokat vatten', farg: 0x8a9c9e, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'], dryck: { slacker: 1, ren: true, torst: DRYCK.koktVarde, stat: 'koktDrucket' }, sar: 'kokt' }, // kokat i en lerkruka (steg 9.5.25): rent, till såren och att dricka
-  vin: { namn: 'Vin', farg: 0x521100, i: ['lerkruka_stor'], haller: 40, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.vinKvall, alkohol: 0.35, stat: 'drack_vin' } }, // vinet (steg 9.6.12, brygg.ts): i stora krukor, blir bättre med tiden
-  ol: { namn: 'Öl', farg: 0x906f0f, i: ['lerkruka_stor'], haller: 6, dryck: { slacker: DRYCK.olSlacker, kvall: DRYCK.olKvall, alkohol: 0.25, stat: 'drack_ol' } }, // ölet (steg 9.6.13, brygg.ts): i stora krukor, håller sex dygn
+  vin: { namn: 'Vin', farg: 0x521100, i: ['lerkruka_stor', 'tunna'], haller: 40, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.vinKvall, alkohol: 0.35, stat: 'drack_vin' } }, // vinet (steg 9.6.12, brygg.ts): i stora krukor, blir bättre med tiden
+  ol: { namn: 'Öl', farg: 0x906f0f, i: ['lerkruka_stor', 'tunna'], haller: 6, dryck: { slacker: DRYCK.olSlacker, kvall: DRYCK.olKvall, alkohol: 0.25, stat: 'drack_ol' } }, // ölet (steg 9.6.13, brygg.ts): i stora krukor, håller sex dygn
   saft: { namn: 'Saft', farg: 0x742a01, i: ['lerkruka_mellan'], haller: 2, dryck: { slacker: DRYCK.slacker, torst: DRYCK.saftVarde, tanke: ['Drack saft', DRYCK.saftGlad, DRYCK.saftTim], stat: 'saftDrucken', forsta: '{namn} drack byns första saft av krossade bär.' } }, // bär krossade i en mellanstor kruka (steg 9.6.9): den första drycken, håller två dygn
   mjolk: { namn: 'Mjölk', farg: 0xbdb39b, i: ['lerkruka_liten', 'lerkruka_mellan'], haller: 1, dryck: { slacker: DRYCK.slacker, torst: DRYCK.mjolkVarde, mat: { protein: DRYCK.mjolkProtein, fett: DRYCK.mjolkFett }, stat: 'mjolkDrucken', forsta: '{namn} drack byns första getmjölk.' } }, // getmjölken (steg 9.8.8, boskap.ts): håller ett dygn
   black: { namn: 'Bläck', farg: 0x24201d, i: ['lerkruka_liten'] }, // sot av kol och vatten (steg 10.6.4): en liten kruka räcker till 2 blad
   te: { namn: 'Örtte', farg: 0x906f0f, i: ['lerkruka_liten'], dryck: { slacker: 0, varm: TE.varm, stat: 'teDrucket', forsta: '{namn} drack ett örtte av rölleka.' } }, // dricks av den som är sjuk eller fryser (villTe), inte mot törsten
   buljong: { namn: 'Buljong', farg: 0x7d5b40, i: ['lerkruka_mellan'], haller: 2, dryck: { slacker: DRYCK.buljongSlacker, ren: true, varm: TE.varm, torst: DRYCK.buljongVarde, stat: 'buljongDrucken', forsta: '{namn} drack byns första buljong.' } }, // ben och svamp eller kål som sjudit i krukan på elden (steg 10.7.24, tillverka.ts)
-  svagdricka: { namn: 'Svagdricka', farg: 0xb2921b, i: ['lerkruka_stor'], haller: 4, dryck: { slacker: 1, ren: true, torst: DRYCK.svagVarde, alkohol: 0.05, stat: 'drack_svagdricka' } }, // bryggs av malt i karet (steg 10.7.24, brygg.ts): mot törsten på dagen
-  mjod: { namn: 'Mjöd', farg: 0xd8b25f, i: ['lerkruka_stor'], haller: 20, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.mjodKvall, alkohol: 0.3, stat: 'drack_mjod' } }, // honungen som jäst i karet (steg 10.7.25, brygg.ts)
+  svagdricka: { namn: 'Svagdricka', farg: 0xb2921b, i: ['lerkruka_stor', 'tunna'], haller: 4, dryck: { slacker: 1, ren: true, torst: DRYCK.svagVarde, alkohol: 0.05, stat: 'drack_svagdricka' } }, // bryggs av malt i karet (steg 10.7.24, brygg.ts): mot törsten på dagen
+  mjod: { namn: 'Mjöd', farg: 0xd8b25f, i: ['lerkruka_stor', 'tunna'], haller: 20, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.mjodKvall, alkohol: 0.3, stat: 'drack_mjod' } }, // honungen som jäst i karet (steg 10.7.25, brygg.ts)
   sprit: { namn: 'Sprit', farg: 0xdad0bb, i: ['lerkruka_liten'], dryck: { slacker: DRYCK.spritSlacker, kvall: DRYCK.spritKvall, alkohol: 0.7, stat: 'drack_sprit' }, sar: 'sprit' }, // bränd i brännpannan (steg 10.7.26, brygg.ts): håller hur länge som helst
   brannolja: { namn: 'Brännolja', farg: 0xd8b25f, i: ['oljelampa', 'lerkruka_liten'] }, // kokas i örtköket (steg 12.4.2, ljus.ts): står i oljelampan eller i en liten kruka
   sno: { namn: 'Snö', farg: 0xdad0bb, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] }, // snön som smälts i en kruka vid elden (steg 10.2.50, torst.ts): blir vatten // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
@@ -86,10 +86,10 @@ export const VATSKOR = {
 export type VatskaId = keyof typeof VATSKOR;
 export const ar_vatska = (k: string): k is VatskaId => k in VATSKOR;
 // så mycket en behållare rymmer: krukans storlek (KRUKOR), annars en del (säcken och asken)
-export const karRymmer = (t: Ting) => krukaAv(t.k)?.rymmer ?? 1;
-const behallare = (t: Ting) => t.k === 'vattensack' || t.k === 'naverask' || t.k === 'oljelampa' || !!krukaAv(t.k); // oljelampan rymmer en brännolja (steg 12.4.2)
+export const karRymmer = (t: Ting) => krukaAv(t.k)?.rymmer ?? (t.k === 'tunna' ? TUNNA.rymmer : 1); // tunnan (steg 12.4.6)
+const behallare = (t: Ting) => t.k === 'vattensack' || t.k === 'naverask' || t.k === 'oljelampa' || t.k === 'tunna' || !!krukaAv(t.k); // oljelampan rymmer en brännolja (steg 12.4.2)
 // en ledig behållare som passar vätskan v: tom, färdig (inte en kruka som torkar) och inte i någons hand
-export const ledigaFor = (s: State, v: VatskaId) => tingOf(s).filter(t => behallare(t) && !t.inne && !t.vaxt && !t.kok && t.ler === undefined && ingenHar(t) && (VATSKOR[v].i as string[]).includes(t.k)).sort((a, b) => karRymmer(a) - karRymmer(b) || a.id - b.id); // minst först
+export const ledigaFor = (s: State, v: VatskaId) => tingOf(s).filter(t => behallare(t) && !t.inne && !t.vaxt && !t.kok && t.ler === undefined && ingenHar(t) && (VATSKOR[v].i as string[]).includes(t.k)).sort((a, b) => mognarI(v, b.k) - mognarI(v, a.k) || karRymmer(a) - karRymmer(b) || a.id - b.id); // där drycken mognar först (tunnan, steg 12.4.6), sedan minst först
 export const ledigFor = (s: State, v: VatskaId) => ledigaFor(s, v)[0];
 // hur mycket av vätskan byn har, i alla behållare
 // kyrkans krukor (steg 10.3.23): ingen annan dricker ur dem
@@ -201,6 +201,7 @@ import { mattnad, naringOf } from './naring';
 // vinet och ölet för berusningen (rus.ts, steg 9.6.14)
 alkoholKrok.finns = (s, v) => !!medVatska(s, v);
 alkoholKrok.ta = (s, v) => taVatska(s, v, 1) > 0;
+alkoholKrok.kv = (s, v) => medVatska(s, v)?.inne?.q ?? 2; // kvaliteten i behållaren som det tas ur först (mognaden, tunna.ts)
 alkoholKrok.alkohol = v => dryckAv(v)?.alkohol ?? 0;
 alkoholKrok.namn = v => VATSKOR[v].namn;
 alkoholKrok.drycker = () => DRYCKER.filter(k => dryckAv(k)!.alkohol);
@@ -215,3 +216,4 @@ export function fyllLampa(s: State, p: Person, tk: { ref?: number }) {
   if (forstaGang(s, 'lampaFylldForsta')) log(s, `${p.name} fyllde oljelampan med brännolja igen.`, 'world', [p.id]);
 }
 import { LJUSSORTER, ljusSort } from './ljus';
+import { TUNNA, mognarI } from './tunna';

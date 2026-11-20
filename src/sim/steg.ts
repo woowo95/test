@@ -603,6 +603,8 @@ export const TAKTER: Takt[] = [
   { namn: 'flytt och nybyggare', sek: 60, fn: (s, dt) => { if (!s.people.some(alive)) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world'); regulate(s, dt); } },
   { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
   { namn: 'ängen i vägen', sek: 3600, fn: s => { angIVagen(s); } }, // ängen som byn eller ett stråk når flyttas (slatter.ts, steg 10.10.28); sist, så att de andra radernas förskjutning är som förut
+  { namn: 'tunnorna', sek: 600, fn: (s, dt) => tunnaRegn(s, dt) }, // regnet fyller tunnorna ute (tunna.ts, steg 12.4.6)
+  { namn: 'mognaden', sek: 3600, fn: s => mognadSteg(s) }, // vinet och mjödet mognar (tunna.ts, steg 12.4.6)
   { namn: 'vattenhon', sek: 600, fn: (s, dt) => hoRegn(s, dt) }, // regnet fyller vattenhon (vattenho.ts, steg 10.10.30)
   { namn: 'djurens törst', sek: 600, fn: (s, dt) => djurTorstSteg(s, dt) }, // tamdjuren dricker (djurtorst.ts, steg 10.10.31)
   { namn: 'djuren flyr', sek: 0, fn: (s, dt) => tamFaraSteg(s, dt) }, // tamdjuren flyr från bina, elden och vargarna efter sitt mod (djurflykt.ts, steg 10.10.29)
@@ -1771,3 +1773,6 @@ import { tatKlar } from './tatuering';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
 import { baddVila, bredvidKaresta, sittVila, sattaKlar } from './mobler';
+import { mognadSteg, mognadVarde, tunnaRegn } from './tunna';
+import { vardeKrok } from './varde';
+vardeKrok.inne = mognadVarde; // en mognad dryck är värd mer (steg 12.4.6): tunna.ts läses före varde.ts

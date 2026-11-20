@@ -37,3 +37,4 @@
 - 12.4.3 (sängen): en familj med något över byter halmbädden mot en säng (projektet sang, Hemmen blir finare); sängen vilar mer. Läs i Balansen om sängarna byggs och vad de kostar byarna.
 - 12.4.4 (pallen och stolen): byar med en snickarbänk och familjer med något över gör pallar och stolar till borden hemma (gruppen sate i REDSKAPMAL, projektet satta); den som sitter bättre vilar mer och är gladare av måltiden.
 - 12.4.5 (vaggan): spädbarnen sover i en vagga i rummet där föräldern sover, när familjen byggt en (boende i byggnader.ts). Att föräldern arbetar med fria händer finns inget system för ännu (ingen bär spädbarnet i spelet), så det ändrar inget.
+- 12.4.6 (tunnan): vinets mognad flyttade från vinKvalitet (brygg.ts, som inget läste) till MOGNAD i tunna.ts, och den används nu: ett mognat vin eller mjöd ger en bättre tanke och ett högre värde (tingVarde räknar det mognade i behållaren). Byn vill ha en tunna per bryggkar. Ändrar rikedomen i byar med vin.

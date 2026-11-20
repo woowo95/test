@@ -164,6 +164,7 @@ const DEF = {
   pall: { var: 'sak', av: { plankor: 1 }, min: 5, slag: 'stor', tek: 'snickarbank', bank: 'snickarbank', bara: true }, // pallen (steg 12.4.4): en sittplats vid bordet, bättre än stubben
   stol: { var: 'sak', av: { plankor: 2, skinn: 1, ull: 1 }, min: 12, slag: 'station', tek: 'stol', bank: 'snickarbank', bara: true }, // stolen: en pall med ryggstöd och dyna av skinn och ull
   vagga: { var: 'station', av: { plankor: 2, ull: 1 }, min: 10 }, // vaggan (steg 12.4.5): en låg låda av plankor på medar, med en bädd av ull
+  tunna: { var: 'sak', av: { plankor: 3, rep: 1 }, min: 5, slag: 'stor', tek: 'laggkar', bank: 'snickarbank', bara: true }, // tunnan (steg 12.4.6, tunna.ts): laggad av plankor och bunden med rep
   oljelampa: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'oljelampa', bank: 'drejskiva' }, // oljelampan (steg 12.4.2): formas av lera som krukan, torkar och bränns
   // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
   jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },

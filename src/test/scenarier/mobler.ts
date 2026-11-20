@@ -179,3 +179,45 @@ SCENARIER.vagga = {
     ];
   },
 };
+
+SCENARIER.tunna = {
+  text: 'Tunnan (steg 12.4.6, tunna.ts): ett laggat kärl från snickarbänken (3 plankor och 1 rep, 5 minuter, tekniken Laggkärl) som rymmer 20 delar vin, mjöd, öl, svagdricka eller vatten; vinet når den högsta kvaliteten i tunnan efter 25 dygn och stannar ett steg under i krukan, mjödet mognar bara i tunnan, en mognare dryck ger en bättre tanke och ett högre värde, och en tunna ute fylls av regnet',
+  kor: () => {
+    const R = SIM.RECEPT.tunna as SIM.ReceptRad, tek = SIM.TEKNIK.find(t => t.id === 'laggkar');
+    const s = SIM.createState(1, START), p = vuxen(s);
+    klockan(s, 12);
+    const tunna = SIM.addTool(s, 'tunna', p), kruka = SIM.addTool(s, 'lerkruka_stor', p); tunna.hos = kruka.hos = undefined;
+    const forst = SIM.ledigFor(s, 'vin') === tunna;
+    SIM.fyllVatska(s, 'vin', 25, tunna); SIM.fyllVatska(s, 'vin', 25, kruka);
+    const rymmer = tunna.inne?.n === 20 && kruka.inne?.n === 10;
+    const v0 = SIM.tingVarde(tunna);
+    s.now += 16 * SIM.DAY; SIM.mognadSteg(s);
+    const t16 = tunna.inne?.q, k16 = kruka.inne?.q;
+    s.now += 10 * SIM.DAY; SIM.mognadSteg(s);
+    const t26 = tunna.inne?.q, k26 = kruka.inne?.q, v26 = SIM.tingVarde(tunna);
+    // mjödet mognar bara i tunnan
+    const t2 = SIM.addTool(s, 'tunna', p), k2 = SIM.addTool(s, 'lerkruka_stor', p);
+    SIM.fyllVatska(s, 'mjod', 5, t2); SIM.fyllVatska(s, 'mjod', 5, k2);
+    s.now += 16 * SIM.DAY; SIM.mognadSteg(s);
+    const mjodT = t2.inne?.q, mjodK = k2.inne?.q ?? 2;
+    // tanken av att dricka ett mognat vin mot ett ungt
+    const ung = SIM.cloneState(s), pu = SIM.living(ung).find(q => q.id === p.id)!;
+    for (const t of SIM.tingOf(ung)) if (t.inne?.v === 'vin') t.inne.q = 2;
+    SIM.drickAlkohol(s, p, 'vin'); SIM.drickAlkohol(ung, pu, 'vin');
+    const glad = p.thoughts.find(t => t.text === 'Drack vin')?.v ?? 0, gladUng = pu.thoughts.find(t => t.text === 'Drack vin')?.v ?? 0;
+    // regnet fyller en tom tunna som står ute
+    const t3 = SIM.addTool(s, 'tunna', p), c = SIM.bynsMitt(s); t3.hos = undefined; t3.x = c.x + 6; t3.y = c.y + 6;
+    for (let i = 0; i < 24 * 60 && !(SIM.vaderNu(s).nb > 0.3 && !SIM.vaderNu(s).sno); i++) s.now += SIM.HOUR; // en tid då det regnar
+    const ute = !SIM.roofed(s, t3.x, t3.y);
+    for (let i = 0; i < 6; i++) SIM.tunnaRegn(s, 600);
+    const regn = t3.inne?.v === 'vatten' ? t3.inne.n : 0;
+    return [
+      [`tunnan görs av ${JSON.stringify(R.av)} på ${R.min} minuter bara vid snickarbänken, med tekniken ${tek?.namn} (kräver ${tek?.krav})`, R.av?.plankor === 3 && R.av?.rep === 1 && R.min === 5 && R.bank === 'snickarbank' && !!R.bara && !!tek && tek.krav.includes('snickarbank') && tek.krav.includes('bryggkar')],
+      [`vinet hälls i tunnan först, och den rymmer 20 delar`, forst && rymmer && ['vin', 'mjod', 'ol', 'svagdricka', 'vatten'].every(v => (SIM.VATSKOR[v as SIM.VatskaId].i as string[]).includes('tunna'))],
+      [`vinet efter 16 dygn: ${t16} i tunnan och ${k16} i krukan; efter 26: ${t26} och ${k26}`, t16 === 4 && k16 === 4 && t26 === 5 && k26 === 4],
+      [`mjödet efter 16 dygn: ${mjodT} i tunnan och ${mjodK} i krukan`, mjodT === 4 && mjodK === 2],
+      [`ett mognat vin ger en bättre tanke (${glad.toFixed(3)} mot ${gladUng.toFixed(3)}) och ett högre värde (${v0.toFixed(1)} → ${v26.toFixed(1)})`, glad > gladUng && v26 > v0],
+      [`regnet fyller en tom tunna ute (${regn} vatten på en timme)`, ute && regn >= 1],
+    ];
+  },
+};

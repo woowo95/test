@@ -101,7 +101,9 @@ export function kartVarde(k: { platser?: { nr: number; v: number }[]; q?: number
   for (const x of k.platser ?? []) if (!kanner || (kanner(x.nr) ?? -1) < x.v) v += x.v >= 1 ? VARDE.kartKand : VARDE.kartRykte;
   return v * kvVarde(k);
 }
-export const tingVarde = (t: Ting) => t.skrift?.platser ? kartVarde(t.skrift) * t.c : t.halv ? varuVarde(t.halv.av) : grundvarde(t.k) * t.c * kvVarde(t) * (t.ber?.mo ? 1 + VARDE.konst : 1);
+// det som ligger i tinget och är värt något utöver det (vinet som mognat, tunna.ts, steg 12.4.6), satt där (filen läses efter den här)
+export const vardeKrok = { inne: (_t: Ting) => 0 };
+export const tingVarde = (t: Ting) => (t.skrift?.platser ? kartVarde(t.skrift) * t.c : t.halv ? varuVarde(t.halv.av) : grundvarde(t.k) * t.c * kvVarde(t) * (t.ber?.mo ? 1 + VARDE.konst : 1)) + (t.inne ? vardeKrok.inne(t) : 0);
 export function rikedomDelar(s: State): Rikedom {
   let forrad = 0, redskap = 0, hus = 0;
   for (const k of SAK_LIST) if (!SAKER[k]!.redskap) forrad += wornOf(s, k) * grundvarde(k);

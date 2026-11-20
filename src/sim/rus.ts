@@ -12,8 +12,9 @@ type VatskaId = import('./vatskor').VatskaId;
 // vätskorna i krukorna (vatskor.ts sätter kroken, så att den här filen inte laddar vatskor.ts och halsa.ts i en ring)
 // alkohol = hur mycket rus en del ger, drycker = dryckerna med alkohol och kvall = den p helst tar på kvällen (raderna i VATSKOR, steg 10.7.23)
 export const alkoholKrok = {
-  finns: (_s: State, _v: VatskaId) => false, ta: (_s: State, _v: VatskaId) => false, alkohol: (_v: VatskaId) => 0, namn: (_v: VatskaId) => '',
-  drycker: (): VatskaId[] => [], kvall: (_s: State, _p: Person): VatskaId | undefined => undefined,
+  finns: (_s: State, _v: VatskaId) => false, ta: (_s: State, _v: VatskaId) => false, kv: (_s: State, _v: VatskaId) => 2, alkohol: (_v: VatskaId) => 0, namn: (_v: VatskaId) => '',
+  drycker: (): VatskaId[] => [], // kv = kvaliteten på drycken som tas (mognaden, tunna.ts, steg 12.4.6)
+  kvall: (_s: State, _p: Person): VatskaId | undefined => undefined,
 };
 
 export const RUS = balans('rus', {
@@ -45,10 +46,11 @@ export const rusTraff = (p: Person) => RUS.traff * rusAv(p);
 // följer p budet Inget rus nu (steg 10.3.22): då tas ingen dryck med alkohol (vatskor.ts)
 export const ingetRus = (s: State, p: Person) => budHindrar(s, p, 'ingetRus');
 export function drickAlkohol(s: State, p: Person, v: VatskaId, tagen = false) { // tagen: drycken är redan tagen ur sin kruka (kyrkans öl, steg 10.3.23)
+  const kv = tagen ? 2 : alkoholKrok.kv(s, v); // ett mognat vin eller mjöd är godare (steg 12.4.6)
   if (!tagen && !alkoholKrok.ta(s, v)) return false;
   const a = alkoholKrok.alkohol(v), namn = alkoholKrok.namn(v).toLowerCase();
   p.rus = clamp(rusAv(p) + a, 0, 2); p.supit = (p.supit ?? 0) + a;
-  if (a >= RUS.kanns) think(p, 'Drack ' + namn, RUS.glad, s.now, RUS.gladTim * HOUR); // svagdrickan känns inte (steg 10.7.24)
+  if (a >= RUS.kanns) think(p, 'Drack ' + namn, RUS.glad * (1 + TUNNA.mognGlad * Math.max(0, kv - 2)), s.now, RUS.gladTim * HOUR); // svagdrickan känns inte (steg 10.7.24)
   count(s, 'drack_' + v);
   if (forstaGang(s, 'alkohol')) log(s, `${p.name} drack byns första ${namn} vid elden.`, 'world', [p.id]);
   return true;
@@ -86,3 +88,4 @@ export function supa(s: State, p: Person) {
   if (budHindrar(s, p, 'ingetRus') && kanSupa(s)) budBrutet(s, p, 'ingetRus'); // utbrottet går före budet (steg 10.3.22)
   for (let i = 0; i < RUS.supa; i++) { const v = starkast(s); if (!v) break; drickAlkohol(s, p, v); }
 }
+import { TUNNA } from './tunna';

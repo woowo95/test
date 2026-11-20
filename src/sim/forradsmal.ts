@@ -260,6 +260,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   fackla: () => 1, // en, den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
   sate: s => finareKrok.sate(s), // pallar och stolar till de platser vid borden hemma som familjen har råd att göra finare (steg 12.4.4, mobler.ts)
+  tunna: s => stationerOf(s).filter(t => t.k === 'bryggkar').length, // en tunna till varje bryggkar, där satsen mognar (steg 12.4.6, tunna.ts)
   oljelampa: s => ljusPlatser(s).length, // oljelampan till samma platser (steg 12.4.2): den blir kvar och fylls på
   slanda: () => 1, // en, dem som spinner, och en i vävstolen (steg 7.7.8)
   vattensack: () => 1, // en, den som inte kan gå (steg 2.10.1)
