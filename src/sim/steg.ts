@@ -350,7 +350,7 @@ KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
 KLAR.uppsatt = (s, p, t) => finishUppsatt(s, p, t);
 KLAR.flyttStation = s => { stationFlytta(s); }; // en station ute närmare dem som använder den (stationer.ts, steg 9.4.8)
-KLAR.bryta = stenBruten; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5)
+KLAR.bryta = (s, p, t) => { stenBruten(s, p, t); wearUsed(s, p, 1); }; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5), och järnhackan slits för varje sten (steg 12.5.4)
 KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, steg 9.4.10)
 KLAR.plockaMossa = mossaPlockad; // mossan läggs i en hög där den plockades (mossa.ts, steg 12.1.6)
 KLAR.malm = malmGravd; // malmen läggs i en hög där den grävdes (malm.ts, steg 12.1.2)

@@ -13,7 +13,7 @@ import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST, plaggVarmer } from './klader';
 import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
-import { GORS, ersattAv, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
+import { GORS, ersattAv, freeOfKinds, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
@@ -22,7 +22,7 @@ import { hageBrist, hageUppgift } from './hage';
 import { VINTER, angBrist, angUppgift } from './slatter';
 import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, skaGravas, skaRojas, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { fylldSack, freeTools, tingOf } from './agande';
-import { ACTS } from './handlingar';
+import { ACTS, redskapTal } from './handlingar';
 import { tileOf } from './mark';
 import { Recept, bynsDel, getable, saknatAv } from './behov';
 import { BUDGET, budgetAndel, budgetNu } from './budget';
@@ -250,7 +250,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     brist: s => { const n = materialBuffert(s, 'byggsten'); return n > 0 ? clamp(1 - (amountOf(s, 'byggsten') + (s.stackar ?? []).filter(q => q.k === 'byggsten').reduce((a, q) => a + q.n, 0)) / n, 0, 1) : 0; },
     kostnad: () => grundvarde('byggsten'),
     kan: (s, p) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'byggsten') && enTill(s, 'bryta', p) && !!bergPlats(s),
-    uppgift: s => { const at = bergPlats(s); return at && { act: 'bryta', text: 'Bryter en byggsten vid berget.', min: BYGGSTEN.min, spot: at }; },
+    uppgift: (s, p) => { const at = bergPlats(s), h = freeOfKinds(s, p, ['jarnhacka']); return at && { act: 'bryta', text: h ? 'Bryter en byggsten med hackan vid berget.' : 'Bryter en byggsten vid berget.', min: BYGGSTEN.min / redskapTal('bryta', h).fart, tool: h, spot: at }; }, // med järnhackan tre gånger så fort (steg 12.5.4)
   },
   // leran (steg 9.4.10, lera.ts): en tur vid stranden när förrådet saknar den byn gör av med
   lera: {

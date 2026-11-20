@@ -904,3 +904,32 @@ SCENARIER.jarnnal = {
     ];
   },
 };
+
+SCENARIER.hacka = {
+  text: 'Järnhackan (steg 12.5.4): ett redskap från smedjan (2 järn och 1 grenar, 5 minuter) som bryter byggsten tre gånger så fort; utan hacka bryts stenen som förut',
+  kor: () => {
+    const R = SIM.RECEPT.jarnhacka;
+    const uppgift = (hacka: boolean) => {
+      const s = SIM.createState(3, START); klockan(s, 8);
+      const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+      p.tek = { ...p.tek, byggsten: 1, smedja: 1 };
+      if (hacka) SIM.addTool(s, 'jarnhacka', p);
+      return { s, p, u: SIM.PROJEKT.byggsten!.uppgift(s, p) };
+    };
+    const utan = uppgift(false), med = uppgift(true);
+    SIM.STENBEHOV.scenario = () => 2;
+    let vill = 0;
+    try { vill = SIM.villAv(med.s, 'jarnhacka'); } finally { delete SIM.STENBEHOV.scenario; }
+    // hackan slits för varje sten
+    const t = SIM.tingOf(med.s).find(q => q.k === 'jarnhacka')!, c0 = t.c;
+    med.p.task = { act: 'bryta', phase: 'do', tx: med.p.x, ty: med.p.y, until: med.s.now, carry: 0, why: '', tool: 'jarnhacka' } as SIM.Task;
+    SIM.KLAR_FOR.bryta!(med.s, med.p, med.p.task, 0); med.p.task = undefined;
+    return [
+      [`järnhackan: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan, och den kräver Byggsten`, R.av.jarn === 2 && R.av.grenar === 1 && R.min === 5 && R.tek === 'smedja' && SIM.JARNSAKER.jarnhacka?.tek === 'byggsten'],
+      [`utan hacka bryts stenen som förut (${utan.u?.min} min, ${utan.u?.tool ?? 'inget redskap'})`, utan.u?.act === 'bryta' && utan.u.min === SIM.BYGGSTEN.min && !utan.u.tool],
+      [`med hackan tre gånger så fort (${med.u?.min?.toFixed(2)} min, ${med.u?.tool})`, med.u?.tool === 'jarnhacka' && Math.abs(SIM.BYGGSTEN.min / med.u.min! - 3) < 1e-9],
+      [`byn vill ha en hacka när den planerat något av sten och kan smida (${vill})`, vill === 1],
+      [`hackan slits för varje sten (${c0.toFixed(4)} till ${t.c.toFixed(4)}) och håller ${SIM.ACTS.bryta.redskap!.jarnhacka.haller} stenar`, t.c < c0 && SIM.ACTS.bryta.redskap!.jarnhacka.haller === 150],
+    ];
+  },
+};

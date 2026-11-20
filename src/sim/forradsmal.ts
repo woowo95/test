@@ -237,6 +237,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
   eldstal: s => living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // ett eldstål när någon kan smida (steg 12.2.12)
   ullsax: s => tamdjurOf(s).some(d => !!tamArt(d.art).ull) && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en ullsax när byn har får och någon kan smida (steg 12.5.2)
+  jarnhacka: s => stenTillPlan(s) > 0 && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en järnhacka när byn planerat något av sten och någon kan smida (steg 12.5.4)
   sag: s => tommaPlatser(s, 'sag'), // en såg vid varje klyvplats som saknar en (steg 12.5.1)
   isborr: s => (s.is?.cm ?? 0) > 0 && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en isborr när isen ligger (steg 12.2.11)
   spanne: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // spännet av järn som halsbandet (steg 12.2.10)

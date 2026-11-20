@@ -169,6 +169,7 @@ const DEF = {
   eldstal: { var: 'sak', av: { jarn: 1 }, min: 3, slag: 'liten', tek: 'smedja' }, // steg 12.2.12
   ullsax: { var: 'sak', av: { jarn: 1 }, min: 3, slag: 'liten', tek: 'smedja' }, // steg 12.5.2
   jarnnal: { var: 'sak', av: { jarn: 1 }, ger: 2, min: 3, slag: 'liten', tek: 'smedja' }, // 1 järn ger 2 nålar (steg 12.5.3)
+  jarnhacka: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' }, // steg 12.5.4
   sag: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // handsågen (steg 12.5.1): ligger vid klyvplatsen
   svard: { var: 'sak', av: { jarn: 3, lader: 1 }, min: 5, slag: 'stor', tek: 'vapensmide' }, // byns första rena vapen (steg 12.2.9)
   jarnspjut: { var: 'sak', av: { jarn: 1, grenar: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // smids (steg 12.2.8)
