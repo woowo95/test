@@ -869,6 +869,7 @@ function ringUte(s: SIM.State) {
 
 SCENARIER.skogsrojning = {
   text: 'Steg 3.6.9: en lagerplats och ett fält kan ligga i skogen. Träden där står kvar tills någon med yxa fäller dem, före andra träd, och de blir trä; inget läggs på en ruta där ett träd står och ingen ruta röjs under ett träd',
+  lang: true,
   kor: () => {
     const s = createState(9, START);
     tandEld(s); klockan(s, 9);
@@ -896,14 +897,18 @@ SCENARIER.skogsrojning = {
     const forst = treeSpot(s, new Set(), p), forstOk = !!forst && SIM.skaRojas(s).includes(tileOf(forst.x, forst.y));
     // byn har mat, så att den med yxa inte måste jaga för egen räkning (det prövas inte här)
     put(s, 'bar', 150);
-    kor(s, 48);
+    // bristen följer det som är kvar (steg 12.1.174): de flesta träden fälls först, de sista när de väger mer än annat
+    kor(s, 12);
+    const kvar12 = [...lagerRutor, ...faltRutor].filter(i => g.trees[i] >= FOREST).length;
+    kor(s, 60);
     const kvar = [...lagerRutor, ...faltRutor].filter(i => g.trees[i] >= FOREST).length;
     const tra = SIM.stocks(s).length + amountOf(s, 'ved');
     return [
       [`inget läggs i lagret där träden står (${underTrad ? 'lades under ett träd' : 'bredvid'})`, !underTrad],
       ['ägaren röjer inte fältet under träden', vantar && orord],
       [`den med yxa fäller först ett träd i lagret eller på fältet`, forstOk],
-      [`efter 48 timmar (två dygn, två år i spelet) är träden fällda (${kvar} av 8 kvar) och har blivit trä (${Math.round(tra)} trä och stammar)`, kvar <= 2 && tra > 0],
+      [`efter 12 timmar är de flesta träden fällda (${kvar12} av 8 kvar)`, kvar12 <= 4],
+      [`efter 72 timmar (tre dygn, tre år i spelet) är träden fällda (${kvar} av 8 kvar) och har blivit trä (${Math.round(tra)} trä och stammar)`, kvar <= 1 && tra > 0],
     ];
   },
 };

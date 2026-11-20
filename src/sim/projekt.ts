@@ -20,7 +20,7 @@ import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './b
 import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
 import { hageBrist, hageUppgift } from './hage';
 import { VINTER, angBrist, angUppgift } from './slatter';
-import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, skaGravas, skaRojas, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
+import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, rojBrist, stubbBrist, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { fylldSack, freeTools, tingOf } from './agande';
 import { ACTS } from './handlingar';
 import { tileOf } from './mark';
@@ -271,7 +271,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
   rojning: {
     namn: 'Röjning', vikt: PROJEKT_TAL.rojning,
-    brist: s => skaRojas(s).length ? 1 : 0,
+    brist: s => rojBrist(s), // hur stor del som är kvar att röja (steg 12.1.174)
     kostnad: () => SKOG.fallTim * ARBETE,
     kan: (s, p) => freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p),
     uppgift: (s, p) => { const o = overHusUppgift(s, p); if (o) return o; const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager, fält eller ett stråk.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
@@ -279,7 +279,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   // stubbarna där något ska stå grävs bort först (steg 6.5.7, skog.ts)
   stubbe: {
     namn: 'Gräva bort stubbar', vikt: PROJEKT_TAL.stubbe,
-    brist: s => skaGravas(s).length ? 1 : 0,
+    brist: s => stubbBrist(s), // hur stor del som är kvar att gräva bort (steg 12.1.174)
     kostnad: () => SKOG.stubbeMin / 60 * ARBETE,
     kan: (s, p) => !!stubbeSpot(s, p),
     uppgift: (s, p) => stubbeUppgift(s, p),
