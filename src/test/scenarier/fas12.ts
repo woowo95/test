@@ -900,3 +900,53 @@ SCENARIER.barnslagsmal = {
     ];
   },
 };
+
+// steg 12.1.48: byn köper så många som den tar emot innan det blir över, och handelns ord stämmer
+SCENARIER.handelretur = {
+  text: 'Handeln köper det byn vill ha (steg 12.1.48): byn köper av en sak den saknar bara så många som den tar emot innan det blir över, så att det just köpta inte säljs tillbaka, och handelns text har rätt artikel och flertal och måltidens nivå som ett ord',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const M = SIM.bynPart(s, SIM.eldPlats(s).x, SIM.eldPlats(s).y);
+    const slag = ['rovfron', 'artfron', 'appelplanta', 'jordgubbsplanta', 'rep', 'salt', 'bar', 'rotter', 'ved'].filter(k => SIM.SAKER[k]);
+    const fel: string[] = [], kop: string[] = [];
+    for (const k of slag) {
+      SIM.setAmount(s, k, 0);
+      const n = Math.min(20, SIM.bynKopAntal(s, k)); // handlaren har 20
+      SIM.setAmount(s, k, n);
+      const over = M.over(['silver']).find(w => w.k === k)?.n ?? 0;
+      kop.push(`${k} ${n}`);
+      if (n < 1 || over > 0) fel.push(`${k}: köper ${n}, sedan över ${over}`);
+    }
+    const ratt = Object.keys(SIM.SAKER).find(k => SIM.SAKER[k]?.namn.endsWith(' · Fin'))!;
+    const ord = SIM.varorText([{ k: 'jordgubbsplanta', n: 1 }, { k: 'appelplanta', n: 1 }, { k: 'remsa', n: 4 }, { k: 'rokelse', n: 2 }, { k: ratt, n: 7 }]);
+    return [
+      [`det köpta är inte över efteråt (${kop.join(', ')})${fel.length ? `: ${fel.join('; ')}` : ''}`, !fel.length],
+      [`orden: "${ord}"`, ord.includes('en jordgubbsplanta') && ord.includes('en äppelplanta') && ord.includes('fyra remsor') && ord.includes('två bitar rökelse') && /sju portioner fin \S+/.test(ord) && !ord.includes('·')],
+    ];
+  },
+};
+
+// steg 12.1.49: det som flyttas till en bättre lagerplats läggs bara där, och redskapet som tagits upp bärs till förrådet
+SCENARIER.barretur = {
+  text: 'Det som bärs i onödan (steg 12.1.49): ved som flyttas ur en lagerplats bärs till en bättre lagerplats bara om den har plats, räknat som när flytten valdes, annars läggs den tillbaka där den låg; den som tagit upp ett redskap bär det till förrådet',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const z0 = SIM.zonesOf(s)[0];
+    s.lagren = [{ x: z0.x, y: z0.y, w: 2, h: 1, namn: 'Nära', prio: 1 }, { x: z0.x, y: z0.y + 1, w: 2, h: 1, namn: 'Längre bort', prio: 0 }];
+    s.stackar = [];
+    const t = { act: 'bara', phase: 'do', tx: z0.x + 0.5, ty: z0.y + 1.5, until: s.now, carry: 0, why: '', items: { ved: 5 } } as unknown as SIM.Task;
+    const tom = SIM.backSpot(s, t);
+    // den bättre lagerplatsen fylls med något annat: veden läggs tillbaka där den låg
+    for (let x = z0.x; x < z0.x + 2; x++) SIM.stacksOf(s).push({ k: 'sten', n: SIM.rymd(s, x, z0.y, 'sten'), c: 1, x, y: z0.y });
+    const full = SIM.backSpot(s, t);
+    // redskapet: den som bara bär en yxa hem går ändå tillbaka, och lägger den i förrådet
+    const p = SIM.living(s)[0], yxa = SIM.newTing(s, 'yxa', 1, 0);
+    yxa.x = yxa.y = undefined; yxa.lass = p.id;
+    const r = { act: 'bara', phase: 'do', tx: z0.x + 8.5, ty: z0.y + 8.5, until: s.now, carry: 0, why: '', ting: [yxa.id] } as unknown as SIM.Task;
+    return [
+      [`med plats i den bättre lagerplatsen bärs veden dit (${tom.x}, ${tom.y})`, Math.floor(tom.y) === z0.y],
+      [`när den är full läggs veden tillbaka där den låg (${full.x}, ${full.y})`, full.x === z0.x + 0.5 && full.y === z0.y + 1.5],
+      ['den som bär ett redskap går tillbaka med det', SIM.barHem(r) && !SIM.isCarrying(r)],
+    ];
+  },
+};

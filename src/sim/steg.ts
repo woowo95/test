@@ -49,7 +49,7 @@ import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
-import { iHelaForradet, stacksOf, isStored, capacity, mayTake, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
+import { iHelaForradet, stacksOf, isStored, capacity, mayTake, avbryt, backSpot, barHem, bordSlag, carryKind, fetchSpot, helaIBordan, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -811,7 +811,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const tf = t?.act === 'tanda' ? eldById(s, t.ref) : undefined, lightDone = t?.act === 'tanda' && (!tf || tf.lit || !t.brand && !t.vanda && !(t.phase === 'do' ? iRackhall(p.x, p.y, () => canLight(s, p, tf)) : iHelaForradet(() => canLight(s, p, tf), t.site ?? { x: t.tx, y: t.ty }))); // framme: det hen bär och når, som försöken (steg 11.1.75); på väg efter mer: också det som redan ligger vid eldplatsen
     const mustGo = t && p.toa < KROPP.toaAvbryt && !ACTS[t.act].nodFri && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
-      if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
+      if (t && barHem(t) && t.act !== 'elda') { t.phase = 'back'; const d = backSpot(s, t); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); } // samma lagerplatser som när flytten valdes, och redskapet läggs tillbaka (steg 12.1.49)
       else if (!(t?.med !== undefined && t.phase === 'do' && !phaseFlip && !mustGo && t.until <= now && skiljsAt(s, p))) chooseTask(s, p); // efter samtalet går man isär en bit (steg 4.5.6.7)
     }
     if (spar.pa) sparaUppgift(p, now); // (bara för att visa)
