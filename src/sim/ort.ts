@@ -254,7 +254,9 @@ export function sparaHistorik(s: State) {
     const h = r.hist ??= [], sist = h[h.length - 1];
     if (sist?.borta) continue; // en by som gått under ändras inte mer
     if (sist && Math.floor(r.t / steg) <= Math.floor(sist.t / steg)) continue;
-    h.push(radBild(r));
+    const b = radBild(r);
+    if (!sist && b.borta) { if (!h.length) delete r.hist; continue; } // ett läger som kom och gick mellan två bilder finns inte i någon
+    h.push(b);
     while (h.length > ORT.histMax) {
       let bast = 1, min = Infinity;
       for (let i = 1; i < h.length - 1; i++) { const v = (h[i + 1]!.t - h[i - 1]!.t) / Math.max(1, r.t - h[i]!.t); if (v < min) { min = v; bast = i; } }

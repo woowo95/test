@@ -34,6 +34,7 @@ import { foderFor, tamdjurOf } from './tamdjur';
 import { ortSattaVal } from './kruka';
 import { BRYGD, BRYGG, bryggVal } from './brygg';
 import { SKRIFT } from './skriftTal';
+import { resaHamtas } from './resa';
 
 export interface Hamtas { av: (s: State, p: Person, tk: Task) => Record<string, number> | undefined; byns?: boolean; fran?: (s: State, p: Person, tk: Task) => Fran } // fran = den som äger det (en tro, steg 10.3.19), för alla slag eller per slag
 // vems det som hämtas är: en ägare för allt, eller per slag en ägare och hur många av dem som är hens (resten tas som vanligt)
@@ -98,6 +99,9 @@ HAMTAS.tanda = { av: (s, p, tk) => tandHamtas(s, p, tk), byns: true };
 
 // måltiden vid bordet (val.ts, steg 11.1.77): en portion av den första maten hen får ta, bärd till bordet
 HAMTAS.maltid = { av: (s, p) => { const k = FOOD.find(q => mayTake(s, p, q) >= 1); return k ? { [k]: 1 } : undefined; } };
+
+// packningen till resan (resa.ts, steg 12.1.8): resenärens del, buren till samlingsplatsen
+HAMTAS.resa = { av: resaHamtas, byns: true };
 
 // ritualen (kult.ts, steg 11.1.77): maten till måltiden och offret, ur kyrkans egendom vid högtiden
 HAMTAS.varda = { av: vardHamtas }; // förbandet och materialet till vården (halsa.ts)

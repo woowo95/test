@@ -2586,7 +2586,7 @@ SCENARIER.bjornjakt = {
       if (s.bjornFalld !== undefined) {
         falld++;
         if (!SIM.bjornarOf(s).length && !SIM.bjornarOf(s, s.now + 30 * HOUR * 0 + 2 * HOUR).length) borta++;
-        if (living(s).some(q => SIM.ryktbarhet(s, q.id) && (q.liv?.bjornar ?? 0) > 0)) dodare++;
+        if (s.people.some(q => (q.liv?.bjornar ?? 0) > 0)) dodare++; // också den som dog i striden efteråt
         const ute = SIM.pilesOf(s).reduce((a, h) => a + (h.k === 'bjorndel' ? h.n : 0), 0) + living(s).reduce((a, q) => a + (q.task?.items?.bjorndel ?? 0), 0) + amountOf(s, 'bjorndel');
         if (ute > 0) delar++;
         if (SIM.pilesOf(s).some(h => h.k === 'bjornskinn') || amountOf(s, 'bjornskinn') > 0) skinn++;
@@ -2599,7 +2599,7 @@ SCENARIER.bjornjakt = {
       [`jägarna når björnen och slåss, eller den går undan (${strider} strider, ${gick} gick undan, en björn kan först slåss och sedan gå undan)`, nadd === jakter && strider > 0],
       [`björnen fälls ibland (${falld} av ${strider})`, falld > 0],
       [`en fälld björn är borta resten av året (${borta} av ${falld})`, borta === falld],
-      [`den som fällde den är björndödare (${dodare} av ${falld}; den som fällde den kan själv ha dött i striden)`, dodare > 0 && dodare >= falld - 1],
+      [`den som fällde den är björndödare (${dodare} av ${falld}; en björn som förblöder har ingen som fällde den)`, dodare > 0 && dodare >= falld - 1],
       [`björnen styckas och bärs hem i delar (${delar} av ${falld})`, delar === falld],
       [`skinnet ligger i högen eller i förrådet (${skinn} av ${falld})`, skinn === falld],
     ];

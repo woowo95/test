@@ -13,7 +13,7 @@ import { TORST } from './torst';
 import { SAKER } from './saker';
 import { alive } from './folk';
 import { BYN } from './egendom';
-import { amountOf, laggIn, use } from './lager';
+import { amountOf, capacity, dropLoad, iHelaForradet, laggIn, load } from './lager';
 import { FOOD } from './saker';
 import { bynsMitt, utanforByn } from './omrade';
 import { blocked, freeNear } from './byggnad';
@@ -172,6 +172,7 @@ export interface Sallskap {
   hjalp?: 1; hjalpTim?: number; // uppdraget är att hjälpa en by, och timmarna sällskapet arbetat i den väckta byn (steg 11.13.23)
   insatser: Insats[];
   dagbok: [number, string, DagbokId?][]; // resans dagbok: tiden, texten och händelsens slag (steg 11.5.13)
+  att?: Record<string, number>; // det ledaren bestämt att packa, som resenärerna hämtar ur förrådet och bär till samlingsplatsen (steg 12.1.8)
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
   behov?: ResBehov; // mättnaden, vätskan och orken på vägen, för hela gruppen (steg 11.5.6)
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
@@ -266,7 +267,8 @@ export const ryttarFart = (d: Tamdjur) => FORDON.ridsadel!.fart.terrang * tamEg(
 export function barDjurAlla(s: State, sl: Sallskap, pack = sl.pack) {
   const rid = ridna(sl);
   const lass = sl.djur.filter(id => !rid.has(id)).map(id => barDjur(s, id)).sort((a, b) => b - a);
-  return lass.slice(0, Math.floor((pack.packsadel ?? 0) + 1e-9)).reduce((a, n) => a + n, 0);
+  const sadlar = Math.max(pack.packsadel ?? 0, pack === sl.pack ? sl.att?.packsadel ?? 0 : 0); // medan sällskapet packar: de sadlar ledaren bestämt (steg 12.1.8)
+  return lass.slice(0, Math.floor(sadlar + 1e-9)).reduce((a, n) => a + n, 0);
 }
 
 // har en resa som börjar t0 och tar dygn dygn en natt (klockan 19–7, som isLight)? En resa på tolv timmar eller mer har alltid det
@@ -348,10 +350,34 @@ export function utgang(s: State, sl: Sallskap): Utgang | undefined {
   for (let n = 0; n <= d; n++) { const x = c.x + sx * n, y = c.y + sy * n; if (utanforByn(s, x, y) >= 1 && !blocked(s, x, y)) { samla = { x, y }; break; } }
   return { samla: freeNear(s, samla.x, samla.y), kant: freeNear(s, c.x + sx * d, c.y + sy * d) };
 }
-// maten och fodret till packningen: den mat det finns mest av först, i hela saker, bokförd hos ägarna
-function taIPackning(s: State, sl: Sallskap, k: string, n: number, led?: Person) {
-  const ag = use(s, led, k, n);
-  for (const o in ag) { const m = Math.floor(ag[o] + 1e-9); if (m > 0) satsa(sl, o === String(BYN) ? 'by' : +o, k, m); }
+// maten och fodret till packningen: den mat det finns mest av först, i hela saker. Inget svävar (steg 11.1.74 och 12.1.8):
+// ledaren bestämmer vad som packas, och resenärerna hämtar det ur förrådet och bär det till samlingsplatsen (resaHamtas), där
+// det läggs i packningen bokfört hos ägarna (iPackningen)
+function taIPackning(_s: State, sl: Sallskap, k: string, n: number, _led?: Person) {
+  n = Math.floor(n + 1e-9);
+  if (n > 0) (sl.att ??= {})[k] = (sl.att[k] ?? 0) + n;
+}
+// det resenären p ska hämta till packningen: det som inte packats och som ingen annan i sällskapet redan bär, så mycket hen orkar
+export function resaHamtas(s: State, p: Person, tk: Task): Record<string, number> | undefined {
+  const sl = s.varld?.sallskap?.find(x => x.id === tk.ref);
+  if (sl?.skede !== 'packar' || !sl.att || !sl.medl.includes(p.id)) return undefined;
+  const bars: Record<string, number> = {};
+  for (const id of sl.medl) { const q = s.people.find(x => x.id === id); if (q && q !== p && q.task?.act === 'resa' && q.task.ref === sl.id) for (const k in q.task.items ?? {}) bars[k] = (bars[k] ?? 0) + q.task.items![k]!; }
+  let rum = capacity(s, p) - load(tk, s);
+  const ut: Record<string, number> = {};
+  for (const k in sl.att) {
+    const n = Math.min(Math.floor(sl.att[k]! - (sl.pack[k] ?? 0) - (bars[k] ?? 0) + 1e-9), Math.floor(rum / Math.max(1e-9, viktOf(k)) + 1e-9));
+    if (n >= 1) { ut[k] = n; rum -= n * viktOf(k); }
+  }
+  return Object.keys(ut).length ? ut : undefined;
+}
+// framme vid samlingsplatsen: det resenären bär läggs i packningen, bokfört hos ägarna
+function iPackningen(sl: Sallskap, tk: Task) {
+  for (const k in tk.items ?? {}) {
+    const ag = tk.ag?.[k] ?? {};
+    for (const o in ag) { const m = Math.floor(ag[o]! + 1e-9); if (m > 0) satsa(sl, +o === BYN ? 'by' : +o, k, m); }
+  }
+  tk.items = undefined; tk.ag = undefined;
 }
 // vikten av det ledaren tänkt sälja som finns i byn och inte lyfts med båda händerna (det bärs i händerna)
 const varorVikt = (s: State, sl: Sallskap) => (sl.varor ?? []).reduce((a, [k, n]) => a + (SAKER[k]?.lyft ? 0 : Math.min(n, Math.floor(amountOf(s, k) + 1e-9)) * viktOf(k)), 0);
@@ -419,7 +445,8 @@ export function borjaPacka(s: State, sl: Sallskap): boolean {
   if (pb.taltBehov > 0 && sl.by === s.varld?.huvud) (s.taltBehov = (s.taltBehov ?? []).filter(([t]) => t > s.now - DAY)).push([s.now, pb.taltBehov]); // det byn vill ha
   // varorna att sälja i den bärförmåga som blir över (steg 11.5.10)
   // det som lyfts med båda händerna bärs bara i händerna, aldrig på en packsadel (steg 11.11.3)
-  let rum = pb.bar - packVikt(sl), hander = sl.medl.length * RESA.hander;
+  const allt = { ...sl.pack }; for (const k in sl.att ?? {}) allt[k] = (allt[k] ?? 0) + sl.att![k]!; // det som packas räknas med
+  let rum = pb.bar - packVikt(sl, allt), hander = sl.medl.length * RESA.hander;
   for (const [k, n] of sl.varor ?? []) {
     const lyft = !!SAKER[k]?.lyft, m = Math.min(n, Math.floor(amountOf(s, k) + 1e-9), Math.floor(Math.min(rum, lyft ? hander : Infinity) / Math.max(1e-9, viktOf(k))));
     if (m > 0) { taIPackning(s, sl, k, m, led); rum -= m * viktOf(k); if (lyft) hander -= m * viktOf(k); }
@@ -446,17 +473,20 @@ export function resaSteg(s: State, p: Person, tk: Task) {
   if (!sl?.ut || !sl.medl.includes(p.id)) { tk.until = s.now; return; }
   if (sl.skede === 'samlas') { samlasSteg(s, sl, p); return; }
   if (sl.skede === 'packar') {
+    // det hen bar läggs i packningen, och finns mer att hämta går hen en vända till (MEDAN.resa i steg.ts hämtar först)
+    if (tk.items) { iPackningen(sl, tk); if (resaHamtas(s, p, tk)) { tk.hamtad = undefined; sl.vid = sl.vid!.filter(id => id !== p.id); return; } }
     if (!sl.vid!.includes(p.id)) sl.vid!.push(p.id);
     const kvar = sl.medl.filter(id => { const q = s.people.find(x => x.id === id); return q && alive(q) && !ute(q) && !sl.vid!.includes(id); });
-    if (kvar.length) return;
-    sl.skede = 'gar'; // alla är framme: djuren lastas och sällskapet går
+    if (kvar.length && !utanDeSomInteKom(s, sl, p, id => sl.vid!.includes(id), sl.packar ?? sl.borjan)) return;
+    sl.skede = 'gar'; sl.t = s.now; sl.att = undefined; // alla är framme: djuren lastas och sällskapet går
     for (const d of tamdjurOf(s)) if (sl.djur.includes(d.id)) { d.x = sl.ut.samla.x; d.y = sl.ut.samla.y; }
     for (const id of sl.medl) { const q = s.people.find(x => x.id === id); if (q?.task?.act === 'resa') { q.task.tx = sl.ut.kant.x; q.task.ty = sl.ut.kant.y; q.task.phase = 'go'; } }
     return;
   }
   if (sl.skede !== 'gar' || Math.hypot(p.x - sl.ut.kant.x, p.y - sl.ut.kant.y) > 1.5) return;
   gaBort(s, p);
-  if (sl.medl.every(id => { const q = s.people.find(x => x.id === id); return !q || !alive(q) || ute(q); })) {
+  const utanfor = (id: number) => { const q = s.people.find(x => x.id === id); return !q || !alive(q) || ute(q); };
+  if (sl.medl.every(utanfor) || utanDeSomInteKom(s, sl, p, id => { const q = s.people.find(x => x.id === id); return !!q && alive(q) && ute(q); }, sl.t)) {
     for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.dog === undefined) d.ute = s.now; // djuren följer med ut
     const hem = byPlats(s.varld!, sl.by), v = varldMark(s);
     sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0; sl.gang = 0;
@@ -602,11 +632,19 @@ export function ridBredvid(s: State, p: Person) {
   if (h) { h.x = p.x; h.y = p.y; }
 }
 // var tionde minut (TAKTER): sällskapen på vägen, i bitar om högst tio minuter (dt i millisekunder, som s.now)
+// sällskapet som ingen längre går till (steg 12.1.8): alla har dött, sitter fångna eller ligger sjuka, och ingen har kommit
+// till samlingsplatsen eller kanten på lika lång tid som ledaren väntar. Resan ställs in, och packningen går tillbaka
+function inteIvag(s: State, sl: Sallskap) {
+  const sedan = sl.skede === 'samlas' ? sl.borjan : sl.skede === 'packar' ? sl.packar ?? sl.borjan : sl.t;
+  if (s.now - sedan < RESA.samlaSek * SEC) return;
+  const paVag = (id: number) => { const q = s.people.find(x => x.id === id); return !!q && alive(q) && !q.fange && (ute(q) || !!sl.vid?.includes(id) || q.task?.act === 'resa' && q.task.ref === sl.id); };
+  if (!sl.medl.some(paVag)) stallIn(s, sl);
+}
 export function resaBehov(s: State, dt: number) {
   const vl = s.varld;
   if (vl?.gommor?.length) vl.gommor = vl.gommor.filter(g => s.now - g.t < RESA.gommaDygn * DAY); // gömmorna ligger kvar en tid (steg 11.5.17)
   for (const sl of sallskapNu(s.varld)) {
-    if (!PA_VAGEN.includes(sl.skede)) continue;
+    if (!PA_VAGEN.includes(sl.skede)) { inteIvag(s, sl); continue; }
     SAKNADKROK.koll?.(s, sl); // den som inte kommit hem i tid blir saknad (steg 11.8.6, vilsegang.ts)
     if (!resenarer(s, sl).length) { forsvunnet(s, sl); continue; } // alla är döda: sällskapet står, och efter en tid räknas det som försvunnet (steg 11.5.18)
     for (let gjort = 0; gjort < dt - 1e-9;) { const d = Math.min(600 * SEC, dt - gjort); behovBit(s, sl, s.now - dt + gjort + d, d); gjort += d; }
@@ -884,8 +922,17 @@ function delaHemma(s: State, sl: Sallskap) {
 // räknas som 1) eller nyfikenheten, delat med dygnen borta och resenärerna, gånger lusten (nyfikenhet och mod, färdigheten
 // Handel på en handelsresa), gånger hur väl förråden hemma räcker resan ut (bristen hemma), och ledens fara drar ner det för
 // den försiktiga. Dygnen är den sparade vägens, annars fågelvägen gånger omvag; ingen väg räknas i valet.
+const ingenDod = (s: State, a: number | 'by') => { if (a === 'by') return undefined; const p = s.people.find(q => q.id === a); return p && alive(p) ? a : undefined; }; // den dödes del går till byn
 export function stallIn(s: State, sl: Sallskap) {
   const vl = s.varld;
+  // det som packats går tillbaka till ägarna (steg 12.1.8): ingen resa ställs in med packningen kvar på samlingsplatsen
+  // (det läggs på samlingsplatsen, där det bärs in som annat som ligger på marken)
+  for (const x of sl.insatser) if (x.djur === undefined && (sl.pack[x.sak] ?? 0) >= 1) {
+    const n = Math.min(x.n, Math.floor(sl.pack[x.sak]! + 1e-9)), o = ingenDod(s, x.agare);
+    if (sl.ut) dropLoad(s, { act: 'resa', items: { [x.sak]: n }, ag: { [x.sak]: { [o ?? BYN]: n } } } as unknown as Task, sl.ut.samla.x, sl.ut.samla.y, o ?? BYN);
+    else laggIn(s, x.sak, n, o);
+    tappa(sl, x.sak, n);
+  }
   if (vl?.sallskap) vl.sallskap = vl.sallskap.filter(x => x !== sl);
   for (const id of sl.medl) { const q = s.people.find(x => x.id === id); if (q?.task?.act === 'resa' && q.task.ref === sl.id) q.task.until = s.now; }
   count(s, 'resa inställd');
@@ -1048,14 +1095,29 @@ export function kallelse(s: State, sl: Sallskap, r: ResPlan) {
   if (sl.medl.length > 1) dagbok(s, sl, 'samlas', `${sl.medl.length - 1} följer med.`);
 }
 // den som är vid samlingsplatsen medan sällskapet samlas: ledaren väntar in de andra
+// (steg 12.1.8): har ledaren inte kommit när väntetiden gått, för att hen dött, är borta eller inte kan gå dit, tar den som
+// kom först över efter lika lång väntan
 function samlasSteg(s: State, sl: Sallskap, p: Person) {
   const vid = sl.vid ??= [];
   if (!vid.includes(p.id)) vid.push(p.id);
-  if (sl.ledare !== p.id) return;
+  const vantat = s.now - sl.borjan >= RESA.samlaSek * SEC;
+  if (sl.ledare !== p.id && !(vantat && !vid.includes(sl.ledare) && vid.find(id => sl.medl.includes(id)) === p.id)) return;
   const alla = sl.medl.every(id => { const q = s.people.find(x => x.id === id); return !q || !alive(q) || vid.includes(id); });
-  if (!alla && s.now - sl.borjan < RESA.samlaSek * SEC) return;
+  if (!alla && !vantat) return;
   if (!alla) sl.medl = sl.medl.filter(id => vid.includes(id)); // de som inte kom är inte med
-  if (sallskapKraft(s, sl) < (sl.krav ?? 0) - 1e-9 || !borjaPacka(s, sl)) stallIn(s, sl);
+  if (sl.ledare !== p.id) { sl.ledare = p.id; dagbok(s, sl, 'samlas', `${p.name} leder resan i stället.`); count(s, 'resa ny ledare'); }
+  if (sallskapKraft(s, sl) < (sl.krav ?? 0) - 1e-9 || !iHelaForradet(() => borjaPacka(s, sl))) stallIn(s, sl); // ledaren planerar på hela förrådet
+}
+// den som inte kommit fram till samlingsplatsen (när sällskapet packar) eller till kanten (när det går) efter lika lång väntan
+// som vid samlingen är inte med längre: hen sitter fången, ligger sjuk eller har dött (steg 12.1.8). Är ledaren en av dem
+// leder den som är kvar
+function utanDeSomInteKom(s: State, sl: Sallskap, p: Person, framme: (id: number) => boolean, sedan: number) {
+  if (s.now - sedan < RESA.samlaSek * SEC) return false;
+  const borta = sl.medl.filter(id => !framme(id));
+  if (!borta.length) return false;
+  sl.medl = sl.medl.filter(framme);
+  if (!sl.medl.includes(sl.ledare)) { sl.ledare = p.id; dagbok(s, sl, 'samlas', `${p.name} leder resan i stället.`); count(s, 'resa ny ledare'); }
+  return true;
 }
 
 // ---------- sällskapet på världskartan (steg 11.5.12, Flera samhällen: Vad spelaren ser och vad byn vet) ----------

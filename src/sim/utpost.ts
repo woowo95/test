@@ -189,6 +189,7 @@ export function overge(_s: State, vl: Varlden, u: VarldRad, t: number) {
     laggIKo(vl, t + (dygn ?? 1) * DAY, 'hemTill', { sak: mal.nr, data });
   }
   u.t = t; u.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; delete u.varor; delete u.ledare;
+  u.tek = []; // utan folk kan ingen något
   if (p) taBortPlats(vl, p);
   varldHandelse(vl, 'upplost', t, { by: u.nr });
 }

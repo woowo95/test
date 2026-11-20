@@ -247,6 +247,7 @@ export function undergang(s: State, vl: Varlden, r: VarldRad, t: number) {
     varde -= v; kvar[id] = (kvar[id] ?? 0) + 1;
   }
   r.sort = 'ruin'; r.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; r.t = t; delete r.varor; delete r.hus; delete r.egen;
+  r.tek = []; // utan folk kan ingen något
   if (Object.keys(kvar).length) { r.kvar = kvar; r.kvarT = t; }
   delete r.ledare;
   const p = platsAv(vl, r);
@@ -262,6 +263,7 @@ export function undergang(s: State, vl: Varlden, r: VarldRad, t: number) {
 // rövarlägret löses upp när folket är slut: platsen försvinner från kartan, och raden finns kvar för krönikan
 export function lagerUpplost(vl: Varlden, r: VarldRad, t: number) {
   r.t = t; r.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; delete r.varor; delete r.ledare;
+  r.tek = []; // utan folk kan ingen något
   const p = byPlats(vl, r.nr);
   if (p) vl.platser = vl.platser!.filter(q => q !== p);
   varldHandelse(vl, 'upplost', t, { by: r.nr });

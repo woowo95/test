@@ -36,6 +36,17 @@ export function hamtatSomISpelet(s: State, p: Person, tk: Task = p.task!) {
   }
   tk.hamtad = 1;
 }
+// packskedet i ett scenario (resa.ts borjaPacka, steg 12.1.8): ledaren bestämmer packningen, och den hämtas ur förrådet och
+// läggs i packningen som när resenärerna burit den till samlingsplatsen
+export function packatSomISpelet(s: State, sl: SIM.Sallskap) {
+  const ok = SIM.borjaPacka(s, sl), led = s.people.find(q => q.id === sl.ledare);
+  for (const [k, n] of Object.entries(sl.att ?? {})) {
+    const ag = SIM.use(s, led, k, n - (sl.pack[k] ?? 0));
+    for (const o in ag) { const m = Math.floor(ag[o]! + 1e-9); if (m > 0) SIM.satsa(sl, +o === SIM.BYN ? 'by' : +o, k, m); }
+  }
+  sl.att = undefined;
+  return ok;
+}
 // en ritual i ett scenario: de som är med har tagit med maten till måltiden och offret (HAMTAS.ritual), som i spelet
 export function ritualMed(s: State, r: SIM.Ritual, med: Person[]) {
   const f = s.ritual; s.ritual = r;

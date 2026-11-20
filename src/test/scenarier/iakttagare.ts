@@ -236,6 +236,7 @@ for (const [ks, why] of [
   [['byggsten', 'bryta'], 'byggstenen (steg 10.10.5) kräver stenhuggarplatsen och stockvägen, nivå 4, och en plan av sten; scenariot byggsten prövar den'],
   [['gris', 'kulting', 'slaktgris', 'bur', 'svinkott', 'levoxe', 'levhast', 'salta_svinkott', 'rock_svinskinn', 'skor_svinskinn', 'axelrem_svinskinn', 'byxor_svinskinn', 'mossa_svinskinn', 'snoskor_svinskinn', 'ryggsack_svinskinn'], 'fläsket kommer bara från ett vildsvin som fällts (sällan, steg 10.10.4) eller från grisen; grisen kommer ur buren (nivå 5, steg 10.10.13), oxen och hästen med handlaren (steg 10.10.3), och byn hinner sällan dit på 50 dygn; scenarierna bur, gris och dragdjur prövar dem'],
   [['skatta', 'bivax', 'vaxljus'], 'bikupan (steg 10.10.16) kommer först när byn tagit honung ur vildbon, och skattningen och vaxet efter det; scenarierna bikupa, skattning och vaxljus prövar dem'],
+  [['benspade'], 'benspaden (steg 2.7.2) kräver tre ben, och benen går först till sylen, nålarna och snarorna, så den görs sent eller inte alls på 50 dygn; scenarierna latrin och lera prövar den'],
   [['naver'], 'nävern (steg 6.3.3) täljs bara när en eld tänds med försök och höet inte räcker, och sedan 10.6.12 tänds eldarna oftast med en brand från en eld som brinner; scenariot naver prövar den'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 

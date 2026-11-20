@@ -331,7 +331,7 @@ MEDAN.roka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S, 'rokeri'); // rök
 for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => { if (finishHalf(s, p, t)) nastaRedskap(s, p, t); }; } // och ett till i samma pass (val.ts)
 MEDAN.falla = workHalf;
 MEDAN.grava = gravaMedan; // gropen finns kvar om grävaren avbryts (grav.ts)
-MEDAN.resa = (s, p, t) => resaSteg(s, p, t); // resenären vid samlingsplatsen och vid kanten (resa.ts, steg 11.5.5)
+MEDAN.resa = (s, p, t) => { if (!hamtaForst(s, p, t)) resaSteg(s, p, t); }; // (den som står vid samlingsplatsen när packningen börjar hämtar sin del först, steg 12.1.8) // resenären vid samlingsplatsen och vid kanten (resa.ts, steg 11.5.5)
 MEDAN.bjornjakt = (s, p, t) => bjornjaktSteg(s, p, t); // jägarna går mot björnen och anfaller den (bjorn.ts, steg 6.6.6)
 MEDAN.vargjakt = (s, p, t) => vargjaktSteg(s, p, t); // jägarna anfaller flocken (varg.ts, steg 3.7.1)
 MEDAN.vakt = (s, p, t) => vaktSteg(s, p, t); // vakten går runt byn (vakt.ts, steg 3.7.4)
