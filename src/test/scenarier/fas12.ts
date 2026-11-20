@@ -1,6 +1,6 @@
 // Scenarier för fas 12: myren och järnet.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank, medHus, setMat, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setItems, setMat, tandEld } from './hjalp';
 import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
@@ -681,6 +681,55 @@ SCENARIER.frittgolv = {
       [`golvet nåddes från dörren efter varje ny bädd`, allaNas],
       [`en ruta där en bädd stänger in golvet finns (${fel !== undefined})`, fel !== undefined],
       [`bädden som stängde in golvet flyttades eller togs isär (${stod}) och golvet nås igen`, flyttad && loggat],
+    ];
+  },
+};
+
+SCENARIER.tandmaterial = {
+  lang: true,
+  text: 'Tändmaterialet som ett vanligt material (steg 12.1.39): behovet räknas ur det elden behöver, inte ur höet till korgar och rep, och flintan och stenarna är egna behov. En by på 30 med fulla förråd av hö och kvistar men utan flinta skickar ingen efter tändmaterial, en by med fulla förråd av allt skickar ingen alls, och den som hämtar tändmaterial gör handlingen Samlar tändmaterial, säger det och bär bara hem hö och kvistar',
+  kor: () => {
+    const { living, setAmount, amountOf, taskName } = SIM;
+    const by = (seed: number, saker: Record<string, number>) => {
+      const s = SIM.createState(seed, START);
+      s.now = new Date(s.now).setHours(9, 0, 0, 0);
+      const kon = ['m', 'k'] as const;
+      for (let i = 0; living(s).length < 30; i++) nyInvanare(s, kon[i % 2], 8 + (i * 7) % 40);
+      setItems(s, saker); setMat(s, { bar: 900, rotter: 900 }); setAmount(s, 'ved', 400);
+      return s;
+    };
+    // följer byn i fyra timmar, var femte minut: vilka som hämtar tändmaterial, vad de heter, säger och bär, och vilka som letar flinta
+    const folj = (s: SIM.State) => {
+      const r = { tand: 0, tandSkal: 0, namn: new Set<string>(), bar: new Set<string>(), leta: new Set<string>(), flest: 0 };
+      for (let i = 0; i < 4 * 12; i++) {
+        kor(s, 1 / 12);
+        let n = 0;
+        for (const p of living(s)) {
+          const t = p.task;
+          if (!t) continue;
+          if (/tändmaterial/.test(t.why ?? '')) r.tandSkal++;
+          if (t.sok) r.leta.add(taskName(t));
+          if (!t.tandmat) continue;
+          r.tand++; n++; r.namn.add(taskName(t));
+          for (const k in t.items ?? {}) if ((t.items![k] ?? 0) > 0) r.bar.add(k);
+        }
+        r.flest = Math.max(r.flest, n);
+      }
+      return r;
+    };
+    const fullt = { torrgras: 150, grenar: 150, sten: 20, rep: 6, korg: 3 };
+    const utanFlinta = folj(by(3, fullt));
+    const alltFullt = folj(by(3, { ...fullt, flinta: 6 }));
+    const s3 = by(7, { flinta: 6, sten: 20 }); s3.fire.lit = false; s3.fire.fuel = 0; s3.fire.emberUntil = undefined; s3.fire.ring = true;
+    const fore = amountOf(s3, 'torrgras') + amountOf(s3, 'grenar');
+    const tom = folj(s3), efter = amountOf(s3, 'torrgras') + amountOf(s3, 'grenar');
+    return [
+      [`en by på 30 med fulla förråd av hö och kvistar men utan flinta skickar ingen efter tändmaterial (${utanFlinta.tand * 5} minuter med tändmaterial, ${utanFlinta.tandSkal} med det skälet; letar: ${[...utanFlinta.leta].join(', ') || 'ingen'})`, utanFlinta.tand === 0 && utanFlinta.tandSkal === 0],
+      [`den som letar flinta gör en handling som heter så (${[...utanFlinta.leta].join(', ') || 'ingen'})`, [...utanFlinta.leta].every(x => /^Letar efter (flinta|stenar)/.test(x))],
+      [`en by med fulla förråd av allt (också det som gör korgar och rep) skickar ingen efter tändmaterial (${alltFullt.tand * 5} minuter, ${alltFullt.tandSkal} med skälet)`, alltFullt.tand === 0 && alltFullt.tandSkal === 0],
+      [`utan hö och kvistar hämtar någon tändmaterial och gör handlingen Samlar tändmaterial (${tom.tand * 5} minuter, högst ${tom.flest} samtidigt, namn: ${[...tom.namn].join(', ')})`, tom.tand > 0 && [...tom.namn].every(x => x === 'Samlar tändmaterial')],
+      [`hen säger att byn behöver tändmaterial och bär bara hö och kvistar (bär: ${[...tom.bar].join(', ') || 'inget'})`, tom.tandSkal > 0 && [...tom.bar].every(k => k === 'torrgras' || k === 'grenar')],
+      [`det kommer hem (hö och kvistar i förrådet ${fore} före, ${efter} efter fyra timmar)`, efter > fore],
     ];
   },
 };

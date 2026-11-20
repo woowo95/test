@@ -4,7 +4,7 @@ import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken } from './lager';
-import { Materialslag, forbrukat, overOchUnder, underBuffert } from './forradsmal';
+import { Materialslag, forbrukat, overOchUnder, tandBuffert, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
@@ -217,9 +217,9 @@ function fireWish(s: State, p: Person, vc: number, f: Fire, vid: boolean): Wish 
   const b = opts.reduce((a, o) => (o.v > a.v ? o : a));
   return { v: b.v * hearthOf(f).maxFuel, why: b.why };
 }
-// hö eller grenar räcker inte till det byn vill ha, med det den som samlar redan bär (tk)
-// (bufferten i FORRADSMAL är minst det tändmaterial byn vill ha, och mer när byn förbrukar mycket, steg 6.2.14)
-export const tinderShort = (s: State, tk?: Task) => underBuffert(s, 'torrgras', tk?.items?.torrgras ?? 0) || underBuffert(s, 'grenar', tk?.items?.grenar ?? 0);
+// hö eller kvistar räcker inte till det elden behöver (tandBuffert i forradsmal.ts), med det den som samlar redan bär (tk).
+// Höet som går åt till korgar och rep räknas inte här (steg 12.1.39): det är ett vanligt material under sin buffert
+export const tinderShort = (s: State, tk?: Task) => (['torrgras', 'grenar'] as const).some(k => amountOf(s, k) + (tk?.items?.[k] ?? 0) < tandBuffert(s, k));
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat. Stenar behövs också till en lägereld till (brasor.ts).
 // Båda är förrådsmålet för stenen (steg 10.11.4). Stenarna som någon bär hem räknas, så att ingen samlar fler än ringen behöver
 // och de som ligger på marken utanför lagret (burna till eldplatsen i flera vändor, eller från en lägereld som tagits isär)
@@ -256,11 +256,10 @@ export function tandHamtas(s: State, p: Person, tk: Task) {
 }
 // en näver (steg 6.3.3) täljs ur en ved med kniv eller yxa: med ett blad och ved behövs inget hö till tändningen
 export const kanTalja = (s: State) => nTools(s, 'kniv') + nTools(s, 'yxa') > 0;
-// tändmaterialet samlas efter förrådsmålet (steg 10.2.9): flintan, stenarna till ringen, och höet och grenarna under sin buffert
-// (MATERIALMAL, där elden som brinner vill ha mindre än den släckta), också när en eld glöder
-export function needTinder(s: State) {
-  return !igniterOf(s) || needStones(s) || tinderShort(s); // med en bågborr behövs ingen flinta (steg 10.6.13)
-}
+// tändmaterialet samlas efter förrådsmålet (steg 10.2.9): höet och kvistarna under det elden behöver (MATERIALMAL, där elden som
+// brinner vill ha mindre än den släckta), också när en eld glöder. Flintan och stenarna till ringen är egna behov med egna skäl
+// (raden leta i val.ts, steg 12.1.39)
+export const needTinder = (s: State) => tinderShort(s);
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 // ringen av stenar runt eldplatsen läggs av den som tänder, med stenarna hen bär eller når
 function laggRing(s: State, p: Person, f: Fire) {
@@ -545,6 +544,20 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
     if (ff <= ELD.flintaSand) tecken(s, p, 'fynd', 'flintan där ingen trodde att den fanns'); // fyndet på den märkliga platsen (steg 8.5.18)
   }
   return Object.keys(got).length ? got : undefined;
+}
+// den närmaste rutan från p med både hö och kvistar (steg 12.1.39): dit går den som hämtar tändmaterial först. Hö och kvistar
+// finns nästan överallt, så det är oftast ett par rutor bort
+export function tandStalle(s: State, p: Person, r = 12): { x: number; y: number } | undefined {
+  const x0 = Math.floor(p.x), y0 = Math.floor(p.y);
+  let bast: { x: number; y: number } | undefined, bd = Infinity;
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const d = Math.hypot(dx, dy);
+    if (d > r + 0.01 || d >= bd) continue;
+    const x = x0 + dx, y = y0 + dy;
+    if (tandPaRutan(s, 'torrgras', x, y) <= 0 || tandPaRutan(s, 'grenar', x, y) <= 0) continue; // (tandPaRutan: inget i vattnet eller under en vägg)
+    bast = { x: x + 0.5, y: y + 0.5 }; bd = d;
+  }
+  return bast;
 }
 // ---------- tändmaterialet på rutan (steg 9.3.4) ----------
 // Höet är gräset självt (hoPaRutan, steg 10.10.9) och kvistarna ligger på all mark, flera hela saker per ruta efter årstiden. Det som plockats (s.plockat, som för grenarna och stenarna i steg.ts) växer tillbaka, ELD.tandAter per dygn

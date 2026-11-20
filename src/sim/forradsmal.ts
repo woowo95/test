@@ -148,6 +148,9 @@ export const MATERIALMAL = {
 export type Materialslag = keyof typeof MATERIALMAL;
 export const MATERIAL_LIST = Object.keys(MATERIALMAL) as Materialslag[];
 export const arMaterial = (k: string): k is Materialslag => k in MATERIALMAL;
+// det elden behöver av hö och kvistar (steg 12.1.39): tändningens del av förrådsmålet, inte det som går åt till korgar och rep.
+// Höet till de sakerna är en vanlig buffert efter förbrukningen och hör till deras projekt
+export const tandBuffert = (s: State, k: 'torrgras' | 'grenar') => MATERIALMAL[k].min(s);
 
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
 // det som tas ur förrådet av ett material räknas som förbrukat (lager.ts); bränslet till elden räknas inte (veden har sin rad)

@@ -1139,6 +1139,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const pa = plockSlag !== undefined ? dtSec + (tk.letat ?? 0) : dtSec;
     if (plockSlag !== undefined) tk.letat = undefined;
     const fart = ACTS[tk.act].fart ?? 1, got = (plockSlag !== undefined ? utanStenar(forageItems(s, p, pa, fart)) : forageItems(s, p, pa, fart)) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas på rundan
+    if (tk.tandmat) { for (const k of ['torrgras', 'grenar']) if (got[k]) bar(k, got[k]); return true; } // den som hämtar tändmaterial tar bara det (steg 12.1.39)
     if (plockSlag === undefined) bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got)); // på rundan plockas svampen som en sak (svampPlock)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); count(s, 'samlat_rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
@@ -1254,6 +1255,7 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
   const res = ACTS[tk.act].resurs, i = y * W + x;
   // stenarna ligger flera på rutan vid stenarna; flintan är sällsynt, en på var hundrade ruta där (RUNDA.flintTat), och bara så
   // länge byn behöver flinta (som förut i forageItems, eld.ts)
+  if (tk.tandmat) return []; // den som hämtar tändmaterial plockar inte bär och rötter (steg 12.1.39): hö och kvistar tas efter tiden ute
   if (tk.sok) {
     const v = rutVarde(s, tk)(x, y), sten = needStones(s);
     const n = sten ? Math.floor(v * RUNDA.stenSaker + 1e-9) : hash3(s.seed, i, 991) < v * RUNDA.flintTat && flintaBehovs(s, tk) ? 1 : 0; // rutans tal först: det är billigt, och de flesta rutor har ingen flinta
@@ -1274,6 +1276,7 @@ const lagrenPa = (res: Lager) => LAGREN_PA[res] ??= [...lagren(res), ...(res ===
 // och det som gäller hela kartan hämtas en gång, och inga listor byggs. Samma antal som sakerPa
 function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
   const res = ACTS[tk.act].resurs;
+  if (tk.tandmat) return () => 0; // (sakerPaRutan)
   if (tk.sok) return (x, y) => sakerPa(s, tk, x, y); // stenarna och flintan räknas som vanligt
   if (!res) { // grenarna: samma tal som sakerPaRutan, utan att bygga en lista per ruta
     const solid = gridOf(s).solid, tr = groundOf(s).trees;
@@ -1425,10 +1428,13 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
   // den som hämtar tändmaterial plockar det som finns på rutan och i närheten och hittar hö och kvistar på vägen (forageItems i
   // eld.ts, efter tiden ute). Ser hen inget annat att plocka går hen vidare från ruta till ruta med det som fattas, som andra
   // samlare, och inte tillbaka till rutorna hen nyss gått (steg 12.1.38; förut letade hen på marken där hen stod)
-  if (tk.tandmat && tinderShort(s, tk) && !full && !narmastMedSaker(s, tk, x, y, RUNDA.syn)) {
+  if (tk.tandmat) {
+    // det räcker till elden, eller händerna är fulla: hem med det (steg 12.1.39)
+    if (!tinderShort(s, tk) || full) { if (full) count(s, 'turer'); tk.until = s.now; return 1e-3; }
     tk.sett = [...(tk.sett ?? []), y * W + x].slice(-RUNDA.sett);
     const n = narmastTand(s, tk, x, y, RUNDA.syn);
-    if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; return 1e-3; }
+    if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; } else tk.until = s.now;
+    return 1e-3;
   }
   tk.plock = undefined;
   if (p.task !== tk || tk.phase !== 'do') return 1e-3;
@@ -1490,17 +1496,6 @@ function strackaFran(s: State, p: Person, tk: Task, x0: number, y0: number, r: n
     const j = kand.splice(bi, 1)[0]; ut.push(j); cx = j % W; cy = Math.floor(j / W);
   }
   return ut;
-}
-// den närmaste rutan inom r med saker, och dit man kan gå (inte i vattnet). Samma ruta varje gång (ingen slump)
-function narmastMedSaker(s: State, tk: Task, x0: number, y0: number, r: number) {
-  let bast: { x: number; y: number } | undefined, bd = Infinity;
-  const vt = vattenNu(s), saker = sakerLasare(s, tk);
-  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-    const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-    if (d > r + 0.01 || d >= bd || !inMap(x, y) || vt[y * W + x] === T.Vatten || saker(x, y) <= 0 || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
-    bast = { x, y }; bd = d;
-  }
-  return bast;
 }
 // tändmaterialet som fattas (hö eller kvistar) finns på rutan (steg 9.3.4, tandPaRutan i eld.ts)
 const tandFattas = (s: State, tk: Task) => (['torrgras', 'grenar'] as Tand[]).filter(k => underBuffert(s, k, tk.items?.[k] ?? 0));
