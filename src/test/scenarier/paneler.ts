@@ -1,6 +1,7 @@
 // Scenarier för kartbilden och panelerna i fas 12 (grenen par-paneler).
 import * as SIM from '../../sim';
-import { SCENARIER, utanWebblasare } from './hjalp';
+import { SCENARIER, medHus, utanWebblasare } from './hjalp';
+import { INGEN, SKUGGA, eldSkuggor, iSkuggan } from '../../ui/eldskugga';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { START, kronikaVakt } from '../kor';
@@ -96,6 +97,32 @@ SCENARIER.grafer = {
       [`de nio talen sparas i historiken med rätt värde${fel.length ? ` (fel: ${fel.map(([id, v]) => `${id} ${sist(id)} i stället för ${v}`).join(', ')})` : ''}`, !fel.length],
       [`de nio graferna finns i GRAFER och ritas (${grafer.length} av 9)`, grafer.length === 9],
       ['böckerna, striderna, resorna och skörden räknas i byns statistik när det händer', /count\(s, 'bocker'\)/.test(kod) && /count\(s, 'strider'\)/.test(kod) && /count\(s, 'resa hemma'\)/.test(kod) && /count\(s, 'skord'/.test(kod)],
+    ];
+  },
+};
+
+SCENARIER.eldskugga = {
+  text: 'Steg 12.3.2: elden kastar skuggor. För varje lägereld räknas hur långt ljuset når åt 360 håll innan det träffar en vägg eller en stam (ui/eldskugga.ts), och nattfiltret gör det som ligger bakom ett eller två steg mörkare. Väggen själv är upplyst, det bakom den i skuggan, det framför den inte, och strålarna räknas om bara när något ändrats. Bara bilden',
+  kor: () => {
+    const s = SIM.createState(3, START); medHus(s);
+    const f = SIM.eldXY(s, s.fire), fx = f.x + 0.5, fy = f.y + 0.5;
+    // den närmaste väggen inom skenet
+    let vagg: { x: number; y: number } | undefined, bd = Infinity;
+    for (let y = f.y - SKUGGA.r; y <= f.y + SKUGGA.r; y++) for (let x = f.x - SKUGGA.r; x <= f.x + SKUGGA.r; x++) if (SIM.isWall(s, x, y)) { const d = Math.hypot(x + 0.5 - fx, y + 0.5 - fy); if (d < bd) { bd = d; vagg = { x, y }; } }
+    const fore = SIM.serialize(s);
+    const { rader, ny } = eldSkuggor(s, [{ x: fx, y: fy }]), igen = eldSkuggor(s, [{ x: fx, y: fy }]);
+    const rad = rader[0], v = vagg!, dx = (v.x + 0.5 - fx) / bd, dy = (v.y + 0.5 - fy) / bd;
+    const bakom = iSkuggan(rad, fx, fy, fx + dx * (bd + 2), fy + dy * (bd + 2)), framfor = iSkuggan(rad, fx, fy, fx + dx * (bd - 1.5), fy + dy * (bd - 1.5));
+    const sjalv = iSkuggan(rad, fx, fy, v.x + 0.5, v.y + 0.5);
+    const skuggade = [...rad].filter(d => d !== INGEN).length;
+    // ett hus till ändrar nyckeln, och strålarna räknas om
+    SIM.touch(s);
+    const omraknad = eldSkuggor(s, [{ x: fx, y: fy }]).ny;
+    return [
+      [`det finns en vägg nära elden (${vagg ? bd.toFixed(1) : '–'} rutor bort) och strålar som träffar något (${skuggade} av ${SKUGGA.hall} håll)`, !!vagg && skuggade > 0],
+      [`bakom väggen är det skugga, framför och på väggen inte (${bakom ? 'skugga' : 'ljust'} bakom, ${framfor ? 'skugga' : 'ljust'} framför, ${sjalv ? 'skugga' : 'ljust'} på väggen)`, bakom && !framfor && !sjalv],
+      [`strålarna räknas en gång och sedan om bara när något ändrats (${ny ? 'ny' : 'gammal'}, ${igen.ny ? 'ny' : 'gammal'}, efter ett nytt hus ${omraknad ? 'ny' : 'gammal'})`, ny && !igen.ny && omraknad],
+      ['skuggorna ändrar inget i byn (bara bilden)', SIM.serialize(s).replace(/"byggV":\d+/, '') === fore.replace(/"byggV":\d+/, '')],
     ];
   },
 };

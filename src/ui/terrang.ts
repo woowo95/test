@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { eldSkuggor } from './eldskugga';
 import { MORKER, sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
 import { s, ui } from './lage';
 import { posOf } from './manniskor';
@@ -125,11 +126,12 @@ const skimmer = (t: number, x: number, y: number) => 1 + FACKEL_FLADDER * Math.s
 export function drawNight(t: number) {
   // på dagen är kartan ljus överallt (steg 10.2.20): vädret gör bara skymningen och natten mörkare. Förut gjorde en mulen himmel
   // (0,5 steg, avrundat till ett helt) hela kartan till skymning mitt på dagen
-  const klocka = DJUPNATT * (1 - lightLevel(t)), m = klocka > 0 ? klocka + vaderMork(t) : 0, eldar: { x: number; y: number; r: number; k: number }[] = [], facklor: { x: number; y: number }[] = [];
+  const klocka = DJUPNATT * (1 - lightLevel(t)), m = klocka > 0 ? klocka + vaderMork(t) : 0, eldar: { x: number; y: number; r: number; k: number }[] = [], facklor: { x: number; y: number }[] = [], lagereldar: { x: number; y: number }[] = [];
   if (m > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
     const I = fireHeat(s, e);
     if (!(I > 0 || emberOn(s, e))) continue;
-    const f = eldXY(s, e), k = I > 0 ? MORKER.eldMin + (1 - MORKER.eldMin) * I : GLOD; // som eldens ljus i simuleringen (LJUSKALLOR.eld)
+    const f = eldXY(s, e); lagereldar.push({ x: f.x + 0.5, y: f.y + 0.5 });
+    const k = I > 0 ? MORKER.eldMin + (1 - MORKER.eldMin) * I : GLOD; // som eldens ljus i simuleringen (LJUSKALLOR.eld)
     eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * MORKER.eldR * SKEN * k * (I > 0 ? skimmer(t, f.x, f.y) : 1), k: -(I > 0 ? 1 : 0.5) }); // negativ: eldens form (natt.ts)
   }
   // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
@@ -140,7 +142,9 @@ export function drawNight(t: number) {
   // (där var och en syns i bilden, inte där hen står i slutet av slaget, steg 10.2.19)
   // alla människor på kartan, byborna och gästerna (rövarna, handlaren, främlingen; steg 10.2.99)
   const folk = m > 0 ? [...living(s).map(posOf), ...gaster(t)].filter(p => !facklor.some(e => Math.hypot(e.x - p.x, e.y - p.y) < 1)).map(p => ({ x: p.x * TS, y: p.y * TS - TS * 0.4, r: TS * FOLK_LJUS })) : [];
-  stallNatt(mork, world, Math.min(DJUPNATT, m), eldar, folk);
+  // eldens skuggor (steg 12.3.2, ui/eldskugga.ts): lägereldarna, som står först bland eldarna, kastar skuggor bakom väggar och stammar
+  const skuggor = m > 0 && lagereldar.length ? eldSkuggor(s, lagereldar) : undefined;
+  stallNatt(mork, world, Math.min(DJUPNATT, m), eldar, folk, skuggor);
 }
 // skuggorna på marken och golven (steg 5.1.8, ui/skugga.ts): träden, folket, djuren, stationerna, sakerna och väggarna.
 // Efter att allt annat ställts på plats i bildrutan
