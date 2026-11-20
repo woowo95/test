@@ -83,6 +83,7 @@ export const GORA: Record<string, string> = {
   slagtra: 'tälja slagträn', scen: 'bygga en scen', trumma: 'göra trummor', benflojt: 'skära benflöjter', lyra: 'göra lyror', kruka: 'bygga upp lerkrukor',
   matta: 'väva mattor', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
   tork: 'bygga en torkställning', bikupa: 'fläta bikupor', bur: 'bygga burar', odling: 'odla', ledarskap: 'välja en ledare', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
+  kolmila: 'kola ved i en mila', blasterugn: 'blåsa järn ur malm', smedja: 'smida järn', vapensmide: 'smida svärd och brynjor', // steg 12.2.1–12.2.9
 };
 // teknikens namn med gemen till dess id; teknik.ts fyller i det när TEKNIK läses (för det som bara sparat namnet, som p.fame)
 export const TEKNAMN: Record<string, string> = {};

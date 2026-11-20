@@ -34,6 +34,9 @@ const HITTAS: Record<string, string> = {
   radjurkott: 'Slaktas ur ett fällt rådjur', farkott: 'Slaktas ur ett får', getkott: 'Slaktas ur en get', fagelkott: 'Slaktas ur en fälld fågel', bjornkott: 'Slaktas ur en fälld björn', farskinn: 'Slaktas ur ett får', getskinn: 'Slaktas ur en get',
   blad: 'Skrivs på ett blad pergament med en dos bläck, på fritiden', // steg 10.6.5
   bjorn: 'Fälls på björnjakt av en stor grupp med spjut', bjorndel: 'Styckas där björnen föll', bjornskinn: 'Slaktas ur en fälld björn',
+  torv: 'Blir till när den blöta torven torkat', blottorv: 'Grävs i myren med spaden, och torkar till torv som den blöta veden', // steg 12.1.3
+  malm: 'Grävs i myren med benspaden, och bryts i järngruvan i bergen', jarnskrot: 'Blir kvar när en järnsak går sönder', // steg 12.1.2, 12.2.7 och 12.2.13
+  jarn: 'Blåses ur malm och kol i blästerugnen, och smids om ur järnskrot i smedjan', // steg 12.2.3 och 12.2.7
 };
 // det den används till som inte är ett recept. Inget om det som kommer senare (steg 11.1.58): det som inte finns i spelet står inte här
 const ANVANDS: Record<string, string[]> = {
@@ -46,6 +49,8 @@ const ANVANDS: Record<string, string[]> = {
   slaktfar: ['Slaktas'], slaktget: ['Slaktas'], djurhorn: ['Handel'], fiskrens: ['Agn och mat åt hunden'], skara: ['Slår ängen till hö'], // djuren (system 9.8)
   levfar: ['Blir byns får'], levget: ['Blir byns get'], levko: ['Blir byns ko'], slaktko: ['Slaktas'], kohud: ['Kläder'], levhons: ['Blir byns höns'],
   blomma: ['Sätts i en lerkruka'], blad: ['Läses av den som har något nytt att lära där'], bok: ['Skrivs i del för del och läses'], // steg 10.6.5–10.6.6
+  malm: ['Blåses till järn i blästerugnen'], jarnskrot: ['Smids om till järn i smedjan'], jarnskold: ['I striden'], svard: ['I striden'], // steg 12.2.3–12.2.9
+  isborr: ['Borrar genom den tjockaste isen'], eldstal: ['Tänder elden mot en flinta'], lie: ['Slår ängen till hö'], // steg 12.2.11–12.2.12
   bensyl: ['Syr kläder vid slöjdbänken'], boll: ['Sport'], slagtra: ['Sport'], mal: ['Sport'],
   slanda: ['Spinner lin till tråd'], fackla: ['Lyser i mörkret, i handen eller uppsatt'], talgljus: ['Lyser inomhus'], vaxljus: ['Lyser inomhus, dubbelt så länge som talgljuset'], bivax: ['Vaxljus'],
   trumma: ['Spelas på scenen'], benflojt: ['Spelas på scenen'], lyra: ['Spelas på scenen'], rovfron: ['Sås på fältet'], artfron: ['Sås på fältet'], malt: ['Ölet i bryggkaret'], kalfron: ['Sås på fältet'], kompost: ['Gödslar fältet'], jordgubbsplanta: ['Planteras på fältet'], appelplanta: ['Planteras på fältet'], slaktrens: ['Bärs till sophögen'], vaxtrest: ['Bärs till sophögen'], // steg 9.6.13
