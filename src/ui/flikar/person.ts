@@ -40,7 +40,7 @@ export const person: Flik = {
     return `
       <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div class="phuvud"><h2><span class="pnamn"${namnStorlek(p.name)}>${esc(p.name)}</span>${lever ? `<button type="button" class="oga${ui.follow === p.id ? ' sel' : ''}" data-folj="${p.id}" title="Följ ${esc(p.name)} med kartan (som att trycka två gånger på porträttet)" aria-label="Följ med kartan">{sym_oga}</button>` : ''}</h2>
       <p class="binamnrad">${bi || '&nbsp;'}</p>${g ? '' : binamnForkl(p)}
-      <p class="pfakta">${pFakta(p)}${g?.fran ? ` · från ${esc(g.fran)}` : ''}</p><p class="pmarken">${marken || '&nbsp;'}</p>
+      <p class="pfakta">${[pFakta(p), g?.fran ? `från ${esc(g.fran)}` : ''].filter(Boolean).join(' · ') || '&nbsp;'}</p><p class="pmarken">${marken || '&nbsp;'}</p>
       <p class="status klick${hel ? ' hel' : ''}" ${fallUt(sid)} title="${esc(hel ? 'Tryck för att korta' : 'Tryck för hela texten och skälet')}">${status}</p>${hel && why ? `<p class="muted small pskal">${esc(why)}</p>` : ''}</div></div>
       ${flikRad(flikar, flik, p)}
       ${delar.length === 1 ? ensamDel(flik, delar[0].html(p) + (g && delar[0].gast ? delar[0].gast(g) : '')) : delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p) + (g && d.gast ? d.gast(g) : ''))).join('')}`;
@@ -96,7 +96,7 @@ const flikRad = (delar: PFlik[], del: PFlik, p: Person) => `<div class="pdelar" 
 // en flik med bara en del (steg 11.1.44): ingen delrubrik, flikens namn står som rubrik och delen är alltid utfälld
 const ensamDel = (f: PFlik, html: string) => `<h3 class="flikrub">${esc(f.namn)}</h3><div class="delinne">${html}</div>`;
 const DELAR: Del[] = [
-  { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml, kort: p => `${Math.floor(ageOf(p, s.now))} år · ${esc(yrkeNamn(s, p) ?? '–')}`, gast: gastPres },
+  { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml, kort: p => esc(yrkeNamn(s, p) ?? '–'), gast: gastPres },
   { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml, kort: p => moodWord(moodOf(p, s.now)) },
   { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml, kort: halsaKort },
   { id: 'egen', tecken: '{sym_egenskaper}', namn: 'Egenskaper', html: egenHtml, kort: egenKort },
@@ -175,11 +175,12 @@ function gastRelRad(namn: string, r: GastRel, g?: number, gast?: boolean, klan?:
 const namnStorlek = (namn: string) => namn.length <= 10 ? '' : ` style="font-size:${Math.max(14, Math.round(24 * 10 / namn.length))}px"`;
 // bredvid porträttet (steg 9.2.95): kön, ålder och yrke, och partnern om det finns en ("med …")
 // raden bredvid porträttet: yrket och partnern. Kön och ålder står under Presentation (steg 10.2.53)
-// raden i huvudet (steg 11.1.41): åldern först, sedan yrket och partnern
+// raden i huvudet (steg 11.1.41): yrket och partnern. Åldern står en gång, i Översikt (steg 12.1.25)
 function pFakta(p: Person) {
-  const y = yrkeNamn(s, p), q = byId(s, p.partner), a = Math.floor(ageOf(p, p.died ?? p.left ?? s.now));
-  return [`${a} år`, y ? esc(y) : '', q ? `med ${pLink(q)}` : ''].filter(Boolean).join(' · ');
+  const y = yrkeNamn(s, p), q = byId(s, p.partner);
+  return [y ? esc(y) : '', q ? `med ${pLink(q)}` : ''].filter(Boolean).join(' · ');
 }
+const alderNu = (p: Person) => ageOf(p, p.died ?? p.left ?? s.now); // den döda och den utflyttade har kvar åldern då
 // en övertygelse: personen drar en sed minst så här mycket åt ena hållet (ett helt steg är 1, seder.ts)
 const OVERTYGAD = 0.35;
 // Översikt (steg 11.1.45): vem personen är och vad hen gör just nu. Beskrivningen i två meningar med resten under ▸ mer, åldern
@@ -187,7 +188,7 @@ const OVERTYGAD = 0.35;
 // och varför, humöret i ett ord och en rad om hälsan som öppnar Hälsa. Gångfarten står under Hälsa och livet och händelserna
 // under Händelser
 function presHtml(p: Person) {
-  const a = ageOf(p, s.now), kids = childrenOf(s, p), d = drar(s, p), lever = alive(p);
+  const a = alderNu(p), kids = childrenOf(s, p), d = drar(s, p), lever = alive(p);
   const tro = SED_LIST.filter(k => sedOppen(s, k) && Math.abs(d[k]) >= OVERTYGAD).sort((x, y) => Math.abs(d[y]) - Math.abs(d[x]))
     .map(k => { const sed = SEDER[k], namn = d[k] > 0 ? sed.pos : sed.neg; return `<span class="tro" title="${esc(`${namn}. ${sed.effect}`)}">${vagSvg(Math.min(5, Math.max(1, Math.round(Math.abs(d[k]) * 5))), d[k] < 0 ? -1 : 1, 1)}${esc(namn)}</span>`; });
   const mening = beskrivning(s, p).split(/(?<=[.!?])\s+/), bid = `besk-${p.id}`, merOppen = hjalpOppen(bid);

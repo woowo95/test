@@ -1427,9 +1427,9 @@ SCENARIER.gastsida = {
     const knappar = (x: string) => [...x.matchAll(/role="tab" data-pdel="(\w+)"/g)].map(m => m[1]).join(',');
     const by = living(s)[0]!; ui.selected = by.id; const bybo = person.html();
     // huvudet står still (steg 11.1.41): lika många rader för bybon och gästen, raden för öknamnet finns när den är tom, åldern
-    // står med yrket, och det hen gör klipps tills man trycker, då skälet kommer fram
+    // står inte i huvudet utan en gång, i Översikt (steg 12.1.25), och det hen gör klipps tills man trycker, då skälet kommer fram
     const rader = (x: string) => (x.split('class="phuvud"')[1] ?? '').split('</div></div>')[0].match(/<(h2|p)[ >]/g)?.length ?? 0;
-    const tomtBi = /class="binamnrad">&nbsp;</.test(bybo) || /class="binamn /.test(bybo), alder = new RegExp(`class="pfakta">${Math.floor(SIM.ageOf(by, s.now))} år`).test(bybo);
+    const tomtBi = /class="binamnrad">&nbsp;</.test(bybo) || /class="binamn /.test(bybo), alder = !/class="pfakta">[^<]*\d+ år/.test(bybo);
     hjalpKlick({ closest: () => ({ dataset: { hjalp: `pstat-${by.id}` } }) } as unknown as HTMLElement); const helStatus = person.html();
     hjalpKlick({ closest: () => ({ dataset: { hjalp: `pstat-${by.id}` } }) } as unknown as HTMLElement);
     const huvud = rader(bybo) === 5 && rader(pres) === 5 && tomtBi && alder && !/status klick hel/.test(bybo) && /status klick hel/.test(helStatus);

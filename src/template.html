@@ -75,7 +75,7 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 .chips { position: absolute; right: calc(var(--stenar) + 10px); top: 12px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
 .chips button.chip { pointer-events: auto; border: 0; font: inherit; font-size: 13px; cursor: pointer; }
 /* folket längst ner på kartan (steg 5.3.3.4) */
-.ports { position: absolute; left: 8px; right: calc(var(--stenar) + 8px + 132px); bottom: 8px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; touch-action: pan-x; overscroll-behavior: contain; } /* zoomen står i hörnet till höger om raden (steg 6.8.13) */
+.ports { position: absolute; left: 8px; right: calc(var(--stenar) + 8px + 132px); bottom: 0; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; touch-action: pan-x; overscroll-behavior: contain; } /* zoomen står i hörnet till höger om raden (steg 6.8.13); raden står vid kartans nederkant (steg 12.1.25) */
 .port { flex: none; width: 84px; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "d" "n" "a"; gap: 1px 0; justify-items: center; text-align: center;
   background: rgba(36, 32, 29, 0.72); color: #dad0bb; border: 1px solid transparent; border-radius: 4px; padding: 4px 4px; font: inherit; font-size: 13px; line-height: 1.2; cursor: pointer; } /* smalt (steg 10.2.53): namnet under porträttet och det hen gör, så att fler får plats */
 .port:hover { background: rgba(36, 32, 29, 0.9); }
@@ -367,8 +367,8 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .phuvud h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
 .phuvud .binamnrad, .phuvud .pmarken { min-height: 1.25em; line-height: 1.25; }
 .phuvud .binamnrad .binamn { font-size: 15px; }
-.phuvud .status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-.phuvud .status.hel { white-space: normal; }
+.phuvud .status { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.25; min-height: 2.5em; cursor: pointer; } /* det hen gör får två rader innan det klipps, och raderna finns alltid (steg 12.1.25) */
+.phuvud .status.hel { display: block; }
 /* ögat vid namnet (steg 11.1.42): följer personen med kartan */
 .phuvud h2 { display: flex; align-items: center; gap: 6px; }
 .phuvud h2 .pnamn { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
