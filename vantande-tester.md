@@ -65,3 +65,4 @@
 
 - Committerna på par-resor har bara typkontrollen och stegens egna scenarier bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld; facit ändras (nya rader i VAGHANDELSER drar slumptal på resorna).
 - 12.1.144 (trasigt hjul och vilt på vägen): scenariot vaghandelser gick igenom.
+- 12.1.145 (Släppa utrustning undantar inget; maten, vattnet, fodret och tälten väger RESA.behovVarde så länge resan behöver dem): scenarierna utvagar och gomma gick igenom.

@@ -137,6 +137,7 @@ export const RESA = balans('resa', {
   rastTim: 24, // en rast för att vila upp sig
   lamnaKost: 150, // det kostar ledaren så mycket att lämna någon (i värde), mer för den som bryr sig och om hen tycker om personen
   lamnaEmpati: 0.5, lamnaTycke: 1,
+  behovVarde: 50, // så mycket (i värde) är en portion mat, en vattensäck, ett hö eller ett tält värt när resan behöver det för dygnen som återstår (steg 12.1.145)
   gommaDygn: 20, // det som släpps ligger i en gömma så här många dygn (år i spelet)
   forsvunnen: 3, // kommer ingen hem räknas resenärerna som försvunna efter så många gånger den väntade tiden (steg 11.5.18)
 });
@@ -1753,14 +1754,34 @@ export function utvagLage(s: State, sl: Sallskap, t = s.now): UtvagLage | undefi
   if (!langsam) return undefined;
   const m = matLage(s, sl, t), f0 = sallskapFart(s, sl);
   const vagKvar = sl.skede === 'hemat' ? m.kvar : m.kvar - stannarFor(sl); // dygnen i gång, utan tiden framme
-  // det som kan släppas: inte maten, vattnet eller fodret; det som är värt minst per vikt först, tills lasten inte bromsar
+  // det som kan släppas: allt i packningen, en sak i taget, den som är värd minst per vikt för resan först, tills lasten inte
+  // bromsar. Maten, vattnet, fodret och tälten är värda mycket (RESA.behovVarde) så länge de behövs för dygnen som återstår
+  // (steg 12.1.145), annars bara sitt grundvärde
   const slapp: Record<string, number> = {}; let slappVarde = 0;
-  const pack = { ...sl.pack }, saker = Object.keys(pack).filter(k => !FOOD.includes(k) && !BEHALL.includes(k) || k === 'silver').sort((a, b) => grundvarde(a) / Math.max(1e-9, viktOf(a)) - grundvarde(b) / Math.max(1e-9, viktOf(b)) || (a < b ? -1 : 1));
-  for (const k of saker) {
-    while ((pack[k] ?? 0) >= 1 && lastFart(s, sl, { pack }) < 1) { pack[k]! -= 1; slapp[k] = (slapp[k] ?? 0) + 1; slappVarde += grundvarde(k); }
+  const pack = { ...sl.pack }, behov = resBehov(sl, m.kvar, resenarer(s, sl).length);
+  const kostar = (k: string) => grundvarde(k) + (behovKvar(pack, behov, k) ? RESA.behovVarde : 0);
+  while (lastFart(s, sl, { pack }) < 1) {
+    let bast: string | undefined, bv = Infinity;
+    for (const k of Object.keys(pack).sort()) {
+      if ((pack[k] ?? 0) < 1 || viktOf(k) <= 0) continue;
+      const v = kostar(k) / viktOf(k);
+      if (v < bv) { bv = v; bast = k; }
+    }
+    if (!bast) break;
+    slappVarde += kostar(bast); pack[bast]! -= 1; slapp[bast] = (slapp[bast] ?? 0) + 1;
   }
   if (lastFart(s, sl, { pack }) < 1) { for (const k of Object.keys(slapp)) delete slapp[k]; slappVarde = 0; } // hjälper det inte släpps inget
   return { n: folk.length + (sl.buren?.length ?? 0), varde: m.varde, kvar: Math.max(0, vagKvar * f0), hem: m.hem * f0, f0, langsam, led: resenarer(s, sl).find(p => p.id === sl.ledare), slapp, slappVarde };
+}
+// det resan behöver för dygnen som återstår (steg 12.1.145): maten (portionerna i alla sorter tillsammans), en vattensäck per
+// resenär, fodret till djuren och tälten
+export function resBehov(sl: Sallskap, dygn: number, n: number): Record<string, number> {
+  return { mat: Math.ceil(n * RESA.matPerDygn * dygn - 1e-9), vattensack: n, torrgras: Math.ceil(sl.djur.length * RESA.foderPerDygn * dygn - 1e-9), talt: Math.ceil(n / RESA.talt) };
+}
+// behövs den sista av sakerna k i packningen för resan, så att den inte går att släppa utan att något saknas?
+function behovKvar(pack: Record<string, number>, behov: Record<string, number>, k: string) {
+  if (FOOD.includes(k)) return FOOD.reduce((a, q) => a + Math.floor(pack[q] ?? 0), 0) <= (behov.mat ?? 0);
+  return k in behov && Math.floor(pack[k] ?? 0) <= behov[k]!;
 }
 // poängen för varje utväg som går: resans värde minus dygnen i den fart utvägen ger minus det den kostar
 export function utvagVal(s: State, sl: Sallskap, t = s.now) {

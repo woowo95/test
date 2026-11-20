@@ -2349,7 +2349,16 @@ SCENARIER.utvagar = {
     const lastEfter = SIM.lastFart(tung.s, tung.sl);
     tung.s.now += 21 * SIM.DAY; SIM.platserUpphor(tung.s.varld!, tung.s.now);
     const kvarG = (tung.s.varld!.platser ?? []).filter(p => p.k === 'gomma').length;
+    // släppa undantar inget (steg 12.1.145): handelsvarorna släpps före maten resan behöver, och mat den inte behöver får släppas
+    const handel = ny(2, { pack: { skinn: 10, vattensack: 2 } }); delete handel.sk.skador; handel.sl.pack.brod = 6;
+    const hl = SIM.utvagLage(handel.s, handel.sl)!, hb2 = SIM.resBehov(handel.sl, SIM.matLage(handel.s, handel.sl).kvar, 2);
+    const hMat = Object.keys(hl.slapp).some(k => SIM.FOOD.includes(k));
+    const mycket = ny(2, { pack: { brod: 2000 } }); delete mycket.sk.skador;
+    const ml = SIM.utvagLage(mycket.s, mycket.sl)!, mb = SIM.resBehov(mycket.sl, SIM.matLage(mycket.s, mycket.sl).kvar, 2);
+    const matKvar = 2000 - (ml.slapp.brod ?? 0);
     return [
+      [`handelsvarorna släpps före maten resan behöver (${Object.entries(hl.slapp).map(([k, n]) => `${n} ${k}`).join(', ') || 'inget'}; 6 bröd av behovet ${hb2.mat})`, (hl.slapp.skinn ?? 0) > 0 && (!hMat || hl.slapp.skinn === 10)],
+      [`mat resan inte behöver får släppas, och vattnet den behöver först när maten är nere i behovet (${ml.slapp.brod ?? 0} bröd och ${ml.slapp.vattensack ?? 0} vattensäckar släpps, ${matKvar} bröd kvar av behovet ${mb.mat})`, (ml.slapp.brod ?? 0) > 0 && (!(ml.slapp.vattensack ?? 0) || matKvar <= mb.mat!)],
       [`på väg mot ${mal.namn} är den med brutna ben långsam (${fartSkadad.toFixed(2)} mot gränsen ${SIM.RESA.langsam})`, fartSkadad < SIM.RESA.langsam],
       [`med en häst rider den skadade (${val[0]}: ${texter[0]})`, val[0] === 'djur'],
       [`med tre friska bärs hen på en bår (${val[1]}: ${texter[1]})`, val[1] === 'bar'],
