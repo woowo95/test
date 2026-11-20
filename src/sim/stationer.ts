@@ -225,7 +225,7 @@ export const STATIONER = {
   },
   // skrivpulpeten (steg 10.6.11): står inne med en sittplats. Där skrivs bladen fortare och bättre; utan den skrivs de för hand vid elden
   skrivpulpet: {
-    kv: STATION.kvMer, namn: 'Skrivpulpet', ikon: 'skrivpulpet', w: 1, h: 1, tek: ['skrivpulpet'], av: RECEPT.skrivpulpet.av, min: RECEPT.skrivpulpet.min, gor: ['skriva'], fart: { skriva: STATION.skrivFart }, inne: true, sitt: true,
+    kv: STATION.kvMer, namn: 'Skrivpulpet', ikon: 'skrivpulpet', w: 1, h: 1, tek: ['skrivpulpet'], av: RECEPT.skrivpulpet.av, min: RECEPT.skrivpulpet.min, gor: ['skriva'], fart: { skriva: STATION.skrivFart }, vid: { penna: 1 }, inne: true, sitt: true, // pennan ligger vid pulpeten (steg 12.4.14)
     bygger: 'Bygger en skrivpulpet av plankor.', forsta: '{namn} byggde byns första skrivpulpet. Där skrivs bladen fortare och bättre.',
   },
   garvning: {

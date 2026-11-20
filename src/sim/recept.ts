@@ -170,6 +170,7 @@ const DEF = {
   utedass: { var: 'station', av: { plankor: 4 }, min: 15, verktyg: { benspade: 'benspaden' } }, // utedasset (steg 12.4.9): en grop med väggar och tak av plankor
   sjukbadd: { var: 'station', av: { torrgras: 4, grenar: 2, skinn: 1 }, min: 12 }, // sjukbädden (steg 12.4.10): en halmbädd med ett skinn över
   fyrfat: { var: 'station', av: { lera: 3 }, min: 10 }, // fyrfatet (steg 12.4.11): ett fat av lera med glödande kol
+  penna: { var: 'sak', av: { fjadrar: 1 }, min: 2, slag: 'liten', tek: 'pergament', verktyg: { kniv: 'kniven' } }, // fjäderpennan (steg 12.4.14): skärs av en fjäder med kniven, för hand
   oljelampa: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'oljelampa', bank: 'drejskiva' }, // oljelampan (steg 12.4.2): formas av lera som krukan, torkar och bränns
   // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
   jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },

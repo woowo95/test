@@ -328,6 +328,9 @@ const DEF = {
     gors: { text: 'Formar en liten oljelampa av lera.', stat: 'lamporGjorda', forsta: '{namn} formade byns första oljelampa av lera. Den ska torka och brännas i elden, och sedan brinner den på brännolja.' } },
   // osten (steg 12.4.7): mjölken ystad i en kruka vid elden; håller 40 dygn och mättar som torkat kött
   ost: { namn: 'Ost', skaffa: RECEPT.ost, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 2, energi: 0.6, mineral: 0.6, vitamin: 0.2 }, haller: 40 },
+  // fjäderpennan (steg 12.4.14, skrift.ts): ligger vid skrivpulpeten, och det som skrivs med den blir oftare bra; håller 20 blad
+  penna: { namn: 'Fjäderpenna', skaffa: RECEPT.penna, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'pennorTrasiga', text: '{namn}s fjäderpenna var utsliten.' },
+    gors: { text: 'Skär en penna av en fjäder med {verktyg}.', stat: 'pennorGjorda', forsta: '{namn} skar byns första fjäderpenna. Med den skrivs bladen jämnare.' } },
   // tunnan (steg 12.4.6, tunna.ts): ett laggat kärl som rymmer 20 delar, där vinet och mjödet mognar längre
   tunna: { namn: 'Tunna', skaffa: RECEPT.tunna, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.00005, redskap: true, trasig: { stat: 'tunnorTrasiga', text: '{namn}s tunna sprack.' },
     gors: { text: 'Laggar en tunna av plankor och binder den med rep.', stat: 'tunnorGjorda', forsta: '{namn} laggade byns första tunna. I den mognar vinet längre än i krukan.' } },

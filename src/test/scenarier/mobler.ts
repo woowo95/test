@@ -424,3 +424,28 @@ SCENARIER.ullregn = {
     ];
   },
 };
+
+SCENARIER.penna = {
+  text: 'Fjäderpennan (steg 12.4.14, skrift.ts): en penna som skärs av 1 fjädrar med kniven på 2 minuter och ligger vid skrivpulpeten, där byn vill ha en per pulpet; det som skrivs med den får oftare bra kvalitet (0,1 högre chans, också vid elden), och den håller 20 blad',
+  kor: () => {
+    const R = SIM.RECEPT.penna as SIM.ReceptRad, pulpet = SIM.stationDef('skrivpulpet')!;
+    const s = SIM.createState(1, START), p = vuxen(s);
+    while (SIM.lightLevel(s.now) < 1) s.now += SIM.HOUR;
+    const utan = SIM.villAv(s, 'penna');
+    medBank(s, 'skrivpulpet');
+    const med = SIM.villAv(s, 'penna');
+    // ett blad skrivs vid elden med pennan: den slits ett blad
+    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined;
+    const penna = SIM.addTool(s, 'penna', p); penna.hos = undefined;
+    p.lardomar = [{ k: 'fara', a: 3, v: 1, c: 0.9, t: s.now, om: 'Ulv dog där' } as NonNullable<SIM.Person['lardomar']>[number]];
+    SIM.setAmount(s, 'pergament', 1); SIM.fyllVatska(s, 'black', 2, kr);
+    p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task;
+    SIM.skrivKlar(s, p);
+    const skrevs = (s.stat?.skrivetMedPenna ?? 0) === 1, slits = Math.abs(penna.c - (1 - 1 / 20)) < 0.02;
+    return [
+      [`pennan skärs av ${JSON.stringify(R.av)} med ${Object.keys(R.verktyg ?? {})} på ${R.min} minuter, för hand, med tekniken ${R.tek}`, R.av?.fjadrar === 1 && !!R.verktyg?.kniv && R.min === 2 && !R.bank && R.tek === 'pergament'],
+      [`den ligger vid skrivpulpeten, och byn vill ha en per pulpet (${utan} utan pulpet, ${med} med en)`, pulpet.vid?.penna === 1 && utan === 0 && med >= 1],
+      [`det som skrivs med den får ${SIM.SKRIFT.pennaKv} högre chans till bra kvalitet, och den håller ${SIM.SKRIFT.pennaBlad} blad (${penna.c.toFixed(3)} kvar)`, SIM.SKRIFT.pennaKv === 0.1 && SIM.SKRIFT.pennaBlad === 20 && skrevs && slits],
+    ];
+  },
+};

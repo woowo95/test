@@ -4,6 +4,7 @@ import { balans } from './balans';
 // läsa skrift.ts, som själv läser tron
 export const SKRIFT = balans('skrift', {
   vikt: 0.4, // projektets vikt (som stenhuggarplatsen)
+  pennaKv: 0.1, pennaBlad: 20, // det som skrivs med en fjäderpenna får så här mycket högre chans till bra kvalitet, och pennan håller så här många blad (steg 12.4.14)
   stenar: 3, min: 15, // huggna stenar och minuter för en runsten
   sorg: 1, // lusten efter den dödas sten är sorgens tyngd delat med partnerns, gånger detta
   stolthet: 0.6, // lusten efter en sten om en bedrift: bedriftens vikt gånger detta, gånger egenintresset ...

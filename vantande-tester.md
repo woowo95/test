@@ -48,3 +48,5 @@
 - Röda redan på varld (255ee7f), inte av 12.4: scenariot brinner (branden i snön sprids inte).
 - 12.4.12 (tvålen i vården): vårdaren som kan Rena händer tar en tvål till såret (vardHamtas) och tvättar händerna med den; tvålen går nu åt, så byar med örtkök kokar mer tvål.
 - 12.4.13 (ylle och väta): den som bär en kappa eller mantel av ylle fryser hälften så mycket av att vara blöt (VADER.ullBlot); personrutan visar det.
+- 12.4.14 (fjäderpennan): byar med en skrivpulpet skär en penna (gruppen penna, en per pulpet), och skrivandet sliter den 1/20 per blad och ger 0,1 högre chans till bra kvalitet.
+- Bildstilen: ingen av de nya sakerna har ännu tre versioner i valdelen (se slutrapporten); platshållarna står i src/ikonermobler.ts.

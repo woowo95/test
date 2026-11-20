@@ -102,6 +102,13 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '................', '...kkkkkkkkkk...', '..kRkvovrvokRk..', '..kRvrovvrovRk..', '..kTRRRRRRRRTk..',
     '...kTTTTTTTTk...', '....kkkkkkkk....', '....kd..kd..kd..', '................', '................', '................', '................'],
     pal: { k: '#24201d', R: '#742a01', T: '#bd753e', v: '#3f2415', o: '#d8b25f', r: '#a14808', d: '#3f2415' } },
+  // fjäderpennan (steg 12.4.14): en lång ljus fjäder snett över rutan, med en skuren spets
+  penna: { pix: [
+    '................', '.............kk.', '............kwWk', '...........kwWk.',
+    '..........kwWk..', '.........kwWk...', '........kwWk....', '.......kwWk.....',
+    '......kwWk......', '.....kwWk.......', '....kWWk........', '...kyk..........',
+    '..kyk...........', '..kk............', '................', '................'],
+    pal: { k: '#24201d', w: '#dad0bb', W: '#bdb39b', y: '#7d5b40' } },
 };
 // stationerna som är en ruta stora har samma bild på kartan
 const KARTA = ['drejskiva', 'vagga', 'brunn', 'utedass', 'fyrfat'];

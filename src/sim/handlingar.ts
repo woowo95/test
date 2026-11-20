@@ -293,6 +293,7 @@ const DEF = {
   satta: { namn: 'Ställer en sittplats vid bordet', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // pallen eller stolen i stället för stubben (steg 12.4.4, mobler.ts)
   ysta: { namn: 'Ystar ost', slag: 'hantverk', hantverk: true, verb: 'ystar', plats: 'elden' }, // mjölk i en kruka vid elden (steg 12.4.7, TILLVERKA)
   fyrfat: { namn: 'Lägger kol i fyrfatet', slag: 'bygga', stilla: true, framme: true, plats: 'station', verb: 'lägger kol i fyrfatet' }, // fyrfatets glöd (steg 12.4.11, mobler.ts)
+  penna: { namn: 'Skär en fjäderpenna', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, // för hand (steg 12.4.14, skrift.ts)
   tunna: { namn: 'Laggar en tunna', slag: 'hantverk', hantverk: true, verb: 'laggar', plats: 'station' }, // vid snickarbänken (steg 12.4.6, tunna.ts)
   oljelampa: { namn: 'Formar en oljelampa', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'elden' }, // på drejskivan om byn har en, annars för hand (steg 12.4.2, ljus.ts)
   fyll_lampa: { namn: 'Fyller oljelampan', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // med brännolja, på bordet eller hyllan (steg 12.4.2, ljus.ts)

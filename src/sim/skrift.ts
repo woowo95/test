@@ -500,7 +500,9 @@ export function skrivKlar(s: State, p: Person) {
   if (!l || !harAtt(s) || skrivLjus(s, p.x, p.y) < SKRIFT.ljusMin) return;
   taVatska(s, 'black', 1);
   const tx = skriv(s, p, l), kv = { id: l.bok?.id ?? 0, k: l.bok ? 'bok' : 'blad', q: undefined as number | undefined };
-  nyKvalitet(s, p, kv, kvVid(s, p, 'skriva'), tx.titel, SKRIFTER[l.slag].skill); // vid skrivpulpeten med stationens tillägg (steg 10.6.11) // kvaliteten ligger på skriften och rör inte bladets eller bokens hållbarhet (steg 10.6.7)
+  const penna = nTools(s, 'penna') > 0; // med en fjäderpenna, vid pulpeten eller vid elden (steg 12.4.14)
+  if (penna) { wearTool(s, p, 'penna', 1 / SKRIFT.pennaBlad); count(s, 'skrivetMedPenna'); }
+  nyKvalitet(s, p, kv, kvVid(s, p, 'skriva') + (penna ? SKRIFT.pennaKv : 0), tx.titel, SKRIFTER[l.slag].skill); // vid skrivpulpeten med stationens tillägg (steg 10.6.11) // kvaliteten ligger på skriften och rör inte bladets eller bokens hållbarhet (steg 10.6.7)
   const q = kv.q ?? NORMAL, fc = SKRIFT.felChans[q] ?? 0;
   const fel = fc > 0 && rnd(s, 'kunskap', p) < fc ? (rnd(s, 'kunskap', p) < 0.5 ? SKRIFT.felOver : SKRIFT.felUnder) : undefined; // slås en gång och står kvar i texten
   if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, l.lar.k === 'fara' ? MINNE.vMaxFara : l.lar.k === 'vatten' ? 1 : l.lar.k === 'pris' ? Infinity : MINNE.vMax) };
@@ -540,3 +542,4 @@ export function lasKlar(s: State, q: Person, t: Task) {
   if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, (k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer) * nar, s.now, SKRIFT.gladjeTim * HOUR);
   count(s, 'last'); count(s, 'last_' + k.slag);
 }
+import { nTools, wearTool } from './agande';
