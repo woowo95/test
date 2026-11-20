@@ -125,20 +125,25 @@ export function ataPortion(s: State, p: Person, k: string) {
   const per = { [k]: KROPP.mattar };
   ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); count(s, 'atit', 1);
 }
+// maten som smakar lite extra gott, i den ordning tankarna kommer: steken (steg 9.6.21), jordgubbarna (steg 9.7.9) och det
+// rökta, det som rökeriet gör (ROKAS i matlagning.ts, steg 9.6.8). glad läses när någon äter: balanstalen står i matlagning.ts
+const GOTT: { tanke: string; ar: (k: string) => boolean; glad: () => number }[] = [
+  { tanke: 'Åt en stek', ar: k => rattInfo(k)?.kat === 'stek', glad: () => STEK.glad },
+  { tanke: 'Åt jordgubbar', ar: k => k === 'jordgubbar', glad: () => ROK.glad * 3 },
+  { tanke: 'Åt rökt mat', ar: k => ROKAS.some(r => r.blir === k), glad: () => ROK.glad },
+];
 // måltidens nivå (steg 9.6.2, ratter.ts): en lagad eller fin måltid ger en tanke som höjer humöret
 function maltidTanke(s: State, p: Person, per: Record<string, number>) {
-  const n = MALTIDSNIVA[basta(per)];
-  if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + basta(per)); }
-  if (basta(per) === 'fin') { const k = Object.keys(per).find(x => MALTIDSNIVA[maltidsNiva(x)] === MALTIDSNIVA.fin); if (k) smakFinMaltid(p, smakSak(k)); } // en favorit (steg 9.6.6)
+  const niva = basta(per), n = MALTIDSNIVA[niva];
+  if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + niva); }
+  if (niva === 'fin') { const k = Object.keys(per).find(x => MALTIDSNIVA[maltidsNiva(x)] === MALTIDSNIVA.fin); if (k) smakFinMaltid(p, smakSak(k)); } // en favorit (steg 9.6.6)
   // variationen (steg 9.6.5): den som ätit samma protein för många gånger tröttnar på det
   let mest = '', mn = 0; for (const k in per) { const pr = proteinAv(k, x => SAKER[x]?.namn ?? x); if (pr && per[k] > mn) { mest = pr; mn = per[k]; } }
   if (mest) {
     const m = (p.protMinne ??= []); m.push(mest); if (m.length > VARIATION.minns) m.shift();
     if (m.filter(x => x === mest).length >= VARIATION.trott) { think(p, `${mest} igen`, VARIATION.tanke, s.now, VARIATION.tankeTim * HOUR); count(s, 'trott_pa_mat'); }
   }
-  if (Object.keys(per).some(x => rattInfo(x)?.kat === 'stek' && per[x] > 0)) think(p, 'Åt en stek', STEK.glad, s.now, RATT.tankeTim * HOUR); // steken smakar bättre (steg 9.6.21)
-  if ((per.jordgubbar ?? 0) > 0) think(p, 'Åt jordgubbar', ROK.glad * 3, s.now, RATT.tankeTim * HOUR); // jordgubbarna gör folk glada (steg 9.7.9)
-  if (Object.keys(per).some(x => x.startsWith('rok') && per[x] > 0)) think(p, 'Åt rökt mat', ROK.glad, s.now, RATT.tankeTim * HOUR); // det rökta smakar lite bättre (steg 9.6.8)
+  for (const g of GOTT) if (Object.keys(per).some(x => per[x] > 0 && g.ar(x))) think(p, g.tanke, g.glad(), s.now, RATT.tankeTim * HOUR);
   const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
   specialTanke(s, p, per); // byns egen rätt som blivit en tradition (steg 10.7.29)
 }
@@ -828,6 +833,6 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
 export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number, fatt: Vara[] = []) => lura(s, M, G, betal, betalVaror(M, G, utom), ger, fatt);
 import { foodDays } from './ekonomi';
 import { MALTIDSNIVA, RATT, VARIATION, basta, maltidsNiva, proteinAv, rattInfo, smakSak } from './ratter';
-import { ROK, STEK, kockGlad } from './matlagning';
+import { ROK, ROKAS, STEK, kockGlad } from './matlagning';
 import { smakFinMaltid } from './rykten';
 import { specialTanke } from './special';

@@ -1,4 +1,4 @@
-import { protesFor, protesPa } from './protes'; // bara inne i funktioner: protes.ts läser den här filen
+import { PROTESER, protesFor, protesPa } from './protes'; // bara inne i funktioner: protes.ts läser den här filen
 import { gasterNu, gastLever } from './gast';
 import { han, honom } from './ord';
 import { personHand } from './personlogg';
@@ -258,15 +258,12 @@ export function gift(s: State, p: Person) {
 // ---------- det kroppen ger ----------
 // hur mycket sämre en del är just nu (0 = hel, 1 = går inte att använda)
 export function delFel(p: Person, d: Kroppsdel) {
-  if (p.saknas?.includes(d)) return PROTES_FEL[p.protes?.[d] ?? ''] ?? 1; // en förlorad del kommer inte tillbaka (steg 8.2.3), men en protes ger tillbaka en del (steg 9.5.11)
+  if (p.saknas?.includes(d)) return PROTESER[p.protes?.[d] ?? '']?.fel ?? 1; // en förlorad del kommer inte tillbaka (steg 8.2.3), men en protes ger tillbaka en del (steg 9.5.11)
   let f = 0;
   for (const w of p.skador ?? []) if (w.d === d) f += SKADA[w.k].fel * w.g * (w.n ?? 1) * (w.k === 'benbrott' && p.krycka && GADELAR.includes(d) ? HALSA.krycka : 1) + (w.fast ? HALSA.fastFel : 0); // vapnet i såret hindrar delen (steg 9.5.21); kryckan låter den med ett brutet ben gå (steg 9.5.28)
   for (const m of p.men ?? []) if (m.d === d) f += m.fel; // det som läkte fel (steg 8.2.4)
   return Math.min(1, f);
 }
-// hur mycket en förlorad del med en protes fattas (steg 9.5.11, PROTESER i protes.ts): träbenet och kryckan ger tillbaka ungefär hälften
-// av gången, kroken en del av greppet, och ögonlappen är bara utseende
-export const PROTES_FEL: Record<string, number> = { traben: 0.25, krycka: 0.25, krok: 0.6, ogonlapp: 1 };
 const harFel = (p: Person) => !!(p.skador?.length || p.saknas?.length || p.men?.length);
 type Vikt = 'rorlighet' | 'handighet' | 'syn' | 'horsel' | 'tal';
 function forlust(p: Person, vikt: Vikt) {
@@ -422,7 +419,6 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   if (SKADA[k].blod > 0 && p.ute === undefined) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod); // den som är på resa blöder inte på byns karta
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());
   if (g >= UPPV.skadaGrad) livet(s, p, 'skadad', true); // det hen överlevt (steg 3.9.8)
-  if (g >= UPPV.skadaGrad) nar = narOm(nar, p);
   nar = narOm(nar, p); // "när hen slaktade" blir "när han slaktade", "när Ask slog hen" "när Ask slog henne" (ordlagret, steg 6.7.2)
   if (g >= UPPV.skadaGrad) upplev(s, p, 'skadad', `${SKADA[k].ett} ${nar}`); // ett barn minns det (steg 3.1.2)
   if (DEL[d].livsviktig && g >= HALSA.dodGrad) return dod;
@@ -593,11 +589,10 @@ function infStadieNotis(s: State, p: Person, w: Skada) {
 // ---------- vården (steg 2.5.2) ----------
 // Vårdregistret VARD (steg 9.5.6, Hälsosystemet i detalj: Vårdregistret): varje behandling är en rad med kravet (vilka sår den
 // gäller), materialet, redskapet, färdigheten i Läkekonst som krävs, tiden i minuter, risken att det går fel och brådskan (högre
-// görs först). Valet och vården frågar registret, kortet visar vad som behövs härnäst och `npm run vard` skriver ut det. Rader
-// med senare = steget där de börjar användas: de finns i registret men deras krav är inte uppfyllda förrän dess
+// görs först). Valet och vården frågar registret, kortet visar vad som behövs härnäst och `npm run vard` skriver ut det.
 export interface VardDef {
   namn: string; text: string; krav: (s: State, q: Person, w: Skada, g: Person) => boolean;
-  material?: Record<string, number>; redskap?: string; fardighet?: number; tid: number; risk: number; bradska: number; andra?: true; senare?: string; hel?: true; // hel = gäller hela människan, inte ett sår (w saknas)
+  material?: Record<string, number>; redskap?: string; fardighet?: number; tid: number; risk: number; bradska: number; andra?: true; hel?: true; // hel = gäller hela människan, inte ett sår (w saknas)
   gor: (s: State, g: Person, q: Person, w: Skada) => void;
 }
 const stor = (w: Skada) => oppet(w) && w.g >= HALSA.vardFel;

@@ -1,5 +1,5 @@
 // Resterna och sophögen (steg 9.7.5, Odlingen i detalj: Resterna och sophögen). All slakt ger slaktrens och all skörd ger
-// växtrester, två saker i SAKER som ruttnar bort med tiden. Så länge de ligger i byn ger de smuts (smutsIByn i smuts.ts), och
+// växtrester, två saker i SAKER som ruttnar bort med tiden. Så länge de ligger i byn ger de smuts (smutsPunkter i smuts.ts), och
 // poängen för att bära dem till sophögen i utkanten, nära latrinen, kommer ur smutsen (raden sopor i ARBETEN, val.ts): de bärs
 // bort när de stör och får ligga när annat är viktigare. Sophögen är en plats och ingen station (s.sophog); resterna ruttnar bort där.
 import { balans } from './balans';

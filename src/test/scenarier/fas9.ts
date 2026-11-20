@@ -1372,7 +1372,7 @@ SCENARIER.vattning = {
 SCENARIER.sophog = {
   text: 'Steg 9.7.5: resterna och sophögen. All slakt ger slaktrens och all skörd ger växtrester, som ruttnar bort med tiden; i byn ger de smuts, och de bärs till sophögen i utkanten, där de ruttnar bort',
   kor: () => {
-    const { DJUR, setAmount, amountOf, smutsIByn, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
+    const { DJUR, setAmount, amountOf, smutsPunkter, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     setAmount(s, 'vilt', 4); setAmount(s, 'kniv', 1); (p.tek ??= {}).kniv = 1; // viltet: fisken ger fiskrens sedan steg 9.8.7
@@ -1380,8 +1380,8 @@ SCENARIER.sophog = {
     bearbetaVid(s, p, DJUR.kanin, 1);
     const rens = amountOf(s, 'slaktrens');
     setAmount(s, 'vaxtrest', 6);
-    const fore = smutsIByn(s).punkter.length;
-    s.now += SIM.HOUR; const smuts = smutsIByn(s).punkter.length;
+    const fore = smutsPunkter(s).length;
+    s.now += SIM.HOUR; const smuts = smutsPunkter(s).length;
     harHamtat(s, p, 'sopor', { slaktrens: amountOf(s, 'slaktrens'), vaxtrest: amountOf(s, 'vaxtrest') });
     soporKlar(s, p);
     const h = sophog(s), kvar = resterIByn(s), pa = h.n;

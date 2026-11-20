@@ -73,7 +73,6 @@ export const KROPP = balans('kropp', {
   toaAvbryt: 0.08, // under detta avbryter nöden det man håller på med
   // hälsa (health)
   svag: 0.4, // under detta är man för svag för att orka något
-  svartSjuk: 8, // en sjukdom som varar längre än så här loggas som svår
   // risken per dygn att dö av olycka eller ålder (Gompertz): dodBas + dodAlder * e^(dodTakt * ålder), dodBarn extra för små barn
   dodBas: 0.0015,
   dodAlder: 0.00004,
@@ -239,23 +238,21 @@ export const ARBETARE = balans('arbetare', {
 });
 const actKod = (a: string) => { let h = 7; for (let i = 0; i < a.length; i++) h = Math.imul(h, 31) + a.charCodeAt(i) | 0; return h; };
 export function enTill(s: State, act: Act, p?: Person) {
-  let n = 0;
-  for (const q of s.people) if (q !== p && alive(q) && q.task?.act === act) n++;
+  const n = andraGor(s, act, p);
   return !n || hash3(p?.id ?? 0, Math.floor(s.now / 60000), actKod(act)) < ARBETARE.fler ** n;
 }
 // samma sak för ett mål (steg 10.11.8): fler kan hjälpas åt med samma törstande, fält, djur eller vattenho, men chansen att en
 // till tar det faller med hur många som redan gör det där (ar väljer uppgifterna med samma mål)
 export function enTillDar(s: State, act: Act, p: Person, ar: (t: Task) => boolean, mal = 0) {
-  let n = 0;
-  for (const q of s.people) if (q !== p && alive(q) && q.task?.act === act && ar(q.task)) n++;
+  const n = andraGor(s, act, p, ar);
   return !n || hash3(p.id, Math.floor(s.now / 60000), actKod(act) + mal) < ARBETARE.fler ** n;
 }
 // byns vuxna (de som lever i byn, gästerna med)
 export const vuxnaOf = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
 // gör någon annan än p handlingen act med målet ref just nu
 export const annanGor = (s: State, p: Person, act: Act, ref: number) => living(s).some(q => q !== p && q.task?.act === act && q.task.ref === ref);
-// så många andra som gör handlingen just nu
-export function andraGor(s: State, act: Act, utom?: Person) { let n = 0; for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act) n++; return n; }
+// så många andra som gör handlingen just nu (och, med ar, med det målet)
+export function andraGor(s: State, act: Act, utom?: Person, ar?: (t: Task) => boolean) { let n = 0; for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act && (!ar || ar(q.task))) n++; return n; }
 
 export function stat(p: Person, k: Stat, now: number) {
   const a = ageOf(p, now);

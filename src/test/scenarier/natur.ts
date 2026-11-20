@@ -1761,7 +1761,7 @@ SCENARIER.regntvatt = {
 SCENARIER.smutsibyn = {
   text: 'Steg 3.6.10: blod och toa-högar inne i byn ger en tanke som sänker humöret hos dem som ser dem, och mat som ligger i en blodfläck eller på eller bredvid en toa-hög ruttnar fortare',
   kor: () => {
-    const { blodas, akel, toaBesok, slitageNu, smutsIByn, SMUTS, zoneOf, utanforByn } = SIM;
+    const { blodas, akel, toaBesok, slitageNu, smutsPunkter, SMUTS, zoneOf, utanforByn } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
     const z = zoneOf(s), bx = z.x + 0.5, by = z.y + 0.5;
@@ -1775,14 +1775,14 @@ SCENARIER.smutsibyn = {
     const pa = slitageNu(s, { k: 'bar', x: z.x, y: z.y }).per, rent = slitageNu(s, ren).per;
     Object.assign(q, { x: z.x + 0.5, y: z.y + z.h - 1 + 0.5, task: undefined }); toaBesok(s, q); // i lagrets andra hörn
     const toa = slitageNu(s, { k: 'bar', x: z.x + 1, y: z.y + z.h - 1 }).per;
-    const ibyn = smutsIByn(s).punkter.length, inne = utanforByn(s, z.x, z.y) <= SMUTS.byn;
-    // nytt blod i en bleknad fläck (samma antal fläckar) syns genast, inte först nästa timme (smutsIByn, kodgenomgången 3.10.25)
+    const ibyn = smutsPunkter(s).length, inne = utanforByn(s, z.x, z.y) <= SMUTS.byn;
+    // nytt blod i en bleknad fläck (samma antal fläckar) syns genast, inte först nästa timme (smutsPunkter, kodgenomgången 3.10.25)
     const u = createState(1, START); klockan(u); tandEld(u);
     const uz = zoneOf(u);
     u.blod = [{ x: uz.x + 0.5, y: uz.y + 0.5, f: 'droppar', m: 1, t: u.now - 18 * HOUR }];
-    const bleknad = smutsIByn(u).punkter.length;
+    const bleknad = smutsPunkter(u).length;
     blodas(u, uz.x + 0.5, uz.y + 0.5, 'blodning', 1);
-    const farsk = smutsIByn(u).punkter.length, antal = u.blod.length;
+    const farsk = smutsPunkter(u).length, antal = u.blod.length;
     // samma toahög ute och inne (steg 11.1.73): inne i ett hus äcklar den mer, och den väger tyngre i rummets smuts
     const w = createState(1, START); klockan(w); medHus(w);
     const rum = SIM.gridOf(w).rooms.find(r => r.tiles.length > 2)!, [a, b2] = living(w).filter(r => ageOf(r, w.now) >= 18) as [SIM.Person, SIM.Person];

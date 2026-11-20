@@ -213,7 +213,7 @@ function blodRutor(s: State) {
   blodCache.set(s, c = { hr, b: s.blod, blod });
   return blod;
 }
-function smutsPunkter(s: State) {
+export function smutsPunkter(s: State) {
   const h0 = Math.floor(s.now / HOUR) * HOUR, punkter: { x: number; y: number }[] = [];
   for (const g of blodOf(s)) if (blodNu(g, Math.max(h0, g.t)) > SMUTS.blodSyns && utanforByn(s, Math.floor(g.x), Math.floor(g.y)) <= SMUTS.byn) punkter.push({ x: g.x, y: g.y });
   for (const f of flackarOf(s)) {
@@ -223,7 +223,6 @@ function smutsPunkter(s: State) {
   for (const a of s.stackar ?? []) if ((a.k === 'slaktrens' || a.k === 'vaxtrest') && a.n >= 1 && utanforByn(s, a.x, a.y) <= SMUTS.byn) punkter.push({ x: a.x + 0.5, y: a.y + 0.5 }); // resterna i byn (steg 9.7.5)
   return punkter;
 }
-export const smutsIByn = (s: State) => ({ get punkter() { return smutsPunkter(s); }, blod: blodRutor(s) });
 // maten på rutan (x, y) ruttnar fortare i en blodfläck eller på eller bredvid en toa-hög (steg 3.6.10): så här många gånger
 export const ruttSmuts = (s: State, x: number, y: number) => {
   if (!s.blod?.length && !s.flackar?.length) return 1;

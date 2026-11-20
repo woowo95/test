@@ -140,14 +140,14 @@ function raknaPot(p: Person) {
 }
 // chansen och effekten för ett barn eller en vuxen (steg 4.1.1.2)
 function chansFor(d: UpplevelseDef, vuxen: boolean) {
-  if (d.vuxenTal) return vuxen ? d.chans : Math.min(1, d.chans * 3);
+  if (d.vuxenTal) return vuxen ? d.chans : Math.min(1, d.chans / UPPV.vuxenChans);
   return vuxen ? d.chans * UPPV.vuxenChans : d.chans;
 }
 function effektFor(d: UpplevelseDef, e: Partial<Record<Stat, number>>, vuxen: boolean) {
   const ut: Partial<Record<Stat, number>> = {};
   for (const k in e) {
     const v = e[k as Stat]!;
-    ut[k as Stat] = d.vuxenTal ? (vuxen ? v : v * 2) : vuxen ? Math.sign(v) * Math.max(1, Math.round(Math.abs(v) * UPPV.vuxenEffekt)) : v;
+    ut[k as Stat] = d.vuxenTal ? (vuxen ? v : v / UPPV.vuxenEffekt) : vuxen ? Math.sign(v) * Math.max(1, Math.round(Math.abs(v) * UPPV.vuxenEffekt)) : v;
   }
   return ut;
 }
@@ -233,19 +233,19 @@ function blekna(s: State, p: Person) {
   raknaPot(p);
 }
 // en gång i timmen (steg.ts, utan att ändra någon annans slump): nära svält eller köld, svårt sjuk, lek och trygghet
+// det man kan vara nära att dö av: nära svält, köld och svårt sjuk
+const NARA_DODEN: [UpplevelseTyp, (p: Person, now: number) => boolean][] = [
+  ['svalt', p => p.hunger <= 0 && p.health < UPPV.naraHalsa],
+  ['frys', p => p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa],
+  ['sjuk', (p, now) => svartSjukNu(p, now) || isSick(p, now) && p.health < UPPV.sjukHalsa],
+];
 export function stepUppvaxt(s: State) {
   const overflod = foodDays(s) > UPPV.overflodDygn;
   for (const p of s.people) {
-    if (paKartan(p)) { // det hen överlevt (i byn; den som är borta, steg 11.2.4), i alla åldrar (steg 3.9.8)
-      if (p.hunger <= 0 && p.health < UPPV.naraHalsa) livet(s, p, 'svalt', true);
-      if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) livet(s, p, 'frys', true);
-      if (svartSjukNu(p, s.now) || isSick(p, s.now) && p.health < UPPV.sjukHalsa) livet(s, p, 'sjuk', true);
-    }
+    if (paKartan(p)) for (const [k, nara] of NARA_DODEN) if (nara(p, s.now)) livet(s, p, k, true); // det hen överlevt (i byn; den som är borta, steg 11.2.4), i alla åldrar (steg 3.9.8)
     if (!alive(p) || ageOf(p, s.now) < UPPV.fran) continue;
     if (p.upp?.some(vuxenUpp)) blekna(s, p);
-    if (p.hunger <= 0 && p.health < UPPV.naraHalsa) upplev(s, p, 'svalt'); // barn och vuxna (steg 4.1.1.2)
-    if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) upplev(s, p, 'frys');
-    if (svartSjukNu(p, s.now) || isSick(p, s.now) && p.health < UPPV.sjukHalsa) upplev(s, p, 'sjuk');
+    for (const [k, nara] of NARA_DODEN) if (nara(p, s.now)) upplev(s, p, k); // barn och vuxna (steg 4.1.1.2)
     if (overflod) upplev(s, p, 'overflod');
     if (!formas(s, p)) continue;
     if (p.task?.act === 'leka' && p.task.phase === 'do') upplev(s, p, 'lek');

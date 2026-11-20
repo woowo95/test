@@ -23,7 +23,6 @@ import { eldarOf, eldXY } from './eld';
 import { notis } from './notiser';
 import { kn, learnK } from './kunskap';
 import { kronika } from './historik';
-import { housesOf, roomAt as rumVid } from './byggnad';
 
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
 export interface SjukStadium { fran: number; text: string } // från hur långt sjukdomen kommit (0–1): det kortet säger
@@ -189,13 +188,12 @@ export function barSmitta(s: State): SjukId | undefined {
 // kunskapen Smittan (steg 9.5.5): lärs när flera i samma hus blir sjuka efter varandra i samma sjukdom, av alla som bor där
 function larSmittan(s: State, p: Person, k: SjukId) {
   if (SJUKDOMAR[k].smitta <= 0) return;
-  const hus = (q: Person) => rumVid(s, q.x, q.y)?.hus;
+  const hus = (q: Person) => roomAt(s, q.x, q.y)?.hus;
   const h = hus(p);
   if (h === undefined) return;
   const andra = living(s).filter(q => q !== p && q.sjuk?.k === k && q.sjuk.st !== undefined && hus(q) === h);
   if (!andra.length) return;
   for (const q of living(s)) if (hus(q) === h && kn(q, 'smitta') < 1) { learnK(q, 'smitta', 1, s.now); count(s, 'larSmittan'); }
-  void housesOf;
 }
 // epidemin i krönikan (steg 9.5.5): när en tredjedel av byn varit sjuk i samma sjukdom, en gång per utbrott (utbrottet är slut
 // när ingen längre är sjuk i den)

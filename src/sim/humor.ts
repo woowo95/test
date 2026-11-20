@@ -246,8 +246,7 @@ export function flyttaUt(s: State, p: Person) {
 
 // risken för ett utbrott den här timmen (på dagen): större ju sämre p mår och ju fler utbrott nyss. Ett barn brister mer sällan
 // med en förälder nära och efter lek
-export function utbrottChans(s: State, p: Person) {
-  const m = moodOf(p, s.now);
+export function utbrottChans(s: State, p: Person, m = moodOf(p, s.now)) {
   if (m >= HUMOR.grans) return 0;
   let risk = HUMOR.risk * (HUMOR.grans - m) / HUMOR.grans * (1 + HUMOR.eskal * (p.utb ?? 0));
   if (ageOf(p, s.now) < ALDER.vuxen) {
@@ -269,7 +268,7 @@ export function utbrottRisk(s: State, p: Person, ljust: boolean) {
   const m = moodOf(p, s.now);
   if (m >= HUMOR.grans) return;
   const djup = (HUMOR.grans - m) / HUMOR.grans, utb = p.utb ?? 0;
-  if (rnd(s, 'humor', p) >= utbrottChans(s, p)) return;
+  if (rnd(s, 'humor', p) >= utbrottChans(s, p, m)) return;
   const allv = djup + HUMOR.allvUtb * utb + HUMOR.allvEmp * (10 - stat(p, 'empati', s.now)) / 10 + HUMOR.allvSlump * gauss(s, 'humor', p) + HUMOR.allvAgg * franMitt(p, 'aggression', s.now);
   let grad = allv >= HUMOR.grad5 ? 5 : allv >= HUMOR.grad4 ? 4 : allv >= HUMOR.grad3 ? 3 : allv >= HUMOR.grad2 ? 2 : 1;
   if (barn) grad = Math.min(grad, 2);
