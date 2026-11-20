@@ -311,14 +311,14 @@ SCENARIER.protes = {
   },
 };
 
-// förbanden (steg 9.5.15): remsan före mossan, en remsa ur ett plagg i nöd, avsnörningen och sömnaden
+// förbanden (steg 9.5.15): remsan, en remsa ur ett plagg i nöd, avsnörningen och sömnaden
 function forbanden(): [string, boolean][] {
   const { HALSA, RECEPT: R, halsaSteg, addTool, setAmount } = SIM;
   const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
   const vard = vardPa;
   const recept = R.remsa.av.skinn === 1 && R.remsa.ger === 2 && R.remsa_lin.av.lintyg === 1;
-  // remsan läggs före mossan
-  setAmount(s, 'remsa', 1); setAmount(s, 'mossa', 1);
+  // remsan ensam skyddar bättre än mossan ensam (mossa under en remsa är bäst, steg 12.1.6, scenariot myrmossa)
+  setAmount(s, 'remsa', 1); setAmount(s, 'mossa', 0);
   q.skador = [{ d: 'bal', k: 'skarsar', g: 0.4, b: 1 }]; vard(s, g, q);
   const remsa = q.skador![0].f === 2 && HALSA.remsa < HALSA.forband;
   // i nöd: en remsa ur plagget
@@ -341,7 +341,7 @@ function forbanden(): [string, boolean][] {
   const sydd = !!tq.skador![0].sydd && tq.skador![0].g < HALSA.storSar;
   return [
     [`remsorna skärs två av ett skinn eller lintyg (${recept ? 'ja' : 'nej'})`, recept],
-    [`remsan läggs före mossan och skyddar bättre mot infektion (${HALSA.remsa} mot ${HALSA.forband})`, remsa],
+    [`remsan skyddar bättre mot infektion än mossan (${HALSA.remsa} mot ${HALSA.forband})`, remsa],
     [`utan remsa och mossa rivs en remsa ur ett plagg, som slits (${c0.toFixed(2)} → ${rock.c.toFixed(2)})`, plagg],
     [`ett stort sår i benet snörs av och slutar blöda (${snord ? 'ja' : 'nej'}), och sitter avsnörningen för länge skadas benet (${skadad ? 'ja' : 'nej'})`, snord && skadad],
     [`ett stort sår sys bara med Läkekonst (${utanKonst ? 'inte utan' : 'syddes utan'}), och det sydda blir medelstort (${sydd ? 'ja' : 'nej'})`, utanKonst && sydd],

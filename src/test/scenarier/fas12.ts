@@ -536,3 +536,37 @@ SCENARIER.nyvarld = {
     ];
   },
 };
+
+SCENARIER.myrmossa = {
+  text: 'Mossan (steg 12.1.6, mossa.ts): mossan växer bara i myren, 4 i en full ruta, och plockas där på en tur som ger upp till 10; mossa under en remsa är det bästa förbandet och håller dubbelt så länge; byn vill ha mossa bara när kartan har en myr',
+  kor: () => {
+    const s = myrBy(), r = myrRutorI(s), utan = SIM.createState(myrFro(1, false), Date.UTC(2026, 3, 1));
+    const mossa = r.filter(i => SIM.fyndAt(s, 'mossa', i) === 4).length, e = SIM.eldPlats(s), utanfor = SIM.fyndAt(s, 'mossa', SIM.tileOf(e.x, e.y));
+    const mal = SIM.MATERIALMAL.mossa!.min!(s), malUtan = SIM.MATERIALMAL.mossa!.min!(utan), folk = SIM.living(s).length;
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const f = { kyla: false, gras: 0 };
+    const u = SIM.projektNu(s, p, 'mossplock', f), at = SIM.mossaPlats(s), pu = SIM.living(utan).find(q => SIM.ageOf(q, utan.now) >= SIM.ALDER.vuxen)!;
+    const uUtan = SIM.projektNu(utan, pu, 'mossplock', f);
+    // turen: högst 10 mossa i en hög där den plockades
+    const t = { act: 'plockaMossa', phase: 'do', tx: at!.x, ty: at!.y, until: s.now, carry: 0, why: '', arbTid: SIM.MOSSA.min * 60000 } as SIM.Task;
+    p.x = at!.x; p.y = at!.y;
+    SIM.mossaPlockad(s, p, t);
+    const hog = SIM.stacksOf(s).filter(a => a.k === 'mossa').reduce((n, a) => n + a.n, 0), i = SIM.tileOf(at!.x, at!.y), tom = SIM.fyndAt(s, 'mossa', i);
+    // förbanden: mossa under en remsa, remsa ensam och mossa ensam
+    const forband = (pack: Record<string, number>) => {
+      p.skador = undefined; SIM.skada(s, p, 'benV', 'skarsar', 0.5, 'olycka', ''); const w = p.skador![0]!; w.b = 0;
+      SIM.vardKalla.pack = pack; SIM.VARD.forband!.gor(s, p, p, w); SIM.vardKalla.pack = undefined;
+      const ny = SIM.forbandGammalt(s, w); s.now += 13 * SIM.HOUR; const tretton = SIM.forbandGammalt(s, w); s.now += 12 * SIM.HOUR; const tjugofem = SIM.forbandGammalt(s, w); s.now -= 25 * SIM.HOUR;
+      return { f: w.f, ny, tretton, tjugofem };
+    };
+    const bada = forband({ remsa: 1, mossa: 1 }), remsa = forband({ remsa: 1 }), bara = forband({ mossa: 1 });
+    return [
+      [`mossan växer bara i myren: ${mossa} av ${r.length} rutor har 4, ingen vid elden`, mossa === r.length && utanfor === 0],
+      [`byn vill ha en mossa per invånare med myr (${mal} för ${folk}) och ingen utan (${malUtan})`, mal === folk && malUtan === 0],
+      [`en vuxen plockar mossa i myren (${u?.act}, ${u?.min} minuter), i en by utan myr ingen`, u?.act === 'plockaMossa' && u.min === 5 && SIM.paMyr(s, SIM.tileOf(u.spot!.x, u.spot!.y)) && !uUtan],
+      [`turen ger 10 mossa i en hög och tömmer rutan (${hog}, kvar ${tom})`, hog === 10 && tom === 0],
+      [`mossa under en remsa är det bästa förbandet och håller 24 timmar (f ${bada.f}, gammalt efter 13 h ${bada.tretton}, efter 25 h ${bada.tjugofem})`, bada.f === 3 && !bada.ny && !bada.tretton && bada.tjugofem && SIM.HALSA.mossaRemsa < SIM.HALSA.remsa],
+      [`remsa ensam (f ${remsa.f}) och mossa ensam (f ${bara.f}) håller 12 timmar som förut`, remsa.f === 2 && bara.f === 1 && remsa.tretton && bara.tretton && !remsa.ny],
+    ];
+  },
+};

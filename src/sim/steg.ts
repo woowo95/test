@@ -6,6 +6,7 @@ import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
 import { myrSteg } from './myr';
 import { malmGravd } from './malm';
+import { mossaPlockad } from './mossa';
 import { torvGravd, torvTorkar } from './torv';
 import { branningKlar, branningSteg, passaKlar } from './brann';
 import { jarngruvorSteg } from './gruva';
@@ -121,7 +122,7 @@ import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } 
 import { lagRegister } from './lagar';
 import { oppnaSed } from './rost';
 import { LARM, handelse, larma } from './rykten';
-import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
+import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
@@ -241,8 +242,8 @@ const KLAR: Partial<Record<Act, Krok>> = {
     if (!t.tool) return; // utan yxa står trädet kvar halvfällt, och nästa fällare gör resten
     fallTanke(s, p, tileOf(t.tx, t.ty)); // långt från byn tänker man på skogsvården (skogsvard.ts, steg 6.5.2)
     const k = fellTree(s, p, t.tx, t.ty);
-    if (k) { // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan; ibland har stammen mossa (steg 2.5.2)
-      wearUsed(s, p, 1); mossaPaStam(s, p, k);
+    if (k) { // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan; 
+      wearUsed(s, p, 1);
       k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p);
       if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k);
     }
@@ -356,6 +357,7 @@ KLAR.flyttStation = s => { stationFlytta(s); }; // en station ute närmare dem s
 KLAR.flyttLager = s => { const v = lagerFlyttVal(s); if (v) lagerFlytta(s, v.z, v.ny); }; // en lagerplats närmare byns mitt (lager.ts, steg 9.4.7)
 KLAR.bryta = stenBruten; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5)
 KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, steg 9.4.10)
+KLAR.plockaMossa = mossaPlockad; // mossan läggs i en hög där den plockades (mossa.ts, steg 12.1.6)
 KLAR.malm = malmGravd; // malmen läggs i en hög där den grävdes (malm.ts, steg 12.1.2)
 KLAR.torv = torvGravd; // den blöta torven läggs i en hög där den grävdes (torv.ts, steg 12.1.3)
 KLAR.kola = branningKlar; KLAR.blasa = branningKlar; // milan laddas och tänds, eller töms (brann.ts, steg 12.2.1)
@@ -1102,7 +1104,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     if (!got) tk.until = s.now; // stammen är slut
     else {
       if (k) got.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), got.ved, undefined, p); // står stammen där ett hus byggs blir träet väggar
-      tk.carry += got.ved; bar('grenar', got.grenar); bar('mossa', got.mossa);
+      tk.carry += got.ved; bar('grenar', got.grenar);
       if (got.done) { tk.until = s.now; const h = k && husById(s, bitAt(s, Math.floor(k.x), Math.floor(k.y))?.hus); if (h) husKlart(s, h, p); } // stocken var det sista i huset (steg 8.1.13)
     }
     return true;
@@ -1111,7 +1113,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
   klyva: (s, _p, tk, { y, bar }) => {
     const got = chopStock(s, tk.ref, y * SKOG.virkeVed);
     if (!got) tk.until = s.now;
-    else { tk.carry += got.ved / SKOG.virkeVed; bar('grenar', got.grenar); bar('mossa', got.mossa); if (got.done) tk.until = s.now; }
+    else { tk.carry += got.ved / SKOG.virkeVed; bar('grenar', got.grenar); if (got.done) tk.until = s.now; }
     return true;
   },
   samla: (s, p, tk, { y, rich, delar, rd, dtSec, bar }) => {
@@ -1133,13 +1135,12 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       count(s, 'samlat_bar', y - r); count(s, 'samlat_rotter', r); // vad som samlats av varje slag (scenariot rotter)
       gjort(s, p, 'samlat', y);
     }
-    // på rundan hittar man det andra (hö, kvistar, mossa, ägg, frön) under hela tiden ute, också gången sedan förra plocket (tk.letat)
+    // på rundan hittar man det andra (hö, kvistar, ägg, frön) under hela tiden ute, också gången sedan förra plocket (tk.letat)
     const pa = plockSlag !== undefined ? dtSec + (tk.letat ?? 0) : dtSec;
     if (plockSlag !== undefined) tk.letat = undefined;
     const fart = ACTS[tk.act].fart ?? 1, got = (plockSlag !== undefined ? utanStenar(forageItems(s, p, pa, fart)) : forageItems(s, p, pa, fart)) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas på rundan
     if (plockSlag === undefined) bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got)); // på rundan plockas svampen som en sak (svampPlock)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
-    bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
     { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); count(s, 'samlat_rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
     if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)

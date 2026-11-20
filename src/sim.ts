@@ -209,6 +209,7 @@ export * from './sim/vacktskog';
 export * from './sim/vackthjalp';
 export * from './sim/myr';
 export * from './sim/malm';
+export * from './sim/mossa';
 export * from './sim/torv';
 export * from './sim/brann';
 export * from './sim/smedja';

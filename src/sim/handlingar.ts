@@ -288,6 +288,7 @@ const DEF = {
   // skogsvården (steg 6.5.2, skogsvard.ts): en planta grävs upp och bärs dit byn vill ha skog
   plantera: { namn: 'Flyttar en planta', slag: 'odla', under: { go: 'går till plantan', do: 'gräver upp plantan', back: 'bär plantan' }, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'plantor', per: 'gang' }, tungt: true, framme: true },
   lera: { namn: 'Gräver lera', slag: 'samla', arbete: 'samla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // vid stranden (lera.ts, steg 9.4.10)
+  plockaMossa: { namn: 'Plockar mossa', slag: 'samla', arbete: 'samla', framme: true }, // i myren, för hand (mossa.ts, steg 12.1.6)
   malm: { namn: 'Gräver malm', slag: 'samla', arbete: 'samla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40, kravs: true } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // i myren (malm.ts, steg 12.1.2)
   torv: { namn: 'Gräver torv', slag: 'tra', arbete: 'ved', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40, kravs: true } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // i myren, när byn behöver ved (torv.ts, steg 12.1.3)
   kola: { namn: 'Kolar', yrke: 'Kolare', slag: 'hantverk', tungt: true, plats: 'station', verb: 'kolar' }, // vid kolmilan (brann.ts, steg 12.2.1)

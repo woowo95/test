@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -708,7 +708,7 @@ SCENARIER.sangar = {
 };
 
 SCENARIER.vard = {
-  text: 'Steg 2.5.2: ett öppet sår kan bli infekterat, och utan vård blir det kallbrand och döden. Vården är en egen handling: man trycker på ett sår som blöder, lägger ett förband av mossa (som hittas när man letar i naturen och ibland på ett fällt träd) och rengör ett infekterat sår, på sig själv eller någon annan. Den som inte kan gå kravlar hem eller bärs hem, och man läker fortare när man vilar',
+  text: 'Steg 2.5.2: ett öppet sår kan bli infekterat, och utan vård blir det kallbrand och döden. Vården är en egen handling: man trycker på ett sår som blöder, lägger ett förband av mossa (som plockas i myren, steg 12.1.6) och rengör ett infekterat sår, på sig själv eller någon annan. Den som inte kan gå kravlar hem eller bärs hem, och man läker fortare när man vilar',
   lang: true,
   kor: () => {
     const s = createState(5, START);
@@ -747,11 +747,7 @@ SCENARIER.vard = {
     // man läker fortare när man vilar
     fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; timmar(p, 4); const vaken = p.skador![0].g;
     fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
-    // mossa hittas i naturen och på ett fällt träd
-    const t = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: 0, carry: 0 } as const;
-    setAmount(s, 'mossa', 0); const fynd = mossaFynd(s, { ...t }, 3600);
-    const k = { id: 999, x: 1, y: 1, ved: 5, grenar: 2, mossa: 2 }; (s.stockar ??= []).push(k); const hugg = chopStock(s, 999, 1)?.mossa ?? 0;
-    // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): mossa hittas och såren vårdas
+    // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): såren vårdas
     // skadorna är få och slumpen avgör vilka sår som behöver vård (ett benbrott behöver inget förband), så byarna prövas tills en har vårdat
     // olyckorna är sällsynta (några på tolv dygn i en by, ofta ingen), så här är de tio gånger vanligare
     let b = createState(4, START);
@@ -768,7 +764,6 @@ SCENARIER.vard = {
       [`den som har brutit benet kan inte gå och kravlar (${kryp.toFixed(2)} av farten)`, kravlar],
       [`den som inte kan gå långt från lägret kravlar hem eller bärs hem av en annan (${langtBort ? 'långt bort' : 'inte långt bort'}, ${bars ? 'buren' : 'kravlade själv'}, hemma ${hem}); sedan steg 3.7.19 kravlar man en ruta på fem sekunder`, langtBort && hem],
       [`man läker fortare när man sover (${(0.5 - vaken).toFixed(3)} → ${(0.5 - sover).toFixed(3)} på fyra timmar)`, 0.5 - sover > 0.5 - vaken],
-      [`mossa hittas när man letar (${fynd.toFixed(2)} i timmen) och när man hugger en fälld stam med mossa (${hugg})`, fynd > 0 && hugg === 2],
       [`på tolv dygn i en by: ${b.stat ? amountOf(b, 'mossa').toFixed(1) : 0} mossa, ${st('skador')} skador, ${st('vard')} vårdtillfällen (${st('vard av andra')} av andra), ${st('forband')} förband, ${st('infektioner')} infektioner, ${st('kallbrand')} kallbrand, ${st('buren hem')} burna hem`, st('vard') > 0 && amountOf(b, 'mossa') + st('forband') > 0],
     ];
   },

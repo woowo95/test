@@ -4,7 +4,6 @@ import { heligtAvstar } from './kultlatt';
 import { hoVal } from './djurtorst';
 import { TATU, TATUERINGAR, tatVal } from './tatuering';
 import { han } from './ord';
-import { mossaKrok } from './halsa';
 import { flintaKrok } from './forradsmal';
 import { flintaTillVerktyg } from './redskap';
 import { VATSKOR, vatskaKrok, villTe } from './vatskor';
@@ -476,8 +475,8 @@ export function dangers(s: State) {
   return { kyla: freezing > VAL.fryserAndel || cold && !nagonGlod(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
 }
 satFaror(dangers);
-// förrådsmålen för mossan och dryckerna (steg 10.2.12): krokarna sätts här, där alla filer redan är lästa
-mossaKrok.vill = s => villHaAv(s, 'mossa'); vatskaKrok.tagen = (s, v, n) => forbrukat(s, v, n);
+// förrådsmålen för dryckerna (steg 10.2.12): krokarna sätts här, där alla filer redan är lästa
+vatskaKrok.tagen = (s, v, n) => forbrukat(s, v, n);
 flintaKrok.verktyg = flintaTillVerktyg; // flintan till redskapen i förrådsmålet (steg 10.2.12)
 type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det

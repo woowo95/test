@@ -265,6 +265,13 @@ const DEF = {
     bas: (s, i) => myrMalm(s, i),
     uttag: { full: 4, reach: 0, regrow: [0, 1 / 240, 1 / 240, 1 / 240] },
   },
+  // mossan (steg 12.1.6, mossa.ts): bara på myren, 4 i en full ruta, och en tömd ruta är full igen efter ungefär 60 dygn
+  // (60 år i spelet); i istiden växer inget till
+  mossa: {
+    namn: 'Mossa', grupp: 'vaxter', ikon: 'mossa', farg: 0x6f8f3a, topp: 4,
+    bas: (s, i) => paMyr(s, i) ? 4 : 0,
+    uttag: { full: 4, reach: 0, regrow: [0, 1 / 480, 1 / 480, 1 / 480] },
+  },
 } satisfies Record<string, FyndDef>;
 // bärbuskarna (buskar.ts): bär växer på rutan i dag där bärens mönster ligger, och bärbuskarna sås ut där när byn grundas
 // (inte på bar jord, i lägret eller där något är byggt)

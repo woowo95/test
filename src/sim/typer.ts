@@ -500,7 +500,7 @@ export interface Borta { fran: number; fodda: number; doda: number; folk?: numbe
 // dorr = öppningen (rutan) där den väntar utanför en stängd dörr, och vantar = sedan när (steg 3.7.21)
 export interface Vargflock { sx?: number; sy?: number; id: number; vargar: number[]; x: number; y: number; mx: number; my: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; sag?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true; valp?: true; tam?: number; vag?: { m: number; t: number[]; ingen?: true }; vagT?: number } // vag: rutorna runt det som står i vägen, mot målet m (ga i varg.ts). valp: en vargvalp går med flocken (steg 9.8.2, tamdjur.ts)
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
-export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number; av?: number } // mossa på stammen (steg 2.5.2), den som fällde (steg 9.2.87)
+export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number; av?: number } // mossa = bara i äldre sparfiler (före steg 12.1.6), den som fällde (steg 9.2.87)
 
 // ---------- seder ----------
 // Byns gemensamma värderingar, -1..1. Registret (SEDER) står i seder.ts.
