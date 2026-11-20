@@ -616,8 +616,9 @@ function infartLinje(s: State) {
 const infartA: AtgardDef = {
   namn: 'Infartsväg', steg: 0,
   foresla: (s, b) => {
-    const v = bastaVag(s); // infartsvägen väljer material som vägarna i byn (steg 10.10.6)
-    if (b.fn !== 'forbattra' || !v || s.infart?.klar || s.infart?.stopp) return [];
+    if (b.fn !== 'forbattra' || s.infart?.klar || s.infart?.stopp) return [];
+    const v = bastaVag(s); // infartsvägen väljer material som vägarna i byn (steg 10.10.6), bara när en förbättring prövas
+    if (!v) return [];
     if (bitsOf(s).filter(q => MATERIAL[q.m]?.vag && !MATERIAL[q.m].brygga).length < PLAN.infartFran) return [];
     const { ut, dx, dy } = infartLinje(s), m = getMap(s.seed).tiles, ritning: Andring[] = [];
     let vatten = 0;

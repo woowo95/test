@@ -1611,7 +1611,7 @@ function iVagen(s: State) {
   const var_ = rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : iIngangen(s, t) ? 'i ingången' : 'så att man inte kom fram i huset';
   const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
   count(s, 'station i vägen');
-  if (t.k === 'scen') { rivScen(s, t, `Scenen revs eftersom den stod ${var_}.`); return; } // scenen bärs aldrig (steg 8.1.16)
+  if (t.k === 'scen') { rivStation(s, t, `Scenen revs eftersom den stod ${var_}.`); return; } // scenen bärs aldrig (steg 8.1.16)
   if (at) { flytta(s, t, at); log(s, `${d.namn} flyttades eftersom den stod ${var_}.`, 'world'); return; }
   taBort(s, t);
   log(s, `${d.namn} togs isär eftersom den stod ${var_} och inte fick plats någon annanstans.`, 'world');
@@ -1760,23 +1760,18 @@ function scenIn(s: State) {
   if (!samlingRum(s)) return;
   const at = utan(s, t, () => { const sal = samlingRum(s); return sal && siteInne(s, t.k, sal); }); // rummen räknas om när scenen är borta
   if (!at) return;
-  rivScen(s, t, `Scenen revs för att byggas upp igen i ${husById(s, samlingRum(s)?.hus ?? -1)?.namn.toLowerCase() ?? 'salen'}. Där går det att uppträda också när det är kallt eller regnar.`);
+  rivStation(s, t, `Scenen revs för att byggas upp igen i ${husById(s, samlingRum(s)?.hus ?? -1)?.namn.toLowerCase() ?? 'salen'}. Där går det att uppträda också när det är kallt eller regnar.`);
 }
-// scenen bärs aldrig (steg 8.1.16): ska den flyttas rivs den, och en del av materialet kommer tillbaka som när ett hus rivs.
-// Byn bygger en ny (scenen i STATIONER, med platsen i salen när det finns en). Instrumenten blir kvar i byn
-// en station ute rivs för ett hus (steg 10.2.77): den tas isär, en del av materialet kommer tillbaka som när ett hus rivs, och
-// projekten bygger den igen på en ny plats eftersom behovet och värdet finns kvar
+// en station rivs (för ett hus, steg 10.2.77, när scenen flyttas eller förbjuds, steg 8.1.16, eller när anfallare slår sönder den):
+// den tas isär, en eld i den släcks, och en del av materialet kommer tillbaka som när ett hus rivs. Projekten bygger den
+// igen på en ny plats när behovet och värdet finns kvar; scenens instrument blir kvar i byn
 export function rivStation(s: State, t: Station, text: string) {
   if (stationDef(t.k)?.eld || stationDef(t.k)?.brasa) { const f = s.eldar?.find(e => e.at && e.at.x === t.x && e.at.y === t.y); if (f) { f.lit = false; f.fuel = 0; } } // elden släcks
-  rivScen(s, t, text); count(s, 'rivenForHus');
-}
-export function rivScenen(s: State, text: string) { const t = stationerOf(s).find(q => q.k === 'scen'); if (t) rivScen(s, t, text); }
-function rivScen(s: State, t: Station, text: string) {
   taBort(s, t);
   for (const [k, n] of Object.entries(stationDef(t.k)!.av)) { const m = Math.floor(n * HUS.rivTillbaka); if (m > 0) put(s, k, m); }
-  count(s, 'scen riven');
   log(s, text, 'world');
 }
+export function rivScenen(s: State, text: string) { const t = stationerOf(s).find(q => q.k === 'scen'); if (t) rivStation(s, t, text); }
 function barIn(s: State) {
   for (const t of s.stationer ?? []) {
     const d = stationDef(t.k);
