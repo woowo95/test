@@ -24,6 +24,7 @@ export const FANG = balans('fangelse', {
   dygnV: 0.05, // ... varje dygn som återstår ...
   brandV: 1, // ... och mycket när det brinner nära
   brytMin: 20, // trädörrens tid utan yxa och bom (RADER.dorrMin, Dörrar mot anfallare), i minuter
+  lasGanger: 2, // bakom en låst dörr tar det så här många gånger längre (steg 12.5.6)
   // mat och vatten till fången (steg 11.12.2): var och en går när fångens hunger eller törst gånger närheten är minst hjalp
   hjalp: 0.15, // familj och partner (närhet 1) går tidigt ...
   van: 0.5, // ... en vän (närhet så här) senare ...
@@ -112,7 +113,8 @@ export function fangeVal(s: State, p: Person): boolean {
     if (vakter.length) { count(s, 'fangelse_stoppad'); fangelseKrok.slass(s, vakter, p); return true; }
     // på rutan inne vid dörren
     const inne = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => (dorr.y + dy) * W + dorr.x + dx).find(i => rutor.includes(i)) ?? rutor[0];
-    p.task = { act: 'rymma', phase: 'go', tx: inne % W + 0.5, ty: Math.floor(inne / W) + 0.5, until: s.now + FANG.brytMin * MIN, arbTid: FANG.brytMin * MIN, carry: 0, why: 'Vill ut ur fängelset', dark: false, ref: dorr.id };
+    const min = FANG.brytMin * (dorrDef(dorr.dorr)?.last ? FANG.lasGanger : 1); // den låsta dörren tar dubbelt så lång tid (steg 12.5.6)
+    p.task = { act: 'rymma', phase: 'go', tx: inne % W + 0.5, ty: Math.floor(inne / W) + 0.5, until: s.now + min * MIN, arbTid: min * MIN, carry: 0, why: 'Vill ut ur fängelset', dark: false, ref: dorr.id };
     count(s, 'fangelse_bryter');
     fangelseKrok.larma(s, p); // slagen mot dörren hörs (steg 11.12.5)
     return true;

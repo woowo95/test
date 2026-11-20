@@ -967,3 +967,49 @@ SCENARIER.gryta = {
     ];
   },
 };
+
+SCENARIER.las = {
+  env: { BALANS: 'fangelse.bryt=-99,fangelse.vakt=0' }, // fången vill alltid ut och ingen vaktar: här prövas tiden det tar
+  text: 'Låset och den låsta dörren (steg 12.5.6): låset smids i smedjan (1 järn, 4 minuter, tekniken Lås), och en dörr med lås (2 plankor och 1 lås, 20 minuter) är nästa rad i DORRAR efter trädörren. Den är bommad också när huset är tomt, och en fånge behöver dubbelt så lång tid för att bryta sig ut',
+  kor: () => {
+    const R = SIM.RECEPT, T = SIM.TEK.las, D = SIM.DORRAR as Record<string, SIM.DorrDef>;
+    const by = (dorr: string) => {
+      const s = SIM.createState(6, START); klockan(s, 10); medHus(s);
+      const h = SIM.housesOf(s)[0]!, b = SIM.fangelseDorr(s, h)!; b.dorr = dorr; SIM.touch(s);
+      return { s, h, b };
+    };
+    // låset smids för dörren: dörrprojektet saknar låset och ärver till smidet
+    const { s, h, b } = by('tradorr');
+    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = vuxna[0];
+    for (const v of vuxna) Object.assign((v.tek ??= {}), { smedja: 1, tradorr: 1, las: 1 });
+    const smedja = medBank(s, 'smedja');
+    SIM.setStock(s, { jarn: 2, kol: 4, plankor: 4 });
+    const fara = { kyla: false, gras: 0 } as never;
+    const kanUtan = SIM.PROJEKT.lasdorr!.kan(s, p, fara), a = SIM.arv(s, p, 'las', fara);
+    const tk = { act: 'smida', phase: 'do', tx: smedja.x, ty: smedja.y, until: s.now, carry: 0, why: '', tool: 'las', ref: smedja.id } as SIM.Task;
+    p.task = tk; SIM.smidaKlar(s, p, tk); p.task = undefined;
+    const las = SIM.amountOf(s, 'las'), ting = SIM.tingOf(s).some(t => t.k === 'las'), kanMed = SIM.PROJEKT.lasdorr!.kan(s, p, fara);
+    SIM.finishDorr(s, p, { act: 'dorr', tool: 'lasdorr' } as SIM.Task);
+    const hangd = b.dorr, lasKvar = SIM.amountOf(s, 'las');
+    // tom: den låsta dörren är bommad, trädörren inte
+    for (const q of SIM.living(s)) if (SIM.roomAt(s, q.x, q.y)?.hus === h.id) { q.x = 1.5; q.y = 1.5; }
+    const lastBom = SIM.bommad(s, b), tra = by('tradorr'), traBom = SIM.bommad(tra.s, tra.b);
+    // fången: 20 minuter bakom trädörren, 40 bakom den låsta
+    const ut = (dorr: string) => {
+      const x = by(dorr), f = SIM.living(x.s).find(q => SIM.ageOf(q, x.s.now) >= SIM.ALDER.vuxen)!;
+      SIM.satt(x.s, f, x.h, 'Dömd', x.s.now + 3 * SIM.DAY);
+      SIM.fangeVal(x.s, f);
+      return f.task?.act === 'rymma' ? (f.task.until - x.s.now) / SIM.MIN : -1;
+    };
+    const minTra = ut('tradorr'), minLas = ut('lasdorr');
+    return [
+      [`låset: ${JSON.stringify(R.las.av)} på ${R.las.min} minuter i smedjan, och tekniken Lås kräver ${T?.krav?.join(' och ')} och prövas fram i smedjan`, R.las.av.jarn === 1 && R.las.min === 4 && R.las.tek === 'smedja' && !!T && T.krav.includes('smedja') && T.krav.includes('tradorr') && !!T.forsok?.vid.includes('smedja')],
+      [`den låsta dörren: ${JSON.stringify(R.lasdorr.av)} på ${R.lasdorr.min} minuter, nästa rad efter trädörren och lika tät`, R.lasdorr.av.plankor === 2 && R.lasdorr.av.las === 1 && R.lasdorr.min === 20 && SIM.dorrRang('lasdorr') === SIM.dorrRang('tradorr') + 1 && D.lasdorr.tat === D.tradorr.tat],
+      [`utan lås kan dörren inte hängas (${kanUtan}), och låset smids för den (${a?.u?.act}, ${a?.u?.tool})`, !kanUtan && a?.u?.act === 'smida' && a.u.tool === 'las'],
+      [`låset läggs i förrådet (${las}, inget redskap: ${!ting}) och sedan kan dörren hängas (${kanMed})`, las === 1 && !ting && kanMed],
+      [`dörren ersätter trädörren (${hangd}) och tar låset (${lasKvar} kvar)`, hangd === 'lasdorr' && lasKvar === 0],
+      [`när huset är tomt är den låsta dörren bommad (${lastBom}), trädörren inte (${traBom})`, lastBom && !traBom],
+      [`en fånge bryter sig ut på ${minTra} minuter genom trädörren och ${minLas} genom den låsta`, minTra === 20 && minLas === 40],
+    ];
+  },
+};

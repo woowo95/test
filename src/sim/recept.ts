@@ -171,6 +171,7 @@ const DEF = {
   jarnnal: { var: 'sak', av: { jarn: 1 }, ger: 2, min: 3, slag: 'liten', tek: 'smedja' }, // 1 järn ger 2 nålar (steg 12.5.3)
   jarnhacka: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' }, // steg 12.5.4
   jarngryta: { var: 'sak', av: { jarn: 3 }, min: 5, slag: 'stor', tek: 'smedja' }, // steg 12.5.5
+  las: { var: 'sak', av: { jarn: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // låset till den låsta dörren (steg 12.5.6)
   sag: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // handsågen (steg 12.5.1): ligger vid klyvplatsen
   svard: { var: 'sak', av: { jarn: 3, lader: 1 }, min: 5, slag: 'stor', tek: 'vapensmide' }, // byns första rena vapen (steg 12.2.9)
   jarnspjut: { var: 'sak', av: { jarn: 1, grenar: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // smids (steg 12.2.8)
@@ -208,6 +209,7 @@ const DEF = {
   skinnfall: { var: 'tillbehor', av: { skinn: RT.fallSkinn }, min: RT.fallMin },
   skinndorr: { var: 'dorr', av: { skinn: RT.skinndorrSkinn }, min: RT.skinndorrMin },
   tradorr: { var: 'dorr', av: { plankor: RT.tradorrVirke, rep: RT.tradorrRep }, min: RT.tradorrMin },
+  lasdorr: { var: 'dorr', av: { plankor: 2, las: 1 }, min: 20 }, // en trädörr med ett lås av järn (steg 12.5.6)
   // plaggen (klader.ts): mangd bitar av materialet, och det i av
   rock: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   skor: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 },

@@ -23,7 +23,7 @@ import { heligtTingNamn } from './kyrka';
 import { grundvarde } from './varde';
 import { vaderNu } from './vader';
 import { Bit, bitsOf, housesOf, roomAt } from './byggnad';
-import { DORRAR } from './byggnad';
+import { DORRAR, dorrDef } from './byggnad';
 import { tand } from './brand';
 import { bynsNamn } from './bynamn';
 
@@ -177,7 +177,7 @@ export function iFarten(s: State, r: Person, dtSec: number) {
 // som vill döda någon. Det tar tid, fortare med yxa och långsammare om den är bommad, och det larmar byn
 const stangdDorrBit = (s: State) => bitsOf(s).find(b => b.dorr && (DORRAR as Record<string, { stanger?: boolean }>)[b.dorr]?.stanger);
 // en dörr är bommad när någon är inne i huset (steg 8.9.1): de som är inne bommar den. Att hålla emot dörren kommer i 11.4.18
-export const bommad = (s: State, b: Bit) => b.hus !== undefined && living(s).some(q => roomAt(s, q.x, q.y)?.hus === b.hus);
+export const bommad = (s: State, b: Bit) => b.hus !== undefined && (!!dorrDef(b.dorr)?.last /* den låsta dörren också när huset är tomt (steg 12.5.6) */ || living(s).some(q => roomAt(s, q.x, q.y)?.hus === b.hus));
 // mal = dörren till huset där den de söker är (hämnden, letaSteg i rovare.ts); annars en stängd dörr när det inte finns något ute
 export function huggDorr(s: State, f: Rovarflock, folk: Person[], mal?: Bit) {
   const d = f.hugger;

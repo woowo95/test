@@ -28,7 +28,7 @@ export const JARNSAK = balans('jarnsak', {
 });
 export const LIE_FART = JARNSAK.lieFart;
 // sakerna som smids, gruppen de hör till, stensakens teknik och texten när den smids
-export interface JarnsakDef { grupp: string; tek: string; text: string; forsta: string }
+export interface JarnsakDef { grupp: string; tek: string; text: string; forsta: string; forrad?: true } // forrad = en sak i förrådet och inget redskap (låset, steg 12.5.6): det smids för det som kräver det (arv i projekt.ts)
 export const JARNSAKER: Record<string, JarnsakDef> = {
   jarnyxa: { grupp: 'yxa', tek: 'yxa', text: 'Smider en järnyxa på städet.', forsta: '{namn} smidde byns första järnyxa. Den fäller ett träd på en tredjedel av tiden.' },
   jarnkniv: { grupp: 'kniv', tek: 'kniv', text: 'Smider en järnkniv på städet.', forsta: '{namn} smidde byns första järnkniv.' },
@@ -41,6 +41,7 @@ export const JARNSAKER: Record<string, JarnsakDef> = {
   jarnnal: { grupp: 'nal', tek: 'bensyl', text: 'Smider två järnnålar.', forsta: '{namn} smidde byns första järnnålar. Med dem sys kläderna tre gånger så fort.' }, // steg 12.5.3
   jarnhacka: { grupp: 'jarnhacka', tek: 'byggsten', text: 'Smider en järnhacka.', forsta: '{namn} smidde byns första järnhacka. Med den bryts en byggsten på en tredjedel av tiden.' }, // steg 12.5.4
   jarngryta: { grupp: 'jarngryta', tek: 'kruka', text: 'Smider en järngryta.', forsta: '{namn} smidde byns första järngryta. I den kokas dubbelt så mycket mat som i en lerkruka.' }, // steg 12.5.5
+  las: { grupp: 'las', tek: 'las', forrad: true, text: 'Smider ett lås.', forsta: '{namn} smidde byns första lås.' }, // steg 12.5.6: till den låsta dörren
   jarnspjut: { grupp: 'spjut', tek: 'flintspjut', text: 'Smider en spets av järn och surrar den på ett skaft.', forsta: '{namn} smidde byns första järnspjut.' }, // steg 12.2.8
 };
 // smedjan som p kan smida vid nu: färdig, och ässjan brinner eller det finns kol att tända den med
@@ -49,7 +50,7 @@ const receptAv = (k: string) => SAKER[k]?.skaffa?.av ?? {};
 // p kan smida k: kan smide och stensakens teknik, har en smedja och materialet
 export const kanSmida = (s: State, p: Person, k: string) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'smedja') && knows(p, JARNSAKER[k].tek) && !!smedjan(s, p) && Object.entries(receptAv(k)).every(([m, n]) => getable(s, p, m) >= n);
 // hur stor del av det byn vill ha av gruppen som ännu inte är av järn
-export const jarnBrist = (s: State, k: string) => { const g = JARNSAKER[k].grupp, v = villAv(s, g); return v > 0 ? clamp((v - nTools(s, k)) / v, 0, 1) : 0; };
+export const jarnBrist = (s: State, k: string) => { if (JARNSAKER[k].forrad) return 0; const g = JARNSAKER[k].grupp, v = villAv(s, g); return v > 0 ? clamp((v - nTools(s, k)) / v, 0, 1) : 0; };
 // det som hämtas till städet (HAMTAS i hamtning.ts): materialet i receptet
 export const smidaHamtas = (tk: Task) => tk.tool === 'jarn' ? { jarnskrot: JARNSAK.omSkrot } : tk.tool && JARNSAKER[tk.tool] ? { ...receptAv(tk.tool) } : undefined;
 // smidet är klart (KLAR i steg.ts): materialet tas, och saken blir p:s, med en kvalitet efter smedjan
@@ -58,8 +59,9 @@ export function smidaKlar(s: State, p: Person, tk: Task) {
   const k = tk.tool, d = k ? JARNSAKER[k] : undefined;
   if (!k || !d || !Object.entries(receptAv(k)).every(([m, n]) => getable(s, p, m) >= n)) return;
   for (const [m, n] of Object.entries(receptAv(k))) takeMaterial(s, p, m, n);
+  if (d.forrad) put(s, k, SAKER[k]!.skaffa!.ger ?? 1, { [p.id]: SAKER[k]!.skaffa!.ger ?? 1 }); // låset läggs i förrådet (steg 12.5.6)
   const q = kvVid(s, p, 'smida');
-  for (let i = 0; i < (SAKER[k]!.skaffa!.ger ?? 1); i++) { // 1 järn ger 2 järnnålar (steg 12.5.3)
+  for (let i = 0; i < (d.forrad ? 0 : SAKER[k]!.skaffa!.ger ?? 1); i++) { // 1 järn ger 2 järnnålar (steg 12.5.3)
     const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now;
     nyKvalitet(s, p, t, q, SAKER[k]!.namn.toLowerCase());
     nyttVid(s, t); // sågen läggs vid klyvplatsen om dess plats står tom, och blir byns (steg 12.5.1)

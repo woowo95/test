@@ -286,7 +286,7 @@ const DEF = {
   station: { namn: 'Bygger en station', slag: 'bygga', verktyg: {}, hantverk: true, stilla: true, plats: 'station', framme: true }, // stationer.ts; task.tool = slaget. Namnen per slag fylls ur STATIONER när stationer.ts laddas (steg 12.1.65)
   // fälten (steg 2.10.3, odling.ts): steget på fältet är task.tool, och arbetet sparas i fältet om det avbryts
   odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true, framme: true },
-  dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen', tradorr: 'Hänger en dörr av trä i dörröppningen' }, hantverk: true, stilla: true, framme: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
+  dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen', tradorr: 'Hänger en dörr av trä i dörröppningen', lasdorr: 'Hänger en låst dörr i dörröppningen' }, hantverk: true, stilla: true, framme: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
   talgljus: { namn: 'Gör ett talgljus', verktyg: { vaxljus: 'Gör ett vaxljus' }, slag: 'hantverk', hantverk: true, verb: 'doppar', plats: 'station' },
   ljus: { namn: 'Ställer fram ett ljus', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // på ett bord eller en hylla inne (ljus.ts, steg 6.3.8)
   // skogsvården (steg 6.5.2, skogsvard.ts): en planta grävs upp och bärs dit byn vill ha skog
