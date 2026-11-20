@@ -13,7 +13,7 @@ import { gravidDel, gravidKvar } from '../../sim/steg';
 import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, kvKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD, opOrd, tioSkala, varorSym } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
-import { pliktDelar, VANA_AR } from '../../sim';
+import { pliktDelar, VANA_AR, ylleYtter } from '../../sim';
 import { fritidLista } from './fram';
 import { gastById, gastRad, type Gast } from '../gaster';
 import type { Flik } from '../panel';
@@ -274,7 +274,7 @@ function behovHtml(p: Person) {
   // bara det som räknas vid personens värme (varmeRaknas i steg.ts): under idealet elden, kylan och milt väder, vid och över
   // det hettan, det som kyler mer än elden värmer och att kroppen svalnar (steg 2.3.4)
   const r = varmeRaknas(p.warm, v);
-  const kylan = `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}${frysFaktor(p) > 1 ? `, brist på fett: ${Math.round((frysFaktor(p) - 1) * 100)} % mer` : ''}${v.vaderGrader > 0.5 ? `, ${v.blot > 0.1 ? 'blöt' : 'blåsten'}: känns ${Math.round(v.vaderGrader)} grader kallare` : ''}`;
+  const kylan = `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}${frysFaktor(p) > 1 ? `, brist på fett: ${Math.round((frysFaktor(p) - 1) * 100)} % mer` : ''}${v.vaderGrader > 0.5 ? `, ${v.blot > 0.1 ? 'blöt' : 'blåsten'}: känns ${Math.round(v.vaderGrader)} grader kallare${v.blot > 0.1 && ylleYtter(s, p) ? ' (yllet håller värmen, hälften så mycket)' : ''}` : ''}`;
   const varme: Orsak[] = r.under ? [
     ...v.eld > 0 ? [{ namn: 'Elden värmer', v: v.eld }] : [],
     ...v.kyla > 0 ? [{ namn: kylan, v: -v.kyla }] : [],

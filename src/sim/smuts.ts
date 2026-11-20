@@ -130,7 +130,7 @@ function toaKarta(s: State): ToaKarta {
       if (x >= 0 && y >= 0 && x < W && y < H) nara[y * W + x] = Math.max(nara[y * W + x], n0);
     }
   }
-  for (const t of latriner(s)) sprid(t.y * W + t.x, SMUTS.latrinVatten); // latrinen äcklar ingen, men den smutsar vattnet
+  for (const t of latriner(s)) sprid(t.y * W + t.x, SMUTS.latrinVatten * (stationDef(t.k)?.dass?.smuts ?? 1)); // latrinen äcklar ingen, men den smutsar vattnet (utedasset mindre, steg 12.4.9)
   kartor.set(s, c = { hr, fl, v, n, nara, vatten });
   return c;
 }
@@ -260,7 +260,8 @@ export function latrinerVaxerIgen(s: State) {
 // väntan läggs till (den som står och väntar på en latrin där någon annan är, steg.ts)
 export function latrinVanta(s: State, min: number) { s.latrinVant = { m: latrinVantNu(s) + min, t: s.now }; count(s, 'latrinVantMin', min); }
 // bristen på latriner: ingen latrin som inte är (nästan) full, eller så mycket väntan på dem som finns (steg 10.2.79)
-export const latrinBrist = (s: State) => { const ko = harKompost(s), full = latriner(s).some(t => !isKlar(t) || latrinFyllt(t) < (ko ? 1 - 1e-9 : STATION.latrinNy)) ? 0 : 1; return Math.max(full, Math.min(1, latrinVantNu(s) / SMUTS.latrinVantFull)); };
+// med en kompost töms utedasset och står kvar (steg 12.4.9), men en grävd latrin som tömts går inte att använda igen: byn vill ha en ny när den är nästan full
+export const latrinBrist = (s: State) => { const ko = harKompost(s), full = latriner(s).some(t => !isKlar(t) || latrinFyllt(t) < (ko && stationDef(t.k)?.dass ? 1 - 1e-9 : STATION.latrinNy)) ? 0 : 1; return Math.max(full, Math.min(1, latrinVantNu(s) / SMUTS.latrinVantFull)); };
 // någon annan använder latrinen t just nu (står där och har börjat): latrinen används av en i taget (steg 10.2.79)
 export const latrinUpptagen = (s: State, t: Station, p: Person) => living(s).some(q => q !== p && q.task?.act === 'toa' && q.task.ref === t.id && q.task.phase === 'do' && q.task.prog !== undefined);
 const harKompost = (s: State) => stationerOf(s).some(t => t.k === 'kompost' && isKlar(t));
@@ -278,7 +279,7 @@ export function toaBesok(s: State, p: Person, ref?: number) {
   count(s, 'toafläckar');
 }
 // en full latrin fylls igen: den försvinner och rutan blir bar jord, som sedan blir gräs av sig själv (mark.ts)
-function fyllIgen(s: State, t: Station, full = true) {
+export function fyllIgen(s: State, t: Station, full = true) {
   s.stationer = stationerOf(s).filter(q => q !== t);
   s.byggV = (s.byggV ?? 0) + 1;
   const g = groundOf(s), i = t.y * W + t.x;

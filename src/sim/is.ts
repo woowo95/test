@@ -74,7 +74,8 @@ export function halGjort(s: State, p: Person) {
   if (forstaGang(s, 'isborrTrasig')) log(s, `${gen(p.name)} isborr var utsliten.`, 'world', [p.id]); else count(s, 'isborrTrasig');
 }
 // kan p nå vattnet: isen ligger inte, eller hen kan hugga upp ett hål
-export const naVattnet = (s: State, p: Person) => !islagt(s) || !!halVal(s, p);
+export const naVattnet = (s: State, p: Person) => !islagt(s) || !!halVal(s, p) || brunnFinns(s); // brunnens vatten fryser inte (steg 12.4.8)
+export const brunnFinns = (s: State) => !!s.stationer?.some(t => t.k === 'brunn' && t.kvar <= 0);
 // vakten för arbetstiderna (kor.ts) får veta hur lång tid hålet tog när vattnet började hämtas (steg 12.1.159): halMin
 // senare i slaget kan svara annat, när någon annan tagit yxan eller isborren gått sönder. Ändrar inget i spelet
 export const halVakt: { lyss?: (t: object, min: number) => void } = {};

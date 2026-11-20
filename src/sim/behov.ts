@@ -14,7 +14,7 @@ import { VARDRATT, kanGa, mindreMat } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
-import { bordVid } from './stationer';
+import { bordVid, moblerKrok } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
 import { amountOf, helt, iBordan, iRackhall, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
@@ -105,7 +105,7 @@ function eat(s: State, p: Person, fran?: Person) {
   ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
   if (portion > 0 && vidBordet(p)) {
-    think(p, 'Åt vid bordet', KROPP.bordGlad * kvEffekt(bordVid(s, p)), now, KROPP.bordGladTim * HOUR); count(s, 'bordMal');
+    think(p, 'Åt vid bordet', KROPP.bordGlad * kvEffekt(bordVid(s, p)) * moblerKrok.sittGlad(s, p), now, KROPP.bordGladTim * HOUR); count(s, 'bordMal'); // och bättre på en stol (steg 12.4.4)
     let mest = 0; for (const k in per) if (per[k] > mest) { mest = per[k]; p.task!.mal = k; } // maten på bordet och i händerna (steg 3.10.3, bara utseende)
   }
   const smutsig = smutsigtAtit(s, per); // maten som plockats där det var toa-smuts (steg 10.11.14)

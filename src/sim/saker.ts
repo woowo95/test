@@ -329,6 +329,22 @@ const DEF = {
   jarnyxa: { namn: 'Järnyxa', hanger: 'balte', grupp: 'yxa', rang: 1, skaffa: RECEPT.jarnyxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, trasig: { stat: 'jarnyxorTrasiga', text: '{namn}s järnyxa gick sönder.' } },
   jarnkniv: { namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },
   lie: { namn: 'Lie', hanger: 'axel', grupp: 'skara', rang: 1, skaffa: RECEPT.lie, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'liarTrasiga', text: '{namn}s lie gick sönder.' } },
+  // oljelampan (steg 12.4.2, ljus.ts): en liten lampa av lera, som torkar och bränns som krukan, och en behållare för brännoljan (vatskor.ts)
+  oljelampa: { namn: 'Oljelampa', skaffa: RECEPT.oljelampa, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'lamporTrasiga', text: '{namn}s oljelampa sprack.' },
+    gors: { text: 'Formar en liten oljelampa av lera.', stat: 'lamporGjorda', forsta: '{namn} formade byns första oljelampa av lera. Den ska torka och brännas i elden, och sedan brinner den på brännolja.' } },
+  // osten (steg 12.4.7): mjölken ystad i en kruka vid elden; håller 40 dygn och mättar som torkat kött
+  ost: { namn: 'Ost', skaffa: RECEPT.ost, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 2, energi: 0.6, mineral: 0.6, vitamin: 0.2 }, haller: 40 },
+  // fjäderpennan (steg 12.4.14, skrift.ts): ligger vid skrivpulpeten, och det som skrivs med den blir oftare bra; håller 20 blad
+  penna: { namn: 'Fjäderpenna', skaffa: RECEPT.penna, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'pennorTrasiga', text: '{namn}s fjäderpenna var utsliten.' },
+    gors: { text: 'Skär en penna av en fjäder med {verktyg}.', stat: 'pennorGjorda', forsta: '{namn} skar byns första fjäderpenna. Med den skrivs bladen jämnare.' } },
+  // tunnan (steg 12.4.6, tunna.ts): ett laggat kärl som rymmer 20 delar, där vinet och mjödet mognar längre
+  tunna: { namn: 'Tunna', skaffa: RECEPT.tunna, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.00005, redskap: true, trasig: { stat: 'tunnorTrasiga', text: '{namn}s tunna sprack.' },
+    gors: { text: 'Laggar en tunna av plankor och binder den med rep.', stat: 'tunnorGjorda', forsta: '{namn} laggade byns första tunna. I den mognar vinet längre än i krukan.' } },
+  // pallen och stolen (steg 12.4.4, mobler.ts): sittplatserna vid bordet, i gruppen sate; stolen är den bättre
+  stol: { namn: 'Stol', grupp: 'sate', rang: 1, skaffa: RECEPT.stol, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
+    gors: { text: 'Fogar en stol med ryggstöd och en dyna av skinn och ull.', stat: 'stolarGjorda', forsta: '{namn} fogade byns första stol. Den är skönare att sitta på än pallen.' } },
+  pall: { namn: 'Pall', grupp: 'sate', skaffa: RECEPT.pall, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
+    gors: { text: 'Fogar en pall av en planka.', stat: 'pallarGjorda', forsta: '{namn} fogade byns första pall. Den är bättre att sitta på än stubben.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

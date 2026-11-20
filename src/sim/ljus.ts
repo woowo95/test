@@ -228,12 +228,16 @@ export const LJUS = balans('talgljus', {
   vaxTim: 16, // ... och ett vaxljus (steg 10.10.24)
   r: 2, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet)
   min: 5, // minuter att ställa fram ett
+  oljaTim: 12, // en oljelampa brinner så här många timmar på en brännolja (steg 12.4.2) ...
+  fyllMin: 1, // ... och att fylla på den tar så här många minuter
 });
 // ljusens sorter (steg 10.10.23): en rad per sort, med hur många timmar den brinner. Sakerna hör till gruppen talgljus
 // (saker.ts), och allt som frågar efter ljuset frågar gruppen. Ljuset på bordet minns sin sort (TalgLjus.k, ingen = talgljus)
-export const LJUSSORTER: Record<string, { brinnTim: number }> = {
+// bransle = ljuset brinner på en vätska som står i det, och det blir kvar och fylls på när den är slut (oljelampan, steg 12.4.2)
+export const LJUSSORTER: Record<string, { brinnTim: number; bransle?: VatskaId }> = {
   talgljus: { get brinnTim() { return LJUS.brinnTim; } },
   vaxljus: { get brinnTim() { return LJUS.vaxTim; } }, // steg 10.10.24
+  oljelampa: { get brinnTim() { return LJUS.oljaTim; }, bransle: 'brannolja' }, // steg 12.4.2: en lampa av lera (saker.ts), i en egen grupp
 };
 export const LJUSGRUPP = 'talgljus';
 export const ljusSort = (l: TalgLjus) => l.k ?? 'talgljus';
@@ -248,7 +252,9 @@ export function ljusPlatser(s: State) {
   const har = new Set((s.ljus ?? []).map(l => l.st));
   return stationerOf(s).filter(st => LJUSBORD.has(st.k) && isKlar(st) && !har.has(st.id) && (rum.get(roomAt(s, st.x, st.y)?.id ?? -1) ?? 0) >= UPPSATT.trosk);
 }
-export const friLjus = (s: State) => tingOf(s).find(x => gruppOf(x.k) === LJUSGRUPP && x.hos === undefined && !x.halv);
+// ett ljus som ingen bär, är färdigt och kan brinna: en lampa med sitt bränsle i (steg 12.4.2)
+const kanBrinna = (x: Ting) => { const b = LJUSSORTER[x.k]?.bransle; return !b || x.inne?.v === b && x.inne.n > 0; };
+export const friLjus = (s: State) => tingOf(s).find(x => (gruppOf(x.k) === LJUSGRUPP || !!LJUSSORTER[x.k]) && x.hos === undefined && !x.halv && x.ler === undefined && kanBrinna(x));
 // tk (någons uppgift eller plats) är i rummet där ljuset l står
 function iRummet(s: State, l: TalgLjus, tk: { tx: number; ty: number }) {
   const st = stationById(s, l.st), r = st && roomAt(s, st.x, st.y);
@@ -258,8 +264,12 @@ function ljusTimme(s: State) {
   for (const l of (s.ljus ?? []).slice()) {
     if (!stationById(s, l.st)) { s.ljus = s.ljus!.filter(x => x !== l); continue; } // bordet är borta, och ljuset med det
     if (l.tand) {
-      if (brunnit(s, l, LJUSSORTER[ljusSort(l)]!.brinnTim)) { s.ljus = s.ljus!.filter(x => x !== l); count(s, 'ljusBrunna'); continue; }
+      if (brunnit(s, l, LJUSSORTER[ljusSort(l)]!.brinnTim)) {
+        if (LJUSSORTER[ljusSort(l)]?.bransle) { l.c = 0; l.tand = undefined; l.tandT = undefined; count(s, 'lampaTom'); continue; } // oljelampan blir kvar, tom (steg 12.4.2)
+        s.ljus = s.ljus!.filter(x => x !== l); count(s, 'ljusBrunna'); continue;
+      }
     }
+    if (l.c <= 1e-9) continue; // en tom lampa tänds inte
     const behov = lightLevel(s.now) <= 0 && living(s).some(q => vaken(q) && (iRummet(s, l, { tx: q.x, ty: q.y }) || !!q.task && iRummet(s, l, q.task)));
     tandEfter(s, l, behov);
   }
@@ -269,7 +279,22 @@ export function finishLjus(s: State, p: Person, tk: Task) {
   const t = friLjus(s), st = tk.ref !== undefined ? stationById(s, tk.ref) : undefined;
   if (!t || !st || (s.ljus ?? []).some(l => l.st === st.id)) return;
   s.ting = tingOf(s).filter(q => q !== t);
-  (s.ljus ??= []).push(t.k === 'talgljus' ? { st: st.id, c: t.c } : { st: st.id, c: t.c, k: t.k });
+  (s.ljus ??= []).push(t.k === 'talgljus' ? { st: st.id, c: t.c } : { st: st.id, c: LJUSSORTER[t.k]?.bransle ? 1 : t.c, k: t.k }); // lampan med sin olja (steg 12.4.2)
   count(s, 'ljusFram');
   if (forstaGang(s, 'ljusForsta')) log(s, `${p.name} ställde ${antal(1, t.k)} på ${st.k === 'hylla' ? 'hyllan' : 'bordet'} inne. Där är det ljust på kvällen.`, 'world', [p.id]);
 }
+
+// ---------- oljelampan (steg 12.4.2, Arbetsstationer och möbler: Oljelampan) ----------
+// Oljelampan är en liten lampa av lera (saker.ts) som formas, torkar och bränns som krukan, och en behållare för brännoljan
+// (VATSKOR i vatskor.ts), som kokas i örtköket. En lampa med olja i ställs fram som talgljuset (finishLjus) och lyser lika mycket,
+// och en fyllning räcker LJUS.oljaTim timmar. När oljan är slut blir lampan kvar på bordet, och byn fyller på den med en
+// brännolja (raden lampa i PROJEKT, projekt.ts; fyllLampa i vatskor.ts)
+// de tomma lamporna på bord och hyllor i rum där folk varit vakna i mörker
+export function tommaLampor(s: State) {
+  const m = s.morkPlats;
+  if (!m || !(s.ljus ?? []).some(l => l.c <= 1e-9)) return [];
+  const rum = new Map<number, number>();
+  for (const k in m) { const i = +k, r = roomAt(s, i % W, Math.floor(i / W)); if (r) rum.set(r.id, (rum.get(r.id) ?? 0) + m[i]); }
+  return (s.ljus ?? []).filter(l => l.c <= 1e-9 && LJUSSORTER[ljusSort(l)]?.bransle).flatMap(l => { const st = stationById(s, l.st); return st && (rum.get(roomAt(s, st.x, st.y)?.id ?? -1) ?? 0) >= UPPSATT.trosk ? [st] : []; });
+}
+import type { VatskaId } from './vatskor';

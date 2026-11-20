@@ -72,3 +72,25 @@
 
 - Ihopslagna i 2c526786, deda7f08, dcf71ca1 och 323ddd0f; varje ihopslagning har typkontrollen och de berörda scenarierna bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` på den senaste committen, som täcker raderna för alla fyra grenarna ovan. Grenarna ändrar spelet (12.1.64, 12.1.83, 12.1.84, 12.1.114), så koll sparar nytt facit.
 - Samma-kollens facit (test/samma.json) är sparat på nytt efter ihopslagningarna. 12.1.93 och 12.1.94 är prövade med samma mot facit från 12.1.89 (på 037fbe41 med rättningen 8f048a2d): samma utveckling som förut.
+
+## System 12.4 Möblerna och sakerna i hemmet (grenen par-mobler)
+
+- Committerna för 12.4.1–12.4.14 på par-mobler har bara typkontrollen och stegens egna scenarier (filen src/test/scenarier/mobler.ts) bakom sig. Systemet är skyldigt hela kedjan när det slagits ihop med varld: `npm run kedja -- "npm run -s koll" "npm run -s likhet"`, med nytt facit.
+- 12.4.1 (drejskivan): lerkrukan görs nu vid en station (plats station i stället för elden), så den som formar en kruka utan drejskiva sätter sig där hantverket görs i byn; byarna blir annorlunda.
+- 12.4.2 (oljelampan): brännoljan är nu en vätska (VATSKOR) som kokas i en ledig oljelampa eller liten lerkruka; brännolja som ligger i stackar i gamla sparfiler blir liggande utan funktion (ingen uppgradering). Byn vill ha en oljelampa till varje plats för ljus, och tomma lampor fylls på (projektet lampa).
+- 12.4.3 (sängen): en familj med något över byter halmbädden mot en säng (projektet sang, Hemmen blir finare); sängen vilar mer. Läs i Balansen om sängarna byggs och vad de kostar byarna.
+- 12.4.4 (pallen och stolen): byar med en snickarbänk och familjer med något över gör pallar och stolar till borden hemma (gruppen sate i REDSKAPMAL, projektet satta); den som sitter bättre vilar mer och är gladare av måltiden.
+- 12.4.5 (vaggan): spädbarnen sover i en vagga i rummet där föräldern sover, när familjen byggt en (boende i byggnader.ts). Att föräldern arbetar med fria händer finns inget system för ännu (ingen bär spädbarnet i spelet), så det ändrar inget.
+- 12.4.6 (tunnan): vinets mognad flyttade från vinKvalitet (brygg.ts, som inget läste) till MOGNAD i tunna.ts, och den används nu: ett mognat vin eller mjöd ger en bättre tanke och ett högre värde (tingVarde räknar det mognade i behållaren). Byn vill ha en tunna per bryggkar. Ändrar rikedomen i byar med vin.
+- 12.4.7 (osten): TILLVERKA har fått fälten vatska (vätskan som går åt ur behållarna) och kruka (behållaren där det sjuder); byar med getter ystar mjölken som annars skulle surna. Tekniken Ost öppnas när byn har haft mjölk (mjölkningen har ingen egen teknik).
+- 12.4.8 (brunnen): brunnen är en plats att dricka och hämta vatten i drickPlats (torst.ts), och under isen når man vattnet där (naVattnet i is.ts); med en brunn smälter ingen snö.
+- 12.4.9 (utedasset): en grävd latrin som tömts i komposten tas bort (den går inte att använda igen) och töms först när den är full; utedasset töms och står kvar. Scenariot latriner godtar att byn står utan latrin efter 5 dygn när den tömt sin och saknar spade.
+- Rättelse av 12.4.1 i samma commit: lerkrukan och oljelampan är kvar vid elden (plats elden), och det som görs fortare vid en station (fart i STATIONER) görs där när byn har en (platsFor i val.ts). Det gäller också sländan i vävstolen, som förut spanns vid elden; ändrar byarna.
+- 12.4.10 (sjukbädden): den sjuke eller skadade sover i en ledig sjukbädd (boende i byggnader.ts) och läker 1,2 gånger fortare; rumstaggen Sjukstuga och krocken Sjuka där man sover (rum.ts).
+- Fel som fanns före 12.4 (på varld, 255ee7f): testbyn i scenariot latriner (testBy(30), 16 invånare i istiden) fryser ihjäl på ett dygn, 15 av 16, om den får en benspade. Utan spaden lever alla. Värt att undersöka.
+- 12.4.11 (fyrfatet): ELDSTATIONER har fått fältet gnistor (brand.ts gnistrar från stationseldar med det); byn ställer ett fyrfat i ett rum där folk sover utan härd och lägger kol i det när det är kallt (projektet fyrfat). Vaggan och fyrfatet tar ingen sovplats när de ställs (siteInne).
+- Röda redan på varld (255ee7f), inte av 12.4: scenariot brinner (branden i snön sprids inte).
+- 12.4.12 (tvålen i vården): vårdaren som kan Rena händer tar en tvål till såret (vardHamtas) och tvättar händerna med den; tvålen går nu åt, så byar med örtkök kokar mer tvål.
+- 12.4.13 (ylle och väta): den som bär en kappa eller mantel av ylle fryser hälften så mycket av att vara blöt (VADER.ullBlot); personrutan visar det.
+- 12.4.14 (fjäderpennan): byar med en skrivpulpet skär en penna (gruppen penna, en per pulpet), och skrivandet sliter den 1/20 per blad och ger 0,1 högre chans till bra kvalitet.
+- Bildstilen: ingen av de nya sakerna har ännu tre versioner i valdelen (se slutrapporten); platshållarna står i src/ikonermobler.ts.

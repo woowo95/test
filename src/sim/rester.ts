@@ -73,7 +73,7 @@ export const komposten = (s: State) => stationerOf(s).find(t => t.k === 'kompost
 export function latrinAttTomma(s: State) {
   if (!komposten(s)) return undefined;
   let best: Station | undefined;
-  for (const l of stationerOf(s)) if (stationDef(l.k)?.gor.includes('toa') && isKlar(l) && (l.fyllt ?? 0) >= STATION.latrinNy && (!best || (l.fyllt ?? 0) > (best.fyllt ?? 0))) best = l;
+  for (const l of stationerOf(s)) if (stationDef(l.k)?.gor.includes('toa') && isKlar(l) && (l.fyllt ?? 0) >= (stationDef(l.k)?.dass ? STATION.latrinNy : 1 - 1e-9) && (!best || (l.fyllt ?? 0) > (best.fyllt ?? 0))) best = l; // en grävd latrin töms först när den är full, eftersom den inte går att använda igen (steg 12.4.9)
   return best;
 }
 // den som tömmer latrinen är klar (KLAR i steg.ts): gropen är tom igen och innehållet ligger i komposten
@@ -82,6 +82,7 @@ export function latrinTomKlar(s: State, p: Person) {
   if (!ko || !l || !isKlar(l) || !(l.fyllt ?? 0)) return;
   const n = Math.max(1, Math.round(REST.latrin * Math.min(1, l.fyllt ?? 0)));
   l.fyllt = 0; ko.kompost = { rest: (ko.kompost?.rest ?? 0) + n, mogna: ko.kompost?.mogna ?? 0 };
+  if (!stationDef(l.k)?.dass) fyllIgen(s, l, false); // en grävd latrin som tömts går inte att använda igen; utedasset står kvar (steg 12.4.9)
   count(s, 'latrinTomd');
   if (forstaGang(s, 'latrinTomd')) log(s, `${p.name} tömde latrinen i komposten, så att ingen ny grop behöver grävas.`, 'world', [p.id]);
 }
@@ -105,3 +106,4 @@ import { TEK, knows, upptack } from './teknik';
 import { hash } from './karta';
 import { temperature } from './vader';
 import { put } from './lager';
+import { fyllIgen } from './smuts';

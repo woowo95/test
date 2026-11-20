@@ -3795,3 +3795,6 @@ export const tecknet = (k: string, alt: string, size = 16) => hasIcon(k) ? iconI
 // myren och järnet (fas 12): platshållarna i ikonerjarn.ts
 import { laggTillJarn } from './ikonerjarn';
 laggTillJarn(PIX, PAL);
+// möblerna och sakerna i hemmet (system 12.4): platshållarna i ikonermobler.ts
+import { laggTillMobler } from './ikonermobler';
+laggTillMobler(PIX, PAL);

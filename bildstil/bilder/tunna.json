@@ -1,0 +1,100 @@
+{
+ "id": "tunna",
+ "w": 13,
+ "h": 15,
+ "rader": [
+  "..EEEEEEEEE..",
+  ".EHHEHHGEHGE.",
+  ".EHGEHGHEGFE.",
+  ".EEEEEEEEEEE.",
+  ".EHGGFGFFGFE.",
+  ".EqpGGFGFpoE.",
+  "EHGGqoqpoGFFE",
+  "EHGHGFGGFGFFE",
+  "EGHGGFGFGFFFE",
+  "EHGHFGGFGGFFE",
+  "EqpqGFGGFpqoE",
+  ".EHGqpqopFFE.",
+  ".EGHGFGFGFFE.",
+  ".EGGFGFGFFFE.",
+  "..EEEEEEEEE.."
+ ],
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b"
+ },
+ "versioner": [
+  {
+   "ide": "Bukig tunna, rund i midjan: kroppen är 13 punkter bred på mitten och smalnar av till 10 i över- och underkant, 15 punkter hög, helt spegelsymmetrisk i formen, med lodräta lagg i jord1 och jord2 som byter ton punkt för punkt, ljusast till vänster och jord0 i kontur och på högra sidan. Överst syns locket snett ovanifrån som en ellips, 10 punkter bred och 4 hög, av två plankor i jord2 och jord3 med en mörk fog mellan dem. Två tvinnade repband i senap1 och senap2 med snedställda punkter för tvinningen går runt kroppen en bit under locket och en bit över botten och följer bukens rundning.",
+   "rader": [
+    "...EEEEEEE...",
+    ".EHHHHEGGGGE.",
+    ".EHHGHEGGFGE.",
+    "..EEEEEEEEE..",
+    ".EGGFGFGFFEE.",
+    "EKJGFGFGFFJIE",
+    "EHGKJKJKJIEFE",
+    "EGHGGFGFGFFEE",
+    "EHGGFGFGFFEFE",
+    "EGHGGFGFGFFEE",
+    "EHGGFGFGFFEFE",
+    "EKJGFGFGFFJIE",
+    "EGHKJKJKJIEFE",
+    ".EGGFGFGFFEE.",
+    "..EEEEEEEEE.."
+   ],
+   "om": "Bukig tunna med 13 punkters midja och 11 punkter i över- och underkant. Det blev 11 och inte 10, eftersom en udda bredd behövs för att formen ska bli spegelsymmetrisk i 13. Locket är en ellips av två plankor i jord3 och jord2 med en fog i jord0 i mitten. Laggen går i jord1 och jord2 och mörknar mot jord0 åt höger. De två repbanden av senap2 och senap1 har växlande punkter för tvinningen. Granskningen: Tunnan håller i stort: 13 × 15 punkter, ungefär tre fjärdedelar av kolonistens höjd, och formen är spegelsymmetrisk. Ljuset faller uppifrån vänster med jord3 och jord2 till vänster och jord0 till höger. Konturen i jord0 och de varma tonerna gör att den syns på gräset, och locket syns snett ovanifrån med fogen mellan de två plankorna. Jag rättade en sak: de två repbanden var raka linjer och följde inte rundningen som idén kräver. Snett uppifrån ska ett band runt en rund kropp böja sig nedåt mot mitten. Banden ligger nu en rad högre vid kanterna (kolumn 1–2 och 10–11) och en rad lägre i mitten (kolumn 3–9). Tvinningen i senap1 och senap2 är kvar, liksom den mörkare senap0 och senap1 till höger. Det övre bandet sitter fortfarande en bit under locket och det nedre en bit över botten. Allt annat är oförändrat."
+  },
+  {
+   "ide": "Hög och rak kagge: en smal cylinder, 9 punkter bred och 15 hög, med raka lodräta sidor som en stående stock, laggen i jord1 och jord2 och konturen i jord0, ljuset från vänster så att högra kanten är mörkast. Laggen sticker upp en punkt över locket så att det ligger insänkt i en ring, och det ellipsformade locket (7 punkter brett, 3 högt) i jord3 och jord2 hålls av en tvärslå av trä mitt över, ritad ovanifrån. De två repbanden i senap1 och senap2 sitter tätt intill övre och nedre kanten, så att mitten är bar och visar laggen.",
+   "rader": [
+    "..EEEEE..",
+    ".EHHHHGE.",
+    "EHFHHHGFE",
+    "EHGGGGGFE",
+    "EHFHHGGFE",
+    "EHHHHGGFE",
+    "EKJKJKJIE",
+    "EJKJKJJIE",
+    "EHGFGGFFE",
+    "EHGFHGFFE",
+    "EHGFGGFFE",
+    "EHHFGGFFE",
+    "EKJKJKJIE",
+    "EJKJKJJIE",
+    ".EEEEEEE."
+   ],
+   "om": "Hög och rak kagge, 9 punkter bred och 15 hög. Laggen sticker upp en punkt runt locket och ramar in det: bakkanten i rad 1 och framkanten i rad 5. Locket i jord3 och jord2 hålls av en tvärslå i jord1 mitt över. Repbanden i senap1 och senap2 sitter tätt intill övre och nedre kanten, så att mitten visar laggen med skarvar i jord1. Ljuset kommer från vänster och högra sidan är mörkast. Konturen är jord0. Granskningen: Storleken (9 × 15), konturen i jord0, ljuset från vänster, symmetrin och den raka kaggeformen behölls; tunnan syns tydligt på gräset och står i rimlig storlek mot kolonisten. Toppen gick inte att läsa: locket flöt ihop med laggen till en fläckig yta. Den är omritad efter idén: laggen sticker upp en punkt som en ljus kant baktill (rad 1), en skuggad innerkant i jord1 visar att locket ligger insänkt, och en tvärslå i jord2 ligger mitt över locket (rad 3). Den främre kanten av laggen sluter ringen (rad 5). Övre repbandet sitter nu direkt under kanten (rad 6–7), som förut. Nedre bandet flyttades ner så att det ligger tätt mot botten (rad 12–13), och mitten visar fyra rader bar lagg. Bandens högra ände fick senap0 också i övre bandets första rad, så att högra sidan är mörkast."
+  },
+  {
+   "ide": "Låg och bred tunna som smalnar uppåt: en symmetrisk trapets, 13 punkter bred vid botten och 10 vid toppen, bara 12 punkter hög, så att den ser tung och stadig ut, med lodräta lagg i jord1 och jord2 och jord0 som kontur. Locket tar större plats ovanifrån, en bred ellips 10 punkter bred och 5 hög i jord2 och jord3, med en liten ögla av rep i mitten att lyfta det i. Två grova repband i senap1 och senap2, ett vid mitten och ett nära botten, ligger snett vinklade efter den avsmalnande formen.",
+   "rader": [
+    "...EEEEEEE...",
+    "..EHHHGHGGE..",
+    ".EHHGJKJGGFE.",
+    ".EHGGKFKGGFE.",
+    ".EGHGGJGGFFE.",
+    ".EEEEEEEEEEE.",
+    ".EHFGFGFGFFE.",
+    ".EKKJKJKJJIE.",
+    "EHGFGFGFGFFFE",
+    "EHGFGFGFGFFFE",
+    "EKKJKJKJKJJIE",
+    "EGGFGFGFGFFFE",
+    ".EEEEEEEEEEE."
+   ],
+   "om": "Låg, bred tunna, 13×12 punkter, som smalnar uppåt från 13 till 11 punkter. Locket ses ovanifrån som en bred ellips i jord2 och jord3 med en liten repögla i senap i mitten och en mörkare framkant. Laggen är lodräta i jord1 och jord2 med kontur i jord0. Två repband i senap1 och senap2 böjer sig nedåt i mitten efter den runda formen: det ena vid midjan, det andra nära botten. Ljuset kommer från vänster. Locket blev 11 punkter brett i stället för 10, så att tunnan blir spegelsymmetrisk i den udda bredden. Granskningen: Ritade om tunnan, eftersom den bröt mot idén och mot reglerna. Locket syntes inte ovanifrån: de översta raderna var bara en platt yta med en otydlig ögla. Nu är locket en tydlig ellips (11 × 5 punkter) i jord3 och jord2 med jord0 som kant, och mitt på sitter en lyftögla av rep i senap2 och senap1 med ett mörkt hål i jord1. Under locket går en kant i jord0, så att vinkeln snett uppifrån läses. Repbanden låg ojämnt och osymmetriskt: KKJ-ändarna stack ut utanför konturen och mönstret hoppade mellan raderna. Nu är de två raka band, ett vid mitten och ett nära botten, ljusast till vänster (senap2) och mörkast till höger (senap0) inom konturen. Laggen i jord2 och jord1 går nu i jämna lodräta kolumner genom hela kroppen, med jord3 som ljuskant till vänster. Formen är spegelsymmetrisk: 11 punkter bred upptill och 13 vid botten (10 går inte att centrera symmetriskt på 13), och 13 punkter hög. Det ryms inom 13 × 15, ser fortfarande lågt och tungt ut och står i rimlig storlek bredvid kolonisten på 14 × 20. Konturen i jord0 och de ljusa tonerna jord3 och senap2 gör att tunnan syns mot gräset."
+  }
+ ],
+ "kommentar": "nya versioner, olika i form"
+}

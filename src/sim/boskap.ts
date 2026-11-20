@@ -135,6 +135,7 @@ export function mjolkaKlar(s: State, p: Person, ref?: number) {
   if (!t || !fyllVatska(s, 'mjolk', n, t)) return;
   d.mjolk = 0; d.mjolkRest = Math.max(0, n - karRymmer(t)) || undefined;
   ovning(p, 'skotsel', BOSKAP.ovning); gjort(s, p, 'mjolkat'); count(s, 'mjolkat');
+  forstaGang(s, 'mjolkHaft'); // byn har haft mjölk (tekniken Ost, steg 12.4.7)
   if (forstaGang(s, 'mjolkatGet')) log(s, `${p.name} mjölkade byns första ${tamArt(d.art).ord[1]}.`, 'world', [p.id]);
 }
 const mjolkKar = (s: State, n: number) => {

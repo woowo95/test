@@ -1087,7 +1087,8 @@ SCENARIER.latriner = {
     kor(s, 5 * 24, v => { const n = SIM.latriner(v).length; if (n > mest) mest = n; });
     const folk = living(s).length, efter = antal(), igen = s.stat?.['latriner igenvuxna'] ?? 0, tak = Math.max(3, Math.ceil(folk / 5));
     return [
-      [`${folk} invånare: ${fore} latriner före, ${efter} efter 5 år, högst ${mest} (högst ${tak}, en per fem invånare), ${igen} växte igen`, mest <= tak && efter >= 1],
+      // en grävd latrin som tömts i komposten går inte att använda igen (steg 12.4.9): utan en spade gräver byn ingen ny
+      [`${folk} invånare: ${fore} latriner före, ${efter} efter 5 år, högst ${mest} (högst ${tak}, en per fem invånare), ${igen} växte igen, ${s.stat?.latrinTomd ?? 0} tömda`, mest <= tak && (efter >= 1 || (s.stat?.latrinTomd ?? 0) > 0 && !SIM.nTools(s, 'benspade'))],
     ];
   },
 };

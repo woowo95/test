@@ -50,6 +50,7 @@ export const VADER = balans('vader', {
   torkarUte: 0.25, // så här mycket torkar man per timme ute när det inte regnar ...
   torkarInne: 0.6, // ... och inne eller vid elden
   blotGrader: 8, // den som är helt blöt fryser som om det var så här många grader kallare
+  ullBlot: 0.5, // under ett ytterplagg av ylle blir så här stor del av kylan av att vara blöt kvar (steg 12.4.13)
   blotTanke: 0.5, // över så här blöt tänker man på det
   blastGrader: 5, // den som är ute i den hårdaste blåsten fryser som om det var så här många grader kallare
   regnEld: 0.5, // en eld ute brinner så här mycket fortare i det kraftigaste regnet
@@ -190,8 +191,10 @@ export function stepVader(s: State) {
   }
 }
 // hur många grader kallare det känns för p, av vädret: blöt och i blåsten (bara ute)
+// ylle värmer också blött (steg 12.4.13): satt i mobler.ts, som läses efter den här filen
+export const vaderKrok = { ylle: (_s: State, _p: Person) => false };
 export function vaderGrader(s: State, p: Person, ute: boolean) {
-  return (p.blot ?? 0) * VADER.blotGrader + (ute ? vaderNu(s).vind * VADER.blastGrader : 0);
+  return (p.blot ?? 0) * VADER.blotGrader * (p.blot && vaderKrok.ylle(s, p) ? VADER.ullBlot : 1) + (ute ? vaderNu(s).vind * VADER.blastGrader : 0);
 }
 // p blir blöt ute i regnet och torkar inne, vid elden och när det inte regnar (dt timmar)
 export function blotSteg(s: State, p: Person, ute: boolean, underTrad: boolean, vidElden: boolean, dt: number) {

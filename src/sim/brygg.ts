@@ -2,7 +2,7 @@
 // (t.sats): satsen ligger i karet medan den jäser och syns där med sin färg. Arbetet är kort (BRYGG.prepMin och tappMin) och
 // väntan lång; ingen arbetar medan det jäser. Under BRYGG.kall grader stannar jäsningen, utom i ett kar inne i ett hus. När
 // satsen är klar silas den och hälls upp i stora lerkrukor, och karet är tomt igen. Vinet och ölet är rader i VATSKOR
-// (vatskor.ts) och står i krukorna, där vinet blir bättre med tiden (vinKvalitet). Registret BRYGD har en rad per dryck.
+// (vatskor.ts) och står i krukorna, där vinet blir bättre med tiden (MOGNAD i tunna.ts). Registret BRYGD har en rad per dryck.
 import { balans } from './balans';
 import { isFood } from './saker';
 import { foodDays } from './ekonomi';
@@ -14,7 +14,7 @@ import { temperature } from './vader';
 import { getable, takeMaterial } from './behov';
 import { VATSKOR, fyllVatska, karRymmer, ledigFor, taVatska, vatskaAv, VatskaId } from './vatskor';
 import { knows } from './teknik';
-import { Ting, fylldSack } from './agande';
+import { fylldSack } from './agande';
 import { olTillKyrkan } from './kyrka';
 import { kyrkaId } from './egendom';
 
@@ -25,8 +25,6 @@ export const BRYGG = balans('brygg', {
   maltKorn: 4, // så mycket korn blöts och torkas till lika mycket malt (steg 9.6.13), på TORK.maltDygn dygn
   maltMin: 2, // och så många minuters arbete
   surForsta: 0.3, // den första satsen öl i ett kar blir sur med den här chansen
-  vinBra: 5, // vinet i krukan är bättre (kvalitet 3) efter så här många dygn ...
-  vinBast: 15, // ... och bäst (kvalitet 4) efter så här många
   olVin: 2, // byn kommer på ölet när den har korn och gjort vin så här många gånger
   brannMin: 2, // så många minuter tar det att hälla en kruka vin eller en sats öl i brännpannan (steg 10.7.26)
   brannKok: 30, // så många minuter kokar pannan medan dess eld brinner
@@ -44,8 +42,6 @@ export const BRYGD: Record<string, BrygdDef> = {
 };
 export type BrygdId = VatskaId;
 export const BRYGD_LIST = Object.keys(BRYGD) as BrygdId[];
-// vinet blir bättre med tiden i krukan: det går att dricka direkt, är bättre efter 5 dygn och bäst efter 15 (kvaliteten 2–4)
-export const vinKvalitet = (s: State, t: Ting) => t.inne?.t === undefined ? 2 : s.now - t.inne.t >= BRYGG.vinBast * DAY ? 4 : s.now - t.inne.t >= BRYGG.vinBra * DAY ? 3 : 2;
 
 export const karen = (s: State) => stationerOf(s).filter(t => t.k === 'bryggkar' && isKlar(t));
 // det p kan göra vid karen: hälla upp en klar sats (när en ledig stor kruka finns) eller lägga en ny sats i ett tomt kar

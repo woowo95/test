@@ -263,6 +263,10 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   slade: s => tamdjurOf(s).some(d => tamArt(d.art).styrka) ? 1 : 0, // en släde när byn har ett dragdjur att spänna för (steg 10.10.3)
   fackla: () => 1, // en, den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
+  sate: s => finareKrok.sate(s), // pallar och stolar till de platser vid borden hemma som familjen har råd att göra finare (steg 12.4.4, mobler.ts)
+  tunna: s => stationerOf(s).filter(t => t.k === 'bryggkar').length, // en tunna till varje bryggkar, där satsen mognar (steg 12.4.6, tunna.ts)
+  penna: s => stationerOf(s).filter(t => t.k === 'skrivpulpet').length, // en fjäderpenna per skrivpulpet (steg 12.4.14, skrift.ts)
+  oljelampa: s => ljusPlatser(s).length, // oljelampan till samma platser (steg 12.4.2): den blir kvar och fylls på
   slanda: () => 1, // en, dem som spinner, och en i vävstolen (steg 7.7.8)
   vattensack: () => 1, // en, den som inte kan gå (steg 2.10.1)
   boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2)
@@ -282,6 +286,7 @@ export const tillverkVill = (s: State, d: TillverkDef) => arMaterial(d.ger) ? vi
 const TILLVERKVILL: Record<string, (s: State) => number> = {
   ridsadel: s => tamdjurOf(s).filter(d => tamArt(d.art).rids && tamAlder(s, d) >= tamArt(d.art).vuxen).length, // en ridsadel per vuxen häst (steg 11.11.4)
   packsadel: s => behovVill(s.sadelBehov, s.now), // packsadlarna: så många djur som byns största sällskap ville lasta det senaste året (steg 11.11.3)
+  ost: s => amountOf(s, 'ost') + Math.floor(ostKrok.surnar(s) / 4), // osten (steg 12.4.7): mjölken som annars skulle surna
   talt: taltVill, // tälten: så många som byns största sällskap med en natt på vägen behövde det senaste året (steg 11.11.1)
 };
 // tälten byn vill ha: det största behovet bland resorna med en natt som packats det senaste året (ett dygn)
@@ -305,6 +310,11 @@ export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
   if (d.tro) return Math.max(0, ...(s.tron ?? []).map(tr => trosMobelBrist(s, tr, k))); // trons möbler i trons hus (steg 10.3.19)
+  if (d.varmer) return finareKrok.fyrfat(s); // fyrfatet i ett rum utan eld (steg 12.4.11, mobler.ts)
+  if (d.sjuk) return finareKrok.sjuk(s); // sjukbäddarna (steg 12.4.10, mobler.ts)
+  if (d.finare) return finareKrok.finare(s, k); // utedasset i stället för latrinen (steg 12.4.9, mobler.ts)
+  if (d.vagga) return finareKrok.vagga(s); // en vagga i varje rum där ett spädbarn sover (steg 12.4.5, mobler.ts)
+  if (d.ersatter) return finareKrok.brist(s, k); // sängen i stället för halmbädden (steg 12.4.3, mobler.ts)
   if (d.hard) return harBrist(s); // härden: ett hus där folk sover utan en härd (steg 7.5.3)
   if (d.langhus) return langhusBrist(s, k); // högsätet och bänkarna i långhuset (steg 10.2.68)
   if (d.utkant?.drag) return kupBrist(s, k); // bikupan (steg 10.10.16)
@@ -314,3 +324,7 @@ export function stationBrist(s: State, k: StationSlag) {
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }
+// sängen i stället för halmbädden (steg 12.4.3): bristen sätts i mobler.ts, som läses efter den här filen
+export const finareKrok = { brist: (_s: State, _k: string) => 0, sate: (_s: State) => 0, vagga: (_s: State) => 0, finare: (_s: State, _k: string) => 0, sjuk: (_s: State) => 0, fyrfat: (_s: State) => 0, toa: (s: State) => latrinBrist(s) };
+// mjölken som annars skulle surna (surnarSnart i vatskor.ts, steg 12.4.7), satt i steg.ts eftersom vatskor.ts läses före den här filen
+export const ostKrok = { surnar: (_s: State) => 0 };

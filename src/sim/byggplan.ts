@@ -381,7 +381,7 @@ const egetRum: AtgardDef = {
   },
 };
 // hemmen blir finare (steg 10.2.69): hur mycket familjen har över (det den äger mot byns median per person och PLAN.hemRik, 0 till 2) och hur många rum huset har
-const hemOverskott = (s: State, ag: number) => {
+export const hemOverskott = (s: State, ag: number) => {
   const f = formogenheter(s).egen, fam = familjOf(s, ag), alla = [...f.values()].sort((x, y) => x - y), med = alla.length ? alla[Math.floor(alla.length / 2)]! : 0;
   const hus = housesOf(s).reduce((n, h) => n + (h.ag !== undefined && fam.some(q => q.id === h.ag) ? husVarde(s, h) : 0), 0); // huset de har räknas inte som överskott
   const per = (fam.reduce((n, q) => n + (f.get(q.id) ?? 0), 0) - hus) / Math.max(1, fam.length);

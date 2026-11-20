@@ -980,7 +980,7 @@ SCENARIER.sad = {
 SCENARIER.vin = {
   text: 'Steg 9.6.12: bryggkaret och vinet. Tekniken Vin kommer genom matlagningen; bär krossas med vatten i bryggkaret, en station som har satsen i sig medan den jäser (3 dygn, inte i kyla utomhus), och vinet hälls upp i stora lerkrukor, där det blir bättre med tiden och håller 40 dygn',
   kor: () => {
-    const { bryggVal, bryggKlar, stepBrygg, setAmount, addTool, vatskaAv, vinKvalitet, VATSKOR, TEK, STATIONER, BRYGD } = SIM;
+    const { bryggVal, bryggKlar, stepBrygg, setAmount, addTool, vatskaAv, mognadKv: vinKvalitet, VATSKOR, TEK, STATIONER, BRYGD } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     p.tek = { ...(p.tek ?? {}), bryggkar: 1, kruka: 1 };
     const kar = { id: 997, k: 'bryggkar', x: 3, y: 3, kvar: 0 } as SIM.Station; s.stationer = [...(s.stationer ?? []), kar];
