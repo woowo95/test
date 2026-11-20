@@ -60,3 +60,8 @@
 
 - Ihopslagna i 2c526786, deda7f08, dcf71ca1 och 323ddd0f; varje ihopslagning har typkontrollen och de berörda scenarierna bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` på den senaste committen, som täcker raderna för alla fyra grenarna ovan. Grenarna ändrar spelet (12.1.64, 12.1.83, 12.1.84, 12.1.114), så koll sparar nytt facit.
 - Samma-kollens facit (test/samma.json) är sparat på nytt efter ihopslagningarna. 12.1.93 och 12.1.94 är prövade med samma mot facit från 12.1.89 (på 037fbe41 med rättningen 8f048a2d): samma utveckling som förut.
+
+## Grenen par-resor (12.1.144–146, 148, 152, 164: resorna, handeln och platserna i världen)
+
+- Committerna på par-resor har bara typkontrollen och stegens egna scenarier bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld; facit ändras (nya rader i VAGHANDELSER drar slumptal på resorna).
+- 12.1.144 (trasigt hjul och vilt på vägen): scenariot vaghandelser gick igenom.

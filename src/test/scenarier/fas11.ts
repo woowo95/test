@@ -2131,7 +2131,7 @@ SCENARIER.redogorelse = {
 };
 
 SCENARIER.vaghandelser = {
-  text: 'Vägens händelser (steg 11.5.14, VAGHANDELSER i resa.ts): de ofarliga raderna (gå vilse, oväder, tappad utrustning och fynd av mat) med risk per dygn, det som höjer den och färdigheten som sänker den (eller höjer ett fynd). Risken är en chans per tid, så korta och långa bitar ger lika många händelser, och sällskapet på vägen går med spelets egen klocka',
+  text: 'Vägens händelser (steg 11.5.14 och 12.1.144, VAGHANDELSER i resa.ts): de ofarliga raderna (gå vilse, oväder, tappad utrustning, fynd av mat, trasigt hjul och vilt) med risk per dygn, det som höjer den och färdigheten som sänker den (eller höjer ett fynd). Risken är en chans per tid, så korta och långa bitar ger lika många händelser, och sällskapet på vägen går med spelets egen klocka',
   kor: () => {
     const IDS = ['mat', 'ovader', 'tappad', 'vilse']; // de ofarliga raderna, räknade efter sitt slag i dagboken (sjukdomen och olyckan prövas i vagsjuk)
     const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, [a, b] = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
@@ -2175,7 +2175,18 @@ SCENARIER.vaghandelser = {
     const vag = SIM.vagMellan(z.s.varld!, zv, z.sl.ruta, mp.y * zv.w + mp.x, 'fots', z.s.now)!;
     z.sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg }; z.sl.pos = 0; z.sl.gang = 0;
     const t0 = z.s.now; korTills(z.s, () => (z.sl.pos ?? 0) >= 2 || z.sl.skede !== 'ute', 30 * 3600);
+    // trasigt hjul och vilt (steg 12.1.144)
+    const h = ny(); h.p.skill.hantverk = 0; h.q.skill.hantverk = 0;
+    const hjulUtan = SIM.vagRisk(h.s, h.sl, 'hjul'); h.sl.fordon = ['vagn']; const hjul0 = SIM.vagRisk(h.s, h.sl, 'hjul');
+    h.sl.forlorat = 0; SIM.VAGHANDELSER.hjul!.gor(h.s, h.sl, h.s.now); const lag0 = h.sl.forlorat;
+    h.p.skill.hantverk = 20; const hjul20 = SIM.vagRisk(h.s, h.sl, 'hjul');
+    h.sl.forlorat = 0; SIM.VAGHANDELSER.hjul!.gor(h.s, h.sl, h.s.now); const lag20 = h.sl.forlorat;
+    const fall = (jakt: number) => { const w = ny(); w.p.skill.jakt = jakt; w.q.skill.jakt = 0; w.sl.pack = {}; let n = 0; for (let i = 0; i < 200; i++) { const k0 = w.sl.pack.kott ?? 0; SIM.VAGHANDELSER.vilt!.gor(w.s, w.sl, w.s.now); if ((w.sl.pack.kott ?? 0) > k0) n++; } return { n, heltal: Number.isInteger(w.sl.pack.kott ?? 0) }; };
+    const vilt0 = fall(0), vilt20 = fall(20);
     return [
+      [`trasigt hjul bara med vagn (utan ${hjulUtan.toFixed(3)}, med ${hjul0.toFixed(3)} per dygn), och den som kan hantverk sänker risken (${hjul20.toFixed(3)})`, hjulUtan === 0 && hjul0 > 0 && hjul20 < hjul0],
+      [`hantverket kortar lagningen (${lag0} → ${lag20} timmar)`, lag0 > 0 && lag20 > 0 && lag20 < lag0],
+      [`viltet: utan jägare fälldes ${vilt0.n} av 200, med en skicklig jägare ${vilt20.n}, köttet i hela bitar`, vilt0.n > 0 && vilt0.n < 100 && vilt20.n === 200 && vilt0.heltal && vilt20.heltal],
       [`gå vilse: obanad mark ${obanad.toFixed(3)}, stig ${stig.toFixed(3)} per dygn`, Math.abs(obanad - 0.06) < 1e-9 && Math.abs(stig - 0.02) < 1e-9],
       [`den som kan jakt sänker risken (${stig.toFixed(3)} → ${jagare.toFixed(3)})`, jagare < stig],
       [`den som kan samla hittar oftare mat (${fynd0.toFixed(3)} → ${fynd20.toFixed(3)})`, fynd20 > fynd0],

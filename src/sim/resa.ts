@@ -117,6 +117,10 @@ export const RESA = balans('resa', {
   tappadLast: 2, // risken att tappa något gånger (1 + så här mycket gånger lasten delat med bärförmågan)
   fyndMat: 0.5, // portioner per resenär i ett fynd av mat (minst en hel)
   fyndVarm: 5, fyndKall: 0.3, // under så många grader hittar sällskapet bara så stor del så ofta
+  hjulTim: 8, // timmar det tar att laga ett trasigt hjul för den som inte kan hantverk; den bästa i sällskapet kortar det (fardSank) (steg 12.1.144)
+  viltMin: 0.15, // chansen att fälla viltet för ett sällskap utan jägare; den bästa jägaren höjer den upp till 1 vid full färdighet (steg 12.1.144)
+  viltKott: 3, // kött i packningen när sällskapet fäller viltet (en kanins kött)
+  viltTim: 2, // timmar jakten tar, fälld eller inte
   // när maten tar slut (steg 11.5.15)
   hungerKost: 5, // det ett dygn utan mat kostar en resenär, i värde (samma skala som resans värde)
   tidKost: 3, // det ett dygn längre resa kostar en resenär, i värde
@@ -1302,6 +1306,8 @@ export const DAGBOK = {
   ovader: { namn: 'Oväder', sym: '🌧️' },
   tappad: { namn: 'Tappat', sym: '👐' },
   mat: { namn: 'Mat', sym: '🫐' },
+  hjul: { namn: 'Trasigt hjul', sym: '🛞' }, // steg 12.1.144
+  vilt: { namn: 'Vilt', sym: '🦌' },
   ran: { namn: 'Rån', sym: '🗡️', stor: true },
   strid: { namn: 'Strid', sym: '⚔️', stor: true },
   skada: { namn: 'Skada', sym: '🩹', stor: true },
@@ -1471,6 +1477,28 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
       if (!folk.length) return;
       const p = folk[Math.floor(rnd(s, 'resa') * folk.length)]!;
       olycka(s, sl, p, t, [...BEN, ...FOTTER, ...ARMAR], 'på resan', 'resa olycka', `${p.name} föll och skadade sig.`);
+    },
+  },
+  // trasigt hjul (steg 12.1.144): bara för sällskap med ett fordon på hjul; den som kan hantverk bäst sänker risken och lagar fortare
+  hjul: {
+    namn: 'Trasigt hjul', dygn: 0.04, fardighet: 'hantverk',
+    risk: (_s, sl) => sl.fordon.some(k => FORDON[k]?.hjul) ? 1 : 0,
+    gor: (s, sl, t) => {
+      const tim = Math.round(RESA.hjulTim * Math.max(0, 1 - basta(s, sl, 'hantverk') / 20 * RESA.fardSank) * 10) / 10;
+      sl.forlorat = (sl.forlorat ?? 0) + tim;
+      dagbok(s, sl, 'hjul', `Ett hjul på vagnen gick sönder; det tog ${spelTid(tim * HOUR)} att laga det.`, t);
+    },
+  },
+  // vilt (steg 12.1.144): sällskapet får syn på vilt, och den bästa jägaren avgör om det blir kött i packningen
+  vilt: {
+    namn: 'Vilt', dygn: 0.06,
+    gor: (s, sl, t) => {
+      sl.forlorat = (sl.forlorat ?? 0) + RESA.viltTim;
+      const chans = RESA.viltMin + (1 - RESA.viltMin) * basta(s, sl, 'jakt') / 20;
+      if (rnd(s, 'resa') < chans) {
+        sl.pack.kott = (sl.pack.kott ?? 0) + RESA.viltKott; count(s, 'resa fällde vilt');
+        dagbok(s, sl, 'vilt', `Fick syn på vilt och fällde det; ${antal(RESA.viltKott, 'kott')} i packningen.`, t);
+      } else dagbok(s, sl, 'vilt', 'Fick syn på vilt, men det kom undan.', t);
     },
   },
   mat: {
