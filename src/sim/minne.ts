@@ -335,7 +335,7 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
   if (!best || sees(s, p, best.x, best.y, sight)) return best;
   // väl framme letar hen upp den bästa platsen i området, med samma krav som platserna hen valde bland (spotFor i val.ts):
   // inte i ett hus, och för samlandet räknas toa-smutsen som en längre väg (steg 10.11.14). Närmare lägret går bra: där
-  // växer inget, och nastaBuske i val.ts frågar inte heller avståndet
+  // växer inget
   const x0 = Math.max(0, best.x - MINNE.sokR), y0 = Math.max(0, best.y - MINNE.sokR);
   const tiles = vattenNu(s), shore = strandNu(s); // vattnet som det är nu (torkan, steg 3.8.2)
   const smuts = (x: number, y: number) => k === 'samla' ? smutsAvdrag(s, x, y) : 0; // toa-smutsen som en längre väg (steg 10.11.14)

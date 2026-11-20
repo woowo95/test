@@ -70,7 +70,7 @@ SCENARIER.stenring = {
     };
     const ensam = letare(false), fler = letare(true);
     // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker.
-    // Buskarna runt platsen töms, för annars går man vidare till nästa (nastaBuske, steg 2.12.4)
+    // Buskarna runt platsen töms, för annars går man vidare till nästa (rundan, steg 4.5.6.1)
     const r = createState(4, START), rm = getMap(r.seed);
     r.now = new Date(r.now).setHours(10, 0, 0, 0); Object.assign(r.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
     setItems(r, { flinta: 1, torrgras: 0, grenar: 0, naver: 0 }); setFood(r, 100); // inget tändmaterial i förrådet

@@ -55,7 +55,7 @@ import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, haftSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
-import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
+import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld } from './eld';
@@ -75,14 +75,14 @@ import { skrivVanor } from './vanor';
 import { RELT, stepRelationer } from './relationer';
 import { MINNE, areaOf, fearPlace, forget, lookAround, observe, plockad, radslaVid, sees, sightOf, trorOm } from './minne';
 import { PLATS } from './plats';
-import { chance, clamp, hash3, rnd } from './slump';
+import { chance, clamp, hash3, r3, rnd } from './slump';
 import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, kartAv, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
 import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
-import { arbetsTimme, chooseTask, nastaBuske, nastaRedskap, spotFor } from './val';
+import { arbetsTimme, chooseTask, nastaRedskap, spotFor } from './val';
 import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
@@ -226,7 +226,6 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   runsten: (s, p, t) => runstenBorja(s, p, t), // stenarna tas när ristningen börjar (steg 10.6.1)
   gravvard: (s, p, t) => gravvardBorja(s, p, t), // materialet tas när arbetet börjar (steg 10.4.2)
   tvinna: (s, p, _t, dtSec) => twineRope(s, p, dtSec / HOUR_S, villHaAv(s, 'rep') + handelsTill(s, 'rep')), // till bufferten plus handelsmålet (steg 10.5.13)
-  hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); }, // äldre sparfiler: rep tvinnades i handarbetet
   tanda: (s, p, t, dtSec) => {
     const f = eldById(s, t.ref); // lägerelden eller en lägereld till (task.ref, brasor.ts)
     if (!f) { p.task = undefined; return; }
@@ -402,7 +401,6 @@ function stepNu(s: State, dtSec: number, events: TalkEvent[] | undefined, visad:
   });
 }
 function stegBy(s: State, dtSec: number, events?: TalkEvent[], efter?: () => void) {
-  if (s.stegRest !== undefined) delete s.stegRest; // (en äldre sparning)
   let skuld = (s.skuld ?? 0) + dtSec;
   for (let n = 0; n < 1e6; n++) {
     const plan = nastaSteg(s);
@@ -557,7 +555,6 @@ export const TAKTER: Takt[] = [
     const kort = dt < KLOCKA.slag - 1e-9; // korta steg: faran är nära, och alla räknas varje steg
     for (const p of c.ppl) {
       if (!alive(p)) continue;
-      delete p.framme; // (en äldre sparning, där de som inte var inblandade räknades en minut i förväg)
       const tk = p.task;
       if (!kort && tk && vantar(p, tk, c.now, dt)) {
         tk.vant = (tk.vant ?? 0) + dt;
@@ -600,7 +597,7 @@ export const TAKTER: Takt[] = [
   { namn: 'gästerna', sek: 30, fn: (s, dt, c) => { const temp = temperature(s), coldRate = coldOf(temp), inRum = rumAntal(s, c); gastVardag(s, dt, g => { const v = varmeDelar(s, g, coldRate, inRum, temp); v.kyla *= 1 - GASTVARD.klad; return nyVarme(g.warm, v, dt / HOUR_S); }); } },
   { namn: 'handlarprat', sek: 0, fn: (s, dt, c) => pratMedHandlare(s, dt, c.events) }, // småprat med handlaren (steg 4.5.4.15, handel.ts)
   // relationer bleknar långsamt utan umgänge
-  { namn: 'relationerna', sek: 600, fn: (s, dt) => { const k = Math.exp(-STEG.blek * dt / 86400); for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; } } },
+  { namn: 'relationerna', sek: STEG.blekSek, fn: (s, dt) => { const k = Math.exp(-STEG.blek * dt / 86400); for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; } } },
   { namn: 'flytt och nybyggare', sek: 60, fn: (s, dt) => { if (!s.people.some(alive)) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world'); regulate(s, dt); } },
   { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
   { namn: 'ängen i vägen', sek: 3600, fn: s => { angIVagen(s); } }, // ängen som byn eller ett stråk når flyttas (slatter.ts, steg 10.10.28); sist, så att de andra radernas förskjutning är som förut
@@ -825,14 +822,11 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     else {
       // arbetet i bitar: till uppgiftens slut, till dess bördan bärs hem, men aldrig längre än BIT sekunder åt gången
       used = Math.min(left, Math.max(0, (tk.until - now) / SEC), BIT);
-      // samlandet går så fort att busken töms mitt i en bit (steg 2.12.4): biten slutar då, och sedan går man vidare
-      const kvar = d.fart && d.arbete && tk.phase === 'do' ? tidTillTom(s, p, tk) : Infinity, tom = kvar > 0 && kvar <= used;
-      if (tom) used = Math.max(1, kvar);
       s.now = t1 - (left - used) * SEC;
       // arbetet når bara det som ligger inom räckhåll och det hen bär dit (steg 11.1.74, Hämtningen)
       iRackhall(p.x, p.y, () => {
         MEDAN[tk.act]?.(s, p, tk, used);
-        if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn, tom);
+        if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn);
       });
       // (bygget kan just ha skickat iväg personen efter mer material)
       if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * STEG.ovningHant * learn);
@@ -1056,7 +1050,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
 // det ett arbete för byn ger, per handling. y = det platsen gav den här biten (takten gånger platsens värde rich), rd = redskapet
 // i handen, a = åldern, bar = lägg något bredvid bördan (grenar, rötter, svamp). Svarar raden true har den själv lagt det i bördan
 // delar = platsens värde per lager före uttaget (richnessDelar), när arbetet tar ur flera lager
-interface Arbetsbit { y: number; rich: number; delar?: number[]; rd: ReturnType<typeof toolRow>; dtSec: number; a: number; bar: (k: string, n: number) => void }
+interface Arbetsbit { y: number; rich: number; delar?: number[]; rd: ReturnType<typeof toolRow>; dtSec: number; a: number; bar: (k: string, n: number) => void; slag?: string }
 const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) => boolean | void>> = {
   // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
   fiske: (s, p, tk, { rd, dtSec, a, bar }) => {
@@ -1111,8 +1105,8 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     else { tk.carry += got.ved / SKOG.virkeVed; bar('grenar', got.grenar); if (got.done) tk.until = s.now; }
     return true;
   },
-  samla: (s, p, tk, { rd, dtSec, bar }) => {
-    { // på rundan (steg 9.2.55): det som plockades, en hel sak. Allt samlande går på rundan, så plockSlag är alltid satt
+  samla: (s, p, tk, { rd, dtSec, bar, slag: plockSlag }) => {
+    { // på rundan (steg 9.2.55): det som plockades, en hel sak. Allt samlande går på rundan, så slaget är alltid satt ('' medan plocket pågår)
       if (plockSlag === 'rotter') { bar('rotter', rd?.rotter ?? 1); count(s, 'samlat_rotter', 1); gjort(s, p, 'samlat', 1); }
       else if (plockSlag === 'sten') bar('sten', 1);
       else if (plockSlag === 'flinta') { // flintan vid stenarna eller i sanden: bara här hittas flinta, och då står det i loggen (steg 12.1.55)
@@ -1166,16 +1160,10 @@ function arbetsTakt(s: State, p: Person, tk: Task) {
   const rk = ryggKorg(s, p, tk), rygg = rk ? (rk.rad.ger ?? 1) * kvEffekt(rk.t) : 1; // ryggsäcken ger det korgen ger (steg 7.1.3)
   return { takt: workRate(s, p, tk.act) * (rd?.ger ?? 1) * (rd ? kvEffekt(redskapIHanden(s, p, tk.tool!)) : 1) * rygg * (d.takt ?? rich) * morkFart(s, p), del, rich, rd, rk }; // i totalmörker går arbetet långsammare (ljus.ts); ett bättre redskap ger lite mer (kvalitet.ts)
 }
-// sekunder tills platsen är tom (rikedomen nere i PLATS.tomtGrans) med den takt arbetet har nu
-function tidTillTom(s: State, p: Person, tk: Task) {
-  const { takt, del, rich } = arbetsTakt(s, p, tk), sj = del ? sankning(s, ACTS[tk.act].resurs!, tk.tx, tk.ty, rich, del.r) : 0;
-  return takt > 0 && sj > 0 ? Math.max(0, rich - PLATS.tomtGrans) / sj / takt : Infinity;
-}
 // arbete för byn (handlingar med arbete): det man får och bär, det platsen har kvar, redskapen som slits och det man lär sig.
-// tom = biten tömde platsen (tidTillTom)
 // rundan (steg 4.5.6.1): samlaren går i full fart från ruta till ruta och stannar en kort stund där det finns något att
 // plocka. Gången räknas som arbete på rutan man går till, så att en arbetstimme ger ungefär lika mycket som när man stod
-// vid busken. Hittar man ingen ruta nära går man till nästa buske (nastaBuske) eller hem. Ger tiden som gått
+// vid busken. Hittar man ingen ruta nära går man hem. Ger tiden som gått
 // Rundan söker sig utåt (steg 4.5.6.2): varje ruta längre från lägret är värd drag() mer. Nyfikenheten och modet drar ut;
 // bördan, hungern, törsten, tröttheten, mörkret som kommer, kylan och rädslan drar hem. Det finns inget tak: den som dras
 // utåt kan gå ända till kartans kant. Barn, gamla och skadade dras mindre ut
@@ -1195,8 +1183,7 @@ function stepNaken(s: State) {
 }
 const ROLLEKA = 0.6; // så mycket rölleka per timmes samlande på en rik röllekaruta (steg 9.7.15)
 export const RUNDA = balans('runda', {
-  sett: 12, // så många rutor minns man att man nyss plockat på ...
-  settSok: 3, // ... och bland stenarna, där det är få rutor och flintan och stenarna inte tar slut på en gång
+  sett: 12, // så många rutor minns man att man nyss plockat på
   sand: 0.3, // flinta finns också i sanden vid stranden: så mycket värd som en ruta vid stenarna (1)
   ut: 0.01, // dragets bas per ruta, och så här mycket till gånger nyfikenheten / 20 och modet / 20
   nyfiken: 0.04,
@@ -1208,7 +1195,6 @@ export const RUNDA = balans('runda', {
   kyla: 0.05, // hemåt i kylan, och mer för den som fryser
   svag: 0.5, // barn, gamla och skadade (hälsan under svagHalsa) dras så här mycket ut
   svagHalsa: 0.7,
-  langtR: 10, // finns inget att plocka inom MINNE.sokR letar den som dras utåt så här långt bort
   vargR: 12, // vargar och rövare så här nära en ruta skrämmer: vargRadsla vid dem, mindre längre bort och för den modige
   vargRadsla: 0.6,
   // samlandet, en gång för alla (steg 9.2.53–9.2.57): saker på rutan, ett plock i taget, och nästa mål när platsen är tom
@@ -1253,11 +1239,13 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
   // bär och rötter, och svampen som växer där (kantarellen och den giftiga spindlingen)
   // antalet är rikedomen räknad i saker, och resten avgör om det ligger en sak till (räknat ur rutan och dygnet, ingen slump),
   // så att det i snitt finns lika mycket som rikedomen säger
-  if (res) { const dag = Math.floor(s.now / DAY); return lagrenPa(res).map((j, n) => { const v = richness(s, j, x + 0.5, y + 0.5) / FYND[j].topp * (FYND[j].saker ?? 1), hel = Math.floor(v); return { k: j, n: hel + (hash3(s.seed + n, i, dag) < v - hel ? 1 : 0) }; }); }
-  const tr = groundOf(s).trees[i];
-  const h = hash3(s.seed, i, 977), bas = tr >= FOREST && h < RUNDA.grenTat ? 1 + Math.floor(h / RUNDA.grenTat * RUNDA.grenSaker) : 0;
-  return [{ k: 'grenar', n: Math.max(0, Math.min(RUNDA.grenSaker, bas) - plockatPa(s, plockKey(tk, i))) }];
+  if (res) { const dag = Math.floor(s.now / DAY); return lagrenPa(res).map((j, n) => ({ k: j, n: saker(s, n, i, dag, richness(s, j, x + 0.5, y + 0.5) / FYND[j].topp * (FYND[j].saker ?? 1)) })); }
+  return [{ k: 'grenar', n: grenarPa(s, tk, i, groundOf(s).trees[i]) }];
 }
+// formlerna för sakerna på en ruta, som sakerPaRutan och sakerLasare delar: grenarna under träden (räknat ur rutan, ingen
+// slump), och bär, rötter och svamp ur rikedomen v i saker, där resten avgör om det ligger en sak till (rutan och dygnet)
+const grenarPa = (s: State, tk: Task, i: number, tr: number) => { const h = hash3(s.seed, i, 977), bas = tr >= FOREST && h < RUNDA.grenTat ? 1 + Math.floor(h / RUNDA.grenTat * RUNDA.grenSaker) : 0; return Math.max(0, Math.min(RUNDA.grenSaker, bas) - plockatPa(s, plockKey(tk, i))); };
+const saker = (s: State, n: number, i: number, dag: number, v: number) => { const hel = Math.floor(v); return hel + (hash3(s.seed + n, i, dag) < v - hel ? 1 : 0); };
 // lagren med saker på rutan för den som samlar res: bär och rötter, och svampen som växer där
 const LAGREN_PA: Partial<Record<string, readonly FyndId[]>> = {};
 const lagrenPa = (res: Lager) => LAGREN_PA[res] ??= [...lagren(res), ...(res === 'samla' ? ['kantarell', 'spindling', 'honung'] as FyndId[] : [])]; // honungen i vildbona räknas som svampen (steg 10.10.15)
@@ -1271,8 +1259,8 @@ function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
     const solid = gridOf(s).solid, tr = groundOf(s).trees;
     return (x, y) => {
       if (!inMap(x, y) || solid[y * W + x] === 1) return 0;
-      const i = y * W + x, h = hash3(s.seed, i, 977), bas = tr[i] >= FOREST && h < RUNDA.grenTat ? 1 + Math.floor(h / RUNDA.grenTat * RUNDA.grenSaker) : 0;
-      return Math.max(0, Math.min(RUNDA.grenSaker, bas) - plockatPa(s, plockKey(tk, i)));
+      const i = y * W + x;
+      return grenarPa(s, tk, i, tr[i]);
     };
   }
   const js = lagrenPa(res), rik = richnessFor(s, js), solid = gridOf(s).solid, dag = Math.floor(s.now / DAY);
@@ -1280,7 +1268,7 @@ function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
     if (!inMap(x, y) || solid[y * W + x] === 1) return 0;
     const i = y * W + x;
     let sum = 0;
-    for (let n = 0; n < js.length; n++) { const f = FYND[js[n]], v = rik(n, i) / f.topp * (f.saker ?? 1), hel = Math.floor(v); sum += hel + (hash3(s.seed + n, i, dag) < v - hel ? 1 : 0); }
+    for (let n = 0; n < js.length; n++) { const f = FYND[js[n]]; sum += saker(s, n, i, dag, rik(n, i) / f.topp * (f.saker ?? 1)); }
     return sum;
   };
 }
@@ -1304,7 +1292,7 @@ function plockaEn(s: State, tk: Task, x: number, y: number): string | undefined 
   }
   return fore.k;
 }
-function drag(s: State, p: Person, tk: Task, varde: (x: number, y: number) => number) {
+function drag(s: State, p: Person, tk: Task) {
   const now = s.now, a = ageOf(p, now), h = hourOf(now);
   let ut = RUNDA.ut + RUNDA.nyfiken * stat(p, 'nyfikenhet', now) / 20 + RUNDA.mod * stat(p, 'mod', now) / 20;
   if (a < ALDER.vuxen || a >= ALDER.gammal || halsa(p) < RUNDA.svagHalsa) ut *= RUNDA.svag;
@@ -1326,10 +1314,8 @@ function drag(s: State, p: Person, tk: Task, varde: (x: number, y: number) => nu
     if (v === undefined) omr.set(a, v = radslaVid(s, p, x, y));
     return hot.length ? v + fara(x, y) : v;
   };
-  // nära: rutorna man ser, utan drag. Längre bort drar det utåt, och längst bort gäller det man tror om rutan
-  // bär och rötter: det man tror om marken man inte ser; grenarna och stenarna syns på marken
-  const res = ACTS[tk.act].resurs, tror = res && !tk.sok ? trorOm(s, p, res) : (x: number, y: number) => varde(x, y) - radsla(x, y);
-  return { nara: { ut: 0, radsla }, bort: { ut, radsla }, langt: { ut, radsla, tror: (x: number, y: number) => tror(x, y) - fara(x, y) }, ut };
+  // ut: hur mycket det drar utåt (negativt hemåt); radsla: rädslan vid en ruta, som nastaMal räknar med
+  return { ut, radsla };
 }
 // det en ruta ger på rundan, 0–1 (steg 4.5.6.3): bären och rötterna efter vad som finns kvar, grenarna i skogen, och för den
 // som letar stenar eller flinta närheten till stenarna (som forageItems i eld.ts)
@@ -1343,8 +1329,6 @@ function rutVarde(s: State, tk: Task): (x: number, y: number) => number {
   const tr = groundOf(s).trees;
   return (x, y) => tr[y * W + x] >= FOREST ? Math.min(1, tr[y * W + x]) : 0;
 }
-// rundan i en bit av steget. Där varje stopp ger en hel sak (r.hel, steg 6.1.3) går man förbi rutorna där inget är klart,
-// och då går flera rutor i samma bit, så att tiden i steget räcker (taskStep räknar bitarna)
 // samlandet, en gång för alla (steg 9.2.53–9.2.57, Samlandet i designdokumentet): samlaren går till ett mål, plockar där rutan
 // för rutan, en hel sak per plock efter RUNDA.plock sekunder, och går vidare till nästa ruta med saker inom synvidden. När inga
 // syns är platsen färdig, och hen väljer nästa mål. Inget plockas under gången, och gången är inte arbete. Hem när bördan är full
@@ -1386,7 +1370,7 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
     if (w.framme && tk.phase === 'do') {
       tk.hopp = undefined;
       // det hen hittat på vägen (hö, kvistar, mossa, ägg, frön) läggs i bördan när hen är framme, också där inget finns att plocka
-      plockSlag = ''; workStep(s, p, tk, 1e-3, a, learn, false, true, 0); plockSlag = undefined;
+      workStep(s, p, tk, 1e-3, a, learn, { n: 0, slag: '' });
       if (p.task !== tk || tk.until <= s.now) return used;
       const f = tk.sett?.[tk.sett.length - 1]; // i ett nytt område ser hen sig omkring: det blir platslärdomar (steg 4.5.6.2)
       if (f === undefined || areaOf(f % W, Math.floor(f / W)) !== areaOf(tk.tx, tk.ty)) lookAround(s, p, tk.tx, tk.ty);
@@ -1400,7 +1384,7 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
     tk.plock = undefined; rundaTid = 'plock';
     const used = Math.max(1e-3, Math.min(left, slut, BIT));
     s.now = now + used * SEC;
-    plockSlag = 'honung'; workStep(s, p, tk, used, a, learn, false, true, 0); plockSlag = undefined;
+    workStep(s, p, tk, used, a, learn, { n: 0, slag: 'honung' });
     return used;
   }
   // plocka (steg 9.2.55): stå still och plocka rutan tom, en hel sak per RUNDA.plock sekunder
@@ -1411,7 +1395,7 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
     tk.plock -= used;
     const klar = tk.plock <= 1e-6, slag = klar ? plockaEn(s, tk, x, y) : undefined;
     if (klar) tk.plock = undefined;
-    plockSlag = slag ?? ''; workStep(s, p, tk, used, a, learn, false, true, slag ? 1 : 0); plockSlag = undefined;
+    workStep(s, p, tk, used, a, learn, { n: slag ? 1 : 0, slag: slag ?? '' });
     return used;
   }
   // den som hämtar tändmaterial plockar det som finns på rutan och i närheten och hittar hö och kvistar på vägen (forageItems i
@@ -1428,24 +1412,22 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
   tk.plock = undefined;
   if (p.task !== tk || tk.phase !== 'do') return 1e-3;
   if (full) { // bördan är full: hem med den (som i workStep), och tillbaka hit sedan om tiden räcker
-    if (tk.until > s.now + 2 * MIN) tk.res = { x: tk.tx, y: tk.ty, until: tk.until };
-    tk.until = s.now; count(s, 'turer');
+    hemMedBordan(s, tk);
     return 1e-3;
   }
   // vidare (steg 9.2.56): den närmaste rutan med saker som hen ser; annars är platsen färdig och nästa mål väljs. Hem när det drar
   // hemåt (draget, men bara hemåt)
   const i = y * W + x;
   tk.sett = [...(tk.sett ?? []), i].slice(-RUNDA.sett);
-  const dr = drag(s, p, tk, rutVarde(s, tk));
+  const dr = drag(s, p, tk);
   if (dr.ut < -RUNDA.hem || tk.until <= s.now + 2 * MIN) { tk.until = s.now; return 1e-3; }
   let n = nastaPaStrackan(s, p, tk, x, y);
   // utan något hen vet eller ser går hen vidare ut i det okända bara så länge draget drar utåt (nyfikenheten och modet, minus
   // bördan, behoven, mörkret och kylan); annars hem. Drar det hemåt kostar varje ruta längre bort från byn lika mycket
-  if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla, dr.ut > 0, Math.max(0, -dr.ut)); }
+  if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.radsla, dr.ut > 0, Math.max(0, -dr.ut)); }
   if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; } else tk.until = s.now;
   return 1e-3;
 }
-let plockSlag: string | undefined; // på rundan: slaget som plockades nu (bär eller rötter, sten eller flinta, grenar), '' medan plocket pågår; för UTFALL
 // sträckan (steg 10.2.21): samlaren väljer de rutor med saker hen ser på en gång, närmast först och sedan närmast den förra,
 // högst RUNDA.stracka, och går dem i tur och ordning. En ruta som blivit tom på vägen hoppas över; när sträckan är slut väljs en
 // ny. Förut letades hela synvidden igenom efter varje ruta
@@ -1567,15 +1549,15 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   }
   return undefined;
 }
-// plock: på rundan (steg 9.2.55) ger arbetet bara det som plockades, en hel sak när plocket är klart (1) eller inget (0)
-function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number, tom = false, runda = false, plock?: number) {
-  const now = s.now, d = ACTS[tk.act], res = d.resurs;
-  const { takt, del: del0, rich, rd, rk } = arbetsTakt(s, p, tk), y = plock ?? takt * dtSec, del = plock === undefined ? del0 : undefined; // ett plock har redan tagits ur rutan (plockaEn)
+// plock: på rundan (steg 9.2.55) ger arbetet bara det som plockades, en hel sak när plocket är klart (n 1) eller inget (0), och slaget som plockades (bär eller rötter, sten eller flinta, honung), '' medan plocket pågår
+function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number, plock?: { n: number; slag: string }) {
+  const now = s.now, d = ACTS[tk.act], res = d.resurs, runda = plock !== undefined;
+  const { takt, del: del0, rich, rd, rk } = arbetsTakt(s, p, tk), y = plock ? plock.n : takt * dtSec, del = plock === undefined ? del0 : undefined; // ett plock har redan tagits ur rutan (plockaEn)
   if (y > 0) count(s, 'prod_' + tk.act, y);
   if (rd && y > 0 && d.slits?.per === 'ger') wearUsed(s, p, y); // korgen slits för det som samlas, inte per timme (steg 2.3.12)
   if (rk?.rad.haller && y > 0 && d.slits?.per === 'ger') slitRygg(s, rk.t, y, rk.rad.haller); // och ryggsäcken likadant (steg 7.1.3)
   // tomt här: gå vidare eller hem (nedan). Den som letar flinta eller stenar fortsätter
-  const tomt = !!del && (rich < PLATS.tomtGrans || tom) && !tk.sok;
+  const tomt = !!del && rich < PLATS.tomtGrans && !tk.sok;
   if (res && del) takeFrom(s, res, tk.tx, tk.ty, y, del.r);
   // den som arbetar ser hur mycket som finns i området och minns det
   if (res && (rich < PLATS.tomtGrans || chance(s, 1 / STEG.minneSek, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
@@ -1593,8 +1575,8 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   };
   // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
   const u = UTFALL[tk.act];
-  if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar })) && y > 0) { tk.carry += y; if (smt) smutsigtPlock(s, carryKind(tk.act), y, smt); }
-  helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7); ett plock är alltid en hel sak (steg 9.2.55) // bara hela saker i bördan (steg 2.10.7); på en runda med hela saker ges saken bara vid stoppet (rundaRuta, steg 6.1.3)
+  if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar, slag: plock?.slag })) && y > 0) { tk.carry += y; if (smt) smutsigtPlock(s, carryKind(tk.act), y, smt); }
+  helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7); på en runda med hela saker ges saken bara vid stoppet (rundaRuta, steg 6.1.3)
   const sk = d.arbete!;
   const before = p.skill[sk];
   const m = p.mentor !== undefined ? byId(s, p.mentor) : undefined; // bredvid sin mentor lär man sig fortare (steg 3.1.1)
@@ -1609,18 +1591,18 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   // arbetet sker i turer: när de fria händerna är fulla eller efter en fångst bärs det hem, sedan fortsätter man. Någon fast
   // tid för en tur finns inte (steg 6.1.10): arbetet slutar annars när det är slut (tk.until) eller när något går före (val.ts)
   const full = fullBorda(s, p, tk), has = isCarrying(tk);
-  // busken är tom: den som samlar går vidare till nästa i närheten tills famnen är full (steg 2.12.4), annars hem.
-  // Den som samlar tändmaterial stannar tills det räcker. Jägaren som redan gått vidare för att leta (jakt.ts) fortsätter
-  if (tomt && tk.phase === 'do' && !runda) {
-    const n = d.fart && !full && tk.until > now + 2 * MIN ? nastaBuske(s, res!, tk.tx, tk.ty) : undefined;
-    if (n) { tk.phase = 'go'; tk.tx = n.x; tk.ty = n.y; } else if (!(tk.tandmat && tinderShort(s, tk))) tk.until = now;
-  }
+  // platsen är tom: arbetet (jakten) slutar. Samlandet går på rundan, som själv går vidare. Jägaren som redan gått vidare för att leta (jakt.ts) fortsätter
+  if (tomt && tk.phase === 'do' && !runda) tk.until = now;
   if ((full || (d.hemVarje && tk.carry > 0) || (tk.act === 'jakt' && jaktFallt(tk))) && has && !(tk.styckTill && tk.styckTill > now)) { // den som styckar ett djur gör det klart först (styckning.ts)
-    if (tk.until > now + 2 * MIN) tk.res = { x: tk.tx, y: tk.ty, until: tk.until };
-    tk.until = now; count(s, 'turer');
+    hemMedBordan(s, tk);
   }
 }
 
+// hem med bördan: platsen minns om tiden räcker till att komma tillbaka, och turen räknas
+function hemMedBordan(s: State, tk: Task) {
+  if (tk.until > s.now + 2 * MIN) tk.res = { x: tk.tx, y: tk.ty, until: tk.until };
+  tk.until = s.now; count(s, 'turer');
+}
 // bygge: lägg det man bär på bygget och arbeta. När rutan är klar, eller materialet tagit slut, tas nästa ruta
 function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   const b = bitById(s, tk.ref);
@@ -1658,7 +1640,6 @@ function byggMer(s: State, b: Bit, k: string) {
 }
 
 // talen i sparfilen avrundas till tre decimaler. En stacks ägardelar avrundas nedåt om de annars blir mer än stacken
-const r3 = (v: number) => Math.round(v * 1000) / 1000;
 function avrunda(this: unknown, k: string, v: unknown) {
   if (k === 'vackta') return undefined; // de väckta byarna sparas för sig (steg 11.13.9)
   if (typeof v === 'number') return Number.isInteger(v) ? v : v < 1 && r3(v) >= 1 ? 0.999 : r3(v); // det som är under 1 (det påbörjade, s.delar) blir aldrig 1 av avrundningen

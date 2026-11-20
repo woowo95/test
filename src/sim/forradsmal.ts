@@ -10,6 +10,7 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { hoBrist } from './vattenho';
+import { r3 } from './slump';
 import { stenTillPlan } from './byggsten';
 import { tamAlder, tamArt, tamdjurOf } from './tamdjur';
 import { SKRIFT } from './skriftTal';
@@ -151,7 +152,6 @@ export const arMaterial = (k: string): k is Materialslag => k in MATERIALMAL;
 // Höet till de sakerna är en vanlig buffert efter förbrukningen och hör till deras projekt
 export const tandBuffert = (s: State, k: 'torrgras' | 'grenar') => MATERIALMAL[k].min(s);
 
-const r3 = (x: number) => Math.round(x * 1000) / 1000;
 // det som tas ur förrådet av ett material räknas som förbrukat (lager.ts); bränslet till elden räknas inte (veden har sin rad)
 export function forbrukat(s: State, k: string, n: number) {
   if (!arMaterial(k) || !n) return;
@@ -183,9 +183,11 @@ export function materialTimme(s: State): Record<string, { b: number; t: number }
 export function materialBuffert(s: State, k: Materialslag, m = s.arbBehov?.mal?.[k]) {
   return Math.max(MATERIALMAL[k].min(s), m?.b ?? 0);
 }
-export function materialTak(s: State, k: Materialslag) {
+export function materialTak(s: State, k: Materialslag) { return takOch(s, k).tak; }
+// taket och bufferten för slaget k: bufferten, och högst FORRAD.materialMatt gånger den eller det platsen rymmer
+function takOch(s: State, k: Materialslag) {
   const m = s.arbBehov?.mal?.[k], b = materialBuffert(s, k, m);
-  return Math.max(b, Math.min(FORRAD.materialMatt * b, m?.t ?? Infinity));
+  return { b, tak: Math.max(b, Math.min(FORRAD.materialMatt * b, m?.t ?? Infinity)) };
 }
 // vill byn ha mer av slaget k än det har (steg 7.2.18)? Målen före begränsningen mot platsen: lagret görs större bara för det som
 // fattas upp till lyxtaket, inte för allt som råkar ligga bredvid
@@ -202,8 +204,8 @@ export const underBuffert = (s: State, k: Materialslag, extra = 0) => amountOf(s
 export const overTak = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra >= materialTak(s, k);
 // båda svaren på en gång (overTak och underBuffert), med bufferten räknad en gång: för den som frågar båda i varje steg (forageItems i eld.ts)
 export function overOchUnder(s: State, k: Materialslag, extra = 0) {
-  const m = s.arbBehov?.mal?.[k], b = materialBuffert(s, k, m), har = amountOf(s, k) + extra;
-  return { over: har >= Math.max(b, Math.min(FORRAD.materialMatt * b, m?.t ?? Infinity)), under: har < b };
+  const { b, tak } = takOch(s, k), har = amountOf(s, k) + extra;
+  return { over: har >= tak, under: har < b };
 }
 
 // ---------- redskapen och stationerna (steg 6.2.17) ----------
@@ -290,7 +292,7 @@ const TILLVERKVILL: Record<string, (s: State) => number> = {
 };
 // tälten byn vill ha: det största behovet bland resorna med en natt som packats det senaste året (ett dygn)
 export function behovVill(b: [number, number][] | undefined, nu: number) { let n = 0; for (const [t, m] of b ?? []) if (t > nu - DAY) n = Math.max(n, m); return n; }
-export function taltVill(s: State) { let n = 0; for (const [t, m] of s.taltBehov ?? []) if (t > s.now - DAY) n = Math.max(n, m); return n; }
+export function taltVill(s: State) { return behovVill(s.taltBehov, s.now); }
 // en station av sorten k: bufferten är en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5): en per den som sover
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)

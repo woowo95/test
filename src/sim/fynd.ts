@@ -566,18 +566,6 @@ export function richnessDelar(s: State, k: Lager, x: number, y: number): { rich:
   const r = ls.map(j => richness(s, j, x, y));
   return { rich: r.reduce((a, b) => a + b, 0), r };
 }
-// hur mycket platsens värde (richnessDelar) sjunker för varje bär man tar där, när uttaget delas mellan lagren som i
-// takeFrom. Bara på land och utan djur (r finns); annars 0
-export function sankning(s: State, k: Lager, x: number, y: number, rich: number, r?: number[]) {
-  if (!r || rich <= 0) return 0;
-  const i = tileOf(x, y), d = takenOf(s);
-  let v = 0;
-  lagren(k).forEach((j, n) => {
-    const u = FYND[j].uttag, kv = u && karna(u.reach);
-    if (kv && d[j]) v += vaxerAt(s, j, i) * kv.v[kv.v.length >> 1].w / kv.sum * (u.reach + 1) / u.full * r[n] / rich;
-  });
-  return v;
-}
 // hur många gånger byn tagit ur kartan: gränssnittet ritar om den när det ändrats (simuleringen läser det aldrig)
 const plock = new WeakMap<State, number>();
 export const plockOf = (s: State) => plock.get(s) ?? 0;
@@ -705,7 +693,6 @@ export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => 
 // Kantarellen är god. Den orangea spindlingen liknar den men är giftig. Den som blir förgiftad lär sig skilja dem åt
 // och kan sedan lära andra (kunskap.ts, minne.ts).
 const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (syns inte för invånarna)
-// svamp som hittas under en stund av samling i skogen; ger hur mycket ätlig mat som hittades.
 // Kantarellen och spindlingen har var sitt lager, så de växer på olika ställen.
 // en svamp plockad på rundan (steg 9.2.53–9.2.55): kantarellen är mat, och den giftiga spindlingen låter den stå som känner igen
 // den; annars läggs den i bördan som giftsvamp (som förr i forageItems). Svarar med det som hamnar i bördan

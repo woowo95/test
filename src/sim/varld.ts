@@ -96,6 +96,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (s.kunskap?.svamp && p.died === undefined && !p.kunskap?.svamp) p.kunskap = { ...p.kunskap, svamp: { v: s.kunskap.svamp, t: s.now } };
     }
     delete s.kunskap;
+    delete s.stegRest; // det som var kvar av ett delat slag (en äldre sparning)
     s.kal ??= inFas(s); // byar från före kalendern kommer i fas med veckan
     // äldre sparfiler: det som räknades ur loggen räknas nu i statistiken
     if (s.log.some(l => l.text.includes('byns första yxa'))) (s.stat ??= {}).yxa1 ??= 1;
