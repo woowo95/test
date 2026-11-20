@@ -1788,6 +1788,7 @@ SCENARIER.stridkarta = {
 };
 
 SCENARIER.slagbild = {
+  env: { BALANS: 'sport.vikt=0' }, // ingen brottning i sporten under timmen utan strid (brottningen är en strid på kartan)
   text: 'Steg 10.1.5: bilden spelar stridens händelser. Varje slag i en strid på kartan tas emot av bilden en gång, i samma ögonblick som det sker, och syns då: den som slår gör rörelsen, i vapnets takt, och strecket går till den som träffas. Antalet ritade slag är antalet händelser, och inget ritas när ingen strid pågår',
   kor: () => {
     const s = createState(21, START); klockan(s, 12);
