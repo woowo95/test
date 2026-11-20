@@ -131,7 +131,8 @@ export const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e
 // ---------- summorna ----------
 // Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack),
 // som glömmer summorna
-export const changed = (s: State) => { summor.delete(s); };
+export const changed = (s: State) => { summor.delete(s); lagerV++; };
+let lagerV = 0; // ökar varje gång en stack ändrats (slagen inom räckhåll, slagFinns)
 // testläget (steg 4.5.7.8): lagerplatsen tas bort. Det som låg där blir liggande som högar på marken, och byn bär det till
 // de andra lagerplatserna. Den sista lagerplatsen tas inte bort (lagerHinder). false = den togs inte bort
 export const lagerHinder = (s: State) => zonesOf(s).length <= 1 ? 'Byn har bara den här lagerplatsen' : undefined;
@@ -143,19 +144,21 @@ export function taBortLager(s: State, z: Zone) {
   return true;
 }
 // ag: ägarnas delar per slag, räknade först när någon frågar efter slaget (undefined = ingen stack med ägare)
-interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Map<string, Del | undefined>; agKlar?: true; lagrade: Stack[] }
+// finns: slagen som har en stack någonstans, i förrådet eller utanför (och det gömda i sin värdstack), steg 12.1.184
+interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Map<string, Del | undefined>; agKlar?: true; lagrade: Stack[]; finns: Set<string> }
 const summor = new WeakMap<State, Summa>();
 function summa(s: State) {
   const st = stacksOf(s), c = summor.get(s);
   if (c && c.st === st) return c;
-  const n: Record<string, number> = {}, w: Record<string, number> = {}, lagrade: Stack[] = [];
+  const n: Record<string, number> = {}, w: Record<string, number> = {}, lagrade: Stack[] = [], finns = new Set<string>();
   for (const a of st) {
+    finns.add(a.k); if (a.dold) finns.add(DOLD_I[a.k]);
     if (!isStored(s, a.x, a.y)) continue;
     lagrade.push(a);
     n[a.k] = (n[a.k] ?? 0) + a.n; w[a.k] = (w[a.k] ?? 0) + a.n * a.c;
     if (a.dold) { const d = DOLD_I[a.k]; n[d] = (n[d] ?? 0) + a.dold; }
   }
-  const ny: Summa = { st, n, w, ag: new Map(), lagrade };
+  const ny: Summa = { st, n, w, ag: new Map(), lagrade, finns };
   summor.set(s, ny);
   return ny;
 }
@@ -599,8 +602,22 @@ function stored(s: State, k: string) {
 // ---------- räckhållet (steg 11.1.74, Hämtningen i designdokumentet) ----------
 // Inget svävar: den som tar något ur förrådet tar det ur en stack hen står vid. Under iRackhall är förrådet bara stackarna inom
 // LAGER.rackvidd rutor från platsen: det som räknas, tas och byter ägare där. Den som hämtar material går därför till stacken
-let nara: { x: number; y: number } | undefined;
+let nara: { x: number; y: number; slag?: Set<string>; v?: number; st?: Stack[] } | undefined;
 export function iRackhall<T>(x: number, y: number, f: () => T): T { const f0 = nara; nara = { x, y }; try { return f(); } finally { nara = f0; } }
+// kan det finnas något av slaget k (steg 12.1.184)? false bara när ingen stack av slaget ligger där frågan gäller: i räckhåll
+// slagen i stackarna inom räckhåll, annars i alla stackar. Redskapen räknas på tingen och ger alltid true. Det någon bär räknas
+// inte här (iBordan). Ett snabbt sätt att hoppa över slag som ger 0 i summorna över mat och ved
+export function slagFinns(s: State, k: string) {
+  if (isTool(k)) return true;
+  if (!nara) return summa(s).finns.has(k);
+  const st = stacksOf(s);
+  if (!nara.slag || nara.v !== lagerV || nara.st !== st) {
+    const m = new Set<string>();
+    for (const a of st) if (iRackvidd(nara, a)) { m.add(a.k); if (a.dold) m.add(DOLD_I[a.k]); }
+    nara.slag = m; nara.v = lagerV; nara.st = st;
+  }
+  return nara.slag.has(k);
+}
 // det som väljs och planeras (valet av arbete, vad som ska hämtas och var) ser hela förrådet, också mitt i ett arbete
 // (vid: platsen för arbetet, där det som burits dit i flera vändor ligger utanför lagret: det räknas med, hamtning.ts)
 let vidPlats: { x: number; y: number } | undefined;

@@ -16,7 +16,7 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid, moblerKrok } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, iBordan, iRackhall, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, use } from './lager';
+import { amountOf, helt, iBordan, slagFinns, iRackhall, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -168,8 +168,9 @@ const BEHOV = () => behovLista ??= [MAT, VED];
 
 // det p själv har och får ta av byns
 const perOf = (b: Behov, k: string) => b.per?.[k] ?? 1;
-function hasFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += (mayTake(s, p, k) + iBordan(p, k)) * perOf(b, k); return n; } // med det hen bär (steg 11.1.77)
-export function ownFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += ownsAmount(s, p, k) * perOf(b, k); return n; }
+// Slagen som inte finns i förrådet (eller inom räckhåll) ger 0 och hoppas över; det som bärs räknas ändå (steg 12.1.184)
+function hasFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += ((slagFinns(s, k) ? mayTake(s, p, k) : 0) + iBordan(p, k)) * perOf(b, k); return n; } // med det hen bär (steg 11.1.77)
+export function ownFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) if (slagFinns(s, k)) n += ownsAmount(s, p, k) * perOf(b, k); return n; }
 // p behöver det och har inget eget eller av byns att ta
 const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && hasFor(s, p, b) < b.minst;
 // p har mat att äta, sin egen eller byns (för måltiden vid bordet, val.ts)
@@ -179,7 +180,7 @@ export const harMat = (s: State, p: Person) => hasFor(s, p, MAT) >= MAT.minst;
 // bufferten per jag (steg 6.2.20): hur stor del av maten i förrådet som är byns (resten äger invånarna; en tom by räknas som byns)
 export function bynsMatAndel(s: State) {
   let all = 0, by = 0;
-  for (const k of MAT.slag) { const a = amountOf(s, k), per = perOf(MAT, k); all += a * per; by += Math.max(0, a - ownedSum(s, k)) * per; }
+  for (const k of MAT.slag) { if (!slagFinns(s, k)) continue; const a = amountOf(s, k), per = perOf(MAT, k); all += a * per; by += Math.max(0, a - ownedSum(s, k)) * per; }
   return all > 0 ? by / all : 1;
 }
 // ... hur många dygn maten som familjen fam äger räcker för den (den som saknar familj är sin egen familj)
@@ -206,10 +207,12 @@ export function needLadder(s: State, p: Person, dtSec: number) {
   }
 }
 function behovSteg(s: State, p: Person, b: Behov, dtSec: number) {
-  const byns = hasFor(s, p, b) >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
-  if (ownFor(s, p, b) < b.minst && (fraga || (byns && b.genast))) tradeAround(s, p, b); // ett byte, före byns förråd
-  if (fraga && hasFor(s, p, b) < b.minst) askAround(s, p, b);
-  if (hasFor(s, p, b) >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); return; }
+  // det p har räknas om bara när ett byte eller en gåva gått igenom: annars är det detsamma (steg 12.1.184)
+  let har = hasFor(s, p, b);
+  const byns = har >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
+  if ((fraga || (byns && b.genast)) && ownFor(s, p, b) < b.minst && tradeAround(s, p, b)) har = hasFor(s, p, b); // ett byte, före byns förråd
+  if (fraga && har < b.minst && askAround(s, p, b)) har = hasFor(s, p, b);
+  if (har >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); return; }
   if (desperat(s, p, b) && ran(s, p, b, dtSec)) return 'ran';
   const v = victimOf(s, p, b);
   if (v) stole(s, p, v, b.id, b.anvand(s, p, v));
@@ -268,7 +271,7 @@ const vilja = (s: State, m: Person, b: Behov) => (g: Person) => willing(s, g, m,
 // m ber den i närheten som har över och helst ger (familjen först)
 function askAround(s: State, m: Person, b: Behov) {
   const g = kretsen(s, m, g => overOf(s, g, b, m) >= b.minst, vilja(s, m, b))[0];
-  if (g) gift(s, m, g, b);
+  return g ? gift(s, m, g, b) : false; // true när gåvan gick igenom
 }
 // m byter till sig det m saknar för behovet av någon i närheten, familj och vänner först
 function tradeAround(s: State, m: Person, b: Behov) {
