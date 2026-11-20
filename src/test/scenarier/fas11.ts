@@ -359,7 +359,7 @@ SCENARIER.platser = {
 };
 
 SCENARIER.varldskarta = {
-  text: 'Världskartan (steg 11.2.16): en knapp i sidhuvudet öppnar kartan, som ritar marken i färger, floderna och platserna med tecken ur paletten, och den går att dra och zooma',
+  text: 'Världskartan (steg 11.2.16): kartan ritar marken i färger, floderna och platserna med tecken ur paletten, och den går att dra och zooma. Den är en del i fliken Omvärlden, först i delraden, utan knapp i sidhuvudet, med en fast höjd, och lederna binds bara ihop rakt (steg 12.1.29)',
   kor: () => {
     const s = utanVarld(testBy(10)), vl = SIM.medVarld(s), v = SIM.varldMark(s)!, b = VB.ritaVarld(vl, v), K = VB.VK;
     const px = (x: number, y: number) => { const i = (y * b.w + x) * 4; return '#' + [0, 1, 2].map(j => b.data[i + j].toString(16).padStart(2, '0')).join(''); };
@@ -401,8 +401,21 @@ SCENARIER.varldskarta = {
     const text = hb ? VB.rutaText(vl, v, hb.x, hb.y) : '';
     // knappen och rutan
     const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8'), main = readFileSync(new URL('../../main.ts', import.meta.url), 'utf8');
-    const knapp = /import '\.\/ui\/varldskarta'/.test(main) && /knapp\.id = 'calVarld'/.test(kod) && /\.nycklar/.test(kod) && /knapp\.addEventListener\('click'/.test(kod);
-    const handelser = ['wheel', 'pointerdown', 'pointermove', 'pointerup'].every(h => kod.includes(`'${h}'`)) && /Escape/.test(kod);
+    const omv = readFileSync(new URL('../../ui/flikar/grannar.ts', import.meta.url), 'utf8');
+    const iOmv = /import '\.\/ui\/varldskarta'/.test(main) && !kod.includes('calVarld') && /getElementById\('vkHost'\)/.test(kod) && /MutationObserver/.test(kod) && /const DELAR: Del\[\] = \[\s*\{ id: 'karta'[^\n]*id="vkHost"/.test(omv) && /\.vkDuk \{[^}]*height: min\(/.test(kod);
+    const handelser = ['wheel', 'pointerdown', 'pointermove', 'pointerup'].every(h => kod.includes(`'${h}'`));
+    // lederna binds ihop rakt (steg 12.1.29): två vägrutor snett intill varandra binds genom hörnrutan, inte med ett snett streck
+    const upptagen = (x: number, y: number) => x < 0 || y < 0 || x >= v.w || y >= v.h || !!v.flod[y * v.w + x] || platsRuta.has(y * v.w + x) || (hb?.x === x && hb?.y === y);
+    let lx = -1, ly = -1;
+    for (let i = 0; i < v.w * v.h && lx < 0; i++) { const x = i % v.w, y = Math.floor(i / v.w); if ([[0, 0], [1, 0], [0, 1], [1, 1]].every(([dx, dy]) => !upptagen(x + dx, y + dy))) { lx = x; ly = y; } }
+    let rakt = false;
+    if (lx >= 0) {
+      const leder0 = vl.leder; vl.leder = { [ly * v.w + lx]: [0, 0, 3], [(ly + 1) * v.w + lx + 1]: [0, 0, 3] } as never;
+      const bl = VB.ritaVarld(vl, v), p2 = (x: number, y: number) => { const i = (y * bl.w + x) * 4; return '#' + [0, 1, 2].map(j => bl.data[i + j].toString(16).padStart(2, '0')).join(''); };
+      vl.leder = leder0;
+      const vag = VB.LEDFARG.vag, m = K / 2;
+      rakt = p2((lx + 1) * K + m, ly * K + m) === vag && p2((lx + 1) * K, (ly + 1) * K) !== vag;
+    }
     return [
       [`marken ritas i marksortens färg (${fel} rutor fel av ${v.w * v.h})`, fel === 0],
       [`floderna ritas längs vattnets väg (${floder} flodrutor, ${flodFel} fel)`, floder > 0 && flodFel === 0],
@@ -415,7 +428,8 @@ SCENARIER.varldskarta = {
       ['zoomen håller punkten under musen kvar, och dra flyttar kartan', kvar && draOk],
       ['kartan går inte att dra bort, och zoomen har en gräns åt båda hållen', inne && zMax],
       ['en punkt på skärmen hittar sin världsruta', rutan],
-      ['en knapp i sidhuvudet öppnar kartan, som går att dra och zooma med mus och fingrar och stängs med Esc', knapp && handelser],
+      ['kartan är den första delen i Omvärlden, utan knapp i sidhuvudet och med en fast höjd, och går att dra och zooma med mus och fingrar', iOmv && handelser],
+      [`lederna binds bara ihop rakt: två vägrutor snett intill varandra går genom hörnrutan (${lx}, ${ly})`, rakt],
     ];
   },
 };

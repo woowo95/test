@@ -74,25 +74,28 @@ export function uppdragHtml() {
   }).join('')}</ul>`;
 }
 
-// stenen Omvärlden (steg 9.3.3): grannklanerna, handlarna, räderna och byns försvar i delar överst. Blek tills byn känner någon
-// utanför. Registret: en ny del är en rad i DELAR
-interface Del { id: string; tecken: string; namn: string; html(): string }
+// stenen Omvärlden (steg 9.3.3): världskartan, grannklanerna, handlarna, räderna och byns försvar i delar överst. Blek tills
+// byn känner någon utanför eller har en värld. Registret: en ny del är en rad i DELAR
+// världskartan (steg 12.1.29): en tom plats som ui/varldskarta.ts lägger kartan i, så att den står kvar när panelen ritas om
+interface Del { id: string; tecken: string; namn: string; html(): string; syns?(): boolean; hjalp?: false }
 const DELAR: Del[] = [
+  { id: 'karta', tecken: '🗺️', namn: 'Världskartan', html: () => '<div id="vkHost" class="vkHost"></div>', syns: () => !!s.varld, hjalp: false },
   { id: 'grannar', tecken: '👥', namn: 'Grannarna', html: grannarHtml },
   { id: 'handlare', tecken: '⚖️', namn: 'Handlarna', html: handlareHtml },
   { id: 'rader', tecken: '⚔️', namn: 'Räderna', html: raderHtml },
   { id: 'forsvar', tecken: '🛡️', namn: 'Försvaret', html: forsvarHtml },
   { id: 'uppdrag', tecken: '📜', namn: 'Uppdragen', html: uppdragHtml }, // steg 11.8.16
 ];
-const oppen = () => DELAR.find(d => d.id === ui.omvDel) ?? DELAR[0];
+const delarNu = () => DELAR.filter(d => d.syns?.() ?? true);
+const oppen = () => delarNu().find(d => d.id === ui.omvDel) ?? delarNu()[0]!;
 export const grannar: Flik = {
   namn: 'Omvärlden',
   krav: 'öppnas när byn känner en klan, har haft handlare eller rövare eller känner till ett uppdrag',
-  syns: () => !!klanerOf(s).length || !!s.handlarNr || !!s.rovarNr || !!s.handlare || !!s.rovare || !!bynsUppdrag(s).length,
+  syns: () => !!s.varld || !!klanerOf(s).length || !!s.handlarNr || !!s.rovarNr || !!s.handlare || !!s.rovare || !!bynsUppdrag(s).length,
   html() {
     const del = oppen();
-    return `${delRad('data-odel', DELAR, del.id)}
-      <div class="phead"><div></div>${hjalpKnapp('omvarlden', 'Vad är klanernas hållning?')}</div>${hjalpText('omvarlden', hallText())}${del.html()}`;
+    return `${delRad('data-odel', delarNu(), del.id)}
+      ${del.hjalp === false ? '' : `<div class="phead"><div></div>${hjalpKnapp('omvarlden', 'Vad är klanernas hållning?')}</div>${hjalpText('omvarlden', hallText())}`}${del.html()}`;
   },
   klick(el) {
     const b = el.closest<HTMLButtonElement>('[data-odel]');

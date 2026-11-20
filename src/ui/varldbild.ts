@@ -150,24 +150,26 @@ export function namnPaKartan(vl: Varlden, kn?: BynsKarta): KartNamn[] {
 }
 
 // lederna (steg 11.5.1): en trampad ruta binds ihop med de trampade grannarna med ett streck, tunt för en stig och bredare
-// för en led och en väg; platshållare i paletten tills bildstilen ritat lederna
+// för en led och en väg; platshållare i paletten tills bildstilen ritat lederna. Strecken går bara rakt (steg 12.1.29), så att
+// ingen ruta får ett kryss: två trampade rutor snett intill varandra binds ihop genom hörnet bara när ingen rak granne redan gör det
 export const LEDFARG: Record<LedId, string> = { obanad: '', stig: farg('jord', 2), led: farg('jord', 3), vag: farg('ben', 2) };
 const LEDBREDD: Record<LedId, number> = { obanad: 0, stig: 1, led: 2, vag: 3 };
 function ritaLeder(b: VarldBild, vl: Varlden, v: VarldMark) {
   const l = vl.leder;
   if (!l) return;
   const m = VK / 2;
+  const klass = (x: number, y: number): LedId => x < 0 || y < 0 || x >= v.w || y >= v.h ? 'obanad' : ledKlass(vl, y * v.w + x);
+  const smal = (a: LedId, c: LedId) => LEDBREDD[c] < LEDBREDD[a] ? c : a; // strecket är den smalare rutans
+  const rak = (x: number, y: number, nx: number, ny: number, k: LedId) => streck(b, x * VK + m, y * VK + m, nx * VK + m, ny * VK + m, LEDBREDD[k], rgb(LEDFARG[k]));
   for (const k of Object.keys(l)) {
     const i = +k, ki = ledKlass(vl, i);
     if (ki === 'obanad') continue;
     const x = i % v.w, y = Math.floor(i / v.w);
-    for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
-      const nx = x + dx, ny = y + dy, j = ny * v.w + nx;
-      if (nx < 0 || ny < 0 || nx >= v.w || ny >= v.h) continue;
-      const kj = ledKlass(vl, j);
-      if (kj === 'obanad') continue;
-      const svag = LEDBREDD[kj] < LEDBREDD[ki] ? kj : ki; // strecket är den smalare rutans
-      streck(b, x * VK + m, y * VK + m, nx * VK + m, ny * VK + m, LEDBREDD[svag], rgb(LEDFARG[svag]));
+    for (const [dx, dy] of [[1, 0], [0, 1]]) { const kj = klass(x + dx, y + dy); if (kj !== 'obanad') rak(x, y, x + dx, y + dy, smal(ki, kj)); }
+    for (const dy of [1, -1]) {
+      const kj = klass(x + 1, y + dy);
+      if (kj === 'obanad' || klass(x + 1, y) !== 'obanad' || klass(x, y + dy) !== 'obanad') continue;
+      const k2 = smal(ki, kj); rak(x, y, x + 1, y, k2); rak(x + 1, y, x + 1, y + dy, k2); // genom hörnet, rakt
     }
   }
 }
