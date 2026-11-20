@@ -1,6 +1,6 @@
 // Scenarier för fas 12: myren och järnet.
 import * as SIM from '../../sim';
-import { SCENARIER, kor, medBank } from './hjalp';
+import { SCENARIER, klockan, kor, medBank } from './hjalp';
 import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
@@ -154,7 +154,7 @@ SCENARIER.kolmila = {
     const b = SIM.branningI(s, t), vedKvar = SIM.amountOf(s, 'ved');
     const tidigt = SIM.attTomma(s), upptagen = SIM.laddbar(s, p, 'kolmila');
     // efter fyra timmar är den klar; den som har tid river den och tar ut kolet (raden kolmila i ARBETEN)
-    s.now = b!.slut - SIM.HOUR / 2;
+    b!.sedd = 7; s.now = b!.slut - SIM.HOUR / 2; // tillsynen (steg 12.2.2) räknas som gjord
     const kol0 = SIM.amountOf(s, 'kol') + SIM.paMarken(s, 'kol');
     kor(s, 6);
     const kol = SIM.amountOf(s, 'kol') + SIM.paMarken(s, 'kol') - kol0, tom = !SIM.branningI(s, t);
@@ -174,6 +174,34 @@ SCENARIER.kolmila = {
       [`projektet kol vill ha ved till milan (${JSON.stringify(recept?.av)})`, recept?.av.ved === 20],
       ['blöt ved går inte att kola', !blot],
       [`kolet väger 1 (${SIM.SAKER.kol!.vikt})`, SIM.SAKER.kol!.vikt === 1],
+    ];
+  },
+};
+
+SCENARIER.tillsyn = {
+  text: 'Tillsynen (steg 12.2.2, brann.ts): en bränning ses till vid tre kända tider och varje missad tillsyn ger mindre ut; raden passa i ARBETEN tar den som är hemma, en mila utan tillsyn ger 4 kol, och milan tänds hellre när tillsynen faller på dagen',
+  kor: () => {
+    const kolning = (medTillsyn: boolean) => {
+      const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = vuxna[0];
+      klockan(s, 9);
+      for (const q of vuxna) (q.tek ??= {}).kolmila = 1;
+      const t = medBank(s, 'kolmila');
+      SIM.setStock(s, { ved: 40 });
+      SIM.branningKlar(s, p, { act: 'kola', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', ref: t.id } as SIM.Task);
+      if (!medTillsyn) for (const q of vuxna) q.tek!.kolmila = 0; // ingen kan se till milan
+      const kol0 = SIM.amountOf(s, 'kol') + SIM.paMarken(s, 'kol');
+      kor(s, 6);
+      return { kol: SIM.amountOf(s, 'kol') + SIM.paMarken(s, 'kol') - kol0, sedda: s.stat?.tillsyn_kolmila ?? 0, missade: s.stat?.tillsynMissad_kolmila ?? 0, kvar: !!SIM.branningarOf(s).length };
+    };
+    const med = kolning(true), utan = kolning(false);
+    const d = SIM.BRANNINGAR.kolmila, s = SIM.createState(1, START);
+    klockan(s, 10); const dag = SIM.vantatUtfall(d, s.now);
+    klockan(s, 18); const kvall = SIM.vantatUtfall(d, s.now);
+    return [
+      [`tre kända tider (${d.tillsyn.join(', ')} timmar efter tändningen), och en missad tillsyn ger ${d.miss.kol} kol mindre`, d.tillsyn.join() === '1,2,3' && d.miss.kol === 2],
+      [`en by med folk hemma på dagen missar ingen tillsyn (${med.sedda} gjorda, ${med.missade} missade) och får 10 kol (${med.kol})`, med.sedda === 3 && med.missade === 0 && med.kol === 10 && !med.kvar],
+      [`en mila utan tillsyn ger 4 kol (${utan.missade} missade, ${utan.kol} kol)`, utan.missade === 3 && utan.kol === 4 && !utan.kvar],
+      [`milan tänds hellre när tillsynen faller på dagen (väntat utfall kl 10 ${dag}, kl 18 ${kvall})`, dag === 1 && kvall < dag],
     ];
   },
 };

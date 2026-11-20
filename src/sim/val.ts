@@ -724,6 +724,8 @@ export const ARBETEN: readonly Arbete[] = [
     if (!l) return false;
     set(v, 'lyssna', l.why); v.spot = l.spot; v.dur = l.dur; v.ref = l.ref; v.tool = l.tool; return true;
   } },
+  // tillsynen vid en kolmila (steg 12.2.2, brann.ts): ett Tillfälle vars brådska är värdet som står på spel och hur nära tiden är
+  { id: 'passa', niva: 3, bradska: ({ s, p }) => passaBradska(s, p), prova: ({ s, p, v }) => { const b = passaVal(s, p); if (!b) return false; projektVal(v, passaUppgift(b), 'Det är dags att se till kolmilan'); return true; } },
   { id: 'rusta', niva: 3, prova: ({ s, p, v }) => { const r = rustaVal(s, p); if (!r) return false; v.spot = r.spot; v.ref = r.ref; v.dur = 2 * MIN; return set(v, 'rusta', r.why); } }, // byta om inför strid (steg 8.7.8), på sin nivå bland tillfällena (steg 10.2.2)
   // 4 Grundbehov (toa, värme, vatten, vila, mat). En lat person tillgodoser dem tidigare än en flitig
   { id: 'gammalSover', niva: 4, nar: 'natt', prova: ({ s, p, v, a }) => a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover && set(v, 'sova', 'Är gammal och sover på natten') },
@@ -1506,4 +1508,4 @@ import { KRUKA, ORTKRUKA, krukaHemVal, ortPlockaVal, ortSattaVal } from './kruka
 import { BIN, flyFranBin, retatNara, skattaVal } from './bin';
 import { BOSKAP, SLAKTDJUR, avlivaVal, klippVal, mjolkaVal, slaktOrsak } from './boskap';
 import { TORV, torvHellre } from './torv';
-import { attTomma, branningUppgift } from './brann';
+import { attTomma, branningUppgift, passaBradska, passaUppgift, passaVal } from './brann';

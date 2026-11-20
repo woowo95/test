@@ -7,7 +7,7 @@ import { leraGravd } from './lera';
 import { myrSteg } from './myr';
 import { malmGravd } from './malm';
 import { torvGravd, torvTorkar } from './torv';
-import { branningKlar, branningSteg } from './brann';
+import { branningKlar, branningSteg, passaKlar } from './brann';
 import { stenBruten } from './byggsten';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
@@ -354,6 +354,7 @@ KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, ste
 KLAR.malm = malmGravd; // malmen läggs i en hög där den grävdes (malm.ts, steg 12.1.2)
 KLAR.torv = torvGravd; // den blöta torven läggs i en hög där den grävdes (torv.ts, steg 12.1.3)
 KLAR.kola = branningKlar; // milan laddas och tänds, eller töms (brann.ts, steg 12.2.1)
+KLAR.passa = passaKlar; // tillsynen vid en bränning (brann.ts, steg 12.2.2)
 KLAR.stubbe = stubbeGravd; // stubben är bortgrävd och blir lite trä (skog.ts, steg 6.5.7)
 KLAR.plantera = plantaUppgravd; // plantan är uppgrävd och bärs till platsen (skogsvard.ts, steg 6.5.2)
 KLAR.ljus = (s, p, t) => finishLjus(s, p, t); // ett talgljus på ett bord eller en hylla (ljus.ts, steg 6.3.8) // en uppsatt fackla (ljus.ts, steg 6.3.7)

@@ -215,6 +215,7 @@ const YRKEN: Record<string, number> = {
   // de snävare yrkena (steg 7.5.5–7.5.8) går före de breda: den som mest slaktar är slaktare och inte jägare
   Slaktare: 0.1, Korgmakare: 0.06, Snickare: 0.1, Spjutmakare: 0.05, Skinnsömmare: 0.08, Garvare: 0.06, Stenhuggare: 0.08, Odlare: 0.15, Kock: 0.1, Vattenbärare: 0.06, Läkekunnig: 0.05,
   Lärare: 0.04, Vargjägare: 0.03, Kämpe: 0.03, Handlare: 0.05,
+  Kolare: 0.04, // den som kolar och ser till milan (steg 12.2.2)
   Jägare: 0.2, Fiskare: 0.2, Samlare: 0.2, Trähuggare: 0.15, Hantverkare: 0.15, Byggare: 0.12, Berättare: 0.06, Eldvaktare: 0.02, Väktare: 0.08, Dagdrivare: 0.3,
 };
 // de snävare yrkenas handlingar (steg 7.5.5–7.5.8). En rad med ett yrke vars handling inte finns ännu räknas inte

@@ -245,6 +245,7 @@ function showHover(gx: number, gy: number) {
     const om = isKlar(st) ? vid : `byggs, ${Math.round(stationKlar(st) * 100)} %`, ib = isKlar(st) ? iBruk(st) : undefined;
     const bruk = ib ? `${esc(ib.p.name)} ${esc(verbOf(ib.p.task!.act))} ${ib.saker.map(k => iconImg(k, 12)).join('')}` : ''; // den som arbetar där och med vad (steg 3.10.3)
     rows.push(`${iconImg(sd.ikon, 12)} <b>${esc(sd.namn)}</b>${om ? ' · ' + om : ''}${bruk ? ' · ' + bruk : ''}`);
+    const brann = branningText(s, st); if (brann) rows.push(esc(brann)); // kolmilan som brinner och tillsynens tider (steg 12.2.2)
   }
   const bit = bitAt(s, x, y);
   if (bit) {
@@ -310,3 +311,4 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => { nere.delete(e.key.toLowerCase()); });
 window.addEventListener('blur', () => nere.clear());
+import { branningText } from '../sim';
