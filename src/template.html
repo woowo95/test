@@ -44,7 +44,8 @@ html, body { height: 100%; }
 [title] { cursor: help; }
 :is(button, a, [data-id], [data-hjalp], [data-pdel], [data-sak], [data-fram], [role="button"], .klick) { cursor: pointer; }
 .bubbla { position: fixed; z-index: 20; max-width: min(280px, calc(100vw - 12px)); box-sizing: border-box; padding: 6px 9px; border: 1px solid var(--ram); border-radius: 4px; background: var(--panel); color: var(--fg); font-size: 13px; line-height: 1.35; white-space: pre-line; pointer-events: none; box-shadow: 0 2px 6px rgba(36, 32, 29, 0.35); }
-body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4; box-sizing: border-box; --topp: 59px; --stenar: 64px; }
+body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4; font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0; box-sizing: border-box; --topp: 59px; --stenar: 64px; }
+button, input, select, textarea { font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0; } /* pixeltypsnittets fi och fl ger fel tecken (flinta blev Ainta, steg 12.1.50) */
 .app { height: 100%; }
 header { position: fixed; left: 0; right: 0; top: 0; height: var(--topp); box-sizing: border-box; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 18px; padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); background: var(--panel); border-bottom: 1px solid var(--line); overflow: hidden; }
 h1 { font-family: var(--display); font-weight: 700; font-size: 24px; margin: 0; letter-spacing: 0; } /* Silkscreen i hela punkter: 8, 16 och 24 */

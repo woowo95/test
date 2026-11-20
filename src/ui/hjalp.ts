@@ -199,10 +199,11 @@ export function namnI(txt: string, namn: string, fran = 0, ok: (i: number) => bo
 export const vemLank = (id: number, namn: string) => { const p = byId(s, id); return p ? pLink(p) : esc(namn); };
 export function linkify(l: LogEntry) {
   const txt = l.text, bitar: { i: number; n: number; p: Person }[] = [];
-  for (const id of l.ids) {
-    const p = byId(s, id), n = p?.name.length ?? 0;
-    const i = p ? namnI(txt, p.name, 0, i => bitar.every(b => i + n <= b.i || i >= b.i + b.n)) : -1;
-    if (i >= 0) bitar.push({ i, n, p: p! });
+  // det längsta namnet först (steg 12.1.50), så att "Frörhild den yngre" får sin länk före "Frörhild" som står i början av den
+  const folk = l.ids.map(id => byId(s, id)).filter((p): p is Person => !!p).sort((a, b) => b.name.length - a.name.length);
+  for (const p of folk) {
+    const n = p.name.length, i = namnI(txt, p.name, 0, i => bitar.every(b => i + n <= b.i || i >= b.i + b.n));
+    if (i >= 0) bitar.push({ i, n, p });
   }
   let ut = '', fran = 0;
   for (const b of bitar.sort((a, b) => a.i - b.i)) { ut += esc(txt.slice(fran, b.i)) + pLink(b.p); fran = b.i + b.n; }
