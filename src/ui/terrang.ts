@@ -12,6 +12,7 @@ import { animMark, markytaLayer, ritaMark, stallMark } from './mark';
 import { animBild } from './animation';
 import { fortsattTrad, type Lov, stallTrad, tradBild, tradSkuggor } from './trad';
 import { buskBild } from './buske';
+import { ritaMyr } from './myrbild';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
 // när: hela marken när tidsåldern, isen, vattnet eller byn byts, annars bara de rutor som ändrats (stigarna, skogen, askan).
@@ -77,6 +78,7 @@ export function drawTerrain(force = false, alla = force) {
     ritaTrad(g, sno, alla ? Infinity : TRAD_MS, synR);
   } else fortsattTrad(TRAD_MS);
   ritaMark(6, alla, syn);
+  ritaMyr(); // myren (steg 12.1.1, ui/myrbild.ts)
   // vågorna och stranden (steg 5.1.9.2) i den del av kartan som syns
   animMark(animBild('vagor'), a.x, a.y, b.x, b.y);
 }

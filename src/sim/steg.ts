@@ -4,6 +4,7 @@ import { budgetDygn, budgetRegister } from './budget';
 import { bynamnRegister } from './bynamn';
 import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
+import { myrSteg } from './myr';
 import { stenBruten } from './byggsten';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
@@ -455,6 +456,7 @@ export const TAKTER: Takt[] = [
   { namn: 'arbetsTimme', sek: 3600, fn: s => { arbetsTimme(s); } },
   { namn: 'historikSteg', sek: 3600, fn: s => { historikSteg(s); } },
   { namn: 'stepVader', sek: 3600, fn: s => { stepVader(s); } },
+  { namn: 'myren', sek: 3600, fn: s => myrSteg(s, groundOf(s)) }, // står under vatten när marken är blöt (myr.ts, steg 12.1.1)
   { namn: 'vindfallen', sek: 3600, fn: s => { vindfallen(s); } },
   { namn: 'regnetTvattar', sek: 3600, fn: s => { regnetTvattar(s); } },
   { namn: 'stepMotgang', sek: 3600, fn: s => { stepMotgang(s); } },

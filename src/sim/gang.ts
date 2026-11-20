@@ -68,6 +68,7 @@ export const GANGFART = {
   mark: { namn: 'Marken', tecken: '🌲', varde: utanSaker, text: l => {
     const t = l.g.tiles[l.i];
     if (!isSoil(t)) return MARKNAMN[t] ?? 'Marken';
+    if (l.g.myr?.[l.i]) return l.g.myrVatten ? 'Myr under vatten' : 'Myr'; // steg 12.1.1
     return l.g.trees[l.i] >= FOREST ? 'Skog' : l.g.trees[l.i] >= VAG.ungskog ? 'Ungskog' : busksort(l.g, l.i)?.namn ?? (l.g.cover[l.i] >= HIGH ? 'Högt gräs' : 'Marken');
   } },
   sno: { namn: 'Snö på marken', tecken: '❄', varde: l => snoPaRutan(l.s, l.p, l.p.x, l.p.y) },

@@ -213,7 +213,7 @@ function showHover(gx: number, gy: number) {
   if (!inMap(x, y)) { box.hidden = true; return; }
   const m = getMap(s.seed), g = groundOf(s), i = y * W + x, t = m.tiles[i], tr = g.trees[i], c = g.cover[i];
   const soil = t === T.Gras || t === T.Skog;
-  const ground = g.tiles[i] === T.Lera ? 'Torr sjöbotten' : t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : busksort(g, i) ? busksort(g, i)!.namn : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
+  const ground = g.myr?.[i] ? (g.myrVatten ? 'Myr under vatten' : 'Myr') : g.tiles[i] === T.Lera ? 'Torr sjöbotten' : t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : busksort(g, i) ? busksort(g, i)!.namn : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
   const rows: string[] = [`<b>${ground}</b>${soil && tr > 0 ? ` · ${tr >= FOREST ? 'skog' : tr >= 0.25 ? 'ungskog' : 'plantor'}` : ''}`];
   const bu = soil ? busksort(g, i) : undefined; if (bu) rows.push(bu.text); // busken (steg 6.5.3)
   for (const f of eldarOf(s)) { const e = eldXY(s, f); if (x === e.x && y === e.y) rows.push(`${f === s.fire ? 'Elden' : 'En lägereld'} (${f.lit ? 'brinner' : emberOn(s, f) ? 'glöder' : 'släckt'})`); }

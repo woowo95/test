@@ -160,4 +160,5 @@ export const iVattnetNu = (s: State, i: number) => vattenOf(s).tiles[i] === T.Va
 const uppTill = (s: State, i: number, n?: number) => !!n && djupOf(s.seed).land[i] <= n && getMap(s.seed).tiles[i] !== T.Sten;
 export const flodHotad = (s: State, i: number) => uppTill(s, i, s.flodHot);
 export const flodBlot = (s: State, i: number) => uppTill(s, i, s.flodBlot);
-export const underMinnet = (s: State, i: number) => uppTill(s, i, s.flodMinne);
+export const underMinnet = (s: State, i: number) => uppTill(s, i, s.flodMinne) || paMyr(s, i); // och på myren byggs inget (steg 12.1.1, myr.ts)
+import { paMyr } from './myr';

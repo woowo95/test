@@ -206,3 +206,4 @@ export * from './sim/vacktro';
 export * from './sim/vacktfalt';
 export * from './sim/vacktskog';
 export * from './sim/vackthjalp';
+export * from './sim/myr';
