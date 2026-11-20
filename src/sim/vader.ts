@@ -69,9 +69,9 @@ export const VADER = balans('vader', {
 // ---------- väder: temperatur ----------
 // Temperaturen följer årstiden mjukt (varje tidsålder glider över i nästa), solen över dygnet
 // och ett långsamt slumpmässigt väder. Den räknas fram ur tiden, så den behöver inte sparas.
-// för varm (steg 12.1.19): kroppen är varmare än KROPP.forVarm och det är riktigt varmt i luften. Tanken, lusten att bada och
-// plaggen som tas av följer samma gräns
-export const forVarm = (s: State, p: Person) => p.warm > KROPP.forVarm && temperature(s) >= KROPP.varmGrader;
+// för varm (steg 12.1.19): kroppen är varmare än KROPP.forVarm. Tanken och lusten att bada följer kroppens värme, utan någon
+// gräns i grader; plaggen väljs efter värmen med en poäng (plaggPoang i utrustning.ts, steg 12.1.149)
+export const forVarm = (_s: State, p: Person) => p.warm > KROPP.forVarm;
 export function temperature(s: State, t = s.now) {
   const c = yearPos(s, t); // var i året: 0 = istidens början
   const i = Math.floor(c), q = c - i;
