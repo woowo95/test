@@ -2846,7 +2846,7 @@ SCENARIER.vagmote = {
     // färden från A är på väg hem från B med silver; en färd från B går samma väg mot A samtidigt
     const f: SIM.RadFard = { id: 9001, fran: A.by!, till: B.by!, g: 'virke', n: 0, t0: tb - 36 * H, t1: tb - 12 * H, t2: tb + 12 * H, silver: 200 };
     const f2: SIM.RadFard = { id: 9002, fran: B.by!, till: A.by!, g: 'virke', n: 0, t0: f.t1, t1: f.t2!, t2: f.t2! + 24 * H };
-    (vl.farder ??= []).push(f, f2);
+    vl.farder = [f, f2]; // bara de två: testbyns värld kan ha en egen färd från A på samma väg (steg 12.1.112)
     const ruta = SIM.fardSpar(vl, f, tb - H, tb, w).filter(r => !byRuta.has(r))[0]!;
     const a = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q))[0]!;
     a.lardomar = (a.lardomar ?? []).filter(l => !((l.k === 'ort' && l.a === A.nr) || (l.k === 'pris' && l.a === A.by)));
