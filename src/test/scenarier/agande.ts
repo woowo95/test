@@ -571,7 +571,8 @@ SCENARIER.klader = {
     const s = createState(2, START); tandEld(s);
     const st = medBank(s, 'flatarbank');
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, bensyl: 1, skinnklader: 1 };
-    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'ben', 3); setAmount(s, 'sten', 6); setAmount(s, 'skinn', 60); setAmount(s, 'rep', 12);
+    // benen räcker både till bensylen och halsbandet, som också görs av ben
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'ben', 6); setAmount(s, 'sten', 6); setAmount(s, 'skinn', 60); setAmount(s, 'rep', 12);
     // utan bensylen vid bänken sys inga kläder
     const utan = !SIM.kanGoras(s, 'rock') && !SIM.kanGoras(s, 'skor');
     let h = 0;
