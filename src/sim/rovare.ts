@@ -27,7 +27,7 @@ import { ledareOf } from './styre';
 import { DAY, HOUR, MIN, Person, SEC, State, T, Task, W, H, inMap } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
-import { husPlats, iHus, kanterna, setHotVilja, setRovarVal, skyddVidElden, vargIStrid, vargStrid } from './varg';
+import { husPlats, iHus, kanterna, setRovarVal, skyddVidElden, vargIStrid, vargStrid } from './varg';
 import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
 import { gastAv, gastAvvapna, gastGar, gastTillbaka, gastTingOf, gasterNu, nyGast, nyttGastId } from './gast';
@@ -87,7 +87,7 @@ export const ROVARE = balans('rovare', {
   hotVapen: 2, // i hotet räknas var och en som 1 + detta gånger vapnets skada
   flyBlod: 2.5, flyHot: 0.8, flyDoda: 1.2, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
   taSek: 12, // så många sekunder tar det att ta en sak ur förrådet (steg 10.1.15): tiden följer hur mycket det finns att ta
-  gavSigTim: 2, // den som flytt eller gett upp i striden står inte emot igen på så här många timmar
+  gavSig: 1, gavSigTim: 2, // den som flytt eller gett upp i striden har så här mycket mindre vilja att stå emot, och det avtar till noll på så här många timmar (steg 12.1.82)
   motR: 10, // de vuxna som är vakna och så här nära möter rövarna, om de är kämpar (rovarRoll, steg 9.2.116) ...
   lyder: 0.5, lyderPlus: 0.15, iver: 0.2, // över den här Envälde-seden lyder man ledaren (så mycket mer vilja), och så mycket drar Fejd och Krig till striden eller från den (steg 8.7.9, 10.1.13)
   pliktPlus: 0.3, familjPlus: 0.05, smabarnMinus: 0.15, // lagen om stridsplikt, den som har partner eller barn i byn att försvara, och föräldern till ett litet barn (steg 10.1.13)
@@ -419,15 +419,17 @@ export function rovarVilja(s: State, p: Person) {
 }
 export const rovarRoll = (v: number): 'kampe' | 'hjalpare' | 'gomd' => v >= ROVARE.kampeFran ? 'kampe' : v >= ROVARE.hjalpFran ? 'hjalpare' : 'gomd';
 // rövarnas rad bland hoten (steg 9.5.19, roller.ts): viljan som den är, och rövarnas två gränser
-viljaKrok.vilja = rovarVilja;
-LARMHOT.rovare = { namn: 'Rövarna', plus: () => 0, kampe: () => ROVARE.kampeFran, hjalp: () => ROVARE.hjalpFran };
+viljaKrok.vilja = rovarVilja; viljaKrok.kan = vuxenKan;
+// den som nyss flytt eller gett upp i en strid med rövarna (steg 10.1.14) vill mindre stå emot igen, och det avtar (steg 12.1.82)
+export const gavSigAvdrag = (s: State, p: Person) => p.gavSig === undefined ? 0 : ROVARE.gavSig * Math.max(0, 1 - (s.now - p.gavSig) / (ROVARE.gavSigTim * HOUR));
+LARMHOT.rovare = { namn: 'Rövarna', plus: (s, p) => -gavSigAvdrag(s, p), kampe: () => ROVARE.kampeFran, hjalp: () => ROVARE.hjalpFran };
 function rovarSkydd(s: State, p: Person, _storlek: number, dur: number) {
   // den som vet men inte varnat än varnar först (steg 10.1.12)
   if (p.larm?.vad === 'rovare' && !p.larm.varnat && vaken(p) && ageOf(p, s.now) >= ALDER.smabarn) return { act: 'varna' as const, why: 'Varnar för rövare', spot: { x: p.x, y: p.y }, dur: ROVARE.varnaSek * SEC };
   const bud = budFor(s, p);
   if (bud) return { act: 'budRovare' as const, why: `Rövare är nära, springer och hämtar ${bud.name}`, spot: { x: bud.x, y: bud.y }, dur };
-  // rollen vid larmet (steg 9.5.19); den som nyss flytt eller gett upp i striden gömmer sig (steg 10.1.14)
-  const roll = p.gavSig !== undefined && s.now - p.gavSig < ROVARE.gavSigTim * HOUR ? 'gomd' : rollVid(s, p, 'rovare');
+  // rollen vid larmet (steg 9.5.19); den som nyss flytt eller gett upp i striden vill mindre (gavSigAvdrag)
+  const roll = rollVid(s, p, 'rovare');
   if (roll !== 'gomd') {
     // de gör sig redo i byn: kämparna vid förrådet med det vapen som finns, hjälparna en bit bakom. Den som ser rövarna går mot dem (flockVal)
     const m = malet(s), vinkel = (p.id * 2.399) % (2 * Math.PI), vapen = taVapen(s, p) ? 'ett vapen' : 'det som finns';
@@ -440,7 +442,6 @@ function rovarSkydd(s: State, p: Person, _storlek: number, dur: number) {
   return { act: 'gomma' as const, why: hus ? 'Rövare är nära, gömmer sig i huset' : 'Rövare är nära, håller sig vid elden nära de vuxna', hot: 'rovare' as const, spot: hus ?? skyddVidElden(s), dur };
 }
 setRovarVal(rovarSkydd);
-setHotVilja(rovarVilja);
 
 // ---------- rövarnas val (steg 10.1.9, 10.1.14 och 10.1.15; "Striden på kartan: Samma val för alla" i designdokumentet) ----------
 // Varje rövare väljer vad hen gör på samma sätt som byborna väljer aktivitet: flocken har ett mål (ta byte, hämnas, heligt krig)
@@ -458,9 +459,9 @@ interface RCtx { ev?: TalkEvent[]; s: State; f: Rovarflock; r: Person; folk: Per
   hot: number; last: number; kvar: number }
 // den som står emot: väntar med vapen, håller vakt eller slåss
 const starEmot = (q: Person) => forsvarar(q) || q.task?.act === 'vakt' || q.task?.act === 'strid';
-// ... och kan det: frisk nog att slåss, och har inte nyss fallit, flytt eller gett upp i striden
-const gavSigNyss = (s: State, q: Person) => q.gavSig !== undefined && s.now - q.gavSig < ROVARE.gavSigTim * HOUR;
-const kanStaEmot = (s: State, q: Person) => starEmot(q) && vuxenKan(s, q) && !gavSigNyss(s, q);
+// ... och kan det: frisk nog att slåss. Den som nyss fallit, flytt eller gett upp ser rövaren inte som någon i vägen så länge rädslan varar
+const gavSigNyss = (s: State, q: Person) => gavSigAvdrag(s, q) > 0;
+const kanStaEmot = (s: State, q: Person) => starEmot(q) && vuxenKan(s, q);
 // flockens strid på kartan, om den pågår
 export const flockStrid = (s: State, f: Rovarflock) => kartStrider(s).find(g => g.efter?.typ === 'rovare' && g.efter.flock === f.id);
 // rövaren är med i en strid på kartan, flockens eller någon annan (steg 10.2.96: den som striden flyttar går inte samtidigt)
@@ -558,7 +559,7 @@ function motet(c: RCtx, ta: boolean) {
     log(s, `En rövare tog det ${q.name} bar.`, 'world', [q.id]);
   } else count(s, 'rovarHotade');
   think(q, 'Hotades av rövare', -0.15, s.now, 6 * HOUR);
-  q.gavSig = s.now; avbryt(s, q); q.task = undefined;
+  q.gavSig = s.now; q.larmRoll = undefined; avbryt(s, q); q.task = undefined;
   g.gorTill = 0;
 }
 function slaSteg(c: RCtx) {
@@ -804,7 +805,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   for (const { k, p } of bybor) {
     if (!p || !alive(p)) continue;
     if (f && k.lage === 'ger') svarTrohet(s, f, p); // heligt krig (steg 8.8.6)
-    if (k.lage !== 'strid') p.gavSig = s.now; // den som fallit, flytt eller gett upp ställer sig inte i vägen igen
+    if (k.lage !== 'strid') { p.gavSig = s.now; p.larmRoll = undefined; } // den som fallit, flytt eller gett upp vill mindre stå emot, och rollen väljs om (steg 12.1.82)
     slitKastat(s, p, st, k);
     if (svartSkadad(k)) svara.push(p.name);
     ovning(p, 'narstrid', SLAGSMAL.ovning);

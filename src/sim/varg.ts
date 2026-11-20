@@ -37,7 +37,7 @@ import { vaderNu } from './vader';
 import { notis } from './notiser';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { tecken } from './religion';
-import { LARMHOT, rollVid } from './roller';
+import { LARMHOT, rollVid, viljaKrok } from './roller';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
 // Under istiden kommer vargar in på kartan från kanten, oftast i flock och ibland en ensam. En flock stryker omkring en tid
@@ -265,7 +265,9 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
 // (eller rövare, steg 4.4.5: byn skyddar sig likadant)
 // Larmet om vargarna håller så länge flocken är nära byn och har setts nyligen (steg 9.2.121), inte bara en timme efter ropet
 // vargarnas rad bland hoten (steg 9.5.19, roller.ts): viljan plus fler × (de vuxna som kan slåss / vargarna i larmet)
-LARMHOT.varg = { namn: 'Vargarna', plus: (s, p) => VARG.fler * living(s).filter(q => !skyddas(s, q) && kanGa(q)).length / Math.max(1, larmNu(s, p)?.storlek ?? 1), kampe: () => VARG.vagar + 1e-12, hjalp: () => VARG.hjalpFran };
+// utan larm (den som kallar till vargjakt, steg 12.1.82) räknas den största flocken byn sett nyligen
+const kandFlock = (s: State) => Math.max(1, ...flockarna(s).filter(f => f.sedd !== undefined && s.now - f.sedd < VARG.jaktVet * HOUR).map(f => f.vargar.length));
+LARMHOT.varg = { namn: 'Vargarna', plus: (s, p) => VARG.fler * living(s).filter(q => viljaKrok.kan(s, q)).length / Math.max(1, larmNu(s, p)?.storlek ?? kandFlock(s)), kampe: () => VARG.vagar + 1e-12, hjalp: () => VARG.hjalpFran };
 const vargLarm = (s: State, p: Person) => { const l = larmNu(s, p); return l && (l.vad === 'varg' || l.vad === 'rovare') && (s.now - l.t < VARG.vakenTim * HOUR || l.vad === 'varg' && vargarNara(s)) ? l : undefined; };
 export const vargarNara = (s: State) => flockarna(s).some(f => f.gor !== 'flyr' && f.vargar.length > 0 && f.sedd !== undefined && s.now - f.sedd < VARG.seddTim * HOUR && utanforByn(s, f.x, f.y) < VARG.naraByn);
 
@@ -274,7 +276,8 @@ export const vargarNara = (s: State) => flockarna(s).some(f => f.gor !== 'flyr' 
 // först, och utan hus till elden nära de vuxna. Den som redan sover i ett hus sover vidare. En förälder med små barn stannar
 // hos dem. De vuxna som vågar möta flocken (modet mot flockens storlek) tar sitt eget bästa vapen eller byns och samlas vid
 // elden. Det varar VARG.vakenTim; sedan läggs vapnet tillbaka (agande.ts: tidyTools)
-export const skyddas = (s: State, p: Person) => { const a = ageOf(p, s.now); return a < ALDER.vaktFran || a >= ALDER.gammal || isSick(p, s.now) || halsa(p) < KROPP.svag; };
+// den som inte kan slåss (barnen, de för gamla och de för svaga, vuxenKan i rovare.ts): samma förlager som mot rövarna (steg 12.1.82)
+export const skyddas = (s: State, p: Person) => !viljaKrok.kan(s, p);
 export const iHus = (s: State, p: Person) => !!roomAt(s, Math.floor(p.x), Math.floor(p.y));
 // närmaste plats under tak: den egna sängen om den är under tak, annars en ruta i närmaste rum
 export function husPlats(s: State, p: Person) {
@@ -290,9 +293,6 @@ type Skydd = { act: Act; why: string; spot?: { x: number; y: number }; dur: numb
 // valet när rövare är nära (rovarSkydd i rovare.ts, som sätter det här när modulen laddas, så att varg.ts inte behöver importera rovare.ts)
 let rovarVal: ((s: State, p: Person, storlek: number, dur: number) => Skydd | undefined) | undefined;
 export const setRovarVal = (f: typeof rovarVal) => { rovarVal = f; };
-// viljan att möta ett hot: samma värde som mot rövarna (rovarVilja i rovare.ts sätter funktionen när allt är laddat, steg 9.2.121)
-let hotVilja: (s: State, p: Person) => number = (s, p) => stat(p, 'mod', s.now) / 20;
-export const setHotVilja = (f: typeof hotVilja) => { hotVilja = f; };
 export function vargSkydd(s: State, p: Person): Skydd | undefined {
   const fi = kanGa(p) ? instangd(s, p) : undefined; // en varg väntar utanför dörren (steg 3.7.21)
   if (fi) return { act: 'gomma', why: `${fi.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren`, hot: 'varg', spot: { x: p.x, y: p.y }, dur: Math.max(MIN, fi.vantar! + VARG.vantaTim * HOUR - s.now) };
@@ -300,11 +300,6 @@ export function vargSkydd(s: State, p: Person): Skydd | undefined {
   if (!l || !kanGa(p)) return;
   const dur = l.vad === 'varg' && vargarNara(s) ? HOUR : Math.max(MIN, l.t + VARG.vakenTim * HOUR - s.now), fi2 = l.vad === 'rovare' ? 'Rövare' : 'Vargar';
   if (l.vad === 'rovare' && rovarVal) return rovarVal(s, p, l.storlek, dur); // rövarna väljs med sina egna tal (steg 9.2.75, rovare.ts)
-  if (skyddas(s, p)) {
-    if (p.task?.act === 'sova' && iHus(s, p)) return;
-    const hus = husPlats(s, p);
-    return hus ? { act: 'gomma', why: `${fi2} är nära, gömmer sig i huset`, hot: l.vad === 'rovare' ? 'rovare' : 'varg', spot: hus, dur } : { act: 'gomma', why: `${fi2} är nära, håller sig vid elden nära de vuxna`, hot: l.vad === 'rovare' ? 'rovare' : 'varg', spot: skyddVidElden(s), dur };
-  }
   // rollerna (steg 9.2.121): kämpe, hjälpare eller gömd, med samma värde som mot rövarna; ingen står och pratar vid elden
   const roll = rollVid(s, p, 'varg');
   if (roll === 'kampe') return { act: 'forsvar', why: `${fi2} är nära, tar ${taVapen(s, p) ? 'ett vapen' : 'det som finns'} och väntar vid elden`, dur };
@@ -468,11 +463,8 @@ function borjaVanta(s: State, f: Vargflock, o: Bit, folk: Person[]) {
   for (const q of inne) if (q.task && larmAvbryter(q.task.act, 'varg') && q.task.act !== 'sova') { avbryt(s, q); q.task = undefined; }
   log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${och(inne.map(q => q.name))} är instängda` : ''}.`, 'world', inne.map(q => q.id));
 }
-// de vuxna i huset som vågar gå ut och möta flocken: modet och hur många de är mot vargarna (som vargSkydd)
-function modiga(s: State, inne: Person[], f: Vargflock) {
-  const kan = inne.filter(q => !skyddas(s, q) && kanGa(q) && ageOf(q, s.now) >= ALDER.vaktFran);
-  return kan.filter(q => stat(q, 'mod', s.now) / 20 + VARG.fler * kan.length / Math.max(1, f.vargar.length) > VARG.vagar);
-}
+// de vuxna i huset som vågar gå ut och möta flocken: de vars roll vid larmet är kämpe (rollVid, som vargSkydd; steg 12.1.82)
+const modiga = (s: State, inne: Person[]) => inne.filter(q => rollVid(s, q, 'varg') === 'kampe');
 // flocken som väntar utanför dörren
 function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   const r = vantarVid(s, f), o = f.dorr && bitAt(s, f.dorr.x + 0.5, f.dorr.y + 0.5);
@@ -487,7 +479,7 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   if (p && chansPer(s, VARG.anfallChans, 60, dtSec, 'varg')) { slutaVanta(f); f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
   f.mx = ut.x; f.my = ut.y;
   if (ga(s, f, VARG.flyFart, dtSec) > 1) return;
-  const modigaUt = modiga(s, folk.filter(q => roomAt(s, q.x, q.y) === r), f); // de som vågar går ut och slåss
+  const modigaUt = modiga(s, folk.filter(q => roomAt(s, q.x, q.y) === r)); // de som vågar går ut och slåss
   if (!modigaUt.length) return;
   slutaVanta(f); count(s, 'vargDorrStrid');
   for (const q of modigaUt) { q.x = ut.x; q.y = ut.y; }
@@ -533,7 +525,7 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   if (f.jagare || f.gor === 'flyr' || !isLight(s.now) || f.sedd === undefined || s.now - f.sedd > VARG.jaktVet * HOUR) return;
   const kan = folk.filter(q => ageOf(q, s.now) >= ALDER.vaktFran && ageOf(q, s.now) < ALDER.vaktTill && !isSick(q, s.now) && halsa(q) >= KROPP.svag && kanGa(q) && q.task?.act !== 'strid' && q.task?.act !== 'vargjakt' && !larmNu(s, q)?.falskt);
   if (!kan.length) return;
-  const vagar = (q?: Person) => !!q && kan.includes(q) && stat(q, 'mod', s.now) / 20 + VARG.fler * kan.length / Math.max(1, f.vargar.length) > VARG.vagar;
+  const vagar = (q?: Person) => !!q && kan.includes(q) && rollVid(s, q, 'varg') === 'kampe'; // rollen vid larmet (steg 12.1.82)
   const led = ledareOf(s), sag = f.sag === undefined ? undefined : byId(s, f.sag), modiga = kan.filter(q => vagar(q));
   const kallar = vagar(sag) ? sag! : vagar(led) ? led! : modiga.length ? modiga.reduce((a, q) => stat(q, 'mod', s.now) > stat(a, 'mod', s.now) ? q : a) : undefined;
   if (!kallar) return;

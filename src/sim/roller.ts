@@ -10,8 +10,8 @@ export const ROLLNAMN: Record<LarmRoll, string> = { kampe: 'Kämpe', hjalpare: '
 export interface LarmHot { namn: string; plus: (s: State, p: Person) => number; kampe: () => number; hjalp: () => number }
 export const LARMHOT: Record<string, LarmHot> = {};
 export const LARMROLL = balans("larmroll", { giltig: 1 }); // en roll gäller så här många timmar innan den väljs om
-// värdet (viljan att möta hotet) sätts av rovare.ts, som de två hoten delar
-export const viljaKrok = { vilja: (_s: State, _p: Person) => 0 };
+// värdet (viljan att möta hotet) och vem som alls kan slåss (vuxenKan) sätts av rovare.ts, som de två hoten delar
+export const viljaKrok = { vilja: (_s: State, _p: Person) => 0, kan: (_s: State, _p: Person) => true };
 // något har hänt (någon skadades eller dog): rollerna väljs om nästa gång de frågas
 export const nyttILarmet = (s: State) => { s.larmV = (s.larmV ?? 0) + 1; };
 export function rollVid(s: State, p: Person, hot: string): LarmRoll {

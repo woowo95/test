@@ -18,7 +18,7 @@ import { grundvarde } from './varde';
 import { varldMark } from './varlden';
 import { ledKlass } from './leder';
 import { rnd } from './slump';
-import { kanGa, skada } from './halsa';
+import { KROPPSDELAR, forlora, kanGa, skada } from './halsa';
 import { STRIDSLAG } from './efterstrid';
 import { Kampe, StridVarld, Uppstallning, djurKampe, nyStrid, personKampe, stridTillSlut } from './strid';
 import { ROVARE } from './rovare';
@@ -104,7 +104,8 @@ export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar']
     skada: (k, w) => {
       const p = person(k);
       if (!p || p.dodVag) return false;
-      const dod = skada(s, p, w.d, w.k, w.g, (sl0?.orsak ?? 'drap') as Parameters<typeof skada>[5], 'på resan');
+      const dod = skada(s, p, w.d, w.k, w.g, (sl0?.orsak ?? 'drap') as Parameters<typeof skada>[5], 'på resan', true);
+      if (!dod && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22): striden avgör (steg 12.1.82)
       if (dod) dorPaVagen(s, sl, p, dod, t);
       return !!dod;
     },

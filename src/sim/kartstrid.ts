@@ -161,7 +161,7 @@ function varldAv(s: State, g: KartStrid): StridVarld {
       if (!p || p.died !== undefined) return false;
       if (sport && w.g < STRID.lek) return false; // brottningen: de svaga slagen gör ont men blir ingen skada (steg 9.2.92)
       const slag = g.efter && !p.gast ? STRIDSLAG[g.efter.typ] : undefined; // striden med rövare eller djur: såret och döden heter efter den
-      const dog = !!skada(s, p, w.d, w.k, w.g, (slag?.orsak ?? 'drap') as Parameters<typeof skada>[5], slag?.text ?? `i ${lek ? 'ett lekslagsmål' : 'en strid'} med ${av.namn}`);
+      const dog = !!skada(s, p, w.d, w.k, w.g, (slag?.orsak ?? 'drap') as Parameters<typeof skada>[5], slag?.text ?? `i ${lek ? 'ett lekslagsmål' : 'en strid'} med ${av.namn}`, true);
       if (!dog) slag?.sar?.(s, p, w);
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
       if (!dog && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22)
@@ -221,7 +221,7 @@ export function kartStridSteg(s: State, dtSec: number) {
         if (sport) continue; // brottaren har matchen som uppgift
         if (k.lage === 'ger' || k.lage === 'borta') { // har lämnat striden: väljer på nytt
           (g.fri ??= []).push(p.id);
-          if (g.efter?.typ === 'rovare' && !p.gast) p.gavSig = s.now;
+          if (g.efter?.typ === 'rovare' && !p.gast) { p.gavSig = s.now; p.larmRoll = undefined; }
           if (p.gast && k.lage === 'ger') gastKrok.ger?.(s, p, st.avsikt); // gästen som gett upp för den som kuvar (steg 11.12.6, rovare.ts) // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
           if (p.task?.act === 'strid') p.task.until = s.now;
         } else if (k.lage === 'strid' || k.lage === 'flykt') { // den som står eller flyr är kvar i striden, också när en skada avbrutit det hen gjorde

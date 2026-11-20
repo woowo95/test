@@ -637,15 +637,21 @@ SCENARIER.benbrott = {
 };
 
 SCENARIER.forlossning = {
-  text: 'Steg 9.5.29: förlossningen. Födseln tar tid: modern lägger sig, förloppet dras ur registret FORLOPP, den som bäst kan hjälpa kommer, och hjälparens vård (Läkekonst, egna barn, rena händer, värme, kokt vatten och remsor) sänker riskerna; texten om förloppet står i notisen',
+  text: 'Steg 9.5.29: förlossningen. Födseln tar tid: modern lägger sig, förloppet dras ur registret FORLOPP, den som väljer att hjälpa kommer (en rad i vårdregistret, steg 12.1.82), och hjälparens vård (Läkekonst, egna barn, rena händer, värme, kokt vatten och remsor) sänker riskerna; texten om förloppet står i notisen',
   kor: () => {
     const { borjaForlossning, birth, forlossRisk, vardKvalitet, FORLOPP, FORLOPP_LIST } = SIM;
     const s = createState(1, START), m = SIM.living(s).find(r => r.sex === 'k' && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     const g = SIM.living(s).find(r => r !== m && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     m.pregnantSince = s.now - 400 * SIM.DAY; m.pregnantBy = m.partner;
     g.x = m.x + 2; g.y = m.y;
+    for (const r of SIM.living(s)) if (r !== m && r !== g) { r.x = 5; r.y = 5; } // bara g är nära nog att höra
     borjaForlossning(s, m);
-    const foder = m.task?.act === 'foder' && !!m.foder, hjalper = SIM.living(s).some(r => r.task?.act === 'forlossa' && r.task.ref === m.id);
+    const foder = m.task?.act === 'foder' && !!m.foder, tvingad = SIM.living(s).some(r => r.task?.act === 'forlossa');
+    // hjälpen är en rad i vårdregistret som valet väger (steg 12.1.82): g väljer att gå dit, och stannar när hen kommer fram
+    const val = SIM.vardVal(s, g, false);
+    g.x = m.x + 1; g.y = m.y; g.task = { act: 'varda', phase: 'do', tx: m.x, ty: m.y, until: s.now, carry: 0, ref: m.id, why: '' };
+    SIM.vardKlar(s, g, g.task);
+    const hjalper = g.task?.act === 'forlossa' && m.foder?.hjalp === g.id && g.task.until === m.foder.till;
     const summa = FORLOPP_LIST.reduce((a, k) => a + FORLOPP[k].p, 0);
     // vården sänker riskerna
     const utan = (() => { const c = SIM.cloneState(s), mm = c.people.find(r => r.id === m.id)!; mm.foder = { f: 'fel', till: c.now }; return forlossRisk(c, mm).mor; })();
@@ -655,7 +661,8 @@ SCENARIER.forlossning = {
     const fodd = s.people.length > fore || (s.stat?.dodfodda ?? 0) > 0;
     return [
       [`förloppen är rader med sannolikheter som blir 1 (${FORLOPP_LIST.join(', ')})`, Math.abs(summa - 1) < 1e-9],
-      [`modern lägger sig och föder (${foder ? 'ja' : 'nej'}), och en hjälpare kommer (${hjalper ? 'ja' : 'nej'})`, foder && hjalper],
+      [`modern lägger sig och föder (${foder ? 'ja' : 'nej'}), och ingen tvingas dit (${tvingad ? 'nej' : 'ja'})`, foder && !tvingad],
+      [`den som är nära väljer att hjälpa (${val?.why ?? 'inget val'}) och stannar tills barnet kommit (${hjalper ? 'ja' : 'nej'})`, val?.ref === m.id && hjalper],
       [`en skicklig hjälpare sänker risken för modern när barnet ligger fel (${(utan * 100).toFixed(1)} % → ${(med * 100).toFixed(1)} %, vården ${vardKvalitet(s, g, m).toFixed(2)})`, med < utan],
       [`när tiden gått föds barnet (${fodd ? 'ja' : 'nej'})`, fodd && !m.foder],
     ];
