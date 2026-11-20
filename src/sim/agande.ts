@@ -80,7 +80,7 @@ export const ownsFree = (s: State, p: Person, k: string) => freeOf(s, p, k).some
 // p tar ett redskap av slaget k i handen, ur bältet om det hänger där. Det hen hade i handen hängs i bältet om det får
 // plats där (steg 7.1.1), annars läggs det i förrådet
 export function take(s: State, p: Person, k: string): Ting | undefined {
-  const c = freeOf(s, p, k).sort((a, b) => bast(a.k) - bast(b.k) || rank(p, a) - rank(p, b) || b.c - a.c)[0]; // den bästa saken i gruppen först (steg 12.2.5)
+  const c = ledigtTing(s, p, k); // den bästa saken i gruppen först (steg 12.2.5)
   if (!c) return;
   c.krok = undefined;
   for (const t of tingOf(s)) if (t.hos === p.id && t !== c) { t.hos = undefined; if (kanHanga(s, p, t)) t.krok = p.id; }

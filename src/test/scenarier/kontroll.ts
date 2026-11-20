@@ -224,7 +224,7 @@ SCENARIER.vakt = {
     // i natt: den modigaste bär två grenar när en annan väljer och nattens vakt utses
     const q = SIM.cloneState(s); klockan(q, 22); q.lastGuardDay = -1;
     const vuxna = living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vaktFran && ageOf(p, q.now) < SIM.ALDER.vaktTill);
-    for (const p of vuxna) { p.pot.mod = 1; Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined, sjuk: undefined, skador: [] }); } // friska (sjukdomen i steg 9.5.1 står i p.sjuk)
+    for (const p of vuxna) { p.pot.mod = 1; Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sjuk: undefined, skador: [] }); } // friska (sjukdomen i steg 9.5.1 står i p.sjuk)
     const [g, p] = vuxna; g!.pot.mod = 20;
     barGrenar(q, g!); p!.task = undefined;
     const grenar0 = grenarUte(q), akt = (x: Person) => x.task?.act; // (en funktion, så att typkontrollen inte tror att uppgiften är tom)
@@ -233,7 +233,7 @@ SCENARIER.vakt = {
     const nere = Math.abs(grenarUte(q) - grenar0 - 2) < 1e-6; // de två grenarna hen bar ligger kvar
     g!.task = undefined; SIM.chooseTask(q, g!);
     // antalet vakter följer hotet (steg 10.1.20): en by som sett vargar, eller nyss haft rövare, utser fler än en lugn natt
-    const antal = (hot: (h: SIM.State) => void) => { const h = SIM.cloneState(s); klockan(h, 22); h.lastGuardDay = -1; h.vargar = undefined; h.rovarVila = undefined; for (const x of living(h)) { x.guardDay = undefined; x.varsel = undefined; Object.assign(x, { health: 1, sickUntil: undefined, sjuk: undefined, skador: [] }); } hot(h); /* alla friska: annars kan de sjuka göra att för få får vakta */ const y = living(h).find(x => ageOf(x, h.now) >= 18)!; Object.assign(y, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9 }); y.task = undefined; SIM.chooseTask(h, y); return { n: living(h).filter(x => x.guardDay === h.lastGuardDay).length, hot: SIM.vaktHot(h) }; };
+    const antal = (hot: (h: SIM.State) => void) => { const h = SIM.cloneState(s); klockan(h, 22); h.lastGuardDay = -1; h.vargar = undefined; h.rovarVila = undefined; for (const x of living(h)) { x.guardDay = undefined; x.varsel = undefined; Object.assign(x, { health: 1, sjuk: undefined, skador: [] }); } hot(h); /* alla friska: annars kan de sjuka göra att för få får vakta */ const y = living(h).find(x => ageOf(x, h.now) >= 18)!; Object.assign(y, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9 }); y.task = undefined; SIM.chooseTask(h, y); return { n: living(h).filter(x => x.guardDay === h.lastGuardDay).length, hot: SIM.vaktHot(h) }; };
     const lugn = antal(() => undefined), medVarg = antal(h => { h.vargar = [{ id: 1, vargar: [1, 2, 3], x: 5, y: 5, mx: 5, my: 5, gar: h.now, hunger: 0.5, gor: 'stryker', sedd: h.now } as SIM.Vargflock]; }), efterRan = antal(h => { h.rovarVila = h.now; });
     return [
       [`en lugn natt vaktar ${lugn.n} (hotet ${lugn.hot.toFixed(1)}), när vargar setts ${medVarg.n} (${medVarg.hot.toFixed(1)}) och strax efter ett rövaranfall ${efterRan.n} (${efterRan.hot.toFixed(1)})`, lugn.n === 1 && medVarg.n > lugn.n && efterRan.n > lugn.n],
@@ -409,11 +409,11 @@ SCENARIER.portratt = {
     // kroppen följer spelet (steg 5.2.3.4): sömnen, sjukdomen, kylan, förbandet och blodet
     const kp = living(s)[0], fore = skapad(s, kp);
     kp.task = { act: 'sova', phase: 'do', tx: kp.x, ty: kp.y, until: s.now + 3600e3 } as SIM.Task;
-    kp.sickUntil = s.now + 3600e3; kp.warm = 0.1;
+    kp.sjuk = { k: 'forkylning', t0: s.now, tecken: s.now, grad: 0.3, mot: 0, r: 1 }; kp.warm = 0.1;
     kp.skador = [{ d: 'huvud', k: 'skarsar', g: 0.5, b: 1, f: 1 }];
     const efter = skapad(s, kp);
     const kroppOk = fore.humor !== 'sover' && !fore.sjuk && !fore.blod && efter.humor === 'sover' && efter.sjuk && efter.kyla && efter.blod && efter.forband.includes('forband-huvud');
-    kp.task = undefined; kp.sickUntil = undefined; kp.warm = 0.9; kp.skador = [];
+    kp.task = undefined; kp.sjuk = undefined; kp.warm = 0.9; kp.skador = [];
     // kläderna och redskapet följer utrustningen (steg 5.2.3.5): rocken av vargskinn, skorna, bältet och yxan i handen
     for (const t of tingOf(s)) if (t.bar === kp.id || t.hos === kp.id) { t.bar = undefined; t.hos = undefined; }
     const naken = skapad(s, kp);

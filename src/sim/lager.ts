@@ -449,10 +449,14 @@ const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)]
 export const nagotPa = (s: State, x: number, y: number) => things(s).some(a => a.x === x && a.y === y) || tingOf(s).some(t => paRutan(t) && t.x === x && t.y === y); // också det som hör till en station (bensylen vid bänken)
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
 const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined && t.bar === undefined && t.krok === undefined;
+// var slaget k läggs: rutan at om den hör till förrådet och har plats, annars bästa platsen i en lagerplats, annars bredvid
+function platsFor(s: State, k: string, occ: Occ, at?: { x: number; y: number }) {
+  return at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(s, occ, at.x, at.y, k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
+}
 function placeOn(s: State, ts: Ting[]) {
   for (const t of ts) {
     if (!utanRuta(t) || tillbakaVid(s, t)) continue; // stationens kniv läggs tillbaka vid stationen
-    const occ = occupancy(s, ts), sp = zoneSpot(s, t.k, -Infinity, occ) ?? besideSpot(s, t.k, occ);
+    const sp = platsFor(s, t.k, occupancy(s, ts));
     t.x = sp.x; t.y = sp.y;
   }
 }
@@ -516,9 +520,7 @@ function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) 
 }
 // var man lägger ner något: i en lagerplats om det finns plats, annars bredvid
 export function dropSpot(s: State, k: string) {
-  const occ = occupancy(s), z = zoneSpot(s, k, -Infinity, occ);
-  if (z) return { x: z.x + 0.5, y: z.y + 0.5 };
-  const sp = besideSpot(s, k, occ);
+  const sp = platsFor(s, k, occupancy(s));
   return { x: sp.x + 0.5, y: sp.y + 0.5 };
 }
 // en ruta i ringen runt lagerplatserna där slaget k får plats (inte bredvid förrådshuset: där står väggarna)
@@ -564,7 +566,7 @@ export function iRackhall<T>(x: number, y: number, f: () => T): T { const f0 = n
 let vidPlats: { x: number; y: number } | undefined;
 export function iHelaForradet<T>(f: () => T, vid?: { x: number; y: number }): T { const f0 = nara, v0 = vidPlats; nara = undefined; vidPlats = vid; try { return f(); } finally { nara = f0; vidPlats = v0; } }
 const vidArbetet = (s: State, k: string) => { let n = 0; for (const a of stacksOf(s)) if (a.k === k && !isStored(s, a.x, a.y) && iRackvidd(vidPlats!, a)) n += a.n; return n; };
-const nas = (a: Stack) => !nara || Math.hypot(a.x + 0.5 - nara.x, a.y + 0.5 - nara.y) <= LAGER.rackvidd;
+const nas = (a: Stack) => !nara || iRackvidd(nara, a);
 export const iRackvidd = (p: { x: number; y: number }, a: { x: number; y: number }) => Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y) <= LAGER.rackvidd;
 // den närmaste stacken i förrådet utom räckhåll från p med något av slagen (det gömda i sin värdstack)
 // (med ägaren fran: bara stackar där fran äger något, som kyrkans mat till högtiden)
@@ -603,7 +605,7 @@ function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: nu
   // det som ligger byggs en gång; en ny stack hamnar alltid på en tom ruta i förrådet och läggs till efter push
   const occ = occupancy(s);
   for (let g = 0; n > 1e-9 && g < 60; g++) {
-    const sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(s, occ, at.x, at.y, k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
+    const sp = platsFor(s, k, occ, at);
     at = undefined;
     // utanför förrådet (när det är fullt) räknas inte rutan i occ: det som redan ligger där av samma slag fylls på, så att
     // det inte blir en ny stack på samma ruta varje gång
@@ -663,7 +665,7 @@ let uttagLyss: ((s: State, p: Person | undefined, k: string, n: number, x: numbe
 export const lyssnaPaUttag = (f: typeof uttagLyss) => { uttagLyss = f; };
 // vakten i npm test och scenarierna (steg 11.1.77): lyss hör uttagen medan spelet räknar ett slag (i > 0, step i steg.ts)
 // stacken på rutan x,y ligger utom räckhåll för p (en liten marginal för avrundningen)
-export const svavar = (p: { x: number; y: number }, x: number, y: number) => !iRackvidd(p, { x, y }) && Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) > LAGER.rackvidd + 0.01;
+export const svavar = (p: { x: number; y: number }, x: number, y: number) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) > LAGER.rackvidd + 0.01;
 export const uttagVakt: { lyss?: typeof uttagLyss; i: number } = { i: 0 };
 function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fran?: number, baraBordan = false) {
   const ag: Del = {};
@@ -1117,7 +1119,7 @@ function storeTings(s: State, t: Task, at?: { x: number; y: number }) {
     const g = tingOf(s).find(q => q.id === id);
     if (!g) continue;
     g.lass = undefined;
-    const occ = occupancy(s), sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(s, occ, at.x, at.y, g.k) ? at : zoneSpot(s, g.k, -Infinity, occ) ?? besideSpot(s, g.k, occ);
+    const sp = platsFor(s, g.k, occupancy(s), at);
     g.x = sp.x; g.y = sp.y; at = undefined;
   }
   t.ting = undefined;

@@ -73,7 +73,6 @@ export const KROPP = balans('kropp', {
   toaAvbryt: 0.08, // under detta avbryter nöden det man håller på med
   // hälsa (health)
   svag: 0.4, // under detta är man för svag för att orka något
-  sjukTim: 40, // timmar som sjukdomen tar från full hälsa
   svartSjuk: 8, // en sjukdom som varar längre än så här loggas som svår
   // risken per dygn att dö av olycka eller ålder (Gompertz): dodBas + dodAlder * e^(dodTakt * ålder), dodBarn extra för små barn
   dodBas: 0.0015,
@@ -228,8 +227,7 @@ export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.
 // går inte i slaget, ritas inte och väljs inte till något
 export const paKartan = (p: Person) => alive(p) && p.ute === undefined;
 export function living(s: State) { return s.people.filter(paKartan); }
-// sjuk just nu (sickUntil är aldrig 0 eller NaN i spelet; då ger uttrycket ändå samma svar som !!sickUntil &&)
-export { isSick } from './sjukdom'; // sjukdomarna (steg 9.5.1, sjukdom.ts); den gamla klockan sickUntil räknas tills den gått ut
+export { isSick } from './sjukdom'; // sjuk just nu: sjukdomen har visat sig (steg 9.5.1, sjukdom.ts)
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
 // gör någon levande (utom `utom`) handlingen act just nu? (drar ingen slump)
 // arbetsordningens mjuka tak för det som annars bara en i hela byn fick göra (steg 10.2.5): en till tar handlingen med chansen

@@ -302,7 +302,7 @@ export function valjer(s: State, varv = 40) {
   const n: Record<string, number> = {}, vuxna = living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen);
   let tot = 0, sok = 0;
   for (let i = 0; i < varv; i++) {
-    for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined }); p.task = undefined; }
+    for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1 }); p.task = undefined; }
     tidyTools(s); // redskapen som togs i handen förra varvet blir lediga igen
     for (const p of vuxna) { SIM.chooseTask(s, p); const t = p.task!; n[t.act] = (n[t.act] ?? 0) + 1; tot++; if (t.sok) sok++; }
   }

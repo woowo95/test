@@ -862,7 +862,7 @@ SCENARIER.favorit = {
     const { ratt, smakAv, favoriter, stepRykten, berattaSmak, MAT, setAmount, rattId, RYKTE } = SIM;
     const s = createState(1, START), [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     p.smak = {}; q.smak = {};
-    for (let i = 0; i < 3000 && smakAv(p, 'm:fisk') > -RYKTE.smakFavorit; i++) { ratt(s, p, { fisk: 1 }, 1); p.sjuk = undefined; p.sickUntil = undefined; }
+    for (let i = 0; i < 3000 && smakAv(p, 'm:fisk') > -RYKTE.smakFavorit; i++) { ratt(s, p, { fisk: 1 }, 1); p.sjuk = undefined; }
     const avsky = smakAv(p, 'm:fisk'), fav = favoriter(p).some(f => f.k === 'fisk' && f.v < 0);
     berattaSmak(p, q, 60); const spred = smakAv(q, 'm:fisk');
     for (let h = 0; h < 5 * 24; h++) stepRykten(s, () => 0.5);

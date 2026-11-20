@@ -422,7 +422,7 @@ SCENARIER.torst = {
     const s = createState(5, START);
     s.kal = nyKalender(s.now, 2); klockan(s, 10); // sommar
     const p = living(s)[0], sh = shoreOf(s.seed);
-    const fyll = () => Object.assign(p, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, sickUntil: undefined, task: undefined });
+    const fyll = () => Object.assign(p, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, task: undefined });
     // takten: vaken, för varm, tungt arbete och sömn
     fyll(); const bas = torstDelar(p).takt;
     p.warm = 1.6; const varm = torstDelar(p).takt; p.warm = 1;
@@ -539,7 +539,7 @@ SCENARIER.kropp = {
     const s = createState(5, START);
     klockan(s, 10);
     const p = living(s)[0], MIN60 = 60;
-    const fyll = () => Object.assign(p, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined });
+    const fyll = () => Object.assign(p, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, task: undefined });
     const timmar = (h: number) => { for (let i = 0; i < h * 60; i++) { const d = halsaSteg(s, p, MIN60); if (d) return d; } return undefined; };
     // en olycka under jakten ger en skada
     fyll(); p.task = { act: 'jakt', phase: 'do', tx: p.x, ty: p.y, until: s.now + 1000 * HOUR, carry: 0, why: '' };
@@ -600,7 +600,7 @@ SCENARIER.vattensack = {
     klockan(s, 10); rikBy(s);
     const [p, q, r] = treVuxna(s, 1);
     const c = bynsMitt(s);
-    const fyll = (x: Person, dx: number) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5 + dx, y: c.y + 2.5 });
+    const fyll = (x: Person, dx: number) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, task: undefined, x: c.x + 0.5 + dx, y: c.y + 2.5 });
     fyll(p, 0); fyll(q, 1); fyll(r, 2); r.x = c.x + 40;
     skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); for (const w of p.skador!) { w.b = 0; if (w.k === 'benbrott') { w.satt = 1; w.spala = 1; } } // också såret i ett öppet brott, och benet är redan satt och spjälat (steg 9.5.27–9.5.28)
     const kanInte = !kanGa(p) && hemma(s, p);
@@ -720,9 +720,9 @@ SCENARIER.vard = {
   kor: () => {
     const s = createState(5, START);
     klockan(s, 10); rikBy(s);
-    const [p, q] = treVuxna(s, 1, x => Object.assign(x, { rest: 1, toa: 1, social: 1, warm: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined }));
+    const [p, q] = treVuxna(s, 1, x => Object.assign(x, { rest: 1, toa: 1, social: 1, warm: 1, torst: 1, blod: 1, skador: undefined }));
     const c = bynsMitt(s);
-    const fyll = (x: Person) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5, y: c.y + 2.5 });
+    const fyll = (x: Person) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, task: undefined, x: c.x + 0.5, y: c.y + 2.5 });
     const timmar = (x: Person, h: number) => { for (let i = 0; i < h * 60; i++) { const d = halsaSteg(s, x, 60); if (d) return d; } return undefined; };
     // en infektion som inte rengörs blir kallbrand och dödar
     fyll(p); skada(s, p, 'benV', 'skarsar', 0.3, 'olycka', ''); p.skador![0].b = 0; p.skador![0].inf = 0;
@@ -967,7 +967,7 @@ SCENARIER.matdygn = {
       const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), skal: string[] = [];
       let alla = 0;
       for (let i = 0; i < 30; i++) {
-        for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined }); p.task = undefined; }
+        for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1 }); p.task = undefined; }
         tidyTools(s);
         for (const p of vuxna) { chooseTask(s, p); alla++; if (['samla', 'jakt', 'fiske'].includes(p.task!.act)) skal.push(p.task!.why ?? ''); }
       }
@@ -1052,7 +1052,7 @@ SCENARIER.arbetare = {
       let n = 0, alla = 0;
       for (let i = 0; i < 400; i++) {
         for (const q of andra) q.task = upptagna.includes(q) ? { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: 'Samlar.', dark: false } : { act: 'vila', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: 'Vilar.', dark: false };
-        Object.assign(p0, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined, task: undefined });
+        Object.assign(p0, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, task: undefined });
         chooseTask(s, p0); alla++; if (['samla', 'jakt', 'fiske'].includes(p0.task!.act) && !p0.task!.sok && !p0.task!.tandmat) n++;
         p0.task = undefined;
       }

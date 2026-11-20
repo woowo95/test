@@ -13,7 +13,7 @@ import { balans } from './balans';
 import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, think } from './folk';
 import { LAGAR, LagTalDef, lagGaller, lagTal } from './lagar';
-import { drar } from './seder';
+import { fjardedel, lutning } from './seder';
 import { ARBETE, grundvarde } from './varde';
 import { ownMove, ownsId } from './lager';
 import { BUDGET, BUDGET_LIST, BudgetDef, BUDGET_KVAR, budgetId, bynsAv, budgetLonKrok } from './budget';
@@ -35,12 +35,10 @@ export const LON = balans('lon', {
   lutar: 0.3, // så mycket lutningen mot Sammanhållning flyttar rösten om lönelagen och lönen var och en vill ha
 });
 
-const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
 export const lonNu = (s: State) => lagGaller(s, 'lon') && lagGaller(s, 'skatt');
 const vuxna = (s: State) => living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vuxen);
 // föräldern som försörjer p, modern först
 const forsorjare = (s: State, p: Person) => [p.mother, p.father].map(id => living(s).find(q => q.id === id)).find(g => !!g && forsorjer(s, g, p));
-const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 
 // budgetdelen som p:s arbete just nu betalas ur, om det är arbete för byn
 export function lonDel(s: State, tk?: Task): string | undefined {

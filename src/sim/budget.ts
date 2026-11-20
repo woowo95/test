@@ -22,7 +22,7 @@ import { kroppensMat } from './ekonomi';
 import { ligger } from './sjukdom';
 import { lagGaller } from './lagar';
 import { ledareOf } from './styre';
-import { drar } from './seder';
+import { fjardedel, lutning } from './seder';
 import { FRAGOR, vikter } from './rost';
 import { TAS_UPP, budgetBortKrok } from './lagar';
 import { knows } from './teknik';
@@ -53,8 +53,6 @@ export interface BudgetDef {
   vill(s: State, p: Person): number; // vikten p vill ge delen (0 till 1)
   mat?: { vem(s: State, p: Person): boolean; behov(s: State): number }; // en matdel (steg 10.5.8): vem som äter ur den, och hur mycket den högst får
 }
-const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
-const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
 const lagg = (m: Record<string, number>, k: string, n: number) => { if (n > 0) m[k] = (m[k] ?? 0) + n; };
 const fran = (s: State, m: Record<string, number>, bitar: (b: Bit) => boolean) => { for (const b of bitsOf(s)) { const it = MATERIAL[b.m]?.item; if (it && bitar(b)) lagg(m, it, needOf(b)); } return m; };
 // byns hus: inte en familjs och inte trons

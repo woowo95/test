@@ -94,7 +94,6 @@ export function eldReserv(s: State, k: string) {
   if (k === 'torrgras') return TROSKEL.tandBrist;
   return 0;
 }
-export const sparas = (s: State, k: string) => eldReserv(s, k);
 
 export interface Forradsmal {
   dygn: number; // förrådets dygn räknas mot så här många (gånger försiktigheten) ...
@@ -217,7 +216,7 @@ export function hotNu(s: State) {
   return Math.min(1, strider / VILLTAL.hotStrider + (s.rovare ? 0.5 : 0) + (s.vargar?.length ? 0.3 : 0) + (s.bjornJakt && s.now - s.bjornJakt.sedd < VILLTAL.hotDygn * DAY ? 0.3 : 0)); // björnen sedd på sistone
 }
 // vapnen och rustningen växer med de vuxna och hoten (steg 10.2.75): bas i fred och upp till bas + hot vid fullt hot, andelar av de vuxna
-const vapenVill = (s: State, bas: number, hot: number) => Math.ceil(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length * (bas + hot * hotNu(s)) - 1e-9);
+const vapenVill = (s: State, bas: number, hot: number) => Math.ceil(vuxna(s, ALDER.vuxen) * (bas + hot * hotNu(s)) - 1e-9);
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut

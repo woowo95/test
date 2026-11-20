@@ -8,7 +8,7 @@ import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, andraGor, enTill, familjOf, forstaGang, gjort, living, log } from './folk';
 import { enOrd, han, hans, sinOrd, stor } from './ord';
 import { getable, Recept, takeMaterial } from './behov';
-import { sparas } from './forradsmal';
+import { eldReserv } from './forradsmal';
 import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool, ingenHar } from './agande';
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
@@ -1181,7 +1181,7 @@ export function kanBygga(s: State, p: Person, k: StationSlag) {
   const h = halvbyggd(s, k, p);
   if (h) return Object.entries(nastaAv(k, h)).every(([m, n]) => getable(s, p, m) >= n); // nästa del tar sitt material (steg 12.1.17)
   if (nyPaVag(s, k, p)) return false; // en annan är redan på väg att bygga en ny av sorten: det byn saknar är under arbete
-  return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(nastaAv(k)).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m)) && !!stationSite(s, k, p);
+  return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(nastaAv(k)).every(([m, n]) => getable(s, p, m) >= n + eldReserv(s, m)) && !!stationSite(s, k, p);
 }
 // trons möbler (steg 10.3.19): en vuxen troende, när trons hus saknar möbeln och kyrkan äger materialet (det hämtas aldrig)
 function kanByggaTro(s: State, p: Person, k: StationSlag) {
@@ -1441,7 +1441,7 @@ export function kanGoraTillbehor(s: State, p: Person, k: TillbehorSlag) {
   const d: TillbehorDef = TILLBEHOR[k];
   if (!d.tek.some(t => knows(p, t))) return false;
   const gor = andraGor(s, 'tillbehor', p), utan = utanTillbehor(s, k).length;
-  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m)) && (!d.kar || !!tomtKar(s, d.kar));
+  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + eldReserv(s, m)) && (!d.kar || !!tomtKar(s, d.kar));
 }
 // en tom och ledig behållare av sorten k som ingen bär (brännpannans kruka)
 const tomtKar = (s: State, k: string) => tingOf(s).find(t => t.k === k && !t.inne && !t.kok && !t.vaxt && t.ler === undefined && ingenHar(t) && t.c > 0);

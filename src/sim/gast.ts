@@ -175,7 +175,7 @@ export function gastTillbaka(s: State, p: Person) {
   if (fran !== undefined) p.fran = fran;
   // livet hemma, förenklat
   Object.assign(p, { health: 1, blod: 1, hunger: Math.max(p.hunger, 0.8), rest: 0.9, warm: 1, torst: 1, toa: 0.8 });
-  for (const f of ['blot', 'sjuk', 'skador', 'svimmat', 'brinner', 'sickUntil', 'sickWhy', 'poisonUntil', 'sorg'] as const) delete p[f];
+  for (const f of ['blot', 'sjuk', 'skador', 'svimmat', 'brinner', 'sickWhy', 'poisonUntil', 'sorg'] as const) delete p[f];
   p.thoughts = p.thoughts.filter(t => t.until > s.now);
   delete kp.kropp; delete kp.borta;
   count(s, 'gast igen');

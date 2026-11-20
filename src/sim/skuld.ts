@@ -1,6 +1,7 @@
 // ---------- skulden och förlåtelsen (steg 10.8.1–10.8.3, Kunskap och lärdomar: Skuld och förlåtelse) ----------
 // Den som i ett utbrott gjort någon illa bär en skuld (humor.ts skapar den). Den tynger humöret och bleknar. Den som bär en
 // skuld väljer hellre den hen gjort illa att samtala med och ber om förlåtelse med en botgåva ur det hen har över
+import { honom } from './ord';
 import { ALDER, REL, ageOf, alive, count, getRel, isParent, living, log, stat, think } from './folk';
 import { HANDELSER, vittnen } from './rykten';
 import { personHand } from './personlogg';
@@ -119,7 +120,6 @@ export function forlatChans(s: State, p: Person, q: Person, x: Anger) {
   const igen = Math.max(0, (getRel(s, p, q).minns?.illa ?? 1) - 1);
   return clamp(SKULD.ja + SKULD.jaEmp * (stat(q, 'empati', s.now) - 10) / 10 + SKULD.jaOp * x.op0 / 100 - SKULD.jaAllv * x.allv - SKULD.jaIgen * igen, SKULD.jaMin, SKULD.jaMax);
 }
-const hen = (p: Person) => p.sex === 'k' ? 'henne' : 'honom';
 export function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
   if (rnd(s, 'skuld', q) >= forlatChans(s, p, q, x)) { // nej: inget byter ägare, skulden sitter kvar och bleknar
     think(p, `${q.name} förlät mig inte`, -0.03, s.now, 12 * HOUR);
@@ -144,7 +144,7 @@ export function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
   p.angr = p.angr!.filter(e => e !== x);
   if (!p.angr.length) p.angr = undefined;
   count(s, 'skuldForlaten');
-  const text = `${q.name} förlät ${p.name}, som ${x.text} ${hen(q)}, och fick ${vad} som bot.`;
+  const text = `${q.name} förlät ${p.name}, som ${x.text} ${honom(q)}, och fick ${vad} som bot.`;
   log(s, text, 'rel', [p.id, q.id]);
   personHand(s, p, 'relation', `Bad ${q.name} om förlåtelse och blev förlåten.`, 'gott');
   personHand(s, q, 'relation', `Förlät ${p.name} och fick ${vad} som bot.`, 'gott');

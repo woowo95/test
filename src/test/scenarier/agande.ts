@@ -452,7 +452,7 @@ SCENARIER.arv = {
     const flyttBar = allt(s, 'sten') > 0 && allt(s, 'sten') >= 30 - orkar - 1e-6 && !ownedAll(s, d.id).sten;
     ({ s, d, a, b, c, e } = ny()); setAmount(s, 'skinn', 0);
     s.now = new Date(s.now).setHours(23, 0, 0, 0); s.lastGuardDay = -5; Object.assign(s.fire, { lit: true, fuel: 5 });
-    for (const q of living(s)) Object.assign(q, { hunger: 1, rest: 1, warm: 1, toa: 1, torst: 1, health: 1, sickUntil: undefined });
+    for (const q of living(s)) Object.assign(q, { hunger: 1, rest: 1, warm: 1, toa: 1, torst: 1, health: 1 });
     d.pot.mod = 100; bordan(s, d, 'skinn', 4); a.task = undefined;
     chooseTask(s, a);
     const vaktBar = d.guardDay !== undefined && !d.task && Math.abs(allt(s, 'skinn') - 4) < 1e-6;
@@ -1110,7 +1110,7 @@ SCENARIER.handlare = {
     // på kvällen väljer den som handlar för byn att gå till filten (night i val.ts)
     const kv = SIM.cloneState(s); if (kv.handlare && med) Object.assign(kv.handlare, structuredClone(med), { handlat: [] }); // med det hen kom med
     kv.now = new Date(kv.now).setHours(20, 0, 0, 0); kv.lastGuardDay = SIM.yearNo(kv, kv.now - 7 * HOUR);
-    for (const q of living(kv)) Object.assign(q, { hunger: 1, rest: 1, warm: 1, toa: 1, torst: 1, health: 1, sickUntil: undefined, guardDay: undefined, task: undefined });
+    for (const q of living(kv)) Object.assign(q, { hunger: 1, rest: 1, warm: 1, toa: 1, torst: 1, health: 1, guardDay: undefined, task: undefined });
     const kvVal = living(kv).filter(q => SIM.ageOf(q, kv.now) >= SIM.ALDER.vuxen).map(q => { SIM.chooseTask(kv, q); return q.task?.act; });
     // hen går hem efter några timmar, filten plockas ihop och nästa besök bestäms
     timmar(s, (h ? (h.gar - s.now) / HOUR : 0) + 1);
@@ -1871,7 +1871,7 @@ SCENARIER.kopta = {
     rikBy(s); tandEld(s); setAmount(s, 'ved', 40); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 30); /* (ingen fara går före handeln) */ SIM.handlarFram(s, vanligBy(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!));
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
-    const sort = !!h.sort && h.varor.every(w => SIM.HANDLARVAROR.some(v => v.k === w.k && v.sort.includes(h.sort!))); // (sorten följer byns rikedom)
+    const sort = !!h.sort && h.varor.every(w => SIM.HANDLARVAROR.some(v => v.k === w.k)); // (sorten följer byns rikedom)
     h.bynKlar = true; h.silver = 0;
     s.ting = tingOf(s).filter(q => q.k !== 'yxa' && q.k !== 'kniv'); // byn har ingen yxa eller kniv och kan inte göra dem
     for (const p of living(s)) { if (p.task?.act === 'handla') p.task = undefined; p.tek = { ...p.tek, yxa: 0, kniv: 0 }; delete p.hopp; }
@@ -1891,7 +1891,7 @@ SCENARIER.kopta = {
     const bytt = (s.stat?.redskapHopp ?? 0), vb = helAffar(s, b).forsta;
     const ingenNy = !vb && (s.stat?.redskapHopp ?? 0) === bytt;
     return [
-      [`handlaren är en vandrande handlare med varor som den sorten kan ha`, sort],
+      [`handlaren har en sort och varor ur registret`, sort],
       ['finns ingen yxa i byn saknar man en, också den som inte fäller träd', saknar],
       [`den som saknar en yxa går till handlaren och köper den (${va?.why ?? 'gick inte'})`, kopte],
       [`hen kommer en fast bit närmare tekniken (${hopp.toFixed(2)}), men kan inte göra en yxa`, Math.abs(hopp - SIM.HANDEL.redskapHopp) < 1e-9 && !kan && !gora && (a.hopp ?? []).includes('yxa')],
@@ -3295,7 +3295,7 @@ SCENARIER.bihandel = {
     const s = createState(6, START);
     // packningen: många handlare packar, och några har honung eller vax i hela mängder inom spannet
     let hon = 0, vax = 0, hela = true;
-    for (let i = 0; i < 300; i++) for (const w of SIM.packa(s, 125, 'vandrande')) {
+    for (let i = 0; i < 300; i++) for (const w of SIM.packa(s, 125)) {
       if (w.k === 'honung') { hon++; hela &&= Number.isInteger(w.n) && w.n >= 2; }
       if (w.k === 'bivax') { vax++; hela &&= Number.isInteger(w.n) && w.n >= 1; }
     }

@@ -101,6 +101,10 @@ function foraldrar(s: State) {
   foraldrarCache.set(s, { key, ids });
   return ids;
 }
+// hur p lutar mot Sammanhållning (-1 till 1): budgeten, lönen och skatten läser den
+export const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
+// x avrundat till närmaste fjärdedel, mellan 0 och 1
+export const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 export function drar(s: State, p: Person) {
   const barn = foraldrar(s).has(p.id), d = nollor();
   for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);

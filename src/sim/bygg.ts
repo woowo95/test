@@ -8,7 +8,7 @@ import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById,
 import { vaderSlit } from './vader';
 import { groundOf, nyttVatten, punktIRuta } from './mark';
 import { kunnighet } from './ekonomi';
-import { sparas } from './forradsmal';
+import { eldReserv } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
 import { amountOf, changed, enPerRuta, ownMove, ownsAmount, ownsId, put, use, zonesOf } from './lager';
@@ -64,7 +64,7 @@ interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing:
 // det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas.
 // Den som får ta av andra (getable = allt i byn) har redan familjens med: aldrig mer än allt
 // Ett bygge i en del av budgeten (steg 10.5.7) får också det delen fått
-export const avail = (s: State, k: string, p?: Person, hus?: number, b?: Bit) => husTro(s, hus) !== undefined ? Math.floor(ownsId(s, kyrkaId(husTro(s, hus)!), k) + 1e-9) : (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus) + budgetAv(s, b, k)) : amountOf(s, k)) - sparas(s, k);
+export const avail = (s: State, k: string, p?: Person, hus?: number, b?: Bit) => husTro(s, hus) !== undefined ? Math.floor(ownsId(s, kyrkaId(husTro(s, hus)!), k) + 1e-9) : (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus) + budgetAv(s, b, k)) : amountOf(s, k)) - eldReserv(s, k);
 // trons hus (steg 10.3.19): byggs bara av det kyrkan äger
 const husTro = (s: State, hus?: number) => hus === undefined ? undefined : husById(s, hus)?.tro;
 const famHus = (s: State, hus?: number) => { const h = husById(s, hus); return h?.ag !== undefined ? h : undefined; };
@@ -374,7 +374,7 @@ export function kanHangaDorr(s: State, p: Person, k: DorrSlag) {
   const d: DorrDef = DORRAR[k];
   if (!d.tek.some(t => knows(p, t))) return false;
   const gor = andraGor(s, 'dorr', p), utan = utanDorr(s, k).length;
-  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m));
+  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + eldReserv(s, m));
 }
 // platsen dit den som hänger dörren går: i den första öppningen som saknar den
 export function dorrSpot(s: State, k: DorrSlag) {

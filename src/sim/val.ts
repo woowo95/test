@@ -37,7 +37,7 @@ import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from '.
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, underBuffert, materialTak, sparas, villHaAv } from './forradsmal';
+import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, underBuffert, materialTak, eldReserv, villHaAv } from './forradsmal';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
@@ -1109,7 +1109,7 @@ export function handlarVaraVal(s: State, p: Person): ((v: Val) => void) | undefi
   const m = s.handelsMal;
   if (!m) return undefined;
   if (m.k === 'rep') {
-    if (!knows(p, 'rep') || amountOf(s, 'rep') >= villHaAv(s, 'rep') + m.till || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + sparas(s, 'torrgras') || !enTill(s, 'tvinna', p)) return undefined;
+    if (!knows(p, 'rep') || amountOf(s, 'rep') >= villHaAv(s, 'rep') + m.till || getable(s, p, 'torrgras') < SAKER.rep!.skaffa!.av!.torrgras! + eldReserv(s, 'torrgras') || !enTill(s, 'tvinna', p)) return undefined;
     return v => set(v, 'tvinna', 'Byn har det den behöver. Tvinnar rep att byta med handlaren.');
   }
   const u = handelTask(s, p, m.k);

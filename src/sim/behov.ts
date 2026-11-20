@@ -23,7 +23,7 @@ import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { kroppensMat, matPerDygn } from './ekonomi';
-import { REDSKAPMAL, arMaterial, buffert, sparas, villHaAv } from './forradsmal';
+import { REDSKAPMAL, arMaterial, buffert, eldReserv, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { dampning, handelse, smakMat } from './rykten';
@@ -397,12 +397,12 @@ const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.st
 export const getable = (s: State, p: Person, k: string) => (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
 // det p har till hands till sitt arbete av slaget k (steg 11.1.74): det hen bär dit och det som ligger inom räckhåll, utom det
 // som sparas (till elden)
-export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - sparas(s, k));
+export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - eldReserv(s, k));
 // det första material i receptet av som p inte kan få tag i (med det som sparas till elden, sparas i ekonomi.ts), annars undefined (steg 6.1.17)
 // receptet till ett projekt när p kunde göra det om materialet eller redskapet fanns (steg 6.2.19): materialet, redskapet
-// som behövs och hur mycket av varje som sparas (annars sparas() i forradsmal.ts)
+// som behövs och hur mycket av varje som sparas (annars eldReserv() i forradsmal.ts)
 export interface Recept { av: Record<string, number>; verktyg?: string; spar?: (m: string) => number }
-export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(s, _m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + (iBordan(p, m) >= n ? 0 : extra(m)) - 1e-9)?.[0];
+export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => eldReserv(s, _m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + (iBordan(p, m) >= n ? 0 : extra(m)) - 1e-9)?.[0];
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};

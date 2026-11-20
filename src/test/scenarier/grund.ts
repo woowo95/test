@@ -1083,7 +1083,7 @@ SCENARIER.flodrest = {
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
     let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
     kor(s, (b0 - s.now) / HOUR);
-    for (const x of living(s)) Object.assign(x, { health: 1, sickUntil: undefined, sjuk: undefined, skador: [] }); // (friska vuxna som kan bära: en sjukdom i byn är inte det som prövas)
+    for (const x of living(s)) Object.assign(x, { health: 1, sjuk: undefined, skador: [] }); // (friska vuxna som kan bära: en sjukdom i byn är inte det som prövas)
     const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.bynsMitt(s);
     const fritt = (x: number, y: number) => x > 0 && y > 0 && x < W - 1 && y < W - 1 && g[y * W + x] !== T.Sten && g[y * W + x] !== T.Vatten && SIM.ledig(s, x, y) && !SIM.bitAt(s, x, y);
     const nara = (f: (i: number) => boolean, ej: { x: number; y: number }[] = []) => {

@@ -134,7 +134,7 @@ export function insjukna(s: State, p: Person, k: SjukId, why?: string) {
   return true;
 }
 // har tecknen kommit (efter inkubationen): bara då är hen sjuk för sig själv och de andra
-export const isSick = (p: Person, now: number) => !!p.sjuk && now >= p.sjuk.tecken || p.sickUntil !== undefined && p.sickUntil > now;
+export const isSick = (p: Person, now: number) => !!p.sjuk && now >= p.sjuk.tecken;
 // det kortet säger: stadiet och orsaken
 export function sjukText(p: Person) {
   const j = p.sjuk;

@@ -7,7 +7,6 @@ import { sallskapTyngd, trampaFard } from './leder';
 import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { KLOCKA, SLAGHINDER } from './klocka';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, makeName, stat, think, paKartan } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
@@ -176,38 +175,37 @@ export const handelsTill = (s: State, k: string) => s.handelsMal?.k === k ? s.ha
 // sorterna av handlare (steg 4.5.4.16 och 11.6.10): sorten följer hembyn, inte huvudbyn. En by skickar den sista sorten i
 // registret som den har råd med och kan utrusta (radHandlarSort i byhandling.ts): rik är rikedomen per person som andel av
 // RAD.rikPer, djur att byns mark ger bete åt dragdjur (radDjur), och tek tekniken byn behöver (packsadeln görs med samma
-// teknik som ryggsäcken; vagnen kommer med 11.11.2). Sorten bestämmer utrustningen (HANDLAR_UTR), silvret och varorna
-// (kolumnen sort i HANDLARVAROR)
+// teknik som ryggsäcken; vagnen kommer med 11.11.2). Sorten bestämmer utrustningen (HANDLAR_UTR) och silvret; varorna
+// i HANDLARVAROR är desamma för alla sorter
 export interface HandlarSortDef { namn: string; utr: string; rik: number; djur?: true; tek?: string; silver: readonly [number, number] }
 export const HANDLARSORTER: Record<string, HandlarSortDef> = {
   vandrande: { namn: 'Vandrande handlare', utr: 'ryggsack', rik: 0, get silver() { return HANDEL.silver as unknown as readonly [number, number]; } }, // silver: det hen har med sig (balanstalet)
   packdjur: { namn: 'Handlare med packdjur', utr: 'packdjur', rik: 1, djur: true, tek: 'ryggsack', silver: [20, 50] },
   vagn: { namn: 'Handlare med vagn', utr: 'vagn', rik: 1.5, djur: true, tek: 'vagn', silver: [40, 90] },
 };
-const V = ['vandrande', 'packdjur', 'vagn']; // de sorter av handlare som kan ha varan
-// varorna handlarna har med sig: slaget, hur många åt gången, hur ofta (vikt) och vilka sorter av handlare som kan ha dem. Hela saker
-export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number; sort: readonly string[] }[] = [
-  { k: 'flinta', n: [1, 3], vikt: 3, sort: V },
-  { k: 'rep', n: [2, 5], vikt: 3, sort: V },
-  { k: 'skinn', n: [1, 3], vikt: 2, sort: V },
-  { k: 'vargskinn', n: [1, 2], vikt: 1, sort: V },
-  { k: 'torrkott', n: [2, 5], vikt: 2, sort: V },
-  { k: 'torrfisk', n: [2, 5], vikt: 2, sort: V },
-  { k: 'ben', n: [2, 4], vikt: 1, sort: V },
-  { k: 'rovfron', n: [2, 5], vikt: 1, sort: V },
-  { k: 'linfron', n: [2, 4], vikt: 1, sort: V }, // steg 7.7.7
-  { k: 'korn', n: [3, 6], vikt: 1, sort: V },
-  { k: 'salt', n: [2, 5], vikt: 1, sort: V },
-  { k: 'kalfron', n: [2, 5], vikt: 1, sort: V }, { k: 'bonor', n: [2, 5], vikt: 1, sort: V }, // steg 9.7.8
-  { k: 'jordgubbsplanta', n: [2, 4], vikt: 1, sort: V }, // steg 9.7.9
-  { k: 'appelplanta', n: [1, 2], vikt: 1, sort: V }, // steg 9.7.13 // saltet (steg 9.6.19): kommer från byarna vid havet // säden (steg 9.6.11): byn får sitt första korn av handlarna
-  { k: 'artfron', n: [2, 5], vikt: 1, sort: V },
-  { k: 'levfar', n: [1, 2], vikt: 1, sort: V }, { k: 'levget', n: [1, 2], vikt: 1, sort: V }, { k: 'levko', n: [1, 1], vikt: 1, sort: V }, { k: 'levoxe', n: [1, 1], vikt: 1, sort: V }, { k: 'levhast', n: [1, 1], vikt: 1, sort: V }, // steg 10.10.1 och 10.10.3: kon och dragdjuren
-  { k: 'levhons', n: [3, 5], vikt: 1, sort: V }, // steg 9.8.5 och 9.8.10: får och getter som går med handlaren
-  { k: 'kniv', n: [1, 1], vikt: 2, sort: V },
-  { k: 'yxa', n: [1, 1], vikt: 1, sort: V },
-  { k: 'benflojt', n: [1, 1], vikt: 1, sort: V },
-  { k: 'honung', n: [2, 4], vikt: 1, sort: V }, { k: 'bivax', n: [1, 3], vikt: 1, sort: V }, // steg 10.10.26: honung till mjödet och vax till ljus åt en by utan bin
+// varorna handlarna har med sig: slaget, hur många åt gången, hur ofta (vikt). Hela saker
+export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number }[] = [
+  { k: 'flinta', n: [1, 3], vikt: 3 },
+  { k: 'rep', n: [2, 5], vikt: 3 },
+  { k: 'skinn', n: [1, 3], vikt: 2 },
+  { k: 'vargskinn', n: [1, 2], vikt: 1 },
+  { k: 'torrkott', n: [2, 5], vikt: 2 },
+  { k: 'torrfisk', n: [2, 5], vikt: 2 },
+  { k: 'ben', n: [2, 4], vikt: 1 },
+  { k: 'rovfron', n: [2, 5], vikt: 1 },
+  { k: 'linfron', n: [2, 4], vikt: 1 }, // steg 7.7.7
+  { k: 'korn', n: [3, 6], vikt: 1 },
+  { k: 'salt', n: [2, 5], vikt: 1 },
+  { k: 'kalfron', n: [2, 5], vikt: 1 }, { k: 'bonor', n: [2, 5], vikt: 1 }, // steg 9.7.8
+  { k: 'jordgubbsplanta', n: [2, 4], vikt: 1 }, // steg 9.7.9
+  { k: 'appelplanta', n: [1, 2], vikt: 1 }, // steg 9.7.13 // saltet (steg 9.6.19): kommer från byarna vid havet // säden (steg 9.6.11): byn får sitt första korn av handlarna
+  { k: 'artfron', n: [2, 5], vikt: 1 },
+  { k: 'levfar', n: [1, 2], vikt: 1 }, { k: 'levget', n: [1, 2], vikt: 1 }, { k: 'levko', n: [1, 1], vikt: 1 }, { k: 'levoxe', n: [1, 1], vikt: 1 }, { k: 'levhast', n: [1, 1], vikt: 1 }, // steg 10.10.1 och 10.10.3: kon och dragdjuren
+  { k: 'levhons', n: [3, 5], vikt: 1 }, // steg 9.8.5 och 9.8.10: får och getter som går med handlaren
+  { k: 'kniv', n: [1, 1], vikt: 2 },
+  { k: 'yxa', n: [1, 1], vikt: 1 },
+  { k: 'benflojt', n: [1, 1], vikt: 1 },
+  { k: 'honung', n: [2, 4], vikt: 1 }, { k: 'bivax', n: [1, 3], vikt: 1 }, // steg 10.10.26: honung till mjödet och vax till ljus åt en by utan bin
 ];
 
 export interface HVara { k: string; n: number; q?: number; skrift?: Skrift } // skrift = kartan på bladet (steg 11.7.5)
@@ -221,7 +219,7 @@ export interface Handlare {
   gar: number; // när hen går hem igen
   ut: { x: number; y: number }; // där hen kom in på kartan och går ut igen
   utr: string; // utrustningen (HANDLAR_UTR)
-  sort?: string; // vilken sorts handlare (HANDLARSORTER); saknas i sparade byar från före v270: vandrande
+  sort: string; // vilken sorts handlare (HANDLARSORTER)
   djur?: TamArtId; // packdjurets art, häst eller oxe som hembyn har (steg 11.11.5); djuret är hens utrustning och inget djur i byn
   fordon?: string; // släden i snö (steg 11.11.8)
   vagnar?: number; folj?: number[]; lager?: { x: number; y: number }; // karavanen (steg 11.11.6): vagnarna, följets id och lägret
@@ -276,8 +274,8 @@ export function handlarDjur(s: State, h: Handlare, t: number): { x: number; y: n
 // sorten när ingen by gett hen en last (testläget): den vandrande
 const sortFor = (_s: State) => 'vandrande';
 // varorna en handlare har med sig: dragna ur HANDLARVAROR tills de är värda nog eller packningen är full
-export function packa(s: State, kg: number, sort: string): HVara[] {
-  const mal = mellan(s, HANDEL.vardeVaror), ut: HVara[] = [], rader = HANDLARVAROR.filter(v => v.sort.includes(sort));
+export function packa(s: State, kg: number): HVara[] {
+  const mal = mellan(s, HANDEL.vardeVaror), ut: HVara[] = [], rader = HANDLARVAROR;
   let varde = 0;
   for (let i = 0; i < 30 && varde < mal; i++) {
     const tot = rader.reduce((a, v) => a + v.vikt, 0);
@@ -339,13 +337,12 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   const nr = s.handlarNr = (s.handlarNr ?? 0) + 1;
   const h: Handlare = {
     id: -nr, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: 0,
-    fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: last ? last.silver : heltMellan(s, HANDLARSORTER[sort].silver),
+    fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, sort, varor: [], silver: last ? last.silver : heltMellan(s, HANDLARSORTER[sort].silver),
     ...last?.djur && HANDLAR_UTR[utr]?.fordon ? { djur: last.djur } : {}, // packdjuret hembyn gav hen (steg 11.11.5)
     ...last?.vagnar && last.djur ? { vagnar: last.vagnar } : {}, // karavanens vagnar (steg 11.11.6)
     ...last?.fordon ? { fordon: last.fordon } : {}, // släden i snö (steg 11.11.8)
   };
   h.framme = s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / handlarFart(h) * SEC;
-  h.sort = sort;
   const nyckel = gastNyckel(kh.klan.id, kh.person.namn), fodd = kh.person.fodd ??= foddNar(s.seed, nyckel, 'handlare', s.now); // samma person varje gång, drar ingen slump
   // handlaren är en person bland folket (steg 9.2.111, gast.ts), med samma id som i bytena
   s.people.push(nyGast(s, { id: h.id, namn: kh.person.namn, sex, fodd, rad: { sort: 'handlare', klan: kh.klan.id, hem: kh.klan.hem }, x: ut.x, y: ut.y, nyckel, skill: { handel: heltMellan(s, HANDEL.handel) } }));
@@ -353,7 +350,7 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   if (h.vagnar) karavanFolje(s, h, kh.klan.id, kh.klan.hem, (last?.folk ?? 1) - 1, mal, ut); // följet och lägret (steg 11.11.6)
   if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); trampaFard(s, kh.klan.rad, s.varld.huvud, sallskapTyngd(last?.folk ?? 1)); } // handlarens by har besökt huvudbyn (steg 11.4.10), och hen trampade vägen (steg 11.5.1)
   gastensPlatser(s, s.people[s.people.length - 1]); // det hens by känner (steg 11.4.11)
-  h.varor = last ? last.varor : packa(s, rymmer(h), sort);
+  h.varor = last ? last.varor : packa(s, rymmer(h));
   handlarKarta(s, h); // ibland en karta över det hens by känner (steg 11.7.5)
   turnePrat(s, kh.klan.rad, hp(s, h)); // hen talar om den som uppträdde i hens by (steg 11.8.18)
   if (fard) delete fard.last; // lasten bärs nu av hen
@@ -568,7 +565,6 @@ export function handelSteg(s: State, dtSec: number) {
 export function visaFiltar(s: State, h: Handlare) {
   const hf = s.filtar?.find(f => f.handlare === h.id);
   if (!hf) return;
-  if (hf.par === undefined) { hf.par = nyttPar(s); hf.vem = h.id; } // en sparad by från före v267
   const a = h.affar, lagt = !!a && a.fas !== 'fraga' && a.fas !== 'hem';
   hf.varor = lagt ? a.kop.map(w => ({ k: w.k, n: w.n, fran: h.id })) : [];
   hf.byt = lagt ? a.byt : undefined;
@@ -939,5 +935,3 @@ BYTESPRIS.push((s, fran, till, k) => {
   if (!h || (fran.id !== h.id && till.id !== h.id) || k === 'silver') return;
   return grundvarde(k) * handlarVarde(s, h, k);
 });
-// slaget hålls kort medan handlaren är på besök (klocka.ts, steg 10.2.14)
-SLAGHINDER.push(s => s.handlare ? KLOCKA.slag : undefined);

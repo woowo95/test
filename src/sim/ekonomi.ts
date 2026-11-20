@@ -1,4 +1,4 @@
-import { ALDER, KROPP, ageOf, isSick, living, stat } from './folk';
+import { ALDER, KROPP, ageOf, living, stat } from './folk';
 import { handighet, syn } from './halsa';
 import { ageIndex } from './tid';
 import { ACTS, SNABBARE } from './handlingar';
@@ -15,7 +15,6 @@ export const EKONOMI = balans('ekonomi', {
   atGlid: 1 / 24, // det byn äter per person och dygn är ett glidande snitt som byts ut så här mycket i timmen (ungefär ett dygn, ett år i spelet)
   barnArbete: 0.3, // ett barn (under ALDER.vuxen) orkar så här stor del av en vuxens arbete ...
   gammalArbete: 0.6, // ... och en gammal (över ALDER.gammal) så här stor del
-  sjukArbete: 0.3, // den som är sjuk orkar så här stor del
   kunnigBas: 0.6, // en färdighet (0–20) hjälper i arbetet med kunnigBas + färdigheten / kunnigSteg: 0,6 utan, 1,4 med högsta
   kunnigSteg: 25,
   synVikt: 0.6, // så mycket synen betyder i jakten, fisket och samlandet (steg 8.2.2)
@@ -28,7 +27,7 @@ export const EKONOMI = balans('ekonomi', {
 // arbetsförmågan: ålder (barn och gamla orkar mindre) gånger sjukdom. workRate multiplicerar de två delarna var för sig
 // sist i sin kedja; (kedja * a) * b är inte alltid samma flyttal som kedja * (a * b)
 export const ageFactor = (a: number) => a < ALDER.vuxen ? EKONOMI.barnArbete : a > ALDER.gammal ? EKONOMI.gammalArbete : 1;
-export const sickFactor = (p: Person, now: number) => p.sjuk ? sjukOrkar(p, now) : isSick(p, now) ? EKONOMI.sjukArbete : 1; // radens ork (steg 9.5.1), eller den gamla klockan
+export const sickFactor = (p: Person, now: number) => p.sjuk ? sjukOrkar(p, now) : 1; // sjukdomens ork (steg 9.5.1)
 // hur mycket en färdighet (0–20) hjälper i arbetet
 export const kunnighet = (skill: number) => EKONOMI.kunnigBas + skill / EKONOMI.kunnigSteg;
 export const arbetsformaga = (p: Person, a: number, now: number) => ageFactor(a) * sickFactor(p, now);

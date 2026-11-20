@@ -11,7 +11,7 @@ import { ageOf, count, isParent, living, log } from './folk';
 import { kronika } from './historik';
 import { heirsOf } from './arv';
 import { LAGAR, LagTalDef, efterlevs, lagGaller, lagTal, talPlats } from './lagar';
-import { drar } from './seder';
+import { lutning } from './seder';
 import { clamp } from './slump';
 import { agdaDjur, formogenhetDelar, grundvarde, tingVarde } from './varde';
 import { payable } from './behov';
@@ -81,7 +81,7 @@ const snittCache = new WeakMap<State, { t: number; n: number; w: Map<number, num
 function formogenhet(s: State) {
   const c = snittCache.get(s), n = s.people.length;
   if (c && c.t === s.now && c.n === n) return c;
-  const w = new Map<number, number>(), alder = lagGaller(s, 'skatt') ? lagTal(s, 'skatt', 'alder') : SKATT.alder;
+  const w = new Map<number, number>(), alder = forsorjAlder(s);
   let sum = 0, k = 0;
   for (const p of living(s)) { if (p.gast) continue; const v = formogenhetDelar(s, p.id).sum; w.set(p.id, v); if (ageOf(p, s.now) >= alder) { sum += v; k++; } }
   const r = { t: s.now, n, w, m: k ? sum / k : 0 };
@@ -89,7 +89,6 @@ function formogenhet(s: State) {
   return r;
 }
 const egen = (s: State, p: Person) => { const f = formogenhet(s); return { w: f.w.get(p.id) ?? formogenhetDelar(s, p.id).sum, m: f.m }; };
-const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
 // skattelagens tal (steg 10.5.4): procenten, åldern och de två ribborna, med det var och en vill ha
 const PROCENT: LagTalDef = {
   namn: 'procenten', ord: 'skatt', sym: '%', stege: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1, 0.12, 0.15, 0.2], start: SKATT.procent, visa: v => `${Math.round(v * 100)} %`,
@@ -168,7 +167,7 @@ export function skattDygn(s: State, dt: number) {
 const egnaArvingar = (s: State, p: Person) => p.partner !== undefined && living(s).some(q => q.id === p.partner) || living(s).some(q => isParent(p, q));
 // hur ojämnt rikedomen är fördelad bland de vuxna (0 = lika, 1 = en äger allt)
 function ojamnhet(s: State) {
-  const f = formogenhet(s), alder = lagGaller(s, 'skatt') ? lagTal(s, 'skatt', 'alder') : SKATT.alder; // (barnen äger inget och räknas inte)
+  const f = formogenhet(s), alder = forsorjAlder(s); // (barnen äger inget och räknas inte)
   const v = living(s).filter(p => !p.gast && ageOf(p, s.now) >= alder).map(p => f.w.get(p.id) ?? 0).sort((a, b) => a - b), n = v.length, sum = v.reduce((a, b) => a + b, 0);
   if (n < 2 || sum <= 0) return 0;
   let g = 0; v.forEach((x, i) => { g += (2 * (i + 1) - n - 1) * x; });

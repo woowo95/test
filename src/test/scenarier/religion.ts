@@ -129,7 +129,7 @@ SCENARIER.tecken = {
       // ett svårt sjukt barn som blir friskt är ett tecken för föräldrarna
       const mo = nyInvanare(s, 'k', 30), fa = nyInvanare(s, 'm', 30); mo.andlig = 100;
       const barn = SIM.newPerson(s, 'k', s.now - 8 * SIM.DAY, mo, fa); s.people.push(barn); Object.assign(barn, { x: mo.x, y: mo.y, health: 1 });
-      barn.svartSjuk = 1; barn.sickUntil = s.now - 1;
+      barn.svartSjuk = 1;
       SIM.stepReligion(s);
       const sag = !!mo.upp?.some(u => u.k === 'tecken' && u.om?.includes(barn.name));
       // den som var med om samma sak delar tron som just uppstod

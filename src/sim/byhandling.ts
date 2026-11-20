@@ -421,7 +421,7 @@ export function packaRad(r: VarldRad, rand: () => number, over: (g: VarugruppId)
   const helt = ([a, b]: readonly [number, number] | number[]) => a + Math.floor(rand() * (b - a + 1));
   const [a0, b0] = HANDEL.vardeVaror, mal = (a0 + rand() * (b0 - a0)) * vmax, ut: HVara[] = [];
   const kvar: Partial<Record<VarugruppId, number>> = {};
-  const rader = HANDLARVAROR.filter(v => v.sort.includes(sort) && SAKER[v.k] && gruppAv(v.k) && (!SAKER[v.k]!.skaffa?.tek || r.tek.includes(SAKER[v.k]!.skaffa!.tek!)));
+  const rader = HANDLARVAROR.filter(v => SAKER[v.k] && gruppAv(v.k) && (!SAKER[v.k]!.skaffa?.tek || r.tek.includes(SAKER[v.k]!.skaffa!.tek!)));
   const per = (k: string) => gruppAv(k) === 'mat' && isFood(k) ? 1 : grundvarde(k);
   let varde = 0;
   for (let i = 0; i < 30 * vmax && varde < mal && rader.length; i++) {
