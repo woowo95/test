@@ -19,6 +19,7 @@ import { blocked } from './byggnad';
 import { INDIVID } from './djur';
 import { tanke } from './tankar';
 import { handelse } from './rykten';
+import { kronikaBer } from './berattelser';
 
 // en art av tamdjur. ord = en/ett, ett djur, flera, det bestämda; foder = det man matar djuret med, det bästa först (hela saker); bete = djuret betar i hagen (steg 9.8.4),
 // och betet det helst äter; liv = hur många dygn (år i spelet) det lever, vuxen = när det är fullvuxet, varde = vad det är värt i
@@ -81,6 +82,7 @@ export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare
   s.nextTam = id - TAM_ID0 + 1;
   const d: Tamdjur = { id, art, born, hunger: 0, x, y, agare, hona: hash3(s.seed, id, 0x7a6d) < 0.5 };
   l.push(d); count(s, `tam_${art}`);
+  if (forstaGang(s, 'forstaTamdjur')) kronikaBer(s, 'k_djur', id, { forsta: true, djur: `${tamArt(art).ord[0]} ${tamArt(art).ord[1]}` }); // byns första tamdjur (steg 12.1.135)
   return d;
 }
 // djuret dör (av hunger, ålder eller ett rovdjur) och tas bort ur byn
@@ -89,6 +91,7 @@ export function tamDor(s: State, d: Tamdjur, orsak: string) {
   count(s, `tamDog_${orsak}`);
   const a = tamArt(d.art), q = d.agare !== undefined ? byId(s, d.agare) : undefined;
   if (orsak === 'rymde') return; // den som rymde har redan sin rad i loggen (hundRymmer)
+  kronikaBer(s, 'k_djur', d.id, { djur: `${a.ord[0]} ${a.ord[1]}`, hur: orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak, agare: q?.name }); // byn miste ett djur (steg 12.1.135)
   const sk = q && alive(q) ? q : byId(s, mestMatat(s, d)?.[0]); // ägaren, eller den som matat djuret mest (steg 12.1.131)
   if (sk && alive(sk)) tanke(sk, 'mittDjurDog', s.now);
   log(s, `${q ? `${gen(q.name)} ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);

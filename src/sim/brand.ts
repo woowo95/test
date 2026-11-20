@@ -14,7 +14,6 @@ import { Bit, MATERIAL, bitAt, bitsOf, blocked, dorrDef, touch, vagBort } from '
 import { Station, stationAt, stationDef, stationerOf, taBort } from './stationer';
 import { ALDER, ageOf, alive, count, livet, living, log, byId } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
-import { kronika } from './historik';
 import { naVattnet } from './is';
 import { eldPlats, vaderstreck } from './karta';
 import { bynsAvstand, bynsMitt } from './omrade';
@@ -372,7 +371,7 @@ export function brandSteg(s: State, dtSec: number) {
   log(s, `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`, 'world');
   if (b.hot || b.ut.length >= BRAND.stor) {
     notis(s, 'motgang', `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`);
-    kronika(s, `En eldsvåda ${b.kalla === 'blixt' ? 'efter ett blixtnedslag ' : ''}brände ${mark(b.ut.length)}${b.vagg ? ` och ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}` : ''}${b.hot ? ' nära byn' : ''}.`, 'motgang');
+    kronikaBer(s, 'k_brand', b.t, { mark: mark(b.ut.length), vaggar: b.vagg ? ` och ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}` : '', blixt: b.kalla === 'blixt', nara: !!b.hot }); // mallen (steg 12.1.135)
     allaBarn(s, 'brand');
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)
   }
@@ -805,3 +804,4 @@ import { grundvarde } from './varde';
 import { forlustFore, forlustEfter } from './tankelage';
 import { tanke } from './tankar';
 import { husFolk } from './byggnader';
+import { kronikaBer } from './berattelser';

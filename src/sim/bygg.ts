@@ -233,7 +233,8 @@ export function husKlart(s: State, h: Hus, p: Person) {
     const hf = husFalt(h.namn);
     if (fnOf(h).sover) log(s, `${stor(hf.hus)} är ${hf.klart}. Nu kan ${tal(sovPersoner(n))} sova under tak.`, 'world', [p.id]); // golvrutorna räknas om till personer (steg 12.1.119)
     notis(s, 'hus', `${p.name} satte sista biten: ${hf.hus} är ${hf.klart}.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
-    { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `), hus3: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hf.klart === 'färdigt' ? 'sitt' : 'sin'} `) }); } husKlar(s, h); // hus3: när ägaren är subjektet ("gjorde klart sitt hus")
+    if (h.tro !== undefined) kronikaBer(s, 'k_tro', h.id, { huset: true, hus: husFalt(h.namn).hus }); // trons hus (steg 12.1.135)
+    else { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `), hus3: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hf.klart === 'färdigt' ? 'sitt' : 'sin'} `) }); } husKlar(s, h); // hus3: när ägaren är subjektet ("gjorde klart sitt hus")
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', husFalt(h.namn).hus); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }

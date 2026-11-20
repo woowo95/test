@@ -49,6 +49,7 @@ import { EFTER, FAROR, MED, gastKrok } from './efterstrid';
 import { tanke } from './tankar';
 import { forlustFore, forlustEfter } from './tankelage';
 import { allaBarn } from './uppvaxt';
+import { kronikaBer } from './berattelser';
 
 // ---------- rövarflocken (steg 4.4.5, Striden på kartan i designdokumentet) ----------
 // När byn är rik (Byns rikedom, varde.ts, med försvaret räknat emot) kan ett gäng rövare komma: folk från en grannklan som inte
@@ -627,7 +628,7 @@ export function taKlart(s: State, f: Rovarflock) {
   count(s, 'rovarPlundring'); if (tyst) count(s, 'rovarTyst');
   const vad = [...tog_.length ? [`tog ${och(tog_)} ur förrådet`] : [], ...drev.length ? [`drev bort ${och(drev)} som stod ute`] : []].join(' och '); // djuren stod ute, inte i förrådet (steg 12.1.119)
   const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}${vad}.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
-  log(s, text, 'world'); if (tog) { notis(s, 'motgang', text); kronika(s, text, 'rovare'); allaBarn(s, 'rovarePlundring'); }
+  log(s, text, 'world'); if (tog) { notis(s, 'motgang', text); kronikaBer(s, 'k_rovare', Math.floor(s.now / HOUR), { fran: fran(s, f), vad, tyst }); allaBarn(s, 'rovarePlundring'); } // mallen (steg 12.1.135)
   tandaHus(s, f); // (steg 8.9.3)
   forlustEfter(s, 'ran'); // (steg 12.1.131)
 }

@@ -27,6 +27,7 @@ import { kronika } from './historik';
 import { tanke } from './tankar';
 import { allaBarn } from './uppvaxt';
 import { botad } from './halsa';
+import { kronikaBer } from './berattelser';
 
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
 export interface SjukStadium { fran: number; text: string } // från hur långt sjukdomen kommit (0–1): det kortet säger
@@ -163,6 +164,12 @@ const stadiumNu = (j: Sjuk) => { const st = SJUKDOMAR[j.k].stadier; let i = 0; s
 // prövas med radens smitta; den som är immun eller redan sjuk smittas inte. Också den som ännu inte har tecken smittar
 // (inkubationen), så att sjukdomen hinner spridas innan någon märker det. Djuren smittas inte
 export function smittaTimme(s: State) {
+  const e = s.epidemi; // utbrottet som krönikan skrev om är över när ingen längre är sjuk i det (steg 12.1.135)
+  if (e?.skriven && !living(s).some(q => q.sjuk?.k === e.k)) {
+    const doda = e.ids.filter(id => s.people.some(q => q.id === id && q.died !== undefined)).length;
+    kronikaBer(s, 'k_epidemi', e.ids[0] ?? 0, { sjukdom: SJUKDOMAR[e.k].namn.toLowerCase(), antal: tal(e.ids.length), doda: doda ? ` ${stor(tal(doda))} dog.` : '' });
+    delete s.epidemi;
+  }
   const sjuka = living(s).filter(p => p.sjuk && SJUKDOMAR[p.sjuk.k].smitta > 0);
   if (!sjuka.length) return;
   const eldar = eldarOf(s).map(f => eldXY(s, f)), vidEld = (p: Person) => eldar.findIndex(e => Math.hypot(p.x - e.x - 0.5, p.y - e.y - 0.5) < SJUK.eldNara);

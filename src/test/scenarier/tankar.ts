@@ -156,3 +156,34 @@ SCENARIER.rykten2 = {
     ];
   },
 };
+
+SCENARIER.mallar = {
+  text: 'Nya berättelsemallar (steg 12.1.135, BERATTELSER i berattelser.ts): tio mallar med minst åtta varianter var för krönikan, skrivna när händelsen sker, med en kategori i krönikan; beskrivningen och eftermälet använder samma mallar för det personen var med om, och texterna drar inte ur spelets slump',
+  kor: () => {
+    const NYA = ['k_rovare', 'k_brand', 'k_tornado', 'k_flod', 'k_epidemi', 'k_tro', 'k_resa', 'k_handel', 'k_djur', 'k_ratt'] as const;
+    const by = (v: SIM.Variant) => typeof v === 'string' || v.om({});
+    const fa = NYA.filter(k => !(k in SIM.BERATTELSER) || SIM.BERATTELSER[k].filter(by).length + SIM.BERATTELSER[k].filter(v => typeof v !== 'string' && !v.om({}) && !v.om({ person: true })).length < 8);
+    const utanKat = NYA.filter(k => !SIM.kronikaKat(k));
+    const s = SIM.cloneState(testBy(20)), rader = () => s.hist?.kronika ?? [];
+    const slump = JSON.stringify(s.rngs ?? {});
+    // djuret dör, smittan tar slut
+    const n0 = rader().length, p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const d = SIM.nyttTamdjur(s, 'far', p.x, p.y, p.id); SIM.tamDor(s, d, 'alder');
+    for (const q of SIM.living(s)) delete q.sjuk;
+    s.epidemi = { k: 'magsjuka', ids: [p.id, -1, -2], skriven: 1 }; SIM.smittaTimme(s);
+    const nya = rader().slice(n0), djur = nya.find(r => r[2] === 'k_djur'), epi = nya.find(r => r[2] === 'k_epidemi');
+    // personen som var med om branden
+    p.upp = [...p.upp ?? [], { k: 'brand', a: 20, e: {} }];
+    p.died = s.now; p.cause = 'av ålder'; // eftermälet tar alltid med det hen var med om
+    const besk = SIM.beskrivning(s, p), personText = SIM.BERATTELSER.k_brand.filter(v => typeof v !== 'string' && v.om({ person: true })).map(v => (v as { t: string }).t.replace(/^\{\w+\} /, '').replace(/\.$/, '')); // utan namnet först, som texten kan byta mot han eller hon
+    return [
+      [`tio mallar med minst åtta varianter var för krönikan${fa.length ? ` (för få: ${fa.join(', ')})` : ''}`, fa.length === 0],
+      [`varje mall har en kategori i krönikan${utanKat.length ? ` (saknas ${utanKat.join(', ')})` : ''}`, utanKat.length === 0],
+      [`ett djur som dör står i krönikan (${djur?.[1] ?? 'ingen rad'})`, !!djur && !djur[1].includes('{')],
+      [`smittan som tagit slut står i krönikan (${epi?.[1] ?? 'ingen rad'})`, !!epi && !epi[1].includes('{') && !s.epidemi],
+      [`eftermälet säger att ${p.name} var med om branden`, personText.some(t => besk.includes(t))],
+      ['texterna drar inte ur spelets slump', JSON.stringify(s.rngs ?? {}) === slump],
+    ];
+  },
+};
+

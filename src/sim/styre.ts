@@ -532,7 +532,7 @@ function doma(s: State, l: Person) {
       log(s, `${q.name} och ${drabbad.name} gör upp i en holmgång.`, 'rel', [q.id, drabbad.id]);
       continue;
     } else if (lag && rang <= STR.tingRost && !Object.values(st.ministrar ?? {}).length && FRAGOR.skuld) {
-      if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); tanke(q, 'frikandes', s.now); continue; }
+      if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); tanke(q, 'frikandes', s.now); kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), fri: true }); continue; }
     }
     // ett straff som kräver något (Fängelse, steg 11.12.3) döms bara när det finns; annars det närmaste mildare, och lagen behåller sitt
     const fang = !!fangelseLedigt(s), vikt = HANDELSER[b.h].vikt, steg = lag ? straffNu(s, lag.straff) : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang, fang);
@@ -546,6 +546,7 @@ function doma(s: State, l: Person) {
     ratt.push(r);
     count(s, 'straff'); count(s, 'straff_' + steg);
     log(s, `${l.name} ${STRAFF[steg]} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
+    if (steg !== 3 && steg !== 6) kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b), straff: STRAFF[steg] }); // tinget dömde (steg 12.1.135); utvisningen och döden har sina rader
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     tanke(q, 'straffad', now, { namn: l.name, v: -STR.tanke * (steg + 1), tid: STR.tankeDygn * DAY });
     barnTill(s, q, undefined, 'foralderDomd', q.name); // barnen (steg 12.1.133)
