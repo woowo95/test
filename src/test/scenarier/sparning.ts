@@ -240,7 +240,7 @@ SCENARIER.slump = {
     for (const q of h.people) q.tek = { ...q.tek, yxa: 1 };
     const sett = new Set<string>();
     const hd = drag(h, 'val', () => {
-      for (const [mat, flinta, ved] of [[200, 1, 50], [200, 0, 50], [200, 1, 0]]) {
+      for (const [mat, flinta, ved] of [[200, 1, 50], [200, 0, 300], [200, 1, 0]]) { // utan flinta och med ved nog letar man flinta (raden leta, steg 12.1.39)
         setFood(h, mat); setItems(h, { flinta, torrgras: 20, grenar: 20 }); setAmount(h, 'ved', ved);
         for (const q of hv()) addTool(h, 'yxa', q);
         for (let i = 0; i < 200; i++) {
