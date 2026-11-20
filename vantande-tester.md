@@ -13,6 +13,7 @@
 - 12.1.76 (elden sköts genom valet av aktivitet) ändrar grunden: vem som lägger ved på elden och tänder den väljs nu i valet i stället för att elden avbryter någon. Skyldig koll med nytt facit och `npm run likhet`.
 - 12.1.82 (vården, striden och vargarna): läs räknarna `vargVantar`, `vargDorrStrid` och `vargTrottnade` i fasens Balans (`npm run balans -- 24 35`). Väntar vargarna utanför en dörr i färre än var fjärde by tas väntan bort med sitt stycke i dokumentet.
 - 12.1.21 (rikedomen lockar): `npm run strid` före (på 141bbace) och efter (85a3aff3), en gång var, som information om flockarna.
+- 12.1.11 (vägarna glöms efter tio dygn, resans poäng räknas en gång per timme): ändrar spelet. Skyldig koll med nytt facit och `npm run likhet` (reslikhet var grön).
 
 ## Grenen par-texter (12.1.118–12.1.122, texterna efter granskningen)
 
@@ -45,7 +46,7 @@
 - natt-bildstil (12.1.69, 12.1.70, 12.1.102): src/portrattkarna.ts är omskriven (samma porträtt punkt för punkt); skyldig samma-kollen och `npm run utseende`.
 - natt-tester (12.1.68, 12.1.85 testernas del, 12.1.100, 12.1.101, 12.1.106): skyldig koll.
 - natt-paneler (12.1.54, 12.1.73, 12.1.66, 12.1.99, 12.1.105, 12.1.72): skyldig koll, samma-kollen (12.1.99) och `npm run utseende`. Vid ihopslagningen behölls varlds ändringar där de gick emot grenens: lerkrukans låga platshållare är borttagen (12.1.15), gömmorna ritas inte på världskartan (12.1.9), kartan har ingen knapp (12.1.29), sederna har ingen pil vid vågen och visar alla rader (12.1.28), och påbuden lagskrift och fängelse finns inte längre (12.1.27).
-- natt-jarn (12.1.1–12.1.3, 12.2.1–12.2.13 och 12.3.1): skyldig koll med nytt facit (myren, torven och isborrens gräns på 30 cm ändrar byarna), likhet (tillsynen, 12.2.2) och balansen (`npm run balans -- 24 35`). 12.2.5 är prövat med `npm run samma`.
+- natt-jarn (12.1.1–12.1.7, 12.2.1–12.2.13 och 12.3.1; 12.1.4–12.1.7 bockades av på grenen par-myren, där scenarierna resursteknik, myroffer, myrmossa och myrvag gick igenom): skyldig koll med nytt facit (myren, torven och isborrens gräns på 30 cm ändrar byarna), likhet (tillsynen, 12.2.2) och balansen (`npm run balans -- 24 35`). 12.2.5 är prövat med `npm run samma`.
 - 18 scenarier var röda på varld redan före ihopslagningarna (39c496fa, efter 12.1.33): kista, handlare, slaktbank, virke, ikoner, symboler, tidsord, borta, varldtillstand, varldslag, forhistoria, kallelse, gomma, handelsresa, vagmote, turne, talt, kyrkanutlyser. De hör till 12.1-stegen från 12.1.9 och rättas innan 12.1 testas med kedjan.
 
 ## Grenen par-tester (12.1.159, 12.1.160, 12.1.162, 12.1.115, 12.1.130)
@@ -54,6 +55,16 @@
 - 12.1.159: vattenlarmet i by 80191 (dygn 33,9) ska vara borta i `npm run balans -- 24 35`.
 - 12.1.162: `npm run strid` ska visa björnens strider mot rövarna som en egen rad (Björnen mot rövarna).
 - 12.1.130: koll ska mätas på MacBooken efter ihopslagningen: klocktiden och de fem längsta jobben mot 85 minuter.
+## Grenen par-smatt (12.1.22, 12.1.110, 12.1.153, 12.1.155, 12.1.163, 12.1.165, 12.1.166)
+
+- Committerna på par-smatt har bara typkontrollen och stegens egna scenarier bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit när grenen förts in i varld.
+- 12.1.22 (barnet föds in i föräldrarnas tro): ändrar byarna (fler troende, tron dör senare ut). Trons tre balanstal ses över i fasens Balans (12.6.6), som mäter att en tro grundas i de flesta byar med minst 20 vuxna inom 35 dygn och att minst nio av tio vuxna har en tro när byn haft en tro i 20 dygn.
+- 12.1.110 (ledarens egenskaper drar från skalans mitt, EGENSKAP.mitt i stället för 50): ändrar byarnas form (tätt eller glest, ring eller rader).
+- 12.1.153 (inget ligger i elden): ändrar var högar hamnar; ny vakt `sak i elden` i koll. Scenariot fullaforrad var rött redan före steget (Korg 0 uppgifter, 0 fritid).
+- 12.1.163 (rensningarna vid inläsning som uppgradering 62): ändrar inte spelet, men sparversionen blir 62, så samma-kollen och facit visar annan utveckling enbart av versionsnumret. Prövat i molnet: de fem byarna i `npm run samma` gav samma tillstånd före och efter steget, med versionsnumret borträknat.
+- 12.1.165 (gäster och främlingar bär klanens tatueringar): märkena räknas ur gästens egen slump, men en inflyttad med ett märke på en plats får inget nytt där, så byarna ändras lite; samma-kollen och facit visar annan utveckling.
+- 12.1.155 (byn byter sällan namn: bynamn.vana 0,3 → 0,5, vanaDygn 20 → 10, nejDygn 3 → 10): mätt i molnet med sparade testbyar i 20 dygn (20 år i spelet) från dygn 5 och 25: förut 4 byten på 100 by-år (by 1: 0+0, 1511: 2+0, 4634: 2 från dygn 25), nu 0 byten och 3 nej. Läs `bynamn_byte` i fasens Balans; blir det inget byte alls i någon by på 35 dygn kan vanan sänkas något.
+- 12.1.166 (bladet väger in hur känd den döda är): ändrar vilka blad som skrivs.
 
 ## Frågor till Björn (från natten till 20 november)
 
@@ -158,10 +169,35 @@
 - 12.1.149 (klädseln efter värmen, plaggPoang i utrustning.ts; KROPP.varmGrader styr nu bara tanken För varm och badet): scenarierna kladval (nytt, ersätter kladvarme), svalaplagg, klader, plagg, naken, ullplagg, mantel och vinterpals gick igenom i molnet. Ändrar spelet. Raden "den som är extremt varm blir tröttare och tänker på det" i scenariot varm var röd redan på 12.1.139, före grenen.
 - 12.1.150 (slöjdbänkarna efter arbetet som väntar, koKrok i forradsmal.ts fylld i projekt.ts; balanstalet `station.bankHinner` = 60 minuter): scenarierna slojdbankar (nytt), kladmaterial och varm gick igenom i molnet (varm med sin röda rad från före grenen). Ändrar spelet. Läs i fasens Balans hur många slöjdbänkar byarna bygger (`npm run hus`) och pröva `bankHinner` med `jamfor --svep` om det blir för många eller för få.
 
+## Grenen par-klader (12.1.19, 12.1.20, 12.1.34)
+
+- Bara typkontrollen och scenarierna klader, plagg, varm, skugga, ullplagg, svalaplagg, kladval, kladvarme, kladmaterial, slojdbankar, projekt, odling, falt, grodor, flerarig, ylle, virke och slaktbank är körda. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit när grenen förts in i varld.
+- Det som ändrar byarna: tanken För varm och lusten att bada följer kroppens värme utan gränsen på 30 grader (fler bad och fler tankar en vanlig sommardag); tunikan och skjortan önskas när någon kan väva, också utan tyg, och kappan och sjalen när det finns ull eller får; det projekten saknar gör linet mer värt att så (odling.projektVikt). Läs i fasens Balans om byarna med vävstol sår mer lin och syr fler tunikor, och om fler bad tar för mycket tid.
+- Rättningen i bristNu (projekt.ts) tar bort en oändlig rekursion som kraschade scenariot klader (slöjdbänkens brist räknade om alla projekt, steg 12.1.150); i byarna kan den ha kraschat varje gång något byggts samma timme. Koll visar om fler scenarier gått från krasch till grönt.
+- 12.1.34 var redan byggt (dad4d44) och halmhattens tre versioner finns i bildstilens valdel (12.1.127, bildstil v254); inget nytt att publicera i bildstilen.
+
+## Varld 20 november: 12.1.111, 12.1.112, 12.1.114 (1ee2902e, bacb1ccf, f568f224)
+
+- Väntar tills de åtta parallella grenarna (par-bildfart, par-paneler2, par-strid, par-styre, par-valet, par-forrad, par-myren, par-klader) är inne; sedan hela kedjan en gång: `npm run kedja -- "npm run -s koll" "npm run -s likhet"`.
+- 12.1.111: bara scenarierna (handelsfard, handlarby, handlarlast, bygava, uppdragbyar tar färden med ett nummer efter det före handlingen). Spelet är oförändrat.
+- 12.1.112: bara scenariot handlare (gränsen från 12.1.48). virke, slaktbank och kista är gröna; varldtillstand blir grönt först när koll sparat nya testbyar.
+- 12.1.114: gåvan och det vänliga beskedet dämpas av fejden. Ändrar världen: skyldig koll med nytt facit, likhet och `npm run radanfall` som information. I scenariots värld på 40 dygn (40 år i spelet) skickas nu ett ovänligt besked men inget krig bryter ut, eftersom relationerna sällan sjunker under −20 och beskedet gick vid −94, nära golvet −100.
+- 12.1.9 och 12.1.10 var redan byggda (761bd327, b7d0e189) och står under "Fas 12.1 från 12.1.9" ovan.
+
+## Grenen par-strid (12.1.57, 12.1.58, 12.1.59, 12.1.82, 12.1.87: vården, striden, jakten och rovdjuren)
+
+- Stegen byggdes tidigare i dag (8ef60b2, 495200a, 1b810ad, f189eb6, 684d98b) och finns redan i varld; de var bara inte avbockade. Skyldiga `npm run kedja -- "npm run -s koll" "npm run -s likhet"` som en del av 12.1 (de ändrar vården i byn, blödningen i striden, vargjakten och förlossningen, så facit ändras).
+- Scenariot undsattning blev rött av 12.1.177 (ef10eae, långsammare i skenet): den fallne låg redan längre bort än STRID.hjalpAvst från rövaren och vårdades på stället utan att bäras. Rättat i scenariots uppställning (den fallne ligger mellan raddaFri och hjalpAvst), inte i striden.
+- Gröna i molnet: vard, blodning, halsoflik, strid, pilisaret, rader, varg, bjornjakt, forlossning, rovarstrid, vargskydd, undsattning, olyckshugg.
+
+## Grenen par-styre (12.1.27, 12.1.60, 12.1.61)
+
+- Koden för alla tre stegen fanns redan på varld när grenen började; grenen ändrar bara texten "Inga påbud just nu." i fliken Styre och bockar av stegen. Scenarierna pabud, omrostning, ledare, skatt, makten, budget, fangelse, utlysa, graven, kyrkan och sederfas8 är gröna i molnet. Stegen ändrar spelet (rädslan i byar utan ledare, legitimiteten, skatten på höns och bikupor, nödlistan, prästens mat, begravningen, gravgåvan), så de är skyldiga `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit, tillsammans med resten av 12.1.
+
 ## Grenen par-paneler2 (12.1.12, 12.1.25, 12.1.26, 12.1.28, 12.1.29, 12.1.35, 12.1.50 och 12.1.51)
 
 - 12.1.12, 12.1.25, 12.1.26, 12.1.28, 12.1.29 och 12.1.35 fanns redan i koden på varld (med kontrollerna i ui-ren, sedlista och varldskarta, som går igenom); grenen bockade av dem. Bandet i Seder (kortet f12_sederband i bildstil/fas12.js) väntar på att bildstilen publiceras och på Björns ja eller nej.
 - 12.1.50 ändrar texter i simuleringen (utbyggnadens rutor, projektens skäl i ProjektDef.skal). Skälet är en del av uppgiftens text, så facit och samma-kollen kan visa annan utveckling om skälen jämförs; nya textkontroller (noll, litetNamn) larmar i koll om en text är fel. `npm run texter -- 2 10` gav 0 fel för dem.
-- Rättelsen av den oändliga loopen i bristNu (8b2aaa0, från steg 12.1.150) ändrar vad slöjdbänkens brist läser medan bristerna räknas om. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit.
+- Grenen är skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit. (Rättelsen av loopen i bristNu fanns också på varld och är samma.)
 - 12.1.51: vakten för knappar som täcker annat (src/test/tackvakt.ts) körs av `npm run utseende`; när felsok-12-1 förs in blir den en rad i FORMVAKTER. Skyldig `npm run utseende`.
 - Scenariot ord var rött redan på varld (tekniker utan "att göra": drejskiva, oljelampa, sang, stol, laggkar, ost, brunn, utedass, sjukstuga, fyrfat).

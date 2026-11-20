@@ -6,7 +6,7 @@ import { husNytt } from './byggnad';
 import { faltAt } from './odling';
 import { angAt } from './slatter';
 import { bynsMitt, omrade, tillHoljet } from './omrade';
-import { ALDER, ageOf, byId, count, familjOf, forstaGang, getRel, living, log, stat } from './folk';
+import { ALDER, EGENSKAP, ageOf, byId, count, familjOf, forstaGang, getRel, living, log, stat } from './folk';
 import { type Bit, Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch, vagBort } from './byggnad';
 import { stenFrakt, stenFraktKostnad } from './byggsten';
 import { eldPlats, getMap } from './karta';
@@ -74,7 +74,6 @@ export const PLAN = balans('byggplan', {
   prisRel: 0.3, // en vän betalar mindre ...
   prisSkill: 0.3, // ... och den som är bättre på handel
   rivDygn: 2, // ett tomt eget hus som ingen velat köpa på så här många dygn (år i spelet) rivs (steg 10.11.15)
-  potMitt: 50, // en egenskap på det här värdet drar inte åt något håll
   tatSed: 0.7, tatLedare: 0.3, // hur mycket seden Sammanhållning och ledarens empati gör att husen står tätt
   glestFran: -0.5, // under det här (byplanens täthet) står husen en ruta glesare
   raderFran: 0.5, // över det här (seden Förnyelse och ledarens nyfikenhet) byggs husen i rader längs stråken
@@ -980,8 +979,9 @@ export interface Byplan { form: 'ring' | 'rader'; tat: number; golv: 'tra' | 'jo
 const kanTragolv = (s: State) => living(s).some(p => knows(p, MATERIAL.tra.tek!));
 // golvet i ett nytt hus: det byplanen säger, och jord när ingen kan göra trägolv
 const golvNu = (s: State) => (s.byplan?.golv ?? 'tra') === 'tra' && kanTragolv(s) ? 'tra' : 'jord';
+// ledarens egenskap drar åt sitt håll från skalans mitt (EGENSKAP.mitt), −1 till 1 (steg 12.1.110)
 export function byplanNu(s: State): Byplan {
-  const led = ledareOf(s), v = s.seder?.v ?? ({} as Record<string, number>), egen = (k: 'empati' | 'nyfikenhet') => led ? (led.pot[k] - PLAN.potMitt) / PLAN.potMitt : 0;
+  const led = ledareOf(s), v = s.seder?.v ?? ({} as Record<string, number>), egen = (k: 'empati' | 'nyfikenhet') => led ? (led.pot[k] - EGENSKAP.mitt) / EGENSKAP.mitt : 0;
   const tat = clamp((v.gemenskap ?? 0) * PLAN.tatSed + egen('empati') * PLAN.tatLedare, -1, 1);
   const form = (v.nyfikenhet ?? 0) + egen('nyfikenhet') > PLAN.raderFran ? 'rader' as const : 'ring' as const;
   const golv = (v.forsiktighet ?? 0) < PLAN.jordFran ? 'jord' as const : 'tra' as const;

@@ -41,7 +41,8 @@ export const BYNT = balans('bynamn', {
   heligt: 0.4, heligtAndlig: 0.6, // tron: heligt + heligtAndlig × andligheten / 100
   annan: 0, annanRel: 0.6, // en annans namn: annan + annanRel × relationen / 100 (högst 1, lägst 0)
   avsatt: 0.5, // en avsatt eller störtad ledares namn stämmer så här mycket (steg 10.9.4)
-  vana: 0.3, vanaDygn: 20, // vanan: den som levt vanaDygn dygn med namnet drar av vana från hur gärna hen byter (steg 10.9.4)
+  vana: 0.5, vanaDygn: 10, // vanan: den som levt vanaDygn dygn med namnet drar av vana från hur gärna hen byter (steg 10.9.4, 12.1.155)
+  nejDygn: 10, // ett namn som röstats ned tas inte upp igen på så här många dygn (år i spelet, steg 12.1.155)
 });
 
 export type BynamnSlag = 'nybygget' | 'natur' | 'minne' | 'person' | 'tro';
@@ -192,7 +193,7 @@ export function bastaNamn(s: State, p: Person) {
 // som en skylt under Påbud. Den som får lägga fram påbud föreslår det namn hen själv tycker bäst om, när hen tycker klart bättre
 // om det än om det byn heter. Utan ledare föreslår den vuxna med mest karisma, och namnet är det enda som tas upp utan ledare.
 // Var och en röstar efter hur mycket bättre hen tycker om det nya namnet än det byn heter. Ett nej gör att samma namn inte tas
-// upp igen på LAG.nedrostat dygn
+// upp igen på BYNT.nejDygn dygn
 export const BYNAMN_FRAGA = {
   prio: 2, // prioriteten: så här mycket gånger hur mycket bättre förslagsställaren tycker om namnet (troskeln i LAG.troskel)
 };
@@ -221,7 +222,7 @@ export function bynamnRegister() {
       return { v, why: v > 0 ? `Tycker att ${d.namn} stämmer bättre` : `Tycker att ${bynsNamn(s)} stämmer bättre` };
     },
     gor: (s, d) => dop(s, { namn: d.namn as string, rad: d.rad as string, om: d.om as number | undefined }),
-    nej: (s, d) => { (s.bynamnNej ??= {})[d.namn as string] = s.now + LAG.nedrostat * DAY; count(s, 'bynamn_nej'); },
+    nej: (s, d) => { (s.bynamnNej ??= {})[d.namn as string] = s.now + BYNT.nejDygn * DAY; count(s, 'bynamn_nej'); },
     missnoje: s => harHaftLedare(s), utanStyre: true,
   };
 }

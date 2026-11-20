@@ -4,7 +4,7 @@ import { balans } from './balans';
 import { eldPlats } from './karta';
 import { count, living, log } from './folk';
 import { coldOf, temperature } from './vader';
-import { changed, enPerRuta, paMarken } from './lager';
+import { changed, enPerRuta, ingetIElden, paMarken } from './lager';
 import { bedTile } from './byggnader';
 import { newFire, woodDays } from './eld';
 import { Station } from './stationer';
@@ -61,6 +61,7 @@ export function nyEld(s: State, t: Station) {
   Object.assign(f, { id: t.id, at: { x: t.x, y: t.y }, ring: true, klar: s.now, folk: [] });
   (s.eldar ??= []).push(f);
   s.byggV = (s.byggV ?? 0) + 1; // rutan är en eldplats: vägarna och platserna räknas om
+  ingetIElden(s); // det som låg där flyttas (steg 12.1.153)
 }
 
 // ---------- varje timme ----------
