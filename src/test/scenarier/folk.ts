@@ -2513,12 +2513,12 @@ SCENARIER.personlogg = {
 SCENARIER.klockan = {
   text: 'Klockan och slagen (steg 10.2.14): hela byn stegas tillsammans i korta slag (KLOCKA.slag). Två som går mot varandra från var sitt håll ser varandra innan de möts och möts ungefär mitt på vägen, där de faktiskt är, i stället för att hoppa förbi varandra i ett långt slag. När alla sover blir slagen längre',
   kor: () => {
-    const s = createState(5, START);
+    const s = createState(5, START); klockan(s, 12); // på dagen, när ingen går till vakten
     const [a, b] = living(s).filter(q => SIM.ageOf(q, s.now) >= 16);
     const eld = SIM.eldPlats(s), A = SIM.freeNear(s, eld.x - 14, eld.y + 5), B = SIM.freeNear(s, eld.x + 14, eld.y + 5);
     for (const [p, fran, till] of [[a, A, B], [b, B, A]] as const) {
       p.x = fran.x; p.y = fran.y; p.toa = 1; p.hunger = 1; p.torst = 1; p.rest = 1;
-      p.task = { act: 'promenad', phase: 'go', tx: till.x, ty: till.y, until: s.now + HOUR, carry: 0, why: 'prov' };
+      p.task = { act: 'promenad', phase: 'go', tx: till.x, ty: till.y, until: s.now + HOUR, carry: 0, dark: !SIM.isLight(s.now), why: 'prov' }; // (dark: promenaden är en dygnshandling, och utan den väljer de om genast)
     }
     const mitt = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
     let minD = Infinity, motesPlats = mitt, sag = false;
