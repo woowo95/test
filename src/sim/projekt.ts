@@ -14,7 +14,7 @@ import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST, plaggVarmer } from './klader';
 import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
-import { GORS, ersattAv, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
+import { DJURARTER, GORS, ersattAv, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
@@ -426,8 +426,14 @@ export function arv(s: State, p: Person, m: string, f: ProjektFara, djup = 0): {
     const n = djup < 2 ? fattas(s, p, m, f) : undefined;
     return n ? arv(s, p, n, f, djup + 1) : undefined;
   }
-  const ka = KALLA[m], st = ka && amountOf(s, ka.ur) > 0 ? stationSomFattas(s, 'slakta') : undefined;
-  if (st && PROJEKT[st]) return djup < 2 ? arv(s, p, st, f, djup + 1) : undefined;
+  const ka = KALLA[m];
+  if (ka) { // skinnet är på väg (steg 12.1.123): det fällda djuret som ligger slaktas till skinn, och den som redan jagar efter det bär hem ett
+    if (amountOf(s, ka.ur) > 0) { // det som fattas är det som behövs för att slakta: stationen eller kniven, annars väntar projektet på slakten
+      const art = DJURARTER.find(d => d.sak === ka.ur), st = stationSomFattas(s, art?.act ?? 'slakta') ?? (art?.kniv && freeTools(s, p, 'kniv') < 1 ? 'kniv' : undefined);
+      return st && PROJEKT[st] && djup < 2 ? arv(s, p, st, f, djup + 1) : undefined;
+    }
+    if (living(s).some(q => q !== p && q.task?.act === ka.act && q.task.hamtar === m)) return undefined;
+  }
   return hamtas(m) ? { sak: m } : undefined;
 }
 // det mest värda projekt p kan göra nu, med uppgiften och värdet (lika värde: registrets ordning). Är det mest värda ett som p
