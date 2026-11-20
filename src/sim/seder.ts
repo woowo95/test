@@ -102,7 +102,7 @@ function foraldrar(s: State) {
   return ids;
 }
 // hur p lutar mot Sammanhållning (-1 till 1): budgeten, lönen och skatten läser den
-export const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
+export const lutning = (s: State, p: Person) => clamp(drarSed(s, p, 'gemenskap'), -1, 1);
 // x avrundat till närmaste fjärdedel, mellan 0 och 1
 export const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 export function drar(s: State, p: Person) {
@@ -115,6 +115,13 @@ export function drar(s: State, p: Person) {
   }
   for (const m of minnen(s, p).values()) for (const k in m.d) d[k as Sed] += m.d[k as Sed]!;
   return d;
+}
+// en enda seds dragning, samma tal som drar(s, p)[k] med samma tillägg i samma ordning (steg 12.1.104): för den som bara läser en sed
+export function drarSed(s: State, p: Person, k: Sed) {
+  let v = k === 'andlig' ? (andlighet(s, p) - 50) / 50 : SEDER[k].dra(p.pot, foraldrar(s).has(p.id));
+  for (const u of p.upp ?? []) { const e = upplevelseSed(u.k)?.[k]; if (e !== undefined) v += e * SED.uppSteg; }
+  for (const m of minnen(s, p).values()) { const x = m.d[k]; if (x !== undefined) v += x; }
+  return v;
 }
 // minnena av de döda som drar personens hållning (steg 10.4.9): per död, INTRYCK:s sedkolumn gånger minnets styrka (styrka
 // gånger säkerhet) gånger minneSteg. Tillsammans drar de högst minneMax per sed; blir det mer krymper alla lika mycket
@@ -207,7 +214,7 @@ export const VANA_AR = SED.vanaDygn; // vanorna bleknar på så här många dygn
 // Värna – Bruka (steg 8.4.13): fällda träd och dödade djur ger sämre humör för dem som drar åt Värna, mer ju starkare de tycker
 export function naturTanke(s: State, t: 'tradFalldes') {
   if (!s.styre?.oppna?.includes('natur')) return;
-  for (const p of living(s)) { const d = drar(s, p).natur; if (d < SED.varnaFran) tanke(p, t, s.now, { v: SED.varnaTanke * d }); }
+  for (const p of living(s)) { const d = drarSed(s, p, 'natur'); if (d < SED.varnaFran) tanke(p, t, s.now, { v: SED.varnaTanke * d }); }
 }
 // tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
 export const HABIT_FADE = SED.vanaDygn * DAY;

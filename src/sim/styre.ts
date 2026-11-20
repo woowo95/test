@@ -23,7 +23,7 @@ import { ownMove, ownsAmount } from './lager';
 import { rnd } from './slump';
 import { UPPV, upplev, barnTill } from './uppvaxt';
 import { kronika } from './historik';
-import { Sed, drar, influence } from './seder';
+import { Sed, drarSed, influence } from './seder';
 import { knows } from './teknik';
 import { Bevis, HANDELSER, HandelseTyp, allmant, anseende, asiktOm, handelse, ryktbarhet, vittnen } from './rykten';
 import { ISTID, ageIndex, hourOf, isLight, kallTid } from './tid';
@@ -185,7 +185,7 @@ const PDEF = {
   // arbetsordningen (steg 6.1.19, val.ts): ett påbud kan flytta en rad en nivå upp
   bygg: { namn: 'Bygg före allt', text: 'Hur ofta bygget går före försörjningen med mat och ved', asikt: s => clamp(PAB.byggUtan * homeless(s) / Math.max(1, living(s).length) - 1, -1, 1) },
   // nattvakten (steg 10.1.20, vaktHot i val.ts): en försiktig ledare vill ha fler som vaktar
-  vakt: { namn: 'Nattvakten', text: 'Hur många som håller vakt om natten', sed: 'forsiktighet', asikt: (s, l) => clamp(drar(s, l).forsiktighet, -1, 1) },
+  vakt: { namn: 'Nattvakten', text: 'Hur många som håller vakt om natten', sed: 'forsiktighet', asikt: (s, l) => clamp(drarSed(s, l, 'forsiktighet'), -1, 1) },
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån mot ledaren', /* steg 11.1.29 */ text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
   // tystnaden (steg 10.4.10): en person, levande eller död, som inte ska nämnas
@@ -236,7 +236,7 @@ export function tystFaktor(s: State, a: Person, om: number) {
 }
 // en försiktig ledare vill ha större lager, och en intelligent planerar inför istiden
 function lagerAsikt(s: State, l: Person) {
-  return clamp(drar(s, l).forsiktighet + (kallTid(ageIndex(s)) ? PAB.plan * (l.pot.intelligens - 10) / 6 : 0), -1, 1);
+  return clamp(drarSed(s, l, 'forsiktighet') + (kallTid(ageIndex(s)) ? PAB.plan * (l.pot.intelligens - 10) / 6 : 0), -1, 1);
 }
 
 // ---------- data ----------

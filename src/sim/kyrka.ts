@@ -10,7 +10,7 @@ import { MAT } from './behov';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
-import { type Sed, drar, habitShare } from './seder';
+import { type Sed, drarSed, habitShare } from './seder';
 import { ata } from './naring';
 import { ALDER, KROPP, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat } from './folk';
 import { INTRYCK, beratta, paminn, ryktbarhet, samlatIntryck, handelse } from './rykten';
@@ -620,7 +620,7 @@ export const BUDROST: Record<string, BudRostRad> = {
   tro: { ja: 'Tror att budet är rätt', nej: 'Tycker att budet är för hårt', v: (_s, p, _tr, b, bv) => (p.troStyrka ?? 0) / 100 - budStorlek(b, bv) * BUDROSTTAL.hard },
   egen: { ja: '', nej: 'Gör själv det budet förbjuder', v: (_s, p, _tr, b) => b.sort === 'forbud' && b.acts ? -BUDROSTTAL.egen * habitShare(p, b.acts) : 0 },
   intresse: { ja: '', nej: '', v: (s, p, tr, b, bv) => b.intresse ? BUDROSTTAL.intresse * b.intresse(s, p, tr, bv).v : 0, why: (s, p, tr, b, bv) => b.intresse!(s, p, tr, bv).why },
-  sed: { ja: 'Budet passar hens sed', nej: 'Budet går emot hens sed', v: (s, p, _tr, b) => b.sed ? b.sed[1] * (BUDROSTTAL.drag * drar(s, p)[b.sed[0]] + BUDROSTTAL.sed * (s.seder.v[b.sed[0]] ?? 0)) : 0 },
+  sed: { ja: 'Budet passar hens sed', nej: 'Budet går emot hens sed', v: (s, p, _tr, b) => b.sed ? b.sed[1] * (BUDROSTTAL.drag * drarSed(s, p, b.sed[0]) + BUDROSTTAL.sed * (s.seder.v[b.sed[0]] ?? 0)) : 0 },
   ande: { ja: 'Är andlig', nej: 'Är världslig', v: (s, p) => BUDROSTTAL.ande * (andlighet(s, p) - 50) / 50 },
   skala: { ja: 'Budet passar tron', nej: 'Budet passar inte tron', v: (_s, _p, tr, b) => { const v = b.skala ? skalaV(tr, b.skala) : undefined; return v === undefined ? 0 : BUDROSTTAL.skala * (b.sida ? v - 50 : 50 - v) / 50; } },
   humor: { ja: 'Mår bra', nej: 'Mår dåligt och vill inte ha fler bördor', v: (s, p, _tr, b, bv) => BUDROSTTAL.humor * budStorlek(b, bv) * (moodOf(p, s.now) - HUMOR.bas) },

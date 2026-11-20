@@ -10,7 +10,7 @@ import { clamp, rnd } from './slump';
 import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, stat, paKartan } from './folk';
 import { kronika } from './historik';
 import { ljugOm } from './rykten';
-import { SED_LIST, drar, influence } from './seder';
+import { SED_LIST, drar, drarSed, influence } from './seder';
 import type { Sed } from './seder';
 import { PABUD, pabudFraga, pabudFran, ledareOf, ledarVikt, legitimitet, slutarStyre, styreAv, utvisa } from './styre';
 import { notis } from './notiser';
@@ -235,7 +235,7 @@ export function oppnaSed(s: State, k: Sed) {
   if (st.oppna.includes(k)) return;
   st.oppna.push(k);
   const ppl = vikter(s); let v = 0;
-  for (const x of ppl) v += drar(s, x.p)[k] * x.andel;
+  for (const x of ppl) v += drarSed(s, x.p, k) * x.andel;
   s.seder.v[k] = clamp(v, -1, 1);
   log(s, `Byn börjar fundera på ${SED_NAMN[k] ?? k}.`, 'world');
 }

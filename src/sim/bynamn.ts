@@ -14,7 +14,7 @@ import { FOREST } from './vag';
 import { BJORK, GRAN } from './trad';
 import { RYKTE } from './rykten';
 import { GUDAR, gudarOf, troende } from './religion';
-import { drar } from './seder';
+import { drarSed } from './seder';
 import { ISTID, kalender } from './tid';
 import { LAG, TAS_UPP } from './lagar';
 import { FRAGOR, Fraga, rostaOm } from './rost';
@@ -172,7 +172,7 @@ export function tilltal(s: State, p: Person, k: { rad: string; om?: number }) {
     case 'minne': return BYNT.natur + (barMinnet(p, d.minne!) ? BYNT.minneEget : 0);
     case 'tro': return BYNT.heligt + BYNT.heligtAndlig * (p.andlig ?? 0) / 100;
     case 'person': {
-      if (k.om === p.id) return Math.max(0, BYNT.eget + BYNT.egetEnvalde * Math.max(-1, Math.min(1, drar(s, p).rang)));
+      if (k.om === p.id) return Math.max(0, BYNT.eget + BYNT.egetEnvalde * Math.max(-1, Math.min(1, drarSed(s, p, 'rang'))));
       const q = byId(s, k.om);
       return q ? Math.max(0, Math.min(1, BYNT.annan + BYNT.annanRel * getRel(s, p, q).op / 100)) : 0;
     }
