@@ -72,7 +72,7 @@ function troHtml(tr: Tro, storst = false) {
     <p class="small">Grundare: ${grundare}, år ${tr.ar}</p>
     ${skalaHtml(tr)}
     ${gudarHtml(tr)}
-    <h3>De troende (${folk.length})</h3><ul class="rels">${folk.map(p => `<li>${pLink(p)}<span></span><span title="${esc(`Tron är ${tioDel(p.troStyrka ?? 0)} av 10 stark hos ${p.name}. Den växer av bönen, högtiderna och tecknen, och sjunker när inget bekräftar den`)}">${bar((p.troStyrka ?? 0) / 100)}</span><span class="muted">${Math.floor(ageOf(p, s.now))} år</span></li>`).join('')}</ul>
+    <h3>De troende (${folk.length})</h3><ul class="rels">${folk.map(p => `<li>${pLink(p)}<span></span><span title="${esc(`Tron hos ${p.name} är ${tioDel(p.troStyrka ?? 0)} av 10 i styrka. Den växer av bönen, högtiderna och tecknen, och sjunker när inget bekräftar den`)}">${bar((p.troStyrka ?? 0) / 100)}</span><span class="muted">${Math.floor(ageOf(p, s.now))} år</span></li>`).join('')}</ul>
     ${kultHtml(tr)}${tr.roster?.length ? `<div class="phead"><div><h3>Omröstningar</h3></div>${flikLank('styre', 'Alla omröstningar')}</div>${omrostningar(tr.roster, '')}` : ''}<h3>Upplevelser som rör tron</h3>${upplevHtml(folk)}`;
 }
 

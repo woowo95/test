@@ -207,7 +207,7 @@ function presHtml(p: Person) {
 function gangRad(p: Person) {
   const gf = gangDelar(s, p);
   return rad(p, 'gang', '🚶 Gångfart', `${bar(gf.fart, gf.fart < LAG.halsa ? 'low' : '')}<span>${Math.round(gf.fart * 100)} %</span>`, gf.delar.map(d => ({ namn: `${d.tecken} ${d.namn}`, v: d.v })), ' %',
-    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten tas gånger varandra.');
+    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten multipliceras med varandra.');
 }
 // livet före besöket hos en invånare i en väckt by (steg 11.13.16, vacktliv.ts): de döda föräldrarna och händelserna, senaste först
 const forrFam = (p: Person) => p.forr?.familj.length ? `<p class="muted">${p.forr.familj.map(f => `${esc(f.namn)} (${f.roll === 'mor' ? 'mor' : f.roll === 'far' ? 'far' : f.roll}, död)`).join(', ')}</p>` : '';

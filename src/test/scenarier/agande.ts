@@ -3049,7 +3049,7 @@ SCENARIER.sammanfattning = {
     const ikapp64 = lank64 && spolaText(false).includes('Se byn spolas fram') && spara64.includes('`${arN >= 2 ? `År ${arK} av ${arN} · ` : \'\'}${Math.round(f * 100)} %`');
     return [
       ['sammanfattningen har länken I krönikan på året byn lämnades, knappen heter Se byn spolas fram och förloppet skrivs År 3 av 5 · 60 % (steg 11.1.64)', ikapp64],
-      [`tiden i verkligheten och i spelet (${ren(html).slice(0, 60)}…)`, /gick 2(,0)? år i spelet \(2(,0)? dagar i verkligheten\)/.test(html)],
+      [`tiden i verkligheten och i spelet (${ren(html).slice(0, 60)}…)`, /Du var borta i två dagar \(två år i spelet\)/.test(html) && !/\d,0/.test(html)],
       ['talen: födda, döda och invånare', /1 födda · 0 döda · \d+ lever nu i byn/.test(html)],
       [`antalet nya notiser och en knapp till dem (${ren(html).match(/\d+ nya notiser/)?.[0]})`, /2 nya notiser/.test(html) && html.includes('data-notis="visa"')],
       ['utan nya notiser ingen knapp till dem', /Inga nya notiser/.test(tom) && !tom.includes('data-notis')],

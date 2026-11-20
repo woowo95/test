@@ -249,7 +249,7 @@ const DEF = {
   rovor: { namn: 'Rovor', skaffa: { tid: 0.2, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, naring: { energi: 1.4, vitamin: 1, mineral: 0.6, protein: 0.2, fett: 0.1 }, haller: 8 },
   arter: { namn: 'Ärter', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.5, naring: { protein: 1.6, energi: 1.4, mineral: 0.7, vitamin: 0.4, fett: 0.1 }, haller: 20 }, // håller så länge något får hålla (LAGER.maxDygn), men det torkade äts sist
   // toa-högen (steg 2.10.5): en toa-fläck på marken (FLACKAR i smuts.ts), som går att trycka på. Den bleknar bort av sig själv
-  toa: { namn: 'Toa-hög', mark: true },
+  toa: { namn: 'Avträdeshög', mark: true },
   artfron: { namn: 'Ärtfrön', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', haller: 20 }, // fröna från de vilda ärterna (steg 3.10.23.8), som rovfröna
   // silvret (steg 4.4.1.3, handel.ts): det enda som är pengar. Det kommer med handlarna och är värt en arbetstimme styck. Det
   // byts bara med handlaren än; silver mellan byborna kommer i steg 9.5.1.2

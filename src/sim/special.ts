@@ -1,3 +1,4 @@
+import { ganger } from './ord';
 // ---------- byns egna rätter och drycker (steg 10.7.29, Mat, matlagning och dryck: Specialrecept, Specialblandningar) ----------
 // Ett specialrecept är byns eget namn på en sort: en rätt (huvudingrediensen, kategorin och nivån) eller en dryck (raden i VATSKOR).
 // Rätten eller drycken är samma sak i förrådet som förut. Namnet kommer när en skicklig kock lagar en fin rätt eller en
@@ -35,7 +36,7 @@ export function specialSats(s: State, p: Person, k: string, av: string[], ai: nu
   const sort = sortAv(k), l = (s.special ??= []), x = l.find(q => q.sort === sort);
   if (x) {
     x.n++;
-    if (x.n === SPECIAL.tradition && !x.trad) { x.trad = 1; const t = `${x.namn} har lagats ${x.n} gånger och är byns tradition.`; log(s, t, 'world', [p.id]); kronika(s, t, 'mat'); count(s, 'specialTradition'); }
+    if (x.n === SPECIAL.tradition && !x.trad) { x.trad = 1; const t = `${x.namn} har lagats ${ganger(x.n)} och är byns tradition.`; log(s, t, 'world', [p.id]); kronika(s, t, 'mat'); count(s, 'specialTradition'); }
     return;
   }
   if ((p.skill.matlagning ?? 0) < SPECIAL.skill || rnd(s, 'mat', p) >= SPECIAL.chans * Math.pow(0.5, l.length)) return;

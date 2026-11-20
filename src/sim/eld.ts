@@ -427,7 +427,7 @@ function brinner(s: State, f: Fire, dtSec: number) {
     // kolet blir alltid ett litet, slumpat antal; hämtar ingen det förtvinar det efter några dygn
     const coal = ELD.kolMin + Math.floor(rnd(s, 'eld') * ELD.kolSpann);
     f.ash = (f.ash ?? 0) + coal; f.ashUntil = now + ELD.kolDygn * DAY;
-    log(s, `${f === s.fire ? 'Elden' : 'En lägereld'} har brunnit ut. Kvar ligger en svart hög med ${coal} kol.`, 'world');
+    log(s, `${f === s.fire ? 'Elden' : 'En lägereld'} har brunnit ut. Kvar ligger en svart hög med ${antal(coal, 'kol')}.`, 'world');
   }
   if (f.ash && (f.ashUntil ?? 0) <= now) { f.ash = 0; f.ashUntil = undefined; }
 }

@@ -9,7 +9,7 @@ import { balans } from './balans';
 import { SLAGHINDER, kanNa, nasTid } from './klocka';
 import { GANG } from './gang';
 import { kronikaBer, och, personFalt } from './berattelser';
-import { han, honom, tal } from './ord';
+import { han, honom, svaraText, tal } from './ord';
 import { blodas } from './blod';
 import { blocked, freeNear, roomAt } from './byggnad';
 import { bjornVarden, bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
@@ -229,12 +229,12 @@ function bjornSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   });
   if (falld && !bar) { count(s, 'bjornKvar'); lamnaFallt(s, 'bjorn', 1, folk[0].x, folk[0].y); }
   blodas(s, folk[0].x, folk[0].y, 'jakt', 1);
-  const namn = och(folk.map(p => p.name)), svaraText = svara.length ? ` ${och(svara)} skadades svårt.` : '';
+  const namn = och(folk.map(p => p.name)), svaraT = svaraText(folk, svara);
   const text = jakt ? `${namn} gick på björnjakt. ${falld ? 'Björnen dog.' : 'Björnen kom undan.'}`
     : `En björn${medUngar ? ' med ungar' : ''} anföll ${namn}. ${falld ? 'Björnen dog.' : vinnare === 0 ? 'Björnen gav sig av.' : 'Björnen vann och gick sin väg.'}`;
   log(s, text, 'world', folk.map(p => p.id)); notis(s, 'strid', text, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
-  if (jakt) kronikaBer(s, falld ? 'k_bjornjakt' : 'k_bjornjaktMiss', folk[0].id, { folk: namn, svara: svaraText });
-  else kronikaBer(s, 'k_bjornAnfall', folk[0].id, { folk: namn, svara: svaraText });
+  if (jakt) kronikaBer(s, falld ? 'k_bjornjakt' : 'k_bjornjaktMiss', folk[0].id, { folk: namn, svara: svaraT });
+  else kronikaBer(s, 'k_bjornAnfall', folk[0].id, { folk: namn, svara: svaraT });
   if (!falld) bjornGarUndan(s, folk[0].x, folk[0].y); // björnen som vunnit eller gett upp går bort från byn (steg 9.2.30)
 }
 EFTER.bjorn = (s, efter, vinnare, g) => bjornSlut(s, efter, vinnare, g as KartStrid);

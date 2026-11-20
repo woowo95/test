@@ -160,7 +160,7 @@ function stock(id: number) {
 function agarRader(ag: Record<string, number> | undefined, n: number) {
   const eg = Object.entries(ag ?? {}).map(([id, m]) => ({ q: byId(s, Number(id)), m: Math.round(m) })).filter(r => r.m >= 1).sort((a, b) => b.m - a.m);
   const byns = n - eg.reduce((a, r) => a + r.m, 0);
-  return [...byns >= 1 ? [`<div>Byns ${byns}</div>`] : [], ...eg.map(r => `<div>${r.q ? pLink(r.q) : 'Någon som inte finns kvar'} ${r.m}</div>`)].join('') || '<div>Byns</div>';
+  return [...byns >= 1 ? [`<div>Byn: ${byns}</div>`] : [], ...eg.map(r => `<div>${r.q ? pLink(r.q) : 'Någon som inte finns kvar'} ${r.m}</div>`)].join('') || '<div>Byns</div>';
 }
 // ett slag i förrådet: ägarna summeras över stackarna i förrådet, och för redskap och plagg över tingen
 function agareAvSlag(k: string) {

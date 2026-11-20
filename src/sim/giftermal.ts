@@ -1,3 +1,4 @@
+import { tal } from './ord';
 // ---------- giftermål med grannarna (steg 11.3.6, Flera samhällen: Hur byarna påverkar varandra) ----------
 // Den som inte finner någon i byn att bli ett par med (en vuxen utan partner, och ingen i byn av det andra könet utan partner,
 // i en ålder man kan flirta med och som inte är släkt) kan gifta sig med någon i en vänlig grannby: en chans per dygn (GIFT.chans),
@@ -45,7 +46,7 @@ export function giftermal(s: State, p: Person, k: Klan, ut = rnd(s, 'gift') < GI
     const med = [p, ...living(s).filter(c => isParent(p, c) && ageOf(c, s.now) < ALDER.vuxen)];
     leave(s, ...med);
     r.tal.folk += med.length;
-    const text = `${p.name} gifte sig med någon i ${k.namn} och flyttade dit${med.length > 1 ? ` med ${med.length - 1} barn` : ''}.`;
+    const text = `${p.name} gifte sig med någon i ${k.namn} och flyttade dit${med.length > 1 ? ` med ${med.length === 2 ? 'ett barn' : `${tal(med.length - 1)} barn`}` : ''}.`;
     log(s, text, 'move', med.map(q => q.id)); notis(s, 'utflytt', text, med.map(q => q.id)); kronika(s, text, 'utflytt');
     count(s, 'giftUt', med.length);
     return undefined;

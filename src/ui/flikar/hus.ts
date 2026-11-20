@@ -29,8 +29,8 @@ export const hus: Flik = {
     const status = klar < bits.length ? `Byggs: ${klar} av ${bits.length} delar klara.` : bra ? `${cap(bra)}.` : '';
     // dörren i öppningen (DORRAR i byggnad.ts, steg 2.2.16): symbolen, och förklaringen när musen är över
     const dorrar = bits.filter(b => b.k === 'oppning').map(b => {
-      const d = dorrDef(b.dorr), om = d ? `${d.namn}: håller värmen ${Math.round(d.tat * 100)} %` : 'Öppen dörröppning: värmen går ut här'; // värmen skrivs på ett sätt (steg 11.1.57)
-      return d ? `<span title="${esc(om)}" aria-label="${esc(om)}">${iconImg(d.ikon)} ${esc(d.namn)}</span>` : `<span class="muted" title="${esc(om)}" aria-label="${esc(om)}">Öppen dörröppning</span>`;
+      const d = dorrDef(b.dorr), om = d ? `${d.namn}: håller värmen ${Math.round(d.tat * 100)} %` : 'Öppning utan dörr: värmen går ut här'; // värmen skrivs på ett sätt (steg 11.1.57)
+      return d ? `<span title="${esc(om)}" aria-label="${esc(om)}">${iconImg(d.ikon)} ${esc(d.namn)}</span>` : `<span class="muted" title="${esc(om)}" aria-label="${esc(om)}">Öppning utan dörr</span>`;
     }).join(', ');
     // vad huset används till efter det som står i det (RUMSFUNKTIONER i byggnader.ts, steg 2.2.17)
     const anv = klar === bits.length ? rumsFunktioner(s, h).map(f => `<span title="${esc(`${f.namn}: ${f.om}`)}" aria-label="${esc(f.namn)}">${tecknet(f.ikon, f.ikon)} ${esc(f.namn)}</span>`).join(' · ') : '';

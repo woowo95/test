@@ -80,7 +80,7 @@ export const SAKORD: Record<string, Ord> = {
 export function sakOrd(k: string): Ord {
   const o = SAKORD[k];
   if (o) return o;
-  const d = SAKER[k], n = (d?.namn ?? k).toLowerCase();
+  const d = SAKER[k], n = (d?.namn ?? k).split(' · ')[0].toLowerCase(); // rätterna: "Rotgröt · Lagad" blir "rotgröt"
   return [d?.ett ? 'ett' : 'en', n, n];
 }
 // en eller ett framför saken
@@ -144,10 +144,10 @@ export const GORA: Record<string, string> = {
   korg: 'fläta korgar', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
   kniv: 'slå flintknivar', timmervagg: 'bygga timmerhus', slaktbank: 'bygga en slaktbänk', flatarbank: 'bygga en slöjdbänk', halmbadd: 'göra halmbäddar',
   bord: 'bygga bord', hylla: 'göra hyllor och kistor', skinnfall: 'sy skinnfällar', skinndorr: 'hänga dörrar av skinn', tradorr: 'göra trädörrar',
-  bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', packsadel: 'sy packsadlar', ridning: 'rida', mal: 'binda mål', boll: 'sy bollar',
+  bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', packsadel: 'sy packsadlar', ridning: 'rida', mal: 'göra mål till bollspelen', boll: 'sy bollar',
   slagtra: 'tälja slagträn', scen: 'bygga en scen', trumma: 'göra trummor', benflojt: 'skära benflöjter', lyra: 'göra lyror', kruka: 'bygga upp lerkrukor',
   matta: 'väva mattor', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
-  tork: 'bygga en torkställning', bikupa: 'fläta bikupor', bur: 'bygga burar', odling: 'odla', ledarskap: 'välja en ledare', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
+  tork: 'bygga en torkställning', bikupa: 'fläta bikupor', bur: 'bygga burar', odling: 'odla', ledarskap: 'leda byn', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
   kolmila: 'kola ved i en mila', blasterugn: 'blåsa järn ur malm', smedja: 'smida järn', vapensmide: 'smida svärd och brynjor', // steg 12.2.1–12.2.9
 };
 // teknikens namn med gemen till dess id; teknik.ts fyller i det när TEKNIK läses (för det som bara sparat namnet, som p.fame)
@@ -176,6 +176,13 @@ export const honom = (p: Kon) => p.sex === 'k' ? 'henne' : 'honom';
 export const hans = (p: Kon) => p.sex === 'k' ? 'hennes' : 'hans';
 export const stor = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 export const liten = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+
+// de svårt skadade efter en strid, utan att namnen upprepas (steg 12.1.121): "Hon skadades svårt.", "Alla tre skadades svårt."
+export function svaraText(folk: (Kon & { name: string })[], svara: string[]) {
+  if (!svara.length) return '';
+  if (svara.length === folk.length) return folk.length === 1 ? ` ${stor(han(folk[0]))} skadades svårt.` : folk.length === 2 ? ' Båda skadades svårt.' : ` Alla ${tal(folk.length)} skadades svårt.`;
+  return ` ${och(svara)} skadades svårt.`;
+}
 
 // ---------- marken ----------
 // hur mycket mark (rutor) som brann eller översvämmades: "en liten bit mark", "ett stort stycke mark"

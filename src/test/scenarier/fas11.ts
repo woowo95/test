@@ -584,7 +584,7 @@ SCENARIER.varldskronika = {
       [`huvudbyns grundande står först i världens krönika ("${text}")`, grundad && text.includes(r.namn) && !!r.namn],
       [`de stora sparas för alltid (${stora0} + 20 = ${stora.length} stora)`, stora.length === stora0 + 20],
       [`de små har ett tak (${sma.length} av högst ${tak}), och de äldsta försvinner först`, sma.length === tak && aldstaBort],
-      [`krönikan står i tidsordning, också när en händelse skrivs i efterhand ("${karavan}")`, iOrdning && karavan.startsWith('En karavan plundras vid')],
+      [`krönikan står i tidsordning, också när en händelse skrivs i efterhand ("${karavan}")`, iOrdning && karavan.startsWith('En karavan plundrades vid')],
       ['krönikan sparas med världen', igen.kronika?.length === kr.length],
     ];
   },

@@ -414,7 +414,7 @@ export function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
   if (l.k === 'pris') delade('pris', 'silver', prisOm(s, l)); // samtalets ämne (steg 3.9.5, 10.5.15)
-  else delade(l.k === 'fara' || l.k === 'flod' ? 'fara' : 'plats', LARDOMAR[l.k].ikon, l.k === 'fara' ? 'en farlig plats' : l.k === 'flod' ? 'översvämningen' : LARDOMAR[l.k].vad); // högvattnet är en fara, inte en plats där något finns (steg 12.1.118) // samtalets ämne (steg 3.9.5)
+  else delade(l.k === 'fara' || l.k === 'flod' ? 'fara' : 'plats', LARDOMAR[l.k].ikon, l.k === 'fara' ? (l.om?.endsWith(' där') ? `platsen där ${l.om.slice(0, -4)}` : 'en farlig plats') : l.k === 'flod' ? 'översvämningen' : LARDOMAR[l.k].vad); // högvattnet är en fara, inte en plats där något finns (steg 12.1.118) // samtalets ämne (steg 3.9.5)
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a); // mindre på en lögnare (steg 3.3.3)
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt

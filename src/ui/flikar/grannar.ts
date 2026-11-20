@@ -49,7 +49,7 @@ function raderHtml() {
   if (!n && !f) return '<p class="muted">Inga rövare har kommit än.</p>';
   const nu = f ? `<p class="low">⚔️ ${f.folk.length} rövare är vid byn: ${rovarna(s, f).map(p => pLink(p)).join(', ')}.</p>` : '';
   const rad = (namn: string, v: unknown) => `<dt>${namn}</dt><dd>${Number(v ?? 0)}</dd>`;
-  return `${nu}<h4>Sedan byn grundades</h4><dl class="kv smal">${rad('Flockar som kommit', n)}${rad('Rövare som kommit', st.rovare)}${rad('Strider', st.rovarStrid)}${rad('Rövare som dött', st.rovarDoda)}${rad('Gånger vakten väckte byn', st.rovarVackt)}</dl><p>${kronikaLank('strid', 'Striderna i krönikan')}</p>`;
+  return `${nu}<h4>Sedan byn grundades</h4><dl class="kv smal">${rad('Flockar som kommit', n)}${rad('Rövare som kommit', st.rovare)}${rad('Strider', st.rovarStrid)}${rad('Rövare som dött', st.rovarDoda)}${rad('Väckt av vakten', st.rovarVackt)}</dl><p>${kronikaLank('strid', 'Striderna i krönikan')}</p>`;
 }
 // byns försvar: vakten i natt, de som håller vakt nu och vapnen i förrådet (strid.ts VAPEN)
 function forsvarHtml() {

@@ -141,11 +141,11 @@ export const BUD = {
   ingenHan: { namn: 'Ingen hånar gudarna', sort: 'forbud', storlek: 1, skala: 'forlat', sida: 1, text: 'Ingen hånar gudarna' }, // budskapet hanaGud (framtradande.ts)
   // de nya kraven och offren (steg 10.3.23)
   olHogtid: { namn: 'Öl vid högtiden', sort: 'krav', storlek: 2, skala: 'fest', sida: 0, kraver: 'hogtid', text: 'Var och en dricker en öl ur kyrkans krukor vid högtiden',
-    om: () => 'Vid varje högtid dricker varje vuxen som är med en öl ur en kruka som kyrkan äger, och den tomma krukan blir kvar. Den som följer budet och tappar öl ger krukan till kyrkan när den har mindre öl än de vuxna troende. Saknas ölet mår de som följer budet lite sämre.' },
+    om: () => 'Vid varje högtid dricker varje vuxen som är med en öl ur en kruka som kyrkan äger, och den tomma krukan blir kvar. När kyrkan har färre krukor öl än det finns vuxna troende ger den som tappar öl en kruka till kyrkan. Saknas ölet mår de som följer budet lite sämre.' },
   forstaSkord: { namn: 'Den första skörden offras', sort: 'offer', storlek: 2, skala: 'livet', sida: 0, text: 'Det första ur varje skörd går till tron',
     om: () => 'Den första hela saken ur varje ny skörd på ett fält går till kyrkans egendom, när den som skördar följer budet.' }, // odling.ts frågar forstaSkorden
   valkomna: { namn: 'Handlaren ska välkomnas', sort: 'krav', storlek: 1, skala: 'oppen', sida: 0, text: 'Handlaren får mat när hen kommer',
-    om: () => 'När handlaren kommer får hen en hel mat ur byns förråd, en gång per besök, och de som följer budet får en bättre relation med hen.' }, // handel.ts frågar valkomnaHandlare
+    om: () => 'När handlaren kommer får handlaren en måltid ur byns förråd, en gång per besök, och de som följer budet kommer bättre överens med handlaren.' }, // handel.ts frågar valkomnaHandlare
   begravFiende: { namn: 'Den fallne fienden begravs', sort: 'krav', storlek: 2, skala: 'forlat', sida: 0, text: 'En fallen fiende får en grav',
     om: () => 'De som följer budet begraver en avrustad fiende på trons gravplats, med vanlig grävtid, i stället för att hen ligger kvar.' }, // grav.ts
   // vem som får en grav och vem som skändas (steg 10.4.13): den som tar hand om kroppen följer sin egen tros bud (grav.ts odeVal)
@@ -249,7 +249,7 @@ export const BUD = {
   hogtid: { namn: 'Högtid', sort: 'krav', storlek: 1, ritual: 'hogtid', text: 'Tron firar en högtid i en tidsålder', varden: hogtidNu, vardeNamn: (_s, v) => hogtidNamn(v), nu: () => true,
     om: (s, tr, b) => { const { ai, form } = hogtidAv(b.v); return `${['I istiden', 'I vårtiden', 'I sommartiden', 'I hösttiden'][ai]}, under ${spelTid(RITUALER.hogtid.tim * HOUR)}. De troende samlas ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. ${form === 'fasta' ? 'Ingen mat: ett år utan mat.' : 'En hel mat per närvarande, ur kyrkans egendom först och annars ur den egna maten.'}`; } },
   offer: { namn: 'Offer vid högtiden', sort: 'offer', storlek: 2, kraver: 'hogtid', text: 'Var och en lägger en mat på den heliga platsen',
-    om: (s, tr) => `Vid varje högtid. Var och en som följer budet lägger en hel mat, den hen äger mest av, ${helig(s, tr) ? 'på den heliga platsen' : 'vid elden'}, och den är borta.` },
+    om: (s, tr) => `Vid varje högtid. Var och en som följer budet lägger en måltid av den mat de äger mest av, ${helig(s, tr) ? 'på den heliga platsen' : 'vid elden'}, och den är borta.` },
   valsigna: { namn: 'Bröllopet välsignas', sort: 'krav', storlek: 1, text: 'Paret vigs vid den heliga platsen', nu: (s, tr) => (tr.brollop ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
     om: (s, tr) => `När två i tron gifter sig. Byns fest hålls ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}, prästen leder, och de troende får tro. Maten är byns, som vid alla bröllop.` },
   dop: { namn: 'Dopet', sort: 'krav', storlek: 1, ritual: 'dop', text: 'Barnet välsignas när det fötts', nu: (s, tr) => (tr.fodd ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,

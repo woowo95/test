@@ -1,5 +1,5 @@
 import { gen } from './ord';
-import { antal, honom, och, talOrd } from './ord';
+import { antal, honom, och, tal, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
@@ -434,7 +434,7 @@ function emigrate(s: State) {
     if (!one.length) return;
     const p = pick(s, one, 'flytt'), med = [p, ...barn(p)]; // en ensam förälder tar med sina barn
     leave(s, ...med);
-    const ut = `${p.name} lämnade byn${med.length > 1 ? ` med ${med.length - 1} barn` : ''} för att söka lyckan på annat håll.`;
+    const ut = `${p.name} lämnade byn${med.length > 1 ? ` med ${med.length === 2 ? 'ett barn' : `${tal(med.length - 1)} barn`}` : ''} för att söka lyckan på annat håll.`;
     log(s, ut, 'move', med.map(g => g.id)); notis(s, 'utflytt', ut, med.map(g => g.id));
     count(s, 'utvandrade', med.length);
     radKrok.utflytt(s, med.length); // de går till en by i världen (byflytt.ts, steg 11.3.5)

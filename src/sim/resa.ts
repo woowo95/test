@@ -66,7 +66,7 @@ import { GRODOR, rutorAv } from './odling';
 import { TORKA } from './torka';
 import { BYREL, byHandelse, gavaRel } from './byrel';
 import { kronika } from './historik';
-import { antal, hans, honom, horText, och, spelTid, tal } from './ord';
+import { antal, hans, honom, horText, och, spelTid, stor, tal } from './ord';
 // "en sak", "tre saker"
 const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
 
@@ -1220,7 +1220,7 @@ export function kallelse(s: State, sl: Sallskap, r: ResPlan) {
     if (x.v + RESA.foljVinst * (r.varde / (sl.medl.length + 1) - hemmaForlust(s, x.q, r.dygn)) / r.dygn <= RESA.folj) continue;
     if (foljMed(vl, sl, x.q)) count(s, 'resa följer med');
   }
-  if (sl.medl.length > 1) dagbok(s, sl, 'samlas', `${sl.medl.length - 1} följer med.`);
+  if (sl.medl.length > 1) dagbok(s, sl, 'samlas', `${stor(tal(sl.medl.length - 1))} följer med.`);
 }
 // den som är vid samlingsplatsen medan sällskapet samlas: ledaren väntar in de andra
 // (steg 12.1.8): har ledaren inte kommit när väntetiden gått, för att hen dött, är borta eller inte kan gå dit, tar den som
