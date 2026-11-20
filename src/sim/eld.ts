@@ -1,3 +1,4 @@
+import { antal, gen, spelTid } from './ord';
 import { stationsVarme } from './stationseld';
 import { han } from './ord';
 import { tal } from './ord';
@@ -31,7 +32,6 @@ import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { SNABBARE } from './handlingar';
 import { DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, T, Task, W, H } from './typer';
 import { balans } from './balans';
-import { num } from './format';
 import { vedPerEld, BRASA } from './brasor';
 import { iVattnetNu } from './sjo';
 
@@ -253,7 +253,7 @@ export const kanTalja = (s: State) => nTools(s, 'kniv') + nTools(s, 'yxa') > 0;
 // brinner vill ha mindre än den släckta), också när en eld glöder. Flintan och stenarna till ringen är egna behov med egna skäl
 // (raden leta i val.ts, steg 12.1.39)
 export const needTinder = (s: State) => tinderShort(s);
-function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
+const durText = (sec: number) => spelTid(sec * SEC); // spelets tid i hela ord (steg 12.1.120)
 // ringen av stenar runt eldplatsen läggs av den som tänder, med stenarna hen bär eller når
 function laggRing(s: State, p: Person, f: Fire) {
   if (f.ring || getable(s, p, 'sten') < ELD.ring) return;
@@ -334,9 +334,9 @@ export function tryLight(s: State, p: Person, f = s.fire) {
   const c = tandChans(s, p, f, naver) * (1 + (f.tries - 1) / ELD.forsokLara); // varje misslyckat försök sedan elden brann gör nästa lättare
   const lyckas = rnd(s, 'eld', p) < c;
   if (ig.id === 'bagborr' && wearTool(s, p, 'bagborr', 1 / ELD.borrForsok)) { // borren slits av varje försök (steg 10.6.13)
-    count(s, 'bagborrarTrasiga'); log(s, `${p.name}s bågborr gick sönder.`, 'world', [p.id]);
+    count(s, 'bagborrarTrasiga'); log(s, `${gen(p.name)} bågborr gick sönder.`, 'world', [p.id]);
   }
-  if (ig.slits && wearTool(s, p, ig.id, 1 / ig.slits)) { count(s, ig.id + 'Trasiga'); log(s, `${p.name}s ${ig.name.split(' ')[0].toLowerCase()} var slitet.`, 'world', [p.id]); } // eldstålet slits av varje försök (steg 12.2.12)
+  if (ig.slits && wearTool(s, p, ig.id, 1 / ig.slits)) { count(s, ig.id + 'Trasiga'); log(s, `${gen(p.name)} ${ig.name.split(' ')[0].toLowerCase()} var slitet.`, 'world', [p.id]); } // eldstålet slits av varje försök (steg 12.2.12)
   if (ig.med === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) { use(s, p, 'flinta', 1, true); count(s, 'flintaSprackStal'); } // flintan som stålet slås mot kan spricka
   if (lyckas) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
@@ -357,7 +357,7 @@ export function takeCoal(s: State, p: Person, verb: string, f = s.fire) {
   if (n < 1) return;
   addTo(s, 'kol', n);
   f.ash = 0; f.ashUntil = undefined;
-  log(s, `${p.name} ${verb} ${n} kol ur den gamla elden och lade dem i förrådet.`, 'world', [p.id]);
+  log(s, `${p.name} ${verb} ${antal(n, 'kol')} ur den gamla elden och lade ${n === 1 ? 'den' : 'dem'} i förrådet.`, 'world', [p.id]);
 }
 export function addFuel(s: State, p: Person, n: number, f = s.fire) {
   const h = hearthOf(f);
@@ -417,7 +417,7 @@ function brinner(s: State, f: Fire, dtSec: number) {
     // kolet blir alltid ett litet, slumpat antal; hämtar ingen det förtvinar det efter några dygn
     const coal = ELD.kolMin + Math.floor(rnd(s, 'eld') * ELD.kolSpann);
     f.ash = (f.ash ?? 0) + coal; f.ashUntil = now + ELD.kolDygn * DAY;
-    log(s, `${f === s.fire ? 'Elden' : 'En lägereld'} har brunnit ut. Kvar ligger en svart hög med ${coal} kol.`, 'world');
+    log(s, `${f === s.fire ? 'Elden' : 'En lägereld'} har brunnit ut. Kvar ligger en svart hög med ${antal(coal, 'kol')}.`, 'world');
   }
   if (f.ash && (f.ashUntil ?? 0) <= now) { f.ash = 0; f.ashUntil = undefined; }
 }

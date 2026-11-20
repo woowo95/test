@@ -1,3 +1,4 @@
+import { styck } from '../sim/ord';
 import { kartKampe } from './stridbild';
 import { ROVARHANDLINGAR, type RovarGor, hp, gastLever, gastTingOf, TEK, HANDEL, HANDLAR_UTR, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, State } from '../sim';
@@ -69,7 +70,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
         // det hen bär (steg 10.1.8): vapnet i handen och resten, som saker
         ...gastTingOf(s, q).length ? [{ namn: 'Bär', varde: gastTingOf(s, q).map(t => `<span title="${esc(sakNamn(t.k))}${t.hos === q.id ? ' (i handen)' : t.bar === q.id ? ' (på sig)' : ''}">${iconImg(t.k, 12)}</span>`).join(' '), title: 'Vapnen och kläderna hen bär' }] : [],
         ...Object.keys(q.gast?.bar ?? {}).length ? [{ namn: 'Bytet', varde: Object.entries(q.gast!.bar!).map(([k, m]) => `${iconImg(k, 12)}${m > 1 ? m : ''}`).join(' '), title: 'Det hen tagit ur byns förråd' }] : [], // bytet (steg 6.6.11)
-        ...q.gast?.anhorig ? [{ namn: 'Hämnas', varde: esc(q.gast.anhorig), title: 'Anhörig till den som hämnas (steg 8.8.4)' }] : []],
+        ...q.gast?.anhorig ? [{ namn: 'Hämnas', varde: esc(q.gast.anhorig), title: 'Den anhörige som rövaren hämnas' }] : []],
       p: q, liv: livFor(s, r.klan, q.name, q.sex, 'rovare', q.born)
       };
     });
@@ -94,7 +95,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       gor: g.fas === 'pratar' ? 'Framför beskedet' : g.fas === 'gar' ? 'Går hem' : 'På väg mot byn',
       fran: k ? `${k.namn} vid ${k.hem}` : undefined,
       rader: [{ namn: 'Besked', varde: g.besked === 'ovanligt' ? '📜 Ovänligt' : '📜 Vänligt', title: 'Beskedet budet bär; det verkar efter samtalet med ledaren' },
-        ...g.gava?.length ? [{ namn: 'Gåva', varde: esc(g.gava.map(w => `${w.n} ${w.k}`).join(', ')), title: 'Det budet bär som gåva' }] : []],
+        ...g.gava?.length ? [{ namn: 'Gåva', varde: esc(g.gava.map(w => styck(w.n, w.k)).join(', ')), title: 'Det budet bär som gåva' }] : []],
       liv: livFor(s, g.klan, p.name, p.sex, 'gast', p.born),
     };
   }),

@@ -5,6 +5,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { PIX } from '../../ikoner';
+import { titta } from '../textkoll';
 import { TEKNIK } from '../../sim/teknik';
 import { medVatska, SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
@@ -1006,10 +1007,53 @@ SCENARIER.ord = {
       [`varje teknik har ett "att göra" (saknas: ${utanGora.join(', ') || 'inga'}); t.ex. "${O.gora(TEKNIK[0]!)}"`, utanGora.length === 0],
       [`skador: "${O.skada('ett blåmärke', 0.1)}", "${O.skada('en blödning', 0.5)}", "${O.skada('ett skärsår', 0.9)}"`, O.skada('ett blåmärke', 0.1) === 'ett lätt blåmärke' && O.skada('en blödning', 0.5) === 'en svår blödning' && O.skada('ett skärsår', 0.9) === 'ett mycket svårt skärsår'],
       [`pronomen: ${O.han({ sex: 'k' })}/${O.honom({ sex: 'm' })}/${O.hans({ sex: 'k' })}`, O.han({ sex: 'k' }) === 'hon' && O.honom({ sex: 'm' }) === 'honom' && O.hans({ sex: 'k' }) === 'hennes'],
+      ...ordFall(),
+    ];
+  },
+};
+// de nya fallen (steg 12.1.118): genitiv, böjning, bestämd form, och att texterna utanför mallarna når kontrollerna
+function ordFall(): [string, boolean][] {
+  const gen = SIM.fyll('{namn}s yxa gick sönder.', { namn: 'Asdis' }), gen2 = SIM.fyll('{namn}s yxa', { namn: 'Ask' });
+  const best = [SIM.bestamd('Mellanstor lerkruka')[0], SIM.bestamd('Slagträ')[0], SIM.bestamd('Liten lerkruka')[0], SIM.bestamd('Verkstad')[0]];
+  const s = createState(6, START), fria: string[] = [];
+  SIM.lyssnaPaTexter((m, i, t) => { if (i === -2) fria.push(`${m}: ${t}`); });
+  SIM.log(s, 'En rad i loggen.', 'world'); SIM.think(s.people[0], 'En tanke.', 0, s.now, 1); SIM.kronika(s, 'En rad i krönikan.');
+  SIM.lyssnaPaTexter(undefined);
+  return [
+    [`genitiv: "${gen}", "${gen2}", ${O.gen('Ingdis')}`, gen === 'Asdis yxa gick sönder.' && gen2 === 'Asks yxa' && O.gen('Ingdis') === 'Ingdis'],
+    [`ental och flertal: "${O.antal(1, 'appel')}", "${O.antal(3, 'appel')}", "${O.styck(1, 'appel')}", "${O.styck(5, 'abborre')}", "${O.stOrd(1, 'sovplats', 'sovplatser')}"`,
+      O.antal(1, 'appel') === 'ett äpple' && O.antal(3, 'appel') === 'tre äpplen' && O.styck(1, 'appel') === '1 äpple' && O.styck(5, 'abborre') === '5 abborrar' && O.stOrd(1, 'sovplats', 'sovplatser') === '1 sovplats'],
+    [`en och ett: ${O.enEtt('lader')} läder, ${O.enEtt('horn')} horn, ${O.enEtt('appelplanta')} äppelplanta, ${O.artikel('Rövarläger')} rövarläger, ${O.antal(3, 'salt')}`,
+      O.enEtt('horn') === 'ett' && O.enEtt('appelplanta') === 'en' && SIM.SAKER.lader?.ett === true && O.artikel('Rövarläger') === 'ett' && O.antal(3, 'salt') === 'tre nävar salt'],
+    [`bestämd form: ${best.join(', ')}`, best.join() === 'den mellanstora lerkrukan,slagträet,den lilla lerkrukan,verkstaden'],
+    [`texterna utanför mallarna når kontrollerna: ${fria.join(' | ')}`, fria.some(x => x.startsWith('log:')) && fria.some(x => x.startsWith('tanke:')) && fria.some(x => x.startsWith('kronika:'))],
+  ];
+}
+
+SCENARIER.textfel = {
+  text: 'Steg 12.1.119: texter som säger emot spelet. Skador räknas inte som bedrifter och står för sig (två ärr på samma ställe en gång), och händerna är inget vapen man ogillar. Steg 12.1.122: titta (npm run texter och testernas vakt) skriver också handeln, framträdandet, matchen och sammanfattningen efter tiden borta',
+  kor: () => {
+    const s = createState(6, START), p = s.people[0];
+    p.fame = ['Tände byns första eld', 'Fick ett ärr i vänstra benet', 'Fick ett ärr i vänstra benet', 'Förlorade två fingrar', 'Blev ökänd', 'Tände byns första eld'];
+    const bed = SIM.bedrifter(p), sk = SIM.skadorText(p);
+    return [
+      [`bedrifterna utan skador och dubbletter: ${bed.join(', ')}`, bed.length === 1 && bed[0] === 'Tände byns första eld'],
+      [`skadorna för sig: "${sk}"`, sk === 'har två ärr i vänstra benet och har förlorat två fingrar'],
+      [`texterna utan bara händerna som vapen: ${SIM.BERATTELSER.besk_handGilla.length} varianter för nävarna`, SIM.BERATTELSER.besk_handGilla.length >= 8 && !JSON.stringify(SIM.BERATTELSER).includes('bara händerna')],
+      ...tittaFall(),
     ];
   },
 };
 
+// steg 12.1.122: verktyget texter (titta) skriver också sammanfattningen efter tiden borta, så att mallarna b_* går genom kontrollerna
+function tittaFall(): [string, boolean][] {
+  const s = testBy(20), mallar = new Set<string>();
+  SIM.lyssnaPaTexter(m => { mallar.add(m); });
+  titta(s);
+  SIM.lyssnaPaTexter(undefined);
+  const b = [...mallar].filter(m => m.startsWith('b_'));
+  return [[`titta skriver sammanfattningen efter tiden borta (${b.join(', ') || 'inget'})`, b.length > 0]];
+}
 SCENARIER.omrostning = {
   text: 'Steg 8.3.1–8.3.3: allt byn avgör är en fråga i FRAGOR. Klockan 20 röstar alla vuxna efter åsikter och intresse, summan av vikterna avgör, och vid Envälde väger nästan bara ledaren. Omröstningarna sparas',
   kor: () => {
@@ -1190,7 +1234,7 @@ SCENARIER.pilar = {
   },
 };
 SCENARIER.tidsord = {
-  text: 'Steg 11.1.4–11.1.5: tiden skrivs på ett sätt i hela gränssnittet, och året och tidsstaven i sidhuvudet har samma förklaring med kopplingen till den riktiga klockan: långa spann i år och tidsåldrar, datum som "År 12, vårtid", och "tryck" i stället för "klicka". Ingen text i gränssnittets kod eller i panelerna i en testby innehåller "dygn", "säsong" eller "klicka"',
+  text: 'Steg 11.1.4–11.1.5: tiden skrivs på ett sätt i hela gränssnittet, och året och tidsstaven i sidhuvudet har samma förklaring med kopplingen till den riktiga klockan: långa spann i år och tidsåldrar, datum som "År 12, vårtid", och "tryck" i stället för "klicka". Ingen text i gränssnittets kod eller i panelerna i en testby innehåller "dygn", "säsong" eller "klicka". Steg 12.1.120: varje tidsspann skrivs i spelets tid i hela ord (spelTid i ordlagret), och begravningsbudens tid kommer ur koden',
   kor: () => {
     utanWebblasare();
     const ord = /dygn|säsong|klicka/i;
@@ -1238,9 +1282,20 @@ SCENARIER.tidsord = {
       [`året och tidsstaven har samma förklaring: ett år är ett dygn och en tidsålder en vecka, med dagen och klockan ("${forkl.replace(/\n/g, ' ')}")`, samma && /Ett år i spelet är ett dygn i verkligheten, och en tidsålder är en vecka/.test(forkl) && forkl.includes(`dag ${k.dag} av ${k.av}`) && /kl\. \d\d:\d\d/.test(forkl) && forkl.startsWith(SIM.timeLabel(s, s.now))],
       [`ingen sträng i gränssnittets kod säger dygn, säsong eller klicka${fel.length ? `: ${fel.slice(0, 3).join('; ')}` : ''}`, !fel.length],
       [`panelerna i en testby säger inte dygn, säsong eller klicka${iPanel ? `: ${iPanel}` : ''}`, !iPanel],
+      ...spelTidFall(),
     ];
   },
 };
+// tiden i texterna (steg 12.1.120): en gemensam funktion ger spelets tid i hela ord, och begravningsbuden följer koden
+function spelTidFall(): [string, boolean][] {
+  const H = SIM.HOUR, ex = [O.spelTid(SIM.MIN), O.spelTid(3 * H), O.spelTid(SIM.DAY), O.spelTid(2.4 * SIM.DAY), O.spelTid(8 * SIM.DAY), O.spelTid(15 * SIM.MIN)];
+  const bal = (SIM.BUD.bal as { om: () => string }).om(), vatten = (SIM.BUD.vattenGrav as { om: () => string }).om();
+  const balTid = O.spelTid((SIM.BEGRAVNINGAR.bal.min ?? 0) * SIM.MIN), vattenTid = O.spelTid((SIM.BEGRAVNINGAR.vatten.min ?? 0) * SIM.MIN);
+  return [
+    [`spelets tid i hela ord: ${ex.join(', ')}`, ex.join() === 'sex timmar,två månader,ett år,två år,en tidsålder,fyra dagar' && ex.every(t => !/\d|,\d/.test(t))],
+    [`begravningsbudens tid stämmer med koden (${balTid}, ${vattenTid})`, bal.includes(balTid) && vatten.includes(vattenTid) && !/en timme|halv timme/.test(bal + vatten)],
+  ];
+}
 SCENARIER.forradsflik = {
   text: 'Steg 11.1.6: förrådet är en flik utan runsten (flikar/forrad.ts). Rikedomen i sidhuvudet öppnar och stänger den på bred och smal skärm, spaltens rubrik på datorn öppnar den, och fliken visar sakerna i mapparna med namn och antal',
   kor: () => {

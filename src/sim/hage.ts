@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // ---------- hagen (steg 9.8.4–9.8.6, Djuren i detalj: Hagen) ----------
 // En egen fil för hagen och betet, så att tamdjur.ts (som varg.ts och arv.ts läser tidigt) inte drar in marken och odlingen.
 import { balans } from './balans';
@@ -174,7 +175,7 @@ function stepBete(s: State, d: Tamdjur) {
     d.hage = undefined; d.x = hx + 0.5 + ux * 2; d.y = hy + 0.5 + uy * 2; h = undefined;
     count(s, 'tamRymde');
     const q = d.agare !== undefined ? byId(s, d.agare) : undefined;
-    log(s, `${q ? `${q.name}s` : 'Byns'} ${tamArt(d.art).ord[1]} rymde genom ett hål i hagens staket.`, 'world', q ? [q.id] : []);
+    log(s, `${q ? `${gen(q.name)}` : 'Byns'} ${tamArt(d.art).ord[1]} rymde genom ett hål i hagens staket.`, 'world', q ? [q.id] : []);
   }
   if (d.hunger < HAGE.bettMin) return;
   let rs: number[];

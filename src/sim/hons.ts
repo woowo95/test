@@ -1,3 +1,4 @@
+import { antal, stor, tal } from './ord';
 // ---------- hönsen (steg 9.8.10, Djuren i detalj: Hönsen, grisen och katten) ----------
 // Hönsen är en flock utan individer (s.hons): bara hur många hönor byn har, var flocken går och vem som äger den. De kommer med
 // handlaren (varan levhons i HANDLARVAROR, handel.ts) och blir en höna i flocken när de ligger i byn; den som köpte dem äger
@@ -28,8 +29,7 @@ export function honsDor(s: State, n: number, orsak: string) {
   const h = honsOf(s);
   if (!h || n < 1) return;
   n = Math.min(h.n, n); h.n -= n; count(s, 'honsDog', n);
-  const alla = h.n === 0, text = alla && n === 1 ? 'Byns enda höna' : alla ? 'Alla hönor i byns flock' : `${n} ${n === 1 ? 'höna' : 'hönor'} i byns flock`;
-  log(s, `${text} dog ${orsak}.`, 'world', h.agare !== undefined ? [h.agare] : []);
+  log(s, `${n === h.n + n ? (n === 1 ? 'Byns enda höna' : `Alla ${tal(n)} hönor`) : stor(antal(n, 'levhons'))}${n === h.n + n ? '' : ' i byns flock'} dog ${orsak}.`, 'world', h.agare !== undefined ? [h.agare] : []);
 }
 
 export function stepHons(s: State) {

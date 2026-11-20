@@ -137,7 +137,7 @@ const DEF = {
   flyttaeld: { namn: 'Flyttar elden', yrke: 'Eldvaktare', slag: 'elda', tungt: true }, // steg 2.10.4: släcker elden och bär stenarna till en ny eldplats (eldflytt.ts)
   varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, skamfri: true, varmer: true, plats: 'elden' },
   svalka: { namn: 'Svalkar sig i skuggan', tecken: '🌳', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'skugga' }, // steg 2.3.13
-  toa: { namn: 'Går avsides på toa', tecken: '{sym_toa}', ikon: 'a_toa', verb: 'är på toa', plats: 'avsides', nodFri: true },
+  toa: { namn: 'Går avsides', tecken: '{sym_toa}', ikon: 'a_toa', verb: 'har gått avsides', plats: 'avsides', nodFri: true },
   dricka: { namn: 'Dricker vid vattnet', tecken: '🥤' },
   dryck: { namn: 'Dricker', tecken: '🥤', stilla: true }, // mjölk, saft, kokt vatten, te, vin eller öl hemma (steg 10.2.34) // steg 2.4.1: platsen väljs i torst.ts
   ata_sno: { namn: 'Äter snö', tecken: '🧊', stilla: true }, // den törstige när inget bättre finns nära (steg 9.6.18, torst.ts)
@@ -319,7 +319,7 @@ const DEF = {
   tjura: { namn: 'Tjurar för sig själv', tecken: '😤', ikon: 'utb1', dygn: true, stilla: true, plats: 'avsides' },
   skams: { namn: 'Skäms och håller sig undan', tecken: '😔', dygn: true, stilla: true, plats: 'avsides' }, // straffet skam (steg 3.5.3, styre.ts)
   elak: { namn: 'Är elak mot någon', tecken: '😠', ikon: 'utb2', dygn: true, stilla: true },
-  skvallra: { namn: 'Snackar skit om någon', tecken: '🗣️', ikon: 'utb2', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
+  skvallra: { namn: 'Talar illa om någon', tecken: '🗣️', ikon: 'utb2', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
   krossa: { namn: 'Slår sönder något', tecken: '💥', ikon: 'utb2', dygn: true, stilla: true },
   undan: { namn: 'Går undan för tornadon', tecken: '🌪️', stilla: true, fortsatter: ['brand', 'tornado'] as const }, // steg 3.8.4 (tornado.ts)
   // eldsvådorna (steg 3.8.5, brand.ts): de vuxna släcker en eld nära byn, med vattensäcken (fylls vid vattnet och töms över

@@ -1,3 +1,4 @@
+import { horText } from './ord';
 import { living } from './folk';
 import { amountOf, foodOf } from './lager';
 import { skogAndel } from './mark';
@@ -66,6 +67,7 @@ export const kronikaKat = (slag?: string) => slag === undefined ? undefined : KA
 export const kronika = (s: State, text: string, slag?: string) => kronikaVid(s, s.now, text, slag);
 // en rad vid en annan tid än nu (den väckta byns krönika bakåt, steg 11.13.17)
 export function kronikaVid(s: State, tid: number, text: string, slag?: string) {
+  horText('kronika', text);
   const k = histOf(s).kronika, t = Math.round(tid);
   let i = k.length;
   while (i > 0 && k[i - 1][0] > t) i--;

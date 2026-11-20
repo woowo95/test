@@ -24,8 +24,8 @@ export const PERSONLOGG = {
   skada: { namn: 'Skador', ikon: '🩹', ton: 'ont' },
   sjuk: { namn: 'Sjukdom', ikon: '🦠', notiser: ['sjuk'], ton: (x: string) => /frisk/.test(x) ? 'gott' : 'ont' },
   strid: { namn: 'Strider', ikon: '⚔️', notiser: ['strid'], ton: 'ont' },
-  fara: { namn: 'Faror hen sett', ikon: '⚠️', notiser: ['anfall', 'motgang', 'varsel'], ton: 'ont' },
-  lart: { namn: 'Det hen lärt sig', ikon: '🧠', notiser: ['mastare'], ton: 'gott' },
+  fara: { namn: 'Faror', ikon: '⚠️', notiser: ['anfall', 'motgang', 'varsel'], ton: 'ont' },
+  lart: { namn: 'Lärdomar', ikon: '🧠', notiser: ['mastare'], ton: 'gott' },
   masterverk: { namn: 'Mästerverk', ikon: '🏅', notiser: ['masterverk'], ton: 'gott' },
   titel: { namn: 'Titlar', ikon: '👑', notiser: ['ledare'], ton: blandat },
   hus: { namn: 'Hus', ikon: '🏠', notiser: ['hus'], ton: 'gott' },
@@ -34,7 +34,7 @@ export const PERSONLOGG = {
   relation: { namn: 'Vänner och ovänner', ikon: '🤝', notiser: ['par'], ton: blandat },
   match: { namn: 'Matcher', ikon: '🏅', notiser: ['match'] },
   markt: { namn: 'Märken i huden', ikon: '🩸', ton: 'gott' }, // tatueringarna (steg 10.7.5)
-  nara: { namn: 'De som står hen nära', ikon: '👥', notiser: ['fodd', 'dod', 'gravid'], ton: blandat },
+  nara: { namn: 'De närmaste', ikon: '👥', notiser: ['fodd', 'dod', 'gravid'], ton: blandat },
 } satisfies Record<string, PersonloggSlag>;
 export type PersonloggId = keyof typeof PERSONLOGG;
 export type Ton = 'gott' | 'ont';

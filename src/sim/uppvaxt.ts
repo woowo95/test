@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { liten, talOrd } from './ord';
 import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log, paKartan } from './folk';
 import { pick, rnd } from './slump';
@@ -106,7 +107,7 @@ export const UPPLEVELSER = {
   // det oförklarliga (steg 4.1.2.1, TECKEN i religion.ts): om = vad det var
   bonHjalpte: { text: 'Bönen i nöd hjälpte', chans: 0.5, e: [{ mod: 1 }, { empati: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, vuxenTal: true, ande: true }, // steg 8.5.4
   bonInte: { text: 'Bönen i nöd hjälpte inte', chans: 0.5, e: [{ mod: -1 }, { nyfikenhet: 1 }], vem: 'bada', sed: { nyfikenhet: 1 }, vuxenTal: true, ande: true },
-  tecken: { text: 'Var med om något oförklarligt: {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: -1 }, { minne: 1 }], vem: 'bada', sed: { forsiktighet: 1, nyfikenhet: -1 }, vuxenTal: true, ande: true },
+  tecken: { text: 'Var med om något oförklarligt, {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: -1 }, { minne: 1 }], vem: 'bada', sed: { forsiktighet: 1, nyfikenhet: -1 }, vuxenTal: true, ande: true },
   // de som formar sederna i stället för de gamla händelserna (steg 4.5.4.9)
   byggdeHus: { text: 'Byggde {om} tillsammans med andra', chans: 0.5, e: [{ empati: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 1 }, kort: 'Byggde ett hus tillsammans med andra' },
   forstaMastare: { text: 'Såg {om} bli byns första mästare', chans: 0.3, e: [{ nyfikenhet: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { nyfikenhet: 1 }, kort: 'Såg någon bli byns första mästare' },
@@ -124,7 +125,7 @@ export const upplevelseKort = (k: UpplevelseTyp) => DEF[k].kort ?? DEF[k].text.r
 const styrka = (u: Upplevelse) => Object.values(u.e).reduce((a, v) => a + Math.abs(v ?? 0), 0);
 // en sparad by från före steg 6.7.2 har bara namnet: då står det förälder och barn som förut
 const omText = (u: Upplevelse) => !u.om || u.om.includes(' ') ? u.om ?? '' : u.k === 'foralder' ? `förälder ${u.om}` : u.k === 'barnDod' ? `sitt barn ${u.om}` : u.om;
-export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}', omText(u));
+export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}s', gen(omText(u))).replace('{om}', omText(u));
 export const formas = (s: State, p: Person) => alive(p) && ageOf(p, s.now) < UPPV.alder;
 // u är från vuxenlivet (steg 4.1.1.2); de andra är från barndomen
 export const vuxenUpp = (u: Upplevelse) => u.v === 1;

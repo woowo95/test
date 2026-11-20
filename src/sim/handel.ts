@@ -1,4 +1,4 @@
-import { honom } from './ord';
+import { bestamd, han, honom, stor } from './ord';
 import { gastensPlatser, horOmGast, kannerOrt, kartaBorta, O_KANT, ORT, radBesoker } from './ort';
 import { SKRIFT } from './skriftTal';
 import { NORMAL } from './kvalitet';
@@ -418,7 +418,7 @@ function lagUt(s: State, h: Handlare) {
   h.fas = 'handlar'; h.kom = s.now; h.gar = nastaKl(s.now, HANDEL.morgon); h.kvall = undefined;
   (s.filtar ??= []).push({ x: hp(s, h).x, y: hp(s, h).y + BYTE.bakom, slut: h.gar, varor: [], handlare: h.id, vem: h.id, par: nyttPar(s) }); // varorna ligger kvar i packningen (steg 4.5.7.4)
   log(s, `${hp(s, h).name} har brett ut en filt nära elden och väntar på kunder.`, 'world'); notis(s, 'gast', `${hp(s, h).name} från ${hp(s, h).gast!.hem!} har brett ut en filt nära elden och väntar på kunder.`, [], { x: Math.floor(hp(s, h).x), y: Math.floor(hp(s, h).y) });
-  if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${hp(s, h).name} från ${hp(s, h).gast!.hem!}, med ${HANDLAR_UTR[h.utr].namn.toLowerCase()}en full av varor.`, 'handel');
+  if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${hp(s, h).name} från ${hp(s, h).gast!.hem!}, med ${bestamd(HANDLAR_UTR[h.utr].namn)[0]} ${bestamd(HANDLAR_UTR[h.utr].namn)[1] === 'det' ? 'fullt' : 'full'} av varor.`, 'handel');
 }
 
 // handlaren går: filten plockas ihop och hen går tillbaka mot kanten
@@ -454,7 +454,7 @@ export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number,
   h.varor = h.varor.filter(w => w.n >= 1);
   if (till) { hp(s, h).x = till.x + 0.5; hp(s, h).y = till.y + 0.5; }
   gar(s, h, true);
-  log(s, `Tornadon kastade handlaren ${hp(s, h).name} ${till ? 'en bit bort' : 'åt sidan'}${sonder ? ` och ${sonder} av varorna i packningen gick sönder` : ''}. Hen går hem.`, 'world');
+  log(s, `Tornadon kastade handlaren ${hp(s, h).name} ${till ? 'en bit bort' : 'åt sidan'}${sonder ? ` och ${sonder} av varorna i packningen gick sönder` : ''}. ${stor(han(hp(s, h)))} går hem.`, 'world');
 }
 
 // handlaren dog av svält, kyla eller sjukdom (gastvardag.ts, steg 9.2.113): packningen tas ihop, besöket tar slut och nästa

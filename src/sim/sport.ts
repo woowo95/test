@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { overskott } from './teknik';
 // Sporten (steg 4.3.1, Kultur, sport och konst): barnens lekar blir sport för de vuxna. Några sociala sporter med enkla
 // föremål, när byn har ett överskott av mat och ved och folk har fritid. Sporten ger glädje och tränar bara färdigheter
@@ -409,7 +410,7 @@ function delaUt(s: State, m: Match, d: SportDef, bast: Person, har: Person[]): P
   if (!bast.fame.includes(titel)) { bast.fame.push(titel); personHand(s, bast, 'titel', `${titel}.`); }
   handelse(s, bast, 'tavling', undefined, gren);
   think(bast, `Vann ${p.sak} i tävlingen`, SPORT.gladje, s.now, SPORT.gladjeTim * HOUR);
-  kronika(s, bast === l ? `${l.name} satte upp ${p.sak} som pris i ${gren} och vann själv.` : `${bast.name} vann tävlingen i ${gren} och fick ${l.name}s ${p.sak}.`, 'fritid');
+  kronika(s, bast === l ? `${l.name} satte upp ${p.sak} som pris i ${gren} och vann själv.` : `${bast.name} vann tävlingen i ${gren} och fick ${gen(l.name)} ${p.sak}.`, 'fritid');
   count(s, 'tavlingVunnen');
   return p;
 }

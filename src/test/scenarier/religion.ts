@@ -361,7 +361,7 @@ SCENARIER.religionsflik = {
       [`den minsta tron (${minst}) ligger under Övriga trosriktningar och syns när man öppnar dem`, html.includes('Övriga trosriktningar') && !tron(html).includes(minst) && tron(oppen).includes(minst)],
       [`trons bud och högtider är rader som fälls ut: högtiden säger när och vad man gör, och båda varför (steg 11.1.24)`, budOk],
       ['trons tyngd står inte som tal: etiketten står ensam, och talet med delarna i förklaringen (steg 11.1.20)', !html.includes('· tyngd') && new RegExp(`title="[^"]*Tyngd [^"]*"><b>${SIM.troEtikett(s, stor.tr).namn}</b></p>`).test(html)],
-      ['andligheten och trons styrka förklaras som 0 till 10, utan talet 0 till 100 (steg 11.1.21)', /title="Tron är [\d,]+ av 10 stark hos/.test(html) && /title="Andlighet [\d,]+ av 10:/.test(html) && !/av 100 stark/.test(html)],
+      ['andligheten och trons styrka förklaras som 0 till 10, utan talet 0 till 100 (steg 11.1.21)', /title="Tron hos [^"]* är [\d,]+ av 10 i styrka/.test(html) && /title="Andlighet [\d,]+ av 10:/.test(html) && !/av 100 stark/.test(html)],
       [`rubrikerna: De troende (N) i varje tro och Andligheten i byn sist (steg 11.1.19)`, html.includes('<h3>De troende (5)</h3>') && html.includes('<h3>Andligheten i byn</h3>') && !html.includes('<h3>Personer</h3>')],
       ['alla i byn står med andlighet och tro', html.includes('<h3>Andligheten i byn</h3>') && SIM.living(s).every(p => html.includes(`data-id="${p.id}"`))],
     ];

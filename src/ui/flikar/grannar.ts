@@ -11,7 +11,7 @@ const ROLL_IKON: Record<string, string> = { hovding: 'ledarskap', handlare: 'han
 // det vänliga, så att fientlig inte ser ut som lite
 const hallBar = (v: number) => mittStapel(v / 100, ` hall${v < 0 ? ' neg' : ''}`);
 // vad hållningen är, vad som ändrar den och vad vakten gör (?-knappen i fliken)
-const hallText = () => `<p class="muted small">Hållningen är hur klanen ser på byn, från fientlig till vänner. Den blir vänligare när byn byter med klanens handlare och när en främling från klanen får stanna, och fientligare när handlaren märker att byn lurat hen, när en främling visas bort och när klanens rövare dör vid byn. Med åren glöms det, och hållningen går tillbaka mot det neutrala.</p>
+const hallText = () => `<p class="muted small">Hållningen är hur klanen ser på byn, från fientlig till vänlig. Den blir vänligare när byn byter med klanens handlare och när en främling från klanen får stanna, och fientligare när handlaren märker att byn lurat hen, när en främling visas bort och när klanens rövare dör vid byn. Med åren glöms det, och hållningen går tillbaka mot det neutrala.</p>
   <p class="muted small">En klan som är för fientlig skickar ingen handlare, och rövarna kommer från den klan som tycker sämst om byn. Vakten håller sig vaken om natten och väcker byn när rövare kommer.</p>`;
 function grannarHtml() {
   const k = klanerOf(s);
@@ -49,7 +49,7 @@ function raderHtml() {
   if (!n && !f) return '<p class="muted">Inga rövare har kommit än.</p>';
   const nu = f ? `<p class="low">⚔️ ${f.folk.length} rövare är vid byn: ${rovarna(s, f).map(p => pLink(p)).join(', ')}.</p>` : '';
   const rad = (namn: string, v: unknown) => `<dt>${namn}</dt><dd>${Number(v ?? 0)}</dd>`;
-  return `${nu}<h4>Sedan byn grundades</h4><dl class="kv smal">${rad('Flockar som kommit', n)}${rad('Rövare som kommit', st.rovare)}${rad('Strider', st.rovarStrid)}${rad('Rövare som dött', st.rovarDoda)}${rad('Gånger vakten väckte byn', st.rovarVackt)}</dl><p>${kronikaLank('strid', 'Striderna i krönikan')}</p>`;
+  return `${nu}<h4>Sedan byn grundades</h4><dl class="kv smal">${rad('Flockar som kommit', n)}${rad('Rövare som kommit', st.rovare)}${rad('Strider', st.rovarStrid)}${rad('Rövare som dött', st.rovarDoda)}${rad('Väckt av vakten', st.rovarVackt)}</dl><p>${kronikaLank('strid', 'Striderna i krönikan')}</p>`;
 }
 // byns försvar: vakten i natt, de som håller vakt nu och vapnen i förrådet (strid.ts VAPEN)
 function forsvarHtml() {

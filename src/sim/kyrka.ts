@@ -1,3 +1,5 @@
+import { antal, gen, spelTid, stor } from './ord';
+import { MIN } from './typer';
 import { TROSKEL } from './forradsmal';
 import { hearthOf, woodDays } from './eld';
 // Kyrkan och buden (system 8.6). Registret BUD: varje bud är ett förbud, ett krav eller ett offer, med storlek (1–4), vilken nivå tron behöver och
@@ -116,6 +118,8 @@ export function kottAndel(s: State, art: string) {
 }
 // storleken: 2 när arten ger mindre än en tjugondel av köttet, 3 under en fjärdedel, annars 4
 export const djurStorlek = (s: State, art: string) => { const a = kottAndel(s, art); return a < 1 / 20 ? 2 : a < 1 / 4 ? 3 : 4; };
+// begravningarnas tal för budens texter: grav.ts fyller i dem ur BEGRAVNINGAR (steg 12.1.120), så att texten följer koden
+export const BEGR_TAL = { balVed: 4, balMin: 2, vattenMin: 2, vakaTim: 4, gravolTim: 2 };
 export const BUD = {
   tacka: { namn: 'Tacka gudarna före maten', sort: 'krav', storlek: 1, skala: 'livet', sida: 0, text: 'Man tackar innan man äter' },
   tecken: { namn: 'Bära trons tecken', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, text: 'De troende bär tecknet' },
@@ -128,8 +132,8 @@ export const BUD = {
   lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Lunden får stå', sed: ['natur', -1] },
   kottHelg: { namn: 'Inget kött på heliga dagar', sort: 'forbud', storlek: 2, skala: 'fest', sida: 1, text: 'Inget kött på den heliga dagen', mat: () => ['kott'], dag: true }, // ätandet, inte slakten (steg 10.3.16)
   // de nya förbuden (steg 10.3.22). Bud med dag gäller bara den heliga dagen (heligDag)
-  ingetRus: { namn: 'Inget rus', sort: 'forbud', storlek: 3, skala: 'fest', sida: 1, text: 'De troende dricker inte öl eller vin',
-    om: () => 'De som följer budet tar inte öl eller vin till kvällen eller mot törsten, och den som super sig full bryter budet.' }, // rus.ts frågar
+  ingetRus: { namn: 'Inget rus', sort: 'forbud', storlek: 3, skala: 'fest', sida: 1, text: 'De troende dricker inget som ger rus',
+    om: () => 'De som följer budet tar inte öl, vin, mjöd eller sprit till kvällen eller mot törsten, och den som super sig full bryter budet.' }, // rus.ts frågar
   djurVilar: { namn: 'Djuren vilar på den heliga dagen', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Ingen slaktar eller klipper djuren på den heliga dagen', acts: ['avliva', 'klippa'], dag: true },
   ingenHandel: { namn: 'Inte handla med främlingar', sort: 'forbud', storlek: 3, skala: 'oppen', sida: 1, text: 'Man handlar inte med främlingar', acts: ['handla', 'koa'] }, // gåvorna går som förut
   ingenStrid: { namn: 'Ingen strid på heliga dagar', sort: 'forbud', storlek: 3, skala: 'krig', sida: 0, text: 'Ingen börjar slåss på den heliga dagen', dag: true,
@@ -137,11 +141,11 @@ export const BUD = {
   ingenHan: { namn: 'Ingen hånar gudarna', sort: 'forbud', storlek: 1, skala: 'forlat', sida: 1, text: 'Ingen hånar gudarna' }, // budskapet hanaGud (framtradande.ts)
   // de nya kraven och offren (steg 10.3.23)
   olHogtid: { namn: 'Öl vid högtiden', sort: 'krav', storlek: 2, skala: 'fest', sida: 0, kraver: 'hogtid', text: 'Var och en dricker en öl ur kyrkans krukor vid högtiden',
-    om: () => 'Vid varje högtid dricker varje vuxen som är med en öl ur en kruka som kyrkan äger, och den tomma krukan blir kvar. Den som följer budet och tappar öl ger krukan till kyrkan när den har mindre öl än de vuxna troende. Saknas ölet mår de som följer budet lite sämre.' },
+    om: () => 'Vid varje högtid dricker varje vuxen som är med en öl ur en kruka som kyrkan äger, och den tomma krukan blir kvar. När kyrkan har färre krukor öl än det finns vuxna troende ger den som tappar öl en kruka till kyrkan. Saknas ölet mår de som följer budet lite sämre.' },
   forstaSkord: { namn: 'Den första skörden offras', sort: 'offer', storlek: 2, skala: 'livet', sida: 0, text: 'Det första ur varje skörd går till tron',
     om: () => 'Den första hela saken ur varje ny skörd på ett fält går till kyrkans egendom, när den som skördar följer budet.' }, // odling.ts frågar forstaSkorden
   valkomna: { namn: 'Handlaren ska välkomnas', sort: 'krav', storlek: 1, skala: 'oppen', sida: 0, text: 'Handlaren får mat när hen kommer',
-    om: () => 'När handlaren kommer får hen en hel mat ur byns förråd, en gång per besök, och de som följer budet får en bättre relation med hen.' }, // handel.ts frågar valkomnaHandlare
+    om: () => 'När handlaren kommer får handlaren en måltid ur byns förråd, en gång per besök, och de som följer budet kommer bättre överens med handlaren.' }, // handel.ts frågar valkomnaHandlare
   begravFiende: { namn: 'Den fallne fienden begravs', sort: 'krav', storlek: 2, skala: 'forlat', sida: 0, text: 'En fallen fiende får en grav',
     om: () => 'De som följer budet begraver en avrustad fiende på trons gravplats, med vanlig grävtid, i stället för att hen ligger kvar.' }, // grav.ts
   // vem som får en grav och vem som skändas (steg 10.4.13): den som tar hand om kroppen följer sin egen tros bud (grav.ts odeVal)
@@ -159,20 +163,20 @@ export const BUD = {
   gravhus: { namn: 'Ett gravhus över graven', sort: 'krav', storlek: 2, skala: 'livet', sida: 1, grupp: 'gravvard', text: 'Graven får ett litet hus' },
   // begravningens former (steg 10.4.5): kroppens väg och samlingen, en rad i BEGRAVNINGAR (grav.ts) per bud
   bal: { namn: 'Bål', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'vag', text: 'De döda bränns på ett bål',
-    om: () => 'Fyra ved tas vid graven och bålet lägger en timme till arbetet. Askan får en grav och en vård som andra. Saknas veden begravs hen i jorden.' },
+    om: () => `${stor(antal(BEGR_TAL.balVed, 'ved'))} tas vid graven, och att lägga och tända bålet tar ${spelTid(BEGR_TAL.balMin * MIN)} till. Askan får en grav och en vård som andra. Saknas veden begravs den döda i jorden.` }, // talen ur BEGRAVNINGAR (grav.ts, steg 12.1.120)
   vattenGrav: { namn: 'Vattnet', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'vag', text: 'De döda sänks i sjön',
-    om: () => 'Kroppen bärs till trons plats vid stranden och sänks där på en halv timme. Sjön minns de sänkta.' },
+    om: () => `Kroppen bärs till trons plats vid stranden och sänks där, vilket tar ${spelTid(BEGR_TAL.vattenMin * MIN)}. Sjön minns de sänkta.` },
   tystBegr: { namn: 'Den tysta begravningen', sort: 'krav', storlek: 1, skala: 'fest', sida: 1, grupp: 'samling', text: 'Bara familjen samlas vid graven',
-    om: () => 'Förälder, barn och partner samlas en timme vid graven. De får lite humör och tro.' },
+    om: () => `Förälder, barn och partner samlas vid graven under ${spelTid(BEGR_TAL.vakaTim * HOUR)}. De får lite humör och tro.` },
   vanligBegr: { namn: 'Begravningen', sort: 'krav', storlek: 2, grupp: 'samling', text: 'Trosfränderna samlas vid graven',
-    om: () => 'Trosfränderna och familjen samlas en timme vid graven, och prästen leder när tron har en. De får humör och tro.' },
+    om: () => `Trosfränderna och familjen samlas vid graven under ${spelTid(BEGR_TAL.vakaTim * HOUR)}, och prästen leder när tron har en. De får humör och tro.` },
   // tilläggen till begravningen (steg 10.4.12): egna bud, en rad i BEGRAVNINGAR (grav.ts) var, som kan läggas till de andra formerna
   vaka: { namn: 'Vakan', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, text: 'De nära sitter hos den döda kvällen efter',
     om: () => 'De som stod den döda nära sitter hos kroppen från kl. 20 kvällen efter dödsfallet till midnatt. Den som följer budet bär inte kroppen till graven före vakan.' },
   sorgkvade: { namn: 'Sorgkvädet', sort: 'krav', storlek: 2, text: 'Trons skald kväder om den döda vid begravningen',
     om: () => 'När trosfränderna samlas vid graven och en troende skald som minns den döda är med, sprids hens minne till alla som är där.' },
   gravol: { namn: 'Gravöl', sort: 'krav', storlek: 3, skala: 'fest', sida: 0, text: 'Byns vuxna äter och dricker öl efter begravningen',
-    om: () => 'Efter begravningen samlas byns vuxna två timmar vid elden. En hel mat per två och en öl var tas ur kyrkans egendom. Räcker det inte hålls inget gravöl.' },
+    om: () => `Efter begravningen samlas byns vuxna vid elden under ${spelTid(BEGR_TAL.gravolTim * HOUR)}. En måltid per två och en kruka öl var tas ur kyrkans egendom. Räcker det inte hålls inget gravöl.` },
   // gravplatsen (steg 10.4.6): en rad i GRAVPLATSER (grav.ts) per bud. Den blir sed när den första troende dör, så att också hen hamnar där
   gravNara: { namn: 'Gravplatsen nära byn', sort: 'krav', storlek: 1, skala: 'natur', sida: 1, grupp: 'gravplats', text: 'De döda vilar strax utanför byn' },
   gravBryn: { namn: 'Gravplatsen i skogsbrynet', sort: 'krav', storlek: 1, skala: 'natur', sida: 0, grupp: 'gravplats', text: 'De döda vilar där skogen börjar' },
@@ -243,9 +247,9 @@ export const BUD = {
     om: (_s, _tr, b) => `Vid högtiden äter man ${huvudNamn(b.v).toLowerCase()} först, lagat före rått. Saknas det mår de som följer budet lite sämre.` },
   // ritualerna som bud (steg 10.3.3)
   hogtid: { namn: 'Högtid', sort: 'krav', storlek: 1, ritual: 'hogtid', text: 'Tron firar en högtid i en tidsålder', varden: hogtidNu, vardeNamn: (_s, v) => hogtidNamn(v), nu: () => true,
-    om: (s, tr, b) => { const { ai, form } = hogtidAv(b.v); return `${['I istiden', 'I vårtiden', 'I sommartiden', 'I hösttiden'][ai]}, en kväll i ${RITUALER.hogtid.tim} timmar. De troende samlas ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. ${form === 'fasta' ? 'Ingen mat: ett år utan mat.' : 'En hel mat per närvarande, ur kyrkans egendom först och annars ur den egna maten.'}`; } },
+    om: (s, tr, b) => { const { ai, form } = hogtidAv(b.v); return `${['I istiden', 'I vårtiden', 'I sommartiden', 'I hösttiden'][ai]}, under ${spelTid(RITUALER.hogtid.tim * HOUR)}. De troende samlas ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. ${form === 'fasta' ? 'Ingen mat: ett år utan mat.' : 'En hel mat per närvarande, ur kyrkans egendom först och annars ur den egna maten.'}`; } },
   offer: { namn: 'Offer vid högtiden', sort: 'offer', storlek: 2, kraver: 'hogtid', text: 'Var och en lägger en mat på den heliga platsen',
-    om: (s, tr) => `Vid varje högtid. Var och en som följer budet lägger en hel mat, den hen äger mest av, ${helig(s, tr) ? 'på den heliga platsen' : 'vid elden'}, och den är borta.` },
+    om: (s, tr) => `Vid varje högtid. Var och en som följer budet lägger en måltid av den mat de äger mest av, ${helig(s, tr) ? 'på den heliga platsen' : 'vid elden'}, och den är borta.` },
   valsigna: { namn: 'Bröllopet välsignas', sort: 'krav', storlek: 1, text: 'Paret vigs vid den heliga platsen', nu: (s, tr) => (tr.brollop ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
     om: (s, tr) => `När två i tron gifter sig. Byns fest hålls ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}, prästen leder, och de troende får tro. Maten är byns, som vid alla bröllop.` },
   dop: { namn: 'Dopet', sort: 'krav', storlek: 1, ritual: 'dop', text: 'Barnet välsignas när det fötts', nu: (s, tr) => (tr.fodd ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
@@ -253,7 +257,7 @@ export const BUD = {
   vuxen: { namn: 'Vuxenblivandet', sort: 'krav', storlek: 1, ritual: 'vuxen', text: 'Den unga välsignas när hen blir vuxen', nu: (s, tr) => (tr.vuxen ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
     om: (s, tr) => `När någon fyller ${ALDER.vuxen} år och hens tro, annars moderns, annars faderns, har budet. Byn samlas i en timme ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. Inget går åt.` },
   myrOffer: { namn: 'Offer i myren', sort: 'offer', storlek: 2, skala: 'natur', sida: 0, ritual: 'myrOffer', text: 'Det mest värda kyrkan äger sänks i myren', finns: s => harMyr(s),
-    om: () => `En gång om dygnet samlas de troende i ${RITUALER.myrOffer.tim} timme vid myrens kant närmast byn och sänker det mest värda vapnet, smycket eller maten som kyrkan äger. Saken är borta för gott, och ju mer den var värd, desto mer stärks tron. Äger kyrkan inget sådant hålls inget offer.` },
+    om: () => `En gång om året samlas de troende under ${spelTid(RITUALER.myrOffer.tim * HOUR)} vid myrens kant närmast byn och sänker det mest värda vapnet, smycket eller maten som kyrkan äger. Saken är borta för gott, och ju mer den var värd, desto mer stärks tron. Äger kyrkan inget sådant hålls inget offer.` },
   manniskooffer: { namn: 'Människooffer', sort: 'offer', storlek: 4, skala: 'krig', sida: 1, text: 'Tron kräver det yttersta' },
 } satisfies Record<string, BudDef>;
 export type BudId = keyof typeof BUD;
@@ -686,7 +690,7 @@ export function hogtidOlKvade(s: State, tr: Tro, med: Person[]) {
   const skald = med.filter(p => (p.skill[FRAM_SKILL] ?? 0) >= KYRKA.skald).sort((a, b) => (b.skill[FRAM_SKILL] ?? 0) - (a.skill[FRAM_SKILL] ?? 0) || a.id - b.id)[0];
   if (!skald) { for (const p of med) if (p.tro === tr.id && foljer(p, 'kvade')) think(p, 'Ingen kvad om tron vid högtiden', KULT.offerInget, s.now, 12 * HOUR); return; }
   const q = framKval(s, skald);
-  for (const p of med) if (p !== skald && p.tro === tr.id) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kvadeTro * q); think(p, `Hörde ${skald.name}s kväde om tron`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+  for (const p of med) if (p !== skald && p.tro === tr.id) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kvadeTro * q); think(p, `Hörde ${gen(skald.name)} kväde om tron`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
   count(s, 'hogtid_kvade');
   log(s, `${skald.name} kvad om ${troNamn(tr)} vid högtiden.`, 'rel', [skald.id]);
 }
@@ -702,7 +706,7 @@ export function sorgkvade(s: State, tr: Tro, om: number, med: Person[]) {
   if (!skald) return;
   const e = minne(skald)!, q = framKval(s, skald), d = byId(s, om);
   for (const p of med) if (p !== skald) { beratta(s, skald, p, e, getRel(s, skald, p)); paminn(s, p, e.om, e.bev); // kvädet påminner (steg 10.6.15)
-    think(p, `Hörde ${skald.name}s sorgkväde om ${e.namn}`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+    think(p, `Hörde ${gen(skald.name)} sorgkväde om ${e.namn}`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
   count(s, 'sorgkvade');
   log(s, `${skald.name} kvad om ${d?.name ?? e.namn} vid graven.`, 'rel', [skald.id]);
 }

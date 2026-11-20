@@ -1,3 +1,4 @@
+import { antal, iMening } from './ord';
 // ---------- arv och flytt ----------
 // När någon dör går allt hen ägde till partnern. Finns ingen partner delas det på barnen, annars på föräldrarna, annars
 // på syskonen, och finns ingen av dem blir det byns. Delningen är så jämn som möjligt efter värdet (`grundvarde` i varde.ts),
@@ -48,16 +49,18 @@ export function inherit(s: State, p: Person) {
   const heirs = heirsOf(s, p);
   if (!heirs.length) return;
   const val = heirs.map(() => 0), fick: string[][] = heirs.map(() => []), varde: number[][] = heirs.map(() => []); // varde: vad varje del av arvet är värd
+  const st: Record<string, [n: number, v: number]>[] = heirs.map(() => ({})); // vanliga saker räknas ihop per slag: "tre träspjut" (steg 12.1.119)
+  const lagg = (i: number, k: string, n: number, v: number) => { const x = (st[i][k] ??= [0, 0]); x[0] += n; x[1] += v; };
   const hus = housesOf(s).filter(q => q.ag === p.id).sort((a, b) => husVarde(s, b) - husVarde(s, a) || a.id - b.id);
-  // en del av arvet till den som hittills fått minst: namnet, värdet och bytet av ägare
-  const ge = (namn: string, v: number, byt: (id: number) => void) => { const i = val.indexOf(Math.min(...val)); fick[i].push(namn); varde[i].push(v); byt(heirs[i].id); val[i] += v; return heirs[i]; };
+  // en del av arvet till den som hittills fått minst: namnet, värdet och bytet av ägare (stack: en vanlig sak som räknas ihop per slag)
+  const ge = (namn: string, v: number, byt: (id: number) => void, stack?: string) => { const i = val.indexOf(Math.min(...val)); if (stack) lagg(i, stack, 1, v); else { fick[i].push(namn); varde[i].push(v); } byt(heirs[i].id); val[i] += v; return heirs[i]; };
   for (const h of hus) {
-    const arvinge = ge(h.namn, husVarde(s, h), id => { h.ag = id; });
+    const arvinge = ge(iMening(h.namn), husVarde(s, h), id => { h.ag = id; });
     husNytt(s, h, 'ag', `Nyss ärvt av ${arvinge.name}.`);
     if (h.namn === husNamn(p.name)) h.namn = husNamn(arvinge.name);
   }
   const tools = tingOf(s).filter(t => t.agare === p.id).sort((a, b) => tingVarde(b) - tingVarde(a) || a.id - b.id);
-  for (const t of tools) ge(tingNamn(t).toLowerCase(), tingVarde(t), id => { t.agare = id; });
+  for (const t of tools) ge(tingNamn(t).toLowerCase(), tingVarde(t), id => { t.agare = id; }, tingNamn(t) === sakNamn(t.k) ? t.k : undefined); // vanliga saker räknas ihop per slag
   // djuren (steg 9.8.1) ärvs som redskapen, ett i taget till den som hittills fått minst. Hunden ärvs inte: den går till den som matat den mest (steg 9.8.3, tamdjur.ts)
   for (const d of tamdjurOf(s).filter(d => d.agare === p.id && d.art !== 'hund').sort((a, b) => a.id - b.id)) ge(`${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]}`, tamArt(d.art).varde, id => { d.agare = id; });
   // bikupan (steg 10.10.16) ärvs som hönsen, en kupa i taget till den som hittills fått minst
@@ -81,8 +84,9 @@ export function inherit(s: State, p: Person) {
       const k = Object.keys(eget).filter(k => (nu[k] ?? 0) - (fore[hi][k] ?? 0) >= 1 && grundvarde(k) < gap - 1e-9).sort((a, b) => grundvarde(b) - grundvarde(a) || (a < b ? -1 : 1))[0];
       if (!k || !ownMove(s, k, 1, heirs[hi].id, heirs[lo].id)) break;
     }
-    heirs.forEach((h, i) => { const nu = ownedAll(s, h.id); for (const k in eget) { const n = Math.round((nu[k] ?? 0) - (fore[i][k] ?? 0)); if (n >= 1) { fick[i].push(`${n} ${sakNamn(k).toLowerCase()}`); varde[i].push(n * grundvarde(k)); } } }); // det som delades ut (hela saker)
+    heirs.forEach((h, i) => { const nu = ownedAll(s, h.id); for (const k in eget) { const n = Math.round((nu[k] ?? 0) - (fore[i][k] ?? 0)); if (n >= 1) lagg(i, k, n, n * grundvarde(k)); } }); // det som delades ut (hela saker)
   }
+  heirs.forEach((_h, i) => { for (const [k, [n, v]] of Object.entries(st[i])) { fick[i].push(antal(n, k)); varde[i].push(v); } });
   heirs.forEach((h, i) => {
     if (!fick[i].length) return;
     const text = `${h.name} ärvde ${lista(fick[i])} efter ${p.name}.`;

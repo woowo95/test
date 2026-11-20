@@ -6,14 +6,41 @@
 // ett-ord, artikeln och ändelsen) larmar när en ny rad skriver rådata. Bara texten: inget här drar slump eller ändrar spelet.
 import { SAKER } from './saker';
 
+// ---------- lyssnaren på texterna ----------
+// verktyget som samlar texterna (npm run texter) och testernas vakt får varje text som skrivs (steg 4.5.1.1). Mallarnas texter
+// kommer från berattelser.ts; det som skrivs utanför mallarna (loggen, krönikan, notiserna, tankarna och resans dagbok) anmäls
+// med horText (steg 12.1.118), med platsen -2 och inga fält. Bara i verktyget och vakten; spelet sätter den aldrig
+export type TextLyssnare = (mall: string, i: number, text: string, f: Record<string, string | number | boolean | undefined>) => void;
+export const TEXTLYSS: { f?: TextLyssnare } = {};
+export const horText = (slag: string, text: string) => { if (TEXTLYSS.f) TEXTLYSS.f(slag, -2, text, {}); };
+
 // ---------- talen ----------
 const TAL = ['ingen', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta', 'nio', 'tio', 'elva', 'tolv'];
 // ett tal som ord: 0–12 som ord, annars siffror (ålder, år och sådant där talet behövs). ett = ett-ord ("ett år")
 export const talOrd = (n: number, ett = false) => n === 1 && ett ? 'ett' : TAL[n] ?? String(n);
+// ett tal i ord också över tolv, upp till 99 (folket i en by: "sexton"), annars siffror (steg 12.1.122)
+const TIOTAL = ['', '', 'tjugo', 'trettio', 'fyrtio', 'femtio', 'sextio', 'sjuttio', 'åttio', 'nittio'], TONAR = ['tretton', 'fjorton', 'femton', 'sexton', 'sjutton', 'arton', 'nitton'];
+export const heltOrd = (n: number, ett = false) => { n = Math.max(0, Math.round(n)); return n <= 12 ? talOrd(n, ett) : n < 20 ? TONAR[n - 13] : n < 100 ? TIOTAL[Math.floor(n / 10)] + (n % 10 ? talOrd(n % 10, ett) : '') : String(n); };
 // ett antal i löpande text: 0–12 som ord, fler än tolv "många", fler än 200 "otaliga" (ett = ett-ord vid 1)
 export const tal = (n: number, ett = false) => n > 200 ? 'otaliga' : n > 12 ? 'många' : talOrd(Math.max(0, Math.round(n)), ett);
 // "en gång", "tre gånger", "många gånger", "otaliga gånger"
 export const ganger = (n: number) => n === 1 ? 'en gång' : `${tal(n)} gånger`;
+
+// ---------- tiden (steg 12.1.120) ----------
+// ett tidsspann i verkligheten som tid i spelet, i hela tal och med ord: ett dygn är ett år, en vecka en tidsålder, två timmar en
+// månad, fyra minuter ungefär en dag och tio sekunder en timme. Allt som spelaren ser om hur länge något varar går genom den, i
+// simuleringens texter och i gränssnittet ("två månader", "ett år", "några timmar"); aldrig verkliga minuter eller decimaler
+const T_AR = 24 * 3600 * 1000, T_DAG = T_AR / 365, T_TIM = T_DAG / 24;
+const st_ = (x: number, en: string, fler: string, ett = false) => { const m = Math.max(1, Math.round(x)); return m === 1 ? `${ett ? 'ett' : 'en'} ${en}` : `${tal(m)} ${fler}`; };
+export function spelTid(ms: number) {
+  if (ms >= 6.5 * T_AR) return st_(ms / (7 * T_AR), 'tidsålder', 'tidsåldrar');
+  if (ms >= 0.95 * T_AR) return st_(ms / T_AR, 'år', 'år', true);
+  if (ms >= 27 * T_DAG) return st_(Math.min(11, ms / (T_AR / 12)), 'månad', 'månader');
+  if (ms >= 6.5 * T_DAG) return st_(ms / (7 * T_DAG), 'vecka', 'veckor');
+  if (ms >= 0.9 * T_DAG) return st_(ms / T_DAG, 'dag', 'dagar');
+  if (ms >= 0.9 * T_TIM) return Math.round(ms / T_TIM) > 12 ? 'nästan en dag' : st_(ms / T_TIM, 'timme', 'timmar');
+  return 'en stund';
+}
 
 // ---------- listor ----------
 // namnen med kommatecken och "och" sist (det som redan har ett "och" i sig först, så att leden inte blandas ihop)
@@ -45,14 +72,18 @@ export const SAKORD: Record<string, Ord> = {
   grillfisk: ['en', 'grillad fisk', 'grillade fiskar'], grillkott: ['en', 'bit grillat kött', 'bitar grillat kött'], torrkott: ['en', 'bit torkat kött', 'bitar torkat kött'],
   torrfisk: ['en', 'torkad fisk', 'torkade fiskar'], talgljus: ['ett', 'talgljus', 'talgljus'], talt: ['ett', 'tält', 'tält'], packsadel: ['en', 'packsadel', 'packsadlar'], ridsadel: ['en', 'ridsadel', 'ridsadlar'], vagn: ['en', 'vagn', 'vagnar'], vaxljus: ['ett', 'vaxljus', 'vaxljus'], fackla: ['en', 'fackla', 'facklor'], slanda: ['en', 'slända', 'sländor'], kalke: ['en', 'kälke', 'kälkar'], slade: ['en', 'släde', 'slädar'], levoxe: ['en', 'oxe', 'oxar'], levhast: ['en', 'häst', 'hästar'], kulting: ['en', 'kulting', 'kultingar'], slaktgris: ['en', 'slaktad gris', 'slaktade grisar'], bur: ['en', 'bur', 'burar'], bagborr: ['en', 'bågborr', 'bågborrar'], hus: ['ett', 'hus', 'hus'], vattensack: ['en', 'vattensäck', 'vattensäckar'],
   rovfron: ['ett', 'rovfrö', 'rovfrön'], rovor: ['en', 'rova', 'rovor'], arter: ['en', 'ärta', 'ärter'], artfron: ['ett', 'ärtfrö', 'ärtfrön'],
-  silver: ['en', 'bit silver', 'bitar silver'], virke: ['ett', 'stycke virke', 'stycken virke'], naver: ['en', 'bit näver', 'bitar näver'],
+  silver: ['en', 'bit silver', 'bitar silver'], salt: ['en', 'näve salt', 'nävar salt'], virke: ['ett', 'stycke virke', 'stycken virke'], naver: ['en', 'bit näver', 'bitar näver'],
   vargdel: ['ett', 'vargstycke', 'vargstycken'], radjurdel: ['ett', 'rådjursstycke', 'rådjursstycken'], vildsvindel: ['ett', 'vildsvinsstycke', 'vildsvinsstycken'], vildsvin: ['ett', 'fällt vildsvin', 'fällda vildsvin'], svinkott: ['en', 'bit fläsk', 'bitar fläsk'], svinskinn: ['ett', 'svinskinn', 'svinskinn'], bjorndel: ['ett', 'björnstycke', 'björnstycken'],
+  appel: ['ett', 'äpple', 'äpplen'], pilar: ['en', 'pil', 'pilar'], vaxtrest: ['en', 'växtrest', 'växtrester'], bonor: ['en', 'böna', 'bönor'], kalfron: ['ett', 'kålfrö', 'kålfrön'], jordgubbar: ['en', 'jordgubbe', 'jordgubbar'], notter: ['en', 'hasselnöt', 'hasselnötter'], lok: ['en', 'lök', 'lökar'], kal: ['ett', 'kålhuvud', 'kålhuvuden'], // steg 12.1.118: namnen i SAKER som står i plural eller inte går att räkna
+  braxen: ['en', 'braxen', 'braxnar'], sik: ['en', 'sik', 'sikar'], korn: ['en', 'näve korn', 'nävar korn'], mjol: ['en', 'näve mjöl', 'nävar mjöl'], malt: ['en', 'näve malt', 'nävar malt'], torv: ['en', 'torva', 'torvor'], malm: ['en', 'klump malm', 'klumpar malm'], jarn: ['en', 'bit järn', 'bitar järn'],
+  krok: ['en', 'krok', 'krokar'], krycka: ['en', 'krycka', 'kryckor'], remsa: ['en', 'remsa', 'remsor'], nal: ['en', 'bennål', 'bennålar'], naverask: ['en', 'näverask', 'näveraskar'], lerkruka_liten: ['en', 'liten lerkruka', 'små lerkrukor'], lerkruka_mellan: ['en', 'mellanstor lerkruka', 'mellanstora lerkrukor'], lerkruka_stor: ['en', 'stor lerkruka', 'stora lerkrukor'],
+  skara: ['en', 'skära', 'skäror'], slunga: ['en', 'slunga', 'slungor'], bage: ['en', 'pilbåge', 'pilbågar'], skold: ['en', 'sköld', 'sköldar'], isborr: ['en', 'isborr', 'isborrar'], lie: ['en', 'lie', 'liar'], jarnyxa: ['en', 'järnyxa', 'järnyxor'], jarnkniv: ['en', 'järnkniv', 'järnknivar'], bok: ['en', 'bok', 'böcker'],
 };
 // orden för en sak: ur SAKORD, annars sakens namn i SAKER (samma i ental och flertal)
 export function sakOrd(k: string): Ord {
   const o = SAKORD[k];
   if (o) return o;
-  const d = SAKER[k], n = (d?.namn ?? k).toLowerCase();
+  const d = SAKER[k], n = (d?.namn ?? k).split(' · ')[0].toLowerCase(); // rätterna: "Rotgröt · Lagad" blir "rotgröt"
   return [d?.ett ? 'ett' : 'en', n, n];
 }
 // en eller ett framför saken
@@ -64,11 +95,48 @@ export function antal(n: number, k: string) {
   const m = Math.round(n);
   return m === 1 ? `${art} ${en}` : `${tal(m)} ${fler}`;
 }
+// ett antal med siffror i gränssnittet, med sakens ental eller flertal: "1 äpple", "5 abborrar" (siffra = hur talet skrivs)
+export function styck(n: number, k: string, siffra: (n: number) => string = String) { const [, en, fler] = sakOrd(k); return `${siffra(n)} ${Math.abs(n - 1) < 1e-9 ? en : fler}`; }
+// ett ord med siffror och rätt form: "1 sovplats", "3 sovplatser"
+export const stOrd = (n: number, en: string, fler: string, siffra: (n: number) => string = String) => `${siffra(n)} ${Math.abs(n - 1) < 1e-9 ? en : fler}`;
 // sin eller sitt framför saken (sina för flera)
 export const sin = (k: string, n = 1) => n !== 1 ? 'sina' : enEtt(k) === 'ett' ? 'sitt' : 'sin';
 // sin eller sitt efter en sak eller station med fältet ett (en lerkruka, ett bord)
 export const sinOrd = (d: { ett?: boolean }) => d.ett ? 'sitt' : 'sin';
 export const enOrd = (d: { ett?: boolean }) => d.ett ? 'ett' : 'en';
+
+// ---------- bestämd form ----------
+const NEUTRUM = ['spjut', 'spö', 'bord', 'ställ', 'bälte', 'altare', 'trä', 'kar', 'nät', 'horn', 'tält', 'hus', 'skjul', 'läger'];
+// sakernas namn med gemen som är ett-ord (SAKER), för den bestämda formen
+let ettNamn: Set<string> | undefined;
+const arEtt = (n: string) => (ettNamn ??= new Set(Object.values(SAKER).filter(d => d?.ett).map(d => d!.namn.toLowerCase()))).has(n) || NEUTRUM.some(e => n.endsWith(e));
+// substantivets bestämda form: "lerkrukan", "spöet", "bältet", "kitteln"
+const bestOrd = (n: string, ett: boolean) => ett ? n + (/e$/.test(n) ? 't' : 'et') : n + (/[aeiouyåäö]$|el$/.test(n) ? 'n' : 'en');
+// adjektivets svaga form framför ett substantiv i bestämd form: "den mellanstora", "det lilla", "den grillade"
+const svag = (a: string) => /^lit(en|et)$/.test(a) ? 'lilla' : /ad$/.test(a) ? a + 'e' : /[aeo]$/.test(a) ? a : a.replace(/tt$/, 't') + 'a';
+// ett namn med ett nummer mitt i en mening (inga siffror i texten, steg 6.7.4): "Hydda 3" blir "den tredje hyddan", "Lagerplats 2"
+// "den andra lagerplatsen", och efter det tolfte "ännu en hydda"; andra namn står som de är (steg 12.1.118)
+const NUMMER = ['', 'första', 'andra', 'tredje', 'fjärde', 'femte', 'sjätte', 'sjunde', 'åttonde', 'nionde', 'tionde', 'elfte', 'tolfte'];
+export function iMening(namn: string) {
+  const m = namn.match(/^(\S+) (\d+)$/);
+  if (!m) return namn;
+  const [best, den] = bestamd(m[1]), n = +m[2];
+  return n < NUMMER.length ? `${den} ${NUMMER[n]} ${best}` : `ännu ${den === 'det' ? 'ett' : 'en'} ${m[1].toLowerCase()}`;
+}
+// ett hus namn mitt i en mening: "den andra hyddan", "långhuset", men "Stevids hus" som det står (ett namn)
+export const husIMening = (namn: string) => /^\S+ \d+$/.test(namn) ? iMening(namn) : /^\S+s hus$/.test(namn) ? namn : liten(namn);
+// en eller ett framför ett namn ur ett register ("en runsten", "ett rövarläger")
+export const artikel = (namn: string) => arEtt(namn.toLowerCase()) ? 'ett' : 'en';
+// sakens bestämda form och pronomen: "den mellanstora lerkrukan", "det" för slagträet (steg 12.1.118, fynd 14)
+export function bestamd(namn: string, ett?: boolean): [string, string] {
+  const av = namn.indexOf(' av ');
+  if (av > 0) { const [b, h] = bestamd(namn.slice(0, av), ett); return [b + namn.slice(av).toLowerCase(), h]; }
+  const n = namn.toLowerCase();
+  if (n.endsWith('skor')) return [n + 'na', 'de'];
+  const o = n.split(' '), sub = o[o.length - 1], e = ett ?? arEtt(n);
+  if (o.length > 1) return [`${e ? 'det' : 'den'} ${o.slice(0, -1).map(svag).join(' ')} ${bestOrd(sub, e)}`, e ? 'det' : 'den'];
+  return [bestOrd(n, e), e ? 'det' : 'den'];
+}
 
 // ---------- teknikerna ----------
 // vad den som kan tekniken gör: "har lärt sig att odla", "kom på hur man kan välja en ledare", "Med Gunve dog konsten att odla"
@@ -79,10 +147,10 @@ export const GORA: Record<string, string> = {
   korg: 'fläta korgar', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
   kniv: 'slå flintknivar', timmervagg: 'bygga timmerhus', slaktbank: 'bygga en slaktbänk', flatarbank: 'bygga en slöjdbänk', halmbadd: 'göra halmbäddar',
   bord: 'bygga bord', hylla: 'göra hyllor och kistor', skinnfall: 'sy skinnfällar', skinndorr: 'hänga dörrar av skinn', tradorr: 'göra trädörrar',
-  bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', packsadel: 'sy packsadlar', ridning: 'rida', mal: 'binda mål', boll: 'sy bollar',
+  bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', packsadel: 'sy packsadlar', ridning: 'rida', mal: 'göra mål till bollspelen', boll: 'sy bollar',
   slagtra: 'tälja slagträn', scen: 'bygga en scen', trumma: 'göra trummor', benflojt: 'skära benflöjter', lyra: 'göra lyror', kruka: 'bygga upp lerkrukor',
   matta: 'väva mattor', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
-  tork: 'bygga en torkställning', bikupa: 'fläta bikupor', bur: 'bygga burar', odling: 'odla', ledarskap: 'välja en ledare', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
+  tork: 'bygga en torkställning', bikupa: 'fläta bikupor', bur: 'bygga burar', odling: 'odla', ledarskap: 'leda byn', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
   kolmila: 'kola ved i en mila', blasterugn: 'blåsa järn ur malm', smedja: 'smida järn', vapensmide: 'smida svärd och brynjor', // steg 12.2.1–12.2.9
 };
 // teknikens namn med gemen till dess id; teknik.ts fyller i det när TEKNIK läses (för det som bara sparat namnet, som p.fame)
@@ -112,6 +180,13 @@ export const hans = (p: Kon) => p.sex === 'k' ? 'hennes' : 'hans';
 export const stor = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 export const liten = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 
+// de svårt skadade efter en strid, utan att namnen upprepas (steg 12.1.121): "Hon skadades svårt.", "Alla tre skadades svårt."
+export function svaraText(folk: (Kon & { name: string })[], svara: string[]) {
+  if (!svara.length) return '';
+  if (svara.length === folk.length) return folk.length === 1 ? ` ${stor(han(folk[0]))} skadades svårt.` : folk.length === 2 ? ' Båda skadades svårt.' : ` Alla ${tal(folk.length)} skadades svårt.`;
+  return ` ${och(svara)} skadades svårt.`;
+}
+
 // ---------- marken ----------
 // hur mycket mark (rutor) som brann eller översvämmades: "en liten bit mark", "ett stort stycke mark"
 export const mark = (n: number) => n <= 3 ? 'en liten bit mark' : n <= 15 ? 'en bit mark' : n <= 60 ? 'ett stort stycke mark' : 'ett mycket stort stycke mark';
@@ -119,6 +194,8 @@ export const mark = (n: number) => n <= 3 ? 'en liten bit mark' : n <= 15 ? 'en 
 // ---------- släkten (steg 6.7.2) ----------
 // genitiv av ett namn: "Ylvars", men "Ask" blir "Asks" och "Ines" "Ines"
 export const gen = (namn: string) => /[sxz]$/i.test(namn) ? namn : `${namn}s`;
+// bara ändelsen, för ett namn som står i en länk: "Ask" + "s", "Asdis" + ""
+export const genS = (namn: string) => /[sxz]$/i.test(namn) ? '' : 's';
 // vad q är för p: mor, far, son, dotter, bror eller syster (undefined om de inte är så nära släkt)
 type Slakt = { id: number; sex: 'm' | 'k' | string; mother?: number; father?: number };
 export function slaktOrd(p: Slakt, q: Slakt): string | undefined {

@@ -1,4 +1,5 @@
-import { honom } from './ord';
+import { gen } from './ord';
+import { antal, honom, och, tal, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
@@ -31,7 +32,6 @@ import { freeNear, isWall } from './byggnad';
 import { GASTSORTER, GastSortDef, gastGar, nyGast, nyttGastId } from './gast';
 import { laggIn } from './lager';
 import { grundvarde } from './varde';
-import { SAKER } from './saker';
 import { notis } from './notiser';
 import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
@@ -146,8 +146,9 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   raddAkt(s, p, akt, `${p.name} dog ${cause}`, orsak); // de som såg det blir rädda för det hen gjorde (steg 8.4.10)
   if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)
   const a = Math.floor(ageOf(p, s.now));
-  log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${a} år gammal.`, [p.id], p.ute === undefined ? { x: Math.floor(p.x), y: Math.floor(p.y) } : undefined);
-  count(s, 'doda'); count(s, 'dog ' + cause); personNara(s, p, `${p.name} dog ${cause}, ${a} år gammal.`, [], 'ont'); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
+  const aText = a < 1 ? 'som spädbarn' : `${a <= 12 ? talOrd(a) : a} år gammal`; // åldern med ord för de små (steg 12.1.120)
+  log(s, `${p.name} dog ${cause}, ${aText}.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${aText}.`, [p.id], p.ute === undefined ? { x: Math.floor(p.x), y: Math.floor(p.y) } : undefined);
+  count(s, 'doda'); count(s, 'dog ' + cause); personNara(s, p, `${p.name} dog ${cause}, ${aText}.`, [], 'ont'); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a <= 12 ? talOrd(a) : a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), ...(n => ({ barn: n, barnOrd: talOrd(n) }))(s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length) });
   if (p.ute === undefined) nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1); den som dör på resan ligger inte på byns karta
   gravgava(s, p); // gravgåvan läggs undan innan arvet (steg 8.5.6)
   skuldKrok.f?.(s, p);
@@ -179,7 +180,7 @@ export function birth(s: State, mother: Person) {
   mother.pregnantSince = undefined; mother.lastBirth = s.now; mother.foder = undefined;
   if (mother.task?.act === 'foder') mother.task.until = s.now;
   if (rnd(s, 'halsa', mother) < risk.barn) { // barnet dör (dödfött, eller dog i förlossningen)
-    count(s, 'dodfodda'); log(s, `${mother.name}s barn dog när det föddes. ${risk.f.text}`, 'death', [mother.id]); notis(s, 'dodfodd', `${mother.name}s barn dog när det föddes. ${risk.f.text}`, [mother.id]);
+    count(s, 'dodfodda'); log(s, `${gen(mother.name)} barn dog när det föddes. ${risk.f.text}`, 'death', [mother.id]); notis(s, 'dodfodd', `${gen(mother.name)} barn dog när det föddes. ${risk.f.text}`, [mother.id]);
     think(mother, 'Förlorade sitt barn i förlossningen', -0.4, s.now, 3 * DAY);
     if (rnd(s, 'halsa', mother) < risk.mor) die(s, mother, 'barnsang');
     return;
@@ -271,7 +272,7 @@ export function beskedVerkar(s: State, p: Person) {
   for (const w of g.gava ?? []) { laggIn(s, w.k, w.n); varde += w.n * grundvarde(w.k); }
   if (varde > 0) byHandelse(vl, 'gava', r.nr, vl.huvud, gavaRel(varde) / BYREL.gava);
   const l = ledarenNu(s), vem = l ? l.name : 'byn', vanligt = g.besked === 'besked';
-  const gavaText = g.gava?.length ? `, och lämnade ${g.gava.map(w => `${w.n} ${SAKER[w.k]?.namn.toLowerCase() ?? w.k}`).join(', ')} som gåva` : '';
+  const gavaText = g.gava?.length ? `, och lämnade ${och(g.gava.map(w => antal(w.n, w.k)))} som gåva` : '';
   const text = `${p.name}, sändebud från ${k?.namn ?? 'en grannby'}, bar ${vanligt ? 'ett vänligt' : 'ett ovänligt'} besked till ${vem}${gavaText}.`;
   g.gava = undefined;
   count(s, vanligt ? 'sandebudVanligt' : 'sandebudOvanligt');
@@ -443,7 +444,7 @@ function emigrate(s: State, skal: FlyttSkal) {
     if (!one.length) return;
     const p = pick(s, one, 'flytt'), med = [p, ...barn(p)]; // en ensam förälder tar med sina barn
     leave(s, ...med);
-    utflyttade(s, med, `${FLYTT_SKAL[skal]} ${p.name} lämnade byn${med.length > 1 ? ` med ${med.length - 1} barn` : ''} för att söka lyckan på annat håll.`);
+    utflyttade(s, med, `${FLYTT_SKAL[skal]} ${p.name} lämnade byn${med.length > 1 ? ` med ${med.length === 2 ? 'ett barn' : `${tal(med.length - 1)} barn`}` : ''} för att söka lyckan på annat håll.`);
     radKrok.utflytt(s, med.length); // de går till en by i världen (byflytt.ts, steg 11.3.5)
     return;
   }

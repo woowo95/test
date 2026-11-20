@@ -1,3 +1,4 @@
+import { stOrd } from '../sim/ord';
 import * as PIXI from 'pixi.js';
 import { bordighet, fuktAv, husVisas, rutorAv } from '../sim';
 import { mattaAt, runstenAt, gravAt, heligAt, kvarAt, BAR, busksort, FALT_STEG, FOREST, GRODOR, isSoil, stadium, Falt, byId, faltAt, faltIndex, HIGH, MATERIAL, Person, T, W, bitAt, bynsMitt, condOf, dorrDef, emberOn, eldXY, eldarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, stationerOf, framfor, bordPlatser, tingOf, toaAt, tandTest, blixtTest, roomAt, rumVisas, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile, Station, storlekAv, tornadoPos, tornadoAndel, hageAt , nyttSlag, pratarMed } from '../sim';
@@ -278,7 +279,7 @@ function showHover(gx: number, gy: number) {
   const rum = roomAt(s, x, y);
   if (rum) {
     const hus = husById(s, rum.hus), n = sovplatser(s, rum), fns = rumVisas(s, rum).map(f => tecknet(f.ikon, f.ikon, 12)).join(''); // rummets taggar (RUMSTYPER i rum.ts)
-    rows.push(`Under tak${hus ? ` (${esc(husVisas(s, hus))})` : ''}${fns ? ' ' + fns : ''} · ${n ? `${n} sovplatser · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`);
+    rows.push(`Under tak${hus ? ` (${esc(husVisas(s, hus))})` : ''}${fns ? ' ' + fns : ''} · ${n ? `${stOrd(n, 'sovplats', 'sovplatser')} · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`);
   }
   const here = living(s).filter(p => { const o = posOf(p); return Math.floor(o.x) === x && Math.floor(o.y) === y; });
   // den som pratar (steg 11.1.61): vad slags samtal det är, så att pratbubblans färg får ett ord

@@ -1,3 +1,5 @@
+import { MIN } from '../../sim';
+import { spelTid, styck } from '../../sim/ord';
 import { BRASA, ELD, FireLog, HOUR, amountOf, byId, eldById, eldFaktor, brinnTakt, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
 import { bar, clockTxt, durTxt, esc, fallUt, fmtN, hjalpKnapp, hjalpOppen, hjalpText, num, pLink, times } from '../hjalp';
 import { s, ui } from '../lage';
@@ -49,7 +51,7 @@ function fireHtml() {
       <dt>Bränsle</dt><dd>${fmtN(amountOf(s, 'ved'))} ved och ${fmtN(amountOf(s, 'grenar'))} grenar i förrådet (grenar brinner fort)</dd>
       ${(f.ash ?? 0) >= 1 ? `<dt>Kolhög</dt><dd>${f.ash} kol i den gamla elden, ligger kvar ca ${durTxt((f.ashUntil ?? now) - now)}</dd>` : ''}
       ${amountOf(s, 'kol') >= 1 ? `<dt>Kol</dt><dd>${fmtN(amountOf(s, 'kol'))} i förrådet</dd>` : ''}
-      ${ig ? `<dt>Per försök</dt><dd>${ig.grass} hö och ${ig.sticks} grenar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
+      ${ig ? `<dt>Per försök</dt><dd>${styck(ig.grass, 'torrgras')} och ${styck(ig.sticks, 'grenar')} (eller en bit kol), ungefär ${spelTid(ig.minutes * MIN)}${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
       ${!f.lit ? `<dt>Försök</dt><dd>${f.tries} sedan elden slocknade${lighter ? `, ${pLink(lighter)} försöker nu` : ''}</dd>` : ''}
     </dl>` : ''}
     <h3>Sedan byn grundades</h3><dl class="kv fam">

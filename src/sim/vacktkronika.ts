@@ -18,7 +18,7 @@ const SLAG: Partial<Record<VarldHandelseId, string>> = {
 };
 export function byggKronika(b: State, r: VarldRad) {
   const vl = b.varld, rader: [number, string, string][] = [];
-  for (const h of vl?.kronika ?? []) if ((h.by === r.nr || h.mot === r.nr) && h.t <= b.now) rader.push([h.t, varldHandelseText(vl!, h), SLAG[h.k] ?? 'nyhet']);
+  for (const h of vl?.kronika ?? []) if ((h.by === r.nr || h.mot === r.nr) && h.t <= b.now) rader.push([h.t, varldHandelseText(vl!, h) + '.', SLAG[h.k] ?? 'nyhet']);
   const doda = new Set<string>();
   for (const p of b.people) {
     const mor = byId(b, p.mother)?.name ?? p.forr?.familj.find(f => f.roll === 'mor')?.namn, far = byId(b, p.father)?.name ?? p.forr?.familj.find(f => f.roll === 'far')?.namn;

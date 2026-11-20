@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // Isen på sjöarna (steg 2.11.3). Vattnet har en egen temperatur som följer luftens långsamt, med ungefär två dygns
 // fördröjning (två år i spelet). När vattnet kyls under noll lägger sig isen, och den växer fortare ju kallare det är och
 // ju tunnare den är (tjock is skyddar vattnet under); snö på isen gör att den växer långsammare. Över noll smälter den.
@@ -70,7 +71,7 @@ export function halVal(s: State, p: Person) {
 export function halGjort(s: State, p: Person) {
   if (!islagt(s) || halVal(s, p)?.id !== 'isborr') return;
   if (!wearTool(s, p, 'isborr', 1 / IS.borrHal)) return;
-  if (forstaGang(s, 'isborrTrasig')) log(s, `${p.name}s isborr var utsliten.`, 'world', [p.id]); else count(s, 'isborrTrasig');
+  if (forstaGang(s, 'isborrTrasig')) log(s, `${gen(p.name)} isborr var utsliten.`, 'world', [p.id]); else count(s, 'isborrTrasig');
 }
 // kan p nå vattnet: isen ligger inte, eller hen kan hugga upp ett hål
 export const naVattnet = (s: State, p: Person) => !islagt(s) || !!halVal(s, p);

@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // Djurens törst (steg 10.10.31, Djuren i detalj: Djurens törst och vattenhon). Törsten växer per tid: på TAM.torstTim timmar
 // vill djuret dricka igen, och det dricker en hel mängd vatten efter artens tal (dricker på raden i TAMDJUR). Var vattnet
 // finns är rader i registret DJURVATTEN, prövade i ordning: snön när den ligger, stranden när hagen når vattnet (eller för
@@ -36,7 +37,7 @@ export function djurTorstSteg(s: State, dt: number) {
     if (d.torstTim >= TAM.torstDod * tamEg(d).talighet) {
       const q = d.agare !== undefined ? byId(s, d.agare) : undefined;
       tamDor(s, d, 'av törst');
-      notis(s, 'djurtorst', `${q ? `${q.name}s` : 'Byns'} ${tamArt(d.art).ord[1]} dog av törst.`, q ? [q.id] : [], { x: d.x, y: d.y });
+      notis(s, 'djurtorst', `${q ? `${gen(q.name)}` : 'Byns'} ${tamArt(d.art).ord[1]} dog av törst.`, q ? [q.id] : [], { x: d.x, y: d.y });
     }
   }
 }

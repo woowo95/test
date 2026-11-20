@@ -1,3 +1,4 @@
+import { han, hans } from './ord';
 import { nagonEld } from './eld';
 // Lerkrukan (steg 9.4.11, Arbetsstationer och möbler: Leran och lerkrukan, Tre storlekar): ett ting med kvalitet, skick och
 // ägare, inte en möbel, i tre storlekar som är rader i registret KRUKOR. Den byggs upp för hand av lera med sand i (1, 2 eller 4
@@ -68,7 +69,7 @@ export function krukaUpp(s: State, p: Person, tk: Task) {
   if (!v || v.t.id !== tk.ref) return;
   const k = v.t;
   k.hos = p.id; k.x = k.y = k.vid = undefined;
-  tk.phase = 'back'; tk.tx = v.i % W + 0.5; tk.ty = Math.floor(v.i / W) + 0.5; tk.why = 'Bär sin lerkruka till rummet där hen sover';
+  tk.phase = 'back'; tk.tx = v.i % W + 0.5; tk.ty = Math.floor(v.i / W) + 0.5; tk.why = `Bär sin lerkruka till rummet där ${han(p)} sover`;
 }
 // framme i rummet: krukan ställs på rutan, eller där hen står om rutan blivit upptagen
 export function krukaNer(s: State, p: Person, tk: Task) {
@@ -174,7 +175,7 @@ export function ortPlockaKlar(s: State, p: Person, ref?: number) {
   const g = t.vaxt.g as GrodaSlag;
   put(s, GRODOR[g].sak, ORTKRUKA.plock, { [p.id]: ORTKRUKA.plock });
   t.vaxt.v = ORTKRUKA.ater; count(s, 'ortKruka'); ovning(p, 'odling', ORTKRUKA.ovning);
-  if (forstaGang(s, 'ortKruka')) log(s, `${p.name} plockade röllekan som växer i hens lerkruka.`, 'world', [p.id]);
+  if (forstaGang(s, 'ortKruka')) log(s, `${p.name} plockade röllekan som växer i ${hans(p)} lerkruka.`, 'world', [p.id]);
 }
 // ... och sätter ett frö i en ledig kruka (Förbättra, bredvid staketet): den växt som väger mest av dem hen har frö till (steg 10.7.3)
 export function ortSattaVal(s: State, p: Person) {

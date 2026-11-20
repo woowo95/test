@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
@@ -67,7 +68,7 @@ export function wearUsed(s: State, p: Person, n: number) {
   if (!wearTool(s, p, k, n / r.haller)) return;
   const tr = SAKER[k]?.trasig, forsta = tr ? forstaGang(s, tr.stat) : false;
   if (p.task) { p.task.tool = undefined; if (r.kravs) p.task.until = s.now; } // utan yxan slutar man fälla och hugga
-  if (tr?.text && forsta) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]);
+  if (tr?.text && forsta) log(s, tr.text.replace('{namn}s', gen(p.name)).replace('{namn}', p.name), 'world', [p.id]);
 }
 // ---------- rep ----------
 // Rep tvinnas av växtfibrer (hö) av den som kan det, vid slöjdbänken (stationer.ts) och fortare där, annars för hand vid

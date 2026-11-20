@@ -126,16 +126,16 @@ interface TitelLage { vuxna: Person[]; folk: number; rang: number; leg: number; 
 // kort och om (steg 10.2.59): några ord om rollen, och mer när man trycker på den. Titeln säger hur ledaren fick sin plats och vad
 // folket kallar hen; vem som bestämmer står bara i styrets form (FORMER), så att texterna inte säger emot varandra (steg 11.1.27)
 const TITLAR: { namn: [string, string]; kort: string; om: string; passar: (s: State, p: Person, x: TitelLage) => boolean }[] = [
-  { namn: ['Kung', 'Drottning'], kort: 'leder ett stort folk', om: 'Fick sin plats genom sin höga rang i en stor by, och folket kallar hen så.', passar: (_s, _p, x) => x.folk >= LED.kungFolk && x.rang >= LED.kungRang },
-  { namn: ['Jarl', 'Jarl'], kort: 'leder ett växande folk', om: 'Fick sin plats genom sin höga rang i en by som växer, och folket kallar hen så.', passar: (_s, _p, x) => x.folk >= LED.jarlFolk && x.rang >= LED.jarlRang },
-  { namn: ['Järnhanden', 'Järnhanden'], kort: 'ett öknamn för den som straffar hårt', om: 'Ett öknamn som folket ger den som straffar hårt fast byn inte godtar hen.', passar: (_s, _p, x) => x.hard >= LED.jarnHard && x.leg < LED.jarnLeg }, // ett öknamn som folket använder
+  { namn: ['Kung', 'Drottning'], kort: 'leder ett stort folk', om: 'Fick sin plats genom sin höga rang i en stor by, och folket kallar ledaren så.', passar: (_s, _p, x) => x.folk >= LED.kungFolk && x.rang >= LED.kungRang },
+  { namn: ['Jarl', 'Jarl'], kort: 'leder ett växande folk', om: 'Fick sin plats genom sin höga rang i en by som växer, och folket kallar ledaren så.', passar: (_s, _p, x) => x.folk >= LED.jarlFolk && x.rang >= LED.jarlRang },
+  { namn: ['Järnhanden', 'Järnhanden'], kort: 'ett öknamn för den som straffar hårt', om: 'Ett öknamn som folket ger den som straffar hårt fast byn inte godtar ledaren.', passar: (_s, _p, x) => x.hard >= LED.jarnHard && x.leg < LED.jarnLeg }, // ett öknamn som folket använder
   { namn: ['Krigshövding', 'Krigshövding'], kort: 'den främsta krigaren', om: 'Fick sin plats i en by som stridit mycket, där folket följer den främsta krigaren.', passar: (_s, _p, x) => x.krig >= LED.krig }, // och seden Fejd när den finns (9.2.3)
-  { namn: ['Hövding', 'Hövding'], kort: 'byns ansedda ledare', om: 'Fick sin plats genom sin höga rang, och folket kallar hen så.', passar: (_s, _p, x) => x.rang >= LED.hovding },
+  { namn: ['Hövding', 'Hövding'], kort: 'byns ansedda ledare', om: 'Fick sin plats genom sin höga rang, och folket kallar ledaren så.', passar: (_s, _p, x) => x.rang >= LED.hovding },
   { namn: ['Storjägare', 'Storjägare'], kort: 'den bästa jägaren', om: 'Folket följer den som skaffar mest vilt.', passar: (_s, p) => p.tag === 'Jägare' },
   { namn: ['Den vise', 'Den visa'], kort: 'den klokaste', om: 'Folket följer den klokaste.', passar: (_s, p) => p.pot.intelligens >= LED.vis },
-  { namn: ['Byfader', 'Bymoder'], kort: 'tar hand om alla', om: 'Har stort stöd och mycket empati, och folket ser hen som en förälder.', passar: (s, p, x) => x.stod >= LED.faderStod && stat(p, 'empati', s.now) >= LED.faderEmp },
+  { namn: ['Byfader', 'Bymoder'], kort: 'tar hand om alla', om: 'Har stort stöd och är omtänksam, och folket ser ledaren som en förälder.', passar: (s, p, x) => x.stod >= LED.faderStod && stat(p, 'empati', s.now) >= LED.faderEmp },
   { namn: ['Äldste', 'Äldsta'], kort: 'den äldsta', om: 'Folket följer den som levt längst.', passar: (s, p, x) => ageOf(p, s.now) >= ALDER.aldre && x.vuxna.every(q => ageOf(q, s.now) <= ageOf(p, s.now)) },
-  { namn: ['Ålderman', 'Ålderkvinna'], kort: 'vald av byn', om: 'Byn har valt hen, och hen för ordet vid tinget.', passar: () => true }, // vald av byn (Ålderkvinna för en kvinna, steg 4.5.3.2)
+  { namn: ['Ålderman', 'Ålderkvinna'], kort: 'vald av byn', om: 'Byn har valt ledaren, som för ordet vid tinget.', passar: () => true }, // vald av byn (Ålderkvinna för en kvinna, steg 4.5.3.2)
 ];
 const TITELNAMN = new Set(TITLAR.flatMap(t => t.namn));
 // några ord om titeln, och mer (steg 10.2.59)
@@ -147,23 +147,23 @@ const stor = (t: string) => t[0].toUpperCase() + t.slice(1);
 const fort = (s: State) => s.seder.v.fortjanst ?? 0, fejdNu = (s: State) => s.seder.v.fejd ?? 0, rangNu = (s: State) => s.seder.v.rang ?? 0;
 const FORMER: { namn: string; passar: (s: State) => boolean; text: (l: Person, titel: string) => string }[] = [
   { namn: 'Godevälde', passar: s => (s.seder.v.andlig ?? 0) >= FORM.starkt && rangNu(s) >= FORM.lut, // den främsta prästen leder (steg 8.6.1)
-    text: (l, t) => `${l.name}, ${t.toLowerCase()}, styr byn i gudarnas namn. De starka buden äga laga kraft.` },
+    text: (l, t) => `${l.name}, ${t.toLowerCase()}, styr byn i gudarnas namn. De starka buden äger laga kraft.` },
   { namn: 'Envälde', passar: s => rangNu(s) >= FORM.starkt && fejdNu(s) >= FORM.lut && fort(s) <= 0,
     text: (l, t) => `${l.name}, ${t.toLowerCase()}, har tagit makten och styr allena. ${stor(hennes(l))} ord är lag, och ingen må tala emot.` },
   { namn: 'Krigarvälde', passar: s => rangNu(s) >= LED.hovding && fejdNu(s) >= FORM.lut,
-    text: (l, t) => `Krigarna kring ${l.name}, ${t.toLowerCase()}, råda över byn. Den som bär vapen väger tyngst.` },
+    text: (l, t) => `Krigarna kring ${l.name}, ${t.toLowerCase()}, råder över byn. Den som bär vapen väger tyngst.` },
   { namn: 'Kungadöme', passar: s => rangNu(s) >= LED.hovding && fort(s) >= FORM.lut,
     text: (l, t) => `${l.name}, ${t.toLowerCase()}, styr byn. Makten går i arv inom ätten.` },
   { namn: 'Hövdingadöme', passar: s => rangNu(s) >= LED.hovding,
     text: (l, t) => `${l.name}, ${t.toLowerCase()}, råder över byn med tinget vid sin sida. ${stor(hon(l))} dömer, och byn lyder.` },
   { namn: 'Ätternas råd', passar: s => rangNu(s) >= FORM.mitt && fort(s) >= FORM.lut,
-    text: (l, t) => `De gamla ätterna råda över byn, och ${l.name}, ${t.toLowerCase()}, för deras talan.` },
+    text: (l, t) => `De gamla ätterna råder över byn, och ${l.name}, ${t.toLowerCase()}, för deras talan.` },
   { namn: 'Folkting', passar: () => true,
     text: (l, t) => `Byn råder över sig själv vid tinget. ${l.name}, ${t.toLowerCase()}, för ordet, men beslutet är folkets. Faller ${hon(l)}, väljer byn en ny bland dem som kan leda.` },
 ];
 // vågskålarna: sederna som låses upp av styret, i den ordning de visas. steg = när en låst vågskål byggs
 export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[] = [
-  { id: 'rang', sed: 'rang', namn: 'Allmogen – Envälde' },
+  { id: 'rang', sed: 'rang', namn: 'Folkstyre – Envälde' },
   { id: 'fortjanst', sed: 'fortjanst', namn: 'Förtjänst – Härkomst' },
   { id: 'fejd', sed: 'fejd', namn: 'Förlikning – Fejd' },
   { id: 'andlig', sed: 'andlig', namn: 'Världslig – Andlig' },

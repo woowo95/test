@@ -1,3 +1,4 @@
+import { tal } from './ord';
 import { balans } from './balans';
 import { count, living, log } from './folk';
 import { motgangNu } from './motgang';
@@ -47,7 +48,7 @@ export function stepTorka(s: State) {
       st.tomma.push(...nya);
       vattnetAndrat(s, fore);
       count(s, 'sjon sjunker');
-      log(s, nya.length ? `Torkan håller i sig. Sjön har dragit sig tillbaka och ${nya.length === 1 ? sjoNamn(s, nya[0]).toLowerCase() + ' har' : nya.length + ' tjärnar har'} torkat ut.` : 'Torkan håller i sig. Sjön har dragit sig tillbaka från stranden.', 'world');
+      log(s, nya.length ? `Torkan håller i sig. Sjön har dragit sig tillbaka och ${nya.length === 1 ? sjoNamn(s, nya[0]).toLowerCase() + ' har' : tal(nya.length) + ' tjärnar har'} torkat ut.` : 'Torkan håller i sig. Sjön har dragit sig tillbaka från stranden.', 'world');
       if (nya.length) count(s, 'sjo torkat ut', nya.length);
     }
     return;

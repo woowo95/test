@@ -1,3 +1,4 @@
+import { han } from './ord';
 // ---------- tatueringarna (steg 10.7.5, Porträttens byggsätt: Tatueringar) ----------
 // En vuxen som varit med om något stort kan få ett mönster i pannan, på kinden eller på halsen. Motiven är rader i registret
 // TATUERINGAR: händelsen, platsen och seden som drar. När händelsen fastnat hos en vuxen vill hen ha märket, starkast de första
@@ -10,7 +11,6 @@ import { DAY, MIN, Person, State } from './typer';
 import type { Sed } from './seder';
 import { getable, takeMaterial } from './behov';
 import { personHand } from './personlogg';
-import { han } from './ord';
 import { rnd } from './slump';
 import { tatKrok } from './uppvaxt';
 

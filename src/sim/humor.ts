@@ -95,7 +95,7 @@ export const UTBROTT = {
   tjura: { grad: 1, act: 'tjura', min: 60, spann: 60, text: 'går undan och tjurar' },
   supa: { grad: 2, act: 'supa', min: 60, spann: 60, text: 'super sig full' }, // när byn har vin eller öl (steg 9.6.15, rus.ts)
   elak: { skuld: 0.2, angrar: 'var elak mot', grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: 'nast', hard: true },
-  skitsnack: { grad: 2, act: 'skvallra', min: 10, spann: 10, text: 'snackar skit med', mal: 'skvaller', annars: 'elak' }, // steg 3.3.3 (rykten.ts)
+  skitsnack: { grad: 2, act: 'skvallra', min: 10, spann: 10, text: 'talar illa om andra med', mal: 'skvaller', annars: 'elak' }, // steg 3.3.3 (rykten.ts)
   krossa: { grad: 2, act: 'krossa', min: 10, spann: 10, text: 'slår sönder', ting: true, hard: true },
   fly: { grad: 2, act: 'fly', min: 90, spann: 90, text: 'flyr ut i skogen' },
   badd: { grad: 3, act: 'badd', min: 240, spann: 240, text: 'lägger sig och orkar inte gå upp' },
@@ -199,7 +199,7 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
   if (mal) {
     const van = k === 'slut' && p.partner !== mal.id;
     const op0 = getRel(s, p, mal).op; // relationen innan, till skulden
-    log(s, `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);
+    log(s, rad.grad >= 4 ? `I vredesmod ${rad.text.split(' ')[0]} ${p.name}${rad.text.includes(' ') ? ' ' + rad.text.split(' ').slice(1).join(' ') : ''} ${mal.name}.` : `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]); // ett svårt dåd står för sig, utan "mår dåligt" (steg 12.1.121)
     if (van) { personHand(s, p, 'relation', `Bröt vänskapen med ${mal.name}.`, 'ont'); personHand(s, mal, 'relation', `${p.name} bröt vänskapen.`, 'ont'); } // steg 9.2.107
     if (k === 'elak') {
       think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
@@ -216,7 +216,7 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
       else { r.op = clamp(r.op - HUMOR.brytOp, -100, 100); think(mal, `${p.name} bröt vänskapen`, -HUMOR.brytTanke, s.now, HUMOR.brytDygn * DAY); }
     } else if (rad.vald) slar(s, p, mal, k, rad.vald);
     if (rad.skuld) angra(s, p, mal, rad.skuld, van ? 'bröt vänskapen med' : rad.angrar ?? rad.text, op0); // efter det, så att skammen räknar dem som såg
-  } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? ' sin egen ' : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
+  } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? (SAKER[ting.k]?.ett ? ' sitt eget ' : ' sin egen ') : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
 }
 
 // symbolen för utbrottets grad (steg 3.10.13): utbrottet är uppgiftens task.tool (val.ts)

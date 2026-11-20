@@ -1,3 +1,4 @@
+import { horText } from './ord';
 // Notiserna (steg 5.4.3): små meddelanden om det som hänt, som ligger kvar tills spelaren tar bort dem och läses ett i taget.
 // Fem slag (Björn efter bildstil v105) i NOTIS_SLAG: samma brev med olika sigill (symbolen sym_notis_<slag>). Varje sorts
 // notis är en rad i NOTISER (slaget, rubriken, hur viktig den är). Byn sparar dem i s.notiser (en egen del i sparfilen, inte
@@ -81,6 +82,7 @@ export interface Notiser { nr: number; lista: Notis[] }
 
 export function notis(s: State, id: string, text: string, ids: number[] = [], plats?: { x: number; y: number }, ref: { fram?: number; match?: number; resa?: number; ton?: Ton | Record<number, Ton> } = {}) { // ref: framträdandet eller matchen raden pekar på; ton: god eller ond för dem den gäller, eller per person (personens händelser)
   if (!NOTISER[id]) throw new Error(`okänd notis: ${id}`);
+  horText('notis', text);
   const N = (s.notiser ??= { nr: 0, lista: [] }), ar = kalender(s, s.now).ar;
   let n = N.lista.find(x => x.id === id && x.ar === ar);
   if (!n) {

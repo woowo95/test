@@ -1,3 +1,5 @@
+import { styck } from '../../sim/ord';
+import { gen } from '../../sim/ord';
 import { areaCenter, larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { vana, pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, arvAnseende, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
@@ -201,7 +203,7 @@ function presHtml(p: Person) {
 function gangRad(p: Person) {
   const gf = gangDelar(s, p);
   return rad(p, 'gang', '🚶 Gångfart', `${bar(gf.fart, gf.fart < LAG.halsa ? 'low' : '')}<span>${Math.round(gf.fart * 100)} %</span>`, gf.delar.map(d => ({ namn: `${d.tecken} ${d.namn}`, v: d.v })), ' %',
-    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten tas gånger varandra.');
+    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten multipliceras med varandra.');
 }
 // livet före besöket hos en invånare i en väckt by (steg 11.13.16, vacktliv.ts): de döda föräldrarna och händelserna, senaste först
 const forrFam = (p: Person) => p.forr?.familj.length ? `<p class="muted">${p.forr.familj.map(f => `${esc(f.namn)} (${f.roll === 'mor' ? 'mor' : f.roll === 'far' ? 'far' : f.roll}, död)`).join(', ')}</p>` : '';
@@ -465,7 +467,7 @@ function ryktenHtml(p: Person) {
   const huvud = `<div class="anshuvud klick falla" ${fallUt(hid)} title="${esc(sam)}">${ansStapel(p.id)}<span class="ansskala"><span>Dåligt</span><span>Neutralt</span><span>Gott</span></span></div>${hjalpText(hid, `<p class="muted small">${esc(sam)}</p>`)}`;
   // arvet (steg 10.8.5): en del av det byn tycker om mor och far räknas i anseendet
   const arv = arvAnseende(s, p.id).a, fo = [p.father, p.mother].map(id => id !== undefined ? byId(s, id) : undefined).filter((q): q is Person => !!q);
-  const arvRad = Math.abs(arv) >= 0.05 ? `<p class="muted small ansarv" title="${esc(`En del av det byn tycker om ${fo.map(q => q.name).join(' och ')} räknas i ${p.name}s anseende`)}"><span class="riktn${arv > 0 ? '' : ' ned'}">${arv > 0 ? '▲' : '▼'}</span> Ärvt från föräldrarna: ${fo.map(q => pLink(q)).join(' och ')}</p>` : '';
+  const arvRad = Math.abs(arv) >= 0.05 ? `<p class="muted small ansarv" title="${esc(`En del av det byn tycker om ${fo.map(q => q.name).join(' och ')} räknas i ${gen(p.name)} anseende`)}"><span class="riktn${arv > 0 ? '' : ' ned'}">${arv > 0 ? '▲' : '▼'}</span> Ärvt från föräldrarna: ${fo.map(q => pLink(q)).join(' och ')}</p>` : '';
   const bid = (k: IntryckTyp) => `by-${p.id}-${k}`, upp = (k: IntryckTyp) => INTRYCK[k].tecken > 0;
   const vemMinne = new Map<IntryckTyp, { q: Person; e: NonNullable<ReturnType<typeof intryckOm>> }[]>(); // en gång per intryck och omritning
   const vem = (k: IntryckTyp) => { let v = vemMinne.get(k); if (!v) vemMinne.set(k, v = living(s).flatMap(q => { const e = intryckOm(q, p.id, k); return e ? [{ q, e }] : []; }).sort((a, b) => b.e.v * b.e.c - a.e.v * a.e.c)); return v; };
@@ -510,7 +512,7 @@ const skickRing = (c: number, hand: boolean, stor: boolean) => ringSvg(c, (stor 
 function gearHtml(p: Person) {
   const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand && t.bar !== p.id);
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
-  const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.krok !== undefined ? `i ${byId(s, t.krok)?.name ?? 'någon'}s bälte` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
+  const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.krok !== undefined ? `i ${gen(byId(s, t.krok)?.name ?? 'någon')} bälte` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
   const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 4)}</span>` : ''}${skickRing(t.c, cls.includes('hand'), px > 20)}</span>`;
   const t = uppgiftVid(p), borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), ih = bordaIHander(s, p, t, u), kg = (n: number) => `${kortTal(n)} kg`; // vikten i kg överallt (steg 11.1.49)
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
@@ -564,7 +566,7 @@ function stockHtml(p: Person) {
   const own = Object.entries(ownedStock(s, p)).filter(([k, n]) => n >= 0.5 && STACK[k]).sort((a, b) => b[1] - a[1]);
   if (!own.length) return '';
   const txt = fmtN;
-  return `<p class="utretik">Hens del i förrådet</p><div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${txt(n)} ${sakNamn(k).toLowerCase()}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
+  return `<p class="utretik">Hens del i förrådet</p><div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${styck(n, k, txt)}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
 }
 // kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.
 function knowledgeHtml(p: Person) {

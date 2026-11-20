@@ -250,14 +250,14 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
 }
 // paret a och b går isär (när relationen blivit för dålig, eller i ett utbrott, humor.ts). En skilsmässa tar hårdare
 export function skiljas(s: State, a: Person, b: Person, r: Rel) {
-  const gift = r.gift !== undefined, f = gift ? RELT.skiljTanke : 1, ord = gift ? 'Skilde sig' : 'Separerade', now = s.now;
+  const gift = r.gift !== undefined, f = gift ? RELT.skiljTanke : 1, ord = gift ? 'Skilde sig från' : 'Gick skilda vägar med', now = s.now;
   a.partner = undefined; b.partner = undefined; r.rom = SAMTAL.skiltRom; r.par = undefined; r.gift = undefined;
   log(s, gift ? `${a.name} och ${b.name} skilde sig.` : `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
   personHand(s, a, 'relation', gift ? `Skilde sig från ${b.name}.` : `Gick skilda vägar med ${b.name}.`, 'ont'); personHand(s, b, 'relation', gift ? `Skilde sig från ${a.name}.` : `Gick skilda vägar med ${a.name}.`, 'ont'); // steg 9.2.107
   if (gift) count(s, 'skilsmassa');
   barnTill(s, a, b, 'skilsmassa'); // barnen minns det (steg 3.1.2)
   upplev(s, b, 'lamnad', a.name); // den som blev lämnad (steg 4.1.1.2)
-  think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
+  think(a, `${ord} ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
 }
 import { berattaSmak, dampning } from './rykten';
 import { RUS, rusAv } from './rus';

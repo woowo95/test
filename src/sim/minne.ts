@@ -1,3 +1,4 @@
+import { sakOrd } from './ord';
 import { bynsMitt, omrade, utanforByn } from './omrade';
 import { strandNu, vattenNu } from './sjo';
 import { PLATS } from './plats';
@@ -413,7 +414,7 @@ export function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
   if (l.k === 'pris') delade('pris', 'silver', prisOm(s, l)); // samtalets ämne (steg 3.9.5, 10.5.15)
-  else delade(l.k === 'fara' ? 'fara' : 'plats', LARDOMAR[l.k].ikon, l.k === 'fara' ? 'en farlig plats' : LARDOMAR[l.k].vad); // samtalets ämne (steg 3.9.5)
+  else delade(l.k === 'fara' || l.k === 'flod' ? 'fara' : 'plats', LARDOMAR[l.k].ikon, l.k === 'fara' ? (l.om?.endsWith(' där') ? `platsen där ${l.om.slice(0, -4)}` : 'en farlig plats') : l.k === 'flod' ? 'översvämningen' : LARDOMAR[l.k].vad); // högvattnet är en fara, inte en plats där något finns (steg 12.1.118) // samtalets ämne (steg 3.9.5)
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a); // mindre på en lögnare (steg 3.3.3)
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt
@@ -517,7 +518,7 @@ export function describe(s: State, l: Lardom) {
 const byNamn = (s: State, nr: number) => s.varld?.rader?.find(r => r.nr === nr)?.namn ?? 'en by';
 const GR = 'grupp:';
 const slagNamn = (sl: string) => (sl.startsWith(GR) ? prisKrok.gruppNamn(sl.slice(GR.length)) : sakNamn(sl)).toLowerCase();
-const prisOm = (s: State, l: Lardom) => `vad ${byNamn(s, l.a)} betalar för ${slagNamn(l.sl!)}`;
+const prisOm = (s: State, l: Lardom) => `vad ${byNamn(s, l.a)} betalar för ${l.sl!.startsWith(GR) ? slagNamn(l.sl!) : sakOrd(l.sl!)[2]}`; // "för flintknivar", "för kor" (steg 12.1.118)
 // p lär sig byns pris på slaget med säkerheten c (1 = egen affär), av src (den som berättade) eller själv
 export function larPris(s: State, p: Person, by: number, sl: string, c: number, src?: number) {
   const v = prisKrok.radPris(s, by, sl), e = findL(p, 'pris', by, sl), fel = !!e && Math.abs(e.v - v) >= MINNE.prisFel - 1e-9;

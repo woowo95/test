@@ -1,3 +1,4 @@
+import { genS, styck } from '../../sim/ord';
 import { DAY, FALT_STEG, GRODOR, MARK_FORE, ODLING, VAXTSJUK, byId, bordSkord, bordighet, faltById, faltKlar, faltRuta, froTillbaka, fuktAv, fuktFaktor, grodaPa, iIstiden, kalender, kravFaktor, living, rutorAv, skordAndel, temperature, vaxtFaktor } from '../../sim';
 import type { GrodaDef } from '../../sim';
 import { iconImg } from '../../ikoner';
@@ -20,7 +21,7 @@ function faltHtml() {
   const antal = f.steg === 'mogen' ? f.sadda ?? f.n : f.n, arbetar = living(s).filter(p => p.task?.act === 'odla' && p.task.ref === f.id);
   return `
     <div class="phead">${iconImg(d ? (f.steg === 'mogen' ? d.sak : 'grodd') : 'odling', 32)}<div><h2>Fält</h2>
-    <p class="muted">${ag ? `${pLink(ag)}s familj` : 'Ingen äger det'} · ${f.n} rutor (${Math.min(f.w, f.n)} × ${rader})</p></div>${faltOm()}
+    <p class="muted">${ag ? `${pLink(ag)}${genS(ag.name)} familj` : 'Ingen äger det'} · ${f.n} rutor (${Math.min(f.w, f.n)} × ${rader})</p></div>${faltOm()}
     <h3>Just nu</h3><dl class="kv">
       <dt>${esc(FALT_STEG[f.steg].namn)}</dt><dd>${bar(faltKlar(f))}<span>${Math.round(faltKlar(f) * 100)} %</span></dd>
       ${f.steg !== 'vaxer' ? `<dt>Rutor klara</dt><dd>${f.klara} av ${antal}</dd>` : ''}
@@ -46,7 +47,7 @@ function markHtml(f: NonNullable<ReturnType<typeof faltById>>, k: number) {
 function rutaHtml() {
   const f = faltById(s, ui.faltId), k = ui.faltRuta;
   if (!f || k >= f.n) return '<p class="muted">Fältet har vuxit igen med gräs.</p>';
-  const ag = byId(s, f.agare), vid = ag ? `På ${pLink(ag)}s fält` : 'På ett fält';
+  const ag = byId(s, f.agare), vid = ag ? `På ${pLink(ag)}${genS(ag.name)} fält` : 'På ett fält';
   const ru = rutorAv(f)[k];
   if (!ru?.g || !grodaPa(f, k)) return `
     <div class="phead">${iconImg('odling', 32)}<div><h2>Ruta på fältet</h2>
@@ -69,7 +70,7 @@ function rutaHtml() {
       ${mogen ? `<dt>Skörda</dt><dd>${over > 0 ? `inom ${durTxt(over)}, sedan blir den övermogen` : `övermogen, ${Math.round(a * 100)} % kvar`}</dd>`
         : `<dt>Mognar</dt><dd>${mogenOm}</dd>`}
       ${sjuk ? `<dt>Sjuk</dt><dd>sjukdomen sprider sig till grannrutorna</dd>` : ''}
-      <dt>Ger</dt><dd title="Mer av en skicklig odlare">${iconImg(d.sak, 14)} ${fmtN(d.perRuta * a * bordSkord(s, faltRuta(f, k)))} och ${iconImg(d.fro, 14)} ${fmtN((mogen ? froTillbaka(s, f, k, d, ru.m) : d.fron) * a)} frön</dd>
+      <dt>Ger</dt><dd title="Mer av en skicklig odlare">${iconImg(d.sak, 14)} ${fmtN(d.perRuta * a * bordSkord(s, faltRuta(f, k)))} och ${iconImg(d.fro, 14)} ${styck((mogen ? froTillbaka(s, f, k, d, ru.m) : d.fron) * a, d.fro, fmtN)}</dd>
       <dt>Frosten</dt><dd>${flerarig ? 'dör inte av frosten: vilar i kylan och i istiden, och växer igen efter skörden' : 'dör när det blir kallare än ' + d.frost + ' °C, och i istiden'}</dd>
     </dl>${markHtml(f, k)}`;
 }

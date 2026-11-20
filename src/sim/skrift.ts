@@ -437,7 +437,7 @@ export function skrivVal(s: State, p: Person, at: { x: number; y: number }) {
   const ljus = skrivLjus(s, at.x, at.y);
   if (ljus < SKRIFT.ljusMin || !harAtt(s)) return undefined;
   const l = skrivLust(s, p);
-  return l && l.w > 0 ? { w: l.w * ljus * SKRIFT.fritid, slag: l.slag, min: l.fran ? SKRIFT.kopiaMin : SKRIFTER[l.slag].min ?? SKRIFT.skrivMin, why: l.fran ? 'Vill skriva av en karta' : l.slag === 'karta' ? 'Vill rita en karta' : l.slag === 'lardom' ? 'Vill skriva ner det hen vet' : l.lag ? `Vill skriva ner lagen ${LAGAR[l.lag.id]!.namn.toLowerCase()}` : l.om ? `Vill skriva om ${l.om.namn}` : 'Vill skriva' } : undefined;
+  return l && l.w > 0 ? { w: l.w * ljus * SKRIFT.fritid, slag: l.slag, min: l.fran ? SKRIFT.kopiaMin : SKRIFTER[l.slag].min ?? SKRIFT.skrivMin, why: l.fran ? 'Vill skriva av en karta' : l.slag === 'karta' ? 'Vill rita en karta' : l.slag === 'lardom' ? `Vill skriva ner det ${han(p)} vet` : l.lag ? `Vill skriva ner lagen ${LAGAR[l.lag.id]!.namn.toLowerCase()}` : l.om ? `Vill skriva om ${l.om.namn}` : 'Vill skriva' } : undefined;
 }
 const tingXY = (s: State, t: Ting) => { const q = t.hos !== undefined ? byId(s, t.hos) : undefined; return q ? { x: q.x, y: q.y } : t.x !== undefined ? { x: t.x + 0.5, y: t.y! + 0.5 } : undefined; };
 const kanBev = (q: Person, om: number, b: Bevis) => !!q.intryck?.some(e => e.om === om && e.bev?.some(x => x.h === b.h && x.t === b.t));

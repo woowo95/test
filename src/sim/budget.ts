@@ -1,3 +1,4 @@
+import { antal, tal } from './ord';
 // ---------- styrets budget (steg 10.5.7) ----------
 // Med skattelagen bestämmer styret vad det byn äger går till. Budgeten är delar med en vikt var (0 till 1 i steg om en fjärdedel);
 // varje del är en rad i registret BUDGET med vad delens arbeten saknar. En gång per dygn (ett år i spelet) delas varje material
@@ -28,7 +29,6 @@ import { TAS_UPP, budgetBortKrok } from './lagar';
 import { knows } from './teknik';
 import { forsorjAlder } from './skatt';
 import { RYKTE } from './rykten';
-import { sakNamn } from './saker';
 import type { Tro } from './religion';
 
 export const BUDG = balans('budget', {
@@ -127,7 +127,7 @@ export const BUDGET: Record<string, BudgetDef> = {
       let gav = 0;
       for (const p of ss) { const m = fromByn(s, k, per, p.id); if (m >= 1) { const r = getRel(s, p, l); r.op = clamp(r.op + BUDG.gavaOp * m, -100, 100); count(s, 'budgetGava', m); gav += m; } }
       if (gav < 1) return 0;
-      log(s, `${l.name} gav ${ss.length === 1 ? ss[0].name : `${ss.length} av sitt folk`} ${per} ${sakNamn(k).toLowerCase()} var ur byns förråd.`, 'world', [l.id]);
+      log(s, `${l.name} gav ${ss.length === 1 ? ss[0].name : `${tal(ss.length)} av sitt folk`} ${antal(per, k)} var ur byns förråd.`, 'world', [l.id]);
       return gav;
     },
     vill: (s, p) => { const l = ledareOf(s); if (!l) return 0; return p === l ? 1 : stodjer(s).includes(p) ? 0.75 : 0; },

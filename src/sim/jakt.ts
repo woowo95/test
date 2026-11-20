@@ -1,3 +1,4 @@
+import { honom } from './ord';
 import { doljISno } from './utrustning';
 import { farorNu } from './kult';
 import { heligtAvstar } from './kultlatt';
@@ -328,7 +329,7 @@ function vildsvinSlut(s: State, efter: Efter, g: KartStrid) {
     const tid = SLAGSMAL.minst * SEC;
     if (falld && !bar && k.lage === 'strid') { // den första som står kvar styckar det och bär hem det första stycket
       gjort(s, q, 'vildsvin');
-      if (forstaGang(s, 'vildsvin')) log(s, `${q.name} fällde byns första vildsvin, när det vände sig mot hen.`, 'world', [q.id]);
+      if (forstaGang(s, 'vildsvin')) log(s, `${q.name} fällde byns första vildsvin, när det vände sig mot ${honom(q)}.`, 'world', [q.id]);
       const t: Task = { act: 'jakt', phase: 'do', tx: q.x, ty: q.y, until: s.now + tid, carry: 0, items: { vildsvin: 1 }, why: 'Bär hem ett fällt vildsvin' };
       styckaFallt(s, q, t, 'vildsvin');
       q.task = t; bar = true;

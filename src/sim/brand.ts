@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { kartaBorta } from './ort';
 import { han, mark, tal } from './ord';
 import { tabortBuske } from './buskar';
@@ -581,7 +582,7 @@ export function brinnerSteg(s: State, dtSec: number) {
       const t = pl[Math.floor(ur(s, p.id, 3875) * pl.length)];
       s.ting = tingOf(s).filter(q => q !== t); kartaBorta(s, t);
       count(s, 'brinner plagg');
-      log(s, `${p.name}s ${SAKER[t.k]?.namn ?? t.k} brann upp.`, 'world', [p.id]);
+      log(s, `${gen(p.name)} ${SAKER[t.k]?.namn ?? t.k} brann upp.`, 'world', [p.id]);
     }
   }
 }

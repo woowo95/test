@@ -1,3 +1,4 @@
+import { antal, och } from './ord';
 // ---------- skulden och förlåtelsen (steg 10.8.1–10.8.3, Kunskap och lärdomar: Skuld och förlåtelse) ----------
 // Den som i ett utbrott gjort någon illa bär en skuld (humor.ts skapar den). Den tynger humöret och bleknar. Den som bär en
 // skuld väljer hellre den hen gjort illa att samtala med och ber om förlåtelse med en botgåva ur det hen har över
@@ -12,7 +13,6 @@ import { Anger, DAY, HOUR, Person, State } from './typer';
 import { Vara, flytta, gavaKlar } from './byte';
 import { behovAv, payable, personPart } from './behov';
 import { grundvarde } from './varde';
-import { SAKER } from './saker';
 
 export const SKULD = balans('skuld', {
   bas: 0.15, // styrkan: bas × allvaret × empatin / 10 × hur mycket man bryr sig × (1 + andelen vuxna som vet), ...
@@ -97,7 +97,7 @@ export function botGava(s: State, g: Person, allv: number): Vara[] | undefined {
   }
   return ut;
 }
-const varorNamn = (v: Vara[]) => v.map(w => `${w.t || w.n === 1 ? (SAKER[w.k]?.ett ? 'ett' : 'en') : w.n} ${(SAKER[w.k]?.namn ?? w.k).toLowerCase()}`).join(' och ');
+const varorNamn = (v: Vara[]) => och(v.map(w => antal(w.t ? 1 : w.n, w.k))); // utan siffror (steg 12.1.121)
 // a samtalar med b, och det är inget gräl: den av dem som bär en skuld mot den andra kan be om förlåtelse. Chansen växer
 // tillbaka efter ett försök. Den som inget har över ber inte nu
 export function beOmForlatelse(s: State, a: Person, b: Person) {
