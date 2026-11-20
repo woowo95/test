@@ -73,3 +73,35 @@ function nyaTankar(): [string, boolean][] {
     ['den som inte förlorat något får den inte', !har(a, 'Förlorade allt')],
   ];
 }
+
+SCENARIER.drommar = {
+  text: 'Drömmar på morgonen (steg 12.1.132, drommar.ts): den som sover drömmer ur det hen bär på (sorgen, faran, att ha det bra), registret DROMMAR, och den som vaknat har drömmen som tanke',
+  kor: () => {
+    const bas = testBy(20);
+    // en natt i taget: hen sover i åtta timmar och vaknar, tills drömmen kommit (högst 40 nätter)
+    const natter = (forbered: (s: SIM.State, p: SIM.Person) => void) => {
+      const s = SIM.cloneState(bas), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+      p.thoughts = []; delete p.sorg; forbered(s, p);
+      const sov = { ...(p.task ?? {}), act: 'sova', phase: 'do' } as SIM.Task;
+      for (let n = 0; n < 40; n++) {
+        p.task = sov; for (let h = 0; h < 8; h++) { s.now += SIM.HOUR; SIM.drommar(s, 3600); }
+        p.task = undefined; s.now += SIM.HOUR; SIM.drommar(s, 3600);
+        const t = p.thoughts.find(x => /^Dröm|mardröm/.test(x.text) && x.until > s.now);
+        if (t) return { text: t.text, n: n + 1, kvar: !!p.drom };
+      }
+      return { text: '', n: 40, kvar: !!p.drom };
+    };
+    const sorg = natter((s, p) => { p.sorg = [{ namn: 'Ulv', vem: -5, ord: 'sin vän', v: -0.2, dygn: 5, t0: s.now }]; p.health = 0.3; });
+    const fara = natter((s, p) => { SIM.tanke(p, 'anfollsVargar', s.now, { v: -0.2, tid: 400 * SIM.HOUR }); p.health = 0.3; });
+    const gott = natter((_s, p) => { for (const k of ['hunger', 'rest', 'social', 'health', 'warm', 'torst'] as const) p[k] = 1; p.thoughts = Array.from({ length: 6 }, (_, i) => ({ text: 'Glad ' + i, v: 0.3, until: Infinity })); });
+    const inget = natter((_s, p) => { p.health = 0.3; p.hunger = 0.3; });
+    return [
+      [`den som sörjer drömmer om den döde (${sorg.text}, natt ${sorg.n})`, sorg.text === 'Drömde om Ulv'],
+      [`den som nyss varit i fara får en mardröm (${fara.text}, natt ${fara.n})`, fara.text === 'Hade en mardröm'],
+      [`den som har det bra drömmer gott (${gott.text}, natt ${gott.n})`, gott.text === 'Drömde något gott'],
+      [`den som inte bär på något drömmer inte (${inget.text || 'ingen dröm'} på 40 nätter)`, !inget.text],
+      ['drömmen blir en tanke först när hen vaknat, och sedan är den borta', !sorg.kvar && !fara.kvar],
+      ['varje dröm i DROMMAR blir en tanke i TANKAR', Object.values(SIM.DROMMAR).every(d => d.tanke in SIM.TANKAR)],
+    ];
+  },
+};

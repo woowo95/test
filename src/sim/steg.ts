@@ -451,7 +451,8 @@ export const TAKTER: Takt[] = [
   { namn: 'morkHumor', sek: 3600, fn: s => { for (const p of living(s)) morkHumor(s, p); } },
   { namn: 'facklorTimme', sek: 3600, fn: s => { facklorTimme(s); } },
   { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
-  { namn: 'tankarTimme', sek: 3600, fn: s => { tankarTimme(s); } }, // tankarna ur läget: kläderna, hemmet, ljuset, stolen, hemlängtan (steg 12.1.131, tankelage.ts)
+  { namn: 'tankarTimme', sek: 3600, fn: s => { tankarTimme(s); } },
+  { namn: 'drommar', sek: 3600, fn: (s, dt) => { drommar(s, dt); } }, // den som sover drömmer, den som vaknat har drömmen som tanke (steg 12.1.132, drommar.ts) // tankarna ur läget: kläderna, hemmet, ljuset, stolen, hemlängtan (steg 12.1.131, tankelage.ts)
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
   { namn: 'omtanken', sek: 3600, fn: s => { omtankeTimme(s); lonOmtanke(s); } },
   { namn: 'runstenarna', sek: 3600, fn: s => runstenTimme(s) }, // de som går förbi läser stenarna (skrift.ts, steg 10.6.1)
@@ -1764,3 +1765,4 @@ import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
 import { tanke } from './tankar';
 import { tankarTimme } from './tankelage';
+import { drommar } from './drommar';

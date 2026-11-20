@@ -198,6 +198,10 @@ export const TANKAR = {
   hordeKvade: rad({ text: (a: { skald: string }) => `Hörde ${gen(a.skald)} kväde om tron`, tid: 12 * HOUR, nar: 'skalden kvad om tron (kyrka.ts)' }),
   hordeSorgkvade: rad({ text: (a: { skald: string; om: string }) => `Hörde ${gen(a.skald)} sorgkväde om ${a.om}`, tid: 12 * HOUR, nar: 'skalden kvad om den döde (kyrka.ts)' }),
   forstaSkord: rad({ text: 'Gav det första ur skörden till tron', tid: 12 * HOUR, nar: 'budet om det första ur skörden (kyrka.ts)' }),
+  // ---- drömmarna (steg 12.1.132, DROMMAR i drommar.ts)
+  dromdeOm: rad({ text: (a: { namn: string }) => `Drömde om ${a.namn}`, v: 0.03, tid: 8 * HOUR, nar: 'den som sörjer vaknar efter en dröm om den döde' }),
+  mardrom: rad({ text: 'Hade en mardröm', v: -0.08, tid: 8 * HOUR, nar: 'den som nyss varit i fara vaknar efter en mardröm' }),
+  godDrom: rad({ text: 'Drömde något gott', v: 0.05, tid: 8 * HOUR, nar: 'den som har det bra vaknar efter en god dröm' }),
   // ---- de nya systemen (steg 12.1.131): djuren, resan, olyckan, kroppen, kläderna, hemmet, odlingen, styret och livet
   mittDjurDog: rad({ text: 'Mitt djur dog', v: -0.08, tid: DAY, nar: 'ägaren, eller den som matat det mest, när ett tamdjur dör (tamdjur.ts)' }),
   fickUnge: rad({ text: (a: { unge: string }) => `Fick ${a.unge}`, v: 0.05, tid: 12 * HOUR, nar: 'ägaren när ett av djuren får en unge, till exempel Fick en kalv (boskap.ts)' }),

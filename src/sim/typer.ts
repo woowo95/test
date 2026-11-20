@@ -275,6 +275,7 @@ export interface Person {
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
   raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i RADD_AKT (steg 8.4.10)
   thoughts: Thought[];
+  drom?: { k: import('./drommar').DromId; namn?: string }; // drömmen som blir en tanke när hen vaknar (steg 12.1.132, drommar.ts)
   x: number; y: number; task?: Task;
   fame: string[];
   hand?: import('./personlogg').PersonRad[]; // personens händelser, de senaste (steg 9.2.107, personlogg.ts)
