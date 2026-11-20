@@ -34,8 +34,7 @@ import { kronikaBer, loggBer, personFalt } from './berattelser';
 import { balans } from './balans';
 import { GANG } from './gang';
 import { blodFaktor, GADELAR, HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, syn } from './halsa';
-import { STRIDSDJUR, djurStrid, kampeSort } from './kampar';
-export { STRIDSDJUR };
+import { djurStrid, kampeSort } from './kampar';
 export type { DjurStrid } from './kampar';
 import { KLAD_SLAG, SAKER, sakNamn } from './saker';
 import { kladSkyddStrid, kladTung } from './klader';
@@ -240,7 +239,6 @@ const DELAR = Object.keys(TRAFFDEL) as Kroppsdel[];
 // per klädesplagg i saker.ts: delarna det täcker och hur stor del av skadan det tar per slag, plaggets skydd gånger
 // materialets (PLAGG och KLADMATERIAL i klader.ts, steg 3.10.12). Rustningen kommer i 9.4.1
 export const SKYDD: Record<string, { delar: Kroppsdel[]; tar: Partial<Record<Slag, number>> }> = Object.fromEntries(KLAD_SLAG.flatMap(k => { const sk = kladSkyddStrid(k); return sk ? [[k, sk]] : []; }));
-export const KLADER_STRID = Object.keys(SKYDD);
 
 // ---------- avsikten (registret) ----------
 // vapen = man slåss med vapen (annars med händerna), nere = man slår den som ligger, slut = vad som avslutar striden för
@@ -908,7 +906,6 @@ export function stridText(st: Strid, r: StridRad): string {
 export const sidaNamn = (st: Strid, sd: 0 | 1) => { const n = st.kampar.filter(k => k.sida === sd).map(k => k.namn); return n.length <= 2 ? och(n) : `${n[0]} och ${tal(n.length - 1)} till`; };
 
 // ---------- rapporten efter striden ----------
-export const LAGE_ORD: Record<KampeLage, string> = { strid: 'står kvar', nere: 'ligger skadad', ger: 'gav upp', flykt: 'flydde', borta: 'flydde', dod: 'dog' };
 export interface StridRapport {
   vinnare: 0 | 1 | -1; tid: number;
   sidor: { sida: 0 | 1; namn: string; folk: { id: number; namn: string; lage: KampeLage; skador: string[]; slag: number; traffar: number }[] }[];
