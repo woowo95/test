@@ -7,11 +7,11 @@ import { antal, tal } from './ord';
 // bara delens arbeten tar av det; allt annat tar av det ingen del fått, som förut. Inget sparas: när nästa år delas blir det som är
 // kvar byns igen. Kyrkans del lämnas över till kyrkan och blir kyrkans (steg 10.3.17), och gåvorna ges direkt till dem som stöder
 // ledaren. När skattelagen införs finns inga delar; en del föreslås när det den gäller finns i byn, och varje vikt är en egen fråga.
-import { DAY, Person, State } from './typer';
+import { Person, State } from './typer';
 import type { Bit } from './byggnad';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { ageOf, ALDER, count, getRel, isParent, living, log, relKey, think } from './folk';
+import { ageOf, ALDER, count, getRel, isParent, living, log, relKey } from './folk';
 import { kronika } from './historik';
 import { MATERIAL, bitsOf, husById } from './byggnad';
 import { needOf } from './bygg';
@@ -30,6 +30,7 @@ import { knows } from './teknik';
 import { forsorjAlder } from './skatt';
 import { RYKTE } from './rykten';
 import type { Tro } from './religion';
+import { tanke } from './tankar';
 
 export const BUDG = balans('budget', {
   gava: 5, // så mycket silver var och en som stöder ledaren får i gåva per år, när delen har en full vikt mot de andra
@@ -206,7 +207,7 @@ function matDygn(s: State, fick: Record<string, Record<string, number>>) {
   const g = delar.findIndex(d => d.id === 'gastabud');
   if (g >= 0 && fore[g] > 0 && kvar[g] <= 0) {
     b.fest = true; count(s, 'gastabud');
-    for (const p of living(s)) if (!p.gast) { p.missnoje = clamp((p.missnoje ?? 0) - BUDG.festMiss, 0, 1); think(p, 'Åt på gästabudet', BUDG.festGlad, s.now, DAY / 4); }
+    for (const p of living(s)) if (!p.gast) { p.missnoje = clamp((p.missnoje ?? 0) - BUDG.festMiss, 0, 1); tanke(p, 'gastabud', s.now, { v: BUDG.festGlad }); }
     const t = 'Byn höll gästabud.'; log(s, t, 'world'); kronika(s, t, 'ledare');
   }
 }

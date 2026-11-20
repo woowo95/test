@@ -39,7 +39,7 @@ export type { DjurStrid } from './kampar';
 import { KLAD_SLAG, SAKER, sakNamn } from './saker';
 import { kladSkyddStrid, kladTung } from './klader';
 import { clamp, rnd } from './slump';
-import { byId, count, getRel, log, ovning, relKey, stat, think } from './folk';
+import { byId, count, getRel, log, ovning, relKey, stat } from './folk';
 import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
@@ -1120,14 +1120,15 @@ export function efterStrid(s: State, st: Strid, k: Kampe, p: Person, mot: Person
   if (k.vada) { // vådaträffen: skytten minns det, och de som såg det tycker hen är en klåpare
     const offer = st.kampar.find(o => o.sida === k.sida && o !== k && st.logg.some(r => r.h === 'vada' && r.a === k.id && r.b === o.id));
     const q = offer && person(offer);
-    if (q) { think(p, `Träffade ${q.name} av misstag`, -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR); handelse(s, p, 'vadaskott', q); }
+    if (q) { tanke(p, 'vadaskott', s.now, { namn: q.name, v: -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR }); handelse(s, p, 'vadaskott', q); }
   }
   if (!lek && (k.lage === 'flykt' || k.lage === 'borta' || st.logg.some(r => r.h === 'avstar' && r.a === k.id)) && mot[0]) handelse(s, p, 'backade', mot[0]); // steg 3.7.9
   for (const q of mot) { const r = getRel(s, p, q); r.op = Math.max(-100, Math.min(100, r.op + (lek ? SLAGSMAL.lekOp : -SLAGSMAL.op / 2))); } // båda hållen: op/2 var
   for (const q of mot) if (p.id < q.id) minnsRel(s, p, q, lek ? 'lek' : 'slag'); // det relationen minns, en gång per par (steg 3.9.6)
   if (!lek) for (const q of vanner) if (p.id < q.id) minnsRel(s, p, q, 'sida');
-  if (!lek && vinnare !== -1) think(p, k.sida === vinnare ? `Vann slagsmålet mot ${mot[0].name}` : `Förlorade slagsmålet mot ${mot[0].name}`, k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+  if (!lek && vinnare !== -1) tanke(p, k.sida === vinnare ? 'vannSlagsmal' : 'forloradeSlagsmal', s.now, { namn: mot[0].name, v: k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR });
 }
 
 import { rusSmid, rusTraff } from './rus';
 import { kvOf } from './kvalitet';
+import { tanke } from './tankar';

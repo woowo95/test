@@ -12,7 +12,7 @@ import { FAGEL, FAGEL_UT, FLOCKARTER, KANINER, KANIN_UT, arFagel, dodaDjur, fagl
 import { lamnaFallt, styckaFallt } from './styckning';
 import { KartStrid, kartStridBorja } from './kartstrid';
 import { EFTER, Efter, STRIDSLAG } from './efterstrid';
-import { alive, byId, count, forstaGang, gjort, log, ovning, stat, think } from './folk';
+import { alive, byId, count, forstaGang, gjort, log, ovning, stat } from './folk';
 import { skada, syn } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
 import { KANIN } from './redskap';
@@ -27,6 +27,7 @@ import { snoPaMarken, vaderNu } from './vader';
 import { wearTool } from './agande';
 import { tecken } from './religion';
 import { kn, learnK, useK } from './kunskap';
+import { tanke } from './tankar';
 
 // ---------- jakten som strid (steg 3.7.3) ----------
 // Jägaren letar upp en kanin nära jaktplatsen och smyger sig fram. Kaninen ser hen på ett avstånd som beror på kaninens
@@ -325,7 +326,7 @@ function vildsvinSlut(s: State, efter: Efter, g: KartStrid) {
     const k = st.kampar.find(o => o.pid === q.id)!;
     slitKastat(s, q, st, k);
     ovning(q, 'narstrid', SLAGSMAL.ovning);
-    think(q, falld ? 'Fällde ett vildsvin som anföll' : 'Anfölls av ett vildsvin', falld ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+    tanke(q, falld ? 'falldeVildsvin' : 'anfollsVildsvin', s.now, { v: falld ? SLAGSMAL.vann : -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR });
     const tid = SLAGSMAL.minst * SEC;
     if (falld && !bar && k.lage === 'strid') { // den första som står kvar styckar det och bär hem det första stycket
       gjort(s, q, 'vildsvin');

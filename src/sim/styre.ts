@@ -1,6 +1,6 @@
 import { FANG, fangelseDygn, fangelseLedigt, satt } from './fangelse';
 import { honom, slaktOrd } from './ord';
-import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think, vuxnaOf } from './folk';
+import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, vuxnaOf } from './folk';
 import { efterlevs, lagForBrott, straffNu, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
@@ -31,6 +31,7 @@ import { temperature, vaderNu } from './vader';
 import { notis } from './notiser';
 import { homeless } from './byggnader';
 import { tecken } from './religion';
+import { tanke } from './tankar';
 
 // Styret (steg 3.5, "Ledarskap och makt" i designdokumentet).
 // Ledarskap är en teknik som man kommer på och lär ut i samtal (teknik.ts). Bara den som kan den kan bli ledare: när byn har
@@ -546,7 +547,7 @@ function doma(s: State, l: Person) {
     count(s, 'straff'); count(s, 'straff_' + steg);
     log(s, `${l.name} ${STRAFF[steg]} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
-    think(q, `Straffades av ${l.name}`, -STR.tanke * (steg + 1), now, STR.tankeDygn * DAY);
+    tanke(q, 'straffad', now, { namn: l.name, v: -STR.tanke * (steg + 1), tid: STR.tankeDygn * DAY });
     const familj = living(s).filter(f => f !== l && (f === q || f.partner === id || isKin(f, q))); // innan den utvisade har lämnat byn och partnern
     if (steg >= 2 && steg !== 4) q.straffad = true; // straffad hårt: slag, utvisning, tjänst, döden eller förlorad rätt (lagen rostStraffade)
     if (steg === 4) botes(s, q, drabbad && alive(drabbad) ? drabbad : undefined); // utan någon drabbad går böterna till byn
@@ -634,7 +635,7 @@ export function stepStyre(s: State) {
   const l = ledareOf(s);
   if (!l) return;
   s.styre!.ai = ai;
-  think(l, 'Leder byn', LED.tanke, s.now, 2 * HOUR);
+  tanke(l, 'lederByn', s.now, { v: LED.tanke });
   if (s.styre!.pabudAi !== ai || !TITELNAMN.has(s.styre!.titel ?? '')) seOverTitel(s, l);
   if (s.styre!.pabudAi !== ai) sattPabud(s, l, ai);
   // Förlikning – Fejd låses upp första gången en konflikt avgörs med våld (steg 8.3.5)

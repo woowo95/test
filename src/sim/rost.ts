@@ -7,7 +7,7 @@ import { gen } from './ord';
 import { DAY, Person, State } from './typer';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, stat, think, paKartan } from './folk';
+import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, stat, paKartan } from './folk';
 import { kronika } from './historik';
 import { ljugOm } from './rykten';
 import { SED_LIST, drar, influence } from './seder';
@@ -21,6 +21,7 @@ import { rivScenen } from './stationer';
 import { overstePrast } from './kyrka';
 import { lagGaller, utanRost } from './lagar';
 import { Tro, skalaV, troOf, troende } from './religion';
+import { tanke } from './tankar';
 
 export const ROST = balans('rost', {
   sparas: 14, // så många omröstningar sparas
@@ -310,7 +311,7 @@ function avslojad(s: State, l: Person, f: Fraktion, ang: Person) {
   st.frak = undefined; count(s, 'fraktion_avslojad');
   if (!q) return;
   log(s, `${ang.name} berättade för ${l.name} att ${q.name} och några till vill byta ledare.`, 'rel', [l.id, ang.id, q.id]);
-  think(ang, 'Angav en sammansvärjning', 0.02, s.now, 86400000);
+  tanke(ang, 'angav', s.now);
   const hard = 1 + (s.seder.v.rang ?? 0) + (s.seder.v.fejd ?? 0) * 0.5;
   if (hard >= MISS.hard) { utvisa(s, q, l, 'för att ha velat störta ledaren'); for (const id of f.med) { const m = byId(s, id); if (m && m !== q) m.missnoje = clamp((m.missnoje ?? 0) + 0.1, 0, 1); } }
   else { for (const id of f.med) { const m = byId(s, id); if (m) m.missnoje = (m.missnoje ?? 0) * 0.5; } log(s, `${l.name} gav efter för missnöjet och lyssnade på ${q.name}.`, 'rel', [l.id, q.id]); }

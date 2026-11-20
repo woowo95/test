@@ -5,7 +5,7 @@ import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
 import { blodas } from './blod';
-import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log, makeName, ovning, stat, think } from './folk';
+import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log, makeName, ovning, stat } from './folk';
 import { halsa, horsel, kanGa } from './halsa';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
@@ -46,6 +46,7 @@ import { viktOf } from './saker';
 import { LARMHOT, rollVid, viljaKrok } from './roller';
 import { KartStrid, djurIKartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
 import { EFTER, FAROR, MED, gastKrok } from './efterstrid';
+import { tanke } from './tankar';
 
 // ---------- rövarflocken (steg 4.4.5, Striden på kartan i designdokumentet) ----------
 // När byn är rik (Byns rikedom, varde.ts, med försvaret räknat emot) kan ett gäng rövare komma: folk från en grannklan som inte
@@ -331,7 +332,7 @@ function hors(s: State, fran: Person, r: number) {
   for (const o of living(s)) {
     if (o === fran || harLarm(s, o) || horsel(o) < LARM.dov || (!horn && avst(o, fran) > r)) continue;
     o.larm = { t: s.now, vad: 'rovare', storlek: Math.max(1, Math.round(st * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', o) - 1)))), led };
-    think(o, 'Hörde rop: rövare', -LARM.oro, s.now, LARM.oroTim * HOUR);
+    tanke(o, 'hordeRop', s.now, { vad: 'rövare', v: -LARM.oro, tid: LARM.oroTim * HOUR });
     count(s, 'larm_hort'); n++;
     if (!o.task) continue;
     if (o.task.act === 'sova') { if (vuxenKan(s, o)) { avbryt(s, o); o.task = undefined; count(s, 'rovarVackt'); } continue; }
@@ -556,7 +557,7 @@ function motet(c: RCtx, ta: boolean) {
     q.task.carry = 0; q.task.items = undefined; count(s, 'rovarTogBorda');
     log(s, `En rövare tog det ${q.name} bar.`, 'world', [q.id]);
   } else count(s, 'rovarHotade');
-  think(q, 'Hotades av rövare', -0.15, s.now, 6 * HOUR);
+  tanke(q, 'hotadRovare', s.now);
   q.gavSig = s.now; q.larmRoll = undefined; avbryt(s, q); q.task = undefined;
   g.gorTill = 0;
 }
@@ -808,7 +809,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
     slitKastat(s, p, st, k);
     if (svartSkadad(k)) svara.push(p.name);
     ovning(p, 'narstrid', SLAGSMAL.ovning);
-    think(p, vinnare === 0 ? 'Drev bort rövarna' : 'Slogs med rövare', vinnare === 0 ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+    tanke(p, vinnare === 0 ? 'drevBortRovare' : 'slogsRovare', s.now, { v: vinnare === 0 ? SLAGSMAL.vann : -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR });
   }
   const forst = bybor[0]?.k;
   if (forst) blodas(s, forst.x, forst.y, 'jakt', 1);

@@ -4,7 +4,7 @@ import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
-import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { klenod } from './kvalitet';
 import { DAY, HOUR, Person, Rel, State } from './typer';
@@ -229,7 +229,7 @@ function relEffekt(s: State, p: Person, om: number, k: IntryckTyp, d: number, pr
   // en prestation gör de flesta imponerade, men rivalen och den med låg empati avundsjuka (steg 3.3.2)
   if (prestation && d > 0 && (p.rivaler?.includes(om) || stat(p, 'empati', s.now) <= RYKTE.avundEmp)) {
     op = -op;
-    think(p, `Avundsjuk på ${q.name}`, -RYKTE.avundTanke, s.now, RYKTE.avundTim * HOUR);
+    tanke(p, 'avundsjuk', s.now, { namn: q.name, v: -RYKTE.avundTanke, tid: RYKTE.avundTim * HOUR });
     count(s, 'rykte_avund');
   }
   const r = getRel(s, p, q);
@@ -376,7 +376,7 @@ function ertappad(s: State, b: Person, a: Person, e: Intryck, h: 'logn' | 'overd
   r.op = clamp(r.op - RYKTE.ertappaOp, -100, 100);
   intryck(s, b, a, 'logn', HANDELSER[h].vikt, 1, { h, t: s.now, mot: e.om, motNamn: e.namn, sett: true }, undefined, 0, true);
   count(s, 'rykte_' + h);
-  if (h === 'logn') think(b, `${a.name} ljuger om mig`, RYKTE.lognTanke, s.now, RYKTE.lognTankeTim * HOUR);
+  if (h === 'logn') tanke(b, 'ljugerOm', s.now, { namn: a.name, v: RYKTE.lognTanke, tid: RYKTE.lognTankeTim * HOUR });
 }
 
 // skitsnack (utbrott av grad 2, humor.ts): den som mår dåligt hittar på något om den hen ogillar mest och berättar det för
@@ -630,7 +630,7 @@ export function smakMat(s: State, p: Person, per: Record<string, number>) {
   if (!k) return;
   if (ageOf(p, s.now) < ALDER.vuxen && living(s).some(q => isParent(q, p) && Math.hypot(q.x - p.x, q.y - p.y) < RYKTE.syn)) smaka(p, 'm:' + k, RYKTE.smakMat);
   const v = smakAv(p, 'm:' + k);
-  if (Math.abs(v) > RYKTE.smakKanns) think(p, v > 0 ? 'Fick äta något gott' : 'Fick äta något äckligt', v * RYKTE.smakTanke, s.now, RYKTE.smakTankeTim * HOUR);
+  if (Math.abs(v) > RYKTE.smakKanns) tanke(p, v > 0 ? 'smakGott' : 'smakAckligt', s.now, { v: v * RYKTE.smakTanke, tid: RYKTE.smakTankeTim * HOUR });
 }
 // favoriter och avsky (steg 9.6.6): en fin måltid ger tycke för huvudingrediensen, en matförgiftning avsmak för det man åt
 export const smakFinMaltid = (p: Person, k: string) => smaka(p, 'm:' + k, RYKTE.smakFin);
@@ -732,7 +732,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
       vet.add(q); hort.push(q);
       const st = Math.max(1, Math.round((fran.larm?.storlek ?? storlek) * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', q) - 1))));
       q.larm = { t: s.now, vad, storlek: st, led, ...(falskt ? { falskt: true as const } : {}) };
-      think(q, `Hörde rop: ${vad}`, -LARM.oro, s.now, LARM.oroTim * HOUR);
+      tanke(q, 'hordeRop', s.now, { vad, v: -LARM.oro, tid: LARM.oroTim * HOUR });
       count(s, 'larm_hort');
       if (rnd(s, 'rykte', q) < LARM.vidare) nya.push(q);
     }
@@ -746,3 +746,4 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
 // minns p ett larm nu?
 export const larmNu = (s: State, p: Person) => p.larm && s.now - p.larm.t < LARM.tim * HOUR ? p.larm : undefined;
 import { smakSak } from './ratter';
+import { tanke } from './tankar';

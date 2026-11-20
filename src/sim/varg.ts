@@ -13,7 +13,7 @@ import { bedFor } from './bygg';
 import { Bit, Rum, bitAt, bitsOf, blocked, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { upplev } from './uppvaxt';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat } from './folk';
 import { halsa, kanGa } from './halsa';
 import { Act, larmAvbryter } from './handlingar';
 import { brinnerNara, eldXY, eldarOf } from './eld';
@@ -650,7 +650,7 @@ function vargSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
     slitKastat(s, p, st, k);
     if (svartSkadad(k)) svara.push(p.name);
     ovning(p, 'narstrid', SLAGSMAL.ovning);
-    think(p, vinnare === 0 ? 'Klarade sig mot vargarna' : 'Anfölls av vargar', vinnare === 0 ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+    tanke(p, vinnare === 0 ? 'klaradeVargar' : 'anfollsVargar', s.now, { v: vinnare === 0 ? SLAGSMAL.vann : -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR });
     avbryt(s, p);
     const tid = SLAGSMAL.minst * SEC; // striden har redan pågått på kartan (steg 9.2.29)
     // den som står kvar efter en vargjakt bär hem en fälld varg (den som dödade den först)
@@ -692,6 +692,7 @@ export function vargSteg(s: State, dtSec: number) {
   if (!s.vargar.length) s.vargar = undefined;
 }
 import { VALP, hundSkaller, tamArt, tamDor, tamUte, vargValp } from './tamdjur';
+import { tanke } from './tankar';
 // slaget hålls kort medan vargarna är på kartan (klocka.ts, steg 10.2.14)
 SLAGHINDER.push(s => s.vargar?.length ? KLOCKA.slag : undefined);
 // vargar och bybor som kan nå varandra under ett slag, plus synhållet, eller en flock som anfaller: byn går i korta steg (steg 10.2.18)

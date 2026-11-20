@@ -1,6 +1,6 @@
 import { LAG, efterlevs, lagGaller } from './lagar';
 import { personHand } from './personlogg';
-import { think } from './folk';
+
 import { HOUR } from './typer';
 import { ALDER, ageOf, living, log } from './folk';
 import { clamp } from './slump';
@@ -203,14 +203,15 @@ export function pliktDelar(s: State, p: Person) {
 }
 export const VANA_AR = SED.vanaDygn; // vanorna bleknar på så här många dygn (år i spelet), tårtan i personens Tiden (steg 11.1.46)
 // Värna – Bruka (steg 8.4.13): fällda träd och dödade djur ger sämre humör för dem som drar åt Värna, mer ju starkare de tycker
-export function naturTanke(s: State, text: string) {
+export function naturTanke(s: State, t: 'tradFalldes') {
   if (!s.styre?.oppna?.includes('natur')) return;
-  for (const p of living(s)) { const d = drar(s, p).natur; if (d < SED.varnaFran) think(p, text, SED.varnaTanke * d, s.now, 2 * HOUR); }
+  for (const p of living(s)) { const d = drar(s, p).natur; if (d < SED.varnaFran) tanke(p, t, s.now, { v: SED.varnaTanke * d }); }
 }
 // tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
 export const HABIT_FADE = SED.vanaDygn * DAY;
 // vanornas timmar (vanor.ts): listan bredvid vanobjektet, och funktionerna som läser och skriver den
 import { habitShare, habitTotal } from './vanor';
+import { tanke } from './tankar';
 export { addHabit, habitShare, habitTotal, skrivVanor, vana, vanaSumma } from './vanor';
 // yrkestaggarna, i den ordning de prövas, med den minsta andel av tiden som ger taggen. Vilka handlingar som räknas till ett
 // yrke står i handlingens rad (yrke i handlingar.ts). Ett nytt yrke blir en rad här och ett yrke på handlingarna

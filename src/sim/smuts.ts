@@ -15,7 +15,7 @@ import { getMap } from './karta';
 import { STATION, Station, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
 import { clamp } from './slump';
 import { balans } from './balans';
-import { count, forstaGang, living, log, think } from './folk';
+import { count, forstaGang, living, log } from './folk';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { smutsOf } from './sjo';
@@ -25,6 +25,7 @@ import { bedTile } from './byggnader';
 import { vaderNu } from './vader';
 import { isFood } from './saker';
 import { amountOf } from './lager';
+import { tanke } from './tankar';
 
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
@@ -187,12 +188,12 @@ export function toaInfo(s: State, f: Flack) {
 export function akel(s: State, p: Person) {
   if (p.task?.act === 'sova' || p.task?.act === 'toa') return; // den som själv är på toa störs inte av smutsen
   const syns = smutsPunkter(s), R = SMUTS.ser;
-  if (syns.length && syns.some(q => Math.abs(q.x - p.x) <= R && Math.abs(q.y - p.y) <= R && Math.hypot(q.x - p.x, q.y - p.y) <= R)) think(p, 'Blod och smuts i byn', SMUTS.synHumor, s.now, SMUTS.synTim * HOUR);
+  if (syns.length && syns.some(q => Math.abs(q.x - p.x) <= R && Math.abs(q.y - p.y) <= R && Math.hypot(q.x - p.x, q.y - p.y) <= R)) tanke(p, 'blodSmuts', s.now, { v: SMUTS.synHumor, tid: SMUTS.synTim * HOUR });
   if (!s.flackar?.length) return;
-  if (toaNara(s, tileOf(p.x, p.y)) > SMUTS.akel) think(p, 'Äcklad av smuts', SMUTS.akelHumor, s.now, SMUTS.akelTim * HOUR);
+  if (toaNara(s, tileOf(p.x, p.y)) > SMUTS.akel) tanke(p, 'akelSmuts', s.now, { v: SMUTS.akelHumor, tid: SMUTS.akelTim * HOUR });
   // en toahög inomhus (steg 11.1.73): den som är i rummet eller sover där äcklas mer än av en hög ute i byn
   const i = tileOf(p.x, p.y), har = roomAt(s, i % W, Math.floor(i / W)), b = bedTile(s, p), sov = b === undefined ? undefined : roomAt(s, b % W, Math.floor(b / W));
-  if ((har || sov) && toaIRum(s, [har, sov])) think(p, 'Äcklad av toa i huset', SMUTS.akelHumor * SMUTS.toaInne, s.now, SMUTS.akelTim * HOUR);
+  if ((har || sov) && toaIRum(s, [har, sov])) tanke(p, 'akelToa', s.now, { v: SMUTS.akelHumor * SMUTS.toaInne, tid: SMUTS.akelTim * HOUR });
 }
 // en toahög som syns (starkare än SMUTS.akel) på golvet i något av rummen
 function toaIRum(s: State, rum: (ReturnType<typeof roomAt>)[]) {
@@ -270,7 +271,7 @@ export function toaBesok(s: State, p: Person, ref?: number) {
   if (t && isKlar(t) && stationDef(t.k)?.gor.includes('toa') && Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - p.y) < 1.5) {
     t.fyllt = latrinFyllt(t) + 1 / STATION.latrinRymmer; t.anv = s.now;
     count(s, 'latrinbesok');
-    think(p, 'Fick vara ifred', SMUTS.ifred, s.now, SMUTS.ifredTim * HOUR);
+    tanke(p, 'ifred', s.now, { v: SMUTS.ifred, tid: SMUTS.ifredTim * HOUR });
     if (t.fyllt >= 1 - 1e-9 && !harKompost(s)) fyllIgen(s, t); // med en kompost står den full tills någon tömmer den (steg 9.7.6)
     return;
   }

@@ -52,7 +52,6 @@ import { kannerPris, trorPris } from './minne';
 import { PAB, pabud } from './styre';
 import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid, UPPDRAGTAL } from './uppdrag';
 import { handelse, ryktbarhet } from './rykten';
-import { think } from './folk';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -67,6 +66,7 @@ import { TORKA } from './torka';
 import { BYREL, byHandelse, gavaRel } from './byrel';
 import { kronika } from './historik';
 import { antal, hans, honom, horText, och, spelTid, stor, tal } from './ord';
+import { tanke } from './tankar';
 // "en sak", "tre saker"
 const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
 
@@ -1398,8 +1398,8 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
     if (p) { handelse(s, p, 'turne', undefined, r?.namn ?? 'grannbyn'); kronika(s, `${p.name} kom hem från en turné till ${r?.namn ?? 'grannbyn'}${sl.turne ? ` med ${sl.turne} silver i gåva` : ''}.`, 'grannar'); }
   }
   if (u) for (const p of folk) {
-    if (u.hur === 'klart') { handelse(s, p, 'uppdrag', undefined, u.namn.toLowerCase()); think(p, `Klarade ${u.namn.toLowerCase()}`, UPPDRAGTAL.glad, t, UPPDRAGTAL.tanke * DAY); }
-    else think(p, u.hur === 'tomt' ? 'Kom fram till en tom plats' : 'Uppdraget gick inte', -UPPDRAGTAL.besviken, t, UPPDRAGTAL.tanke * DAY);
+    if (u.hur === 'klart') { handelse(s, p, 'uppdrag', undefined, u.namn.toLowerCase()); tanke(p, 'klaradeUppdrag', t, { namn: u.namn.toLowerCase(), v: UPPDRAGTAL.glad, tid: UPPDRAGTAL.tanke * DAY }); }
+    else tanke(p, u.hur === 'tomt' ? 'tomPlats' : 'uppdragGickInte', t, { v: -UPPDRAGTAL.besviken, tid: UPPDRAGTAL.tanke * DAY });
   }
   count(s, 'resa redogörelse');
   // byn minns de senaste resorna; de äldsta som kommit hem glöms

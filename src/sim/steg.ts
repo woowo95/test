@@ -60,7 +60,7 @@ import { halMin, halVal, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld, plockatKvar } from './eld';
 import { gastLever } from './gast';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
 import { SJUK, SJUK_DOD, forkylning, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
@@ -243,9 +243,9 @@ const KLAR: Partial<Record<Act, Krok>> = {
     const k = fellTree(s, p, t.tx, t.ty);
     if (k) wearUsed(s, p, 1); // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan
   },
-  promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
-  bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = p.warm > 1 ? Math.max(1, p.warm - KROPP.badSvalka) : Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
-  strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
+  promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); tanke(p, 'promenad', s.now); },
+  bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = p.warm > 1 ? Math.max(1, p.warm - KROPP.badSvalka) : Math.max(KROPP.badMin, p.warm - KROPP.badKyla); tanke(p, 'bada', s.now); },
+  strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); tanke(p, 'strand', s.now); },
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
   avrusta: avrustaKlar, rusta: rustaKlar,
@@ -661,7 +661,7 @@ export function viloSlag(p: Person): 'restVila' | 'restArbete' | 'restVaken' {
   return pd && pd.vila ? 'restVila' : pd && pd.tungt && p.task!.phase === 'do' ? 'restArbete' : 'restVaken';
 }
 // tanken efter en natt under tak och hur glad den gör
-const VILOTANKE = { restBadd: ['Sov gott i halmbädden', 0.09], restGolv: ['Sov gott på golvet i huset', 0.07], restTak: ['Sov under tak', 0.05] } as const;
+const VILOTANKE = { restBadd: 'sovBadd', restGolv: 'sovGolv', restTak: 'sovTak' } as const; // raderna i TANKAR
 // den som sover i ett hus vilar bättre, bättre på ett golv och bäst i en halmbädd: talets namn i KROPP, eller inget
 export function viloTak(s: State, p: Person, rum: unknown): 'restBadd' | 'restGolv' | 'restTak' | undefined {
   const pd = p.task && ACTS[p.task.act];
@@ -712,7 +712,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   { // regnet blöter den som är ute; man torkar inne och vid elden (steg 2.11.1)
     const ute = !roofed(s, p.x, p.y); // inne i ett hus håller man sig torr
     blotSteg(s, p, ute, ute && groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga, heatAt(s, p.x, p.y) > KROPP.eldNara, dtSec / HOUR_S);
-    if ((p.blot ?? 0) > VADER.blotTanke) think(p, 'Blöt av regnet', -0.05, now, HOUR);
+    if ((p.blot ?? 0) > VADER.blotTanke) tanke(p, 'blot', now);
   }
   const v = varmeDelar(s, p, coldRate, inRum, temp), heat = v.heat;
   p.warm = p.brinner !== undefined ? KROPP.maxVarm : nyVarme(p.warm, v, dtSec / HOUR_S); // den som brinner har kroppens högsta värme tills elden är släckt (steg 9.2.135)
@@ -720,21 +720,21 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   if (tak) { // man vilar bättre under tak, och bäst på ett golv
     const e = takEffekt(s, p, tak);
     p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak] * e, 0, 1);
-    if (p.task!.act === 'sova') think(p, VILOTANKE[tak][0], VILOTANKE[tak][1] * e, now, 8 * HOUR);
+    if (p.task!.act === 'sova') tanke(p, VILOTANKE[tak], now, { f: e });
   }
   if (heat > KROPP.eldNara) { // välbehaget ur eldstaden för den eld som värmer mest (steg 10.2.109)
     const fh = varmasteHard(s, p.x, p.y);
-    think(p, 'Värms av elden', fh.comfort, now, HOUR);
+    tanke(p, 'vamsAvElden', now, { v: fh.comfort });
     p.rest = clamp(p.rest + dtSec / HOUR_S * fh.comfort * heat, 0, 1); // avslappning vid elden
   }
-  if (p.warm < KROPP.fryser) think(p, 'Fryser', -0.12, now, HOUR);
-  if (forVarm(s, p)) think(p, 'För varm', -0.08, now, HOUR); // för varm (steg 2.3.4 och 12.1.19): en tanke när det är riktigt varmt
+  if (p.warm < KROPP.fryser) tanke(p, 'fryser', now);
+  if (forVarm(s, p)) tanke(p, 'forVarm', now); // för varm (steg 2.3.4 och 12.1.19): en tanke när det är riktigt varmt
   // tröttare bara när man är extremt varm (steg 2.10.20): annars arbetar man som vanligt trots värmen
   if (p.warm > KROPP.extremVarm) p.rest = clamp(p.rest - dtSec / HOUR_S * KROPP.varmTrott * (p.warm - 1), 0, 1);
   p.social = clamp(p.social - dtSec / (KROPP.socialTim * HOUR_S), 0, 1);
   // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
   p.toa = clamp(p.toa - dtSec / (KROPP.toaTim * HOUR_S) * (p.task?.act === 'sova' ? KROPP.toaSomn : 1), 0, 1);
-  if (p.toa <= 0) { p.toa = 1; if (a >= ALDER.smabarn) { toaBesok(s, p); think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); } } // små barn lämnar ingen fläck
+  if (p.toa <= 0) { p.toa = 1; if (a >= ALDER.smabarn) { toaBesok(s, p); tanke(p, 'kissade', now); } } // små barn lämnar ingen fläck
   akel(s, p); // toa-smutsen äcklar den som står i den (steg 2.7.2)
   torstSteg(s, p, a, dtSec); // törsten: fortare för den som är för varm eller arbetar tungt (steg 2.4.1–2.4.2)
 }
@@ -747,7 +747,7 @@ export function halsaLage(p: Person, now: number): 'svalt' | 'frys' | 'torst' | 
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const now = s.now;
   const hl = halsaLage(p, now);
-  if (hl === 'svalt') { p.health -= dtSec / (KROPP.svaltTim * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / STEG.svaltTanke) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
+  if (hl === 'svalt') { p.health -= dtSec / (KROPP.svaltTim * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / STEG.svaltTanke) tanke(p, 'svalter', now); }
   else if (hl === 'frys') p.health -= dtSec / (KROPP.frysTim * HOUR_S);
   else if (hl === 'torst') p.health -= dtSec / (TORST.tomTim * HOUR_S);
   else if (hl === 'laker') p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
@@ -1176,8 +1176,8 @@ function stepNaken(s: State) {
   for (const p of living(s)) {
     if (ageOf(p, s.now) < ALDER.bygger) continue;
     const har = pa.get(p.id), saknas = Object.keys(NAKEN_DELAR).filter(d => !har?.has(d));
-    if (saknas.length === Object.keys(NAKEN_DELAR).length && !har?.size) think(p, 'Är naken', KLADER.naken, s.now, 2 * HOUR);
-    else if (saknas.length) think(p, `Har inget på ${och(saknas.map(d => NAKEN_DELAR[d]!))}`, KLADER.nakenDel * saknas.length, s.now, 2 * HOUR);
+    if (saknas.length === Object.keys(NAKEN_DELAR).length && !har?.size) tanke(p, 'naken', s.now, { v: KLADER.naken });
+    else if (saknas.length) tanke(p, 'nakenDel', s.now, { delar: och(saknas.map(d => NAKEN_DELAR[d]!)), v: KLADER.nakenDel * saknas.length });
   }
 }
 const ROLLEKA = 0.6; // så mycket rölleka per timmes samlande på en rik röllekaruta (steg 9.7.15)
@@ -1761,3 +1761,4 @@ import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
 import { tatKlar } from './tatuering';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
+import { tanke } from './tankar';

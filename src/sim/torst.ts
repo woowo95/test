@@ -9,7 +9,7 @@ import { nagonEld } from './eld';
 // spädbarnet dricker av sin mor (modern törstar för två), och de små barnen dricker byns drycker när en vuxen av familjen är nära
 import { strandNu } from './sjo';
 import { ACTS } from './handlingar';
-import { ALDER, KROPP, ageOf, alive, byId, count, enTillDar, familjOf, forstaGang, isSick, living, log, think, paKartan } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, enTillDar, familjOf, forstaGang, isSick, living, log, paKartan } from './folk';
 import { areaOf, findL, observe } from './minne';
 import { magont, vattenSmuts } from './smuts';
 import { getMap, perKarta } from './karta';
@@ -18,7 +18,7 @@ import { stationRutor } from './stationer';
 import { groundOf } from './mark';
 import { clamp, rnd } from './slump';
 import { halMin, halVal, islagt, naVattnet } from './is';
-import { Act, GRANNAR4, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
+import { Act, GRANNAR4, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { hemma, kanGa } from './halsa';
 import { hjalperFange } from './fangelse';
@@ -97,7 +97,7 @@ export function torstDelar(p: Person) {
 export function torstSteg(s: State, p: Person, a: number, dtSec: number) {
   p.torst = clamp(p.torst - dtSec / HOUR_S * torstDelar(p).takt, 0, 1);
   if (a < ALDER.smabarn && torstig(p, 0)) smabarnDricker(s, p, a);
-  if (p.torst < TORST.farligt) think(p, 'Är mycket törstig', -0.15, s.now, HOUR);
+  if (p.torst < TORST.farligt) tanke(p, 'torstig', s.now);
 }
 function smabarnDricker(s: State, p: Person, a: number) {
   const mor = p.mother !== undefined ? byId(s, p.mother) : undefined;
@@ -204,7 +204,7 @@ function smutsigt(s: State, p: Person, i: number) {
   const smuts = vattenSmuts(s, i);
   if (smuts > 0 && !isSick(p, s.now) && rnd(s, 'halsa', p) < smuts * TORST.mag * SJUK.vatten) {
     insjukna(s, p, 'magsjuka', 'av smutsigt vatten'); // steg 9.5.1
-    think(p, 'Fick ont i magen av vattnet', -0.1, s.now, 6 * HOUR);
+    tanke(p, 'ontVatten', s.now);
     count(s, 'magont av vatten');
     magont(s, i); // kom smutsen från toaletten lär sig byn något om hygien (smuts.ts)
   }
@@ -291,7 +291,7 @@ export function vattenFram(s: State, p: Person, t: Task) {
   const q = byId(s, t.ref);
   if (q && paKartan(q) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
     q.torst = t.tool ? 1 : Math.min(1, q.torst + TORST.hander); // (forstaGang räknar 'bar vatten' varje gång)
-    think(q, `${p.name} gav mig vatten`, 0.1, s.now, 12 * HOUR); count(s, t.tool ? 'bar vatten' : 'bar vatten i handerna');
+    tanke(q, 'gavVatten', s.now, { namn: p.name }); count(s, t.tool ? 'bar vatten' : 'bar vatten i handerna');
     if (forstaGang(s, 'bar vatten')) log(s, `${p.name} bar vatten ${t.tool === 'vattensack' ? 'i säcken' : t.tool ? 'i en kruka' : 'i händerna'} till ${q.name}, ${ageOf(q, s.now) < ALDER.smabarn ? 'som var för liten att gå själv' : 'som inte kunde gå'}.`, 'world', [p.id, q.id]);
     if (t.vatten !== undefined) smutsigt(s, q, t.vatten);
     if (t.tool) wearUsed(s, p, 1);
@@ -299,3 +299,4 @@ export function vattenFram(s: State, p: Person, t: Task) {
   p.task = undefined;
 }
 import { snoVid } from './brand';
+import { tanke } from './tankar';

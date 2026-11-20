@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { alive, byId, count, franMitt, livet, log, think } from './folk';
+import { alive, byId, count, franMitt, livet, log } from './folk';
 import { UPPV, upplev } from './uppvaxt';
 import { gauss } from './slump';
 import { HOUR, Person, Skill, State } from './typer';
@@ -9,6 +9,7 @@ import { gudHandelse } from './religion';
 import { SAKER } from './saker';
 import { STATIONER } from './stationer';
 import { notis } from './notiser';
+import { tanke } from './tankar';
 // ett-ord (ett rep, ett bord) bland sakerna och möblerna
 const arEtt = (k: string) => !!(SAKER[k]?.ett ?? (STATIONER as Record<string, { ett?: true }>)[k]?.ett);
 
@@ -67,7 +68,7 @@ export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: 
   const q = t.q = rullaKvalitet(s, p, station, skill), k = KVALITET[q];
   if (q >= MASTERVERK || q === 0 || (q >= FIN && SAKER[t.k]?.bildyta)) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4); en bildyta målas från fin (steg 10.7.1)
   count(s, 'kv_' + q);
-  if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);
+  if (KV.glad[q]) tanke(p, 'kvalitet', s.now, { text: k.tanke, v: KV.glad[q], tid: KV.gladTim * HOUR });
   if (q >= MASTERVERK) {
     const ett = q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk';
     notis(s, 'masterverk', `${p.name} gjorde ${ett}: ${namn}.`, [p.id]);

@@ -3,7 +3,7 @@ import { tingOf } from './agande';
 import { straken } from './strak';
 import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
-import { budTillfalle, count, forstaGang, gjort, living, log, think } from './folk';
+import { budTillfalle, count, forstaGang, gjort, living, log } from './folk';
 import { wearUsed } from './redskap';
 import { groundOf, isForest, tileOf } from './mark';
 import { FOREST, Ground } from './vag';
@@ -159,11 +159,11 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ...stam, av: p.id }; // den som fällde hugger helst själv (steg 9.2.87)
   stocks(s).push(k);
   nyStubbe(s, Math.floor(x), Math.floor(y), stam.ved); // stubben blir alltid kvar, också där ett hus ska stå (steg 6.5.7)
-  s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad'); naturTanke(s, 'Ett träd fälldes');
+  s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad'); naturTanke(s, 'tradFalldes');
   if (s.fallda === 1) {
     log(s, `${p.name} fällde byns första träd med flintyxan.`, 'world', [p.id]);
     p.fame.push('Fällde byns första träd');
-    think(p, 'Fällde ett träd', SKOG.forstaTanke, s.now, SKOG.forstaTankeTim * HOUR);
+    tanke(p, 'falldeTrad', s.now, { v: SKOG.forstaTanke, tid: SKOG.forstaTankeTim * HOUR });
   }
   return k;
 }
@@ -238,3 +238,4 @@ import { rutorAv } from './odling';
 import { fyndAt } from './fynd';
 import { BIN, retaBo } from './bin';
 import { iSlag } from './saker';
+import { tanke } from './tankar';

@@ -1,7 +1,7 @@
 import { fraktionSamtal } from './rost';
 import { personHand } from './personlogg';
 import { barnTill, upplev } from './uppvaxt';
-import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, franMitt, getRel, isKin, living, log, similarity, stat } from './folk';
 import { blocked, gridOf } from './byggnad';
 import { tileOf } from './mark';
 import { sittAt, stationAt } from './stationer';
@@ -209,15 +209,15 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   if (isKin(a, b)) out += SAMTAL.slaktUt;
   if (kind === 'gräl') {
     r.op -= SAMTAL.gralOp + rnd(s, 'samtal', a) * SAMTAL.gralSpann;
-    think(a, `Grälade med ${b.name}`, -SAMTAL.gralTankeEgen, now, SAMTAL.gralTim * HOUR);
-    think(b, `Grälade med ${a.name}`, -SAMTAL.gralTankeAndra, now, SAMTAL.gralTim * HOUR);
+    tanke(a, 'gralade', now, { namn: b.name, v: -SAMTAL.gralTankeEgen, tid: SAMTAL.gralTim * HOUR });
+    tanke(b, 'gralAndra', now, { namn: a.name, v: -SAMTAL.gralTankeAndra, tid: SAMTAL.gralTim * HOUR });
     samtalAmne(s, a, b, kind); minnsRel(s, a, b, 'gral');
     if (a.partner === b.id) barnTill(s, a, b, 'gral'); // föräldrar som grälar ofta formar barnen (steg 3.1.2)
   } else {
     // vänskap växer allt långsammare ju närmare man redan är; ovänskap fördjupas lättare
     const d = SAMTALSSLAG[kind].v * (out + like) * (kind === 'skämt' && out < 0 ? SAMTAL.skamtOvan : 1);
     r.op += d;
-    if (kind === 'tröst' && out + like > SAMTAL.trostMin) think(b, `Tröstades av ${a.name}`, SAMTAL.trostTanke, now, SAMTAL.trostTim * HOUR);
+    if (kind === 'tröst' && out + like > SAMTAL.trostMin) tanke(b, 'troststes', now, { namn: a.name, v: SAMTAL.trostTanke, tid: SAMTAL.trostTim * HOUR });
     if (kind === 'berättelse') { a.skill.berattande = clamp(a.skill.berattande + SAMTAL.berattaLar * (SAMTAL.berattaInt + a.pot.intelligens / SAMTAL.berattaDiv), 0, 20); a.skill.skaldskap = clamp(a.skill.skaldskap + SAMTAL.skaldLar * SAMTAL.berattaLar * (SAMTAL.berattaInt + a.pot.intelligens / SAMTAL.berattaDiv), 0, 20); }
     if (kind === 'flirt') {
       const att = (stat(b, 'skonhet', now) + stat(b, 'karisma', now)) / SAMTAL.flirtAtt;
@@ -257,9 +257,10 @@ export function skiljas(s: State, a: Person, b: Person, r: Rel) {
   if (gift) count(s, 'skilsmassa');
   barnTill(s, a, b, 'skilsmassa'); // barnen minns det (steg 3.1.2)
   upplev(s, b, 'lamnad', a.name); // den som blev lämnad (steg 4.1.1.2)
-  think(a, `${ord} ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
+  tanke(a, 'skilda', now, { ord, namn: b.name, v: -SAMTAL.skiltTanke * f, tid: SAMTAL.skiltDygn * f * DAY }); tanke(b, 'skilda', now, { ord, namn: a.name, v: -SAMTAL.skiltTanke * f, tid: SAMTAL.skiltDygn * f * DAY });
 }
 import { berattaSmak, dampning } from './rykten';
 import { RUS, rusAv } from './rus';
 import { berattaSpecial } from './special';
 import { beOmForlatelse, skuldVal } from './skuld';
+import { tanke } from './tankar';

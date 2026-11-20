@@ -1,11 +1,12 @@
 import { HOUR, Person, State } from './typer';
-import { alive, byId, count, living, think } from './folk';
+import { alive, byId, count, living } from './folk';
 import { balans } from './balans';
 import { roomAt } from './byggnad';
 import { handelse } from './rykten';
 import { kvOf } from './kvalitet';
 import { krukaPyntQ } from './kruka';
 import { isKlar, krukaHemma, sovrum, stationDef, stationRum, stationerOf } from './stationer';
+import { tanke } from './tankar';
 
 // ---------- pyntet i hemmen (steg 4.3.4) ----------
 // Lerkrukan (ett ting, kruka.ts) och mattorna (pynt i STATIONER, stationer.ts) är bara till för att pynta.
@@ -19,7 +20,6 @@ export const PYNT = balans('pynt', {
   gladTim: 1.5, // ... och så många timmar efter att hen gått därifrån
   syn: [0, 0.005, 0.01, 0.015, 0.025, 0.05], // så mycket (vikten i intrycket smakfull) får den som ser det varje timme
 });
-export const PYNT_TANKE = 'Trivs med sitt pynt';
 
 // står p i rummet rum?
 const iRum = (s: State, p: Person, rum: unknown) => !!rum && roomAt(s, Math.floor(p.x), Math.floor(p.y)) === rum;
@@ -38,7 +38,7 @@ export function stepPynt(s: State) {
   // ägaren trivs av det finaste pyntet i rummet där hen är (en tanke, inte en per pynt)
   const glad = new Map<Person, number>();
   for (const { o, rum, q } of pynt) if (PYNT.glad[q] > 0 && iRum(s, o, rum)) glad.set(o, Math.max(glad.get(o) ?? 0, PYNT.glad[q]));
-  for (const [o, v] of glad) { think(o, PYNT_TANKE, v, s.now, PYNT.gladTim * HOUR); count(s, 'pyntGlad'); }
+  for (const [o, v] of glad) { tanke(o, 'pynt', s.now, { v, tid: PYNT.gladTim * HOUR }); count(s, 'pyntGlad'); }
   // de som ser det får intrycket av det finaste pyntet ägaren har i rummet, inte ett per pynt (steg 10.7.2)
   const finast: typeof pynt = [];
   for (const x of pynt) { const i = finast.findIndex(f => f.o === x.o && f.rum === x.rum); if (i < 0) finast.push(x); else if (x.q > finast[i].q) finast[i] = x; }

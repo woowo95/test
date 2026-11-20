@@ -1643,7 +1643,7 @@ SCENARIER.sederfas8 = {
     const l0 = SIM.sedOppen(s, 'natur');
     SIM.oppnaSed(s, 'natur');
     const varna = v.find(p => SIM.drar(s, p).natur < -0.2);
-    SIM.naturTanke(s, 'Ett träd fälldes');
+    SIM.naturTanke(s, 'tradFalldes');
     const ledsen = !!varna?.thoughts.some(t => t.text === 'Ett träd fälldes');
     s.seder.v.gemenskap = 1; const tat = SIM.byplanNu(s).tat; s.seder.v.gemenskap = -1; const gles = SIM.byplanNu(s).tat;
     s.seder.v.nyfikenhet = 1; l.pot.nyfikenhet = 18; const rader = SIM.byplanNu(s).form;

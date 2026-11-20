@@ -16,7 +16,7 @@ import { kladNyckel } from './klader';
 import { migrateFalt } from './odling';
 import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, inFas, nyKalender } from './tid';
-import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think, SKALD_START, handelStart } from './folk';
+import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, SKALD_START, handelStart } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { Act, DAY, MIN, Person, SEC, State, simulera, useMap } from './typer';
@@ -28,6 +28,7 @@ import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
 import { historikKolumner } from './historik';
 import { laggGruvor } from './gruva';
 import { varldMark } from './varlden';
+import { tanke } from './tankar';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får KARTA.bredd × KARTA.hojd, kartflytt.ts)
@@ -489,7 +490,7 @@ export function pair(s: State, a: Person, b: Person, silent = false) {
   r.par = s.now; r.gift = silent ? s.now : undefined; // de som kommer som par (de första och de som vandrar in) är redan gifta (steg 3.1.1)
   if (!silent) {
     log(s, `${a.name} och ${b.name} blev ett par.`, 'rel', [a.id, b.id]);
-    think(a, `Blev tillsammans med ${b.name}`, 0.15, s.now, DAY);
-    think(b, `Blev tillsammans med ${a.name}`, 0.15, s.now, DAY);
+    tanke(a, 'tillsammans', s.now, { namn: b.name });
+    tanke(b, 'tillsammans', s.now, { namn: a.name });
   }
 }

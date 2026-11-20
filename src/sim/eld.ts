@@ -12,7 +12,7 @@ import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
 import { isWall, roomAt } from './byggnad';
 import { ligger } from './sjukdom';
-import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, living, log, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, living, log, stat } from './folk';
 import { allaTing, nTools, wearTool } from './agande';
 import { kroppFart } from './gang';
 import { SAKER } from './saker';
@@ -268,7 +268,7 @@ function lightFire(s: State, p: Person, f: Fire, brand?: string) {
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries }, f);
   if (brand) log(s, `${p.name} tände ${eldOrd(s, f)} med en brand från ${brand}.`, 'world', [p.id]); // steg 10.6.12
   else log(s, `${p.name} lyckades tända ${eldOrd(s, f)}${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${tal(f.tries, true)} försök` : ''}.`, 'world', [p.id]);
-  think(p, 'Tände elden', ELD.tandGlad, s.now, ELD.tandGladDygn * DAY);
+  tanke(p, 'tandeElden', s.now, { v: ELD.tandGlad, tid: ELD.tandGladDygn * DAY });
   if (f !== s.fire) count(s, 'brasaTand'); // en lägereld till (brasor.ts)
   if (f === s.fire && f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronikaBer(s, 'k_forstaEld', p.id, personFalt(p)); }
   f.tries = 0;
@@ -586,3 +586,4 @@ export const VED: Behov = {
   anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= ALDER.hjalper && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
 };
 import { TORV } from './myr';
+import { tanke } from './tankar';

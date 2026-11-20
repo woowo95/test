@@ -9,7 +9,7 @@ import { ACTS } from './handlingar';
 // ger publiken glädje (mer ju skickligare och mer karismatisk den som uppträder är) och får en kort text som beskriver det.
 // Ett framträdande i taget, i s.fram; de senaste står i s.framtradanden.
 import { antal, enEtt, honom, och, stor, tal } from './ord';
-import { ALDER, KROPP, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, ovning, relKey, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, ovning, relKey, stat } from './folk';
 import { budHindrar, kyrkFram } from './kyrka';
 import { FEST, festFram, festNu } from './kultlatt';
 import { avbryt } from './lager';
@@ -32,6 +32,7 @@ import { notis } from './notiser';
 import { DAY, HOUR, HOUR_S, MIN, Person, SKILLS, SKILL_NAMES, Skill, State, Task, W, inMap } from './typer';
 import { TEKNIK, TEKTAL, knows, learn } from './teknik';
 import { goraUtan } from './ord';
+import { tanke } from './tankar';
 
 export interface FramDef {
   id: string; namn: string;
@@ -263,11 +264,11 @@ function bestall(s: State, p: Person, d: FramDef) {
   const e = bestallMinne(s, p, l, FRAM.budStyre); // ledaren tycker fullt om sig själv: hyllningen väger budStyre
   if (e) {
     count(s, 'framBestalltMinne');
-    think(p, `Fick ${en} ${namn} av ${l.name} för att berätta om ${e.namn}`, 0.05, s.now, 6 * HOUR);
+    tanke(p, 'fickForBerattelse', s.now, { en, sak: namn, namn: l.name, om: e.namn });
     log(s, `${l.name} gav ${p.name} ${en} ${namn} för ett framträdande om ${e.namn}.`, 'rel', [l.id, p.id]);
     return { ...personBud(s, p, e), gud: undefined, betalt: t.k, best: l.id };
   }
-  think(p, `Fick ${en} ${namn} av ${l.name} för att hylla ${honom(l)}`, 0.05, s.now, 6 * HOUR);
+  tanke(p, 'fickForHyllning', s.now, { en, sak: namn, namn: l.name, honom: honom(l) });
   log(s, `${l.name} gav ${p.name} ${en} ${namn} för ett framträdande som hyllar ${l.name}.`, 'rel', [l.id, p.id]);
   const x: BudLage = { ev: 0, l, op: r.op };
   return { k: 'hylla' as Bud, amne: BUDSKAP.hylla.amne(s, p, x), om: l.id, ik: undefined, betalt: t.k };
@@ -286,7 +287,7 @@ function kyrkBud(s: State, p: Person, d: FramDef, b: BudVal | undefined) {
   const bud: BudVal & { best?: number } = e ? { ...personBud(s, p, e), gud: undefined, best: pr!.id } : b && (b.k === 'tro' || dodTroende) ? b : { k: 'tro', amne: BUDSKAP.tro.amne(s, p, { ev: 0, op: 0 }), om: undefined, ik: undefined, gud: undefined };
   if (e) count(s, 'framBestalltMinne');
   const vad = antal(bet.n, bet.k), namn = troNamn(bet.tro);
-  think(p, `Fick ${vad} av ${namn} för att tala om tron`, 0.05, s.now, 6 * HOUR);
+  tanke(p, 'fickForTro', s.now, { vad, namn });
   log(s, `${namn} gav ${p.name} ${vad} för ett framträdande ${bud.k === 'tro' ? 'om tron' : `om ${bud.amne}`}.`, 'rel', [p.id]);
   return { ...bud, betalt: vad, kyrka: namn };
 }
@@ -434,7 +435,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
     }
     s.fram = undefined;
     count(s, 'framInstallt');
-    think(p, 'Ingen kom och lyssnade', -FRAM.ingen, s.now, FRAM.gladjeTim * HOUR);
+    tanke(p, 'ingenLyssnade', s.now, { v: -FRAM.ingen, tid: FRAM.gladjeTim * HOUR });
     framMinne(s, { t: f.start, k: f.k, p: p.id, namn: p.name, text: f.da ?? f.text, n: 0, q: 0, inst: f.inst, bud: f.bud, betalt: f.betalt, ...(f.kyrka ? { kyrka: f.kyrka } : {}), amne: f.amne, ...(f.scen !== undefined ? { scen: f.scen } : {}), nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], inget: true },
       `${p.name} skulle uppträda, men ingen kom och lyssnade.`);
     return;
@@ -461,7 +462,9 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   if (dans) count(s, 'festDans', pub.length);
   m.glad = Math.round(FRAM.gladje * d.kval * q * (dans ? FEST.dans : 1) * 100); // i hundradelar av humöret
   for (const b of pub) {
-    think(b, dans ? `Dansade till ${med.length ? namn : `${gen(p.name)} ${d.namn.toLowerCase()}`}` : med.length ? `Lyssnade på ${d.namn.toLowerCase()} av ${namn}` : `Lyssnade på ${gen(p.name)} ${d.namn.toLowerCase()}`, FRAM.gladje * d.kval * q * (dans ? FEST.dans : 1), s.now, FRAM.gladjeTim * HOUR);
+    const gv = { v: FRAM.gladje * d.kval * q * (dans ? FEST.dans : 1), tid: FRAM.gladjeTim * HOUR };
+    if (dans) tanke(b, 'dansade', s.now, { till: med.length ? namn : `${gen(p.name)} ${d.namn.toLowerCase()}`, ...gv });
+    else tanke(b, 'lyssnade', s.now, { pa: med.length ? `${d.namn.toLowerCase()} av ${namn}` : `${gen(p.name)} ${d.namn.toLowerCase()}`, ...gv });
     const r = getRel(s, b, p), r0 = r.op, l0 = ledd && b !== ledd ? getRel(s, b, ledd).op : undefined, tro0 = b.tro;
     for (const x of alla) if (x !== b) { const rx = getRel(s, b, x); rx.op = Math.max(-100, Math.min(100, rx.op + FRAM.op * (q - 0.5))); } // alla på scenen får mottagningen
     if (f.lar && forelasLar(s, p, b, f.lar, (f.slut - (f.borjar ?? f.start)) / HOUR, q)) (m.lart ??= []).push(b.name); // föreläsningen lär ut ämnet och inget annat (steg 10.6.9)
@@ -479,7 +482,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   if (l && !s.styre?.hanForbud) laggFram(s, 'hanforbud', { led: l.id }, l); // efter ett hån lägger ledaren fram ett förbud (steg 8.3.13)
   for (const x of alla) {
     if (l && alive(l) && x !== l) { const r = getRel(s, l, x); r.op = clamp(r.op - FRAM.hanOp, -100, 100); }
-    think(x, `Uppträdde för ${pub.length === 1 ? 'en' : tal(pub.length)} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
+    tanke(x, 'uppträdde', s.now, { antal: pub.length === 1 ? 'en' : tal(pub.length), v: FRAM.egen, tid: FRAM.gladjeTim * HOUR });
     gjort(s, x, 'upptradt');
   }
   count(s, 'framPublik', pub.length);

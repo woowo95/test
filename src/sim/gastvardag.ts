@@ -10,7 +10,7 @@ import { vattenNu } from './sjo';
 import { balans } from './balans';
 import { chance, clamp } from './slump';
 import { ACTS } from './handlingar';
-import { KROPP, ageOf, count, log, think } from './folk';
+import { KROPP, ageOf, count, log } from './folk';
 import { ata, naringSjunker } from './naring';
 import { torstSteg } from './torst';
 import { halsaLage } from './steg';
@@ -20,6 +20,7 @@ import { nyKvarleva } from './kvarlevor';
 import { notis } from './notiser';
 import { handlarenDog } from './handel';
 import { gasterNu, type GastSort } from './gast';
+import { tanke } from './tankar';
 
 export const GASTVARD = balans('gastvard', {
   matsack: 6, // portionerna i packningen när gästen kommer
@@ -108,7 +109,7 @@ export function gastVardag(s: State, dtSec: number, varme: (p: Person) => number
     if (g.sover && (p.rest >= GASTVARD.vaken || !kanSova(s, p))) { g.sover = undefined; if (p.rest >= GASTVARD.vaken) count(s, 'gast sov'); }
     else if (!g.sover && p.rest < GASTVARD.sovUnder && kanSova(s, p)) g.sover = 1;
     p.rest = clamp(p.rest + h * (g.sover ? 1 / GASTVARD.somnTim : -1 / GASTVARD.vakenTim), 0, 1);
-    if (p.warm < KROPP.fryser) think(p, 'Fryser', -0.12, now, HOUR);
+    if (p.warm < KROPP.fryser) tanke(p, 'fryser', now);
     // hälsan, som en bybos (healthStep i steg.ts), utan ålderdom och olyckor
     const hl = halsaLage(p, now);
     if (hl === 'svalt') p.health -= dtSec / (KROPP.svaltTim * HOUR_S);

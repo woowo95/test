@@ -1,7 +1,7 @@
 import { nagonEld } from './eld';
 import { matAvstar } from './kultlatt';
 import { DAY, HOUR, MIN, SEC, Person, State, Task } from './typer';
-import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
+import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
 import { amountOf, harTillHands, iHelaForradet, put, skickAv, use } from './lager';
@@ -119,11 +119,11 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
   for (const k in per) if (SAKER[k]?.ra) { ra += per[k]; if (!mest || per[k] > per[mest]) mest = k; }
   if (ra <= 1e-9) return;
   count(s, 'rattAtit', ra);
-  think(p, 'Åt rått', MATLAG.surt, s.now, MATLAG.surtTim * HOUR);
+  tanke(p, 'atRatt', s.now, { v: MATLAG.surt, tid: MATLAG.surtTim * HOUR });
   if (rnd(s, 'halsa', p) >= ra / full * MATLAG.sjuk * SJUK.ratt) return;
   const sak = SAKER[mest]!, vad = /fisk|abborre|gädda|mört|braxen|sik/i.test(sak.namn) ? 'rå fisk' : /kött|vilt|fläsk/i.test(sak.namn) || mest === 'vilt' ? 'rått kött' : `rå${sak.ett ? 'tt' : ''} ${sak.namn.toLowerCase()}`; // "rått kött", inte "rått fällt vilt" (steg 12.1.121)
   insjukna(s, p, 'matforgiftning', `av ${vad}`); p.sickWhy = `Matförgiftad av ${vad}`; // steg 9.5.1
-  think(p, 'Blev matförgiftad av rått kött eller rå fisk', MATLAG.forgiftad, s.now, 12 * HOUR); smakForgiftad(p, mest); // en avsky (steg 9.6.6)
+  tanke(p, 'matforgiftad', s.now, { v: MATLAG.forgiftad }); smakForgiftad(p, mest); // en avsky (steg 9.6.6)
   count(s, 'matforgiftad');
   // det som åts står i raden, och ingen rad om hen redan blivit förgiftad samma timme (svampen, steg 6.7.5)
   if (!s.log.some(e => e.t > s.now - HOUR && e.ids.length === 1 && e.ids[0] === p.id && (e.m === 'l_raMat' || e.text.includes('förgiftad')))) loggBer(s, 'l_raMat', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon', vad }, 'world', [p.id]);
@@ -487,3 +487,4 @@ festKrok.servera = (s, med) => {
 import { ataPortion } from './behov';
 import { festKrok } from './ratter';
 import { specialSats } from './special';
+import { tanke } from './tankar';

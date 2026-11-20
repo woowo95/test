@@ -60,6 +60,7 @@ export * from './sim/framtradande';
 export * from './sim/framber';
 export * from './sim/matchber';
 export * from './sim/pynt';
+export * from './sim/tankar';
 export * from './sim/byte';
 export * from './sim/handel';
 export * from './sim/gast';

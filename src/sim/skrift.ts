@@ -1,6 +1,6 @@
 import { DAY, H, HOUR, Lardom, MIN, Person, Skill, State, Task, W } from './typer';
 import { SKRIFT } from './skriftTal';
-import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, relKey, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, relKey, stat } from './folk';
 import { TEK, TEKTAL, knows, learn } from './teknik';
 import { getable, takeMaterial } from './behov';
 import { usable } from './lager';
@@ -30,6 +30,7 @@ import { STRAFF_NAMN } from './styre';
 import { kvVid, stationDef, stationFor, vidStation } from './stationer';
 import { O_BESOKT, O_KANT, O_RYKTE, kannerOrt, larOrt, ortensRad, radVid } from './ort';
 import { byPlats, varldPlatsNr } from './landmarken';
+import { tanke } from './tankar';
 
 // ---------- skriften (system 10.6) ----------
 // Skriften i tre stadier: runstenen, pergamentet och boken. Registret SKRIFTER har en rad per slag av innehåll, med de stadier
@@ -205,7 +206,7 @@ export function runstenKlar(s: State, p: Person, t: Task) {
   runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(bild ? { bild: 1 as const } : {}), text, runor: bild ? '' : runor(text) });
   s.byggV = (s.byggV ?? 0) + 1;
   count(s, 'runsten'); count(s, 'runsten_' + l.slag); if (bild) count(s, 'bildsten');
-  think(p, l.slag === 'minne' ? `Reste en sten efter ${l.om.namn}` : l.slag === 'helig' ? 'Ristade de heliga kvädena' : l.lag ? 'Ristade en lag' : 'Reste en sten om sin bedrift', 0.03, s.now, 12 * HOUR);
+  if (l.slag === 'minne') tanke(p, 'resteMinnessten', s.now, { namn: l.om.namn }); else tanke(p, l.slag === 'helig' ? 'ristadeHeliga' : l.lag ? 'ristadeLag' : 'resteBedrift', s.now);
   const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en bildsten om sin bedrift.`;
   log(s, rad, 'rel', [p.id]); notis(s, 'runsten', rad, [p.id], { x, y }); kronika(s, rad, 'runsten');
 }
@@ -229,7 +230,7 @@ export function runstenTimme(s: State) {
     if (Math.hypot(q.x - r.x - 0.5, q.y - r.y - 0.5) > SKRIFT.las) continue;
     for (const b of r.bev ?? []) lasIntryck(s, q, r.om, b, r.av.id, SKRIFT.lasVikt);
     if (r.slag === 'minne') paminn(s, q, r.om.id, r.bev);
-    if (r.slag === 'helig' && q.tro === r.tro) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR); // bara den som tror
+    if (r.slag === 'helig' && q.tro === r.tro) tanke(q, 'lasteHeliga', s.now, { v: SKRIFT.heligTanke, tid: SKRIFT.heligTim * HOUR }); // bara den som tror
     count(s, 'runstenLast');
   }
 }
@@ -516,7 +517,7 @@ export function skrivKlar(s: State, p: Person) {
     if (l.fran) { const o = tingOf(s).find(x => x.skrift && x.skrift.kid === undefined && x.id === l.fran!.kid); if (o) o.skrift!.kid = o.id; count(s, 'kartKopia'); } // originalet får sitt nummer när det skrivs av första gången
   }
   count(s, 'skrivet'); count(s, 'skrivet_' + l.slag);
-  think(p, `Skrev ${tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1)}`, 0.02, s.now, 6 * HOUR);
+  tanke(p, 'skrev', s.now, { titel: tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1) });
   if (forstaGang(s, 'skrivet')) log(s, `${p.name} skrev byns första blad: ${tx.titel.toLowerCase()}.`, 'skill', [p.id]);
 }
 // när bladet är läst: lärdomen med skrivaren som källa, intrycket i andra hand och glädjen av kvädet och berättelsen
@@ -529,7 +530,7 @@ export function lasKlar(s: State, q: Person, t: Task) {
     q.tek ??= {}; q.tek[tk.id] = Math.max(q.tek[tk.id] ?? 0, Math.min(nar, (q.tek[tk.id] ?? 0) + d));
     if (q.tek[tk.id]! >= 1) { q.tek[tk.id] = 0; learn(s, q, tk, s.people.find(x => x.id === k.av.id)); log(s, `${q.name} lärde sig ${tk.namn.toLowerCase()} ur ${gen(k.av.namn)} bok.`, 'skill', [q.id]); count(s, 'bokLart'); }
   }
-  if (k.tro !== undefined) think(q, 'Läste de heliga kvädena', SKRIFT.heligTanke, s.now, SKRIFT.heligTim * HOUR);
+  if (k.tro !== undefined) tanke(q, 'lasteHeliga', s.now, { v: SKRIFT.heligTanke, tid: SKRIFT.heligTim * HOUR });
   if (k.lar) lasLardom(s, q, { ...k.lar, c: k.lar.c * nar }, k.av.id);
   for (const x of k.platser ? kartNya(s, q, k) : []) {
     for (const y of nyaMarken(q, x)) { const l = larUppdrag(s, q, y.a, SKRIFT.kartaC * nar, { t: y.t, v: y.v, mal: x.nr, k: y.k as UppdragId, src: k.av.id }); if (l.t < y.t) { l.t = y.t; l.v = y.v; } count(s, 'kartMarkeLast'); } // märkena (steg 11.8.14)
@@ -537,6 +538,6 @@ export function lasKlar(s: State, q: Person, t: Task) {
   }
   if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt * nar * (k.fel ?? 1));
   if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id, k.bev);
-  if (k.slag === 'poesi' || k.slag === 'berattelse') think(q, `Läste ${gen(k.av.namn)} ${k.slag === 'poesi' ? 'kväde' : 'berättelse'}`, (k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer) * nar, s.now, SKRIFT.gladjeTim * HOUR);
+  if (k.slag === 'poesi' || k.slag === 'berattelse') tanke(q, 'laste', s.now, { av: k.av.namn, vad: k.slag === 'poesi' ? 'kväde' : 'berättelse', v: (k.slag === 'poesi' ? SKRIFT.gladjePoesi : SKRIFT.gladjeBer) * nar, tid: SKRIFT.gladjeTim * HOUR });
   count(s, 'last'); count(s, 'last_' + k.slag);
 }

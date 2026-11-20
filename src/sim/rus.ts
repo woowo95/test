@@ -3,11 +3,12 @@
 // (rorlighet i halsa.ts), handlaget i arbetet (handighet), smidigheten och träffsäkerheten i striden (strid.ts). Den som dricker
 // mycket under lång tid (p.supit, ett minne som bleknar) får sämre hälsa. Man dricker på kvällen vid elden när byn har vin eller öl.
 import { balans } from './balans';
-import { ALDER, ageOf, count, forstaGang, log, think } from './folk';
+import { ALDER, ageOf, count, forstaGang, log } from './folk';
 import { chansPer, clamp } from './slump';
 import { HOUR, HOUR_S, Person, State } from './typer';
 import { hourOf, isLight } from './tid';
 import { budBrutet, budHindrar } from './kyrka';
+import { tanke } from './tankar';
 type VatskaId = import('./vatskor').VatskaId;
 // vätskorna i krukorna (vatskor.ts sätter kroken, så att den här filen inte laddar vatskor.ts och halsa.ts i en ring)
 // alkohol = hur mycket rus en del ger, drycker = dryckerna med alkohol och kvall = den p helst tar på kvällen (raderna i VATSKOR, steg 10.7.23)
@@ -48,7 +49,7 @@ export function drickAlkohol(s: State, p: Person, v: VatskaId, tagen = false) { 
   if (!tagen && !alkoholKrok.ta(s, v)) return false;
   const a = alkoholKrok.alkohol(v), namn = alkoholKrok.namn(v).toLowerCase();
   p.rus = clamp(rusAv(p) + a, 0, 2); p.supit = (p.supit ?? 0) + a;
-  if (a >= RUS.kanns) think(p, 'Drack ' + namn, RUS.glad, s.now, RUS.gladTim * HOUR); // svagdrickan känns inte (steg 10.7.24)
+  if (a >= RUS.kanns) tanke(p, 'drack', s.now, { dryck: namn, v: RUS.glad, tid: RUS.gladTim * HOUR }); // svagdrickan känns inte (steg 10.7.24)
   count(s, 'drack_' + v);
   if (forstaGang(s, 'alkohol')) log(s, `${p.name} drack byns första ${namn} vid elden.`, 'world', [p.id]);
   return true;
@@ -60,7 +61,7 @@ export function rusSteg(s: State, p: Person, dtSec: number) {
   if (p.rus) {
     if (p.rus >= RUS.fylla) p.fylla = 1; // hen var full i kväll (steg 9.6.15)
     p.rus = Math.max(0, p.rus - RUS.sjunker * h);
-    if (p.rus <= 1e-6) { p.rus = undefined; if (p.fylla) { p.fylla = undefined; p.bak = RUS.bakTim; think(p, 'Bakfull', RUS.bak, s.now, RUS.bakTim * HOUR); count(s, 'bakfylla'); } }
+    if (p.rus <= 1e-6) { p.rus = undefined; if (p.fylla) { p.fylla = undefined; p.bak = RUS.bakTim; tanke(p, 'bakfull', s.now, { v: RUS.bak, tid: RUS.bakTim * HOUR }); count(s, 'bakfylla'); } }
   }
   if (p.supit) {
     if (p.supit > RUS.skadligt) p.health = Math.max(0, p.health - RUS.halsa * h);
