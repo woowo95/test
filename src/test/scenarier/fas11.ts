@@ -1981,9 +1981,15 @@ SCENARIER.samlaresa = {
 SCENARIER.kallelse = {
   text: 'Kallelsen (steg 11.5.11, kallelse och samlasSteg i resa.ts): ledaren kallar som vid björnjakten, och de villigaste följer med tills kraften räcker mot ledens fara; en kort och ofarlig resa går ledaren ensam, eftersom fler bara späder andelarna. Resenärerna går till samlingsplatsen; den som inte kommit inom en timme är inte med, och räcker inte kraften ställs resan in',
   kor: () => {
-    const s0 = SIM.cloneState(testBy(30)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
-    const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 18 && SIM.ageOf(q, s0.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s0.now));
-    for (const q of vuxna) { q.pot.mod = 16; q.pot.nyfikenhet = 14; }
+    // den första testbyn med sex vuxna som kan följa med, så att kraften kan räcka mot en farlig led (testbyn efter 30 dygn
+    // har fyra, med kraften 3,2 mot kravet 4,5; steg 12.1.112)
+    const kan = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now));
+    const s0 = SIM.cloneState(testBy(30, b => kan(b).length >= 6)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
+    const vuxna = kan(s0);
+    // modet och nyfikenheten i anlagen också: uppväxten räknar om pot ur anlagen när någon får en upplevelse (raknaPot i
+    // uppvaxt.ts), och då föll modet tillbaka medan sällskapet samlades (steg 12.1.112)
+    const satt = (q: SIM.Person, k: 'mod' | 'nyfikenhet', v: number) => { if (q.anlag) q.anlag[k] += v - q.pot[k]; q.pot[k] = v; };
+    for (const q of vuxna) { satt(q, 'mod', 16); satt(q, 'nyfikenhet', 14); }
     const vm = SIM.varldMark(s0)!, mal = vl0.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by' && !(SIM.LANDMARKEN[q.k] as { tillfallig?: true }).tillfallig).sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s0, hem.y * vm.w + hem.x, q.y * vm.w + q.x))!;
     const plan = (fara: number): SIM.ResPlan => ({ mal: mal.nr, namn: mal.namn, skal: 'se', varde: 30, dygn: 6, fara, sc: 1, varor: [] });
     // en farlig resa: fler följer med tills kraften räcker
