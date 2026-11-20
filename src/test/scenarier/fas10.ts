@@ -14,16 +14,18 @@ const landVid = (s: SIM.State, d: number) => {
   return { x: Math.floor(c.x) + d, y: Math.floor(c.y) };
 };
 
+// byns fordon k (kälken eller släden) på rutan där at står
+const fordon = (s: SIM.State, k: string, at: { x: number; y: number }) => { const g = SIM.newTing(s, k, 1, SIM.BYN); g.x = Math.floor(at.x); g.y = Math.floor(at.y); return g; };
 SCENARIER.kalke = {
   text: 'Steg 10.10.2: kälken. Den tar tre virken och går i full fart på snö men långsamt på barmark. Den som hämtar virke tar händerna eller kälken efter vad turen ger per tid, och det ingen kan bära ligger kvar tills en kälke hämtar det. Bär och grenar körs inte',
   kor: () => {
-    const { FORDON, fordonFart, fordonTar, fordonRyms, valjFordon, newTing, BYN, living, ageOf, ALDER } = SIM;
+    const { FORDON, fordonFart, fordonTar, fordonRyms, valjFordon, living, ageOf, ALDER } = SIM;
     const s = createState(4, START); klockan(s, 10);
     const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!, k = FORDON.kalke, at = landVid(s, 8), c = SIM.bynsMitt(s);
     s.vader = { ...(s.vader ?? { fukt: 0.5 }), sno: 1 } as typeof s.vader; const faSno = fordonFart(s, k, at.x, at.y);
     s.vader!.sno = 0; const faBar = fordonFart(s, k, at.x, at.y);
     const tar = fordonTar(SIM.lassAv(k), 'virke'), utanKalke = valjFordon(s, p, 'virke', at.x, at.y, 1, 6);
-    const g = newTing(s, 'kalke', 1, BYN); g.x = Math.floor(c.x); g.y = Math.floor(c.y);
+    fordon(s, 'kalke', c);
     s.vader!.sno = 1; const snoTre = valjFordon(s, p, 'virke', at.x, at.y, 1, 3);
     s.vader!.sno = 0; const barTre = valjFordon(s, p, 'virke', at.x, at.y, 1, 3), barEtt = valjFordon(s, p, 'virke', at.x, at.y, 1, 1), ingenHand = valjFordon(s, p, 'virke', at.x, at.y, 0, 1);
     const bar = valjFordon(s, p, 'bar', at.x, at.y, 0, 9), grenar = valjFordon(s, p, 'grenar', at.x, at.y, 0, 9);
@@ -34,7 +36,7 @@ SCENARIER.kalke = {
       const m = SIM.bynsMitt(b), pl = landVid(b, 8);
       b.stackar = (b.stackar ?? []).filter(q => q.k !== 'virke');
       b.stackar.push({ k: 'virke', n: 6, c: 1, x: pl.x, y: pl.y }); SIM.touch(b);
-      if (medKalke) { const t = newTing(b, 'kalke', 1, BYN); t.x = Math.floor(m.x); t.y = Math.floor(m.y); }
+      if (medKalke) { fordon(b, 'kalke', m); }
       let tim = 0;
       const kvar = () => (b.stackar ?? []).some(q => q.k === 'virke' && q.x === pl.x && q.y === pl.y);
       for (; tim < 10 && kvar(); tim++) kor(b, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno } as typeof x.vader; });
@@ -58,7 +60,7 @@ SCENARIER.kalke = {
 SCENARIER.dragdjur = {
   text: 'Steg 10.10.3: oxen, hästen och släden. Ett köpt dragdjur betar i hagen, spänns för släden och står i hagen igen efter turen. Oxen tar större lass och hästen går fortare, den som kör tar det djur som ger mest per tid för lasset, en by utan dragdjur gör ingen släde, och en människa kan inte dra släden',
   kor: () => {
-    const { FORDON, lassAv, fordonFart, valjFordon, newTing, BYN, nyttTamdjur, stepBoskap, setAmount, tamdjurOf, tamArt, villAv, betesTal, slaktOrsak, spand, DAY } = SIM;
+    const { FORDON, lassAv, fordonFart, valjFordon, nyttTamdjur, stepBoskap, setAmount, tamdjurOf, tamArt, villAv, betesTal, slaktOrsak, spand, DAY } = SIM;
     // en by med en hage och staket runt, som i scenariot hage
     const medHage = (seed: number, oxe = true) => {
       const s = createState(seed, START); klockan(s, 9);
@@ -82,18 +84,18 @@ SCENARIER.dragdjur = {
     s.vader = { ...(s.vader ?? { fukt: 0.5 }), sno: 1 } as typeof s.vader;
     const fOxe = fordonFart(s, sl, m.x + 6, m.y, artOxe), fHast = fordonFart(s, sl, m.x + 6, m.y, artHast);
     // vem som tas: det djur som ger mest per tid för lasset (byggstenens vikt prövas med en tung sak: virket i högar om 40)
-    const g = newTing(s, 'slade', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y);
+    fordon(s, 'slade', m);
     const per = (d: SIM.Tamdjur, n: number) => Math.min(n, Math.floor(lassAv(sl, d) / SIM.viktOf('virke'))) * fordonFart(s, sl, m.x + 6, m.y, d);
     const val5 = valjFordon(s, p, 'virke', m.x + 6, m.y, 1, 5), basta5 = per(hast, 5) >= per(oxe!, 5) ? hast : oxe;
     // utan dragdjur kan ingen dra släden
-    const utan = medHage(7, false), gu = newTing(utan.s, 'slade', 1, BYN); gu.x = Math.floor(utan.p.x); gu.y = Math.floor(utan.p.y);
+    const utan = medHage(7, false); fordon(utan.s, 'slade', utan.p);
     const manniska = valjFordon(utan.s, utan.p, 'virke', utan.p.x + 6, utan.p.y, 0, 3);
     // oxen får inga ungar, hästen får föl och slaktas inte
     const ungar = !tamArt('oxe').unge && !!tamArt('hast').unge, hastSlakt = slaktOrsak(s, hast);
     // en tur: högen hämtas på släden och oxen står i hagen igen
     const b = medHage(4), bm = SIM.bynsMitt(b.s);
     const bo = tamdjurOf(b.s).find(d => d.art === 'oxe')!;
-    const bg = newTing(b.s, 'slade', 1, BYN); bg.x = Math.floor(bm.x); bg.y = Math.floor(bm.y);
+    fordon(b.s, 'slade', bm);
     let pl = { x: Math.floor(bm.x) + 9, y: Math.floor(bm.y) };
     for (let i = 9; i < 25; i++) { const x = Math.floor(bm.x) + i, y = Math.floor(bm.y); if (SIM.inMap(x, y) && SIM.groundOf(b.s).tiles[SIM.tileOf(x + 0.5, y + 0.5)] !== 0 && !SIM.isStored(b.s, x, y) && !(b.h && x >= b.h.x && x < b.h.x + b.h.w && y >= b.h.y && y < b.h.y + b.h.h)) { pl = { x, y }; break; } }
     b.s.stackar = (b.s.stackar ?? []).filter(q => q.k !== 'virke');
@@ -181,13 +183,13 @@ SCENARIER.byggsten = {
   // och det andra före, så stenen får en hög vikt här (om stenen bryts i byarna avgörs i fasens Balans)
   env: { BALANS: 'projekt.byggsten=100' },
   kor: () => {
-    const { STENBEHOV, FORDON, lassAv, fordonTar, newTing, BYN, living, ageOf, ALDER, amountOf, bergPlats, stenFrakt, TEK } = SIM;
+    const { STENBEHOV, FORDON, lassAv, fordonTar, living, ageOf, ALDER, amountOf, bergPlats, stenFrakt, TEK } = SIM;
     const tek = TEK.byggsten;
     const by = (medKalke: boolean) => {
       const s = createState(3, START); klockan(s, 8);
       for (const p of living(s)) if (ageOf(p, s.now) >= ALDER.vuxen) p.tek = { ...p.tek, byggsten: 1 };
       const m = SIM.bynsMitt(s);
-      if (medKalke) { const g = newTing(s, 'kalke', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y); }
+      if (medKalke) { fordon(s, 'kalke', m); }
       const frakt = stenFrakt(s);
       let tim = 0;
       for (; tim < 48 && !(medKalke ? amountOf(s, 'byggsten') >= 1 : (s.stat?.byggstenBruten ?? 0) >= 1); tim++) kor(s, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno: 0 } as typeof x.vader; });
@@ -225,7 +227,7 @@ SCENARIER.stenvag = {
       for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, byggsten: 1 });
       SIM.planBuild(s); byggKlart(s);
       SIM.setAmount(s, 'virke', 6);
-      const m = SIM.bynsMitt(s), g = newTing(s, 'kalke', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y);
+      const m = SIM.bynsMitt(s); fordon(s, 'kalke', m);
       return s;
     };
     const s = by(), f = BYGGATGARDER.stockvagA.foresla(s, behov, () => true);
@@ -268,14 +270,14 @@ SCENARIER.stenvag = {
 SCENARIER.stenvagg = {
   text: 'Steg 10.10.7: väggar av staplad sten. En by med berg nära, seden Förutseende och bränder bakom sig bygger sten; en by med Dagens behov eller utan något att köra stenen på bygger timmer. Stenen brinner inte och rummet är varmare. En timmervägg som rasat byggs upp i sten, och ett timmerhus byter vägg en ruta i taget',
   kor: () => {
-    const { MATERIAL, newTing, BYN, living, bitsOf, BYGGATGARDER, vaggVal } = SIM;
+    const { MATERIAL, living, bitsOf, BYGGATGARDER, vaggVal } = SIM;
     const behov = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 } as SIM.ByggBehov;
     const by = (sed: number, brann: number, kalke = true) => {
       const s = createState(3, START); klockan(s); byggare(s);
       for (const p of living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, byggsten: 1 });
       s.seder = { ...(s.seder ?? {}), v: { ...(s.seder?.v ?? {}), forsiktighet: sed } } as typeof s.seder;
       (s.stat ??= {})['brand vagg'] = brann;
-      if (kalke) { const m = SIM.bynsMitt(s), g = newTing(s, 'kalke', 1, BYN); g.x = Math.floor(m.x); g.y = Math.floor(m.y); }
+      if (kalke) { const m = SIM.bynsMitt(s); fordon(s, 'kalke', m); }
       return s;
     };
     const s = by(1, 20); SIM.planBuild(s);
