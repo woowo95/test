@@ -60,3 +60,7 @@
 
 - Ihopslagna i 2c526786, deda7f08, dcf71ca1 och 323ddd0f; varje ihopslagning har typkontrollen och de berörda scenarierna bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` på den senaste committen, som täcker raderna för alla fyra grenarna ovan. Grenarna ändrar spelet (12.1.64, 12.1.83, 12.1.84, 12.1.114), så koll sparar nytt facit.
 - Samma-kollens facit (test/samma.json) är sparat på nytt efter ihopslagningarna. 12.1.93 och 12.1.94 är prövade med samma mot facit från 12.1.89 (på 037fbe41 med rättningen 8f048a2d): samma utveckling som förut.
+
+## Grenen par-register (12.1.139–12.1.143, 12.1.149, 12.1.150)
+
+- 12.1.139 (yrkena präst, skald, skrivare, bryggare, vävare och krukmakare; bryggningen flyttad från kocken): bara typkontrollen och scenariot yrken. Yrkestaggen är bara ett namn och påverkar inte vad man gör, men taggen skrivs i loggen och personens hand, så facit kan visa annan utveckling. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld.
