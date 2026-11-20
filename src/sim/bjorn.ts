@@ -12,7 +12,8 @@ import { kronikaBer, och, personFalt } from './berattelser';
 import { han, honom, svaraText, tal } from './ord';
 import { blodas } from './blod';
 import { blocked, freeNear, roomAt } from './byggnad';
-import { bjornVarden, bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
+import { djurStrid } from './kampar';
+import { bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { isLight, yearNo } from './tid';
 import { halsa, kanGa } from './halsa';
@@ -181,7 +182,7 @@ export function bjornjaktSteg(s: State, p: Person, tk: Task) {
 // slaget träffar (STRIDSLAG.bjorn). När den är slut gör bjornSlut resten. En fälld björn styckas och bärs hem av den första som
 // står kvar och kan stycka den; annars ligger den kvar där den föll
 export function bjornStrid(s: State, id: number, folk: Person[], medUngar: boolean, avsikt: Avsikt) {
-  const d = bjornVarden(), b = bjornarOf(s).find(q => q.id === id) ?? { x: folk[0].x + 1, y: folk[0].y }, bp = freeNear(s, b.x, b.y);
+  const d = djurStrid('bjorn'), b = bjornarOf(s).find(q => q.id === id) ?? { x: folk[0].x + 1, y: folk[0].y }, bp = freeNear(s, b.x, b.y);
   const k: DjurMed['k'] = { id: 0, namn: d.namn, sida: 1, djur: 'bjorn', st: { styrka: d.styrka, uthallighet: d.uthallighet, mod: d.mod * (medUngar ? BJORNJAKT.ungarMod : 1), smidighet: d.smidighet, skicklighet: d.skicklighet }, vapen: d.vapen, klader: [], fart: d.fart, x: bp.x, y: bp.y };
   const med = folk.filter(p => p.gast ? p.died === undefined && p.left === undefined : alive(p)) /* också rövarna (steg 10.2.29) */, jakt = avsikt === 'doda';
   if (!med.length) return;

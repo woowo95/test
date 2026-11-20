@@ -26,18 +26,18 @@ import { INDIVID } from './djur';
 // dricker = så många hela vatten djuret dricker var TAM.torstTim timme (steg 10.10.31); tal, mod och tam = artens tålighet, mod (0–1) och tamhet, som individen får sina egna kring (tamEg, steg 10.10.29);
 // pals = så stor del av binas stick som når igenom pälsen (steg 10.10.27);
 // ute = går lös i byn utan hage och fähus, så att vargen och rövarna kan ta det; fangas = det levande bytet ur en fälla som blir ett ungt djur av arten (grisen, steg 10.10.13)
-export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; mattar: number; ikon: string; ater: number; mjolk?: number; ull?: number; unge?: string; lev?: string; styrka?: number; snabb?: number; ute?: true; fangas?: string; pals?: number; dricker?: number; tal?: number; mod?: number; tam?: number; rids?: true } // rids: kan bära en ryttare med ridsadel (steg 11.11.4)
+export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; ikon: string; ater: number; mjolk?: number; ull?: number; unge?: string; lev?: string; styrka?: number; snabb?: number; ute?: true; fangas?: string; pals?: number; dricker?: number; tal?: number; mod?: number; tam?: number; rids?: true } // rids: kan bära en ryttare med ridsadel (steg 11.11.4)
 export const TAMDJUR = {
-  hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', ...KOTTSLAG, 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'varg', ater: 1, pals: 0.2, dricker: 1, tal: 1, mod: 0.8, tam: 1 },
-  far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur', ater: 1, pals: 0.15, dricker: 1, tal: 1, mod: 0.3, tam: 1, ull: 2, unge: 'ett lamm', lev: 'levfar' },
-  get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: ['lovkarve', 'torrgras'], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, mattar: 0.5, ikon: 'radjur', ater: 1, pals: 0.4, dricker: 1, tal: 1.2, mod: 0.5, tam: 0.8, mjolk: 2, unge: 'en killing', lev: 'levget' },
+  hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', ...KOTTSLAG, 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, ikon: 'varg', ater: 1, pals: 0.2, dricker: 1, tal: 1, mod: 0.8, tam: 1 },
+  far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, ikon: 'radjur', ater: 1, pals: 0.15, dricker: 1, tal: 1, mod: 0.3, tam: 1, ull: 2, unge: 'ett lamm', lev: 'levfar' },
+  get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: ['lovkarve', 'torrgras'], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, ikon: 'radjur', ater: 1, pals: 0.4, dricker: 1, tal: 1.2, mod: 0.5, tam: 0.8, mjolk: 2, unge: 'en killing', lev: 'levget' },
   // kon (steg 10.10.1): äter som två får, ger mest mjölk och mest slakt, och lever längst
-  ko: { namn: 'Ko', ord: ['en', 'ko', 'kor', 'kon'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 60, mattar: 0.5, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 1, mod: 0.5, tam: 1, mjolk: 4, unge: 'en kalv', lev: 'levko' },
+  ko: { namn: 'Ko', ord: ['en', 'ko', 'kor', 'kon'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 60, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 1, mod: 0.5, tam: 1, mjolk: 4, unge: 'en kalv', lev: 'levko' },
   // dragdjuren (steg 10.10.3): oxen är billigare, starkare och långsammare och får inga ungar; hästen är dyrare och snabbare, får föl och slaktas inte
-  oxe: { namn: 'Oxe', ord: ['en', 'oxe', 'oxar', 'oxen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 50, mattar: 0.5, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 1.2, mod: 0.7, tam: 0.9, lev: 'levoxe', styrka: 4, snabb: 0.7 },
+  oxe: { namn: 'Oxe', ord: ['en', 'oxe', 'oxar', 'oxen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 50, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 1.2, mod: 0.7, tam: 0.9, lev: 'levoxe', styrka: 4, snabb: 0.7 },
   // grisen (steg 10.10.13): kultingen fångas i buren och går lös i byn; ägaren ger den rester från slakten och skörden, och rötter när de inte räcker. Inga ungar
-  gris: { namn: 'Gris', ord: ['en', 'gris', 'grisar', 'grisen'], foder: ['slaktrens', 'vaxtrest', 'rotter'], liv: 10, vuxen: 1, varde: 30, mattar: 0.5, ikon: 'vildsvin', ater: 1, pals: 0.8, dricker: 1, tal: 1, mod: 0.6, tam: 0.7, ute: true, fangas: 'kulting' },
-  hast: { namn: 'Häst', ord: ['en', 'häst', 'hästar', 'hästen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 20, vuxen: 3, varde: 80, mattar: 0.5, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 0.9, mod: 0.4, tam: 0.8, unge: 'ett föl', lev: 'levhast', styrka: 3, snabb: 1, rids: true },
+  gris: { namn: 'Gris', ord: ['en', 'gris', 'grisar', 'grisen'], foder: ['slaktrens', 'vaxtrest', 'rotter'], liv: 10, vuxen: 1, varde: 30, ikon: 'vildsvin', ater: 1, pals: 0.8, dricker: 1, tal: 1, mod: 0.6, tam: 0.7, ute: true, fangas: 'kulting' },
+  hast: { namn: 'Häst', ord: ['en', 'häst', 'hästar', 'hästen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 20, vuxen: 3, varde: 80, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 0.9, mod: 0.4, tam: 0.8, unge: 'ett föl', lev: 'levhast', styrka: 3, snabb: 1, rids: true },
 } as const satisfies Record<string, TamArt>;
 export type TamArtId = keyof typeof TAMDJUR;
 export const TAM_LIST = Object.keys(TAMDJUR) as TamArtId[];
@@ -124,7 +124,7 @@ export function mataKlar(s: State, p: Person, ref?: number) {
   const k = foderFor(s, p, d);
   if (!k) return;
   takeMaterial(s, p, k, 1);
-  d.hunger = Math.max(0, d.hunger - tamArt(d.art).mattar * 2);
+  d.hunger = 0; // en sak foder gör djuret mätt
   (d.matad ??= {})[p.id] = (d.matad[p.id] ?? 0) + 1;
   if (d.art === 'hund' && d.agare === p.id) d.lojal = Math.min(1, (d.lojal ?? HUND.start) + HUND.mata);
   ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat');
