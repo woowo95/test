@@ -6,7 +6,8 @@
 //   - Platsen är kartan: kämpens x och y är personens, före och efter varje stridssteg, och väggar och vatten är världens.
 //   - Såret sätts på personen när slaget träffar, blodet är personens blod, och den som dör är död i samma ögonblick
 //     (världen som striden frågar, StridVarld i strid.ts). Inget förs tillbaka efteråt.
-//   - Medan en strid pågår går hela byn i korta steg (STRID.kortSteg, nastaSteg), så att alla väljer om hela tiden.
+//   - Medan en strid pågår går hela byn i korta steg (STRID.kortSteg, nastaSteg), så att alla väljer om hela tiden. Leken och
+//     brottningen undantas (faraNara): ingen annan dras in i dem.
 //   - Den som står nära ser striden och väljer i valet av aktivitet (raden slagsmal i ARBETEN, val.ts): gå emellan, gå undan
 //     eller fortsätta med sitt. Valet är en poäng ur empatin, modet, banden till dem som slåss och blodtörsten (narStridVal).
 // Steg 10.1.4 flyttar slagsmålet efter ett gräl hit; leken, brottningen, rånen och ledarstriden kommer i 10.1.7 och rövarna
@@ -89,8 +90,10 @@ function tillBilden(g: KartStrid, n0: number) {
 }
 
 // ---------- korta steg när faran är nära ----------
-// faran är nära så länge en strid pågår på kartan (fler faror kommer med rövarna och djuren)
-export const faraNara = (s: State) => kartStrider(s).length > 0 || FAROR.some(f => f(s));
+// faran är nära så länge en strid pågår på kartan (fler faror kommer med rövarna och djuren). Leken och brottningen (lekAv gäller
+// båda) är ingen fara: ingen annan dras in i dem (serStriden), och kartStridSteg delar själv slaget i STRID.tick, så byn går i
+// vanliga slag medan de pågår (förslag 511). Djurens strider (efter.egen, t.ex. vildsvinet) är en fara fast de saknar rad i FAROR
+export const faraNara = (s: State) => kartStrider(s).some(g => !lekAv(g.st.avsikt)) || FAROR.some(f => f(s));
 // längden på byns nästa slag (sekunder): korta steg medan faran är nära, annars ett helt slag (slagLangd). Spelet och
 // ikappräkningen frågar samma sak, och step delar aldrig ett slag, så att slagen blir desamma
 export function nastaSteg(s: State) { return faraNara(s) ? STRID.kortSteg : slagLangd(s); }

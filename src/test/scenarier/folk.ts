@@ -1824,6 +1824,40 @@ SCENARIER.slagbild = {
   },
 };
 
+SCENARIER.lekfara = {
+  text: 'Leken och brottningen är ingen fara (förslag 511): under en brottning ger nastaSteg ett vanligt slag och en tredje bybo vid ett arbete räknas i bitar om KLOCKA.arbetsBit sekunder, medan ett slagsmål och en strid mot ett vildsvin fortfarande ger korta steg (STRID.kortSteg)',
+  kor: () => {
+    const ny = () => {
+      const s = createState(21, START); klockan(s, 12);
+      const [a, b, c, ...ovriga] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
+      for (const q of ovriga) { q.x = a.x + 40; q.task = undefined; }
+      b.x = a.x + 1.2; b.y = a.y; c.x = a.x + 8; c.y = a.y; c.toa = 1;
+      c.task = { act: 'vila', phase: 'do', tx: c.x, ty: c.y, until: s.now + HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) } as SIM.Task;
+      return { s, a, b, c };
+    };
+    // brottningen: vanliga slag, och den som vilar väntar med att räknas
+    const br = ny();
+    const g = SIM.kartStridBorja(br.s, 'brottning', [[br.a], [br.b]], 'i brottningen', { typ: 'brottning' });
+    const brSteg = SIM.nastaSteg(br.s);
+    step(br.s, brSteg);
+    const vant = br.c.task?.act === 'vila' ? br.c.task.vant ?? 0 : -1;
+    let n = 0; while (br.s.kartStrider?.length && n < 2000) { step(br.s, SIM.nastaSteg(br.s)); n++; }
+    // slagsmålet och vildsvinet: korta steg
+    const sl = ny(); SIM.kartStridBorja(sl.s, 'slagsmal', [[sl.a], [sl.b]], 'för att pröva');
+    const slSteg = SIM.nastaSteg(sl.s);
+    const vs = ny();
+    SIM.kartStridBorja(vs.s, 'doda', [[vs.a], []], 'Anfölls av ett vildsvin', { typ: 'vildsvin', egen: true, djur: 99 }, [{ art: 'vildsvin', id: 99, k: SIM.djurKampe('vildsvin', 0, 1, vs.a.x + 1.2, vs.a.y) }]);
+    const vsSteg = SIM.nastaSteg(vs.s);
+    return [
+      [`under brottningen är nästa slag ${brSteg} s (vanligt slag ${SIM.KLOCKA.slag} s, inte ${SIM.STRID.kortSteg} s)`, brSteg === SIM.KLOCKA.slag],
+      [`den tredje bybon som vilar väntar med att räknas (${vant} s)`, vant > 0 && vant < SIM.KLOCKA.arbetsBit],
+      [`brottningen blir klar i vanliga slag (${n} slag, slut: ${!!g.st.slut})`, !!g.st.slut && !br.s.kartStrider?.length],
+      [`ett slagsmål ger korta steg (${slSteg} s)`, slSteg === SIM.STRID.kortSteg],
+      [`en strid mot ett vildsvin ger korta steg (${vsSteg} s)`, vsSteg === SIM.STRID.kortSteg],
+    ];
+  },
+};
+
 SCENARIER.slagsmal = {
   text: 'Slagsmål och lek i byn (steg 3.7.2): ett gräl kan bli ett slagsmål, striden räknas färdigt, skadorna blir riktiga skador, de som slåss står kvar och behoven väntar, vinnaren blir ett rykte, barn brottas på lek, närstriden och träffsäkerheten växer, och duck, parering och de nya skadorna finns i striden',
   kor: () => {
