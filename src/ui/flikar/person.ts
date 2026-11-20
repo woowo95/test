@@ -46,12 +46,8 @@ export const person: Flik = {
       ${delar.length === 1 ? ensamDel(flik, delar[0].html(p) + (g && delar[0].gast ? delar[0].gast(g) : '')) : delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p) + (g && d.gast ? d.gast(g) : ''))).join('')}`;
   },
   klick(el) {
-    const ti = el.closest<HTMLElement>('.tid [data-t]');
-    if (ti) { tidVald = tidVald === ti.dataset.t ? undefined : ti.dataset.t; return true; }
     const ln = el.closest<HTMLElement>('[data-lnal]'); // en lärdoms plats: kameran dit och en nål på kartan, ett tryck till tar bort nålen (steg 10.2.63)
     if (ln) { const a = Number(ln.dataset.lnal); if (ui.nal?.a === a) ui.nal = undefined; else { const c = areaCenter(a); ui.nal = { a, ...c }; visaPaKartan(c.x, c.y, 6); } return true; }
-    const tg = el.closest<HTMLElement>('[data-ptek]'); // en teknik i kunskapen: rutan om den visas eller döljs
-    if (tg) { kunTek = kunTek === tg.dataset.ptek ? undefined : tg.dataset.ptek; return true; }
     const f = el.closest<HTMLElement>('[data-pfall]'); // en dels rubrik: fäll ut eller ihop (steg 5.3.4.2)
     if (f) { const id = f.dataset.pfall!; ui.personFall[id] = !utfalld(id, f.dataset.forst === '1'); return true; }
     const b = el.closest<HTMLElement>('[data-pdel]');
@@ -570,7 +566,6 @@ function stockHtml(p: Person) {
   const txt = fmtN;
   return `<p class="utretik">Hens del i förrådet</p><div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${txt(n)} ${sakNamn(k).toLowerCase()}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
 }
-let kunTek: string | undefined; // tekniken vars ruta är öppen i kunskapen
 // kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.
 function knowledgeHtml(p: Person) {
   const ks = Object.entries(p.kunskap ?? {}).filter(([, e]) => e.v >= 0.05);
@@ -579,9 +574,10 @@ function knowledgeHtml(p: Person) {
   const lt = ls.filter(l => LARDOMAR[l.k].kat === 'tro'), lv = ls.filter(l => LARDOMAR[l.k].kat !== 'tro');
   // teknik som symboler: det hen kan fullt, det hen funderar på blekt med en ring som visar hur långt hen kommit.
   // Ett tryck visar samma ruta om tekniken som i teknikfliken (tekInfo), här under symbolerna
+  const tid = (t: string) => `ptek-${p.id}-${t}`, kunTek = TEKNIK.find(x => hjalpOppen(tid(x.id)))?.id; // tekniken vars ruta är öppen
   const tk = TEKNIK.filter(x => (p.tek?.[x.id] ?? 0) > 0.01).map(x => {
     const v = p.tek![x.id], kan = v >= 1, title = `${kan ? 'Kan göra' : 'Funderar på'} ${x.namn.toLowerCase()}${kan ? '' : ` (${Math.round(v * 100)} %)`}`;
-    return `<button type="button" class="tnod liten ${kan ? 'kan' : 'pa'}${kunTek === x.id ? ' sel' : ''}" data-ptek="${x.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(x.id, 16)}${kan ? '' : `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(v * 100)} 100"/></svg>`}</button>`;
+    return `<button type="button" class="tnod liten ${kan ? 'kan' : 'pa'}${kunTek === x.id ? ' sel' : ''}" data-hjalp="${tid(x.id)}" data-hjalp-grupp="ptek-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(x.id, 16)}${kan ? '' : `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(v * 100)} 100"/></svg>`}</button>`;
   });
   const rows = ks.map(([k, e]) => ({ n: KUNSKAPER[k]?.namn ?? k, v: e.v }));
   // rubrikerna (steg 11.1.51): Tekniker, Kunnande, Lärdomar och Föreställningar
@@ -619,7 +615,6 @@ const HABIT_GROUPS = () => habitGroups ??= (() => {
 // tårtdiagram över den vakna tiden de senaste dygnen (vanorna bleknar, seder.ts). Bara de allra minsta delarna slås ihop
 // till Annat (steg 3.10.5)
 const SMA = 0.01;
-let tidVald: string | undefined; // namnet på delen som är markerad med ett tryck
 // musen över en del av tårtan eller en rad: båda lyser och resten bleknar, hur många delar det än är
 if (typeof document !== 'undefined') document.addEventListener('mouseover', e => {
   const t = e.target instanceof Element ? e.target : null, el = t?.closest<HTMLElement>('.tid [data-i]'), tid = el?.closest('.tid');
@@ -647,12 +642,15 @@ function tidHtml(p: Person) {
   const annatVad = all.filter(x => x.v < SMA).map(x => x.g.name.toLowerCase()); // det som är för litet för en egen bit (steg 11.1.46)
   if (annat > 0) bitar.push({ name: 'Annat', ikon: '<span class="tecken">…</span>', v: annat });
   const farg = (i: number) => tartFarg(i, bitar.length);
-  const tart = tartSvg(bitar.map((b, i) => ({ v: b.v, titel: `${esc(b.name)}: ${Math.round(b.v * 100)} %`, attr: `style="--f:${farg(i)}" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}` })));
+  // delen som är markerad med ett tryck: en i taget, samma ruta på tårtan och i listan
+  const did = (n: string) => `ptid-${p.id}-${n}`, tidVald = bitar.find(b => hjalpOppen(did(b.name)))?.name;
+  const valAttr = (n: string) => `data-hjalp="${esc(did(n))}" data-hjalp-grupp="ptid-${p.id}-"${n === tidVald ? ' class="vald"' : ''}`;
+  const tart = tartSvg(bitar.map((b, i) => ({ v: b.v, titel: `${esc(b.name)}: ${Math.round(b.v * 100)} %`, attr: `style="--f:${farg(i)}" data-i="${i}" ${valAttr(b.name)}` })));
   const vald = bitar.some(b => b.name === tidVald);
   const hid = `tidforkl-${p.id}`;
   return `<p class="tidrub"><b>De senaste ${VANA_AR} åren</b> ${hjalpKnapp(hid, 'Vad visar tårtan?')}</p>${hjalpText(hid, `<p class="muted small">Den vakna tiden de senaste ${VANA_AR} åren, och det senaste väger mest. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.${annatVad.length ? ` Annat är det som var för sig är under en procent: ${esc(annatVad.join(', '))}.` : ''}</p>`)}
     <div class="tid${vald ? ' har-vald' : ''}">${tart}
-    <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name === 'Annat' ? `Annat, var för sig under en procent: ${annatVad.join(', ')}` : b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}><span class="fg" style="background:${farg(i)}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
+    <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name === 'Annat' ? `Annat, var för sig under en procent: ${annatVad.join(', ')}` : b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" ${valAttr(b.name)}><span class="fg" style="background:${farg(i)}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
     ${p.pratArbete ? `<p class="muted small">${iconImg('a_prata', 12)} ${p.pratArbete} samtal under arbetet</p>` : ''}
     ${pliktRad(p)}`;
 }
