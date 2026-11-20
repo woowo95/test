@@ -1,11 +1,11 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
 import { medvetande } from '../../sim/halsa';
 import { BIN } from '../../sim/bin';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
-import { medLagar, medTal, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta, vidForradet } from './hjalp';
+import { testBy, medLagar, medTal, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta, vidForradet } from './hjalp';
 
 SCENARIER.behov = {
   text: 'Behovsstegen: den som behöver något tar sitt eget, sedan byns, ber sedan någon i närheten om det, och stjäl först när hen håller på att dö. Hög empati stjäl aldrig, man stjäl helst av den man inte tycker om, och den bestulne märker det.',
@@ -301,13 +301,7 @@ SCENARIER.varm = {
     // lika mycket som värmen ändras på en timme (kodgenomgången 3.10.25)
     const fall = [sol, { ...sol, mild: 0.5, eld: 0.3 }, { ...v0, kyla: 2, eld: 0.1 }, { ...sol, hetta: 0.4 }];
     const rutan = [1, 1.05, 1.2].every(w0 => fall.every(v => { const r = varmeRaknas(w0, v); return Math.abs(Math.max(0, w0 + v.hetta + r.netto - r.svalnar) - nyVarme(w0, v, 1)) < 1e-9; }));
-    // för varm: kläderna tas av, bältet sitter kvar, och nya tas inte på i värmen
-    const rock = addTool(s, 'rock_kaninskinn', p), balte = addTool(s, 'balte_rep', p);
-    rock.bar = p.id; balte.bar = p.id; rock.x = rock.y = balte.x = balte.y = undefined;
-    p.warm = 1.6; stepKlader(s);
-    const avtagen = rock.bar === undefined && balte.bar === p.id;
-    p.warm = 1; stepKlader(s);
-    const ejPa = rock.bar === undefined;
+    // vad man har på sig i värmen prövas i scenariot kladval (steg 12.1.149)
     // en tanke när man är för varm, och tröttare först när man är extremt varm (steg 2.10.20)
     // samma person i en kopia av byn med samma arbete ett slag, men bara för varm: bara den extrema värmen skiljer dem åt
     const lik = cloneState(s), pl = lik.people.find(q => q.id === p.id)!;
@@ -328,55 +322,55 @@ SCENARIER.varm = {
       ['under idealet är det som förut', under],
       ['över idealet svalnar man, men aldrig under idealet', svalnar],
       ['personrutans värme vid och över idealet är det som räknas', rutan],
-      ['den som är för varm tar av sig rocken men inte bältet', avtagen],
-      ['i värmen tas rocken inte på igen', ejPa],
       ['den som är extremt varm blir tröttare och tänker på det', trott && tanke],
       [`folk blir varmare än idealet på sommaren (som mest ${maxVarm.toFixed(2)}) och badar då (${badVarm} bad)`, maxVarm > 1 && badVarm >= 1],
     ];
   },
 };
 
-SCENARIER.kladvarme = {
-  text: 'Steg 12.1.19: kläderna stannar på. Plagg tas av först när det är riktigt varmt (KROPP.varmGrader, omkring 30 grader) och kroppen är för varm, ett i taget med det varmaste först. Lätta plagg (skjortan, byxorna) och bältet sitter kvar. Under gränsen tas inget av, och plaggen tas på igen när det svalnat (KROPP.svalnatGrader). Tanken "För varm" följer samma gräns. Gränserna sänks här (15 och 12 grader), så att alla fall finns under ett år',
-  env: { BALANS: 'kropp.varmGrader=15,kropp.svalnatGrader=12' },
+SCENARIER.kladval = {
+  text: 'Klädseln efter värmen (steg 12.1.149): varje plaggs värme vägs mot temperaturen, med skyddet, anseendet och kostnaden för att vara naken. Ingen som har kläder går naken i 14 grader, och i hettan åker de varma plaggen av först, ett i taget, medan de lätta som klär kroppen sitter kvar; när det svalnat tas de på igen',
   kor: () => {
     const s = createState(5, START);
-    // en tid i året som är riktigt varm, en som är ljum (under gränsen men inte svalnad) och en som är sval
     const tid = (ok: (g: number) => boolean) => { for (let h = 0; h < 24 * 400; h++) { const t = s.now + h * HOUR; if (ok(temperature(s, t))) return t; } return -1; };
-    const het = tid(g => g >= KROPP.varmGrader + 1), ljum = tid(g => g >= KROPP.svalnatGrader + 0.5 && g < KROPP.varmGrader - 0.5), sval = tid(g => g < KROPP.svalnatGrader - 1);
-    const p = living(s)[0];
+    const fjorton = tid(g => g >= 13.5 && g <= 14.5), het = tid(g => g >= 25), sval = tid(g => g <= 8);
+    const p = living(s)[0]!;
     for (const t of SIM.tingOf(s)) if (t.bar === p.id) t.bar = undefined;
     const pa = (k: string) => { const t = addTool(s, k, p); t.bar = p.id; t.x = t.y = undefined; return t; };
-    const rock = pa('rock_kaninskinn'), mossa = pa('mossa_kaninskinn'), byxor = pa('byxor_kaninskinn'), skjorta = pa('skjorta_lintyg'), balte = pa('balte_rep');
-    const tanke = (t: number) => { s.now = t; p.warm = 1.9; p.thoughts = []; step(s, 30); return p.thoughts.some(q => q.text === 'För varm'); };
-    // ljumt: kroppen är för varm, men det är inte riktigt varmt i luften
-    s.now = ljum; p.warm = 1.6; stepKlader(s);
-    const kvarILjumt = [rock, mossa, byxor, skjorta, balte].every(t => t.bar === p.id);
-    const ingenTanke = !tanke(ljum);
-    // riktigt varmt: ett plagg i taget, det varmaste först
-    s.now = het; p.warm = 1.6; stepKlader(s);
-    const forst = rock.bar === undefined && mossa.bar === p.id;
-    p.warm = 1.6; stepKlader(s);
-    const sedan = mossa.bar === undefined;
-    p.warm = 1.6; stepKlader(s); p.warm = 1.6; stepKlader(s);
-    const lattaKvar = byxor.bar === p.id && skjorta.bar === p.id && balte.bar === p.id;
-    const varmTanke = tanke(het);
-    // fortfarande ljumt: inget tas på igen
-    s.now = ljum; p.warm = 1; stepKlader(s);
-    const ejPa = rock.bar === undefined && mossa.bar === undefined;
-    // svalnat: plaggen tas på igen
-    s.now = sval; p.warm = 1; stepKlader(s);
-    const paIgen = rock.bar === p.id && mossa.bar === p.id;
+    const rock = pa('rock_vargskinn'), mossa = pa('mossa_kaninskinn'), byxor = pa('byxor_kaninskinn'), skjorta = pa('skjorta_lintyg'), skor = pa('skor_kaninskinn'), balte = pa('balte_rep');
+    const alla = [rock, mossa, byxor, skjorta, skor, balte];
+    // 14 grader: allt sitter kvar
+    s.now = fjorton; for (let i = 0; i < 6; i++) SIM.stepKlader(s);
+    const kvar14 = alla.every(t => t.bar === p.id);
+    // hettan: ett plagg i taget, det varmaste först
+    s.now = het; const ordning: string[] = [];
+    for (let i = 0; i < 8; i++) { const fore = alla.filter(t => t.bar === p.id); SIM.stepKlader(s); for (const t of fore) if (t.bar !== p.id) ordning.push(t.k); }
+    const lattKvar = byxor.bar === p.id && skjorta.bar === p.id && skor.bar === p.id && balte.bar === p.id;
+    // den som bara har rocken tar inte av den, inte ens i hettan: hellre varm än naken
+    const q = living(s)[1]!;
+    for (const t of SIM.tingOf(s)) if (t.bar === q.id) t.bar = undefined;
+    const qRock = addTool(s, 'rock_kaninskinn', q); qRock.bar = q.id; qRock.x = qRock.y = undefined;
+    for (let i = 0; i < 4; i++) SIM.stepKlader(s);
+    const rockNaken = qRock.bar === q.id;
+    // när det svalnat tas de på igen
+    s.now = sval; for (let i = 0; i < 4; i++) SIM.stepKlader(s);
+    const paIgen = rock.bar !== undefined && mossa.bar === p.id; // rocken tas av den som vill ha den, p eller någon annan i byn
+    // i en by i 14 grader: ingen som har kläder blir naken
+    const b = SIM.cloneState(testBy(25)); let b14 = -1;
+    for (let h = 0; h < 24 * 400 && b14 < 0; h++) { const t = b.now + h * HOUR; const g = temperature(b, t); if (g >= 13.5 && g <= 14.5) b14 = t; }
+    const tackt = (o: Person) => new Set(SIM.tingOf(b).filter(t => t.bar === o.id).map(t => SIM.NAKEN_PLATS[SIM.SAKER[t.k]?.klad?.plats ?? ''] ).filter(x => x));
+    b.now = b14;
+    const fore = new Map(living(b).map(o => [o.id, tackt(o)]));
+    for (let i = 0; i < 6; i++) SIM.stepKlader(b);
+    const blevNaken = living(b).filter(o => [...fore.get(o.id)!].some(d => !tackt(o).has(d)));
     return [
-      ['alla tre slags tider finns under ett år', het > 0 && ljum > 0 && sval > 0],
-      [`ljumt (${Math.round(temperature(s, ljum))} grader): alla plagg sitter kvar`, kvarILjumt],
-      ['ljumt: ingen tanke på att vara för varm', ingenTanke],
-      [`riktigt varmt (${Math.round(temperature(s, het))} grader): rocken, det varmaste, tas av först och mössan sitter kvar`, forst],
-      ['nästa gång tas mössan av', sedan],
-      ['byxorna, skjortan och bältet sitter kvar', lattaKvar],
-      ['riktigt varmt: tanken "För varm"', varmTanke],
-      ['medan det är ljumt tas plaggen inte på igen', ejPa],
-      [`när det svalnat (${Math.round(temperature(s, sval))} grader) tas de på igen`, paIgen],
+      ['tiderna finns under ett år (14 grader, hetta och svalt)', fjorton > 0 && het > 0 && sval > 0],
+      [`i 14 grader sitter alla plaggen kvar`, kvar14],
+      [`i hettan (${Math.round(temperature(s, het))} grader) åker de varma av ett i taget, det varmaste först (${ordning.join(', ') || 'inget'})`, ordning[0] === rock.k && ordning.includes(mossa.k) && ordning.indexOf(rock.k) < ordning.indexOf(mossa.k)],
+      ['skjortan, byxorna, skorna och bältet sitter kvar i hettan', lattKvar],
+      ['den som bara har en rock behåller den i hettan', rockNaken],
+      [`när det svalnat (${Math.round(temperature(s, sval))} grader) tas mössan på igen, och rocken bärs (av ${rock.bar === p.id ? p.name : SIM.byId(s, rock.bar ?? -1)?.name ?? 'ingen'})`, paIgen],
+      [`i testbyn i 14 grader blir ingen som har kläder naken (${living(b).length} invånare${blevNaken.length ? `; naken: ${blevNaken.map(o => o.name).join(', ')}` : ''})`, b14 > 0 && !blevNaken.length],
     ];
   },
 };
