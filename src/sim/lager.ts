@@ -781,13 +781,13 @@ function ordning(s: State, p: Person) {
 }
 export const forstaMat = (s: State, p: Person) => ordning(s, p).find(k => mayTake(s, p, k) >= 1 && ataKan(s, p, k));
 export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
-  let got = 0, cw = 0; const per: Record<string, number> = {};
+  let got = 0, cw = 0, delar: number[] | undefined; const per: Record<string, number> = {}; // budgetens matdelar hämtas en gång per måltid
   for (const k of p ? ordning(s, p) : FOOD) {
     if (n - got <= 1e-12) break;
     if (p && !ataKan(s, p, k)) continue;
     const hand = fran ? 0 : iBordan(p, k), v = Math.min(n - got, amountOf(s, k) + hand, takeLimit(s, k, p, fran) + hand); // med det hen bär (steg 11.1.77)
     if (v > 1e-12) { const r = takeOwn(s, k, v, p, false, fran?.id); got += r.n; cw += r.n * r.c; per[k] = (per[k] ?? 0) + r.n; }
-    if (p && !fran && budgetMatKrok.f) for (const o of budgetMatKrok.f(s, p)) { // sedan ur en matdel som ger p mat
+    if (p && !fran && budgetMatKrok.f) for (const o of delar ??= budgetMatKrok.f(s, p)) { // sedan ur en matdel som ger p mat
       if (n - got <= 1e-12) break;
       const m = Math.min(n - got, ownsId(s, o, k));
       if (m <= 1e-12) continue;
