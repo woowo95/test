@@ -1648,7 +1648,7 @@ SCENARIER.skattetal = {
   },
 };
 SCENARIER.sederfas8 = {
-  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
+  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren, som drar åt sitt håll från egenskapens mitt (steg 12.1.110)',
   kor: () => {
     const { s, v, l } = medLedare();
     const l0 = SIM.sedOppen(s, 'natur');
@@ -1659,7 +1659,12 @@ SCENARIER.sederfas8 = {
     s.seder.v.gemenskap = 1; const tat = SIM.byplanNu(s).tat; s.seder.v.gemenskap = -1; const gles = SIM.byplanNu(s).tat;
     s.seder.v.nyfikenhet = 1; l.pot.nyfikenhet = 18; const rader = SIM.byplanNu(s).form;
     s.seder.v.nyfikenhet = -1; l.pot.nyfikenhet = 2; const ring = SIM.byplanNu(s).form;
+    // ledaren drar åt sitt håll från skalans mitt (steg 12.1.110): över mitten åt ett håll, under åt det andra
+    s.seder.v.gemenskap = 0; l.pot.empati = 16; const tatOver = SIM.byplanNu(s).tat; l.pot.empati = 4; const tatUnder = SIM.byplanNu(s).tat;
+    s.seder.v.nyfikenhet = 0.2; l.pot.nyfikenhet = 16; const formOver = SIM.byplanNu(s).form; l.pot.nyfikenhet = 4; const formUnder = SIM.byplanNu(s).form;
     return [
+      [`ledarens empati över mitten drar tätt, under glest (${tatOver.toFixed(2)}, ${tatUnder.toFixed(2)})`, tatOver > 0 && tatUnder < 0],
+      [`ledarens nyfikenhet över mitten drar åt rader, under åt ring (${formOver}, ${formUnder})`, formOver === 'rader' && formUnder === 'ring'],
       ['Värna – Bruka är låst tills träd fälls', !l0],
       [`den som drar åt Värna blir ledsen av ett fällt träd (${varna?.name ?? 'ingen drar åt Värna'})`, !!varna && ledsen],
       [`husen tätt eller glest följer sederna (${tat.toFixed(2)}, ${gles.toFixed(2)})`, tat > gles],
