@@ -113,6 +113,7 @@ export const STATION = balans('station', {
   brasaFran: 2.5, // lägerelden ligger helst så här många rutor från mitten av sovplatserna den är till för ...
   brasaSok: 4, // ... och högst så här många rutor därifrån
   // pyntet (steg 4.3.4, pynt.ts): möbler som bara är till för att pynta, i rummet där ägaren sover
+  drejFart: 2, // så många gånger fortare lerkrukorna formas på drejskivan (steg 12.4.1)
 });
 
 // namn och ikon (ikoner.ts; kartans bild uppifrån heter ikon_karta), w och h = rutorna den tar (bredd och djup), tek = teknikerna, och den som kan någon av dem bygger den, av = materialet, min = minuters arbete,
@@ -139,6 +140,8 @@ const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fac
 const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra', bok: 'bok', krycka: 'krycka', traben: 'traben', krok: 'krok', bagborr: 'bagborr', kalke: 'kalke', slade: 'slade', vagn: 'vagn' };
 const traVid = (b: string, f: (r: ReceptRad) => boolean = () => true) => [...new Set((Object.keys(TRA_ACT) as (keyof typeof RECEPT)[]).filter(k => { const r: ReceptRad = RECEPT[k]; return r.bank === b && f(r); }).map(k => TRA_ACT[k]!))];
 const SNICKAR = traVid('snickarbank');
+// det som formas av lera på drejskivan (steg 12.4.1): lerkrukorna (handlingen lerkruka, kruka.ts)
+const DREJ: Act[] = ['lerkruka'];
 // plaggen som görs vid stationen st (PlaggDef.station i klader.ts: hjälmen och brynjan i smedjan, steg 12.2.9)
 const plaggVid = (st: string) => (Object.keys(PLAGG) as Act[]).filter(k => (PLAGG as Record<string, { station?: string }>)[k].station === st);
 // ---------- den vävda mattan (steg 10.7.6, Pynt och smycken: Den vävda mattan) ----------
@@ -402,6 +405,11 @@ export const STATIONER = {
     kv: STATION.kvMer, namn: 'Smedja', ikon: 'smedja', w: 3, h: 2, tek: ['smedja'], av: RECEPT.smedja.av, min: RECEPT.smedja.min, inne: true, gor: ['smida', ...plaggVid('smedja')], bara: ['smida', ...plaggVid('smedja')], fart: Object.fromEntries(plaggVid('smedja').map(a => [a, STATION.redskapFart])),
     bygger: 'Bygger en smedja med ässja och städ.',
     forsta: '{namn} byggde byns första smedja. Järnet i den blev hammaren och tången, och vid städet smids järnet.',
+  },
+  // drejskivan (steg 12.4.1): inne, med en sittplats. Lerkrukorna formas dubbelt så fort här och blir oftare bra; för hand går de fortfarande
+  drejskiva: {
+    kv: STATION.kvMer, namn: 'Drejskiva', ikon: 'drejskiva', w: 1, h: 1, tek: ['drejskiva'], av: RECEPT.drejskiva.av, min: RECEPT.drejskiva.min, inne: true, sitt: true, gor: DREJ, fart: Object.fromEntries(DREJ.map(a => [a, STATION.drejFart])),
+    bygger: 'Bygger en drejskiva av virke och sten.', forsta: '{namn} byggde byns första drejskiva. På den formas krukorna fortare och jämnare.',
   },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;

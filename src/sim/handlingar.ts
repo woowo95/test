@@ -237,7 +237,7 @@ const DEF = {
   bagborr: { namn: 'Gör en bågborr', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.6.13
   krycka: { namn: 'Täljer en krycka', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, traben: { namn: 'Täljer ett träben', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, krok: { namn: 'Gör en krok', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, ogonlapp: { namn: 'Skär en ögonlapp', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'station' }, // proteserna (steg 9.5.11)
   naverask: { namn: 'Viker en näverask', slag: 'hantverk', hantverk: true, verb: 'viker', plats: 'station' }, // vid slöjdbänken om byn har en, annars för hand (steg 9.4.13)
-  lerkruka: { namn: 'Bygger upp en lerkruka', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'elden' }, // steg 9.4.11, kruka.ts
+  lerkruka: { namn: 'Bygger upp en lerkruka', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'station' }, // steg 9.4.11, kruka.ts: på drejskivan om byn har en (steg 12.4.1), annars för hand
   slanda: { namn: 'Gör en slända', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 7.7.8
   fackla: { namn: 'Gör en fackla', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' }, // steg 6.3.6 (ljus.ts)
   trumma: { namn: 'Gör en trumma', slag: 'hantverk', hantverk: true, verb: 'spänner', plats: 'station' },

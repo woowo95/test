@@ -16,7 +16,7 @@ export const KOTTSLAG: readonly string[] = ['kott', 'vargkott', 'radjurkott', 'f
 // bara arbetet: materialet är djuret.
 // bank = stationen där det görs fortare och bättre än för hand (steg 9.4.5), bara = det görs bara där, kniv = det täljs och kräver
 // kniven som ligger på bänken
-export interface ReceptRad { var: 'sak' | 'station' | 'tillbehor' | 'dorr' | 'plagg'; av?: Record<string, number>; ger?: number; min: number; slag?: TidSlag; tek?: string; verktyg?: Record<string, string>; mangd?: number; bank?: 'snickarbank'; bara?: true; kniv?: true }
+export interface ReceptRad { var: 'sak' | 'station' | 'tillbehor' | 'dorr' | 'plagg'; av?: Record<string, number>; ger?: number; min: number; slag?: TidSlag; tek?: string; verktyg?: Record<string, string>; mangd?: number; bank?: 'snickarbank' | 'drejskiva'; bara?: true; kniv?: true }
 
 // Balanstal (regel 8): materialet och minuterna för stationerna, möblerna, tillbehören och dörrarna
 export const RT = balans('recept', {
@@ -159,6 +159,7 @@ const DEF = {
   kolmila: { var: 'station', av: {}, min: 10 }, // grävs med spaden (steg 12.2.1)
   blasterugn: { var: 'station', av: { lera: 6, sten: 4, skinn: 2, virke: 1 }, min: 20 }, // skinnen och virket är bälgen (steg 12.2.3)
   smedja: { var: 'station', av: { huggen_sten: 6, lera: 2, skinn: 2, virke: 1, jarn: 1 }, min: 20 }, // järnet är hammaren och tången (steg 12.2.4)
+  drejskiva: { var: 'station', av: { virke: 2, huggen_sten: 1 }, min: 15, slag: 'stor', tek: 'drejskiva' }, // drejskivan (steg 12.4.1): en skiva av trä på en axel, med en sten som svänghjul
   // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
   jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },
   jarnkniv: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' },
@@ -193,7 +194,7 @@ const DEF = {
   remsa: { var: 'sak', av: { skinn: 1 }, ger: 2, min: 2, slag: 'liten', tek: 'kniv' }, remsa_lin: { var: 'sak', av: { lintyg: 1 }, ger: 2, min: 2, slag: 'liten', tek: 'kniv' },
   nal: { var: 'sak', av: { ben: 1 }, min: 3, slag: 'liten', tek: 'bensyl', verktyg: { sten: 'en sten', flinta: 'en flinta' } },
   naverask: { var: 'sak', av: { naver: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'naverask' }, // näveraskan (steg 9.4.13): viks av näver och sys ihop med rep, för hand eller fortare vid slöjdbänken
-  lerkruka_liten: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'kruka' }, lerkruka_mellan: { var: 'sak', av: { lera: 2 }, min: 4, slag: 'liten', tek: 'kruka' }, lerkruka_stor: { var: 'sak', av: { lera: 4 }, min: 4, slag: 'liten', tek: 'kruka' }, // lerkrukan i tre storlekar (steg 9.4.11, KRUKOR i kruka.ts): byggs upp för hand av lera med sand i
+  lerkruka_liten: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'kruka', bank: 'drejskiva' }, lerkruka_mellan: { var: 'sak', av: { lera: 2 }, min: 4, slag: 'liten', tek: 'kruka', bank: 'drejskiva' }, lerkruka_stor: { var: 'sak', av: { lera: 4 }, min: 4, slag: 'liten', tek: 'kruka', bank: 'drejskiva' }, // lerkrukan i tre storlekar (steg 9.4.11, KRUKOR i kruka.ts): byggs upp för hand av lera med sand i
   hogsate: { var: 'station', av: { virke: RT.hogsateVirke }, min: RT.hogsateMin }, // långhusets högsäte och bänkar (steg 10.2.68)
   bank: { var: 'station', av: { virke: RT.bankVirke }, min: RT.bankMin },
   krubba: { var: 'station', av: { virke: RT.krubbaVirke }, min: RT.krubbaMin }, // foderhäcken i fähuset (steg 10.2.88)
