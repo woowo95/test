@@ -77,6 +77,8 @@ const plugin = {
     b.onLoad({ filter: /src[\\/]main\.ts$/ }, a => ({ contents: andraMain(readFileSync(a.path, 'utf8')), loader: 'ts', resolveDir: dirname(a.path) }));
     // skuggbildens delar syns för A/B-proven (ab318.cjs), bara i mätversionen
     b.onLoad({ filter: /src[\\/]ui[\\/]skugga\.ts$/ }, a => ({ contents: readFileSync(a.path, 'utf8') + "\n(window as any).__skugga = { delar, get rt() { return rt; }, get rtTak() { return rtTak; }, get rtRor() { return typeof rtRor === 'undefined' ? undefined : rtRor; } };\n", loader: 'ts', resolveDir: dirname(a.path) }));
+    // växterna som förut, i en Graphics ur samma rutor (ab180.cjs, steg 12.1.180), bara i mätversionen
+    b.onLoad({ filter: /src[\\/]ui[\\/]vaxter\.ts$/ }, a => ({ contents: readFileSync(a.path, 'utf8') + "\n(window as any).__vaxter = { plantLayer, bitar, gammal(g: any) { const v = synligaRutor(); g.clear(); for (let ry = v.y0; ry <= v.y1; ry++) for (let rx = v.x0; rx <= v.x1; rx++) ritaRuta(rx, ry, rutaOps(rx, ry), (x: number, y: number, c: number) => g.beginFill(c).drawRect(x, y, 1, 1).endFill()); } };\n", loader: 'ts', resolveDir: dirname(a.path) }));
   },
 };
 const r = await build({ entryPoints: [MAIN], bundle: true, minify: false, format: 'iife', target: 'es2020', write: false, legalComments: 'none', plugins: [plugin], banner: { js: "performance.mark('bunt-start');" }, absWorkingDir: KOD });

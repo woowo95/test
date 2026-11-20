@@ -268,7 +268,7 @@ async function minneTid(b, skarm = 'dator') {
   if (har('start')) { await start(b); await start(b, 'dator', 'file://' + path.resolve(HAR, '../../../samhallssimulatorn.html'), 'start-officiell').catch(e => logg('officiell start', String(e).slice(0, 200))); await startProfil(b); }
   if (har('startoff')) await start(b, 'dator', 'file://' + path.resolve(HAR, '../../../samhallssimulatorn.html'), 'start-officiell');
   if (har('stadigt')) { await stadigt(b); await stadigt(b, 'dator', 'natt'); }
-  if (har('ikapp')) await ikapp(b);
+  if (har('ikapp')) await ikapp(b, process.env.IKAPP ? process.env.IKAPP.split(',').map(f => [parseFloat(f), f.endsWith('s')]) : undefined);
   if (har('minne')) await minneTid(b);
   if (har('mobil')) { if (!fs.existsSync(SIDA_MOBIL.slice(7))) logg('matt-mobil.html finns inte; mobilen hoppas över'); else { await bild(b, 'mobil', ['dag', 'natt', 'sno']); await panorering(b, 'mobil'); await paneler(b, 'mobil', ['person.om', 'person.behov', 'höger.kronika', 'höger.teknik', 'höger.forrad', 'ruta.station']); await start(b, 'mobil', SIDA_MOBIL); } }
   if (har('prov')) { const { ctx, pg, cdp } = await oppna(b, 'dag', 'dator'); await klar(pg); await kladIn(pg); await sov(3000); const r = await tidta(pg, cdp, 8); spara('prov', r); console.log(await minne(pg, cdp)); await ctx.close(); }

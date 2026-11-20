@@ -8,7 +8,7 @@ import { living, ageIndex, hourOf, vaderNu, HOUR, nastaSteg, step, serialize, sn
 import { lasBy } from '../../../src/test/delby';
 const HAR = dirname(fileURLToPath(import.meta.url));
 const SCENER = [
-  { namn: 'dag', by: '1511-40', tim: 5 },
+  { namn: 'dag', by: process.env.BY ?? '1511-40', tim: 5 },
   { namn: 'natt', by: '1511-40', tim: 15 },
   { namn: 'regn', by: '1-35', tim: 4.5 },
   { namn: 'sno', by: '1511-25', tim: 4.5 },
