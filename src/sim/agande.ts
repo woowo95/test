@@ -87,7 +87,9 @@ export function take(s: State, p: Person, k: string): Ting | undefined {
 }
 // ett redskap som slitits sönder räknas som förbrukat (steg 10.11.9): i s.forbruk under '@' och gruppen, samma glidande medel som
 // materialen (forradsmal.ts), så att byn vill ha så många extra som går åt
-export function redskapSlitet(s: State, k: string) { const f = s.forbruk ??= {}, g = '@' + gruppOf(k); f[g] = (f[g] ?? 0) + 1; }
+export function redskapSlitet(s: State, k: string) { const f = s.forbruk ??= {}, g = '@' + gruppOf(k); f[g] = (f[g] ?? 0) + 1; skrotKrok.f(s, k); }
+// en järnsak som gick sönder lämnar järnskrot (steg 12.2.7): kroken sätts av jarnsaker.ts
+export const skrotKrok = { f: (_s: State, _k: string) => {} };
 // slitage på redskapet p arbetar med (i handen, annars hens eget, annars det sämsta). true = det gick sönder
 export function wearTool(s: State, p: Person, k: string, v: number) {
   const ts = toolsOf(s, k);

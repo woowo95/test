@@ -8,7 +8,8 @@ import { balans } from './balans';
 import { getable, takeMaterial } from './behov';
 import { ALDER, ageOf, count, forstaGang, log } from './folk';
 import { Person, State, Task } from './typer';
-import { addTool, nTools } from './agande';
+import { addTool, nTools, skrotKrok } from './agande';
+import { addTo, put } from './lager';
 import { SAKER } from './saker';
 import { knows } from './teknik';
 import { isKlar, kvVid, stationerOf, vidStation } from './stationer';
@@ -22,6 +23,8 @@ import { clamp } from './slump';
 export const JARNSAK = balans('jarnsak', {
   ersatt: 0.6, // ett järnredskap som ersätter ett av sten är värt så här mycket av det som saknas i gruppen (projektets vikt)
   lieFart: 3, // lien slår ängen så här många gånger fortare än skäran (slåttern har ingen redskapsrad)
+  omSkrot: 2, // så många järnskrot smids om till ett järn (steg 12.2.7) ...
+  omMin: 3, // ... på så här många minuter
 });
 export const LIE_FART = JARNSAK.lieFart;
 // sakerna som smids, gruppen de hör till, stensakens teknik och texten när den smids
@@ -39,9 +42,10 @@ export const kanSmida = (s: State, p: Person, k: string) => ageOf(p, s.now) >= A
 // hur stor del av det byn vill ha av gruppen som ännu inte är av järn
 export const jarnBrist = (s: State, k: string) => { const g = JARNSAKER[k].grupp, v = villAv(s, g); return v > 0 ? clamp((v - nTools(s, k)) / v, 0, 1) : 0; };
 // det som hämtas till städet (HAMTAS i hamtning.ts): materialet i receptet
-export const smidaHamtas = (tk: Task) => tk.tool && JARNSAKER[tk.tool] ? { ...receptAv(tk.tool) } : undefined;
+export const smidaHamtas = (tk: Task) => tk.tool === 'jarn' ? { jarnskrot: JARNSAK.omSkrot } : tk.tool && JARNSAKER[tk.tool] ? { ...receptAv(tk.tool) } : undefined;
 // smidet är klart (KLAR i steg.ts): materialet tas, och saken blir p:s, med en kvalitet efter smedjan
 export function smidaKlar(s: State, p: Person, tk: Task) {
+  if (tk.tool === 'jarn') { omsmidKlar(s, p); return; }
   const k = tk.tool, d = k ? JARNSAKER[k] : undefined;
   if (!k || !d || !Object.entries(receptAv(k)).every(([m, n]) => getable(s, p, m) >= n)) return;
   for (const [m, n] of Object.entries(receptAv(k))) takeMaterial(s, p, m, n);
@@ -59,3 +63,18 @@ laggTillProjekt(Object.fromEntries(Object.entries(JARNSAKER).map(([k, d]) => [k,
   recept: (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'smedja') && knows(p, d.tek) && stationerOf(s).some(t => t.k === 'smedja' && isKlar(t)) ? { av: { ...receptAv(k) } } : undefined,
   uppgift: (s: State, p: Person) => { const t = smedjan(s, p); return t && { act: 'smida' as const, text: d.text, min: SAKER[k]!.skaffa!.min!, tool: k, spot: vidStation(t), ref: t.id }; },
 }])));
+
+// ---------- järnskrotet (steg 12.2.7, Järnet: Järnskrotet) ----------
+// En järnsak som går sönder lämnar 1 järnskrot för varje järn i receptet (redskapSlitet i agande.ts), och 2 järnskrot smids om
+// till 1 järn i smedjan på 3 minuter. Omsmidet är ett sätt att få järn: projektet jarn (brann.ts) smider om när skrotet räcker,
+// och blåser annars
+skrotKrok.f = (s, k) => { const n = receptAv(k).jarn ?? 0; if (n > 0 && SAKER[k]?.redskap) { addTo(s, 'jarnskrot', n); count(s, 'jarnskrot', n); } };
+export const kanSmidaOm = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'smedja') && !!smedjan(s, p) && getable(s, p, 'jarnskrot') >= JARNSAK.omSkrot;
+export const omsmidUppgift = (s: State, p: Person) => { const t = smedjan(s, p); return t && { act: 'smida' as const, text: 'Smider om järnskrot till järn.', min: JARNSAK.omMin, tool: 'jarn', spot: vidStation(t), ref: t.id }; };
+function omsmidKlar(s: State, p: Person) {
+  if (getable(s, p, 'jarnskrot') < JARNSAK.omSkrot) return;
+  const ag = takeMaterial(s, p, 'jarnskrot', JARNSAK.omSkrot), agare = Object.keys(ag).sort((a, b) => ag[b] - ag[a])[0];
+  put(s, 'jarn', 1, agare !== undefined ? { [agare]: 1 } : undefined);
+  count(s, 'omsmitt');
+  if (forstaGang(s, 'omsmitt')) log(s, `${p.name} smidde om järnskrot till nytt järn.`, 'world', [p.id]);
+}

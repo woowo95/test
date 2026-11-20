@@ -295,3 +295,32 @@ SCENARIER.jarnredskap = {
     ];
   },
 };
+
+SCENARIER.jarnskrot = {
+  text: 'Järnskrotet (steg 12.2.7, jarnsaker.ts): en järnsak som går sönder lämnar 1 järnskrot för varje järn i receptet, och 2 järnskrot smids om till 1 järn i smedjan på 3 minuter, när byn vill ha järn',
+  kor: () => {
+    const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = vuxna[0];
+    klockan(s, 10);
+    for (const q of vuxna) Object.assign((q.tek ??= {}), { smedja: 1 });
+    SIM.setStock(s, { kol: 4 });
+    const t = medBank(s, 'smedja');
+    // en järnyxa slits sönder: 2 järnskrot
+    const y = SIM.addTool(s, 'jarnyxa', p);
+    SIM.wearTool(s, p, 'jarnyxa', 10);
+    const borta = !SIM.tingOf(s).includes(y), skrot = SIM.amountOf(s, 'jarnskrot');
+    // en flintyxa lämnar inget
+    SIM.addTool(s, 'yxa', p); SIM.wearTool(s, p, 'yxa', 10);
+    const skrot2 = SIM.amountOf(s, 'jarnskrot');
+    // den som vill ha järn smider om skrotet
+    const u = SIM.PROJEKT.jarn!.uppgift(s, p);
+    const tk = { act: 'smida', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', tool: 'jarn', ref: t.id } as SIM.Task;
+    p.task = tk; SIM.smidaKlar(s, p, tk); p.task = undefined;
+    const jarn = SIM.amountOf(s, 'jarn'), kvar = SIM.amountOf(s, 'jarnskrot');
+    return [
+      [`en sönderslipad järnyxa lämnar 2 järnskrot (${skrot})`, borta && skrot === 2],
+      [`en flintyxa lämnar inget (${skrot2})`, skrot2 === 2],
+      [`den som vill ha järn smider om skrotet (${u?.text}, ${u?.min} minuter)`, u?.act === 'smida' && u.tool === 'jarn' && u.min === 3],
+      [`2 järnskrot blir 1 järn (${jarn} järn, ${kvar} skrot kvar)`, jarn === 1 && kvar === 0],
+    ];
+  },
+};

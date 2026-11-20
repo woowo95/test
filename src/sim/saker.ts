@@ -312,6 +312,7 @@ const DEF = {
   blottorv: { namn: 'Blöt torv', skaffa: { tid: 0.03 }, stack: 20, vikt: 2, mapp: 'Bränsle' },
   malm: { namn: 'Malm', skaffa: { tid: 0.1 }, stack: 10, vikt: 4, mapp: 'Sten', brinnerInte: true }, // steg 12.1.2: grävs i myren (malm.ts)
   jarn: { namn: 'Järn', ett: true, skaffa: { tid: 0.5 }, stack: 20, vikt: 2, mapp: 'Sten', brinnerInte: true }, // steg 12.2.3: blåses i blästerugnen (brann.ts)
+  jarnskrot: { namn: 'Järnskrot', ett: true, skaffa: { tid: 0.25 }, stack: 20, vikt: 1, mapp: 'Sten', brinnerInte: true }, // steg 12.2.7: blir kvar när en järnsak går sönder, och smids om till järn
   // järnredskapen (steg 12.2.6, jarnsaker.ts): i redskapens grupper med högre rang än stensaken, smids i smedjan
   jarnyxa: { namn: 'Järnyxa', hanger: 'balte', grupp: 'yxa', rang: 1, skaffa: RECEPT.jarnyxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, trasig: { stat: 'jarnyxorTrasiga', text: '{namn}s järnyxa gick sönder.' } },
   jarnkniv: { namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },

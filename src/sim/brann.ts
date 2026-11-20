@@ -212,8 +212,9 @@ laggTillProjekt({
     namn: 'Järn', vikt: 1,
     brist: () => 0,
     kostnad: () => grundvarde('jarn') * BRANN.ugnUt,
-    kan: (s, p) => !!laddbar(s, p, 'blasterugn') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.blasterugn, s.now),
+    kan: (s, p) => kanSmidaOm(s, p) || !!laddbar(s, p, 'blasterugn') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.blasterugn, s.now), // järnskrotet smids om först (steg 12.2.7)
     recept: (s, p) => knows(p, 'blasterugn') && branningsStationer(s, 'blasterugn').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.blasterugn.in } } : undefined,
-    uppgift: (s, p) => { const t = laddbar(s, p, 'blasterugn'); return t && branningUppgift(s, t); },
+    uppgift: (s, p) => { if (kanSmidaOm(s, p)) return omsmidUppgift(s, p); const t = laddbar(s, p, 'blasterugn'); return t && branningUppgift(s, t); },
   },
 });
+import { kanSmidaOm, omsmidUppgift } from './jarnsaker';
