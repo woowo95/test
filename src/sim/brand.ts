@@ -109,11 +109,9 @@ export const BRAND = balans('brand', {
   sackR: 2.5, // ... inom så här många rutor från där den hälls
   brannHand: 0.15, // chansen i timmen att få en brännskada när man släcker med händerna ...
   brannHandGrad: [0.1, 0.4], // ... så här svår (slumpas mellan)
-  iElden: 3, // den som står i en brinnande ruta bränns med den här takten (i timmen) ...
-  iEldenGrad: [0.2, 0.7], // ... så här svårt (slumpas mellan)
-  // den som brinner (steg 6.4.16): kläderna eller håret tar eld, och hen bränns tills elden är släckt
-  tarEld: 0.5, // chansen att man börjar brinna när man bränns i en brinnande ruta ...
-  tarEldHand: 0.2, // ... när man bränns medan man släcker med händerna ...
+  // den som brinner (steg 6.4.16): kläderna eller håret tar eld, och hen bränns tills elden är släckt. Det är att brinna som skadar
+  // den som är i elden (steg 12.1.80)
+  tarEldHand: 0.2, // chansen att man börjar brinna när man bränns medan man släcker med händerna ...
   vaggEld: 0.3, // ... och i timmen när man står bredvid en brinnande vägg (elden hoppar över)
   smitta: 3, // elden smittar (steg 9.2.134): den som går eller står på en ruta som brinner börjar brinna med den här takten i sekunden
   // (en sekund är några minuter i spelet), så nästan säkert också den som bara går igenom ...
@@ -372,7 +370,7 @@ export function brandSteg(s: State, dtSec: number) {
   if (hot && !b.hot) { b.hot = 1; log(s, 'Elden närmar sig byn!', 'world'); count(s, 'brand hot'); }
   ser(s, b);
   soker(s, b, hot);
-  iElden(s, b, dtSec);
+  eldSmittar(s, b, dtSec);
   brandKarta(s);
   if (b.r.length) return;
   // branden är slut
@@ -509,13 +507,6 @@ function vardeNara(s: State, i: number) {
   for (let y = Math.max(0, y0 - R); y <= Math.min(H - 1, y0 + R); y++) for (let x = Math.max(0, x0 - R); x <= Math.min(W - 1, x0 + R); x++) n += c.v[y * W + x];
   return n;
 }
-// den brinnande rutan närmast byns område
-function narmastByn(s: State, b: Brand) {
-  const ut = bynsAvstand(s);
-  let best = -1, bd = Infinity;
-  for (const r of b.r) { const d = ut.at(r[0]); if (d < bd) { bd = d; best = r[0]; } }
-  return best;
-}
 // den närmaste brinnande rutan till (x, y) och avståndet dit
 function narmast(b: Brand, x: number, y: number, utom?: (i: number) => boolean) {
   let best = -1, bd = Infinity;
@@ -543,19 +534,9 @@ function soker(s: State, b: Brand, hot: boolean) {
     avbryt(s, p); count(s, 'brand avbryter');
   }
 }
-// den som står i en brinnande ruta bränns
-function iElden(s: State, b: Brand, dtSec: number) {
-  const k = kartaOf(b), DELAR: Kroppsdel[] = ['fotV', 'fotH', 'benV', 'benH', 'handV', 'handH', 'bal'];
-  for (const p of living(s)) {
-    const x = Math.floor(p.x), y = Math.floor(p.y);
-    if (!alive(p) || !inMap(x, y) || k[y * W + x] !== 1 || ur(s, p.id, 3860) >= chans(BRAND.iElden, dtSec)) continue;
-    const d = DELAR[Math.floor(ur(s, p.id, 3861) * DELAR.length)], g = BRAND.iEldenGrad[0] + ur(s, p.id, 3862) * (BRAND.iEldenGrad[1] - BRAND.iEldenGrad[0]);
-    b.skadade++; count(s, 'brand skadad');
-    const dod = skada(s, p, d, 'brannskada', g, 'brand', 'i elden');
-    if (dod) { die(s, p, dod); continue; }
-    upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
-    if (ur(s, p.id, 3867) < BRAND.tarEld) antand(s, p, 'i elden');
-  }
+// elden smittar (steg 9.2.134): den som är i elden tar eld, och det är att brinna som skadar (brinnerSteg)
+function eldSmittar(s: State, b: Brand, dtSec: number) {
+  const k = kartaOf(b);
   // elden smittar (steg 9.2.134): den som är på en ruta som brinner börjar nästan säkert brinna, också den som bara går igenom; och
   // elden hoppar över från en brinnande vägg, och med en lägre chans från marken som brinner, till den som står bredvid
   for (const p of living(s)) {
@@ -597,8 +578,10 @@ export function brinnerSteg(s: State, dtSec: number) {
     if (ur(s, p.id, 3871) < chans(BRAND.brinnSkada, dtSec)) {
       const d = DELAR[Math.floor(ur(s, p.id, 3872) * DELAR.length)], g = BRAND.brinnGrad[0] + ur(s, p.id, 3873) * (BRAND.brinnGrad[1] - BRAND.brinnGrad[0]);
       count(s, 'brinner skadad');
+      if (s.brand?.brann_p?.includes(p.id)) { s.brand.skadade++; count(s, 'brand skadad'); } // i branden (steg 12.1.80)
       const dod = skada(s, p, d, 'brannskada', g, 'brand', 'när hen brann');
       if (dod) { die(s, p, dod); delete p.brinner; continue; }
+      if (s.brand?.brann_p?.includes(p.id)) upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
     }
     const pl = paSig(s, p).filter(t => !SAKER[t.k]?.brinnerInte);
     if (pl.length && ur(s, p.id, 3874) < chans(BRAND.plaggBrinner, dtSec)) {
@@ -689,14 +672,13 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
   if (!kanGa(p) || !b.r.length) return;
   const n = narmast(b, p.x, p.y);
   if (hot && ageOf(p, s.now) >= ALDER.vuxen) {
-    const mal = narmastByn(s, b); // det som brinner närmast byn först
-    if (freeTools(s, p, 'vattensack') >= 1 && naVattnet(s, p)) {
-      const spot = drickPlats(s, p);
-      if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: TORST.fyllSek * SEC, tool: 'vattensack', ref: mal };
-    }
     // var och en väljer den ruta som är mest värd att släcka (steg 10.11.3): det som står nära, delat med hur många som redan
-    // släcker där, och kanten före det inre
+    // släcker där, och kanten före det inre; också den med vattensäcken (steg 12.1.80)
     const i = bastSlack(s, b, p, slackare(s, p));
+    if (i >= 0 && freeTools(s, p, 'vattensack') >= 1 && naVattnet(s, p)) {
+      const spot = drickPlats(s, p);
+      if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: TORST.fyllSek * SEC, tool: 'vattensack', ref: i };
+    }
     const fot = i >= 0 ? fotfaste(s, b, i, p) : undefined;
     if (fot) return { act: 'slacka', why: 'Släcker elden med händerna', spot: fot, dur: BRAND.handMin * MIN, ref: i };
   }
