@@ -692,8 +692,9 @@ function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number 
   return bytaMed(s, personPart(s, m), personPart(s, g), vill, v);
 }
 // den som är mycket skickligare i Handel lurar ibland den andra: G tar mer betalt (M lägger till det som är värt mest för G),
-// eller M betalar mindre (det sista M lägger fram tas bort). Ger den som lurade
-function lura(s: State, M: Part, G: Part, betal: Vara[], varor: (Vara & { ut: number })[], ger: number): Part | undefined {
+// och har M redan lagt fram allt ger G mindre (det sista i fatt, det M får, tas bort); eller M betalar mindre (det sista M
+// lägger fram tas bort). Ger den som lurade
+function lura(s: State, M: Part, G: Part, betal: Vara[], varor: (Vara & { ut: number })[], ger: number, fatt: Vara[] = []): Part | undefined {
   const d = (G.handel ?? 0) - (M.handel ?? 0);
   if (Math.abs(d) < HANDLA.lura || rnd(s, 'handel') >= HANDLA.luraChans) return undefined;
   let mer = ger * HANDLA.luraAndel;
@@ -705,6 +706,13 @@ function lura(s: State, M: Part, G: Part, betal: Vara[], varor: (Vara & { ut: nu
       if (n < 1) continue;
       if (i >= 0) betal[i].n += n; else betal.push({ k: w.k, n });
       mer -= n * w.ut; rum -= n * viktOf(w.k);
+    }
+    for (let i = fatt.length - 1; i >= 0 && mer > 1e-9; i--) { // något blir kvar av varje sak: ett byte är något mot något
+      const f = fatt[i], ut = vardeAv(f, G, false);
+      if (f.t || ut <= 1e-9) continue;
+      const n = Math.min(f.n - 1, Math.floor(mer / ut + 1e-9));
+      if (n < 1) continue;
+      f.n -= n; mer -= n * ut;
     }
     return mer < ger * HANDLA.luraAndel ? G : undefined;
   }
@@ -779,7 +787,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   const fatt = vill.map(w => ({ ...w, n: w.t ? 1 : helt(w.n * del) })).filter(w => w.n > 0);
   if (vaxel > 0) fatt.push({ k: 'silver', n: vaxel });
   if (!fatt.length || !betal.length) return 0; // ett byte är något mot något: blev ena sidan noll hela saker blir det inget byte
-  return genomfor(s, M, G, fatt, betal, v.typ, desperat, !!v.delad, lura(s, M, G, betal, varor, ger * del));
+  return genomfor(s, M, G, fatt, betal, v.typ, desperat, !!v.delad, lura(s, M, G, betal, varor, ger * del, fatt));
 }
 // det M kan betala G med: det som är värt mest för G och minst för M först (ut = värt för G, in = värt för M)
 export function betalVaror(M: Part, G: Part, utom: readonly string[]) {
@@ -817,7 +825,7 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
   return n;
 }
 // den som är skickligare lurar ibland den andra i ett byte M och G gått med på (handlaren, steg 4.5.7.4): betal kan ändras
-export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number) => lura(s, M, G, betal, betalVaror(M, G, utom), ger);
+export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number, fatt: Vara[] = []) => lura(s, M, G, betal, betalVaror(M, G, utom), ger, fatt);
 import { foodDays } from './ekonomi';
 import { MALTIDSNIVA, RATT, VARIATION, basta, maltidsNiva, proteinAv, rattInfo, smakSak } from './ratter';
 import { ROK, STEK, kockGlad } from './matlagning';

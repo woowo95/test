@@ -834,7 +834,7 @@ function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
     f.ja = true;
     affarMed(s, h, p);
     const fatt: Vara[] = a.kop.map(w => ({ ...w })), betal = a.bud.map(w => ({ ...w }));
-    const lurare = luraI(s, M, H_, betal, a.kop.map(w => w.k), ger);
+    const lurare = luraI(s, M, H_, betal, a.kop.map(w => w.k), ger, fatt);
     a.byt = s.now; a.fas = 'plocka';
     visaFiltar(s, h); // filtarna ligger som de låg när de blev överens (byteKlart tar platserna härifrån)
     genomfor(s, M, H_, fatt, betal, 'handel', false, true, lurare);
