@@ -292,7 +292,7 @@ SCENARIER.varm = {
     // en tanke när man är för varm, och tröttare först när man är extremt varm (steg 2.10.20)
     // samma person i en kopia av byn med samma arbete ett slag, men bara för varm: bara den extrema värmen skiljer dem åt
     const lik = cloneState(s), pl = lik.people.find(q => q.id === p.id)!;
-    for (const q of [p, pl]) { q.rest = 1; q.task = { act: 'ved', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: '' }; }
+    for (const q of [p, pl]) { q.rest = 1; q.task = { act: 'ved', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: '', dark: false }; } // dark: det är dag, annars tror steget att dagen blivit natt och väljer om
     p.warm = 1.9; pl.warm = (KROPP.forVarm + KROPP.extremVarm) / 2; step(s, 30); step(lik, 30); // en uppdatering av behoven (TAKTER, steg 10.2.14): värmen sjunker sedan
     const trott = 1 - p.rest > (1 - pl.rest) * 1.5, tanke = p.thoughts.some(t => t.text === 'För varm');
     // badet kyler den som är för varm
