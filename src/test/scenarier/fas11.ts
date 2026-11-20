@@ -4020,6 +4020,7 @@ SCENARIER.turne = {
     const vuxna = modigaste(s);
     const p = vuxna[0]!;
     p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    p.bedrift = undefined; // en färsk bedrift som väger mer (påhittig, 0,5 mot turnéns 0,4) står annars kvar (steg 12.1.112)
     const q = narmasteBy(vl, hem, x => x.by !== undefined && !!SIM.radNr(vl, x.by)?.syn && SIM.radNr(vl, x.by)!.tal.folk > 0);
     const r = SIM.radNr(vl, q.by!)!;
     SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
