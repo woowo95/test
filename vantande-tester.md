@@ -12,6 +12,12 @@
 - 12.1.18 (förråden växer med det som inte får plats) ändrade byarna så att scenariot klader fick fler ben; fler scenarier kan ha påverkats och syns i koll.
 - 12.1.21 (rikedomen lockar): `npm run strid` före (på 141bbace) och efter (85a3aff3), en gång var, som information om flockarna.
 
+## Grenen par-sparning (12.1.71, 12.1.88, 12.1.127)
+
+- 12.1.71 (a98426d) och 12.1.88 (56f12f4): gamla sparfiler före v378 och flytten från localStorage borttagna. Skyldig koll (scenarierna sparning, sparbas, egendom, plagg, kunskap, stenring, stationsteknik, brasa, falt, smidighet, slagsmal, vattensack gick igenom i molnet; byarna ska utvecklas exakt som förut, så facit ska inte ändras) och `npm run utseende` (byn läggs nu i webbläsarens databas i stället för i det enkla minnet; prövat i molnet med en liten by, inte hela kommandot).
+- Scenariot vard var rött redan före grenen (på b5c6c48): "på tolv dygn i en by: 0 förband".
+- 12.1.127: bara bildstilen (valdelen), inget i spelet.
+
 ## Hopslagna nattgrenar
 
 - natt-bildstil (12.1.69, 12.1.70, 12.1.102): src/portrattkarna.ts är omskriven (samma porträtt punkt för punkt); skyldig samma-kollen och `npm run utseende`.
