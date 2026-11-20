@@ -51,6 +51,7 @@ export const LAG = {
 export const condBar = (c: number) => bar(c, c < LAG.skick ? 'low' : '');
 // förklaringar bakom en ?-knapp (symboler först): knappen och texten har samma id, och ett tryck på knappen visar eller döljer texten
 const oppna = new Set<string>();
+export const stangAllaHjalp = () => oppna.clear(); // scenariokörningen: inget är utfällt när nästa scenario börjar (steg 12.1.113)
 // en berättelse som fälls ut (steg 11.1.3): boksymbolen i stället för ?-knappen, som bara är till för förklaringar
 export const berattelseKnapp = (id: string, title: string) => `<button type="button" class="hjalp bok" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">${tecknet('berattelse', '📜', 14)}</button>`;
 // delraden överst i en flik (steg 11.1.25): symbolen med namnet under, som runstenarna, så att ingen rubrik behöver upprepa delens
