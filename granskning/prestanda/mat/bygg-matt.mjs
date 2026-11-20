@@ -75,6 +75,8 @@ const plugin = {
   name: 'matt',
   setup(b) {
     b.onLoad({ filter: /src[\\/]main\.ts$/ }, a => ({ contents: andraMain(readFileSync(a.path, 'utf8')), loader: 'ts', resolveDir: dirname(a.path) }));
+    // skuggbildens delar syns för A/B-proven (ab318.cjs), bara i mätversionen
+    b.onLoad({ filter: /src[\\/]ui[\\/]skugga\.ts$/ }, a => ({ contents: readFileSync(a.path, 'utf8') + "\n(window as any).__skugga = { delar, get rt() { return rt; }, get rtTak() { return rtTak; }, get rtRor() { return typeof rtRor === 'undefined' ? undefined : rtRor; } };\n", loader: 'ts', resolveDir: dirname(a.path) }));
   },
 };
 const r = await build({ entryPoints: [MAIN], bundle: true, minify: false, format: 'iife', target: 'es2020', write: false, legalComments: 'none', plugins: [plugin], banner: { js: "performance.mark('bunt-start');" }, absWorkingDir: KOD });

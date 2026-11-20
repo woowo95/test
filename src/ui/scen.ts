@@ -51,8 +51,9 @@ export class Ikoner {
   private n = 0;
   private bilder: PIXI.Sprite[] = []; // egna bilder, så att lagret kan dela med annat (figurLayer)
   // skugga: bilderna kastar en skugga på marken (steg 5.1.8, ui/skugga.ts): den ritade halvgenomskinliga skuggan tas ur bilden
-  // och läggs i skuggbilden, där marken blir ett steg mörkare i paletten
-  constructor(readonly layer: PIXI.Container, readonly skugga = false) {}
+  // och läggs i skuggbilden, där marken blir ett steg mörkare i paletten. rorlig: bilderna flyttar sig ofta (djuren, rövarbytet),
+  // och deras skuggor ligger i skuggbildens lilla rörliga del, så att den fasta delen inte ritas om när de går (skugga.ts)
+  constructor(readonly layer: PIXI.Container, readonly skugga = false, readonly rorlig = false) {}
   start() { this.n = 0; }
   // x, y = bildens övre vänstra hörn. Ingen bild vrids: det som står vridet har en egen bild (steg 3.10.7)
   add(k: string, x: number, y: number, sc: number, tint = 0xffffff) {
@@ -60,7 +61,7 @@ export class Ikoner {
     let sp = this.bilder[this.n++];
     if (!sp) { sp = new PIXI.Sprite(); this.bilder.push(sp); this.layer.addChild(sp); }
     sp.texture = ikonUtanSkugga(k); sp.scale.set(sc); // den halvgenomskinliga skuggan i bilden ritas aldrig som den är (steg 5.5.1): i ett lager med skugga blir den skuggbild, annars tas den bort
-    (sp as PIXI.Sprite & { skuggIkon?: string }).skuggIkon = this.skugga ? k : undefined; sp.tint = tint; sp.visible = true;
+    const ss = sp as PIXI.Sprite & { skuggIkon?: string; skuggRor?: boolean }; ss.skuggIkon = this.skugga ? k : undefined; ss.skuggRor = this.rorlig; sp.tint = tint; sp.visible = true;
     sp.position.set(x, y); sp.zIndex = y + iconCanvas(k).height * sc; // bildens nederkant, i ett lager som sorteras
   }
   end() { for (let i = this.n; i < this.bilder.length; i++) this.bilder[i].visible = false; }

@@ -348,7 +348,7 @@ function riktning(id: number, x: number, y: number, gar?: boolean): Rikt {
 // markeringen runt den valda försvinner när man markerar något annat (steg 6.8.12): då är en ruta för det andra öppen
 const markeradNu = () => ui.tab === undefined || ui.tab === 'person' ? ui.selected : undefined;
 // bytet rövaren bär syns på figuren (steg 10.2.28): det hen har mest av, vid handen
-const bytesIkoner = new Ikoner(figurLayer, true);
+const bytesIkoner = new Ikoner(figurLayer, true, true);
 function ritaRovarna(skugga: PIXI.Graphics) {
   bytesIkoner.start();
   for (const g of gaster()) {
