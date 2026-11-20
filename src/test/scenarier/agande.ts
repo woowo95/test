@@ -1316,7 +1316,7 @@ SCENARIER.handelsko = {
 };
 
 SCENARIER.tillfalle = {
-  text: 'Nivån Tillfälle (steg 6.1.14, "Arbetsordningen" i designdokumentet): det som går förlorat om ingen tar det nu. Den som ska följa med på vargjakten går före vanlig trötthet men efter nöden (måste på toa genast). Handeln brådskar mer ju närmare handlaren är att gå: när besöket börjar går ungefär hälften av de trötta och handlar först, när det slutar alla; den som inte är trött handlar ändå',
+  text: 'Nivån Tillfälle (steg 6.1.14, "Arbetsordningen" i designdokumentet): det som går förlorat om ingen tar det nu. Den som ska följa med på vargjakten går före vanlig trötthet men efter nöden (måste på toa genast). Handeln prövas på sin plats som de andra tillfällena (steg 12.1.74): också den trötta handlar först, både när handlaren just kommit och när hen snart går',
   kor: () => {
     // vargjakten: en by i istiden med en flock som någon just sett och modiga vuxna med spjut
     const s = createState(1, START); s.kal = SIM.nyKalender(s.now, 0); tandEld(s);
@@ -1358,13 +1358,13 @@ SCENARIER.tillfalle = {
       }
       return ja / 200;
     };
-    const borjan = prova(0, true), slut = prova(9.99, true), pigg = prova(0, false);
+    const borjan = prova(0, true), slut = prova(9.99, true), pigg = prova(5, false);
     return [
       [`den som kallar går genast, de ${foljer.length} som följer med väljer igen (${kallarGar ? 'går' : 'går inte'}, ${vantar ? 'väljer' : 'väljer inte'})`, kallarGar && vantar],
       [`den som måste på toa genast går dit först (${n?.task?.act})`, nod],
       [`den trötta följer med på vargjakten före vilan (${tr?.task?.act})`, fore],
       ['när tiden att komma iväg är ute är tillfället borta', borta],
-      [`när handlaren just kommit handlar ${Math.round(borjan * 100)} % av de trötta först (ungefär hälften)`, borjan > 0.35 && borjan < 0.65],
+      [`när handlaren just kommit handlar ${Math.round(borjan * 100)} % av de trötta först`, borjan > 0.95],
       [`när handlaren snart går handlar ${Math.round(slut * 100)} % av de trötta först`, slut > 0.95],
       [`den som inte är trött handlar (${Math.round(pigg * 100)} %)`, pigg > 0.95],
     ];

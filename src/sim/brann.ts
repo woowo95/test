@@ -11,7 +11,7 @@
 // (raden kolmila i ARBETEN, val.ts)
 import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, living, log } from './folk';
-import { clamp, rnd } from './slump';
+import { rnd } from './slump';
 import { hourOf, isLight } from './tid';
 import { HOUR, Person, State, Task } from './typer';
 import { Station, isKlar, stationerOf, vidStation } from './stationer';
@@ -31,8 +31,6 @@ export const BRANN = balans('brann', {
   kolMiss: 2, // varje missad tillsyn vid milan ger så här mycket mindre kol (steg 12.2.2)
   tillsynMin: 2, // en tillsyn tar så här många minuter ...
   tillsynSen: 0.5, // ... och kommer ingen inom så här många timmar efter tiden är den missad
-  passVarde: 6, // värdet som står på spel (i grundvärde) där tillsynen väger fullt; mindre värde väger mindre
-  passMin: 0.2, // ... men aldrig mindre än så här
   ugnMalm: 8, ugnKol: 10, // en blåsning i blästerugnen tar så här mycket malm och kol (steg 12.2.3) ...
   ugnUt: 6, // ... och ger så här mycket järn
   ugnTim: 4, // ugnen går så här många timmar efter klockan
@@ -119,8 +117,7 @@ export const utfall = (d: BranningDef, miss: number) => Object.fromEntries(Objec
 // ---------- tillsynen (steg 12.2.2, Järnet: Tillsynen) ----------
 // En bränning ska ses till vid kända tider (tillsyn, timmar efter tändningen). Kommer ingen inom BRANN.tillsynSen timmar efter
 // tiden är tillsynen missad, och varje missad tillsyn ger mindre ut (miss). Tiderna är en regel om världen; vem som går är ingen
-// regel: raden passa i ARBETEN (val.ts) är ett Tillfälle, vars brådska är värdet som står på spel och hur nära tiden är
-// (passaBradska), och sömnen, hungern och farorna vägs som vanligt
+// regel: raden passa i ARBETEN (val.ts) är ett Tillfälle som prövas när tiden för tillsynen är inne, och farorna går före som vanligt
 const tidFor = (b: Branning, d: BranningDef, k: number) => b.t0 + d.tillsyn[k] * HOUR;
 // tillsynen som kan göras nu vid bränningen b: den första vars tid har kommit och som varken gjorts eller missats
 export function tillsynNu(s: State, b: Branning) {
@@ -156,14 +153,6 @@ export function passaVal(s: State, p: Person) {
     return { b, t, n, d };
   }
   return undefined;
-}
-// brådskan (bradska i ARBETEN): hur nära tiden är (från tidens början till sista stund) gånger värdet som står på spel
-export function passaBradska(s: State, p: Person) {
-  const v = passaVal(s, p);
-  if (!v) return 0;
-  const varde = Object.entries(v.d.miss).reduce((a, [k, n]) => a + grundvarde(k) * n, 0);
-  const nara = clamp((s.now - v.n.fran) / Math.max(1, v.n.till - v.n.fran), 0, 1);
-  return clamp(varde / BRANN.passVarde, BRANN.passMin, 1) * (BRANN.passMin + (1 - BRANN.passMin) * nara);
 }
 export const passaUppgift = (v: NonNullable<ReturnType<typeof passaVal>>) => ({ act: 'passa' as const, text: v.d.tillsyn_text, min: BRANN.tillsynMin, spot: vidStation(v.t), ref: v.t.id });
 // tillsynen är gjord (KLAR i steg.ts): den räknas, om den inte hann bli missad medan den gjordes

@@ -400,7 +400,6 @@ export function lyssnaVal(s: State, p: Person, plats: (q: Person) => { x: number
   return { why: `Lyssnar på ${vem?.name ?? 'någon'}s ${d.namn.toLowerCase()}`, dur: f.slut - s.now, ref: f.start, tool: f.k, spot: publikPlats(s, f, p, plats) };
 }
 // brådskan i arbetsordningen: stiger under väntan, som hos handlaren
-export const lyssnaBradska = (s: State) => { const f = framOppen(s); return f && !f.igang && f.borjar !== undefined ? { fran: f.start, till: f.borjar } : undefined; };
 // medan man uppträder (MEDAN i steg.ts): övning, och de som lyssnar räknas till publiken
 export function upptradaSteg(s: State, p: Person, t: Task, dtSec: number) {
   const f = s.fram;

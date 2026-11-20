@@ -68,7 +68,6 @@ export const TROSKEL = balans('troskel', {
   // gränserna för försök och bygge
   forsokMat: 1.1, // byn prövar sig fram fullt ut när maten räcker så här många dygn ...
   forsokVed: 2, // ... och veden så här många, och mindre med mindre (overskott i teknik.ts, steg 10.2.43)
-  byggMatFran: 0.25, byggMatSpann: 0.9, byggMatMin: 0.1, // maten dämpar bygget: (matdygn - Fran) / Spann, aldrig under Min (val.ts)
 });
 // Redskapen och stationerna (steg 6.2.17): hur många byn vill ha är bufferten. Ett redskap räknas per vuxen från ALDER.vuxen
 // (yxan från yxaFran)
