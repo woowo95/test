@@ -47,6 +47,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   gangVakt.lyss = (s, p, rutor, mork) => { const t = gangLangsam(s, p, rutor, mork); if (t) larm('långsam gång', () => t); };
   // inget svävar (steg 11.1.77): den som tar något ur en stack står vid den
   uttagVakt.lyss = (_s, p, k, _n, x, y) => { if (p && svavar(p, x, y)) larm('svävar', () => `${p.name} (${p.task?.act ?? 'ingen uppgift'}) tog ${k} ${Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y).toFixed(0)} rutor bort`); };
+  const lagerkoll0 = { pa: LAGERKOLL.pa, n: LAGERKOLL.n }; // ställs tillbaka sist, så att ett scenario som kör en by inte lämnar vakten på
   LAGERKOLL.pa = true; LAGERKOLL.fel.length = 0; // förrådets minne per slag och rutnätet jämförs med nyräknade (steg 12.1.186)
   const sedda = new WeakSet<object>(); // arbetena som vakten för arbetstiderna redan sett (steg 9.2.63)
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
@@ -123,6 +124,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     sparAndel: Math.round(Math.max(...sparStorlek(s).map(d => d.kb / d.grans)) * 100), // den del som ligger närmast sin gräns (steg 11.2.2)
   };
   const vakter = [...fel].map(([typ, f]) => `${typ} (${f.n} ggr), första: ${f.forsta}`);
+  Object.assign(LAGERKOLL, lagerkoll0); LAGERKOLL.fel.length = 0;
   return { seed, n, vakter, s, ack: { hunger, humor, humorN, lit, steg, vintermat, vinterved } };
 }
 
