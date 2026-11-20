@@ -4,7 +4,7 @@ import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
-import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, gjortDygn, isKin, isParent, living, log, relKey, stat } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { klenod } from './kvalitet';
 import { DAY, HOUR, Person, Rel, State } from './typer';
@@ -105,6 +105,9 @@ export const RYKTE = balans('rykte', {
   skitsnack: 1.5, // ett påhittat rykte är så här starkt gånger händelsens vikt
   smakTycke: 0.7, // chansen att en smak från början är tycke (annars avsmak)
   berestDygn: 5, // den som kommer hem efter så här många dygn (år i spelet) borta är vittberest (steg 12.1.134)
+  gudlosTro: 0.5, // gudlös (steg 12.1.173): när minst så stor del av de vuxna tror ...
+  gudlosMin: 1, // ... och de troende varit med på minst så här många böner och ritualer det senaste dygnet i snitt ...
+  gudlosAndel: 0.1, // ... får den som varit med på högst så stor del av snittet intrycket gudlös hos dem som ser hen
   braPris: 0.25, // den som ger minst så här mycket mer än hen får i ett byte ger ett bra pris (steg 12.1.134)
 });
 
@@ -154,7 +157,7 @@ const IDEF = {
   scenDalig: { namn: 'dålig på scenen', tecken: -1, op: -3, sym: '🥱', betyder: 'Publiken tog illa emot framträdandet.' },
   skrivkunnig: { namn: 'skrivkunnig', tecken: 1, op: 5, sym: '🪶', sed: { nyfikenhet: 1 }, betyder: 'Har skrivit ett blad, en bok eller ristat en sten.' },
   from: { namn: 'from', tecken: 1, op: 4, sym: '🕯️', sed: { andlig: 1 }, betyder: 'Ber och offrar mycket.' },
-  gudlos: { namn: 'gudlös', tecken: -1, op: -6, sym: '⛓️', sed: { andlig: -1 }, betyder: 'Har vanhelgat det heliga eller stötts ut ur tron.' },
+  gudlos: { namn: 'gudlös', tecken: -1, op: -6, sym: '⛓️', sed: { andlig: -1 }, betyder: 'Har vanhelgat det heliga, stötts ut ur tron eller håller sig borta från tron när de andra tror.' },
   suput: { namn: 'suput', tecken: -1, op: -6, sym: '🍺', som: 'en suput', betyder: 'Är ofta full.' },
   lurendrejare: { namn: 'lurendrejare', tecken: -1, op: -20, sym: '🦊', som: 'en lurendrejare', betyder: 'Har lurat någon i ett byte.', dampar: { ge: 0.3 }, beteende: 'Man ger ogärna till en lurendrejare.' },
   hederlig: { namn: 'hederlig handlare', tecken: 1, op: 8, sym: '⚖️', som: 'en hederlig handlare', betyder: 'Ger bra pris i bytena.' },
@@ -235,6 +238,7 @@ const HDEF = {
   bad: { i: 'from', vikt: 0.05, text: 'bad och offrade till gudarna' },
   skandade: { i: 'gudlos', vikt: 0.5, text: 'skändade {sak}' },
   utstott: { i: 'gudlos', vikt: 0.4, text: 'stöttes ut ur tron' },
+  utanTro: { i: 'gudlos', vikt: 0.1, text: 'höll sig borta från tron' }, // steg 12.1.173
   full: { i: 'suput', vikt: 0.15, text: 'var full igen' },
   lurade: { i: 'lurendrejare', vikt: 0.5, text: 'lurade {om} i ett byte' },
   braPris: { i: 'hederlig', vikt: 0.1, text: 'gav {om} ett bra pris' },
@@ -326,6 +330,15 @@ export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sa
   if (offer && d.i === 'valdsam') budTillfalle(s, 'skadad', offer, p); // hämnd är en plikt (budet, steg 8.6.6)
 }
 
+// en gång om dygnet (steg 12.1.173): den som håller sig borta från tron medan de andra i byn tror får intrycket gudlös hos dem
+// som ser hen. Hur ofta var och en varit med på byns böner och ritualer det senaste dygnet räknas med gjort(…, 'tro')
+export function gudlosDygn(s: State) {
+  const vuxna = living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vuxen), troende = vuxna.filter(p => p.tro !== undefined);
+  if (!troende.length || troende.length < vuxna.length * RYKTE.gudlosTro) return;
+  const snitt = troende.reduce((a, p) => a + gjortDygn(s, p, 'tro'), 0) / troende.length;
+  if (snitt < RYKTE.gudlosMin) return;
+  for (const p of vuxna) if (gjortDygn(s, p, 'tro') <= snitt * RYKTE.gudlosAndel) handelse(s, p, 'utanTro');
+}
 // det som p gjort (beviset b) blir känt för alla i till (när ledaren straffar p, styre.ts): de hör det med del av vikten
 export function allmant(s: State, p: Person, b: Bevis, del: number, till: Person[]) {
   const d = HANDELSER[b.h];

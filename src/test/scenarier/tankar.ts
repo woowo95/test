@@ -211,3 +211,24 @@ SCENARIER.amnen2 = {
     ];
   },
 };
+
+SCENARIER.gudlos = {
+  text: 'Gudlös av att hålla sig borta från tron (steg 12.1.173, gudlosDygn i rykten.ts): en gång om dygnet får den som aldrig är med på byns böner och ritualer intrycket gudlös hos dem som ser hen, när de andra i byn tror; i en by utan tro får ingen det',
+  kor: () => {
+    const prov = (medTro: boolean) => {
+      const s = SIM.cloneState(testBy(20)), vuxna = SIM.living(s).filter(p => !p.gast && SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), [borta, ...andra] = vuxna;
+      for (const p of vuxna) { p.intryck = []; delete p.gjort; p.x = vuxna[0].x; p.y = vuxna[0].y; p.task = undefined; p.tro = medTro ? 1 : undefined; }
+      borta.tro = undefined;
+      for (const p of andra) SIM.gjort(s, p, 'tro', 2);
+      SIM.gudlosDygn(s);
+      return { borta, andra, s };
+    };
+    const a = prov(true), b = prov(false);
+    const ser = (x: typeof a, p: SIM.Person) => x.andra.filter(q => SIM.intryckOm(q, p.id, 'gudlos')).length;
+    return [
+      [`den som aldrig är med ses som gudlös (${ser(a, a.borta)} av ${a.andra.length})`, ser(a, a.borta) > 0],
+      ['de som är med ses inte som gudlösa', a.andra.every(p => ser(a, p) === 0)],
+      ['i en by utan tro får ingen intrycket', ser(b, b.borta) === 0],
+    ];
+  },
+};

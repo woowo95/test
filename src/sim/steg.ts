@@ -496,7 +496,8 @@ export const TAKTER: Takt[] = [
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
   { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: s => { lagDygn(s); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (lagar.ts, steg 12.1.60)
-  { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
+  { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } },
+  { namn: 'gudlös', sek: 86400, fas: 0.81, fn: s => { gudlosDygn(s); } }, // den som håller sig borta från tron (rykten.ts, steg 12.1.173) // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },
   { namn: 'wearBuild', sek: 21600, fn: (s, dt, c) => { wearBuild(s, dt / HOUR_S, c.ai); } },
@@ -1766,3 +1767,4 @@ import { stepHons } from './hons';
 import { tanke } from './tankar';
 import { tankarTimme } from './tankelage';
 import { drommar } from './drommar';
+import { gudlosDygn } from './rykten';

@@ -7,7 +7,7 @@ import { personHand } from './personlogg';
 import { DAY, HOUR, MIN, Person, State, T, W, inMap } from './typer';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
-import { ALDER, KROPP, ageOf, alive, byId, count, isParent, living, log, stat } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, gjort, isParent, living, log, stat } from './folk';
 import { kronika } from './historik';
 import { tatKrok, upplev } from './uppvaxt';
 import { SKRIFT } from './skriftTal';
@@ -97,7 +97,7 @@ export function bonNod(s: State, p: Person): { id: BonId; o: string; vem?: numbe
 // bönen är klar (KLAR i steg.ts): humör, tro, och en bön i nöd får svar inom några dygn (steg 8.5.4)
 export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; why?: string }) {
   const id = (t.tool ?? 'vardag') as BonId, d = BDEF[id], f = (rokelse(s, p) ? KULT.starkare : 1) * (barTecken(s, p) ? KULT.starkare : 1) * (vidHeligtTing(s, p) ? KULT.starkare : 1);
-  if (d.namn === 'Vardagsbön') tanke(p, 'badBon', s.now, { v: d.ger.humor * f }); else tanke(p, 'kult', s.now, { text: d.namn, v: d.ger.humor * f }); handelse(s, p, 'bad');
+  if (d.namn === 'Vardagsbön') tanke(p, 'badBon', s.now, { v: d.ger.humor * f }); else tanke(p, 'kult', s.now, { text: d.namn, v: d.ger.humor * f }); handelse(s, p, 'bad'); gjort(s, p, 'tro'); // med i tron (steg 12.1.173)
   p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + d.ger.tro * f);
   count(s, 'bon_' + id);
   if (id === 'vardag') p.bonD = dygnNr(s.now);
@@ -270,7 +270,7 @@ export function ritualTimme(s: State) {
     const offerF = r.k === 'myrOffer' && tr ? myrOffra(s, tr) : 1; // det mer värda offret ger mer tro (steg 12.1.5)
     const ledd = pr && (!drakt || bar) ? KULT.starkare : 1, troF = (!pr || !drakt ? 1 : bar ? KULT.starkare : 0.5) * offerF;
     for (const p of med) {
-      tanke(p, 'ritual', s.now, { text: r.namn ?? d.namn, v: (r.om?.includes(p.id) ? d.huvud ?? d.humor : d.humor) * ledd });
+      tanke(p, 'ritual', s.now, { text: r.namn ?? d.namn, v: (r.om?.includes(p.id) ? d.huvud ?? d.humor : d.humor) * ledd }); gjort(s, p, 'tro'); // (steg 12.1.173)
       // en ritual ger tro bara till dem som har ritualens tro (steg 10.3.3); fastan ger mer
       if (r.tro !== undefined && p.tro === r.tro) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + (r.form === 'fasta' ? KULT.fastaTro : r.k === 'vuxen' && r.om?.includes(p.id) ? KULT.vuxenTro : r.tyst ? KULT.tystTro : d.tro) * troF);
       p.task!.until = s.now;
