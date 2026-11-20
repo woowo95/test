@@ -104,7 +104,7 @@ export const RESA = balans('resa', {
   turneVan: 10, // grannbyn måste tycka så här bra om byn (hållningen, -100 till 100) för att ta emot en turné
   seVarde: 15, // det väntade värdet av att se en plats man bara hört rykten om, för en medelmåttigt nyfiken (arbetstimmar)
   omvag: 1.5, // en väg ingen gått räknas som fågelvägen gånger så här mycket
-  faraDygn: 0.04, // ledens fara per dygn på vägen (tills vägens händelser finns, steg 11.5.14)
+  faraDygn: 0.04, // ledens fara per dygn på vägen i valet av resa: ett fast tal, inte räknat ur vägens händelser
   // kallelsen (steg 11.5.11)
   kraftPerFara: 15, // den kraft sällskapet behöver per del av ledens fara (en medelstark vuxen har kraften 1)
   foljMod: 0.4, foljTycke: 0.4, foljNyfiken: 0.3, foljSlump: 0.6, // viljan att följa med: modet, tycket om ledaren, nyfikenheten och slumpen ...
