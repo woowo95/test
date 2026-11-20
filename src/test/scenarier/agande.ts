@@ -46,17 +46,33 @@ const helAffar = (s: State, p: Person, forByn = false, tills?: SIM.Affar['fas'])
     const v = SIM.handlaVal(s, p);
     if (!v) break;
     forsta ??= v; steg.push(v.why);
-    p.x = v.spot.x; p.y = v.spot.y;
-    p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task;
+    handlaUppgift(s, p, v);
     if (v.why.startsWith('Står i kö')) break;
     if (tills && h.affar?.vem === p.id && h.affar.fas === tills) { SIM.visaFiltar(s, h); return { forsta, steg }; }
-    SIM.handlaKlar(s, p, p.task);
+    SIM.handlaKlar(s, p, p.task!);
     if (h.affar?.vem !== p.id) break;
   }
   p.task = undefined;
   return { forsta, steg };
 };
 
+// uppgiften att handla som valet v säger, och personen på platsen om stall är satt
+type Handla = NonNullable<ReturnType<typeof SIM.handlaVal>>;
+const handlaUppgift = (s: State, p: Person, v: Handla, stall = true) => {
+  if (stall) { p.x = v.spot.x; p.y = v.spot.y; }
+  p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task;
+};
+// bytet mellan tre vuxna i en rik by med tomt förråd, utan vänner: a och b vid förrådet, där bytet görs (steg 11.1.77), c långt bort
+const bytesBy = () => {
+  const s = createState(6, START);
+  rikBy(s); tomtForrad(s); s.ting = [];
+  const [a, b, c] = treVuxna(s, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
+  for (const q of [a, b, c]) for (const r of [a, b, c]) if (q !== r) getRel(s, q, r).op = 0;
+  s.people = [a, b, c]; vidForradet(s, a, b); c.x = 90;
+  return { s, a, b, c };
+};
+// a samlar och saknar korg, b har två korgar och a har 20 bär
+const korgbyte = (s: State, a: Person, b: Person) => { a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20); };
 SCENARIER.agande = {
   lang: true,
   text: 'Varje redskap är ett ting med ägare och skick. Den som gör det äger det, det gamla och det en död lämnar är byns. Man har redskapet man arbetar med i handen, tar sitt eget först, behåller det egna i handen och lägger tillbaka byns. Man lånar av släkt och vänner, inte av ovänner',
@@ -174,14 +190,7 @@ SCENARIER.byte = {
   text: 'Byten i behovsstegen, mellan sitt eget och byns förråd: den som saknar något byter till sig det mot något hen har över, när båda tjänar på det (grundvärdet gånger var och ens behov). Ojämna byten går när skillnaden är liten, när den ena håller på att dö eller när de står varandra nära. Mat, material och redskap kan bytas. I samtal, mest på kvällar och nätter, byter folk också utan akut behov när båda tjänar på det (steg 1.4.3).',
   lang: true,
   kor: () => {
-    const ny = () => {
-      const s = createState(6, START);
-      rikBy(s); tomtForrad(s); s.ting = [];
-      const [a, b, c] = treVuxna(s, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
-      for (const q of [a, b, c]) for (const r of [a, b, c]) if (q !== r) getRel(s, q, r).op = 0; // inga vänner
-      s.people = [a, b, c]; vidForradet(s, a, b); c.x = 90; // bytet görs vid förrådet, där sakerna ligger (steg 11.1.77)
-      return { s, a, b, c };
-    };
+    const ny = bytesBy;
     const byns = (s: State, k: string) => amountOf(s, k) - living(s).reduce((n, q) => n + ownsAmount(s, q, k), 0);
     const nara = (x: number, y: number) => Math.abs(x - y) < 1e-6;
     // a är hungrig och har trä över, b har mat över: a byter till sig mat före byns. b värderar sin mat över till hälften
@@ -218,7 +227,7 @@ SCENARIER.byte = {
     const grenar = ownsAmount(s, b, 'grenar') + ownsAmount(s, c, 'grenar'), grenOver = ownsAmount(s, a, 'grenar'), grenByten = s.stat?.byten;
     // ett redskap mot mat: a samlar och saknar korg, b har två
     ({ s, a, b } = ny());
-    a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20);
+    korgbyte(s, a, b);
     const korg = askForTool(s, a, b) === 'byte' && ownedBy(s, a).some(t => t.k === 'korg') && ownsAmount(s, b, 'bar') > 0;
     // kvällens byten (1.4.3): a har mat men mindre än hen vill ha kvar (matPerDygn) och trä över, b tvärtom. Ingen saknar något
     ({ s, a, b } = ny());
@@ -899,20 +908,13 @@ SCENARIER.plagg = {
 SCENARIER.bytessystem = {
   text: 'Ett bytessystem för alla byten (steg 4.4.1.1): ett byte mellan bybor går genom samma kod som handeln med handlaren sedan gör (parter i byte.ts). Ett stort byte (ett redskap) görs på en filt där sakerna ligger en stund och skrivs i krönikan; ett litet vardagsbyte är en överlämning från hand till hand och skrivs bara i loggen. En gåva av ett redskap till ett barn och mat till den som höll på att dö skrivs i krönikan. Den som handlar för byn byter till sig det projekten saknar av bybor som har det över (steg 10.5.18).',
   kor: () => {
-    const ny = () => {
-      const s = createState(6, START);
-      rikBy(s); tomtForrad(s); s.ting = [];
-      const [a, b, c] = treVuxna(s, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
-      for (const q of [a, b, c]) for (const r of [a, b, c]) if (q !== r) getRel(s, q, r).op = 0;
-      s.people = [a, b, c]; vidForradet(s, a, b); c.x = 90;
-      return { s, a, b, c };
-    };
+    const ny = bytesBy;
     // krönikans rader av ett slag ('byte', 'gava') och loggens rader ur en mall (steg 6.7.7: texten varierar)
     const kron = (s: State, slag: string) => (s.hist?.kronika ?? []).filter(k => k[2] === slag).length;
     const logg = (s: State, mall: string) => s.log.filter(l => l.m === mall).length;
     // ett redskap mot mat: ett stort byte på en filt, i loggen och i krönikan
     let { s, a, b } = ny();
-    a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20);
+    korgbyte(s, a, b);
     const korg = askForTool(s, a, b) === 'byte';
     const fb = s.filtar?.find(f => f.vem === b.id), fa = s.filtar?.find(f => f.vem === a.id);
     const filt = s.filtar?.length === 2 && !!fa && !!fb && fa.par === fb.par && fb.varor.some(v => v.k === 'korg' && v.fran === b.id) && fa.varor.length > 0 && fa.varor.every(v => v.fran === a.id);
@@ -1284,7 +1286,7 @@ SCENARIER.handelsko = {
     const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) SIM.sattKlanPris(s, hk, { [k]: 1, skinn: 1 }); // (klanens priser som grundvärdet: kön prövas, inte priset)
     SIM.hp(s, h).skill.handel = 0; // (en ovan handlare: det prövade beror inte på vem som kom)
     SIM.put(s, 'skinn', 6, { [a.id]: 6 }); for (const p of [a, b]) SIM.put(s, 'silver', 20, { [p.id]: 20 }); // b har bara silver: inget att sälja, så det enda b vill är köttet
-    const uppgift = (p: Person, v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; };
+    const uppgift = (p: Person, v: Handla) => handlaUppgift(s, p, v, false);
     const va = SIM.handlaVal(s, a)!; uppgift(a, va);
     const vb = SIM.handlaVal(s, b)!; uppgift(b, vb);
     const affar = () => s.handlare?.affar;
@@ -1549,7 +1551,7 @@ SCENARIER.forhandling = {
     SIM.hp(s, h).skill.handel = 0; // (en ovan handlare: det prövade beror inte på vem som kom)
     for (const p of [a, b]) { SIM.put(s, 'skinn', 6, { [p.id]: 6 }); SIM.put(s, 'silver', 20, { [p.id]: 20 }); }
     const aff = () => s.handlare?.affar;
-    const uppgift = (p: Person, v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { p.x = v.spot.x; p.y = v.spot.y; p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; return v; };
+    const uppgift = (p: Person, v: Handla) => { handlaUppgift(s, p, v); return v; };
     const v1 = uppgift(a, SIM.handlaVal(s, a)!);
     const hn = SIM.handlarNu(s, a);
     const fraga = v1.why.startsWith('Frågar vad') && !!hn && hn.bybo[0] === 'a_prata' && hn.handlare.join() === h.varor.map(w => w.k).join();
@@ -1676,7 +1678,7 @@ SCENARIER.handlarrel = {
       for (const p of living(d)) if (p.task?.act === 'handla') p.task = undefined;
       dh.varor = [{ k: 'torrkott', n: 2 }]; SIM.put(d, 'silver', 30, { [da.id]: 30 }); // silvret är värt lika mycket i byn och hos handlarens by (steg 11.6.3)
       const dr = SIM.gastRel(d, dh, da)!; dr.irr = 0; dr.op = -100;
-      const upp = (v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { da.x = v.spot.x; da.y = v.spot.y; da.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: d.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; };
+      const upp = (v: Handla) => handlaUppgift(d, da, v);
       const n0 = d.stat?.handlarIrriterad ?? 0, aff = () => d.handlare?.affar;
       for (let i = 0; i < 40; i++) {
         const v = SIM.handlaVal(d, da); if (!v || aff()?.vem !== da.id) break; upp(v);
@@ -1738,7 +1740,7 @@ SCENARIER.filtar = {
     const t = createState(6, START);
     rikBy(t); tomtForrad(t); t.ting = []; setByn(t);
     const [a, b] = treVuxna(t, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
-    a.habit = { samla: 10 }; addTool(t, 'korg', b); addTool(t, 'korg', b); gain(t, a, 'bar', 20);
+    korgbyte(t, a, b);
     const bytte = askForTool(t, a, b) === 'byte';
     const [f1, f2] = t.filtar ?? [];
     const par = bytte && t.filtar?.length === 2 && f1.par === f2.par && f1.vem !== f2.vem && Math.abs(Math.abs(f1.y - f2.y) - SIM.FILT_MOT) < 1e-9;
@@ -1906,7 +1908,7 @@ SCENARIER.handslag = {
     const t = createState(6, START);
     rikBy(t); tomtForrad(t); t.ting = []; setByn(t);
     const [a, b] = treVuxna(t, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
-    a.habit = { samla: 10 }; addTool(t, 'korg', b); addTool(t, 'korg', b); gain(t, a, 'bar', 20);
+    korgbyte(t, a, b);
     const bytte = askForTool(t, a, b) === 'byte';
     const e = t.log.slice().reverse().find(l => SIM.radByte(t, l)), m = e && SIM.radByte(t, e);
     const hel = (v: SIM.ByteVara[]) => v.length > 0 && v.every(w => Number.isInteger(w.n) && w.n >= 1 && Number.isInteger(w.p) && w.p >= 1);
