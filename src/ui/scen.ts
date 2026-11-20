@@ -15,7 +15,7 @@ export const app = new PIXI.Application({ background: 0x1d2420, antialias: false
 export const view = app.view as HTMLCanvasElement;
 export const world = new PIXI.Container();
 export const terrainG = new PIXI.Graphics();
-export const plantG = new PIXI.Graphics(); // bärbuskar och svampar som finns just nu
+export const plantLayer = new PIXI.Container(); // bärbuskar och svampar som finns just nu, i sparade bitar (ui/vaxter.ts, steg 12.1.180)
 export const flackG = new PIXI.Graphics(); // fläckarna på marken, som blodet vid slaktbänken (smuts.ts)
 export const djurFx = new PIXI.Graphics(); // det kastade i luften och dammet efter kaniner som flyr (jakt.ts, vaxter.ts)
 export const djurMarkLayer = new PIXI.Container(); // utropstecknet över kaninen som ser någon och flyr
@@ -40,7 +40,7 @@ export const labels = new PIXI.Container();
 // och värmekartan ovanpå syns som på dagen. Den som lägger till ett lager bredvid ett av dem lägger det i samma behållare
 // (lagerEfter)
 export const mork = new PIXI.Container();
-mork.addChild(terrainG, plantG, flackG, husLayer, mattLayer, structG, pileLayer, overG, djurFx, rokBakLayer, figurLayer, peopleG, rokLayer);
+mork.addChild(terrainG, plantLayer, flackG, husLayer, mattLayer, structG, pileLayer, overG, djurFx, rokBakLayer, figurLayer, peopleG, rokLayer);
 world.addChild(mork, filterG, bubbleG, symbolLayer, djurMarkLayer, labels);
 // lägg ett lager direkt ovanför ett annat, i samma behållare
 export const lagerEfter = (nytt: PIXI.DisplayObject, fore: PIXI.DisplayObject) => fore.parent!.addChildAt(nytt, fore.parent!.getChildIndex(fore) + 1);
