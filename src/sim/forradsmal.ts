@@ -281,6 +281,7 @@ export const tillverkVill = (s: State, d: TillverkDef) => arMaterial(d.ger) ? vi
 const TILLVERKVILL: Record<string, (s: State) => number> = {
   ridsadel: s => tamdjurOf(s).filter(d => tamArt(d.art).rids && tamAlder(s, d) >= tamArt(d.art).vuxen).length, // en ridsadel per vuxen häst (steg 11.11.4)
   packsadel: s => behovVill(s.sadelBehov, s.now), // packsadlarna: så många djur som byns största sällskap ville lasta det senaste året (steg 11.11.3)
+  ost: s => amountOf(s, 'ost') + Math.floor(ostKrok.surnar(s) / 4), // osten (steg 12.4.7): mjölken som annars skulle surna
   talt: taltVill, // tälten: så många som byns största sällskap med en natt på vägen behövde det senaste året (steg 11.11.1)
 };
 // tälten byn vill ha: det största behovet bland resorna med en natt som packats det senaste året (ett dygn)
@@ -317,3 +318,5 @@ export function stationBrist(s: State, k: StationSlag) {
 }
 // sängen i stället för halmbädden (steg 12.4.3): bristen sätts i mobler.ts, som läses efter den här filen
 export const finareKrok = { brist: (_s: State, _k: string) => 0, sate: (_s: State) => 0, vagga: (_s: State) => 0 };
+// mjölken som annars skulle surna (surnarSnart i vatskor.ts, steg 12.4.7), satt i steg.ts eftersom vatskor.ts läses före den här filen
+export const ostKrok = { surnar: (_s: State) => 0 };

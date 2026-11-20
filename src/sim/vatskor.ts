@@ -217,3 +217,15 @@ export function fyllLampa(s: State, p: Person, tk: { ref?: number }) {
 }
 import { LJUSSORTER, ljusSort } from './ljus';
 import { TUNNA, mognarI } from './tunna';
+// ---------- osten (steg 12.4.7) ----------
+// mjölken som annars skulle surna: den del av en vätska med hållbarhet som stått mer än OSTEN.surnar av sin tid
+export const OSTEN = balans('osten', { surnar: 0.5 });
+export const surnarSnart = (s: State, v: VatskaId) => { const h = (VATSKOR[v] as VatskaDef).haller; return h === undefined ? 0 : tingOf(s).reduce((n, t) => n + (t.inne?.v === v && !kyrkans(t) && t.inne.t !== undefined && s.now - t.inne.t >= OSTEN.surnar * h * DAY ? t.inne.n : 0), 0); };
+// en behållare av sorten k som blir ledig när n av vätskan v tas: tom, eller med högst n av v i
+export const karSomBlirLedig = (s: State, k: string, v?: string, n = 0) => tingOf(s).find(t => t.k === k && !t.vaxt && !t.kok && t.ler === undefined && ingenHar(t) && !kyrkans(t) && (!t.inne || t.inne.v === v && t.inne.n <= n));
+// n av vätskan v tas, ur behållaren forst först
+export function taVatskaFran(s: State, v: VatskaId, n: number, forst?: Ting) {
+  let kvar = n;
+  if (forst?.inne?.v === v) { const d = Math.min(kvar, forst.inne.n); forst.inne.n -= d; kvar -= d; vatskaKrok.tagen(s, v, d); if (forst.inne.n <= 0) forst.inne = undefined; }
+  return n - kvar + (kvar > 0 ? taVatska(s, v, kvar) : 0);
+}

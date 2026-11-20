@@ -134,7 +134,7 @@ import { stationById, stationFlyttTimme, stationFor, kvVid, stationFlytta, finis
 import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
-import { ar_vatska, fyllLampa, fyllVatska, ledigFor, teFaktor } from './vatskor';
+import { ar_vatska, fyllLampa, fyllVatska, karSomBlirLedig, ledigFor, taVatskaFran, teFaktor, vatskaAv, type VatskaId } from './vatskor';
 import { rullaKvalitet } from './kvalitet';
 import { protesTimme } from './protes';
 import { halsoNotiser } from './halsonotiser';
@@ -290,13 +290,16 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   const sack = d.vatten ? fylldSack(s) : undefined;
   if (d.vatten && !sack) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
   if (d.eld && !stationFor(s, d.act) && !nagonEld(s)) return; /* vilken eld som helst (steg 12.1.55) */ // teet kokas vid en eld som brinner om byn inte har örtköket (steg 9.5.8)
-  const kar = ar_vatska(d.ger) ? ledigFor(s, d.ger) : undefined;
-  if (ar_vatska(d.ger) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
+  const vk = d.vatska as { v: VatskaId; n: number } | undefined;
+  if (vk && vatskaAv(s, vk.v) < vk.n) return; // mjölken till osten (steg 12.4.7)
+  const kar = ar_vatska(d.ger) ? ledigFor(s, d.ger) : d.kruka ? karSomBlirLedig(s, d.kruka, vk?.v, vk?.n) : undefined;
+  if ((ar_vatska(d.ger) || d.kruka) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
+  if (vk) taVatskaFran(s, vk.v, vk.n, kar); // ur krukan där det ska sjuda först, så att den blir ledig
   if (sack) sack.inne = undefined; // säcken töms men finns kvar (steg 7.6.6)
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
   const ag: Record<string, number> = {};
   for (const [q, n] of Object.entries(av)) addDel(ag, takeMaterial(s, p, q, n), 1);
-  if (kar && d.sjud) { kar.kok = { r: d.ger, n: d.n, kvar: d.sjud * MIN, ag, vatska: 1, q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // buljongen sjuder i krukan på elden (stepKok)
+  if (kar && d.sjud) { kar.kok = { r: d.ger, n: d.n, kvar: d.sjud * MIN, ag: Object.keys(ag).length ? ag : { [p.id]: 1 }, ...(ar_vatska(d.ger) ? { vatska: 1 as const } : {}), q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // osten blir en sak i förrådet när den sjudit (steg 12.4.7) // buljongen sjuder i krukan på elden (stepKok)
   else if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
@@ -1776,3 +1779,6 @@ import { baddVila, bredvidKaresta, sittVila, sattaKlar } from './mobler';
 import { mognadSteg, mognadVarde, tunnaRegn } from './tunna';
 import { vardeKrok } from './varde';
 vardeKrok.inne = mognadVarde; // en mognad dryck är värd mer (steg 12.4.6): tunna.ts läses före varde.ts
+import { ostKrok } from './forradsmal';
+import { surnarSnart } from './vatskor';
+ostKrok.surnar = s => surnarSnart(s, 'mjolk'); // mjölken som annars skulle surna ystas (steg 12.4.7)

@@ -221,3 +221,35 @@ SCENARIER.tunna = {
     ];
   },
 };
+
+SCENARIER.ost = {
+  text: 'Osten (steg 12.4.7): 4 mjölk ystas i en mellanstor lerkruka vid elden till 1 ost (4 minuters arbete och 15 minuter på elden, tekniken Ost, som öppnas när byn har haft mjölk); osten håller 40 dygn, mättar som torkat kött och fyller protein och fett, och byn ystar den mjölk som annars skulle surna',
+  kor: () => {
+    const d = SIM.TILLVERKA.ysta, ost = SIM.SAKER.ost!, tek = SIM.TEKNIK.find(t => t.id === 'ost')!;
+    const s = SIM.createState(1, START), p = vuxen(s);
+    klockan(s, 12);
+    const stangd = !SIM.oppen(s, tek);
+    const kruka = SIM.addTool(s, 'lerkruka_mellan', p); kruka.hos = undefined;
+    SIM.fyllVatska(s, 'mjolk', 4, kruka);
+    const farsk = SIM.tillverkVill(s, d);
+    s.now += 14 * SIM.HOUR;
+    const gammal = SIM.tillverkVill(s, d);
+    (s.stat ??= {}).mjolkHaft = 1; const oppen = SIM.oppen(s, tek);
+    (p.tek ??= {}).ost = 1; (p.tek ??= {}).kruka = 1;
+    s.fire.lit = true; s.fire.fuel = 4;
+    const kan = SIM.PROJEKT.ysta.kan(s, p, { kyla: false } as unknown as SIM.ProjektFara);
+    p.task = { act: 'ysta', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task;
+    SIM.KLAR_FOR.ysta!(s, p, p.task, 0);
+    const sjuder = kruka.kok?.r === 'ost' && !kruka.inne && SIM.vatskaAv(s, 'mjolk') === 0;
+    const fore = SIM.amountOf(s, 'ost');
+    SIM.stepKok(s, 16 * 60);
+    const efter = SIM.amountOf(s, 'ost'), tom = !kruka.kok && !kruka.inne;
+    return [
+      [`4 mjölk i en mellanstor lerkruka vid elden, ${d.min} minuters arbete och ${d.sjud} minuter på elden`, d.vatska?.v === 'mjolk' && d.vatska.n === 4 && d.kruka === 'lerkruka_mellan' && d.min === 4 && d.sjud === 15 && !!d.eld],
+      [`osten håller ${ost.haller} dygn, mättar ${ost.mat} som torkat kött (${SIM.SAKER.torrkott!.mat}) och fyller protein och fett`, ost.haller === 40 && ost.mat === SIM.SAKER.torrkott!.mat && (ost.naring?.protein ?? 0) >= 2 && (ost.naring?.fett ?? 0) >= 2 && SIM.INGREDIENSER.ost.grupper.join() === 'protein,fett'],
+      [`tekniken ${tek.namn} kräver ${tek.krav} och är stängd tills byn haft mjölk (${stangd} → ${oppen})`, tek.krav.join() === 'kruka' && stangd && oppen],
+      [`byn vill ysta den mjölk som annars skulle surna (färsk ${farsk}, efter 14 timmar ${gammal})`, farsk === 0 && gammal === 1 && kan],
+      [`mjölken sjuder i krukan och blir en ost i förrådet, och krukan blir ledig`, sjuder && efter === fore + 1 && tom],
+    ];
+  },
+};

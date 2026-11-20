@@ -62,6 +62,13 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '...kjJjJjJjJk...', '...kjJjJjJjJk...', '...kjJjJjJjJk...', '...kyyyyyyyyk...',
     '...kjJjJjJjJk...', '....kkkkkkkk....', '................', '................'],
     pal: { ...TRA, y: '#a0947d' } },
+  // osten (steg 12.4.7): en rund ost av ljus ostmassa med en skuren kil
+  ost: { pix: [
+    '................', '................', '................', '................',
+    '.....kkkkkk.....', '...kkYYYYYYkk...', '..kYYYyYYYYYYk..', '..kYYYYYYYkkkk..',
+    '..kyYYYYYYkYYk..', '..kyyYYYYYkyYk..', '...kyyyyyykyk...', '....kkkkkkkk....',
+    '................', '................', '................', '................'],
+    pal: { k: '#24201d', Y: '#d8b25f', y: '#b2921b' } },
 };
 // stationerna som är en ruta stora har samma bild på kartan
 const KARTA = ['drejskiva', 'vagga'];
