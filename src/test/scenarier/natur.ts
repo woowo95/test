@@ -797,7 +797,7 @@ SCENARIER.mobler = {
     return [
       [`halmbädden bäddas av hö och grenar inne i sovsalen på ${h} timmar`, !!b && inne && tog],
       [`bädden tar ${w * bh} golvrutor men är en del av sovplatsen (tre rutor per person, steg 9.2.36): ${platser0} sovplatser före, ${platser1} efter med ${stationerOf(s).length} bäddar, klara och påbörjade`, !!b && platser1 === platser0],
-      [`alla som sover i huset får en bädd (${baddar} bäddar åt ${platser0})`, baddar >= platser0],
+      [`alla som sover i huset får en bädd, eller så många som får plats med fritt golv (steg 12.1.36: ${baddar} bäddar åt ${platser0}${baddar < platser0 ? ', ingen plats för fler' : ''})`, baddar >= platser0 || !SIM.stationSite(s, 'halmbadd')],
       [`den som sover i bädden vilar fortare (${vilan ?? 'ingen sover där'}: ${KROPP.restBadd} mot ${KROPP.restGolv} på golvet)`, vilan === 'restBadd' && KROPP.restBadd > KROPP.restGolv],
       [`byn vill ha bäddar när man sover utan (brist ${brist0.toFixed(2)})`, brist0 > 0],
       [`bäddarna tar aldrig en sovplats som någon behöver (${baddar} bäddar; ${hemlos0} utan sovplats före, ${hemlos1} efter)`, hemlos1 <= hemlos0 && baddar >= 1],

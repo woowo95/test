@@ -845,6 +845,33 @@ function golvFri(s: State, rum: Set<number>, x: number, y: number) {
 export const golvLedigt = (s: State, rum: Rum, x: number, y: number) => golvFri(s, new Set(rum.tiles), x, y);
 // står något på rutorna (x, y, w×h) i ett hus ingång: rutan innanför en öppning (steg 3.10.1)? Öppningen själv är inget golv
 const iIngang = (s: State, x: number, y: number, w: number, h: number) => rutorAv(x, y, w, h).some(q => GRANNAR4.some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'oppning'));
+// fritt golv i husen (steg 12.1.36): ett hus ska gå att gå in i och röra sig i. Rutan innanför en öppning hålls fri, och allt
+// fritt golv i rummet (också platserna där man står, sitter eller sover, som är golv) nås från öppningen när sakerna står där,
+// och varje sak och eld i rummet har en nådd ruta rakt bredvid sig. ny = rutorna som en ny sak skulle ta. Mattan ligger som ett
+// golv och tar ingen ruta. Ett rum utan öppning (ett hus vars dörr rasat) prövas inte
+export function golvNas(s: State, r: Rum, ny: readonly number[] = []) {
+  const at = stationRutor(s).at, eld = new Map<number, number>();
+  for (const [n, f] of (s.eldar ?? []).entries()) if (f.at) { const m = f.hearth === 'hard' ? 2 : 1; for (let j = 0; j < m; j++) for (let i = 0; i < m; i++) eld.set((f.at.y + j) * W + f.at.x + i, -1 - n); }
+  // vad som står på rutan: stationens id, en eld (under noll), den nya saken (NaN) eller inget
+  const pa = (i: number): number | undefined => ny.includes(i) ? NaN : at.get(i)?.id ?? eld.get(i);
+  const ingang = r.tiles.filter(i => GRANNAR4.some(([dx, dy]) => bitAt(s, i % W + dx, Math.floor(i / W) + dy)?.k === 'oppning'));
+  if (!ingang.length) return true;
+  if (ingang.some(i => { const v = pa(i); return v !== undefined && !(v < 0); })) return false; // en eld i ingången flyttas inte här
+  const fria = ingang.filter(i => pa(i) === undefined), rum = new Set(r.tiles), sedd = new Set(fria), ko = [...fria];
+  for (let k = 0; k < ko.length; k++) for (const [dx, dy] of GRANNAR4) {
+    const j = ko[k] + dy * W + dx;
+    if (rum.has(j) && !sedd.has(j) && pa(j) === undefined && Math.abs((j % W) - (ko[k] % W)) <= 1) { sedd.add(j); ko.push(j); }
+  }
+  const natt = new Set<number>(), saker = new Set<number>(); // sakerna (Object.is skiljer NaN från de andra) som har en nådd ruta bredvid
+  for (const i of r.tiles) {
+    const v = pa(i);
+    if (v === undefined) { if (!sedd.has(i)) return false; continue; }
+    const id = Number.isNaN(v) ? Infinity : v;
+    saker.add(id);
+    if (GRANNAR4.some(([dx, dy]) => sedd.has(i + dy * W + dx))) natt.add(id);
+  }
+  return natt.size === saker.size;
+}
 // inne: i ett färdigt hus (en möbel man sover i bara där man sover, det andra inte i ett förrådshus), på lediga golvrutor med
 // golv framför sig, och bara om den inte tar en sovplats som någon behöver. Helst mot en vägg och inte vid öppningen, och en
 // bädd aldrig i ingången. bara = bara i det rummet, far = bara i de husen (ingen bygger i någon annans hus, steg 3.10.2)
@@ -865,9 +892,9 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
         let fri = true, sc = rot * STATION.vriden + bonus;
         for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = golvFri(s, rum, x + i, y + j);
         for (let i = 0; i < w && fri; i++) fri = rum.has((y + h) * W + x + i) && !stationRutor(s).at.has((y + h) * W + x + i); // golvet framför
-        if (!fri || d.sover && iIngang(s, x, y, w, h)) continue; // en bädd aldrig i ingången (steg 3.10.1)
+        if (!fri || iIngang(s, x, y, w, h)) continue; // ingenting i ingången (steg 3.10.1 och 12.1.36)
         runtOm(s, x, y, w, h, k => { if (k === 'vagg') sc -= STATION.badd; else if (k === 'oppning') sc += STATION.dorr; });
-        if (sc < bs) { bs = sc; best = rot ? { x, y, rot, inne: 1 } : { x, y, inne: 1 }; }
+        if (sc < bs && golvNas(s, r, rutorAv(x, y, w, h).map(q => q.y * W + q.x))) { bs = sc; best = rot ? { x, y, rot, inne: 1 } : { x, y, inne: 1 }; } // och golvet nås från dörren (steg 12.1.36)
       }
     }
   }
@@ -1084,7 +1111,7 @@ function siteForvar(s: State, k: string) {
   const zs = zonesOf(s), mot = (q: { x: number; y: number }) => GRANNAR4.some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'vagg') ? 0 : 1;
   const c = golvet(s, k, !stationDef(k)?.forvar?.redskap && golvFullt(s) > 0)
     .sort((a, b) => mot(a) - mot(b) || +b.full - +a.full || ((b.z.prio ?? 0) - (a.z.prio ?? 0)) || zs.indexOf(a.z) - zs.indexOf(b.z) || a.y - b.y || a.x - b.x);
-  const at = c.find(q => nas(s, q.z, q.y * W + q.x));
+  const at = c.find(q => !iIngang(s, q.x, q.y, 1, 1) && nas(s, q.z, q.y * W + q.x)); // aldrig innanför en dörr (steg 12.1.36)
   return at && { x: at.x, y: at.y, rot: undefined, inne: 1 as const };
 }
 // där man står när man bygger en möbel som inte går att gå igenom: mitt på en ruta rakt bredvid som man kan gå på
@@ -1551,22 +1578,29 @@ export function taBort(s: State, t: Station) {
   tomt(s, [t]);
   touch(s);
 }
-// En möbel eller station som står framför en arbetsstation (på rutan där man står och arbetar), eller en bädd i ett hus
-// ingång, flyttas till en plats där den får stå, en i timmen och när ingen står på den eller arbetar vid den. Får den
-// ingen plats tas den isär. Förvaringen tas isär (utanLager), och grillen och brasorna står vid sin eld. Det händer i
-// byar som sparades innan rutan framför hölls fri (3.6.6) och bäddarna hölls ur ingången
+// En möbel eller station som står framför en arbetsstation (på rutan där man står och arbetar), i ett hus ingång eller så att
+// golvet i huset inte nås från dörren (steg 12.1.36), flyttas till en plats där den får stå, en i timmen och när ingen står på
+// den eller arbetar vid den. Får den ingen plats tas den isär. Förvaringen flyttas bara ur ingången (den tas annars isär i
+// utanLager), och grillen och brasorna står vid sin eld. Det händer i byar som sparades innan rutan framför hölls fri (3.6.6)
+// och golvet i husen hölls fritt
+const iIngangen = (s: State, t: Station) => { const { w, h } = storlekAv(t); return t.inne && iIngang(s, t.x, t.y, w, h); };
+// stänger t in en del av golvet: rummet nås inte med den men utan den
+function stangerGolv(s: State, t: Station) {
+  const d = stationDef(t.k), r = stationRum(s, t);
+  return !!r && !d?.golv && !golvNas(s, r) && utan(s, t, () => golvNas(s, r));
+}
 function iVagen(s: State) {
   const fram = framRutor(s);
-  const t = stationerOf(s).find(t => {
+  const t = [...stationerOf(s)].reverse().find(t => { // den senast byggda först: när två saker tillsammans stänger in golvet står den senare fel
     const d = stationDef(t.k);
-    if (!d || !isKlar(t) || d.forvar || d.eld || d.brasa) return false;
+    if (!d || !isKlar(t) || d.eld || d.brasa || d.forvar && !iIngangen(s, t)) return false;
     const { w, h } = storlekAv(t), rutor = rutorAv(t.x, t.y, w, h);
-    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !(d.sover && t.inne && iIngang(s, t.x, t.y, w, h)) && !(arbetar(d) && !framLand(s, t.x, t.y, w, h))) return false;
+    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !iIngangen(s, t) && !(arbetar(d) && !framLand(s, t.x, t.y, w, h)) && !(t.inne && stangerGolv(s, t))) return false;
     return !living(s).some(q => arbetarVid(t, q)) && !living(s).some(p => rutor.some(q => q.x === Math.floor(p.x) && q.y === Math.floor(p.y)));
   });
   if (!t) return;
   const d = stationDef(t.k)!, { w, h } = storlekAv(t);
-  const var_ = rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : 'i ingången';
+  const var_ = rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : iIngangen(s, t) ? 'i ingången' : 'så att man inte kom fram i huset';
   const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
   count(s, 'station i vägen');
   if (t.k === 'scen') { rivScen(s, t, `Scenen revs eftersom den stod ${var_}.`); return; } // scenen bärs aldrig (steg 8.1.16)

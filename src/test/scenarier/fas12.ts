@@ -1,6 +1,6 @@
 // Scenarier för fas 12: myren och järnet.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank, setMat, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, setMat, tandEld } from './hjalp';
 import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
@@ -647,3 +647,40 @@ SCENARIER.svalaplagg = {
   },
 };
 const KLAD_MIN = () => SIM.KLAD_SLAG.reduce((a, k) => SIM.SAKER[k]!.klad!.varme < SIM.SAKER[a]!.klad!.varme ? k : a);
+
+SCENARIER.frittgolv = {
+  text: 'Fritt golv i husen (steg 12.1.36, golvNas i stationer.ts): ingen möbel eller station ställs på rutan innanför en dörr, och allt fritt golv och varje sak i huset nås från dörren. Det som redan står fel i en sparad by flyttas, en sak i timmen, och tas isär om det inte får plats',
+  kor: () => {
+    const { stationerOf, stationSite, bitAt, storlekAv, golvNas, gridOf, stepStationer } = SIM;
+    const s = SIM.createState(1, START); klockan(s); tandEld(s);
+    const hus = medHus(s)!, W = SIM.W; // W läses efter att kartan skapats
+    const rum = () => gridOf(s).rooms.find(r => r.hus === hus.id && r.tiles.length)!;
+    const iIngang = (t: SIM.Station) => { const { w, h } = storlekAv(t); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => bitAt(s, t.x + i + dx, t.y + j + dy)?.k === 'oppning')) return true; return false; };
+    // bäddar så länge det finns plats: ingen i ingången, och golvet nås hela tiden från dörren
+    let n = 0, allaNas = true;
+    for (; n < 30 && stationSite(s, 'halmbadd'); n++) { medBank(s, 'halmbadd'); allaNas &&= golvNas(s, rum()); }
+    const baddar = stationerOf(s).filter(t => t.k === 'halmbadd');
+    const ingen = !baddar.some(iIngang);
+    // en sparad by med en bädd som stänger in golvet: den sista bädden tas bort och läggs där den stänger in en ruta
+    const sist = baddar.at(-1)!; s.stationer = stationerOf(s).filter(t => t !== sist); SIM.touch(s);
+    const r0 = rum(), fel = r0.tiles.find(i => !golvNas(s, r0, [i]) && !SIM.stationAt(s, i % W, Math.floor(i / W)) && ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => bitAt(s, i % W + dx, Math.floor(i / W) + dy)?.k === 'oppning'));
+    let flyttad = false, stod = '';
+    if (fel !== undefined) {
+      const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'halmbadd', x: fel % W, y: Math.floor(fel / W), kvar: 0, inne: 1 };
+      s.stationer!.push(t); SIM.touch(s);
+      stod = `${t.x}, ${t.y}`;
+      for (const p of SIM.living(s)) { p.x = 1.5; p.y = 1.5; p.task = undefined; } // ingen ligger i bädden
+      stepStationer(s);
+      const efter = stationerOf(s).find(q => q.id === t.id);
+      flyttad = (!efter || `${efter.x}, ${efter.y}` !== stod) && golvNas(s, rum()); // flytta ändrar samma objekt
+      stod += efter ? ` → ${efter.x}, ${efter.y}` : ' → isär';
+    }
+    const loggat = s.log.some(r => /inte kom fram i huset/.test(r.text));
+    return [
+      [`${n} bäddar fick plats i huset, ingen i ingången`, n >= 1 && ingen],
+      [`golvet nåddes från dörren efter varje ny bädd`, allaNas],
+      [`en ruta där en bädd stänger in golvet finns (${fel !== undefined})`, fel !== undefined],
+      [`bädden som stängde in golvet flyttades eller togs isär (${stod}) och golvet nås igen`, flyttad && loggat],
+    ];
+  },
+};
