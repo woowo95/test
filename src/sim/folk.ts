@@ -4,7 +4,7 @@ import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task } from './typer';
 import { balans } from './balans';
-import { nyAndlighet } from './religion';
+import { fodTro, nyAndlighet } from './religion';
 import { RYKTE, ryktbarhet } from './rykten';
 import { hourOf } from './tid';
 import { horText, lista, och, tal } from './ord';
@@ -352,6 +352,7 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
   if (uk) { p.name = uk.namn; p.uppkallad = uk.q.id; count(s, 'uppkallade'); }
   else p.name = makeName(s, sex, 'folk', [mother, father]);
   p.andlig = nyAndlighet(s, p, mother, father); // ur personens egen följd (steg 4.1.1.1)
+  fodTro(s, p, mother, father); // barnet växer upp i föräldrarnas tro (steg 12.1.22)
   const at = freeNear(s, p.x, p.y); p.x = at.x; p.y = at.y; // inte i en husvägg
   return p;
 }

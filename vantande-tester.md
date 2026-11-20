@@ -54,6 +54,16 @@
 - 12.1.159: vattenlarmet i by 80191 (dygn 33,9) ska vara borta i `npm run balans -- 24 35`.
 - 12.1.162: `npm run strid` ska visa björnens strider mot rövarna som en egen rad (Björnen mot rövarna).
 - 12.1.130: koll ska mätas på MacBooken efter ihopslagningen: klocktiden och de fem längsta jobben mot 85 minuter.
+## Grenen par-smatt (12.1.22, 12.1.110, 12.1.153, 12.1.155, 12.1.163, 12.1.165, 12.1.166)
+
+- Committerna på par-smatt har bara typkontrollen och stegens egna scenarier bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit när grenen förts in i varld.
+- 12.1.22 (barnet föds in i föräldrarnas tro): ändrar byarna (fler troende, tron dör senare ut). Trons tre balanstal ses över i fasens Balans (12.6.6), som mäter att en tro grundas i de flesta byar med minst 20 vuxna inom 35 dygn och att minst nio av tio vuxna har en tro när byn haft en tro i 20 dygn.
+- 12.1.110 (ledarens egenskaper drar från skalans mitt, EGENSKAP.mitt i stället för 50): ändrar byarnas form (tätt eller glest, ring eller rader).
+- 12.1.153 (inget ligger i elden): ändrar var högar hamnar; ny vakt `sak i elden` i koll. Scenariot fullaforrad var rött redan före steget (Korg 0 uppgifter, 0 fritid).
+- 12.1.163 (rensningarna vid inläsning som uppgradering 62): ändrar inte spelet, men sparversionen blir 62, så samma-kollen och facit visar annan utveckling enbart av versionsnumret. Prövat i molnet: de fem byarna i `npm run samma` gav samma tillstånd före och efter steget, med versionsnumret borträknat.
+- 12.1.165 (gäster och främlingar bär klanens tatueringar): märkena räknas ur gästens egen slump, men en inflyttad med ett märke på en plats får inget nytt där, så byarna ändras lite; samma-kollen och facit visar annan utveckling.
+- 12.1.155 (byn byter sällan namn: bynamn.vana 0,3 → 0,5, vanaDygn 20 → 10, nejDygn 3 → 10): mätt i molnet med sparade testbyar i 20 dygn (20 år i spelet) från dygn 5 och 25: förut 4 byten på 100 by-år (by 1: 0+0, 1511: 2+0, 4634: 2 från dygn 25), nu 0 byten och 3 nej. Läs `bynamn_byte` i fasens Balans; blir det inget byte alls i någon by på 35 dygn kan vanan sänkas något.
+- 12.1.166 (bladet väger in hur känd den döda är): ändrar vilka blad som skrivs.
 
 ## Frågor till Björn (från natten till 20 november)
 
