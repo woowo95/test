@@ -13,6 +13,7 @@
 - 12.1.76 (elden sköts genom valet av aktivitet) ändrar grunden: vem som lägger ved på elden och tänder den väljs nu i valet i stället för att elden avbryter någon. Skyldig koll med nytt facit och `npm run likhet`.
 - 12.1.82 (vården, striden och vargarna): läs räknarna `vargVantar`, `vargDorrStrid` och `vargTrottnade` i fasens Balans (`npm run balans -- 24 35`). Väntar vargarna utanför en dörr i färre än var fjärde by tas väntan bort med sitt stycke i dokumentet.
 - 12.1.21 (rikedomen lockar): `npm run strid` före (på 141bbace) och efter (85a3aff3), en gång var, som information om flockarna.
+- 12.1.11 (vägarna glöms efter tio dygn, resans poäng räknas en gång per timme): ändrar spelet. Skyldig koll med nytt facit och `npm run likhet` (reslikhet var grön).
 
 ## Grenen par-texter (12.1.118–12.1.122, texterna efter granskningen)
 

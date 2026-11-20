@@ -18,7 +18,7 @@ import { bynsMitt, utanforByn } from './omrade';
 import { blocked, freeNear } from './byggnad';
 import { gaBort, ute } from './ute';
 import { Varlden, varldMark } from './varlden';
-import { byPlats, kandPlats, varldPlatserPa, varldPlatsNr } from './landmarken';
+import { byPlats, kandPlats, varldPlatserPa, varldPlatsNr, type VarldPlats } from './landmarken';
 import { clamp } from './slump';
 import { ryggsack } from './utrustning';
 import { Tamdjur, tamArt, tamdjurOf, tamEg } from './tamdjur';
@@ -102,6 +102,7 @@ export const RESA = balans('resa', {
   turneVan: 10, // grannbyn måste tycka så här bra om byn (hållningen, -100 till 100) för att ta emot en turné
   seVarde: 15, // det väntade värdet av att se en plats man bara hört rykten om, för en medelmåttigt nyfiken (arbetstimmar)
   omvag: 1.5, // en väg ingen gått räknas som fågelvägen gånger så här mycket
+  poangTim: 1, // så ofta (timmar i spelet) resans poäng för varje plats räknas om (steg 12.1.11)
   faraDygn: 0.04, // ledens fara per dygn på vägen i valet av resa: ett fast tal, inte räknat ur vägens händelser
   // kallelsen (steg 11.5.11)
   kraftPerFara: 15, // den kraft sällskapet behöver per del av ledens fara (en medelstark vuxen har kraften 1)
@@ -1119,12 +1120,30 @@ function dygnDit(s: State, fran: { x: number; y: number }, till: { x: number; y:
   return (sparad ? sparad.kostnad : Math.hypot(till.x - fran.x, till.y - fran.y) * RESA.omvag) / VARLD.gangPerDygn;
 }
 export interface ResPlan { mal: number; namn: string; skal: ResmalId; uppdrag?: number; varde: number; dygn: number; fara: number; sc: number; varor: [string, number][]; kop?: [string, number][] }
+// resans poäng för varje plats räknas en gång per RESA.poangTim timmar och person (steg 12.1.11): målen med poängen utan byns
+// förråd, som bara är en faktor. En resenär väljer alltså på poäng som kan vara en timme gammal (sex minuter i verkligheten)
+interface ResMal extends Omit<ResPlan, 'sc'> { bas: number; d: number } // d: dygnen utan avrundning
+const resMalMinne = new WeakMap<State, Map<number, { h: number; l: ResMal[] }>>();
 // den resa personen helst skulle samla till och dess poäng (utan bruset); fd och wd är dygnen byns mat och ved räcker
 export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan | undefined {
   const vl = s.varld, v = varldMark(s), hem = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
   if (!vl || !v || !hem || p.gast || ute(p) || sallskapFor(vl, p.id)) return undefined;
-  const ny = stat(p, 'nyfikenhet', s.now), mod = stat(p, 'mod', s.now), utfar = Math.max(0, 1 + pabud(s, 'utfarder') * PAB.utfarMax); // påbudet Utfärder (steg 11.8.15)
+  let m = resMalMinne.get(s);
+  if (!m) resMalMinne.set(s, m = new Map());
+  const h = Math.floor(s.now / (RESA.poangTim * HOUR));
+  let e = m.get(p.id);
+  if (e?.h !== h) m.set(p.id, e = { h, l: resMal(s, p, vl, hem) });
   let bast: ResPlan | undefined;
+  for (const x of e.l) {
+    if (x.skal === 'sandebud' && !vl.bud) continue; // budet har redan gått med någon annan under timmen
+    const sc = x.bas * clamp(Math.min(fd, wd) / x.d, 0, 1);
+    if (sc > 0 && (!bast || sc > bast.sc)) { const { bas: _b, d: _d, ...r } = x; bast = { ...r, sc }; }
+  }
+  return bast;
+}
+function resMal(s: State, p: Person, vl: Varlden, hem: VarldPlats): ResMal[] {
+  const ut: ResMal[] = [];
+  const ny = stat(p, 'nyfikenhet', s.now), mod = stat(p, 'mod', s.now), utfar = Math.max(0, 1 + pabud(s, 'utfarder') * PAB.utfarMax); // påbudet Utfärder (steg 11.8.15)
   for (const q of [...vl.platser ?? [], ...vl.minnesplatser ?? []]) { // och platserna byn tror finns (steg 12.1.146)
     if (q.nr === hem.nr) continue;
     const niva = kannerOrt(s, p, q.nr);
@@ -1160,11 +1179,11 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     if (!skal) continue;
     const dygn = 2 * dygnDit(s, hem, q) + (nere ?? RESMAL[skal].stannar);
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
-    const lust = (ny + mod) / 20, hemma = clamp(Math.min(fd, wd) / dygn, 0, 1);
-    const sc = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
-    if (sc > 0 && (!bast || sc > bast.sc)) bast = { mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: Math.round(dygn * 100) / 100, fara: Math.round(fara * 1000) / 1000, sc, varor, kop, ...(uid !== undefined ? { uppdrag: uid } : {}) };
+    const lust = (ny + mod) / 20, dygnR = Math.round(dygn * 100) / 100;
+    const bas = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * Math.max(0, 1 - fara * forsiktig);
+    if (bas > 0) ut.push({ mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: dygnR, fara: Math.round(fara * 1000) / 1000, varor, kop, ...(uid !== undefined ? { uppdrag: uid } : {}), bas, d: dygn });
   }
-  return bast;
+  return ut;
 }
 // hur lämplig p är att bära byns besked (1 för en medelmåttig): karismen, Handel och släkt i byn (den hen kommer ifrån)
 export const budLamplig = (s: State, p: Person, klan: number | undefined) => stat(p, 'karisma', s.now) / 10 * (1 + p.skill.handel / 20) * (klan !== undefined && p.fran === klan ? 1 + RESA.budSlakt : 1);
