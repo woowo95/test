@@ -234,8 +234,10 @@ export const harBalte = (s: State, p: Person) => allaTing(s).some(t => t.bar ===
 // vad plaggen väger, i vikt
 export const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of allaTing(s)) if (t.bar === p.id) v += viktOf(t.k); return v; };
 // hur stor del av kylan plagget t (av slaget k) tar bort: ett finare plagg värmer lite mer (kvalitet.ts)
-export const kladSkydd = (k: string, t?: { q?: number }) => Math.min(UTRUSTNING.maxVarme, (SAKER[k]?.klad?.varme ?? 0) * kvEffekt(t));
-// hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt): varje plagg tar bort sin del av det som är kvar
+// Ett svalt plagg (värmen under noll, steg 12.1.34) ger lika mycket mer kyla och mindre hetta
+export const kladSkydd = (k: string, t?: { q?: number }) => Math.max(-UTRUSTNING.maxVarme, Math.min(UTRUSTNING.maxVarme, (SAKER[k]?.klad?.varme ?? 0) * kvEffekt(t)));
+// hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt, under noll när de svala plaggen kyler mer än de varma värmer):
+// varje plagg tar bort sin del av det som är kvar
 export function kladVarme(s: State, p: Person) {
   let kvar = 1;
   for (const t of allaTing(s)) if (t.bar === p.id) kvar *= 1 - kladSkydd(t.k, t);
@@ -272,12 +274,14 @@ export function stepKlader(s: State) {
     }
     // för varm (steg 12.1.19): när det är riktigt varmt tas ett plagg av i taget, det varmaste först, och de tas på igen när det
     // svalnat. Lätta plagg (skjortan, tunikan, byxorna och skorna) och det som inte värmer sitter kvar
+    // det svala plagget tvärtom (steg 12.1.34): när kylan är en fara tas det av, det svalaste först, och på igen när den gått över
+    if (kyla) { const t = paSig(s, p).filter(q => SAKER[q.k]!.klad!.varme < 0).sort((a, b) => SAKER[a.k]!.klad!.varme - SAKER[b.k]!.klad!.varme)[0]; if (t) { t.bar = undefined; count(s, 'plaggAvKyla'); } }
     if (forVarm(s, p)) { const t = paSig(s, p).filter(q => SAKER[q.k]!.klad!.varme > 0 && !PLAGG[kladAv(q.k)?.plagg as Plagg]?.latt).sort((a, b) => SAKER[b.k]!.klad!.varme - SAKER[a.k]!.klad!.varme)[0]; if (t) { t.bar = undefined; count(s, 'plaggAvVarme'); } }
     for (const t of paSig(s, p)) if (heligtAvstar(s, p, kladArt(t.k), kyla)) { t.bar = undefined; count(s, 'heligtPlaggAv'); } // plagget tas av och ligger kvar
     const har = new Set(paSig(s, p).map(t => SAKER[t.k]!.klad!.plats));
     for (const k of KLAD_SLAG) {
       const pl = SAKER[k]!.klad!.plats;
-      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla) || (SAKER[k]!.klad!.varme > 0 && !PLAGG[kladAv(k)?.plagg as Plagg]?.latt && varmt)) continue; // tas på igen när det svalnat (steg 12.1.19)
+      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla) || (SAKER[k]!.klad!.varme > 0 && !PLAGG[kladAv(k)?.plagg as Plagg]?.latt && varmt) || SAKER[k]!.klad!.varme < 0 && kyla) continue; // tas på igen när det svalnat (steg 12.1.19)
       let best: Ting | undefined;
       for (const t of tingOf(s)) {
         if (t.k !== k || t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || t.helig !== undefined || !lends(s, t.agare, p)) continue; // det heliga tinget bärs inte (steg 10.3.20)

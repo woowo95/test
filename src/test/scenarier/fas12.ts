@@ -606,3 +606,44 @@ SCENARIER.myrvag = {
     ];
   },
 };
+
+SCENARIER.svalaplagg = {
+  text: 'Svala plagg (steg 12.1.34, klader.ts och utrustning.ts): som varma plagg värmer kyler svala plagg, med samma tal under noll. Skjortan av lin kyler lite, och hatten av halm (flätas av hö vid slöjdbänken) kyler mest. Ett svalt plagg tas på när det är varmt och av när kylan är en fara',
+  env: { BALANS: 'kropp.varmGrader=15,kropp.svalnatGrader=12' },
+  kor: () => {
+    const { SAKER, KROPP, temperature } = SIM;
+    const v = (k: string) => SAKER[k]!.klad!.varme;
+    const s = SIM.createState(5, START), p = SIM.living(s)[0]!;
+    const tid = (ok: (t: number) => boolean) => { for (let h = 0; h < 24 * 400; h++) { const t = s.now + h * SIM.HOUR; if (ok(t)) return t; } return -1; };
+    const het = tid(t => temperature(s, t) >= Math.max(KROPP.varmGrader, KROPP.kladFran) + 1);
+    for (const t of SIM.tingOf(s)) if (t.bar === p.id) t.bar = undefined;
+    const pa = (k: string) => { const t = SIM.addTool(s, k, p); t.bar = p.id; t.x = t.y = undefined; return t; };
+    // hettan: med hatten svalare än utan
+    s.now = het;
+    const hettaUtan = SIM.varmeDelar(s, p, 0, new Map()).hetta;
+    const hatt = pa('hatt_halm');
+    const kv = SIM.kladVarme(s, p), hettaMed = SIM.varmeDelar(s, p, 0, new Map()).hetta;
+    // riktigt varmt: mössan tas av och hatten på
+    hatt.bar = undefined; const mossa = pa('mossa_kaninskinn');
+    p.warm = 1.6; SIM.stepKlader(s);
+    const byter1 = mossa.bar === undefined; p.warm = 1.6; SIM.stepKlader(s);
+    const hattPa = hatt.bar === p.id && mossa.bar === undefined;
+    // kylan som fara: hatten av och mössan på
+    const kall = tid(t => { s.now = t; return SIM.farorNu(s).kyla; });
+    s.now = kall; p.warm = 0.5; SIM.stepKlader(s);
+    const hattAv = hatt.bar === undefined;
+    p.warm = 0.5; SIM.stepKlader(s);
+    const mossaPa = mossa.bar === p.id;
+    const projekt = SIM.PROJEKT.hatt, rock = SIM.PROJEKT.rock;
+    return [
+      [`skjortan av lin kyler lite (${v('skjorta_lintyg')}), skjortan av ylle värmer (${v('skjorta_ylle')})`, v('skjorta_lintyg') < 0 && v('skjorta_ylle') > 0],
+      [`hatten av halm kyler mest (${v('hatt_halm')}, tunikan av lin ${v('tunika_lintyg')})`, (KLAD_MIN() as string) === 'hatt_halm' && v('hatt_halm') < v('tunika_lintyg')],
+      [`hatten flätas av två hö vid slöjdbänken på 3 minuter`, SAKER.hatt_halm!.skaffa!.av!.torrgras === 2 && SAKER.hatt_halm!.skaffa!.min === 3 && SIM.STATIONER.flatarbank!.gor!.includes('hatt')],
+      [`med hatten kyler kläderna (${kv.toFixed(3)}) och hettan är mindre (${hettaMed.toFixed(3)} mot ${hettaUtan.toFixed(3)})`, kv < 0 && hettaMed < hettaUtan],
+      [`riktigt varmt: mössan av (${byter1}) och hatten på (${hattPa})`, het > 0 && byter1 && hattPa],
+      [`när kylan är en fara tas hatten av (${hattAv}) och mössan på igen (${mossaPa})`, kall > 0 && hattAv && mossaPa],
+      [`hatten skyddar inte mot kylan i projekten (${!!projekt?.motKyla}), rocken gör det (${!!rock?.motKyla})`, !!projekt && !projekt.motKyla && !!rock?.motKyla],
+    ];
+  },
+};
+const KLAD_MIN = () => SIM.KLAD_SLAG.reduce((a, k) => SIM.SAKER[k]!.klad!.varme < SIM.SAKER[a]!.klad!.varme ? k : a);

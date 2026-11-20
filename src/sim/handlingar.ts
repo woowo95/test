@@ -213,6 +213,7 @@ const DEF = {
   tunika: { namn: 'Syr en tunika', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
   kappa: { namn: 'Syr en kappa', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, sjal: { namn: 'Syr en sjal', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // ullens plagg (steg 9.8.15)
   skjorta: { namn: 'Syr en skjorta', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  hatt: { namn: 'Flätar en hatt', slag: 'hantverk', hantverk: true, stilla: true, verb: 'flätar', plats: 'station' }, // halmhatten (steg 12.1.34)
   mjarde: { namn: 'Flätar en mjärde', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid fångstbänken (stationer.ts, steg 7.4.2)
   vittja: { namn: 'Vittjar mjärden', slag: 'fiska', verb: 'vittjar', plats: 'skog' },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid slöjdbänken (stationer.ts)

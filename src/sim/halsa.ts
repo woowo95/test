@@ -222,7 +222,7 @@ export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
 export function binStick(s: State, p: Person, dtSec: number, storlek: number, rad: OlyckaDef = OLYCKOR.skatta!) {
   const t = p.task, sk = rad.fardighet;
   const lugn = Math.max(0, 1 - (sk ? p.skill[sk] : 0) / HALSA.skicklig) * (t?.tool && rad.lugnar?.[t.tool] !== undefined ? rad.lugnar[t.tool] : 1);
-  const r = rad.risk * storlek * lugn * (1 - BIN.kladSkydd * kladVarme(s, p));
+  const r = rad.risk * storlek * lugn * (1 - BIN.kladSkydd * Math.max(0, kladVarme(s, p))); // de svala plaggen skyddar inte mer än inget
   const n = antalPa(s, r * dtSec / HOUR_S, 'halsa', p);
   for (let i = 0; i < n; i++) stick(s, p, pick(s, rad.delar, 'halsa', p));
   // arbetet kan reta upp boet (steg 10.10.27): RETAR.arbete per tid, gånger boets storlek, sänkt av färdigheten och röken som sticken
@@ -234,7 +234,7 @@ export function binStick(s: State, p: Person, dtSec: number, storlek: number, ra
 // det uppretade boet sticker p (steg 10.10.27): perTim stick i timmen (redan gånger boets storlek), sänkt av kläderna, på
 // vilken kroppsdel som helst. Antalet dras per tid, så att det blir lika många med korta som med långa slag
 export function retadStick(s: State, p: Person, dtSec: number, perTim: number) {
-  const r = perTim * (1 - BIN.kladSkydd * kladVarme(s, p)), delar = (Object.keys(KROPPSDELAR) as Kroppsdel[]).filter(d => !p.saknas?.includes(d));
+  const r = perTim * (1 - BIN.kladSkydd * Math.max(0, kladVarme(s, p))), delar = (Object.keys(KROPPSDELAR) as Kroppsdel[]).filter(d => !p.saknas?.includes(d));
   const n = antalPa(s, r * dtSec / HOUR_S, 'halsa', p);
   for (let i = 0; i < n; i++) stick(s, p, pick(s, delar, 'halsa', p));
   return n;

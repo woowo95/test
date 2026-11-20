@@ -60,6 +60,9 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
   isborr: { pix: ['................', '......kkkk......', '.......jj.......', '.......kk.......', '.......kS.......', '.......kS.......', '.......kS.......', '.......kS.......', '.......kS.......', '......kSSk......', '.......kS.......', '......kSSk......', '.......kS.......', '........k.......', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', j: '#7d5b40' } },
   // eldstålet (steg 12.2.12): ett böjt stål med en gnista
   eldstal: { pix: ['................', '................', '................', '................', '.....kkkkkk.....', '....kSSSSSSk....', '...kSkkkkkkSk...', '...kSk....kSk...', '....k......k....', '................', '.........y......', '........yoy.....', '.........y......', '................', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', y: '#d8b25f', o: '#a14808' } },
+  // halmhatten (steg 12.1.34), platshållare: en bred brätte av halm med ett mörkare band runt kullen
+  hatt_halm: { pix: ['................', '................', '................', '................', '......dddd......', '.....dYYYYd.....', '.....dYyYYd.....', '.....deeeed.....', '..ddddYYYYdddd..', '.dYYYyYYYYyYYYd.', '..ddYYYyyYYYdd..', '....dddddddd....', '................', '................', '................', '................'],
+    pal: { d: '#7d5b40', Y: '#bdb39b', y: '#a0947d', e: '#5e3c24' } },
 };
 export function laggTillJarn(PIX: Pix, PAL: Pal) {
   for (const [k, b] of Object.entries(BILDER)) { PIX[k] = b.pix; PAL[k] = b.pal; }
