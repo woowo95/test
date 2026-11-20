@@ -8,7 +8,7 @@ import { gen } from './ord';
 // (stepBoskap, steg.ts), likadant i båda lägena, med byns följd 'tamdjur'.
 import { balans } from './balans';
 import { spand } from './agande';
-import { ALDER, ageOf, byId, count, forstaGang, gjort, log, ovning, annanGor } from './folk';
+import { ALDER, ageOf, byId, count, forstaGang, gjort, log, ovning, annanGor, alive } from './folk';
 import { desperatMat, getable } from './behov';
 import { rnd } from './slump';
 import { amountOf, changed, gain, put, stacksOf, tidy } from './lager';
@@ -85,6 +85,7 @@ function foda(s: State) {
     if (rnd(s, 'tamdjur') >= BOSKAP.fodd) continue;
     const u = nyttTamdjur(s, d.art, d.x, d.y, d.agare);
     u.hage = d.hage; count(s, `fodd_${d.art}`);
+    const ag = d.agare !== undefined ? byId(s, d.agare) : undefined; if (ag && alive(ag)) tanke(ag, 'fickUnge', s.now, { unge: a.unge }); // (steg 12.1.131)
     if (forstaGang(s, `forstaUng_${d.art}`)) log(s, `Byns ${a.ord[1]} fick ${a.unge ?? 'en unge'}.`, 'world', d.agare !== undefined ? [d.agare] : []);
   }
 }
@@ -213,3 +214,4 @@ export function avlivaKlar(s: State, p: Person, ref?: number) {
   if (forstaGang(s, 'slaktatTamdjur')) log(s, `${p.name} avlivade ${tamArt(d.art).ord[3]} och bar det till slaktbänken.`, 'world', [p.id]);
 }
 import { handelse } from './rykten';
+import { tanke } from './tankar';

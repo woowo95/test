@@ -170,6 +170,7 @@ export function laggFram(s: State, f: string, d: FragaData, fram: Person, prio =
   q.push({ f, d, fram: fram.id, prio });
 }
 const vuxenRost = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen;
+const LAGFRAGOR = new Set(['nylag', 'lagtal', 'lagstraff']); // frågorna som ger byn en lag eller ändrar den (lagar.ts)
 export function rostaOm(s: State, fr: Fraga) {
   const def = FRAGOR[fr.f], fram = byId(s, fr.fram);
   // kretsen: byn, eller en tros troende (steg 8.6.7). De troende väger lika, och Var och en – Präster flyttar vikten till prästerna
@@ -190,6 +191,7 @@ export function rostaOm(s: State, fr: Fraga) {
   // missnöjet med styret: bara byns frågor, inte trons eller skulden på tinget
   if (def.krets === 'byn' && fr.f !== 'skuld' && (def.missnoje?.(s) ?? true)) for (const r of roster) if (r.ja !== gick) { const p = byId(s, r.id); if (p) p.missnoje = clamp((p.missnoje ?? 0) + ROST.miss + ROST.missEnvalde * envalde, 0, 1); }
   if (gick) def.gor(s, fr.d, fram); else def.nej?.(s, fr.d);
+  if (gick && LAGFRAGOR.has(fr.f)) for (const r of roster) if (!r.ja) { const p = byId(s, r.id); if (p && alive(p)) tanke(p, 'orattvisLag', s.now); } // (steg 12.1.131)
   return gick;
 }
 // klockan 20: de viktigaste frågorna tas upp, en per kväll (ROST.kvall)

@@ -464,6 +464,7 @@ export function forlora(s: State, p: Person, d: Kroppsdel, hur: string) {
 function laktSkada(s: State, p: Person, w: Skada) {
   if (w.k === 'bistick') return; // ett stick lämnar inget efter sig
   const g0 = w.g0 ?? 0;
+  if (g0 >= HALSA.avbryt) tanke(p, 'friskIgen', s.now); // en svår skada som läkt (steg 12.1.131)
   if (g0 >= HALSA.menGrad && rnd(s, 'halsa', p) < (w.snett ? HALSA.snettMen : HALSA.menChans)) { // ett snett läkt brott ger oftare ett bestående men (steg 9.5.27)
     const ont = !GADELAR.includes(w.d) && !DEL[w.d].syn;
     (p.men ??= []).push({ d: w.d, fel: ont ? 0 : HALSA.menFel, ont: ont ? HALSA.menOnt : 0 });

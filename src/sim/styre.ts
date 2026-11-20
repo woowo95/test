@@ -532,7 +532,7 @@ function doma(s: State, l: Person) {
       log(s, `${q.name} och ${drabbad.name} gör upp i en holmgång.`, 'rel', [q.id, drabbad.id]);
       continue;
     } else if (lag && rang <= STR.tingRost && !Object.values(st.ministrar ?? {}).length && FRAGOR.skuld) {
-      if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); continue; }
+      if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); tanke(q, 'frikandes', s.now); continue; }
     }
     // ett straff som kräver något (Fängelse, steg 11.12.3) döms bara när det finns; annars det närmaste mildare, och lagen behåller sitt
     const fang = !!fangelseLedigt(s), vikt = HANDELSER[b.h].vikt, steg = lag ? straffNu(s, lag.straff) : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang, fang);

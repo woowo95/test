@@ -833,7 +833,7 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
 export function hemkomst(s: State, sl: Sallskap, t: number) {
   const in_ = sl.ut?.kant ?? bynsMitt(s);
-  for (const p of resenarer(s, sl)) if (ute(p)) kommHem(s, p, in_.x, in_.y);
+  for (const p of resenarer(s, sl)) if (ute(p)) { kommHem(s, p, in_.x, in_.y); tanke(p, 'komHem', t); } // (steg 12.1.131)
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
   vagnHem(s, sl, in_.x, in_.y);
   delaHemma(s, sl);
@@ -897,6 +897,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   for (const p of folk) larOrt(s, p, sl.mal, O_BESOKT, 1, { t });
   const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
   dagbok(s, sl, 'fram', `Kom fram till ${plats.namn}.`, t);
+  if (plats.by === undefined) for (const p of folk) tanke(p, 'sagStort', t); // ett landmärke (steg 12.1.131)
   if (sl.skal === 'uppdrag') uppdragFram(s, sl, t);
   if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Gick ner i gruvan och stannade där i ${spelTid(stannarFor(sl) * DAY)}.`, t);
   const ruin = ruinRad(vl, sl.mal);

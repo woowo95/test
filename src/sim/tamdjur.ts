@@ -9,7 +9,7 @@ import { gen, honom } from './ord';
 import { balans } from './balans';
 import { farorNu } from './kult';
 import { KOTTSLAG, isFood } from './saker';
-import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning } from './folk';
+import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning, alive } from './folk';
 import { getable, takeMaterial } from './behov';
 import { hash3, rnd } from './slump';
 import { put } from './lager';
@@ -17,6 +17,7 @@ import { stat } from './folk';
 import { DAY, Person, State, inMap } from './typer';
 import { blocked } from './byggnad';
 import { INDIVID } from './djur';
+import { tanke } from './tankar';
 
 // en art av tamdjur. ord = en/ett, ett djur, flera, det bestämda; foder = det man matar djuret med, det bästa först (hela saker); bete = djuret betar i hagen (steg 9.8.4),
 // och betet det helst äter; liv = hur många dygn (år i spelet) det lever, vuxen = när det är fullvuxet, varde = vad det är värt i
@@ -87,6 +88,8 @@ export function tamDor(s: State, d: Tamdjur, orsak: string) {
   count(s, `tamDog_${orsak}`);
   const a = tamArt(d.art), q = d.agare !== undefined ? byId(s, d.agare) : undefined;
   if (orsak === 'rymde') return; // den som rymde har redan sin rad i loggen (hundRymmer)
+  const sk = q && alive(q) ? q : byId(s, mestMatat(s, d)?.[0]); // ägaren, eller den som matat djuret mest (steg 12.1.131)
+  if (sk && alive(sk)) tanke(sk, 'mittDjurDog', s.now);
   log(s, `${q ? `${gen(q.name)} ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);
 }
 // vad djuret äter av det som finns, det bästa först (undefined: inget att ge det)
@@ -214,7 +217,7 @@ export function stepHund(s: State, d: Tamdjur) {
     const v = rnd(s, 'tamdjur') * Math.PI * 2, r = rnd(s, 'tamdjur') * HUND.folj;
     const hx = p.x + Math.cos(v) * r, hy = p.y + Math.sin(v) * r;
     if (inMap(Math.floor(hx), Math.floor(hy)) && !blocked(s, hx, hy)) { d.x = hx; d.y = hy; } else { d.x = p.x; d.y = p.y; } // inte i vattnet eller en vägg: då står den hos ägaren
-    count(s, 'hundFoljer');
+    count(s, 'hundFoljer'); tanke(p, 'hundFoljer', s.now); // (steg 12.1.131)
   }
 }
 

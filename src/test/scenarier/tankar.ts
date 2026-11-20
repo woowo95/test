@@ -39,6 +39,37 @@ SCENARIER.tankar = {
       ['namnet fylls i och tiden kan ges vid anropet', gi.v === 0.15 && gi.until === now + SIM.HOUR],
       ['en rad utan styrka kräver den vid anropet', kastar],
       [`varje rad säger vad som ger den${utanNar.length ? ` (${utanNar.join(', ')})` : ''}`, utanNar.length === 0],
+      ...nyaTankar(),
     ];
   },
 };
+
+// de nya tankarna (steg 12.1.131): några av händelserna och lägena prövade direkt
+function nyaTankar(): [string, boolean][] {
+  const s = SIM.cloneState(testBy(20)), har = (p: SIM.Person, t: string) => p.thoughts.some(x => x.text === t && x.until > s.now);
+  const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), [a, b, c] = folk;
+  // djuret dör: ägaren
+  const d = SIM.nyttTamdjur(s, 'far', a.x, a.y, a.id); SIM.tamDor(s, d, 'alder');
+  // kläderna: nya, slitna och fina
+  const plagg = (p: SIM.Person) => SIM.tingOf(s).filter(t => t.bar === p.id && !!SIM.kladAv(t.k));
+  const ge = (p: SIM.Person) => { if (!plagg(p).length) { const k = SIM.KLADER_AV[0]; const t = SIM.addTool(s, SIM.kladNyckel(k.plagg, k.mat), p); t.bar = p.id; } };
+  ge(a); ge(b);
+  for (const t of plagg(a)) { t.c = 1; t.q = 4; }
+  for (const t of plagg(b)) { t.c = 0.1; t.q = 2; }
+  for (const p of [a, b]) p.thoughts = p.thoughts.filter(x => !/kläder/.test(x.text));
+  SIM.tankarTimme(s);
+  // olyckan: c förlorar allt hen äger
+  const varde = () => SIM.formogenheter(s).egen.get(c.id) ?? 0, fore = varde();
+  SIM.forlustFore(s, 'brand');
+  s.forlustFore!.brand!.v[c.id] = Math.max(SIM.TANKELAGE.forlustMin, fore) * 10; // c ägde tio gånger mer när branden började
+  SIM.forlustEfter(s, 'brand');
+  const saknas = (['mittDjurDog', 'fickUnge', 'hundFoljer', 'hemlangtan', 'komHem', 'sagStort', 'husetBrann', 'forloradeAllt', 'slackteElden', 'friskIgen', 'fickProtes', 'nyaKlader', 'slitnaKlader', 'finaKlader', 'egetHus', 'soverISang', 'ljusInne', 'sitterPaStol', 'godSkord', 'missvaxt', 'orattvisLag', 'hogSkatt', 'frikandes', 'fickTatuering'] as const).filter(k => !(k in SIM.TANKAR));
+  return [
+    [`de 24 nya tankarna är rader${saknas.length ? ` (saknas ${saknas.join(', ')})` : ''}`, saknas.length === 0],
+    ['ägaren får Mitt djur dog', har(a, 'Mitt djur dog')],
+    ['nya och fina kläder ger Nya kläder och Fina kläder', har(a, 'Nya kläder') && har(a, 'Fina kläder') && !har(a, 'Slitna kläder')],
+    ['slitna kläder ger Slitna kläder', har(b, 'Slitna kläder') && !har(b, 'Nya kläder')],
+    [`den som mist allt i en olycka får Förlorade allt (före ${Math.round(fore)})`, har(c, 'Förlorade allt') && !s.forlustFore],
+    ['den som inte förlorat något får den inte', !har(a, 'Förlorade allt')],
+  ];
+}

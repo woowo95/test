@@ -12,7 +12,7 @@ import { hearthOf, heatAt } from './eld';
 import { rasar } from './bygg';
 import { Bit, MATERIAL, bitAt, bitsOf, blocked, dorrDef, touch, vagBort } from './byggnad';
 import { Station, stationAt, stationDef, stationerOf, taBort } from './stationer';
-import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
+import { ALDER, ageOf, alive, count, livet, living, log, byId } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
 import { kronika } from './historik';
 import { naVattnet } from './is';
@@ -131,7 +131,7 @@ export type BrandRuta = [number, number, number, number];
 // branden som pågår: när och var den började (kalla = gnistor eller blixten), rutorna som brinner och de som brunnit klart,
 // hur många rutor som tagit eld, och vad den gjort
 // brann = det av trä som brunnit upp (golv, dörrar, stationer, möbler och redskap), namnet och hur många (steg 6.4.3)
-export interface Brand { brann_p?: number[]; t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; brann?: Record<string, number> }
+export interface Brand { husFolk?: number[]; slackare?: number[]; /* de som bodde i husen som brann och de som släckte (steg 12.1.131) */ brann_p?: number[]; t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; brann?: Record<string, number> }
 
 // ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
 // slumpföljderna)
@@ -249,7 +249,7 @@ export function tand(s: State, i: number, kalla: Brand['kalla'], u: number, bran
   const fu = bransle(i);
   if (!fu || u >= fu[0]) return;
   let b = s.brand;
-  if (!b) { b = s.brand = { t: s.now, x: i % W, y: Math.floor(i / W), kalla, r: [], ut: [], n: 0, trad: 0, vagg: 0, saker: 0, skadade: 0, slackt: 0 }; count(s, 'brand'); count(s, 'brand ' + kalla); }
+  if (!b) { b = s.brand = { t: s.now, x: i % W, y: Math.floor(i / W), kalla, r: [], ut: [], n: 0, trad: 0, vagg: 0, saker: 0, skadade: 0, slackt: 0 }; count(s, 'brand'); count(s, 'brand ' + kalla); forlustFore(s, 'brand'); }
   const k = kartaOf(b);
   if (k[i]) return;
   k[i] = 1; b.r.push([i, 0, fu[1], 0]); b.n++; count(s, 'brand ruta');
@@ -377,7 +377,11 @@ export function brandSteg(s: State, dtSec: number) {
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)
   }
   for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) < 14) tecken(s, p, 'brandStopp'); // branden som stannade (steg 8.5.18)
+  // tankarna (steg 12.1.131): de som bodde i ett hus som brann, de som var med och släckte, och den som mist det mesta
+  for (const id of b.husFolk ?? []) { const q = byId(s, id); if (q && alive(q)) tanke(q, 'husetBrann', s.now); }
+  if (b.slackt) for (const id of b.slackare ?? []) { const q = byId(s, id); if (q && alive(q)) tanke(q, 'slackteElden', s.now); }
   delete s.brand;
+  forlustEfter(s, 'brand');
 }
 
 // gnistor från elden och brasorna, och blixten när den slår ner (en gång i timmen)
@@ -431,6 +435,7 @@ function slocknar(s: State, b: Brand) {
     const v = bitAt(s, x, y), br = bitBrinner(v), upp = a >= BRAND.trad;
     if (v && br && v.k === 'vagg') {
       v.c -= a * BRAND.vaggSkick; rev = true;
+      if (v.hus !== undefined) for (const q of husFolk(s).get(v.hus) ?? []) if (!(b.husFolk ??= []).includes(q.id)) b.husFolk.push(q.id); // de som bor där (steg 12.1.131)
       if (v.c <= 0) { const h = rasar(s, v); b.vagg++; count(s, 'brand vagg'); drabbadHus(s, h, 'eldsvådan som förstörde huset'); }
     } else if (v && br && upp) {
       if (v.k === 'golv') { brann(b, MATERIAL[v.m].namn); if (MATERIAL[v.m].vag) vagBort(s, v); else v.m = 'jord'; }
@@ -749,6 +754,7 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
     t.ref = r[0];
     const takt = BRAND.hand * latt(s, r[0]) / HOUR_S, tid = Math.min(kvar, (1 - r[3]) / Math.max(1e-9, takt));
     r[3] += takt * tid; kvar -= tid;
+    if (!(b.slackare ??= []).includes(p.id)) b.slackare.push(p.id); // (steg 12.1.131)
     if (k[r[0]] === 1 && ur(s, p.id, 3864 + varv * 17) < chans(BRAND.brannHand, tid)) {
       const DELAR: Kroppsdel[] = ['handV', 'handH', 'armV', 'armH'];
       const d = DELAR[Math.floor(ur(s, p.id, 3865) * DELAR.length)], g = BRAND.brannHandGrad[0] + ur(s, p.id, 3866) * (BRAND.brannHandGrad[1] - BRAND.brannHandGrad[0]);
@@ -775,7 +781,7 @@ export function slackaFram(s: State, p: Person, _t: Task) {
     const nara = b.r.map(r => ({ r, d: Math.hypot(r[0] % W + 0.5 - p.x, Math.floor(r[0] / W) + 0.5 - p.y) })).filter(q => q.d <= BRAND.sackR).sort((a, c) => a.d - c.d || a.r[0] - c.r[0]);
     const sl = bransleAv(s);
     for (const q of nara.slice(0, BRAND.sackRutor)) q.r[3] = Math.min(1, q.r[3] + (sl(q.r[0])?.[2] ?? 1));
-    if (nara.length) { count(s, 'brand sack'); wearUsed(s, p, 1); }
+    if (nara.length) { count(s, 'brand sack'); wearUsed(s, p, 1); if (!(b.slackare ??= []).includes(p.id)) b.slackare.push(p.id); }
     slocknar(s, b);
   }
   p.task = undefined;
@@ -796,3 +802,6 @@ SLAGHINDER.push(s => s.brand ? KLOCKA.slag : undefined);
 // branden och en bybo som kan nå varandra under ett slag, plus synhållet: byn går i korta steg (steg 10.2.18)
 FAROR.push(s => { const b = s.brand; return !!b?.r.length && living(s).some(q => kanNa(narmast(b, q.x, q.y).d, 0, GANG.fart)); });
 import { grundvarde } from './varde';
+import { forlustFore, forlustEfter } from './tankelage';
+import { tanke } from './tankar';
+import { husFolk } from './byggnader';

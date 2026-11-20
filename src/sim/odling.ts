@@ -1,7 +1,7 @@
 import { stubbeOn } from './stubbar';
 import { tabortBuske } from './buskar';
 import { OMRADE_DELAR, bynsMitt, iByn, omrade, utanforByn } from './omrade';
-import { ALDER, ageOf, alive, count, familjOf, forstaGang, gjort, living, log, ovning, stat, vuxnaOf } from './folk';
+import { ALDER, ageOf, alive, count, familjOf, forstaGang, gjort, living, log, ovning, stat, vuxnaOf, byId, isParent } from './folk';
 import { FYND, richness, takeFrom } from './fynd';
 import { kunnighet } from './ekonomi';
 import { SNABBARE } from './handlingar';
@@ -512,6 +512,7 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     if (Math.abs((r.fu ?? d.fukt) - d.fukt) < 0.1 && kn(p, 'fukt') < 1) learnK(p, 'fukt', JORD.larFukt, s.now); // den som ser grödan trivas lär sig fukten (steg 9.7.3)
     const sk = 1 + (p.skill.odling ?? 0) / ODLING.skillSkord; // en skicklig odlare får mer (steg 9.7.7)
     const po = (d as GrodaDef).drag && pollinerad(s, faltRuta(f, k)) ? 1 + BIN.pollen : 1; // bina ger mer av det som blommar för dem (steg 10.10.25)
+    { const g = a * b * sk * po; if (g >= TANKELAGE.godSkord) skordTanke(s, f, p, 'godSkord'); else if (g <= TANKELAGE.daligSkord) skordTanke(s, f, p, 'missvaxt'); } // (steg 12.1.131)
     if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b * sk * po); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b * sk * po); if (po > 1) count(s, 'pollinerat'); forstaSkorden(s, p, f, d.sak, r.m); } // den första skörden offras (steg 10.3.23)
     if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
     gain(s, p, 'vaxtrest', 1); // växtresterna (steg 9.7.5)
@@ -556,11 +557,17 @@ function forlorad(s: State, f: Falt, orsak: keyof typeof FORLUST, rutor?: Set<nu
   const d = GRODOR[r[ks[0]].g!], agare = s.people.find(q => q.id === f.agare);
   log(s, `${FORLUST[orsak].ord} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
   count(s, FORLUST[orsak].stat);
+  skordTanke(s, f, agare, 'missvaxt'); // (steg 12.1.131)
   for (const k of ks) r[k] = { st: 'sa' };
   f.rord = s.now; // gräset börjar ta fältet först nu, när det står utan gröda (inte från sådden)
   sammanfatta(f);
 }
 
+// odlaren och familjen som lever av fältet får tanken om skörden (steg 12.1.131)
+function skordTanke(s: State, f: Falt, odlare: Person | undefined, t: 'godSkord' | 'missvaxt') {
+  const ag = byId(s, f.agare), fam = living(s).filter(q => q === odlare || !!ag && (q === ag || q.id === ag.partner || isParent(ag, q)));
+  for (const q of fam) tanke(q, t, s.now);
+}
 // grödan på fältet brann i en eldsvåda (brand.ts, steg 3.8.5)
 export function faltBrann(s: State, f: Falt) { forlorad(s, f, 'eld'); }
 // tornadon (steg 6.4.11) förstör grödan på rutorna den går över
@@ -864,3 +871,5 @@ function vaxtsjukdom(s: State, f: Falt) {
 }
 utsadeKrok.av = utsade;
 import { paMyr } from './myr'; // inget fält på myren (steg 12.1.1)
+import { TANKELAGE } from './tankelage';
+import { tanke } from './tankar';

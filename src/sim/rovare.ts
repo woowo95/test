@@ -47,6 +47,7 @@ import { LARMHOT, rollVid, viljaKrok } from './roller';
 import { KartStrid, djurIKartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
 import { EFTER, FAROR, MED, gastKrok } from './efterstrid';
 import { tanke } from './tankar';
+import { forlustFore, forlustEfter } from './tankelage';
 
 // ---------- rövarflocken (steg 4.4.5, Striden på kartan i designdokumentet) ----------
 // När byn är rik (Byns rikedom, varde.ts, med försvaret räknat emot) kan ett gäng rövare komma: folk från en grannklan som inte
@@ -585,6 +586,7 @@ function taSteg(c: RCtx) {
   if (f.skal && !f.radKlar) { f.radKlar = true; if (radSeger(s, f)) { if ((f.gor as string) !== 'letar') { tandaHus(s, f); f.klar = true; } return; } }
   if (f.gor === 'letar' || f.letar?.length) { letaSteg(s, f, c.folk); return; }
   if (huggDorr(s, f, c.folk)) return; // en stängd dörr huggs sönder (steg 8.9.1–8.9.2)
+  forlustFore(s, 'ran'); // förmögenheten när plundringen börjar (steg 12.1.131)
   g.taTid = (g.taTid ?? 0) + c.dt;
   while (g.taTid >= ROVARE.taSek) {
     g.taTid -= ROVARE.taSek;
@@ -626,6 +628,7 @@ export function taKlart(s: State, f: Rovarflock) {
   const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}${vad}.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
   log(s, text, 'world'); if (tog) { notis(s, 'motgang', text); kronika(s, text, 'rovare'); }
   tandaHus(s, f); // (steg 8.9.3)
+  forlustEfter(s, 'ran'); // (steg 12.1.131)
 }
 // hämnden letar hus för hus (steg 8.8.5): flocken går till husen i tur och ordning, närmast först. Är den de söker där, eller
 // kommer de nära hen, hittas hen. När alla hus är genomsökta ger de sig av

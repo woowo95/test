@@ -24,6 +24,7 @@ import { eldarOf, eldXY } from './eld';
 import { notis } from './notiser';
 import { kn, learnK } from './kunskap';
 import { kronika } from './historik';
+import { tanke } from './tankar';
 
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
 export interface SjukStadium { fran: number; text: string } // från hur långt sjukdomen kommit (0–1): det kortet säger
@@ -237,7 +238,7 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
   }
   if (j.mot >= 1) {
     if (d.immun) (p.immun ??= {})[j.k] = 1;
-    count(s, 'frisk_' + j.k); delete p.sjuk;
+    count(s, 'frisk_' + j.k); delete p.sjuk; tanke(p, 'friskIgen', s.now); // (steg 12.1.131)
     // kopporna lämnar ärr i ansiktet, och var tionde förlorar ett öga (steg 9.5.4)
     if (j.k === 'koppor') {
       (p.arr ??= []).push({ d: 'huvud', n: 3 });

@@ -12,6 +12,7 @@ import { vattnetAndrat } from './torka';
 import { areaOf, bynsMinne } from './minne';
 import { eldPlats } from './karta';
 import { DAY, HOUR, State, T, Task, W } from './typer';
+import { forlustFore, forlustEfter } from './tankelage';
 
 // Översvämningen (steg 3.8.3, "Motgångarna i spelet" i designdokumentet). En av motgångarna i registret MOTGANGAR
 // (motgang.ts), på våren och hösten: efter ett långt regn stiger sjön en ruta i taget, en till tre rutor upp på marken
@@ -107,12 +108,14 @@ function andras(s: State, niva: number, fore: number, minne: number) {
     const f = eldPlats(s);
     if (s.fire.lit && iVattnetNu(s, f.y * W + f.x)) s.fire.fuel = 0; // elden i vattnet slocknar (stepFire i eld.ts)
     count(s, 'flod stiger');
+    if (!fore) forlustFore(s, 'flod'); // (steg 12.1.131)
     log(s, fore ? 'Vattnet fortsätter att stiga.' : 'Sjön svämmar över. Vattnet stiger upp på stranden.', 'world');
 
   } else {
     delete s.flodHot;
     if (!mindes) minns(s, hogst); // första gången det sjunker
     log(s, niva ? 'Vattnet sjunker undan.' : 'Vattnet har dragit sig tillbaka till stranden.', 'world');
+    if (!niva) forlustEfter(s, 'flod'); // (steg 12.1.131)
   }
 }
 // så högt som någon i byn säkert minns att vattnet nått (lärdomen 'flod' i minne.ts)
