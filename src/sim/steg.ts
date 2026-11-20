@@ -407,6 +407,7 @@ function stegBy(s: State, dtSec: number, events?: TalkEvent[], efter?: () => voi
     slag(s, plan, events); skuld -= plan;
     efter?.();
     globalThis.slagPuls?.();
+    if (skuld <= 1e-9) break; // ingen tid kvar: nästa slags längd behöver inte räknas
   }
   if (skuld > 1e-9) s.skuld = Math.round(skuld * 1000) / 1000; else delete s.skuld;
 }
