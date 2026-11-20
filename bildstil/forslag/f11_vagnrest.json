@@ -1,0 +1,36 @@
+{
+ "kort": "f11_vagnrest",
+ "namn": "Karavanens trasiga vagn",
+ "slag": null,
+ "typ": "janej",
+ "fore": "Förlagan: vagnen som redan finns i spelet.",
+ "vad": "Steg 11.13.26: där rövare plundrat en karavan ligger vagnarna kvar, och det rövarna lämnade ligger bredvid. Den lilla kartan för karavanresten har två vagnar. En ruta stor, snett ovanifrån som kartan, på gräs. Den ska se annorlunda ut än grundarnas vagn i byn, som gått sönder av sig själv",
+ "versioner": [
+  {
+   "ide": "Vagnen som finns i spelet i dag, hel.",
+   "bilder": [
+    {
+     "namn": "vagn",
+     "rader": [
+      "................",
+      "................",
+      "q...............",
+      ".qq.............",
+      "...qq...........",
+      "....qqkkkkkkkkkk",
+      "....kFFFFFFFFFFk",
+      "....kHHHHHHHHHHk",
+      "....kkkkkkkkkkkk",
+      "......kkk...kkk.",
+      ".....kHFHkkHFHk.",
+      ".....kFHFkkFHFk.",
+      ".....kHFHkkHFHk.",
+      "......kkk...kkk.",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  }
+ ]
+}

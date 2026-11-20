@@ -1,0 +1,59 @@
+{
+ "kort": "f9_ortkruka_mellan",
+ "namn": "Örtkrukan, också den mellanstora",
+ "slag": null,
+ "typ": "janej",
+ "fore": "Ritad med kod: krukorna som redan finns, med röllekan i båda.",
+ "vad": "Steg 9.5.8: röllekan växer i en lerkruka. Du sa ja till den lilla krukan; här står röllekan också i den mellanstora",
+ "versioner": [
+  {
+   "ide": "Röllekan i den lilla krukan och i den mellanstora.",
+   "bilder": [
+    {
+     "namn": "ortkruka_liten",
+     "rader": [
+      ".ww..ww.",
+      ".qw..wq.",
+      ".O.NN.O.",
+      "..ONNO..",
+      ".O.NM.O.",
+      "..rNMr..",
+      ".ruEEsr.",
+      "..rutr..",
+      ".ruttsr.",
+      "ruttttsr",
+      "rKJJJJIr",
+      ".rttssr.",
+      "..rrrr.."
+     ]
+    },
+    {
+     "namn": "ortkruka_mellan",
+     "rader": [
+      "....ww..ww....",
+      "....qw..wq....",
+      "....O.NN.O....",
+      ".....ONNO.....",
+      "....O.NM.O....",
+      "...rrrNMrrr...",
+      "...ruuNMtsr...",
+      "....rutssr....",
+      ".rrrrutssrrrr.",
+      "rur.rutssr.rsr",
+      "rtruttttsssrsr",
+      "rruuttttttssrr",
+      "ruttttttttsssr",
+      "rLKKKKKKKKKJIr",
+      "rutJttJttJtssr",
+      "rLKKKKKKKKJJIr",
+      ".rtttttttsssr.",
+      "..rtttttsssr..",
+      "...rtttsssr...",
+      "....rtsssr....",
+      "...rrrrrrrr..."
+     ]
+    }
+   ]
+  }
+ ]
+}

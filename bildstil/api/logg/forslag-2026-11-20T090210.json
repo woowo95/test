@@ -1,0 +1,17 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f10_gudabild_fler!",
+  "f11_gomma_fler!"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 1.44,
+  "hog": 3.09
+ },
+ "dollar": 0.849,
+ "rapport": [
+  "f10_gudabild_fler: 5 versioner",
+  "f11_gomma_fler: 5 versioner"
+ ]
+}

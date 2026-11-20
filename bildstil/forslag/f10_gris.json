@@ -10,30 +10,6 @@
     {
      "namn": "f10_gris",
      "rader": [
-      "...................oo...",
-      "....oooooooooo...oqo....",
-      "...oqwqwqqwqqwqo.oqpo...",
-      ".ooqwqqwqwqqwqqqqopqpo..",
-      "p.oqpqqpqpqqpqpqpqpkqqo.",
-      "opoqppqppqpppqppqpppqqwo",
-      ".opppqpppqppppqppppppEqE",
-      ".oppppppqpppppppppppoqqo",
-      "..EppoppppppoppppppoEEE.",
-      "...EoooooooooooooE......",
-      "....ppEoEEEEppEoE.......",
-      "....po.o....po.o........",
-      "....EE.E....EE.E........"
-     ]
-    }
-   ],
-   "anteckning": "Grisen står på alla fyra ben i profil med huvudet åt höger, som djuren står på kartan, sedd lätt snett uppifrån. Därför syns ryggen som ett smalt ljust band i ben2–ben3 överst, sidan i ben1 och magen i ben0 med en jordkontur under buken. Från sidan syns alla fyra korta ben. De två närmaste är ben1 med jord0-klövar. De bortre är en ton mörkare och står förskjutna bakom de närmaste. Huvudet sitter ihop med kroppen utan hals. Det trekantiga örat lutar framåt över det kolsvarta ögat, och det trubbiga trynet i ben2 har två jord0-näsborrar i spetsen och en liten glanspunkt. Knorren är en liten ögla högt på bakdelen. Bilden har ingen markskugga och inget anfallsläge. Granskningen: Rad 8 var 25 punkter bred i stället för 24, med en punkt för mycket på slutet. Raden är nu 24 punkter, och trynet har fått en jord0-kontur under sig (två punkter), så att det inte hänger öppet mot gräset. I övrigt följer grisen reglerna och idén. Den är 24 × 13 punkter, en rimlig storlek bredvid kolonisten (14 × 20). Den ses snett uppifrån med ett ljust ryggband i ben2–ben3, sidan i ben1 och magen i ben0. Ljuset kommer uppifrån vänster, konturen är i ben0 och jord0 och ögat i kol0. Trynet har näsborrar och örat lutar framåt. Benen är 3 punkter långa och de bortre är mörkare. Knorren sitter högt på bakdelen. Den ljusa kroppen syns tydligt mot gräset.",
-   "ide": "Den runda tamgrisen: en nästan äggformad kropp, cirka 20 × 13 punkter, med huvudet åt höger. Ryggen syns som ett smalt ljust band snett ovanifrån i ben2–ben3, sidan är ben1 och magen ben0, med kontur i ben0 och jord0 under buken. Ett kort trubbigt tryne i ben2 har två jord0-prickar som näsborrar och ett litet trekantigt öra lutar framåt över ett ögon-punkt i kol0. Fyra korta ben på 3 punkter: de två närmaste i ben1, de bortre en ton mörkare och lite bakom. Svansen är en knorr på 2–3 punkter i en liten ögla högt på bakdelen."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f10_gris",
-     "rader": [
       "..........E.E.E...........",
       "....E.E.EEHEHEHEE.E.......",
       "...EHEGEHHHHGHHGHEHEE...H.",
@@ -55,33 +31,6 @@
    ],
    "anteckning": "Grisen står på alla fyra benen på gräset, sedd från sidan med en aning ovanifrån, som djuren på kartan, med huvudet åt vänster mot ljuset. Kroppen är tunnformad och högst över bogen. Ryggkammen hackas i uddar av jord0, och toppen ljusnar till jord3 uppe till vänster. Det kilformade huvudet slutar i ett rakt tryne med en ljus punkt och en näsborre, och har ett litet upprätt spetsigt öra och ett mörkt öga. Av benen syns de två närmaste i ljusare jord2 och de två bortre i mörkare jord1. Alla fyra är 5 punkter långa med klövar i kol1. Knorren sitter som en liten ljus ring i jord3 vid den mörka bakdelen. Ingen skugga är ritad och ingen anfallsställning. Granskningen: Grisen håller storleken (26 × 16 med svans och ben, kroppen cirka 22 × 12) och står rätt mot kolonisten. Den ses från sidan på gräset, med jord0-kontur och borstkam, och knorren i jord3 syns mot bakdelen. Jag rättade en sak: de små upprätta spetsiga örona från idén saknades. Nu står ett spetsigt öra bakom ögat, med jord0-kontur och jord3 inuti mot ljuset uppe till vänster. Resten är oförändrat.",
    "ide": "Den borstiga järnåldersgrisen, nära vildsvinet: kroppen är tunnformad och högre över bogen än över länden, cirka 22 × 14 punkter. Den har ett långt kilformat huvud med rakt tryne och små upprätta spetsiga öron. Pälsen är jord1–jord2 med jord0-kontur. Längs ryggen går en kam av borst, där konturen hackas i små uddar och toppen ljusnar till jord3 mot ljuset uppe till vänster. Benen är längre och smalare, 4–5 punkter, med mörka klövar i kol1. Knorren lyser ljust i jord3 mot den mörka bakdelen så att den syns."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f10_gris",
-     "rader": [
-      ".....................IJ.",
-      "....................J..I",
-      "........II.III.II.IIJII.",
-      "......IILLILKLILKIKJI...",
-      "....IILKLKLKLJKLKJKJJI..",
-      "...IKLJJILKLKJLKJKJKJJI.",
-      "..ILKJJJIKLKLJKLKJKJJJI.",
-      ".oopJJJIKLKJKLKJKJKJJJI.",
-      "oqqpJJIJLKJKLKJKJKJJJJI.",
-      "oEqEJIJKKJKLKJKJKJJJJI..",
-      "oppoIJKJKJKJKJKJJJJJJI..",
-      ".oo.IIJJKJJKJJKJJJIJJI..",
-      ".....IIJJIJJJIJJIJJJII..",
-      "......IJJIII.I.IIJJII...",
-      ".......JIEE......JIEE...",
-      ".......EEEE......EEEE..."
-     ]
-    }
-   ],
-   "anteckning": "Grisen står på alla fyra benen på gräset, sedd från sidan och lite ovanifrån som djuren på kartan, med huvudet åt vänster mot ljuset. Den ulliga kroppen är nästan klotrund, cirka 18 × 13 punkter, med lockar i senap. De ljusa L-topparna sitter uppe till vänster och de mörkare J- och I-tonerna nere till höger. Konturen i senap0 är knottrig av lockarna. Det stora örat hänger ner över ögat, så ögat syns inte. Trynet sticker ut som en ljus benfärgad skiva med två näsborrar i jord0. Knorren sitter som en liten ring högst upp på bakdelen. Benen är korta stumpar på 3 punkter: de närmaste är i senap och de bortre i jord0 strax bakom, med klövar i jord0. Ingen skugga är ritad. Granskningen: Granskad, inget behövde rättas; versionen lämnas oförändrad. Storleken är 24 × 16 punkter, med kroppen ungefär 18 × 13 som i idén. Det gör grisen lägre än kolonisten (14 × 20) men tydligt bredare, vilket passar ett runt svin. Den står på alla ben från sidan, som djuren på kartan, utan anfalls- eller specialställning. Lockarna i senap0–senap3 ger en vågig, knottrig kontur i senap0. Ljuset ligger uppe till vänster och skuggan nere till höger. Senapstonerna skiljer sig klart från det oliv- och barrgröna gräset, så grisen syns. Trynet är en ljus skiva i ben0–ben2 med två näsborrar i jord0. Det hängande örat bildas av den mörkare fliken bakom senap0-linjen, som löper snett ner över ögat, så inget öga syns, som i idén. Benen är korta stumpar med mörkare bortre ben i jord0 bakom de närmaste. Knorren sitter som en krull högst upp på bakdelen. Bara paletten används, utan kol0 och utan ritad markskugga.",
-   "ide": "Den ulliga klotgrisen: en kort och kompakt, nästan klotrund kropp på cirka 18 × 13 punkter, med lockig päls i senap0–senap1 och ljusa toppar i L. Konturen i senap0 och I är vågig och knottrig av lockarna i stället för slät. Stora hängande öron faller ner över ögonen, och bara trynet sticker ut som en ljus skiva i ben1–ben2 med två näsborrar. Benen är korta stumpar på 3 punkter, och de bortre syns mörkare bakom de närmaste. Den tjocka svansknorren sitter som en liten krull högst upp på bakdelen."
   }
  ]
 }

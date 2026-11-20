@@ -1,0 +1,38 @@
+{
+ "kort": "f11_vagnsvrak",
+ "namn": "Grundarnas trasiga vagn",
+ "slag": [
+  "station"
+ ],
+ "typ": "janej",
+ "fore": "Förlagan: vagnen som redan finns i spelet.",
+ "vad": "Steg 11.6.13: grundarna kom långt bortifrån, och deras vagn gick sönder där byn ligger. Den står i lagret på startplatsen med de första sakerna i och rymmer tre stackar. Ingen bygger en sådan. En ruta stor, snett ovanifrån som stationerna, på gräs",
+ "versioner": [
+  {
+   "ide": "Vagnen som finns i spelet i dag, hel.",
+   "bilder": [
+    {
+     "namn": "vagn",
+     "rader": [
+      "................",
+      "................",
+      "q...............",
+      ".qq.............",
+      "...qq...........",
+      "....qqkkkkkkkkkk",
+      "....kFFFFFFFFFFk",
+      "....kHHHHHHHHHHk",
+      "....kkkkkkkkkkkk",
+      "......kkk...kkk.",
+      ".....kHFHkkHFHk.",
+      ".....kFHFkkFHFk.",
+      ".....kHFHkkHFHk.",
+      "......kkk...kkk.",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  }
+ ]
+}
