@@ -382,7 +382,6 @@ export interface State {
   tradAlder?: string; // trädens ålder efter att de vuxit klart, dygn per ruta, packat (trad.ts, steg 5.1.4.2)
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   stridRapporter?: { t: number; orsak: string; vinnare?: number; n: number }[]; // de äldre striderna (steg 8.8.10)
-  aktOm?: Record<string, string>; // vad byn minns om olyckan bakom rädslan för en handling
   bynamn?: import('./bynamn').Bynamn; // byns namn (steg 10.9.1, bynamn.ts); saknas = Nybygget
   bynamnNej?: Record<string, number>; // namn som röstats ned och när de får tas upp igen (steg 10.9.3)
   kanda?: Record<number, number>; // byns samlade minne (ryktbarheten) av varje person som någon minns, räknat var fjärde timme (steg 10.6.14, rykten.ts)

@@ -20,7 +20,7 @@ import { SKRIFT } from './skriftTal';
 import { GUDAR, Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
 import { harMyr } from './myr';
 import { farorNu, KULT, RITUALER, type RitualId, farBliPrast, heligaFor, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
-import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
+import { FRAGOR, Fraga, FragaData, oppnaSed, rostaOm } from './rost';
 import { LAGAR, LagForslag, lagGaller } from './lagar';
 import { amountOf, ownMove, ownedStock, ownsAmount, ownsId, put, takeLimit, use } from './lager';
 import { BYN, kyrkaId } from './egendom';
@@ -597,12 +597,17 @@ function heligaTingKvar(s: State, tr: Tro) {
 export function kyrkaTimme(s: State) {
   for (const tr of s.tron ?? []) if (tr.bud?.length) heligaTingKvar(s, tr);
   for (const tr of s.tron ?? []) { if (tr.slut !== undefined) continue; const folk = troende(s, tr); if (folk.length) offerTimme(s, tr, folk); }
-  if (Math.floor(s.now / HOUR) % 24 === 12) { skattDygn(s); helgonDygn(s); kvadeDygn(s); valsignaDygn(s); budDygn(s); }
-  const f = s.tron?.length ? living(s).filter(p => p.tro !== undefined).length : 0;
-  if (f >= 3 && s.styre) oppnaAndlig(s);
 }
-let oppnaAndlig: (s: State) => void = () => {};
-export const satOppnaAndlig = (f: typeof oppnaAndlig) => { oppnaAndlig = f; };
+// kyrkans dygn (raden kyrkans dygn i TAKTER, kl. KYRKA_TIMME; klockslaget frågas när raden räknas direkt efter en laddning)
+export const KYRKA_TIMME = 12;
+export function kyrkaDygn(s: State) {
+  if (Math.floor(s.now / HOUR) % 24 === KYRKA_TIMME) { skattDygn(s); helgonDygn(s); kvadeDygn(s); valsignaDygn(s); budDygn(s); }
+}
+// varje timme, efter kyrkans dygn
+export function andligTimme(s: State) {
+  const f = s.tron?.length ? living(s).filter(p => p.tro !== undefined).length : 0;
+  if (f >= 3 && s.styre) oppnaSed(s, 'andlig'); // seden Världslig – Andlig låses upp när minst tre har en tro (steg 8.6.1)
+}
 // ---------- rösten om ett bud (registret, steg 10.3.9) ----------
 // rösten är summan av raderna, över noll är ja. ja och nej: skälet när raden drar åt det hållet. Vad hen tycker om den som
 // föreslår räknas för alla frågor (rostaOm) och läggs inte till här
@@ -645,6 +650,12 @@ FRAGOR.taBortBud = {
   rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined); return { v: -r.v > 0 && tr.skrift ? -r.v * SKRIFT.heligTrog : -r.v, why: r.why }; }, // en helig skrift gör budet svårare att rösta bort (steg 10.6.3)
   gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b = { id: d.id as BudId, v: d.v as BudVarde | undefined }; taBortBud(s, tr, b); count(s, 'bud_bort'); const t = `${troNamn(tr)} tog bort budet ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
+// budet som röstats in läggs in i tron (nyttBud och bytBud)
+function laggInBud(s: State, tr: Tro, d: FragaData): AntagetBud {
+  const b: AntagetBud = { id: d.id as BudId, ...(d.v !== undefined ? { v: d.v as BudVarde } : {}), t: s.now };
+  (tr.bud ??= []).push(b); BDEF[b.id].antas?.(s, tr, b);
+  return b;
+}
 FRAGOR.bytBud = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${budNamn(s, { id: d.id as BudId, v: d.v })} i stället för ${budNamn(s, { id: d.gid as BudId, v: d.gv }).toLowerCase()}`, krets: 'tro',
   rost: (s, p, d) => {
@@ -654,20 +665,22 @@ FRAGOR.bytBud = {
   },
   gor: (s, d) => {
     const tr = troOf(s, d.tro as number)!; taBortBud(s, tr, { id: d.gid as BudId, v: d.gv as BudVarde | undefined });
-    const b: AntagetBud = { id: d.id as BudId, ...(d.v !== undefined ? { v: d.v } : {}), t: s.now }; (tr.bud ??= []).push(b); BDEF[b.id].antas?.(s, tr, b); count(s, 'bud_byte');
+    const b = laggInBud(s, tr, d); count(s, 'bud_byte');
     const t = `${troNamn(tr)} bytte ${budNamn(s, { id: d.gid as BudId, v: d.gv }).toLowerCase()} mot ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro');
   },
 };
 FRAGOR.nyttBud = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${budNamn(s, { id: d.id as BudId, v: d.v })}`, krets: 'tro',
   rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined); return { v: r.v, why: r.why }; },
-  gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b: AntagetBud = { id: d.id as BudId, ...(d.v !== undefined ? { v: d.v } : {}), t: s.now }; (tr.bud ??= []).push(b); BDEF[b.id].antas?.(s, tr, b); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
+  gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b = laggInBud(s, tr, d); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
 }
 
 // ---------- de nya kraven och offren (steg 10.3.23) ----------
 // kyrkans öl: krukor med öl som tron äger. Ingen annan dricker ur dem (vatskor.ts)
 export const kyrkansOl = (s: State, tr: Tro) => tingOf(s).filter(t => t.agare === kyrkaId(tr.id) && t.inne?.v === 'ol' && t.inne.n > 0);
+// p dricker en öl ur kyrkans kruka t vid högtiden eller gravölet; den tomma krukan blir kvar
+function drickKyrkansOl(s: State, p: Person, t: Ting) { t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined; drickAlkohol(s, p, 'ol', true); }
 export const olAntal = (s: State, tr: Tro) => kyrkansOl(s, tr).reduce((a, t) => a + Math.floor(t.inne!.n + 1e-9), 0);
 // tron som får ölet p tappar: p följer budet, och kyrkan har mindre öl än de vuxna troende (brygg.ts)
 export function olTillKyrkan(s: State, p: Person): Tro | undefined {
@@ -679,7 +692,7 @@ export function hogtidOlKvade(s: State, tr: Tro, med: Person[]) {
   if (budIn(tr, 'olHogtid')) for (const p of med) {
     if (ageOf(p, s.now) < ALDER.vuxen) continue;
     const t = budHindrar(s, p, 'ingetRus') ? undefined : kyrkansOl(s, tr)[0];
-    if (t) { t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined; drickAlkohol(s, p, 'ol', true); count(s, 'hogtid_ol'); } // den tomma krukan blir kvar
+    if (t) { drickKyrkansOl(s, p, t); count(s, 'hogtid_ol'); }
     else if (p.tro === tr.id && foljer(p, 'olHogtid') && !budHindrar(s, p, 'ingetRus')) think(p, 'Ölet saknades vid högtiden', KULT.offerInget, s.now, 12 * HOUR);
   }
   if (!budIn(tr, 'kvade')) return;
@@ -715,7 +728,7 @@ export function gravolSlut(s: State, tr: Tro, med: Person[]) {
     const k = FOOD.filter(q => kyrkansAv(s, tr, q) >= 1).sort((a, b) => kyrkansAv(s, tr, b) - kyrkansAv(s, tr, a))[0];
     if (k && kyrkanTar(s, tr, k, 1)) { ata(p, { [k]: KROPP.mattar }); count(s, 'atit', 1); } // en portion var (steg 10.11.10)
     const t = budHindrar(s, p, 'ingetRus') ? undefined : kyrkansOl(s, tr)[0];
-    if (t) { t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined; drickAlkohol(s, p, 'ol', true); count(s, 'gravol_ol'); } // den tomma krukan blir kvar
+    if (t) { drickKyrkansOl(s, p, t); count(s, 'gravol_ol'); }
   }
 }
 // den första skörden (odling.ts): den första hela saken k ur en ny skörd på fältet f går till kyrkan. m = när rutan mognade; en ruta

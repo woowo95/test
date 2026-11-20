@@ -27,7 +27,7 @@ export const RADD_AKT: Record<string, RaddAktDef> = {
 };
 const aktRad = (act: Act | undefined) => Object.keys(RADD_AKT).find(k => !!act && RADD_AKT[k].acts.includes(act));
 // offret dog eller skadades svårt medan hen gjorde act
-export function raddForAkt(s: State, offer: Person, act: Act | undefined, om: string) {
+export function raddForAkt(s: State, offer: Person, act: Act | undefined) {
   const k = aktRad(act);
   if (!k) return;
   for (const q of living(s)) {
@@ -36,7 +36,6 @@ export function raddForAkt(s: State, offer: Person, act: Act | undefined, om: st
     if (!sag && !nara) continue;
     const r = (q.raddAkt ??= {});
     r[k] = Math.max(r[k] ?? 0, sag ? RADSLA.sett : RADSLA.hort);
-    (s.aktOm ??= {})[k] = om;
   }
 }
 // den som är rädd nog för handlingen (rädslan gånger hur lite mod hen har) låter bli den
@@ -66,4 +65,4 @@ export function raddDygn(s: State) {
   }
 }
 // olyckorna anmäls genom folk.ts (satAktRadd), som inte kan importera den här filen
-export function raddRegister() { satAktRadd((s, p, act, om) => raddForAkt(s, p, act, om)); }
+export function raddRegister() { satAktRadd(raddForAkt); }

@@ -7,7 +7,7 @@ import { balans } from './balans';
 import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, relKey } from './folk';
 import { kronika } from './historik';
-import { FRAGOR, ROST, Fraga, framFor, laggFram, rostaOm, vikter } from './rost';
+import { FRAGOR, ROST, Fraga, framFor, rostaOm, vikter } from './rost';
 import { PABUD, PABUD_FRAGOR, pabudFran, pabudOm, STRAFF_NAMN, ledarHard, legitimitet, ledareOf, styreAv } from './styre';
 import { fangelseLedigt } from './fangelse';
 import { knows } from './teknik';
@@ -106,7 +106,7 @@ const sammaTal = (a?: Record<string, number>, b?: Record<string, number>) => JSO
 const passar = (k: SkriftLag | undefined, l: Lag) => !!k && k.id === l.id && k.straff === l.straff && sammaTal(k.tal, l.tal);
 // var lagen står skriven: på en sten, på ett blad, i en bok (fliken Styre)
 export const skrivenVar = (s: State, l: Lag) => [...(s.runstenar?.some(r => passar(r.lag, l)) ? ['på en sten'] : []), ...(s.ting?.some(t => passar(t.skrift?.lag, l)) ? ['på ett blad'] : []), ...(s.ting?.some(t => !!t.delar?.some(k => passar(k.lag, l))) ? ['i en bok'] : [])];
-export const skrivenLag = (s: State, l: Lag) => !!s.runstenar?.some(r => passar(r.lag, l)) || !!s.ting?.some(t => passar(t.skrift?.lag, l) || !!t.delar?.some(k => passar(k.lag, l)));
+export const skrivenLag = (s: State, l: Lag) => skrivenVar(s, l).length > 0;
 // taket (steg 8.4.3): minnet, ministrarna och de skrivna lagarna (steg 10.6.10), aldrig över takVisas
 export const lagTakDelar = (s: State) => ({ minne: LAG.tak, ministrar: LAG.takMinister * Object.keys(s.styre?.ministrar ?? {}).length, skrivna: LAG.takSkrift * lagarNu(s).filter(l => skrivenLag(s, l)).length });
 export const lagTak = (s: State) => { const d = lagTakDelar(s); return Math.min(LAG.takVisas, d.minne + d.ministrar + d.skrivna); };
@@ -192,7 +192,6 @@ export function tasUppKvall(s: State) {
   if (o) o.varfor = bast.varfor;
   return true;
 }
-export { laggFram };
 
 export const budgetBortKrok: { f?: (s: State) => void } = {};
 // raderna i FRAGOR som hör till lagarna läggs till när allt är laddat (steg.ts)

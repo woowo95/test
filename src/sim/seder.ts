@@ -188,13 +188,15 @@ export function stepSeder(s: State) {
 
 // ---------- vilja ----------
 // pliktkänsla 0–1: hur mycket personen jobbar för byn i stället för sig själv
+// lagens del: arbetsplikten och samhällstjänsten (steg 8.4.1, 8.4.8), en gång för duty och pliktDelar (fynd 251)
+const pliktLag = (s: State, p: Person) => (lagGaller(s, 'arbetsplikt') ? LAG.plikt * efterlevs(s) : 0) + ((p.tjanst ?? 0) > s.now ? LAG.plikt : 0);
 export function duty(s: State, p: Person) {
-  const lag = (lagGaller(s, 'arbetsplikt') ? LAG.plikt * efterlevs(s) : 0) + ((p.tjanst ?? 0) > s.now ? LAG.plikt : 0); // arbetsplikten och samhällstjänsten (steg 8.4.1, 8.4.8)
+  const lag = pliktLag(s, p);
   return clamp(SED.pliktBas + (p.pot.flit - SED.mitt) * SED.pliktFlit + (p.pot.empati - SED.mitt) * SED.pliktEmpati + s.seder.v.arbete * SED.pliktSed + lag, SED.pliktMin, SED.pliktMax);
 }
 // pliktkänslans delar för gränssnittet (steg 11.1.46): samma tal som duty räknar, var för sig. Ändrar inget i byn
 export function pliktDelar(s: State, p: Person) {
-  const lag = (lagGaller(s, 'arbetsplikt') ? LAG.plikt * efterlevs(s) : 0) + ((p.tjanst ?? 0) > s.now ? LAG.plikt : 0);
+  const lag = pliktLag(s, p);
   return { bas: SED.pliktBas, flit: (p.pot.flit - SED.mitt) * SED.pliktFlit, empati: (p.pot.empati - SED.mitt) * SED.pliktEmpati, sed: s.seder.v.arbete * SED.pliktSed, lag };
 }
 export const VANA_AR = SED.vanaDygn; // vanorna bleknar på så här många dygn (år i spelet), tårtan i personens Tiden (steg 11.1.46)

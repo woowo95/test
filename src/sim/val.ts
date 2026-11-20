@@ -44,7 +44,7 @@ import { lonNu } from './lon';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
-import { bordPlats, ryggsack, ryms } from './utrustning';
+import { bordPlats, rustaVal, ryggsack, ryms } from './utrustning';
 import { taFordon, valjFordon } from './fordon';
 // p orkar bära en av saken k (virket lyfts med båda händerna, steg 10.2.89)
 const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, p)({ [k]: viktOf(k) });
@@ -83,7 +83,7 @@ import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
 import { efterAnfall } from './rovare';
 import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
-import { GRAV, avrustaVal, begravaVal, gravGava, gravbesokVal, gravvardVal, rustaVal } from './grav';
+import { GRAV, avrustaVal, begravaVal, gravGava, gravbesokVal, gravvardVal } from './grav';
 import { budBrutet, budForbjuder, viltBikta, vilodagNu } from './kyrka';
 import { LAG, lagGaller } from './lagar';
 import { raddFor } from './radsla';

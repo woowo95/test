@@ -6,7 +6,7 @@ import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { PIX } from '../../ikoner';
 import { TEKNIK } from '../../sim/teknik';
-import { medVatska, SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed } from './hjalp';
+import { medVatska, SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed, styreTimme, kyrkansTimme } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -1411,7 +1411,7 @@ SCENARIER.fangelsestraff = {
     s.now = s.now - (s.now % SIM.DAY) + 20 * SIM.HOUR;
     for (let i = 0; i < 10 && !s.styre!.ratt?.length; i++) {
       (l.intryck ??= []).push({ om: q.id, namn: q.name, k: 'valdsam', v: 1, c: 1, t: s.now - i, bev: [{ h: 'drap', t: s.now - i, mot: d.id, motNamn: d.name, sett: true }] });
-      SIM.stepStyre(s);
+      styreTimme(s);
     }
     const r = s.styre!.ratt?.[0], dygn = q.fange?.till !== undefined ? Math.round((q.fange.till - s.now) / SIM.DAY) : 0;
     // hen går dit och väljer inget arbete
@@ -1485,7 +1485,7 @@ SCENARIER.tinget = {
     const yxa = SIM.newTing(s, 'yxa', 1, q.id);
     klockan(s);
     s.now = s.now - (s.now % 86400000) + 20 * 3600000;
-    for (let i = 0; i < 20 && !(s.styre!.ratt?.length); i++) { SIM.stepStyre(s); }
+    for (let i = 0; i < 20 && !(s.styre!.ratt?.length); i++) { styreTimme(s); }
     const r = s.styre!.ratt?.[0];
     // en dör under björnjakten där de andra ser det, och de blir rädda för att jaga björn
     const s2 = medLedare(7).s; nyInvanare(s2, 'm', 25); nyInvanare(s2, 'k', 25);
@@ -2618,7 +2618,7 @@ SCENARIER.buden = {
     let fastade = false, djur = 0;
     const kott0 = SIM.amountOf(s, 'kott'), t0 = q.troStyrka!, prast0 = SIM.ownedStock(s, pr).bar ?? 0;
     const dag0 = s.now - (s.now % 86400000);
-    for (let d = 1; d <= 7; d++) { s.now = dag0 + d * 86400000 + 12 * 3600000; SIM.kyrkaTimme(s); fastade ||= (q.fasta ?? 0) > s.now; djur = s.stat?.djuroffer ?? 0; }
+    for (let d = 1; d <= 7; d++) { s.now = dag0 + d * 86400000 + 12 * 3600000; kyrkansTimme(s); fastade ||= (q.fasta ?? 0) > s.now; djur = s.stat?.djuroffer ?? 0; }
     const forst = SIM.forradSum(s, tr) > 0, tiond = (SIM.ownedStock(s, pr).bar ?? 0) > prast0;
     // främlingen, giftermålet, hämnden, de döda och lunden
     const ny = nyInvanare(s, 'm', 25); ny.hunger = 0.3; const mat0 = SIM.FOOD.reduce((a, k) => a + SIM.amountOf(s, k), 0); SIM.budTillfalle(s, 'framling', ny); const matEfter = SIM.FOOD.reduce((a, k) => a + SIM.amountOf(s, k), 0);
@@ -2970,7 +2970,7 @@ SCENARIER.heligting = {
     SIM.radDygn(s, 'heligt', k);
     const g = s.rovare!; SIM.radSeger(s, g);
     const tagen = !s.ting!.includes(byns) && (s.gastTing ?? []).some(t => t.k === 'yxa' && t.q === 4 && g.folk.includes(t.agare));
-    SIM.kyrkaTimme(s);
+    kyrkansTimme(s);
     const fallit = !tr.bud!.some(q => q.id === 'heligtTing'), sorjer = SIM.troende(s, tr).every(q => q.thoughts.some(t => t.text === 'Vårt heliga ting är borta'));
     // tinget med kvalitet och berättelse: anfallaren som bär det fälls, och den som avrustar hen får ett vanligt mästerverk
     const gt = (s.gastTing ?? []).find(t => t.k === 'yxa' && t.q === 4)!; gt.ber = { namn: 'Bergsklyv' } as SIM.SakMinne;

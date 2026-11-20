@@ -7,7 +7,7 @@ import { byId, isSocial, TalkEvent } from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
-import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
+import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank, utanWebblasare, styreTimme } from './hjalp';
 import { garIBilden, stalle, SITTA, vidArbetet } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
@@ -848,14 +848,14 @@ SCENARIER.ledare = {
     };
     // utan tekniken blir ingen ledare
     const a = by();
-    for (let i = 0; i < 5; i++) SIM.stepStyre(a.t);
+    for (let i = 0; i < 5; i++) styreTimme(a.t);
     const ingen = !a.t.styre?.ledare;
     // den som kan tekniken och är omtyckt väljs, och den första ledaren låser upp Envälde
     const b = by(), [l, tjuv, offer] = b.vuxna;
     (l.tek ??= {}).ledarskap = 1;
     for (const q of b.vuxna) if (q !== l) getRel(b.t, l, q).op = 40;
     const rang0 = SIM.sedOppen(b.t, 'rang');
-    SIM.stepStyre(b.t);
+    styreTimme(b.t);
     const vald = SIM.ledareOf(b.t) === l, titel = b.t.styre?.titel, rang1 = SIM.sedOppen(b.t, 'rang');
     const leg = SIM.legitimitet(b.t);
     // Tyngsta röster (steg 4.5.4.10): ledarens extra vikt räknas, störst först, och andelarna blir tillsammans 100 %
@@ -869,7 +869,7 @@ SCENARIER.ledare = {
     for (const q of b.vuxna) { q.x = l.x + 1; q.y = l.y; }
     SIM.handelse(b.t, tjuv, 'stold', offer, 'mat');
     klockan(b.t, SIM.STR.timme);
-    SIM.stepStyre(b.t);
+    styreTimme(b.t);
     const straff = b.t.stat?.straff ?? 0;
     // den som skäms väljer inte samtal vid elden
     tjuv.skam = b.t.now + DAY;
@@ -899,7 +899,7 @@ SCENARIER.ledare = {
     }
     // ledaren dör: ingen annan kan tekniken, och påbuden upphör
     SIM.die(b.t, l, 'alderdom');
-    SIM.stepStyre(b.t);
+    styreTimme(b.t);
     const slut = !SIM.ledareOf(b.t) && SIM.pabud(b.t, 'matlager') === b.t.seder.v.forsiktighet && b.t.styre!.historia[0].till !== undefined;
     return [
       [`Störst inflytande räknar med ledarens extra vikt (${l.name} ${lr ? Math.round(lr.andel * 100) : 0} %), är sorterad och andelarna blir 100 %`, rostOk],
@@ -927,7 +927,7 @@ SCENARIER.rattegang = {
     const vuxna = living(t).filter(p => ageOf(p, t.now) >= SIM.ALDER.vuxen), [l, tjuv, offer, langt] = vuxna;
     (l.tek ??= {}).ledarskap = 1;
     for (const q of vuxna) if (q !== l) getRel(t, l, q).op = 40;
-    SIM.stepStyre(t);
+    styreTimme(t);
     // ledaren och de flesta ser stölden, en långt bort hör om den som rykte
     for (const q of vuxna) { q.x = l.x + 1; q.y = l.y; }
     langt.x = l.x + 40; langt.y = l.y;
@@ -935,7 +935,7 @@ SCENARIER.rattegang = {
     SIM.handelse(t, tjuv, 'stold', offer, 'mat');
     SIM.allmant(t, tjuv, { h: 'stold', t: t0, mot: offer.id, motNamn: offer.name, sak: 'mat' }, 0.5, [langt]);
     klockan(t, SIM.STR.timme);
-    SIM.stepStyre(t);
+    styreTimme(t);
     const r = t.styre?.ratt?.[0], x = r && SIM.rattegang(t, r);
     // varje slags dom och väder ger en text (inget villkor lämnar en mall tom)
     let tomma = 0;
@@ -951,7 +951,7 @@ SCENARIER.rattegang = {
     klockan(t, SIM.STR.timme + 24);
     SIM.handelse(t, tjuv, 'sla', offer);
     klockan(t, SIM.STR.timme + 48);
-    SIM.stepStyre(t);
+    styreTimme(t);
     // hårdheten som ett ord, med delarna i förklaringen (steg 11.1.65)
     utanWebblasare(); setByn(t); uiLage.styreDel = 'styre';
     const rid = `ratt-${r?.t}-${r?.om}`;
@@ -980,7 +980,7 @@ SCENARIER.titel = {
     const vuxna = living(t).filter(p => ageOf(p, t.now) >= SIM.ALDER.vuxen), l = vuxna[0];
     (l.tek ??= {}).ledarskap = 1;
     for (const q of vuxna) if (q !== l) getRel(t, l, q).op = 40;
-    SIM.stepStyre(t);
+    styreTimme(t);
     const vald = SIM.ledareOf(t) === l, forsta = t.styre?.titel;
     const ns = (m: string, k: string) => l.sex === 'k' ? k : m, titel = () => SIM.ledarTitel(t, l);
     const op = (v: number) => { for (const q of living(t)) if (q !== l) getRel(t, l, q).op = v; };
@@ -1003,18 +1003,18 @@ SCENARIER.titel = {
     // titeln ses över när årstiden byts (när påbuden sätts), och den gamla titeln finns kvar i historien
     const fore = t.styre!.titel;
     t.styre!.pabudAi = (SIM.ageIndex(t) + 1) % 4;
-    SIM.stepStyre(t);
+    styreTimme(t);
     const h = t.styre!.historia[t.styre!.historia.length - 1];
     const byt = t.styre!.titel === ns('Kung', 'Drottning') && h.titel === t.styre!.titel && !!h.forr?.includes(fore!);
     // en titel som inte längre finns (en sparad by) byts genast och läggs inte i historien
     t.styre!.titel = 'Talesperson'; h.titel = 'Talesperson'; const nForr = h.forr!.length;
-    SIM.stepStyre(t);
+    styreTimme(t);
     const gammal = t.styre!.titel === ns('Kung', 'Drottning') && h.forr!.length === nForr;
     // yrket som visas är titeln så länge hen leder, och det gamla yrket kommer tillbaka efteråt (steg 3.10.19)
     const yrkeLed = SIM.yrkeNamn(t, l), annan = vuxna[1], yrkeAnnan = SIM.yrkeNamn(t, annan) === annan.tag;
     t.seder.v.rang = 0;
     const form = SIM.styrelseform(t).namn;
-    SIM.leave(t, l); SIM.stepStyre(t);
+    SIM.leave(t, l); styreTimme(t);
     const yrkeEfter = SIM.yrkeNamn(t, l);
     // titelns text och styrets text säger inte emot varandra (steg 11.1.27): titeln säger hur ledaren fick sin plats och vad folket
     // kallar hen, aldrig vem som bestämmer, och ordet förman finns inte

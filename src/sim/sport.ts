@@ -21,15 +21,14 @@ import { HALSA, kanGa } from './halsa';
 import { ACTS, isWork } from './handlingar';
 import { duty } from './seder';
 import { raddFor } from './radsla';
-import { kartStridAv } from './kartstrid';
-import { rnd } from './slump';
+import { kartStridAv, kartStridBorja } from './kartstrid';
+import { clamp, rnd } from './slump';
 import { hourOf } from './tid';
 import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { notis } from './notiser';
 import { och, tal } from './ord';
 import { STRID } from './strid';
-import { kartStridBorja } from './kartstrid';
 import { EFTER } from './efterstrid';
 // kampen i brottningen är slut: ringen är ledig igen (steg 10.1.7)
 EFTER.brottning = s => { if (s.sport) s.sport.brott = s.now; };
@@ -39,7 +38,6 @@ import { FEST, festNu, festVann } from './kultlatt';
 import { betalning } from './framtradande';
 import { ledareOf, legitimitet } from './styre';
 import { handelse } from './rykten';
-import { clamp } from './slump';
 
 export interface SportDef {
   id: string; namn: string;

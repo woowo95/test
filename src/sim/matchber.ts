@@ -27,7 +27,7 @@ export function matchBerattelse(s: State, m: MatchMinne): string {
   const sum = (l: typeof sp, k: 'f' | 'v') => l.reduce((a, x) => a + x[k], 0), laget = (l: typeof sp) => `laget med ${och(l.map(x => x.namn))}`;
   const vl = lag?.[m.vinnLag!], fl = lag?.[1 - m.vinnLag!];
   const f = {
-    sport: m.k, sportnamn: (d?.namn ?? 'match').toLowerCase(), spelare: och(sp.map(x => x.namn)), n: talOrd(sp.length), nTal: sp.length,
+    sport: m.k, sportnamn: (d?.namn ?? 'match').toLowerCase(), spelare: och(sp.map(x => x.namn)), n: talOrd(sp.length),
     ...(vl && fl ? {
       vinnare: laget(vl), bast: laget(fl), jamnt: Math.abs(sum(vl, 'v') - sum(fl, 'v')) <= MATCHBER.jamnt, overlagset: sum(vl, 'v') - sum(fl, 'v') >= MATCHBER.overlagset,
       skrall: sum(fl, 'f') - sum(vl, 'f') >= MATCHBER.skrall, favorit: sum(vl, 'f') >= sum(fl, 'f'),

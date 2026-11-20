@@ -8,6 +8,9 @@ import { BEAT, START, STEG_TIM, korBy } from '../kor';
 import { lasBy } from '../delby';
 
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
+// styrets och kyrkans timme som i TAKTER (steg 12.1.97, fynd 130): kvällen och kyrkans dygn är egna rader, i samma ordning som förut
+export const styreTimme = (s: State) => { SIM.kvallForeStyret(s); SIM.stepStyre(s); SIM.styretsKvall(s); };
+export const kyrkansTimme = (s: State) => { SIM.kyrkaTimme(s); SIM.kyrkaDygn(s); SIM.andligTimme(s); };
 export const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
   for (const k of STACK_ORDER) if (isTool(k)) setAmount(s, k, m[k] ?? 0);

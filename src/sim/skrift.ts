@@ -9,12 +9,11 @@ import { omrade } from './omrade';
 import { Bevis, HANDELSER, Intryck, bevisText, kandVikt, lasIntryck, paminn } from './rykten';
 import { Ting, newTing, tingOf } from './agande';
 import { taVatska, vatskaAv } from './vatskor';
-import { LARDOMAR, describe, findL, lasLardom } from './minne';
+import { LARDOMAR, describe, findL, lardomMax, lasLardom } from './minne';
 import { larUppdrag, tilltro, type UppdragId } from './uppdrag';
 import { lightLevel } from './tid';
 import { NORMAL, nyKvalitet } from './kvalitet';
 import { clamp, rnd } from './slump';
-import { MINNE } from './minne';
 import { ljusAt } from './ljus';
 import { gen, han, slaktOrd } from './ord';
 import { notis } from './notiser';
@@ -74,21 +73,32 @@ export function runor(text: string) {
 // halveras för varje sten p redan rest; eller, för prästen och lärjungen, trons heliga kväden
 interface Lust { w: number; slag: SkriftSlag; om: { id: number; namn: string }; bev?: Bevis[]; lag?: SkriftLag }
 const harSten = (s: State, slag: SkriftSlag, om: number, t?: number) => !!s.runstenar?.some(r => r.slag === slag && r.om.id === om && (t === undefined || r.bev?.[0]?.t === t));
+// sorgen och bedriften, som stenen och bladet båda skriver om (fynd 197). Sorgen: de döda p sörjer, med lusten utan hur känd den
+// döda är. Bedriften: p:s egen stora bedrift (p.bedrift, rykten.ts), som avtar till noll på stolthetDygn, om den inte redan finns
+function sorgen(s: State, p: Person): { d: Person; w: number }[] {
+  const ut: { d: Person; w: number }[] = [];
+  for (const g of p.sorg ?? []) {
+    const d = g.vem !== undefined ? byId(s, g.vem) : s.people.find(q => q.name === g.namn && q.died !== undefined);
+    if (d && !alive(d)) ut.push({ d, w: SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner) });
+  }
+  return ut;
+}
+function bedriften(s: State, p: Person, finns: (b: NonNullable<Person['bedrift']>) => boolean): { w: number; bev: Bevis[] } | undefined {
+  const b = p.bedrift;
+  if (!b || HANDELSER[b.h].vikt < SKRIFT.bedriftMin || finns(b)) return undefined;
+  const kvar = 1 - (s.now - b.t) / (SKRIFT.stolthetDygn * DAY), egen = 0.5 + Math.max(0, 20 - stat(p, 'empati', s.now)) / 20;
+  return kvar > 0 ? { w: SKRIFT.stolthet * HANDELSER[b.h].vikt * egen * kvar, bev: [{ ...b, sett: undefined }] } : undefined;
+}
 export function runstenLust(s: State, p: Person): Lust | undefined {
   if (p.gast || ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'stenhuggarplats')) return undefined;
   let best: Lust | undefined;
-  for (const g of p.sorg ?? []) {
-    const d = g.vem !== undefined ? byId(s, g.vem) : s.people.find(q => q.name === g.namn && q.died !== undefined);
-    if (!d || alive(d) || harSten(s, 'minne', d.id) || s.gravar?.some(q => q.vem === d.id && q.text)) continue;
-    const w = SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner) * kandVikt(s, d.id); // den byn minns väljs oftare (steg 10.6.14)
+  for (const { d, w: w0 } of sorgen(s, p)) {
+    if (harSten(s, 'minne', d.id) || s.gravar?.some(q => q.vem === d.id && q.text)) continue;
+    const w = w0 * kandVikt(s, d.id); // den byn minns väljs oftare (steg 10.6.14)
     if (!best || w > best.w) best = { w, slag: 'minne', om: { id: d.id, namn: d.name } };
   }
-  const b = p.bedrift;
-  if (b && HANDELSER[b.h].vikt >= SKRIFT.bedriftMin && !harSten(s, 'handelse', p.id, b.t)) {
-    const kvar = 1 - (s.now - b.t) / (SKRIFT.stolthetDygn * DAY), egen = 0.5 + Math.max(0, 20 - stat(p, 'empati', s.now)) / 20;
-    const w = SKRIFT.stolthet * HANDELSER[b.h].vikt * egen * kvar;
-    if (kvar > 0 && (!best || w > best.w)) best = { w, slag: 'handelse', om: { id: p.id, namn: p.name }, bev: [{ ...b, sett: undefined }] };
-  }
+  const bd = bedriften(s, p, b => harSten(s, 'handelse', p.id, b.t));
+  if (bd && (!best || bd.w > best.w)) best = { w: bd.w, slag: 'handelse', om: { id: p.id, namn: p.name }, bev: bd.bev };
   if (best) best.w *= SKRIFT.avtar ** (s.runstenar ?? []).filter(r => r.av.id === p.id && r.slag !== 'helig').length;
   // trons heliga kväden: prästen eller lärjungen som kan dem utantill (steg 10.6.2), mindre för varje helig sten tron har
   const tr = troOf(s, p.tro);
@@ -310,16 +320,9 @@ function starkastBev(s: State, p: Person) {
 export function skrivLust(s: State, p: Person): SkrivLust | undefined {
   if (p.gast || ageOf(p, s.now) < ALDER.vuxen) return undefined;
   const c: SkrivLust[] = [];
-  for (const g of p.sorg ?? []) {
-    const d = g.vem !== undefined ? byId(s, g.vem) : s.people.find(q => q.name === g.namn && q.died !== undefined);
-    if (!d || alive(d) || harBlad(s, k => k.slag === 'minne' && k.om?.id === d.id)) continue;
-    c.push({ w: SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner), slag: 'minne', om: { id: d.id, namn: d.name } });
-  }
-  const b = p.bedrift;
-  if (b && HANDELSER[b.h].vikt >= SKRIFT.bedriftMin && !harBlad(s, k => k.slag === 'handelse' && k.om?.id === p.id && k.bev?.[0]?.t === b.t)) {
-    const kvar = 1 - (s.now - b.t) / (SKRIFT.stolthetDygn * DAY), egen = 0.5 + Math.max(0, 20 - stat(p, 'empati', s.now)) / 20;
-    if (kvar > 0) c.push({ w: SKRIFT.stolthet * HANDELSER[b.h].vikt * egen * kvar, slag: 'handelse', om: { id: p.id, namn: p.name }, bev: [{ ...b, sett: undefined }] });
-  }
+  for (const { d, w } of sorgen(s, p)) if (!harBlad(s, k => k.slag === 'minne' && k.om?.id === d.id)) c.push({ w, slag: 'minne', om: { id: d.id, namn: d.name } });
+  const bd = bedriften(s, p, b => harBlad(s, k => k.slag === 'handelse' && k.om?.id === p.id && k.bev?.[0]?.t === b.t));
+  if (bd) c.push({ w: bd.w, slag: 'handelse', om: { id: p.id, namn: p.name }, bev: bd.bev });
   let lar: Lardom | undefined, lw = 0;
   for (const l of p.lardomar ?? []) {
     if (l.k === 'flod' || l.k === 'ort' || l.k === 'uppdrag') continue; // platserna i världen skrivs på kartor (fas 11)
@@ -503,7 +506,7 @@ export function skrivKlar(s: State, p: Person) {
   nyKvalitet(s, p, kv, kvVid(s, p, 'skriva'), tx.titel, SKRIFTER[l.slag].skill); // vid skrivpulpeten med stationens tillägg (steg 10.6.11) // kvaliteten ligger på skriften och rör inte bladets eller bokens hållbarhet (steg 10.6.7)
   const q = kv.q ?? NORMAL, fc = SKRIFT.felChans[q] ?? 0;
   const fel = fc > 0 && rnd(s, 'kunskap', p) < fc ? (rnd(s, 'kunskap', p) < 0.5 ? SKRIFT.felOver : SKRIFT.felUnder) : undefined; // slås en gång och står kvar i texten
-  if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, l.lar.k === 'fara' ? MINNE.vMaxFara : l.lar.k === 'vatten' ? 1 : l.lar.k === 'pris' ? Infinity : MINNE.vMax) };
+  if (fel && l.lar) l.lar = { ...l.lar, v: clamp(l.lar.v * fel, 0, lardomMax(l.lar.k)) };
   if (fel && l.lar) tx.text = describe(s, l.lar).text;
   if (l.platser && l.slag === 'karta') l.platser = kartRykten(s, p, l.platser, q);
   const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(l.platser ? { platser: l.platser } : {}), ...(l.fran?.kid !== undefined ? { kid: l.fran.kid } : {}) };

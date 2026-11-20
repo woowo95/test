@@ -448,10 +448,10 @@ export type SamSlag = keyof typeof SAMLA;
 // räknar det som händer i byn (statistiken i s.stat)
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
 // en olycka gör de som såg den rädda för handlingen (steg 8.4.10, lagar.ts sätter funktionen när allt är laddat)
-type AktRadd = (s: State, p: Person, act: Act | undefined, om: string, orsak?: string) => void;
+type AktRadd = (s: State, p: Person, act: Act | undefined) => void;
 let aktRaddF: AktRadd = () => {};
 export const satAktRadd = (f: AktRadd) => { aktRaddF = f; };
-export const raddAkt: AktRadd = (s, p, act, om, orsak) => aktRaddF(s, p, act, om, orsak);
+export const raddAkt: AktRadd = (s, p, act) => aktRaddF(s, p, act);
 // buden som verkar i andra system (steg 8.6.6–8.6.10, kyrka.ts sätter funktionen när allt är laddat). Tillfället säger var:
 // en främling kommer (p), två ska bli ett par (p och q), p skadades av q, p vill tala illa om en död, p vill fälla trädet (x, y).
 // true = budet stoppar det

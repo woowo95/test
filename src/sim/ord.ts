@@ -24,7 +24,7 @@ export const lista = (l: string[], max = 4) => l.length <= max ? och(l) : `${l[0
 // ---------- sakerna ----------
 // [artikel, ental, flertal] med gemen: där namnet i SAKER inte går att räkna (harkött, hö) står ett mått framför
 type Ord = readonly [art: 'en' | 'ett', ental: string, flertal: string];
-export const SAKORD: Record<string, Ord> = {
+const SAKORD: Record<string, Ord> = {
   bar: ['ett', 'bär', 'bär'], rotter: ['en', 'rot', 'rötter'], kott: ['en', 'bit harkött', 'bitar harkött'], fisk: ['en', 'bit fiskkött', 'bitar fiskkött'],
   svamp: ['en', 'svamp', 'svampar'], ved: ['ett', 'vedträ', 'vedträn'], grenar: ['en', 'gren', 'grenar'], torrgras: ['en', 'famn hö', 'famnar hö'],
   kol: ['en', 'bit kol', 'bitar kol'], flinta: ['en', 'flinta', 'flintor'], yxa: ['en', 'flintyxa', 'flintyxor'], fiskespjut: ['ett', 'träspjut', 'träspjut'],
@@ -56,7 +56,7 @@ export function sakOrd(k: string): Ord {
   return [d?.ett ? 'ett' : 'en', n, n];
 }
 // en eller ett framför saken
-export const enEtt = (k: string) => sakOrd(k)[0];
+const enEtt = (k: string) => sakOrd(k)[0];
 // "en rot", "tre rötter", "många grenar", "lite rötter"
 export function antal(n: number, k: string) {
   const [art, en, fler] = sakOrd(k);
@@ -79,7 +79,7 @@ export const GORA: Record<string, string> = {
   korg: 'fläta korgar', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
   kniv: 'slå flintknivar', timmervagg: 'bygga timmerhus', slaktbank: 'bygga en slaktbänk', flatarbank: 'bygga en slöjdbänk', halmbadd: 'göra halmbäddar',
   bord: 'bygga bord', hylla: 'göra hyllor och kistor', skinnfall: 'sy skinnfällar', skinndorr: 'hänga dörrar av skinn', tradorr: 'göra trädörrar',
-  bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', packsadel: 'sy packsadlar', ridning: 'rida', mal: 'binda mål', boll: 'sy bollar',
+  bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', ridning: 'rida', mal: 'binda mål', boll: 'sy bollar',
   slagtra: 'tälja slagträn', scen: 'bygga en scen', trumma: 'göra trummor', benflojt: 'skära benflöjter', lyra: 'göra lyror', kruka: 'bygga upp lerkrukor',
   matta: 'väva mattor', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
   tork: 'bygga en torkställning', bikupa: 'fläta bikupor', bur: 'bygga burar', odling: 'odla', ledarskap: 'välja en ledare', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',

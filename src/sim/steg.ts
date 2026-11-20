@@ -40,7 +40,7 @@ import { askaSteg, brandHetta, brandSteg, snoSmalt, brinnerSteg, hjalpaKlar, sla
 import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
-import { STR, stepStyre } from './styre';
+import { STR, kvallForeStyret, stepStyre, styretsKvall } from './styre';
 import { bildKrok, gralBlirSlagsmal, kartStridBorja, lekSteg, kartStridSteg, nastaSteg, serStriden } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
@@ -116,15 +116,14 @@ import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from '.
 import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
 import { fangeOde } from './fangeval';
-import { avrustaKlar, gravDygn, gravKlar, gravaMedan, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
+import { avrustaKlar, gravDygn, gravKlar, gravaMedan, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
-import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
+import { KYRKA_TIMME, andligTimme, kyrkaDygn, kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad } from './kyrka';
 import { lagRegister } from './lagar';
 import { raddDygn, raddRegister } from './radsla';
-import { oppnaSed } from './rost';
 import { LARM, handelse, larma } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
-import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
+import { bordPlats, fullBorda, kladVarme, rustaKlar, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
 import { allaTing } from './agande';
@@ -285,7 +284,6 @@ for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
   if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
 };
 lagRegister(); raddRegister(); skattRegister(); budgetRegister(); bynamnRegister(); lonRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
-satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
 // det som görs vid en station är klart: materialet tas och saken läggs i förrådet, och är hens som gjorde den (tillverka.ts)
@@ -491,7 +489,9 @@ export const TAKTER: Takt[] = [
   { namn: 'stepRykten', sek: 3600, fn: s => { stepRykten(s, moodOf); } },
   { namn: 'glomRykten', sek: 14400, fn: (s, dt) => { glomRykten(s, dt / HOUR_S); } },
   { namn: 'stepBerattelser', sek: 3600, fn: s => { stepBerattelser(s); } },
+  { namn: 'kvällen före styret', sek: 86400, fas: STR.timme / 24, fn: s => { kvallForeStyret(s); } }, // trons krets och dopet (styre.ts)
   { namn: 'stepStyre', sek: 3600, fn: s => { stepStyre(s); } },
+  { namn: 'styrets kväll', sek: 86400, fas: STR.timme / 24, fn: s => { styretsKvall(s); } }, // domen, omröstningen och det som tas upp (styre.ts)
   { namn: 'rotStumps', sek: 3600, fn: s => { rotStumps(s); } },
   { namn: 'tidyStore', sek: 3600, fn: s => { tidyStore(s); } },
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
@@ -505,6 +505,8 @@ export const TAKTER: Takt[] = [
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },
+  { namn: 'kyrkans dygn', sek: 86400, fas: KYRKA_TIMME / 24, fn: s => { kyrkaDygn(s); } }, // skatten, helgonen, kvädena, välsignelsen och buden (kyrka.ts)
+  { namn: 'seden andlig', sek: 3600, fn: s => { andligTimme(s); } }, // seden Världslig – Andlig låses upp (kyrka.ts)
   { namn: 'wearBuild', sek: 21600, fn: (s, dt, c) => { wearBuild(s, dt / HOUR_S, c.ai); } },
   { namn: 'stepByggnader', sek: 3600, fn: s => { stepByggnader(s); } },
   { namn: 'husKlaraTimme', sek: 3600, fn: s => { husKlaraTimme(s); } },
