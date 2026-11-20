@@ -30,6 +30,8 @@ import { SAK_ART, farorNu, heligRuta, heligtFor, matAvstar } from './kultlatt';
 // Avstånd är i rutor, om inget annat sägs. Hur fort varje sak slits och hur länge maten håller står i saker.ts, och
 // temperaturen som maten ruttnar efter i vader.ts
 export const LAGER = balans('lager', {
+  utanDygn: 1, // det som legat på marken utan plats räknas som ett medel över så här många dygn (steg 12.1.18)
+  utanMin: 0.25, // ... och lagret växer när medlet är minst så här många saker
   // lagerplatserna (zoner)
   forradFran: 4, // med så här många vanliga lagerplatser är ett förrådshus värt mer än en lagerplats till (inget tak på lagerplatserna, steg 7.2.18)
   startBredd: 2, startHojd: 2, // byns första lagerplats, vid kartans lagerplats
@@ -970,6 +972,15 @@ export function tidyStore(s: State) {
   }
   changed(s);
 }
+// ---------- förråden växer med det som inte får plats (steg 12.1.18, Förvaring: Förråden växer) ----------
+// Varje timme räknas det som ligger utanför lagret utan någon ledig ruta att bäras till, och medlet över de senaste dygnen
+// (LAGER.utanDygn) är behovet av mer förvaring, oavsett om byn vill ha mer av saken
+export function matUtanPlats(s: State) {
+  const n = overflow(s).filter(a => lagerFullt(s, a.k)).length, u = s.utanPlats ?? { v: 0, t: s.now };
+  const f = Math.exp(-Math.max(0, s.now - u.t) / (LAGER.utanDygn * DAY));
+  s.utanPlats = { v: u.v * f + n * (1 - f), t: s.now };
+}
+export const utanPlatsNu = (s: State) => s.utanPlats?.v ?? 0;
 // finns ingen ledig ruta i någon lagerplats där saken får ligga?
 export const lagerFullt = (s: State, k: string) => { const all = things(s); return !zonesOf(s).some(z => allows(z, k) && all.filter(a => inZone(z, a.x, a.y)).length < z.w * z.h); };
 // Lagret är ett byggbehov (steg 7.2.18): det som inte fått plats ligger bredvid, och Byggplanen väljer mellan att göra en

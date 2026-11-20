@@ -48,6 +48,41 @@ SCENARIER.byggnader = {
 
 
 // kläderna från början (steg 10.2.73) tas bort i prov som räknar med familjernas förmögenhet utan dem
+SCENARIER.fulltforrad = {
+  text: 'Steg 12.1.18: förråden växer med det som inte får plats. Det som legat på marken utan plats de senaste dygnen räknas som ett medel, lagerplatsen växer av det också när byn har mer än sitt mål, och förrådshuset får både en utbyggnad och ett nytt hus som förslag',
+  kor: () => {
+    const s = createState(1, START);
+    const zs = SIM.zonesOf(s), upptagen = new Set(SIM.stacksOf(s).map(a => a.y * SIM.W + a.x));
+    // alla lagerplatser fulla av sten, och tre stenar bredvid den första utan plats
+    for (const z of zs) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!upptagen.has(y * SIM.W + x)) { (s.stackar ??= []).push({ k: SIM.allows(z, 'sten') ? 'sten' : 'bar', n: SIM.allows(z, 'sten') ? 40 : 1, x, y, c: 1 } as NonNullable<SIM.State["stackar"]>[number]); upptagen.add(y * SIM.W + x); }
+    const z0 = zs[0], bredvid: { x: number; y: number }[] = [];
+    for (let x = z0.x - 1; x <= z0.x + z0.w && bredvid.length < 3; x++) for (const y of [z0.y - 1, z0.y + z0.h]) if (bredvid.length < 3 && SIM.usable(s, x, y) && !upptagen.has(y * SIM.W + x) && SIM.zoneAt(s, x, y) < 0) { bredvid.push({ x, y }); upptagen.add(y * SIM.W + x); }
+    for (const q of bredvid) s.stackar!.push({ k: 'sten', n: 1, x: q.x, y: q.y, c: 1 } as NonNullable<SIM.State["stackar"]>[number]);
+    SIM.changed(s);
+    const utan = SIM.overflow(s).filter(a => SIM.lagerFullt(s, a.k)).length;
+    SIM.matUtanPlats(s);
+    const forst = SIM.utanPlatsNu(s);
+    s.now += 6 * SIM.HOUR; SIM.matUtanPlats(s); const sex = SIM.utanPlatsNu(s);
+    s.now += 18 * SIM.HOUR; SIM.matUtanPlats(s); const dygn = SIM.utanPlatsNu(s);
+    // byn har mer sten än den vill ha, och lagret växer ändå
+    const mal = !SIM.villHaMer(s, 'sten'), yta = () => SIM.zonesOf(s).reduce((n, z) => n + z.w * z.h, 0), fore = yta(), antal = SIM.zonesOf(s).length;
+    SIM.planLager(s);
+    const vaxte = yta() > fore || SIM.zonesOf(s).length > antal;
+    // förrådshuset: det som legat utan plats ökar behovet, och behovet pekar inte ut ett hus att bygga ut
+    const akut = (v: number) => { s.utanPlats = { v, t: s.now }; return SIM.BYGGNADER.forrad.akut!(s); };
+    const a0 = akut(0), a1 = akut(10);
+    const okAt = () => true, b: SIM.ByggBehov = { fn: 'forrad', a: a1, sc: 0 };
+    const nytt = SIM.BYGGATGARDER.nyttHus.foresla(s, b, okAt).length;
+    return [
+      [`det som ligger bredvid lagret utan ledig ruta räknas (${utan} saker)`, utan === bredvid.length && bredvid.length === 3],
+      [`medlet växer med tiden: ${forst.toFixed(2)} direkt, ${sex.toFixed(2)} efter sex timmar och ${dygn.toFixed(2)} efter ett dygn`, forst < 1e-9 && sex > 0.5 && dygn > sex && dygn < 3],
+      [`lagret växer av det, också när byn har mer sten än sitt mål (${mal ? 'mer än målet' : 'under målet'}, ${fore} rutor blev ${yta()})`, mal && vaxte],
+      [`behovet av förrådshus växer med det som legat utan plats (${a0.plats} mot ${a1.plats} rutor, ${a0.v.toFixed(2)} mot ${a1.v.toFixed(2)})`, a1.plats > a0.plats || a1.v > a0.v],
+      [`förrådsbehovet pekar inte ut ett hus: utbyggnaden och ett nytt hus är båda förslag (${nytt} nya hus föreslås)`, a1.hus === undefined && nytt > 0],
+    ];
+  },
+};
+
 SCENARIER.forradshus = {
   lang: true,
   text: 'Fyller förrådet fler rutor än förrådshusen rymmer bygger byn ett förrådshus (steg 10.2.67). Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
@@ -545,6 +580,7 @@ SCENARIER.lager = {
     for (let y = vz.y; y < vz.y + vz.h; y++) for (let x = vz.x; x < vz.x + vz.w; x++) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y });
     for (let y = vz.y - ut; y < vz.y + vz.h + ut; y++) for (let x = vz.x - ut; x < vz.x + vz.w + ut; x++) if (!isStored(vx, x, y) && usable(vx, x, y)) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y }, { k: 'ved', n: 1, c: 1, x, y });
     const vxFore = tot(), vxYta = vz.w * vz.h;
+    vx.utanPlats = { v: 1, t: vx.now }; // stenen har legat där utan plats en tid (steg 12.1.18)
     (SIM.planLager(vx), SIM.tidyStore(vx));
     const vxRutor = new Map<number, number>();
     for (const q of vx.stackar) if (isStored(vx, q.x, q.y)) vxRutor.set(q.y * SIM.W + q.x, (vxRutor.get(q.y * SIM.W + q.x) ?? 0) + 1);

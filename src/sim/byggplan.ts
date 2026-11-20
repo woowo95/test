@@ -17,8 +17,7 @@ import { PLATS, rektAvstand } from './plats';
 import { type Station, delarAv, nyPlatsDel, rivDel, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
 import { enOrd, stor } from './ord';
 import { knows } from './teknik';
-import { villHaMer } from './forradsmal';
-import { amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
+import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { findPath } from './vag';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, RUMSFUNKTIONER, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
@@ -301,13 +300,13 @@ function dorrPlats(s: State, x0: number, y0: number, W2: number, H2: number, f: 
 const byggaUt: AtgardDef = {
   namn: 'Bygga ut', steg: 1,
   foresla: (s, b, okAt) => {
-    const hs = housesOf(s).filter(h => h.klar && !h.ut && !fnOf(h).omkring && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.tro !== undefined ? h.tro === b.a.tro : b.a.ag !== undefined ? h.ag === b.a.ag : h.ag === undefined && h.tro === undefined && fnId(h) === b.fn && !fnOf(h).lager));
+    const hs = housesOf(s).filter(h => h.klar && !h.ut && !fnOf(h).omkring && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.tro !== undefined ? h.tro === b.a.tro : b.a.ag !== undefined ? h.ag === b.a.ag : h.ag === undefined && h.tro === undefined && fnId(h) === b.fn && (!fnOf(h).lager || (h.w - 2) * (h.h - 2) < HUS.forradMax))); // ett förrådshus byggs ut till sin största storlek (steg 12.1.18)
     const ut: Forslag[] = [], want = onskadPlats(s, b);
     for (const h of hs) for (const side of ['v', 'o', 'n', 's'] as const) {
       const lodrat = side === 'n' || side === 's', iw = h.w - 2, ih = h.h - 2;
       for (let k = 1; k <= HUS.maxSida; k++) {
         const nw = iw + (lodrat ? 0 : k), nh = ih + (lodrat ? k : 0);
-        if (Math.min(nw, nh) > HUS.maxSida || Math.max(nw, nh) > HUS.langSida * Math.min(nw, nh) || nw * nh > BYGG.maxInne) break;
+        if (Math.min(nw, nh) > HUS.maxSida || Math.max(nw, nh) > HUS.langSida * Math.min(nw, nh) || nw * nh > BYGG.maxInne || fnOf(h).lager && nw * nh > HUS.forradMax) break;
         const f = utbyggnad(s, h, side, k, okAt);
         if (!f) break;
         const mer = platsAv(b, nw * nh) - platsAv(b, iw * ih); // så många fler får plats (personer i ett sovrum, steg 9.2.36)
@@ -816,6 +815,7 @@ export function husFel(s: State): string | undefined {
 // en gång i timmen; själva planen (planBuild) är en egen rad i TAKTER (steg.ts) och görs var PLAN.varTim:e timme (steg 7.2.3 och 10.2.21)
 export function stepByggplan(s: State) {
   stepBehov(s);
+  matUtanPlats(s);
   planLager(s);
   byplanNu(s);
   torgNu(s);
@@ -825,7 +825,7 @@ export function stepByggplan(s: State) {
 // lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Byggplanen väger en större lagerplats mot en ny. Marken märks bara
 // ut, så det behövs ingen byggare, och det väntar inte på annat bygge
 export function planLager(s: State) {
-  if (!overflow(s).some(a => villHaMer(s, a.k) && lagerFullt(s, a.k))) return;
+  if (utanPlatsNu(s) < LAGER.utanMin || !overflow(s).some(a => lagerFullt(s, a.k))) return; // det som legat utan plats (steg 12.1.18)
   const u: ByggBehov = { fn: 'lagerplats', a: { v: 1, plats: 0 }, sc: 0 }, f = valj(s, u, () => true);
   if (f?.at === 'lagerNyA') { if (!lagerNy(s)) lagerStorre(s); } else if (!lagerStorre(s)) lagerNy(s);
 }

@@ -6,7 +6,7 @@ import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed,
 import { heatAt, vedPerDygn } from './eld';
 import { BLOTVED } from './blotved';
 import { eldPlats } from './karta';
-import { changed, enPerRuta, isStored, ownedAll, stacksOf, zoneAt, zonesOf } from './lager';
+import { changed, enPerRuta, isStored, ownedAll, stacksOf, utanPlatsNu, zoneAt, zonesOf } from './lager';
 import { tillbaka, tramat } from './bygg';
 import { kronika } from './historik';
 import { DAY, HOUR, W } from './typer';
@@ -89,8 +89,8 @@ export const BYGGNADER = {
   },
   forrad: {
     namn: 'Förrådshus', ikon: '📦', behov: 'Maten ruttnar eller förrådet är fullt: under tak ruttnar och slits det mindre', fara: false, vikt: 2, lager: true,
-    // ett tomt hus blir förrådshuset (funktionsbyte nedan), så då byggs inget nytt (steg 2.12.5)
-    akut: s => tommaSovsalar(s).length ? { v: 0, plats: 0 } : forradBehov(s),
+    // en tom sovsal någon annanstans tar inte bort behovet (steg 12.1.18)
+    akut: s => forradBehov(s),
     namnFor: (_s, _w, _h, same) => same ? `Förrådshus ${same + 1}` : 'Förrådshuset',
   },
   familjehus: {
@@ -216,16 +216,14 @@ function forradBehov(s: State): Akut {
   let ute = 0, inneFullt = 0;
   const zs = zonesOf(s);
   for (const i of rutor) { const z = zs[zoneAt(s, i % W, Math.floor(i / W))]; if (z?.hus !== undefined && forrad.has(z.hus)) inneFullt++; else ute++; }
-  const brist = ute - (inne - inneFullt);
+  const brist = ute - (inne - inneFullt) + Math.round(utanPlatsNu(s)); // och det som legat på marken utan plats (steg 12.1.18)
   if (brist < HUS.forradMinBrist) return { v: 0, plats: 0 };
   // huset tar emot allt, mat och material (inget slag): det byggs för förrådet, inte ett för maten och ett för materialet
   const plats = Math.max(HUS.forradPlats, Math.min(HUS.forradMax, brist));
-  // ett förrådshus som inte nått sin största storlek byggs ut i stället för ett nytt
-  const litet = housesOf(s).find(h => forrad.has(h.id) && !h.ut && (h.w - 2) * (h.h - 2) < HUS.forradMax);
-  return { v: Math.min(1, brist / Math.max(1, rutor.size)) * HUS.forradAkut, plats, ...(litet ? { hus: litet.id } : {}) };
+  // en utbyggnad av ett förrådshus som inte nått sin största storlek och ett nytt hus är båda förslag, och byggplanen väljer
+  // efter värde och kostnad (steg 12.1.18)
+  return { v: Math.min(1, brist / Math.max(1, rutor.size + utanPlatsNu(s))) * HUS.forradAkut, plats };
 }
-// byns färdiga sovsalar som ingen sover i (h.tom sätts i funktionsbyte), utan station som gör dem till verkstäder
-const tommaSovsalar = (s: State): Hus[] => housesOf(s).filter(h => (h.fn ?? 'sovsal') === 'sovsal' && h.ag === undefined && h.klar && h.tom !== undefined && !harArbete(s, h));
 
 // det mest akuta behovet just nu: faror först, sedan vikten gånger hur akut det är
 export function mostUrgent(s: State) {

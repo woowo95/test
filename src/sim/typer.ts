@@ -457,6 +457,7 @@ export interface State {
   bjornUndan?: { fran: number; till: number; x0: number; y0: number; x1: number; y1: number }; // björnen går bort efter en strid (steg 9.2.30)
   stationFlytt?: { id: number; x: number; y: number; rot?: 1; vinst: number }; // den station ute som är mest värd att flytta närmare dem som använder den (steg 9.4.8, stationer.ts)
   larmV?: number; // ökar när något händer i ett larm (någon skadas eller dör), så att rollerna väljs om (steg 9.5.19, roller.ts)
+  utanPlats?: { v: number; t: number }; // det som legat på marken utan plats i lagret, ett medel över de senaste dygnen (steg 12.1.18, lager.ts)
   lagerFlytt?: { i: number; ny: { x: number; y: number }; vinst: number; saker: number }; // den lagerplats som är mest värd att flytta närmare mitten, räknad varje timme (steg 9.4.7, lager.ts)
   plockat?: Record<string, { n: number; t: number }>; // det som plockats av grenar och stenar på en ruta och när (steg 9.2.53, steg.ts); det växer tillbaka
   testTorr?: 1; // testläget: marken är torkad helt (steg 9.2.24, brand.ts); bara i kopian av byn
