@@ -56,6 +56,8 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
   ringbrynja_jarn: { pix: ['................', '....kkk..kkk....', '...kSsSkkSsSk...', '..kSsSsSsSsSsk..', '..kSsSsSsSsSsk..', '..kskSsSsSsksk..', '..kk.SsSsSs.kk..', '.....sSsSsS.....', '.....SsSsSs.....', '.....sSsSsS.....', '.....kkkkkk.....', '................', '................', '................', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', s: '#61767a' } },
   // spännet av järn (steg 12.2.10)
   spanne_jarn: { pix: ['................', '................', '................', '................', '.....kkkkkk.....', '....kSSSSSSk....', '...kSkkkkkkSk...', '...kSk....kSk...', '...kSkkkkkkSk...', '....kSSSSSSk....', '.....kkSkkk.....', '.......S........', '................', '................', '................', '................'], pal: { k: '#233035', S: '#8a9c9e' } },
+  // isborren (steg 12.2.11)
+  isborr: { pix: ['................', '......kkkk......', '.......jj.......', '.......kk.......', '.......kS.......', '.......kS.......', '.......kS.......', '.......kS.......', '.......kS.......', '......kSSk......', '.......kS.......', '......kSSk......', '.......kS.......', '........k.......', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', j: '#7d5b40' } },
 };
 export function laggTillJarn(PIX: Pix, PAL: Pal) {
   for (const [k, b] of Object.entries(BILDER)) { PIX[k] = b.pix; PAL[k] = b.pal; }

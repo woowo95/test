@@ -4,8 +4,7 @@
 // Det ger ungefär 15 cm när istiden börjar och 35–40 cm som mest, och isen går upp i början av våren. Alla sjöar har
 // samma is. Allt räknas varje timme i stepIs (steg.ts), likadant i spelet och i ikappräkningen.
 // Den som fiskar eller dricker när isen ligger hugger först upp ett hål (registret ISHAL): tunn is med händerna, tjockare
-// med en sten, och yxan, spjutet och spaden tar sig genom all is. Det sista är tillfälligt: när isborren kommer (steg
-// 7.4.4) tar bara den sig genom den tjockaste isen. Fisket genom hålet är pimpling; det ger lika mycket som fisket från
+// med en sten, yxan, spjutet och spaden genom is upp till 30 cm, och bara isborren av järn (steg 12.2.11) genom den tjockaste isen. Fisket genom hålet är pimpling; det ger lika mycket som fisket från
 // stranden efter årstiden
 import { balans } from './balans';
 import { amountOf } from './lager';
@@ -17,6 +16,7 @@ import { living } from './folk';
 import { rnd } from './slump';
 
 export const IS = balans('is', {
+  halMax: 30, // yxan, spjutet och spaden tar sig genom is upp till så här många cm; tjockare is bara isborren (steg 12.2.11)
   vattenTim: 48, // vattnets temperatur närmar sig luftens så här långsamt (timmar)
   forst: 0.5, // när vattnet kyls under noll blir isen så här många cm per grad under noll
   vaxer: 1, // isen växer vaxer × köld / (bas + tjockleken) cm per timme (köld = grader under noll) ...
@@ -31,10 +31,12 @@ export interface IsMinne { vatten: number; cm: number } // vattnets temperatur (
 interface HalDef { id: string; namn: string; max: number; minPerCm: number; har: (s: State, p: Person) => boolean }
 const harRedskap = (s: State, p: Person, ks: string[]) => ks.includes(p.task?.tool ?? '') || !!freeOfKinds(s, p, ks);
 export const ISHAL: HalDef[] = [
-  // tillfälligt: yxan, spjutet och spaden tar sig genom all is tills isborren kommer (steg 7.4.4)
-  { id: 'yxa', namn: 'yxan', max: Infinity, minPerCm: 0.3, har: (s, p) => harRedskap(s, p, ['yxa']) },
-  { id: 'spjut', namn: 'spjutet', max: Infinity, minPerCm: 0.5, har: (s, p) => harRedskap(s, p, SPJUT) },
-  { id: 'benspade', namn: 'spaden', max: Infinity, minPerCm: 0.5, har: (s, p) => harRedskap(s, p, ['benspade']) },
+  // isborren av järn (steg 12.2.11) borrar genom den tjockaste isen, tre gånger så fort som yxan; yxan, spjutet och spaden tar
+  // sig bara genom is upp till 30 cm (IS.halMax)
+  { id: 'isborr', namn: 'isborren', max: Infinity, minPerCm: 0.1, har: (s, p) => harRedskap(s, p, ['isborr']) },
+  { id: 'yxa', namn: 'yxan', max: IS.halMax, minPerCm: 0.3, har: (s, p) => harRedskap(s, p, ['yxa', 'jarnyxa']) },
+  { id: 'spjut', namn: 'spjutet', max: IS.halMax, minPerCm: 0.5, har: (s, p) => harRedskap(s, p, ['jarnspjut', ...SPJUT]) },
+  { id: 'benspade', namn: 'spaden', max: IS.halMax, minPerCm: 0.5, har: (s, p) => harRedskap(s, p, ['benspade']) },
   { id: 'sten', namn: 'en sten', max: 15, minPerCm: 0.6, har: s => amountOf(s, 'sten') >= 1 },
   { id: 'hand', namn: 'händerna', max: 5, minPerCm: 1, har: () => true },
 ];

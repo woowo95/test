@@ -385,3 +385,24 @@ SCENARIER.jarnsmycke = {
     ];
   },
 };
+
+SCENARIER.isborr = {
+  text: 'Isborren (steg 12.2.11): smids av 1 järn och 1 grenar på 4 minuter i smedjan och borrar genom den tjockaste isen tre gånger så fort som yxan; yxan, spjutet och spaden tar sig bara genom is upp till 30 cm',
+  kor: () => {
+    const R = SIM.RECEPT.isborr;
+    const hal = (borr: boolean) => {
+      const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+      s.is = { vatten: 0, cm: 40 } as typeof s.is;
+      SIM.addTool(s, 'yxa', p); SIM.addTool(s, 'flintspjut', p);
+      if (borr) SIM.addTool(s, 'isborr', p);
+      const h = SIM.halVal(s, p);
+      return { h: h?.id, min: h ? SIM.halMin(s, p) : undefined };
+    };
+    const med = hal(true), utan = hal(false);
+    return [
+      [`isborren: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan`, R.av.jarn === 1 && R.av.grenar === 1 && R.min === 4 && R.tek === 'smedja' && !!SIM.JARNSAKER.isborr],
+      [`genom 40 cm is får byn med borr upp hålet på 4 minuter (${med.h}, ${med.min} minuter)`, med.h === 'isborr' && Math.abs((med.min ?? 0) - 4) < 1e-9],
+      [`byn utan borr får inte upp något (${utan.h ?? 'inget'})`, !utan.h],
+    ];
+  },
+};
