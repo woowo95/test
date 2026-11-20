@@ -54,7 +54,7 @@ function startWork0(s: State, p: Person, tk: Task) {
   if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN; return; } // en dörr i en öppning (bygg.ts)
   if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(s, p, tk.act) * MIN; startSmalta(s, p, tk); return; } // att dricka (torst.ts); snön i en kruka vid elden (steg 10.2.50)
   if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)
-  if (tk.act === 'vatten') { tk.until = s.now + (TORST.fyllMin + halMin(s, p)) * MIN; return; } // vattensäcken fylls (torst.ts), med hålet i isen (is.ts)
+  if (tk.act === 'vatten') { tk.until = s.now + TORST.fyllSek * SEC + halMin(s, p) * MIN; return; } // kärlet fylls (torst.ts), med hålet i isen (is.ts)
   if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN; return; } // ett tillbehör till en möbel (stationer.ts)
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) / redskapTal('falla', tk.tool).fart - (s.halvfallt?.[i] ?? 0)); return; } // järnyxan fäller fortare (steg 12.2.6)
   // framme: arbetet tar sin tid från framkomsten, inte det som blev över av tiden för vägen dit; den som redan stod där står inte

@@ -617,7 +617,12 @@ SCENARIER.vattensack = {
     // farligt törstig: de andra ger vatten ändå
     p.task = undefined; p.torst = 0.1; chooseTask(s, p); const farligt = akt(p);
     const fl = STATIONER.flatarbank, tek = TEKNIK.find(t => t.id === 'vattensack');
+    // att fylla kärlet vid vattnet tar fem sekunder (steg 12.1.37), när isen inte ligger
+    const fs = SIM.cloneState(s), fq = SIM.living(fs)[1]!; if (fs.is) fs.is.cm = 0;
+    const ft = { act: 'vatten', phase: 'do', until: fs.now, tool: 'vattensack' } as Task; SIM.startWork(fs, fq, ft);
+    const fyllSek = (ft.until - fs.now) / SIM.SEC;
     return [
+      [`att fylla säcken vid vattnet tar ${fyllSek} sekunder`, fyllSek === 5],
       ['den som har brutit benet kan inte gå och ligger hemma', kanInte],
       [`utan säck väntar hen (${utan ?? 'inget'}) och en annan bär vatten i händerna`, utan !== 'fatt' && utan !== 'dricka' && hander],
       [`med en säck i byn väntar hen på den (${vantar ?? 'inget'})`, vantar !== 'fatt' && vantar !== 'dricka'],

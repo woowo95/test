@@ -5,6 +5,7 @@ import { ODLING } from './odling';
 import type { Act } from './typer';
 import { ACTS } from './handlingar';
 import { GORS } from './redskap';
+import { TORST } from './torst';
 
 // ---------- arbetstiderna (steg 2.12.8) ----------
 // Riktlinjen för hur lång tid ett arbete får ta (Arbete, Arbetstider i designdokumentet). Spelet följer klockan, så det är
@@ -21,6 +22,7 @@ export const TIDSLAG = {
   falt: { namn: 'Fältruta', min: 1, max: 8 }, // 1: att så en ruta tar en minut (steg 3.10.23.4; 2 före)
   // inte i riktlinjen: att slakta, rensa, grilla och torka en bit (förslag, Björn kan ändra)
   bearbeta: { namn: 'Bearbeta mat och vilt', min: 2, max: 8 },
+  fylla: { namn: 'Fylla ett kärl vid vattnet', min: 5 / 60, max: 5 / 60 }, // fem sekunder (steg 12.1.37); hålet i isen räknas för sig
 };
 export type TidSlag = keyof typeof TIDSLAG;
 
@@ -30,6 +32,7 @@ export function allaTider(): { namn: string; slag: TidSlag | undefined; min: num
   for (const d of Object.values(SAKER)) if (d?.skaffa?.min !== undefined) ut.push({ namn: d.namn, slag: d.skaffa.slag, min: d.skaffa.min });
   for (const d of [...Object.values(STATIONER), ...Object.values(TILLBEHOR), ...Object.values(DORRAR)]) ut.push({ namn: d.namn, slag: 'station', min: d.min });
   for (const m of Object.values(MATERIAL)) if (m.k === 'vagg' || m.k === 'golv') ut.push({ namn: m.namn, slag: m.k, min: m.tim * 60 });
+  ut.push({ namn: 'Fylla ett kärl vid vattnet', slag: 'fylla', min: TORST.fyllSek / 60 }); // steg 12.1.37
   for (const [k, n] of [['röja', ODLING.rojaMin], ['gräva', ODLING.beredaMin], ['så', ODLING.saMin], ['skörda', ODLING.skordaMin]] as const) ut.push({ namn: `Fältruta: ${k}`, slag: 'falt', min: n });
   return ut;
 }
@@ -46,22 +49,24 @@ export const TID_MARG = 1.5;
 // handling får alltså alltid ett slag (en ny sak kräver redan sitt slag, steg 2.12.8)
 // att slakta, rensa, grilla och torka görs i omgångar (en hel fångst i ett pass, SLAKT i redskap.ts), så passet är en stund;
 // tiden per bit står i SLAKT och prövas av scenariot tider
-const BEARBETA = new Set<string>(), STATION_AKT = new Set(['station', 'tillbehor', 'dorr']);
+const BEARBETA = new Set<string>(), STATION_AKT = new Set(['station', 'tillbehor', 'dorr']), FYLLA = new Set(['vatten']); // att hämta vatten är att fylla ett kärl (steg 12.1.37)
 let tidAkt: Record<Act, TidSlag | 'stund'> | undefined; // räknas när den behövs (saker.ts läser den här filen när den laddas)
 export function tidSlagAv(a: Act): TidSlag | 'stund' {
   tidAkt ??= Object.fromEntries((Object.keys(ACTS) as Act[]).map(x => {
     if (BEARBETA.has(x)) return [x, 'bearbeta'];
     if (STATION_AKT.has(x)) return [x, 'station'];
+    if (FYLLA.has(x)) return [x, 'fylla'];
     const ks = GORS[x];
     if (ks?.length) { const sl = ks.map(k => SAKER[k]?.skaffa?.slag).filter((y): y is TidSlag => !!y); return [x, sl.sort((y, z) => TIDSLAG[z].max - TIDSLAG[y].max)[0] ?? 'stund']; }
     return [x, 'stund'];
   })) as Record<Act, TidSlag | 'stund'>;
   return tidAkt[a] ?? 'stund';
 }
-// tar arbetet t, som börjar nu, längre tid än sitt slag? Svarar med vad som är fel, annars undefined
-export function forLangtArbete(t: { act: Act; until: number }, nu: number): string | undefined {
+// tar arbetet t, som börjar nu, längre tid än sitt slag? Svarar med vad som är fel, annars undefined. extra = minuter som
+// inte hör till arbetet (hålet i isen innan kärlet fylls, halMin i is.ts)
+export function forLangtArbete(t: { act: Act; until: number }, nu: number, extra = 0): string | undefined {
   const slag = tidSlagAv(t.act);
   if (!slag || slag === 'stund') return undefined;
-  const min = (t.until - nu) / 60000, max = TIDSLAG[slag].max * TID_MARG;
-  return min > max + 1e-6 ? `${t.act} tar ${Math.round(min)} minuter, slaget ${TIDSLAG[slag].namn.toLowerCase()} högst ${TIDSLAG[slag].max} (gånger ${TID_MARG})` : undefined;
+  const min = (t.until - nu) / 60000 - extra, max = TIDSLAG[slag].max * TID_MARG;
+  return min > max + 1e-6 ? `${t.act} tar ${+min.toFixed(2)} minuter, slaget ${TIDSLAG[slag].namn.toLowerCase()} högst ${TIDSLAG[slag].max} (gånger ${TID_MARG})` : undefined;
 }

@@ -29,7 +29,7 @@ import { wearUsed } from './redskap';
 import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
 import { isLight, kalender } from './tid';
-import { drickPlats } from './torst';
+import { TORST, drickPlats } from './torst';
 import { vattenNu } from './sjo';
 import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { allaBarn, drabbadHus, upplev } from './uppvaxt';
@@ -105,7 +105,6 @@ export const BRAND = balans('brand', {
   handMin: 20, // ett pass att släcka med händerna (minuter) ...
   hand: 120, // (1,5 före steg 9.9.4) // ... släcker så här många rutor i timmen ...
   handR: 1.6, // ... inom så här många rutor från den som släcker
-  fyllMin: 2, // minuter att fylla vattensäcken
   sackRutor: 8, // (4 före steg 9.9.4) // en säck vatten släcker så här många rutor (gånger hur lätt rutan släcks, högst helt) ...
   sackR: 2.5, // ... inom så här många rutor från där den hälls
   brannHand: 0.15, // chansen i timmen att få en brännskada när man släcker med händerna ...
@@ -692,7 +691,7 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
     const mal = narmastByn(s, b); // det som brinner närmast byn först
     if (freeTools(s, p, 'vattensack') >= 1 && naVattnet(s, p)) {
       const spot = drickPlats(s, p);
-      if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: BRAND.fyllMin * MIN, tool: 'vattensack', ref: mal };
+      if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: TORST.fyllSek * SEC, tool: 'vattensack', ref: mal };
     }
     // var och en väljer den ruta som är mest värd att släcka (steg 10.11.3): det som står nära, delat med hur många som redan
     // släcker där, och kanten före det inre

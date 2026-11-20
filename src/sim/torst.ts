@@ -53,7 +53,7 @@ export const TORST = balans('torst', {
   okant: 0.3, // så smutsigt tror man att vatten man inte vet något om är
   mag: 0.2, // chansen att få ont i magen är vattnets smuts gånger detta (0,4 före balansen av fas 2, steg 2.12.1) ...
   magMin: 2, magSpann: 4, // ... och man är sjuk i magMin + slump × magSpann timmar
-  fyllMin: 3, // så många minuter det tar att fylla vattensäcken vid vattnet (steg 2.10.1)
+  fyllSek: 5, // så många sekunder det tar att fylla ett kärl vid vattnet (steg 12.1.37; Vätskor och behållare: Att fylla ett kärl), överallt där vatten hämtas
   hamtaR: 30, // man hämtar vatten åt den som inte kan gå och är högst så här många rutor bort
   hamtaTorst: 2, hamtaFalt: 1, hamtaKok: 0.3, // vattnets poäng (steg 10.2.37): gånger törsten, gånger hur torrt fältet är, och örtköket
   hamtaDjur: 1, // vattenhons poäng (steg 10.10.31): gånger hur tom hon är och hur många djur som dricker ur den
