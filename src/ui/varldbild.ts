@@ -46,6 +46,8 @@ export const TECKEN: Record<string, string[]> = {
   stubbe: t('', '', '', '', '', '', '.....kkkk', '....klJlJk', '....kJJJJk', '....kjJJjk', '...kjkkkkjk'),
   // silvergruvan (steg 11.10.1, platshållare): ett mörkt hål i berget med en timrad öppning och silver som glimmar
   gruva: t('', '', '', '......kkkk', '.....kSSSSk', '....kSjjjjSk', '...kSjkkkkjSk', '...kSjkKKkjSk', '..kSSjkKwkjSSk', '..kSSjkkkkjSSk', '.kkkkkkkkkkkkkk'),
+  // järngruvan (steg 12.2.13, platshållare): samma hål i berget, med rostbrun malm
+  jarngruva: t('', '', '', '......kkkk', '.....kSSSSk', '....kSjjjjSk', '...kSjkkkkjSk', '...kSjkrrkjSk', '..kSSjkrrkjSSk', '..kSSjkkkkjSSk', '.kkkkkkkkkkkkkk'),
   eld: t('', '', '', '', '', '.......y', '......yry', '......rYr', '.....yrRry', '.....jkkkj'),
   // sällskapet på vägen (steg 11.5.12, platshållare): två vandrare åt höger, den första med en packning på ryggen
   sallskap: t('', '', '.....kk.....kk', '....kwwk...kwwk', '....kwwk...kwwk', '..jj.kk.....kk', '.jJJkrrk...krrk', '.jJlkrrk...krrk', '.jJJkrrk...krrk', '..jjkrrk...krrk', '.....kjk....kjk', '.....k.k....k.k', '.....k.k....k.k', '....kk.kk..kk.kk'),

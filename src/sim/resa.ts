@@ -10,7 +10,7 @@ import { isLight } from './tid';
 import { temperature, vaderNu } from './vader';
 import { KROPP, count } from './folk';
 import { TORST } from './torst';
-import { SAKER } from './saker';
+import { SAKER, sakNamn } from './saker';
 import { alive } from './folk';
 import { BYN } from './egendom';
 import { amountOf, capacity, dropLoad, iHelaForradet, laggIn, load } from './lager';
@@ -26,7 +26,7 @@ import { Tamdjur, tamArt, tamdjurOf, tamEg } from './tamdjur';
 import { FORDON, lassAv, lediga } from './fordon';
 import { viktOf } from './saker';
 import { grundvarde } from './varde';
-import { SILVER, silverMellan } from './gruva';
+import { GRUVSAK, SILVER } from './gruva';
 import { VARLD, VARLDMARK, MARK_IDS, VarldMark } from './varldmark';
 import { kostnader, vagMellan, vagRutor, VarldVag } from './vagval';
 import { delFel, GADELAR } from './halsa';
@@ -151,7 +151,7 @@ export const RESMAL = {
   se: { namn: 'Se en plats', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
   sandebud: { namn: 'Sändebud', mal: ['by'], stannar: 1 },
   budbarare: { namn: 'Budbärare', mal: ['by'], stannar: 0.25 }, // den som utlyst ett uppdrag skickar det till en grannby (steg 11.8.13, utlysa.ts)
-  hamta: { namn: 'Hämta', mal: ['silvergruva'], stannar: 1 }, // det en plats ger: silvret i gruvan; tiden nere väljs i packskedet (steg 11.10.1)
+  hamta: { namn: 'Hämta', mal: ['silvergruva', 'jarngruva'], stannar: 1 }, // och malmen i järngruvan (steg 12.2.13) // det en plats ger: silvret i gruvan; tiden nere väljs i packskedet (steg 11.10.1)
 } as const satisfies Record<string, ResmalDef>;
 export type ResmalId = keyof typeof RESMAL;
 export const RESMAL_IDS = Object.keys(RESMAL) as ResmalId[];
@@ -533,7 +533,7 @@ export function nattTapp(s: State, sl: Sallskap, t = s.now) {
 function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (sl.skede !== 'framme' && isLight(t)) ga(s, sl, t, dt);
   else if (sl.skede === 'framme' && t - (sl.framme ?? t) >= stannarFor(sl) * 24 * HOUR) {
-    if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Kom upp ur gruvan med ${sl.pack.silver ?? 0} silver.`, t);
+    if (sl.skal === 'hamta') { const k = gruvSakFor(s, sl); dagbok(s, sl, 'fram', `Kom upp ur gruvan med ${sl.pack[k] ?? 0} ${sakNamn(k).toLowerCase()}.`, t); }
     vackKrok.vander?.(s, sl, t); // ut ur den väckta byn, med det som ändrats (steg 11.13.10)
     if (sl.hjalp) hjalpSlut(s, sl, t);
     sl.skede = 'hemat'; satVag(s, sl, false); dagbok(s, sl, 'ut', 'Vänder hem.', t);
@@ -579,12 +579,12 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
 // per dygn borta. Takten faller ju längre de är nere (kroppen tröttnar, silverMellan i gruva.ts), så en lång väg dit gör en
 // längre tid nere värd det, där resan dit och hem räknas med och maten för hela tiden tar plats som silvret annars fått. n resenärer,
 // rum = bärförmågan som blir över när vattnet och fodret är packade, vag = dygnen dit, marg = ledarens marginal
-export function silverPlan(n: number, rum: number, vag: number, marg: number): { nere: number; silver: number } | undefined {
-  const vs = viktOf('silver');
+export function silverPlan(n: number, rum: number, vag: number, marg: number, gruva = 'silvergruva'): { nere: number; silver: number } | undefined {
+  const g = GRUVSAK[gruva] ?? GRUVSAK.silvergruva, vs = viktOf(g.sak); // järngruvan ger malm (steg 12.2.13)
   let bast: { nere: number; silver: number; v: number } | undefined;
   for (let h = 1; h <= SILVER.maxDygn * 24; h++) {
     const dygn = 2 * vag + h / 24, mat = Math.ceil(n * RESA.matPerDygn * (h / 24 + vag) * marg - 1e-9); // maten för vägen dit är uppäten framme
-    const silver = Math.min(Math.floor(n * silverMellan(0, h) + 1e-9), Math.floor((rum - mat) / vs + 1e-9));
+    const silver = Math.min(Math.floor(n * g.mellan(0, h) + 1e-9), Math.floor((rum - mat) / vs + 1e-9));
     if (silver <= 0) continue;
     const v = silver / dygn;
     if (!bast || v > bast.v + 1e-9) bast = { nere: h / 24, silver, v };
@@ -599,7 +599,7 @@ export function gruvPlanFor(s: State, sl: Sallskap) {
   sl.nere = nere;
   if (!pb) return undefined;
   const led = s.people.find(p => p.id === sl.ledare), vag = pb.dygn / 2;
-  return silverPlan(sl.medl.length, pb.bar - pb.vatten * viktOf('vattensack') - pb.foder * viktOf('torrgras') - pb.talt * viktOf('talt'), vag, led ? marginal(led) : RESA.margMitt);
+  return silverPlan(sl.medl.length, pb.bar - pb.vatten * viktOf('vattensack') - pb.foder * viktOf('torrgras') - pb.talt * viktOf('talt'), vag, led ? marginal(led) : RESA.margMitt, gruvaFor(s, sl));
 }
 // sällskapets bärförmåga nu: resenärerna och djuren
 const barNu = (s: State, sl: Sallskap) => resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + barDjurAlla(s, sl);
@@ -619,9 +619,10 @@ function gruvBit(s: State, sl: Sallskap, t: number, dt: number) {
   const n = resenarer(s, sl).length;
   if (!n) return;
   const h1 = (t - (sl.framme ?? t)) / HOUR;
-  sl.silverArb = (sl.silverArb ?? 0) + n * silverMellan(Math.max(0, h1 - tim), h1);
-  const m = Math.floor(sl.silverArb + 1e-9), rum = Math.floor((barNu(s, sl) - packVikt(sl)) / viktOf('silver') + 1e-9), fick = Math.max(0, Math.min(m, rum));
-  if (fick > 0) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; sl.silverArb -= fick; }
+  const gs = GRUVSAK[gruvaFor(s, sl)] ?? GRUVSAK.silvergruva; // silvret, eller malmen i järngruvan (steg 12.2.13)
+  sl.silverArb = (sl.silverArb ?? 0) + n * gs.mellan(Math.max(0, h1 - tim), h1);
+  const m = Math.floor(sl.silverArb + 1e-9), rum = Math.floor((barNu(s, sl) - packVikt(sl)) / viktOf(gs.sak) + 1e-9), fick = Math.max(0, Math.min(m, rum));
+  if (fick > 0) { sl.pack[gs.sak] = (sl.pack[gs.sak] ?? 0) + fick; sl.silverArb -= fick; }
   if (m > rum) { sl.silverArb = 0; sl.nere = Math.min(stannarFor(sl), (t - (sl.framme ?? t)) / DAY); } // fullt: tiden nere är slut
 }
 // på väg ut ur byn sitter ryttaren på hästen: hästen följer hen till kanten (steg 11.11.4)
@@ -1010,8 +1011,8 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     // silvergruvan (steg 11.10.1): silvret personen väntar sig bära hem efter den bästa tiden nere, mindre för ett rykte
     let nere: number | undefined;
     if (!skal && (RESMAL.hamta.mal as readonly string[]).includes(q.k)) {
-      const g = silverPlan(1, barResenar(s, p), dygnDit(s, hem, q), marginal(p));
-      if (g) { skal = 'hamta'; nere = g.nere; varde = g.silver * grundvarde('silver') * (niva === O_RYKTE ? SILVER.rykte : 1); }
+      const g = silverPlan(1, barResenar(s, p), dygnDit(s, hem, q), marginal(p), q.k);
+      if (g) { skal = 'hamta'; nere = g.nere; varde = g.silver * grundvarde(GRUVSAK[q.k]?.sak ?? 'silver') * (niva === O_RYKTE ? SILVER.rykte : 1); }
     }
     if (!skal && niva === O_RYKTE && (RESMAL.se.mal as readonly string[]).includes(q.k)) { skal = 'se'; varde = RESA.seVarde * ny / 10; }
     if (!skal) continue;
@@ -1651,3 +1652,6 @@ function lamnaKvar(s: State, sl: Sallskap, p: Person, t: number) {
   dagbok(s, sl, 'ut', `${p.name} gick för långsamt och lämnades att gå hem ensam.`, t);
   dagbok(s, ny, 'ut', `Lämnades av sällskapet och går hem ensam.`, t);
 }
+// gruvan sällskapet reser till (steg 12.2.13): målets sort, silvergruvan om målet inte är en järngruva
+function gruvaFor(s: State, sl: Sallskap) { const q = s.varld?.platser?.find(x => x.nr === sl.mal); return q?.k === 'jarngruva' ? 'jarngruva' : 'silvergruva'; }
+const gruvSakFor = (s: State, sl: Sallskap) => GRUVSAK[gruvaFor(s, sl)].sak;

@@ -431,3 +431,22 @@ SCENARIER.eldstal = {
     ];
   },
 };
+
+SCENARIER.jarngruva = {
+  text: 'Järngruvan (steg 12.2.13, gruva.ts): två platser i bergen på världskartan som fungerar som silvergruvan; ett sällskap bryter 2 malm per person och timme och bär hem den, och malmen är samma sak som den ur myren',
+  kor: () => {
+    const s = SIM.createState(6, START), vl = s.varld!, v = SIM.varldMark(s)!;
+    const gruvor = (vl.platser ?? []).filter(p => p.k === 'jarngruva'), berg = gruvor.every(p => SIM.MARK_IDS[v.mark[p.y * v.w + p.x]] === 'berg');
+    const plan = SIM.silverPlan(3, 120, 2, 1, 'jarngruva'), silver = SIM.silverPlan(3, 120, 2, 1);
+    // en värld som sparats före järngruvorna får dem
+    vl.platser = (vl.platser ?? []).filter(p => p.k !== 'jarngruva'); delete vl.jarnLagd;
+    SIM.jarngruvorSteg(s);
+    const igen = (vl.platser ?? []).filter(p => p.k === 'jarngruva').length;
+    return [
+      [`världen har ${gruvor.length} järngruvor i bergen`, gruvor.length === SIM.JARNGRUVA.gruvor && gruvor.length === 2 && berg],
+      [`sällskapet reser dit för att hämta (${SIM.RESMAL.hamta.mal.join(', ')}), och malmen är samma sak som myrens (${SIM.GRUVSAK.jarngruva.sak})`, SIM.RESMAL.hamta.mal.includes('jarngruva' as never) && SIM.GRUVSAK.jarngruva.sak === 'malm'],
+      [`tre personer bryter 2 malm per person och timme och bär fullt på några timmar (${plan?.silver} malm på ${Math.round((plan?.nere ?? 0) * 24)} timmar; silvret ${silver?.silver} på ${Math.round((silver?.nere ?? 0) * 24)} timmar)`, !!plan && plan.silver > 0 && plan.nere * 24 <= 12 && SIM.GRUVSAK.jarngruva.mellan(0, 1) === 2],
+      [`en värld som sparats före järngruvorna får dem (${igen})`, igen === 2],
+    ];
+  },
+};

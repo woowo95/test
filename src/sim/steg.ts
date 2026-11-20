@@ -9,6 +9,7 @@ import { malmGravd } from './malm';
 import { torvGravd, torvTorkar } from './torv';
 import { branningKlar, branningSteg, passaKlar } from './brann';
 import { haftSteg } from './smedja';
+import { jarngruvorSteg } from './gruva';
 import { smidaKlar } from './jarnsaker';
 import { stenBruten } from './byggsten';
 import { GASTVARD, gastVardag } from './gastvardag';
@@ -467,7 +468,7 @@ export const TAKTER: Takt[] = [
   { namn: 'historikSteg', sek: 3600, fn: s => { historikSteg(s); } },
   { namn: 'stepVader', sek: 3600, fn: s => { stepVader(s); } },
   { namn: 'myren', sek: 3600, fn: s => myrSteg(s, groundOf(s)) }, // står under vatten när marken är blöt (myr.ts, steg 12.1.1)
-  { namn: 'bränningarna', sek: 600, fn: s => { if (s.branningar) branningSteg(s); haftSteg(s); } }, // kolmilorna som blivit klara (brann.ts, steg 12.2.1), och om byn haft malm och järn (smedja.ts, steg 12.2.4)
+  { namn: 'bränningarna', sek: 600, fn: s => { if (s.branningar) branningSteg(s); haftSteg(s); jarngruvorSteg(s); } }, // kolmilorna som blivit klara (brann.ts, steg 12.2.1), och om byn haft malm och järn (smedja.ts, steg 12.2.4)
   { namn: 'vindfallen', sek: 3600, fn: s => { vindfallen(s); } },
   { namn: 'regnetTvattar', sek: 3600, fn: s => { regnetTvattar(s); } },
   { namn: 'stepMotgang', sek: 3600, fn: s => { stepMotgang(s); } },

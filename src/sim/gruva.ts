@@ -8,6 +8,7 @@ import { hash3 } from './slump';
 import { laggPlats } from './landmarken';
 import { MARK_IDS, VarldMark } from './varldmark';
 import { Varlden } from './varlden';
+import type { State } from './typer';
 
 export const SILVER = balans('silver', {
   gruvor: 2, // så många silvergruvor har världen
@@ -17,10 +18,21 @@ export const SILVER = balans('silver', {
   rykte: 0.5, // det väntade silvret gånger så här mycket när byn bara hört rykten om gruvan
   maxDygn: 3, // längst så många dygn (år i spelet) nere
 });
+// järngruvan (steg 12.2.13, Landskapet och järnet: Järngruvan): som silvergruvan, men där bryts malm, samma sak som den ur myren
+export const JARNGRUVA = balans('jarngruva', {
+  gruvor: 2, // så många järngruvor har världen
+  perTimme: 2, // hela malm en person bryter per timme nere (malmen väger 4, så sällskapet bär fullt på några timmar)
+});
+// det gruvan ger: sakens id och hur mycket en person bryter från timme a till timme b nere
+export const GRUVSAK: Record<string, { sak: string; mellan: (a: number, b: number) => number }> = {
+  silvergruva: { sak: 'silver', mellan: (a, b) => silverMellan(a, b) },
+  jarngruva: { sak: 'malm', mellan: (a, b) => JARNGRUVA.perTimme * (b - a) },
+};
 // silvret en person bryter från timme a till timme b nere: takten perTimme · e^(−h/trott), summerad
 export const silverMellan = (a: number, b: number) => SILVER.perTimme * SILVER.trott * (Math.exp(-a / SILVER.trott) - Math.exp(-b / SILVER.trott));
 // gruvorna i en värld: så många som fattas läggs på de bergsrutor hashen väljer först
 export function laggGruvor(vl: Varlden, v: VarldMark, t = 0) {
+  laggJarngruvor(vl, v, t);
   let n = (vl.platser ?? []).filter(p => p.k === 'silvergruva').length;
   if (n >= SILVER.gruvor) return;
   const berg: [number, number][] = [];
@@ -31,3 +43,20 @@ export function laggGruvor(vl: Varlden, v: VarldMark, t = 0) {
     if (laggPlats(vl, v, 'silvergruva', i % v.w, Math.floor(i / v.w), t)) n++;
   }
 }
+// järngruvorna (steg 12.2.13): så många som fattas, på bergsrutor som en annan hash väljer. En värld som sparats utan dem får
+// sina första gången raden bränningarna i TAKTER ser den (vl.jarnLagd), eftersom gruvan alltid funnits där
+export function laggJarngruvor(vl: Varlden, v: VarldMark, t = 0) {
+  vl.jarnLagd = 1;
+  let n = (vl.platser ?? []).filter(p => p.k === 'jarngruva').length;
+  if (n >= JARNGRUVA.gruvor) return;
+  const berg: [number, number][] = [];
+  for (let i = 0; i < v.w * v.h; i++) if (MARK_IDS[v.mark[i]] === 'berg') berg.push([hash3(vl.fro, i, 0x4a41524e), i]);
+  berg.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  for (const [, i] of berg) {
+    if (n >= JARNGRUVA.gruvor) break;
+    if (laggPlats(vl, v, 'jarngruva', i % v.w, Math.floor(i / v.w), t)) n++;
+  }
+}
+// en värld som sparats före järngruvorna får dem nu (raden bränningarna i TAKTER)
+export function jarngruvorSteg(s: State) { if (s.varld && !s.varld.jarnLagd) { const v = varldMarkKrok.f?.(s); if (v) laggJarngruvor(s.varld, v, s.now); } }
+export const varldMarkKrok: { f?: (s: State) => VarldMark | undefined } = {};
