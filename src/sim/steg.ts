@@ -149,6 +149,10 @@ export const BEAT = KLOCKA.slag;
 const BIT = 60;
 // Balanstalen (regel 8). Kroppens gränser och takter (KROPP) och åldrarna (ALDER) står i folk.ts, eftersom val.ts och behov.ts läser dem
 const STEG = balans('steg', {
+  // lärandet och arbetet (steg 12.1.107)
+  larNyfiken: 0.1, // seden Nyfikenhet (-1 till 1) höjer lärandet så här mycket
+  mastare: 16, // färdigheten där man blir mästare
+  kvarMin: 2, // minuter: en uppgift med mindre tid kvar än så går man inte tillbaka till (och den sparas inte)
   // att nöta marken (hur fort man går står i GANG, gang.ts)
   markNot: 0.03, // hur mycket ett steg nöter marken (MARK.nott per ruta)
   vandraNot: 0.08, // ... och när man rör sig på platsen (gånger vandra.v i handlingens rad och tiden)
@@ -564,7 +568,7 @@ export const TAKTER: Takt[] = [
   // det var och en gör: alla en bit i taget, sida vid sida. Den som står still vid ett arbete räknas inte förrän arbetet är
   // klart, KLOCKA.arbetsBit sekunder gått eller något nytt händer (vantar, steg 10.2.21); då räknas hela tiden på en gång
   { namn: 'aktiviteterna', sek: 0, fn: (s, dt, c) => {
-    const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
+    const learn = 1 + STEG.larNyfiken * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
     const kort = dt < KLOCKA.slag - 1e-9; // korta steg: faran är nära, och alla räknas varje steg
     for (const p of c.ppl) {
       if (!alive(p)) continue;
@@ -1060,7 +1064,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     storeLoad(s, tk, p.x, p.y, tk.lon === 'forradet' ? BYN : p.id); // det som bärs hem i arbete för byns förråd mot lön blir byns (steg 10.5.9)
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
     const r = tk.res;
-    if (r && r.until > now + 2 * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
+    if (r && r.until > now + STEG.kvarMin * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
     else p.task = undefined;
   } else {
     if (hamtaForst(s, p, tk)) return; // materialet hämtas först (steg 11.1.74, hamtning.ts)
@@ -1148,8 +1152,8 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const fart = ACTS[tk.act].fart ?? 1, got = forageItems(s, p, pa, fart) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas som saker på rundan
     if (tk.tandmat) { for (const k of ['torrgras', 'grenar']) if (got[k]) bar(k, got[k]); return true; } // den som hämtar tändmaterial tar bara det (steg 12.1.39)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
-    { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); count(s, 'samlat_rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
-    if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
+    { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * RUNDA.rolleka; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); count(s, 'samlat_rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
+    if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * RUNDA.rolleka; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
     if (ageIndex(s) === VAR) bar('agg', FAGEL.agg * dt / HOUR_S); // fåglarnas ägg, som man ibland hittar på våren (steg 6.6.3)
@@ -1204,8 +1208,8 @@ function stepNaken(s: State) {
     else if (saknas.length) tanke(p, 'nakenDel', s.now, { delar: och(saknas.map(d => NAKEN_DELAR[d]!)), v: KLADER.nakenDel * saknas.length });
   }
 }
-const ROLLEKA = 0.6; // så mycket rölleka per timmes samlande på en rik röllekaruta (steg 9.7.15)
 export const RUNDA = balans('runda', {
+  rolleka: 0.6, // så mycket rölleka (och blommor) per timmes samlande på en rik ruta (steg 9.7.15)
   sett: 12, // så många rutor minns man att man nyss plockat på
   sand: 0.3, // flinta finns också i sanden vid stranden: så mycket värd som en ruta vid stenarna (1)
   ut: 0.01, // dragets bas per ruta, och så här mycket till gånger nyfikenheten / 20 och modet / 20
@@ -1438,7 +1442,7 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
   const i = y * W + x;
   tk.sett = [...(tk.sett ?? []), i].slice(-RUNDA.sett);
   const dr = drag(s, p, tk);
-  if (dr.ut < -RUNDA.hem || tk.until <= s.now + 2 * MIN) { tk.until = s.now; return 1e-3; }
+  if (dr.ut < -RUNDA.hem || tk.until <= s.now + STEG.kvarMin * MIN) { tk.until = s.now; return 1e-3; }
   let n = nastaPaStrackan(s, p, tk, x, y);
   // utan något hen vet eller ser går hen vidare ut i det okända bara så länge draget drar utåt (nyfikenheten och modet, minus
   // bördan, behoven, mörkret och kylan); annars hem. Drar det hemåt kostar varje ruta längre bort från byn lika mycket
@@ -1607,7 +1611,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const m = p.mentor !== undefined ? byId(s, p.mentor) : undefined; // bredvid sin mentor lär man sig fortare (steg 3.1.1)
   const vidMentor = m?.task && ACTS[m.task.act].arbete === sk && Math.hypot(m.x - p.x, m.y - p.y) < RELT.mentorNara ? RELT.mentorOvning : 1;
   ovning(p, sk, dtSec / HOUR_S * STEG.ovningArbete * learn * vidMentor * (STEG.ovningBas + stat(p, 'intelligens', now) / 20));
-  if (before < 16 && p.skill[sk] >= 16) blevMastare(s, p, sk);
+  if (before < STEG.mastare && p.skill[sk] >= STEG.mastare) blevMastare(s, p, sk);
   // arbetet sker i turer: när de fria händerna är fulla eller efter en fångst bärs det hem, sedan fortsätter man. Någon fast
   // tid för en tur finns inte (steg 6.1.10): arbetet slutar annars när det är slut (tk.until) eller när något går före (val.ts)
   const full = fullBorda(s, p, tk), has = isCarrying(tk);
@@ -1620,7 +1624,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
 
 // hem med bördan: platsen minns om tiden räcker till att komma tillbaka, och turen räknas
 function hemMedBordan(s: State, tk: Task) {
-  if (tk.until > s.now + 2 * MIN) tk.res = { x: tk.tx, y: tk.ty, until: tk.until };
+  if (tk.until > s.now + STEG.kvarMin * MIN) tk.res = { x: tk.tx, y: tk.ty, until: tk.until };
   tk.until = s.now; count(s, 'turer');
 }
 // bygge: lägg det man bär på bygget och arbeta. När rutan är klar, eller materialet tagit slut, tas nästa ruta

@@ -92,18 +92,26 @@ export const DELA = balans('dela', {
 });
 
 // ---------- mat ----------
+// talen i ätandet (steg 12.1.107)
+export const ATA = balans('ata', {
+  fastaHunger: 0.2, // fastan (steg 8.5.14) bryts när hungern är över så här mycket ...
+  fastaVarm: 0.3, // ... eller värmen under så här mycket: kyla och svält går före
+  halvSkick: 0.5, // maten under så här mycket av sitt skick mättar sämre
+  skamd: 0.25, // under så här mycket kan man bli magsjuk av den ...
+  skamdChans: 0.35, // ... med högst den här chansen per måltid (för den helt skämda maten), gånger SJUK.skamd
+});
 const portionOf = (p: Person, now: number) => ageOf(p, now) < ALDER.matBarn ? KROPP.portionBarn : 1;
 // en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
 function eat(s: State, p: Person, fran?: Person) {
-  if ((p.fasta ?? 0) > s.now && p.hunger > 0.2 && p.warm > 0.3) return 0; // fastan (steg 8.5.14): kyla och svält går före
+  if ((p.fasta ?? 0) > s.now && p.hunger > ATA.fastaHunger && p.warm > ATA.fastaVarm) return 0; // fastan (steg 8.5.14): kyla och svält går före
   const now = s.now, full = portionOf(p, now);
-  const { n: portion, c: q, per } = takeFood(s, full, p, fran), f = KROPP.mattar / full * (q >= 0.5 ? 1 : 0.5 + q);
+  const { n: portion, c: q, per } = takeFood(s, full, p, fran), f = KROPP.mattar / full * (q >= ATA.halvSkick ? 1 : ATA.halvSkick + q);
   // maten fyller näringsvärdena, och mättnaden är en sammanfattning av dem (steg 2.6.1, naring.ts)
   ratt(s, p, per, full); // rått kött och rå fisk (matlagning.ts, steg 2.8.1), av det som åts innan det skalas till mättnad
   for (const k in per) per[k] *= f;
   for (const k in per) { heligtBrutet(s, p, SAK_ART[k]); matBrutet(s, p, k); } // den svältande åt det heliga djurets kött (steg 10.3.15)
   ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
-  if (q < 0.5) tanke(p, 'daligMat', now);
+  if (q < ATA.halvSkick) tanke(p, 'daligMat', now);
   if (portion > 0 && vidBordet(p)) {
     tanke(p, 'vidBordet', now, { v: KROPP.bordGlad * kvEffekt(bordVid(s, p)) * moblerKrok.sittGlad(s, p), tid: KROPP.bordGladTim * HOUR }); count(s, 'bordMal'); // och bättre på en stol (steg 12.4.4)
     let mest = 0; for (const k in per) if (per[k] > mest) { mest = per[k]; p.task!.mal = k; } // maten på bordet och i händerna (steg 3.10.3, bara utseende)
@@ -113,7 +121,7 @@ function eat(s: State, p: Person, fran?: Person) {
     insjukna(s, p, 'magsjuka', 'av smutsig mat'); p.sickWhy = 'Magsjuk av mat som plockats vid toa-smuts';
     tanke(p, 'smutsigMat', now); count(s, 'smutsigMat');
   }
-  else if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35 * SJUK.skamd) {
+  else if (q < ATA.skamd && rnd(s, 'halsa', p) < (ATA.skamd - q) / ATA.skamd * ATA.skamdChans * SJUK.skamd) {
     insjukna(s, p, 'magsjuka', 'av skämd mat'); p.sickWhy = 'Magsjuk av skämd mat'; // steg 9.5.1
     tanke(p, 'skamdMat', now); count(s, 'skamdMat');
     loggBer(s, 'l_magsjuk', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon' }, 'world', [p.id]);

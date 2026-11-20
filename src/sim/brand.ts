@@ -62,6 +62,11 @@ const DELSTEG = 5;
 
 // Balanstal (regel 8)
 export const BRAND = balans('brand', {
+  // lösa tal som flyttats hit (steg 12.1.107)
+  teckenR: 14, // så nära branden som stannade man ser tecknet (steg 8.5.18)
+  vattenMin: 0.2, // minuter att springa i vattnet när man brinner
+  avMin: 0.3, // minuter att slita av sig plagget som brinner
+  hjalpNara: 1.5, // så nära (rutor) man släcker den som brinner med händerna
   djurDor: 1, // ett tamdjur eller en höna på en ruta som brinner dör med den här takten (per timme, räknat per tid; steg 10.10.10)
   gnista: 0.0002, // (0,001 före steg 9.9.4: det brann i nästan varje by) // chansen per steg (5 minuter) att en gnista från en brinnande eld når marken, gånger eldstadens spread ...
   gnistaR: 2, // ... så här många rutor bort (slumpas)
@@ -375,7 +380,7 @@ export function brandSteg(s: State, dtSec: number) {
     allaBarn(s, 'brand');
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)
   }
-  for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) < 14) tecken(s, p, 'brandStopp'); // branden som stannade (steg 8.5.18)
+  for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) < BRAND.teckenR) tecken(s, p, 'brandStopp'); // branden som stannade (steg 8.5.18)
   // tankarna (steg 12.1.131): de som bodde i ett hus som brann, de som var med och släckte, och den som mist det mesta
   for (const id of b.husFolk ?? []) { const q = byId(s, id); if (q && alive(q)) tanke(q, 'husetBrann', s.now); }
   if (b.slackt) for (const id of b.slackare ?? []) { const q = byId(s, id); if (q && alive(q)) { tanke(q, 'slackteElden', s.now); handelse(s, q, 'slackte'); } }
@@ -607,10 +612,10 @@ function utEld(s: State, p: Person) {
 export function slackaSigVal(s: State, p: Person) {
   if (p.brinner === undefined) return;
   const vatten = naVattnet(s, p) ? drickPlats(s, p) : undefined;
-  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', skal: 'vatten' as const, spot: vatten, dur: 0.2 * MIN };
+  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', skal: 'vatten' as const, spot: vatten, dur: BRAND.vattenMin * MIN };
   const spot = utEld(s, p); // ur elden först, så att hen inte rullar i det som brinner och tar eld igen (steg 10.2.17)
   const pl = paSig(s, p).find(t => !SAKER[t.k]?.brinnerInte);
-  if (pl) return { act: 'slackaSig' as const, why: `Brinner och sliter av sig ${SAKER[pl.k]?.namn ?? pl.k}`, spot, dur: 0.3 * MIN, ref: pl.id };
+  if (pl) return { act: 'slackaSig' as const, why: `Brinner och sliter av sig ${SAKER[pl.k]?.namn ?? pl.k}`, spot, dur: BRAND.avMin * MIN, ref: pl.id };
   return { act: 'slackaSig' as const, why: 'Brinner och rullar på marken', spot, dur: BRAND.rullMin * MIN };
 }
 // de som står nära den som brinner springer dit och släcker (Fara i val.ts, före att släcka branden i byn)
@@ -635,7 +640,7 @@ export function slackaSigKlar(s: State, p: Person, t: Task) {
 }
 export function hjalpaKlar(s: State, p: Person, t: Task) {
   const q = living(s).find(o => o.id === t.ref);
-  if (q && q.brinner !== undefined && Math.hypot(q.x - p.x, q.y - p.y) <= 1.5) slacktP(s, q, 'hjälp');
+  if (q && q.brinner !== undefined && Math.hypot(q.x - p.x, q.y - p.y) <= BRAND.hjalpNara) slacktP(s, q, 'hjälp');
 }
 
 // vad p gör åt branden: släcker (de vuxna när elden är nära byn), eller går undan (den som är nära elden)
