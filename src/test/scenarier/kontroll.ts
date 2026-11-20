@@ -314,7 +314,7 @@ SCENARIER.rovardrakt = {
 };
 
 SCENARIER.tatuering = {
-  text: 'Steg 10.7.5: tatueringar. En vuxen som varit med om något stort (fällt en varg eller björn, dödat någon, mist någon nära eller blivit vuxen) vill ha ett märke i pannan, på kinden eller på halsen, så gärna som byns sed i motivet drar. En annan vuxen gör det med bennålen och kol på 4 minuter, i byns stil, och märket syns i porträttet och står i personens berättelse',
+  text: 'Steg 10.7.5: tatueringar. En vuxen som varit med om något stort (fällt en varg eller björn, dödat någon, mist någon nära eller blivit vuxen) vill ha ett märke i pannan, på kinden eller på halsen, så gärna som byns sed i motivet drar. En annan vuxen gör det med bennålen på 4 minuter, i byns stil, och märket syns i porträttet och står i personens berättelse',
   kor: () => {
     const s = createState(3, START), v = living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const [g, q, r] = v;
@@ -345,8 +345,8 @@ SCENARIER.tatuering = {
       [`lusten följer seden: striden märks i en by som drar åt Krig, jakten inte i en som drar åt Värna (${vill})`, vill === 'strid' && ingenJakt],
       [`den som dödat någon vill ha märket när upplevelsen fastnat (${markt} av ${fastnat})`, fastnat > 0 && markt === fastnat],
       ['utan bennål tatuerar ingen', !utanNal],
-      [`den som har bennålen och kol väljer att tatuera (${d?.q.name ?? 'ingen'} efter ${forsok} försök), i 4 minuter`, d?.q === q && d.m === 'strid' && d.dur === 4 * SIM.MIN],
-      [`märket i pannan i byns stil (${del}), 1 kol går åt (${SIM.amountOf(s, 'kol')} kvar)`, del === `tat-${stil}-panna` && !efter.del.tatKind && SIM.amountOf(s, 'kol') === 2 && !q.tatV],
+      [`den som har bennålen väljer att tatuera (${d?.q.name ?? 'ingen'} efter ${forsok} försök), i 4 minuter`, d?.q === q && d.m === 'strid' && d.dur === 4 * SIM.MIN],
+      [`märket i pannan i byns stil (${del}), och inget kol går åt (${SIM.amountOf(s, 'kol')} kvar, fynd 502)`, del === `tat-${stil}-panna` && !efter.del.tatKind && SIM.amountOf(s, 'kol') === 3 && !q.tatV],
       [`det syns i porträttet (${skilda} punkter), bara i paletten`, skilda > 0 && utanfor === 0],
       [`och står i berättelsen (${rad?.[2] ?? ''})`, !!rad],
       [`tolv delar i porträttet, fyra stilar gånger tre platser (${saknas.join(', ') || 'alla finns'})`, !saknas.length],

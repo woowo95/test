@@ -415,7 +415,6 @@ export function rovarVilja(s: State, p: Person) {
   const familj = nara.length ? ROVARE.familjPlus : 0, smabarn = nara.some(q => isParent(p, q) && ageOf(q, s.now) < ALDER.smabarn) ? ROVARE.smabarnMinus : 0;
   return stat(p, 'mod', s.now) / 20 + iver + lyder + plikt + familj - smabarn - ROVARE.skadad * (1 - halsa(p)) - (isSick(p, s.now) ? ROVARE.sjuk : 0) - (a >= ALDER.gammal ? ROVARE.gammal : 0);
 }
-export const rovarRoll = (v: number): 'kampe' | 'hjalpare' | 'gomd' => v >= ROVARE.kampeFran ? 'kampe' : v >= ROVARE.hjalpFran ? 'hjalpare' : 'gomd';
 // rövarnas rad bland hoten (steg 9.5.19, roller.ts): viljan som den är, och rövarnas två gränser
 viljaKrok.vilja = rovarVilja; viljaKrok.kan = vuxenKan;
 // den som nyss flytt eller gett upp i en strid med rövarna (steg 10.1.14) vill mindre stå emot igen, och det avtar (steg 12.1.82)
@@ -819,6 +818,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   log(s, text, 'world', ids); notis(s, 'strid', text, ids, plats);
   kronika(s, text, 'rovare');
   if (f && vinnare === 0) for (const r of rovarna(s, f)) gr(r).flytt = true; // den slagna flocken flyr
+  if (vinnare === 0 && s.styre && ledareOf(s)) s.styre.vunna = (s.styre.vunna ?? 0) + 1; // byn slog tillbaka rövarna: en vunnen strid i ledarens framgång (steg 8.3.9, fynd 456)
 };
 // en rövare dör i striden (gastKrok i efterstrid.ts): hen ligger kvar med det hen bar, klanen minns det och blir ovänligare
 gastKrok.dod = (s, r, av) => {

@@ -45,7 +45,7 @@ import { lonNu } from './lon';
 import { faltNu, vildFronPlats } from './odling';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
-import { bordPlats, ryggsack, ryms } from './utrustning';
+import { bordPlats, rustaVal, ryggsack, ryms } from './utrustning';
 import { taFordon, valjFordon } from './fordon';
 // p orkar bära en av saken k (virket lyfts med båda händerna, steg 10.2.89)
 const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, p)({ [k]: viktOf(k) });
@@ -84,9 +84,10 @@ import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
 import { efterAnfall } from './rovare';
 import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
-import { GRAV, avrustaVal, begravaVal, gravGava, gravbesokVal, gravvardVal, rustaVal } from './grav';
+import { GRAV, avrustaVal, begravaVal, gravGava, gravbesokVal, gravvardVal } from './grav';
 import { budBrutet, budForbjuder, viltBikta, vilodagNu } from './kyrka';
-import { LAG, lagGaller, raddFor } from './lagar';
+import { LAG, lagGaller } from './lagar';
+import { raddFor } from './radsla';
 import { ligger } from './sjukdom';
 
 // ---------- val av aktivitet ----------
@@ -857,7 +858,7 @@ export const ARBETEN: readonly Arbete[] = [
   // kolmilan som brunnit klart (steg 12.2.1, brann.ts): den rivs och kolet tas ut
   { id: 'kolmila', niva: 8, nar: 'dag', forb: true, minAlder: ALDER.vuxen, prova: c => { const { s, v } = c; const t = attTomma(s); if (!t) return false; projektVal(v, branningUppgift(s, t), 'Kolmilan har brunnit klart'); return true; } },
   { id: 'brygga', niva: 8, nar: 'dag', forb: true, minAlder: ALDER.vuxen, prova: c => { const { s, p, v } = c; const b = bryggVal(s, p); if (!b) return false; projektVal(v, { act: b.act, text: b.act === 'tappa' ? (b.v === 'sprit' ? 'Häller upp spriten ur brännpannan i en liten lerkruka.' : 'Silar satsen och häller upp den i lerkrukor.') : b.act === 'branna' ? 'Häller vin eller öl i brännpannan och eldar under den.' : b.act === 'malta' ? 'Blöter korn och hänger upp det på torkställningen till malt.' : BRYGD[b.v].gor, min: b.act === 'tappa' ? BRYGG.tappMin : b.act === 'branna' ? BRYGG.brannMin : b.act === 'malta' ? BRYGG.maltMin : BRYGG.prepMin, spot: vidStation(b.kar), ref: b.kar.id }, b.act === 'tappa' ? 'Satsen i bryggkaret har jäst klart' : 'Byn vill ha mer att dricka'); return true; } }, // steg 9.6.12–9.6.13
-  { id: 'tatuera', niva: 8, nar: 'dag', forb: true, prova: c => { const { s, p, v } = c; const d = tatVal(s, p); if (!d) return false; projektVal(v, { act: 'tatuera', text: `Gör ett märke i huden på ${d.q.name} med bennålen och kol.`, min: TATU.min, tool: 'nal', spot: { x: d.q.x, y: d.q.y }, ref: d.q.id }, `${d.q.name} vill minnas att ${han(d.q)} ${TATUERINGAR[d.m].text}`); return true; } }, // steg 10.7.5
+  { id: 'tatuera', niva: 8, nar: 'dag', forb: true, prova: c => { const { s, p, v } = c; const d = tatVal(s, p); if (!d) return false; projektVal(v, { act: 'tatuera', text: `Gör ett märke i huden på ${d.q.name} med bennålen.`, min: TATU.min, tool: 'nal', spot: { x: d.q.x, y: d.q.y }, ref: d.q.id }, `${d.q.name} vill minnas att ${han(d.q)} ${TATUERINGAR[d.m].text}`); return true; } }, // steg 10.7.5
   { id: 'klippa', niva: 8, nar: 'dag', forb: true, prova: c => { const { s, p, v } = c; const d = klippVal(s, p); if (!d) return false; projektVal(v, { act: 'klippa', text: 'Klipper ullen av fåret med kniven.', min: BOSKAP.klippMin / tamEg(d).tamhet, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, 'Fårets ull har vuxit ut'); return true; } }, // steg 9.8.5
   { id: 'hamla', niva: 8, nar: 'dag', forb: true, prova: c => { const { s, p, v } = c; const i = hamlaVal(s, p); if (i === undefined) return false; const ny = !hamlatPa(s, i); projektVal(v, { act: 'hamla', text: ny ? 'Kapar grenarna på en björk, så att den skjuter nya skott med löv åt djuren.' : 'Skär skotten med lövet på den hamlade björken till lövkärvar.', min: VINTER.hamlaMin, spot: { x: i % W + 0.5, y: Math.floor(i / W) + 1.2 }, ref: i }, ny ? 'Höet räcker inte åt djuren' : 'Den hamlade björken har nya skott'); return true; } }, // lövtäkten (steg 9.8.16)
   { id: 'ortSatta', niva: 8, nar: 'dag', forb: true, prova: c => { const { s, p, v } = c; const o = ortSattaVal(s, p); if (!o) return false; projektVal(v, { act: 'ortSatta', text: 'Sätter en växt i sin lediga lerkruka.', min: ORTKRUKA.sattMin, spot: { x: o.t.x! + 0.5, y: o.t.y! + 0.5 }, ref: o.t.id }, 'En kruka står tom'); return true; } }, // steg 10.10.11

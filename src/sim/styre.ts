@@ -37,8 +37,8 @@ import { tecken } from './religion';
 // minst LED.vuxna vuxna väljs den mest omtyckta med hög karisma av dem som kan tekniken och inte har dåligt anseende. Dör ledaren
 // väljs nästa på samma sätt; kan ingen vuxen tekniken har byn ingen ledare, och påbuden upphör (en by kan glömma ledarskapet).
 // Den första ledaren låser upp den första vågskålen, seden Allmogen – Envälde (seder.ts). Ledaren drar sederna med ungefär
-// en tredjedel av byns vikt, mer vid Envälde och hög legitimitet. Legitimiteten räknas ur folkets stöd, tiden vid makten och
-// vintrarna byn klarat, och sjunker av orättvisa straff; den sparas inte. Påbuden (matlager, vedlager, torkat) kommer ur ledarens
+// en tredjedel av byns vikt, mer vid Envälde och hög legitimitet. Legitimiteten räknas ur folkets stöd, framgångarna (vunna
+// strider och fler invånare) och vintrarna byn klarat, och sjunker av orättvisa straff; den sparas inte. Påbuden (matlager, vedlager, torkat) kommer ur ledarens
 // personlighet och ses över en gång per årstid; straffen delas ut på kvällen för det ledaren sett eller hört som rykte.
 
 // ---------- balanstal (regel 8) ----------
@@ -58,7 +58,8 @@ export const LED = balans('ledare', {
   hovding: 0.35, // styrelseformen är ett hövdingadöme från så här mycket Envälde
   // ledarens vikt i sederna: byns vikt gånger sedVikt × (1 + sedRang × Envälde) × (sedLegBas + legitimiteten)
   sedVikt: 0.5, sedRang: 1, sedLegBas: 0.5,
-  // legitimiteten (0 till 1): stödet (0,5 + snittrelationen / 200) gånger wStod och vintrarna (högst vintrar) gånger wVint, minus orättvisan
+  // legitimiteten (0 till 1): stödet (0,5 + snittrelationen / 200) gånger wStod och vintrarna (högst vintrar) gånger wVint,
+  // plus hur ledaren tillsattes och framgångarna, minus orättvisan
   wStod: 0.6, wVint: 0.2, vintrar: 2,
   orattDygn: 3, // orättvisan bleknar med en tidskonstant på så här många dygn
   tanke: 0.04, // ledaren mår så här mycket bättre (tanken Leder byn)
@@ -259,7 +260,7 @@ export interface Styre {
   frak?: Fraktion; frakVald?: number; lugn?: number; // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
   dogVinter?: number;
   kyrka?: number; kyrkaVikt?: number; // översteprästens välsignelse (1) eller fördömelse (−1) och vad den är värd (steg 8.6.16)
-  hanForbud?: boolean; // förbudet mot hån (steg 8.3.13)
+  hanForbud?: boolean; // förbudet mot hån (steg 8.3.13); det gäller ledaren det handlade om och upphör när ledaren byts (fynd 491)
   tystnad?: { id: number; namn: string }; // den påbudet om tystnad gäller (steg 10.4.10)
   lagar?: Lag[]; nedrostat?: Record<string, number>; // lagarna och det som nyss röstats ned (system 8.4, lagar.ts)
 }
@@ -274,8 +275,7 @@ export interface Rattegang {
   publik: number; dog?: true; dygn?: number; // hur många som såg straffet, om den dömda dog av slaget, och dygnen i fängelset (steg 11.12.3)
   regn?: true; sno?: true; kallt?: true; eld?: true; natt?: true; // vädret och elden
 }
-const styreOf = (s: State) => s.styre ??= { historia: [], oppna: [] };
-export const styreAv = styreOf;
+export const styreAv = (s: State) => s.styre ??= { historia: [], oppna: [] };
 export const ledareOf = (s: State) => { const id = s.styre?.ledare; const p = id === undefined ? undefined : byId(s, id); return p && alive(p) ? p : undefined; };
 // makt-sederna (Skalor som låses upp) syns i Styre och är låsta tills det de styr finns i byn
 export const MAKT_SEDER: readonly Sed[] = ['rang', 'fortjanst', 'fejd', 'andlig'];
@@ -284,8 +284,7 @@ export const sedOppen = (s: State, k: Sed) => !LASTA_SEDER.includes(k) || !!s.st
 
 // ---------- legitimiteten ----------
 type Leg = { v: number; stod: number; satt: number; fram: number; vint: number; oratt: number };
-export function legitimitet(s: State): Leg { return raknaLeg(s); }
-function raknaLeg(s: State): Leg {
+export function legitimitet(s: State): Leg {
   const st = s.styre, l = ledareOf(s);
   if (!st || !l) return { v: 0, stod: 0, satt: 0, fram: 0, vint: 0, oratt: 0 };
   let op = 0, w = 0;
@@ -320,7 +319,7 @@ export function pabud(s: State, k: Pabud) {
 // påbuden är frågor (steg 8.3.1): varje årstid lägger ledaren eller ministern fram det hen vill ändra, och byn röstar klockan 20. Innan
 // något är bestämt gäller byns egen sed
 function sattPabud(s: State, l: Person, ai: number) {
-  const st = styreOf(s), forr = st.pabud;
+  const st = styreAv(s), forr = st.pabud;
   st.pabud ??= Object.fromEntries(PABUD_LIST.map(k => { const d: PabudDef = PABUD[k]; return [k, d.sed ? s.seder.v[d.sed] : 0]; }));
   st.pabudAi = ai;
   if (!forr) log(s, `${l.name} vill bestämma hur stora förråd byn ska ha.`, 'world', [l.id]);
@@ -356,7 +355,7 @@ function rostval(s: State, vuxna: Person[]) {
   }
   let best = kand[0], bs = -1;
   for (const c of kand) { const x = summa.get(c.id) ?? 0; if (x > bs) { bs = x; best = c; } }
-  const st = styreOf(s);
+  const st = styreAv(s);
   (st.roster ??= []).push({ t: s.now, f: 'ledare', namn: 'Ny ledare', fram: best.id, framNamn: best.name, roster, ja: bs, nej: 1 - bs, gick: true });
   if (st.roster.length > ROST.sparas) st.roster.splice(0, st.roster.length - ROST.sparas);
   return best;
@@ -364,7 +363,7 @@ function rostval(s: State, vuxna: Person[]) {
 function valj(s: State) {
   const vuxna = vuxnaOf(s);
   if (vuxna.length < LED.vuxna) return;
-  const stn = styreOf(s), forstaVal = !stn.historia.length;
+  const stn = styreAv(s), forstaVal = !stn.historia.length;
   if (!forstaVal) oppnaSed(s, 'fortjanst'); // Förtjänst – Härkomst låses upp första gången en ny ska väljas (steg 8.3.4)
   let best: Person | undefined, satt = 1;
   const fv = byId(s, stn.frakVald); stn.frakVald = undefined;
@@ -398,7 +397,7 @@ function valj(s: State) {
   }
   if (!best) return;
   const st = stn, forsta = forstaVal;
-  st.ledare = best.id; best.ledde = true; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s); // vintern där ingen dog räknas från nu
+  st.hanForbud = undefined; st.ledare = best.id; best.ledde = true; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s); // vintern där ingen dog räknas från nu
   const titel = st.titel = titelFor(s, best, vuxna);
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
@@ -450,18 +449,17 @@ function seOverTitel(s: State, l: Person) {
   if (h?.id === l.id && h.till === undefined) { if (forr && TITELNAMN.has(forr)) (h.forr ??= []).push(forr); h.titel = ny; }
   if (forr && TITELNAMN.has(forr)) { log(s, `Byn kallar nu ${l.name} för ${ny.toLowerCase()}.`, 'world', [l.id]); kronika(s, `Byn började kalla ${l.name} för ${ny.toLowerCase()}.`, 'ledare'); }
 }
-export const slutarStyre = (s: State, varfor: string) => slutar(s, varfor);
 // den störtade eller den som ville störta drivs ut (steg 8.3.11–8.3.12)
 export function utvisa(s: State, q: Person, av: Person, varfor: string) {
   kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: av.name, varfor }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad.`, [q.id]);
-  if (s.styre?.ledare === q.id) slutar(s, 'drevs ut');
+  if (s.styre?.ledare === q.id) slutarStyre(s, 'drevs ut');
   leave(s, q);
 }
-function slutar(s: State, varfor: string) {
+export function slutarStyre(s: State, varfor: string) {
   const st = s.styre!, h = st.historia[st.historia.length - 1], l = byId(s, st.ledare!);
   if (h && h.till === undefined) { h.till = s.now; h.slut = varfor; }
   if (l) kronika(s, `${l.name} slutade leda byn (${varfor}).`, 'ledare');
-  st.ledare = undefined; st.sedan = undefined; st.titel = undefined; st.pabud = undefined; st.pabudAi = undefined;
+  st.hanForbud = undefined; st.ledare = undefined; st.sedan = undefined; st.titel = undefined; st.pabud = undefined; st.pabudAi = undefined;
   if (!vuxnaOf(s).some(p => knows(p, 'ledarskap'))) log(s, 'Ingen i byn kan leda den längre. Påbuden gäller inte mer.', 'world');
 }
 
@@ -479,7 +477,6 @@ export const STRAFF_REG = [
   { id: 8, namn: 'Ingen vård', da: 'tog rätten till vård från', inf: 'inte få vård', nu: 'tar rätten till vård från' }, // steg 9.5.30
   { id: 9, namn: 'Fängelse', da: 'satte i fängelse', inf: 'sitta i fängelset', nu: 'sätter i fängelse' }, // steg 11.12.3: kräver ett fängelse med ledig plats (fangelse.ts)
 ] as const;
-const STRAFF = STRAFF_REG.map(r => r.nu);
 const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev', 'rymning']); // rymningen ur fängelset (steg 11.12.1)
 // straffets steg (0 till 3, eller Fängelse 9 när byn har ett med ledig plats) för vikten v gånger hårdheten
 function stegOf(v: number, h: HandelseTyp, rang: number, fang = false) {
@@ -495,9 +492,10 @@ function hardDelar(s: State, l: Person) {
   return { rang: STR.rang * (s.seder.v.rang ?? 0), emp: STR.empati * (10 - stat(l, 'empati', s.now)) / 10, hum: STR.humor * (0.5 - moodOf(l, s.now)), agg: STR.agg * franMitt(l, 'aggression', s.now) };
 }
 // ledarens hårdhet (1 är lagom, mellan STR.min och STR.max): ledaren föreslår ett annat straff i en lag efter den (lagar.ts, steg 11.12.3)
-export const ledarHard = (s: State, l: Person) => { const d = hardDelar(s, l); return clamp(1 + d.rang + d.emp + d.hum + d.agg, STR.min, STR.max); };
+const hardAv = (d: ReturnType<typeof hardDelar>) => clamp(1 + d.rang + d.emp + d.hum + d.agg, STR.min, STR.max); // ledarens hårdhet ur delarna (fynd 237)
+export const ledarHard = (s: State, l: Person) => hardAv(hardDelar(s, l));
 function doma(s: State, l: Person) {
-  const st = styreOf(s), now = s.now, rang = s.seder.v.rang ?? 0;
+  const st = styreAv(s), now = s.now, rang = s.seder.v.rang ?? 0;
   const domt = (st.domt ??= []);
   // det värsta som var och en gjort, det ledaren sett eller hört de senaste dygnen
   const fall = new Map<number, Bevis>();
@@ -510,7 +508,7 @@ function doma(s: State, l: Person) {
   }
   if (!fall.size) return;
   const delar = hardDelar(s, l);
-  const hard0 = clamp(1 + delar.rang + delar.emp + delar.hum + delar.agg, STR.min, STR.max);
+  const hard0 = hardAv(delar);
   const v = vaderNu(s), ratt = (st.ratt ??= []);
   for (const [id, b] of fall) {
     const q = byId(s, id);
@@ -544,7 +542,7 @@ function doma(s: State, l: Person) {
       ...(temperature(s) < 0 ? { kallt: true } : {}), ...(s.fire.lit ? { eld: true } : {}), ...(!isLight(now) ? { natt: true } : {}) };
     ratt.push(r);
     count(s, 'straff'); count(s, 'straff_' + steg);
-    log(s, `${l.name} ${STRAFF[steg]} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
+    log(s, `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     think(q, `Straffades av ${l.name}`, -STR.tanke * (steg + 1), now, STR.tankeDygn * DAY);
     const familj = living(s).filter(f => f !== l && (f === q || f.partner === id || isKin(f, q))); // innan den utvisade har lämnat byn och partnern
@@ -593,14 +591,12 @@ function kanner(s: State, l: Person, q: Person, b: Bevis) {
 }
 
 // ---------- rättegångarna i fliken Styre (steg 3.10.17) ----------
-const STRAFF_DA = STRAFF_REG.map(r => r.da);
-const STRAFF_INF = STRAFF_REG.map(r => r.inf);
 export const STRAFF_NAMN = STRAFF_REG.map(r => r.namn);
 // texten om en rättegång: berättelsen ur mallarna r_ratt och r_folk (berattelser.ts), brottet och namnen på dem som visste
 export function rattegang(s: State, r: Rattegang) {
   const q = byId(s, r.om), l = byId(s, r.led), namn = (ids: number[]) => och(ids.map(id => byId(s, id)?.name ?? 'någon som glömts'));
   const f: Fyllning = { ...(q ? personFalt(q) : { namn: r.namn, hen: 'den dömde', honom: 'den dömde' }), ledare: r.ledNamn, lhen: l ? hon(l) : 'ledaren',
-    brott: brottText(r.b, r.ledNamn, l), straff: STRAFF_DA[r.steg], straffInf: STRAFF_INF[r.steg], arstid: ARSTIDER[ageIndex(s, r.t)],
+    brott: brottText(r.b, r.ledNamn, l), straff: STRAFF_REG[r.steg].da, straffInf: STRAFF_REG[r.steg].inf, arstid: ARSTIDER[ageIndex(s, r.t)],
     regn: !!r.regn, sno: !!r.sno, kallt: !!r.kallt, eld: !!r.eld, natt: !!r.natt, sjalv: !!r.b.sett, falsk: !!r.b.falsk,
     oratt: !!r.oratt, hard: r.steg > r.lagom, utvisad: r.steg === 3, dog: !!r.dog, manga: r.publik >= 5 };
   // två av samma kön: namnen i stället för hon och han, så att det inte blir oklart vem som menas (textminnet, steg 6.7.3)
@@ -618,15 +614,24 @@ export function rattegang(s: State, r: Rattegang) {
   };
 }
 
+// ---------- kvällen (raderna kvällen före styret och styrets kväll i TAKTER, en gång per dygn kl. STR.timme) ----------
+// (klockslaget frågas ändå: en rad räknas direkt när en by laddas eller klockan flyttas, och kvällen ska vara på kvällen)
+const kvall = (s: State) => Math.floor(hourOf(s.now)) === STR.timme;
+// trons krets och dopet väntar inte på att byn har en ledare (steg 10.3.2, 10.9.3); före styrets timme, som förut
+export function kvallForeStyret(s: State) { if (kvall(s)) { kyrkaKvall(s); dopKvall(s); } }
+// ledarens kväll efter styrets timme: domen, omröstningen och det som tas upp
+export function styretsKvall(s: State) {
+  const l = ledareOf(s);
+  if (l && kvall(s)) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); }
+}
 // ---------- en gång i timmen ----------
 export function stepStyre(s: State) {
   const st = s.styre;
-  if (Math.floor(hourOf(s.now)) === STR.timme) { kyrkaKvall(s); dopKvall(s); } // byns namn utan ledare (steg 10.9.3) och trons krets väntar inte på att byn har en ledare (steg 10.3.2)
   if (!st && !living(s).some(p => knows(p, 'ledarskap'))) return;
   const ai = ageIndex(s);
   if (st?.ledare !== undefined) {
     const l = byId(s, st.ledare);
-    if (!l || !alive(l)) slutar(s, l?.left !== undefined ? 'lämnade byn' : 'dog');
+    if (!l || !alive(l)) slutarStyre(s, l?.left !== undefined ? 'lämnade byn' : 'dog');
     else if (st.ai === ISTID && ai !== ISTID) { st.vintrar = (st.vintrar ?? 0) + 1; ledarensVinter(s, l, st); missnojeLatt(s); if (nodDod(s) === (st.dogVinter ?? 0)) for (const q of vuxnaOf(s)) tecken(s, q, 'ingenDog'); st.dogVinter = nodDod(s); } // vintern där ingen dog (steg 8.5.18)
   }
   if (st) st.ai = ai;
@@ -640,12 +645,9 @@ export function stepStyre(s: State) {
   // Förlikning – Fejd låses upp första gången en konflikt avgörs med våld (steg 8.3.5)
   if (!s.styre!.oppna.includes('fejd') && ((s.stat?.strid_skada ?? 0) + (s.stat?.strid_doda ?? 0) + (s.stat?.drap ?? 0) > 0)) oppnaSed(s, 'fejd');
   // de andra skalorna låses upp när det de styr finns i byn (steg 8.4.11–8.4.13)
-  if (!s.styre!.oppna.includes('andlig') && living(s).filter(p => p.tro !== undefined).length >= 3) oppnaSed(s, 'andlig'); // steg 8.6.1
   if (!s.styre!.oppna.includes('krig') && (s.stat?.rovarstrid ?? 0) + (s.stat?.vargstrid ?? 0) > 0) oppnaSed(s, 'krig');
   if (!s.styre!.oppna.includes('natur') && (s.fallda ?? 0) > 0) oppnaSed(s, 'natur');
   missnojeTimme(s);
-  if (!ledareOf(s)) return;
-  if (Math.floor(hourOf(s.now)) === STR.timme) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); }
 }
 // skammen: den straffade håller sig undan bordet och elden (val.ts)
 export const skams = (p: Person, now: number) => p.skam !== undefined && p.skam > now;
@@ -654,12 +656,12 @@ export const styrelseform = (s: State) => FORMER.find(f => f.passar(s))!;
 // ---------- striderna som avgör (steg 10.1.7): de sker på kartan, och det här händer när de är slut ----------
 // striden om ledarskapet: vinnaren blir ledare vid nästa val (som den fraktionen valt, frakVald)
 EFTER.tronstrid = (s, e, vinnare) => {
-  const v = byId(s, (vinnare === 1 ? e.b : e.a) as number), stn = styreOf(s);
+  const v = byId(s, (vinnare === 1 ? e.b : e.a) as number), stn = styreAv(s);
   if (v && alive(v) && vinnare !== -1) { stn.frakVald = v.id; stn.satt = 1; }
 };
 // holmgången: vann den anklagade är saken avgjord. Förlorade hen tas brottet upp igen på nästa ting, utan ny holmgång
 EFTER.holmgang = (s, e, vinnare) => {
-  const q = byId(s, e.q as number), stn = styreOf(s);
+  const q = byId(s, e.q as number), stn = styreAv(s);
   if (vinnare === 0 || !q || !alive(q)) return;
   const nyckel = `${e.q}:${e.brott}:${e.t}`;
   if (stn.domt) stn.domt = stn.domt.filter(k => !k.startsWith(`${e.q}:`));
@@ -670,8 +672,8 @@ EFTER.holmgang = (s, e, vinnare) => {
 // ledaren i en väckt by (steg 11.13.19, vacktro.ts): radens ledare har lett byn sedan sedan, med titeln som passar byn nu.
 // Utan rader i loggen och notiser: det hände före besöket
 export function ledareUrRad(s: State, l: Person, sedan: number) {
-  const st = styreOf(s), vuxna = vuxnaOf(s);
-  st.ledare = l.id; l.ledde = true; st.sedan = sedan; st.vintrar = 0; st.vunna = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s);
+  const st = styreAv(s), vuxna = vuxnaOf(s);
+  st.hanForbud = undefined; st.ledare = l.id; l.ledde = true; st.sedan = sedan; st.vintrar = 0; st.vunna = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s);
   const titel = st.titel = titelFor(s, l, vuxna);
   st.historia.push({ id: l.id, namn: l.name, titel, fran: sedan });
   if (!st.oppna.includes('rang')) st.oppna.push('rang');

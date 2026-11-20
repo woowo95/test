@@ -424,7 +424,7 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   if (DEL[d].livsviktig && g >= HALSA.dodGrad) return dod;
   if (g >= HALSA.logg) log(s, `${p.name} fick ${SKADA[k].ett} i ${DEL[d].i} ${nar}.`, 'world', [p.id]);
   if (g >= UPPV.skadaGrad) personHand(s, p, 'skada', `Fick ${SKADA[k].ett} i ${DEL[d].i} ${nar}.`); // personens händelser (steg 9.2.107)
-  if (g >= HALSA.radd) { fearPlace(s, p, '', `${p.name} skadades svårt där`); raddAkt(s, p, p.task?.act, `${p.name} skadades svårt`); }
+  if (g >= HALSA.radd) { fearPlace(s, p, '', `${p.name} skadades svårt där`); raddAkt(s, p, p.task?.act); }
   if (g >= HALSA.avbryt) avbryt(s, p);
   return undefined;
 }

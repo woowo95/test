@@ -8,7 +8,7 @@
 import { balans } from './balans';
 import { alive, byId, count, stat } from './folk';
 import { delade } from './berattelser';
-import { findL, MINNE, stark, tillit, trimLardomar, UPPDRAGKROK } from './minne';
+import { LARDOMAR, findL, MINNE, stark, tillit, trimLardomar, UPPDRAGKROK } from './minne';
 import { put } from './lager';
 import { kyrkaId } from './egendom';
 import { troNamn } from './religion';
@@ -197,7 +197,7 @@ export function berattaUppdrag(s: State, a: Person, b: Person, l: Lardom, r: Rel
   larUppdrag(s, b, l.a, l.c * trust * MINNE.troDel, { t: l.t, v: l.v, mal: l.g ?? -1, k: (l.om ?? 'leverans') as UppdragId, src: a.id, led: (l.led ?? 0) + 1 });
   if (!fore) count(s, 'uppdragBerattat');
 }
-UPPDRAGKROK.tal = UPPDRAGTAL;
+Object.assign(LARDOMAR.uppdrag, { tak: () => UPPDRAGTAL.max, dela: () => UPPDRAGTAL.dela, glom: () => UPPDRAGTAL.glom }); // uppdragens tal på deras rad i LARDOMAR (fynd 201)
 UPPDRAGKROK.beratta = (s, a, b, l, r) => berattaUppdrag(s, a, b, l, r);
 UPPDRAGKROK.describe = (s, l) => describeUppdrag(s, l);
 export function describeUppdrag(s: State, l: Lardom) {

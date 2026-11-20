@@ -29,7 +29,7 @@ export const SALLSYNT: Record<string, string> = {
   snickarbank: 'snickarbänken (steg 9.4.4) kräver klyvplatsen, sällan på 35 dygn; scenariot snickarbank prövar den',
   halsband_fjaderband: 'fjädrarna kommer bara från fåglarna, som få byar fångar, och halsbanden är få; scenariot fjaderband prövar det',
   fangeVantar: 'rövaren som ger upp i en strid väntar på hur striden slutar (steg 11.12.6), och rövarna ger sällan upp på 50 dygn; scenarierna fangar och fangeval prövar det',
-  tatuera: 'märket görs med en bennål och kol, och kolet finns bara när en eld slocknat med aska kvar; scenariot tatuering prövar det',
+  tatuera: 'märket görs åt den som varit med om något stort och med en bennål, som inte alla byar har; scenariot tatuering prövar det',
   matta: 'vävs vid vävstolen, som är sen och sällsynt; scenariot pynt prövar mattan', blomma: 'plockas bara till en lerkruka med blommor (steg 10.7.3), och krukorna är sällsynta; scenariot blommor prövar den',
   vedbod: 'kräver mycket ved ute, hinner inte alltid komma på 35 dygn; scenariot skjul prövar den',
   bjorn: 'björnen finns i få byar och fälls sällan (steg 6.6.4–6.6.6); scenarierna bjorn och bjornjakt prövar den',

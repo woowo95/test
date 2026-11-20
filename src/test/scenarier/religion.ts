@@ -167,7 +167,12 @@ SCENARIER.tecken = {
         SIM.bjornSteg(k);
         if (!(k.stat?.bjornstrid ?? 0) && !SIM.djurIKartStrid(k, 'bjorn')) { bjMote++; if (p.upp?.some(u => u.k === 'tecken' && u.om === SIM.teckenText('bjornVande'))) bjSag++; }
       }
+      // fältet som gav dubbelt mot de andra (fynd 343): skörden på en ruta mot de andra fältens skörd per ruta
+      const fx = { id: 901, n: 4 } as SIM.Falt, fb = { id: 902, n: 4, gav: [6, 2] } as SIM.Falt, falt0 = s.falt;
+      s.falt = [fx]; const ensamFalt = !SIM.gavDubbelt(s, fx, 100);
+      s.falt = [fx, fb]; const dubbel = SIM.gavDubbelt(s, fx, 6) && !SIM.gavDubbelt(s, fx, 5.9); s.falt = falt0;
       return [
+        [`ett fält som ger dubbelt mot de andras skörd per ruta är ett tecken, men inte utan andra fält (fynd 343)`, ensamFalt && dubbel],
         [`tvillingar som föds levande är ett tecken för båda föräldrarna (${tvForsok} försök)`, tvSag],
         [`den som möter björnen utan att den anfaller minns björnen som vände om (${bjSag} av ${bjMote} möten)`, bjMote > 0 && bjSag === bjMote],
         [`den världsliga (andlighet 0) tolkar inte blixten som en tro (${varldslig.filter(p => p.tro !== undefined).length} av 60)`, varldslig.every(p => p.tro === undefined)],

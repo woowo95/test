@@ -18,7 +18,6 @@ import { BEGR_TAL, BUD, BudId, KYRKA, budBrutet, budIn, foljer, foljerStorlek, h
 import { SkalaId, Tro, rymsBud, skalaV, troOf } from './religion';
 import { amountOf, harTillHands, put } from './lager';
 import { SAKER } from './saker';
-import { kladAv } from './klader';
 import { getable, takeMaterial } from './behov';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
@@ -186,32 +185,32 @@ export function kroppUpp(s: State, p: Person, t: Task) {
   if (vakaVantar(s, q) && budIn(troOf(s, p.tro), 'vaka')) budBrutet(s, p, 'vaka'); // den troende bar kroppen före vakan
   const val = odeVal(s, p, q); if (val.brot) budBrutet(s, p, val.brot); // hen gör som utan budet hen inte följer (steg 10.4.13)
   const ode = q.ode = val.ode;
+  // uppgiften: gå med kroppen till platsen at och arbeta där i tid ms (fynd 171)
+  const bar = (at: { x: number; y: number }, why: string, tid: number, tool?: string) => {
+    t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = why;
+    t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = tool;
+  };
   if (arSkand(ode)) { // skändningen (steg 10.4.13): utan ved eller vatten blir det åt djuren
     const k: SkandId = (ode === 'balRit' && amountOf(s, 'ved') < ODEN.balRit.ved!) || (ode === 'vattnet' && !vattenNara(s)) ? 'djuren' : ode, r = ODEN[k];
     const at = k === 'vattnet' ? strandPlats(s, q.x, q.y) : k === 'stigen' ? stigPlats(s) : skogsPlats(s, q.x, q.y, r.avst, false), tid = r.min! * MIN;
-    q.ode = k; t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Bär bort ${q.namn} (${r.namn.toLowerCase()})`;
-    t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
+    q.ode = k; bar(at, `Bär bort ${q.namn} (${r.namn.toLowerCase()})`, tid); return;
   }
   if (ode === 'skogen') { // ut i skogen (steg 10.4.7): kroppen läggs ner, inget grävs
     const at = skogsPlats(s, q.x, q.y), tid = ODEN.skogen.min! * MIN;
-    t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Bär ${q.namn} ut i skogen`;
-    t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
+    bar(at, `Bär ${q.namn} ut i skogen`, tid); return;
   }
   const d = q.k === 'fiende' ? undefined : byId(s, q.vem), tr = q.k === 'fiende' ? troOf(s, p.tro) : d?.brottsling ? undefined : troOf(s, d?.tro);
   // kroppens väg (steg 10.4.5): vattnet bärs till trons plats vid stranden och sänks på en halv timme; bålet tar en timme till när veden finns
   const bud = q.k === 'fiende' ? [] : kroppBud(s, q, tr), vag = q.vag = bud.includes('bal') ? 'bal' : bud.includes('vattenGrav') && tr && vattenNara(s) ? 'vatten' : 'jord';
   if (vag === 'vatten') {
     const at = vattenPlats(s, tr!);
-    t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Bär ${q.namn} till vattnet`;
-    const tid = BEGRAVNINGAR.vatten.min! * MIN; t.until = s.now + tid + GA_TID; t.arbTid = tid; t.tool = undefined; return;
+    bar(at, `Bär ${q.namn} till vattnet`, BEGRAVNINGAR.vatten.min! * MIN); return;
   }
   // en grav som någon börjat gräva ligger kvar som en grop (q.grav), och nästa grävare fortsätter där, som ett halvfällt träd
   const at = q.grav ?? (ode === 'ovardig' ? ovardigPlats(s) : gravPlats(s, tr, q.k === 'fiende' ? undefined : kroppBud(s, q, tr))), spade = freeTools(s, p, 'benspade') > 0, bal = vag === 'bal' && amountOf(s, 'ved') >= BEGRAVNINGAR.bal.ved! ? BEGRAVNINGAR.bal.min! : 0;
-  t.act = 'grava'; t.phase = 'go'; t.tx = at.x + 0.5; t.ty = at.y + 0.5; t.why = `Gräver en grav åt ${q.namn}`;
   const hel = ((spade ? GRAV.spadeMin : GRAV.handMin) + bal) * MIN, del = q.grav?.del ?? 0, tid = hel * (1 - del);
   q.grav = { x: at.x, y: at.y, del, hel };
-  t.until = s.now + tid + GA_TID; t.arbTid = tid;
-  t.tool = spade ? 'benspade' : undefined; if (spade) take(s, p, 'benspade');
+  bar(at, `Gräver en grav åt ${q.namn}`, tid, spade ? 'benspade' : undefined); if (spade) take(s, p, 'benspade');
 }
 // medan graven grävs: gropen blir djupare (q.grav.del), så att arbetet finns kvar om grävaren avbryts
 export function gravaMedan(s: State, _p: Person, t: Task, dtSec: number) {
@@ -318,17 +317,6 @@ export function avrustaKlar(s: State, p: Person, t: Task) {
   q.saker = undefined; count(s, 'avrustad');
   think(p, 'Tog det en fallen fiende bar', -0.02, s.now, 6 * HOUR);
 }
-// byta om inför strid (steg 8.7.8): när larmet går hämtar var och en sin rustning. Vid en överraskning hinner man inte
-export function rustaVal(s: State, p: Person) {
-  if (!p.larm || s.now - p.larm.t > HOUR || p.task?.act === 'strid' || [s.rovare, ...(s.rovareFler ?? [])].some(f => f && Math.hypot(f.x - p.x, f.y - p.y) < 6)) return undefined;
-  const t = (s.ting ?? []).find(q => { const pl = kladAv(q.k)?.plagg; return (pl === 'rustning' || pl === 'hjalm') && q.helig === undefined && q.bar === undefined && q.hos === undefined && q.lass === undefined && (q.agare === p.id || q.agare === undefined || q.agare < 0) && q.x !== undefined; });
-  return t ? { spot: { x: t.x! + 0.5, y: t.y! + 0.5 }, ref: t.id, why: 'Hämtar sin rustning inför striden' } : undefined;
-}
-export function rustaKlar(s: State, p: Person, t: Task) {
-  const q = (s.ting ?? []).find(o => o.id === t.ref);
-  if (q && q.bar === undefined) { q.bar = p.id; q.x = q.y = q.vid = undefined; count(s, 'rustad'); }
-}
-
 // ---------- gravarnas utseende (steg 10.4.2) ----------
 // graven är först en jordhög. Sedan gör någon som minns den döda vården: en rad i GRAVAR. Vilken är ett bud i den dödas tro (BUD, grupperna
 // gravvard och storagrav), och utan tro en gravbräda, eller en gravstolpe innan byn har plankor

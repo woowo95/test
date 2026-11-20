@@ -40,7 +40,7 @@ import { askaSteg, brandHetta, brandSteg, snoSmalt, brinnerSteg, hjalpaKlar, sla
 import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
-import { STR, stepStyre } from './styre';
+import { STR, kvallForeStyret, stepStyre, styretsKvall } from './styre';
 import { bildKrok, gralBlirSlagsmal, kartStridBorja, lekSteg, kartStridSteg, nastaSteg, serStriden } from './kartstrid';
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
@@ -116,14 +116,14 @@ import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from '.
 import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
 import { fangeOde } from './fangeval';
-import { avrustaKlar, gravDygn, gravKlar, gravaMedan, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
+import { avrustaKlar, gravDygn, gravKlar, gravaMedan, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
-import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
-import { lagDygn, lagRegister } from './lagar';
-import { oppnaSed } from './rost';
+import { KYRKA_TIMME, andligTimme, kyrkaDygn, kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad } from './kyrka';
+import { lagRegister } from './lagar';
+import { raddDygn, raddRegister } from './radsla';
 import { LARM, handelse, larma } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
-import { bordPlats, fullBorda, kladVarme, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
+import { bordPlats, fullBorda, kladVarme, rustaKlar, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
 import { allaTing } from './agande';
@@ -278,8 +278,7 @@ for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
   // fångstgropen (steg 10.2.84) grävdes där den ska ligga; mjärden och snaran görs vid fångstbänken och sätts ut
   if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
 };
-lagRegister(); skattRegister(); budgetRegister(); bynamnRegister(); lonRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
-satOppnaAndlig(s => oppnaSed(s, 'andlig'));
+lagRegister(); raddRegister(); skattRegister(); budgetRegister(); bynamnRegister(); lonRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
 // det som görs vid en station är klart: materialet tas och saken läggs i förrådet, och är hens som gjorde den (tillverka.ts)
@@ -483,7 +482,9 @@ export const TAKTER: Takt[] = [
   { namn: 'stepRykten', sek: 3600, fn: s => { stepRykten(s, moodOf); } },
   { namn: 'glomRykten', sek: 14400, fn: (s, dt) => { glomRykten(s, dt / HOUR_S); } },
   { namn: 'stepBerattelser', sek: 3600, fn: s => { stepBerattelser(s); } },
+  { namn: 'kvällen före styret', sek: 86400, fas: STR.timme / 24, fn: s => { kvallForeStyret(s); } }, // trons krets och dopet (styre.ts)
   { namn: 'stepStyre', sek: 3600, fn: s => { stepStyre(s); } },
+  { namn: 'styrets kväll', sek: 86400, fas: STR.timme / 24, fn: s => { styretsKvall(s); } }, // domen, omröstningen och det som tas upp (styre.ts)
   { namn: 'rotStumps', sek: 3600, fn: s => { rotStumps(s); } },
   { namn: 'tidyStore', sek: 3600, fn: s => { tidyStore(s); } },
   { namn: 'vaggRensa', sek: 3600, fn: s => { vaggRensa(s); } },
@@ -493,10 +494,12 @@ export const TAKTER: Takt[] = [
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld && s.vackt === undefined && s.vacktPlats === undefined) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
-  { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: s => { lagDygn(s); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (lagar.ts, steg 12.1.60)
+  { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: s => { raddDygn(s); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (radsla.ts, steg 12.1.60 och 12.1.84)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },
+  { namn: 'kyrkans dygn', sek: 86400, fas: KYRKA_TIMME / 24, fn: s => { kyrkaDygn(s); } }, // skatten, helgonen, kvädena, välsignelsen och buden (kyrka.ts)
+  { namn: 'seden andlig', sek: 3600, fn: s => { andligTimme(s); } }, // seden Världslig – Andlig låses upp (kyrka.ts)
   { namn: 'wearBuild', sek: 21600, fn: (s, dt, c) => { wearBuild(s, dt / HOUR_S, c.ai); } },
   { namn: 'stepByggnader', sek: 3600, fn: s => { stepByggnader(s); } },
   { namn: 'husKlaraTimme', sek: 3600, fn: s => { husKlaraTimme(s); } },
@@ -1542,6 +1545,13 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   }
   return undefined;
 }
+// den som når 16 i en färdighet blir mästare i den; den första i byn får notisen, och de andra minns det
+export function blevMastare(s: State, p: Person, sk: keyof typeof SKILL_NAMES) {
+  const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = forstaGang(s, 'mastare_' + sk) && !s.people.some(q => q.fame.includes(title)); // en gång per färdighet, också när de döda rensats bort (fynd 313); titeln i byn täcker sparade byar från före räkningen
+  p.fame.push(title); personHand(s, p, 'titel', `Blev ${title.toLowerCase()}.`); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
+  if (first) notis(s, 'mastare', `${p.name} är byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, [p.id]);
+  if (first) for (const q of living(s)) if (q !== p) upplev(s, q, 'forstaMastare', p.name); // de andra såg det (steg 4.5.4.9)
+}
 // plock: på rundan (steg 9.2.55) ger arbetet bara det som plockades, en hel sak när plocket är klart (n 1) eller inget (0), och slaget som plockades (bär eller rötter, sten eller flinta, honung), '' medan plocket pågår
 function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number, plock?: { n: number; slag: string }) {
   const now = s.now, d = ACTS[tk.act], res = d.resurs, runda = plock !== undefined;
@@ -1575,12 +1585,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const m = p.mentor !== undefined ? byId(s, p.mentor) : undefined; // bredvid sin mentor lär man sig fortare (steg 3.1.1)
   const vidMentor = m?.task && ACTS[m.task.act].arbete === sk && Math.hypot(m.x - p.x, m.y - p.y) < RELT.mentorNara ? RELT.mentorOvning : 1;
   ovning(p, sk, dtSec / HOUR_S * STEG.ovningArbete * learn * vidMentor * (STEG.ovningBas + stat(p, 'intelligens', now) / 20));
-  if (before < 16 && p.skill[sk] >= 16) {
-    const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
-    p.fame.push(title); personHand(s, p, 'titel', `Blev ${title.toLowerCase()}.`); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
-    if (first) notis(s, 'mastare', `${p.name} är byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, [p.id]);
-    if (first) for (const q of living(s)) if (q !== p) upplev(s, q, 'forstaMastare', p.name); // de andra såg det (steg 4.5.4.9)
-  }
+  if (before < 16 && p.skill[sk] >= 16) blevMastare(s, p, sk);
   // arbetet sker i turer: när de fria händerna är fulla eller efter en fångst bärs det hem, sedan fortsätter man. Någon fast
   // tid för en tur finns inte (steg 6.1.10): arbetet slutar annars när det är slut (tk.until) eller när något går före (val.ts)
   const full = fullBorda(s, p, tk), has = isCarrying(tk);

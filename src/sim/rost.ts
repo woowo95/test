@@ -222,11 +222,10 @@ export function seOverMinistrar(s: State) {
     if (!m.nar(s)) continue;
     const q = m.vem(s);
     if (!q) continue;
-    if ((s.seder.v.rang ?? 0) > 0.5) { (st.ministrar ??= {})[id] = q.id; log(s, `${l.name} gjorde ${q.name} till ${m.namn.toLowerCase()}.`, 'world', [l.id, q.id]); count(s, 'minister'); oppnaHarkomst(s); }
-    else { laggFram(s, 'minister', { post: id, id: q.id, namn: q.name }, l); oppnaHarkomst(s); }
+    if ((s.seder.v.rang ?? 0) > 0.5) { (st.ministrar ??= {})[id] = q.id; log(s, `${l.name} gjorde ${q.name} till ${m.namn.toLowerCase()}.`, 'world', [l.id, q.id]); count(s, 'minister'); oppnaSed(s, 'fortjanst'); }
+    else { laggFram(s, 'minister', { post: id, id: q.id, namn: q.name }, l); oppnaSed(s, 'fortjanst'); }
   }
 }
-const oppnaHarkomst = (s: State) => oppnaSed(s, 'fortjanst');
 // en vågskål låses upp (Skalor som låses upp): den börjar där byn redan lutar, inte på noll
 export function oppnaSed(s: State, k: Sed) {
   const st = styreAv(s);

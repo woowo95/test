@@ -143,6 +143,17 @@ const MDEF = {
     { t: '{helt}, säger de nu, och det är sant: {namn} är {tillstand}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
     { t: 'Så fick {namn} sitt namn: {hen} är {tillstand}, och byn kallar {honom} {helt}.', om: f => !!f.tillst }, // inget bevis: det byn tycker att hen är (steg 6.7.6)
   ],
+  // Lill- och Stor-namnet (steg 4.5.4.8, fynd 500): namnet kommer av släkten, en förälder eller ett barn med samma namnslut
+  slaktnamn: [
+    '{namn} och {hens} {rel} {slakting} har samma namn i slutet, så byn kallar {honom} {binamn}.',
+    'Två i samma släkt med samma namn går inte ihop vid elden. {namn} blev {binamn}, för {hens} {rel} heter {slakting}.',
+    'När någon ropade på {slakting} vände sig {namn} om. Sedan dess heter {hen} {binamn}.',
+    '{helt}, säger byn, så att ingen tar fel på {honom} och {hens} {rel} {slakting}.',
+    'Namnet {binamn} kommer av släkten: {namn} heter som {hens} {rel} {slakting} i slutet.',
+    'Det var barnen som började säga {binamn} om {namn}, för {hen} och {slakting} låter likadant.',
+    'I {slaktingens} hus finns två med samma namnslut, och {namn} kallas därför {binamn}.',
+    '{namn} är {binamn} i allas mun. Det är inget fel i det, bara att {hens} {rel} heter {slakting}.',
+  ],
   oknamn: [
     { t: 'Bakom ryggen kallar byn {namn} för {binamn}. {Hen} {skal}.', om: f => !f.tillst },
     { t: '{namn} {skal}, och nu heter {hen} {helt} i allas mun.', om: f => !f.tillst },
@@ -2167,7 +2178,7 @@ export function fyll(text: string, f: Fyllning) {
 export const berattelse = (s: State, mall: MallId, nyckel: number, f: Fyllning = {}) => fyll(valjVariant(s, mall, nyckel, f), f);
 
 // ---------- öknamnen och hedersnamnen (steg 3.9.1) ----------
-export interface Binamn { k: IntryckTyp; namn: string; v: number; t: number; skal?: string; tillst?: true } // tillst = inget bevis, bara det byn tycker (steg 6.7.6)
+export interface Binamn { k: IntryckTyp; namn: string; v: number; t: number; skal?: string; tillst?: true; slakt?: string; rel?: string } // tillst = inget bevis, bara det byn tycker (steg 6.7.6) // slakt, rel: Lill- eller Stor-namnet kommer av släktingen med samma namnslut, och vad hen är (fynd 500)
 // namnet efter förnamnet: "Ask Lögnaren", "Brand den flitige"
 export const heltNamn = (p: Person) => p.binamn ? `${p.name} ${p.binamn.namn}` : p.name;
 export const arHeder = (b: Binamn) => INTRYCK[b.k].tecken > 0;
@@ -2206,15 +2217,18 @@ export function stepBerattelser(s: State) {
 }
 // har en förälder eller ett barn i livet samma namnslut (Torbjörn och Tuskbjörn) kallas ibland den yngre Lill- och den
 // äldre Stor- (Lillbjörn, Storbjörn, steg 4.5.4.8). Drar ingen slump
-export function lekNamn(s: State, p: Person) {
+export function lekNamn(s: State, p: Person) { return lekNamnAv(s, p)?.namn; }
+function lekNamnAv(s: State, p: Person): { namn: string; q: Person } | undefined {
   const slut = namnSlut(p.name);
   if (!slut || slut.length < 3 || hash(s.seed, p.id, 11) >= BERATT.lekNamn) return undefined;
   const q = living(s).find(x => x !== p && (isParent(x, p) || isParent(p, x)) && namnSlut(x.name) === slut);
-  return q ? (p.born > q.born ? 'Lill' : 'Stor') + slut : undefined;
+  return q ? { namn: (p.born > q.born ? 'Lill' : 'Stor') + slut, q } : undefined;
 }
 export function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
+  const lek = lekNamnAv(s, p);
+  if (lek) { slaktnamn(s, p, k, v, lek.namn, lek.q); return; }
   const val = BINAMN[k].namn, i = Math.floor(hash(s.seed, p.id, val.length + k.length) * val.length);
-  const namnet = lekNamn(s, p) ?? val[i][p.sex === 'm' ? 0 : 1];
+  const namnet = val[i][p.sex === 'm' ? 0 : 1];
   const { skal, tillst } = skalTill(s, p, k), fore = p.binamn;
   p.binamn = { k, namn: namnet, v, t: s.now, ...(tillst ? { tillst: true as const } : { skal }) };
   const heder = INTRYCK[k].tecken > 0;
@@ -2226,10 +2240,21 @@ export function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`); personHand(s, p, 'titel', `Kallas ${heltNamn(p)}.`, heder ? 'gott' : 'ont');
   count(s, 'binamn'); count(s, heder ? 'hedersnamn' : 'oknamn');
 }
-// för personrutan: symbolen (heder eller skam) och förklaringen
+// Lill- eller Stor-namnet (fynd 500): det ges när byn ändå skulle ge ett binamn, men skälet är släkten och inte intrycket
+function slaktnamn(s: State, p: Person, k: IntryckTyp, v: number, namnet: string, q: Person) {
+  const fore = p.binamn, rel = slaktOrd(p, q) ?? 'släkting';
+  p.binamn = { k, namn: namnet, v, t: s.now, slakt: q.name, rel };
+  const f: Fyllning = { namn: p.name, binamn: namnet, helt: heltNamn(p), hen: han(p), hens: hans(p), honom: honom(p), rel, slakting: q.name, slaktingens: gen(q.name) };
+  const text = berattelse(s, 'slaktnamn', p.id, f);
+  log(s, `👪 ${text}`, 'rel', [p.id, q.id]);
+  kronika(s, text, 'slaktnamn');
+  p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`); personHand(s, p, 'titel', `Kallas ${heltNamn(p)}.`);
+  count(s, 'binamn'); count(s, 'slaktnamn');
+}
 export function binamnInfo(p: Person) {
   const b = p.binamn;
   if (!b) return undefined;
+  if (b.slakt) return { namn: b.namn, sym: '👪', heder: true, varfor: `${p.name} heter som sin ${b.rel ?? 'släkting'} ${b.slakt} i slutet`, intryck: 'släkten', bevis: true, alive: alive(p) }; // namnet kommer av släkten (fynd 500)
   return { namn: b.namn, sym: arHeder(b) ? '🏅' : '🗯️', heder: arHeder(b), varfor: `${p.name} ${b.skal ?? `är ${tillstand(b.k)}`}`, intryck: INTRYCK[b.k].namn, bevis: !!b.skal, alive: alive(p) }; // bevis: utan skäl säger varfor bara samma sak igen (steg 6.7.8)
 }
 
