@@ -10,7 +10,7 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { hoBrist } from './vattenho';
-import { r3 } from './slump';
+import { clamp, r3 } from './slump';
 import { stenTillPlan } from './byggsten';
 import { tamAlder, tamArt, tamdjurOf } from './tamdjur';
 import { SKRIFT } from './skriftTal';
@@ -297,6 +297,15 @@ function langhusBrist(s: State, k: StationSlag) {
   const vill = Math.ceil(sovplatser(s, r) / STATION.bankPer);
   return vill > 0 ? Math.max(0, (vill - har) / vill) : 0;
 }
+// arbetet som väntar vid stationen k (steg 12.1.150), i minuter: projekt.ts fyller i kroken (bristen i projekten för det som görs
+// där gånger receptets minuter), eftersom projekten läser den här filen
+export const koKrok = { vid: (_s: State, _k: StationSlag) => 0 };
+// utan en färdig station vill byn ha en; annars är bristen hur mycket mer som väntar än stationerna hinner (hinner minuter var)
+function koBrist(s: State, k: StationSlag, hinner: number) {
+  const har = stationerOf(s).filter(t => t.k === k && isKlar(t)).length;
+  if (!har) return 1;
+  return clamp(koKrok.vid(s, k) / (har * hinner) - 1, 0, 1);
+}
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
@@ -305,7 +314,7 @@ export function stationBrist(s: State, k: StationSlag) {
   if (d.langhus) return langhusBrist(s, k); // högsätet och bänkarna i långhuset (steg 10.2.68)
   if (d.utkant?.drag) return kupBrist(s, k); // bikupan (steg 10.10.16)
   if (d.hage) return hoBrist(s); // vattenhon i hagen som inte når vattnet (steg 10.10.30)
-  if (d.perVuxna) return stationerOf(s).filter(t => t.k === k && isKlar(t)).length < Math.max(1, Math.ceil(vuxna(s, ALDER.vuxen) / d.perVuxna)) ? 1 : 0; // slöjdbänken: en per tolv vuxna (steg 12.1.20)
+  if (d.hinner) return koBrist(s, k, d.hinner); // slöjdbänken: arbetet som väntar vid den (steg 12.1.150)
   if (d.fahus) { const n = fahusHus(s).length; return n ? fahusUtanKrubba(s).length / n : 0; } // en krubba i varje fähus (steg 10.2.88)
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
