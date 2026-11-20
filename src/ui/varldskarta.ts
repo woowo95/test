@@ -4,7 +4,7 @@
 // med musen eller fingret och zooma med hjulet eller två fingrar. Musen över en ruta visar marken och platserna där, och ett tryck
 // utan att dra skriver det under kartan. Kartan har en fast höjd, så att den behåller sin storlek när texten under den ändras.
 // Själva bilden räknas i ui/varldbild.ts.
-import { byFlikar, PlatsRuta, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
 import { omUngefar } from './hjalp';
@@ -37,6 +37,8 @@ stil.textContent = `
 .vkSida ul { margin: 2px 0; padding-left: 0; list-style: none; }
 .vkSida .vkOkand { color: ${farg('ben', 1)}; }
 .vkSida .vkViss { font-size: 0.85em; margin-left: 3px; cursor: help; }
+.vkSida .vkDag { cursor: help; }
+.vkSida .vkBok { margin-top: 4px; }
 .vkSida .vkVarna { color: ${farg('rost', 3)}; }
 .vkKronika { position: absolute; top: 6px; left: 6px; max-width: calc(100% - 12px); max-height: 45%; overflow: auto; padding: 4px 8px;
   background: ${farg('kol', 1)}; color: ${farg('ben', 3)}; border: 1px solid ${farg('kol', 3)}; border-radius: 3px; }
@@ -149,7 +151,7 @@ function montera() {
   if (!host || ruta.parentElement === host || !s?.varld) return;
   host.appendChild(ruta);
   kronLista.innerHTML = kronikaHtml();
-  if (vyFor !== s.varld) { vy = undefined; info.textContent = ''; valdBy = undefined; }
+  if (vyFor !== s.varld) { vy = undefined; info.textContent = ''; valt = undefined; }
   sida.innerHTML = sidaHtml();
   rita();
   const b = bilden(), vl = s.varld, hb = vl.platser?.find(p => p.by === vl.huvud);
@@ -208,8 +210,10 @@ const slapp = (e: PointerEvent) => {
     if (vl && v) {
       const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top), kn = bynsKarta(s!);
       info.innerHTML = rutaHtml(q.x, q.y);
+      const sl = sallskapNu(vl).find(x => { const l = sallskapLage(s!, x); return !!l && Math.round(l.x) === q.x && Math.round(l.y) === q.y; });
       const by = (vl.platser ?? []).find(p => p.x === q.x && p.y === q.y && syns(kn, p) && p.by !== undefined);
-      if (by) { valdBy = by.nr; sida.innerHTML = sidaHtml(); }
+      if (sl) { valt = { sl: sl.id }; sida.innerHTML = sidaHtml(); }
+      else if (by) { valt = { by: by.nr }; sida.innerHTML = sidaHtml(); }
     }
   }
 };
@@ -244,14 +248,6 @@ function rutaHtml(x: number, y: number): string {
   }
   const vm = varldMark(s!);
   for (const gr of vl.gravar ?? []) if (vm && gr.ruta === y * vm.w + x) delar.push(`<div class="vkPlats"><b>✝ Grav</b>: ${esc(gr.namn)}<div>Begravd vid leden år ${kalender(s!, gr.t).ar}</div></div>`); // steg 11.5.18
-  for (const sl of sallskapNu(vl)) { // sällskapet på rutan (steg 11.5.12)
-    const l = sallskapLage(s, sl);
-    if (!l || Math.round(l.x) !== x || Math.round(l.y) !== y) continue;
-    const r = sallskapRuta(s, sl), dygn = (d: number) => omUngefar(d * DAY);
-    const kvar = r.kvar !== undefined ? `, ${dygn(r.kvar)} kvar` : r.stannar !== undefined ? `, stannar ${dygn(r.stannar)} till` : '';
-    const inKnapp = vacktMedBesok(huvud(), sl.mal) && vacktMedBesok(huvud(), sl.mal) !== s ? `<button type="button" class="vkGaIn" data-gain="${sl.mal}" title="Gå in: visa byn medan de egna är där">🚪 Gå in</button>` : ''; // steg 11.13.11
-    delar.push(`<div class="vkPlats"><b>🎒 ${esc(r.titel)}</b>: ${esc(r.skede)}${kvar} ${inKnapp}<div>${esc(r.ledare)}${r.medl.length ? ` med ${r.medl.map(esc).join(', ')}` : ''}${r.djur.length ? ` och ${r.djur.map(d => esc(d.toLowerCase())).join(', ')}` : ''}</div>${r.pack.length ? `<div>Packning: ${r.pack.map(([k, n]) => `${n} ${esc(k.toLowerCase())}`).join(', ')}</div>` : ''}${sl.dagbok.length ? `<ul class="vkBok">${sl.dagbok.slice(-5).reverse().map(([t, text, slag]) => `<li>År ${kalender(s!, t).ar}: ${slag ? DAGBOK[slag].sym : ''} ${esc(text)}</li>`).join('')}</ul>` : ''}</div>`); // dagboken, det senaste först (steg 11.5.13)
-  }
   return delar.join('');
 }
 
@@ -267,7 +263,7 @@ export const BYFLIKAR = [
   { id: 'forb', tecken: '🤝', namn: 'Förbindelsen' },
 ] as const;
 type ByFlikId = (typeof BYFLIKAR)[number]['id'];
-let valdBy: number | undefined, byFlik: ByFlikId = 'oversikt';
+let valt: { by?: number; sl?: number } | undefined, byFlik: ByFlikId = 'oversikt';
 const OKAND = '<span class="vkOkand" title="Byn vet inte">?</span>';
 function alderText(ar: number) { const n = kalender(s!, s!.now).ar - ar; return n <= 0 ? 'från i år' : n === 1 ? 'ett år gammal' : `${n} år gammal`; }
 function viss(r: PlatsRuta, sant?: string, varde?: string) {
@@ -278,8 +274,10 @@ function viss(r: PlatsRuta, sant?: string, varde?: string) {
 const uppg = (r: PlatsRuta, varde: string | undefined, sant?: string) => varde === undefined || !r.visshet ? OKAND : `${esc(varde)}${viss(r, sant, varde)}`;
 function sidaHtml(): string {
   if (!s?.varld) return '';
-  const f = valdBy !== undefined ? byFlikar(s, valdBy, id => TEKNIK.find(x => x.id === id)?.namn ?? id) : undefined;
-  if (!f) return '<div class="vkTom">Tryck på en by på kartan</div>';
+  const sl = valt?.sl !== undefined ? sallskapNu(s.varld).find(x => x.id === valt!.sl) : undefined;
+  if (sl) return sallskapHtml(sl);
+  const f = valt?.by !== undefined ? byFlikar(s, valt.by, id => TEKNIK.find(x => x.id === id)?.namn ?? id) : undefined;
+  if (!f) return '<div class="vkTom">Tryck på en by eller ett sällskap på kartan</div>';
   const r = f.ruta, rad = (id: string) => r.rader.find(d => d.id === id);
   const tal = (id: string) => { const d = rad(id); return `<tr><th>${esc(d?.namn ?? id)}</th><td>${uppg(r, d?.tror, d?.sant)}</td></tr>`; };
   const flikar = `<div class="vkFlikar" role="tablist">${BYFLIKAR.map(x => `<button type="button" role="tab" data-vkflik="${x.id}" aria-selected="${x.id === byFlik}" title="${x.namn}">${x.tecken}</button>`).join('')}</div>`;
@@ -294,9 +292,25 @@ function sidaHtml(): string {
   const namn = BYFLIKAR.find(x => x.id === byFlik)!.namn;
   return `<div><b>${esc(r.sort)} ${esc(r.namn)}</b>${viss(r)}</div>${flikar}<div class="vkFlikNamn vkOkand">${namn}</div>${inne}`;
 }
+// sällskapets ruta (steg 11.5.12 och 12.1.31): vilka som går, vart, varför, packningen och dagboken från vägen, det senaste
+// först; dagbokens tecken är bildstilens symboler (symboler.ts byter emojin) och säger sitt namn vid tryck
+function sallskapHtml(sl: Sallskap): string {
+  const r = sallskapRuta(s!, sl), dygn = (d: number) => omUngefar(d * DAY);
+  const kvar = r.kvar !== undefined ? `, ${dygn(r.kvar)} kvar` : r.stannar !== undefined ? `, stannar ${dygn(r.stannar)} till` : '';
+  const inKnapp = vacktMedBesok(huvud(), sl.mal) && vacktMedBesok(huvud(), sl.mal) !== s ? `<button type="button" class="vkGaIn" data-gain="${sl.mal}" title="Gå in: visa byn medan de egna är där">🚪 Gå in</button>` : ''; // steg 11.13.11
+  const vem = r.vem.map((p, i) => `<button class="plink" data-id="${p.id}" type="button">${esc(p.namn)}</button>${i === 0 ? ' <span class="vkOkand">leder</span>' : ''}`).join(', ');
+  const bok = sl.dagbok.length ? `<ul class="vkBok">${sl.dagbok.slice(-12).reverse().map(([t, text, slag]) => `<li>År ${kalender(s!, t).ar}: ${slag ? `<span class="vkDag" title="${esc(DAGBOK[slag].namn)}">${DAGBOK[slag].sym}</span> ` : ''}${esc(text)}</li>`).join('')}</ul>` : '<div class="vkOkand">Inget i dagboken än</div>';
+  return `<div><b>🎒 ${esc(r.titel)}</b></div>`
+    + `<table><tr><th>Vart</th><td>${esc(r.mal)}</td></tr><tr><th>Varför</th><td>${esc(r.varfor)}</td></tr><tr><th>Skede</th><td>${esc(r.skede)}${kvar} ${inKnapp}</td></tr>`
+    + `<tr><th>Vilka</th><td>${vem || '–'}${r.djur.length ? ` med ${r.djur.map(d => esc(d.toLowerCase())).join(', ')}` : ''}</td></tr>`
+    + `${r.pack.length ? `<tr><th>Packning</th><td>${r.pack.map(([k, n]) => `${n} ${esc(k.toLowerCase())}`).join(', ')}</td></tr>` : ''}</table>${bok}`;
+}
 sida.addEventListener('click', e => {
-  const b = (e.target as HTMLElement).closest<HTMLElement>('[data-vkflik]');
-  if (b) { byFlik = b.dataset.vkflik as ByFlikId; sida.innerHTML = sidaHtml(); }
+  const el = e.target as HTMLElement, b = el.closest<HTMLElement>('[data-vkflik]');
+  if (b) { byFlik = b.dataset.vkflik as ByFlikId; sida.innerHTML = sidaHtml(); return; }
+  const nr = el.closest<HTMLElement>('[data-gain]')?.dataset.gain; // Gå in (steg 11.13.11)
+  const v = nr !== undefined ? vacktMedBesok(huvud(), Number(nr)) : undefined;
+  if (v) gaIn(v);
 });
 
 // världens krönika (steg 11.4.13): de senaste först, det byn hört i full färg och resten blekare

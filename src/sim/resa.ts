@@ -1267,13 +1267,14 @@ export function sallskapLage(s: State, sl: Sallskap): SallskapLage | undefined {
   kvar = Math.max(0, kvar) / (VARLD.gangPerDygn * Math.max(1e-9, sallskapFart(s, sl)));
   return { x: ax + (bx - ax) * f, y: ay + (by - ay) * f, dx: Math.sign(bx - ax), dy: Math.sign(by - ay), kvar: Math.round(kvar * 100) / 100 };
 }
-export interface SallskapRuta { titel: string; skede: string; ledare: string; medl: string[]; djur: string[]; pack: [string, number][]; kvar?: number; stannar?: number }
+export interface SallskapRuta { titel: string; mal: string; varfor: string; skede: string; ledare: string; medl: string[]; vem: { id: number; namn: string }[]; djur: string[]; pack: [string, number][]; kvar?: number; stannar?: number } // mal, varfor och vem (ledaren först): rutan på världskartan (steg 12.1.31)
 export function sallskapRuta(s: State, sl: Sallskap): SallskapRuta {
   const mal = s.varld?.platser?.find(p => p.nr === sl.mal)?.namn ?? '', lage = sallskapLage(s, sl);
   const namn = (id: number) => s.people.find(p => p.id === id)?.name ?? '';
   const djur = [...sl.djur.map(id => s.tamdjur?.find(d => d.id === id)).filter(d => !!d).map(d => tamArt(d!.art).namn), ...sl.fordon.map(k => SAKER[k]?.namn ?? k)]; // och vagnen (steg 12.1.10)
   return {
-    titel: `${RESMAL[sl.skal].namn}: ${mal}`, skede: SKEDEN[sl.skede], ledare: namn(sl.ledare), medl: sl.medl.filter(id => id !== sl.ledare).map(namn).filter(Boolean),
+    titel: `${RESMAL[sl.skal].namn}: ${mal}`, mal, varfor: sl.hjalp ? 'Hjälpa byn' : RESMAL[sl.skal].namn, skede: SKEDEN[sl.skede], ledare: namn(sl.ledare), medl: sl.medl.filter(id => id !== sl.ledare).map(namn).filter(Boolean),
+    vem: [sl.ledare, ...sl.medl.filter(id => id !== sl.ledare)].map(id => ({ id, namn: namn(id) })).filter(x => x.namn),
     djur, pack: Object.entries(sl.pack).filter(([, n]) => n >= 1).map(([k, n]) => [SAKER[k]?.namn ?? k, Math.floor(n)] as [string, number]).sort((a, b) => b[1] - a[1]),
     ...(lage && sl.skede !== 'framme' ? { kvar: lage.kvar } : {}), ...(lage && sl.skede === 'framme' ? { stannar: lage.kvar } : {}),
   };

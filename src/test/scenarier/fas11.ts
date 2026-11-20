@@ -1976,7 +1976,7 @@ SCENARIER.sallskapfast = {
 };
 
 SCENARIER.sallskapkarta = {
-  text: 'Sällskapet på världskartan (steg 11.5.12, sallskapLage och sallskapRuta i resa.ts, bilden i ui/varldbild.ts): sällskapet står mellan rutan det är på och nästa längs vägen, vänt åt sitt håll, och rör sig när det går; rutan har skälet, målet, skedet, medlemmarna, packningen och hur många dygn det är kvar',
+  text: 'Sällskapet på världskartan (steg 11.5.12 och 12.1.31, sallskapLage och sallskapRuta i resa.ts, bilden i ui/varldbild.ts): sällskapet står mellan rutan det är på och nästa längs vägen, vänt åt sitt håll, och rör sig när det går; rutan bredvid kartan har vart, varför, skedet, vilka som går, packningen, dygnen kvar och dagboken med bildstilens tecken och namnet vid tryck',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, v = SIM.varldMark(s)!;
     const [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 20 && SIM.ageOf(q, s.now) < 50 && SIM.personFart(s, q) === 1);
@@ -1995,6 +1995,8 @@ SCENARIER.sallskapkarta = {
     const mellan = Math.min(a1 % v.w, b1 % v.w) <= l1.x + 1e-9 && l1.x <= Math.max(a1 % v.w, b1 % v.w) + 1e-9 && Math.min(Math.floor(a1 / v.w), Math.floor(b1 / v.w)) <= l1.y + 1e-9 && l1.y <= Math.max(Math.floor(a1 / v.w), Math.floor(b1 / v.w)) + 1e-9;
     const ratt = l1.dx === Math.sign(b1 % v.w - a1 % v.w) && l1.dy === Math.sign(Math.floor(b1 / v.w) - Math.floor(a1 / v.w));
     const r = SIM.sallskapRuta(s, sl);
+    const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
+    const ui = /if \(sl\) return sallskapHtml\(sl\)/.test(kod) && /class="vkDag" title="\$\{esc\(DAGBOK\[slag\]\.namn\)\}">\$\{DAGBOK\[slag\]\.sym\}/.test(kod) && /data-id="\$\{p\.id\}"/.test(kod) && !/function rutaHtml[\s\S]*sallskapNu\(vl\)\) \{ \/\/ sällskapet på rutan/.test(kod);
     const tecken = VB.TECKEN.sallskap!, iPal = tecken.length === VB.VK && tecken.every(rad => rad.length === VB.VK && [...rad].every(c => c === '.' || c in VB.TECKENPAL));
     return [
       [`sällskapet står mellan två rutor på vägen (${l1.x.toFixed(2)}, ${l1.y.toFixed(2)})`, mellan],
@@ -2002,6 +2004,7 @@ SCENARIER.sallskapkarta = {
       [`det rör sig när det går (${l0.kvar} → ${l1.kvar} dygn kvar)`, l1.kvar < l0.kvar && (l1.x !== l0.x || l1.y !== l0.y)],
       [`rutan: ${r.titel}, ${r.skede}, ${r.ledare} med ${r.medl.join(', ')}, ${r.pack.map(([k, n]) => `${n} ${k}`).join(', ')}`, r.titel.includes(malP.namn) && r.skede === 'På väg dit' && r.ledare === a!.name && r.medl.includes(b!.name) && r.pack.length === 2 && r.kvar !== undefined],
       ['bilden är 16 × 16 punkter i paletten', iPal],
+      [`rutan bredvid kartan (steg 12.1.31): vart (${r.mal}), varför (${r.varfor}) och vilka, ledaren först med länk`, r.mal === malP.namn && r.varfor === 'Handel' && r.vem[0]?.id === a!.id && r.vem.some(p => p.id === b!.id) && ui],
     ];
   },
 };
