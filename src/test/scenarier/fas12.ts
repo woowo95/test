@@ -869,3 +869,34 @@ SCENARIER.sjukvila = {
     ];
   },
 };
+
+// steg 12.1.47: åldern och storleken vägs in i viljan att slåss
+SCENARIER.barnslagsmal = {
+  text: 'Åldern i slagsmålen (steg 12.1.47): ett gräl mellan två vuxna blir oftare ett slagsmål än ett mellan en vuxen och ett barn på åtta år, och ett barn på fyra år slåss inte utan gråter',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const vuxen = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const [a, b] = vuxen, atta = nyInvanare(s, 'k', 8), fyra = nyInvanare(s, 'm', 4);
+    const t0 = s.now;
+    const prov = (x: SIM.Person, y: SIM.Person) => {
+      let n = 0;
+      s.now = t0; // åldrarna står still: 4000 försök på en minut var
+      for (let i = 0; i < 4000; i++) {
+        s.kartStrider = []; for (const q of [x, y]) q.task = undefined;
+        SIM.gralBlirSlagsmal(s, x, y);
+        if (SIM.kartStridAv(s, x)) n++;
+        s.now += 1000;
+      }
+      s.kartStrider = [];
+      return n;
+    };
+    const grat0 = s.stat?.gralGrat ?? 0;
+    const vv = prov(a, b), vb = prov(a, atta), bv = prov(atta, a), v4 = prov(a, fyra);
+    const grat = (s.stat?.gralGrat ?? 0) - grat0;
+    return [
+      [`två vuxna slåss ibland efter ett gräl (${vv} av 4000)`, vv > 20],
+      [`en vuxen och ett barn på åtta år mycket mer sällan (${vb} och ${bv} av 4000)`, vb + bv < (vv * 2) / 5],
+      [`ett barn på fyra år slåss inte (${v4} av 4000)${grat ? `, och har gråtit ${grat} gånger` : ''}`, v4 === 0],
+    ];
+  },
+};
