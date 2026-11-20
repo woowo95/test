@@ -150,7 +150,7 @@ SCENARIER.borta = {
       [`den som är borta röstar inte i byn (${roster0} gånger)`, roster0 === 0],
       ['den som är borta äter, dricker, smittas och flyttar sig inte i byn', orort],
       ['när alla är borta grundas byn inte om och ingen ny kommer', inteOmgrundad],
-      ['alla kommer hem och är i byn igen', SIM.living(s).length === alla.length],
+      ['alla kommer hem och är i byn igen', alla.every(p => SIM.living(s).includes(p))], // (ett barn kan födas under timmen)
     ];
   },
 };
@@ -1216,6 +1216,7 @@ SCENARIER.splittring = {
 };
 
 SCENARIER.forhistoria = {
+  lang: true,
   text: 'Förhistorien (steg 11.3.13, forhistoria.ts): världen har levt FORHIST.ar år när huvudbyn grundas, med byar som vuxit, delats och gått under efter radens regler, en krönika och grannbyar som lever',
   env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=100' },
   kor: () => {
@@ -1229,9 +1230,11 @@ SCENARIER.forhistoria = {
     const levandeKlaner = klaner.length > 0 && klaner.every(k => { const r = radAv(k); return !!r && SIM.lever(vl, r) && k.namn === r.namn; });
     // samma frö ger samma förhistoria
     const t = SIM.createState(7, Date.UTC(2026, 0, 1)), lika = JSON.stringify(t.varld!.rader) === JSON.stringify(vl.rader) && JSON.stringify(t.varld!.kronika) === JSON.stringify(vl.kronika);
+    // en by delar sig bara när den vuxit sig stor, några gånger på hundra år i en värld: frågan gäller några världar
+    const delade = antal('delad') || [1, 4, 6, 8].reduce((n, f) => n || (() => { const u = SIM.createState(f, Date.UTC(2026, 0, 1)); return (u.varld!.kronika ?? []).filter(h => h.t < u.founded && h.k === 'delad').length; })(), 0);
     return [
       [`världen började ${SIM.FORHIST.ar} år före grundandet (${Math.round((s.founded - (vl.borjan ?? s.founded)) / SIM.DAY)} år)`, vl.borjan !== undefined && Math.round((s.founded - vl.borjan) / SIM.DAY) === SIM.FORHIST.ar],
-      [`vid grundandet finns ${levande.length} byar och ${ruiner.length} ruiner, och krönikan har ${fore.length} händelser (grundad ${antal('grundad')}, delad ${antal('delad')}, gått under ${antal('gattUnder')})`, levande.length > 0 && ruiner.length > 0 && antal('delad') > 0 && antal('gattUnder') > 0],
+      [`vid grundandet finns ${levande.length} byar och ${ruiner.length} ruiner, och krönikan har ${fore.length} händelser (grundad ${antal('grundad')}, delad ${antal('delad')}, gått under ${antal('gattUnder')}; delad i någon av fem världar ${delade})`, levande.length > 0 && ruiner.length > 0 && delade > 0 && antal('gattUnder') > 0],
       [`en gammal by kan mindre än en yngre (${gamla.length} byar med ${Math.min(...levande.map(r => r.tek.length))}–${Math.max(...levande.map(r => r.tek.length))} tekniker)`, omvant],
       [`huvudbyn har förbindelse med ${klaner.length} grannbyar, alla levande byar ur raden`, levandeKlaner],
       ['samma frö ger samma förhistoria', lika],
@@ -4629,7 +4632,7 @@ SCENARIER.fangar = {
     const rovGer = arena('kuva', 1), byFly = arena('kuva', 0), skadaFly = arena('skada', 1);
     // byn med ett fängelse och seden Förlikning, och två rövare som anfaller
     const by = (fangelse: boolean) => {
-      const s = SIM.createState(6, START); klockan(s, 10); medHus(s);
+      const s = SIM.createState(1, START); klockan(s, 10); medHus(s); // en by där de som är hemma kan vinna över två rädda rövare
       for (const c of SIM.klanerOf(s)) c.inst = -60;
       s.seder.v.fejd = -1;
       if (fangelse) { const h = SIM.housesOf(s)[0]; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s); }
