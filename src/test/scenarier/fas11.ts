@@ -2294,11 +2294,13 @@ SCENARIER.reslikhet = {
     let olik = -1;
     for (let d = 1; d <= DYGN && olik < 0; d++) {
       const mal = s0.now + d * SIM.DAY;
+      // tiden som redan beställts men väntar på ett helt slag (skuld) räknas med, annars beställs den två gånger och byn hamnar förbi målet
+      const kvar = (s: SIM.State) => (mal - s.now) / SIM.SEC - (s.skuld ?? 0);
       SIM.spar.pa = true;
-      while (spel.now < mal) { SIM.spar.v = new WeakMap(); SIM.step(spel, Math.min(300, (mal - spel.now) / SIM.SEC), [] as SIM.TalkEvent[]); }
+      while (kvar(spel) > 1e-3) { SIM.spar.v = new WeakMap(); SIM.step(spel, Math.min(300, kvar(spel)), [] as SIM.TalkEvent[]); }
       SIM.spar.pa = false;
-      while (ikapp.now < mal) SIM.step(ikapp, Math.min(SIM.nastaSteg(ikapp), (mal - ikapp.now) / SIM.SEC));
-      while (lang.now < mal) SIM.step(lang, Math.min(3600, (mal - lang.now) / SIM.SEC));
+      while (kvar(ikapp) > 1e-3) SIM.step(ikapp, Math.min(SIM.nastaSteg(ikapp), kvar(ikapp)));
+      while (kvar(lang) > 1e-3) SIM.step(lang, Math.min(3600, kvar(lang)));
       sett.add(skede(spel));
       const [a, b, c] = [spel, ikapp, lang].map(hash);
       if (a !== b || a !== c) olik = d;
