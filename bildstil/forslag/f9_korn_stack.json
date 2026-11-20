@@ -1,0 +1,228 @@
+{
+ "kort": "f9_korn_stack",
+ "namn": "Korn i förrådet",
+ "slag": [],
+ "vad": "Korn, som du valde (version 1), som den ligger i förrådet: en, några (tre i en triangel) och många (sex i en pyramid), som stackarna du valde. Byggs in i steg 11.14.1 tillsammans med saken. Du sa nej till alla tre förra gången, utan kommentar, så det här är nya idéer utan förlaga.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f9_korn_stack_1",
+     "rader": [
+      "..IIII.....",
+      ".ILKLKIIII.",
+      "ILKLKKEKJJI",
+      "IKLKKJGKJKI",
+      "IKKLKJFJKJI",
+      "IJKKJJFJJKI",
+      "IJKJKJFJIJI",
+      ".IJJJIEIJI.",
+      "..IIIIIIII."
+     ]
+    },
+    {
+     "namn": "f9_korn_stack_3",
+     "rader": [
+      ".......IIII..........",
+      "......ILKLKIIII......",
+      ".....ILKLKKEKJJI.....",
+      ".....IKLKKJGKJKI.....",
+      ".....IKKLKJFJKJI.....",
+      ".....IJKKJJFJJKI.....",
+      "..IIIIJKJKJFJIJI.....",
+      ".ILKLKIJJJIEIJIKIIII.",
+      "ILKLKKEIIIIIIIIKEKJJI",
+      "IKLKKJGKJKIKLKKJGKJKI",
+      "IKKLKJFJKJIKKLKJFJKJI",
+      "IJKKJJFJJKIJKKJJFJJKI",
+      "IJKJKJFJIJIJKJKJFJIJI",
+      ".IJJJIEIJI.IJJJIEIJI.",
+      "..IIIIIIII..IIIIIIII."
+     ]
+    },
+    {
+     "namn": "f9_korn_stack_6",
+     "rader": [
+      "............IIII...............",
+      "...........ILKLKIIII...........",
+      "..........ILKLKKEKJJI..........",
+      "..........IKLKKJGKJKI..........",
+      "..........IKKLKJFJKJI..........",
+      "..........IJKKJJFJJKI..........",
+      ".......IIIIJKJKJFJIJI..........",
+      "......ILKLKIJJJIEIJIKIIII......",
+      ".....ILKLKKEIIIIIIIIKEKJJI.....",
+      ".....IKLKKJGKJKIKLKKJGKJKI.....",
+      ".....IKKLKJFJKJIKKLKJFJKJI.....",
+      ".....IJKKJJFJJKIJKKJJFJJKI.....",
+      "..IIIIJKJKJFJIJIJKJKJFJIJI.....",
+      ".ILKLKIJJJIEIJIKIJJJIEIJIKIIII.",
+      "ILKLKKEIIIIIIIIKEIIIIIIIIKEKJJI",
+      "IKLKKJGKJKIKLKKJGKJKIKLKKJGKJKI",
+      "IKKLKJFJKJIKKLKJFJKJIKKLKJFJKJI",
+      "IJKKJJFJJKIJKKJJFJJKIJKKJJFJJKI",
+      "IJKJKJFJIJIJKJKJFJIJIJKJKJFJIJI",
+      ".IJJJIEIJI.IJJJIEIJI.IJJJIEIJI.",
+      "..IIIIIIII..IIIIIIII..IIIIIIII."
+     ]
+    }
+   ],
+   "anteckning": "Kornet är den valda saken (version 1): en bunden kärve som ligger ner, axen åt vänster i senapens ljusa toner, ett band av jord i midjan och de avskurna stråna åt höger, 11 × 9 punkter, kontur i senap0 och ljuset uppe till vänster. Kärvarna staplas som timmer: varje kopia är oförändrad med hel kontur. Den övre vilar i skåran mellan de två undre, sex punkter högre, och täcker deras översida eftersom den ligger ovanpå och närmare ögat uppifrån. Undre kärvar som ligger sida vid sida delar kanten där de nuddar varandra. Pyramiden har raderna 3-2-1 och varje rad är förskjuten en halv bredd (5 punkter), så att formen blir spegelsymmetrisk, 31 × 21 punkter. Ingen behållare används, eftersom kärven ligger som den är. Granskningen: Granskat, inget behövde rättas. Varje kopia är exakt den valda kornsaken (11 × 9 punkter) med samma ljus uppe till vänster och hel kontur i senap0, så kopiorna syns isär och syns på gräset. Storleken stämmer mot kolonisten (14 × 20). Tre: två kopior nuddar varandra och delar konturkolumnen. Den tredje ligger mitt över skåran, centrerad på kolumn 10, och täcker de undre kopiornas översta tre rader, som det ska bli när den ses snett uppifrån. Sex: raderna 3-2-1, varje rad förskjuten en halv bredd (5 punkter) och med samma överlapp på tre rader. Det ger en spegelsymmetrisk pyramid på 31 × 21 punkter. Den blir lägre än de ungefärliga 30 punkterna eftersom kopiorna överlappar, men höjden följer av sakens storlek och ska inte skalas. Jag kontrollerade alla överlappande rader punkt för punkt: de främre kopiorna ligger ovanpå, de bakre syns bara där de främre är genomskinliga, och inga glapp eller felaktiga punkter finns.",
+   "ide": "Staplade på höjden: kornet ritas exakt som den valda saken (version 1), samma storlek och samma ljus uppe till vänster, och kopiorna läggs ovanpå varandra. Tre: två kopior sida vid sida på marken som nuddar varandra, och den tredje mitt ovanpå, vilande i skåran mellan dem. Sex: raderna 3-2-1 där varje rad är förskjuten en halv bredd, så att en spegelsymmetrisk pyramid omkring 32 × 30 punkter bildas. Varje kopia har hel kontur i materialets mörkaste ton så att de syns isär."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "korn_en",
+     "rader": [
+      "...IK.I...",
+      "..ILKIKJ..",
+      ".ILKLKJKI.",
+      ".IKLKJKJI.",
+      "IKLKJKJKJI",
+      ".IKJKJKJI.",
+      "..IKJKJI..",
+      "..EGFFFE..",
+      "..IKJKJI..",
+      "..IKJKJI..",
+      ".IKJKJJJI.",
+      ".IKJJKJJI.",
+      "IJKJJJJJJI",
+      ".IIIIIIII."
+     ]
+    },
+    {
+     "namn": "korn_tre",
+     "rader": [
+      "...IK.I......IK.I...",
+      "..ILKIKJ....ILKIKJ..",
+      ".ILKLKJKI..ILKLKJKI.",
+      ".IKLKJKJI..IKLKJKJI.",
+      "IKLKJKJKJIIKLKJKJKJI",
+      ".IKJKJKJIKIIKJKJKJI.",
+      "..IKJKJILKIKJKJKJI..",
+      "..EGFFILKLKJKIFFFE..",
+      "..IKJKIKLKJKJIJKJI..",
+      "..IKJIKLKJKJKJIKJI..",
+      ".IKJKJIKJKJKJIKJJJI.",
+      ".IKJJKJIKJKJIJJKJJI.",
+      "IJKJJJJEGFFFEJJJJJJI",
+      ".IIIIIIIKJKJIIIIIII.",
+      ".......IKJKJI.......",
+      "......IKJKJJJI......",
+      "......IKJJKJJI......",
+      ".....IJKJJJJJJI.....",
+      "......IIIIIIII......"
+     ]
+    },
+    {
+     "namn": "korn_sex",
+     "rader": [
+      ".............IK.I.............",
+      "............ILKIKJ............",
+      "...........ILKLKJKI...........",
+      "...........IKLKJKJI...........",
+      "..........IKLKJKJKJI..........",
+      "........IK.IKJKJKJIK.I........",
+      ".......ILKIKJKJKJILKIKJ.......",
+      "......ILKLKJKIFFILKLKJKI......",
+      "......IKLKJKJIJKIKLKJKJI......",
+      ".....IKLKJKJKJIIKLKJKJKJI.....",
+      "...IK.IKJKJKJIKJIKJKJKJIK.I...",
+      "..ILKIKJKJKJILKIKJKJKJILKIKJ..",
+      ".ILKLKJKIFFILKLKJKIFFILKLKJKI.",
+      ".IKLKJKJIJKIKLKJKJIJKIKLKJKJI.",
+      "IKLKJKJKJIIKLKJKJKJIIKLKJKJKJI",
+      ".IKJKJKJIKJIKJKJKJIKJIKJKJKJI.",
+      "..IKJKJIJJKJIKJKJIJJKJIKJKJI..",
+      "..EGFFFEJJJJEGFFFEJJJJEGFFFE..",
+      "..IKJKJIIIIIIKJKJIIIIIIKJKJI..",
+      "..IKJKJI....IKJKJI....IKJKJI..",
+      ".IKJKJJJI..IKJKJJJI..IKJKJJJI.",
+      ".IKJJKJJI..IKJJKJJI..IKJJKJJI.",
+      "IJKJJJJJJIIJKJJJJJJIIJKJJJJJJI",
+      ".IIIIIIII..IIIIIIII..IIIIIIII."
+     ]
+    }
+   ],
+   "anteckning": "Korn är här en liten bunden kärve, cirka 10 × 14 punkter. Den står upprätt på golvet och ses snett ovanifrån. Axen breder ut sig i toppen och är ljusast uppe till vänster i senap. Ett band av jord binder ihop stråna, och de avskurna stråna slutar i en kant av senap0, som också är konturen. Stackarna ligger på golvet och bygger på djup, inte höjd. Tre: två kärvar bak, 5 punkter högre upp, och en fram i mitten som skymmer deras nedre del, så att bara axen och banden syns bakom. Sex: en bak, två i mitten och tre fram, varje rad 5 punkter längre fram. Den främre raden skymmer stråna på raden bakom, och silhuetten blir låg och bred, 30 × 24 punkter. Ingen behållare används. Jag har inte sett version 1 och har därför antagit att kornet är en bunden kärve; formen kan bytas mot den valda bilden med samma uppställning. Granskningen: Rättat: korn_tre stod en halv punkt snett. Den främre kärven satt inte mitt emellan de två bakre, eftersom de bakre överlappade varandra med en kolumn i en 19 punkter bred bild. De bakre kärvarna står nu sida vid sida (x 0 och 10) och den främre i mitten (x 5), 5 punkter längre ner, i en bild på 20 × 19 punkter. Triangeln är därmed spegelsymmetrisk. Det inneslutna genomskinliga hålet mellan axen på rad 5 är fyllt med senap0, så att gräset inte syns som en mörk prick inne i högen. korn_en är oförändrad, eftersom den är den valda saken. korn_sex är oförändrad: den är symmetrisk, ligger i tre rader bakåt med 5 punkters steg och är 30 × 24, nära idéns omkring 36 × 24. Konturen är senap0, ljuset kommer uppifrån vänster med senap3 och bindslet är i jordtoner. Kärvarna är ljusare än gräset och står i rimlig storlek mot kolonisten.",
+   "ide": "Utlagda på golvet, djup i stället för höjd: kopiorna står bredvid varandra på marken, sedda snett ovanifrån, och triangeln och pyramiden bildas bakåt in i bilden i stället för uppåt. Tre: en kopia längst fram i mitten och två bakom, 4–5 punkter högre upp i bilden, vars nedre del döljs av den främre. Sex: bakersta raden en, mellersta två och främsta tre, varje rad delvis skymd av raden framför, vilket ger en låg och bred silhuett på omkring 36 × 24 punkter som läses som en hög på golvet."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_korn_stack_1",
+     "rader": [
+      "..I.II.I..",
+      ".ILKLKJKI.",
+      "ILKLKKJKJI",
+      "IKLKJKJJJI",
+      ".IKJKJJJI.",
+      "..IJKJJI..",
+      "..EGFFFE..",
+      "..IKJJJI..",
+      ".IKJKJJJI.",
+      ".IJKJJJJI.",
+      "IJKJJJJJII",
+      ".IIIIIIII."
+     ]
+    },
+    {
+     "namn": "f9_korn_stack_3",
+     "rader": [
+      "......I.II.I......",
+      ".....ILKLKJKI.....",
+      "....ILKLKKJKJI....",
+      "....IKLKJKJJJI....",
+      ".....IKJKJJJI.....",
+      "......IJKJJI......",
+      "..I.IIEIFFIEII.I..",
+      ".ILKLKJKIIKLKJKJI.",
+      "ILKLKKJKIKLKJKJJJI",
+      "IKLKJKJJIKJKJJKJJI",
+      ".IKJKJJJIIJKJJJJI.",
+      "..IJKJJIIIIJKJJI..",
+      "..EGFFFE..EGFFFE..",
+      "..IKJJJI..IJJKJI..",
+      ".IKJKJJJIIJKJJJJI.",
+      ".IJKJJJJIIJJKJJJI.",
+      "IJKJJJJJIJKJJJJJII",
+      ".IIIIIIIIIIIIIIII."
+     ]
+    },
+    {
+     "namn": "f9_korn_stack_6",
+     "rader": [
+      "..........I.II.I..........",
+      ".........ILKLKJKI.........",
+      "........ILKLKKJKJI........",
+      "........IKLKJKJJJI........",
+      ".........IKJKJJJI.........",
+      "..........IJKJJI..........",
+      "......I.IIEIFFIEII.I......",
+      ".....ILKLKJKIILKLKJKI.....",
+      "....ILKLKKJKILKLKKJKJI....",
+      "....IKLKJKJJIKLKJKJJJI....",
+      ".....IKJKJJJIIKJKJJJI.....",
+      "......IJKJJIIIIJKJJI......",
+      "..I.IIEIFFIEIIEIFFIEII.I..",
+      ".ILKLKJKIILKLKJKIIKLKJKJI.",
+      "ILKLKKJKILKLKKJKIKLKJKJJJI",
+      "IKLKJKJJIKLKJKJJIKJKJJKJJI",
+      ".IKJKJJJIIKJKJJJIIJKJJJJI.",
+      "..IJKJJIIIIJKJJIIIIJKJJI..",
+      "..EGFFFE..EGFFFE..EGFFFE..",
+      "..IKJJJI..IKJJJI..IJJKJI..",
+      ".IKJKJJJIIKJKJJJIIJKJJJJI.",
+      ".IJKJJJJIIJKJJJJIIJJKJJJI.",
+      "IJKJJJJJIJKJJJJJIJKJJJJJII",
+      ".IIIIIIIIIIIIIIIIIIIIIIII."
+     ]
+    }
+   ],
+   "anteckning": "Kornet är samma kärve som saken (version 1): ett upprätt knippe med gyllene ax upptill, ett jordfärgat band om midjan och avskurna strån nedtill, konturen i senap0 och ljuset uppifrån vänster. I förrådet står kärvarna tätt intill varandra. Varje övre kopia ritas först och skjuts så långt ner att de främre täcker dess nedre halva; av den syns bara axen och bandet. Tre: två kärvar nere som överlappar varandra 2 punkter i mitten och en centrerad bakom, 18 × 18 punkter. Sex: 3+2+1 byggda likadant, 26 × 24 punkter. Silhuetten är spegelsymmetrisk; bara kornet och den mörkare högersidan på varje kärve skiljer sidorna åt, så det mörka samlas nere till höger. Ingen behållare behövs, eftersom kärven står själv. Granskningen: Granskat mot reglerna. Storleken stämmer: en kärve är 10 × 12, tre är 18 × 18 och sex är 26 × 24. Det håller sig inom omkring 26 × 26 och ser rimligt ut bredvid kolonisten (14 × 20). Silhuetterna är spegelsymmetriska kring mittlinjen. Konturen är senap0 runt kornet och jord0 i bandet, aldrig kol0. Ljuset kommer uppifrån vänster. Kärvarna är ljusare än gräset och syns tydligt. Överlappningen följer idén: de övre kopiorna visar bara sitt huvud och bandet, och de nedre ligger tätt med 2 punkters överlapp. En rättelse: i tre- och sexstacken var alla kopior lika ljusa, så den mörkare tonen samlades inte nere till höger som idén kräver. Därför har den nedre högra kopian i båda stackarna fått en mörkare ton: färre senap3/senap2 och mer senap1 i huvudet och skaftet, och glansen har flyttats in en punkt. Formen är oförändrad och kornet är kvar, utan släta ytor eller mörka prickar. Den enskilda kärven är oförändrad.",
+   "ide": "Tät klunga med kraftig överlappning: kopiorna skjuts så nära att varje övre eller bakre kopia bara visar sin övre halva, och hela stacken får en sammanhållen, nästan rund triangelsilhuett. Tre: två nedre kopior som överlappar varandra några punkter i mitten och en övre, centrerad, som täcker deras övre kanter. Sex: tre, två och en i samma täta byggsätt, högst omkring 26 × 26 punkter, spegelsymmetrisk kring en lodrät mittlinje, där bara ljuset och kornet skiljer vänster sida från höger, och den mörkare tonen samlas nere till höger i klungan."
+  }
+ ]
+}

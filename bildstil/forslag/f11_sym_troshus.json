@@ -2,9 +2,9 @@
  "kort": "f11_sym_troshus",
  "namn": "Trons hus",
  "slag": null,
- "vad": "Steg 11.1.22: en symbol per betydelse. I Tro delade den här saken symbol med något annat (skriftrullen, folket eller gnistorna), och nu får den en egen. Symbolen i 16 punkter på panelens botten. Ja eller nej? Din kommentar förra gången: ”gör något som ser mer ut som en kyrka”",
+ "vad": "Steg 11.1.22: en symbol per betydelse. I Tro delade den här saken symbol med något annat (skriftrullen, folket eller gnistorna), och nu får den en egen. Symbolen i 16 punkter på panelens botten. Ja eller nej? Din kommentar förra gången: ”gör fler versioner av version 2”",
  "av": "API:t (claude-opus-5-5), tre idéer",
- "kommentar": "gör något som ser mer ut som en kyrka. Alla tre versionerna ska tydligt vara en kyrka sedd snett uppifrån: ett långsmalt hus med brant tak och ett torn, en spira eller ett kors på taket, som en stavkyrka av trä eller en liten kyrka av sten. Inte en hydda, ett tält eller en kon.",
+ "kommentar": "Gör tre varianter av den här stenkyrkan (Björn valde den): samma idé, men olika i form, t.ex. med torn, med absid eller med annat tak.",
  "versioner": [
   {
    "bilder": [
@@ -31,7 +31,214 @@
     }
    ],
    "anteckning": "Symbolen är en liten stenkyrka sedd snett uppifrån och ryms i 16 × 16 punkter. Kyrkskeppet går från nere till vänster upp mot höger. Vi ser den övre takytan, som får ljuset uppifrån vänster (rost2–rost3), och den nedre takytan i rost1. Takfoten och konturen är rost0. Under taket syns den främre långväggen av huggen sten i skiffer1–3, med två fönster i skiffer0, och skiffer0 är också konturen. Vid den främre, vänstra gaveln står ett fyrkantigt torn, 5 punkter brett. Det når högst upp i rutan, har ett spetsigt pyramidtak och ett litet kors i benfärg som spetsen. Tornet har en fönstergluggar och en dörr i jord0 längst ner. Ljuset faller på tornets vänstra sida och på den övre takytan. Kol0 används inte. Tornet är en tydlig lodrät form mot det låga, långa skeppet, så att symbolen läses som en kyrka och inte som en hydda. Granskningen: Ja, oförändrad. Bilden är 16 × 16 och fyller rutan som en symbol ska. Stenkyrkan ligger snett in i bilden: skeppet går från nere till vänster upp mot höger, med väggar i skiffer1–skiffer3 och skiffer0 som kontur. Sadeltaket är i rost0–rost3, med den ljusa takytan uppåt mot vänster. Det fem punkter breda tornet står vid den främre gaveln. Pyramidtaket är spegelsymmetriskt och skiljer sig bara i ljuset (ljust till vänster, mörkt till höger), och korset i ben står högst upp i rutan. Det mörka fönstret och dörren i jord0 läses som öppningar, inte som fläckar. Ljuset faller från övre vänstra hörnet, och ingen glans är vit. Rost och skiffer med mörk kontur syns tydligt på det olivgröna gräset. Silhuetten är kantig och tung, med tornet som tydlig vertikal mot det låga skeppet, som idén beskriver. Inget behövde rättas.",
-   "ide": "Liten stenkyrka som ligger snett in i bilden: ett långsmalt kyrkskepp som går från nere till vänster upp mot höger, med väggar av huggen sten i skiffer1–skiffer2 och skiffer0 som kontur, och ett brant sadeltak i rost1–rost2 där den ljusa takytan vetter uppåt mot vänster. Vid den främre gaveln står ett fyrkantigt torn, ungefär 5 punkter brett, som når högst upp i rutan, med ett spetsigt pyramidtak och ett litet kors i benfärg högst upp. Formen är kantig och tung med tornet som tydlig vertikal mot det låga skeppet."
+   "ide": "Version 2 som du valde: Liten stenkyrka som ligger snett in i bilden: ett långsmalt kyrkskepp som går från nere till vänster upp mot höger, med väggar av huggen sten i skiffer1–skiffer2 och skiffer0 som kontur, och ett brant sadeltak i rost1–rost2 där den ljusa takytan vetter uppåt mot vänster. Vid den främre gaveln står ett fyrkantigt torn, ungefär 5 punkter brett, som når högst upp i rutan, med ett spetsigt pyramidtak och ett litet kors i benfärg högst upp. Formen är kantig och tung med tornet som tydlig vertikal mot det låga skeppet."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_troshus_torn",
+     "rader": [
+      "...q............",
+      "..qpo...........",
+      "...o............",
+      "..rur...........",
+      ".rutsr..........",
+      "rutttsr.........",
+      "QTSTSRQ.........",
+      "QTQSQRQ.........",
+      "QTSSRSQrrrrrrrr.",
+      "QSTSSRQuutuutur.",
+      "QSRSSRQtsttstsr.",
+      "QTSTSRQrrrrrrrr.",
+      "QSTSRRQSTSQSSRQ.",
+      "QSFESRQTSSQSRRQ.",
+      "QTFESRQSSTSSRRQ.",
+      "QQQQQQQQQQQQQQQ."
+     ]
+    },
+    {
+     "namn": "f11_sym_troshus_absid",
+     "rader": [
+      "..q.............",
+      ".qpo............",
+      "..o.............",
+      "rrrrrrrrrr......",
+      "ruututuutr......",
+      "rtutttuturrr....",
+      "rtttuttturutr...",
+      "rsststtssrttsr..",
+      "rsrsssrssrsssr..",
+      "rrrrrrrrrrssrr..",
+      "QTSTSSTSRSrrrr..",
+      "QSTQSSQSRSSRRQ..",
+      "QTSQSRQSRSSSRQ..",
+      "QSFESSTSRRSRQ...",
+      "QTFESSSRRRRQ....",
+      "QQQQQQQQQQQ....."
+     ]
+    },
+    {
+     "namn": "f11_sym_troshus_kamgavel",
+     "rader": [
+      ".......q........",
+      "......qpo.......",
+      ".......o........",
+      "......rusr......",
+      "......QTSQ......",
+      ".QQ...QTSQ...QQ.",
+      ".QTQEEQSRQEEQSQ.",
+      "QTSQHGHGGHGHQSRQ",
+      "QTSQGHGGHGGGQSRQ",
+      "QSTQFGFGFFGFQSRQ",
+      "QTSQFFEFFEFFQRRQ",
+      "QSSQEEEEEEEEQRRQ",
+      "QTSTSQSSTSQSSRRQ",
+      "QSTSSTSFESSTSRRQ",
+      "QTSSTSSFESSSRRRQ",
+      "QQQQQQQQQQQQQQQQ"
+     ]
+    }
+   ],
+   "anteckning": "Tre varianter av Björns stenkyrka, alla 16 × 16 som symbol på panelens botten, med samma idé: väggar av skiffersten (konturen skiffer0) med ett litet benkors överst. Kyrkan står på marken och ses snett ovanifrån som husen på kartan, så taket syns ovanifrån och väggen bara som ett smalt band framtill. Ljuset kommer uppifrån vänster, därför är vänstra väggkanten och taket ljusast. 1) Torn: ett högt fyrkantigt tårn med ljudgluggar och rosttornspira till vänster, och ett lägre långhus med rosttak till höger. 2) Absid: långhuset har rosttak och ett kors på västgaveln, och i östra änden sitter en rundad absid med ett lägre halvkonformat tak. 3) Annat tak: ett brant spåntak i jord (trä i stället för tegel), trappgavlar i sten på båda sidor och en liten takryttare med kors mitt på nocken. Dörren är mörkt trä i alla tre. Ingen sittplats och inga andra saker är ritade. Granskningen: Storleken (16 × 16 punkter), vinkeln och läsbarheten håller i alla tre bilderna. Alla har skifferkontur och ljuset uppe till vänster. Tornet och absiden rättades inte. I kamgaveln var framsidan inte spegelsymmetrisk. Det högra gavelkrönet i rad 5 stod en punkt för långt in (kolumn 12–13 i stället för 13–14). Mittornet var tre punkter brett och stod därför en halv punkt snett över dörren och gavlarna. Jag flyttade det högra krönet till 13–14. Tornet är nu fyra punkter brett (kolumn 6–9), mitt över dörren, med ljus vänstersida och mörkare högersida. Huvudtakets mörka band vid tornet blev EE på båda sidor. Tornhuven blev rusr. Korset står kvar på mittlinjen, eftersom ett tre punkter brett kors inte kan centreras exakt på 16 punkter.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_troshus_a_torn",
+     "rader": [
+      "...p............",
+      "..pqp...........",
+      "...p............",
+      "..rur...........",
+      ".rutsr..........",
+      ".rrrrrrrrrrrrrr.",
+      ".QTTSQruuutttsr.",
+      ".QTSSQrututttsr.",
+      ".QSQSQruuuuuutr.",
+      ".QTQSQrtstsstsr.",
+      ".QTSTQrsssstssr.",
+      ".QSTSQrrrrrrrrr.",
+      ".QTFSQQTSRSTSRQ.",
+      ".QSFSQQSTRSSSRQ.",
+      ".QQQQQQQQQQQQQQ.",
+      "................"
+     ]
+    },
+    {
+     "namn": "f11_sym_troshus_b_absid",
+     "rader": [
+      "..p.............",
+      ".pqp............",
+      "..p.............",
+      ".rrrrrrrrrr.....",
+      ".ruuututuur.....",
+      ".ruttuttttrrr...",
+      ".ruuuuuuuurtsr..",
+      ".rtstsstssrtssr.",
+      ".rssstssssrsssr.",
+      ".rrrrrrrrrrrrrr.",
+      ".QTSTSTSSSQTSSQ.",
+      ".QSTRSFFSTQSTRQ.",
+      ".QTSRSFFSSQSSSQ.",
+      ".QSTSSFFSTQSSQ..",
+      ".QQQQQQQQQQQQ...",
+      "................"
+     ]
+    },
+    {
+     "namn": "f11_sym_troshus_c_gaveltak",
+     "rader": [
+      "........p.......",
+      ".......pqp......",
+      "........p.......",
+      ".......EGE......",
+      "......EHQGE.....",
+      ".....EHQTQGE....",
+      "....EHQTSSQGE...",
+      "...EHQTSQSSQGE..",
+      "..EHQTSSTSSSQGE.",
+      "...QTSTSSSTSSQ..",
+      "...QSTSSFSSTSQ..",
+      "...QTSSFGFSSSQ..",
+      "...QSTSFGFSTSQ..",
+      "...QTSSFFFSSSQ..",
+      "...QQQQQQQQQQQ..",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Tre varianter av Björns stenkyrka, alla 16 × 16 och med samma idé: gråblå sten med skifferkontur, ett kors i ben överst och ljuset uppe till vänster. A har ett torn till vänster med spetsigt rosttak och korset överst, samt ett långhus med åstak sett snett ovanifrån; nocken är ljusast och framsidan mörkare. B saknar torn. Där sitter korset på takets vänstra gavel, och en lägre, rundad absid med eget kägeltak sticker ut till höger. C vänder gaveln mot betraktaren och har ett brant tak av trä i jordtoner i stället för rost. Den är spegelsymmetrisk, med ett runt fönster i gaveln och en välvd dörr i mitten. Husen står på marken, så bara tak och framvägg syns, med dörr och fönster som mörka öppningar. Ingen skugga är ritad. Granskningen: Granskat mot reglerna; inget behövde rättas, versionen lämnas oförändrad. Alla tre bilderna är 16 × 16 punkter, en storlek som passar en symbol på panelens botten. Alla rader är 16 tecken och bara palettens tecken används. Konturerna följer materialets mörkaste ton: skiffer0 runt stenen, rost0 runt rosttaken och jord0 runt gaveltaket. Ljuset kommer uppifrån vänster, med ljusare toner till vänster och mörkare till höger. Korset är i ben, utan ren vit, och står mitt på tornet eller taket. c är spegelsymmetrisk kring mittkolumnen. Det gäller både gaveln, dörren och korset, och bara ljuset skiljer sidorna åt. a och b följer spelets bild av husen med rosttak, stenvägg och torn. Den avfasade högra hörnan i b läses som en rund absid och är avsiktlig. Alla tre har tydlig kontur och syns mot gräset.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_troshus_torn",
+     "rader": [
+      "...q............",
+      "..qqp...........",
+      "...p............",
+      "...r............",
+      "..rur...........",
+      ".rutsr..........",
+      ".QTSSQ.rrrrrrrr.",
+      ".QTRSQruututtssr",
+      ".QSQRQrututtstsr",
+      ".QTSSQrssssssssr",
+      ".QSRSQQTSTSTSSRQ",
+      ".QSESQQSQSTSQSRQ",
+      ".QEGEQQTQTSTQSRQ",
+      ".QEFEQQSTSRSTSRQ",
+      ".QEFEQQRSRSRSRRQ",
+      ".QQQQQQQQQQQQQQQ"
+     ]
+    },
+    {
+     "namn": "f11_sym_troshus_absid",
+     "rader": [
+      "..q.............",
+      ".qqp............",
+      "..p.............",
+      ".rrrrrrrrrr.....",
+      "rutuututtsr.....",
+      "ruututtstsr.rrr.",
+      "rututtstssrrutsr",
+      "rtststssssrutssr",
+      "rsssssssssrsssr.",
+      "QTSTSTSTSRQTSRQ.",
+      "QSEESTSQSRQSQRQ.",
+      "QTGESTSQSRQTQRQ.",
+      "QSGESTSTSRQSRRQ.",
+      "QTFESRSTRRQRSQ..",
+      "QRFERSRSRRQRQ...",
+      "QQQQQQQQQQQQ...."
+     ]
+    },
+    {
+     "namn": "f11_sym_troshus_gaveltak",
+     "rader": [
+      ".......qp.......",
+      "......qqpp......",
+      ".......qp.......",
+      "......rutr......",
+      ".....ruTSsr.....",
+      "....rutTSRsr....",
+      "...rutSTSRRsr...",
+      "..rutTSQQSRRsr..",
+      ".rutSTSQQSRSRsr.",
+      "rsQTSTSTSSRSRQsr",
+      "..QTSTSEESRSRQ..",
+      "..QSTSEGFESRRQ..",
+      "..QTSTEGFESRSQ..",
+      "..QSRSEFFESRRQ..",
+      "..QRSREFFERSRQ..",
+      "..QQQQEEEEQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Tre stenkyrkor på samma idé som Björns val: gråa stenväggar (skiffer, kontur skiffer0), rosttak (kontur rost0) och ett ljust kors i ben. Ljuset kommer uppifrån vänster, så vänster takfall och väggkant är ljusast. Alla tre ses snett ovanifrån som kartans hus: taket syns som en yta och framväggen som ett band under. Varje variant ryms i 16 × 16 punkter på panelens botten. 1) Med torn: ett fyrkantigt torn med pyramidtak och kors står vid västgaveln och har dörren, och långhuset med fönster sträcker sig åt höger. 2) Med absid: korset står på takåsen vid västra änden och dörren sitter i gaveln. Långhuset slutar till höger i en lägre, rundad absid med eget rundat tak som svänger in nedåt. 3) Med annat tak: gaveln vänd mot betraktaren och ett brant sadeltak vars två fall syns ovanifrån och sticker ut som takfötter. Ett runt fönster sitter i gavelröstet och en valvdörr i mitten. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Ingen markskugga är ritad. Granskningen: Granskat och inget rättat; versionen är oförändrad. Alla tre bilderna är 16 × 16 punkter, en symbol som ska ligga på panelens botten, och använder bara paletten. Konturerna följer materialet: skiffer0 runt stenen, rost0 runt taket och jord0 runt dörren. Ljuset faller från övre vänstra hörnet: ljus vänsterkant på taken och väggarna, mörkare åt höger. Korset är ben i två toner med p som skuggsida, utan ren vit. Gaveltaksbilden är spegelsymmetrisk i formen (kors, gavel, takfot och dörr i mitten), och bara ljuset skiljer sidorna. Tornet och absiden är asymmetriska byggnader, och där är det rätt. Rosttaket och benkorset sticker ut mot det gröna och har tydlig silhuett i liten storlek. Ingen bär något, så regeln om huvud och ansikte gäller inte. Mitt förslag är gaveltaksbilden som den tydligaste symbolen.",
+   "ide": ""
   }
  ]
 }

@@ -10,89 +10,83 @@
     {
      "namn": "f10_snokruka",
      "rader": [
-      "......SSSS......",
-      ".....SwwqwS.....",
-      "....SwwqwqqS....",
-      "....SwqwqqTS....",
-      "...rSqqqTqTSr...",
-      "...rtuuttsssr...",
-      "....rtutsssr....",
+      ".....SSSSSS.....",
+      "....SqwqqqqS....",
+      "...SqwwqqqqTS...",
+      "...SwqqqqTqTS...",
+      "...SSqqTqTTSS...",
+      "..rrrutttssrrr..",
+      "..r..rtsssr..r..",
       "..r.rtuttssr.r..",
-      ".r.rtuuttsssr.r.",
-      ".rrtuuuttssssrr.",
-      "..rKLLKKKJJJJr..",
-      "..rtuuttsssssr..",
-      "..rtuttssssssr..",
-      "..rIKKJJJJIIIr..",
-      "...rttssssssr...",
-      "....rtsssssr....",
-      ".....rssssr.....",
+      "..rrtutttsssrr..",
+      "..rtuutttssssr..",
+      "..rKLKKKKJJJIr..",
+      "..rtutttsssssr..",
+      "...rtttsssssr...",
+      "...rtsssssssr...",
+      "....rsssssrr....",
       ".....rrrrrr....."
      ]
     }
    ],
-   "anteckning": "Mellankrukan står på marken som i spelet, sedd snett uppifrån: mynningens bakre kant syns på sidorna bakom snön (rost0), och den främre läppen ligger som ett smalt lerband (rost) framför snön. Därför ser man att snön ligger i krukan och inte på den. Snön är en spegelsymmetrisk halvrund kupol, fem punkter över kanten och lite smalare än läppen. Den är i ben3/ben2 med kornet bytt punkt för punkt, ljusast uppe till vänster, med skiffer3-skugga nere till höger mot kanten och kontur i skiffer2. Krukan har rost0-kontur, ljus vänstersida, mörk högersida, två senapsband och korta öron. Formen är min tolkning av mellankrukan efter den stora krukan i bild 2, eftersom mellankrukan inte visas där. Granskningen: Granskad mot reglerna; inget behövde rättas, versionen är oförändrad. Storlek: mellankrukan står exakt som i spelet (16 × 18 punkter med snön) och är rimlig bredvid kolonisten (14 × 20). Vinkel: snett uppifrån. Mynningen syns som ett smalt lerband (rad 5) framför snön, så snön ligger i krukan och inte på den. Symmetri: snökupolen och krukan med öronen är spegelsymmetriska kring mittlinjen mellan punkt 7 och 8; bara ljuset och kornet skiljer sidorna åt. Snön: kupolen reser sig 4 rader över kanten, i ben3 och ben2 med kornet bytt punkt för punkt. Den är ljusast uppe till vänster och skuggad med skiffer3 nere till höger mot kanten, med skiffer2 som kontur. Den har ingen ren vit glans och är ljus mot gräset, så den syns tydligt. Krukan: rostkonturen och senapsbanden är orörda.",
-   "ide": "Rundad kupol: mellankrukan står exakt som i spelet, och ur öppningens ellips väller en jämn, halvrund snökupol som reser sig 4–5 punkter över kanten och är spegelsymmetrisk kring krukans mittlinje. Snön ritas i ben3 och ben2 med kornet bytt punkt för punkt, ljusast uppe till vänster och skuggad med skiffer3 nere till höger där kupolen möter krukans kant, och konturen är skiffer2. Krukans mynning syns som ett smalt band av lera framför snön, så att man ser att snön ligger i krukan och inte på den."
+   "anteckning": "Mellankrukan står på marken vid elden, ritad som spelets kruka: rostbränd lera med kontur i rost0, ljus uppe till vänster, senapsrand över magen och två små öron vid halsen. Snön är packad i krukan och står upp ur öppningen som en jämn, spegelsymmetrisk kupol, en punkt bredare än mynningen på var sida och fem punkter hög. Kupolen är ben2 med lite ben3 uppe till vänster och kornig skiffer3 nere till höger, med kontur i skiffer2. Eftersom vi ser snett uppifrån täcker kupolen hela öppningen. Av mynningen syns bara läppen som en smal lerring under snökanten. Krukan står fritt, utan något under eller bredvid. Granskningen: Inget behövde rättas, så versionen är oförändrad. Storleken stämmer: bilden är 16 × 16, själva krukan är 11 punkter hög och snökupolen står 5 punkter över mynningen. Det är rimligt bredvid kolonisten (14 × 20) och följer idén om 4–5 punkter. Vinkeln är snett uppifrån: kupolen ses som en rund kaka med ett smalt synligt lerband (rad 5) under snökanten. Siluetten är spegelsymmetrisk i både kupolen (kolumn 5–10, 4–11 och 3–12 kring mitten 7,5) och krukan med öronen. Bara ljus och korn skiljer sidorna. Ljuset kommer uppifrån vänster: ben3 sitter uppe till vänster och skiffer3-kornet nere till höger. Konturen är skiffer2 runt snön och rost0 runt leran, aldrig kol0. Den ljusa snön och den roströda krukan syns tydligt mot oliv- och barrgräset. Kupolen buktar en punkt ut över mynningen och täcker hela öppningen, så krukans form är orörd och bara innehållet är nytt. ben3-punkterna uppe till vänster (fyra stycken i en diagonal) läses som snöns ljusaste ton i kornet, inte som en stor glans. De får stå kvar eftersom idén anger att snön är ben3 och ben2. Saken bärs inte, så kravet om huvud och ansikte gäller inte.",
+   "ide": "Mjuk kupol: mellankrukan ritas exakt som den finns i spelet, och ur öppningen reser sig en jämnt rundad, spegelsymmetrisk snökupol som buktar ut någon punkt över mynningens kant och står 4–5 punkter över den. Snön är ben3 och ben2 med kornig skiffer3 nere till höger och en tunn kontur i skiffer2; glansen är en enda ben3-punkt uppe till vänster. Ovanifrån syns kupolen som en rund kaka som täcker hela öppningen, så krukans mynning syns bara som en smal ring av lera under snökanten."
   },
   {
    "bilder": [
     {
-     "namn": "f10_snokruka",
+     "namn": "f10_snokruka_mellan",
      "rader": [
-      ".......SS.......",
-      "......SwpS......",
-      "......SqTS......",
-      ".....SwqTpS.....",
-      ".....SqwpTS.....",
-      "....SwqwqTpS....",
-      "...SqwqqwTpTS...",
-      "..SwqwqwqTpTpS..",
-      ".SwqwqwqTpTpTpS.",
-      "..rtSqpqTpTSsr..",
-      "..rutttsstsssr..",
-      "...rttststssr...",
-      "..rutttststssr..",
-      ".rututttststssr.",
-      ".rKLKKJKJJJIJIr.",
-      ".rtututtstssssr.",
-      ".rtuttttststssr.",
-      "..rttttstssssr..",
-      "..rtstststsssr..",
-      "...rsststsssr...",
-      "....rrrrrrrr...."
+      "......S......",
+      ".....SwS.....",
+      "....SwwqS....",
+      "....SwqTS....",
+      "...SwqwTTS...",
+      "...SqwqTTS...",
+      "..SqwqqTTSS..",
+      "..SqqqTTTSS..",
+      "...rutttsTS..",
+      "....rtssrS...",
+      "..rtuttsssr..",
+      ".rtuuttssssr.",
+      ".rKLKKKJJJIr.",
+      ".rttttsssssr.",
+      ".rJKJJJIIIIr.",
+      "..rttsssssr..",
+      "...rtssssr...",
+      "....rrrrr...."
      ]
     }
    ],
-   "anteckning": "Mellankrukan står på marken vid elden och ses snett ovanifrån som de andra krukorna. Krukans form och färger ändras inte. Snön är skyfflad till en symmetrisk kon som står cirka 8 punkter över mynningen och smalnar till en trubbig topp, så silhuetten blir en triangel ovanpå den runda krukan. Ljuset kommer från vänster: vänster sluttning är ben3 och ben2, höger sluttning skiffer3 och ben1, konturen är skiffer2. En enda glanspunkt i ben3 sitter nära spetsen. Nederst buktar en snökrage ut över mynningens bakkant. Framför konen syns en del av mynningen med snöytan inuti, och därunder krukans rostfärgade läpp. Ingen ny behållare och ingen pall eller annat runt krukan. Granskningen: Ingen rättelse behövs, versionen lämnas oförändrad. Den är 16 × 21 punkter, en lagom mellankruka bredvid kolonisten (14 × 20). Silhuetten är spegelsymmetrisk kring mitten: snökonen går från spetsen i rad 0 till basen i rad 8 och krukan från mynningen i rad 9 till botten i rad 20. Bara ljuset skiljer sidorna åt: ben3/ben2 på vänster sluttning, skiffer3/ben1 på höger och rost3 till vänster mot rost1 till höger på krukan. Konturerna är materialens mörkaste toner (skiffer2 runt snön, rost0 runt leran), och kol0 används inte. Tonerna växlar punkt för punkt utan fläckar. Mynningens ellips syns snett uppifrån med snön innanför och den främre läppen i rost framför. Konen står ungefär 8–9 punkter över kanten med en trubbig spets och kragen buktar ut lite över kanten, som i idén. Den ljusa snön och den rostiga krukan med senapsbandet har tydlig kontur och syns väl mot det olivgröna gräset. Krukan står på marken och bärs inte, så inget går genom huvud eller ansikte.",
-   "ide": "Spetsig topp: samma mellankruka, oförändrad, men snön är skyfflad in i en kon som smalnar till en trubbig spets mitt över öppningen, omkring 7–8 punkter över kanten, så att silhuetten blir en triangel ovanpå krukans runda form. Konen är symmetrisk i formen men belyst från vänster: ben3 och ben2 på vänster sluttning, skiffer3 och ben1 på höger, konturen skiffer2 och en enda glanspunkt i ben3 nära spetsen. Nederst bildar snön en liten krage som bullar ut över mynningens bakkant, så att ellipsen syns framför och bakom konen."
+   "anteckning": "Mellankrukan står på marken vid elden, sedd snett uppifrån som de andra krukorna: rundad buk med två senapsband, smal hals och läpp. Öppningen syns inte eftersom snön fyller den och står upp som en kantig hög, åtta punkter över kanten. Högen är byggd spegelsymmetrisk, trappstegsvis bredare nedåt och lite bredare än läppen, för att formen ska bli symmetrisk. Bara ljuset skiljer sidorna: vänster sluttning och toppen i ben3 och ben2, höger sluttning i skiffer3 och skiffer2, och konturen runt om i skiffer2. Den klump som rasat ut har krympt till två punkter som hänger över läppen och halsen till höger, så att silhuetten nästan inte ändras. Krukans kontur är rost0 och ljuset kommer uppifrån vänster.",
+   "ide": "Spetsig hög som skopats med handen: på den oförändrade mellankrukan står snön som en hög, lätt sned topp, ungefär 7–8 punkter över kanten, med en tydlig spets uppe till vänster som fallit lite åt höger. På höger sida har en klump rasat ut över kanten och hänger ner en punkt eller två på krukans axel. Toppen och vänster sluttning är ben3 och ben2, höger sluttning skiffer3 och skiffer2, med en kantig kontur i skiffer2 som gör en tydlig silhuett mot gräset."
   },
   {
    "bilder": [
     {
-     "namn": "f10_snokruka",
+     "namn": "f10_snokruka_packade_block",
      "rader": [
       "......SSSS......",
       ".....SwwqqS.....",
-      "..SSSwqqqqTSSS..",
-      ".SwwqTqqqTTwqqS.",
-      ".SwqqqTqqTTqqTS.",
-      ".SqqTTTqTTTqTTS.",
-      "...SSSTqTTSSS...",
-      "...ruttqTttsr...",
-      ".....rtttsr.....",
-      "...ruuttttssr...",
-      "..ruttsttttssr..",
-      "..rLKKKKJJJJIr..",
-      "..rttttttttssr..",
-      "..rttttsttsssr..",
-      "...rttttttssr...",
-      "....rtttsssr....",
+      "..SSSSwqwqSSSS..",
+      "..SwqSTTTTSqqS..",
+      "..SqwSTTTTSqqS..",
+      "..STTSTTTTSTTS..",
+      "..ruttttttsssr..",
+      "....rutttssr....",
+      "...rutttttssr...",
+      "..ruuttttttssr..",
+      "..rKKJJJJJJJIr..",
+      "..rutstttstssr..",
+      "..rttttstssssr..",
+      "...rttttssssr...",
+      "....rssssssr....",
       ".....rrrrrr....."
      ]
     }
    ],
-   "anteckning": "Mellankrukan står upprätt på marken som i spelet. Den ses snett uppifrån, med samma rostbuk, senapsband och mörka rostkontur. Öppningen är helt dold av snö. En stor klump sitter i mitten bak och två mindre ligger symmetriskt till vänster och höger fram. De står ungefär fem punkter över kanten. Varje klump har ljus i ben3 uppe till vänster och skugga i skiffer3 där klumparna möts. Hela högen har kontur i skiffer2. Snön hänger lite ut över framkanten, och en droppe smält snö rinner ner över mynningen. Det visar att krukan är bräddfull och står vid elden. Snön är det enda kalla och ljusa i bilden, så den syns först mot den varma krukan. Granskningen: Storleken (16 × 17) stämmer mot kolonisten och mellankrukan. Vinkeln är snett uppifrån, snöhögen är spegelsymmetrisk med ljuset uppe till vänster på varje klump, och skiffer2-konturen gör att den syns på gräset. Den följer idén med en stor klump bak och två mindre fram. En sak är rättad: i krukans brädd (rad 7) satt två lösa skiffer2-punkter som såg ut som ett grått hål i kanten. Jag gjorde dem till en liten snödropp i ben2 och skiffer3. Konturen ovanför dem (rad 6) öppnades, så att droppen hänger ihop med snöhögen och syns hänga ut över framkanten. Krukans form är i övrigt orörd.",
-   "ide": "Packade klumpar: mellankrukan precis som i spelet, fylld med tre eller fyra stora runda snöklumpar som ligger tryckta mot varandra ovanpå öppningen, en stor i mitten bak och två mindre symmetriskt till vänster och höger fram, så att toppen blir knölig men ändå jämn i silhuetten. Varje klump har eget ljus uppe till vänster i ben3 och skuggas i ben2 och skiffer3 där klumparna möts, med kontur i skiffer2 runt hela snöhögen. Klumparna sticker upp omkring 5 punkter och hänger lite ut över framkanten så att det syns att krukan är bräddfull."
+   "anteckning": "Den oförändrade mellankrukan står på marken vid elden, och vi ser den snett uppifrån. Den har bred mynning, smal hals, en rund buk med senapsband, konturen i rost0 och ljuset uppifrån till vänster. I mynningen står fyra kantiga block av packad skare: ett överst i mitten, ett till vänster, ett till höger och ett litet i mitten längst ner. Blocken fyller hela öppningen, så att ingen lera syns innanför kanten, och reser sig 7 punkter över mynningen med en trappig, vinklad silhuett. Varje block har en översida sedd ovanifrån i ben3 och ben2 och en smal framsida i skiffer3, med fogar och kontur i skiffer2. Så blir snön ljusare än gräset och syns först. Krukan bärs inte här; den står bara och väntar på att snön ska smälta. Granskningen: Krukan (rad 8–17 i förra versionen: mynning, hals, buk med senapsbandet) är oförändrad, liksom bredd, symmetri och kontur. Rättat: snön stod 8 punkter över kanten, men idén säger 5–6. Den är nu 6 punkter hög, så bilden blir 16 × 16 i stället för 16 × 18. Snön är omritad till tre tydliga block. Det högre mittblocket har sin översida i ben3/ben2 och en framsida i skiffer3 på 3 punkter. Sidoblocken har översidor sedda ovanifrån och en smal framsida i skiffer3, med fogar i skiffer2 mellan blocken. Det vänstra blocket har den ljusaste översidan (w) och det högra en mörkare (q), så ljuset kommer uppifrån vänster. Silhuetten är trappig, och blocken fyller hela mynningen så att ingen lera syns innanför kanten. Konturen är snöns mörkaste ton (skiffer2), och ingen ren vit glans är använd.",
+   "ide": "Packade snöklumpar: i den oförändrade mellankrukans öppning står tre eller fyra kantiga block av hårdpackad skare, staplade så att de sticker upp 5–6 punkter över kanten med raka brutna kanter i stället för en rund kulle. Varje block har en ljus översida i ben3 och ben2 (sedd ovanifrån) och en smal mörkare framsida i skiffer3 med fogar i skiffer2 mellan blocken, så att silhuetten blir trappig och vinklad. Blocken fyller hela mynningen så att ingen lera syns innanför kanten."
   }
  ]
 }

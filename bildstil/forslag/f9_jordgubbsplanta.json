@@ -2,89 +2,216 @@
  "kort": "f9_jordgubbsplanta",
  "namn": "Jordgubbsplantan",
  "slag": null,
- "vad": "Steg 9.7.9: jordgubbsplantan är låg med tandade blad och röda bär, och sprider utlöpare. Här plantan på en ruta av fältet. Din kommentar förra gången: ”gör om utan förlaga”",
+ "vad": "Steg 9.7.9: jordgubbsplantan är låg med tandade blad och röda bär, och sprider utlöpare. Här plantan på en ruta av fältet. Din kommentar förra gången: ”gör dem mer röda”",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Gör jordgubbarna mer röda.",
  "versioner": [
   {
    "bilder": [
     {
-     "namn": "f9_jordgubbsplanta",
+     "namn": "jordgubbsplanta_1",
      "rader": [
-      "GGFGGGFGGGGFGGGF",
-      "FGFFGFFFGFFFFGFF",
+      "GFGGFGHFGGFGFGGF",
+      "FGFFGFFGFFGFFGFF",
+      "FFEFFFEFFFFEFFFE",
+      "EEEEEEMEEMEEEEEE",
+      "GFGGFMPMMPMGFGGF",
+      "FGFFMPPOPPOMFGHF",
+      "FFEMPOOMPOONMFEF",
+      "EEEMPOMOMONNMEEE",
+      "GFHGMONOMONMFGGF",
+      "FGFFGMMNNMMHFGFF",
+      "FEFFttFMNFttFFEF",
+      "EEEEtsEENEtsEEEE",
+      "GFGGFrGFGHFrFGGF",
+      "FGFFGHFGFFGFFGFF",
       "FFEFFFEFFFFEFFEF",
-      "EEEEUEUUUUEUEEEE",
-      "GFGUPUPPPOUOUGFG",
-      "GFUPPPPWWOOOOUFF",
-      "FEUPPOWWWWOOOUFE",
-      "EEUPOOWWWWWOOUEE",
-      "GGFUPOOWWOOWUGGG",
-      "FGFFUOUOOUOUFFGF",
-      "FFFutUFUUFUutFFF",
-      "EEEtrEEutEEtrEEE",
-      "GGFGGGGtrGGGGFGG",
-      "FGFFFFGFFFGFFFFG",
-      "FFEFFFEFFFFFEFFF",
-      "EEEEEEFEEEEEEEEE"
+      "EEEEEEEEEEEEEEEE"
+     ]
+    },
+    {
+     "namn": "jordgubbsplanta_2",
+     "rader": [
+      "GFGGFGHFGGFGFGGF",
+      "FGFFGMFGMFGFFGFF",
+      "FFEFMPMMPMFMFFFE",
+      "EEEMPPOPPMMPMEEE",
+      "GFMPPOOMPOPPOMGF",
+      "FGMPOOMOPOOONMHF",
+      "FFMPOMNOMOONMFEF",
+      "EEEMONNOMNNMEEEE",
+      "GFttFMNNNMFttGGF",
+      "FGtsGttGNFFtsGFF",
+      "FEFrFtsFFNNNMPMF",
+      "EEEEEErEEEEEMOOM",
+      "GFGGFGGFGHFGFMMF",
+      "FGFFGHFGFFGFFGFF",
+      "FFEFFFEFFFFEFFEF",
+      "EEEEEEEEEEEEEEEE"
+     ]
+    },
+    {
+     "namn": "jordgubbsplanta_3",
+     "rader": [
+      "GFGGMGHMGGMGFGGF",
+      "FGFMPMMPMMPMFGFF",
+      "FFMPPOPPOMPPMFFE",
+      "EMPPOOMPOOPOOMEE",
+      "GMPOOMOPOMOONMGF",
+      "FGMOMNOMONMNMGHF",
+      "FttFMNONNONMFttF",
+      "EtsEMttNNttMEtsE",
+      "GFrGMtsNNtsMFGrF",
+      "FGFFttrGNFrHttFF",
+      "FEFFtsFNNFEFtsEF",
+      "ENNNErEEEEEEErNN",
+      "MPMGFGGFGHFGFMPM",
+      "MOMFGHFGFFGFFMOM",
+      "FMEFFFEFFFFEFFMF",
+      "EEEEEEEEEEEEEEEE"
      ]
     }
    ],
-   "anteckning": "Plantan står på en ruta av åkern och ses snett ovanifrån, så tuvan syns som en rund rosett. Rutan är fårad jord med vågräta fåror: jord0 i fårornas botten, jord1 och jord2 på åsarna. Mitt på ligger en tät tuva på 12 × 8 punkter. Den består av tredelade blad med tandad kant (hacken i konturen upptill och nertill) i oliv3 och oliv2, med barr2 inåt mot mitten och nere till höger och kontur i barr0. Bladen ligger platt, så ingen stjälk syns. Bären hänger ut vid framkanten, där de syns ovanifrån. De är tre bär på 2 × 2 punkter i rost2 med rost0 nertill och en glanspunkt i rost3 uppe till vänster. Bären är det enda mättade i bilden, eftersom det är dem man ska se. Formen är spegelsymmetrisk kring rutans mitt, och bara ljuset skiljer sidorna åt. Utlöparna är inte ritade, för den här idén är den runda rosetten. Granskningen: Rättat: tuvan var osymmetrisk till formen och hade mörka barr0-fläckar mitt i bladen (rad 7). Jag har ritat om den som en spegelsymmetrisk rosett på 12 × 8 punkter (kolumn 2–13, rad 3–10). Den har tandad kant upptill och nertill och skarvar i barr0 mellan bladen. Ytan är oliv3 till vänster och oliv2 till höger, med barr2 inåt mot mitten och inga mörka prickar inuti. De tre bären (2 × 2, rost2/rost0 med en glanspunkt i rost3 uppe till vänster) sitter nu symmetriskt vid tuvans framkant: ett på var sida och ett i mitten, ett steg lägre. Jorden har jämna vågräta fåror med jord0 i varje fjärde rad och jord1/jord2 på åsarna. Storleken (en ruta), vinkeln ovanifrån och paletten var redan rätt.",
-   "ide": "Rund rosett mitt på rutan: rutan är fårad jord med vågräta fåror (jord0 i botten, jord1 och jord2 på åsarna), och mitt på står en låg, tät, nästan rund tuva som är omkring 11 × 8 punkter. Tuvan består av fyra eller fem tredelade blad sedda ovanifrån med tandad kant, i oliv2/oliv3 med barr2 inåt och kontur i barr0, ljusast uppe till vänster. Vid tuvans framkant sticker tre små bär på 2 × 2 punkter ut, i rost2 med rost0 nertill och en enda glanspunkt i rost3. Silhuetten är symmetrisk till formen, och bara ljuset skiljer sidorna åt."
+   "anteckning": "Plantan står på en ruta av åkern, 16 × 16 punkter med fårad jord i jord0–jord3, sedd snett ovanifrån som de andra plantorna. Den är låg: en rosett av tandade, tredelade blad i oliv med oliv0 som kontur. Ljuset kommer uppifrån vänster. Bären hänger ut från rosetten mot jorden. Jag har behållit de tre stegen från kortet: en ung planta, en mellanstor med en utlöpare och en småplanta, och en mogen med utlöpare åt båda hållen. Enligt kommentaren är bären nu tydligt röda: de är ritade i rost2 och rost1 med rost0 som skugga nertill och inget av det orange rost3. De är också fler och lite större, så att de är det man ser först på åkern. Granskningen: Granskat och lämnat oförändrat. Storleken stämmer: plantan står på en ruta av åkern (16 × 16) med fårad jord, låg och tydligt mindre än kolonisten. Vinkeln är snett uppifrån: bladrosetten syns ovanifrån och bären hänger fram mot betraktaren på jorden. Det finns ingen platt sidovy och ingen ritad markskugga. Ljuset faller från övre vänstra hörnet: oliv3 ligger uppe och till vänster på bladen, oliv1 och oliv0 nere och till höger. Bären har rost2 uppe till vänster, rost1 till höger och rost0 i spetsen. Konturen är materialets mörkaste ton, oliv0 runt bladen och rost0 i bärspetsen, och kol används inte. Bladkanten är hackig och läses som tandade blad. Bären är det mättade i bilden, eftersom de är maten och det som går att ta. Utlöparna (oliv1) med små dotterplantor syns i version 2 och 3, så idén följs. Plantan är ljusare och har kontur mot den mörka jorden, så den syns. Ingen behållare, sittplats eller bärning ingår, och spegelsymmetri krävs inte för en växt. Alla rader är 16 tecken och bara palettens tecken används.",
+   "ide": ""
   },
   {
    "bilder": [
     {
-     "namn": "f9_jordgubbsplanta",
+     "namn": "jordgubbsplanta_version1",
      "rader": [
-      "GHGGHGGGHGGGHGGG",
-      "GGMOMGMOMFGGGGFG",
-      "FMPOOMPPOMFGFFFF",
-      "EMOPONOONMFFEFFE",
-      "GMNOMOPONMGHGGHG",
-      "GFMNNONNMFGGGGGG",
-      "FGFMNsNMsFFFGFFF",
-      "EFENFENFEsEFFEFE",
-      "HGutHGutGHNGGHGG",
-      "GGtrGGtrGGsFGGGG",
-      "FFFGFFFFGFFsFMPM",
-      "FEFFEFFEFFENMOOM",
-      "GGHGGGHGGGGHsMNM",
-      "GGGGFGGGHMPMGMPM",
-      "FGFFFFGFFMOMFMOM",
-      "EFFEFEFFEFMFEFME"
+      "GHGGHGGGHGGHGGGF",
+      "GFGMPMGMPMGFGGFF",
+      "FFMPPOMPPOPMFFFE",
+      "EMPPOPOOPOONOMEE",
+      "GMPOPOOPONONNOMF",
+      "MPOPOONOONONNNMF",
+      "FMOONONONNONNMFE",
+      "EMNMNNMNMNNMNMOE",
+      "GONMGHGGHGGHGGNF",
+      "GuttsGFNONGFGGNF",
+      "FtLtrGFuttsGMPPM",
+      "EEsrEEEtLtsEMONM",
+      "GHGGHGGGsrGHGMNF",
+      "GFGFGGFGGFGFGGFF",
+      "FFGFFGFFGFFGFFFE",
+      "EEEEEEEEEEEEEEEE"
+     ]
+    },
+    {
+     "namn": "jordgubbsplanta_version2",
+     "rader": [
+      "GHGGHGGGHGGHGGGF",
+      "GFMPMPMGGFGFGGFF",
+      "FMPPOPOMGFFGFFFE",
+      "EMPOPONMEMPMPMEE",
+      "GMOPONNMGMPOPOMF",
+      "GFMNONMGMPOONNMF",
+      "FFGMNMFFGMONNMFE",
+      "EEONMEEEEEMNMNOO",
+      "GHuttsGGGNONGGGF",
+      "GFtLtrFGGuttsGFF",
+      "FFGsrGFFGtLtsFFE",
+      "EEEEEEEEEEsrEEEE",
+      "GHGGHGGGHGGHGGGF",
+      "GFGFGGFGGFGFGGFF",
+      "FFGFFGFFGFFGFFFE",
+      "EEEEEEEEEEEEEEEE"
+     ]
+    },
+    {
+     "namn": "jordgubbsplanta_version3",
+     "rader": [
+      "GHGGHGGGHGGHGGGF",
+      "GFGFGVPVGVPVGGFF",
+      "FFGVPXPVPXPXVFFE",
+      "EEVPXPXXPXXWXVEE",
+      "GVPXPXXPXWXWWXVF",
+      "GVXPXXWXXWXWWWVF",
+      "FqVXXWXWXWWWVVFE",
+      "qLqVWVEVWVWNXNEE",
+      "GqGGNXNGHGGuttsF",
+      "GFGFuttsGFGtLtrF",
+      "FFGFtLtrGFFGsrFE",
+      "EEEEEsrEEEEEEEEE",
+      "GHGGHGGGHGGHGGGF",
+      "GFGFGGFGGFGFGGFF",
+      "FFGFFGFFGFFGFFFE",
+      "EEEEEEEEEEEEEEEE"
      ]
     }
    ],
-   "anteckning": "Plantan står på en ruta av åkern och ses snett ovanifrån, så rutan är helt fylld med fårad jord. Fårorna går vågrätt med en ljus kam (jord2/jord3) och en mörk botten (jord0/jord1). Moderplantan är en bladtuva på 9 × 6 punkter i det övre vänstra hörnet. Den har tandade blad i oliv2 och oliv3, kontur i oliv0 och en rost1-krona i mitten. Två röda bär hänger på korta oliv1-stjälkar ner på jorden framför tuvan; de är de enda mättade punkterna i bilden. Från kronan går en utlöpare på en punkt snett ner över fårorna, i rost1 med inslag av oliv1. Den slutar vid en liten dotterplanta i det nedre högra hörnet, som har tre små blad runt en egen krona. Ljuset kommer uppifrån vänster, så glansen ligger på bladens övre vänstra delar. Granskningen: Granskad mot reglerna: storleken (en ruta, 16 × 16, med låg planta) stämmer mot kolonisten, vinkeln är snett ovanifrån med fårad jord i jämna band, ljuset kommer uppifrån vänster (oliv3 överst på bladen, oliv1 nere till höger) och bladen har oliv0 som kontur. Bären (rost) är det starka, som de ska vara. Moderplantan, utlöparen och de två bären följer idén. En sak rättades: dotterplantans tredje blad var avklippt av rutans högra kant och såg ut som en halv fläck. Jag flyttade det en punkt in (kolumn 13–15) och det nedre vänstra bladet en punkt åt vänster (kolumn 9–11). Nu har dotterplantan tre hela, små tredelade blad kring sin rot och rör inte grannrutan. Resten är oförändrat.",
-   "ide": "Moderplanta med utlöpare: en mindre bladtuva på omkring 8 × 6 punkter står i rutans övre vänstra del på fårad jord. Från den löper en tunn, böjd utlöpare på en punkt (rost1 med inslag av oliv1) snett ner över en fåra till en liten dotterplanta i nedre högra hörnet, som bara har två eller tre små tredelade blad. Två röda bär hänger på korta stjälkar ner på jorden framför moderplantan. Silhuetten blir platt, bred och diagonal, så att spridningen syns direkt."
+   "anteckning": "Plantan står mitt på en egen ruta av åkern: 16 × 16 punkter fårad jord med ljusa åsar och mörka fåror i jord, och en mörkare framkant längst ner. Bladen sitter samlade i en låg ruska i rutans övre del. Bären hänger under bladen ner mot jorden, och utlöparna kryper ut längs fåran. De tre bilderna är kortets tre versioner, med samma bladformer som förut: den runda olivruskan, de hjärtformade treblanden med utlöpare och den taggiga mörka barrgröna. Ändringen gäller bara bären, enligt Björns kommentar. De är nu röda i rost1 med rost0 i skuggan nere till höger. Rost2 finns kvar bara som en punkts glans uppe till vänster, så bären är röda och inte orange. Under varje bär sitter en spets och ovanför en liten grön foderkrans, så att bären syns mot den bruna jorden. Granskningen: Rättat: 1) Bären var rostfärgade trianglar som hängde rakt under bladen i rad och såg ut som morötter. De är nu runda, hjärtformade bär (4 punkter breda) med grön foderkrans, glans uppe till vänster (rost3), ett gult frö (senap3) och mörk spets nere till höger. De ligger bredvid bladrosetten på jorden, i olika höjd. 2) Bladen har tandad kant med en tagg i varje blad, ljusast uppe till vänster och oliv0 eller barr1 som kontur. 3) Utlöparen syns nu. I version 1 går en stängel ner till en liten dotterplanta. I version 2 sitter två rosetter ihop och en utlöpare går ut mot kanten, så att den fortsätter på grannrutan. 4) Version 3 hade blad i barr0–barr2, som var mörkare än jorden och inte syntes. Bladen är nu ljusare (barr3 och oliv3), och en vit-gul blomma visar att plantan blommar. 5) Fårorna är desamma i alla tre versionerna, med en mörk fåra var fjärde rad. Storleken (en ruta, låg planta) och vinkeln ovanifrån var redan rätt.",
+   "ide": ""
   },
   {
    "bilder": [
     {
-     "namn": "f9_jordgubbsplanta",
+     "namn": "jordgubbsplanta_steg1",
      "rader": [
-      "GGGHGGUGUGUGGGGG",
-      "GFGGGUPXUXWUGFGG",
-      "FFEFFUXXWWVUFFEF",
-      "FGFFFGUXWVUFFFGF",
-      "GGGUGUGUWUHUGUGG",
-      "GFUPXWUGWFUXWVUG",
-      "FFUXWVUFWFUWVVUF",
-      "FGFUWUFFWFGUVUGF",
-      "GGGHGVGGWGHVGGGG",
-      "GFGGGFVGWFVGGFGG",
-      "FFEFFFUWXVUFFFEF",
-      "FGFFFGOUVUOFFFGF",
-      "GGGOOOGGGGHOOOGG",
-      "GFutsOGGGFGGutsG",
-      "FFtsrutFEFFFtsrF",
-      "FGFrFsrFFFGFFrGF"
+      "FGFFGFGFFGFFGFGF",
+      "GFGFFGFGFGFGFFGF",
+      "FFGFGFFGFFGFGFFG",
+      "EFEEFEEEFEEFEEEF",
+      "FGFFGFMFMMFFGFGF",
+      "GFGFFMPMPOMGFFGF",
+      "FFGFMPOPOPOMGFFG",
+      "EFEEFMOPNONMEEEF",
+      "FGFFMNOMNONMGFGF",
+      "GFGFFMNNMNMGFFGF",
+      "FFGFGFMGNMGFGFFG",
+      "EFEEFEEEFEEFEEEF",
+      "FGFFGFGFFGFFGFGF",
+      "GFGFFGFGFGFGFFGF",
+      "FFGFGFFGFFGFGFFG",
+      "EFEEFEEEFEEFEEEF"
+     ]
+    },
+    {
+     "namn": "jordgubbsplanta_steg2",
+     "rader": [
+      "FGFFGFGFFGFFGFGF",
+      "GFGFFGFGFGFGFFGF",
+      "FFGFGFFGFFGFGFFG",
+      "EFEEFMEMFMMFEEEF",
+      "FGFFMPMPMPOMGFGF",
+      "GFGMPOqOPOPOMFGF",
+      "FFGFMqKqNOPNMFFG",
+      "EFEMPOqONqONMEEF",
+      "FGFFMNOMqKqNMFGF",
+      "GFGMNNMNNqNMFFGF",
+      "FFGFMFMNMNMFGFFG",
+      "EFEEFEEEFEEFEEEF",
+      "FGFFGFGFFGFFGFGF",
+      "GFGFFGFGFGFGFFGF",
+      "FFGFGFFGFFGFGFFG",
+      "EFEEFEEEFEEFEEEF"
+     ]
+    },
+    {
+     "namn": "jordgubbsplanta_steg3",
+     "rader": [
+      "FGFFGFGFFGFFGFGF",
+      "GFGFFGFGFGFGFFGF",
+      "FFGFMFMMFMGMGFFG",
+      "EFEMPMPOMPMOMEEF",
+      "FGMPOPOPOPOPOMGF",
+      "GFGMPOPOMPONOMGF",
+      "FFMPOPNOMOPNNMFG",
+      "EFEMONOMNONONMEF",
+      "FGMNONMNONMNMFGF",
+      "GFGMNMNNMNNMMFGF",
+      "FFGtsMFutMGMGNFG",
+      "EFEsrEEsrEEtsNEF",
+      "FGFFGFGFFGFsrNPO",
+      "GFGFFGFGFGFGFFOM",
+      "FFGFGFFGFFGFGFFG",
+      "EFEEFEEEFEEFEEEF"
      ]
     }
    ],
-   "anteckning": "Plantan står mitt på en åkerruta (16 × 16) med vågräta fåror i jord1 och jord2. Tuvans fot sitter strax under mitten. Därifrån strålar tre bladstjälkar upp och ut mot bakkanten i en halvcirkel: en rakt upp och en åt varje sida. I toppen av varje stjälk sitter tre tandade småblad, sedda förkortade snett ovanifrån, med oliv3 och barr3 uppe till vänster, barr1 nere till höger och kontur i barr0. Två tunna bärstjälkar i oliv2 böjer sig framåt och ner från foten. De har vardera två röda bär (rost3 till rost1 med spets i rost0) som ligger på jorden framför plantan. Bären är det enda mättade i bilden, eftersom de går att ta. Fårorna syns runt foten och mellan bladen. Granskningen: Rättat: bären var oregelbundna fläckar med rost0 som kontur på fel sida (vänster) och en lös rost0-prick i fåran. Nu har vänster klase ett stort jordgubbsformat bär (rost3-glans uppe till vänster, rost0-kontur nere till höger och en spets nedåt) och ett litet bär under stjälken. Höger klase har ett lika stort bär. Bärstjälkarnas foder i oliv2 sitter ovanpå bären, och den lösa stjälkpunkten till höger är borttagen. Bladsolfjädern, stjälken, fårorna, storleken (en ruta, 16 × 16) och vinkeln var redan rätt och är oförändrade.",
-   "ide": "Solfjäder med bärbågar: plantan är högre än bred. Bladen sitter på stjälkar som strålar upp och ut mot bakkanten i en halvcirkel och ses förkortade, med tre tandade småblad i toppen av varje stjälk (barr2/X/oliv3, kontur barr0). Från tuvans fot böjer sig två tunna bärstjälkar framåt och ner, så att små klasar med ett eller två röda bär (rost0–rost3) ligger på jorden framför plantan. Under alltihop syns de vågräta fårorna i jord1 och jord2 tydligt runt foten."
+   "anteckning": "Plantan står på en ruta av åkern (16 × 16, fårad jord i jord-tonerna med mörkare fåror), sedd snett uppifrån: en låg rosett av tandade blad i oliv med kontur i oliv0 och ljuset uppe till vänster. Bären hänger under bladen ute på kanten, där man ser dem och kan plocka dem. Efter Björns kommentar är bären nu tydligt röda: rost1 som kropp, rost0 som kontur nedtill till höger och en enda glanspunkt i rost2 uppe till vänster, i stället för de orange tonerna. Resten är som förut: tre stadier, från en liten planta med två bär, via en större planta med en första utlöpare, till den mogna plantan med fler bär och en utlöpare med en ny liten bladrosett mot rutans kant. Granskningen: Rättat: 1) Bladen var släta klumpar; nu har kanten tandade hack och bladen är delade i tre småblad med en mörk mittnerv, ljusast uppe till vänster och mörkast nere till höger. 2) Den unga plantan i steg 1 hade mogna bär, vilket inte är logiskt. Nu är den liten och utan bär. Steg 2 blommar, med blomblad i ben2 (aldrig ren vit) och mitt i senap. Först steg 3 har mogna röda bär i rost, eftersom de mättade tonerna sparas till maten. Ett av bären har en glanspunkt. 3) Steg 3 hade ett lösryckt bär och en utlöpare utan fäste. Nu går utlöparen från plantans kant till en liten dotterplanta vid högra kanten, så att den kan fortsätta in på nästa ruta. 4) Jordens fåror i rad 14 i steg 3 var förskjutna. Nu har alla tre stegen samma fårade åkerruta (16 × 16), så rutorna passar ihop på åkern. Storlek, vinkel snett uppifrån och oliv-tonerna med kontur i oliv0 är behållna. Plantan är låg och syns tydligt mot den mörka jorden.",
+   "ide": ""
   }
  ]
 }

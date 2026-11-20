@@ -2,78 +2,79 @@
  "kort": "f10_bivax",
  "namn": "Bivaxet",
  "slag": null,
- "vad": "Steg 10.10.20: bivaxet skärs ur kupan när honungen skattas, varannan kaka ger ett. Det blir ljus och byts. En liten sak Din kommentar förra gången: ”gör tre nya versioner utan förlaga”",
+ "vad": "Steg 10.10.20: bivaxet skärs ur kupan när honungen skattas, varannan kaka ger ett. Det blir ljus och byts. En liten sak Din kommentar förra gången: ”gör tre nya utan förlaga. Gör en bivaxkaka där man kan se det typiska mönstret tydligt.”",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "Gör tre nya utan förlaga. Gör en bivaxkaka där man tydligt ser det typiska mönstret av sexkantiga celler.",
  "versioner": [
   {
    "bilder": [
     {
      "namn": "f10_bivax",
      "rader": [
-      "....IIIIII....",
-      "..IILLLKKKII..",
-      ".ILLwLKKKKKKI.",
-      "IKLLKKKKKJKKKI",
-      "IKLKKKKKJKKKKI",
-      "IKKKKKJJKKKKJI",
-      "IJKKKKKKKKKJJI",
-      "IJJKKKKKKKJJJI",
-      "IJJJJJJJJJJJII",
-      ".IJJJJJJJJJII.",
-      "..IIIIIIIIII.."
-     ]
-    }
-   ],
-   "anteckning": "Vaxkakan ligger platt på marken som en låg, rund kaka som smälts och stelnat. Snett ovanifrån syns mest ovansidan, en liggande oval på omkring 12 × 7 punkter i senap2 och senap3, och framför den ett smalt band på 2 punkter i senap1 som är kakans framkant. Konturen i senap0 går runt hela kakan och formen är spegelsymmetrisk. Ljuset kommer uppifrån vänster: där ligger senap3 och en enda glanspunkt i ben3, medan senap1 och kanten mörknar nere till höger. En grund spricka i senap1 löper snett över ovansidan, så att kakan läses som vax och inte som en ost eller en limpa. Den ligger fritt som en enda sak i förrådet, utan behållare, i liten storlek mot rutan (14 × 11 punkter). Granskningen: Rättat: översidan slutade i en rak vågrät kant mot framkanten, så kakan läste som en klump eller limpa. Nu buktar ovalens nederkant: senap1 når upp på sidorna (rad 6–7) medan mitten går ner till rad 7. Framkanten blir då ett krökt band, 2 punkter i mitten och lite högre på sidorna, som på en låg cylinder sedd snett ovanifrån. Sprickan är flyttad till en kort, grund diagonal i senap1 från höger mot mitten (4 punkter), utan mörka fläckar. Det ljusaste ligger uppe till vänster i senap3, med en enda glanspunkt i ben3, och det mörkaste nere till höger. Konturen är senap0 runt hela. Silhuetten är spegelsymmetrisk, och storlek och vinkel är oförändrade (14 × 11, ovansidan omkring 12 × 7 enligt idén). Bilden syns väl på gräset.",
-   "ide": "En rund, platt vaxkaka som smälts och fått stelna, sedd snett ovanifrån som en låg ost: ovansidan är en liggande oval på omkring 12 × 7 punkter i senap2 och senap3 med korn, och framkanten är ett smalt band på 2 punkter i senap1 med kontur i senap0 runt hela. Formen är spegelsymmetrisk och bara ljuset skiljer sidorna: senap3 och en enda glanspunkt i ben3 uppe till vänster, och senap1 nere till höger. En svag, grund spricka i senap1 över ovansidan gör att den inte läses som en limpa eller en ost."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f10_bivax",
-     "rader": [
-      "..IIIIIIII..",
-      ".IqLqLLLKLI.",
-      "IqJLLqJLLKKI",
-      "ILqLLLqLKLKI",
-      "IqLLJLLLJLKI",
-      "ILLKLLKLKKKI",
-      "IJKJJKJJKJJI",
-      "IJKJJKJJKJII",
-      "IJJJJJJJJJII",
-      ".IIIIIIIIII."
-     ]
-    }
-   ],
-   "anteckning": "Vaxkakan ligger platt på marken som en sak i förrådet, en enda utskuren bit utan behållare. Ovansidan ses snett uppifrån och tar ungefär hälften av höjden: ljusa cellväggar i senap3 och ben2 med små öppningar i senap1, förskjutna rad för rad så att de läses som sexkanter. Mot höger och nedåt blir väggarna senap2 eftersom ljuset kommer uppifrån vänster. Framkanten är ett band på 3 punkter i senap1 med lodräta streck i senap0, där snittet visar cellväggarna. Konturen är senap0 runt om. Höger bakhörn trappar ner ojämnt eftersom biten är skuren för hand och inte är symmetrisk. Granskningen: Storleken (12 × 10) och vinkeln behölls: ovansidan ses snett uppifrån och framkanten är ett band på 3 punkter. Bilden syns tydligt på gräset och behöver ingen symmetri, eftersom kakan är handskuren. Rättat: 1) Cellmönstret låg i ett rakt rutnät med många q och läste som ost. Nu ligger öppningarna i senap1 glest och förskjutet rad för rad (kolumn 2 och 6, sedan 4 och 8), så att det läses som sexkantiga celler. Väggarna är ljusa i senap3 och ben2. 2) Ljuset kommer nu från övre vänstra hörnet: q och L ligger uppe till vänster och senap2 tar över mot höger och nedåt. q nere till höger är borttaget. 3) Framkanten hade cellväggarna i senap0, samma ton som konturen, och de blev mörka fläckar. Väggarna är nu korta lodräta streck i senap2 på senap1. Den högra änden mörknar till senap0 som sida i skugga, och bandets nedre rad är jämn senap1 utan ensamma prickar. 4) Snittkanten är ojämn: den sneda kanten uppe till vänster och det snedskurna hörnet uppe till höger gör kakan handskuren utan att den blir en rund limpa. Konturen är senap0 runt om.",
-   "ide": "En kantig bit utskuren vaxkaka direkt ur kupan, ungefär 11 × 8 punkter, som en tjock fyrkantig skiva med lite ojämna snittkanter, inte symmetrisk eftersom den skurits för hand. Ovansidan ses snett uppifrån och visar ett glest mönster av sexkantiga celler, där cellernas väggar är ljusa i senap3 och ben2 och öppningarna är små prickar i senap1. Framkanten är ett band på 3 punkter i senap1 och senap0 där snittet visar cellernas lodräta väggar som korta streck, och konturen är senap0 runt om."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f10_bivax",
-     "rader": [
       "................",
-      "................",
-      "................",
-      "................",
-      "......IIII......",
-      ".....ILqLKI.....",
-      "....ILLJLKKI....",
-      "....ILLLJKKI....",
-      "...ILLKLKJKJI...",
-      "...ILKLKKKJJI...",
-      "...IKLKKKJKJI...",
-      "...IKKKKJKJJI...",
-      "...IJKKKJJJJI...",
-      "...IJJKJJJJJI...",
-      "....IIIIIIII....",
+      "..IIIIIIIIIIII..",
+      "..ILLLLLLKLKKI..",
+      "..IJLwJJLJJJKI..",
+      "..IJLJJJLJJJKI..",
+      "..ILLLLLKKKKKI..",
+      "..IJJJLJJJKJJI..",
+      "..IJJJLJJJKJJI..",
+      "..ILLLLKKKKKKI..",
+      "..IJLJJJKJJJKI..",
+      "..IJLJJJKJJJKI..",
+      "..ILKKKKKKKKKI..",
+      "...IJJKJJJKJI...",
+      "....IJKJJJKI....",
+      ".....IIIIII.....",
       "................"
      ]
     }
    ],
-   "anteckning": "Vaxklumpen är en enda sak i förrådet och ligger inte i någon behållare. Den står fritt på sin platta undersida och ses snett uppifrån som kartan. Formen är en spegelsymmetrisk äggform, 10 punkter bred och 11 hög med konturen, centrerad nertill i en ruta på 16 × 16. Ljuset kommer uppifrån vänster: senap3 och en glanspunkt i ben2 uppe till vänster, senap2 över mitten och senap1 nere till höger. Konturen är senap0. Två grunda veck i senap1 överst visar att klumpen är knådad för hand och färdig att rullas till ljus. Skuggan på marken lägger spelet till. Granskningen: Granskat och oförändrat. Storleken är rimlig för en liten sak: 10 × 11 punkter, något större än idéns 8 × 10 men tydligt mindre än kolonisten (14 × 20). Vinkeln fungerar: klumpen är rund och står på en plattare undersida, och ett föremål utan arbetsyta behöver ingen ovanvy av en skiva. Formen är spegelsymmetrisk kring mitten rad för rad (4, 6, 8, 10, 10 och 8 punkter breda), och bara ljuset och kornet skiljer sidorna åt. Ljuset följer idén: senap3 och glanspunkten i ben2 sitter uppe till vänster, senap2 över mitten och senap1 nere till höger. Konturen är senap0, materialets mörkaste ton och inte svart. Kornet byts punkt för punkt utan mörka fläckar. Vecket i senap1 löper snett överst och visar att vaxet är knådat. Den varma senapen och konturen syns tydligt mot det olivgröna gräset. Saken bärs inte, så inget går genom huvudet.",
-   "ide": "En handknådad klump vax, hög och rundad som ett litet ägg eller en knuten näve, omkring 8 punkter bred och 10 hög, som står på sin plattare undersida. Den är spegelsymmetrisk i formen och skuggas som en kula: senap3 och en glanspunkt i ben2 uppe till vänster, senap2 över mitten och senap1 nere till höger, med kontur i senap0 och korn punkt för punkt. Ett par grunda veck efter fingrarna i senap1 överst visar att den är knådad och färdig att rullas till ljus."
+   "anteckning": "Kakan står upp som en bit bivax skuren ur kupan: rak överkant där den skurits loss och rundad nederkant, som när den hängde. Den lutar lite bakåt, så överst syns snittet som ett smalt ljust band (senap3/senap2), och under det framsidans bikakemönster ovanifrån-snett. Cellerna är spetsiga sexkanter, 4 punkter breda, med förskjutna rader. Väggarna är i senap3 uppe till vänster och senap2 nere till höger, och cellernas botten i senap1, som går mot senap0 nedåt höger. Konturen är senap0. En glanspunkt i ben3 sitter i en cell uppe till vänster. Det är en enda sak utan behållare, 12 × 14 punkter på en ruta, och skuggan lägger programmet till. Granskningen: Storleken (12 × 14 punkter, liten sak mot kolonisten 14 × 20), den symmetriska konturen i senap0 och läsbarheten på gräset var redan rätt och är kvar. Rättat: 1) Överkanten är nu rak (konturen går över hela bredden) i stället för avrundad, så att den avskurna kanten syns som i idén. 2) Raden under är nu ett smalt ljust snittband (senap3 till vänster, senap2 till höger) som ses ovanifrån, så att kakan läses snett uppifrån. 3) Det slumpmässiga kornet är ersatt med ett riktigt cellmönster: celler 4 punkter breda, förskjutna varannan rad som en bikaka, med väggar i senap3 uppe till vänster och senap2 nere till höger, och cellbottnar i senap1. Ljuset faller därmed från övre vänstra hörnet. 4) De lösa mörka senap0-prickarna inne i ytan är borttagna, eftersom de bröt regeln om fläckar. 5) Glanspunkten i ben3 är flyttad till den översta cellen uppe till vänster.",
+   "ide": "En stående bivaxkaka i form av en rundad tunga, så som den hänger i kupan: rak avskuren överkant och rundad nederkant, omkring 12 punkter bred och 14 hög, symmetrisk kring mittlinjen och lutad lite bakåt så att den ses snett uppifrån. Hela framsidan är ett tätt bikakemönster av sexkantiga celler, varje cell 4 punkter bred, med väggar i senap3/senap2 och cellernas botten i senap1 som blir mörkare nedåt höger. Konturen är senap0, överkanten är ett smalt ljust band av själva snittet, och en eller två celler uppe till vänster får en enda glanspunkt i ben3."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "bivaxkaka",
+     "rader": [
+      ".IIIIIIIIIIII.",
+      "ILJJLLJJLLJJKI",
+      "ILJILLJILKJIKI",
+      "ILLLKLLLKLLKKI",
+      "IJLLJJLLJJLKJI",
+      "IILLJILLJILKII",
+      "ILLLKLLLKLKKKI",
+      "ILJJLLJJLKJJKI",
+      "IKJKJKJKJJIJII",
+      "IJIJIJIJIJIJII",
+      "IJIJIJIJIIIIII",
+      ".IIIIIIIIIIII."
+     ]
+    }
+   ],
+   "anteckning": "Vaxkakan ligger platt på marken som en sak i förrådet, sedd snett ovanifrån som en liten arbetsyta: ovansidan (7 rader) visar ett riktigt sexkantigt cellmönster med delade väggar och förskjutna rader. Väggarna är ljusa i senap3 och mot nedre högra hörnet senap2. Öppningarna är senap1, med en mörkare punkt uppe till vänster och ljus nere till höger, så att cellerna ser ut som gropar i ljuset från övre vänstra hörnet. Framkanten är snittet där kakan skurits ur kupan, ett band på 3 punkter där cellernas rör syns som lodräta streck i senap1/senap0. Konturen är senap0 med rundade hörn, så att den blir ett brett, lågt block på 13 × 12 punkter som syns mot gräset. Saken ritas ensam, utan behållare, och är ingen hög. Granskningen: Rättat: ytan var 8 rader och framkanten bara 2, så bandet syntes knappt och skivan blev nästan kvadratisk. Nu är bilden 14 × 12 punkter: kontur, en ovansida på 7 rader (ungefär 12 × 7 inuti) och ett framband på 3 rader, som idén säger. Cellerna var oregelbundna fläckar. Nu är de tre rader tydliga celler i förskjutet mönster, med väggar i senap3 och öppningar i senap1 och en punkt senap0 nere till höger i varje öppning för djupet. Ljuset var fel: kanten nere till höger hade ljusa senap2-fläckar. Nu går tonen från senap3 uppe till vänster mot senap2 och senap0 nere till höger. Frambandet visar snittets rör som lodräta streck i jämn takt, senap2/senap1 mot senap1/senap0, och mörknar åt höger. Hörnen är rundade och konturen är senap0. Formen är spegelsymmetrisk, och den ljusa senapen syns tydligt mot det olivgröna gräset. Storleken, knappt en ruta, är rimlig för en liten sak bredvid kolonisten.",
+   "ide": "En låg, rektangulär vaxskiva som ligger platt, ritad ovanifrån som en liten arbetsyta: ovansidan tar tre fjärdedelar av höjden (ungefär 14 × 7 punkter) och visar tre rader sexkantiga celler i förskjutet mönster, ljusa väggar i senap3 och cellöppningar i senap1. Framkanten är ett band på 3 punkter i senap1/senap0 där snittet visar cellernas rör som täta lodräta streck. Hörnen är lätt rundade och konturen är senap0, så att silhuetten blir ett brett, lågt block som syns tydligt mot marken."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_bivax",
+     "rader": [
+      ".IIIIIIIIII.",
+      "ILLLLKLLLKKI",
+      "ILLJJLKLJJKI",
+      "ILJJKLLJJKKI",
+      "ILKLKJJKLKKI",
+      "IKLKJJKKKKJI",
+      "IJJJJJJJJJII",
+      "IJJJJJJJJIII",
+      ".IIIIIIIIII."
+     ]
+    }
+   ],
+   "anteckning": "Bivaxet är en sak i förrådet: en enda utskuren bit vaxkaka som ligger platt på marken och ses snett ovanifrån, utan behållare. Ovansidan tar större delen av höjden (11 av 15 rader) och visar cellerna ovanifrån som sexkanter med avskurna hörn i förskjutna rader. Väggarna är ljust senap (senap3), och cellerna är gropar i senap1. Ljuset kommer uppifrån vänster, så varje cells övre vänstra kant ligger i skugga (senap0) och den nedre högra innerväggen lyser (senap2). Framkanten är ett smalt band på 2 punkter i mörkare senap, där de avskurna cellrören syns som ett svagt randigt korn. Konturen är vaxets mörkaste ton, senap0, och biten är 20 × 15 punkter: en liten sak, ljusare än gräset så att den syns. Granskningen: Rättat: storleken. Bivaxet ska vara en liten sak men var 20 × 15 punkter, bredare än kolonisten (14 × 20). Det är nu en liten vaxkaka på 12 × 9 punkter. Rättat: vinkeln. Ovansidan ses ovanifrån och tar ungefär två tredjedelar av höjden. Framkanten är nu ett smalt band på 2 punkter i senap1 (J) med kontur i senap0 (I). Rättat: ljuset. Senap3 (L) ligger uppe till vänster och senap2 och senap1 (K, J) nere till höger. Rättat: läsbarheten. Det täta honungsmönstret är förenklat till några cellpar i senap1, så att det blir korn utan ensamma prickar. Behållet: konturen i senap0, den spegelsymmetriska rundade formen och den starka senapsgula tonen. Den skiljer vaxet tydligt från gräset och passar en sak som går att ta och byta.",
+   "ide": ""
   }
  ]
 }
