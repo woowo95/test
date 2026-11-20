@@ -979,3 +979,25 @@ SCENARIER.grenartak = {
     ];
   },
 };
+
+// steg 12.1.53: det de andra redan klyver räknas med i virkets värde
+SCENARIER.virkeklyv = {
+  text: 'Många klyver virke samtidigt (steg 12.1.53): virkets värde för den som väljer räknar med det de andra redan klyver, så att antalet som klyver följer hur mycket som fattas och hur mycket var och en bär hem',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    SIM.setAmount(s, 'virke', 0);
+    const folk = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = folk[0], andra = folk.slice(1);
+    (s as { arbBehov?: unknown }).arbBehov = { mal: { virke: { b: andra.length, t: 20 } } }; // byn vill ha lika många virke som de andra vuxna, och ingen har börjat
+    const fam = SIM.familjOf(s, p.id), om = SIM.omtanke(s, p);
+    const varde = () => SIM.personVarde(s, 'virke', fam, om, p);
+    const klyver = (n: number) => andra.forEach((q, i) => { q.task = i < n ? { act: 'klyva', phase: 'do', tx: q.x, ty: q.y, until: s.now + 3600000, carry: 0, why: '' } as SIM.Task : undefined; });
+    klyver(0); const v0 = varde();
+    klyver(2); const v2 = varde();
+    klyver(andra.length); const v4 = varde();
+    return [
+      [`ingen klyver: virket är värt något (${v0.toFixed(3)})`, v0 > 0],
+      [`två klyver: mindre värt (${v2.toFixed(3)})`, v2 < v0],
+      [`alla ${andra.length} andra klyver, så mycket som fattas: inget värt för en till (${v4.toFixed(3)})`, andra.length >= 3 && v4 === 0],
+    ];
+  },
+};

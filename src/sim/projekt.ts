@@ -7,9 +7,9 @@ import { Act, Person, State } from './typer';
 import { familjOf } from './folk';
 import { omtanke } from './omtanke';
 import { clamp } from './slump';
-import { amountOf } from './lager';
+import { amountOf, capacity } from './lager';
 import { materialBuffert, stationBrist, tillverkVill, villAv, villHaAv } from './forradsmal';
-import { SAKER } from './saker';
+import { SAKER, viktOf } from './saker';
 import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST, plaggVarmer } from './klader';
 import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
@@ -116,6 +116,7 @@ export interface ProjektDef {
   kan(s: State, p: Person, f: ProjektFara): boolean;
   recept?(s: State, p: Person, f: ProjektFara): Recept | undefined; // receptet när bara materialet eller redskapet fattas (steg 6.2.19)
   uppgift(s: State, p: Person): Uppgift | undefined;
+  paVag?(s: State, p?: Person): number; // den del av bristen (0 till 1) som de andra (inte p) som redan gör det fyller när de är klara (steg 12.1.53): räknas varje gång, inte en gång i timmen som bristen
 }
 
 // ett redskap i gruppen g: bristen är hur stor del av det byn vill ha som saknas
@@ -236,6 +237,8 @@ export const PROJEKT: Record<string, ProjektDef> = {
   virke: {
     namn: SAKER.virke!.namn, vikt: PROJEKT_TAL.virke,
     brist: s => { const n = materialBuffert(s, 'virke'); return n > 0 ? clamp(1 - amountOf(s, 'virke') / n, 0, 1) : 0; }, // bufferten i FORRADSMAL (steg 6.2.14)
+    // det de som redan klyver bär hem (så mycket var och en orkar lyfta, minst ett), som en del av bufferten (steg 12.1.53)
+    paVag: (s, p) => { const n = materialBuffert(s, 'virke'); if (!(n > 0)) return 0; let v = 0; for (const q of living(s)) if (q !== p && q.task?.act === 'klyva') v += Math.max(1, Math.floor(capacity(s, q) / viktOf('virke') + 1e-9)); return v / n; },
     kostnad: () => grundvarde('virke'),
     kan: (s, p) => freeTools(s, p, 'yxa') > 0 && (!!klyvStam(s) || !!treeSpot(s, fellingTiles(s, p), p)),
     // finns ingen fälld stam fälls ett träd först (steg 6.2.19)
@@ -383,7 +386,9 @@ export const bristNu = (s: State, k: string) => {
 };
 export function personVarde(s: State, k: string, fam: readonly Person[], om: number, p?: Person) {
   const d = PROJEKT[k], e = d.egen ? d.egen(s, fam, p) : 0;
-  return d.vikt * kylFaktor(s, d) * ((om ? bristNu(s, k) * om : 0) + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
+  // det de andra redan är på väg att göra räknas med (steg 12.1.53)
+  const b = om ? Math.max(0, bristNu(s, k) - (d.paVag?.(s, p) ?? 0)) : 0;
+  return d.vikt * kylFaktor(s, d) * (b * om + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
 }
 // den i familjen som sover under tak utan en bädd
 function utanEgenBadd(s: State, fam: readonly Person[]) {
