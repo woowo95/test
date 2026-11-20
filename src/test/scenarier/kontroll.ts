@@ -36,7 +36,7 @@ const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleri
 
 // alla rutor och flikar i en testby, ritade som text: de som visar "//" (en kodkommentar som hamnat i en textmall)
 function kodIRutorna() {
-  const s = SIM.cloneState(testBy(1)); utanWebblasare(); setByn(s);
+  const s = SIM.cloneState(testBy(30)); utanWebblasare(); setByn(s); // en by efter 30 dygn har stationer, fält och många saker att läsa
   const fel: string[] = []; let n = 0;
   const las = (namn: string, html: () => string) => { n++; if (/(^|[^:])\/\/\s/.test(html())) fel.push(namn); };
   for (const [namn, f] of Object.entries({ eld, forrad, grannar, kronika, religion, seder, styre, tal, teknik })) las(namn, () => f.html!());
@@ -47,6 +47,21 @@ function kodIRutorna() {
   for (const tg of tingOf(s).slice(0, 60)) { ui.sak = `t:${tg.id}`; las(`sak ${tg.k}`, () => sakFlik.html!()); }
   for (const p of living(s)) { ui.selected = p.id; las(`person ${p.name}`, () => personFlik.html!()); }
   return { n, fel: [...new Set(fel)] };
+}
+// Styre-fliken får plats (steg 12.1.26): varje rad i ledarlistan har lika många delar som listan har kolumner, så att ingen del
+// hamnar på en egen rad utanför rutan, ingen text i den klipps, och rutorna står i en kolumn på en smal skärm
+function styretFarPlats() {
+  const s = SIM.cloneState(testBy(1)); utanWebblasare(); setByn(s);
+  const css = readFileSync(new URL('../../template.html', import.meta.url), 'utf8');
+  const kol = /\.rels\.ledarlista \{ grid-template-columns: ([^;]+);/.exec(css)?.[1].trim().split(/\s+(?![^(]*\))/).length ?? 0;
+  const smal = /@media \(max-width: \d+px\) \{ \.rutor \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(css);
+  const klipps = /\.rels\.ledarlista[^{]*\{[^}]*(nowrap|ellipsis)/.test(css);
+  ui.styreDel = 'styre'; const html = styre.html!();
+  const lista = /<ul class="rels ledarlista">([\s\S]*?)<\/ul>/.exec(html)?.[1] ?? '';
+  const rader = [...lista.matchAll(/<li>([\s\S]*?)<\/li>/g)].map(m => {
+    let d = 0, n = 0; for (const x of m[1].matchAll(/<(\/?)(\w+)[^>]*?(\/?)>/g)) { if (x[1]) d--; else if (!x[3] && !/^(img|br)$/.test(x[2])) { if (d === 0) n++; d++; } else if (d === 0) n++; } return n;
+  });
+  return { ledare: !!SIM.ledareOf(s), kol, rader, smal, klipps };
 }
 
 SCENARIER['ui-ren'] = {
@@ -70,8 +85,9 @@ SCENARIER['ui-ren'] = {
     const sa = serialize(a), sb = serialize(b);
     let d = 0; while (d < sa.length && sa[d] === sb[d]) d++;
     // ingen ruta eller flik visar kod (steg 12.1.12): varje station, hus, lager, fält, ting och person i en testby, och flikarna
-    const kod = kodIRutorna();
+    const kod = kodIRutorna(), st = styretFarPlats();
     return [
+      [`Styre-fliken får plats (steg 12.1.26): ledarlistan har ${st.kol} kolumner och raderna ${st.rader.join(', ') || 'inga'} delar${st.klipps ? ', texten klipps' : ''}; rutorna i en kolumn på en smal skärm: ${st.smal ? 'ja' : 'nej'}`, st.ledare && st.kol === 3 && st.rader.length > 0 && st.rader.every(n => n === st.kol) && !st.klipps && st.smal],
       [`ingen ruta eller flik visar en kodkommentar (${kod.n} rutor${kod.fel.length ? `; "//" i: ${kod.fel.slice(0, 6).join(', ')}` : ''})`, kod.n > 50 && !kod.fel.length],
       [`gränssnittet läste ${n} gånger under ${DYGN} dygn (${DYGN} år i spelet), med ${living(a).length} invånare`, n > 100],
       [`läsningarna skrev inget i byn (${andrat} av ${n} gånger ändrades sparfilen)`, andrat === 0],

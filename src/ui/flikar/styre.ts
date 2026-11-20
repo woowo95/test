@@ -20,7 +20,7 @@ function styretHtml() {
     const ledare = l ? `<div class="formnamn">${iconImg('ledarskap', 24)} <b>${esc(f.namn)}</b> ${hjalpKnapp('styre', 'Vad är styret?')}</div>
       <p class="lagtext">${esc(f.text(l, st.titel ?? ''))}</p>
       ${hjalpText('styre', `<p class="muted">Bara den som kan ledarskap kan bli ledare. Ledaren drar byns seder åt sitt håll, bestämmer påbuden och straffar det hen sett eller hört om.</p>`)}
-      <ul class="rels"><li>${pLink(l)}<span></span><span></span><span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span><span class="muted small" title="${esc(titelOm(st.titel)?.om ?? '')}">${esc(titelOm(st.titel)?.kort ?? '')}</span></li>${ministrar()}</ul>
+      <ul class="rels ledarlista"><li>${pLink(l)}<span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span><span class="muted small" title="${esc(titelOm(st.titel)?.om ?? '')}">${esc(titelOm(st.titel)?.kort ?? '')}</span></li>${ministrar()}</ul>
       <p class="muted small" title="Så väljs nästa ledare">👑 ${esc(TRONFOLJD_TEXT[tronfoljd(s)])}</p>
       <div class="rutor"><div class="ruta" title="Hur mycket byn godtar ledaren"><div class="rutnamn">⚖️ Legitimitet</div><div class="rutbar">${bar(lg.v, lg.v < 0.3 ? 'low' : '')}<span>${Math.round(lg.v * 100)} %</span></div>
       ${hjalpText('styre', `<dl class="kv smal">${delar.map(([n, v, w]) => `<dt class="small">${n}</dt><dd class="small">${bar(v)}<span>${Math.round(v * 100)} % · väger ${Math.round(w * 100)} %</span></dd>`).join('') + (lg.oratt > 0.005 ? `<dt class="small">Orättvisa straff</dt><dd class="small">−${Math.round(lg.oratt * 100)} %</dd>` : '')}</dl>`)}</div>
@@ -109,8 +109,10 @@ function budgetDelar() {
   }).join('')}</div>`;
 }
 // ministrarna (steg 8.3.8): en rad per post
+// ledaren och ministrarna (steg 12.1.26): tre delar per rad i listan ledarlista, namnet, rollen och vad den gör, och texten
+// bryts i stället för att klippas
 function ministrar() {
-  return Object.entries(s.styre?.ministrar ?? {}).map(([id, pid]) => { const q = byId(s, pid); return q ? `<li>${pLink(q)}<span></span><span></span><span class="muted">${esc(MINISTRAR[id]?.namn ?? id)}</span><span class="muted small" title="${esc(MINISTRAR[id]?.om ?? '')}">${esc(MINISTRAR[id]?.kort ?? '')}</span></li>` : ''; }).join('');
+  return Object.entries(s.styre?.ministrar ?? {}).map(([id, pid]) => { const q = byId(s, pid); return q ? `<li>${pLink(q)}<span class="muted">${esc(MINISTRAR[id]?.namn ?? id)}</span><span class="muted small" title="${esc(MINISTRAR[id]?.om ?? '')}">${esc(MINISTRAR[id]?.kort ?? '')}</span></li>` : ''; }).join('');
 }
 // omröstningarna (steg 8.3.3): frågan, vem som la fram den och utfallet. Ett tryck visar varje röst som en symbol med vikten och varför
 // trons krets visar sina egna i fliken Religion (steg 10.3.2)

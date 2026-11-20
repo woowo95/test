@@ -231,6 +231,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .formnamn { text-align: center; font-size: 17px; display: flex; justify-content: center; align-items: center; gap: 6px; margin: 2px 0 6px; }
 .rutor { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 8px 0; }
 .ruta { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+@media (max-width: 600px) { .rutor { grid-template-columns: minmax(0, 1fr); } } /* en kolumn på en smal skärm (steg 12.1.26) */
 .rutnamn { text-align: center; font-weight: 600; margin-bottom: 6px; }
 .rutbar { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
 .rutbar .bar { flex: 1; }
@@ -433,6 +434,7 @@ dd .ont { color: var(--g-rost); font-weight: 700; }
 .roster li.rvarfor { display: block; padding: 2px 0 4px 18px; }
 .rels { display: grid; grid-template-columns: minmax(0, max-content) max-content max-content 1fr; gap: 6px 12px; align-items: center; }
 .rels li { display: contents; }
+.rels.ledarlista { grid-template-columns: max-content minmax(0, max-content) minmax(0, 1fr); } .rels.ledarlista li > span { justify-self: start; overflow-wrap: anywhere; } /* ledaren och ministrarna: tre delar per rad, inget klipps (steg 12.1.26) */
 .rels .plink { justify-self: start; text-align: left; }
 .rels li > .muted:not(.relfork) { justify-self: end; }
 .relsyms { display: flex; gap: 2px; }
