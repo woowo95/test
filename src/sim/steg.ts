@@ -682,7 +682,7 @@ export const takEffekt = (s: State, p: Person, tak: ReturnType<typeof viloTak>) 
 // värmen per timme: elden, kylan (det huset, skinnfällen och kläderna skyddar är borta) och milt väder. inRum = hur många som är i varje rum.
 // Över idealet (steg 2.3.4): solen (inte i skugga: i ett hus eller under ett träd), kläderna när det är milt och elden tätt intill
 export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>, temp = temperature(s)) {
-  const rum = roomAt(s, p.x, p.y), brand = rum ? 0 : brandHetta(s, p.x, p.y), heat = Math.max(heatAt(s, p.x, p.y), brand, rum?.hus !== undefined && s.fangEld && fangEldBrinner(s, rum.hus) ? FANG.eldHeat : 0), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0; // branden värmer som lägerelden tätt intill (steg 9.2.135)
+  const rum = roomAt(s, p.x, p.y), brand = rum ? 0 : brandHetta(s, p.x, p.y), eldH = heatAt(s, p.x, p.y), heat = Math.max(eldH, brand, rum?.hus !== undefined && s.fangEld && fangEldBrinner(s, rum.hus) ? FANG.eldHeat : 0), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0; // branden värmer som lägerelden tätt intill (steg 9.2.135)
   const fall = tillbehorVarme(s, p, rum); // skinnfällen i bädden (steg 2.2.14)
   const klad = kladVarme(s, p); // kläderna (steg 2.3.2)
   const skugga = !!rum || groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga;
@@ -691,7 +691,7 @@ export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<num
   const sol = skugga ? 0 : Math.max(0, temp - KROPP.solFran) / KROPP.solDiv * (1 - vaderNu(s).moln * VADER.molnSol);
   const kladHetta = klad * Math.max(0, temp - KROPP.kladFran) / KROPP.kladDiv, eldHetta = Math.max(0, heat - KROPP.eldTatt) * KROPP.eldHetta;
   return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: cr * (1 - shelter) * (1 - fall) * (1 - klad) * frysFaktor(p), mild: cr === 0 ? KROPP.mildVarme : 0,
-    sol, kladHetta, eldHetta, brandHetta: brand > heatAt(s, p.x, p.y) ? eldHetta : 0, hetta: sol + kladHetta + eldHetta, skugga, blot: p.blot ?? 0, vaderGrader: vg };
+    sol, kladHetta, eldHetta, brandHetta: brand > eldH ? eldHetta : 0, hetta: sol + kladHetta + eldHetta, skugga, blot: p.blot ?? 0, vaderGrader: vg };
 }
 // värmen efter dt timmar: under idealet som förut (elden, kylan, milt väder, aldrig över idealet). Vid och över idealet värmer
 // bara hettan, kylan kyler, och kroppen svalnar mot idealet (KROPP.svalnar) men aldrig under det

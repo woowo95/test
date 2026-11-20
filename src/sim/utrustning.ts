@@ -265,6 +265,9 @@ export function stepKlader(s: State) {
   if (!tingOf(s).some(t => SAKER[t.k]?.klad)) return;
   const varmt = temperature(s) >= KROPP.svalnatGrader, kyla = farorNu(s).kyla;
   const ledare = s.styre?.ledare;
+  // plaggen per slag, i tingens ordning, en gång per timme (om de är fria frågas när de väljs: det någon tar av sig blir fritt)
+  const avSlag = new Map<string, Ting[]>();
+  for (const t of tingOf(s)) if (SAKER[t.k]?.klad) { let l = avSlag.get(t.k); if (!l) avSlag.set(t.k, l = []); l.push(t); }
   for (const p of living(s)) {
     // ledarens mantel (steg 8.3.14): den tillhör byn och följer ämbetet. Ledaren byter till den; den som inte längre leder tappar den
     for (const t of paSig(s, p)) if (arMantel(t.k) && p.id !== ledare) t.bar = undefined;
@@ -284,8 +287,8 @@ export function stepKlader(s: State) {
       const pl = SAKER[k]!.klad!.plats;
       if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla) || (SAKER[k]!.klad!.varme > 0 && !PLAGG[kladAv(k)?.plagg as Plagg]?.latt && varmt) || SAKER[k]!.klad!.varme < 0 && kyla) continue; // tas på igen när det svalnat (steg 12.1.19)
       let best: Ting | undefined;
-      for (const t of tingOf(s)) {
-        if (t.k !== k || t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || t.helig !== undefined || !lends(s, t.agare, p)) continue; // det heliga tinget bärs inte (steg 10.3.20)
+      for (const t of avSlag.get(k) ?? []) {
+        if (t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || t.helig !== undefined || !lends(s, t.agare, p)) continue; // det heliga tinget bärs inte (steg 10.3.20)
         if (!best || rang(p, t) < rang(p, best) || (rang(p, t) === rang(p, best) && t.c > best.c)) best = t;
       }
       if (!best) continue;
