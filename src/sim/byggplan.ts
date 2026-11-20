@@ -19,7 +19,8 @@ import { enOrd, stor } from './ord';
 import { knows } from './teknik';
 import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
-import { findPath } from './vag';
+import { BAR, findPath } from './vag';
+import { paMyr } from './myr';
 import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, RUMSFUNKTIONER, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
@@ -702,12 +703,14 @@ const paTorg = (s: State, i: number) => { const t = s.torg, x = i % W, y = (i / 
 const kanTek = (s: State, t: string) => living(s).some(p => knows(p, t));
 // vägmaterialen (steg 7.3.7 och 10.10.6): vad en ruta är värd mot en stockvägsruta, om byn kan lägga den nu och frakten per ruta.
 // Stenen behöver inte ligga i förrådet: den bryts för planen (byggsten.ts). Ordningen är från sämst till bäst: en sliten väg kan få
-// ett bättre material i stället för att lagas
-const VAGAR: { m: string; varde: number; kan: (s: State) => boolean; frakt: (s: State) => number }[] = [
-  { m: 'stockvag', varde: 1, kan: s => kanTek(s, 'stockvag') && amountOf(s, 'virke') >= PLAN.vagVirke, frakt: () => 0 },
+// ett bättre material i stället för att lagas. myr = får läggas på myren (steg 12.1.7): stockarna flyter på den blöta marken, stenen sjunker
+const VAGAR: { m: string; varde: number; kan: (s: State) => boolean; frakt: (s: State) => number; myr?: true }[] = [
+  { m: 'stockvag', varde: 1, kan: s => kanTek(s, 'stockvag') && amountOf(s, 'virke') >= PLAN.vagVirke, frakt: () => 0, myr: true },
   { m: 'stenvag', varde: PLAN.stenVag, kan: s => kanTek(s, 'byggsten') && stenFrakt(s) < Infinity, frakt: s => MATERIAL.stenvag.n * stenFraktKostnad(s) },
 ];
 const vagRang = (m: string) => VAGAR.findIndex(v => v.m === m);
+// en ruta på myren som folk trampat upp till en stig (steg 12.1.7)
+const myrStig = (s: State, g: ReturnType<typeof groundOf>, i: number) => paMyr(s, i) && g.cover[i] < BAR;
 // kostnaden för ritningen med frakten, per tid vägen håller (räknat i stockvägens livslängd): en väg som slits långsammare
 // behöver läggas om mer sällan
 const vagKostnad = (s: State, v: typeof VAGAR[number], ritning: Andring[]) => (ritningKostnad(ritning) + v.frakt(s) * ritning.length) * MATERIAL[v.m].slit / MATERIAL.stockvag.slit;
@@ -722,15 +725,16 @@ const bastaVag = (s: State) => VAGAR.filter(v => v.kan(s)).map(v => ({ v, sc: v.
 const stockvagA: AtgardDef = {
   namn: 'Väg', steg: 0,
   // ett förslag för varje vägmaterial byn kan lägga: på stråken och torget, mest trampat först, och när de är belagda på den
-  // fria marken i byns område utom fälten
+  // fria marken i byns område utom fälten. På myren (steg 12.1.7) läggs stockvägen där folk trampat upp en stig, en ruta bred,
+  // så att en by som ofta går till myren får en väg dit; inget annat byggs där
   foresla: (s, b) => {
     if (b.fn !== 'forbattra') return [];
     const g = groundOf(s), st = straken(s), m = getMap(s.seed).tiles, ut: Forslag[] = [];
     for (const v of VAGAR) {
       if (!v.kan(s)) continue;
-      const fri = (x: number, y: number) => inMap(x, y) && vagLedig(s, y * W + x, v.m) && st.ruta[y * W + x] >= 0 && m[y * W + x] !== T.Vatten && m[y * W + x] !== T.Sten && !stationRutor(s).at.has(y * W + x);
+      const fri = (x: number, y: number) => inMap(x, y) && vagLedig(s, y * W + x, v.m) && (v.myr || !paMyr(s, y * W + x)) && st.ruta[y * W + x] >= 0 && m[y * W + x] !== T.Vatten && m[y * W + x] !== T.Sten && !stationRutor(s).at.has(y * W + x);
       let lista: number[] = [], yta = false;
-      for (let i = 0; i < W * H; i++) if ((st.ruta[i] > 0 || paTorg(s, i)) && vagLedig(s, i, v.m)) lista.push(i);
+      for (let i = 0; i < W * H; i++) if ((st.ruta[i] > 0 || paTorg(s, i) || v.myr && myrStig(s, g, i)) && vagLedig(s, i, v.m) && (v.myr || !paMyr(s, i))) lista.push(i);
       if (!lista.length && !(st.ruta.some((r, i) => r > 0 && !gridOf(s).at.has(i)))) { // stråken och torget är belagda: den fria marken i byns område
         const o = omrade(s);
         for (let i = 0; i < W * H; i++) if (o.inne[i] && vagLedig(s, i, v.m) && m[i] !== T.Vatten && m[i] !== T.Sten && !stationRutor(s).at.has(i) && !faltAt(s, i % W, Math.floor(i / W)) && !angAt(s, i % W, Math.floor(i / W)) && !zonesOf(s).some(z => inZone(z, i % W, Math.floor(i / W))) && !(s.stackar ?? []).some(a => a.x === i % W && a.y === Math.floor(i / W))) lista.push(i);
@@ -743,7 +747,7 @@ const stockvagA: AtgardDef = {
         if (ritning.length >= PLAN.vagBatch) break;
         const x = i % W, y = Math.floor(i / W), vag = st.ruta[i - 1] > 0 || st.ruta[i + 1] > 0, [dx, dy] = vag ? [0, 1] : [1, 0];
         // tre rutor bred om det inte står något två rutor bort, annars två (på den fria marken en ruta i taget)
-        const lagg = yta ? [[x, y]] : [[x, y], [x + dx, y + dy], ...(fri(x - dx, y - dy) && !gridOf(s).at.has((y + 2 * dy) * W + x + 2 * dx) ? [[x - dx, y - dy]] : [])];
+        const lagg = yta || st.ruta[i] <= 0 && paMyr(s, i) ? [[x, y]] : [[x, y], [x + dx, y + dy], ...(fri(x - dx, y - dy) && !gridOf(s).at.has((y + 2 * dy) * W + x + 2 * dx) ? [[x - dx, y - dy]] : [])];
         for (const [qx, qy] of lagg) if ((yta || fri(qx, qy)) && !med.has(qy * W + qx)) { med.add(qy * W + qx); ritning.push({ x: qx, y: qy, m: v.m }); }
       }
       if (ritning.length) ut.push({ at: 'stockvagA', x: 0, y: 0, w: 0, h: 0, ritning, oppnas: [], kostnad: vagKostnad(s, v, ritning), varde: PLAN.forbVag * v.varde, plats: 0 });

@@ -570,3 +570,39 @@ SCENARIER.myrmossa = {
     ];
   },
 };
+
+SCENARIER.myrvag = {
+  text: 'Stockvägen över myren (steg 12.1.7, byggplan.ts och vag.ts): stockvägen får läggas på myren där folk trampat upp en stig, en ruta bred, men inte stenvägen; på en färdig stockväg går man som på vanlig mark',
+  kor: () => {
+    const behov = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 } as SIM.ByggBehov;
+    const s = myrBy(), r = myrRutorI(s), g = SIM.groundOf(s), e = SIM.eldPlats(s);
+    for (const p of SIM.living(s)) Object.assign((p.tek ??= {}), { stockvag: 1, byggsten: 1 });
+    SIM.setAmount(s, 'virke', 6);
+    // en stig av fem rutor genom myren, de närmaste elden; resten av myren är orörd
+    const nara = [...r].sort((a, c) => Math.hypot(a % SIM.W - e.x, Math.floor(a / SIM.W) - e.y) - Math.hypot(c % SIM.W - e.x, Math.floor(c / SIM.W) - e.y));
+    const stig = new Set(nara.slice(0, 5));
+    for (const i of r) g.cover[i] = stig.has(i) ? 0 : 0.8;
+    s.vader = { ...(s.vader ?? { sno: 0 }), fukt: 0.1 }; SIM.myrSteg(s, g);
+    const f = SIM.BYGGATGARDER.stockvagA.foresla(s, behov, () => true);
+    const stock = f.flatMap(q => q.ritning).filter(a => a.m === 'stockvag'), sten = f.flatMap(q => q.ritning).filter(a => a.m === 'stenvag');
+    const paMyr = (a: { x: number; y: number }) => SIM.paMyr(s, a.y * SIM.W + a.x);
+    const stockMyr = stock.filter(paMyr), utanforStig = stockMyr.filter(a => !stig.has(a.y * SIM.W + a.x));
+    // farten på stigen: myrens broms, en påbörjad väg ändrar inget, en färdig tar bort bromsen, också under vatten
+    const i = nara[0]!, x = i % SIM.W, y = Math.floor(i / SIM.W);
+    const fore = SIM.markFart(g, i);
+    const bit = { id: s.nextBit!++, x, y, k: 'golv', m: 'stockvag', b: 0.5, mat: 0, c: 1 } as SIM.Bit;
+    SIM.bitsOf(s).push(bit); SIM.touch(s); SIM.gridOf(s);
+    const paborjad = SIM.markFart(g, i);
+    bit.b = 1; bit.mat = 1; SIM.touch(s); SIM.gridOf(s);
+    const fardig = SIM.markFart(g, i), granne = SIM.markFart(g, nara[1]!);
+    s.vader.fukt = 0.9; SIM.myrSteg(s, g);
+    const blot = SIM.markFart(g, i);
+    return [
+      [`stockvägen föreslås på myrens stig (${stockMyr.length} av ${stig.size} rutor), inte på den orörda myren (${utanforStig.length})`, stockMyr.length >= 1 && utanforStig.length === 0],
+      [`stenvägen läggs aldrig på myren (${sten.filter(paMyr).length} av ${sten.length})`, sten.every(a => !paMyr(a))],
+      [`på myren går man långsamt (${fore}), också över en påbörjad väg (${paborjad})`, fore === SIM.MYR.fartTorr && paborjad === fore],
+      [`på den färdiga stockvägen som på vanlig mark (${fardig}), bredvid den som förut (${granne})`, fardig === 1 && granne === SIM.MYR.fartTorr],
+      [`också när myren står under vatten (${blot})`, !!g.myrVatten && blot === 1],
+    ];
+  },
+};

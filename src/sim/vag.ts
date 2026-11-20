@@ -22,7 +22,7 @@ export const VAG = balans('vag', {
 
 // solid = väggar, built = byggda eller planerade rutor, hinder = hyllor, kistor och ställ (går inte att gå igenom, stationer.ts),
 // lost = rutor med lösa saker på golvet (långsamma, lager.ts). Steg 2.3.6
-export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; alder?: Float32Array; art?: Uint8Array; buske?: Uint8Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array; ang?: Uint8Array; brand?: Uint8Array; myr?: Uint8Array; myrVatten?: true } // brand: 1 = rutan brinner, 2 = bredvid elden (brand.ts, steg 9.2.136)
+export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; alder?: Float32Array; art?: Uint8Array; buske?: Uint8Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array; ang?: Uint8Array; brand?: Uint8Array; myr?: Uint8Array; myrVatten?: true; vag?: Uint8Array } // brand: 1 = rutan brinner, 2 = bredvid elden (brand.ts, steg 9.2.136)
 export const HIGH = 0.9, BAR = 0.3; // högt gräs över HIGH, bar jord under BAR
 export const FOREST = 0.5; // träd från detta värde räknas som skog
 export const BUSKE = 250; // g.buske från detta värde: en buske står på rutan (buskar.ts, steg 6.5.3)
@@ -39,7 +39,7 @@ export function markFart(g: Ground, i: number) {
   if (tr >= FOREST) return GANG.fartSkog;
   if (tr >= VAG.ungskog || (g.buske?.[i] ?? 0) >= BUSKE) return GANG.fartUng; // en buske är lika tung att gå igenom som ungskog
   const f = g.cover[i] >= HIGH ? GANG.fartHog : 1;
-  return g.myr?.[i] ? Math.min(f, myrFart(g)) : f; // myren (steg 12.1.1, myr.ts): inga träd, men långsam, och långsammast under vatten
+  return g.myr?.[i] && !g.vag?.[i] ? Math.min(f, myrFart(g)) : f; // myren (steg 12.1.1, myr.ts): inga träd, men långsam, och långsammast under vatten; på en färdig stockväg går man som på vanlig mark (steg 12.1.7)
 }
 // kostnad att gå in på en ruta: man följer hellre en upptrampad stig än går över orörd mark
 const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? VAG.stigBas + VAG.stigTacke * g.cover[i] : 1) / speedAt(g, i) * (g.ang?.[i] ? VAG.ang : 1);

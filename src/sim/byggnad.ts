@@ -134,11 +134,11 @@ export function gridOf(s: State): Grid {
     for (const i of r.tiles) tak[i] = r.id;
     rooms.push(r);
   }
-  const brygga = new Uint8Array(W * H);
-  for (const b of bitsOf(s)) if (b.b >= 1 && MATERIAL[b.m].brygga) brygga[b.y * W + b.x] = 1;
+  const brygga = new Uint8Array(W * H), vag = new Uint8Array(W * H);
+  for (const b of bitsOf(s)) if (b.b >= 1 && MATERIAL[b.m].brygga) brygga[b.y * W + b.x] = 1; else if (b.b >= 1 && MATERIAL[b.m].vag) vag[b.y * W + b.x] = 1;
   g = { v, at, solid, tak, rooms, brygga };
   grids.set(s, g);
-  const gr = groundOf(s); gr.solid = solid; gr.built = built;
+  const gr = groundOf(s); gr.solid = solid; gr.built = built; gr.vag = vag; // de färdiga vägarna: på myren tar de bort bromsen (markFart i vag.ts, steg 12.1.7)
   return g;
 }
 export const bitAt = (s: State, x: number, y: number) => gridOf(s).at.get(Math.floor(y) * W + Math.floor(x));
