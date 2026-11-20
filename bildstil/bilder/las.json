@@ -1,0 +1,72 @@
+{
+ "id": "las",
+ "w": 8,
+ "h": 9,
+ "rader": [
+  "..QQQQ..",
+  ".QTSSRQ.",
+  "QSSQQSRQ",
+  "QSQ..QRQ",
+  "QTTSTSSQ",
+  "QSRkkSRQ",
+  "QSRkkRRQ",
+  "QSRSRRRQ",
+  ".QQQQQQ."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d"
+ },
+ "versioner": [
+  {
+   "ide": "Ett rundat hänglås, spegelsymmetriskt kring mittlinjen: en kropp som en avrundad fyrkant, 8 punkter bred och 5 hög, längst ner, med en tjock bygel på 2 punkter i bredd som en båge över, 4 punkter hög. Bygeln går ner i kroppens ovansida på båda sidor. Järnet är skiffer1 och skiffer2 i korn, med kontur i skiffer0 och en glans på en punkt i skiffer3 uppe till vänster på bygeln. Eftersom låset ses snett uppifrån är kroppens överkant ett ljusare band på 1 punkt, och framsidan under bandet är mörkare och har ett nyckelhål i kol0 mitt på, en prick med en kort spalt under.",
+   "rader": [
+    "..QQQQ..",
+    ".QTSSRQ.",
+    "QSSQQSRQ",
+    "QSQ..QRQ",
+    "QTTSTSSQ",
+    "QSRkkSRQ",
+    "QSRkkRRQ",
+    "QSRSRRRQ",
+    ".QQQQQQ."
+   ],
+   "om": "Hänglåset är 8 punkter brett och 9 högt. Bygeln är en båge på fyra rader som går ner i kroppens ovansida på båda sidor. Den har glans i skiffer3 uppe till vänster, och öppningen är genomskinlig. Kroppen är fem rader med kontur i skiffer0: överst ett ljusare band i skiffer2, under det en mörkare framsida i skiffer1 med korn av skiffer2. Mitt på framsidan sitter nyckelhålet i kol0, två punkter brett och två rader högt, eftersom det inte går att centrera en enda punkt på 8 punkters bredd. De nedre hörnen är rundade och formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Granskningen: Storleken (8 × 9), formen och symmetrin behålls; låset syns på gräset tack vare konturen i skiffer0 och de ljusare skiffertonerna. Rättat: (1) Kroppens överkant (rad 4) var lika mörk som framsidan. Nu är den ett ljusare band i skiffer3/skiffer2 som visar ovansidan snett uppifrån. (2) Ljuset: framsidan hade skiffer1 till vänster på rad 6, mot ljuset. Nu är vänsterkanten ljusare (skiffer2) och högerkanten mörkare (skiffer1) på bygel och kropp, med korn i raden längst ner. (3) Glansen på bygeln är en enda punkt i skiffer3 uppe till vänster (rad 1); den extra ljusa punkten nedanför är borttagen. (4) Nyckelhålet i kol0 sitter kvar mitt på framsidan, symmetriskt kring mittlinjen. Bygeln är kvar i full bredd med ben på 2 punkter, eftersom en smalare bygel med 2 punkter breda ben och kontur inte ryms på 8 punkter."
+  },
+  {
+   "ide": "En låsplåt som ligger platt i förrådet och ses snett ovanifrån: en rektangulär plåt, 6 punkter bred och 7 hög, i skiffer2 och skiffer1 med kontur i skiffer0, och längs nederkanten ett mörkare band på 1 punkt som visar plåtens tjocklek. En fyrkantig regel, 2 punkter tjock, sticker ut 2 punkter åt höger från plåtens mitt och är något ljusare på ovansidan. Ett nyckelhål i kol0 sitter mitt på plåten, och de fyra hörnen har spiknitar på en punkt i skiffer3 som glänser svagt, så att det är tydligt att plåten spikas i en dörr. Plåten är inte symmetrisk, eftersom regeln bara sticker ut åt ena hållet.",
+   "rader": [
+    "QQQQQQ..",
+    "QTSSTQ..",
+    "QSSSRQQQ",
+    "QSkkSTTQ",
+    "QSSkSRRQ",
+    "QSSSRQQQ",
+    "QTSRTQ..",
+    "QRRRRQ..",
+    "QQQQQQ.."
+   ],
+   "om": "En låsplåt sedd snett ovanifrån, 6 punkter bred. Plåten är ritad i skiffer2 med korn av skiffer1 och har kontur i skiffer0. Nederst ligger ett mörkare band i skiffer1 som visar plåtens tjocklek. Spiknitar i skiffer3 sitter i de fyra hörnen, och mitt på plåten sitter ett nyckelhål i kol0. Regeln är 2 punkter tjock och sticker ut 2 punkter åt höger från mitten, med en ljusare ovansida i skiffer3 och skiffer2. Plåten är alltså medvetet osymmetrisk och har en helt annan form än ett hänglås. Granskningen: Storleken (8 × 9), vinkeln snett ovanifrån med framkanten som band i skiffer1, konturen i skiffer0 och kontrasten mot gräset håller. Det här har jag rättat: 1) Den ensamma ljusa pricken i skiffer3 mitt på plåten är borttagen. Ytan går nu jämnare från skiffer2 uppe till vänster mot skiffer1 nere till höger, så ljuset kommer från övre vänstra hörnet. Bara de fyra nitarna glänser svagt i hörnen. 2) Regeln var otydlig. En ljus punkt i skiffer1 bröt plåtens kontur ovanför den, och en mörk bröt den nedanför. Nu sitter regeln rent i plåtens högra kant: 2 punkter tjock, ovansidan i skiffer3 och undersidan i skiffer1, med kontur i skiffer0 ovanför, under och till höger. Plåtens kontur är hel ovanför och under regeln. Bredden 8 räcker bara till 2 punkter av regeln, där den ena ligger i plåtkanten. 3) Nyckelhålet har kvar sitt runda huvud på 2 punkter i kol0 med smalt skaft under. Det är det enda verkligt svarta i bilden."
+  },
+  {
+   "ide": "Ett nordiskt rörlås: en järncylinder som ligger vågrätt, 8 punkter lång och 4 punkter tjock, med en rund ändplatta i varje ände som ses lite ovanifrån som smala ovaler. Cylindern skuggas med skiffer3 längs översidan, skiffer2 i mitten och skiffer1 längs undersidan, och konturen är skiffer0. En smal krokig bygel, 1 till 2 punkter bred, sticker upp från vänstra änden, böjer sig i en låg båge över cylindern och går ner mot högra änden. Bygeln gör silhuetten hög och öppen upptill, inte kompakt som hänglåsets, och den högra ändplattan har nyckelspringan i kol0.",
+   "rader": [
+    ".QQQQQQ.",
+    "QTTSSSRQ",
+    "QTQ..QRQ",
+    "QSQ..QSQ",
+    "QTQQQQSQ",
+    "QTTTTTSQ",
+    "QSSSSSkQ",
+    "QSRRRRkQ",
+    ".QQQQQQ."
+   ],
+   "om": "Ett nordiskt rörlås, 8 × 9 punkter. Den vågräta järncylindern ligger nederst på raderna 4–8. Den skuggas med skiffer3 upptill, skiffer2 i mitten och skiffer1 nedtill, och konturen är skiffer0. Ändplattorna sitter i kolumnerna 1 och 6 och skiljs från cylindern av en mörkare fog, med rundade hörn nertill. Nyckelspringan i kol0 sitter i den högra plattan. Den smala bygeln går upp från vänstra plattan, böjer sig i en låg båge över cylindern och går ner till den högra. Hålet under bågen är genomskinligt, så att silhuetten blir hög och öppen upptill och inte kompakt som ett hänglås. Ljuset kommer uppifrån vänster: bygeln är skiffer3 till vänster och mörknar åt höger. Granskningen: Ritningen var ett kompakt hänglås: bygeln hade bara två genomskinliga punkter i en enda rad, så silhuetten blev sluten. Den följde inte idén om ett rörlås med hög och öppen bygel. Jag ritade om den inom 8 × 9 punkter. Bygeln går nu som en låg båge från vänstra änden till högra. Den är en punkt tjock, ljus (skiffer3) till vänster och mörk (skiffer1) till höger, och öppningen är 2 × 2 punkter så att silhuetten blir öppen upptill. Cylindern ligger vågrätt i rad 4–8 och är skuggad med skiffer3 överst, skiffer2 i mitten och skiffer1 nederst. Ändplattorna sticker upp som smala ovaler i båda ändarna, så formen är spegelsymmetrisk och bara ljuset skiljer sidorna åt. Nyckelspringan sitter som en lodrät springa i kol0 på den högra ändplattan. Konturen är skiffer0 hela vägen, utan svart kontur. Låset är mattgrått och ljusare än gräset, så det syns på marken, och storleken passar mot kolonisten."
+  }
+ ]
+}
