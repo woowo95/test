@@ -1207,3 +1207,88 @@ SCENARIER.virkeklyv = {
     ];
   },
 };
+
+SCENARIER.eldruta = {
+  text: 'Inget ligger i elden (steg 12.1.153): en ruta med en eld, brasa eller härd tar inte emot högar, varken i en lagerplats eller när någon släpper sin börda, och det som redan ligger där flyttas till närmaste fria ruta',
+  kor: () => {
+    const s = SIM.createState(9, START), z = SIM.zonesOf(s)[0], at = { x: z.x, y: z.y }, i = at.y * SIM.W + at.x;
+    const pa = (x: number, y: number) => SIM.stacksOf(s).filter(a => a.x === x && a.y === y && a.n > 0);
+    // en hög ligger i lagret, och en brasa blir klar på rutan: högen flyttas
+    SIM.setAmount(s, 'sten', 1); const sten = SIM.stacksOf(s).find(a => a.k === 'sten')!; sten.x = at.x; sten.y = at.y;
+    const t = { id: 991, k: 'brasa', x: at.x, y: at.y, kvar: 0 } as SIM.Station; (s.stationer ??= []).push(t);
+    SIM.nyEld(s, t);
+    const flyttad = !pa(at.x, at.y).length && SIM.amountOf(s, 'sten') === 1;
+    // lagret fylls: inget läggs på brasans ruta
+    SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'grenar', 40); SIM.setAmount(s, 'flinta', 20);
+    const iLagret = !pa(at.x, at.y).length;
+    // någon släpper sin börda mitt i brasan: den läggs bredvid
+    const p = nyInvanare(s, 'm', 30);
+    const tk = { act: 'samla', phase: 'do', carry: 0, items: { sten: 3 } } as unknown as SIM.Task;
+    SIM.dropLoad(s, tk, at.x + 0.5, at.y + 0.5, p.id);
+    const borda = !pa(at.x, at.y).length;
+    // utanför lagret, på den första elden
+    const f = SIM.eldPlats(s), tk2 = { act: 'samla', phase: 'do', carry: 0, items: { sten: 2 } } as unknown as SIM.Task;
+    SIM.dropLoad(s, tk2, f.x + 0.5, f.y + 0.5, p.id);
+    const forsta = !pa(f.x, f.y).length;
+    // örtkökets härd är en eldruta, inte bänken bredvid
+    const ort: SIM.Station = { id: 992, k: 'ortkok', x: at.x + 8, y: at.y + 8, kvar: 0, delar: SIM.delarIRad('ortkok', at.x + 8, at.y + 8) };
+    s.stationer!.push(ort);
+    const eld = SIM.eldRutor(s), hard = SIM.delarAv(ort).filter(q => q.del?.eld), ovr = SIM.delarAv(ort).filter(q => !q.del?.eld);
+    const iHard = hard.length > 0 && hard.every(q => eld.has(q.y * SIM.W + q.x)) && ovr.every(q => !eld.has(q.y * SIM.W + q.x));
+    return [
+      ['det som låg där brasan lades flyttas', flyttad],
+      ['brasans ruta hör till eldrutorna', eld.has(i)],
+      ['lagret lägger inget på brasan', iLagret],
+      ['den som släpper sin börda i brasan lägger den bredvid', borda],
+      ['inget läggs i den första elden', forsta],
+      ['örtkökets härd är en eldruta, men inte resten av köket', iHard],
+    ];
+  },
+};
+
+SCENARIER.klantatuering = {
+  text: 'Gäster och inflyttade bär sin klans tatueringar (steg 12.1.165): en vuxen från en annan klan har ibland märken, alltid i den klanens stil (ur klanens nummer), och barn har inga',
+  kor: () => {
+    const s = SIM.createState(6, START);
+    for (const c of SIM.klanerOf(s)) c.inst = 50;
+    const fr: SIM.Person[] = [];
+    for (let i = 0; i < 40; i++) { const g = SIM.framling(s); if (g) fr.push(g); }
+    const medTat = fr.filter(g => g.tat?.length), stilRatt = fr.every(g => (g.tat ?? []).every(t => t.stil === SIM.klanStil(g.gast!.klan!)));
+    const enPerPlats = fr.every(g => new Set((g.tat ?? []).map(t => t.p)).size === (g.tat ?? []).length);
+    const k = SIM.klanerOf(s)[0]!, gaster: SIM.Person[] = [];
+    for (let i = 0; i < 40; i++) gaster.push(SIM.nyGast(s, { id: -1000 - i, namn: 'Gäst', sex: 'm', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare', klan: k.id }, x: 1, y: 1, nyckel: 900 + i }));
+    const barn = SIM.nyGast(s, { id: -2000, namn: 'Barn', sex: 'k', fodd: s.now - 6 * SIM.DAY, rad: { sort: 'handlare', klan: k.id }, x: 1, y: 1, nyckel: 999 });
+    const gMed = gaster.filter(g => g.tat?.length), gStil = gaster.every(g => (g.tat ?? []).every(t => t.stil === SIM.klanStil(k.id)));
+    const stilar = new Set(SIM.klanerOf(s).map(c => SIM.klanStil(c.id)));
+    return [
+      [`en del främlingar bär märken (${medTat.length} av ${fr.length}), alla i sin klans stil`, medTat.length > 0 && medTat.length < fr.length && stilRatt],
+      ['en plats rymmer ett märke', enPerPlats],
+      [`gästerna från en klan bär klanens stil (${gMed.length} av ${gaster.length} med märken, ${SIM.TAT_STILNAMN[SIM.klanStil(k.id)]})`, gMed.length > 0 && gStil],
+      ['ett barn som följer med har inga märken', !barn.tat?.length],
+      [`klanerna har olika stilar (${stilar.size} stilar bland ${SIM.klanerOf(s).length} klaner)`, SIM.klanerOf(s).length < 2 || stilar.size > 1],
+      ['porträttet visar märket i klanens stil', !medTat[0] || SIM.tatDel(medTat[0], medTat[0].tat![0].p) === `tat-${SIM.klanStil(medTat[0].gast!.klan!)}-${medTat[0].tat![0].p}`],
+    ];
+  },
+};
+
+SCENARIER.bladkand = {
+  text: 'Bladet väger in hur känd den döda är (steg 12.1.166): den som sörjer två döda lika mycket skriver bladet och ristar stenen om den som byn minns, med samma vägning för båda',
+  kor: () => {
+    const s = SIM.createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const p = v[0]!, a = nyInvanare(s, 'm', 50), b = nyInvanare(s, 'k', 50);
+    a.died = s.now; b.died = s.now;
+    p.sorg = [{ namn: a.name, vem: a.id, ord: 'vän', v: -1, dygn: 5, t0: s.now }, { namn: b.name, vem: b.id, ord: 'vän', v: -1, dygn: 5, t0: s.now }];
+    SIM.setAmount(s, 'pergament', 2); SIM.setAmount(s, 'black', 2); p.skill.berattande = 10; (p.tek ??= {}).stenhuggarplats = 1;
+    const om = (kand: SIM.Person) => {
+      for (const q of v) q.intryck = q === p ? [] : [{ om: kand.id, namn: kand.name, k: 'hjalpsam', v: 1, c: 1, t: s.now }];
+      SIM.kandaRakna(s);
+      const bl = SIM.skrivLust(s, p), st = SIM.runstenLust(s, p);
+      return { blad: bl?.slag === 'minne' ? bl.om?.id : undefined, sten: st?.slag === 'minne' ? st.om.id : undefined };
+    };
+    const kA = om(a), kB = om(b);
+    return [
+      [`bladet skrivs om den som byn minns (${kA.blad === a.id ? a.name : '–'}, sedan ${kB.blad === b.id ? b.name : '–'})`, kA.blad === a.id && kB.blad === b.id],
+      [`stenen ristas om samma (${kA.sten === a.id ? a.name : '–'}, sedan ${kB.sten === b.id ? b.name : '–'})`, kA.sten === a.id && kB.sten === b.id],
+    ];
+  },
+};

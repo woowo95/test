@@ -1,3 +1,4 @@
+import { ingetIElden } from './lager';
 import { bynsMitt } from './omrade';
 import { ALDER, KROPP, count, isSick, living, log } from './folk';
 import { halsa } from './halsa';
@@ -117,6 +118,7 @@ export function flyttaElden(s: State, p: Person) {
   delete f.flytt;
   for (const t of stationerOf(s)) if (stationDef(t.k)?.eld && t.y === gammal.y && t.x === gammal.x - 1) { t.x = mal.x - 1; t.y = mal.y; } // grillen står med elden i mitten (siteEld i stationer.ts)
   s.byggV = (s.byggV ?? 0) + 1; // husen, stationerna och vägarna räknas om
+  ingetIElden(s); // det som låg på den nya eldplatsen flyttas (steg 12.1.153)
   count(s, 'eldflytt');
   log(s, `${p.name} släckte elden och bar stenarna i ringen till en ny eldplats ${mal.varfor === 'plats' ? 'där ett hus ska byggas' : 'mitt i byn'}.`, 'world', [p.id]);
   if (s.stat!.eldflytt === 1) kronika(s, `${p.name} flyttade byns eld ${mal.varfor === 'plats' ? 'för att ge plats åt ett hus' : 'till byns mitt'}.`, 'bygge');

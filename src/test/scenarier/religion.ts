@@ -500,3 +500,32 @@ SCENARIER.gudar = {
 };
 
 for (const n of ['tecken', 'gudar']) { const kor0 = SCENARIER[n].kor; SCENARIER[n].kor = () => { SIM.TRO_PROV.utanTak = true; try { return kor0(); } finally { SIM.TRO_PROV.utanTak = false; } }; }
+
+SCENARIER.barntro = {
+  text: 'Tron får fäste (steg 12.1.22): ett barn föds in i föräldrarnas tro och har den kvar som vuxen; tror föräldrarna olika växer barnet oftare upp i den starkare tron, och barn till föräldrar utan tro har ingen',
+  kor: () => {
+    const s = createState(9, START);
+    const mor = nyInvanare(s, 'k', 30), far = nyInvanare(s, 'm', 30);
+    const tro = (id: number, namn: string): SIM.Tro => ({ id, grundare: mor.id, gnamn: mor.name, t: s.now, k: 'blixt', ar: 1, bakom: 'Himlens hammare', vill: 'att man tystnar när det mullrar', svek: 'skogen brinner', natur: 15, manga: 50, bekr: s.now, namn });
+    s.tron = [tro(1, 'Hammarens väg'), tro(2, 'Vindens väg')];
+    const barn = () => SIM.newPerson(s, 'k', s.now, mor, far);
+    const utan = barn();
+    mor.tro = 1; mor.troStyrka = 60; far.tro = 1; far.troStyrka = 60;
+    const samma = barn();
+    // barnet växer upp: 18 dygn (18 år i spelet) senare har hen samma tro, om inget fått hen att lämna den
+    s.people.push(samma); s.now += 18 * SIM.DAY; SIM.stepReligion(s);
+    const vuxen = samma.tro === 1 && SIM.ageOf(samma, s.now) >= SIM.ALDER.vuxen;
+    far.tro = 2; far.troStyrka = 20; mor.troStyrka = 80;
+    let morTro = 0, farTro = 0;
+    for (let i = 0; i < 200; i++) { const b = barn(); if (b.tro === 1) morTro++; else if (b.tro === 2) farTro++; }
+    far.died = s.now;
+    const farDod = barn();
+    return [
+      ['föräldrar utan tro får barn utan tro', utan.tro === undefined],
+      ['föräldrar med samma tro får ett barn i den tron', samma.tro === 1 && samma.troStyrka === SIM.TRO.styrkaNy],
+      ['barnet har tron kvar som vuxen', vuxen],
+      [`tror föräldrarna olika får barnet en av trosriktningarna, oftare den starkare (${morTro} mot ${farTro} av 200)`, morTro + farTro === 200 && morTro > farTro * 2 && farTro > 0],
+      ['en död förälders tro följer inte med', farDod.tro === 1],
+    ];
+  },
+};
