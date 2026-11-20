@@ -4093,12 +4093,12 @@ SCENARIER.dopet = {
     const m = createState(9, START); (m.hus ??= []).push({ klar: m.now } as never);
     const v = SIM.living(m).filter(p => SIM.ageOf(p, m.now) >= SIM.ALDER.vuxen), l = v[0];
     const rad = SIM.TAS_UPP.find(r => r.id === 'bynamn'), forslag = rad?.lista(m, l) ?? [];
-    // ett nej: namnet tas inte upp igen på tre dygn
+    // ett nej: namnet tas inte upp igen på BYNT.nejDygn dygn
     const n = createState(9, START); (n.hus ??= []).push({ klar: n.now } as never);
     SIM.FRAGOR.bynamn.nej!(n, { namn: forslag[0]?.fr.d.namn as string });
     const nv = SIM.living(n).filter(p => SIM.ageOf(p, n.now) >= SIM.ALDER.vuxen);
     const blockerad = nv.every(p => SIM.namnForslag(n, p)?.b.namn !== forslag[0]?.fr.d.namn);
-    n.now += 3 * SIM.DAY + 1;
+    n.now += SIM.BYNT.nejDygn * SIM.DAY + 1;
     const igen = nv.some(p => SIM.namnForslag(n, p)?.b.namn === forslag[0]?.fr.d.namn);
     return [
       [`innan byn slagit sig ner tas inget namn upp (${forNer})`, forNer === 'Nybygget'],
@@ -4106,12 +4106,12 @@ SCENARIER.dopet = {
       [`en rad i krönikan under Styre (${krona?.[1]}) och en notis (${not?.rader[0]})`, !!krona && /^Byn kallar sig nu /.test(krona[1]) && !!not && SIM.KRONIKA_KAT.find(k => k.id === 'styre')!.slag.includes('bynamn')],
       [`utan ledare skapas inget styre (${!!s.styre}) och ingen blir missnöjd (${miss})`, !s.styre && !miss],
       [`med ledare lägger ledaren fram ett namn (${forslag[0]?.varfor}, prioritet ${forslag[0]?.prio.toFixed(2)})`, forslag.length === 1 && forslag[0].prio >= SIM.LAG.troskel],
-      [`ett nej: namnet tas inte upp på tre dygn (${blockerad}), men sedan (${igen})`, blockerad && igen],
+      [`ett nej: namnet tas inte upp på ${SIM.BYNT.nejDygn} dygn (${blockerad}), men sedan (${igen})`, blockerad && igen],
     ] as [string, boolean][];
   },
 };
 SCENARIER.namnbyte = {
-  text: 'Namnet kan bytas (steg 10.9.4): ett nytt namn tas upp när den som föreslår tycker klart bättre om det än om det byn heter. Namnet stämmer inte längre när personen det heter efter är död och bortglömd, och en avsatt ledares namn stämmer hälften så bra. Vanan drar av upp till 0,3, fullt efter 20 dygn, och krönikan minns det gamla namnet',
+  text: 'Namnet kan bytas (steg 10.9.4): ett nytt namn tas upp när den som föreslår tycker klart bättre om det än om det byn heter. Namnet stämmer inte längre när personen det heter efter är död och bortglömd, och en avsatt ledares namn stämmer hälften så bra. Vanan drar av upp till BYNT.vana, fullt efter BYNT.vanaDygn dygn (steg 12.1.155), och krönikan minns det gamla namnet',
   kor: () => {
     const s = createState(9, START); (s.hus ??= []).push({ klar: s.now } as never);
     const v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), p = v[0], q = v[1];
@@ -4125,12 +4125,12 @@ SCENARIER.namnbyte = {
     if (forslag) SIM.rostaOm(s, { f: 'bynamn', d: { namn: forslag.b.namn, rad: forslag.b.rad, om: forslag.b.om }, fram: p.id });
     const krona = s.hist?.kronika.filter(k => k[2] === 'bynamn').map(k => k[1]) ?? [];
     q.died = undefined;
-    // vanan: ingen vid Nybygget, full efter 20 dygn
+    // vanan: ingen vid Nybygget, halv efter halva BYNT.vanaDygn, full efter
     const t = createState(9, START), tv = SIM.living(t).filter(o => SIM.ageOf(o, t.now) >= SIM.ALDER.vuxen)[0];
     const vana0 = SIM.namnVana(t, tv);
     t.bynamn = { namn: 'Granåsen', rad: 'gran', t: t.now };
-    t.now += 10 * SIM.DAY; const vana10 = SIM.namnVana(t, tv);
-    t.now += 20 * SIM.DAY; const vana30 = SIM.namnVana(t, tv);
+    t.now += SIM.BYNT.vanaDygn / 2 * SIM.DAY; const vana10 = SIM.namnVana(t, tv);
+    t.now += SIM.BYNT.vanaDygn * SIM.DAY; const vana30 = SIM.namnVana(t, tv);
     // en avsatt ledares namn stämmer hälften så bra
     const a = createState(9, START), av = SIM.living(a).filter(o => SIM.ageOf(o, a.now) >= SIM.ALDER.vuxen)[0];
     const fore = SIM.sant(a, { rad: 'person', om: av.id });
@@ -4140,7 +4140,7 @@ SCENARIER.namnbyte = {
       [`byn heter ${namn.namn}, som stämmer ${sant0} medan ${q.name} lever och ${sant1} när hen är död och bortglömd`, sant0 === 1 && sant1 === 0],
       [`ett nytt namn föreslås (${forslag?.b.namn}, prioritet ${forslag?.prio.toFixed(2)}) och byn byter (${SIM.bynsNamn(s)}, ${s.stat?.bynamn_byte ?? 0} byte)`, !!forslag && SIM.bynsNamn(s) === forslag.b.namn && s.stat?.bynamn_byte === 1],
       [`krönikan minns det gamla namnet: ${krona[krona.length - 1]}`, krona.length === 2 && krona[1].includes(`Den hette förr ${namn.namn}.`)],
-      [`vanan: ${vana0} vid Nybygget, ${vana10.toFixed(2)} efter 10 dygn och ${vana30.toFixed(2)} efter 30`, vana0 === 0 && Math.abs(vana10 - 0.15) < 1e-9 && vana30 === 0.3],
+      [`vanan: ${vana0} vid Nybygget, ${vana10.toFixed(2)} halvvägs och ${vana30.toFixed(2)} efter längre tid`, vana0 === 0 && Math.abs(vana10 - SIM.BYNT.vana / 2) < 1e-9 && vana30 === SIM.BYNT.vana],
       [`en avsatt ledares namn stämmer hälften så bra (${fore} → ${efter})`, fore === 1 && efter === 0.5],
     ] as [string, boolean][];
   },

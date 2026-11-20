@@ -41,8 +41,8 @@ export const BYNT = balans('bynamn', {
   heligt: 0.4, heligtAndlig: 0.6, // tron: heligt + heligtAndlig × andligheten / 100
   annan: 0, annanRel: 0.6, // en annans namn: annan + annanRel × relationen / 100 (högst 1, lägst 0)
   avsatt: 0.5, // en avsatt eller störtad ledares namn stämmer så här mycket (steg 10.9.4)
-  vana: 0.3, vanaDygn: 20, // vanan: den som levt vanaDygn dygn med namnet drar av vana från hur gärna hen byter (steg 10.9.4, 12.1.155)
-  nejDygn: 3, // ett namn som röstats ned tas inte upp igen på så här många dygn (år i spelet, steg 12.1.155)
+  vana: 0.5, vanaDygn: 10, // vanan: den som levt vanaDygn dygn med namnet drar av vana från hur gärna hen byter (steg 10.9.4, 12.1.155)
+  nejDygn: 10, // ett namn som röstats ned tas inte upp igen på så här många dygn (år i spelet, steg 12.1.155)
 });
 
 export type BynamnSlag = 'nybygget' | 'natur' | 'minne' | 'person' | 'tro';
