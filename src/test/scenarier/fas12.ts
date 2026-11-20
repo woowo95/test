@@ -807,3 +807,41 @@ SCENARIER.branningljus = {
     ];
   },
 };
+
+SCENARIER.eldruta = {
+  text: 'Inget ligger i elden (steg 12.1.153): en ruta med en eld, brasa eller härd tar inte emot högar, varken i en lagerplats eller när någon släpper sin börda, och det som redan ligger där flyttas till närmaste fria ruta',
+  kor: () => {
+    const s = SIM.createState(9, START), z = SIM.zonesOf(s)[0], at = { x: z.x, y: z.y }, i = at.y * SIM.W + at.x;
+    const pa = (x: number, y: number) => SIM.stacksOf(s).filter(a => a.x === x && a.y === y && a.n > 0);
+    // en hög ligger i lagret, och en brasa blir klar på rutan: högen flyttas
+    SIM.setAmount(s, 'sten', 1); const sten = SIM.stacksOf(s).find(a => a.k === 'sten')!; sten.x = at.x; sten.y = at.y;
+    const t = { id: 991, k: 'brasa', x: at.x, y: at.y, kvar: 0 } as SIM.Station; (s.stationer ??= []).push(t);
+    SIM.nyEld(s, t);
+    const flyttad = !pa(at.x, at.y).length && SIM.amountOf(s, 'sten') === 1;
+    // lagret fylls: inget läggs på brasans ruta
+    SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'grenar', 40); SIM.setAmount(s, 'flinta', 20);
+    const iLagret = !pa(at.x, at.y).length;
+    // någon släpper sin börda mitt i brasan: den läggs bredvid
+    const p = nyInvanare(s, 'm', 30);
+    const tk = { act: 'samla', phase: 'do', carry: 0, items: { sten: 3 } } as unknown as SIM.Task;
+    SIM.dropLoad(s, tk, at.x + 0.5, at.y + 0.5, p.id);
+    const borda = !pa(at.x, at.y).length;
+    // utanför lagret, på den första elden
+    const f = SIM.eldPlats(s), tk2 = { act: 'samla', phase: 'do', carry: 0, items: { sten: 2 } } as unknown as SIM.Task;
+    SIM.dropLoad(s, tk2, f.x + 0.5, f.y + 0.5, p.id);
+    const forsta = !pa(f.x, f.y).length;
+    // örtkökets härd är en eldruta, inte bänken bredvid
+    const ort: SIM.Station = { id: 992, k: 'ortkok', x: at.x + 8, y: at.y + 8, kvar: 0, delar: SIM.delarIRad('ortkok', at.x + 8, at.y + 8) };
+    s.stationer!.push(ort);
+    const eld = SIM.eldRutor(s), hard = SIM.delarAv(ort).filter(q => q.del?.eld), ovr = SIM.delarAv(ort).filter(q => !q.del?.eld);
+    const iHard = hard.length > 0 && hard.every(q => eld.has(q.y * SIM.W + q.x)) && ovr.every(q => !eld.has(q.y * SIM.W + q.x));
+    return [
+      ['det som låg där brasan lades flyttas', flyttad],
+      ['brasans ruta hör till eldrutorna', eld.has(i)],
+      ['lagret lägger inget på brasan', iLagret],
+      ['den som släpper sin börda i brasan lägger den bredvid', borda],
+      ['inget läggs i den första elden', forsta],
+      ['örtkökets härd är en eldruta, men inte resten av köket', iHard],
+    ];
+  },
+};

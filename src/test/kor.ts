@@ -6,7 +6,7 @@ import { forLangtArbete } from '../sim/tider';
 import { halMin } from '../sim/is';
 import { kyrkaId } from '../sim/egendom';
 import { budgetAgare } from '../sim/budget';
-import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, sparStorlek, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL, uttagVakt, svavar } from '../sim';
+import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, sparStorlek, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL, uttagVakt, svavar, eldRutor } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { gastLever } from '../sim/gast';
@@ -148,11 +148,12 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     if (t.agare !== BYN && !lever.has(t.agare)) larm('redskap utan ägare', () => `${t.k} ${t.id} ägs av ${t.agare}`);
     for (const [vad, id] of [['hos', t.hos], ['lass', t.lass]] as const) if (id !== undefined && !lever.has(id)) larm(`redskap ${vad} ingen`, () => `${t.k} ${t.id} ${vad} ${id}`);
   }
-  const tiles = vattenNu(s), upptagen = new Map<number, string[]>();
+  const tiles = vattenNu(s), upptagen = new Map<number, string[]>(), eld = eldRutor(s);
   const plats = (k: string, x: number, y: number) => {
     // under en översvämning ligger tunga saker kvar på rutorna som vattnet nått (flod.ts), men aldrig i sjön
     if (tiles[y * W + x] === T.Vatten && (!s.flod || getMap(s.seed).tiles[y * W + x] === T.Vatten)) larm('sak i vattnet', () => `${k} på ${x},${y}`);
     else if (isWall(s, x + 0.5, y + 0.5)) larm('sak i en vägg', () => `${k} på ${x},${y}`);
+    if (eld.has(y * W + x)) larm('sak i elden', () => `${k} på ${x},${y}`); // inget ligger i en eld, brasa eller härd (steg 12.1.153)
     if (!isStored(s, x, y)) return;
     // i ett redskapsställ står flera redskap, så många som det rymmer (steg 2.3.6)
     const forr = upptagen.get(y * W + x) ?? [], f = forvarAt(s, x, y);

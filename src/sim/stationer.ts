@@ -15,7 +15,7 @@ import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool, ingenHar } fr
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
 import { troshusRum, trosMobelBrist } from './troshus';
-import { Zone, amountOf, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
+import { Zone, amountOf, ingetIElden, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
@@ -1295,6 +1295,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
   if (d.mobel) nyKvalitet(s, p, t, 0, d.namn.toLowerCase()); // möblerna har kvalitet, stationerna inte (kvalitet.ts)
   if (d.verktyg && wearTool(s, p, d.verktyg, STATION.latrinSpade)) { const tr = SAKER[d.verktyg]?.trasig; if (tr) count(s, tr.stat); } // benspaden slits för varje grop
   if (forstaGang(s, 'station_' + t.k)) { log(s, forstaText(d.forsta, p), 'world', [p.id]); p.fame.push(`Byggde byns första ${forstaForm(d.namn)}`); }
+  ingetIElden(s); // en station med eld: det som låg där flyttas (steg 12.1.153)
   fyllPlatser(s);
 }
 

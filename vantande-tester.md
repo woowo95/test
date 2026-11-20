@@ -39,8 +39,7 @@
 - Committerna på par-smatt har bara typkontrollen och stegens egna scenarier bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit när grenen förts in i varld.
 - 12.1.22 (barnet föds in i föräldrarnas tro): ändrar byarna (fler troende, tron dör senare ut). Trons tre balanstal ses över i fasens Balans (12.6.6), som mäter att en tro grundas i de flesta byar med minst 20 vuxna inom 35 dygn och att minst nio av tio vuxna har en tro när byn haft en tro i 20 dygn.
 - 12.1.110 (ledarens egenskaper drar från skalans mitt, EGENSKAP.mitt i stället för 50): ändrar byarnas form (tätt eller glest, ring eller rader).
-
-## Frågor till Björn (från natten till 20 november)
+- 12.1.153 (inget ligger i elden): ändrar var högar hamnar; ny vakt `sak i elden` i koll. Scenariot fullaforrad var rött redan före steget (Korg 0 uppgifter, 0 fritid).
 
 - Benspaden görs inte längre i någon av testbyarna på 50 dygn (50 år i spelet, sju veckor i verkligheten): benen går först till sylen, nålarna och snarorna. Den står nu bland det sällsynta i testet. Ska benen räcka till spaden tidigare (en sak för fasens Balans), eller är det rätt att den kommer sent?
 - Världens rader för handelsläger som brutits upp blir kvar för alltid (ungefär 1,6 nya per dygn, alltså per år i spelet). Med tiden växer världens del av sparningen förbi gränsen 512 KB. Ska ett upplöst läger glömmas efter en tid, som ett minne som bleknar?
