@@ -1,4 +1,4 @@
-import { antal } from './ord';
+import { antal, spelTid } from './ord';
 // ---------- bina (system 10.10, steg 10.10.14–10.10.27; Djuren i detalj: Bina) ----------
 // Binas drag (steg 10.10.14): hur mycket som blommar för bina på en plats, ett tal mellan 0 och 1. Det som blommar är rader i
 // registret DRAGKALLOR, och en ny dragväxt är en ny rad. Summan inom BIN.r rutor delas med BIN.dragFullt, och talet är högst 1.
@@ -275,7 +275,7 @@ export function retaBo(s: State, orsak: keyof typeof RETAR, x: number, y: number
   count(s, 'boRetat'); count(s, 'boRetat ' + orsak);
   const nara = living(s).filter(p => Math.hypot(p.x - x, p.y - y) <= BIN.retadR + 1).map(p => p.id);
   log(s, `Bina blev uppretade av ${rad.namn} och sticker alla som kommer nära.`, 'world', nara);
-  notis(s, 'retat', `Bina i ${kupa !== undefined || orsak === 'kupa' ? 'en bikupa' : 'ett vildbo'} blev uppretade av ${rad.namn}. De sticker alla inom ${BIN.retadR} rutor i ${BIN.retadTid} minuter.`, nara, { x, y });
+  notis(s, 'retat', `Bina i ${kupa !== undefined || orsak === 'kupa' ? 'en bikupa' : 'ett vildbo'} blev uppretade av ${rad.namn}. De sticker alla som kommer nära under ${spelTid(BIN.retadTid * MIN)}.`, nara, { x, y });
   return true;
 }
 // närmaste uppretade bo inom räckhåll r från (x, y)

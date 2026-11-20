@@ -1,3 +1,4 @@
+import { num } from '../../sim';
 import { LAGER, condOf, lagerHinder, living, sakNamn, zonesOf } from '../../sim';
 import { carryTxt, esc, hallCirkel, hjalpKnapp, hjalpText, kvOrdning, kvRubrik, pLink, pileTxt } from '../hjalp';
 import { outPilesAt, piles, s, ui, uppgiftVid } from '../lage';
@@ -43,7 +44,7 @@ export const hog: Flik = {
     const who = living(s).filter(p => p.task?.act === 'bara' && Math.floor(p.task.tx) === at.x && Math.floor(p.task.ty) === at.y);
     return `
     <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2></div>${hjalpKnapp('hog', 'Varför ligger det här?')}</div>
-    ${hjalpText('hog', `<p class="muted small">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${LAGER.ute} gånger fortare än i lagret.</p>`)}
+    ${hjalpText('hog', `<p class="muted small">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${num(LAGER.ute)} gånger så fort som i lagret.</p>`)}
     ${kvRubrik('Här ligger')}<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
   },

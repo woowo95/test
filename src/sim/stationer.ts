@@ -325,7 +325,7 @@ export const STATIONER = {
   rokeri: { // steg 9.6.8 (matlagning.ts): som torkställningen, men på ett dygn och i alla väder
     namn: 'Rökeri', ikon: 'rokeri', w: 2, h: 2, tek: ['rokeri'], av: RECEPT.rokeri.av, min: RECEPT.rokeri.min, gor: ['roka'], bara: ['roka'],
     bygger: 'Bygger ett rökeri av sten, grenar och lera.',
-    forsta: '{namn} byggde byns första rökeri. Där röks köttet och fisken på ett dygn, också när det regnar.',
+    forsta: '{namn} byggde byns första rökeri. Där röks köttet och fisken fortare än på torkställningen, också när det regnar.',
   },
   tork: {
     namn: 'Torkställning', ikon: 'tork', w: 2, h: 1, tek: ['tork'], av: RECEPT.tork.av, min: RECEPT.tork.min, gor: ['torka', 'malta'], bara: ['torka', 'malta'], flera: true,

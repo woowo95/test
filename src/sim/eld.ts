@@ -1,4 +1,4 @@
-import { antal, gen } from './ord';
+import { antal, gen, spelTid } from './ord';
 import { stationsVarme } from './stationseld';
 import { han } from './ord';
 import { tal } from './ord';
@@ -32,7 +32,6 @@ import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, T, Task, W, H } from './typer';
 import { balans } from './balans';
-import { num } from './format';
 import { vedPerEld, BRASA } from './brasor';
 import { iVattnetNu } from './sjo';
 
@@ -255,7 +254,7 @@ export const kanTalja = (s: State) => nTools(s, 'kniv') + nTools(s, 'yxa') > 0;
 // brinner vill ha mindre än den släckta), också när en eld glöder. Flintan och stenarna till ringen är egna behov med egna skäl
 // (raden leta i val.ts, steg 12.1.39)
 export const needTinder = (s: State) => tinderShort(s);
-function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
+const durText = (sec: number) => spelTid(sec * SEC); // spelets tid i hela ord (steg 12.1.120)
 // ringen av stenar runt eldplatsen läggs av den som tänder, med stenarna hen bär eller når
 function laggRing(s: State, p: Person, f: Fire) {
   if (f.ring || getable(s, p, 'sten') < ELD.ring) return;

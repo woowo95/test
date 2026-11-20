@@ -1,4 +1,4 @@
-import { artikel } from './ord';
+import { artikel, tal } from './ord';
 // ---------- platsen i minnet (fas 11.4, Flera samhällen: Platsen i minnet) ----------
 // Det en person vet om en plats i världen är en lärdom av slaget ort (LARDOMAR i minne.ts): platsens nummer (a), nivån (v, en
 // rad i ORTNIVA: rykte, känt eller besökt), säkerheten (c), tiden då uppgifterna senast hördes (t) och för ett rykte den som
@@ -430,7 +430,7 @@ function nyhetNarByn(s: State, p: Person, nr: number, t0: number, t1: number, sr
   if (!vad.length && fore && nu) {
     if (nu.borta && !fore.borta) vad.push(`${q?.namn ?? 'Byn'} har gått under`);
     else if (nu.led !== fore.led) vad.push(`${q?.namn ?? 'Byn'} har fått en ny ledare${nu.led ? `, ${nu.led}` : ''}`);
-    else vad.push(`${q?.namn ?? 'Byn'} har nu ${nu.tal.folk} invånare (förut ${fore.tal.folk})`);
+    else { const d = Math.round(nu.tal.folk - fore.tal.folk), b = q?.namn ?? 'Byn'; vad.push(d === 0 ? `${b} är lika stor som förut` : d > 0 ? `${b} har vuxit: ${d === 1 ? 'en person till' : `${tal(d)} fler`} bor där nu` : `${b} har krympt: ${d === -1 ? 'en person' : `${tal(-d)}`} färre bor där nu`); } // utan siffror (steg 12.1.120)
   }
   const kom = src !== undefined ? byId(s, src) : p, text = `Nyheter från ${q?.namn ?? 'en by långt borta'}: ${vad.join('. ')}. ${kom?.name ?? 'Någon'} kom med nyheten.`;
   kronika(s, text, 'nyhet');

@@ -5,7 +5,8 @@
 // mallarna b_* i BERATTELSER. Hur lång texten blir beror på hur länge man varit borta (BORTA_LANGD).
 // ui/spara.ts räknar ikapp och visar rutan; den här filen bygger bara innehållet, så att ett scenario kan läsa det.
 import { ARSTIDER, Borta, DAY, HOUR, MallId, State, WEEK, berattelse, kalender, ledareOf, living, olasta, talOrd } from '../sim';
-import { esc, kronikaLank, num } from './hjalp';
+import { esc, kronikaLank } from './hjalp';
+import { spelTid } from '../sim/ord';
 import { s } from './lage';
 
 // registret: kronikans slag (raden får mallens id eller ett eget slag) och hur viktiga de är i berättelsen, högst först.
@@ -101,19 +102,17 @@ export function ikappHtml(spola: boolean, kanSpola = true) {
 
 // tiden i verkligheten (en dag är ett år i spelet), efter tiden i spelet i sammanfattningen
 function verkligTid(ms: number) {
-  const h = ms / HOUR, min = Math.max(1, Math.round(ms * 60 / HOUR));
-  return h >= 24 ? `${num(h / 24)} ${h < 36 ? 'dag' : 'dagar'}` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
+  const d = Math.round(ms / DAY), h = Math.round(ms / HOUR), min = Math.max(1, Math.round(ms * 60 / HOUR)); // hela tal (steg 12.1.120)
+  return d >= 1 ? (d === 1 ? 'en dag' : `${talOrd(d)} dagar`) : h >= 1 ? (h === 1 ? 'en timme' : `${talOrd(h)} timmar`) : min === 1 ? 'en minut' : `${talOrd(min)} minuter`;
 }
 export function bortaHtml(b: Borta) {
-  const years = (s.now - b.fran) / DAY;
   const fodda = (s.stat?.fodda ?? 0) - b.fodda, doda = (s.stat?.doda ?? 0) - b.doda;
-  // den verkliga tiden och tiden i spelet (ett dygn är ett år), minst en månad
-  const man = Math.max(1, Math.round(years * 12));
-  const yrs = years >= 1 ? `${num(years)} år` : `${man} ${man === 1 ? 'månad' : 'månader'}`;
+  // den verkliga tiden och tiden i spelet (ett dygn är ett år); berättelsen under säger vad som hänt under åren (steg 12.1.120–12.1.121)
+  const yrs = spelTid(Math.max(s.now - b.fran, DAY / 12));
   const n = olasta(s);
   const ber = bortaBerattelse(s, b).map(p => `<p class="ovBer">${p.split('\n').map(esc).join('<br>')}</p>`).join('');
   return `
-    <p class="ovLead">Medan du var borta gick ${yrs} i spelet (${verkligTid(s.now - b.fran)} i verkligheten).</p>
+    <p class="ovLead">Du var borta i ${verkligTid(s.now - b.fran)} (${yrs} i spelet).</p>
     <div class="ovBerattelse">${ber}</div>
     <p class="muted">${fodda} födda · ${doda} döda · ${living(s).length} lever nu i byn · ${kronikaLank('', 'I krönikan', kalender(s, b.fran).ar)}</p>
     <p class="ovNotiser">{sym_notis} ${n ? `${n} ${n === 1 ? 'ny notis' : 'nya notiser'}` : 'Inga nya notiser'}</p>

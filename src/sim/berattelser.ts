@@ -842,14 +842,14 @@ const MDEF = {
   k_dog: [
     '{helt} dog {orsak}, {alder} år gammal.',
     'Byn sörjde när {helt} dog {orsak}. {Hen} blev {alder} år.',
-    '{alder} år fick {namn} leva innan {hen} dog {orsak}.',
+    '{Alder} år fick {namn} leva innan {hen} dog {orsak}.',
     'Det var {arstid} när {helt} dog {orsak}, {alder} år gammal.',
     '{helt} är borta. {Hen} dog {orsak} vid {alder} års ålder.',
     'En tystnad föll över byn: {helt} dog {orsak}, {alder} år gammal.',
     'Elden brann lågt den kvällen. {helt} hade dött {orsak}, {alder} år gammal.',
     '{helt} dog {orsak}. {Hen} hann bli {alder} år.',
     { t: '{partner} vakade hos {helt} till slutet. {Hen} dog {orsak}, {alder} år gammal.', om: f => !!f.partner },
-    { t: '{helt} dog {orsak}, {alder} år gammal, och lämnade {barn} barn efter sig.', om: f => (f.barn as number) > 1 },
+    { t: '{helt} dog {orsak}, {alder} år gammal, och lämnade {barnOrd} barn efter sig.', om: f => (f.barn as number) > 1 },
     { t: 'Snön föll när {helt} dog {orsak}. {Hen} blev {alder} år.', om: f => f.sno === true },
     { t: 'Mitt i natten dog {helt} {orsak}, {alder} år gammal.', om: f => f.natt === true },
     // steg 6.7.7

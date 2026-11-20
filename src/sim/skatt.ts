@@ -1,4 +1,4 @@
-import { gen } from './ord';
+import { antal, gen } from './ord';
 // ---------- skatten på rikedomen (steg 10.5.3) ----------
 // Med skattelagen betalar varje vuxen över SKATT.alder en gång per dygn (ett år i spelet) en procent av det hen äger
 // (förmögenheten i personrutan: hus, djur och påbörjat räknas men är aldrig betalning) till byns förråd. Man betalar med hela
@@ -137,7 +137,7 @@ export function skuldVidDoden(s: State, p: Person) {
   const dog = p.died; p.died = undefined;
   const v = betala(s, p, p.skatteskuld);
   p.died = dog;
-  if (v > 0) { count(s, 'skattVarde', v); count(s, 'skuldDod', v); log(s, `Byn tog saker värda ${Math.round(v)} för ${gen(p.name)} skatteskuld.`, 'death', [p.id]); }
+  if (v > 0) { count(s, 'skattVarde', v); count(s, 'skuldDod', v); log(s, `Byn tog saker värda ${antal(v / grundvarde('silver'), 'silver')} för ${gen(p.name)} skatteskuld.`, 'death', [p.id]); }
   delete p.skatteskuld;
 }
 export const struken = (s: State) => { for (const p of s.people) delete p.skatteskuld; };
@@ -160,7 +160,7 @@ export function skattDygn(s: State, dt: number) {
   }
   if (sum <= 0) return;
   count(s, 'skattVarde', sum);
-  log(s, `Skatten gav byns förråd saker värda ${Math.round(sum)}.`, 'world');
+  log(s, `Skatten gav byns förråd saker värda ${antal(sum / grundvarde('silver'), 'silver')}.`, 'world');
 }
 
 // ---------- arvsskatten (steg 10.5.6) ----------
@@ -189,7 +189,7 @@ export function arvsskattVidDoden(s: State, p: Person) {
   p.died = dog;
   if (v <= 0) return;
   count(s, 'arvsskattVarde', v);
-  const text = `Byn tog saker värda ${Math.round(v)} i arvsskatt efter ${p.name}.`;
+  const text = `Byn tog saker värda ${antal(v / grundvarde('silver'), 'silver')} i arvsskatt efter ${p.name}.`;
   log(s, text, 'death', [p.id]); kronika(s, text, 'arv');
 }
 

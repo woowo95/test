@@ -23,6 +23,22 @@ export const tal = (n: number, ett = false) => n > 200 ? 'otaliga' : n > 12 ? 'm
 // "en gång", "tre gånger", "många gånger", "otaliga gånger"
 export const ganger = (n: number) => n === 1 ? 'en gång' : `${tal(n)} gånger`;
 
+// ---------- tiden (steg 12.1.120) ----------
+// ett tidsspann i verkligheten som tid i spelet, i hela tal och med ord: ett dygn är ett år, en vecka en tidsålder, två timmar en
+// månad, fyra minuter ungefär en dag och tio sekunder en timme. Allt som spelaren ser om hur länge något varar går genom den, i
+// simuleringens texter och i gränssnittet ("två månader", "ett år", "några timmar"); aldrig verkliga minuter eller decimaler
+const T_AR = 24 * 3600 * 1000, T_DAG = T_AR / 365, T_TIM = T_DAG / 24;
+const st_ = (x: number, en: string, fler: string, ett = false) => { const m = Math.max(1, Math.round(x)); return m === 1 ? `${ett ? 'ett' : 'en'} ${en}` : `${tal(m)} ${fler}`; };
+export function spelTid(ms: number) {
+  if (ms >= 6.5 * T_AR) return st_(ms / (7 * T_AR), 'tidsålder', 'tidsåldrar');
+  if (ms >= 0.95 * T_AR) return st_(ms / T_AR, 'år', 'år', true);
+  if (ms >= 27 * T_DAG) return st_(Math.min(11, ms / (T_AR / 12)), 'månad', 'månader');
+  if (ms >= 6.5 * T_DAG) return st_(ms / (7 * T_DAG), 'vecka', 'veckor');
+  if (ms >= 0.9 * T_DAG) return st_(ms / T_DAG, 'dag', 'dagar');
+  if (ms >= 0.9 * T_TIM) return Math.round(ms / T_TIM) > 12 ? 'nästan en dag' : st_(ms / T_TIM, 'timme', 'timmar');
+  return 'en stund';
+}
+
 // ---------- listor ----------
 // namnen med kommatecken och "och" sist (det som redan har ett "och" i sig först, så att leden inte blandas ihop)
 export const och = (l: string[]) => { l = [...l.filter(x => x.includes(' och ')), ...l.filter(x => !x.includes(' och '))]; return l.length > 1 ? `${l.slice(0, -1).join(', ')} och ${l[l.length - 1]}` : l[0] ?? ''; };

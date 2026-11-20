@@ -1,7 +1,7 @@
-import { styck } from '../sim/ord';
+import { spelTid, styck } from '../sim/ord';
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { DAY, halsa, moodOf, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
+import { halsa, moodOf, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -11,11 +11,8 @@ export { num }; // decimalkomma (format.ts), här för gränssnittets skull
 export const fmtN = (n: number) => String(n > 0 && n < 1 ? 1 : Math.round(n)); // förråd och stackar: alltid hela tal
 export const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 export const times = (n: number) => `${n} ${n === 1 ? 'gång' : 'gånger'}`;
-export function durTxt(ms: number) {
-  const h = ms / HOUR;
-  const min = Math.max(1, Math.round(ms / MIN));
-  return h >= 24 ? `${num(h / 24)} år` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
-}
+// ett tidsspann i spelets tid, i hela tal (steg 12.1.120, spelTid i ordlagret): "två månader", "ett år"
+export const durTxt = (ms: number) => spelTid(Math.max(0, ms));
 // året och tidsstaven i sidhuvudet har samma förklaring (steg 11.1.5): kopplingen till den riktiga klockan, dagen i tidsåldern och klockan
 const klSlag = (t: number) => { const d = new Date(t); return `kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 export function tidForklaring(t: number) {
@@ -62,10 +59,7 @@ export const delRad = (attr: string, delar: readonly { id: string; tecken: strin
 // en länk till en kategori i Krönikan (steg 11.1.40): öppnar Krönikan med kategorin vald (panel.ts)
 export const kronikaLank = (kat: string, text: string, ar?: number) => `<button type="button" class="lank" data-visa="kronika" data-kkat-lank="${kat}"${ar !== undefined ? ` data-kar-lank="${ar}"` : ''}>${esc(text)}</button>`; // ar = krönikan öppnas på det året (steg 11.1.64)
 // hur länge det är kvar, i spelets ord (steg 11.1.40): "ungefär 2 år", "en tidsålder", "några timmar"
-export function omUngefar(ms: number) {
-  const ar = ms / DAY;
-  return ar >= 7 ? `${Math.round(ar / 7)} ${Math.round(ar / 7) === 1 ? 'tidsålder' : 'tidsåldrar'}` : ar >= 1.5 ? `${Math.round(ar)} år` : ar >= 0.75 ? 'ett år' : durTxt(Math.max(0, ms));
-}
+export const omUngefar = (ms: number) => spelTid(Math.max(0, ms)); // samma ord överallt (steg 12.1.120)
 // en länk till en annan flik (steg 11.1.15): ett tryck öppnar den (panel.ts)
 export const flikLank = (flik: string, text: string) => `<button type="button" class="lank" data-visa="${flik}">${esc(text)}</button>`;
 export const hjalpKnapp = (id: string, title: string) => `<button type="button" class="hjalp" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">?</button>`;

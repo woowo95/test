@@ -1,7 +1,7 @@
 import { gen } from './ord';
 import { doljISno } from './utrustning';
 import { heligtAvstar } from './kultlatt';
-import { han, honom, lista, stor, tal } from './ord';
+import { antal, han, honom, lista, stor, tal } from './ord';
 import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
@@ -501,11 +501,12 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
 const STJALS = ['vilt', 'fagel', 'varg', 'vargdel', 'radjur', 'radjurdel', 'vildsvin', 'vildsvindel', 'bjorn', 'bjorndel', ...KOTTSLAG, 'fisk', 'abborre', 'grillkott', 'torrkott'];
 function stjal(s: State, f: Vargflock) {
   let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
-  for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; }
+  const tagna: Record<string, number> = {};
+  for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; tagna[k] = (tagna[k] ?? 0) + 1; }
   if (!tog) return;
   f.hunger = Math.max(0, f.hunger - VARG.stjalMat * tog);
   count(s, 'vargStal', tog);
-  log(s, `Vargar smög in i byn i mörkret och tog ${tog} ${tog === 1 ? 'sak' : 'saker'} mat ur förrådet.`, 'world');
+  log(s, `Vargar smög in i byn i mörkret och tog ${och(Object.entries(tagna).map(([k, m]) => antal(m, k)))} ur förrådet.`, 'world');
 }
 
 // ---------- vargarna och betesdjuren (steg 9.8.12) ----------

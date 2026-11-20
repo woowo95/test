@@ -14,7 +14,7 @@ import { GA_TID } from './paborjat';
 import { nyRitual } from './kultlatt';
 import { hourOf } from './tid';
 import { Grav, GravStil, GravVard, KVAR, Kvarleva, gravAt, kroppKrok, kvarById, nara, sagSkandad } from './kvarlevor';
-import { BUD, BudId, KYRKA, budBrutet, budIn, foljer, foljerStorlek, harBud, satSkand } from './kyrka';
+import { BEGR_TAL, BUD, BudId, KYRKA, budBrutet, budIn, foljer, foljerStorlek, harBud, satSkand } from './kyrka';
 import { SkalaId, Tro, rymsBud, skalaV, troOf } from './religion';
 import { amountOf, harTillHands, put } from './lager';
 import { SAKER } from './saker';
@@ -459,6 +459,7 @@ export const BEGRAVNINGAR: Record<BegrId, { namn: string; led: 'vag' | 'samling'
   sorgkvade: { namn: 'Sorgkvädet', led: 'tillagg', bud: 'sorgkvade', skalor: [] },
   gravol: { namn: 'Gravölet', led: 'tillagg', bud: 'gravol', skalor: [['fest', 0]], tim: 2 },
 };
+BEGR_TAL.balVed = BEGRAVNINGAR.bal.ved ?? 0; BEGR_TAL.balMin = BEGRAVNINGAR.bal.min ?? 0; BEGR_TAL.vattenMin = BEGRAVNINGAR.vatten.min ?? 0; BEGR_TAL.vakaTim = BEGRAVNINGAR.vaka.tim ?? 0; BEGR_TAL.gravolTim = BEGRAVNINGAR.gravol.tim ?? 0; // budens texter (kyrka.ts, steg 12.1.120)
 // den enkla begravningen, utan samling: humöret för familjen och för de andra som stod hen nära
 export const BEGRAVNINGAR_ENKEL = balans('begravning', { familj: 0.05, andra: 0.03 });
 const GRAVBUD = new Set<string>([...VARDER.map(k => GRAVAR[k].bud), ...Object.values(BEGRAVNINGAR).map(b => b.bud), ...PLATSER.map(k => GRAVPLATSER[k].bud)]);

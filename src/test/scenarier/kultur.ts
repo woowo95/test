@@ -1223,7 +1223,7 @@ SCENARIER.pilar = {
   },
 };
 SCENARIER.tidsord = {
-  text: 'Steg 11.1.4–11.1.5: tiden skrivs på ett sätt i hela gränssnittet, och året och tidsstaven i sidhuvudet har samma förklaring med kopplingen till den riktiga klockan: långa spann i år och tidsåldrar, datum som "År 12, vårtid", och "tryck" i stället för "klicka". Ingen text i gränssnittets kod eller i panelerna i en testby innehåller "dygn", "säsong" eller "klicka"',
+  text: 'Steg 11.1.4–11.1.5: tiden skrivs på ett sätt i hela gränssnittet, och året och tidsstaven i sidhuvudet har samma förklaring med kopplingen till den riktiga klockan: långa spann i år och tidsåldrar, datum som "År 12, vårtid", och "tryck" i stället för "klicka". Ingen text i gränssnittets kod eller i panelerna i en testby innehåller "dygn", "säsong" eller "klicka". Steg 12.1.120: varje tidsspann skrivs i spelets tid i hela ord (spelTid i ordlagret), och begravningsbudens tid kommer ur koden',
   kor: () => {
     utanWebblasare();
     const ord = /dygn|säsong|klicka/i;
@@ -1271,9 +1271,20 @@ SCENARIER.tidsord = {
       [`året och tidsstaven har samma förklaring: ett år är ett dygn och en tidsålder en vecka, med dagen och klockan ("${forkl.replace(/\n/g, ' ')}")`, samma && /Ett år i spelet är ett dygn i verkligheten, och en tidsålder är en vecka/.test(forkl) && forkl.includes(`dag ${k.dag} av ${k.av}`) && /kl\. \d\d:\d\d/.test(forkl) && forkl.startsWith(SIM.timeLabel(s, s.now))],
       [`ingen sträng i gränssnittets kod säger dygn, säsong eller klicka${fel.length ? `: ${fel.slice(0, 3).join('; ')}` : ''}`, !fel.length],
       [`panelerna i en testby säger inte dygn, säsong eller klicka${iPanel ? `: ${iPanel}` : ''}`, !iPanel],
+      ...spelTidFall(),
     ];
   },
 };
+// tiden i texterna (steg 12.1.120): en gemensam funktion ger spelets tid i hela ord, och begravningsbuden följer koden
+function spelTidFall(): [string, boolean][] {
+  const H = SIM.HOUR, ex = [O.spelTid(SIM.MIN), O.spelTid(3 * H), O.spelTid(SIM.DAY), O.spelTid(2.4 * SIM.DAY), O.spelTid(8 * SIM.DAY), O.spelTid(15 * SIM.MIN)];
+  const bal = (SIM.BUD.bal as { om: () => string }).om(), vatten = (SIM.BUD.vattenGrav as { om: () => string }).om();
+  const balTid = O.spelTid((SIM.BEGRAVNINGAR.bal.min ?? 0) * SIM.MIN), vattenTid = O.spelTid((SIM.BEGRAVNINGAR.vatten.min ?? 0) * SIM.MIN);
+  return [
+    [`spelets tid i hela ord: ${ex.join(', ')}`, ex.join() === 'sex timmar,två månader,ett år,två år,en tidsålder,fyra dagar' && ex.every(t => !/\d|,\d/.test(t))],
+    [`begravningsbudens tid stämmer med koden (${balTid}, ${vattenTid})`, bal.includes(balTid) && vatten.includes(vattenTid) && !/en timme|halv timme/.test(bal + vatten)],
+  ];
+}
 SCENARIER.forradsflik = {
   text: 'Steg 11.1.6: förrådet är en flik utan runsten (flikar/forrad.ts). Rikedomen i sidhuvudet öppnar och stänger den på bred och smal skärm, spaltens rubrik på datorn öppnar den, och fliken visar sakerna i mapparna med namn och antal',
   kor: () => {

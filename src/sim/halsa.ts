@@ -1,6 +1,6 @@
 import { protesFor, protesPa } from './protes'; // bara inne i funktioner: protes.ts läser den här filen
 import { gasterNu, gastLever } from './gast';
-import { han, honom } from './ord';
+import { han, honom, spelTid } from './ord';
 import { personHand } from './personlogg';
 import { utanforByn } from './omrade';
 import { UPPV, upplev } from './uppvaxt';
@@ -523,7 +523,7 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   if (p.blod < HALSA.blodDod) { if (p.ute === undefined) blodas(s, p.x, p.y, 'forblodning', 1); return 'blod'; }
   // tiden kvar (steg 9.5.14): när den blir kort blir det en notis, en gång per gång hen börjar blöda illa
   const kvar = tidKvar(p);
-  if (kvar < HALSA.kortTim && !p.blodNotis) { p.blodNotis = 1; notis(s, 'blodning', `${p.name} förblöder om ${Math.max(1, Math.round(kvar * 60))} minuter om ingen hjälper.`, [p.id], p.ute === undefined ? { x: Math.floor(p.x), y: Math.floor(p.y) } : undefined); }
+  if (kvar < HALSA.kortTim && !p.blodNotis) { p.blodNotis = 1; notis(s, 'blodning', `${p.name} förblöder om ${spelTid(kvar * HOUR)} om ingen hjälper.`, [p.id], p.ute === undefined ? { x: Math.floor(p.x), y: Math.floor(p.y) } : undefined); }
   else if (kvar >= HALSA.kortTim) delete p.blodNotis;
   const ont = smarta(p);
   if (ont > HALSA.ontGrans) think(p, 'Har ont', -HALSA.smartaHumor * ont, s.now, HOUR);

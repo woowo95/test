@@ -1,4 +1,5 @@
-import { bestamd, gen, stor } from '../../sim/ord';
+import { MIN } from '../../sim';
+import { bestamd, gen, spelTid, stor } from '../../sim/ord';
 import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
@@ -124,7 +125,7 @@ export const station: Flik = {
     ${bruk}
     ${d.utkant?.drag ? dragRad(st) : ''}
     ${d.gor.length ? `<h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>` : ''}
-    <h3>Material</h3><p ${tip(`${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av}</p><p>Arbete ${d.min} min</p>
+    <h3>Material</h3><p ${tip(`${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av}</p><p>Arbete ${spelTid(d.min * MIN)}</p>
     ${platser ? `<h3>Redskap</h3><dl class="kv">${platser}</dl>` : ''}
     ${d.forvar ? `${kvRubrik('Förvaring')}${inne ? `<dl class="kv stk">${inne}</dl>` : '<p class="muted">tom</p>'}<p class="muted">${forvar}</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}
