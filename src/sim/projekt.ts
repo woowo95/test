@@ -8,7 +8,7 @@ import { familjOf } from './folk';
 import { omtanke } from './omtanke';
 import { clamp } from './slump';
 import { amountOf, capacity } from './lager';
-import { materialBuffert, stationBrist, tillverkVill, villAv, villHaAv } from './forradsmal';
+import { koKrok, materialBuffert, stationBrist, tillverkVill, villAv, villHaAv } from './forradsmal';
 import { SAKER, viktOf } from './saker';
 import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST, plaggVarmer } from './klader';
 import { coldOf, temperature } from './vader';
@@ -365,6 +365,13 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
 };
 export const PROJEKT_LIST = Object.keys(PROJEKT);
+// arbetet som väntar vid stationen k (steg 12.1.150, koKrok i forradsmal.ts): för varje sak som görs där, bristen i projektet gånger
+// receptets minuter
+koKrok.vid = (s, k) => {
+  let n = 0;
+  for (const g of STATIONER[k].gor) { const b = PROJEKT[g] ? bristNu(s, g) : 0; if (b > 0) n += b * ((RECEPT as Record<string, { min?: number } | undefined>)[g]?.min ?? 0); } // b > 0: också en brist som inte går att räkna (NaN) hoppas över
+  return n;
+};
 // det byns projekt saknar (steg 10.5.17), en gång i timmen (TAKTER): per material det projekten behöver (beh: receptets
 // material för varje projekt med brist, som någon vuxen kan göra nu, och det byggena i budgetens delar med procent över 0
 // saknar), det som saknas av det när det byn har dragits av (n) och den största bristen bland projekten som behöver det (b,

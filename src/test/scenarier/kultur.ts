@@ -4176,7 +4176,7 @@ SCENARIER.pabud = {
 };
 
 SCENARIER.yrken = {
-  text: 'Yrkena Herde och Biodlare (steg 12.1.32, YRKEN i seder.ts): den som mest vaktar och sköter djuren kallas herde, och den som sköter bina biodlare',
+  text: 'Yrkena Herde och Biodlare (steg 12.1.32, YRKEN i seder.ts): den som mest vaktar och sköter djuren kallas herde, och den som sköter bina biodlare; och de sex yrkena präst, skald, skrivare, bryggare, vävare och krukmakare (steg 12.1.139)',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18), [h, b, ...ovriga] = vuxna;
     for (const x of vuxna) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
@@ -4188,6 +4188,31 @@ SCENARIER.yrken = {
       [`${h!.name} som vallar, mjölkar och klipper kallas ${h!.tag ?? 'inget'}`, h!.tag === 'Herde'],
       [`${b!.name} som skattar bikuporna kallas ${b!.tag ?? 'inget'}`, b!.tag === 'Biodlare'],
       [`de andra blir inget av dem (${ovriga.map(x => x.tag ?? 'inget').join(', ')})`, !ovriga.some(x => x.tag === 'Herde' || x.tag === 'Biodlare')],
+      ...nyaYrken(),
     ];
   },
 };
+// steg 12.1.139: sex yrken från de nya systemen, och bryggningen räknas till bryggaren och inte kocken
+function nyaYrken(): [string, boolean][] {
+  const s = SIM.cloneState(testBy(3)), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+  const fall: [string, Record<string, number>][] = [
+    ['Präst', { ritual: 5, be: 4, samla: 4 }], ['Skald', { upptrada: 6, samla: 5 }], ['Skrivare', { skriva: 4, bok: 2, gora_pergament: 2, samla: 4 }],
+    ['Bryggare', { brygga: 4, malta: 3, tappa: 2, koka_mat: 1, samla: 3 }], ['Vävare', { spinna: 4, vava: 4, samla: 4 }], ['Krukmakare', { lerkruka: 5, lera: 2, samla: 5 }],
+  ];
+  // testbyn har få vuxna: två yrken i taget, och de andra gör vardagligt arbete
+  if (vuxna.length < 3) return [[`testbyn har för få vuxna (${vuxna.length})`, false]];
+  const fick: [string, string, string][] = [];
+  for (let j = 0; j < fall.length; j += 2) {
+    for (const x of vuxna) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
+    const del = fall.slice(j, j + 2);
+    del.forEach(([, h], i) => { vuxna[i]!.habit = { ...h }; });
+    SIM.updateTags(s);
+    del.forEach(([y], i) => fick.push([y, vuxna[i]!.name, vuxna[i]!.tag ?? 'inget']));
+  }
+  const kock = SIM.TAGS.find(t => t.tag === 'Kock'), bry = SIM.TAGS.find(t => t.tag === 'Bryggare');
+  return [
+    [`de sex yrkena finns och har handlingar (${fall.map(([y]) => `${y}: ${SIM.TAGS.find(t => t.tag === y)?.acts.join(', ') ?? 'saknas'}`).join('; ')})`, fall.every(([y]) => (SIM.TAGS.find(t => t.tag === y)?.acts.length ?? 0) > 0)],
+    ['bryggningen hör till bryggaren och inte kocken', !!bry && !!kock && ['brygga', 'malta', 'tappa', 'branna'].every(a => bry.acts.includes(a as SIM.Act) && !kock.acts.includes(a as SIM.Act))],
+    ...fick.map(([y, namn, tag]): [string, boolean] => [`${namn} kallas ${tag} (ska vara ${y})`, tag === y]),
+  ];
+}

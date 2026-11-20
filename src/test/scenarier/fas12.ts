@@ -630,7 +630,7 @@ SCENARIER.svalaplagg = {
     const v = (k: string) => SAKER[k]!.klad!.varme;
     const s = SIM.createState(5, START), p = SIM.living(s)[0]!;
     const tid = (ok: (t: number) => boolean) => { for (let h = 0; h < 24 * 400; h++) { const t = s.now + h * SIM.HOUR; if (ok(t)) return t; } return -1; };
-    const het = tid(t => temperature(s, t) >= Math.max(KROPP.varmGrader, KROPP.kladFran) + 1);
+    const het = tid(t => temperature(s, t) >= Math.max(25, KROPP.kladFran + 1)); // riktigt varmt: klädseln väljs efter värmen (steg 12.1.149)
     for (const t of SIM.tingOf(s)) if (t.bar === p.id) t.bar = undefined;
     const pa = (k: string) => { const t = SIM.addTool(s, k, p); t.bar = p.id; t.x = t.y = undefined; return t; };
     // hettan: med hatten svalare än utan

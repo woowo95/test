@@ -22,13 +22,13 @@ import { heldBy, iKroken, Ting, allaTing, redskapSlitet, tingOf } from './agande
 import { kvEffekt, kvHaller } from './kvalitet';
 import { ACTS } from './handlingar';
 import { BYN, lends } from './egendom';
-import { KROPP, count, living } from './folk';
-import { forVarm, snoPaMarken, temperature } from './vader';
+import { count, living } from './folk';
+import { snoPaMarken, temperature } from './vader';
 import { bordSlag, carryKind, handOrkar } from './lager';
 import { balans } from './balans';
 import { SAK_ART, arPrast, heligtAvstar, heligtBrutet } from './kultlatt';
 import { farorNu } from './kult';
-import { KLADMATERIAL, PLAGG, type Plagg, kladAv } from './klader';
+import { KLADER, KLADMATERIAL, NAKEN_PLATS, kladAv, kladSkyddStrid } from './klader';
 import { fordonI, rymsI } from './fordon';
 
 export const UTRUSTNING = balans('utrustning', {
@@ -261,9 +261,17 @@ const arMantel = (k: string) => kladAv(k)?.plagg === 'mantel';
 const kladFor = (s: State, p: Person, k: string) => { const pl = kladAv(k)?.plagg; return pl === 'prastdrakt' || pl === 'mask' ? arPrast(s, p) : pl === 'tecken' ? p.tro !== undefined : true; };
 // plagget av det heliga djurets skinn (steg 10.3.15): den som följer budet bär det inte, utom när kylan är en fara
 const kladArt = (k: string) => { const m = kladAv(k)?.mat; return m ? SAK_ART[KLADMATERIAL[m].sak] : undefined; };
+// poängen för att ha plagget k på sig (steg 12.1.149, vikterna i KLADER): värmen gånger hur kallt det är, skyddet i striden,
+// finheten och att det klär en del som annars vore naken (NAKEN_PLATS). t = tinget om hen redan har det på sig
+export function plaggPoang(s: State, p: Person, k: string, t: Ting | undefined, temp = temperature(s)) {
+  const r = kladAv(k), pl = SAKER[k]?.klad?.plats, del = pl ? NAKEN_PLATS[pl] : undefined;
+  const skydd = kladSkyddStrid(k), sk = skydd ? Object.values(skydd.tar).reduce((a, b) => a + (b ?? 0), 0) : 0;
+  const naken = del !== undefined && !paSig(s, p).some(q => q !== t && NAKEN_PLATS[SAKER[q.k]!.klad!.plats] === del);
+  return KLADER.valVarme * kladSkydd(k, t) * (KLADER.valIdeal - temp) / KLADER.valSpann + KLADER.valSkydd * sk + KLADER.valFin * (r ? KLADMATERIAL[r.mat].finhet : 0) + (naken ? KLADER.valNaken : 0);
+}
 export function stepKlader(s: State) {
   if (!tingOf(s).some(t => SAKER[t.k]?.klad)) return;
-  const varmt = temperature(s) >= KROPP.svalnatGrader, kyla = farorNu(s).kyla;
+  const temp = temperature(s), kyla = farorNu(s).kyla;
   const ledare = s.styre?.ledare;
   // plaggen per slag, i tingens ordning, en gång per timme (om de är fria frågas när de väljs: det någon tar av sig blir fritt)
   const avSlag = new Map<string, Ting[]>();
@@ -276,16 +284,16 @@ export function stepKlader(s: State) {
       const m = tingOf(s).find(t => arMantel(t.k) && t.bar === undefined && t.hos === undefined && t.lass === undefined && !t.halv && t.helig === undefined);
       if (m) { for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.plats === 'yttre') t.bar = undefined; m.bar = p.id; m.x = m.y = m.vid = undefined; }
     }
-    // för varm (steg 12.1.19): när det är riktigt varmt tas ett plagg av i taget, det varmaste först, och de tas på igen när det
-    // svalnat. Lätta plagg (skjortan, tunikan, byxorna och skorna) och det som inte värmer sitter kvar
-    // det svala plagget tvärtom (steg 12.1.34): när kylan är en fara tas det av, det svalaste först, och på igen när den gått över
-    if (kyla) { const t = paSig(s, p).filter(q => SAKER[q.k]!.klad!.varme < 0).sort((a, b) => SAKER[a.k]!.klad!.varme - SAKER[b.k]!.klad!.varme)[0]; if (t) { t.bar = undefined; count(s, 'plaggAvKyla'); } }
-    if (forVarm(s, p)) { const t = paSig(s, p).filter(q => SAKER[q.k]!.klad!.varme > 0 && !PLAGG[kladAv(q.k)?.plagg as Plagg]?.latt).sort((a, b) => SAKER[b.k]!.klad!.varme - SAKER[a.k]!.klad!.varme)[0]; if (t) { t.bar = undefined; count(s, 'plaggAvVarme'); } }
+    // klädseln efter värmen (steg 12.1.149): det plagg som har lägst poäng under −valByte tas av, ett i taget, så att de varmaste
+    // åker av först när det blir varmt och de svala först när det blir kallt
+    { let av: Ting | undefined, ap = -KLADER.valByte;
+      for (const t of paSig(s, p)) { if (arMantel(t.k) && p.id === ledare) continue; const v = plaggPoang(s, p, t.k, t, temp); if (v < ap) { av = t; ap = v; } }
+      if (av) { av.bar = undefined; count(s, SAKER[av.k]!.klad!.varme > 0 ? 'plaggAvVarme' : 'plaggAvKyla'); } }
     for (const t of paSig(s, p)) if (heligtAvstar(s, p, kladArt(t.k), kyla)) { t.bar = undefined; count(s, 'heligtPlaggAv'); } // plagget tas av och ligger kvar
     const har = new Set(paSig(s, p).map(t => SAKER[t.k]!.klad!.plats));
     for (const k of KLAD_SLAG) {
       const pl = SAKER[k]!.klad!.plats;
-      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla) || (SAKER[k]!.klad!.varme > 0 && !PLAGG[kladAv(k)?.plagg as Plagg]?.latt && varmt) || SAKER[k]!.klad!.varme < 0 && kyla) continue; // tas på igen när det svalnat (steg 12.1.19)
+      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla) || plaggPoang(s, p, k, undefined, temp) <= KLADER.valByte) continue; // klädseln efter värmen (steg 12.1.149)
       let best: Ting | undefined;
       for (const t of avSlag.get(k) ?? []) {
         if (t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || t.helig !== undefined || !lends(s, t.agare, p)) continue; // det heliga tinget bärs inte (steg 10.3.20)

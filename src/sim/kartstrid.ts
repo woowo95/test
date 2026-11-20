@@ -15,7 +15,8 @@ import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
 import { GANG } from './gang';
 import { blocked, freeNear } from './byggnad';
-import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat, paKartan, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat, paKartan } from './folk';
+import { tanke } from './tankar';
 import { KROPPSDELAR, forlora, kanGa, skada } from './halsa';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
@@ -367,7 +368,7 @@ export function gralBlirSlagsmal(s: State, a: Person, b: Person) {
   if (budHindrar(s, a, 'ingenStrid')) { count(s, 'bud_ingenStrid'); return; } // den heliga dagen (steg 10.3.22)
   // ett litet barn slåss inte på kartan: det gråter i stället
   const liten = [a, b].find(q => ageOf(q, s.now) < SLAGSMAL.smaBarn);
-  if (liten) { think(liten, 'Grät efter ett gräl', -SLAGSMAL.grat, s.now, SLAGSMAL.gratTim * HOUR); count(s, 'gralGrat'); return; }
+  if (liten) { tanke(liten, 'gratGral', s.now, { v: -SLAGSMAL.grat, tid: SLAGSMAL.gratTim * HOUR }); count(s, 'gralGrat'); return; }
   kartStridBorja(s, 'slagsmal', [[a], [b]], 'efter ett gräl');
   handelse(s, a, 'sla', b); // den som började slagsmålet slog först
 }

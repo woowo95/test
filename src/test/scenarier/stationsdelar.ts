@@ -168,6 +168,31 @@ SCENARIER.brannolja = {
   },
 };
 
+SCENARIER.slojdbankar = {
+  text: 'Slöjdbänkarna (steg 12.1.150): behovet räknas ur arbetet som väntar vid bänken (bristen i projekten för det som görs där gånger receptets minuter) i stället för en per tolv vuxna; en bänk till byggs när mer väntar än bänkarna hinner',
+  kor: () => {
+    const s = createState(1, START);
+    medHus(s);
+    const bank = (n: number) => { s.stationer = (s.stationer ?? []).filter(t => t.k !== 'flatarbank'); for (let i = 0; i < n; i++) (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: 1 + 3 * i, y: 1, kvar: 0 } as Station); s.byggV = (s.byggV ?? 0) + 1; };
+    // det som väntar i byn: bristen i projekten gånger minuterna, för det som görs vid bänken
+    bank(1);
+    const RE = SIM.RECEPT as Record<string, { min?: number } | undefined>;
+    let vantat = 0; const nan: string[] = [];
+    for (const g of SIM.STATIONER.flatarbank.gor) { const b = SIM.PROJEKT[g] ? SIM.bristNu(s, g) : 0; if (Number.isNaN(b)) nan.push(g); if (b > 0) vantat += b * (RE[g]?.min ?? 0); }
+    const vid = SIM.koKrok.vid(s, 'flatarbank');
+    const hinner = SIM.STATIONER.flatarbank.hinner!;
+    // med ett bestämt arbete som väntar
+    const med = (min: number, n: number) => { const f = SIM.koKrok.vid; SIM.koKrok.vid = () => min; try { bank(n); return SIM.stationBrist(s, 'flatarbank'); } finally { SIM.koKrok.vid = f; } };
+    return [
+      [`arbetet som väntar vid bänken räknas ur projekten (${vid.toFixed(1)} minuter, väntat ${vantat.toFixed(1)}${nan.length ? `; brist som inte går att räkna hoppas över: ${nan.join(', ')}` : ''})`, Math.abs(vid - vantat) < 1e-9 && Number.isFinite(vid)],
+      ['utan slöjdbänk vill byn ha en, också när inget väntar', med(0, 0) === 1],
+      ['en bänk räcker när mindre väntar än den hinner', med(hinner * 0.8, 1) === 0],
+      [`mer än en bänk hinner: byn vill ha en till (${med(hinner * 1.5, 1)})`, med(hinner * 1.5, 1) > 0],
+      ['med två bänkar är det nog', med(hinner * 1.5, 2) === 0],
+      ['antalet vuxna avgör inte längre', !('perVuxna' in SIM.STATIONER.flatarbank)],
+    ];
+  },
+};
 SCENARIER.kladmaterial = {
   text: 'Steg 12.1.20: materialet till kläderna. Ett plagg som väntar på läder, lintyg eller ylle ärver genom projektet som gör materialet (garvningen, vävningen), och skinnet det i sin tur väntar på hämtas genom jakten (KALLA i projekt.ts). Byn vill ha en slöjdbänk per tolv vuxna',
   kor: () => {
@@ -179,19 +204,10 @@ SCENARIER.kladmaterial = {
     (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'garvning', x: 1, y: 5, kvar: 0, delar: SIM.delarIRad('garvning', 1, 5) } as Station); s.byggV = (s.byggV ?? 0) + 1;
     const jakt = SIM.hamtas('skinn')?.act === 'jakt' && SIM.hamtas('radjursskinn')?.act === 'jakt';
     const viaGarvning = SIM.fattas(s, p, 'garva', f), lader = SIM.arv(s, p, 'lader', f);
-    // slöjdbänken: ingen ger brist; en räcker till tolv vuxna; fler vuxna vill ha en till
-    const bank = (n: number) => { s.stationer = (s.stationer ?? []).filter(t => t.k !== 'flatarbank'); for (let i = 0; i < n; i++) (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: 1 + 3 * i, y: 1, kvar: 0 } as Station); };
-    const vuxna = () => SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen).length;
-    bank(0); const ingen = SIM.stationBrist(s, 'flatarbank');
-    bank(1); const en = SIM.stationBrist(s, 'flatarbank'), v0 = vuxna();
-    for (let i = 0; vuxna() <= 12; i++) s.people.push({ ...p, id: 90000 + i, tek: { ...p.tek } });
-    const fler = SIM.stationBrist(s, 'flatarbank'), v1 = vuxna();
-    bank(2); const tva = SIM.stationBrist(s, 'flatarbank');
+    // hur många slöjdbänkar byn vill ha prövas i scenariot slojdbankar (steg 12.1.150)
     return [
       ['skinnen hämtas genom jakten', jakt],
       [`garvningen väntar på skinn (${viaGarvning}), och lädret ärver genom garvningen till jakten efter skinn (${lader?.sak})`, viaGarvning === 'skinn' && lader?.sak === 'skinn'],
-      [`utan slöjdbänk vill byn ha en (${ingen}); en räcker till ${v0} vuxna (${en})`, ingen === 1 && (v0 > 12 || en === 0)],
-      [`${v1} vuxna vill ha en till (${fler}), och med två är det nog (${tva})`, fler === 1 && tva === 0],
     ];
   },
 };

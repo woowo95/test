@@ -43,6 +43,7 @@ export const TANKAR = {
   sovSang: rad({ text: 'Sov gott i sängen', tid: 8 * HOUR, nar: 'sov i en säng; styrkan STATION.sangGlad gånger hur utvilad (vila i STATIONER, steg 12.4.3)' }),
   sovVagga: rad({ text: 'Sov gott i vaggan', tid: 8 * HOUR, nar: 'spädbarnet sov i en vagga; styrkan STATION.vaggaGlad gånger hur utvilad (vila i STATIONER, steg 12.4.5)' }),
   bredvidKaresta: rad({ text: 'Sov bredvid sin käresta', nar: 'sov i en säng intill kärestans (mobler.ts, steg 12.4.3)' }),
+  rumPlus: rad({ text: (a: { text: string }) => a.text, tid: 8 * HOUR, nar: 'sover eller äter i ett rum med ett plus; texten och styrkan i RUM_PLUS (rum.ts, steg 12.1.143)' }),
   promenad: rad({ text: 'Tog en skön promenad', v: 0.06, tid: 6 * HOUR, nar: 'promenaden (steg.ts)' }),
   bada: rad({ text: 'Badade i sjön', v: 0.08, tid: 6 * HOUR, nar: 'badet (steg.ts)' }),
   strand: rad({ text: 'Satt vid vattnet och fick ro', v: 0.06, tid: 6 * HOUR, nar: 'satt vid stranden (steg.ts)' }),
@@ -91,6 +92,7 @@ export const TANKAR = {
   tomhant: rad({ text: (a: { namn: string }) => `Gick tomhänt från ${a.namn}`, nar: 'fick inget byte hos handlaren (handel.ts)' }),
   // ---- samtal och relationer
   gralade: rad({ text: (a: { namn: string }) => `Grälade med ${a.namn}`, nar: 'den som började grälet (samtal.ts)' }),
+  gratGral: rad({ text: 'Grät efter ett gräl', nar: 'ett litet barn i ett gräl som skulle bli slagsmål; styrkan och tiden i SLAGSMAL (kartstrid.ts, steg 12.1.47)' }),
   gralAndra: rad({ text: (a: { namn: string }) => `Grälade med ${a.namn}`, nar: 'den andra i grälet (samtal.ts)' }),
   troststes: rad({ text: (a: { namn: string }) => `Tröstades av ${a.namn}`, nar: 'ett tröstande samtal (samtal.ts)' }),
   skilda: rad({ text: (a: { ord: string; namn: string }) => `${a.ord} ${a.namn}`, nar: 'skilsmässa eller gick skilda vägar (samtal.ts)' }),

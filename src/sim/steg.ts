@@ -22,7 +22,7 @@ import { angIVagen, angMark } from './slatter';
 import { tamFaraSteg } from './djurflykt';
 import { hoRegn } from './vattenho';
 import { djurTorstSteg } from './djurtorst';
-import { rumVila } from './rum';
+import { rumPlus, rumPlusTanke, rumVila } from './rum';
 import { PLAN, planBuild, stepByggplan } from './byggplan';
 import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, sattVid, stepMjardar, valjFisk, vittja } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST, tillverkAv } from './tillverka';
@@ -130,8 +130,8 @@ import { allaTing } from './agande';
 import { och } from './ord';
 import { stepPynt } from './pynt';
 import { glomByten, stadaByten } from './byte';
-import { stationById, stationFlyttTimme, stationFor, kvVid, slitRedskapVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
-import { buffert, forbrukTimme, overTak, underBuffert, villHaAv } from './forradsmal';
+import { stationById, stationFlyttTimme, stationFor, kvVid, slitRedskapVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation, vidBordet } from './stationer';
+import { buffert, forbrukTimme, overTak, underBuffert, villHaAv, ostKrok } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
 import { ar_vatska, fyllLampa, fyllVatska, karSomBlirLedig, ledigFor, taVatskaFran, teFaktor, vatskaAv, type VatskaId } from './vatskor';
@@ -741,6 +741,8 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
     if (p.task!.act === 'sova') { if (bv) { tanke(p, bv.tanke, now, { v: bv.glad * e }); bredvidKaresta(s, p); } else tanke(p, VILOTANKE[tak], now, { f: e }); } // sängen och vaggan har sin egen tanke (steg 12.4.3)
   }
   p.rest = clamp(p.rest + dtSec / HOUR_S * sittVila(s, p), 0, 1); // den som sitter på en pall eller stol vilar mer (steg 12.4.4)
+  // rummens plus (steg 12.1.143): en god tanke hos den som sover eller äter i ett rum där taggarna passar bra ihop
+  if (v.rum && (tak && p.task!.act === 'sova' || vidBordet(p))) for (const m of rumPlus(s, v.rum)) if (m.tanke) tanke(p, 'rumPlus', now, { text: rumPlusTanke(m.id), v: m.tanke });
   if (heat > KROPP.eldNara) { // välbehaget ur eldstaden för den eld som värmer mest (steg 10.2.109)
     const fh = varmasteHard(s, p.x, p.y);
     tanke(p, 'vamsAvElden', now, { v: fh.comfort });
@@ -1789,7 +1791,6 @@ import { baddVila, bredvidKaresta, iDass, sittVila, sattaKlar } from './mobler';
 import { mognadSteg, mognadVarde, tunnaRegn } from './tunna';
 import { vardeKrok } from './varde';
 vardeKrok.inne = mognadVarde; // en mognad dryck är värd mer (steg 12.4.6): tunna.ts läses före varde.ts
-import { ostKrok } from './forradsmal';
 import { surnarSnart } from './vatskor';
 ostKrok.surnar = s => surnarSnart(s, 'mjolk'); // mjölken som annars skulle surna ystas (steg 12.4.7)
 import { tanke } from './tankar';

@@ -10,7 +10,7 @@ import { iSangen } from '../../ui/stalle';
 import { skapad } from '../../ui/utseende';
 import { KARNA } from '../../portrattkarna';
 import { setByn, ui } from '../../ui/lage';
-import { familjen, iRing, medLagar, setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
+import { testBy, familjen, iRing, medLagar, setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -1251,6 +1251,36 @@ SCENARIER.sovplats = {
   },
 };
 
+SCENARIER.rumplus = {
+  text: 'Rummens plus (steg 12.1.143): Varmt och ljust, Fint pyntat och Eget rum i registret RUM_PLUS, som läser rummens taggar ur RUMSTYPER; eget rum vilar man bättre i, och pluset syns under rummets taggar',
+  kor: () => {
+    const { RUM_PLUS, RUMSTYPER } = SIM, rad = (id: string) => RUM_PLUS.find(p => p.id === id)!, T = (...k: string[]) => new Set(k);
+    const ljust = rad('ljust'), pynt = rad('pynt'), eget = rad('eget');
+    // en ny grundtagg i registret (som Sjukstugan) delar rummet av sig själv, utan att pluset ändras
+    const reg = RUMSTYPER as Record<string, SIM.RumsTyp>;
+    reg.provtagg = { namn: 'Prov', ikon: 'bord', slag: 'grund', om: '', krav: () => false };
+    const nyDelar = !eget.krav(T('sovrum', 'provtagg'), false);
+    delete reg.provtagg;
+    // i en riktig by: plusen räknas och vilan följer dem
+    const s = SIM.cloneState(testBy(25)), rum = SIM.gridOf(s).rooms.filter(r => r.tiles.length);
+    let vilaRatt = rum.length > 0, sagsEget = 0;
+    for (const r of rum) {
+      const pl = SIM.rumPlus(s, r), mi = SIM.rumMinus(s, r);
+      let v = 1; for (const m of mi) if (m.vila) v *= 1 - m.vila; for (const m of pl) if (m.vila) v *= 1 + m.vila;
+      if (Math.abs(SIM.rumVila(s, r) - v) > 1e-12) vilaRatt = false;
+      if (pl.includes(eget)) sagsEget++;
+    }
+    return [
+      [`registret har tre plus (${RUM_PLUS.map(p => p.namn).join(', ')})`, RUM_PLUS.length >= 3 && !!ljust && !!pynt && !!eget],
+      ['varmt och ljust: ett varmt rum med ljus när det är mörkt ute, inte utan ljus', ljust.krav(T('varmt', 'matsal'), true) && !ljust.krav(T('varmt'), false) && !ljust.krav(T('matsal'), true)],
+      ['fint pyntat: ett prytt rum där man sover eller äter, inte en prydd verkstad', pynt.krav(T('prytt', 'sovrum'), false) && pynt.krav(T('prytt', 'matsal'), false) && !pynt.krav(T('prytt', 'verkstad'), false)],
+      ['eget rum: ett sovrum utan annan funktion; ett sovrum med kök, verkstad eller sovsal är inget eget rum', eget.krav(T('sovrum', 'varmt', 'prytt'), false) && !eget.krav(T('sovrum', 'kok', 'hydda'), false) && !eget.krav(T('sovrum', 'verkstad'), false) && !eget.krav(T('sovsal'), false)],
+      ['en ny grundtagg i RUMSTYPER räknas som en annan funktion utan att pluset ändras', nyDelar],
+      ['eget rum vilar man bättre i, varmt och pyntat ger en tanke', (eget.vila ?? 0) > 0 && (ljust.tanke ?? 0) > 0 && (pynt.tanke ?? 0) > 0],
+      [`i testbyn följer vilan i rummen både minus och plus (${rum.length} rum, ${sagsEget} eget rum)`, vilaRatt],
+    ];
+  },
+};
 SCENARIER.rumstyper = {
   text: 'Steg 7.2.1: rummen räknas fram och funktionen sitter på rummet, inte på hela huset. Registret RUMSTYPER ger rummet en tagg för varje krav det uppfyller, och taggar som passar dåligt ihop ger ett minus',
   kor: () => {
