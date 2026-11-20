@@ -95,7 +95,10 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 /* lista till vänster över allt byn äger */
 /* Förrådet öppnas med rikedomen i sidhuvudet (steg 5.3.3.4) */
 /* förrådsspalten är smal (steg 6.9.2): en rad är bara symbolen och antalet */
-.owned { position: absolute; left: 10px; top: 12px; width: 120px; max-height: calc(100% - 110px); display: block; overflow-y: auto; background: none; color: #dad0bb; text-shadow: 0 1px 2px #24201d, 0 0 3px #24201d; padding: 0 2px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
+/* listan har kartrutornas mörka bakgrund (steg 12.1.161), så att den går att läsa mot snön och den ljusa marken */
+.owned { position: absolute; left: 10px; top: 12px; width: 120px; max-height: calc(100% - 110px); display: block; overflow-y: auto; background: rgba(36, 32, 29, 0.82); color: #dad0bb; text-shadow: 0 1px 1px #24201d; border-radius: 4px; padding: 4px 7px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
+/* med fingret (mobilen, plattan): större siffror som går att läsa (steg 12.1.161) */
+@media (pointer: coarse) { .owned { width: 136px; font-size: 14px; } .owned .n, .forradlista .n { font-size: 15px; font-weight: 700; } }
 .owned h4 { margin: 0 0 3px; font-size: 16px; opacity: 0.8; font-family: var(--display); font-weight: 400; }
 .owned .forradrub { border: 0; background: none; color: inherit; font: inherit; padding: 0; cursor: pointer; text-shadow: inherit; } /* rubriken öppnar förrådets flik (steg 11.1.6) */
 .forradlista { list-style: none; padding: 0; margin: 0 0 8px; } .forradlista li { display: flex; gap: 6px; align-items: center; padding: 2px 0; } .forradlista .n { margin-left: auto; font-variant-numeric: tabular-nums; }

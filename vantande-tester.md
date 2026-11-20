@@ -32,3 +32,4 @@
 ## Grenen par-paneler (12.1.154 och framåt, otestad med de långa testerna)
 
 - 12.1.154 (vänd mot bänken): bara bilden ändras (ui/stalle.ts, ui/manniskor.ts); skyldig `npm run utseende` och koll (scenariot stalle är grönt).
+- 12.1.161 (förrådslistan får en bakgrund): bara stilen i template.html; skyldig `npm run utseende` (datorn och mobilen).
