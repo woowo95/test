@@ -126,9 +126,13 @@ export const fuelStock = (s: State) => amountOf(s, 'ved') + amountOf(s, 'grenar'
 // bränslet p får elda med, räknat i ved
 export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved', p, fran) + takeLimit(s, 'grenar', p, fran) * GREN + (fran ? 0 : iBordan(p, 'ved') + iBordan(p, 'grenar') * GREN) // med det hen bär dit
   + (takeLimit(s, 'torv', p, fran) + takeLimit(s, 'blottorv', p, fran) + (fran ? 0 : iBordan(p, 'torv') + iBordan(p, 'blottorv'))) * TORV.varde; // och torven (steg 12.1.3)
-// ta bränsle ur förrådet, ved först och sedan grenar; ger hur mycket som togs
-// p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
-export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Person) {
+// ta bränsle ur förrådet: grenarna som inte behövs till tändningen först (steg 12.1.52), sedan veden och de andra grenarna; ger hur
+// mycket som togs. p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
+export function takeFuel(s: State, n0: number, p?: Person, ag?: Del, fran?: Person) {
+  const gHar = () => Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9);
+  const g0 = Math.min(Math.max(0, gHar() - Math.ceil(tandBuffert(s, 'grenar') - 1e-9)), Math.floor(n0 / GREN + 1e-9)); // hela grenar, aldrig mer än det som behövs
+  if (g0 > 0) { const d = use(s, p, 'grenar', g0, true, fran?.id); forbrukat(s, 'grenar', -g0); if (ag) addDel(ag, d, GREN); }
+  const n = n0 - g0 * GREN;
   const v = Math.min(n, takeLimit(s, 'ved', p, fran) + (fran ? 0 : iBordan(p, 'ved')));
   const b0 = blotUttaget(), w = use(s, p, 'ved', v, true, fran?.id);
   if (p?.task) p.task.blotVed = v > 0 ? Math.min(1, (blotUttaget() - b0) / v) : 0; // det som togs: torr ved tas först (steg 7.3.4), och ur det hen får ta (steg 12.1.55)
@@ -136,7 +140,7 @@ export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Perso
   const hel = (k: string, kvar: number) => kvar <= 1e-9 ? 0 : Math.min(Math.floor(takeLimit(s, k, p, fran) + (fran ? 0 : iBordan(p, k)) + 1e-9), Math.ceil(kvar / TORV.varde - 1e-9));
   const tt = hel('torv', n - v);
   if (tt > 0) { const d = use(s, p, 'torv', tt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); }
-  const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9), Math.ceil((n - v - tt * TORV.varde) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
+  const g = Math.min(gHar(), Math.ceil((n - v - tt * TORV.varde) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
   if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
   const bt = hel('blottorv', n - v - tt * TORV.varde - g * GREN);
   if (bt > 0) {
@@ -145,10 +149,11 @@ export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Perso
     if (p?.task) p.task.blotVed = Math.min(1, ((p.task.blotVed ?? 0) * v + bt * TORV.varde) / tot);
   }
   if (ag) addDel(ag, w);
-  return v + tt * TORV.varde + g * GREN + bt * TORV.varde;
+  return g0 * GREN + v + tt * TORV.varde + g * GREN + bt * TORV.varde;
 }
-// bränsle som inte fick plats går tillbaka till förrådet som grenar
-export const giveBack = (s: State, n: number) => { if (n > 0) addTo(s, 'grenar', n / GREN); };
+// bränsle som inte fick plats går tillbaka till förrådet: hela vedträn som ved och resten som de hela grenar det räcker till
+// (steg 12.1.52: förut blev allt grenar, ett vedträ två och en halv gren, och grenarna växte långt över taket)
+export const giveBack = (s: State, n: number) => { const v = Math.floor(n + 1e-9), g = Math.floor((n - v) / GREN + 1e-9); if (v > 0) addTo(s, 'ved', v); if (g > 0) addTo(s, 'grenar', g); };
 function fireLog(s: State, e: Omit<FireLog, 't'>, f = s.fire) { f.log.push({ t: s.now, ...e }); if (f.log.length > 80) f.log.splice(0, f.log.length - 80); }
 export const emberOn = (s: State, f = s.fire) => !f.lit && f.emberUntil !== undefined && f.emberUntil > s.now;
 // eldens styrka 0–1 efter hur mycket ved som brinner

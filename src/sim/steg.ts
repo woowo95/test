@@ -58,7 +58,7 @@ import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld, plockatKvar } from './eld';
+import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
@@ -131,7 +131,7 @@ import { och } from './ord';
 import { stepPynt } from './pynt';
 import { glomByten, stadaByten } from './byte';
 import { stationById, stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
-import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
+import { buffert, forbrukTimme, overTak, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
 import { ar_vatska, fyllVatska, ledigFor, teFaktor } from './vatskor';
@@ -797,6 +797,9 @@ function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   }
 }
 
+// grenarna från en stam som huggs eller klyvs följer med när byn behöver dem, till elden eller veden; annars lämnas de på marken
+// (steg 12.1.52: de växte förut långt över taket)
+export const grenarMed = (s: State, tk: Task) => !overTak(s, 'grenar', tk.items?.grenar ?? 0) || woodDays(s) < buffert(s, 'ved');
 // Uppgiften under ett steg. Tiden i steget går åt till det som händer i tur och ordning: att avsluta och välja, att gå
 // (tiden följer vägen), att arbeta i bitar och att bära hem. Det räknas likadant i spelet och vid ikappräkning; spelet
 // visar bara samma rörelse (spar). Vanor och idéer växer medan man håller på
@@ -1099,7 +1102,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const k = stocks(s).find(q => q.id === tk.ref), got = chopStock(s, tk.ref, y);
     if (!got) tk.until = s.now; // stammen är slut
     else {
-      tk.carry += got.ved; bar('grenar', got.grenar);
+      tk.carry += got.ved; if (grenarMed(s, tk)) bar('grenar', got.grenar);
       if (got.done) { tk.until = s.now; const h = k && husById(s, bitAt(s, Math.floor(k.x), Math.floor(k.y))?.hus); if (h) husKlart(s, h, p); } // stocken var det sista i huset (steg 8.1.13)
     }
     return true;
@@ -1108,7 +1111,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
   klyva: (s, _p, tk, { y, bar }) => {
     const got = chopStock(s, tk.ref, y * SKOG.virkeVed);
     if (!got) tk.until = s.now;
-    else { tk.carry += got.ved / SKOG.virkeVed; bar('grenar', got.grenar); if (got.done) tk.until = s.now; }
+    else { tk.carry += got.ved / SKOG.virkeVed; if (grenarMed(s, tk)) bar('grenar', got.grenar); if (got.done) tk.until = s.now; }
     return true;
   },
   samla: (s, p, tk, { rd, dtSec, bar, slag: plockSlag }) => {

@@ -950,3 +950,32 @@ SCENARIER.barretur = {
     ];
   },
 };
+
+// steg 12.1.52: grenarna växer inte över taket
+SCENARIER.grenartak = {
+  text: 'Grenarna över taket (steg 12.1.52): grenarna som inte behövs till tändningen eldas före veden, bränsle som inte fick plats på elden går tillbaka som ved och inte som grenar, och grenarna från en stam lämnas på marken när byn har grenar till taket och ved så det räcker',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10); tandEld(s);
+    const tak = SIM.materialTak(s, 'grenar'), buf = SIM.tandBuffert(s, 'grenar');
+    SIM.setAmount(s, 'ved', 200); SIM.setAmount(s, 'grenar', Math.ceil(tak * 5));
+    const g0 = SIM.amountOf(s, 'grenar'), v0 = SIM.amountOf(s, 'ved');
+    const fick = SIM.takeFuel(s, 4);
+    const g1 = SIM.amountOf(s, 'grenar'), v1 = SIM.amountOf(s, 'ved');
+    // när grenarna är nere vid bufferten tas veden
+    SIM.setAmount(s, 'grenar', Math.ceil(buf)); SIM.takeFuel(s, 4); const g2 = SIM.amountOf(s, 'grenar'), v2 = SIM.amountOf(s, 'ved');
+    // tillbaka: 2,5 ved blir två vedträn och en gren
+    SIM.setAmount(s, 'ved', 10); SIM.setAmount(s, 'grenar', 0); SIM.giveBack(s, 2.5);
+    const tillbaka = `${SIM.amountOf(s, 'ved') - 10} ved och ${SIM.amountOf(s, 'grenar')} grenar`;
+    // stammen
+    const t = { act: 'hugga', phase: 'do', tx: 0, ty: 0, until: s.now, carry: 0, why: '' } as unknown as SIM.Task;
+    SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const lamnas = !SIM.grenarMed(s, t);
+    SIM.setAmount(s, 'grenar', 0); const tas = SIM.grenarMed(s, t);
+    SIM.setAmount(s, 'ved', 0); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const vedBrist = SIM.grenarMed(s, t);
+    return [
+      [`grenarna över bufferten eldas först (grenar ${g0} → ${g1}, ved ${v0} → ${v1}, fick ${fick.toFixed(1)})`, g1 < g0 && v1 === v0 && Math.abs(fick - 4) < 0.5],
+      [`vid bufferten tas veden (grenar ${g2}, ved ${v2})`, g2 === Math.ceil(buf) && v2 < 200],
+      [`det som inte fick plats går tillbaka som ${tillbaka}`, tillbaka === '2 ved och 1 grenar'],
+      [`grenarna från stammen: lämnas när de räcker (${lamnas}), tas när de fattas (${tas}) och när veden fattas (${vedBrist})`, lamnas && tas && vedBrist],
+    ];
+  },
+};
