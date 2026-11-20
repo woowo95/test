@@ -11,6 +11,7 @@ import { budBrutet, budHindrar } from './kyrka';
 import { tanke } from './tankar';
 import { upplev } from './uppvaxt';
 import { handelse } from './rykten';
+import { moodOf } from './humor';
 type VatskaId = import('./vatskor').VatskaId;
 // vätskorna i krukorna (vatskor.ts sätter kroken, så att den här filen inte laddar vatskor.ts och halsa.ts i en ring)
 // alkohol = hur mycket rus en del ger, drycker = dryckerna med alkohol och kvall = den p helst tar på kvällen (raderna i VATSKOR, steg 10.7.23)
@@ -25,7 +26,13 @@ export const RUS = balans('rus', {
   fart: 0.35, // gången och händigheten sjunker så här mycket per hel rus (1 = mycket full) ...
   smid: 6, traff: 4, // ... smidigheten och träffsäkerheten i striden så här många poäng per hel rus
   golv: 0.4, // aldrig under så här stor del av förmågan
-  kvall: 0.3, // chansen per timme att den vuxne som är hemma på kvällen tar en dryck när byn har (steg 10.7.23: per tid, kvallsChans) ...
+  kvall: 0.3, // chansen per timme att den vuxne som är hemma på kvällen tar en dryck när byn har (steg 10.7.23: per tid, kvallsChans), gånger lusten ...
+  // lusten till rus (steg 12.1.175, rusLust): 1 + humör + vana − plikt + uppväxt, mellan lustMin och lustMax
+  lustHumor: 0.6, // den som mår dåligt (humöret 0) dricker så här mycket hellre, den som mår bra (1) så här mycket mindre
+  lustVana: 0.8, vanaFull: 3, // vanan: det man supit (p.supit, glöms med supit i timmen), full vid vanaFull, ger så här mycket mer lust
+  lustSed: 0.4, // byns sed Plikt drar ner lusten så här mycket (Lättja upp)
+  lustUpp: 0.15, // per poäng i uppväxten (upplevelsen Såg en förälder supa, ±2)
+  lustMin: 0.2, lustMax: 3,
   mest: 0.8, // ... och inte redan är så här full
   supit: 0.02, // så mycket av det man supit glöms i timmen ...
   skadligt: 3, // ... och över så här mycket blir hälsan sämre ...
@@ -81,7 +88,13 @@ export function kvallsDryck(s: State, p: Person, hemma: boolean): VatskaId | und
 export function kvallsChans(s: State, p: Person) {
   const dt = Math.min(s.now - (p.kvallT ?? -Infinity), ((hourOf(s.now) - 19 + 24) % 24) * HOUR);
   p.kvallT = s.now;
-  return dt > 0 && chansPer(s, RUS.kvall, HOUR_S, dt / 1000, 'val', p);
+  return dt > 0 && chansPer(s, RUS.kvall * rusLust(s, p), HOUR_S, dt / 1000, 'val', p);
+}
+// lusten till rus (steg 12.1.175): en faktor på chansen att ta en dryck på kvällen, ur humöret, vanan, byns seder och uppväxten
+export function rusLust(s: State, p: Person) {
+  const humor = (0.5 - moodOf(p, s.now)) * 2, vana = Math.min(1, (p.supit ?? 0) / RUS.vanaFull), sed = s.seder?.v.arbete ?? 0;
+  const upp = (p.upp ?? []).reduce((a, u) => a + (u.rus ?? 0), 0);
+  return clamp(1 + RUS.lustHumor * humor + RUS.lustVana * vana - RUS.lustSed * sed + RUS.lustUpp * upp, RUS.lustMin, RUS.lustMax);
 }
 // supandet (utbrottet supa i humor.ts): den som mår dåligt super sig full när byn har något att dricka, det starkaste först
 const starkast = (s: State) => alkoholKrok.drycker().filter(k => alkoholKrok.finns(s, k)).sort((a, b) => alkoholKrok.alkohol(b) - alkoholKrok.alkohol(a))[0];

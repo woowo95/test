@@ -104,7 +104,7 @@ SCENARIER.uppvaxt2 = {
   text: 'Nya upplevelser i uppväxten (steg 12.1.133, UPPLEVELSER i uppvaxt.ts): tio rader för barn ur de nya systemen, var och en med flera utfall, som fastnar när barnet är med om saken',
   kor: () => {
     const NYA = ['djur', 'resaBarn', 'rovareBort', 'rovarePlundring', 'epidemi', 'foralderDomd', 'foralderSop', 'fester', 'lasaBarn', 'faltet'] as const;
-    const rader = NYA.filter(k => k in SIM.UPPLEVELSER && SIM.UPPLEVELSER[k].vem === 'barn' && SIM.UPPLEVELSER[k].e.length >= 2);
+    const rader = NYA.filter(k => k in SIM.UPPLEVELSER && SIM.UPPLEVELSER[k].vem === 'barn' && (SIM.UPPLEVELSER[k].e.length >= 2 || ((SIM.UPPLEVELSER[k] as { rus?: number[] }).rus?.length ?? 0) >= 2));
     const s = SIM.cloneState(testBy(20, b => SIM.living(b).some(c => SIM.ageOf(c, b.now) >= SIM.UPPV.fran && SIM.ageOf(c, b.now) < SIM.UPPV.alder && SIM.living(b).some(q => SIM.isParent(q, c)))));
     const barn = SIM.living(s).find(c => SIM.ageOf(c, s.now) >= SIM.UPPV.fran && SIM.ageOf(c, s.now) < SIM.UPPV.alder && SIM.living(s).some(q => SIM.isParent(q, c)))!;
     const far = SIM.living(s).find(q => SIM.isParent(q, barn))!, vuxen = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && q !== far)!;
@@ -229,6 +229,31 @@ SCENARIER.gudlos = {
       [`den som aldrig är med ses som gudlös (${ser(a, a.borta)} av ${a.andra.length})`, ser(a, a.borta) > 0],
       ['de som är med ses inte som gudlösa', a.andra.every(p => ser(a, p) === 0)],
       ['i en by utan tro får ingen intrycket', ser(b, b.borta) === 0],
+    ];
+  },
+};
+
+SCENARIER.ruslust = {
+  text: 'Lusten till rus (steg 12.1.175, rusLust i rus.ts): chansen att ta en dryck på kvällen är gånger lusten ur humöret, vanan, byns seder och uppväxten; en ledsen person med vana dricker oftare än en glad utan, och Såg en förälder supa ger ett plus eller minus på lusten i stället för egenskaper',
+  kor: () => {
+    const s = SIM.cloneState(testBy(20)), [ledsen, glad] = SIM.living(s).filter(p => !p.gast && SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    ledsen.thoughts = [{ text: 'Mår uselt', v: -0.8, until: Infinity }]; ledsen.supit = SIM.RUS.vanaFull;
+    glad.thoughts = Array.from({ length: 5 }, (_, i) => ({ text: 'Glad ' + i, v: 0.3, until: Infinity })); glad.supit = 0;
+    for (const p of [ledsen, glad]) { p.upp = (p.upp ?? []).filter(u => !u.rus); }
+    const t0 = new Date(s.now).setHours(21, 0, 0, 0);
+    const kvallar = (p: SIM.Person) => { let n = 0; for (let i = 0; i < 400; i++) { s.now = t0 + i * SIM.DAY; p.kvallT = s.now - SIM.HOUR; if (SIM.kvallsChans(s, p)) n++; } return n; };
+    const nL = kvallar(ledsen), nG = kvallar(glad);
+    // uppväxten: plus eller minus på lusten, inga egenskaper
+    const ung = (b: SIM.State) => SIM.living(b).find(c => SIM.ageOf(c, b.now) >= SIM.UPPV.fran && SIM.ageOf(c, b.now) < SIM.UPPV.alder);
+    const sb = SIM.cloneState(testBy(20, b => !!ung(b))), barn = ung(sb);
+    let u: SIM.Upplevelse | undefined;
+    if (barn) { barn.upp = []; medTal(SIM.UPPLEVELSER, 'chans', 1, () => SIM.upplev(sb, barn, 'foralderSop', 'Ulv')); u = barn.upp.find(x => x.k === 'foralderSop'); }
+    const fore = SIM.rusLust(s, glad); glad.upp = [...glad.upp ?? [], { k: 'foralderSop', a: 8, e: {}, rus: 2 }]; const efter = SIM.rusLust(s, glad);
+    return [
+      [`en ledsen med vana dricker oftare än en glad utan (${nL} mot ${nG} kvällar av 400)`, nL > nG * 1.5],
+      [`lusten: ledsen ${SIM.rusLust(s, ledsen).toFixed(2)}, glad ${fore.toFixed(2)}`, SIM.rusLust(s, ledsen) > 1 && fore < 1],
+      [`Såg en förälder supa ändrar lusten (${u?.rus ?? '–'}) och inga egenskaper`, !!u && Math.abs(u.rus ?? 0) === 2 && Object.keys(u.e).length === 0],
+      ['plus på lusten ur uppväxten gör lusten större', efter > fore],
     ];
   },
 };

@@ -53,7 +53,7 @@ export const UPPV = balans('uppvaxt', {
 // hälften så fort i vuxenlivet
 // sed (steg 4.5.4.9): åt vilket håll upplevelsen drar personens hållning i sederna, 1 = lite, 2 = tydligt, 3 = mycket (negativt =
 // sedens andra sida); ett steg är SED.uppSteg (seder.ts). kort: namnet på upplevelsen utan {om} (fliken Seder)
-interface UpplevelseDef { text: string; chans: number; e: Partial<Record<Stat, number>>[]; vem: 'barn' | 'vuxen' | 'bada'; tidig?: true; vuxenTal?: true; ande?: true; tung?: true; sed?: Partial<Record<Sed, number>>; kort?: string }
+interface UpplevelseDef { rus?: number[]; /* utfallen på lusten till rus (steg 12.1.175) */ text: string; chans: number; e: Partial<Record<Stat, number>>[]; vem: 'barn' | 'vuxen' | 'bada'; tidig?: true; vuxenTal?: true; ande?: true; tung?: true; sed?: Partial<Record<Sed, number>>; kort?: string }
 export const UPPLEVELSER = {
   skadad: { text: 'Skadades svårt: {om}', chans: 0.6, e: [{ mod: -2 }, { uthallighet: 2 }, { mod: -1, uthallighet: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, ande: true },
   svalt: { text: 'Var nära att svälta ihjäl', chans: 0.3, e: [{ flit: 2 }, { flit: 1, empati: -1 }], vem: 'bada', sed: { forsiktighet: 2, arbete: 1 }, ande: true },
@@ -121,7 +121,7 @@ export const UPPLEVELSER = {
   rovarePlundring: { text: 'Såg rövarna plundra byn', chans: 0.5, e: [{ mod: -1 }, { mod: -1, flit: 1 }], vem: 'barn', sed: { forsiktighet: 2 }, kort: 'Såg rövarna komma' },
   epidemi: { text: 'Var med om en epidemi i byn', chans: 0.5, e: [{ mod: -1 }, { empati: 1 }, { uthallighet: 1 }], vem: 'barn', sed: { forsiktighet: 2 }, ande: true },
   foralderDomd: { text: 'Såg {om} straffas på tinget', kort: 'En förälder dömdes', chans: 0.7, e: [{ karisma: -1 }, { aggression: 1 }, { empati: -1 }], vem: 'barn', sed: { rang: -2 } }, // mindre tillit till styret: drar bort från Envälde
-  foralderSop: { text: 'Såg {om} supa', kort: 'Såg en förälder supa', chans: 0.3, e: [{ aggression: 1, flit: -1 }, { flit: 1, mod: -1 }], vem: 'barn' },
+  foralderSop: { text: 'Såg {om} supa', kort: 'Såg en förälder supa', chans: 0.3, e: [{}], rus: [2, -2], vem: 'barn' }, // mer eller mindre lust till rus (steg 12.1.175), inga egenskaper
   fester: { text: 'Växte upp med fester, sport och framträdanden', chans: 0.02, e: [{ karisma: 2 }, { karisma: 1, empati: 1 }], vem: 'barn', sed: { prat: 1, gemenskap: 1 } }, // vid varje framträdande, match och gästabud
   lasaBarn: { text: 'Lärde sig läsa som barn', chans: 0.5, e: [{ intelligens: 1, minne: 1 }, { nyfikenhet: 2 }], vem: 'barn', sed: { nyfikenhet: 1 } },
   faltet: { text: 'Hjälpte till på fältet', chans: 0.004, e: [{ flit: 2 }, { flit: 1, uthallighet: 1 }], vem: 'barn', sed: { arbete: 1 } }, // en timme i taget på fältet
@@ -133,7 +133,7 @@ export const upplevelseSed = (k: UpplevelseTyp) => DEF[k].sed;
 export const upplevelseKort = (k: UpplevelseTyp) => DEF[k].kort ?? DEF[k].text.replace(/[,:]? (av |genom )?\{om\}/, '');
 
 // hur mycket en upplevelse formade (den svagaste trängs undan när listan är full)
-const styrka = (u: Upplevelse) => Object.values(u.e).reduce((a, v) => a + Math.abs(v ?? 0), 0);
+const styrka = (u: Upplevelse) => Object.values(u.e).reduce((a, v) => a + Math.abs(v ?? 0), 0) + Math.abs(u.rus ?? 0);
 // en sparad by från före steg 6.7.2 har bara namnet: då står det förälder och barn som förut
 const omText = (u: Upplevelse) => !u.om || u.om.includes(' ') ? u.om ?? '' : u.k === 'foralder' ? `förälder ${u.om}` : u.k === 'barnDod' ? `sitt barn ${u.om}` : u.om;
 export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}s', gen(omText(u))).replace('{om}', omText(u));
@@ -176,6 +176,7 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr =
   if (rnd(s, 'uppvaxt', p) >= chansFor(d, vuxen)) return;
   const e0 = effektFor(d, pick(s, d.e, 'uppvaxt', p), vuxen), e = ggr === 1 ? e0 : Object.fromEntries(Object.entries(e0).map(([x, v]) => [x, Math.round((v ?? 0) * ggr)])) as typeof e0;
   const u: Upplevelse = { k, a: Math.floor(ageOf(p, s.now)), e, ...om ? { om } : {}, ...vuxen ? { v: 1 as const, t: s.now } : {} };
+  if (d.rus) u.rus = Math.round(pick(s, d.rus, 'uppvaxt', p) * ggr); // lusten till rus (steg 12.1.175)
   if (d.ande) u.n = andeRiktning(s, p, vuxen); // andligheten (steg 4.1.1.3)
   const lista = [...p.upp ?? [], u];
   if (lista.filter(x => vuxenUpp(x) === vuxen).length > (vuxen ? UPPV.vuxenMax : UPPV.max)) {
