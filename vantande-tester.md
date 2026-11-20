@@ -167,3 +167,11 @@
 - 12.1.143 (rummens plus, RUM_PLUS i rum.ts): scenarierna rumplus och rumstyper gick igenom i molnet. Ändrar spelet (vilan i ett eget rum och tankarna). Pluset under rummets taggar i fliken Hus är en platshållare (+) och har inte prövats med `npm run utseende`. När grenen par-mobler förs in: Sjukstugan räknas som en annan funktion i Eget rum av sig själv, eftersom villkoret läser slag i RUMSTYPER.
 - 12.1.149 (klädseln efter värmen, plaggPoang i utrustning.ts; KROPP.varmGrader styr nu bara tanken För varm och badet): scenarierna kladval (nytt, ersätter kladvarme), svalaplagg, klader, plagg, naken, ullplagg, mantel och vinterpals gick igenom i molnet. Ändrar spelet. Raden "den som är extremt varm blir tröttare och tänker på det" i scenariot varm var röd redan på 12.1.139, före grenen.
 - 12.1.150 (slöjdbänkarna efter arbetet som väntar, koKrok i forradsmal.ts fylld i projekt.ts; balanstalet `station.bankHinner` = 60 minuter): scenarierna slojdbankar (nytt), kladmaterial och varm gick igenom i molnet (varm med sin röda rad från före grenen). Ändrar spelet. Läs i fasens Balans hur många slöjdbänkar byarna bygger (`npm run hus`) och pröva `bankHinner` med `jamfor --svep` om det blir för många eller för få.
+
+## Varld 20 november: 12.1.111, 12.1.112, 12.1.114 (1ee2902e, bacb1ccf, f568f224)
+
+- Väntar tills de åtta parallella grenarna (par-bildfart, par-paneler2, par-strid, par-styre, par-valet, par-forrad, par-myren, par-klader) är inne; sedan hela kedjan en gång: `npm run kedja -- "npm run -s koll" "npm run -s likhet"`.
+- 12.1.111: bara scenarierna (handelsfard, handlarby, handlarlast, bygava, uppdragbyar tar färden med ett nummer efter det före handlingen). Spelet är oförändrat.
+- 12.1.112: bara scenariot handlare (gränsen från 12.1.48). virke, slaktbank och kista är gröna; varldtillstand blir grönt först när koll sparat nya testbyar.
+- 12.1.114: gåvan och det vänliga beskedet dämpas av fejden. Ändrar världen: skyldig koll med nytt facit, likhet och `npm run radanfall` som information. I scenariots värld på 40 dygn (40 år i spelet) skickas nu ett ovänligt besked men inget krig bryter ut, eftersom relationerna sällan sjunker under −20 och beskedet gick vid −94, nära golvet −100.
+- 12.1.9 och 12.1.10 var redan byggda (761bd327, b7d0e189) och står under "Fas 12.1 från 12.1.9" ovan.
