@@ -29,7 +29,6 @@ export const KROPP = balans('kropp', {
   // för varm (steg 2.3.4): 1 är idealet och värmen kan gå upp till maxVarm. Över idealet värmer bara solen, kläderna när det
   // inte är kallt och att sitta tätt vid elden (hetta i varmeDelar, steg.ts); elden och det milda vädret fyller bara upp till idealet
   maxVarm: 2,
-  varmGrader: 30, svalnatGrader: 27, // riktigt varmt (steg 12.1.19): först från så här många grader är man för varm och tar av plagg, och de tas på igen under svalnatGrader
   forVarm: 1.3, // över detta är man för varm: en tanke (sämre humör), lockas till bad och tar av sig de varma kläderna ...
   extremVarm: 1.7, // ... men först över detta blir man tröttare och lägger tid på att svalka sig i skuggan (steg 2.10.20)
   svalnar: 0.15, // över idealet svalnar kroppen så här mycket per timme, aldrig under idealet

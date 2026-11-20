@@ -100,7 +100,7 @@ export function pabudKort() {
     const mer = tal.map(x => `${f.tal.length > 1 ? `${esc(x.d.namn)}: ` : ''}${esc(l.name)} vill ${esc(varde(x.k, x.led))}, byn själv ${esc(varde(x.k, x.egen))}.`).join(' ');
     return kort(`kort-pabud-${f.id}`, f.namn, 'påbud', f.tal.length > 1 ? `${esc(f.text)}<br>${sager}` : sager, `${mer} Byn följer påbudet så mycket som den lyssnar på ledaren.`);
   }).join('');
-  return kortlista || '<li class="small muted lagkort">Inga påbud gör någon skillnad just nu.</li>';
+  return kortlista || '<li class="small muted lagkort">Inga påbud just nu.</li>';
 }
 export function pabudDel() {
   const l = ledareOf(s);

@@ -194,7 +194,7 @@ SCENARIER.slojdbankar = {
   },
 };
 SCENARIER.kladmaterial = {
-  text: 'Steg 12.1.20: materialet till kläderna. Ett plagg som väntar på läder, lintyg eller ylle ärver genom projektet som gör materialet (garvningen, vävningen), och skinnet det i sin tur väntar på hämtas genom jakten (KALLA i projekt.ts). Byn vill ha en slöjdbänk per tolv vuxna',
+  text: 'Steg 12.1.20: materialet till kläderna. Ett plagg som väntar på läder, lintyg eller ylle ärver genom projektet som gör materialet (garvningen, vävningen), och skinnet det i sin tur väntar på hämtas genom jakten (KALLA i projekt.ts). Tygets plagg vill byn ha när någon kan väva, också innan tyget finns, och det projekten saknar gör linet mer värt att så (grodaPoang i odling.ts)',
   kor: () => {
     const s = createState(1, START);
     medHus(s);
@@ -205,9 +205,22 @@ SCENARIER.kladmaterial = {
     const jakt = SIM.hamtas('skinn')?.act === 'jakt' && SIM.hamtas('radjursskinn')?.act === 'jakt';
     const viaGarvning = SIM.fattas(s, p, 'garva', f), lader = SIM.arv(s, p, 'lader', f);
     // hur många slöjdbänkar byn vill ha prövas i scenariot slojdbankar (steg 12.1.150)
+    // linet: utan tyg och utan vävare vill byn inga tunikor; med en vävare vill den en var, och bristen följer kedjan bakåt
+    const tunikor = () => SIM.REDSKAPMAL.tunika(s);
+    const utanVavare = tunikor();
+    for (const q of SIM.living(s)) for (const id of ['vavstol', 'slanda', 'lin', 'odling']) (q.tek ??= {})[id] = 1;
+    const medVavare = tunikor();
+    SIM.setAmount(s, 'lintyg', 0); SIM.setAmount(s, 'trad', 0); SIM.setAmount(s, 'lin', 0); SIM.setAmount(s, 'ratlin', 0);
+    s.projektSaknar = { lintyg: { beh: 3, n: 3, b: 0.8 } };
+    const lin = SIM.projektenSaknar(s, 'ratlin'), med = SIM.grodaPoang(s, 'lin');
+    s.projektSaknar = undefined;
+    const utan = SIM.grodaPoang(s, 'lin'), korn = SIM.projektenSaknar(s, 'ratlin');
     return [
       ['skinnen hämtas genom jakten', jakt],
       [`garvningen väntar på skinn (${viaGarvning}), och lädret ärver genom garvningen till jakten efter skinn (${lader?.sak})`, viaGarvning === 'skinn' && lader?.sak === 'skinn'],
+      [`utan tyg och vävare vill byn inga tunikor (${utanVavare}), med en vävare en var (${medVavare})`, utanVavare === 0 && medVavare === SIM.living(s).length],
+      [`lintyget projekten saknar ger det råa linet värde genom kedjan (${lin}, utan brist ${korn})`, lin === 0.8 && korn === 0],
+      [`linet är mer värt att så när projekten saknar tyg (${med.toFixed(2)} mot ${utan.toFixed(2)})`, med > utan * 1.5],
     ];
   },
 };

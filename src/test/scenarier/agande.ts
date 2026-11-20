@@ -1121,7 +1121,8 @@ function byHandel(): [string, boolean][] {
   s.ting = tingOf(s).filter(t => !SIM.GORS.kniv.includes(t.k));
   setAmount(s, 'flinta', 0); setAmount(s, 'torrfisk', 120); setAmount(s, 'silver', 10); // (silver att betala flintan med)
   SIM.projektSaknarRakna(s);
-  const behov = s.projektSaknar?.flinta?.n ?? 0, tar = Math.max(behov, SIM.bynKopAntal(s, 'flinta')); // det projekten saknar, och upp till bufferten (steg 12.1.48)
+  const behov = s.projektSaknar?.flinta?.n ?? 0;
+  const tar = Math.max(behov, SIM.bynKopAntal(s, 'flinta')); // och så många som byn tar emot innan det blir över (steg 12.1.48)
   h.varor = [{ k: 'flinta', n: behov + 1 }]; h.silver = 40; // (lite flinta, så att handlaren har plats för betalningen i ryggsäcken)
   const b0 = s.stat?.handelByten ?? 0;
   vuxen(s).skill.handel = 20; // (en skicklig som handlar för byn: affären går igenom)
@@ -1144,7 +1145,7 @@ function byHandel(): [string, boolean][] {
   const behollSkinn = skinn >= 1 && Math.round(amountOf(t, 'skinn')) === skinn && !g.varor.some(w => w.k === 'skinn');
   const direkt = Math.round(amountOf(t, 'silver')) >= 1 && g.varor.length > 0;
   return [
-    [`byn köper flintan projekten saknar (${flinta}, saknar ${behov}, tar emot ${tar}) och säljer sedan sitt överflöd för silver i samma besök (${silver} silver, handlaren fick ${salt.map(w => `${w.n} ${w.k}`).join(', ')})`, bada],
+    [`byn köper flintan projekten saknar, högst så många som den tar emot (${flinta}, projekten ${behov}, högst ${tar}) och säljer sedan sitt överflöd för silver i samma besök (${silver} silver, handlaren fick ${salt.map(w => `${w.n} ${w.k}`).join(', ')})`, bada],
     [`byn säljer inte skinnen ett plagg väntar på (${Math.round(amountOf(t, 'skinn'))} av ${skinn} kvar; utan projekten hade byn sålt dem: ${annars ? 'ja' : 'nej'})`, behollSkinn && annars],
     [`utan något att köpa säljer byn direkt för silver (${Math.round(amountOf(t, 'silver'))} silver, handlaren fick ${g.varor.map(w => `${w.n} ${w.k}`).join(', ')})`, direkt],
   ];
