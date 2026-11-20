@@ -79,7 +79,7 @@ export function uppdragHtml() {
 // världskartan (steg 12.1.29): en tom plats som ui/varldskarta.ts lägger kartan i, så att den står kvar när panelen ritas om
 interface Del { id: string; tecken: string; namn: string; html(): string; syns?(): boolean; hjalp?: false }
 const DELAR: Del[] = [
-  { id: 'karta', tecken: '🗺️', namn: 'Världskartan', html: () => '<div id="vkHost" class="vkHost"></div>', syns: () => !!s.varld, hjalp: false },
+  { id: 'karta', tecken: '📍', namn: 'Världskartan', html: () => '<div id="vkHost" class="vkHost"></div>', syns: () => !!s.varld, hjalp: false },
   { id: 'grannar', tecken: '👥', namn: 'Grannarna', html: grannarHtml },
   { id: 'handlare', tecken: '⚖️', namn: 'Handlarna', html: handlareHtml },
   { id: 'rader', tecken: '⚔️', namn: 'Räderna', html: raderHtml },

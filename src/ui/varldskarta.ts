@@ -249,7 +249,7 @@ export const BYFLIKAR = [
   { id: 'oversikt', tecken: '🏠', namn: 'Översikt' },
   { id: 'folket', tecken: '👥', namn: 'Folket' },
   { id: 'styre', tecken: '⚖️', namn: 'Styre och tro' },
-  { id: 'kunskap', tecken: '📚', namn: 'Kunskap' },
+  { id: 'kunskap', tecken: '🧠', namn: 'Kunskap' },
   { id: 'historia', tecken: '📜', namn: 'Historia' },
   { id: 'forb', tecken: '🤝', namn: 'Förbindelsen' },
 ] as const;

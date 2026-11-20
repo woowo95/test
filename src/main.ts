@@ -124,7 +124,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) 
     + `<button type="button" data-tornado="1" title="En tornado kommer nu från kartans kant">${iconImg('tornado', 14)}</button>`
     + `<button type="button" data-slagsmal="1" title="Ett slagsmål: de två vakna vuxna som står närmast varandra börjar slåss">${iconImg('kk_strid', 14)}</button>`
     + `<button type="button" data-torka="1" title="Torka marken helt, så att en brand kan provas när som helst">${iconImg('torrgras', 14)}</button>`
-    + `<button type="button" data-vack="1" title="Väck den närmaste grannbyn: den byggs ur sin rad och går med byn; tryck igen så somnar den">${tecknet('familjehus', '🏘️', 14)}</button><button type="button" data-nyvarld="1" title="En ny värld runt byn: byn är densamma, men världen, grannbyarna och vägarna är nya">🌍</button><span id="testSvar"></span>`; // steg 12.3.1
+    + `<button type="button" data-vack="1" title="Väck den närmaste grannbyn: den byggs ur sin rad och går med byn; tryck igen så somnar den">${tecknet('familjehus', '🏘️', 14)}</button><button type="button" data-nyvarld="1" title="En ny värld runt byn: byn är densamma, men världen, grannbyarna och vägarna är nya">📍</button><span id="testSvar"></span>`; // steg 12.3.1
   // knappen svarar direkt (steg 4.5.6.4): den lyser upp, och raden under knapparna säger vad som skickats och varifrån, eller
   // varför det inte går just nu. En knapp som inte kan användas är grå (testKnappar)
   $('testSkicka').addEventListener('click', e => {
