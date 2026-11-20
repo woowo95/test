@@ -227,10 +227,7 @@ export function grodorNu(s: State): GrodaSlag[] {
 }
 // kornet (steg 9.6.11): när byn fått sitt första korn av handlarna kommer de som kan odla på sädesodlingen
 export function kornUpptackt(s: State) {
-  if (amountOf(s, 'korn') <= 0 || living(s).some(p => knows(p, 'sadesodling'))) return;
-  const t = TEK.sadesodling, nya = living(s).filter(p => knows(p, 'odling'));
-  for (const p of nya) learn(s, p, t);
-  if (nya.length && forstaGang(s, 'sadesodling')) log(s, `Byn har fått korn av handlarna, och ${nya[0].name} förstår att det kan sås på fältet.`, 'world', [nya[0].id]);
+  if (amountOf(s, 'korn') > 0) upptack(s, TEK.sadesodling, p => knows(p, 'odling'), 'sadesodling', p => `Byn har fått korn av handlarna, och ${p.name} förstår att det kan sås på fältet.`);
 }
 export const grodaNu = (s: State): GrodaSlag | undefined => grodorNu(s)[0];
 const kanOdla = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'odling');
@@ -545,24 +542,30 @@ function storre(s: State, p: Person, f: Falt) {
   for (let k = fore; k < n; k++) f.r![k] = { st: 'roja' };
   noteraFore(s, f, fore);
 }
-// grödan är borta (frost, röta, eld, flod, torka eller tornado) på rutorna (alla med gröda, eller de i rutor): de ska sås igen
-function forlorad(s: State, f: Falt, varfor: string, rutor?: Set<number>) {
+// varför en gröda dog: ordet i raden och namnet i byns statistik
+const FORLUST = {
+  frost: { ord: 'Frosten', stat: 'frostdod' }, rota: { ord: 'Rötan', stat: 'ruttnat' }, torka: { ord: 'Torkan', stat: 'vissnat' },
+  flod: { ord: 'Översvämningen', stat: 'drankt falt' }, eld: { ord: 'Elden', stat: 'brant falt' }, tornado: { ord: 'Tornadon', stat: 'tornado falt' },
+  faglar: { ord: 'Fåglarna', stat: 'fagelAt' }, harar: { ord: 'Hararna', stat: 'hareAt' }, sjukdom: { ord: 'Sjukdomen', stat: 'vaxtsjukDod' },
+} as const;
+// grödan är borta (FORLUST) på rutorna (alla med gröda, eller de i rutor): de ska sås igen
+function forlorad(s: State, f: Falt, orsak: keyof typeof FORLUST, rutor?: Set<number>) {
   const r = rutorAv(f), ks: number[] = [];
   for (let k = 0; k < f.n; k++) if ((r[k].st === 'vaxer' || r[k].st === 'mogen') && (!rutor || rutor.has(faltRuta(f, k)))) ks.push(k);
   if (!ks.length) return;
   const d = GRODOR[r[ks[0]].g!], agare = s.people.find(q => q.id === f.agare);
-  log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
-  count(s, varfor === 'Sjukdomen' ? 'vaxtsjukDod' : varfor === 'Fåglarna' ? 'fagelAt' : varfor === 'Hararna' ? 'hareAt' : varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : varfor === 'Tornadon' ? 'tornado falt' : 'ruttnat');
+  log(s, `${FORLUST[orsak].ord} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
+  count(s, FORLUST[orsak].stat);
   for (const k of ks) r[k] = { st: 'sa' };
   f.rord = s.now; // gräset börjar ta fältet först nu, när det står utan gröda (inte från sådden)
   sammanfatta(f);
 }
 
 // grödan på fältet brann i en eldsvåda (brand.ts, steg 3.8.5)
-export function faltBrann(s: State, f: Falt) { forlorad(s, f, 'Elden'); }
+export function faltBrann(s: State, f: Falt) { forlorad(s, f, 'eld'); }
 // tornadon (steg 6.4.11) förstör grödan på rutorna den går över
 export function faltTornado(s: State, rutor: Set<number>) {
-  for (const f of faltOf(s)) forlorad(s, f, 'Tornadon', rutor);
+  for (const f of faltOf(s)) forlorad(s, f, 'tornado', rutor);
 }
 
 // varje timme (steg.ts): grödorna växer ruta för ruta när det är varmt nog och dör i frost eller ruttnar, och ett fält där inget
@@ -579,17 +582,17 @@ export function stepOdling(s: State) {
     if (grodor) {
       const frost = new Set<number>();
       for (let k = 0; k < f.n; k++) if ((r[k].st === 'vaxer' || r[k].st === 'mogen') && !(GRODOR[r[k].g!] as GrodaDef).flerarig && (istid || temp < GRODOR[r[k].g!].frost)) frost.add(faltRuta(f, k)); // den fleråriga vilar i stället (steg 9.7.9)
-      if (frost.size) forlorad(s, f, 'Frosten', frost);
-      if (s.flod) { const fl = new Set(faltRutor(f).filter(i => iVattnetNu(s, i))); if (fl.size) forlorad(s, f, 'Översvämningen', fl); } // steg 3.8.3 (flod.ts)
+      if (frost.size) forlorad(s, f, 'frost', frost);
+      if (s.flod) { const fl = new Set(faltRutor(f).filter(i => iVattnetNu(s, i))); if (fl.size) forlorad(s, f, 'flod', fl); } // steg 3.8.3 (flod.ts)
       skadedjur(s, f); // fåglarna och hararna (steg 9.7.11)
       vaxtsjukdom(s, f); // växtsjukdomen (steg 9.7.12)
       const rutt = new Set<number>();
       for (let k = 0; k < f.n; k++) if (r[k].st === 'mogen' && skordAndel(s, f, k) <= 0) rutt.add(faltRuta(f, k));
-      if (rutt.size) forlorad(s, f, 'Rötan', rutt);
+      if (rutt.size) forlorad(s, f, 'rota', rutt);
       // en växande ruta som torkat ut vissnar (steg 3.8.2 och 12.1.79): under torkan sjunker fukten, och den som vattnar räddar rutorna (torst.ts)
       const torr = new Set<number>();
       for (let k = 0; k < f.n; k++) if (r[k].st === 'vaxer' && (r[k].fu ?? 1) <= 0) torr.add(faltRuta(f, k));
-      if (torr.size) forlorad(s, f, 'Torkan', torr);
+      if (torr.size) forlorad(s, f, 'torka', torr);
       if (temp > ODLING.vaxGrad && !istid) for (const x of r) if (x.st === 'vaxer' && x.sj === undefined) { /* en sjuk planta växer inte (steg 9.7.12) */ x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) * kravFaktor(s, f, r.indexOf(x), x.g!, temp) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
       sammanfatta(f);
       continue;
@@ -690,7 +693,7 @@ export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
   if (ta && forstaGang(s, 'froForst')) log(s, `${p.name} tog med sig frön från de vilda grödorna. De går inte att äta.`, 'world', [p.id]);
   return ut;
 }
-import { TEK, learn } from './teknik';
+import { TEK, upptack } from './teknik';
 import { grundvarde } from './varde';
 import { foodDays, kroppensMat } from './ekonomi';
 import { FORRADSMAL, buffert } from './forradsmal';
@@ -818,8 +821,8 @@ function skadedjur(s: State, f: Falt) {
     if (fro && !skramma && u < SKADEDJUR.fagel) fagel.add(i);
     else if (!fro && !stangt && u < SKADEDJUR.hare * (0.3 + Math.min(1.2, richness(s, 'jakt', i % W, Math.floor(i / W))))) hare.add(i);
   }
-  if (fagel.size) forlorad(s, f, 'Fåglarna', fagel);
-  if (hare.size) forlorad(s, f, 'Hararna', hare);
+  if (fagel.size) forlorad(s, f, 'faglar', fagel);
+  if (hare.size) forlorad(s, f, 'harar', hare);
 }
 export const skrammaHar = { grenar: 2, torrgras: 2 }; // det fågelskrämman görs av
 // fågelskrämman: den som kan tekniken sätter upp en vid familjens fält som saknar en
@@ -857,7 +860,7 @@ function vaxtsjukdom(s: State, f: Falt) {
     const risk = VAXTSJUK.risk * Math.max(0, 1 + VAXTSJUK.fukt * ((x.fu ?? 0.5) - 0.5)) * (1 + VAXTSJUK.granne * grannar) * (1 + VAXTSJUK.samma * samma);
     if (hash(s.seed ^ 0x5b1c, faltRuta(f, k), h) < risk) { x.sj = s.now; count(s, 'vaxtsjuk'); if (forstaGang(s, 'vaxtsjuk')) log(s, `En sjukdom har kommit på grödan på ett fält. De sjuka plantorna vissnar.`, 'world'); }
   }
-  if (dod.size) forlorad(s, f, 'Sjukdomen', dod);
+  if (dod.size) forlorad(s, f, 'sjukdom', dod);
 }
 utsadeKrok.av = utsade;
 import { paMyr } from './myr'; // inget fält på myren (steg 12.1.1)

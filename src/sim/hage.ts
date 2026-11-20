@@ -110,7 +110,7 @@ export function hageUppgift(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'staket')) return undefined;
   const v = hageVal(s, p);
   if (v) return { act: 'hage' as const, text: 'Sätter staket runt hagen, så att djuren inte rymmer.', min: STAKET.min, spot: { x: v.i % W + 0.5, y: Math.floor(v.i / W) + 0.5 }, ref: v.i };
-  if (!nyHageBehov(s) || living(s).some(q => q !== p && q.task?.act === 'hage' && q.task.ref === -1)) return undefined;
+  if (!nyHageBehov(s) || annanGor(s, p, 'hage', -1)) return undefined;
   const n = hageSida(s), at = faltSite(s, n, n * n);
   return at && { act: 'hage' as const, text: 'Märker ut en hage åt djuren.', min: HAGE.matMin, spot: { x: at.x + 0.5, y: at.y + 0.5 }, ref: -1 };
 }

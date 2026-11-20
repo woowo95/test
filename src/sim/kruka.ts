@@ -125,7 +125,7 @@ export const krukaPyntQ = (t: Ting) => Math.min(PERFEKT, kvOf(t) + (krukaBlommar
 // krukan står på en ruta (inte i någons händer, på en kälke eller i en möbel): bara där sätts och plockas något (steg 10.10.11)
 const paRuta = (q: Ting) => q.hos === undefined && q.lass === undefined && q.vid === undefined && q.x !== undefined && q.y !== undefined;
 // någon annan arbetar redan vid krukan
-const upptagen = (s: State, p: Person, t: Ting) => living(s).some(q => q !== p && (q.task?.act === 'ortPlocka' || q.task?.act === 'ortSatta') && q.task.ref === t.id);
+const upptagen = (s: State, p: Person, t: Ting) => annanGor(s, p, 'ortPlocka', t.id) || annanGor(s, p, 'ortSatta', t.id);
 // p:s lediga kruka, där en växt kan sättas
 const ledigKruka = (s: State, p: Person) => tingOf(s).find(q => q.agare === p.id && (q.k === 'lerkruka_liten' || q.k === 'lerkruka_mellan') && q.ler === undefined && !q.inne && !q.vaxt && !q.kok && paRuta(q) && !upptagen(s, p, q));
 // poängen för växten g i p:s kruka

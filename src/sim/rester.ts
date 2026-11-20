@@ -88,11 +88,7 @@ export function latrinTomKlar(s: State, p: Person) {
 // en gång i timmen: den som odlar kan märka att det växer bättre där resterna legat (tekniken Gödsel) och komposten mognar
 export function stepKompost(s: State) {
   const h = s.sophog;
-  if (h && h.n >= REST.upptack && !living(s).some(p => knows(p, 'kompost')) && hash(s.seed ^ 0x7c0, Math.floor(s.now / HOUR), 7) < REST.upptackTim) {
-    const nya = living(s).filter(p => knows(p, 'odling'));
-    for (const p of nya) learn(s, p, TEK.kompost);
-    if (nya.length && forstaGang(s, 'godsel')) log(s, `${nya[0].name} märker att det växer bättre där resterna på sophögen har legat.`, 'world', [nya[0].id]);
-  }
+  if (h && h.n >= REST.upptack && hash(s.seed ^ 0x7c0, Math.floor(s.now / HOUR), 7) < REST.upptackTim) upptack(s, TEK.kompost, p => knows(p, 'odling'), 'godsel', p => `${p.name} märker att det växer bättre där resterna på sophögen har legat.`);
   const ko = komposten(s);
   if (!ko) return;
   if (h?.n) { ko.kompost = { rest: (ko.kompost?.rest ?? 0) + Math.floor(h.n), mogna: ko.kompost?.mogna ?? 0 }; h.n = 0; } // sophögen blir komposten
@@ -105,8 +101,7 @@ export function stepKompost(s: State) {
   if (forstaGang(s, 'kompostKlar')) log(s, 'Den första komposten är färdig. Den gör fälten bördigare.', 'world');
 }
 import { isKlar } from './stationer';
-import { living } from './folk';
-import { TEK, knows, learn } from './teknik';
+import { TEK, knows, upptack } from './teknik';
 import { hash } from './karta';
 import { temperature } from './vader';
 import { put } from './lager';

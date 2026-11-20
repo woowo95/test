@@ -3,7 +3,7 @@ import { personHand } from './personlogg';
 import { TROSKEL } from './forradsmal';
 import { delade, fyll, kronikaBer, larFalt, loggBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, ageOf, alive, byId, count, living, log, stat, think, paKartan } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think, paKartan } from './folk';
 import { rnd } from './slump';
 import { amountOf, harTillHands, use } from './lager';
 import { SAKER, isTool } from './saker';
@@ -305,6 +305,14 @@ export function learn(s: State, p: Person, t: Tek, from?: Person) {
   think(p, `Kom på hur man kan ${goraUtan(t)}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
   handelse(s, p, 'pahittig', undefined, `hur man kan ${goraUtan(t)}`); // de som ser det minns hen som påhittig (steg 10.4.9)
   if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `lärde sig ${gora(t)}`); upplev(s, p, 'egenTeknik', `hur man kan ${goraUtan(t)}`); gudHandelse(s, 'hantverk', `konsten ${gora(t)}, som ${p.name} kom på`); }
+}
+// en teknik som byn kommer på av sig själv när något har hänt (kornet, ölet, mjödet och komposten): så länge ingen kan den lär sig
+// alla som kan (kan) den, och första gången skrivs en rad. Villkoret för när det händer står hos den som anropar
+export function upptack(s: State, t: Tek, kan: (p: Person) => boolean, forsta: string, text: (p: Person) => string) {
+  if (living(s).some(p => knows(p, t.id))) return;
+  const nya = living(s).filter(kan);
+  for (const p of nya) learn(s, p, t);
+  if (nya.length && forstaGang(s, forsta)) log(s, text(nya[0]), 'world', [nya[0].id]);
 }
 
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Hantverk (slag hantverk i handlingar.ts: att tvinna rep,

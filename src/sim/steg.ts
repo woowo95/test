@@ -58,7 +58,7 @@ import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld } from './eld';
+import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld, plockatKvar } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
@@ -1216,13 +1216,7 @@ export const RUNDA = balans('runda', {
 // (nyckeln för varje slag och ruta byggs en gång: den frågas för hundratals rutor i varje val av nästa mål)
 const PLOCKNYCKLAR: Record<string, string[]> = {};
 const plockKey = (tk: Task, i: number) => { const slag = tk.sok ? 'sten' : ACTS[tk.act].resurs ?? 'gren'; return (PLOCKNYCKLAR[slag] ??= [])[i] ??= `${slag}:${i}`; };
-function plockatPa(s: State, key: string) {
-  const r = s.plockat?.[key];
-  if (!r) return 0;
-  const kvar = r.n - Math.floor((s.now - r.t) / DAY * RUNDA.ater);
-  if (kvar <= 0) { delete s.plockat![key]; return 0; }
-  return kvar;
-}
+const plockatPa = (s: State, key: string) => plockatKvar(s, key, RUNDA.ater);
 // sakerna på rutan per lager (för bär och rötter två), eller en siffra för grenarna och stenarna
 export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: string; n: number }[] {
   if (!inMap(x, y) || gridOf(s).solid[y * W + x] === 1) return []; /* under en vägg ligger inget att plocka (samlaren ställde sig i väggen, by 1) */

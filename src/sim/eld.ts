@@ -525,7 +525,16 @@ export function tandStalle(s: State, p: Person, r = 12): { x: number; y: number 
 // ---------- tändmaterialet på rutan (steg 9.3.4) ----------
 // Höet är gräset självt (hoPaRutan, steg 10.10.9) och kvistarna ligger på all mark, flera hela saker per ruta efter årstiden. Det som plockats (s.plockat, som för grenarna och stenarna i steg.ts) växer tillbaka, ELD.tandAter per dygn
 export type Tand = 'torrgras' | 'grenar';
-const tandKey = (k: Tand, i: number) => `${k === 'torrgras' ? 'ho' : 'kvist'}:${i}`;
+const kvistKey = (i: number) => `kvist:${i}`; // höet tas ur gräset, så bara kvistarna har en rad i s.plockat
+// det som plockats på en ruta (s.plockat, nyckeln key) och inte vuxit tillbaka, när ater saker växer tillbaka per dygn. En rad
+// som vuxit tillbaka helt tas bort. Kvistarna här och grenarna och stenarna i rundan (steg.ts) använder den
+export function plockatKvar(s: State, key: string, ater: number) {
+  const r = s.plockat?.[key];
+  if (!r) return 0;
+  const kvar = r.n - Math.floor((s.now - r.t) / DAY * ater);
+  if (kvar <= 0) { delete s.plockat![key]; return 0; }
+  return kvar;
+}
 export function tandPaRutan(s: State, k: Tand, x: number, y: number): number {
   if (x < 0 || y < 0 || x >= W || y >= H) return 0;
   const g = groundOf(s), i = y * W + x, t = g.tiles[i];
@@ -533,11 +542,7 @@ export function tandPaRutan(s: State, k: Tand, x: number, y: number): number {
   const ai = ageIndex(s);
   if (k === 'torrgras') return hoPaRutan(s, x, y);
   const bas = Math.floor(ELD.kvistSaker * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * grenFaktor(g, i) + 1e-9);
-  const r = s.plockat?.[tandKey(k, i)];
-  if (!r) return bas;
-  const kvar = r.n - Math.floor((s.now - r.t) / DAY * ELD.tandAter);
-  if (kvar <= 0) { delete s.plockat![tandKey(k, i)]; return bas; }
-  return Math.max(0, bas - kvar);
+  return Math.max(0, bas - plockatKvar(s, kvistKey(i), ELD.tandAter));
 }
 // höet är gräset (steg 10.10.9): högt och kort gräs på öppen mark, inte under träd, på en buske, i hagen eller på ängen. Ett hö
 // är MARK.hoTacke av gräset, ner till stubben (MARK.stubb); det växer tillbaka med gräset (growGround i mark.ts)
@@ -549,9 +554,8 @@ export function hoPaRutan(s: State, x: number, y: number) {
 // en sak tändmaterial tas från rutan
 export function tandPlocka(s: State, k: Tand, x: number, y: number) {
   if (k === 'torrgras') { const g = groundOf(s), i = y * W + x; g.cover[i] = Math.max(MARK.stubb, Math.min(1, g.cover[i]) - MARK.hoTacke); return; }
-  const key = tandKey(k, y * W + x), r = s.plockat?.[key];
-  const kvar = r ? Math.max(0, r.n - Math.floor((s.now - r.t) / DAY * ELD.tandAter)) : 0;
-  (s.plockat ??= {})[key] = { n: kvar + 1, t: s.now };
+  const key = kvistKey(y * W + x);
+  (s.plockat ??= {})[key] = { n: plockatKvar(s, key, ELD.tandAter) + 1, t: s.now };
 }
 // arbetet v mot tändmaterialet av slaget k: hela saker från rutan där p arbetar, så många som arbetet räcker till och rutan har
 function tandTa(s: State, p: Person, got: Record<string, number>, k: Tand, v: number) {
