@@ -33,7 +33,7 @@ import { onskan } from './naring';
 import { VARDRATT, halsa, hemma, kanGa, vardBehov, vardVal, vilaHellre } from './halsa';
 import { MAT, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness } from './fynd';
-import { coldOf, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
+import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
@@ -1380,7 +1380,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   // promenad: den nyfikne går gärna ut och ser sig omkring. Bad: när det är varmt i vattnet
   const calm = u < VAL.lugn ? 1 : VAL.lugnAkut, temp = temperature(s), shore = bathSpot(s);
   const wp = (VAL.promBas + stat(p, 'nyfikenhet', now) / VAL.promNyfiken) * calm;
-  const varm = p.warm > KROPP.forVarm ? VAL.badVarm * (p.warm - 1) : 0;
+  const varm = forVarm(s, p) ? VAL.badVarm * (p.warm - 1) : 0; // lusten att bada följer gränsen för för varm (steg 12.1.19)
   const wb = temp >= VAL.badTemp && shore && vaderTillater(s, 'torrt') ? (clamp((temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) + varm) * calm : 0;
   // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;

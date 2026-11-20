@@ -275,6 +275,7 @@ SCENARIER.promenad = {
 SCENARIER.varm = {
   text: 'Steg 2.3.4: kroppen kan bli varmare än idealet: av solen på sommaren (inte i skugga under ett träd eller i ett hus), av kläderna när det är milt och av att sitta tätt vid elden. Under idealet är det som förut. Den som är för varm svalnar, tar av sig de varma kläderna (bältet sitter kvar), tar inte på sig nya, lockas till bad, och badet kyler. Tröttare blir hen först när hen är extremt varm (steg 2.10.20)',
   lang: true,
+  env: { BALANS: 'kropp.varmGrader=-50,kropp.svalnatGrader=-50' }, // gränsen för riktigt varmt (steg 12.1.19) tas bort: här prövas kroppen
   kor: () => {
     const s = createState(5, START);
     s.kal = nyKalender(s.now, 2); klockan(s, 14); // sommar, mitt på dagen
@@ -327,6 +328,51 @@ SCENARIER.varm = {
       ['i värmen tas rocken inte på igen', ejPa],
       ['den som är extremt varm blir tröttare och tänker på det', trott && tanke],
       [`folk blir varmare än idealet på sommaren (som mest ${maxVarm.toFixed(2)}) och badar då (${badVarm} bad)`, maxVarm > 1 && badVarm >= 1],
+    ];
+  },
+};
+
+SCENARIER.kladvarme = {
+  text: 'Steg 12.1.19: kläderna stannar på. Plagg tas av först när det är riktigt varmt (KROPP.varmGrader, omkring 30 grader) och kroppen är för varm, ett i taget med det varmaste först. Lätta plagg (skjortan, byxorna) och bältet sitter kvar. Under gränsen tas inget av, och plaggen tas på igen när det svalnat (KROPP.svalnatGrader). Tanken "För varm" följer samma gräns. Gränserna sänks här (15 och 12 grader), så att alla fall finns under ett år',
+  env: { BALANS: 'kropp.varmGrader=15,kropp.svalnatGrader=12' },
+  kor: () => {
+    const s = createState(5, START);
+    // en tid i året som är riktigt varm, en som är ljum (under gränsen men inte svalnad) och en som är sval
+    const tid = (ok: (g: number) => boolean) => { for (let h = 0; h < 24 * 400; h++) { const t = s.now + h * HOUR; if (ok(temperature(s, t))) return t; } return -1; };
+    const het = tid(g => g >= KROPP.varmGrader + 1), ljum = tid(g => g >= KROPP.svalnatGrader + 0.5 && g < KROPP.varmGrader - 0.5), sval = tid(g => g < KROPP.svalnatGrader - 1);
+    const p = living(s)[0];
+    for (const t of SIM.tingOf(s)) if (t.bar === p.id) t.bar = undefined;
+    const pa = (k: string) => { const t = addTool(s, k, p); t.bar = p.id; t.x = t.y = undefined; return t; };
+    const rock = pa('rock_kaninskinn'), mossa = pa('mossa_kaninskinn'), byxor = pa('byxor_kaninskinn'), skjorta = pa('skjorta_lintyg'), balte = pa('balte_rep');
+    const tanke = (t: number) => { s.now = t; p.warm = 1.9; p.thoughts = []; step(s, 30); return p.thoughts.some(q => q.text === 'För varm'); };
+    // ljumt: kroppen är för varm, men det är inte riktigt varmt i luften
+    s.now = ljum; p.warm = 1.6; stepKlader(s);
+    const kvarILjumt = [rock, mossa, byxor, skjorta, balte].every(t => t.bar === p.id);
+    const ingenTanke = !tanke(ljum);
+    // riktigt varmt: ett plagg i taget, det varmaste först
+    s.now = het; p.warm = 1.6; stepKlader(s);
+    const forst = rock.bar === undefined && mossa.bar === p.id;
+    p.warm = 1.6; stepKlader(s);
+    const sedan = mossa.bar === undefined;
+    p.warm = 1.6; stepKlader(s); p.warm = 1.6; stepKlader(s);
+    const lattaKvar = byxor.bar === p.id && skjorta.bar === p.id && balte.bar === p.id;
+    const varmTanke = tanke(het);
+    // fortfarande ljumt: inget tas på igen
+    s.now = ljum; p.warm = 1; stepKlader(s);
+    const ejPa = rock.bar === undefined && mossa.bar === undefined;
+    // svalnat: plaggen tas på igen
+    s.now = sval; p.warm = 1; stepKlader(s);
+    const paIgen = rock.bar === p.id && mossa.bar === p.id;
+    return [
+      ['alla tre slags tider finns under ett år', het > 0 && ljum > 0 && sval > 0],
+      [`ljumt (${Math.round(temperature(s, ljum))} grader): alla plagg sitter kvar`, kvarILjumt],
+      ['ljumt: ingen tanke på att vara för varm', ingenTanke],
+      [`riktigt varmt (${Math.round(temperature(s, het))} grader): rocken, det varmaste, tas av först och mössan sitter kvar`, forst],
+      ['nästa gång tas mössan av', sedan],
+      ['byxorna, skjortan och bältet sitter kvar', lattaKvar],
+      ['riktigt varmt: tanken "För varm"', varmTanke],
+      ['medan det är ljumt tas plaggen inte på igen', ejPa],
+      [`när det svalnat (${Math.round(temperature(s, sval))} grader) tas de på igen`, paIgen],
     ];
   },
 };

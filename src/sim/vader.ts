@@ -2,7 +2,7 @@ import { clamp, hash3 } from './slump';
 import { HOUR, Person, State } from './typer';
 import { hourOf, kalender, yearPos } from './tid';
 import { balans } from './balans';
-import { count, log } from './folk';
+import { KROPP, count, log } from './folk';
 import { MOTGANG, hardGrader, motgangVid } from './motgang';
 import { TORKA, torkaNu } from './torka';
 import { FLOD, flodRegn } from './flod';
@@ -67,6 +67,9 @@ export const VADER = balans('vader', {
 // ---------- väder: temperatur ----------
 // Temperaturen följer årstiden mjukt (varje tidsålder glider över i nästa), solen över dygnet
 // och ett långsamt slumpmässigt väder. Den räknas fram ur tiden, så den behöver inte sparas.
+// för varm (steg 12.1.19): kroppen är varmare än KROPP.forVarm och det är riktigt varmt i luften. Tanken, lusten att bada och
+// plaggen som tas av följer samma gräns
+export const forVarm = (s: State, p: Person) => p.warm > KROPP.forVarm && temperature(s) >= KROPP.varmGrader;
 export function temperature(s: State, t = s.now) {
   const c = yearPos(s, t); // var i året: 0 = istidens början
   const i = Math.floor(c), q = c - i;

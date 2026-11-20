@@ -50,7 +50,7 @@ import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
-import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
+import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
@@ -721,7 +721,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
     p.rest = clamp(p.rest + dtSec / HOUR_S * fh.comfort * heat, 0, 1); // avslappning vid elden
   }
   if (p.warm < KROPP.fryser) think(p, 'Fryser', -0.12, now, HOUR);
-  if (p.warm > KROPP.forVarm) think(p, 'För varm', -0.08, now, HOUR); // för varm (steg 2.3.4): en tanke
+  if (forVarm(s, p)) think(p, 'För varm', -0.08, now, HOUR); // för varm (steg 2.3.4 och 12.1.19): en tanke när det är riktigt varmt
   // tröttare bara när man är extremt varm (steg 2.10.20): annars arbetar man som vanligt trots värmen
   if (p.warm > KROPP.extremVarm) p.rest = clamp(p.rest - dtSec / HOUR_S * KROPP.varmTrott * (p.warm - 1), 0, 1);
   p.social = clamp(p.social - dtSec / (KROPP.socialTim * HOUR_S), 0, 1);
