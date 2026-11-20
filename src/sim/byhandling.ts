@@ -20,7 +20,7 @@ import { grundvarde } from './varde';
 import { Varlden } from './varlden';
 import { DAY, Stat, State } from './typer';
 import { gruppAv, radMarkId, radGruppPaslag, radHar, radRikedomUr, radTar, radVaror, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
-import { RAD, rikMal } from './rad';
+import { RAD, radDoda, rikMal } from './rad';
 import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
 import { trampaFard, sallskapTyngd } from './leder';
@@ -503,8 +503,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
   if (!BYSORTER[mot.sort].folk || mot.tal.folk <= 0) return; // byn finns inte längre: flocken går hem
   const u = anfallUtfall(r, mot, f.anfall!, i => varldSlump(vl, r.nr, f.id, 0x414e + i), enhet);
   count(s, 'radanfall_med', f.anfall! + forsvarare(mot)); // alla som var med, för andelen döda (steg 11.6.19)
-  const dra = (x: VarldRad, n: number) => { x.tal.folk = Math.max(0, x.tal.folk - n); x.tal.styrka = Math.max(0, Math.min(x.tal.styrka - n, x.tal.folk)); };
-  dra(r, u.dodaA); dra(mot, u.dodaF);
+  radDoda(r, u.dodaA); radDoda(mot, u.dodaF);
   f.anfall! -= u.dodaA;
   for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) taUr(mot, g, n);
   f.byte = u.byte;
@@ -525,7 +524,7 @@ flockKrok.slut = (s, fl) => {
   const vl = s.varld, f = vl?.farder?.find(x => x.id === fl.fard), r = f && radNr(vl!, f.fran);
   if (!vl || !f) return;
   const hem = fl.hemN ?? 0, doda = Math.max(0, f.anfall! - hem);
-  if (r) { r.tal.folk = Math.max(0, r.tal.folk - doda); r.tal.styrka = Math.max(0, Math.min(r.tal.styrka - doda, r.tal.folk)); }
+  if (r) radDoda(r, doda);
   count(s, 'varldsanfall_doda', doda);
   f.anfall = hem;
   f.hem = Object.entries(fl.hemBar ?? {}).filter(([k, n]) => k in SAKER && n > 0).map(([k, n]) => ({ k: k as HVara['k'], n }));

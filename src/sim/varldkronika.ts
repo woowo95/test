@@ -28,7 +28,6 @@ export const VARLDSHANDELSER = {
   uppdrag: { namn: 'Uppdrag', stor: false, text: '{by} sänder ut ett uppdrag till {plats}' },
 } as const satisfies Record<string, VarldHandelseDef>;
 export type VarldHandelseId = keyof typeof VARLDSHANDELSER;
-export const VARLDHANDELSE_IDS = Object.keys(VARLDSHANDELSER) as VarldHandelseId[];
 
 export const VARLDKRONIKA = balans('varldkronika', {
   smaTak: 300, // så många små händelser sparas; de stora sparas alla

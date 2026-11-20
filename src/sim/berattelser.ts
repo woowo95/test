@@ -1,7 +1,7 @@
 import { balans } from './balans';
 import { PERSONLOGG, PLOGG, type PersonloggId, type PersonloggSlag, type PersonRad } from './personlogg';
 import { personHand } from './personlogg';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey, stat } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey, stat, vuxnaOf } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
@@ -2154,7 +2154,7 @@ function skalTill(s: State, p: Person, k: IntryckTyp): { skal: string; tillst: b
 // var BERATT.timmar timme: hur många av de andra vuxna som har samma starka intryck av var och en
 export function stepBerattelser(s: State) {
   if (Math.round(s.now / HOUR) % BERATT.timmar) return;
-  const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
+  const vuxna = vuxnaOf(s);
   if (vuxna.length - 1 < BERATT.minVuxna) return;
   for (const p of living(s)) {
     const andra = vuxna.filter(q => q !== p), m = new Map<IntryckTyp, { n: number; v: number }>();

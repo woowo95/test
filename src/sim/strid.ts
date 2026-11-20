@@ -76,7 +76,6 @@ export const STRID = balans('strid', {
   skoldSlag: 0.3, skoldPil: 0.6, // skölden blockerar 3 av 10 slag och 6 av 10 pilar och kast (steg 8.7.3)
   jarnSkoldSlag: 0.5, jarnSkoldPil: 0.8, // järnskölden 5 av 10 slag och 8 av 10 pilar (steg 12.2.8)
   kvSkada: [0.6, 0.8, 1, 1.2, 1.4, 1.8], // vapnets skada gånger detta efter kvaliteten (usel, slarvig, normal, fin, mästerverk, perfekt)
-  smidPer: 1, // varje steg rustning tar så här mycket smidighet
   tick: 0.2, // sekunder i spelet per tidssteg i striden (samma i båda lägena)
   kortSteg: 0.5, // sekunder per steg för hela byn när faran är nära (steg 10.1.1 och 10.2.13, mätt med npm run kortsteg). Byns vanliga slag är KLOCKA.slag (klocka.ts)
   tempo: 2, // striden går så här många gånger långsammare än den räknas: allt i den (slagen, stegen, blodet, orken) tar längre tid men slutar likadant (steg 3.7.18)

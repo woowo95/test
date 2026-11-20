@@ -36,12 +36,11 @@ export const RADER = balans('rader', {
   hittaNara: 3, // hämnden: så nära (rutor) måste anfallarna komma för att hitta den de söker (steg 8.8.5)
   troTapp: 30, troNy: 40, utanTro: 50, // den som ger upp i ett heligt krig: tappar så mycket i tron, och får anfallarnas tro som en dragning
   skandad: 20, // de troende tappar så mycket när deras heliga plats skändas
-  smitta: 0.1, // för varje bybo som gett upp sjunker de andras mod så här mycket
   overtygelse: 0.5, // i ett heligt krig läggs andligheten gånger tron till modet, upp till så här mycket
   storStrid: 4, // en räd med minst så här många anfallare är en stor strid, som stannar ikappräkningen (steg 8.8.9)
   krigiskFran: 70, // heligt krig: klanens tro står över så här åt Krigisk
   dorrMin: 20, dorrYxa: 8, dorrBom: 2, // så många minuter det tar att hugga sönder en stängd trädörr, med yxa, och gånger detta om den är bommad (steg 8.9.1)
-  tandaMin: 30, tandaChans: 0.2, tandaInst: -60, // att tända ett hus (steg 8.9.3): tid, chans och hur illa klanen ska tycka om byn
+  tandaChans: 0.2, tandaInst: -60, // att tända ett hus (steg 8.9.3): chans och hur illa klanen ska tycka om byn
 });
 export type RadSkal = 'plundra' | 'hamnd' | 'heligt';
 const perPerson = (s: State) => rikedom(s) / Math.max(1, living(s).length);

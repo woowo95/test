@@ -35,7 +35,7 @@ import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } fr
 import { fahusHus } from './slatter';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
-import { DAY, GREN, HOUR, State, WEEK } from './typer';
+import { DAY, GREN, State, WEEK } from './typer';
 import { TillverkDef } from './tillverka';
 import { protesVill } from './protes';
 
@@ -112,18 +112,9 @@ export type Resurs = keyof typeof FORRADSMAL;
 // bufferten i dygn för förrådsseden eller påbudet v, och extra (den som anar en hård vinter, motgang.ts)
 export const onskatDygn = (k: Resurs, v: number, extra = 0) => { const r = FORRADSMAL[k]; return r.dygn * (1 + FORRAD.forsiktig * v + extra) * (FORRAD.behovTomt - r.min); };
 
-// byns mål, räknade en gång i timmen (inte sparade: de räknas ur påbudet)
-interface Mal { key: string; buffert: number; tak: number }
-const cache = new WeakMap<State, Record<string, Mal>>();
-function mal(s: State, k: Resurs): Mal {
-  const v = pabud(s, FORRADSMAL[k].pabud), key = `${Math.floor(s.now / HOUR)}:${v}`, c = cache.get(s) ?? {};
-  let m = c[k];
-  if (!m || m.key !== key) { const b = onskatDygn(k, v); m = c[k] = { key, buffert: b, tak: FORRADSMAL[k].matt * b }; cache.set(s, c); }
-  return m;
-}
-// bufferten och lyxtaket i dygn. extra: p:s aning om en hård vinter (räknas då direkt)
-export const buffert = (s: State, k: Resurs, extra = 0) => extra ? onskatDygn(k, pabud(s, FORRADSMAL[k].pabud), extra) : mal(s, k).buffert;
-export const lyxtak = (s: State, k: Resurs, extra = 0) => extra ? FORRADSMAL[k].matt * buffert(s, k, extra) : mal(s, k).tak;
+// bufferten och lyxtaket i dygn (räknade ur påbudet). extra: p:s aning om en hård vinter
+export const buffert = (s: State, k: Resurs, extra = 0) => onskatDygn(k, pabud(s, FORRADSMAL[k].pabud), extra);
+export const lyxtak = (s: State, k: Resurs, extra = 0) => FORRADSMAL[k].matt * buffert(s, k, extra);
 
 // ---------- materialen (steg 6.2.14) ----------
 interface Materialmal {

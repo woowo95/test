@@ -7,7 +7,7 @@
 // namn efter hur sant det är gånger hur slaget tilltalar hen (gilla); den som föreslår tar det hen tycker bäst om (bastaNamn).
 // Efterledet räknas ur byns frö, så att samma by får samma namn utan att slumpen i byn rubbas
 import { DAY, T, W, State, Person, inMap } from './typer';
-import { ALDER, ageOf, alive, byId, count, getRel, living } from './folk';
+import { alive, byId, count, getRel, living, vuxnaOf } from './folk';
 import { eldPlats, hash } from './karta';
 import { groundOf } from './mark';
 import { FOREST } from './vag';
@@ -75,12 +75,11 @@ function skogAv(s: State, art: number) {
   }
   return mark ? Math.min(1, skog / mark / BYNT.skogFull) : 0;
 }
-const vuxna = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
 // bär p minnet: en egen upplevelse eller ett intryck av någon (en vargdödare)
 export const barMinnet = (p: Person, m: NonNullable<BynamnDef['minne']>) =>
   !!(m.upp && p.upp?.some(u => m.upp!.includes(u.k))) || !!(m.intryck && p.intryck?.some(e => m.intryck!.includes(e.k)));
 function minnesAndel(s: State, rad: string) {
-  const m = DEF[rad].minne!, v = vuxna(s);
+  const m = DEF[rad].minne!, v = vuxnaOf(s);
   return v.length ? Math.min(1, v.filter(p => barMinnet(p, m)).length / v.length / BYNT.minne) : 0;
 }
 // har byn slagit sig ner: ett färdigt hus, eller den första istiden är över
@@ -240,7 +239,7 @@ export function dop(s: State, k: { namn: string; rad: string; om?: number }) {
 // klockan 20 utan ledare: den vuxna med mest karisma föreslår, och namnet är det enda som tas upp
 export function dopKvall(s: State) {
   if (ledareOf(s)) return;
-  const v = vuxna(s);
+  const v = vuxnaOf(s);
   if (!v.length) return;
   const p = v.reduce((a, q) => q.pot.karisma > a.pot.karisma ? q : a);
   const f = namnForslag(s, p);

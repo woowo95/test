@@ -59,6 +59,7 @@ export function rnd(s: State, k: Strom, p?: Person): number {
 }
 export const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
 export const r3 = (v: number) => Math.round(v * 1000) / 1000; // tre decimaler
+export const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y); // avståndet i rutor mellan två punkter
 export const clampI = (v: number, n: number) => clamp(Math.floor(v), 0, n - 1); // rutan (0 till n - 1) som punkten v ligger i, närmaste ruta utanför kartan
 export function gauss(s: State, k: Strom, p?: Person) { return (rnd(s, k, p) + rnd(s, k, p) + rnd(s, k, p) - 1.5) / 1.5; }
 export function pick<X>(s: State, arr: readonly X[], k: Strom, p?: Person): X { return arr[Math.floor(rnd(s, k, p) * arr.length)]; }

@@ -31,7 +31,6 @@ export const TAT_STILAR = ['linjer', 'prickar', 'flator', 'djur'] as const;
 export type TatStil = typeof TAT_STILAR[number];
 export const TAT_STILNAMN: Record<TatStil, string> = { linjer: 'linjer', prickar: 'prickar', flator: 'flätor', djur: 'djurtecken' };
 export const byStil = (s: State): TatStil => TAT_STILAR[Math.abs(s.seed) % TAT_STILAR.length];
-export const klanStil = (nr: number): TatStil => TAT_STILAR[Math.abs(nr) % TAT_STILAR.length];
 
 export const TATU = balans('tatuering', {
   bas: 0.3, sed: 0.7, // lusten att märka en händelse: bas + sed × byns värde i motivets sed

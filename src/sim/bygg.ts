@@ -38,7 +38,6 @@ export const BYGG = balans('bygg', {
   radiePerPerson: 0.25, // ... plus så många per invånare
   utomVikt: 1, // en plats får så många poäng (färre är bättre) för varje ruta utanför det byn omsluter, så att byn håller ihop ...
   mittVikt: 0.2, // ... och så många för varje ruta från områdets mitt (bynsMitt), bland platserna innanför ...
-  lagerMarg: 1, // ett hus står minst så här många rutor från en lagerplats
   byggareInt: 4, // när byn väljer byggare väger intelligensen så här många gånger mindre än hantverket
   omforsok: 12, // timmar innan byn försöker planera ett hus igen när det inte fanns någon plats
   perHus: 4, // så många får bygga på varje hus (platserna på bygget); fler väger en tredjedel (arbetarna, steg 6.1.13 i val.ts)

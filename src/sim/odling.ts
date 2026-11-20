@@ -1,7 +1,7 @@
 import { stubbeOn } from './stubbar';
 import { tabortBuske } from './buskar';
 import { OMRADE_DELAR, bynsMitt, iByn, omrade, utanforByn } from './omrade';
-import { ALDER, ageOf, alive, count, familjOf, forstaGang, gjort, living, log, ovning, stat } from './folk';
+import { ALDER, ageOf, alive, count, familjOf, forstaGang, gjort, living, log, ovning, stat, vuxnaOf } from './folk';
 import { FYND, richness, takeFrom } from './fynd';
 import { kunnighet } from './ekonomi';
 import { SNABBARE } from './handlingar';
@@ -619,7 +619,7 @@ const famCache = new WeakMap<State, { key: number; n: number }>();
 export function fronFamiljer(s: State) {
   const key = Math.floor(s.now / HOUR), c = famCache.get(s);
   if (c && c.key === key) return c.n;
-  const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), kan = vuxna.some(p => knows(p, 'odling')), sedda = new Set<number>();
+  const vuxna = vuxnaOf(s), kan = vuxna.some(p => knows(p, 'odling')), sedda = new Set<number>();
   let n = 0;
   for (const p of vuxna) {
     if (sedda.has(p.id) || (kan && !knows(p, 'odling'))) continue;

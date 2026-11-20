@@ -62,7 +62,7 @@ import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight,
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
-import { SJUK, SJUK_DOD, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
+import { SJUK, SJUK_DOD, forkylning, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
 import { eldPlats, getMap } from './karta';
 import { eldFlyttKvar, flyttaElden, stepEldFlytt } from './eldflytt';
 import { giftSteg } from './giftermal';
@@ -76,7 +76,7 @@ import { RELT, stepRelationer } from './relationer';
 import { MINNE, areaOf, fearPlace, forget, lookAround, observe, plockad, radslaVid, sees, sightOf, trorOm } from './minne';
 import { PLATS } from './plats';
 import { chance, clamp, hash3, r3, rnd } from './slump';
-import { ARSTID, VAR, ageIndex, hourOf, iIstiden, isLight } from './tid';
+import { VAR, ageIndex, hourOf, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, kartAv, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
 import { FOREST, findPath, wear } from './vag';
@@ -760,7 +760,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   p.health -= dtSec / HOUR_S * skorbjugg(p); // brist på vitaminer (steg 2.6.2)
   if (!p.sjuk && !(p.sickUntil && p.sickUntil > now)) {
     // förkylningen av kyla, väta och trötthet (steg 9.5.1): oftare i istiden. Den svåra sjukdomen loggas när den kommit långt (sjukSvar nedan)
-    if (chance(s, (iIstiden(ai) ? ARSTID.sjukIstid : ARSTID.sjuk) * SJUK.kyla / 86400, dtSec, 'halsa', p)) insjukna(s, p, 'forkylning');
+    if (chance(s, forkylning(ai), dtSec, 'halsa', p)) insjukna(s, p, 'forkylning');
   }
   if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'kyla' : p.torst <= 0 ? 'torst' : (p.poisonUntil ?? 0) > now ? 'svamp' : skorbjugg(p) > 0 && !isSick(p, now) ? 'skorbjugg' : 'sjukdom'); return true; }
   // ålderdom och olyckor (Gompertz, per år = per dygn)

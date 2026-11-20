@@ -18,7 +18,7 @@ import { DORRAR, bitAt, bitsOf, freeNear, husById, roomAt } from './byggnad';
 import { LARM } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
-import { clamp, hash3, rnd } from './slump';
+import { avst, clamp, hash3, rnd } from './slump';
 import { STRID, SLAGSMAL, VAPEN, personKampe, slitKastat, svartSkadad, type Kampe } from './strid';
 import { isLight, lightLevel } from './tid';
 import { larmAvbryter } from './handlingar';
@@ -88,7 +88,6 @@ export const ROVARE = balans('rovare', {
   flyBlod: 2.5, flyHot: 0.8, flyDoda: 1.2, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
   taSek: 12, // så många sekunder tar det att ta en sak ur förrådet (steg 10.1.15): tiden följer hur mycket det finns att ta
   gavSig: 1, gavSigTim: 2, // den som flytt eller gett upp i striden har så här mycket mindre vilja att stå emot, och det avtar till noll på så här många timmar (steg 12.1.82)
-  motR: 10, // de vuxna som är vakna och så här nära möter rövarna, om de är kämpar (rovarRoll, steg 9.2.116) ...
   lyder: 0.5, lyderPlus: 0.15, iver: 0.2, // över den här Envälde-seden lyder man ledaren (så mycket mer vilja), och så mycket drar Fejd och Krig till striden eller från den (steg 8.7.9, 10.1.13)
   pliktPlus: 0.3, familjPlus: 0.05, smabarnMinus: 0.15, // lagen om stridsplikt, den som har partner eller barn i byn att försvara, och föräldern till ett litet barn (steg 10.1.13)
   gerUpp: 1.5, // ... och så många gånger mer när byn gett upp
@@ -116,9 +115,8 @@ const gr = (r: Person) => r.gast!;
 // x, y: ledaren (den första rövaren), mx, my: ledarens mål. lurat: flocken har väntat utanför byn. test: flocken kom från
 // testläget och rastar kortare (steg 9.2.103). anfall: flocken har setts i eller nära byn, och byn går mot den (steg 9.2.104)
 // striden vid förrådet som pågår (steg 6.6.10): striden (strid.ts) och när den började (t0), och arenans hörn på kartan (ox, oy)
-export interface Rovarflock { fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; rotar?: { x: number; y: number; min: number }[]; rotat?: boolean; letat?: boolean; till: number; sedd?: number; gissning?: number; vackt?: boolean; lurat?: boolean; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
+export interface Rovarflock { fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; rotar?: { x: number; y: number; min: number }[]; letat?: boolean; till: number; sedd?: number; gissning?: number; vackt?: boolean; lurat?: boolean; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
 
-const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 const vaken = (p: Person) => p.task?.act !== 'sova';
 const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'rovare') * (b - a);
 export const vuxenKan = (s: State, p: Person) => { const a = ageOf(p, s.now); return a >= ALDER.vaktFran && a < ALDER.vaktTill && halsa(p) >= KROPP.svag && kanGa(p); }; // den sjuka kan slåss men vill mindre (ROVARE.sjuk i rovarVilja)

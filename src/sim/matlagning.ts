@@ -40,7 +40,6 @@ export const MATLAG = balans('matlagning', {
   brannFull: 10, // ... och den med färdigheten Matlagning så här hög bränner inget
   ovning: 0.15, // färdigheten växer så här mycket per timme vid grillen (gånger 0,4 + intelligens / 20)
   sjuk: 0.015, // chansen att bli matförgiftad av en hel portion rått kött eller rå fisk
-  sjukMin: 2, sjukSpann: 4, // matförgiftad i så många timmar (min + slump × spann)
   surt: -0.03, surtTim: 4, // tanken av att äta rått kött eller rå fisk, och hur länge den varar (timmar)
   forgiftad: -0.2, // tanken av att bli matförgiftad (ett halvt dygn)
   kockGlad: 0.03, // en mästerkock (Matlagning brannFull) ger maten så här mycket mer humör (steg 9.6.4)

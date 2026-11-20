@@ -7,7 +7,7 @@
 // (stepBoskap, steg.ts), likadant i båda lägena, med byns följd 'tamdjur'.
 import { balans } from './balans';
 import { spand } from './agande';
-import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
+import { ALDER, ageOf, byId, count, forstaGang, gjort, log, ovning, annanGor } from './folk';
 import { desperatMat, getable } from './behov';
 import { rnd } from './slump';
 import { amountOf, changed, gain, put, stacksOf, tidy } from './lager';
@@ -95,7 +95,7 @@ export function klippVal(s: State, p: Person) {
   let b: Tamdjur | undefined, bd = 40;
   for (const d of tamdjurOf(s)) {
     if (!tamArt(d.art).ull || (d.ull ?? 0) < 1 || !vuxen(s, d) || (d.agare !== undefined && d.agare !== p.id)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'klippa' && q.task.ref === d.id)) continue;
+    if (annanGor(s, p, 'klippa', d.id)) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < bd) { b = d; bd = dd; }
   }
@@ -118,7 +118,7 @@ export function mjolkaVal(s: State, p: Person) {
   let b: Tamdjur | undefined, bd = 40;
   for (const d of tamdjurOf(s)) {
     if (!tamArt(d.art).mjolk || (d.mjolk ?? 0) < 1 || (d.agare !== undefined && d.agare !== p.id)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'mjolka' && q.task.ref === d.id)) continue;
+    if (annanGor(s, p, 'mjolka', d.id)) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < bd) { b = d; bd = dd; }
   }
@@ -189,7 +189,7 @@ export function avlivaVal(s: State, p: Person) {
   const svalt = farorNu(s).svalt;
   for (const d of tamdjurOf(s)) {
     if (heligtAvstar(s, p, d.art, svalt)) continue; // det heliga djuret avlivas inte, utom i svält (steg 10.3.15)
-    if (living(s).some(q => q !== p && q.task?.act === 'avliva' && q.task.ref === d.id)) continue;
+    if (annanGor(s, p, 'avliva', d.id)) continue;
     if (slaktOrsak(s, d, p)) return d;
   }
   return undefined;

@@ -5,11 +5,11 @@ import { nagonEld } from './eld';
 // bränningen är väntan och inget arbete. Om krukan spricker i bränningen avgör kvaliteten; en sprucken kruka blir skärvor.
 // Medan den torkar och bränns (t.ler) är den inte färdig och går inte att använda
 import { balans } from './balans';
-import { tingOf, Ting } from './agande';
+import { tingOf, Ting, ingenHar } from './agande';
 import { villAv } from './forradsmal';
 import { krukaHemma, pyntLust, pyntOf, sittAt, sovrum, stationAt } from './stationer';
 import { temperature, vaderNu } from './vader';
-import { ALDER, ageOf, count, forstaGang, living, log, ovning } from './folk';
+import { ALDER, ageOf, count, forstaGang, living, log, ovning, annanGor } from './folk';
 import { clamp, rnd } from './slump';
 import { PERFEKT, kvOf } from './kvalitet';
 import { HOUR, Person, State, Task, W } from './typer';
@@ -20,7 +20,6 @@ export const KRUKOR = {
   mellan: { namn: 'Mellanstor lerkruka', lera: 2, rymmer: 5, vikt: 1, min: 4 },
   stor: { namn: 'Stor lerkruka', lera: 4, rymmer: 10, vikt: 2, min: 4 },
 } satisfies Record<string, KrukaDef>;
-export type KrukSlag = keyof typeof KRUKOR;
 export const krukaAv = (sak: string): KrukaDef | undefined => (KRUKOR as Record<string, KrukaDef>)[sak.replace(/^lerkruka_/, '')] && sak.startsWith('lerkruka_') ? (KRUKOR as Record<string, KrukaDef>)[sak.replace(/^lerkruka_/, '')] : undefined;
 export const KRUKA = balans('kruka', {
   torkTim: 24, // en kruka torkar på ungefär så här många timmar i vanligt väder ...
@@ -55,10 +54,10 @@ export function stepKrukor(s: State) {
 // igen. Raden krukaHem i ARBETEN (val.ts) väljer det bland det man gör för att göra det bättre; hen går till krukan, tar upp den
 // (KLAR i steg.ts), bär den till en fri ruta i rummet och ställer ner den där (LAMNA i steg.ts)
 const fri = (s: State, x: number, y: number) => !stationAt(s, x, y) && !sittAt(s, x, y) && !tingOf(s).some(t => t.x === x && t.y === y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y);
-const barsHem = (s: State, p: Person, t: Ting) => living(s).some(q => q !== p && q.task?.act === 'krukaHem' && q.task.ref === t.id);
+const barsHem = (s: State, p: Person, t: Ting) => annanGor(s, p, 'krukaHem', t.id);
 export function krukaHemVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || pyntOf(s, p)) return undefined;
-  const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.kok === undefined /* en rätt som lagas på elden flyttas inte */ && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined && t.x !== undefined && t.y !== undefined && !barsHem(s, p, t));
+  const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.kok === undefined /* en rätt som lagas på elden flyttas inte */ && ingenHar(t) && t.krok === undefined && t.x !== undefined && t.y !== undefined && !barsHem(s, p, t));
   if (!rum || !k) return undefined;
   const i = rum.tiles.find(j => fri(s, j % W, Math.floor(j / W)));
   return i === undefined ? undefined : { t: k, i };

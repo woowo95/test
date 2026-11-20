@@ -7,7 +7,7 @@
 // fähuset ger gödsel, som hamnar i komposten (rester.ts). Byn slaktar på hösten de djur den inte har hö till (slaktOrsak i
 // boskap.ts). Allt stegas en gång i timmen (stepVinter, steg.ts), likadant i båda lägena, utan slump.
 import { balans } from './balans';
-import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './folk';
+import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning, annanGor } from './folk';
 import { getable } from './behov';
 import { amountOf, gain } from './lager';
 import { DAY, H, HOUR, Person, State, T, W } from './typer';
@@ -22,7 +22,7 @@ import { gridOf, housesOf, Hus } from './byggnad';
 import { rumTaggar } from './rum';
 import { komposten } from './rester';
 import { betesTal, betesdjurOf, hagarOf } from './hage';
-import { Tamdjur, tamDor, tamEg, tamdjurOf } from './tamdjur';
+import { Tamdjur, tamDor, tamEg } from './tamdjur';
 import { faltRiktning, faltSite } from './odling';
 import { iByn } from './omrade';
 import { paStrak } from './strak';
@@ -104,7 +104,7 @@ export function slaVal(s: State, p: Person) {
   const g = groundOf(s), t = getMap(s.seed).tiles;
   for (const a of angarOf(s)) for (const i of angRutor(a)) {
     if (t[i] === T.Vatten || g.cover[i] < HIGH) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'slatter' && q.task.ref === i)) continue;
+    if (annanGor(s, p, 'slatter', i)) continue;
     return i;
   }
   return undefined;
@@ -179,7 +179,7 @@ export const hamladeOf = (s: State) => s.hamlade ?? [];
 export const hamlatPa = (s: State, i: number) => hamladeOf(s).some(h => h.i === i);
 const lovtid = (s: State) => !iIstiden(kalender(s).ai); // i istiden har björken inga löv
 const moget = (s: State, h: Hamlat) => s.now - h.t >= VINTER.lovDygn * DAY;
-const upptagen = (s: State, p: Person, i: number) => living(s).some(q => q !== p && q.task?.act === 'hamla' && q.task.ref === i);
+const upptagen = (s: State, p: Person, i: number) => annanGor(s, p, 'hamla', i);
 // trädet p ska hamla eller skära skotten på: ett hamlat träd med skott först, annars en ny björk när höet inte räcker
 export function hamlaVal(s: State, p: Person): number | undefined {
   if (ageOf(p, s.now) < ALDER.vuxen || !isLight(s.now) || !lovtid(s) || !betesdjurOf(s).length) return undefined;
@@ -230,5 +230,3 @@ function glomHamlade(s: State) {
   const g = groundOf(s), kvar = s.hamlade.filter(h => g.trees[h.i] >= 1);
   if (kvar.length !== s.hamlade.length) { s.hamlade = kvar; s.byggV = (s.byggV ?? 0) + 1; }
 }
-// djuren som står i fähuset (gränssnittet)
-export const iFahuset = (s: State, h: Hus) => tamdjurOf(s).filter(d => d.fahus === h.id);

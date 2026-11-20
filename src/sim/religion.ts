@@ -31,8 +31,7 @@ export const TRO = balans('tro', {
   takTro: 4, // högst så många trosriktningar samtidigt i byn (steg 8.5.11)
   spridBy: 0.5, // så mycket ett samtal kan få den som tvivlar att byta tro (steg 8.5.12)
   // den första tron (steg 4.1.2.1, "Den första tron" i designdokumentet)
-  grunda: 70, // så andlig måste den vara som tolkar ett tecken till en egen tro ...
-  grundaChans: 0.3, // ... och chansen att hen gör det när hen är med om tecknet
+  grunda: 70, // så andlig måste den vara som tolkar ett tecken till en egen tro
   namn: 3, // när så här många tror får tron ett namn, en symbol och en berättelse (steg 4.1.2.3)
   styrka: 60, // så stark är tron hos den som grundar den (0–100)
   bekrafta: 10, // ett nytt tecken gör tron så här mycket starkare hos den som redan tror
@@ -260,7 +259,7 @@ export const TECKEN = {
 } satisfies Record<string, TeckenDef>;
 export type TeckenTyp = keyof typeof TECKEN;
 const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
-// chansen att tolka varje tecken till en egen tro (steg 8.5.18), ett balanstal per rad; det som saknas har TRO.grundaChans
+// chansen att tolka varje tecken till en egen tro (steg 8.5.18), ett balanstal per rad
 // alla trosnamnen (raden i världen, steg 11.3.11)
 export const TRONAMN: readonly string[] = Object.values(TECKEN).flatMap(d => (d as TeckenDef).namn);
 export const TECKENTAL = balans('tecken', {

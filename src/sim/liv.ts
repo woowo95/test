@@ -73,7 +73,6 @@ export const LIV = balans('liv', {
   parFran: 18, parTill: 38, // ett par där hen som valts är över Fran och under Till flyttar tillsammans (med sina barn under ALDER.vuxen)
   ensamFran: 16, ensamTill: 40, // annars ger sig en ensam vuxen i den åldern av
   // död och födsel
-  barnDod: 5, // ett barn som dör under så här många år sörjs av hela byn (sedan Barn)
   // tankarna efter en död eller flytt: styrkan (humör) och hur länge de varar (dygn)
   sorjPartner: -0.3, sorjPartnerDygn: 1.2, // partnern
   sorjNara: -0.25, sorjNaraDygn: 1, // förälder och barn

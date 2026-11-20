@@ -15,7 +15,7 @@ import { alive, byId, count, forstaGang, gjort, log, ovning, stat, think } from 
 import { skada, syn } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
 import { KANIN } from './redskap';
-import { clamp, rnd } from './slump';
+import { avst, clamp, rnd } from './slump';
 import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, chansMot, djurKampe, kastat, nyStrid, slitKastat, slump, traffa } from './strid';
 import { isLight } from './tid';
 import { HOUR, Jaktforsok, Person, SEC, State, T, Task, W, inMap } from './typer';
@@ -87,7 +87,6 @@ export function vindMot(rikt: number, fx: number, fy: number, tx: number, ty: nu
 export const JAKTSYN = { smyg: 60, smygRutor: 5, sikta: 3, siktaSpann: 2, siktaSett: 1, kastFart: 8, ga: 1.6, flyS: 1.6, plocka: 3 };
 type P = { x: number; y: number };
 const mot = (a: P, b: P, k: number) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
-const avst = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 // hur försöket går, i sekunder från början: tS jägaren börjar smyga från Q, tA hen är framme vid P, tK hen kastar,
 // tI det slår till, tF haren flyr (och flocken med den, tFlock), tG jägaren har hämtat det som kastades i G, E slutet
 export function jaktForlopp(f: Jaktforsok) {

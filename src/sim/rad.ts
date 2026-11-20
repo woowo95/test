@@ -141,6 +141,8 @@ EFTERSTEG.push((_s, vl) => { for (const r of vl.rader ?? []) if (r.syn) { r.syn.
 
 // rikedomens och styrkans mål
 export const rikMal = (r: VarldRad) => r.tal.folk * RAD.rikPer * (1 + tekTillskott(r, 'rikedom'));
+// n döda i raden: folket minskar med de döda, och styrkan med lika många men aldrig över folket
+export function radDoda(r: VarldRad, n: number) { r.tal.folk = Math.max(0, r.tal.folk - n); r.tal.styrka = Math.max(0, Math.min(r.tal.styrka - n, r.tal.folk)); }
 export const styrkaMal = (r: VarldRad) => Math.min(r.tal.folk, Math.round(r.tal.folk * (BYSORTER[r.sort].barn ? RAD.styrka : RAD.styrkaUtanBarn) * (1 + tekTillskott(r, 'styrka'))));
 // så stor del av vägen en timme tar, när en hel dygns väg är del
 const perTimme = (del: number) => 1 - (1 - del) ** (1 / 24);

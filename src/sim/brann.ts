@@ -10,7 +10,7 @@
 // då ved till milan, eftersom projektets recept är bränningens (BRANNINGAR). En mila som brunnit klart töms av den som har tid
 // (raden kolmila i ARBETEN, val.ts)
 import { balans } from './balans';
-import { ALDER, ageOf, count, forstaGang, living, log } from './folk';
+import { ALDER, ageOf, count, forstaGang, log, annanGor } from './folk';
 import { rnd } from './slump';
 import { hourOf, isLight } from './tid';
 import { HOUR, Person, State, Task } from './typer';
@@ -149,7 +149,7 @@ export function passaVal(s: State, p: Person) {
   for (const b of branningarOf(s)) {
     const d = BRANNINGAR[b.b], n = tillsynNu(s, b), t = stationerOf(s).find(x => x.id === b.st);
     if (!n || !t || !knows(p, d.tek)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'passa' && q.task.ref === t.id)) continue;
+    if (annanGor(s, p, 'passa', t.id)) continue;
     return { b, t, n, d };
   }
   return undefined;

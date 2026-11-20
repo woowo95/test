@@ -295,7 +295,6 @@ const FLOCK_LIST = () => Object.values(FLOCKARTER);
 const flockAvGrupp = (g: number): FlockArt | undefined => { let b: FlockArt | undefined; if (g < FAG_G) for (const f of FLOCK_LIST()) if (g >= f.G && (!b || f.G > b.G)) b = f; return b; };
 export const flockArtAv = (id: number) => flockAvGrupp(Math.floor(id / 8));
 export const arRadjur = (id: number) => flockArtAv(id)?.art === 'radjur';
-export const arFlockdjur = (id: number) => !!flockArtAv(id);
 // platserna där flocken kan dyka upp, så som marken var när byn grundades: skogskanten (en öppen ruta med skog inom kant
 // rutor) eller inne i skogen, minst hemAvst rutor från byplatsen
 const flockPlatser: Record<string, (seed: number) => number[]> = {};
@@ -341,7 +340,6 @@ export function flockGrupper(s: State, f: FlockArt, t = s.now, bara?: (x: number
 export const radjurGrupper = (s: State, t = s.now, bara?: (x: number, y: number) => boolean) => flockGrupper(s, FLOCKARTER.radjur, t, bara);
 // så långt (rutor) ett djur kan stå från flockens mitt: betet, flykten och vägen till land
 export const flockUt = (f: FlockArt) => f.tal.spridd + 1 + f.tal.fly * f.tal.flyMax + 5.5 * Math.SQRT2 + 1;
-export const RADJUR_UT = flockUt(FLOCKARTER.radjur);
 // artens djur vid tiden t: vart och ett betar kring flockens mitt och springer undan från folk som kommer nära (folk: var folket
 // syns, från gränssnittet). Ett fällt djur är borta
 export function flockOf(s: State, f: FlockArt, t = s.now, folk?: readonly { x: number; y: number }[], bara?: (x: number, y: number) => boolean): Djur[] {

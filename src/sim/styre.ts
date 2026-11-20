@@ -1,6 +1,6 @@
 import { FANG, fangelseDygn, fangelseLedigt, satt } from './fangelse';
 import { honom, slaktOrd } from './ord';
-import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think, vuxnaOf } from './folk';
 import { efterlevs, lagForBrott, straffNu, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
@@ -58,9 +58,8 @@ export const LED = balans('ledare', {
   hovding: 0.35, // styrelseformen är ett hövdingadöme från så här mycket Envälde
   // ledarens vikt i sederna: byns vikt gånger sedVikt × (1 + sedRang × Envälde) × (sedLegBas + legitimiteten)
   sedVikt: 0.5, sedRang: 1, sedLegBas: 0.5,
-  // legitimiteten (0 till 1): stödet (0,5 + snittrelationen / 200) gånger wStod, tiden vid makten (1 - e^(-dygn / tidDygn))
-  // gånger wTid, och vintrarna (högst vintrar) gånger wVint, minus orättvisan
-  wStod: 0.6, wTid: 0.2, wVint: 0.2, tidDygn: 4, vintrar: 2,
+  // legitimiteten (0 till 1): stödet (0,5 + snittrelationen / 200) gånger wStod och vintrarna (högst vintrar) gånger wVint, minus orättvisan
+  wStod: 0.6, wVint: 0.2, vintrar: 2,
   orattDygn: 3, // orättvisan bleknar med en tidskonstant på så här många dygn
   tanke: 0.04, // ledaren mår så här mycket bättre (tanken Leder byn)
 });
@@ -260,7 +259,7 @@ export interface Styre {
   frak?: Fraktion; frakVald?: number; lugn?: number; // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
   dogVinter?: number;
   kyrka?: number; kyrkaVikt?: number; // översteprästens välsignelse (1) eller fördömelse (−1) och vad den är värd (steg 8.6.16)
-  hanForbud?: boolean; hanSedd?: number; // förbudet mot hån (steg 8.3.13)
+  hanForbud?: boolean; // förbudet mot hån (steg 8.3.13)
   tystnad?: { id: number; namn: string }; // den påbudet om tystnad gäller (steg 10.4.10)
   lagar?: Lag[]; nedrostat?: Record<string, number>; // lagarna och det som nyss röstats ned (system 8.4, lagar.ts)
 }
@@ -328,7 +327,6 @@ function sattPabud(s: State, l: Person, ai: number) {
 }
 
 // ---------- valet ----------
-const vuxnaOf = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
 // hur nästa ledare väljs (steg 8.3.6), det sätt som passar sederna bäst. Prästernas val kommer med kyrkan
 export type Tronfoljd = 'arv' | 'utse' | 'strid' | 'val' | 'prast';
 export function tronfoljd(s: State): Tronfoljd {

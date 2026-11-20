@@ -9,7 +9,6 @@ import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { underBuffert } from './forradsmal';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
-import { nTools } from './agande';
 import { DAY, H, HOUR, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { FOREST, Ground, HIGH, VAG, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
@@ -670,8 +669,6 @@ function naraMark(s: State, f: (g: Ground, i: number) => boolean) {
 // flinta hittas oftast vid stenarna, ibland i sanden vid stranden och sällan annars
 // hur lätt det är att hitta flinta på platsen just nu: platser där man hittat flinta har mindre kvar ett tag
 export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flinta', x, y);
-// flintorna och yxorna i byn. Yxorna räknas i styck, som i skog.ts (axes): en sliten yxa är fortfarande en yxa
-export const flintorOchYxor = (s: State) => amountOf(s, 'flinta') + nTools(s, 'yxa');
 // byn behöver flinta att tända eld med och till en yxa
 export const wantsFlint = (s: State) => underBuffert(s, 'flinta'); // efter förbrukningen, minst TROSKEL.flintaMinsta (steg 10.2.12)
 // en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen.

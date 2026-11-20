@@ -13,7 +13,7 @@ import { fyndAt, vildboKrok } from './fynd';
 import { H, HOUR_S, MIN, State, W, inMap } from './typer';
 import { Station, isKlar, stationerOf } from './stationer';
 import { antalPa, chance, rnd } from './slump';
-import { count, forstaGang, log } from './folk';
+import { count, forstaGang, log, annanGor } from './folk';
 import { notis } from './notiser';
 import { hardVinter } from './vader';
 import { ALDER, ageOf, alive, byId, gjort, living, ovning } from './folk';
@@ -222,7 +222,7 @@ export function skattaVal(s: State, p: Person) {
     if (t.ag !== undefined && t.ag !== p.id) continue;
     const n = attTa(t, p), d = Math.hypot(t.x - p.x, t.y - p.y);
     if (n < 1 || n < bn || (n === bn && d >= bd)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'skatta' && q.task.ref === t.id)) continue;
+    if (annanGor(s, p, 'skatta', t.id)) continue;
     b = t; bn = n; bd = d;
   }
   return b;

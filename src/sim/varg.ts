@@ -23,7 +23,7 @@ import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { anseende, handelse, larma, larmNu } from './rykten';
 import { KOTTSLAG, SAKER } from './saker';
 import { vattenNu } from './sjo';
-import { clamp, rnd, chansPer } from './slump';
+import { avst, clamp, rnd, chansPer } from './slump';
 import { SLAGSMAL, VAPEN, Avsikt, djurKampe, personKampe, slitKastat, svartSkadad } from './strid';
 import { DjurMed, KartStrid, kartStridBorja, kartStrider } from './kartstrid';
 import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
@@ -128,7 +128,6 @@ export const VARG = balans('varg', {
 });
 
 const flockarna = (s: State) => s.vargar ?? [];
-const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 // den brinnande lägereld som är närmast flocken, inom VARG.eldR (mitten av rutan, som nyttMal)
 function narmasteEld(s: State, f: Vargflock) {
   let b: { x: number; y: number } | undefined, bd = VARG.eldR;

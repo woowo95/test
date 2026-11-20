@@ -14,8 +14,8 @@ import { KROPP, ageOf, count, log, think } from './folk';
 import { ata, naringSjunker } from './naring';
 import { torstSteg } from './torst';
 import { halsaLage } from './steg';
-import { SJUK, insjukna, sjukSteg } from './sjukdom';
-import { ARSTID, ageIndex, iIstiden } from './tid';
+import { forkylning, insjukna, sjukSteg } from './sjukdom';
+import { ageIndex } from './tid';
 import { nyKvarleva } from './kvarlevor';
 import { notis } from './notiser';
 import { handlarenDog } from './handel';
@@ -115,7 +115,7 @@ export function gastVardag(s: State, dtSec: number, varme: (p: Person) => number
     else if (hl === 'frys') p.health -= dtSec / (KROPP.frysTim * HOUR_S);
     else if (hl === 'laker') p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
     const sjukDod = sjukSteg(s, p, dtSec, !!g.sover, false);
-    if (!p.sjuk && chance(s, (iIstiden(ageIndex(s)) ? ARSTID.sjukIstid : ARSTID.sjuk) * SJUK.kyla / 86400, dtSec, 'halsa', p)) insjukna(s, p, 'forkylning');
+    if (!p.sjuk && chance(s, forkylning(ageIndex(s)), dtSec, 'halsa', p)) insjukna(s, p, 'forkylning');
     if (sjukDod || p.health <= 0) { gastDor(s, p, sjukDod ? 'av sjukdom' : p.hunger <= 0 ? 'av svält' : 'av kyla'); continue; }
     if (g.sort !== 'fange') satt(s, p, gastAkt(s, p)); // fången styrs av fangeSteg i rovare.ts (steg 11.12.6)
   }

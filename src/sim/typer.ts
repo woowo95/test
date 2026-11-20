@@ -489,7 +489,7 @@ export interface State {
   projektSaknar?: Record<string, import('./projekt').ProjektSaknar>; // det byns projekt saknar, per material, räknat en gång i timmen (steg 10.5.17, projekt.ts)
   handelsMal?: import('./handel').HandelsMal; // varorna byn gör att byta med handlaren, räknat en gång i timmen (steg 10.5.13, handel.ts)
   epidemi?: { k: import('./sjukdom').SjukId; ids: number[]; skriven?: 1 }; // utbrottet som pågår (steg 9.5.5, sjukdom.ts)
-  handlare?: import('./handel').Handlare; nastaHandlare?: number; handlarVantar?: number[]; handlarNr?: number; // handlarVantar: byarna (radernas nummer) vars handlare kommit fram till kartans kant och väntar på att få gå in (steg 11.6.8); nastaHandlare används inte sedan v532
+  handlare?: import('./handel').Handlare; handlarVantar?: number[]; handlarNr?: number; // handlarVantar: byarna (radernas nummer) vars handlare kommit fram till kartans kant och väntar på att få gå in (steg 11.6.8)
   gastNr?: number; // handlaren som är på besök, när nästa kommer och hur många som kommit (steg 4.4.1.2, handel.ts) // det som syns gå från hand till hand och filtarna med det som byts (bara för bilden), och det som nyss bytts bort (steg 4.4.1.1, byte.ts)
   fest?: import('./kultlatt').Fest; // festen vid högtiden (steg 10.7.19, kult.ts)
   sport?: import('./sport').Match; // matchen som pågår eller väntar på spelare (steg 4.3.1, sport.ts)
@@ -513,19 +513,18 @@ export interface Seder { v: Record<import('./seder').Sed, number>; at?: number }
 // ---------- eldstäder och tänddon ----------
 // Eldstäderna som finns: lägerelden och härden i huset (steg 7.5.3). Välbehaget och vilan vid elden räknas ur eldstaden för den eld
 // som värmer personen mest (steg 10.2.109).
-// spread = relativ risk att elden tar sig ut i omgivningen (används när brandsystemet finns).
-export interface Hearth { id: string; name: string; desc: string; indoor: boolean; maxFuel: number; burn: number; radius: number; comfort: number; spread: number; requires: string }
+// spread = relativ risk att elden tar sig ut i omgivningen (brand.ts läser den).
+export interface Hearth { id: string; name: string; desc: string; indoor: boolean; maxFuel: number; burn: number; radius: number; comfort: number; spread: number }
 export const HEARTHS: Hearth[] = [
-  { id: 'lagereld', name: 'Lägereld', desc: 'Trä staplat på marken innanför en ring av stenar. Lätt att göra, men mycket värme går förlorad och den kan inte stå inomhus.', indoor: false, maxFuel: 6, burn: 0.5, radius: 5, comfort: 0.04, spread: 1, requires: 'Eld' },
-  { id: 'hard', name: 'Härd', desc: 'Stensatt härd i golvet med rökhål i taket. Den första elden som går att ha inomhus.', indoor: true, maxFuel: 10, burn: 0.4, radius: 6, comfort: 0.07, spread: 0.3, requires: 'Bofast by' },
+  { id: 'lagereld', name: 'Lägereld', desc: 'Trä staplat på marken innanför en ring av stenar. Lätt att göra, men mycket värme går förlorad och den kan inte stå inomhus.', indoor: false, maxFuel: 6, burn: 0.5, radius: 5, comfort: 0.04, spread: 1 },
+  { id: 'hard', name: 'Härd', desc: 'Stensatt härd i golvet med rökhål i taket. Den första elden som går att ha inomhus.', indoor: true, maxFuel: 10, burn: 0.4, radius: 6, comfort: 0.07, spread: 0.3 },
 ];
 // chance = chans per försök, grass/sticks = tändmaterial per försök, minutes = tid per försök
-export interface Igniter { id: string; name: string; desc: string; chance: number; grass: number; sticks: number; minutes: number; requires: string; tek?: string; med?: string; slits?: number } // tek = tekniken den som tänder ska kunna (annars id), med = det som behövs bredvid (flintan som stålet slås mot), slits = så många försök redskapet håller (steg 12.2.12)
+export interface Igniter { id: string; name: string; chance: number; grass: number; sticks: number; minutes: number; tek?: string; med?: string; slits?: number } // tek = tekniken den som tänder ska kunna (annars id), med = det som behövs bredvid (flintan som stålet slås mot), slits = så många försök redskapet håller (steg 12.2.12)
 export const IGNITERS: Igniter[] = [
-  { id: 'flinta', name: 'Flinta', desc: 'Flintan slås mot en annan sten så att gnistor faller i tändmaterialet. Kräver tålamod och mycket tändmaterial.', chance: 0.025, grass: 3, sticks: 3, minutes: 15, requires: '–' },
-  { id: 'bagborr', name: 'Bågborr', desc: 'En pinne snurras snabbt mot en träskiva med hjälp av en båge tills glöd bildas.', chance: 0.13, grass: 2, sticks: 1, minutes: 10, requires: 'Bågborr' }, // steg 10.6.13: ungefär tre försök där flintan tar sexton; håller ELD.borrForsok försök
-  { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide', tek: 'smedja', med: 'flinta', slits: 400 }, // steg 12.2.12: smids i smedjan
-  { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
+  { id: 'flinta', name: 'Flinta', chance: 0.025, grass: 3, sticks: 3, minutes: 15 },
+  { id: 'bagborr', name: 'Bågborr', chance: 0.13, grass: 2, sticks: 1, minutes: 10 }, // steg 10.6.13: ungefär tre försök där flintan tar sexton; håller ELD.borrForsok försök
+  { id: 'eldstal', name: 'Eldstål och flinta', chance: 0.45, grass: 1, sticks: 1, minutes: 5, tek: 'smedja', med: 'flinta', slits: 400 }, // steg 12.2.12: smids i smedjan
 ];
 
 // nyckeltalen i tal-ordning: [tid, värde, värde, …] per timme och per dygn, och krönikans rader [tid, text]

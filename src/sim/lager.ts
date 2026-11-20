@@ -2,7 +2,7 @@ import { stubbeOn } from './stubbar';
 import { OMRADE, omrade, utanforByn } from './omrade';
 import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
-import { Ting, halvKlar, nTools, newTing, redskapSlitet, tingOf } from './agande';
+import { Ting, halvKlar, nTools, newTing, redskapSlitet, tingOf, ingenHar } from './agande';
 import { kvHaller } from './kvalitet';
 import { baraForvar, forvarAt, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr } from './stationer';
 import { faltAt } from './odling';
@@ -431,7 +431,7 @@ const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass =
 const lying = (s: State) => tingOf(s).filter(ligger);
 // står redskapet på en ruta, också ett som hör till en station (lyran vid scenen): då lägger ingen något annat där. Ett hus
 // som blir förrådshus gör rutan till förråd, med det som redan står där (steg 9.1)
-const paRutan = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined;
+const paRutan = (t: Ting) => t.x !== undefined && ingenHar(t) && t.krok === undefined;
 // det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things), och hur
 // många redskap som ligger på varje ruta (i ett ställ står flera, steg 2.3.6)
 type Occ = Map<number, Stack> & { redskap: Map<number, number> };

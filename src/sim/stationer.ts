@@ -9,7 +9,7 @@ import { ALDER, ageOf, alive, byId, count, andraGor, enTill, familjOf, forstaGan
 import { enOrd, han, hans, sinOrd, stor } from './ord';
 import { getable, Recept, takeMaterial } from './behov';
 import { sparas } from './forradsmal';
-import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool } from './agande';
+import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool, ingenHar } from './agande';
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
 import { troshusRum, trosMobelBrist } from './troshus';
@@ -577,7 +577,7 @@ export function framfor(t: Station) {
 }
 // står något framför stationen (en hög, ett redskap på marken eller en annan station)? Då kan den inte användas
 export const framFri = (s: State, t: Station) => framfor(t).every(q => !(s.stackar ?? []).some(a => a.x === q.x && a.y === q.y)
-  && !tingOf(s).some(k => k.x === q.x && k.y === q.y && k.hos === undefined && k.lass === undefined && k.bar === undefined && k.vid === undefined) && !stationAt(s, q.x, q.y)
+  && !tingOf(s).some(k => k.x === q.x && k.y === q.y && ingenHar(k) && k.vid === undefined) && !stationAt(s, q.x, q.y)
   && inMap(q.x, q.y) && !blocked(s, q.x + 0.5, q.y + 0.5)); // inte i vattnet (eller översvämningen): då står man bredvid stationen (steg 4.5.4.3)
 // står man framför stationen på land? Rutan där man arbetar får inte vara vatten (steg 4.5.4.3)
 const framLand = (s: State, x: number, y: number, w: number, h: number) => Array.from({ length: w }, (_, i) => i).every(i => inMap(x + i, y + h) && getMap(s.seed).tiles[(y + h) * W + x + i] !== T.Vatten);
@@ -968,7 +968,7 @@ export const villKista = (s: State, p: Person) => !kistaOf(s, p) && bedTile(s, p
 // p:s pynt, färdigt eller halvbyggt. Lusten efter ett pynt till avtar med varje pynt man redan har (STATION.pyntAvtar, steg 10.2.43)
 export const PYNT_LIST = STATION_LIST.filter(k => (STATIONER[k] as StationDef).pynt);
 // en lerkruka som står i rummet där p sover är också pynt (steg 9.4.12): pyntet räknas på tingen i rummet, inte bara på möblerna
-export const krukaHemma = (s: State, p: Person) => { const rum = sovrum(s, p); return rum ? tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.x !== undefined && roomAt(s, t.x, t.y!) === rum) : undefined; };
+export const krukaHemma = (s: State, p: Person) => { const rum = sovrum(s, p); return rum ? tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && ingenHar(t) && t.x !== undefined && roomAt(s, t.x, t.y!) === rum) : undefined; };
 export const pyntOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag === p.id && !!stationDef(t.k)?.pynt) ?? krukaHemma(s, p);
 // hur många pynt p har (möblerna och krukan hemma), och om ett av dem är halvbyggt
 const pyntAntal = (s: State, p: Person) => stationerOf(s).filter(t => t.ag === p.id && !!stationDef(t.k)?.pynt).length + (krukaHemma(s, p) ? 1 : 0);
@@ -1444,7 +1444,7 @@ export function kanGoraTillbehor(s: State, p: Person, k: TillbehorSlag) {
   return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m)) && (!d.kar || !!tomtKar(s, d.kar));
 }
 // en tom och ledig behållare av sorten k som ingen bär (brännpannans kruka)
-const tomtKar = (s: State, k: string) => tingOf(s).find(t => t.k === k && !t.inne && !t.kok && !t.vaxt && t.ler === undefined && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.c > 0);
+const tomtKar = (s: State, k: string) => tingOf(s).find(t => t.k === k && !t.inne && !t.kok && !t.vaxt && t.ler === undefined && ingenHar(t) && t.c > 0);
 // platsen dit den som gör tillbehöret går: framför den första stationen som saknar det
 export function tillbehorSpot(s: State, k: TillbehorSlag) {
   const t = utanTillbehor(s, k)[0];
@@ -1519,7 +1519,7 @@ export function nyttVid(s: State, k: Ting) {
 // en tom plats fylls med ett av byns redskap av det slaget som ligger i förrådet
 export function fyllPlatser(s: State) {
   for (const slag of VID_SLAG) for (let t = tomPlats(s, slag); t; t = tomPlats(s, slag)) {
-    const k = tingOf(s).find(q => q.k === slag && q.agare === BYN && q.vid === undefined && q.hos === undefined && q.lass === undefined && q.bar === undefined);
+    const k = tingOf(s).find(q => q.k === slag && q.agare === BYN && q.vid === undefined && ingenHar(q));
     if (!k) break;
     tillStation(k, t);
   }

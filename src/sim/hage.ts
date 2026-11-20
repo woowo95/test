@@ -2,7 +2,7 @@
 // En egen fil för hagen och betet, så att tamdjur.ts (som varg.ts och arv.ts läser tidigt) inte drar in marken och odlingen.
 import { balans } from './balans';
 import { spand } from './agande';
-import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
+import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning, annanGor } from './folk';
 import { getable, takeMaterial } from './behov';
 import { rnd } from './slump';
 import { H, Person, State, T, W, inMap } from './typer';
@@ -128,7 +128,7 @@ function laggUtHage(s: State, p: Person) {
 export function hageVal(s: State, p: Person) {
   if (!knows(p, 'staket') || getable(s, p, 'grenar') < STAKET.grenar || !isLight(s.now)) return undefined;
   for (const h of hagarOf(s)) {
-    const i = hageKant(s, h).find(j => !harStaket(s, j) && !living(s).some(q => q !== p && q.task?.act === 'hage' && q.task.ref === j));
+    const i = hageKant(s, h).find(j => !harStaket(s, j) && !annanGor(s, p, 'hage', j));
     if (i !== undefined) return { h, i };
   }
   return undefined;
@@ -215,7 +215,7 @@ export function vallaVal(s: State, p: Person) {
   if (!hagarOf(s).some(h => hageHel(s, h))) return undefined;
   let b: Tamdjur | undefined, bd = TAM.mataR * 2;
   for (const d of betesdjurOf(s)) {
-    if (d.fahus !== undefined || living(s).some(q => q !== p && q.task?.act === 'valla' && q.task.ref === d.id)) continue; // djuren i fähuset står kvar
+    if (d.fahus !== undefined || annanGor(s, p, 'valla', d.id)) continue; // djuren i fähuset står kvar
     const h = hageById(s, d.hage);
     if (h && !(nedbetad(s, h) && malHage(s, flocken(s, p, d).length, h))) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);

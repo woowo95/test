@@ -41,7 +41,6 @@ export const TAMDJUR = {
 export type TamArtId = keyof typeof TAMDJUR;
 export const TAM_LIST = Object.keys(TAMDJUR) as TamArtId[];
 export const tamArt = (a: TamArtId): TamArt => TAMDJUR[a];
-export const DRAGDJUR = TAM_LIST.filter(a => tamArt(a).styrka); // de som spänns för släden (steg 10.10.3)
 
 // ett tamdjur. hunger 0–1 (1 = svälter), svalt = timmar det svultit, agare = personen som äger det (ingen = byn), matad = hur
 // mycket var och en matat det (hunden byter till den som matat mest, steg 9.8.3)

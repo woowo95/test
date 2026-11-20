@@ -56,7 +56,6 @@ export const KULT = balans('kult', {
   slutenFran: 70, // Öppen – Sluten: så sluten ska tron vara
   fest: 50, forsakelse: 50, // Fest – Försakelse: över så här mycket på respektive sida (0 = Fest, 100 = Försakelse)
   tystTro: 1, // tron den tysta begravningen ger (steg 10.4.5)
-  vattenR: 20, // ... och så här nära ska vattnet vara för att den döde läggs i vatten
   vuxenTro: 3, // den unga får så här mycket tro av sitt vuxenblivande, de andra ritualens vanliga (steg 10.3.4)
   fastaTro: 4, // fastan ger tron så här mycket i stället för högtidens 3 (steg 10.3.3)
   offerTro: 2, offerInget: -0.02, // offret vid högtiden: tron hos den som offrar, och humöret hos den som inget har
@@ -229,17 +228,17 @@ function vanhelga(s: State) {
 // ---------- ritualerna (steg 8.5.6, 8.5.13, 8.5.14) ----------
 export interface RitualDef { namn: string; tim: number; humor: number; tro: number; huvud?: number; mat?(r: Ritual): boolean; /* ritualen har en måltid: festmåltiden ur kokgropen lagas inför den (steg 10.7.28) */ vem(s: State, r: Ritual): Person[]; plats(s: State, r: Ritual): { x: number; y: number }; kan?(s: State, r: Ritual): boolean } // kan: hålls bara när det som går åt finns
 export interface Ritual { k: RitualId; start: number; slut: number; x: number; y: number; tro?: number; namn?: string; om?: number[]; gick?: number; form?: HogtidForm; tyst?: true; fran?: number; kropp?: number } // fran = ritualen börjar tidigast då (vakan), kropp = den döda vakan sitter hos
-const vuxna = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.smabarn);
+const overSmabarn = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.smabarn); // alla utom de minsta barnen
 // p har en annan tro än tro, och den är sluten (Öppen – Sluten)
 const slutenAnnan = (s: State, p: Person, tro?: number) => { const t = p.tro !== tro ? troOf(s, p.tro) : undefined; return !!t && (skalaV(t, 'oppen') ?? 0) >= KULT.slutenFran; };
 const vidElden = (s: State) => { const f = eldPlats(s), q = freeNear(s, f.x + 0.5, f.y + 2); return q; };
 export const RITUALER = {
   begravning: { namn: 'Begravning', tim: 1, humor: 0.05, tro: 2, vem: (s, r) => living(s).filter(p => (!r.tyst && p.tro === r.tro) || r.om?.some(id => { const d = byId(s, id); return d && (isParent(p, d) || isParent(d, p) || p.partner === id || d.partner === p.id); })), /* den tysta: bara familjen (steg 10.4.5) */ plats: (_s, r) => ({ x: r.x, y: r.y }) },
-  brollop: { namn: 'Bröllop', tim: 2, humor: 0.08, huvud: 0.15, tro: 1, mat: () => true, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // välsignat (tron har budet, steg 10.3.3) vid trons heliga plats
+  brollop: { namn: 'Bröllop', tim: 2, humor: 0.08, huvud: 0.15, tro: 1, mat: () => true, vem: overSmabarn, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // välsignat (tron har budet, steg 10.3.3) vid trons heliga plats
   // gillet är en fest för hela byn (steg 10.7.19): alla kommer utom de vars egen tro är en annan och sluten; fastan håller bara de troende
   hogtid: { namn: 'Högtid', tim: 3, humor: 0.1, tro: 3, mat: r => r.form !== 'fasta', vem: (s, r) => living(s).filter(p => p.tro === r.tro || r.form !== 'fasta' && !p.gast && !slutenAnnan(s, p, r.tro)), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && (troshusPlats(s, tr) ?? helig(s, tr))) ?? vidElden(s); } },
-  dop: { namn: 'Dop', tim: 1, humor: 0.05, huvud: 0.1, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // steg 10.3.4: huvud = föräldrarna
-  vuxen: { namn: 'Vuxenblivande', tim: 1, humor: 0.05, huvud: 0.15, tro: 1, vem: vuxna, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // huvud = den unga
+  dop: { namn: 'Dop', tim: 1, humor: 0.05, huvud: 0.1, tro: 1, vem: overSmabarn, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // steg 10.3.4: huvud = föräldrarna
+  vuxen: { namn: 'Vuxenblivande', tim: 1, humor: 0.05, huvud: 0.15, tro: 1, vem: overSmabarn, plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && helig(s, tr)) ?? vidElden(s); } }, // huvud = den unga
   // vakan och gravölet (steg 10.4.12): de nära sitter hos kroppen (eller vid graven, om den redan begravts) kvällen efter dödsfallet,
   // och byns vuxna dricker gravöl vid elden efter begravningen
   vaka: { namn: 'Vaka', tim: 4, humor: 0.05, tro: 1, vem: (s, r) => living(s).filter(p => r.om?.some(id => nara(s, p, id))),
