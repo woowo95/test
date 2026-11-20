@@ -15,7 +15,7 @@ import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
 import { type Station, delarAv, nyPlatsDel, rivDel, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
-import { enOrd, stor } from './ord';
+import { enOrd, stor, tal } from './ord';
 import { knows } from './teknik';
 import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
@@ -998,7 +998,7 @@ export function byplanNu(s: State): Byplan {
   return s.byplan = ny;
 }
 function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
-  if (fn === 'sovsal') return `${by.name} planerar ${n >= HUS.langhus ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${n} att sova under tak.`;
+  if (fn === 'sovsal') return `${by.name} planerar ${n >= HUS.langhus ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${tal(n)} att sova under tak.`;
   if (fn === 'familjehus') return `${by.name} och familjen bestämmer sig för att bygga ett eget hus, ${h.namn.toLowerCase()}.`;
   return `${by.name} planerar ${h.namn.toLowerCase()}.`;
 }

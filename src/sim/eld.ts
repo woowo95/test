@@ -1,3 +1,4 @@
+import { antal, gen } from './ord';
 import { stationsVarme } from './stationseld';
 import { han } from './ord';
 import { tal } from './ord';
@@ -335,9 +336,9 @@ export function tryLight(s: State, p: Person, f = s.fire) {
   const c = tandChans(s, p, f, naver) * (1 + (f.tries - 1) / ELD.forsokLara); // varje misslyckat försök sedan elden brann gör nästa lättare
   const lyckas = rnd(s, 'eld', p) < c;
   if (ig.id === 'bagborr' && wearTool(s, p, 'bagborr', 1 / ELD.borrForsok)) { // borren slits av varje försök (steg 10.6.13)
-    count(s, 'bagborrarTrasiga'); log(s, `${p.name}s bågborr gick sönder.`, 'world', [p.id]);
+    count(s, 'bagborrarTrasiga'); log(s, `${gen(p.name)} bågborr gick sönder.`, 'world', [p.id]);
   }
-  if (ig.slits && wearTool(s, p, ig.id, 1 / ig.slits)) { count(s, ig.id + 'Trasiga'); log(s, `${p.name}s ${ig.name.split(' ')[0].toLowerCase()} var slitet.`, 'world', [p.id]); } // eldstålet slits av varje försök (steg 12.2.12)
+  if (ig.slits && wearTool(s, p, ig.id, 1 / ig.slits)) { count(s, ig.id + 'Trasiga'); log(s, `${gen(p.name)} ${ig.name.split(' ')[0].toLowerCase()} var slitet.`, 'world', [p.id]); } // eldstålet slits av varje försök (steg 12.2.12)
   if (ig.med === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) { use(s, p, 'flinta', 1, true); count(s, 'flintaSprackStal'); } // flintan som stålet slås mot kan spricka
   if (lyckas) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
@@ -358,7 +359,7 @@ export function takeCoal(s: State, p: Person, verb: string, f = s.fire) {
   if (n < 1) return;
   addTo(s, 'kol', n);
   f.ash = 0; f.ashUntil = undefined;
-  log(s, `${p.name} ${verb} ${n} kol ur den gamla elden och lade dem i förrådet.`, 'world', [p.id]);
+  log(s, `${p.name} ${verb} ${antal(n, 'kol')} ur den gamla elden och lade ${n === 1 ? 'den' : 'dem'} i förrådet.`, 'world', [p.id]);
 }
 export function addFuel(s: State, p: Person, n: number, f = s.fire) {
   const h = hearthOf(f);

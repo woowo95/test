@@ -1,3 +1,4 @@
+import { gen, honom } from './ord';
 // ---------- de tama djuren (fas 9.8, Djuren i detalj) ----------
 // De tama djuren är rader i registret TAMDJUR, som de vilda arterna i DJUR (redskap.ts): hunden, fåren och getterna är
 // individer med art, ålder, hunger och ägare (s.tamdjur), hönsen en flock (steg 9.8.10). Inga personligheter, ingen avel på
@@ -87,7 +88,7 @@ export function tamDor(s: State, d: Tamdjur, orsak: string) {
   count(s, `tamDog_${orsak}`);
   const a = tamArt(d.art), q = d.agare !== undefined ? byId(s, d.agare) : undefined;
   if (orsak === 'rymde') return; // den som rymde har redan sin rad i loggen (hundRymmer)
-  log(s, `${q ? `${q.name}s ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);
+  log(s, `${q ? `${gen(q.name)} ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);
 }
 // vad djuret äter av det som finns, det bästa först (undefined: inget att ge det)
 // det djuret äter som också är mat åt människorna (hundens kött) ges inte när byn svälter, efter samma mått som valet av aktivitet (steg 10.2.1)
@@ -192,7 +193,7 @@ export function stepHund(s: State, d: Tamdjur) {
     if (!ny) { hundRymmer(s, d, p ? `${p.name} var död, och ingen annan hade matat hunden.` : 'Ingen tog hand om hunden.'); return; }
     const q = byId(s, ny[0])!;
     d.agare = q.id; d.lojal = HUND.byte; count(s, 'hundArv');
-    log(s, `${p ? `${p.name}s` : 'Byns'} hund gick till ${q.name}, som hade matat den mest.`, 'world', [q.id]);
+    log(s, `${p ? `${gen(p.name)}` : 'Byns'} hund gick till ${q.name}, som hade matat den mest.`, 'world', [q.id]);
     return;
   }
   let l = d.lojal ?? HUND.start;
@@ -205,7 +206,7 @@ export function stepHund(s: State, d: Tamdjur) {
     if (ny && ny[1] > egen) {
       const q = byId(s, ny[0])!;
       d.agare = q.id; d.lojal = HUND.byte; count(s, 'hundBytte');
-      log(s, `${p.name}s hund slutade lyda hen och följer nu ${q.name}, som matat den mer.`, 'world', [p.id, q.id]);
+      log(s, `${gen(p.name)} hund slutade lyda ${honom(p)} och följer nu ${q.name}, som matat den mer.`, 'world', [p.id, q.id]);
     } else hundRymmer(s, d, `${p.name} tog inte hand om sin hund.`);
     return;
   }
@@ -233,7 +234,7 @@ export function hundSkaller(s: State, avst: (d: Tamdjur) => number) {
     const p = byId(s, d.agare);
     if (!p || p.died !== undefined) continue;
     count(s, 'hundSkallde');
-    if (forstaGang(s, 'hundSkallde')) log(s, `${p.name}s hund skällde: den hade hört något ute i mörkret.`, 'world', [p.id]);
+    if (forstaGang(s, 'hundSkallde')) log(s, `${gen(p.name)} hund skällde: den hade hört något ute i mörkret.`, 'world', [p.id]);
     return { hund: d, p };
   }
   return undefined;

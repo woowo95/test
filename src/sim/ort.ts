@@ -1,3 +1,4 @@
+import { artikel } from './ord';
 // ---------- platsen i minnet (fas 11.4, Flera samhällen: Platsen i minnet) ----------
 // Det en person vet om en plats i världen är en lärdom av slaget ort (LARDOMAR i minne.ts): platsens nummer (a), nivån (v, en
 // rad i ORTNIVA: rykte, känt eller besökt), säkerheten (c), tiden då uppgifterna senast hördes (t) och för ett rykte den som
@@ -88,7 +89,7 @@ export function ortBleknar(l: Lardom, timmar: number, tau: number): boolean {
 export function berattaOrt(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
   const vl = s.varld, q = vl && varldPlatsNr(vl, l.a);
-  delade('fjarran', 'karta', q ? (l.v === O_RYKTE ? `${LANDMARKEN[q.k].namn.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats långt borta');
+  delade('fjarran', 'karta', q ? (l.v === O_RYKTE ? `${artikel(LANDMARKEN[q.k].namn)} ${LANDMARKEN[q.k].namn.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats långt borta');
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a);
   const niva = Math.max(O_RYKTE, l.v - 1), fore = findL(b, 'ort', l.a);
   larOrt(s, b, l.a, niva, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1, fr: l.v === O_RYKTE ? (l.fr ?? a.id) : a.id, ...(nyhet(s, l) ? { ny: l.ny } : {}) });
@@ -143,7 +144,7 @@ export function rovareSedda(s: State, p: Person, klan: number | undefined) {
 // lärdomen i ord (describe i minne.ts)
 export function describeOrt(s: State, l: Lardom) {
   const vl = s.varld, q = vl && varldPlatsNr(vl, l.a), niva = ORTNIVA[l.v] ?? ORTNIVA[0];
-  const sort = q ? LANDMARKEN[q.k].namn : 'En plats', place = q ? (l.v === O_RYKTE ? `${sort.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats som inte finns längre';
+  const sort = q ? LANDMARKEN[q.k].namn : 'En plats', place = q ? (l.v === O_RYKTE ? `${artikel(sort)} ${sort.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats som inte finns längre';
   const what = `${cap(niva.text)} ${l.v === O_RYKTE ? place : `${sort.toLowerCase()} ${q?.namn ?? ''}`.trim()}`;
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : l.v === O_BESOKT ? 'egen resa' : 'egen erfarenhet') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som var där` : ''}`;
   const sure = l.c >= 0.75 ? 'säker' : l.c >= 0.4 ? 'ganska säker' : 'osäker';

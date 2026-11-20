@@ -378,7 +378,7 @@ export function noticeTheft(s: State, p: Person, key: string) {
     const r = getRel(s, p, t), w = l ? clamp(n * grundvarde(key) / DELA.stoldVarde, 0, 1) : 1;
     r.op = clamp(r.op - (l ? DELA.stoldLindrig * w : DELA.stoldOp), -100, 100);
     if (w < DELA.stoldTanke) continue;
-    think(p, `${t.name} tog av min ${namnOf(key)}`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
+    think(p, `${t.name} tog av det jag sparat (${namnOf(key).toLowerCase()})`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
     if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
     handelse(s, t, l ? 'stoldLindrig' : 'stold', p, namnOf(key), p); // bara den bestulne vet, och kan berätta det (steg 3.3.1)
     if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit ${hans(p)} ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }

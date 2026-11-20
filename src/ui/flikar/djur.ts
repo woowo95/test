@@ -66,7 +66,7 @@ function honsHtml() {
     <dl class="kv">
       ${rd('Flock', 'Så många hönor går i flocken. De letar mat själva, så ingen matar dem', `${h.n} ${h.n === 1 ? 'höna' : 'hönor'}`)}
       ${rd('Ägare', h.agare !== undefined ? 'Ägaren. Äggen blir hens' : 'Byn äger flocken', q ? pLink(q) : h.agare !== undefined ? '–' : 'Byn')}
-      ${rd('Ägg', agg === 0 ? 'Inga ägg i istiden' : 'Ägg om året: en per höna, utom i istiden', `${kortTal(agg)} ägg/år`)}
+      ${rd('Ägg', agg === 0 ? 'Inga ägg i istiden' : 'Ägg om året: ett per höna, utom i istiden', `${kortTal(agg)} ägg/år`)}
     </dl>`;
 }
 function djurHtml() {
@@ -79,7 +79,7 @@ function djurHtml() {
   return `
     <div class="phead">${levande(d)}<div><h2>${esc(art.art)}</h2></div></div>
     <dl class="kv">
-      ${rad('Ålder', drag.alder / art.alder, `${drag.alder} år`, `${drag.alder} år gammal. En ${art.art.toLowerCase()} blir högst ${art.alder} år.`)}
+      ${rad('Ålder', drag.alder / art.alder, `${drag.alder} år`, `${drag.alder} år gammal. Arten blir högst ${art.alder} år.`)}
       ${rad('Styrka', drag.styrka / (art.styrka * topp), `${Math.round(drag.styrka / (art.styrka * topp) * 100)} % av artens bästa`, `Styrka ${kortTal(drag.styrka)}, ${jfr(drag.styrka, art.styrka)}`)}
       ${rad('Snabbhet', drag.snabbhet / (art.fart * topp), `${Math.round(drag.snabbhet / (art.fart * topp) * 100)} % av artens bästa`, `Snabbhet ${kortTal(drag.snabbhet)}, ${jfr(drag.snabbhet, art.fart)}${drag.alder / art.alder > 0.7 ? '. Den är gammal och har blivit långsammare' : ''}`)}
       ${rad('Tålighet', drag.talighet / topp, pr(drag.talighet), 'Hur mycket skador och svält den tål', 'skill')}
@@ -89,7 +89,7 @@ function djurHtml() {
       ${rad('Tamhet', 0, '0 %', 'Ett vilt djur är inte tamt alls', 'skill')}
       ${f ? rad('Mättnad', 1 - f.hunger, pr(1 - f.hunger), 'Flockens mättnad: full stapel är mätt. En hungrig flock jagar harar, smyger till förrådet på natten och kan anfalla den som är ensam', f.hunger > 0.6 ? 'low' : '') : ''}
       ${f ? `<dt>Flock</dt><dd title="${esc(f.vargar.length > 1 ? `Flocken har ${f.vargar.length} vargar${f.vargar[0] === d.id ? '. Den här är ledarvargen' : ''}` : 'En ensam varg')}"><span>${f.vargar.length} ${f.vargar.length === 1 ? 'varg' : 'vargar'}</span></dd>` : ''}
-      ${g ? (gr => `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${gr} just nu"><span>${g.n} ${gr}</span></dd>`)(FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn : d.art === 'fagel' ? 'fåglar' : 'harar') : ''}
+      ${g ? (gr => `<dt>Grupp</dt><dd title="Gruppen har ${g.n} ${gr} just nu"><span>${g.n} ${gr}</span></dd>`)(FLOCKARTER[d.art] ? FLOCKARTER[d.art].namn.toLowerCase() : d.art === 'fagel' ? (g.n === 1 ? 'fågel' : 'fåglar') : g.n === 1 ? 'hare' : 'harar') : ''}
     </dl>`;
 }
 export const djur: Flik = { namn: 'Djuret', knapp: 'person', html: djurHtml };

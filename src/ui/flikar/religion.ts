@@ -1,3 +1,4 @@
+import { styck } from '../../sim/ord';
 const kortTyngd = (v: number) => (Math.round(v * 10) / 10).toLocaleString('sv-SE');
 import { trosBerattelse, GUD_OMR, Gud, Person, troEtikett, tyngd, tyngdDelar, formNamn, gudarOf, SKALA_IDS, SKALOR, Tro, UPPV, skalaSyns, skalaV, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, troNamn, troende, upplevelseText } from '../../sim';
 import { tecknet } from '../../ikoner';
@@ -22,7 +23,7 @@ function kultHtml(tr: Tro) {
     rad.push(`<li class="klick falla" ${fallUt(id)} title="${esc(budNamn(s, b))}">${tecknet('sym_bud', '📜')} ${esc(budNamn(s, b))}${hjalpText(id, `<p class="muted small budmer">${d.om ? esc(d.om(s, tr, b)) + ' ' : ''}Varför tron antog det: ${esc(d.text.toLowerCase())}.</p>`)}</li>`);
   });
   if (tr.plan) rad.push(`<li title="${esc(planKlar(s, tr) ? 'Planen är klar' : 'Planen bestäms del för del i trons krets')}">${tecknet('sym_troshus', '📜')} Trons hus${planKlar(s, tr) ? ` (${esc(troshusNamn(s, tr))})` : ''}: ${esc(planText(s, tr))}${planKlar(s, tr) ? ` · ${troshusKlart(s, tr) ? 'står klart' : troshusAv(s, tr).length ? 'byggs' : 'väntar på kyrkans egendom'}` : ''}</li>`); // planen (steg 10.3.18)
-  if (forradSum(s, tr)) rad.push(`<li title="${esc(Object.entries(kyrkansForrad(s, tr)).filter(([, n]) => n >= 1).map(([k, n]) => `${Math.floor(n + 1e-9)} ${k}`).join(', '))}">${tecknet('sym_kyrkoforrad', '📜')} Kyrkans förråd: ${forradSum(s, tr)}</li>`);
+  if (forradSum(s, tr)) rad.push(`<li title="${esc(Object.entries(kyrkansForrad(s, tr)).filter(([, n]) => n >= 1).map(([k, n]) => styck(Math.floor(n + 1e-9), k)).join(', '))}">${tecknet('sym_kyrkoforrad', '📜')} Kyrkans förråd: ${forradSum(s, tr)}</li>`);
   for (const h of tr.helgon ?? []) rad.push(`<li title="${esc(`Krönikan: ${h.krönika} Myten: ${h.myt}`)}">${tecknet('sym_helgon', '✨')} Helgonet ${esc(h.namn)}</li>`);
   const sten = heligaStenar(s, tr)[0]; // ristat på en sten (steg 10.6.2): stensymbolen, och den ristade texten vid tryck
   if (tr.kvade) rad.push(sten ? `<li title="${esc(`Ristat: ${sten.text}`)}" tabindex="0">${tecknet('sym_kvade', '📜')}🪨 Heliga kväden</li>` : `<li title="${esc(tr.kvade.text)}">${tecknet('sym_kvade', '📜')} Heliga kväden</li>`);

@@ -393,7 +393,7 @@ export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) 
     if (t.niva > TEKTAL.larNiva || !knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue; // nivå 3 och uppåt lärs inte i prat (steg 4.2.3.1)
     if (rnd(s, 'kunskap', a) > TEKTAL[slag.lar ?? 'larChans'] * mer) continue;
     lartUt(s, a, b);
-    delade('teknik', t.id, t.namn.toLowerCase()); // samtalets ämne (steg 3.9.5)
+    delade('teknik', t.id, goraUtan(t)); // vad man gör med tekniken: "göra flintspjut", "stifta lagar" (steg 12.1.118) // samtalets ämne (steg 3.9.5)
     b.tek ??= {};
     const d = Math.min(1 - (b.tek[t.id] ?? 0), TEKTAL.larFramsteg * (TEKTAL.larBas + stat(b, 'intelligens', s.now) / 20));
     b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);

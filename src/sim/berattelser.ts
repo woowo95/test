@@ -16,7 +16,8 @@ import { upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
-import { ganger, gen, goraNamn, han, honom, och, slaktOrd, talOrd } from './ord';
+import { TEXTLYSS, type TextLyssnare, bestamd, ganger, gen, goraNamn, han, honom, och, slaktOrd, talOrd } from './ord';
+export { bestamd } from './ord';
 import { isSick } from './sjukdom';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
@@ -230,7 +231,7 @@ const MDEF = {
     '{Hen} har binamnet {binamn}.',
     'I byn kallas {hen} oftast {binamn}.',
     '{Hen} är känd under namnet {binamn}.',
-    '{binamn} är det namn byn använder om {honom}.',
+    'Det namn byn använder om {honom} är {binamn}.',
     'Även barnen kallar {honom} {binamn}.',
     'Byn gav {honom} namnet {binamn}.',
     'I byn går {hen} under namnet {binamn}.',
@@ -515,7 +516,7 @@ const MDEF = {
   besk_forstFodd: [
     '{Hen} var det första barnet som föddes i byn.',
     'Ingen i byn föddes före {honom}.',
-    '{Hen} är byns förstfödda.',
+    '{Hen} är byns första barn.',
     '{Hen} föddes först av alla i byn.',
     'Byns första barn var {namn}.',
     '{namn} är det första barnet som fötts i byn.',
@@ -807,13 +808,13 @@ const MDEF = {
   e_minns: [
     'Vid elden berättar man fortfarande om {honom}.',
     'Byn har inte glömt {honom}.',
-    '{hans} namn lever kvar i byn.',
+    '{Hans} namn lever kvar i byn.',
     'De som var med minns hur det var när {hen} levde.',
     { t: 'Det är länge sedan nu, men några minns {honom} än.', om: f => f.lange === true },
     { t: 'Barnen som föddes efteråt har bara hört talas om {honom}.', om: f => f.lange === true },
     { t: 'Ännu talar man om {honom} vid elden.', om: f => !f.lange },
     { t: 'Saknaden efter {honom} har inte gått över.', om: f => !f.lange },
-    { t: '{hans} barn bär minnet av {honom} vidare.', om: f => f.barn === true },
+    { t: '{Hans} barn bär minnet av {honom} vidare.', om: f => f.barn === true },
   ],
   // krönikan (steg 3.9.3). Alla har {arstid} ('istiden', 'våren' …), och villkoren kallt, sno, regn, natt och blast
   k_dog: [
@@ -895,11 +896,11 @@ const MDEF = {
     '{namn} lade det sista på plats, och nu var {hus2} {klart}.',
     'Efter mycket arbete stod {hus} {klart}.',
     'Det var {arstid} när {hus} blev {klart}.',
-    'Byn samlades och såg på när {namn} gjorde klart {hus2}.',
+    'Byn samlades och såg på när {namn} gjorde klart {hus3}.',
     '{namn} torkade svetten ur pannan. {Hus2} var {klart}.',
     'Nu stod {hus} {klart}, och byn var lite större.',
     { t: 'Precis före kylan blev {hus} {klart}.', om: f => f.kallt === true },
-    { t: 'I regnet gjorde {namn} klart {hus2}, och nu kunde man sitta torrt.', om: f => f.regn === true },
+    { t: 'I regnet gjorde {namn} klart {hus3}, och nu kunde man sitta torrt.', om: f => f.regn === true },
   ],
   k_forstaLedare: [
     '{namn} blev byns första ledare ({titel}).',
@@ -1007,21 +1008,21 @@ const MDEF = {
   ],
   k_vargjakt: [
     '{folk} gick på vargjakt mot {vargar} och fällde {fallde}.{svara}',
-    'Det var {arstid} när {folk} gick på vargjakt mot {vargar}. De fällde {fallde}.{svara}',
-    '{folk} tog sina spjut och gick mot {vargar}. De fällde {fallde}.{svara}',
-    'Byn skickade {folk} på vargjakt mot {vargar}, och de fällde {fallde}.{svara}',
-    'Med spjuten i händerna gick {folk} mot {vargar}. De fällde {fallde}.{svara}',
+    'Det var {arstid} när {folk} gick på vargjakt mot {vargar}. {De} fällde {fallde}.{svara}',
+    '{folk} tog sina spjut och gick mot {vargar}. {De} fällde {fallde}.{svara}',
+    'Byn skickade {folk} på vargjakt mot {vargar}, och {de} fällde {fallde}.{svara}',
+    'Med spjuten i händerna gick {folk} mot {vargar}. {De} fällde {fallde}.{svara}',
     '{folk} följde spåren till {vargar} och fällde {fallde}.{svara}',
-    'Det var en vargjakt byn talade om länge: {folk} mot {vargar}, och de fällde {fallde}.{svara}',
+    'Det var en vargjakt byn talade om länge: {folk} mot {vargar}, och {de} fällde {fallde}.{svara}',
     '{folk} gick ut för att göra slut på {vargar}, och fällde {fallde}.{svara}',
-    { t: 'I snön följde {folk} spåren till {vargar} på vargjakt, och de fällde {fallde}.{svara}', om: f => f.sno === true },
-    { t: 'I blåsten gick {folk} på vargjakt mot {vargar}, och de fällde {fallde}.{svara}', om: f => f.blast === true },
+    { t: 'I snön följde {folk} spåren till {vargar} på vargjakt, och {de} fällde {fallde}.{svara}', om: f => f.sno === true },
+    { t: 'I blåsten gick {folk} på vargjakt mot {vargar}, och {de} fällde {fallde}.{svara}', om: f => f.blast === true },
   ],
   k_vargSprang: [
-    '{namn} gick på vargjakt{med}, men vargarna sprang innan de hann fram.',
+    '{namn} gick på vargjakt{med}, men vargarna sprang innan {de} hann fram.',
     'Vargarna var borta innan {namn}{med} hann fram. Vargjakten blev ingenting.',
-    '{namn} gick på vargjakt{med}, men vargarna hörde dem och sprang.',
-    'Det var {arstid} när {namn} gick på vargjakt{med}. Vargarna sprang innan de hann fram.',
+    '{namn} gick på vargjakt{med}, men vargarna hörde {dem} och sprang.',
+    'Det var {arstid} när {namn} gick på vargjakt{med}. Vargarna sprang innan {de} hann fram.',
     'Vargjakten slutade innan den börjat: vargarna sprang när {namn}{med} kom.',
     '{namn} gick på vargjakt{med}, men såg bara vargarnas ryggar.',
     'Vargarna var för snabba för {namn}{med} på vargjakten.',
@@ -1061,10 +1062,10 @@ const MDEF = {
     'Ingen fällde björnen den dagen, fast {folk} försökte.{svara}',
   ],
   k_bjornSprang: [
-    '{namn} gick på björnjakt{med}, men björnen hörde dem och försvann in i skogen.',
-    'Det var {arstid} när {namn} gick på björnjakt{med}. Björnen gick undan innan de hann fram.',
+    '{namn} gick på björnjakt{med}, men björnen hörde {dem} och försvann in i skogen.',
+    'Det var {arstid} när {namn} gick på björnjakt{med}. Björnen gick undan innan {de} hann fram.',
     'Björnen märkte {namn}{med} på björnjakten och gick sin väg.',
-    '{namn} smög efter björnen{med}, men den var borta innan de kom nära.',
+    '{namn} smög efter björnen{med}, men den var borta innan {de} kom nära.',
     'När {namn} kom fram{med} fanns bara björnens spår kvar.',
     'Björnen var för vaksam. {namn}{med} såg den bara springa sin väg.',
     '{namn} gick på björnjakt{med}, men skogen var tom när de kom fram.',
@@ -1237,7 +1238,7 @@ const MDEF = {
     '{namn} sa åt {med} att hålla sig borta från {om}.',
     '{namn} och {med} pratade om {om}, och båda blev lite rädda.',
     '{med} fick höra om {om} av {namn}.',
-    '{namn} gjorde {om} farligare än det kanske är när {med} lyssnade.',
+    '{namn} överdrev nog hur farligt det är, men {med} lyssnade ändå.',
     '{namn} och {med} pratade lågt om {om}.',
     '{namn} lärde {med} att vara rädd för {om}.',
   ],
@@ -1252,14 +1253,14 @@ const MDEF = {
     '{namn} visste något om {om} som {med} inte visste.',
   ],
   p_teknik: [
-    '{namn} lärde {med} om {om}.',
-    '{namn} visade {med} vad {om} är för något.',
-    '{namn} och {med} pratade om {om}.',
-    '{med} frågade {namn} om {om}.',
-    '{namn} förklarade {om} för {med}.',
-    '{namn} och {med} funderade över {om}.',
-    '{namn} lät {med} pröva på {om}.',
-    '{med} lärde sig om {om} av {namn}.',
+    '{namn} lärde {med} hur man ska {om}.',
+    '{namn} visade {med} hur man kan {om}.',
+    '{namn} och {med} pratade om hur man ska {om}.',
+    '{med} frågade {namn} hur man ska {om}.',
+    '{namn} förklarade för {med} hur man ska {om}.',
+    '{namn} och {med} funderade över hur man bäst ska {om}.',
+    '{namn} lät {med} pröva på att {om}.',
+    '{med} lärde sig av {namn} hur man ska {om}.',
   ],
   p_kunskap: [
     '{namn} lärde {med} att {om}.',
@@ -1363,7 +1364,7 @@ const MDEF = {
   ],
   p_mat: [
     '{namn} och {med} pratade om maten.',
-    '{namn} klagade för {med} att {namn} är hungrig.',
+    '{namn} klagade för {med} att {hen} är hungrig.',
     '{namn} och {med} undrade om maten räcker.',
     '{namn} och {med} pratade om vad de ska äta.',
     '{namn} sa till {med} att magen knorrar.',
@@ -1436,7 +1437,7 @@ const MDEF = {
     '{namn} saknar {om} när de inte ses.',
     'När {om} är borta ser {namn} ofta bort mot stigen.',
     '{namn} sparar det bästa av maten åt {om}.',
-    'Det {namn} tänker säger {namn} först till {om}.',
+    'Det {namn} tänker säger {hen} först till {om}.',
     '{namn} och {om} sitter ofta bredvid varandra vid elden.',
     // steg 6.7.7
     '{namn} känner sig trygg när {om} är nära.',
@@ -1447,7 +1448,7 @@ const MDEF = {
     { t: '{namn} och {om} har pratat så många gånger att de vet vad den andra ska säga.', om: f => !!f.mycketPrat },
     { t: '{namn} och {om} har slagits sida vid sida, och det glömmer de inte.', om: f => !!f.sida },
     { t: '{namn} och {om} har grälat, men de blev alltid sams igen.', om: f => !!f.gral },
-    { t: '{namn} är bara ett barn, men {hen} följer {om} vart {om} än går.', om: f => !!f.ung },
+    { t: '{namn} är bara ett barn, men {hen} följer {om} vart {omHen} än går.', om: f => !!f.ung },
     { t: 'De gamla säger att {namn} och {om} är som syskon.', om: f => !!f.gammal && !f.kin },
     { t: '{namn} blir glad bara {om} sätter sig bredvid.', om: f => !!f.glad },
     { t: 'Barnen de fått tillsammans håller {namn} och {om} nära varandra.', om: f => !!f.barn },
@@ -1984,7 +1985,7 @@ const MDEF = {
   ],
   l_arke: [ // {namn} ser {om} som sin ärkefiende
     '{namn} ser nu {om} som sin ärkefiende.',
-    'Ingen hatar {namn} som {om}. {om} är {hans} ärkefiende nu.',
+    '{namn} hatar ingen som {om}. {om} är {hans} ärkefiende nu.',
     'För {namn} är {om} nu den värsta fienden.',
     '{namn} har bestämt sig: {om} är {hans} ärkefiende.',
     '{namn} hatar {om} mer än någon annan i byn.',
@@ -2113,19 +2114,19 @@ export function valjVariant(s: State, mall: MallId, nyckel: number, f: Fyllning 
   let x = v[i0];
   if (undvik) for (let k = 0; k < v.length; k++) { const y = v[(i0 + k) % v.length]; if (!undvik(fyll(typeof y === 'string' ? y : y.t, f))) { x = y; break; } }
   const text = typeof x === 'string' ? x : x.t;
-  if (textLyssnare) textLyssnare(mall, BERATTELSER[mall].indexOf(x), fyll(text, f), f);
+  if (TEXTLYSS.f) TEXTLYSS.f(mall, BERATTELSER[mall].indexOf(x), fyll(text, f), f);
   return text;
 }
 // verktyget som samlar texterna (npm run texter, steg 4.5.1.1): får varje vald variant (mallen, variantens plats i mallen och
 // texten ifylld, och fälten), varje del av en beskrivning (mallen 'del:<id>', plats -1) och hela beskrivningen ('beskrivning').
 // Bara i verktyget och testernas vakt (steg 4.5.1.2); spelet sätter den aldrig
-let textLyssnare: ((mall: string, i: number, text: string, f: Fyllning) => void) | undefined;
-export function lyssnaPaTexter(f: typeof textLyssnare) { textLyssnare = f; }
+export function lyssnaPaTexter(f: ((mall: string, i: number, text: string, f: Fyllning) => void) | undefined) { TEXTLYSS.f = f as TextLyssnare | undefined; } // ordlagret håller lyssnaren (steg 12.1.118)
 export function fyll(text: string, f: Fyllning) {
-  return text.replace(/\{(\w+)\}/g, (_, k: string, i: number) => {
+  return text.replace(/\{(\w+)\}(s(?![\p{L}]))?/gu, (_, k: string, gs: string | undefined, i: number) => {
     const v = f[k] ?? f[k.toLowerCase()];
     let t = v === undefined ? '' : String(v);
     if (k === 'arstid' && text.slice(Math.max(0, i - 8), i) === 'Det var ') t = OBEST[t] ?? t; // "Det var sommar när" (steg 6.7.6)
+    if (gs) t = gen(t); // "{namn}s" är genitiv: "Asdis yxa", inte "Asdiss yxa" (steg 12.1.118)
     return k[0] === k[0].toUpperCase() && k[0] !== k[0].toLowerCase() ? t.charAt(0).toUpperCase() + t.slice(1) : t;
   });
 }
@@ -2520,7 +2521,7 @@ function eftermale(s: State, p: Person) {
   if (uppfann(p).length) { f.vad = och(uppfann(p).slice(-3)); ut.push(mening(b, 'besk_uppfann', 14)); }
   else if (bedrifter(p).length) { f.vad = ihop(bedrifter(p).slice(-2).map(liten)); ut.push(mening(b, 'besk_bedrift', 15)); }
   ut.push(mening(b, 'e_minns', 43));
-  textLyssnare?.('beskrivning', -1, ut.join(' '), f);
+  TEXTLYSS.f?.('beskrivning', -1, ut.join(' '), f);
   return ut.join(' ');
 }
 export function beskrivning(s: State, p: Person) {
@@ -2557,9 +2558,9 @@ export function beskrivning(s: State, p: Person) {
     valda.push(ovriga.splice(j, 1)[0]!);
   }
   valda.sort((x, y) => x.i - y.i);
-  const ut = [mening(b, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', 0), ...trots ? [mening(b, 'besk_trots', 31)] : [], ...valda.map(x => { const t = x.d.text(b); textLyssnare?.('del:' + x.d.id, -1, t, b.f); return t; })];
+  const ut = [mening(b, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', 0), ...trots ? [mening(b, 'besk_trots', 31)] : [], ...valda.map(x => { const t = x.d.text(b); TEXTLYSS.f?.('del:' + x.d.id, -1, t, b.f); return t; })];
   if (ut.length < 2) ut.push(mening(b, 'besk_inget', 6));
-  textLyssnare?.('beskrivning', -1, ut.join(' '), f);
+  TEXTLYSS.f?.('beskrivning', -1, ut.join(' '), f);
   return ut.join(' ');
 }
 
@@ -2621,17 +2622,6 @@ const sakGrupp = (k: string): SakGrupp => {
 };
 // sakens namn i bestämd form och pronomenet: flintkniven/den, träspjutet/det, skorna av kaninskinn/de (ett plagg av ett
 // material, klader.ts: bara plagget får bestämd form)
-const NEUTRUM = ['spjut', 'spö', 'bord', 'ställ', 'bälte'];
-export function bestamd(namn: string): [string, string] {
-  const av = namn.indexOf(' av ');
-  if (av > 0) { const [b, h] = bestamd(namn.slice(0, av)); return [b + namn.slice(av).toLowerCase(), h]; }
-  const n = namn.toLowerCase();
-  if (n === 'litet bord') return ['det lilla bordet', 'det'];
-  if (n.endsWith('skor')) return [n + 'na', 'de'];
-  if (NEUTRUM.some(e => n.endsWith(e))) return [n + (/[aeiouyåäö]$/.test(n) ? 't' : 'et'), 'det'];
-  return [n + (/[aeiouyåäö]$/.test(n) ? 'n' : 'en'), 'den'];
-}
-
 // saken t (ett ting eller en möbel) blev ett mästerverk eller usel: spara det berättelsen behöver
 export function sakMinne(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }) {
   const v = vaderNu(s), dag = 24 * HOUR;
@@ -2697,7 +2687,7 @@ export function sakVarg(s: State, t: { id: number; k: string; q?: number; ber?: 
 export function sakBerattelse(s: State, t: { id: number; k: string; q?: number; ber?: SakMinne }, namn: string) {
   const m = t.ber, p = m && byId(s, m.g);
   if (!m || !p) return '';
-  const [saken, den] = bestamd(namn), q = t.q ?? 0, usel = q === 0;
+  const [saken, den] = bestamd(namn, SAKER[t.k]?.ett), q = t.q ?? 0, usel = q === 0;
   const f: Fyllning = { namn: p.name, hen: hen(p), saken, den, pa: PA[m.ai], arstid: ARSTIDER[m.ai], vader: m.v ? VADER_ORD[m.v] : '', glad: m.h >= BERATT.glad, ledsen: m.h <= BERATT.ledsen, natt: m.natt === 1, l: m.l, egen: m.namn, perfekt: q >= 5 };
   const nara = m.nara !== undefined ? byId(s, m.nara) : undefined, at = m.at !== undefined ? byId(s, m.at) : undefined, lo = m.lo !== undefined ? byId(s, m.lo) : undefined;
   const vem = m.varg !== undefined ? byId(s, m.varg) : undefined;
@@ -2792,7 +2782,7 @@ export function pratText(s: State, p: Person) {
 export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   // fälten som varianterna väljer på (steg 6.7.7): åldrarna, humöret, samtalen och det de varit med om tillsammans
   const barnIhop = s.people.some(c => (c.mother === p.id && c.father === q.id) || (c.mother === q.id && c.father === p.id));
-  const f: Fyllning = { namn: p.name, om: q.name, hen: hen(p), ung: ageOf(p, s.now) < ALDER.vuxen, gammal: ageOf(p, s.now) >= ALDER.gammal, omUng: ageOf(q, s.now) < ALDER.vuxen,
+  const f: Fyllning = { namn: p.name, om: q.name, hen: hen(p), omHen: hen(q), ung: ageOf(p, s.now) < ALDER.vuxen, gammal: ageOf(p, s.now) >= ALDER.gammal, omUng: ageOf(q, s.now) < ALDER.vuxen,
     glad: moodOf(p, s.now) >= BERATT.glad, talks: r.talks ?? 0, mycketPrat: (r.talks ?? 0) >= BERATT.mycketPrat, sida: !!r.minns?.sida, gral: !!r.minns?.gral, slag: !!r.minns?.slag, barn: barnIhop, kin: isKin(p, q) };
   const mall: MallId = p.partner === q.id ? 'r_partner' : r.op > REL.naraVan ? 'r_nara' : r.op > REL.vanOrd ? 'r_van' : r.op > REL.osams ? 'r_bekant' : r.op > REL.ovan ? 'r_ogillar' : 'r_ovan';
   const nyckel = p.id * 7919 + q.id, ut: string[] = [fyll(valjVariant(s, mall, nyckel, f, 0), f)];

@@ -7,7 +7,7 @@ import { balans } from './balans';
 import { nyAndlighet } from './religion';
 import { RYKTE, ryktbarhet } from './rykten';
 import { hourOf } from './tid';
-import { lista, och, tal } from './ord';
+import { horText, lista, och, tal } from './ord';
 
 // ---------- balanstal (regel 8) ----------
 // Kroppen: mätarna hunger, rest, warm, social, toa och health går från 0 (slut) till 1 (full). Här står gränserna där folk
@@ -400,6 +400,7 @@ export function similarity(a: Person, b: Person) {
 // redan bland de senaste i loggen, inom slagets fönster (SAMLA), byggs den på med den nya delen och flyttas överst, i stället
 // för att en ny rad läggs till. Bara texten: statistiken räknar varje händelse som förut
 export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[] = [], sam?: { slag: SamSlag; k: number; n: string; d: string }) {
+  horText('log', text);
   if (sam) {
     const def = SAMLA[sam.slag], f = def.fonster(s.now);
     for (let i = s.log.length - 1; i >= Math.max(0, s.log.length - SAMLA_BAKAT); i--) {
@@ -484,6 +485,7 @@ export function gjortDygn(s: State, p: Person, k: string) {
 // räknar k och ger true första gången det händer i byn (för raderna om 'byns första …' i loggen)
 export const forstaGang = (s: State, k: string) => { count(s, k); return s.stat![k] === 1; };
 export function think(p: Person, text: string, v: number, now: number, dur: number) {
+  horText('tanke', text);
   p.thoughts = p.thoughts.filter(t => t.text !== text);
   p.thoughts.push({ text, v, until: now + dur });
 }

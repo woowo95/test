@@ -563,7 +563,7 @@ function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
     w.inf = 0; count(s, 'infektioner');
     const v = w.vardare !== undefined ? byId(s, w.vardare) : undefined; // den som vårdade såret förstår att händerna och redskapen inte var rena (steg 9.5.25)
     if (v && alive(v) && kn(v, 'renahander') < 1) { learnK(v, 'renahander', HALSA.renaLar, s.now); count(s, 'renaHanderLart'); }
-    if (w.g >= HALSA.logg) log(s, `${p.name}s sår i ${DEL[w.d].i} blev infekterat.`, 'world', [p.id]);
+    if (w.g >= HALSA.logg) log(s, `${gen(p.name)} sår i ${DEL[w.d].i} blev infekterat.`, 'world', [p.id]);
     return;
   }
   if ((w.ren ?? 0) > s.now && w.inf < HALSA.kallbrand) {
@@ -708,7 +708,7 @@ export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: numbe
   const lager = fetchSpot(s, 'remsa') ?? fetchSpot(s, 'mossa'), fart = GANG.fart;
   const omvag = lager ? (Math.hypot(lager.x - p.x, lager.y - p.y) + Math.hypot(best.x - lager.x, best.y - lager.y) - Math.hypot(best.x - p.x, best.y - p.y)) / fart / 3600 : 0;
   const stanna = b.blod && !(p.forbandMed ?? 0) && tidKvar(best) < omvag * HALSA.hamtaMarg;
-  return { spot: { x: best.x, y: best.y }, ref: best.id, stanna, why: b.protes && !b.blod && !b.rengor && !b.forband && !b.bara ? `Sätter en protes på ${best.name}` : b.bara && !b.blod && !b.rengor ? `Går för att bära hem ${best.name}` : stanna ? `Springer till ${best.name} och trycker på såret` : `Tar hand om ${best.name}s sår` };
+  return { spot: { x: best.x, y: best.y }, ref: best.id, stanna, why: b.protes && !b.blod && !b.rengor && !b.forband && !b.bara ? `Sätter en protes på ${best.name}` : b.bara && !b.blod && !b.rengor ? `Går för att bära hem ${best.name}` : stanna ? `Springer till ${best.name} och trycker på såret` : `Tar hand om ${gen(best.name)} sår` };
 }
 // rätten till vård (steg 9.5.9, "Rätt till vård" i designdokumentet): hur mycket före de andra p vårdar q, efter sederna och
 // styret. Vid Sammanhållning vårdas alla lika; vid Självförsörjning vårdar släkten sina egna; vid Envälde går ledaren och hens

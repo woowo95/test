@@ -66,6 +66,9 @@ import { GRODOR, rutorAv } from './odling';
 import { TORKA } from './torka';
 import { BYREL, byHandelse, gavaRel } from './byrel';
 import { kronika } from './historik';
+import { antal, hans, honom, horText, och, tal } from './ord';
+// "en sak", "tre saker"
+const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
 
 export const RESA = balans('resa', {
   samlaSek: 3600, // så länge (sekunder i verkligheten) ledaren får samla sällskapet innan resan ställs in (en timme, ett kvarts dygn i spelet)
@@ -144,16 +147,16 @@ export const RESA = balans('resa', {
 export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver', 'packsadel', 'ridsadel', 'vagn'];
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
-export interface ResmalDef { namn: string; mal: readonly LandmarkId[]; stannar: number }
+export interface ResmalDef { namn: string; resa: string; mal: readonly LandmarkId[]; stannar: number } // resa: färden i en mening ("kom hem från en handelsresa")
 export const RESMAL = {
-  handel: { namn: 'Handel', mal: ['by', 'handelslager'], stannar: 1 },
-  uppdrag: { namn: 'Uppdrag', mal: ['by', 'ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'utpost', 'rovarlager', 'gomma'], stannar: 1 },
-  turne: { namn: 'Turné', mal: ['by'], stannar: 1 },
-  slakt: { namn: 'Besök hos släkt', mal: ['by'], stannar: 2 },
-  se: { namn: 'Se en plats', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
-  sandebud: { namn: 'Sändebud', mal: ['by'], stannar: 1 },
-  budbarare: { namn: 'Budbärare', mal: ['by'], stannar: 0.25 }, // den som utlyst ett uppdrag skickar det till en grannby (steg 11.8.13, utlysa.ts)
-  hamta: { namn: 'Hämta', mal: ['silvergruva', 'jarngruva'], stannar: 1 }, // och malmen i järngruvan (steg 12.2.13) // det en plats ger: silvret i gruvan; tiden nere väljs i packskedet (steg 11.10.1)
+  handel: { namn: 'Handel', resa: 'en handelsresa', mal: ['by', 'handelslager'], stannar: 1 },
+  uppdrag: { namn: 'Uppdrag', resa: 'ett uppdrag', mal: ['by', 'ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'utpost', 'rovarlager', 'gomma'], stannar: 1 },
+  turne: { namn: 'Turné', resa: 'en turné', mal: ['by'], stannar: 1 },
+  slakt: { namn: 'Besök hos släkt', resa: 'ett besök hos släkten', mal: ['by'], stannar: 2 },
+  se: { namn: 'Se en plats', resa: 'en färd för att se platsen', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
+  sandebud: { namn: 'Sändebud', resa: 'en färd som sändebud', mal: ['by'], stannar: 1 },
+  budbarare: { namn: 'Budbärare', resa: 'en färd med ett bud', mal: ['by'], stannar: 0.25 }, // den som utlyst ett uppdrag skickar det till en grannby (steg 11.8.13, utlysa.ts)
+  hamta: { namn: 'Hämta', resa: 'en färd till gruvan', mal: ['silvergruva', 'jarngruva'], stannar: 1 }, // och malmen i järngruvan (steg 12.2.13) // det en plats ger: silvret i gruvan; tiden nere väljs i packskedet (steg 11.10.1)
 } as const satisfies Record<string, ResmalDef>;
 export type ResmalId = keyof typeof RESMAL;
 export const RESMAL_IDS = Object.keys(RESMAL) as ResmalId[];
@@ -876,7 +879,7 @@ function turneFram(s: State, sl: Sallskap, r: import('./radtal').VarldRad, t: nu
   const n = Math.max(0, Math.min(Math.floor(r.tal.silver), Math.floor(RESA.turneGava * turneKraft(s, led) / Math.max(1e-9, varde1('silver')) + 1e-9)));
   if (n > 0) { radTar(r, 'silver', -n); sl.pack.silver = (sl.pack.silver ?? 0) + n; }
   const vad = led.skill.skaldskap / 20 >= (led.bedrift?.h === 'tavling' ? 1 : 0) ? 'uppträdde' : 'tävlade';
-  const text = `${led.name} ${vad} i ${r.namn}${n > 0 ? ` och fick ${n} silver i gåva` : ''}.`;
+  const text = `${led.name} ${vad} i ${r.namn}${n > 0 ? ` och fick ${antal(n, 'silver')} i gåva` : ''}.`;
   dagbok(s, sl, 'turne', text, t);
   sl.turne = n;
   count(s, 'turne framme');
@@ -917,7 +920,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
     radTar(r, sak, m); radTar(r, 'silver', -pay);
     radPrisAndras(s, r, sak, pay, -1);
   }
-  if (fick) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; dagbok(s, sl, 'handel', `Sålde ${salda} saker i ${r.namn} för ${fick} silver.`, t); count(s, 'resa sålde', salda); }
+  if (fick) { sl.pack.silver = (sl.pack.silver ?? 0) + fick; dagbok(s, sl, 'handel', `Sålde ${saker(salda)} i ${r.namn} för ${antal(fick, 'silver')}.`, t); count(s, 'resa sålde', salda); }
   // köpa: det byn har brist på, om det fortfarande är billigare här än hemma, så mycket byn har och silvret räcker till (steg 11.6.11)
   let kopta = 0, gav = 0;
   for (const [sak, n] of sl.kop ?? []) {
@@ -932,7 +935,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
     radPrisAndras(s, r, sak, pay, 1);
     kopta += m; gav += pay;
   }
-  if (kopta) { dagbok(s, sl, 'handel', `Köpte ${kopta} saker i ${r.namn} för ${gav} silver att ta hem.`, t); count(s, 'resa köpte hem', kopta); }
+  if (kopta) { dagbok(s, sl, 'handel', `Köpte ${saker(kopta)} i ${r.namn} för ${antal(gav, 'silver')} att ta hem.`, t); count(s, 'resa köpte hem', kopta); }
   // köpa: mat för vägen hem
   const v = varldMark(s), hem = byPlats(vl, sl.by), vd = v && hem ? vagDygn(s, plats.y * v.w + plats.x, hem.y * v.w + hem.x) : undefined;
   const led = folk.find(p => p.id === sl.ledare) ?? folk[0];
@@ -947,7 +950,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
       tappa(sl, 'silver', pay); sl.pack[kop] = (sl.pack[kop] ?? 0) + m;
       radTar(r, kop, -m); radTar(r, 'silver', pay);
       radPrisAndras(s, r, kop, pay, 1);
-      dagbok(s, sl, 'handel', `Köpte ${m} ${SAKER[kop]!.namn.toLowerCase()} för ${pay} silver till vägen hem.`, t); count(s, 'resa köpte', m);
+      dagbok(s, sl, 'handel', `Köpte ${antal(m, kop)} för ${antal(pay, 'silver')} till vägen hem.`, t); count(s, 'resa köpte', m);
     }
   }
   // mötet: byn minns resenärerna som mött huvudbyn, och inställningen blir lite bättre
@@ -1310,6 +1313,7 @@ export const DAGBOK = {
 } as const satisfies Record<string, DagbokDef>;
 export type DagbokId = keyof typeof DAGBOK;
 export function dagbok(s: State, sl: Sallskap, slag: DagbokId, text: string, t = s.now) {
+  horText('dagbok', text);
   sl.dagbok.push([t, text, slag]);
   if ((DAGBOK[slag] as DagbokDef).stor) notis(s, 'resa', `${RESMAL[sl.skal].namn}, ${malNamn(s, sl)}: ${text}`, sl.medl, undefined, { resa: sl.id });
 }
@@ -1350,7 +1354,7 @@ export function uppdragFram(s: State, sl: Sallskap, t: number) {
     if (hur === 'klart') {
       Object.assign(fick, u.belon); u.belon = {};
       avslutaUppdrag(s, vl, u, true);
-      text = `${namn} är gjort. Belöningen: ${sakLista(fick) || 'ingen'}.`;
+      text = `${namn}: uppdraget är utfört. Belöningen: ${sakLista(fick) || 'ingen'}.`;
     } else text = `${namn} gick inte att göra${gor === 'leverera' ? ': saken fanns inte i packningen' : ''}.`;
   }
   uppdragUtfall(s, sl, namn, hur, fick, text, t);
@@ -1370,9 +1374,9 @@ export function hjalpSlut(s: State, sl: Sallskap, t: number) {
   if (tim !== undefined && tim < UPPDRAGTAL.hjalpTim * Math.max(1, folk)) { uppdragUtfall(s, sl, namn, 'misslyckat', fick, `Hjälpte bara till i ${Math.round(tim)} timmar, och byn gav ingen belöning.`, t); return; }
   Object.assign(fick, u.belon); u.belon = {};
   avslutaUppdrag(s, vl, u, true);
-  uppdragUtfall(s, sl, namn, 'klart', fick, `${namn} är gjort${tim !== undefined ? ` efter ${Math.round(tim)} timmars arbete` : ''}. Belöningen: ${sakLista(fick) || 'ingen'}.`, t);
+  uppdragUtfall(s, sl, namn, 'klart', fick, `${namn}: uppdraget är utfört${tim !== undefined ? ` efter ${Math.round(tim)} timmars arbete` : ''}. Belöningen: ${sakLista(fick) || 'ingen'}.`, t);
 }
-const sakLista = (x: Record<string, number>) => Object.entries(x).filter(([, n]) => n >= 1).map(([k, n]) => `${n} ${k}`).join(', ');
+const sakLista = (x: Record<string, number>) => och(Object.entries(x).filter(([, n]) => n >= 1).map(([k, n]) => antal(Math.floor(n), k)));
 // hemkomsten: byn får veta om resan
 export function redogorelse(s: State, sl: Sallskap, t: number) {
   const vl = s.varld;
@@ -1380,7 +1384,7 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
   radBesoker(vl, vl.huvud, sl.mal);
   const folk = resenarer(s, sl), led = folk.find(p => p.id === sl.ledare) ?? folk[0];
   const dygn = Math.max(1, Math.round((t - sl.borjan) / DAY));
-  const text = `${led?.name ?? 'Sällskapet'}${folk.length > 1 ? ` och ${folk.length - 1} till` : ''} kom hem från ${RESMAL[sl.skal].namn.toLowerCase()} till ${malNamn(s, sl)} efter ${dygn} dygn.`;
+  const text = `${led?.name ?? 'Sällskapet'}${folk.length > 1 ? ` och ${folk.length - 1} till` : ''} kom hem från ${RESMAL[sl.skal].resa}${malNamn(s, sl) ? ` till ${malNamn(s, sl)}` : ''} efter ${dygn} dygn.`;
   sl.berattad = t;
   const u = sl.utfall, upp = u ? ` ${u.namn}: ${u.hur === 'klart' ? `klart${sakLista(u.fick) ? `, med ${sakLista(u.fick)}` : ''}` : u.hur === 'tomt' ? 'platsen var tom' : 'gick inte'}.` : '';
   log(s, text + upp, 'world', folk.map(p => p.id)).resa = sl.id; // minnet hos dem som var med (personens logg)
@@ -1531,7 +1535,7 @@ export const MATSLUT: Record<string, MatslutDef> = {
       if (!d) return;
       d.dog = t; sl.djur = sl.djur.filter(id => id !== d.id);
       sl.pack[l.djur!.kott] = (sl.pack[l.djur!.kott] ?? 0) + l.djur!.m;
-      count(s, 'resa slaktade'); dagbok(s, sl, 'mat', `Maten tog slut; slaktade ${tamArt(d.art).ord[3]} och fick ${l.djur!.m} kött.`, t);
+      count(s, 'resa slaktade'); dagbok(s, sl, 'mat', `Maten tog slut; slaktade ${tamArt(d.art).ord[3]} och fick ${antal(l.djur!.m, l.djur!.kott)}.`, t);
     },
   },
 };
@@ -1680,7 +1684,7 @@ const bars = (sl: Sallskap, id: number) => sl.buren?.some(b => b[0] === id);
 // ett djur som kan bära en människa till (lasten räknas i lastFart)
 const barDjurFor = (s: State, sl: Sallskap) => sl.djur.some(id => barDjur(s, id) >= RESA.personVikt);
 export const UTVAGAR: Record<string, UtvagDef> = {
-  fortsatta: { namn: 'Fortsätta', gor: (s, sl, l, t) => dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt; sällskapet fortsätter i hens takt.`, t) },
+  fortsatta: { namn: 'Fortsätta', gor: (s, sl, l, t) => dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt; sällskapet går i ${hans(l.langsam)} takt.`, t) },
   vagn: {
     namn: 'Åka på vagnen', kan: (_s, sl) => sl.fordon.length > 0, om: (_s, sl, l) => bara(sl, l, 'vagn'),
     gor: (s, sl, l, t) => { (sl.buren ??= []).push([l.langsam.id, 'vagn']); dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt och får åka på vagnen.`, t); },
@@ -1692,7 +1696,7 @@ export const UTVAGAR: Record<string, UtvagDef> = {
   bar: {
     namn: 'Bära på en bår', kan: (s, sl, l) => resenarer(s, sl).filter(p => p !== l.langsam && !bars(sl, p.id) && kanGa(p) && personFart(s, p) >= RESA.langsam).length >= 2 && !sl.buren?.some(b => b[1] === 'bar'),
     om: (_s, sl, l) => bara(sl, l, 'bar'),
-    gor: (s, sl, l, t) => { (sl.buren ??= []).push([l.langsam.id, 'bar']); dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt; två bär hen på en bår.`, t); },
+    gor: (s, sl, l, t) => { (sl.buren ??= []).push([l.langsam.id, 'bar']); dagbok(s, sl, 'ut', `${l.langsam.name} går långsamt; två bär ${honom(l.langsam)} på en bår.`, t); },
   },
   slappa: {
     namn: 'Släppa utrustning', kan: (_s, _sl, l) => Object.keys(l.slapp).length > 0, om: (_s, sl, l) => { const pack = { ...sl.pack }; for (const [k, n] of Object.entries(l.slapp)) { pack[k] = (pack[k] ?? 0) - n; if (pack[k]! <= 0) delete pack[k]; } return { pack }; },
@@ -1702,7 +1706,7 @@ export const UTVAGAR: Record<string, UtvagDef> = {
       if (!vl || sl.ruta === undefined || !Object.keys(l.slapp).length) return;
       for (const [k, n] of Object.entries(l.slapp)) tappa(sl, k, n);
       GOMMAKROK.lagg?.(s, sl, { ...l.slapp }, t); // en gömma i världen som de minns (steg 12.1.9, gomma.ts)
-      dagbok(s, sl, 'ut', `Lasten var för tung; sällskapet gömde ${Object.entries(l.slapp).map(([k, n]) => `${n} ${(SAKER[k]?.namn ?? k).toLowerCase()}`).join(', ')} vid vägen.`, t);
+      dagbok(s, sl, 'ut', `Lasten var för tung; sällskapet gömde ${sakLista(l.slapp)} vid vägen.`, t);
     },
   },
   rasta: {

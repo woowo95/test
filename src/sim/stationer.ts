@@ -1,3 +1,5 @@
+import { bestamd } from './ord';
+import { gen } from './ord';
 import { bynsMitt, omrade, tillHoljet, utanforByn } from './omrade';
 import { siteHo } from './vattenho';
 import { RECEPT, type ReceptRad } from './recept';
@@ -1146,7 +1148,7 @@ function utanLager(s: State) {
   s.stationer = stationerOf(s).filter(t => !borta.includes(t));
   s.byggV = (s.byggV ?? 0) + 1;
   tomt(s, borta);
-  for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : utom(t) ? 'eftersom ingen kom åt den' : iVag(t) ? 'eftersom den stod där man arbetar vid en bänk' : 'eftersom den stängde in en del av lagret'}.`, 'world');
+  for (const t of borta) { const d = stationDef(t.k)!, [best, den] = bestamd(d.namn, d.ett); log(s, `${stor(best)} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : utom(t) ? `eftersom ingen kom åt ${den}` : iVag(t) ? `eftersom ${den} stod där man arbetar vid en bänk` : `eftersom ${den} stängde in en del av lagret`}.`, 'world'); }
 }
 
 // en station som står inne (inte en bädd) som byn vill bygga men inte har plats för i något hus (steg 2.2.17): någon kan
@@ -1606,9 +1608,9 @@ function iVagen(s: State) {
   const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
   count(s, 'station i vägen');
   if (t.k === 'scen') { rivScen(s, t, `Scenen revs eftersom den stod ${var_}.`); return; } // scenen bärs aldrig (steg 8.1.16)
-  if (at) { flytta(s, t, at); log(s, `${d.namn} flyttades eftersom den stod ${var_}.`, 'world'); return; }
+  if (at) { flytta(s, t, at); log(s, `${stor(bestamd(d.namn, d.ett)[0])} flyttades eftersom ${bestamd(d.namn, d.ett)[1]} stod ${var_}.`, 'world'); return; }
   taBort(s, t);
-  log(s, `${d.namn} togs isär eftersom den stod ${var_} och inte fick plats någon annanstans.`, 'world');
+  log(s, `${stor(bestamd(d.namn, d.ett)[0])} togs isär eftersom ${bestamd(d.namn, d.ett)[1]} stod ${var_} och inte fick plats någon annanstans.`, 'world');
 }
 // ---------- dragningen mot mitten: stationerna ute (steg 9.4.8, Byggplanen: Dragningen mot mitten) ----------
 // Varje gång någon börjar arbeta vid en station räknas det (stationBrukad, val.ts) och glöms långsamt. Att flytta en station ute
@@ -1742,7 +1744,7 @@ function inredningen(s: State) {
     count(s, 'möbel utflyttad');
     if (at) { flytta(s, t, at); log(s, `${o.name} bar ${sinOrd(d)} ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? `huset där ${han(o)} sover`}.`, 'world', [o.id]); continue; }
     if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade ${sinOrd(d)} ${namn} i ${h?.namn.toLowerCase() ?? 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
-    taBort(s, t); log(s, `${o.name}s ${namn} i ${h.namn.toLowerCase()} togs isär, eftersom ${d.ett ? 'det' : 'den'} inte fick plats där ${han(o)} sover.`, 'world', [o.id]);
+    taBort(s, t); log(s, `${gen(o.name)} ${namn} i ${h.namn.toLowerCase()} togs isär, eftersom ${d.ett ? 'det' : 'den'} inte fick plats där ${han(o)} sover.`, 'world', [o.id]);
   }
   for (const t of stationerOf(s)) if (stationDef(t.k)?.sover && isKlar(t)) agaBadd(s, t);
 }

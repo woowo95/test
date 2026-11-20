@@ -1,3 +1,4 @@
+import { antal, iMening, stor } from './ord';
 import { fangelseAkut } from './fangelse';
 import { husNytt } from './byggnad';
 import { ALDER, KROPP, ageOf, alive, byId, count, familjOf, living, log } from './folk';
@@ -420,7 +421,7 @@ export function stepByggnader(s: State) {
     if (h.ag === undefined) continue;
     const o = byId(s, h.ag);
     if (o && alive(o)) continue;
-    h.ag = undefined; husNytt(s, h, 'ag', 'Har nyss blivit byns.'); log(s, `${h.namn} har ingen ägare längre och blir byns.`, 'world');
+    h.ag = undefined; husNytt(s, h, 'ag', 'Har nyss blivit byns.'); log(s, `${stor(iMening(h.namn))} har ingen ägare längre och blir byns.`, 'world');
   }
   funktionsbyte(s);
   verkstadensHyllor(s);
@@ -465,7 +466,7 @@ function riv(s: State, h: Hus) {
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
   const ved = tillbaka(s, { ...h, ag: undefined }, mat); // till byn
   touch(s); changed(s); count(s, 'rivet');
-  log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`, 'bygge');
+  log(s, `${stor(iMening(h.namn))} behövdes inte längre och revs. ${stor(antal(Math.round(ved), 'ved'))} kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`, 'bygge');
 }
 // vad en tom sovsal blir (steg 10.2.39): det byn behöver mest, med poäng som i BYGGNADER (vikten gånger hur akut det är). En
 // station som står där gör den till en verkstad (steg 2.2.17), ett förrådshus när maten ruttnar eller förrådet är fullt, ett
@@ -557,5 +558,5 @@ export function husKlar(s: State, h: Hus) {
   zonesOf(s).push({ x: h.x + 1, y: h.y + 1, w: h.w - 2, h: h.h - 2, namn: h.namn, slag: h.slag, prio: 3, hus: h.id });
   changed(s);
   enPerRuta(s);
-  log(s, `${h.namn} är färdigt. Där ruttnar och slits ${h.slag === 'material' ? 'materialet' : 'maten'} mindre.`, 'world');
+  log(s, `${stor(iMening(h.namn))} är färdigt. Där ruttnar och slits ${h.slag === 'material' ? 'materialet' : 'maten'} mindre.`, 'world');
 }

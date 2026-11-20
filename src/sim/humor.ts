@@ -216,7 +216,7 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
       else { r.op = clamp(r.op - HUMOR.brytOp, -100, 100); think(mal, `${p.name} bröt vänskapen`, -HUMOR.brytTanke, s.now, HUMOR.brytDygn * DAY); }
     } else if (rad.vald) slar(s, p, mal, k, rad.vald);
     if (rad.skuld) angra(s, p, mal, rad.skuld, van ? 'bröt vänskapen med' : rad.angrar ?? rad.text, op0); // efter det, så att skammen räknar dem som såg
-  } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? ' sin egen ' : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
+  } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? (SAKER[ting.k]?.ett ? ' sitt eget ' : ' sin egen ') : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
 }
 
 // symbolen för utbrottets grad (steg 3.10.13): utbrottet är uppgiftens task.tool (val.ts)

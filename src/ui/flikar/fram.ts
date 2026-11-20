@@ -3,7 +3,7 @@
 // instrumentet, budskapet och om ledaren betalade, publiken och mottagningen. Symbolerna först; texten kommer fram när man
 // håller över raden
 import { BUDSKAP, FRAM_AV, FramMinne, SPORT_AV, framBerattelse, framMinneAv, sakNamn, timeLabel } from '../../sim';
-import { och } from '../../sim/ord';
+import { antal, och } from '../../sim/ord';
 import { iconImg } from '../../ikoner';
 import { clockTxt, esc, framKnapp, matchKnapp, vemLank, andring } from '../hjalp';
 import { s, ui } from '../lage';
@@ -27,7 +27,7 @@ export function framHtml(m?: FramMinne) {
     m.inst ? `<li title="${esc(`Instrumentet: ${sakNamn(m.inst).toLowerCase()}`)}">${iconImg(m.inst, 16)} ${esc(sakNamn(m.inst))}</li>` : '',
     ...(m.grupp ?? []).map(g => `<li title="${esc(`På scenen med ${m.namn}${g.inst ? `, spelade ${sakNamn(g.inst).toLowerCase()}` : ''}`)}">${iconImg('scen', 16)} ${vemLank(g.id, g.namn)}${g.inst ? ` ${iconImg(g.inst, 14)}` : ''}</li>`), // gruppen (steg 10.7.11)
     bud ? `<li title="Budskapet">${esc(bud.namn)}${m.om ? ` <span class="muted">(${esc(m.om)})</span>` : ''}</li>` : '',
-    m.betalt && m.kyrka ? `<li title="${esc(`${m.kyrka} betalade för framträdandet med ${m.betalt}`)}">${iconImg('silver', 14)} <span class="muted">${esc(m.kyrka)} betalade</span> ${esc(m.betalt)}</li>` : m.betalt ? `<li title="${esc(`${m.bestallt || m.ledare || 'Ledaren'} betalade för framträdandet med en ${m.betalt}`)}">${iconImg('silver', 14)} <span class="muted">betalt med</span> ${esc(m.betalt)}</li>` : '',
+    m.betalt && m.kyrka ? `<li title="${esc(`${m.kyrka} betalade för framträdandet med ${m.betalt}`)}">${iconImg('silver', 14)} <span class="muted">${esc(m.kyrka)} betalade</span> ${esc(m.betalt)}</li>` : m.betalt ? `<li title="${esc(`${m.bestallt || m.ledare || 'Ledaren'} betalade för framträdandet med ${antal(1, m.betalt)}`)}">${iconImg('silver', 14)} <span class="muted">betalt med</span> ${esc(sakNamn(m.betalt))}</li>` : '',
   ].join('');
   const text = `<p class="ovBer">${esc(framBerattelse(s, m) || m.text)}</p>`; // berättelsen (steg 5.4.7.2)
   if (m.inget) return `${huvud}${text}<ul class="fame">${fakta}</ul><p>{sym_nej} Ingen kom och lyssnade.</p>`;

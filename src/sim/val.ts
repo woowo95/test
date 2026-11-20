@@ -593,7 +593,7 @@ export const FORBATTRA: readonly ForbRad[] = [
   { id: 'underhall', kand: c => {
     const ug = underhallGrupp(c.s, c.p), uu = ug && PROJEKT[ug].uppgift(c.s, c.p);
     if (!uu) return undefined;
-    return { sc: VAL.forbUnderhall * brus(c), gor: () => projektVal(c.v, uu, 'Byn har det den behöver. Ett av byns är slitet och ett nytt görs i tid') };
+    return { sc: VAL.forbUnderhall * brus(c), gor: () => projektVal(c.v, uu, 'Byn har det den behöver. Ett av byns redskap är slitet och ett nytt görs i tid') };
   } },
   // vården på en grav (steg 10.4.2): den som minns den döda, mest den som stod hen nära
   { id: 'gravvard', kand: c => { const g = gravvardVal(c.s, c.p); if (!g) return undefined; return { sc: GRAV.vard * g.w * brus(c), gor: () => projektVal(c.v, g.uppgift, 'Byn har det den behöver') }; } },
@@ -812,7 +812,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'torka', niva: 5, nar: 'dag', kort: true, vader: 'torrt', prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p) && radda(s, p, lagrat(s, k => TORKAS.some(r => r.ra === k)), torkAndel(pabud(s, 'torkat'))) && (torkVal(s, v, 'Det finns kött och fisk att torka'), true) },
   { id: 'roka', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p, 'rokeri') && radda(s, p, lagrat(s, k => ROKAS.some(r => r.ra === k))) && (set(v, 'roka', 'Det finns kött och fisk att röka'), v.dur = torkTid(s, 'rokeri'), true) }, // rökeriet, också i regn (steg 9.6.8)
   { id: 'valla', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const d = vallaVal(s, p); if (!d) return false; projektVal(v, { act: 'valla', text: d.hage !== undefined ? 'Flyttar djuren till en hage med mer bete.' : `Leder ${tamArt(d.art).ord[3]} in i hagen med ett rep.`, min: HAGE.vallaMin / tamEg(d).tamhet, spot: { x: d.x, y: d.y }, ref: d.id }, d.hage !== undefined ? 'Djuren har betat ner hagen' : 'Ett djur går utanför hagen'); return true; } }, // steg 9.8.4, 9.8.6
-  { id: 'avliva', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const d = avlivaVal(s, p); if (!d) return false; projektVal(v, { act: 'avliva', text: `Avlivar ${tamArt(d.art).ord[3]} och bär det till slaktbänken.`, min: SLAKTDJUR.min, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, { gammal: 'Djuret är gammalt', svalt: 'Byn behöver mat', host: 'Höet räcker inte över istiden', stold: 'Hungern driver till stöld' }[slaktOrsak(s, d, p)!] ?? 'Flocken är för stor'); return true; } }, // steg 9.8.7
+  { id: 'avliva', niva: 5, nar: 'dag', kort: true, prova: ({ s, p, v }) => { const d = avlivaVal(s, p); if (!d) return false; projektVal(v, { act: 'avliva', text: `Avlivar ${tamArt(d.art).ord[3]} och bär ${tamArt(d.art).ord[0] === 'ett' ? 'det' : 'den'} till slaktbänken.`, min: SLAKTDJUR.min, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, { gammal: 'Djuret är gammalt', svalt: 'Byn behöver mat', host: 'Höet räcker inte över istiden', stold: 'Hungern driver till stöld' }[slaktOrsak(s, d, p)!] ?? 'Flocken är för stor'); return true; } }, // steg 9.8.7
   // slåttern räddar gräset som annars går förlorat när istiden kommer (steg 10.11.21): på Rädda med chansen raddaTim delat med
   // timmarna kvar av slåttertiden, annars på Förbättra
   { id: 'slatter', niva: 5, nar: 'dag', kort: true, prova: c => { const i = slaVal(c.s, c.p); return i !== undefined && rnd(c.s, 'val', c.p) < Math.min(1, VAL.raddaTim / slatterKvar(c.s)) && slatterRad(c, i); } }, // steg 9.8.9
@@ -1253,11 +1253,11 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   if (over) {
     // behöver byn virke (till timmerväggarna, steg 10.2.70) klyvs det ur stammen i stället för att den huggs till ved (steg 10.2.102)
     if (over.ved >= SKOG.virkeVed && amountOf(s, 'virke') < materialBuffert(s, 'virke')) {
-      set(v, 'klyva', 'Klyver virke ur stammen hen fällde.');
+      set(v, 'klyva', `Klyver virke ur stammen ${han(p)} fällde.`);
       v.ref = over.id; v.tool = 'yxa'; v.spot = { x: over.x + 0.3, y: over.y + 0.2 };
       return;
     }
-    set(v, 'hugga', stockOverHus(s) === over ? 'Hugger en fälld stam som ligger över ett hus.' : 'Hugger stammen hen fällde.');
+    set(v, 'hugga', stockOverHus(s) === over ? 'Hugger en fälld stam som ligger över ett hus.' : `Hugger stammen ${han(p)} fällde.`);
     v.ref = over.id; v.tool = 'yxa'; v.spot = { x: over.x + 0.3, y: over.y + 0.2 };
     return;
   }

@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // ---------- boskapen: får och getter (fas 9.8, Djuren i detalj) ----------
 // Fåren och getterna köps av handlaren som levande djur (varorna levfar och levget i HANDLARVAROR, handel.ts): när en sådan vara
 // ligger i byn blir den ett djur (tamdjur.ts) som ägs av den som köpte det och betar i hagen (hage.ts). På våren får en vuxen
@@ -206,7 +207,7 @@ export function avlivaKlar(s: State, p: Person, ref?: number) {
   if (orsak === 'stold' && agare) {
     count(s, 'boskapsstold');
     handelse(s, p, 'boskapsstold', agare, tamArt(d.art).ord[1], agare);
-    log(s, `${p.name} slaktade ${agare.name}s ${tamArt(d.art).ord[1]} i hungern.`, 'rel', [p.id, agare.id]);
+    log(s, `${p.name} slaktade ${gen(agare.name)} ${tamArt(d.art).ord[1]} i hungern.`, 'rel', [p.id, agare.id]);
   }
   count(s, 'tamDog_slaktad'); count(s, `slaktad_${orsak}`); gjort(s, p, 'avlivat');
   if (forstaGang(s, 'slaktatTamdjur')) log(s, `${p.name} avlivade ${tamArt(d.art).ord[3]} och bar det till slaktbänken.`, 'world', [p.id]);

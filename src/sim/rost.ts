@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // Omröstningarna och maktens delar (system 8.3). Allt byn avgör är en fråga i registret FRAGOR: vem som får lägga fram den, vilka som
 // röstar (kretsen) och vad ett ja gör. Frågan avgörs genom handuppräckning vid elden klockan 20 (rostKvall, från stepStyre). Alla vuxna
 // röstar efter egna åsikter och eget intresse, och summan av vikterna avgör (`vikter`, samma tal som i sederna). Här finns också
@@ -144,7 +145,7 @@ export const FRAGOR: Record<string, FragaDef> = {
       for (const k of pabudTal(d)) ny[k] = d[k] as number;
       st.pabud = ny;
       if (d.om !== undefined) st.tystnad = { id: d.om as number, namn: d.namn as string };
-      if (fram) log(s, `Byn gick på ${fram.name}s förslag om ${(pabudFraga(d.k as string)?.namn ?? '').toLowerCase()}.`, 'world', [fram.id]);
+      if (fram) log(s, `Byn gick på ${gen(fram.name)} förslag om ${(pabudFraga(d.k as string)?.namn ?? '').toLowerCase()}.`, 'world', [fram.id]);
     },
   },
   minister: {

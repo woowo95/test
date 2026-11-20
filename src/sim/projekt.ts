@@ -1,3 +1,4 @@
+import { han } from './ord';
 import { nagonEld } from './eld';
 import { eldKan } from './stationseld';
 import { LERA, leraBrist, leraPlats } from './lera';
@@ -56,8 +57,8 @@ const overHusUppgift = (s: State, p?: Person, virke = false): Uppgift | undefine
   if (o) return { act: 'hugga', text: 'Hugger en fälld stam som ligger över ett hus.', tool: 'yxa', spot: { x: o.x + 0.3, y: o.y + 0.2 }, ref: o.id };
   const e = p && egenStock(s, p);
   if (e) return virke && e.ved >= SKOG.virkeVed
-    ? { act: 'klyva', text: 'Klyver virke ur stammen hen fällde.', tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id }
-    : { act: 'hugga', text: 'Hugger stammen hen fällde.', tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id };
+    ? { act: 'klyva', text: `Klyver virke ur stammen ${han(p)} fällde.`, tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id }
+    : { act: 'hugga', text: `Hugger stammen ${han(p)} fällde.`, tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id };
 };
 
 export const PROJEKT_TAL = balans('projekt', {

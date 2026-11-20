@@ -1,6 +1,6 @@
 import { husNytt } from './byggnad';
 import { omtankeOm } from './omtanke';
-import { gen, hans } from './ord';
+import { bestamd, gen, hans, iMening, stor, tal } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
@@ -19,7 +19,7 @@ import { budgetAv, budgetFor, budgetId } from './budget';
 import { fellingTiles, kronaOver } from './skog';
 import { stubbeOn } from './stubbar';
 import { FOREST } from './vag';
-import { HUS, bedTile, familjOf, fnOf, husKlar } from './byggnader';
+import { HUS, bedTile, familjOf, fnOf, husKlar, sovPersoner } from './byggnader';
 import { GRANNAR4, HOUR_S, Person, State, Task, W, inMap } from './typer';
 import { iVattnetNu } from './sjo';
 import { FLOD } from './flod';
@@ -244,9 +244,10 @@ export function husKlart(s: State, h: Hus, p: Person) {
     if (h.varKlar !== undefined) return;
     livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
-    if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
-    notis(s, 'hus', `${p.name} satte sista biten: ${h.namn} är färdigt.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
-    { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `) }); } husKlar(s, h);
+    const hf = husFalt(h.namn);
+    if (fnOf(h).sover) log(s, `${stor(hf.hus)} är ${hf.klart}. Nu kan ${tal(sovPersoner(n))} sova under tak.`, 'world', [p.id]); // golvrutorna räknas om till personer (steg 12.1.119)
+    notis(s, 'hus', `${p.name} satte sista biten: ${hf.hus} är ${hf.klart}.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
+    { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `), hus3: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hf.klart === 'färdigt' ? 'sitt' : 'sin'} `) }); } husKlar(s, h); // hus3: när ägaren är subjektet ("gjorde klart sitt hus")
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', husFalt(h.namn).hus); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }
@@ -276,7 +277,7 @@ function flyttKlar(s: State, h: Hus) {
   h.fn = g.fn; h.slag = g.slag; h.ag = g.ag; h.tro = g.tro;
   const ved = rivHus(s, g);
   count(s, 'husFlyttat');
-  log(s, `${h.namn} står klart närmare byns mitt, och ${g.namn.toLowerCase()} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');
+  log(s, `${stor(iMening(h.namn))} står klart närmare byns mitt, och ${g.namn.toLowerCase()} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');
 }
 // material som inte längre finns i huset (en vägg som rasat eller rivits) räknas inte till det
 function glomKom(h: Hus, k: string, n: number) {
@@ -317,7 +318,7 @@ function slutUt(s: State, h: Hus, p: Person) {
   h.x = ut.x; h.y = ut.y; h.w = ut.w; h.h = ut.h; h.ut = undefined;
   if (fnOf(h).lager) for (const z of zonesOf(s)) if (z.hus === h.id) { z.x = h.x + 1; z.y = h.y + 1; z.w = h.w - 2; z.h = h.h - 2; changed(s); }
   count(s, 'utbyggt'); touch(s); husNytt(s, h, 'ut', 'Nyss utbyggt.');
-  log(s, `${h.namn} är utbyggt.`, 'world', [p.id]);
+  log(s, `${stor(iMening(h.namn))} är utbyggt.`, 'world', [p.id]);
 }
 // en vägg som just blivit klar: den som står där kliver åt sidan, och det som ligger där (stackar och redskap) flyttas
 function clearTile(s: State, b: Bit) {
@@ -407,12 +408,11 @@ export function finishDorr(s: State, p: Person, tk: Task) {
 }
 // husets namn mitt i en mening ('långhuset', 'Stevids hus') och färdig eller färdigt efter genus (steg 4.5.1.4)
 // huset i krönikan: "Förrådshus 2" blir "det andra förrådshuset" (inga siffror i texten, steg 6.7.4), "Hydda 3" "den tredje hyddan"
-const NUMMER = ['', 'första', 'andra', 'tredje', 'fjärde', 'femte', 'sjätte', 'sjunde', 'åttonde', 'nionde', 'tionde', 'elfte', 'tolfte'];
 function husFalt(namn: string) {
   const m = namn.match(/^(\S+) (\d+)$/);
   if (m) {
-    const bas = m[1].toLowerCase(), ett = /hus$/.test(bas), best = ett ? `${bas}et` : bas.replace(/a$/, 'an'), n = +m[2];
-    return { hus: n < NUMMER.length ? `${ett ? 'det' : 'den'} ${NUMMER[n]} ${best}` : `ännu ${ett ? 'ett' : 'en'} ${bas}`, klart: ett ? 'färdigt' : 'färdig' };
+    const ett = bestamd(m[1])[1] === 'det';
+    return { hus: iMening(namn), klart: ett ? 'färdigt' : 'färdig' };
   }
   return { hus: / hus$/.test(namn) ? namn : namn.charAt(0).toLowerCase() + namn.slice(1), klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' };
 }

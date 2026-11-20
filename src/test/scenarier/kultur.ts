@@ -1006,9 +1006,28 @@ SCENARIER.ord = {
       [`varje teknik har ett "att göra" (saknas: ${utanGora.join(', ') || 'inga'}); t.ex. "${O.gora(TEKNIK[0]!)}"`, utanGora.length === 0],
       [`skador: "${O.skada('ett blåmärke', 0.1)}", "${O.skada('en blödning', 0.5)}", "${O.skada('ett skärsår', 0.9)}"`, O.skada('ett blåmärke', 0.1) === 'ett lätt blåmärke' && O.skada('en blödning', 0.5) === 'en svår blödning' && O.skada('ett skärsår', 0.9) === 'ett mycket svårt skärsår'],
       [`pronomen: ${O.han({ sex: 'k' })}/${O.honom({ sex: 'm' })}/${O.hans({ sex: 'k' })}`, O.han({ sex: 'k' }) === 'hon' && O.honom({ sex: 'm' }) === 'honom' && O.hans({ sex: 'k' }) === 'hennes'],
+      ...ordFall(),
     ];
   },
 };
+// de nya fallen (steg 12.1.118): genitiv, böjning, bestämd form, och att texterna utanför mallarna når kontrollerna
+function ordFall(): [string, boolean][] {
+  const gen = SIM.fyll('{namn}s yxa gick sönder.', { namn: 'Asdis' }), gen2 = SIM.fyll('{namn}s yxa', { namn: 'Ask' });
+  const best = [SIM.bestamd('Mellanstor lerkruka')[0], SIM.bestamd('Slagträ')[0], SIM.bestamd('Liten lerkruka')[0], SIM.bestamd('Verkstad')[0]];
+  const s = createState(6, START), fria: string[] = [];
+  SIM.lyssnaPaTexter((m, i, t) => { if (i === -2) fria.push(`${m}: ${t}`); });
+  SIM.log(s, 'En rad i loggen.', 'world'); SIM.think(s.people[0], 'En tanke.', 0, s.now, 1); SIM.kronika(s, 'En rad i krönikan.');
+  SIM.lyssnaPaTexter(undefined);
+  return [
+    [`genitiv: "${gen}", "${gen2}", ${O.gen('Ingdis')}`, gen === 'Asdis yxa gick sönder.' && gen2 === 'Asks yxa' && O.gen('Ingdis') === 'Ingdis'],
+    [`ental och flertal: "${O.antal(1, 'appel')}", "${O.antal(3, 'appel')}", "${O.styck(1, 'appel')}", "${O.styck(5, 'abborre')}", "${O.stOrd(1, 'sovplats', 'sovplatser')}"`,
+      O.antal(1, 'appel') === 'ett äpple' && O.antal(3, 'appel') === 'tre äpplen' && O.styck(1, 'appel') === '1 äpple' && O.styck(5, 'abborre') === '5 abborrar' && O.stOrd(1, 'sovplats', 'sovplatser') === '1 sovplats'],
+    [`en och ett: ${O.enEtt('lader')} läder, ${O.enEtt('horn')} horn, ${O.enEtt('appelplanta')} äppelplanta, ${O.artikel('Rövarläger')} rövarläger, ${O.antal(3, 'salt')}`,
+      O.enEtt('horn') === 'ett' && O.enEtt('appelplanta') === 'en' && SIM.SAKER.lader?.ett === true && O.artikel('Rövarläger') === 'ett' && O.antal(3, 'salt') === 'tre nävar salt'],
+    [`bestämd form: ${best.join(', ')}`, best.join() === 'den mellanstora lerkrukan,slagträet,den lilla lerkrukan,verkstaden'],
+    [`texterna utanför mallarna når kontrollerna: ${fria.join(' | ')}`, fria.some(x => x.startsWith('log:')) && fria.some(x => x.startsWith('tanke:')) && fria.some(x => x.startsWith('kronika:'))],
+  ];
+}
 
 SCENARIER.omrostning = {
   text: 'Steg 8.3.1–8.3.3: allt byn avgör är en fråga i FRAGOR. Klockan 20 röstar alla vuxna efter åsikter och intresse, summan av vikterna avgör, och vid Envälde väger nästan bara ledaren. Omröstningarna sparas',

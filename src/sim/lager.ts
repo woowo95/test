@@ -1,3 +1,4 @@
+import { iMening, stor } from './ord';
 import { stubbeOn } from './stubbar';
 import { OMRADE, omrade, utanforByn } from './omrade';
 import { groundOf } from './mark';
@@ -1012,7 +1013,7 @@ export function lagerStorre(s: State) {
     zs[i] = growOf(s, i)!; grew = i;
   }
   if (grew < 0) return false;
-  log(s, zs[grew].namn ? `${zs[grew].namn} blev för liten, så byn gjorde den större.` : 'Lagret blev för litet, så byn gjorde det större.', 'world');
+  log(s, zs[grew].namn ? `${stor(iMening(zs[grew].namn!))} blev för liten, så byn gjorde den större.` : 'Lagret blev för litet, så byn gjorde det större.', 'world');
   enPerRuta(s); changed(s);
   return true;
 }
@@ -1092,7 +1093,7 @@ export function flyttaLager(s: State, z: Zone) {
   if (skogI(s, best) > 0) best.rojs = true;
   zs[zs.indexOf(z)] = best;
   count(s, 'lagerFlyttat');
-  log(s, `${z.namn ?? 'Lagret'} låg i vägen för ett bygge, så byn bär sakerna till en ny plats.`, 'world');
+  log(s, `${z.namn ? stor(iMening(z.namn)) : 'Lagret'} låg i vägen för ett bygge, så byn bär sakerna till en ny plats.`, 'world');
   enPerRuta(s); changed(s);
 }
 export function lagerNy(s: State) {

@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { liten, talOrd } from './ord';
 import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log, paKartan } from './folk';
 import { pick, rnd } from './slump';
@@ -124,7 +125,7 @@ export const upplevelseKort = (k: UpplevelseTyp) => DEF[k].kort ?? DEF[k].text.r
 const styrka = (u: Upplevelse) => Object.values(u.e).reduce((a, v) => a + Math.abs(v ?? 0), 0);
 // en sparad by från före steg 6.7.2 har bara namnet: då står det förälder och barn som förut
 const omText = (u: Upplevelse) => !u.om || u.om.includes(' ') ? u.om ?? '' : u.k === 'foralder' ? `förälder ${u.om}` : u.k === 'barnDod' ? `sitt barn ${u.om}` : u.om;
-export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}', omText(u));
+export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}s', gen(omText(u))).replace('{om}', omText(u));
 export const formas = (s: State, p: Person) => alive(p) && ageOf(p, s.now) < UPPV.alder;
 // u är från vuxenlivet (steg 4.1.1.2); de andra är från barndomen
 export const vuxenUpp = (u: Upplevelse) => u.v === 1;

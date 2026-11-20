@@ -1,3 +1,4 @@
+import { enOrd } from './ord';
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
 import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
@@ -331,12 +332,12 @@ export function rustaKlar(s: State, p: Person, t: Task) {
 // ---------- gravarnas utseende (steg 10.4.2) ----------
 // graven är först en jordhög. Sedan gör någon som minns den döda vården: en rad i GRAVAR. Vilken är ett bud i den dödas tro (BUD, grupperna
 // gravvard och storagrav), och utan tro en gravbräda, eller en gravstolpe innan byn har plankor
-export interface GravRad { namn: string; mat: Record<string, number>; min: number; bud: BudId; skalor: [SkalaId, 0 | 1][]; stora?: true; dygn: number } // dygn = när vården är utsliten utan lagning (steg 10.4.8)
+export interface GravRad { namn: string; mat: Record<string, number>; min: number; bud: BudId; skalor: [SkalaId, 0 | 1][]; stora?: true; dygn: number; ett?: true } // dygn = när vården är utsliten utan lagning (steg 10.4.8)
 export const GRAVAR: Record<GravVard, GravRad> = {
   gravstolpe: { namn: 'Gravstolpe', mat: { virke: 1 }, min: 4, bud: 'gravStolpe', skalor: [['natur', 0]], dygn: 28 },
   gravbrada: { namn: 'Gravbräda', mat: { plankor: 1 }, min: 3, bud: 'gravBrada', skalor: [['natur', 1]], dygn: 28 },
   stockram: { namn: 'Stockram', mat: { virke: 2 }, min: 5, bud: 'stockram', skalor: [['oppen', 1]], dygn: 28 },
-  gravhus: { namn: 'Gravhus', mat: { virke: 2, plankor: 2 }, min: 12, bud: 'gravhus', skalor: [['livet', 1]], dygn: 28 },
+  gravhus: { namn: 'Gravhus', ett: true, mat: { virke: 2, plankor: 2 }, min: 12, bud: 'gravhus', skalor: [['livet', 1]], dygn: 28 },
   gravhog: { namn: 'Gravhög', mat: {}, min: 20, bud: 'gravhog', skalor: [['livet', 1], ['fest', 0]], stora: true, dygn: 84 },
   // stengravarna (steg 10.4.3): med stenhuggarplatsen. Stenen tas när arbetet börjar, och arbetet vid graven är ristningen
   gravsten: { namn: 'Gravsten', mat: { huggen_sten: 1 }, min: 5, bud: 'gravsten', skalor: [['natur', 1]], dygn: 280 },
@@ -408,7 +409,7 @@ export function gravvardVal(s: State, p: Person) {
   }
   if (!best) return undefined;
   const { g, k } = best;
-  return { w: best.w, uppgift: { act: 'gravvard' as const, text: `Gör en ${GRAVAR[k].namn.toLowerCase()} på ${g.namn}s grav.`, min: GRAVAR[k].min, tool: k, spot: { x: g.x + 0.5, y: g.y + 0.5 }, ref: g.vem } };
+  return { w: best.w, uppgift: { act: 'gravvard' as const, text: `Gör ${enOrd(GRAVAR[k])} ${GRAVAR[k].namn.toLowerCase()} på ${gen(g.namn)} grav.`, min: GRAVAR[k].min, tool: k, spot: { x: g.x + 0.5, y: g.y + 0.5 }, ref: g.vem } };
 }
 // framme vid graven: materialet tas när arbetet börjar; saknas det står jordhögen kvar
 export function gravvardBorja(s: State, p: Person, t: Task) {
@@ -423,8 +424,8 @@ export function gravvardKlar(s: State, p: Person, t: Task) {
   if (!g || !GRAVAR[k]) return;
   g.vard = k; count(s, 'gravvard'); count(s, 'gravvard_' + k);
   gravText(s, p, g);
-  think(p, `Gjorde en ${GRAVAR[k].namn.toLowerCase()} åt ${g.namn}`, 0.02, s.now, 6 * HOUR);
-  log(s, `${p.name} gjorde en ${GRAVAR[k].namn.toLowerCase()} på ${g.namn}s grav.`, 'rel', [p.id]);
+  think(p, `Gjorde ${enOrd(GRAVAR[k])} ${GRAVAR[k].namn.toLowerCase()} åt ${g.namn}`, 0.02, s.now, 6 * HOUR);
+  log(s, `${p.name} gjorde ${enOrd(GRAVAR[k])} ${GRAVAR[k].namn.toLowerCase()} på ${gen(g.namn)} grav.`, 'rel', [p.id]);
 }
 
 // ---------- gravtexten (steg 10.4.4) ----------

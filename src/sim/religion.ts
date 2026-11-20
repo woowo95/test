@@ -1,3 +1,4 @@
+import { stor as storOrd, tal } from './ord';
 import { clamp, gauss, pick, rnd } from './slump';
 import { SKRIFT } from './skriftTal';
 import { troshusKlart } from './troshus';
@@ -339,7 +340,7 @@ function namnge(s: State, tr: Tro, folk: Person[]) {
   tr.sym = d.sym; tr.ber = berattelse(s, tr, p);
   nyGud(s, tr, d.omr, teckenText(tr.k, tr.om), p); // den första guden kommer ur tecknet
   count(s, 'tro_namn');
-  log(s, `${folk.length} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
+  log(s, `${storOrd(tal(folk.length))} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
   kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`, 'tro');
 }
 

@@ -46,7 +46,11 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   const dag = () => ((s.now - START) / DAY).toFixed(1);
   // texterna som skrivs går genom kontrollerna (steg 4.5.1.2), beskrivningarna också genom stilen (steg 4.5.1.4), och en gång per dygn skrivs de som bara visas när man trycker
   const kon = konI(s);
-  lyssnaPaTexter((mall, _i, text, f) => { for (const k of kollaText(text, f, kon, mall === 'beskrivning', mall === 'beskrivning')) larm('text ' + k.id, () => `${mall}: ${k.vad} i "${text}"`); });
+  const settFria = new Set<string>(); // texterna utanför mallarna (loggen, krönikan, notiserna, tankarna, dagboken; steg 12.1.118) kontrolleras en gång var
+  lyssnaPaTexter((mall, i, text, f) => {
+    if (i === -2) { if (settFria.has(text)) return; settFria.add(text); if (settFria.size > 20000) settFria.clear(); }
+    for (const k of kollaText(text, f, kon, mall === 'beskrivning', mall === 'beskrivning' || i === -2)) larm('text ' + k.id, () => `${mall}: ${k.vad} i "${text}"`);
+  });
   for (let i = 0; i < dagar * STEG_DYGN; i++) {
     step(s, BEAT);
     varjeSteg?.(s);

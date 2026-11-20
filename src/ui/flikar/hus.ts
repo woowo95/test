@@ -1,3 +1,4 @@
+import { stOrd } from '../../sim/ord';
 import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
 import { cap, esc, fmtN, hjalpKnapp, hjalpText, omUngefar, pLink } from '../hjalp';
@@ -24,7 +25,7 @@ export const hus: Flik = {
     if (!h) return '<p class="muted">Huset finns inte längre.</p>';
     const bits = bitsOf(s).filter(b => b.hus === h.id), klar = bits.filter(b => b.b >= 1).length;
     const rum = gridOf(s).rooms.filter(r => r.hus === h.id), sov = rum.reduce((n, r) => n + sovplatser(s, r), 0);
-    const bra = [sov ? `${sov} sovplatser` : '', rum.length ? `håller värmen ${Math.round(Math.max(...rum.map(r => insulation(s, r))) * 100)} %` : ''].filter(x => x).join(', ');
+    const bra = [sov ? stOrd(sov, 'sovplats', 'sovplatser') : '', rum.length ? `håller värmen ${Math.round(Math.max(...rum.map(r => insulation(s, r))) * 100)} %` : ''].filter(x => x).join(', ');
     const status = klar < bits.length ? `Byggs: ${klar} av ${bits.length} delar klara.` : bra ? `${cap(bra)}.` : '';
     // dörren i öppningen (DORRAR i byggnad.ts, steg 2.2.16): symbolen, och förklaringen när musen är över
     const dorrar = bits.filter(b => b.k === 'oppning').map(b => {

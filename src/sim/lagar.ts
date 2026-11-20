@@ -167,7 +167,7 @@ export const TAS_UPP: { id: string; lista(s: State, p: Person): LagForslag[] }[]
   { id: 'nylag', lista: (s, p) => knows(p, 'lag') ? Object.keys(LAGAR).flatMap(id => {
     if (lagGaller(s, id) || LAGAR[id].kan?.(s) === false || (LAGAR[id].tek && !knows(p, LAGAR[id].tek!)) || LAGAR[id].rost(s, p).v <= 0) return [];
     const full = lagarNu(s).length >= lagTak(s) ? 0.5 : 1;
-    return [{ fr: { f: 'nylag', d: { id }, fram: p.id }, prio: LAGAR[id].prio(s) * full, varfor: `${LAGAR[id].om ? `Efter ${LAGAR[id].om}` : 'Det behövs'} vill ${p.name} ha en lag` }];
+    return [{ fr: { f: 'nylag', d: { id }, fram: p.id }, prio: LAGAR[id].prio(s) * full, varfor: LAGAR[id].om ? `${p.name} vill ha en lag efter ${LAGAR[id].om}` : `${p.name} tycker att byn behöver en lag` }];
   }) : [] },
   // ett tal i en lag som gäller (steg 10.5.4): den som får lägga fram föreslår platsen i stegen närmast sitt eget
   { id: 'lagtal', lista: (s, p) => lagarNu(s).flatMap(l => Object.entries(LAGAR[l.id].tal ?? {}).flatMap(([k, d]) => {

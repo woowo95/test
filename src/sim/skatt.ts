@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // ---------- skatten på rikedomen (steg 10.5.3) ----------
 // Med skattelagen betalar varje vuxen över SKATT.alder en gång per dygn (ett år i spelet) en procent av det hen äger
 // (förmögenheten i personrutan: hus, djur och påbörjat räknas men är aldrig betalning) till byns förråd. Man betalar med hela
@@ -136,7 +137,7 @@ export function skuldVidDoden(s: State, p: Person) {
   const dog = p.died; p.died = undefined;
   const v = betala(s, p, p.skatteskuld);
   p.died = dog;
-  if (v > 0) { count(s, 'skattVarde', v); count(s, 'skuldDod', v); log(s, `Byn tog saker värda ${Math.round(v)} för ${p.name}s skatteskuld.`, 'death', [p.id]); }
+  if (v > 0) { count(s, 'skattVarde', v); count(s, 'skuldDod', v); log(s, `Byn tog saker värda ${Math.round(v)} för ${gen(p.name)} skatteskuld.`, 'death', [p.id]); }
   delete p.skatteskuld;
 }
 export const struken = (s: State) => { for (const p of s.people) delete p.skatteskuld; };

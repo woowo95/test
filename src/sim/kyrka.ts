@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { TROSKEL } from './forradsmal';
 import { hearthOf, woodDays } from './eld';
 // Kyrkan och buden (system 8.6). Registret BUD: varje bud är ett förbud, ett krav eller ett offer, med storlek (1–4), vilken nivå tron behöver och
@@ -686,7 +687,7 @@ export function hogtidOlKvade(s: State, tr: Tro, med: Person[]) {
   const skald = med.filter(p => (p.skill[FRAM_SKILL] ?? 0) >= KYRKA.skald).sort((a, b) => (b.skill[FRAM_SKILL] ?? 0) - (a.skill[FRAM_SKILL] ?? 0) || a.id - b.id)[0];
   if (!skald) { for (const p of med) if (p.tro === tr.id && foljer(p, 'kvade')) think(p, 'Ingen kvad om tron vid högtiden', KULT.offerInget, s.now, 12 * HOUR); return; }
   const q = framKval(s, skald);
-  for (const p of med) if (p !== skald && p.tro === tr.id) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kvadeTro * q); think(p, `Hörde ${skald.name}s kväde om tron`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+  for (const p of med) if (p !== skald && p.tro === tr.id) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kvadeTro * q); think(p, `Hörde ${gen(skald.name)} kväde om tron`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
   count(s, 'hogtid_kvade');
   log(s, `${skald.name} kvad om ${troNamn(tr)} vid högtiden.`, 'rel', [skald.id]);
 }
@@ -702,7 +703,7 @@ export function sorgkvade(s: State, tr: Tro, om: number, med: Person[]) {
   if (!skald) return;
   const e = minne(skald)!, q = framKval(s, skald), d = byId(s, om);
   for (const p of med) if (p !== skald) { beratta(s, skald, p, e, getRel(s, skald, p)); paminn(s, p, e.om, e.bev); // kvädet påminner (steg 10.6.15)
-    think(p, `Hörde ${skald.name}s sorgkväde om ${e.namn}`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+    think(p, `Hörde ${gen(skald.name)} sorgkväde om ${e.namn}`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
   count(s, 'sorgkvade');
   log(s, `${skald.name} kvad om ${d?.name ?? e.namn} vid graven.`, 'rel', [skald.id]);
 }

@@ -1,3 +1,4 @@
+import { styck } from '../sim/ord';
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
 import { DAY, halsa, moodOf, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
@@ -125,7 +126,7 @@ export const mittStapel = (v: number, cls = '') => { const w = Math.round(Math.m
 // pilen med ändringen från a till b (minustecknet är −, steg 11.1.60); lika = det som står när inget ändrats
 export const andring = (a: number, b: number, lika = '=') => { const d = b - a; return d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} −${-d}` : lika; };
 // varorna som symboler med antalet, och namnet när musen är över
-export const varorSym = (v: readonly { k: string; n: number }[], storlek = 14) => v.map(w => `<span title="${esc(`${w.n} ${sakNamn(w.k).toLowerCase()}`)}">${iconImg(w.k, storlek)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–';
+export const varorSym = (v: readonly { k: string; n: number }[], storlek = 14) => v.map(w => `<span title="${esc(styck(w.n, w.k))}">${iconImg(w.k, storlek)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–';
 export const sickNow = (p: Person) => isSick(p, s.now);
 // det behov som är lägst (steg 11.1.43): av mat, värme, hälsa och humör under sin gräns det som ligger längst under, och dess
 // symbol står vid namnet i stället för ett utropstecken. Gränserna är desamma som förut (LAG och KROPP.svag)
@@ -184,9 +185,9 @@ export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; kl
 // det p bär vid tiden som visas (uppgiftVid, steg 6.1.1), som kartan
 export function carryTxt(p: Person) {
   const t = uppgiftVid(p), orkar = capacity(s, p), parts: string[] = [];
-  const kg = (n: number) => `${num(n).replace(',0', '')} kg`, styck = (k: string, n: number) => `${fmtN(n)} ${sakNamn(k).toLowerCase()} (${kg(n * viktOf(k))})`;
-  if (t && t.carry > 0) parts.push(styck(carryKind(t.act), t.carry));
-  for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(styck(k, t!.items![k]));
+  const kg = (n: number) => `${num(n).replace(',0', '')} kg`, bors = (k: string, n: number) => `${styck(n, k, fmtN)} (${kg(n * viktOf(k))})`;
+  if (t && t.carry > 0) parts.push(bors(carryKind(t.act), t.carry));
+  for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(bors(k, t!.items![k]));
   return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar / 2)} i en`;
 }
 // en rad i loggen där namnen går att trycka på

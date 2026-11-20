@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // Bönen, de heliga platserna, ritualerna, prästen och profeten (system 8.5). Tre register: BONER (en rad per sorts bön), HELIGA_PLATSER (en rad
 // per sort) och RITUALER (en rad per ritual). Graven och kroppen står i kvarlevor.ts, tron i religion.ts. Bön och offer påverkar nästan bara
 // humöret och tron, och går aldrig före maten eller veden.
@@ -124,7 +125,7 @@ function bonSvar(s: State, p: Person) {
   }
 }
 // rutan där bönen i nöd hölls och fick svar blir en kandidat till en helig plats, också utan präst (steg 10.3.10)
-const bonSvarPlats = (s: State, p: Person, v: NonNullable<Person['bonVan']>) => { const tr = troOf(s, p.tro); if (!tr) return; heligKandidat(tr, { x: v.x ?? Math.floor(p.x), y: v.y ?? Math.floor(p.y), t: s.now, om: `där ${p.name}s bön fick svar` }); };
+const bonSvarPlats = (s: State, p: Person, v: NonNullable<Person['bonVan']>) => { const tr = troOf(s, p.tro); if (!tr) return; heligKandidat(tr, { x: v.x ?? Math.floor(p.x), y: v.y ?? Math.floor(p.y), t: s.now, om: `där ${gen(p.name)} bön fick svar` }); };
 export function heligKandidat(tr: Tro, k: { x: number; y: number; t: number; om: string }) {
   const l = (tr.heligKand ??= []);
   if (l.some(q => q.x === k.x && q.y === k.y)) return;

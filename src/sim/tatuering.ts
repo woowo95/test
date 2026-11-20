@@ -1,3 +1,4 @@
+import { han } from './ord';
 // ---------- tatueringarna (steg 10.7.5, Porträttens byggsätt: Tatueringar) ----------
 // En vuxen som varit med om något stort kan få ett mönster i pannan, på kinden eller på halsen. Motiven är rader i registret
 // TATUERINGAR: händelsen, platsen och seden som drar. När händelsen fastnat hos en vuxen vill hen ha märket, starkast de första
@@ -82,8 +83,8 @@ export function tatKlar(s: State, g: Person, ref?: number) {
   const d = DEF[v.m], stil = byStil(s);
   (q.tat ??= []).push({ m: v.m, p: d.plats, stil, t: s.now, av: g.id });
   ovning(g, 'hantverk', TATU.ovning); gjort(s, g, 'tatuerat'); count(s, 'tatuering'); count(s, 'tatuering_' + v.m);
-  personHand(s, q, 'markt', `Fick ett märke i ${d.plats === 'panna' ? 'pannan' : d.plats === 'kind' ? 'kinden' : 'halsen'} av ${g.name}, ${TAT_STILNAMN[stil]}, efter att hen ${d.text}.`);
-  if (forstaGang(s, 'forstaTatuering')) log(s, `${g.name} gjorde byns första tatuering: ${TAT_STILNAMN[stil]} i ${gen(q.name)} ${d.plats === 'panna' ? 'panna' : d.plats === 'kind' ? 'kind' : 'hals'}, för att hen ${d.text}.`, 'world', [g.id, q.id]);
+  personHand(s, q, 'markt', `Fick ett märke i ${d.plats === 'panna' ? 'pannan' : d.plats === 'kind' ? 'kinden' : 'halsen'} av ${g.name}, ${TAT_STILNAMN[stil]}, efter att ${han(q)} ${d.text}.`);
+  if (forstaGang(s, 'forstaTatuering')) log(s, `${g.name} gjorde byns första tatuering: ${TAT_STILNAMN[stil]} i ${gen(q.name)} ${d.plats === 'panna' ? 'panna' : d.plats === 'kind' ? 'kind' : 'hals'}, för att ${han(q)} ${d.text}.`, 'world', [g.id, q.id]);
 }
 const gen = (n: string) => /s$/.test(n) ? n : n + 's';
 // tatueringarnas delar i porträttet (PORTRATT: tat-<stil>-<plats>)

@@ -9,7 +9,7 @@ import { balans } from './balans';
 import { SLAGHINDER, kanNa, nasTid } from './klocka';
 import { GANG } from './gang';
 import { kronikaBer, och, personFalt } from './berattelser';
-import { tal } from './ord';
+import { han, honom, tal } from './ord';
 import { blodas } from './blod';
 import { blocked, freeNear, roomAt } from './byggnad';
 import { bjornVarden, bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
@@ -170,7 +170,7 @@ export function bjornjaktSteg(s: State, p: Person, tk: Task) {
     count(s, 'bjornjaktGick');
     for (const q of med) { q.task!.until = s.now; q.task!.prog = 1; }
     log(s, `Björnen märkte jägarna och gick undan innan ${p.name} och de andra hann fram.`, 'world', med.map(q => q.id));
-    kronikaBer(s, 'k_bjornSprang', p.id, { ...personFalt(p), med: med.length > 1 ? ` med ${tal(med.length - 1)} till` : '' });
+    kronikaBer(s, 'k_bjornSprang', p.id, { ...personFalt(p), med: med.length > 1 ? ` med ${tal(med.length - 1)} till` : '', de: med.length > 1 ? 'de' : han(p), dem: med.length > 1 ? 'dem' : honom(p) });
     return;
   }
   bjornStrid(s, b.id, med, alla.some(d => d.art === 'bjornunge'), 'doda');

@@ -495,7 +495,7 @@ export function rykteDod(s: State, p: Person) {
   for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === p.id) trimDetaljer(e);
   if (r >= RYKTE.dodLog) {
     const top = samlatIntryck(s, p.id)[0];
-    if (top) { log(s, `Byn minns ${p.name} som ${INTRYCK[top[0]].namn}.`, 'death', [p.id]); count(s, 'rykte_minns'); }
+    if (top) { log(s, `Byn minns ${p.name} som ${INTRYCK[top[0]].som ?? INTRYCK[top[0]].namn}.`, 'death', [p.id]); count(s, 'rykte_minns'); }
     if (r >= RYKTE.legend) { p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd'); personHand(s, p, 'titel', a >= 0 ? 'Blev en legend i byn.' : 'Blev ökänd.'); }
   }
 }
