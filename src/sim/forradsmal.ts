@@ -217,6 +217,9 @@ export function hotNu(s: State) {
 }
 // vapnen och rustningen växer med de vuxna och hoten (steg 10.2.75): bas i fred och upp till bas + hot vid fullt hot, andelar av de vuxna
 const vapenVill = (s: State, bas: number, hot: number) => Math.ceil(vuxna(s, ALDER.vuxen) * (bas + hot * hotNu(s)) - 1e-9);
+// tygets plagg görs när någon kan väva eller tyget finns, ullens när det finns ull i något led eller får som ger den (steg 12.1.20)
+const tygPlagg = (s: State) => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 || living(s).some(p => !!p.tek?.vavstol);
+const ullPlagg = (s: State) => amountOf(s, 'ylle') > 0 || living(s).some(p => !!p.tek?.vavstol) && (amountOf(s, 'ulltrad') + amountOf(s, 'ull') > 0 || tamdjurOf(s).some(d => !!tamArt(d.art).ull));
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
@@ -247,9 +250,11 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   prastdrakt: s => (s.tron ?? []).filter(t => t.prast !== undefined && t.bud?.some(b => b.id === 'drakt') && (t.sk?.prast ?? 100) >= 34).length, tecken: s => s.tron?.some(t => t.slut === undefined && t.bud?.some(b => b.id === 'tecken')) ? Math.ceil(living(s).filter(p => p.tro !== undefined).length / 3) : 0, // system 8.5
   mask: s => (s.tron ?? []).filter(t => t.prast !== undefined && t.bud?.some(b => b.id === 'drakt') && (t.sk?.prast ?? 100) < 34).length,
   mantel: s => s.styre?.sedan !== undefined && s.now - s.styre.sedan >= WEEK && legitimitet(s).v > 0.5 ? 1 : 0,
-  tunika: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ylle sedan steg 9.8.14
+  // tygets plagg (ylle sedan steg 9.8.14): en var när någon kan väva, också innan tyget finns, så att plagget väntar på tyget och
+  // det ärver värdet bakåt till vävningen, spinningen och linet som sås (steg 12.1.20, grodorNu i odling.ts)
+  tunika: s => tygPlagg(s) ? living(s).length : 0, skjorta: s => tygPlagg(s) ? living(s).length : 0,
   hatt: s => living(s).length, // en svalkande hatt var (steg 12.1.34)
-  kappa: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, sjal: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ullens plagg (steg 9.8.15)
+  kappa: s => ullPlagg(s) ? living(s).length : 0, sjal: s => ullPlagg(s) ? living(s).length : 0, // ullens plagg (steg 9.8.15), när ullen finns eller fåren ger den (steg 12.1.20)
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna), // lika många som korgarna, till dem som samlar (steg 7.1.3)

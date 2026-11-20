@@ -1453,7 +1453,7 @@ export const FRITID: readonly FritidRad[] = [
       v.spot = walkSpot(s, p, far); v.dur = (VAL.promMin + rnd(s, 'val', p) * VAL.promSpann) * MIN * VAL.pass; return true;
     } },
   { id: 'bada', nar: 'dag', kraver: 'varmt vatten, en badplats och torrt väder', ger: 'svalka och humör', drar: 'värmen', akt: ['bada'],
-    // lusten att bada följer gränsen för för varm (steg 12.1.19)
+    // lusten att bada följer kroppens värme (för varm, steg 12.1.19)
     vikt: c => {
       const varm = forVarm(c.s, c.p) ? VAL.badVarm * (c.p.warm - 1) : 0;
       return c.temp >= VAL.badTemp && c.shore && vaderTillater(c.s, 'torrt') ? (clamp((c.temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) + varm) * c.calm : 0;

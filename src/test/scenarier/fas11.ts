@@ -2656,6 +2656,9 @@ SCENARIER.byhandlingar = {
   },
 };
 
+// färden som byn just skickade (steg 12.1.111): den med ett nummer efter n0, numret före handlingen. Den senaste färden från byn
+// kan vara en äldre som redan kommit fram (testbyn är sparad och kan ha en färd ute), och dess post finns inte längre i kön
+const nyFard = (vl: SIM.Varlden, n0: number, villkor: (f: NonNullable<SIM.Varlden['farder']>[number]) => boolean) => vl.farder?.find(x => x.id > n0 && villkor(x));
 SCENARIER.handelsfard = {
   text: 'Handelsfärden mellan två byar (steg 11.6.6): en by med överflöd skickar en färd till den granne där gruppen är dyrast när resan är dragen; lasten lämnar byn när färden går, mottagaren får den och betalar när den kommer fram, och betalningen kommer hem, allt i hela tal',
   kor: () => {
@@ -2677,8 +2680,10 @@ SCENARIER.handelsfard = {
     const val = SIM.byVal(s, vl, r, 3);
     // färden ger sig av
     const v0 = r.varor!.virke!, rel0 = SIM.relation(vl, dyr.nr, r.nr) ?? 0;
+    const n0 = vl.nastaFard ?? 0;
     SIM.BYHANDLINGAR.handel.gor(c);
-    const f = [...vl.farder ?? []].reverse().find(x => x.fran === r.nr)!, ut = !!f && r.varor!.virke === v0 - f.n && f.g === 'virke';
+    const f = nyFard(vl, n0, x => x.fran === r.nr)!, ut = !!f && r.varor!.virke === v0 - f.n && f.g === 'virke';
+    if (!f) return [[`byn skickar en handelsfärd till grannen där virket är dyrt (affären: ${aff ? `${aff.n} ${aff.g}` : 'ingen'})`, false]];
     // den kommer fram
     const dv0 = dyr.varor!.virke ?? 0, ds0 = dyr.tal.silver;
     const fram = vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!;
@@ -2714,8 +2719,10 @@ SCENARIER.handlarby = {
     // den första byn med syn på huvudbyn som får en affär där när den har tre gånger så mycket som den vill av allt
     const { huvud, r, c } = forstaByMedAffar(s, false);
     if (!r || !c) return [['en by kan skicka en handlare till huvudbyn', false]];
+    const n0 = vl.nastaFard ?? 0;
     SIM.BYHANDLINGAR.handel.gor(c);
-    const f = [...vl.farder ?? []].reverse().find(x => x.fran === r!.nr)!;
+    const f = nyFard(vl, n0, x => x.fran === r!.nr)!;
+    if (!f) return [['byn skickar sin handlare som en färd till huvudbyn', false]];
     const skickad = !!f && f.handlare === true && f.till === vl.huvud && f.n === 0;
     const syns = !!SIM.fardLage(vl, f, (f.t0 + f.t1) / 2, SIM.varldMark(s)!.w);
     const inteTva = !SIM.fardAffar(SIM.byCtx(s, vl, r, huvud));
@@ -2751,8 +2758,11 @@ SCENARIER.handlarlast = {
     const { r, c } = forstaByMedAffar(s, true);
     if (!r || !c) return [['en by kan skicka en handlare till huvudbyn', false]];
     const har0 = Object.fromEntries(SIM.VARUGRUPP_IDS.map(g => [g, SIM.radHar(r!, g)])), sv0 = r.tal.silver;
+    const n0 = vl.nastaFard ?? 0;
     SIM.BYHANDLINGAR.handel.gor(c);
-    const f = [...vl.farder ?? []].reverse().find(x => x.fran === r!.nr)!, last = f.last!;
+    const f = nyFard(vl, n0, x => x.fran === r!.nr)!;
+    if (!f) return [['byn skickar sin handlare som en färd till huvudbyn', false]];
+    const last = f.last!;
     const kan = !!last && last.varor.length > 0 && last.varor.every(w => { const t = SIM.SAKER[w.k]?.skaffa?.tek; return !t || r!.tek.includes(t); });
     const dragit = r.tal.silver === sv0 - last.silver && SIM.VARUGRUPP_IDS.some(g => SIM.radHar(r!, g) < har0[g]!);
     const hela = last.varor.every(w => Number.isInteger(w.n) && w.n >= 1) && Number.isInteger(last.silver), lastText = last?.varor.map(w => `${w.n} ${w.k}`).join(', ');
@@ -2959,8 +2969,10 @@ SCENARIER.bygava = {
     const ingen = SIM.gavaAffar({ ...c, r: r2 });
     // färden ger sig av med gåvan och kommer fram
     const v0 = r.varor!.virke!, mv0 = mot.varor!.virke ?? 0, rel0 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
+    const n0 = vl.nastaFard ?? 0;
     SIM.BYHANDLINGAR.gava.gor(c);
-    const f = [...vl.farder ?? []].reverse().find(x => x.fran === r.nr && x.gava)!;
+    const f = nyFard(vl, n0, x => x.fran === r.nr && !!x.gava)!;
+    if (!f) return [[`byn skickar en gåva till grannen (affären: ${aff ? `${aff.n} ${aff.g}` : 'ingen'})`, false]];
     const ut = !!f && f.g === 'virke' && r.varor!.virke === v0 - f.n && Number.isInteger(f.n) && f.n > 0;
     const n = f?.n ?? 0, varde = n * (f?.g === 'mat' ? SIM.RADPRIS.portion : 1), vantad = Math.max(1, Math.round(SIM.BYREL.gava * varde / 10));
     SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
@@ -3270,6 +3282,24 @@ SCENARIER.bykrig = {
     // huvudbyn går inte i krig av raden (den väljer själv, senare)
     const hv = vl.rader!.find(x => x.nr === vl.huvud)!, hg = SIM.radGrannar(vl, hv).find(g => SIM.BYSORTER[g.sort].ledare);
     const huvudUte = !hg || SIM.BYHANDLINGAR.krig.poang({ ...SIM.byCtx(s, vl, hg, hv), rel: -100 }) < 0;
+    // kriget kan bryta ut ur byarnas eget val (steg 12.1.114): en by som hamnar i fejd med en granne väljer (byVal, mot alla
+    // grannar och alla handlingar) det ovänliga beskedet, och när relationen sjunkit vidare kriget. Det vänliga dämpas av fejden
+    const s2 = SIM.cloneState(testBy(10)), vl2 = s2.varld!;
+    let kedja = 0, prov = 0, vanlig = 0;
+    for (const x of vl2.rader!) {
+      if (!SIM.lever(vl2, x) || x.nr === vl2.huvud || !SIM.BYSORTER[x.sort].ledare) continue;
+      const g = SIM.radGrannar(vl2, x).find(y => y.nr !== vl2.huvud && SIM.BYSORTER[y.sort].ledare);
+      if (!g) continue;
+      const k = `${x.nr}>${g.nr}`; prov++;
+      vl2.rel![k] = -80; delete vl2.ovanligt?.[k];
+      const v1 = SIM.byVal(s2, vl2, x, 5);
+      if (v1 && v1.c.mot === g && (v1.id === 'gava' || (v1.id === 'besked' && SIM.beskedTon(v1.c).ton === 'besked'))) vanlig++;
+      if (v1?.id !== 'besked' || v1.c.mot !== g) continue;
+      SIM.BYHANDLINGAR.besked.gor(v1.c);
+      vl2.rel![k] = -90; // (en räd eller ett gräl till)
+      const v2 = SIM.byVal(s2, vl2, x, 6);
+      if (v2?.id === 'krig' && v2.c.mot === g) { SIM.BYHANDLINGAR.krig.gor(v2.c); if (SIM.byLage(vl2, x.nr, g.nr) === 'krig') kedja++; }
+    }
     // en värld i 40 dygn (40 år i spelet): krigen kommer och går ur poängen
     const w = varldEfter(10, 40);
     const lagst = Math.min(...Object.values(w.varld?.rel ?? {}));
@@ -3283,6 +3313,7 @@ SCENARIER.bykrig = {
       [`i krig handlar byarna inte (före: ${affar0 ? 'affär' : 'ingen'}, i krig: ${affar1 ? 'affär' : 'ingen'})`, affar0 && !affar1],
       [`freden: genast inte (${f2(fredNu)}), efter ${3 * SIM.BYHANDLING.fredDygn} dygn ja (${f2(fredSen)}), och läget tas bort`, fredNu < 0 && fredSen > 0 && fred],
       ['huvudbyn går inte i krig av världens rader', huvudUte],
+      [`en by i fejd (relationen −80) väljer själv det ovänliga beskedet och sedan kriget när relationen sjunkit till −90 (${kedja} av ${prov} byar), och ingen är vänlig mot grannen den ser ner på (${vanlig})`, kedja >= 1 && vanlig === 0],
       [`i en värld i 40 dygn: ${w.stat?.bykrig ?? 0} krig och ${w.stat?.byfred ?? 0} fredsslut, ${w.stat?.byhandling_plundra ?? 0} räder, den lägsta relationen ${lagst}; räder måste förekomma`, (w.stat?.byhandling_plundra ?? 0) > 0],
     ];
   },
@@ -3842,8 +3873,10 @@ SCENARIER.uppdragbyar = {
     const c = SIM.byCtx(s, vl, r, ruin, s.now), p = SIM.BYHANDLINGAR.uppdrag.poang(c);
     const v = SIM.byVal(s, vl, r, 0);
     const kvar0 = Object.values(SIM.ruinKvar(vl, ruin, s.now)).reduce((a, n) => a + n, 0);
+    const n0 = vl.nastaFard ?? 0;
     SIM.BYHANDLINGAR.uppdrag.gor(c);
-    const f = [...vl.farder ?? []].reverse().find(x => x.fran === r.nr && x.uppdrag !== undefined)!;
+    const f = nyFard(vl, n0, x => x.fran === r.nr && x.uppdrag !== undefined)!;
+    if (!f) return [[`byn ger sig av mot ruinen (poängen ${p.toFixed(2)})`, false]];
     SIM.KOHANDELSER.fardFram(s, vl, { sak: f.id } as never);
     const kvar1 = Object.values(SIM.ruinKvar(vl, ruin, f.t1)).reduce((a, n) => a + n, 0);
     const byte = { ...f.byte };
@@ -3856,8 +3889,9 @@ SCENARIER.uppdragbyar = {
       const u = SIM.utlys(vl, 'hjalp', SIM.byPlats(vl, m.nr)!.nr, { k: 'styre', rad: m.nr }, { silver: 300 }, s.now)!;
       const c2 = SIM.byCtx(s, vl, r, m, s.now);
       const p2 = SIM.BYHANDLINGAR.uppdrag.poang(c2);
+      const n2 = vl.nastaFard ?? 0;
       SIM.BYHANDLINGAR.uppdrag.gor(c2);
-      const f2 = [...vl.farder ?? []].reverse().find(x => x.fran === r.nr && x.uppdrag === u.id);
+      const f2 = nyFard(vl, n2, x => x.fran === r.nr && x.uppdrag === u.id);
       if (f2) SIM.KOHANDELSER.fardFram(s, vl, { sak: f2.id } as never);
       hjalp = p2 > 0 && !!f2 && !SIM.uppdragNr(vl, u.id) && (f2.silver ?? 0) > 0;
       txt = `poängen ${p2.toFixed(2)}, silvret ${f2?.silver ?? 0}`;

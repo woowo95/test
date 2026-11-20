@@ -22,6 +22,7 @@ import { ledig, stationerOf, storlekAv } from './stationer';
 import { amountOf, gain, iHelaForradet } from './lager';
 import { temperature, vaxtFaktor } from './vader';
 import { TORKA } from './torka';
+import { TILLVERKA } from './tillverka';
 import { iVattnetNu } from './sjo';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 import { tecken } from './religion';
@@ -50,6 +51,7 @@ import { BIN, pollinerad } from './bin';
 // Under torkan vissnar grödan om ägaren inte vattnar den med vattensäcken (steg 3.8.2, torst.ts). Bördighet och fukt kommer i steg 8.3.1, kompost och fler grödor i 8.3.2.
 export const ODLING = balans('odling', {
   villPer: 6, // byn vill ha så mycket av en gröda per invånare; mindre gör grödan mer värd att så (grodorNu)
+  projektVikt: 1, // en gröda vars skörd projekten saknar (också längre fram i kedjan: rått lin, lin, tråd, lintyg) är värd 1 + så här mycket gånger den bristen att så (steg 12.1.20)
   froTakt: 6, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE; 3 före balansen av fas 2, steg 2.12.2)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
   froLeta: 0.3, // den som samlar går till de vilda grödorna för att plocka frön med VAL.fronChans, om någon ruta har så här mycket (steg 2.10.11)
@@ -213,11 +215,34 @@ function dygnTillIstid(s: State) {
 // grödorna som kan sås nu, den bästa först: de som hinner mogna före istiden med marginal efter frosttåligheten
 // Vilken gröda som sås avgörs av en poäng över alla rader i GRODOR (steg 9.6.11): skörden per ruta gånger grundvärdet och hur
 // mycket byn saknar av den, för de grödor som hinner mogna före istiden (med större marginal för den som tål mindre frost) och som någon kan odla
+// grödans poäng: skörden per ruta gånger grundvärdet, hur mycket byn saknar av den och det projekten saknar av det som görs av den
+export const grodaPoang = (s: State, g: GrodaSlag, folk = Math.max(1, living(s).length)) => GRODOR[g].perRuta * grundvarde(GRODOR[g].sak) * clamp(1 - amountOf(s, GRODOR[g].sak) / (folk * ODLING.villPer), 0.1, 1) * (1 + ODLING.projektVikt * projektenSaknar(s, GRODOR[g].sak));
 export function grodorNu(s: State): GrodaSlag[] {
   const d = dygnTillIstid(s), folk = Math.max(1, living(s).length);
   const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => ((GRODOR[g] as GrodaDef).plats ?? 'falt') === 'falt' && ((GRODOR[g] as GrodaDef).flerarig && d > 0 || d >= GRODOR[g].dygn + Math.max(ODLING.margMin, ODLING.margBas + ODLING.margFrost * (GRODOR[g].frost - ODLING.margRef))) && /* en flerårig gröda vilar över istiden (steg 9.7.9) */ (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
-  const poang = (g: GrodaSlag) => GRODOR[g].perRuta * grundvarde(GRODOR[g].sak) * clamp(1 - amountOf(s, GRODOR[g].sak) / (folk * ODLING.villPer), 0.1, 1);
-  return kan.map(g => ({ g, p: poang(g) })).sort((a, b) => b.p - a.p || a.g.localeCompare(b.g)).map(x => x.g);
+  return kan.map(g => ({ g, p: grodaPoang(s, g, folk) })).sort((a, b) => b.p - a.p || a.g.localeCompare(b.g)).map(x => x.g);
+}
+// materialet till kläderna (steg 12.1.20): det projekten saknar (s.projektSaknar, en gång i timmen i projekt.ts) ger värde åt
+// grödan som materialet görs av, som virket till ett hus ger värde åt fällningen. Bristen följer kedjan av recept framåt (det
+// rått lin görs till, det det görs till, högst GJORS_DJUP steg): den största bristen bland det som ännu saknas
+const GJORS_DJUP = 3;
+let gjorsAv: Map<string, string[]> | undefined;
+// det som görs av materialet k: saker vars recept tar k, och det som tillverkas av k (TILLVERKA)
+function gorsAv(k: string) {
+  if (!gjorsAv) {
+    gjorsAv = new Map();
+    const lagg = (m: string, x: string) => { const l = gjorsAv!.get(m) ?? []; if (!l.includes(x)) l.push(x); gjorsAv!.set(m, l); };
+    for (const x in SAKER) for (const m in SAKER[x]!.skaffa?.av ?? {}) lagg(m, x);
+    for (const d of Object.values(TILLVERKA)) for (const m in d.av) lagg(m, d.ger);
+  }
+  return gjorsAv.get(k) ?? [];
+}
+export function projektenSaknar(s: State, k: string, djup = 0): number {
+  const L = s.projektSaknar;
+  if (!L) return 0;
+  let b = (L[k]?.n ?? 0) > 0 ? L[k].b : 0;
+  if (djup < GJORS_DJUP) for (const x of gorsAv(k)) b = Math.max(b, projektenSaknar(s, x, djup + 1));
+  return b;
 }
 // kornet (steg 9.6.11): när byn fått sitt första korn av handlarna kommer de som kan odla på sädesodlingen
 export function kornUpptackt(s: State) {
