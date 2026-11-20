@@ -21,7 +21,6 @@ export const SALLSYNT: Record<string, string> = {
   smalta: 'snön smälts bara när sjön är frusen, elden brinner och det finns en ledig lerkruka (steg 10.2.50), inte i alla byar på 35 dygn; scenariot torst prövar det',
   lyra: 'lyran görs bara vid snickarbänken med kniven där (steg 9.4.5, nivå 4), sällan på 35 dygn; scenarierna snickarbank och scen prövar den',
   flyttStation: 'en station ute flyttas bara när den används mycket och står långt från husen och lagren (steg 9.4.8); scenariot mittenstation prövar det',
-  flyttLager: 'en lagerplats flyttas bara när mycket hämtas där och en plats närmare mitten är ledig (steg 9.4.7); scenariot mittenlager prövar det',
   tork: 'torkställningen görs bara när byn har kött och fisk över för ett dygn, och de hungrigare byarna kommer på den sent; scenariot tork prövar den',
   koka_te: 'örtteet (steg 9.5.8) kräver tekniken Örtte på nivå 4 och en lerkruka; scenariot vatskor prövar det',
   orte: 'som koka_te; scenariot vatskor prövar det',

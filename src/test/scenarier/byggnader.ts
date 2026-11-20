@@ -637,7 +637,7 @@ SCENARIER.verkstad = {
   text: 'Rummets funktion (steg 2.2.17): ett rum får sin funktion av det som står i det. När byn vill bygga en slöjdbänk men sovsalarna är fulla planerar den en verkstad åt den, och en sovsal som ingen sover i men där en station står blir en verkstad i stället för att rivas',
   env: { BALANS: 'hus.sovFast=0' }, // utan rutor för rymd blir sovsalen precis full: alla har en sovplats och inget golv blir över (steg 9.2.36)
   kor: () => {
-    const { HUS, stationDef, inneUtanPlats, rumsFunktioner, sovKvar, stationerOf, stationRum, stationSite, isKlar } = SIM;
+    const { HUS, stationDef, inneUtanPlats, rumTaggar, sovKvar, stationerOf, stationRum, stationSite, isKlar } = SIM;
     // en by med en sovsal som är så full att slöjdbänken inte får plats där, där alla kan bygga en slöjdbänk
     const s = createState(1, START); klockan(s); tandEld(s);
     byggare(s); planBuild(s); const A = byggKlart(s)!;
@@ -658,7 +658,8 @@ SCENARIER.verkstad = {
     const banken = () => stationerOf(s).find(t => t.k === 'flatarbank' && isKlar(t));
     while (!banken() && h < 96) { kor(s, 1); h++; }
     const t = banken(), iB = !!t && !!B && stationRum(s, t)?.hus === B.id;
-    const fnB = B ? rumsFunktioner(s, B).map(f => f.namn) : [], fnA = rumsFunktioner(s, A).map(f => f.namn);
+    const taggar = (h: typeof A) => [...new Set(gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length).flatMap(r => [...rumTaggar(s, r)]))] as string[];
+    const fnB = B ? taggar(B) : [], fnA = taggar(A); // rummens taggar (RUMSTYPER, steg 7.2.1)
     const igen = BYGGNADER.verkstad.akut(s).v;
     // en sovsal där ingen sover men där en station står blir en verkstad, och stationen står kvar
     const q = cloneState(s), Bq = housesOf(q).find(r => r.id === B?.id)!;
@@ -676,7 +677,7 @@ SCENARIER.verkstad = {
       [`byn vill ha en verkstad (hur akut ${a.v}, ${a.plats} golvrutor)`, a.v === HUS.verkstadAkut && a.plats === SIM.verkstadPlats('flatarbank')],
       [`byn planerar ${B?.namn.toLowerCase() ?? 'inget hus'}`, B?.fn === 'verkstad' && B.namn === 'Verkstaden'],
       [`slöjdbänken byggs i verkstaden på ${h} timmar`, iB],
-      [`verkstaden är en verkstad efter det som står där (${fnB.join(', ')}), sovsalen ett sovrum (${fnA.join(', ')})`, fnB.includes('Verkstad') && !fnB.includes('Sovrum') && fnA.includes('Sovrum') && !fnA.includes('Verkstad')],
+      [`verkstaden är en verkstad efter det som står där (${fnB.join(', ')}), sovsalen ett sovrum (${fnA.join(', ')})`, fnB.includes('verkstad') && !fnB.some(k => k === 'sovrum' || k === 'sovsal') && fnA.some(k => k === 'sovrum' || k === 'sovsal') && !fnA.includes('verkstad')],
       ['ingen ny verkstad när slöjdbänken står', igen === 0],
       [`en tom sovsal där en station står blir en verkstad och stationen står kvar (${Bq.namn})`, Bq.fn === 'verkstad' && kvar],
       ['slaktbänken står ute och slöjdbänken inne (registret)', !stationDef('slaktbank')?.inne && !!stationDef('flatarbank')?.inne && !!ute && !('inne' in ute)],
@@ -1294,11 +1295,11 @@ SCENARIER.rumstyper = {
     SIM.setRumFn(s, r(), 'samling');
     const fnRum = SIM.rumFnId(s, r()) === 'samling' && SIM.fnId(h) === 'sovsal' && SIM.sovplatser(s, r()) === 0 && SIM.samlingRum(s)?.id === r().id;
     const namn = SIM.rumNamn(s, r());
-    // husets ruta (steg 11.1.57): etiketterna Används till och Rummen, och värmen skrivs håller värmen N %
+    // husets ruta (steg 11.1.57): etiketten Rummen (en rad om vad rummen är, steg 12.1.78), och värmen skrivs håller värmen N %
     utanWebblasare(); setByn(s); ui.husId = h.id; const hr = husFlik.html!();
-    const husRuta = /class="etik">Används till</.test(hr) && /class="etik">Rummen</.test(hr) && /[Hh]åller värmen \d+ %/.test(hr) && !/mindre värme/.test(hr);
+    const husRuta = !/Används till/.test(hr) && /class="etik">Rummen</.test(hr) && /[Hh]åller värmen \d+ %/.test(hr) && !/mindre värme/.test(hr);
     return [
-      ['husets ruta: etiketterna Används till och Rummen, och värmen skrivs håller värmen N % (steg 11.1.57)', husRuta],
+      ['husets ruta: bara etiketten Rummen om vad rummen är, och värmen skrivs håller värmen N % (steg 11.1.57)', husRuta],
       ['ett hus från en gammal sparfil är ett rum med husets funktion', gammal],
       [`rummet är en sovsal med en sovplats per tre rutor (${SIM.sovplatser(s, rum)} på ${rum.tiles.length} rutor, steg 9.2.36)`, sov],
       ['ett bord inne gör rummet till en matsal', matsal],
@@ -2451,36 +2452,6 @@ SCENARIER.mitten = {
       [`när allt rasat är det mer värt att bygga ett nytt närmare mitten (${alla ? `${alla.stanna.toFixed(3)} mot ${alla.flytta.toFixed(3)}, läget ${lage(s, H0).toFixed(2)} mot ${alla.ny ? lage(s, alla.ny).toFixed(2) : '-'}` : 'inget val'})`, !!alla && alla.flytta > alla.stanna && narmre],
       [`byggplanen planerar det nya huset (${nytt ? nytt.namn : 'inget'}), och det gamla lagas inte under tiden`, planerat],
       [`när det nya är klart rivs det gamla och det nya är en sovsal (${nytt?.fn ?? '-'})`, borta && nytt?.fn === 'sovsal'],
-    ];
-  },
-};
-
-SCENARIER.mittenlager = {
-  text: 'Steg 9.4.7: det som hämtas ur varje lagerplats räknas. Att flytta en lagerplats närmare byns mitt är ett projekt, värt det som hämtas där gånger hur mycket närmare den nya platsen ligger, och när den flyttats bärs sakerna dit',
-  kor: () => {
-    const { zonesOf: zs, lagerFlyttTimme, lagerFlyttVal, lagerFlytta, projektVarde, omrade } = SIM;
-    const s = createState(1, START); klockan(s); tandEld(s);
-    // en lagerplats långt från mitten, med saker i
-    const m = omrade(s).mitt;
-    const z: SIM.Zone | undefined = iRing(m, 9, 20, 32, (x, y) => {
-      const c = { x, y, w: 2, h: 2, namn: 'Långt bort' };
-      return SIM.allUsable(s, c) && !zs(s).some(q => SIM.overlaps(c, q, 2)) && !SIM.strakI(s, x, y, 2, 2) && c;
-    });
-    if (!z) return [['en plats för lagerplatsen långt bort', false]];
-    zs(s).push(z);
-    const utan = (lagerFlyttTimme(s), lagerFlyttVal(s));
-    // det hämtas mycket där: flytten blir värd något
-    z.hamtat = 200; z.hamtatT = s.now;
-    lagerFlyttTimme(s);
-    const v = lagerFlyttVal(s), varde = projektVarde(s, 'lagerFlytt');
-    const d = (q: { x: number; y: number; w: number; h: number }) => Math.hypot(q.x + q.w / 2 - m.x - 0.5, q.y + q.h / 2 - m.y - 0.5);
-    const fore = d(z), efter = v ? d(v.ny) : Infinity;
-    // flytten: lagerplatsen ligger på den nya platsen
-    const flyttad = !!v && v.z === z && lagerFlytta(s, v.z, v.ny), ny = zs(s).find(q => q.namn === 'Långt bort');
-    return [
-      [`utan något hämtat är flytten inget värd (${utan ? 'värd' : 'inget'})`, !utan],
-      [`när mycket hämtas där finns en plats närmare mitten (${fore.toFixed(1)} → ${efter.toFixed(1)} rutor) och projektet är värt något (${varde.toFixed(3)})`, !!v && efter < fore && varde > 0],
-      [`efter flytten ligger lagerplatsen närmare (${ny ? d(ny).toFixed(1) : '-'} rutor)`, flyttad && !!ny && d(ny) < fore],
     ];
   },
 };

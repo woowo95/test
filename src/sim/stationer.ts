@@ -1766,7 +1766,6 @@ function scenIn(s: State) {
 // den tas isär, en eld i den släcks, och en del av materialet kommer tillbaka som när ett hus rivs. Projekten bygger den
 // igen på en ny plats när behovet och värdet finns kvar; scenens instrument blir kvar i byn
 export function rivStation(s: State, t: Station, text: string) {
-  if (stationDef(t.k)?.eld || stationDef(t.k)?.brasa) { const f = s.eldar?.find(e => e.at && e.at.x === t.x && e.at.y === t.y); if (f) { f.lit = false; f.fuel = 0; } } // elden släcks
   taBort(s, t);
   for (const [k, n] of Object.entries(stationDef(t.k)!.av)) { const m = Math.floor(n * HUS.rivTillbaka); if (m > 0) put(s, k, m); }
   log(s, text, 'world');

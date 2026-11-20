@@ -170,8 +170,8 @@ export function deliver(b: Bit, n: number, repair: boolean) { if (repair) b.lm =
 // ---------- var materialet kom ifrån ----------
 // Varje hus minns var materialet till det kom ifrån, så att det kan visas när man trycker på huset. Nycklarna är
 // `hur:vem:slag`: byn (byns förråd), eget (byggarens), familj (familjens, som man får ta), gava (skänkt av vem),
-// stold (taget utan lov av vem), fallt (stockar från träd som vem fällde eller högg för bygget). Ändrar inget i spelet
-export const KOM = ['byn', 'eget', 'familj', 'gava', 'fallt', 'stold', 'kyrka'] as const;
+// stold (taget utan lov av vem). Ändrar inget i spelet
+export const KOM = ['byn', 'eget', 'familj', 'gava', 'stold', 'kyrka'] as const;
 export function noteKom(s: State, husId: number | undefined, kom: Record<string, number>) {
   const h = husById(s, husId);
   if (!h) return;
@@ -180,18 +180,6 @@ export function noteKom(s: State, husId: number | undefined, kom: Record<string,
 }
 export function komOf(h: Hus) {
   return Object.entries(h.kom ?? {}).map(([key, n]) => { const [hur, vem, k] = key.split(':'); return { hur: hur as typeof KOM[number], vem: +vem, k, n }; });
-}
-// stockar till ett hus som byggs läggs direkt i väggarna: från träd som stod där huset ska stå, eller som fälldes
-// för bygget (hus = husets id). Ger hur mycket som gick åt
-export function toWalls(s: State, x: number, y: number, n: number, hus?: number, by?: Person) {
-  const h = housesOf(s).find(q => !q.klar && q.tro === undefined && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
-  n = Math.floor(n + 1e-9); // bara hela stockar går till väggarna; resten ligger kvar på stammen
-  if (!h || n <= 0) return 0;
-  let used = 0;
-  const walls = bitsOf(s).filter(b => b.hus === h.id && b.k === 'vagg' && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
-  for (const b of walls) { const d = Math.min(needOf(b), n - used); deliver(b, d, false); used += d; if (used >= n - 1e-9) break; }
-  if (by && used > 1e-9) noteKom(s, h.id, { [`fallt:${by.id}:ved`]: used });
-  return used;
 }
 // en stunds arbete på en ruta. Ger true när rutan är klar
 // har = materialet som byggaren håller i händerna (steg 3.6.5): det läggs i bygget först när biten är klar
@@ -251,8 +239,8 @@ export function husKlart(s: State, h: Hus, p: Person) {
     h.byggare = undefined;
   }
 }
-// materialet i bitarna (det som burits dit), per sak: ved, virke och plankor (timret är virke sedan steg 10.2.70, golvet plankor sedan 10.2.90)
-export const tramat = (bs: Bit[]) => { const r: Record<string, number> = {}; for (const b of bs) { const k = MATERIAL[b.m].item; if (k === 'ved' || k === 'virke' || k === 'plankor') r[k] = (r[k] ?? 0) + b.mat; } return r; };
+// materialet i bitarna (det som burits dit), per sak: virke och plankor (timret är virke sedan steg 10.2.70, golvet plankor sedan 10.2.90)
+export const tramat = (bs: Bit[]) => { const r: Record<string, number> = {}; for (const b of bs) { const k = MATERIAL[b.m].item; if (k === 'virke' || k === 'plankor') r[k] = (r[k] ?? 0) + b.mat; } return r; };
 // HUS.rivTillbaka av träet i bitarna går till ägaren (eller byn), hela saker. Ger hur många saker det blev
 export function tillbaka(s: State, h: Hus, mat: Record<string, number>) {
   let n = 0;

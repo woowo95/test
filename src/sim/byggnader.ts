@@ -530,25 +530,8 @@ export const samlingRum = (s: State): Rum | undefined => {
   return ids.size ? gridOf(s).rooms.find(r => r.hus !== undefined && ids.has(r.hus) && r.tiles.length && rumFnId(s, r) === 'samling') : undefined;
 };
 
-// ---------- rummets funktion av det som står i det (steg 2.2.17) ----------
-// Ett rum får sin funktion av det som står i det och det som görs där: där någon sover är det ett sovrum, där en station
-// står som man arbetar vid en verkstad, och där golvet är en lagerplats ett förråd. Flera funktioner i samma rum går bra. Varje
-// sort är en rad i registret RUMSFUNKTIONER; husets egen funktion (fn ovan) säger vad byn byggde det för och styr vem som
-// sover där och vad som får stå där. Gränssnittet visar båda (flikar/hus.ts, rutan under musen)
-interface RumsFunktion { namn: string; ikon: string; om: string; har: (s: State, h: Hus) => boolean }
-// en färdig station som man arbetar vid står i huset
-const harArbete = (s: State, h: Hus) => stationerOf(s).some(t => isKlar(t) && !!stationDef(t.k)?.gor.length && stationRum(s, t)?.hus === h.id);
-export const RUMSFUNKTIONER = {
-  sovrum: {
-    namn: 'Sovrum', ikon: '🛏️', om: 'Här sover någon',
-    har: (s, h) => { const tiles = new Set(gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles)); return living(s).some(p => { const t = bedTile(s, p); return t !== undefined && tiles.has(t); }); },
-  },
-  verkstad: { namn: 'Verkstad', ikon: 'verkstad', om: 'Här står en station som man arbetar vid', har: harArbete },
-  forrad: { namn: 'Förråd', ikon: '📦', om: 'Golvet är en lagerplats under tak', har: (s, h) => zonesOf(s).some(z => z.hus === h.id) },
-} satisfies Record<string, RumsFunktion>;
-export const RUMSFUNKTION_LIST = Object.keys(RUMSFUNKTIONER) as (keyof typeof RUMSFUNKTIONER)[];
-// husets funktioner efter det som står i det
-export const rumsFunktioner = (s: State, h: Hus): RumsFunktion[] => RUMSFUNKTION_LIST.map(k => RUMSFUNKTIONER[k] as RumsFunktion).filter(f => f.har(s, h));
+// en färdig station som man arbetar vid står i huset (en verkstad, steg 2.2.17). Vad rummen är visar taggarna (RUMSTYPER i rum.ts)
+export const harArbete = (s: State, h: Hus) => stationerOf(s).some(t => isKlar(t) && !!stationDef(t.k)?.gor.length && stationRum(s, t)?.hus === h.id);
 
 // ---------- ett hus blir färdigt ----------
 // ett förrådshus: golvet blir en lagerplats under tak, viktigast av alla, så att det som ligger ute bärs in dit

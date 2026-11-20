@@ -1,4 +1,4 @@
-import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
+import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, sakNamn, sovplatser } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
 import { cap, esc, fmtN, hjalpKnapp, hjalpText, omUngefar, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -11,7 +11,6 @@ const HUR: Record<typeof KOM[number], string> = {
   eget: 'Byggarnas eget',
   familj: 'Från familjen',
   gava: 'Skänkt',
-  fallt: 'Från träd som fälldes för bygget',
   stold: 'Taget utan lov',
 };
 
@@ -31,8 +30,6 @@ export const hus: Flik = {
       const d = dorrDef(b.dorr), om = d ? `${d.namn}: håller värmen ${Math.round(d.tat * 100)} %` : 'Öppen dörröppning: värmen går ut här'; // värmen skrivs på ett sätt (steg 11.1.57)
       return d ? `<span title="${esc(om)}" aria-label="${esc(om)}">${iconImg(d.ikon)} ${esc(d.namn)}</span>` : `<span class="muted" title="${esc(om)}" aria-label="${esc(om)}">Öppen dörröppning</span>`;
     }).join(', ');
-    // vad huset används till efter det som står i det (RUMSFUNKTIONER i byggnader.ts, steg 2.2.17)
-    const anv = klar === bits.length ? rumsFunktioner(s, h).map(f => `<span title="${esc(`${f.namn}: ${f.om}`)}" aria-label="${esc(f.namn)}">${tecknet(f.ikon, f.ikon)} ${esc(f.namn)}</span>`).join(' · ') : '';
     // rummen och deras taggar (RUMSTYPER i rum.ts, steg 7.2.1): symbolerna, och förklaringen när musen är över
     const rumRad = rum.filter(r => r.tiles.length).map(r => {
       const tg = rumVisas(s, r).map(t => `<span title="${esc(`${t.namn}: ${t.om}`)}" aria-label="${esc(t.namn)}">${tecknet(t.ikon, t.ikon, 16)}</span>`).join(' ');
@@ -59,7 +56,7 @@ export const hus: Flik = {
     }).join('') : '';
     const fangHtml = h.fn === 'fangelse' ? `<h3>Fångar${fangEldBrinner(s, h.id) ? ' <span title="En liten eld brinner därinne" aria-label="En liten eld brinner">🔥</span>' : ''}</h3>${fang ? `<ul class="fangar">${fang}</ul>` : '<p class="muted">Ingen sitter här nu.</p>'}` : '';
     return `
-    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${anv ? `<p><span class="etik">Används till</span> ${anv}</p>` : ''}${rumRad && klar === bits.length ? `<p><span class="etik">Rummen</span> ${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p><span class="etik">${dorrar.includes(', ') ? 'Dörrarna' : 'Dörren'}</span> ${dorrar}</p>` : ''}</div>${hjalpKnapp('hus-om', 'Vad gör huset?')}</div>${hjalpText('hus-om', `<p class="muted small">Huset håller värmen och skyddar mot väder och kyla. Rummen används till det byn behöver, och den som äger huset bor där med familjen.</p>`)}
+    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${rumRad && klar === bits.length ? `<p><span class="etik">Rummen</span> ${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p><span class="etik">${dorrar.includes(', ') ? 'Dörrarna' : 'Dörren'}</span> ${dorrar}</p>` : ''}</div>${hjalpKnapp('hus-om', 'Vad gör huset?')}</div>${hjalpText('hus-om', `<p class="muted small">Huset håller värmen och skyddar mot väder och kyla. Rummen används till det byn behöver, och den som äger huset bor där med familjen.</p>`)}
     ${fangHtml}<h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Inget material än.</p>'}`;
   },
 };

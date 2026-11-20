@@ -6,7 +6,7 @@ import { Act, Person, State } from './typer';
 import { familjOf } from './folk';
 import { omtanke } from './omtanke';
 import { clamp } from './slump';
-import { LAGER, amountOf, lagerFlyttVal } from './lager';
+import { amountOf } from './lager';
 import { materialBuffert, stationBrist, tillverkVill, villAv, villHaAv } from './forradsmal';
 import { SAKER } from './saker';
 import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST, plaggVarmer } from './klader';
@@ -86,7 +86,6 @@ export const PROJEKT_TAL = balans('projekt', {
   byggsten: 0.5, // ... byggstenen när Byggplanen planerat något av sten (steg 10.10.5, byggsten.ts)
   lera: 0.5, // ... leran när förrådet saknar den byn gör av med (steg 9.4.10, lera.ts)
   stationFlytt: 0.4, // ... att flytta en station ute närmare dem som använder den (steg 9.4.8, stationer.ts)
-  lagerFlytt: 0.4, // ... att flytta en lagerplats närmare byns mitt (steg 9.4.7, lager.ts)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   ljus: 0.4, // ... att ställa fram ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
   uppsatt: 0.4, // ... att sätta upp en fackla där folk ofta är vakna i mörker (steg 6.3.7, ljus.ts)
@@ -244,15 +243,6 @@ export const PROJEKT: Record<string, ProjektDef> = {
       const t = treeSpot(s, fellingTiles(s, p), p);
       return t && { act: 'falla', text: 'Fäller ett träd till virke.', min: fallTid(s, tileOf(t.x, t.y)) / 60000, tool: 'yxa', spot: t };
     },
-  },
-  // en lagerplats flyttas närmare byns mitt (steg 9.4.7, lager.ts): bristen är det som hämtas där gånger hur mycket närmare den
-  // nya platsen ligger, mindre ju fler saker som ska bäras om
-  lagerFlytt: {
-    namn: 'Flytta en lagerplats', vikt: PROJEKT_TAL.lagerFlytt,
-    brist: s => { const v = lagerFlyttVal(s); return v ? Math.min(1, v.vinst / LAGER.flyttFull) * LAGER.flyttMin / (LAGER.flyttMin + v.saker * LAGER.flyttPer) : 0; },
-    kostnad: () => LAGER.flyttMin / 60 * ARBETE,
-    kan: (s, p) => ageOf(p, s.now) >= ALDER.vuxen && !!lagerFlyttVal(s) && enTill(s, 'flyttLager', p),
-    uppgift: s => { const v = lagerFlyttVal(s); return v && { act: 'flyttLager', text: 'Märker ut en ny lagerplats närmare byns mitt.', min: LAGER.flyttMin, spot: { x: v.ny.x + v.ny.w / 2, y: v.ny.y + v.ny.h / 2 } }; },
   },
   // byggstenen (steg 10.10.5, byggsten.ts): bryts vid berget när Byggplanen planerat något av sten; det som ligger i högarna där räknas med
   byggsten: {

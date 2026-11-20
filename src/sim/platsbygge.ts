@@ -63,7 +63,7 @@ function narmasteBy(vl: Varlden, x: number, y: number): VarldRad | undefined {
   }
   return b;
 }
-// det bästa bygget för byn r: rutan, sorten och vinsten utöver kostnaden
+// det bästa bygget för byn r bland dem den har material till: rutan, sorten och vinsten utöver kostnaden
 export function bastaBygge(vl: Varlden, v: VarldMark, r: VarldRad, t: number): { i: number; k: PlatsByggeId; netto: number } | undefined {
   const hem = byPlats(vl, r.nr);
   if (!hem || !vl.leder) return undefined;
@@ -73,7 +73,7 @@ export function bastaBygge(vl: Varlden, v: VarldMark, r: VarldRad, t: number): {
     if (Math.max(Math.abs(x - hem.x), Math.abs(y - hem.y)) > PLATSTAL.rutor) continue;
     const m = MARK_IDS[v.mark[i]];
     for (const k of PLATSBYGGE_IDS) {
-      if (!(LANDMARKEN[k].mark as readonly string[]).includes(m) || hinder(vl, v, k, x, y)) continue;
+      if (!(LANDMARKEN[k].mark as readonly string[]).includes(m) || !harRad(r, k) || hinder(vl, v, k, x, y)) continue;
       const netto = platsVinst(vl, v, i, k, t) - platsKostnad(k);
       if (netto > 0 && (!bast || netto > bast.netto) && narmasteBy(vl, x, y) === r) bast = { i, k, netto };
     }
@@ -98,7 +98,7 @@ export function platsBygge(s: State, vl: Varlden, n: number) {
     if (r.sort !== 'by' || !lever(vl, r) || r.tal.folk < PLATSTAL.minFolk) continue;
     if (varldSlump(vl, r.nr, n, A.se) >= PLATSTAL.chans) continue;
     const b = bastaBygge(vl, v, r, t);
-    if (b && harRad(r, b.k)) byggPlats(s, vl, r, b.i, b.k, t);
+    if (b) byggPlats(s, vl, r, b.i, b.k, t);
   }
 }
 // vägarna som går nära rutan i räknas om (de kan nu gå över platsen)

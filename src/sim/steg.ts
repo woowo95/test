@@ -49,7 +49,7 @@ import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
-import { iHelaForradet, stacksOf, isStored, lagerFlyttTimme, capacity, mayTake, lagerFlyttVal, lagerFlytta, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
+import { iHelaForradet, stacksOf, isStored, capacity, mayTake, avbryt, bordSlag, carryKind, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -97,7 +97,7 @@ import { JAKT, jaktBar, jaktFallt, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { BYN, sumOf } from './egendom';
-import { vaggRensa, husKlart, avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, siteOf, toWalls, wearBuild, workOn } from './bygg';
+import { vaggRensa, husKlart, avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, siteOf, wearBuild, workOn } from './bygg';
 import { Bit, bitAt, bitsOf, husById, MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, roofed, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
@@ -238,15 +238,11 @@ const MEDAN: Partial<Record<Act, Krok>> = {
 };
 // det som händer när en handling är klar
 const KLAR: Partial<Record<Act, Krok>> = {
-  falla: (s, p, t) => { // ett träd där ett hus ska stå, eller som fälldes för bygget, blir stockar i husets väggar direkt; resten huggs till trä
+  falla: (s, p, t) => { // trädet faller och blir en stam, som huggs till ved
     if (!t.tool) return; // utan yxa står trädet kvar halvfällt, och nästa fällare gör resten
     fallTanke(s, p, tileOf(t.tx, t.ty)); // långt från byn tänker man på skogsvården (skogsvard.ts, steg 6.5.2)
     const k = fellTree(s, p, t.tx, t.ty);
-    if (k) { // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan; 
-      wearUsed(s, p, 1);
-      k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p);
-      if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k);
-    }
+    if (k) wearUsed(s, p, 1); // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan
   },
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
   bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = p.warm > 1 ? Math.max(1, p.warm - KROPP.badSvalka) : Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
@@ -354,7 +350,6 @@ KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
 KLAR.uppsatt = (s, p, t) => finishUppsatt(s, p, t);
 KLAR.flyttStation = s => { stationFlytta(s); }; // en station ute närmare dem som använder den (stationer.ts, steg 9.4.8)
-KLAR.flyttLager = s => { const v = lagerFlyttVal(s); if (v) lagerFlytta(s, v.z, v.ny); }; // en lagerplats närmare byns mitt (lager.ts, steg 9.4.7)
 KLAR.bryta = stenBruten; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5)
 KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, steg 9.4.10)
 KLAR.plockaMossa = mossaPlockad; // mossan läggs i en hög där den plockades (mossa.ts, steg 12.1.6)
@@ -511,7 +506,6 @@ export const TAKTER: Takt[] = [
   { namn: 'stepNaken', sek: 3600, fn: s => { stepNaken(s); } },
   { namn: 'stepByggplan', sek: 3600, fn: s => { stepByggplan(s); } },
   { namn: 'planBuild', sek: PLAN.varTim * 3600, fn: s => { planBuild(s); } }, // byggplanen (steg 7.2.3)
-  { namn: 'lagerFlytt', sek: 4 * 3600, fn: s => { lagerFlyttTimme(s); } }, // en lagerplats närmare mitten (steg 9.4.7)
   { namn: 'stationFlytt', sek: 24 * 3600, fn: s => { stationFlyttTimme(s); } }, // en station ute närmare dem som använder den (steg 9.4.8); en gång per dygn: var folk bor och arbetar ändras långsamt, och sökningen är dyr
   { namn: 'stepEldFlytt', sek: 3600, fn: s => { stepEldFlytt(s); } },
   { namn: 'lagerIStraket', sek: 3600, fn: s => { lagerIStraket(s); } },
@@ -1105,7 +1099,6 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const k = stocks(s).find(q => q.id === tk.ref), got = chopStock(s, tk.ref, y);
     if (!got) tk.until = s.now; // stammen är slut
     else {
-      if (k) got.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), got.ved, undefined, p); // står stammen där ett hus byggs blir träet väggar
       tk.carry += got.ved; bar('grenar', got.grenar);
       if (got.done) { tk.until = s.now; const h = k && husById(s, bitAt(s, Math.floor(k.x), Math.floor(k.y))?.hus); if (h) husKlart(s, h, p); } // stocken var det sista i huset (steg 8.1.13)
     }
@@ -1635,7 +1628,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   const k = MATERIAL[b.m].item;
   // materialet ligger kvar i händerna medan man bygger och läggs i bygget när biten är klar (steg 3.6.5). Avbryts arbetet
   // bär man hem det som inte använts (taskStep: den som bär något går hem med det)
-  // bara det som fattas läggs i bygget: har någon annan lagt stockar i väggen under tiden (toWalls i bygg.ts) behåller man resten
+  // bara det som fattas läggs i bygget: har någon annan lagt material i väggen under tiden behåller man resten
   const har = (k && tk.items?.[k]) || 0, anv = Math.min(har, needOf(b));
   const done = b.b >= 1 && b.lp === undefined && b.c >= 0.5;
   if (!done && needOf(b) - har <= 1e-9) {

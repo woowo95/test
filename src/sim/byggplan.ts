@@ -2,8 +2,6 @@ import { skuldFaktor } from './skatt';
 import { troOf } from './religion';
 import { helig } from './kult';
 import { planDel } from './troshus';
-import { fuelStock, hearthOf } from './eld';
-import { TROSKEL } from './forradsmal';
 import { husNytt } from './byggnad';
 import { faltAt } from './odling';
 import { angAt } from './slatter';
@@ -21,7 +19,7 @@ import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZon
 import { tingOf } from './agande';
 import { BAR, findPath } from './vag';
 import { paMyr } from './myr';
-import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, RUMSFUNKTIONER, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
+import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
@@ -67,7 +65,6 @@ export const PLAN = balans('byggplan', {
   forbGolv: 0.3, forbRum: 0.5, forbRik: 0.4, // hur mycket förbättringen är värd (0 till 1)
   hemRik: 2, // hemmen blir finare (steg 10.2.69): överskottet är 1 när familjen äger så här många gånger byns median per person (0 vid medianen)
   barUtTim: 24, // så länge väntar ett hus på att det som låg i en lagerplats ska bäras ut (timmar i spelet)
-  lagerKostnad: 0.5, // att göra en lagerplats större eller ny kostar så här mycket (arbetet med att bära om)
   forStort: 2, // ett hus är för stort när det har så här många gånger fler sovplatser än familjen
   husVanta: 2, husMote: 8, // ett husbyte väntar så här många dygn (år i spelet) på att köparen och säljaren står så här många rutor från varandra
   rasLage: 2, // ett skadat hus (steg 9.4.6): läget väger så här mycket mer när allt rasat (andelen som rasat gånger det)
@@ -161,7 +158,7 @@ const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= ALDER.vuxen &&
 // Ett system som behöver plats bygger aldrig själv utan anmäler ett byggbehov: en rad i BYGGNADER (byggnader.ts) som säger hur
 // akut det är och hur mycket plats det behöver. Sedan när varje behov funnits minns byn (s.byggBehov), så att inget byggs för ett
 // behov som bara fanns en stund (Robusthet i designdokumentet). Ett behov som försvinner glöms.
-export interface ByggBehov { fn: Fn | 'forbattra' | 'lagerplats'; a: Akut; sc: number }
+export interface ByggBehov { fn: Fn | 'forbattra'; a: Akut; sc: number }
 export function byggbehov(s: State): ByggBehov[] {
   const ut: ByggBehov[] = [];
   for (const fn of FN) {
@@ -252,7 +249,7 @@ const stenVaggA: AtgardDef = {
 const nyttHus: AtgardDef = {
   namn: 'Nytt hus', steg: 3,
   foresla: (s, b, okAt) => {
-    if (b.a.hus !== undefined || b.a.kop || b.fn === 'forbattra' || b.fn === 'lagerplats' || (BYGGNADER as Record<string, Byggnad>)[b.fn]?.omkring) return []; // kop: familjen har bara råd att köpa
+    if (b.a.hus !== undefined || b.a.kop || b.fn === 'forbattra' || (BYGGNADER as Record<string, Byggnad>)[b.fn]?.omkring) return []; // kop: familjen har bara råd att köpa
     // storleken efter behovet; så nära kvadratiskt som möjligt
     const sizes: { w: number; h: number }[] = [];
     // både bredare än djupt och djupare än brett (steg 9.2.133), så att en smal men djup lucka i en trång by går att bygga i
@@ -352,9 +349,6 @@ function utbyggnad(s: State, h: Hus, side: 'v' | 'o' | 'n' | 's', k: number, okA
 // ---------- förbättringarna (steg 7.2.10) ----------
 // Byn stannar aldrig: när inget behov är akut föreslår Byggplanen ett bättre golv, ett eget rum åt en växande familj och en
 // utbyggnad åt den rika. Bitarna märks forb och byggs på nivån Förbättra i Arbetsordningen (val.ts)
-// räcker veden till förbättringen (steg 10.2.44)? Den ved ritningen tar dras från förrådet, och resten måste räcka minst
-// TROSKEL.forsokVed dygn till elden: en förbättring äter inte upp veden byn eldar med
-const vedRacker = (s: State, f: Forslag) => { const ved = f.ritning.reduce((n, a) => n + (MATERIAL[a.m].item === 'ved' ? MATERIAL[a.m].n : 0), 0); return ved <= 0 || (fuelStock(s) - ved) / (hearthOf(s.fire).burn * 24) >= TROSKEL.forsokVed; };
 const battreGolv: AtgardDef = {
   namn: 'Byta material', steg: 0,
   foresla: (s, b) => {
@@ -410,16 +404,6 @@ const rikUt: AtgardDef = {
     return [];
   },
 };
-// ---------- lagret (steg 7.2.18) ----------
-// ingen ritning: marken märks bara ut. Kostar arbetet med att flytta det som ligger, och väger därför lätt mot ett förrådshus
-const lagerStorreA: AtgardDef = {
-  namn: 'Större lagerplats', steg: 0,
-  foresla: (_s, b) => b.fn === 'lagerplats' ? [{ at: 'lagerStorreA', x: 0, y: 0, w: 0, h: 0, ritning: [], oppnas: [], kostnad: PLAN.lagerKostnad, varde: 1, plats: 0 }] : [],
-};
-const lagerNyA: AtgardDef = {
-  namn: 'Ny lagerplats', steg: 1,
-  foresla: (_s, b) => b.fn === 'lagerplats' ? [{ at: 'lagerNyA', x: 0, y: 0, w: 0, h: 0, ritning: [], oppnas: [], kostnad: PLAN.lagerKostnad, varde: 1, plats: 0 }] : [],
-};
 // ---------- att köpa ett hus (steg 7.2.14 och 7.2.16) ----------
 // Tre tal: husets värde (materialet och arbetet minus slitaget); vad det är värt för säljaren (värdet gånger hur väl det fyller
 // familjens behov); vad det är värt för köparen (vad det skulle kosta att få samma rum på ett annat sätt, aldrig mer än familjen
@@ -429,7 +413,7 @@ const salesPlats = (s: State, h: Hus) => gridOf(s).rooms.filter(r => r.hus === h
 // Alla hus där man bor eller umgås går att köpa (steg 9.2.109), men priset följer hur mycket säljaren behöver huset. Förrådshus,
 // verkstäder (en station står där), torkhus och vedbodar är inga bostäder och säljs inte
 export function kopbart(s: State, h: Hus): boolean {
-  return !!h.klar && !h.ut && KOPBARA.has(fnId(h)) && !RUMSFUNKTIONER.verkstad.har(s, h);
+  return !!h.klar && !h.ut && KOPBARA.has(fnId(h)) && !harArbete(s, h);
 }
 const KOPBARA = new Set<Fn>(['sovsal', 'familjehus', 'samling']);
 // behöver säljaren huset? 0 = nej: familjen är borta eller huset är för stort för den, eller byns sovsal står tom; 1 = ja
@@ -785,7 +769,7 @@ const bryggaA: AtgardDef = {
     return bast ? [{ at: 'bryggaA', x: 0, y: 0, w: 0, h: 0, ritning: bast, oppnas: [], kostnad: ritningKostnad(bast), varde: PLAN.forbBrygga, plats: 0 }] : [];
   },
 };
-export const BYGGATGARDER = { stockvagA, infartA, bryggaA, omkringA, nyttHus, byggaUt, battreGolv, stenVaggA, egetRum, rikUt, lagerStorreA, lagerNyA, kopaHus } satisfies Record<string, AtgardDef>;
+export const BYGGATGARDER = { stockvagA, infartA, bryggaA, omkringA, nyttHus, byggaUt, battreGolv, stenVaggA, egetRum, rikUt, kopaHus } satisfies Record<string, AtgardDef>;
 export type Atgard = keyof typeof BYGGATGARDER;
 const ATGARDER = BYGGATGARDER as Record<string, AtgardDef>;
 
@@ -793,7 +777,6 @@ const ATGARDER = BYGGATGARDER as Record<string, AtgardDef>;
 // Varje ritning prövas av samma kontroll innan den godtas: husets regler (balanstal i HUS och BYGG), en ytterdörr, inget i vattnet,
 // på elden eller där vattnet steg sist, inga väggar över en annan byggnad. Då kan en ny åtgärd i registret inte göra ett trasigt hus.
 export function ritningOk(s: State, f: Forslag, okAt: (i: number) => boolean): boolean {
-  if (f.at === 'lagerStorreA' || f.at === 'lagerNyA') return true;
   if (f.at === 'stockvagA' || f.at === 'bryggaA' || f.at === 'infartA') return f.ritning.length > 0;
   if (f.at === 'omkringA') return f.ritning.some(q => q.m === 'oppning') && f.ritning.every(q => MATERIAL[q.m]); // väggarna står runt det som redan står
   const iw = f.w - 2, ih = f.h - 2;
@@ -827,12 +810,11 @@ export function stepByggplan(s: State) {
   husAffar(s);
   rivOmTomt(s);
 }
-// lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Byggplanen väger en större lagerplats mot en ny. Marken märks bara
-// ut, så det behövs ingen byggare, och det väntar inte på annat bygge
+// lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Lagret görs större, och ett nytt läggs när det inte går. Marken
+// märks bara ut, så det behövs ingen byggare, och det väntar inte på annat bygge
 export function planLager(s: State) {
   if (utanPlatsNu(s) < LAGER.utanMin || !overflow(s).some(a => lagerFullt(s, a.k))) return; // det som legat utan plats (steg 12.1.18)
-  const u: ByggBehov = { fn: 'lagerplats', a: { v: 1, plats: 0 }, sc: 0 }, f = valj(s, u, () => true);
-  if (f?.at === 'lagerNyA') { if (!lagerNy(s)) lagerStorre(s); } else if (!lagerStorre(s)) lagerNy(s);
+  if (!lagerStorre(s)) lagerNy(s);
 }
 // vems en ändring är (steg 7.2.17): byn eller en familj. Var och en har en pågående ändring i taget
 // trons hus är trons (steg 10.3.19): ett halvbyggt trons hus hindrar inte byns byggen
@@ -895,7 +877,7 @@ function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
     const poang = (f: Forslag) => f.varde / (Math.max(PROJEKT_TAL.minKostnad, f.kostnad) * (1 + PLAN.stegPaslag * d.steg));
     const fs = d.foresla(s, u, okAt).map(f => ({ f, sc: poang(f) })).sort((a, c) => c.sc - a.sc).slice(0, PLAN.perBehov);
     for (const { f, sc } of fs) {
-      if (!ritningOk(s, f, okAt) || u.fn === 'forbattra' && !vedRacker(s, f)) continue;
+      if (!ritningOk(s, f, okAt)) continue;
       if (sc > bs) { bs = sc; bast = f; }
     }
   }
