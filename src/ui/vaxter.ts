@@ -10,11 +10,12 @@ import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
 import { type DjurHall, djurBild, fagelBild, hasIcon, iconCanvas, kartbild } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
+import { sinHash } from './pixel';
 
 // sakerna på rutan (steg 9.2.53, Björns val i steg 9.9.1: i rad), i 16 punkter per ruta och bara i palettens färger. Det som ritas är
 // det som går att plocka (sakerPaMarken): spelets egna bilder av bären, svampen, rötterna och grenarna i sin naturliga storlek, en, två
 // eller tre i en sned rad över rutan från uppe till vänster till nere till höger. En ruta utan saker ritas inte
-const BILD_FARG: Record<string, number> = { y: 0xdad0bb, x: 0xbdb39b, v: 0x7e7362, C: 0x21310e, D: 0x324726, E: 0x505e3e, g: 0x4b4f00, G: 0x647025, r: 0xa14808, h: 0xb2921b, H: 0x906f0f, s: 0x742a01, S: 0xa14808, f: 0xbdb39b, j: 0x5e3c24, J: 0x7d5b40, l: 0x647025 };
+const BILD_FARG: Record<string, number> = { y: 0xdad0bb, x: 0xbdb39b, v: 0x7e7362, C: 0x21310e, D: 0x324726, E: 0x505e3e }; // röllekans färger
 const KBILD_AV: Record<string, string> = { bar: 'bar', kantarell: 'svamp', spindling: 'svamp', rotter: 'rotter', grenar: 'grenar' };
 const RAD_T = [[0.5], [0.15, 0.85], [0, 0.5, 1]];
 function ritaRad(k: string, n: number, x: number, y: number) {
@@ -30,8 +31,6 @@ const ROLLEKA_VILD = [
   ['.yxy...yy.', 'yxxxv.yxxv', '.vCv...vC.', '..C....C..', '..C...C...', '.D.C.CD.D.', 'DED.CC.DE.', '.DEDCDEDD.'],
   ['yxy..yy..yx.', 'xxv.yxxv.xxv', '.C...vC..vC.', '.C....C..C..', '..C...C.C...', 'D.DC.DCC.D..', 'EDD.CCC.DED.', '.DEDDCDEDD..'],
 ];
-// vildbinas bo på stammen (steg 10.10.15, platshållare tills Björn valt i bildstilen): en grå-gul kupa av vax som hänger på trädet
-const VILDBO = ['.jj.', 'jhHj', 'hHhH', 'jhHj', 'HhHh', '.jj.'];
 // Björns val (steg 11.14.1): hålet i stammen och bina ur bildstilens vildbo, utan stammen i bilden (trädet har sin egen)
 const VILDBO_HAL = (() => { const b = KARTBILDER.vildbo; if (!b) return undefined; return { w: b.w, h: b.h, pal: b.pal, rader: b.rader.map(r => [...r].map((c, x) => c === 'g' || c === 'p' || c === 'H' || (c === 'o' && (x < 5 || x > 14)) ? c : '.').join('')) }; })();
 let bon: number[] = []; // rutorna med ett bo som syns, för bina som surrar runt stammen (drawAnimals)
@@ -42,7 +41,7 @@ const ritaKb = (b: { rader: string[]; pal: Record<string, string> }, x: number, 
 // bildruta vid tiden som visas (ui.nu), som folket, eftersom de skuttar omkring (djur.ts).
 let ritad = '', ritadNar = -Infinity;
 // en fast plats i rutan för varje sak, så att buskarna inte hoppar runt när kartan ritas om
-const plats = (i: number, j: number) => { const h = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return h - Math.floor(h); };
+const plats = sinHash;
 // rutorna som syns och en halv skärm runt om, avrundat till hela block om 8 rutor (steg 9.1.3): det utanför ritas inte
 const SYNS_BLOCK = 8;
 function synligaRutor() {
@@ -61,18 +60,17 @@ export function drawPlants(force = false) {
   plantG.clear(); bon = [];
   for (let ry = v.y0; ry <= v.y1; ry++) for (let rx = v.x0; rx <= v.x1; rx++) {
     const i = ry * W + rx, x = rx * TS, y = ry * TS;
-    let j = 0; // varje sak får en fast plats i rutan, så att bilden inte hoppar runt när kartan ritas om
     for (const q of sakerPaMarken(s, 'samla', rx, ry)) {
       const n = Math.min(3, q.n);
       if (n <= 0) continue;
-      if (q.k === 'honung') { if (vildboSyns(s, i)) { bon.push(i); if (VILDBO_HAL) ritaKb(VILDBO_HAL, x + 1, y - 8); else ritaBild(VILDBO, x + 9, y + 3); } continue; } // honungen syns som boet på trädet, inte som kakor på marken
+      if (q.k === 'honung') { if (vildboSyns(s, i)) { bon.push(i); if (VILDBO_HAL) ritaKb(VILDBO_HAL, x + 1, y - 8); } continue; } // honungen syns som boet på trädet, inte som kakor på marken
       if (q.k === 'bar') continue; // bären syns på bärbuskarna (steg 6.5.4, terrang.ts), och under träd växer inga (steg 10.10.8)
-      ritaRad(q.k, n, x, y); j += n;
+      ritaRad(q.k, n, x, y);
     }
     if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5)); // röllekan växer vild (steg 9.7.15)
     if (rx % 2 === 0 && ry % 2 === 0 && hasselVaxer(s, i) > 0.3) { const b = KARTBILDER.hassel; if (b) ritaKb(b, x + 8 - (b.w >> 1), y + TS - b.h + 2); } // den vilda hasseln (steg 9.7.14) som en buske på varannan ruta där den växer (Björns val, steg 10.11.1)
     const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
-    if (gr > 0) { ritaRad('grenar', gr, x, y); j += gr; }
+    if (gr > 0) ritaRad('grenar', gr, x, y);
   }
 }
 
@@ -105,8 +103,11 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
   if (Math.hypot(dx, dy) > 0.01) h = Math.abs(dx) >= Math.abs(dy) * 0.8 ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
   hallar.set(id, { x, y, h }); sedd.add(id);
   const k = bild?.(h) ?? (art === 'fagel' ? fagelBild(u, h) : djurBild(art, id, h, art === 'kanin' && iIstiden(ageIndex(s, ui.nu)))), c = iconCanvas(k); // fågeln i platsens utseende (steg 6.6.3) // foten nära rutans punkt, mitt under djuret
-  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' || art === 'bjornunge' || art === 'vildsvin' ? 4 : 3) - c.height), 1);
+  const fot = art === 'kanin' ? 2 : art === 'varg' || art === 'bjorn' || art === 'bjornunge' || art === 'vildsvin' ? 4 : 3;
+  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + fot - c.height), 1);
+  lador.set(id, { w: c.width, h: c.height, fot }); // bildens mått, för den vita kanten när djuret är markerat
 }
+const lador = new Map<number, { w: number; h: number; fot: number }>();
 // de tama djurens bilder (Björns val, steg 11.14.1): hunden (valpen tills den är vuxen), fåret och geten i tre utseenden efter id:t;
 // de andra har en platshållare (TAMDJUR.ikon)
 const TAMBILD: Record<string, string> = { hund: 'hund', far: 'far', get: 'get' };
@@ -140,7 +141,7 @@ export function drawAnimals() {
     visad.set(k.id, e); sedda.add(k.id);
     const art = k.art, fallt = art === 'radjur' ? kartbild('radjur') : art === 'vildsvin' ? 'vildsvin' : art === 'fagel' ? kartbild(FALLD[k.u ?? 1]) : undefined; // det fällda rådjuret (steg 6.6.2) och fågeln (steg 6.6.3)
     if (k.ligger && fallt) { const c = iconCanvas(fallt); djurIkoner.add(fallt, Math.round(k.x * TS - c.width / 2), Math.round(k.y * TS + 2 - c.height), 1); }
-    else if (k.ligger) djurIkoner.add('kanin_dod', k.x * TS - 4, k.y * TS - 6, 1); else ritaDjur(art, k.id, k.x, k.y, riktade, k.u);
+    else if (k.ligger) djurIkoner.add('kanin_dod', Math.round(k.x * TS - iconCanvas('kanin_dod').width / 2), Math.round(k.y * TS + 2 - iconCanvas('kanin_dod').height), 1); else ritaDjur(art, k.id, k.x, k.y, riktade, k.u);
     if (!k.ligger) ut.push({ id: k.id, art, x: k.x, y: k.y, grupp: -1, u: k.u });
     if (e.larm > ui.nu) larm(k.x, k.y);
   }
@@ -164,8 +165,8 @@ export function drawAnimals() {
   }
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
   // i en strid på kartan (steg 9.2.29) står vargen och björnen där striden har dem, vid tiden som visas
-  for (const d of vargarOf(s)) { const k = djuretNu('varg', d.id, ui.nu), { x, y } = anfall(k, d, 'an_bett'); ritaDjur('varg', d.id, x, y, riktade); ut.push({ ...d, x, y }); }
-  for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id, ui.nu) : undefined, { x, y } = anfall(k, d, 'an_klo'); ritaDjur(d.art, d.id, x, y, riktade); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
+  for (const d of vargarOf(s)) { const k = djuretNu('varg', d.id), { x, y } = anfall(k, d, 'an_bett'); ritaDjur('varg', d.id, x, y, riktade); ut.push({ ...d, x, y }); }
+  for (const d of bjornarOf(s, ui.nu)) { const k = d.art === 'bjorn' ? djuretNu('bjorn', d.id) : undefined, { x, y } = anfall(k, d, 'an_klo'); ritaDjur(d.art, d.id, x, y, riktade); ut.push({ ...d, x, y }); } // björnen (steg 6.6.4) och ungarna (steg 6.6.5), i Björns ritningar // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
   for (const d of s.tamdjur ?? []) { // läser listan utan att skriva (tamdjurOf gör s.tamdjur ??= []); de döda står inte kvar i den
     if (d.dog !== undefined) continue;
     const ikon = TAMDJUR[d.art].ikon as Djur['art']; ritaDjur(ikon, d.id, d.x, d.y, riktade, 1, tamBild(d)); ut.push({ id: d.id, art: ikon, x: d.x, y: d.y, grupp: -1, tam: d.art });
@@ -189,8 +190,9 @@ export function drawAnimals() {
     });
   }
   const hons = honsOf(s); // hönsflocken (steg 9.8.10): hönorna runt flockens plats, två höns i varje bild (Björns val, steg 11.14.1)
-  if (hons) for (let i = 0; i < hons.n; i++) { const v = i * 2.4, r = 0.4 + (i % 4) * 0.35; const hx = hons.x + Math.cos(v) * r, hy = hons.y + Math.sin(v) * r; if (!KARTBILDER.hons || i % 2 === 0) ritaDjur('fagel', HONS_ID0 + i, hx, hy, riktade, 1, KARTBILDER.hons ? (h => h === 'vast' || h === 'bak' ? 'kb_hons_vast' : 'kb_hons') : undefined); ut.push({ id: HONS_ID0 + i, art: 'fagel', x: hx, y: hy, grupp: -1, tam: 'hons' }); } // de tama djuren (steg 9.8.1): platshållare tills Björn valt i bildstilen
+  if (hons) for (let i = 0; i < hons.n; i++) { const v = i * 2.4, r = 0.4 + (i % 4) * 0.35; const hx = hons.x + Math.cos(v) * r, hy = hons.y + Math.sin(v) * r; if (i % 2 === 0) ritaDjur('fagel', HONS_ID0 + i, hx, hy, riktade, 1, h => h === 'vast' || h === 'bak' ? 'kb_hons_vast' : 'kb_hons'); ut.push({ id: HONS_ID0 + i, art: 'fagel', x: hx, y: hy, grupp: -1, tam: 'hons' }); } // de tama djuren (steg 9.8.1): platshållare tills Björn valt i bildstilen
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
+  for (const id of lador.keys()) if (!riktade.has(id)) lador.delete(id);
   // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
   // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna
   if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)), st = s.tornado.storlek ?? 'medel', f = tornadoFot(st); djurIkoner.add(tornadoBild(undefined, st), Math.round(p.x * TS - f.cx), Math.round(p.y * TS - f.fot), 1); } // i sin storlek (steg 6.4.15)
@@ -209,8 +211,8 @@ export function drawAnimals() {
   }
   // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
   // (de tama djuren och hönsflocken markeras på samma sätt, och när musen är över dem; en höna är hela flocken)
-  const kant = (d: SynligtDjur) => { const b = d.art === 'varg' ? { w: 28, h: 19, fot: 5 } : d.art === 'bjorn' ? { w: 50, h: 35, fot: 4 } : d.art === 'bjornunge' || d.art === 'vildsvin' ? { w: 25, h: 18, fot: 4 } : d.art === 'radjur' ? { w: 28, h: 31, fot: 4 } : d.art === 'fagel' ? { w: 24, h: 17, fot: 4 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
-    djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(d.x * TS - b.w / 2, d.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); };
+  const kant = (d: SynligtDjur) => { const b = lador.get(d.id); if (!b) return; // runt djurets bild som den ritas just nu
+    djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(Math.round(d.x * TS - b.w / 2) - 1, Math.round(d.y * TS + b.fot - b.h) - 1, b.w + 2, b.h + 2, 3).lineStyle(0); };
   const markerade = new Set<number>();
   for (const id of [ui.tab === 'djur' ? ui.djurId : -1, ui.djurHover]) { if (arHona(id)) honsIdn(hons?.n ?? 0).forEach(q => markerade.add(q)); else markerade.add(id); }
   for (const d of ut) if (markerade.has(d.id)) kant(d);

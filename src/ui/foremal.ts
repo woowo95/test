@@ -1,4 +1,4 @@
-import { HO, fallorAv, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv } from '../sim';
+import { HO, fallorAv, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv, type Ting } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -9,7 +9,7 @@ import { outPilesAt, piles, s, sakVar, ui, uppgiftVid } from './lage';
 import { Ikoner, TS, figurLayer, mattLayer, overG, pileLayer, rokLayer, structG } from './scen';
 import { eldBild, gnistBild, rokBild } from './animation';
 import { ANIMTAKT } from '../animbilder';
-import { iBruk } from './ibruk';
+import { arbetandeNu, iBruk } from './ibruk';
 import { framstegPunkter } from './framsteg';
 import { farg, fargTal, narmast } from '../palett';
 import * as PIXI from 'pixi.js';
@@ -60,36 +60,37 @@ function tatHog(k: string, x0: number, y0: number, n: 1 | 3 | 6) {
 }
 function drawPile(pl: Pile, t: number) {
   const x0 = pl.x * TS, y0 = pl.y * TS, f = Math.min(1, pl.n / pl.max), g = structG, c = condOf(pl);
+  const hogGlans = () => { if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); }; // mästerverkets glans
   // liten stapel för skicket längst ner i rutan
   g.beginFill(0x24201d).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * clamp(c, 0, 1), 2).endFill();
   // ikoner: ju fullare stacken är desto fler, redskap som en större bild
   // en ensam symbol ritas i sina egna punkter mitt i rutan (steg 5.5.5): 8 punkter mitt över stapeln, 16 punkter över hela rutan
   // en behållare med något i (steg 9.4.14, platshållare tills Björn valt i bildstilen): en yta i vätskans färg
-  const inne = pl.id !== undefined ? tingOf(s).find(q => q.id === pl.id)?.inne : undefined;
+  const ting = pl.id !== undefined ? tingIdn.get(pl.id) : undefined, inne = ting?.inne;
   // ytan där vätskan syns (steg 9.4.14; Björns val, steg 11.14.1): innanför kanten överst i lerkrukan och näveraskan, i världspixlar från rutan
   const yta = () => { if (!inne) return; const r = YTA_BEH[pl.k] ?? [6, 4, 4, 2]; overG.beginFill(VATSKOR[inne.v].farg).drawRect(x0 + r[0], y0 + r[1], r[2], r[3]).endFill(); };
   const ensam = (k: string) => { const w = iconCanvas(k).width || 8; if (w > 8) pileIcons.add(k, x0, y0 - 3, 1); else pileIcons.add(k, x0 + 4, y0 + 3, 1); yta(); };
   if (pl.gor) { ensam(pl.gor); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
   // lerkrukan (steg 10.7.2): ett av tre utseenden efter krukan själv, och växten i den
-  const kruka = pl.k.startsWith('lerkruka_') && pl.id !== undefined ? tingOf(s).find(q => q.id === pl.id) : undefined;
+  const kruka = pl.k.startsWith('lerkruka_') ? ting : undefined;
   if (kruka) {
     const b = krukaBild(kruka), ik = hasIcon(b.ikon) ? b.ikon : pl.k; ensam(ik);
     if (b.vaxt) vaxtIKruka(x0 + 8, y0 - 3 + (KRUKKANT[ik] ?? 3), b.vaxt.v, b.vaxt.g === 'blomma', !!b.vaxt.blommar);
-    if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
+    hogGlans();
     return;
   }
   const n = clamp(Math.ceil(f * 4), 1, 4);
   // en, några eller många (steg 9.2.40): har saken en egen bild för några eller många i bildstilen ritas den en gång, annars som förut
   const mangd = pl.max === 1 || kartbildEnsam(pl.k) ? '' : f > 2 / 3 ? '_manga' : f > 1 / 3 ? '_nagra' : '';
-  if (mangd && KARTBILDER[pl.k + mangd]) { kartHog(pl.k + mangd, x0, y0, 1); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
+  if (mangd && KARTBILDER[pl.k + mangd]) { kartHog(pl.k + mangd, x0, y0, 1); hogGlans(); return; }
   if (kartbild(pl.k)) {
     const hogK = pl.blot && KARTBILDER.ved_blot ? 'ved_blot' : variant(pl.k, pl.x, pl.y), ensamBild = pl.max === 1 || kartbildEnsam(pl.k);
     if (ensamBild || !tatHog(hogK, x0, y0, f > 2 / 3 ? 6 : f > 1 / 3 ? 3 : 1)) kartHog(hogK, x0, y0, ensamBild ? 1 : n);
     if (YTA_BEH[pl.k]) yta();
-    if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT);
+    hogGlans();
     return;
   }
-  if (pl.max === 1 || iconCanvas(pl.k).width > 8) { ensam(pl.k); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
+  if (pl.max === 1 || iconCanvas(pl.k).width > 8) { ensam(pl.k); hogGlans(); return; }
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
 }
 // växten i krukan (steg 10.7.2, platshållare): stjälkar upp från kanten och, när den vuxit, röllekans vita blomkorgar.
@@ -132,13 +133,12 @@ function drawKarra() {
 function drawFalt() {
   // staketet (steg 9.7.10; Björns val, steg 11.14.1): längs en vågrät kant och tvärs en lodrät, båda i ett hörn
   const staket = new Set(s.staket ?? []);
-  if (KARTBILDER.staket_langs && KARTBILDER.staket_tvars) for (const i of staket) {
+  for (const i of staket) {
     const X = (i % W) * TS, Y = Math.floor(i / W) * TS, x = i % W;
     const vagrat = (x > 0 && staket.has(i - 1)) || (x < W - 1 && staket.has(i + 1)), lodrat = staket.has(i - W) || staket.has(i + W);
     if (lodrat) pileIcons.add('kb_staket_tvars', X + ((TS - KARTBILDER.staket_tvars.w) >> 1), Y, 1);
     if (vagrat || !lodrat) pileIcons.add('kb_staket_langs', X, Y + TS - KARTBILDER.staket_langs.h, 1);
   }
-  else for (const i of s.staket ?? []) { const X = (i % W) * TS, Y = Math.floor(i / W) * TS; structG.lineStyle(1, 0x7d5b40).moveTo(X, Y + TS / 2).lineTo(X + TS, Y + TS / 2).moveTo(X + 2, Y + 3).lineTo(X + 2, Y + TS - 2).moveTo(X + TS - 3, Y + 3).lineTo(X + TS - 3, Y + TS - 2).lineStyle(0); } // staketet (steg 9.7.10): en platshållare tills Björn valt i bildstilen
   for (const f of faltOf(s)) {
     const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', R = rutorAv(f);
     for (let k = 0; k < f.n; k++) { // varje ruta efter sitt eget steg och sin gröda (steg 9.7.1)
@@ -229,8 +229,12 @@ function lagerMark(w: number, h: number) {
   return t;
 }
 const VAGG_KANT = 4; // så många punkter av en vägg bakom en station inne som bilden får täcka (steg 9.2.41)
+// tingen efter id och det som står vid en station (inte i någons hand eller lass), räknat en gång per bildruta (kodgenomgången 405)
+let tingIdn = new Map<number, Ting>(), tingVid = new Map<number, Ting>();
 export function drawStructures(t: number) {
-  const tab = ui.tab;
+  const tab = ui.tab, folk = arbetandeNu(); // den som arbetar vid stationerna, en gång per bildruta (kodgenomgången 414)
+  tingIdn = new Map(); tingVid = new Map();
+  for (const k of tingOf(s)) { tingIdn.set(k.id, k); if (k.vid !== undefined && k.hos === undefined && k.lass === undefined && !tingVid.has(k.vid)) tingVid.set(k.vid, k); }
   structG.clear(); overG.clear();
   // lagerplatsen: en svag färgton under rutorna (steg 6.8.9), en ram runt dem och en stack per ruta
   zonesOf(s).forEach((z, i) => {
@@ -289,8 +293,8 @@ export function drawStructures(t: number) {
     for (const k of st.med ?? []) { const b = 'kb_' + tillbehorDef(k)?.ikon + v; if (kb && hasIcon(b)) pileIcons.add(b, x0, y0, 1); else pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); } // tillbehören i den (skinnfällen i bädden), i bildstilen lagd ovanpå bädden
     if (st.tork?.length) hangande(st, x0, y0);
     const yta = (v ? YTA[st.k]?.v : YTA[st.k]) ?? { x: 2, y: 2 };
-    (iBruk(st)?.saker ?? []).slice(0, 3).forEach((k, i) => sakVid(pileIcons, k, x0 + yta.x + (v ? 0 : i * 6), y0 + yta.y + (v ? i * 7 : 0))); // sida vid sida, i den stående under varandra
-    const vid = yta.vid && tingOf(s).find(k => k.vid === st.id && k.hos === undefined && k.lass === undefined);
+    (iBruk(st, folk)?.saker ?? []).slice(0, 3).forEach((k, i) => sakVid(pileIcons, k, x0 + yta.x + (v ? 0 : i * 6), y0 + yta.y + (v ? i * 7 : 0))); // sida vid sida, i den stående under varandra
+    const vid = yta.vid && tingVid.get(st.id);
     if (vid) sakVid(pileIcons, vid.k, x0 + yta.vid!.x, y0 + yta.vid!.y);
   }
   // dörrarna i öppningarna (DORRAR i byggnad.ts): den stående bilden (_v) när väggen går uppåt (en vägg ovanför öppningen)
@@ -361,14 +365,14 @@ function lagereld(f: Fire) {
   const l = f.lit ? (fireHeat(s, f) > 0.5 ? 'stort' : 'lite') : emberOn(s, f) ? 'glod' : (f.ash ?? 0) >= 1 ? 'kol' : f.fuel > 0 ? 'ny' : 'tom';
   if (f.ring) pileIcons.add('kb_lagereld_ring', x, y, 1);
   pileIcons.add(f.lit ? eldBild(l as 'stort' | 'lite') : 'kb_lagereld_' + l, x, y, 1);
-  if (f.med?.includes('stekhall')) { const b = hasIcon('kb_stekhall') ? 'kb_stekhall' : hasIcon('stekhall_karta') ? 'stekhall_karta' : 'stekhall', c = iconCanvas(b); pileIcons.add(b, Math.round(cx - c.width / 2), Math.round(cy - c.height / 2 - 2), 1); } // stekhällen på härden (steg 10.2.87; Björns val, steg 11.14.1)
+  if (f.med?.includes('stekhall')) { const b = 'kb_stekhall', c = iconCanvas(b); pileIcons.add(b, Math.round(cx - c.width / 2), Math.round(cy - c.height / 2 - 2), 1); } // stekhällen på härden (steg 10.2.87; Björns val, steg 11.14.1)
   if (!f.lit) return;
   if (l === 'stort') rokIkoner.add(gnistBild(), cx - ANIMTAKT.gnista.x, cy - ANIMTAKT.gnista.y, 1);
   rokIkoner.add(rokBild(undefined, e.x + e.y), cx - ANIMTAKT.rok.x, cy - ANIMTAKT.rok.y, 1); // varje eld i sin egen takt
 }
 // stationens bild ur bildstilen (kartbilder.ts, steg 5.1.2.2), den stående om stationen står vriden
 // stubben att sitta på: bildstilens (steg 5.1.2.3) i en ruta
-const SITT = hasIcon('kb_sittplats') ? 'kb_sittplats' : 'sittplats';
+const SITT = 'kb_sittplats';
 // En station vars ikon också är en sak har sin bild som <ikon>_station (komposten); de som har flera utseenden heter <id>_2 och
 // <id>_3 och väljs efter stationen (altaret, steg 11.14.1). Den stående bilden kan vara den liggande vriden i ikoner.ts (vattenhon)
 const arStation = (k: string) => { const b = KARTBILDER[k] ?? KARTBILDER[k.replace(/_v$/, '')]; return !!b && (b.sort === 'kar-station' || b.sort === 'kar-mobel') && hasIcon('kb_' + k); };

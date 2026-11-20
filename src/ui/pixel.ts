@@ -18,9 +18,15 @@ export function brus(x: number, y: number, sk: number, s: number) {
 }
 // slump 0–1 ur tal som inte är heltal (blodet och sporten): samma tal ger samma slump
 export const sinHash = (a: number, b = 0) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
+// en andra sådan slump med andra tal (vädret och träden, samma tal som de godkända björkarna ritades med)
+export const sinHash3 = (a: number, b = 0, c = 0) => { const h = Math.sin(a * 127.1 + b * 311.7 + c * 74.7) * 43758.5453; return h - Math.floor(h); };
 // Bayer-rastret 4 × 4 som tröskel 0–1 i punkten (x, y): en punkt med styrkan a ritas när bayer(x, y) < a
 const TROSKEL = BAYER.map(v => (v + 0.5) / 16);
 export const bayer = (x: number, y: number) => TROSKEL[(y & 3) * 4 + (x & 3)]!;
+// en färg #rrggbb som tre tal 0–255, som tre tal 0–1, och en lista färger 0–1 i följd (till bildprogrammen)
+export const rgb255 = (hex: string) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+export const rgb01 = (hex: string) => rgb255(hex).map(v => v / 255);
+export const platt = (fs: readonly string[]) => new Float32Array(fs.flatMap(rgb01));
 // färgen mellan a (f = 0) och b (f = 1), som tal 0xrrggbb
 export function mix(a: number, b: number, f: number) {
   const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - f) + ((b >> sh) & 255) * f);

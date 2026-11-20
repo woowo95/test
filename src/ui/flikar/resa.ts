@@ -5,17 +5,12 @@
 import { DAGBOK, RESA, SAKER, redogorelseAv, type Agare, type Redogorelse } from '../../sim';
 import { clockTxt, esc, vemLank } from '../hjalp';
 import { s, ui } from '../lage';
-import { notisVal } from '../notiser';
+import { redogKlick } from '../notiser';
 import type { Flik } from '../panel';
 
 export const resa: Flik = {
   namn: 'Resan', knapp: 'person', html: () => resaHtml(redogorelseAv(s, ui.resaNr)),
-  klick(el) {
-    const b = el.closest<HTMLElement>('[data-resa]');
-    if (!b) return false;
-    ui.resaNr = Number(b.dataset.resa); ui.tab = 'resa'; notisVal.oppen = false;
-    return true;
-  },
+  klick: redogKlick('resa', 'resa', nr => { ui.resaNr = nr; }),
 };
 
 const namn = (id: number) => s.people.find(p => p.id === id)?.name ?? 'någon';

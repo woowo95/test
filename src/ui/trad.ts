@@ -9,7 +9,7 @@
 import { rasterPa } from '../palett';
 import * as PIXI from 'pixi.js';
 import { FARGER, kornPa } from '../palett';
-import { brus as vn, platsHash as hash } from './pixel';
+import { brus as vn, platsHash as hash, sinHash3 } from './pixel';
 import { fotSkugga, skuggTrad } from './skugga';
 import { BUSK_FORMER, buskPx } from './buske';
 
@@ -76,7 +76,7 @@ function torrakaPx(h: number, s: number) {
 // och kronan i klungor av blad, ljusa uppe till vänster och en mörk kant nedtill och till höger. På vintern kala grenar med
 // snö ovanpå. Den torra björken har alla grenar utan löv, en avbruten topp, flagnande bark och tickor. Slumpen är
 // bildstilens (hs och vs), så att björkarna blir som de godkända; skuggan på marken kommer med skuggorna (steg 5.1.8).
-const hs = (x: number, y: number, s = 0) => { const h = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); };
+const hs = sinHash3;
 const RAMP: Record<string, number> = { kol: 0, jord: 4, senap: 8, rost: 12, oliv: 16, barr: 20, skiffer: 24, ben: 28 };
 const I = (r: string, t: number) => RAMP[r] + t;
 type Pkt = Map<string, number>;

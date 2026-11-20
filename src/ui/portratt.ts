@@ -46,12 +46,12 @@ function showTip(id: number) {
   const p = byId(s, id), el = portEls.get(id), tip = $('portTip');
   if (!p || !el || !alive(p)) { hideTip(); return; }
   tipId = id;
-  const m = moodOf(p, s.now);
+  const m = moodOf(p, s.now), why = uppgiftVid(p)?.why, lagst = lagstBehov(p), h = halsa(p); // skälet ur samma uppgift som den som syns
   tip.innerHTML = `<div class="tiphead">${portrattImg(skapad(s, p), 'big')}<h4>${esc(p.name)}</h4>${figurSvg(skapad(s, p), 'kortfigur', 'Figuren')}</div><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${yrkeNamn(s, p) ? ' · ' + esc(yrkeNamn(s, p)!) : ''}</p>
-    <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
+    <p>${shortAct(p)}</p>${why ? `<p class="op">${esc(why)}</p>` : ''}
     <dl><dt>Humör</dt><dd>${bar(m, m < LAG.olycklig ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < LAG.hunger ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
-    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(halsa(p), halsa(p) < LAG.halsa ? 'low' : '', trend(p, 'health', halsa(p)))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>
-    ${lagstBehov(p) ? `<p class="op">Lägst just nu: ${esc(lagstBehov(p)!.namn.toLowerCase())}</p>` : ''}<p class="op">Tryck för att välja. Ögat i rutan följer.</p>`;
+    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(h, h < LAG.halsa ? 'low' : '', trend(p, 'health', h))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>
+    ${lagst ? `<p class="op">Lägst just nu: ${esc(lagst.namn.toLowerCase())}</p>` : ''}<p class="op">Tryck för att välja. Ögat i rutan följer.</p>`;
   const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
   tip.hidden = false;
   tip.style.top = `${Math.max(8, r.top - wrap.top - tip.offsetHeight - 6)}px`; // ovanför raden, som står längst ner (steg 5.3.3.4)

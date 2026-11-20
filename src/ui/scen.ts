@@ -47,7 +47,6 @@ export const lagerEfter = (nytt: PIXI.DisplayObject, fore: PIXI.DisplayObject) =
 app.stage.addChild(world);
 
 // ikoner som sprites i ett lager. Varje bildruta börjar från första spriten; de som blir över göms
-const textures: Record<string, PIXI.Texture> = {};
 export class Ikoner {
   private n = 0;
   private bilder: PIXI.Sprite[] = []; // egna bilder, så att lagret kan dela med annat (figurLayer)
@@ -58,12 +57,11 @@ export class Ikoner {
   // x, y = bildens övre vänstra hörn. Ingen bild vrids: det som står vridet har en egen bild (steg 3.10.7)
   add(k: string, x: number, y: number, sc: number, tint = 0xffffff) {
     if (!hasIcon(k)) return;
-    textures[k] ??= PIXI.Texture.from(iconCanvas(k), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     let sp = this.bilder[this.n++];
     if (!sp) { sp = new PIXI.Sprite(); this.bilder.push(sp); this.layer.addChild(sp); }
     sp.texture = ikonUtanSkugga(k); sp.scale.set(sc); // den halvgenomskinliga skuggan i bilden ritas aldrig som den är (steg 5.5.1): i ett lager med skugga blir den skuggbild, annars tas den bort
     (sp as PIXI.Sprite & { skuggIkon?: string }).skuggIkon = this.skugga ? k : undefined; sp.tint = tint; sp.visible = true;
-    sp.position.set(x, y); sp.zIndex = y + textures[k].height * sc; // bildens nederkant, i ett lager som sorteras
+    sp.position.set(x, y); sp.zIndex = y + iconCanvas(k).height * sc; // bildens nederkant, i ett lager som sorteras
   }
   end() { for (let i = this.n; i < this.bilder.length; i++) this.bilder[i].visible = false; }
 }

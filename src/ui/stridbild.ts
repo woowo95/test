@@ -3,7 +3,7 @@
 // visas när tiden som visas når dem: den som anfaller gör slagets rörelse en gång, i vapnets takt, och strecket till den som
 // träffas syns en kort stund. Ett slag i koden är ett slag i bilden, och inget ritas som inte har hänt. Filen ritar inget
 // själv (ingen PIXI), så att scenariot slagbild kan räkna att varje händelse blir ett ritat slag.
-import { type KartStrid, type Person, type SlagBild, type State, SEC, kartStrider, stridBild } from '../sim';
+import { type KartStrid, type Person, type SlagBild, type State, kartStrider, stridBild } from '../sim';
 
 export const SLAGBILD = {
   rorelse: 0.7, // slagets rörelse tar så här stor del av tiden till nästa anfall ...
@@ -46,4 +46,3 @@ export function kartKampe(s: State, p: Person) {
   }
   return undefined;
 }
-export { SEC };

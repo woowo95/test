@@ -1,4 +1,5 @@
 import { GUI, type GuiBild, type StenLage } from '../guibilder';
+import { bildDuk } from './bildduk';
 
 // Runstenarna och banden (steg 5.3.3.1): flikknapparna är runstenar i flikens färger med emblemet i mitten, i tre lägen:
 // stängd, öppen (fylld med flikens färg) och blek (fliken går inte att öppna än). Överst i varje flik står dess band med
@@ -13,10 +14,7 @@ const urls = new Map<GuiBild, string>();
 function url(b: GuiBild) {
   let u = urls.get(b);
   if (u) return u;
-  const c = document.createElement('canvas'); c.width = b.w; c.height = b.h;
-  const g = c.getContext('2d')!;
-  b.rader.forEach((rad, y) => [...rad].forEach((k, x) => { const f = b.pal[k]; if (f) { g.fillStyle = f; g.fillRect(x, y, 1, 1); } }));
-  u = c.toDataURL(); urls.set(b, u);
+  u = bildDuk(b).toDataURL(); urls.set(b, u);
   return u;
 }
 const img = (b: GuiBild, cls: string) => `<img class="${cls}" src="${url(b)}" width="${b.w}" height="${b.h}" alt="" draggable="false">`;

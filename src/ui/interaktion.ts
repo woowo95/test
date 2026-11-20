@@ -90,9 +90,57 @@ view.addEventListener('pointermove', e => {
 const lyft = (e: PointerEvent) => { fingrar.delete(e.pointerId); if (fingrar.size < 2) nyp = undefined; if (!fingrar.size) setTimeout(() => { nypt = false; }, 0); };
 view.addEventListener('pointerup', lyft);
 view.addEventListener('pointercancel', lyft);
+// det som går att trycka på där (gx, gy), i ordningen trycket väljer: vad trycket gör, eller undefined där inget finns. Trycket
+// och muspekaren frågar samma lista (kodgenomgången 95), så att en ny sak på kartan blir tryckbar och ger handen på ett ställe
+// kand = personen och djuret där, när de redan är framletade
+function vadAt(gx: number, gy: number, kand?: { p?: Person; dj?: number }): (() => void) | undefined {
+  const p = kand ? kand.p : personAt(gx, gy), dj = kand ? kand.dj : p ? undefined : djurAt(gx, gy);
+  if (p) return () => selectPerson(p.id);
+  const g = gastAt(gx, gy);
+  if (g !== undefined) return () => selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
+  if (dj !== undefined) return () => { ui.djurId = dj; visa('djur'); };
+  const sak = (k: string) => () => { ui.sak = k; visa('sak'); };
+  if (tornadoAt(gx, gy)) return sak('tornado'); // tornadon (steg 9.2.22)
+  const c = tileAt(gx, gy), i = c.y * W + c.x;
+  if (!inMap(c.x, c.y)) return undefined; // utanför kartan finns inget att visa
+  const fa = filtAt(gx, gy);
+  if (fa) return () => { ui.filtAt = fa; ui.byteNr = -1; if (valdFilt()) visa('filt'); };
+  const eld = fireAt(gx, gy);
+  if (eld !== undefined) return () => { ui.eld = eld ? eld - 1 : undefined; visa('eld'); };
+  const rs = runstenAt(s, c.x, c.y);
+  if (rs) return sak(`R:${rs.id}`); // runstenen (steg 10.6.1)
+  if (gravAt(s, c.x, c.y)) return sak(`g:${i}`); // graven (steg 8.5.1)
+  if (heligAt(s, c.x, c.y)) return sak(`h:${i}`); // den heliga platsen (steg 8.5.5)
+  const kv = kvarAt(s, c.x, c.y);
+  if (kv) return sak(`q:${kv.id}`); // det som blivit kvar av en människa (steg 8.2.3)
+  const sto = s.stockar?.find(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y);
+  if (sto) return sak(`v:${sto.id}`); // stocken, också på ett fält, en lagerplats eller vid en station
+  if (stubbeAt(c.x, c.y)) return sak(`u:${i}`); // stubben (steg 3.10.6)
+  const st = stationAt(s, c.x, c.y), stol = st ? undefined : stolAt(c.x, c.y);
+  if (stol) return () => { ui.stationId = stol.id; visa('station'); }; // stolen vid bänken eller bordet (steg 6.8.10), också på en lagerplats (steg 9.2.13)
+  const zi = storeAt(gx, gy);
+  if (zi) return () => valjLager(zi - 1, c);
+  if (st) return () => { ui.stationId = st.id; visa('station'); };
+  if (outPilesAt(c.x, c.y).length) return () => { ui.hogAt = c; visa('hog'); };
+  if (toaAt(s, c.x, c.y)) return sak(`f:${i}`);
+  const ma = mattaAt(s, c.x, c.y);
+  if (ma) return () => { ui.stationId = ma.id; visa('station'); }; // mattan under allt annat (steg 10.7.6)
+  const fl = faltAt(s, c.x, c.y);
+  if (fl) return () => valjFalt(fl, c.x, c.y);
+  const ha = hageAt(s, c.x, c.y);
+  if (ha) return sak(`H:${ha.id}`); // hagen (steg 9.8.4)
+  if (s.uppsatta?.some(q => q.x === c.x && q.y === c.y)) return sak(`a:${i}`); // den uppsatta facklan (steg 6.3.7)
+  const hus = husAt(c.x, c.y);
+  if (hus !== undefined) return () => { ui.husId = hus; visa('hus'); };
+  if (tradAt(c.x, c.y)) return sak(`r:${i}`); // trädet (steg 5.1.4.3)
+  if (buskeAt(c.x, c.y)) return sak(`b:${i}`); // busken (steg 6.5.3)
+  const sj = sjoAt(c.x, c.y);
+  if (sj >= 0) return () => { ui.sjoNr = sj; visa('sjo'); };
+  return undefined;
+}
 app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6 || nypt) return;
-  const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
+  const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), c = tileAt(gx, gy);
   if (e.pointerType === 'touch') visaTryckt(gx, gy);
   if (ui.testMode && ui.flytta >= 0) { flyttaHit(c.x, c.y); renderPanel(true); return; } // stationen som flyttas i testläget (steg 3.10.1)
   if (ui.testMode && ui.brandTest) { // branden börjar där man trycker (steg 4.5.6.6); trycket väljer ingen person eller sak
@@ -102,34 +150,7 @@ app.stage.on('pointertap', e => {
     return;
   }
   if (ui.testMode && ui.blixtTest) { testSvara(blixtTest(s, c.x, c.y).text); nyttSlag(s); renderPanel(true); return; } // blixten slår ner där (steg 6.4.7), flera i rad
-  const g = p ? undefined : gastAt(gx, gy), dj = p || g !== undefined ? undefined : djurAt(gx, gy);
-  if (p) selectPerson(p.id);
-  else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
-  else if (dj !== undefined) { ui.djurId = dj; visa('djur'); }
-  else if (tornadoAt(gx, gy)) { ui.sak = 'tornado'; visa('sak'); } // tornadon (steg 9.2.22)
-  else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
-  else if (filtAt(gx, gy)) { ui.filtAt = filtAt(gx, gy)!; ui.byteNr = -1; if (valdFilt()) visa('filt'); }
-  else if (fireAt(gx, gy) !== undefined) { const id = fireAt(gx, gy)!; ui.eld = id ? id - 1 : undefined; visa('eld'); }
-  else if (runstenAt(s, c.x, c.y)) { ui.sak = `R:${runstenAt(s, c.x, c.y)!.id}`; visa('sak'); } // runstenen (steg 10.6.1)
-  else if (gravAt(s, c.x, c.y)) { ui.sak = `g:${c.y * W + c.x}`; visa('sak'); } // graven (steg 8.5.1)
-  else if (heligAt(s, c.x, c.y)) { ui.sak = `h:${c.y * W + c.x}`; visa('sak'); } // den heliga platsen (steg 8.5.5)
-  else if (kvarAt(s, c.x, c.y)) { ui.sak = `q:${kvarAt(s, c.x, c.y)!.id}`; visa('sak'); } // det som blivit kvar av en människa (steg 8.2.3)
-  else if (s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) { ui.sak = `v:${s.stockar.find(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)!.id}`; visa('sak'); } // stocken, också på ett fält, en lagerplats eller vid en station (steg 8.1.6)
-  else if (stubbeAt(c.x, c.y)) { ui.sak = `u:${c.y * W + c.x}`; visa('sak'); } // stubben (steg 3.10.6)
-  else if (!stationAt(s, c.x, c.y) && stolAt(c.x, c.y)) { ui.stationId = stolAt(c.x, c.y)!.id; visa('station'); } // stolen vid bänken eller bordet (steg 6.8.10), också på en lagerplats (steg 9.2.13)
-  else if (zi) valjLager(zi - 1, c);
-  else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }
-  else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
-  else if (toaAt(s, c.x, c.y)) { ui.sak = `f:${c.y * W + c.x}`; visa('sak'); }
-  else if (mattaAt(s, c.x, c.y)) { ui.stationId = mattaAt(s, c.x, c.y)!.id; visa('station'); } // mattan under allt annat (steg 10.7.6)
-  else if (faltAt(s, c.x, c.y)) valjFalt(faltAt(s, c.x, c.y)!, c.x, c.y);
-  else if (hageAt(s, c.x, c.y)) { ui.sak = `H:${hageAt(s, c.x, c.y)!.id}`; visa('sak'); } // hagen (steg 9.8.4)
-  else if (s.uppsatta?.some(q => q.x === c.x && q.y === c.y)) { ui.sak = `a:${c.y * W + c.x}`; visa('sak'); } // den uppsatta facklan (steg 6.3.7)
-  else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
-  else if (tradAt(c.x, c.y)) { ui.sak = `r:${c.y * W + c.x}`; visa('sak'); } // trädet (steg 5.1.4.3)
-  else if (buskeAt(c.x, c.y)) { ui.sak = `b:${c.y * W + c.x}`; visa('sak'); } // busken (steg 6.5.3)
-  else if (sjoAt(c.x, c.y) >= 0) { ui.sjoNr = sjoAt(c.x, c.y); visa('sjo'); }
-  else avmarkera();
+  (vadAt(gx, gy, { p, dj: p ? undefined : djurAt(gx, gy) }) ?? avmarkera)();
 });
 // raden under testknapparna (steg 4.5.6.4): vad som hände, utan ordet Testläget, med stor bokstav först
 export function testSvara(text: string) {
@@ -189,10 +210,10 @@ app.stage.on('pointermove', e => {
     return;
   }
   showHover(gx, gy);
-  ui.hovered = personAt(gx, gy)?.id;
-  ui.djurHover = ui.hovered === undefined ? djurAt(gx, gy) ?? -1 : -1;
-  const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || tornadoAt(gx, gy) || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) !== undefined || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || hageAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) || stolAt(c.x, c.y) || tradAt(c.x, c.y) || buskeAt(c.x, c.y) || !!s.uppsatta?.some(q => q.x === c.x && q.y === c.y) || !!s.stockar?.some(q => Math.floor(q.x) === c.x && Math.floor(q.y) === c.y)) ? 'pointer' : 'grab';
+  const hp = personAt(gx, gy), dj = hp ? undefined : djurAt(gx, gy);
+  ui.hovered = hp?.id;
+  ui.djurHover = dj ?? -1;
+  view.style.cursor = vadAt(gx, gy, { p: hp, dj }) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; ui.djurHover = -1; });

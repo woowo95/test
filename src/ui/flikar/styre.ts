@@ -2,7 +2,7 @@ import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, tite
 import { iconImg } from '../../ikoner';
 import { bar, delRad, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
-import { lastSed, sedFormat, sedKlick, sedLista, sedVag } from './seder';
+import { lastSed, sedFormat, sedKlick, sedLista, sedRader, sedVag } from './seder';
 import type { Flik } from '../panel';
 
 // styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, vågskålarna, rättegångarna och de ledare byn haft.
@@ -28,10 +28,11 @@ function styretHtml() {
       : '<p class="muted">Byn har ingen ledare just nu. Ingen vuxen som kan ledarskap är vald ännu.</p>';
     // en sed som inte är upplåst står sist som en grå rad (steg 11.1.14), som i Seder
     const oppenSkal = (v: (typeof VAGSKALAR)[number]) => v.sed ? st.oppna.includes(v.id) : false;
+    const dragen = sedRader(); // en gång för alla vågskålar
     const skalar = [...VAGSKALAR.filter(oppenSkal), ...VAGSKALAR.filter(v => !oppenSkal(v))].map(v => {
       if (!oppenSkal(v)) return lastSed(v.namn);
       const d = SEDER[v.sed!], x = s.seder.v[v.sed!] ?? 0;
-      return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!)}${sedLista(v.sed!)}</li>`;
+      return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!, dragen)}${sedLista(v.sed!, dragen)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
     return `${ledare}<div class="phead"><div><h3>Maktens seder</h3></div>${flikLank('seder', 'Alla seder')}</div><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
@@ -66,11 +67,18 @@ export const styre: Flik = {
 const ordAv = (v: number, ord: string[]) => { const x = Math.max(0, v); return x < 0.05 ? ord[0] : ord[Math.min(ord.length - 1, 1 + Math.floor((x - 0.05) / (0.95 / (ord.length - 1))))]; };
 // tystnaden (steg 10.4.10): vem den gäller och hur hårt
 const tystVarde = (v: number) => v < 0.05 || !s.styre?.tystnad ? 'ingen' : `${s.styre.tystnad.namn} nämns ${v < 0.4 ? 'mer sällan' : v < 0.75 ? 'sällan' : 'nästan aldrig'}`;
+// varje påbuds värde i ord, en rad per påbud (kodgenomgången 283: ett nytt påbud utan egen rad syns som typfel)
+const lager = (k: 'ved' | 'mat') => (v: number) => `${k} för ${num(onskatDygn(k, v))} år`; // förrådsmålen i år (steg 11.1.65)
+const tre = (v: number, ord: [string, string, string]) => v < -0.33 ? ord[0] : v > 0.33 ? ord[2] : ord[1];
 const VARDE: Record<Pabud, (v: number) => string> = {
-  matlager: v => `mat för ${num(onskatDygn('mat', v))} år`, vedlager: v => `ved för ${num(onskatDygn('ved', v))} år`, // förrådsmålen i år (steg 11.1.65)
-  torkat: v => `${Math.round(torkAndel(v) * 100)} %`, vinter: v => ordAv(v, ['som vanligt', 'några fler', 'många fler']),
-  bygg: v => ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']), vakt: v => v < -1 / 3 ? 'färre vakter' : v > 1 / 3 ? 'fler vakter' : 'som vanligt',
-  han: v => v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas', tystnad: tystVarde,
+  matlager: lager('mat'),
+  vedlager: lager('ved'),
+  torkat: v => `${Math.round(torkAndel(v) * 100)} %`,
+  bygg: v => ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']),
+  vinter: v => ordAv(v, ['som vanligt', 'några fler', 'många fler']),
+  vakt: v => tre(v, ['färre', 'som vanligt', 'fler']),
+  han: v => tre(v, ['förbjudet', 'ogillas', 'tillåtet']),
+  tystnad: tystVarde,
   utfarder: v => v < -0.5 ? 'håll er hemma' : v > 0.5 ? 'utfärder är viktiga' : 'ingen hållning', // tre lägen (steg 12.1.27)
 };
 const varde = (k: Pabud, v: number) => VARDE[k](v);

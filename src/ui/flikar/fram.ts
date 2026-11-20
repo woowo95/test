@@ -5,23 +5,17 @@
 import { BUDSKAP, FRAM_AV, FramMinne, SPORT_AV, framBerattelse, framMinneAv, sakNamn, timeLabel } from '../../sim';
 import { och } from '../../sim/ord';
 import { iconImg } from '../../ikoner';
-import { clockTxt, esc, framKnapp, matchKnapp, vemLank } from '../hjalp';
+import { clockTxt, esc, framKnapp, matchKnapp, vemLank, andring } from '../hjalp';
 import { s, ui } from '../lage';
-import { notisVal } from '../notiser';
+import { redogKlick } from '../notiser';
 import type { Flik } from '../panel';
 
 export const fram: Flik = {
   namn: 'Framträdandet', knapp: 'person', html: () => framHtml(framMinneAv(s, ui.framNr)),
-  klick(el) {
-    const b = el.closest<HTMLElement>('[data-fram]');
-    if (!b) return false;
-    ui.framNr = Number(b.dataset.fram); ui.tab = 'fram'; notisVal.oppen = false;
-    return true;
-  },
+  klick: redogKlick('fram', 'fram', nr => { ui.framNr = nr; }),
 };
 
 // ändringen som tal och pil
-const andring = (a: number, b: number) => { const d = b - a; return d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} −${-d}` : '='; }; // minustecknet är − (steg 11.1.60)
 const medel = (v: number[]) => v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0;
 
 export function framHtml(m?: FramMinne) {

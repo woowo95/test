@@ -68,12 +68,10 @@ export function drag(s: State, p: Person, djup = 0): Skapad {
 // är arg, den som flyr eller gömmer sig är rädd, och annars humöret som orden i invånarlistan (moodWord). Ett sår i huvudet
 // har förband när det är omlagt, ett blåmärke eller krossår i huvudet syns som blåmärke, och blodet syns när ett sår blöder
 export const HUMORGRANS = { glad: 0.75, nojd: 0.55, lugn: 0.4 };
-const RADD = new Set(['fly', 'gomma']);
 function kropp(s: State, p: Person, del: Record<string, string | null>) {
   const t = p.task, gor = t?.act;
   const m = moodOf(p, s.now);
-  const humor = gor === 'sova' && t?.phase === 'do' ? 'sover' : utbrottNu(s, p) ? 'arg' : gor && RADD.has(gor) ? 'radd'
-    : stridAnsikte(s, p, gor) ?? (m > HUMORGRANS.glad ? 'glad' : m > HUMORGRANS.nojd ? 'nojd' : m > HUMORGRANS.lugn ? 'lugn' : 'ledsen'); // i striden argt eller allvarligt (steg 10.2.95)
+  const humor = gor === 'sova' && t?.phase === 'do' ? 'sover' : utbrottNu(s, p) ? 'arg' : stridAnsikte(s, p, gor) ?? (m > HUMORGRANS.glad ? 'glad' : m > HUMORGRANS.nojd ? 'nojd' : m > HUMORGRANS.lugn ? 'lugn' : 'ledsen'); // i striden argt eller allvarligt (steg 10.2.95)
   const huvud = (p.skador ?? []).filter(w => w.d === 'huvud');
   const forband = huvud.some(w => w.f) ? ['forband-huvud'] : [];
   if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
@@ -104,6 +102,16 @@ export function skapad(s: State, p: Person): Skapad {
 // spelet (Kläder)
 const REDSKAP = new Map<string, string>(KARNA.PR.delar.filter((d: { sort: string; sak?: string }) => d.sort === 'redskap' && d.sak).map((d: { id: string; sak: string }) => [d.sak, d.id]));
 const HALSSMYCKE: Partial<Record<string, string>> = { benband: 'smycke-2', tandband: 'smycke-3', fjaderband: 'smycke-9' };
+// plaggen på figuren och i porträttet, för byborna och gästerna (kodgenomgången 189): plaggets slag → fältet i kläderna. Manteln
+// och kappan syns som en rock tills Björn valt (steg 8.3.14); byxorna och skjortan syns på kartfiguren (steg 9.2.58)
+type Klader = NonNullable<Skapad['klader']>;
+type Mat = keyof typeof KLADMATERIAL;
+const PLAGG_FALT: Record<string, (k: Klader, mat: Mat) => void> = {
+  rock: (k, m) => { k.rock = KLADMATERIAL[m].namn; }, mantel: (k, m) => { k.rock = KLADMATERIAL[m].namn; }, kappa: (k, m) => { k.rock = KLADMATERIAL[m].namn; },
+  skor: k => { k.skor = true; }, byxor: (k, m) => { k.byxor = KLADMATERIAL[m].namn; }, skjorta: k => { k.skjorta = true; },
+  balte: k => { k.balte = true; }, axelrem: k => { k.axelrem = true; }, ryggsack: k => { k.ryggsack = true; },
+};
+const klada = (k: Klader, a: { plagg: string; mat: Mat }) => PLAGG_FALT[a.plagg]?.(k, a.mat);
 function utrustad(s: State, p: Person, u: Skapad) {
   const t = s === visad ? uppgiftVid(p) : p.task, r = utrustning(s, p, !!t && load(t, s) > 0); // vid tiden som visas, som kartan (steg 6.1.1); en by som inte visas (texterna i testerna): nu
   u.klader = { rock: null, skor: false, balte: false, axelrem: false, ryggsack: false, krokar: 0 };
@@ -113,13 +121,7 @@ function utrustad(s: State, p: Person, u: Skapad) {
     const a = pl.ting && kladAv(pl.ting.k);
     if (!a) continue;
     if ((a.plagg === 'halsband' || a.plagg === 'tecken') && HALSSMYCKE[a.mat]) u.del.smycke = HALSSMYCKE[a.mat]!;
-    if (a.plagg === 'rock' || a.plagg === 'mantel') u.klader.rock = KLADMATERIAL[a.mat].namn; // manteln syns som en rock tills Björn valt (steg 8.3.14)
-    else if (a.plagg === 'skor') u.klader.skor = true;
-    else if (a.plagg === 'byxor') u.klader.byxor = KLADMATERIAL[a.mat].namn; // byxorna och skjortan syns på kartfiguren (steg 9.2.58)
-    else if (a.plagg === 'skjorta') u.klader.skjorta = true;
-    else if (a.plagg === 'balte') u.klader.balte = true;
-    else if (a.plagg === 'axelrem') u.klader.axelrem = true;
-    else if (a.plagg === 'ryggsack') u.klader.ryggsack = true;
+    klada(u.klader, a);
   }
   const h = r.hoger.ting ?? r.axel.ting ?? (r.krok.ting?.hos === p.id ? r.krok.ting : undefined); // det i handen, också när det hänger i bältet medan hen bär
   u.del.redskap = (h && REDSKAP.get(h.k)) ?? null;
@@ -154,7 +156,6 @@ BESK_ANSIKTE.del = ansiktsDel;
 // rövarna, var och en med sin chans, och vargskinnsrocken likaså; byborna kan inte tillverka dem. Vapnet i handen när det
 // finns som del, humöret arg i striden och rädd på flykten
 // handlaren (steg 8.1.8): en person som kolonisterna, slumpad en gång ur namnet och byns frö
-const HARV = new Map<string, Skapad>();
 // det gästen bär, på figuren och i porträttet (steg 10.1.8): plaggen och vapnet är saker (s.gastTing), ärren är personens, och
 // luvan, duken och den mörka skinnrocken är rövarnas dräkt (GASTUTRUSTNING i sim/gast.ts)
 function buren(s: State, r: Person, d: Skapad): Skapad {
@@ -162,43 +163,33 @@ function buren(s: State, r: Person, d: Skapad): Skapad {
   for (const t of gastTingOf(s, r)) {
     if (t.bar !== r.id) continue;
     const a = kladAv(t.k); if (!a) continue;
-    if (a.plagg === 'rock' || a.plagg === 'mantel' || a.plagg === 'kappa') klader.rock = KLADMATERIAL[a.mat].namn;
-    else if (a.plagg === 'skor') klader.skor = true;
-    else if (a.plagg === 'byxor') klader.byxor = KLADMATERIAL[a.mat].namn;
-    else if (a.plagg === 'skjorta') klader.skjorta = true;
-    else if (a.plagg === 'balte') klader.balte = true;
+    if (a.plagg !== 'axelrem' && a.plagg !== 'ryggsack') klada(klader, a); // gästerna har ingen axelrem eller ryggsäck på figuren
   }
   if (dr?.rovarskinn) klader.rock = 'rovarskinn';
   const arr = r.arr?.find(a => a.d === 'huvud');
   return { ...d, klader, del: { ...d.del, huvudbonad: dr?.bonad === 'luva' ? 'bonad-9' : dr?.bonad === 'duk' ? 'bonad-10' : d.del.huvudbonad ?? null, arr: arr ? `arr-${arr.n}` : null, redskap: REDSKAP.get(gastVapen(s, r) ?? '') ?? null } };
 }
-export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k', p?: Person): Skapad { // p = handlaren som person: då syns det hen bär
-  const k = s.seed + ':' + namn + ':' + sex;
-  let d = HARV.get(k);
+// en gäst slumpad en gång ur byns frö, namnet och könet. Rövaren bär inget eget på huvudet eller halsen och inga egna kläder,
+// bara det hen har (buren); handlaren behåller det slumpade. Slaget står i minnets nyckel, inte i slumpen
+const GARV = new Map<string, Skapad>();
+function gastSkapad(s: State, slag: 'handlare' | 'rovare', namn: string, sex: 'm' | 'k'): Skapad {
+  const k = s.seed + ':' + namn + ':' + sex, nyckel = slag + ':' + k;
+  let d = GARV.get(nyckel);
   if (!d) {
     let h = s.seed | 0;
     for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 0x01000193);
     d = KARNA.slumpPerson(KARNA.slumpFran(h), { kon: sex === 'k' ? 'kvinna' : 'man', alder: 'vuxen' }) as Skapad;
     d.sjuk = false; d.kyla = false; d.blod = false; d.forband = [];
-    if (HARV.size > 200) HARV.clear();
-    HARV.set(k, d);
+    if (slag === 'rovare') { d.del.huvudbonad = null; d.del.smycke = null; d.klader = { rock: null, skor: false, balte: false }; }
+    if (GARV.size > 400) GARV.clear();
+    GARV.set(nyckel, d);
   }
+  return d;
+}
+export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k', p?: Person): Skapad { // p = handlaren som person: då syns det hen bär
+  const d = gastSkapad(s, 'handlare', namn, sex);
   return p ? buren(s, p, d) : d;
 }
-const RARV = new Map<string, Skapad>();
 export function rovarSkapad(s: State, r: Person, humor: string): Skapad {
-  const k = s.seed + ':' + r.name + ':' + r.sex;
-  let d = RARV.get(k);
-  if (!d) {
-    let h = s.seed | 0;
-    for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 0x01000193);
-    const rn = KARNA.slumpFran(h), kon = r.sex === 'k' ? 'kvinna' : 'man';
-    d = KARNA.slumpPerson(rn, { kon, alder: 'vuxen' }) as Skapad;
-    d.del.huvudbonad = null;
-    d.del.smycke = null; d.forband = []; d.sjuk = false; d.kyla = false; d.blod = false;
-    d.klader = { rock: null, skor: false, balte: false };
-    if (RARV.size > 200) RARV.clear();
-    RARV.set(k, d);
-  }
-  return { ...buren(s, r, d), humor, blod: r.blod < 0.7 };
+  return { ...buren(s, r, gastSkapad(s, 'rovare', r.name, r.sex)), humor, blod: r.blod < 0.7 };
 }

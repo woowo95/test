@@ -7,6 +7,7 @@
 import { BynsKarta, FLOD_NEDRE, LANDMARKEN, LEDER, LedId, ledKlass, MARK_IDS, O_KANT, syns, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
 import { hash3 } from '../sim/slump';
 import { farg } from '../palett';
+import { rgb255 } from './pixel';
 
 export const VK = 16; // punkter per världsruta
 
@@ -57,7 +58,7 @@ export const TECKEN: Record<string, string[]> = {
 };
 
 // RGBA ur en färg i paletten
-const rgb = (hex: string) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+const rgb = rgb255;
 const RGB: Record<string, number[]> = Object.fromEntries(Object.entries(TECKENPAL).map(([k, h]) => [k, rgb(h)]));
 const MARKRGB = MARK_IDS.map(k => { const [r, n] = VARLDMARK[k].farg; return rgb(farg(r, n)); });
 export const FLODFARG = farg('skiffer', 2);

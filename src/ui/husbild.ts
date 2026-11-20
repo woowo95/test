@@ -102,6 +102,15 @@ function bild(s: State, b: Bit) {
   cache.set(key, c); formCache.set(key, m);
   return { key, c, m };
 }
+// bilden per husbit sparas så länge byns tid är densamma (kodgenomgången 417): husen, grannarna och smutsen ändras bara när ett
+// slag räknats, och då ändras s.now. Annars räknas nyckeln (åtta grannar, golvet hos dem, huset) för varje bit varje bildruta
+let bitMinne: { s?: State; now: number; r: Map<number, ReturnType<typeof bild>> } = { now: NaN, r: new Map() };
+function bildNu(s: State, b: Bit) {
+  if (bitMinne.s !== s || bitMinne.now !== s.now) bitMinne = { s, now: s.now, r: new Map() };
+  if (bitMinne.r.has(b.id)) return bitMinne.r.get(b.id);
+  const r = bild(s, b); bitMinne.r.set(b.id, r);
+  return r;
+}
 // genomskinligheten: det som byggs syns svagt, och en sliten vägg bleknar (som förut)
 // ritar det som har en pixelbild och säger vilka rutor det var, så att foremal.ts hoppar över dem
 export function ritaHus(s: State, bits: Bit[]) {
@@ -109,7 +118,7 @@ export function ritaHus(s: State, bits: Bit[]) {
   const klara = new Set<number>(), former: { x: number; y: number; t: PIXI.Texture }[] = [], tak: { x: number; y: number; t: PIXI.Texture; form?: PIXI.Texture }[] = [];
   for (const b of bits) {
     if (b.k === 'vagg' && (b.m !== 'timmer' || (b.b <= 0 && b.mat <= 0))) continue;
-    const r = bild(s, b);
+    const r = bildNu(s, b);
     if (!r) continue;
     let t = tex.get(r.key);
     if (!t) { t = PIXI.Texture.from(r.c, { scaleMode: PIXI.SCALE_MODES.NEAREST }); tex.set(r.key, t); }

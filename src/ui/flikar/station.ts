@@ -129,7 +129,7 @@ export const station: Flik = {
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
     ${tb ? `<h3>Tillbehör</h3><dl class="kv">${tb}</dl>` : ''}
-    ${st.k === 'scen' && fritidLista({ scen: st.id }) ? `<h3>Framträdanden här</h3>${fritidLista({ scen: st.id, antal: 10 })}` : ''}
+    ${(f => f ? `<h3>Framträdanden här</h3>${f}` : '')(st.k === 'scen' ? fritidLista({ scen: st.id, antal: 10 }) : '')}
     ${testRad(st.id)}`;
   },
 };

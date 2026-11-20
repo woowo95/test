@@ -227,7 +227,8 @@ function glid(id: number, q: { x: number; y: number }, nu: number) {
   return ox || oy ? { x: q.x + ox, y: q.y + oy } : q;
 }
 function sprid(ppl: Person[]) {
-  const q = ppl.map(p => ({ id: p.id, ...platsAv(p) })), bas = q.map(o => ({ x: o.x, y: o.y }));
+  const q = ppl.map(p => ({ id: p.id, ...platsAv(p) }));
+  const bas = q.map(o => ({ x: o.x, y: o.y }));
   for (let varv = 0; varv < 3; varv++) for (let i = 0; i < q.length; i++) for (let j = i + 1; j < q.length; j++) {
     const a = q[i], b = q[j];
     if (!a.still || !b.still) continue;
@@ -296,8 +297,6 @@ const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.
 // tiden kvar till förblödning (steg 9.5.14): en röd siffra i minuter över huvudet när den är kort (HALSA.kortTim)
 const blodStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 20, fill: 0xa14808, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
 const blodTexter: PIXI.Text[] = [];
-// de ur byn som slåss i testarenan: de syns bara i striden (ui/arena.ts)
-export const dolda = new Set<number>();
 // figurerna, en sprite per person som återanvänds
 const figurer = new Map<number, PIXI.Sprite>(), sedd = new Set<number>();
 function figurAv(id: number) {
@@ -355,7 +354,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
   for (const g of gaster()) {
     // i striden på kartan (steg 10.1.14): kämpen är personen, och armen gör slagets rörelse just när ett slag sker (ui/stridbild.ts)
     const gp = s.people.find(q => q.id === g.id && q.gast), kk = gp && kartKampe(s, gp), sl = kk ? slagAv(g.id, ui.nu) : undefined;
-    const r = g.rovare, sk = kk ? { k: kk.k, mot: sl?.mot ?? kk.mot } : undefined, ligger = !!g.ligger || !!kk?.ligger, x = g.x * TS, y = g.y * TS;
+    const r = g.rovare, sk = kk ? { k: kk.k, mot: sl?.mot ?? kk.mot } : undefined, ligger = !!kk?.ligger, x = g.x * TS, y = g.y * TS;
     let rikt = riktning(g.id, g.x, g.y);
     const strid = sk && !ligger ? STRIDBILD[sk.k.vapen as string] ?? STRIDBILD.hand : undefined, ab = strid ? arbetsBild(strid, kk ? (sl ? Math.min(3, Math.floor(sl.andel * 4)) : 0) : slag() - g.id) : undefined;
     if (sk?.mot) rikt = sk.mot.x < g.x ? 'vast' : 'sida';
@@ -380,11 +379,25 @@ function ritaRovarna(skugga: PIXI.Graphics) {
   }
   bytesIkoner.end();
 }
+// varje persons utseende och dess text (nyckeln till den sparade bilden), räknat om högst en gång i sekunden eller när uppgiften
+// ändrats (kodgenomgången 403 och 435). Ett ansikte eller plagg kan byta bild upp till en sekund senare. Minnet ligger här och
+// inte i skapad(), för testerna ändrar en person och frågar igen vid samma klockslag
+const utseenden = new Map<number, { s: typeof s; sek: number; uppg: string; q: ReturnType<typeof skapad>; k: string }>();
+function utseendeAv(p: Person) {
+  const sek = Math.floor(performance.now() / 1000), u = uppgiftVid(p), uppg = u ? `${u.act}|${u.phase}|${u.ref}|${u.tool}` : '';
+  let m = utseenden.get(p.id);
+  if (!m || m.s !== s || m.sek !== sek || m.uppg !== uppg) {
+    if (utseenden.size > 400) utseenden.clear();
+    const q = skapad(s, p);
+    utseenden.set(p.id, m = { s, sek, uppg, q, k: JSON.stringify(q) });
+  }
+  return m;
+}
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   sedd.clear();
   const skugga = skuggFolk().clear().beginFill(0xffffff); // skuggorna vid fötterna (steg 5.1.8, ui/skugga.ts)
-  const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
+  const ppl = living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
   { const nu = performance.now(); for (const [id, q] of synlig) synlig.set(id, glid(id, q, nu)); }
   markIcons.start();
@@ -399,7 +412,7 @@ export function drawPeople(t: number) {
     const q = posOf(p);
     let x = q.x * TS, y = q.y * TS;
     pos.set(p.id, q);
-    const tk = uppgiftVid(p), sleeping = !!tk && soverNu(p, tk); // den som går till sängen går upprätt och lägger sig först i bädden (steg 9.2.89)
+    const tk = uppgiftVid(p), sleeping = !!tk && soverNu(p, tk), barNagot = !!tk && load(tk, s) > 0; // bär något, en gång per person (kodgenomgången 434) // den som går till sängen går upprätt och lägger sig först i bädden (steg 9.2.89)
     // figuren ur porträttgeneratorn (steg 5.2.3.2, ui/folkbild.ts) med fötterna under punkten; den som sover eller inte kan
     // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen har en egen, lägre mall i hel skala (steg 5.5.5)
     const sp = figurAv(p.id), ligger = sleeping || !kanGa(p) || !!kartKampe(s, p)?.ligger, liten = a < ALDER.smabarn;
@@ -418,20 +431,21 @@ export function drawPeople(t: number) {
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
     const strid = gor === 'strid' && !ligger ? stridNu(p) : undefined;
-    const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && (gor === 'bygga' || !(tk && load(tk, s) > 0)) ? ARBETEN[gor] : undefined; // byggaren har materialet i händerna medan hen bygger (steg 9.2.90)
+    const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && (gor === 'bygga' || !barNagot) ? ARBETEN[gor] : undefined; // byggaren har materialet i händerna medan hen bygger (steg 9.2.90)
     const ab = arb ? arbetsBild(arb, strid?.ruta ?? slag() + p.id) : undefined; // i striden på kartan styr slaget rörelsen, inte klockan
     if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
     else if (ab && !vidBank && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
     const steg = st === 'ga' ? GANG[(slag() + p.id) % 4] : undefined;
     const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
-    let arm: Arm = tk && load(tk, s) > 0 && gor !== 'bygga' ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
+    let arm: Arm = barNagot && gor !== 'bygga' ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
     if (steg && arm === 'hanga') arm = steg[1];
     if (ab) arm = ab.arm;
     // sängen (steg 6.8.5): den som sover i en färdig säng ligger mitt i den med huvudet i bäddens huvudände (vänster i den
     // liggande bädden, uppåt i den stående), och bara under ett byggt täcke (ett tillbehör i bädden, skinnfällen) har hen täcke
     const iS = iSangen(s, q.x, q.y, sleeping), sang = iS?.sang; // (ui/stalle.ts, steg 12.1.14)
     if (iS) rikt = iS.rikt;
-    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: !!iS?.tacke, smabarn: liten || undefined }, p.id === markerad || p.id === harSaken);
+    const ut = utseendeAv(p);
+    sp.texture = figurTex(ut.q, { rikt, ben, arm, ligga: ligger, tacke: !!iS?.tacke, smabarn: liten || undefined }, p.id === markerad || p.id === harSaken, ut.k);
     const w = sp.texture.width, h = sp.texture.height;
     sp.anchor.set(0); sp.rotation = 0; sp.scale.x = 1;
     if (sang) {
@@ -457,7 +471,7 @@ export function drawPeople(t: number) {
     // det man bär syns på figuren, hur lite det än är (steg 3.6.5): framför kroppen, och med en kartbild ur bildstilen i sin
     // naturliga storlek (steg 5.1.2.1)
     // varje hand sitt eget (steg 6.1.2): två slag syns i var sin hand, ett slag framför kroppen som förut
-    if (tk && load(tk, s) > 0) {
+    if (barNagot) {
       // i famnen (steg 6.8.3): figurens hand i armläget bära, räknat från figuren, så att saken följer den mjukt
       const ih = bordaIHander(s, p, tk, utrustning(s, p, true)), sv = rikt === 'vast' ? -1 : 1, fh = !ligger && figurHand(sp.texture);
       const fx = fh ? sp.position.x + fh[0] + 0.5 : x, fy = fh ? sp.position.y + fh[1] + 0.5 : y - r * 0.4;
@@ -534,7 +548,7 @@ export function drawPeople(t: number) {
   let b = 0;
   for (const p of living(s)) {
     const kvar = tidKvar(p);
-    if (kvar >= HALSA.kortTim || dolda.has(p.id)) continue;
+    if (kvar >= HALSA.kortTim) continue;
     const tx = blodTexter[b] ?? (blodTexter[b] = (() => { const t2 = new PIXI.Text('', blodStyle); t2.scale.set(0.5); t2.anchor.set(0.5, 1); labels.addChild(t2); return t2; })());
     b++;
     const txt = `${Math.max(1, Math.round(kvar * 60))} min`; // med enhet (steg 11.1.61)

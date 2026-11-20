@@ -9,6 +9,7 @@ import { s, ui } from './lage';
 import { renderPanel, visa } from './panel';
 import { talVal } from './flikar/tal';
 import { harNotiser, notisHtml, notisKlick, notisKnapp, notisTitel, notisVal } from './notiser';
+import { bildDuk } from './bildduk';
 
 interface Ruta {
   html(t: number): string; // symbolen och talet
@@ -23,6 +24,9 @@ const vindPil = (t: number) => {
   return `<svg width="${px}" height="${px}" viewBox="0 0 8 8" style="transform:rotate(${Math.round(v.rikt * 180 / Math.PI)}deg);vertical-align:middle;shape-rendering:crispEdges" aria-hidden="true"><path d="M0 3h5V1l3 3-3 3V5H0z" fill="currentColor"/></svg>`;
 };
 const vindText = (t: number) => { const v = vaderNu(s, t); return `${v.vind >= 0.5 ? 'Hård vind' : v.vind > 0 ? 'Blåsigt' : 'Svag vind'} från ${vindFran(v.rikt)}`; };
+// byns rikedom en gång per uppdatering (kodgenomgången 437 och 447): talet och texten delar den så länge byns tid är densamma
+let rikMinne: { s: typeof s; now: number; r: ReturnType<typeof rikedomDelar> } | undefined;
+const rikNu = () => rikMinne && rikMinne.s === s && rikMinne.now === s.now ? rikMinne.r : (rikMinne = { s, now: s.now, r: rikedomDelar(s) }).r;
 export const RUTOR: Record<string, Ruta> = {
   // temperaturen och vädret (steg 2.11.1): vädrets symbol och graderna
   calTemp: {
@@ -31,9 +35,9 @@ export const RUTOR: Record<string, Ruta> = {
   },
   // byns rikedom (varde.ts); ett tryck öppnar förrådet (panel.ts, steg 5.3.3.4)
   calRik: {
-    html: () => { const r = rikedomDelar(s); return `${tecknet('sym_vag', '⚖', 16)} ${Math.round(r.forrad + r.redskap + r.hus)}`; },
+    html: () => { const r = rikNu(); return `${tecknet('sym_vag', '⚖', 16)} ${Math.round(r.forrad + r.redskap + r.hus)}`; },
     title: () => {
-      const r = rikedomDelar(s), sum = r.forrad + r.redskap + r.hus, a = s.delning?.andel ?? 0;
+      const r = rikNu(), sum = r.forrad + r.redskap + r.hus, a = s.delning?.andel ?? 0;
       return `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar). Tryck för att öppna förrådet\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${lagGaller(s, 'skatt') ? `Skatten fyller byns förråd: ${Math.round(SKATT.procent * 100)} % av det var och en äger varje år` : a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
     },
   },
@@ -67,10 +71,7 @@ export function renderRaden(t = ui.nu) {
 
 // vågbandet (Björns ja till g_vag): rutan på 8 × 7 punkter upprepas över hela bredden, i hel skala, på grundens beige
 {
-  const V = GUI.vag, c = document.createElement('canvas'); c.width = V.w; c.height = V.h;
-  const g = c.getContext('2d')!;
-  g.fillStyle = V.bg; g.fillRect(0, 0, V.w, V.h);
-  V.rader.forEach((rad, y) => [...rad].forEach((k, x) => { const f = V.pal[k]; if (f) { g.fillStyle = f; g.fillRect(x, y, 1, 1); } }));
+  const V = GUI.vag, c = bildDuk(V, { bakgrund: V.bg });
   const rot = document.documentElement.style;
   rot.setProperty('--vag', `url(${c.toDataURL()})`); rot.setProperty('--vag-h', `${V.h}px`);
 }
