@@ -167,6 +167,7 @@ const DEF = {
   spanne: { var: 'plagg', mangd: 1, min: 3 }, // ett spänne av järn, pynt (steg 12.2.10)
   isborr: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // steg 12.2.11
   eldstal: { var: 'sak', av: { jarn: 1 }, min: 3, slag: 'liten', tek: 'smedja' }, // steg 12.2.12
+  ullsax: { var: 'sak', av: { jarn: 1 }, min: 3, slag: 'liten', tek: 'smedja' }, // steg 12.5.2
   sag: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // handsågen (steg 12.5.1): ligger vid klyvplatsen
   svard: { var: 'sak', av: { jarn: 3, lader: 1 }, min: 5, slag: 'stor', tek: 'vapensmide' }, // byns första rena vapen (steg 12.2.9)
   jarnspjut: { var: 'sak', av: { jarn: 1, grenar: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // smids (steg 12.2.8)

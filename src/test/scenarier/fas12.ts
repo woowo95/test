@@ -844,3 +844,32 @@ SCENARIER.sag = {
     ];
   },
 };
+
+SCENARIER.ullsax = {
+  text: 'Ullsaxen (steg 12.5.2): en sax från smedjan (1 järn, 3 minuter) som klipper ett får på en tredjedel av tiden mot kniven; en by utan sax klipper med kniven som förut',
+  kor: () => {
+    const R = SIM.RECEPT.ullsax, rad = SIM.ARBETEN.find(a => a.id === 'klippa')!;
+    // ett får vars ull vuxit ut, och vad den vuxne väljer med kniven och med saxen
+    const val = (sax: boolean) => {
+      const s = SIM.createState(2, START); klockan(s, 10);
+      const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0];
+      SIM.put(s, 'levfar', 1, { [p.id]: 1 }); SIM.stepBoskap(s);
+      const d = SIM.tamdjurOf(s).find(q => q.art === 'far')!; d.ull = 1;
+      if (sax) SIM.addTool(s, 'ullsax', p); else SIM.setAmount(s, 'kniv', 1);
+      const v = { act: 'vila', why: '', dur: 0 } as SIM.Val;
+      const ok = rad.prova({ s, p, v } as never);
+      return { ok, tool: v.tool, min: v.dur / SIM.MIN, s, p };
+    };
+    const kniv = val(false), sax = val(true);
+    // saxen slits för varje får
+    const t = SIM.tingOf(sax.s).find(q => q.k === 'ullsax')!, c0 = t.c;
+    sax.p.task = { act: 'klippa', phase: 'do', tx: sax.p.x, ty: sax.p.y, until: sax.s.now, carry: 0, why: '', tool: 'ullsax' } as SIM.Task;
+    SIM.wearUsed(sax.s, sax.p, 1); sax.p.task = undefined;
+    return [
+      [`ullsaxen: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan`, R.av.jarn === 1 && Object.keys(R.av).length === 1 && R.min === 3 && R.tek === 'smedja' && !!SIM.JARNSAKER.ullsax],
+      [`utan sax klipps fåret med kniven som förut (${kniv.tool}, ${kniv.min} min)`, !!kniv.ok && kniv.tool === 'kniv'],
+      [`med saxen går det på en tredjedel av tiden (${sax.tool}, ${sax.min.toFixed(2)} min)`, !!sax.ok && sax.tool === 'ullsax' && Math.abs(kniv.min / sax.min - 3) < 1e-9],
+      [`saxen slits för varje får (${c0.toFixed(4)} till ${t.c.toFixed(4)}) och håller ${SIM.ACTS.klippa.redskap!.ullsax.haller} klippningar`, t.c < c0 && SIM.ACTS.klippa.redskap!.ullsax.haller === 400],
+    ];
+  },
+};
