@@ -2,7 +2,7 @@
 import { createState, living, DAY, type Person } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor } from './hjalp';
+import { SCENARIER, kor, vardPa } from './hjalp';
 
 SCENARIER.sjukdom = {
   text: 'Steg 9.5.1–9.5.2 och 10.10.12: varje sjukdom är en rad i SJUKDOMAR med orsak, smitta, inkubation, längd, stadier, följder, vård, dödlighet per ålder och immunitet. Sjukdomen och motståndet växer båda; vinner sjukdomen dör man av den, annars blir man frisk, och immun efter mässlingen och kopporna. Den som förlorar mot förkylningen får lunginflammation i stället för att dö',
@@ -161,10 +161,10 @@ SCENARIER.lakekonst = {
     const sar = (inf: number): SIM.Skada => ({ d: 'armV' as SIM.Kroppsdel, k: 'skarsar' as SIM.SkadaTyp, g: 0.5, b: 0, inf });
     q.x = p.x; q.y = p.y;
     q.skador = [sar(0.1)];
-    SIM.vardKlar(s, p, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, ref: q.id });
+    vardPa(s, p, q, false);
     const ren0 = (q.skador[0].ren ?? s.now) - s.now, efter = p.skill.lakekonst, vaxte = efter > fore;
     p.skill.lakekonst = 16; q.skador = [sar(0.1)];
-    SIM.vardKlar(s, p, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, ref: q.id });
+    vardPa(s, p, q, false);
     const ren1 = (q.skador[0].ren ?? s.now) - s.now;
     // en äldre sparning utan färdigheten
     const g = SIM.cloneState(s); g.v = 25; for (const x of g.people) delete (x.skill as Partial<Record<string, number>>).lakekonst; // sparad före uppgradering 26

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medBank, medHus, setMat, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { SCENARIER, kor, klockan, medBank, medHus, setMat, vardPa, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
@@ -251,13 +251,12 @@ SCENARIER.vatskor = {
 SCENARIER.salva = {
   text: 'Steg 9.5.10: salvan blir läkesalva. Tekniken Läkesalva kräver Örtte och örtköket, salvan görs bara i örtköket och har kvalitet, och läggs på såret: den sänker risken för infektion, dämpar en infektion som börjat och hjälper brännskador att läka, mer ju bättre den är',
   kor: () => {
-    const { TEKNIK, TILLVERKA, STATIONER, SALVA, salvaVerkan, vardKlar, halsaSteg, addTool } = SIM;
+    const { TEKNIK, TILLVERKA, STATIONER, SALVA, salvaVerkan, halsaSteg, addTool } = SIM;
     const tek = TEKNIK.find(t => t.id === 'lakesalva');
     const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     addTool(s, 'naverask', g).inne = { v: 'salva', n: 1, q: 2 };
     q.skador = [{ d: 'armV', k: 'skarsar', g: 0.5, b: 0 }];
-    g.x = q.x; g.y = q.y;
-    vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id });
+    vardPa(s, g, q);
     const lagd = q.skador![0].salva === 2 && SIM.vatskaAv(s, 'salva') === 0;
     const w = q.skador![0], risk = (k?: number) => 1 - SALVA.skydd * salvaVerkan({ ...w, salva: k });
     // en infektion som börjat går tillbaka med salva och växer utan
@@ -278,10 +277,10 @@ SCENARIER.salva = {
 SCENARIER.protes = {
   text: 'Steg 9.5.11: proteserna. Kryckan, träbenet och kroken görs bara vid snickarbänken och ögonlappen för hand eller vid slöjdbänken. Den som förlorat ett ben får ett träben och går igen ungefär hälften så bra, den som förlorat en hand får en krok och en del av greppet, och ögonlappen är bara utseende. En vårdare sätter protesen på, och den som behöver den mest får den först (steg 10.11.19)',
   kor: () => {
-    const { RECEPT: R, addTool, rorlighet, handighet, syn, forlora, protesVill, STATIONER, vardKlar, vardVal } = SIM;
+    const { RECEPT: R, addTool, rorlighet, handighet, syn, forlora, protesVill, STATIONER, vardVal } = SIM;
     const s = createState(1, START), [p, q, g] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     // vårdaren g sätter protesen på (steg 10.11.19): behandlingen protes i VARD
-    const satt = (o: SIM.Person) => { g.x = o.x; g.y = o.y; vardKlar(s, g, { act: 'varda', phase: 'do', tx: o.x, ty: o.y, until: s.now, carry: 0, why: '', ref: o.id }); };
+    const satt = (o: SIM.Person) => vardPa(s, g, o);
     const bank = ['krycka', 'traben', 'krok'].every(k => (R as Record<string, SIM.ReceptRad>)[k].bank === 'snickarbank' && (R as Record<string, SIM.ReceptRad>)[k].bara) && STATIONER.flatarbank.gor.includes('ogonlapp') && !(R.ogonlapp as SIM.ReceptRad).bara;
     const hel = rorlighet(p);
     forlora(s, p, 'benV', 'höggs av'); p.skador = undefined;
@@ -314,9 +313,9 @@ SCENARIER.protes = {
 
 // förbanden (steg 9.5.15): remsan före mossan, en remsa ur ett plagg i nöd, avsnörningen och sömnaden
 function forbanden(): [string, boolean][] {
-  const { HALSA, RECEPT: R, vardKlar, halsaSteg, addTool, setAmount } = SIM;
+  const { HALSA, RECEPT: R, halsaSteg, addTool, setAmount } = SIM;
   const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
-  const vard = (c: SIM.State, gg: SIM.Person, qq: SIM.Person) => { gg.x = qq.x; gg.y = qq.y; vardKlar(c, gg, { act: 'varda', phase: 'do', tx: qq.x, ty: qq.y, until: c.now, carry: 0, why: '', ref: qq.id }); };
+  const vard = vardPa;
   const recept = R.remsa.av.skinn === 1 && R.remsa.ger === 2 && R.remsa_lin.av.lintyg === 1;
   // remsan läggs före mossan
   setAmount(s, 'remsa', 1); setAmount(s, 'mossa', 1);
@@ -492,15 +491,14 @@ SCENARIER.undsattning = {
 SCENARIER.pilisaret = {
   text: 'Steg 9.5.21: vapnet i såret. En pil eller ett kastspjut sitter kvar, pluggar såret så att det blöder mindre och hindrar delen, och dras ut som en behandling som får såret att blöda mer en stund',
   kor: () => {
-    const { blodning, delFel, vardKlar, halsaSteg, HALSA, VAPEN } = SIM;
+    const { blodning, delFel, halsaSteg, HALSA, VAPEN } = SIM;
     const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     const pil = !!VAPEN.bage.kast.fastnar;
     q.skador = [{ d: 'armV', k: 'sticksar', g: 0.5, b: 1 }];
     const utan = blodning(q), felUtan = delFel(q, 'armV');
     q.skador[0].fast = 1;
     const med = blodning(q), felMed = delFel(q, 'armV');
-    g.x = q.x; g.y = q.y;
-    vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id });
+    vardPa(s, g, q);
     const w = q.skador![0], drogs = !w.fast && w.drog !== undefined;
     w.b = 1; w.f = undefined; const efter = blodning(q);
     s.now += (HALSA.draTim + 0.1) * SIM.HOUR; halsaSteg(s, q, 1); const sen = blodning(q);
@@ -585,9 +583,9 @@ SCENARIER.infbalans = {
 
 // att sätta benet och spjälan (steg 9.5.28)
 function sattaBenet(): [string, boolean][] {
-  const { vardKlar, kanGa, handighet, addTool, setAmount, HALSA } = SIM;
+  const { kanGa, handighet, addTool, setAmount, HALSA } = SIM;
   const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
-  const vard = () => { g.x = q.x; g.y = q.y; vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id }); };
+  const vard = () => vardPa(s, g, q);
   setAmount(s, 'grenar', 10); setAmount(s, 'remsa', 4);
   g.skill.lakekonst = HALSA.sattaLak;
   q.skador = [{ d: 'benV', k: 'benbrott', g: 0.6, b: 0, t0: s.now }]; vard();

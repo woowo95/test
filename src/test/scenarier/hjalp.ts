@@ -103,6 +103,11 @@ export const hittaBy = (hogst: number, sedan: number, ai: number, duger: (b: Sta
   for (let seed = 1; seed < hogst; seed++) { const b = SIM.createState(seed, START); b.founded -= 20 * DAY; b.kal = SIM.nyKalender(b.now - sedan, ai); if (duger(b, seed)) return b; }
   return undefined;
 };
+// g vårdar q och vården blir klar, med g bredvid q om flytta är satt
+export const vardPa = (s: State, g: Person, q: Person, flytta = true) => {
+  if (flytta) { g.x = q.x; g.y = q.y; }
+  SIM.vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id });
+};
 // ett tomt styre utan ledare, med lagarna
 export const medLagar = (s: State, lagar: { id: string; t: number; straff: number; av: number; om: string }[]) => {
   s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar } as unknown as State['styre'];
