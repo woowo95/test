@@ -8,6 +8,12 @@ import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
 import { jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
 
+// en vargflock med n vargar som stryker omkring vid (x, y) med hungern hunger, med nästa nummer i byn och det som står i mer
+const nyFlock = (s: State, n: number, x: number, y: number, hunger: number, mer: Partial<SIM.Vargflock> = {}) => {
+  const id = s.vargNr = (s.vargNr ?? 0) + 1;
+  const f: SIM.Vargflock = { id, vargar: Array.from({ length: n }, (_, j) => 10_000_000 + id * 8 + j), x, y, mx: x, my: y, gar: s.now + 48 * HOUR, hunger, gor: 'stryker', ...mer };
+  (s.vargar ??= []).push(f); return f;
+};
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
   kor: () => {
@@ -1973,9 +1979,7 @@ SCENARIER.varg = {
     // en by i istiden med en flock nära
     const by = (h: number, seed = 1) => { const s = createState(seed, START); s.kal = nyKalender(s.now, 0); klockan(s, h); tandEld(s); return s; };
     const flock = (s: State, n: number, dx: number, hunger: number) => {
-      const c = bynsMitt(s), id = s.vargNr = (s.vargNr ?? 0) + 1;
-      const f: SIM.Vargflock = { id, vargar: Array.from({ length: n }, (_, j) => 10_000_000 + id * 8 + j), x: c.x + dx, y: c.y, mx: c.x + dx, my: c.y, gar: s.now + 48 * HOUR, hunger, gor: 'stryker' };
-      (s.vargar ??= []).push(f); return f;
+      const c = bynsMitt(s); return nyFlock(s, n, c.x + dx, c.y, hunger);
     };
     // vakten ser flocken på natten och väcker byn
     const nv = by(2); kor(nv, 0.5);
@@ -2040,9 +2044,8 @@ SCENARIER.kallar = {
       setMat(s, { vilt: 60, bar: 60 });
       const vuxna = living(s).filter(q => ageOf(q, s.now) >= 18 && ageOf(q, s.now) < 55);
       for (const q of vuxna) { const t = SIM.addTool(s, 'flintspjut', q); t.hos = q.id; q.pot.mod = 10; q.pot.karisma = 10; }
-      const c = bynsMitt(s), id = s.vargNr = 1;
-      const f: SIM.Vargflock = { id, vargar: [10_000_008, 10_000_009], x: c.x + 14, y: c.y, mx: c.x + 14, my: c.y, gar: s.now + 48 * HOUR, hunger: 0.5, gor: 'stryker', sedd: s.now };
-      (s.vargar ??= []).push(f);
+      const c = bynsMitt(s); s.vargNr = 0;
+      const f = nyFlock(s, 2, c.x + 14, c.y, 0.5, { sedd: s.now });
       return { s, f, vuxna };
     };
     // försöker tills jakten blir av (högst 40 gånger); svarar med den som kallade och hur många som gick
@@ -2143,8 +2146,7 @@ SCENARIER.vargskydd = {
       if (hus) medHus(s);
       for (let i = 0; i < 4; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
       kor(s, 0.2);
-      const c = bynsMitt(s), id = s.vargNr = (s.vargNr ?? 0) + 1;
-      (s.vargar ??= []).push({ id, vargar: [10_000_000 + id * 8, 10_000_001 + id * 8], x: c.x + 9, y: c.y, mx: c.x + 9, my: c.y, gar: s.now + 48 * HOUR, hunger: 0.1, gor: 'stryker' });
+      const c = bynsMitt(s); nyFlock(s, 2, c.x + 9, c.y, 0.1);
       let gom = 0, svaga = 0, iHus = 0, vidEld = 0, forsvar = 0, medVapen = 0, foralder = 0;
       kor(s, 0.4);
       // steg 9.2.121: medan flocken står nära och har setts nyligen håller larmet, också efter VARG.vakenTim, och ingen vuxen samtalar
@@ -2221,8 +2223,7 @@ SCENARIER.tradorr = {
       if (!ensam) { ute.left = q.now; ute.task = undefined; } // (den ensamma långt bort behövs bara när flocken ska kunna jaga hellre: med vägen runt hindren når vargarna hen)
       p.pot.mod = mod; p.x = inneX; p.y = inneY;
       p.task = { act: 'gomma', phase: 'do', tx: inneX, ty: inneY, until: q.now + 20 * HOUR, carry: 0, why: 'Vargar är nära, gömmer sig i huset', dark: !isLight(q.now) };
-      const id = q.vargNr = (q.vargNr ?? 0) + 1;
-      (q.vargar ??= []).push({ id, vargar: [0, 1, 2].map(j => 10_000_000 + id * 8 + j), x: inneX + 8, y: inneY, mx: inneX + 8, my: inneY, gar: q.now + 48 * HOUR, hunger: 1, gor: 'stryker' });
+      nyFlock(q, 3, inneX + 8, inneY, 1);
       let inne = 0, vantade = 0, gomde = 0, stangd = false; const t0 = q.now, dorr0 = q.stat?.vargDorrStrid ?? 0;
       const seen = new Set<string>();
       kor(q, 4, q => {
@@ -2282,9 +2283,7 @@ SCENARIER.stridkronika = {
     for (const x of jag) SIM.addTool(v, 'flintspjut', x);
     let jakter = 0, forsta = 0;
     for (let i = 0; i < 6; i++) {
-      const id = v.vargNr = (v.vargNr ?? 0) + 1, c = bynsMitt(v);
-      const f: SIM.Vargflock = { id, vargar: [10_000_000 + id * 8], x: c.x + 5, y: c.y, mx: c.x + 5, my: c.y, gar: v.now + 48 * HOUR, hunger: 0.5, gor: 'stryker' };
-      (v.vargar ??= []).push(f);
+      const c = bynsMitt(v), f = nyFlock(v, 1, c.x + 5, c.y, 0.5);
       const n0 = krn(v).length;
       SIM.vargStrid(v, f, jag.filter(x => x.health > 0), 'doda', 'på vargjakt'); slutStrider(v);
       const nya = slag(v).slice(n0);

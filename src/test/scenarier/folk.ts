@@ -1829,7 +1829,7 @@ SCENARIER.slagbild = {
 };
 
 SCENARIER.slagsmal = {
-  text: 'Slagsmål och lek i byn (steg 3.7.2): ett gräl kan bli ett slagsmål, striden räknas färdigt och sparas, skadorna blir riktiga skador, de som slåss står kvar och behoven väntar, vinnaren blir ett rykte, barn brottas på lek, närstriden och träffsäkerheten växer, och duck, parering och de nya skadorna finns i striden',
+  text: 'Slagsmål och lek i byn (steg 3.7.2): ett gräl kan bli ett slagsmål, striden räknas färdigt, skadorna blir riktiga skador, de som slåss står kvar och behoven väntar, vinnaren blir ett rykte, barn brottas på lek, närstriden och träffsäkerheten växer, och duck, parering och de nya skadorna finns i striden',
   kor: () => {
     const t = createState(21, START), ps = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen), [a, b] = ps;
     const n0 = a.skill.narstrid;
@@ -1841,15 +1841,7 @@ SCENARIER.slagsmal = {
     for (let i = 0; i < 4; i++) step(t, 1);
     const star = [a, b].every(x => x.task?.act === 'strid' && x.task.until > t.now), vantar = a.task?.act === 'strid' && !st.slut;
     for (let i = 0; i < 1500 && !st.slut; i++) step(t, SIM.nastaSteg(t));
-    const sparad = t.stridRapporter?.length === 1 && t.stridRapporter[0].orsak === 'för att pröva';
-    // samma by och samma slump ger samma strid igen
-    const t2 = createState(21, START), [a2, b2] = living(t2).filter(x => ageOf(x, t2.now) >= SIM.ALDER.vuxen);
-    for (const x of [a2, b2]) { x.pot.mod = 16; x.pot.aggression = 16; }
-    b2.x = a2.x + 1.2; b2.y = a2.y; a2.toa = 0.01;
-    const igen = SIM.kartStridBorja(t2, 'slagsmal', [[a2], [b2]], 'för att pröva').st;
-    for (let i = 0; i < 4; i++) step(t2, 1);
-    for (let i = 0; i < 1500 && !igen.slut; i++) step(t2, SIM.nastaSteg(t2));
-    const sammaIgen = JSON.stringify(igen.logg) === JSON.stringify(st.logg);
+    // (att rapporten sparas och att samma slump ger samma strid prövas i stridkarta)
     const skadad = (a.skador?.length ?? 0) + (b.skador?.length ?? 0) > 0 || st.kampar.every(k => !k.skador.length);
     const ovat = a.skill.narstrid > n0;
     const v = st.slut!.vinnare, vinnare = v === -1 ? undefined : [a, b][v];
@@ -1876,7 +1868,6 @@ SCENARIER.slagsmal = {
     u.v = 12; SIM.migrate(u);
     const upp = u.people.every(x => x.skill.narstrid >= 0 && x.skill.traff >= 0);
     return [
-      ['stridens rapport sparas i byn, och samma by och samma slump ger samma strid', sparad && sammaIgen],
       ['skadorna från striden blir skador på personerna', skadad],
       ['de som slåss står kvar i striden', star],
       ['närstriden växer av ett slagsmål', ovat],
