@@ -23,14 +23,14 @@ import { byId, alive, count, forstaGang, living, log } from './folk';
 
 export const MORKER = balans('morker', {
   fart: 0.6, // den som är vaken i totalmörker går och arbetar så här fort
-  eldR: 6, // en eld som brinner för fullt lyser så här många rutor bort ...
+  eldR: 9, // en eld som brinner för fullt lyser så här många rutor bort (steg 12.1.156: hälften längre än förut) ...
   branningR: 2, // en kolmila eller blästerugn som brinner lyser lite, så här många rutor bort (steg 12.2.1 och 12.2.3)
   eldMin: 0.5, // ... och en liten eld så här stor del av det
 });
 // facklan (steg 6.3.6)
 export const FACKLA = balans('fackla', {
   brinnTim: 5, // en fackla brinner så här många timmar innan den brunnit ut
-  r: 4, // ... och lyser så här många rutor bort
+  r: 6, // ... och lyser så här många rutor bort (steg 12.1.156)
 });
 
 // de uppsatta facklorna (steg 6.3.7)
@@ -224,7 +224,7 @@ export function finishUppsatt(s: State, p: Person, tk: { tx: number; ty: number 
 export const LJUS = balans('talgljus', {
   brinnTim: 8, // ett talgljus brinner så här många timmar
   vaxTim: 16, // ... och ett vaxljus (steg 10.10.24)
-  r: 2, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet)
+  r: 3, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet; steg 12.1.156)
   min: 5, // minuter att ställa fram ett
 });
 // ljusens sorter (steg 10.10.23): en rad per sort, med hur många timmar den brinner. Sakerna hör till gruppen talgljus

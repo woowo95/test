@@ -34,3 +34,4 @@
 - 12.1.154 (vänd mot bänken): bara bilden ändras (ui/stalle.ts, ui/manniskor.ts); skyldig `npm run utseende` och koll (scenariot stalle är grönt).
 - 12.1.161 (förrådslistan får en bakgrund): bara stilen i template.html; skyldig `npm run utseende` (datorn och mobilen).
 - 12.1.157 (namn vid alla på kartan): ui/namnskyltar.ts, ui/manniskor.ts, två platshållare i ikoner.ts (roll_ledare, roll_prast) och valkorten f12_roll_prast och f12_roll_ledare i bildstil/fas12.js (bildstilen inte publicerad, `node bildstil/kontrollera.mjs --bilder` inte körd); skyldig `npm run utseende` (rollsymbolerna i hel skala) och koll.
+- 12.1.156 (större sken): ändrar spelet (MORKER.eldR 6 → 9, FACKLA.r 4 → 6, LJUS.r 2 → 3); skyldig koll med nytt facit, `npm run likhet` och `npm run utseende`. Scenariot uppsatt prövar nu ljuset i hela byn i en testby (en ny by ligger hela inom eldens ljus). Bilderna före och efter i granskning/sken/.

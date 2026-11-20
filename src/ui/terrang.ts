@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
+import { MORKER, sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
 import { s, ui } from './lage';
 import { posOf } from './manniskor';
 import { gaster } from './gaster';
@@ -115,13 +115,13 @@ function kantHash(x: number, y: number) {
 // mörkret och eldens sken
 // (steg 5.1.1.4, 5.1.7.2): paletten ett steg mörkare i skymningen och tre mitt i natten, med raster, och ljuset runt varje eld (ui/natt.ts)
 // Molnen och regnet gör skymningen och natten mörkare på samma sätt, en del av ett steg (vaderMork i ui/vaderbild.ts, steg 5.5.1); på dagen inte (steg 10.2.20)
-// eldens ljus når så många rutor när den brinner för fullt (steg 6.8.15); glöden och en svag eld lyser mindre, i samma förhållande
-const ELD_LJUS = 14, FOLK_LJUS = 1.5; // ... och ljuset kring en människa så många rutor (steg 9.2.69)
-const FACKEL_STORRE = 1.25, FACKEL_FLADDER = 0.04; // de andra ljusens sken är så här mycket större än deras ljus i simuleringen, och alla sken fladdrar så här mycket (steg 10.2.99)
-// skimret (steg 11.1.68): lugnare än förut (halva utslaget, hälften så fort), och samma för elden och facklan. Facklans sken ritas
-// lika stort som lägereldens; bara bilden, inte hur långt ljuset når i spelet (LJUSKALLOR i sim/ljus.ts)
+// skenet följer ljuset i simuleringen (steg 12.1.156): det man ser upplyst är det folk kan arbeta i. Inom ljusets räckvidd i
+// spelet (MORKER.eldR, FACKLA.r och LJUS.r i sim/ljus.ts) är det fullt ljust, och utanför tonar skenet ut till SKEN gånger
+// räckvidden (natt.ts är fullt ljust ut till ungefär 0,6 av skenets radie). Glöden lyser GLOD av en eld som brinner för fullt
+const SKEN = 1 / 0.6, GLOD = 0.12, FOLK_LJUS = 1.5; // ... och ljuset kring en människa så många rutor (steg 9.2.69)
+const FACKEL_FLADDER = 0.04; // alla sken fladdrar så här mycket (steg 10.2.99)
+// skimret (steg 11.1.68): lugnt, med litet utslag och långsam takt, och samma för elden och facklan
 const skimmer = (t: number, x: number, y: number) => 1 + FACKEL_FLADDER * Math.sin(t / 180 + x * 7 + y * 3) * Math.sin(t / 75 + x);
-const FACKLOR = new Set(['fackla', 'uppsatt']);
 export function drawNight(t: number) {
   // på dagen är kartan ljus överallt (steg 10.2.20): vädret gör bara skymningen och natten mörkare. Förut gjorde en mulen himmel
   // (0,5 steg, avrundat till ett helt) hela kartan till skymning mitt på dagen
@@ -129,13 +129,13 @@ export function drawNight(t: number) {
   if (m > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
     const I = fireHeat(s, e);
     if (!(I > 0 || emberOn(s, e))) continue;
-    const f = eldXY(s, e), k = I > 0 ? 0.45 + 0.55 * I : 0.12;
-    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * ELD_LJUS * k * (I > 0 ? skimmer(t, f.x, f.y) : 1), k: -(I > 0 ? 1 : 0.5) }); // negativ: eldens form (natt.ts)
+    const f = eldXY(s, e), k = I > 0 ? MORKER.eldMin + (1 - MORKER.eldMin) * I : GLOD; // som eldens ljus i simuleringen (LJUSKALLOR.eld)
+    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * MORKER.eldR * SKEN * k * (I > 0 ? skimmer(t, f.x, f.y) : 1), k: -(I > 0 ? 1 : 0.5) }); // negativ: eldens form (natt.ts)
   }
   // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
   // (en fackla som någon bär lyser där bäraren syns i bilden, steg 10.2.19)
   // (steg 10.2.99: facklan lyser som en liten eld, större än människans cirkel, i eldens form och fladdrande)
-  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l, fl = skimmer(t, q.x, q.y); facklor.push(q); eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * (FACKLOR.has(n) ? ELD_LJUS : l.r * FACKEL_STORRE) * fl, k: -0.85 }); }
+  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l, fl = skimmer(t, q.x, q.y); facklor.push(q); eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * l.r * SKEN * fl, k: -0.85 }); }
   // ljuset kring människorna (steg 9.2.69): bara i bilden; den som bär en fackla har facklans ljus
   // (där var och en syns i bilden, inte där hen står i slutet av slaget, steg 10.2.19)
   // alla människor på kartan, byborna och gästerna (rövarna, handlaren, främlingen; steg 10.2.99)
