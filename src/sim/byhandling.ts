@@ -24,7 +24,7 @@ import { RAD, rikMal } from './rad';
 import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
 import { trampaFard, sallskapTyngd } from './leder';
-import { vagRutor } from './vagval';
+import { sparadVag, vagRutor } from './vagval';
 import { anfallUtfall, BYANFALL, flockStorlek, forsvarare, vinstChans } from './radanfall';
 import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
@@ -553,9 +553,9 @@ handlarKrok.hem = (s, rad, last) => {
 handlarKrok.borta = (s, rad) => { const vl = s.varld; if (vl?.farder) vl.farder = vl.farder.filter(x => !(x.handlare && x.fran === rad)); };
 // var färden är nu, i världens rutor (för kartan): längs vägen ut och sedan hem
 const fardRutor = (vl: Varlden, w: number, a: number, b: number) => {
-  const v = vl.vagar?.find(x => x.fs === 'fots' && x.fran === a && x.till === b);
+  const v = sparadVag(vl, 'fots', a, b);
   if (v) return vagRutor(v, w);
-  const u = vl.vagar?.find(x => x.fs === 'fots' && x.fran === b && x.till === a);
+  const u = sparadVag(vl, 'fots', b, a);
   return u ? vagRutor(u, w).reverse() : undefined;
 };
 // rutorna färden går över mellan tiderna ta och tb, på vägen ut och hem (för mötena på vägen, steg 11.6.12)

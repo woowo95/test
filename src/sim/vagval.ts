@@ -98,9 +98,21 @@ export function vagRutor(vag: VarldVag, w: number): number[] {
   return r;
 }
 
+// de sparade vägarna slås upp per par (steg 12.1.11): ett index per lista, som byggs om när listan fått nya vägar. Den första
+// vägen för ett par gäller, som när listan letades igenom
+const vagIndex = new WeakMap<VarldVag[], { n: number; m: Map<string, VarldVag> }>();
+export function sparadVag(vl: Varlden, fs: Fardsatt, a: number, b: number): VarldVag | undefined {
+  const l = vl.vagar;
+  if (!l?.length) return undefined;
+  let ix = vagIndex.get(l);
+  if (!ix) vagIndex.set(l, ix = { n: 0, m: new Map() });
+  for (; ix.n < l.length; ix.n++) { const x = l[ix.n], k = `${x.fs}:${x.fran}:${x.till}`; if (!ix.m.has(k)) ix.m.set(k, x); }
+  return ix.m.get(`${fs}:${a}:${b}`);
+}
+
 // vägen mellan två rutor med ett färdsätt: den sparade, annars räknas den och sparas i världen
 export function vagMellan(vl: Varlden, v: VarldMark, a: number, b: number, fs: Fardsatt, nu: number): VarldVag | undefined {
-  const sparad = vl.vagar?.find(x => x.fs === fs && x.fran === a && x.till === b);
+  const sparad = sparadVag(vl, fs, a, b);
   if (sparad) return sparad;
   const r = billigasteVag(vl, v, a, b, fs);
   if (!r) return undefined;

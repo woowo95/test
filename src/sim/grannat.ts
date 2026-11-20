@@ -7,7 +7,7 @@ import { balans } from './balans';
 import { VARLD, VarldMark } from './varldmark';
 import { Varlden } from './varlden';
 import { VarldPlats } from './landmarken';
-import { narmasteMal, packaVag } from './vagval';
+import { narmasteMal, packaVag, sparadVag } from './vagval';
 
 export const GRANNAT = balans('grannat', {
   antal: 6, // så många grannar har varje by
@@ -21,7 +21,7 @@ export function byGrannar(vl: Varlden, v: VarldMark, p: VarldPlats, nu: number):
   const vagar = vl.vagar ??= [];
   return funna.map(f => {
     const kostnad = Math.round(f.kostnad * 1000) / 1000;
-    if (!vagar.some(x => x.fs === 'fots' && x.fran === a && x.till === f.till)) vagar.push({ fran: a, till: f.till, fs: 'fots', steg: packaVag(f.rutor, v.w), kostnad, t: nu });
+    if (!sparadVag(vl, 'fots', a, f.till)) vagar.push({ fran: a, till: f.till, fs: 'fots', steg: packaVag(f.rutor, v.w), kostnad, t: nu });
     return { nr: byar.get(f.till)!.nr, kostnad, dygn: Math.round(kostnad / VARLD.gangPerDygn * 100) / 100 };
   });
 }

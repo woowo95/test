@@ -30,7 +30,7 @@ import { viktOf } from './saker';
 import { grundvarde } from './varde';
 import { SILVER, silverMellan } from './gruva';
 import { VARLD, VARLDMARK, MARK_IDS, VarldMark } from './varldmark';
-import { kostnader, vagMellan, vagRutor, VarldVag } from './vagval';
+import { kostnader, sparadVag, vagMellan, vagRutor, VarldVag } from './vagval';
 import { delFel, GADELAR } from './halsa';
 import { ageOf, ALDER } from './folk';
 import { snoPaMarken } from './vader';
@@ -1096,7 +1096,7 @@ export function resaVaror(s: State, p: Person, klan: number | undefined): { varo
 // dygnen dit som personen räknar dem: den sparade vägens, annars fågelvägen
 function dygnDit(s: State, fran: { x: number; y: number }, till: { x: number; y: number }) {
   const vl = s.varld!, v = varldMark(s)!, a = fran.y * v.w + fran.x, b = till.y * v.w + till.x;
-  const sparad = vl.vagar?.find(x => x.fs === 'fots' && x.fran === a && x.till === b);
+  const sparad = sparadVag(vl, 'fots', a, b);
   return (sparad ? sparad.kostnad : Math.hypot(till.x - fran.x, till.y - fran.y) * RESA.omvag) / VARLD.gangPerDygn;
 }
 export interface ResPlan { mal: number; namn: string; skal: ResmalId; uppdrag?: number; varde: number; dygn: number; fara: number; sc: number; varor: [string, number][]; kop?: [string, number][] }
