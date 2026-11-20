@@ -15,12 +15,13 @@ export const TILLVERKA: Record<string, TillverkDef> = {
   skara_remsor: { act: 'skara_remsor', ger: 'remsa', n: 2, av: RECEPT.remsa.av!, min: RECEPT.remsa.min, tek: 'kniv', vill: 4, text: 'Skär remsor av ett skinn till förband.', forsta: '{namn} skar byns första remsor till förband.' }, // steg 9.5.15
   skara_lin: { act: 'skara_lin', ger: 'remsa', n: 2, av: RECEPT.remsa_lin.av!, min: RECEPT.remsa_lin.min, tek: 'kniv', vill: 4, text: 'Skär remsor av lintyg till förband.', forsta: '{namn} skar byns första remsor av lin.' }, // går först när byn har lintyg
   koka_vatten: { act: 'koka_vatten', ger: 'kokt', n: 1, av: {}, min: 2, tek: 'kruka', vill: 4, vatten: true, eld: true, text: 'Kokar vatten i en lerkruka.', forsta: '{namn} kokade vatten för första gången, så att det blev rent.' }, // steg 9.5.25
-  mala_korn: { act: 'mala_korn', ger: 'mjol', n: 4, av: { korn: 4 }, min: 4, tek: 'kvarnsten', vill: 8, text: 'Mal korn till mjöl vid kvarnstenen.', forsta: '{namn} malde byns första mjöl.' }, // steg 9.6.22
-  salta_fisk: { act: 'salta_fisk', ger: 'saltfisk', n: 4, av: { fisk: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in fisk så att den håller.', forsta: '{namn} saltade in byns första fisk.' }, // saltet (steg 9.6.19)
+  mala_korn: { act: 'mala_korn', ger: 'mjol', n: RECEPT.mjol.ger!, av: RECEPT.mjol.av!, min: RECEPT.mjol.min, tek: 'kvarnsten', vill: 8, text: 'Mal korn till mjöl vid kvarnstenen.', forsta: '{namn} malde byns första mjöl.' }, // steg 9.6.22
+  salta_fisk: { act: 'salta_fisk', ger: 'saltfisk', n: RECEPT.saltfisk.ger!, av: RECEPT.saltfisk.av!, min: RECEPT.saltfisk.min, tek: 'tork', vill: 8, text: 'Saltar in fisk så att den håller.', forsta: '{namn} saltade in byns första fisk.' }, // saltet (steg 9.6.19)
   // varje köttslag saltas till samma saltade kött (steg 10.3.14); svinet före kon, som raderna alltid stått (projekten tar den första
   // vid lika värde)
   ...Object.fromEntries((['kott', 'vargkott', 'radjurkott', 'farkott', 'getkott', 'svinkott', 'kokott', 'fagelkott', 'bjornkott'] as const).map(k => [`salta_${k}`, {
-    act: `salta_${k}` as Act, ger: 'saltkott', n: 4, av: { [k]: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: `Saltar in ${SALTKOTT[k]} så att det håller.`, forsta: `{namn} saltade in byns första ${SALTKOTT[k]}.`,
+    act: `salta_${k}` as Act, ger: 'saltkott', n: RECEPT.saltkott.ger!, av: { [k]: RECEPT.saltkott.av!.kott, salt: RECEPT.saltkott.av!.salt }, min: RECEPT.saltkott.min, // receptet med köttslaget i stället för kött (steg 12.1.107)
+    tek: 'tork', vill: 8, text: `Saltar in ${SALTKOTT[k]} så att det håller.`, forsta: `{namn} saltade in byns första ${SALTKOTT[k]}.`,
   }])),
   krossa_saft: { act: 'krossa_saft', ger: 'saft', n: 5, av: { bar: 10 }, min: 3, tek: 'kruka', vill: 5, text: 'Krossar bär till saft i en mellanstor lerkruka.', forsta: '{namn} krossade bär till byns första saft.' }, // steg 9.6.9
   koka_buljong: { act: 'koka_buljong', ger: 'buljong', n: 4, av: { ben: 2 }, eller: { av: ['svamp', 'kal'], n: 1 }, min: 3, tek: 'kruka', vill: 1, vatten: true, eld: true, sjud: 15, text: 'Lägger ben och svamp eller kål med vatten i en lerkruka som får sjuda på elden.', forsta: '{namn} satte byns första buljong att sjuda på elden.' }, // steg 10.7.24
