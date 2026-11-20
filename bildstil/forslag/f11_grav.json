@@ -78,6 +78,31 @@
    ],
    "anteckning": "Graven är ett enkelt kors som Björn bad om: fem gråa stenar lagda platt på marken som ett plustecken, ritat rakt ovanifrån. Bilden är 11 × 11 punkter och ryms väl inom en ruta på världskartan, mindre än en människa. Inget står upp, så ingen sida eller framkant syns, och formen är lika åt alla fyra håll. Varje sten är en rundad klump med 2–3 punkter inne i en kontur av skiffer0. Stenarna delar kontur där de möts, så korset läses som en sammanhängande form, men de avskurna hörnen gör varje sten rund. Ljuset kommer uppifrån vänster: skiffer3 som en enda glanspunkt uppe till vänster, skiffer2 i mitten och skiffer1 nere till höger. Det gråa sticker ut mot gräset utan att använda de starka tonerna. Granskningen: Granskad mot reglerna; inget behövde rättas. Storleken på 11 × 11 punkter är rimlig mot kolonisten (14 × 20) och ryms väl i en ruta. Korset ligger platt och är ritat rakt ovanifrån, vilket stämmer för en sak som saknar höjd. Formen är spegelsymmetrisk åt båda hållen: armstenarna har 3 × 2 respektive 2 × 3 punkter inuti, mittstenen 3 × 3, och de ligger tätt så att plustecknet läses tydligt. Varje sten har kontur i skiffer0 och rundade hörn, med en enda glanspunkt i skiffer3 uppe till vänster, skiffer2 i mitten och skiffer1 nere till höger. Ljuset följer alltså regeln, och kornet skiljer stenarna åt utan ensamma mörka prickar. Den grå skiffern med mörk kontur syns tydligt mot det olivgröna gräset. Bilden följer idén, och den bärs inte, så inget går genom huvud eller ansikte. Versionen lämnas oförändrad.",
    "ide": "Ett kors lagt av stenar platt på marken, ritat rakt ovanifrån som ett plustecken av fem gråa stenar, en i mitten och en i varje arm, med det hela omkring 11 × 11 punkter. Varje sten är en rundad klump på 3–4 punkter i skiffer1 till skiffer3 med kontur i skiffer0, ljusast uppe till vänster och mörkast nere till höger, och de ligger tätt så att korsformen läses tydligt. Korset saknar höjd helt och är lika i alla fyra riktningar; bara kornet i stenarna skiljer dem åt."
+  },
+  {
+   "ide": "Din egen ritning: ett träkors på en liten jordhög.",
+   "bilder": [
+    {
+     "namn": "Björns ritning",
+     "rader": [
+      "...EEEE...",
+      "...EHHE...",
+      "...EGFE...",
+      "EEEEGFEEEE",
+      "EHHHHHHHGE",
+      "EGHGGGGGFE",
+      "EEEEGFEEEE",
+      "...EGFE...",
+      "...EGFE...",
+      "...EGFE...",
+      "...EGFE...",
+      "...EGFE...",
+      ".EGHGFFGE.",
+      "EGGFGFGFFE",
+      ".EEEEEEEE."
+     ]
+    }
+   ]
   }
  ]
 }

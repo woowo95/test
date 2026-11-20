@@ -1,0 +1,87 @@
+{
+ "kort": "f10_kott_fagel",
+ "namn": "Fågelns kött",
+ "slag": null,
+ "vad": "Steg 10.3.14: köttet från fågeln, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just fågeln. Din kommentar förra gången: ”gör en separerat ruta som jag väjer i för varje sorts kött”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "ide": "Med ben: en benbit sedd snett uppifrån.",
+   "bilder": [
+    {
+     "namn": "f10_kott_fagel",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      ".......oo.......",
+      "......owqo......",
+      ".......qo.......",
+      ".......qo.......",
+      "......FLHF......",
+      ".....FqLHF......",
+      ".....FLqHF......",
+      ".....FLHHF......",
+      ".....FHLHF......",
+      "......FFF.......",
+      "................",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  },
+  {
+   "ide": "Hel form utan synliga ben, där siluetten bär skillnaden.",
+   "bilder": [
+    {
+     "namn": "kott_fagel",
+     "rader": [
+      "................",
+      "................",
+      "...oo......oo...",
+      "..owqo....oqpo..",
+      "...oqo....oqo...",
+      "..oqwqoooopqpo..",
+      ".oqwwqqqqqqqppo.",
+      ".owqqwqqqqqqLpo.",
+      ".oqwqqqqqqqLqpo.",
+      "..oqqqqqqqLqpo..",
+      "..oqqqqqqLqLpo..",
+      "...oqqqqLqppo...",
+      "....oqqLqppo....",
+      ".....oqpppo.....",
+      "......oooo......",
+      "................"
+     ]
+    }
+   ]
+  },
+  {
+   "ide": "En bit som pekar åt sitt eget håll, så att sorterna får olika siluetter.",
+   "bilder": [
+    {
+     "namn": "kott_fagel",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "........oo......",
+      "........wo......",
+      "........qo......",
+      ".......EHE......",
+      "......EqHGE.....",
+      "......EHHGE.....",
+      "......EqHGE.....",
+      ".....EHHGE......",
+      "....EHHGE.......",
+      "....EHFE........",
+      ".....EE.........",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  }
+ ]
+}

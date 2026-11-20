@@ -1,16 +1,16 @@
 {
  "id": "jarnhjalm_jarn",
- "w": 11,
+ "w": 10,
  "h": 8,
  "rader": [
-  "...QQQQQ...",
-  ".QSTSRSSSQ.",
-  "QSSSSRSSSRQ",
-  "QRTRRTRRTRQ",
-  "QSSSSRSRSRQ",
-  "QSSSSTSRRRQ",
-  "QSRSRRRRRRQ",
-  ".QQQQQQQQQ."
+  "...QQQQ...",
+  "..QTSSRQ..",
+  ".QSTSRSRQ.",
+  "QSSTSSRSRQ",
+  "QSRRRRRRRQ",
+  "QQQQRRQQQQ",
+  "....SR....",
+  "....QQ...."
  ],
  "ritad": 1,
  "av": "API:t (claude-opus-5-5), tre idéer",
@@ -23,48 +23,19 @@
   "m": "#372f25",
   "n": "#474138"
  },
- "versioner": [
-  {
-   "ide": "En låg, rund kupolhjälm som står på sin kant, sedd snett ovanifrån: kupolen fyller de övre sex raderna som en spegelsymmetrisk halvoval, 11 punkter bred, och nertill finns ett smalt, mörkare band på två punkter som visar kantringen framtill. Järnet ritas i skiffer1–skiffer3 med kontur i skiffer0, ljusast uppe till vänster, med en enda glanspunkt i skiffer3 högt upp. Två korsande band av nitat järn (en punkt breda, i skiffer1) går över kronan från fram till bak och från sida till sida, med nitarna som enstaka ljusare punkter.",
-   "rader": [
-    "...QQQQQ...",
-    ".QSTSRSSSQ.",
-    "QSSSSRSSSRQ",
-    "QRTRRTRRTRQ",
-    "QSSSSRSRSRQ",
-    "QSSSSTSRRRQ",
-    "QSRSRRRRRRQ",
-    ".QQQQQQQQQ."
-   ],
-   "om": "Järnhjälmen, 11×8 punkter: en spegelsymmetrisk kupol i skiffer1–3 med kontur i skiffer0, ljusast uppe till vänster och mörkast nere till höger. Ett band i skiffer1 går från fram till bak i mittkolumnen och ett annat från sida till sida på fjärde raden. Nitarna är ljusare punkter i skiffer2 på banden. Kantringen framtill är ett mörkare band på två rader längst ner (skiffer1 med konturen under). Glansen ligger högt uppe till vänster. Granskningen: Storleken (11 × 8) och den spegelsymmetriska konturen i skiffer0 behålls. Hjälmen är liten mot kolonisten men stämmer med kortets mått.\n\nDet här rättade jag mot idén och reglerna:\n- **Banden syntes inte.** Det korsande järnet gick inte att läsa ut. Nu går ett lodrätt band i skiffer1 genom mittkolumnen från kronan ner till kantringen, och ett vågrätt band löper hela rad 3 från sida till sida.\n- **Nitarna saknades.** De är nu enstaka ljusare punkter i skiffer3: tre på det vågräta bandet (sidorna och korsningen i mitten) och en nertill på det lodräta.\n- **Glansen var för stor.** Skiffer3 låg utspritt som en fläck på flera punkter uppe till vänster (bland annat på rad 1, 2 och 4). Nu finns en enda glanspunkt högt upp till vänster, och resten av kupolen är skiffer2 med korn av skiffer1 som tätnar mot nedre högra hörnet.\n- **Ensamma mörka prickar** i ljusa ytan är borttagna.\n- **Kantringen** är nu ett tydligt mörkare band på två punkter: rad 6 i skiffer1 med lite skiffer2 till vänster där ljuset faller, och konturen under. Det ger känslan av en hjälm som står på kanten, sedd snett ovanifrån.\n\nMed konturen i skiffer0 och de ljusare skiffertonerna skiljer sig hjälmen från det olivgröna gräset."
-  },
-  {
-   "ide": "En spetsigare, konisk hjälm med nässkydd som står på kanten: silhuetten smalnar uppåt till en trubbig topp mitt på (cirka 9 punkter bred nertill och 3 överst) och från kantbandet framtill hänger ett smalt näsjärn, två punkter brett, rakt ner över de två nedersta raderna. Hjälmen är helt spegelsymmetrisk kring mittlinjen, ritad i skiffer1–skiffer3 med skiffer0 som kontur, och kanten är ett mörkare band på två punkter i skiffer1 och skiffer0. En lodrät ås i skiffer3 på vänster sida om mitten fångar ljuset från övre vänstra hörnet.",
-   "rader": [
-    "...QQQQ...",
-    "..QTSSRQ..",
-    ".QSTSRSRQ.",
-    "QSSTSSRSRQ",
-    "QSRRRRRRRQ",
-    "QQQQRRQQQQ",
-    "....SR....",
-    "....QQ...."
-   ],
-   "om": "Konisk järnhjälm som står på kanten, 10 punkter bred och 8 hög. Silhuetten smalnar uppåt till en trubbig topp på 4 punkter med konturen. Nertill är den 10 punkter bred i stället för 9, så att det två punkter breda näsjärnet hamnar exakt på mittlinjen och formen blir helt spegelsymmetrisk. Kontur i skiffer0 och kupan i skiffer1–skiffer3. Ljusåsen i skiffer3 går lodrätt i kolumn 3, till vänster om mitten. Kantbandet är två rader: skiffer1 med en ljusare punkt längst till vänster, och under det skiffer0. Näsjärnet hänger rakt ner från bandet över de två nedersta raderna, med skiffer2 och skiffer1 i den övre raden och skiffer0 i spetsen. Granskningen: Inget behövde rättas, så punkterna är oförändrade. Storleken är 10 × 8 punkter, inom gränsen 11 × 8, och står rimligt mot kolonisten (14 × 20): ungefär ett huvud brett. Silhuetten är spegelsymmetrisk kring mitten. Bredden är jämn, så toppen blir 4 punkter i stället för idéns 3; det behövs för att symmetrin ska gå jämnt ut. Hjälmen smalnar uppåt till en trubbig topp. Kantbandet är två rader i skiffer1 och skiffer0, och näsjärnet är två punkter brett och hänger rakt ner över de två nedersta raderna. Den ljusa åsen i skiffer3 ligger till vänster om mitten och fångar ljuset uppifrån vänster, medan högersidan mörknar mot skiffer1. Konturen är skiffer0, inte kol0. Den kalla grå hjälmen med mörk kontur skiljer sig tydligt från det oliv- och barrgröna gräset. Vinkeln är snett uppifrån på en hjälm som står på kanten, utan platt sidovy."
-  },
-  {
-   "ide": "Hjälmen ligger upp och ner på högen med öppningen uppåt, sedd snett ovanifrån som en skål: den ovala kantringen, 11 punkter bred och omkring 5 hög, ritas i skiffer2–skiffer3 med kontur i skiffer0, och insidan är mörk i skiffer0 och kol1 med ljuset fallande på den bortre, nedre insidan. Under ringen syns kupolens rundade undersida som ett lågt band på två till tre punkter i skiffer1, symmetriskt avrundat nertill. Formen är en ren spegelsymmetrisk oval, och en glanspunkt sitter på ringens övre vänstra kant.",
-   "rader": [
-    "..QQQQQQQ..",
-    ".QTSSSSSRQ.",
-    "QSQlllllQRQ",
-    "QSQmnnnmQRQ",
-    ".QSSTSSSRQ.",
-    ".QQRRRRRQQ.",
-    "..QSRRRRQ..",
-    "...QQQQQ..."
-   ],
-   "om": "Järnhjälmen ligger upp och ner med öppningen uppåt, som en skål sedd snett ovanifrån. Den ovala kantringen är 11 punkter bred och 5 hög, i skiffer2–skiffer3 med kontur i skiffer0. Den är ljusast till vänster och mörkare (skiffer1) på högra sidan. Glanspunkten sitter på ringens övre vänstra kant. Insidan är mörk: kol0 och kol1 vid den bortre väggen, ljusare kol2 och kol3 nere på den närmre insidan där ljuset faller. Under ringen syns kupolens undersida som ett lågt, avrundat band i skiffer1 på två punkter, med en ljusare punkt åt vänster. Den har kontur i skiffer0 och smalnar symmetriskt nertill. Granskningen: Rättat: 1) kol0 (k) i hjälmens insida är bytt mot kol1. Insidan är bara mörk, inte svart, och kol0 sparas till det som verkligen är svart. Insidan är nu kol1 bak och kol2–kol3 längst ner, så ljuset faller på den nedre insidan som i idén. 2) Glansen i ben3 (w) var ett främmande material på järnet. Den är nu skiffer3, en enda punkt på ringens övre vänstra kant mot en ring i skiffer2, så järnet har bara skifferns toner. 3) Ringens främre del var bara skiffer0-kontur, så ringen såg öppen ut framtill. Den främre kanten är nu ett eget band i skiffer2 med ett korn i skiffer3 och skiffer1 mot höger, så den ovala ringen är sluten och omkring 5 punkter hög. 4) Kupolens undersida har nu skiffer0-kontur mot ringen och är skiffer1 med ett korn i skiffer2 uppe till vänster. Den är ett lågt band på 3 punkter, symmetriskt avrundat nertill. Formen är fortfarande spegelsymmetrisk och 11 × 8 punkter. Mot kolonisten på 14 × 20 punkter blir den lagom stor, och den ljusa ringen syns mot gräset."
-  }
- ]
+ "om": "En spetsigare, konisk hjälm med nässkydd som står på kanten: silhuetten smalnar uppåt till en trubbig topp mitt på (cirka 9 punkter bred nertill och 3 överst) och från kantbandet framtill hänger ett smalt näsjärn, två punkter brett, rakt ner över de två nedersta raderna. Hjälmen är helt spegelsymmetrisk kring mittlinjen, ritad i skiffer1–skiffer3 med skiffer0 som kontur, och kanten är ett mörkare band på två punkter i skiffer1 och skiffer0. En lodrät ås i skiffer3 på vänster sida om mitten fångar ljuset från övre vänstra hörnet. Konisk järnhjälm som står på kanten, 10 punkter bred och 8 hög. Silhuetten smalnar uppåt till en trubbig topp på 4 punkter med konturen. Nertill är den 10 punkter bred i stället för 9, så att det två punkter breda näsjärnet hamnar exakt på mittlinjen och formen blir helt spegelsymmetrisk. Kontur i skiffer0 och kupan i skiffer1–skiffer3. Ljusåsen i skiffer3 går lodrätt i kolumn 3, till vänster om mitten. Kantbandet är två rader: skiffer1 med en ljusare punkt längst till vänster, och under det skiffer0. Näsjärnet hänger rakt ner från bandet över de två nedersta raderna, med skiffer2 och skiffer1 i den övre raden och skiffer0 i spetsen. Granskningen: Inget behövde rättas, så punkterna är oförändrade. Storleken är 10 × 8 punkter, inom gränsen 11 × 8, och står rimligt mot kolonisten (14 × 20): ungefär ett huvud brett. Silhuetten är spegelsymmetrisk kring mitten. Bredden är jämn, så toppen blir 4 punkter i stället för idéns 3; det behövs för att symmetrin ska gå jämnt ut. Hjälmen smalnar uppåt till en trubbig topp. Kantbandet är två rader i skiffer1 och skiffer0, och näsjärnet är två punkter brett och hänger rakt ner över de två nedersta raderna. Den ljusa åsen i skiffer3 ligger till vänster om mitten och fångar ljuset uppifrån vänster, medan högersidan mörknar mot skiffer1. Konturen är skiffer0, inte kol0. Den kalla grå hjälmen med mörk kontur skiljer sig tydligt från det oliv- och barrgröna gräset. Vinkeln är snett uppifrån på en hjälm som står på kanten, utan platt sidovy.",
+ "vald": 2,
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "...QQQQQ...",
+   ".QSTSRSSSQ.",
+   "QSSSSRSSSRQ",
+   "QRTRRTRRTRQ",
+   "QSSSSRSRSRQ",
+   "QSSSSTSRRRQ",
+   "QSRSRRRRRRQ",
+   ".QQQQQQQQQ."
+  ]
+ }
 }

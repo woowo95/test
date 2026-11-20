@@ -1,19 +1,19 @@
 {
  "id": "ringbrynja_jarn",
- "w": 17,
+ "w": 19,
  "h": 11,
  "rader": [
-  ".QQQQQQQQQQQQQQQ.",
-  "QTSTSTRQQQRSRSRSQ",
-  "QSTSTSTRRRSRSRSRQ",
-  "QTQSTSTSRSRSRSQRQ",
-  "QSTQSTSTSRSRSQRRQ",
-  "QTSTQSTSRSRSQRSRQ",
-  "QSTSTQSRSRSQRSRRQ",
-  "QTSTSRSRSRSRSRSRQ",
-  "QRSRSRSRSRSRSRRRQ",
-  "QRQRQRQRQRQRQRQRQ",
-  ".Q.Q.Q.Q.Q.Q.Q.Q."
+  ".QQQQQQQQQQQQQQQQQ.",
+  "QTSTSTTQRRRQSTSTSRQ",
+  "QTTSTSTSQQQSTSTSRSQ",
+  "QSTSTSTTSTSTSTSRSRQ",
+  ".QQQTSTSTSTSTSRQQQ.",
+  "...QSRSRRSRRSRRQ...",
+  "...QRRRRRRRRRRRQ...",
+  "...QTSTSTSTSTSRQ...",
+  "...QSTSTSTSTSRSQ...",
+  "...QTSTSTSTSSRRQ...",
+  "...QQQQQQQQQQQQQ..."
  ],
  "ritad": 1,
  "av": "API:t (claude-opus-5-5), tre idéer",
@@ -25,55 +25,22 @@
   "t": "#a14808",
   "w": "#dad0bb"
  },
- "versioner": [
-  {
-   "ide": "Fyrkantigt paket: brynjan vikt till ett platt, nästan kvadratiskt block omkring 17×10 punkter, sett snett ovanifrån, med ovansidan som en ringväv i skiffer1–skiffer3 där korn av små ringar (ljus punkt, mörk punkt i ett rutmönster) gör ytan levande och skiffer0 som kontur. Halsöppningen syns som en grund, mörkare halvmåne i skiffer1 mitt på den bakre kanten, och de två korta ärmarna är vikta in över bröstet som två snedställda band med en skiffer0-linje som veck; framkanten är ett smalt band på 2 punkter i skiffer1–skiffer0 där ringarnas ände bildar en tandad nederkant. Formen är spegelsymmetrisk; bara ljuset från övre vänster gör vänstra kanten ljusare och en enda glanspunkt i skiffer3 sitter uppe till vänster.",
-   "rader": [
-    ".QQQQQQQQQQQQQQQ.",
-    "QTSTSTRQQQRSRSRSQ",
-    "QSTSTSTRRRSRSRSRQ",
-    "QTQSTSTSRSRSRSQRQ",
-    "QSTQSTSTSRSRSQRRQ",
-    "QTSTQSTSRSRSQRSRQ",
-    "QSTSTQSRSRSQRSRRQ",
-    "QTSTSRSRSRSRSRSRQ",
-    "QRSRSRSRSRSRSRRRQ",
-    "QRQRQRQRQRQRQRQRQ",
-    ".Q.Q.Q.Q.Q.Q.Q.Q."
-   ],
-   "om": "Ringbrynjan som ett platt, fyrkantigt paket, 17×11 punkter, sett snett ovanifrån med skiffer0 som kontur. Ovansidan är en ringväv av skiffer1–skiffer3 i rutmönster, ljusare åt vänster. Halsöppningen är en grund halvmåne i skiffer1 mitt på bakkanten, och de två ärmarna är vikta in över bröstet med sneda veck i skiffer0. Framkanten är ett band på två punkter i skiffer1–skiffer0 med tandad nederkant. Formen är spegelsymmetrisk, och glanspunkten i skiffer3 sitter uppe till vänster. Granskningen: Ritad om i samma storlek, 17 × 11 punkter, inom ramen 19 × 12. Framkanten var bara en rad; nu är den ett band på 2 punkter (en rad skiffer1/skiffer2 och en rad skiffer1/skiffer0) med den tandade raden av ringändar under. Ovansidan tar därmed 7 av 11 rader, ungefär två tredjedelar av höjden, sedd snett ovanifrån. Halsöppningen är nu en grund halvmåne mitt på bakkanten (skiffer0 i mitten, skiffer1 runt) i stället för ett djupt V som klöv ytan. Ärmarnas veck är två snedställda skiffer0-linjer som speglar varandra exakt; de går från kanterna in mot mitten. Ytan var för mörk och slät för att synas mot gräset. Nu är ringkornet ett jämnt rutmönster: skiffer3/skiffer2 uppe till vänster och skiffer2/skiffer1 nere till höger. Ljuset ändrar alltså tonen, men formen är spegelsymmetrisk. Den ljusa randen längs vänsterkanten är borta. Konturen är skiffer0 runt om och hela bilden håller sig till skiffertonerna, så rustningen är dämpad men ljusare än gräset."
-  },
-  {
-   "ide": "T-form som ligger utbredd men vikt på mitten: kroppen vikt så att nedre halvan ligger dubbelt, ärmarna ligger rakt ut åt sidorna som korta trubbiga stumpar, så att silhuetten blir ett brett T, 19 punkter brett och omkring 11 högt, sett snett ovanifrån. Ringväven ritas i skiffer2 och skiffer3 med ett tätt korn av ringar och skiffer0 som kontur, halsöppningen är en rund mörk öppning i skiffer0–skiffer1 vid bakkanten, och vikningen över magen syns som en tjockare kant på 2 punkter i skiffer1 tvärs över kroppen. Symmetrisk form längs mittlinjen, med ljusare vänster ärm och mörkare höger enligt ljuset.",
-   "rader": [
-    ".QQQQQQQQQQQQQQQQQ.",
-    "QTSTSTTQRRRQSTSTSRQ",
-    "QTTSTSTSQQQSTSTSRSQ",
-    "QSTSTSTTSTSTSTSRSRQ",
-    ".QQQTSTSTSTSTSRQQQ.",
-    "...QSRSRRSRRSRRQ...",
-    "...QRRRRRRRRRRRQ...",
-    "...QTSTSTSTSTSRQ...",
-    "...QSTSTSTSTSRSQ...",
-    "...QTSTSTSTSSRRQ...",
-    "...QQQQQQQQQQQQQ..."
-   ],
-   "om": "Ringbrynjan som ett brett T, 19 punkter brett och 11 högt. Ärmarna är korta trubbiga stumpar rakt ut åt sidorna (raderna 1–3), med ljusare ringkorn till vänster och mörkare till höger. Halsöppningen sitter vid bakkanten som en rund mörk öppning i skiffer0 och skiffer1. Vikningen över magen är ett band på 2 punkter i skiffer1 tvärs över kroppen, och under det ligger den dubbla nedre halvan i skiffer2 och skiffer3. Konturen är skiffer0 runt om och formen är symmetrisk längs mittlinjen. OBS: rad 4 råkade bli 20 tecken lång (en punkt för mycket) och behöver kortas till 19 innan bilden används. Granskningen: Rad 4 var inte symmetrisk. Höger ärms underkant gick ut till kolumn 18 och kroppens kontur saknades vid kolumn 15 (där låg S och R). Raden är nu en spegling av vänster sida: hörnet på kolumn 18 är genomskinligt, och kroppskonturen och ärmens underkant är skiffer0 på kolumnerna 15–17. Vikningens övre rad var slät skiffer1. Den har nu fått ett korn av skiffer2 och skiffer1, ljusare åt vänster, så att vikkanten läses som en tjockare kant med ljuset uppifrån vänster. Resten följer reglerna och idén och är oförändrat: storleken 19 × 11 är rimlig mot kolonisten för en hopvikt brynja, halsöppningen är centrerad, och ringkornet i skiffer2–skiffer3 med kontur i skiffer0 syns tydligt på gräset."
-  },
-  {
-   "ide": "Hoprullat knyte: brynjan lagd i en tung, rundad och låg hög som en kudde, ovalt hoprullad med ärmarna vikta bakåt så att bara deras ändar sticker ut som två små rundade flikar vid sidorna, omkring 18 punkter bred och 9 hög. Ytan böljar i ringväv där skiffer3 sitter på de upphöjda vecken och skiffer1 i dalarna mellan dem, med skiffer0 som kontur och en mörkare undre kant på 2–3 punkter som visar tyngden; i ena änden syns en rad av den kantade halsringen med en enda smal kantring i rost2 som läderbindning, det enda varma inslaget. Silhuetten är symmetrisk kring mitten, bara kornet och ljuset skiljer sidorna.",
-   "rader": [
-    "....QQQQQQQQQQ....",
-    "...QTwTRRtRSRSQ...",
-    "..QTSTTSRRSTSSRQ..",
-    ".QQTSRTSTRSTSRSQQ.",
-    "QTQTTSTTSTSSTSRQRQ",
-    "QSQSRSTRSRSRSRRQRQ",
-    ".QQRSRSRRSRRSRRQQ.",
-    "..QRRRSRRRRSRRRQ..",
-    "...QQQQQQQQQQQQ..."
-   ],
-   "om": "Ringbrynjan hoprullad till ett lågt, ovalt knyte, 18 punkter brett och 9 högt. Ärmarna är vikta bakåt, och bara ändarna sticker ut som två små rundade flikar vid sidorna. Konturen är skiffer0. Ringväven böljar i rader: skiffer3 på de upphöjda vecken och skiffer1 i dalarna. Ytan är ljusast uppe till vänster, med en enda glanspunkt i ben3, och de nedersta raderna är mörkare (skiffer1) och visar tyngden. Upptill i mitten syns halsringens kant i skiffer1 med en enda kantring i rost2 som läderbindning. Silhuetten är spegelsymmetrisk; bara kornet och ljuset skiljer sidorna åt. Granskningen: Inget behövde rättas, så punkterna är oförändrade. Storleken är 18 × 9, inom ramen 19 × 12 och som idén. Mot kolonisten (14 × 20) blir den en låg, tung hög. Vinkeln är snett ovanifrån och visar ovansidan av knytet. Den mörkare undre kanten (skiffer1-raderna längst ner) ger tyngden, och skiffer0 är konturen. Silhuetten är spegelsymmetrisk, med flikarna vid båda sidorna och samma indrag i varje rad; bara kornet och ljuset skiljer sidorna. Ljuset faller uppe till vänster: skiffer3 och en enda glanspunkt i ben3, som inte är ren vit. Höger sida och underkanten är mörkare. Den grå skiffern med mörk kontur skiljer sig tydligt från det olivgröna gräset. Den enda varma punkten är kantringen i rost2 vid halsöppningen."
-  }
- ]
+ "om": "T-form som ligger utbredd men vikt på mitten: kroppen vikt så att nedre halvan ligger dubbelt, ärmarna ligger rakt ut åt sidorna som korta trubbiga stumpar, så att silhuetten blir ett brett T, 19 punkter brett och omkring 11 högt, sett snett ovanifrån. Ringväven ritas i skiffer2 och skiffer3 med ett tätt korn av ringar och skiffer0 som kontur, halsöppningen är en rund mörk öppning i skiffer0–skiffer1 vid bakkanten, och vikningen över magen syns som en tjockare kant på 2 punkter i skiffer1 tvärs över kroppen. Symmetrisk form längs mittlinjen, med ljusare vänster ärm och mörkare höger enligt ljuset. Ringbrynjan som ett brett T, 19 punkter brett och 11 högt. Ärmarna är korta trubbiga stumpar rakt ut åt sidorna (raderna 1–3), med ljusare ringkorn till vänster och mörkare till höger. Halsöppningen sitter vid bakkanten som en rund mörk öppning i skiffer0 och skiffer1. Vikningen över magen är ett band på 2 punkter i skiffer1 tvärs över kroppen, och under det ligger den dubbla nedre halvan i skiffer2 och skiffer3. Konturen är skiffer0 runt om och formen är symmetrisk längs mittlinjen. OBS: rad 4 råkade bli 20 tecken lång (en punkt för mycket) och behöver kortas till 19 innan bilden används. Granskningen: Rad 4 var inte symmetrisk. Höger ärms underkant gick ut till kolumn 18 och kroppens kontur saknades vid kolumn 15 (där låg S och R). Raden är nu en spegling av vänster sida: hörnet på kolumn 18 är genomskinligt, och kroppskonturen och ärmens underkant är skiffer0 på kolumnerna 15–17. Vikningens övre rad var slät skiffer1. Den har nu fått ett korn av skiffer2 och skiffer1, ljusare åt vänster, så att vikkanten läses som en tjockare kant med ljuset uppifrån vänster. Resten följer reglerna och idén och är oförändrat: storleken 19 × 11 är rimlig mot kolonisten för en hopvikt brynja, halsöppningen är centrerad, och ringkornet i skiffer2–skiffer3 med kontur i skiffer0 syns tydligt på gräset.",
+ "vald": 2,
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".QQQQQQQQQQQQQQQ.",
+   "QTSTSTRQQQRSRSRSQ",
+   "QSTSTSTRRRSRSRSRQ",
+   "QTQSTSTSRSRSRSQRQ",
+   "QSTQSTSTSRSRSQRRQ",
+   "QTSTQSTSRSRSQRSRQ",
+   "QSTSTQSRSRSQRSRRQ",
+   "QTSTSRSRSRSRSRSRQ",
+   "QRSRSRSRSRSRSRRRQ",
+   "QRQRQRQRQRQRQRQRQ",
+   ".Q.Q.Q.Q.Q.Q.Q.Q."
+  ]
+ }
 }

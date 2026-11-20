@@ -547,9 +547,9 @@
   return { varld, iBojd, utsnitt, platt: ext => B => skinnRitning(B, true, true, ext) };
   }
 
-  // spelets världskarta (samma utsnitt som i f11_pergament), vattnet där paletten är skiffer, avståndet till land för
+  // spelets hela världskarta (förminskad, två punkter per världsruta), vattnet där paletten är skiffer, avståndet till land för
   // kompassrosen, stämpeln och havsormen
-  const K = VARLDKARTA, KW = K.w, KH = K.h, N = KW * KH, typ = new Uint8Array(N), avst = new Uint16Array(N).fill(65535), ko = [];
+  const K = VARLDKARTA.hel ? { w: VARLDKARTA.hel.w, h: VARLDKARTA.hel.h, ny: VARLDKARTA.hel.rader } : VARLDKARTA, KW = K.w, KH = K.h, N = KW * KH, typ = new Uint8Array(N), avst = new Uint16Array(N).fill(65535), ko = [];
   for (let y = 0; y < KH; y++) for (let x = 0; x < KW; x++) { const n = parseInt(K.ny[y][x], 32), i = y * KW + x; typ[i] = (n >> 2) === 6 ? HAV : SLATT; if (typ[i] !== HAV) { avst[i] = 0; ko.push(i); } }
   for (let h = 0; h < ko.length; h++) { const i = ko[h], x = i % KW; for (const d of [-1, 1, -KW, KW]) { const j = i + d; if (j < 0 || j >= N || (d === -1 && x === 0) || (d === 1 && x === KW - 1) || avst[j] <= avst[i] + 1) continue; avst[j] = avst[i] + 1; ko.push(j); } }
   const djupt = []; for (let i = 0; i < N; i++) { const x = i % KW, y = (i / KW) | 0; if (typ[i] === HAV && x > 50 && x < KW - 60 && y > 30 && y < KH - 35) djupt.push([avst[i], x, y]); }
@@ -563,9 +563,9 @@
   const BOJD = KS.iBojd('black', 1.4, EXT);
   const kort = (id, f) => { const k = VAL.find(v => v.id === id); if (k) f(k); };
   kort('f11_pergament', k => Object.assign(k, { typ: 'janej', stor: true, kol: true,
-    vad: 'Steg 11.9.2: världskartan på pergament, som vi bestämde i konceptet (steg 11.1.9): bläck på pergament, lite böjt i kanterna så att man ser att kartan brukar vara ihoprullad, hållen av två händer med tummen på runbandet, ett runt gradnät som samlas i en kompassros, en gammaldags röd stämpel och havsormen. Här spelets riktiga världskarta (samma utsnitt som förut) i den ramen. Din kommentar förra gången: ”kartan ska vara mer lik hur vi bestämde att den skulle se ut. Även med händer som håller kartan och andra detaljer”',
-    versioner: [{ text: 'Spelets världskarta på pergament, böjd i kanterna och hållen av två händer, med runband, runt gradnät, kompassros, stämpel och havsorm.', w: BOJD.w, h: BOJD.h, kol: true, rita: BOJD.rita }] }));
+    vad: 'Steg 11.9.2: världskartan på pergament, som vi bestämde i konceptet (steg 11.1.9): bläck på pergament, lite böjt i kanterna så att man ser att kartan brukar vara ihoprullad, hållen av två händer med tummen på runbandet, ett runt gradnät som samlas i en kompassros, en gammaldags röd stämpel och havsormen. Här hela spelets världskarta, förminskad, i den ramen: den stora kontinenten i mitten och småöarna runt om, som världen skapas (steg 11.2.5). Förut syntes bara ett utsnitt av kontinenten. Din kommentar förra gången: ”ja detta är rätt stil men kartan ska bestå av en stor landmassa i mitten och några små öar runtomkring”',
+    versioner: [{ text: 'Hela spelets världskarta på pergament, böjd i kanterna och hållen av två händer, med runband, runt gradnät, kompassros, stämpel och havsorm.', w: BOJD.w, h: BOJD.h, kol: true, rita: BOJD.rita }] }));
   kort('f11_utsmyckning', k => Object.assign(k, { typ: 'janej', stor: true,
-    vad: 'Steg 11.9.4: pergamentkartans ram, kompassros och havets bilder, ritade som på kartan vi bestämde (konceptet i steg 11.1.9): runbandet med runor mellan två bläcklinjer och knutar i hörnen, det runda gradnätet som samlas i den åttauddiga kompassrosen med röd nordspets, den röda stämpeln och havsormen. Här på spelets riktiga världskarta, utan händerna. Din kommentar förra gången: ”använd vår befintliga karta som facit”',
+    vad: 'Steg 11.9.4: pergamentkartans ram, kompassros och havets bilder, ritade som på kartan vi bestämde (konceptet i steg 11.1.9): runbandet med runor mellan två bläcklinjer och knutar i hörnen, det runda gradnätet som samlas i den åttauddiga kompassrosen med röd nordspets, den röda stämpeln och havsormen. Här på hela spelets världskarta, utan händerna. Din kommentar förra gången: ”använd vår befintliga karta som facit”',
     versioner: [{ text: 'Spelets världskarta med konceptets runband, runda gradnät, kompassros, stämpel och havsorm.', w: KW, h: KH, rita: KS.platt(EXT) }] }));
 })();

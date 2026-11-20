@@ -139,6 +139,26 @@
    ],
    "anteckning": "Stolpförrådet står på marken som en station, snett ovanifrån. Skivan av tre liggande stockar ses uppifrån (rad 3–9, jord2–jord3 med kontur i jord0). Under den syns framkanten som ett band på 2 punkter i jord1, och bara de två främre stolparna syns, som korta stumpar. Säcken står på skivan, så dess knut och snörning i rost (det man kan ta) sticker upp över bakkanten. Själva säcken ses ovanifrån i ben1–ben2 med kontur i ben0 och en enda glanspunkt uppe till vänster. Saken är 15 × 15 punkter och fyller nästan rutan. Ljuset kommer från vänster och silhuetten är fyrkantig. Ingen skugga är ritad. Granskningen: Rättat: stolparna var bara 3 punkter höga mot idéns 4, så hela saken flyttades upp en rad och stumparna fick fyra rader. Saken fyller nu 15 × 16 punkter. Framkantens nedre rad var helt slät i jord1 och har fått lite korn med en punkt jord2. Oförändrat: de tre stockarna ses ovanifrån som par av ljusa och mörka rader, framkanten är 2 punkter i jord1 och konturen är jord0. Säcken i ben1–ben2 med kontur i ben0 och knut med rostband är spegelsymmetrisk och ligger mitt på skivan. Stumparna sitter symmetriskt kring mitten, och ljuset kommer uppifrån vänster. Saken syns tydligt mot gräset.",
    "ide": "Stolpförråd: en liten upphöjd plattform av stockar på två korta stolpar, ritad som stationerna med en ovanifrån sedd skiva av tre stockar i jord2–jord3 med kontur i jord0, en framkant på 2 punkter i jord1 och två stolpstumpar på 4 punkter. På skivan ligger en knuten säck i ben1–ben2 ovanifrån, och hela saken fyller nästan rutan, omkring 15 punkter bred och 15 hög. Silhuetten blir fyrkantig och kantig, som en byggd förvaring i stället för en mjuk packning."
+  },
+  {
+   "ide": "Din egen ritning: en kista av trä med lock och ett ljust lås.",
+   "bilder": [
+    {
+     "namn": "Björns ritning",
+     "rader": [
+      "EEEEEEEEEEEEE",
+      "EHHGHHHGHHGGE",
+      "EHGHHGHGHHGGE",
+      "EHGHGHGHGHGGE",
+      "EEEEEHGGEEEEE",
+      "EGGFEGqGEFGFE",
+      "EFGFFEEEFGFFE",
+      "EGFFGFFFGFFFE",
+      "EFFFFFFFFFFFE",
+      "EEEEEEEEEEEEE"
+     ]
+    }
+   ]
   }
  ]
 }

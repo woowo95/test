@@ -1,0 +1,87 @@
+{
+ "kort": "f10_kott_bjorn",
+ "namn": "Björnens kött",
+ "slag": null,
+ "vad": "Steg 10.3.14: köttet från björnen, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just björnen. Din kommentar förra gången: ”gör en separerat ruta som jag väjer i för varje sorts kött”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "ide": "Med ben: en benbit sedd snett uppifrån.",
+   "bilder": [
+    {
+     "namn": "f10_kott_bjorn",
+     "rader": [
+      "................",
+      "..ooooooooooo...",
+      ".oqwqqpqqqpqqo..",
+      "oqqpqqqpqqpqppo.",
+      "oppqppqpppqpppo.",
+      "EGFsFFGFsFFFsFE.",
+      "EFsFGFFsFFsFFFE.",
+      "EsFFFsFFGFFsFrE.",
+      "EFFsFFsFFFsFFrE.",
+      "EFsFFsFFFsFFsrE.",
+      "EFsFFFFsFFsFrrE.",
+      "EsrrrsrrrrsrrrE.",
+      "ErrrrrrrrrrrrrE.",
+      ".EEEEEEEEEEEEE..",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  },
+  {
+   "ide": "Hel form utan synliga ben, där siluetten bär skillnaden.",
+   "bilder": [
+    {
+     "namn": "kott_bjorn",
+     "rader": [
+      "................",
+      "....rrrrrrrr....",
+      "..rrtuqtttssrr..",
+      ".rtuqLttqqtsssr.",
+      ".rtqttsLqtsqssr.",
+      "rtuttqqtsstLsssr",
+      "rtqLtssqtssqqssr",
+      "rttsqtssLqsstssr",
+      "rttsLqssstLqsssr",
+      "rtrrsqssLsssrrsr",
+      "rtsprrrrrrrrsssr",
+      "rtsspsstssspsssr",
+      ".rtssssssssssrr.",
+      "..rrrrrrrrrrrr..",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  },
+  {
+   "ide": "En bit som pekar åt sitt eget håll, så att sorterna får olika siluetter.",
+   "bilder": [
+    {
+     "namn": "kott_bjorn",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "...ooooooo......",
+      "..ooqLqLqpoo....",
+      ".oqLpqLpqLppo...",
+      "oLprtuttsssrpo..",
+      "oLrtutstsssrpooo",
+      "oqrtstsssssrpqwo",
+      "oprststssssrppqo",
+      "oprsstsssssrpooo",
+      ".oqprrrrrrrppo..",
+      "..ooppqppppoo...",
+      "....oooooooo....",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  }
+ ]
+}

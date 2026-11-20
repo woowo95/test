@@ -4,7 +4,7 @@
  "slag": [
   "station"
  ],
- "vad": "Steg 11.6.13: grundarna kom långt bortifrån, och deras vagn gick sönder där byn ligger. Den står i lagret på startplatsen med de första sakerna i och rymmer tre stackar. Ingen bygger en sådan. En ruta stor, snett ovanifrån som stationerna, på gräs Din kommentar förra gången: ”det finns redan en vagn i spelet. Använd den som förlaga men gör den trasig”",
+ "vad": "Steg 11.6.13: grundarna kom långt bortifrån, och deras vagn gick sönder där byn ligger. Den står i lagret på startplatsen med de första sakerna i och rymmer tre stackar. Ingen bygger en sådan. En ruta stor, snett ovanifrån som stationerna, på gräs. Varje version står till vänster och vagnen som redan finns i spelet (den du valde till världskartan) till höger. Din kommentar förra gången: ”visa hur den ser ut bredvid vagnen som redan finns i spelet”",
  "av": "API:t (claude-opus-5-5), tre idéer",
  "kommentar": "det finns redan en vagn i spelet, den är förlagan. Gör den trasig",
  "versioner": [
@@ -29,6 +29,21 @@
       "..EGE...EHGGFE..",
       "..EEE...EGEEFE..",
       ".........EEEE..."
+     ]
+    },
+    {
+     "namn": "vagnen i spelet",
+     "rader": [
+      "....kkk.kkk.....",
+      "...kwwpkwwpk....",
+      "...kpppkpppk....",
+      ".kkkkkkkkkkkkkkk",
+      ".kGHGGGGGHGGk...",
+      ".kkkkkkkkkkk....",
+      "....kFGFk.......",
+      "...kFGkGFk......",
+      "....kFGFk.......",
+      ".....kkk........"
      ]
     }
    ],
@@ -57,6 +72,21 @@
       ".EEEEEEEEEEEEE..",
       "......EHGE......"
      ]
+    },
+    {
+     "namn": "vagnen i spelet",
+     "rader": [
+      "....kkk.kkk.....",
+      "...kwwpkwwpk....",
+      "...kpppkpppk....",
+      ".kkkkkkkkkkkkkkk",
+      ".kGHGGGGGHGGk...",
+      ".kkkkkkkkkkk....",
+      "....kFGFk.......",
+      "...kFGkGFk......",
+      "....kFGFk.......",
+      ".....kkk........"
+     ]
     }
    ],
    "anteckning": "Förlagan är spelets vagn: korgen ses snett ovanifrån med ljus kant runt det mörka golvet, ett mörkare framband och kryssekrade hjul under framkanten. Den här vagnen är trasig. Skaklarna har brustit: en stump sticker upp åt vänster från korgen, och den lösa biten ligger på marken nere till vänster. Det högra hjulet har rasat ihop till en halv ring, så korgens högra hörn vilar direkt på gräset. Där är frambandet sönder, och den mörka lagningen visar en planka som saknas. Det vänstra hjulet är helt; dess överkant döljs av korgen. Allt är trä i jordtoner med jord0 som kontur. Ljuset kommer uppifrån vänster, så korgens vänstra kant är ljusast. Korgen är tom, för sakerna i lagret visar spelet för sig. Bilden är en ruta stor, 16 × 16 punkter. Granskningen: Ritade om vagnen. Den förra syntes nästan från sidan: flaket var en låda med framsida, och hjulen var fyrkantiga klossar under den. Den hade också en lös stång i övre vänstra hörnet och en bit som låg skild från vagnen nere till vänster, och de tre översta raderna var tomma. Nu ses flaket ovanifrån som stationerna, med samma mått på 12 × 13 punkter. Ytan tar omkring tre fjärdedelar av höjden och har vågräta plankor i jord2 och jord3 med kornig ton. Den ljusa kanten sitter uppe till vänster och den mörkare jord1 till höger. Framkanten är ett mörkare band på 2–3 punkter, och konturen är jord0 runt om. Det som visar att vagnen är trasig sitter nu på vagnen: ett brutet stycke i bakkanten, vänster hjul kvar som en smal stående oval vid sidan, höger hjul borta så att bara axelstumpen sticker ut, och dragstången avbruten mitt fram. Flaket är tomt, så att sakerna i lagret syns i det, och den ljusa jorden med kontur syns på det olivgröna gräset. Vagnen har ingen sittplats.",
@@ -83,6 +113,21 @@
       "..EGEFE..EGE....",
       "..EGFFE..EFFE.GE",
       "...EEE....EE...."
+     ]
+    },
+    {
+     "namn": "vagnen i spelet",
+     "rader": [
+      "....kkk.kkk.....",
+      "...kwwpkwwpk....",
+      "...kpppkpppk....",
+      ".kkkkkkkkkkkkkkk",
+      ".kGHGGGGGHGGk...",
+      ".kkkkkkkkkkk....",
+      "....kFGFk.......",
+      "...kFGkGFk......",
+      "....kFGFk.......",
+      ".....kkk........"
      ]
     }
    ],

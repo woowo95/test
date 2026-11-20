@@ -16,10 +16,10 @@
   const KORT = (id, namn, vad, versioner) => ({ id, namn, typ: 'tre', vad, versioner });
 
   VAL.push(
-    KORT('f11_sallskap', 'Sällskapet på resa', 'Steg 11.5: ett sällskap som är ute på resa syns på världskartan där det är just nu och flyttar sig en ruta i taget. Bilden visar det mellan ett träd och ett berg ur spelet.', [
-      PA_KARTAN('Två vandrare i rad med packning på ryggen.', ['', '', '.....kk......kk.', '....kwwk....kwwk', '....kwwk....kwwk', '..kk.kk...kk.kk.', '.kJJkrrk.kJJkrrk', '.kJlkrrk.kJlkrrk', '.kJJkrrk.kJJkrrk', '..kkkrrk..kkkrrk', '....kjjk....kjjk', '....k.k.....k.k.', '....k..k...k..k.', '...kk..kk.kk..kk']),
-      PA_KARTAN('Tre små figurer på led, den främsta med en vandringsstav.', ['', '', '', '', '.kk...kk...kk..J', 'kwwk.kwwk.kwwk.J', '.kk...kk...kk..J', 'kRRk.kggk.krrkkJ', 'kRRk.kggk.krrk.J', 'kjjk.kjjk.kjjk.J', 'k..k.k..k.k..k.J', 'kk.kkk.kkk.kk..J']),
-      PA_KARTAN('En större vandrare med ett knyte på en stång över axeln och en väska vid höften.', ['', '', '.....kk.........', '....kwwk........', '....kwwk...kkkk.', '.....kk...kJJJJk', '...kkrrkjjkJlJJk', '..kJkrrk..kJJJJk', '..kJkrrk...kkkk.', '...kkrrk........', '....kjjk........', '....k..k........', '...k....k.......', '..kk....kk......']),
+    KORT('f11_sallskap', 'Sällskapet på resa', 'Steg 11.5: ett sällskap som är ute på resa syns på världskartan där det är just nu och flyttar sig en ruta i taget. Här de tre förslagen från konceptkartan (steg 11.1.9), i spelets färger och storlek, mellan ett träd och ett berg ur spelet. Din kommentar förra gången: ”jag tror att vi hade bättre förslag på hur det kunde se ut från när vi gjorde konceptbilderna”', [
+      PA_KARTAN('En oxkärra med kapell, som karavanen på konceptkartan.', ['', '', '', '', '..kkkkk.........', '.kwwwwwk........', 'kwwwwwwwk...k.k.', 'kwwwwwwwk.kkkkkk', 'kjjjjjjjkkJJJJJk', 'kjjjjjjjk.JJJJJJ', 'kkkkkkkkk.kJJJkk', '.kSk.kSk..k.k.k.', '.kkk.kkk..k.k.k.']),
+      PA_KARTAN('Två packhästar i rad, som på konceptkartan.', ['', '', '', '', '', '', '..........k.......k', '..kkk....kJk.kkk.kJ', '.kYYYk...kJJkYYYkkJ', '.kYYYkJJJJJkkYYYkJk', '..kJJJJJJJJk.kJJJJk', '..kk.kk..kk..kk.kk.', '..k..k...k...k..k..']),
+      PA_KARTAN('En vandrare som leder en packhäst, som på konceptkartan.', ['', '', '', '', '', '', '...k..........kk', '..klk.......kkJJk', '..kYk.kkk..kkJJJ.', '.kYYYkkYYYkkkkk..', '..kjk.kJJJJJJk...', '..kjk..kk..kk....', '..k.k..k...k.....']),
     ]),
     KORT('f11_gomma', 'Gömman', 'Steg 11.5: packning som ett sällskap lämnat kvar ute i världen (en gömma) syns på världskartan tills någon hämtar den. Bilden visar den mellan ett träd och ett berg ur spelet.', [
       PA_KARTAN('Ett knyte ombundet med rep.', ['', '', '', '', '', '......kkkk......', '....kkJJJJkk....', '...kJJJyJJJJk...', '...kJJyyyJJJk...', '..kJJJJyJJJJJk..', '..kJlJJyJJJlJk..', '..kJJJJyJJJJJk..', '...kkkkkkkkkk...']),
@@ -644,15 +644,13 @@
   const L = { o: 'kol0', k: 'kol2', r: 'rost2', R: 'rost3', d: 'rost1', y: 'senap2', Y: 'senap3', z: 'senap1', j: 'jord1', J: 'jord2', b: 'jord3', w: 'ben3', W: 'ben2', s: 'skiffer2', S: 'skiffer3', q: 'skiffer1' };
   const botten = (B, w, h) => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) B.satt(x, y, B.P.i('ben', 2)); };
   const ruta = (B, rader) => { botten(B, 20, 20); ritaSprite(B, rader, L, 2, 2); };
-  // pilen upp (godkänd, sym_pil_upp) vriden ett kvarts varv medsols: pilen åt höger; speglad: åt vänster
-  const UPP = { rader: ['.......M.......', '......MPM......', '.....MOOPM.....', '....MOOONNM....', '...MOOOONNNM...', '..MOOOOONNNNM..', '.MOOOOOONNNNNM.', 'MMMMMMMMMMMMMMM', '...............'], pal: { M: '#353204', P: '#898b4c', O: '#647025', N: '#4b4f00' } };
-  const H0 = UPP.rader.length, W0 = UPP.rader[0].length;
-  const hoger = Array.from({ length: W0 }, (_, y) => Array.from({ length: H0 }, (_, x) => UPP.rader[H0 - 1 - x][y]).join(''));
-  const vanster = hoger.map(r => [...r].reverse().join(''));
+  // pilen åt vänster som redan finns i spelet (sym_vanster_pil, arenans första sida); speglad: åt höger
+  const UPP = { rader: ['..............QQ', '............QQTQ', '..........QQTTSQ', '........QQTTSSRQ', '......QQTTSSTSRQ', '....QQTTSSTSSSRQ', '..QQTTSSTSSSTSRQ', 'QQTTSSTSSSSTSSRQ', 'QQSSTSSSSSTSSSRQ', '..QQRSSSSRSSSSRQ', '....QQRSSSSSSRRQ', '......QQRSSSSRRQ', '........QQRRSRRQ', '..........QQRRRQ', '............QQRQ', '..............QQ'], pal: {'Q': '#233035', 'R': '#3e5156', 'S': '#61767a', 'T': '#8a9c9e'} };
+  const vanster = UPP.rader, hoger = vanster.map(r => [...r].reverse().join(''));
   const pil = (B, rader, x0, y0) => rader.forEach((r, y) => [...r].forEach((ch, x) => { const c = UPP.pal[ch]; if (c) B.satt(x0 + x, y0 + y, B.P.fran(c)); }));
   const S = 'Steg 11.1.22: en symbol per betydelse. I Tro delade den här saken symbol med något annat (skriftrullen, folket eller gnistorna), och nu får den en egen. Symbolen i 16 punkter på panelens botten. Ja eller nej?';
   VAL.push(
-    { id: 'f11_pil_sidor', sym: ['sym_pil_vanster', 'sym_pil_hoger'], namn: 'Pilarna åt sidorna i Seder', typ: 'janej', vad: 'Steg 11.1.16: pilarna vid upplevelserna i Seder (åt vilket håll en upplevelse drar seden, en till tre pilar) blir pixelsymboler. De är den godkända pilen upp, vriden ett kvarts varv: till vänster en pil åt vänster, sedan en åt höger och sist tre i rad, som när en upplevelse drar starkt. Ja eller nej?', versioner: [{ text: 'Pilen upp vriden ett kvarts varv: åt vänster, åt höger och tre åt höger i rad.', w: 72, h: 20, rita: B => { botten(B, 72, 20); pil(B, vanster, 2, 2); pil(B, hoger, 16, 2); for (let i = 0; i < 3; i++) pil(B, hoger, 34 + i * 12, 2); } }] },
+    { id: 'f11_pil_sidor', sym: ['sym_pil_vanster', 'sym_pil_hoger'], namn: 'Pilarna åt sidorna i Seder', typ: 'janej', vad: 'Steg 11.1.16: pilarna vid upplevelserna i Seder (åt vilket håll en upplevelse drar seden, en till tre pilar) blir pixelsymboler. Här är det pilen som redan finns i spelet (vänsterpilen i arenan), och samma pil speglad åt höger: till vänster en pil åt vänster, sedan en åt höger och sist tre i rad, som när en upplevelse drar starkt. Din kommentar förra gången: ”vi har redan pilar i spelet återanvänd dem”', versioner: [{ text: 'Vänsterpilen som finns i spelet, och samma pil speglad: åt vänster, åt höger och tre åt höger i rad.', w: 80, h: 20, rita: B => { botten(B, 80, 20); pil(B, vanster, 2, 2); pil(B, hoger, 20, 2); for (let i = 0; i < 3; i++) pil(B, hoger, 40 + i * 12, 2); } }] },
     { id: 'f11_sym_bud', sym: 'sym_bud', namn: 'Trons bud', typ: 'janej', vad: S, versioner: [{ text: 'En rundad stenhäll med ristade runor i rader.', w: 20, h: 20, rita: B => ruta(B, [
       '................', '.....oooooo.....', '...ooSSSSSSoo...', '..oSSSSSSSSSso..', '..oSqqSqSqqsso..', '..oSSSSSSSSsso..', '..oSqSqqSqSsso..', '..oSSSSSSSssso..',
       '..oSqqSSqqssso..', '..oSSSSSSsssso..', '..oSqSqqSqssso..', '..oSSSSssssssso..', '..osssssssssso..', '...oooooooooo...', '................', '................']) }] },
@@ -673,3 +671,4 @@
       '..obow.w.woJjo..', '..obow.w.woJjo..', '...obowwwoJjo...', '...obooooJJjo...', '....obbbbJjo....', '.....oooooo.....', '................', '................']) }] },
   );
 })();
+

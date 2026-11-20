@@ -1,0 +1,87 @@
+{
+ "kort": "f10_kott_far",
+ "namn": "Fårets kött",
+ "slag": null,
+ "vad": "Steg 10.3.14: köttet från fåret, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just fåret. Din kommentar förra gången: ”gör en separerat ruta som jag väjer i för varje sorts kött”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "ide": "Med ben: en benbit sedd snett uppifrån.",
+   "bilder": [
+    {
+     "namn": "f10_kott_far",
+     "rader": [
+      "................",
+      "................",
+      "...oo..oo..oo...",
+      "...wo..qo..qo...",
+      "...qo..qo..qo...",
+      "..oqoooqoooqoo..",
+      "..oqqqpqqqpqqo..",
+      "..oqpqqqpqqppo..",
+      "..rtstsstsstsr..",
+      "..rtssststsssr..",
+      "..rstssstssssr..",
+      "..rssssssssssr..",
+      "..rrrrrrrrrrrr..",
+      "................",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  },
+  {
+   "ide": "Hel form utan synliga ben, där siluetten bär skillnaden.",
+   "bilder": [
+    {
+     "namn": "kott_far",
+     "rader": [
+      "................",
+      "...oooooo.......",
+      "..owwwqqqo......",
+      ".owwqqqqqpo.....",
+      ".owqqsssqqpo....",
+      "owqsuttssqpo....",
+      "owqstuttssqpooo.",
+      "owqsttstssqpqwqo",
+      "owqsstsssqpppqpo",
+      ".oqqsssssqppooo.",
+      "..oqqqsssqppo...",
+      "...oqqqqpppo....",
+      ".....ooooooo....",
+      "................",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  },
+  {
+   "ide": "En bit som pekar åt sitt eget håll, så att sorterna får olika siluetter.",
+   "bilder": [
+    {
+     "namn": "kott_far",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      ".....wo..wo.....",
+      "..worqorrqorwo..",
+      ".rqotqoutqotqor.",
+      "rpqotqoutqosqopr",
+      "rqqptqputqpsqppr",
+      "rqpqpqqpqpqppqor",
+      "rututttstststssr",
+      ".rtuttstssssssr.",
+      "..rrssssssssrr..",
+      "....rrrrrrrr....",
+      "................",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  }
+ ]
+}

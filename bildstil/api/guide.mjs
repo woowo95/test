@@ -26,15 +26,18 @@ Bildstilens guide (regler för allt som ritas):
 - Sittplatsen är en egen sak: en station, bänk eller ett bord ritas utan pall, stubbe, stol eller annat att sitta på framför. Spelet ställer sittplatsen (stubben) framför stationen för sig, så den hör aldrig till stationens bild.
 - Tre djur, inte ett djur i tre ställningar: versionerna av ett djur är tre olika djur att välja mellan (kroppsbyggnad, päls, huvud, svans, horn), alla i samma ställning: stående på alla ben, som djuret står på kartan. Samma djur stående, sittande, liggande eller betande är inte tre versioner. Ett tamt djur som har en vild förfader i spelet (hunden och valpen efter vargen) ritas från spelets bild av förfadern.
 - Det som sitter ihop ritas som bitar som passar ihop: ett staket ritas som en bit längs (vågrät, 16 punkter bred) och en bit tvärs (lodrät, 16 punkter hög), som sätts ihop till en hage.
-- Symbolerna som finns används: finns redan en symbol för något (heligt, styrka, snabbhet, tålighet, mod) ritas ingen ny; bara det som saknas ritas.
+- Det som finns används: finns redan en symbol, en pil, en väg, en bro, en station eller en modell för något, används den som den är; bara det som saknas ritas. En väg över myren är stockvägen eller bryggan som finns, pilarna åt sidorna är pilen som finns, järnyxan byggs på flintyxans modell.
 - Anfall är en knuff: ett djur eller en människa som anfaller ritas inte i någon ny ställning. Spelet skjuter den vanliga bilden framåt mot målet och tillbaka; rita aldrig särskilda anfallsbilder (gap, tunga, resta ramar).
 - Husen byggs som husen: ett hus (fähuset, ladan) byggs av spelets väggar, tak och dörrar som de andra husen och får ingen egen bild.
 - Det som kan vändas ritas åt båda håll: en sak som står längs eller tvärs på kartan (en kälke, en ho, ett kar) ritas både liggande vågrätt och stående lodrätt.
 - Samma storlek när något ritas om: en sak som ritas om behåller sin storlek, om inte kommentaren säger något annat.
 - Väggar helt uppifrån: en vägg (av timmer, sten eller flätverk) ritas rakt ovanifrån som spelets timmervägg, ett band av krönet utan någon framsida.
+- Ett godkänt djur är modellen: en variant av ett godkänt djur (oxen eller hästen av kon) ritas med exakt samma modell, samma form, ställning och storlek; bara det som skiljer på riktigt ändras (längre horn, man, svans, färg).
 - Det valda djuret från två håll: när ett djur är valt ritas samma djur (samma form) från två vinklar, snett framifrån och från sidan, och med två eller tre täckningar (pälsens färg och teckning).
+- Bredvid sina släktingar: ett förslag av något som redan finns i andra sorter (en sköld, en vagn, en yxa) visas bredvid sorterna som finns i spelet.
+- Marken i en större yta: mark som upprepas (myr, äng) visas också kaklad över en större yta, minst sex gånger fyra rutor, så att man ser mönstret.
 - Sorterna skiljer sig i form: olika sorter av samma slags sak (kött från olika djur) skiljer sig i formen där det är rimligt, inte bara i färgen.
-- Små barn ser små ut: de små barnens porträtt byggs av porträttdelar som finns, valda så att barnet ser tydligt ungt ut (runt huvud, stora ögon, liten näsa och mun).
-- Vätskan syns i karet: en station eller behållare som kan ha olika vätskor visar vätskan i vätskans färg, en bild per vätska.
+- Små barn ser små ut: de små barnens porträtt byggs av egna porträttdelar för nästan nyfödda barn (stort runt huvud, stora ögon, knappnäsa, liten mun, nästan inget hår), som Björn går igenom i granskningen; inte av de vuxnas delar.
+- Vätskan syns i karet: en station eller behållare som kan ha olika vätskor visar vätskan i vätskans färg, en bild per vätska, och vätskan fyller hela utrymmet i karet.
 
 Svara bara med JSON enligt schemat.`;

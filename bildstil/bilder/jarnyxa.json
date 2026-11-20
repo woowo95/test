@@ -1,20 +1,20 @@
 {
  "id": "jarnyxa",
- "w": 11,
+ "w": 10,
  "h": 12,
  "rader": [
-  "....EGE....",
-  "...QQQQQQQ.",
-  "...QTSSSSSQ",
-  "...QSRSRSSQ",
-  "...QRRQQSSQ",
-  "..EHE..QRSQ",
-  "..EGE..QSTQ",
-  ".EHE...QRSQ",
-  ".EGE....QQ.",
-  "EHE........",
-  "EFE........",
-  "EE........."
+  ".....QQQ..",
+  "....QTTSQ.",
+  "....QTSSRQ",
+  "...EHQSRRQ",
+  "...EGEQRQ.",
+  "..EHE.QQ..",
+  "..EGE.....",
+  ".EHE......",
+  ".EGE......",
+  "EHE.......",
+  "EFE.......",
+  "EE........"
  ],
  "ritad": 1,
  "av": "API:t (claude-opus-5-5), tre idéer",
@@ -83,5 +83,22 @@
    ],
    "om": "Järnyxa i 11×12 punkter. Skaftet går snett från nedre vänstra hörnet och upp genom skafthålet, där en bit av trät syns. Det är jord0-konturen kring jord2 och jord3 som på flintyxan. Huvudet är av grått järn i skiffertoner med skiffer0-kontur: en kort nacke till vänster om skaftet och ett utsvängt blad med skägg till höger. Eggen är ljusast i skiffer3, och nackens övre vänstra del ljusare enligt ljuset. Det finns ingen surrning. Granskningen: Inget behövde rättas. Yxan är 11 × 12 punkter och fyller rutan, och mot kolonisten (14 × 20) är den rimlig som ett handredskap. Den ligger snett på marken: skaftet går diagonalt från nere till vänster upp genom skafthålet och sticker ut lite ovanför huvudet. Huvudet är smitt järn utan surrning, med en kort nacke till vänster och ett blad till höger som vidgas lika mycket uppåt och nedåt (symmetriskt). Konturerna är materialens mörkaste toner: skiffer0 runt järnet och jord0 runt träet, ingen kol0. Ljuset kommer uppe från vänster: den ljusa skiffer3 ligger på nackens övre vänstra del och längs eggen, jord3 på skaftets vänstra sida. Varje material har två till tre toner. Det grå järnet och det ljusbruna skaftet med mörk kontur syns tydligt mot det olivgröna gräset."
   }
- ]
+ ],
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "....EGE....",
+   "...QQQQQQQ.",
+   "...QTSSSSSQ",
+   "...QSRSRSSQ",
+   "...QRRQQSSQ",
+   "..EHE..QRSQ",
+   "..EGE..QSTQ",
+   ".EHE...QRSQ",
+   ".EGE....QQ.",
+   "EHE........",
+   "EFE........",
+   "EE........."
+  ]
+ }
 }
