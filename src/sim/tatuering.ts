@@ -13,6 +13,7 @@ import { getable } from './behov';
 import { personHand } from './personlogg';
 import { rnd } from './slump';
 import { tatKrok } from './uppvaxt';
+import { tanke } from './tankar';
 
 export type TatPlats = 'panna' | 'kind' | 'hals';
 export interface TatDef { namn: string; plats: TatPlats; sed: Sed; text: string }
@@ -81,7 +82,7 @@ export function tatKlar(s: State, g: Person, ref?: number) {
   q.tatV!.splice(i, 1); if (!q.tatV!.length) delete q.tatV;
   const d = DEF[v.m], stil = byStil(s);
   (q.tat ??= []).push({ m: v.m, p: d.plats, stil, t: s.now, av: g.id });
-  ovning(g, 'hantverk', TATU.ovning); gjort(s, g, 'tatuerat'); count(s, 'tatuering'); count(s, 'tatuering_' + v.m);
+  ovning(g, 'hantverk', TATU.ovning); gjort(s, g, 'tatuerat'); count(s, 'tatuering'); count(s, 'tatuering_' + v.m); tanke(q, 'fickTatuering', s.now); // (steg 12.1.131)
   personHand(s, q, 'markt', `Fick ett märke i ${TAT_PLATSORD[d.plats].best} av ${g.name}, ${TAT_STILNAMN[stil]}, efter att ${han(q)} ${d.text}.`);
   if (forstaGang(s, 'forstaTatuering')) log(s, `${g.name} gjorde byns första tatuering: ${TAT_STILNAMN[stil]} i ${gen(q.name)} ${TAT_PLATSORD[d.plats].obest}, för att ${han(q)} ${d.text}.`, 'world', [g.id, q.id]);
 }

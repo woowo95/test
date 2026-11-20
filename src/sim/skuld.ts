@@ -3,7 +3,7 @@ import { antal, och } from './ord';
 // Den som i ett utbrott gjort någon illa bär en skuld (humor.ts skapar den). Den tynger humöret och bleknar. Den som bär en
 // skuld väljer hellre den hen gjort illa att samtala med och ber om förlåtelse med en botgåva ur det hen har över
 import { honom } from './ord';
-import { ALDER, REL, ageOf, alive, count, getRel, isParent, living, log, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, count, getRel, isParent, living, log, stat } from './folk';
 import { HANDELSER, vittnen } from './rykten';
 import { personHand } from './personlogg';
 import { kronika } from './historik';
@@ -13,6 +13,7 @@ import { Anger, DAY, HOUR, Person, State } from './typer';
 import { Vara, flytta, gavaKlar } from './byte';
 import { behovAv, payable, personPart } from './behov';
 import { grundvarde } from './varde';
+import { tanke } from './tankar';
 
 export const SKULD = balans('skuld', {
   bas: 0.15, // styrkan: bas × allvaret × empatin / 10 × hur mycket man bryr sig × (1 + andelen vuxna som vet), ...
@@ -122,7 +123,7 @@ export function forlatChans(s: State, p: Person, q: Person, x: Anger) {
 }
 export function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
   if (rnd(s, 'skuld', q) >= forlatChans(s, p, q, x)) { // nej: inget byter ägare, skulden sitter kvar och bleknar
-    think(p, `${q.name} förlät mig inte`, -0.03, s.now, 12 * HOUR);
+    tanke(p, 'forlatInte', s.now, { namn: q.name });
     count(s, 'skuldNej');
     return;
   }
@@ -130,8 +131,8 @@ export function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
   for (const w of gava) flytta(s, w, g, m);
   gavaKlar(s, g, m, gava, false);
   const vad = varorNamn(gava);
-  think(q, `Fick ${vad} av ${p.name} som bot`, 0.05, s.now, 12 * HOUR);
-  think(p, `${q.name} förlät mig`, 0.05, s.now, 12 * HOUR);
+  tanke(q, 'fickBot', s.now, { vad, namn: p.name });
+  tanke(p, 'forlat', s.now, { namn: q.name });
   // relationen lagas halva vägen tillbaka till där den var innan
   const r = getRel(s, p, q);
   if (x.op0 > r.op) r.op = clamp(r.op + (x.op0 - r.op) / 2, -100, 100);

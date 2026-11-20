@@ -7,7 +7,7 @@ import { sallskapTyngd, trampaFard } from './leder';
 import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, makeName, stat, think, paKartan } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, makeName, stat, paKartan } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
@@ -46,6 +46,7 @@ import { gastAv, gastGar, gastTillbaka, hp, nyGast, nyttGastId } from './gast';
 import { valkomnaHandlare } from './kyrka';
 import { FORDON, lassAv } from './fordon';
 import { tamArt, type TamArtId } from './tamdjur';
+import { tanke } from './tankar';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // En handlare kommer när en by i världen skickat hen (byhandling.ts, steg 11.6.8): hen går över världskartan, väntar vid
@@ -592,7 +593,7 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
     if (!isSocial(p) || h.affar) continue; // den som handlar och handlaren pratar bara om affären (steg 4.5.7.5)
     if (rnd(s, 'handel', p) >= dtSec / HANDEL.pratSek) continue;
     const out = (stat(p, 'empati', s.now) + H.skill.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
-    think(p, out > 0 ? `Småpratade med ${H.name}` : `Småpratet med ${H.name} gick trögt`, out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, s.now, HANDEL.pratTim * HOUR);
+    tanke(p, out > 0 ? 'smaprat' : 'smapratTrogt', s.now, { namn: H.name, v: out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, tid: HANDEL.pratTim * HOUR });
     events?.push({ a: p.id, b: h.id, kind: 'småprat', good: out > 0, t: s.now });
     if (out > 0) { prisIPrat(s, p, H, h.varor.map(w => w.k)); horOmGast(s, p, H, ORT.prat); } // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15) och var hen bor (steg 11.4.2)
     count(s, 'handlarPrat');
@@ -889,7 +890,7 @@ function slut(s: State, h: Handlare, a: Affar, p: Person | undefined) {
   if (p) (h.handlat ??= []).push(p.id);
   count(s, 'egenHandel');
   if (bytt) { count(s, 'egnaByten'); if (a.salj) count(s, 'saltOver'); }
-  else { if (p) think(p, `Gick tomhänt från ${hp(s, h).name}`, HANDEL.tomTanke, s.now, HANDEL.tomTim * HOUR); count(s, 'tomhant'); }
+  else { if (p) tanke(p, 'tomhant', s.now, { namn: hp(s, h).name, v: HANDEL.tomTanke, tid: HANDEL.tomTim * HOUR }); count(s, 'tomhant'); }
   if (p && !bytt && a.forsok?.length) avbrutenAffar(s, h, a, p);
 }
 // hur mycket handlaren gillar bybon, −100 till 100 (redogörelsen, steg 5.4.6.1)

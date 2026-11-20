@@ -31,6 +31,15 @@
 - Bara typkontrollen och stegens egna scenarier (sag, ullsax, jarnnal, hacka, gryta, las) är körda, och de närmaste (vard, tatuering, stridvard, vardval, kokning, byggsten, fangelse, tradorr, dorr, teknik, tider, arbetstid, ord, ikoner, symboler, jarnredskap, jarnskrot, isborr, eldstal, heltal). Systemet är skyldigt hela kedjan när grenen slagits ihop med varld: `npm run kedja -- "npm run -s koll" "npm run -s likhet"`, med nytt facit.
 - Det som ändrar byarna: sågen vid klyvplatsen (plankorna går fortare), ullsaxen och järnhackan (nya rader i klippningen och brytandet, och REDSKAPMAL vill ha dem), järnnålen (bennålen och järnnålen är nu en grupp i REDSKAPSGRUPPER, och byn vill ha en nål när någon kan smida och byn har en slöjdbänk), järngrytan (kokningen kan ge dubbel sats) och den låsta dörren (en ny teknik och en dörr som är bommad också när huset är tomt, så rövarna och anfallarna hugger längre). Likheten bör köras eftersom klippningen och brytandet fått en redskapsrad.
 
+## Grenen par-tankar (12.1.131–12.1.136, humöret, drömmarna, upplevelserna, rykten, mallarna och samtalsämnena)
+
+- Committerna på par-tankar (145728a–f4630ae) har bara typkontrollen och stegens egna scenarier (tankar, drommar, uppvaxt2, rykten2, mallar, amnen2) bakom sig, och de närliggande scenarierna kronika, kronikakat, kronikalista, beskrivning, berattelser, epidemi, brand, oversvamning, tornado, textfel, ord, uppvaxt, vuxenliv, humor, rykten, ikoner, samtal och amnen. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld, och nytt facit.
+- 12.1.131 del 1 (145728a, flytten till TANKAR) är prövad med `npm run samma` mot 2c52678: samma utveckling som förut. Del 2 och stegen efter ändrar spelet (nya tankar, drömmar, upplevelser, intryck och samtalsämnen ändrar humöret, relationerna och sederna), så facit och samma-kollen visar annan utveckling.
+- Nya rader i TAKTER (tankarTimme och drommar, en gång i timmen) och en ny slumpföljd (drom): skyldig `npm run likhet`, och `npm run kostnad` i fasens kodgenomgång.
+- Nya krönikerader (k_rovare, k_brand, k_tornado, k_flod, k_epidemi, k_tro, k_resa, k_handel, k_djur, k_ratt) och nya texter: `npm run texter` bör visa att varianterna väljs; brandens, tornadons och översvämningens slutrad i krönikan skrivs nu ur mallarna i stället för den gamla texten.
+- 12.1.173 (gudlös, en ny rad i TAKTER en gång om dygnet) och 12.1.175 (lusten till rus ändrar chansen att dricka på kvällen, och därmed ruset, grälen och bakfyllan): samma kedja; `npm run likhet` täcker båda.
+- Femton nya intryckssymboler (i_forsvarare … i_fangelsekund i ikoner.ts) är platshållare; skyldig `npm run utseende` och tre versioner var i bildstilens valdel (publiceras inte från grenen).
+
 ## Hopslagna nattgrenar
 
 - natt-bildstil (12.1.69, 12.1.70, 12.1.102): src/portrattkarna.ts är omskriven (samma porträtt punkt för punkt); skyldig samma-kollen och `npm run utseende`.

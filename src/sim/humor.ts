@@ -1,6 +1,6 @@
 import { amountOf } from './lager';
 import { personHand, satHumor } from './personlogg';
-import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat, think } from './folk';
+import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
 import { skiljas } from './samtal';
@@ -183,7 +183,7 @@ function slar(s: State, p: Person, q: Person, k: Utbrott, v: Vald) {
     const dod = skada(s, q, d, t, v.g[0] + rnd(s, 'humor', p) * (v.g[1] - v.g[0]), 'drap', `när ${p.name} slog hen`);
     if (dod) { count(s, 'drap'); die(s, q, dod); return; }
   }
-  think(q, `${p.name} slog mig`, -v.tanke, s.now, v.dygn * DAY);
+  tanke(q, 'slogMig', s.now, { namn: p.name, v: -v.tanke, tid: v.dygn * DAY });
   if (isParent(p, q) && ageOf(q, s.now) < ALDER.vuxen) {
     count(s, 'utb_barn'); livet(s, p, 'slogBarn');
     upplev(s, q, q.upp?.some(u => u.k === 'slagen') ? 'slagenIgen' : 'slagen', p.name);
@@ -202,18 +202,18 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
     log(s, rad.grad >= 4 ? `I vredesmod ${rad.text.split(' ')[0]} ${p.name}${rad.text.includes(' ') ? ' ' + rad.text.split(' ').slice(1).join(' ') : ''} ${mal.name}.` : `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]); // ett svårt dåd står för sig, utan "mår dåligt" (steg 12.1.121)
     if (van) { personHand(s, p, 'relation', `Bröt vänskapen med ${mal.name}.`, 'ont'); personHand(s, mal, 'relation', `${p.name} bröt vänskapen.`, 'ont'); } // steg 9.2.107
     if (k === 'elak') {
-      think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
+      tanke(mal, 'elakMot', s.now, { namn: p.name, v: -HUMOR.elakHumor, tid: HUMOR.elakTim * HOUR });
       { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.elakOp, -100, 100); }
       handelse(s, p, 'elak', mal);
     } else if (k === 'skitsnack') {
       skitsnack(s, p, mal);
     } else if (k === 'puttas') {
-      think(mal, `${p.name} puttade mig`, -HUMOR.puttHumor, s.now, HUMOR.puttTim * HOUR);
+      tanke(mal, 'puttade', s.now, { namn: p.name, v: -HUMOR.puttHumor, tid: HUMOR.puttTim * HOUR });
       { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.puttOp, -100, 100); }
     } else if (k === 'slut') {
       const r = getRel(s, p, mal);
       if (!van) skiljas(s, p, mal, r);
-      else { r.op = clamp(r.op - HUMOR.brytOp, -100, 100); think(mal, `${p.name} bröt vänskapen`, -HUMOR.brytTanke, s.now, HUMOR.brytDygn * DAY); }
+      else { r.op = clamp(r.op - HUMOR.brytOp, -100, 100); tanke(mal, 'brotVanskap', s.now, { namn: p.name, v: -HUMOR.brytTanke, tid: HUMOR.brytDygn * DAY }); }
     } else if (rad.vald) slar(s, p, mal, k, rad.vald);
     if (rad.skuld) angra(s, p, mal, rad.skuld, van ? 'bröt vänskapen med' : rad.angrar ?? rad.text, op0); // efter det, så att skammen räknar dem som såg
   } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? (SAKER[ting.k]?.ett ? ' sitt eget ' : ' sin egen ') : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
@@ -229,7 +229,7 @@ export function utbrottKlar(s: State, p: Person, t: Task) {
     const x = tingOf(s).find(q => q.id === t.ref && q.hos === undefined && q.bar === undefined && q.lass === undefined);
     if (x) { s.ting = tingOf(s).filter(q => q !== x); count(s, 'utb_sonder_' + x.k); }
   }
-  think(p, 'Fick ur mig det', HUMOR.lattnad, s.now, HUMOR.lattnadTim * HOUR);
+  tanke(p, 'fickUr', s.now, { v: HUMOR.lattnad, tid: HUMOR.lattnadTim * HOUR });
 }
 
 // att flytta ut (steg 3.2.3) händer direkt, inte som en handling: bara den som inte har en partner i byn, och bara om minst
@@ -334,3 +334,4 @@ export function stepHumor(s: State) {
 satHumor(moodOf); // personens händelser minns humöret (steg 9.2.108)
 import { RUS, kanSupa, rusAv, supa } from './rus';
 import { angerText, angerTim, angra } from './skuld';
+import { tanke } from './tankar';

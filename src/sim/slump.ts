@@ -40,6 +40,7 @@ export const STROMMAR = {
   gift: 'giftermål med grannbyarna: vem som gifter sig, med vilken by och vem som flyttar (steg 11.3.6, giftermal.ts)',
   skuld: 'skulden: när man ber om förlåtelse och svaret (steg 10.8.2, skuld.ts)',
   resa: 'resorna: vilka sällskapet möter och vad som händer på vägen (fas 11.5, resa.ts)',
+  drom: 'drömmarna: om den som sover drömmer, och vad (steg 12.1.132, drommar.ts)',
   vackt: 'den väckta byn: allt som byggs ur radens tal, folket, deras åldrar och släkt (fas 11.13, vackt.ts)',
 } as const;
 export type Strom = keyof typeof STROMMAR;

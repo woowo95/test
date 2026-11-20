@@ -8,7 +8,7 @@ import { LandmarkId } from './landmarken';
 import { H, HOUR, Person, State, Task, W } from './typer';
 import { isLight } from './tid';
 import { temperature, vaderNu } from './vader';
-import { KROPP, count, alive, ageOf, ALDER, makeName, getRel, isSick, living, stat, think, log, ovning } from './folk';
+import { KROPP, count, alive, ageOf, ALDER, makeName, getRel, isSick, living, stat, log, ovning } from './folk';
 import { TORST } from './torst';
 import { SAKER, sakNamn } from './saker';
 import { BYN } from './egendom';
@@ -47,7 +47,7 @@ import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
 import { PAB, pabud } from './styre';
 import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid, UPPDRAGTAL } from './uppdrag';
-import { handelse, ryktbarhet } from './rykten';
+import { handelse, ryktbarhet, RYKTE } from './rykten';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -60,6 +60,8 @@ import { TORKA } from './torka';
 import { BYREL, byHandelse, gavaRel } from './byrel';
 import { kronika } from './historik';
 import { antal, hans, honom, horText, och, spelTid, stor, tal } from './ord';
+import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 // "en sak", "tre saker"
 const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
 
@@ -840,7 +842,7 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
 export function hemkomst(s: State, sl: Sallskap, t: number) {
   const in_ = sl.ut?.kant ?? bynsMitt(s);
-  for (const p of resenarer(s, sl)) if (ute(p)) kommHem(s, p, in_.x, in_.y);
+  for (const p of resenarer(s, sl)) if (ute(p)) { const borta = t - (p.ute ?? t); kommHem(s, p, in_.x, in_.y); tanke(p, 'komHem', t); upplev(s, p, 'resaBarn'); if (borta >= RYKTE.berestDygn * DAY) handelse(s, p, 'reste'); } // (steg 12.1.131)
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
   vagnHem(s, sl, in_.x, in_.y);
   delaHemma(s, sl);
@@ -909,6 +911,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   for (const p of folk) larOrt(s, p, sl.mal, O_BESOKT, 1, { t });
   const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
   dagbok(s, sl, 'fram', `Kom fram till ${plats.namn}.`, t);
+  if (plats.by === undefined) for (const p of folk) tanke(p, 'sagStort', t); // ett landmärke (steg 12.1.131)
   if (sl.skal === 'uppdrag') uppdragFram(s, sl, t);
   if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Gick ner i gruvan och stannade där i ${spelTid(stannarFor(sl) * DAY)}.`, t);
   const ruin = ruinRad(vl, sl.mal);
@@ -1412,8 +1415,8 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
     if (p) { handelse(s, p, 'turne', undefined, r?.namn ?? 'grannbyn'); kronika(s, `${p.name} kom hem från en turné till ${r?.namn ?? 'grannbyn'}${sl.turne ? ` med ${sl.turne} silver i gåva` : ''}.`, 'grannar'); }
   }
   if (u) for (const p of folk) {
-    if (u.hur === 'klart') { handelse(s, p, 'uppdrag', undefined, u.namn.toLowerCase()); think(p, `Klarade ${u.namn.toLowerCase()}`, UPPDRAGTAL.glad, t, UPPDRAGTAL.tanke * DAY); }
-    else think(p, u.hur === 'tomt' ? 'Kom fram till en tom plats' : 'Uppdraget gick inte', -UPPDRAGTAL.besviken, t, UPPDRAGTAL.tanke * DAY);
+    if (u.hur === 'klart') { handelse(s, p, 'uppdrag', undefined, u.namn.toLowerCase()); tanke(p, 'klaradeUppdrag', t, { namn: u.namn.toLowerCase(), v: UPPDRAGTAL.glad, tid: UPPDRAGTAL.tanke * DAY }); }
+    else tanke(p, u.hur === 'tomt' ? 'tomPlats' : 'uppdragGickInte', t, { v: -UPPDRAGTAL.besviken, tid: UPPDRAGTAL.tanke * DAY });
   }
   count(s, 'resa redogörelse');
   // byn minns de senaste resorna; de äldsta som kommit hem glöms

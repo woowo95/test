@@ -3,7 +3,7 @@ import { personHand } from './personlogg';
 import { TROSKEL } from './forradsmal';
 import { delade, fyll, kronikaBer, larFalt, loggBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think, paKartan } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, paKartan } from './folk';
 import { rnd } from './slump';
 import { amountOf, harTillHands, use } from './lager';
 import { SAKER, isTool } from './saker';
@@ -20,6 +20,7 @@ import { gudHandelse } from './religion';
 import { notis } from './notiser';
 import { TEKNAMN, gora, goraUtan, lista, och } from './ord';
 import { handelse } from './rykten';
+import { tanke } from './tankar';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -313,7 +314,7 @@ export function learn(s: State, p: Person, t: Tek, from?: Person) {
   log(s, `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, 'skill', [p.id]);
   personHand(s, p, 'lart', `Kom på hur man kan ${goraUtan(t)}.`); // steg 9.2.107
   if (first) notis(s, 'teknik', `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, [p.id]);
-  think(p, `Kom på hur man kan ${goraUtan(t)}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
+  tanke(p, 'komPa', s.now, { vad: goraUtan(t), v: TEKTAL.kommaPa, tid: TEKTAL.kommaPaTim * HOUR });
   handelse(s, p, 'pahittig', undefined, `hur man kan ${goraUtan(t)}`); // de som ser det minns hen som påhittig (steg 10.4.9)
   if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `lärde sig ${gora(t)}`); upplev(s, p, 'egenTeknik', `hur man kan ${goraUtan(t)}`); gudHandelse(s, 'hantverk', `konsten ${gora(t)}, som ${p.name} kom på`); }
 }

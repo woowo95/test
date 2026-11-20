@@ -15,7 +15,7 @@ import { freeNear, roomAt } from './byggnad';
 import { djurStrid } from './kampar';
 import { jaktFoljer, jaktKallare, jaktPlatsVid, jaktSamlas } from './rovdjursjakt';
 import { bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, livet, living, log, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, livet, living, log, stat } from './folk';
 import { isLight, yearNo } from './tid';
 import { halsa, kanGa } from './halsa';
 import { avbryt, foodOf } from './lager';
@@ -30,6 +30,7 @@ import { upplev } from './uppvaxt';
 import { tecken } from './religion';
 import { H, HOUR, MIN, Person, SEC, State, Task, W } from './typer';
 import { bynsMitt } from './omrade';
+import { tanke } from './tankar';
 
 export const BJORNMOTE = balans('bjornmote', {
   nara: 2.5, // så nära (rutor) man ska komma björnen för att överraska den ...
@@ -90,7 +91,7 @@ export function bjornSteg(s: State) {
       return; // en strid per slag
     }
     // den ser björnen, blir rädd och går därifrån
-    think(p, ungar.length ? 'Såg en björn med ungar' : 'Såg en björn', -BJORNMOTE.rädd, s.now, BJORNMOTE.räddTim * HOUR);
+    tanke(p, ungar.length ? 'sagBjornUngar' : 'sagBjorn', s.now, { v: -BJORNMOTE.rädd, tid: BJORNMOTE.räddTim * HOUR });
     avbryt(s, p);
     tecken(s, p, 'bjornVande'); // björnen som vände om (steg 10.3.7)
     log(s, `${p.name} kom nära en björn${ungar.length ? ' med ungar' : ''} och drog sig försiktigt undan.`, 'world', [p.id]);
@@ -210,7 +211,7 @@ function bjornSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   folk.forEach(p => {
     const k = kampeAv(p);
     if (!k) return;
-    efterKampen(s, p, st, k, svara, jakt ? (falld ? 'Fällde björnen på björnjakten' : 'Björnen kom undan') : 'Anfölls av en björn', jakt && falld);
+    efterKampen(s, p, st, k, svara, jakt ? (falld ? 'falldeBjorn' : 'bjornUndan') : 'anfollsBjorn', jakt && falld);
     avbryt(s, p);
     const tid = SLAGSMAL.minst * SEC; // striden har redan pågått på kartan (steg 9.2.29)
     // den första som står kvar styckar den fällda björnen och bär hem det hen orkar; resten ligger i en hög där den föll
@@ -240,7 +241,7 @@ function jagareVidStriden(s: State) {
   for (const p of living(s)) {
     if (g.g.st.kampar.some(k => k.pid === p.id) || !p.task || !JAGAR.has(p.task.act) || Math.hypot(p.x - g.k.x, p.y - g.k.y) > BJORNMOTE.med) continue;
     if (stat(p, 'mod', s.now) / 20 >= BJORNMOTE.gaMed) { kartStridMed(s, g.g, p, 0); count(s, 'bjornstridGickMed'); }
-    else { avbryt(s, p); think(p, 'Såg en björn slåss med folk', -BJORNMOTE.rädd, s.now, BJORNMOTE.räddTim * HOUR); count(s, 'bjornstridUndan'); }
+    else { avbryt(s, p); tanke(p, 'sagBjornSlass', s.now, { v: -BJORNMOTE.rädd, tid: BJORNMOTE.räddTim * HOUR }); count(s, 'bjornstridUndan'); }
   }
 }
 const JAGAR = new Set(['jakt', 'kaninjakt', 'radjurjakt', 'fageljakt']); // de som jagar byte (inte björnjakten, som redan slåss)

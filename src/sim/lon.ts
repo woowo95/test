@@ -6,12 +6,12 @@
 // budgetdel arbetet hör till: delens silver först, sedan hela saker av den mat byn har över bufferten. Det som inte kan betalas
 // stryks; den som inte fick sin lön blir missnöjd varje timme och arbetar mindre för byn. I valet av arbete läggs lönen till
 // omtanken om byn, gånger den del av lönen man verkligen fått de senaste åren.
-import { DAY, HOUR_S, Person, State } from './typer';
+import { HOUR_S, Person, State } from './typer';
 import { knows } from './teknik';
 import { forsorjer } from './behov';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { ALDER, ageOf, count, living, log, think } from './folk';
+import { ALDER, ageOf, count, living, log } from './folk';
 import { LAGAR, LagTalDef, lagGaller, lagTal } from './lagar';
 import { fjardedel, lutning } from './seder';
 import { ARBETE, grundvarde } from './varde';
@@ -23,6 +23,7 @@ import { FOOD } from './saker';
 import { foodDaysAll } from './ekonomi';
 import { buffert } from './forradsmal';
 import type { Task } from './typer';
+import { tanke } from './tankar';
 
 export const LON = balans('lon', {
   skattFor: 100, // så mycket (grundvärde) byn tagit in i skatt innan någon kan komma på lönen
@@ -103,7 +104,7 @@ export function lonDygn(s: State) {
     const andel = clamp(fick / skuld, 0, 1);
     p.lonFick = (p.lonFick ?? 1) * (1 - LON.minne) + andel * LON.minne;
     p.lonObetald = andel < 1 - 1e-9 ? 1 - andel : undefined;
-    if (p.lonObetald) think(p, 'Fick inte hela sin lön', -0.1, s.now, DAY / 4);
+    if (p.lonObetald) tanke(p, 'lonObetald', s.now);
   }
 }
 

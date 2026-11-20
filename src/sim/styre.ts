@@ -1,6 +1,6 @@
 import { FANG, fangelseDygn, fangelseLedigt, satt } from './fangelse';
 import { honom, slaktOrd } from './ord';
-import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think, vuxnaOf } from './folk';
+import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, vuxnaOf } from './folk';
 import { efterlevs, lagForBrott, straffNu, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
@@ -21,7 +21,7 @@ import { grundvarde } from './varde';
 import { sakNamn } from './saker';
 import { ownMove, ownsAmount } from './lager';
 import { rnd } from './slump';
-import { UPPV, upplev } from './uppvaxt';
+import { UPPV, upplev, barnTill } from './uppvaxt';
 import { kronika } from './historik';
 import { Sed, drar, influence } from './seder';
 import { knows } from './teknik';
@@ -31,6 +31,7 @@ import { temperature, vaderNu } from './vader';
 import { notis } from './notiser';
 import { homeless } from './byggnader';
 import { tecken } from './religion';
+import { tanke } from './tankar';
 
 // Styret (steg 3.5, "Ledarskap och makt" i designdokumentet).
 // Ledarskap är en teknik som man kommer på och lär ut i samtal (teknik.ts). Bara den som kan den kan bli ledare: när byn har
@@ -529,7 +530,7 @@ function doma(s: State, l: Person) {
       log(s, `${q.name} och ${drabbad.name} gör upp i en holmgång.`, 'rel', [q.id, drabbad.id]);
       continue;
     } else if (lag && rang <= STR.tingRost && !Object.values(st.ministrar ?? {}).length && FRAGOR.skuld) {
-      if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); continue; }
+      if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); tanke(q, 'frikandes', s.now); kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), fri: true }); continue; }
     }
     // ett straff som kräver något (Fängelse, steg 11.12.3) döms bara när det finns; annars det närmaste mildare, och lagen behåller sitt
     const fang = !!fangelseLedigt(s), vikt = HANDELSER[b.h].vikt, steg = lag ? straffNu(s, lag.straff) : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang, fang);
@@ -543,8 +544,10 @@ function doma(s: State, l: Person) {
     ratt.push(r);
     count(s, 'straff'); count(s, 'straff_' + steg);
     log(s, `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
+    if (steg !== 3 && steg !== 6) kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b), straff: STRAFF_REG[steg].nu }); // tinget dömde (steg 12.1.135); utvisningen och döden har sina rader
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
-    think(q, `Straffades av ${l.name}`, -STR.tanke * (steg + 1), now, STR.tankeDygn * DAY);
+    tanke(q, 'straffad', now, { namn: l.name, v: -STR.tanke * (steg + 1), tid: STR.tankeDygn * DAY });
+    barnTill(s, q, undefined, 'foralderDomd', q.name); // barnen (steg 12.1.133)
     const familj = living(s).filter(f => f !== l && (f === q || f.partner === id || isKin(f, q))); // innan den utvisade har lämnat byn och partnern
     if (steg >= 2 && steg !== 4) q.straffad = true; // straffad hårt: slag, utvisning, tjänst, döden eller förlorad rätt (lagen rostStraffade)
     if (steg === 4) botes(s, q, drabbad && alive(drabbad) ? drabbad : undefined); // utan någon drabbad går böterna till byn
@@ -639,7 +642,7 @@ export function stepStyre(s: State) {
   const l = ledareOf(s);
   if (!l) return;
   s.styre!.ai = ai;
-  think(l, 'Leder byn', LED.tanke, s.now, 2 * HOUR);
+  tanke(l, 'lederByn', s.now, { v: LED.tanke });
   if (s.styre!.pabudAi !== ai || !TITELNAMN.has(s.styre!.titel ?? '')) seOverTitel(s, l);
   if (s.styre!.pabudAi !== ai) sattPabud(s, l, ai);
   // Förlikning – Fejd låses upp första gången en konflikt avgörs med våld (steg 8.3.5)

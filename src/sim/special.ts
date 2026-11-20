@@ -8,13 +8,14 @@ import { ganger } from './ord';
 // I samtalen berättar den som tycker om byns egen rätt om den, och den som lyssnar får tycke för den
 import { DAY, HOUR, Person, State } from './typer';
 import { balans } from './balans';
-import { count, log, think } from './folk';
+import { count, log } from './folk';
 import { rnd } from './slump';
 import { gen } from './ord';
 import { kronika } from './historik';
 import { KATEGORIER, rattInfo, smakSak } from './ratter';
 import { smaka, smakAv, RYKTE } from './rykten';
 import { delade } from './berattelser';
+import { tanke } from './tankar';
 
 export const SPECIAL = balans('special', {
   chans: 0.05, // chansen per sats att den skickliga kocken ger sorten ett namn ...
@@ -47,7 +48,7 @@ export function specialSats(s: State, p: Person, k: string, av: string[], ai: nu
 }
 // den som äter eller dricker en tradition får en liten tanke
 export function specialTanke(s: State, p: Person, per: Record<string, number>) {
-  for (const k in per) if (per[k] > 0 && specialAv(s, k)?.trad) { think(p, 'Åt byns egen rätt', SPECIAL.glad, s.now, SPECIAL.gladTim * HOUR); return; }
+  for (const k in per) if (per[k] > 0 && specialAv(s, k)?.trad) { tanke(p, 'byggsRatt', s.now, { v: SPECIAL.glad, tid: SPECIAL.gladTim * HOUR }); return; }
 }
 // i ett samtal berättar a om byns egna rätt som a tycker bäst om, och b, som står a nära, får tycke för den (som matsmaken, rykten.ts)
 export function berattaSpecial(s: State, a: Person, b: Person, op: number) {

@@ -11,7 +11,8 @@
 // varandra får tanken Sov bredvid sin käresta (bredvidKaresta)
 import { HUS } from './byggnader';
 import { hemOverskott } from './byggplan';
-import { ALDER, ageOf, byId, count, familjOf, forstaGang, living, log, think } from './folk';
+import { ALDER, ageOf, byId, count, familjOf, forstaGang, living, log } from './folk';
+import { tanke } from './tankar';
 import { addTool, ingenHar, tingOf } from './agande';
 import { type Rum, roomAt, husById } from './byggnad';
 import { sjukKrok, sovPlats } from './byggnader';
@@ -64,7 +65,7 @@ export function bredvidKaresta(s: State, p: Person) {
   if (!q || q.task?.act !== 'sova') return;
   const r = stationRutor(s), a = r.at.get(tileOf(p.x, p.y)), b = r.at.get(tileOf(q.x, q.y));
   if (!a || !b || a === b || !stationDef(a.k)?.vila || !stationDef(b.k)?.vila || !intill(a, b)) return;
-  think(p, 'Sov bredvid sin käresta', STATION.bredvidGlad, s.now, STATION.bredvidTim * HOUR);
+  tanke(p, 'bredvidKaresta', s.now, { v: STATION.bredvidGlad, tid: STATION.bredvidTim * HOUR });
 }
 moblerKrok.site = siteErsatt; moblerKrok.ersatt = ersatt;
 import { finareKrok } from './forradsmal';

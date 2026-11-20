@@ -9,7 +9,7 @@ import { gen, honom } from './ord';
 import { balans } from './balans';
 import { farorNu } from './kult';
 import { KOTTSLAG, isFood } from './saker';
-import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning } from './folk';
+import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning, alive } from './folk';
 import { getable, takeMaterial } from './behov';
 import { hash3, rnd } from './slump';
 import { put } from './lager';
@@ -17,6 +17,9 @@ import { stat } from './folk';
 import { DAY, Person, State, inMap } from './typer';
 import { blocked } from './byggnad';
 import { INDIVID } from './djur';
+import { tanke } from './tankar';
+import { handelse } from './rykten';
+import { kronikaBer } from './berattelser';
 
 // en art av tamdjur. ord = en/ett, ett djur, flera, det bestämda; foder = det man matar djuret med, det bästa först (hela saker); bete = djuret betar i hagen (steg 9.8.4),
 // och betet det helst äter; liv = hur många dygn (år i spelet) det lever, vuxen = när det är fullvuxet, varde = vad det är värt i
@@ -79,6 +82,7 @@ export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare
   s.nextTam = id - TAM_ID0 + 1;
   const d: Tamdjur = { id, art, born, hunger: 0, x, y, agare, hona: hash3(s.seed, id, 0x7a6d) < 0.5 };
   l.push(d); count(s, `tam_${art}`);
+  if (forstaGang(s, 'forstaTamdjur')) kronikaBer(s, 'k_djur', id, { forsta: true, djur: `${tamArt(art).ord[0]} ${tamArt(art).ord[1]}` }); // byns första tamdjur (steg 12.1.135)
   return d;
 }
 // djuret dör (av hunger, ålder eller ett rovdjur) och tas bort ur byn
@@ -87,6 +91,9 @@ export function tamDor(s: State, d: Tamdjur, orsak: string) {
   count(s, `tamDog_${orsak}`);
   const a = tamArt(d.art), q = d.agare !== undefined ? byId(s, d.agare) : undefined;
   if (orsak === 'rymde') return; // den som rymde har redan sin rad i loggen (hundRymmer)
+  kronikaBer(s, 'k_djur', d.id, { djur: `${a.ord[0]} ${a.ord[1]}`, hur: orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak, agare: q?.name }); // byn miste ett djur (steg 12.1.135)
+  const sk = q && alive(q) ? q : byId(s, mestMatat(s, d)?.[0]); // ägaren, eller den som matat djuret mest (steg 12.1.131)
+  if (sk && alive(sk)) tanke(sk, 'mittDjurDog', s.now);
   log(s, `${q ? `${gen(q.name)} ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);
 }
 // vad djuret äter av det som finns, det bästa först (undefined: inget att ge det)
@@ -127,7 +134,7 @@ export function mataKlar(s: State, p: Person, ref?: number) {
   d.hunger = 0; // en sak foder gör djuret mätt
   (d.matad ??= {})[p.id] = (d.matad[p.id] ?? 0) + 1;
   if (d.art === 'hund' && d.agare === p.id) d.lojal = Math.min(1, (d.lojal ?? HUND.start) + HUND.mata);
-  ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat');
+  ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat'); handelse(s, p, 'skotteDjur', undefined, tamArt(d.art).ord[3]); // (steg 12.1.134)
   if (forstaGang(s, 'matatDjur')) log(s, `${p.name} matade byns ${tamArt(d.art).ord[1]} för första gången.`, 'world', [p.id]);
 }
 // vad byns djur är värda (byns rikedom, varde.ts) och vad en persons djur är värda (förmögenheten)
@@ -214,7 +221,7 @@ export function stepHund(s: State, d: Tamdjur) {
     const v = rnd(s, 'tamdjur') * Math.PI * 2, r = rnd(s, 'tamdjur') * HUND.folj;
     const hx = p.x + Math.cos(v) * r, hy = p.y + Math.sin(v) * r;
     if (inMap(Math.floor(hx), Math.floor(hy)) && !blocked(s, hx, hy)) { d.x = hx; d.y = hy; } else { d.x = p.x; d.y = p.y; } // inte i vattnet eller en vägg: då står den hos ägaren
-    count(s, 'hundFoljer');
+    count(s, 'hundFoljer'); tanke(p, 'hundFoljer', s.now); // (steg 12.1.131)
   }
 }
 

@@ -7,7 +7,7 @@ import { gen } from './ord';
 import { DAY, Person, State } from './typer';
 import { balans } from './balans';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, stat, think, paKartan } from './folk';
+import { ALDER, ageOf, alive, byId, count, isKin, living, log, relKey, stat, paKartan } from './folk';
 import { kronika } from './historik';
 import { ljugOm } from './rykten';
 import { SED_LIST, drar, influence } from './seder';
@@ -21,6 +21,7 @@ import { rivScenen } from './stationer';
 import { overstePrast } from './kyrka';
 import { lagGaller, utanRost } from './lagar';
 import { Tro, skalaV, troOf, troende } from './religion';
+import { tanke } from './tankar';
 
 export const ROST = balans('rost', {
   sparas: 14, // så många omröstningar sparas
@@ -169,6 +170,7 @@ export function laggFram(s: State, f: string, d: FragaData, fram: Person, prio =
   q.push({ f, d, fram: fram.id, prio });
 }
 const vuxenRost = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen;
+const LAGFRAGOR = new Set(['nylag', 'lagtal', 'lagstraff']); // frågorna som ger byn en lag eller ändrar den (lagar.ts)
 export function rostaOm(s: State, fr: Fraga) {
   const def = FRAGOR[fr.f], fram = byId(s, fr.fram);
   // kretsen: byn, eller en tros troende (steg 8.6.7). De troende väger lika, och Var och en – Präster flyttar vikten till prästerna
@@ -189,6 +191,7 @@ export function rostaOm(s: State, fr: Fraga) {
   // missnöjet med styret: bara byns frågor, inte trons eller skulden på tinget
   if (def.krets === 'byn' && fr.f !== 'skuld' && (def.missnoje?.(s) ?? true)) for (const r of roster) if (r.ja !== gick) { const p = byId(s, r.id); if (p) p.missnoje = clamp((p.missnoje ?? 0) + ROST.miss + ROST.missEnvalde * envalde, 0, 1); }
   if (gick) def.gor(s, fr.d, fram); else def.nej?.(s, fr.d);
+  if (gick && LAGFRAGOR.has(fr.f)) for (const r of roster) if (!r.ja) { const p = byId(s, r.id); if (p && alive(p)) tanke(p, 'orattvisLag', s.now); } // (steg 12.1.131)
   return gick;
 }
 // klockan 20: de viktigaste frågorna tas upp, en per kväll (ROST.kvall)
@@ -309,7 +312,7 @@ function avslojad(s: State, l: Person, f: Fraktion, ang: Person) {
   st.frak = undefined; count(s, 'fraktion_avslojad');
   if (!q) return;
   log(s, `${ang.name} berättade för ${l.name} att ${q.name} och några till vill byta ledare.`, 'rel', [l.id, ang.id, q.id]);
-  think(ang, 'Angav en sammansvärjning', 0.02, s.now, 86400000);
+  tanke(ang, 'angav', s.now);
   const hard = 1 + (s.seder.v.rang ?? 0) + (s.seder.v.fejd ?? 0) * 0.5;
   if (hard >= MISS.hard) { utvisa(s, q, l, 'för att ha velat störta ledaren'); for (const id of f.med) { const m = byId(s, id); if (m && m !== q) m.missnoje = clamp((m.missnoje ?? 0) + 0.1, 0, 1); } }
   else { for (const id of f.med) { const m = byId(s, id); if (m) m.missnoje = (m.missnoje ?? 0) * 0.5; } log(s, `${l.name} gav efter för missnöjet och lyssnade på ${q.name}.`, 'rel', [l.id, q.id]); }

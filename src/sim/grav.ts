@@ -2,7 +2,7 @@ import { enOrd } from './ord';
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
 import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { byId, count, isParent, living, log, relKey, think } from './folk';
+import { byId, count, isParent, living, log, relKey } from './folk';
 import { rnd } from './slump';
 import { getMap } from './karta';
 import { sjoVid } from './sjo';
@@ -21,10 +21,11 @@ import { SAKER } from './saker';
 import { getable, takeMaterial } from './behov';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
-import { Bevis, HANDELSER, RYKTE, bevisText, intryckStyrka, paminn, ryktbarhet } from './rykten';
+import { Bevis, HANDELSER, RYKTE, bevisText, intryckStyrka, paminn, ryktbarhet, handelse } from './rykten';
 import { grundvarde } from './varde';
 import { gen, slaktOrd } from './ord';
 import { ALDER, ageOf } from './folk';
+import { tanke } from './tankar';
 
 // ---------- kroppen och graven (steg 8.5.1) ----------
 // kroppen ligger kvar där personen dog. En vuxen, helst någon nära, bär den till gravplatsen och gräver (nivån Rädda i arbetsordningen). Grävandet
@@ -230,7 +231,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
   if (!q) return;
   if (q.ode === 'skogen') { // lagd i skogen (steg 10.4.7): kroppen ligger kvar och ruttnar vidare
     q.x = Math.floor(p.x); q.y = Math.floor(p.y); q.bars = undefined; q.utburen = true; q.ode = undefined;
-    count(s, 'utburen'); think(p, `Bar ut ${q.namn} i skogen`, 0, s.now, 6 * HOUR);
+    count(s, 'utburen'); tanke(p, 'barUt', s.now, { namn: q.namn });
     return;
   }
   if (arSkand(q.ode)) { skandaKlar(s, p, q); return; }
@@ -240,7 +241,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
     gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil: 'jord', fiende: true, ...(tr ? { tro: tr.id } : {}) });
     count(s, 'grav'); count(s, 'grav_fiende'); groundOf(s).cover[y * W + x] = 0;
     if (tr) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kravTro);
-    think(p, `Begravde fienden ${q.namn}`, 0, s.now, 6 * HOUR);
+    tanke(p, 'begravdeFiende', s.now, { namn: q.namn });
     log(s, `${p.name} begravde fienden ${q.namn}.`, 'rel', [p.id]);
     return;
   }
@@ -255,7 +256,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
   if (stil === 'vatten') { (s.sankta ??= []).push({ vem: q.vem, namn: q.namn, x, y, t: s.now, sjo: sjoVid(s, x, y), ...(q.med ? { med: q.med } : {}) }); count(s, 'sankt'); }
   else { gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}), ...(q.med ? { med: q.med } : {}), ...(stor ? { stor: true as const } : {}) }); groundOf(s).cover[y * W + x] = 0; }
   count(s, 'grav'); count(s, 'grav_' + stil);
-  think(p, `Begravde ${q.namn}`, -0.02, s.now, 6 * HOUR);
+  tanke(p, 'begravde', s.now, { namn: q.namn });
   if (tr && !ovardig) { count(s, 'begravd_troende'); }
   // samlingen (steg 10.4.5): den vanliga med trosfränderna, den tysta med familjen, och den enkla utan samling
   const samling = ovardig || !tr ? undefined : bud.includes('vanligBegr') ? 'vanlig' : bud.includes('tystBegr') ? 'tyst' : undefined;
@@ -265,7 +266,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
     for (const o of living(s)) {
       if (!d) continue;
       const familj = isParent(o, d) || isParent(d, o) || o.partner === d.id || d.partner === o.id;
-      if (familj || nara(s, o, d.id)) think(o, `${q.namn} begravdes`, familj ? BEGRAVNINGAR_ENKEL.familj : BEGRAVNINGAR_ENKEL.andra, s.now, 12 * HOUR);
+      if (familj || nara(s, o, d.id)) tanke(o, 'begravdes', s.now, { namn: q.namn, v: familj ? BEGRAVNINGAR_ENKEL.familj : BEGRAVNINGAR_ENKEL.andra });
     }
     log(s, `${p.name} begravde ${q.namn}.`, 'rel', [p.id]);
   }
@@ -280,8 +281,9 @@ function skandaKlar(s: State, p: Person, q: Kvarleva) {
   if (ODEN[k].kvar) { q.k = 'skandad'; q.utburen = true; q.t = s.now; }
   else s.kvarlevor = s.kvarlevor!.filter(x => x !== q);
   count(s, 'skandad'); count(s, 'skandad_' + k);
-  think(p, `Skändade ${q.namn}`, 0, s.now, 6 * HOUR);
+  tanke(p, 'skandade', s.now, { namn: q.namn });
   log(s, `${p.name} skändade ${q.namn}: ${ODEN[k].namn.toLowerCase()}.`, 'rel', [p.id]);
+  handelse(s, p, 'skandade', undefined, q.namn); // (steg 12.1.134)
 }
 // stigen: där vägen ut mot kartans närmaste kant (infartens håll) lämnar byns område
 function stigPlats(s: State) {
@@ -315,7 +317,7 @@ export function avrustaKlar(s: State, p: Person, t: Task) {
   for (const [k, n] of Object.entries(q.saker ?? {})) { if (SAKER[k]?.redskap) for (let i = 0; i < n; i++) newTing(s, k, 1, -1); else put(s, k, n); }
   if (q.ting && !orena(s, p)) { for (const g of q.ting) { const ny = newTing(s, g.k, g.c, -1); if (g.q !== undefined) ny.q = g.q; if (g.ber) ny.ber = g.ber; } q.ting = undefined; }
   q.saker = undefined; count(s, 'avrustad');
-  think(p, 'Tog det en fallen fiende bar', -0.02, s.now, 6 * HOUR);
+  tanke(p, 'togAvFiende', s.now);
 }
 // ---------- gravarnas utseende (steg 10.4.2) ----------
 // graven är först en jordhög. Sedan gör någon som minns den döda vården: en rad i GRAVAR. Vilken är ett bud i den dödas tro (BUD, grupperna
@@ -412,7 +414,7 @@ export function gravvardKlar(s: State, p: Person, t: Task) {
   if (!g || !GRAVAR[k]) return;
   g.vard = k; count(s, 'gravvard'); count(s, 'gravvard_' + k);
   gravText(s, p, g);
-  think(p, `Gjorde ${enOrd(GRAVAR[k])} ${GRAVAR[k].namn.toLowerCase()} åt ${g.namn}`, 0.02, s.now, 6 * HOUR);
+  tanke(p, 'gjordeGrav', s.now, { en: enOrd(GRAVAR[k]), grav: GRAVAR[k].namn.toLowerCase(), namn: g.namn });
   log(s, `${p.name} gjorde ${enOrd(GRAVAR[k])} ${GRAVAR[k].namn.toLowerCase()} på ${gen(g.namn)} grav.`, 'rel', [p.id]);
 }
 
@@ -545,7 +547,7 @@ export function gravbesokKlar(s: State, p: Person, t: Task) {
   const vem = t.ref ?? -1, g = gravAv(s, vem), q = g ? undefined : sanktAv(s, vem);
   if (!g && !q) return;
   p.gravBesok = s.now; paminn(s, p, vem, g?.textBev); count(s, 'gravbesok'); // gravtexten bär sina händelser (steg 10.6.15)
-  think(p, 'Stod vid graven', BESOK.trost, s.now, 6 * HOUR);
+  tanke(p, 'stodVidGraven', s.now, { v: BESOK.trost });
   if (t.gava) {
     const k = minstaGava(s, p);
     if (k) { takeMaterial(s, p, k, 1, true); if (g) g.gavor = (g.gavor ?? 0) + 1; else q!.gavor = (q!.gavor ?? 0) + 1; count(s, 'gravgava'); }

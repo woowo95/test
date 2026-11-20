@@ -6,7 +6,7 @@ import { overskott } from './teknik';
 // En match i taget: den som har fritid börjar en på en plats i byn eller går med i den som väntar på spelare, och den spelas på
 // dagen. Sporterna är rader i registret SPORTER; föremålen de kräver är saker i saker.ts som byn måste ha.
 import { personHand } from './personlogg';
-import { ALDER, ageOf, alive, byId, count, getRel, living, log, ovning, stat, think, paKartan } from './folk';
+import { ALDER, ageOf, alive, byId, count, getRel, living, log, ovning, stat, paKartan } from './folk';
 import { SAKER, isTool } from './saker';
 import { nTools, ownsFree, tingOf, wearTool } from './agande';
 import { kronika } from './historik';
@@ -39,6 +39,8 @@ import { FEST, festNu, festVann } from './kultlatt';
 import { betalning } from './framtradande';
 import { ledareOf, legitimitet } from './styre';
 import { handelse } from './rykten';
+import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 
 export interface SportDef {
   id: string; namn: string;
@@ -234,7 +236,7 @@ function horRopet(s: State, p: Person, q: Person) {
 const foljChans = (s: State, p: Person, q: Person) => SPORT.folj * overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * (stat(q, 'styrka', s.now) + stat(q, 'smidighet', s.now)) / 20
   * (1 + SPORT.foljTycke * getRel(s, q, p).op / 100) * (q.task && isWork(q.task.act) ? 1 - SPORT.foljPlikt * duty(s, q) : 1);
 // ingen ville vara med: den som samlade blir ledsen
-function ingen(s: State, p: Person) { think(p, 'Ingen ville spela', -SPORT.ingen, s.now, SPORT.ingenTim * HOUR); count(s, 'sportIngen'); }
+function ingen(s: State, p: Person) { tanke(p, 'ingenSpela', s.now, { v: -SPORT.ingen, tid: SPORT.ingenTim * HOUR }); count(s, 'sportIngen'); }
 // platsen: den fria ruta i byn eller minst utanför (högst SPORT.utanfor rutor), närmast den som samlar, där alla rutor inom
 // sportens yta är lediga, utan tak och utan träd
 export function sportPlats(s: State, p: Person, d: SportDef) {
@@ -361,8 +363,8 @@ function avgor(s: State, m: Match, p: Person) {
   for (const q of vinnare) bastI(s, d, q);
   // glad eller ledsen (steg 10.7.15): vinnarna och förlorarna bland dem som var med i slutet
   const namn = d.namn.toLowerCase();
-  for (const q of publiken(s, m)) think(q, `Såg ${namn}`, SPORT.tittaGladje, s.now, SPORT.gladjeTim * HOUR); // publiken (steg 10.7.16)
-  for (const q of har) if (vinnare.includes(q)) think(q, `Vann ${namn}`, SPORT.gladje, s.now, SPORT.gladjeTim * HOUR); else think(q, `Förlorade ${namn}`, -SPORT.forlust, s.now, SPORT.gladjeTim * HOUR);
+  for (const q of publiken(s, m)) { tanke(q, 'sagMatch', s.now, { namn, v: SPORT.tittaGladje, tid: SPORT.gladjeTim * HOUR }); upplev(s, q, 'fester'); } // publiken (steg 10.7.16)
+  for (const q of har) if (vinnare.includes(q)) tanke(q, 'vannMatch', s.now, { namn, v: SPORT.gladje, tid: SPORT.gladjeTim * HOUR }); else tanke(q, 'forloradeMatch', s.now, { namn, v: -SPORT.forlust, tid: SPORT.gladjeTim * HOUR });
 }
 // publiken (steg 10.7.16): den som har fritid när en match pågår eller väntar på spelare, och inte spelar, kan gå dit och
 // titta, utan åldersgräns. Var och en står på sin plats i en ring runt matchen, utanför spelarnas yta, i den ordning de kom,
@@ -408,7 +410,7 @@ function delaUt(s: State, m: Match, d: SportDef, bast: Person, har: Person[]): P
   const gren = d.namn.toLowerCase(), titel = `Vann tävlingen i ${gren}`;
   if (!bast.fame.includes(titel)) { bast.fame.push(titel); personHand(s, bast, 'titel', `${titel}.`); }
   handelse(s, bast, 'tavling', undefined, gren);
-  think(bast, `Vann ${p.sak} i tävlingen`, SPORT.gladje, s.now, SPORT.gladjeTim * HOUR);
+  tanke(bast, 'vannTavling', s.now, { sak: p.sak, v: SPORT.gladje, tid: SPORT.gladjeTim * HOUR });
   kronika(s, bast === l ? `${l.name} satte upp ${p.sak} som pris i ${gren} och vann själv.` : `${bast.name} vann tävlingen i ${gren} och fick ${gen(l.name)} ${p.sak}.`, 'fritid');
   count(s, 'tavlingVunnen');
   return p;

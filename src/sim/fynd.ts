@@ -2,7 +2,7 @@ import { tal } from './ord';
 import { Avst, bynsAvstand, bynsMitt } from './omrade';
 import { upplev } from './uppvaxt';
 import { PLATS, rektAvstand } from './plats';
-import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
+import { count, forstaGang, franMitt, gjort, stat, log } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
 import { clamp, clampI, pickNarmaste, rnd } from './slump';
@@ -712,7 +712,7 @@ export function eatPoison(s: State, p: Person) {
   insjukna(s, p, 'svampforgiftning'); // steg 9.5.1: förgiftningen är en sjukdom som kan döda (motgiftet kommer i 9.5.14)
   p.poisonUntil = s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
-  think(p, 'Blev förgiftad av en svamp', FANGST.giftTanke, s.now, FANGST.giftTankeDygn * DAY);
+  tanke(p, 'svampGift', s.now, { v: FANGST.giftTanke, tid: FANGST.giftTankeDygn * DAY });
   upplev(s, p, 'svamp'); smakGift(p); // avsmak för svamp (steg 3.3.5)
   const before = kn(p, 'svamp'), v = learnK(p, 'svamp', FANGST.giftLar, s.now);
   log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]);
@@ -748,3 +748,4 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   return 1;
 }
 import { myrMalm, paMyr } from './myr';
+import { tanke } from './tankar';

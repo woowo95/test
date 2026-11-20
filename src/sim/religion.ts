@@ -14,6 +14,7 @@ import { isSick } from './sjukdom';
 import { kyrkansForrad } from './kyrka';
 import { releaseOwner } from './lager';
 import { kyrkaId } from './egendom';
+import { kronikaBer } from './berattelser';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
 // hur viktigt det heliga är för hen, inte vad hen tror på. Den ärvs delvis och flyttas av upplevelserna (uppvaxt.ts, steg
@@ -320,6 +321,7 @@ export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   p.tro = tr.id; p.troStyrka = TRO.styrka;
   count(s, 'tro_ny');
   log(s, `${p.name} tolkade ${teckenText(k, om)} som ett tecken. ${tolkning(tr)}`, 'rel', [p.id]);
+  kronikaBer(s, 'k_tro', tr.id, { grundare: p.name, tecken: teckenText(k, om) }); // (steg 12.1.135)
 }
 
 // ---------- namnet och berättelsen (steg 4.1.2.3) ----------

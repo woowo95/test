@@ -1,4 +1,4 @@
-import { antal, gen, spelTid, stor } from './ord';
+import { antal, spelTid, stor } from './ord';
 import { MIN } from './typer';
 import { TROSKEL } from './forradsmal';
 import { hearthOf, woodDays } from './eld';
@@ -12,8 +12,8 @@ import { clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
 import { type Sed, drar, habitShare } from './seder';
 import { ata } from './naring';
-import { ALDER, KROPP, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat, think } from './folk';
-import { INTRYCK, beratta, paminn, ryktbarhet, samlatIntryck } from './rykten';
+import { ALDER, KROPP, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat } from './folk';
+import { INTRYCK, beratta, paminn, ryktbarhet, samlatIntryck, handelse } from './rykten';
 import { FOOD, KOTTSLAG, sakNamn } from './saker';
 import { type Ting, tingOf } from './agande';
 import { MASTERVERK, kvNamn } from './kvalitet';
@@ -337,9 +337,9 @@ export function budBrutet(s: State, p: Person, id: BudId) {
   if (lagGaller(s, budLag(id))) handelseBud(s, p, id);
   if (!budIn(tr, id)) return;
   p.skuld = (p.skuld ?? 0) + KYRKA.skuld; p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - KYRKA.skuldTro);
-  think(p, `Bröt mot budet: ${BDEF[id].namn.toLowerCase()}`, KYRKA.skuldHumor, s.now, 12 * HOUR);
+  tanke(p, 'brotBud', s.now, { bud: BDEF[id].namn.toLowerCase(), v: KYRKA.skuldHumor });
   if ((skalaV(tr, 'forlat') ?? 0) > 70 && rymsBud(s, tr, 4) && (p.skuld ?? 0) >= KYRKA.stotaUt) {
-    p.tro = undefined; p.skuld = 0; count(s, 'utstott');
+    p.tro = undefined; p.skuld = 0; count(s, 'utstott'); handelse(s, p, 'utstott');
     log(s, `${troNamn(tr)} stötte ut ${p.name}.`, 'rel', [p.id]);
   }
 }
@@ -366,7 +366,7 @@ function offerTimme(s: State, tr: Tro, folk: Person[]) {
     const k = [...Object.keys(saknar ??= troshusSaknar(s, tr)), 'ved', 'grenar', 'sten', 'bar', 'rep'].find(q => ownsAmount(s, p, q) >= 1); // helst det trons hus saknar (steg 10.3.19)
     if (!k) continue;
     gavaIn(s, tr, k, 1, p); count(s, 'kyrka_gava');
-    think(p, 'Gav en gåva till tron', 0.02, s.now, 6 * HOUR);
+    tanke(p, 'gavTron', s.now);
   }
 }
 // kyrkskatten (steg 8.6.3): en lag när styret står åt Andlig, och styret kan förbjuda den när det står åt Världslig
@@ -384,10 +384,10 @@ export interface KyrkUtgift { namn: string; vikt: (s: State, tr: Tro) => number;
 export const KYRKUTGIFTER: Record<string, KyrkUtgift> = {
   // försörja prästen (Präster)
   prast: { namn: 'försörja prästen', vikt: (s, tr) => { const v = skalaV(tr, 'prast') ?? 50; return v > 60 && prastOf(s, tr) && kyrkansMat(s, tr, 1) ? (v - 50) / 50 : 0; },
-    gor: (s, tr) => { const pr = prastOf(s, tr), m = kyrkansMat(s, tr, 1); if (pr && m && kyrkanTar(s, tr, m, 1)) { ata(pr, { [m]: KROPP.mattar }); count(s, 'atit', 1); think(pr, 'Fick mat av tron', 0.03, s.now, 6 * HOUR); } } }, // prästen äter den (steg 12.1.61)
+    gor: (s, tr) => { const pr = prastOf(s, tr), m = kyrkansMat(s, tr, 1); if (pr && m && kyrkanTar(s, tr, m, 1)) { ata(pr, { [m]: KROPP.mattar }); count(s, 'atit', 1); tanke(pr, 'prastMat', s.now); } } }, // prästen äter den (steg 12.1.61)
   // gåvor till de fattiga (Öppen)
   fattig: { namn: 'ge åt de fattiga', vikt: (s, tr) => { const v = skalaV(tr, 'oppen') ?? 50; return v < 40 && kyrkansMat(s, tr, 2) ? (50 - v) / 50 : 0; },
-    gor: (s, tr) => { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0], m = kyrkansMat(s, tr, 1); if (q && m && kyrkanTar(s, tr, m, 1)) { ata(q, { [m]: KROPP.mattar }); count(s, 'atit', 1); think(q, 'Fick mat av tron', 0.05, s.now, 6 * HOUR); } } }, // en portion som äts (steg 10.11.10)
+    gor: (s, tr) => { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0], m = kyrkansMat(s, tr, 1); if (q && m && kyrkanTar(s, tr, m, 1)) { ata(q, { [m]: KROPP.mattar }); count(s, 'atit', 1); tanke(q, 'trosMat', s.now); } } }, // en portion som äts (steg 10.11.10)
   // ett framträdande som sprider tron eller minnet av en död troende (Sprider sig, steg 10.7.18): kyrkan lägger undan
   // KYRKA.framPris hela saker av det den har mest av, och den troende som nästa gång uppträder med ett budskap får dem (kyrkFram)
   fram: { namn: 'betala ett framträdande', vikt: (s, tr) => { const v = skalaV(tr, 'sprid'); return v !== undefined && v < 40 && !tr.framPris && framSak(s, tr) ? (50 - v) / 50 : 0; },
@@ -513,10 +513,10 @@ function budDygn(s: State) {
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined || !tr.bud?.length) continue;
     const vuxna = troende(s, tr).filter(p => ageOf(p, s.now) >= ALDER.vuxen), med = (id: BudId) => budIn(tr, id) ? vuxna.filter(p => foljer(p, id)) : [];
-    const krav = (id: BudId, text: string) => { for (const p of med(id)) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kravTro); think(p, text, KYRKA.kravHumor, s.now, 12 * HOUR); } };
+    const krav = (id: BudId, t: 'tackade' | 'halsadeElden' | 'badForFodd') => { for (const p of med(id)) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kravTro); tanke(p, t, s.now, { v: KYRKA.kravHumor }); } };
     // kraven: att tacka före maten och hälsa elden på morgonen, och att be när någon fötts eller dött
-    krav('tacka', 'Tackade gudarna för maten'); krav('halsa', 'Hälsade elden i morse');
-    if (fodda !== (tr.fodda ?? fodda)) krav('fodsel', 'Bad för den som fötts eller dött');
+    krav('tacka', 'tackade'); krav('halsa', 'halsadeElden');
+    if (fodda !== (tr.fodda ?? fodda)) krav('fodsel', 'badForFodd');
     tr.fodda = fodda;
     // fastan: en dag av sju äter den troende inte (p.fasta, behov.ts)
     if ((dag + tr.id) % KYRKA.vecka === 3) for (const p of med('fasta')) p.fasta = s.now + DAY;
@@ -537,7 +537,7 @@ function budDygn(s: State) {
     if ((dag + tr.id) % KYRKA.vecka === 0 && budIn(tr, 'djuroffer')) {
       const slag = KOTTSLAG.reduce((a, k) => takeLimit(s, k) > takeLimit(s, a) ? k : a, 'kott'); // det köttslag byn har mest av (steg 10.3.14)
       if (takeLimit(s, slag) >= KYRKA.djur) { use(s, undefined, slag, KYRKA.djur, true); count(s, 'djuroffer'); for (const p of med('djuroffer')) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); }
-      else for (const p of med('djuroffer')) think(p, 'Tron kräver djur, och det finns inget att offra', KYRKA.djurSakna, s.now, DAY);
+      else for (const p of med('djuroffer')) tanke(p, 'djurSaknas', s.now, { v: KYRKA.djurSakna });
     }
     if (budIn(tr, 'manniskooffer') && dag - (tr.offrad ?? -Infinity) >= KYRKA.offerDygn) {
       const q = living(s).find(p => p.straffad && p.tro !== tr.id); // den som straffats hårt på tinget
@@ -558,7 +558,7 @@ function budTillfalleK(s: State, typ: BudTillfalle, p: Person, q?: Person): bool
   if (typ === 'skadad') { // hämnd är en plikt: den drabbade glömmer inte
     if (!q || !harBud(s, p, 'hamnd')) return false;
     const r = s.rels[relKey(p.id, q.id)]; if (r) r.op = Math.max(-100, r.op - KYRKA.hamndRel);
-    think(p, `Måste hämnas på ${q.name}`, -0.03, s.now, 2 * DAY); count(s, 'hamnd_plikt');
+    tanke(p, 'hamnas', s.now, { namn: q.name }); count(s, 'hamnd_plikt');
     return false;
   }
   if (typ === 'talaIlla') return harBud(s, p, 'deDoda');
@@ -594,7 +594,7 @@ function heligaTingKvar(s: State, tr: Tro) {
     count(s, 'heligtTingBort');
     const tx = `Det heliga tinget i ${troNamn(tr).toLowerCase()} finns inte längre, och budet föll.`;
     log(s, tx, 'rel'); kronika(s, tx, 'tro');
-    for (const p of troende(s, tr)) { p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - KYRKA.tingTro); think(p, 'Vårt heliga ting är borta', KYRKA.tingHumor, s.now, KYRKA.tingDygn * DAY); }
+    for (const p of troende(s, tr)) { p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - KYRKA.tingTro); tanke(p, 'tingBorta', s.now, { v: KYRKA.tingHumor, tid: KYRKA.tingDygn * DAY }); }
   }
 }
 // ---------- varje timme ----------
@@ -697,13 +697,13 @@ export function hogtidOlKvade(s: State, tr: Tro, med: Person[]) {
     if (ageOf(p, s.now) < ALDER.vuxen) continue;
     const t = budHindrar(s, p, 'ingetRus') ? undefined : kyrkansOl(s, tr)[0];
     if (t) { drickKyrkansOl(s, p, t); count(s, 'hogtid_ol'); }
-    else if (p.tro === tr.id && foljer(p, 'olHogtid') && !budHindrar(s, p, 'ingetRus')) think(p, 'Ölet saknades vid högtiden', KULT.offerInget, s.now, 12 * HOUR);
+    else if (p.tro === tr.id && foljer(p, 'olHogtid') && !budHindrar(s, p, 'ingetRus')) tanke(p, 'olSaknades', s.now, { v: KULT.offerInget });
   }
   if (!budIn(tr, 'kvade')) return;
   const skald = med.filter(p => (p.skill[FRAM_SKILL] ?? 0) >= KYRKA.skald).sort((a, b) => (b.skill[FRAM_SKILL] ?? 0) - (a.skill[FRAM_SKILL] ?? 0) || a.id - b.id)[0];
-  if (!skald) { for (const p of med) if (p.tro === tr.id && foljer(p, 'kvade')) think(p, 'Ingen kvad om tron vid högtiden', KULT.offerInget, s.now, 12 * HOUR); return; }
+  if (!skald) { for (const p of med) if (p.tro === tr.id && foljer(p, 'kvade')) tanke(p, 'ingenKvad', s.now, { v: KULT.offerInget }); return; }
   const q = framKval(s, skald);
-  for (const p of med) if (p !== skald && p.tro === tr.id) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kvadeTro * q); think(p, `Hörde ${gen(skald.name)} kväde om tron`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+  for (const p of med) if (p !== skald && p.tro === tr.id) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kvadeTro * q); tanke(p, 'hordeKvade', s.now, { skald: skald.name, v: KYRKA.kvadeHumor * q }); }
   count(s, 'hogtid_kvade');
   log(s, `${skald.name} kvad om ${troNamn(tr)} vid högtiden.`, 'rel', [skald.id]);
 }
@@ -719,7 +719,7 @@ export function sorgkvade(s: State, tr: Tro, om: number, med: Person[]) {
   if (!skald) return;
   const e = minne(skald)!, q = framKval(s, skald), d = byId(s, om);
   for (const p of med) if (p !== skald) { beratta(s, skald, p, e, getRel(s, skald, p)); paminn(s, p, e.om, e.bev); // kvädet påminner (steg 10.6.15)
-    think(p, `Hörde ${gen(skald.name)} sorgkväde om ${e.namn}`, KYRKA.kvadeHumor * q, s.now, 12 * HOUR); }
+    tanke(p, 'hordeSorgkvade', s.now, { skald: skald.name, om: e.namn, v: KYRKA.kvadeHumor * q }); }
   count(s, 'sorgkvade');
   log(s, `${skald.name} kvad om ${d?.name ?? e.namn} vid graven.`, 'rel', [skald.id]);
 }
@@ -742,7 +742,7 @@ export function forstaSkorden(s: State, p: Person, f: { offrat?: number }, k: st
   const tr = troOf(s, p.tro)!;
   ownMove(s, k, 1, p.id, kyrkaId(tr.id)); f.offrat = m; count(s, 'forstaSkord');
   p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kravTro);
-  think(p, 'Gav det första ur skörden till tron', KYRKA.kravHumor, s.now, 12 * HOUR);
+  tanke(p, 'forstaSkord', s.now, { v: KYRKA.kravHumor });
 }
 // handlaren välkomnas när hen kommer fram (handel.ts), en gång per besök: en hel mat ur byns förråd, och de som följer budet får en bättre relation
 export function valkomnaHandlare(s: State, h: Handlare) {
@@ -753,3 +753,4 @@ export function valkomnaHandlare(s: State, h: Handlare) {
 }
 import { specialHuvud } from './special';
 import { dagNr } from './tid';
+import { tanke } from './tankar';

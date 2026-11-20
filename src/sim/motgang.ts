@@ -1,7 +1,7 @@
 import { stor, tal } from './ord';
 import { balans } from './balans';
 import { ageOf, alive, count, isParent, livet, living, log, stat } from './folk';
-import { delade } from './berattelser';
+import { delade, kronikaBer } from './berattelser';
 import { kronika } from './historik';
 import { clamp, hash3, rnd } from './slump';
 import { kalender, yearNo } from './tid';
@@ -190,7 +190,9 @@ export function stepMotgang(s: State) {
   if (m.pagar && m.pagar.t !== nu?.start) {
     const dog = deadCount(s) - m.pagar.dog, d = DEF[m.pagar.k];
     log(s, `${d.slutar}${dog ? ` ${stor(tal(dog))} dog under den.` : ' Alla klarade sig.'}`, 'world');
-    kronika(s, `${d.namn} tog slut${dog ? `. ${stor(tal(dog))} dog under den` : ' och alla klarade sig'}.`, 'motgang');
+    const km = m.pagar.k === 'tornado' ? 'k_tornado' : m.pagar.k === 'oversvamning' ? 'k_flod' : undefined; // tornadon och översvämningen har sina mallar (steg 12.1.135)
+    if (km) kronikaBer(s, km, m.pagar.t, { doda: dog ? ` ${stor(tal(dog))} dog.` : '' });
+    else kronika(s, `${d.namn} tog slut${dog ? `. ${stor(tal(dog))} dog under den` : ' och alla klarade sig'}.`, 'motgang');
     for (const p of living(s)) if (p.born < m.pagar.t) livet(s, p, 'mg:' + m.pagar.k); // de som klarade den (steg 3.9.8)
     if (m.pagar.k === 'hardVinter' || m.pagar.k === 'torka') holdBarn(s, m.pagar.t, m.pagar.k === 'torka' ? 'torkan' : 'den hårda vintern');
     const tk = SLUT_TECKEN[m.pagar.k]; // det oförklarliga (steg 4.1.2.1): motgången tog slut

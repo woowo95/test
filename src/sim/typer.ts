@@ -275,6 +275,8 @@ export interface Person {
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
   raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i RADD_AKT (steg 8.4.10)
   thoughts: Thought[];
+  drom?: { k: import('./drommar').DromId; namn?: string };
+  vardadAv?: { id: number; t: number }; // den som vårdade hen senast och när (steg 12.1.134, halsa.ts) // drömmen som blir en tanke när hen vaknar (steg 12.1.132, drommar.ts)
   x: number; y: number; task?: Task;
   fame: string[];
   hand?: import('./personlogg').PersonRad[]; // personens händelser, de senaste (steg 9.2.107, personlogg.ts)
@@ -310,7 +312,7 @@ export interface Person {
 // en upplevelse i barndomen eller vuxenlivet: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), vad den gjorde med egenskaperna och vem
 // eller vad den gällde
 // v = från vuxenlivet och t = när (steg 4.1.1.2), n = hur mycket den flyttade andligheten (steg 4.1.1.3), b = hur många steg den bleknat (steg 4.1.1.4)
-export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string; v?: 1; t?: number; n?: number; b?: number }
+export interface Upplevelse { rus?: number; /* plus eller minus på lusten till rus (steg 12.1.175, rusLust i rus.ts) */ k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string; v?: 1; t?: number; n?: number; b?: number }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
 // t = när platsen sågs (den som hör det får samma tid; återväxten räknas därifrån), src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.
@@ -459,6 +461,7 @@ export interface State {
   testTorr?: 1; // testläget: marken är torkad helt (steg 9.2.24, brand.ts); bara i kopian av byn
   nedslag?: { x: number; y: number; t: number }[]; // blixtens senaste nedslag (steg 9.2.21, brand.ts): gränssnittet ritar blixten där
   retade?: import('./bin').Retat[]; // de uppretade bina (steg 10.10.27, bin.ts)
+  forlustFore?: Partial<Record<import('./tankelage').Olycka, { t: number; v: Record<number, number> }>>; // förmögenheten när en olycka började (steg 12.1.131, tankelage.ts)
   brand?: import('./brand').Brand; // eldsvådan som brinner (steg 3.8.5, brand.ts): rutorna som brinner och det den gjort
   aska?: [number, number][]; // rutorna som brann nyss och när (steg 3.8.5, brand.ts): marken är svart en tid
   sjoTorr?: { niva: number; tomma: number[]; v: number; t: number; pa?: true; regn?: number }; // torkan (steg 3.8.2, torka.ts): så många rutor vid kanten som är torr sjöbotten, sjöarna som torkat ut, ändringsräknaren, när det senast ändrades, om torkan pågår och regnet sedan vattnet steg senast

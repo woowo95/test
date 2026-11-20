@@ -4,7 +4,7 @@ import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
 import { lista, tal } from './ord';
 import { delade, loggBer } from './berattelser';
-import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, forstaGang, getRel, gjortDygn, isKin, isParent, living, log, relKey, stat } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { klenod } from './kvalitet';
 import { DAY, HOUR, Person, Rel, State } from './typer';
@@ -104,6 +104,11 @@ export const RYKTE = balans('rykte', {
   lognTanke: -0.05, lognTankeTim: 12, // den som hör att någon ljuger om hen blir så här ledsen i så här många timmar
   skitsnack: 1.5, // ett påhittat rykte är så här starkt gånger händelsens vikt
   smakTycke: 0.7, // chansen att en smak från början är tycke (annars avsmak)
+  berestDygn: 5, // den som kommer hem efter så här många dygn (år i spelet) borta är vittberest (steg 12.1.134)
+  gudlosTro: 0.5, // gudlös (steg 12.1.173): när minst så stor del av de vuxna tror ...
+  gudlosMin: 1, // ... och de troende varit med på minst så här många böner och ritualer det senaste dygnet i snitt ...
+  gudlosAndel: 0.1, // ... får den som varit med på högst så stor del av snittet intrycket gudlös hos dem som ser hen
+  braPris: 0.25, // den som ger minst så här mycket mer än hen får i ett byte ger ett bra pris (steg 12.1.134)
 });
 
 // ---------- registren ----------
@@ -144,6 +149,22 @@ const IDEF = {
   pahittig: { namn: 'påhittig', tecken: 1, op: 8, sym: '{sym_hjarna}', sed: { nyfikenhet: 2 }, betyder: 'Har kommit på något nytt.' }, // steg 10.4.9 (symbolen är en platshållare)
   skvaller: { namn: 'skvallerbytta', tecken: -1, op: -6, sym: '🗣️', som: 'en skvallerbytta', betyder: 'Berättar dåliga rykten om andra.' }, // steg 10.8.6 (symbolen är en platshållare)
   aventyrare: { namn: 'äventyrare', tecken: 1, op: 8, sym: '📜', sed: { nyfikenhet: 1 }, som: 'en äventyrare', betyder: 'Har klarat ett uppdrag ute i världen.' }, // steg 11.8.17 (symbolen är en platshållare)
+  // intrycken från de nya systemen (steg 12.1.134; symbolerna är platshållare)
+  forsvarare: { namn: 'försvarare', tecken: 1, op: 10, sym: '🛡️', sed: { krig: 1 }, som: 'en försvarare', betyder: 'Stod kvar och slogs när rövarna kom.' },
+  botare: { namn: 'botare', tecken: 1, op: 12, sym: '🌿', sed: { gemenskap: 1 }, som: 'en botare', betyder: 'Har botat en sjuk eller skadad.' },
+  daligLakare: { namn: 'dålig läkare', tecken: -1, op: -8, sym: '🩸', som: 'en dålig läkare', betyder: 'Hade en sjuk eller skadad i sin vård som dog.' },
+  scenBra: { namn: 'bra på scenen', tecken: 1, op: 6, sym: '🎭', betyder: 'Publiken tog väl emot framträdandet.' },
+  scenDalig: { namn: 'dålig på scenen', tecken: -1, op: -3, sym: '🥱', betyder: 'Publiken tog illa emot framträdandet.' },
+  skrivkunnig: { namn: 'skrivkunnig', tecken: 1, op: 5, sym: '🪶', sed: { nyfikenhet: 1 }, betyder: 'Har skrivit ett blad, en bok eller ristat en sten.' },
+  from: { namn: 'from', tecken: 1, op: 4, sym: '🕯️', sed: { andlig: 1 }, betyder: 'Ber och offrar mycket.' },
+  gudlos: { namn: 'gudlös', tecken: -1, op: -6, sym: '⛓️', sed: { andlig: -1 }, betyder: 'Har vanhelgat det heliga, stötts ut ur tron eller håller sig borta från tron när de andra tror.' },
+  suput: { namn: 'suput', tecken: -1, op: -6, sym: '🍺', som: 'en suput', betyder: 'Är ofta full.' },
+  lurendrejare: { namn: 'lurendrejare', tecken: -1, op: -20, sym: '🦊', som: 'en lurendrejare', betyder: 'Har lurat någon i ett byte.', dampar: { ge: 0.3 }, beteende: 'Man ger ogärna till en lurendrejare.' },
+  hederlig: { namn: 'hederlig handlare', tecken: 1, op: 8, sym: '⚖️', som: 'en hederlig handlare', betyder: 'Ger bra pris i bytena.' },
+  vittberest: { namn: 'vittberest', tecken: 1, op: 5, sym: '🧭', sed: { nyfikenhet: 1 }, betyder: 'Har rest långt och varit borta länge.' },
+  brandslackare: { namn: 'brandsläckare', tecken: 1, op: 10, sym: '💧', sed: { gemenskap: 1 }, som: 'en brandsläckare', betyder: 'Var med och släckte en brand.' },
+  djurvan: { namn: 'bra med djur', tecken: 1, op: 4, sym: '🐾', betyder: 'Sköter djuren väl.' },
+  fangelsekund: { namn: 'fängelsekund', tecken: -1, op: -10, sym: '🔒', som: 'en fängelsekund', betyder: 'Har suttit i fängelse.' },
   forutseende: { namn: 'förutseende', tecken: 1, op: 8, sym: '{sym_oga}', sed: { forsiktighet: 2 }, betyder: 'Har som ledare tagit byn väl genom vintern.' }, // steg 10.4.9 (symbolen är en platshållare)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
@@ -206,6 +227,25 @@ const HDEF = {
   turne: { i: 'skicklig', vikt: 0.4, text: 'uppträdde i {sak}', prestation: true }, // steg 11.8.18: turnén, berättad när hen kommer hem eller av handlare därifrån
   uppdrag: { i: 'aventyrare', vikt: 0.5, text: 'klarade uppdraget {sak}', prestation: true }, // steg 11.8.17: berättas när sällskapet kommer hem
   pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat sin sovplats med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
+  // händelserna från de nya systemen (steg 12.1.134)
+  forsvarade: { i: 'forsvarare', vikt: 0.4, text: 'stod kvar och slogs när rövarna kom', prestation: true },
+  sprang: { i: 'feg', vikt: 0.3, text: 'sprang när rövarna kom' },
+  botade: { i: 'botare', vikt: 0.4, text: 'botade {om}', prestation: true },
+  vardDog: { i: 'daligLakare', vikt: 0.3, text: 'vårdade {om}, som dog ändå' },
+  scenBra: { i: 'scenBra', vikt: 0.25, text: 'fick publiken med sig i {sak}', prestation: true },
+  scenDalig: { i: 'scenDalig', vikt: 0.2, text: 'tråkade ut publiken med {sak}' },
+  skrev: { i: 'skrivkunnig', vikt: 0.3, text: 'skrev {sak}', prestation: true },
+  bad: { i: 'from', vikt: 0.05, text: 'bad och offrade till gudarna' },
+  skandade: { i: 'gudlos', vikt: 0.5, text: 'skändade {sak}' },
+  utstott: { i: 'gudlos', vikt: 0.4, text: 'stöttes ut ur tron' },
+  utanTro: { i: 'gudlos', vikt: 0.1, text: 'höll sig borta från tron' }, // steg 12.1.173
+  full: { i: 'suput', vikt: 0.15, text: 'var full igen' },
+  lurade: { i: 'lurendrejare', vikt: 0.5, text: 'lurade {om} i ett byte' },
+  braPris: { i: 'hederlig', vikt: 0.1, text: 'gav {om} ett bra pris' },
+  reste: { i: 'vittberest', vikt: 0.4, text: 'kom hem efter en lång resa', prestation: true },
+  slackte: { i: 'brandslackare', vikt: 0.4, text: 'var med och släckte branden', prestation: true },
+  skotteDjur: { i: 'djurvan', vikt: 0.03, text: 'skötte {sak} väl' },
+  satt: { i: 'fangelsekund', vikt: 0.6, text: 'satt i fängelset' },
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;
 export const HANDELSER: Record<HandelseTyp, HandelseDef> = HDEF;
@@ -229,7 +269,7 @@ function relEffekt(s: State, p: Person, om: number, k: IntryckTyp, d: number, pr
   // en prestation gör de flesta imponerade, men rivalen och den med låg empati avundsjuka (steg 3.3.2)
   if (prestation && d > 0 && (p.rivaler?.includes(om) || stat(p, 'empati', s.now) <= RYKTE.avundEmp)) {
     op = -op;
-    think(p, `Avundsjuk på ${q.name}`, -RYKTE.avundTanke, s.now, RYKTE.avundTim * HOUR);
+    tanke(p, 'avundsjuk', s.now, { namn: q.name, v: -RYKTE.avundTanke, tid: RYKTE.avundTim * HOUR });
     count(s, 'rykte_avund');
   }
   const r = getRel(s, p, q);
@@ -290,6 +330,15 @@ export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sa
   if (offer && d.i === 'valdsam') budTillfalle(s, 'skadad', offer, p); // hämnd är en plikt (budet, steg 8.6.6)
 }
 
+// en gång om dygnet (steg 12.1.173): den som håller sig borta från tron medan de andra i byn tror får intrycket gudlös hos dem
+// som ser hen. Hur ofta var och en varit med på byns böner och ritualer det senaste dygnet räknas med gjort(…, 'tro')
+export function gudlosDygn(s: State) {
+  const vuxna = living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vuxen), troende = vuxna.filter(p => p.tro !== undefined);
+  if (!troende.length || troende.length < vuxna.length * RYKTE.gudlosTro) return;
+  const snitt = troende.reduce((a, p) => a + gjortDygn(s, p, 'tro'), 0) / troende.length;
+  if (snitt < RYKTE.gudlosMin) return;
+  for (const p of vuxna) if (gjortDygn(s, p, 'tro') <= snitt * RYKTE.gudlosAndel) handelse(s, p, 'utanTro');
+}
 // det som p gjort (beviset b) blir känt för alla i till (när ledaren straffar p, styre.ts): de hör det med del av vikten
 export function allmant(s: State, p: Person, b: Bevis, del: number, till: Person[]) {
   const d = HANDELSER[b.h];
@@ -376,7 +425,7 @@ function ertappad(s: State, b: Person, a: Person, e: Intryck, h: 'logn' | 'overd
   r.op = clamp(r.op - RYKTE.ertappaOp, -100, 100);
   intryck(s, b, a, 'logn', HANDELSER[h].vikt, 1, { h, t: s.now, mot: e.om, motNamn: e.namn, sett: true }, undefined, 0, true);
   count(s, 'rykte_' + h);
-  if (h === 'logn') think(b, `${a.name} ljuger om mig`, RYKTE.lognTanke, s.now, RYKTE.lognTankeTim * HOUR);
+  if (h === 'logn') tanke(b, 'ljugerOm', s.now, { namn: a.name, v: RYKTE.lognTanke, tid: RYKTE.lognTankeTim * HOUR });
 }
 
 // skitsnack (utbrott av grad 2, humor.ts): den som mår dåligt hittar på något om den hen ogillar mest och berättar det för
@@ -630,7 +679,7 @@ export function smakMat(s: State, p: Person, per: Record<string, number>) {
   if (!k) return;
   if (ageOf(p, s.now) < ALDER.vuxen && living(s).some(q => isParent(q, p) && Math.hypot(q.x - p.x, q.y - p.y) < RYKTE.syn)) smaka(p, 'm:' + k, RYKTE.smakMat);
   const v = smakAv(p, 'm:' + k);
-  if (Math.abs(v) > RYKTE.smakKanns) think(p, v > 0 ? 'Fick äta något gott' : 'Fick äta något äckligt', v * RYKTE.smakTanke, s.now, RYKTE.smakTankeTim * HOUR);
+  if (Math.abs(v) > RYKTE.smakKanns) tanke(p, v > 0 ? 'smakGott' : 'smakAckligt', s.now, { v: v * RYKTE.smakTanke, tid: RYKTE.smakTankeTim * HOUR });
 }
 // favoriter och avsky (steg 9.6.6): en fin måltid ger tycke för huvudingrediensen, en matförgiftning avsmak för det man åt
 export const smakFinMaltid = (p: Person, k: string) => smaka(p, 'm:' + k, RYKTE.smakFin);
@@ -732,7 +781,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
       vet.add(q); hort.push(q);
       const st = Math.max(1, Math.round((fran.larm?.storlek ?? storlek) * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', q) - 1))));
       q.larm = { t: s.now, vad, storlek: st, led, ...(falskt ? { falskt: true as const } : {}) };
-      think(q, `Hörde rop: ${vad}`, -LARM.oro, s.now, LARM.oroTim * HOUR);
+      tanke(q, 'hordeRop', s.now, { vad, v: -LARM.oro, tid: LARM.oroTim * HOUR });
       count(s, 'larm_hort');
       if (rnd(s, 'rykte', q) < LARM.vidare) nya.push(q);
     }
@@ -746,3 +795,4 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
 // minns p ett larm nu?
 export const larmNu = (s: State, p: Person) => p.larm && s.now - p.larm.t < LARM.tim * HOUR ? p.larm : undefined;
 import { smakSak } from './ratter';
+import { tanke } from './tankar';

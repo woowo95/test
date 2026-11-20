@@ -649,7 +649,7 @@ function vargSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   folk.forEach(p => {
     const k = kampeAv(p);
     if (!k) return;
-    efterKampen(s, p, st, k, svara, vinnare === 0 ? 'Klarade sig mot vargarna' : 'Anfölls av vargar', vinnare === 0);
+    efterKampen(s, p, st, k, svara, vinnare === 0 ? 'klaradeVargar' : 'anfollsVargar', vinnare === 0);
     avbryt(s, p);
     const tid = SLAGSMAL.minst * SEC; // striden har redan pågått på kartan (steg 9.2.29)
     // den som står kvar efter en vargjakt bär hem en fälld varg (den som dödade den först)

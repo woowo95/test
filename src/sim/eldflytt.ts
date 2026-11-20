@@ -1,5 +1,5 @@
 import { bynsMitt } from './omrade';
-import { ALDER, KROPP, count, isSick, living, log, think } from './folk';
+import { ALDER, KROPP, count, isSick, living, log } from './folk';
 import { halsa } from './halsa';
 import { eldPlats } from './karta';
 import { ELD } from './eld';
@@ -9,6 +9,7 @@ import { bitsOf, gridOf, housesOf, roomAt } from './byggnad';
 import { kronika } from './historik';
 import { HOUR, Person, State, W, inMap } from './typer';
 import { balans } from './balans';
+import { tanke } from './tankar';
 
 // ---------- elden flyttas (steg 2.10.4) ----------
 // Elden står där byn grundades. Den flyttas i två fall (Björn efter v115): när ett hus behöver platsen där elden står
@@ -119,7 +120,7 @@ export function flyttaElden(s: State, p: Person) {
   count(s, 'eldflytt');
   log(s, `${p.name} släckte elden och bar stenarna i ringen till en ny eldplats ${mal.varfor === 'plats' ? 'där ett hus ska byggas' : 'mitt i byn'}.`, 'world', [p.id]);
   if (s.stat!.eldflytt === 1) kronika(s, `${p.name} flyttade byns eld ${mal.varfor === 'plats' ? 'för att ge plats åt ett hus' : 'till byns mitt'}.`, 'bygge');
-  think(p, 'Flyttade elden', ELDFLYTT.tanke, s.now, ELDFLYTT.tankeTim * HOUR);
+  tanke(p, 'flyttadeElden', s.now, { v: ELDFLYTT.tanke, tid: ELDFLYTT.tankeTim * HOUR });
 }
 
 // vad det kostar att flytta elden (steg 10.2.8): ringens stenar gånger ELDFLYTT.kostnad, i samma värde som ett bygges material

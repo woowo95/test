@@ -5,7 +5,7 @@ import { utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
 import { blodas } from './blod';
-import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log, makeName, stat, think } from './folk';
+import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log, makeName, stat } from './folk';
 import { halsa, horsel, kanGa } from './halsa';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
@@ -15,7 +15,7 @@ import { kantMot } from './grannbyar';
 import { addTo, amountOf, avbryt, carryKind, dropLoad, isCarrying, zoneOf, zonesOf } from './lager';
 import { hundSkaller, tamArt, tamStulen, tamUte } from './tamdjur';
 import { DORRAR, bitAt, bitsOf, freeNear, husById, roomAt } from './byggnad';
-import { LARM } from './rykten';
+import { LARM, handelse } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
 import { avst, clamp, hash3, rnd } from './slump';
@@ -46,6 +46,10 @@ import { viktOf } from './saker';
 import { LARMHOT, rollVid, viljaKrok } from './roller';
 import { KartStrid, djurIKartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
 import { EFTER, FAROR, MED, gastKrok } from './efterstrid';
+import { tanke } from './tankar';
+import { forlustFore, forlustEfter } from './tankelage';
+import { allaBarn } from './uppvaxt';
+import { kronikaBer } from './berattelser';
 
 // ---------- rövarflocken (steg 4.4.5, Striden på kartan i designdokumentet) ----------
 // När världen skickar dem (radanfall.ts, steg 11.6.20) kommer ett gäng rövare: folk från en grannklan som inte
@@ -318,7 +322,7 @@ function hors(s: State, fran: Person, r: number) {
   for (const o of living(s)) {
     if (o === fran || harLarm(s, o) || horsel(o) < LARM.dov || (!horn && avst(o, fran) > r)) continue;
     o.larm = { t: s.now, vad: 'rovare', storlek: Math.max(1, Math.round(st * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', o) - 1)))), led };
-    think(o, 'Hörde rop: rövare', -LARM.oro, s.now, LARM.oroTim * HOUR);
+    tanke(o, 'hordeRop', s.now, { vad: 'rövare', v: -LARM.oro, tid: LARM.oroTim * HOUR });
     count(s, 'larm_hort'); n++;
     if (!o.task) continue;
     if (o.task.act === 'sova') { if (vuxenKan(s, o)) { avbryt(s, o); o.task = undefined; count(s, 'rovarVackt'); } continue; }
@@ -540,7 +544,7 @@ function motet(c: RCtx, ta: boolean) {
     q.task.carry = 0; q.task.items = undefined; count(s, 'rovarTogBorda');
     log(s, `En rövare tog det ${q.name} bar.`, 'world', [q.id]);
   } else count(s, 'rovarHotade');
-  think(q, 'Hotades av rövare', -0.15, s.now, 6 * HOUR);
+  tanke(q, 'hotadRovare', s.now);
   q.gavSig = s.now; q.larmRoll = undefined; avbryt(s, q); q.task = undefined;
   g.gorTill = 0;
 }
@@ -568,6 +572,7 @@ function taSteg(c: RCtx) {
   if (f.skal && !f.radKlar) { f.radKlar = true; if (radSeger(s, f)) { if ((f.gor as string) !== 'letar') { tandaHus(s, f); f.klar = true; } return; } }
   if (f.gor === 'letar' || f.letar?.length) { letaSteg(s, f, c.folk); return; }
   if (huggDorr(s, f, c.folk)) return; // en stängd dörr huggs sönder (steg 8.9.1–8.9.2)
+  forlustFore(s, 'ran'); // förmögenheten när plundringen börjar (steg 12.1.131)
   g.taTid = (g.taTid ?? 0) + c.dt;
   while (g.taTid >= ROVARE.taSek) {
     g.taTid -= ROVARE.taSek;
@@ -607,8 +612,9 @@ export function taKlart(s: State, f: Rovarflock) {
   count(s, 'rovarPlundring'); if (tyst) count(s, 'rovarTyst');
   const vad = [...tog_.length ? [`tog ${och(tog_)} ur förrådet`] : [], ...drev.length ? [`drev bort ${och(drev)} som stod ute`] : []].join(' och '); // djuren stod ute, inte i förrådet (steg 12.1.119)
   const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}${vad}.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
-  log(s, text, 'world'); if (tog) { notis(s, 'motgang', text); kronika(s, text, 'rovare'); }
+  log(s, text, 'world'); if (tog) { notis(s, 'motgang', text); kronikaBer(s, 'k_rovare', Math.floor(s.now / HOUR), { fran: fran(s, f), vad, tyst }); allaBarn(s, 'rovarePlundring'); } // mallen (steg 12.1.135)
   tandaHus(s, f); // (steg 8.9.3)
+  forlustEfter(s, 'ran'); // (steg 12.1.131)
 }
 // hämnden letar hus för hus (steg 8.8.5): flocken går till husen i tur och ordning, närmast först. Är den de söker där, eller
 // kommer de nära hen, hittas hen. När alla hus är genomsökta ger de sig av
@@ -787,9 +793,10 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   }
   for (const { k, p } of bybor) {
     if (!p || !alive(p)) continue;
+    if (k.lage === 'strid') handelse(s, p, 'forsvarade'); else if (k.lage === 'flykt') handelse(s, p, 'sprang'); // (steg 12.1.134)
     if (f && k.lage === 'ger') svarTrohet(s, f, p); // heligt krig (steg 8.8.6)
     if (k.lage !== 'strid') { p.gavSig = s.now; p.larmRoll = undefined; } // den som fallit, flytt eller gett upp vill mindre stå emot, och rollen väljs om (steg 12.1.82)
-    efterKampen(s, p, st, k, svara, vinnare === 0 ? 'Drev bort rövarna' : 'Slogs med rövare', vinnare === 0);
+    efterKampen(s, p, st, k, svara, vinnare === 0 ? 'drevBortRovare' : 'slogsRovare', vinnare === 0);
   }
   const forst = bybor[0]?.k;
   if (forst) blodas(s, forst.x, forst.y, 'jakt', 1);
@@ -801,6 +808,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   kronika(s, text, 'rovare');
   if (f && vinnare === 0) for (const r of rovarna(s, f)) gr(r).flytt = true; // den slagna flocken flyr
   if (vinnare === 0 && s.styre && ledareOf(s)) s.styre.vunna = (s.styre.vunna ?? 0) + 1; // byn slog tillbaka rövarna: en vunnen strid i ledarens framgång (steg 8.3.9, fynd 456)
+  if (vinnare === 0) allaBarn(s, 'rovareBort'); // barnen som såg det (steg 12.1.133)
 };
 // en rövare dör i striden (gastKrok i efterstrid.ts): hen ligger kvar med det hen bar, klanen minns det och blir ovänligare
 gastKrok.dod = (s, r, av) => {

@@ -8,7 +8,7 @@ import { BYN } from './egendom';
 import { krukaAv } from './kruka';
 import { DAY, HOUR, MIN, Person, State } from './typer';
 import { balans } from './balans';
-import { KROPP, count, forstaGang, log, think } from './folk';
+import { KROPP, count, forstaGang, log } from './folk';
 import { isSick } from './sjukdom';
 import { HALSA, hemma, salvaKrok, vattenKrok } from './halsa';
 
@@ -151,7 +151,7 @@ function drack(s: State, p: Person, v: VatskaId, d: DryckDef) {
   p.torst = Math.min(1, p.torst + d.slacker);
   if (d.varm && p.warm < KROPP.fryser) p.warm = Math.min(1, p.warm + d.varm);
   if (d.mat) { const n = naringOf(p); n.protein = Math.min(1, n.protein + (d.mat.protein ?? 0)); n.fett = Math.min(1, n.fett + (d.mat.fett ?? 0)); p.hunger = mattnad(n); }
-  if (d.tanke) think(p, d.tanke[0], d.tanke[1], s.now, d.tanke[2] * HOUR);
+  if (d.tanke) tanke(p, 'dryck', s.now, { text: d.tanke[0], v: d.tanke[1], tid: d.tanke[2] * HOUR });
   count(s, d.stat); specialTanke(s, p, { [v]: 1 }); // byns egen dryck (steg 10.7.29)
   if (d.forsta && forstaGang(s, v + 'Forsta')) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }
@@ -229,3 +229,4 @@ export function taVatskaFran(s: State, v: VatskaId, n: number, forst?: Ting) {
   if (forst?.inne?.v === v) { const d = Math.min(kvar, forst.inne.n); forst.inne.n -= d; kvar -= d; vatskaKrok.tagen(s, v, d); if (forst.inne.n <= 0) forst.inne = undefined; }
   return n - kvar + (kvar > 0 ? taVatska(s, v, kvar) : 0);
 }
+import { tanke } from './tankar';

@@ -3,12 +3,12 @@ import { SAK_ART, heligtBrutet, matBrutet } from './kultlatt';
 import { utsadeKrok } from './ratter';
 import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
-import { loggBer } from './berattelser';
+import { loggBer, kronikaBer, BERATT } from './berattelser';
 import { State, Person, HOUR, DAY, MIN } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, gruppOf, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
 import { ledareOf } from './styre';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, familjOf, livet, living, log, ovning, relKey, stat, think } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, familjOf, livet, living, log, ovning, relKey, stat } from './folk';
 import { forsorjAlder } from './skatt';
 import { VARDRATT, kanGa, mindreMat } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
@@ -26,7 +26,7 @@ import { kroppensMat, matPerDygn } from './ekonomi';
 import { REDSKAPMAL, arMaterial, buffert, eldReserv, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
-import { dampning, handelse, smakMat } from './rykten';
+import { dampning, handelse, smakMat, RYKTE } from './rykten';
 import { VED, vedPerDygn } from './eld';
 import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf, vardeAv, kartOf } from './byte';
 import { bynKanner, kannerOrt } from './ort';
@@ -103,19 +103,19 @@ function eat(s: State, p: Person, fran?: Person) {
   for (const k in per) per[k] *= f;
   for (const k in per) { heligtBrutet(s, p, SAK_ART[k]); matBrutet(s, p, k); } // den svältande åt det heliga djurets kött (steg 10.3.15)
   ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
-  if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
+  if (q < 0.5) tanke(p, 'daligMat', now);
   if (portion > 0 && vidBordet(p)) {
-    think(p, 'Åt vid bordet', KROPP.bordGlad * kvEffekt(bordVid(s, p)) * moblerKrok.sittGlad(s, p), now, KROPP.bordGladTim * HOUR); count(s, 'bordMal'); // och bättre på en stol (steg 12.4.4)
+    tanke(p, 'vidBordet', now, { v: KROPP.bordGlad * kvEffekt(bordVid(s, p)) * moblerKrok.sittGlad(s, p), tid: KROPP.bordGladTim * HOUR }); count(s, 'bordMal'); // och bättre på en stol (steg 12.4.4)
     let mest = 0; for (const k in per) if (per[k] > mest) { mest = per[k]; p.task!.mal = k; } // maten på bordet och i händerna (steg 3.10.3, bara utseende)
   }
   const smutsig = smutsigtAtit(s, per); // maten som plockats där det var toa-smuts (steg 10.11.14)
   if (smutsig > 0 && rnd(s, 'halsa', p) < smutsig * SJUK.smutsig) {
     insjukna(s, p, 'magsjuka', 'av smutsig mat'); p.sickWhy = 'Magsjuk av mat som plockats vid toa-smuts';
-    think(p, 'Åt smutsig mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'smutsigMat');
+    tanke(p, 'smutsigMat', now); count(s, 'smutsigMat');
   }
   else if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35 * SJUK.skamd) {
     insjukna(s, p, 'magsjuka', 'av skämd mat'); p.sickWhy = 'Magsjuk av skämd mat'; // steg 9.5.1
-    think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
+    tanke(p, 'skamdMat', now); count(s, 'skamdMat');
     loggBer(s, 'l_magsjuk', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon' }, 'world', [p.id]);
   }
   return portion;
@@ -135,16 +135,16 @@ const GOTT: { tanke: string; ar: (k: string) => boolean; glad: () => number }[] 
 // måltidens nivå (steg 9.6.2, ratter.ts): en lagad eller fin måltid ger en tanke som höjer humöret
 function maltidTanke(s: State, p: Person, per: Record<string, number>) {
   const niva = basta(per), n = MALTIDSNIVA[niva];
-  if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + niva); }
+  if (n.humor > 0) { tanke(p, 'maltid', s.now, { text: n.tanke, v: n.humor, tid: RATT.tankeTim * HOUR }); count(s, 'maltid_' + niva); }
   if (niva === 'fin') { const k = Object.keys(per).find(x => MALTIDSNIVA[maltidsNiva(x)] === MALTIDSNIVA.fin); if (k) smakFinMaltid(p, smakSak(k)); } // en favorit (steg 9.6.6)
   // variationen (steg 9.6.5): den som ätit samma protein för många gånger tröttnar på det
   let mest = '', mn = 0; for (const k in per) { const pr = proteinAv(k, x => SAKER[x]?.namn ?? x); if (pr && per[k] > mn) { mest = pr; mn = per[k]; } }
   if (mest) {
     const m = (p.protMinne ??= []); m.push(mest); if (m.length > VARIATION.minns) m.shift();
-    if (m.filter(x => x === mest).length >= VARIATION.trott) { think(p, `${mest} igen`, VARIATION.tanke, s.now, VARIATION.tankeTim * HOUR); count(s, 'trott_pa_mat'); }
+    if (m.filter(x => x === mest).length >= VARIATION.trott) { tanke(p, 'trottPa', s.now, { mat: mest, v: VARIATION.tanke, tid: VARIATION.tankeTim * HOUR }); count(s, 'trott_pa_mat'); }
   }
-  for (const g of GOTT) if (Object.keys(per).some(x => per[x] > 0 && g.ar(x))) think(p, g.tanke, g.glad(), s.now, RATT.tankeTim * HOUR);
-  const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
+  for (const g of GOTT) if (Object.keys(per).some(x => per[x] > 0 && g.ar(x))) tanke(p, 'gott', s.now, { text: g.tanke, v: g.glad(), tid: RATT.tankeTim * HOUR });
+  const k = kockGlad(s, per); if (k > 0.005) tanke(p, 'vallagad', s.now, { v: k, tid: RATT.tankeTim * HOUR }); // kockens hand (steg 9.6.4)
   specialTanke(s, p, per); // byns egen rätt som blivit en tradition (steg 10.7.29)
 }
 // p sitter vid bordet och äter (handlingen maltid, framme: val.ts och stationer.ts, steg 2.2.15)
@@ -306,8 +306,8 @@ function gift(s: State, m: Person, g: Person, n: Behov) {
   for (const k of n.slag) { if (rest <= 1e-9) break; const v = ownMove(s, k, rest / perOf(n, k), g.id, m.id); if (v > 0) gavs.push({ k, n: v }); rest -= v * perOf(n, k); }
   const r = getRel(s, m, g);
   r.op = clamp(r.op + 3, -100, 100);
-  think(m, `Fick ${n.namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
-  think(g, `Gav ${n.namn} till ${m.name}`, 0.05, s.now, 6 * HOUR); minnsGava(s, g, m);
+  tanke(m, 'fickGava', s.now, { sak: n.namn, namn: g.name });
+  tanke(g, 'gavGava', s.now, { sak: n.namn, namn: m.name }); minnsGava(s, g, m);
   gavaKlar(s, personPart(s, g), personPart(s, m), gavs, n.fara(s, m) > 0); // samma överlämning och rad som ett byte (steg 4.4.1.1)
   handelse(s, g, n.fara(s, m) > 0 ? 'hjalp' : 'gava', m, n.namn); // de som ser det tycker bättre om den som ger (steg 3.3.1)
   count(s, 'gava_' + n.id, want - rest);
@@ -383,8 +383,8 @@ export function noticeTheft(s: State, p: Person, key: string) {
     const r = getRel(s, p, t), w = l ? clamp(n * grundvarde(key) / DELA.stoldVarde, 0, 1) : 1;
     r.op = clamp(r.op - (l ? DELA.stoldLindrig * w : DELA.stoldOp), -100, 100);
     if (w < DELA.stoldTanke) continue;
-    think(p, `${t.name} tog av det jag sparat (${namnOf(key).toLowerCase()})`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
-    if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
+    tanke(p, 'togSparat', s.now, { namn: t.name, sak: namnOf(key).toLowerCase(), v: l ? -0.04 : -0.1 });
+    if (alive(t)) tanke(t, 'vetAttJagTog', s.now, { namn: p.name });
     handelse(s, t, l ? 'stoldLindrig' : 'stold', p, namnOf(key), p); // bara den bestulne vet, och kan berätta det (steg 3.3.1)
     if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit ${hans(p)} ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
   }
@@ -538,8 +538,8 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
       give(t, g, m);
       const namn = `${SAKER[k]?.ett ? 'ett' : 'en'} ${(SAKER[k]?.namn ?? k).toLowerCase()}`, r = getRel(s, a, b); // rätt genus (ett träspjut)
       r.op = clamp(r.op + 4, -100, 100);
-      think(m, `Fick ${namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
-      think(g, `Gav ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR); minnsGava(s, g, m);
+      tanke(m, 'fickGava', s.now, { sak: namn, namn: g.name });
+      tanke(g, 'gavGava', s.now, { sak: namn, namn: m.name }); minnsGava(s, g, m);
       count(s, 'gavor');
       gavaKlar(s, personPart(s, g), personPart(s, m), [{ k, n: 1, t }], false);
       handelse(s, g, 'gava', m, namn);
@@ -735,11 +735,12 @@ function lura(s: State, M: Part, G: Part, betal: Vara[], varor: (Vara & { ut: nu
 function lurad(s: State, X: Part, L: Part) {
   count(s, 'lurat');
   if (L.p) gjort(s, L.p, 'lurade');
+  if (L.p && X.p) handelse(s, L.p, 'lurade', X.p); // de som ser bytet (steg 12.1.134)
   const p = X.p;
   if (!p || rnd(s, 'handel') >= HANDLA.marka * ((p.skill.handel ?? 0) + p.pot.intelligens / 2)) return false;
   count(s, 'lurad');
   gjort(s, p, 'lurad');
-  think(p, `Blev lurad av ${L.namn}`, HANDLA.surTanke, s.now, HANDLA.surTim * HOUR);
+  tanke(p, 'lurad', s.now, { namn: L.namn, v: HANDLA.surTanke, tid: HANDLA.surTim * HOUR });
   if (L.p) { const r = getRel(s, p, L.p); r.op = clamp(r.op - HANDLA.surRel, -100, 100); }
   log(s, `${p.name} märkte att ${L.namn} hade lurat ${honom(p)} i ett byte.`, 'rel', [p.id, ...(L.p ? [L.p.id] : [])]);
   return true;
@@ -829,10 +830,13 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
   for (const w of fatt) flytta(s, w, G, M);
   for (const w of betal) flytta(s, w, M, G);
   if (M.p && G.p) { const r = getRel(s, M.p, G.p); r.op = clamp(r.op + HANDLA.byteRel, -100, 100); }
-  if (M.p) think(M.p, `Bytte till sig ${varorText(fatt)} av ${G.namn}`, HANDLA.byteTanke, s.now, HANDLA.byteTim * HOUR);
-  if (G.p) think(G.p, `Bytte till sig ${varorText(betal)} av ${M.namn}`, HANDLA.byteTanke, s.now, HANDLA.byteTim * HOUR);
+  if (M.p) tanke(M.p, 'bytte', s.now, { varor: varorText(fatt), namn: G.namn, v: HANDLA.byteTanke, tid: HANDLA.byteTim * HOUR });
+  if (G.p) tanke(G.p, 'bytte', s.now, { varor: varorText(betal), namn: M.namn, v: HANDLA.byteTanke, tid: HANDLA.byteTim * HOUR });
   for (const X of [M, G]) if (X.p) { ovning(X.p, 'handel', HANDLA.ovning * (0.5 + X.p.pot.intelligens / 20)); gjort(s, X.p, 'bytt'); }
   if (lurare) { const X = lurare === M ? G : M, markt = lurad(s, X, lurare); for (const f of vidLura) f(s, lurare, X, markt); }
+  else { const v = (l: Vara[]) => l.reduce((a, w) => a + (w.varde ?? grundvarde(w.k) * w.n), 0), vf = v(fatt), vb = v(betal); // den som gav mer än hen fick: ett bra pris (steg 12.1.134)
+    if (vf + vb >= BERATT.stortByte) kronikaBer(s, 'k_handel', Math.floor(s.now / HOUR), { a: M.namn, b: G.namn, fick: varorText(fatt), gav: varorText(betal) }); // ett stort byte (steg 12.1.135)
+    if (G.p && M.p && vf >= vb * (1 + RYKTE.braPris) && vb > 0) handelse(s, G.p, 'braPris', M.p); else if (G.p && M.p && vb >= vf * (1 + RYKTE.braPris) && vf > 0) handelse(s, M.p, 'braPris', G.p); }
   const n = enheter(fatt);
   count(s, 'byten'); count(s, 'byte_' + typ, n); if (delad) count(s, 'kvallsbyten');
   if (byteKlart(s, M, G, fatt, betal, desperat)) count(s, 'storaByten'); // samma rad i loggen och krönikan, vem motparten än är
@@ -845,3 +849,4 @@ import { MALTIDSNIVA, RATT, VARIATION, basta, maltidsNiva, proteinAv, rattInfo, 
 import { ROK, ROKAS, STEK, kockGlad } from './matlagning';
 import { smakFinMaltid } from './rykten';
 import { specialTanke } from './special';
+import { tanke } from './tankar';
