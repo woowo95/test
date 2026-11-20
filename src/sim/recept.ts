@@ -166,6 +166,7 @@ const DEF = {
   vagga: { var: 'station', av: { plankor: 2, ull: 1 }, min: 10 }, // vaggan (steg 12.4.5): en låg låda av plankor på medar, med en bädd av ull
   tunna: { var: 'sak', av: { plankor: 3, rep: 1 }, min: 5, slag: 'stor', tek: 'laggkar', bank: 'snickarbank', bara: true }, // tunnan (steg 12.4.6, tunna.ts): laggad av plankor och bunden med rep
   ost: { var: 'sak', min: 4, slag: 'liten', tek: 'ost' }, // osten (steg 12.4.7): 4 mjölk i en mellanstor lerkruka vid elden (TILLVERKA.ysta), materialet är mjölken
+  brunn: { var: 'station', av: { huggen_sten: 6, virke: 1, rep: 1 }, min: 20, verktyg: { benspade: 'benspaden' } }, // brunnen (steg 12.4.8, torst.ts): grävs med spaden och sätts med huggen sten, med ett vindspel av virke och rep
   oljelampa: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'oljelampa', bank: 'drejskiva' }, // oljelampan (steg 12.4.2): formas av lera som krukan, torkar och bränns
   // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
   jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },

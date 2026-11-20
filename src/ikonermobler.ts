@@ -69,9 +69,16 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '..kyYYYYYYkYYk..', '..kyyYYYYYkyYk..', '...kyyyyyykyk...', '....kkkkkkkk....',
     '................', '................', '................', '................'],
     pal: { k: '#24201d', Y: '#d8b25f', y: '#b2921b' } },
+  // brunnen (steg 12.4.8): en rund kant av huggen sten med mörkt vatten i, och ett vindspel av virke över
+  brunn: { pix: [
+    '................', '..kk........kk..', '..kjkkkkkkkkjk..', '..kj..kyyk..jk..',
+    '..kj...kk...jk..', '..kj...kk...jk..', '..kkkkkkkkkkkk..', '..kSsSsSsSsSsk..',
+    '.kSvvvvvvvvvvSk.', '.ksvVvvvvvVvvsk.', '.kSvvvvvvvvvvSk.', '..kSsSsSsSsSsk..',
+    '..ksSsSsSsSsSk..', '...kkkkkkkkkk...', '................', '................'],
+    pal: { ...TRA, S: '#8a9c9e', s: '#61767a', v: '#233035', V: '#3b6ea5', y: '#a0947d' } },
 };
 // stationerna som är en ruta stora har samma bild på kartan
-const KARTA = ['drejskiva', 'vagga'];
+const KARTA = ['drejskiva', 'vagga', 'brunn'];
 // de längre stationerna står vridna ett kvarts varv när de står på högkant (platshållare tills den stående bilden ritats)
 const VRIDS = ['sang'];
 const vrid = (r: string[]) => Array.from({ length: r[0].length }, (_, x) => r.map(rad => rad[x]).reverse().join(''));

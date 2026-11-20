@@ -427,6 +427,11 @@ export const STATIONER = {
     vila: { tim: STATION.vaggaVila, tanke: 'Sov gott i vaggan', glad: STATION.vaggaGlad },
     bygger: 'Bygger en vagga av plankor med en bädd av ull.', forsta: '{namn} byggde byns första vagga. Där sover spädbarnet gott.',
   },
+  // brunnen (steg 12.4.8, torst.ts): en stensatt brunn i byn, där man dricker och hämtar vatten som inte fryser och inte sinar
+  brunn: {
+    namn: 'Brunn', ikon: 'brunn', w: 1, h: 1, tek: ['brunn'], av: RECEPT.brunn.av, min: RECEPT.brunn.min, gor: [], verktyg: 'benspade',
+    bygger: 'Gräver en brunn och sätter den med huggen sten.', forsta: '{namn} grävde byns första brunn. Vattnet där fryser inte och sinar inte.',
+  },
   // drejskivan (steg 12.4.1): inne, med en sittplats. Lerkrukorna formas dubbelt så fort här och blir oftare bra; för hand går de fortfarande
   drejskiva: {
     kv: STATION.kvMer, namn: 'Drejskiva', ikon: 'drejskiva', w: 1, h: 1, tek: ['drejskiva'], av: RECEPT.drejskiva.av, min: RECEPT.drejskiva.min, inne: true, sitt: true, gor: DREJ, fart: Object.fromEntries(DREJ.map(a => [a, STATION.drejFart])),

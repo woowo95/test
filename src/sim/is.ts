@@ -73,7 +73,8 @@ export function halGjort(s: State, p: Person) {
   if (forstaGang(s, 'isborrTrasig')) log(s, `${p.name}s isborr var utsliten.`, 'world', [p.id]); else count(s, 'isborrTrasig');
 }
 // kan p nå vattnet: isen ligger inte, eller hen kan hugga upp ett hål
-export const naVattnet = (s: State, p: Person) => !islagt(s) || !!halVal(s, p);
+export const naVattnet = (s: State, p: Person) => !islagt(s) || !!halVal(s, p) || brunnFinns(s); // brunnens vatten fryser inte (steg 12.4.8)
+export const brunnFinns = (s: State) => !!s.stationer?.some(t => t.k === 'brunn' && t.kvar <= 0);
 // så många minuter det tar för p att hugga upp hålet (0 när isen inte ligger eller det inte går)
 export function halMin(s: State, p: Person) {
   const h = halVal(s, p);
