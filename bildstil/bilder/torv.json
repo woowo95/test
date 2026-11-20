@@ -12,7 +12,7 @@
   "EFEmFEFEmEEE",
   ".EEEEEEEEEE."
  ],
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
  "pal": {
   "E": "#3f2415",
@@ -20,36 +20,52 @@
   "G": "#7d5b40",
   "H": "#987e62",
   "m": "#372f25",
-  "n": "#474138"
+  "n": "#474138",
+  "X": "#505e3e",
+  "o": "#7e7362"
  },
  "versioner": [
   {
-   "ide": "Ett enda platt torvblock som ligger längs, som en tegelsten sedd snett uppifrån: hela 12 punkter brett och 8 högt, där ovansidan tar de översta 5 raderna och framkanten är ett band på 3 rader i mörkare ton. Ovansidan är jord1 och jord2 med korta vågräta fiberstreck i jord3 (2–3 punkter långa, aldrig ensamma prickar), ljusast uppe till vänster; framkanten är jord1 och jord0 med några mörka stråk i kol2 som rötter. Konturen är jord0 runt om, hörnen avrundade med en punkt så att silhuetten blir en jämn, spegelsymmetrisk rektangel, och de raka spadsnitten ses tydligt.",
+   "ide": "Ett enda torvblock som ligger platt, ungefär 12 punkter brett och 7 högt: ovansidan är en avlång rektangel sedd snett uppifrån som tar drygt hälften av höjden, i jord2 med korn av jord1 och korta fibrer i jord3 och ben0, och en eller två punkter mossa i barr3 vid övre vänstra kanten. Framkanten är ett band på 3 punkter i jord1 med jord0-ränder där spaden skurit och ett par rotstrån som sticker ut en punkt. Den högra kortsidan är det mörkaste, konturen runt hela blocket är jord0 och kanterna är raka men med lite avrundade hörn, som torkad torv.",
    "rader": [
-    ".EEEEEEEEEE.",
-    "EHHHGGHHGGFE",
-    "EGGGHHGGFGFE",
-    "EGHHGGFGGFFE",
-    "EFGGFFGHHFFE",
-    "EFFmFFEFmFFE",
-    "EFEmFEFEmEEE",
-    ".EEEEEEEEEE."
+    "..EEEEEEEEE.",
+    ".EXHGHGGoGFE",
+    ".EXGFGHGFGFE",
+    ".EGoGGFGHGFE",
+    ".EGGFGGoGFFE",
+    "HEFFFEFFEFEE",
+    "oEFFFEFFEFEE",
+    "..EEEEEEEEE."
    ],
-   "om": "Ett platt torvblock som ligger längs, 12×8 punkter, med jord0-kontur och avrundade hörn så att silhuetten blir en spegelsymmetrisk rektangel. Ovansidan tar de fem översta raderna: jord2 och jord1 med vågräta fiberstreck i jord3 på 2–3 punkter, ljusast uppe till vänster och mörkare mot nedre högra hörnet. Framkanten är ett band på tre rader i jord1 och jord0 med två lodräta rotstråk i kol2. De raka spadsnitten syns som skarpa kanter. Granskningen: Oförändrad. Blocket fyller hela rutan på 12 × 8 punkter och är litet mot kolonisten (14 × 20), som en torvbit ska vara. Vinkeln är snett uppifrån: ovansidan tar raderna 0–4 och framkanten är ett mörkare band på 2 rader i jord1, jord0 och kol2 ovanför konturen. Silhuetten är en spegelsymmetrisk rektangel med hörnen avrundade med en punkt, och de raka spadsnitten syns. Konturen är jord0 runt om, aldrig svart. Ovansidan har jord3-fibrer i korta vågräta streck på 2–3 punkter utan ensamma prickar. Den ljusaste tonen ligger uppe till vänster och den mörkaste nere till höger. Rotstråken i kol2 är korta lodräta par, inga fläckar. Den bruna kontrasten och konturen gör att blocket syns tydligt på det olivgröna gräset. Bilden följer idén."
+   "om": "Ett enda torvblock som ligger platt, 12 punkter brett och 8 högt, med jord0-kontur och avrundade hörn. Ovansidan (översta fyra raderna med konturen) är jord2 med korn av jord1 och fibrer i jord3 och ben0. Två punkter mossa i barr3 sitter vid övre vänstra kanten. Framkanten är ett band på 3 punkter i jord1 med lodräta jord0-ränder där spaden skurit. Den högra kortsidan är mörkast. Två rotstrån i jord3 och ben0 sticker ut en punkt till vänster. Granskningen: Storleken (12 × 8) passar mot kolonisten och följer gränsen. Vinkeln, konturen i jord0, ljuset uppifrån vänster, mossan i barr3 och kontrasten mot gräset följer reglerna. Ovansidan tog bara 3 av 8 rader, alltså mindre än hälften av höjden. Jag gjorde den 4 rader hög och lade till en rad i jord2 med korn av jord1 och fibrer i ben0 och jord3. Framkanten är nu 2 rader i jord1 och bildar tillsammans med bottenkonturen ett mörkt band på 3 punkter. Spadränderna i framkanten står nu i samma kolumn på båda raderna, så att skärningen blir rak. Rotstråna till vänster och den mörka högra kortsidan har jag behållit."
   },
   {
-   "ide": "Ett torvblock som står på högkant, smalare och högre: omkring 8 punkter brett och 8 högt, med en liten ovansida på 3 rader överst och en hög framsida på 5 rader under. Framsidan visar myrens skikt som vågräta band i jord1, jord2 och kol3, med ljusare fiberlager i jord3 närmast toppen, och från sidokanterna sticker några korta rottrådar ut som raka 2-punktsstreck i jord2 så att silhuetten blir lite trådig i stället för helt rak. Konturen är jord0, ljuset faller uppe till vänster så att vänstra kanten av ovansidan är ljusast och nedre högra hörnet mörkast.",
+   "ide": "En liten trave i kors med en låg bred silhuett nertill och en smalare upptill, som ett T: underst ligger ett block på längden, 12 punkter brett med ovansida i jord2 och framkant i jord1. Ovanpå, mitt på, ligger ett block på tvären som syns med kortänden framåt, ungefär 5 punkter brett, med en kvadratisk snittyta i jord1 och jord0 där fibrerna syns som korta streck i jord3 och ovansidan i jord2 och jord3. Formen är spegelsymmetrisk kring mitten, bara ljuset skiljer sidorna åt: den vänstra sidan är ljusare och den högra mörkare, och hela traven har kontur i jord0.",
    "rader": [
     "...EEEEEE...",
-    "..EHHHHGHE..",
-    "..EHGHHGGE..",
-    "GGEGHGHGFE..",
-    "..EGFGGFFEGG",
-    "..EFnFFnFE..",
-    "GGEnFnnFnE..",
-    "...EEEEEE..."
+    "...EHHGGE...",
+    "EEEEFHFFEEEE",
+    "EHGEFHFEEGGE",
+    "EGHEFFHFEGFE",
+    "EFGEEEEEEFFE",
+    "EGFFGFFFFFEE",
+    ".EEEEEEEEEE."
    ],
-   "om": "Ett torvblock på högkant, 8 punkter brett och 8 högt, med rottrådar som gör bilden 12 punkter bred. Konturen är jord0 med rundade hörn. Ovansidan (raderna 1–2) är ljusast i jord3 och jord2 uppe till vänster. På framsidan ligger först ett fiberlager i jord3 och jord2, sedan band av jord1, jord2 och kol3, mörkast nere till höger. Rottrådarna är raka 2-punktsstreck i jord2: två till vänster (raderna 3 och 6) och ett till höger (rad 4). Granskningen: Ritningen höll redan reglerna: blocket är 8 × 8 inom rutan på 12 × 8, så storleken passar mot kolonisten. Den ses snett uppifrån med en ovansida överst och en framsida under, konturen är jord0, inget kol0 används och rottrådarna i jord2 sticker ut från sidokanterna. Jag rättade bara ljuset. Ovansidan (rad 1–2) har fått mer jord3, så att den skiljer sig tydligare från framsidan och är ljusast uppe till vänster. På framsidan börjar det ljusa fiberlagret överst och skikten mörknar nedåt mot kol3, så att nedre högra hörnet blir mörkast. Mitt i rad 4 har en jord1-punkt bytts mot jord2 för att undvika en ensam mörk fläck, och rad 5–6 har fått de mörka kol3-banden lägst. Silhuetten, storleken och rötterna är oförändrade."
+   "om": "Torv som en liten trave i kors med T-formad silhuett. Underst ligger ett block på längden, 12 punkter brett, med ovansida i jord3 och jord2 och en framkant i jord1. Ovanpå, mitt på, ligger ett block på tvären med kortänden framåt, 6 punkter brett. Det har en kort ovansida i jord3 och jord2 och en fyrkantig snittyta i jord1 och jord0, där fibrerna syns som ett lodrätt streck i jord3. Formen är spegelsymmetrisk, och vänster sida är ljusare än den högra. Hela traven har kontur i jord0. Granskningen: Storleken (12 × 8), vinkeln snett uppifrån, T-formen, symmetrin och jord0-konturen följer idén och syns på gräset, så formen är kvar. Två rättelser: Snittytan på tvärblocket hade fibrerna som ett enda obrutet lodrätt streck i jord3 genom hela ytan. Nu är de korta streck (två punkter i mitten och en punkt längre ner), och ytan är jord1 med jord0 åt höger, som idén säger. Den nedre framkanten (rad 6) var slät jord1 och har nu korn med en ljusare punkt till vänster och den mörkare tonen kvar till höger."
+  },
+  {
+   "ide": "Två block som står på högkant och lutar mot varandra som ett tält för att torka, en hög och spetsig silhuett ungefär 11 punkter bred och 8 hög: topparna möts i mitten, och nertill står fötterna isär med en genomskinlig trekant emellan. Varje block är ett snett plattat rätblock på omkring 5 punkter, där den smala övre kanten syns ovanifrån som ett ljust band i jord3 och jord2 och framsidan är fibrig i jord1 och jord2 med strån i ben0. Det vänstra blocket är ljusare och det högra mörkare, formen är annars spegelsymmetrisk, och konturen är jord0.",
+   "rader": [
+    ".....EE.....",
+    "....EHGE....",
+    "...EHGFGE...",
+    "..EHGEEFGE..",
+    ".EHGoEEFoGE.",
+    "EHGoGEEFoFGE",
+    "EHoFE..EFoGE",
+    "EEEEE..EEEEE"
+   ],
+   "om": "Två torvblock på högkant som lutar mot varandra som ett tält, 12 punkter brett och 8 högt. Topparna möts i mitten och fötterna står isär med en genomskinlig trekant emellan. Den smala övre kanten är ett ljust band, H på det vänstra blocket och G på det mörkare högra. Framsidorna är fibriga i G och F med strån i o, och konturen är E. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Granskningen: Storleken (12 × 8) passar mot kolonisten och ryms inom gränsen. Silhuetten är spegelsymmetrisk med topparna i mitten och den genomskinliga trekanten mellan fötterna, och konturen är jord0 runt om. Blocken har ett ljust krönband längs ytterkanterna (jord3 och jord2), så vinkeln snett uppifrån fungerar. Det vänstra blocket är ljusare än det högra, och de bruna tonerna syns mot olivgräset. Jag ändrade bara en punkt: nedre delen av det vänstra blockets framsida var nästan bara jord2, så en punkt där är nu jord1. Då får ytan korn i två toner och blir mörkare nedåt, som ljuset kräver. Resten följer idén och reglerna och är oförändrat."
   }
  ]
 }
