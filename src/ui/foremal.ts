@@ -436,7 +436,7 @@ function igenvuxen(g: { x: number; y: number }) {
 // bildstenen (steg 10.7.1): samma sten med målade bilder i stället för runbandet, en figur med spjut och ett djur
 function runstenBild(x: number, y: number, bild = false) {
   const X = x * TS, Y = y * TS, gr = structG, u = TS / 16;
-  gr.beginFill(0x24201d, 0.35).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill();
+  gr.beginFill(0x21290d).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill(); // skuggan i paletten: gräset ett steg mörkare (MORKARE[1]), inte genomskinlig (steg 12.1.168)
   gr.beginFill(0x8a9c9e).drawPolygon([X + 5 * u, Y + TS - 2 * u, X + 4.5 * u, Y + 6 * u, X + 6 * u, Y + 2 * u, X + 10 * u, Y + 1.5 * u, X + 11.5 * u, Y + 5 * u, X + 11 * u, Y + TS - 2 * u]).endFill();
   gr.beginFill(0x61767a).drawRect(X + 10 * u, Y + 4 * u, 1.5 * u, TS - 6 * u).endFill();
   if (bild) {
