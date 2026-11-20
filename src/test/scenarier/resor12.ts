@@ -1,6 +1,7 @@
 // Scenarier för fas 12: resorna, handeln och platserna i världen (grenen par-resor).
 import * as SIM from '../../sim';
-import { SCENARIER, testBy } from './hjalp';
+import { SCENARIER, testBy, klockan, rikBy, tandEld } from './hjalp';
+import { BEAT } from '../kor';
 
 // en by i världen med grannar och ett stort överskott, som slår upp ett handelsläger
 function medLager() {
@@ -44,6 +45,33 @@ SCENARIER.lagerslut = {
       [`två som vet om lägret: platsen ligger kvar som minnesplats, och byn tror att den finns (${minne?.namn ?? 'ingen'})`, !!minne && tror && ute],
       [`den som reser dit ser att lägret är borta och glömmer det, den andra tror det ännu`, sag],
       [`hemma berättar sällskapet det, och minnesplatsen tas bort när ingen längre minns den`, glomd],
+    ];
+  },
+};
+
+SCENARIER.handlarfackla = {
+  text: 'Handlarens fackla (steg 12.1.152, handel.ts och GASTUTRUSTNING i gast.ts): handlaren har en fackla i sin utrustning och sätter upp den vid lägret när det är mörkt, så att handeln sker i ljus; på dagen är den släckt. I totalmörker tar handeln längre tid, som annat arbete',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10));
+    rikBy(s); tandEld(s);
+    const kl = SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true);
+    SIM.handlarFram(s, kl!.klan.rad!);
+    for (let i = 0; i < 2000 && s.handlare?.fas !== 'handlar'; i++) { SIM.step(s, BEAT); if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now + (BEAT - 2) * SIM.SEC; }
+    const h = s.handlare!, hp = SIM.hp(s, h), t = (s.gastTing ?? []).find(x => x.k === 'fackla' && x.agare === hp.id);
+    // på dagen släckt, på natten uppe vid lägret och lyser där
+    h.gar = s.now + 30 * SIM.DAY; // (hen stannar medan klockan ställs)
+    klockan(s, 12); SIM.handelSteg(s, 1); const dag = !h.fackla;
+    klockan(s, 23); s.fire.lit = false; SIM.handelSteg(s, 1);
+    const f = h.fackla, natt = !!f, ljus = f ? SIM.ljusAt(s, f.x + 0.5, f.y + 0.5) : 0;
+    // en affär i ljuset och i mörkret: den tar längre tid i mörkret
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && !q.gast)!;
+    const dur = (morkt = false) => { h.affar = { vem: p.id, namn: p.name, byn: true, fas: 'fraga', kop: [], bud: [], hamta: [], framme: [], nej: 0, f: SIM.HANDEL.forstaBud, t: s.now }; const v = SIM.handlaVal(s, p); h.affar = undefined; return v && (!morkt || SIM.iMorker(s, v.spot.x, v.spot.y)) ? v.dur : 0; };
+    const iLjus = dur();
+    delete h.fackla; const iMorker = dur(true);
+    return [
+      [`handlaren har en fackla i utrustningen (${t ? 'ja' : 'nej'})`, !!t],
+      [`på dagen är den släckt, på natten uppsatt mellan filtarna och lyser där (ljuset ${ljus.toFixed(2)})`, dag && natt && ljus > 0],
+      [`handeln tar längre tid i totalmörker (${(iLjus / 1000).toFixed(0)} s i ljuset, ${(iMorker / 1000).toFixed(0)} s i mörkret)`, iLjus > 0 && iMorker > iLjus],
     ];
   },
 };
