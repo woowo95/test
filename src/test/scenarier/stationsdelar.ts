@@ -82,3 +82,38 @@ SCENARIER.ortkokdelar = {
     ];
   },
 };
+
+SCENARIER.brannolja = {
+  text: 'Steg 12.1.16: brännoljan och rökelsen kokas bara i örtköket, med elden tänd, som salvan och tjäran',
+  kor: () => {
+    const s = createState(1, START);
+    medHus(s);
+    const acts = ['koka_olja', 'koka_rokelse'] as const;
+    const iBara = acts.every(a => SIM.STATIONER.ortkok.bara!.includes(a));
+    const utan = acts.every(a => !SIM.kanGoras(s, a));
+    const fri = (x: number, y: number, w: number, h: number) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (!inMap(x + i, y + j) || !SIM.usable(s, x + i, y + j, true) || SIM.stationAt(s, x + i, y + j) || SIM.roomAt(s, x + i, y + j)) return false; return true; };
+    const c = SIM.bynsMitt(s);
+    let at: { x: number; y: number } | undefined;
+    for (let r = 4; r < 30 && !at; r++) for (let k = 0; k < 24 && !at; k++) { const x = Math.round(c.x + Math.cos(k / 24 * 6.283) * r), y = Math.round(c.y + Math.sin(k / 24 * 6.283) * r); if (fri(x, y, 3, 3)) at = { x, y }; }
+    if (!at) return [['en fri plats för örtköket', false]];
+    const t: Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'ortkok', x: at.x, y: at.y, kvar: 0, delar: SIM.delarIRad('ortkok', at.x, at.y) };
+    (s.stationer ??= []).push(t); s.byggV = (s.byggV ?? 0) + 1;
+    const med = acts.every(a => SIM.kanGoras(s, a) && SIM.stationFor(s, a) === t);
+    const p = s.people[0], v = SIM.vidStation(t);
+    p.x = v.x; p.y = v.y;
+    const tk = (a: string): SIM.Task => ({ act: a as SIM.Act, phase: 'do', tx: p.x, ty: p.y, until: s.now + 5 * SIM.MIN, carry: 0, why: '' });
+    // utan ved och med kall eld blir det inget arbete; med ved tänds elden först
+    SIM.setAmount(s, 'ved', 0);
+    const kall = acts.every(a => SIM.eldaForst(s, p, tk(a)) === false) && !SIM.stationBrinner(t);
+    SIM.setAmount(s, 'ved', 10);
+    const tand = SIM.eldaForst(s, p, tk('koka_olja')), brinner = SIM.stationBrinner(t);
+    const igen = SIM.eldaForst(s, p, tk('koka_rokelse'));
+    return [
+      ['brännoljan och rökelsen görs bara i örtköket, som salvan och tjäran', iBara && SIM.STATIONER.ortkok.bara!.includes('koka_salva') && SIM.STATIONER.ortkok.bara!.includes('koka_tjara')],
+      ['utan örtkök går de inte att koka', utan],
+      ['med ett helt örtkök kokas de där', med],
+      ['med kall eld och ingen ved blir det inget arbete', kall],
+      [`med ved tänds elden först (${tand} min) och brinner sedan, så nästa kokning börjar direkt (${igen} min)`, typeof tand === 'number' && tand > 0 && brinner && igen === 0],
+    ];
+  },
+};
