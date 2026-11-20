@@ -103,6 +103,8 @@ export const hittaBy = (hogst: number, sedan: number, ai: number, duger: (b: Sta
   for (let seed = 1; seed < hogst; seed++) { const b = SIM.createState(seed, START); b.founded -= 20 * DAY; b.kal = SIM.nyKalender(b.now - sedan, ai); if (duger(b, seed)) return b; }
   return undefined;
 };
+// en behållare k (som ingen håller i) som p äger, med n av vätskan v
+export const medVatska = (s: State, p: Person, k: string, v: string, n: number) => { const t = SIM.addTool(s, k, p); t.hos = undefined; SIM.fyllVatska(s, v as SIM.VatskaId, n, t); return t; };
 // g vårdar q och vården blir klar, med g bredvid q om flytta är satt
 export const vardPa = (s: State, g: Person, q: Person, flytta = true) => {
   if (flytta) { g.x = q.x; g.y = q.y; }

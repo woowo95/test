@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medBank, medHus, setMat, vardPa, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { medVatska, SCENARIER, kor, klockan, medBank, medHus, setMat, vardPa, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
@@ -903,9 +903,9 @@ SCENARIER.saft = {
 SCENARIER.koktvatten = {
   text: 'Steg 9.6.10: kokat vatten att dricka. Det kokade vattnet dricks av den törstige som är hemma när det finns, och det är rent: den som dricker det behöver inte gå till det smutsiga vattnet och får inte ont i magen',
   kor: () => {
-    const { addTool, fyllVatska, vatskaAv, drickHemma: drickDryck } = SIM;
+    const { vatskaAv, drickHemma: drickDryck } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined; fyllVatska(s, 'kokt', 3, kr);
+    medVatska(s, p, 'lerkruka_mellan', 'kokt', 3);
     p.torst = 0.3; const fore = s.stat?.['magont av vatten'] ?? 0;
     drickDryck(s, p);
     const drack = p.torst === 1 && vatskaAv(s, 'kokt') === 2, mag = (s.stat?.['magont av vatten'] ?? 0) === fore;
@@ -940,12 +940,12 @@ SCENARIER.sad = {
 SCENARIER.vin = {
   text: 'Steg 9.6.12: bryggkaret och vinet. Tekniken Vin kommer genom matlagningen; bär krossas med vatten i bryggkaret, en station som har satsen i sig medan den jäser (3 dygn, inte i kyla utomhus), och vinet hälls upp i stora lerkrukor, där det blir bättre med tiden och håller 40 dygn',
   kor: () => {
-    const { bryggVal, bryggKlar, stepBrygg, setAmount, addTool, fyllVatska, vatskaAv, vinKvalitet, VATSKOR, TEK, STATIONER, BRYGD } = SIM;
+    const { bryggVal, bryggKlar, stepBrygg, setAmount, addTool, vatskaAv, vinKvalitet, VATSKOR, TEK, STATIONER, BRYGD } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     p.tek = { ...(p.tek ?? {}), bryggkar: 1, kruka: 1 };
     const kar = { id: 997, k: 'bryggkar', x: 3, y: 3, kvar: 0 } as SIM.Station; s.stationer = [...(s.stationer ?? []), kar];
     setAmount(s, 'bar', 12);
-    const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
+    medVatska(s, p, 'vattensack', 'vatten', 1);
     // en svältande by brygger inte (steg 10.2.1): bären är mat, och med maten under bufferten läggs ingen sats och raden väljs inte
     const sv = SIM.cloneState(s), ps = SIM.living(sv).find(r => r.id === p.id)!;
     for (const k of SIM.SAK_LIST) if (SIM.isFood(k) && k !== 'bar') setAmount(sv, k, 0);
@@ -977,7 +977,7 @@ SCENARIER.vin = {
 SCENARIER.ol = {
   text: 'Steg 9.6.13: ölet. Tekniken Öl kommer när byn har korn och har gjort vin; kornet blöts och hängs på torkställningen, där det gror och torkar till malt, och maltet jäser med vatten och rölleka i bryggkaret (den första satsen dubbelt så länge) till 8 öl i stora lerkrukor',
   kor: () => {
-    const { olUpptackt, bryggVal, bryggKlar, maltaKlar, stepBrygg, torka, setAmount, amountOf, addTool, fyllVatska, vatskaAv, knows, BRYGG, BRYGD } = SIM;
+    const { olUpptackt, bryggVal, bryggKlar, maltaKlar, stepBrygg, torka, setAmount, amountOf, addTool, vatskaAv, knows, BRYGG, BRYGD } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     p.tek = { ...(p.tek ?? {}), bryggkar: 1, sadesodling: 1, kruka: 1 };
     olUpptackt(s); const forut = knows(p, 'ol');
@@ -988,7 +988,7 @@ SCENARIER.ol = {
     const malta = bryggVal(s, p); maltaKlar(s, p, tork.id);
     s.now += SIM.TORK.maltDygn * SIM.DAY + SIM.HOUR; torka(s, p, 1);
     const malt = amountOf(s, 'malt');
-    const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
+    medVatska(s, p, 'vattensack', 'vatten', 1);
     const brygga = bryggVal(s, p); bryggKlar(s, p, kar.id);
     const dubbelt = kar.sats?.dygn === BRYGD.ol.dygn * 2, sur = !!kar.sats?.sur;
     for (let i = 0; i < kar.sats!.dygn * 24 + 1; i++) { s.now += SIM.HOUR; stepBrygg(s); }
@@ -1007,9 +1007,9 @@ SCENARIER.ol = {
 SCENARIER.rus = {
   text: 'Steg 9.6.14: berusningen. Ett tillstånd i hälsosystemet som sänker förmågorna mer ju mer man druckit (gången, handlaget, smidigheten och träffsäkerheten) och går över med tiden; den som dricker mycket under lång tid får sämre hälsa',
   kor: () => {
-    const { drickAlkohol, rusSteg, rorlighet, handighet, personKampe, addTool, fyllVatska, RUS } = SIM;
+    const { drickAlkohol, rusSteg, rorlighet, handighet, personKampe, RUS } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    const kr = addTool(s, 'lerkruka_stor', p); kr.hos = undefined; fyllVatska(s, 'vin', 10, kr);
+    medVatska(s, p, 'lerkruka_stor', 'vin', 10);
     const g0 = rorlighet(p), h0 = handighet(p), k0 = personKampe(s, p, 1, 0, 0, 0).st;
     drickAlkohol(s, p, 'vin'); const g1 = rorlighet(p);
     drickAlkohol(s, p, 'vin'); drickAlkohol(s, p, 'vin');
@@ -1030,9 +1030,9 @@ SCENARIER.rus = {
 SCENARIER.bakfylla = {
   text: 'Steg 9.6.15: ruset i byn. Alkoholen ger glädje och fler gräl, flirtar och slagsmål, bakfylla dagen efter som drar ner humöret och förmågorna, och supandet är ett utbrott bland de andra',
   kor: () => {
-    const { rusSteg, rorlighet, addTool, fyllVatska, UTBROTT, supa, rusAv, RUS } = SIM;
+    const { rusSteg, rorlighet, UTBROTT, supa, rusAv, RUS } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    const kr = addTool(s, 'lerkruka_stor', p); kr.hos = undefined; fyllVatska(s, 'vin', 10, kr);
+    medVatska(s, p, 'lerkruka_stor', 'vin', 10);
     const g0 = rorlighet(p);
     supa(s, p); const full = rusAv(p);
     let t = 0; while (p.rus && t++ < 400) rusSteg(s, p, 300);
@@ -1196,12 +1196,12 @@ SCENARIER.kvarn = {
 SCENARIER.brod = {
   text: 'Steg 9.6.23: bakugnen och brödet. Deg av mjöl och vatten jäser och gräddas i bakugnen utan bagaren och blir bröd, som håller längre än annan lagad mat',
   kor: () => {
-    const { bakaKlar, kanBaka, stepBak, setAmount, amountOf, addTool, fyllVatska, SAKER, RATT } = SIM;
+    const { bakaKlar, kanBaka, stepBak, setAmount, amountOf, SAKER, RATT } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     const ugn = { id: 992, k: 'bakugn', x: 2, y: 8, kvar: 0 } as SIM.Station; s.stationer = [...(s.stationer ?? []), ugn];
     p.tek = { ...(p.tek ?? {}), bakugn: 1 }; p.skill.matlagning = SIM.MATLAG.brannFull;
     setAmount(s, 'mjol', 6); setAmount(s, 'ved', 3); setAmount(s, 'brod', 0);
-    const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
+    medVatska(s, p, 'vattensack', 'vatten', 1);
     const kan = kanBaka(s, p);
     SIM.elda(s, p, ugn, 1); bakaKlar(s, p); // ugnens eld tänds först (steg 10.2.85)
     const iUgnen = !!ugn.deg && amountOf(s, 'mjol') === 2;
@@ -2260,7 +2260,7 @@ SCENARIER.fangstgrop = {
 SCENARIER.stationseld = {
   text: 'Steg 10.2.85–10.2.86: örtköket, bakugnen och rökeriet har egna eldar. Den som ska arbeta där lägger på ved och tänder den, den brinner så länge veden räcker och glöder sedan, och arbetet går bara när den brinner: degen gräddas och köttet röks inte förrän elden tänts. Veden går åt i elden och inte i recepten, och örtkökets eld värmer lite',
   kor: () => {
-    const { bakaKlar, kanBaka, stepBak, setAmount, amountOf, addTool, fyllVatska, torka, kanTorka, torrDel, stepStationsEld, eldaForst, vidStation, heatAt, STATIONSELD, ELDSTATIONER, RECEPT } = SIM;
+    const { bakaKlar, kanBaka, stepBak, setAmount, amountOf, torka, kanTorka, torrDel, stepStationsEld, eldaForst, vidStation, heatAt, STATIONSELD, ELDSTATIONER, RECEPT } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     const ugn = { id: 991, k: 'bakugn', x: 2, y: 8, kvar: 0 } as SIM.Station, rok = { id: 992, k: 'rokeri', x: 2, y: 2, kvar: 0 } as SIM.Station;
     const ort = { id: 993, k: 'ortkok', x: 8, y: 2, kvar: 0 } as SIM.Station;
@@ -2269,7 +2269,7 @@ SCENARIER.stationseld = {
     const tim = (n: number) => { for (let h = 0; h < n; h++) { s.now += SIM.HOUR; stepStationsEld(s, 3600); stepBak(s); } };
     // bakugnen: degen står i en kall ugn och blir inget bröd
     setAmount(s, 'mjol', 8); setAmount(s, 'ved', 0); setAmount(s, 'brod', 0);
-    const sack = addTool(s, 'vattensack', p); sack.hos = undefined; fyllVatska(s, 'vatten', 1, sack);
+    medVatska(s, p, 'vattensack', 'vatten', 1);
     const utanVed = !kanBaka(s, p);
     bakaKlar(s, p); tim(3);
     const kallUgn = !!ugn.deg && amountOf(s, 'brod') === 0;

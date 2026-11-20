@@ -5,7 +5,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { TEKNIK } from '../../sim/teknik';
-import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed } from './hjalp';
+import { medVatska, SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
@@ -1839,7 +1839,7 @@ SCENARIER.pergament = {
 SCENARIER.skriva = {
   text: 'Steg 10.6.5: att skriva och läsa. Den som kommer åt ett blad och bläck skriver på fritiden, på dagen och i ljuset vid elden (3 minuter, 1 blad och 1 dos bläck), oftare ju högre färdigheten är. Det skrivna bladet är skrivarens, och andra läser det där det ligger (2 minuter) när det har något nytt för dem',
   kor: () => {
-    const { skrivVal, lasVal, skrivKlar, lasKlar, setAmount, amountOf, addTool, fyllVatska, vatskaAv, tingOf, lightLevel, findL, SKRIFT } = SIM;
+    const { skrivVal, lasVal, skrivKlar, lasKlar, setAmount, amountOf, vatskaAv, tingOf, lightLevel, findL, SKRIFT } = SIM;
     const s = createState(1, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     const [p, q, o] = v as [Person, Person, Person];
     for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
@@ -1850,7 +1850,7 @@ SCENARIER.skriva = {
     const at = { x: p.x, y: p.y };
     setAmount(s, 'pergament', 2);
     const utanBlack = skrivVal(s, p, at);
-    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined; fyllVatska(s, 'black', 2, kr);
+    medVatska(s, p, 'lerkruka_liten', 'black', 2);
     const med = skrivVal(s, p, at)?.w ?? 0, utanSkill = skrivVal(s, o, at)?.w ?? 0;
     p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
     skrivKlar(s, p);
@@ -1879,7 +1879,7 @@ SCENARIER.skriva = {
 SCENARIER.bok = {
   text: 'Steg 10.6.6: böcker. Vid snickarbänken, och bara där, binds 8 blad mellan 2 plankor till en tom bok (5 minuter), som fylls del för del, högst 8 delar av samma slag. Den som kan en teknik skriver en handbok, helst om det få i byn kan, och den som läser den lär sig tekniken utan lärare, så att konsten inte dör med den sista som kunde den',
   kor: () => {
-    const { skrivKlar, lasKlar, skrivLust, bokPlats, runstenTimme, setAmount, amountOf, addTool, fyllVatska, tingOf, lightLevel, knows, STATIONER, SKRIFT } = SIM;
+    const { skrivKlar, lasKlar, skrivLust, bokPlats, runstenTimme, setAmount, amountOf, tingOf, lightLevel, knows, STATIONER, SKRIFT } = SIM;
     const s = createState(1, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     const [p, q] = v as [Person, Person];
     for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; }
@@ -1892,7 +1892,7 @@ SCENARIER.bok = {
     SIM.placeTools(s);
     const bok = tingOf(s).find(t => t.k === 'bok');
     const bara = (STATIONER.snickarbank!.bara as string[]).includes('bok');
-    const kr = addTool(s, 'lerkruka_liten', p); kr.hos = undefined; fyllVatska(s, 'black', 2, kr);
+    medVatska(s, p, 'lerkruka_liten', 'black', 2);
     const lust = skrivLust(s, p);
     p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
     skrivKlar(s, p);
@@ -2626,7 +2626,7 @@ SCENARIER.buden = {
     const f3 = b3.v[0], o3 = nyInvanare(s3, 'm', 25); o3.tro = undefined;
     const dagen = (helig: boolean) => { for (let i = 0; i < 14 && SIM.heligDag(s3, tr3) !== helig; i++) s3.now += 86400000; };
     // inget rus
-    const kr3 = SIM.addTool(s3, 'lerkruka_stor', o3); kr3.hos = undefined; SIM.fyllVatska(s3, 'vin', 10, kr3);
+    medVatska(s3, o3, 'lerkruka_stor', 'vin', 10);
     klockan(s3, 22);
     const rusF = SIM.kvallsDryck(s3, f3, true), rusO = SIM.kvallsDryck(s3, o3, true);
     const brutet0 = s3.stat?.bud_brutet ?? 0; SIM.supa(s3, f3); const supBrott = (s3.stat?.bud_brutet ?? 0) > brutet0 && (f3.skuld ?? 0) > 0;
@@ -2651,7 +2651,7 @@ SCENARIER.buden = {
     const vux4 = b4.v.filter(p => SIM.ageOf(p, s4.now) >= SIM.ALDER.vuxen), f4 = vux4[0];
     // öl vid högtiden: kyrkans kruka, som byn inte dricker ur
     const olTr = SIM.olTillKyrkan(s4, f4)?.id;
-    const kr4 = SIM.addTool(s4, 'lerkruka_stor', f4); kr4.hos = undefined; SIM.fyllVatska(s4, 'ol', 10, kr4); kr4.agare = kid;
+    const kr4 = medVatska(s4, f4, 'lerkruka_stor', 'ol', 10); kr4.agare = kid;
     const byOl = SIM.medVatska(s4, 'ol'), ol0 = kr4.inne!.n;
     for (const p of vux4) p.skill.skaldskap = 0;
     SIM.hogtidOlKvade(s4, tr4, vux4);
@@ -3398,7 +3398,7 @@ SCENARIER.gravol = {
     // med mat och öl: en hel mat per två och en öl var
     const n = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen).length;
     satKyrka(s, tr, { bar: n });
-    const krukor = [0, 1].map(() => { const k = SIM.addTool(s, 'lerkruka_stor', barare); k.hos = undefined; SIM.fyllVatska(s, 'ol', 10, k); k.agare = kid; return k; });
+    const krukor = [0, 1].map(() => { const k = medVatska(s, barare, 'lerkruka_stor', 'ol', 10); k.agare = kid; return k; });
     const olNu = () => krukor.reduce((x, k) => x + (k.inne?.n ?? 0), 0);
     SIM.nyRitual(s, 'gravol', { tro: tr.id, om: [d.id], namn: `Gravölet efter ${d.name}` }); SIM.ritualTimme(s);
     const gr = s.ritual as SIM.Ritual | undefined, med = gr ? SIM.RITUALER.gravol.vem(s) : [];
@@ -3666,7 +3666,7 @@ SCENARIER.drycker = {
     const s = rikDag(3), p = vuxna(s)[0]!;
     p.tek = { ...(p.tek ?? {}), kruka: 1, bryggkar: 1, ol: 1 };
     s.fire.lit = true;
-    const sack = () => { const t = SIM.addTool(s, 'vattensack', p); t.hos = undefined; SIM.fyllVatska(s, 'vatten', 1, t); return t; };
+    const sack = () => { const t = medVatska(s, p, 'vattensack', 'vatten', 1); return t; };
     const kruka = (k: string) => { const t = SIM.addTool(s, k, p); t.hos = undefined; return t; };
     // buljongen: 2 ben, svamp (det byn har mest av) och vatten i en mellanstor kruka på elden
     SIM.setAmount(s, 'ben', 2); SIM.setAmount(s, 'svamp', 3); SIM.setAmount(s, 'kal', 1); sack();
@@ -3731,7 +3731,7 @@ SCENARIER.sprit = {
     SIM.finishTillbehor(s, p, { act: 'tillbehor', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: 'brannpanna' } as SIM.Task);
     const panna = !!kar.med?.includes('brannpanna') && !SIM.tingOf(s).includes(stor);
     // bränningen: vinet hälls i, pannans eld tänds, och spriten är klar efter 30 minuter
-    const vin = SIM.addTool(s, 'lerkruka_stor', p); vin.hos = undefined; SIM.fyllVatska(s, 'vin', 5, vin);
+    medVatska(s, p, 'lerkruka_stor', 'vin', 5);
     SIM.setAmount(s, 'ved', 6);
     const val = SIM.bryggVal(s, p);
     p.x = 3; p.y = 4;
@@ -3881,8 +3881,8 @@ SCENARIER.mjod = {
     const kar = { id: 996, k: 'bryggkar', x: 3, y: 3, kvar: 0, inne: 1, brygt: 1 } as SIM.Station;
     s.stationer = [...(s.stationer ?? []), kar];
     SIM.setAmount(s, 'honung', 3);
-    const vin = SIM.addTool(s, 'lerkruka_stor', p); vin.hos = undefined; SIM.fyllVatska(s, 'vin', 4, vin); // vinet finns redan
-    const sack = SIM.addTool(s, 'vattensack', p); sack.hos = undefined; SIM.fyllVatska(s, 'vatten', 1, sack);
+    medVatska(s, p, 'lerkruka_stor', 'vin', 4); // vinet finns redan
+    medVatska(s, p, 'vattensack', 'vatten', 1);
     const val = SIM.bryggVal(s, p); SIM.bryggKlar(s, p, kar.id);
     const sats = kar.sats?.v === 'mjod' && kar.sats.n === 5 && kar.sats.dygn === 4 && SIM.amountOf(s, 'honung') === 0;
     for (let i = 0; i < 4 * 24 + 1; i++) { s.now += SIM.HOUR; SIM.stepBrygg(s); }

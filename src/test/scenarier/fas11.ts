@@ -1,6 +1,6 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { SCENARIER, varldEfter, klockan, kor, korTills, medHus, rovarGang, testBy, utanWebblasare } from './hjalp';
+import { medVatska, SCENARIER, varldEfter, klockan, kor, korTills, medHus, rovarGang, testBy, utanWebblasare } from './hjalp';
 import { START } from '../kor';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
@@ -74,7 +74,7 @@ const langstaMal = (s: SIM.State, hb: SIM.VarldPlats) => {
 };
 // p skriver vid at: en liten lerkruka med bläck, redskapen på plats, valet av vad som skrivs (det som ges tillbaka) och arbetet klart
 const skrivNu = (s: SIM.State, p: SIM.Person, at = { x: p.x, y: p.y }) => {
-  const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
+  medVatska(s, p, 'lerkruka_liten', 'black', 2);
   SIM.placeTools(s);
   const val = SIM.skrivVal(s, p, at);
   p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
@@ -3231,7 +3231,7 @@ SCENARIER.kartblad = {
     while (SIM.lightLevel(s.now) < 1) s.now += SIM.HOUR;
     const at = { x: p.x, y: p.y };
     SIM.setAmount(s, 'pergament', 2);
-    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; SIM.fyllVatska(s, 'black', 2, kr);
+    medVatska(s, p, 'lerkruka_liten', 'black', 2);
     const lust = SIM.skrivLust(s, p), val = SIM.skrivVal(s, p, at);
     const tid = SIM.skrivPlats(s, p, at, val?.min).dur / SIM.skrivPlats(s, p, at).dur;
     p.task = { act: 'skriva', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' };
