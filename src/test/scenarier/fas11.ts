@@ -150,7 +150,8 @@ SCENARIER.borta = {
       [`den som är borta röstar inte i byn (${roster0} gånger)`, roster0 === 0],
       ['den som är borta äter, dricker, smittas och flyttar sig inte i byn', orort],
       ['när alla är borta grundas byn inte om och ingen ny kommer', inteOmgrundad],
-      ['alla kommer hem och är i byn igen', SIM.living(s).length === alla.length],
+      // var och en av dem som var borta (ett barn kan ha fötts under timmen efter, steg 12.1.112)
+      ['alla kommer hem och är i byn igen', alla.every(p => SIM.living(s).includes(p))],
     ];
   },
 };
