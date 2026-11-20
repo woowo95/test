@@ -60,3 +60,8 @@
 
 - Ihopslagna i 2c526786, deda7f08, dcf71ca1 och 323ddd0f; varje ihopslagning har typkontrollen och de berörda scenarierna bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` på den senaste committen, som täcker raderna för alla fyra grenarna ovan. Grenarna ändrar spelet (12.1.64, 12.1.83, 12.1.84, 12.1.114), så koll sparar nytt facit.
 - Samma-kollens facit (test/samma.json) är sparat på nytt efter ihopslagningarna. 12.1.93 och 12.1.94 är prövade med samma mot facit från 12.1.89 (på 037fbe41 med rättningen 8f048a2d): samma utveckling som förut.
+
+## Grenen par-roda (12.1.123, 12.1.124, 12.1.167 utom knapphet)
+
+- 12.1.123 ändrar spelet: jakten efter skinn väntar när ett fällt djur ligger oslaktat (då fattas stationen eller kniven) eller när någon redan jagar efter skinnet (`arv` i projekt.ts; jägaren har nu `hamtar` som samlaren). Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit.
+- 12.1.167 och 12.1.124 ändrar bara scenarier (slump, ui-ren, fangar, varm, fritid, kista). De 28 scenarierna kördes ensamma i molnet på grenens sista commit; knapphet är kvar röd (frågan till Björn i steget).
