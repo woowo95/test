@@ -172,15 +172,23 @@ export function behallVarde(s: State, d: Tamdjur) {
 // räcker eller på hösten när höet inte räcker över istiden slaktas det som är minst värt att behålla, ett i taget; och det
 // gamla, när mindre än SLAKTDJUR.kvarLiv av livet är kvar
 // p = den som slaktar: någon annans djur slaktar bara den som är så hungrig att hen stjäl (boskapsstöld, steg 9.8.12)
-export function slaktOrsak(s: State, d: Tamdjur, p?: Person): string | undefined {
+// det minst värda att behålla av arten (de som slaktas), det första vid lika; värdet räknas en gång per djur (steg 12.1.104)
+function minstVart(s: State, art: Tamdjur['art']) {
+  const arten = tamdjurOf(s).filter(q => q.art === art && SLAKTAD[q.art]);
+  let m: Tamdjur | undefined, mv = Infinity;
+  for (const q of arten) { const v = behallVarde(s, q); if (!m || v < mv) { m = q; mv = v; } }
+  return { n: arten.length, minst: m };
+}
+// minst = minstVart per art, som avlivaVal räknar en gång för alla djuren
+export function slaktOrsak(s: State, d: Tamdjur, p?: Person, minst?: Map<string, ReturnType<typeof minstVart>>): string | undefined {
   const a = tamArt(d.art);
   if (!SLAKTAD[d.art] || spand(s, d.id)) return undefined; // inte dragdjuret som drar släden (steg 10.10.3)
   if (p && d.agare !== undefined && d.agare !== p.id) return desperatMat(s, p) ? 'stold' : undefined;
   if (tamAlder(s, d) > a.liv * (1 - SLAKTDJUR.kvarLiv)) return 'gammal';
-  const arten = tamdjurOf(s).filter(q => q.art === d.art && SLAKTAD[q.art]);
-  if (a.unge && arten.length < 2) return undefined; // ett par blir kvar av den art som får ungar (grisen får inga, steg 10.10.13)
-  const minst = arten.reduce((m, q) => behallVarde(s, q) < behallVarde(s, m) ? q : m);
-  if (minst !== d) return undefined;
+  let mv = minst?.get(d.art);
+  if (!mv) { mv = minstVart(s, d.art); minst?.set(d.art, mv); }
+  if (a.unge && mv.n < 2) return undefined; // ett par blir kvar av den art som får ungar (grisen får inga, steg 10.10.13)
+  if (mv.minst !== d) return undefined;
   if (farorNu(s).svalt) return 'svalt';
   const bete = hagarOf(s).filter(h => djurIHagen(s, h).length);
   if (bete.length && bete.every(h => hageDygn(s, h) < HAGE.flyttDygn) && !hagarOf(s).some(h => hageDygn(s, h, 1) >= BOSKAP.beteDygn)) return 'bete';
@@ -189,11 +197,11 @@ export function slaktOrsak(s: State, d: Tamdjur, p?: Person): string | undefined
 }
 export function avlivaVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGoras(s, 'slakta', p) || getable(s, p, 'kniv') < 1 || !isLight(s.now)) return undefined;
-  const svalt = farorNu(s).svalt;
+  const svalt = farorNu(s).svalt, minst = new Map<string, ReturnType<typeof minstVart>>();
   for (const d of tamdjurOf(s)) {
     if (heligtAvstar(s, p, d.art, svalt)) continue; // det heliga djuret avlivas inte, utom i svält (steg 10.3.15)
     if (annanGor(s, p, 'avliva', d.id)) continue;
-    if (slaktOrsak(s, d, p)) return d;
+    if (slaktOrsak(s, d, p, minst)) return d;
   }
   return undefined;
 }

@@ -184,7 +184,7 @@ export function sportVikt(s: State, p: Person, calm: number) {
   if (!m && s.sport) return 0; // en match i taget
   if (m?.titta?.includes(p.id)) return 0; // den som tittar spelar inte (steg 10.7.16)
   if (m && !harEgen(s, p, SPORT_AV[m.k])) return 0; // utan eget redskap kan man inte vara med
-  if (!m && !SPORTER.some(d => kanSpela(s, d, vuxna(s)))) return 0;
+  if (!m) { const v = vuxna(s); if (!SPORTER.some(d => kanSpela(s, d, v))) return 0; } // de vuxna räknas en gång (steg 12.1.104)
   return overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * SPORT.vikt * calm * (m ? SPORT.med * (m.pris ? prisLust(p, SPORT_AV[m.k]) : 1) : festNu(s) ? FEST.lust : 1) * (stat(p, 'styrka', s.now) + stat(p, 'smidighet', s.now)) / 20
     * kroppLust(p, s.now); // den som är skadad eller sjuk vill mindre, efter hur svårt (steg 12.1.46)
 }

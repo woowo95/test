@@ -81,7 +81,8 @@ export function billigasteVag(vl: Varlden, v: VarldMark, a: number, b: number, f
   if (a === b) return { rutor: [a], kostnad: 0 };
   if (!isFinite(k[b])) return undefined;
   const bx = b % w, by = Math.floor(b / w);
-  const est = (i: number) => { const dx = Math.abs(i % w - bx), dy = Math.abs(Math.floor(i / w) - by); return (Math.max(dx, dy) + (S2 - 1) * Math.min(dx, dy)) / maxFart(); }; // ingen ruta kostar under 1 delat med den snabbaste leden
+  const mf = maxFart(); // en gång per sökning (steg 12.1.104)
+  const est = (i: number) => { const dx = Math.abs(i % w - bx), dy = Math.abs(Math.floor(i / w) - by); return (Math.max(dx, dy) + (S2 - 1) * Math.min(dx, dy)) / mf; }; // ingen ruta kostar under 1 delat med den snabbaste leden
   const { g, fran } = sok(k, w, v.h, a, est, i => i === b);
   return isFinite(g[b]) ? { rutor: spara(fran, b), kostnad: g[b] } : undefined;
 }

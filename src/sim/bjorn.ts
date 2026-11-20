@@ -115,7 +115,8 @@ function jaktBeslut(s: State, bx: number, by: number) {
   if (!kan.length) return;
   const kraftAv = (l: Person[]) => l.reduce((a, q) => a + BJORNJAKT.kraftBas + BJORNJAKT.kraftSkada * VAPEN[personKampe(s, q, 0, 0, 0, 0).vapen].skada, 0);
   // hur många som vågar och om jakten blir av kommer ur jägarnas styrka mot björnens (steg 10.1.17), inte ur fasta antal
-  const vagar = (q?: Person) => !!q && kan.includes(q) && stat(q, 'mod', s.now) / 20 + BJORNJAKT.fler * kraftAv(kan) / (BJORNJAKT.kraftBjorn * BJORNJAKT.kvot) > BJORNJAKT.vagar;
+  const kraftKan = kraftAv(kan); // gruppens styrka är densamma för var och en (steg 12.1.104)
+  const vagar = (q?: Person) => !!q && kan.includes(q) && stat(q, 'mod', s.now) / 20 + BJORNJAKT.fler * kraftKan / (BJORNJAKT.kraftBjorn * BJORNJAKT.kvot) > BJORNJAKT.vagar;
   const { kallar } = jaktKallare(s, kan, byId(s, j.sag), vagar);
   if (!kallar) return;
   const nod = clamp(1 - foodOf(s) / Math.max(1, folk.length) / BJORNJAKT.matNog, 0, 1);
