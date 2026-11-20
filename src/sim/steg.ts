@@ -580,16 +580,19 @@ export const TAKTER: Takt[] = [
     const social = c.social.filter(p => kanPrata(s, p)); // en brottning kan ha börjat under steget (steg 9.2.100)
     for (const p of social) {
       if (!alive(p)) continue;
-      const nara = social.filter(q => q !== p && alive(q) && horHar(s, p, q));
-      const t = p.task!, med = t.med !== undefined ? nara.find(q => q.id === t.med) : undefined, others = med ? [med] : nara; // den man står bredvid (steg 4.5.6.7)
+      // vilka som hörs räknas först när det blir ett samtal: innan dess räcker det att veta om någon hörs (fynd 432)
+      const hors = (q: Person) => q !== p && alive(q) && horHar(s, p, q);
+      const t = p.task!, med = t.med !== undefined ? social.find(q => q.id === t.med && hors(q)) : undefined; // den man står bredvid (steg 4.5.6.7)
+      const finns = !!med || social.some(hors);
       if (t.act === 'samtal') {
         if (t.med !== undefined && !med) { t.until = Math.min(t.until, c.now); count(s, 'samtal for langt'); continue; } // den andra gick
-        t.ensam = others.length ? 0 : (t.ensam ?? 0) + dt;
+        t.ensam = finns ? 0 : (t.ensam ?? 0) + dt;
         if (t.ensam > SAMTAL.ensamSek) { t.until = Math.min(t.until, c.now); count(s, 'samtal ensam'); continue; }
       }
-      if (!others.length) continue;
+      if (!finns) continue;
       const expect = dt / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', c.now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
+      const others = n ? (med ? [med] : social.filter(hors)) : [];
       for (let i = 0; i < n; i++) { const g = converse(s, p, others, c.events); if (g) gralBlirSlagsmal(s, p, g); } // ett gräl kan bli ett slagsmål (strid.ts)
       if (n) { count(s, 'samtal', n); if (!ACTS[t.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
     }
