@@ -4600,14 +4600,16 @@ SCENARIER.fangar = {
       return st.kampar[svag].lage;
     };
     const rovGer = arena('kuva', 1), byFly = arena('kuva', 0), skadaFly = arena('skada', 1);
-    // byn med ett fängelse och seden Förlikning, och två rövare som anfaller
+    // byn med ett fängelse och seden Förlikning, och en rövare som anfaller
     const by = (fangelse: boolean) => {
-      const s = SIM.createState(1, START); klockan(s, 10); medHus(s); // en by där de som är hemma kan vinna över två rädda rövare
+      // en by där de som är hemma vinner över en rädd rövare: det som prövas är vad som händer när rövaren ger upp, inte
+      // vem som vinner (med två rövare avgjorde slumpen i en enda strid, och byn förlorade efter steg 12.1.74)
+      const s = SIM.createState(1, START); klockan(s, 10); medHus(s);
       for (const c of SIM.klanerOf(s)) c.inst = -60;
       s.seder.v.fejd = -1;
       if (fangelse) { const h = SIM.housesOf(s)[0]; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s); }
-      const z = SIM.zoneOf(s)!, f = rovarGang(s, 2, { x: z.x + z.w / 2 + 10, y: z.y + z.h / 2 }, { anfaller: true });
-      for (const id of f.folk) { const r = s.people.find(q => q.id === id)!; r.pot.mod = 3; } // rädda rövare: modet tar slut fort
+      const z = SIM.zoneOf(s)!, f = rovarGang(s, 1, { x: z.x + z.w / 2 + 10, y: z.y + z.h / 2 }, { anfaller: true });
+      for (const id of f.folk) { const r = s.people.find(q => q.id === id)!; r.pot.mod = 3; } // en rädd rövare: modet tar slut fort
       let avsikt: string | undefined;
       korTills(s, () => (s.stat?.fange_tagen ?? 0) > 0 || (s.stat?.kartStridSlut ?? 0) > 0 && !SIM.kartStrider(s).length && !(s.rovare?.folk.length), 6 * 3600, () => { for (const g of SIM.kartStrider(s)) if (g.efter?.typ === 'rovare') avsikt ??= g.st.avsikt; });
       return { s, avsikt };

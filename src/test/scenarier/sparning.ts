@@ -219,8 +219,9 @@ SCENARIER.slump = {
     spar.pa = false;
     for (let i = 0; i < 12 * 24; i++) step(e, BEAT);
     const inspelning = serialize(d) === serialize(e);
-    // nattens vakt och den som tänder elden väljs med ett slumptal per kandidat, inte i sorteringens jämförelser (då beror
-    // antalet slumptal på webbläsarens sorteringsalgoritm)
+    // nattens vakt väljs med ett slumptal per kandidat, inte i sorteringens jämförelser (då beror antalet slumptal på
+    // webbläsarens sorteringsalgoritm). Den som tänder elden väljer det själv i valet av aktivitet (raden tanda, steg 12.1.76),
+    // med sin egen följd: byns följd för elden rörs inte
     const g = createState(5, START), vuxna = () => living(g).filter(q => ageOf(q, g.now) >= ALDER.vaktFran && ageOf(q, g.now) < ALDER.vaktTill);
     while (vuxna().length < 4) g.people.push({ ...structuredClone(vuxna()[0]), id: g.nextId++, task: undefined, rngs: undefined });
     g.now = new Date(g.now).setHours(23, 0, 0, 0);
@@ -230,8 +231,7 @@ SCENARIER.slump = {
     Object.assign(g.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
     setItems(g, { torrgras: 10, grenar: 10, flinta: 2 }); setAmount(g, 'ved', 10);
     for (const q of living(g)) q.task = undefined;
-    const tandare = living(g).filter(q => ageOf(q, g.now) >= ALDER.ansvar).length;
-    const ed = drag(g, 'eld', () => stepFire(g, 1, living(g)));
+    const ed = drag(g, 'eld', () => { stepFire(g, 1, living(g)); for (const q of living(g)) if (ageOf(q, g.now) >= ALDER.ansvar) chooseTask(g, q); });
     const tande = living(g).some(q => q.task?.act === 'tanda');
     // var en person går (promenad, strand, flinta, trädet som fälls) väljs med personens egen följd, inte byns
     const h = createState(6, START), hv = () => living(h).filter(q => ageOf(q, h.now) >= ALDER.vuxen);
@@ -254,7 +254,7 @@ SCENARIER.slump = {
     return [
       [`var en person går väljs med personens egen slumpföljd (${hd} tal ur byns, för ${valen.filter(a => sett.has(a)).join(', ')})`, hd === 0 && valen.every(a => sett.has(a))],
       [`nattens vakt väljs med ett slumptal per vuxen (${vd} tal för ${vuxna().length} vuxna)`, vd === vuxna().length && living(g).some(q => q.guardDay !== undefined && q.guardDay === g.lastGuardDay)],
-      [`den som tänder elden väljs med ett slumptal per kandidat (${ed} tal för ${tandare} och platsen)`, tande && ed === tandare + 1],
+      [`den som tänder elden väljer det själv, med sin egen följd (${tande ? 'någon tänder' : 'ingen tänder'}, ${ed} tal ur byns följd för elden)`, tande && ed === 0],
       ['fler slumptal i ett system ändrar inte slumpen i de andra', lika],
       [`varje system och varje person får egna tal (${olika.size} olika av ${Object.keys(STROMMAR).length + living(c).length})`, olika.size === Object.keys(STROMMAR).length + living(c).length],
       ['spelets inspelning av gångvägarna ändrar inget i byn (ett dygn)', inspelning],

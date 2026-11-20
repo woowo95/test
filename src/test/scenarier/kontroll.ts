@@ -50,7 +50,7 @@ function kodIRutorna() {
 // Styre-fliken får plats (steg 12.1.26): varje rad i ledarlistan har lika många delar som listan har kolumner, så att ingen del
 // hamnar på en egen rad utanför rutan, ingen text i den klipps, och rutorna står i en kolumn på en smal skärm
 function styretFarPlats() {
-  const s = SIM.cloneState(testBy(1)); utanWebblasare(); setByn(s);
+  const s = SIM.cloneState(testBy(1, b => !!SIM.ledareOf(b))); utanWebblasare(); setByn(s); // en testby med en ledare: listan finns bara då
   const css = readFileSync(new URL('../../template.html', import.meta.url), 'utf8');
   const kol = /\.rels\.ledarlista \{ grid-template-columns: ([^;]+);/.exec(css)?.[1].trim().split(/\s+(?![^(]*\))/).length ?? 0;
   const smal = /@media \(max-width: \d+px\) \{ \.rutor \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(css);
