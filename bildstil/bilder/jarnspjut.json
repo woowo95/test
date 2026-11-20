@@ -1,0 +1,106 @@
+{
+ "id": "jarnspjut",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..............QQ",
+  "............QQSQ",
+  "...........QTSQ.",
+  "..........QSSRQ.",
+  "..........QSSRQ.",
+  "..........QSRQ..",
+  "..........QQQ...",
+  ".......oqpo.....",
+  "......oooo......",
+  ".....oqpo.......",
+  "....EGFE........",
+  "...EGFE.........",
+  "..EGGE..........",
+  ".EGFE...........",
+  "EGFE............",
+  "EFE............."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b"
+ },
+ "versioner": [
+  {
+   "ide": "Ett smalt skaft, två punkter brett i jord1 och jord2 med kontur i jord0, går diagonalt från nedre vänstra hörnet upp mot rutans mitt och fortsätter i en bred, rund bladform av järn som tar ungefär den övre högra tredjedelen av rutan. Bladet är spegelsymmetriskt kring skaftets linje, högst fyra punkter brett på mitten och spetsigt i båda ändar, med kontur i skiffer0, skiffer2 och skiffer3 mot övre vänstra sidan, skiffer1 mot nedre högra och en enda glanspunkt i skiffer3 nära spetsen. Där bladets hals möter skaftet sitter en lindning av rep, tre punkter lång i ben1 och ben2 med en rand av ben0, som ett ljust band tvärs över skaftet.",
+   "rader": [
+    "..............QQ",
+    "............QQSQ",
+    "...........QTSQ.",
+    "..........QSSRQ.",
+    "..........QSSRQ.",
+    "..........QSRQ..",
+    "..........QQQ...",
+    ".......oqpo.....",
+    "......oooo......",
+    ".....oqpo.......",
+    "....EGFE........",
+    "...EGFE.........",
+    "..EGGE..........",
+    ".EGFE...........",
+    "EGFE............",
+    "EFE............."
+   ],
+   "om": "Järnspjut, 16×16, diagonalt från nedre vänstra till övre högra hörnet som flintspjutet. Bladet tar rutans övre högra del (rader 0–6, kolumn 9–15). Det är spetsigt mot hörnet, bredast nära basen och smalnar sedan av mot halsen. Det är spegelsymmetriskt kring skaftets linje och har kontur i skiffer0. Insidan har skiffer2 och skiffer3 mot övre vänstra sidan och skiffer1 mot nedre högra, och en enda glanspunkt i skiffer3 sitter nära spetsen. Under bladets bas sitter en replindning på tre rader i ben1 och ben2 med kontur och en mittrand i ben0, som ett ljust band tvärs över skaftet. Skaftet är två punkter brett i jord2 och jord1 med kontur i jord0, och det slutar med en avrundad ände i hörnet. Eftersom skaftet är två punkter brett ligger dess mittlinje en halv punkt från bladets symmetrilinje, och det går inte att undvika i rutnätet. Granskningen: Bladet var inte spegelsymmetriskt kring skaftets linje: vänsterkanten stod lodrätt i kolumn 9 genom rad 3–6 och halsen var en platt rad på fyra punkter, så bladet blev en snedställd kloss förskjuten åt höger. Jag ritade om bladet till ett blad som är spegelsymmetriskt kring diagonalen (spets uppe till höger, smal hals nere till vänster), mest fyra till fem punkter brett på mitten och spetsigt i båda ändar. Halsen är nu tre punkter och möter replindningen på skaftets linje. Ljuset följer bladet: skiffer2 mot övre vänstra sidan och längs mittlinjen, skiffer1 mot nedre högra sidan, kontur i skiffer0 och en enda glanspunkt i skiffer3 nära spetsen; tidigare fanns tre punkter skiffer3. Replindningen (ben0, ben2, ben1 med en rand av ben0), skaftet i jord1 och jord2 med kontur i jord0, storleken 16 × 16 och diagonalen över hela rutan var redan rätt och är oförändrade."
+  },
+  {
+   "ide": "Ett långt, smalt blad likt ett pilblad, utan tydligt bredaste ställe, går två eller tre punkter brett längs nästan halva diagonalen, från rutans mitt ut i det övre högra hörnet, med en rak mittås i skiffer3 på ovansidan och skiffer1 på undersidan så att det ser smitt ut. Skaftet är kort och tjockt i jord2 med korn av jord1 och slutar nere till vänster i en avrundad ände i jord3 och jord1. Repet ligger i två tunna lindningar med en punkts mellanrum strax under bladets hylsa, i ben1 med ben0 i skuggan, så att fästet syns som två ljusa ringar tvärs över skaftet.",
+   "rader": [
+    "..............QQ",
+    ".............QTQ",
+    "............QTSQ",
+    "...........QTSRQ",
+    "..........QTSRQ.",
+    ".........QTSRQ..",
+    "........QTSRQ...",
+    ".......QTSRQ....",
+    "......QTRQ......",
+    ".....QSRQ.......",
+    "....oppo........",
+    "...EHGE.........",
+    "..oppo..........",
+    ".EHFE...........",
+    "EHGE............",
+    ".EE............."
+   ],
+   "om": "Ett långt, smalt pilblad utan bredaste ställe, tre punkter brett med skiffer0-kontur, från rutans mitt ut i det övre högra hörnet. Mittåsen ligger rakt längs diagonalen i skiffer2 med skiffer3 på ovansidan och skiffer1 på undersidan. Bladet smalnar av till en kort hylsa. Strax under hylsan ligger två tunna lindningar av rep i ben1 med ben0 i kanterna, med en rad skaft emellan, så att de syns som två ljusa ringar. Skaftet är kort och tjockt i jord2 och jord3 med korn av jord1 och slutar nere till vänster i en avrundad ände. Granskningen: Inget behövde rättas. Spjutet är 16 × 16 punkter och fyller rutan snett, som flintspjutet. Det står i rimlig skala mot kolonisten (14 × 20). Alla tecken finns i paletten. Bladet har kontur i skiffer0. Mittåsen i skiffer3 ligger på ovansidan och skiffer1 på undersidan, så ljuset kommer uppifrån vänster. Bladet är tre punkter brett, smalnar av mot hylsan och har en spetsig udd i övre högra hörnet. Skaftet har kontur i jord0 och tonerna jord2/jord3 med korn av jord1, och det slutar i en avrundad ände nere till vänster. De två lindningarna i ben1 med ben0 i kanterna ligger tvärs över skaftet med en punkts mellanrum strax under hylsan. Diagonalen är obruten, en punkts förskjutning per rad. Bladet och skaftet har kontur och ljusare toner än gräset, så spjutet syns på marken."
+  },
+  {
+   "ide": "Ett kantigt rombformat blad med raka sidor, kort och brett, högst fem punkter tvärs över diagonalen, sitter i det övre högra hörnet. Bladet är spegelsymmetriskt med ett tydligt hörn på var sida om skaftlinjen, kontur i skiffer0 och fyllning i skiffer2, ljusare skiffer3 längs den övre vänstra kanten och skiffer1 längs den nedre högra. Bladets tånge sticker in i ett kluvet skaft som är två punkter brett i jord1 och jord2, och ett långt, korsvis lindat rep i ben1 och ben0 täcker de fyra översta punkterna av skaftet så att fästet syns tydligt, medan skaftet löper ända ner till det nedre vänstra hörnet.",
+   "rader": [
+    "..............QQ",
+    "............QQSQ",
+    "...........QTSQ.",
+    "..........QTSRQ.",
+    "..........QSRQ..",
+    ".........QSQQ...",
+    ".........QQ.....",
+    "......oppo......",
+    ".....oopo.......",
+    "....oppo........",
+    "...oopo.........",
+    "..EGFE..........",
+    ".EGFE...........",
+    "EGFE............",
+    "EFE.............",
+    "EE.............."
+   ],
+   "om": "Järnspjutet ligger snett från nedre vänstra till övre högra hörnet som flintspjutet och fyller rutan (16×16). Bladet är en kort, bred romb i övre högra hörnet, spegelsymmetrisk kring skaftlinjen, med ett tydligt hörn på var sida (vid (11,1) och (14,4)). Det är som mest fyra till fem punkter brett tvärs över diagonalen. Bladet har kontur i skiffer0 (Q) och fyllning i skiffer2 (S), med ett ljust band av skiffer3 (T) längs den övre vänstra kanten och skiffer1 (R) längs den nedre högra. Under bladet syns fästet: tången (R, med kontur Q) sticker ner i det kluvna skaftets klyka mellan de två klykändarna i jord2 och jord1. Därunder täcker ett korsvis lindat rep i ben1 och ben0 de fyra översta punkterna av skaftet, ett schackmönster som läses som korsade varv. Skaftet är två punkter brett (jord2 mot ljuset, jord1 i skuggan) med kontur i jord0 och löper ända ner i det nedre vänstra hörnet, där det slutar i en avrundad ände som på flintspjutet. Granskningen: Bladet var långsmalt och osymmetriskt (basen slöt i en skaftrad med skiffer1 och en jordkontur fem punkter bred). Jag ritade om det som en kort, bred romb, spegelsymmetrisk kring diagonalen. Den har ett tydligt hörn på var sida, kontur i skiffer0, skiffer3 längs den övre vänstra kanten, skiffer2 längs mittlinjen och skiffer1 längs den nedre högra. Repet var bredare än skaftet och utan kant. Nu är det lika brett som skaftet med kontur, täcker exakt de fyra översta punkterna och har omväxlande varv i ben1 och mellanrum i ben0, så att lindningen syns. Skaftet är två punkter brett (jord2 mot ljuset, jord1 i skuggan) med jord0 som kontur. Det löper obrutet till det nedre vänstra hörnet och har en sluten ände. Storleken är oförändrad: spjutet fyller rutan snett."
+  }
+ ]
+}

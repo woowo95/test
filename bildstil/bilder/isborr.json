@@ -1,0 +1,99 @@
+{
+ "id": "isborr",
+ "w": 12,
+ "h": 15,
+ "rader": [
+  "...EE.......",
+  "..EHHEE.....",
+  "..EGGHHEE...",
+  "...EEGGHHEE.",
+  "....QSQGGHHE",
+  "...QRRQEEGFE",
+  "...QSSQ..EE.",
+  "..QRRQ......",
+  "..QTSQ......",
+  ".QRRQ.......",
+  ".QSSQ.......",
+  "QRRQ........",
+  "QSSQ........",
+  "QTQ.........",
+  "QQ.........."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ },
+ "versioner": [
+  {
+   "ide": "Smal T-borr: ett järnskaft på 2–3 punkters bredd går snett från nedre vänstra hörnet till övre högra, med en tät spiral ritad som omväxlande sneda band i skiffer2 och skiffer1 med skiffer0 som kontur, och längst ned till vänster en kort spets i skiffer3 och skiffer2. Överst till höger sitter ett rakt tvärhandtag av trä, cirka 7 punkter långt och 2 punkter tjockt, vinkelrätt mot skaftet (alltså från övre vänstra mot nedre högra), i jord3 och jord2 med kontur i jord0 och lika långt ut åt båda sidor om skaftet. Ljuset faller på skaftets och handtagets övre vänstra kanter, med högst en glanspunkt i skiffer3 på spiralen.",
+   "rader": [
+    "...EE.......",
+    "..EHHEE.....",
+    "..EGGHHEE...",
+    "...EEGGHHEE.",
+    "....QSQGGHHE",
+    "...QRRQEEGFE",
+    "...QSSQ..EE.",
+    "..QRRQ......",
+    "..QTSQ......",
+    ".QRRQ.......",
+    ".QSSQ.......",
+    "QRRQ........",
+    "QSSQ........",
+    "QTQ.........",
+    "QQ.........."
+   ],
+   "om": "Smal T-borr i 12×15 punkter. Järnskaftet är 2 punkter brett med kontur i skiffer0 och går brant från spetsen nere till vänster upp mot handtaget. Spiralen är omväxlande band i skiffer2 och skiffer1, med en enda glanspunkt i skiffer3 mitt på skaftet. Spetsen längst ned är i skiffer3 och skiffer2. Tvärhandtaget av trä (jord3 och jord2, en punkt jord1 nere till höger, kontur i jord0) går vinkelrätt från övre vänstra mot nedre högra hörnet. Det är cirka 7 punkter långt och sticker ut lika långt åt båda håll från skaftets topp, så att skaftet försvinner in under det. Granskningen: Tvärhandtaget satt snett: det stack ut ungefär fyra punkter uppåt-vänster men bara två nedåt-höger om skaftet, fast idén säger lika långt åt båda sidor. Jag ritade om det som ett flackare trappsteg (två punkter per rad), så att det står vinkelrätt mot det branta skaftet. Nu sträcker det sig lika långt åt båda sidor om skaftets topp (kolumn 2–11 med skaftet i mitten): jord3 längs den övre kanten, jord2 under, jord1 längst ned till höger och kontur i jord0. Spiralen hade två glanspunkter i skiffer3; jag tog bort den nedre så att bara en finns kvar, på skaftets övre vänstra kant. Spetsen längst ned till vänster har nu skiffer3 och skiffer2 som i idén, med kontur i skiffer0. Storleken (12 × 15), vinkeln och de omväxlande spiralbanden i skiffer2 och skiffer1 är oförändrade. Borren syns fortfarande på gräset tack vare konturen och de ljusa tonerna i handtaget."
+  },
+  {
+   "ide": "Bred vindelborr: skaftet är tunt (2 punkter) närmast handtaget men bär nedtill en bred spiral av järn med utstickande vindlar, 5 punkter breda, som ger en sågtandad silhuett åt båda sidor längs nedre halvan av diagonalen och slutar i en kort centrumspets i nedre vänstra hörnet. Vindlarna har ljus ovansida i skiffer3 och skiffer2 och mörk undersida i skiffer1 med kontur i skiffer0, så att skruven läses tydligt även i liten storlek. Överst till höger sitter ett kort, tjockt tvärhandtag av trä i jord2 och jord3 med kontur i jord0, genomträtt mitt på skaftets öga och symmetriskt kring skaftet.",
+   "rader": [
+    "......EE.Q.",
+    ".....EHHESQ",
+    "......EGHE.",
+    "......QEGHE",
+    ".....QTREEE",
+    "....QTRQ...",
+    "..QQQTRQ...",
+    ".QTTSTSQ...",
+    "..QRRSTSQ..",
+    ".QQQSRRQ...",
+    "QTTSTSQ....",
+    ".QRRSTSQ...",
+    "..QSRRQ....",
+    ".QSRQQ.....",
+    "QQQ........"
+   ],
+   "om": "Isborren, 12×15, ligger snett från nedre vänstra till övre högra hörnet. Överst till höger sitter ett kort, tjockt tvärhandtag av trä (jord3 och jord2, kontur jord0). Det ligger vinkelrätt mot skaftet och är trätt genom ögat, och en liten järnände sticker upp ovanför. Under handtaget är skaftet tunt, 2 punkter i skiffer3 och skiffer1 med kontur i skiffer0. Nedre halvan är en bred vindelborr med två vindlar. Ovansidan är ljus (skiffer3 och skiffer2) och undersidan mörk (skiffer1). Vindlarna sticker ut växelvis åt vänster och höger, så att silhuetten blir sågtandad. Borren slutar i en kort centrumspets i nedre vänstra hörnet."
+  },
+  {
+   "ide": "Skedborr med hylsa: nedre delen är ett halvrunt, rännformat järnblad, cirka 3 punkter brett med en vriden egg längst ned till vänster, där den inre rännan syns som ett mörkt streck i skiffer1 och kanterna som ljusa linjer i skiffer3 och skiffer2. Ett rakt järnskaft leder upp till ett platt järnöga högst upp till höger, och genom ögat sitter ett långt runt tvärhandtag av trä på omkring 8 punkter, vinkelrätt mot skaftet, i jord3, jord2 och jord1 med kontur i jord0 och avrundade ändar. Silhuetten blir ett långt smalt kors snett över rutan, med det breda handtaget som tydligaste del och bladet som en tunn ränna nedtill.",
+   "rader": [
+    "....EE......",
+    "...EHGE.....",
+    "....EHGEQQ..",
+    ".....EHGETQ.",
+    "......EHGEQ.",
+    "......QSHGE.",
+    ".....QSQEGFE",
+    ".....QTQ.EE.",
+    "...QQSQ.....",
+    "..QTRSQ.....",
+    ".QTRSQ......",
+    ".QTRSQ......",
+    "QTRSQ.......",
+    "QTSQ........",
+    "QQ.........."
+   ],
+   "om": "Skedborren ligger snett från nedre vänstra till övre högra hörnet. Tvärhandtaget av trä löper vinkelrätt mot skaftet, högst upp till höger. Det är ungefär 8 punkter långt, i jord3, jord2 och jord1 med kontur i jord0 och avrundade ändar. Järnögat syns som en liten platta i skiffer3 och skiffer0 på handtagets bortre sida och som en krage i skiffer2 där skaftet går in. Skaftet är smalt och ritat i skiffer2 och skiffer3 med kontur i skiffer0. Bladet nedtill är rännformat och omkring 3 punkter brett: kanterna är skiffer3 och skiffer2, och den inre rännan är ett mörkt streck i skiffer1. Det smalnar av till en vriden egg längst ned till vänster. Bilden är 12 punkter bred och 15 hög."
+  }
+ ]
+}

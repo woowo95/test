@@ -1,0 +1,92 @@
+{
+ "id": "jarnskold",
+ "w": 14,
+ "h": 12,
+ "rader": [
+  "....ssssss....",
+  "..ssFHGHGFss..",
+  ".sHGFQQQQFGGr.",
+  "sHGHQTSSRQHGGr",
+  "sGHGQSSRRQGHGr",
+  "sHGGQSRRRQGHGr",
+  "sGHGFQQQQFGGGr",
+  "rsHGFGHGGFGGsr",
+  "rrssFGHGGFssrr",
+  ".rrrssssssrrr.",
+  "..rrrrrrrrrr..",
+  "....rrrrrr...."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808"
+ },
+ "versioner": [
+  {
+   "ide": "Låg och platt: skölden ligger med framsidan upp och ses som en spegelsymmetrisk oval, 14 punkter bred och 10 hög, med ett smalt framkantsband på 2 punkter i mörk läder (rost0) längst ner, så att den syns ligga på marken. Ytan är lodräta bräder i jord2 och jord3 med raka fogar i jord1 och kontur i jord0, och runt ovalen löper läderkanten som ett band på 1 punkt i rost1 och rost0. Mitt i sitter en låg, rund järnbuckla på 4×3 punkter i skiffer1 och skiffer2 med kontur i skiffer0 och en glanspunkt i skiffer3 uppe till vänster.",
+   "rader": [
+    "....ssssss....",
+    "..ssFHGHGFss..",
+    ".sHGFQQQQFGGr.",
+    "sHGHQTSSRQHGGr",
+    "sGHGQSSRRQGHGr",
+    "sHGGQSRRRQGHGr",
+    "sGHGFQQQQFGGGr",
+    "rsHGFGHGGFGGsr",
+    "rrssFGHGGFssrr",
+    ".rrrssssssrrr.",
+    "..rrrrrrrrrr..",
+    "....rrrrrr...."
+   ],
+   "om": "Järnskölden ligger med framsidan upp: en spegelsymmetrisk oval, 14 punkter bred och 10 hög, med ett framkantsband på 2 punkter i rost0 under. Ytan är lodräta bräder i jord2 och jord3 med fogar i jord1. Läderkanten är ett band på 1 punkt i rost1, som blir rost0 på högersidan i skuggan. Buckla 4×3 punkter i skiffer1 och skiffer2 med kontur i skiffer0 och en glanspunkt i skiffer3 uppe till vänster. Avvikelse: bräderna har ingen egen kontur i jord0, eftersom läderkanten redan ramar in dem. Granskningen: Inget behövde rättas, punkterna är oförändrade. Storleken är 14 × 12 punkter, inom gränsen 14 × 13, och rimlig bredvid kolonisten (14 × 20). Vinkeln stämmer: skölden ligger platt med framsidan upp och ses som en oval på 10 rader (rad 0–9). Under den ligger ett framkantsband på 2 punkter i rost0 (rad 10–11), så den läser som liggande på marken och inte som en sidovy. Formen är spegelsymmetrisk med samma bredder på varje rad och bucklan centrerad på kolumn 4–9. Bara ljuset skiljer sidorna åt: kanten är rost1 uppe till vänster och rost0 nere till höger. Bucklan har 4×3 punkter inuti i skiffer1/skiffer2, kontur i skiffer0 och en glanspunkt i skiffer3 uppe till vänster, som idén säger. Ytan är lodräta bräder i jord2/jord3 med fogar i jord1, så den har korn utan fläckar. Läderkanten fungerar som yttre kontur, vilket är rätt eftersom läder är det yttersta materialet. Brunt trä, rostkant och grå buckla skiljer sig tydligt från det olivgröna gräset, så skölden syns på marken."
+  },
+  {
+   "ide": "Hög och skålformad: skölden ses brantare uppifrån, nästan som en cirkel på 13×13 punkter, och är välvd som en flat skål så att den ljusaste träytan (jord3) ligger uppe till vänster och tonen glider mot jord1 nere till höger. Brädfogarna syns knappt; i stället får träet ett fint korn, och läderkanten är ett jämnt varv på 1 punkt i rost1 med rost0 längs nedre högra delen och ett framkantsband på bara 1–2 punkter. Bucklan är en spetsig kon på 5×5 punkter i skiffer1–skiffer2, förkortad så att toppen sitter en punkt ovanför mitten, med en smal fläns i skiffer0 runt foten och en glanspunkt i skiffer3.",
+   "rader": [
+    "....sssss....",
+    "..ssHHGHHss..",
+    ".sHHGHHGHGGs.",
+    "sHHGHQQQGGGFs",
+    "sHGHQTSRQGGFs",
+    "sHGGQSSRQGFGs",
+    "sGHGQSRRQFGFr",
+    "sGGHGQQQFGFFr",
+    "sGGGFGFGFFGFr",
+    "sGFGGFGFFGFFr",
+    ".sGFGFGFFFFr.",
+    "..sssssrrrr..",
+    "....rrrrr...."
+   ],
+   "om": "Järnskölden som en nästan rund, skålformad sköld, 13 punkter bred och 12 hög, med ett framkantsband på 1 punkt i rost0 under den nedre bågen (13 rader totalt). Läderkanten är ett jämnt varv på 1 punkt i rost1 och går över i rost0 längs nedre högra delen, där den smälter ihop med bandet till en mörk kant på 1–2 punkter. Träet glider från jord3 uppe till vänster via jord2 till jord1 nere till höger. Brädfogar ritas inte, i stället får ytan fint korn. Bucklan är en kon på 5×5 punkter med en fläns i skiffer0 runt foten och kroppen i skiffer2 (ljus sida) och skiffer1 (skuggsida). Toppen är en glanspunkt i skiffer3 på rad 4, en punkt ovanför sköldens mitt. Granskningen: Storleken (13×13), vinkeln, läderkanten, ljuset från övre vänster, bucklan och att skölden syns mot gräset var redan rätt. Jag rättade tre saker. 1) Formen var inte spegelsymmetrisk: raderna 8 och 9 var smalare (11 punkter) medan raderna 3 och 4 var fulla (13). Nu har rad 3 till 9 full bredd och cirkeln är symmetrisk uppåt och nedåt (5, 9, 11, 13 … 13, 11, 9, 5), med mitten på rad 6. 2) Framkanten var för tjock och oregelbunden, med 'rss' till vänster på rad 10. Nu är kanten ett jämnt varv på 1 punkt, framkantsbandet är 2 punkter (rad 11–12), rost1 ligger till vänster och rost0 mot nedre högra delen. 3) Glanspunkten (skiffer3) på bucklans topp är flyttad ett steg åt vänster, så att den ligger på den sida som ljuset kommer ifrån."
+  },
+  {
+   "ide": "Bred kant och tvärbräder: en oval på 14×11 punkter där läderkanten är tjock, ett band på 2 punkter i rost1 och rost2 med glesa sömpunkter i rost0, och framkanten under den är 2 punkter mörk jord0 så att skivan ser tjock och tung ut. Innanför ligger vågräta bräder i jord2 och jord3 med två mörkare fogar i jord1, vilket ger en helt annan rytm än lodräta bräder. Bucklan är en bred platt skiva på 6×4 punkter i skiffer2 med kontur i skiffer0 och fyra nitar i skiffer1 runt om, symmetriskt placerade, och en enda glanspunkt i skiffer3 uppe till vänster.",
+   "rader": [
+    "....rrrrrr....",
+    "..rrtttrtsrr..",
+    ".rttHHHGHGssr.",
+    "rttFFFFFFFFssr",
+    "rttHRQQQQRGssr",
+    "rtrHQTSSSQGrsr",
+    "rttFQSSSRQFssr",
+    "rtsHRQQQQRGssr",
+    "ErtsHGHGGGssrE",
+    "EErsssrssssrEE",
+    ".EEErrrrrrEEE.",
+    "..EFEEFEEEEE..",
+    "....EEEEEE...."
+   ],
+   "om": "Järnskölden ligger platt och ses snett uppifrån. Ovansidan är en bred oval på 14×11 punkter. Läderkanten är ett tjockt band på 2 punkter i rost2 uppe till vänster och rost1 nere till höger, med kontur i rost0 och glesa sömpunkter i rost0 placerade symmetriskt. Under ovalen syns en framkant på 2 punkter i jord0, så att skivan ser tjock och tung ut. Innanför ligger vågräta bräder i jord3 och jord2 med två fogar i jord1, som syns på båda sidor om bucklan. Bucklan är en platt skiva på 6×4 punkter i skiffer2 med kontur i skiffer0 och fyra nitar i skiffer1 i hörnen. Den har en glanspunkt i skiffer3 uppe till vänster och korn i skiffer1 nere till höger. Granskningen: Ritade om skölden så att den följer idén bättre, i samma storlek (14 × 13). Läderkanten var tre punkter tjock och åt upp skivan, så träet och de vågräta bräderna syntes knappt. Nu är kanten ett band i rost2 (uppe till vänster) och rost1 (nere till höger) med kontur i rost0 och glesa sömpunkter i rost0. Innanför syns bräderna i jord3 och jord2 med en hel fog i jord1 ovanför bucklan och en fog vid sidorna, så den vågräta rytmen syns. Framkanten var en tjock och otydlig massa av jord0 och rost; nu följer den ovalen förskjuten två punkter nedåt, med två rader jord0 och lite jord1 för kornets skull. Bucklan är 6 × 4 i skiffer2 med kontur i skiffer0, nitar i skiffer1 i hörnen och en glanspunkt i skiffer3 uppe till vänster. Silhuetten är spegelsymmetrisk och står ljus och mättad mot det olivgröna gräset.,"
+  }
+ ]
+}

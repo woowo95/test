@@ -1,0 +1,87 @@
+{
+ "id": "jarnyxa",
+ "w": 11,
+ "h": 12,
+ "rader": [
+  "....EGE....",
+  "...QQQQQQQ.",
+  "...QTSSSSSQ",
+  "...QSRSRSSQ",
+  "...QRRQQSSQ",
+  "..EHE..QRSQ",
+  "..EGE..QSTQ",
+  ".EHE...QRSQ",
+  ".EGE....QQ.",
+  "EHE........",
+  "EFE........",
+  "EE........."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ },
+ "versioner": [
+  {
+   "ide": "Skäggyxa: skaftet av trä går snett från nedre vänstra hörnet upp mot övre högra, och i övre änden sitter ett järnhuvud vars egg hänger ner i ett långt skägg på framsidan, så att huvudet blir en krokig L-form mot skaftet. Skaftet ritas i jord1 och jord2 med kontur i jord0 och ljuskanten på övre vänstra sidan. Huvudet är skiffer1–skiffer3 med kontur i skiffer0, en eller två punkter skiffer3 längs eggen som glans, och skafthålet syns som en tjockare ring av järn där skaftets ände sticker ut en punkt ovanför.",
+   "rader": [
+    "....EGE....",
+    "...QQQQQQQ.",
+    "...QTSSSSSQ",
+    "...QSRSRSSQ",
+    "...QRRQQSSQ",
+    "..EHE..QRSQ",
+    "..EGE..QSTQ",
+    ".EHE...QRSQ",
+    ".EGE....QQ.",
+    "EHE........",
+    "EFE........",
+    "EE........."
+   ],
+   "om": "Skäggyxa, 11×12. Skaftet går från nedre vänstra hörnet upp mot övre högra, i jord0, jord1, jord2 och jord3 som flintyxans skaft. Skaftets ände sticker upp en punkt ovanför skafthålet. Huvudet är en tjock järnring kring skaftet: skiffer3 uppe till vänster, ett mörkare hål i skiffer1 och kontur i skiffer0. Från ringen går bladet åt höger och hänger ner i ett långt skägg, så att huvudet blir en krokig L-form. Eggen har två punkter skiffer3 som glans. Granskningen: Rättat: skaftets ände ovanför huvudet satt för långt åt höger och följde inte skaftets lutning. Nu sticker den upp en punkt (jord2 med jord0 omkring) mitt över skafthålet, i linje med skaftet. Skafthålet är nu en tydlig, tjockare järnkrage (kolumn 3–6, rad 1–4) där skaftet går in, i stället för den lösa rostprick-mönstringen. Skaftets kontur kolliderar inte längre med huvudet. Glansen är minskad från tre till två punkter skiffer3: en uppe till vänster på huvudet och en längs eggen i skägget. Skägget har fått en rundad nedre kant med skiffer0. Oförändrat: storleken (11 × 12, rimlig mot kolonisten 14 × 20), skaftets diagonal från nedre vänstra till övre högra hörnet, jord1–jord3 med jord0-kontur och ljuskant uppe till vänster, samt L-formen med skägget på framsidan enligt idén. Yxan har kontur och är ljusare än gräset, så den syns."
+  },
+  {
+   "ide": "Kort bred klyvyxa: ett tjockt skaft av trä snett från nedre vänstra till övre högra hörnet, och överst ett kilformat järnhuvud som är nästan lika brett som långt, med en rak bred egg på ena sidan och en platt nacke på den andra. Huvudet ligger tvärs över skaftet så att silhuetten blir ett T som lutar. Skaftet är jord1–jord2 med kornig ton och kontur i jord0; järnet är skiffer1–skiffer2 med en mörkare skiffer0-kant runt skafthålet och glans högst upp till vänster på eggen.",
+   "rader": [
+    "......QQ...",
+    ".....QTSQ..",
+    "....QSSRQ..",
+    "...QSSSRRQ.",
+    "..QSSSRFRRQ",
+    "...QQRRRRQ.",
+    "....EGFQQ..",
+    "...EHFE....",
+    "..EGFE.....",
+    ".EGGE......",
+    "EGFE.......",
+    "EEE........"
+   ],
+   "om": "Kort, bred klyvyxa som ligger snett. Skaftet går från nedre vänstra hörnet upp mot övre högra och är fyra punkter brett: kontur i jord0 och insida i jord2 och jord1, med den ljusare tonen åt vänster. Järnhuvudet ligger tvärs över skaftet så att silhuetten blir ett lutande T. Den raka breda eggen går längs övre vänstra sidan och den platta nacken längs nedre högra. Huvudet har kontur i skiffer0 och insida i skiffer2 uppe till vänster och skiffer1 nere till höger. Glansen är en enda skiffer3-punkt högst upp på eggen. Mitt i huvudet syns skaftets ände i skafthålet som en jord1-punkt, med en mörk skiffer0-kant nedåt höger. Bilden är 11 punkter bred och 12 hög, och ingen surrning är ritad. Granskningen: Järnhuvudet var en liten klump med en spets uppåt och lästes inte som ett T. Nu ligger huvudet tvärs över skaftets riktning, som idén säger. Den breda raka eggen går som en trappa parallellt med skaftet uppe till vänster (6,0 till 2,4), med glans i skiffer3 på en enda punkt högst upp. Huvudet smalnar mot en kort platt nacke nere till höger (10,4 till 8,6), och kilformen blir nästan lika bred som lång. Skafthålet sitter mitt på skaftlinjen, med träets ände i jord1 inramad av skiffer1, och järnet är skiffer2 och skiffer1 med kontur i skiffer0. Det tjocka skaftet har kvar sin diagonal med kontur i jord0. Det har fått en ljusare punkt i jord3 på den belysta sidan och möter nu huvudet under hålet i stället för att sluta platt mot det. Storleken är fortfarande 11 × 12 och fyller rutan. Den grå konturen gör att yxan syns mot gräset."
+  },
+  {
+   "ide": "",
+   "rader": [
+    ".....EE..Q.",
+    "..QQQEHQQTQ",
+    ".QTSQGEQSTQ",
+    ".QSRQHEQRTQ",
+    "..QQEHEQRTQ",
+    "...EGE.QRTQ",
+    "..EHE...QSQ",
+    "..EGE....Q.",
+    ".EHE.......",
+    ".EFE.......",
+    "EHE........",
+    "EE........."
+   ],
+   "om": "Järnyxa i 11×12 punkter. Skaftet går snett från nedre vänstra hörnet och upp genom skafthålet, där en bit av trät syns. Det är jord0-konturen kring jord2 och jord3 som på flintyxan. Huvudet är av grått järn i skiffertoner med skiffer0-kontur: en kort nacke till vänster om skaftet och ett utsvängt blad med skägg till höger. Eggen är ljusast i skiffer3, och nackens övre vänstra del ljusare enligt ljuset. Det finns ingen surrning. Granskningen: Inget behövde rättas. Yxan är 11 × 12 punkter och fyller rutan, och mot kolonisten (14 × 20) är den rimlig som ett handredskap. Den ligger snett på marken: skaftet går diagonalt från nere till vänster upp genom skafthålet och sticker ut lite ovanför huvudet. Huvudet är smitt järn utan surrning, med en kort nacke till vänster och ett blad till höger som vidgas lika mycket uppåt och nedåt (symmetriskt). Konturerna är materialens mörkaste toner: skiffer0 runt järnet och jord0 runt träet, ingen kol0. Ljuset kommer uppe från vänster: den ljusa skiffer3 ligger på nackens övre vänstra del och längs eggen, jord3 på skaftets vänstra sida. Varje material har två till tre toner. Det grå järnet och det ljusbruna skaftet med mörk kontur syns tydligt mot det olivgröna gräset."
+  }
+ ]
+}

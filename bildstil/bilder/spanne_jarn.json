@@ -1,0 +1,67 @@
+{
+ "id": "spanne_jarn",
+ "w": 8,
+ "h": 8,
+ "rader": [
+  "..QQQQQ.",
+  ".QTSRSSQ",
+  "QSR..SRQ",
+  "QS..S.RQ",
+  "QR.S.QSQ",
+  ".QSRS.Q.",
+  ".SQQQ...",
+  "S......."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ },
+ "versioner": [
+  {
+   "ide": "Ringspänne (öppen ring med nål): en nästan sluten järnring, 7–8 punkter i diameter och 1–2 punkter tjock, med ett smalt glapp nere till höger och två små ihoprullade ändknoppar på var sida om glappet, så att ringen är spegelsymmetrisk kring diagonalen. Nålen ligger tvärs över ringen från nedre vänstra till övre högra hörnet, med en liten ögla runt ringen uppe till höger och spetsen som sticker 1 punkt utanför ringen nere till vänster. Allt i skiffer: kontur skiffer0, ringen i skiffer1–skiffer2 med korn och en enda glanspunkt i skiffer3 uppe till vänster på ringen, och spännet ses snett ovanifrån, liggande platt, så ringen blir en aning bredare än hög.",
+   "rader": [
+    "..QQQQQ.",
+    ".QTSRSSQ",
+    "QSR..SRQ",
+    "QS..S.RQ",
+    "QR.S.QSQ",
+    ".QSRS.Q.",
+    ".SQQQ...",
+    "S......."
+   ],
+   "om": "Ringspänne av järn, 8×8 punkter, sett snett ovanifrån och liggande platt. Ringen är 8 punkter bred och 7 hög, alltså en aning bredare än hög. Den har kontur i skiffer0 och kropp i skiffer1–2 med korn, och en enda glanspunkt i skiffer3 uppe till vänster. Glappet är en genomskinlig punkt nere till höger, mellan två ändknoppar som sitter på var sin sida om diagonalen. Nålen går från nedre vänstra till övre högra hörnet. Den har en ögla runt ringen uppe till höger och går över ringens nedre kant. Spetsen sticker en punkt utanför ringens kontur nere till vänster. Granskningen: Ritningen följer idén: ringen är 8 punkter bred och 7 hög (lite bredare än hög, liggande platt och sedd snett uppifrån). Glappet sitter nere till höger med en ändknopp på var sida. Nålen går från nedre vänstra till övre högra hörnet och har en ögla runt ringen uppe till höger. Konturen är skiffer0, ringen har korn i skiffer1–2 och en enda glanspunkt i skiffer3 uppe till vänster. Ringens form är spegelsymmetrisk kring diagonalen. Storleken stämmer mot kolonisten: ett litet spänne på knappt en halv ruta. Jag rättade bara en sak. Nålspetsen nere till vänster var en ensam mörk punkt i skiffer1 utanför konturen, och den läses som en mörk prick på gräset. Den är nu skiffer2 som resten av nålen, så att spetsen syns ljus mot oliven. Inget annat är ändrat."
+  },
+  {
+   "ide": "Bågspänne (fibula, som en säkerhetsnål): ett avlångt spänne som ligger snett från nedre vänstra till övre högra hörnet, med en tjock välvd båge på 2 punkters bredd överst, en liten spiralfjäder som en rundad knopp i övre högra änden och en plattare fotplatta med nålfäste i nedre vänstra änden. Den raka nålen syns som en tunn 1 punkts linje strax under och parallellt med bågen, mellan fjädern och foten. Järnet i skiffer1–skiffer2 med kontur i skiffer0, bågens ovansida ljusast med en glanspunkt i skiffer3 uppe till vänster, och den undre nålen i den mörkare skiffer1.",
+   "rader": [
+    "..QQQQQ.",
+    ".QTSSSRQ",
+    "QTSQ.RRQ",
+    "QSRQ.RQ.",
+    "QSRQRQ..",
+    "QSSRRQ..",
+    "QSRRQ...",
+    ".QQQ...."
+   ],
+   "om": "Bågspänne av järn, 8×8, snett från nedre vänstra till övre högra hörnet. Bågen är 2 punkter bred och har konturen i skiffer0. Den välver sig upp mot övre vänstra hörnet, med ovansidan i skiffer2 och glans i skiffer3 uppe till vänster. Uppe till höger sitter spiralfjädern som en rundad knopp i skiffer1. Nere till vänster ligger en plattare fotplatta med nålfästet. Den raka nålen i skiffer1 går som en 1 punkts linje från fjädern ner till foten, under bågen och parallellt med den, med en genomskinlig glipa emellan. Granskningen: Spännet håller storleken (8 × 8, ungefär en tredjedel av kolonistens bredd) och följer idén: bågen välver sig upp mot övre vänstra hörnet med glanspunkterna i skiffer3 uppe till vänster, fjäderknoppen sitter i övre högra änden, fotplattan i nedre vänstra och nålen löper rakt snett mellan dem. Ljuset går från ljust uppe till vänster till mörkt nere till höger, och regeln om symmetri gäller inte för ett bågspänne. En rättelse: nålens kontur var bruten. På rad 4 låg nålens skiffer1 direkt mot det genomskinliga, och där har jag lagt in en punkt skiffer0. Nu har nålen en sammanhängande kontur från fjädern till foten och syns mot gräset, och silhuetten blir sluten. Resten är oförändrat."
+  },
+  {
+   "ide": "Rombiskt plattspänne: en flat smidd järnplatta i form av en romb eller ett avrundat fyrkantsspänne, omkring 7 punkter bred och 6 hög eftersom den ligger platt och ses snett ovanifrån, spegelsymmetrisk med en upphöjd knopp i mitten och en enkel inslagen linje runt kanten. Nålen syns bara som en kort spets på 1–2 punkter som sticker ut i nedre vänstra hörnet och ett litet fäste uppe till höger, eftersom resten döljs under plattan. Ytan i skiffer1–skiffer2 med korn, kontur i skiffer0, knoppen ljusast med en glanspunkt i skiffer3 och plattans nedre högra kant som ett smalt band i skiffer0–skiffer1 för tjockleken.",
+   "rader": [
+    "......Q.",
+    "...QQQSQ",
+    "..QSSSQ.",
+    ".QSSTSRQ",
+    ".QSSSRRQ",
+    "..QSRRQ.",
+    ".S.QQQ..",
+    "R......."
+   ],
+   "om": "Ett rombiskt plattspänne av smitt järn, 7 punkter brett och 6 högt, sett snett ovanifrån. Konturen är skiffer0 och ytan har korn i skiffer1 och skiffer2. Kanten är ljus uppe till vänster (skiffer3) och mörkare nere till höger. En inslagen linje i skiffer1 löper innanför kanten. Knoppen i mitten har en glanspunkt i skiffer3. Plattans tjocklek syns som ett mörkare band nere till höger. Nålens spets sticker ut 2 punkter i nedre vänstra hörnet och fästet syns uppe till höger. Granskningen: Plattan var sned: rad 1 började i kolumn 3 och rad 2 i kolumn 2, så romben lutade. Nu är den spegelsymmetrisk kring kolumn 4 och 7 × 6 punkter stor (rad 1 kolumn 3–5, rad 2 kolumn 2–6, rad 3–4 kolumn 1–7, rad 5 kolumn 2–6, rad 6 kolumn 3–5). Fyra ljusa skiffer3-punkter var utspridda över ytan och bröt mot glansregeln. Nu finns skiffer3 bara som en glanspunkt på knoppen i mitten. Knoppen skuggas av skiffer1 till höger och under. Ytan har skiffer2 uppe till vänster och skiffer1 nere till höger, så ljuset kommer från övre vänstra hörnet och plattans nedre högra kant ger tjocklek. De lösa mörka fläckarna i ytan är borta. Nålspetsen nere till vänster (skiffer2 och skiffer1) och fästet uppe till höger är kvar. Konturen är skiffer0, så spännet syns mot gräset. Den inslagna kantlinjen är förenklad bort, eftersom den inte går att läsa på 7 punkter utan att plattan blir mörk."
+  }
+ ]
+}

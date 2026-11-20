@@ -1,0 +1,67 @@
+{
+ "id": "eldstal",
+ "w": 9,
+ "h": 7,
+ "rader": [
+  "......QQ.",
+  ".....QS.Q",
+  "....QSRRQ",
+  "..QTSRQ..",
+  "QSSRQ....",
+  "Q.RQ.....",
+  ".QQ......"
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ },
+ "versioner": [
+  {
+   "ide": "Ett smalt smitt stålband som ligger snett från nedre vänstra till övre högra hörnet och tar hela 9×7-rutan, där båda ändarna är upprullade till små runda öglor på 2–3 punkter, som de krökta eldstålen från vikingatiden; formen är spegelsymmetrisk kring bandets mitt och bara ljuset skiljer ändarna åt. Bandet ritas ovanifrån som det ligger, med skiffer0 som kontur, skiffer1 och skiffer2 som korn längs ytan och en enda punkt skiffer3 som glans på den övre vänstra kanten. Öglornas hål är genomskinliga så att silhuetten läses som en liten lyra även på marken.",
+   "rader": [
+    "......QQ.",
+    ".....QS.Q",
+    "....QSRRQ",
+    "..QTSRQ..",
+    "QSSRQ....",
+    "Q.RQ.....",
+    ".QQ......"
+   ],
+   "om": "Eldstålet är ett smalt smitt stålband som går snett från nedre vänstra till övre högra hörnet över hela 9×7-rutan. Båda ändarna är upprullade till små öglor med ett genomskinligt hål på en punkt, så att silhuetten läses som en liten lyra. Formen är punktsymmetrisk kring bandets mitt. Konturen är skiffer0 och ytans korn skiffer1 och skiffer2, ljusare åt övre vänster. En enda punkt skiffer3 ligger som glans på bandets övre vänstra kant. Granskningen: Inget behövde rättas. Bilden är 9 × 7 punkter och fyller rutan. Mot kolonisten på 14 × 20 är den lagom liten att hållas i handen. Formen följer idén: ett smalt stålband går snett från nedre vänstra till övre högra hörnet. Båda ändarna är rullade till öglor med ett genomskinligt hål på en punkt, (1,7) och (5,1), så silhuetten läses som en liten lyra. Formen är symmetrisk kring bandets mitt (punkten 3,4); varje kontur- och bandpunkt har sin motsvarighet i den andra ändan, och bara tonerna skiljer ändarna åt. Bara skifferns toner används: skiffer0 som kontur, skiffer1 och skiffer2 som korn längs bandet och en enda punkt skiffer3 som glans på den övre vänstra kanten. Den ljusare skiffer2 ligger mot övre vänstra sidan och skiffer1 mot den nedre högra, så ljuset kommer från rätt håll. Den mörka konturen gör att bandet syns mot det mellanmörka gräset. Saken ligger platt och ses ovanifrån som den ligger på marken, så vinkeln stämmer."
+  },
+  {
+   "ide": "Ett brett D-format eldstål med en rak, tjock slagkant och en böjd bygel ovanför som fingrarna går igenom, lagt platt och vridet snett så att slagkanten löper från nedre vänstra mot övre högra hörnet och bygeln buktar upp mot övre vänstra. Slagkanten är ett kompakt band på 2 punkter i skiffer1 och skiffer2 med en mörkare skiffer0-kant nedåt höger, medan bygeln är en tunn ring på 1 punkt med ett genomskinligt hål på några punkter i mitten. Formen är symmetrisk kring bygelns mitt, och en punkt skiffer3 på bygelns övre vänstra del är den enda glansen.",
+   "rader": [
+    "...TSSSSR",
+    "..S...SRQ",
+    ".S...SRQ.",
+    "S...SRQ..",
+    "S..SRQ...",
+    "R.SRQ....",
+    "RSRQ....."
+   ],
+   "om": "Eldstålet, 9×7, ligger platt och snett. Slagkanten är ett band på 2 punkter (skiffer2 uppåt vänster, skiffer1 under) från nedre vänstra till övre högra hörnet, med en kant i skiffer0 nedåt höger. Bygeln är en tunn ring på 1 punkt (skiffer2 och skiffer1) som buktar upp mot övre vänstra och omsluter ett genomskinligt hål. Den enda glansen är en punkt skiffer3 på bygelns övre vänstra del. Granskningen: Det rättade: bygelns hörn uppe till vänster var en rät vinkel, så eldstålet såg ut som en triangel och inte som ett D. Bygeln går nu i en båge från slagkantens nedre ände upp längs vänster sida och snett in mot överkanten, där den möter slagkantens övre ände. Hålet i mitten är kvar och genomskinligt. Bygelns vänstra sida är ljusare (skiffer2 i stället för skiffer1) så att den syns mot gräset. Längst ner är den mörkare (skiffer1), eftersom ljuset kommer uppifrån vänster. Glansen är fortfarande en enda punkt skiffer3, uppe till vänster på bygeln. Det som är oförändrat: slagkanten är kvar som ett diagonalt band på 2 punkter i skiffer2 och skiffer1 med en skiffer0-kant nedåt höger. Storleken är fortfarande 9 × 7, vilket passar som en liten sak i handen bredvid kolonisten på 14 × 20. Eldstålet ligger platt och snett, som en sak sedd uppifrån."
+  },
+  {
+   "ide": "En kort rak stålbit infattad i ett litet handtag av trä, som en kniv utan egg, liggande snett med handtaget i nedre vänstra hörnet och stålet ut mot övre högra, så som kolonisten håller det när han slår mot flintan. Handtaget är 4 punkter långt i jord1 och jord2 med kontur i jord0 och en ljusare jord3-punkt uppe till vänster; stålet är 5 punkter långt, 2 punkter tjockt, i skiffer1 och skiffer2 med kontur i skiffer0 och en böjd krok på 1–2 punkter i spetsen. Silhuetten blir en tydlig snedställd pinne i två material, lätt att skilja från de krökta stålen.",
+   "rader": [
+    "......QQ.",
+    ".....QTSQ",
+    "....QSRQR",
+    "..EQSRQ.Q",
+    ".EHGEQ...",
+    "EGFE.....",
+    ".EE......"
+   ],
+   "om": "Eldstål, 9×7 punkter. Ett litet trähandtag ligger i nedre vänstra hörnet: jord3 uppe till vänster, sedan jord2 och jord1, med kontur i jord0. Ur handtaget går en kort rak stålbit snett upp mot övre högra hörnet, i skiffer2 på ljussidan och skiffer1 på skuggsidan, med kontur i skiffer0. I spetsen böjer stålet nedåt i en krok på ett par punkter. Ljuset faller uppe till vänster och silhuetten blir en snedställd pinne i två material. Granskningen: Grundformen stämde med idén och reglerna: en snedställd pinne med handtaget nere till vänster och stålet uppe till höger, inom 9 × 7 punkter. Den passar mot kolonisten (14 × 20) och har inget att spegla. Rättat: 1) Kroken var en sluten ögla av skiffer0 som läste som en ring. Nu är stålet ett rakt band, 2 punkter tjockt (skiffer2 uppe till vänster, skiffer1 nere till höger), och kroken är en kort nedböjd spets på 2 punkter längst till höger. 2) Stålet saknade ljus punkt och flöt ihop med gräset. Nu finns en enda glanspunkt i skiffer3 uppe till vänster på stålet, i ljusets riktning, så att det syns på olivgräset. 3) Konturen var öppen under stålets nederkant och under handtagets ände. Nu sluter skiffer0 och jord0 runt båda materialen, och skarven mellan stål och handtag har kontur. Handtaget behåller jord3 uppe till vänster, jord2 och jord1 nedåt höger, med kontur i jord0."
+  }
+ ]
+}

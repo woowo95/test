@@ -1,0 +1,105 @@
+{
+ "id": "lie",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...QQQQQQQQQ..EE",
+  "..QTTTTTTTwTQEHE",
+  ".QTSRSSRSSRREHGE",
+  ".QSRQQQQQQQEHFE.",
+  ".QRQ......EHGE..",
+  "..Q......EHGE...",
+  "....EE..EHGE....",
+  "....EHEEHGE.....",
+  ".....EGHGE......",
+  ".....EHGE.......",
+  "....EHFE........",
+  "...EHGE.........",
+  "..EHFE..........",
+  ".EHGE...........",
+  "EHGE............",
+  "EFE............."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ },
+ "versioner": [
+  {
+   "ide": "Ett rakt skaft av trä går snett från nedre vänstra hörnet upp mot övre högra, två punkter brett i jord2 och jord3 med kontur i jord0, och på mitten sticker ett kort handtag på 3 punkter ut vinkelrätt åt övre vänstra sidan. Från skaftets övre ände går bladet av järn vågrätt åt vänster längs bildens överkant i en jämn båge som böjer nedåt mot spetsen, 2–3 punkter brett vid skaftet och smalnande till en punkt. Bladet är i skiffer1 och skiffer2 med kontur i skiffer0, och längs den övre eggen ligger en smal ljus rand i skiffer3 med en enda glanspunkt nära skaftet.",
+   "rader": [
+    "...QQQQQQQQQ..EE",
+    "..QTTTTTTTwTQEHE",
+    ".QTSRSSRSSRREHGE",
+    ".QSRQQQQQQQEHFE.",
+    ".QRQ......EHGE..",
+    "..Q......EHGE...",
+    "....EE..EHGE....",
+    "....EHEEHGE.....",
+    ".....EGHGE......",
+    ".....EHGE.......",
+    "....EHFE........",
+    "...EHGE.........",
+    "..EHFE..........",
+    ".EHGE...........",
+    "EHGE............",
+    "EFE............."
+   ],
+   "om": "Lien är 16×16 punkter. Träskaftet är två punkter brett i jord3 och jord2 (jord1 för kornet) med kontur i jord0 och går snett från nedre vänstra hörnet upp till övre högra. Mitt på skaftet sticker ett kort handtag på tre punkter ut mot övre vänstra sidan. Från skaftets topp går bladet vågrätt åt vänster längs överkanten och böjer nedåt till en spets vid vänsterkanten. Det är två till tre punkter brett vid skaftet, i skiffer2 och skiffer1 med kontur i skiffer0. Längs den övre eggen går en ljus rand i skiffer3, med en enda glanspunkt i ben3 nära skaftet. Granskningen: Ingen rättning behövs. Bilden är 16 × 16 punkter och fyller rutan; bredvid kolonisten (14 × 20) har den en rimlig storlek för ett långt redskap. Skaftet går snett från nedre vänstra hörnet till övre högra. Det är två punkter brett i jord2/jord3 (jord1 mot nedre högra sidan) med kontur i jord0, och handtaget sticker ut åt övre vänster på mitten. Bladet går från skaftets topp åt vänster längs överkanten och böjer nedåt till en spets. Det är skiffer1/skiffer2 med kontur i skiffer0 och har en ljus rand i skiffer3 längs översidan. Glansen är en enda punkt nära skaftet i ben3, inte ren vit. Ljuset kommer uppifrån vänster, och konturerna är materialens mörkaste toner, inte kol0. En lie är inte symmetrisk, så symmetriregeln gäller inte. Det grå bladet och det ljusa träet syns tydligt mot det olivgröna gräset, och silhuetten följer idén.\n\nNote: the key above contains a stray character; corrected object follows.\n"
+  },
+  {
+   "ide": "Skaftet är svagt böjt som ett utdraget S från nedre vänstra hörnet till övre högra, som en nordisk lie där skaftet följer kroppen, i jord1 och jord2 med kontur i jord0 och ett handtag på mitten i en ljusare ton som sticker ut åt vänster. Bladet sitter i den övre änden men hänger nedåt längs högra kanten i en krokig båge mot nedre högra hörnet, så att silhuetten blir som en hake med öppningen åt vänster. Järnet ritas i skiffer2 med mörkare skiffer1 mot ryggen och skiffer0 som kontur, och eggen på bladets insida har en tunn ljus linje i skiffer3.",
+   "rader": [
+    "..........QQQQ..",
+    ".........QTTSSQ.",
+    "........EHQTSRRQ",
+    ".......EHGEQTSRQ",
+    "......EHGE.QTSRQ",
+    ".....EHFE..QTSRQ",
+    ".....EHGE..QTSRQ",
+    ".EEEEHGE....QTSQ",
+    "EHHHGFE.....QTRQ",
+    ".EEHGE......QTRQ",
+    "..EHFE......QTQ.",
+    ".EHGE.......QTQ.",
+    "EHGE........QQ..",
+    "EHFE............",
+    "EGE.............",
+    "EE.............."
+   ],
+   "om": "Lien är 16×16. Skaftet (jord1–jord3, kontur i jord0) går som ett utdraget S från nedre vänstra hörnet upp till en hylsa av järn uppe till höger. Det är brantare i båda ändarna och snett på mitten. Handtaget på mitten (rad 8) sticker ut åt vänster i jord3. Bladet sitter i hylsan och hänger nedåt längs högra kanten, med en lätt krok inåt vid spetsen. Silhuetten blir en hake som är öppen åt vänster. Bladet har skiffer2 i mitten, skiffer1 mot ryggen till höger, skiffer0 som kontur och en tunn egglinje i skiffer3 på insidan. Granskningen: Storleken (16×16, fyller rutan bredvid kolonisten), vinkeln, silhuetten (hake med öppningen åt vänster), skaftet med handtaget åt vänster och ljuset uppifrån vänster följer reglerna och idén. Därför är skaftet och handtaget oförändrade. Rättat: bladet var nästan bara skiffer3 och skiffer1, så skiffer2 saknades nedanför toppen trots att idén vill ha bladet i skiffer2. Bladet är nu en punkt bredare vid hälen (rad 5–6, QTSRQ), så att det smalnar av mot spetsen som en riktig lie. Rad 7 har skiffer2 mot ryggen. Kvar är eggens tunna linje i skiffer3 på insidan, skiffer1 mot ryggen och konturen i skiffer0."
+  },
+  {
+   "ide": "En kort järnålderslie: skaftet går rakt från nedre vänstra hörnet till strax förbi mitten, tre punkter tjockt i jord2 med jord3 uppe till vänster och jord0 som kontur, och handtaget på mitten är en liten tvärpinne med en ring av senap0 där den är surrad fast. Bladet fortsätter från skaftets ände i en spetsig vinkel bakåt och nedåt, så att skaft och blad tillsammans bildar ett smalt utdraget V med spetsen mot övre högra hörnet. Bladet är långt, smalt och bara lätt böjt, i skiffer1 och skiffer2 med kontur i skiffer0 och en eller två glanspunkter i skiffer3 där det möter skaftet.",
+   "rader": [
+    ".............QQ.",
+    "............QTSQ",
+    "...........QTRSQ",
+    "..........EHQRSQ",
+    "..........EHGESQ",
+    ".........EHGEQSQ",
+    "........EHFE.QSQ",
+    ".......EHFE..QSQ",
+    "......EHGE..QSRQ",
+    ".....EHGE..QSRQ.",
+    "....EIIIE..QSQ..",
+    "...EHGEEGE.QRQ..",
+    "..EHFE..EFE.Q...",
+    ".EHGE....EE.....",
+    "EHGE............",
+    "EFE............."
+   ],
+   "om": "Kort järnålderslie, 16×16. Skaftet är tre punkter tjockt, i jord2 och jord3 med kontur i jord0, och går rakt från nedre vänstra hörnet upp mot övre högra hörnet. På mitten sitter en ring av senap0 där handtaget är surrat fast. Handtaget är en kort tvärpinne som pekar snett nedåt höger. Uppe vid spetsen går skaftet in i järnet, och där sitter glansen i skiffer3. Därifrån löper bladet tillbaka nedåt längs högerkanten, så att skaft och blad bildar ett smalt V med spetsen mot övre högra hörnet. Bladet är lätt böjt inåt mot skaftet och slutar i en spets nertill. Det är ritat i skiffer2 och skiffer1 med kontur i skiffer0, med ljuset från vänster. Granskningen: Liens storlek (16 × 16), vinkel, ljus, toner och kontur följer reglerna och idén, och den syns på gräset. Skaftet har jord3 upptill till vänster och kontur i jord0, och bladet i skiffer1 och skiffer2 har kontur i skiffer0 och glans i skiffer3 vid fästet. En sak var fel: surrningen av senap0 satt en rad ovanför handtaget (rad 9). Handtaget går ut från skaftet på rad 10–11, så surrningen hörde inte ihop med det. Jag flyttade ringen ner till rad 10, där tvärpinnen fästs, och gav rad 9 samma trätoner som resten av skaftet. Allt annat är oförändrat."
+  }
+ ]
+}

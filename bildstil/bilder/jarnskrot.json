@@ -1,0 +1,70 @@
+{
+ "id": "jarnskrot",
+ "w": 10,
+ "h": 8,
+ "rader": [
+  "........QQ",
+  "......QQTQ",
+  ".....QTSRQ",
+  "...QQTStrQ",
+  "..QwSStsQ.",
+  ".QTSRtsrQ.",
+  "QRSRtsrQ..",
+  ".QQQQQ...."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "w": "#dad0bb"
+ },
+ "versioner": [
+  {
+   "ide": "En enda avbruten knivklinga som ligger snett över rutan från nedre vänstra till övre högra hörnet, ungefär 10 punkter lång och 3–4 punkter bred, sedd snett ovanifrån så att flatsidan syns som en smal kil. Eggen längs ovansidan har en ljus kant i skiffer3 med en enda glanspunkt uppe till vänster, ryggen och undersidan går i skiffer1 och konturen är skiffer0. Den avbrutna änden nere till vänster är tvär och tandad med två eller tre hack, och rosten ligger som sammanhängande fläckar av rost1 och rost2 med rost0 i kanten mot nedre högra delen, aldrig som ensamma prickar.",
+   "rader": [
+    "........QQ",
+    "......QQTQ",
+    ".....QTSRQ",
+    "...QQTStrQ",
+    "..QwSStsQ.",
+    ".QTSRtsrQ.",
+    "QRSRtsrQ..",
+    ".QQQQQ...."
+   ],
+   "om": "En avbruten knivklinga, 10×8 punkter, som ligger snett från nedre vänstra till övre högra hörnet, med spetsen uppe till höger. Konturen är skiffer0. Eggen längs ovansidan är skiffer3, med en enda glanspunkt i ben3 uppe till vänster på eggen. Flatsidan är skiffer2 och ryggen skiffer1. Rosten är en sammanhängande diagonal fläck av rost2 och rost1 med rost0 i kanten mot nedre högra delen. Den avbrutna änden nere till vänster är tvär och tandad, med utstickande hack i rad 5 och 7. Granskningen: Storlek (10 × 8), vinkel, rostfläckarna i rost0–rost2 och egg och glans följer idén och reglerna. Klingan syns på gräset tack vare skifferkonturen. Rättat: den avbrutna änden nere till vänster var rörig. Där låg en skiffer1-punkt i nedersta raden utan kontur under sig, och konturpunkterna spretade. Nu är undersidan sluten med skiffer0, och den tvära änden är tandad med ett tydligt hack (rad 5–7). Klingans undersida har fått skiffer2 och skiffer1 i två toner, så att den har korn."
+  },
+  {
+   "ide": "Ett böjt och trasigt järnband, som en sönderbruten ring från en tunna eller ett hjulbeslag, lagt som ett krokigt C eller ett slarvigt S ovanifrån, cirka 9 punkter brett och 7 högt. Bandet är 2 punkter tjockt med den ljusare skiffer2–skiffer3 på ovansidan som vetter mot ljuset och skiffer1 på insidan av böjen nere till höger, konturen i skiffer0. Ena änden är avbruten och lite uppvikt så att man ser en kort ljus kant, och rosten i rost1 och rost2 kryper i ett par sammanhängande partier längs den skuggade insidan.",
+   "rader": [
+    "..QQQQQQQ.",
+    ".QTTSTSSTQ",
+    "QTSsstRRSQ",
+    "QSsQQQQQQ.",
+    "QSssRSSRQ.",
+    "QSRSRtsRQ.",
+    ".QRRRRRQ..",
+    "..QQQQQ..."
+   ],
+   "om": "Ett sönderbrutet järnband, böjt som ett C ovanifrån, med öppningen åt höger, 9 punkter brett och 8 högt. Bandet är 2 punkter tjockt och har skiffer0 som kontur. Ovansidan och den vänstra ytterkanten är ljusa (skiffer3 och skiffer2), medan insidan av böjen är skuggad i skiffer1. Rosten i rost1 och rost2 sitter i sammanhängande partier längs insidan, både på den övre armen och nere vid böjen. Båda ändarna är avbrutna och slutar i en ljus skiffer3-punkt, så att den uppvikta brottkanten syns. Granskningen: Storleken (9×8, under 10×8) och vinkeln ovanifrån var rätt. Det inre av C:et var fyllt med två rader skiffer0 (rad 3–4), så bandet lästes som en mörk oval klump och inte som ett böjt band. Nu delar armarna en enda rad kontur, så mörkret i mitten är bara en tunn linje och bandets form syns. Bilden är breddad till 10 punkter. Den övre armen sticker ut förbi den undre och slutar i en avbruten, uppvikt ände med en ljus skiffer3-kant. Rosten låg i spridda prickar och ligger nu i två sammanhängande partier i rost1 och rost2: ett längs insidan av böjen (övre armens undersida ner längs ryggen) och ett mindre på den undre armen. Ljuset kommer uppifrån vänster med skiffer3/skiffer2, och skuggan ligger nere till höger i skiffer1. Konturen är skiffer0 runt om, och utan kol0 syns bandet tydligt mot gräset."
+  },
+  {
+   "ide": "En kort och knubbig bit av ett sönderslaget yxhuvud, låg och bred som en kil, ungefär 9 punkter bred och 6 hög, liggande platt så att man ser ovansidan och ett smalt mörkare framkantsband på 2 punkter. Vänstra delen är den tjocka nacken med halva skafthålet kvar som en mörk halvrund inbuktning i skiffer0, och högra delen smalnar till en bruten egg som slutar i en sned, tandad brottyta. Ytan går i skiffer1, skiffer2 och skiffer3 med glans i övre vänstra hörnet, och en större rostfläck i rost1 och rost2 med rost0-kant täcker nacken nere till höger så att det tydligt ser ut som gammalt skrot.",
+   "rader": [
+    "QQQQQQ....",
+    "QTTSTSQQQ.",
+    ".QTSTSSSSQ",
+    ".QSttsSRQ.",
+    "QSrtssRSRQ",
+    "QRrsrRRRQ.",
+    ".QQQQQQQ.."
+   ],
+   "om": "En bit av ett sönderslaget yxhuvud, 10 × 7 punkter, liggande platt och sedd snett ovanifrån. Konturen är skiffer0 runt om. Till vänster sitter den tjocka nacken med halva skafthålet kvar som en halvrund inbuktning i vänsterkanten (rad 2–4). Ovansidan går i skiffer1, skiffer2 och skiffer3, med glans i skiffer3 uppe till vänster. Till höger slutar eggen i en sned, tandad brottyta, där konturen hoppar fram och tillbaka mellan kolumn 8 och 9. En rostfläck i rost1 och rost2 med kant i rost0 täcker nackens nedre högra del och går ner i framkanten. Framkantsbandet är 2 punkter: en rad i skiffer1 och rost0 och under den konturen i skiffer0. Granskningen: Ritade om formen så att den följer idén och läses som ett platt, snett uppifrån sett yxhuvud. Den är fortfarande 10 × 7 punkter, alltså lagom mot kolonisten. Ändringar: (1) Det halva skafthålet var en otydlig QQ-klump mitt i vänsterkanten. Nu är det en tydlig halvrund inbuktning i skiffer0 i nackens vänsterkant (rad 2–3). (2) Ovansidan har tonerna skiffer3, skiffer2 och skiffer1 med glans uppe till vänster, och nacken är högre än eggen, så att formen smalnar som en kil åt höger. (3) Eggens brottyta till höger är nu tandad, med kanten som hoppar ut och in mellan raderna. (4) Det saknade framkantsbandet på 2 punkter är tillagt: en rad skiffer1 och sedan konturen i skiffer0. Konturen är nu sluten runt hela biten. (5) Rostfläcken ligger nu samlad på nacken, ljusast i rost2 uppe och med rost0-kant nere, i stället för utspridd över ytan. Konturen i skiffer0 och de ljusa grå tonerna gör att biten syns på gräset."
+  }
+ ]
+}

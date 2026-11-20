@@ -1,0 +1,70 @@
+{
+ "id": "malm",
+ "w": 10,
+ "h": 8,
+ "rader": [
+  "..rrr.rr..",
+  ".rTuurutr.",
+  "rTuussutsr",
+  "rutusttssr",
+  "rtuttttstr",
+  "rstsssssrr",
+  ".rssssssr.",
+  "..rrrrrr.."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "T": "#8a9c9e",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ },
+ "versioner": [
+  {
+   "ide": "En enda låg, rundad klump (ungefär 10 bred och 7 hög) i stället för en hög, eftersom en sak i förrådet ritas som en sak; silhuetten är ojämn med tre eller fyra mjuka bulor, som om några små malmkulor vuxit ihop till en, och den är medvetet osymmetrisk eftersom malm inte är formad. Ovansidan ses snett uppifrån i rost2 och rost3 med korn som byts punkt för punkt, och korta porer ritas som små sammanhängande gropar i rost1, aldrig som ensamma prickar. Framkanten är ett smalt band på 2 punkter i rost1, konturen är rost0 och väta visas med en eller två glanspunkter i skiffer3 uppe till vänster.",
+   "rader": [
+    "..rrr.rr..",
+    ".rTuurutr.",
+    "rTuussutsr",
+    "rutusttssr",
+    "rtuttttstr",
+    "rstsssssrr",
+    ".rssssssr.",
+    "..rrrrrr.."
+   ],
+   "om": "En låg, osymmetrisk malmklump på 10×8 punkter. Konturen är rost0. Ovansidan har tre bulor och ses snett uppifrån i rost3 och rost2. Den är ljusast uppe till vänster och blir mörkare åt höger. Porerna är små sammanhängande gropar i rost1. Framkanten är ett band på två punkter i rost1 och mörknar mot rost0 nere till höger. Två glanspunkter i skiffer3 uppe till vänster visar att klumpen är våt. Granskningen: Inget behövde rättas, så punkterna är oförändrade. Storleken är 10 × 8 och ryms inom gränsen; mot kolonisten (14 × 20) är det en rimlig liten klump. Det är en enda sak, inte en hög, som regeln för saker i förrådet kräver. Vinkeln stämmer: ovansidan i rost2 och rost3 ses snett uppifrån, och framkanten är ett band på två punkter i rost1. Silhuetten är ojämn och osymmetrisk med bulor och en grop i överkanten, vilket passar malm. Konturen är rost0 och tjocknar nere till höger, så ljuset kommer från övre vänstra hörnet. Porerna i rost1 hänger ihop och är inga ensamma prickar. Vätan är två glanspunkter i skiffer3 uppe till vänster, inte ren vit. Den varma rosten syns tydligt mot det olivgröna gräset."
+  },
+  {
+   "ide": "En kantig, platt skiva av myrmalmskorpa, som en bit av den hårda skorpan som brutits loss ur myren: en oregelbunden femhörning med brutna, raka kanter, ungefär 10 bred och 6 hög, med ovansidan sedd uppifrån så att den tar det mesta av höjden. Ytan är rost2 med ljusare rost3 mot övre vänstra hörnet och en tydlig spricka i rost1 som går snett över, plus några porgropar i samma ton. Brottkanten fram är ett band på 2–3 punkter i rost1 och rost0 med jord0 längst ner där den är blöt, konturen är rost0 och en enda glanspunkt i skiffer3 visar myrvattnet.",
+   "rader": [
+    "rrrrr.....",
+    "ruuutrrr..",
+    "ruTuttstrr",
+    "ruuttsttsr",
+    "rtutstttr.",
+    "rssrsssrr.",
+    "rrsrrsrr..",
+    "EEEEEEE..."
+   ],
+   "om": "Platt, kantig skiva av myrmalmskorpa i form av en femhörning, 10 punkter bred och 8 hög. Ovansidan ses uppifrån: rost2 som blir ljusare rost3 mot övre vänstra hörnet. En spricka i rost1 går snett från övre högra hörnet ner mot vänster, och några porgropar har samma ton. En enda glanspunkt i skiffer3 visar myrvattnet. Brottkanten fram är ett band i rost1 och rost0, och längst ner blir den blöt jord0. Konturen är rost0. Alla rader är högst 10 tecken och har bara tecken ur paletten. Granskningen: Storleken (10 × 8), vinkeln med ovansidan sedd uppifrån, bandet fram och färgerna höll redan, och rostbrunt syns bra mot det olivgröna gräset. Rättat: Formen var en rundad, nästan spegelsymmetrisk klump, inte den kantiga femhörning idén beskriver. Jag ritade om den som en bruten skiva med raka kanter: rak vänstersida, sned överkant och avskuren högersida, så att den ser lossbruten ut ur myrskorpan. Glanspunkten i skiffer3 flyttade jag från mitten till det övre vänstra hörnet, mot ljuset. Sprickan i rost1 går nu tydligt snett nerifrån vänster upp mot höger, med en porgrop vid sidan. Brottkanten fram är rost1 och rost0 och följer den nya formen, med jord0 längst ner där den är blöt. Konturen är rost0 runt hela skivan. Det är en enda sak och ingen hög, som regeln för saker i förrådet kräver; uppdragets ord om några stycken i en liten hög gäller inte den här bilden."
+  },
+  {
+   "ide": "En hög, knölig klump, ungefär 8 bred och 8 hög, byggd av två tre runda knölar som sitter ihop: en stor knöl nere till vänster och en mindre som sticker upp snett bakom till höger, så att silhuetten blir som en druvklase med tydliga inbuktningar mellan knölarna. Varje knöl är ljusast uppe till vänster (rost3 och rost2) och mörknar mot nedre högra kanten (rost1), med inbuktningarna och porerna i rost1 och kontur i rost0. Väta visas med en glanspunkt i skiffer3 på den stora knölen och en mörk, blöt rand av jord0 och jord1 längst ner, som torv som fastnat.",
+   "rader": [
+    ".....rrr..",
+    "....rutsr.",
+    ".rrrrttssr",
+    "ruTtsrtssr",
+    "rutstsssr.",
+    "rtsstssssr",
+    "EFsFssFsFE",
+    ".EEEFEEEE."
+   ],
+   "om": "Myrmalm, 10 × 8 punkter, ritad som en knölig hög.\n\nKnölarna:\n- En stor knöl nere till vänster.\n- En mindre knöl bakom till höger, som sticker upp snett. Den har sin egen kontur i rost0 och en inbuktning vid skarven.\n- En liten utbuktning nere till höger. Den bildar en andra inbuktning i silhuetten.\n\nTonerna:\n- Knölarna är ljusast uppe till vänster i rost3 och rost2 och mörknar mot rost1 nere till höger.\n- Porerna och skarvarna är rost1, och konturen är rost0.\n- Glanspunkten är en enda punkt i skiffer3 på den stora knölen och visar vätan.\n- Längst ner ligger ett blött torvband i jord1 och jord0, med jord0 som kontur. Granskningen: Ritningen följer i stort reglerna och idén. Storleken är 10 × 8, vilket passar mot kolonisten (14 × 20). Den är en enda knölig klump och ingen hög. Den rostbruna klumpen med kontur i rost0 syns tydligt mot det olivgröna gräset. Ljuset är rätt, med rost3 och rost2 uppe till vänster på varje knöl och rost1 nere till höger. Glanspunkten i skiffer3 sitter på den stora knölen och den blöta torvranden i jord0 och jord1 ligger längst ner. Jag rättade en sak: inbuktningen mellan den stora knölen och den mindre bakom till höger syntes knappt, så att knölarna flöt ihop. På rad 4 (index 3) ändrade jag därför punkten mellan dem till rost0 (\"ruTtstsssr\" blev \"ruTtsrtssr\"). Då blir sömmen tydlig och silhuetten läses som en druvklase. Samtidigt bröts det rutiga t/s-mönstret upp till korn. Inbuktningen på högerkanten (rad 5) är kvar."
+  }
+ ]
+}
