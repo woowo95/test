@@ -163,7 +163,7 @@ function summa(s: State) {
 // Varje slag räknas när någon frågar efter det, över de stackar som ligger i förrådet (summa sparar dem, så att platsen inte
 // prövas igen för varje slag; steg 10.2.102)
 function agOf(s: State, k: string) {
-  if (nara) { let d: Del | undefined; for (const a of stored(s, k)) if (a.ag) addDel(d ??= {}, a.ag); return d; } // i räckhåll
+  if (nara) { let d: Del | undefined; for (const a of stacksOf(s)) if (a.k === k && a.ag && nas(a)) addDel(d ??= {}, a.ag); return d; } // i räckhåll (delarna är hela saker per ägare: ordningen spelar ingen roll)
   const c = summa(s);
   // första frågan efter att summorna räknats om går igenom stackarna en gång för alla slag (förut en gång per slag som frågades);
   // varje slag läggs ihop i stackarnas ordning som förut
@@ -176,7 +176,7 @@ function agOf(s: State, k: string) {
 // hur mycket byn har av ett slag. Redskapen räknas på tingen (agande.ts)
 export function amountOf(s: State, k: string) {
   if (isTool(k)) { let n = 0; for (const t of tingOf(s)) if (iSlag(t.k, k)) n += t.c; return n; } // en grupp: alla i den (steg 12.2.5)
-  if (nara) { const h = SAKER[k]?.i; let n = 0; for (const a of stored(s, h ?? k)) n += h ? a.dold ?? 0 : a.n; return n; } // i räckhåll
+  if (nara) { const h = SAKER[k]?.i, kk = h ?? k; let n = 0; for (const a of stacksOf(s)) if (a.k === kk && nas(a)) n += h ? a.dold ?? 0 : a.n; return n; } // i räckhåll (en summa: utan sorteringen)
   return (summa(s).n[k] ?? 0) + (vidPlats ? vidArbetet(s, k) : 0);
 }
 // mängden gånger skicket (för värdet, varde.ts)
