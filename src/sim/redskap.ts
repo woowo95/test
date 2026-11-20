@@ -28,6 +28,7 @@ import { SAK_ART, heligtBrutet } from './kultlatt';
 // Vad byn sparar när den gör redskap (hur många den vill ha står i REDSKAPMAL i forradsmal.ts, steg 6.2.17). Hur mycket ett redskap kräver står i receptet (skaffa.av
 // i saker.ts) och läses därifrån (RECEPT); hur länge det håller och vad det ger står i handlingens rad (handlingar.ts).
 export const REDSKAP = balans('redskap', {
+  nalFart: 3, nalKv: 1.5, // den som syr ett plagg med en järnnål syr så här många gånger fortare, och med kvaliteten nalKv som järnkniven (steg 12.5.3)
   kvRedskap: 0.2, // ett redskap med kvaliteten 2 (järnkniven) gör det som görs med det lika mycket bättre som en station med kv 0,2 (steg 12.2.6)
   tak: 1.5, // projekten över bufferten (steg 10.2.74): byn vill ha upp till så här många gånger det den behöver av en grupp
   maskPerGrav: 4, // en grävning ger så här många maskar
@@ -310,7 +311,7 @@ export function makeTask(s: State, p: Person, g: string) {
 export function toolDone(s: State, p: Person, k: string) {
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
   if (krukaAv(k)) krukaFormad(t); // lerkrukan ska torka och brännas (steg 9.4.11, kruka.ts)
-  nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k), sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
+  nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k) + nalKv(s, p, k), sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
   nyttVid(s, t); gjort(s, p, 'gjort');
   slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
   const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
@@ -337,6 +338,12 @@ export const flintaTillVerktyg = (s: State) => {
 };
 // det som täljs och skärs med kniven (receptets verktyg kniv, eller kniv: täljs med kniven på bänken) blir oftare bra med en järnkniv
 // (steg 12.2.6): knivens tal kvalitet i slaktens rad (handlingar.ts) gånger REDSKAP.kvRedskap, som en bättre station
+// järnnålen (steg 12.5.3): den som syr ett plagg (det som inte smids) och har en ledig järnnål syr tre gånger så fort, och
+// plagget blir oftare bra, som det som täljs med järnkniven
+const SYDDA = new Set<string>(PLAGG_LIST.filter(g => !(PLAGG[g] as { station?: string }).station));
+const harJarnnal = (s: State, p: Person) => freeTools(s, p, 'jarnnal') > 0 || tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id);
+export const nalFart = (s: State, p: Person, act: string) => SYDDA.has(act) && harJarnnal(s, p) ? REDSKAP.nalFart : 1;
+export const nalKv = (s: State, p: Person, k: string) => SYDDA.has(gruppOf(k)) && harJarnnal(s, p) ? (REDSKAP.nalKv - 1) * REDSKAP.kvRedskap : 0;
 export function knivKv(s: State, p: Person, k: string) {
   const r = SAKER[k]?.skaffa as { verktyg?: Record<string, string>; kniv?: true } | undefined;
   if (!r?.kniv && !r?.verktyg?.kniv) return 0;

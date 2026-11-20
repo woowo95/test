@@ -21,7 +21,7 @@ import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
 import { HUS, bedTile, fahusUtanKrubba, husFolk, krubbaKrok, fnOf, langhusRum, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
 import { coldOf, nederbord, temperature } from './vader';
-import { ACTS } from './handlingar';
+import { ACTS, redskapTal } from './handlingar';
 import { SAKER, isTool } from './saker';
 import { kvHaller, nyKvalitet } from './kvalitet';
 import { groundOf, tileOf } from './mark';
@@ -189,7 +189,7 @@ export const STATIONER = {
     bygger: 'Bygger en stenhuggarplats.', forsta: '{namn} byggde byns första stenhuggarplats.',
   },
   klyvplats: {
-    namn: 'Klyvplats', ikon: 'klyvplats', w: 3, h: 1, tek: ['klyvplats'], av: RECEPT.klyvplats.av, min: RECEPT.klyvplats.min, gor: ['klyva_plank'], bara: ['klyva_plank'],
+    namn: 'Klyvplats', ikon: 'klyvplats', w: 3, h: 1, tek: ['klyvplats'], av: RECEPT.klyvplats.av, min: RECEPT.klyvplats.min, gor: ['klyva_plank'], bara: ['klyva_plank'], vid: { sag: 1 }, // sågen ligger här (steg 12.5.1)
     bygger: 'Bygger en klyvplats.', forsta: '{namn} byggde byns första klyvplats. Där klyvs virket till plankor.',
   },
   // örtköket (steg 7.6.1): en egen liten eld, och varje recept tar 1 ved som bränsle (i receptet)
@@ -1531,7 +1531,22 @@ export function tillbakaVid(s: State, k: Ting) {
 // handlingen act är gjord en gång vid stationen: redskapet den kräver (kraver) slits så mycket. true = det gick sönder
 export function slitVid(s: State, act: Act, v: number) {
   const t = stationFor(s, act), k = t && stationDef(t.k)?.kraver?.[act];
-  const r = k ? redskapVid(s, t, k).sort((a, b) => a.c - b.c)[0] : undefined;
+  return slitRedskap(s, k ? redskapVid(s, t, k).sort((a, b) => a.c - b.c)[0] : undefined, v);
+}
+// det redskap som ligger vid p:s station för act och som arbetet har en rad för (sågen vid klyvplatsen, steg 12.5.1), det som
+// går fortast. Det gör arbetet så många gånger fortare som raden säger (redskapTal), och slits för varje sak som görs
+export function redskapVidAct(s: State, act: Act, p?: Person) {
+  const t = stationFor(s, act, p), rader = ACTS[act]?.redskap;
+  if (!t || !rader) return undefined;
+  const k = Object.keys(rader).filter(k => redskapVid(s, t, k).length).sort((a, b) => redskapTal(act, b).fart - redskapTal(act, a).fart)[0];
+  return k ? { k, t, fart: redskapTal(act, k).fart } : undefined;
+}
+// n saker är gjorda vid stationen: redskapet som ligger där slits med n av så många som raden säger att det håller
+export function slitRedskapVid(s: State, act: Act, n: number, p?: Person) {
+  const r = redskapVidAct(s, act, p), h = r && ACTS[act].redskap![r.k].haller;
+  return !!r && !!h && slitRedskap(s, redskapVid(s, r.t, r.k).sort((a, b) => a.c - b.c)[0], n / h);
+}
+function slitRedskap(s: State, r: Ting | undefined, v: number) {
   if (!r) return false;
   r.c -= v / kvHaller(r); // ett bättre redskap håller längre (kvalitet.ts)
   if (r.c > 1e-9) return false;

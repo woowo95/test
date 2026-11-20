@@ -90,9 +90,9 @@ function foda(s: State) {
 }
 
 // ---------- att klippa fåren ----------
-// En vuxen med kniv klipper ett får vars ull vuxit ut, i dagsljus och utom i istiden; ullen blir hens (eller byns)
+// En vuxen med kniv eller ullsax klipper ett får vars ull vuxit ut, i dagsljus och utom i istiden; ullen blir hens (eller byns)
 export function klippVal(s: State, p: Person) {
-  if (ageOf(p, s.now) < ALDER.vuxen || getable(s, p, 'kniv') < 1 || !isLight(s.now) || iIstiden(kalender(s).ai)) return undefined; // i istiden behöver fåret ullen
+  if (ageOf(p, s.now) < ALDER.vuxen || getable(s, p, 'kniv') < 1 && getable(s, p, 'ullsax') <= 0 /* ullsaxen (steg 12.5.2) */ || !isLight(s.now) || iIstiden(kalender(s).ai)) return undefined; // i istiden behöver fåret ullen
   let b: Tamdjur | undefined, bd = 40;
   for (const d of tamdjurOf(s)) {
     if (!tamArt(d.art).ull || (d.ull ?? 0) < 1 || !vuxen(s, d) || (d.agare !== undefined && d.agare !== p.id)) continue;

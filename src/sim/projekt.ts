@@ -14,7 +14,7 @@ import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST, plaggVarmer } from './klader';
 import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
-import { GORS, ersattAv, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
+import { GORS, ersattAv, freeOfKinds, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
@@ -23,7 +23,7 @@ import { hageBrist, hageUppgift } from './hage';
 import { VINTER, angBrist, angUppgift } from './slatter';
 import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, skaGravas, skaRojas, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { fylldSack, freeTools, tingOf } from './agande';
-import { ACTS } from './handlingar';
+import { ACTS, redskapTal } from './handlingar';
 import { tileOf } from './mark';
 import { Recept, bynsDel, getable, saknatAv } from './behov';
 import { BUDGET, budgetAndel, budgetNu } from './budget';
@@ -31,7 +31,7 @@ import { FALLOR, fallPlats, fallorAv, mjardarVill } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST, tillverkAv } from './tillverka';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
-import { STATION, kanGoras, stationSomFattas, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
+import { STATION, redskapVidAct, kanGoras, stationSomFattas, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
 import { LJUS, LJUSSORTER, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
@@ -197,7 +197,7 @@ const tillverk = (k: string): ProjektDef => {
     kan: (s, p) => { const av = har(s, p) && kar(s) && antal(s) < vill(s) ? tillverkAv(d, q => getable(s, p, q) - utsadeKrok.av(s, q)) : undefined; return !!av && Object.entries(av).every(([q, n]) => getable(s, p, q) - utsadeKrok.av(s, q) >= n); }, // utsädet sparas (steg 9.6.22)
     recept: (s, p) => { const av = har(s, p) && antal(s) < vill(s) ? tillverkAv(d, q => getable(s, p, q)) : undefined; return av ? { av } : undefined; },
     // i en station som går fortare (sländan i vävstolen, steg 7.7.9), med redskapet som ligger där
-    uppgift: s => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1), tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
+    uppgift: s => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1) / (redskapVidAct(s, d.act)?.fart ?? 1) /* sågen vid klyvplatsen (steg 12.5.1) */, tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
   };
 };
 export const PROJEKT: Record<string, ProjektDef> = {
@@ -254,7 +254,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     brist: s => { const n = materialBuffert(s, 'byggsten'); return n > 0 ? clamp(1 - (amountOf(s, 'byggsten') + (s.stackar ?? []).filter(q => q.k === 'byggsten').reduce((a, q) => a + q.n, 0)) / n, 0, 1) : 0; },
     kostnad: () => grundvarde('byggsten'),
     kan: (s, p) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'byggsten') && enTill(s, 'bryta', p) && !!bergPlats(s),
-    uppgift: s => { const at = bergPlats(s); return at && { act: 'bryta', text: 'Bryter en byggsten vid berget.', min: BYGGSTEN.min, spot: at }; },
+    uppgift: (s, p) => { const at = bergPlats(s), h = freeOfKinds(s, p, ['jarnhacka']); return at && { act: 'bryta', text: h ? 'Bryter en byggsten med hackan vid berget.' : 'Bryter en byggsten vid berget.', min: BYGGSTEN.min / redskapTal('bryta', h).fart, tool: h, spot: at }; }, // med järnhackan tre gånger så fort (steg 12.5.4)
   },
   // leran (steg 9.4.10, lera.ts): en tur vid stranden när förrådet saknar den byn gör av med
   lera: {

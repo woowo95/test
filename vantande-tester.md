@@ -26,6 +26,11 @@
 - Scenariot vard var rött redan före grenen (på b5c6c48): "på tolv dygn i en by: 0 förband".
 - 12.1.127: bara bildstilen (valdelen), inget i spelet.
 
+## System 12.5 Järnredskapen (grenen par-jarnredskap, 12.5.1–12.5.6, ab1ebb9 till den senaste committen på grenen)
+
+- Bara typkontrollen och stegens egna scenarier (sag, ullsax, jarnnal, hacka, gryta, las) är körda, och de närmaste (vard, tatuering, stridvard, vardval, kokning, byggsten, fangelse, tradorr, dorr, teknik, tider, arbetstid, ord, ikoner, symboler, jarnredskap, jarnskrot, isborr, eldstal, heltal). Systemet är skyldigt hela kedjan när grenen slagits ihop med varld: `npm run kedja -- "npm run -s koll" "npm run -s likhet"`, med nytt facit.
+- Det som ändrar byarna: sågen vid klyvplatsen (plankorna går fortare), ullsaxen och järnhackan (nya rader i klippningen och brytandet, och REDSKAPMAL vill ha dem), järnnålen (bennålen och järnnålen är nu en grupp i REDSKAPSGRUPPER, och byn vill ha en nål när någon kan smida och byn har en slöjdbänk), järngrytan (kokningen kan ge dubbel sats) och den låsta dörren (en ny teknik och en dörr som är bommad också när huset är tomt, så rövarna och anfallarna hugger längre). Likheten bör köras eftersom klippningen och brytandet fått en redskapsrad.
+
 ## Hopslagna nattgrenar
 
 - natt-bildstil (12.1.69, 12.1.70, 12.1.102): src/portrattkarna.ts är omskriven (samma porträtt punkt för punkt); skyldig samma-kollen och `npm run utseende`.

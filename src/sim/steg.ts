@@ -130,7 +130,7 @@ import { allaTing } from './agande';
 import { och } from './ord';
 import { stepPynt } from './pynt';
 import { glomByten, stadaByten } from './byte';
-import { stationById, stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
+import { stationById, stationFlyttTimme, stationFor, kvVid, slitRedskapVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
@@ -293,6 +293,7 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   if (ar_vatska(d.ger) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
   if (sack) sack.inne = undefined; // säcken töms men finns kvar (steg 7.6.6)
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
+  slitRedskapVid(s, d.act, d.n, p); // sågen vid klyvplatsen slits för varje planka (steg 12.5.1)
   const ag: Record<string, number> = {};
   for (const [q, n] of Object.entries(av)) addDel(ag, takeMaterial(s, p, q, n), 1);
   if (kar && d.sjud) { kar.kok = { r: d.ger, n: d.n, kvar: d.sjud * MIN, ag, vatska: 1, q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // buljongen sjuder i krukan på elden (stepKok)
@@ -313,7 +314,7 @@ KLAR.mata = (s, p, t) => mataKlar(s, p, t.ref); // de tama djuren (tamdjur.ts, s
 KLAR.hage = (s, p, t) => hageKlar(s, p, t.ref); // hagen (steg 9.8.4), eller att märka ut den (ref −1, steg 10.2.36)
 KLAR.ang = (s, p) => angKlar(s, p); // slåtterängen märks ut (steg 10.2.36)
 KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
-KLAR.klippa = (s, p, t) => klippKlar(s, p, t.ref);
+KLAR.klippa = (s, p, t) => { klippKlar(s, p, t.ref); wearUsed(s, p, 1); }; // ullsaxen slits för varje får (steg 12.5.2)
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
 KLAR.skatta = (s, p, t) => skattaKlar(s, p, t.ref); // bikupan (bin.ts, steg 10.10.20)
@@ -348,7 +349,7 @@ KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
 KLAR.uppsatt = (s, p, t) => finishUppsatt(s, p, t);
 KLAR.flyttStation = s => { stationFlytta(s); }; // en station ute närmare dem som använder den (stationer.ts, steg 9.4.8)
-KLAR.bryta = stenBruten; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5)
+KLAR.bryta = (s, p, t) => { stenBruten(s, p, t); wearUsed(s, p, 1); }; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5), och järnhackan slits för varje sten (steg 12.5.4)
 KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, steg 9.4.10)
 KLAR.plockaMossa = mossaPlockad; // mossan läggs i en hög där den plockades (mossa.ts, steg 12.1.6)
 KLAR.malm = malmGravd; // malmen läggs i en hög där den grävdes (malm.ts, steg 12.1.2)

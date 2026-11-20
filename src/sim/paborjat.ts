@@ -7,7 +7,7 @@ import { BYN } from './egendom';
 import { alive, byId, count, living } from './folk';
 import { put } from './lager';
 import { isForest, tileOf } from './mark';
-import { GORS, borjaTool, minOf, toolDone } from './redskap';
+import { GORS, borjaTool, minOf, nalFart, toolDone } from './redskap';
 import { fallTid } from './skog';
 import { fartVid, startStation, tillbehorDef } from './stationer';
 import { dorrDef } from './byggnad';
@@ -69,13 +69,13 @@ function startWork0(s: State, p: Person, tk: Task) {
     t = newTing(s, 'paborjat', 1, p.id);
     t.halv = { gor: k, av: takeRecipe(s, p, k), kvar: minOf(k) * MIN, ag: p.id };
   } else count(s, 'fortsatt'); // byns statistik: arbete som avbröts och togs upp igen
-  tk.ref = t.id; tk.until = s.now + t.halv!.kvar / fartVid(s, p, tk.act); // vid slöjdbänken lite fortare (stationer.ts)
+  tk.ref = t.id; tk.until = s.now + t.halv!.kvar / fartVid(s, p, tk.act) / nalFart(s, p, tk.act); // vid slöjdbänken lite fortare (stationer.ts), med järnnålen tre gånger så fort (steg 12.5.3)
 }
 // medan man arbetar: arbetet går framåt och det påbörjade slits inte
 export function workHalf(s: State, p: Person, tk: Task, dtSec: number) {
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty), h = (s.halvfallt ??= {}); h[i] = (h[i] ?? 0) + dtSec * SEC; return; }
   const t = halvById(s, tk.ref);
-  if (t) { t.halv!.kvar = Math.max(0, t.halv!.kvar - dtSec * SEC * fartVid(s, p, tk.act)); t.c = 1; }
+  if (t) { t.halv!.kvar = Math.max(0, t.halv!.kvar - dtSec * SEC * fartVid(s, p, tk.act) * nalFart(s, p, tk.act)); t.c = 1; }
 }
 // arbetet är klart: det påbörjade blir ett redskap (true)
 export function finishHalf(s: State, p: Person, tk: Task) {

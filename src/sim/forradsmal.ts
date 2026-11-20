@@ -222,7 +222,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   metspo: spjutVill, // ett metspö per spjut
   nat: s => Math.ceil(spjutVill(s) / 3), // ett nät på tre fiskare (steg 9.6.16)
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna),
-  nal: s => living(s).some(p => p.skill.lakekonst >= 2 || !!p.tatV?.length) ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15) eller vill ha ett märke (tatuering.ts, steg 10.7.5)
+  nal: s => living(s).some(p => p.skill.lakekonst >= 2 || !!p.tatV?.length) || living(s).some(p => !!p.tek?.smedja) && harStation(s, 'flatarbank') ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15) eller vill ha ett märke (tatuering.ts, steg 10.7.5), och en järnnål när någon kan smida och byn syr vid slöjdbänken (steg 12.5.3)
   krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)
   naverask: s => ortkokKan(s) ? villHaAv(s, 'salva') + villHaAv(s, 'benlim') : 0, // näveraskarna (steg 9.4.14): salvan och limmet som byn vill ha förvaras i dem
   lerkruka: s => Math.round(living(s).reduce((n, p) => n + (villPynt(s, p, 'kruka') ? pyntLust(s, p) : 0), 0)) + // lusten efter en kruka till avtar (steg 10.2.43)
@@ -236,6 +236,10 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   snoskor: s => Math.ceil(living(s).length / VILLTAL.snoskorPer), // några par till dem som går ut i snön
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
   eldstal: s => living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // ett eldstål när någon kan smida (steg 12.2.12)
+  ullsax: s => tamdjurOf(s).some(d => !!tamArt(d.art).ull) && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en ullsax när byn har får och någon kan smida (steg 12.5.2)
+  jarnhacka: s => stenTillPlan(s) > 0 && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en järnhacka när byn planerat något av sten och någon kan smida (steg 12.5.4)
+  jarngryta: s => living(s).some(p => !!p.tek?.smedja && !!p.tek?.kruka) ? 1 : 0, // en järngryta när någon kan smida och laga mat i kruka (steg 12.5.5)
+  sag: s => tommaPlatser(s, 'sag'), // en såg vid varje klyvplats som saknar en (steg 12.5.1)
   isborr: s => (s.is?.cm ?? 0) > 0 && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en isborr när isen ligger (steg 12.2.11)
   spanne: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // spännet av järn som halsbandet (steg 12.2.10)
   // ledarens mantel (steg 8.3.14): byn gör en åt den som suttit en tidsålder med mer än hälften av legitimiteten
