@@ -1,7 +1,7 @@
 // hur figuren står i bilden (steg 10.2.55): sitter, går eller står. Ingen ritning här, så att testet (scenariot stalle) kan
 // gå igenom en by med samma regler som bilden. Sittanimationen visas bara på en sittplats (en stubbe eller stol vid ett bord,
 // stationRutor i stationer.ts) eller på stolen vid en bänk, och gåanimationen bara när figuren flyttat sig sedan förra bilden
-import { blocked, sittAt, stationAt, type State } from '../sim';
+import { ACTS, blocked, forflyttar, kroppFart, lekGang, sittAt, sparUppgift, stationAt, type Person, type State } from '../sim';
 
 // handlingarna man gör sittande när det finns en plats att sitta på; annars står man
 export const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
@@ -25,4 +25,16 @@ export function vidArbetet(s: State, gor: string | undefined, x: number, y: numb
   const rx = Math.floor(x), ry = Math.floor(y);
   for (const [dx, dy, rikt] of SIDOR) { const nx = rx + dx, ny = ry + dy; if (!blocked(s, nx + 0.5, ny + 0.5) && !stationAt(s, nx + 0.5, ny + 0.5)) return { x: nx + 0.5, y: ny + 0.5, rikt }; }
   return { x: rx + 0.5, y: ry + 1.5, rikt: 'bak' };
+}
+
+// om figuren går i bilden vid tiden t (steg 12.1.13, Det visuella: En källa för rörelsen): simuleringens spår (forflyttar i
+// steg.ts), leken som går i gångfart mellan sina punkter (lekGang i gang.ts) och jägaren under de delar av försöket då hen går
+// (jaktPlats i ui/jakt.ts, ur jaktForlopp). Bilden jämför aldrig sina egna ritade platser: svängningen hos den som arbetar
+// är ingen gång. Samma funktion ger bilden och scenariot stalle sin indata
+export function garIBilden(s: State, p: Person, t: number, jakt?: { gar?: boolean }): boolean {
+  if (jakt) return !!jakt.gar;
+  if (forflyttar(p, t)) return true;
+  const tk = sparUppgift(p, t, s.now), d = tk?.phase === 'do' ? ACTS[tk.act] : undefined, w = d?.vandra;
+  if (!tk || !d || !w || d.slag !== 'leka' || d.stilla || d.tur || tk.act === 'sport' && s.sport?.start === tk.ref) return false;
+  return lekGang(p.id, w.r * 0.6, (w.h0 + w.h1) / 2, kroppFart(p, t), t).gar;
 }

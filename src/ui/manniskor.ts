@@ -27,7 +27,7 @@ import { jaktPlats } from './jakt';
 import { kartKampe, slagAv } from './stridbild';
 import { stridAnsikte } from './stridansikte';
 import { slag } from './animation';
-import { stalle, vidArbetet } from './stalle';
+import { garIBilden, stalle, vidArbetet } from './stalle';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -319,14 +319,15 @@ function stridNu(p: Person): { vapen: string; mot?: { x: number; y: number }; ru
   return undefined;
 }
 const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr']);
-const forra = new Map<number, { x: number; y: number; rx: number; ry: number; rikt: Rikt; rorde: boolean }>();
+const forra = new Map<number, { x: number; y: number; rikt: Rikt; rorde: boolean }>();
 const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gang2'], ['sta', 'hanga']];
 // figuren går bara när den flyttat sig sedan förra bilden (steg 10.2.55): den som står still går aldrig i bilden
 const gar = (id: number) => !!forra.get(id)?.rorde;
 vidNyBy.push(() => forra.clear());
 const SVANG = 2; // hur mycket större det nya hållet ska vara för att figuren ska vända sig (steg 6.8.2)
-// (rx, ry) = platsen utan knuffarna och glidningen i bilden: bara den räknas som att hen går (steg 8.1.2), så att den som står vid latrinen eller dricker vatten står stilla i bilden
-function riktning(id: number, x: number, y: number, rx = x, ry = y): Rikt {
+// gar = om hen går (garIBilden i ui/stalle.ts, steg 12.1.13), ur simuleringen och aldrig ur platserna i bilden. Gästerna utan
+// den frågan går när platsen de fått från simuleringen (gaster.ts) flyttat sig
+function riktning(id: number, x: number, y: number, gar?: boolean): Rikt {
   const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram', rorde = false;
   if (f) {
     const dx = x - f.x, dy = y - f.y;
@@ -338,9 +339,9 @@ function riktning(id: number, x: number, y: number, rx = x, ry = y): Rikt {
       const tvars = rikt === 'sida' || rikt === 'vast' ? Math.abs(dy) : Math.abs(dx);
       if (!(langs > 0 && tvars < langs * SVANG)) rikt = ny;
     }
-    rorde = Math.abs(rx - f.rx) + Math.abs(ry - f.ry) > 1e-4;
+    rorde = gar ?? Math.abs(dx) + Math.abs(dy) > 1e-4;
   }
-  forra.set(id, { x, y, rx, ry, rikt, rorde });
+  forra.set(id, { x, y, rikt, rorde });
   return rikt;
 }
 // gästerna: handlaren som en person (steg 8.1.8) och rövarna (steg 6.6.12), figurer ur skaparen som byborna (ui/utseende.ts), som går, slåss med sitt vapen mot
@@ -405,8 +406,7 @@ export function drawPeople(t: number) {
     // rörelse i armarna
     const bank = gor && !ligger ? stationAt(s, q.x, q.y - 1) : undefined, bd = bank && isKlar(bank) ? stationDef(bank.k) : undefined;
     const vidBank = !!(bank && bd?.sitt && bd.gor.includes(gor as never) && Math.floor(q.y) === bank.y + storlekAv(bank).h);
-    const ra = platsAv(p);
-    let rikt = riktning(p.id, q.x, q.y, ra.x, ra.y);
+    let rikt = riktning(p.id, q.x, q.y, garIBilden(s, p, ui.nu, jaktPlats(p)));
     // sitter bara på en sittplats, går bara när hen flyttat sig (steg 10.2.55, ui/stalle.ts)
     const st = stalle(s, { ligger, gor, x: q.x, y: q.y, vidBank, rorde: gar(p.id) }), sitter = st === 'sitta'; // (platsen i bilden: q är posOf)
     if (sitter && rikt === 'bak') rikt = 'fram';

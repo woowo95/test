@@ -191,6 +191,9 @@ export function sparPlats(p: Person, t: number) {
   const t0 = v[i], t1 = v[i + 3], f = t1 > t0 ? Math.min(1, Math.max(0, (t - t0) / (t1 - t0))) : 1;
   return { x: v[i + 1] + (v[i + 4] - v[i + 1]) * f, y: v[i + 2] + (v[i + 5] - v[i + 2]) * f, still: v[i + 1] === v[i + 4] && v[i + 2] === v[i + 5] };
 }
+// om p förflyttar sig vid tiden t (steg 12.1.13): spåret går där mellan två olika punkter. Samma spår som stegen och stigarna, och
+// den enda källan för om någon går i bilden; svängningen som bara finns i bilden räknas aldrig som rörelse
+export function forflyttar(p: Person, t: number) { const sp = sparPlats(p, t); return !!sp && !sp.still; }
 // vad p gör vid tiden t under slaget som slutar vid nu (spar.u); före slagets början, efter det eller när inget sparats: uppgiften nu
 export function sparUppgift(p: Person, t: number, nu: number): Task | undefined {
   const u = spar.u.get(p);

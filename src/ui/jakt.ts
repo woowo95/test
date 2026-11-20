@@ -29,26 +29,26 @@ type P = { x: number; y: number };
 const mot = (a: P, b: P, k: number) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
 const avst = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 // vad jägaren gör vid tiden u (sekunder från början): var hen är, symbolen över huvudet och texten under Gör just nu
-type Fas = { x: number; y: number; mark?: string; text: string };
+type Fas = { x: number; y: number; mark?: string; text: string; gar?: boolean }; // gar: jägaren går i den här delen av försöket (jaktForlopp)
 function fasAv(f: Jaktforsok, u: number): Fas {
   const o = jaktForlopp(f), dj = flockArtAv(f.id) ? `${flockArtAv(f.id)!.namn}et` : arFagel(f.id) ? 'fågeln' : 'haren'; // rådjuret (steg 6.6.2) och fågeln (steg 6.6.3)
   if (u < o.tS) { // letar: slingrar sig fram mot platsen där hen börjar smyga, i jämn fart
     const k = u / o.tS, d = avst(o.S, o.Q), nx = d > 0.01 ? -(o.Q.y - o.S.y) / d : 0, ny = d > 0.01 ? (o.Q.x - o.S.x) / d : 0;
     const sv = Math.sin(k * Math.PI * 3) * Math.sin(k * Math.PI) * SLINGA * Math.min(1, d / 2);
     const at = mot(o.S, o.Q, k);
-    return { x: at.x + nx * sv, y: at.y + ny * sv, text: 'letar efter harar' };
+    return { x: at.x + nx * sv, y: at.y + ny * sv, text: 'letar efter harar', gar: true };
   }
-  if (u < o.tA) return { ...mot(o.Q, o.P, (u - o.tS) / (o.tA - o.tS)), mark: 'a_smyga', text: flockArtAv(f.id) ? `smyger mot ett ${flockArtAv(f.id)!.namn}` : arFagel(f.id) ? 'smyger mot en fågel' : 'smyger mot en hare' };
+  if (u < o.tA) return { ...mot(o.Q, o.P, (u - o.tS) / (o.tA - o.tS)), gar: true, mark: 'a_smyga', text: flockArtAv(f.id) ? `smyger mot ett ${flockArtAv(f.id)!.namn}` : arFagel(f.id) ? 'smyger mot en fågel' : 'smyger mot en hare' };
   if (u < o.tK) return { ...o.P, mark: o.kast ? 'a_sikta' : 'a_jaga', text: o.kast ? 'siktar' : f.hand ? `griper ${dj}` : 'sticker' };
   if (u < o.tI) return { ...o.P, mark: 'a_sikta', text: 'kastar' };
   const G = o.G ?? o.P, fangad = f.ut === 'fangad';
   const hamtar = o.kast ? (fangad ? `hämtar ${dj}` : f.v === 'sten' ? 'hämtar stenen' : 'hämtar spjutet') : fangad ? `tar ${dj}` : arFagel(f.id) ? 'ser fåglarna flyga' : `ser ${dj} springa`;
-  if (u < o.tG) return { ...mot(o.P, G, Math.min(1, (u - o.tI) / Math.max(0.01, o.tG - o.tI - 3))), text: hamtar };
-  return { ...mot(G, o.S, Math.min(1, (u - o.tG) / Math.max(0.01, o.E - o.tG - 1))), text: fangad ? (flockArtAv(f.id) ? `tar hand om ${flockArtAv(f.id)!.namn}et` : arFagel(f.id) ? 'bär fågeln' : 'bär haren') : 'går tillbaka' };
+  if (u < o.tG) return { ...mot(o.P, G, Math.min(1, (u - o.tI) / Math.max(0.01, o.tG - o.tI - 3))), text: hamtar, gar: u - o.tI < o.tG - o.tI - 3 };
+  return { ...mot(G, o.S, Math.min(1, (u - o.tG) / Math.max(0.01, o.E - o.tG - 1))), gar: u - o.tG < o.E - o.tG - 1, text: fangad ? (flockArtAv(f.id) ? `tar hand om ${flockArtAv(f.id)!.namn}et` : arFagel(f.id) ? 'bär fågeln' : 'bär haren') : 'går tillbaka' };
 }
 
 // var jägaren syns och vilken symbol hen har över huvudet, när ett försök pågår vid tiden som visas
-export function jaktPlats(p: Person): { x: number; y: number; mark?: string } | undefined {
+export function jaktPlats(p: Person): { x: number; y: number; mark?: string; gar?: boolean } | undefined {
   const f = p.task?.act === 'jakt' || forsok.has(p.id) ? aktivt(p.id) : undefined;
   return f && fasAv(f, (ui.nu - f.t) / SEC);
 }

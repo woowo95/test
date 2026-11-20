@@ -8,7 +8,7 @@ import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
-import { stalle, SITTA, vidArbetet } from '../../ui/stalle';
+import { garIBilden, stalle, SITTA, vidArbetet } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
 import { hjalpKlick } from '../../ui/hjalp';
@@ -2815,32 +2815,43 @@ SCENARIER.anfallet = {
 };
 
 SCENARIER.stalle = {
-  text: 'Steg 10.2.55: figuren sitter bara på en sittplats och går bara när den flyttat sig. En by går tolv timmar, och varje person prövas i varje steg med samma regel som bilden (ui/stalle.ts): ingen ritas sittande utan sittplats eller gående utan att ha flyttat sig',
+  text: 'Steg 10.2.55 och 12.1.13: figuren sitter bara på en sittplats och går bara när simuleringen flyttar den. En by går tolv timmar med spåren påslagna som i spelet, och varje person prövas flera gånger i varje slag med bildens egen indata (garIBilden och stalle i ui/stalle.ts): ingen ritas sitta utan en sittplats, ingen går när spåret står still (utom leken, som går mellan sina punkter), den som samtalar utan sittplats står, och den som arbetar med en ruta står intill den',
   kor: () => {
     const s = createState(7, START); klockan(s, 8); medHus(s); SIM.setAmount(s, 'yxa', 2); tidyTools(s); // yxorna: någon fäller och hugger (steg 10.2.78)
-    const forra = new Map<number, { x: number; y: number }>();
     let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0;
-    for (let k = 0; k < STEG_TIM * 12; k++) {
-      step(s, 300);
-      for (const p of living(s)) {
-        const tk = p.task, f = forra.get(p.id), rorde = !!f && Math.abs(p.x - f.x) + Math.abs(p.y - f.y) > 1e-4;
-        forra.set(p.id, { x: p.x, y: p.y });
-        const ligger = tk?.act === 'sova' && tk.phase === 'do' || !SIM.kanGa(p);
-        const l = stalle(s, { ligger, gor: tk?.phase === 'do' ? tk.act : undefined, x: p.x, y: p.y, vidBank: false, rorde });
-        if (l === 'sitta') { sitter++; if (!SIM.sittAt(s, p.x, p.y)) { sittUtan++; forst ||= `${p.name} sitter utan sittplats (${tk?.act})`; } }
-        if (l === 'ga') { gar++; if (!rorde) { garStilla++; forst ||= `${p.name} går utan att flytta sig (${tk?.act})`; } }
-        if (l === 'sta' && tk?.phase === 'do' && SITTA.has(tk.act)) star++;
-        // stå vid arbetet (steg 10.2.78): den som arbetar med en ruta ritas på en ruta intill och vänd mot den
-        const va = tk?.phase === 'do' ? vidArbetet(s, tk.act, p.x, p.y) : undefined;
-        if (va) {
-          arbeten++;
-          const rx = Math.floor(p.x), ry = Math.floor(p.y), vx = Math.floor(va.x), vy = Math.floor(va.y), mot = { bak: ry < vy, fram: ry > vy, sida: rx > vx, vast: rx < vx }[va.rikt];
-          if (rx === vx && ry === vy || Math.abs(rx - vx) + Math.abs(ry - vy) !== 1 || !mot) { felArbete++; forst ||= `${p.name} ${tk!.act} på sin egen ruta eller med ryggen mot arbetet`; }
+    const per = new Map<string, { n: number; ga: number }>(); // per handling i ACTS: prov där hen gör den på platsen, och hur många av dem hen går
+    SIM.spar.pa = true;
+    try {
+      for (let k = 0; k < STEG_TIM * 12; k++) {
+        const t0 = s.now;
+        step(s, 300);
+        for (const p of living(s)) for (let j = 0; j < 4; j++) {
+          const t = t0 + (s.now - t0) * (j + 0.5) / 4, tk = SIM.sparUppgift(p, t, s.now), sp = SIM.sparPlats(p, t), x = sp?.x ?? p.x, y = sp?.y ?? p.y;
+          const rorde = garIBilden(s, p, t), flyttas = !!sp && !sp.still;
+          const ligger = tk?.act === 'sova' && tk.phase === 'do' || !SIM.kanGa(p), gor = tk?.phase === 'do' ? tk.act : undefined;
+          const l = stalle(s, { ligger, gor, x, y, vidBank: false, rorde });
+          if (gor) { const r = per.get(gor) ?? { n: 0, ga: 0 }; r.n++; if (l === 'ga') r.ga++; per.set(gor, r); }
+          if (l === 'sitta') { sitter++; if (!SIM.sittAt(s, x, y)) { sittUtan++; forst ||= `${p.name} sitter utan sittplats (${tk?.act})`; } }
+          if (l === 'ga') { gar++; if (!flyttas && (ACTS as Record<string, { slag?: string }>)[gor ?? '']?.slag !== 'leka') { garStilla++; forst ||= `${p.name} går när spåret står still (${tk?.act} ${tk?.phase})`; } }
+          if (l === 'sta' && gor && SITTA.has(gor)) star++;
+          // stå vid arbetet (steg 10.2.78): den som arbetar med en ruta ritas på en ruta intill och vänd mot den
+          const va = gor ? vidArbetet(s, gor, x, y) : undefined;
+          if (va) {
+            arbeten++;
+            const rx = Math.floor(x), ry = Math.floor(y), vx = Math.floor(va.x), vy = Math.floor(va.y), mot = { bak: ry < vy, fram: ry > vy, sida: rx > vx, vast: rx < vx }[va.rikt];
+            if (rx === vx && ry === vy || Math.abs(rx - vx) + Math.abs(ry - vy) !== 1 || !mot) { felArbete++; forst ||= `${p.name} ${gor} på sin egen ruta eller med ryggen mot arbetet`; }
+          }
         }
       }
-    }
+    } finally { SIM.spar.pa = false; SIM.spar.v = new WeakMap(); SIM.spar.u = new WeakMap(); }
+    // de som står vid sitt arbete (vid vattnet, i samtalet, vid grytan) går aldrig i bilden
+    const STILLA = ['samtal', 'fiske', 'dricka', 'koka', 'maltid'].filter(a => per.get(a)?.n);
+    const stillaGar = STILLA.filter(a => per.get(a)!.ga > 0);
+    const sedda = [...per.keys()].filter(a => a in ACTS);
     return [
-      [`ingen sitter utan sittplats och ingen går utan att flytta sig (${sitter} sittande, ${gar} gående${forst ? `; ${forst}` : ''})`, sittUtan === 0 && garStilla === 0 && gar > 0],
+      [`ingen sitter utan sittplats och ingen går när spåret står still (${sitter} sittande, ${gar} gående${forst ? `; ${forst}` : ''})`, sittUtan === 0 && garStilla === 0 && gar > 0],
+      [`den som fiskar, dricker, samtalar, kokar eller äter går aldrig i bilden (${STILLA.map(a => `${a} ${per.get(a)!.ga}/${per.get(a)!.n}`).join(', ')})`, STILLA.length >= 3 && !stillaGar.length],
+      [`bildens indata prövad för ${sedda.length} handlingar i ACTS`, sedda.length >= 10],
       [`den som samtalar utan sittplats står (${star} gånger)`, star > 0],
       [`den som arbetar med en ruta står intill och är vänd mot den (${arbeten} gånger, ${felArbete} fel; steg 10.2.78)`, arbeten > 0 && felArbete === 0],
     ];
