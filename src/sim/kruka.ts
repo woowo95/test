@@ -89,13 +89,12 @@ export function slappKruka(s: State, tk: Task, p: Person, x: number, y: number) 
 export const krukaVill = (s: State) => villAv(s, 'lerkruka');
 
 // ---------- utseendet (steg 10.7.2) ----------
-// Lerkrukan har tre utseenden, rader i registret KRUKA_UTSEENDEN, så att husen inte ser likadana ut. Vilket en kruka har följer
+// Lerkrukan har två utseenden, rader i registret KRUKA_UTSEENDEN, så att husen inte ser likadana ut. Vilket en kruka har följer
 // krukan själv (dess nummer) och ändrar varken glädjen, värdet eller smaken. En kruka med en växt i ritas med växten, högre ju mer
 // den vuxit
 export const KRUKA_UTSEENDEN = [
   { id: 'rundad', namn: 'Rundad' }, // den Björn valde i bildstilen (steg 4.5.2)
   { id: 'hog', namn: 'Hög och smal' }, // platshållare tills Björn valt
-  { id: 'skal', namn: 'Låg och vid' }, // platshållare tills Björn valt
 ] as const;
 export const krukaUtseende = (t: { id: number }) => KRUKA_UTSEENDEN[t.id % KRUKA_UTSEENDEN.length];
 // det kartan ritar för krukan: bilden och växten i den (sorten och hur långt den vuxit)

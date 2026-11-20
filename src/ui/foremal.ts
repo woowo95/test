@@ -94,7 +94,7 @@ function drawPile(pl: Pile, t: number) {
 }
 // växten i krukan (steg 10.7.2, platshållare): stjälkar upp från kanten och, när den vuxit, röllekans vita blomkorgar.
 // KRUKKANT = raden i krukans bild där kanten är
-const KRUKKANT: Record<string, number> = { lerkruka_hog: 1, lerkruka_skal: 7, lerkruka_liten: 6, lerkruka_mellan: 0, lerkruka_stor: 0 };
+const KRUKKANT: Record<string, number> = { lerkruka_hog: 1, lerkruka_liten: 6, lerkruka_mellan: 0, lerkruka_stor: 0 };
 // behållarens yta för vätskan: x, y, bredd och höjd från rutans hörn, efter var bilden ritas (ensam och kartHog i drawPile)
 const YTA_BEH: Record<string, [number, number, number, number]> = { lerkruka_liten: [6, 4, 4, 1], lerkruka_mellan: [4, -2, 6, 1], lerkruka_stor: [4, -2, 6, 1], naverask: [5, 2, 6, 1] };
 // blomman (steg 10.7.3) har gröna knoppar tills den blommar, och då gula och vita kronor

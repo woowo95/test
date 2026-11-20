@@ -4,6 +4,7 @@ import { createState, Person, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
+import { PIX } from '../../ikoner';
 import { TEKNIK } from '../../sim/teknik';
 import { SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
@@ -870,6 +871,10 @@ SCENARIER.pynt = {
     k3.vaxt = { g: 'rolleka', v: 1 };
     const b1 = SIM.krukaBild(k1), b2 = SIM.krukaBild(k2), b3 = SIM.krukaBild(k3);
     const v1 = SIM.tingVarde(k1), v2 = SIM.tingVarde(k2);
+    // varje utseende i varje storlek ritas hel (steg 12.1.15): krukan börjar i bildens översta tredjedel, inte bara underdelen
+    const halva = ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'].flatMap(k => SIM.KRUKA_UTSEENDEN.map((_, i) => SIM.krukaBild({ ...k1, k, id: i }).ikon)).filter(ik => {
+      const r = PIX[ik] ?? []; return !r.length || r.findIndex(x => /[^.z]/.test(x)) >= r.length / 3;
+    });
     const m = matta();
     return [
       [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} av tolv tycker om mattor)`, vill && bara === 1 && brist > 0 && sorter > 0 && sorter < 12],
@@ -880,6 +885,7 @@ SCENARIER.pynt = {
       [`ett uselt pynt ger ingenting (${usel.glad}, ${usel.syn})`, usel.glad === 0 && usel.syn === 0],
       [`det finaste pyntet i rummet räknas: med ett fint pynt till är intrycket ${tva.syn.toFixed(3)} som med mästerverket ensamt (${fin.syn.toFixed(3)})`, Math.abs(tva.syn - fin.syn) < 1e-9 && tva.glad === fin.glad],
       [`två krukor ritas olika (${b1.ikon}, ${b2.ikon}) och har samma värde (${v1.toFixed(1)}, ${v2.toFixed(1)})`, b1.ikon !== b2.ikon && v1 === v2],
+      [`varje utseende av lerkrukan ritas hel i alla tre storlekarna (${SIM.KRUKA_UTSEENDEN.length} utseenden${halva.length ? `; bara underdelen: ${halva.join(', ')}` : ''})`, !halva.length],
       [`krukan med rölleka ritas med växten (${b3.vaxt?.g}, vuxen ${b3.vaxt?.v})`, b3.vaxt?.g === 'rolleka' && b3.vaxt.v === 1 && !b1.vaxt],
       ...m,
     ];

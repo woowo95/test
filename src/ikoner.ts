@@ -2399,24 +2399,6 @@ export const PIX: Record<string, string[]> = {
     '......oooo......',
     '....zzzzzzzz....',
   ],
-  lerkruka_skal: [ // platshållare (steg 10.7.2): en låg och vid kruka med en vulst under kanten
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '................',
-    '.oooooooooooooo.',
-    '.orrrrrrrrrrrro.',
-    '.oTTRRRRRRRRrro.',
-    '..okRkRkRkRkro..',
-    '..oTTRRRRRRrro..',
-    '...oTRRRRRrro...',
-    '....oRRRrrro....',
-    '.....oooooo.....',
-    '..zzzzzzzzzzzz..',
-  ],
   hogsate: [ // platshållare (steg 10.2.68)
     '....oooooooo....',
     '...oSsSsSsSSo...',
@@ -4318,7 +4300,7 @@ PIX.rokeri = PIX.tork; PAL.rokeri = PAL.tork; PIX.rokfisk = PIX.torrfisk; PAL.ro
 for (const k of RATT_SAKER) { const h = rattInfo(k)!.huvud, f = ({ kott: 'grillkott', fisk: 'grillfisk', rot: 'rotter', svamp: 'svamp', bar: 'bar', sad: 'artfron' } as Record<string, string>)[h]; const sym = KARTBILDER['sym_' + rattInfo(k)!.kat]; PIX[k] = sym ? sym.rader : PIX[f]; PAL[k] = sym ? sym.pal : PAL[f]; } // rätterna (steg 9.6.3): gruppens symbol ur Björns val (soppa, gröt och gryta, steg 10.11.1), annars en platshållare efter huvudingrediensen
 // kunskaperna i pratbubblan (steg 9.9.3): platshållare ur befintliga symboler tills de ritats
 for (const [k, f] of [['motvind', 'vader_blast'], ['renahander', 'a_vatten'], ['fukt', 'vader_regn'], ['smitta', 's_dod']] as const) if (PIX[f]) { PIX[k] = PIX[f]; PAL[k] = PAL[f]; }
-for (const k of ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor', 'lerkruka_hog', 'lerkruka_skal']) { if (k.endsWith('hog') || k.endsWith('skal')) { PAL[k] = PAL.kruka; continue; } PIX[k] = PIX.kruka; PAL[k] = PAL.kruka; } // platshållare för lerkrukans tre storlekar (steg 9.4.11) tills Björn valt i bildstilen // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
+for (const k of ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor', 'lerkruka_hog']) { if (k.endsWith('hog')) { PAL[k] = PAL.kruka; continue; } PIX[k] = PIX.kruka; PAL[k] = PAL.kruka; } // platshållare för lerkrukans tre storlekar (steg 9.4.11) tills Björn valt i bildstilen // intrycket smakfull (steg 4.3.4): lerkrukan Björn valde
 // Björns val efter v245 (steg 4.5.2): rocken (version 2) och skorna (version 1) i 16 × 16 punkter, samma form för kaninskinn och
 // vargskinn i materialets färger, och bybornas filt (version 1; handlaren har kvar den förra)
 const ROCK16 = [
