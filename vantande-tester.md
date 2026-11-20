@@ -174,3 +174,11 @@
 - Det som ändrar byarna: tanken För varm och lusten att bada följer kroppens värme utan gränsen på 30 grader (fler bad och fler tankar en vanlig sommardag); tunikan och skjortan önskas när någon kan väva, också utan tyg, och kappan och sjalen när det finns ull eller får; det projekten saknar gör linet mer värt att så (odling.projektVikt). Läs i fasens Balans om byarna med vävstol sår mer lin och syr fler tunikor, och om fler bad tar för mycket tid.
 - Rättningen i bristNu (projekt.ts) tar bort en oändlig rekursion som kraschade scenariot klader (slöjdbänkens brist räknade om alla projekt, steg 12.1.150); i byarna kan den ha kraschat varje gång något byggts samma timme. Koll visar om fler scenarier gått från krasch till grönt.
 - 12.1.34 var redan byggt (dad4d44) och halmhattens tre versioner finns i bildstilens valdel (12.1.127, bildstil v254); inget nytt att publicera i bildstilen.
+
+## Varld 20 november: 12.1.111, 12.1.112, 12.1.114 (1ee2902e, bacb1ccf, f568f224)
+
+- Väntar tills de åtta parallella grenarna (par-bildfart, par-paneler2, par-strid, par-styre, par-valet, par-forrad, par-myren, par-klader) är inne; sedan hela kedjan en gång: `npm run kedja -- "npm run -s koll" "npm run -s likhet"`.
+- 12.1.111: bara scenarierna (handelsfard, handlarby, handlarlast, bygava, uppdragbyar tar färden med ett nummer efter det före handlingen). Spelet är oförändrat.
+- 12.1.112: bara scenariot handlare (gränsen från 12.1.48). virke, slaktbank och kista är gröna; varldtillstand blir grönt först när koll sparat nya testbyar.
+- 12.1.114: gåvan och det vänliga beskedet dämpas av fejden. Ändrar världen: skyldig koll med nytt facit, likhet och `npm run radanfall` som information. I scenariots värld på 40 dygn (40 år i spelet) skickas nu ett ovänligt besked men inget krig bryter ut, eftersom relationerna sällan sjunker under −20 och beskedet gick vid −94, nära golvet −100.
+- 12.1.9 och 12.1.10 var redan byggda (761bd327, b7d0e189) och står under "Fas 12.1 från 12.1.9" ovan.

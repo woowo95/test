@@ -84,7 +84,7 @@ export const BYHANDLINGAR = {
   // till huvudbyn går med sändebudet (11.6.23)
   gava: {
     namn: 'Gåva',
-    poang: c => { const a = gavaAffar(c); return a ? Math.max(0, BYHANDLING.gavaMal - c.rel) / 100 * (0.5 + ledDrag(c, 'empati')) * radsla(c) * (1 - c.krig / 2) * Math.min(2, gavaRel(a.n * enhet(a.g)) / BYHANDLING.gavaFull) - BYHANDLING.gavaKostnad : -1; },
+    poang: c => { const a = gavaAffar(c); return a ? Math.max(0, BYHANDLING.gavaMal - c.rel) / 100 * (1 - fejdMot(c)) * (0.5 + ledDrag(c, 'empati')) * radsla(c) * (1 - c.krig / 2) * Math.min(2, gavaRel(a.n * enhet(a.g)) / BYHANDLING.gavaFull) - BYHANDLING.gavaKostnad : -1; },
     gor: c => { const a = gavaAffar(c); if (a) skickaFard(c, a, true); },
   },
   // sändebudet (steg 11.6.23): byn skickar ett bud med ett vänligt besked till en granne den vill stå väl med (mer av en ledare
@@ -248,9 +248,13 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 export interface RadFard { uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 // tonen i beskedet och dess poäng: det vänliga eller det ovänliga, det som lönar sig mest (huvudbyns stat och kyrka väljer
 // likadant, sandebud.ts)
+// fejden (steg 12.1.114): ju längre ner byn ser på grannen under beskedRel, desto mindre vill den vara vänlig (gåvan och det
+// vänliga beskedet) och desto mer vill den vara ovänlig; vid beskedRel + beskedFull är det vänliga inget val alls
+const fejdMot = (c: ByCtx) => clamp((-c.rel - BYHANDLING.beskedRel) / BYHANDLING.beskedFull, 0, 1);
 export function beskedTon(c: ByCtx): { ton: BeskedTon; p: number } {
-  const van = Math.max(0, BYHANDLING.beskedMal - c.rel) / 100 * (0.5 + ledDrag(c, 'karisma')) * radsla(c) * (1 - c.krig / 2) - BYHANDLING.beskedKostnad;
-  const ovan = clamp((-c.rel - BYHANDLING.beskedRel) / BYHANDLING.beskedFull, 0, 1) * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig) / radsla(c) - BYHANDLING.beskedKostnad;
+  const fejd = fejdMot(c);
+  const van = Math.max(0, BYHANDLING.beskedMal - c.rel) / 100 * (1 - fejd) * (0.5 + ledDrag(c, 'karisma')) * radsla(c) * (1 - c.krig / 2) - BYHANDLING.beskedKostnad;
+  const ovan = fejd * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig) / radsla(c) - BYHANDLING.beskedKostnad;
   return ovan > van ? { ton: 'ovanligt', p: ovan } : { ton: 'besked', p: van };
 }
 export type BeskedTon = 'besked' | 'ovanligt';
