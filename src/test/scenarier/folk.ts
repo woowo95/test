@@ -2819,13 +2819,13 @@ SCENARIER.stalle = {
         }
       }
     } finally { SIM.spar.pa = false; SIM.spar.v = new WeakMap(); SIM.spar.u = new WeakMap(); }
-    // de som står vid sitt arbete (vid vattnet, i samtalet, vid grytan) går aldrig i bilden
-    const STILLA = ['samtal', 'fiske', 'dricka', 'koka', 'maltid'].filter(a => per.get(a)?.n);
+    // de som står vid sitt arbete (vid vattnet, i samtalet, vid grytan, vid elden, vid maten) går aldrig i bilden
+    const STILLA = ['samtal', 'fiske', 'dricka', 'koka', 'maltid', 'ata', 'varma'].filter(a => per.get(a)?.n);
     const stillaGar = STILLA.filter(a => per.get(a)!.ga > 0);
     const sedda = [...per.keys()].filter(a => a in ACTS);
     return [
       [`ingen sitter utan sittplats och ingen går när spåret står still (${sitter} sittande, ${gar} gående${forst ? `; ${forst}` : ''})`, sittUtan === 0 && garStilla === 0 && gar > 0],
-      [`den som fiskar, dricker, samtalar, kokar eller äter går aldrig i bilden (${STILLA.map(a => `${a} ${per.get(a)!.ga}/${per.get(a)!.n}`).join(', ')})`, STILLA.length >= 3 && !stillaGar.length],
+      [`den som fiskar, dricker, samtalar, kokar, äter eller värmer sig går aldrig i bilden (${STILLA.map(a => `${a} ${per.get(a)!.ga}/${per.get(a)!.n}`).join(', ')})`, STILLA.length >= 3 && !stillaGar.length],
       [`bildens indata prövad för ${sedda.length} handlingar i ACTS`, sedda.length >= 10],
       [`den som samtalar utan sittplats står (${star} gånger)`, star > 0],
       [`den som arbetar med en ruta står intill och är vänd mot den (${arbeten} gånger, ${felArbete} fel; steg 10.2.78)`, arbeten > 0 && felArbete === 0],
