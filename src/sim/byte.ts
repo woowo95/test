@@ -178,7 +178,7 @@ function bytetGlomt(s: State, b: ByteMinne) {
 export function glomByten(s: State, p: Person) {
   const b = p.byten;
   if (!b) return;
-  delete p.byten;
+  p.byten = undefined;
   for (const x of b) bytetGlomt(s, x);
 }
 // bytet en rad i loggen handlar om: hela bytet på raden eller det någon minns med numret (filt.ts, gränssnittet)

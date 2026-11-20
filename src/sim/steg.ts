@@ -1742,7 +1742,7 @@ function compact(s: State) {
 }
 function glomDod(s: State, p: Person) {
   glomByten(s, p);
-  delete p.hand;
+  p.hand = undefined;
   if (Object.keys(p.habit).length) p.habit = {};
   if (p.thoughts.length) p.thoughts = [];
 }

@@ -61,8 +61,8 @@ function p_protes(q: Person, d: Kroppsdel, k: string) {
 // en gång i timmen: kryckan tas av när benet läkt, och den som tappat sin protes (den gick sönder) har ingen längre
 export function protesTimme(s: State) {
   for (const p of living(s)) {
-    if (p.krycka && !brutetBen(p) && !Object.values(p.protes ?? {}).includes('krycka')) { const t = tingOf(s).find(q => q.k === 'krycka' && q.pa === p.id); if (t) { t.pa = undefined; t.bar = undefined; } delete p.krycka; }
+    if (p.krycka && !brutetBen(p) && !Object.values(p.protes ?? {}).includes('krycka')) { const t = tingOf(s).find(q => q.k === 'krycka' && q.pa === p.id); if (t) { t.pa = undefined; t.bar = undefined; } p.krycka = undefined; }
     for (const d of Object.keys(p.protes ?? {}) as Kroppsdel[]) if (!tingOf(s).some(t => t.pa === p.id && t.k === p.protes![d])) delete p.protes![d];
-    if (p.protes && !Object.keys(p.protes).length) delete p.protes;
+    if (p.protes && !Object.keys(p.protes).length) p.protes = undefined;
   }
 }

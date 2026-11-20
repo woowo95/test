@@ -951,7 +951,7 @@ SCENARIER.priser = {
     const hk = h ? SIM.klanById(s, SIM.hp(s, h).gast!.klan) : undefined;
     let affar = false, prat = false, led = false, nyhet = false, rattat = '';
     if (h && hk && p && q && r) {
-      for (const x of s.people) delete x.lardomar;
+      for (const x of s.people) x.lardomar = undefined;
       SIM.sattKlanPris(s, hk, { rep: 1.4 });
       SIM.put(s, 'rep', SIM.villHaAv(s, 'rep') + 3, { [p.id]: SIM.villHaAv(s, 'rep') + 3 });
       SIM.genomfor(s, SIM.handlarPart(s, h), SIM.personPart(s, p, true), [{ k: 'rep', n: 2 }], [{ k: 'silver', n: 3 }], 'handel');
@@ -1849,7 +1849,7 @@ SCENARIER.kopta = {
     const sort = !!h.sort && h.varor.every(w => SIM.HANDLARVAROR.some(v => v.k === w.k)); // (sorten följer byns rikedom)
     h.bynKlar = true; h.silver = 0;
     s.ting = tingOf(s).filter(q => q.k !== 'yxa' && q.k !== 'kniv'); // byn har ingen yxa eller kniv och kan inte göra dem
-    for (const p of living(s)) { if (p.task?.act === 'handla') p.task = undefined; p.tek = { ...p.tek, yxa: 0, kniv: 0 }; delete p.hopp; }
+    for (const p of living(s)) { if (p.task?.act === 'handla') p.task = undefined; p.tek = { ...p.tek, yxa: 0, kniv: 0 }; p.hopp = undefined; }
     const saknar = SIM.behovAv(s, a, 'yxa') === SIM.DELA.saknar;
     h.varor = [{ k: 'yxa', n: 1, q: 1 }, { k: 'kniv', n: 1, q: 1 }];
     SIM.put(s, 'silver', 300, { [a.id]: 300 });
@@ -2457,7 +2457,7 @@ SCENARIER.rovartest = {
     let bv = 0, bp: { x: number; y: number } | undefined;
     for (let i = 0; i < 32 && !bp; i++) { bv = i * Math.PI / 16; for (let r = 6; r < 40 && !bp; r++) { const x = Math.floor(bm.x + Math.cos(bv) * r) + 0.5, y = Math.floor(bm.y + Math.sin(bv) * r) + 0.5; if (utanforByn(b, x, y) >= 8 && land(x, y) && land(x - Math.cos(bv) * 10, y - Math.sin(bv) * 10) && land(x + Math.cos(bv) * 8, y + Math.sin(bv) * 8)) bp = { x, y }; } }
     const bf = rovarGang(b, 3, bp!); bf.vantat = true; bf.till = b.now + 60 * MIN;
-    gar.x = bp!.x - Math.cos(bv) * 10; gar.y = bp!.y - Math.sin(bv) * 10; delete gar.larm;
+    gar.x = bp!.x - Math.cos(bv) * 10; gar.y = bp!.y - Math.sin(bv) * 10; gar.larm = undefined;
     gar.task = { act: 'bara', phase: 'go', tx: bp!.x + Math.cos(bv) * 8, ty: bp!.y + Math.sin(bv) * 8, until: b.now + HOUR, carry: 0, why: 'går förbi' };
     let fickLarm = -1;
     for (let i = 0; i < 90 && b.rovare; i++) {
@@ -2508,7 +2508,7 @@ SCENARIER.rovarfackla = {
     const d = (medFackla + utanFackla) / 2;
     const s = cloneState(n), f = s.rovare!, fo = SIM.rovarna(s, f), x0 = fo[0].x, y0 = fo[0].y;
     for (const r of fo) { r.x = x0; r.y = y0; }
-    const p = living(s)[0]; delete p.larm; p.x = x0 + d; p.y = y0; p.task = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0 };
+    const p = living(s)[0]; p.larm = undefined; p.x = x0 + d; p.y = y0; p.task = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0 };
     SIM.rovarSteg(s, 1);
     const ser = (p as Person).larm?.vad === 'rovare' && d > utanFackla && d < medFackla;
     // på dagen är facklan släckt, och när det blir dag släcks den (tinget finns kvar: ett gäng går aldrig ut utan en fackla)
@@ -2543,7 +2543,7 @@ SCENARIER.rovarsyn = {
       const f = rovarGang(s, 3, { x: x0, y: y0 }), p = living(s)[0];
       SIM.rovarSteg(s, 1);
       for (const r of SIM.rovarna(s, f)) { r.x = x0; r.y = y0; }
-      p.x = x0 + 5; p.y = y0; p.task = { act: akt, phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 }; delete p.larm;
+      p.x = x0 + 5; p.y = y0; p.task = { act: akt, phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 }; p.larm = undefined;
       const syn = SIM.synhall(s, f, p), d = typeof fas === 'number' ? syn * fas : fas(syn);
       p.x = x0 + d; p.task.tx = p.x;
       SIM.rovarSteg(s, 1);
@@ -2584,7 +2584,7 @@ SCENARIER.rovarsyn = {
     const vux = (s: State) => living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, s.now) < SIM.ALDER.gammal && !SIM.isSick(p, s.now)); /* vuxna som kan slåss väcks av larmet */
     const rad = vux(r).slice(0, 4);
     const luckor = [9, 34, 59, 84];
-    rad.forEach((p, i) => { p.x = x0 + luckor[i]; p.y = y0; p.task = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: r.now + 20 * HOUR, carry: 0 }; delete p.larm; });
+    rad.forEach((p, i) => { p.x = x0 + luckor[i]; p.y = y0; p.task = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: r.now + 20 * HOUR, carry: 0 }; p.larm = undefined; });
     for (const p of living(r)) if (!rad.includes(p)) { p.x = x0 + 150; p.y = y0; } // de sover långt bort
     const ingenInnan = rad.slice(1).every(p => !p.larm);
     SIM.rovarSteg(r, 1);
@@ -2592,7 +2592,7 @@ SCENARIER.rovarsyn = {
     // larmet sprids: de andra i raden sover och väcks av den som varnar, och varnar själva vidare (hörhåll 30 rutor, 25 emellan)
     const k = ny(12); rovarGang(k, 3, { x: x0, y: y0 });
     const kad = vux(k).slice(0, 4);
-    kad.forEach((p, i) => { p.x = x0 + luckor[i]; p.y = y0; p.task = { act: i ? 'sova' : 'samla', phase: 'do', tx: p.x, ty: p.y, until: k.now + 20 * HOUR, carry: 0 }; delete p.larm; });
+    kad.forEach((p, i) => { p.x = x0 + luckor[i]; p.y = y0; p.task = { act: i ? 'sova' : 'samla', phase: 'do', tx: p.x, ty: p.y, until: k.now + 20 * HOUR, carry: 0 }; p.larm = undefined; });
     for (const p of living(k)) if (!kad.includes(p)) { p.x = x0 + 150; p.y = y0; }
     korTills(k, () => kad.every(p => p.larm?.vad === 'rovare'), 1800); /* ett led per steg, och stegen är fem minuter när faran inte är nära */
     const led = kad.map(p => p.larm?.led ?? -1);
@@ -3271,7 +3271,7 @@ SCENARIER.bihandel = {
     for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
     s.handlare!.utr = 'packdjur'; // (en handlare med packdjur, steg 11.6.10: testets varor ryms inte hos en vandrande)
     const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
-    for (const p of living(s)) { if (p.task?.act === 'handla') p.task = undefined; delete p.hopp; }
+    for (const p of living(s)) { if (p.task?.act === 'handla') p.task = undefined; p.hopp = undefined; }
     // en by utan honung och utan mat nog byter till sig kakor: honungen är mat, och en by med mat nog köper ingen
     setAmount(s, 'honung', 0); setAmount(s, 'bivax', 0); setMat(s, {});
     h.bynKlar = undefined; h.varor = [{ k: 'honung', n: 4 }]; h.silver = 0;

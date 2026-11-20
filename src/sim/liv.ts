@@ -419,7 +419,7 @@ function refound(s: State) {
 // de i med lämnar byn tillsammans: bördan läggs ner först, sedan packar var och en det hen orkar bära av allt hen äger (arv.ts)
 // och resten blir byns. Den som blir kvar släpper sin partner, som när någon dör; ett par som flyttar tillsammans är kvar som par
 export function leave(s: State, ...med: Person[]) {
-  for (const p of med) { avbryt(s, p); p.left = s.now; delete p.skatteskuld; packUp(s, p); releaseOwner(s, p.id); } // skulden stryks när hen flyttar (steg 10.5.5)
+  for (const p of med) { avbryt(s, p); p.left = s.now; p.skatteskuld = undefined; packUp(s, p); releaseOwner(s, p.id); } // skulden stryks när hen flyttar (steg 10.5.5)
   for (const q of living(s)) {
     const p = med.find(x => x.id === q.partner);
     if (p) { q.partner = undefined; think(q, `Saknar ${p.name}`, LIV.saknarFlytt, s.now, LIV.saknarFlyttDygn * DAY); }
@@ -472,6 +472,6 @@ export function sorgTimme(s: State) {
       if (s.now >= t2 && !g.s3) { g.s3 = 1; think(q, `Saknar ${g.namn}`, LIV.saknar, s.now, LIV.saknasDygn * DAY); }
     }
     q.sorg = q.sorg.filter(g => !g.s3);
-    if (!q.sorg.length) delete q.sorg;
+    if (!q.sorg.length) q.sorg = undefined;
   }
 }

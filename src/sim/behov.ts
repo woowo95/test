@@ -389,7 +389,7 @@ export function noticeTheft(s: State, p: Person, key: string) {
     if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit ${hans(p)} ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
   }
   p.stulet = p.stulet.filter(x => x.k !== key);
-  if (!p.stulet.length) delete p.stulet;
+  if (!p.stulet.length) p.stulet = undefined;
 }
 
 // ---------- material till ett arbete ----------

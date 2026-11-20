@@ -564,7 +564,7 @@ function tandTa(s: State, p: Person, got: Record<string, number>, k: Tand, v: nu
   while (t >= 1 - 1e-9 && tandPaRutan(s, k, x, y) > 0) { tandPlocka(s, k, x, y); t -= 1; n++; }
   t = Math.min(t, 1 - 1e-6); // på en tom ruta väntar arbetet, högst en sak
   if (t > 1e-9) d[nyck] = t; else delete d[nyck];
-  if (!Object.keys(d).length) delete p.delar;
+  if (!Object.keys(d).length) p.delar = undefined;
   if (n) got[k] = n;
 }
 // så många dygn bränslet i förrådet räcker

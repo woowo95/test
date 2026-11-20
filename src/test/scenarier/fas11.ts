@@ -2248,7 +2248,7 @@ SCENARIER.vagsjuk = {
     const ny = (pack: Record<string, number>) => {
       const s = SIM.cloneState(s0), p = s.people.find(q => q.id === a!.id)!, q = s.people.find(x => x.id === b!.id)!;
       const sl = SIM.nyttSallskap(s, p, mal, 'handel')!; SIM.foljMed(s.varld!, sl, q);
-      for (const x of [p, q]) { SIM.gaBort(s, x); delete x.skador; delete x.sjuk; x.blod = 1; }
+      for (const x of [p, q]) { SIM.gaBort(s, x); x.skador = undefined; x.sjuk = undefined; x.blod = 1; }
       sl.skede = 'framme'; sl.framme = s.now; sl.pack = { brod: 50, vattensack: 4, ...pack }; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 4, foder: 0 };
       const v = SIM.varldMark(s)!; sl.ruta = hb.y * v.w + hb.x;
       return { s, sl, p, q };
@@ -2302,7 +2302,7 @@ SCENARIER.utvagar = {
     const ny = (antal: number, o: { hast?: boolean; pack?: Record<string, number> } = {}) => {
       const s = SIM.cloneState(s0), folk = vuxna.slice(0, antal).map(q => s.people.find(x => x.id === q.id)!);
       const sl = SIM.nyttSallskap(s, folk[0]!, mal.nr, 'handel')!; for (const q of folk.slice(1)) SIM.foljMed(s.varld!, sl, q);
-      for (const x of folk) { SIM.gaBort(s, x); delete x.skador; delete x.sjuk; x.blod = 1; }
+      for (const x of folk) { SIM.gaBort(s, x); x.skador = undefined; x.sjuk = undefined; x.blod = 1; }
       const v = SIM.varldMark(s)!, vag = SIM.vagMellan(s.varld!, v, hb.y * v.w + hb.x, mal.y * v.w + mal.x, 'fots', s.now)!;
       sl.skede = 'ute'; sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg };
       const r = SIM.vagenRutor(s, sl); sl.pos = Math.floor((r.length - 1) * 0.3); sl.ruta = r[sl.pos]; sl.gang = 0;
@@ -2329,9 +2329,9 @@ SCENARIER.utvagar = {
     kor(bar, 1); const f1 = SIM.sallskapFart(bar.s, bar.sl), buren = bar.sl.buren?.map(b => b[1]).join(',');
     kor(kall, 1); const ensam = kall.s.varld!.sallskap!.find(x => x !== kall.sl && x.medl.includes(kall.sk.id));
     // den som läkt går själv igen
-    delete bar.sk.skador; bar.sk.men = []; kor(bar, 1); const gar = !bar.sl.buren;
+    bar.sk.skador = undefined; bar.sk.men = []; kor(bar, 1); const gar = !bar.sl.buren;
     // släppa: en tung last, och det släppta blir en gömma
-    const tung = ny(2, { pack: { sten: 30 } }); delete tung.sk.skador; tung.sl.pack.brod = 6;
+    const tung = ny(2, { pack: { sten: 30 } }); tung.sk.skador = undefined; tung.sl.pack.brod = 6;
     const lage = SIM.utvagLage(tung.s, tung.sl)!;
     SIM.UTVAGAR.slappa!.gor(tung.s, tung.sl, lage, tung.s.now);
     const gm = (tung.s.varld!.platser ?? []).filter(p => p.k === 'gomma'), vt = SIM.varldMark(tung.s)!;
@@ -2363,7 +2363,7 @@ SCENARIER.gomma = {
     // ett sällskap på väg med en tung last av yxor, som släpper en del vid vägen
     const s = SIM.cloneState(s0), folk = vuxna.slice(0, 2).map(q => s.people.find(x => x.id === q.id)!);
     const sl = SIM.nyttSallskap(s, folk[0]!, mal.nr, 'handel')!; SIM.foljMed(s.varld!, sl, folk[1]!);
-    for (const x of folk) { SIM.gaBort(s, x); delete x.skador; delete x.sjuk; x.blod = 1; }
+    for (const x of folk) { SIM.gaBort(s, x); x.skador = undefined; x.sjuk = undefined; x.blod = 1; }
     const v = SIM.varldMark(s)!, vag = SIM.vagMellan(s.varld!, v, hb.y * v.w + hb.x, mal.y * v.w + mal.x, 'fots', s.now)!;
     sl.skede = 'ute'; sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg };
     const r = SIM.vagenRutor(s, sl); sl.pos = Math.floor((r.length - 1) * 0.3); sl.ruta = r[sl.pos]; sl.gang = 0;
@@ -2405,7 +2405,7 @@ SCENARIER.forsvunnen = {
     const ny = (antal: number) => {
       const s = SIM.cloneState(s0), folk = vuxna.slice(0, antal).map(q => s.people.find(x => x.id === q.id)!);
       const sl = SIM.nyttSallskap(s, folk[0]!, mal, 'handel')!; for (const q of folk.slice(1)) SIM.foljMed(s.varld!, sl, q);
-      for (const x of folk) { SIM.gaBort(s, x); delete x.skador; delete x.sjuk; x.blod = 1; }
+      for (const x of folk) { SIM.gaBort(s, x); x.skador = undefined; x.sjuk = undefined; x.blod = 1; }
       sl.skede = 'framme'; sl.framme = s.now; sl.pack = { brod: 50, vattensack: 4 }; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 4, foder: 0 };
       const v = SIM.varldMark(s)!; sl.ruta = hb.y * v.w + hb.x;
       return { s, sl, folk };

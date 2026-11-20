@@ -205,6 +205,6 @@ export function stepMotgang(s: State) {
     kronika(s, `År ${yearNo(s)}: ${borjar.split('.')[0]}.`, 'motgang');
     allaBarn(s, nu.id);
   }
-  for (const p of s.people) if (p.varsel && (!alive(p) || p.varsel.t < s.now - DAY * 7)) delete p.varsel;
+  for (const p of s.people) if (p.varsel && (!alive(p) || p.varsel.t < s.now - DAY * 7)) p.varsel = undefined;
 }
 const deadCount = (s: State) => s.stat?.doda ?? 0;

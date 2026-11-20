@@ -201,5 +201,5 @@ export function blotSteg(s: State, p: Person, ute: boolean, underTrad: boolean, 
   else if (v.nb > 0) n += v.nb * VADER.blotTakt * (v.sno ? VADER.blotSno : 1) * (underTrad ? VADER.blotTrad : 1) * dt;
   else n -= VADER.torkarUte * dt;
   n = clamp(n, 0, 1);
-  if (n > 0) p.blot = n; else if (b) delete p.blot;
+  if (n > 0) p.blot = n; else if (b) p.blot = undefined;
 }

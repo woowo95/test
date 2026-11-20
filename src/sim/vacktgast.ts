@@ -13,7 +13,7 @@ import { skrivVanor } from './vanor';
 import { kantMotBy } from './grannbyar';
 import { eldPlats } from './karta';
 import { gaMot } from './rovare';
-import { count } from './folk';
+import { count, nyPerson } from './folk';
 import { freeNear } from './byggnad';
 import { FOOD, SAKER } from './saker';
 import { DODSORSAKER, type Dodsorsak } from './liv';
@@ -45,9 +45,9 @@ export function besokIn(s: State, sl: Sallskap) {
   sl.gaster = [];
   sl.vacktMat = mat;
   for (const p of folk) {
-    const g = JSON.parse(JSON.stringify(p)) as Person;
-    for (const f of BESOKET) delete (g as unknown as Record<string, unknown>)[f];
-    delete g.ute; delete g.dodVag;
+    const g = nyPerson(JSON.parse(JSON.stringify(p)) as Person);
+    for (const f of BESOKET) (g as unknown as Record<string, unknown>)[f] = undefined;
+    g.ute = undefined; g.dodVag = undefined;
     g.id = nyttGastId(b); g.x = kant.x; g.y = kant.y;
     g.gast = { sort: 'besok', hemRad: vl.huvud, fas: 'kommer', mat: per, vatten: GASTVARD.sack, ...(sl.hjalp ? { hjalp: 1 as const } : {}) };
     b.people.push(g);

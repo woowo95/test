@@ -11,7 +11,7 @@ import { DAY, Person, State } from './typer';
 
 export function byggTro(b: State, r: VarldRad) {
   const folk = b.people.filter(p => p.died === undefined), fria = folk.slice().sort((a, c) => andlighet(b, c) - andlighet(b, a) || a.id - c.id);
-  for (const p of folk) { delete p.tro; delete p.troStyrka; } // (en fast person som sparats med hela personen hade en tro i den byn hen kom ifrån)
+  for (const p of folk) { p.tro = undefined; p.troStyrka = undefined; } // (en fast person som sparats med hela personen hade en tro i den byn hen kom ifrån)
   let storsta: number | undefined;
   for (let rt = r.tro; rt; rt = rt.annan) {
     const n = Math.min(fria.length, Math.round(rt.andel / 100 * folk.length));

@@ -78,7 +78,7 @@ export function tatKlar(s: State, g: Person, ref?: number) {
   if (!q || !alive(q) || Math.hypot(q.x - g.x, q.y - g.y) > 1.5) { count(s, 'tatueringMiste'); return; }
   const i = (q.tatV ?? []).reduce((b, v, j, a) => tatLust(s, v) > tatLust(s, a[b]) ? j : b, 0), v = q.tatV?.[i];
   if (!v) return;
-  q.tatV!.splice(i, 1); if (!q.tatV!.length) delete q.tatV;
+  q.tatV!.splice(i, 1); if (!q.tatV!.length) q.tatV = undefined;
   const d = DEF[v.m], stil = byStil(s);
   (q.tat ??= []).push({ m: v.m, p: d.plats, stil, t: s.now, av: g.id });
   ovning(g, 'hantverk', TATU.ovning); gjort(s, g, 'tatuerat'); count(s, 'tatuering'); count(s, 'tatuering_' + v.m);
