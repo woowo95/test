@@ -1,0 +1,106 @@
+{
+ "id": "vagga",
+ "w": 15,
+ "h": 16,
+ "rader": [
+  ".EEEEEEEEEEEEE.",
+  "EHHGHHHHGHHHHGE",
+  "EHEEEEEEEEEEEGE",
+  "EHEFFFFFFFFFEGE",
+  "EHEpqqppqqpqEGE",
+  "EHEqwwwuuutpEGE",
+  "EHEwHHqututpEGE",
+  "EHEqwqwtutsoEGE",
+  "EHEpqpqppopoEGE",
+  "EHEEEEEEEEEEEGE",
+  "EHHHGHHHHHGHHGE",
+  "EFGFFFFGFFFFFFE",
+  "EFFFFFFFFFFFFFE",
+  "EEEEEEEEEEEEEEE",
+  "EGFFE.....EFFFE",
+  ".EEE.......EEE."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ },
+ "versioner": [
+  {
+   "ide": "Låg rak låda av plankor som står vågrätt i rutan, omkring 15 punkter bred och 11 hög, med längs- och kortväggar som är spegelsymmetriska. Snett ovanifrån syns krönet på bakväggen och kortväggarna som smala ljusa band i jord3 och jord2 med korn längs plankorna och kontur i jord0, framkanten som ett band på 2–3 punkter i jord1, och under kortändarna sticker de två böjda medarna fram som korta bågar i jord1 vid de främre hörnen. Inne i lådan ligger en bädd av ull i ben2 och ben1 som tar det mesta av ytan, med spädbarnets lilla runda ansikte i jord3 och ben3 vid vänstra änden och en svept kropp i ben3 och ben2 under en filt.",
+   "rader": [
+    ".EEEEEEEEEEEEE.",
+    "EHHGHHHHGHHHHGE",
+    "EHEEEEEEEEEEEGE",
+    "EHEFFFFFFFFFEGE",
+    "EHEpqqppqqpqEGE",
+    "EHEqwwwuuutpEGE",
+    "EHEwHHqututpEGE",
+    "EHEqwqwtutsoEGE",
+    "EHEpqpqppopoEGE",
+    "EHEEEEEEEEEEEGE",
+    "EHHHGHHHHHGHHGE",
+    "EFGFFFFGFFFFFFE",
+    "EFFFFFFFFFFFFFE",
+    "EEEEEEEEEEEEEEE",
+    "EGFFE.....EFFFE",
+    ".EEE.......EEE."
+   ],
+   "om": "Vaggan, 15×14 punkter: en låg, rak planklåda vågrätt i rutan med kontur i jord0. Bakväggens och kortväggarnas krön är ljusa band i jord3 och jord2 med korn längs plankorna. Bakväggens insida syns som ett smalt band i jord1. Framkanten är ett band på två punkter i jord1 med jord2-korn. Under kortändarna sticker de två böjda medarna fram som korta bågar i jord1. Inne i lådan ligger en ullbädd i ben2 och ben1. Spädbarnets lilla runda ansikte i jord3 med en glanspunkt i ben3 ligger vid vänstra änden. Den svepta kroppen syns i ben3 vid axeln och är täckt av en dämpad filt i oliv2 och oliv3. Höjden blev 14 punkter i stället för omkring 11, eftersom medarna och bakväggens insida tar egna rader. Granskningen: Ritade om lådan. Insidan läste som en tavla eller karta: det gröna i mitten gav ingen bild av ett barn, och det fanns inget ansikte. Nu har lådan en tydlig inre kontur i jord0. Bakväggens insida ligger i skugga i jord1. Bädden av ull är i ben2 och ben1 och blir mörkare mot nedre högra hörnet. Vid vänstra änden ligger spädbarnets runda ansikte i jord3 inramat av en luva i ben3. Den svepta kroppen i ben3 och ben2 försvinner under en filt i rost3, rost2 och rost1. Filten är dämpad men varm, så att barnet syns först. Under kortändarna stod raka ben, men vaggan ska stå på böjda medar. Därför är de nu två spegelsymmetriska bågar i jord1 som sticker fram och böjer upp mot de yttre hörnen. Vinkeln är snett ovanifrån: krönet på bakväggen och kortväggarna syns som smala band i jord3 och jord2 med korn längs plankorna, och framkanten är ett band på 2 punkter i jord1. Formen är spegelsymmetrisk, och bara ljuset skiljer sidorna åt: ljusare krön till vänster och mörkare till höger. Storleken är 15 × 16 punkter och fyller rutan. Hela vaggan har kontur i jord0 och ljust trä och ull, så den syns på gräset och är lägre än kolonisten (14 × 20)."
+  },
+  {
+   "ide": "Smal djup låda som står lodrätt i rutan, omkring 11 punkter bred och 16 hög, med väggar som lutar utåt så att öppningen är bredare än botten och formen är spegelsymmetrisk kring mittlinjen. Medarna löper längs långsidorna och syns som två svängda bågar i jord1 och jord2 som buktar ut till vänster och höger utanför lådans nederdel, med de uppböjda spetsarna synliga upptill och nertill. Ovanifrån ser man ner i lådan på en tjock bädd av ull i ben2 och ben1, där barnets huvud ligger i den övre änden mot bakkanten och kroppen är svept i en filt i ben3, medan framkanten är ett mörkare band på 2 punkter i jord1.",
+   "rader": [
+    "..EG........FE..",
+    "..EEEEEEEEEEEE..",
+    "..EHHGHHHGHGFE..",
+    "..EHFGFGGFFGFE..",
+    "..EHFqFGGFoGFE..",
+    "..EHFqHHHGoGFE..",
+    "..EHFpwwwqoGFE..",
+    "..EHFpwwqwoGFE..",
+    "..EHFpwqwwoGFE..",
+    "..EHFpwwwqoGFE..",
+    "..EHFpqwqqoGFE..",
+    ".EEHFqpqppoGFEE.",
+    "EGEHHGHHGHGGFEFE",
+    "EG.EFGFFGFFFE.FE",
+    "EG..EFFGFFFE..FE",
+    ".EH.EEEEEEEE.FE."
+   ],
+   "om": "Vaggan står lodrätt i rutan. Själva lådan är 12 punkter bred och hela bilden 16 hög. Lådan har kontur i jord0 och en ljus kant i jord3 och jord2 med ljuset från vänster. Insidan är fodrad med ull i ben2 och ben1. Barnet ligger med huvudet mot bakkanten: håret i jord1 och jord2, ansiktet i rost3 och rost2. Kroppen är svept i en filt i ben3 med lite korn i ben2. Framkanten är ett band på 2 punkter i jord1. Medarna i jord2 och jord1 löper längs båda långsidorna med kontur i jord0. De buktar ut utanför lådan i mitten och möter konturen upptill och nertill som uppböjda spetsar. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Granskningen: Ritade om formen efter idén. Den gamla lådan var en fyrkant på 16 punkter, lika bred som kolonisten, så den såg ut som en tavla. Nu är den 12 punkter bred med kanten, 16 hög och lodrät. Väggarna lutar utåt, så framkanten smalnar av till 10 och sedan 8 punkter, och formen är spegelsymmetrisk. Medarna syns: uppböjda spetsar ovanför lådan och två bågar i jord2 (vänster) och jord1 (höger) som buktar ut utanför nederdelen och svänger in vid nedre spetsen. Framkanten är ett band på 2 punkter i jord1. Ljuset kommer uppifrån vänster: vänster kant är i jord3 och höger kant i jord1, och den inre vänsterväggen ligger i skugga. Barnets ansikte var i rost, en mättad ton som drog blicken. Nu har huvudet hår i jord1 och jord2 och ansiktet i jord3, vid bakkanten. Filten är ben3 och ullbädden ben2 och ben1 med ben0 i skuggan. Konturen är jord0 runt allt."
+  },
+  {
+   "ide": "Vågrät låda av plankor med en låg huva vid vänstra änden: två korta lutande plankor i jord2 och jord3 reser sig förkortade vid bakkanten och bildar ett litet tak över barnets huvud, så att silhuetten är högre till vänster och låg och öppen till höger. Kortändarna är höga gavelbrädor med rundade krön och medarna syns som breda böjda stumpar i jord1 under framkantens två hörn, framkanten själv ett band på 3 punkter i jord1 med jord0 som kontur. Under huvan skymtar barnets ansikte i jord3 och ben3 på en kudde av ull, och resten av lådan fylls av ullbädden i ben2 och ben1 med en vikt filt i ben3 över kroppen.",
+   "rader": [
+    "..EEEEE.........",
+    ".EHHHGGE........",
+    "EHHGHGGFE...EEE.",
+    "EHGHGGFFEEEEHHGE",
+    "EHHGGFFFEHHGHGFE",
+    "EGEEEEEEEqpqqpFE",
+    "EHFqwHHqpqwwpqFE",
+    "EHFqHHGqwwwwqpFE",
+    "EGqpqqpwwqwwwqFE",
+    "EGqqpqpqwwwqppFE",
+    "EGpqpppqpqppppFE",
+    "EFFFFFGFFFFFGFFE",
+    "EFFGFFFFFFGFFFFE",
+    "EEEEEEEEEEEEEEEE",
+    ".EFFE......EFFE.",
+    "..EE........EE.."
+   ],
+   "om": "Vaggan, 16 × 16 punkter. Det är en vågrät låda av plankor sedd snett ovanifrån. Vid vänstra änden reser sig en låg huva av två lutande plankor i jord3 och jord2 med kontur i jord0, så silhuetten är högre till vänster. Under huvans takfot skymtar barnets ansikte i ben3 och jord3 på en kudde av ull. Den högra gavelbrädan har ett rundat krön som sticker upp över bakkanten. Bädden är ull i ben2 och ben1, och en vikt filt i ben3 ligger över kroppen. Framkanten är ett band på 3 punkter i jord1 med kontur i jord0, och under hörnen syns medarna som böjda stumpar i jord1. Ljuset kommer från vänster: vänstra väggen är i jord3 och jord2 och den högra i jord1. Granskningen: Ritningen håller i stort. Den är 16 × 16 och rimlig mot kolonisten för en vagga. Vinkeln är snett uppifrån med bädden ovanifrån och huvan förkortad vid bakkanten till vänster. Framkanten är ett band på 3 punkter (två rader jord1 och en rad jord0), och medarna är korta böjda, spegelsymmetriska stumpar under hörnen. Konturen är jord0 och ljuset kommer uppifrån vänster. Den följer idén och syns på gräset. Två små rättelser: den ensamma mörka pricken i ben0 i ullbädden (rad 10) blev ben1, eftersom den bröt mot regeln om inga fläckar. Framkantens övre rad var helt slät jord1 och fick två punkter jord2 som korn."
+  }
+ ]
+}

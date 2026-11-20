@@ -1,0 +1,98 @@
+{
+ "id": "fyrfat",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  "....EEEEEEEE....",
+  "..EEHHHHHHHGEE..",
+  ".EHHEEEEEEEEGGE.",
+  "EHHElmlmtlmlEGGE",
+  "EHElmtsmlmltmEGE",
+  "EHElmtuLutmllEGE",
+  "EGHEmlmlmsulEGFE",
+  ".EGGEEEEEEEEGFE.",
+  "..EGFFFGFFFFFE..",
+  "..EFFFFFFFGFFE..",
+  "..EEEEEEEEEEEE..",
+  "..EGE.EGFE.EFE..",
+  "..EGE.EGFE.EFE..",
+  "..EEE.EEEE.EEE.."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "l": "#2f261d",
+  "m": "#372f25",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ },
+ "versioner": [
+  {
+   "ide": "Ett runt, lågt fat sett snett ovanifrån: öppningen är en bred oval som fyller nästan hela bredden (16 punkter) och ungefär 9 rader. Den har en kant av bränd lera i jord2–jord3 med jord0 som kontur, ljusast uppe till vänster, och ett smalt framkantsband på 2 punkter i jord1 under ovalen. Under bandet syns tre korta fötter som stumpar på 3 punkter, en mitt fram och en vid var sida, symmetriskt placerade. I ovalen ligger kolbitar i kol1–kol2 med glödande sprickor och kanter i rost2, rost3 och en enda punkt senap3 som glans mitt i glöden.",
+   "rader": [
+    "....EEEEEEEE....",
+    "..EEHHHHHHHGEE..",
+    ".EHHEEEEEEEEGGE.",
+    "EHHElmlmtlmlEGGE",
+    "EHElmtsmlmltmEGE",
+    "EHElmtuLutmllEGE",
+    "EGHEmlmlmsulEGFE",
+    ".EGGEEEEEEEEGFE.",
+    "..EGFFFGFFFFFE..",
+    "..EFFFFFFFGFFE..",
+    "..EEEEEEEEEEEE..",
+    "..EGE.EGFE.EFE..",
+    "..EGE.EGFE.EFE..",
+    "..EEE.EEEE.EEE.."
+   ],
+   "om": "Fyrfatet, 16×14 punkter. Ett runt, lågt fat av bränd lera sett snett ovanifrån. Kanten är en bred oval över rad 0–7 i jord3/jord2, ljusast uppe till vänster och mörkare (jord1) nere till höger, med jord0 som kontur. I öppningen ligger kolbitar i kol1/kol2 med glödande sprickor i rost1–rost3 och en enda punkt senap3 som glans mitt i glöden. Under ovalen ligger ett framkantsband på 2 rader i jord1 med en sluten nederkant. Under den står tre korta fötter på 3 rader, en mitt fram och en vid var sida, spegelsymmetriskt placerade. Granskningen: Inget behövde rättas. Bilden är 16 × 14 punkter och fyller rutan; bredvid kolonisten (14 × 20) har den en rimlig storlek. Vinkeln stämmer: fatet ses snett ovanifrån, och öppningen är en bred oval på 8 rader, drygt hälften av höjden. Under den sitter ett framkantsband på 2 rader i jord1 och tre fotstumpar på 3 punkter, en mitt fram och en vid var sida. Silhuetten är spegelsymmetrisk kring mitten; bara ljuset skiljer sidorna åt (jord3 uppe till vänster, jord2–jord1 nere till höger). Konturen är jord0 och aldrig svart. Kolen i kol1–kol2 är riktigt svarta, så de tonerna är rätt här. Glöden i rost2–rost3 har en enda glanspunkt i senap3 och är bildens enda starka färg, som sig bör för elden. Kanten i jord2–jord3 är ljusare än gräset i oliv och barr, så fatet syns på marken. Bilden följer idén."
+  },
+  {
+   "ide": "Ett fyrkantigt fat med rundade hörn, som ett lågt lertråg: ovansidan är en bred rektangel på omkring 14×8 punkter ritad ovanifrån, med en tjock kant på 2 punkter i jord2–jord3 och kontur i jord0. Framkanten är ett rakt band på 3 punkter i jord1 med ett grovt korn. Tre fötter syns som klumpiga stumpar på 4 punkter: två under de främre hörnen och den bakre som en kort skymt mitt under bakkanten. Glöden fyller den rektangulära gropen som ett jämnt lager kol i kol1–kol2, med rost2 och rost3 som lyser mellan bitarna och tätast i mitten.",
+   "rader": [
+    "..EEEEEEEEEEEE..",
+    ".EHHHGHHHHGHHGE.",
+    "EHGlmllmsllmlGFE",
+    "EHGmltmutmslmGFE",
+    "EHHlsutuutmtlGFE",
+    "EGHmlmtstlmlmGFE",
+    "EHGGHGGGHGGGHGFE",
+    "EFGFFFGFFFFGFFFE",
+    "EFFFGFFFFGFFFFFE",
+    ".EFFGFFGFFFFGFE.",
+    "..EEEEEEEEEEEE..",
+    ".EGFE......EGFE.",
+    ".EGFE......EFFE.",
+    ".EEEE......EEEE."
+   ],
+   "om": "Fyrfatet som ett lågt fyrkantigt lertråg med rundade hörn, 16×14 punkter. Ovansidan är omkring 16×7 punkter ovanifrån med en kant i jord2–jord3 (ljusare till vänster, jord1 längst till höger) och kontur i jord0. Gropen är 10×4 punkter kol i kol1–kol2, där rost2 och rost3 lyser tätast i mitten. Framkanten är ett rakt band på 3 rader i jord1 med grovt korn av jord2 och jord0. Två klumpiga fötter på 4 punkter står under de främre hörnen, och den bakre syns som en kort, mörkare skymt mitt emellan dem. Granskningen: Den mittersta foten under framkanten är borttagen. Den stod som ett tredje framben, men den bakre foten står under bakkanten och döljs av fatet när det ses snett uppifrån. Enligt regeln syns bara de främre fötterna. De mörka jord0-prickarna i framkantens band (rad 7, 8 och 9) är bytta mot jord1 och jord2, så att bandet har korn utan fläckar. Resten fungerar och är oförändrat: storleken (16×14, låg bredvid kolonisten), ytan ovanifrån på 7 rader med framkantens band på 3 punkter, de rundade hörnen och fötterna, som är spegelsymmetriska, den ljusa jordkanten som syns mot gräset och glöden, som är tätast i mitten."
+  },
+  {
+   "ide": "Ett djupare runt fat med två utstående öron, ett på var sida, som gör silhuetten bredare än hög: öppningen är en mindre oval på omkring 11×6 punkter och fatets buk syns som ett välvt band på 3 punkter under den, i jord1–jord2 med jord0 som kontur. Öronen är små platta flikar på 2–3 punkter vid ovalens ändar, ljusa på vänster sida och mörkare på höger, och formen är spegelsymmetrisk. Under buken står två främre fötter som korta stumpar på 3 punkter, och glöden ligger kupad över kanten med kol1 och en kärna av rost3 och senap2 i mitten.",
+   "rader": [
+    "......lmml......",
+    ".....lmuKml.....",
+    "....EGluLKFE....",
+    ".EEHlmtuKKsmFEE.",
+    "EHGlmsuLKtsmlFFE",
+    ".EGmlstKusmllFE.",
+    "..EGHlmllmlFFE..",
+    "..EHHGHGGGFGFE..",
+    "..EGGFGGFGFFFE..",
+    "...EGFGFFGFFE...",
+    "....EEFFFFEE....",
+    ".....EGEEFE.....",
+    ".....EG..FE.....",
+    ".....EE..EE....."
+   ],
+   "om": "Fyrfatet, 16×14: ett djupt runt lerfat. Glöden ligger kupad över bakkanten (rad 0–2) och fyller öppningen, som är en oval på omkring 12×6 punkter (rad 2–7). Glöden är kol1/kol2 med en kärna av rost3 och senap2–3 i mitten, och kol0 bara som svart kol nere till höger. Öronen är platta flikar vid ovalens ändar på rad 3–5: jord3 till vänster och jord1 till höger. Under den ljusa främre läppen syns buken som ett välvt band på tre rader i jord2/jord1, med jord0 som kontur. Två främre fötter står som stumpar på 3 punkter. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Granskningen: Storleken (16 × 14), vinkeln (glöden ovanifrån i öppningen, läppen som ljust band och buken på 3 punkter under), den spegelsymmetriska silhuetten, öronen (ljusa till vänster, mörka till höger) och de två fotstumparna på 3 punkter följer reglerna och idén. Det jag har rättat: Kolen var ritad med kol0 (k). Den tonen är förbehållen det som är helt svart, och idén anger kol1, så jag har bytt till kol1 (l). I rad 2 saknade högra sidan sin lerkant, så jag har lagt en jord1-punkt där och öppningens kant läses nu runt om. Glöden hade tre punkter senap3, vilket bröt mot regeln om högst två glanspunkter. Den mittersta är nu senap2, så kärnan är rost3 och senap2 med två ljuspunkter."
+  }
+ ]
+}

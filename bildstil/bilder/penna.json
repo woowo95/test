@@ -1,0 +1,83 @@
+{
+ "id": "penna",
+ "w": 11,
+ "h": 11,
+ "rader": [
+  ".......ooo.",
+  "......owwpo",
+  ".....owqwpo",
+  "....owqwpo.",
+  "...oqwwpo..",
+  "..oqwwpo...",
+  "..oqwpo....",
+  "..owpo.....",
+  ".oqo.......",
+  "oqo........",
+  "Fo........."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "l": "#2f261d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ },
+ "versioner": [
+  {
+   "ide": "Rak gåsfjäder på diagonalen: spolen börjar som en snedskuren spets i nedre vänstra hörnet och fanet löper rakt upp mot övre högra hörnet, en smal droppform som är bredast (3 punkter) i övre tredjedelen och slutar i en rundad topp. Fanet ritas i ben3, ben2 och ben1 med korn längs fjäderns längd, konturen i ben0, och skaftet är en ljus linje i ben3 genom mitten med ben1 under; spetsen är 2 punkter bar spole i ben2 med den snedskurna kanten markerad av en enda punkt jord1 som bläckrest. Fjädern ligger platt så som en kolonist håller den mellan fingrarna, och sidorna av fanet är nästan lika men ljusare på övre vänstra sidan.",
+   "rader": [
+    ".......ooo.",
+    "......owwpo",
+    ".....owqwpo",
+    "....owqwpo.",
+    "...oqwwpo..",
+    "..oqwwpo...",
+    "..oqwpo....",
+    "..owpo.....",
+    ".oqo.......",
+    "oqo........",
+    "Fo........."
+   ],
+   "om": "Fjäderpennan ligger rakt på diagonalen från nedre vänstra till övre högra hörnet och fyller rutan på 11×11 punkter. Fanet är en smal droppform med rundad topp. Det är bredast (4 punkter inuti konturen) i den övre tredjedelen och smalnar av nedåt. Konturen runt fanet är i ben0. Skaftet är en ljus linje i ben3 genom mitten med ben1 direkt under. Övre vänstra sidan av fanet har ben3 och ben2 i korn längs fjädern, nedre högra sidan ben1, så ljuset kommer uppifrån vänster. Spetsen är 2 punkter bar spole i ben2 och slutar i en enda punkt jord1 som bläckrest i det snedskurna hörnet. Granskningen: Oförändrad. Fjädern ligger rakt på diagonalen från nedre vänstra till övre högra hörnet och fyller rutan på 11 × 11. Skaftet i ben3 löper obrutet genom mitten, med ben1 på den skuggade nedre högra sidan, så ljuset faller från övre vänster. Fanet har korn i ben3 och ben2 och kontur i ben0, materialets mörkaste ton. Spolen är bar ben2 och slutar i en snedskuren spets med en enda punkt jord1 som bläckrest. Toppen är rundad och sidorna nästan lika, vilket stämmer med idén. Det ljusa fanet med ben0-kontur syns tydligt mot det olivgröna gräset. Fanet är visserligen 4 punkter brett mitt på i stället för 3, men det gör silhuetten tydligare i liten storlek. Storleken mot kolonisten följer kortets mått."
+  },
+  {
+   "ide": "Svängd vingpenna: fjädern följer samma diagonal från nedre vänster till övre höger men böjer sig i en mjuk båge uppåt-vänster, så att silhuetten blir en krökt skära i stället för en rak sticka. Fanet är asymmetriskt som på en riktig vingfjäder, smalt (1 punkt) på den yttre sidan och brett (2–3 punkter) på den inre, i ben2 och ben3 med ben0 som kontur och skaftet i ben3; spolens nedersta 3 punkter är bara, i ben1, och slutar i en skarp sned spets. Toppen har ett litet hack där fanet delat sig, två punkter ben0, som ger fjädern liv utan många detaljer.",
+   "rader": [
+    "......oooo.",
+    ".....oqwqqo",
+    ".....oqwqoo",
+    "....oqwqoqo",
+    "....oqwqqo.",
+    "...oqwqqpo.",
+    "..oqwqqpo..",
+    ".oqwqpo....",
+    ".opooo.....",
+    "opo........",
+    "po........."
+   ],
+   "om": "Svängd vingpenna i 11×11. Skaftet (ben3) går i en båge från spetsen nere till vänster upp mot övre höger. Nertill är det brant och upptill nästan vågrätt, så silhuetten blir en krökt skära och inte en rak sticka. Fanet är asymmetriskt: en punkt på den yttre sidan uppe till vänster och två till tre punkter på den inre sidan nere till höger. Det är ritat i ben2 och ben3, med ben1 som skugga nere till höger och ben0 som kontur. Spolens nedersta tre punkter är bara, i ben1, och slutar i en sned spets i hörnet. Uppe till höger har fanet ett litet hack: två ben0-punkter där det delat sig. Granskningen: Ritningen följde reglerna: ben0-kontur, ljus från övre vänster, ljus mot gräset och storlek i proportion till kolonisten. Däremot var den nästan helt rak, medan idén ville ha en krökt skära. Jag har låtit skaftet resa sig brantare i de övre fem raderna (skaftkolumnerna går nu 0,1,2,3,4,5,6,6,7,7 nedifrån), så att fjädern böjer sig mjukt uppåt-vänster. Spolen och spetsen i ben1 är oförändrade. Fanet är kvar asymmetriskt, 1 punkt q på yttersidan och 2–3 punkter q/p på innersidan. Hacket med två ben0-punkter sitter kvar på innersidan nära toppen. Toppkonturen är förlängd ett steg åt vänster så att den slutna toppen fortfarande har kontur. Storleken är fortfarande 11 × 11."
+  },
+  {
+   "ide": "Strimmad fjäder med kort fan och lång spole: den nedre halvan av diagonalen är en bar, rak spole i ben2 och ben1 med en tydlig snedskuren, mörkare spets (jord0 och kol1 som torkat bläck i yttersta punkten), och den övre halvan är ett kort, brett och flikigt fan. Fanet är ljust i ben3 och ben2 men har två eller tre tvärstrimmor i jord2 och G-toner som på en vild fågelfjäder (höna eller vråk), konturen i ben0 längs fanet och jord1 runt spolen. Silhuetten blir en fjäderviska på ett skaft, lätt att skilja från en kniv eller ett spö i liten storlek.",
+   "rader": [
+    "........owo",
+    "......oGwqo",
+    ".....owwGqo",
+    ".....oGqqGo",
+    "....owqGpo.",
+    "....Fqqpoo.",
+    "...FpFoo...",
+    "..FqF......",
+    ".FpF.......",
+    "EqF........",
+    "lE........."
+   ],
+   "om": "Fjäderpennan går snett från nedre vänstra till övre högra hörnet. Den nedre halvan är en bar, rak spole med en ljus kärna i ben2 och ben1 och kontur i jord1. Spetsen är snedskuren och mörk: jord0 och längst ut kol1, som torkat bläck. Den övre halvan är ett kort, brett fan i ben3 och ben2 med kontur i ben0. Fanet har en flik som sticker ut åt nedre högra kanten och två tvärstrimmor i jord2 tvärs över fanet, som på en vild fågelfjäder. Ljuset kommer uppifrån vänster, så fanets övre vänstra sida är ljusast. Granskningen: Ritningen följer i stort reglerna och idén. Storleken är 11 × 11 och passar som sak bredvid kolonisten. Spolen är rak och diagonal, i ben2 och ben1 med kontur i jord1. Spetsen är snedskuren och mörk (jord0, kol1 ytterst som bläck). Fanet är ljust med två tvärstrimmor i jord2, och ljuset faller uppifrån vänster: w och q uppe till vänster, p nere till höger. Konturen i ben0 och jord1 skiljer den från gräset. En fjäder är inte spegelsymmetrisk, så det sneda fanet får vara. En sak rättade jag: fanets högra kant var en rak lodrät linje av ben0 i fem rader, vilket gjorde fanet blockigt i stället för flikigt. Jag tog bort hörnpunkten på rad 5 (längst till höger) och flyttade konturen ett steg in (p blev o). Det ger en liten flik i kanten, som idén beskriver, och en mer fjäderlik silhuett. Allt annat är oförändrat."
+  }
+ ]
+}
