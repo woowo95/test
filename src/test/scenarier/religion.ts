@@ -8,6 +8,8 @@ import { setByn } from '../../ui/lage';
 import { religion } from '../../ui/flikar/religion';
 import { esc, hjalpKlick } from '../../ui/hjalp';
 
+// p ser tecknet k en gång per 25 timmar tills hen har en tro (högst 50 gånger)
+const faTro = (s: SIM.State, p: Person, k: Parameters<typeof SIM.tecken>[2]) => { for (let i = 0; i < 50 && p.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, p, k); } };
 SCENARIER.andlighet = {
   text: 'Andligheten (steg 4.1.1.1): alla har en mellan 0 och 100, grundarna spridda över hela skalan, barnen delvis som föräldrarna, och den syns först när den första tron finns',
   kor: () => {
@@ -224,7 +226,7 @@ SCENARIER.tronamn = {
     const s = createState(9, START);
     const ny = (k: SIM.TeckenTyp) => {
       const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      faTro(s, a, k);
       return a;
     };
     const a = ny('blixt'), tr = SIM.troOf(s, a.tro)!;
@@ -272,7 +274,7 @@ SCENARIER.fragetecken = {
     setByn(s);
     const ny = (k: SIM.TeckenTyp, n: number) => {
       const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      faTro(s, a, k);
       const tr = SIM.troOf(s, a.tro)!;
       for (let j = 1; j < n; j++) nyInvanare(s, 'm', 30).tro = tr.id;
       SIM.stepReligion(s);
@@ -302,7 +304,7 @@ SCENARIER.trotext = {
   kor: () => {
     const s = createState(9, START);
     const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-    for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, 'blixt'); }
+    faTro(s, a, 'blixt');
     const tr = SIM.troOf(s, a.tro)!;
     if (!tr) return [['en tro uppstod', false]];
     for (let j = 0; j < 6; j++) nyInvanare(s, 'm', 30).tro = tr.id;
@@ -328,7 +330,7 @@ SCENARIER.religionsflik = {
     const fore = religion.syns!();
     const ny = (k: SIM.TeckenTyp, n: number) => {
       const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      faTro(s, a, k);
       const tr = SIM.troOf(s, a.tro)!;
       for (let j = 1; j < n; j++) nyInvanare(s, 'm', 30).tro = tr.id;
       SIM.stepReligion(s);
@@ -371,7 +373,7 @@ SCENARIER.trostyngd = {
   kor: () => {
     const s = createState(9, START);
     const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-    for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, 'blixt'); }
+    faTro(s, a, 'blixt');
     const tr = SIM.troOf(s, a.tro)!, folk = [a];
     while (folk.length < 10) { const p = nyInvanare(s, 'm', 30); p.andlig = 50; p.tro = tr.id; folk.push(p); }
     for (const p of folk) p.troStyrka = 100;
@@ -404,7 +406,7 @@ SCENARIER.trostyngd = {
     const prastFore = SIM.skalaSyns(s, 'prast'); tr.prast = folk[1].id; SIM.stepReligion(s); const prastEfter = SIM.skalaSyns(s, 'prast');
     const oppenFore = SIM.skalaSyns(s, 'oppen');
     const b = nyInvanare(s, 'm', 40); b.andlig = 100;
-    for (let i = 0; i < 50 && b.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, b, 'brand'); }
+    faTro(s, b, 'brand');
     SIM.stepReligion(s);
     const oppen = SIM.skalaSyns(s, 'oppen');
     const f = (x: number) => x.toFixed(2);
@@ -434,7 +436,7 @@ SCENARIER.gudar = {
     // en tro ur tecknet k med skalorna natur och manga, och tre som tror
     const nyTro = (k: SIM.TeckenTyp, natur: number, manga: number) => {
       const a = nyInvanare(s, 'k', 30); a.andlig = 100;
-      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      faTro(s, a, k);
       const tr = SIM.troOf(s, a.tro)!; tr.natur = natur; tr.manga = manga;
       for (let i = 0; i < 2; i++) { const p = nyInvanare(s, 'm', 30); p.andlig = 50; p.tro = tr.id; }
       SIM.stepReligion(s);
