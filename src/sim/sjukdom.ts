@@ -151,8 +151,9 @@ export function foljd(p: Person, now: number, k: 'feber' | 'hosta' | 'diarre') {
   if (!p.sjuk || !isSick(p, now)) return 0;
   return (SJUKDOMAR[p.sjuk.k].foljd[k] ?? 0) * (0.5 + 0.5 * p.sjuk.grad);
 }
-// svårt sjuk: sjukdomen har kommit över hälften (upplevelserna, uppvaxt.ts), eller den gamla klockan
-export const svartSjukNu = (p: Person, now: number) => isSick(p, now) && (!p.sjuk || p.sjuk.grad >= 0.5);
+// svårt sjuk: sjukdomen har kommit så långt att den sjuke lägger sig också utan feber (SJUK.ligga, steg 12.1.46), eller den gamla
+// klockan. Loggen (steg.ts) och upplevelserna (uppvaxt.ts) frågar här
+export const svartSjukNu = (p: Person, now: number) => isSick(p, now) && (!p.sjuk || p.sjuk.grad >= SJUK.ligga);
 // den sjuke lägger sig när febern är hög eller sjukdomen kommit långt (val.ts); annars arbetar hen med det hen orkar
 export const ligger = (p: Person, now: number) => isSick(p, now) && (!p.sjuk || !!SJUKDOMAR[p.sjuk.k].foljd.feber && p.sjuk.grad >= SJUK.vilaFran || p.sjuk.grad >= SJUK.ligga);
 // hur mycket den sjuke orkar i arbetet (1 för den som är frisk)

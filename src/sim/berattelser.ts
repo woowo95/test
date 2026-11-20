@@ -2183,7 +2183,7 @@ const MDEF = {
   l_svartSjuk: [
     '{namn} blev svårt sjuk.',
     'En svår sjukdom har drabbat {namn}.',
-    '{namn} ligger med feber och orkar inte resa sig.',
+    { t: '{namn} ligger med feber och orkar inte resa sig.', om: f => f.feber === true },
     '{namn} är mycket sjuk, och de andra oroar sig.',
     { t: 'Kylan tog {namn}, som blev svårt sjuk.', om: f => !!f.kallt },
     '{namn} har blivit svårt sjuk.',

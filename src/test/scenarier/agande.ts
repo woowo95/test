@@ -1136,7 +1136,7 @@ function byHandel(): [string, boolean][] {
   const skinn = t.projektSaknar?.skinn?.beh ?? 0;
   setAmount(t, 'skinn', skinn); setAmount(t, 'torrfisk', 120); setAmount(t, 'silver', 0);
   SIM.projektSaknarRakna(t);
-  const utan = cloneState(t); utan.projektSaknar = undefined;
+  const utan = cloneState(t); utan.projektSaknar = undefined; setAmount(utan, 'skinn', skinn + 1); // en till: det sista behålls ändå (steg 12.1.48)
   const annars = SIM.bynPart(utan, 30, 30).over([]).some(w => w.k === 'skinn'); // utan projekten hade byn sålt skinnen
   g.varor = []; g.silver = 40;
   kannerPriser(t, g);

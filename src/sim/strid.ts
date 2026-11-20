@@ -1079,6 +1079,9 @@ export const SLAGSMAL = balans('slagsmal', {
   lekOp: 2, // ... och stiger så här mycket efter en lek
   vann: 0.15, forlora: 0.2, tankeTim: 8, // tanken efter att ha vunnit eller förlorat, och hur många timmar den varar
   minst: 20, // den som slåss står kvar minst så här många sekunder (striden tar tid också när den är kort)
+  storlek: 4, // (steg 12.1.47) chansen att ett gräl blir ett slagsmål gånger den mindres storlek mot den störres upphöjt till detta (storleken: åldern mot vuxen)
+  smaBarn: 7, // ... och ett barn yngre än så här slåss inte på kartan utan gråter
+  grat: 0.2, gratTim: 2, // tanken hos barnet som grät efter grälet, och hur många timmar den varar
 });
 // svårt skadad efter striden (krönikan, steg 3.7.16): föll av smärtan, eller en skada som är svår i personrutan (HALSA.avbryt)
 export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.some(w => w.g >= HALSA.avbryt); }

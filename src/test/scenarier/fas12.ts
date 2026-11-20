@@ -1,6 +1,6 @@
 // Scenarier för fas 12: myren och järnet.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setItems, setMat, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, setItems, setMat, tandEld, tandOchFlinta } from './hjalp';
 import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
@@ -1010,6 +1010,200 @@ SCENARIER.las = {
       [`dörren ersätter trädörren (${hangd}) och tar låset (${lasKvar} kvar)`, hangd === 'lasdorr' && lasKvar === 0],
       [`när huset är tomt är den låsta dörren bommad (${lastBom}), trädörren inte (${traBom})`, lastBom && !traBom],
       [`en fånge bryter sig ut på ${minTra} minuter genom trädörren och ${minLas} genom den låsta`, minTra === 20 && minLas === 40],
+    ];
+  },
+};
+
+// steg 12.1.45: barnets hjälp väljs med samma poäng som de vuxnas rader, och fattas inget leker barnet
+SCENARIER.barnhjalp = {
+  text: 'Barnens hjälp följer behovet (steg 12.1.45): när veden och maten räcker länge hjälper barnen inte till med dem, och när veden är slut hjälper de till med veden och säger det',
+  kor: () => {
+    const prov = (ved: number) => {
+      const s = SIM.createState(1, START); klockan(s, 10); tandEld(s); tandOchFlinta(s);
+      setFood(s, 3000); SIM.setAmount(s, 'ved', ved);
+      const barn = nyInvanare(s, 'k', SIM.ALDER.vuxen - 2);
+      const varv: string[] = [];
+      for (let i = 0; i < 200; i++) {
+        Object.assign(barn, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, task: undefined });
+        SIM.chooseTask(s, barn);
+        varv.push(`${barn.task?.act}|${barn.task?.why ?? ''}`);
+        s.now += 7 * 60000;
+        if (new Date(s.now).getUTCHours() >= 16) klockan(s, 10);
+      }
+      return varv;
+    };
+    const full = prov(3000), tom = prov(0);
+    const vedFull = full.filter(r => r.includes('Hjälper till') && r.includes('ved')), vedTom = tom.filter(r => r.includes('Hjälper till. Byn behöver ved'));
+    const lekFull = full.filter(r => r.startsWith('leka|')).length, hjalpFull = full.filter(r => r.includes('Hjälper till'));
+    return [
+      [`veden räcker länge: inget barn hjälper till med veden (${vedFull.length} av ${full.length}${vedFull[0] ? `, t.ex. ${vedFull[0]}` : ''})`, vedFull.length === 0],
+      [`förråden räcker: barnet hjälper inte till (${hjalpFull.length} av ${full.length}${hjalpFull[0] ? `, t.ex. ${hjalpFull[0]}` : ''}) utan leker (${lekFull})`, hjalpFull.length === 0 && lekFull > full.length / 2],
+      [`veden är slut: barnet hjälper till med veden och säger det (${vedTom.length} av ${tom.length})`, vedTom.length > 0],
+    ];
+  },
+};
+
+// steg 12.1.46: skadan och sjukdomen är en faktor i lusten till sport, lek och förbättringar, och orden stämmer med kroppen
+SCENARIER.sjukvila = {
+  text: 'Den som är sjuk eller skadad vilar (steg 12.1.46): skadan och sjukdomen sänker lusten till sport, lek och det som inte brådskar efter hur svår den är, den som vilar för sjukdomen står som sjuk, och "svårt sjuk" skrivs först när sjukdomen är så svår att hen lägger sig',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10); tandEld(s); tandOchFlinta(s); setFood(s, 3000); SIM.setAmount(s, 'ved', 3000);
+    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const [frisk, latt, svar, sjuk] = vuxna;
+    const kl = (p: SIM.Person) => SIM.kroppLust(p, s.now);
+    const sv = (p: SIM.Person) => SIM.sportVikt(s, p, 1);
+    // den sjuke med tydliga tecken vilar, och står som sjuk
+    SIM.insjukna(s, sjuk, 'magsjuka'); sjuk.sjuk!.tecken = s.now; sjuk.sjuk!.st = 0; sjuk.sjuk!.grad = SIM.SJUK.vilaFran + 0.05;
+    Object.assign(sjuk, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, task: undefined });
+    SIM.chooseTask(s, sjuk);
+    const varfor = sjuk.task?.why ?? '';
+    // såren efter den sjukes val, så att ingen vård går före vilan
+    SIM.skada(s, latt, 'armV', 'skarsar', 0.15, 'olycka', 'i skogen');
+    SIM.skada(s, svar, 'bal', 'skarsar', 0.9, 'olycka', 'i skogen'); SIM.skada(s, svar, 'benV', 'skarsar', 0.9, 'olycka', 'i skogen');
+    const halvt = SIM.svartSjukNu(sjuk, s.now);
+    sjuk.sjuk!.grad = SIM.SJUK.ligga; const helt = SIM.svartSjukNu(sjuk, s.now);
+    // "ligger med feber" bara för en sjukdom med feber
+    const feberUtan = SIM.valjVariant(s, 'l_svartSjuk', 1, { namn: 'X', feber: false });
+    let feberText = 0; for (let n = 0; n < 200; n++) if (String(SIM.valjVariant(s, 'l_svartSjuk', n, { namn: 'X', feber: false })).includes('feber')) feberText++;
+    return [
+      [`den friska vill fullt ut (${kl(frisk).toFixed(2)})`, kl(frisk) === 1],
+      [`den lätt skadade vill mindre (${kl(latt).toFixed(2)}), och sporten lockar mindre (${sv(latt).toFixed(3)} mot ${sv(frisk).toFixed(3)})`, kl(latt) > 0 && kl(latt) < 1 && sv(latt) <= sv(frisk)],
+      [`den svårt skadade vill inte alls (${kl(svar).toFixed(2)}) och spelar inte (${sv(svar)})`, kl(svar) === 0 && sv(svar) === 0],
+      [`den sjuke vilar och står som sjuk: "${varfor}"`, sjuk.task?.act === 'vila' && varfor === 'Är sjuk och vilar'],
+      [`"svårt sjuk" först när den sjuke lägger sig (grad ${SIM.SJUK.vilaFran + 0.05}: ${halvt}, grad ${SIM.SJUK.ligga}: ${helt})`, !halvt && helt],
+      [`utan feber står det inget om feber (${feberText} av 200, t.ex. ${JSON.stringify(feberUtan)})`, feberText === 0],
+    ];
+  },
+};
+
+// steg 12.1.47: åldern och storleken vägs in i viljan att slåss
+SCENARIER.barnslagsmal = {
+  text: 'Åldern i slagsmålen (steg 12.1.47): ett gräl mellan två vuxna blir oftare ett slagsmål än ett mellan en vuxen och ett barn på åtta år, och ett barn på fyra år slåss inte utan gråter',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const vuxen = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const [a, b] = vuxen, atta = nyInvanare(s, 'k', 8), fyra = nyInvanare(s, 'm', 4);
+    const t0 = s.now;
+    const prov = (x: SIM.Person, y: SIM.Person) => {
+      let n = 0;
+      s.now = t0; // åldrarna står still: 4000 försök på en minut var
+      for (let i = 0; i < 4000; i++) {
+        s.kartStrider = []; for (const q of [x, y]) q.task = undefined;
+        SIM.gralBlirSlagsmal(s, x, y);
+        if (SIM.kartStridAv(s, x)) n++;
+        s.now += 1000;
+      }
+      s.kartStrider = [];
+      return n;
+    };
+    const grat0 = s.stat?.gralGrat ?? 0;
+    const vv = prov(a, b), vb = prov(a, atta), bv = prov(atta, a), v4 = prov(a, fyra);
+    const grat = (s.stat?.gralGrat ?? 0) - grat0;
+    return [
+      [`två vuxna slåss ibland efter ett gräl (${vv} av 4000)`, vv > 20],
+      [`en vuxen och ett barn på åtta år mycket mer sällan (${vb} och ${bv} av 4000)`, vb + bv < (vv * 2) / 5],
+      [`ett barn på fyra år slåss inte (${v4} av 4000)${grat ? `, och har gråtit ${grat} gånger` : ''}`, v4 === 0],
+    ];
+  },
+};
+
+// steg 12.1.48: byn köper så många som den tar emot innan det blir över, och handelns ord stämmer
+SCENARIER.handelretur = {
+  text: 'Handeln köper det byn vill ha (steg 12.1.48): byn köper av en sak den saknar bara så många som den tar emot innan det blir över, så att det just köpta inte säljs tillbaka, och handelns text har rätt artikel och flertal och måltidens nivå som ett ord',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const M = SIM.bynPart(s, SIM.eldPlats(s).x, SIM.eldPlats(s).y);
+    const slag = ['rovfron', 'artfron', 'appelplanta', 'jordgubbsplanta', 'rep', 'salt', 'bar', 'rotter', 'ved'].filter(k => SIM.SAKER[k]);
+    const fel: string[] = [], kop: string[] = [];
+    for (const k of slag) {
+      SIM.setAmount(s, k, 0);
+      const n = Math.min(20, SIM.bynKopAntal(s, k)); // handlaren har 20
+      SIM.setAmount(s, k, n);
+      const over = M.over(['silver']).find(w => w.k === k)?.n ?? 0;
+      kop.push(`${k} ${n}`);
+      if (n < 1 || over > 0) fel.push(`${k}: köper ${n}, sedan över ${over}`);
+    }
+    const ratt = Object.keys(SIM.SAKER).find(k => SIM.SAKER[k]?.namn.endsWith(' · Fin'))!;
+    const ord = SIM.varorText([{ k: 'jordgubbsplanta', n: 1 }, { k: 'appelplanta', n: 1 }, { k: 'remsa', n: 4 }, { k: 'rokelse', n: 2 }, { k: ratt, n: 7 }]);
+    return [
+      [`det köpta är inte över efteråt (${kop.join(', ')})${fel.length ? `: ${fel.join('; ')}` : ''}`, !fel.length],
+      [`orden: "${ord}"`, ord.includes('en jordgubbsplanta') && ord.includes('en äppelplanta') && ord.includes('fyra remsor') && ord.includes('två bitar rökelse') && /sju portioner fin \S+/.test(ord) && !ord.includes('·')],
+    ];
+  },
+};
+
+// steg 12.1.49: det som flyttas till en bättre lagerplats läggs bara där, och redskapet som tagits upp bärs till förrådet
+SCENARIER.barretur = {
+  text: 'Det som bärs i onödan (steg 12.1.49): ved som flyttas ur en lagerplats bärs till en bättre lagerplats bara om den har plats, räknat som när flytten valdes, annars läggs den tillbaka där den låg; den som tagit upp ett redskap bär det till förrådet',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const z0 = SIM.zonesOf(s)[0];
+    s.lagren = [{ x: z0.x, y: z0.y, w: 2, h: 1, namn: 'Nära', prio: 1 }, { x: z0.x, y: z0.y + 1, w: 2, h: 1, namn: 'Längre bort', prio: 0 }];
+    s.stackar = [];
+    const t = { act: 'bara', phase: 'do', tx: z0.x + 0.5, ty: z0.y + 1.5, until: s.now, carry: 0, why: '', items: { ved: 5 } } as unknown as SIM.Task;
+    const tom = SIM.backSpot(s, t);
+    // den bättre lagerplatsen fylls med något annat: veden läggs tillbaka där den låg
+    for (let x = z0.x; x < z0.x + 2; x++) SIM.stacksOf(s).push({ k: 'sten', n: SIM.rymd(s, x, z0.y, 'sten'), c: 1, x, y: z0.y });
+    const full = SIM.backSpot(s, t);
+    // redskapet: den som bara bär en yxa hem går ändå tillbaka, och lägger den i förrådet
+    const p = SIM.living(s)[0], yxa = SIM.newTing(s, 'yxa', 1, 0);
+    yxa.x = yxa.y = undefined; yxa.lass = p.id;
+    const r = { act: 'bara', phase: 'do', tx: z0.x + 8.5, ty: z0.y + 8.5, until: s.now, carry: 0, why: '', ting: [yxa.id] } as unknown as SIM.Task;
+    return [
+      [`med plats i den bättre lagerplatsen bärs veden dit (${tom.x}, ${tom.y})`, Math.floor(tom.y) === z0.y],
+      [`när den är full läggs veden tillbaka där den låg (${full.x}, ${full.y})`, full.x === z0.x + 0.5 && full.y === z0.y + 1.5],
+      ['den som bär ett redskap går tillbaka med det', SIM.barHem(r) && !SIM.isCarrying(r)],
+    ];
+  },
+};
+
+// steg 12.1.52: grenarna växer inte över taket
+SCENARIER.grenartak = {
+  text: 'Grenarna över taket (steg 12.1.52): grenarna som inte behövs till tändningen eldas före veden, bränsle som inte fick plats på elden går tillbaka som ved och inte som grenar, och grenarna från en stam lämnas på marken när byn har grenar till taket och ved så det räcker',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10); tandEld(s);
+    const tak = SIM.materialTak(s, 'grenar'), buf = SIM.tandBuffert(s, 'grenar');
+    SIM.setAmount(s, 'ved', 200); SIM.setAmount(s, 'grenar', Math.ceil(tak * 5));
+    const g0 = SIM.amountOf(s, 'grenar'), v0 = SIM.amountOf(s, 'ved');
+    const fick = SIM.takeFuel(s, 4);
+    const g1 = SIM.amountOf(s, 'grenar'), v1 = SIM.amountOf(s, 'ved');
+    // när grenarna är nere vid bufferten tas veden
+    SIM.setAmount(s, 'grenar', Math.ceil(buf)); SIM.takeFuel(s, 4); const g2 = SIM.amountOf(s, 'grenar'), v2 = SIM.amountOf(s, 'ved');
+    // tillbaka: 2,5 ved blir två vedträn och en gren
+    SIM.setAmount(s, 'ved', 10); SIM.setAmount(s, 'grenar', 0); SIM.giveBack(s, 2.5);
+    const tillbaka = `${SIM.amountOf(s, 'ved') - 10} ved och ${SIM.amountOf(s, 'grenar')} grenar`;
+    // stammen
+    const t = { act: 'hugga', phase: 'do', tx: 0, ty: 0, until: s.now, carry: 0, why: '' } as unknown as SIM.Task;
+    SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const lamnas = !SIM.grenarMed(s, t);
+    SIM.setAmount(s, 'grenar', 0); const tas = SIM.grenarMed(s, t);
+    SIM.setAmount(s, 'ved', 0); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const vedBrist = SIM.grenarMed(s, t);
+    return [
+      [`grenarna över bufferten eldas först (grenar ${g0} → ${g1}, ved ${v0} → ${v1}, fick ${fick.toFixed(1)})`, g1 < g0 && v1 === v0 && Math.abs(fick - 4) < 0.5],
+      [`vid bufferten tas veden (grenar ${g2}, ved ${v2})`, g2 === Math.ceil(buf) && v2 < 200],
+      [`det som inte fick plats går tillbaka som ${tillbaka}`, tillbaka === '2 ved och 1 grenar'],
+      [`grenarna från stammen: lämnas när de räcker (${lamnas}), tas när de fattas (${tas}) och när veden fattas (${vedBrist})`, lamnas && tas && vedBrist],
+    ];
+  },
+};
+
+// steg 12.1.53: det de andra redan klyver räknas med i virkets värde
+SCENARIER.virkeklyv = {
+  text: 'Många klyver virke samtidigt (steg 12.1.53): virkets värde för den som väljer räknar med det de andra redan klyver, så att antalet som klyver följer hur mycket som fattas och hur mycket var och en bär hem',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    SIM.setAmount(s, 'virke', 0);
+    const folk = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = folk[0], andra = folk.slice(1);
+    (s as { arbBehov?: unknown }).arbBehov = { mal: { virke: { b: andra.length, t: 20 } } }; // byn vill ha lika många virke som de andra vuxna, och ingen har börjat
+    const fam = SIM.familjOf(s, p.id), om = SIM.omtanke(s, p);
+    const varde = () => SIM.personVarde(s, 'virke', fam, om, p);
+    const klyver = (n: number) => andra.forEach((q, i) => { q.task = i < n ? { act: 'klyva', phase: 'do', tx: q.x, ty: q.y, until: s.now + 3600000, carry: 0, why: '' } as SIM.Task : undefined; });
+    klyver(0); const v0 = varde();
+    klyver(2); const v2 = varde();
+    klyver(andra.length); const v4 = varde();
+    return [
+      [`ingen klyver: virket är värt något (${v0.toFixed(3)})`, v0 > 0],
+      [`två klyver: mindre värt (${v2.toFixed(3)})`, v2 < v0],
+      [`alla ${andra.length} andra klyver, så mycket som fattas: inget värt för en till (${v4.toFixed(3)})`, andra.length >= 3 && v4 === 0],
     ];
   },
 };

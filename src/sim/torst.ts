@@ -20,7 +20,7 @@ import { clamp, rnd } from './slump';
 import { brunnFinns, halMin, halVal, islagt, naVattnet } from './is';
 import { Act, GRANNAR4, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { hemma, kanGa } from './halsa';
+import { hemma, kanGa, kroppLust } from './halsa';
 import { hjalperFange } from './fangelse';
 import { fylldSack, freeTools, toolsOf } from './agande';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
@@ -267,10 +267,11 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   }
   // vem eller vad som får vattnet väljs med poäng (steg 10.2.37): den törstige efter hur törstig hen är, fältet efter hur torrt
   // det är och örtköket med ett fast tal; utan säck eller kruka bärs vattnet bara åt en törstig
-  const ft = karl ? torrtFalt(s, p) : undefined, kk = !!karl && villFylla(s, p);
-  const vp = best ? TORST.hamtaTorst * (1 - best.torst) : 0, vf = ft ? TORST.hamtaFalt * faltTorrt(s, p, ft) : 0, vk = kk ? TORST.hamtaKok : 0;
+  // fältet och örtköket brådskar inte: den som är skadad eller sjuk vill dem mindre, och den som hellre vilar inte alls (steg 12.1.46)
+  const ft = karl ? torrtFalt(s, p) : undefined, kk = !!karl && villFylla(s, p), kl = kroppLust(p, s.now);
+  const vp = best ? TORST.hamtaTorst * (1 - best.torst) : 0, vf = ft ? TORST.hamtaFalt * faltTorrt(s, p, ft) * kl : 0, vk = kk ? TORST.hamtaKok * kl : 0;
   if (best && vp < Math.max(vf, vk)) best = undefined;
-  const f = !best && ft && vf >= vk ? ft : undefined, kok = !best && !f && kk;
+  const f = !best && ft && vf > 0 && vf >= vk ? ft : undefined, kok = !best && !f && vk > 0;
   const spot = (best || f || kok) && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
   if (!spot) return undefined;
   const i = karl === 'vattensack' ? 'säcken' : karl ? 'krukan' : 'händerna';

@@ -632,6 +632,15 @@ function bynBehovUtan(s: State, k: string) {
   const { har: hb, buf } = bynBuffert(s, b);
   return hb < buf ? 1 : DELA.over;
 }
+// så många av k som byn tar emot innan det blir över (steg 12.1.48): samma gräns som bynOver säljer från (behalla eller bufferten),
+// så att det som just köpts inte är överskott. Saknar byn saken helt tas minst en. Redskapen köps ett i taget (handel.ts)
+export function bynKopAntal(s: State, k: string) {
+  if (isTool(k)) return 1;
+  const minst = bynBehovUtan(s, k) >= DELA.saknar ? 1 : 0, b = behovMed(k);
+  if (!b) return Math.max(minst, Math.ceil(Math.max(1, behalla(s, k)) - amountOf(s, k) - 1e-9));
+  const { har, buf } = bynBuffert(s, b);
+  return Math.max(minst, Math.ceil((buf - har) / perOf(b, k) - 1e-9));
+}
 function bynOver(s: State, utom: readonly string[]): Vara[] {
   const ut: Vara[] = [], rest = new Map<Behov, number>(), grupper = new Map<string, number>();
   for (const k of SAK_LIST) {
@@ -652,7 +661,7 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
       const r = rest.get(b) ?? (() => { const { har, buf } = bynBuffert(s, b); return har - buf; })();
       n = Math.min(n, helt(r / perOf(b, k)));
       rest.set(b, r - Math.max(0, n) * perOf(b, k));
-    } else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - behalla(s, k)));
+    } else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - Math.max(1, behalla(s, k)))); // det sista behålls, som redskapen: utan det saknar byn saken (bynBehovUtan, steg 12.1.48)
     if (n >= 1) ut.push({ k, n });
   }
   return ut;

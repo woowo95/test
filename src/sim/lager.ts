@@ -519,6 +519,18 @@ export function dropSpot(s: State, k: string) {
   const sp = platsFor(s, k, occupancy(s));
   return { x: sp.x + 0.5, y: sp.y + 0.5 };
 }
+// dit den som bär går när arbetet är klart (steg.ts, steg 12.1.49). Det som tagits ur en lagerplats där det fick ligga flyttas bara
+// till en lagerplats som är bättre än den det låg i, räknat som när flytten valdes (barLista): finns ingen sådan plats längre läggs
+// det tillbaka där det låg. Den som bara bär ett redskap (det låg på marken) bär det till förrådet
+export function backSpot(s: State, t: Task) {
+  let k = homeKind(t);
+  if (!isCarrying(t)) { const g = t.ting?.map(id => tingOf(s).find(q => q.id === id)).find(q => !!q); if (g) k = g.k; }
+  const x = Math.floor(t.tx), y = Math.floor(t.ty), z = t.act === 'bara' && isStored(s, x, y) ? zonesOf(s)[zoneAt(s, x, y)] : undefined;
+  if (z && allows(z, k)) { const sp = zoneSpot(s, k, z.prio ?? 0); return sp ? { x: sp.x + 0.5, y: sp.y + 0.5 } : { x: x + 0.5, y: y + 0.5 }; }
+  return dropSpot(s, k);
+}
+// bär p något hem när arbetet är klart: bördan, eller redskapet som den som bär in saker tog upp (steg 12.1.49)
+export const barHem = (t: Task) => isCarrying(t) || t.act === 'bara' && !!t.ting?.length;
 // en ruta i ringen runt lagerplatserna där slaget k får plats (inte bredvid förrådshuset: där står väggarna)
 function ringSpot(s: State, k: string, occ: Occ) {
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));

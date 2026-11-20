@@ -23,7 +23,7 @@ import { ACTS } from './handlingar';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isParent, livet, living, log, ovning, raddAkt, paKartan } from './folk';
 import { amountOf, avbryt, fetchSpot } from './lager';
 import { fearPlace } from './minne';
-import { SJUK, foljd, ligger } from './sjukdom';
+import { SJUK, foljd, isSick, ligger } from './sjukdom';
 // febern av en sjukdom: medvetandet utan klockan (sjukdomen vet när tecknen kommit, st)
 const sjukFeber = (p: Person) => p.sjuk?.st !== undefined ? foljd(p, p.sjuk.tecken, 'feber') : 0;
 import { TORST } from './torst';
@@ -807,7 +807,14 @@ export function burenSteg(s: State, p: Person, t: Task) {
   if (!g || !alive(g) || g.task?.act !== 'varda' || g.task.bar !== p.id) p.task = undefined;
 }
 // den skadade vilar hellre än arbetar: när det gör mycket ont eller ett sår är infekterat
-export const vilaHellre = (p: Person) => !!p.skador?.length && (smarta(p) >= HALSA.vilaOnt || infektion(p) > 0) || !!p.sjuk && p.sjuk.grad >= SJUK.vilaFran && p.sjuk.st !== undefined; // också den sjuke med tydliga tecken (steg 9.5.4)
+const skadadVilar = (p: Person) => !!p.skador?.length && (smarta(p) >= HALSA.vilaOnt || infektion(p) > 0);
+export const vilaHellre = (p: Person) => skadadVilar(p) || !!p.sjuk && p.sjuk.grad >= SJUK.vilaFran && p.sjuk.st !== undefined; // också den sjuke med tydliga tecken (steg 9.5.4)
+// varför p vilar hellre (steg 12.1.46): den som vilar för sjukdomen står som sjuk, inte skadad
+export const vilaSkal = (p: Person, now: number) => skadadVilar(p) || !!p.skador?.length && !isSick(p, now) ? 'Är skadad och vilar' : 'Är sjuk och vilar';
+// hur gärna kroppen vill det som inte är brådskande: sporten, leken och förbättringarna (steg 12.1.46). 0 för den som hellre vilar,
+// annars mindre ju mer ont hen har och ju längre sjukdomen har kommit; 1 för den som är frisk och hel
+export const kroppLust = (p: Person, now: number) => vilaHellre(p) ? 0
+  : (1 - clamp(smarta(p) / HALSA.vilaOnt, 0, 1)) * (!isSick(p, now) ? 1 : p.sjuk ? 1 - clamp(p.sjuk.grad / SJUK.ligga, 0, 1) : 0);
 
 // ---------- förbandet (steg 2.5.2, 9.5.15 och 12.1.6) ----------
 // w.f: 1 = mossa, 2 = en remsa, 3 = mossa under en remsa. Mossan plockas i myren (mossa.ts)
