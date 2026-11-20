@@ -96,6 +96,9 @@ const PLAGG_DEF = {
     skydd: { delar: ['huvud'], tar: { hugg: 0.7, stick: 0.6, slag: 0.6 } }, forsta: '{namn} smidde byns första {plagg}.' },
   ringbrynja: { namn: 'Ringbrynja', ord: 'en ringbrynja', verb: 'Smider', plats: 'yttre', mangd: RECEPT.ringbrynja.mangd, med: RECEPT.ringbrynja.av, varme: 0, dygn: 40, vikt: 12, smid: 3, tek: 'vapensmide', min: RECEPT.ringbrynja.min, slag: ['metall'], station: 'smedja', tung: true,
     skydd: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.85, stick: 0.6, slag: 0.35, bett: 0.8 } }, forsta: '{namn} smidde byns första {plagg}. Den är det dyraste byn kan göra.' },
+  // smycket av järn (steg 12.2.10, Pynt och smycken): ett spänne som smids i smedjan och bärs som halsbandet
+  spanne: { namn: 'Spänne', ord: 'ett spänne', verb: 'Smider', plats: 'smycke', mangd: RECEPT.spanne.mangd, varme: 0, dygn: 40, vikt: 0.2, tek: 'smedja', min: RECEPT.spanne.min, slag: ['metall'], station: 'smedja',
+    forsta: '{namn} smidde byns första {plagg}. Den som bär det får anseende.' },
   ryggsack: { namn: 'Ryggsäck', ord: 'en ryggsäck', verb: 'Syr', plats: 'rygg', mangd: RECEPT.ryggsack.mangd, med: RECEPT.ryggsack.av, varme: 0, dygn: 10, vikt: 2, tek: 'ryggsack', min: RECEPT.ryggsack.min, slag: ['skinn'], rygg: 20,
     forsta: '{namn} sydde byns första {plagg}. Den som samlar plockar rakt ner i den och bär dubbelt så mycket.' }, // steg 7.1.3
 } satisfies Record<string, PlaggDef>;

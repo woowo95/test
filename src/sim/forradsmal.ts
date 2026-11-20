@@ -240,6 +240,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   byxor: s => living(s).length, mossa: s => living(s).length,
   snoskor: s => Math.ceil(living(s).length / VILLTAL.snoskorPer), // några par till dem som går ut i snön
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
+  spanne: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // spännet av järn som halsbandet (steg 12.2.10)
   // ledarens mantel (steg 8.3.14): byn gör en åt den som suttit en tidsålder med mer än hälften av legitimiteten
   // prästens dräkt med budet om den (steg 10.3.11)
   prastdrakt: s => (s.tron ?? []).filter(t => t.prast !== undefined && t.bud?.some(b => b.id === 'drakt') && (t.sk?.prast ?? 100) >= 34).length, tecken: s => s.tron?.some(t => t.slut === undefined && t.bud?.some(b => b.id === 'tecken')) ? Math.ceil(living(s).filter(p => p.tro !== undefined).length / 3) : 0, // system 8.5

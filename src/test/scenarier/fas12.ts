@@ -369,3 +369,19 @@ SCENARIER.vapensmide = {
     ];
   },
 };
+
+SCENARIER.jarnsmycke = {
+  text: 'Smycken (steg 12.2.10): ett spänne av järn smids i smedjan av 1 järn på 3 minuter och bärs som pynt, som halsbandet',
+  kor: () => {
+    const d = SIM.stationDef('smedja')!, P = SIM.PLAGG.spanne, k = 'spanne_jarn';
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    Object.assign((p.tek ??= {}), { smedja: 1 });
+    SIM.setStock(s, { jarn: 2, kol: 2 });
+    medBank(s, 'smedja');
+    return [
+      [`spännet: ${JSON.stringify(SIM.receptAv('spanne', 'jarn'))} på ${P.min} minuter, ett smycke`, SIM.receptAv('spanne', 'jarn').jarn === 1 && Object.keys(SIM.receptAv('spanne', 'jarn')).length === 1 && P.min === 3 && P.plats === 'smycke' && !!SIM.SAKER[k]],
+      ['det smids i smedjan och bara där', d.gor.includes('spanne' as SIM.Act) && !!d.bara?.includes('spanne' as SIM.Act) && SIM.kanGoras(s, 'spanne' as SIM.Act, p)],
+      [`byn vill ha några (${SIM.villAv(s, 'spanne')})`, SIM.villAv(s, 'spanne') >= 1],
+    ];
+  },
+};

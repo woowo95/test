@@ -163,6 +163,7 @@ const DEF = {
   jarnkniv: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' },
   lie: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },
   jarnhjalm: { var: 'plagg', mangd: 2, av: { lader: 1 }, min: 5 }, ringbrynja: { var: 'plagg', mangd: 8, av: { lader: 1 }, min: 5 }, // smids i smedjan (steg 12.2.9)
+  spanne: { var: 'plagg', mangd: 1, min: 3 }, // ett spänne av järn, pynt (steg 12.2.10)
   svard: { var: 'sak', av: { jarn: 3, lader: 1 }, min: 5, slag: 'stor', tek: 'vapensmide' }, // byns första rena vapen (steg 12.2.9)
   jarnspjut: { var: 'sak', av: { jarn: 1, grenar: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // smids (steg 12.2.8)
   jarnskold: { var: 'sak', av: { ved: 3, lader: 1, jarn: 1 }, min: 4, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, // mest trä: vid snickarbänken, med järnet bland materialen (steg 12.2.8)
