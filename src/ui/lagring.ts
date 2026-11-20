@@ -3,8 +3,6 @@
 // databas (IndexedDB): en post per del av byn (serializeParts i steg.ts), och en post för byn som säger vilka delar den har.
 // Alla poster för en by skrivs i en och samma transaktion, så en sparning som avbryts lämnar den förra hel. En del som inte
 // ändrats sedan förra sparningen skrivs inte om (historikens gamla veckor).
-// En by som sparats på det gamla sättet (hela byn som en text i det enkla minnet) läses därifrån och flyttas över första
-// gången: den skrivs i databasen och tas sedan bort ur det enkla minnet.
 // Filen frågar bara simuleringen, så att scenariot sparbas kan pröva den med en databas i minnet (minnesBas).
 import { ForGammalBy, State, arVacktDel, joinParts, lasVackta, migrate, serializeParts } from '../sim';
 
@@ -38,27 +36,6 @@ export async function lasBy<E>(bas: Bas, by: string): Promise<{ by: State; extra
   const p = await bas.las(by), st = tolka(p);
   return st ? { by: st, extra: p!.extra as E } : undefined;
 }
-
-// Byn ur databasen, och annars den gamla sparningen ur det enkla minnet (gammal), som då flyttas över: den skrivs i databasen
-// och tas bort ur det enkla minnet först när skrivningen gått igenom. extra räknas ur den gamla posten
-export async function lasEllerFlytta<E>(bas: Bas, by: string, gammal: Gammal, extra?: (txt: string) => { t: string; extra?: E }):
-Promise<{ by: State; extra?: E } | undefined> {
-  const ny = await lasBy<E>(bas, by);
-  if (ny) return ny;
-  const txt = gammal.hamta();
-  if (txt == null) return undefined;
-  const g = extra ? extra(txt) : { t: txt };
-  const st = tolkaText(g.t);
-  if (!st) return undefined;
-  try { await sparaBy(bas, by, st, g.extra); gammal.glom(); } catch { /* ligger kvar i det enkla minnet till nästa gång */ }
-  return { by: st, extra: g.extra };
-}
-// en gammal sparning i det enkla minnet
-export interface Gammal { hamta(): string | null; glom(): void }
-export const gammalNyckel = (nyckel: string): Gammal => ({
-  hamta: () => { try { return localStorage.getItem(nyckel); } catch { return null; } },
-  glom: () => { try { localStorage.removeItem(nyckel); } catch { /* ignoreras */ } },
-});
 
 // ---------- databasen i webbläsaren: en tabell, nyckeln "by/del" för delarna och "by" för byns post ----------
 const DB_NAMN = 'samhallssimulatorn', TABELL = 'delar';

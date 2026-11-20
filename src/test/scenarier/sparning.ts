@@ -7,7 +7,7 @@ import { kanonisk } from '../pool';
 import { setItems, setFood, Koll, kor, SCENARIER, testBy, utanWebblasare } from './hjalp';
 import { setByn } from '../../ui/lage';
 import { tal as talFlik, talVal } from '../../ui/flikar/tal';
-import { lasBy, lasEllerFlytta, lasFel, minnesBas, sparaBy, tolkaText } from '../../ui/lagring';
+import { lasBy, lasFel, minnesBas, sparaBy, tolkaText } from '../../ui/lagring';
 
 SCENARIER.historik = {
   lang: true,
@@ -354,7 +354,7 @@ SCENARIER.kartminne = {
 };
 
 SCENARIER.sparbas = {
-  text: 'Sparningen i webbläsarens databas (steg 11.2.1): byn sparas som en post per del och blir exakt samma by igen, och en by sparad på det gamla sättet går att ladda och flyttas över',
+  text: 'Sparningen i webbläsarens databas (steg 11.2.1): byn sparas som en post per del och blir exakt samma by igen',
   kor: async () => {
     const s = cloneState(testBy(3)), bas = minnesBas();
     await sparaBy(bas, 'egen', s);
@@ -365,16 +365,6 @@ SCENARIER.sparbas = {
     // byn som lästs in utvecklas exakt som den som sparades
     let sammaSen = false;
     if (r) { kor(s, 2); kor(r.by, 2); sammaSen = kanonisk(serialize(r.by)) === kanonisk(serialize(s)); }
-    // en by sparad på det gamla sättet: hela byn som en text i det enkla minnet
-    const gbas = minnesBas(), gtxt = serialize(createState(7, START));
-    let glomd = false;
-    const gammal = { hamta: () => (glomd ? null : gtxt), glom: () => { glomd = true; } };
-    const g = await lasEllerFlytta(gbas, 'egen', gammal), igen = await lasBy(gbas, 'egen');
-    const gOk = !!g && kanonisk(serialize(g.by)) === kanonisk(gtxt);
-    // en annan by med sin tid (byar.ts): den gamla posten { t, vagg } flyttas över med tiden
-    const abas = minnesBas(), atxt = JSON.stringify({ t: gtxt, vagg: 12345 });
-    const a = await lasEllerFlytta<{ vagg?: number }>(abas, 'samhalle-by-x', { hamta: () => atxt, glom: () => {} }, t => { const o = JSON.parse(t); return { t: o.t, extra: { vagg: o.vagg } }; });
-    const a2 = await lasBy<{ vagg?: number }>(abas, 'samhalle-by-x');
     // en ny by sparad på samma plats har färre veckor i historiken: de gamla delarna försvinner
     await sparaBy(bas, 'egen', createState(5, START));
     const kvar = [...bas.poster.keys()].filter(k => k.startsWith('egen/')), nyDelar = Object.keys(serializeParts(createState(5, START)));
@@ -382,9 +372,6 @@ SCENARIER.sparbas = {
       [`en post per del och en för byn (${delposter.length} delar, ${Object.keys(delar).length} i sparningen)`, enPerDel],
       ['byn som läses är exakt den som sparades', lika],
       ['och den utvecklas exakt likadant två timmar framåt', sammaSen],
-      ['en by sparad på det gamla sättet går att ladda', gOk],
-      ['den flyttas över: den står i databasen och tas bort ur det enkla minnet', glomd && !!igen && kanonisk(serialize(igen.by)) === kanonisk(gtxt)],
-      ['en annan by flyttas över med sin tid', a?.extra?.vagg === 12345 && a2?.extra?.vagg === 12345 && !!a2],
       [`en ny by på samma plats lämnar inga gamla delar kvar (${kvar.length} delar)`, kvar.length === nyDelar.length && kvar.every(k => nyDelar.includes(k.slice(5)))],
     ];
   },

@@ -1,5 +1,5 @@
 import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serializeParts, spar, step, stridBild, DAY } from '../sim';
-import { gammalNyckel, lasEllerFlytta, sparaBy, tolkaText, webbBas } from './lagring';
+import { lasBy, sparaBy, tolkaText, webbBas } from './lagring';
 import { $, esc } from './hjalp';
 import { bortaHtml, ikappHtml, spolaText } from './borta';
 import { gaHem, huvud, s, ui } from './lage';
@@ -9,9 +9,8 @@ import { sparaAnnan } from './byar';
 import { app } from './scen';
 
 // ---------- sparning: i webbläsaren och i artefaktens databas; den nyaste vinner när byn läses in ----------
-// I webbläsaren ligger byn i webbläsarens databas, en post per del (lagring.ts, steg 11.2.1). En by som sparats på det
-// gamla sättet, som en text under SAVE_KEY i det enkla minnet, flyttas över första gången den läses
-const SAVE_KEY = 'samhalle-save-v1', EGEN = 'egen';
+// I webbläsaren ligger byn i webbläsarens databas, en post per del (lagring.ts, steg 11.2.1)
+const EGEN = 'egen';
 let lokalLarm = false; // felet skrivs i konsolen en gång, inte var tjugonde sekund
 export function saveLocal() {
   const s = huvud(); // huvudbyn också när en väckt by visas (steg 11.13.11)
@@ -110,7 +109,7 @@ export function nyByVald() { if (ui.molnFel) setGrund(Infinity); }
 // nyare än den som spelas byts den in med nyare(by)
 export async function loadSaves(nyare: (by: State) => void): Promise<State | null> {
   let local: State | null = null, g: number | null = null;
-  try { local = (await lasEllerFlytta(webbBas, EGEN, gammalNyckel(SAVE_KEY)))?.by ?? null; } catch (e) { console.warn('Byn i webbläsaren gick inte att läsa', e); }
+  try { local = (await lasBy(webbBas, EGEN))?.by ?? null; } catch (e) { console.warn('Byn i webbläsaren gick inte att läsa', e); }
   try { const v = localStorage.getItem(GRUND_KEY); g = v === null ? null : Number(v); } catch { /* ignoreras */ }
   try {
     const r = await fromCloud(LAS_MS);
