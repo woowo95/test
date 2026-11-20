@@ -17,7 +17,7 @@ import { avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
 import { balans } from './balans';
 import { RELT } from './relationer';
-import { rykteDod, startSmak } from './rykten';
+import { rykteDod, startSmak, handelse } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, klanById, klanerOf, narhet, type Klan } from './klaner';
@@ -40,6 +40,7 @@ import { barSmitta, insjukna } from './sjukdom';
 import { nyttILarmet } from './roller';
 import { forlossRisk } from './forlossning';
 import { tanke, tankeText } from './tankar';
+import { HALSA } from './halsa';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -143,6 +144,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   const { text: cause, sorg } = DODSORSAKER[orsak], akt = p.task?.act;
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;
+  if (p.vardadAv && s.now - p.vardadAv.t <= HALSA.botDygn * DAY && (p.sjuk || p.skador?.length)) { const v = byId(s, p.vardadAv.id); if (v && alive(v)) handelse(s, v, 'vardDog', p); } // dog i någons vård (steg 12.1.134)
   if (p.gast?.sort === 'handlare' && s.handlare?.id === p.id) handlarenDog(s, s.handlare); // handlaren som dör (i en brand, ett slagsmål) avslutar besöket, som i gastDor
   raddAkt(s, p, akt, `${p.name} dog ${cause}`, orsak); // de som såg det blir rädda för det hen gjorde (steg 8.4.10)
   if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)

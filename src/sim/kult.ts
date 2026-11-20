@@ -37,7 +37,7 @@ import { notis } from './notiser';
 satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
 satEgendomVarde(o => varuVarde(o) / grundvarde('ved')); // kyrkans egendom i trons tyngd (steg 10.3.8)
 import { isSick } from './sjukdom';
-import { prastMinns } from './rykten';
+import { prastMinns, handelse } from './rykten';
 
 export { farorNu, satFaror } from './kultlatt'; // farorna över byn (steg 10.11.18: i kultlatt.ts, så att förrådet också kan läsa dem)
 export const KULT = balans('kult', {
@@ -97,7 +97,7 @@ export function bonNod(s: State, p: Person): { id: BonId; o: string; vem?: numbe
 // bönen är klar (KLAR i steg.ts): humör, tro, och en bön i nöd får svar inom några dygn (steg 8.5.4)
 export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; why?: string }) {
   const id = (t.tool ?? 'vardag') as BonId, d = BDEF[id], f = (rokelse(s, p) ? KULT.starkare : 1) * (barTecken(s, p) ? KULT.starkare : 1) * (vidHeligtTing(s, p) ? KULT.starkare : 1);
-  if (d.namn === 'Vardagsbön') tanke(p, 'badBon', s.now, { v: d.ger.humor * f }); else tanke(p, 'kult', s.now, { text: d.namn, v: d.ger.humor * f });
+  if (d.namn === 'Vardagsbön') tanke(p, 'badBon', s.now, { v: d.ger.humor * f }); else tanke(p, 'kult', s.now, { text: d.namn, v: d.ger.humor * f }); handelse(s, p, 'bad');
   p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + d.ger.tro * f);
   count(s, 'bon_' + id);
   if (id === 'vardag') p.bonD = dygnNr(s.now);

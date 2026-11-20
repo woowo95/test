@@ -35,7 +35,7 @@ import { eldPlats } from './karta';
 import { antalPa, chance, clamp, pick, rnd } from './slump';
 import { BIN, kupor, retaBo } from './bin';
 import { kladVarme } from './utrustning';
-import { Act, HOUR, HOUR_S, Person, Skill, State, Task } from './typer';
+import { Act, DAY, HOUR, HOUR_S, Person, Skill, State, Task } from './typer';
 import { balans } from './balans';
 import { GANG } from './gang';
 import { blodDroppar, blodas } from './blod';
@@ -53,6 +53,7 @@ import { fangeMal } from './rovare'; // fången bärs till fängelset (steg 11.1
 
 // ---------- balanstal (regel 8) ----------
 export const HALSA = balans('halsa', {
+  botDygn: 3, // den som vårdats för högst så här många dygn sedan och blir frisk (eller dör) räknas till vårdaren (steg 12.1.134)
   blodTim: 0.6, // ett öppet sår av grad 1 (och blod 1 i SKADOR) tar så här mycket blod i timmen (1 = allt blod) ...
   stridBlod: 6, // i en strid på kartan blöder såren så här många gånger fortare av ansträngningen (steg 12.1.58: som stridens egen blödning förut)
   levrar: 1.5, // ... och har levrat sig efter levrar × (0,5 + graden) timmar
@@ -460,11 +461,17 @@ export function forlora(s: State, p: Person, d: Kroppsdel, hur: string) {
   log(s, text, 'world', [p.id]); p.fame.push(`Förlorade ${DEL[d].i}`);
   tanke(p, 'forloradeDel', s.now, { del: DEL[d].i });
 }
+// den som nyss vårdats och blivit frisk: vårdaren får intrycket botare hos dem som ser det (steg 12.1.134)
+export function botad(s: State, p: Person) {
+  const v = p.vardadAv && s.now - p.vardadAv.t <= HALSA.botDygn * DAY ? byId(s, p.vardadAv.id) : undefined;
+  delete p.vardadAv;
+  if (v && alive(v)) handelse(s, v, 'botade', p);
+}
 // en skada som läkt (steg 8.2.4): den kan läka fel och ge ett bestående men, och lämna ett ärr som ändrar utseendet
 function laktSkada(s: State, p: Person, w: Skada) {
   if (w.k === 'bistick') return; // ett stick lämnar inget efter sig
   const g0 = w.g0 ?? 0;
-  if (g0 >= HALSA.avbryt) tanke(p, 'friskIgen', s.now); // en svår skada som läkt (steg 12.1.131)
+  if (g0 >= HALSA.avbryt) { tanke(p, 'friskIgen', s.now); botad(s, p); } // en svår skada som läkt (steg 12.1.131)
   if (g0 >= HALSA.menGrad && rnd(s, 'halsa', p) < (w.snett ? HALSA.snettMen : HALSA.menChans)) { // ett snett läkt brott ger oftare ett bestående men (steg 9.5.27)
     const ont = !GADELAR.includes(w.d) && !DEL[w.d].syn;
     (p.men ??= []).push({ d: w.d, fel: ont ? 0 : HALSA.menFel, ont: ont ? HALSA.menOnt : 0 });
@@ -758,7 +765,7 @@ export function vardKlar(s: State, p: Person, t: Task) {
   count(s, 'vard');
   ovning(p, 'lakekonst', HALSA.lakeOvning); gjort(s, p, 'vardat'); // läkekonsten växer när man vårdar (steg 9.5.7)
   if (q !== p && q.health < UPPV.naraHalsa) { upplev(s, p, 'raddade', q.name); upplev(s, q, 'raddad', p.name); } // nära döden (steg 4.1.1.2)
-  if (q !== p) { count(s, 'vard av andra'); livet(s, p, 'vardat'); tanke(q, 'togHandOm', s.now, { namn: p.name }); }
+  if (q !== p) { count(s, 'vard av andra'); livet(s, p, 'vardat'); tanke(q, 'togHandOm', s.now, { namn: p.name }); q.vardadAv = { id: p.id, t: s.now }; } // den som vårdade (steg 12.1.134)
   if (b.bara) bara(s, p, q, t);
 }
 // att bära hem den som inte kan gå: till sovplatsen, annars vid elden, och fången till fängelset. Den skadade följer med (barMed)
@@ -797,3 +804,4 @@ export const forbandGammalt = (s: State, w: Skada) => !!w.f && w.fT !== undefine
 export const FORBAND_NAMN = ['', 'förband av mossa', 'förband', 'förband av mossa och remsa'];
 import { rusFaktor } from './rus';
 import { tanke } from './tankar';
+import { handelse } from './rykten';

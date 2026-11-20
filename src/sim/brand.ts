@@ -27,7 +27,7 @@ import { faltAt, faltBrann, faltIndex, faltOf, faltRutor, grodaPa, harStaket } f
 import { tamDor, tamdjurOf } from './tamdjur';
 import { honsDor, honsOf } from './hons';
 import { wearUsed } from './redskap';
-import { larma, larmNu } from './rykten';
+import { larma, larmNu, handelse } from './rykten';
 import { SAKER } from './saker';
 import { isLight, kalender } from './tid';
 import { TORST, drickPlats } from './torst';
@@ -379,7 +379,7 @@ export function brandSteg(s: State, dtSec: number) {
   for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) < 14) tecken(s, p, 'brandStopp'); // branden som stannade (steg 8.5.18)
   // tankarna (steg 12.1.131): de som bodde i ett hus som brann, de som var med och släckte, och den som mist det mesta
   for (const id of b.husFolk ?? []) { const q = byId(s, id); if (q && alive(q)) tanke(q, 'husetBrann', s.now); }
-  if (b.slackt) for (const id of b.slackare ?? []) { const q = byId(s, id); if (q && alive(q)) tanke(q, 'slackteElden', s.now); }
+  if (b.slackt) for (const id of b.slackare ?? []) { const q = byId(s, id); if (q && alive(q)) { tanke(q, 'slackteElden', s.now); handelse(s, q, 'slackte'); } }
   delete s.brand;
   forlustEfter(s, 'brand');
 }

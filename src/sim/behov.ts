@@ -26,7 +26,7 @@ import { kroppensMat, matPerDygn } from './ekonomi';
 import { REDSKAPMAL, arMaterial, buffert, eldReserv, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
-import { dampning, handelse, smakMat } from './rykten';
+import { dampning, handelse, smakMat, RYKTE } from './rykten';
 import { VED, vedPerDygn } from './eld';
 import { BYTE, Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf, vardeAv, kartOf } from './byte';
 import { bynKanner, kannerOrt } from './ort';
@@ -735,6 +735,7 @@ function lura(s: State, M: Part, G: Part, betal: Vara[], varor: (Vara & { ut: nu
 function lurad(s: State, X: Part, L: Part) {
   count(s, 'lurat');
   if (L.p) gjort(s, L.p, 'lurade');
+  if (L.p && X.p) handelse(s, L.p, 'lurade', X.p); // de som ser bytet (steg 12.1.134)
   const p = X.p;
   if (!p || rnd(s, 'handel') >= HANDLA.marka * ((p.skill.handel ?? 0) + p.pot.intelligens / 2)) return false;
   count(s, 'lurad');
@@ -824,6 +825,8 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
   if (G.p) tanke(G.p, 'bytte', s.now, { varor: varorText(betal), namn: M.namn, v: HANDLA.byteTanke, tid: HANDLA.byteTim * HOUR });
   for (const X of [M, G]) if (X.p) { ovning(X.p, 'handel', HANDLA.ovning * (0.5 + X.p.pot.intelligens / 20)); gjort(s, X.p, 'bytt'); }
   if (lurare) { const X = lurare === M ? G : M, markt = lurad(s, X, lurare); for (const f of vidLura) f(s, lurare, X, markt); }
+  else { const v = (l: Vara[]) => l.reduce((a, w) => a + (w.varde ?? grundvarde(w.k) * w.n), 0), vf = v(fatt), vb = v(betal); // den som gav mer än hen fick: ett bra pris (steg 12.1.134)
+    if (G.p && M.p && vf >= vb * (1 + RYKTE.braPris) && vb > 0) handelse(s, G.p, 'braPris', M.p); else if (G.p && M.p && vb >= vf * (1 + RYKTE.braPris) && vf > 0) handelse(s, M.p, 'braPris', G.p); }
   const n = enheter(fatt);
   count(s, 'byten'); count(s, 'byte_' + typ, n); if (delad) count(s, 'kvallsbyten');
   if (byteKlart(s, M, G, fatt, betal, desperat)) count(s, 'storaByten'); // samma rad i loggen och krönikan, vem motparten än är

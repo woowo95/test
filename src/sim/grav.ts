@@ -22,7 +22,7 @@ import { kladAv } from './klader';
 import { getable, takeMaterial } from './behov';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
-import { Bevis, HANDELSER, RYKTE, bevisText, intryckStyrka, paminn, ryktbarhet } from './rykten';
+import { Bevis, HANDELSER, RYKTE, bevisText, intryckStyrka, paminn, ryktbarhet, handelse } from './rykten';
 import { grundvarde } from './varde';
 import { gen, slaktOrd } from './ord';
 import { ALDER, ageOf } from './folk';
@@ -284,6 +284,7 @@ function skandaKlar(s: State, p: Person, q: Kvarleva) {
   count(s, 'skandad'); count(s, 'skandad_' + k);
   tanke(p, 'skandade', s.now, { namn: q.namn });
   log(s, `${p.name} skändade ${q.namn}: ${ODEN[k].namn.toLowerCase()}.`, 'rel', [p.id]);
+  handelse(s, p, 'skandade', undefined, q.namn); // (steg 12.1.134)
 }
 // stigen: där vägen ut mot kartans närmaste kant (infartens håll) lämnar byns område
 function stigPlats(s: State) {

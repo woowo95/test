@@ -13,7 +13,7 @@ import { ALDER, KROPP, ageOf, alive, byId, count, getRel, gjort, isSick, living,
 import { budHindrar, kyrkFram } from './kyrka';
 import { FEST, festFram, festNu } from './kultlatt';
 import { avbryt } from './lager';
-import { INTRYCK, Intryck, IntryckTyp, asiktOm, beratta, intryckOm, kandVikt, paminn, scenVersion } from './rykten';
+import { INTRYCK, Intryck, IntryckTyp, asiktOm, beratta, intryckOm, kandVikt, paminn, scenVersion, handelse } from './rykten';
 import { prastOf } from './kult';
 import { ledareOf, legitimitet, pabud } from './styre';
 import { Ting, redskapSlitet, tingOf } from './agande';
@@ -75,6 +75,7 @@ export const FRAM_AV: Record<string, FramDef> = Object.fromEntries(FRAMTRADANDEN
 export const FRAM_SKILL: Skill = 'skaldskap'; // steg 4.3.2.5; övas också av berättelser i samtalen (samtal.ts)
 
 export const FRAM = balans('framtradande', {
+  scenBra: 0.75, scenDalig: 0.3, // framträdandets kvalitet från vilken publiken minns det som bra, och till vilken som dåligt (steg 12.1.134)
   fran: 18, till: 23, // ett framträdande börjar på kvällen mellan dessa timmar, när det är mörkt
   // kallelsen (steg 10.7.9): lusten att uppträda är ett tal per timme, viljaTim gånger kvaliteten (färdigheten och karisman),
   // gånger tiden sedan personen senast prövade, räknat tidigast från klockan fran samma kväll
@@ -478,6 +479,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
     else if (spred) (m.rykte ??= []).push(b.name);
     if (f.bud === 'tro' && b.tro !== tro0 && b.tro === p.tro) (m.tro ??= []).push(b.name);
   }
+  if (q >= FRAM.scenBra) handelse(s, p, 'scenBra', undefined, d.namn.toLowerCase()); else if (q <= FRAM.scenDalig) handelse(s, p, 'scenDalig', undefined, d.namn.toLowerCase()); // publikens mottagning (steg 12.1.134)
   // den som hånar ledaren får sämre relation med ledaren (steg 4.3.2.3)
   if (f.bud) count(s, 'framBud_' + f.bud);
   const l = f.bud === 'hana' ? byId(s, f.om!) : undefined;

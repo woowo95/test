@@ -6,6 +6,7 @@ import { REL, byId, count, isKin, log, relKey, stat } from './folk';
 import { bitsOf, dorrDef, gridOf, housesOf, husById, type Hus } from './byggnad';
 import { moodOf } from './humor';
 import { tanke } from './tankar';
+import { handelse } from './rykten';
 
 // ---------- fängelset (steg 11.12.1, Fångar och fängelset i designdokumentet) ----------
 // Ett hus med funktionen Fängelse och en trädörr. Styret vill ha det genom påbudet Fängelse, och byn bygger det som ett projekt
@@ -146,6 +147,7 @@ export function slapps(s: State, p: Person) {
   if (dygn < 0.5) return;
   const n = Math.max(1, Math.round(dygn));
   fangelseKrok.upplev(s, p, `i ${n} år`, 1 + Math.max(0, dygn - 1) * FANG.uppDygn);
+  handelse(s, p, 'satt'); // (steg 12.1.134)
   if (f.av !== undefined && f.av !== p.id) { const r = s.rels[relKey(p.id, f.av)]; if (r) r.op = clamp(r.op - FANG.domareOp * dygn, -100, 100); }
 }
 // ---------- vakten (steg 11.12.5) ----------

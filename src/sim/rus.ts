@@ -10,6 +10,7 @@ import { hourOf, isLight } from './tid';
 import { budBrutet, budHindrar } from './kyrka';
 import { tanke } from './tankar';
 import { upplev } from './uppvaxt';
+import { handelse } from './rykten';
 type VatskaId = import('./vatskor').VatskaId;
 // vätskorna i krukorna (vatskor.ts sätter kroken, så att den här filen inte laddar vatskor.ts och halsa.ts i en ring)
 // alkohol = hur mycket rus en del ger, drycker = dryckerna med alkohol och kvall = den p helst tar på kvällen (raderna i VATSKOR, steg 10.7.23)
@@ -61,7 +62,7 @@ export function rusSteg(s: State, p: Person, dtSec: number) {
   const h = dtSec / HOUR_S;
   if (p.bak) { p.bak = Math.max(0, p.bak - h); if (p.bak <= 1e-6) p.bak = undefined; }
   if (p.rus) {
-    if (p.rus >= RUS.fylla) p.fylla = 1; // hen var full i kväll (steg 9.6.15)
+    if (p.rus >= RUS.fylla && !p.fylla) { p.fylla = 1; handelse(s, p, 'full'); } // hen var full i kväll (steg 9.6.15), och de som ser det minns det (steg 12.1.134)
     p.rus = Math.max(0, p.rus - RUS.sjunker * h);
     if (p.rus <= 1e-6) { p.rus = undefined; if (p.fylla) { p.fylla = undefined; p.bak = RUS.bakTim; tanke(p, 'bakfull', s.now, { v: RUS.bak, tid: RUS.bakTim * HOUR }); count(s, 'bakfylla'); } }
   }

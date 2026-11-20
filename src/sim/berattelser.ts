@@ -116,6 +116,22 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   pahittig: { namn: [['den kloke', 'den kloka'], ['Finurlig', 'Finurlig'], ['den listige', 'den listiga'], ['Hittaren', 'Hittaren']] }, // steg 10.4.9
   skvaller: { namn: [['Skvallret', 'Skvallerbyttan'], ['Pratmakaren', 'Pratmakerskan'], ['Sladdertacka', 'Sladdertacka'], ['den lösmynte', 'den lösmynta']] }, // steg 10.8.6
   aventyrare: { namn: [['Äventyraren', 'Äventyrerskan'], ['Vägfararen', 'Vägfarerskan'], ['den bereste', 'den beresta'], ['Vidfamnaren', 'Vidfamnerskan']] }, // steg 11.8.17
+  // binamnen för intrycken från de nya systemen (steg 12.1.134)
+  forsvarare: { namn: [['Försvararen', 'Försvarerskan'], ['Sköldmuren', 'Sköldmön'], ['den trofaste', 'den trofasta'], ['Grindvakten', 'Grindvakten']] },
+  botare: { namn: [['Botaren', 'Boterskan'], ['Läkehand', 'Läkehand'], ['den milde', 'den milda'], ['Örtkunnig', 'Örtkunnig']] },
+  daligLakare: { namn: [['Kvacksalvaren', 'Kvacksalverskan'], ['Dödshand', 'Dödshand'], ['den klumpige', 'den klumpiga'], ['Gravgrävaren', 'Gravgräverskan']] },
+  scenBra: { namn: [['Skalden', 'Skaldmön'], ['Guldtunga', 'Guldtunga'], ['den älskade', 'den älskade'], ['Lyssnarsamlaren', 'Lyssnarsamlerskan']] },
+  scenDalig: { namn: [['Gäspet', 'Gäspet'], ['den tråkige', 'den tråkiga'], ['Sömnsången', 'Sömnsången'], ['Gnällaren', 'Gnällerskan']] },
+  skrivkunnig: { namn: [['Skrivaren', 'Skriverskan'], ['Runkarlen', 'Runkvinnan'], ['den lärde', 'den lärda'], ['Fjäderpennan', 'Fjäderpennan']] },
+  from: { namn: [['den fromme', 'den fromma'], ['Bönemannen', 'Bönekvinnan'], ['den helige', 'den heliga'], ['Offraren', 'Offrerskan']] },
+  gudlos: { namn: [['den gudlöse', 'den gudlösa'], ['Hädaren', 'Häderskan'], ['den otrogne', 'den otrogna'], ['Gudsföraktaren', 'Gudsförakterskan']] },
+  suput: { namn: [['Suputen', 'Suputen'], ['Ölstruten', 'Ölstruten'], ['den törstige', 'den törstiga'], ['Hornet', 'Hornet']] },
+  lurendrejare: { namn: [['Lurendrejaren', 'Lurendrejerskan'], ['Rävtungan', 'Rävtungan'], ['den listige', 'den listiga'], ['Fiffaren', 'Fifferskan']] },
+  hederlig: { namn: [['den hederlige', 'den hederliga'], ['Rakvågen', 'Rakvågen'], ['den ärlige', 'den ärliga'], ['Rätthand', 'Rätthand']] },
+  vittberest: { namn: [['den vittbereste', 'den vittberesta'], ['Vandraren', 'Vandrerskan'], ['Långfararen', 'Långfarerskan'], ['Vägmätaren', 'Vägmäterskan']] },
+  brandslackare: { namn: [['Brandsläckaren', 'Brandsläckerskan'], ['Vattenbäraren', 'Vattenbärerskan'], ['den orädde', 'den orädda'], ['Eldtämjaren', 'Eldtämjerskan']] },
+  djurvan: { namn: [['Herden', 'Herdinnan'], ['Djurvännen', 'Djurvännen'], ['den milde', 'den milda'], ['Fårfadern', 'Fårmodern']] },
+  fangelsekund: { namn: [['Fängelsekunden', 'Fängelsekunden'], ['Bojan', 'Bojan'], ['den inlåste', 'den inlåsta'], ['Gallret', 'Gallret']] },
   forutseende: { namn: [['den framsynte', 'den framsynta'], ['Förrådsvakt', 'Förrådsvakt'], ['den vise', 'den visa'], ['Vinterhövding', 'Vinterhövding']] },
 };
 export const BINAMN: Record<IntryckTyp, BinamnDef> = BDEF;

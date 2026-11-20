@@ -130,3 +130,29 @@ SCENARIER.uppvaxt2 = {
     ];
   },
 };
+
+SCENARIER.rykten2 = {
+  text: 'Nya rykten med binamn (steg 12.1.134, rykten.ts och berattelser.ts): femton nya intryck i INTRYCK med sina händelser i HANDELSER och fyra binamn var i BINAMN, och den som flyr från rövarna får intrycket feg',
+  kor: async () => {
+    const { hasIcon } = await import('../../ikoner');
+    const NYA = ['forsvarare', 'botare', 'daligLakare', 'scenBra', 'scenDalig', 'skrivkunnig', 'from', 'gudlos', 'suput', 'lurendrejare', 'hederlig', 'vittberest', 'brandslackare', 'djurvan', 'fangelsekund'] as const;
+    const utan = NYA.filter(k => !(k in SIM.INTRYCK));
+    const binamn = NYA.filter(k => k in SIM.BINAMN && SIM.BINAMN[k].namn.length === 4 && SIM.BINAMN[k].namn.every(([m, k2]) => !!m && !!k2));
+    const handelse = NYA.filter(k => Object.values(SIM.HANDELSER).some(h => h.i === k));
+    const ikon = NYA.filter(k => hasIcon('i_' + k));
+    // vittnena: den som stod kvar mot rövarna och den som sprang
+    const s = SIM.cloneState(testBy(20)), [a, b, v] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    for (const p of [a, b]) { p.x = v.x + 1; p.y = v.y; }
+    v.task = undefined; v.intryck = []; // (vittnet minns bara de starkaste intrycken)
+    SIM.handelse(s, a, 'forsvarade'); SIM.handelse(s, b, 'sprang');
+    const om = (p: SIM.Person, k: SIM.IntryckTyp) => !!SIM.intryckOm(v, p.id, k);
+    return [
+      [`femton nya intryck${utan.length ? ` (saknas ${utan.join(', ')})` : ''}`, utan.length === 0],
+      [`fyra binamn i mannens och kvinnans form för varje (${binamn.length})`, binamn.length === NYA.length],
+      [`en händelse som ger varje (${handelse.length})`, handelse.length === NYA.length],
+      [`en symbol för varje (${ikon.length})`, ikon.length === NYA.length],
+      ['vittnet ser försvararen', om(a, 'forsvarare') && !om(a, 'feg')],
+      ['den som sprang när rövarna kom får intrycket feg', SIM.HANDELSER.sprang.i === 'feg' && om(b, 'feg')],
+    ];
+  },
+};

@@ -6,7 +6,7 @@ import { getable, takeMaterial } from './behov';
 import { usable } from './lager';
 import { bitAt, roomAt } from './byggnad';
 import { omrade } from './omrade';
-import { Bevis, HANDELSER, Intryck, bevisText, kandVikt, lasIntryck, paminn } from './rykten';
+import { Bevis, HANDELSER, Intryck, bevisText, kandVikt, lasIntryck, paminn, handelse } from './rykten';
 import { Ting, newTing, tingOf } from './agande';
 import { taVatska, vatskaAv } from './vatskor';
 import { LARDOMAR, describe, findL, lasLardom } from './minne';
@@ -207,7 +207,7 @@ export function runstenKlar(s: State, p: Person, t: Task) {
   runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(bild ? { bild: 1 as const } : {}), text, runor: bild ? '' : runor(text) });
   s.byggV = (s.byggV ?? 0) + 1;
   count(s, 'runsten'); count(s, 'runsten_' + l.slag); if (bild) count(s, 'bildsten');
-  if (l.slag === 'minne') tanke(p, 'resteMinnessten', s.now, { namn: l.om.namn }); else tanke(p, l.slag === 'helig' ? 'ristadeHeliga' : l.lag ? 'ristadeLag' : 'resteBedrift', s.now);
+  handelse(s, p, 'skrev', undefined, 'en runsten'); if (l.slag === 'minne') tanke(p, 'resteMinnessten', s.now, { namn: l.om.namn }); else tanke(p, l.slag === 'helig' ? 'ristadeHeliga' : l.lag ? 'ristadeLag' : 'resteBedrift', s.now);
   const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en bildsten om sin bedrift.`;
   log(s, rad, 'rel', [p.id]); notis(s, 'runsten', rad, [p.id], { x, y }); kronika(s, rad, 'runsten');
 }
@@ -519,6 +519,7 @@ export function skrivKlar(s: State, p: Person) {
   }
   count(s, 'skrivet'); count(s, 'skrivet_' + l.slag);
   tanke(p, 'skrev', s.now, { titel: tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1) });
+  handelse(s, p, 'skrev', undefined, tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1)); // (steg 12.1.134)
   if (forstaGang(s, 'skrivet')) log(s, `${p.name} skrev byns första blad: ${tx.titel.toLowerCase()}.`, 'skill', [p.id]);
 }
 // när bladet är läst: lärdomen med skrivaren som källa, intrycket i andra hand och glädjen av kvädet och berättelsen

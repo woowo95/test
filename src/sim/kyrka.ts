@@ -13,7 +13,7 @@ import { HUMOR, moodOf } from './humor';
 import { type Sed, drar, habitShare } from './seder';
 import { ata } from './naring';
 import { ALDER, KROPP, type BudTillfalle, ageOf, byId, count, getRel, living, log, relKey, satBudTillfalle, stat } from './folk';
-import { INTRYCK, beratta, paminn, ryktbarhet, samlatIntryck } from './rykten';
+import { INTRYCK, beratta, paminn, ryktbarhet, samlatIntryck, handelse } from './rykten';
 import { FOOD, KOTTSLAG, sakNamn } from './saker';
 import { type Ting, tingOf } from './agande';
 import { MASTERVERK, kvNamn } from './kvalitet';
@@ -339,7 +339,7 @@ export function budBrutet(s: State, p: Person, id: BudId) {
   p.skuld = (p.skuld ?? 0) + KYRKA.skuld; p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - KYRKA.skuldTro);
   tanke(p, 'brotBud', s.now, { bud: BDEF[id].namn.toLowerCase(), v: KYRKA.skuldHumor });
   if ((skalaV(tr, 'forlat') ?? 0) > 70 && rymsBud(s, tr, 4) && (p.skuld ?? 0) >= KYRKA.stotaUt) {
-    p.tro = undefined; p.skuld = 0; count(s, 'utstott');
+    p.tro = undefined; p.skuld = 0; count(s, 'utstott'); handelse(s, p, 'utstott');
     log(s, `${troNamn(tr)} stötte ut ${p.name}.`, 'rel', [p.id]);
   }
 }

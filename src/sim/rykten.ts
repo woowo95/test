@@ -104,6 +104,8 @@ export const RYKTE = balans('rykte', {
   lognTanke: -0.05, lognTankeTim: 12, // den som hör att någon ljuger om hen blir så här ledsen i så här många timmar
   skitsnack: 1.5, // ett påhittat rykte är så här starkt gånger händelsens vikt
   smakTycke: 0.7, // chansen att en smak från början är tycke (annars avsmak)
+  berestDygn: 5, // den som kommer hem efter så här många dygn (år i spelet) borta är vittberest (steg 12.1.134)
+  braPris: 0.25, // den som ger minst så här mycket mer än hen får i ett byte ger ett bra pris (steg 12.1.134)
 });
 
 // ---------- registren ----------
@@ -144,6 +146,22 @@ const IDEF = {
   pahittig: { namn: 'påhittig', tecken: 1, op: 8, sym: '{sym_hjarna}', sed: { nyfikenhet: 2 }, betyder: 'Har kommit på något nytt.' }, // steg 10.4.9 (symbolen är en platshållare)
   skvaller: { namn: 'skvallerbytta', tecken: -1, op: -6, sym: '🗣️', som: 'en skvallerbytta', betyder: 'Berättar dåliga rykten om andra.' }, // steg 10.8.6 (symbolen är en platshållare)
   aventyrare: { namn: 'äventyrare', tecken: 1, op: 8, sym: '📜', sed: { nyfikenhet: 1 }, som: 'en äventyrare', betyder: 'Har klarat ett uppdrag ute i världen.' }, // steg 11.8.17 (symbolen är en platshållare)
+  // intrycken från de nya systemen (steg 12.1.134; symbolerna är platshållare)
+  forsvarare: { namn: 'försvarare', tecken: 1, op: 10, sym: '🛡️', sed: { krig: 1 }, som: 'en försvarare', betyder: 'Stod kvar och slogs när rövarna kom.' },
+  botare: { namn: 'botare', tecken: 1, op: 12, sym: '🌿', sed: { gemenskap: 1 }, som: 'en botare', betyder: 'Har botat en sjuk eller skadad.' },
+  daligLakare: { namn: 'dålig läkare', tecken: -1, op: -8, sym: '🩸', som: 'en dålig läkare', betyder: 'Hade en sjuk eller skadad i sin vård som dog.' },
+  scenBra: { namn: 'bra på scenen', tecken: 1, op: 6, sym: '🎭', betyder: 'Publiken tog väl emot framträdandet.' },
+  scenDalig: { namn: 'dålig på scenen', tecken: -1, op: -3, sym: '🥱', betyder: 'Publiken tog illa emot framträdandet.' },
+  skrivkunnig: { namn: 'skrivkunnig', tecken: 1, op: 5, sym: '🪶', sed: { nyfikenhet: 1 }, betyder: 'Har skrivit ett blad, en bok eller ristat en sten.' },
+  from: { namn: 'from', tecken: 1, op: 4, sym: '🕯️', sed: { andlig: 1 }, betyder: 'Ber och offrar mycket.' },
+  gudlos: { namn: 'gudlös', tecken: -1, op: -6, sym: '⛓️', sed: { andlig: -1 }, betyder: 'Har vanhelgat det heliga eller stötts ut ur tron.' },
+  suput: { namn: 'suput', tecken: -1, op: -6, sym: '🍺', som: 'en suput', betyder: 'Är ofta full.' },
+  lurendrejare: { namn: 'lurendrejare', tecken: -1, op: -20, sym: '🦊', som: 'en lurendrejare', betyder: 'Har lurat någon i ett byte.', dampar: { ge: 0.3 }, beteende: 'Man ger ogärna till en lurendrejare.' },
+  hederlig: { namn: 'hederlig handlare', tecken: 1, op: 8, sym: '⚖️', som: 'en hederlig handlare', betyder: 'Ger bra pris i bytena.' },
+  vittberest: { namn: 'vittberest', tecken: 1, op: 5, sym: '🧭', sed: { nyfikenhet: 1 }, betyder: 'Har rest långt och varit borta länge.' },
+  brandslackare: { namn: 'brandsläckare', tecken: 1, op: 10, sym: '💧', sed: { gemenskap: 1 }, som: 'en brandsläckare', betyder: 'Var med och släckte en brand.' },
+  djurvan: { namn: 'bra med djur', tecken: 1, op: 4, sym: '🐾', betyder: 'Sköter djuren väl.' },
+  fangelsekund: { namn: 'fängelsekund', tecken: -1, op: -10, sym: '🔒', som: 'en fängelsekund', betyder: 'Har suttit i fängelse.' },
   forutseende: { namn: 'förutseende', tecken: 1, op: 8, sym: '{sym_oga}', sed: { forsiktighet: 2 }, betyder: 'Har som ledare tagit byn väl genom vintern.' }, // steg 10.4.9 (symbolen är en platshållare)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
@@ -206,6 +224,24 @@ const HDEF = {
   turne: { i: 'skicklig', vikt: 0.4, text: 'uppträdde i {sak}', prestation: true }, // steg 11.8.18: turnén, berättad när hen kommer hem eller av handlare därifrån
   uppdrag: { i: 'aventyrare', vikt: 0.5, text: 'klarade uppdraget {sak}', prestation: true }, // steg 11.8.17: berättas när sällskapet kommer hem
   pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat sin sovplats med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
+  // händelserna från de nya systemen (steg 12.1.134)
+  forsvarade: { i: 'forsvarare', vikt: 0.4, text: 'stod kvar och slogs när rövarna kom', prestation: true },
+  sprang: { i: 'feg', vikt: 0.3, text: 'sprang när rövarna kom' },
+  botade: { i: 'botare', vikt: 0.4, text: 'botade {om}', prestation: true },
+  vardDog: { i: 'daligLakare', vikt: 0.3, text: 'vårdade {om}, som dog ändå' },
+  scenBra: { i: 'scenBra', vikt: 0.25, text: 'fick publiken med sig i {sak}', prestation: true },
+  scenDalig: { i: 'scenDalig', vikt: 0.2, text: 'tråkade ut publiken med {sak}' },
+  skrev: { i: 'skrivkunnig', vikt: 0.3, text: 'skrev {sak}', prestation: true },
+  bad: { i: 'from', vikt: 0.05, text: 'bad och offrade till gudarna' },
+  skandade: { i: 'gudlos', vikt: 0.5, text: 'skändade {sak}' },
+  utstott: { i: 'gudlos', vikt: 0.4, text: 'stöttes ut ur tron' },
+  full: { i: 'suput', vikt: 0.15, text: 'var full igen' },
+  lurade: { i: 'lurendrejare', vikt: 0.5, text: 'lurade {om} i ett byte' },
+  braPris: { i: 'hederlig', vikt: 0.1, text: 'gav {om} ett bra pris' },
+  reste: { i: 'vittberest', vikt: 0.4, text: 'kom hem efter en lång resa', prestation: true },
+  slackte: { i: 'brandslackare', vikt: 0.4, text: 'var med och släckte branden', prestation: true },
+  skotteDjur: { i: 'djurvan', vikt: 0.03, text: 'skötte {sak} väl' },
+  satt: { i: 'fangelsekund', vikt: 0.6, text: 'satt i fängelset' },
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;
 export const HANDELSER: Record<HandelseTyp, HandelseDef> = HDEF;

@@ -18,6 +18,7 @@ import { DAY, Person, State, inMap } from './typer';
 import { blocked } from './byggnad';
 import { INDIVID } from './djur';
 import { tanke } from './tankar';
+import { handelse } from './rykten';
 
 // en art av tamdjur. ord = en/ett, ett djur, flera, det bestämda; foder = det man matar djuret med, det bästa först (hela saker); bete = djuret betar i hagen (steg 9.8.4),
 // och betet det helst äter; liv = hur många dygn (år i spelet) det lever, vuxen = när det är fullvuxet, varde = vad det är värt i
@@ -130,7 +131,7 @@ export function mataKlar(s: State, p: Person, ref?: number) {
   d.hunger = Math.max(0, d.hunger - tamArt(d.art).mattar * 2);
   (d.matad ??= {})[p.id] = (d.matad[p.id] ?? 0) + 1;
   if (d.art === 'hund' && d.agare === p.id) d.lojal = Math.min(1, (d.lojal ?? HUND.start) + HUND.mata);
-  ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat');
+  ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat'); handelse(s, p, 'skotteDjur', undefined, tamArt(d.art).ord[3]); // (steg 12.1.134)
   if (forstaGang(s, 'matatDjur')) log(s, `${p.name} matade byns ${tamArt(d.art).ord[1]} för första gången.`, 'world', [p.id]);
 }
 // vad byns djur är värda (byns rikedom, varde.ts) och vad en persons djur är värda (förmögenheten)

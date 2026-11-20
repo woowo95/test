@@ -51,7 +51,7 @@ import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
 import { PAB, pabud } from './styre';
 import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid, UPPDRAGTAL } from './uppdrag';
-import { handelse, ryktbarhet } from './rykten';
+import { handelse, ryktbarhet, RYKTE } from './rykten';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -834,7 +834,7 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
 export function hemkomst(s: State, sl: Sallskap, t: number) {
   const in_ = sl.ut?.kant ?? bynsMitt(s);
-  for (const p of resenarer(s, sl)) if (ute(p)) { kommHem(s, p, in_.x, in_.y); tanke(p, 'komHem', t); upplev(s, p, 'resaBarn'); } // (steg 12.1.131)
+  for (const p of resenarer(s, sl)) if (ute(p)) { const borta = t - (p.ute ?? t); kommHem(s, p, in_.x, in_.y); tanke(p, 'komHem', t); upplev(s, p, 'resaBarn'); if (borta >= RYKTE.berestDygn * DAY) handelse(s, p, 'reste'); } // (steg 12.1.131)
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
   vagnHem(s, sl, in_.x, in_.y);
   delaHemma(s, sl);

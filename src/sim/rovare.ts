@@ -15,7 +15,7 @@ import { kantMot } from './grannbyar';
 import { addTo, amountOf, avbryt, carryKind, dropLoad, isCarrying, zoneOf, zonesOf } from './lager';
 import { hundSkaller, tamArt, tamStulen, tamUte } from './tamdjur';
 import { DORRAR, bitAt, bitsOf, freeNear, husById, roomAt } from './byggnad';
-import { LARM } from './rykten';
+import { LARM, handelse } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
 import { avst, clamp, hash3, rnd } from './slump';
@@ -808,6 +808,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   }
   for (const { k, p } of bybor) {
     if (!p || !alive(p)) continue;
+    if (k.lage === 'strid') handelse(s, p, 'forsvarade'); else if (k.lage === 'flykt') handelse(s, p, 'sprang'); // (steg 12.1.134)
     if (f && k.lage === 'ger') svarTrohet(s, f, p); // heligt krig (steg 8.8.6)
     if (k.lage !== 'strid') { p.gavSig = s.now; p.larmRoll = undefined; } // den som fallit, flytt eller gett upp vill mindre stå emot, och rollen väljs om (steg 12.1.82)
     slitKastat(s, p, st, k);
