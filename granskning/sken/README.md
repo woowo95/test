@@ -10,3 +10,7 @@ Samma by (by 3, år 14, sommar, kl. 22) på natten, inzoomad lika mycket.
 ## Steg 12.1.169: skenet ser större ut och arbetsljuset följer bilden
 
 - `natt-169.png`: samma by och tid. Elden lyser 14 rutor, facklan 9, talgljuset 5 och glöden 1,5, och bilden ritar skenet med exakt samma räckvidd som spelet: fullt ljust ut till tre fjärdedelar av räckvidden, sedan tonar det ut, och utanför räckvidden syns inget sken. Elden brinner inte för fullt i bilden, så cirkeln är mindre än 14 rutor, lika stor som där folk kan arbeta. Jämför med `natt-fore.png`: det ljusa området är ungefär hälften större.
+
+## Steg 12.1.170: mjukare sken utan raster
+
+- `natt-170.png` (samma by, tid och zoom som `natt-169.png`) och `natt-170-nara.png` (inzoomad): skenet är fullt ljust ut till ungefär halva räckvidden och tonar sedan ut till kanten, och i övergången blandas färgen steglöst mellan palettens steg av mörker, utan raster och utan ringar. Det gäller eldarna, facklorna, ljusen, eldens skuggor och cirkeln kring människorna. Räckvidden och arbetsljuset är som i 12.1.169.

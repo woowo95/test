@@ -4,8 +4,9 @@
 // per punkt i bilderna) vilket steg punkten får, så att övergången blir jämn utan nya färger. Elden lyser: nära en brinnande
 // eld (eller glöd) är mörkret mindre, och det minskar i steg utåt. Mitt i natten (steg 5.1.7.2) är det tre steg mörkare, så
 // att nästan allt är kolsvart och bara elden lyser. Bara utseende; filtret gör inget alls på dagen.
-// Mörkret ligger i hela steg över kartan (steg 6.8.17): rastret används bara i kanten av ljuset och i en smal rand (RAND, en
-// del av kartans bredd) som sveper över kartan från öster till väster under SVEP_MS (datorns tid) när mörkret går ett steg.
+// Mörkret ligger i hela steg över kartan (steg 6.8.17): rastret används bara i en smal rand (RAND, en del av kartans bredd) som
+// sveper över kartan från öster till väster under SVEP_MS (datorns tid) när mörkret går ett steg. I ljusets kant (eldarna,
+// facklorna, ljusen, eldens skuggor och cirkeln kring människorna) blandas färgen steglöst mellan stegen (steg 12.1.170).
 import * as PIXI from 'pixi.js';
 import { FARGER, MORKARE, BAYER } from '../palett';
 import { W } from '../sim';
@@ -50,9 +51,9 @@ void main() {
   for (int i = 0; i < ${MAX_ELDAR}; i++) {
     vec4 e = uEld[i];
     float d = length(w - e.xy) / max(e.z, 1.0);
-    float li = e.w < 0.0 ? -e.w * (1.0 - smoothstep(0.75, 1.0, d)) : e.w * clamp(1.0 - d, 0.0, 1.0);
-    // eldens skuggor (steg 12.3.2, ui/eldskugga.ts): bakom en vägg eller en stam är ljuset ett eller två steg svagare, med raster
-    // bara i skuggans kant
+    float li = e.w < 0.0 ? -e.w * (1.0 - smoothstep(0.5, 1.0, d)) : e.w * clamp(1.0 - d, 0.0, 1.0);
+    // eldens skuggor (steg 12.3.2, ui/eldskugga.ts): bakom en vägg eller en stam är ljuset ett eller två steg svagare, och kanten
+    // blandas steglöst som ljusets kant (steg 12.1.170)
     if (e.z > 0.0 && uHarSkugga[i] > 0.5) {
       vec2 dv = w - e.xy;
       float a = fract(atan(dv.y, dv.x) / 6.2831853 + 1.0);
@@ -70,7 +71,6 @@ void main() {
   }
   float u = 1.0 - (w.x * 0.85 + w.y * 0.15) / uKart;
   float bas = uFran + (uTill - uFran) * clamp((uSvep * (1.0 + uRand) - u) / uRand, 0.0, 1.0);
-  float m = max(0.0, bas - max(3.3 * ljus, folk));
   float bd = 1e9;
   vec3 b0 = col, b1 = col, b2 = col, b3 = col;
   for (int i = 0; i < 32; i++) {
@@ -81,9 +81,15 @@ void main() {
   vec2 px = floor(w);
   float k = mod(px.x, 4.0) + 4.0 * mod(px.y, 4.0), bay = 0.0;
   for (int j = 0; j < 16; j++) if (float(j) == k) bay = uBayer[j];
-  float lag = floor(min(m, 2.0));
-  float steg = lag + ((min(m, 3.0) - lag) * 16.0 > bay + 0.5 ? 1.0 : 0.0);
-  vec3 o = steg < 0.5 ? b0 : (steg < 1.5 ? b1 : (steg < 2.5 ? b2 : b3));
+  // mörkret i hela steg, med raster bara i randen som sveper när mörkret byter steg (steg 6.8.17)
+  float lag = floor(min(bas, 2.0));
+  float sb = lag + ((min(bas, 3.0) - lag) * 16.0 > bay + 0.5 ? 1.0 : 0.0);
+  // ljuset tar bort mörker, och i övergången blandas färgen steglöst mellan palettens steg av mörker, utan raster och utan
+  // ringar (steg 12.1.170): det enda stället där kartan ritar färger mellan palettens
+  float m = clamp(sb - max(3.3 * ljus, folk), 0.0, 3.0);
+  float lo = min(floor(m), 2.0), fr = m - lo;
+  vec3 c0 = lo < 0.5 ? b0 : (lo < 1.5 ? b1 : b2), c1 = lo < 0.5 ? b1 : (lo < 1.5 ? b2 : b3);
+  vec3 o = mix(c0, c1, fr);
   gl_FragColor = vec4(o * c.a, c.a);
 }`;
 
@@ -95,7 +101,7 @@ export const nattFilter = new PIXI.Filter(undefined, FRAG, {
 });
 
 // mörkret m (0 dag, 1 skymning, 2 natt, 3 djup natt, och tal emellan) och eldarna (x och y i världens punkter, hur långt ljuset
-// når, styrkan 0–1). En negativ styrka är elden (steg 6.8.15): fullt ljus ut till tre fjärdedelar av vägen och sedan mjukt avtagande till räckvidden (steg 12.1.169); de andra
+// når, styrkan 0–1). En negativ styrka är elden (steg 6.8.15): fullt ljus ut till ungefär halva vägen och sedan mjukt avtagande till räckvidden, steglöst utan raster (steg 12.1.169 och 12.1.170); de andra
 // avtar jämnt. Mörkret avrundas till hela steg; när steget byts sveper randen över kartan (steg 6.8.17)
 const svep = { fran: -1, till: -1, t0: 0 };
 let skuggSatt = false;
