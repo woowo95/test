@@ -34,6 +34,7 @@ export const JARNSAKER: Record<string, JarnsakDef> = {
   jarnkniv: { grupp: 'kniv', tek: 'kniv', text: 'Smider en järnkniv på städet.', forsta: '{namn} smidde byns första järnkniv.' },
   lie: { grupp: 'skara', tek: 'kniv', text: 'Smider en lie på städet.', forsta: '{namn} smidde byns första lie. Med den slås ängen tre gånger så fort som med skäran.' },
   isborr: { grupp: 'isborr', tek: 'smedja', text: 'Smider en isborr.', forsta: '{namn} smidde byns första isborr. Den borrar genom den tjockaste isen.' }, // steg 12.2.11
+  eldstal: { grupp: 'eldstal', tek: 'smedja', text: 'Smider ett eldstål.', forsta: '{namn} smidde byns första eldstål. Mot en flinta ger det gnistor som tänder på ett par försök.' }, // steg 12.2.12
   svard: { grupp: 'svard', tek: 'vapensmide', text: 'Smider ett svärd.', forsta: '{namn} smidde byns första svärd, det första som bara är ett vapen.' }, // steg 12.2.9
   jarnspjut: { grupp: 'spjut', tek: 'flintspjut', text: 'Smider en spets av järn och surrar den på ett skaft.', forsta: '{namn} smidde byns första järnspjut.' }, // steg 12.2.8
 };

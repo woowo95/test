@@ -122,7 +122,8 @@ export const igniterOf = (s: State, p?: Person) => {
   for (let i = IGNITERS.length - 1; i >= 0; i--) {
     const ig = IGNITERS[i];
     if (!SAKER[ig.id]?.redskap) { if (amountOf(s, ig.id) + iBordan(p, ig.id) >= 1) return ig; continue; } // med det hen bär dit (steg 11.1.75)
-    if (nTools(s, ig.id) >= 1 && (p ? kanTeknik(p, ig.id) : living(s).some(q => kanTeknik(q, ig.id)))) return ig;
+    if (ig.med && amountOf(s, ig.med) + iBordan(p, ig.med) < 1) continue; // eldstålet utan flinta att slå mot (steg 12.2.12)
+    if (nTools(s, ig.id) >= 1 && (p ? kanTeknik(p, ig.tek ?? ig.id) : living(s).some(q => kanTeknik(q, ig.tek ?? ig.id)))) return ig;
   }
   return undefined;
 };
@@ -343,6 +344,8 @@ export function tryLight(s: State, p: Person, f = s.fire) {
   if (ig.id === 'bagborr' && wearTool(s, p, 'bagborr', 1 / ELD.borrForsok)) { // borren slits av varje försök (steg 10.6.13)
     count(s, 'bagborrarTrasiga'); log(s, `${p.name}s bågborr gick sönder.`, 'world', [p.id]);
   }
+  if (ig.slits && wearTool(s, p, ig.id, 1 / ig.slits)) { count(s, ig.id + 'Trasiga'); log(s, `${p.name}s ${ig.name.split(' ')[0].toLowerCase()} var slitet.`, 'world', [p.id]); } // eldstålet slits av varje försök (steg 12.2.12)
+  if (ig.med === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) { use(s, p, 'flinta', 1, true); count(s, 'flintaSprackStal'); } // flintan som stålet slås mot kan spricka
   if (lyckas) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
     use(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id }, f);

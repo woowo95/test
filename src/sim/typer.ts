@@ -515,11 +515,11 @@ export const HEARTHS: Hearth[] = [
   { id: 'hard', name: 'Härd', desc: 'Stensatt härd i golvet med rökhål i taket. Den första elden som går att ha inomhus.', indoor: true, maxFuel: 10, burn: 0.4, radius: 6, comfort: 0.07, spread: 0.3, requires: 'Bofast by' },
 ];
 // chance = chans per försök, grass/sticks = tändmaterial per försök, minutes = tid per försök
-export interface Igniter { id: string; name: string; desc: string; chance: number; grass: number; sticks: number; minutes: number; requires: string }
+export interface Igniter { id: string; name: string; desc: string; chance: number; grass: number; sticks: number; minutes: number; requires: string; tek?: string; med?: string; slits?: number } // tek = tekniken den som tänder ska kunna (annars id), med = det som behövs bredvid (flintan som stålet slås mot), slits = så många försök redskapet håller (steg 12.2.12)
 export const IGNITERS: Igniter[] = [
   { id: 'flinta', name: 'Flinta', desc: 'Flintan slås mot en annan sten så att gnistor faller i tändmaterialet. Kräver tålamod och mycket tändmaterial.', chance: 0.025, grass: 3, sticks: 3, minutes: 15, requires: '–' },
   { id: 'bagborr', name: 'Bågborr', desc: 'En pinne snurras snabbt mot en träskiva med hjälp av en båge tills glöd bildas.', chance: 0.13, grass: 2, sticks: 1, minutes: 10, requires: 'Bågborr' }, // steg 10.6.13: ungefär tre försök där flintan tar sexton; håller ELD.borrForsok försök
-  { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide' },
+  { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide', tek: 'smedja', med: 'flinta', slits: 400 }, // steg 12.2.12: smids i smedjan
   { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
 ];
 

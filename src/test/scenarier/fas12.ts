@@ -406,3 +406,28 @@ SCENARIER.isborr = {
     ];
   },
 };
+
+SCENARIER.eldstal = {
+  text: 'Eldstålet (steg 12.2.12): smids av 1 järn på 3 minuter, slås mot en flinta och tänder oftast på ett till tre försök; en by med eldstål, flinta och bågborr tänder med stålet, utan flinta med borren, och smeden gör ett nytt när stålet är slitet',
+  kor: () => {
+    const R = SIM.RECEPT.eldstal, ig = SIM.IGNITERS.find(i => i.id === 'eldstal')!;
+    const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = vuxna[0];
+    for (const q of vuxna) Object.assign((q.tek ??= {}), { smedja: 1, bagborr: 1 });
+    SIM.addTool(s, 'bagborr', p); const stal = SIM.addTool(s, 'eldstal', p);
+    SIM.setStock(s, { flinta: 2 });
+    const medFlinta = SIM.igniterOf(s, p)?.id;
+    SIM.setStock(s, { flinta: 0 });
+    const utanFlinta = SIM.igniterOf(s, p)?.id;
+    // stålet slits ut: smeden vill göra ett nytt
+    SIM.setStock(s, { flinta: 2, kol: 2, jarn: 1 });
+    s.ting = SIM.tingOf(s).filter(t => t !== stal);
+    medBank(s, 'smedja');
+    const brist = SIM.jarnBrist(s, 'eldstal'), u = SIM.PROJEKT.eldstal?.uppgift(s, p);
+    return [
+      [`eldstålet: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan, håller ${ig.slits} försök`, R.av.jarn === 1 && R.min === 3 && R.tek === 'smedja' && ig.slits === 400 && ig.grass === 1 && ig.sticks === 1],
+      [`tänder oftast på ett till tre försök (chansen ${ig.chance})`, ig.chance >= 0.33 && ig.chance <= 0.6],
+      [`med eldstål, flinta och bågborr tänds elden med stålet (${medFlinta}), utan flinta med borren (${utanFlinta})`, medFlinta === 'eldstal' && utanFlinta === 'bagborr'],
+      [`när stålet är slitet gör smeden ett nytt (brist ${brist}, ${u?.text})`, brist === 1 && u?.act === 'smida' && u.tool === 'eldstal'],
+    ];
+  },
+};
