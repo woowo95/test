@@ -1,5 +1,7 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
 import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
+import { medvetande } from '../../sim/halsa';
+import { BIN } from '../../sim/bin';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -749,6 +751,13 @@ SCENARIER.vard = {
     const buren0 = s.stat?.['buren hem'] as number ?? 0; let hem = false;
     for (let i = 0; i < 12 * STEG_TIM && !hem; i++) { step(s, BEAT); if (tk()?.act !== 'buren' && hemma(s, p)) hem = true; }
     const bars = (s.stat?.['buren hem'] as number ?? 0) > buren0;
+    // ett förband som suttit för länge byts hemma i byn av en annan (steg 12.1.57)
+    fyll(p); fyll(q); setAmount(s, 'mossa', 3); skada(s, p, 'handV', 'skarsar', 0.5, 'olycka', '');
+    Object.assign(p.skador![0], { b: 0, f: 1, fT: s.now - (HALSA.bytaTim + 1) * HOUR }); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' };
+    q.x = p.x + 3; q.y = p.y; q.task = undefined; const bytt0 = s.stat?.forbandBytt ?? 0;
+    chooseTask(s, q); const qt = () => q.task as Person['task'], bytaVal = qt()?.act === 'varda' && qt()?.ref === p.id;
+    for (let i = 0; i < 20 * STEG_TIM && qt()?.act === 'varda'; i++) step(s, BEAT);
+    const bytt = (s.stat?.forbandBytt as number ?? 0) > (bytt0 as number) && !!p.skador?.[0] && s.now - p.skador[0].fT! < HALSA.bytaTim * HOUR;
     // man läker fortare när man vilar
     fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; timmar(p, 4); const vaken = p.skador![0].g;
     fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.skador![0].salva = 5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
@@ -768,6 +777,7 @@ SCENARIER.vard = {
       [`blödningen stannar och ett förband av mossa läggs på (${lagda} förband, mossa kvar ${mossa})`, trycktes && forband && lagda === 1],
       [`den som har brutit benet kan inte gå och kravlar (${kryp.toFixed(2)} av farten)`, kravlar],
       [`den som inte kan gå långt från lägret kravlar hem eller bärs hem av en annan (${langtBort ? 'långt bort' : 'inte långt bort'}, ${bars ? 'buren' : 'kravlade själv'}, hemma ${hem}); sedan steg 3.7.19 kravlar man en ruta på fem sekunder`, langtBort && hem],
+      [`ett gammalt förband byts hemma i byn av en annan (${bytaVal ? 'valde vården' : 'valde inte vården'}, ${bytt ? 'bytt' : 'inte bytt'})`, bytaVal && bytt],
       [`man läker fortare när man sover (${(0.5 - vaken).toFixed(3)} → ${(0.5 - sover).toFixed(3)} på fyra timmar)`, 0.5 - sover > 0.5 - vaken],
       [`på tolv dygn i en by: ${b.stat ? amountOf(b, 'mossa').toFixed(1) : 0} mossa, ${st('skador')} skador, ${st('vard')} vårdtillfällen (${st('vard av andra')} av andra), ${st('forband')} förband, ${st('infektioner')} infektioner, ${st('kallbrand')} kallbrand, ${st('buren hem')} burna hem`, st('vard') > 0 && amountOf(b, 'mossa') + st('forband') > 0],
     ];
@@ -789,8 +799,13 @@ SCENARIER.halsoflik = {
     // förmågorna: värdet är det simuleringen räknar med, och delarna visar var det kommer ifrån
     const rf = FORMAGOR.rorlighet, hf = FORMAGOR.handighet;
     const formagor = rf.varde(p) === rorlighet(p) && hf.varde(p) === handighet(p) && FORMAGOR.smarta.varde(p) === smarta(p)
-      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === (smarta(p) > 0 ? 2 : 1) && hf.delar(p).length === 1
+      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === (smarta(p) > 0 ? 2 : 1) && Math.abs(1 + hf.delar(p).reduce((a, x) => a + x.v, 0) - handighet(p)) < 1e-9 // händigheten har också medvetandet (steg 12.1.57)
       && FORMAGOR.blod.delar(p).length === 1 && FORMAGOR.smarta.delar(p).length === 2;
+    // delarna ger värdet också för bigiftet, bistickens antal och den kroniska smärtan (steg 12.1.57)
+    const b2 = createState(5, START).people[1];
+    Object.assign(b2, { hunger: 1, torst: 1, health: 1, blod: 1, rest: 1, skador: [{ d: 'handV', k: 'bistick', g: 0.5, b: 0, n: 3 }], men: [{ d: 'benH', fel: 0.2, ont: 0.1 }], gift: (BIN.giftYr + BIN.giftDod) / 2 });
+    const summa = (f: { delar: (p: Person) => { v: number }[] }) => f.delar(b2).reduce((a, x) => a + x.v, 0);
+    const delarGer = Math.abs(1 + summa(FORMAGOR.medvetande) - medvetande(b2)) < 1e-9 && Math.abs(-summa(FORMAGOR.smarta) - smarta(b2)) < 1e-9 && Math.abs(1 + summa(FORMAGOR.handighet) - handighet(b2)) < 1e-9;
     // vården syns: förband och rengjort, och ett infekterat sår som inte rengörs blir sämre
     const w = p.skador![0]; w.f = 1; w.inf = 0.3;
     const smutsig = skadeLista(p, s.now)[0];
@@ -806,6 +821,7 @@ SCENARIER.halsoflik = {
       [`ett benbrott blir en rad: ${brott.tecken} ${brott.namn}, ${brott.grad}, ${brott.gar}`, brottRad],
       [`delarna i figuren får färg av hur skadade de är (benet ${delSkada(p, 'benV').toFixed(2)}, handen ${delSkada(p, 'handH').toFixed(2)})`, farg],
       [`förmågorna visar simuleringens värden (rörlighet ${rf.varde(p).toFixed(2)}, händighet ${hf.varde(p).toFixed(2)}) och vad som sänker dem`, formagor],
+      [`delarna ger värdet med bigift, tre bistick och det som läkt fel (medvetande ${medvetande(b2).toFixed(2)}, smärta ${smarta(b2).toFixed(2)}, händighet ${handighet(b2).toFixed(2)})`, delarGer],
       [`ett infekterat sår med förband visas som ${smutsig.gar}, och rengjort som ${ren.gar}`, vard],
       ['ett sår som rengjordes för länge sedan räknas inte som rengjort', !gammal.gjort.includes('rengjort') && !gammal.battre],
       [`kallbranden visas med ${kall.tecken} och blir sämre`, kall.tecken === '☠️' && !kall.battre],

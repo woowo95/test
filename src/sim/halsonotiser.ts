@@ -29,7 +29,7 @@ export const HALSOTECKEN: Record<string, TeckenDef> = {
   blods: { notis: 'blodigen', varde: (_s, p) => blods(p) ? 1 : 0,
     text: (p, f, t, b) => t > f && (p.hnBlodat ?? 0) > 0 ? `${gen(p.name)} sår blöder igen.${behovText(b)}` : undefined },
   stoppad: { notis: 'blodstopp', varde: (_s, p) => blods(p) ? 1 : 0,
-    text: (p, f, t) => t < f ? `Blödningen hos ${p.name} har stoppats.` : undefined },
+    text: (p, f, t) => t < f ? `Blödningen hos ${p.name} har ${blodning(p) > 0 ? 'avtagit' : 'stoppats'}.` : undefined }, // ett litet sår blöder svagt en stund till (steg 12.1.57)
   svimmat: { notis: 'svimmat', varde: (_s, p) => p.svimmat ? 1 : 0,
     text: (p, f, t, b) => t > f ? `${p.name} har svimmat och ligger medvetslös.${behovText(b)}` : undefined },
   infektion: { notis: 'infborjar', varde: (_s, p) => (p.skador ?? []).filter(w => w.inf !== undefined).length,

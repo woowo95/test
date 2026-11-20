@@ -24,7 +24,7 @@ import { viktOf } from './saker';
 import { wearUsed } from './redskap';
 import type { Person } from './typer';
 import { blocked } from './byggnad';
-import { kanGa, retadStick } from './halsa';
+import { SKADOR, kanGa, retadStick } from './halsa';
 import { avbryt } from './lager';
 import { kartStrider } from './kartstrid';
 import { tamArt, tamDor, tamEg, tamdjurOf } from './tamdjur';
@@ -325,11 +325,10 @@ export function retadeSteg(s: State, dt: number) {
   if (kvar.length < s.retade.length) log(s, 'De uppretade bina lugnade sig.', 'world');
   if (kvar.length) s.retade = kvar; else delete s.retade;
 }
-// djurens stick läker på samma tid som människans (SKADA.bistick.lakTim): en rad i TAKTER var tionde minut
+// djurens stick läker på samma tid som människans (SKADOR.bistick.lakTim): en rad i TAKTER var tionde minut
 export function djurStickSteg(s: State, dt: number) {
-  for (const d of tamdjurOf(s)) if (d.bistick) { d.bistick.g -= dt / HOUR_S / BISTICK_LAK; if (d.bistick.g <= 0) d.bistick = undefined; }
+  for (const d of tamdjurOf(s)) if (d.bistick) { d.bistick.g -= dt / HOUR_S / SKADOR.bistick.lakTim; if (d.bistick.g <= 0) d.bistick = undefined; }
 }
-const BISTICK_LAK = 12;
 // den som dött av bistick får en notis
 export function binDod(s: State, p: Person) { notis(s, 'retat', `${p.name} dog av bistick.`, [p.id], { x: p.x, y: p.y }); }
 FAROR.push(s => !!s.retade?.length); // korta slag medan bina sticker
