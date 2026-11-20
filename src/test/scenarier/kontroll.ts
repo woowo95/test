@@ -14,11 +14,40 @@ import { anvandsKant, skaffasKant } from '../../ui/skaffas';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ANSIKTSORD, drag, glomArv, rovarSkapad, skapad, skonNiva } from '../../ui/utseende';
-import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar, utanWebblasare } from './hjalp';
+import { Koll, kor, klockan, uiLas, testBy, SCENARIER, grenarUte, barGrenar, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { sak as sakFlik } from '../../ui/flikar/sak';
+import { station as stationFlik } from '../../ui/flikar/station';
+import { hus as husFlik } from '../../ui/flikar/hus';
+import { lager as lagerFlik } from '../../ui/flikar/lager';
+import { falt as faltFlik } from '../../ui/flikar/falt';
+import { person as personFlik } from '../../ui/flikar/person';
+import { eld } from '../../ui/flikar/eld';
+import { forrad } from '../../ui/flikar/forrad';
+import { grannar } from '../../ui/flikar/grannar';
+import { kronika } from '../../ui/flikar/kronika';
+import { religion } from '../../ui/flikar/religion';
+import { seder } from '../../ui/flikar/seder';
+import { styre } from '../../ui/flikar/styre';
+import { tal } from '../../ui/flikar/tal';
+import { teknik } from '../../ui/flikar/teknik';
 import { lagstBehov } from '../../ui/hjalp';
 const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
+
+// alla rutor och flikar i en testby, ritade som text: de som visar "//" (en kodkommentar som hamnat i en textmall)
+function kodIRutorna() {
+  const s = SIM.cloneState(testBy(1)); utanWebblasare(); setByn(s);
+  const fel: string[] = []; let n = 0;
+  const las = (namn: string, html: () => string) => { n++; if (/(^|[^:])\/\/\s/.test(html())) fel.push(namn); };
+  for (const [namn, f] of Object.entries({ eld, forrad, grannar, kronika, religion, seder, styre, tal, teknik })) las(namn, () => f.html!());
+  for (const st of SIM.stationerOf(s)) { ui.stationId = st.id; las(`station ${st.k}`, () => stationFlik.html!()); }
+  for (const h of SIM.housesOf(s)) { ui.husId = h.id; las(`hus ${h.id}`, () => husFlik.html!()); }
+  SIM.zonesOf(s).forEach((z, i) => { ui.lagerNr = i; las(`lager ${z.namn ?? i}`, () => lagerFlik.html!()); });
+  for (const f of s.falt ?? []) { ui.faltId = f.id; ui.faltRuta = -1; las(`fält ${f.id}`, () => faltFlik.html!()); }
+  for (const tg of tingOf(s).slice(0, 60)) { ui.sak = `t:${tg.id}`; las(`sak ${tg.k}`, () => sakFlik.html!()); }
+  for (const p of living(s)) { ui.selected = p.id; las(`person ${p.name}`, () => personFlik.html!()); }
+  return { n, fel: [...new Set(fel)] };
+}
 
 SCENARIER['ui-ren'] = {
   lang: true,
@@ -40,7 +69,10 @@ SCENARIER['ui-ren'] = {
     }
     const sa = serialize(a), sb = serialize(b);
     let d = 0; while (d < sa.length && sa[d] === sb[d]) d++;
+    // ingen ruta eller flik visar kod (steg 12.1.12): varje station, hus, lager, fält, ting och person i en testby, och flikarna
+    const kod = kodIRutorna();
     return [
+      [`ingen ruta eller flik visar en kodkommentar (${kod.n} rutor${kod.fel.length ? `; "//" i: ${kod.fel.slice(0, 6).join(', ')}` : ''})`, kod.n > 50 && !kod.fel.length],
       [`gränssnittet läste ${n} gånger under ${DYGN} dygn (${DYGN} år i spelet), med ${living(a).length} invånare`, n > 100],
       [`läsningarna skrev inget i byn (${andrat} av ${n} gånger ändrades sparfilen)`, andrat === 0],
       [sa === sb ? 'sparfilerna är lika tecken för tecken' : `sparfilerna skiljer sig${lika > 0 ? ` redan efter ${lika} dygn` : ''}, första skillnaden: …${sa.slice(Math.max(0, d - 60), d + 40)}… mot …${sb.slice(Math.max(0, d - 60), d + 40)}…`, sa === sb],
