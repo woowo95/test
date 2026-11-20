@@ -17,7 +17,7 @@ Bildstilens guide (regler för allt som ritas):
 - Stationerna ovanifrån: stationer, bänkar, bord, bäddar och härdar ses snett ovanifrån, som slaktbänken och borden. Arbetsytan (skivan, stocken, hällen) ritas ovanifrån och tar hälften till tre fjärdedelar av höjden; framkanten är ett smalt band på 2–3 punkter i en mörkare ton; bara de främre benen syns, som korta stumpar på 3–6 punkter; det som ligger på ytan ritas ovanifrån; höga delar (stolpar, ramar, en gryta) står upp vid bakkanten, förkortade. Aldrig rakt från sidan. Stationerna ska annars se mycket olika ut: form, material och storlek är fria, bara vinkeln är gemensam.
 - Logiken först: tänk innan du ritar på hur saken bärs, hålls eller står och vad som då syns. På ryggen syns bara det som sticker upp bakom axeln, i handen syns det från handen och ut, och en rem eller sträng går runt kroppen, aldrig genom huvudet eller ansiktet. I porträttet syns bara den del av ett redskap som logiskt syns.
 - Symmetriskt det som är symmetriskt: en kruka, en skål, en sköld eller en tunna har en spegelsymmetrisk form; bara ljuset och kornet skiljer sidorna åt.
-- Som i spelet: allt ses snett uppifrån, som kartan, aldrig som en platt sidovy. Något som redan finns i spelet (ett träd, ett djur, ett hus) ritas från spelets bild av det.
+- Som i spelet: allt ses snett uppifrån, som kartan, aldrig som en platt sidovy. Något som redan finns i spelet (ett träd, ett djur, ett hus) ritas från spelets bild av det. En variant av något som finns (en trasig vagn, en rasad mur) börjar från spelets bild, och bara skillnaden läggs på som ett lager ovanpå (mossa, sprickor, avbrutna delar).
 
 - Vet vad bilden är till: bestäm innan du ritar i vilket sammanhang saken syns, t.ex. den växande plantan på åkern eller skörden som sak i förrådet. Kortets text säger vilket; rita bara det.
 - En sak i förrådet ritas som en enda sak (ett äpple, en limpa, en balja), aldrig som en hög eller flera; bilderna för en hel stack ritas senare, när Björn godkänt saken.
@@ -32,5 +32,9 @@ Bildstilens guide (regler för allt som ritas):
 - Det som kan vändas ritas åt båda håll: en sak som står längs eller tvärs på kartan (en kälke, en ho, ett kar) ritas både liggande vågrätt och stående lodrätt.
 - Samma storlek när något ritas om: en sak som ritas om behåller sin storlek, om inte kommentaren säger något annat.
 - Väggar helt uppifrån: en vägg (av timmer, sten eller flätverk) ritas rakt ovanifrån som spelets timmervägg, ett band av krönet utan någon framsida.
+- Det valda djuret från två håll: när ett djur är valt ritas samma djur (samma form) från två vinklar, snett framifrån och från sidan, och med två eller tre täckningar (pälsens färg och teckning).
+- Sorterna skiljer sig i form: olika sorter av samma slags sak (kött från olika djur) skiljer sig i formen där det är rimligt, inte bara i färgen.
+- Små barn ser små ut: de små barnens porträtt byggs av porträttdelar som finns, valda så att barnet ser tydligt ungt ut (runt huvud, stora ögon, liten näsa och mun).
+- Vätskan syns i karet: en station eller behållare som kan ha olika vätskor visar vätskan i vätskans färg, en bild per vätska.
 
 Svara bara med JSON enligt schemat.`;

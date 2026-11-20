@@ -1,0 +1,83 @@
+{
+ "kort": "f11_grav",
+ "namn": "Graven ute i världen",
+ "slag": null,
+ "vad": "Steg 11.5: den som dör på en resa begravs där, och graven syns på världskartan. I spelet är den nu ett kryss. Bilden visar den mellan ett träd och ett berg ur spelet. Din kommentar förra gången: ”gör ett enkelt kors”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "gör ett enkelt kors",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f11_grav_kors",
+     "rader": [
+      "................",
+      "......EEEE......",
+      "......EHHE......",
+      "......EGFE......",
+      "...EEEEGFEEEE...",
+      "...EHHHoEHHGE...",
+      "...EGHGEoGGFE...",
+      "...EGFGoEFFFE...",
+      "...EEEEGFEEEE...",
+      "......EGFE......",
+      "......EGFE......",
+      "......EFFE......",
+      "......EGFE......",
+      "....EGHGFFGE....",
+      "...EGGFGFGFFE...",
+      "....EEEEEEEE...."
+     ]
+    }
+   ],
+   "anteckning": "Korset står upprätt med foten nedsjunken i en liten jordtuva, framsidan mot betraktaren. Eftersom vi ser snett uppifrån syns ovansidan av toppen och armarna som ett smalt band i jord3. Stam och armar är 2 punkter tjocka i jord1 och jord2 med kontur i jord0, och den ljusare tonen ligger till vänster. Vid korsningen sitter en lindning i jord0 och ben0. Tuvan har 3 rader och är ljusast uppe till vänster. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Granen och berget kommer ur spelet och ritas inte här, bara graven på sin ruta. Granskningen: Granskad och oförändrad. Korset är 10 × 15 punkter med tuvan, nära idéns 9 × 13, och står rimligt mot kolonisten på 14 × 20 som en grav på en ruta. Det är spegelsymmetriskt kring mitten mellan kolumn 7 och 8: stammen, armarna och tuvan har samma form på båda sidor. Bara ljuset skiljer sidorna åt, med jord3 och jord2 till vänster och jord1 till höger. Ovansidan av armarna och toppen syns som ett ljust band i jord3, så korset läses snett uppifrån och inte som en platt sidovy. Konturen är jord0 och inte svart, och korset har två till tre trätoner med korn. Det lindade bandet vid korsningen i jord0 och ben0 följer idén. Den ljusare träytan med mörk kontur syns tydligt mot det olivgröna gräset. Ingen glans i vitt och inga färger utanför paletten.",
+   "ide": "Ett upprätt träkors av två kluvna störar, ungefär 9 punkter brett och 13 högt på en ruta, som står rakt i marken med framsidan mot betraktaren. Stammen och armarna är 2 punkter tjocka i jord1 och jord2 med kontur i jord0. Ovansidan av armarna och toppen syns som ett smalt ljusare band i jord3 eftersom vi ser snett uppifrån, och vid korsningen sitter ett lindat band i jord0 och ben0. Längst ner sjunker foten ner i en liten jordtuva på 2–3 punkter, och korset är spegelsymmetriskt så att bara ljuset från vänster skiljer sidorna åt. På kortet står det ensamt på sin ruta mellan spelets egen gran och berget."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_grav",
+     "rader": [
+      "......EEE......",
+      "......EHE......",
+      "....EEEHEEE....",
+      "....EHHHGGE....",
+      "....EEEGEEE....",
+      "......EGE......",
+      "......EGE......",
+      "....EEEEEEE....",
+      "..EEHHHHGGGEE..",
+      ".EHHGHHGGGFGFE.",
+      ".EGHGGGGFGFFFE.",
+      "..EGFGFFFFFFE..",
+      "...EEEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Graven ligger på marken och ses snett ovanifrån som kartan. Jordhögen är en låg, rundad oval, 13 punkter bred och 6 hög. Den har kontur i jord0, och krönet är ljusast (jord3) uppe till vänster och mörknar till jord1 nere till höger. Korset är enkelt, som Björn bad om: en stolpe och en tvärslå i trätoner med kontur i jord0. Det står vid bakkanten, alltså huvudänden, och syns därför bakom högen. Foten döljs av högens bakkant, så att korset ser ut att vara nedstucket i jorden. Det är 7 × 8 punkter och den enda höga delen. Både högen och korset är spegelsymmetriska kring mitten; bara ljuset och kornet skiljer sidorna åt. Ingen skugga är ritad, den lägger programmet till. Granskningen: Granskad och oförändrad. Storleken stämmer: bilden är 15 × 13 punkter och högen 13 × 6, alltså lägre och smalare än kolonisten (14 × 20). Korset på 7 × 7 står vid bakkanten. Vinkeln är snett uppifrån: högen är en oval sedd ovanifrån och har en mörkare framkant i jord1. Korset står upp bakom högen och är förkortat. Både högen och korset är spegelsymmetriska kring mittkolumnen, och bara ljuset skiljer sidorna åt: jord3 uppe till vänster och jord1 nere till höger. Hela konturen är jord0 och kol0 används inte. Den ljusa ovalen med mörk kontur syns tydligt mot gräset i oliv. Bilden följer idén och ingenting bärs.",
+   "ide": "En låg grav: en avlång jordhög, omkring 13 punkter bred och 6 hög, ses ovanifrån som en rundad oval i jord1 till jord3 med kontur i jord0, där krönet är ljusast uppe till vänster. Vid bakkanten, alltså huvudänden, står ett litet träkors på cirka 6 × 8 punkter i samma trätoner, förkortat så att det ser ut att stå upp bakom högen. Silhuetten är bred och låg med korset som enda höga del, och både högen och korset är symmetriska kring mitten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_grav",
+     "rader": [
+      "....QQQ....",
+      "...QTSSQ...",
+      "...QSSRQ...",
+      ".QQ.QQQ.QQ.",
+      "QTSQTSSQTSQ",
+      "QSSQSSRQSRQ",
+      "QSRQRRRQRRQ",
+      ".QQ.QQQ.QQ.",
+      "...QTSSQ...",
+      "...QSRRQ...",
+      "....QQQ...."
+     ]
+    }
+   ],
+   "anteckning": "Graven är ett enkelt kors som Björn bad om: fem gråa stenar lagda platt på marken som ett plustecken, ritat rakt ovanifrån. Bilden är 11 × 11 punkter och ryms väl inom en ruta på världskartan, mindre än en människa. Inget står upp, så ingen sida eller framkant syns, och formen är lika åt alla fyra håll. Varje sten är en rundad klump med 2–3 punkter inne i en kontur av skiffer0. Stenarna delar kontur där de möts, så korset läses som en sammanhängande form, men de avskurna hörnen gör varje sten rund. Ljuset kommer uppifrån vänster: skiffer3 som en enda glanspunkt uppe till vänster, skiffer2 i mitten och skiffer1 nere till höger. Det gråa sticker ut mot gräset utan att använda de starka tonerna. Granskningen: Granskad mot reglerna; inget behövde rättas. Storleken på 11 × 11 punkter är rimlig mot kolonisten (14 × 20) och ryms väl i en ruta. Korset ligger platt och är ritat rakt ovanifrån, vilket stämmer för en sak som saknar höjd. Formen är spegelsymmetrisk åt båda hållen: armstenarna har 3 × 2 respektive 2 × 3 punkter inuti, mittstenen 3 × 3, och de ligger tätt så att plustecknet läses tydligt. Varje sten har kontur i skiffer0 och rundade hörn, med en enda glanspunkt i skiffer3 uppe till vänster, skiffer2 i mitten och skiffer1 nere till höger. Ljuset följer alltså regeln, och kornet skiljer stenarna åt utan ensamma mörka prickar. Den grå skiffern med mörk kontur syns tydligt mot det olivgröna gräset. Bilden följer idén, och den bärs inte, så inget går genom huvud eller ansikte. Versionen lämnas oförändrad.",
+   "ide": "Ett kors lagt av stenar platt på marken, ritat rakt ovanifrån som ett plustecken av fem gråa stenar, en i mitten och en i varje arm, med det hela omkring 11 × 11 punkter. Varje sten är en rundad klump på 3–4 punkter i skiffer1 till skiffer3 med kontur i skiffer0, ljusast uppe till vänster och mörkast nere till höger, och de ligger tätt så att korsformen läses tydligt. Korset saknar höjd helt och är lika i alla fyra riktningar; bara kornet i stenarna skiljer dem åt."
+  }
+ ]
+}

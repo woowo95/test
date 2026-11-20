@@ -1,0 +1,53 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f9_jordgubbsplanta!",
+  "f10_hast!",
+  "f10_bur!",
+  "f10_bivax!",
+  "f11_gravhog!",
+  "f11_sym_bud!",
+  "f9_spjala_stack!",
+  "f9_salt!",
+  "f10_snokruka!",
+  "f11_grav!=gör ett enkelt kors",
+  "f11_sym_troshus!=gör något som ser mer ut som en kyrka",
+  "f10_kott=gör köttet olika i form också där det är rimligt, inte bara färgen",
+  "f10_ko=version 3 ser okej ut. Rita lite olika variationer av den som jag kan se. Ansiktet ser lite konstigt ut just nu",
+  "f10_oxe=samma som för kon (förlagan är kons version 3) fast med längre horn",
+  "f10_gris=formen är helt okej. Rita den i två vinklar och med olika täckning",
+  "f10_vildsvin=rita den från två vinklar och med lite olika täckning",
+  "f10_tamhet=gör bandet smalare och bjällran lite större",
+  "f9_hage=ta bort den blå pricken och rita hagen i ett sammanhang",
+  "f11_vagnsvrak=det finns redan en vagn i spelet, den är förlagan. Gör den trasig",
+  "f11_vagnrest=använd vagnen vi redan har i spelet (förlagan) och gör den till en plundrad, trasig karavanvagn som ser annorlunda ut än grundarnas"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 8.83,
+  "hog": 18.93
+ },
+ "dollar": 8.386,
+ "rapport": [
+  "f9_jordgubbsplanta: 3 versioner",
+  "f10_hast: 3 versioner",
+  "f10_bur: 3 versioner",
+  "f10_bivax: 3 versioner",
+  "f11_gravhog: 3 versioner",
+  "f11_sym_bud: 3 versioner",
+  "f9_spjala_stack: 3 versioner",
+  "f9_salt: 3 versioner",
+  "f10_snokruka: 3 versioner",
+  "f11_grav: 3 versioner",
+  "f11_sym_troshus: 3 versioner; kontrollerna varnar fortfarande: version 2: olika",
+  "f10_kott: 3 versioner; kontrollerna varnar fortfarande: version 3: olika",
+  "f10_ko: 3 versioner",
+  "f10_oxe: 3 versioner",
+  "f10_gris: 3 versioner",
+  "f10_vildsvin: 3 versioner",
+  "f10_tamhet: 3 versioner; kontrollerna varnar fortfarande: version 2: olika",
+  "f9_hage: 3 versioner",
+  "f11_vagnsvrak: 3 versioner",
+  "f11_vagnrest: 3 versioner"
+ ]
+}

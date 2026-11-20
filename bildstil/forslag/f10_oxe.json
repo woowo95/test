@@ -2,105 +2,102 @@
  "kort": "f10_oxe",
  "namn": "Oxen",
  "slag": null,
- "vad": "Steg 10.10.3: oxen är ett dragdjur som drar släden: billigare och starkare än hästen men långsammare. Större och tyngre än kon, utan juver. Från sidan på gräs",
+ "vad": "Steg 10.10.3: oxen är ett dragdjur som drar släden: billigare och starkare än hästen men långsammare. Större och tyngre än kon, utan juver. Från sidan på gräs Din kommentar förra gången: ”samma som för kon fast med längre horn”",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "samma som för kon (förlagan är kons version 3) fast med längre horn",
  "versioner": [
   {
    "bilder": [
     {
      "namn": "f10_oxe",
      "rader": [
-      ".p......p.........................",
-      ".qo....oq.........................",
-      "..qo..qo..........................",
-      "...qoqo...........................",
-      "...rutrrrrrrrrrrrrrrrrrrrrrrrr....",
-      "..rtuuttuuuutuuututuutttuttuttr...",
-      ".rtuuttstuttuttuttuttttsttttstsrr.",
-      ".rtttkttstttsttutttsttttsttstssrs.",
-      "rutttsttststtttsttsttttsttstsssrs.",
-      "rttsttststtsttststtsttsttstsstsrs.",
-      "rltsstsststtsttststtsstststssssrs.",
-      ".rssssststsstsstststsststssssssrs.",
-      "..rrrrrsttsttststtstststsssstssrs.",
-      ".......rsststststssststssstssssrs.",
-      "........rssstsssststssssstsssssrs.",
-      ".........rtsrrrsrrrrrrrsrrrtsrrrsr",
-      ".........rtsr.rsr.....rsr.rtsr.rsr",
-      ".........rstr.rsr.....rsr.rtsr.rsr",
-      ".........rtsr.rsr.....rsr.rstr..r.",
-      ".........rtsr.rsr.....rsr.rtsr....",
-      ".........EFEE.EFE.....EFE.EFEE....",
-      ".........EEEE.EEE.....EEE.EEEE...."
+      "q........q......................",
+      "op......qo......................",
+      ".op....qo.......................",
+      "..opEEqo........................",
+      ".FEHHGGE...EEEEEEEEEEEEEEEEEEE..",
+      "EFHGHGGFGEEHHGHHGHGHHGHGHHGHGGE.",
+      ".EHGHGFGGGHHGHHGHHGHGHGHHGHGGFEE",
+      ".EGHGFGFGGGGHGGHGGHGGGHGGHGGFFEE",
+      ".EGkGFFGFGGGFGGFGGGFGGFGGFGFFFEE",
+      "EGGGFFFGFFGFGFFGFGFFGFGFFGFFFFEE",
+      "EpooFFFFFFFGFFGFFFGFFGFFFGFFFFEE",
+      ".EoooEFFFFFFFGFFFFFFGFFFFFGFFFEE",
+      "..EEEEFFFFFFFFFFGFFFFFFGFFFFFFEE",
+      "......EFFFFFFGFFFFFFFFGFFFFFFFEE",
+      "......EFFFFFFFFGFFFFFFFFFFGFFFEE",
+      ".......EFFFFFEEEEEEEEEEEFFFFFEE.",
+      "........EGFEFE.........EFEEGFFE.",
+      "........EGFEFE.........EFEEGFE..",
+      "........EGFEFE.........EFEEGFE..",
+      "........EFFEFE.........EFEEFFE..",
+      "........lll.ll.........lllllll.."
      ]
     }
    ],
-   "anteckning": "Oxen står på alla fyra ben som på kartan, sedd från sidan och lite ovanifrån med huvudet åt vänster. Den är 34 × 22 punkter, alltså längre och högre än kon. Huvudet hålls framåt och lite lågt, så mulen med näsborren hamnar under ryggens linje. Den raka ryggen syns ovanifrån som ett ljust band i rost3 och rost2. Kornet går mot rost1 nere till höger, under buken och på länden, och konturen är rost0. Hornen sitter i hjässan och böjer sig utåt som en lyra: det främre framåt och uppåt, det bakre bakåt och uppåt. De är ritade i ben2 med ben0 på skuggsidan. Alla fyra benen syns: de nära är bredare och ljusare, de bortre smalare och mörkare och lite förskjutna. Hovarna är i jord0 med en ton jord1. Buken är slät utan juver. Den tunna svansen hänger rakt ner längs länden och slutar i en mörk tofs. Ingen skugga, inget sele och ingen släde är ritade; de hör till andra bilder. Granskningen: Oxen följer i stort reglerna. Den är 34 × 22 punkter och står i rimlig storlek bredvid kolonisten (14 × 20): ryggen ligger något under kolonistens huvudhöjd. Den ses från sidan och lite ovanifrån med ett ljust ryggband i rost3. Ljuset faller uppe till vänster och skuggan nere till höger under buken. Konturen är i rost0, hovarna i jord0 och jord1, och de bortre benen är smalare och mörkare. Buken saknar juver, och rosten syns tydligt mot det olivgröna gräset. Det enda som avvek från idén var svansen: tofsen var bara en eller två punkter och läste inte som en tofs. Den är nu förlängd till ett tydligare knippe på tre rader (rost0 och rost1) som slutar i en spets, i höjd med hasen. Inget annat är ändrat.",
-   "ide": "Lång och hög oxe med rak rygg, 34 × 22 punkter, sedd från sidan och lite ovanifrån så att ryggen syns som ett ljust band. Pälsen är rostbrun med kornig rost2 och rost1, ljusast uppe till vänster över ryggen och mörkast nere till höger under buken, och konturen är rost0. Huvudet sticker fram och lite nedåt, och de breda hornen i ben2 och ben1 böjer sig utåt och framåt som en lyra. Fyra långa, raka ben med hovar i jord0, en tunn svans med tofs hänger bak, och buken är slät utan juver."
+   "anteckning": "Oxen är byggd efter kons version 3: samma bruna päls i jordtoner med jord0 som kontur och samma ställning, stående från sidan med huvudet åt vänster och alla fyra benen på gräset. Snett uppifrån syns ryggen som ett ljusare band (jord2–jord3), och kroppen mörknar nedåt mot buken. Oxen är större och tyngre än kon, 32 × 21 punkter, med kraftigare bringa och hals och utan juver. Hornen är längre enligt kommentaren: två benfärgade horn går snett uppåt och utåt från pannan, tre till fyra punkter långa, med ljusast ton i topparna. Det bortre benparet är mörkare och står förskjutet bakom de närmare benen. Klövarna är i kol1. Svansen hänger rakt ner från länden och slutar i en tofs. Skuggan ritas inte, eftersom spelet lägger till den. Granskningen: Storleken (32 × 21) passar: oxen är något högre än kolonisten och större än kon. Den ses från sidan på alla fyra ben som djuren på kartan, och den bruna pälsen med kontur syns på gräset. Tre rättelser: 1) De ensamma mörka jord0-prickarna i den nedre delen av kroppen (rad 13–14) bröt mot regeln om korn utan fläckar. De är nu jord1 med några jord2-punkter som korn. 2) Ytterkanten på rad 13 slutade i en ljus jord1-punkt utanför konturen; den är nu jord0. 3) Det främre bakbenet saknade kontur på vänster sida. Det har nu en jord0-kontur, och klövarna under det är breddade så att de passar. Resten är oförändrat.",
+   "ide": ""
   },
   {
    "bilder": [
     {
      "namn": "f10_oxe",
      "rader": [
-      "...................EEEEEE...........",
-      "................EEEGGHGGFE..........",
-      "....EEEEEEEEEEEEGGGHGGGHGFEE....po..",
-      "..EEGGHGGHGGGHGGGGHGGGGGFGGFE.Eppo..",
-      ".EFEGHGGGGGHGGGGHGGGGGFGGFGGFEHHpoE.",
-      ".EFEGGGHGGGGGHGGGGGGGGFGGFGGFGHHHGGE",
-      ".EFEGGHGGGGGGGGHGGGGGFGGGFGFGGHkHGGE",
-      ".EFEGGGGGHGGGGGGGGGGGGFGGGFGFFGHHHGE",
-      ".EFEGGHGGGGGGGHGGGGGGFGGFGFGFFGHHHHE",
-      "..EEGGGGGGGGGGGGGGGFGGFGFGFFFEFHHHkE",
-      "...EGGGGFGGGGGGGFGGGGFGFGFFFFFEHHGE.",
-      "...EFGGGGFGGGGGGGGFGGGFGFFFFFE.EEEE.",
-      "...EFFGFFFFGFFFFFFFFGFFFFFFFE.......",
-      "....EGFFFEFGFFFEEEFGFFFEFGFFE.......",
-      "....EGFE..EGFE....EGFE..EGFE........",
-      "....EGFE..EFFE....EGFE..EFFE........",
-      "....EFFE..EGFE....EFFE..EGFE........",
-      "....EGFE..EFFE....EGFE..EFFE........",
-      "....EmlE..EmlE....EmlE..EmlE........",
-      "....EEEE..EEEE....EEEE..EEEE........"
+      "o........o......................",
+      ".pq.....qp......................",
+      "..pq...qo.......................",
+      "...pEEo.........................",
+      "..EHGGFEEEEEEE..................",
+      "..EGHGGFFHHGHGEEEEEEEEEEEEEEE...",
+      "..EHkGGFGHGHGHGGHGGFGGGFGGFGFE..",
+      ".EGHGGFFGGHGGHGGFGGGFGGFGFGFFEE.",
+      ".EGGGFFEFGGHGGFGGFGGFGFGGFGFFEF.",
+      ".EFFFEEFFGGGFGGFGGFGFGFFGFFFFEF.",
+      "..EEE.EFFFGGFGGFGFGFFGFFFFFFFEF.",
+      "......EFFFGFFGFFFGFFFFGFFFFFFEF.",
+      ".......EFFFFGFFFFFGFFFFFFFFFFEF.",
+      "........EFFFFFFFFFFFFFFFFFFFFEE.",
+      ".........EEEEEEEEEEEEEEEEEEEE.EE",
+      "..........GF.FE........FE.GF....",
+      "..........GF.FE........FE.GF....",
+      "..........FE.EE........EE.FE....",
+      "..........FE.EE........EE.FE....",
+      "..........FE.EE........EE.FE....",
+      "..........mm.mm........mm.mm...."
      ]
     }
    ],
-   "anteckning": "Oxen står på alla fyra benen från sidan, som djuren står på kartan, och vänder huvudet åt höger. Bogpuckeln är bildens högsta punkt, och den tjocka halsen går rakt ut i ett kort och brett huvud som hänger lågt. Ett horn pekar ut åt sidan, mot betraktaren, och syns därför som en kort ljus stump uppe på hjässan; det bortre hornet döljs av huvudet. Benen står brett isär och alla fyra syns, med klövar i kol. Buken är slät och utan juver, och svansen är kort. Ljuset kommer uppifrån vänster, så ryggen är ljusast i jord2 och buken mörkast i jord1, med jord0 som kontur. Bilden har inga sele eller släde, eftersom spelet lägger dem till. Granskningen: Rad 4 var bara 35 punkter bred. Huvudet och hornet hamnade därför en punkt för långt åt vänster jämfört med raderna över och under. Raden är nu 36 punkter, med huvudets kontur i jord0 på punkt 29 och hornroten (p, o) på punkt 32–33, i linje med hornet på raderna 2–3. Två hål i konturen är stängda: på rad 2 fick nackens övergång till halsen en jord0-punkt, så att den bruna pälsen inte längre gränsar direkt mot det genomskinliga, och på rad 3 fick svansens topp en jord0-punkt. Resten följer reglerna och idén och är oförändrat: storleken 36 × 20 mot kolonisten på 14 × 20, ljuset från vänster, puckeln över bogen, de korta hornen i ben, de fyra grova benen och ingen juver. Det enda kol0 är ögat och näsborren, där det verkligen är svart.",
-   "ide": "Låg och massiv oxe, 36 × 20 punkter, byggd som ett tungt block med en hög puckel av muskler över bogen och en tjock hals som går rakt ut i ett brett, kort huvud. Pälsen är mörk jordbrun i jord1 och jord2 med jord0 som kontur, och mulen och pannan är ljusare i H med ett mörkt öga i kol0. Hornen är korta, tjocka stumpar i ben1 som pekar rakt ut åt sidan. De fyra korta, grova benen står brett isär och syns alla från sidan, svansen är kort och buken saknar juver."
+   "anteckning": "Oxen står som kon på kartan: från sidan på alla fyra benen, huvudet åt vänster, snett uppifrån så att ryggen syns. Förlagan är kons version 3: samma bruna päls i jordtoner med jord0 som kontur, samma kropp och ben. Tre saker är ändrade. Hornen är längre, två ljusa benhorn i ben-tonerna som går ut och uppåt från pannan, ljusast uppe till vänster. Juvret under buken är borttaget, eftersom oxen inte har något. Kroppen är större och tyngre än kons, 32 × 21 punkter, med en puckel över bogen och en bredare buk. De fyra benen står stadigt med mörka klövar, och svansen hänger ner bakom länden med en tofs. Ögat är den enda punkten i kol0. Jag har inte ritat någon skugga eller någon släde; spelet lägger till dem. Granskningen: Granskad: oxen är 32 × 21 punkter. Den är något högre än kolonisten (14 × 20) och tydligt längre, vilket passar ett tungt dragdjur. Den står på alla fyra ben i samma ställning som djuren på kartan och har inget juver. Jordtonerna med jord0 som kontur syns tydligt mot det olivgröna gräset. Ljuset faller uppifrån vänster, med jord3 på huvud och rygg och jord1 mot buk och bakdel. De närmaste benen är ljusare än de bortre, och hornen är symmetriska i bentoner utan vit glans. Den enda rättelsen: konturen saknades i glappet mellan huvudet och nackpuckeln (rad 4, punkt 8), där bruna punkter låg öppna mot gräset. Den punkten är nu jord0, så nackens kontur är obruten. I övrigt är bilden oförändrad.",
+   "ide": ""
   },
   {
    "bilder": [
     {
      "namn": "f10_oxe",
      "rader": [
-      "...............ooooooFFFFFF.......",
-      "............oooqwqqpqHGHGGHFFF....",
-      "..........ooqqqqqpqqpHGHGGHGGFoo..",
-      "..oooooHGoqqqpqqpqqpqGHGGHGGFGppo.",
-      ".oqwqqpqHGpqqqpqqpqpqpGGHGFGpqpppo",
-      "oqpqpqpqHGqqpqqqpqqqpqGGpGGqpqqppo",
-      "oqpoqpqpHGpqpqqppqqppqqGpqGqpqppoo",
-      "opoqopqpHGqpoqpqopqpoqpqopqpoqpooo",
-      "oGpqpqHGpppqopqpoqpqopqpoqppoppooo",
-      "FGGopqpqpqqpoqppopqpoqppopqpoppooo",
-      "FEGGoqpqpppqopqpoqppopqpoppqopoooo",
-      ".FGFopopqpqpoqppopqpoqppoqppoppooo",
-      "..FFopqopqpqoppqopqpoppqoppqopoooo",
-      "....opopqpqpoqpqopqpopqpoqppoppooo",
-      ".....opopqpqoppqoppqopqpopqpopoooo",
-      "......opopppopqpopqpopqpopqpopoooo",
-      ".......opoopoppooppoooppooppoopooo",
-      "...........oppo.ooo..oo.ppo.ooo...",
-      "............qpo.oGo.....qpo.oGo...",
-      "............ppo.Goo.....ppo.Goo...",
-      "............nml.mml.....nml.mml...",
-      "............mll.mll.....mll.mll..."
+      "o..........o....................",
+      "oq........qo....................",
+      ".pq......qp.....................",
+      "..opEEEEEpo.....................",
+      ".EFGHHGGFEEEEEEEEEEEEEEEEEEEEEE.",
+      "EFHHGHGGFGHHGHHGHGGHGHGGHGGGFEEE",
+      "EFHkGHGGFHGHGGHGHGGHGGHGGFGGFEEE",
+      ".EGHGGGFFGHGGHGGHGGFGGHGGFGFFEEE",
+      ".EGHGGFFEGGHGGFGGHGGGFGGFGFFFEEE",
+      ".EGGGFFE.FGGGFGGFGGFGGFGFFFFFEEE",
+      ".EppoFE..EFGGFGFGFGGFGFFGFFFFEEE",
+      "..EooE....EFFGFFGFFGFFFGFFFFFEEE",
+      "...EE......EFFFFFFFFFFFFFFFFFE.E",
+      "...........EGFEEFEEEEEFEEGFEE.EE",
+      "...........EGFEEFE...EFEEGFE....",
+      "...........EGFEEFE...EFEEGFE....",
+      "...........EGFEEFE...EFEEGFE....",
+      "...........mlmllml...lmlmlml...."
      ]
     }
    ],
-   "anteckning": "Oxen står på alla fyra benen från sidan, med huvudet åt vänster, så som djuren står på kartan. Den är 34 × 22 punkter, större och tyngre än kon och utan juver. Pälsen är så lång att kroppen blir en rundad höstack. De hängande lockarna i ben2 och ben1 har ränder i o och slutar i en ojämn frans. Fransen döljer överbenen, så bara de nedersta stumparna med mörka hovar syns. De bortre benen är mörkare än de närmre. Ländryggen bär en mörkare sadel i G och H med jord1 som kontur. Hornen sitter högst upp på huvudet och svänger bakåt och nedåt längs huvudets sida som en krok i H och G. Den tjocka luggen täcker ögonen, och mulen är mörk i jord. Ljuset kommer uppifrån vänster och har en glanspunkt på ryggen och en i pannan. Ingen sele eller släde är ritad, eftersom det är djurets egen bild. Granskningen: Rättat två saker. 1) Rad 16 var 35 punkter bred; den avslutande punkten är borttagen, så att alla rader är 34 punkter breda (34 × 22). 2) Hornet var en rak lodrät stapel i H och G bakom huvudet och läste som en kant, inte som en krok. På rad 8 är dess nedre ände flyttad en punkt framåt, så att hornet svänger nedåt och bakåt längs huvudets sida och slutar i en krok, som idén säger. Resten stämmer med reglerna. Oxen är 34 × 22 och tydligt större och tyngre än kolonisten (14 × 20). Den står på alla fyra benen i spelets snett uppifrån-vinkel och har inget juver. Konturen är o och jord, aldrig kol, utom i de mörka hovarna. Ljuset kommer uppifrån till vänster och den mörka sidan ligger till höger. Den ljusa pälsen i ben syns tydligt mot gräset och sadeln i G ligger över ländryggen.",
-   "ide": "Raggig oxe med lång, tjock päls, 34 × 22 punkter, med en rundad silhuett som en höstack där luggen hänger ner till knäna och döljer överbenen. Pälsen är ljus i ben2 och ben1 med o som kontur, randig i hängande lock ner mot buken, och en mörkare sadel i G över ländryggen. Hornen svänger nedåt och bakåt längs huvudets sidor som krokar i H och G, pannan har en tjock lugg över ögonen och bara de nedersta benstumparna med mörka hovar syns under pälsfransen."
+   "anteckning": "Oxen står som kon på kartan: från sidan på alla fyra benen, huvudet åt vänster, sedd lite snett uppifrån som spelets djur. Förlagan är kons version 3: brun jordpäls (jord3 till jord1) med kontur i jord0, ljuset från övre vänstra hörnet och mörkare buk och bakdel. Jämfört med kon är kroppen längre och tyngre, och den har inget juver. Hornen är klart längre än kons och böjer sig utåt och uppåt från pannan åt båda håll i ben med ben0 som kontur. Mulen är ljus i ben, ögat är kol0 och klövarna kol. Av benen syns de närmaste ljusare och de bortre mörkare, i två par. Svansen hänger ner bakom låret. Den knuffar bara vid anfall, så den har ingen egen ställning. Bilden är 32 × 18 punkter. Granskningen: Storleken (32 × 18) stämmer: oxen är större och tyngre än kon och lägre än kolonisten. Den står från sidan som djuren på kartan och syns tydligt mot gräset med kontur i jord0. Huvudet, hornen och ljuset uppifrån vänster är oförändrade. Jag rättade tre saker. Svansen var en ensam prick (F) utanför konturen; nu är den en svans i jord0 som hänger ner längs bakdelen och slutar i en tofs. Oxen hade bara två ben; de bortre fram- och bakbenen har lagts till, smalare och mörkare, så att den står på alla fyra. Buken mellan benen har fått en sluten kontur.",
+   "ide": ""
   }
  ]
 }

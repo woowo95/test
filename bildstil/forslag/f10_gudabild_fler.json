@@ -1,0 +1,144 @@
+{
+ "kort": "f10_gudabild_fler",
+ "namn": "Gudabilden, fler",
+ "slag": null,
+ "vad": "Steg 10.3.19: gudabilden i trons hus, den snidade bilden av trons gud. En ruta stor. Du valde alla tre gudabilderna förra gången; de byggs in. Här fem till, var och en en annan gud eller ande Din kommentar förra gången: ”alla varianter använder vi. Och jag vill ha fler varianter. Gör 5st till”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f10_gudabild_tor",
+     "rader": [
+      ".....EEEEEE.....",
+      "....EHHGHGGE....",
+      "...EHHGHGGGFE...",
+      "...EHEGGGGEFE...",
+      "...EHGGHGGFFE...",
+      "..EHEHGHGGGEFE..",
+      "..EHGEHGGFEFFE..",
+      "..EGGGEHGEFFFE..",
+      "..EGQTTSSSRQFE..",
+      "..EGQSSRSRRQFE..",
+      "..EGFEHHGGEFFE..",
+      "..EGFEGHGFEFFE..",
+      ".EHGEGFEEGFEGFE.",
+      ".EGFFFFFFFFFFFE.",
+      ".EFFFFFFFFFFFFE.",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Tor står upprätt på en låg rund träplatta mitt i rutan, 16 × 16 punkter. Den sätta gubben (12 punkter bred) har ett stort huvud som är ljusast på hjässan uppe till vänster. Ögonen är skurna som mörka jord0-punkter. Det kilformade skägget slutar i en spets mot hammarhuvudet, och axlarnas ovansida syns snett uppifrån. Båda nävarna är knutna om skaftet framför magen. Skaftet pekar uppåt bakom skägget, så hammarhuvudet ligger vågrätt tvärs över bröstet och sticker ut en punkt på var sida. Hammarhuvudet är i skiffer: ovansidan ljusare med en glanspunkt i skiffer3 till vänster, undersidan mörk. Under nävarna syns bara skaftets nedre stump, mellan de korta benen. Plattan ses ovanifrån som en smal yta med fötterna på. Framkanten är ett band på 2 punkter i jord1 med jord0 som kontur. Ingen skugga på marken är ritad. Granskningen: Rättat: hammarhuvudet var ett band på 14 punkter tvärs över hela figuren och utanför konturen. Det läste som ett tunnband runt en säck, och händer, skaft och skägg syntes inte. Nu är hammarhuvudet 8 punkter brett (skiffer2–3 med skiffer0 i ändarna) och ligger vågrätt framför bröstet. Under det sitter två knutna nävar i jord3/jord2 om skaftet, den ena ovanför den andra framför magen. Skägget är en tydlig kil från hakan ner till hammaren, och halsens jord0-linje skiljer det stora huvudet från de breda axlarna. Två fötter och skaftets ände står på plattans ovansida. Plattans framkant är ett band på 2 punkter i jord1 med jord0 under, som i idén. Oförändrat: storleken (12 × 15 på en ruta, lagom mot kolonisten), ljuset uppe till vänster, den spegelsymmetriska formen, jord0 som kontur och det ljusa träet som syns mot gräset.",
+   "ide": "Tor, den satte: en kort och bred trägubbe, omkring 12 punkter bred och 15 hög, med stort huvud, kilformat skägg och båda händerna knutna om hammarskaftet framför magen, så att hammarhuvudet ligger vågrätt tvärs över kroppen. Kroppen är spegelsymmetrisk; snidad i jord1–jord3 med jord0 som kontur, ljusast uppe till vänster på hjässan och axlarna, och hammarhuvudet i skiffer2–skiffer3 som det enda avvikande materialet. Snett ovanifrån syns hjässans rundning och axlarnas ovansida, och figuren står på en låg rund träplatta vars framkant är ett band på 2 punkter i jord1."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_gudabild_oden",
+     "rader": [
+      ".lm...EEEE...ml.",
+      "nmnl.EqqpoE.lnmn",
+      ".lml.EpoooE.lml.",
+      ".EqqpqppppoopoE.",
+      "EoopoooopooooooE",
+      ".EEEEEEEEEEEEEE.",
+      ".....EqEqoE.....",
+      ".....EpqpoE.....",
+      ".....EpEEoE.....",
+      ".....EqpooE.....",
+      ".....EpqooE.....",
+      ".....EpqpoE.....",
+      "...QSEqpooERQ...",
+      "..QSTEpppoERRQ..",
+      "..QSTSRSRSRRRQ..",
+      "...QQQQQQQQQQ..."
+     ]
+    }
+   ],
+   "anteckning": "Gudabilden står på marken i trons hus som en fristående påle, 16 × 16 punkter, sedd snett uppifrån. Hattens ovansida syns som en ljus oval upptill, och brättet är ett brett band med ljus ovansida och en mörkare framkant. På brättets båda ändar sitter en korp vänd utåt, med näbben utåt. Det gör silhuetten till ett T, spegelsymmetriskt; bara ljuset skiljer sidorna åt. Under brättet ligger ansiktet i skugga. Vänster öga är en djup skåra i jord0 och höger öga en slät yta, därunder följer näsa, munskåra och skägg. Pålen är 6 punkter bred i grånat trä (ben0–ben2) med jord0 som kontur. Nertill står den i en liten stenring i skiffer, där de främre stenarna skymmer pålens fot. Korparna är i kol1–kol3 utan svart kontur. Granskningen: Rättat: pålen hoppade en punkt åt höger i rad 12, så stenringen blev osymmetrisk (spann 4–13 mot 2–13 och 3–12 i raderna under). Pålen ligger nu i kolumn 5–10 hela vägen och ringen är spegelsymmetrisk kring mitten. Hattbrättet hade fyrkantiga hörn; de är rundade, så brättet syns som en oval snett ovanifrån som idén säger. Brättets framkant är nu ett obrutet jord0-band, så att ansiktet sitter under hatten i stället för att synas genom brättet. Kvar som förut: en ruta stor (16 × 16, kortare än kolonisten), T-silhuett med en korp på var sida, ett ögat som skåra och det andra slätt, grånat trä i ben0–ben2 med jord0-kontur och ljus från vänster. Den ljusa pålen syns tydligt på gräset.",
+   "ide": "Oden, den smala stolpen: en hög och smal påle, 6–7 punkter bred och hela 16 hög, där överdelen är snidad till ett ansikte under en bred hatt. Ena ögat är en djup skåra i jord0 och det andra en slät yta; på hattbrättets båda sidor sitter en korpe, en på var sida, så att silhuetten blir ett T upptill och förblir spegelsymmetrisk. Träet är grånat i ben0–ben2 med jord0 som kontur och korparna i kol1–kol3; hattens ovansida syns snett ovanifrån som en ljus oval och pålen slutar nertill i en liten stenring i skiffer1–skiffer2."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_gudabild_freja_sten",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "....QQQQQQQQ....",
+      "..QQTTTSTSSRQQ..",
+      ".QTTTSTSSSSSRRQ.",
+      ".QTSTSSSSSSSSRQ.",
+      ".QTSSQQSSQQSSRQ.",
+      ".QSTSSSTRSSSSRQ.",
+      ".QRSSSRQQRSSSRQ.",
+      ".QTRRLSSSSKRRRQ.",
+      ".QRTTTLKKKSSSRQ.",
+      ".QRRSSSSSSSSRRQ.",
+      "..QQQQQQQQQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Stenen ligger direkt på marken, låg och rund (14 × 11 punkter längst ner i rutan), sedd snett uppifrån: krönet överst är ljusast (skiffer3) där ljuset faller från vänster, framsidan med ansiktet är skiffer2 och mörknar mot nedre högra kanten (skiffer1), konturen är skiffer0. Ansiktet är inhugget: ögonen och munnen är skåror i skiffer0, näsan har en ljus och en mörk sida. De två armarna är upphöjd relief som börjar vid stenens sidor, följer rundningen nedåt och möts med händerna under halssmycket. Smycket är en båge av 6 punkter i senap2–senap3 under hakan, bildens enda mättade ton. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Ingen sockel, ingen sittplats. Granskningen: Storleken (14 × 11 punkter), den låga runda formen, ljuset uppe till vänster, skiffer0-konturen och halssmycket som enda mättade ton stämmer med idén och syns på gräset, så de behölls.\n\nTre saker rättades:\n1. Armarna saknades. Två korta armar i skiffer1 går nu från sidorna (rad 11–12) in mot halssmyckets ändar, där händerna i ljusare sten (rad 13) håller det. Armarna är spegelvända mot varandra.\n2. Halssmycket var inte symmetriskt. Rad 13 hade en skiffer1-punkt till höger om bågen (kolumn 10) som saknade motsvarighet till vänster; den är nu stentonen skiffer2. Bågen går därmed jämnt från punkterna i kolumn 5 och 10 på rad 12 ner till kolumnerna 6–9 på rad 13.\n3. Stenens nederkant hade ljusa skiffer3-punkter mitt på, vilket bröt mot ljuset uppifrån till vänster. Den är nu ett mörkare symmetriskt band i skiffer1 och skiffer2.",
+   "ide": "Frejas sten, låg och rund: ett runt klotformat stenblock, omkring 14 punkter brett och 11 högt, med ett enkelt inhugget ansikte och två korta armar som löper runt stenens framsida och möts över ett halssmycke. Stenen är skiffer1–skiffer3 med skiffer0 som kontur och ljus överst till vänster där stenens krön syns ovanifrån; halssmycket är en båge av 5–7 punkter i senap2–senap3, bildens enda mättade ton eftersom det är gudinnans tecken. Formen är spegelsymmetrisk och liggande låg, så den läses som en sten och inte som en stolpe."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_gudabild_njord_skepp",
+     "rader": [
+      ".EEE........EEE.",
+      "EHEGE......EGEGE",
+      ".EHGE......EGFE.",
+      "..EGE......EFE..",
+      "..EHE......EFE..",
+      "..EHEEEEEEEEGE..",
+      ".EHHHGHHGHGGGFE.",
+      "EHGEEFEFEEFEEGFE",
+      "EHGFEFFEFFEFEGFE",
+      ".EGHHGHGHGGGGFE.",
+      ".EFFGFFFFGFFFFE.",
+      "..EFFFGFFFFFFE..",
+      "..EEEEEEEEEEEE..",
+      "...EGE....EGE...",
+      "...EFE....EFE...",
+      "...EEE....EEE..."
+     ]
+    }
+   ],
+   "anteckning": "Njords skepp står på golvet i trons hus som en liten snidad båt av en urholkad stock, sedd snett ovanifrån som stationerna. Ovanifrån syns relingens ovansida som ett ljust band i jord2–jord3 runt en mörkare avlång grop i jord0–jord1 (det urholkade), och längst fram ett smalt band på 2 punkter i jord1, där skrovet buktar nedåt. Båda stävarna reser sig 4–5 punkter vid ändarna och är förkortade, eftersom de står upp. De slutar i var sitt snidat huvud med nos och öga som vetter utåt, bort från båten. Formen är spegelsymmetrisk kring mitten; bara ljuset skiljer sidorna åt (ljusare till vänster, mörkare till höger). Båten vilar på två tvärslåar under kölen. Av dem syns bara de främre ändarna, som stumpar på 3 punkter, så att den inte rullar. Konturen är jord0 rakt igenom, utan svart. Bilden är 16 × 16 punkter, alltså en ruta. Granskningen: Granskad mot reglerna. Storleken stämmer: skeppet är en ruta (16 × 16) med skrovet omkring 9 punkter högt, lagom mot kolonisten. Vinkeln stämmer: insidan syns som en mörk grop i jord0–jord1, relingen som ljusare band i jord2–jord3 och framkanten som ett smalt band i jord1. Båten vilar på två tvärslåar som stumpar på 3 punkter. Formen är spegelsymmetrisk, och stävarna reser sig 5 punkter med var sitt huvud vänt utåt. Ljuset faller från vänster och konturen är jord0, så skeppet syns på gräset. Enda rättelsen gäller rad 11: de två ensamma jord0-prickarna i framkantens jord1-band var mörka fläckar mot regeln om korn. Jag bytte dem mot jord1 med en jord2-punkt för kornet. Resten är oförändrat.",
+   "ide": "Njords skepp, avlångt och liggande: en snidad båt av en urholkad stock, 16 punkter bred och omkring 9 hög, vars båda stävar reser sig 4–5 punkter vid ändarna och slutar i var sitt snidat huvud som vetter utåt. Snett ovanifrån syns båtens insida som en mörkare avlång grop i jord0–jord1 och relingens ovansida som ett ljusare band i jord2–jord3, medan framkanten av skrovet är ett smalt band på 2 punkter i jord1. Båten är spegelsymmetrisk kring sin mitt och ligger på två korta tvärslåar som stumpar på 3 punkter, så att den inte rullar."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_gudabild_hastanden",
+     "rader": [
+      "...ooooo...",
+      "..owwqqpo..",
+      ".owqqqqqpo.",
+      ".ollqqqllo.",
+      ".olmqqpmlo.",
+      "..oqqqppo..",
+      "...oqqpo...",
+      "...oqppo...",
+      "...olplo...",
+      "....ooo....",
+      "....EHE....",
+      "....EGE....",
+      "..QSEFERQ..",
+      ".QTSSRSSRQ.",
+      "QSSRSSSRRRQ",
+      ".QQQQQQQQQ."
+     ]
+    }
+   ],
+   "anteckning": "Hästanden står fast på kartan: en tunn stake, 3 punkter bred, är nedslagen i en låg hög av stenar. Hästskallen sitter trädd på stakens topp. Vi ser skallen snett ovanifrån och framifrån, så pannan med ögonhålorna syns överst och nospartiet pekar nedåt mot betraktaren. Nosspetsen skymmer därför stakens översta del, och staken syns först under nosen. Stenarna ligger framför stakens fot och täcker den nedersta biten. Skallen är spegelsymmetrisk kring mittkolumnen; bara ljuset skiljer sidorna åt, med ben3 uppe till vänster och ben1 till höger. Konturerna är ben0 runt skallen, jord0 runt staken och skiffer0 runt stenarna. Bilden är 11 × 16 punkter. Granskningen: Skallen var rund och kort, som en människoskalle, inte som idéns hästskalle. Den är nu en hästskalle: bred panna med ögonhålorna längst ut på sidorna (kol1–kol2, två rader djupa) och ett långt, smalt nosparti som pekar nedåt mot betraktaren och slutar i två näsborrar i kol1. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt, med pannan i ben2–ben3 uppe till vänster och ben1 nere till höger. Den ensamma mörka skiffer0-pricken inne i stenhögen är bytt mot skiffer1, så att stenarna har korn utan fläck. Annat är oförändrat: storleken 11 × 16, den tunna staken i jord med jord0 som kontur och den låga, breda stenhögen.",
+   "ide": "Hästanden, stång med skalle: en tunn stake, 3 punkter bred, nedslagen i en liten hög av stenar, som bär en hästskalle överst så att hela bilden blir omkring 10 bred och 16 hög. Skallen ses snett ovanifrån och framifrån: ett långsmalt nosparti som pekar nedåt mot betraktaren, pannan ljus i ben2–ben3 uppe till vänster, ögonhålorna två mörka gropar i kol1 och konturen i ben0; den är spegelsymmetrisk. Staken är jord1–jord2 med jord0 som kontur och stenhögen vid foten skiffer1–skiffer2, låg och bred så att silhuetten blir ett tunt streck med ett tydligt ljust huvud."
+  }
+ ]
+}

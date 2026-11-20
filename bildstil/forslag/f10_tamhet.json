@@ -2,89 +2,90 @@
  "kort": "f10_tamhet",
  "namn": "Symbolen Tamhet",
  "slag": null,
- "vad": "Steg 10.10.29: symbolen för hur tamt ett djur är, bland djurets egenskaper när man trycker på det. Styrka, snabbhet, tålighet och mod har redan sina symboler (musklen, tassen, skölden och svärdet), så bara tamheten ritas. 16 punkter",
+ "vad": "Steg 10.10.29: symbolen för hur tamt ett djur är, bland djurets egenskaper när man trycker på det. Styrka, snabbhet, tålighet och mod har redan sina symboler (musklen, tassen, skölden och svärdet), så bara tamheten ritas. 16 punkter Din kommentar förra gången: ”gör bandet smalare och bjällran lite större”",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "gör bandet smalare och bjällran lite större",
  "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "tamhet",
+     "rader": [
+      "....EEEEEEEE....",
+      "...EHGGGGGGFE...",
+      "..EHGHGGGGGGFE..",
+      ".EHGEEEEEEEEGFE.",
+      ".EHGE......EGFE.",
+      ".EGHE......EGFE.",
+      ".EHGE......EFFE.",
+      ".EGGE......EGFE.",
+      ".EGGE......EFFE.",
+      ".EGGEEIIIIEEFFE.",
+      "..EGGIKLKJIFFE..",
+      "...EIKLKKJJIE...",
+      "...IKKKKJJJJI...",
+      "..IKKJKJJJJJII..",
+      "..IIIIIkkIIIII..",
+      ".......II......."
+     ]
+    }
+   ],
+   "anteckning": "Tamheten visas som ett halsband av läder med en bjällra, framifrån, i samma form och storlek som förut. Enligt kommentaren är bandet nu smalare, två punkter brett mellan konturerna i stället för tre. Bjällran är större, tolv punkter bred nertill, och hänger framför bandets nederkant i mitten, där den sitter på ett riktigt halsband. Bandet är brunt läder (jord) med jord0 som kontur, och bjällran är mässing (senap) med senap0 som kontur. Ljuset kommer uppifrån vänster, och glansen är bara två punkter i senap3. Kläppen syns som en mörk springa i bjällrans mynning med en liten kula under. Bilden är spegelsymmetrisk, och bara ljuset skiljer sidorna åt. Granskningen: Granskad mot reglerna; inget behövde rättas. Symbolen är ett halsband av läder med en bjällra i mässing, en tydlig bild för tamhet som inte krockar med musklen, tassen, skölden eller svärdet. Den är 16 × 16 punkter och nästan fyller rutan, med få och stora former och ingen bakgrund. Formen är spegelsymmetrisk: ringen, bjällran, öppningen och kläppen ligger symmetriskt kring mitten, och bara ljuset skiljer sidorna åt. Ljuset kommer uppifrån vänster: ringens vänstra sida är ljus (jord3/jord2) och den högra mörk (jord1). Bjällran är ljus till vänster (senap2/senap3) och mörkare till höger (senap1). Konturen är materialens mörkaste ton, jord0 runt lädret och senap0 runt mässingen. Glansen är två punkter senap3 och aldrig vit. Kol0 används bara i bjällrans mynning, som är det enda som verkligen är svart. Den mättade senapsfärgen sparas till bjällran, som är det man ska se. Med sin mörka kontur syns symbolen bra mot både gräs och panel. Vinkelreglerna för stationer och bärande gäller inte här, eftersom det är en symbol som ritas framifrån.",
+   "ide": ""
+  },
   {
    "bilder": [
     {
      "namn": "f10_tamhet",
      "rader": [
       "....EEEEEEEE....",
-      "..EEHHHGHGGGEE..",
-      ".EHHGHEEEEGGGFE.",
-      ".EHGHE....EGGFE.",
-      ".EHGGE....EGFGE.",
-      ".EHGHE....EGGFE.",
-      ".EGHGE....EGFFE.",
-      ".EGGGE....EFGFE.",
-      ".EGHGE....EGFFE.",
-      ".EGGFGEEEEGFFFE.",
-      "..EEGFGGFGFFEE..",
+      "...EHHGHGGGFE...",
+      "..EHGEEEEEEGFE..",
+      ".EHGE......EGFE.",
+      ".EHGE......EGFE.",
+      ".EGHE......EFGE.",
+      ".EHGE......EGFE.",
+      ".EGFE......EFFE.",
+      "..EGFE....EFFE..",
+      "...EGFEEEEFFE...",
+      "....EFIIIIFE....",
+      "....EIKKJJIE....",
+      "....IKLJJJJI....",
+      "...IKJJJJJJII...",
+      "...IIIIIIIIII...",
+      ".......II......."
+     ]
+    }
+   ],
+   "anteckning": "Tamheten visas som ett halsband med bjällra, sett framifrån som en symbol, samma motiv som tidigare. Läderbandet är smalare: två punkter läder i jordtoner mellan konturer i jord0, i stället för det tjocka bandet. Ljuset faller från övre vänstra hörnet, så vänster sida är ljusast med jord3 och höger sida mörkast med jord1. Bjällran i senap hänger mitt under bandets nederkant. Den är nu större: 10 punkter bred och 6 hög med kläpp. Konturen är i senap0 och det enda glansljuset sitter uppe till vänster. Ringen och bjällran är spegelsymmetriska och ritade utan bakgrund. Granskningen: Granskad och oförändrad. Symbolen är ett halsband av läder med en mässingsbjällra, ett tydligt tecken för ett tamt djur. Den skiljer sig från musklen, tassen, skölden och svärdet. Formatet är 16 × 16 punkter, och ringen och bjällran nästan fyller rutan utan bakgrund. Ringen och bjällran med kläppen är spegelsymmetriska kring mitten. Konturen följer materialets mörkaste ton: jord0 runt lädret och senap0 runt mässingen, aldrig svart. Ljuset faller uppifrån vänster: ljusast H och G på ringens vänstra sida, F på den högra. Bjällran har senap2 till vänster, en enda glanspunkt i senap3 och mörknar mot höger. Det bruna lädret och den varma senapen syns klart mot det olivgröna gräset. Formerna är få och stora och går att läsa i liten storlek.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_tamhet",
+     "rader": [
+      "....EEEEEEEE....",
+      "...EHHGHHGGGE...",
+      "..EHGEEEEEEGFE..",
+      "..EHE......EFE..",
+      "..EGE......EFE..",
+      "..EHE......EGE..",
+      "..EGE......EFE..",
+      "..EGFEEEEEEFFE..",
+      "...EGFFGFFGFE...",
       "....EEEIIEEE....",
       "......IKJI......",
-      ".....IL..JI.....",
-      ".....IK..JI.....",
-      "......IIII......"
+      ".....IKLKJI.....",
+      ".....IKKJJI.....",
+      "....IKKJJJJI....",
+      "...IKJJJJJJJI...",
+      "....IIIEEIII...."
      ]
     }
    ],
-   "anteckning": "Halsbandet ses rakt framifrån som en symbol: en sluten, spegelsymmetrisk läderring, 14 punkter bred och 12 hög, med ett hål i mitten där bakgrunden syns. Läderremmen är tjock och ljusast uppe till vänster (jord3 i kornet), övergår i jord2 och blir jord1 nere till höger. Ytterkanten och hålets kant har kontur i jord0. Längst ner i mitten går bronsöglan genom remmens nederkant och hänger rakt ner, så att silhuetten blir en ring med en droppe under. Öglan är en liten rund ring med ett eget hål: kontur i senap0, senap2 till vänster, senap1 till höger och under, och en enda glanspunkt i senap3 uppe till vänster. Bakgrund och skugga är inte ritade. Granskningen: Granskat: ringen är 14 × 11 punkter, helt spegelsymmetrisk och nästan fyller rutan. Hålet i mitten är genomskinligt. Läderremmen har korn i jord1–jord3, är ljusast uppe till vänster och har kontur i jord0, så den syns tydligt mot gräset. Den följer idén och storleken stämmer för en symbol på 16 punkter. En sak är rättad: öglan av brons saknade kontur längs underkanten, där den nedersta raden slutade i senap1 utan senap0 runt. Den nedersta raden är nu konturen i senap0, så öglan har mörk kontur runt hela, ett hål på 2 × 2 punkter och kvar senap2, senap1 och glanspunkten i senap3 uppe till vänster. Allt annat är oförändrat.",
-   "ide": "Ett halsband framifrån: en tjock, helt symmetrisk ring av läder som nästan fyller rutan, omkring 14 punkter bred och 12 hög, med ett hål i mitten där bakgrunden syns igenom. Remmen är jord1 och jord2 med korn, ljusast uppe till vänster (jord3) och mörkast nere till höger, med kontur i jord0. Längst ner i mitten hänger en liten rund ögla av brons i senap1 och senap2 med kontur i senap0 och en glanspunkt i senap3, så att silhuetten blir en rund ring med en droppe under."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f10_tamhet",
-     "rader": [
-      "................",
-      "................",
-      ".EEE............",
-      "EuHHE...........",
-      "EuHGE....III....",
-      "EHGGE...ILLKI...",
-      "EHGGE..ILKLKKIEE",
-      "EHHGHEIKLKKKIEHE",
-      "EHHHHHHIIIIIHHGE",
-      "EGHHuHHHuHHHHGGE",
-      "EGGHGGGGGGHGGGE.",
-      "EGGGGGGGGGGGGE..",
-      ".EGGGGEEEEEEE...",
-      ".EHGGE..........",
-      ".EGGGE..........",
-      ".EEEEE.........."
-     ]
-    }
-   ],
-   "anteckning": "Handen ses från sidan med handflatan uppåt: tummen står upp vid vänsterkanten, handens ovansida (handflatan) är ljusast i jord3 eftersom ljuset kommer uppifrån vänster, och undersidan och handleden går ned i jord2 med enstaka rost3 som hudton. Fingrarna sträcker sig åt höger, och fingertopparna böjer sig lite uppåt så att handen blir en grund skål. Handleden är en kort stump nere till vänster. Mitt i handflatan ligger en liten hög säd i senap2 och senap3 med kontur i senap0. Det är det enda mättade i bilden och visar att djuret äter ur handen. Hela handen har kontur i jord0. Ingen bakgrund. Granskningen: Symbolen följer idén: en öppen hand från sidan som tar hela bredden, med tummen upprest till vänster, fingrarna mot höger med uppböjd fingertopp, handleden som en stump nere till vänster och en liten hög säd i senap mitt i handflatan. Säden är det enda mättade i bilden. Konturen är jord0 runt huden och senap0 runt säden, och storlek, vinkel och läsbarhet stämmer. Jag rättade bara ljuset. Tummens ljusa ton u stod på den högra (skuggiga) sidan och är flyttad till vänsterkanten. Den ljusa pricken u i handledens nedre del och den i handflatans undre rad stred mot att det nedre är mörkast; de är bytta mot G. Handledens översta rad fick i stället H uppe till vänster.",
-   "ide": "En öppen hand från sidan, låg och bred: handflatan vänd uppåt med fingrarna mot höger, tummen lite upprest vid vänsterkanten och handleden som en kort stump nere till vänster, ritad i hudtonerna H, G och u med kontur i jord0. Mitt i handflatan ligger en liten hög säd eller en bit mat i senap2 och senap3, det enda mättade i bilden, som visar att djuret äter ur handen. Formen är en vågrät skål som tar hela bredden och ungefär 10 punkters höjd, inte symmetrisk eftersom handen ses från sidan."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f10_tamhet",
-     "rader": [
-      ".....oooooo.....",
-      "....oqwqqppo....",
-      "...oqqqqpqppo...",
-      "..ooqqpqqpppoo..",
-      ".oqoqqqqpqppopo.",
-      "oqpoqllqpllpoppo",
-      "ooortqqqpqpsrooo",
-      "...rtqpqqppsr...",
-      "...rttststssr...",
-      "...orrrrrrrro...",
-      "....oqqqpqpo....",
-      "....oqoqpopo....",
-      ".....oqqppo.....",
-      "......orro......",
-      "......rtsr......",
-      "......rtsr......"
-     ]
-    }
-   ],
-   "anteckning": "Huvudet ses rakt framifrån och är spegelsymmetriskt, så att formen säger 'lugnt husdjur' redan i liten storlek. Pannan börjar högst upp i rutan. Öronen hänger snett ner och ut åt sidorna, där huvudet är som bredast (cols 0–15). Ögonen är två korta mörka streck i kol1, halvslutna och lugna. Grimman bärs som på ett riktigt djur. Kindremmarna kommer fram under öronen, alltså där remmen går upp bakom dem, och lägger sig över huvudets kant ner till nosbandet tvärs över nosryggen. Nosbandet har en ljusare ton till vänster och rost0 som mörk underkant. Repänden sitter fast under hakan och hänger rakt ner till rutans nederkant. Huvudet är i ben1 och ben2 med kontur i ben0 och en enda punkt ben3 som glans uppe till vänster. Ljuset faller från vänster, så vänster sida är ljusare och höger mörkare, men formen är densamma på båda sidor. Granskningen: Granskad mot reglerna; inget behövde rättas. Symbolen är 16 × 16 punkter, och huvudet fyller rutan på höjden och är 12 punkter brett över öronen. Det ses rakt framifrån, som en symbol ska. Formen är spegelsymmetrisk rad för rad: öronen, ögonstrecken på punkt 5–6 och 9–10, näsborrarna på 6 och 9 och repänden på 6–9. Bara ljuset skiljer sidorna åt: ben2 och rost2 till vänster, ben1 och rost1 till höger, och en enda glanspunkt i ben3 uppe till vänster. Konturen är ben0 runt huvudet och rost0 runt grimman, och kol0 används inte (ögonen är kol1). Grimman följer idén: kindremmarna går från öronfästet ner längs kinderna, nosbandet går tvärs över nosryggen, och repänden hänger från hakan ner till nederkanten. Rost används bara på grimman, som är det man ska se, och det ljusa benet syns tydligt mot gräset.",
-   "ide": "Ett hornlöst djurhuvud rakt framifrån, högt och spegelsymmetriskt: ett avlångt kalv- eller fårhuvud i ben1 och ben2 med kontur i ben0, öronen hängande snett ut åt sidorna och ögonen som två små mörka streck, halvslutna och lugna. Över nosen och upp bakom öronen går en grimma av rep i rost1 och rost2 med kontur i rost0, ett band tvärs över nosryggen och ett runt kinderna, och från hakan hänger en kort repände rakt ner till rutans nederkant. Huvudet fyller rutan på höjden, omkring 11 punkter brett, och bara ljuset skiljer vänster sida från höger."
+   "anteckning": "Symbolen är ett halsband med en bjällra, sett framifrån: läderremmen bildar en oval ring och bjällran hänger fritt från remmens nederkant i en liten ögla mitt under ringen. Efter kommentaren är bandet smalare, bara tre punkter tvärs över: en kontur i jord0 ytterst, en rad läder och en kontur i jord0 innerst. Hålet i mitten har därför blivit större. Bjällran är större än förut, sex rader hög och upp till tio punkter bred nertill. Den är symmetrisk och klockformad i senaptoner med en kontur i senap0, och springan nertill är mörk jord. Ljuset kommer uppifrån vänster: läderremmen är ljusast uppe till vänster och mörkast nere till höger, och bjällran har en enda glanspunkt i senap3 uppe till vänster. Formen, färgerna och den genomskinliga bakgrunden är annars desamma som förut. Granskningen: Granskad mot reglerna; inget behövde rättas, så versionen är oförändrad. Det är en symbol på 16 × 16 punkter som nästan fyller rutan (kolumn 2–13, rad 0–15). Den har en kontur runt hela och inget är ritat bakom den. Idén är en halsring av läder eller trä med en bjällra under, en tydlig bild av ett tamt djur, och den liknar inte musklen, tassen, skölden eller svärdet. Formen är spegelsymmetrisk både i ringen och i bjällran; bara ljuset skiljer sidorna åt. Ljuset kommer uppifrån vänster: ringen har jord3/jord2 till vänster och upptill och jord1 till höger och nertill, och bjällran har senap2 till vänster och senap1 till höger. Glansen är en enda punkt senap3. Konturen är materialets mörkaste ton: jord0 runt ringen och senap0 runt bjällran, ingen kol0. Den mättade senapen i bjällran gör att symbolen syns på gräset, och ringen bär sin mörka kontur. Kläppen är två punkter jord0 i bjällrans nederkant och läses som en mörk öppning, inte som en fläck.",
+   "ide": ""
   }
  ]
 }

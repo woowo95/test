@@ -1,0 +1,123 @@
+{
+ "kort": "f9_bryggkar_drycker",
+ "namn": "Jäskaret med dryckerna",
+ "slag": null,
+ "typ": "janej",
+ "fore": "Ritad med kod efter jäskaret du valde.",
+ "vad": "Steg 9.6.12: i jäskaret jäser vin, öl, svagdricka och mjöd. Genom gluggen syns vätskan i sin färg, som i spelets register över vätskorna Din kommentar förra gången: ”det ska även synas när det är vätska i karet med olika fäger för vilken vätska det är”",
+ "versioner": [
+  {
+   "ide": "Jäskaret fyra gånger: vinet mörkrött, ölet mörkt gyllene, svagdrickan ljusare gul och mjödet ljust honungsgult, med skum i gluggen.",
+   "bilder": [
+    {
+     "namn": "bryggkar_vin",
+     "rader": [
+      ".........EEEE......................EEEE.........",
+      ".........EHGE......................EHGE.........",
+      ".........EGFE......................EGFE.........",
+      "....EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE....",
+      "...EHHGHHHGHHHHGHHHGHHHHGHHHGHHHHGHHGHHHGHGGE...",
+      "...EHGHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEGGFE...",
+      "...EHHGEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEGGFE...",
+      "...EHGHEFGFGGGGFGGGFGFGGGGGFGGGEEEEEEGFFEGFGE...",
+      "...EGHHEFGGGFGGGGFGGFGGGFGGFGGFErrrrEGFFEGGFE...",
+      "...EHGGEFGGGGGFGGGGFGGFGGGGFGFGEsqsrEFGFEFGFE...",
+      "...EGHGEFGFGGGGGFGGGFGGGGFGGGGGEssqsEGFFEGFFE...",
+      "...EHGGEFGGGFGGGGGFGFGGFGGGFFGGEEEEEEFFFEFGFE...",
+      "...EGHGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEGFFE...",
+      "...EGHGGHGGGHGGGHGGGGHGGGGGHGGGGFGGGFGGGFGFFE...",
+      "...EFGFFFGFFFGFFFGFFFFGFFFFGFFFFFGFFFFGFFFFFE...",
+      "...EFFGFFFFFFFFFGFFFFGFFGFFFFFFFGFFFFFFFFGFFE...",
+      "...EFFFFGFFFFFFFFFFFFFFFFFFFFGFFFFFFFFFFFFFFE...",
+      "....EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE....",
+      ".........EGFE......................EGFE.........",
+      ".........EFFE......................EFFE.........",
+      ".........EFFE......................EFFE.........",
+      ".........EEEE......................EEEE........."
+     ]
+    },
+    {
+     "namn": "bryggkar_ol",
+     "rader": [
+      ".........EEEE......................EEEE.........",
+      ".........EHGE......................EHGE.........",
+      ".........EGFE......................EGFE.........",
+      "....EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE....",
+      "...EHHGHHHGHHHHGHHHGHHHHGHHHGHHHHGHHGHHHGHGGE...",
+      "...EHGHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEGGFE...",
+      "...EHHGEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEGGFE...",
+      "...EHGHEFGFGGGGFGGGFGFGGGGGFGGGEEEEEEGFFEGFGE...",
+      "...EGHHEFGGGFGGGGFGGFGGGFGGFGGFEIIIIEGFFEGGFE...",
+      "...EHGGEFGGGGGFGGGGFGGFGGGGFGFGEJwJIEFGFEFGFE...",
+      "...EGHGEFGFGGGGGFGGGFGGGGFGGGGGEJJwJEGFFEGFFE...",
+      "...EHGGEFGGGFGGGGGFGFGGFGGGFFGGEEEEEEFFFEFGFE...",
+      "...EGHGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEGFFE...",
+      "...EGHGGHGGGHGGGHGGGGHGGGGGHGGGGFGGGFGGGFGFFE...",
+      "...EFGFFFGFFFGFFFGFFFFGFFFFGFFFFFGFFFFGFFFFFE...",
+      "...EFFGFFFFFFFFFGFFFFGFFGFFFFFFFGFFFFFFFFGFFE...",
+      "...EFFFFGFFFFFFFFFFFFFFFFFFFFGFFFFFFFFFFFFFFE...",
+      "....EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE....",
+      ".........EGFE......................EGFE.........",
+      ".........EFFE......................EFFE.........",
+      ".........EFFE......................EFFE.........",
+      ".........EEEE......................EEEE........."
+     ]
+    },
+    {
+     "namn": "bryggkar_svagdricka",
+     "rader": [
+      ".........EEEE......................EEEE.........",
+      ".........EHGE......................EHGE.........",
+      ".........EGFE......................EGFE.........",
+      "....EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE....",
+      "...EHHGHHHGHHHHGHHHGHHHHGHHHGHHHHGHHGHHHGHGGE...",
+      "...EHGHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEGGFE...",
+      "...EHHGEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEGGFE...",
+      "...EHGHEFGFGGGGFGGGFGFGGGGGFGGGEEEEEEGFFEGFGE...",
+      "...EGHHEFGGGFGGGGFGGFGGGFGGFGGFEJJJJEGFFEGGFE...",
+      "...EHGGEFGGGGGFGGGGFGGFGGGGFGFGEKwKJEFGFEFGFE...",
+      "...EGHGEFGFGGGGGFGGGFGGGGFGGGGGEKKwKEGFFEGFFE...",
+      "...EHGGEFGGGFGGGGGFGFGGFGGGFFGGEEEEEEFFFEFGFE...",
+      "...EGHGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEGFFE...",
+      "...EGHGGHGGGHGGGHGGGGHGGGGGHGGGGFGGGFGGGFGFFE...",
+      "...EFGFFFGFFFGFFFGFFFFGFFFFGFFFFFGFFFFGFFFFFE...",
+      "...EFFGFFFFFFFFFGFFFFGFFGFFFFFFFGFFFFFFFFGFFE...",
+      "...EFFFFGFFFFFFFFFFFFFFFFFFFFGFFFFFFFFFFFFFFE...",
+      "....EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE....",
+      ".........EGFE......................EGFE.........",
+      ".........EFFE......................EFFE.........",
+      ".........EFFE......................EFFE.........",
+      ".........EEEE......................EEEE........."
+     ]
+    },
+    {
+     "namn": "bryggkar_mjod",
+     "rader": [
+      ".........EEEE......................EEEE.........",
+      ".........EHGE......................EHGE.........",
+      ".........EGFE......................EGFE.........",
+      "....EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE....",
+      "...EHHGHHHGHHHHGHHHGHHHHGHHHGHHHHGHHGHHHGHGGE...",
+      "...EHGHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEGGFE...",
+      "...EHHGEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEGGFE...",
+      "...EHGHEFGFGGGGFGGGFGFGGGGGFGGGEEEEEEGFFEGFGE...",
+      "...EGHHEFGGGFGGGGFGGFGGGFGGFGGFEKKKKEGFFEGGFE...",
+      "...EHGGEFGGGGGFGGGGFGGFGGGGFGFGELwLKEFGFEFGFE...",
+      "...EGHGEFGFGGGGGFGGGFGGGGFGGGGGELLwLEGFFEGFFE...",
+      "...EHGGEFGGGFGGGGGFGFGGFGGGFFGGEEEEEEFFFEFGFE...",
+      "...EGHGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEGFFE...",
+      "...EGHGGHGGGHGGGHGGGGHGGGGGHGGGGFGGGFGGGFGFFE...",
+      "...EFGFFFGFFFGFFFGFFFFGFFFFGFFFFFGFFFFGFFFFFE...",
+      "...EFFGFFFFFFFFFGFFFFGFFGFFFFFFFGFFFFFFFFGFFE...",
+      "...EFFFFGFFFFFFFFFFFFFFFFFFFFGFFFFFFFFFFFFFFE...",
+      "....EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE....",
+      ".........EGFE......................EGFE.........",
+      ".........EFFE......................EFFE.........",
+      ".........EFFE......................EFFE.........",
+      ".........EEEE......................EEEE........."
+     ]
+    }
+   ]
+  }
+ ]
+}

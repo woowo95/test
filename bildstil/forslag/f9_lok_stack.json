@@ -2,133 +2,11 @@
  "kort": "f9_lok_stack",
  "namn": "Löken i förrådet",
  "slag": [],
- "vad": "Löken, som du valde (version 1), som den ligger i förrådet: en, några (tre i en triangel) och många (sex i en pyramid), som stackarna du valde. Byggs in i steg 10.11.1 tillsammans med saken.",
+ "vad": "Löken, som du valde (version 1), som den ligger i förrådet: en, några (tre i en triangel) och många (sex i en pyramid), som stackarna du valde. Byggs in i steg 10.11.1 tillsammans med saken. Din kommentar förra gången: ”jag gillar symbolen i version 3 bäst så använd den när det är en lök. Men jag gillar inte hur det ser ut när det är många. ordnar dem mer som i version 1”",
  "av": "API:t (claude-opus-5-5), tre idéer",
  "versioner": [
   {
-   "bilder": [
-    {
-     "namn": "f9_lok_stack_1",
-     "rader": [
-      "..M...M..",
-      "..PM.MO..",
-      "..MPMOM..",
-      "...MPOM..",
-      "...MOM...",
-      "...rtr...",
-      "..rutsr..",
-      ".ruttssr.",
-      ".rutstsr.",
-      ".rttsssr.",
-      "..rtssr..",
-      "...rrr..."
-     ]
-    },
-    {
-     "namn": "f9_lok_stack_3",
-     "rader": [
-      "......M...M......",
-      "......PM.MO......",
-      "......MPMOM......",
-      "..M...MMPOM...M..",
-      "..PM.MOMOMPM.MO..",
-      "..MPMOMrtrMPMOM..",
-      "...MPOMutsrMPOM..",
-      "...MOMuttssMOM...",
-      "...rtrutstsrtr...",
-      "..rutsrtssrutsr..",
-      ".ruttssrsruttssr.",
-      ".rutstsrrrutstsr.",
-      ".rttsssr.rttsssr.",
-      "..rtssr...rtssr..",
-      "...rrr.....rrr..."
-     ]
-    },
-    {
-     "namn": "f9_lok_stack_6",
-     "rader": [
-      "..........M...M..........",
-      "..........PM.MO..........",
-      "..........MPMOM..........",
-      "......M...MMPOM...M......",
-      "......PM.MOMOMPM.MO......",
-      "......MPMOMrtrMPMOM......",
-      "..M...MMPOMutsMMPOM...M..",
-      "..PM.MOMOMPMtMOMOMPM.MO..",
-      "..MPMOMrtrMPMOMrtrMPMOM..",
-      "...MPOMutsrMPOMutsrMPOM..",
-      "...MOMuttssMOMuttssMOM...",
-      "...rtrutstsrtrutstsrtr...",
-      "..rutsrtssrutsrtssrutsr..",
-      ".ruttssrsruttssrsruttssr.",
-      ".rutstsrrrutstsrrrutstsr.",
-      ".rttsssr.rttsssr.rttsssr.",
-      "..rtssr...rtssr...rtssr..",
-      "...rrr.....rrr.....rrr..."
-     ]
-    }
-   ],
-   "anteckning": "Löken står upprätt med rundad lök i rost (ljuset uppe till vänster, rost0 som kontur) och blasten rakt upp i oliv. Bilderna ligger i förrådet utan behållare. Vi ser stackarna snett uppifrån, så varje bakre rad står 5–6 punkter högre upp än raden framför. Den främre radens blast och lökar ritas över de bakre, och de bakre lökarna syns i glipan mellan de främre. Tre (17×18): två lökar framme och en bakom i glipan, där mest den övre halvan och blasten syns. Sex (25×22): raderna 3-2-1 i en spetsig triangel, där blastspetsarna sticker upp som en taggig krans överst. Varje lök är samma 9×12 som den enskilda. Granskningen: Rättat: de bakre lökarna låg ovanpå de främre i stället för bakom dem. I trean slutade den bakre lökens botten precis där de främre lökarnas toppar började, och i sexan var det likadant mellan raderna. Ingen lök var alltså halvt dold, och sexan blev 25 × 22 punkter i stället för omkring 22 × 18. Nu ligger varje bakre rad bara 3 punkter högre än raden framför, i stället för 5–6, och lökarna läggs bakifrån och framåt. Den främre radens blast och lökar täcker då den nedre halvan av lökarna bakom. Av dem syns bara toppen, blasten och en smal remsa mitt i glipan, som idén säger. Trean är nu 17 × 15 punkter och sexan 25 × 18 (23 × 18 med innehåll), en tät och spetsig pyramid där blasten bildar en taggig krans. Den enskilda löken (version 1) är oförändrad. Den bärs inte, är spegelsymmetrisk i kroppen och syns tydligt på gräset med rostkontur och ljus vänstersida.",
-   "ide": "Upprätt och tät pyramid: varje lök står som i version 1 med blasten rakt upp, och stackarna byggs med bakre rader högre upp och halvt dolda bakom de främre, eftersom vi ser dem snett uppifrån. Tre är två lökar framme sida vid sida och en tredje bakom, mitt i glipan, där bara den övre halvan och blasten syns. Sex är raderna 3-2-1, omkring 22 × 18 punkter, en hög spetsig triangel där de små blastspetsarna sticker upp som en krans och gör silhuetten taggig upptill."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f9_lok_stack_1",
-     "rader": [
-      "..rrrrr.....",
-      ".rutuutr....",
-      "rtuLutstrEE.",
-      "rtuutstssHHE",
-      "rututstsrGGE",
-      "rtsttssrEE..",
-      ".rsssssr....",
-      "..rrrrr....."
-     ]
-    },
-    {
-     "namn": "f9_lok_stack_3",
-     "rader": [
-      "......rrrrr.........",
-      ".....rutuutr........",
-      "....rtuLutstrEE.....",
-      "....rtuutstssHHE....",
-      "..rrrrrutsrrrrrE....",
-      ".rutuutrtrutuutr....",
-      "rtuLutstrtuLutstrEE.",
-      "rtuutstsrtuutstssHHE",
-      "rututstsrututstsrGGE",
-      "rtsttssrrtsttssrEE..",
-      ".rsssssr.rsssssr....",
-      "..rrrrr...rrrrr....."
-     ]
-    },
-    {
-     "namn": "f9_lok_stack_6",
-     "rader": [
-      "..........rrrrr.............",
-      ".........rutuutr............",
-      "........rtuLutstrEE.........",
-      "........rtuutstssHHE........",
-      "......rrrrrutsrrrrrE........",
-      ".....rutuutrtrutuutr........",
-      "....rtuLutstrtuLutstrEE.....",
-      "....rtuutstsrtuutstssHHE....",
-      "..rrrrrutsrrrrrutsrrrrrE....",
-      ".rutuutrtrutuutrtrutuutr....",
-      "rtuLutstrtuLutstrtuLutstrEE.",
-      "rtuutstsrtuutstsrtuutstssHHE",
-      "rututstsrututstsrututstsrGGE",
-      "rtsttssrrtsttssrrtsttssrEE..",
-      ".rsssssr.rsssssr.rsssssr....",
-      "..rrrrr...rrrrr...rrrrr....."
-     ]
-    }
-   ],
-   "anteckning": "Varje lök ligger på sidan på förrådets golv, sedd snett uppifrån: den runda knölen till vänster mot ljuset och den torra, korta blasten åt höger. Knölens skal har tre rosttoner med rost0 som kontur, och en enda glanspunkt i senap3 uppe till vänster. Blasten är jordtoner med jord0 i spetsen. I högarna lägger jag de undre lökarna först från vänster till höger, så att varje lök täcker grannens blast. Därför syns blasten bara på den lök som ligger längst till höger i varje rad, och spetsarna bildar en trappa längs högra kanten. De övre lökarna vilar i svackan mellan två undre och ligger fyra punkter längre bak, så att högen blir en låg kulle (3 lökar: 20 × 12, 6 lökar: 28 × 16). Ingen behållare används, lökarna ligger fritt som på en hylla. Granskningen: Granskad, ingenting behövde rättas. Storlek: den enskilda löken är den godkända (12 × 8 punkter) och behåller sin storlek. Treslaget är 20 × 12 och sexslaget 28 × 16, alltså väl under 64 × 64 och i rimlig storlek mot kolonisten (14 × 20). Sexslaget blir lite större än idéns ungefärliga 24 × 14. Tätare packning skulle dölja knölarnas runda form, så jag behöll den. Vinkel och idé: lökarna ligger på sidan, alla åt samma håll, med knölen till vänster och blasten åt höger. De övre lökarna vilar i svackan mellan två undre och är skjutna halva höjden uppåt, så högen blir en låg kulle. Blastspetsarna bildar en trappa längs högra kanten. Ljuset kommer uppifrån vänster med en enda senapsglans per lök, och den mörkaste tonen ligger nere till höger. Kontur: rost0 runt knölen och jord0 runt blasten, ingen kol0. Överlappen är logiska: varje lök ligger delvis bakom lökarna framför eller under sig, och inga ensamma mörka prickar uppstår. Rosten syns tydligt mot det olivgröna gräset och är rätt mättad för mat.",
-   "ide": "Liggande på sidan, alla åt samma håll: varje lök ligger ner med den runda knölen till vänster mot ljuset och den torra blasten pekande åt höger, som lökar upplagda på en hylla. Tre och sex läggs i samma pyramid (2-1 och 3-2-1), men de övre lökarna vilar i svackan mellan två undre och ligger bara lite längre bak, så högen blir låg och bred, omkring 24 × 14 punkter för sex. Silhouetten är en rundad kulle av knölar till vänster med en rad korta blastspetsar som sticker ut längs högra kanten."
-  },
-  {
+   "ide": "Löken ur version 3, liggande med blasten snett upp åt vänster. Tre och sex staplas som i version 1: de bakre raderna högre upp och halvt dolda bakom de främre.",
    "bilder": [
     {
      "namn": "f9_lok_stack_1",
@@ -150,54 +28,52 @@
     {
      "namn": "f9_lok_stack_3",
      "rader": [
-      "..........N.N..........",
-      "..........PNN..........",
-      "..........PON..........",
-      "...........O...........",
-      "..........sss..........",
-      ".........suuts.........",
-      "........suLutts........",
-      "........suuttts........",
-      ".........sttts.........",
-      "......sss.sss.sss......",
-      ".....suuts.q.suuts.....",
-      "NPPOsuLuttspsuLuttsOPPN",
-      "MNNOsuutttsqsuutttsONNM",
-      ".....sttts...sttts.....",
-      "......sss.....sss......"
+      ".....N..N..............",
+      ".....NP.PN.............",
+      "......NPON.............",
+      ".......NOsssss.........",
+      "N..N....suNuuNs........",
+      "NP.PN...suNPuPNs.......",
+      ".NPON...suuNPONs.......",
+      "..NOsssssutuNOsssss....",
+      "...suuuutstutsuuuuts...",
+      "...suLuuttsttsuLuutts..",
+      "...suututtssssuututts..",
+      "...sututtts..sututtts..",
+      "...sttuttts..sttuttts..",
+      "....sttttsp...sttttsp..",
+      ".....sssspq....sssspq..",
+      "........q.p.......q.p.."
      ]
     },
     {
      "namn": "f9_lok_stack_6",
      "rader": [
-      "..........N.N..........",
-      "..........PNN..........",
-      "..........PON..........",
-      "...........O...........",
-      "..........sss..........",
-      ".........suuts.........",
-      "........suLutts........",
-      "........suuttts........",
-      ".........sttts.........",
-      "......sss.sss.sss......",
-      ".....suuts.q.suuts.....",
-      "NPPOsuLuttspsuLuttsOPPN",
-      "MNNOsuutttsqsuutttsONNM",
-      ".....sttts.p.sttts.....",
-      "...ssssss.sss.ssssss...",
-      "..suuts..suuts..suuts..",
-      ".suLuttssuLuttssuLutts.",
-      ".suutttssuutttssuuttts.",
-      ".Osttts..sttts..stttsO.",
-      "PN.sss....sss....sss.NP",
-      "N..........O..........N",
-      "..........PON..........",
-      "..........N.N.........."
+      "..........N..N...................",
+      "..........NP.PN..................",
+      "...........NPON..................",
+      "............NOsssss..............",
+      ".....N..N....suNuuNs.............",
+      ".....NP.PN...suNPuPNs............",
+      "......NPON...suuNPONs............",
+      ".......NOsssssutuNOsssss.........",
+      "N..N....suNuuNstutsuNuuNs........",
+      "NP.PN...suNPuPNsttsuNPuPNs.......",
+      ".NPON...suuNPONssssuuNPONs.......",
+      "..NOsssssutuNOsssssutuNOsssss....",
+      "...suuuutstutsuuuutstutsuuuuts...",
+      "...suLuuttsttsuLuuttsttsuLuutts..",
+      "...suututtssssuututtssssuututts..",
+      "...sututtts..sututtts..sututtts..",
+      "...sttuttts..sttuttts..sttuttts..",
+      "....sttttsp...sttttsp...sttttsp..",
+      ".....sssspq....sssspq....sssspq..",
+      "........q.p.......q.p.......q.p.."
      ]
     }
-   ],
-   "anteckning": "Lökarna ligger på sidan i förrådet, ritade snett uppifrån utan behållare, eftersom de ligger lösa. Knölen är rost i tre toner: rost3 som ljus sida uppe till vänster, rost2 i skuggan nere till höger och rost1 som kontur runt varje lök, så att de skiljs åt i högen. Glansen är en enda senap3-punkt. Blasten är oliv i två eller tre toner och de torra rötterna ben. Den enda löken ligger med blasten snett upp åt vänster och rötterna ner åt höger. Tre lökar bildar en triangel: två nederst med rötterna mot varandra och blasten åt vänster och höger, och den översta vilar på dem med rötterna ner i skarven och blasten rakt upp. Sex lökar bildar en pyramid: de tre i triangeln ligger bakom och en främre rad av tre ligger närmast betraktaren och skymmer de mellersta knölarnas nederdel. Den främre raden har blasten snett ner åt vänster, rakt ner och snett ner åt höger. Högen blir en spegelsymmetrisk stjärna på 23 × 22 punkter med blasten åt sex håll och rötterna inåt, där de mest göms. Granskningen: Rättat i stack 3 och stack 6, stack 1 är oförändrad. Högarna var inte spegelsymmetriska. Den översta löken stod en punkt för långt till vänster (blasten i kolumn 10–11 i en 23 punkter bred bild), och den högra löken var en punkt bredare än den vänstra. Alla lökar har nu samma knöl, 7 × 6 punkter, med samma ljus uppe till vänster, och blasten ligger spegelvänd kring mittkolumnen. Rötterna (ben) ligger nu i mitten, där lökarnas rotändar möts. Tidigare satt de snett i den vänstra lökens kant, vilket bröt mot idén om rötterna in mot mitten. I stack 6 låg en lös skifferpunkt (S) i en lökkant och två lösa oliva prickar (O) i den nedre raden. De är borttagna. Den nedre raden är omritad som tre hela lökar framför de två mellersta, med blasten snett ner åt vänster, rakt ner och snett ner åt höger, så att högen blir en symmetrisk stjärna på 23 × 23 punkter. Färgerna (rost med kontur i rost1, en senapsglans, oliv blast) följer den enda löken, så att stackarna ser ut som saken.",
-   "ide": "Liggande med blasten utåt: lökarna ligger på sidan med rötterna in mot mitten och blasten pekande ut från högen, de vänstra åt vänster, de högra åt höger och den översta uppåt, så att högen blir spegelsymmetrisk som en stjärna eller ett knippe. Den enda löken ligger med blasten snett upp åt vänster, tre bildar en triangel med tre blastspetsar åt tre håll, och sex bildar en rund, nästan cirkelformad hög på omkring 22 × 20 punkter. Ljuset faller uppifrån vänster på varje knöl, och konturen är lökens mörkaste ton runt varje lök så att de skiljs åt i högen."
+   ]
   }
- ]
+ ],
+ "typ": "janej",
+ "fore": "Ritad med kod: löken ur version 3, staplad som i version 1."
 }

@@ -1,0 +1,90 @@
+{
+ "kort": "f11_sym_bud",
+ "namn": "Trons bud",
+ "slag": null,
+ "vad": "Steg 11.1.22: en symbol per betydelse. I Tro delade den här saken symbol med något annat (skriftrullen, folket eller gnistorna), och nu får den en egen. Symbolen i 16 punkter på panelens botten. Ja eller nej? Du sa nej till alla tre förra gången, utan kommentar, så det här är nya idéer utan förlaga.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_bud_runsten",
+     "rader": [
+      "................",
+      ".....QQQQQQ.....",
+      "....QTTTTSSQ....",
+      "...QTTTSTSSRQ...",
+      "...QTSTSSSSRQ...",
+      "...QTttStSSRQ...",
+      "...QTtSSttSRQ...",
+      "...QStSStSRRQ...",
+      "...QTSTSSSSRQ...",
+      "...QTStStStRQ...",
+      "...QSTtSStSRQ...",
+      "...QTStSStRRQ...",
+      "...QTSSSSSRRQ...",
+      "...QSTSSSRSRQ...",
+      "...QTSSSRSRRQ...",
+      "...QQQQQQQQQQ..."
+     ]
+    }
+   ],
+   "anteckning": "Runstenen står upprätt rest i marken och ses lätt snett uppifrån. Därför syns en smal, ljusare krönyta överst (rad 2–3, mest skiffer3), och under den framsidan med ristningen. Formen är spegelsymmetrisk med rundad topp, 10 punkter bred och 15 hög, och står på panelens botten. Konturen är skiffer0 runt om. Ljuset kommer från övre vänster: vänsterkanten är skiffer3 och högerkanten skiffer1, med skiffer2 i ett korn emellan. Ristningen är två korta rader runor (två plus två tecken) ifyllda med rost2, som målade runor. De är det enda mättade i bilden, så att symbolen läses som tro och bud och inte som vanlig sten. Ingen markskugga och ingen mark är ritad. Granskningen: Granskad, inget behövde rättas. Stenen är 10 × 15 punkter: tydligt lägre än kolonisten (14 × 20) och ryms i rutan. Silhuetten är spegelsymmetrisk med en rundad topp. Den växer från 6 till 8 och sedan 10 punkter bred, centrerad mellan kolumn 7 och 8. Krönet överst är ljusare (skiffer3), så stenen ses lätt snett uppifrån. Ljuset faller från övre vänster: vänsterkanten är skiffer3 och högerkanten skiffer1. Konturen är skiffer0, inte svart. Kornet växlar mellan skiffer2 och skiffer3 utan ensamma mörka prickar. Två rader runor i rost2 är det enda mättade i bilden. Den gråblå stenen med mörk kontur syns tydligt mot det oliva gräset. Ingen skugga är ritad, och inget bärs, så det finns inget att kontrollera kring huvud eller ansikte. Svar: ja.",
+   "ide": "Runsten: en hög, smal sten med rundad topp, omkring 10 punkter bred och 15 hög, spegelsymmetrisk i formen och lätt snett uppifrån så att en smal ljusare krönyta syns överst. Stenen är i skiffer1–skiffer3 med kontur i skiffer0, och på framsidan löper två eller tre korta rader runristning ifyllda med rost2, som de målade runorna; de är det enda mättade i bilden. Ljuset faller från övre vänster så att vänsterkanten är skiffer3 och högerkanten skiffer1."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_bud_edsring",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "....IIIIIIII....",
+      "..IIKLKKKKKJII..",
+      ".IKLKJIIIIJKJJI.",
+      ".IKKJI....IKJJI.",
+      ".IKKJI....IJJJI.",
+      ".IJKJI....IJJJI.",
+      ".IJKJJIIIIJJJJI.",
+      "..IJKJJJJJJJJI..",
+      "...IJKJIIJJJI...",
+      "....IJJIIJJI....",
+      ".....II..II.....",
+      "................",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Edsringen ligger fritt som symbol, sedd snett ovanifrån: en bred sluten oval (14 × 12 punkter) på panelens botten, utan något under sig. Hålet i mitten är genomskinligt, så den läses som en ren ring. Bronsen är tre punkter tjock i senap1–senap3 med kontur i senap0. Ljuset faller uppe till vänster, där senap3-glansen sitter, och den nedre högra sidan är mörkast. De två utsvällda ändknopparna möts nere på mitten, åtskilda av en konturfog, så att formen förblir spegelsymmetrisk. Granskningen: Ja med rättningar. Storleken (14 punkter bred) stämmer mot kolonisten, ringen ses snett ovanifrån med genomskinligt hål, formen är spegelsymmetrisk och senapstonerna med senap0-kontur syns på gräset. Rättat: senap3 låg som en lång ljus strimma längs hela vänstersidan och i vänstra knoppen. Nu är den bara glans på två punkter uppe till vänster, och resten av ljussidan är senap2. Ändknopparna längst ner var kantiga och såg ut som ben. Nu är de två rundade knoppar med tydlig kontur som möts på mitten, den vänstra med senap2 mot ljuset och den högra i senap1. Översta raden är flyttad ett steg ner så att ovalen blir lägre och bredare.",
+   "ide": "Edsringen: en tjock, sluten armring av brons som man svor sina löften på, sedd snett ovanifrån som en bred oval omkring 14 punkter bred och 10 hög, med hålet i mitten genomskinligt. Ringen är 3 punkter tjock i senap1–senap3 med kontur i senap0, glans på en eller två punkter uppe till vänster i senap3, och två små utsvällda ändknoppar som möts längst ner på mitten så att formen förblir spegelsymmetrisk. Inget står eller ligger under den; den är en ren rund silhuett."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_bud",
+     "rader": [
+      "................",
+      "............EEE.",
+      "...........EHGGE",
+      "..........EGHGE.",
+      ".........rtssr..",
+      "........rsssr...",
+      ".......EHHGE....",
+      "......EFGGE.....",
+      ".....EHGFE......",
+      "....EFHGE.......",
+      "...EHGFE........",
+      "..EHGmE.........",
+      ".Elmkk..........",
+      "lmkkk...........",
+      ".kkk............",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Budkaveln ligger som symbol på panelens botten, sedd uppifrån som en sak på marken. Den ligger snett från nedre vänster till övre höger, omkring 14 punkter lång och tre punkter tjock inne i konturen. Ingen håller den, så hela staven syns. Träet är jord2–jord3 med kontur i jord0, och den ljusa kanten ligger uppåt vänster mot ljuset. Längs mitten går två inskurna skåror i jord1, var och en två punkter snett tvärs över staven. Den nedre änden är svartbränd: först mörknar träet, och längst ut är det kol1–kol0. Där är träet verkligen svart, och bara där används kol0. Nära den övre änden sitter en kort lindning av snodd i rost1, med kontur i rost0 och en ljus punkt i rost2. Det är den enda mättade färgen, så att budet syns först. Silhuetten är ett långt, smalt snedstreck och liknar varken stenen eller ringen. Granskningen: Ingen rättelse behövs, versionen är oförändrad. Budkaveln ligger som ett långt, smalt snedstreck från nedre vänster till övre höger och fyller panelen ned mot botten. Den är omkring 14 punkter lång och 3 punkter tjock inom konturen, som idén säger. Staven är i jord2–jord3 med kontur i jord0 och har den ljusa kanten uppe till vänster. Skårorna i jord1 (rad 7–8 och 9–10) går snett tvärs över staven, så de läses som inskurna hack och inte som fläckar. Den lindade snodden i rost1 sitter nära den övre änden, med rost2-glans uppe till vänster och kontur i rost0. Den nedre änden är svartbränd i kol0–kol1; kol0 används bara där, eftersom ytan verkligen är svart. Staven är ljusare än gräset och syns tydligt, och silhuetten skiljer sig klart från stenen och ringen. Det är en liggande sak och inget som bärs, så inga regler om bärande berörs.",
+   "ide": "Budkaveln: den snidade trästaven som skickades från gård till gård för att kalla folket till tinget, lagd diagonalt från nedre vänster till övre höger, omkring 14 punkter lång och 3 punkter tjock. Staven är i jord2–jord3 med kontur i jord0, har två eller tre inskurna skåror i jord1 längs mitten, den ena änden svartbränd i kol0–kol1 som tecken på bud, och en kort lindad snodd i rost1 nära den andra änden. Silhuetten är ett långt, smalt snedstreck, helt olik både stenen och ringen."
+  }
+ ]
+}

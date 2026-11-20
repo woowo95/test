@@ -1,0 +1,18 @@
+{
+ "kommando": "omrita",
+ "val": [
+  "pryd:pryd-6=se till att den hamnar rätt på halsen på alla kroppsformer",
+  "farg:farg-3=jag gillar inte dem gröna detaljerna"
+ ],
+ "kommentar": null,
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.2,
+  "hog": 0.4
+ },
+ "dollar": 0.078,
+ "rapport": [
+  "pryd__om__pryd-6 1: \"Benkedja\"",
+  "farg__om__farg-3 1: \"Likblek\""
+ ]
+}

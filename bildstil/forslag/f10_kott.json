@@ -2,246 +2,342 @@
  "kort": "f10_kott",
  "namn": "Köttet från fem arter",
  "slag": null,
- "vad": "Steg 10.3.14: rådjuret, fåret, geten, fågeln och björnen ger var sitt kött. Här alla fem i rad, i samma form och var sin ton (rådjur, får, get, fågel, björn)",
+ "vad": "Steg 10.3.14: rådjuret, fåret, geten, fågeln och björnen ger var sitt kött. Här alla fem i rad, i samma form och var sin ton (rådjur, får, get, fågel, björn) Din kommentar förra gången: ”gör köttet olika i form också där det är rimligt inte bara färgen”",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "gör köttet olika i form också där det är rimligt inte bara färgen. Varje version visar fem bitar som skiljer sig tydligt i form: fågelns kött är ett litet smalt lår eller en hel liten plockad fågel, rådjurets en smal ryggfilé eller ett slankt lår, fårets och getens revben eller kotletter (olika storlek), björnens en stor, tjock och fet stek. Inte fem lika klubbor i olika färg.",
  "versioner": [
   {
    "bilder": [
     {
      "namn": "f10_kott_radjur",
      "rader": [
-      "..EEEE..........",
-      ".EtttsEE........",
-      "EttstsssEE......",
-      "EtstsstsssEE..oo",
-      "EttsssstsssEooqo",
-      "EstsssssssrEqppo",
-      "ErrssssssrrEoopo",
-      ".ErrrrrrrrE...oo",
-      "..EEEEEEEE......"
+      "................",
+      ".........oo.....",
+      ".........wo.....",
+      "........qo......",
+      "........qo......",
+      ".......qo.......",
+      ".......qo.......",
+      "......rsr.......",
+      ".....rtsr.......",
+      ".....rtssr......",
+      "....rutssr......",
+      "....rtstssr.....",
+      "....rsstssr.....",
+      ".....rsssr......",
+      "......rrr.......",
+      "................"
      ]
     },
     {
      "namn": "f10_kott_far",
      "rader": [
-      "..rrrr..........",
-      ".rqqqqrr........",
-      "ruututttrr......",
-      "rututtutttrr..oo",
-      "ruuttttutttrooqo",
-      "rtutttttttsrqppo",
-      "rssttttttssroopo",
-      ".rssssssssr...oo",
-      "..rrrrrrrr......"
+      "................",
+      "................",
+      "...oo..oo..oo...",
+      "...wo..qo..qo...",
+      "...qo..qo..qo...",
+      "..oqoooqoooqoo..",
+      "..oqqqpqqqpqqo..",
+      "..oqpqqqpqqppo..",
+      "..rtstsstsstsr..",
+      "..rtssststsssr..",
+      "..rstssstssssr..",
+      "..rssssssssssr..",
+      "..rrrrrrrrrrrr..",
+      "................",
+      "................",
+      "................"
      ]
     },
     {
      "namn": "f10_kott_get",
      "rader": [
-      "..EEEE..........",
-      ".EtttGEE........",
-      "EttGtGGGEE......",
-      "EtGtGGtGGGEE..oo",
-      "EttGGtGtGGGEooqo",
-      "EGtGGGGtGGFEqppo",
-      "EFFGGGGGGFFEoopo",
-      ".EFFFFFFFFE...oo",
-      "..EEEEEEEE......"
+      "................",
+      "......o...o.....",
+      "......w...q.....",
+      "......q...q.....",
+      "......q...p.....",
+      "....ooqoooqo....",
+      "....oqpqqpqo....",
+      "....rutttstr....",
+      "....rttsttsr....",
+      "....rtstttsr....",
+      "....rttstssr....",
+      "....rtsttssr....",
+      "....rssssssr....",
+      "....rrrrrrrr....",
+      "................",
+      "................"
      ]
     },
     {
      "namn": "f10_kott_fagel",
      "rader": [
-      "..FFFF..........",
-      ".FquuHFF........",
-      "FuuHuHHHFF......",
-      "FuHuHHuHHHFF..oo",
-      "FuuHHHHuHHHFooqo",
-      "FHuHHHHHHHGFqppo",
-      "FGGHHHHHHGGFoopo",
-      ".FGGGGGGGGF...oo",
-      "..FFFFFFFF......"
+      "................",
+      "................",
+      "................",
+      ".......oo.......",
+      "......owqo......",
+      ".......qo.......",
+      ".......qo.......",
+      "......FLHF......",
+      ".....FqLHF......",
+      ".....FLqHF......",
+      ".....FLHHF......",
+      ".....FHLHF......",
+      "......FFF.......",
+      "................",
+      "................",
+      "................"
      ]
     },
     {
      "namn": "f10_kott_bjorn",
      "rader": [
-      "..llll..........",
-      ".lsssrll........",
-      "lssrsrrrll......",
-      "lsrsrrsrrrll..oo",
-      "lssrrrrsrrrlooqo",
-      "lrsrrrrrrrElqppo",
-      "lEErrrrrrEEloopo",
-      ".lEEEEEEEEl...oo",
-      "..llllllll......"
+      "................",
+      "..ooooooooooo...",
+      ".oqwqqpqqqpqqo..",
+      "oqqpqqqpqqpqppo.",
+      "oppqppqpppqpppo.",
+      "EGFsFFGFsFFFsFE.",
+      "EFsFGFFsFFsFFFE.",
+      "EsFFFsFFGFFsFrE.",
+      "EFFsFFsFFFsFFrE.",
+      "EFsFFsFFFsFFsrE.",
+      "EFsFFFFsFFsFrrE.",
+      "EsrrrsrrrrsrrrE.",
+      "ErrrrrrrrrrrrrE.",
+      ".EEEEEEEEEEEEE..",
+      "................",
+      "................"
      ]
     }
    ],
-   "anteckning": "Varje kött är en enda sak i förrådet: en lårstek som ligger på marken, sedd snett ovanifrån. Den har ingen behållare. Biten är 16 × 9 punkter: köttet 12 × 9 med den tjocka rundade änden till vänster och en benstump med rund knopp åt höger. Benet är ben0 som kontur och ben1–ben2 inuti, med ljuset uppe till vänster. Ovansidan har köttets två ljusaste toner med korn och ljuset uppe till vänster. Ett band på 2 punkter i en mörkare ton längs underkanten visar tjockleken. Konturen är köttets mörkaste ton, aldrig svart. Alla fem har exakt samma silhuett och skiljer sig bara i ton. Rådjuret är djup rost med jord0 som kontur. Fåret är ljusare rost med en tunn fettkant i ben2 överst. Geten är rost blandad med jord1–jord2. Fågeln är blek i rost3 och jord3, med en enda glanspunkt i ben2. Björnen är mörkast, i rost0 och jord0 med kontur i kol1. Granskningen: Granskat mot reglerna: storleken (16 × 9 med benet, köttet omkring 12 × 9) passar mot kolonisten. Vinkeln snett ovanifrån med ovansida och ett smalt mörkare tjockleksband undertill stämmer. Ljuset kommer uppifrån vänster, och alla fem har exakt samma silhuett med var sin ton enligt idén. Köttet ligger löst på marken och bärs inte, så inget går genom en människa. Rättat: på geten låg två ensamma rost1-prickar (s) mitt i jord2-ytan, rad 5 och 6. De bröt mot regeln om korn utan mörka fläckar och är nu rost2 (t), så att ytan bara blandar rost2 och jord2 med jord1-bandet undertill. Övriga fyra är oförändrade. Björnens mörka toner följer idén (mörkast av de fem) och skiljs från gräset genom den röda tonen och kol1-konturen.",
-   "ide": "Lårstek med benknopp: en droppformad köttbit omkring 12 × 9 punkter, ritad snett ovanifrån med den tjocka rundade änden till vänster och en kort benstump i ben1–ben2 (ungefär 4 punkter, med en rund knopp) som sticker ut åt höger. Ovansidan är köttets två ljusaste toner med korn, och undertill löper ett smalt mörkare band på 2 punkter som visar tjockleken; konturen är köttets mörkaste ton. Alla fem har exakt samma silhuett och byts bara i ton: rådjur djup rost (rost0–rost2), får ljusare rost med en tunn fettkant i ben2, get rost blandad med jord1–jord2, fågel blek (rost3, jord3, ben2) och björn mörkast (rost0, jord0, kol1-kontur)."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f10_kott_radjur",
-     "rader": [
-      "...EEEEEEEEEE...",
-      "..EqqqqppppppE..",
-      ".EtttttstssssrE.",
-      ".EttsttoossssrE.",
-      ".EtstsoqqossrrE.",
-      ".EttssoqqosrsrE.",
-      ".EstsssoossrsrE.",
-      ".EsstsssssrsrrE.",
-      "..ErsrrrrrrrrE..",
-      "...EEEEEEEEEE..."
-     ]
-    },
-    {
-     "namn": "f10_kott_far",
-     "rader": [
-      "...rrrrrrrrrr...",
-      "..rqqqqppppppr..",
-      ".rqpqpppppppppr.",
-      ".ruutuuoottttsr.",
-      ".rututoqqottssr.",
-      ".ruuttoqqotstsr.",
-      ".rtutttoottstsr.",
-      ".rttutttttstssr.",
-      "..rstssssssssr..",
-      "...rrrrrrrrrr..."
-     ]
-    },
-    {
-     "namn": "f10_kott_get",
-     "rader": [
-      "...EEEEEEEEEE...",
-      "..EqqqqppppppE..",
-      ".EHHHHHGHGGGGFE.",
-      ".EHHGHHooGGGGFE.",
-      ".EHGHGoqqoGGFFE.",
-      ".EHHGGoqqoGFGFE.",
-      ".EGHGGGooGGFGFE.",
-      ".EGGHGGGGGFGFFE.",
-      "..EFGFFFFFFFFE..",
-      "...EEEEEEEEEE..."
-     ]
-    },
-    {
-     "namn": "f10_kott_fagel",
-     "rader": [
-      "...rrrrrrrrrr...",
-      "..rLLLLKKKKKKr..",
-      ".rqqqqququuuuor.",
-      ".rqquqqoouuuuor.",
-      ".rququoqqouuoor.",
-      ".rqquuoqqououor.",
-      ".ruquuuoouuouor.",
-      ".ruuquuuuuouoor.",
-      "..rouoooooooor..",
-      "...rrrrrrrrrr..."
-     ]
-    },
-    {
-     "namn": "f10_kott_bjorn",
-     "rader": [
-      "...llllllllll...",
-      "..lppppooooool..",
-      ".lFFFFFrFrrrrEl.",
-      ".lFFrFFoorrrrEl.",
-      ".lFrFroqqorrEEl.",
-      ".lFFrroqqorErEl.",
-      ".lrFrrroorrErEl.",
-      ".lrrFrrrrrErEEl.",
-      "..lErEEEEEEEEl..",
-      "...llllllllll..."
-     ]
-    }
-   ],
-   "anteckning": "Fem köttskivor som ligger platt på marken eller i förrådet, sedda snett ovanifrån som stationerna. Snittytan fyller nästan hela bilden (14 × 10 punkter på en 16 bred ruta), framkanten är ett smalt mörkare band på två punkter (mörk ton och kontur). Fettranden ligger längs bakkanten, och mitt i snittet sitter benets tvärsnitt (2 × 2 i ben2 med en ben0-ring). Formen är identisk och spegelsymmetrisk i alla fem; bara köttets ton skiljer dem åt, och ljuset faller uppifrån vänster, så att vänstra delen av snittet är ljusare och högra nedre delen mörkare. Rådjur: mörk rost med jord0-kontur. Får: rost3 med dubbel fettrand. Get: gråbrun jord. Fågel: blek ben och rost3 med gulaktigt fett. Björn: rost0 och jord0 med kol1-kontur och mörkare fett. Ingen behållare, eftersom varje bild är en enda sak. Granskningen: Granskat alla fem skivorna. De är rätt storlek för en sak i förrådet (14 × 10, mindre än en ruta och väl under kolonistens 14 × 20). De är sedda ovanifrån med snittytan som fyller bilden och ett mörkare band i framkanten. Formen och bentvärsnittet är spegelsymmetriska kring mitten, och ljuset kommer uppifrån vänster: fettranden är ljusast till vänster och köttet mörknar åt höger och nedåt. Två rättelser, båda i fågelns skiva: 1) Bentvärsnittet var 2 × 2 i ben3 (ww). Det var fyra punkter av den ljusaste tonen, alltså mer än reglernas glans på högst en eller två punkter, och idén säger ben2 med ben0-kant. Nu är det ben2 (qq) som i de andra skivorna. 2) Konturen var rost1 (s), som inte är materialets mörkaste ton och gjorde den bleka skivan svag mot gräset. Nu är den rost0 (r) som fårets, så att skivan har en tydlig kontur och syns på gräset. Fågelns hud i senap lämnas kvar, eftersom en fettrand i ben skulle flyta ihop med det bleka köttet. De andra fyra skivorna är oförändrade.",
-   "ide": "Platt köttskiva: en avlång, rundat rektangulär skiva omkring 13 × 8 punkter, sedd ovanifrån så att snittytan fyller nästan hela bilden och framkanten bara är ett band på 2 punkter i mörkare ton. Längs ovankanten går en smal fettrand på 1–2 punkter i ben1–ben2 och mitt i snittet syns en liten rund bentvärsnitt (2 × 2 punkter, ben2 med ben0-kant), så att formen är spegelsymmetrisk och bara ljuset skiljer sidorna. De fem skivorna ligger likadana i rad och skiljs bara av köttets ton: rådjur mörk rost, får rosaljus rost3 med bredare fettrand, get gråbrun jord, fågel blek ben och rost3, björn nästan svartbrun rost0 och jord0."
+   "anteckning": "Fem köttbitar som saker i förrådet, en bit per ruta på 16 × 16, var och en liggande på marken och sedd snett ovanifrån med ljuset uppe till vänster. Ingen behållare används. Benen sticker ut där de naturligt sitter: ur lårets smala ände och ur spjällets fettkant, alltid åt samma håll. Fågeln är ett litet blekt lår med kort benknopp. Rådjuret är ett slankt, mörkt och magert lår med lång tunn läggpipa. Fåret är ett brett spjäll med tre korta ben och en tjock fettkant. Geten är ett smalare, rödare spjäll med två långa tunna ben och bara en tunn fettrand. Björnen är en stor, nästan fyrkantig stek med tjockt fettlock och en mörkare framkant på två punkter. Konturen är materialets mörkaste ton: rost0 runt köttet, ben0 runt ben och fett, jord0 runt björnköttet och jord2 runt fågelskinnet. Granskningen: Granskat mot reglerna. Storleken stämmer mot kolonisten (14 × 20): varje kött ryms i sin ruta på 16 × 16, och björnens stek på 15 × 13 är störst. Vinkeln är snett uppifrån med ljuset från vänster, och formerna följer idén och regeln att sorterna skiljer sig i form. Inget bärs, så ingenting går genom något huvud. Tre rättelser: 1) Fåret: fettkanten saknade kontur upptill. Jag lade till en konturrad i ben0 mellan benen, där benen går igenom, och sköt ner spjället en rad. Det andra glansljuset i fettet (ben3) blev ben2, så att glansen bara är en punkt. 2) Geten: samma fel, fettremsan hade ingen övre kontur. Benen slutar nu i en konturrad i ben0 över en tunn fettremsa, och köttet har en rad mindre så att höjden blir densamma. 3) Fågeln: konturen var jord2, som inte är materialets mörka ton och nästan försvann mot olivgräset. Den är bytt till jord1, så att det bleka låret får en tydlig kant och syns på gräset. Rådjuret och björnen är oförändrade.",
+   "ide": "Benbitar i stigande storlek, var och en i en egen ruta på 16 × 16 och sedd snett uppifrån med ljuset från vänster. Fågeln är ett smalt litet lår, cirka 5 × 9, i blek skinnton (ben2, senap3 och jord3) med en kort benknopp i ben3. Rådjuret är ett slankt lår, 7 × 14, i mörk mager rost1/rost0 med en lång tunn läggpipa. Fåret är ett brett revbensspjäll med tre korta ben som sticker ut åt samma håll och en tjock fettkant i ben2, medan geten är ett smalare spjäll med två längre, tunnare ben, magrare och rödare i rost2/rost1. Björnen är en stor, nästan fyrkantig stek, 15 × 13, i mörk jord1/rost0 med ett tjockt fettlock i ben1/ben2 över ovansidan och framkanten som ett 2–3 punkter brett mörkare band."
   },
   {
    "bilder": [
     {
      "namn": "kott_radjur",
      "rader": [
-      ".oo.........",
-      "owqo..rrrr..",
-      "oqqporttssr.",
-      ".opprttstssr",
-      "..orttsstssr",
-      "...rtsssstrr",
-      "...rsstssrrr",
-      "...rssstrrr.",
-      "....rsrrrr..",
-      ".....rrrr..."
+      "................",
+      "..rrrr..........",
+      ".rtutsr.........",
+      ".rptutsr........",
+      "..rpttssr.......",
+      "...rptstsr......",
+      "....rpttssr.....",
+      ".....rptstsr....",
+      "......rptssr....",
+      ".......rptssr...",
+      "........rptsr...",
+      ".........rptsr..",
+      "..........rpsr..",
+      "...........rpsr.",
+      "............rrr.",
+      "................"
      ]
     },
     {
      "namn": "kott_far",
      "rader": [
-      ".oo.........",
-      "owqo..rrrr..",
-      "oqqporuuttr.",
-      ".oppruutqttr",
-      "..oruuttqttr",
-      "...ruttttqsr",
-      "...rttqttssr",
-      "...rtttqssr.",
-      "....rtssrr..",
-      ".....rrrr..."
+      "................",
+      "...oooooo.......",
+      "..owwwqqqo......",
+      ".owwqqqqqpo.....",
+      ".owqqsssqqpo....",
+      "owqsuttssqpo....",
+      "owqstuttssqpooo.",
+      "owqsttstssqpqwqo",
+      "owqsstsssqpppqpo",
+      ".oqqsssssqppooo.",
+      "..oqqqsssqppo...",
+      "...oqqqqpppo....",
+      ".....ooooooo....",
+      "................",
+      "................",
+      "................"
      ]
     },
     {
      "namn": "kott_get",
      "rader": [
-      ".oo.........",
-      "owqo..EEEE..",
-      "oqqpoEttGGE.",
-      ".oppEttGHGGE",
-      "..oEttGGHGGE",
-      "...EtGGGGHFE",
-      "...EGGHGGFFE",
-      "...EGGGHFFE.",
-      "....EGFFFE..",
-      ".....EEEE..."
+      "................",
+      "...rrrr.........",
+      "..rqqqpr........",
+      ".rqutttsr.......",
+      ".rqttstsr.......",
+      "..rtstssr.......",
+      "...rtsssr.......",
+      "....rsssoo......",
+      ".....rrowqo.....",
+      "........owqo....",
+      ".........owqo...",
+      "..........owqo..",
+      "..........owqpo.",
+      "...........oppo.",
+      "............oo..",
+      "................"
      ]
     },
     {
      "namn": "kott_fagel",
      "rader": [
-      ".oo.........",
-      "owqo..FFFF..",
-      "oqqpoFqqHHF.",
-      ".oppFqqHpHHF",
-      "..oFqqHHpHHF",
-      "...FqHHHHpGF",
-      "...FHHpHHGGF",
-      "...FHHHpGGF.",
-      "....FHGGFF..",
-      ".....FFFF..."
+      "................",
+      "................",
+      "...oo......oo...",
+      "..owqo....oqpo..",
+      "...oqo....oqo...",
+      "..oqwqoooopqpo..",
+      ".oqwwqqqqqqqppo.",
+      ".owqqwqqqqqqLpo.",
+      ".oqwqqqqqqqLqpo.",
+      "..oqqqqqqqLqpo..",
+      "..oqqqqqqLqLpo..",
+      "...oqqqqLqppo...",
+      "....oqqLqppo....",
+      ".....oqpppo.....",
+      "......oooo......",
+      "................"
      ]
     },
     {
      "namn": "kott_bjorn",
      "rader": [
-      ".oo.........",
-      "owqo..EEEE..",
-      "oqqpoEtsrrE.",
-      ".oppEtsrFrrE",
-      "..oEtsrrFrrE",
-      "...EsrrrrFEE",
-      "...ErrFrrEEE",
-      "...ErrrFEEE.",
-      "....ErEEEE..",
-      ".....EEEE..."
+      "................",
+      "....rrrrrrrr....",
+      "..rrtuqtttssrr..",
+      ".rtuqLttqqtsssr.",
+      ".rtqttsLqtsqssr.",
+      "rtuttqqtsstLsssr",
+      "rtqLtssqtssqqssr",
+      "rttsqtssLqsstssr",
+      "rttsLqssstLqsssr",
+      "rtrrsqssLsssrrsr",
+      "rtsprrrrrrrrsssr",
+      "rtsspsstssspsssr",
+      ".rtssssssssssrr.",
+      "..rrrrrrrrrrrr..",
+      "................",
+      "................"
      ]
     }
    ],
-   "anteckning": "Varje kött är en enda sak i förrådet och ligger fritt, utan behållare. Det är en köttbit med benknota, sedd snett ovanifrån och 12 × 10 punkter stor, så att den är mindre än en ruta. Benet sticker upp mot övre vänstra hörnet i ben2 och ben3 med kontur i ben0. Köttet har samma form och samma ljus i alla fem: ljusast uppe till vänster och mörkast nere till höger, med konturen i köttets mörkaste ton. En diagonal fettstrimma ger korn. Bara tonen skiljer arterna åt: rådjuret är magert rostrött, fåret ljusare med vitt fett i ben2, geten brunröd i jord, fågeln blek i ben och jord, och björnen mörkast i rost0 och jord0. Benet är detsamma i alla fem. Rostens mättade toner används eftersom maten är något man ska se. Granskningen: Storleken (12 × 10, en sak mindre än en ruta), vinkeln, ljuset från övre vänstra hörnet och den gemensamma formen med samma ben på alla fem stämmer och behålls. Jag rättade tre saker. Fårets kontur var rost1 och är nu rost0, materialets mörkaste ton. Fågelns kontur var jord2 och är nu jord1, så att det ljusa köttet får en tydligare kant mot gräset. Björnköttet var mörkt och smälte in i gräset; det har fått rost2 som ljus uppe till vänster, så att det syns på marken och följer ljuset.",
-   "ide": ""
+   "anteckning": "Varje kött är en sak i förrådet: en enda bit som ligger platt och ses snett uppifrån, utan behållare. Därför syns ovansidan och bara björnens tjocka stek har en framkant (2–3 punkter i rost0/rost1) som visar höjden. Ljuset kommer uppifrån vänster, så rost3 ligger uppe till vänster och rost0 nere till höger, och konturen är rost0 runt köttet och ben0 runt fett, hud och ben. Formerna skiljer sorterna åt. Rådjuret är en smal, avsmalnande ryggfilé snett över rutan med en tunn hinna i ben1 längs ena kanten. Fåret är en rund kotlett med bred fettring och en kort benstump åt höger. Geten är en mindre, spetsig kotlett med smal fettrand och ett långt benskaft snett ned åt höger. Fågeln är en hel liten plockad fågel på rygg, droppformad i blek gulvit hud. Vingarna syns som veck mot sidorna och de två korta låren pekar ned och ut med bleka benknoppar. Björnen är en hög rund trumma med marmorerat fett i ben- och senaptoner och en mörk framkant. Inga ben syns där köttet är helt. Granskningen: Granskat mot reglerna: alla fem ligger inom en ruta (16 × 16), har kontur i materialets mörkaste ton (rost0 runt köttet, ben0 runt fett, ben och hud), ljuset faller uppe till vänster och de syns på gräset. Formerna skiljer sorterna åt som idén säger. Rådjuret, fåret och geten är oförändrade. Fågeln är omritad. Den såg ut som en klocka eller ett spöke med ben som hängde nedåt, och de utspridda senapsprickarna läste som fläckar. Nu är den en spegelsymmetrisk droppform som ligger på rygg: bred bakdel med två korta lår uppåt med knölar, smal halsände nederst och blek gulvit hud i ben3, ben2 och ben1. Senap3 används bara som korn i skuggsidan nere till höger, med ben0 som kontur. I björnen var de två ensamma rost0-punkterna i rad 9 (kolumn 2 och 15) mörka fläckar mitt i ytan. De är bytta mot rost2 och rost1 så att bara ytterkonturen och framkantens band är mörka. Trumformen med framkanten på tre punkter och det marmorerade fettet är kvar.",
+   "ide": "Hela former utan synliga ben, där silhuetten bär skillnaden. Fågeln är en hel liten plockad fågel som ligger på rygg, droppformad, med två korta lår uppåt och de stympade vingarna tryckta mot sidorna, i blek gulvit hud. Rådjuret är en lång smal ryggfilé som ligger diagonalt över rutan som en avsmalnande rem, mörkröd och mager med bara en tunn hinna i ben1 längs ena kanten. Fåret är en rund, fet kotlett med en bred vit fettring och en kort benstump, geten en mindre och spetsigare kotlett med smal fettrand och längre benskaft. Björnen är en hög, rund och tjock klump, nästan en trumma sedd uppifrån, med marmorerat fett i ben- och senaptoner och en tydlig mörk framkant som visar tjockleken."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "kott_radjur",
+     "rader": [
+      ".....rrrrr......",
+      "....rtutssr.....",
+      "....rutqtsr.....",
+      "....rttstsr.....",
+      "....rtstssr.....",
+      ".....rtssr......",
+      ".....rtssr......",
+      "......rtsr......",
+      "......rtsr......",
+      "......rtsr......",
+      "......rssr......",
+      "......EGFE......",
+      "......EGFE......",
+      "......lmml......",
+      ".......ll.......",
+      "................"
+     ]
+    },
+    {
+     "namn": "kott_far",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      ".....wo..wo.....",
+      "..worqorrqorwo..",
+      ".rqotqoutqotqor.",
+      "rpqotqoutqosqopr",
+      "rqqptqputqpsqppr",
+      "rqpqpqqpqpqppqor",
+      "rututttstststssr",
+      ".rtuttstssssssr.",
+      "..rrssssssssrr..",
+      "....rrrrrrrr....",
+      "................",
+      "................",
+      "................"
+     ]
+    },
+    {
+     "namn": "kott_get",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "....rrrrrrrrrrr.",
+      ".oortsstsstsssr.",
+      ".owqpqqpqpqppor.",
+      ".oorststssssssr.",
+      ".oqppqpppppppor.",
+      ".oorsstsssssssr.",
+      "...rrrrrrrrrrrr.",
+      "................",
+      "................",
+      "................",
+      "................"
+     ]
+    },
+    {
+     "namn": "kott_fagel",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "........oo......",
+      "........wo......",
+      "........qo......",
+      ".......EHE......",
+      "......EqHGE.....",
+      "......EHHGE.....",
+      "......EqHGE.....",
+      ".....EHHGE......",
+      "....EHHGE.......",
+      "....EHFE........",
+      ".....EE.........",
+      "................",
+      "................"
+     ]
+    },
+    {
+     "namn": "kott_bjorn",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "...ooooooo......",
+      "..ooqLqLqpoo....",
+      ".oqLpqLpqLppo...",
+      "oLprtuttsssrpo..",
+      "oLrtutstsssrpooo",
+      "oqrtstsssssrpqwo",
+      "oprststssssrppqo",
+      "oprsstsssssrpooo",
+      ".oqprrrrrrrppo..",
+      "..ooppqppppoo...",
+      "....oooooooo....",
+      "................",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Fem bitar som var och en ligger på en egen ruta i förrådet, ritade snett ovanifrån utan behållare. Ljuset kommer uppifrån vänster. Köttets kontur är rost0, benens ben0 och den bleka fågelhudens jord1. Fågeln är en liten krokig vinge-lår-bit med blek hud, och benspetsen sticker upp. Rådjuret är ett långt, slankt lår som ligger lodrätt: den breda snittytan är upptill med en benprick, därunder kommer en smal skank, pälsen och längst ner en kort klövstump i kol. Fåret är en ljus solfjäder av fyra böjda revben, och benen sticker upp ur ett fettband över det ljusa köttet. Geten är en rak, smal och låg rad med två raka revben och magert, mörkt kött mellan dem; benändarna sticker ut till vänster. Björnen är en bred, låg och oval stek som fyller nästan hela rutan, med ett tjockt gulvitt fettlager runt om och mörkt kött. Bara ett kort, grovt ben sticker ut i högra änden. Granskningen: Rättat: Fågeln hade jord1 (F) som kontur; den är nu jord0 (E), materialets mörkaste ton, så att den bleka huden får en tydlig kant mot gräset. Fågeln hade också för många glanspunkter i ben2 (q); två är kvar och resten är jord3. Längst ner i fågeln ligger nu jord1 som mörk ton, så att ljuset faller uppifrån vänster. Getens ryggbensstump längst till vänster saknade kontur i översta benraden, där ljusaste tonen (w) låg ytterst. Konturen är nu ben0 och glansen flyttad en punkt in. En ensam mörk ben0-prick mitt i getens nedre revben är borttagen. Björnens fettlager hade den ljusaste tonen senap3 (L) i underkanten, mot ljuset från övre vänster. Underkanten är nu ben1/ben2 så att den blir mörkare nedåt. Rådjuret och fåret följer reglerna och idén och är oförändrade. Alla fem behåller storlek och form.",
+   "ide": "Bitar som pekar åt olika håll, så att raden får fem tydligt skilda silhuetter. Fågeln är en tunn vinge-lår-bit som en liten krok, 4 × 8, med blek hud och en benspets. Rådjuret är ett långt slankt lår med en kort klövstump i kol1/jord0 längst ner, liggande lodrätt så att det blir högt och smalt. Fåret är en halvmåne av fyra böjda revben bredvid varandra, fet och ljus, medan geten är en rak, smal rad av två revben med köttremsor mellan, mörkare och magrare. Björnen är en bred, låg och oval stek som fyller nästan hela rutan, med ett tjockt fettlager runt om och ett grovt kort ben som bara sticker ut en bit i ena änden, mest kött och minst ben av alla fem."
   }
  ]
 }

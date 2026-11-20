@@ -1,0 +1,124 @@
+{
+ "kort": "f11_gravhog",
+ "namn": "Gravhögen i världen",
+ "slag": [],
+ "vad": "Steg 11.13.28: på den lilla kartan för en gravhög står högen vid mitten, 3 × 2 rutor. Gravgåvorna ligger inne i den och syns inte. Den som kommer dit kan bryta upp den och ta gåvorna, om tron, seden och ryktet tillåter. Snett ovanifrån som kartan, på gräs Du sa nej till alla tre förra gången, utan kommentar, så det här är nya idéer utan förlaga.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f11_gravhog",
+     "rader": [
+      "................................................",
+      "................................................",
+      "..................MMMMMMMMMMMM..................",
+      "..............MMMMPPPOPPPPPOPPMMMM..............",
+      "...........MMMPPPPPOPPPPPPOPPPPPOPMMM...........",
+      ".........MMPPOPPPPPPOPPPPPPOPPPPPOPOPMM.........",
+      ".......MMPPPPOPPPPPPOPPPPPPOPPPPPOPPOPOMM.......",
+      "......MPOPPPPPPOPPPPPPPOPPPPPPOPOPPOPOOPOM......",
+      ".....MPPPPPPOPPPPPPOPPPPPOPPPOPOOPOPOPOOPOM.....",
+      "....MPPOPPPPPPOPPPPPPOPPPPOPOPPOOPOPOOPOPONM....",
+      "...MPOPPPPPOPPPPPPOPPPPPPPOPOOPOPPOPOOPOONONM...",
+      "..MPPPPOPPPPPPOPPPPPOPPOPOOPOPPOPOOPOPOOOONONM..",
+      "..MPPOPPPPPPOPPPPPPOPPOPOPOOPOPPOOPOOOOONOONNM..",
+      ".MPPPPPOPPPPPPOPPPPPOPOOPOPOPOOPOPOOOONOONONNNM.",
+      ".MPPOPPPPPPOPPPPPOPPOPOOPOPOOPOOPOOONOONONONNNM.",
+      ".MPOPPPPPOPPPPPPPOPOOPOPOOPOOPOOOONOONONONNONNM.",
+      ".MPPPOPPPPPOPPPPOOPOPOOPOOPOPOOONONOONNONNONNFE.",
+      ".EHPPOPPPPPOPOPOOPOOPOPOOPOOONONNONONNONNONNNFE.",
+      ".EHPOPPPPOPPOPOOPOPOOPOOPOOONONNONNONONNONNNNFE.",
+      "..EHPOPPPOPOOPOPOOPOOPOOPONONNONONNONNONNNNNFE..",
+      "..EHGPOPOOPOPOOPOOPOOPOONONNONNONONNONNNONNFFE..",
+      "...EHGPOOPOOPOOPOOPOOONONNONNONNONNONNNONNFFE...",
+      "....EHGOPOOPOOOPOOPOOONNONNONNNONNONNONNGFFE....",
+      ".....EHGOOPOOPOOOPONONNONNONNNONNONNONNGFFE.....",
+      "......EHGGOPOOPOONONNONNNONNONNONNNONNGFFE......",
+      ".......EEHGGOOPONNONNONNNONNONNONNNNGFFEE.......",
+      ".........EEHGGHGGFGGGFGGFGGFGFFGFFGFFEE.........",
+      "...........EEEGHGGFGGFGGFGFFGFFGFFEEE...........",
+      "..............EEEEGGFGGFFGFFGFEEEE..............",
+      "..................EEEEEEEEEEEE..................",
+      "................................................",
+      "................................................"
+     ]
+    }
+   ],
+   "anteckning": "Gravhögen ligger på marken som en låg, rund jordkulle, 46 × 28 punkter på 3 × 2 rutor (48 × 32) med luft runt om. Snett ovanifrån syns nästan bara den välvda ovansidan. Toppen uppe till vänster är ljusast i oliv3 med korn av oliv2. Mitten är oliv2 och nedre högra delen oliv1 med korn av oliv2, så högen blir ljusare än gräset den står på. Konturen är oliv0. Längs nederkanten, där kullen möter marken, löper ett smalt band av bar jord: jord2 till vänster, jord1 till höger, med kontur i jord0. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Gravgåvorna ligger inne i högen och syns därför inte. Någon uppbruten variant ritas inte här, och ingen skugga ritas. Granskningen: Rättat: högen smälte in i gräset. Stora släta fält av oliv2 och oliv1 var lika mörka som gräset eller mörkare, och skiftet mellan dem gick som en hård diagonal linje. Nu är ovansidan mest oliv3 med korn av oliv2, mitten är ett jämnt kornat blandfält av oliv3 och oliv2, och bara skuggsidan nere till höger går mot oliv1. Högen blir därmed tydligt ljusare än marken, och ingen yta är slät. Jordbandet är tydligare och följer ljuset: jord3 och jord2 till vänster, jord1 till höger. I mitten är det 3 punkter, i stället för det fläckiga blandbandet. Konturen är oliv0 runt gräset och jord0 runt jorden. Silhuetten, storleken (46 × 28 punkter på 3 × 2 rutor) och spegelsymmetrin är oförändrade. Vinkeln snett ovanifrån, med den välvda ovansidan och ett smalt framband, stämmer redan.",
+   "ide": "Rund, gräsbevuxen jordkulle: en mjuk oval kupol, cirka 46 × 28 punkter, som fyller rutorna med lite luft runt om. Sedd snett ovanifrån syns mest den välvda ovansidan; toppen är ljusast i oliv3 (P) med korn av oliv2 (O) uppe till vänster och går mot oliv1 (N) nere till höger, så att högen är ljusare än gräset runt den. Konturen är oliv0 (M), och längs nederkanten löper ett smalt band på 2–3 punkter av bar jord i jord1 och jord2 (F, G), där kullen möter marken; formen är spegelsymmetrisk och bara ljuset skiljer sidorna åt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_gravhog_stenrose",
+     "rader": [
+      ".................QQQQQQQQQQ.................",
+      ".............QQQQTSRRTTSRRTQQQQ.............",
+      "...........QQTRTTSSRTSTSRTSSSRTQQ...........",
+      ".........QQTTSRSTSRRSTSRRSSSRRSSRQQ.........",
+      ".......QQRRRRRRRFRRRRRRRRRRRRRRRRRRQQ.......",
+      "......QTTTSSRRTTTSRRTTTSRRRTSSSRRTSSSQ......",
+      ".....QTTTSTSRTTSTSRTTSTSSRSTSSSRSTSSSSQ.....",
+      "....QTSTSTSRRSTSSRRSTSSSRRSSTSRRSSTSSSRQ....",
+      "....QRRRRRRRRRRRRRRRRRRRRRRRRRFRRRRRRRRQ....",
+      "...QTTTSTRRTTTSRRTTSTRRRTTSSRRTSSSRRTSSSQ...",
+      "...QTTSTSRTTSTSRTTSTSSRTSTSSRSTSSSRSTSSSQ...",
+      "..QTSTSTSRTSTSSRSTSTSSRSTSSSRSSTSSRSSTSSSQ..",
+      "..QSTSSSRRSTSSRRSSTSSRRSSTSRRSSSRRRSSTSSRQ..",
+      "..QRRRRRRRRFRRRRRRRRRRRRRRRRRRRRRRRRRRRRRQ..",
+      ".QTTTSTRRTTTSRRTTSSRRTTSSRRTSSSRRTSSRRTSSSQ.",
+      ".QTTSTSRTTSTSRTSTSSRTSTSSRSTSSSRSTSSRSTSSSQ.",
+      ".QTSTSSRTSTSSRSTSSSRSTSTSRSSTSSRSSTSRSSTSSQ.",
+      ".QSTSSRRSTSSRRSSTSRRSSTSRRSSSRRRSSRRRSSSRRQ.",
+      ".QRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRFRRRRRRRRQ.",
+      "QTTTSRRTTTSRRTTSRRTTSRRRTSSRRTSSRRTSSSRRTSSQ",
+      "QTTSTRTTSTSRTSTSRTSTSRRTSTSRSTSSRSTSSSRSTSSQ",
+      "QTSTSRTSTSSRSTSSRSTSTRRSTSSRSSTSRSSTSSRSSTSQ",
+      "QSTSSRSTSTSRSSTSRSSTSRRSSTSRSTSSRSSSTSRSTSSQ",
+      "QSSSRRSSTSRRSTSRRSSSRRRSTSRRSSRRRSSSRRRSSRRQ",
+      ".QSRQQQSSRQQQSRQQQSRQQQQSRQQQSRQQQSSRQQQSRQ.",
+      "..QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Gravhögen som stenröse, 44 × 26 punkter. Den ska stå mitt på sin yta på 3 × 2 rutor (48 × 32) på gräset och ses snett ovanifrån som kartan: en låg kupa där stenraderna blir mindre och färre mot toppen. Längst ner är den bred och nästan rak, så att den vilar på marken. Skuggan lägger programmet till. Gravgåvorna ligger inne i röset och syns inte, så bara stenarna ritas, utan öppning, gåvor eller ny behållare. Stenarna är skiffer3 och skiffer2 med korn. På stenarna uppe till vänster är skiffer3 mest och fungerar som glans; nere till höger tar skiffer2 över. Fogarna är skiffer1 med enstaka punkter jord1, och konturen runt röset är skiffer0. Kanten är bruten av stenarnas rundade hörn, och silhuetten är spegelsymmetrisk kring mitten. Röset är grått och ljusare än gräset, så det syns tydligt. Granskningen: Rättat: stenarna var raka rektangulära block i trappsteg (en zikkurat), inte runda kullerstenar. Silhuetten steg i stora hack, och hela röset var lika ljust, så ljuset från övre vänstra hörnet saknades. Ritat om i samma storlek (44 × 26, ryms i 3 × 2 rutor). Silhuetten är nu en låg, jämn och symmetrisk kupa. Stenarna är runda, 4–6 punkter breda, med avrundade hörn i skiffer1 och fogar som förskjuts från rad till rad. De blir lägre mot toppen: 3 punkter höga överst och 5 punkter nederst. Stenarna till vänster och upptill har mer skiffer3 och en punkt glans. Stenarna till höger och nedtill är mer skiffer2 med mörkare nedre högra hörn. Fogarna är skiffer1 med enstaka punkter jord1, och konturen är skiffer0. Nederkanten är knölig av stenarnas rundade underkanter. Gravgåvorna syns inte. Röset är grått och ljusare än gräset.",
+   "ide": "Stenröse: en lägre och knöligare kupa, cirka 44 × 26 punkter, byggd av runda kullerstenar på 4–6 punkter vardera, som ligger i rader och blir mindre mot toppen. Stenarna är skiffer3 och skiffer2 (T, S) med en punkt glans i skiffer3 på de övre vänstra stenarna. Fogarna mellan dem är skiffer1 (R), med enstaka punkter jord1 (F), och hela silhuetten har konturen skiffer0 (Q). Röset är grått och ljusare än gräset, och silhuetten är symmetrisk men bruten av stenarnas rundade kanter."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_gravhog_skeppssattning",
+     "rader": [
+      "......................QQ......................",
+      "..................QQ..QTTQ..QQ..................",
+      ".............QQ..QTTQ.QTSQ.QTTQ..QQ.............",
+      "............QTTQ.QTSQ.QSSQ.QTSQ.QTTQ............",
+      "........QQ..QTSQ.QSSQ..QQ..QSSQ.QTSQ..QQ........",
+      "..Q....QTTQ.QSSQ..QQ........QQ..QSSQ.QTTQ....Q..",
+      ".QTQ...QTSQ..QQ..................QQ..QTSQ...QTQ.",
+      "QTTSQ..QSSQ.......MMMMMMMMMMMM.......QSSQ..QTTSQ",
+      "QTSSQ...QQ....MMMMPPPPPPPPOPPOMMMM....QQ...QTSSQ",
+      "QTSSQ.......MMPPPGGPPPPPOPPPOPPOPOMM.......QTSSQ",
+      "QTSSQ......MPPPPGPPPPOPPPOPPOPPOOPONM......QTSSQ",
+      "QSSSQ......MPPPPPGPPOPPOPPOPOOPOOOONM......QSSSQ",
+      ".QQQ.......MPPPOPPGPPOPPOPPOOPOOPOONM.......QQQ.",
+      "...........MPOPPOPGPPOPOOPOOPOOOOONNM...........",
+      "............MMOPOOGPOOPOOOPOOOONNNMM............",
+      "........QQ....MMMMOOGOOOOONONNMMMM....QQ........",
+      ".......QTTQ.......MMMMMMMMMMMM.......QTTQ.......",
+      ".......QTSQ..QQ..................QQ..QTSQ.......",
+      ".......QSSQ.QTTQ..QQ........QQ..QTTQ.QSSQ.......",
+      "........QQ..QTSQ.QTTQ..QQ..QTTQ.QTSQ..QQ........",
+      "............QSSQ.QTSQ.QTTQ.QTSQ.QSSQ............",
+      ".............QQ..QSSQ.QTSQ.QSSQ..QQ.............",
+      "..................QQ..QSSQ..QQ..................",
+      "......................QQ......................"
+     ]
+    }
+   ],
+   "anteckning": "Skeppssättningen ligger på marken och ses snett ovanifrån som kartan. Ramen är 48 × 24 punkter med spetsarna åt vänster och höger. De resta stenarna (4 × 5, skiffer2–3 med konturen skiffer0) följer båtformen. De bakre står högt upp i bilden och de främre långt ner, så att de främre skymmer kullens framkant, som de gör när man ser dem snett uppifrån. Stävstenarna i spetsarna är 5 × 8 och står upp högre än de andra, mörkare nedtill till höger. Innanför ligger en flack, avlång kulle i oliv3 och oliv2 med lite jord2 där torven är tunn, ljusast uppe till vänster. Mot framkanten blir kullen mörkare: oliv1 och en kontur i oliv0. Gravgåvorna ligger inne i kullen och syns inte. Formen är spegelsymmetrisk längs och tvärs; bara ljuset skiljer sidorna åt. Granskningen: Rättat: raderna var olika långa (de översta och nedersta var 46 punkter, de andra 48), så bilden ritades om till exakt 48 × 24 och spegelsymmetrisk längs och tvärs. Stävstenarna var bara 6 punkter höga och hade skiffer1 (R), som idén inte har. Nu är de 8 punkter höga i skiffer2 och skiffer3, står upp vid bakkanten och är lika i båda spetsarna. De små stenarna har nu samma form, 4 × 5 punkter, med skiffer3 uppe till vänster och sitter jämnt längs en båtform med spetsar åt vänster och höger. Kullen hade en kontur i oliv1 upptill och oliv0 nedtill och var mest oliv2, så den smälte in i gräset. Nu har den hela konturen i oliv0 (M), är mest oliv3 med oliv2 och lite jord2 där torven är tunn, ljusast uppe till vänster och mörkast med oliv1 nere till höger, så att den syns på gräset. Storleken mot kolonisten och vinkeln snett ovanifrån är oförändrade.",
+   "ide": "Skeppssättning med låg hög: en båtformad ram av resta stenar, 48 × 24 punkter, med spetsar åt vänster och höger. Stenarna är små och förkortade, 3–4 punkter breda och 4–5 höga, i skiffer2 och skiffer3 (S, T) med konturen skiffer0 (Q). Stävstenarna i de två spetsarna är högre, omkring 8 punkter, och står upp mest vid bakkanten. Innanför stenarna ligger en flack, avlång jordkulle i oliv3 och oliv2 (P, O) med jord2 (G) där torven är tunn, ljusast uppe till vänster; hela formen är spegelsymmetrisk både längs och tvärs."
+  }
+ ]
+}

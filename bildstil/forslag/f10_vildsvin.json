@@ -2,85 +2,156 @@
  "kort": "f10_vildsvin",
  "namn": "Vildsvinet",
  "slag": null,
- "vad": "Steg 10.10.4: vildsvinet lever i en flock om 3 till 6 i skogen och jagas. Lågt och tungt framtill, med borst längs ryggen och betar. Från sidan på gräs",
+ "vad": "Steg 10.10.4: vildsvinet lever i en flock om 3 till 6 i skogen och jagas. Lågt och tungt framtill, med borst längs ryggen och betar. Från sidan på gräs Din kommentar förra gången: ”rita den från två vinklar och med lite olika täckning”",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "rita den från två vinklar och med lite olika täckning",
  "versioner": [
   {
    "bilder": [
     {
-     "namn": "f10_vildsvin_galt",
+     "namn": "vildsvin_sida_1",
      "rader": [
-      "........l.l...............",
-      ".......ElElEl.............",
-      ".....EEGGFGFlElEl.........",
-      "....EGGFGFFGFFGFlElEl.....",
-      "...EGGFFGFFmFFGFFmFFlEl...",
-      ".EEGGkFFGFFmFFFmFFGFFmFE..",
-      "EHGwFFmFFGFFmFFFmFFmFFmEEl",
-      "EGFqFmFFmFFmFFmFFFmFFmmE.l",
-      "EFmEqqmFFmFmFFmFmFFmFmE...",
-      ".EEEEEmmFmmFmmmFmmFmmE....",
-      "......EmEEEEEEEEEmEEE.....",
-      "......EGEmE.....EFEmE.....",
-      "......EFEll.....EmEll.....",
-      "......lll.......lll......."
+      "......E.EE.E............",
+      ".....EHGHGGHE...........",
+      "....EGHGHGGHGGEEEEE.....",
+      "...EGHGGGHGGGGGGGGGE....",
+      "..EGHGFGGFGGFGGGFGGFGEE.",
+      ".EGGkGFGFGFFGFGFFGFFFE.E",
+      ".EGGGFFGFFFGFFFFGFFFFFE.",
+      "EHGGFwFFEFFFFFFFFFFFFFE.",
+      "EGFGwFFEFFFFFFFFFEFFFFE.",
+      ".EEE.EFFFFFFFFFFFFFFFE..",
+      ".....EFEEEEEEEEEEEEEFE..",
+      ".....EFE.lE.....lE.EFE..",
+      ".....EFE.lE.....lE.EFE..",
+      ".....kk..kk.....kk.kk..."
+     ]
+    },
+    {
+     "namn": "vildsvin_sida_2",
+     "rader": [
+      "....EE..................",
+      "...EpHE.EEEEEEEEEE......",
+      "..EHpHHEHpHHpHHHHHEE....",
+      "..EpHHHHHHpHHHHHHGHHE...",
+      ".EHHkHHHGHHHGHHHGHGGGE..",
+      ".EHHHHGHGGHGGHGGGGGGGE.E",
+      "EpHHHGGFGGGFGGGGFGGGFEE.",
+      "EHHqGGEGFGGGGFGGGFGGFE..",
+      ".EEEEEFGGFGGGFGGFGGFFE..",
+      ".....EGGEEEEEEEEEEEGGE..",
+      ".....EGE.lE....lE.EGE...",
+      ".....EGE.lE....lE.EGE...",
+      ".....kk..kk....kk.kk...."
+     ]
+    },
+    {
+     "namn": "vildsvin_sida_3",
+     "rader": [
+      ".....E.E.E.E.E..........",
+      "....EHEHEGEGEFE.........",
+      "...EHGHGHGGGGGFEEEEEE...",
+      "..EHGHGGHGGFGGFGGFGGFE..",
+      ".EGHGFGGFGGFGFGFFGFFFE..",
+      ".EGkGGFGFGFFGFFFFFFFFE.E",
+      "EGGGFFGFFGFFFGFFFFGFFEE.",
+      "EHwGFFFEFFFFFFFFFEFFFE..",
+      "EGwwFFEFFGFFFFGFFFGFFE..",
+      ".EEE.EFFEEEEEEEEEEEFFE..",
+      ".....EFE.lE.....lE.EFE..",
+      ".....EFE.lE.....lE.EFE..",
+      ".....kk..kk.....kk.kk..."
      ]
     }
    ],
-   "anteckning": "Galten står på alla fyra korta ben på marken och vänder trynet åt vänster, som djuren står på kartan. Kroppen är kilformad: hög och tung över bogen och sluttande ner mot en smal bakdel. Längs ryggkammen står en man av borst i jord0 och kol1 som är högst över bogen och avtar bakåt. Eftersom vi ser snett uppifrån syns ett smalt band av ryggen under manen, och de bortre benen är en punkt förskjutna åt höger, kortare och mörkare bakom de främre. Bara den närmaste betan syns; den kröker uppåt ur munvinkeln framför trynet, i ben2 med en glanspunkt i ben3. Ögat är en liten mörk punkt nära huvudets ovankant. Ljuset kommer uppifrån vänster, så hjässan och bogen är ljusast (jord2) och buken mörkast (kol2), med jord0 som kontur. Svansen är en tunn rak stump med en tofs i kol1. Ingen skugga på marken och ingen anfallsställning. Granskningen: Rättat: storleken. Version 1 var 32 × 18 punkter, alltså nästan lika hög som kolonisten (20). Det bröt både mot idén (en kropp på ungefär 24 × 15) och mot logiken, eftersom en galt når en människa ungefär till midjan. Galten är omritad i 26 × 14 punkter med samma form. Den är kilformad, hög över bogen och sluttar ner mot en smalare bakdel. Manen av borst i jord0 och kol1 är högst över bogen och följer ryggen bakåt. Trynet pekar rakt åt vänster med ljuset (jord3) på nosspetsen. Ögat i kol0 sitter nära huvudets ovankant. Betan i ben2 kröker uppåt ur munvinkeln med en enda glanspunkt i ben3. Pälsen är jord0, jord1 och kol2 med korn och ljusast uppe till vänster. Konturen är jord0. Benen är korta, de bortre en punkt förskjutna bakom de främre, och hovarna är kol1. Svansen är en tunn stump med tofs. I övrigt följde versionen reglerna: vinkeln är densamma som djuren på kartan, konturen är rätt, det finns ingen ensam fläck och betan har bara en glanspunkt.",
-   "ide": "Gammal galt, kilformad: en kropp på ungefär 24 × 15 punkter som är hög och massiv över bogen och sluttar brant ner mot en smal bakdel, med en lång rak tryne framåt åt vänster och små ögon nära huvudets ovankant. Längs hela ryggkammen står en tät, tydlig man av borst i jord0 och kol1 som är högst över bogen, och två grova böjda betar i ben2 med en glanspunkt i ben3 kröker uppåt ur munvinkeln. Pälsen är mörk, i jord0, jord1 och kol2 med korn. Den står på alla fyra korta ben, och eftersom vi ser snett uppifrån syns ett smalt band av ryggen och de bortre benen en punkt förskjutna bakom de främre; svansen är en tunn rak stump med en tofs."
+   "anteckning": "Björn bad om två vinklar och lite olika täckning. Därför finns nu fyra vildsvin: två från sidan och två snett framifrån, och i varje vinkel en brun och en ljusare, gråbrun päls. Storleken är densamma som förut, omkring 24 × 14 punkter. Galten står på alla fyra benen på gräset, som på kartan. Den låga, tunga framdelen och det stora huvudet ligger nere till vänster, och ryggen sluttar mot det mindre bakpartiet. Borsten står upp som en kam över bogen. I den ljusa pälsen är kammen mörk som en man. Betarna syns ljust vid trynet och böjer sig uppåt. Från sidan syns båda benparen; de bortre benen är mörkare och står lite innanför de närmre. I den sneda vinkeln vänder grisen trynet ner mot betraktaren. Då syns ryggen ovanifrån som en diagonal, och benen står under buken. Konturen är jord0 och ljuset kommer uppifrån vänster. Bara klövarna är kol. Granskningen: Rättat: de två snett-bilderna (vildsvin_snett_1/2) är samma djur i en annan vinkel och ställning, och sida_2 var bara sida_1 i ljusare färg. Det bryter mot regeln att versionerna är tre olika djur i samma ställning. Snett-bilderna är borttagna. Versionerna är nu tre olika vildsvin, alla från sidan och stående på fyra ben som på kartan, med samma storlek (24 × 13–14 punkter, lägre än kolonisten).\n1: den mörkbruna galten, behållen oförändrad.\n2: en ljusare, gråspräcklig sugga med smalare kropp, kort borst, spetsigt öra och små betar.\n3: en gammal galt med hög borstman över bogen, kraftigare framdel och stora uppåtböjda betar.\nAlla har kontur i jord0 och ljus uppifrån vänster. Kol0 används bara i öga och klövar. Kornet i kroppen är bytt punkt för punkt så att ytan inte blir slät.",
+   "ide": ""
   },
   {
    "bilder": [
     {
-     "namn": "f10_vildsvin_sugga",
+     "namn": "vildsvin_a_galt",
      "rader": [
-      "..........E.EE.E..........",
-      ".......EEEEEEEEEEEEE......",
-      "....EEEHHHGHHHGHHGGGGE....",
-      "...EHGEHHGHHHGHHGGHGGFEE..",
-      "..EHGGEGHHGHHGHGGGGFGGFEE.",
-      "..EGGEGHGHGGHGGGGFGGFGFE.E",
-      ".EGkGGGHGGGHGGFGGFGFGFFE.E",
-      "EGGGGGGGGGGGFGGFGFFGFFFE.E",
-      "EFFGGFGGGFGGFGFFGFFFFFFE.E",
-      ".EpFFGFFGFFGFFFFFFFFFFFEEE",
-      "..EEFFFFFFFFGFFFFFFFFFFE..",
-      "...EFFFFFFFFFFFFFFFFFFE...",
-      "....EGEEFEEEEEEEEFEEGE....",
-      "....EGEEFE......EFEEGE....",
-      "....EGElll......lllEGE....",
-      "....llll.l......l.llll....",
-      "....l.l............l.l...."
+      "......E.E.E.E.............",
+      ".....EHEHEHEHEE...........",
+      "....EHpHHGHGHGHGEEEE......",
+      "...EHHpHGHGHGHGGHGGGEE....",
+      "..EHHkGHGHGHGHGGHGGGGGGE..",
+      ".EHpHHGHGHGHGHGGHGGGGGFE..",
+      "EHHHGGHGHGHGGHGGGGGGGFFE..",
+      "EGwGGGHGHGHGGGGGGGGGFFFE..",
+      "EEqEGGGHGGGGGGGGGGGFFFFE..",
+      ".EEEFGGGGGGGGGGGGGGFFFEE..",
+      "....EFFFGGGGGGGGGFFFFEE...",
+      ".....EGE..EGE...EGE.EGE...",
+      ".....EFE..EFE...EFE.EFE...",
+      ".....kk...kk....kk..kk...."
+     ]
+    },
+    {
+     "namn": "vildsvin_b_sugga",
+     "rader": [
+      "......E.E.E...........",
+      ".....EpEpEpEE.........",
+      "....EpHpHpHpHHEEE.....",
+      "...EppHpHpHpHHpHHHEE..",
+      "..EppkHpHpHHpHHHHHHHE.",
+      ".EpqpHHpHpHHpHHHHHHGE.",
+      "EppHHpHpHHpHHHHHHHGGE.",
+      "EpHHHHpHHHHHHHHHHGGGE.",
+      "EEHEHHHHHHHHHHHHHGGE..",
+      "..EEGHHHHHHHHHHGGGEE..",
+      "....EGE..EGE.EGE.EGE..",
+      "....EGE..EGE.EGE.EGE..",
+      "....kk...kk..kk..kk..."
+     ]
+    },
+    {
+     "namn": "vildsvin_c_gragalt",
+     "rader": [
+      ".....Q.Q.Q.Q..............",
+      "....QTQTQTQTQ.............",
+      "...QTTSTSTSTSQQQQQQ.......",
+      "..QTTSTSTSSTSSSSSSSQQ.....",
+      ".QTkTSTSTSSTSSSSSSSSSQ.Q..",
+      "QTTSTSTSSTSSSSSSSSSRSQQ...",
+      "QwTSSTSSSSSSSSSSSSRRRQ....",
+      "QqSSSSSSSSSSSSSSSSRRRQ....",
+      ".QQRSSSSSSSSSSSSSRRRQ.....",
+      "...QRRSSSSSSSSSRRRQQ......",
+      "....QSQ..QSQ.QSQ.QSQ......",
+      "....QRQ..QRQ.QRQ.QRQ......",
+      "....QRQ..QRQ.QRQ.QRQ......",
+      "....kk...kk..kk..kk......."
      ]
     }
    ],
-   "anteckning": "Suggan står på alla fyra ben som djuren på kartan, i profil vänd åt vänster men lite uppifrån, så att ryggen och den låga borstkammen i jord0 syns överst. Kroppen är en rund, tunnlik oval på ungefär 22 × 13 punkter med jämn rygglinje. Huvudet är tungt och lågt framtill och går utan tydlig hals över i bogen. Det korta, tjocka trynet pekar snett nedåt. Det rundade örat hänger framåt över pannan, och betarna är bara en punkt i ben1 vid mungipan. Pälsen är jord1–jord3, ljusast uppe till vänster på ryggen och mörkast mot buken och bakdelen. Konturen är jord0, ögat är en punkt i kol0. Nära benen är ljusare. De bortre benen skymtar förskjutna bakom dem, i mörkare ton med bara en kant synlig. De kluvna klövarna i kol1 är delade med en genomskinlig punkt. Svansen hänger rakt ner från bakdelen och slutar i en liten tofs. Skuggan på marken ritas inte. Granskningen: Ritade om suggan. Raderna var olika breda (29 och 30 tecken), så bilden blev sned. Nu är alla rader 26 punkter breda. Kroppen var 30 × 18 och för stor mot kolonisten (14 × 20). Den är nu omkring 24 × 12 punkter plus ben, nära idéns 22 × 13, och hela bilden är 26 × 17. Svansen hängde lös från kroppen. Nu går den ut från bakdelen, hänger rakt ner och slutar i en liten tofs. Båda benparen var ritade lika och i höjd med varandra. Nu skymtar de bortre benen (mörkare jord1) förskjutna bakom de främre och slutar en rad högre. Alla klövar är i kol1 och kluvna. Borstkammen är lägre och kortare i jord0, och rygglinjen är jämn som en tunna. Örat är rundat, hänger framåt över ögat och är ljusast uppe till vänster. Tryne och mun är kortare, med en enda bet i ben1 vid munnen. Pälsen går i jord1–jord3 med ljuset uppe till vänster och jord0 som kontur, så att grisen syns mot gräset. Ögat är den enda punkten i kol0.",
-   "ide": "Sugga, rund som en tunna: en låg, oval kropp på ungefär 22 × 13 punkter med jämn rygglinje, kortare och tjockare tryne, rundade öron som hänger lite framåt och bara små betar på en punkt i ben1 vid munnen. Borsten längs ryggen är en lägre, kortare kam i jord0, och pälsen är varmare brun i jord1, jord2 och jord3 med ljusast tonen överst till vänster på ryggen. Den står stadigt på fyra korta ben med kluvna klövar i kol1, där de bortre benen skymtar förskjutna bakom de främre, och svansen hänger rakt ner med en liten tofs."
+   "anteckning": "Björn ville ha två vinklar och lite olika päls, så kortet har nu två galtar som var och en ritas på två sätt: från sidan och snett framifrån. Storleken är densamma som förut, omkring 26 × 14 punkter från sidan och 20 × 14 snett framifrån. Båda står på alla fyra ben, som djuret står på kartan. Från sidan vänder svinet åt vänster. Den höga, tunga bogen sitter framtill och rumpan är låg baktill. Borsten sticker upp som en rad mörka toppar längs ryggen. Trynet pekar ner mot marken, och betarna (ben2 och ben3) böjer sig uppåt framför ögat. Snett framifrån kommer huvudet mot betraktaren: båda ögonen och trynet syns, och betarna sticker ut på var sin sida om trynet. Kroppen blir kortare och går bakåt-uppåt, och av benen syns bara fyra korta stumpar med mörka klövar. Pälsen skiljer de två svinen åt: (a) är mörkbrun i jord1 och jord2, (b) är ljusare och gråsprängd i jord2, jord3 och ben1. Båda har konturen i jord0 och ljuset uppe till vänster. Det finns ingen skugga och ingen anfallsställning. Granskningen: Rättat: versionen hade två sidovyer och två snedvyer av samma vildsvin, där b bara var a i ljusare färger. Det bryter mot regeln om tre djur i samma ställning, och kortet säger att djuret ska ritas från sidan. Snedvyerna är borttagna. I stället finns tre olika vildsvin, alla stående på alla fyra ben från sidan och vända åt vänster som på kartan. (a) Stor brun galt, 26×14, med hög borstkam över de tunga bogarna, ett kilformat huvud lågt framtill och en uppåtböjd bete i ben2/ben3. (b) Sugga, 22×13, mindre och rundare med kortare ben, utan betar och med gråspräcklig ljusbrun päls i jord3/ben1. (c) Gråsvart galt, 26×14, smalare och mer högbent, med lång tryne, manen bara över bogen, en svanstofs och betar; pälsen är i skiffer med skiffer0 som kontur. Version a:s kropp var mest jord1, som är mörkare än gräset; nu är alla kroppar lika ljusa som eller ljusare än gräset (jord2/jord3, ben1, skiffer2/skiffer3) och har kontur i materialets mörkaste ton. Ljuset faller uppifrån vänster. Kol0 används bara för ögon och klövar. Storleken mot kolonisten (14×20) är behållen: ett lågt djur med ryggen ungefär i midjehöjd.",
+   "ide": ""
   },
   {
    "bilder": [
     {
-     "namn": "vildsvin",
+     "namn": "f10_vildsvin_sida",
      "rader": [
-      "......E.E.E.............",
-      "....E.EFEFEFEE..........",
-      "...EGEFGFGFFFFEEE.......",
-      "...EGHGHGGFGFFGFFFEEE...",
-      "..EHGkGGHGFGFGFGFFGFFE..",
-      ".EGGGHGGFGGFGFGFFGFFFEE.",
-      "EGGHGGFGGFGFGFFFGFFFFEE.",
-      "oGGGFGGFGFGFGFGFFFFFFE..",
-      "oEwFGFGFGFGFGFFFGFFFFE..",
-      ".EqEFGFGFGFGFFFFFFFFFE..",
-      "..EFFFGFFFFEEEEEFFFFFE..",
-      "....GE.FE......FE..GE...",
-      "....FE.EE......EE..FE...",
-      "....kk.kk......kk..kk..."
+      "........E.E.E...........",
+      ".......EHEGEGE..........",
+      ".....EEGHGHGFGEEEE......",
+      "....EGEGHGFGFGFFGFFEE...",
+      "...EGHGFGHGFGFGFFGFFGFE.",
+      "..EGHGkGHGFGFGFFGFFGFFEE",
+      ".EGHGFGHGFGFGFFGFFFGFFE.",
+      "EpoGFGFGFGFFGFFGFFGFFFE.",
+      "EowGFGFFGFFGFFFGFFFGFFE.",
+      ".EqFGFFFGFFFFGFFFFGFFEE.",
+      "..EEFFEEFFGFFEEFFGFFEE..",
+      "....EFE..EFE....EFE.EFE.",
+      "....EFE..EFE....EFE.EFE.",
+      "....lll..lll....lll.lll."
      ]
     }
    ],
-   "anteckning": "Ett enda vuxet vildsvin, stående på alla fyra benen som djuret står på kartan, sett från sidan och lite ovanifrån med nosen åt vänster. Bilden är 24 × 14 punkter, något större än en ruta men lägre än en människa. Djuret är lågt och tungt framtill: det kilformade huvudet hänger ned mot marken och skuldrorna är högst. En kam av mörkt borst går längs ryggen, och kroppen sluttar ned mot en smalare bakdel med en kort svans. Pälsen är tecknad i jordtonerna jord1 till jord3, med kontur i jord0. Ljuset kommer uppifrån vänster, så pannan och skuldran är ljusast och bakdelen och buken mörkast. Trynet är tecknat i ben0 och en liten bete i ben2 till ben3 sticker upp ur munvinkeln. Ögat och klövarna är kol0. Av benen syns de två närmaste i ljusare ton och de två bortre lite mörkare, förskjutna så att alla fyra syns. Ingen skugga är ritad. Granskningen: Granskad: storleken (24 × 14) stämmer mot kolonisten (14 × 20) för ett lågt och tungt vildsvin. Djuret står på alla fyra benen med huvudet åt vänster och ljuset uppifrån vänster. Konturen är jord0, och klövarna och ögat är kol0 eftersom de verkligen är svarta. Betarna är i ben, borsten sitter längs ryggen och puckeln ligger framtill, så idén följs. Rättat: den bakre delen av kroppen (bål och länd, rad 3–8) var en slät yta av bara jord1. Jag har lagt in enstaka punkter av jord2 som korn, utan mörka fläckar, så att ytan inte är slät och den mörkare sidan nere till höger behålls. I övrigt är bilden oförändrad.",
+   "anteckning": "Vildsvinet står på alla fyra ben på gräset, som det står på kartan. Bild 1 visar det från sidan med huvudet åt vänster: lågt och tungt framtill med borst längs ryggen. Det har mörk, tät päls i jord0 till jord2, jord3 bara uppe till vänster där ljuset faller. Bild 2 visar det snett framifrån och uppifrån. Huvudet kommer mot betraktaren nere till vänster och kroppen går bakåt uppåt höger, så ryggens borstkam syns som en mörk linje ovanifrån. Det har en ljusare, glesare gråbrun päls med mer jord2 och jord3. Trynet i ben0 och ben1 är spegelsymmetriskt, med betarna i ben2 och ben3 på båda sidor. Konturen är jord0, klövarna kol1 och bara ögonen kol0. Storleken på 24 × 14 är oförändrad från sidan, och framifrån är bilden 20 × 16. Granskningen: Rättat: 1) Den andra bilden (f10_vildsvin_snett) är borttagen. Den visade samma vildsvin i en annan ställning och vinkel, och benen hängde inte ihop med kroppen. Enligt reglerna står alla versioner som djuret står på kartan, och kortet ber om sidovyn på gräs. 2) Sidobilden hade en slät, enfärgad bål. Den har nu korn: jord1 och jord2 byts punkt för punkt, ljusast uppe till vänster vid skuldran och mörkast nere till höger. Det blir inga mörka fläckar, och konturen är fortfarande jord0. Oförändrat: storleken (24 × 14, lågt och tungt framtill bredvid kolonisten på 14 × 20), borsten längs ryggen, trynet med beten i ben, det svarta ögat, de fyra benen med klövar i kol1 och den genomskinliga bakgrunden. Vildsvinet syns på gräset genom den mörka jordkonturen.",
    "ide": ""
   }
  ]

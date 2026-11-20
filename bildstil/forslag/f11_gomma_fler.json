@@ -1,0 +1,144 @@
+{
+ "kort": "f11_gomma_fler",
+ "namn": "Gömman, fler symboler",
+ "slag": null,
+ "vad": "Steg 11.5: packning som ett sällskap lämnat kvar ute i världen (en gömma) syns på världskartan tills någon hämtar den. Du valde version 3. Här fem nya symboler: en väska, en säck eller en större förvaring som lämnats kvar, 16 × 16 punkter på gräset som världskartans andra tecken Din kommentar förra gången: ”gör en symbol för en väska eller fler förvaringar. Gör fem olika och behåll version 3”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "gomma_sack_knuten",
+     "rader": [
+      "................",
+      "......oqpo......",
+      ".....oqpqpo.....",
+      "......oqpo......",
+      ".....EGFFFE.....",
+      "......oqpo......",
+      ".....oqqppo.....",
+      "....oqwqpqpo....",
+      "...oqqpqpqppo...",
+      "...oqpqpqpppo...",
+      "...oqqpqpppoo...",
+      "...opqpqpppoo...",
+      "....oppqppoo....",
+      "....oopopooo....",
+      ".....oooooo.....",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Säcken står upprätt på marken av egen tyngd, så den ses snett ovanifrån: den platta botten skymtar som ett mörkare band i ben0 nertill. Formen är spegelsymmetrisk och omkring 10 punkter bred och 14 hög inklusive tofsen. Den runda buken har sin ljusaste ton (ben2 och en punkt ben3) uppe till vänster och mörknar mot ben0 nere till höger. Halsen är smal och hopsnörd med ett rep i jord1 med kanter i jord0, och ovanför sticker en liten tofs av det hopdragna tyget upp. Konturen är i ben0, alltså materialets mörkaste ton. Ingen behållare, bärare eller skugga är ritad, bara den lämnade säcken mitt i rutan på 16 × 16 punkter. Granskningen: Granskad mot reglerna. Storleken (10 × 14 punkter mot kolonistens 14 × 20) passar en stor säck som står på marken. Silhuetten är spegelsymmetrisk kring mitten. Säcken syns ljus i ben1–ben2 mot gräset, ljuset kommer uppifrån vänster med en enda glanspunkt i ben3, och botten är en mörkare kant i ben0. Repet i jord1 har kontur i jord0, och tofsen sticker upp överst, så idén följs. En sak är rättad: i rad 10 låg en ensam mörk prick (ben0) inne i den ljusare buken till höger. Den är bytt till ben1, och ben0 flyttad ut mot konturen, så att skuggan nere till höger blir en jämn övergång utan fläck. Allt annat är oförändrat.",
+   "ide": "Knuten säck: en hög, päronformad säck av grovt ylletyg i ben1–ben2 med kontur i ben0, omkring 10 punkter bred och 13 hög. Den står upprätt och är spegelsymmetrisk, med en smal hals som är hopsnörd med ett rep i jord1 och en liten tofs av tyg som sticker upp överst. Den rundade buken ses snett ovanifrån, med en ljus axel uppe till vänster, och nertill skymtar säckens platta botten som en mörkare kant."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_gomma_axelvaska",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "..EEEEEEEEEEEEE.",
+      "..EHHGHHHGHHGGE.",
+      ".FEHGHHGHGHHGGEF",
+      "F.EHGHGHGHGHGGEG",
+      "F.EEEEEHGGEEEEEG",
+      "F.EGGFEGqGEFGFEF",
+      "F.EFGFFEEEFGFFEF",
+      "F.EGFFGFFFGFFFEF",
+      ".FEFFFFFFFFFFFEG",
+      ".FEEEEEEEEEEEEEF",
+      ".G........FGFGF.",
+      "..FGFFGFGF......",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Väskan ligger platt på gräset med locket uppåt mot betraktaren, så att ovansidan syns snett ovanifrån: läderytan i jord3/jord2 med ljuset uppe till vänster och konturen i jord0. Fliken viker sig över framkanten. Där syns en tunga med en liten benknapp i ben2, den enda ljusa punkten. Framkanten är ett mörkare band i jord1. Väskan är 14 × 8 punkter. Remmen sitter fast i väskans två övre hörn och ligger slarvigt utlagd i en lös, sned ögla bakom väskan på gräset. Remmen är en smal linje i jord1 med enstaka ljusare punkter, så att silhuetten blir låg och ojämn. Ingen skugga är ritad. Granskningen: Rättat: 1) Remmen stod upprätt som ett handtag i en båge ovanför väskan, som en väska sedd från sidan. Det bröt mot vinkeln och mot idén. Nu ligger remmen utlagd på gräset i en lös, ojämn ögla runt väskans sidor och under den. Öglan hänger lägre till vänster än till höger, så silhuetten blir låg. 2) Väskan var 14 punkter bred med fliken och benknappen en halv punkt ur mitten, så den var inte symmetrisk. Nu är kroppen 13 punkter bred (kolumn 2–14). Fliken med benknappen i ben2 sitter exakt i mitten (kolumn 8). 3) Vinkeln: locket ses ovanifrån och tar större delen av höjden. Det är ljust i jord3–jord2 uppe till vänster. Flikens kant går tvärs över locket, och fliken pekar mot betraktaren. Framkanten är ett mörkare band i jord1 på två punkter, och konturen är i jord0. 4) Remmen har korn som växlar mellan jord1 och jord2, så att den inte blir slät men syns mot olivgräset. Storleken behölls, omkring 13 × 10 punkter för väskan och hela tecknet inom 16 × 16.",
+   "ide": "Liggande axelväska: en låg, bred läderväska i jord2–jord3 med kontur i jord0, omkring 14 punkter bred och 8 hög. Den ligger ner på gräset med locket mot betraktaren, så att den nästan fyrkantiga ovansidan och fliken med en liten benknapp i ben2 syns ovanifrån. Remmen ligger slarvigt utlagd i en lös ögla runt väskan på gräset, så att silhuetten blir låg och ojämn."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_gomma_skinnbylte",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "................",
+      "....EEEEEEE.....",
+      "...EoHHGHGoE....",
+      "..EHHoHGHoGGE...",
+      ".EEHGHoGoGGFEE..",
+      "EHHGHGGpGGFGFFE.",
+      ".EEGHGoGoFGFEE..",
+      "..EHGoGGFoFFE...",
+      "...EoGFGFFoE....",
+      "....EEEEEEE.....",
+      "................",
+      "................",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Bylten ligger platt på marken, sedd nästan rakt ovanifrån, och står ensam på gräset utan behållare. Fällen är vikt runt packningen till en låg, oval kudde, cirka 15 × 9 punkter. Den ljusa hårsidan (H och G) vetter uppåt vänster och mörknar mot F nere till höger. Konturen är jord0, så bylten syns mot det olivgröna gräset. Två rep i ben0 går diagonalt tvärs över och korsar varandra i mitten. Knuten i korsningen har en enda glanspunkt i ben1. Fällens hörn sticker ut som spetsiga flikar, en åt vänster och en åt höger. Silhuetten är bred och låg, utan säckens höga form. Skuggan på marken lägger spelet till. Granskningen: Rättat: bylten var osymmetrisk. Vänstra fliken stack ut på rad 7 och högra kanten gick ner till kolumn 14 på rad 9, så knytet lutade och ena sidan var bredare. Formen är nu spegelsymmetrisk kring mitten (kolumn 7, rad 8), med båda flikarna som spetsar i E på mittraden ut till kolumn 0 och 14. Ovalen är jämn, 15 × 9 punkter som idén säger, och den nedre kanten är lika bred som den övre. Det mesta är oförändrat: korset av rep i ben0 med knuten i ben1 mitt på, fällen i H och G med F mot nedre högra hörnet för ljuset uppifrån vänster, konturen i jord0 och den låga, platta formen. Bylten är ljusare än det olivgröna gräset och syns på det. Den hålls inte av någon, så inget går genom huvud eller ansikte. Storleken mot kolonisten (14 × 20) stämmer för ett knyte på marken.",
+   "ide": "Skinnbylte: ett platt, ovalt knyte där ett lurvigt hudfäll i H och G med kontur i E är vikt runt packningen, sett nästan rakt ovanifrån och omkring 15 punkter brett och 9 högt. Två rep i ben0 går tvärs över bylten och korsar varandra mitt på, och fällens hörn sticker ut som spetsiga flikar åt sidorna. Formen ska läsas som en låg, bred kudde, helt utan den höga silhuetten som en säck har."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "gomma_stenrose",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "......QQQQ......",
+      ".....QTTSSQ.....",
+      "..QQQQTSSRQQQQ..",
+      ".QTTSQSSSRQTSSQ.",
+      ".QTSSSQQQQSSSRQ.",
+      ".QSRRQooooQRRRQ.",
+      ".QQQQQowqoQQQQQ.",
+      ".QTTSQoqqoQTSRQ.",
+      ".QTSSQoppoQSSRQ.",
+      ".QSRRQoppoQSRRQ.",
+      "..QQQQooooQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Stenröset ligger på marken och ses snett uppifrån som kartans andra tecken: en låg, rund hög om elva punkters höjd. Den översta stenen ligger mitt på och vilar på två mellanstenar, och två framstenar står i botten. Varje sten har sin egen kontur i skiffer0 och är ljusast i skiffer3 uppe till vänster och mörkast i skiffer1 nere till höger. Mellan framstenarna syns bara den del av näverasken som logiskt sticker fram: ett smalt stycke av den runda sidan med ljus näver och ett mörkare band i ben, med ben0 som kant. Resten av asken döljs under stenarna, och det är så man ser att något ligger gömt. Högen är ungefär spegelsymmetrisk kring asken; bara ljuset och kanten skiljer sidorna åt. Det är bara en bild, för version 3 är just stenröset. Väska och säck hör till de andra versionernas idéer och vore dessutom nya behållare. Granskningen: Rättat: 1) Symmetrin. Raderna 11–15 gick ut till kolumn 15 medan raderna 8–10 slutade i kolumn 14, så röset blev 15 punkter brett och snett åt höger. Nu ligger hela röset i kolumnerna 1–14 (14 × 11 punkter) och har en spegelsymmetrisk kontur; bara ljuset skiljer sidorna åt (ljust uppe till vänster, skiffer1 nere till höger). 2) Näveraskens hörn. Det var ett lodrätt ljust band utan egen kontur och läste som en planka. Nu har asken kontur i ben0 och ses snett uppifrån: överst en ljus lockyta i ben2 med en enda glanspunkt i ben3 uppe till vänster, och under den en framkant på två punkter i den mörkare ben1. Den ligger mellan de två främre stenarna, så man ser att något är gömt under röset. Oförändrat: de fem stenarna i skiffer1–3 med kontur i skiffer0, den ljusa översta stenen och storleken mot kolonisten.",
+   "ide": "Stenröse: en rund, låg hög av fem eller sex grå stenar i skiffer1–skiffer3 med kontur i skiffer0, som täcker gömman och är omkring 14 punkter bred och 11 hög. Mellan de två främsta stenarna sticker hörnet av en näverask fram, ritad som spelets näverask, så att man ser att något ligger gömt därunder. Den översta stenen är ljusast uppe till vänster, och högen är ungefär symmetrisk men ojämn i kanten."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "gomma_stolpforrad",
+     "rader": [
+      "......oqo.......",
+      "......sts.......",
+      "EEEEEoqwpoEEEEE.",
+      "EHGHoqqpppoGHGE.",
+      "EGFGoqpqppoFGFE.",
+      "EHGHopqpppoGHGE.",
+      "EGFGGopppoGFGFE.",
+      "EHGHGHoooHGHGHE.",
+      "EGFGFGFGFGFGFGE.",
+      "EFGFFFFFFFFGFFE.",
+      "EFFFFGFFFFFFFFE.",
+      "EEEEEEEEEEEEEEE.",
+      ".EGFE.....EGFE..",
+      ".EGFE.....EGFE..",
+      ".EGFE.....EGFE..",
+      ".EEEE.....EEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Stolpförrådet står på marken som en station, snett ovanifrån. Skivan av tre liggande stockar ses uppifrån (rad 3–9, jord2–jord3 med kontur i jord0). Under den syns framkanten som ett band på 2 punkter i jord1, och bara de två främre stolparna syns, som korta stumpar. Säcken står på skivan, så dess knut och snörning i rost (det man kan ta) sticker upp över bakkanten. Själva säcken ses ovanifrån i ben1–ben2 med kontur i ben0 och en enda glanspunkt uppe till vänster. Saken är 15 × 15 punkter och fyller nästan rutan. Ljuset kommer från vänster och silhuetten är fyrkantig. Ingen skugga är ritad. Granskningen: Rättat: stolparna var bara 3 punkter höga mot idéns 4, så hela saken flyttades upp en rad och stumparna fick fyra rader. Saken fyller nu 15 × 16 punkter. Framkantens nedre rad var helt slät i jord1 och har fått lite korn med en punkt jord2. Oförändrat: de tre stockarna ses ovanifrån som par av ljusa och mörka rader, framkanten är 2 punkter i jord1 och konturen är jord0. Säcken i ben1–ben2 med kontur i ben0 och knut med rostband är spegelsymmetrisk och ligger mitt på skivan. Stumparna sitter symmetriskt kring mitten, och ljuset kommer uppifrån vänster. Saken syns tydligt mot gräset.",
+   "ide": "Stolpförråd: en liten upphöjd plattform av stockar på två korta stolpar, ritad som stationerna med en ovanifrån sedd skiva av tre stockar i jord2–jord3 med kontur i jord0, en framkant på 2 punkter i jord1 och två stolpstumpar på 4 punkter. På skivan ligger en knuten säck i ben1–ben2 ovanifrån, och hela saken fyller nästan rutan, omkring 15 punkter bred och 15 hög. Silhuetten blir fyrkantig och kantig, som en byggd förvaring i stället för en mjuk packning."
+  }
+ ]
+}
