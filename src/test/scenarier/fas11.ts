@@ -3282,6 +3282,24 @@ SCENARIER.bykrig = {
     // huvudbyn går inte i krig av raden (den väljer själv, senare)
     const hv = vl.rader!.find(x => x.nr === vl.huvud)!, hg = SIM.radGrannar(vl, hv).find(g => SIM.BYSORTER[g.sort].ledare);
     const huvudUte = !hg || SIM.BYHANDLINGAR.krig.poang({ ...SIM.byCtx(s, vl, hg, hv), rel: -100 }) < 0;
+    // kriget kan bryta ut ur byarnas eget val (steg 12.1.114): en by som hamnar i fejd med en granne väljer (byVal, mot alla
+    // grannar och alla handlingar) det ovänliga beskedet, och när relationen sjunkit vidare kriget. Det vänliga dämpas av fejden
+    const s2 = SIM.cloneState(testBy(10)), vl2 = s2.varld!;
+    let kedja = 0, prov = 0, vanlig = 0;
+    for (const x of vl2.rader!) {
+      if (!SIM.lever(vl2, x) || x.nr === vl2.huvud || !SIM.BYSORTER[x.sort].ledare) continue;
+      const g = SIM.radGrannar(vl2, x).find(y => y.nr !== vl2.huvud && SIM.BYSORTER[y.sort].ledare);
+      if (!g) continue;
+      const k = `${x.nr}>${g.nr}`; prov++;
+      vl2.rel![k] = -80; delete vl2.ovanligt?.[k];
+      const v1 = SIM.byVal(s2, vl2, x, 5);
+      if (v1 && v1.c.mot === g && (v1.id === 'gava' || (v1.id === 'besked' && SIM.beskedTon(v1.c).ton === 'besked'))) vanlig++;
+      if (v1?.id !== 'besked' || v1.c.mot !== g) continue;
+      SIM.BYHANDLINGAR.besked.gor(v1.c);
+      vl2.rel![k] = -90; // (en räd eller ett gräl till)
+      const v2 = SIM.byVal(s2, vl2, x, 6);
+      if (v2?.id === 'krig' && v2.c.mot === g) { SIM.BYHANDLINGAR.krig.gor(v2.c); if (SIM.byLage(vl2, x.nr, g.nr) === 'krig') kedja++; }
+    }
     // en värld i 40 dygn (40 år i spelet): krigen kommer och går ur poängen
     const w = varldEfter(10, 40);
     const lagst = Math.min(...Object.values(w.varld?.rel ?? {}));
@@ -3295,6 +3313,7 @@ SCENARIER.bykrig = {
       [`i krig handlar byarna inte (före: ${affar0 ? 'affär' : 'ingen'}, i krig: ${affar1 ? 'affär' : 'ingen'})`, affar0 && !affar1],
       [`freden: genast inte (${f2(fredNu)}), efter ${3 * SIM.BYHANDLING.fredDygn} dygn ja (${f2(fredSen)}), och läget tas bort`, fredNu < 0 && fredSen > 0 && fred],
       ['huvudbyn går inte i krig av världens rader', huvudUte],
+      [`en by i fejd (relationen −80) väljer själv det ovänliga beskedet och sedan kriget när relationen sjunkit till −90 (${kedja} av ${prov} byar), och ingen är vänlig mot grannen den ser ner på (${vanlig})`, kedja >= 1 && vanlig === 0],
       [`i en värld i 40 dygn: ${w.stat?.bykrig ?? 0} krig och ${w.stat?.byfred ?? 0} fredsslut, ${w.stat?.byhandling_plundra ?? 0} räder, den lägsta relationen ${lagst}; räder måste förekomma`, (w.stat?.byhandling_plundra ?? 0) > 0],
     ];
   },
