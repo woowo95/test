@@ -1,0 +1,87 @@
+{
+ "id": "jarngryta",
+ "w": 13,
+ "h": 13,
+ "rader": [
+  "....QQQQQ....",
+  "...QRRRRRQ...",
+  "..QRQ...QRQ..",
+  "..QSSSSSSSQ..",
+  ".QSkkkkkklSQ.",
+  "QSkkkkkllllSQ",
+  "QTSSSSSSSSSRQ",
+  "QSSRSRRRRRRQQ",
+  "QSRSRRRRRRQRQ",
+  ".QSRRRRRRQRQ.",
+  "..QQRRRRQQQ..",
+  ".QRQ.QRQ.QRQ.",
+  "QRQ..QRQ..QRQ"
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d",
+  "l": "#2f261d"
+ },
+ "versioner": [
+  {
+   "ide": "Klotrund gryta: en bred, nästan klotformad buk av smitt järn, cirka 13 punkter bred, med öppningen som en liggande ellips överst. Ellipsen tar ungefär en tredjedel av höjden, har en tunn kant i skiffer2 och ett sotsvart inre i kol0 och kol1. Bygeln står rakt upp som en smal båge, en punkt tjock i skiffer1 med skiffer0 som kontur, från de två öronen vid kanten och förkortad över öppningens bakre halva. Buken har kornigt järn i skiffer0, skiffer1 och skiffer2, med en eller två punkter glans i skiffer3 uppe till vänster och mörkast nere till höger. Under buken syns tre korta ben på 2–3 punkter, ett i mitten fram och två snett ut åt sidorna, och hela formen är spegelsymmetrisk.",
+   "rader": [
+    "....QQQQQ....",
+    "...QRRRRRQ...",
+    "..QRQ...QRQ..",
+    "..QSSSSSSSQ..",
+    ".QSkkkkkklSQ.",
+    "QSkkkkkllllSQ",
+    "QTSSSSSSSSSRQ",
+    "QSSRSRRRRRRQQ",
+    "QSRSRRRRRRQRQ",
+    ".QSRRRRRRQRQ.",
+    "..QQRRRRQQQ..",
+    ".QRQ.QRQ.QRQ.",
+    "QRQ..QRQ..QRQ"
+   ],
+   "om": "Järngrytan, 13 × 13 punkter. Den runda buken är 13 punkter bred och har skiffer0 som kontur. Bygeln är en punkt tjock i skiffer1 och står som en båge över öppningens bakre halva, ner till öronen vid kanten. Öppningen är en liggande ellips över raderna 3–6 med kant i skiffer2 och ett sotigt inre i kol0 och kol1. Järnet är kornigt i skiffer2, skiffer1 och skiffer0, med en punkt glans i skiffer3 uppe till vänster, och det är mörkast nere till höger. Tre korta ben sitter under buken: ett i mitten fram och två snett ut åt sidorna. Formen är spegelsymmetrisk. Granskningen: Ovansidan liknade en hjälm med visir: en fylld kupol över ett mörkt band, inte en öppning med bygel. Därför har jag ritat om de fem översta raderna. Bygeln är nu en smal båge i skiffer1 med kontur i skiffer0. Den går från öronen vid kanten och är genomskinlig under bågen, så att gräset syns där. Öppningen är en liggande ellips över rad 3–6 (ungefär en tredjedel av höjden). Den har en tunn kant i skiffer2 och ett sotigt inre i kol0, med kol1 nere till höger. Glansen i skiffer3 sitter uppe till vänster på den främre kanten. De tre benen gick rakt ner sida vid sida. Nu går sidobenen snett utåt och mittbenet rakt ner fram, och formen är spegelsymmetrisk. Bukens järn i skiffer1/skiffer2 med kontur i skiffer0 är oförändrat. Det är ljusare än gräset och syns mot det. Storleken är kvar på 13 × 13 punkter, inom 14 × 13."
+  },
+  {
+   "ide": "Låg och bred grytpanna: en tung, flat gryta som är bredare än hög, nästan 14 punkter bred men bara omkring 9 punkter hög med bygel och ben. Väggarna går nästan rakt ner från en tjock utvikt kant. Öppningen är en stor ellips sedd ovanifrån och tar mer än halva höjden, med kolsvart botten och ett par punkter skiffer1 som fångar ljuset på insidan av bakkanten. Bygeln är nedfälld och ligger bakåt som en tunn båge längs bakkanten utanför öppningen. Framsidan är ett smalt band på 3–4 punkter i skiffer0 och skiffer1, och under den syns tre stumpiga ben på 2 punkter, ett vid varje sida och ett i mitten.",
+   "rader": [
+    "..RSSSSSSSRQ..",
+    ".SQTTSSSSSRQQ.",
+    "QTQkRRRRRRkQRQ",
+    "QTQkkkkkkkkQRQ",
+    "QSQkkkkkkkkQRQ",
+    "QTSQkkkkkkQSRQ",
+    "QSSSQQQQQQSRRQ",
+    ".QSSRSRRRRRRQ.",
+    ".QQQQQQQQQQQQ.",
+    ".RQ...RQ...QQ.",
+    ".QQ...QQ...QQ."
+   ],
+   "om": "Låg och bred grytpanna i skiffertoner med skiffer0 som kontur. Bygeln är nedfälld och ligger som en tunn båge bakom bakkanten, fäst vid kantens sidor. Den tjocka utvikta kanten är ljusast uppe till vänster. Öppningen är en stor ellips med kolsvart botten och två punkter skiffer1 på insidan av bakkanten. Framsidan är ett smalt band i skiffer1 och skiffer0, och under den står tre stumpiga ben på 2 punkter. Grytan är 14 punkter bred och 13 hög med bygel och ben, alltså högre än idéns omkring 9: bygel och ben tar 4 av raderna. Granskningen: Jag sänkte grytan från 13 till 11 rader, så att den blir den låga och breda grytpanna som idén beskriver. Den fyller fortfarande hela bredden på 14 punkter och läses som större och tyngre än lerkrukan. Bygeln ligger nu nedfälld som en tunn båge i skiffer längs bakkanten, utanför öppningen, med ändarna fästa i den utvikta kanten på båda sidor. På insidan av bakkanten ligger en rad skiffer1 som fångar ljuset, och under den är botten kolsvart. Öppningen och den tjocka kanten tar nu ungefär 6 av 11 rader. Framsidan är ett band på 3 punkter i skiffer0 och skiffer1 (kanten, bandet och konturen). Under den står tre stumpiga ben på 2 punkter, spegelsymmetriskt vid varje sida och i mitten. Ljuset kommer från vänster med skiffer3 på vänstra kanten och mörknar mot höger. Konturen är skiffer0 runt om. Kol0 finns bara i den svarta botten."
+  },
+  {
+   "ide": " Hög päronformad gryta: en äggformad buk som är bredast nertill, med en smalare hals och en tjock rund kant i skiffer2 runt en mindre ellips av sot i kol0. Två små öron sticker ut på var sida om halsen. Från öronen går bygeln upp i en spetsigare båge till en liten krok eller ring överst i mitten, och den når bildens översta rad, så att grytan ser ut att vara gjord för att hänga över härden. Kroppen är av kornigt järn i skiffer0–skiffer1 med skiffer2 på vänster skuldra och en punkt skiffer3 som glans. Längst ner bär tre korta, lite utåtsvängda ben grytan: två syns på sidorna och ett i mitten fram, alla 3 punkter långa med kontur i skiffer0.",
+   "rader": [
+    "......QQ......",
+    ".....Q..Q.....",
+    "....Q....Q....",
+    "...Q.QQQQ.Q...",
+    "..Q.QSSSSQ.Q..",
+    ".QSQSkkkkRQRQ.",
+    "...QSSRRRRQ...",
+    "..QSQQQQQQRQ..",
+    ".QSTSRRSRRRRQ.",
+    ".QSRRSRRRRRQQ.",
+    "..QSRRSRRRRQ..",
+    ".QRQQQRRQQQRQ.",
+    "QQ....QQ....QQ"
+   ],
+   "om": "En päronformad järngryta, 14 × 13 punkter. Överst sitter en liten ring i mitten. Därifrån går bygeln i en spetsig båge ner till två öron på var sida om halsen. Den tjocka runda kanten är i skiffer2 runt en ellips av sot i kol0. Under kanten är halsen smal, och buken blir bredast nertill. Buken är kornigt järn i skiffer1 med skiffer2 på vänstra skuldran och en enda glanspunkt i skiffer3 uppe till vänster. Konturen är skiffer0 och tjockare nere till höger. Tre korta ben på 3 punkter svänger lite utåt: två på sidorna och ett i mitten fram. Granskningen: x"
+  }
+ ]
+}
