@@ -69,7 +69,7 @@ export const LAGER = balans('lager', {
   // vad som bärs in först (haulJob): poängen är avståndet från lägret, plus detta för det som inte ligger på marken; lägst poäng först
   barBredvid: 50, // saker bredvid lagret när det nu finns plats i det
   svaltOmvag: 30, // vid svält väger det som inte är mat som om det låg så här många rutor längre bort (steg 10.2.6)
-  barFullt: 8, // när förrådet är fullt bärs bara det som ligger längre bort från lägret än så här många rutor (det man bär in hamnar ändå utanför) ...
+  barFullt: 8, // när förrådet är fullt bärs bara det som kommer så här många rutor närmare lägret där det hamnar (utanför ringen, besideSpot; steg 12.1.190) ...
   barVarde: 1, barVardeMin: 1, barVardeMax: 4, // ... gånger sakens grundvärde delat med barVarde, mellan min och max (steg 10.2.44): det värdefulla bärs från närmare
   barSortera: 40, // saker i fel lagerplats (maten bland materialet): före det som ligger bredvid lagret, som redan räknas som lagrat
   barNarmare: 150, // saker som kan flyttas till en lagerplats närmare elden
@@ -1371,17 +1371,22 @@ function barLista(s: State) {
     return plats.get(q);
   };
   // finns det plats för slaget i förrådet (i en lagerplats eller ringen runt)? Annars hamnar det man bär in ändå på marken
-  // utanför, och då bärs bara det som ligger långt bort (LAGER.barFullt), närmare ju mer det är värt (steg 10.2.44). Annars bärs
-  // samma saker fram och tillbaka
+  // utanför, på den plats besideSpot ger, och då bärs bara det som kommer tillräckligt mycket närmare lägret där (LAGER.barFullt),
+  // mindre ju mer det är värt (steg 10.2.44). Platsen räknas en gång per slag (steg 12.1.190): annars bars samma saker fram och
+  // tillbaka, och samma flyttar som inte blev av räknades om
   const ryms = new Map<string, boolean>(), rymsIn = (k: string) => {
     if (!ryms.has(k)) ryms.set(k, !!(spot(k, -Infinity) ?? ringSpot(s, k, occ)));
     return ryms.get(k)!;
+  };
+  const hamnar = new Map<string, number>(), hamnarVid = (k: string) => { // avståndet från lägret där det man bär in läggs när förrådet är fullt
+    if (!hamnar.has(k)) { const r = besideSpot(s, k, occ); hamnar.set(k, utanforByn(s, r.x, r.y)); }
+    return hamnar.get(k)!;
   };
   for (const a of things(s)) {
     const d = utanforByn(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d, min: number | undefined;
-    if (!isStored(s, a.x, a.y)) { if (d * clamp(grundvarde(a.k) / LAGER.barVarde, LAGER.barVardeMin, LAGER.barVardeMax) > LAGER.barFullt || rymsIn(a.k)) why = 'Det ligger saker på marken som ska in i lagret'; }
+    if (!isStored(s, a.x, a.y)) { if (rymsIn(a.k) || (d - hamnarVid(a.k)) * clamp(grundvarde(a.k) / LAGER.barVarde, LAGER.barVardeMin, LAGER.barVardeMax) > LAGER.barFullt) why = 'Det ligger saker på marken som ska in i lagret'; }
     else if (zi < 0) { if (spot(a.k, -Infinity)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; min = -Infinity; } }
     else if (!allows(zs[zi], a.k)) { if (spot(a.k, -Infinity)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; min = -Infinity; } }
     else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; min = zs[zi].prio ?? 0; }
