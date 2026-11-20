@@ -4089,3 +4089,20 @@ SCENARIER.pabud = {
     ];
   },
 };
+
+SCENARIER.yrken = {
+  text: 'Yrkena Herde och Biodlare (steg 12.1.32, YRKEN i seder.ts): den som mest vaktar och sköter djuren kallas herde, och den som sköter bina biodlare',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18), [h, b, ...ovriga] = vuxna;
+    for (const x of vuxna) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
+    h!.habit = { valla: 10, mjolka: 4, klippa: 3, samla: 2 }; b!.habit = { skatta: 3, samla: 6, ved: 3 };
+    SIM.updateTags(s);
+    const tags = SIM.TAGS.filter(t => t.tag === 'Herde' || t.tag === 'Biodlare');
+    return [
+      [`yrkena finns och räknar handlingarna med yrket (${tags.map(t => `${t.tag}: ${t.acts.join(', ')}`).join('; ')})`, tags.length === 2 && tags.every(t => t.acts.length > 0)],
+      [`${h!.name} som vallar, mjölkar och klipper kallas ${h!.tag ?? 'inget'}`, h!.tag === 'Herde'],
+      [`${b!.name} som skattar bikuporna kallas ${b!.tag ?? 'inget'}`, b!.tag === 'Biodlare'],
+      [`de andra blir inget av dem (${ovriga.map(x => x.tag ?? 'inget').join(', ')})`, !ovriga.some(x => x.tag === 'Herde' || x.tag === 'Biodlare')],
+    ];
+  },
+};
