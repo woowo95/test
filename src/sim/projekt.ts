@@ -33,7 +33,7 @@ import { knows } from './teknik';
 import { STATION, kanGoras, stationSomFattas, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
 import { bedTile } from './byggnader';
 import { stationRutor } from './stationer';
-import { LJUS, LJUSSORTER, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle } from './ljus';
+import { LJUS, LJUSSORTER, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle, tommaLampor } from './ljus';
 import { ALDER, ageOf, enTill, living } from './folk';
 import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
 import { VATSKOR, ar_vatska, ledigFor, vatskaAv } from './vatskor';
@@ -307,6 +307,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => Math.min(...Object.keys(LJUSSORTER).map(grundvarde)) + LJUS.min / 60 * ARBETE,
     kan: (s, p) => !!friLjus(s) && ljusPlatser(s).length > 0 && enTill(s, 'ljus', p),
     uppgift: s => { const st = ljusPlatser(s)[0]; return st && { act: 'ljus', text: 'Ställer fram ett ljus inne.', min: LJUS.min, spot: { x: st.x + 0.5, y: st.y + 0.5 }, ref: st.id }; },
+  },
+  // en tom oljelampa på ett bord eller en hylla fylls med brännolja (steg 12.4.2, ljus.ts)
+  lampa: {
+    namn: 'Olja i lampan', vikt: PROJEKT_TAL.ljus,
+    brist: s => tommaLampor(s).length ? 1 : 0,
+    kostnad: () => grundvarde('talg') + LJUS.fyllMin / 60 * ARBETE,
+    kan: (s, p) => vatskaAv(s, 'brannolja') >= 1 && tommaLampor(s).length > 0 && enTill(s, 'fyll_lampa', p),
+    uppgift: s => { const st = tommaLampor(s)[0]; return st && { act: 'fyll_lampa', text: 'Fyller oljelampan med brännolja.', min: LJUS.fyllMin, spot: { x: st.x + 0.5, y: st.y + 0.5 }, ref: st.id }; },
   },
   // fälten (steg 2.10.3, odling.ts): nästa steg på det egna fältet, eller att röja ett nytt
   falt: {

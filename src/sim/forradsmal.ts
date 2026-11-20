@@ -259,6 +259,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   slade: s => tamdjurOf(s).some(d => tamArt(d.art).styrka) ? 1 : 0, // en släde när byn har ett dragdjur att spänna för (steg 10.10.3)
   fackla: () => 1, // en, den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
+  oljelampa: s => ljusPlatser(s).length, // oljelampan till samma platser (steg 12.4.2): den blir kvar och fylls på
   slanda: () => 1, // en, dem som spinner, och en i vävstolen (steg 7.7.8)
   vattensack: () => 1, // en, den som inte kan gå (steg 2.10.1)
   boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2)

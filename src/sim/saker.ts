@@ -323,6 +323,9 @@ const DEF = {
   jarnyxa: { namn: 'Järnyxa', hanger: 'balte', grupp: 'yxa', rang: 1, skaffa: RECEPT.jarnyxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, trasig: { stat: 'jarnyxorTrasiga', text: '{namn}s järnyxa gick sönder.' } },
   jarnkniv: { namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },
   lie: { namn: 'Lie', hanger: 'axel', grupp: 'skara', rang: 1, skaffa: RECEPT.lie, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'liarTrasiga', text: '{namn}s lie gick sönder.' } },
+  // oljelampan (steg 12.4.2, ljus.ts): en liten lampa av lera, som torkar och bränns som krukan, och en behållare för brännoljan (vatskor.ts)
+  oljelampa: { namn: 'Oljelampa', skaffa: RECEPT.oljelampa, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'lamporTrasiga', text: '{namn}s oljelampa sprack.' },
+    gors: { text: 'Formar en liten oljelampa av lera.', stat: 'lamporGjorda', forsta: '{namn} formade byns första oljelampa av lera. Den ska torka och brännas i elden, och sedan brinner den på brännolja.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

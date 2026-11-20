@@ -80,13 +80,14 @@ export const VATSKOR = {
   svagdricka: { namn: 'Svagdricka', farg: 0xb2921b, i: ['lerkruka_stor'], haller: 4, dryck: { slacker: 1, ren: true, torst: DRYCK.svagVarde, alkohol: 0.05, stat: 'drack_svagdricka' } }, // bryggs av malt i karet (steg 10.7.24, brygg.ts): mot törsten på dagen
   mjod: { namn: 'Mjöd', farg: 0xd8b25f, i: ['lerkruka_stor'], haller: 20, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.mjodKvall, alkohol: 0.3, stat: 'drack_mjod' } }, // honungen som jäst i karet (steg 10.7.25, brygg.ts)
   sprit: { namn: 'Sprit', farg: 0xdad0bb, i: ['lerkruka_liten'], dryck: { slacker: DRYCK.spritSlacker, kvall: DRYCK.spritKvall, alkohol: 0.7, stat: 'drack_sprit' }, sar: 'sprit' }, // bränd i brännpannan (steg 10.7.26, brygg.ts): håller hur länge som helst
+  brannolja: { namn: 'Brännolja', farg: 0xd8b25f, i: ['oljelampa', 'lerkruka_liten'] }, // kokas i örtköket (steg 12.4.2, ljus.ts): står i oljelampan eller i en liten kruka
   sno: { namn: 'Snö', farg: 0xdad0bb, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'] }, // snön som smälts i en kruka vid elden (steg 10.2.50, torst.ts): blir vatten // örtteet av rölleka (steg 9.5.8): kokas och står kvar i den lilla krukan
 } satisfies Record<string, VatskaDef>;
 export type VatskaId = keyof typeof VATSKOR;
 export const ar_vatska = (k: string): k is VatskaId => k in VATSKOR;
 // så mycket en behållare rymmer: krukans storlek (KRUKOR), annars en del (säcken och asken)
 export const karRymmer = (t: Ting) => krukaAv(t.k)?.rymmer ?? 1;
-const behallare = (t: Ting) => t.k === 'vattensack' || t.k === 'naverask' || !!krukaAv(t.k);
+const behallare = (t: Ting) => t.k === 'vattensack' || t.k === 'naverask' || t.k === 'oljelampa' || !!krukaAv(t.k); // oljelampan rymmer en brännolja (steg 12.4.2)
 // en ledig behållare som passar vätskan v: tom, färdig (inte en kruka som torkar) och inte i någons hand
 export const ledigaFor = (s: State, v: VatskaId) => tingOf(s).filter(t => behallare(t) && !t.inne && !t.vaxt && !t.kok && t.ler === undefined && ingenHar(t) && (VATSKOR[v].i as string[]).includes(t.k)).sort((a, b) => karRymmer(a) - karRymmer(b) || a.id - b.id); // minst först
 export const ledigFor = (s: State, v: VatskaId) => ledigaFor(s, v)[0];
@@ -206,3 +207,11 @@ alkoholKrok.drycker = () => DRYCKER.filter(k => dryckAv(k)!.alkohol);
 alkoholKrok.kvall = kvallsVal;
 import { alkoholKrok, drickAlkohol, ingetRus } from './rus';
 import { specialTanke } from './special';
+// oljelampan på bordet fylls med en brännolja (steg 12.4.2, ljus.ts), när arbetet är klart (KLAR.fyll_lampa i steg.ts): lampan på möbeln task.ref
+export function fyllLampa(s: State, p: Person, tk: { ref?: number }) {
+  const l = (s.ljus ?? []).find(x => x.st === tk.ref), b = l && LJUSSORTER[ljusSort(l)]?.bransle;
+  if (!l || !b || l.c > 1e-9 || taVatska(s, b, 1) < 1) return;
+  l.c = 1; count(s, 'lampaFylld');
+  if (forstaGang(s, 'lampaFylldForsta')) log(s, `${p.name} fyllde oljelampan med brännolja igen.`, 'world', [p.id]);
+}
+import { LJUSSORTER, ljusSort } from './ljus';

@@ -134,7 +134,7 @@ import { stationById, stationFlyttTimme, stationFor, kvVid, stationFlytta, finis
 import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
-import { ar_vatska, fyllVatska, ledigFor, teFaktor } from './vatskor';
+import { ar_vatska, fyllLampa, fyllVatska, ledigFor, teFaktor } from './vatskor';
 import { rullaKvalitet } from './kvalitet';
 import { protesTimme } from './protes';
 import { halsoNotiser } from './halsonotiser';
@@ -359,6 +359,7 @@ KLAR.passa = passaKlar; // tillsynen vid en bränning (brann.ts, steg 12.2.2)
 KLAR.smida = smidaKlar; // ett järnredskap är smitt (jarnsaker.ts, steg 12.2.6)
 KLAR.stubbe = stubbeGravd; // stubben är bortgrävd och blir lite trä (skog.ts, steg 6.5.7)
 KLAR.plantera = plantaUppgravd; // plantan är uppgrävd och bärs till platsen (skogsvard.ts, steg 6.5.2)
+KLAR.fyll_lampa = fyllLampa; // oljelampan fylls med brännolja (ljus.ts, steg 12.4.2)
 KLAR.ljus = (s, p, t) => finishLjus(s, p, t); // ett talgljus på ett bord eller en hylla (ljus.ts, steg 6.3.8) // en uppsatt fackla (ljus.ts, steg 6.3.7)
 MEDAN.forsok = forsokSteg; KLAR.forsok = forsokKlar; // försöken mot en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1)
 MEDAN.odla = workOdla; KLAR.odla = finishOdla; // fälten (odling.ts)

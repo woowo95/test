@@ -160,6 +160,7 @@ const DEF = {
   blasterugn: { var: 'station', av: { lera: 6, sten: 4, skinn: 2, virke: 1 }, min: 20 }, // skinnen och virket är bälgen (steg 12.2.3)
   smedja: { var: 'station', av: { huggen_sten: 6, lera: 2, skinn: 2, virke: 1, jarn: 1 }, min: 20 }, // järnet är hammaren och tången (steg 12.2.4)
   drejskiva: { var: 'station', av: { virke: 2, huggen_sten: 1 }, min: 15, slag: 'stor', tek: 'drejskiva' }, // drejskivan (steg 12.4.1): en skiva av trä på en axel, med en sten som svänghjul
+  oljelampa: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'oljelampa', bank: 'drejskiva' }, // oljelampan (steg 12.4.2): formas av lera som krukan, torkar och bränns
   // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
   jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },
   jarnkniv: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' },
