@@ -20,6 +20,8 @@ export const MYR = balans('myr', {
   fartTorr: 0.85, // myren går man så här fort på ...
   fartVatten: 0.75, // ... och när den står under vatten så här (marken bromsar som mest till 0,75, steg 6.2.7)
   vattenFukt: 0.6, // över så här mycket fukt i marken (VaderMinne.fukt, vader.ts) står myren under vatten
+  malmAndel: 0.2, // så stor del av myrens rutor har malm (steg 12.1.2, malm.ts) ...
+  malmFull: 4, // ... och så mycket malm har en full ruta
 });
 // en by på en världsruta med myr (VARLDMARK) har alltid myr, och fler
 const MYRAR_MARK: Partial<Record<MarkId, number>> = { myr: 2 };
@@ -54,6 +56,8 @@ export const myrOf = perKarta(seed => {
   }
   return n ? a : undefined;
 });
+// malmen i en orörd ruta (lagret malm i FYND, steg 12.1.2): fläckar på myren, var femte ruta ungefär, räknat ur fröet
+export const myrMalm = (s: State, i: number) => myrOf(s.seed)?.[i] === 1 && hash(s.seed + 81, i % W - OX, Math.floor(i / W) - OY) < MYR.malmAndel ? MYR.malmFull : 0;
 export const harMyr = (s: State) => !!myrOf(s.seed);
 export const paMyr = (s: State, i: number) => myrOf(s.seed)?.[i] === 1;
 export const myrRutor = (s: State) => { const a = myrOf(s.seed); let n = 0; if (a) for (let i = 0; i < a.length; i++) n += a[i]; return n; };

@@ -5,6 +5,7 @@ import { bynamnRegister } from './bynamn';
 import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
 import { myrSteg } from './myr';
+import { malmGravd } from './malm';
 import { stenBruten } from './byggsten';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
@@ -348,6 +349,7 @@ KLAR.flyttStation = s => { stationFlytta(s); }; // en station ute närmare dem s
 KLAR.flyttLager = s => { const v = lagerFlyttVal(s); if (v) lagerFlytta(s, v.z, v.ny); }; // en lagerplats närmare byns mitt (lager.ts, steg 9.4.7)
 KLAR.bryta = stenBruten; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5)
 KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, steg 9.4.10)
+KLAR.malm = malmGravd; // malmen läggs i en hög där den grävdes (malm.ts, steg 12.1.2)
 KLAR.stubbe = stubbeGravd; // stubben är bortgrävd och blir lite trä (skog.ts, steg 6.5.7)
 KLAR.plantera = plantaUppgravd; // plantan är uppgrävd och bärs till platsen (skogsvard.ts, steg 6.5.2)
 KLAR.ljus = (s, p, t) => finishLjus(s, p, t); // ett talgljus på ett bord eller en hylla (ljus.ts, steg 6.3.8) // en uppsatt fackla (ljus.ts, steg 6.3.7)

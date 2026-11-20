@@ -51,3 +51,38 @@ SCENARIER.myr = {
     ];
   },
 };
+
+SCENARIER.myrmalm = {
+  text: 'Myrmalmen (steg 12.1.2, malm.ts): malm i fläckar på myren, 4 i en full ruta, som grävs med spaden på en tur som ger 4 malm, och en tömd ruta är full igen efter ungefär 30 dygn; i istiden växer inget till och den frusna myren går inte att gräva',
+  kor: () => {
+    const s = myrBy(), r = myrRutorI(s);
+    const malm = r.filter(i => SIM.fyndAt(s, 'malm', i) > 0), full = malm.every(i => SIM.fyndAt(s, 'malm', i) === 4), utanfor = SIM.fyndAt(s, 'malm', SIM.tileOf(SIM.eldPlats(s).x, SIM.eldPlats(s).y));
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const f = { kyla: false, gras: 0 };
+    s.ting = SIM.tingOf(s).filter(t => t.k !== 'benspade');
+    const utanSpade = SIM.projektNu(s, p, 'malm', f);
+    SIM.addTool(s, 'benspade', p);
+    const u = SIM.projektNu(s, p, 'malm', f), at = SIM.malmPlats(s);
+    const egen = SIM.projektVarde(s, 'malm');
+    // turen: 4 malm i en hög där den grävdes, och rutan är tom
+    const t: SIM.Task = { act: 'malm', phase: 'do', tx: at!.x, ty: at!.y, until: s.now, carry: 0, why: '', arbTid: SIM.MALM.min * 60000, tool: 'benspade' } as SIM.Task;
+    p.x = at!.x; p.y = at!.y;
+    SIM.malmGravd(s, p, t);
+    const hog = SIM.stacksOf(s).filter(a => a.k === 'malm').reduce((n, a) => n + a.n, 0), i = SIM.tileOf(at!.x, at!.y), tom = SIM.fyndAt(s, 'malm', i);
+    // återväxten: inget i istiden, nästan full efter 30 dygn på sommaren
+    SIM.growFynd(s, 30 * 24, 0, 1, 0); const istid = SIM.fyndAt(s, 'malm', i);
+    SIM.growFynd(s, 30 * 24, 2, 1, 0); const efter = SIM.fyndAt(s, 'malm', i);
+    // den frusna myren
+    s.is = { ...(s.is ?? {}), cm: 10 } as typeof s.is;
+    const frusen = SIM.malmPlats(s);
+    return [
+      [`malm i fläckar på myren: ${malm.length} av ${r.length} rutor, 4 i varje, ingen utanför myren`, malm.length >= r.length * 0.08 && malm.length <= r.length * 0.4 && full && utanfor === 0],
+      [`byn har inget eget mål för malmen (värdet ${egen})`, egen === 0],
+      ['utan spade gräver ingen malm', !utanSpade],
+      [`med spaden gräver en vuxen malm i myren (${u?.act}, ${u?.min} minuter)`, u?.act === 'malm' && u.min === 6 && u.tool === 'benspade' && SIM.paMyr(s, SIM.tileOf(u.spot!.x, u.spot!.y))],
+      [`turen ger 4 malm i en hög där den grävdes, och rutan är tom (${hog}, kvar ${tom})`, hog === 4 && tom === 0 && SIM.SAKER.malm!.vikt === 4],
+      [`i istiden växer malmen inte till (${istid}), efter 30 dygn på sommaren är rutan nästan full (${efter.toFixed(2)})`, istid === 0 && efter > 3.5],
+      ['den frusna myren går inte att gräva', !frusen],
+    ];
+  },
+};
