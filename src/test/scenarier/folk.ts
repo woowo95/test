@@ -8,7 +8,7 @@ import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
-import { garIBilden, stalle, SITTA, vidArbetet, vidStationen } from '../../ui/stalle';
+import { GANG_MIN, garNu, simPlats, stalle, SITTA, vidArbetet, vidStationen } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
 import { hjalpKlick } from '../../ui/hjalp';
@@ -2791,10 +2791,11 @@ SCENARIER.anfallet = {
 };
 
 SCENARIER.stalle = {
-  text: 'Steg 10.2.55, 12.1.13 och 12.1.154: figuren sitter bara på en sittplats och går bara när simuleringen flyttar den. En by går tolv timmar med spåren påslagna som i spelet, och varje person prövas flera gånger i varje slag med bildens egen indata (garIBilden och stalle i ui/stalle.ts): ingen ritas sitta utan en sittplats, ingen går när spåret står still (utom leken, som går mellan sina punkter), den som samtalar utan sittplats står, och den som arbetar med en ruta står intill den och vid en station är vänd mot den',
+  text: 'Steg 10.2.55, 12.1.13, 12.1.129 och 12.1.154: figuren sitter bara på en sittplats och går bara när platsen i simuleringen ändrats sedan förra bilden. En by går tolv timmar med spåren påslagna som i spelet, och varje person prövas flera gånger i varje slag med bildens egen indata (garIBilden och stalle i ui/stalle.ts): ingen ritas sitta utan en sittplats, ingen går när spåret står still (utom leken, som går mellan sina punkter), den som samtalar utan sittplats står, och den som arbetar med en ruta står intill den och vid en station är vänd mot den',
   kor: () => {
     const s = createState(7, START); klockan(s, 8); medHus(s); SIM.setAmount(s, 'yxa', 2); tidyTools(s); // yxorna: någon fäller och hugger (steg 10.2.78)
-    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0, vidSt = 0, felSt = 0;
+    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0, vidSt = 0, felSt = 0, garUtan = 0, sammaBild = 0, sammaGar = 0;
+    const forraPlats = new Map<number, { x: number; y: number }>();
     // vänd mot bänken (steg 12.1.154): stationen ligger åt det håll figuren är vänd, sett från där hen står
     const motSt = (t: SIM.Station, x: number, y: number, rikt: string) => {
       const q = SIM.arbetsDel(t), cx = q.x + q.w / 2, cy = q.y + q.h / 2;
@@ -2810,9 +2811,12 @@ SCENARIER.stalle = {
       for (let k = 0; k < STEG_TIM * 12; k++) {
         const t0 = s.now;
         step(s, 300);
+        { const t = t0 + (s.now - t0) * 0.5, m = new Map<number, { x: number; y: number }>(); for (const p of living(s)) { garNu(s, p, t, m); sammaBild++; if (garNu(s, p, t, m)) sammaGar++; } }
         for (const p of living(s)) for (let j = 0; j < 4; j++) {
           const t = t0 + (s.now - t0) * (j + 0.5) / 4, tk = SIM.sparUppgift(p, t, s.now), sp = SIM.sparPlats(p, t), x = sp?.x ?? p.x, y = sp?.y ?? p.y;
-          const rorde = garIBilden(s, p, t), flyttas = !!sp && !sp.still;
+          // gånganimationen (steg 12.1.129): benen bara när platsen i simuleringen ändrats sedan förra bilden
+          const fore = forraPlats.get(p.id), rorde = garNu(s, p, t, forraPlats), nu = simPlats(s, p, t), flyttas = !!sp && !sp.still;
+          if (rorde && (!fore || Math.hypot(nu.x - fore.x, nu.y - fore.y) <= GANG_MIN)) { garUtan++; forst ||= `${p.name} går utan att ha flyttat sig (${tk?.act} ${tk?.phase})`; }
           const ligger = tk?.act === 'sova' && tk.phase === 'do' || !SIM.kanGa(p), gor = tk?.phase === 'do' ? tk.act : undefined;
           const l = stalle(s, { ligger, gor, x, y, vidBank: false, rorde });
           if (gor) { const r = per.get(gor) ?? { n: 0, ga: 0 }; r.n++; if (l === 'ga') r.ga++; per.set(gor, r); }
@@ -2841,6 +2845,8 @@ SCENARIER.stalle = {
       [`bildens indata prövad för ${sedda.length} handlingar i ACTS`, sedda.length >= 10],
       [`den som samtalar utan sittplats står (${star} gånger)`, star > 0],
       [`den som arbetar med en ruta står intill och är vänd mot den (${arbeten} gånger, ${felArbete} fel; steg 10.2.78)`, arbeten > 0 && felArbete === 0],
+      [`ingen ritas med gånganimationen utan att platsen i simuleringen ändrats sedan förra bilden (${garUtan} gånger; steg 12.1.129)`, garUtan === 0],
+      [`samma bild två gånger vid samma tid: ingen går i den andra (${sammaGar} av ${sammaBild})`, sammaBild > 0 && sammaGar === 0],
       [`den som arbetar vid en station är vänd mot den (${vidSt} gånger vid ${provSt.map(t => t.k).join(', ')} och i byn, ${felSt} fel; steg 12.1.154)`, provSt.length >= 4 && vidSt > 0 && felSt === 0],
     ];
   },

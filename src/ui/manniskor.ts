@@ -28,7 +28,7 @@ import { jaktPlats } from './jakt';
 import { kartKampe, slagAv } from './stridbild';
 import { stridAnsikte } from './stridansikte';
 import { slag } from './animation';
-import { garIBilden, iSangen, stalle, vidArbetet, vidStationen } from './stalle';
+import { garNu, iSangen, stalle, vidArbetet, vidStationen } from './stalle';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -328,7 +328,8 @@ const forra = new Map<number, { x: number; y: number; rikt: Rikt; rorde: boolean
 const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gang2'], ['sta', 'hanga']];
 // figuren går bara när den flyttat sig sedan förra bilden (steg 10.2.55): den som står still går aldrig i bilden
 const gar = (id: number) => !!forra.get(id)?.rorde;
-vidNyBy.push(() => forra.clear());
+const simForra = new Map<number, { x: number; y: number }>(); // platsen i simuleringen i förra bilden (garNu i ui/stalle.ts)
+vidNyBy.push(() => { forra.clear(); simForra.clear(); });
 const SVANG = 2; // hur mycket större det nya hållet ska vara för att figuren ska vända sig (steg 6.8.2)
 // gar = om hen går (garIBilden i ui/stalle.ts, steg 12.1.13), ur simuleringen och aldrig ur platserna i bilden. Gästerna utan
 // den frågan går när platsen de fått från simuleringen (gaster.ts) flyttat sig
@@ -427,7 +428,7 @@ export function drawPeople(t: number) {
     // rörelse i armarna
     const bank = gor && !ligger ? stationAt(s, q.x, q.y - 1) : undefined, bd = bank && isKlar(bank) ? stationDef(bank.k) : undefined;
     const vidBank = !!(bank && bd?.sitt && bd.gor.includes(gor as never) && Math.floor(q.y) === bank.y + storlekAv(bank).h);
-    let rikt = riktning(p.id, q.x, q.y, garIBilden(s, p, ui.nu, jaktPlats(p)));
+    let rikt = riktning(p.id, q.x, q.y, garNu(s, p, ui.nu, simForra, jaktPlats(p))); // benen bara när platsen i simuleringen ändrats (steg 12.1.129)
     // sitter bara på en sittplats, går bara när hen flyttat sig (steg 10.2.55, ui/stalle.ts)
     const st = stalle(s, { ligger, gor, x: q.x, y: q.y, vidBank, rorde: gar(p.id) }), sitter = st === 'sitta'; // (platsen i bilden: q är posOf)
     if (sitter && rikt === 'bak') rikt = 'fram';
