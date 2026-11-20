@@ -11,6 +11,7 @@ import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { gastLever } from '../sim/gast';
 import { radVakt } from '../sim/rad';
+import { LAGERKOLL, lagerVakt } from '../sim/lager';
 import { kronikaKat } from '../sim/historik';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { kollaText, konI, titta } from './textkoll';
@@ -46,6 +47,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   gangVakt.lyss = (s, p, rutor, mork) => { const t = gangLangsam(s, p, rutor, mork); if (t) larm('långsam gång', () => t); };
   // inget svävar (steg 11.1.77): den som tar något ur en stack står vid den
   uttagVakt.lyss = (_s, p, k, _n, x, y) => { if (p && svavar(p, x, y)) larm('svävar', () => `${p.name} (${p.task?.act ?? 'ingen uppgift'}) tog ${k} ${Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y).toFixed(0)} rutor bort`); };
+  LAGERKOLL.pa = true; LAGERKOLL.fel.length = 0; // förrådets minne per slag och rutnätet jämförs med nyräknade (steg 12.1.186)
   const sedda = new WeakSet<object>(); // arbetena som vakten för arbetstiderna redan sett (steg 9.2.63)
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
@@ -159,6 +161,7 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   // hamnar utanför filtren. Raderna läggs i tidsordning, så de sista några prövas igen varje timme
   kronikaVakt(s, larm);
   // en gång i timmen: ägare, redskap, stackar och hus
+  for (const f of lagerVakt(s)) larm('förrådets minne', () => f); // stackarna per slag, rutnätet och summorna (steg 12.1.186)
   const ids = new Set<number>();
   for (const t of s.ting ?? []) {
     if (ids.has(t.id)) larm('ting-id två gånger', () => `${t.k} ${t.id}`); ids.add(t.id);
