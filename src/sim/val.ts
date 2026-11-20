@@ -14,7 +14,7 @@ import { narStridVal } from './kartstrid';
 import { facklaVal, ljusAt } from './ljus';
 import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, platsIByn, utanforByn } from './omrade';
 import { SKRIFT, lasVal, skrivPlats, skrivVal } from './skrift';
-import { GANG } from './gang';
+import { GANG, kroppFart } from './gang';
 import { iVattnetNu, sjoNamn, sjoVid, strandNu } from './sjo';
 import { freeTools, take } from './agande';
 import { PLATS } from './plats';
@@ -43,7 +43,7 @@ import { PROJEKT, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, pr
 import { omtanke } from './omtanke';
 import { lonNu } from './lon';
 import { faltNu, vildFronPlats } from './odling';
-import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
+import { type Tur, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
 import { bordPlats, rustaVal, ryggsack, ryms } from './utrustning';
 import { taFordon, valjFordon } from './fordon';
@@ -52,7 +52,7 @@ const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, 
 // hur många av saken k p bär i händerna på en tur (det tunga: så många som ryms, steg 10.10.2)
 const iHandenAv = (s: State, p: Person, k: string) => { const r = ryms(s, p), w = viktOf(k); let n = 0; while (n < 20 && r({ [k]: (n + 1) * w })) n++; return n; };
 const stackPa = (s: State, x: number, y: number, k: string) => Math.floor((s.stackar ?? []).filter(q => q.x === Math.floor(x) && q.y === Math.floor(y) && q.k === k).reduce((a, q) => a + q.n, 0) + 1e-9);
-import { allows, amountOf, avbryt, iHelaForradet, iRackhall, narmasteMed, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
+import { allows, amountOf, avbryt, carryKind, iHelaForradet, iRackhall, narmasteMed, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
 import { BYGG, bedFor, buildJob, siteOf } from './bygg';
 import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
@@ -360,9 +360,11 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   cands.sort((a, b) => a.d - b.d);
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
   // avsides (toa): en plats var som helst mellan narAvstAng och langtAvsides, så att högarna inte bildar en ring (steg 3.6.7)
-  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : plats === 'avsides' && cands.length ? cands[Math.floor(rnd(s, 'val', p) * cands.length)] : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want, plats === 'avsides' ? min : 0) ?? { x: mid.x, y: mid.y };
+  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands, d.resurs === 'samla' ? turFor(s, p) : undefined) : plats === 'avsides' && cands.length ? cands[Math.floor(rnd(s, 'val', p) * cands.length)] : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want, plats === 'avsides' ? min : 0) ?? { x: mid.x, y: mid.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
+// samlarens tur (steg 12.1.187, turPerTimme i minne.ts): så många saker hen bär hem och hur fort hen går
+const turFor = (s: State, p: Person): Tur => ({ borda: Math.max(1, bordPlats(s, p) / viktOf(carryKind('samla'))), fart: kroppFart(p, s.now) });
 // en station eller en plats vid ett bord på rutan eller bredvid den
 function vidBanken(s: State, x: number, y: number) {
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (stationAt(s, x + dx, y + dy) || sittAt(s, x + dx, y + dy)) return true;
