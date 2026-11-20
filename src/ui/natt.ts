@@ -9,13 +9,14 @@
 // facklorna, ljusen, eldens skuggor och cirkeln kring människorna) blandas färgen steglöst mellan stegen (steg 12.1.170).
 import * as PIXI from 'pixi.js';
 import { FARGER, MORKARE, BAYER } from '../palett';
-import { W } from '../sim';
+import { MORKER, W } from '../sim';
 import { platt } from './pixel';
 import { SKUGGA } from './eldskugga';
 
 const RAND = 0.03, KART = W * 16, SVEP_MS = 60000; // randens bredd som del av kartan, kartans bredd i världens punkter, svepets tid
 
 const MAX_ELDAR = 8, MAX_FOLK = 64;
+const SKEN_BORJAR = 1 / 3; // skenet börjar tona ut så här långt ut, som del av räckvidden (steg 12.1.172)
 const SKUGGA_LJUS = '0.45'; // så mycket ljus skuggan tar (ljuset gånger 3,3 är stegen mörker: ungefär ett och ett halvt steg)
 // strålarna från eldarna (ui/eldskugga.ts): en rad per eld, längden åt varje håll i åttondels rutor, i röd kanal
 const skuggData = new Uint8Array(SKUGGA.hall * MAX_ELDAR * 4).fill(255);
@@ -37,6 +38,7 @@ uniform vec4 uEld[${MAX_ELDAR}];
 uniform vec3 uFolk[${MAX_FOLK}];
 uniform sampler2D uSkugga;
 uniform float uHarSkugga[${MAX_ELDAR}];
+uniform float uBorjar;
 uniform float uKart;
 uniform float uRand;
 uniform float uFran;
@@ -51,7 +53,7 @@ void main() {
   for (int i = 0; i < ${MAX_ELDAR}; i++) {
     vec4 e = uEld[i];
     float d = length(w - e.xy) / max(e.z, 1.0);
-    float li = e.w < 0.0 ? -e.w * (1.0 - smoothstep(0.5, 1.0, d)) : e.w * clamp(1.0 - d, 0.0, 1.0);
+    float li = e.w < 0.0 ? -e.w * (1.0 - smoothstep(uBorjar, 1.0, d)) : e.w * clamp(1.0 - d, 0.0, 1.0);
     // eldens skuggor (steg 12.3.2, ui/eldskugga.ts): bakom en vägg eller en stam är ljuset ett eller två steg svagare, och kanten
     // blandas steglöst som ljusets kant (steg 12.1.170)
     if (e.z > 0.0 && uHarSkugga[i] > 0.5) {
@@ -97,11 +99,11 @@ void main() {
 export const nattFilter = new PIXI.Filter(undefined, FRAG, {
   uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uM3: platt(MORKARE[3]),
   uBayer: new Float32Array(BAYER),
-  uFran: 0, uTill: 0, uSvep: 1, uPos: new Float32Array(2), uSkala: 1, uEld: new Float32Array(MAX_ELDAR * 4), uSkugga: skuggTex, uHarSkugga: new Float32Array(MAX_ELDAR), uFolk: new Float32Array(MAX_FOLK * 3), uKart: KART, uRand: RAND,
+  uFran: 0, uTill: 0, uSvep: 1, uPos: new Float32Array(2), uSkala: 1, uEld: new Float32Array(MAX_ELDAR * 4), uSkugga: skuggTex, uHarSkugga: new Float32Array(MAX_ELDAR), uBorjar: 0.27, uFolk: new Float32Array(MAX_FOLK * 3), uKart: KART, uRand: RAND,
 });
 
 // mörkret m (0 dag, 1 skymning, 2 natt, 3 djup natt, och tal emellan) och eldarna (x och y i världens punkter, hur långt ljuset
-// når, styrkan 0–1). En negativ styrka är elden (steg 6.8.15): fullt ljus ut till ungefär halva vägen och sedan mjukt avtagande till räckvidden, steglöst utan raster (steg 12.1.169 och 12.1.170); de andra
+// når, styrkan 0–1). En negativ styrka är elden (steg 6.8.15): fullt ljus ut till ungefär en tredjedel av räckvidden och sedan en mjuk kurva, steglöst utan raster, som fortsätter svagt en bit utanför räckvidden (steg 12.1.169, 12.1.170 och 12.1.172); de andra
 // avtar jämnt. Mörkret avrundas till hela steg; när steget byts sveper randen över kartan (steg 6.8.17)
 const svep = { fran: -1, till: -1, t0: 0 };
 let skuggSatt = false;
@@ -120,6 +122,9 @@ export function stallNatt(lager: PIXI.Container, varld: PIXI.Container, m: numbe
   u.uFran = svep.fran; u.uTill = svep.till; u.uSvep = del; u.uPos[0] = varld.position.x; u.uPos[1] = varld.position.y; u.uSkala = varld.scale.x;
   const e = u.uEld as Float32Array; e.fill(0);
   eldar.slice(0, MAX_ELDAR).forEach((f, i) => e.set([f.x, f.y, f.r, f.k], i * 4));
+  // övergången börjar vid ungefär en tredjedel av räckvidden (steg 12.1.172), räknat i skenets radie, som är räckvidden och
+  // MORKER.skenUt till (ui/terrang.ts)
+  u.uBorjar = SKEN_BORJAR / (1 + MORKER.skenUt);
   const hs = u.uHarSkugga as Float32Array; hs.fill(0);
   if (skuggor) {
     skuggor.rader.slice(0, MAX_ELDAR).forEach((_, i) => { hs[i] = 1; });

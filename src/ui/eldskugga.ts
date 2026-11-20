@@ -7,7 +7,7 @@ import { FOREST, H, MORKER, W, groundOf, isWall, type State } from '../sim';
 
 export const SKUGGA = {
   hall: 360, // så många håll runt elden
-  get r() { return Math.ceil(MORKER.eldR) + 1; }, // så många rutor ut räknas strålen (eldens sken når inte längre, steg 12.1.169)
+  get r() { return Math.ceil(MORKER.eldR * (1 + MORKER.skenUt)) + 1; }, // så många rutor ut räknas strålen (eldens sken når inte längre, steg 12.1.169)
   steg: 0.25, // strålen prövas så här ofta (rutor)
   forbi: 0.6, // skuggan börjar så här långt bakom kanten där strålen träffar, så att väggen och stammen själva är upplysta
   per: 8, // strålens längd sparas i åttondels rutor (0–255), alltså högst 31 rutor

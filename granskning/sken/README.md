@@ -14,3 +14,7 @@ Samma by (by 3, år 14, sommar, kl. 22) på natten, inzoomad lika mycket.
 ## Steg 12.1.170: mjukare sken utan raster
 
 - `natt-170.png` (samma by, tid och zoom som `natt-169.png`) och `natt-170-nara.png` (inzoomad): skenet är fullt ljust ut till ungefär halva räckvidden och tonar sedan ut till kanten, och i övergången blandas färgen steglöst mellan palettens steg av mörker, utan raster och utan ringar. Det gäller eldarna, facklorna, ljusen, eldens skuggor och cirkeln kring människorna. Räckvidden och arbetsljuset är som i 12.1.169.
+
+## Steg 12.1.172: skenet tonar ut mjukare och lite längre
+
+- `natt-172.png` (samma by, tid och zoom som `natt-170.png`) och `natt-172-nara.png` (inzoomad, som `natt-170-nara.png`): övergången börjar vid ungefär en tredjedel av räckvidden, följer en mjuk kurva och fortsätter som ett svagt sken en fjärdedel utanför räckvidden (MORKER.skenUt, 0,25). Arbetsljuset når som förut till räckvidden.

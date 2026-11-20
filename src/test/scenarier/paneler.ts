@@ -128,7 +128,7 @@ SCENARIER.eldskugga = {
 };
 
 SCENARIER.skenet = {
-  text: 'Steg 12.1.169: cirkeln där folk kan arbeta är samma cirkel som syns i bilden. Ljusets räckvidd är ett tal per ljuskälla (elden 14 rutor, facklan 9, talgljuset 5, glöden lite), och både bilden (ui/terrang.ts) och simuleringen läser samma tal: strax innanför räckvidden är det ljust nog att arbeta, strax utanför mörkt, och bilden ritar inget sken utanför den',
+  text: 'Steg 12.1.169: cirkeln där folk kan arbeta är samma cirkel som syns i bilden. Ljusets räckvidd är ett tal per ljuskälla (elden 14 rutor, facklan 9, talgljuset 5, glöden lite), och både bilden (ui/terrang.ts) och simuleringen läser samma tal: strax innanför räckvidden är det ljust nog att arbeta, strax utanför mörkt, och bilden ritar bara ett svagt sken en fjärdedel utanför den (steg 12.1.172)',
   kor: () => {
     const s = SIM.createState(3, START), e = SIM.eldXY(s, s.fire), ex = e.x + 0.5, ey = e.y + 0.5;
     // natten, och ett håll från elden utan hus
@@ -141,12 +141,12 @@ SCENARIER.skenet = {
     const g = { ...s.fire, lit: false, emberUntil: s.now + 3600e3 }, glod = SIM.eldRackvidd(s, g as typeof s.fire);
     // bilden läser samma tal, utan någon faktor (ui/terrang.ts), och skimret krymper bara skenet
     const kod = readFileSync(new URL('../../ui/terrang.ts', import.meta.url), 'utf8');
-    const bildEld = /r = eldRackvidd\(s, e\)/.test(kod) && /r: TS \* r \* \(I > 0 \? skimmer/.test(kod), bildAndra = /r: TS \* l\.r \* fl,/.test(kod), skimmerMindre = /const skimmer = \([^)]*\) => 1 - /.test(kod);
+    const bildEld = /r = eldRackvidd\(s, e\)/.test(kod) && /r: TS \* r \* \(1 \+ MORKER\.skenUt\) \* \(I > 0 \? skimmer/.test(kod), bildAndra = /r: TS \* l\.r \* \(1 \+ MORKER\.skenUt\) \* fl,/.test(kod), skimmerMindre = /const skimmer = \([^)]*\) => 1 - /.test(kod);
     return [
       [`talen: elden ${SIM.MORKER.eldR}, facklan ${SIM.FACKLA.r}, talgljuset ${SIM.LJUS.r} rutor`, SIM.MORKER.eldR === 14 && SIM.FACKLA.r === 9 && SIM.LJUS.r === 5],
       [`elden som brinner för fullt (${I.toFixed(2)}) lyser ${r.toFixed(1)} rutor: ljust strax innanför (${innanfor.toFixed(2)}), mörkt strax utanför (${utanfor.toFixed(2)})`, I > 0.99 && innanfor > 0 && utanfor === 0],
       [`glöden lyser lite, också i simuleringen (${glod} rutor)`, glod > 0 && glod < SIM.FACKLA.r],
-      [`bilden ritar elden och de andra ljusen med räckvidden i simuleringen (${bildEld ? 'elden' : 'inte elden'}, ${bildAndra ? 'de andra' : 'inte de andra'}), och skimret krymper bara skenet (${skimmerMindre ? 'ja' : 'nej'})`, bildEld && bildAndra && skimmerMindre],
+      [`bilden ritar elden och de andra ljusen med räckvidden i simuleringen och ett svagt sken MORKER.skenUt (${SIM.MORKER.skenUt}) av den utanför, där man inte kan arbeta (${bildEld ? 'elden' : 'inte elden'}, ${bildAndra ? 'de andra' : 'inte de andra'}), och skimret krymper bara skenet (${skimmerMindre ? 'ja' : 'nej'})`, bildEld && bildAndra && skimmerMindre && SIM.MORKER.skenUt > 0 && SIM.MORKER.skenUt < 0.5],
     ];
   },
 };

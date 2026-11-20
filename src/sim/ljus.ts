@@ -28,6 +28,7 @@ export const MORKER = balans('morker', {
   branningR: 2, // en kolmila eller blästerugn som brinner lyser lite, så här många rutor bort (steg 12.2.1 och 12.2.3)
   eldMin: 0.5, // ... och en liten eld så här stor del av det
   glodR: 1.5, // glöden som är kvar när elden slocknat lyser så här många rutor
+  skenUt: 0.25, // skenet i bilden fortsätter svagt så här stor del av räckvidden utanför den (steg 12.1.172); där räcker ljuset inte att arbeta i
 });
 // facklan (steg 6.3.6)
 export const FACKLA = balans('fackla', {
