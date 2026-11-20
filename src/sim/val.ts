@@ -760,9 +760,11 @@ export const ARBETEN: readonly Arbete[] = [
     if (!sk) return false;
     projektVal(c.v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot, ref: sk.ref }, sk.tool === 'mogen' ? 'Grödan på fältet är mogen' : 'Arbetar vidare på sitt fält'); return true;
   } },
-  { id: 'slakta', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => {
-    const vilt = slaktbart(s, p);
-    if (!(a >= ALDER.vuxen && vilt && radda(s, p, lagrat(s, k => k === vilt.sak)))) return false;
+  { id: 'slakta', niva: 5, nar: 'dag', prova: c => {
+    const { s, p, v, a } = c;
+    if (a < ALDER.vuxen) return false; // barnen slaktar inte: farorna behöver inte räknas
+    const vilt = slaktbart(s, p, faror(c).svalt);
+    if (!(vilt && radda(s, p, lagrat(s, k => k === vilt.sak)))) return false;
     processTask(s, v, vilt, 'Det finns vilt att slakta innan det blir dåligt'); return true;
   } },
   { id: 'rensa', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => a >= ALDER.rensar && !!rensaArt(s, p) && radda(s, p, lagrat(s, k => RENSAS.some(q => q.sak === k))) && (processTask(s, v, rensaArt(s, p)!, 'Det finns fisk att rensa innan den blir dålig'), true) },
@@ -1285,7 +1287,7 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
 }
 // slakta det fällda viltet eller rensa fisken vid slaktbänken (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
 // det första djuret som p kan slakta (kaninen, vargen; steg 3.7.14)
-const slaktbart = (s: State, p: Person) => { const svalt = dangers(s).svalt; return DJURARTER.find(art => art.act === 'slakta' && canProcess(s, p, art) && !heligtAvstar(s, p, art.art, svalt)); }; // det heliga djuret slaktas inte, utom i svält (steg 10.3.15)
+const slaktbart = (s: State, p: Person, svalt = dangers(s).svalt) => DJURARTER.find(art => art.act === 'slakta' && canProcess(s, p, art) && !heligtAvstar(s, p, art.art, svalt)); // det heliga djuret slaktas inte, utom i svält (steg 10.3.15)
 const RENSAS = [DJUR.abborre, DJUR.gadda, DJUR.mort, DJUR.braxen, DJUR.sik];
 const rensaArt = (s: State, p: Person) => RENSAS.find(a => canProcess(s, p, a));
 function processTask(s: State, v: Val, art: Djurart, why: string) {
