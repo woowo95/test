@@ -393,6 +393,13 @@ export const STATIONER = {
     bygger: 'Bygger en blästerugn av lera och sten, med en bälg av skinn.',
     forsta: '{namn} byggde byns första blästerugn. Där blir malm och kol till järn.',
   },
+  // smedjan (steg 12.2.4, smedja.ts): inne, med ässjan som brinner på kol och städet där man arbetar. Allt smide görs bara här
+  smedja: {
+    delar: [{ namn: 'Ässjan', ikon: 'smedja_assja', w: 2, h: 2 }, { namn: 'Städet', ikon: 'smedja_stad', w: 1, h: 2, arbete: true }],
+    kv: STATION.kvMer, namn: 'Smedja', ikon: 'smedja', w: 3, h: 2, tek: ['smedja'], av: RECEPT.smedja.av, min: RECEPT.smedja.min, inne: true, gor: ['smida'], bara: ['smida'],
+    bygger: 'Bygger en smedja med ässja och städ.',
+    forsta: '{namn} byggde byns första smedja. Järnet i den blev hammaren och tången, och vid städet smids järnet.',
+  },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
 export const STATION_LIST = Object.keys(STATIONER) as StationSlag[];

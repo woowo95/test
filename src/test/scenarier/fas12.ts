@@ -232,3 +232,32 @@ SCENARIER.blaster = {
     ];
   },
 };
+
+SCENARIER.smedja = {
+  text: 'Smedjan (steg 12.2.4, smedja.ts): en station inne med ässja och städ av huggen sten, lera, skinn, virke och järn, där allt smide görs och bara där; ässjan brinner på kol (2 i timmen, rymmer 4) och smidet går bara när den brinner, en ässja som brinner höjer poängen för att smida, tekniken Smide öppnas när byn har haft järn, och rummet får taggen Smedja',
+  kor: () => {
+    const d = SIM.stationDef('smedja')!, tek = SIM.TEKNIK.find(t => t.id === 'smedja'), e = SIM.ELDSTATIONER.smedja;
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    klockan(s, 10);
+    const fore = !!s.stat?.jarnHaft;
+    SIM.setStock(s, { jarn: 1 }); SIM.haftSteg(s);
+    const haft = !!s.stat?.jarnHaft;
+    const t = medBank(s, 'smedja'), r = SIM.roomAt(s, t.x, t.y), tagg = !!r && SIM.rumTaggar(s, r).has('smedja' as SIM.RumTagg);
+    const vid = SIM.vidStation(t); p.x = vid.x; p.y = vid.y;
+    const tk = { act: 'smida', phase: 'do', tx: vid.x, ty: vid.y, until: s.now + 4 * SIM.MIN, carry: 0, why: '' } as SIM.Task;
+    SIM.setStock(s, { kol: 0 });
+    const utanKol = SIM.eldaForst(s, p, tk), faktor0 = SIM.smidaFaktor(s, 'smida');
+    SIM.setStock(s, { kol: 6 });
+    const medKol = SIM.eldaForst(s, p, tk), brinner = SIM.stationBrinner(t), kolKvar = SIM.amountOf(s, 'kol'), iAssjan = t.eld?.ved ?? 0, faktor = SIM.smidaFaktor(s, 'smida');
+    SIM.stepStationsEld(s, 3600); const efterTimme = t.eld?.ved ?? 0;
+    return [
+      [`smedjan står inne, 3 × 2 med ässjan och städet, av ${JSON.stringify(d.av)} på ${d.min} minuter, och allt smide görs bara där`, !!d.inne && d.w === 3 && d.h === 2 && d.delar?.map(q => q.namn).join() === 'Ässjan,Städet' && d.av.huggen_sten === 6 && d.av.lera === 2 && d.av.skinn === 2 && d.av.virke === 1 && d.av.jarn === 1 && d.min === 20 && !!d.bara?.includes('smida')],
+      [`tekniken ${tek?.namn} kräver ${tek?.krav} och öppnas när byn har haft järn (före ${fore}, efter ${haft})`, !!tek && tek.krav.includes('kolmila') && tek.krav.includes('stenhuggarplats') && tek.tidigast?.[0].stat === 'jarnHaft' && !fore && haft],
+      [`ässjan brinner på kol, ${e.burn} i timmen och rymmer ${e.max}`, e.bransle === 'kol' && e.burn === 2 && e.max === 4 && e.kravs],
+      [`utan kol går smidet inte (${utanKol})`, utanKol === false && faktor0 === 1],
+      [`med kol tänds ässjan (${medKol} minuter, ${iAssjan} kol i den, ${kolKvar} kvar i förrådet) och smidet är mer värt (${faktor})`, typeof medKol === 'number' && brinner && iAssjan >= 1 && iAssjan <= 4 && kolKvar === 6 - iAssjan && faktor > 1],
+      [`ässjan bränner 2 kol i timmen (${iAssjan} → ${efterTimme})`, Math.abs(iAssjan - efterTimme - Math.min(2, iAssjan)) < 1e-9],
+      [`rummet med smedjan får taggen Smedja`, tagg],
+    ];
+  },
+};

@@ -24,7 +24,7 @@ import { villHaAv } from './forradsmal';
 import { handelsTill } from './handel';
 import { tandHamtas } from './eld';
 import { ritualMat } from './kult';
-import { eldaVed } from './stationseld';
+import { eldBransle, eldaVed } from './stationseld';
 import { BAK, festRecept, grillHamtas, kokRecept, STEK, stekRecept, torkHamtas } from './matlagning';
 import { RATT } from './ratter';
 import { GRODOR, odlaHamtas, STAKET, skrammaHar } from './odling';
@@ -122,7 +122,7 @@ export const hamtaForst = (s: State, p: Person, tk: Task) => iHelaForradet(() =>
 function hamtaForstNu(s: State, p: Person, tk: Task) {
   if (tk.site || tk.hamtad && !tk.vanda) return false;
   // och veden till stationens eld, när arbetet görs vid en station med eld (stationseld.ts, steg 11.1.75)
-  const av0 = hamtasFor(tk.act)?.av(s, p, tk), ved = eldaVed(s, p, tk), av = ved > 0 ? { ...av0, ved: (av0?.ved ?? 0) + ved } : av0;
+  const av0 = hamtasFor(tk.act)?.av(s, p, tk), ved = eldaVed(s, p, tk), br = ved > 0 ? eldBransle(s, p, tk) : 'ved', av = ved > 0 ? { ...av0, [br]: (av0?.[br] ?? 0) + ved } : av0; // ässjans kol (steg 12.2.4)
   if (!av) { if (tk.vanda) laggVid(s, p, tk); return false; }
   let sak = saknas(s, p, av);
   // fler vändor: det som bars hit läggs vid platsen, där det ligger inom räckhåll, och hen går efter resten. Hamnade det
