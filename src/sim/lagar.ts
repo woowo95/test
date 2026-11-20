@@ -1,12 +1,11 @@
 // Lagarna (system 8.4). En lag är en rad i registret LAGAR: vad den gäller, vilket straff den har från början och hur den väcks av det
 // som hänt. Att stifta, ändra och ta bort en lag är frågor i röstsystemet (FRAGOR i rost.ts). Vad som tas upp en kväll väljs ur registret
 // TAS_UPP, efter prioritet (steg 8.4.5). En lag läser spelet med `lagGaller`; ett brott i `doma` (styre.ts) får straffet i lagen.
-import { Act, HOUR, Person, State } from './typer';
-import { rnd } from './slump';
-import { REL, byId } from './folk';
+import { HOUR, Person, State } from './typer';
+import { byId } from './folk';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat } from './folk';
+import { ALDER, ageOf, count, living, log, relKey } from './folk';
 import { kronika } from './historik';
 import { FRAGOR, ROST, Fraga, framFor, laggFram, rostaOm, vikter } from './rost';
 import { PABUD, PABUD_FRAGOR, pabudFran, pabudOm, STRAFF_NAMN, ledarHard, legitimitet, ledareOf, styreAv } from './styre';
@@ -34,14 +33,6 @@ export const LAG = balans('lag', {
   stegHardare: 0.5, // Envälde och Fejd över det här gör straffet ett steg hårdare när lagen stiftas
   straffHard: 0.4, // ledaren vill ha ett steg hårdare eller mildare straff i en lag för varje så här mycket hårdheten skiljer sig från lagom (steg 11.12.3)
   rikEmot: 0.4, rikAndel: 1.5, // den som äger mer än rikAndel gånger sin del av byns mat röstar så här mycket emot att förrådet delas lika
-  aktSett: 0.8, aktHort: 0.5, // rädslan för en handling hos den som såg olyckan och hos de närmaste
-  aktRadd: 0.3, // över det här räknas man som rädd för handlingen
-  aktSyn: 12, // så nära (rutor) ser man olyckan
-  modMax: 1.5, modMin: 0.5, // den rädde låter bli handlingen efter rädslan gånger detta (modMax − mod/20, aldrig under modMin)
-  aktSprid: 0.15, // chansen per dygn och god vän att en rädd berättar för hen, som blir så här mycket rädd ...
-  aktSpridV: 0.7, // ... gånger berättarens rädsla
-  aktGlom: 0.97, // rädslan för en handling blir så här mycket svagare per dygn (år i spelet)
-  aktUndvik: 0.35, // den som är så här rädd (efter modet) låter bli handlingen
 });
 export const LAG_SKOG = 8; // förbudet att fälla nära byn: inom så många rutor från byns område
 
@@ -203,66 +194,9 @@ export function tasUppKvall(s: State) {
 }
 export { laggFram };
 
-// ---------- byns dygn (styre.ts, på kvällen) ----------
-// var och ens rädsla för en farlig handling berättas vidare och bleknar (steg 10.2.41: tabun, där en rädsla som många delade
-// blev en regel för hela byn, är borta; var och ens rädslor och lärdomar om faror finns kvar)
-export function lagDygn(s: State) {
-  raddDygn(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), s);
-}
-// ---------- rädslan för en handling (steg 8.4.10) ----------
-// en död eller en svår skada medan någon gjorde något gör de som såg det och de närmaste rädda för handlingen. Rädslan
-// berättas vidare bland vännerna och blir svagare med tiden, och den som är rädd nog (efter modet) låter bli handlingen, utom i
-// nöd (svält och kyla går före). Raderna är handlingar som kan ta livet av någon och som man klarar sig utan
-export interface RaddAktDef { namn: string; acts: Act[] }
-export const RADD_AKT: Record<string, RaddAktDef> = {
-  bjornjakt: { namn: 'jaga björn', acts: ['bjornjakt'] },
-  vargjakt: { namn: 'jaga varg', acts: ['vargjakt'] },
-  bada: { namn: 'bada i sjön', acts: ['bada'] },
-  sport: { namn: 'spela', acts: ['sport'] },
-};
-const aktRad = (act: Act | undefined) => Object.keys(RADD_AKT).find(k => !!act && RADD_AKT[k].acts.includes(act));
-// offret dog eller skadades svårt medan hen gjorde act
-export function raddForAkt(s: State, offer: Person, act: Act | undefined, om: string) {
-  const k = aktRad(act);
-  if (!k) return;
-  for (const q of living(s)) {
-    if (q === offer) continue;
-    const sag = Math.hypot(q.x - offer.x, q.y - offer.y) < LAG.aktSyn, nara = offer.partner === q.id || offer.mother === q.id || offer.father === q.id || q.mother === offer.id || q.father === offer.id;
-    if (!sag && !nara) continue;
-    const r = (q.raddAkt ??= {});
-    r[k] = Math.max(r[k] ?? 0, sag ? LAG.aktSett : LAG.aktHort);
-    (s.aktOm ??= {})[k] = om;
-  }
-}
-// den som är rädd nog för handlingen (rädslan gånger hur lite mod hen har) låter bli den
-export function raddFor(s: State, p: Person, act: Act): string | undefined {
-  if (!p.raddAkt) return undefined;
-  for (const k in RADD_AKT) {
-    if (!RADD_AKT[k].acts.includes(act)) continue;
-    const v = p.raddAkt[k] ?? 0;
-    if (v * clamp(LAG.modMax - stat(p, 'mod', s.now) / 20, LAG.modMin, LAG.modMax) > LAG.aktUndvik) return RADD_AKT[k].namn;
-  }
-  return undefined;
-}
-// rädslan berättas för goda vänner och blir svagare med tiden
-function raddDygn(vuxna: Person[], s: State) {
-  for (const p of vuxna) {
-    if (!p.raddAkt) continue;
-    for (const k in p.raddAkt) {
-      const v = p.raddAkt[k];
-      p.raddAkt[k] = v * LAG.aktGlom;
-      if (v < LAG.aktRadd) continue;
-      for (const q of vuxna) if (q !== p && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > REL.van && rnd(s, 'minne', p) < LAG.aktSprid) { const r = (q.raddAkt ??= {}); r[k] = Math.max(r[k] ?? 0, v * LAG.aktSpridV); }
-    }
-    for (const k in p.raddAkt) if (p.raddAkt[k] < 0.05 || !RADD_AKT[k]) delete p.raddAkt[k];
-    if (!Object.keys(p.raddAkt).length) p.raddAkt = undefined;
-  }
-}
-
 export const budgetBortKrok: { f?: (s: State) => void } = {};
 // raderna i FRAGOR som hör till lagarna läggs till när allt är laddat (steg.ts)
 export function lagRegister() {
-satAktRadd((s, p, act, om) => raddForAkt(s, p, act, om));
 FRAGOR.nylag = {
   namn: (_s, d) => `Ny lag: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
   rost: (s, p, d) => LAGAR[d.id as string].rost(s, p),

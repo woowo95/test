@@ -819,6 +819,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   log(s, text, 'world', ids); notis(s, 'strid', text, ids, plats);
   kronika(s, text, 'rovare');
   if (f && vinnare === 0) for (const r of rovarna(s, f)) gr(r).flytt = true; // den slagna flocken flyr
+  if (vinnare === 0 && s.styre && ledareOf(s)) s.styre.vunna = (s.styre.vunna ?? 0) + 1; // byn slog tillbaka rövarna: en vunnen strid i ledarens framgång (steg 8.3.9, fynd 456)
 };
 // en rövare dör i striden (gastKrok i efterstrid.ts): hen ligger kvar med det hen bar, klanen minns det och blir ovänligare
 gastKrok.dod = (s, r, av) => {

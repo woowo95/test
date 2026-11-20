@@ -30,3 +30,4 @@
 ## Grenen par-styret (12.1.62, 12.1.84, 12.1.97)
 
 - 12.1.62 (fel i kunskapen och kulturen, fynd 277, 298, 313, 322, 343, 347): ändrar spelet lite (lärlingar i öl, mjöd och gödsel, "går i lära" utanför hantverket, brottningen på den heliga dagen, tecknet dubbelt, framträdandet som slutar när den som leder dör). Skyldig `npm run likhet` och koll med nytt facit.
+- 12.1.84 (styret, tron och kulturen, fynd 456, 542, 512, 554, 557, 548, 502, 491, 500): ändrar spelet (vunna strider mot rövare i ledarens legitimitet, ingen åldersgräns i sporten, tatueringen utan kol, flera kan rista en lag, hånförbudet upphör med ledaren, Lill- och Stor-namnen med egen text). Balanstalen för rädslan heter nu `radsla.*` i stället för `lag.akt*`. Skyldig `npm run likhet` och koll med nytt facit.

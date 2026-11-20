@@ -1930,7 +1930,13 @@ SCENARIER.berattelser = {
     for (let n = 0; n < 20 && !lill; n++) { const son = nyInvanare(nt, 'm', 5); son.father = far.id; son.name = 'Tuskbjörn'; lill = SIM.lekNamn(nt, son); if (!lill) son.died = nt.now; }
     storN = SIM.lekNamn(nt, far);
     for (let n = 0; n < 20 && !storN; n++) { const f2 = nyInvanare(nt, 'm', 40); f2.name = 'Arnbjörn'; const b2 = nyInvanare(nt, 'm', 5); b2.father = f2.id; b2.name = 'Gunbjörn'; storN = SIM.lekNamn(nt, f2); }
+    // Lill- och Stor-namnet har en egen text om släkten och lånar inte öknamnets skäl (fynd 500)
+    const lillP = SIM.living(nt).find(q => q.name === 'Tuskbjörn' && SIM.lekNamn(nt, q) === 'Lillbjörn');
+    if (lillP) SIM.gebinamn(nt, lillP, 'tjuv', 1);
+    const slaktRad = (nt.hist?.kronika ?? []).filter(r => r[2] === 'slaktnamn').map(r => r[1])[0] ?? '';
+    const slaktOk = !!lillP && lillP.binamn?.namn === 'Lillbjörn' && lillP.binamn.slakt === 'Torbjörn' && !lillP.binamn.skal && slaktRad.includes('Torbjörn') && !/\{/.test(slaktRad);
     return [
+      [`Lillbjörn får sitt namn av släkten, med en egen text (${slaktRad || 'ingen'})`, slaktOk],
       [`ett barn får ibland en del av en förälders namn (${Math.round(andelArv * 100)} % efter Torbjörn: ${exempel.join(', ')})`, andelArv > SIM.NAMN.arv * 0.6 && andelArv < SIM.NAMN.arv * 2.5],
       [`binamnet leker med namnet: ${lill ?? 'inget'} och ${storN ?? 'inget'}`, lill === 'Lillbjörn' && storN === 'Storbjörn'],
       ['för få med samma intryck ger inget namn', forFa],

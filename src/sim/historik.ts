@@ -58,7 +58,7 @@ export const KRONIKA_KAT: KronikaKat[] = [
   { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom'] },
   { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud', 'uppdrag'] }, // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
   { id: 'skrift', namn: 'Skrifter', ikon: 'kk_skrift', tecken: '📜', slag: ['runsten', 'skrift'] }, // stenarna, bladen och böckerna (steg 10.6.8)
-  { id: 'fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎲', slag: ['fritid', 'hedersnamn', 'oknamn', 'k_skadadLek'] },
+  { id: 'fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎲', slag: ['fritid', 'hedersnamn', 'oknamn', 'slaktnamn', 'k_skadadLek'] },
 ];
 const KAT_AV = new Map(KRONIKA_KAT.flatMap(k => k.slag.map(sl => [sl, k.id] as const)));
 // kategorin för ett slag av krönikerad (undefined = ingen, t.ex. en rad i en gammal sparfil utan slag)

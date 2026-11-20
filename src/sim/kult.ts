@@ -45,6 +45,7 @@ export const KULT = balans('kult', {
   heligTak: 3, // en tro har högst så här många heliga platser
   heligKand: 5, // så många rutor där en bön i nöd fick svar minns tron
   ofta: 1.5, // bönens vikt på fritiden: andligheten delad med 100 gånger så här
+  leddDygn: 2, // prästen leder en bön för tron med så här många dygns mellanrum (år i spelet, fynd 554)
   starkare: 1.5, // rökelse, trons tecken och prästens dräkt gör en bön så här mycket starkare
   nodAnde: 60, nodTro: 50, // bönen i nöd: den som har minst så här andlighet och tro
   hjalpDygn: 2, // går faran över inom så här många dygn (år i spelet) hjälpte bönen
@@ -494,7 +495,7 @@ export function kultTimme(s: State) {
     hogtidSteg(s, tr);
     const pr = prastOf(s, tr);
     if (budIn(tr, 'myrOffer') && !s.ritualKo?.some(r => r.k === 'myrOffer' && r.tro === tr.id) && (tr.myrOffer ?? -Infinity) + DAY <= s.now) { tr.myrOffer = s.now; nyRitual(s, 'myrOffer', { tro: tr.id }); } // en gång om dygnet (steg 12.1.5)
-    if (pr && !s.ritual && !s.ritualKo?.some(r => r.k === 'leddBon' && r.tro === tr.id) && (tr.leddBon ?? 0) + 2 * DAY <= s.now) { tr.leddBon = s.now; nyRitual(s, 'leddBon', { tro: tr.id }); } // vid den heliga platsen, eller vid elden innan tron har en (steg 10.3.10)
+    if (pr && !s.ritual && !s.ritualKo?.some(r => r.k === 'leddBon' && r.tro === tr.id) && (tr.leddBon ?? 0) + KULT.leddDygn * DAY <= s.now) { tr.leddBon = s.now; nyRitual(s, 'leddBon', { tro: tr.id }); } // vid den heliga platsen, eller vid elden innan tron har en (steg 10.3.10)
   }
   if (Math.floor(s.now / HOUR) % 24 === 0) vanhelga(s);
   if (s.fest && Math.floor(s.now / DAY) > s.fest.dag) festSlut(s); // festdagen är slut

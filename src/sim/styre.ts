@@ -37,8 +37,8 @@ import { tecken } from './religion';
 // minst LED.vuxna vuxna väljs den mest omtyckta med hög karisma av dem som kan tekniken och inte har dåligt anseende. Dör ledaren
 // väljs nästa på samma sätt; kan ingen vuxen tekniken har byn ingen ledare, och påbuden upphör (en by kan glömma ledarskapet).
 // Den första ledaren låser upp den första vågskålen, seden Allmogen – Envälde (seder.ts). Ledaren drar sederna med ungefär
-// en tredjedel av byns vikt, mer vid Envälde och hög legitimitet. Legitimiteten räknas ur folkets stöd, tiden vid makten och
-// vintrarna byn klarat, och sjunker av orättvisa straff; den sparas inte. Påbuden (matlager, vedlager, torkat) kommer ur ledarens
+// en tredjedel av byns vikt, mer vid Envälde och hög legitimitet. Legitimiteten räknas ur folkets stöd, framgångarna (vunna
+// strider och fler invånare) och vintrarna byn klarat, och sjunker av orättvisa straff; den sparas inte. Påbuden (matlager, vedlager, torkat) kommer ur ledarens
 // personlighet och ses över en gång per årstid; straffen delas ut på kvällen för det ledaren sett eller hört som rykte.
 
 // ---------- balanstal (regel 8) ----------
@@ -58,9 +58,9 @@ export const LED = balans('ledare', {
   hovding: 0.35, // styrelseformen är ett hövdingadöme från så här mycket Envälde
   // ledarens vikt i sederna: byns vikt gånger sedVikt × (1 + sedRang × Envälde) × (sedLegBas + legitimiteten)
   sedVikt: 0.5, sedRang: 1, sedLegBas: 0.5,
-  // legitimiteten (0 till 1): stödet (0,5 + snittrelationen / 200) gånger wStod, tiden vid makten (1 - e^(-dygn / tidDygn))
-  // gånger wTid, och vintrarna (högst vintrar) gånger wVint, minus orättvisan
-  wStod: 0.6, wTid: 0.2, wVint: 0.2, tidDygn: 4, vintrar: 2,
+  // legitimiteten (0 till 1): stödet (0,5 + snittrelationen / 200) gånger wStod och vintrarna (högst vintrar) gånger wVint,
+  // plus hur ledaren tillsattes och framgångarna, minus orättvisan
+  wStod: 0.6, wVint: 0.2, vintrar: 2,
   orattDygn: 3, // orättvisan bleknar med en tidskonstant på så här många dygn
   tanke: 0.04, // ledaren mår så här mycket bättre (tanken Leder byn)
 });
@@ -260,7 +260,7 @@ export interface Styre {
   frak?: Fraktion; frakVald?: number; lugn?: number; // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
   dogVinter?: number;
   kyrka?: number; kyrkaVikt?: number; // översteprästens välsignelse (1) eller fördömelse (−1) och vad den är värd (steg 8.6.16)
-  hanForbud?: boolean; hanSedd?: number; // förbudet mot hån (steg 8.3.13)
+  hanForbud?: boolean; // förbudet mot hån (steg 8.3.13); det gäller ledaren det handlade om och upphör när ledaren byts (fynd 491)
   tystnad?: { id: number; namn: string }; // den påbudet om tystnad gäller (steg 10.4.10)
   lagar?: Lag[]; nedrostat?: Record<string, number>; // lagarna och det som nyss röstats ned (system 8.4, lagar.ts)
 }
@@ -400,7 +400,7 @@ function valj(s: State) {
   }
   if (!best) return;
   const st = stn, forsta = forstaVal;
-  st.ledare = best.id; best.ledde = true; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s); // vintern där ingen dog räknas från nu
+  st.hanForbud = undefined; st.ledare = best.id; best.ledde = true; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s); // vintern där ingen dog räknas från nu
   const titel = st.titel = titelFor(s, best, vuxna);
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
@@ -463,7 +463,7 @@ function slutar(s: State, varfor: string) {
   const st = s.styre!, h = st.historia[st.historia.length - 1], l = byId(s, st.ledare!);
   if (h && h.till === undefined) { h.till = s.now; h.slut = varfor; }
   if (l) kronika(s, `${l.name} slutade leda byn (${varfor}).`, 'ledare');
-  st.ledare = undefined; st.sedan = undefined; st.titel = undefined; st.pabud = undefined; st.pabudAi = undefined;
+  st.hanForbud = undefined; st.ledare = undefined; st.sedan = undefined; st.titel = undefined; st.pabud = undefined; st.pabudAi = undefined;
   if (!vuxnaOf(s).some(p => knows(p, 'ledarskap'))) log(s, 'Ingen i byn kan leda den längre. Påbuden gäller inte mer.', 'world');
 }
 
@@ -673,7 +673,7 @@ EFTER.holmgang = (s, e, vinnare) => {
 // Utan rader i loggen och notiser: det hände före besöket
 export function ledareUrRad(s: State, l: Person, sedan: number) {
   const st = styreOf(s), vuxna = vuxnaOf(s);
-  st.ledare = l.id; l.ledde = true; st.sedan = sedan; st.vintrar = 0; st.vunna = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s);
+  st.hanForbud = undefined; st.ledare = l.id; l.ledde = true; st.sedan = sedan; st.vintrar = 0; st.vunna = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s);
   const titel = st.titel = titelFor(s, l, vuxna);
   st.historia.push({ id: l.id, namn: l.name, titel, fran: sedan });
   if (!st.oppna.includes('rang')) st.oppna.push('rang');

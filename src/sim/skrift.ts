@@ -112,7 +112,7 @@ export function lagSkrivVikt(s: State) {
 }
 function lagLust(s: State, p: Person): { w: number; lag: SkriftLag } | undefined {
   const w = SKRIFT.lag * lagSkrivVikt(s);
-  if (w <= 0 || living(s).some(q => q !== p && q.task?.act === 'runsten' && q.task.tool === 'lag')) return undefined; // en lag i taget
+  if (w <= 0) return undefined; // lusten sjunker när lagen är skriven, och runstenBorja och runstenKlar frågar den igen (fynd 548)
   let bast: Lag | undefined, bv = -Infinity;
   for (const l of lagarNu(s)) { if (skrivenLag(s, l)) continue; const v = LAGAR[l.id]!.rost(s, p).v; if (v > bv) { bv = v; bast = l; } }
   return bast && { w, lag: { id: bast.id, straff: bast.straff, ...(bast.tal ? { tal: { ...bast.tal } } : {}) } };

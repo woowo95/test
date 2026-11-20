@@ -41,7 +41,7 @@ import type { Handlare } from './handel';
 export const KYRKA = balans('kyrka', {
   offerChans: 0.03, // chansen per timme att en andlig ger en gåva till kyrkan ...
   offerAnde: 55, // ... från den här andligheten
-  skatt: 1, // kyrkskatten: så många saker per dygn ur byns förråd till kyrkan, per fem troende
+  skatt: 1, // kyrkskatten: så mycket ved per dygn ur byns förråd till kyrkan, per fem troende
   styrkaLiten: 15, styrkaStor: 50, styrkaMycket: 70, // så stark tro behövs för att följa ett litet, stort och mycket stort bud
   skuld: 1, // ett brutet bud ger så här mycket skuld ...
   skuldHumor: -0.05, // ... så här mycket sämre humör ...
@@ -371,7 +371,7 @@ function skattDygn(s: State) {
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined || !rymsBud(s, tr, 4)) continue;
     const n = Math.ceil(troende(s, tr).length / 5) * KYRKA.skatt, k = woodDays(s) - n / (hearthOf(s.fire).burn * 24) >= TROSKEL.forsokVed ? 'ved' : undefined; // bara ur ett överskott av ved, efter hur länge den räcker (steg 10.2.43)
-    if (k) { const l = ledareOf(s) ?? living(s)[0]; if (l) { gavaIn(s, tr, k, n); count(s, 'kyrkskatt'); } }
+    if (k) { gavaIn(s, tr, k, n); count(s, 'kyrkskatt'); }
   }
 }
 // vad förrådet går till (steg 8.6.4 och 10.7.18): kyrkans utgifter är rader i ett register. Varje rad har sitt villkor och sin
@@ -633,8 +633,8 @@ satHeligtDjur(foljerStorlek, (s, p) => budBrutet(s, p, 'heligtDjur'));
 satMatBud((s, p, k) => !!matBud(s, p, k) && !farorNu(s).svalt, (s, p, k) => { const b = matBud(s, p, k); if (b) budBrutet(s, p, b.id); });
 satBudTillfalle((s, typ, p, q) => budTillfalleK(s, typ, p, q));
 for (const id of Object.keys(BUD) as BudId[]) if (BDEF[id].sort === 'forbud' && BDEF[id].acts) LAGAR[budLag(id)] = { namn: BDEF[id].namn, sym: '📜', text: BDEF[id].text, straff: 4, brott: ['budbrott'], kan: s => (s.seder.v.andlig ?? 0) > 0.2 && !!s.tron?.some(t => budIn(t, id)), prio: s => (s.seder.v.andlig ?? 0) > 0.2 && s.tron?.some(t => budIn(t, id)) ? clamp((s.seder.v.andlig ?? 0), 0, 1) * 0.6 : 0, rost: (s, p) => { if (!s.tron?.some(t => budIn(t, id))) return { v: -1, why: 'Ingen tro har budet längre' }; const ja = budIn(troOf(s, p.tro), id); return { v: ja ? 0.6 : -0.4, why: ja ? 'Tror på budet' : 'Delar inte tron' }; }, om: 'kyrkans önskan' };
-LAGAR.kyrkskatt = { namn: 'Kyrkskatt', sym: '📜', text: 'En del av byns förråd går till kyrkan', straff: 4, om: 'kyrkans krav', kan: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 4)), prio: s => (s.seder.v.andlig ?? 0) > 0.4 ? clamp(s.seder.v.andlig, 0, 1) * 0.7 : 0, rost: (_s, p) => ({ v: p.tro !== undefined ? 0.4 : -0.5, why: p.tro !== undefined ? 'Vill stödja tron' : 'Betalar inte för en tro hen inte har' }) };
-LAGAR.ejKyrkskatt = { namn: 'Förbud mot kyrkskatt', sym: '📜', text: 'Kyrkan tar inget ur byns förråd', straff: 0, om: 'kyrkans makt', kan: s => !!s.tron?.length, prio: s => (s.seder.v.andlig ?? 0) < -0.4 ? clamp(-s.seder.v.andlig, 0, 1) * 0.6 : 0, rost: (_s, p) => ({ v: p.tro === undefined ? 0.5 : -0.4, why: p.tro === undefined ? 'Delar inte tron' : 'Vill stödja tron' }) };
+LAGAR.kyrkskatt = { namn: 'Kyrkskatt', sym: '📜', text: 'En del av byns ved går till kyrkan', straff: 4, om: 'kyrkans krav', kan: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 4)), prio: s => (s.seder.v.andlig ?? 0) > 0.4 ? clamp(s.seder.v.andlig, 0, 1) * 0.7 : 0, rost: (_s, p) => ({ v: p.tro !== undefined ? 0.4 : -0.5, why: p.tro !== undefined ? 'Vill stödja tron' : 'Betalar inte för en tro hen inte har' }) };
+LAGAR.ejKyrkskatt = { namn: 'Förbud mot kyrkskatt', sym: '📜', text: 'Kyrkan tar ingen ved ur byns förråd', straff: 0, om: 'kyrkans makt', kan: s => !!s.tron?.length, prio: s => (s.seder.v.andlig ?? 0) < -0.4 ? clamp(-s.seder.v.andlig, 0, 1) * 0.6 : 0, rost: (_s, p) => ({ v: p.tro === undefined ? 0.5 : -0.4, why: p.tro === undefined ? 'Delar inte tron' : 'Vill stödja tron' }) };
 FRAGOR.kyrkutgift = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${KYRKUTGIFTER[d.vad as string]?.namn ?? d.vad}`, krets: 'tro',
   rost: (s, p) => ({ v: 0.1 + (andlighet(s, p) - 50) / 100, why: 'Tycker att det är rätt för tron' }),

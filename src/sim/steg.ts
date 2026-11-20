@@ -119,7 +119,8 @@ import { fangeOde } from './fangeval';
 import { avrustaKlar, gravDygn, gravKlar, gravaMedan, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp, rustaKlar } from './grav';
 import { bonKlar, farorNu, kultTimme } from './kult';
 import { kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad, satOppnaAndlig } from './kyrka';
-import { lagDygn, lagRegister } from './lagar';
+import { lagRegister } from './lagar';
+import { raddDygn, raddRegister } from './radsla';
 import { oppnaSed } from './rost';
 import { LARM, handelse, larma } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
@@ -283,7 +284,7 @@ for (const k of Object.keys(FALLOR)) KLAR[k as Act] = (s, p, t) => {
   // fångstgropen (steg 10.2.84) grävdes där den ska ligga; mjärden och snaran görs vid fångstbänken och sätts ut
   if (FALLOR[k].gravs) { const x = Math.floor(t.tx), y = Math.floor(t.ty); if (!mjardarOf(s).some(m => m.x === x && m.y === y)) sattVid(s, p, k, x, y); } else sattUt(s, p, k);
 };
-lagRegister(); skattRegister(); budgetRegister(); bynamnRegister(); lonRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
+lagRegister(); raddRegister(); skattRegister(); budgetRegister(); bynamnRegister(); lonRegister(); kyrkaRegister(); satOffrad((s, p) => die(s, p, 'offrad'));
 satOppnaAndlig(s => oppnaSed(s, 'andlig'));
 satBudHandelse((s, p) => handelse(s, p, 'budbrott'));
 export const KLAR_FOR = KLAR; // scenarierna prövar det som händer när ett arbete är klart
@@ -500,7 +501,7 @@ export const TAKTER: Takt[] = [
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld && s.vackt === undefined && s.vacktPlats === undefined) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
-  { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: s => { lagDygn(s); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (lagar.ts, steg 12.1.60)
+  { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: s => { raddDygn(s); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (radsla.ts, steg 12.1.60 och 12.1.84)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'kultTimme', sek: 3600, fn: s => { kultTimme(s); } },
   { namn: 'kyrkaTimme', sek: 3600, fn: s => { kyrkaTimme(s); } },

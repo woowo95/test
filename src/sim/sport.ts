@@ -20,7 +20,7 @@ import { FOREST } from './vag';
 import { HALSA, kanGa } from './halsa';
 import { ACTS, isWork } from './handlingar';
 import { duty } from './seder';
-import { raddFor } from './lagar';
+import { raddFor } from './radsla';
 import { kartStridAv } from './kartstrid';
 import { rnd } from './slump';
 import { hourOf } from './tid';
@@ -101,7 +101,6 @@ export const SPORT = balans('sport', {
   vikt: 0.4, // vikten i fritiden (leisure i val.ts) att börja en match, gånger lugnet och (styrka + smidighet) / 20 ...
   med: 12, // ... och gånger så här mycket när en match väntar på spelare
   mat: 1.1, ved: 2, // fullt ut när maten räcker så här många dygn och veden så här många, mindre med mindre (overskott i teknik.ts, steg 10.2.43)
-  alderTill: 50, // över detta spelar man inte
   minuter: 10, spann: 10, // en match varar så här många minuter från att den börjar, plus upp till spann (steg 10.7.13)
   vanta: 10, // minuter: så länge väntar man på spelare; matchen börjar senast då, om det kommit nog
   // samlingen (steg 10.7.12): den som ropar hörs nara rutor. Var och en som hör vill vara med med chansen folj gånger överskottet
@@ -174,12 +173,12 @@ function oppen(s: State) {
 }
 // hur många av föremålet k (ett redskap) byn vill ha: ett, när byn har vuxna nog till en sport som behöver det (VILL i redskap.ts)
 export const sportFor = (s: State, k: string) => SPORTER.some(d => d.foremal.includes(k) && vuxna(s) >= d.min) ? 1 : 0;
-const vuxna = (s: State) => living(s).filter(q => { const a = ageOf(q, s.now); return a >= ALDER.vuxen && a <= SPORT.alderTill; }).length;
+const vuxna = (s: State) => living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen).length;
 
 // vikten för sport i fritiden (leisure i val.ts): calm är lugnet där (1 när byn inte behöver arbete)
 export function sportVikt(s: State, p: Person, calm: number) {
   const a = ageOf(p, s.now);
-  if (a < ALDER.vuxen || a > SPORT.alderTill) return 0;
+  if (a < ALDER.vuxen) return 0; // ingen åldersgräns uppåt: kroppen (styrkan och smidigheten) avgör (fynd 557)
   const m = oppen(s);
   if (!m && s.sport) return 0; // en match i taget
   if (m?.titta?.includes(p.id)) return 0; // den som tittar spelar inte (steg 10.7.16)
@@ -224,12 +223,12 @@ export function sportListaVal(s: State, p: Person) {
   const d = SPORT_AV[m.k];
   return { why: `Följer med ${byId(s, m.p ?? -1)?.name ?? 'de andra'} och spelar ${d.namn.toLowerCase()}`, spot: platsFor(s, p, m), dur: m.slut - s.now, ref: m.start, tool: d.id };
 }
-// hör q ropet från p och kan komma: en vuxen upp till SPORT.alderTill inom hörhåll, vaken, kan gå, strider inte, gör inget som
+// hör q ropet från p och kan komma: en vuxen inom hörhåll, vaken, kan gå, strider inte, gör inget som
 // inte ens ett larm avbryter, bär ingen död (den som bär en kropp till graven lägger inte ner den för att spela) och är inte
 // rädd för att spela
 function horRopet(s: State, p: Person, q: Person) {
   const a = ageOf(q, s.now), t = q.task;
-  return paKartan(q) && !q.gast && a >= ALDER.vuxen && a <= SPORT.alderTill && Math.hypot(q.x - p.x, q.y - p.y) <= SPORT.nara && kanGa(q)
+  return paKartan(q) && !q.gast && a >= ALDER.vuxen && Math.hypot(q.x - p.x, q.y - p.y) <= SPORT.nara && kanGa(q)
     && !(t && (t.act === 'sport' || t.act === 'sova' || t.act === 'badd' || ACTS[t.act]?.fortsatter?.length)) && !kartStridAv(s, q) && !raddFor(s, q, 'sport') && !s.kvarlevor?.some(k => k.bars === q.id);
 }
 // chansen att q vill vara med när p samlar: överskottet, kroppen, tycket om p och, för den som arbetar, pliktkänslan

@@ -189,10 +189,11 @@ SCENARIER.lag = {
   },
 };
 SCENARIER.matchpublik = {
-  text: 'Publiken (steg 10.7.16): den som har fritid när en match pågår kan gå dit och titta, också den som är för gammal för att spela. Publiken står i en ring utanför spelarnas yta, blir glad när matchen avgörs, står i redogörelsen och berättelsen och går när matchen är slut',
+  text: 'Publiken (steg 10.7.16): den som har fritid när en match pågår kan gå dit och titta, också den som inte orkar spela. Publiken står i en ring utanför spelarnas yta, blir glad när matchen avgörs, står i redogörelsen och berättelsen och går när matchen är slut',
   kor: () => {
     const s = rikDag(3), v = vuxna(s), med = v.slice(0, 2), w = v[2]!, gammal = v[3]!;
     gammal.born = s.now - 60 * SIM.DAY;
+    gammal.pot.styrka = gammal.pot.smidighet = 0; // utan krafter spelar man inte (kroppen avgör, ingen åldersgräns: fynd 557)
     for (const q of [w, gammal]) q.task = undefined;
     const vikt = [SIM.tittaVikt(s, w, 1)]; // ingen match: ingen vikt
     match(s, 'brottning', med);
@@ -210,7 +211,7 @@ SCENARIER.matchpublik = {
     kor(s, 0.25);
     const kvar = [w, gammal].filter(q => q.task?.act === 'titta').length;
     return [
-      [`vikten att titta: ${vikt.map(x => x.toFixed(2)).join(', ')} (utan match, under en match, för en spelare, för en över ${SIM.SPORT.alderTill} som inte får spela: titta och spela)`, vikt[0] === 0 && vikt[1]! > 0 && vikt[2] === 0 && vikt[3]! > 0 && vikt[4] === 0],
+      [`vikten att titta: ${vikt.map(x => x.toFixed(2)).join(', ')} (utan match, under en match, för en spelare, för en gammal utan krafter som inte orkar spela: titta och spela)`, vikt[0] === 0 && vikt[1]! > 0 && vikt[2] === 0 && vikt[3]! > 0 && vikt[4] === 0],
       [`två går och tittar (${valde ? 'ja' : 'nej'}) och står där i ${sag} steg, utanför spelarnas yta och platser`, valde && sag > 0 && utanfor],
       [`ingen i publiken går med i matchen`, !medIMatchen],
       [`publiken i redogörelsen: ${mm?.publik?.map(x => x.namn).join(', ') ?? 'ingen'}`, !!mm && !mm.installd && mm.publik?.length === 2],
@@ -1346,6 +1347,8 @@ SCENARIER.mantel = {
     const t0 = SIM.hanTillat(s);
     SIM.laggFram(s, 'hanforbud', { led: l.id }, l); SIM.rostKvall(s);
     const forbud = !!s.styre.hanForbud && SIM.hanTillat(s) === 0 && t0 >= 0;
+    // förbudet gäller ledaren det handlade om och upphör när hen slutar leda (fynd 491)
+    const s2 = structuredClone(s); SIM.slutarStyre(s2, 'dog'); const upphor = !s2.styre?.hanForbud && SIM.hanTillat(s2) > 0;
     // manteln
     SIM.newTing(s, 'mantel_kaninskinn', 1, -1); const man = () => s.ting!.find(t => t.k === 'mantel_kaninskinn')!;
     SIM.stepKlader(s); const paLedaren = man().bar === l.id;
@@ -1357,6 +1360,7 @@ SCENARIER.mantel = {
     hb.k = 'halsband_tandband'; const a2 = SIM.ryktbarhet(s, v[2].id).a;
     return [
       ['förbudet mot hån går igenom och stoppar hånet', forbud],
+      ['förbudet mot hån upphör när ledaren slutar (fynd 491)', upphor],
       ['ledaren har på sig manteln', paLedaren],
       ['manteln går till nästa ledare', nasta],
       [`ett halsband ger anseende, ett finare mer (${a0.toFixed(2)} → ${a1.toFixed(2)} → ${a2.toFixed(2)})`, a1 > a0 && a2 > a1],
@@ -1490,7 +1494,7 @@ SCENARIER.tinget = {
     for (const p of v2) { p.x = offer.x + 1; p.y = offer.y; }
     SIM.die(s2, offer, 'bjorn');
     const radda = SIM.living(s2).filter(p => (p.raddAkt?.bjornjakt ?? 0) > 0).length;
-    SIM.lagDygn(s2);
+    SIM.raddDygn(s2);
     const kvar = SIM.living(s2)[0]; kvar.pot.mod = 1; // (den fega låter bli det hen är rädd för)
     return [
       [`rättegången gäller lagens straff (${r ? SIM.STRAFF_NAMN[r.steg] : 'ingen'})`, !!r && r.steg === 4],
