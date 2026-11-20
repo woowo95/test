@@ -12,10 +12,12 @@ import { freeOfKinds, SPJUT } from './redskap';
 import { snoPaMarken, temperature } from './vader';
 import { Person, State } from './typer';
 import { tecken } from './religion';
-import { living } from './folk';
+import { count, forstaGang, living, log } from './folk';
+import { wearTool } from './agande';
 import { rnd } from './slump';
 
 export const IS = balans('is', {
+  borrHal: 200, // isborren håller för så här många hål (steg 12.2.11)
   halMax: 30, // yxan, spjutet och spaden tar sig genom is upp till så här många cm; tjockare is bara isborren (steg 12.2.11)
   vattenTim: 48, // vattnets temperatur närmar sig luftens så här långsamt (timmar)
   forst: 0.5, // när vattnet kyls under noll blir isen så här många cm per grad under noll
@@ -62,6 +64,13 @@ export function stepIs(s: State) {
 export function halVal(s: State, p: Person) {
   const cm = isCm(s);
   return cm > 0 ? ISHAL.find(h => h.max >= cm && h.har(s, p)) : undefined;
+}
+// p hugger eller borrar upp ett hål nu (fisket, vattnet, att dricka): isborren slits för varje hål (steg 12.2.11). Går den
+// sönder räknas det, och första gången står det i loggen
+export function halGjort(s: State, p: Person) {
+  if (!islagt(s) || halVal(s, p)?.id !== 'isborr') return;
+  if (!wearTool(s, p, 'isborr', 1 / IS.borrHal)) return;
+  if (forstaGang(s, 'isborrTrasig')) log(s, `${p.name}s isborr var utsliten.`, 'world', [p.id]); else count(s, 'isborrTrasig');
 }
 // kan p nå vattnet: isen ligger inte, eller hen kan hugga upp ett hål
 export const naVattnet = (s: State, p: Person) => !islagt(s) || !!halVal(s, p);

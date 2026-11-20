@@ -75,6 +75,7 @@ export const STRID = balans('strid', {
   bakomTrad: 0.5, // en pil mot någon bakom ett träd träffar trädet så här ofta
   skoldSlag: 0.3, skoldPil: 0.6, // skölden blockerar 3 av 10 slag och 6 av 10 pilar och kast (steg 8.7.3)
   jarnSkoldSlag: 0.5, jarnSkoldPil: 0.8, // järnskölden 5 av 10 slag och 8 av 10 pilar (steg 12.2.8)
+  kvSkada: [0.6, 0.8, 1, 1.2, 1.4, 1.8], // vapnets skada gånger detta efter kvaliteten (usel, slarvig, normal, fin, mästerverk, perfekt)
   smidPer: 1, // varje steg rustning tar så här mycket smidighet
   tick: 0.2, // sekunder i spelet per tidssteg i striden (samma i båda lägena)
   kortSteg: 0.5, // sekunder per steg för hela byn när faran är nära (steg 10.1.1 och 10.2.13, mätt med npm run kortsteg). Byns vanliga slag är KLOCKA.slag (klocka.ts)
@@ -309,6 +310,7 @@ export interface Kampe {
   jagar?: number; // hämnden riktar sig mot just den personen (steg 8.8.5)
   skold?: boolean; // håller en sköld (steg 8.7.3)
   skoldJarn?: true; // ... och den är av järn (steg 12.2.8)
+  kv?: Record<string, number>; // vapnens kvalitet som gånger skadan (STRID.kvSkada): en fin kniv skadar mycket mer än en usel (steg 12.2.6)
   id: number; namn: string; sida: 0 | 1; pid?: number; djur?: string; // pid = personen i byn, djur = sorten i KAMPAR (kampar.ts); utan den en människa
   st: KampeStats; vapen: Vapen; klader: string[]; fart: number; // fart = gånger STRID.fart
   x: number; y: number; // rutor (med decimaler)
@@ -616,6 +618,7 @@ function byt(st: Strid, a: Kampe) {
 export const TRAFFDEL_PROV: { del?: Kroppsdel } = {};
 // en träff av graden skada med slaget sl: kroppsdelen, kläderna, skadan och följderna
 export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, kast?: true) {
+  skada0 *= a.kv?.[a.vapen] ?? 1; // vapnets kvalitet (steg 12.2.6)
   const kastad = kast ? VAP[a.vapen].kast : undefined;
   let x = slump(st);
   let d: Kroppsdel = 'bal';
@@ -966,8 +969,12 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoOk(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
+  // vapnens kvalitet (steg 12.2.6): det bästa tinget av varje vapen hen har, och skadan gånger STRID.kvSkada efter kvaliteten
+  const kv: Record<string, number> = {};
+  for (const t of [...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)]) if (t.k === vapen || t.k === reserv) kv[t.k] = Math.max(kv[t.k] ?? 0, STRID.kvSkada[kvOf(t)]);
+  for (const k in kv) if (kv[k] === 1) delete kv[k];
   return {
-    emp: stat(p, 'empati', s.now), id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined /* rövarna har ingen ledare (steg 10.2.25) */, gast: p.gast ? 1 : undefined, skoldJarn: bar.includes('jarnskold') && !TVA_HAND.has(vapen) ? true : undefined, skold: (bar.includes('skold') || bar.includes('jarnskold')) && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
+    emp: stat(p, 'empati', s.now), id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined /* rövarna har ingen ledare (steg 10.2.25) */, gast: p.gast ? 1 : undefined, kv: Object.keys(kv).length ? kv : undefined, skoldJarn: bar.includes('jarnskold') && !TVA_HAND.has(vapen) ? true : undefined, skold: (bar.includes('skold') || bar.includes('jarnskold')) && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
     st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now) - paSig(s, p).reduce((a, q) => a + (PLAGG[kladAv(q.k)?.plagg as keyof typeof PLAGG]?.smid ?? 0), 0) - rusSmid(p), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen) - rusTraff(p), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p) * blodFaktor(p) - rusTraff(p), /* ruset (steg 9.6.14) */ torst: blodtorst(s, p) },
   };
 }
@@ -1100,3 +1107,4 @@ export function efterStrid(s: State, st: Strid, k: Kampe, p: Person, mot: Person
 }
 
 import { rusSmid, rusTraff } from './rus';
+import { kvOf } from './kvalitet';

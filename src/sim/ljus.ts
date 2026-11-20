@@ -24,6 +24,7 @@ import { byId, alive, count, forstaGang, living, log } from './folk';
 export const MORKER = balans('morker', {
   fart: 0.6, // den som är vaken i totalmörker går och arbetar så här fort
   eldR: 6, // en eld som brinner för fullt lyser så här många rutor bort ...
+  branningR: 2, // en kolmila eller blästerugn som brinner lyser lite, så här många rutor bort (steg 12.2.1 och 12.2.3)
   eldMin: 0.5, // ... och en liten eld så här stor del av det
 });
 // facklan (steg 6.3.6)
@@ -63,6 +64,8 @@ export const LJUSKALLOR = {
   ljus: { namn: 'Talgljusen', kallor: s => (s.ljus ?? []).filter(l => l.tand).flatMap(l => { const st = stationById(s, l.st); return st ? [{ x: st.x + 0.5, y: st.y + 0.5, r: LJUS.r, rum: roomAt(s, st.x, st.y) }] : []; }) },
   // branden lyser (steg 9.2.20): rutorna i brandens kant, som ljus för dem som släcker eller arbetar och på kartan
   brand: { namn: 'Branden', kallor: s => brandLjus(s).map(i => ({ x: i % W + 0.5, y: Math.floor(i / W) + 0.5, r: BRAND.ljusR })) },
+  // kolmilan och blästerugnen som brinner (brann.ts): lite ljus mitt i stationen
+  branning: { namn: 'Kolmilan och blästerugnen', kallor: s => (s.branningar ?? []).filter(b => b.slut > s.now).flatMap(b => { const t = stationById(s, b.st); return t ? [{ x: t.x + 1, y: t.y + 1, r: MORKER.branningR }] : []; }) },
   uppsatt: { namn: 'Uppsatta facklor', kallor: s => (s.uppsatta ?? []).filter(u => u.tand).map(u => ({ x: u.x + 0.5, y: u.y + 0.5, r: FACKLA.r, rum: roomAt(s, u.x, u.y) })) }, // inne lyser den upp rummet (steg 9.2.11)
 } satisfies Record<string, Ljuskalla>;
 const KALLOR = Object.values(LJUSKALLOR) as Ljuskalla[];

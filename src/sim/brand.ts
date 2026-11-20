@@ -399,6 +399,7 @@ function gnistor(s: State, dtSec: number, dry: number) {
   };
   if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, (HEARTHS.find(h => h.id === s.fire.hearth) ?? HEARTHS[0]).spread, 0); }
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
+  for (const b of s.branningar ?? []) { const t = b.slut > s.now ? stationerOf(s).find(q => q.id === b.st) : undefined; if (t) fran(t.x + 1, t.y + 1, HEARTHS[0].spread, 50000 + t.id); } // kolmilan och blästerugnen gnistrar som en lägereld medan de brinner (steg 12.2.1 och 12.2.3)
   if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
     const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
     if (inMap(nx, ny)) { count(s, 'blixt nara'); nedslag(s, nx, ny); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }

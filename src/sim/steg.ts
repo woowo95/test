@@ -56,7 +56,7 @@ import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './pabor
 import { arbetaBredvid, forsokKlar, forsokSteg, haftSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
-import { halMin, halVal, islagt, stepIs } from './is';
+import { halMin, halVal, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld } from './eld';
 import { gastLever } from './gast';
@@ -1073,6 +1073,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       const h = halVal(s, p);
       if (!h) { tk.until = s.now; return; }
       tk.hal = halMin(s, p) * 60;
+      halGjort(s, p); // isborren slits (steg 12.2.11)
       if (forstaGang(s, 'pimplade')) log(s, `${p.name} högg upp ett hål i isen med ${h.namn} och pimplade, byns första fiske genom isen.`, 'world', [p.id]);
     }
     if (tk.hal) { const d = Math.min(tk.hal, tk.prog); tk.hal -= d; tk.prog -= d; if (tk.hal > 0) return; }
