@@ -575,7 +575,7 @@ export const vedPerDygn = (s: State) => hearthOf(s.fire).burn * 24;
 export const VED: Behov = {
   id: 'ved', namn: 'ved', slag: ['ved', 'grenar'], per: { grenar: GREN }, minst: 0.5,
   mangd: () => 1, // en famn
-  kvar: 3, // så mycket ved som brinner på sex timmar
+  kvar: () => 3, // så mycket ved som brinner på sex timmar
   behover: (s, p) => { const f = hemEld(s, p); return p.warm < KROPP.fryser && (f.lit || emberOn(s, f)) && f.fuel < fireWant(s, f); },
   fara: (_s, p) => p.warm < KROPP.frysdod ? 1 - p.health : 0, // man fryser ihjäl när kroppsvärmen är nästan slut, och hälsan sjunker
   // stölden: p hämtar den andras ved till elden (steg.ts räknar den när den tas). Annars hämtar den som väljs längre upp

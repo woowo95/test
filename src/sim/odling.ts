@@ -244,7 +244,7 @@ const agareLever = (s: State, f: Falt) => s.people.some(q => q.id === f.agare &&
 const familjFalt = (s: State, p: Person) => familjOf(s, p.id).some(q => q !== p && faltOf(s).some(f => f.agare === q.id));
 // så många rutor p:s fält ska ha (steg 9.7.1): familjens matbehov via förrådsmålen (portionerna per dygn gånger förrådets dygn
 // och taket), gånger faltForrad, delat med maten per ruta; mellan faltMin och faltMax ...
-export const faltBehov = (s: State, p: Person) => clamp(Math.ceil(Math.max(1, familjOf(s, p.id).length) * EKONOMI.matPerDygn * FORRADSMAL.mat.dygn * FORRADSMAL.mat.matt * ODLING.faltForrad / ODLING.rutaMat), ODLING.faltMin, ODLING.faltMax);
+export const faltBehov = (s: State, p: Person) => clamp(Math.ceil(Math.max(kroppensMat(p, s.now), familjOf(s, p.id).reduce((a, q) => a + kroppensMat(q, s.now), 0)) * FORRADSMAL.mat.dygn * FORRADSMAL.mat.matt * ODLING.faltForrad / ODLING.rutaMat), ODLING.faltMin, ODLING.faltMax);
 // ... och så många hen har frön till med grödan g, eller med den av grödorna som kan sås nu som hen har flest frön till
 const froRutor = (s: State, p: Person, g: GrodaSlag) => Math.floor(getable(s, p, GRODOR[g].fro) / ODLING.froPerRuta);
 const froNu = (s: State, p: Person) => { let m = 0; for (const g of grodorNu(s)) m = Math.max(m, froRutor(s, p, g)); return m; };
@@ -694,7 +694,7 @@ export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
 }
 import { TEK, learn } from './teknik';
 import { grundvarde } from './varde';
-import { EKONOMI, foodDays } from './ekonomi';
+import { foodDays, kroppensMat } from './ekonomi';
 import { FORRADSMAL, buffert } from './forradsmal';
 
 // ---------- jordens värden (steg 9.7.2, Odlingen i detalj: Jorden) ----------

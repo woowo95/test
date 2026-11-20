@@ -149,10 +149,10 @@ export const budgetFor = (s: State, b?: Bit) => b && budgetNu(s).find(d => BUDGE
 // det av slaget k som delen bygget hör till fått (lägg till det man får ta)
 export const budgetAv = (s: State, b: Bit | undefined, k: string) => { const d = budgetFor(s, b); return d ? Math.floor(ownsId(s, budgetId(d), k) + 1e-9) : 0; };
 // det ingen längre ska ha: delarna släpper det de fått, och det blir byns
-const KVAR = -1000000 - 999; // maten ingen matdel fått ligger kvar till nästa år
+export const BUDGET_KVAR = -1000000 - 999; // maten ingen matdel fått ligger kvar till nästa år
 // budgetens ägare: delarna och det som ligger kvar (vakten i kor.ts)
-export const budgetAgare = () => [...BUDGET_LIST.map(budgetId), KVAR];
-export const budgetSlapp = (s: State) => { for (const id of BUDGET_LIST) releaseOwner(s, budgetId(id)); releaseOwner(s, KVAR); };
+export const budgetAgare = () => [...BUDGET_LIST.map(budgetId), BUDGET_KVAR];
+export const budgetSlapp = (s: State) => { for (const id of BUDGET_LIST) releaseOwner(s, budgetId(id)); releaseOwner(s, BUDGET_KVAR); };
 // matdelarna p får äta ur (budgetMatKrok i lager.ts)
 const matFor = (s: State, p: Person) => budgetNu(s).filter(d => BUDGET[d.id].mat?.vem(s, p)).map(d => budgetId(d.id));
 
@@ -203,7 +203,7 @@ function matDygn(s: State, fick: Record<string, Record<string, number>>) {
     if (byn < 1) continue;
     const f = delaBudget(byn, delar.map(d => d.vikt), kvar);
     delar.forEach((d, i) => { if (f[i] >= 1) { fromByn(s, k, f[i], budgetId(d.id)); (fick[d.id] ??= {})[k] = f[i]; kvar[i] -= f[i]; byn -= f[i]; } });
-    if (byn >= 1) fromByn(s, k, byn, KVAR);
+    if (byn >= 1) fromByn(s, k, byn, BUDGET_KVAR);
   }
   const g = delar.findIndex(d => d.id === 'gastabud');
   if (g >= 0 && fore[g] > 0 && kvar[g] <= 0) {

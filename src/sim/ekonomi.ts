@@ -9,10 +9,9 @@ import { RELT } from './relationer';
 import { sjukOrkar } from './sjukdom';
 
 // ---------- ekonomi ----------
-// Balanstalen (regel 8). Den som ger mat till någon utanför familjen behåller matPerDygn själv (MAT.kvar i behov.ts), och
+// Balanstalen (regel 8). Den som ger mat till någon utanför familjen behåller det kroppen äter på ett dygn (kroppensMat, MAT.kvar i behov.ts), och
 // torkställningen lämnar så mycket per person (TORK.spara). Hur länge förrådet räcker räknas av vad byn äter (foodDays)
 export const EKONOMI = balans('ekonomi', {
-  matPerDygn: 1.6, // portioner mat per person som man behåller när man ger bort mat
   atGlid: 1 / 24, // det byn äter per person och dygn är ett glidande snitt som byts ut så här mycket i timmen (ungefär ett dygn, ett år i spelet)
   barnArbete: 0.3, // ett barn (under ALDER.vuxen) orkar så här stor del av en vuxens arbete ...
   gammalArbete: 0.6, // ... och en gammal (över ALDER.gammal) så här stor del

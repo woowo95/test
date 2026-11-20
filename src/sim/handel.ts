@@ -68,6 +68,7 @@ export const HANDEL = balans('handel', {
   vinst: 0.25, // handlaren värderar sina egna varor så mycket över grundvärdet, och det byn har gott om så mycket under (steg 4.4.1.3)
   ensamTim: 2, // har den som handlar för byn inte kommit på så många timmar, går en annan vuxen
   egnaMax: 3, // en bybo vill köpa högst så många slag av saker i en affär (steg 4.4.1.5)
+  egnaAvVarje: 2, // ... och högst så många av varje slag
   // förhandlingen (steg 4.5.7.4): så många sekunder (spelets tid) tar det att fråga vad handlaren har, att plocka upp en sak
   // man hämtar, att argumentera för ett bud (mellan de två talen), att plocka upp det köpta och att lägga det man köpt hemma
   fragaSek: 10, hamtaSek: 20, budSek: [5, 10], plockaSek: 15, hemSek: 20,
@@ -771,12 +772,12 @@ function budNu(s: State, h: Handlare, a: Affar, M: Part) {
   }
   return false;
 }
-// kunden väljer: byn det den saknar, en bybo det hen har mest nytta av (högst HANDEL.egnaMax slag); annars säljer hen
+// kunden väljer: byn det den saknar, en bybo det hen har mest nytta av (högst HANDEL.egnaMax slag och HANDEL.egnaAvVarje av varje); annars säljer hen
 function valj(s: State, h: Handlare, a: Affar, M: Part, p: Person) {
   // byn köper det den saknar och det projekten saknar (steg 10.5.17), det mest värda först, och av projektens material så många som saknas
   const lista = s.projektSaknar;
   a.kop = a.andra ? [] : (a.byn ? h.varor.filter(w => (w.skrift?.platser ? kartNytta(w, M) >= HANDEL.nytta : M.varde(w.k) >= DELA.saknar) || (lista?.[w.k]?.n ?? 0) >= 1).sort((x, y) => M.varde(y.k) - M.varde(x.k)) : vill(s, h, p).slice(0, HANDEL.egnaMax))
-    .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? Math.min(w.n, lista?.[w.k]?.n || w.n) : Math.min(w.n, 2), q: w.q, ...(w.skrift ? { skrift: w.skrift } : {}) }));
+    .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? Math.min(w.n, lista?.[w.k]?.n || w.n) : Math.min(w.n, HANDEL.egnaAvVarje), q: w.q, ...(w.skrift ? { skrift: w.skrift } : {}) }));
   if (a.kop.length && budNu(s, h, a, M)) return true;
   const sal = saljaAv(s, h, M, p);
   if (!sal.length) return false;

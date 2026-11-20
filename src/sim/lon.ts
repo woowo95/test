@@ -16,7 +16,7 @@ import { LAGAR, LagTalDef, lagGaller, lagTal } from './lagar';
 import { drar } from './seder';
 import { ARBETE, grundvarde } from './varde';
 import { ownMove, ownsId } from './lager';
-import { BUDGET, BUDGET_LIST, BudgetDef, budgetId, bynsAv, budgetLonKrok } from './budget';
+import { BUDGET, BUDGET_LIST, BudgetDef, BUDGET_KVAR, budgetId, bynsAv, budgetLonKrok } from './budget';
 import { fromByn } from './lager';
 import { bitById } from './byggnad';
 import { FOOD } from './saker';
@@ -87,11 +87,14 @@ export function lonDygn(s: State) {
       const silver = Math.floor(Math.min(n, ownsId(s, budgetId(d), 'silver')) + 1e-9), m = silver >= 1 ? ownMove(s, 'silver', silver, budgetId(d), till.id) : 0;
       let kvar = n - m;
       if (m >= 1) count(s, 'lonSilver', m);
-      // resten i hela saker av den mat byn har över bufferten, så länge en sak inte är värd mer än det som är kvar
+      // resten i hela saker av den mat byn har över bufferten, så länge en sak inte är värd mer än det som är kvar: byns egen,
+      // och den som ingen matdel i budgeten fått (BUDGET_KVAR, steg 12.1.77)
       for (const k of FOOD) {
         const v = grundvarde(k);
-        while (kvar >= v - 1e-9 && v > 0 && bynsAv(s, k) >= 1 && foodDaysAll(s) > buffert(s, 'mat')) {
-          if (fromByn(s, k, 1, till.id) < 1) break;
+        while (kvar >= v - 1e-9 && v > 0 && foodDaysAll(s) > buffert(s, 'mat')) {
+          if (bynsAv(s, k) >= 1) { if (fromByn(s, k, 1, till.id) < 1) break; }
+          else if (ownsId(s, BUDGET_KVAR, k) >= 1) { if (ownMove(s, k, 1, BUDGET_KVAR, till.id) < 1) break; }
+          else break;
           kvar -= v; count(s, 'lonVaror', 1);
         }
       }

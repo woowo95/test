@@ -228,7 +228,7 @@ const vapenVill = (s: State, bas: number, hot: number) => Math.ceil(living(s).fi
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
-  nat: s => Math.min(2, Math.ceil(spjutVill(s) / 3)), // ett nät på tre fiskare, högst två (steg 9.6.16)
+  nat: s => Math.ceil(spjutVill(s) / 3), // ett nät på tre fiskare (steg 9.6.16)
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna),
   nal: s => living(s).some(p => p.skill.lakekonst >= 2 || !!p.tatV?.length) ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15) eller vill ha ett märke (tatuering.ts, steg 10.7.5)
   krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)
