@@ -25,7 +25,6 @@ import { iVattnetNu } from './sjo';
 import { FLOD } from './flod';
 import { balans } from './balans';
 import { vidElden } from './eldflytt';
-import { } from './eld';
 import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
@@ -247,10 +246,10 @@ export function tillbaka(s: State, h: Hus, mat: Record<string, number>) {
   return n;
 }
 // ett hus rivs: bitarna och huset försvinner, och HUS.rivTillbaka av träet går till ägaren (eller byn). Ger hur mycket trä det blev
-export function rivHus(s: State, h: Hus) {
-  const mat = tramat(bitsOf(s).filter(b => b.hus === h.id));
+export function rivHus(s: State, h: Hus, tillByn = false) {
+  const mat = tramat(bitsOf(s).filter(b => b.hus === h.id)); // virket och veden i väggarna (timret är virke, steg 10.2.70)
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
-  const ved = tillbaka(s, h, mat);
+  const ved = tillbaka(s, tillByn ? { ...h, ag: undefined } : h, mat); // till ägaren, eller till byn
   touch(s); changed(s); count(s, 'rivet');
   return ved;
 }
@@ -260,7 +259,7 @@ function flyttKlar(s: State, h: Hus) {
   const g = husById(s, h.flyttFran);
   h.flyttFran = undefined;
   if (!g) return;
-  h.fn = g.fn; h.slag = g.slag; h.ag = g.ag; h.tro = g.tro;
+  h.fn = g.fn; h.ag = g.ag; h.tro = g.tro;
   const ved = rivHus(s, g);
   count(s, 'husFlyttat');
   log(s, `${h.namn} står klart närmare byns mitt, och ${g.namn.toLowerCase()} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');

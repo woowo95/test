@@ -127,9 +127,9 @@ export const STATION = balans('station', {
 // privata saker (kistan, steg 2.10.18): byggs inte i byns lager utan av var och en i rummet där hen sover (kistorna nedan)
 // pynt = bara till för att pynta (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv i rummet där hen sover, som kistan
 // brasa = ringen till en lägereld till medan den läggs (steg 2.9.1, 4.5.6.8, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar). När den är klar blir den en lägereld (nyEld) och ingen station
-export interface Utkant { drag?: true; till: number; avst: number; vatten?: true; falt?: true; tradFri?: true; faltNara?: true } // faltNara: så nära ett fält som möjligt (komposten, steg 10.2.93) // tradFri: söker en plats utan träd (bara latrinen, steg 8.1.14)
-export interface Forvar { rymmer: number; redskap?: true; bara?: readonly string[]; tak?: true; stangd?: true; privat?: true }
-export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true; av?: Record<string, number>; min?: number; eld?: true } // en del i en station med delar (steg 9.4.1); av och min = delens eget bygge, eld = stationens eld hör till delen (steg 12.1.17)
+interface Utkant { drag?: true; till: number; avst: number; vatten?: true; falt?: true; tradFri?: true; faltNara?: true } // faltNara: så nära ett fält som möjligt (komposten, steg 10.2.93) // tradFri: söker en plats utan träd (bara latrinen, steg 8.1.14)
+interface Forvar { rymmer: number; redskap?: true; bara?: readonly string[]; tak?: true; stangd?: true; privat?: true }
+interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true; av?: Record<string, number>; min?: number; eld?: true } // en del i en station med delar (steg 9.4.1); av och min = delens eget bygge, eld = stationens eld hör till delen (steg 12.1.17)
 // byggNamn = uppgiftens namn när meningen bygger inte kan kortas till det (kortBygg)
 export interface StationDef { byggNamn?: string; kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; agd?: true; enda?: true; fahus?: true; kok?: true; tro?: true; golv?: true; hage?: true; rund?: true; pyntQ?: number; smak?: string; vrak?: true; perVuxna?: number } // perVuxna = byn vill ha en per så många vuxna (slöjdbänken, steg 12.1.20) // vrak = byggs aldrig, står där grundarna kom (vagnen, steg 11.6.13); hage = står i en hage (vattenhon, steg 10.10.30); golv = ligger på golvet som en matta: man går över den och annat står på den (steg 10.7.6); pyntQ = så många kvalitetssteg finare som pynt; smak = sorten i smaken (PYNT_SMAK) när den inte är stationens id // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
@@ -144,20 +144,20 @@ const plaggVid = (st: string) => (Object.keys(PLAGG) as Act[]).filter(k => (PLAG
 // ---------- den vävda mattan (steg 10.7.6, Pynt och smycken: Den vävda mattan) ----------
 // Mattan är ett pynt som ligger på golvet i rummet där ägaren sover, av lintyg eller ylle. Storlekarna är rader i MATTOR; varje
 // storlek finns i båda tygen som en station (matta_<storlek>_<tyg>), och smaken (PYNT_SMAK) är en för alla mattor
-export interface MattaDef { namn: string; w: number; h: number; tyg: number; min: number; pyntQ?: number; rund?: true }
+interface MattaDef { namn: string; w: number; h: number; tyg: number; min: number; pyntQ?: number; rund?: true }
 export const MATTOR = {
   liten: { namn: 'Liten matta', w: 1, h: 1, tyg: 2, min: 10 },
   lang: { namn: 'Lång matta', w: 2, h: 1, tyg: 3, min: 13 },
   stor: { namn: 'Stor matta', w: 2, h: 2, tyg: 5, min: 18, pyntQ: 1 },
   rund: { namn: 'Rund matta', w: 2, h: 2, tyg: 4, min: 16, pyntQ: 1, rund: true }, // ritad rund, så att golvet syns i hörnen
 } satisfies Record<string, MattaDef>;
-export type MattaStorlek = keyof typeof MATTOR;
-export const MATTA_LIST = Object.keys(MATTOR) as MattaStorlek[];
-export const MATTA_TYG = { lintyg: 'lin', ylle: 'ylle' } as const;
-export type MattaTyg = keyof typeof MATTA_TYG;
+type MattaStorlek = keyof typeof MATTOR;
+const MATTA_LIST = Object.keys(MATTOR) as MattaStorlek[];
+const MATTA_TYG = { lintyg: 'lin', ylle: 'ylle' } as const;
+type MattaTyg = keyof typeof MATTA_TYG;
 const MATTA_TYG_LIST = Object.keys(MATTA_TYG) as MattaTyg[];
 type MattaSlag = `matta_${MattaStorlek}_${typeof MATTA_TYG[MattaTyg]}`;
-export const mattaId = (k: MattaStorlek, tyg: MattaTyg) => `matta_${k}_${MATTA_TYG[tyg]}` as MattaSlag;
+const mattaId = (k: MattaStorlek, tyg: MattaTyg) => `matta_${k}_${MATTA_TYG[tyg]}` as MattaSlag;
 const MATTA_ST = Object.fromEntries(MATTA_LIST.flatMap(k => MATTA_TYG_LIST.map(tyg => { const m: MattaDef = MATTOR[k]; return [mattaId(k, tyg), {
   namn: m.namn, ikon: mattaId(k, tyg), w: m.w, h: m.h, tek: ['matta'], av: { [tyg]: m.tyg }, min: m.min, gor: [], inne: true, mobel: true, flera: true, pynt: true, golv: true, smak: 'matta',
   ...(m.pyntQ ? { pyntQ: m.pyntQ } : {}), ...(m.rund ? { rund: true } : {}),
@@ -346,7 +346,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första scen. Där uppträder man på kvällen, och där ligger instrumenten.',
   },
   // pyntet (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv, i rummet där hen sover, och sorten följer smaken
-  // (pyntSort). Ägaren trivs där, och de som ser det tycker bättre om hen, mer ju finare det är
+  // (gillarPynt). Ägaren trivs där, och de som ser det tycker bättre om hen, mer ju finare det är
 
   // långhusets möbler (steg 10.2.68): högsätet, ett i byn, och bänkarna längs väggarna, en per fyra sovplatser
   hogsate: {
@@ -482,7 +482,7 @@ export const storlekAv = (t: { k: string; rot?: unknown; delar?: Station['delar'
 // ---------- stationer i flera delar (steg 9.4.1–9.4.2, "Stationer i flera delar" i designdokumentet) ----------
 // Delarna står var för sig och var och en kan vridas; stationen byggs, flyttas och tas bort som en helhet. En station utan
 // delar har en enda del: hela stationen. Delen med arbete är där man står och arbetar (annars den första)
-export interface DelRuta { i: number; x: number; y: number; w: number; h: number; rot?: 1; del?: StationDel }
+interface DelRuta { i: number; x: number; y: number; w: number; h: number; rot?: 1; del?: StationDel }
 export function delarAv(t: Station): DelRuta[] {
   const d = stationDef(t.k);
   if (!d?.delar || !t.delar?.length) { const { w, h } = storlek(t.k, t.rot); return [{ i: 0, x: t.x, y: t.y, w, h, rot: t.rot }]; }
@@ -649,7 +649,7 @@ export function uteStation(s: State, x: number, y: number) {
 // för en stig runt det som ska stå där. motVagg: husen räknas inte, för en station får stå mot en vägg (Björn efter v101)
 // minne: för en sökning som prövar många platser utan att något i byn ändras emellan (sokUte). Om något står på en ruta beror bara
 // på rutan, så svaret sparas första gången rutan frågas (alltid med samma motVagg)
-export function friRunt(s: State, rutor: { x: number; y: number }[], motVagg = false, minne?: Map<number, boolean>) {
+function friRunt(s: State, rutor: { x: number; y: number }[], motVagg = false, minne?: Map<number, boolean>) {
   const r = PLATS.uteFri, egna = new Set(rutor.map(q => q.y * W + q.x)), g = gridOf(s), zs = zonesOf(s);
   for (const q of rutor) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = q.x + dx, y = q.y + dy, i = y * W + x;
@@ -842,11 +842,13 @@ function sokUte(s: State, k: string) {
   return best;
 }
 // inne: en golvruta i rummet där ingen station står, inget ligger och som inte är en lagerplats
+// står en eld eller en härd (två gånger två rutor) på rutan?
+const eldPa = (s: State, x: number, y: number) => (s.eldar ?? []).some(f => f.at && x >= f.at.x && y >= f.at.y && x < f.at.x + (f.hearth === 'hard' ? 2 : 1) && y < f.at.y + (f.hearth === 'hard' ? 2 : 1));
 function golvFri(s: State, rum: Set<number>, x: number, y: number) {
   const i = y * W + x;
   return rum.has(i) && !stationRutor(s).at.has(i) && !stationRutor(s).sitt.has(i) && !zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)
     && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !tingOf(s).some(q => q.x === x && q.y === y && q.hos === undefined && q.lass === undefined)
-    && !(s.eldar ?? []).some(f => f.at && x >= f.at.x && y >= f.at.y && x < f.at.x + (f.hearth === 'hard' ? 2 : 1) && y < f.at.y + (f.hearth === 'hard' ? 2 : 1)); // inte på en eld eller härd
+    && !eldPa(s, x, y); // inte på en eld eller härd
 }
 // en golvruta där en möbel kan ställas (mattan stänger inte, steg 10.7.6)
 export const golvLedigt = (s: State, rum: Rum, x: number, y: number) => golvFri(s, new Set(rum.tiles), x, y);
@@ -981,10 +983,8 @@ export const pyntLust = (s: State, p: Person) => STATION.pyntAvtar ** pyntAntal(
 export const PYNT_SMAK: Record<string, { salt: number; fran: number; till: number }> = {
   kruka: { salt: 43, fran: 0, till: 1 }, matta: { salt: 44, fran: 0, till: STATION.mattaSmak },
 };
-export const PYNT_SORTER = Object.keys(PYNT_SMAK);
 export const gillarPynt = (s: State, p: Person, sort: string) => { const r = PYNT_SMAK[sort]; if (!r) return false; const h = hash3(s.seed, p.id, r.salt); return h >= r.fran && h < r.till; };
-// den första sorten p tycker om, och sorten i smaken för pyntet k
-export const pyntSort = (s: State, p: Person) => PYNT_SORTER.find(k => gillarPynt(s, p, k))!;
+// sorten i smaken för pyntet k
 export const pyntSmakAv = (k: string) => stationDef(k)?.smak ?? k;
 // p vill ha pyntet k: hen är vuxen, sover inne, bygger inte redan ett och tycker om sorten. En matta: den storlek och det tyg p väljer
 export const villPynt = (s: State, p: Person, k: string) => ageOf(p, s.now) >= ALDER.vuxen && !halvPynt(s, p) && gillarPynt(s, p, pyntSmakAv(k)) && bedTile(s, p) !== undefined && (!stationDef(k)?.golv || mattaVal(s, p) === k);
@@ -1022,11 +1022,10 @@ export const sovrum = (s: State, p: Person) => { const b = bedTile(s, p); return
 function siteKista(s: State, k: string, p: Person) { const r = sovrum(s, p); return r && (stationDef(k)?.golv ? siteMatta(s, k, r) : siteInne(s, k, r)); }
 // mattan (steg 10.7.6): på golvrutor i rummet där ingen annan matta ligger och ingen eld brinner. Möbler och det som ligger får
 // stå på den. Helst mitt i rummet
-export function siteMatta(s: State, k: string, rum: Rum) {
+function siteMatta(s: State, k: string, rum: Rum) {
   const hus = husById(s, rum.hus);
   if (!hus?.klar || !rum.tiles.length) return undefined;
   const set = new Set(rum.tiles), golv = stationRutor(s).golv, mx = rum.tiles.reduce((a, i) => a + i % W, 0) / rum.tiles.length, my = rum.tiles.reduce((a, i) => a + Math.floor(i / W), 0) / rum.tiles.length;
-  const eld = (x: number, y: number) => (s.eldar ?? []).some(f => f.at && x >= f.at.x && y >= f.at.y && x < f.at.x + (f.hearth === 'hard' ? 2 : 1) && y < f.at.y + (f.hearth === 'hard' ? 2 : 1));
   let best: { x: number; y: number; rot?: 1; inne: 1 } | undefined, bs = Infinity;
   for (const rot of [0, 1] as const) {
     const { w, h } = storlek(k, rot);
@@ -1034,7 +1033,7 @@ export function siteMatta(s: State, k: string, rum: Rum) {
     for (const i0 of rum.tiles) {
       const x = i0 % W, y = (i0 - x) / W;
       let fri = true;
-      for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) { const i1 = (y + j) * W + x + i; fri = set.has(i1) && !golv.has(i1) && !eld(x + i, y + j); }
+      for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) { const i1 = (y + j) * W + x + i; fri = set.has(i1) && !golv.has(i1) && !eldPa(s, x + i, y + j); }
       if (!fri) continue;
       const sc = Math.hypot(x + w / 2 - 0.5 - mx, y + h / 2 - 0.5 - my) + rot * STATION.vriden;
       if (sc < bs) { bs = sc; best = rot ? { x, y, rot, inne: 1 } : { x, y, inne: 1 }; }
@@ -1415,20 +1414,12 @@ for (const [k, d] of Object.entries(TILLBEHOR as Record<string, TillbehorDef>)) 
 export const tillbehorDef = (k: string): TillbehorDef | undefined => (TILLBEHOR as Record<string, TillbehorDef>)[k];
 // de färdiga stationer som tillbehöret hör till, och de av dem som saknar det
 // det ett tillbehör ligger i: en station eller möbel, eller en härd, som är en eld (till: 'hard', steg 10.2.87)
-export type Hallare = Station | Fire;
+type Hallare = Station | Fire;
 const arEld = (h: Hallare): h is Fire => 'hearth' in h;
 export const tillbehorStationer = (s: State, k: TillbehorSlag): Hallare[] => TILLBEHOR[k].till === 'hard' ? (s.eldar ?? []).filter(f => f.hearth === 'hard') : stationerOf(s).filter(t => isKlar(t) && t.k === TILLBEHOR[k].till);
 export const utanTillbehor = (s: State, k: TillbehorSlag) => tillbehorStationer(s, k).filter(t => !t.med?.includes(k));
 // där man står vid den: framför stationen, eller vid härden
-export const hallareVid = (s: State, h: Hallare) => arEld(h) ? vidEld(s, h, 0, 1.3) : vidStation(h);
-// en stekhäll som ligger vid grillen flyttas till en härd som saknar en (steg 10.2.87)
-function stekhallTillHarden(s: State) {
-  const g = stationerOf(s).find(t => t.k === 'grill' && t.med?.includes('stekhall')), h = g && utanTillbehor(s, 'stekhall')[0];
-  if (!g || !h) return;
-  g.med = g.med!.filter(k => k !== 'stekhall'); if (!g.med.length) g.med = undefined;
-  (h.med ??= []).push('stekhall'); count(s, 'stekhallFlyttad');
-  if (forstaGang(s, 'stekhallFlyttad')) log(s, 'Stekhällen vid grillen flyttades till härden.', 'world');
-}
+const hallareVid = (s: State, h: Hallare) => arEld(h) ? vidEld(s, h, 0, 1.3) : vidStation(h);
 // p kan göra tillbehöret: p kan tekniken, det finns fler stationer som saknar det än de som redan gör det, och p kan få tag i
 // materialet
 // materialet p saknar till ett tillbehör av sorten k som någon station saknar (steg 6.1.17)
@@ -1677,13 +1668,15 @@ export function taBortStation(s: State, t: Station) {
 // spelaren flyttar den så att hörnet uppe till vänster hamnar på rutan (x, y): på golv i ett hus eller på mark där saker
 // kan ligga (lager.ts), där ingen annan station och ingen sittplats står. Byns regler gäller sedan som vanligt (det som ska
 // stå inne bärs in, förvaringen utanför ett lager tas isär). false = den fick inte plats
+// en ruta där en station kan stå när den flyttas i testläget: ingen annan station eller sittplats där, och golv i ett rum eller fri mark
+function flyttRutaOk(s: State, x: number, y: number) {
+  if (!inMap(x, y) || stationAt(s, x, y) || sittAt(s, x, y)) return false;
+  const b = bitAt(s, x, y);
+  return b ? b.k === 'golv' && !!roomAt(s, x, y) : usable(s, x, y, true);
+}
 export function flyttaStation(s: State, t: Station, x: number, y: number) {
   const rutor = delarAv(t).flatMap(q => rutorAv(q.x - t.x + x, q.y - t.y + y, q.w, q.h)); // alla delar flyttas lika långt (steg 9.4.1)
-  const ok = utan(s, t, () => rutor.every(q => {
-    if (!inMap(q.x, q.y) || stationAt(s, q.x, q.y) || sittAt(s, q.x, q.y)) return false;
-    const b = bitAt(s, q.x, q.y);
-    return b ? b.k === 'golv' && !!roomAt(s, q.x, q.y) : usable(s, q.x, q.y, true);
-  }));
+  const ok = utan(s, t, () => rutor.every(q => flyttRutaOk(s, q.x, q.y)));
   if (!ok) return false;
   flytta(s, t, { x, y, rot: t.rot ? 1 : undefined, inne: bitAt(s, x, y) ? 1 : undefined });
   log(s, `${stationDef(t.k)?.namn ?? 'En station'} flyttades i testläget.`, 'world');
@@ -1695,11 +1688,7 @@ export function flyttaDel(s: State, t: Station, i: number, x: number, y: number,
   const r = delarAv(t)[i];
   if (!t.delar?.length || !r?.del) return false;
   const rot = vrid ? (r.rot ? undefined : 1 as const) : r.rot, w = rot ? r.del.h : r.del.w, h = rot ? r.del.w : r.del.h;
-  const ok = utan(s, t, () => rutorAv(x, y, w, h).every(q => {
-    if (!inMap(q.x, q.y) || stationAt(s, q.x, q.y) || sittAt(s, q.x, q.y)) return false;
-    const b = bitAt(s, q.x, q.y);
-    return b ? b.k === 'golv' && !!roomAt(s, q.x, q.y) : usable(s, q.x, q.y, true);
-  }) && delarAv(t).every(o => o.i === i || o.x + o.w <= x || x + w <= o.x || o.y + o.h <= y || y + h <= o.y));
+  const ok = utan(s, t, () => rutorAv(x, y, w, h).every(q => flyttRutaOk(s, q.x, q.y)) && delarAv(t).every(o => o.i === i || o.x + o.w <= x || x + w <= o.x || o.y + o.h <= y || y + h <= o.y));
   if (!ok) return false;
   t.delar[i] = { x, y, ...(rot ? { rot } : {}), ...byggAv(t.delar[i]) };
   horn(t);
@@ -1789,7 +1778,6 @@ const iRivetHus = (s: State, t: Station) => { const b = bitAt(s, t.x, t.y); retu
 // som stod inne i ett hus som rivits försvinner
 export function stepStationer(s: State) {
   if (!s.stationer?.length) return;
-  if (s.eldar?.length) stekhallTillHarden(s);
   fyllPlatser(s);
   kistorna(s);
   barIn(s);

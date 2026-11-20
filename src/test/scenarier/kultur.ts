@@ -790,10 +790,10 @@ SCENARIER.bildyta = {
 
 // den vävda mattan (steg 10.7.6): smaken per sort, storleken efter lusten och tyget, ett golv man går över och som annat står på
 function matta(): [string, boolean][] {
-  const { PROJEKT, isKlar, bedTile, mattaVal, mattaAt, stationAt, stationerOf, stationDef, villPynt, gillarPynt, pyntSort, MATTOR, PYNT } = SIM;
+  const { PROJEKT, isKlar, bedTile, mattaVal, mattaAt, stationAt, stationerOf, stationDef, villPynt, gillarPynt, MATTOR, PYNT } = SIM;
   // alla tycker om krukan sedan bonaden togs bort (steg 10.2.110); mattan har sitt eget tal
   const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
-  const lika = Array.from({ length: 60 }, (_, i) => i).every(i => pyntSort(s, { id: i } as Person) === 'kruka');
+  const lika = Array.from({ length: 60 }, (_, i) => i).every(i => gillarPynt(s, { id: i } as Person, 'kruka'));
   const gillar = Array.from({ length: 60 }, (_, i) => gillarPynt(s, { id: i } as Person, 'matta')).filter(Boolean).length;
   setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'lintyg', 20);
   const p = vuxna(s).find(q => bedTile(s, q) !== undefined && gillarPynt(s, q, 'matta'))!;
@@ -2873,7 +2873,7 @@ function brottning(): [string, boolean][] {
 SCENARIER.kruka = {
   text: 'Steg 9.4.12: lerkrukan är pynt och i bruk genom systemen som finns. En kruka som torkar går inte att använda; den mellanstora bär vatten som säcken; ägarens lediga kruka bärs av hen till rummet där hen sover (steg 10.11.17) och är pynt där, och byn vill ha krukor till pyntet och att bära vatten i',
   kor: () => {
-    const { addTool, freeTools, vattenKarl, krukaHemVal, krukaUpp, krukaNer, placeTools, krukaHemma, stepPynt, sovrum, bedTile, krukaVill, pyntSort, PYNT_TANKE } = SIM;
+    const { addTool, freeTools, vattenKarl, krukaHemVal, krukaUpp, krukaNer, placeTools, krukaHemma, stepPynt, sovrum, bedTile, krukaVill, PYNT_TANKE } = SIM;
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
     const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!;
     for (const t of SIM.tingOf(s).filter(t => t.k === 'vattensack')) s.ting = SIM.tingOf(s).filter(q => q !== t);
@@ -2903,7 +2903,7 @@ SCENARIER.kruka = {
       [`krukan i förrådet flyttar sig inte själv (${stodKvar ? 'står kvar' : 'flyttade sig'}), och ägaren vill bära den hem (${val?.t === k ? 'ja' : 'nej'})`, stodKvar && val?.t === k],
       [`hen tar upp krukan och bär den (${bars ? 'ja' : 'nej'})`, bars],
       [`ägarens kruka ställs i rummet där hen sover (${hemma ? 'där' : 'inte där'}) och är pynt: hen trivs (${trivs ? 'ja' : 'nej'})`, hemma && trivs],
-      [`byn vill ha ${vill} krukor (${pyntare} som pynt och en att bära vatten i), och lerkrukan är en av smakerna (${pyntSort(s, p)})`, vill === pyntare + 1 && 'kruka' in SIM.PYNT_SMAK],
+      [`byn vill ha ${vill} krukor (${pyntare} som pynt och en att bära vatten i), och lerkrukan är en av smakerna`, vill === pyntare + 1 && 'kruka' in SIM.PYNT_SMAK],
     ];
   },
 };

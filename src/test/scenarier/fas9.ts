@@ -1181,9 +1181,9 @@ SCENARIER.lok = {
 };
 
 SCENARIER.stek = {
-  text: 'Steg 9.6.21 och 10.2.87: stekhällen. En flat sten på härden inne i huset där kött och fisk steks med talg till stek, som smakar bättre (en rad i TILLAGNING). Steken görs bara vid härden, när den brinner, och en stekhäll som ligger vid grillen flyttas till härden när det finns en',
+  text: 'Steg 9.6.21 och 10.2.87: stekhällen. En flat sten på härden inne i huset där kött och fisk steks med talg till stek, som smakar bättre (en rad i TILLAGNING). Steken görs bara vid härden, när den brinner, och inte vid en stekhäll som ligger vid grillen',
   kor: () => {
-    const { stekaKlar, kanSteka, setAmount, amountOf, rattId, stepStationer, newFire, TILLAGNING, TILLBEHOR, MAT, ACTS } = SIM;
+    const { stekaKlar, kanSteka, setAmount, amountOf, rattId, newFire, TILLAGNING, TILLBEHOR, MAT, ACTS } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     setMat(s, {});
     setAmount(s, 'kott', 4); setAmount(s, 'talg', 2);
@@ -1191,10 +1191,8 @@ SCENARIER.stek = {
     const grill = { id: 994, k: 'grill', x: 1, y: 1, kvar: 0, med: ['stekhall'] } as SIM.Station;
     s.stationer = [...(s.stationer ?? []), grill];
     const vidGrill = kanSteka(s, p);
-    const hard: SIM.Fire = { ...newFire(), id: 995, at: { x: 6, y: 6 }, hearth: 'hard', folk: [] };
+    const hard: SIM.Fire = { ...newFire(), id: 995, at: { x: 6, y: 6 }, hearth: 'hard', folk: [], med: ['stekhall'] };
     s.eldar = [...(s.eldar ?? []), hard];
-    stepStationer(s);
-    const flyttad = !grill.med?.includes('stekhall') && !!hard.med?.includes('stekhall');
     const slackt = kanSteka(s, p);
     hard.lit = true; hard.fuel = 3;
     const med = kanSteka(s, p);
@@ -1204,7 +1202,7 @@ SCENARIER.stek = {
     const gott = p.thoughts.some(t => t.text === 'Åt en stek');
     return [
       [`steka är en rad i TILLAGNING (${TILLAGNING.steka.namn}) och stekhällen ett tillbehör till härden (${TILLBEHOR.stekhall.till}), där man steker (${ACTS.steka.plats})`, !!TILLAGNING.steka && TILLBEHOR.stekhall.till === 'hard' && ACTS.steka.plats === 'hard'],
-      [`vid grillen steker ingen (${vidGrill ? 'ja' : 'nej'}), och stekhällen där flyttas till härden (${flyttad ? 'ja' : 'nej'})`, !vidGrill && flyttad],
+      [`vid grillen steker ingen (${vidGrill ? 'ja' : 'nej'})`, !vidGrill],
       [`på en släckt härd steker ingen (${slackt ? 'ja' : 'nej'}), på en brinnande ja (${med ? 'ja' : 'nej'})`, !slackt && med],
       [`två kött och en talg blir ${stek} köttstek (${amountOf(s, 'talg')} talg kvar)`, stek === 2],
       [`steken smakar bättre (${gott ? 'ja' : 'nej'})`, gott],

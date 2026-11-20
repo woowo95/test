@@ -1264,7 +1264,7 @@ SCENARIER.rumstyper = {
     const fore = SIM.sovplatser(s, r());
     SIM.setRumFn(s, r(), 'samling');
     const fnRum = SIM.rumFnId(s, r()) === 'samling' && SIM.fnId(h) === 'sovsal' && SIM.sovplatser(s, r()) === 0 && SIM.samlingRum(s)?.id === r().id;
-    const namn = SIM.rumNamn(s, r());
+    const namn = SIM.rumVisas(s, r()).map(t => t.namn).join(', ');
     // husets ruta (steg 11.1.57): etiketten Rummen (en rad om vad rummen är, steg 12.1.78), och värmen skrivs håller värmen N %
     utanWebblasare(); setByn(s); ui.husId = h.id; const hr = husFlik.html!();
     const husRuta = !/Används till/.test(hr) && /class="etik">Rummen</.test(hr) && /[Hh]åller värmen \d+ %/.test(hr) && !/mindre värme/.test(hr);

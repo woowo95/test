@@ -38,11 +38,16 @@ export function eldStationVid(s: State, p: { x: number; y: number }, act: string
 export const eldKan = (s: State, p: Person, t?: Station) => !t || !eldDef(t) || stationBrinner(t) || getable(s, p, eldDef(t)!.bransle ?? 'ved') >= 1;
 // det stationens eld brinner på (ved, eller ässjans kol)
 export const eldBransle = (s: State, p: Person, tk: Task) => { const t = eldStationVid(s, p, tk.act); return (t && eldDef(t)?.bransle) ?? 'ved'; };
+// hur många hela vedträn (eller kol) stationens eld behöver för att räcka timmar timmar, högst så många som ryms: minst ett
+// när den är kall och tom, så att den går att tända
+const vedBehov = (e: { ved: number; lit?: number }, d: { burn: number; max: number }, timmar: number) => Math.min(Math.max(Math.ceil(Math.max(0, timmar * d.burn - e.ved) - 1e-9), e.lit || e.ved > 0 ? 0 : 1), Math.floor(d.max - e.ved + 1e-9));
+// hur länge arbetet tk vid stationen t håller på, i timmar, och elden efter det (tim i stationens eld)
+const arbTimmar = (s: State, tk: Task, t: Station, d: { tim?: (s: State, t: Station) => number }) => Math.max(0, tk.until - s.now, tk.arbTid ?? 0) / HOUR + (d.tim?.(s, t) ?? 0);
 // p lägger ved på stationens eld så att den räcker timmar timmar, hela ved och högst så många som ryms, och tänder den om den är
 // kall. Svarar med minuterna det tog att tända (0 när den brann eller glödde), eller undefined när den inte brinner
 export function elda(s: State, p: Person, t: Station, timmar: number) {
   const d = eldDef(t)!, e = (t.eld ??= { ved: 0 });
-  const br = d.bransle ?? 'ved', behov = Math.max(Math.ceil(Math.max(0, timmar * d.burn - e.ved) - 1e-9), e.lit || e.ved > 0 ? 0 : 1), n = Math.min(behov, Math.floor(d.max - e.ved + 1e-9), Math.floor(getable(s, p, br) + 1e-9));
+  const br = d.bransle ?? 'ved', n = Math.min(vedBehov(e, d, timmar), Math.floor(getable(s, p, br) + 1e-9));
   if (n > 0) { takeMaterial(s, p, br, n); e.ved += n; count(s, br === 'ved' ? 'stationsVed' : 'stationsBransle_' + br, n); }
   if (e.lit || e.ved <= 0) return e.lit ? 0 : undefined;
   const kall = !glod(s, t);
@@ -54,16 +59,14 @@ export function elda(s: State, p: Person, t: Station, timmar: number) {
 export function eldaVed(s: State, p: Person, tk: Task) {
   const t = eldStationVid(s, p, tk.act), d = t && eldDef(t);
   if (!t || !d) return 0;
-  const e = t.eld ?? { ved: 0 }, arb = Math.max(0, tk.until - s.now, tk.arbTid ?? 0) / HOUR + (d.tim?.(s, t) ?? 0);
-  return Math.min(Math.max(Math.ceil(Math.max(0, arb * d.burn - e.ved) - 1e-9), e.lit || e.ved > 0 ? 0 : 1), Math.floor(d.max - e.ved + 1e-9));
+  return vedBehov(t.eld ?? { ved: 0 }, d, arbTimmar(s, tk, t, d));
 }
 // framme vid arbetet (paborjat.ts): vid en station med eld eldar man först. Brinner den inte, och arbetet kräver den, blir det
 // inget arbete. Svarar med minuterna det tog att tända, eller false när arbetet inte går
 export function eldaForst(s: State, p: Person, tk: Task): number | false {
   const t = eldStationVid(s, p, tk.act);
   if (!t) return 0;
-  const d = eldDef(t)!, arb = Math.max(0, tk.until - s.now, tk.arbTid ?? 0) / HOUR + (d.tim?.(s, t) ?? 0);
-  const m = elda(s, p, t, arb);
+  const d = eldDef(t)!, m = elda(s, p, t, arbTimmar(s, tk, t, d));
   if (m === undefined && d.kravs) { count(s, 'stationsEldUtan'); return false; }
   return m ?? 0;
 }

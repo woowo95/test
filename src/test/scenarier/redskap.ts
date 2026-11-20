@@ -427,7 +427,7 @@ function materialForrad(v: State) {
   let h = medHus(v);
   for (let i = 0; i < 4 && h?.fn !== 'forrad'; i++) h = medHus(v); // ett familjehus kan komma före
   const z = SIM.zonesOf(v).find(q => q.hus === h?.id);
-  if (h && z) { h.slag = 'material'; z.slag = 'material'; }
+  if (z) z.slag = 'material';
   fyll.forEach((k, i) => SIM.setAmount(v, k, forut[i]));
   SIM.touch(v);
   return z;

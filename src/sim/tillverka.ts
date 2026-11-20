@@ -1,5 +1,6 @@
 import { RECEPT } from './recept';
 import { Act } from './typer';
+import { SALTKOTT } from './handlingar';
 
 // ---------- tillverkningen vid stationerna (steg 7.5–7.7) ----------
 // Det som görs av material vid en station och läggs i förrådet, utan att vara ett redskap eller plagg: en rad per sak. Varje rad
@@ -15,16 +16,11 @@ export const TILLVERKA: Record<string, TillverkDef> = {
   koka_vatten: { act: 'koka_vatten', ger: 'kokt', n: 1, av: {}, min: 2, tek: 'kruka', vill: 4, vatten: true, eld: true, text: 'Kokar vatten i en lerkruka.', forsta: '{namn} kokade vatten för första gången, så att det blev rent.' }, // steg 9.5.25
   mala_korn: { act: 'mala_korn', ger: 'mjol', n: 4, av: { korn: 4 }, min: 4, tek: 'kvarnsten', vill: 8, text: 'Mal korn till mjöl vid kvarnstenen.', forsta: '{namn} malde byns första mjöl.' }, // steg 9.6.22
   salta_fisk: { act: 'salta_fisk', ger: 'saltfisk', n: 4, av: { fisk: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in fisk så att den håller.', forsta: '{namn} saltade in byns första fisk.' }, // saltet (steg 9.6.19)
-  salta_kott: { act: 'salta_kott', ger: 'saltkott', n: 4, av: { kott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in kött så att det håller.', forsta: '{namn} saltade in byns första kött.' },
-  // varje köttslag saltas till samma saltade kött (steg 10.3.14)
-  salta_vargkott: { act: 'salta_vargkott', ger: 'saltkott', n: 4, av: { vargkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in vargkött så att det håller.', forsta: '{namn} saltade in byns första vargkött.' },
-  salta_radjurkott: { act: 'salta_radjurkott', ger: 'saltkott', n: 4, av: { radjurkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in rådjurskött så att det håller.', forsta: '{namn} saltade in byns första rådjurskött.' },
-  salta_farkott: { act: 'salta_farkott', ger: 'saltkott', n: 4, av: { farkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in fårkött så att det håller.', forsta: '{namn} saltade in byns första fårkött.' },
-  salta_getkott: { act: 'salta_getkott', ger: 'saltkott', n: 4, av: { getkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in getkött så att det håller.', forsta: '{namn} saltade in byns första getkött.' },
-  salta_svinkott: { act: 'salta_svinkott', ger: 'saltkott', n: 4, av: { svinkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in fläsk så att det håller.', forsta: '{namn} saltade in byns första fläsk.' },
-  salta_kokott: { act: 'salta_kokott', ger: 'saltkott', n: 4, av: { kokott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in nötkött så att det håller.', forsta: '{namn} saltade in byns första nötkött.' },
-  salta_fagelkott: { act: 'salta_fagelkott', ger: 'saltkott', n: 4, av: { fagelkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in fågelkött så att det håller.', forsta: '{namn} saltade in byns första fågelkött.' },
-  salta_bjornkott: { act: 'salta_bjornkott', ger: 'saltkott', n: 4, av: { bjornkott: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: 'Saltar in björnkött så att det håller.', forsta: '{namn} saltade in byns första björnkött.' },
+  // varje köttslag saltas till samma saltade kött (steg 10.3.14); svinet före kon, som raderna alltid stått (projekten tar den första
+  // vid lika värde)
+  ...Object.fromEntries((['kott', 'vargkott', 'radjurkott', 'farkott', 'getkott', 'svinkott', 'kokott', 'fagelkott', 'bjornkott'] as const).map(k => [`salta_${k}`, {
+    act: `salta_${k}` as Act, ger: 'saltkott', n: 4, av: { [k]: 4, salt: 1 }, min: 3, tek: 'tork', vill: 8, text: `Saltar in ${SALTKOTT[k]} så att det håller.`, forsta: `{namn} saltade in byns första ${SALTKOTT[k]}.`,
+  }])),
   krossa_saft: { act: 'krossa_saft', ger: 'saft', n: 5, av: { bar: 10 }, min: 3, tek: 'kruka', vill: 5, text: 'Krossar bär till saft i en mellanstor lerkruka.', forsta: '{namn} krossade bär till byns första saft.' }, // steg 9.6.9
   koka_buljong: { act: 'koka_buljong', ger: 'buljong', n: 4, av: { ben: 2 }, eller: { av: ['svamp', 'kal'], n: 1 }, min: 3, tek: 'kruka', vill: 1, vatten: true, eld: true, sjud: 15, text: 'Lägger ben och svamp eller kål med vatten i en lerkruka som får sjuda på elden.', forsta: '{namn} satte byns första buljong att sjuda på elden.' }, // steg 10.7.24
   koka_te: { act: 'koka_te', ger: 'te', n: 1, av: { rolleka: 1 }, min: 2, tek: 'orte', vill: 2, vatten: true, eld: true, text: 'Kokar ett örtte av rölleka i en liten lerkruka.', forsta: '{namn} kokade byns första örtte av rölleka.' }, // steg 9.5.8

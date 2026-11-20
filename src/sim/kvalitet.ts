@@ -68,10 +68,13 @@ export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: 
   if (q >= MASTERVERK || q === 0 || (q >= FIN && SAKER[t.k]?.bildyta)) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4); en bildyta målas från fin (steg 10.7.1)
   count(s, 'kv_' + q);
   if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);
-  if (q >= MASTERVERK) notis(s, 'masterverk', `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}.`, [p.id]);
-  if (q >= MASTERVERK) log(s, `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}${t.ber?.namn ? `, som byn kallar ${t.ber.namn}` : ''}.`, 'world', [p.id]);
-  // de som ser det blir imponerade (eller avundsjuka) och skrattar åt det usla (steg 3.3.1, 3.4.3)
-  if (q >= MASTERVERK) { handelse(s, p, q === PERFEKT ? 'perfekt' : 'masterverk', undefined, namn.toLowerCase()); gudHandelse(s, 'hantverk', `mästerverket som ${p.name} gjorde`); } // steg 4.1.5
+  if (q >= MASTERVERK) {
+    const ett = q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk';
+    notis(s, 'masterverk', `${p.name} gjorde ${ett}: ${namn}.`, [p.id]);
+    log(s, `${p.name} gjorde ${ett}: ${namn}${t.ber?.namn ? `, som byn kallar ${t.ber.namn}` : ''}.`, 'world', [p.id]);
+    // de som ser det blir imponerade (eller avundsjuka) och skrattar åt det usla (steg 3.3.1, 3.4.3), och gudarna märker det (steg 4.1.5)
+    handelse(s, p, q === PERFEKT ? 'perfekt' : 'masterverk', undefined, namn.toLowerCase()); gudHandelse(s, 'hantverk', `mästerverket som ${p.name} gjorde`);
+  }
   // många usla eller fina saker, eller ett mästerverk, formar den som gjorde dem (steg 4.1.1.2)
   if (q === 0) { livet(s, p, 'usla'); if (p.liv!.usla >= UPPV.manga) upplev(s, p, 'usla'); }
   if (q >= MASTERVERK) upplev(s, p, 'perfekta', q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk');

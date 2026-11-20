@@ -2,12 +2,12 @@ import { fangelseAkut } from './fangelse';
 import { husNytt } from './byggnad';
 import { ALDER, KROPP, ageOf, alive, byId, count, familjOf, living, log } from './folk';
 import { planKlar, planRutor, troshusBestamd, troshusGolv, vuxnaTroende } from './troshus';
-import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
+import { Hus, MATERIAL, Rum, bitById, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
 import { heatAt, vedPerDygn } from './eld';
 import { BLOTVED } from './blotved';
 import { eldPlats } from './karta';
 import { changed, enPerRuta, isStored, ownedAll, stacksOf, utanPlatsNu, zoneAt, zonesOf } from './lager';
-import { tillbaka, tramat } from './bygg';
+import { rivHus } from './bygg';
 import { kronika } from './historik';
 import { DAY, HOUR, W } from './typer';
 import { tingOf } from './agande';
@@ -68,9 +68,9 @@ export const verkstadPlats = (k: string) => { const { w, h } = storlek(k); retur
 // det mest akuta: faror (kyla) före bekvämlighet, sedan efter vikten. Ett hus har en funktion (`fn`, en rad här); hus från
 // äldre sparfiler är sovsalar. Väggarna, golven och arbetet med dem är desamma för alla (bygg.ts, byggnad.ts).
 // En ny sorts byggnad blir en rad.
-// v = hur akut (0 = behövs inte, 1 = mycket), plats = rutor under tak som behövs, slag = vad ett förrådshus ska rymma,
+// v = hur akut (0 = behövs inte, 1 = mycket), plats = rutor under tak som behövs,
 // ag = vem som ska äga huset (ett familjehus)
-export interface Akut { tro?: number; v: number; plats: number; slag?: 'mat' | 'material'; ag?: number; hus?: number; kop?: boolean } // hus = just det här huset behöver mer plats (familjen har vuxit); kop = familjen har bara råd att köpa ett hus (steg 9.2.109)
+export interface Akut { tro?: number; v: number; plats: number; ag?: number; hus?: number; kop?: boolean } // hus = just det här huset behöver mer plats (familjen har vuxit); kop = familjen har bara råd att köpa ett hus (steg 9.2.109)
 export interface Byggnad {
   namn: string; ikon: string;
   behov: string; // vilket behov den fyller (förklaringen i gränssnittet)
@@ -286,7 +286,7 @@ function familjUtanHus(s: State): { ag: number; folk: Person[]; kop?: boolean } 
 // och en bädd vars ägare sover någon annanstans står tom tills den flyttats (inredningen i stationer.ts). Cachen gäller så länge husen (s.byggV), tiden (s.now) och antalet levande är desamma. s.now flyttas inom
 // ett slag av varje persons egen tid (taskStep i steg.ts), så den räknas om flera gånger per slag (ungefär 0,5 % av körtiden);
 // s.now står kvar i nyckeln eftersom familjerna kan ändras inom ett slag
-interface Boende { key: string; egna: Map<number, { tiles: number[]; folk: Person[]; hus: number }>; gemensamt: number[]; ovriga: Person[]; plats: Map<number, number>; ute?: true } // ute: byn har inget tak att sova under, och de gemensamma platserna är bäddarna ute (steg 10.2.48)
+interface Boende { key: string; egna: Map<number, { tiles: number[]; folk: Person[]; hus: number }>; gemensamt: number[]; ovriga: Person[]; plats: Map<number, number> }
 const boenden = new WeakMap<State, Boende>();
 function boende(s: State): Boende {
   const ppl = living(s), key = `${s.byggV ?? 0}:${s.now}:${ppl.length}`;
@@ -378,15 +378,15 @@ export function sovKvar(s: State, r: Rum) {
 // så många som sover under tak men inte i en halmbädd
 export function utanBadd(s: State) {
   const b = boende(s), st = stationRutor(s).sov;
-  if (b.ute || !b.gemensamt.length) { let n = Math.max(0, b.ovriga.length - b.gemensamt.length); for (const e of new Set(b.egna.values())) n += Math.max(0, e.folk.length - e.tiles.filter(i => st.has(i)).length); return n; } // (de som sover ute utan bädd)
+  if (!b.gemensamt.length) { let n = Math.max(0, b.ovriga.length - b.gemensamt.length); for (const e of new Set(b.egna.values())) n += Math.max(0, e.folk.length - e.tiles.filter(i => st.has(i)).length); return n; } // (de som sover ute utan bädd)
   let n = Math.min(b.ovriga.length, b.gemensamt.length) - Math.min(b.ovriga.length, b.gemensamt.filter(i => st.has(i)).length);
   for (const [h, e] of new Map([...b.egna.values()].map(e => [e.tiles, e]))) n += Math.min(e.folk.length, h.length) - Math.min(e.folk.length, h.filter(i => st.has(i)).length);
   return n;
 }
 // så många som saknar en egen sovplats under tak
-export const homeless = (s: State) => { const b = boende(s); return b.ute ? b.ovriga.length : Math.max(0, b.ovriga.length - b.gemensamt.length); }; // den som sover i en bädd ute har inget tak
-// byn har inget tak att sova under (bäddarna står då ute, steg 10.2.48)
-export const utanTak = (s: State) => !!boende(s).ute || !boende(s).gemensamt.length;
+export const homeless = (s: State) => { const b = boende(s); return Math.max(0, b.ovriga.length - b.gemensamt.length); };
+// byn har inget tak att sova under: inga gemensamma sovplatser
+export const utanTak = (s: State) => !boende(s).gemensamt.length;
 // den sjuke sover för sig (steg 9.5.5, kunskapen Smittan): i ett färdigt hus där ingen bor, när någon i byn kan Smittan och
 // sjukdomen smittar. En ruta per sjuk i huset, ingen frisk sover där (ingen bor där)
 function sjukBadd(s: State, p: Person) {
@@ -451,30 +451,27 @@ function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
   return r.namnFor ? r.namnFor(s, w, hh, same, a) : r.namn;
 }
 // ett förrådshus byter aldrig funktion, så lagerplatsen behöver inte tas bort här
-function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
+function bytFn(s: State, h: Hus, fn: Fn) {
   const fore = h.namn;
   husNytt(s, h, 'fn', `Var nyss ${fore.toLowerCase()}.`);
-  h.fn = fn; h.slag = slag; h.tom = undefined; h.rumFn = undefined;
-  h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
+  h.fn = fn; h.tom = undefined; h.rumFn = undefined;
+  h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, ag: h.ag });
   touch(s); count(s, 'bytt_' + fn);
   log(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'bygge');
   husKlar(s, h);
 }
 function riv(s: State, h: Hus) {
-  const mat = tramat(bitsOf(s).filter(b => b.hus === h.id)); // virket och veden i väggarna (timret är virke, steg 10.2.70)
-  s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
-  const ved = tillbaka(s, { ...h, ag: undefined }, mat); // till byn
-  touch(s); changed(s); count(s, 'rivet');
+  const ved = rivHus(s, h, true);
   log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`, 'bygge');
 }
 // vad en tom sovsal blir (steg 10.2.39): det byn behöver mest, med poäng som i BYGGNADER (vikten gånger hur akut det är). En
 // station som står där gör den till en verkstad (steg 2.2.17), ett förrådshus när maten ruttnar eller förrådet är fullt, ett
 // samlingshus när byn inget har (HUS.tomSamling, eller mer när en scen står utan sal); är inget värt mer än HUS.tomRiv rivs den
-function tomBlir(s: State, h: Hus, f: Akut, hs: Hus[]): { fn: Fn | 'riv'; slag?: Akut['slag'] } {
-  let b: { fn: Fn | 'riv'; slag?: Akut['slag'] } = { fn: 'riv' }, bv = HUS.tomRiv;
-  const prova = (fn: Fn, v: number, slag?: Akut['slag']) => { if (v > bv) { bv = v; b = { fn, slag }; } };
+function tomBlir(s: State, h: Hus, f: Akut, hs: Hus[]): Fn | 'riv' {
+  let b: Fn | 'riv' = 'riv', bv = HUS.tomRiv;
+  const prova = (fn: Fn, v: number) => { if (v > bv) { bv = v; b = fn; } };
   if (harArbete(s, h)) prova('verkstad', BYGGNADER.verkstad.vikt);
-  if (f.v > 1e-9) prova('forrad', BYGGNADER.forrad.vikt * f.v, f.slag);
+  if (f.v > 1e-9) prova('forrad', BYGGNADER.forrad.vikt * f.v);
   if (!hs.some(q => q.fn === 'samling')) prova('samling', BYGGNADER.samling.vikt * Math.max(HUS.tomSamling, BYGGNADER.samling.akut?.(s).v ?? 0));
   return b;
 }
@@ -494,7 +491,7 @@ function funktionsbyte(s: State) {
     const forrad = f.v > 1e-9 && !harArbete(s, h); // byn behöver ett förrådshus: ett tomt hus blir det före ett nytt
     if (s.now - h.tom < (forrad ? HUS.tomTim * HOUR : HUS.tomDygn * DAY)) continue;
     const b = tomBlir(s, h, f, hs);
-    if (b.fn === 'riv') riv(s, h); else bytFn(s, h, b.fn, b.slag);
+    if (b === 'riv') riv(s, h); else bytFn(s, h, b);
     return; // ett hus i taget
   }
 }
@@ -509,12 +506,11 @@ export function varmareInne(s: State, rum: Rum, c: number, varmer = false, p?: {
   }
   return inne >= Math.min(0, ute) - HUS.varmeMarg;
 }
-// samlingshusets rum, där man umgås när det är kallt (val.ts)
-// långhuset (steg 10.2.68): byns största sovsal (ingen äger den) med minst HUS.langhus sovplatser, där högsätet och bänkarna står
 // fähusens rum som saknar en krubba (steg 10.2.88): där ställs nästa krubba
 export const fahusUtanKrubba = (s: State): Rum[] => gridOf(s).rooms.filter(r => { const h = husById(s, r.hus); return !!h?.klar && fnId(h) === 'fahus' && !krubbaKrok.iRum(s, r); });
 // stationer.ts sätter kroken (den läses efter den här filen)
 export const krubbaKrok = { iRum: (_s: State, _r: Rum) => false };
+// långhuset (steg 10.2.68): byns största sovsal (ingen äger den) med minst HUS.langhus sovplatser, där högsätet och bänkarna står
 export function langhusRum(s: State): Rum | undefined {
   let best: Rum | undefined, bn = 0;
   for (const r of gridOf(s).rooms) {
@@ -537,8 +533,8 @@ export const harArbete = (s: State, h: Hus) => stationerOf(s).some(t => isKlar(t
 // ett förrådshus: golvet blir en lagerplats under tak, viktigast av alla, så att det som ligger ute bärs in dit
 export function husKlar(s: State, h: Hus) {
   if (!fnOf(h).lager || zonesOf(s).some(z => z.hus === h.id)) return;
-  zonesOf(s).push({ x: h.x + 1, y: h.y + 1, w: h.w - 2, h: h.h - 2, namn: h.namn, slag: h.slag, prio: 3, hus: h.id });
+  zonesOf(s).push({ x: h.x + 1, y: h.y + 1, w: h.w - 2, h: h.h - 2, namn: h.namn, prio: 3, hus: h.id }); // huset tar emot allt, mat och material
   changed(s);
   enPerRuta(s);
-  log(s, `${h.namn} är färdigt. Där ruttnar och slits ${h.slag === 'material' ? 'materialet' : 'maten'} mindre.`, 'world');
+  log(s, `${h.namn} är färdigt. Där ruttnar och slits maten mindre.`, 'world');
 }

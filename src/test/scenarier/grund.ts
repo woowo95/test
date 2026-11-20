@@ -1005,7 +1005,7 @@ SCENARIER.oversvamning = {
       fyll.forEach((k, i) => SIM.setAmount(h, k, forut[i]));
       const z = SIM.zonesOf(h).find(q => q.hus === hh?.id);
       if (!hh || !z) continue;
-      hh.slag = 'material'; z.slag = 'material'; SIM.touch(h);
+      z.slag = 'material'; SIM.touch(h);
       (h.stationer ??= []).push({ id: h.nextStation = (h.nextStation ?? 0) + 1, k: 'hylla', x: z.x + (z.w > 1 ? 1 : 0), y: z.y, kvar: 0, inne: 1 } as SIM.Station); SIM.touch(h);
       SIM.stepStationer(h);
       if (!SIM.stationerOf(h).some(q => q.k === 'hylla')) continue;

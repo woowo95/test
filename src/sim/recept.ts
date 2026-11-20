@@ -50,6 +50,10 @@ export const RT = balans('recept', {
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv i stationer.ts)
 const bordSkiva = (w: number, h: number) => Math.ceil(w * h / 2) * RT.bordVirke; // skivan av plankor (steg 10.2.90): en planka för varje två rutor, och ett virke till stubbarna (litet bord 1, bord 2, långbord 3)
 
+// det som skärs ur ett slaktat djur med kniven: lika för varje art, min minuter av slaget slag
+function slakt<const K extends string>(ks: readonly K[], min: number, slag: 'liten' | 'stor') {
+  return Object.fromEntries(ks.map(k => [k, { var: 'sak' as const, min, slag, tek: 'kniv' }])) as Record<K, { var: 'sak'; min: number; slag: 'liten' | 'stor'; tek: string }>;
+}
 const DEF = {
   // sakerna (saker.ts): redskapen, maten som lagas och det som slaktas
   kott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' },
@@ -115,14 +119,10 @@ const DEF = {
   metspo: { var: 'sak', av: { rep: 1, ben: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'metspo', bank: 'snickarbank' },
   kniv: { var: 'sak', av: { flinta: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'kniv' },
   skinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' },
-  vargkott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' },
-  radjurkott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' }, farkott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' }, getkott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' }, kokott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' }, svinkott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' }, // steg 10.3.14
-  fagelkott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' }, bjornkott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' },
-  farskinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' }, getskinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' }, kohud: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' }, svinskinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' }, vitskinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' },
-  vargskinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' },
+  ...slakt(['vargkott', 'radjurkott', 'farkott', 'getkott', 'kokott', 'svinkott', 'fagelkott', 'bjornkott'], 3, 'liten'), // köttet av varje art (steg 10.3.14)
+  ...slakt(['farskinn', 'getskinn', 'kohud', 'svinskinn', 'vitskinn', 'vargskinn'], 5, 'stor'), // skinnen
   fjadrar: { var: 'sak', min: 2, slag: 'liten', tek: 'kniv' },
-  radjursskinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' },
-  bjornskinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' },
+  ...slakt(['radjursskinn', 'bjornskinn'], 5, 'stor'),
   bensyl: { var: 'sak', av: { ben: 1 }, min: 4, slag: 'liten', tek: 'bensyl', verktyg: { sten: 'en sten', flinta: 'en flinta' } },
   boll: { var: 'sak', av: { skinn: 1, torrgras: 1 }, min: 4, slag: 'liten', tek: 'boll' },
   slagtra: { var: 'sak', av: { ved: 1 }, min: 4, slag: 'liten', tek: 'slagtra', verktyg: { kniv: 'kniven', flinta: 'en flinta' }, bank: 'snickarbank' },
