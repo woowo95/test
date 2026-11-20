@@ -152,7 +152,8 @@ interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete
 // håller den som är där torr; finare = byggs i stället för stationen av den sorten när byn har något över (Hemmen blir finare, mobler.ts)
 // sjuk = en bädd för den som är sjuk eller skadad (sjukbädden, steg 12.4.10, mobler.ts): ingen sovplats för någon annan
 // varmer = står inne och värmer rummet med en stationseld (fyrfatet, steg 12.4.11, mobler.ts): byn ställer det i ett rum med sovplatser långt från en eld
-export interface StationDef { varmer?: true; sjuk?: true; dass?: { smuts: number }; finare?: string; vagga?: true; ersatter?: string; vila?: { tim: number; tanke: 'sovSang' | 'sovVagga'; glad: number }; byggNamn?: string; kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; agd?: true; enda?: true; fahus?: true; kok?: true; tro?: true; golv?: true; hage?: true; rund?: true; pyntQ?: number; smak?: string; vrak?: true; hinner?: number } // hinner = så många minuter arbete som får vänta vid en: väntar mer vill byn ha en till (slöjdbänken, steg 12.1.150) // vrak = byggs aldrig, står där grundarna kom (vagnen, steg 11.6.13); hage = står i en hage (vattenhon, steg 10.10.30); golv = ligger på golvet som en matta: man går över den och annat står på den (steg 10.7.6); pyntQ = så många kvalitetssteg finare som pynt; smak = sorten i smaken (PYNT_SMAK) när den inte är stationens id // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
+// ljus = ett talgljus kan stå på möbeln (ljusPlatser i ljus.ts)
+export interface StationDef { ljus?: true; varmer?: true; sjuk?: true; dass?: { smuts: number }; finare?: string; vagga?: true; ersatter?: string; vila?: { tim: number; tanke: 'sovSang' | 'sovVagga'; glad: number }; byggNamn?: string; kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; agd?: true; enda?: true; fahus?: true; kok?: true; tro?: true; golv?: true; hage?: true; rund?: true; pyntQ?: number; smak?: string; vrak?: true; hinner?: number } // hinner = så många minuter arbete som får vänta vid en: väntar mer vill byn ha en till (slöjdbänken, steg 12.1.150) // vrak = byggs aldrig, står där grundarna kom (vagnen, steg 11.6.13); hage = står i en hage (vattenhon, steg 10.10.30); golv = ligger på golvet som en matta: man går över den och annat står på den (steg 10.7.6); pyntQ = så många kvalitetssteg finare som pynt; smak = sorten i smaken (PYNT_SMAK) när den inte är stationens id // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus', 'naverask', 'ogonlapp', 'nal'];
 // träsakerna vid snickarbänken (steg 9.4.5): receptets kolumn bank säger var det görs fortare och bättre, bara att det bara görs
@@ -250,23 +251,23 @@ export const STATIONER = {
     forsta: '{namn} gjorde byns första halmbädd. Den som sover i den vilar upp sig fortare.',
   },
   // borden (steg 2.2.15): tre storlekar av samma möbel och teknik. Byn bygger den storlek som räcker åt dem som saknar en plats
-  bord: {
+  bord: { ljus: true, // ett talgljus kan stå här (ljusPlatser i ljus.ts, steg 12.1.107)
     namn: 'Litet bord', ett: true, ikon: 'bord', w: 2, h: 1, tek: ['bord'], av: RECEPT.bord.av, min: RECEPT.bord.min, gor: [], mobel: true, flera: true, platser: true,
     byggNamn: 'Bygger ett litet bord', bygger: 'Bygger ett bord med stubbar att sitta på.',
     forsta: '{namn} byggde byns första bord, med stubbar att sitta på. Där äter man tillsammans och samtalar.',
   },
-  bord2: {
+  bord2: { ljus: true, // ett talgljus kan stå här (ljusPlatser i ljus.ts, steg 12.1.107)
     namn: 'Bord', ett: true, ikon: 'bord2', w: 2, h: 2, tek: ['bord'], av: RECEPT.bord2.av, min: RECEPT.bord2.min, gor: [], mobel: true, flera: true, platser: true,
     bygger: 'Bygger ett bord med åtta stubbar runt.',
     forsta: '{namn} byggde byns första fyrkantiga bord, med plats för åtta.',
   },
-  bord3: {
+  bord3: { ljus: true, // ett talgljus kan stå här (ljusPlatser i ljus.ts, steg 12.1.107)
     namn: 'Långbord', ett: true, ikon: 'bord3', w: 3, h: 2, tek: ['bord'], av: RECEPT.bord3.av, min: RECEPT.bord3.min, gor: [], mobel: true, flera: true, platser: true,
     bygger: 'Bygger ett långbord med tio stubbar runt.',
     forsta: '{namn} byggde byns första långbord, med plats för tio.',
   },
   // förvaringen (steg 2.3.6): står i en lagerplats, på en ruta där något redan ligger, och går inte att gå igenom
-  hylla: {
+  hylla: { ljus: true, // ett talgljus kan stå här (ljusPlatser i ljus.ts, steg 12.1.107)
     namn: 'Hylla', ikon: 'hylla', w: 1, h: 1, tek: ['hylla'], av: RECEPT.hylla.av, min: RECEPT.hylla.min, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.hyllaRymmer },
     bygger: 'Bygger en hylla av virke och rep i lagret.',
     forsta: '{namn} byggde byns första hylla. På den ryms flera högar på samma plats, så att lagret tar mindre plats.',

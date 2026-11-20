@@ -14,7 +14,7 @@ import { roomAt } from './byggnad';
 import { ACTS } from './handlingar';
 import { lightLevel } from './tid';
 import { HOUR, Person, State, TalgLjus, Task, Uppsatt, W } from './typer';
-import { isKlar, ledig, stationById, stationerOf } from './stationer';
+import { isKlar, ledig, stationById, stationDef, stationerOf } from './stationer';
 import { omrade } from './omrade';
 import { tileOf } from './mark';
 import { isWall } from './byggnad';
@@ -260,7 +260,6 @@ export const LJUSSORTER: Record<string, { brinnTim: number; bransle?: VatskaId }
 };
 export const LJUSGRUPP = 'talgljus';
 export const ljusSort = (l: TalgLjus) => l.k ?? 'talgljus';
-const LJUSBORD = new Set(['bord', 'bord2', 'bord3', 'hylla']);
 // borden och hyllorna inne, utan ett ljus, i rum där folk varit vakna i mörker minst UPPSATT.trosk timmar (som avtar)
 export function ljusPlatser(s: State) {
   const m = s.morkPlats;
@@ -269,7 +268,7 @@ export function ljusPlatser(s: State) {
   for (const k in m) { const i = +k, r = roomAt(s, i % W, Math.floor(i / W)); if (r) rum.set(r.id, (rum.get(r.id) ?? 0) + m[i]); }
   if (!rum.size) return [];
   const har = new Set((s.ljus ?? []).map(l => l.st));
-  return stationerOf(s).filter(st => LJUSBORD.has(st.k) && isKlar(st) && !har.has(st.id) && (rum.get(roomAt(s, st.x, st.y)?.id ?? -1) ?? 0) >= UPPSATT.trosk);
+  return stationerOf(s).filter(st => stationDef(st.k)?.ljus && isKlar(st) && !har.has(st.id) && (rum.get(roomAt(s, st.x, st.y)?.id ?? -1) ?? 0) >= UPPSATT.trosk);
 }
 // ett ljus som ingen bär, är färdigt och kan brinna: en lampa med sitt bränsle i (steg 12.4.2)
 const kanBrinna = (x: Ting) => { const b = LJUSSORTER[x.k]?.bransle; return !b || x.inne?.v === b && x.inne.n > 0; };
