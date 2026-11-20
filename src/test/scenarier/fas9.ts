@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, kor, klockan, medBank, medHus, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { SCENARIER, kor, klockan, medBank, medHus, setMat, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
@@ -672,7 +672,7 @@ SCENARIER.vardlag = {
     const h = SIM.createState(2, START), p = SIM.living(h).find(r => SIM.ageOf(r, h.now) >= SIM.ALDER.vuxen)!;
     h.seder.v.arbete = 1; p.saknas = ['benV', 'benH']; p.hunger = KROPP.hungrig * (VARDRATT.snal + 1) / 2;
     const knapp = mindreMat(h, p, () => 1), gott = mindreMat(h, p, () => 10);
-    for (const k of SIM.FOOD) SIM.setAmount(h, k, 0);
+    setMat(h, {});
     const vantar = SIM.foodDays(h) < VARDRATT.knapp && !MAT.behover(h, p);
     h.seder.v.arbete = 0; h.seder.v.gemenskap = 0;
     const mild = !mindreMat(h, p, () => 1);
@@ -735,9 +735,9 @@ SCENARIER.matgrupper = {
 SCENARIER.maltidsniva = {
   text: 'Steg 9.6.2: måltidernas nivåer. Rått, enkel, lagad och fin efter hur många grupper som ingår: det grillade och torkade är enkelt, en rätt ur krukan med två grupper är lagad och med tre, varav en är smak, fin. En lagad måltid höjer humöret lite och en fin mer',
   kor: () => {
-    const { maltidsNiva, nivaAvGrupper, MAT, rattId, FOOD, setAmount } = SIM;
+    const { maltidsNiva, nivaAvGrupper, MAT, rattId, setAmount } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    const ata = (k: string) => { for (const f of FOOD) setAmount(s, f, 0); setAmount(s, k, 4); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p); return p.thoughts.find(t => t.text.startsWith('Åt en'))?.v ?? 0; };
+    const ata = (k: string) => { setMat(s, {}); setAmount(s, k, 4); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p); return p.thoughts.find(t => t.text.startsWith('Åt en'))?.v ?? 0; };
     const lagad = ata(rattId('fisk', 'gryta', 'lagad')), fin = ata(rattId('fisk', 'gryta', 'fin')), grill = ata('grillfisk');
     return [
       [`nivåerna: abborre ${maltidsNiva('abborre')}, grillad fisk ${maltidsNiva('grillfisk')}, fiskgryta ${maltidsNiva(rattId('fisk', 'gryta', 'lagad'))}`, maltidsNiva('abborre') === 'ratt' && maltidsNiva('grillfisk') === 'enkel'],
@@ -752,7 +752,7 @@ SCENARIER.kokning = {
   kor: () => {
     const { kokRecept, kokaKlar, stepKok, kanKoka, TILLAGNING, setAmount, addTool, chooseTask, SAKER, amountOf, rattId } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    for (const k of SIM.FOOD) setAmount(s, k, 0);
+    setMat(s, {});
     const ro = 2 + SIM.utsade(s, 'rolleka'); // (röllekan som sparas till sådden används inte i krukan)
     setAmount(s, 'fisk', 4); setAmount(s, 'rotter', 4); setAmount(s, 'rolleka', ro);
     p.tek = { ...(p.tek ?? {}), kruka: 1 }; s.fire.lit = true; p.skill.matlagning = SIM.MATLAG.brannFull; // en skicklig kock bränner inget (steg 9.6.4)
@@ -779,11 +779,11 @@ SCENARIER.kokning = {
 SCENARIER.kocken = {
   text: 'Steg 9.6.4: kocken. Det som bränns är hela bitar: varje bit bränns eller inte med en chans som sjunker med färdigheten Matlagning, och en skicklig kock ger maten en liten humörhöjning',
   kor: () => {
-    const { grilla, setAmount, amountOf, MAT, FOOD, MATLAG } = SIM;
+    const { grilla, setAmount, amountOf, MAT, MATLAG } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     s.fire.lit = true; s.stationer = [...(s.stationer ?? []), { id: 999, k: 'grill', x: 1, y: 1, kvar: 0 } as SIM.Station];
     const prov = (skill: number) => {
-      for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'fisk', 40); s.stat = {};
+      setMat(s, {}); setAmount(s, 'fisk', 40); s.stat = {};
       p.skill.matlagning = skill; vidStack(s, p, 'fisk'); for (let i = 0; i < 10; i++) grilla(s, p, 0.5);
       return { grillat: amountOf(s, 'grillfisk'), brant: s.stat.brant as number ?? 0, kvar: amountOf(s, 'fisk') };
     };
@@ -802,9 +802,9 @@ SCENARIER.kocken = {
 SCENARIER.variation = {
   text: 'Steg 9.6.5: variation. Var och en minns proteinet i de senaste måltiderna, och den som ätit samma protein för många gånger tröttnar och får tanken "Fisk igen", som drar ner humöret lite; den som äter omväxlande gör det inte',
   kor: () => {
-    const { MAT, FOOD, setAmount, VARIATION } = SIM;
+    const { MAT, setAmount, VARIATION } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    const ata = (k: string) => { for (const f of FOOD) setAmount(s, f, 0); setAmount(s, k, 4); p.hunger = 0.2; MAT.anvand(s, p); };
+    const ata = (k: string) => { setMat(s, {}); setAmount(s, k, 4); p.hunger = 0.2; MAT.anvand(s, p); };
     p.protMinne = []; p.thoughts = [];
     for (let i = 0; i < VARIATION.trott; i++) ata('grillfisk');
     const igen = p.thoughts.find(t => t.text === 'Fisk igen')?.v ?? 0;
@@ -821,7 +821,7 @@ SCENARIER.variation = {
 SCENARIER.favorit = {
   text: 'Steg 9.6.6: favoriter och avsky. En fin måltid ger tycke för rättens huvudingrediens och en matförgiftning avsmak för det man åt; en stark smak är en favorit eller en avsky, som bleknar med tiden om den inte förnyas och sprids i samtal till den som står en nära',
   kor: () => {
-    const { ratt, smakAv, favoriter, stepRykten, berattaSmak, MAT, FOOD, setAmount, rattId, RYKTE } = SIM;
+    const { ratt, smakAv, favoriter, stepRykten, berattaSmak, MAT, setAmount, rattId, RYKTE } = SIM;
     const s = createState(1, START), [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     p.smak = {}; q.smak = {};
     for (let i = 0; i < 3000 && smakAv(p, 'm:fisk') > -RYKTE.smakFavorit; i++) { ratt(s, p, { fisk: 1 }, 1); p.sjuk = undefined; p.sickUntil = undefined; }
@@ -829,7 +829,7 @@ SCENARIER.favorit = {
     berattaSmak(p, q, 60); const spred = smakAv(q, 'm:fisk');
     for (let h = 0; h < 5 * 24; h++) stepRykten(s, () => 0.5);
     const bleknat = smakAv(p, 'm:fisk');
-    for (const k of FOOD) setAmount(s, k, 0); setAmount(s, rattId('fisk', 'gryta', 'fin'), 4); q.hunger = 0.2; MAT.anvand(s, q);
+    setMat(s, {}); setAmount(s, rattId('fisk', 'gryta', 'fin'), 4); q.hunger = 0.2; MAT.anvand(s, q);
     const gott = smakAv(q, 'm:fisk');
     return [
       [`en matförgiftning av rå fisk ger avsky för fisk (${avsky.toFixed(2)}), och den står bland favoriterna och avskyn (${fav ? 'ja' : 'nej'})`, avsky <= -RYKTE.smakFavorit && fav],
@@ -843,9 +843,9 @@ SCENARIER.favorit = {
 SCENARIER.ratthaller = {
   text: 'Steg 9.6.7: maten håller. En rätts hållbarhet är medelvärdet av ingrediensernas, så torkad råvara gör att rätten håller längre',
   kor: () => {
-    const { kokRecept, setAmount, SAKER, hallerMedel, FOOD } = SIM;
+    const { kokRecept, setAmount, SAKER, hallerMedel } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    const prov = (k: string) => { for (const f of FOOD) setAmount(s, f, 0); setAmount(s, k, 4); setAmount(s, 'rotter', 4); const r = kokRecept(s, p); return r ? { namn: SAKER[r.id]!.namn, haller: SAKER[r.id]!.haller!, medel: hallerMedel([[r.huvud, 2], [r.andra, 2]]) } : undefined; };
+    const prov = (k: string) => { setMat(s, {}); setAmount(s, k, 4); setAmount(s, 'rotter', 4); const r = kokRecept(s, p); return r ? { namn: SAKER[r.id]!.namn, haller: SAKER[r.id]!.haller!, medel: hallerMedel([[r.huvud, 2], [r.andra, 2]]) } : undefined; };
     const farsk = prov('fisk'), torr = prov('torrfisk');
     return [
       [`av färsk fisk och rötter (medel ${farsk?.medel} dygn) håller ${farsk?.namn} ${farsk?.haller} dygn`, !!farsk && farsk.haller === farsk.medel && farsk.haller < 5],
@@ -857,9 +857,9 @@ SCENARIER.ratthaller = {
 SCENARIER.rokeri = {
   text: 'Steg 9.6.8: rökeriet. En station där kött och fisk röks på ett dygn i stället för torkningens fem, också i regn och på vintern, och rökt mat håller som torkad men smakar lite bättre',
   kor: () => {
-    const { torka, kanTorka, setAmount, amountOf, SAKER, ROK, TORK, MAT, FOOD, STATIONER } = SIM;
+    const { torka, kanTorka, setAmount, amountOf, SAKER, ROK, TORK, MAT, STATIONER } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    for (const k of FOOD) setAmount(s, k, 0);
+    setMat(s, {});
     setAmount(s, 'fisk', 30);
     s.stationer = [...(s.stationer ?? []), { id: 998, k: 'rokeri', x: 2, y: 2, kvar: 0 } as SIM.Station];
     p.tek = { ...(p.tek ?? {}), rokeri: 1 };
@@ -869,7 +869,7 @@ SCENARIER.rokeri = {
     for (let h = 0; h <= ROK.dygn * 24; h++) { SIM.elda(s, p, rok, 24); s.now += SIM.HOUR; SIM.stepStationsEld(s, 3600); }
     torka(s, p, 1, 'rokeri');
     const rokt = amountOf(s, 'rokfisk');
-    for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'rokfisk', 4); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
+    setMat(s, {}); setAmount(s, 'rokfisk', 4); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
     const gott = p.thoughts.some(t => t.text === 'Åt rökt mat');
     return [
       [`byn kan röka (${kan ? 'ja' : 'nej'}), och fisken hängs upp i rökeriet (${uppe})`, kan && uppe > 0],
@@ -1108,9 +1108,9 @@ SCENARIER.snoata = {
 SCENARIER.salt = {
   text: 'Steg 9.6.19: saltet. En handelsvara som handlarna från byarna vid havet säljer; saltat kött och saltad fisk håller längre, och saltet hör till gruppen Smak och fyller mineralerna',
   kor: () => {
-    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, HANDLARVAROR, SAKER, grupperAv, kokRecept, FOOD } = SIM;
+    const { KLAR_FOR, TILLVERKA, setAmount, amountOf, HANDLARVAROR, SAKER, grupperAv, kokRecept } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    for (const k of FOOD) setAmount(s, k, 0);
+    setMat(s, {});
     setAmount(s, 'fisk', 4); setAmount(s, 'salt', 2);
     KLAR_FOR[TILLVERKA.salta_fisk.act]!(s, p, p.task!, 0);
     const saltad = amountOf(s, 'saltfisk'), salt = amountOf(s, 'salt');
@@ -1145,9 +1145,9 @@ SCENARIER.lok = {
 SCENARIER.stek = {
   text: 'Steg 9.6.21 och 10.2.87: stekhällen. En flat sten på härden inne i huset där kött och fisk steks med talg till stek, som smakar bättre (en rad i TILLAGNING). Steken görs bara vid härden, när den brinner, och en stekhäll som ligger vid grillen flyttas till härden när det finns en',
   kor: () => {
-    const { stekaKlar, kanSteka, setAmount, amountOf, rattId, stepStationer, newFire, TILLAGNING, TILLBEHOR, MAT, FOOD, ACTS } = SIM;
+    const { stekaKlar, kanSteka, setAmount, amountOf, rattId, stepStationer, newFire, TILLAGNING, TILLBEHOR, MAT, ACTS } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    for (const k of FOOD) setAmount(s, k, 0);
+    setMat(s, {});
     setAmount(s, 'kott', 4); setAmount(s, 'talg', 2);
     s.fire.lit = true; p.skill.matlagning = SIM.MATLAG.brannFull; p.tek = { ...(p.tek ?? {}), stekhall: 1 };
     const grill = { id: 994, k: 'grill', x: 1, y: 1, kvar: 0, med: ['stekhall'] } as SIM.Station;
@@ -1162,7 +1162,7 @@ SCENARIER.stek = {
     const med = kanSteka(s, p);
     stekaKlar(s, p);
     const stek = SIM.RATT_SAKER.filter(k => SIM.rattInfo(k)?.kat === 'stek' && SIM.rattInfo(k)?.huvud === 'kott').reduce((n, k) => n + amountOf(s, k), 0);
-    for (const k of FOOD) setAmount(s, k, 0); setAmount(s, rattId('kott', 'stek', 'lagad'), 2); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
+    setMat(s, {}); setAmount(s, rattId('kott', 'stek', 'lagad'), 2); p.thoughts = []; p.hunger = 0.2; MAT.anvand(s, p);
     const gott = p.thoughts.some(t => t.text === 'Åt en stek');
     return [
       [`steka är en rad i TILLAGNING (${TILLAGNING.steka.namn}) och stekhällen ett tillbehör till härden (${TILLBEHOR.stekhall.till}), där man steker (${ACTS.steka.plats})`, !!TILLAGNING.steka && TILLBEHOR.stekhall.till === 'hard' && ACTS.steka.plats === 'hard'],
@@ -1221,9 +1221,9 @@ SCENARIER.brod = {
 SCENARIER.svalt = {
   text: 'Steg 9.6.24: skämd mat i valet av mat. Maten man äter väljs efter skicket och hungern: den som nyss blivit hungrig tar färsk mat och låter den skämda ligga, och den som är mycket hungrig äter skämd mat när inget bättre finns, med samma risk för magsjuka som förut',
   kor: () => {
-    const { MAT, FOOD, setAmount, amountOf, stacksOf, KROPP, skickKrav } = SIM;
+    const { MAT, setAmount, amountOf, stacksOf, KROPP, skickKrav } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-    const lagg = (farsk: boolean) => { for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'fisk', 6); for (const a of stacksOf(s)) if (a.k === 'fisk') a.c = 0.2; if (farsk) setAmount(s, 'rotter', 6); };
+    const lagg = (farsk: boolean) => { setMat(s, {}); setAmount(s, 'fisk', 6); for (const a of stacksOf(s)) if (a.k === 'fisk') a.c = 0.2; if (farsk) setAmount(s, 'rotter', 6); };
     lagg(true); p.hunger = KROPP.hungrig - 0.01; MAT.anvand(s, p);
     const tog = { fisk: 6 - amountOf(s, 'fisk'), rotter: 6 - amountOf(s, 'rotter') };
     lagg(false); p.hunger = KROPP.hungrig - 0.01; const lat = MAT.anvand(s, p);
@@ -1688,10 +1688,10 @@ SCENARIER.tamdjur = {
 SCENARIER.valp = {
   text: 'Steg 9.8.2: vargvalpen blir hund. När jägarna fällt flocken står valpen kvar; svälter byn äts den, annars vill den jägare som har mest Empati ta hem den, och det lyckas efter jaktfärdigheten',
   kor: () => {
-    const { vargValp, tamdjurOf, setAmount, amountOf, FOOD } = SIM;
+    const { vargValp, tamdjurOf, setAmount, amountOf } = SIM;
     // byn svälter: valpen äts
     const s = createState(1, START); klockan(s, 10);
-    for (const k of FOOD) setAmount(s, k, 0);
+    setMat(s, {});
     const jagare = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen).slice(0, 3);
     vargValp(s, jagare);
     const aten = !tamdjurOf(s).length && amountOf(s, 'vargkott') > 0;
@@ -2262,7 +2262,7 @@ SCENARIER.fangstgrop = {
 SCENARIER.stationseld = {
   text: 'Steg 10.2.85–10.2.86: örtköket, bakugnen och rökeriet har egna eldar. Den som ska arbeta där lägger på ved och tänder den, den brinner så länge veden räcker och glöder sedan, och arbetet går bara när den brinner: degen gräddas och köttet röks inte förrän elden tänts. Veden går åt i elden och inte i recepten, och örtkökets eld värmer lite',
   kor: () => {
-    const { bakaKlar, kanBaka, stepBak, setAmount, amountOf, addTool, fyllVatska, torka, kanTorka, torrDel, stepStationsEld, eldaForst, vidStation, heatAt, STATIONSELD, ELDSTATIONER, RECEPT, FOOD } = SIM;
+    const { bakaKlar, kanBaka, stepBak, setAmount, amountOf, addTool, fyllVatska, torka, kanTorka, torrDel, stepStationsEld, eldaForst, vidStation, heatAt, STATIONSELD, ELDSTATIONER, RECEPT } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     const ugn = { id: 991, k: 'bakugn', x: 2, y: 8, kvar: 0 } as SIM.Station, rok = { id: 992, k: 'rokeri', x: 2, y: 2, kvar: 0 } as SIM.Station;
     const ort = { id: 993, k: 'ortkok', x: 8, y: 2, kvar: 0 } as SIM.Station;
@@ -2284,7 +2284,7 @@ SCENARIER.stationseld = {
     tim(1); const slackt = !ugn.eld?.lit && (ugn.eld?.glod ?? 0) > s.now;
     tim(STATIONSELD.glodTim + 1); const kall = !ugn.eld?.lit && ugn.eld?.glod === undefined;
     // rökeriet: fisken hänger men röks inte förrän elden brinner
-    for (const k of FOOD) setAmount(s, k, 0); setAmount(s, 'fisk', 10); setAmount(s, 'ved', 0);
+    setMat(s, {}); setAmount(s, 'fisk', 10); setAmount(s, 'ved', 0);
     vidStack(s, p, 'fisk'); torka(s, p, 1, 'rokeri'); const uppe = rok.tork?.[0]; // fiskaren når fisken (steg 11.1.74)
     tim(30);
     const intRokt = !!uppe && torrDel(s, uppe, 'rokeri') === 0 && amountOf(s, 'rokfisk') === 0;
