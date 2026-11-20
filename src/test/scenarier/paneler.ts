@@ -1,6 +1,8 @@
 // Scenarier för kartbilden och panelerna i fas 12 (grenen par-paneler).
 import * as SIM from '../../sim';
-import { SCENARIER } from './hjalp';
+import { SCENARIER, utanWebblasare } from './hjalp';
+import { GRAFER, grafHtml } from '../../ui/graf';
+import { setByn } from '../../ui/lage';
 import { START, kronikaVakt } from '../kor';
 import { readdirSync, readFileSync } from 'node:fs';
 import { hasIcon } from '../../ikoner';
@@ -66,6 +68,34 @@ SCENARIER.kronikakat2 = {
       [`sex nya rader i NOTISER${saknas.length ? ` (saknas: ${saknas.join(', ')})` : ''}`, !saknas.length],
       [`en ny tro, en ny lag och det första tamdjuret ger sin notis, och tamdjuret bara det första (${['tro', 'lag', 'tamdjur'].filter(har).join(', ')}; ${tamN} tamdjursrad)`, har('tro') && har('lag') && har('tamdjur') && tamN === 1],
       [`alla sex skrivs i simuleringen (${iKoden.join(', ')})`, iKoden.length === nya.length],
+    ];
+  },
+};
+
+SCENARIER.grafer = {
+  text: 'Steg 12.1.138: nio nya grafer i Byns tal, var och en med sitt tal i HISTORIK_TAL: silver i byn, tamdjur, sjuka, troende och fångar (hur många just då), och skörd, strider, resor och böcker (sedan byns början, räknat i byns statistik när det händer)',
+  kor: () => {
+    utanWebblasare();
+    const s = SIM.createState(5, START), folk = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const [a, b, c] = folk;
+    SIM.setAmount(s, 'silver', 7);
+    SIM.nyttTamdjur(s, 'hund', a.x, a.y, a.id);
+    b.sjuk = { k: Object.keys(SIM.SJUKDOMAR)[0], t: s.now, tecken: s.now } as unknown as typeof b.sjuk;
+    c.tro = 1; a.tro = 1; (s.tron ??= []).push({ id: 1 } as SIM.Tro);
+    c.fange = { hus: -1, t: s.now, varfor: 'prov' };
+    const st = (s.stat ??= {}) as Record<string, number>;
+    st.skord = 12; st.strider = 3; st['resa hemma'] = 2; st.bocker = 1;
+    SIM.historikSteg(s);
+    const nya: [string, number][] = [['silver', 7], ['tamdjur', 1], ['sjuka', 1], ['troende', 2], ['fangar', 1], ['skord', 12], ['strider', 3], ['resor', 2], ['bocker', 1]];
+    const sist = (id: string) => SIM.historikSerie(s, id).at(-1)?.[1];
+    const fel = nya.filter(([id, v]) => sist(id) !== v);
+    setByn(s);
+    const grafer = nya.filter(([id]) => GRAFER[id] && grafHtml(id).includes(GRAFER[id].namn));
+    const simMapp = new URL('../../sim/', import.meta.url), kod = readdirSync(simMapp).filter(f => f.endsWith('.ts')).map(f => readFileSync(new URL(f, simMapp), 'utf8')).join('\n');
+    return [
+      [`de nio talen sparas i historiken med rätt värde${fel.length ? ` (fel: ${fel.map(([id, v]) => `${id} ${sist(id)} i stället för ${v}`).join(', ')})` : ''}`, !fel.length],
+      [`de nio graferna finns i GRAFER och ritas (${grafer.length} av 9)`, grafer.length === 9],
+      ['böckerna, striderna, resorna och skörden räknas i byns statistik när det händer', /count\(s, 'bocker'\)/.test(kod) && /count\(s, 'strider'\)/.test(kod) && /count\(s, 'resa hemma'\)/.test(kod) && /count\(s, 'skord'/.test(kod)],
     ];
   },
 };

@@ -509,6 +509,7 @@ export function skrivKlar(s: State, p: Person) {
   const k: Skrift = { q, ...(fel ? { fel } : {}), slag: l.slag, av: { id: p.id, namn: p.name }, t: s.now, ...tx, ...(l.om ? { om: l.om } : {}), ...(l.bev ? { bev: l.bev } : {}), ...(l.lar ? { lar: l.lar } : {}), ...(l.tek ? { tek: l.tek } : {}), ...(l.tro !== undefined ? { tro: l.tro } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(l.platser ? { platser: l.platser } : {}), ...(l.fran?.kid !== undefined ? { kid: l.fran.kid } : {}) };
   if (l.bok) {
     (l.bok.delar ??= []).push(k); count(s, 'bokdel');
+    if (l.bok.delar.length === 1) count(s, 'bocker'); // böckerna sedan byns början (steg 12.1.138, grafen i Byns tal)
     if (l.bok.delar.length === 1) { const rad = `${p.name} skrev den första delen i en bok: ${tx.titel.toLowerCase()}.`, at = tingXY(s, l.bok); log(s, rad, 'skill', [p.id]); notis(s, 'skrift', rad, [p.id], at ? { x: Math.floor(at.x), y: Math.floor(at.y) } : undefined); kronika(s, rad, 'skrift'); } // steg 10.6.8
   }
   else {
