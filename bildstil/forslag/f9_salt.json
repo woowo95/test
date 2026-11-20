@@ -2,32 +2,84 @@
  "kort": "f9_salt",
  "namn": "Salt",
  "slag": null,
- "typ": "janej",
- "fore": "Ritad med kod: behållaren som redan finns, oförändrad, med bara innehållet nytt.",
- "om": "Steg 9.6.19: salt kokas fram ur havsvatten och ger smak åt maten. Här näverasken du valde, full av vitt salt.",
- "kommentar": "Använd befintliga behållare",
- "av": "kod",
- "vad": "Steg 9.6.19: salt kokas fram ur havsvatten och ger smak åt maten. Här näverasken du valde, full av vitt salt.",
+ "vad": "Steg 9.6.19: salt kokas fram ur havsvatten och ger smak åt maten. Här näverasken du valde, full av vitt salt. Du sa nej till alla tre förra gången, utan kommentar, så det här är nya idéer utan förlaga.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
  "versioner": [
   {
-   "ide": "Näverasken med saltet.",
    "bilder": [
     {
-     "namn": "salt",
+     "namn": "f9_salt",
      "rader": [
-      "..oooooooo..",
-      ".oqwwqwwqpo.",
-      "oqwwwwwqwqpo",
-      "oqqqwwqwwppo",
-      "opqqqqqqqppo",
-      "owqnnqqqnnpo",
-      "oqqqqnnqqppo",
-      "opqpppqppppo",
-      "opppppppppoo",
-      ".oooooooooo."
+      "...oooo...",
+      "..owwqqo..",
+      ".owqwqqpo.",
+      "mqwqqpqTpm",
+      "mpqpqpTpTm",
+      "mwqqqqqppm",
+      "mGFGGFGFEm",
+      "mqwqqpqpom",
+      "mwqpqqppom",
+      "mqqpqpqoom",
+      "mGFGGFGFEm",
+      "mqpqppooom",
+      ".mmmmmmmm."
      ]
     }
-   ]
+   ],
+   "anteckning": "Näverasken står på marken, sedd snett uppifrån som i spelet, med samma form och storlek som förut: en rund ask med kantlist och två snörade band i jord. Asken är 10 punkter bred och 10 hög, och konturen är kol2 runt hela asken. Bara öppningen är ny. Där ligger ett spegelsymmetriskt, kupat berg av fint salt som välver sig tre punkter över kanten, så att bilden blir 13 punkter hög. Saltet är ljusast i ben3 och ben2 uppe till vänster och mörknar mot ben1 och skiffer3 nere till höger. Kornet byts punkt för punkt, och kupan har en tunn kontur i ben0 så att den syns mot gräset. Kantens framsida syns under saltet, och så ser man direkt att asken är full. Granskningen: Granskad, inget behövde rättas; versionen lämnas oförändrad. Storleken stämmer: asken är 10 × 13 punkter, en liten sak bredvid kolonisten (14 × 20), och asken är densamma som i spelet, med kontur, banden i jord och de mörka tonerna åt höger. Bara öppningen är fylld (raderna 0–5). Saltkupan är spegelsymmetrisk (4, 6 och 8 punkter breda rader, centrerade). Den tonas från ben3 och ben2 uppe till vänster mot ben1 och skiffer3 nere till höger och har ben0 som kontur, materialets mörkaste ton. Den välver sig tre punkter över kanten. Kupan är ljusare än det olivgröna gräset och syns tydligt, och vinkeln snett uppifrån är densamma som askens. Ljuset kommer från övre vänstra hörnet. Det finns ingen ren vit och inga mörka fläckar, och saken bärs inte, så inget går genom huvudet.",
+   "ide": "Rundad topp: Näverasken ritas exakt som den finns i spelet, oförändrad i form och storlek, och bara öppningen fylls med ett jämnt kupat berg av fint salt som välver sig några punkter över kanten. Kupan är spegelsymmetrisk som asken och tonas från ben3 och ben2 uppe till vänster till ben1 och skiffer3 nere till höger, med ett fint korn punkt för punkt och högst en glanspunkt i ben2–ben3, aldrig ren vit. Silhuetten blir asken med en mjuk rund kupol ovanpå, så att man direkt ser att den är full."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_salt",
+     "rader": [
+      "..EFFFFFFE..",
+      ".FHwwqwqqGF.",
+      "FHwqwqpqqpGF",
+      "FGqwqpTqqpGF",
+      "EFGqpqpqpGFE",
+      "EGHGGGGFGFFE",
+      "EwqwqqpqpooE",
+      "EqwqpqqpopoE",
+      "EHGHGGGFGFFE",
+      "EqwqqpqpoooE",
+      "EqqpqpqpooFE",
+      ".EEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Näverasken står på marken som i förrådet, sedd snett ovanifrån; samma form, storlek, kontur och band som den befintliga asken. Saltet är struket jämnt med kanten, så silhuetten blir inte högre. Bara den ovala öppningen är ny: fint korn i ben2 och ben3 med en grund grop i mitten, skuggad med ben1 och skiffer3 mot nedre högra sidan. Den bruna näverkanten ramar in den ljusa ovalen, som syns först. Ljuset kommer uppifrån vänster, så den vänstra sidan är ljusast. Granskningen: Askens kropp, ränder och kontur är oförändrade. Saltovalen var sned: till höger gick saltet ända ut mot kanten (rad 1 och 2), medan näverkanten syntes till vänster. Jag har lagt in en mörkare kantpunkt (jord2) till höger, så att ovalen blir spegelsymmetrisk i öppningen: 6, 8, 8 och 6 punkter bred. Gropen låg till höger om mitten; nu ligger den mitt i ovalen och skuggas med ben1 och skiffer3 mot nedre högra sidan, som i idén. Askens silhuett, storlek (12 × 12 punkter mot kolonistens 14 × 20) och vinkel snett uppifrån behölls, och saltet ligger fortfarande jämnt med kanten.",
+   "ide": "Plan yta: Den befintliga näverasken behålls exakt, och saltet ligger struket jämnt med kanten och ses snett ovanifrån som en ljus oval i öppningen, utan att höja askens silhuett. Ytan är ett fint korn i ben2 och ben3, med en grund grop efter en hand eller ett mått mitt i som skuggas med ben1 och skiffer3 mot nedre högra sidan. Det läses som en full, prydlig ask där den ljusa ovalen mot den bruna näverkanten är det man ser först."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_salt",
+     "rader": [
+      "......oo........",
+      ".....owqo..oo...",
+      ".....owqToowqo..",
+      "..oo.owqpToqpTo.",
+      ".owqoowpTTopTTo.",
+      ".owpTowqpTowqpo.",
+      ".oqpoqwpToqwpTo.",
+      ".opTTpqpToTpTTo.",
+      ".EwqwqqpqppopoE.",
+      ".EwqqpqpqpppooE.",
+      ".EHGHGGGGFGFFFE.",
+      ".EqwqqpqpppppoE.",
+      ".EwqqpqppqppooE.",
+      ".EqqpqppppppooE.",
+      ".EHGGGGGFGFFFFE.",
+      ".EqqqpqpppppooE.",
+      "..EpqpppppoooE..",
+      "...EEEEEEEEEE..."
+     ]
+    }
+   ],
+   "anteckning": "Näverasken står på marken, sedd snett ovanifrån som i spelet: samma raka, symmetriska ljusa näverkropp med mörk jordkontur, två mörkare band och rundade nederhörn. Bara innehållet är nytt. Ur öppningen sticker det kokade saltet upp som brutna, kantiga klumpar av saltkaka. Klumparna har olika höjd, med en hög spets till vänster om mitten, en lägre till höger och en liten flaga längst till vänster, så att silhuetten blir taggig och ojämn i stället för en rund kupol. Varje klump har sin ljusa översida i ben3 och ben2 mot övre vänster och sin skuggsida i ben1 och skiffer3 mot nedre höger, med springor i ben0 emellan. Saltet ligger högre än kanten och syns därför först. Granskningen: Granskad, inget behövde rättas, så versionen är oförändrad. Storleken är 16 × 18 punkter, mindre än kolonisten (14 × 20) och i samma skala som rutan. Asken är densamma som förut och spegelsymmetrisk: konturen i jord0 i kolumn 1 och 14, avrundad botten och band i jord1–jord3. Bara saltet i öppningen är nytt. Det sticker ojämnt upp över kanten som kantiga klumpar med ljus översida (ben3, ben2) uppe till vänster och mörk sida (ben1, skiffer3) nere till höger. Springorna och konturen är ben0, så saltet har ingen svart kontur. Asken ses snett uppifrån med kanten ovanpå. Bilden är ljus och syns tydligt mot gräset. Ingen ren vit och inga ensamma mörka prickar finns.",
+   "ide": "Grova klumpar: Näverasken ritas oförändrad, men i öppningen ligger det kokade saltet som kantiga, kristallina klumpar och flagor som sticker upp ojämnt över kanten och ger en takig, oregelbunden silhuett. Varje klump har en ljus översida i ben3 eller ben2 åt övre vänster och en mörkare sida i ben1 och skiffer3 åt nedre höger, med mörkare springor mellan dem i ben0. Asken själv är symmetrisk som förut, medan bara innehållet är ojämnt, så att det ser ut som saltkaka som brutits loss ur kokpannan."
   }
  ]
 }

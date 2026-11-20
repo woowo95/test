@@ -1,0 +1,17 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f10_kott!=gör köttet olika i form också där det är rimligt inte bara färgen. Varje version visar fem bitar som skiljer sig tydligt i form: fågelns kött är ett litet smalt lår eller en hel liten plockad fågel, rådjurets en smal ryggfilé eller ett slankt lår, fårets och getens revben eller kotletter (olika storlek), björnens en stor, tjock och fet stek. Inte fem lika klubbor i olika färg.",
+  "f11_sym_troshus!=gör något som ser mer ut som en kyrka. Alla tre versionerna ska tydligt vara en kyrka sedd snett uppifrån: ett långsmalt hus med brant tak och ett torn, en spira eller ett kors på taket, som en stavkyrka av trä eller en liten kyrka av sten. Inte en hydda, ett tält eller en kon."
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.88,
+  "hog": 1.89
+ },
+ "dollar": 0.787,
+ "rapport": [
+  "f10_kott: 3 versioner",
+  "f11_sym_troshus: 3 versioner"
+ ]
+}

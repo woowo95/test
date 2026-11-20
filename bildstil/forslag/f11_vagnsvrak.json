@@ -4,35 +4,90 @@
  "slag": [
   "station"
  ],
- "typ": "janej",
- "fore": "Förlagan: vagnen som redan finns i spelet.",
- "vad": "Steg 11.6.13: grundarna kom långt bortifrån, och deras vagn gick sönder där byn ligger. Den står i lagret på startplatsen med de första sakerna i och rymmer tre stackar. Ingen bygger en sådan. En ruta stor, snett ovanifrån som stationerna, på gräs",
+ "vad": "Steg 11.6.13: grundarna kom långt bortifrån, och deras vagn gick sönder där byn ligger. Den står i lagret på startplatsen med de första sakerna i och rymmer tre stackar. Ingen bygger en sådan. En ruta stor, snett ovanifrån som stationerna, på gräs Din kommentar förra gången: ”det finns redan en vagn i spelet. Använd den som förlaga men gör den trasig”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "det finns redan en vagn i spelet, den är förlagan. Gör den trasig",
  "versioner": [
   {
-   "ide": "Vagnen som finns i spelet i dag, hel.",
    "bilder": [
     {
-     "namn": "vagn",
+     "namn": "f11_vagnsvrak",
      "rader": [
       "................",
       "................",
-      "q...............",
-      ".qq.............",
-      "...qq...........",
-      "....qqkkkkkkkkkk",
-      "....kFFFFFFFFFFk",
-      "....kHHHHHHHHHHk",
-      "....kkkkkkkkkkkk",
-      "......kkk...kkk.",
-      ".....kHFHkkHFHk.",
-      ".....kFHFkkFHFk.",
-      ".....kHFHkkHFHk.",
-      "......kkk...kkk.",
-      "................",
-      "................"
+      ".EEEEEEEEEEEEEE.",
+      ".EHHHGHHHGHHGGE.",
+      ".EHFFFFFFFFFFGE.",
+      ".EHGFGGFGGFGFGE.",
+      ".EHFFFFFFFFFFGE.",
+      ".EHGGFGGFGGFGGE.",
+      ".EHFFFFFFFFFFFE.",
+      ".EGHHGHHGHHGGFE.",
+      ".EFGFFFGFFFGFFE.",
+      ".EEEEEEEEEEEEEE.",
+      "..EHE....EEEE...",
+      "..EGE...EHGGFE..",
+      "..EEE...EGEEFE..",
+      ".........EEEE..."
      ]
     }
-   ]
+   ],
+   "anteckning": "Förlagan är spelets vagn: lådan med ljus kant, skaklarna snett upp åt vänster och hjulen med kryssekrar. Jag har ritat den trasig men i samma storlek (en ruta, 16 × 16) och i samma vinkel snett ovanifrån som stationerna. Lådan ses ovanifrån: den ljusa bakkanten, golvet av plankor med en bräda som är bruten och visar ett mörkt hål, och den ljusa framkanten. Därunder ligger framsidan som ett smalt mörkt band. Det vänstra framhjulet står kvar som en kort stump med kryssekrar. Det högra hjulet har gått sönder: lådans högra hörn har sjunkit ner och vilar på marken, och hjulet ligger avbrutet på gräset framför. Skaklarna är avbrutna, så bara en kort splittrad stump sticker ut till vänster. Allt är trä i jordtoner med jord0 som kontur och ljuset från övre vänstra hörnet. Sakerna i lagret syns inte i bilden, eftersom spelet visar dem för sig. Granskningen: Rättat: den gamla versionen var en låda sedd nästan rakt från sidan och hade två ensamma prickar (H och G) till vänster om lådan. Nu ses flaket snett ovanifrån som stationerna. Flakets golv syns ovanifrån och tar ungefär tre fjärdedelar av höjden. Golvet är ritat som plankor i jord1 och jord2, och kanterna är ljusare i jord3, med ljuset uppe till vänster. Framkanten är ett mörkare band på två punkter. Under framkanten syns bara det främre vänstra hjulet, som en kort stump. Det högra hjulet har lossnat och ligger platt på marken, ritat ovanifrån som en ring med nav, så att det syns att vagnen är trasig. Konturen är jord0 runt allt, utan kol. Träet är ljusare än gräset så att vagnen syns, och den håller sig inom en ruta (16 × 16). Flaket är tomt, eftersom spelet visar sakerna som ligger i det.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_vagnsvrak",
+     "rader": [
+      "................",
+      "................",
+      "..EEEEEEE..EEE..",
+      "..EHHHHGHEEGGE..",
+      "..EHGGFGGFGGFE..",
+      "..EHGHGGHGGFFE..",
+      "..EGFFGFFFFGFE..",
+      "..EHGGHGGGHGFE..",
+      "..EGGHGGFGGFFE..",
+      "..EGFFGFFFGFFE..",
+      ".EEHGGGFGGFGFE..",
+      "EHEHHGHHGHGGFE..",
+      "EGEFFGFFFGFFEEF.",
+      "EFEFEFFEFFFEEEE.",
+      ".EEEEEEEEEEEEE..",
+      "......EHGE......"
+     ]
+    }
+   ],
+   "anteckning": "Förlagan är spelets vagn: korgen ses snett ovanifrån med ljus kant runt det mörka golvet, ett mörkare framband och kryssekrade hjul under framkanten. Den här vagnen är trasig. Skaklarna har brustit: en stump sticker upp åt vänster från korgen, och den lösa biten ligger på marken nere till vänster. Det högra hjulet har rasat ihop till en halv ring, så korgens högra hörn vilar direkt på gräset. Där är frambandet sönder, och den mörka lagningen visar en planka som saknas. Det vänstra hjulet är helt; dess överkant döljs av korgen. Allt är trä i jordtoner med jord0 som kontur. Ljuset kommer uppifrån vänster, så korgens vänstra kant är ljusast. Korgen är tom, för sakerna i lagret visar spelet för sig. Bilden är en ruta stor, 16 × 16 punkter. Granskningen: Ritade om vagnen. Den förra syntes nästan från sidan: flaket var en låda med framsida, och hjulen var fyrkantiga klossar under den. Den hade också en lös stång i övre vänstra hörnet och en bit som låg skild från vagnen nere till vänster, och de tre översta raderna var tomma. Nu ses flaket ovanifrån som stationerna, med samma mått på 12 × 13 punkter. Ytan tar omkring tre fjärdedelar av höjden och har vågräta plankor i jord2 och jord3 med kornig ton. Den ljusa kanten sitter uppe till vänster och den mörkare jord1 till höger. Framkanten är ett mörkare band på 2–3 punkter, och konturen är jord0 runt om. Det som visar att vagnen är trasig sitter nu på vagnen: ett brutet stycke i bakkanten, vänster hjul kvar som en smal stående oval vid sidan, höger hjul borta så att bara axelstumpen sticker ut, och dragstången avbruten mitt fram. Flaket är tomt, så att sakerna i lagret syns i det, och den ljusa jorden med kontur syns på det olivgröna gräset. Vagnen har ingen sittplats.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_vagnsvrak",
+     "rader": [
+      "................",
+      "................",
+      "................",
+      "..EEEEEEEEEEEE..",
+      "..EHHGHHGHHGGE..",
+      "..EHEEFEEEFEGE..",
+      "..EHFGFFGFEFGE..",
+      ".EEHGFGFFEFFGE..",
+      "HGEHFGFFEGFFGE..",
+      "EEEHGFGFFGFFGE..",
+      "..EGHGGHGGGGFE..",
+      "..EEEEFFFFEEEE..",
+      "..EHGGEEEEHGEE..",
+      "..EGEFE..EGE....",
+      "..EGFFE..EFFE.GE",
+      "...EEE....EE...."
+     ]
+    }
+   ],
+   "anteckning": "Förlagan är spelets vagn: flaket snett ovanifrån med jord0-kontur, ljus kant uppe till vänster, ett smalt mörkare framband med kryssträ och korta stumpar till hjul, och skaklarna snett upp åt vänster. Vagnen är kvar i samma storlek, en ruta, och står på gräset. Trasig är den på tre sätt. Skaklarna har gått av: en splittrad stump sitter kvar i flakets hörn och den avbrutna biten ligger på marken ovanför. En planka i flaket har spruckit, så ett mörkt hål går snett genom botten. Det högra framhjulet har brustit: halva hjulkrysset saknas och en eker ligger lös bredvid. Det vänstra hjulet är helt, så att man ser vad som fattas. Flaket ritas tomt, eftersom sakerna i lagret visas av spelet. Det finns ingen sittplats och ingen skugga. Granskningen: Rättat: vagnskorgen var ritad rakt från sidan som en låda med en spricka i framsidan. Nu ses den snett ovanifrån som stationerna. Korgen ses ovanifrån med en ljus kant upptill till vänster, en mörkare skuggrad innanför bakväggen och ett tomt golv med en spricka, så att man ser att den rymmer saker. Framkanten är ett smalt mörkare band på två rader. Hjulen var oläsliga rutmönster i ben. De är nu två runda trähjul med kontur i jord0 och nav, och de står framför bandet. Vänster hjul är helt. Höger hjul är trasigt: en fjärdedel saknas och en flisa ligger bredvid, så att man ser att vagnen gått sönder. Den lösa stången i ben, som hängde snett utan fäste, är nu en avbruten dragstång i trä som sticker ut från korgens vänstra gavel. Bara trätoner (jord) används, med ljuset uppifrån vänster. Vagnen är ljusare än gräset och har kontur. Den är en ruta stor, 16 × 16 punkter.",
+   "ide": ""
   }
  ]
 }

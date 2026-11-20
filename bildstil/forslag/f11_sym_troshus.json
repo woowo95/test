@@ -1,0 +1,91 @@
+{
+ "kort": "f11_sym_troshus",
+ "namn": "Trons hus",
+ "slag": null,
+ "vad": "Steg 11.1.22: en symbol per betydelse. I Tro delade den här saken symbol med något annat (skriftrullen, folket eller gnistorna), och nu får den en egen. Symbolen i 16 punkter på panelens botten. Ja eller nej? Din kommentar förra gången: ”gör något som ser mer ut som en kyrka”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "gör något som ser mer ut som en kyrka. Alla tre versionerna ska tydligt vara en kyrka sedd snett uppifrån: ett långsmalt hus med brant tak och ett torn, en spira eller ett kors på taket, som en stavkyrka av trä eller en liten kyrka av sten. Inte en hydda, ett tält eller en kon.",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_troshus",
+     "rader": [
+      ".......KJ.......",
+      "......KKKJ......",
+      ".......KJ.......",
+      ".......HF.......",
+      "......EHGE......",
+      ".....EHGGFE.....",
+      ".....EFFFFE.....",
+      "....EHGGGGFE....",
+      "...EHGHGGFGFE...",
+      "...EFFFFFFFFE...",
+      "..EHGGHGGFGGFE..",
+      ".EHGHGGGGGFGFFE.",
+      ".EFFFFFFFFFFFFE.",
+      "..EHGGGEEGGFFE..",
+      "..EHGGEEEEGFFE..",
+      "..EEEEEEEEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Symbolen visar en stavkyrka av trä rakt framifrån, sedd snett uppifrån, och är spegelsymmetrisk kring mitten. Bara ljuset skiljer sidorna åt: den ljusa sidan (jord3–jord2) ligger till vänster och den skuggade (jord1) till höger.\n\nKyrkan har tre staplade sadeltak som blir smalare uppåt, 14, 10 och 6 punkter breda. Takytorna syns uppifrån som band av spån, och varje takfot är ett smalt mörkare band i jord1 med jord0 som kontur.\n\nSpiran reser sig ur det översta taket och slutar i ett litet kors i senap2 med senap1 på skuggsidan. Korset är det enda starka i bilden, så att det syns först.\n\nI den nedersta väggen sitter en rundbågig dörr i jord0. Silhuetten är hög och spetsig som en gran och ska läsas som en kyrka, inte som en hydda.\n\nInget står framför och inget bärs. Det är en ren symbol för panelens botten i 16 × 16 punkter. Granskningen: Inget rättat; versionen godkänns oförändrad. Symbolen är 16 × 16 punkter, alltså en ruta, och passar som symbol på panelens botten. Den ses rakt framifrån och snett uppifrån, och takfallen syns som band av spån. Silhuetten är spegelsymmetrisk kring mitten (7,5) i varje rad, från korset till grunden; bara ljuset skiljer sidorna åt, med jord3 till vänster och jord1 till höger, så ljuset kommer uppifrån vänster. Idén följs: tre sadeltak som smalnar av uppåt (14, 10 och 6 punkter breda), smala takfotsband i jord1, en spira med ett litet kors i senap2 och en rundbågig dörr i jord0 i nedersta gaveln. Konturen är jord0 runt allt trä, och kol0 används inte. Den mättade senapen finns bara i korset, som bär betydelsen. Med jord0-kontur och ljusa takband syns kyrkan tydligt mot det olivgröna gräset. Den höga, spetsiga silhuetten läses som en kyrka och inte som en hydda. Ingen glans är vit, och ingen del bärs av en människa.",
+   "ide": "Stavkyrka av trä, rakt framifrån och snett uppifrån, spegelsymmetrisk kring mitten: tre staplade sadeltak som blir smalare uppåt, ungefär 14 punkter breda nederst och 6 överst, med brant takfall där takytorna syns uppifrån som breda band av spån i jord1–jord2 med jord0 som kontur. Överst sitter en smal spira som slutar i ett litet kors i senap2, och i den nedersta gaveln syns en mörk rundbågig dörr i jord0. Silhuetten är hög och spetsig som en gran, så att den läses som en kyrka och inte som en hydda."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_troshus",
+     "rader": [
+      "...q............",
+      "..qqo...........",
+      "...p............",
+      "..rur.........rr",
+      ".rutsr......rrur",
+      "ruttssr...rruttr",
+      "rrrrrrr.rruttusr",
+      ".QTSRQrruttusssr",
+      ".QSQRQuttussssrr",
+      ".QTQSQtussssrrTQ",
+      ".QSSRQssssrrQSSQ",
+      ".QTRSQssrrTSSRQQ",
+      ".QSERQrrTQSRQQ..",
+      ".QTESQTSSRQQ....",
+      ".QSERQSRQQ......",
+      ".QQQQQQQ........"
+     ]
+    }
+   ],
+   "anteckning": "Symbolen är en liten stenkyrka sedd snett uppifrån och ryms i 16 × 16 punkter. Kyrkskeppet går från nere till vänster upp mot höger. Vi ser den övre takytan, som får ljuset uppifrån vänster (rost2–rost3), och den nedre takytan i rost1. Takfoten och konturen är rost0. Under taket syns den främre långväggen av huggen sten i skiffer1–3, med två fönster i skiffer0, och skiffer0 är också konturen. Vid den främre, vänstra gaveln står ett fyrkantigt torn, 5 punkter brett. Det når högst upp i rutan, har ett spetsigt pyramidtak och ett litet kors i benfärg som spetsen. Tornet har en fönstergluggar och en dörr i jord0 längst ner. Ljuset faller på tornets vänstra sida och på den övre takytan. Kol0 används inte. Tornet är en tydlig lodrät form mot det låga, långa skeppet, så att symbolen läses som en kyrka och inte som en hydda. Granskningen: Ja, oförändrad. Bilden är 16 × 16 och fyller rutan som en symbol ska. Stenkyrkan ligger snett in i bilden: skeppet går från nere till vänster upp mot höger, med väggar i skiffer1–skiffer3 och skiffer0 som kontur. Sadeltaket är i rost0–rost3, med den ljusa takytan uppåt mot vänster. Det fem punkter breda tornet står vid den främre gaveln. Pyramidtaket är spegelsymmetriskt och skiljer sig bara i ljuset (ljust till vänster, mörkt till höger), och korset i ben står högst upp i rutan. Det mörka fönstret och dörren i jord0 läses som öppningar, inte som fläckar. Ljuset faller från övre vänstra hörnet, och ingen glans är vit. Rost och skiffer med mörk kontur syns tydligt på det olivgröna gräset. Silhuetten är kantig och tung, med tornet som tydlig vertikal mot det låga skeppet, som idén beskriver. Inget behövde rättas.",
+   "ide": "Liten stenkyrka som ligger snett in i bilden: ett långsmalt kyrkskepp som går från nere till vänster upp mot höger, med väggar av huggen sten i skiffer1–skiffer2 och skiffer0 som kontur, och ett brant sadeltak i rost1–rost2 där den ljusa takytan vetter uppåt mot vänster. Vid den främre gaveln står ett fyrkantigt torn, ungefär 5 punkter brett, som når högst upp i rutan, med ett spetsigt pyramidtak och ett litet kors i benfärg högst upp. Formen är kantig och tung med tornet som tydlig vertikal mot det låga skeppet."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_sym_troshus",
+     "rader": [
+      ".......K........",
+      "......LKJ.......",
+      ".......J........",
+      "......EHE.......",
+      "......EGE.......",
+      "......EFE.......",
+      "...rrrEFErrr....",
+      "..rutuuttttsr...",
+      ".rututtttstssr..",
+      "rututttsttstssr.",
+      "rtutttsttstsssr.",
+      "rsssssssssssssr.",
+      ".EFFFFEEEFFFFE..",
+      ".EHGHGmllGFGFE..",
+      ".EGHGGmllFGFFE..",
+      ".EEEEElllEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Kyrkan står på marken sedd från långsidan och lite ovanifrån, så taket syns som en bred trapets. Den tar nästan två tredjedelar av höjden och är bredare än väggarna, eftersom takfoten skjuter ut. Takryttaren står mitt på åsen och korset i senap2 överst. Väggen är bara 4 punkter hög och visar stockvarv i jord1–jord2 med jord0 som kontur. Mörkast är raden närmast under takfoten, där takfoten skuggar. Dörren sitter mitt i väggen, så formen blir spegelsymmetrisk kring mittkolumnen. Bara ljuset, som är ljusast uppe till vänster, och kornet skiljer sidorna åt. Bilden är 15 punkter bred i en 16-ruta, så att spiran och korset kan stå exakt i mitten. Sockeln ligger på bildens nedersta rad, mot panelens botten. Granskningen: Rättat: taket var osymmetriskt (raden 9 slutade en punkt för tidigt, kolumn 0–13 i stället för 0–14). Nu är hela bilden spegelsymmetrisk kring kolumn 7. Taket är brantare och högre: takryttaren och korset är flyttade upp en rad, och taket har fått en rad till och smalnar trappvis från takfoten (15 punkter) mot åsen (9 punkter). Det tar nu 6 av de 10 raderna under spiran, nära två tredjedelar som i idén. Takfotens mörka band har fått rost0-kontur på båda sidor. Väggarna (4 rader), dörren i mitten, korset i senap och ljuset från vänster är oförändrade. Storleken på 15 × 16 punkter passar en symbol på 16 punkter, och bilden syns tydligt på gräset tack vare konturen.",
+   "ide": "Låg, långsmal timrad kyrka sedd från långsidan och snett uppifrån: stockväggar i jord1–jord2 med jord0 som kontur, bara 4 punkter höga, under ett brant sadeltak som tar nästan två tredjedelar av höjden och fyller hela bredden. Mitt på takåsen sitter en smal takryttare, en liten åttkantig spira på 3 punkters bredd, med ett kors i senap2 överst, och i väggen syns en mörk dörr i mitten, så att bilden är spegelsymmetrisk. Silhuetten är bred och låg som ett långhus men med det branta taket och korset mitt på som visar att det är en kyrka."
+  }
+ ]
+}

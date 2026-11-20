@@ -2,35 +2,257 @@
  "kort": "f10_gris",
  "namn": "Grisen",
  "slag": null,
- "vad": "Steg 10.10.13: grisen är en kulting ur buren som växer upp i byn och går lös. Rund, med tryne och knorr på svansen. Från sidan på gräs",
+ "vad": "Steg 10.10.13: grisen är en kulting ur buren som växer upp i byn och går lös. Rund, med tryne och knorr på svansen. Från sidan på gräs Din kommentar förra gången: ”formen är helt okej i version 2. Rita den i två vinklar och med olika täckning”",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "formen är helt okej. Rita den i två vinklar och med olika täckning",
  "versioner": [
   {
    "bilder": [
     {
-     "namn": "f10_gris",
+     "namn": "gris_sida_brun_borst",
      "rader": [
-      "..........E.E.E...........",
-      "....E.E.EEHEHEHEE.E.......",
-      "...EHEGEHHHHGHHGHEHEE...H.",
-      "...EHGFEGHGHGGHGGHGHHEEH.H",
-      "...EGGGFGGFGGFGGFGGFGGE.H.",
-      "..EGGlGGFGGFGFGGFGFGFFEH..",
-      "EHGGFGFGFGFGFGFFGFGFFFE...",
-      "EEGFGFFGFGFFGFFGFFGFFFE...",
-      "EFFGFFFFFGFFFGFFFGFFFFE...",
-      ".EEEFFFFFFGFFFFGFFFFFFE...",
-      "....EEFFFFGFFFFFFGFFFE....",
-      "......EGFEFFEEEFFEGFE.....",
-      ".......GE.FE...FE.GE......",
-      ".......FE.FE...FE.GE......",
-      ".......FE.FE...FE.FE......",
-      ".......ll.ll...ll.ll......"
+      "...EE.EEEEEEEEE.....",
+      "..EHGEHHHHGHGGFGE.E.",
+      ".EHHHHHHGHGGGFGFGE.E",
+      "EHHkHHHGHGGGFGFGFEE.",
+      "EuuHHGHGGGFGFGFGFE..",
+      "EEuGHGGGFGFGFGFFFE..",
+      ".EGGGGFGFGFGFFFFFE..",
+      "..EGGFGFGFFFFFFFE...",
+      "...EGFEEEEEEEGFEE...",
+      "...EGFE.....EGFE....",
+      "...EEEE.....EEEE...."
+     ]
+    },
+    {
+     "namn": "gris_sida_ljus_gles",
+     "rader": [
+      "...FF.FFFFFFFFF.....",
+      "..FqpFqqqqpqppopF.F.",
+      ".FqqqqqqpqpppopopF.F",
+      "FqqEqqqpqpppopopoFF.",
+      "FuuqqpqpppopopopoF..",
+      "FFupqpppopopopoooF..",
+      ".FppppopopopoooooF..",
+      "..FppopopoooooooF...",
+      "...FpoFFFFFFFpoFF...",
+      "...FpoF.....FpoF....",
+      "...EEEE.....EEEE...."
+     ]
+    },
+    {
+     "namn": "gris_sida_flackig",
+     "rader": [
+      "...FF.FFFFFFFFF.....",
+      "..FqpFqqqqGGppopF.F.",
+      ".FqqqqqqpGGGFopopF.F",
+      "FqqEqqqpqGFpopopoFF.",
+      "FuuqqpqpppopoGGFoF..",
+      "FFupqpppopopGGFFoF..",
+      ".FppppopopopoFFooF..",
+      "..FppopopoooooooF...",
+      "...FpoFFFFFFFpoFF...",
+      "...FpoF.....FpoF....",
+      "...EEEE.....EEEE...."
      ]
     }
    ],
-   "anteckning": "Grisen står på alla fyra benen på gräset, sedd från sidan med en aning ovanifrån, som djuren på kartan, med huvudet åt vänster mot ljuset. Kroppen är tunnformad och högst över bogen. Ryggkammen hackas i uddar av jord0, och toppen ljusnar till jord3 uppe till vänster. Det kilformade huvudet slutar i ett rakt tryne med en ljus punkt och en näsborre, och har ett litet upprätt spetsigt öra och ett mörkt öga. Av benen syns de två närmaste i ljusare jord2 och de två bortre i mörkare jord1. Alla fyra är 5 punkter långa med klövar i kol1. Knorren sitter som en liten ljus ring i jord3 vid den mörka bakdelen. Ingen skugga är ritad och ingen anfallsställning. Granskningen: Grisen håller storleken (26 × 16 med svans och ben, kroppen cirka 22 × 12) och står rätt mot kolonisten. Den ses från sidan på gräset, med jord0-kontur och borstkam, och knorren i jord3 syns mot bakdelen. Jag rättade en sak: de små upprätta spetsiga örona från idén saknades. Nu står ett spetsigt öra bakom ögat, med jord0-kontur och jord3 inuti mot ljuset uppe till vänster. Resten är oförändrat.",
-   "ide": "Den borstiga järnåldersgrisen, nära vildsvinet: kroppen är tunnformad och högre över bogen än över länden, cirka 22 × 14 punkter. Den har ett långt kilformat huvud med rakt tryne och små upprätta spetsiga öron. Pälsen är jord1–jord2 med jord0-kontur. Längs ryggen går en kam av borst, där konturen hackas i små uddar och toppen ljusnar till jord3 mot ljuset uppe till vänster. Benen är längre och smalare, 4–5 punkter, med mörka klövar i kol1. Knorren lyser ljust i jord3 mot den mörka bakdelen så att den syns."
+   "anteckning": "Formen från kortet behålls (rund kropp, tryne, knorr, korta ben). Grisen står på alla fyra ben på gräset, som på kartan, i två vinklar: från sidan med trynet åt vänster (24 × 15) och snett framifrån (22 × 15). Där vänder huvudet mot betraktaren: båda öronen, trynets platta skiva och båda ögonen syns, kroppen ligger bakom åt höger och knorren skymtar ovanför länden. De bakre benen slutar högre upp än de främre, eftersom de står längre bort. Varje vinkel finns i tre täckningar: tät brun borst (jordtoner), gles borst med ljus hud (bentoner) och fläckig (ljus med bruna fläckar). Ljuset kommer uppifrån vänster. Konturen tar materialets mörkaste ton och klövarna är mörka. Trynet är ljust rost, för att synas. Granskningen: Rättat: 1) De tre snedvyerna (gris_snett_brun_borst, gris_snett_ljus_gles, gris_snett_flackig) är borttagna. De var samma tre grisar i en annan ställning, och regeln är tre olika djur i samma ställning: stående på alla ben från sidan, som på kartan och som kortet säger. Kvar är tre grisar som skiljer sig i päls och färg: brun och borstig, ljus och gles, fläckig. 2) Grisarna var 24 × 15 punkter. Mot kolonisten (14 × 20) blev det en gris på drygt två meter med ryggen i bröstets höjd. En järnåldersgris är omkring 1,2 m lång och 0,6–0,7 m hög, så alla tre är omritade till 20 × 11 punkter. Formen är densamma: rund kropp, öra framtill, tryne i rost, öga, två synliga benpar med klövar och en knorr på svansen. Ljuset kommer uppifrån vänster och den mörkaste tonen ligger nere till höger. Konturen är i jordtoner och syns mot det olivgröna gräset.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "gris_sida_brun",
+     "rader": [
+      "...EE.....EEE.......",
+      "..EHE..EEEHHHEEEE...",
+      ".EHGEEHHHHGHGHGGE.EE",
+      "EHGGFHHHGHGHGHGGGE.E",
+      "EHGHkHGHGHGHGHGGGFE.",
+      "pHGGHGHGHGHGHGGGGFE.",
+      "pFGHGGGGHGGGGGFFFE..",
+      ".EFGGGFGFGGFGFFFE...",
+      "..EFFFGFFFGFFFFFE...",
+      "..EEFFEEEEEEEEFFE...",
+      "...EFFE......EFFE...",
+      "...EEEE......EEEE..."
+     ]
+    },
+    {
+     "namn": "gris_sida_ljus",
+     "rader": [
+      "...FF.....FFF.......",
+      "..FqF..FFFqqqFFFF...",
+      ".FqpFFqqqqpqpqppF.FF",
+      "FqppoqqqpqpqpqpppF.F",
+      "FqpqkqpqpqpqpqpppoF.",
+      "uqppqpqpqpqpqppppoF.",
+      "uopqppppqpppppoooF..",
+      ".FopppopoppopoooF...",
+      "..FooopooopoooooF...",
+      "..FFooFFFFFFFFooF...",
+      "...FooF......FooF...",
+      "...FFFF......FFFF..."
+     ]
+    },
+    {
+     "namn": "gris_sida_flackig",
+     "rader": [
+      "...FF.....FFF.......",
+      "..FqF..FFFqqqFFFF...",
+      ".FqpFFqqqqGGGqppF.FF",
+      "FqppoqqqpHGGGqpppF.F",
+      "FqpqkqpqpGGFpqpppoF.",
+      "uqppqpqpqpqpqppppoF.",
+      "uopqppppqppGGGoooF..",
+      ".FopppopoppGGFooF...",
+      "..FooopooopoooooF...",
+      "..FFooFFFFFFFFooF...",
+      "...FooF......FooF...",
+      "...FFFF......FFFF..."
+     ]
+    },
+    {
+     "namn": "gris_snett_brun",
+     "rader": [
+      "........EEEEE.EE",
+      "......EEHHHHGEE.",
+      "EE....EEEHGHGHGE",
+      "EHEEEEEHEHGHGHGE",
+      "EHGHHHGGEGHGGFGE",
+      "EHkHGHkGEGGGFGFE",
+      "EGpppppFEGGFGFFE",
+      "EGpEpEpFEFGFFFFE",
+      "EFGpppGFEFFFFFE.",
+      ".EFFFFFE.EEFFE..",
+      ".EFFEFFE..EFFE..",
+      ".EEEEEEE..EEEE.."
+     ]
+    },
+    {
+     "namn": "gris_snett_ljus",
+     "rader": [
+      "........FFFFF.FF",
+      "......FFqqqqpFF.",
+      "FF....FFFqpqpqpF",
+      "FqFFFFFqFqpqpqpF",
+      "FqpqqqppFpqppopF",
+      "FqkqpqkpFpppopoF",
+      "FpuuuuuoFppopooF",
+      "FpuFuFuoFopooooF",
+      "FopuuupoFoooooF.",
+      ".FoooooF.FFooF..",
+      ".FooFooF..FooF..",
+      ".FFFFFFF..FFFF.."
+     ]
+    },
+    {
+     "namn": "gris_snett_flackig",
+     "rader": [
+      "........FFFFF.FF",
+      "......FFqqqqpFF.",
+      "FF....FFFqGGGqpF",
+      "FqFFFFFqFqHGGqpF",
+      "FqpqqGGpFpGGpopF",
+      "FqkqpGkGFpppopoF",
+      "FpuuuuuoFppGGGoF",
+      "FpuFuFuoFopGFGoF",
+      "FopuuupoFoooooF.",
+      ".FoooooF.FFooF..",
+      ".FooFooF..FooF..",
+      ".FFFFFFF..FFFF.."
+     ]
+    }
+   ],
+   "anteckning": "Formen från kortet behålls (rund kropp, tryne, knorr, korta ben, omkring 20 × 12 punkter som kultingen nu) och står på alla fyra ben som på kartan. Den ritas i två vinklar: från sidan med trynet åt vänster och knorren uppe vid baken, och snett framifrån med huvudet närmast, båda öronen, trynet med näsborrarna och kroppen bakom åt höger. I den vinkeln syns bara en liten knorr överst vid baken och ett bakben. Varje vinkel finns i tre täckningar: brun och borstig (jord), ljus och tunnhårig (ben) och fläckig (ljus med bruna fläckar, en av dem över ögat). Kontur och skugga ligger nere till höger, ljuset kommer uppifrån vänster, och hovarna är konturens ton. Granskningen: Granskat och inget rättat; versionen är oförändrad. Storlek: grisen är 20 × 12 punkter från sidan och 16 × 12 snett framifrån. Det är lägre än kolonisten (14 × 20) och rimligt för en järnåldersgris. Vinkel: grisen står på alla fyra ben från sidan, som djuren på kartan, och den sneda bilden har huvudet mot betraktaren. Huvudet i den sneda bilden är spegelsymmetriskt kring mitten: öron, ögon, tryne och näsborrar ligger lika på båda sidor, och bara ljuset skiljer sidorna åt. Idén följs: kroppen är rund, trynet syns tydligt och svansen bildar en liten knorr uppe till höger. Ljuset kommer uppifrån vänster, med ljusa toner på ryggen och mörka mot buken och nere till höger. Konturen är jord0 runt den bruna grisen och jord1 runt de ljusa, aldrig svart; kol0 finns bara i ögonen. Ingen glans finns. Grisarna är ljusare än gräset och har kontur, så de syns på det. De tre versionerna skiljer sig i päls (brun, ljus och fläckig) men har samma ställning. Ingen skugga är ritad.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "gris_sida_borstig",
+     "rader": [
+      "..........E.E.E.E.......",
+      ".....EE..EGEGEGEGEE.....",
+      "....EHFE.EHGHGHGHGHGE..E",
+      "...EHGFEHGHGHGHGHGHGGFEE",
+      "..EHkGGHGHGHGHGHGHGGFFE.",
+      ".EHGGGGGHGHGHGHGHGGFGFFE",
+      "EpGGGFGGGHGHGHGHGGFGFFFE",
+      "EpGGFGGGHGHGHGHGHGGFFFFE",
+      ".EFFGGFGGGHGHGHGGFGFFFE.",
+      "..EEFFGFGFGFGFGFGFFFFE..",
+      "...EEFFFFFFFFFFFFFFEE...",
+      "....EFE.EFE...EFE.EFE...",
+      "....EGE.EFE...EGE.EFE...",
+      "....EEE.EEE...EEE.EEE..."
+     ]
+    },
+    {
+     "namn": "gris_sida_gles",
+     "rader": [
+      "............E...........",
+      ".....EE..EEEEEEEEEE.....",
+      "....EqoE.EqpqpqGqpqpE..E",
+      "...EqpoEqpqpqpqpqpqppoEE",
+      "..EqkppqpqpGpqpqpqppooE.",
+      ".EqpppppqpqpqpqpqppopooE",
+      "EupppoppqpqpqpqpqppopooE",
+      "EuppopppqpqpqpqpqppooooE",
+      ".EooppopppqpqpqppopoooE.",
+      "..EEoopopopopopopooooE..",
+      "...EEooooooooooooooEE...",
+      "....EoE.EoE...EoE.EoE...",
+      "....EpE.EoE...EpE.EoE...",
+      "....EEE.EEE...EEE.EEE..."
+     ]
+    },
+    {
+     "namn": "gris_snett_borstig",
+     "rader": [
+      ".........E.E.E....",
+      "......EEEGEGEGEE.E",
+      ".....EHGHGHGHGGFEE",
+      "....EHGHGHGHGHGFFE",
+      "...EHGHGHGHGHGGFFE",
+      ".EEE.EGHGHGHGGGFFE",
+      ".EHGEHGGGHGHGGFGFE",
+      "..EHGGGEEHGHGGFGFE",
+      ".EHkGGkGEGHGGFGFFE",
+      ".EGGGGGGEGGGFGFFE.",
+      ".EGpppGGEFGFGFFFE.",
+      ".EFEpEFEEFFFFFEE..",
+      "..EEEEEE.EFE.EFE..",
+      "..EFE.EFE.EEE.EEE.",
+      "..EFE.EFE.........",
+      "..EEE.EEE........."
+     ]
+    },
+    {
+     "namn": "gris_snett_gles",
+     "rader": [
+      "...........E......",
+      "......EEEEEEEEEE.E",
+      ".....EqpqpGpqppoEE",
+      "....EqpqpqpqpqpooE",
+      "...EqpqpqGqpqppooE",
+      ".EEE.EpqpqpqpppooE",
+      ".EqpEqpppqpqppopoE",
+      "..EqpppEEqpqppopoE",
+      ".EqkppkpEpqppopooE",
+      ".EppppppEpppopooE.",
+      ".EpuuuppEopopoooE.",
+      ".EoEuEoEEoooooEE..",
+      "..EEEEEE.EoE.EoE..",
+      "..EoE.EoE.EEE.EEE.",
+      "..EpE.EpE.........",
+      "..EEE.EEE........."
+     ]
+    }
+   ],
+   "anteckning": "Formen är behållen: en rund gris med tryne, knorr och fyra korta ben, i samma storlek som förut (24 × 14 punkter från sidan). Grisen står på alla fyra ben på gräset, som den står på kartan. Den nya vinkeln är snett framifrån (18 × 16 punkter). Där kommer huvudet med trynet och båda ögonen fram mot betraktaren och skymmer framkroppen. Bakbenen syns kortare och längre upp än frambenen, och knorren sticker upp vid bakdelen uppe till höger. Jag har tolkat \"täckning\" som pälsen, så varje vinkel finns i två varianter. Den borstiga är jordbrun med en tät borstkam längs ryggen. Den glesa har ljus hud i bentoner, bara några enstaka borst och ett något rostigare tryne. Ljuset kommer uppifrån vänster: ljusast på ryggen och vänster sida, mörkast mot buken och bakdelen nere till höger. Konturen är jord0 och kol0 finns bara i ögonen. Granskningen: Granskat mot reglerna: storleken (24 × 14 från sidan och 18 × 16 snett framifrån) passar mot kolonisten 14 × 20. Grisarna står på alla ben som på kartan. De är runda, har tryne och en liten knorr på svansen och syns tydligt mot gräset med ljus ovansida och jord0-kontur. Ljuset faller uppifrån vänster. Ett fel är rättat: i gris_sida_gles var rad 7 25 punkter bred i stället för 24. En o-punkt i den mörka bakdelen är borttagen så att raden blir 24 och matchar raden under. Allt annat lämnas oförändrat.",
+   "ide": ""
   }
  ]
 }

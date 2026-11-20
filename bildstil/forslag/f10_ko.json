@@ -2,36 +2,267 @@
  "kort": "f10_ko",
  "namn": "Kon",
  "slag": null,
- "vad": "Steg 10.10.1: kon är ett betesdjur som köps av handlaren och ger mest mjölk och kött. Större än fåret och geten, med juver och små horn. Från sidan på gräs",
+ "vad": "Steg 10.10.1: kon är ett betesdjur som köps av handlaren och ger mest mjölk och kött. Större än fåret och geten, med juver och små horn. Från sidan på gräs Din kommentar förra gången: ”version 3 ser okej ut. Rita lite olika variationer av den som jag kan se. Ansiktet ser lite konstigt ut just nu”",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "version 3 ser okej ut. Rita lite olika variationer av den som jag kan se. Ansiktet ser lite konstigt ut just nu",
  "versioner": [
   {
    "bilder": [
     {
-     "namn": "f10_ko",
+     "namn": "f10_ko_v3a_brun",
      "rader": [
-      "..qp...qp.....................",
-      ".EEEEEEEEE....................",
-      ".EHHqHGGFEFE..................",
-      ".EGqqHGGFFEEEEEEEEEEEEEEEEE...",
-      ".EHGqHkGFFGHHHHGHHHGHHHGHHGE..",
-      ".EGqqGGFFGGHGHHGHGHHGHGGHGFEE.",
-      ".EGqGGGFFFGGHGGGHGGGHGGFGGFEE.",
-      ".oqppGGFFGFGGFGGGFGGGFGGFGFEE.",
-      ".opopFGFFFGFGFGGFGFGGFGFFGFEE.",
-      "..oooEEFGFFFGFFFGFFGFFGFFFFEE.",
-      ".......EFFFFFGFFFFFFGFFFFFFEE.",
-      "........EFGFFFGFFFFFGFFFFGFEE.",
-      ".........EGEEFEEEEuutEFEEGFEE.",
-      ".........EGEEFE..sutsEFEEGE.E.",
-      ".........EGEEFE...s.sEFEEGE.E.",
-      ".........EGEEFE......EFEEGE.EF",
-      ".........EGElml......lmlEGE.E.",
-      ".........lml............lml..."
+      "..q...q.....................",
+      "..oEEEo.....................",
+      "EFHHHGGFE...................",
+      ".EHHHGGEEEEEEEEEEEEEEEEEEE..",
+      ".EkHGkGFHHHHHHHHHHGHHHHGGEE.",
+      ".EHGGGFFHHGHHHHHHGHHGHGGGEE.",
+      ".EGGGFEFGHGGHHHGGGGHGGGGFEE.",
+      ".EppppEFGGGGGHGGGGGGGGFGFEE.",
+      ".EoppoEFFGGGGGGGFGGGGFGFFEE.",
+      "..EEEE.EFFGFGGFGGFGFGFFFFEE.",
+      ".......EFFFFGFFFFFFGFFFFFEF.",
+      "........EFFFFFFFFFFFFFFFE.F.",
+      "........EGFEFEEEuutEFEGFE.F.",
+      "........EGFEFE..t.t.FEGFE...",
+      "........EGFEFE......FEGFE...",
+      "........EGFEFE......FEGFE...",
+      "........EGFEFE......FEGFE...",
+      "........EGFEFE......FEGFE...",
+      "........EmmEmE......mEmmE...",
+      "........EEEEEE......EEEEE..."
+     ]
+    },
+    {
+     "namn": "f10_ko_v3b_rodbrun",
+     "rader": [
+      "..q...q.....................",
+      "..orrro.....................",
+      "rsuuuttsr...................",
+      ".ruuuttrrrrrrrrrrrrrrrrrrr..",
+      ".rkutktsuuuuuuuuuutuuuuttrr.",
+      ".rutttssuutuuuuuuutuututtrr.",
+      ".rtttsrstuttuuuttttuttttsrr.",
+      ".rqqqqrstttttuttttttttstsrr.",
+      ".roqqorsstttttttsttttstssrr.",
+      "..rrrr.rsststtsttststssssrr.",
+      ".......rsssstsssssstsssssrE.",
+      "........rsssssssssssssssr.E.",
+      "........rtsrsrrrHHGrsrtsr.E.",
+      "........rtsrsr..G.G.srtsr...",
+      "........rtsrsr......srtsr...",
+      "........rtsrsr......srtsr...",
+      "........rtsrsr......srtsr...",
+      "........rtsrsr......srtsr...",
+      "........rmmrmr......mrmmr...",
+      "........rrrrrr......rrrrr..."
+     ]
+    },
+    {
+     "namn": "f10_ko_v3c_ljus_med_flack",
+     "rader": [
+      "..q...q.....................",
+      "..oEEEo.....................",
+      "EoqqqppoE...................",
+      ".EqqqppEEEEEEEEEEEEEEEEEEE..",
+      ".EkqpkpoqqqqGGGqqqpqqqqppEE.",
+      ".EqpppooqqpqGGGGqpqqpqpppEE.",
+      ".EpppoEopqppGGGFpppqppppoEE.",
+      ".EHHHHEoppppFGFpppppppopoEE.",
+      ".EFHHFEoopppppppoppppopooEE.",
+      "..EEEE.EoopoppoppopopooooEE.",
+      ".......EoooopoooooopoooooEF.",
+      "........EoooooooooooooooE.F.",
+      "........EpoEoEEEuutEoEpoE.F.",
+      "........EpoEoE..t.t.oEpoE...",
+      "........EpoEoE......oEpoE...",
+      "........EpoEoE......oEpoE...",
+      "........EpoEoE......oEpoE...",
+      "........EpoEoE......oEpoE...",
+      "........EmmEmE......mEmmE...",
+      "........EEEEEE......EEEEE..."
+     ]
+    },
+    {
+     "namn": "f10_ko_v3d_morkbrun_balte",
+     "rader": [
+      "..q...q.....................",
+      "..olllo.....................",
+      "lFGGGFFFl...................",
+      ".lGGGFFlllllllllllllllllll..",
+      ".lkGFkFFGGGGqqqGGGFGGGGFFll.",
+      ".lGFFFEFGGFGqqqqGFGGFGFFFll.",
+      ".lFFFElFFGFFqqqpFFFGFFFFEll.",
+      ".lpppplFFFGFpqpFFGFFFFEFEll.",
+      ".loppolFEFFGFFFFEFFGFEFEEll.",
+      "..llll.lFEFGFFEFFGFEFEFEEll.",
+      ".......lFEFEFFEFEEFFEFEEElG.",
+      "........lEFEEFEEFEEEFEEEl.G.",
+      "........lFElEllluutlElFEl.G.",
+      "........lFElEl..t.t.ElFEl...",
+      "........lFElEl......ElFEl...",
+      "........lFElEl......ElFEl...",
+      "........lFElEl......ElFEl...",
+      "........lFElEl......ElFEl...",
+      "........lmmlml......mlmml...",
+      "........llllll......lllll..."
      ]
     }
    ],
-   "anteckning": "Kon står på alla fyra benen på gräset, som djuren står på kartan, sedd från sidan och lite ovanifrån med huvudet åt vänster. Den är 30 × 18 punkter, alltså större än fåret och geten. Mankhöjden blir ungefär tre fjärdedelar av en människa (14 × 20). Ryggen syns lite uppifrån som ett ljusare band i jord3. Sidan och buken mörknar ner mot jord1, och konturen är jord0 runt hela kroppen. De bortre benen är mörkare och slutar en rad högre än de främre, så att djuret står på marken i spelets vinkel. Klövarna är kol eftersom de verkligen är nästan svarta. Två små horn i ben står på hjässan, och örat sticker ut bakom dem mot halsen. En ljus bläs löper ner mot den ljusa mulen. Juvret sitter mellan bakbenen med två spenar. Det har rostens ljusa toner, eftersom mjölken är det man ska se. Svansen hänger rakt ner från länden och slutar i en tofs. Ingen skugga är ritad. Granskningen: Granskad och lämnad oförändrad. Storleken stämmer: kon är 30 × 18 punkter, längre än kolonisten (14 × 20) och tydligt större än får och get, med kroppen omkring 15 punkter hög. Hon står på alla fyra benen från sidan som djuren på kartan. Benen är förskjutna i djupled och de bortre stumparna är kortare, så hon läses snett uppifrån. Ljuset faller rätt: ryggen är ljus jord3 och buken mörkare jord1. Konturen är jord0, och kol0 finns bara i ögat. De små hornen är i ben. Juvret har spenar i rost, som enda mättade färg eftersom det är mjölken man tar. Den bruna kroppen med mörk kontur syns tydligt mot det olivgröna gräset. Svansen hänger fritt bakom med en tofs. Alla rader är 30 tecken långa.",
+   "anteckning": "Kon står på alla fyra benen från sidan på gräset, i samma ställning och storlek som version 3 (28 × 20 punkter). Huvudet är vänt åt vänster, lite mot betraktaren. Ansiktet är ritat om så att det läses tydligt: en ljus panna med två mörka ögon, öron åt var sida, små ljusa horn uppe på hjässan och en ljus mule med två näsborrar och en kontur under hakan. Nacken går ihop med bogen. Främre och bakre benparet syns som ett ljusare när-ben och ett mörkare bortre ben. Juvret hänger under buken framför bakbenen, med två spenar. Svansen hänger från korset och har en tofs. Ljuset kommer uppifrån till vänster: ryggen är ljusast och buken mörkast. Konturen är pälsens mörkaste ton. Variationerna är v3a brun som förut, v3b rödbrun, v3c ljus med en brun fläck och v3d mörkbrun med ljust bälte. Alla tecken finns i paletten. Granskningen: Granskat: storleken (28 × 20, ryggen i höjd med kolonistens axlar), sidovyn på gräset som djuren står på kartan, små horn, juver framför bakbenen, svansen längs bakdelen och ljuset uppe till vänster stämmer i alla fyra. Version a, b och c är oförändrade. Rättat i v3d (mörkbrun med bälte): kroppen och huvudet var nästan helt jord0 och blev mörkare än gräset, vilket bryter mot regeln att det man ska se ska vara ljusare än marken. Inne i kroppen har jag lyft jord0 till jord1 och lagt in jord2 som korn, så att jord0 bara ligger kvar som skugga nertill och till höger. Öronens insida är också ljusad från jord0 till jord1. Konturen (kol1), bältet, mulen, juvret och benen är som förut.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "ko_1_brun",
+     "rader": [
+      "..q...q.....................",
+      "..pEEEp.....................",
+      ".EHHHGEFE...................",
+      ".EHHkGGGEEEEEEEEEEEEEEEEE...",
+      ".EHGGGHHHGHHHGHHHHGHGGGGFEF.",
+      ".EGGGHGHGHHGHHHGHHGHGGFGFEF.",
+      "EGGGGFGHHGHHHGHHHGHHGGFGFEF.",
+      "EpppGFGGGHGHGHHGHHGHGGFGFEF.",
+      "ElppFGGFGGHGGGHGGHGGGFGFFEF.",
+      "EppoEFFGFGGGFGGGFGGGFGFFFEF.",
+      ".EEE.EFFGFGFFGFFFGFGFFFFFEF.",
+      ".....EFFFGFFFGFFFFGFFFFFFEE.",
+      "......EFFEFFEEEEuuuEFFEFFEEE",
+      ".......GE.FE....uut.FE.GE...",
+      ".......GE.FE....t.t.FE.GE...",
+      ".......GE.FE........FE.GE...",
+      ".......GE.FE........FE.GE...",
+      ".......GE.FE........FE.GE...",
+      ".......GE.FE........FE.GE...",
+      ".......ll.ll........ll.ll..."
+     ]
+    },
+    {
+     "namn": "ko_2_brokig",
+     "rader": [
+      "..q...q.....................",
+      "..pEEEp.....................",
+      ".EHHHGEFE...................",
+      ".EHHkGppEEEEEEEEEEEEEEEEE...",
+      ".EHGGGqqqpHHHGHqqqpqppppoEp.",
+      ".EGGGHpqpqHGHHHpqqpqppopoEp.",
+      "EGGGGFpqqpHHHGHqqpHHGGFpoEp.",
+      "EpppGFpppqGHGHHpqqGHGGFpoEp.",
+      "ElppFppoppHGGGHppqGGGFGooEp.",
+      "EppoEoopopppopppopGGFGFooEp.",
+      ".EEE.EoopopoopooopFGFFFooEp.",
+      ".....EooopooopoooopooooooEF.",
+      "......EooEooEEEEuuuEooEooEFF",
+      ".......pE.oE....uut.oE.pE...",
+      ".......pE.oE....t.t.oE.pE...",
+      ".......pE.oE........oE.pE...",
+      ".......pE.oE........oE.pE...",
+      ".......pE.oE........oE.pE...",
+      ".......pE.oE........oE.pE...",
+      ".......ll.ll........ll.ll..."
+     ]
+    },
+    {
+     "namn": "ko_3_ljusbrun_bläs",
+     "rader": [
+      ".q.....q....................",
+      "..pEEEp.....................",
+      ".EqqpHEGE...................",
+      ".EqqkHHHEEEEEEEEEEEEEEEEE...",
+      ".EqqHHpppHpppHppppHpHHHHGEH.",
+      ".EqqHpHpHppHpppHppHpHHGHGEH.",
+      "EqqHHGHppHpppHpppHppHHGHGEH.",
+      "EqqqHGHHHpHpHppHppHpHHGHGEH.",
+      "ElqqGHHGHHpHHHpHHpHHHGHGGEH.",
+      "EqqpEGGHGHHHGHHHGHHHGHGGGEH.",
+      ".EEE.EGGHGHGGHGGGHGHGGGGGEH.",
+      ".....EGGGHGGGHGGGGHGGGGGGEF.",
+      "......EGGEGGEEEEuuuEGGEGGEFF",
+      ".......HE.GE....uut.GE.HE...",
+      ".......HE.GE....t.t.GE.HE...",
+      ".......HE.GE........GE.HE...",
+      ".......HE.GE........GE.HE...",
+      ".......HE.GE........GE.HE...",
+      ".......HE.GE........GE.HE...",
+      ".......ll.ll........ll.ll..."
+     ]
+    }
+   ],
+   "anteckning": "Tre kor att välja mellan, alla gjorda efter version 3: samma storlek (28 × 20) och samma ställning, stående på alla fyra benen från sidan med huvudet åt vänster, som på kartan. Version 1 är brun som förlagan. Version 2 är brokig, ljus med bruna fläckar och brunt huvud. Version 3 är ljust gulbrun med vit bläs i ansiktet och hornen lite utåtböjda. Ansiktet är omgjort så att det läses tydligt. Två korta ljusa horn sitter ovanpå pannan och örat sticker ut bakåt bakom dem. Ögat är en enda mörk punkt högt uppe på huvudets sida. Mulen är ljus, pekar nedåt framåt och har en mörk näsborre. En mörkare kindskugga skiljer huvudet från halsen. Juvret sitter under buken framför bakbenen, med två spenar. Svansen hänger ner bakom länden och slutar i en mörk tofs. Av benen syns de fyra från sidan: de bortre är mörkare än de närmre, och klövarna är mörka. Konturen är jord0, och ljuset kommer uppifrån vänster: ryggen är ljusast och buken mörkast. Granskningen: Granskad mot reglerna; inget behövde rättas, versionen är oförändrad. Storleken stämmer: 28 × 20 punkter, lika hög som kolonisten (14 × 20) med de små hornen och dubbelt så lång, alltså större än fåret och geten. Kon står på alla fyra benen från sidan, som djuren på kartan, och ljuset kommer uppifrån vänster: ryggen och huvudet är ljusare och buken och benens bakkant mörkare. Konturen är jord0 runt pälsen, och kol0 används bara i ögat. Juvret med spenarna syns tydligt under buken i rost3/rost2, närmaste rosa tonen i paletten; det är det kortet ska visa och får därför vara mättat. Alla tre är olika djur i samma ställning: en brun, en brokig med ben-fläckar och en ljusbrun med ljust bläs, så det är inte ett djur i tre ställningar. Kontur och ljusare toner skiljer korna från gräset. Ingen anfallsbild och inget bärs, så inget kan gå genom huvudet.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "ko_1_brun",
+     "rader": [
+      "....qp......................",
+      "...EoEEE....................",
+      "..EGHHGFE.EEEEEEEEEEEEEE....",
+      ".EGHHGGFFGHHHGHHHGHHGHGGE...",
+      ".EHkGGFFGHGGHGGHGGHGGGFGEF..",
+      ".EGGGGFGGGGFGGGHGGGGFGGFFEF.",
+      "EGGGGFFGGFFFGGGGGGFFGGGFFEF.",
+      "EHqqGFFGGFFFGGGGGGGFFGGFFEF.",
+      "EopGFFFGGGGFGGGGGGFFFGGFFEF.",
+      ".EEEEEFFGGGGGGGGFGGGFFFFFEF.",
+      ".....EFFFGGGGFGGGGFFFFFFFEF.",
+      ".....EFFFFFFFFFFFFFFFFFFFEE.",
+      "......EEEEEEEEEEutEEEEEEE.E.",
+      ".......GFEFE....utEGFEFE....",
+      ".......GFEFE....EE.GFEFE....",
+      ".......GFEFE.......GFEFE....",
+      ".......llEl........llEl....."
+     ]
+    },
+    {
+     "namn": "ko_2_rodbrokig",
+     "rader": [
+      "....qp......................",
+      "...EoEEE....................",
+      "..EsttsFE.EEEEEEEEEEEEEE....",
+      ".EsttssFFstttstttsttstssE...",
+      ".EtkssFFstsstsstsstsssFsEF..",
+      ".EssssFssssFqqqpssssFssFFEF.",
+      "EssssFFsssFqqqqppsFFsssFFEF.",
+      "EtqqsFFsssFFqqpppssFFssFFEF.",
+      "EopsFFFssssFsqppssFFFssFFEF.",
+      ".EEEEEFFssssssssFsssFFFFFEF.",
+      ".....EFFFssssFssssFFFFFFFEF.",
+      ".....EFFFFFFFFFFFFFFFFFFFEE.",
+      "......EEEEEEEEEEutEEEEEEE.E.",
+      ".......GFEFE....utEGFEFE....",
+      ".......GFEFE....EE.GFEFE....",
+      ".......GFEFE.......GFEFE....",
+      ".......llEl........llEl....."
+     ]
+    },
+    {
+     "namn": "ko_3_svart",
+     "rader": [
+      "...qp.p.....................",
+      "...lolol....................",
+      "..lnoonml.llllllllllllll....",
+      ".lnoonnmmnooonooonoononnl...",
+      ".loknnmmnonnonnonnonnnmnlm..",
+      ".lnnnnmnnnnmnnnonnnnmnnmmlm.",
+      "lnnnnmmnnmmmnnnnnnmmnnnmmlm.",
+      "loqqnmmnnmmmnnnnnnnmmnnmmlm.",
+      "lmpnmmmnnnnmnnnnnnmmmnnmmlm.",
+      ".lllllmmnnnnnnnnmnnnmmmmmlm.",
+      ".....lmmmnnnnmnnnnmmmmmmmlm.",
+      ".....lmmmmmmmmmmmmmmmmmmmll.",
+      "......llllllllllutlllllll.l.",
+      ".......nmlml....utlnmlml....",
+      ".......nmlml....ll.nmlml....",
+      ".......nmlml.......nmlml....",
+      ".......llml........llml....."
+     ]
+    }
+   ],
+   "anteckning": "Tre kor att välja mellan, alla i samma ställning: stående på alla fyra ben från sidan, lite uppifrån, med huvudet åt vänster som på kartan. Storleken är densamma som i den godkända version 3, ungefär 28 × 17 punkter, så kon blir tydligt större än fåret och geten. Ansiktet är omritat. Huvudet är nu en enkel profil: pannan och ögat högt upp, en ljus mule längst fram med en mörk näsborre och en tydlig käklinje mot halsen, så att det inte längre ser konstigt ut. De små hornen står upp ovanpå huvudet. Ryggen är ljusast uppe till vänster, buken och bakdelen är mörkast, och svansen hänger längs bakdelen. Juvret i rost sitter mellan bakbenen och är det enda varma i bilden. Av benen syns de närmre ljusare och de bortre mörkare. Kon som Björn godkände ligger kvar som ko_1 (brun, med nytt ansikte). ko_2 är rödbrun med en ljus fläck på bålen. ko_3 är svartgrå och har båda hornen synliga. Granskningen: Granskat mot reglerna. Storleken (28 × 17 mot kolonistens 14 × 20) gör kon större än fåret och geten. Hon står på alla ben från sidan som djuren på kartan, har små horn och juver, och kontur och ljus följer reglerna. Jag rättade två saker. 1) Rad 4 i ko_2_rodbrokig var 29 tecken bred, ett s för mycket i ryggens korn, och har kortats till 28 tecken som de andra raderna. 2) Juvret satt mitt under buken. Det sitter nu en punkt längre bak, nära bakbenen där det hör hemma, i alla tre korna. Den svarta kon är mörkare än de andra men har tydlig kontur och syns på gräset, så den fick vara kvar.",
    "ide": ""
   }
  ]

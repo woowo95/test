@@ -1,36 +1,91 @@
 {
  "kort": "f11_vagnrest",
  "namn": "Karavanens trasiga vagn",
- "slag": null,
- "typ": "janej",
- "fore": "Förlagan: vagnen som redan finns i spelet.",
- "vad": "Steg 11.13.26: där rövare plundrat en karavan ligger vagnarna kvar, och det rövarna lämnade ligger bredvid. Den lilla kartan för karavanresten har två vagnar. En ruta stor, snett ovanifrån som kartan, på gräs. Den ska se annorlunda ut än grundarnas vagn i byn, som gått sönder av sig själv",
+ "slag": [],
+ "vad": "Steg 11.13.26: där rövare plundrat en karavan ligger vagnarna kvar, och det rövarna lämnade ligger bredvid. Den lilla kartan för karavanresten har två vagnar. En ruta stor, snett ovanifrån som kartan, på gräs. Den ska se annorlunda ut än grundarnas vagn i byn, som gått sönder av sig själv Din kommentar förra gången: ”använd vagnen vi redan har i spelet som förlaga”",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "använd vagnen vi redan har i spelet (förlagan) och gör den till en plundrad, trasig karavanvagn som ser annorlunda ut än grundarnas",
  "versioner": [
   {
-   "ide": "Vagnen som finns i spelet i dag, hel.",
    "bilder": [
     {
-     "namn": "vagn",
+     "namn": "f11_vagnrest",
+     "rader": [
+      "..E..........E..",
+      "..EG........GE..",
+      "..EEEEEEEEEEEE..",
+      "..EHHGHHGHGGGE..",
+      "..EGFFGFFGFFFE..",
+      "..EHGHGpEEGHGE..",
+      "..EGHGpEEEpGFE..",
+      "..EFFGFEEpFFFE..",
+      "..EHGHGGpGHGFE..",
+      "..EGFFGFFGFFFE..",
+      "..EHGHGGHGGFFE..",
+      "..EFFFFFFFFFFE..",
+      ".EHEEEEEEEEEEE..",
+      "EHFGE...EEEEEE..",
+      "EGEFE..EHGEGFFE.",
+      ".EFE....EEEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Ritad från förlagan, grundarnas lilla vagn: samma flak och samma ljusa skakel snett upp åt vänster. Den är en ruta stor (16 × 16) och ses snett ovanifrån som kartan. Flaket syns ovanifrån och är tömt. Botten har ett uppbrutet hål där en planka slitits loss, så att gräset syns igenom. Framkanten är ett smalt mörkt band. Bara det främre vänstra hjulet sitter kvar, med samma kryssmönster som förlagan. Det högra hjulet har rövarna slagit av, och det ligger platt i gräset bredvid som en ring. Skaklet är avbrutet: en stump sitter kvar vid flaket och den lösa biten ligger överst. Det rövarna lämnade är en sönderriven presenning i ben, som hänger över vänstra kanten. Det skiljer vagnen från grundarnas, som bara gått sönder av sig själv och har hjulen kvar. Allt är dämpat i trä- och bentoner, för här finns inget kvar att ta. Bilden har jord0 som kontur, ljuset uppifrån vänster och ingen ritad skugga. Granskningen: Jag har ritat om bilden. Ensamma ljusa prickar runt vagnen (rad 1–4) bröt mot regeln om korn utan ensamma prickar. Hålet i flaket var genomskinligt mitt i saken. Vagnen saknade ett mörkare framkantsband, och hjulen stod som platta sidovyer under lådan. Nu ses flaket ovanifrån med plankfogar, ljust uppe till vänster och mörkt nere till höger. Hålet i plankorna är mörkt och har ljusa flisor i kanten. Framkanten är ett band på en punkt i jord1 med jord0-kontur. Ett hjul sitter kvar fram till vänster, och det andra har lossnat och ligger platt på gräset till höger. Det skiljer vraket från grundarnas vagn, liksom två avbrutna stolpar för kapellet vid bakkanten. Storleken är kvar: en ruta, 16 × 16. Jordtonerna med jord0-kontur syns mot det olivgröna gräset.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_vagnrest",
+     "rader": [
+      "................",
+      "...EEEEEEE......",
+      "..EHHGHHGHE.....",
+      "..EHGFGGFGHEE...",
+      "..EGFFGFFGGHGE..",
+      "..EHGGFE.EGGHE..",
+      "HGEGFGGEEEGFGE..",
+      "FFEHGFGGFGGFGE..",
+      "..EFEFFEFFEFFE..",
+      "..EEEEEEEEEEEE..",
+      "..EHGE....EEEE..",
+      "..EGFE...EHGGFE.",
+      "..EEEE..EHGEGGFE",
+      ".......EHGEFEGFE",
+      "........EGGFFFE.",
+      ".........EEEEE.."
+     ]
+    }
+   ],
+   "anteckning": "Förlagan är byns vagn: lådan snett ovanifrån med skaklarna åt övre vänster och hjulen under framkanten. Karavanvagnen är plundrad, så den skiljer sig från grundarnas: skaklarna är avbrutna med en ljus flisa i ändan, och lådan är tömd, mörk inuti med bara lite strå kvar. Ett rivet täckkläde i rost hänger över högra kanten och ner över framsidan. Det högra framhjulet är avslitet och ligger platt på gräset bredvid som en ring sedd ovanifrån, och det vänstra står kvar. Konturen är jord0, och ljuset kommer uppifrån vänster. Granskningen: Version 2 var ingen trasig vagn: en hel låda på fyra hjul med en stor rostfläck till höger som läste som eld (som en härd), och spridda ben-punkter uppe till vänster. Rost var dessutom en mättad ton på något som inte ska tas. Jag ritade om vagnen i samma storlek (16 × 16, en ruta): flaket ovanifrån med plankfogar, ljusast uppe till vänster och jord0 som kontur. Bakre högra hörnet är avbrutet och taggigt, och ett hål i plankorna visar gräset. Framkanten är ett mörkt band på två punkter. Bara vänster framhjul står kvar, som en kort stump. Det högra hjulet har lossnat och ligger platt i gräset framför, sett snett ovanifrån med nav. Skaklarna är avbrutna och sticker ut som en stump till vänster. Det rövarna lämnade är inte med, eftersom det ritas som egna saker bredvid. Vagnen har bara trätoner (jord), och hålet, det taggiga hörnet och det lösa hjulet skiljer den från grundarnas vagn.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f11_vagnrest",
      "rader": [
       "................",
       "................",
-      "q...............",
-      ".qq.............",
-      "...qq...........",
-      "....qqkkkkkkkkkk",
-      "....kFFFFFFFFFFk",
-      "....kHHHHHHHHHHk",
-      "....kkkkkkkkkkkk",
-      "......kkk...kkk.",
-      ".....kHFHkkHFHk.",
-      ".....kFHFkkFHFk.",
-      ".....kHFHkkHFHk.",
-      "......kkk...kkk.",
-      "................",
-      "................"
+      "...EEEEEEEEEEE..",
+      "...EHHGHHHGHGE..",
+      "...EFGFFFGFFFE..",
+      "...EHGHHGHHGHE..",
+      ".EEEGHGHE..EGE..",
+      "EHGEHGHGHEEGHE..",
+      ".EEEGHHGHHGHGE..",
+      "...EHGHGHHGHGE..",
+      "...EFFGFFFGFFE..",
+      "...EEEEEEEFFFFE.",
+      "...EGE....EEEEE.",
+      "...EHE.EEEE.....",
+      "...EGEEHFFGE....",
+      "...EE..EEEE....."
      ]
     }
-   ]
+   ],
+   "anteckning": "Förlagan är spelets vagn: en låda snett ovanifrån med skaklar uppe till vänster. Golvet syns ovanifrån, framkanten är ett mörkare band och bara de främre hjulen syns som korta stumpar. Den plundrade karavanvagnen skiljer sig från grundarnas vagn, som bara gått sönder, genom tydliga våldsmärken. Skaklarna är avbrutna till en kort stump. En planka i bakkanten är bortbruten, och den lösa plankan ligger på marken nere till vänster. Lådan är tom och golvet har svedda fläckar (kol). Höger hjul är avslaget och ligger platt på gräset bredvid, så det ses uppifrån som en ring med nav. Bara vänster hjul står kvar under framkanten. En sliten tygtrasa (ben) ligger vid högra sidan som det enda rövarna lämnade. Ingen behållare är tillagd. Trä har konturen jord0, ljuset kommer uppifrån vänster och bilden är en ruta, 16 × 16. Granskningen: Rättat: vagnen lästes som en låda sedd rakt från sidan, var mörk (mest jord1 med kol) mot det olivgröna gräset, och pinnen till höger i ben gick inte att tyda. Den är nu ritad snett ovanifrån som stationerna. Flaket syns ovanifrån med ljusa plankor i jord3/jord2, korn och jord0-kontur, så det blir ljusare än gräset. Bakre sidbrädan står vid bakkanten med sin insida i skugga. Framkanten är ett smalt mörkare band, och bara främre vänstra hjulet syns som en kort stump. Det plundrade syns som skador gjorda med våld, i stället för slitage som på grundarnas vagn: ett uppslaget hål i flaket där gräset syns igenom, en avbruten dragstång till vänster, och höger framhörn som sjunkit ner eftersom hjulet är avslitet och ligger platt på gräset framför. Kol, skiffer och ben är borttagna; trät har bara tre toner med jord0 som kontur. Storleken är kvar: en ruta, 16 × 16.",
+   "ide": ""
   }
  ]
 }
