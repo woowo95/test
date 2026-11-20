@@ -53,6 +53,10 @@ export const KONTROLLER: Kontroll[] = [
     return /\p{Ll}(aen|een|aet|eet)(?=[^\p{L}]|$)/u.exec(t)?.[0];
   } },
   { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år och årtal', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/iu.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
+  // noll av något (steg 12.1.50): "bygga ut huset med 0 rutor"; "under noll" och "från noll" är inget antal
+  { id: 'noll', namn: 'Noll av något (med 0 rutor, noll stycken)', hitta: t => { const m = /(^|[^\p{L}\d.,])(0|noll) (\p{L}+)/iu.exec(t); return m && !/(^|[^\p{L}])(under|över|från|till|mot) $/iu.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } },
+  // ett namn med liten bokstav (steg 12.1.50): "ylvgerds hus". Bara i genitiv, eftersom ett kort namn kan vara ett vanligt ord (Alla, Torka)
+  { id: 'litetNamn', namn: 'Ett namn med liten bokstav (ylvgerds hus)', hitta: (t, _f, kon) => { for (const m of t.matchAll(/(^|[^\p{L}])(\p{Ll}\p{L}{3,})s (?=\p{L})/gu)) { const n = m[2][0].toUpperCase() + m[2].slice(1); if (kon(n) !== undefined) return `${m[2]}s`; } return undefined; } },
   { id: 'ochoch', namn: 'Namn fogade med och … och (A och B och C)', hitta: t => /(\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+)/u.exec(t)?.[0] },
 ];
 // vanliga ord som råkar vara ett namn med en ändelse (Inge + n = Ingen)

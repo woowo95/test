@@ -14,6 +14,7 @@ import { resolve } from 'node:path';
 import { State, ageIndex, bynsMitt, createState, hourOf, rovarnaKommer, serializeParts, stallUpp, step } from '../sim';
 import { FARGER, MORKARE } from '../palett';
 import { BEAT, START } from './kor';
+import { TACK_MATA, TACK_MAX } from './tackvakt';
 
 process.env.TZ = 'Europe/Stockholm'; // klockslagen i byn och i webbläsaren är svensk tid
 const MAPP = resolve(process.argv[2] ?? 'utseende'), BY = Number(process.argv[3] ?? 3);
@@ -109,8 +110,8 @@ const MATA = `(pal, par) => {
 
 async function main() {
   mkdirSync(MAPP, { recursive: true });
-  const s = createState(BY, START), larm: string[] = [];
-  const b = await chromium.launch();
+  const s = createState(BY, START), larm: string[] = [], tack: string[] = [];
+  const b = await chromium.launch(process.env.CLAUDE_CODE_REMOTE ? { executablePath: '/opt/pw-browsers/chromium' } : {}); // i molnet: webbläsaren som finns där
   for (const f of FALL.filter(f => !process.env.FALL || process.env.FALL.split(',').includes(f.namn))) {
     if (!tills(s, f.ai, f.h)) { larm.push(`${f.namn}: byn kom aldrig dit`); continue; }
     if ('rovare' in f) { rovarnaKommer(s, 4, true); const c = bynsMitt(s); if (s.rovare) stallUpp(s, s.rovare, c.x + 8, c.y + 2); }
@@ -135,6 +136,7 @@ async function main() {
       await pg.clock.runFor(SPELA_MS);
       await pg.waitForTimeout(1500);
       await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}.png`, timeout: 120000 }); // mobilens bild är stor
+      const tackUtan = await pg.evaluate(TACK_MATA) as string[];
       const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)}, ${JSON.stringify(steglos)})`) as { iOvergang: number; varld: number; skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
       if (process.env.DEBUG) console.log(new Date(t).toString(), '|', r.nu, '|', r.by, '|', r.klocka, '\n   var (x,y i skärmpunkter):', r.var.join('; '));
       const andel = r.ritade ? r.utanfor / r.ritade : 1;
@@ -155,11 +157,15 @@ async function main() {
       await pg.clock.runFor(500);
       await pg.waitForTimeout(500);
       await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}-stationer.png`, timeout: 120000 });
+      // knappar som täcker annat (steg 12.1.51), med panelen stängd och öppen: listas sist och gör inte felkoden röd (FORM_FEL=1 gör det)
+      for (const [nar, rader] of [['utan panel', tackUtan], ['med panelen öppen', await pg.evaluate(TACK_MATA) as string[]]] as const)
+        for (const x of rader.slice(0, TACK_MAX)) tack.push(`${f.namn} ${sk.namn} ${lg.namn} ${nar}: ${x}`);
       if (fel.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: fel på sidan`);
       await ctx.close();
     }
   }
   await b.close();
+  if (tack.length) { console.log(`\nKNAPPAR SOM TÄCKER ANNAT (steg 12.1.51):\n  ${tack.join('\n  ')}`); if (process.env.FORM_FEL) larm.push(`${tack.length} knappar täcker annat`); }
   console.log(larm.length ? `\nLARM:\n  ${larm.join('\n  ')}` : '\nAllt i paletten och i hel skala.');
   console.log(`Bilderna: ${MAPP}`);
   process.exit(larm.length ? 1 : 0);

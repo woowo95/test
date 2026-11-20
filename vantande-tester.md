@@ -193,3 +193,11 @@
 ## Grenen par-styre (12.1.27, 12.1.60, 12.1.61)
 
 - Koden för alla tre stegen fanns redan på varld när grenen började; grenen ändrar bara texten "Inga påbud just nu." i fliken Styre och bockar av stegen. Scenarierna pabud, omrostning, ledare, skatt, makten, budget, fangelse, utlysa, graven, kyrkan och sederfas8 är gröna i molnet. Stegen ändrar spelet (rädslan i byar utan ledare, legitimiteten, skatten på höns och bikupor, nödlistan, prästens mat, begravningen, gravgåvan), så de är skyldiga `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit, tillsammans med resten av 12.1.
+
+## Grenen par-paneler2 (12.1.12, 12.1.25, 12.1.26, 12.1.28, 12.1.29, 12.1.35, 12.1.50 och 12.1.51)
+
+- 12.1.12, 12.1.25, 12.1.26, 12.1.28, 12.1.29 och 12.1.35 fanns redan i koden på varld (med kontrollerna i ui-ren, sedlista och varldskarta, som går igenom); grenen bockade av dem. Bandet i Seder (kortet f12_sederband i bildstil/fas12.js) väntar på att bildstilen publiceras och på Björns ja eller nej.
+- 12.1.50 ändrar texter i simuleringen (utbyggnadens rutor, projektens skäl i ProjektDef.skal). Skälet är en del av uppgiftens text, så facit och samma-kollen kan visa annan utveckling om skälen jämförs; nya textkontroller (noll, litetNamn) larmar i koll om en text är fel. `npm run texter -- 2 10` gav 0 fel för dem.
+- Grenen är skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit. (Rättelsen av loopen i bristNu fanns också på varld och är samma.)
+- 12.1.51: vakten för knappar som täcker annat (src/test/tackvakt.ts) körs av `npm run utseende`; när felsok-12-1 förs in blir den en rad i FORMVAKTER. Skyldig `npm run utseende`.
+- Scenariot ord var rött redan på varld (tekniker utan "att göra": drejskiva, oljelampa, sang, stol, laggkar, ost, brunn, utedass, sjukstuga, fyrfat).

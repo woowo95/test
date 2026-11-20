@@ -967,7 +967,7 @@ export function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
     if (b && b.k === 'vagg') bytMaterial(b, 'oppning', false);
   }
   touch(s); count(s, 'planerat_ut');
-  const nr = f.ritning.filter(a => MATERIAL[a.m].k === 'golv').length;
+  const nr = f.ritning.filter(a => MATERIAL[a.m].k === 'golv').length + f.oppnas.length; // den gamla väggen blir golv också (steg 12.1.50)
   log(s, `${by.name} planerar att bygga ut ${husIMening(h.namn)}${nr ? ` med ${nr === 1 ? 'en ruta' : `${tal(nr)} rutor`}` : ''}.`, 'world', [by.id]);
 }
 // ---------- byns planering (steg 7.2.11–7.2.12) ----------

@@ -130,7 +130,7 @@ function ritaNamn(g: CanvasRenderingContext2D, dpr: number) {
     const sx = ((n.x + 0.5) * VK - vy.x) * vy.z, sy = ((n.y + 1) * VK - vy.y) * vy.z + 1;
     g.font = `${n.egen ? 700 : 500} 12px "Pixelify Sans", system-ui, sans-serif`;
     g.strokeStyle = farg('ben', 3); g.strokeText(n.namn, sx, sy);
-    g.fillStyle = n.egen ? farg('rost', 0) : farg('kol', 1); g.fillText(n.namn, sx, sy);
+    g.fillStyle = n.egen ? farg('rost', 0) : farg('kol', 1); g.fillText(n.namn.replace(/f(?=[il])/g, 'f\u200c'), sx, sy); // fi och fl slås inte ihop (steg 12.1.50)
   }
 }
 const senare = () => { if (!ritas) { ritas = true; requestAnimationFrame(rita); } };
