@@ -10,6 +10,7 @@ import { kronika } from './historik';
 import { notis } from './notiser';
 import { KLAN, Klan, KlanPerson, klanById, klanMellan, nyKlan } from './klaner';
 import { eldPlats, getMap } from './karta';
+import { streckAv } from './ord';
 import { byGrannar } from './grannat';
 import { hinder, laggPlats, VarldPlats } from './landmarken';
 import { byRutor } from './placering';
@@ -22,11 +23,10 @@ import { hemPlats } from './ort'; // byns egen plats (steg 12.1.64)
 import { MARK_IDS, VARLD, VARLDMARK, VarldMark } from './varldmark';
 import { H, Person, State, T, W } from './typer';
 
-const RIKTNING = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
 // var en plats ligger sett från huvudbyn: marken där och väderstrecket
 function hemAv(v: VarldMark, h: VarldPlats | undefined, p: VarldPlats) {
   const m = VARLDMARK[MARK_IDS[v.mark[p.y * v.w + p.x]]];
-  const r = h ? RIKTNING[((Math.round(Math.atan2(p.y - h.y, p.x - h.x) / (Math.PI / 4)) % 8) + 8) % 8] : undefined;
+  const r = h ? streckAv(Math.atan2(p.y - h.y, p.x - h.x)) : undefined;
   return { hem: r ? `${m.bestamd} i ${r}` : m.bestamd, sallsynt: [...m.sallsynt] };
 }
 // förbindelsen får sin rad i världen, på platsen

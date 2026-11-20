@@ -8,11 +8,10 @@
 // och det djur som ger mest per tid (valjFordon)
 import { Ting, tingOf, ledigtTing, spand } from './agande';
 import { MATERIAL, gridOf, roofed } from './byggnad';
-import { markslag } from './mark';
 import { paStrak } from './strak';
 import type { Fardsatt } from './varldmark';
 import { snoSmalt } from './brand';
-import { groundOf, tileOf } from './mark';
+import { groundOf, markslag, tileOf } from './mark';
 import { SAKER, viktOf } from './saker';
 import { snoPaMarken } from './vader';
 import { Person, State, Task, DAY, inMap } from './typer';
@@ -43,7 +42,7 @@ export const FORDON: Record<string, FordonRad> = {
   ridsadel: { sak: 'ridsadel', namn: 'Ridsadel', drar: 'djur', lass: 0, lassPerStyrka: 0, fart: { vag: FORDON_TAL.ridFart, stig: FORDON_TAL.ridFart, terrang: FORDON_TAL.ridFart, sno: FORDON_TAL.ridFart, is: FORDON_TAL.ridFart }, tar: false, fardsatt: 'packdjur' }, // ryttaren på resorna, aldrig i byn (steg 11.11.4)
   vagn: { sak: 'vagn', namn: 'Vagn', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.vagnLassPerStyrka, fart: { vag: 1, stig: 1, terrang: FORDON_TAL.vagnTerrang, sno: FORDON_TAL.vagnSno, is: FORDON_TAL.vagnTerrang }, tar: true, fardsatt: 'vagn' }, // byns egen vagn (steg 11.11.2)
 };
-export const fordonRad = (k: string) => Object.values(FORDON).find(f => f.sak === k);
+export const fordonRad = (k: string): FordonRad | undefined => FORDON[k]; // nyckeln är saken
 // fordonet i en börda: raden, tinget och dragdjuret som är spänt för
 export interface IBordan { f: FordonRad; g: Ting; d?: Tamdjur }
 export function fordonI(s: State, t?: Task): IBordan | undefined {
@@ -54,9 +53,9 @@ export function fordonI(s: State, t?: Task): IBordan | undefined {
   }
   return undefined;
 }
-// lasset (vikt) för fordonet med djuret d
 // dragfordonet som tar mest, i fart gånger lass, på underlaget u bland dem som finns (steg 11.11.8): i snö släden före vagnen
 export const valjDragfordon = (har: string[], u: Underlag) => [...har].sort((a, b) => FORDON[b].lassPerStyrka * FORDON[b].fart[u] - FORDON[a].lassPerStyrka * FORDON[a].fart[u])[0];
+// lasset (vikt) för fordonet med djuret d
 export const lassAv = (f: FordonRad, d?: Pick<Tamdjur, 'art'> & { id?: number }) => f.drar === 'djur' ? (d && tamArt(d.art).styrka ? tamEg(d).styrka * f.lassPerStyrka : 0) : f.lass; // individens styrka (steg 10.10.29)
 // underlaget på rutan (x, y) utan snön: isen, en lagd väg, en stig (gångstråket eller bar jord) eller terrängen
 export function underlag(s: State, x: number, y: number): Exclude<Underlag, 'sno'> {

@@ -103,6 +103,11 @@ export function skada(ett: string, g: number) {
   return `${grad === 'lätt' ? 'lätta' : grad.replace(/svår$/, 'svåra').replace('måttlig', 'måttliga')} ${ett}`; // flertal (klösmärken)
 }
 
+// ---------- väderstrecken (kodgenomgången, fynd 230) ----------
+// vinkeln (Math.atan2, x åt öster och y åt söder) i ord: öster, sydost … nordost
+export const STRECK = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
+export const streckAv = (vinkel: number) => STRECK[((Math.round(vinkel / (Math.PI / 4)) % 8) + 8) % 8]!;
+
 // ---------- pronomenen ----------
 // han eller hon, honom eller henne, hans eller hennes efter personens kön (aldrig hen om en viss person)
 type Kon = { sex: 'm' | 'k' | string };

@@ -162,6 +162,15 @@ export const radRikedomUr = (r: VarldRad) => (r.hus ?? 0) + ovriga().reduce((n, 
 // det en by i världen vill ha i varje grupp, i samma mått som tillgången
 export const radVill = (r: VarldRad, g: VarugruppId, rikMal: number) => g === 'mat' ? r.tal.folk * portionerPerDygn() * RADPRIS.matDygn : rikMal * (1 - RADPRIS.husAndel) * (VARUGRUPPER as Record<VarugruppId, VarugruppDef>)[g].andel;
 export const radHar = (r: VarldRad, g: VarugruppId) => g === 'mat' ? r.tal.mat : radVaror(r)[g] ?? 0;
+// förrådet i en rad (kodgenomgången, fynd 221): ta ur (aldrig under noll), lägga till, det som är över vad byn vill ha, och
+// varugruppen en sak räknas i (det som inte hör till någon grupp är redskap)
+export const radTaUr = (r: VarldRad, g: VarugruppId, n: number) => {
+  if (g === 'mat') { r.tal.mat = Math.max(0, r.tal.mat - n); return; }
+  const v = radVaror(r); v[g] = Math.max(0, (v[g] ?? 0) - n); r.tal.rikedom = radRikedomUr(r);
+};
+export const radLaggTill = (r: VarldRad, g: VarugruppId, n: number) => radTaUr(r, g, -n);
+export const radOverskott = (r: VarldRad, g: VarugruppId) => Math.floor(radHar(r, g) - radVill(r, g, rikMal(r)));
+export const sakGrupp = (sak: string): VarugruppId => gruppAv(sak) ?? 'redskap';
 // det marken där byn ligger ger mycket av och har sällsynt: sakens påslag när inget annat hänt
 const markCache = new WeakMap<VarldRad, { x?: number; y?: number; m?: { vanligt: readonly string[]; sallsynt: readonly string[] } }>();
 function radMark(s: State, r: VarldRad) {
@@ -249,7 +258,6 @@ export function radTar(r: VarldRad, k: string, n: number) {
 prisKrok.pris = (s, r, slag) => radPaslag(s, r, slag);
 prisKrok.andras = (s, r, slag, varde, upp) => radPrisAndras(s, r, slag, varde, upp);
 prisKrok.satt = (s, r, slag, v) => sattRadPris(s, r, slag, v);
-prisKrok.sallsynt = () => RADPRIS.sallsynt;
 prisKrok.radPris = (s, nr, sl) => { const r = radNr(s.varld ?? {}, nr); return !r ? 1 : sl.startsWith(GRUPP) ? radGruppPaslag(s, r, sl.slice(GRUPP.length) as VarugruppId) : radPaslag(s, r, sl); };
 prisKrok.grupp = k => gruppAv(k);
 prisKrok.gruppNamn = id => (VARUGRUPPER as Record<string, VarugruppDef>)[id]?.namn ?? id;

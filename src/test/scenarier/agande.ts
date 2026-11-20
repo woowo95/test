@@ -1957,7 +1957,7 @@ SCENARIER.grannklaner = {
     const huvud = s.varld!.platser!.find(p => p.by === s.varld!.huvud)!;
     const finns = k.length > 0 && k.length === huvud.grannar!.length && k.every(c => c.folk > 0 && c.styrka > 0 && c.personer.some(p => p.roll === 'hovding'));
     const unika = new Set(k.map(c => c.namn)).size === k.length;
-    const g = cloneState(s); g.klaner = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: SIM.KLAN_HEM_NAMN[0] })); delete g.varld; g.v = 55; SIM.migrate(g);
+    const g = cloneState(s); g.klaner = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: 'kusten i söder' })); delete g.varld; g.v = 55; SIM.migrate(g);
     const migr = !g.klaner && SIM.klanerOf(g).length === k.length && SIM.klanerOf(g).every((c, i) => c.namn === k[i].namn && c.rad !== undefined && c.dygn !== undefined);
     // alla tycker illa om byn: ingen handlare
     const f = cloneState(s); rikBy(f);
@@ -3302,7 +3302,6 @@ SCENARIER.bihandel = {
     // en by utan honung och utan mat nog byter till sig kakor: honungen är mat, och en by med mat nog köper ingen
     setAmount(s, 'honung', 0); setAmount(s, 'bivax', 0); setMat(s, {});
     h.bynKlar = undefined; h.varor = [{ k: 'honung', n: 4 }]; h.silver = 0;
-    const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) hk.pris = { ...hk.pris, honung: 1, bivax: 1 }; // (klanens priser som grundvärdet: honungen prövas, inte priset)
     SIM.hp(s, h).skill.handel = 0; // (en ovan handlare: det prövade beror inte på vem som kom)
     SIM.put(s, 'silver', 300, { [BYN]: 300 }); // byns silver
     const ka = helAffar(s, a, true).forsta;

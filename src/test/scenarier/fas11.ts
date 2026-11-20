@@ -686,7 +686,7 @@ SCENARIER.klanbort = {
     SIM.varldSteg(t);
     const foljer = kt.every(c => { const r = t.varld!.rader!.find(x => x.nr === c.rad)!; return r.tal.folk === c.folk && r.tal.styrka === c.styrka && r.tal.rikedom === c.resurser; });
     // en sparad by från före v531: grannklanerna (och en till än grannätet rymmer) blir byar i världen
-    const g = SIM.cloneState(s), gamla = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: SIM.KLAN_HEM_NAMN[1] }));
+    const g = SIM.cloneState(s), gamla = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: 'fjällen i norr' }));
     const extra = { ...gamla[0], id: 99, namn: 'Extrafolket', personer: [] };
     g.klaner = [...gamla, extra]; delete g.varld; g.v = 55; g.klanNr = 99; SIM.migrate(g);
     const kg = SIM.klanerOf(g), ex = kg.find(c => c.id === 99);
@@ -1506,18 +1506,20 @@ SCENARIER.byhistorik = {
 };
 
 SCENARIER.bynyhet = {
-  text: 'Nyheterna (steg 11.4.9, trorOmBy och storForandring i ort.ts): det en person tror om en by är byns tal vid tiden för uppgiften, och nyare uppgifter där något stort ändrats (ny ledare, invånarna ändrade med mer än 30 %, svält, gått under) är en nyhet i två dygn som berättas hellre och förs vidare som en nyhet',
+  text: 'Nyheterna (steg 11.4.9, radVid och storForandring i ort.ts): det en person tror om en by är byns tal vid tiden för uppgiften, och nyare uppgifter där något stort ändrats (ny ledare, invånarna ändrade med mer än 30 %, svält, gått under) är en nyhet i två dygn som berättas hellre och förs vidare som en nyhet',
   kor: () => {
+    // det personen tror om byn: byns bild vid tiden för uppgiften, som spelet frågar (ortensRad och radVid); ett rykte ger inget
+    const trorOmBy = (x: SIM.State, l: SIM.Lardom) => { const r = l.v > SIM.O_RYKTE ? SIM.ortensRad(x, l.a) : undefined; return r && SIM.radVid(r, l.t); };
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c, d] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const t0 = s.now - 30 * SIM.DAY;
     // en by som varken svultit eller delats under tiden (det är också nyheter)
     const r = vl.rader!.find(x => SIM.lever(vl, x) && vl.platser!.some(q => q.by === x.nr) && !(x.svalt! > t0) && !vl.rader!.some(y => y.fran === x.nr && y.grundad > t0))!, nr = vl.platser!.find(q => q.by === r.nr)!.nr;
     r.hist = [{ t: t0, tal: { ...r.tal, folk: 20 }, led: 'Ulf' }, { t: t0 + 10 * SIM.DAY, tal: { ...r.tal, folk: 22 }, led: 'Ulf' }, { t: t0 + 20 * SIM.DAY, tal: { ...r.tal, folk: 22 }, led: 'Tora' }, { t: t0 + 25 * SIM.DAY, tal: { ...r.tal, folk: 40 }, led: 'Tora' }];
-    const la = SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR }), tror = SIM.trorOmBy(s, la);
+    const la = SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR }), tror = trorOmBy(s, la);
     SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY }); const liten = SIM.nyhet(s, la); // 20 till 22: ingen nyhet
     SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + 21 * SIM.DAY }); const ledare = SIM.nyhet(s, la); // ny ledare
     const lb = SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY });
-    SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 26 * SIM.DAY }); const folk = SIM.nyhet(s, lb), tror2 = SIM.trorOmBy(s, lb); // 22 till 40
+    SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 26 * SIM.DAY }); const folk = SIM.nyhet(s, lb), tror2 = trorOmBy(s, lb); // 22 till 40
     SIM.berattaOrt(s, b!, c!, lb, SIM.getRel(s, b!, c!)); const vidare = SIM.nyhet(s, SIM.findL(c!, 'ort', nr)!);
     const rykte = SIM.larOrt(s, d!, nr, SIM.O_RYKTE, 1);
     // vikten i samtalen: samma plats med och utan nyhet
@@ -1532,7 +1534,7 @@ SCENARIER.bynyhet = {
       ['nyheten förs vidare som en nyhet', vidare],
       [`en nyhet berättas hellre (${vNy} mot ${vGammal})`, vNy === SIM.ORT.nyVikt * vGammal],
       ['efter två dygn är den ingen nyhet längre', !sedan],
-      ['ett rykte ger bara sorten och namnet', SIM.trorOmBy(s, rykte) === undefined],
+      ['ett rykte ger bara sorten och namnet', trorOmBy(s, rykte) === undefined],
     ];
   },
 };
@@ -1686,7 +1688,7 @@ SCENARIER.sallskap = {
     SIM.djurMed(sl, 7);
     const kopia = JSON.parse(JSON.stringify(s)) as SIM.State, k = kopia.varld!.sallskap![0]!;
     return [
-      ['varje skäl har namn och mål', SIM.RESMAL_IDS.every(id => SIM.RESMAL[id].namn && SIM.RESMAL[id].mal.length > 0)],
+      ['varje skäl har namn och mål', (Object.keys(SIM.RESMAL) as SIM.ResmalId[]).every(id => SIM.RESMAL[id].namn && SIM.RESMAL[id].mal.length > 0)],
       [`sällskapet har ledare, mål, skäl och skedet samlas (${sl.skede})`, sl.ledare === a!.id && sl.mal === mal && sl.skal === 'handel' && sl.skede === 'samlas' && sl.by === vl.huvud],
       ['ledaren kan inte leda två sällskap', !igen],
       ['en till följer med, men bara en gång', med && !tva && sl.medl.length === 2],
@@ -3070,7 +3072,7 @@ SCENARIER.utpost = {
       f = SIM.laggPlats(vl, v, 'fyndplats', x, y, s.now);
     }
     if (f) f.inne = { flinta: 12 };
-    const vinst = f ? SIM.utpostVinst(vl, v, f) : -1, leraVinst = SIM.UTPOST.folk * (SIM.UTPOST.perDygn * SIM.grundvarde('lera') - SIM.UTPOST.arbete);
+    const vinst = f ? SIM.utpostVinst(v, f) : -1, leraVinst = SIM.UTPOST.folk * (SIM.UTPOST.perDygn * SIM.grundvarde('lera') - SIM.UTPOST.arbete);
     const folk0 = r.tal.folk, u = f ? SIM.nyUtpost(s, vl, r, f, s.now) : undefined;
     const up = u && SIM.byPlats(vl, u.nr), gick = !!u && u.tal.folk === SIM.UTPOST.folk && r.tal.folk === folk0 - SIM.UTPOST.folk;
     const kron = (vl.kronika ?? []).some(h => h.k === 'utpost' && h.by === r.nr && h.mot === u?.nr);
@@ -3595,7 +3597,7 @@ SCENARIER.uppdrag = {
   text: 'Uppdragen (steg 11.8.1, uppdrag.ts): registret UPPDRAG säger för varje uppdrag utlösaren, platsen, vem som utlyser, belöningen, kravet, tiden och vad som sker; ett utlyst uppdrag är en post med belöningen i hela saker, och när tiden är ute går belöningen tillbaka till den som utlyste',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
-    const rader = SIM.UPPDRAG_IDS.map(k => SIM.uppdragDef(k));
+    const rader = (Object.keys(SIM.UPPDRAG) as SIM.UppdragId[]).map(k => SIM.uppdragDef(k));
     const hela = rader.every(d => d.namn && d.utlosare && d.plats.length && d.utlysare.length && d.krav && d.gor && d.plats.every(x => x === 'narhet' || x in SIM.LANDMARKEN));
     const utlosare = new Set(rader.map(d => d.utlosare)).size === rader.length;
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;

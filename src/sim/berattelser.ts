@@ -16,7 +16,7 @@ import { upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
-import { ganger, gen, goraNamn, han, honom, och, slaktOrd, talOrd } from './ord';
+import { ganger, gen, goraNamn, han, hans, honom, och, slaktOrd, talOrd } from './ord';
 import { isSick } from './sjukdom';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
@@ -79,7 +79,7 @@ export const BERATT = balans('beratt', {
   pratTim: 2, // personrutan visar det senaste samtalet i så här många timmar
   // relationerna utförligt (steg 3.9.6)
   kemi: 0.4, // personkemin (−1 till 1) nämns från så här långt från noll
-  relIntryck: 3, // så här många av intrycken visas
+  relIntryck: 2, // så här många av intrycken visas
 });
 
 // ---------- registren ----------
@@ -2133,7 +2133,6 @@ export const berattelse = (s: State, mall: MallId, nyckel: number, f: Fyllning =
 
 // ---------- öknamnen och hedersnamnen (steg 3.9.1) ----------
 export interface Binamn { k: IntryckTyp; namn: string; v: number; t: number; skal?: string; tillst?: true } // tillst = inget bevis, bara det byn tycker (steg 6.7.6)
-const hen = (p: Person) => p.sex === 'm' ? 'han' : 'hon';
 // namnet efter förnamnet: "Ask Lögnaren", "Brand den flitige"
 export const heltNamn = (p: Person) => p.binamn ? `${p.name} ${p.binamn.namn}` : p.name;
 export const arHeder = (b: Binamn) => INTRYCK[b.k].tecken > 0;
@@ -2185,7 +2184,7 @@ export function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   p.binamn = { k, namn: namnet, v, t: s.now, ...(tillst ? { tillst: true as const } : { skal }) };
   const heder = INTRYCK[k].tecken > 0;
   upplev(s, p, heder ? 'hedersnamn' : 'oknamn', namnet); // steg 4.1.1.2
-  const f: Fyllning = { namn: p.name, binamn: namnet, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne', skal, tillst, tillstand: tillstand(k), kallt: temperature(s) < 0, gamla: living(s).filter(q => ageOf(q, s.now) >= ALDER.gammal).length, arg: !heder && hash(s.seed, p.id, 3) < 0.5 };
+  const f: Fyllning = { namn: p.name, binamn: namnet, helt: heltNamn(p), hen: han(p), honom: honom(p), skal, tillst, tillstand: tillstand(k), kallt: temperature(s) < 0, gamla: living(s).filter(q => ageOf(q, s.now) >= ALDER.gammal).length, arg: !heder && hash(s.seed, p.id, 3) < 0.5 };
   const text = berattelse(s, heder ? 'hedersnamn' : 'oknamn', p.id, f);
   log(s, `${heder ? '🏅' : '🗯️'} ${text}`, 'rel', [p.id]);
   kronika(s, text, heder ? 'hedersnamn' : 'oknamn');
@@ -2352,7 +2351,7 @@ export const BESK_DELAR: BeskDel[] = [
   { id: 'skonhet', fast: true, vikt: b => skonDel(b.s, b.p) ? 1 : 0, text: b => {
     b.f.del = BESK_ANSIKTE.del?.(b.s, b.p) ?? skonaDel(b.s, b.p);
     const v = b.p.pot.skonhet > 10 ? VERKAN.find(([r]) => r.test(String(b.f.del))) : undefined;
-    b.f.verkan = v ? v[1].replace('{hen}', hen(b.p)) : undefined;
+    b.f.verkan = v ? v[1].replace('{hen}', han(b.p)) : undefined;
     return mening(b, b.p.pot.skonhet > 10 ? 'besk_vacker' : 'besk_ful', 11);
   } },
   { id: 'aldst', fast: true, vikt: b => {
@@ -2501,15 +2500,22 @@ const ihop = (l: string[]) => l.length === 2 && l[0].split(' ')[0] === l[1].spli
 // eftermälet (steg 6.7.4, m_eftermale): en död beskrivs i dåtid, först döden (e_dog), sedan vem hen var, grundandet, namnet
 // byn gav, det hen kom på eller gjorde och sist att byn minns hen. Det som bara passar en levande (smaken, vem hen litar
 // på, utseendet när man möter hen) står inte med
-function eftermale(s: State, p: Person) {
-  const a = Math.floor(ageOf(p, s.now)), k = kalender(s, p.died!);
-  let drag = personDrag(s, p), alder = alderOrd(a, p.sex);
+// dragen i beskrivningen och eftermälet (kodgenomgången, fynd 210): ett drag som syns står framför åldern, det bra först
+// ("modig men glömsk"), och två drag åt olika håll binds med men
+function ordnaDrag(p: Person, drag: string[], alder: string) {
   const syns = drag.length === 2 ? drag.find(d => SYNS.has(d)) : undefined;
   if (syns) { alder = `${syns} ${alder || (p.sex === 'm' ? 'man' : 'kvinna')}`; drag = drag.filter(d => d !== syns); }
   if (drag.length === 2 && (TECKEN[drag[0]] ?? 1) < (TECKEN[drag[1]] ?? 1)) drag = [drag[1], drag[0]];
   const bind = drag.length === 2 && (TECKEN[drag[0]] ?? 1) !== (TECKEN[drag[1]] ?? 1) ? 'men' : 'och';
+  return { drag, alder, syns, bind };
+}
+function eftermale(s: State, p: Person) {
+  const a = Math.floor(ageOf(p, s.now)), k = kalender(s, p.died!);
+  let drag = personDrag(s, p), alder = alderOrd(a, p.sex);
+  let syns: string | undefined, bind: string;
+  ({ drag, alder, syns, bind } = ordnaDrag(p, drag, alder));
   const by = samlatIntryck(s, p.id)[0];
-  const f: Fyllning = { namn: p.name, hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne', hans: p.sex === 'm' ? 'hans' : 'hennes', alder, drag1: drag[0], drag2: drag[1], bind, syns: !!syns,
+  const f: Fyllning = { namn: p.name, hen: han(p), honom: honom(p), hans: hans(p), alder, drag1: drag[0], drag2: drag[1], bind, syns: !!syns,
     orsak: p.cause ?? 'av okänd orsak', arstid: ARSTIDER[k.ai], ar: k.ar, aldern: talOrd(a, true), spad: a < 1, ung: a >= 1 && a < 25, gammal: a >= ALDER.gammal, kvar: false,
     binamn: p.binamn?.namn, yrke: p.tag && p.tag !== 'Dagdrivare' ? liten(p.tag) : undefined, rykte: by && by[1] >= BERATT.rykte ? INTRYCK[by[0]].som ?? INTRYCK[by[0]].namn : undefined,
     lange: s.now - p.died! > BERATT.glomtDygn * 24 * HOUR, barn: s.people.some(c => (c.mother === p.id || c.father === p.id) && alive(c)), ny: p.grundare === 'ny' };
@@ -2525,26 +2531,23 @@ function eftermale(s: State, p: Person) {
 }
 export function beskrivning(s: State, p: Person) {
   if (p.died !== undefined) return eftermale(s, p);
-  const a = ageOf(p, s.now), Hen = hen(p), ung = a < ALDER.vuxen, gammal = a >= ALDER.gammal;
+  const a = ageOf(p, s.now), Hen = han(p), ung = a < ALDER.vuxen, gammal = a >= ALDER.gammal;
   let drag = personDrag(s, p), alder = alderOrd(a, p.sex), trots: string | undefined;
   if (drag.length === 2) { // ett drag som går emot åldern får en egen mening (besk_trots)
     trots = drag.find(d => (gammal && MOT_GAMMAL.has(d)) || (ung && MOT_UNG.has(d)));
     if (trots) drag = drag.filter(d => d !== trots);
   }
-  const syns = drag.length === 2 ? drag.find(d => SYNS.has(d)) : undefined;
-  if (syns) { alder = `${syns} ${alder || (p.sex === 'm' ? 'man' : 'kvinna')}`; drag = drag.filter(d => d !== syns); }
-  if (drag.length === 2 && (TECKEN[drag[0]] ?? 1) < (TECKEN[drag[1]] ?? 1)) drag = [drag[1], drag[0]]; // det bra först: "modig men glömsk"
-  const bind = drag.length === 2 && (TECKEN[drag[0]] ?? 1) !== (TECKEN[drag[1]] ?? 1) ? 'men' : 'och';
-  const f: Fyllning = { namn: p.name, hen: Hen, honom: p.sex === 'm' ? 'honom' : 'henne', hans: p.sex === 'm' ? 'hans' : 'hennes', alder, drag1: drag[0], drag2: drag[1], bind, trots, syns: !!syns, ung, liten: a < ALDER.vuxen / 2, gammal, kvar: alive(p), ny: p.grundare === 'ny' };
+  let syns: string | undefined, bind: string;
+  ({ drag, alder, syns, bind } = ordnaDrag(p, drag, alder));
+  const f: Fyllning = { namn: p.name, hen: Hen, honom: honom(p), hans: hans(p), alder, drag1: drag[0], drag2: drag[1], bind, trots, syns: !!syns, ung, liten: a < ALDER.vuxen / 2, gammal, kvar: alive(p), ny: p.grundare === 'ny' };
   const b: Besk = { s, p, f, nyck: i => p.id * 8 + i, borjan: new Set() };
   // yrket och vad byn tycker, och relationerna
   const by = samlatIntryck(s, p.id)[0];
   f.yrke = p.tag && p.tag !== 'Dagdrivare' ? liten(p.tag) : undefined;
   f.rykte = by && by[1] >= BERATT.rykte ? INTRYCK[by[0]].som ?? INTRYCK[by[0]].namn : undefined;
-  f.gott = by ? INTRYCK[by[0]].tecken > 0 : undefined;
   f.binamn = p.binamn?.namn;
   const namnPa = (id?: number) => { const q = id !== undefined ? byId(s, id) : undefined; return q ? q.name : undefined; };
-  f.partner = alive(p) ? namnPa(p.partner) : undefined; f.van = namnPa(p.bast); f.fiende = namnPa(p.arke); f.mentor = namnPa(p.mentor);
+  f.partner = alive(p) ? namnPa(p.partner) : undefined; f.van = namnPa(p.bast); f.fiende = namnPa(p.arke);
   const delar = BESK_DELAR.map((d, i) => ({ d, i, v: d.vikt(b) })).filter(x => x.v > 0);
   const fasta = delar.filter(x => x.d.fast), andra = delar.filter(x => !x.d.fast).sort((x, y) => y.v - x.v || x.i - y.i);
   // kortare och olika från dygn till dygn (steg 10.2.52): de fasta och de viktigaste delarna är alltid med, och de andra fyller
@@ -2571,9 +2574,10 @@ export { talOrd, och }; // talen och listorna bor i ordlagret (steg 6.7.1)
 // Raden får mallens id som slag, så att den kan hittas utan att läsa texten
 // början på en rad utan namnen (ord med stor bokstav): 'Sige prövade och misslyckades' och 'Gunve prövade och …' är samma början
 const tre = (x: string) => x.split(/\s+/).filter(o => !/^[A-ZÅÄÖ]/.test(o)).slice(0, 3).join(' ').toLowerCase().replace(/[^a-zåäö ]/g, '');
+// årstiden, vädret och natten nu, för krönikans och loggens mallar (kodgenomgången, fynd 210)
+const vaderFalt = (s: State): Fyllning => { const v = vaderNu(s); return { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now) }; };
 export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) {
-  const v = vaderNu(s);
-  const g: Fyllning = { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now), ...f };
+  const g: Fyllning = { ...vaderFalt(s), ...f };
   // varianten väljs ur nyckeln och timmen; en som börjar som någon av de tre senaste raderna med samma mall hoppas över
   // (textminnet, steg 6.7.3, m_upprepning). Minnet ligger utanför historiken, så att byn blir likadan utan den
   const tm = (s.textminne ??= {}), forra = (tm[mall] ??= []);
@@ -2585,16 +2589,15 @@ export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) 
 // en rad i händelseloggen ur en mall (steg 6.7.7): som kronikaBer, med årstiden, vädret och natten, och raden minns mallen
 // (m), så att den kan hittas utan att läsa texten. sam = raden kan samlas med andra av samma slag (SAMLA i folk.ts)
 export function loggBer(s: State, mall: MallId, nyckel: number, f: Fyllning, kind: LogEntry['kind'], ids: number[], sam?: Parameters<typeof log>[4]) {
-  const v = vaderNu(s);
-  const g: Fyllning = { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', natt: !isLight(s.now), ...f };
+  const g: Fyllning = { ...vaderFalt(s), ...f };
   const e = log(s, fyll(valjVariant(s, mall, nyckel, g), g), kind, ids, sam);
   if (!e.sam || e.sam.d.length === 1) e.m = mall; else delete e.m;
   return e;
 }
 // fälten för den som lärt sig något (l_lart)
-export const larFalt = (s: State, p: Person): Fyllning => ({ namn: p.name, hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne', ung: ageOf(p, s.now) < ALDER.vuxen });
+export const larFalt = (s: State, p: Person): Fyllning => ({ namn: p.name, hen: han(p), honom: honom(p), ung: ageOf(p, s.now) < ALDER.vuxen });
 // fälten för en person: namnet, namnet byn gav och hen
-export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne' });
+export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNamn(p), hen: han(p), honom: honom(p) });
 
 // ---------- mästerverken och de usla sakerna (steg 3.9.4) ----------
 // När ett mästerverk eller en usel sak blir klar sparas det som berättelsen behöver: görarens humör, årstiden, vädret,
@@ -2698,7 +2701,7 @@ export function sakBerattelse(s: State, t: { id: number; k: string; q?: number; 
   const m = t.ber, p = m && byId(s, m.g);
   if (!m || !p) return '';
   const [saken, den] = bestamd(namn), q = t.q ?? 0, usel = q === 0;
-  const f: Fyllning = { namn: p.name, hen: hen(p), saken, den, pa: PA[m.ai], arstid: ARSTIDER[m.ai], vader: m.v ? VADER_ORD[m.v] : '', glad: m.h >= BERATT.glad, ledsen: m.h <= BERATT.ledsen, natt: m.natt === 1, l: m.l, egen: m.namn, perfekt: q >= 5 };
+  const f: Fyllning = { namn: p.name, hen: han(p), saken, den, pa: PA[m.ai], arstid: ARSTIDER[m.ai], vader: m.v ? VADER_ORD[m.v] : '', glad: m.h >= BERATT.glad, ledsen: m.h <= BERATT.ledsen, natt: m.natt === 1, l: m.l, egen: m.namn, perfekt: q >= 5 };
   const nara = m.nara !== undefined ? byId(s, m.nara) : undefined, at = m.at !== undefined ? byId(s, m.at) : undefined, lo = m.lo !== undefined ? byId(s, m.lo) : undefined;
   const vem = m.varg !== undefined ? byId(s, m.varg) : undefined;
   const del = (mall: MallId, n: number, g: Fyllning = {}) => fyll(valjVariant(s, mall, t.id * 16 + n, { ...f, ...g }, 0), { ...f, ...g });
@@ -2710,7 +2713,7 @@ export function sakBerattelse(s: State, t: { id: number; k: string; q?: number; 
   if (!usel && m.mn) ut.push(del('m_minne', 7, { om: m.mn })); // en sak gjord i sorg (steg 10.6.14)
   else if (!usel && at) ut.push(del('m_inskr', 3, { at: at.name, som: SOM[Math.floor(hash(s.seed, t.id, 5) * SOM.length)] }));
   if (!usel && m.mo) ut.push(konst());
-  if (vem) ut.push(del('m_varg', 4, { vem: vem === p ? p.name : vem.name, hen2: hen(vem) }));
+  if (vem) ut.push(del('m_varg', 4, { vem: vem === p ? p.name : vem.name, hen2: han(vem) }));
   if (q >= 5 && m.namn) ut.push(del('m_perfekt', 5));
   return ut.join(' ');
 }
@@ -2780,7 +2783,7 @@ export function pratText(s: State, p: Person) {
   const [t, l] = (x.fr ?? p.id) === p.id ? [p, q] : [q, p]; // den som talade först, i bådas ruta
   // årstiden och natten från när samtalet hölls, vädret nu (samtalet är högst några timmar gammalt), steg 6.7.7
   const v = vaderNu(s), h = roomAt(s, t.x, t.y);
-  const f: Fyllning = { namn: t.name, hen: hen(t), med: l.name, om: x.o ?? '', arstid: ARSTIDER[kalender(s).ai], natt: !isLight(x.t), kallt: temperature(s) < 0, regn: v.lage === 'regn', inne: !!h,
+  const f: Fyllning = { namn: t.name, hen: han(t), med: l.name, om: x.o ?? '', arstid: ARSTIDER[kalender(s).ai], natt: !isLight(x.t), kallt: temperature(s) < 0, regn: v.lage === 'regn', inne: !!h,
     yrke: t.tag && t.tag !== 'Dagdrivare' ? t.tag.toLowerCase() : undefined, barn: s.people.some(c => alive(c) && (c.mother === t.id || c.father === t.id) && ageOf(c, s.now) < ALDER.vuxen) };
   return fyll(valjVariant(s, `p_${x.k}` as MallId, p.id + q.id, f, Math.round(x.t / MIN)), f);
 }
@@ -2792,7 +2795,7 @@ export function pratText(s: State, p: Person) {
 export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   // fälten som varianterna väljer på (steg 6.7.7): åldrarna, humöret, samtalen och det de varit med om tillsammans
   const barnIhop = s.people.some(c => (c.mother === p.id && c.father === q.id) || (c.mother === q.id && c.father === p.id));
-  const f: Fyllning = { namn: p.name, om: q.name, hen: hen(p), ung: ageOf(p, s.now) < ALDER.vuxen, gammal: ageOf(p, s.now) >= ALDER.gammal, omUng: ageOf(q, s.now) < ALDER.vuxen,
+  const f: Fyllning = { namn: p.name, om: q.name, hen: han(p), ung: ageOf(p, s.now) < ALDER.vuxen, gammal: ageOf(p, s.now) >= ALDER.gammal, omUng: ageOf(q, s.now) < ALDER.vuxen,
     glad: moodOf(p, s.now) >= BERATT.glad, talks: r.talks ?? 0, mycketPrat: (r.talks ?? 0) >= BERATT.mycketPrat, sida: !!r.minns?.sida, gral: !!r.minns?.gral, slag: !!r.minns?.slag, barn: barnIhop, kin: isKin(p, q) };
   const mall: MallId = p.partner === q.id ? 'r_partner' : r.op > REL.naraVan ? 'r_nara' : r.op > REL.vanOrd ? 'r_van' : r.op > REL.osams ? 'r_bekant' : r.op > REL.ovan ? 'r_ogillar' : 'r_ovan';
   const nyckel = p.id * 7919 + q.id, ut: string[] = [fyll(valjVariant(s, mall, nyckel, f, 0), f)];
@@ -2815,15 +2818,15 @@ export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
   if (g) ut.push(`${p.name} har gett ${q.name} ${gavor(g)}${fick ? ` och fått ${fick === 1 ? 'en' : talOrd(fick)} tillbaka` : ' men aldrig fått något tillbaka'}.`);
   else if (fick) ut.push(`${q.name} har gett ${p.name} ${gavor(fick)}, men ${p.name} har aldrig gett något tillbaka.`);
   // intrycken som meningar (steg 6.7.3, m_intryck): de två starkaste, med vad hen såg eller vem hen hörde det av; lika bevis slås ihop
-  const Hen = cap(hen(p)), qHan = hen(q), honomP = p.sex === 'm' ? 'honom' : 'henne';
-  for (const e of (p.intryck ?? []).filter(x => x.om === q.id).sort((x, y) => y.v * y.c - x.v * x.c).slice(0, Math.min(2, BERATT.relIntryck))) {
+  const Hen = cap(han(p)), qHan = han(q), honomP = honom(p);
+  for (const e of (p.intryck ?? []).filter(x => x.om === q.id).sort((x, y) => y.v * y.c - x.v * x.c).slice(0, BERATT.relIntryck)) {
     const t = intryckText(s, e), sjalv = e.src === undefined && !e.led, osaker = e.c < 0.4 ? ', men är inte säker' : '';
     const bev = new Map<string, number>();
     for (const b of e.bev ?? []) { const x = HANDELSER[b.h].text.replace('{om}', b.motNamn === p.name ? honomP : b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något'); bev.set(x, (bev.get(x) ?? 0) + 1); }
     const [vad, n] = [...bev].sort((a, b) => b[1] - a[1])[0] ?? [];
     const gjorde = vad ? `${q.name} ${vad}${n! > 1 ? ` ${ganger(n!)}` : ''}` : undefined;
     if (sjalv) ut.push(gjorde ? `${Hen} har själv sett att ${gjorde} och tycker att ${qHan} är ${t.som}${osaker}.` : `${Hen} tycker att ${q.name} är ${t.som}${osaker}.`);
-    else { const fran = byId(s, e.src ?? -1)?.name; ut.push(`${fran ? `Från ${fran}` : 'Från andra'} har ${hen(p)} hört att ${gjorde ?? `${q.name} är ${t.som}`}${osaker}.`); }
+    else { const fran = byId(s, e.src ?? -1)?.name; ut.push(`${fran ? `Från ${fran}` : 'Från andra'} har ${han(p)} hört att ${gjorde ?? `${q.name} är ${t.som}`}${osaker}.`); }
   }
   return ut;
 }

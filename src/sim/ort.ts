@@ -4,15 +4,14 @@
 // först berättade (fr), som ryktets förskjutning räknas ur. En person minns högst ORT.max platser, och det minst säkra trängs
 // undan. Att höra om en plats igen, på samma eller en högre nivå, stärker minnet.
 import { balans } from './balans';
-import { findL, MINNE, nyhet, trimLardomar } from './minne';
+import { findL, MINNE, nyhet, stark, tillit, trimLardomar } from './minne';
 import { delade } from './berattelser';
 import { alive, byId, count, gjort, living } from './folk';
 import { kronika } from './historik';
 import { notis } from './notiser';
 import { varldHandelseText, VarldHandelse, VARLDSHANDELSER } from './varldkronika';
 import { sparadVag } from './vagval';
-import { clamp, hash3 } from './slump';
-import { lognFaktor } from './rykten';
+import { hash3 } from './slump';
 import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr, type VarldPlats } from './landmarken';
 import { VARLD } from './varldmark';
 import { varldMark, type Varlden } from './varlden';
@@ -57,7 +56,7 @@ export function larOrt(s: State, p: Person, nr: number, niva: number, c: number,
   if (e) {
     const egen = e.src === undefined && niva < e.v; // det man själv sett skrivs inte över av mindre uppgifter (steg 12.1.83)
     if (niva > e.v) { e.v = niva; e.c = Math.max(e.c, c); }
-    else e.c = niva === e.v ? Math.max(c, e.c + MINNE.berattaStark * (1 - e.c)) : Math.min(1, e.c + MINNE.berattaStark * (1 - e.c)); // att höra om det igen stärker minnet
+    else e.c = niva === e.v ? Math.max(c, stark(e.c)) : stark(e.c); // att höra om det igen stärker minnet
     if (t > e.t) {
       const ny = o.ny ?? (storForandring(s, nr, e.t, t) ? s.now : undefined); // nyare uppgifter där något stort ändrats
       if (ny !== undefined && (e.ny === undefined || ny > e.ny)) { e.ny = ny; nyhetNarByn(s, p, nr, e.t, t, o.src); }
@@ -86,10 +85,9 @@ export function ortBleknar(l: Lardom, timmar: number, tau: number): boolean {
 // säkerheten är den hos den som berättar gånger hur mycket b tror på a, som för andra lärdomar. Att berätta stärker det egna
 // minnet. Samtalets ämne blir Fjärran platser
 export function berattaOrt(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
-  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
-  const vl = s.varld, q = vl && varldPlatsNr(vl, l.a);
-  delade('fjarran', 'karta', q ? (l.v === O_RYKTE ? `${LANDMARKEN[q.k].namn.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats långt borta');
-  const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a);
+  l.c = stark(l.c);
+  delade('fjarran', 'karta', platsText(s, l.a, l.v === O_RYKTE ? 'rykte' : 'namn'));
+  const trust = tillit(a, b, r);
   const niva = Math.max(O_RYKTE, l.v - 1), fore = findL(b, 'ort', l.a);
   larOrt(s, b, l.a, niva, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1, ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   if (!fore) { count(s, 'ortBerattad'); gjort(s, a, 'berattat'); }
@@ -104,6 +102,14 @@ export function ryktesLage(s: State, l: Lardom): { x: number; y: number; r: numb
   const r = ORT.ryktRadie * VARLD.gangPerDygn;
   const vinkel = hash3(vl.fro, l.a, 0x4f52) * 2 * Math.PI, d = r * (ORT.ryktFran + (ORT.ryktTill - ORT.ryktFran) * hash3(vl.fro, l.a, 0x5259));
   return { x: q.x + 0.5 + Math.cos(vinkel) * d, y: q.y + 0.5 + Math.sin(vinkel) * d, r };
+}
+// platsen nr i text (kodgenomgången, fynd 174): namnet, sorten och namnet ("gravhög Ulvsö") eller som ett rykte ("gravhög som
+// heter Ulvsö"); en plats som tagits bort ur världen har en egen text
+export function platsText(s: State, nr: number, hur: 'namn' | 'sort' | 'rykte' = 'namn'): string {
+  const q = s.varld && varldPlatsNr(s.varld, nr);
+  if (!q) return 'en plats som inte finns längre';
+  const sort = LANDMARKEN[q.k].namn.toLowerCase();
+  return hur === 'namn' ? q.namn : hur === 'sort' ? `${sort} ${q.namn}` : `${sort} som heter ${q.namn}`;
 }
 // nivån p har i minnet för platsen nr (undefined: okänd)
 export const ortNiva = (p: Person, nr: number): number | undefined => findL(p, 'ort', nr)?.v;
@@ -133,8 +139,9 @@ export function kannerOrt(s: State, p: Person, nr: number): number | undefined {
   return m === undefined ? n : n === undefined ? m : Math.max(m, n);
 }
 // platsen gästen g kommer ifrån: klanens by eller byn i världen hen flyttade ifrån
+const gastHemRad = (s: State, g: Person) => klanById(s, g.gast?.klan)?.rad ?? g.gast?.hemRad; // gästens hemby (fynd 252)
 export function gastHemOrt(s: State, g: Person): number | undefined {
-  const vl = s.varld, rad = klanById(s, g.gast?.klan)?.rad ?? g.gast?.hemRad;
+  const vl = s.varld, rad = gastHemRad(s, g);
   return vl && rad !== undefined ? byPlats(vl, rad)?.nr : undefined;
 }
 // gästen g berättar för bybon p var hen bor: p känner platsen med säkerheten c
@@ -151,8 +158,7 @@ export function rovareSedda(s: State, p: Person, klan: number | undefined) {
 // lärdomen i ord (describe i minne.ts)
 export function describeOrt(s: State, l: Lardom) {
   const vl = s.varld, q = vl && varldPlatsNr(vl, l.a), niva = ORTNIVA[l.v] ?? ORTNIVA[0];
-  const sort = q ? LANDMARKEN[q.k].namn : 'En plats', place = q ? (l.v === O_RYKTE ? `${sort.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats som inte finns längre';
-  const what = `${cap(niva.text)} ${l.v === O_RYKTE ? place : `${sort.toLowerCase()} ${q?.namn ?? ''}`.trim()}`;
+  const what = `${cap(niva.text)} ${platsText(s, l.a, l.v === O_RYKTE ? 'rykte' : 'sort')}`;
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : l.v === O_BESOKT ? 'egen resa' : 'egen erfarenhet') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som var där` : ''}`;
   const sure = l.c >= 0.75 ? 'säker' : l.c >= 0.4 ? 'ganska säker' : 'osäker';
   return { text: what, what, place: q?.namn ?? 'okänd plats', src, sure, wrong: q ? '' : 'platsen finns inte längre' };
@@ -192,8 +198,8 @@ export function raknaBynVet(s: State) {
     if (ny[nr] || iNaromradet(s, nr)) continue;
     if (s.people.some(q => alive(q) && !q.gast && findL(q, 'ort', nr))) continue; // den som är ute minns den ännu
     if (kartSkrifter(s).some(x => x.k.platser?.some(y => y.nr === nr))) continue; // eller har kartan med sig
-    const q = varldPlatsNr(s.varld, nr), om = fore[nr]!.vem.map(id => byId(s, id)).find(x => x && x.died !== undefined);
-    kronika(s, `Ingen i byn minns längre ${q ? `${LANDMARKEN[q.k].namn.toLowerCase()} ${q.namn}` : 'en plats långt borta'}${om ? `; ${om.name} var den sista som visste om den` : ''}.`, 'forlust');
+    const om = fore[nr]!.vem.map(id => byId(s, id)).find(x => x && x.died !== undefined);
+    kronika(s, `Ingen i byn minns längre ${platsText(s, nr, 'sort')}${om ? `; ${om.name} var den sista som visste om den` : ''}.`, 'forlust');
     count(s, 'ortGlomdIByn');
   }
   s.bynVet = { t: s.now, p: ny };
@@ -287,11 +293,6 @@ export function radVid(r: VarldRad, t: number): RadBild | undefined {
 // (share i minne.ts) och förs vidare som en nyhet: byn har gått under eller delats, fått en ny ledare eller börjat lyda under en
 // annan, svultit, eller invånarna har ändrats med mer än ORT.nyStor. Krig och fred kommer med krigen mellan byarna
 export const ortensRad = (s: State, nr: number): VarldRad | undefined => { const vl = s.varld, q = vl && varldPlatsNr(vl, nr); return q?.by !== undefined ? radNr(vl!, q.by) : undefined; };
-export function trorOmBy(s: State, l: Lardom): RadBild | undefined {
-  if (l.k !== 'ort' || l.v <= O_RYKTE) return undefined;
-  const r = ortensRad(s, l.a);
-  return r && radVid(r, l.t);
-}
 export function storForandring(s: State, nr: number, t0: number, t1: number): boolean {
   const r = ortensRad(s, nr), a = r && radVid(r, t0), b = r && radVid(r, t1);
   if (!r || !a || !b) return false;
@@ -324,14 +325,20 @@ export function radKanner(vl: Varlden, r: VarldRad, nr: number): number | undefi
 // En gäst (handlare, främling, rövare) har sin hemby som besökt och känner det hens by känner (radKanner), med uppgifter från
 // i dag: så får byn i samtalen veta hur det står till i världen och höra om platser den inte sett. Det mest säkra går först
 // när minnet är fullt (ORT.max)
+// de platser raden r kan känna (kodgenomgången, fynd 269): den egna, de besökta, grannarna och grannarnas grannar, i den
+// ordningen; radKanner ger nivån för var och en. Säkerheten är en gästs: besökt säkert, känt och rykte efter ORT
+export function radensPlatser(vl: Varlden, r: VarldRad): Set<number> {
+  const egen = byPlats(vl, r.nr), nr = new Set<number>(egen ? [egen.nr, ...(r.besokt ?? [])] : []);
+  for (const x of egen?.grannar ?? []) { nr.add(x.nr); for (const y of varldPlatsNr(vl, x.nr)?.grannar ?? []) nr.add(y.nr); }
+  return nr;
+}
+export const gastSakerhet = (v: number) => v === O_BESOKT ? 1 : v === O_KANT ? ORT.gastKant : ORT.gastRykte;
 export function gastensPlatser(s: State, g: Person) {
-  const vl = s.varld, r = vl && radNr(vl, klanById(s, g.gast?.klan)?.rad ?? g.gast?.hemRad), egen = r && byPlats(vl!, r.nr);
-  if (!vl || !r || !egen) return;
-  const nr = new Set<number>([egen.nr, ...(r.besokt ?? [])]);
-  for (const x of egen.grannar ?? []) { nr.add(x.nr); for (const y of varldPlatsNr(vl, x.nr)?.grannar ?? []) nr.add(y.nr); }
-  for (const n of nr) {
+  const vl = s.varld, r = vl && radNr(vl, gastHemRad(s, g));
+  if (!vl || !r) return;
+  for (const n of radensPlatser(vl, r)) {
     const v = radKanner(vl, r, n);
-    if (v !== undefined && varldPlatsNr(vl, n)) larOrt(s, g, n, v, v === O_BESOKT ? 1 : v === O_KANT ? ORT.gastKant : ORT.gastRykte);
+    if (v !== undefined && varldPlatsNr(vl, n)) larOrt(s, g, n, v, gastSakerhet(v));
   }
 }
 
@@ -342,13 +349,21 @@ export interface RutaRad { id: string; namn: string; tror?: string; sant: string
 // visshet (steg 12.1.30): byn vet det den själv sett (en egen resa eller den egna byn) och tror det den hört eller läst
 export type Visshet = 'vet' | 'tror';
 export interface PlatsRuta { nr: number; namn: string; sort: string; niva?: string; ar?: number; kalla?: string; visshet?: Visshet; rader: RutaRad[]; vem: string[]; kartor: string[]; baraEn: boolean; egen: boolean }
+// raderna i platsens ruta (kodgenomgången, fynd 253): rubriken och värdet ur byns bild; en by som gått under har bara Finns kvar
+const RUTARADER: { id: string; namn: string; v: (s: State, b: RadBild) => string }[] = [
+  { id: 'kvar', namn: 'Finns kvar', v: (_s, b) => b.borta ? 'Nej' : 'Ja' },
+  { id: 'folk', namn: 'Invånare', v: (_s, b) => String(b.tal.folk) },
+  { id: 'mat', namn: 'Mat', v: (_s, b) => String(b.tal.mat) },
+  { id: 'rikedom', namn: 'Rikedom', v: (_s, b) => String(b.tal.rikedom) },
+  { id: 'styrka', namn: 'Styrka', v: (_s, b) => String(b.tal.styrka) },
+  { id: 'led', namn: 'Ledare', v: (_s, b) => b.led ?? 'Ingen' },
+  { id: 'tro', namn: 'Tro', v: (_s, b) => b.tro ?? 'Ingen' },
+  { id: 'lyder', namn: 'Lyder under', v: (s, b) => b.lyder !== undefined ? radNr(s.varld!, b.lyder)?.namn ?? 'en annan by' : 'Ingen' },
+];
 function bildRader(s: State, b: RadBild | undefined): Record<string, string> {
   if (!b) return {};
-  if (b.borta) return { kvar: 'Nej' };
-  const vl = s.varld!;
-  return { kvar: 'Ja', folk: String(b.tal.folk), mat: String(b.tal.mat), rikedom: String(b.tal.rikedom), styrka: String(b.tal.styrka), led: b.led ?? 'Ingen', tro: b.tro ?? 'Ingen', lyder: b.lyder !== undefined ? radNr(vl, b.lyder)?.namn ?? 'en annan by' : 'Ingen' };
+  return Object.fromEntries(RUTARADER.filter(x => !b.borta || x.id === 'kvar').map(x => [x.id, x.v(s, b)]));
 }
-const RUTARADER: [string, string][] = [['kvar', 'Finns kvar'], ['folk', 'Invånare'], ['mat', 'Mat'], ['rikedom', 'Rikedom'], ['styrka', 'Styrka'], ['led', 'Ledare'], ['tro', 'Tro'], ['lyder', 'Lyder under']];
 export function platsRuta(s: State, nr: number): PlatsRuta | undefined {
   const vl = s.varld, q = vl && varldPlatsNr(vl, nr);
   if (!vl || !q) return undefined;
@@ -362,7 +377,7 @@ export function platsRuta(s: State, nr: number): PlatsRuta | undefined {
   if (kl && (!bast || kl.t > bast.t)) { bast = kl; kalla = 'en karta'; }
   const r = ortensRad(s, nr), sant = r ? bildRader(s, radBild(r)) : {};
   const tror = egen ? sant : r && k && k.v > O_RYKTE ? bildRader(s, radVid(r, bast?.t ?? s.now)) : {};
-  const rader = r ? RUTARADER.map(([id, namn]) => ({ id, namn, sant: sant[id] ?? '', ...(tror[id] !== undefined ? { tror: tror[id] } : {}) })) : [];
+  const rader = r ? RUTARADER.map(({ id, namn }) => ({ id, namn, sant: sant[id] ?? '', ...(tror[id] !== undefined ? { tror: tror[id] } : {}) })) : [];
   const visshet: Visshet | undefined = egen ? 'vet' : !bast || !k || k.v === O_RYKTE ? undefined : bast.src === undefined && !bast.led && bast.v === O_BESOKT && kalla !== 'en karta' ? 'vet' : 'tror';
   return {
     nr, namn: egen ? `Er by ${q.namn}` : q.namn, sort: LANDMARKEN[q.k].namn, egen, rader, ...(visshet ? { visshet } : {}),
@@ -442,7 +457,7 @@ function nyhetNarByn(s: State, p: Person, nr: number, t0: number, t1: number, sr
     else if (nu.tal.folk !== fore.tal.folk) vad.push(`${q?.namn ?? 'Byn'} har nu ${nu.tal.folk} invånare (förut ${fore.tal.folk})`);
   }
   if (!vad.length) return; // inget har ändrats i spannet: ingen nyhet (steg 12.1.64)
-  const kom = src !== undefined ? byId(s, src) : p, text = `Nyheter från ${q?.namn ?? 'en by långt borta'}: ${vad.join('. ')}. ${kom?.name ?? 'Någon'} kom med nyheten.`;
+  const kom = src !== undefined ? byId(s, src) : p, text = `Nyheter från ${platsText(s, nr)}: ${vad.join('. ')}. ${kom?.name ?? 'Någon'} kom med nyheten.`;
   kronika(s, text, 'nyhet');
   notis(s, 'nyhet', text, [p.id, ...(kom && kom !== p && !kom.gast ? [kom.id] : [])]);
   count(s, 'nyhetNarByn');

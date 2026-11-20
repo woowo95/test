@@ -21,7 +21,7 @@ import { balans } from './balans';
 import { mots, nyttSlaktband, relation, grundlage } from './byrel';
 import { emigrationRate, hungerFlyttAv, LIV, matGottAv } from './liv';
 import { barkraft, lever, matDygn, styrkaMal } from './rad';
-import { BYSORTER, BysortDef, radKrok, radNr, VarldRad } from './radtal';
+import { BYSORTER, BysortDef, radKrok, radNr, tomTal, VarldRad } from './radtal';
 import { clamp } from './slump';
 import { KOHANDELSER, PERIODRADER, antalUr, laggIKo, periodSlut, varldSlump } from './varldslag';
 import { Varlden, varldMark } from './varlden';
@@ -111,63 +111,56 @@ function delaTro(r: VarldRad, ny: VarldRad, grupp: number) {
   const kvar = troende - med;
   if (kvar > 0 && r.tal.folk > 0) a.andel = Math.round(100 * kvar / r.tal.folk); else delete t.annan;
 }
-// byrutorna i världen (marken och vattnet; räknas en gång per värld)
-const rutor = new WeakMap<VarldMark, number[]>();
-// gruppen grundar en ny by på den närmaste lediga byplatsen inom räckhåll; undefined om ingen finns
-export function nyBy(s: State, vl: Varlden, r: VarldRad, grupp: number, t: number): VarldRad | undefined {
+// byrutorna i världen (marken och vattnet) och rutorna där ett rövarläger får ligga (räknas en gång per värld)
+const rutor = new WeakMap<VarldMark, number[]>(), lagerRutor = new WeakMap<VarldMark, number[]>();
+const rutorFor = (v: VarldMark, k: 'by' | 'rovarlager') => {
+  const m = k === 'by' ? rutor : lagerRutor;
+  let alla = m.get(v);
+  if (!alla) {
+    if (k === 'by') alla = byRutor(v);
+    else { const mk = LANDMARKEN.rovarlager.mark as readonly string[]; alla = []; for (let i = 0; i < v.w * v.h; i++) if (mk.includes(MARK_IDS[v.mark[i]])) alla.push(i); }
+    m.set(v, alla);
+  }
+  return alla;
+};
+// gruppen ur raden r slår sig ner på den närmaste lediga platsen av sorten k inom räckhåll, med sin del av maten (kodgenomgången,
+// fynd 184: byn och lägret på samma sätt); gor ger den nya raden det som skiljer (teknikerna, tron, styrkan) innan den läggs
+// in. undefined om ingen plats finns
+function utflytt(s: State, vl: Varlden, r: VarldRad, grupp: number, t: number, k: 'by' | 'rovarlager', gor: (ny: VarldRad) => void): VarldRad | undefined {
   const v = varldMark(s), hem = platsAv(vl, r);
   if (!v || !hem) return undefined;
-  let alla = rutor.get(v); if (!alla) rutor.set(v, alla = byRutor(v));
+  const alla = rutorFor(v, k);
   // bara rutorna inom räckhåll: varje steg kostar minst 1, så en ruta längre bort i x eller y än räckhållet nås inte
   const nar = FLYTT.dygn * VARLD.gangPerDygn, inom = (i: number) => Math.abs(i % v.w - hem.x) <= nar && Math.abs(Math.floor(i / v.w) - hem.y) <= nar;
-  const lediga = new Set(alla.filter(i => inom(i) && !hinder(vl, v, 'by', i % v.w, Math.floor(i / v.w))));
+  const lediga = new Set(alla.filter(i => inom(i) && !hinder(vl, v, k, i % v.w, Math.floor(i / v.w))));
   const [f] = narmasteMal(vl, v, hem.y * v.w + hem.x, lediga, 1, 'fots');
   if (!f || f.kostnad / VARLD.gangPerDygn > FLYTT.dygn) return undefined;
-  const p = laggPlats(vl, v, 'by', f.till % v.w, Math.floor(f.till / v.w), t);
+  const p = laggPlats(vl, v, k, f.till % v.w, Math.floor(f.till / v.w), t);
   if (!p) return undefined;
   const nr = vl.nastaRad = (vl.nastaRad ?? 0) + 1;
+  const mat = Math.min(r.tal.mat, Math.round(r.tal.mat * grupp / Math.max(1, r.tal.folk + grupp))); // sin del av maten
+  r.tal.mat -= mat;
+  const ny: VarldRad = { nr, sort: k, namn: p.namn, x: p.x, y: p.y, grundad: t, fran: r.nr, t, tal: { ...tomTal(), folk: grupp, mat }, tek: [], fasta: [] };
+  gor(ny);
+  vl.rader!.push(ny);
+  p.by = nr;
+  p.grannar = byGrannar(vl, v, p, t);
+  if (k === 'by') hem.grannar = byGrannar(vl, v, hem, t);
+  mots(vl, r.nr, nr);
+  varldHandelse(vl, k === 'by' ? 'delad' : 'lager', t, { by: r.nr, mot: nr });
+  return ny;
+}
+// gruppen grundar en ny by på den närmaste lediga byplatsen inom räckhåll; undefined om ingen finns
+export const nyBy = (s: State, vl: Varlden, r: VarldRad, grupp: number, t: number) => utflytt(s, vl, r, grupp, t, 'by', ny => {
   // teknikerna: var och en med chansen NYBY.tek, och bara det vars krav den nya byn kan (i moderbyns ordning, kraven först)
-  const tek: string[] = [];
-  r.tek.forEach((id, j) => { if (varldSlump(vl, nr, j, A.tek) < NYBY.tek && (TEK[id]?.krav ?? []).every(k => tek.includes(k))) tek.push(id); });
-  const mat = Math.min(r.tal.mat, Math.round(r.tal.mat * grupp / Math.max(1, r.tal.folk + grupp))); // sin del av maten
-  r.tal.mat -= mat;
-  const ny: VarldRad = { nr, sort: 'by', namn: p.namn, x: p.x, y: p.y, grundad: t, fran: r.nr, t, tal: { folk: grupp, mat, rikedom: 0, silver: 0, styrka: 0 }, tek, fasta: [] };
+  r.tek.forEach((id, j) => { if (varldSlump(vl, ny.nr, j, A.tek) < NYBY.tek && (TEK[id]?.krav ?? []).every(k => ny.tek.includes(k))) ny.tek.push(id); });
   delaTro(r, ny, grupp);
-  vl.rader!.push(ny);
-  p.by = nr;
-  p.grannar = byGrannar(vl, v, p, t);
-  hem.grannar = byGrannar(vl, v, hem, t);
-  mots(vl, r.nr, nr);
-  varldHandelse(vl, 'delad', t, { by: r.nr, mot: nr });
-  return ny;
-}
-
-// rutorna där ett rövarläger får ligga (räknas en gång per värld)
-const lagerRutor = new WeakMap<VarldMark, number[]>();
+});
 // gruppen slår läger som rövare på den närmaste lediga platsen inom räckhåll; undefined om ingen finns
-export function nyttLager(s: State, vl: Varlden, r: VarldRad, grupp: number, t: number): VarldRad | undefined {
-  const v = varldMark(s), hem = platsAv(vl, r);
-  if (!v || !hem) return undefined;
-  let alla = lagerRutor.get(v);
-  if (!alla) { const mk = LANDMARKEN.rovarlager.mark as readonly string[]; alla = []; for (let i = 0; i < v.w * v.h; i++) if (mk.includes(MARK_IDS[v.mark[i]])) alla.push(i); lagerRutor.set(v, alla); }
-  const nar = FLYTT.dygn * VARLD.gangPerDygn, inom = (i: number) => Math.abs(i % v.w - hem.x) <= nar && Math.abs(Math.floor(i / v.w) - hem.y) <= nar;
-  const lediga = new Set(alla.filter(i => inom(i) && !hinder(vl, v, 'rovarlager', i % v.w, Math.floor(i / v.w))));
-  const [f] = narmasteMal(vl, v, hem.y * v.w + hem.x, lediga, 1, 'fots');
-  if (!f || f.kostnad / VARLD.gangPerDygn > FLYTT.dygn) return undefined;
-  const p = laggPlats(vl, v, 'rovarlager', f.till % v.w, Math.floor(f.till / v.w), t);
-  if (!p) return undefined;
-  const nr = vl.nastaRad = (vl.nastaRad ?? 0) + 1;
-  const mat = Math.min(r.tal.mat, Math.round(r.tal.mat * grupp / Math.max(1, r.tal.folk + grupp))); // sin del av maten
-  r.tal.mat -= mat;
-  const ny: VarldRad = { nr, sort: 'rovarlager', namn: p.namn, x: p.x, y: p.y, grundad: t, fran: r.nr, t, tal: { folk: grupp, mat, rikedom: 0, silver: 0, styrka: 0 }, tek: [...r.tek], fasta: [] };
+export const nyttLager = (s: State, vl: Varlden, r: VarldRad, grupp: number, t: number) => utflytt(s, vl, r, grupp, t, 'rovarlager', ny => {
+  ny.tek = [...r.tek];
   ny.tal.styrka = styrkaMal(ny); // de som ger sig av är de som orkar
-  vl.rader!.push(ny);
-  p.by = nr;
-  p.grannar = byGrannar(vl, v, p, t);
-  mots(vl, r.nr, nr);
-  varldHandelse(vl, 'lager', t, { by: r.nr, mot: nr });
-  return ny;
-}
+});
 
 // en timme: de som flyttar ur raden grundar en egen by eller ger sig av tillsammans mot en by
 export function radFlytt(s: State, vl: Varlden, r: VarldRad, n: number) {
@@ -246,7 +239,7 @@ export function undergang(s: State, vl: Varlden, r: VarldRad, t: number) {
     if (v > varde) break;
     varde -= v; kvar[id] = (kvar[id] ?? 0) + 1;
   }
-  r.sort = 'ruin'; r.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; r.t = t; delete r.varor; delete r.hus; delete r.egen;
+  r.sort = 'ruin'; r.tal = tomTal(); r.t = t; delete r.varor; delete r.hus; delete r.egen;
   r.tek = []; // utan folk kan ingen något
   if (Object.keys(kvar).length) { r.kvar = kvar; r.kvarT = t; }
   delete r.ledare;
@@ -262,7 +255,7 @@ export function undergang(s: State, vl: Varlden, r: VarldRad, t: number) {
 
 // rövarlägret löses upp när folket är slut: platsen försvinner från kartan, och raden finns kvar för krönikan
 export function lagerUpplost(vl: Varlden, r: VarldRad, t: number) {
-  r.t = t; r.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; delete r.varor; delete r.ledare;
+  r.t = t; r.tal = tomTal(); delete r.varor; delete r.ledare;
   r.tek = []; // utan folk kan ingen något
   const p = byPlats(vl, r.nr);
   if (p) vl.platser = vl.platser!.filter(q => q !== p);

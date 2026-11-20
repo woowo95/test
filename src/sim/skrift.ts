@@ -28,7 +28,7 @@ import { troshusAv } from './troshus';
 import { LAGAR, type Lag, lagTak, lagarNu, skrivenLag } from './lagar';
 import { STRAFF_NAMN } from './styre';
 import { kvVid, stationDef, stationFor, vidStation } from './stationer';
-import { O_BESOKT, O_KANT, O_RYKTE, kannerOrt, larOrt, ortensRad, radVid } from './ort';
+import { O_BESOKT, O_KANT, O_RYKTE, kannerOrt, larOrt, ortensRad, platsText, radVid } from './ort';
 import { byPlats, varldPlatsNr } from './landmarken';
 
 // ---------- skriften (system 10.6) ----------
@@ -379,7 +379,7 @@ function byLust(s: State, p: Person): SkrivLust | undefined {
   return l && { w: SKRIFT.bybok, slag: 'byn', platser: [{ nr: l.a, v: O_KANT, t: l.t }] };
 }
 function byText(s: State, p: Person, x: KartPlats) {
-  const r = ortensRad(s, x.nr), b = r && radVid(r, x.t), namn = platsNamn(s, x.nr);
+  const r = ortensRad(s, x.nr), b = r && radVid(r, x.t), namn = platsText(s, x.nr);
   if (!b) return `${p.name} skrev om ${namn}.`;
   if (b.borta) return `${p.name} skrev om ${namn}, som inte längre fanns.`;
   return `${p.name} skrev om folket, husen, sederna och historien i ${namn}: ${b.tal.folk} invånare${b.led ? `, ledaren hette ${b.led}` : ''}${b.tro ? ` och de trodde på ${b.tro}` : ''}.`;
@@ -422,8 +422,7 @@ export function kartRykten(s: State, p: Person, pl: KartPlats[], q: number): Kar
   const ch = SKRIFT.kartRykte[q] ?? 0;
   return pl.map(x => x.v > O_RYKTE && ch > 0 && rnd(s, 'kunskap', p) < ch ? { ...x, v: O_RYKTE } : x);
 }
-const platsNamn = (s: State, nr: number) => (s.varld && varldPlatsNr(s.varld, nr)?.namn) ?? 'en plats';
-const kartNamn = (s: State, pl: KartPlats[]) => { const n = pl.map(x => platsNamn(s, x.nr)); return n.length <= 2 ? n.join(' och ') : `${n.slice(0, 2).join(', ')} och ${n.length - 2} till`; };
+const kartNamn = (s: State, pl: KartPlats[]) => { const n = pl.map(x => platsText(s, x.nr)); return n.length <= 2 ? n.join(' och ') : `${n.slice(0, 2).join(', ')} och ${n.length - 2} till`; };
 // det nya på kartan för q: platserna q känner sämre än de är ritade
 // det på kartan som q inte känner, och i boken om en by (steg 11.7.7) också uppgifter som är nyare än de q har
 const kartNya = (s: State, q: Person, k: Skrift) => (k.platser ?? []).filter(x => (kannerOrt(s, q, x.nr) ?? -1) < x.v || k.slag === 'byn' && (findL(q, 'ort', x.nr)?.t ?? -Infinity) < x.t || nyaMarken(q, x).length > 0);
@@ -483,9 +482,9 @@ function skriv(s: State, p: Person, l: SkrivLust): { titel: string; text: string
   if (l.slag === 'poesi') return { titel: `Kvädet om ${om}`, text: `Hör om ${om}, som ${vad}.` };
   if (l.slag === 'lag' && l.lag) return { titel: LAGAR[l.lag.id]!.namn, text: lagText(l.lag) };
   if (l.slag === 'kunskap') { const t = TEK[l.tek!]!; return { titel: `Om ${t.namn.toLowerCase()}`, text: `${t.text} ${t.effekt}` }; }
-  if (l.slag === 'karta' && l.fran) return { titel: `${l.fran.titel.replace(/ \(avskrift\)$/, '')} (avskrift)`, text: `${p.name} skrev av ${gen(l.fran.av.namn)} karta: ${l.platser!.map(x => platsNamn(s, x.nr)).join(', ')}.` };
-  if (l.slag === 'byn') return { titel: `Boken om ${platsNamn(s, l.platser![0]!.nr)}`, text: byText(s, p, l.platser![0]!) };
-  if (l.slag === 'karta') return { titel: `Kartan över ${kartNamn(s, l.platser!)}`, text: `${p.name} ritade ${l.platser!.map(x => platsNamn(s, x.nr)).join(', ')}.` };
+  if (l.slag === 'karta' && l.fran) return { titel: `${l.fran.titel.replace(/ \(avskrift\)$/, '')} (avskrift)`, text: `${p.name} skrev av ${gen(l.fran.av.namn)} karta: ${l.platser!.map(x => platsText(s, x.nr)).join(', ')}.` };
+  if (l.slag === 'byn') return { titel: `Boken om ${platsText(s, l.platser![0]!.nr)}`, text: byText(s, p, l.platser![0]!) };
+  if (l.slag === 'karta') return { titel: `Kartan över ${kartNamn(s, l.platser!)}`, text: `${p.name} ritade ${l.platser!.map(x => platsText(s, x.nr)).join(', ')}.` };
   if (l.slag === 'helig') return { titel: `De heliga kvädena (${om.toLowerCase()})`, text: troOf(s, l.tro!)?.kvade?.text ?? '' };
   return { titel: `Berättelsen om ${om}`, text: `${om} ${vad}.` };
 }

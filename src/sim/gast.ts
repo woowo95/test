@@ -95,9 +95,11 @@ export function gastVapenSatt(s: State, p: Person, k: string | undefined) {
 }
 // det gästen bär lämnar kartan med hen. Den som dött tappar det hen höll i och bar löst: det ligger kvar på rutan som byns ting,
 // så att det går att ta; kläderna följer kroppen
+// gästens ting t läggs på rutan där hen står, som byns (kodgenomgången, fynd 239)
+const tingPaRutan = (s: State, p: Person, t: NonNullable<State['gastTing']>[number]) => (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: t.k, c: t.c, agare: 0, x: Math.floor(p.x), y: Math.floor(p.y), ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}) });
 export function gastTingBort(s: State, p: Person, dod: boolean) {
   if (!s.gastTing?.length) return;
-  if (dod) for (const t of s.gastTing) if (t.agare === p.id && t.bar === undefined) (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: t.k, c: t.c, agare: 0, x: Math.floor(p.x), y: Math.floor(p.y), ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}) });
+  if (dod) for (const t of s.gastTing) if (t.agare === p.id && t.bar === undefined) tingPaRutan(s, p, t);
   s.gastTing = s.gastTing.filter(t => t.agare !== p.id);
   if (!s.gastTing.length) delete s.gastTing;
 }
@@ -106,7 +108,7 @@ export function gastTingBort(s: State, p: Person, dod: boolean) {
 export function gastAvvapna(s: State, p: Person) {
   if (!s.gastTing?.length) return 0;
   const tas = s.gastTing.filter(t => t.agare === p.id && t.bar === undefined);
-  for (const t of tas) (s.ting ??= []).push({ id: s.nextTing = (s.nextTing ?? 0) + 1, k: t.k, c: t.c, agare: 0, x: Math.floor(p.x), y: Math.floor(p.y), ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}) });
+  for (const t of tas) tingPaRutan(s, p, t);
   s.gastTing = s.gastTing.filter(t => !tas.includes(t));
   if (!s.gastTing.length) delete s.gastTing;
   return tas.length;
@@ -146,7 +148,7 @@ export function nyGast(s: State, o: { id: number; namn: string; sex: 'm' | 'k'; 
 export function gastGar(s: State, id: number, hem?: boolean) {
   const g = gastAv(s, id);
   if (g) gastTingBort(s, g, g.died !== undefined); // det hen bär följer med, eller ligger kvar där hen dog (steg 10.1.8)
-  if (hem) { const p = gastAv(s, id); if (p) gastHem(s, p); }
+  if (hem && g) gastHem(s, g);
   s.people = s.people.filter(p => !(p.id === id && p.gast));
 }
 

@@ -75,9 +75,13 @@ export function raknaLeder(vl: Varlden, v: VarldMark, t: number) {
     if (kl === 0 && nu < LEDTAL.glom) delete l[i];
   }
   if (!andrade.size) return;
+  raknaOmVagar(vl, v, t, vag => vagRutor(vag, v.w).some(i => andrade.has(i)));
+}
+// de sparade vägarna räknas om (de som berörs, eller alla) när kostnaderna ändrats (kodgenomgången, fynd 238)
+function raknaOmVagar(vl: Varlden, v: VarldMark, t: number, berors: (vag: NonNullable<Varlden['vagar']>[number]) => boolean = () => true) {
   vl.ledVer = (vl.ledVer ?? 0) + 1;
   for (const vag of vl.vagar ?? []) {
-    if (!vagRutor(vag, v.w).some(i => andrade.has(i))) continue;
+    if (!berors(vag)) continue;
     const r = billigasteVag(vl, v, vag.fran, vag.till, vag.fs);
     if (!r) continue;
     vag.steg = packaVag(r.rutor, v.w); vag.kostnad = Math.round(r.kostnad * 1000) / 1000; vag.t = t;
@@ -89,12 +93,7 @@ export function frysMark(s: State, vl: Varlden, v: VarldMark, t: number) {
   const fr = iIstiden(ageIndex(s, t));
   if (!!vl.frusen === fr) return;
   if (fr) vl.frusen = true; else delete vl.frusen;
-  vl.ledVer = (vl.ledVer ?? 0) + 1;
-  for (const vag of vl.vagar ?? []) {
-    const r = billigasteVag(vl, v, vag.fran, vag.till, vag.fs);
-    if (!r) continue;
-    vag.steg = packaVag(r.rutor, v.w); vag.kostnad = Math.round(r.kostnad * 1000) / 1000; vag.t = t;
-  }
+  raknaOmVagar(vl, v, t);
 }
 PERIODRADER.push({ namn: 'frusen mark', period: 'timme', fn: (s, vl, n) => { const v = varldMarkFor(s); if (v) frysMark(s, vl, v, periodSlut(vl, 'timme', n)); } });
 // marken behövs för vägarna; världslagen ger bara världen, så den packas upp här (en gång per värld, varlden.ts)

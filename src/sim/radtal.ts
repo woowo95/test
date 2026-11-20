@@ -25,6 +25,8 @@ export const RADTAL = {
 } as const satisfies Record<string, RadtalDef>;
 export type RadtalId = keyof typeof RADTAL;
 export const RADTAL_IDS = Object.keys(RADTAL) as RadtalId[];
+// en rad utan något: alla tal noll (en ruin, ett övergivet läger)
+export const tomTal = () => Object.fromEntries(RADTAL_IDS.map(k => [k, 0])) as Record<RadtalId, number>;
 
 // ---------- bysorterna (steg 11.2.11) ----------
 // Vad som gäller en sort av rad: om folket föder barn, om det skaffar egen mat, om det finns en ledare, om den hör till en

@@ -117,9 +117,9 @@ export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar']
 // en rövare ur lägret L som kämpe (rövarnas kropp ur ROVARE, vapnet efter lägrets utrustning)
 const mitt = ([a, b]: readonly number[]) => (a + b) / 2;
 export function rovarKampe(L: VarldRad): Uppstallning['kampar'][number] {
-  const vapen = anfallUtr(L) >= 1.5 ? 'yxa' : anfallUtr(L) >= 1.2 ? 'flintspjut' : 'kniv';
+  const u = anfallUtr(L), vapen = u >= 1.5 ? 'yxa' : u >= 1.2 ? 'flintspjut' : 'kniv';
   return { id: 0, namn: 'Rövare', sida: 1, gast: 1, vapen, klader: [], fart: 1, x: 0, y: 0,
-    st: { styrka: mitt(ROVARE.styrka), uthallighet: mitt(ROVARE.uthallighet), mod: mitt(ROVARE.mod), smidighet: mitt(ROVARE.smidighet), skicklighet: 5 + Math.max(0, (mitt(ROVARE.skicklighet) - 5) * 2) / 2 } };
+    st: { styrka: mitt(ROVARE.styrka), uthallighet: mitt(ROVARE.uthallighet), mod: mitt(ROVARE.mod), smidighet: mitt(ROVARE.smidighet), skicklighet: Math.max(5, mitt(ROVARE.skicklighet)) } };
 }
 
 VAGHANDELSER.ran = {
