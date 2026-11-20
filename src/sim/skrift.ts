@@ -533,7 +533,7 @@ export function lasKlar(s: State, q: Person, t: Task) {
   if (k.lar) lasLardom(s, q, { ...k.lar, c: k.lar.c * nar }, k.av.id);
   for (const x of k.platser ? kartNya(s, q, k) : []) {
     for (const y of nyaMarken(q, x)) { const l = larUppdrag(s, q, y.a, SKRIFT.kartaC * nar, { t: y.t, v: y.v, mal: x.nr, k: y.k as UppdragId, src: k.av.id }); if (l.t < y.t) { l.t = y.t; l.v = y.v; } count(s, 'kartMarkeLast'); } // märkena (steg 11.8.14)
-    if ((kannerOrt(s, q, x.nr) ?? -1) < x.v || k.slag === 'byn') { larOrt(s, q, x.nr, x.v, SKRIFT.kartaC * nar, { t: x.t, src: k.av.id, fr: k.av.id }); count(s, 'kartLast'); } // kartan (steg 11.7.1)
+    if ((kannerOrt(s, q, x.nr) ?? -1) < x.v || k.slag === 'byn') { larOrt(s, q, x.nr, x.v, SKRIFT.kartaC * nar, { t: x.t, src: k.av.id }); count(s, 'kartLast'); } // kartan (steg 11.7.1)
   }
   if (k.om) for (const x of k.bev ?? []) lasIntryck(s, q, k.om, x, k.av.id, SKRIFT.lasVikt * nar * (k.fel ?? 1));
   if (k.slag === 'minne' && k.om) paminn(s, q, k.om.id, k.bev);

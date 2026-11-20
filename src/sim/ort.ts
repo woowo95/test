@@ -50,21 +50,22 @@ export const ORTNIVA = [
 export const O_RYKTE = 0, O_KANT = 1, O_BESOKT = 2;
 
 // p lär sig om platsen nr på nivån niva med säkerheten c; uppgifterna är från tiden t (nu om inget anges), av src (den som
-// berättade) eller själv, och fr är den som först berättade ett rykte
+// berättade) eller själv. Den som varit där själv behåller det som källa när hen hör mindre om platsen av någon annan
 // ny: uppgiften är en nyhet sedan den tiden (den som berättar en nyhet för den vidare, steg 11.4.9)
-export function larOrt(s: State, p: Person, nr: number, niva: number, c: number, o: { t?: number; src?: number; led?: number; fr?: number; ny?: number } = {}): Lardom {
+export function larOrt(s: State, p: Person, nr: number, niva: number, c: number, o: { t?: number; src?: number; led?: number; ny?: number } = {}): Lardom {
   const t = o.t ?? s.now, led = o.led ?? (o.src === undefined ? 0 : 1), e = findL(p, 'ort', nr);
   if (e) {
-    if (niva > e.v) { e.v = niva; e.c = Math.max(e.c, c); if (niva > O_RYKTE) delete e.fr; }
-    else e.c = niva === e.v ? Math.max(e.c, c, e.c + MINNE.berattaStark * (1 - e.c)) : Math.min(1, e.c + MINNE.berattaStark * (1 - e.c)); // att höra om det igen stärker minnet
+    const egen = e.src === undefined && niva < e.v; // det man själv sett skrivs inte över av mindre uppgifter (steg 12.1.83)
+    if (niva > e.v) { e.v = niva; e.c = Math.max(e.c, c); }
+    else e.c = niva === e.v ? Math.max(c, e.c + MINNE.berattaStark * (1 - e.c)) : Math.min(1, e.c + MINNE.berattaStark * (1 - e.c)); // att höra om det igen stärker minnet
     if (t > e.t) {
       const ny = o.ny ?? (storForandring(s, nr, e.t, t) ? s.now : undefined); // nyare uppgifter där något stort ändrats
       if (ny !== undefined && (e.ny === undefined || ny > e.ny)) { e.ny = ny; nyhetNarByn(s, p, nr, e.t, t, o.src); }
-      e.t = t; e.src = o.src; e.led = led; if (o.src === undefined) delete e.src;
+      e.t = t; if (!egen) { e.src = o.src; e.led = led; if (o.src === undefined) delete e.src; }
     }
     return e;
   }
-  const l: Lardom = { k: 'ort', a: nr, v: niva, c, t, led, ...(o.src !== undefined ? { src: o.src } : {}), ...(niva === O_RYKTE && o.fr !== undefined ? { fr: o.fr } : {}), ...(o.ny !== undefined ? { ny: o.ny } : {}) };
+  const l: Lardom = { k: 'ort', a: nr, v: niva, c, t, led, ...(o.src !== undefined ? { src: o.src } : {}), ...(o.ny !== undefined ? { ny: o.ny } : {}) };
   (p.lardomar ??= []).push(l);
   trimLardomar(s, p);
   return l;
@@ -82,27 +83,26 @@ export function ortBleknar(l: Lardom, timmar: number, tau: number): boolean {
 }
 // ---------- platserna i samtalen (steg 11.4.4) ----------
 // a berättar för b om platsen i lärdomen l: ett led i berättandet tar bort en nivå (besökt blir känt, känt blir rykte), och
-// säkerheten är den hos den som berättar gånger hur mycket b tror på a, som för andra lärdomar. Ett rykte som börjar här får a
-// som den som först berättade (ryktets förskjutning, steg 11.4.5); ett rykte som berättas vidare behåller sin. Att berätta
-// stärker det egna minnet. Samtalets ämne blir Fjärran platser
+// säkerheten är den hos den som berättar gånger hur mycket b tror på a, som för andra lärdomar. Att berätta stärker det egna
+// minnet. Samtalets ämne blir Fjärran platser
 export function berattaOrt(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
   const vl = s.varld, q = vl && varldPlatsNr(vl, l.a);
   delade('fjarran', 'karta', q ? (l.v === O_RYKTE ? `${LANDMARKEN[q.k].namn.toLowerCase()} som heter ${q.namn}` : q.namn) : 'en plats långt borta');
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a);
   const niva = Math.max(O_RYKTE, l.v - 1), fore = findL(b, 'ort', l.a);
-  larOrt(s, b, l.a, niva, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1, fr: l.v === O_RYKTE ? (l.fr ?? a.id) : a.id, ...(nyhet(s, l) ? { ny: l.ny } : {}) });
+  larOrt(s, b, l.a, niva, l.c * trust * MINNE.troDel, { t: l.t, src: a.id, led: (l.led ?? 0) + 1, ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   if (!fore) { count(s, 'ortBerattad'); gjort(s, a, 'berattat'); }
 }
 // ---------- ryktets läge (steg 11.4.5) ----------
 // Ett rykte är ett område i världen (i världsrutor): radien ORT.ryktRadie dygns gång, och mitten förskjuten från platsen åt ett
-// håll och ett avstånd som räknas ur världens frö, platsen och den som först berättade, så att platsen alltid ligger inom
-// området men inte i mitten. Samma rykte ligger på samma ställe hos alla som hört det av samma första berättare
+// håll och ett avstånd som räknas ur världens frö och platsens nummer, så att platsen alltid ligger inom området men inte i
+// mitten. Samma rykte ligger på samma ställe hos alla (steg 12.1.83)
 export function ryktesLage(s: State, l: Lardom): { x: number; y: number; r: number } | undefined {
   const vl = s.varld, q = vl && varldPlatsNr(vl, l.a);
   if (!q) return undefined;
-  const r = ORT.ryktRadie * VARLD.gangPerDygn, fr = l.fr ?? l.src ?? 0;
-  const vinkel = hash3(vl.fro, l.a, 0x4f52 + fr * 7) * 2 * Math.PI, d = r * (ORT.ryktFran + (ORT.ryktTill - ORT.ryktFran) * hash3(vl.fro, fr, 0x5259 + l.a * 3));
+  const r = ORT.ryktRadie * VARLD.gangPerDygn;
+  const vinkel = hash3(vl.fro, l.a, 0x4f52) * 2 * Math.PI, d = r * (ORT.ryktFran + (ORT.ryktTill - ORT.ryktFran) * hash3(vl.fro, l.a, 0x5259));
   return { x: q.x + 0.5 + Math.cos(vinkel) * d, y: q.y + 0.5 + Math.sin(vinkel) * d, r };
 }
 // nivån p har i minnet för platsen nr (undefined: okänd)
@@ -142,10 +142,10 @@ export function horOmGast(s: State, p: Person, g: Person, c: number) {
   const nr = p.gast ? undefined : gastHemOrt(s, g);
   if (nr !== undefined) larOrt(s, p, nr, O_KANT, c, { src: g.id });
 }
-// bybon p ser rövare från klanen och får ett rykte om byn de kom ifrån; p är den som först berättar det
+// bybon p ser rövare från klanen och får ett rykte om byn de kom ifrån
 export function rovareSedda(s: State, p: Person, klan: number | undefined) {
   const vl = s.varld, rad = klanById(s, klan)?.rad, nr = vl && rad !== undefined ? byPlats(vl, rad)?.nr : undefined;
-  if (nr !== undefined && !p.gast) larOrt(s, p, nr, O_RYKTE, ORT.anfall, { fr: p.id });
+  if (nr !== undefined && !p.gast) larOrt(s, p, nr, O_RYKTE, ORT.anfall);
 }
 
 // lärdomen i ord (describe i minne.ts)
@@ -207,11 +207,11 @@ export function kartSkrifter(s: State): { t: Ting; k: Skrift }[] {
 const barPlatser = (t: Ting) => !!t.skrift?.platser || !!t.delar?.some(k => k.platser);
 // en karta har brunnit, sålts eller stulits: det byn vet räknas om genast
 export function kartaBorta(s: State, t: Ting | undefined) { if (t && barPlatser(t)) { raknaBynVet(s); count(s, 'kartaBorta'); } }
-// en plats på en karta som en lärdom: läget för ett rykte räknas som hos den som läst kartan (ritaren är den som först berättade)
+// en plats på en karta som en lärdom (för ryktets läge)
 const kartLardom = (s: State, nr: number): Lardom | undefined => {
   const e = s.bynVet?.p[nr], t = e?.kartor?.map(id => tingOf(s).find(x => x.id === id)).find(x => x);
   const k = t && (t.skrift?.platser ? t.skrift : t.delar?.find(d => d.platser?.some(x => x.nr === nr))), x = k?.platser?.find(y => y.nr === nr);
-  return k && x && { k: 'ort', a: nr, v: x.v, c: 1, t: x.t, led: 1, src: k.av.id, fr: k.av.id };
+  return k && x && { k: 'ort', a: nr, v: x.v, c: 1, t: x.t, led: 1, src: k.av.id };
 };
 // det byn vet om platsen nr: sammanställningen, närområdet (känt) och byns egen plats (besökt); undefined: okänd
 export function bynKanner(s: State, nr: number): VetOrt | undefined {
@@ -402,7 +402,7 @@ export function byFlikar(s: State, nr: number, tekNamn: (id: string) => string =
   const hemR = hemRad(s);
   if (!ruta.egen && hemR !== undefined) {
     const mellan = (vl.kronika ?? []).filter(h => ((h.by === r.nr && h.mot === hemR) || (h.by === hemR && h.mot === r.nr)) && hortHandelse(s, h));
-    const lage = [...mellan].reverse().find(h => h.k === 'krig' || h.k === 'fred' || h.k === 'forbund');
+    const lage = [...mellan].reverse().find(h => h.k === 'krig' || h.k === 'fred');
     const hem = hemPlats(s), v = varldMark(s);
     const vag = hem && v ? sparadVag(vl, 'fots', hem.y * v.w + hem.x, q.y * v.w + q.x) ?? sparadVag(vl, 'fots', q.y * v.w + q.x, hem.y * v.w + hem.x) : undefined;
     ut.forb = {

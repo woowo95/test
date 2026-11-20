@@ -12,7 +12,7 @@ import { KLAN_HEM_NAMN } from './klaner';
 export type Roll = 'handlare' | 'rovare' | 'gast' | 'bybo'; // bybo: en invånare i en väckt by (steg 11.13.16, vacktliv.ts), vars släkt och byns händelser finns på riktigt
 export interface Slakting { roll: 'mor' | 'far' | 'syskon' | 'partner' | 'barn'; namn: string; sex: 'm' | 'k'; ar: number; dog?: number } // ar = gästens ålder när hen föddes eller kom in i livet (föräldrarna: 0), dog = gästens ålder när hen dog
 export interface LivRad { ar: number; k: string; text: string }
-export interface GastLiv { alder: number; familj: Slakting[]; liv: LivRad[]; humor: number; kan: string[]; beskrivning: string }
+export interface GastLiv { alder: number; familj: Slakting[]; liv: LivRad[]; kan: string[]; beskrivning: string }
 
 // åldern när gästen först kommer, efter rollen (år, ett dygn = ett år i spelet)
 const ALDRAR: Record<Roll, [number, number]> = { handlare: [24, 56], rovare: [18, 42], gast: [18, 60], bybo: [18, 60] };
@@ -126,9 +126,7 @@ export function gastLiv(seed: number, nyckel: number, namn: string, sex: 'm' | '
     }
   }
   if (roll === 'handlare') c.kan.unshift('handla');
-  // humöret: sämre en tid efter en förlust, bättre med en levande familj (0–1 som en bybos)
   const forlust = c.liv.filter(l => l.k === 'foralder' || l.k === 'partnerDog' || l.k === 'barnDog').at(-1);
-  const humor = Math.max(0.1, Math.min(0.9, 0.6 + (lever(c, 'partner').length ? 0.08 : 0) + Math.min(3, lever(c, 'barn').length) * 0.03 - (forlust && alder - forlust.ar < 3 ? 0.25 : 0)));
   const partner = c.familj.find(f => f.roll === 'partner'), barn = c.familj.filter(f => f.roll === 'barn');
   const delar = [
     `${namn} är ${alder} år och ${roll === 'handlare' ? 'handlare' : roll === 'rovare' ? 'rövare' : 'kommer'} från ${klan} vid ${hem}.`,
@@ -136,7 +134,7 @@ export function gastLiv(seed: number, nyckel: number, namn: string, sex: 'm' | '
     c.kan.length ? `${cap(hen(sex))} kan ${c.kan.length > 1 ? `${c.kan.slice(0, -1).join(', ')} och ${c.kan.at(-1)}` : c.kan[0]}.` : '',
     forlust && alder - forlust.ar < 3 ? `${cap(hen(sex))} sörjer fortfarande.` : '',
   ];
-  const liv: GastLiv = { alder, familj: c.familj, liv: c.liv, humor, kan: c.kan, beskrivning: delar.filter(Boolean).join(' ') };
+  const liv: GastLiv = { alder, familj: c.familj, liv: c.liv, kan: c.kan, beskrivning: delar.filter(Boolean).join(' ') };
   if (cache.size > CACHE_MAX) cache.clear();
   cache.set(id, liv);
   return liv;

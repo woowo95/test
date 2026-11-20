@@ -30,3 +30,4 @@
 ## Grenen par-varlden (12.1.64, 12.1.83, 12.1.98, 12.1.111, 12.1.114)
 
 - 12.1.64 (fel i resorna, gästerna och världen): ändrar spelet lite (de döda på vägen äter inte, gästers törst, karavanens platser, väckta byns plats, nyheter, dygnet efter lokal midnatt för heliga dagar och fester, inga handelsvaror utan grannar). Skyldig koll med nytt facit och likhet. Fynd 299 (sällskap som fastnar) var redan rättat i 12.1.8.
+- 12.1.83 (världen och gästerna): mutan och fjäsket är borta ur BYHANDLINGAR, handlarens tycke läser hens riktiga egenskaper, egen resa skrivs inte över av ett rykte och ryktets läge räknas ur frö och plats. Ändrar världen och handeln; skyldig koll med nytt facit, likhet och `npm run radhandel` som information. Scenariot muta är borttaget.

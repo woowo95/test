@@ -4,8 +4,8 @@
 // handling och den granne som ger högst poäng, och gör den om poängen är över noll. Poängen vägs av ledarens personlighet
 // (egenskaperna ur nyckeln, radperson.ts) och av trons skalor (hur krigisk byns tro är), och ett litet slumptal ur världens frö
 // gör att samma by inte alltid väljer samma sak. Relationen (byrel.ts) är det som ändras; BYHANDELSER säger hur mycket.
-// Fler rader kommer med sina steg: handelsfärden (11.6.6), gåvan (11.6.14), mutan (11.6.15), anfallen (11.6.16), kriget
-// (11.6.22) och sändebudet (11.6.23). Huvudbyn väljer ur samma register när handlingen kan bli en resa med verkliga bybor.
+// Raderna: handelsfärden (11.6.6), gåvan (11.6.14), anfallen (11.6.16), kriget (11.6.22), sändebudet (11.6.23) och
+// uppdragen (11.8.9). Huvudbyn väljer ur samma register när handlingen kan bli en resa med verkliga bybor.
 import { balans } from './balans';
 import { BYLAGEN, BYREL, byHandelse, byLage, gavaRel, lageSedan, relation, sattLage } from './byrel';
 import { count } from './folk';
@@ -39,8 +39,6 @@ import type { TamArtId } from './tamdjur';
 
 export const BYHANDLING = balans('byhandling', {
   slump: 0.1, // så mycket kan slumpen flytta en poäng åt varje håll
-  fjaskMal: 30, // fjäsket lönar sig tills relationen nått hit
-  fjaskKostnad: 0.1, // det fjäsket kostar i poäng (tid, ära)
   radsla: 2, // högst så mycket väger att grannen är starkare (styrkan delad med den egna)
   // handelsfärden (steg 11.6.6)
   last: 80, // så mycket (i grundvärde) bär en handelsfärd (ställt i steg 11.6.7 med npm run radhandel)
@@ -52,10 +50,7 @@ export const BYHANDLING = balans('byhandling', {
   gava: 40, // så mycket (i grundvärde) av det byn har över ger den bort
   gavaMal: 40, // gåvan lönar sig tills relationen nått hit
   gavaKostnad: 0.1, // det gåvan kostar i poäng (bärarnas tid, det som kunde bytts)
-  // mutan (steg 11.6.15)
-  muta: 20, // så mycket en muta är värd (i silver eller grundvärde)
-  mutaMal: 40, // mutan lönar sig tills relationen nått hit
-  mutaKostnad: 0.15, // det mutan kostar i poäng utöver silvret (risken, äran)
+  gavaFull: 2, // en gåva som höjer mottagarens syn så mycket väger fullt i poängen (en större väger högst dubbelt)
   // plundringen (steg 11.6.16)
   plundraRel: 0, // fejden: byn vill plundra den den ser lägre på än minus så mycket ...
   plundraFull: 50, // ... och vill det fullt ut vid minus så mycket mer
@@ -84,43 +79,22 @@ export const ledDrag = (c: ByCtx, k: Stat) => ((c.led?.[k] ?? 10.5) - 1) / 19;
 const radsla = (c: ByCtx) => clamp((c.mot.tal.styrka + 1) / (c.r.tal.styrka + 1), 1 / BYHANDLING.radsla, BYHANDLING.radsla);
 
 export const BYHANDLINGAR = {
-  // fjäsket: vänliga ord till en granne man vill stå väl med, mest mot en starkare granne och av en ledare med karisma; en
-  // krigisk tro fjäskar mindre
-  fjask: {
-    namn: 'Fjäsk',
-    poang: c => Math.max(0, BYHANDLING.fjaskMal - c.rel) / 100 * (0.5 + ledDrag(c, 'karisma')) * radsla(c) * (1 - c.krig / 2) - BYHANDLING.fjaskKostnad,
-    gor: c => byHandelse(c.vl, 'fjask', c.r.nr, c.mot.nr),
-  },
   // gåvan (steg 11.6.14): byn ger bort det den har mest över till en granne den vill stå väl med, mer av en ledare med
   // empati och mot en starkare granne; mottagarens syn höjs efter gåvans värde när den kommer fram. Huvudbyns gåvor och gåvor
   // till huvudbyn går med sändebudet (11.6.23)
   gava: {
     namn: 'Gåva',
-    poang: c => { const a = gavaAffar(c); return a ? Math.max(0, BYHANDLING.gavaMal - c.rel) / 100 * (0.5 + ledDrag(c, 'empati')) * radsla(c) * (1 - c.krig / 2) * Math.min(2, gavaRel(a.n * enhet(a.g)) / BYREL.fjask) - BYHANDLING.gavaKostnad : -1; },
+    poang: c => { const a = gavaAffar(c); return a ? Math.max(0, BYHANDLING.gavaMal - c.rel) / 100 * (0.5 + ledDrag(c, 'empati')) * radsla(c) * (1 - c.krig / 2) * Math.min(2, gavaRel(a.n * enhet(a.g)) / BYHANDLING.gavaFull) - BYHANDLING.gavaKostnad : -1; },
     gor: c => { const a = gavaAffar(c); if (a) skickaFard(c, a, true); },
   },
-  // sändebudet (steg 11.6.23): byn skickar ett bud med ett vänligt besked till en granne den vill stå väl med (som fjäsket, mer
-  // av en ledare med karisma) eller ett ovänligt till en den ser långt ner på (mer av en aggressiv ledare och en krigisk tro);
+  // sändebudet (steg 11.6.23): byn skickar ett bud med ett vänligt besked till en granne den vill stå väl med (mer av en ledare
+  // med karisma) eller ett ovänligt till en den ser långt ner på (mer av en aggressiv ledare och en krigisk tro);
   // poängen ger också tonen (beskedTon). Beskedet verkar först när budet kommit fram; till huvudbyn kommer budet som en gäst
   // och beskedet verkar efter samtalet med ledaren (liv.ts). Ett vänligt bud bär byns gåva när den har något över
   besked: {
     namn: 'Skicka besked',
     poang: c => c.r.nr === c.vl.huvud || beskedUte(c.vl, c.r.nr, c.mot.nr) || restid(c.vl, c.r, c.mot) === undefined ? -1 : beskedTon(c).p,
     gor: c => skickaBud(c, beskedTon(c).ton),
-  },
-  // mutan (steg 11.6.15): silver, eller det byn har mest över när silvret inte räcker, till grannens ledare själv, av en ledare
-  // med list (intelligens) och lite empati, mot en starkare granne; den går fram med ett bud och verkar när den kommit fram. Hälften av verkan faller bort när
-  // mottagarens ledare byts (ledarBytet i byrel.ts). Inte till eller från huvudbyn
-  muta: {
-    namn: 'Muta',
-    poang: c => mutaKan(c) ? Math.max(0, BYHANDLING.mutaMal - c.rel) / 100 * (0.5 + ledDrag(c, 'intelligens')) * (1.5 - ledDrag(c, 'empati')) * radsla(c) * Math.min(1, mutaRikedom(c.r) / (4 * BYHANDLING.muta)) - BYHANDLING.mutaKostnad : -1,
-    gor: c => {
-      if (!mutaKan(c)) return;
-      const dygn = restid(c.vl, c.r, c.mot)!;
-      const m = mutaMed(c.r)!;
-      if (m === 'silver') radTar(c.r, 'silver', -BYHANDLING.muta); else taUr(c.r, m, Math.ceil(BYHANDLING.muta / enhet(m)));
-      laggIKo(c.vl, c.t + dygn * DAY, 'muta', { sak: c.mot.nr, data: { fran: c.r.nr, n: BYHANDLING.muta } });
-    },
   },
   // plundringen (steg 11.6.16): en flock ur byns styrka anfaller en granne den ser ner på (en fejd), eller som den inte är vän med
   // när den själv saknar mat (svälten), mer av en aggressiv ledare och en krigisk tro, när bytet väger mer än de döda man väntar sig; anfallet avgörs när flocken kommer fram (radanfall.ts)
@@ -361,23 +335,6 @@ function gavaGrupp(r: VarldRad): { g: VarugruppId; n: number } | undefined {
   }
   return bast;
 }
-// mutan går att ge: byn har silvret, grannen har en ledare och ligger inom räckhåll, och ingen av dem är huvudbyn
-// det byn mutar med: silvret om det räcker, annars den grupp den har mest över (i grundvärde) om den räcker
-function mutaMed(r: VarldRad): 'silver' | VarugruppId | undefined {
-  if (r.tal.silver >= BYHANDLING.muta) return 'silver';
-  let bast: VarugruppId | undefined, v = 0;
-  for (const g of VARUGRUPP_IDS) { const x = overskott(r, g) * enhet(g); if (x > v) { bast = g; v = x; } }
-  return bast && overskott(r, bast) >= Math.ceil(BYHANDLING.muta / enhet(bast)) ? bast : undefined;
-}
-const mutaRikedom = (r: VarldRad) => Math.max(r.tal.silver, ...VARUGRUPP_IDS.map(g => Math.max(0, overskott(r, g)) * enhet(g)));
-const mutaKan = (c: ByCtx) => c.r.nr !== c.vl.huvud && c.mot.nr !== c.vl.huvud && !!mutaMed(c.r) && BYSORTER[c.mot.sort].ledare && restid(c.vl, c.r, c.mot) !== undefined;
-// mutan kommer fram: ledaren tar den själv (den går inte till byns förråd), och byns syn på givaren höjs
-KOHANDELSER.muta = (s, vl, p) => {
-  const mot = radNr(vl, p.sak), fran = p.data?.fran;
-  if (!mot || fran === undefined || !lever(vl, mot)) return;
-  byHandelse(vl, 'muta', fran, mot.nr, (p.data?.n ?? BYHANDLING.muta) / BYHANDLING.muta);
-  count(s, 'radmuta_fram');
-};
 // lasten tas ur byns förråd och färden ger sig av
 const taUr = (r: VarldRad, g: VarugruppId, n: number) => {
   if (g === 'mat') { r.tal.mat = Math.max(0, r.tal.mat - n); return; }

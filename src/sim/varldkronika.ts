@@ -15,20 +15,15 @@ export const VARLDSHANDELSER = {
   nyLedare: { namn: 'Ny ledare', stor: false, text: '{by} får en ny ledare' },
   krig: { namn: 'Krig', stor: true, text: '{by} och {mot} går i krig' },
   fred: { namn: 'Fred', stor: true, text: '{by} och {mot} sluter fred' },
-  forbund: { namn: 'Förbund', stor: true, text: '{by} och {mot} sluter förbund' },
   svalt: { namn: 'Svält', stor: false, text: 'Svält i {by}' },
-  farsot: { namn: 'Farsot', stor: false, text: 'En farsot går genom {by}' },
   lager: { namn: 'Rövarläger', stor: false, text: 'Hungriga ur {by} slår läger som rövare: {mot}' },
   upplost: { namn: 'Upplöst', stor: false, text: '{by} överges' },
   utpost: { namn: 'Utpost', stor: false, text: '{by} sätter upp utposten {mot} vid {plats}' },
   handelslager: { namn: 'Handelsläger', stor: false, text: '{by} slår upp handelslägret {mot}' },
   rad: { namn: 'Räd', stor: false, text: '{by} gör en räd mot {mot}' },
-  karavan: { namn: 'Plundrad karavan', stor: false, text: 'En karavan plundras vid {plats}' },
   platsbygge: { namn: 'Bygge på leden', stor: false, text: '{by} bygger {plats}' },
-  uppdrag: { namn: 'Uppdrag', stor: false, text: '{by} sänder ut ett uppdrag till {plats}' },
 } as const satisfies Record<string, VarldHandelseDef>;
 export type VarldHandelseId = keyof typeof VARLDSHANDELSER;
-export const VARLDHANDELSE_IDS = Object.keys(VARLDSHANDELSER) as VarldHandelseId[];
 
 export const VARLDKRONIKA = balans('varldkronika', {
   smaTak: 300, // så många små händelser sparas; de stora sparas alla

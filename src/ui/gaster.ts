@@ -18,7 +18,7 @@ export interface Gast {
   rader: { namn: string; varde: string; title: string }[]; // det som är särskilt för sorten
   p: Person; // gästen själv (steg 9.2.114)
   byten?: ByteMinne[]; // bytena hen gjort med byn (steg 4.5.4.17)
-  liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna, humöret och det hen kan
+  liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna och det hen kan
   rovare?: Person; // rövaren själv: ritas som en figur ur skaparen (steg 6.6.12, ui/manniskor.ts)
   rel?: { p: Person; r: GastRel; g: number }[]; // relationerna till byborna (handlaren, steg 4.5.7.11): g = hur mycket hen gillar bybon, −1 till 1
 }
