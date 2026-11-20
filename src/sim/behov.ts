@@ -206,10 +206,12 @@ export function needLadder(s: State, p: Person, dtSec: number) {
   }
 }
 function behovSteg(s: State, p: Person, b: Behov, dtSec: number) {
-  const byns = hasFor(s, p, b) >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
-  if (ownFor(s, p, b) < b.minst && (fraga || (byns && b.genast))) tradeAround(s, p, b); // ett byte, före byns förråd
-  if (fraga && hasFor(s, p, b) < b.minst) askAround(s, p, b);
-  if (hasFor(s, p, b) >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); return; }
+  // det p har räknas om bara när ett byte eller en gåva gått igenom: annars är det detsamma (hasFor går igenom alla slag)
+  let har = hasFor(s, p, b);
+  const byns = har >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
+  if ((fraga || (byns && b.genast)) && ownFor(s, p, b) < b.minst && tradeAround(s, p, b)) har = hasFor(s, p, b); // ett byte, före byns förråd
+  if (fraga && har < b.minst && askAround(s, p, b)) har = hasFor(s, p, b);
+  if (har >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); return; }
   if (desperat(s, p, b) && ran(s, p, b, dtSec)) return 'ran';
   const v = victimOf(s, p, b);
   if (v) stole(s, p, v, b.id, b.anvand(s, p, v));
@@ -268,7 +270,7 @@ const vilja = (s: State, m: Person, b: Behov) => (g: Person) => willing(s, g, m,
 // m ber den i närheten som har över och helst ger (familjen först)
 function askAround(s: State, m: Person, b: Behov) {
   const g = kretsen(s, m, g => overOf(s, g, b, m) >= b.minst, vilja(s, m, b))[0];
-  if (g) gift(s, m, g, b);
+  return g ? gift(s, m, g, b) : false;
 }
 // m byter till sig det m saknar för behovet av någon i närheten, familj och vänner först
 function tradeAround(s: State, m: Person, b: Behov) {
