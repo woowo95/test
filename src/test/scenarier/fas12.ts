@@ -836,3 +836,36 @@ SCENARIER.barnhjalp = {
     ];
   },
 };
+
+// steg 12.1.46: skadan och sjukdomen är en faktor i lusten till sport, lek och förbättringar, och orden stämmer med kroppen
+SCENARIER.sjukvila = {
+  text: 'Den som är sjuk eller skadad vilar (steg 12.1.46): skadan och sjukdomen sänker lusten till sport, lek och det som inte brådskar efter hur svår den är, den som vilar för sjukdomen står som sjuk, och "svårt sjuk" skrivs först när sjukdomen är så svår att hen lägger sig',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10); tandEld(s); tandOchFlinta(s); setFood(s, 3000); SIM.setAmount(s, 'ved', 3000);
+    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const [frisk, latt, svar, sjuk] = vuxna;
+    const kl = (p: SIM.Person) => SIM.kroppLust(p, s.now);
+    const sv = (p: SIM.Person) => SIM.sportVikt(s, p, 1);
+    // den sjuke med tydliga tecken vilar, och står som sjuk
+    SIM.insjukna(s, sjuk, 'magsjuka'); sjuk.sjuk!.tecken = s.now; sjuk.sjuk!.st = 0; sjuk.sjuk!.grad = SIM.SJUK.vilaFran + 0.05;
+    Object.assign(sjuk, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, task: undefined });
+    SIM.chooseTask(s, sjuk);
+    const varfor = sjuk.task?.why ?? '';
+    // såren efter den sjukes val, så att ingen vård går före vilan
+    SIM.skada(s, latt, 'armV', 'skarsar', 0.15, 'olycka', 'i skogen');
+    SIM.skada(s, svar, 'bal', 'skarsar', 0.9, 'olycka', 'i skogen'); SIM.skada(s, svar, 'benV', 'skarsar', 0.9, 'olycka', 'i skogen');
+    const halvt = SIM.svartSjukNu(sjuk, s.now);
+    sjuk.sjuk!.grad = SIM.SJUK.ligga; const helt = SIM.svartSjukNu(sjuk, s.now);
+    // "ligger med feber" bara för en sjukdom med feber
+    const feberUtan = SIM.valjVariant(s, 'l_svartSjuk', 1, { namn: 'X', feber: false });
+    let feberText = 0; for (let n = 0; n < 200; n++) if (String(SIM.valjVariant(s, 'l_svartSjuk', n, { namn: 'X', feber: false })).includes('feber')) feberText++;
+    return [
+      [`den friska vill fullt ut (${kl(frisk).toFixed(2)})`, kl(frisk) === 1],
+      [`den lätt skadade vill mindre (${kl(latt).toFixed(2)}), och sporten lockar mindre (${sv(latt).toFixed(3)} mot ${sv(frisk).toFixed(3)})`, kl(latt) > 0 && kl(latt) < 1 && sv(latt) <= sv(frisk)],
+      [`den svårt skadade vill inte alls (${kl(svar).toFixed(2)}) och spelar inte (${sv(svar)})`, kl(svar) === 0 && sv(svar) === 0],
+      [`den sjuke vilar och står som sjuk: "${varfor}"`, sjuk.task?.act === 'vila' && varfor === 'Är sjuk och vilar'],
+      [`"svårt sjuk" först när den sjuke lägger sig (grad ${SIM.SJUK.vilaFran + 0.05}: ${halvt}, grad ${SIM.SJUK.ligga}: ${helt})`, !halvt && helt],
+      [`utan feber står det inget om feber (${feberText} av 200, t.ex. ${JSON.stringify(feberUtan)})`, feberText === 0],
+    ];
+  },
+};

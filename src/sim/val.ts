@@ -30,7 +30,7 @@ import { eldaVal, tandaVal, tandStalle, igniterOf, canLight, eldFor, eldXY, nago
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
-import { VARDRATT, halsa, hemma, kanGa, vardBehov, vardVal, vilaHellre } from './halsa';
+import { VARDRATT, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
 import { MAT, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial } from './behov';
 import { FANGST, Kind, flintSpot } from './fynd';
 import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
@@ -508,7 +508,8 @@ const faror = (c: Ctx) => c.f ??= dangers(c.s);
 // Förbättra dämpas mjukt (steg 10.11.20): när kylan eller hungern är en fara tas raderna på Förbättra och projekten med chansen
 // VAL.projFara (en dragning per val), som bygget dämpas (byggDampning): tiden går helst till faran, men ingenting stängs av
 const slatterRad = ({ s, p, v }: Ctx, i = slaVal(s, p)) => { if (i === undefined) return false; const lie = freeTools(s, p, 'lie') > 0; projektVal(v, { act: 'slatter', text: lie ? 'Slår det höga gräset på ängen med lien.' : 'Slår det höga gräset på ängen med skäran.', min: VINTER.slaMin / (lie ? LIE_FART : 1) /* lien slår tre gånger så fort (steg 12.2.6) */, tool: 'skara', spot: { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }, ref: i }, 'Gräset på slåtterängen står högt'); return true; };
-const forbNu = (c: Ctx) => { const f = faror(c); return !(f.kyla || f.svalt) || (c.forb ??= rnd(c.s, 'val', c.p) < VAL.projFara); };
+// den som är skadad eller sjuk tar Förbättra mer sällan, efter hur svårt (kroppLust, steg 12.1.46): vilan väger tyngre än förbättringarna
+const forbNu = (c: Ctx) => { const f = faror(c), ch = (f.kyla || f.svalt ? VAL.projFara : 1) * kroppLust(c.p, c.s.now); return ch >= 1 || (c.forb ??= rnd(c.s, 'val', c.p) < ch); };
 // lat: hur mycket tidigare den lata tar grundbehoven
 const fryser = (c: Ctx) => c.p.warm < KROPP.kallt + KROPP.latVarme * c.lazy;
 export interface Arbete {
@@ -700,7 +701,7 @@ export const ARBETEN: readonly Arbete[] = [
     if (utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= GANG.kravlaMax) return set(v, 'vila', 'Är skadad och kravlar hem');
     set(v, 'vila', 'Kan inte gå och väntar på att bäras hem'); v.spot = { x: p.x, y: p.y }; return true;
   } },
-  { id: 'vilaSkadad', niva: 4, prova: ({ p, v }) => vilaHellre(p) && set(v, 'vila', 'Är skadad och vilar') },
+  { id: 'vilaSkadad', niva: 4, prova: ({ s, p, v }) => vilaHellre(p) && set(v, 'vila', vilaSkal(p, s.now)) }, // sjuk eller skadad (steg 12.1.46)
   // extremt varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13).
   // Den som bara är för varm arbetar som vanligt (steg 2.10.20)
   { id: 'svalka', niva: 4, prova: ({ s, p, v }) => {
@@ -802,8 +803,11 @@ export const ARBETEN: readonly Arbete[] = [
     const d = dag(c);
     // leken och hjälpen ur poängen (steg 10.2.43): leken efter seden Barn och mer för de yngre, hjälpen efter åldern och hur akut
     // byn behöver arbete; barnet leker med chansen lek / (lek + hjälp)
-    const lek = (VAL.lekBas + VAL.lekSed * s.seder.v.barn) * (1 + VAL.lekUng * (1 - a / ALDER.vuxen)), hjalp = a / ALDER.vuxen * (VAL.barnHjalp + d.u);
-    if (rnd(s, 'val', p) < lek / Math.max(1e-9, lek + hjalp)) return set(v, 'leka', lekText(s));
+    // det skadade eller sjuka barnet leker och hjälper mindre och vilar i stället, efter hur svårt (kroppLust, steg 12.1.46)
+    const kl = kroppLust(p, s.now), lek = (VAL.lekBas + VAL.lekSed * s.seder.v.barn) * (1 + VAL.lekUng * (1 - a / ALDER.vuxen)), hjalp = a / ALDER.vuxen * (VAL.barnHjalp + d.u);
+    const r = rnd(s, 'val', p) * (lek + hjalp);
+    if (r < (lek + hjalp) * (1 - kl)) return set(v, 'vila', vilaSkal(p, s.now));
+    if (r < lek) return set(v, 'leka', lekText(s));
     // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
     // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
     const cb: Ctx = { ...c, d: { ...d, works: true } };
@@ -1356,7 +1360,7 @@ function projektVal(v: Val, u: Uppgift, why: string) {
 // egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete
 function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const now = s.now;
-  const wv = (p.rest < VAL.vilaDag ? (1 - p.rest) * VAL.vilaVikt : 0) + lazy * VAL.vilaLat;
+  const wv = (p.rest < VAL.vilaDag ? (1 - p.rest) * VAL.vilaVikt : 0) + lazy * VAL.vilaLat + (1 - kroppLust(p, now)) * VAL.vilaVikt; // den skadade och sjuka vilar hellre (steg 12.1.46)
   const wh = (p.skill.hantverk / VAL.hantSkill + p.pot.flit / VAL.hantFlit) * (u < VAL.hantLugn ? VAL.hantLugnVikt : VAL.hantAkutVikt);
   const wsoc = (1 - p.social) * VAL.umgasVikt;
   // promenad: den nyfikne går gärna ut och ser sig omkring. Bad: när det är varmt i vattnet

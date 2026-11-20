@@ -18,7 +18,7 @@ import { bitAt, freeNear, roomAt } from './byggnad';
 import { ledig } from './stationer';
 import { groundOf } from './mark';
 import { FOREST } from './vag';
-import { HALSA, kanGa } from './halsa';
+import { HALSA, kanGa, kroppLust } from './halsa';
 import { ACTS, isWork } from './handlingar';
 import { duty } from './seder';
 import { raddFor } from './radsla';
@@ -183,7 +183,8 @@ export function sportVikt(s: State, p: Person, calm: number) {
   if (m?.titta?.includes(p.id)) return 0; // den som tittar spelar inte (steg 10.7.16)
   if (m && !harEgen(s, p, SPORT_AV[m.k])) return 0; // utan eget redskap kan man inte vara med
   if (!m && !SPORTER.some(d => kanSpela(s, d, vuxna(s)))) return 0;
-  return overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * SPORT.vikt * calm * (m ? SPORT.med * (m.pris ? prisLust(p, SPORT_AV[m.k]) : 1) : festNu(s) ? FEST.lust : 1) * (stat(p, 'styrka', s.now) + stat(p, 'smidighet', s.now)) / 20;
+  return overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * SPORT.vikt * calm * (m ? SPORT.med * (m.pris ? prisLust(p, SPORT_AV[m.k]) : 1) : festNu(s) ? FEST.lust : 1) * (stat(p, 'styrka', s.now) + stat(p, 'smidighet', s.now)) / 20
+    * kroppLust(p, s.now); // den som är skadad eller sjuk vill mindre, efter hur svårt (steg 12.1.46)
 }
 // att spela: gå med i matchen som väntar, annars samla folk till en ny (steg 10.7.12)
 export function sportVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number; tool: string } | undefined {
@@ -230,8 +231,8 @@ function horRopet(s: State, p: Person, q: Person) {
   return paKartan(q) && !q.gast && a >= ALDER.vuxen && Math.hypot(q.x - p.x, q.y - p.y) <= SPORT.nara && kanGa(q)
     && !(t && (t.act === 'sport' || t.act === 'sova' || t.act === 'badd' || ACTS[t.act]?.fortsatter?.length)) && !kartStridAv(s, q) && !raddFor(s, q, 'sport') && !s.kvarlevor?.some(k => k.bars === q.id);
 }
-// chansen att q vill vara med när p samlar: överskottet, kroppen, tycket om p och, för den som arbetar, pliktkänslan
-const foljChans = (s: State, p: Person, q: Person) => SPORT.folj * overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * (stat(q, 'styrka', s.now) + stat(q, 'smidighet', s.now)) / 20
+// chansen att q vill vara med när p samlar: överskottet, kroppen (också skadan och sjukdomen, steg 12.1.46), tycket om p och, för den som arbetar, pliktkänslan
+const foljChans = (s: State, p: Person, q: Person) => SPORT.folj * overskott(foodDays(s), woodDays(s), SPORT.mat, SPORT.ved) * (stat(q, 'styrka', s.now) + stat(q, 'smidighet', s.now)) / 20 * kroppLust(q, s.now)
   * (1 + SPORT.foljTycke * getRel(s, q, p).op / 100) * (q.task && isWork(q.task.act) ? 1 - SPORT.foljPlikt * duty(s, q) : 1);
 // ingen ville vara med: den som samlade blir ledsen
 function ingen(s: State, p: Person) { think(p, 'Ingen ville spela', -SPORT.ingen, s.now, SPORT.ingenTim * HOUR); count(s, 'sportIngen'); }

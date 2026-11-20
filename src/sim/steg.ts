@@ -62,7 +62,7 @@ import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight,
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
-import { SJUK, SJUK_DOD, forkylning, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme } from './sjukdom';
+import { SJUK, SJUKDOMAR, SJUK_DOD, forkylning, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme, svartSjukNu } from './sjukdom';
 import { eldPlats, getMap } from './karta';
 import { eldFlyttKvar, flyttaElden, stepEldFlytt } from './eldflytt';
 import { giftSteg } from './giftermal';
@@ -762,7 +762,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   rusSteg(s, p, dtSec); // berusningen går över (steg 9.6.14, rus.ts); drycken är en vald handling (steg 10.2.34)
   const sjukDod = sjukSteg(s, p, dtSec, p.task?.act === 'sova', !!p.task && !!ACTS[p.task.act].arbete && p.task.phase === 'do', teFaktor(s, p, SJUK.lakeort));
   if (sjukDod) { die(s, p, SJUK_DOD[sjukDod]); return true; }
-  if (p.sjuk && p.sjuk.grad >= 0.5 && !p.svartSjuk) { loggBer(s, 'l_svartSjuk', p.id, { namn: p.name }, 'world', [p.id]); p.svartSjuk = 1; } // svårt sjuk: ett tecken när hen blir frisk (steg 4.1.2.1)
+  if (p.sjuk && svartSjukNu(p, s.now) && !p.svartSjuk) { loggBer(s, 'l_svartSjuk', p.id, { namn: p.name, feber: !!SJUKDOMAR[p.sjuk.k].foljd.feber }, 'world', [p.id]); p.svartSjuk = 1; } // svårt sjuk: när sjukdomen är så svår att hen lägger sig (steg 12.1.46); ett tecken när hen blir frisk (steg 4.1.2.1)
   p.health -= dtSec / HOUR_S * skorbjugg(p); // brist på vitaminer (steg 2.6.2)
   if (!p.sjuk) {
     // förkylningen av kyla, väta och trötthet (steg 9.5.1): oftare i istiden. Den svåra sjukdomen loggas när den kommit långt (sjukSvar nedan)
