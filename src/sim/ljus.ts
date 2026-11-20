@@ -33,7 +33,7 @@ export const MORKER = balans('morker', {
 // facklan (steg 6.3.6)
 export const FACKLA = balans('fackla', {
   brinnTim: 5, // en fackla brinner så här många timmar innan den brunnit ut
-  r: 9, // ... och lyser så här många rutor bort (steg 12.1.169)
+  r: 12, // ... och lyser så här många rutor bort, nästan som elden (steg 12.1.176)
 });
 
 // de uppsatta facklorna (steg 6.3.7)

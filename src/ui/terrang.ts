@@ -132,12 +132,13 @@ export function drawNight(t: number) {
     const I = fireHeat(s, e), r = eldRackvidd(s, e); // samma räckvidd som arbetsljuset (LJUSKALLOR.eld)
     if (!r) continue;
     const f = eldXY(s, e); lagereldar.push({ x: f.x + 0.5, y: f.y + 0.5 });
-    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * r * (1 + MORKER.skenUt) * (I > 0 ? skimmer(t, f.x, f.y) : 1), k: -(I > 0 ? 1 : 0.5) }); // negativ: eldens form (natt.ts)
+    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * r * (1 + MORKER.skenUt) * (I > 0 ? skimmer(t, f.x, f.y) : 1), k: -1 }); // negativ: skenets kurva (natt.ts), samma för alla ljuskällor (steg 12.1.176)
   }
-  // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
+  // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan. Varje rad i
+  // registret, också de som kommer senare, tonar ut med samma kurva efter sin räckvidd, utan egen kant eller eget raster (steg 12.1.176)
   // (en fackla som någon bär lyser där bäraren syns i bilden, steg 10.2.19)
   // (steg 10.2.99: facklan lyser som en liten eld, större än människans cirkel, i eldens form och fladdrande)
-  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l, fl = skimmer(t, q.x, q.y); facklor.push(q); eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * l.r * (1 + MORKER.skenUt) * fl, k: -0.85 }); }
+  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l, fl = skimmer(t, q.x, q.y); facklor.push(q); eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * l.r * (1 + MORKER.skenUt) * fl, k: -1 }); }
   // ljuset kring människorna (steg 9.2.69): bara i bilden; den som bär en fackla har facklans ljus
   // (där var och en syns i bilden, inte där hen står i slutet av slaget, steg 10.2.19)
   // alla människor på kartan, byborna och gästerna (rövarna, handlaren, främlingen; steg 10.2.99)
