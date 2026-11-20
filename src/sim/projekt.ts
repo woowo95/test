@@ -412,7 +412,8 @@ export const bristAlla = (s: State) => {
 export const bristNu = (s: State, k: string) => {
   const a = s.arbBehov;
   if (!a?.brist) return PROJEKT[k].brist(s);
-  if (a.bv !== (s.byggV ?? 0)) { a.brist = bristAlla(s); a.bv = s.byggV ?? 0; }
+  // bv sätts först: stationernas brist frågar bristNu igen (koKrok.vid, slöjdbänkens kö) och får då den förra räkningen
+  if (a.bv !== (s.byggV ?? 0)) { a.bv = s.byggV ?? 0; a.brist = bristAlla(s); }
   return a.brist[k] ?? 0;
 };
 export function personVarde(s: State, k: string, fam: readonly Person[], om: number, p?: Person) {
