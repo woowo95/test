@@ -715,7 +715,7 @@ export function eatPoison(s: State, p: Person) {
   tanke(p, 'svampGift', s.now, { v: FANGST.giftTanke, tid: FANGST.giftTankeDygn * DAY });
   upplev(s, p, 'svamp'); smakGift(p); // avsmak för svamp (steg 3.3.5)
   const before = kn(p, 'svamp'), v = learnK(p, 'svamp', FANGST.giftLar, s.now);
-  log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]);
+  log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]); p.forgiftadT = s.now; // (matlagning.ts)
   if ((s.stat!.forgiftad ?? 0) <= 1) {
     log(s, 'Byn misstänker att en av svamparna är giftig.', 'world');
   }

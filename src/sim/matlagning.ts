@@ -125,8 +125,9 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
   insjukna(s, p, 'matforgiftning', `av ${vad}`); p.sickWhy = `Matförgiftad av ${vad}`; // steg 9.5.1
   tanke(p, 'matforgiftad', s.now, { v: MATLAG.forgiftad }); smakForgiftad(p, mest); // en avsky (steg 9.6.6)
   count(s, 'matforgiftad');
-  // det som åts står i raden, och ingen rad om hen redan blivit förgiftad samma timme (svampen, steg 6.7.5)
-  if (!s.log.some(e => e.t > s.now - HOUR && e.ids.length === 1 && e.ids[0] === p.id && (e.m === 'l_raMat' || e.text.includes('förgiftad')))) loggBer(s, 'l_raMat', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon', vad }, 'world', [p.id]);
+  // det som åts står i raden, och ingen rad om hen redan blivit förgiftad samma timme (svampen, steg 6.7.5). Tiden står på
+  // personen (steg 12.1.107): spelet räknar aldrig ur loggen
+  if (!(p.forgiftadT !== undefined && p.forgiftadT > s.now - HOUR)) { loggBer(s, 'l_raMat', p.id, { namn: p.name, hen: p.sex === 'm' ? 'han' : 'hon', vad }, 'world', [p.id]); p.forgiftadT = s.now; }
 }
 
 // ---------- torkning (steg 2.8.2) ----------
