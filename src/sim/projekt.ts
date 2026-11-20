@@ -404,8 +404,9 @@ export function fattas(s: State, p: Person, k: string, f: ProjektFara) {
 // vid stenarna (det sällsynta, flintan). Annat material (skinn, ben) kommer av andra arbeten, och då väntar projektet
 // Materialet till kläderna (steg 12.1.20): skinnen som jakten ger (viltet slaktas sedan till skinn) står i KALLA, så att ett plagg
 // som väntar på skinn ger jakten värde, som virket till ett hus ger fällningen värde. Skinnet kommer ur det fällda
-// djuret (ur) när det slaktas: ligger ett sådant oslaktat och saknar byn stationen där det slaktas, är det stationen som fattas
-export const KALLA: Record<string, { act: Act; ur: string }> = { skinn: { act: 'jakt', ur: 'vilt' }, vitskinn: { act: 'jakt', ur: 'vilt' }, radjursskinn: { act: 'jakt', ur: 'radjur' } };
+// djuret (ur) när det slaktas: ligger ett sådant oslaktat och saknar byn stationen där det slaktas, är det stationen som fattas.
+// Benet till sylen, nålen, snaran och benspaden kommer ur viltet på samma sätt (steg 12.1.158)
+export const KALLA: Record<string, { act: Act; ur: string }> = { skinn: { act: 'jakt', ur: 'vilt' }, vitskinn: { act: 'jakt', ur: 'vilt' }, radjursskinn: { act: 'jakt', ur: 'radjur' }, ben: { act: 'jakt', ur: 'vilt' } }; // benet kommer ur viltet som skinnet (steg 12.1.158)
 export function hamtas(m: string): { act: Act; leta?: true } | undefined {
   if (KALLA[m]) return { act: KALLA[m].act };
   const sk = SAKER[m]?.skaffa, a = sk?.act ? ACTS[sk.act as Act]?.arbete : undefined;
