@@ -18,11 +18,11 @@ import { FORHIST, forhistoria } from './forhistoria';
 import { narmasteMal } from './vagval';
 import { varldHandelse } from './varldkronika';
 import { medVarld, varldMark } from './varlden';
+import { hemPlats } from './ort'; // byns egen plats (steg 12.1.64)
 import { MARK_IDS, VARLD, VARLDMARK, VarldMark } from './varldmark';
 import { H, Person, State, T, W } from './typer';
 
 const RIKTNING = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
-const huvudPlats = (s: State) => s.vacktPlats !== undefined ? s.varld?.platser?.find(p => p.nr === s.vacktPlats) : s.varld?.platser?.find(p => p.k === 'by' && p.by === (s.vackt ?? s.varld!.huvud)); // byns egen plats: den väckta byns rad (steg 11.13.10)
 // var en plats ligger sett från huvudbyn: marken där och väderstrecket
 function hemAv(v: VarldMark, h: VarldPlats | undefined, p: VarldPlats) {
   const m = VARLDMARK[MARK_IDS[v.mark[p.y * v.w + p.x]]];
@@ -45,14 +45,14 @@ function nyRad(s: State, k: Klan, p: VarldPlats | undefined): VarldRad {
 // förbindelsen ligger på platsen: var den bor, vad som är sällsynt där och restiden
 function placera(s: State, k: Klan, p: VarldPlats | undefined, dygn: number | undefined) {
   const v = varldMark(s);
-  if (p && v) { const h = hemAv(v, huvudPlats(s), p); k.hem = h.hem; k.sallsynt = h.sallsynt; }
+  if (p && v) { const h = hemAv(v, hemPlats(s), p); k.hem = h.hem; k.sallsynt = h.sallsynt; }
   if (dygn !== undefined) k.dygn = dygn;
   return nyRad(s, k, p);
 }
 
 // den närmaste lediga byplatsen som går att nå till fots från huvudbyn blir en ny by (utbrytning, en sparad klan utan by)
 function nyPlats(s: State, namn: string): { p: VarldPlats; dygn: number } | undefined {
-  const vl = medVarld(s), v = varldMark(s), h = huvudPlats(s);
+  const vl = medVarld(s), v = varldMark(s), h = hemPlats(s);
   if (!v || !h) return undefined;
   const lediga = new Set(byRutor(v).filter(i => !hinder(vl, v, 'by', i % v.w, Math.floor(i / v.w))));
   const [f] = narmasteMal(vl, v, h.y * v.w + h.x, lediga, 1, 'fots');
@@ -68,7 +68,7 @@ function nyPlats(s: State, namn: string): { p: VarldPlats; dygn: number } | unde
 // forhist: en ny värld får sin förhistoria (forhistoria.ts, steg 11.3.13; ingen när åldern är 0), och byarna i grannätet som lever efter den får en
 // förbindelse med huvudbyn: namnet, folket, styrkan och rikedomen ur raden, ledaren som hövding och läggningen ur tron
 export function nyaGrannbyar(s: State, gamla: Klan[] = [], forhist = true) {
-  const vl = medVarld(s, forhist && FORHIST.ar > 0 ? forhistoria : undefined), h = huvudPlats(s), kvar = [...gamla];
+  const vl = medVarld(s, forhist && FORHIST.ar > 0 ? forhistoria : undefined), h = hemPlats(s), kvar = [...gamla];
   for (const g of h?.grannar ?? []) {
     const p = vl.platser?.find(q => q.nr === g.nr);
     if (!p) continue;
@@ -88,7 +88,7 @@ function synFor(s: State, r: VarldRad, p: VarldPlats, dygn: number) {
   const l = r.ledare !== undefined ? r.fasta[r.ledare] : undefined, hv = k.personer.find(q => q.roll === 'hovding');
   if (l && hv) { hv.namn = l.namn; hv.sex = l.kon; hv.fodd = l.fodd; }
   const v = varldMark(s);
-  if (v) { const h = hemAv(v, huvudPlats(s), p); k.hem = h.hem; k.sallsynt = h.sallsynt; }
+  if (v) { const h = hemAv(v, hemPlats(s), p); k.hem = h.hem; k.sallsynt = h.sallsynt; }
   k.dygn = dygn;
   r.syn = k;
 }
@@ -128,7 +128,7 @@ const KANT = 0.3; // så långt in från kartans kant står den som kommer in
 export const kantMot = (s: State, klan: number | undefined) => kantMotBy(s, klanById(s, klan)?.rad);
 // kanten mot byn med raden nr i världen
 export function kantMotBy(s: State, nr: number | undefined): { x: number; y: number } | undefined {
-  const h = huvudPlats(s), p = nr === undefined ? undefined : s.varld?.platser?.find(q => q.k === 'by' && q.by === nr);
+  const h = hemPlats(s), p = nr === undefined ? undefined : s.varld?.platser?.find(q => q.k === 'by' && q.by === nr);
   if (!h || !p || (p.x === h.x && p.y === h.y)) return undefined;
   const e = eldPlats(s), cx = e.x + 0.5, cy = e.y + 0.5, dx = p.x - h.x, dy = p.y - h.y;
   const tx = dx > 0 ? (W - KANT - cx) / dx : dx < 0 ? (KANT - cx) / dx : Infinity, ty = dy > 0 ? (H - KANT - cy) / dy : dy < 0 ? (KANT - cy) / dy : Infinity;

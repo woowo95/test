@@ -1,6 +1,6 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { medVatska, nyInvanare, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, testBy, utanWebblasare } from './hjalp';
+import { medVatska, nyInvanare, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, setItems, testBy, utanWebblasare } from './hjalp';
 import { START } from '../kor';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
@@ -5908,6 +5908,49 @@ SCENARIER.rikedomlockar = {
       [`det som finns över bärbördan lockar ändå (bärbördan ${tak}, bytet ${Math.round(b40)}: ${Math.round(lock1)} → ${Math.round(lock40)} → ${Math.round(lock80)})`, lock40 > tak * 1.5 && lock80 > lock40],
       ['men långsammare ju mer det är', lock80 - lock40 < lock40 - tak && lock40 < b40],
       ['en klan lika rik per person som byn har inget skäl att plundra, en mycket fattigare har det', !lika && fattigare],
+    ];
+  },
+};
+
+SCENARIER.resfel = {
+  text: 'Fel i resorna, gästerna och världen (steg 12.1.64): den som dött på vägen äter inte, gästens törst tar hälsa och dödsorsaken blir törst, karavanens ledare känner sin bys platser, en väckt by känner sin egen plats, dygnet följer lokal midnatt och byn gör inga handelsvaror när ingen grannby kan skicka en handlare',
+  kor: () => {
+    // ett sällskap på tre framme vid målet, där en dött på vägen: en måltid tar två portioner, inte tre
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!, sl = SIM.nyttSallskap(s, a!, hb.grannar![0]!.nr, 'handel')!; SIM.foljMed(vl, sl, b!); SIM.foljMed(vl, sl, c!);
+    sl.skede = 'framme'; sl.framme = s.now; sl.pack = { torrmort: 20 }; sl.behov = { matt: SIM.KROPP.hungrig - 0.01, vatska: 1, ork: 1, fulla: 0, foder: 0 };
+    SIM.dorPaVagen(s, sl, c!, 'svalt', s.now);
+    s.now += 600 * SIM.SEC; SIM.resaBehov(s, 600 * SIM.SEC);
+    const atit = 20 - (sl.pack.torrmort ?? 0);
+    // en väckt by känner sin egen plats och inte huvudbyns
+    const v = SIM.cloneState(testBy(3)), vv = v.varld!, annan = vv.platser!.find(q => q.k === 'by' && q.by !== undefined && q.by !== vv.huvud)!;
+    v.vackt = annan.by;
+    const egen = SIM.bynKanner(v, annan.nr)?.v === SIM.O_BESOKT, huvudBesokt = SIM.bynKanner(v, SIM.byPlats(vv, vv.huvud!)!.nr)?.v === SIM.O_BESOKT;
+    // dygnet: ett nytt nummer vid midnatt lokal tid
+    const mid = SIM.dygnStart(s.now), dygn = SIM.dagNr(mid) === SIM.dagNr(mid + 3600000) && SIM.dagNr(mid - 1) === SIM.dagNr(mid) - 1;
+    // ingen grannby som kan skicka en handlare: inget mål för handelsvarorna
+    const u = SIM.cloneState(testBy(3)); u.varld = undefined; for (const x of u.people) x.tek = { ...x.tek, rep: 1 };
+    setItems(u, { torrgras: 200, rep: 0 }); SIM.handelsMalRakna(u);
+    // karavanen: ledaren känner platserna runt sin by, och en gäst utan vatten dör av törst
+    const bas = testBy(3, x => !x.handlare && !x.people.some(p => p.gast && p.died === undefined)), rad = SIM.klanerOf(bas).map(k => k.rad).find(nr => nr !== undefined && bas.varld!.rader?.some(r => r.nr === nr))!;
+    const k = SIM.cloneState(bas), r = k.varld!.rader!.find(x => x.nr === rad)!;
+    r.tal.folk = 80; r.tal.rikedom = 100000; r.tek = [...new Set([...r.tek, 'ryggsack', 'vagn'])];
+    handlarenKommer(k, rad, SIM.packaRad(r, mulberry(7), () => 100000, 'vagn', 'oxe'));
+    const h = k.handlare as SIM.Handlare | undefined, led = h && SIM.hp(k, h), platser = (led?.lardomar ?? []).filter(l => l.k === 'ort').length;
+    const g = k.people.find(p => p.gast?.sort === 'folje' && p.died === undefined) ?? led;
+    let orsak: string | undefined;
+    if (g) {
+      g.hunger = 1; g.torst = 0; g.health = 1e-4; g.gast!.vatten = 0; g.gast!.mat = 5;
+      SIM.gastVardag(k, 60, () => 1);
+      orsak = g.cause;
+    }
+    return [
+      [`den som dött äter inte: en måltid för två av tre tog ${atit} portioner`, atit === 2],
+      ['en väckt by känner sin egen plats som besökt, och inte huvudbyns', egen && !huvudBesokt],
+      ['dygnet byter nummer vid midnatt lokal tid, som kalendern', dygn],
+      [`utan grannbyar som kan skicka en handlare görs inga handelsvaror (${u.handelsMal?.k ?? 'inget mål'})`, !u.handelsMal],
+      [`karavanens ledare känner platserna runt sin by (${platser})`, !!h?.vagnar && platser > 0],
+      [`en gäst utan vatten tappar hälsa och dör av törst (${orsak ?? 'lever'})`, orsak === 'av törst'],
     ];
   },
 };

@@ -11,7 +11,7 @@ import { kronika } from './historik';
 import { tatKrok, upplev } from './uppvaxt';
 import { SKRIFT } from './skriftTal';
 import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, troOf, troende } from './religion';
-import { ageIndex, ageStart } from './tid';
+import { ageIndex, ageStart, dagNr, dygnStart } from './tid';
 import { getMap } from './karta';
 import { groundOf } from './mark';
 import { myrOf } from './myr';
@@ -75,7 +75,7 @@ export type BonId = keyof typeof BONER;
 const BDEF: Record<BonId, BonDef> = BONER;
 // vikten på fritiden: den andlige ber ofta, den oandlige aldrig
 export const bonVikt = (s: State, p: Person) => p.tro === undefined ? 0 : andlighet(s, p) / 100 * KULT.ofta;
-const dygnNr = (now: number) => Math.floor(now / DAY);
+const dygnNr = dagNr;
 // fritidens bön: en gång om dagen. Tacksägelsen går före; helst vid den heliga platsen
 export function bonFritid(s: State, p: Person): { id: BonId; o?: string; spot?: { x: number; y: number } } | undefined {
   const tr = troOf(s, p.tro);
@@ -382,16 +382,16 @@ function hogtidSteg(s: State, tr: Tro) {
   if (tr.hogtid === st) return;
   const b = tr.bud?.find(x => x.id === 'hogtid' && hogtidAv(x.v).ai === ai);
   if (!b) return;
-  tr.hogtid = st; tr.hogtidDag = Math.floor(s.now / DAY); // dygnet är heligt (steg 10.3.16)
+  tr.hogtid = st; tr.hogtidDag = dagNr(s.now); // dygnet är heligt (steg 10.3.16)
   const form = hogtidAv(b.v).form, namn = hogtidNamn(b.v);
   if (form === 'fasta') { nyRitual(s, 'hogtid', { tro: tr.id, namn, form }); return; }
   // gillet börjar klockan FEST.tim (steg 10.7.19), i dag eller i morgon om den tiden har gått; den dagen är festdagen
-  const idag = Math.floor(s.now / DAY) * DAY, fran = idag + FEST.tim * HOUR >= s.now ? idag + FEST.tim * HOUR : idag + DAY + FEST.tim * HOUR;
+  const idag = dygnStart(s.now), fran = idag + FEST.tim * HOUR >= s.now ? idag + FEST.tim * HOUR : dygnStart(idag + DAY + 2 * HOUR) + FEST.tim * HOUR; // midnatt lokal tid (steg 12.1.64)
   const r = { tro: tr.id, namn, form, fran };
   nyRitual(s, 'hogtid', r);
   const at = RDEF.hogtid.plats(s, { k: 'hogtid', start: s.now, slut: 0, x: 0, y: 0, ...r });
-  if (s.fest && Math.floor(s.now / DAY) > s.fest.dag) festSlut(s);
-  s.fest = { tro: tr.id, namn, dag: Math.floor(fran / DAY), x: at.x, y: at.y, at: 0, fram: [], vann: {} };
+  if (s.fest && dagNr(s.now) > s.fest.dag) festSlut(s);
+  s.fest = { tro: tr.id, namn, dag: dagNr(fran), x: at.x, y: at.y, at: 0, fram: [], vann: {} };
 }
 // när högtiden slutar: gillets mat eller fastans dygn, och offret av dem som följer budet
 export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
@@ -497,7 +497,7 @@ export function kultTimme(s: State) {
     if (pr && !s.ritual && !s.ritualKo?.some(r => r.k === 'leddBon' && r.tro === tr.id) && (tr.leddBon ?? 0) + 2 * DAY <= s.now) { tr.leddBon = s.now; nyRitual(s, 'leddBon', { tro: tr.id }); } // vid den heliga platsen, eller vid elden innan tron har en (steg 10.3.10)
   }
   if (Math.floor(s.now / HOUR) % 24 === 0) vanhelga(s);
-  if (s.fest && Math.floor(s.now / DAY) > s.fest.dag) festSlut(s); // festdagen är slut
+  if (s.fest && dagNr(s.now) > s.fest.dag) festSlut(s); // festdagen är slut
   ritualTimme(s);
 }
 import { festKrok } from './ratter';

@@ -631,7 +631,7 @@ export const orkFart = (sl: Sallskap, ork?: number) => {
 };
 // tappet i ork per timme en natt utan tak, för hela gruppen (tälten skyddar fyra var)
 export function nattTapp(s: State, sl: Sallskap, t = s.now) {
-  const n = sl.medl.length, talt = Math.floor(sl.pack.talt ?? 0), utan = n ? Math.max(0, n - RESA.talt * talt) / n : 0;
+  const n = resenarer(s, sl).length, talt = Math.floor(sl.pack.talt ?? 0), utan = n ? Math.max(0, n - RESA.talt * talt) / n : 0;
   const v = vaderNu(s, t);
   return utan * (Math.max(0, RESA.koldFran - temperature(s, t)) * RESA.orkKold + v.nb * RESA.orkBlot);
 }
@@ -655,7 +655,7 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (!PA_VAGEN.includes(sl.skede)) return;
   if (sl.skede !== 'framme') langsamma(s, sl, t);
   if (!PA_VAGEN.includes(sl.skede)) return;
-  const b = behovOf(sl), tim = dt / HOUR, dag = isLight(t), framme = sl.skede === 'framme', r = rutaNu(s, sl), n = sl.medl.length;
+  const b = behovOf(sl), tim = dt / HOUR, dag = isLight(t), framme = sl.skede === 'framme', r = rutaNu(s, sl), n = resenarer(s, sl).length; // de levande äter och dricker (steg 12.1.64)
   b.matt = clamp(b.matt - tim / KROPP.hungerTim, 0, 1);
   b.vatska = clamp(b.vatska - tim / TORST.tim * (dag ? 1 : TORST.somn), 0, 1);
   if (dag && !framme) b.ork -= tim * RESA.orkGang;
@@ -1428,7 +1428,7 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
     namn: 'Oväder', dygn: 0.05,
     risk: (s, _sl, t) => 1 + RESA.ovaderNb * vaderNu(s, t).nb,
     gor: (s, sl, t) => {
-      const n = sl.medl.length, utan = n ? Math.max(0, n - RESA.talt * Math.floor(sl.pack.talt ?? 0)) / n : 0;
+      const n = resenarer(s, sl).length, utan = n ? Math.max(0, n - RESA.talt * Math.floor(sl.pack.talt ?? 0)) / n : 0;
       sl.forlorat = (sl.forlorat ?? 0) + RESA.ovaderTim; const b = behovOf(sl); b.ork = clamp(b.ork - RESA.ovaderOrk * utan, 0, 1);
       dagbok(s, sl, 'ovader', `Ett oväder: väntade ut det i ${RESA.ovaderTim} timmar${utan > 0 ? ' utan tak' : ' i tälten'}.`, t);
     },
@@ -1770,7 +1770,7 @@ function lamnaKvar(s: State, sl: Sallskap, p: Person, t: number) {
   const ny = nyttSallskap(s, p, sl.mal, sl.skal);
   if (!ny) return;
   ny.skede = 'hemat'; ny.ruta = sl.ruta; ny.ut = sl.ut; ny.borjan = sl.borjan; ny.behov = { ...behovOf(sl), fulla: 0, foder: 0 };
-  const n = sl.medl.length + 1;
+  const n = resenarer(s, sl).length + 1;
   for (const k of [...FOOD, 'vattensack']) { const m = Math.floor((sl.pack[k] ?? 0) / n); if (m > 0) { tappa(sl, k, m); ny.pack[k] = m; } }
   ny.behov.fulla = Math.floor(ny.pack.vattensack ?? 0);
   vandHem(s, ny);

@@ -13,7 +13,7 @@ import { varldHandelseText, VarldHandelse, VARLDSHANDELSER } from './varldkronik
 import { sparadVag } from './vagval';
 import { clamp, hash3 } from './slump';
 import { lognFaktor } from './rykten';
-import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
+import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr, type VarldPlats } from './landmarken';
 import { VARLD } from './varldmark';
 import { varldMark, type Varlden } from './varlden';
 import { instText, KLAN_ROLLER, klanById } from './klaner';
@@ -112,14 +112,22 @@ export const ortNiva = (p: Person, nr: number): number | undefined => findL(p, '
 // Marken och naturen inom ORT.narDygn dygns gång från byn är känd för var och en som bor där, utan att sparas hos personen.
 // Platser med folk (folk i LANDMARKEN) hör inte dit: en ny by känner inga byar eller läger och får veta om dem genom en
 // besökare, en handlare, ett anfall eller en upphittad karta. Byns egen plats är besökt
+// byns egen rad och plats i världen (steg 12.1.64): huvudbyns, eller den väckta byns egen (steg 11.13.10 och 11.13.15). Alla
+// som frågar efter hemmet frågar här
+export const hemRad = (s: State): number | undefined => s.vackt ?? s.varld?.huvud;
+export function hemPlats(s: State): VarldPlats | undefined {
+  const vl = s.varld, hem = hemRad(s);
+  if (!vl) return undefined;
+  return s.vacktPlats !== undefined ? varldPlatsNr(vl, s.vacktPlats) : hem !== undefined ? byPlats(vl, hem) : undefined;
+}
 export function iNaromradet(s: State, nr: number): boolean {
-  const vl = s.varld, q = vl && varldPlatsNr(vl, nr), hem = s.vackt ?? vl?.huvud, h = vl && hem !== undefined ? byPlats(vl, hem) : undefined; // en väckt by har sin egen plats (steg 11.13.15)
+  const vl = s.varld, q = vl && varldPlatsNr(vl, nr), h = hemPlats(s);
   if (!q || !h || (LANDMARKEN[q.k] as LandmarkDef).folk) return false;
   return Math.hypot(q.x - h.x, q.y - h.y) <= ORT.narDygn * VARLD.gangPerDygn;
 }
 // det en bybo vet om platsen nr: minnet, närområdet (känt) och byns egen plats (besökt); undefined: okänd
 export function kannerOrt(s: State, p: Person, nr: number): number | undefined {
-  const vl = s.varld, hem = s.vackt ?? vl?.huvud, egen = !p.gast && !!vl && hem !== undefined && byPlats(vl, hem)?.nr === nr;
+  const egen = !p.gast && hemPlats(s)?.nr === nr;
   if (egen) return O_BESOKT;
   const m = ortNiva(p, nr), n = !p.gast && iNaromradet(s, nr) ? O_KANT : undefined;
   return m === undefined ? n : n === undefined ? m : Math.max(m, n);
@@ -207,8 +215,7 @@ const kartLardom = (s: State, nr: number): Lardom | undefined => {
 };
 // det byn vet om platsen nr: sammanställningen, närområdet (känt) och byns egen plats (besökt); undefined: okänd
 export function bynKanner(s: State, nr: number): VetOrt | undefined {
-  const vl = s.varld;
-  if (vl?.huvud !== undefined && byPlats(vl, vl.huvud)?.nr === nr) return { v: O_BESOKT, t: s.now, vem: [] };
+  if (hemPlats(s)?.nr === nr) return { v: O_BESOKT, t: s.now, vem: [] };
   const e = s.bynVet?.p[nr];
   if (!iNaromradet(s, nr)) return e;
   return e && e.v >= O_KANT ? e : { v: O_KANT, t: s.now, vem: e?.vem ?? [] };
@@ -220,7 +227,7 @@ export function bynKanner(s: State, nr: number): VetOrt | undefined {
 // tydligt, ryktena som grå områden och resten blekt; en hemlig plats (LANDMARKEN) syns först när byn har ett rykte om den
 export interface BynsKarta { niva: (nr: number) => number | undefined; nara: (x: number, y: number) => boolean; rykten: { nr: number; x: number; y: number; r: number }[] }
 export function bynsKarta(s: State): BynsKarta | undefined {
-  const vl = s.varld, h = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
+  const vl = s.varld, h = hemPlats(s);
   if (!vl) return undefined;
   const R = ORT.narDygn * VARLD.gangPerDygn, rykten: BynsKarta['rykten'] = [];
   for (const k in s.bynVet?.p ?? {}) {
@@ -345,7 +352,7 @@ const RUTARADER: [string, string][] = [['kvar', 'Finns kvar'], ['folk', 'Invåna
 export function platsRuta(s: State, nr: number): PlatsRuta | undefined {
   const vl = s.varld, q = vl && varldPlatsNr(vl, nr);
   if (!vl || !q) return undefined;
-  const k = bynKanner(s, nr), egen = q.by !== undefined && q.by === vl.huvud;
+  const k = bynKanner(s, nr), hemR = hemRad(s), egen = q.by !== undefined && q.by === hemR;
   const vem = (k?.vem ?? []).map(id => byId(s, id)).filter((p): p is Person => !!p);
   // den senaste uppgiften bland dem som vet
   let bast: Lardom | undefined;
@@ -392,10 +399,11 @@ export function byFlikar(s: State, nr: number, tekNamn: (id: string) => string =
   if (r.tro) ut.tro = { namn: r.tro.namn, andel: Math.round(r.tro.andel * 100) };
   if (r.fran !== undefined) ut.ursprung = radNr(vl, r.fran)?.namn ?? 'en by som inte finns längre';
   ut.grundad = yearNo(s, r.grundad);
-  if (!ruta.egen && vl.huvud !== undefined) {
-    const mellan = (vl.kronika ?? []).filter(h => ((h.by === r.nr && h.mot === vl.huvud) || (h.by === vl.huvud && h.mot === r.nr)) && hortHandelse(s, h));
+  const hemR = hemRad(s);
+  if (!ruta.egen && hemR !== undefined) {
+    const mellan = (vl.kronika ?? []).filter(h => ((h.by === r.nr && h.mot === hemR) || (h.by === hemR && h.mot === r.nr)) && hortHandelse(s, h));
     const lage = [...mellan].reverse().find(h => h.k === 'krig' || h.k === 'fred' || h.k === 'forbund');
-    const hem = byPlats(vl, vl.huvud), v = varldMark(s);
+    const hem = hemPlats(s), v = varldMark(s);
     const vag = hem && v ? sparadVag(vl, 'fots', hem.y * v.w + hem.x, q.y * v.w + q.x) ?? sparadVag(vl, 'fots', q.y * v.w + q.x, hem.y * v.w + hem.x) : undefined;
     ut.forb = {
       ...(r.syn ? { inst: r.syn.inst, hallning: instText(r.syn.inst) } : {}),
@@ -413,7 +421,8 @@ export function byFlikar(s: State, nr: number, tekNamn: (id: string) => string =
 export function hortHandelse(s: State, h: VarldHandelse): boolean {
   const vl = s.varld;
   if (!vl) return false;
-  if (h.by === vl.huvud || h.mot === vl.huvud) return true;
+  const hem = hemRad(s);
+  if (h.by === hem || h.mot === hem) return true;
   const nr = h.plats ?? (h.by !== undefined ? byPlats(vl, h.by)?.nr : undefined);
   const k = nr === undefined ? undefined : bynKanner(s, nr);
   return !!k && k.v >= O_KANT && k.t >= h.t;
@@ -421,6 +430,7 @@ export function hortHandelse(s: State, h: VarldHandelse): boolean {
 function nyhetNarByn(s: State, p: Person, nr: number, t0: number, t1: number, src: number | undefined) {
   const vl = s.varld, e = s.bynVet?.p[nr];
   if (!vl || p.gast || (e && e.t >= t1)) return; // byn har redan hört det
+  if (e && e.t > t0) t0 = e.t; // det byn redan hört genom någon annan skrivs inte igen (steg 12.1.64)
   if (e) { e.t = t1; if (!e.vem.includes(p.id)) e.vem.push(p.id); }
   else (s.bynVet ??= { t: s.now, p: {} }).p[nr] = { v: findL(p, 'ort', nr)?.v ?? O_KANT, t: t1, vem: [p.id] }; // tills det räknas om
   const r = ortensRad(s, nr), q = varldPlatsNr(vl, nr);
@@ -429,8 +439,9 @@ function nyhetNarByn(s: State, p: Person, nr: number, t0: number, t1: number, sr
   if (!vad.length && fore && nu) {
     if (nu.borta && !fore.borta) vad.push(`${q?.namn ?? 'Byn'} har gått under`);
     else if (nu.led !== fore.led) vad.push(`${q?.namn ?? 'Byn'} har fått en ny ledare${nu.led ? `, ${nu.led}` : ''}`);
-    else vad.push(`${q?.namn ?? 'Byn'} har nu ${nu.tal.folk} invånare (förut ${fore.tal.folk})`);
+    else if (nu.tal.folk !== fore.tal.folk) vad.push(`${q?.namn ?? 'Byn'} har nu ${nu.tal.folk} invånare (förut ${fore.tal.folk})`);
   }
+  if (!vad.length) return; // inget har ändrats i spannet: ingen nyhet (steg 12.1.64)
   const kom = src !== undefined ? byId(s, src) : p, text = `Nyheter från ${q?.namn ?? 'en by långt borta'}: ${vad.join('. ')}. ${kom?.name ?? 'Någon'} kom med nyheten.`;
   kronika(s, text, 'nyhet');
   notis(s, 'nyhet', text, [p.id, ...(kom && kom !== p && !kom.gast ? [kom.id] : [])]);

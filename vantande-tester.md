@@ -26,3 +26,7 @@
 - Världens rader för handelsläger som brutits upp blir kvar för alltid (ungefär 1,6 nya per dygn, alltså per år i spelet). Med tiden växer världens del av sparningen förbi gränsen 512 KB. Ska ett upplöst läger glömmas efter en tid, som ett minne som bleknar?
 - Att grunda en värld med 400 års förhistoria tar ungefär 45 s datortid. Det märks när en ny by grundas. Går det bra, eller ska förhistorien räknas medan spelet redan visas?
 - Steg 12.1.11 (vägarna i världen snabbare) säger att det inte ändrar spelet, men bara en av de tre delarna gör det. Vägarna slås nu upp per par i stället för att letas i en lista (byggt, samma spel). De två andra delarna ändrar spelet. Att glömma vägar ingen använt på länge gör att resans plan räknar med fågelvägen gånger omvägen tills vägen gåtts igen. Att räkna resans poäng en gång i timmen (sex minuter i verkligheten) gör att en resenär väljer på poäng som kan vara upp till en timme gamla. Ska de byggas ändå, så att spelet blir lite annorlunda, eller räcker uppslagningen per par tills mätningen (`npm run varldkostnad`) visar att resorna kostar för mycket?
+
+## Grenen par-varlden (12.1.64, 12.1.83, 12.1.98, 12.1.111, 12.1.114)
+
+- 12.1.64 (fel i resorna, gästerna och världen): ändrar spelet lite (de döda på vägen äter inte, gästers törst, karavanens platser, väckta byns plats, nyheter, dygnet efter lokal midnatt för heliga dagar och fester, inga handelsvaror utan grannar). Skyldig koll med nytt facit och likhet. Fynd 299 (sällskap som fastnar) var redan rättat i 12.1.8.
