@@ -7,7 +7,7 @@ import { byId, isSocial, TalkEvent } from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
-import { medTal, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
+import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
 import { stalle, SITTA, vidArbetet } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
@@ -2111,7 +2111,6 @@ SCENARIER.vemibyn = {
 };
 
 SCENARIER.merliv = {
-  lang: true,
   text: 'Steg 3.9.8: mer ur livet i beskrivningen: familjen (många barn, föräldralös, först född i byn, barn till en grundare), bäst i byn på något, bedrifterna i tal (vargar, vårdade, hus) räknade i personens statistik (p.liv), lärare och lärling, rädslan efter ett vargbett (stark men rädd), det hen överlevt, ägodelarna (mästerverk, rik, fattig, eget hus), ledaren, skammen, arvet från föräldrarna och längtan',
   kor: () => {
     const t = createState(13, START);
@@ -2153,8 +2152,7 @@ SCENARIER.merliv = {
     (t.ting ??= []).push({ id: 9999, k: 'kniv', c: 1, agare: ma.id, q: 5, ber: { g: ma.id, h: 0.5, ai: 0, namn: 'Vintervargen' } });
     const bma = besk(ma);
     // räknarna fylls i en vanlig by
-    const by = createState(3, START);
-    kor(by, 14 * 24);
+    const by = SIM.cloneState(testBy(15)); // en sparad testby efter minst 15 dygn (15 år i spelet)
     const liv = by.people.filter(p => p.liv && Object.keys(p.liv).some(k => !k.startsWith('t:'))).length;
     const alla = [...living(t), ...living(by)].map(besk);
     const nya = ['besk_barn', 'besk_foraldralos', 'besk_forstFodd', 'besk_grundarbarn', 'besk_bast', 'besk_vargar', 'besk_vardat', 'besk_hus', 'besk_larare', 'besk_larling', 'besk_raddVarg', 'besk_overlevt', 'besk_mastarverk', 'besk_egetHus', 'besk_rik', 'besk_fattig', 'besk_ledare', 'besk_skam', 'besk_arv', 'besk_langtan'];
@@ -2214,11 +2212,9 @@ SCENARIER.gjort = {
 };
 
 SCENARIER.kronika = {
-  lang: true,
   text: 'Steg 3.9.3: händelserna (födslar, dödsfall, första elden, uppfinningar, hus, ledare, strider och vargjakter) skrivs som små berättelser i krönikan ur mallarna k_* i BERATTELSER, med årstiden, vädret och natten; loggen behåller sin korta rad',
   kor: () => {
-    const t = createState(3, START);
-    kor(t, 10 * 24);
+    const t = SIM.cloneState(testBy(10)); // en sparad testby efter tio dygn (tio år i spelet)
     const rader = t.hist?.kronika ?? [], ber = rader.filter(k => k[2]?.startsWith('k_'));
     const hela = ber.every(([, x]) => !/[{}]|undefined|  | \.|^\s*$/.test(x) && /[.!]$/.test(x));
     const slag = new Set(ber.map(k => k[2]));
@@ -2310,7 +2306,6 @@ SCENARIER.amnen = {
 };
 
 SCENARIER.relationstext = {
-  lang: true,
   text: 'Steg 3.9.6: ett tryck på en relation i personrutan berättar utförligt vad hen tycker om den andra och varför: hur nära de är, personkemin, vad de varit med om tillsammans (samtal, barn, gräl, slagsmål, lek, strider sida vid sida, gåvor åt båda hållen; Rel.minns) och vad hen tror om den andra (intrycken och ryktena)',
   kor: () => {
     const hel = (x: string) => !/[{}]|undefined|NaN|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);
@@ -2320,8 +2315,7 @@ SCENARIER.relationstext = {
     SIM.minnsGava(t, a, b); SIM.minnsGava(t, a, b); SIM.minnsGava(t, b, a); SIM.minnsRel(t, a, b, 'gral');
     const ta = SIM.relationText(t, a, b, r).join(' '), tb = SIM.relationText(t, b, a, r).join(' ');
     // i en by som lever: vad relationerna minns efter sex dygn
-    const v = createState(3, START);
-    kor(v, 6 * 24);
+    const v = SIM.cloneState(testBy(10)); // en sparad testby efter minst tio dygn (tio år i spelet)
     const rels = Object.values(v.rels), sum = (k: 'gral' | 'slag' | 'lek' | 'sida') => rels.reduce((n, x) => n + (x.minns?.[k] ?? 0), 0);
     const gavor = rels.reduce((n, x) => n + (x.minns?.gav?.[0] ?? 0) + (x.minns?.gav?.[1] ?? 0), 0);
     const texter = living(v).flatMap(p => living(v).filter(q => q !== p && v.rels[SIM.relKey(p.id, q.id)]).map(q => SIM.relationText(v, p, q, v.rels[SIM.relKey(p.id, q.id)])));
@@ -3094,7 +3088,6 @@ SCENARIER.skvaller = {
   },
 };
 SCENARIER.fulspel = {
-  lang: true,
   text: 'Fulspel (steg 10.8.7): en medlem i fraktionen hittar på något om ledaren när hen pratar med någon utanför den, med chansen 0,3 gånger (10 − empatin) / 10, så att den med empati 10 inte gör det. Den som lyssnar tycker sämre om ledaren. När lögnen når den det sägs ha hänt blir berättaren ertappad, och är den som ertappar lojal mot ledaren avslöjas fraktionen, med en rad i krönikan och en notis',
   kor: () => {
     const by = (seed: number, emp: number) => {
@@ -3106,12 +3099,17 @@ SCENARIER.fulspel = {
       getRel(t, a, b).op = 0; getRel(t, b, l).op = 30; getRel(t, m, l).op = 60;
       return { t, l, a, b, m };
     };
-    // chansen: 200 samtal var
-    const andel = (emp: number) => { let n = 0; for (let i = 0; i < 200; i++) { const x = by(300 + i, emp); SIM.fraktionSamtal(x.t, x.a, x.b); if (x.t.stat?.fulspel) n++; } return n / 200; };
+    // chansen: 200 samtal var i samma by (chansen dras ur pratarens egen slump); relationen mellan dem ställs tillbaka efter varje
+    const andel = (emp: number) => {
+      const x = by(300, emp);
+      for (let i = 0; i < 200; i++) { getRel(x.t, x.a, x.b).op = 0; SIM.fraktionSamtal(x.t, x.a, x.b); }
+      return (x.t.stat?.fulspel ?? 0) / 200;
+    };
+    // den första lögnen i en by: samtalen utan lögn ändrar inget, så samma by prövas tills den kommer
+    const forstaLogn = (seed: number) => { const y = by(seed, 0); for (let i = 0; i < 100 && !y.t.stat?.fulspel; i++) SIM.fraktionSamtal(y.t, y.a, y.b); return y.t.stat?.fulspel ? y : undefined; };
     const a0 = andel(0), a5 = andel(5), a10 = andel(10);
     // en lögn: b tycker sämre om ledaren
-    let x: ReturnType<typeof by> | undefined;
-    for (let i = 0; i < 100 && !x; i++) { const y = by(600 + i, 0); SIM.fraktionSamtal(y.t, y.a, y.b); if (y.t.stat?.fulspel) x = y; }
+    const x = forstaLogn(600);
     const op = getRel(x!.t, x!.b, x!.l).op, e = x!.b.intryck?.find(q => q.om === x!.l.id && q.bev?.[0]?.falsk);
     // lögnen når den det sägs ha hänt: a ertappas av en lojal, fraktionen avslöjas
     const mot = byId(x!.t, e?.bev?.[0]?.mot ?? -1)!;
@@ -3121,8 +3119,7 @@ SCENARIER.fulspel = {
     const kron = x!.t.hist?.kronika?.some(r => r[1] === `${x!.a.name} spred lögner om ${x!.l.name} och blev avslöjad.`) ?? false;
     const not = (x!.t.notiser?.lista ?? []).some(n => n.rader.some(r => /spred lögner om/.test(r)));
     // den som ertappar är inte lojal: fraktionen står kvar
-    let z: ReturnType<typeof by> | undefined;
-    for (let i = 0; i < 100 && !z; i++) { const y = by(800 + i, 0); SIM.fraktionSamtal(y.t, y.a, y.b); if (y.t.stat?.fulspel) z = y; }
+    const z = forstaLogn(800);
     const ez = z!.b.intryck!.find(q => q.om === z!.l.id && q.bev?.[0]?.falsk)!, motz = byId(z!.t, ez.bev![0]!.mot!)!;
     getRel(z!.t, motz, z!.l).op = 0;
     SIM.beratta(z!.t, z!.a, motz, ez, getRel(z!.t, z!.a, motz));
