@@ -160,14 +160,26 @@ const byteVaror = (s: State, varor: Vara[], fran: Part, till: Part): ByteVara[] 
 // bytet i loggen och i bybornas minne (steg 5.5.6): minns en bybo det (p.byten) har raden bara numret (bnr), annars hela
 // bytet. Minnet rymmer BYTE.minnas byten; en affär som inte blev av tar bort den äldsta som inte heller blev av, aldrig ett
 // riktigt byte
-export function loggaByte(rad: LogEntry, minne: ByteMinne, folk: (Person | undefined)[]) {
+export function loggaByte(s: State, rad: LogEntry, minne: ByteMinne, folk: (Person | undefined)[]) {
   const vem = folk.filter((p): p is Person => !!p);
   for (const p of vem) {
     const b = (p.byten ??= []); b.push(minne);
-    if (b.length > BYTE.minnas) b.splice(minne.avbruten ? b.findIndex(x => x.avbruten) : 0, 1);
+    if (b.length > BYTE.minnas) { const [ut] = b.splice(minne.avbruten ? b.findIndex(x => x.avbruten) : 0, 1); if (ut) bytetGlomt(s, ut); }
   }
   if ((rad.sam?.d.length ?? 1) > 1) return; // raden samlar flera byten (steg 6.7.5) och pekar inte på något av dem
   if (vem.some(p => p.byten!.includes(minne))) rad.bnr = minne.nr; else rad.byte = minne;
+}
+// bytet b glöms av den som minns det: minns ingen i folket det längre, får raden i loggen som pekar på numret hela bytet
+function bytetGlomt(s: State, b: ByteMinne) {
+  if (s.people.some(q => q.byten?.some(x => x.nr === b.nr))) return; // efter en inläsning är minnena olika föremål med samma nummer
+  for (const l of s.log) if (l.bnr === b.nr) { l.byte = b; delete l.bnr; }
+}
+// den döda p glömmer sina byten (steg 12.1.24, Sparningen)
+export function glomByten(s: State, p: Person) {
+  const b = p.byten;
+  if (!b) return;
+  delete p.byten;
+  for (const x of b) bytetGlomt(s, x);
 }
 // bytet en rad i loggen handlar om: hela bytet på raden eller det någon minns med numret (filt.ts, gränssnittet)
 export function radByte(s: State, l: LogEntry): ByteMinne | undefined {
@@ -199,7 +211,7 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
   const vardag = !hf && !stort && !desperat, slag = (v: Vara[]) => och([...new Set(v.map(w => SAKER[w.k]?.namn.toLowerCase() ?? w.k))]);
   const rad = loggBer(s, 'l_byte', Math.abs(m.id) * 997 + Math.abs(g.id), { namn: m.namn, med: g.namn, fatt: varorText(fatt), betal: varorText(betal), desperat }, 'rel', [m.id, g.id].filter(i => i > 0), vardag ? { slag: 'byte', k: 0, n: '', d: `${slag(fatt)} mot ${slag(betal)}` } : undefined);
   const text = rad.text;
-  loggaByte(rad, minne, [m.p, g.p]);
+  loggaByte(s, rad, minne, [m.p, g.p]);
   if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
   if (stort) kronika(s, text, 'byte');
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);

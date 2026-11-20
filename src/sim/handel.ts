@@ -880,7 +880,7 @@ const relTal = (s: State, h: Handlare, p: Person) => Math.round(gillar(s, h, p) 
 // ett byte. Bara loggen och minnet; inget i simuleringen läser det
 function avbrutenAffar(s: State, h: Handlare, a: Affar, p: Person) {
   const minne: ByteMinne = { nr: (s.byteNr = (s.byteNr ?? 0) + 1), t: s.now, a: p.id, an: p.name, b: h.id, bn: hp(s, h).name, ag: [], bg: [], forsok: a.forsok, arg: a.arg, avbruten: true, rel: [a.rel0 ?? relTal(s, h, p), relTal(s, h, p)] };
-  loggaByte(log(s, `${p.name} och ${hp(s, h).name} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${a.forsok!.length} bud`}.`, 'rel', [p.id]), minne, [p]);
+  loggaByte(s, log(s, `${p.name} och ${hp(s, h).name} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${a.forsok!.length} bud`}.`, 'rel', [p.id]), minne, [p]);
 }
 // den som inte kommit tillbaka till affären på länge (somnat, blivit sjuk) har gett upp den, och den som dött är borta
 function glomAffar(s: State, h: Handlare) {

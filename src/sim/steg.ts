@@ -122,7 +122,7 @@ import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
 import { allaTing } from './agande';
 import { och } from './ord';
 import { stepPynt } from './pynt';
-import { stadaByten } from './byte';
+import { glomByten, stadaByten } from './byte';
 import { stationById, stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
@@ -1719,7 +1719,9 @@ export const joinParts = (delar: string[]) => {
 };
 
 // varje timme (timblocket ovan): de döda och utflyttade utöver de 120 senaste och relationer mellan två som inte lever
-// tas bort, så att byn och sparfilen hålls små. Sparningen bara läser byn
+// tas bort, så att byn och sparfilen hålls små. Sparningen bara läser byn. De döda behåller bara det berättelserna, krönikan
+// och släktträdet läser: personloggen, bytena, vanorna och tankarna glöms, och relationer till personer som inte längre
+// finns i folket tas bort (steg 12.1.24)
 const MINNS_DODA = 120;
 function compact(s: State) {
   const borta = (p: Person) => !alive(p) && !gastLever(p); // en gäst på kartan är inte borta (steg 9.2.111)
@@ -1729,8 +1731,15 @@ function compact(s: State) {
     const drop = new Set(gone.slice(MINNS_DODA).map(p => p.id));
     s.people = s.people.filter(p => !drop.has(p.id));
   }
-  const ids = new Set(s.people.filter(p => !borta(p)).map(p => p.id));
-  for (const k in s.rels) { const m = /^(-?\d+)-(-?\d+)$/.exec(k), a = Number(m?.[1]), b = Number(m?.[2]); /* gästernas id är negativa */ if (!ids.has(a) && !ids.has(b)) delete s.rels[k]; }
+  for (const p of s.people) if (p.died !== undefined && !p.gast) glomDod(s, p);
+  const ids = new Set(s.people.filter(p => !borta(p)).map(p => p.id)), finns = new Set(s.people.map(p => p.id));
+  for (const k in s.rels) { const m = /^(-?\d+)-(-?\d+)$/.exec(k), a = Number(m?.[1]), b = Number(m?.[2]); /* gästernas id är negativa */ if (!ids.has(a) && !ids.has(b) || !finns.has(a) || !finns.has(b)) delete s.rels[k]; }
+}
+function glomDod(s: State, p: Person) {
+  glomByten(s, p);
+  delete p.hand;
+  if (Object.keys(p.habit).length) p.habit = {};
+  if (p.thoughts.length) p.thoughts = [];
 }
 import { bakaKlar, gropKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
 import { stepStationsEld } from './stationseld';
