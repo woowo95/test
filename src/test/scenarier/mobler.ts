@@ -378,3 +378,27 @@ SCENARIER.fyrfat = {
     ];
   },
 };
+
+SCENARIER.tval = {
+  text: 'Tvålen i vården (steg 12.4.12): den som vårdar ett sår och kan Rena händer tvättar händerna med 1 tvål om byn har någon, och såret blir då mer sällan infekterat (0,3 gånger risken mot 0,5 med bara rena händer); byns mål för tvål räknas ur förbrukningen',
+  kor: () => {
+    const s = SIM.createState(1, START), [g, q] = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    klockan(s, 12);
+    SIM.learnK(g, 'renahander', 1, s.now);
+    const sar = () => ({ d: 'vanster_arm', k: 'skarsar', g: 0.5, b: 0 } as unknown as SIM.Skada);
+    const w1 = sar(), w2 = sar();
+    q.skador = [w1, w2];
+    SIM.setStock(s, { remsa: 4, tval: 1 });
+    SIM.VARD.forband.gor(s, g, q, w1);
+    const medTval = w1.rh === 2 && SIM.amountOf(s, 'tval') === 0;
+    SIM.VARD.forband.gor(s, g, q, w2);
+    const utan = w2.rh === 1;
+    const mal = SIM.MATERIALMAL.tval;
+    return [
+      [`med tvål tvättar hen händerna och tvålen går åt (${w1.rh})`, medTval],
+      [`utan tvål bara rena händer (${w2.rh})`, utan],
+      [`risken är ${SIM.HALSA.tval} gånger med tvål mot ${SIM.HALSA.renaHander} med bara rena händer`, SIM.HALSA.tval === 0.3 && SIM.HALSA.renaHander === 0.5],
+      [`byns mål för tvål följer förbrukningen (förrådsmålen, minst ${mal.min()})`, SIM.arMaterial('tval')],
+    ];
+  },
+};

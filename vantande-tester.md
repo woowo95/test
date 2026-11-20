@@ -46,3 +46,4 @@
 - Fel som fanns före 12.4 (på varld, 255ee7f): testbyn i scenariot latriner (testBy(30), 16 invånare i istiden) fryser ihjäl på ett dygn, 15 av 16, om den får en benspade. Utan spaden lever alla. Värt att undersöka.
 - 12.4.11 (fyrfatet): ELDSTATIONER har fått fältet gnistor (brand.ts gnistrar från stationseldar med det); byn ställer ett fyrfat i ett rum där folk sover utan härd och lägger kol i det när det är kallt (projektet fyrfat). Vaggan och fyrfatet tar ingen sovplats när de ställs (siteInne).
 - Röda redan på varld (255ee7f), inte av 12.4: scenariot brinner (branden i snön sprids inte).
+- 12.4.12 (tvålen i vården): vårdaren som kan Rena händer tar en tvål till såret (vardHamtas) och tvättar händerna med den; tvålen går nu åt, så byar med örtkök kokar mer tvål.
