@@ -10,7 +10,7 @@ const START = require('fs').existsSync(chromium.executablePath()) ? {} : { execu
 const fs = require('fs'), path = require('path');
 const HAR = __dirname, RA = path.join(HAR, 'ra');
 fs.mkdirSync(RA, { recursive: true });
-const SIDA = 'file://' + path.join(HAR, 'matt.html');
+const SIDA = 'file://' + path.join(HAR, process.env.MATT ?? 'matt.html'); // MATT=annan.html: en sparad mätversion (växelvis före och efter)
 const ETIKETT = process.env.ETIKETT ? '-' + process.env.ETIKETT : '';
 const SKARMAR = {
   dator: { viewport: { width: 1300, height: 850 } },
