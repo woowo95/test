@@ -150,6 +150,7 @@ try { ui.spola = localStorage.getItem(SPOLA_NYCKEL) === '1'; } catch { /* utan w
 // sparas därför bara när den syns. Byn sparas efter hand (IKAPP_LOKAL_MS och IKAPP_MOLN_MS), så att en omladdning
 // fortsätter där räknandet var och inte börjar om; sammanställningen (s.borta) sparas med byn och gäller hela tiden
 const BIT_MS = 100, BIT_SPOLA_MS = 30; // datorns tid per bit, och när kartan visas medan den räknas
+const RITA_MIN_MS = 120, RITA_GANGER = 4; // snabbspolningens bilder: högst åtta i sekunden, och väntan minst fyra gånger ritningens tid (steg 12.1.179)
 const IKAPP_LOKAL_MS = 15000, IKAPP_MOLN_MS = MIN; // hur ofta byn sparas i webbläsaren och i molnet under räknandet
 // nästa bit efter att webbläsaren fått svara (förloppet, knapparna): ett meddelande till sig själv, som inte väntar de minst
 // 4 ms en setTimeout gör och inte stryps till en gång i sekunden när fliken är gömd
@@ -166,7 +167,7 @@ export async function catchUp(target: number) {
   const from = s.now;
   if (showOverlay) s.borta ??= { fran: from, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0, folk: living(s).length };
   const ov = $('overlay');
-  let senastRitad = 0;
+  let senastRitad = 0, ritTid = 0; // när kartan senast ritades i snabbspolningen och hur lång tid det tog (datorns tid)
   const rita = ikapp.rita, spolar = () => showOverlay && ui.spola && !!rita;
   const visaSpola = () => {
     ov.classList.toggle('spolar', spolar());
@@ -195,8 +196,13 @@ export async function catchUp(target: number) {
         // förloppet i år (steg 11.1.64): År 3 av 5 · 60 %, och bara procenten när det är mindre än ett år
         const arN = Math.ceil(span / DAY), arK = Math.min(arN, Math.floor((s.now - from) / DAY) + 1);
         const pt = document.getElementById('progTxt'); if (pt) pt.textContent = `${arN >= 2 ? `År ${arK} av ${arN} · ` : ''}${Math.round(f * 100)} %`;
-        // kartan som den ser ut nu: byn spolas fram medan den räknas (högst åtta bilder i sekunden, så att räknandet går fort)
-        if (syns && performance.now() - senastRitad > 120) { rita!(); app.render(); senastRitad = performance.now(); }
+        // kartan som den ser ut nu: byn spolas fram medan den räknas (steg 12.1.179). Nästa bild ritas när det gått minst
+        // RITA_GANGER gånger så lång tid som den förra tog att rita, och aldrig oftare än var RITA_MIN_MS: då tar ritningen
+        // högst ungefär en femtedel av tiden, också på en långsam dator
+        const tn = performance.now();
+        if (syns && tn - senastRitad > Math.max(RITA_MIN_MS, RITA_GANGER * ritTid)) {
+          rita!(); app.render(); senastRitad = performance.now(); ritTid = senastRitad - tn;
+        }
       }
       if (s.now < target) nasta(chunk); else resolve();
     };

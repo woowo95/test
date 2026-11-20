@@ -10,7 +10,7 @@ import { rasterPa } from '../palett';
 import * as PIXI from 'pixi.js';
 import { FARGER, kornPa } from '../palett';
 import { brus as vn, platsHash as hash, sinHash3 } from './pixel';
-import { fotSkugga, skuggTrad } from './skugga';
+import { tradSkuggLista } from './skugga';
 import { BUSK_FORMER, buskPx } from './buske';
 
 const KOL = 0, JORD = 4, BARR = 20, BEN = 28;
@@ -322,8 +322,8 @@ export function fortsattTrad(ms: number) {
     const i = ordning[v.pos], b = bild(i), x = i % W, y = (i / W) | 0, stam = stammar && !!b && b.h >= 8, k = b ? (stam ? 'S|' : '') + nyckel(b, sno) : '';
     const f = sprites.get(i);
     if (f?.k === k) continue;
-    skuggaAndrad = true;
-    if (!b) { if (f) { f.sp.destroy(); sprites.delete(i); } continue; }
+    if (!b) { if (f) { f.sp.destroy(); sprites.delete(i); skuggaAndrad = true; } continue; }
+    if (!f || skuggW(f.b) !== skuggW(b) || skuggRy2(f.b) !== skuggRy2(b)) skuggaAndrad = true; // snö, löv, kol och hamling ändrar inte skuggans form (steg 12.1.181)
     const sp = f?.sp ?? Object.assign(new PIXI.Sprite(), { cullable: true }); // ett träd utanför skärmen ritas inte (steg 9.1.3)
     const tx = stam ? stamTex(b) : tradTex(b, sno), t = sp.texture = tx.t;
     const bx = x * 16 + 8 + Math.round((hash(x, y, 595) - 0.5) * 8), by = y * 16 + 14 + Math.round((hash(x, y, 596) - 0.5) * 4);
@@ -337,16 +337,15 @@ export function fortsattTrad(ms: number) {
 // trädens skuggor på marken (steg 5.1.8, ui/skugga.ts): bildstilens oval vid foten, ungefär så bred som kronan (den döda
 // granen har tunna grenar och en smalare skugga). Ritas om bara när träden ändras, eller när skuggan blir längre
 let skuggLang = -1;
+// skuggans form för trädet b: halva bredden w och höjden i kvadrat ry2 (fotSkugga i skugga.ts)
+const skuggW = (b: TradBild) => b.typ === 'buske' ? 6 : Math.max(1, Math.round(b.h * (b.typ === 'torr' && !b.bjork ? 0.2 : b.bjork ? 0.3 : 0.28)));
+const skuggRy2 = (b: TradBild) => b.h < 8 ? 2 : 5;
 export function tradSkuggor(lang = 1) {
   if (!skuggaAndrad && lang === skuggLang) return;
   skuggaAndrad = false; skuggLang = lang;
-  const fasta = skuggTrad();
-  fasta.clear().beginFill(0xffffff);
-  for (const { b, x, y } of sprites.values()) {
-    const w = b.typ === 'buske' ? 6 : Math.max(1, Math.round(b.h * (b.typ === 'torr' && !b.bjork ? 0.2 : b.bjork ? 0.3 : 0.28)));
-    fotSkugga(fasta, x, y, w, b.h < 8 ? 2 : 5, lang);
-  }
-  fasta.endFill();
+  const lista: { x: number; y: number; w: number; ry2: number }[] = [];
+  for (const { b, x, y } of sprites.values()) lista.push({ x, y, w: skuggW(b), ry2: skuggRy2(b) });
+  tradSkuggLista(lista, lang);
 }
 
 // Träden skymmer inte (steg 5.1.4.6): en krona som står framför (söder om) något man behöver se, folk, djur, saker på
