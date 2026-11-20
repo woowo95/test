@@ -158,6 +158,10 @@ const DEF = {
   kolmila: { var: 'station', av: {}, min: 10 }, // grävs med spaden (steg 12.2.1)
   blasterugn: { var: 'station', av: { lera: 6, sten: 4, skinn: 2, virke: 1 }, min: 20 }, // skinnen och virket är bälgen (steg 12.2.3)
   smedja: { var: 'station', av: { huggen_sten: 6, lera: 2, skinn: 2, virke: 1, jarn: 1 }, min: 20 }, // järnet är hammaren och tången (steg 12.2.4)
+  // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
+  jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },
+  jarnkniv: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' },
+  lie: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },
   bikupa: { var: 'station', av: { torrgras: 4, grenar: 2 }, min: 10, tek: 'bikupa' }, // bikupan (steg 10.10.16): en halmkupa flätad av hö på grenar
   kompost: { var: 'station', av: { virke: 1 }, min: 10, tek: 'kompost' }, // komposten (steg 9.7.6): en enkel inhägnad av lite trä
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },

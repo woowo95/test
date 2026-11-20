@@ -2,7 +2,7 @@ import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
-import { ACTS, ACT_LIST, toolRow } from './handlingar';
+import { ACTS, ACT_LIST, redskapTal, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, iSlag, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
 import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
@@ -157,7 +157,7 @@ export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.m
 export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && iSlag(t.k, 'kniv'))) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && (ACTS[art.act]?.plats === 'station' ? !!stationFor(s, art.act, p) : enTill(s, art.act, p)); // en bänk rymmer sin arbetare (steg 10.2.5)
 // slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
 export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
-  const n = Math.min(hours * art.timme, harTillHands(s, p, art.sak) / art.mat); // det hen har till hands (steg 11.1.74)
+  const n = Math.min(hours * art.timme * redskapTal(art.act, p.task?.tool).fart, harTillHands(s, p, art.sak) / art.mat); // det hen har till hands (steg 11.1.74); järnkniven tre gånger så fort (steg 12.2.6)
   if (n <= 0 || art.kniv && knives(s) < 1 || !kanGoras(s, art.act)) { if (p.task) p.task.until = s.now; return; }
   const vems = stycka(s, p, art, n);
   heligtBrutet(s, p, art.art); // det heliga djuret slaktas bara i nöd (steg 10.3.15)

@@ -55,7 +55,7 @@ HAMTAS.dorr = { av: (_s, _p, tk) => DORRAR[tk.tool as DorrSlag]?.av };
 const djurHamtas: Hamtas = { av: (s, p, tk) => {
   const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === tk.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt));
   // hela djur: det som hinns, avrundat uppåt till ett helt djur (en del av ett djur går inte att slakta)
-  const n = a ? Math.ceil(Math.min((tk.until - s.now) / HOUR * a.timme, djurKvar(s, a)) - 1e-9) * a.mat : 0;
+  const n = a ? Math.ceil(Math.min((tk.until - s.now) / HOUR * a.timme * redskapTal(a.act, tk.tool).fart, djurKvar(s, a)) - 1e-9) * a.mat : 0; // järnkniven (steg 12.2.6)
   return n > 0 ? { [a!.sak]: n } : undefined;
 } };
 for (const a of DJURARTER) HAMTAS[a.act] ??= djurHamtas;
@@ -181,3 +181,7 @@ function laggVid(s: State, p: Person, tk: Task) {
 HAMTAS.kola = { av: (s, _p, tk) => branningHamtas(s, tk) };
 HAMTAS.blasa = HAMTAS.kola; // malmen och kolet till blästerugnen (steg 12.2.3)
 import { branningHamtas } from './brann';
+// järnredskapen som smids (steg 12.2.6, jarnsaker.ts): materialet i receptet
+HAMTAS.smida = { av: (_s, _p, tk) => smidaHamtas(tk) };
+import { smidaHamtas } from './jarnsaker';
+import { redskapTal } from './handlingar';

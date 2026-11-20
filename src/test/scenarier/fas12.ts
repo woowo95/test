@@ -261,3 +261,37 @@ SCENARIER.smedja = {
     ];
   },
 };
+
+SCENARIER.jarnredskap = {
+  text: 'Järnredskapen (steg 12.2.6, jarnsaker.ts): järnyxan, järnkniven och lien smids i smedjan och ligger i redskapens grupper; de arbetar tre gånger så fort som stenredskapen, håller fyra till fem gånger så länge, och järnsaken tas före stensaken',
+  kor: () => {
+    const R = SIM.RECEPT, A = SIM.ACTS;
+    const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = vuxna[0];
+    klockan(s, 10);
+    for (const q of vuxna) Object.assign((q.tek ??= {}), { smedja: 1, yxa: 1, kniv: 1 });
+    const t = medBank(s, 'smedja');
+    SIM.setStock(s, { jarn: 6, grenar: 6, kol: 4 });
+    const brist = SIM.jarnBrist(s, 'jarnyxa'), u = SIM.PROJEKT.jarnyxa!.uppgift(s, p), kan = SIM.PROJEKT.jarnyxa!.kan(s, p, { kyla: false, gras: 0 });
+    // smidet: materialet tas och yxan blir hens
+    const tk = { act: 'smida', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', tool: 'jarnyxa', ref: t.id } as SIM.Task;
+    p.task = tk; SIM.smidaKlar(s, p, tk); p.task = undefined;
+    const yxa = SIM.tingOf(s).find(q => q.k === 'jarnyxa'), jarnKvar = SIM.amountOf(s, 'jarn');
+    // järnsaken tas före stensaken: en flintyxa och en järnyxa, och p tar järnyxan
+    SIM.addTool(s, 'yxa', p);
+    const tagen = SIM.take(s, p, 'yxa');
+    // fällningen: tre gånger så fort med järnyxan
+    const i = SIM.tileOf(p.x, p.y), fall = (k: string) => { const q: SIM.Task = { act: 'falla', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: k } as SIM.Task; SIM.startWork(s, p, q); return q.until - s.now; };
+    const sten = fall('yxa'), jarn = fall('jarnyxa');
+    void i;
+    return [
+      [`recepten: järnyxa ${JSON.stringify(R.jarnyxa.av)} ${R.jarnyxa.min} min, järnkniv ${JSON.stringify(R.jarnkniv.av)} ${R.jarnkniv.min} min, lie ${JSON.stringify(R.lie.av)} ${R.lie.min} min`, R.jarnyxa.av.jarn === 2 && R.jarnyxa.av.grenar === 1 && R.jarnyxa.min === 5 && R.jarnkniv.av.jarn === 1 && R.jarnkniv.min === 4 && R.lie.av.jarn === 2 && R.lie.min === 5],
+      [`de ligger i grupperna yxa, kniv och skära med högre rang än stensaken`, SIM.gruppOf('jarnyxa') === 'yxa' && SIM.gruppOf('jarnkniv') === 'kniv' && SIM.gruppOf('lie') === 'skara' && (SIM.SAKER.jarnyxa!.rang ?? 0) > (SIM.SAKER.yxa!.rang ?? 0)],
+      [`byn som vill ha en yxa saknar en av järn (${brist}), och den smids vid städet (${u?.act}, ${kan})`, brist > 0 && u?.act === 'smida' && u.tool === 'jarnyxa' && u.ref === t.id && kan],
+      [`smidet tar 2 järn (kvar ${jarnKvar}) och yxan blir smedens`, !!yxa && yxa.agare === p.id && jarnKvar === 4],
+      [`järnyxan tas före flintyxan (${tagen?.k})`, tagen?.k === 'jarnyxa'],
+      [`järnyxan fäller ett träd på en tredjedel av tiden (${Math.round(sten / 1000)} s mot ${Math.round(jarn / 1000)} s)`, Math.abs(sten / jarn - 3) < 1e-6],
+      [`hugga och klyva ger tre gånger så mycket med järnyxan, slakten går tre gånger så fort med järnkniven`, A.hugga.redskap!.jarnyxa.ger === 3 && A.klyva.redskap!.jarnyxa.ger === 3 && A.slakta.redskap!.jarnkniv.fart === 3 && A.falla.redskap!.jarnyxa.fart === 3],
+      [`järnsakerna håller fyra till fem gånger så länge (yxan ${A.falla.redskap!.jarnyxa.haller} träd mot ${A.falla.redskap!.yxa.haller}, kniven ${A.slakta.redskap!.jarnkniv.haller} mot ${A.slakta.redskap!.kniv.haller})`, A.falla.redskap!.jarnyxa.haller! / A.falla.redskap!.yxa.haller! >= 4 && A.slakta.redskap!.jarnkniv.haller! / A.slakta.redskap!.kniv.haller! >= 4],
+    ];
+  },
+};
