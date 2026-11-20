@@ -5,6 +5,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import * as O from '../../sim/ord';
 import { PIX } from '../../ikoner';
+import { titta } from '../textkoll';
 import { TEKNIK } from '../../sim/teknik';
 import { medVatska, SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
@@ -1030,7 +1031,7 @@ function ordFall(): [string, boolean][] {
 }
 
 SCENARIER.textfel = {
-  text: 'Steg 12.1.119: texter som säger emot spelet. Skador räknas inte som bedrifter och står för sig (två ärr på samma ställe en gång), och händerna är inget vapen man ogillar',
+  text: 'Steg 12.1.119: texter som säger emot spelet. Skador räknas inte som bedrifter och står för sig (två ärr på samma ställe en gång), och händerna är inget vapen man ogillar. Steg 12.1.122: titta (npm run texter och testernas vakt) skriver också handeln, framträdandet, matchen och sammanfattningen efter tiden borta',
   kor: () => {
     const s = createState(6, START), p = s.people[0];
     p.fame = ['Tände byns första eld', 'Fick ett ärr i vänstra benet', 'Fick ett ärr i vänstra benet', 'Förlorade två fingrar', 'Blev ökänd', 'Tände byns första eld'];
@@ -1039,10 +1040,20 @@ SCENARIER.textfel = {
       [`bedrifterna utan skador och dubbletter: ${bed.join(', ')}`, bed.length === 1 && bed[0] === 'Tände byns första eld'],
       [`skadorna för sig: "${sk}"`, sk === 'har två ärr i vänstra benet och har förlorat två fingrar'],
       [`texterna utan bara händerna som vapen: ${SIM.BERATTELSER.besk_handGilla.length} varianter för nävarna`, SIM.BERATTELSER.besk_handGilla.length >= 8 && !JSON.stringify(SIM.BERATTELSER).includes('bara händerna')],
+      ...tittaFall(),
     ];
   },
 };
 
+// steg 12.1.122: verktyget texter (titta) skriver också sammanfattningen efter tiden borta, så att mallarna b_* går genom kontrollerna
+function tittaFall(): [string, boolean][] {
+  const s = testBy(20), mallar = new Set<string>();
+  SIM.lyssnaPaTexter(m => { mallar.add(m); });
+  titta(s);
+  SIM.lyssnaPaTexter(undefined);
+  const b = [...mallar].filter(m => m.startsWith('b_'));
+  return [[`titta skriver sammanfattningen efter tiden borta (${b.join(', ') || 'inget'})`, b.length > 0]];
+}
 SCENARIER.omrostning = {
   text: 'Steg 8.3.1–8.3.3: allt byn avgör är en fråga i FRAGOR. Klockan 20 röstar alla vuxna efter åsikter och intresse, summan av vikterna avgör, och vid Envälde väger nästan bara ledaren. Omröstningarna sparas',
   kor: () => {

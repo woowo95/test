@@ -18,6 +18,9 @@ export const horText = (slag: string, text: string) => { if (TEXTLYSS.f) TEXTLYS
 const TAL = ['ingen', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta', 'nio', 'tio', 'elva', 'tolv'];
 // ett tal som ord: 0–12 som ord, annars siffror (ålder, år och sådant där talet behövs). ett = ett-ord ("ett år")
 export const talOrd = (n: number, ett = false) => n === 1 && ett ? 'ett' : TAL[n] ?? String(n);
+// ett tal i ord också över tolv, upp till 99 (folket i en by: "sexton"), annars siffror (steg 12.1.122)
+const TIOTAL = ['', '', 'tjugo', 'trettio', 'fyrtio', 'femtio', 'sextio', 'sjuttio', 'åttio', 'nittio'], TONAR = ['tretton', 'fjorton', 'femton', 'sexton', 'sjutton', 'arton', 'nitton'];
+export const heltOrd = (n: number, ett = false) => { n = Math.max(0, Math.round(n)); return n <= 12 ? talOrd(n, ett) : n < 20 ? TONAR[n - 13] : n < 100 ? TIOTAL[Math.floor(n / 10)] + (n % 10 ? talOrd(n % 10, ett) : '') : String(n); };
 // ett antal i löpande text: 0–12 som ord, fler än tolv "många", fler än 200 "otaliga" (ett = ett-ord vid 1)
 export const tal = (n: number, ett = false) => n > 200 ? 'otaliga' : n > 12 ? 'många' : talOrd(Math.max(0, Math.round(n)), ett);
 // "en gång", "tre gånger", "många gånger", "otaliga gånger"

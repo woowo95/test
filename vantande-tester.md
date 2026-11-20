@@ -12,6 +12,12 @@
 - 12.1.18 (förråden växer med det som inte får plats) ändrade byarna så att scenariot klader fick fler ben; fler scenarier kan ha påverkats och syns i koll.
 - 12.1.21 (rikedomen lockar): `npm run strid` före (på 141bbace) och efter (85a3aff3), en gång var, som information om flockarna.
 
+## Grenen par-texter (12.1.118–12.1.122, texterna efter granskningen)
+
+- Committerna på par-texter har bara typkontrollen och stegens egna scenarier (ord, textfel, tidsord) bakom sig, och ett tjugotal scenarier om texterna. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld.
+- Textkontrollerna går nu också på loggen, krönikan, notiserna, tankarna och resans dagbok (12.1.118), och titta() skriver också handeln vid filten, framträdandet, matchen och sammanfattningen (12.1.122). En fel text där ger vaktlarmet `text <kontroll>` i koll. `npm run texter` med 4 byar i 20 dygn (20 år i spelet) hade 0 fel efter steget; fler byar och dygn kan hitta fler, och de rättas i texten, inte i kontrollen.
+- Stegen ändrar bara texter, men tankarna slås ihop efter sin text (think i folk.ts), så en tanke som nu skrivs med ord ("Uppträdde för många vid elden" över tolv) kan slå ihop två som förut var olika och ändra humöret lite. Samma-kollen och facit kan därför visa annan utveckling; nytt facit sparas när koll är grön.
+
 ## Hopslagna nattgrenar
 
 - natt-bildstil (12.1.69, 12.1.70, 12.1.102): src/portrattkarna.ts är omskriven (samma porträtt punkt för punkt); skyldig samma-kollen och `npm run utseende`.

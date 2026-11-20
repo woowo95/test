@@ -6,7 +6,7 @@
 // ui/spara.ts räknar ikapp och visar rutan; den här filen bygger bara innehållet, så att ett scenario kan läsa det.
 import { ARSTIDER, Borta, DAY, HOUR, MallId, State, WEEK, berattelse, kalender, ledareOf, living, olasta, talOrd } from '../sim';
 import { esc, kronikaLank } from './hjalp';
-import { spelTid } from '../sim/ord';
+import { heltOrd, spelTid, tal as talMangd } from '../sim/ord';
 import { s } from './lage';
 
 // registret: kronikans slag (raden får mallens id eller ett eget slag) och hur viktiga de är i berättelsen, högst först.
@@ -48,7 +48,7 @@ function valj(rader: Rad[], max: number) {
 function stycke(st: State, rader: Rad[], max: number, nyckel: number, forst?: string) {
   const { ut, over } = valj(rader, max);
   const m = ut.map(r => utanAr(r.text));
-  if (over) m.push(berattelse(st, 'b_ovrigt', nyckel, { n: talOrd(over) }));
+  if (over) m.push(berattelse(st, 'b_ovrigt', nyckel, { n: talMangd(over) }));
   return [forst, ...m].filter(Boolean).join('\n'); // en rad per händelse (steg 8.1.10)
 }
 const tal = (rader: Rad[]) => ({ dodaTal: rader.filter(isDod).length, foddaTal: rader.filter(isFodd).length });
@@ -63,7 +63,7 @@ export function bortaBerattelse(st: State, b: Borta): string[] {
   if (L.dela === 'en') return [stycke(st, rader, L.max, b.fran)];
   const nu = living(st).length, fore = b.folk ?? nu - ((st.stat?.fodda ?? 0) - b.fodda) + ((st.stat?.doda ?? 0) - b.doda);
   const t0 = tal(rader);
-  ut.push(berattelse(st, 'b_inledning', b.fran, { ar: talOrd(Math.round(ar)), fore: talOrd(fore), nu: talOrd(nu), foreTal: fore, nuTal: nu, fodda: talOrd(t0.foddaTal, true), doda: talOrd(t0.dodaTal), ...t0 }));
+  ut.push(berattelse(st, 'b_inledning', b.fran, { ar: talOrd(Math.round(ar)), fore: heltOrd(fore), nu: heltOrd(nu), foreTal: fore, nuTal: nu, fodda: talOrd(t0.foddaTal, true), doda: talOrd(t0.dodaTal), ...t0 }));
   // grupperna: ett år (kalenderns år) eller en tidsålder (kalenderns start), i tidsordning
   const grupper: { nyckel: number; fran: number; till: number; ai: number; rader: Rad[] }[] = [];
   for (let t = b.fran; t < st.now + 1; t += L.dela === 'ar' ? DAY : WEEK / 7) {
@@ -88,7 +88,7 @@ export function bortaBerattelse(st: State, b: Borta): string[] {
   }
   if (L.dela === 'alder') {
     const led = ledareOf(st), h = (st.hus ?? []).filter(x => x.klar).length;
-    ut.push(berattelse(st, 'b_nu', st.now / HOUR, { antal: talOrd(nu), ledare: led?.name, hus: h ? (h === 1 ? 'ett hus' : `${talOrd(h)} hus`) : undefined }));
+    ut.push(berattelse(st, 'b_nu', st.now / HOUR, { antal: heltOrd(nu), ledare: led?.name, hus: h ? (h === 1 ? 'ett hus' : `${heltOrd(h)} hus`) : undefined }));
   }
   return ut;
 }

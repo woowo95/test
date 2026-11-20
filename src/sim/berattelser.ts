@@ -1935,7 +1935,7 @@ const MDEF = {
     { t: '{Publik} stod runt dem och ropade och hejade.', om: f => Number(f.nPub) > 1 },
     { t: '{Publik} stod en bit bort och hejade på dem.', om: f => Number(f.nPub) === 1 },
     { t: '{Publik} kom och tittade och hejade högt.', om: f => Number(f.nPub) === 1 },
-    { t: 'Det var bara {publik} som tittade, men hen hejade för flera.', om: f => Number(f.nPub) === 1 },
+    { t: 'Det var bara {publik} som tittade, men hejandet räckte för flera.', om: f => Number(f.nPub) === 1 },
     { t: '{Publik} samlades runt platsen för att se på.', om: f => Number(f.nPub) > 1 },
     { t: '{Publik} satt i gräset och tittade på hela matchen.', om: f => Number(f.nPub) === 1 },
   ],
