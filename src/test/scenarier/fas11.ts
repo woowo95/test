@@ -1508,26 +1508,43 @@ SCENARIER.gastort = {
 };
 
 SCENARIER.byruta = {
-  text: 'Byns ruta på världskartan (steg 11.4.12, platsRuta i ort.ts och ui/varldskarta.ts): spalterna Byn tror (med året och varifrån) och Sant nu, vilka som känner platsen och varningen Bara en vet',
+  text: 'Byns ruta på världskartan (steg 11.4.12 och 12.1.30, platsRuta och byFlikar i ort.ts och ui/varldskarta.ts): Byn tror (med året och varifrån) och Sant nu, vet eller tror, flikarna med folket, tron, teknikerna, historien och förbindelsen, vilka som känner platsen och varningen Bara en vet',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const r = vl.rader!.find(x => SIM.lever(vl, x) && vl.platser!.some(q => q.by === x.nr && !SIM.iNaromradet(s, q.nr)))!, nr = vl.platser!.find(q => q.by === r.nr)!.nr;
     const t0 = s.now - 20 * SIM.DAY;
     r.hist = [{ t: t0, tal: { ...r.tal, folk: 11 }, led: 'Ulf' }];
-    const okand = SIM.platsRuta(s, nr);
+    const okand = SIM.platsRuta(s, nr), okandF = SIM.byFlikar(s, nr)!;
     SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR, src: b!.id }); SIM.raknaBynVet(s);
     const en = SIM.platsRuta(s, nr)!;
     SIM.larOrt(s, b!, nr, SIM.O_RYKTE, 1); SIM.raknaBynVet(s);
     const tva = SIM.platsRuta(s, nr)!;
     const folk = en.rader.find(d => d.namn === 'Invånare'), led = en.rader.find(d => d.namn === 'Ledare');
-    const egen = SIM.platsRuta(s, vl.platser!.find(q => q.by === vl.huvud)!.nr)!;
+    const egenNr = vl.platser!.find(q => q.by === vl.huvud)!.nr, egen = SIM.platsRuta(s, egenNr)!;
+    // flikarna (steg 12.1.30): det byn vet eller tror, folket, tron, teknikerna, historien och förbindelsen
+    SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 2 * SIM.HOUR }); SIM.raknaBynVet(s); // b har hört det av någon
+    r.fasta = [{ namn: 'Ulf', kon: 'm', fodd: t0 - 30 * SIM.DAY * 365, roll: 'ledare' }, { namn: 'Död', kon: 'k', fodd: 0, roll: 'handlare', dor: t0 }]; r.ledare = 0;
+    r.tek = [SIM.TEKNIK[0]!.id]; r.tro = { namn: 'Solens väg', andel: 0.42, krig: 0 };
+    const hNy = SIM.varldHandelse(vl, 'nyLedare', t0, { by: r.nr }), hSen = SIM.varldHandelse(vl, 'svalt', s.now + SIM.HOUR, { by: r.nr }) // efter det byn hört;
+    const rad = SIM.varldHandelse(vl, 'rad', t0, { by: r.nr, mot: vl.huvud });
+    const kand = SIM.byFlikar(s, nr)!, egenF = SIM.byFlikar(s, egenNr)!;
+    const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
+    const ui = /BYFLIKAR = \[(\s*\{ id: '\w+'[^\n]*\n){6}\]/.test(kod) && /\.vkHuvud \{[^}]*flex-wrap: wrap/.test(kod) && /\.vkDuk \{[^}]*flex: 3 1/.test(kod) && /class="vkOkand"[^>]*>\?</.test(kod) && kod.includes("'👁' : '👂'") && /data-id="\$\{p\.id\}"/.test(kod);
     return [
+      [`flikarna: okänd by har inget om folket, teknikerna eller förbindelsen (${okandF.ruta.visshet ?? 'ingen visshet'})`, !okandF.ruta.visshet && !okandF.folket && !okandF.tek && !okandF.forb],
+      [`hört av någon är Byn tror (${kand.ruta.visshet}), den egna byn Byn vet (${egenF.ruta.visshet})`, kand.ruta.visshet === 'tror' && egenF.ruta.visshet === 'vet' && en.visshet === 'tror'],
+      [`folket: ledaren, men inte den döda (${kand.folket?.map(p => `${p.namn} ${p.roll}`).join(', ')})`, !!kand.folket?.some(p => p.namn === 'Ulf' && p.roll === 'Ledare') && !kand.folket.some(p => p.namn === 'Död')],
+      [`tron med andelen och teknikerna (${kand.tro?.namn} ${kand.tro?.andel} %, ${kand.tek?.length})`, kand.tro?.andel === 42 && kand.tek?.length === 1],
+      [`historien: bara det byn hört (${kand.historia.length})`, kand.historia.some(h => h.text === SIM.varldHandelseText(vl, hNy)) && !kand.historia.some(h => h.text === SIM.varldHandelseText(vl, hSen))],
+      [`förbindelsen: räderna mot den egna byn (${kand.forb?.rader})`, kand.forb?.rader === 1 && !!rad],
+      ['den egna byns ruta har inga förbindelser', !egenF.forb && egenF.ruta.rader.every(d => d.tror === d.sant)],
+      ['rutan till höger om kartan (under på en smal skärm), sex flikar, grått ? och 👁/👂, länkar till personerna', ui],
       [`en okänd plats har ingen spalt Byn tror (${okand?.niva ?? 'okänd'})`, !!okand && !okand.niva && okand.rader.every(d => d.tror === undefined) && okand.rader.length > 0],
       [`Byn tror är byns tal vid uppgiftens tid, Sant nu är talen nu (${folk?.tror} mot ${folk?.sant})`, folk?.tror === '11' && folk.sant === String(r.tal.folk) && led?.tror === 'Ulf'],
       [`året och varifrån (år ${en.ar}, ${en.kalla})`, en.ar === SIM.yearNo(s, t0 + SIM.HOUR) && !!en.kalla?.includes(b!.name)],
       [`vilka som vet (${en.vem.join(', ')}) och Bara en vet`, en.vem.length === 1 && en.vem[0] === a!.name && en.baraEn],
       [`två som vet: ingen varning (${tva.vem.length})`, tva.vem.length === 2 && !tva.baraEn],
-      ['byns egen plats har ingen jämförelse', egen.egen && !egen.rader.length],
+      ['byns egen plats: det byn vet är detsamma som det som är sant', egen.egen && egen.rader.length > 0 && egen.rader.every(d => d.tror === d.sant)],
     ];
   },
 };

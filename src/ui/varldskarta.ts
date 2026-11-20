@@ -4,7 +4,7 @@
 // med musen eller fingret och zooma med hjulet eller två fingrar. Musen över en ruta visar marken och platserna där, och ett tryck
 // utan att dra skriver det under kartan. Kartan har en fast höjd, så att den behåller sin storlek när texten under den ändras.
 // Själva bilden räknas i ui/varldbild.ts.
-import { vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { byFlikar, PlatsRuta, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
 import { omUngefar } from './hjalp';
@@ -13,7 +13,8 @@ import { TECKEN, TECKENPAL, VK, Vy, begransa, dra, helaKartan, namnPaKartan, NAM
 const stil = document.createElement('style');
 stil.textContent = `
 .vkRuta { display: flex; flex-direction: column; gap: 4px; }
-.vkDuk { position: relative; height: min(62vh, 520px); flex: none; background: ${farg('kol', 0)}; border-radius: 3px; overflow: hidden; }
+.vkHuvud { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
+.vkDuk { position: relative; height: min(62vh, 520px); flex: 3 1 340px; min-width: 0; background: ${farg('kol', 0)}; border-radius: 3px; overflow: hidden; }
 .vkDuk canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; image-rendering: pixelated; }
 .vkDuk canvas.drar { cursor: grabbing; }
 .vkInfo { margin: 0; padding: 6px 8px; min-height: 1.4em; color: ${farg('ben', 3)}; background: ${farg('kol', 1)}; border-radius: 3px; }
@@ -24,6 +25,19 @@ stil.textContent = `
 .vkInfo th { color: ${farg('ben', 1)}; }
 .vkInfo .vkGaIn { font: inherit; margin-left: 6px; padding: 1px 6px; border-radius: 3px; border: 1px solid ${farg('kol', 3)}; background: ${farg('kol', 2)}; color: ${farg('ben', 3)}; cursor: pointer; }
 .vkInfo .vkVarna { color: ${farg('rost', 3)}; }
+.vkSida { flex: 1 1 240px; min-width: 0; max-height: min(62vh, 520px); overflow: auto; padding: 6px 8px; box-sizing: border-box;
+  color: ${farg('ben', 3)}; background: ${farg('kol', 1)}; border-radius: 3px; }
+.vkSida .vkTom { color: ${farg('ben', 1)}; }
+.vkSida .vkFlikar { display: flex; flex-wrap: wrap; gap: 2px; margin: 4px 0; }
+.vkSida .vkFlikar button { font: inherit; padding: 1px 6px; border-radius: 3px; border: 1px solid ${farg('kol', 3)}; background: ${farg('kol', 2)}; color: ${farg('ben', 3)}; cursor: pointer; }
+.vkSida .vkFlikar button[aria-selected="true"] { background: ${farg('kol', 3)}; border-color: ${farg('ben', 1)}; }
+.vkSida table { border-collapse: collapse; }
+.vkSida th, .vkSida td { padding: 1px 8px 1px 0; text-align: left; font-weight: normal; vertical-align: top; }
+.vkSida th { color: ${farg('ben', 1)}; }
+.vkSida ul { margin: 2px 0; padding-left: 0; list-style: none; }
+.vkSida .vkOkand { color: ${farg('ben', 1)}; }
+.vkSida .vkViss { font-size: 0.85em; margin-left: 3px; cursor: help; }
+.vkSida .vkVarna { color: ${farg('rost', 3)}; }
 .vkKronika { position: absolute; top: 6px; left: 6px; max-width: calc(100% - 12px); max-height: 45%; overflow: auto; padding: 4px 8px;
   background: ${farg('kol', 1)}; color: ${farg('ben', 3)}; border: 1px solid ${farg('kol', 3)}; border-radius: 3px; }
 .vkKronika summary { cursor: pointer; }
@@ -34,8 +48,8 @@ document.head.appendChild(stil);
 
 const ruta = document.createElement('div');
 ruta.className = 'vkRuta'; ruta.setAttribute('aria-label', 'Världskartan');
-ruta.innerHTML = `<div class="vkDuk"><canvas></canvas><details class="vkKronika"><summary title="Världens krönika: det byn hört i full färg, resten blekare">📜</summary><ol></ol></details></div><div class="vkInfo"></div>`;
-const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement>('.vkInfo')!, kronLista = ruta.querySelector('.vkKronika ol')!;
+ruta.innerHTML = `<div class="vkHuvud"><div class="vkDuk"><canvas></canvas><details class="vkKronika"><summary title="Världens krönika: det byn hört i full färg, resten blekare">📜</summary><ol></ol></details></div><aside class="vkSida" aria-label="Byns ruta"></aside></div><div class="vkInfo"></div>`;
+const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement>('.vkInfo')!, kronLista = ruta.querySelector('.vkKronika ol')!, sida = ruta.querySelector<HTMLElement>('.vkSida')!;
 const visas = () => ruta.isConnected;
 
 // bilden räknas en gång per värld och när platserna ändrats
@@ -135,7 +149,8 @@ function montera() {
   if (!host || ruta.parentElement === host || !s?.varld) return;
   host.appendChild(ruta);
   kronLista.innerHTML = kronikaHtml();
-  if (vyFor !== s.varld) { vy = undefined; info.textContent = ''; }
+  if (vyFor !== s.varld) { vy = undefined; info.textContent = ''; valdBy = undefined; }
+  sida.innerHTML = sidaHtml();
   rita();
   const b = bilden(), vl = s.varld, hb = vl.platser?.find(p => p.by === vl.huvud);
   if (vyFor !== vl && b && hb && vy) {
@@ -190,7 +205,12 @@ const slapp = (e: PointerEvent) => {
   if (!pekare.size) duk.classList.remove('drar');
   if (fanns && !pekare.size && drog < 6 && vy) { // ett tryck utan att dra: rutans text under kartan
     const r = duk.getBoundingClientRect(), vl = s?.varld, v = s && varldMark(s);
-    if (vl && v) { const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top); info.innerHTML = rutaHtml(q.x, q.y); }
+    if (vl && v) {
+      const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top), kn = bynsKarta(s!);
+      info.innerHTML = rutaHtml(q.x, q.y);
+      const by = (vl.platser ?? []).find(p => p.x === q.x && p.y === q.y && syns(kn, p) && p.by !== undefined);
+      if (by) { valdBy = by.nr; sida.innerHTML = sidaHtml(); }
+    }
   }
 };
 duk.addEventListener('pointerup', slapp);
@@ -209,13 +229,13 @@ function rutaHtml(x: number, y: number): string {
   if (!s || !vl || !v) return '';
   const kn = bynsKarta(s), delar = [`<div>${esc(rutaText(vl, v, x, y, kn))}</div>`];
   for (const q of (vl.platser ?? []).filter(p => p.x === x && p.y === y && syns(kn, p))) {
+    if (q.by !== undefined) continue; // byarna har sin ruta bredvid kartan (steg 12.1.30)
     const r = platsRuta(s, q.nr);
     if (!r || r.egen) continue;
     const huvud = `<b>${esc(r.sort)} ${esc(r.namn)}</b>: ${r.niva ? esc(r.niva) : 'okänd för byn'}${r.ar !== undefined ? `, uppgifter från år ${r.ar} (${esc(r.kalla ?? '')})` : ''}`;
-    const tab = r.rader.length ? `<table><tr><th></th><th>Byn tror</th><th>Sant nu</th></tr>${r.rader.map(d => `<tr><th>${esc(d.namn)}</th><td>${esc(d.tror ?? '–')}</td><td>${esc(d.sant)}</td></tr>`).join('')}</table>` : '';
     const vem = r.vem.length ? `<div>Vet: ${r.vem.map(esc).join(', ')}</div>` : '';
     const kartor = r.kartor.length ? `<div>Kartor: ${r.kartor.map(esc).join(', ')}</div>` : ''; // steg 11.7.4
-    delar.push(`<div class="vkPlats">${huvud}${tab}${vem}${kartor}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
+    delar.push(`<div class="vkPlats">${huvud}${vem}${kartor}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}</div>`);
   }
   for (const u of bynsUppdrag(s)) { // uppdragen och fynden byn känner till på rutan (steg 11.8.16)
     const q = u.nr !== undefined ? vl.platser?.find(p => p.nr === u.nr) : undefined;
@@ -234,6 +254,50 @@ function rutaHtml(x: number, y: number): string {
   }
   return delar.join('');
 }
+
+// ---------- byns ruta bredvid kartan (steg 12.1.30, Tydligare gränssnitt: Omvärlden, Byns ruta) ----------
+// Ett tryck på en by visar dess ruta med flikar som runstenarna i den egna byn. Varje uppgift säger om byn vet (👁, sett själv)
+// eller tror (👂, hört eller läst), hur gammal den är och varifrån; det byn inte vet är ett grått ?. Den egna byn har samma ruta
+export const BYFLIKAR = [
+  { id: 'oversikt', tecken: '🏠', namn: 'Översikt' },
+  { id: 'folket', tecken: '👥', namn: 'Folket' },
+  { id: 'styre', tecken: '⚖️', namn: 'Styre och tro' },
+  { id: 'kunskap', tecken: '📚', namn: 'Kunskap' },
+  { id: 'historia', tecken: '📜', namn: 'Historia' },
+  { id: 'forb', tecken: '🤝', namn: 'Förbindelsen' },
+] as const;
+type ByFlikId = (typeof BYFLIKAR)[number]['id'];
+let valdBy: number | undefined, byFlik: ByFlikId = 'oversikt';
+const OKAND = '<span class="vkOkand" title="Byn vet inte">?</span>';
+function alderText(ar: number) { const n = kalender(s!, s!.now).ar - ar; return n <= 0 ? 'från i år' : n === 1 ? 'ett år gammal' : `${n} år gammal`; }
+function viss(r: PlatsRuta, sant?: string, varde?: string) {
+  if (!r.visshet) return '';
+  const titel = `${r.visshet === 'vet' ? 'Byn vet' : 'Byn tror'}: ${r.ar !== undefined ? `${alderText(r.ar)} (år ${r.ar})` : ''}${r.kalla ? `, ${r.kalla}` : ''}${sant !== undefined && varde !== undefined && sant !== varde ? `. Sant nu: ${sant}` : ''}`;
+  return `<span class="vkViss" title="${esc(titel)}">${r.visshet === 'vet' ? '👁' : '👂'}</span>`;
+}
+const uppg = (r: PlatsRuta, varde: string | undefined, sant?: string) => varde === undefined || !r.visshet ? OKAND : `${esc(varde)}${viss(r, sant, varde)}`;
+function sidaHtml(): string {
+  if (!s?.varld) return '';
+  const f = valdBy !== undefined ? byFlikar(s, valdBy, id => TEKNIK.find(x => x.id === id)?.namn ?? id) : undefined;
+  if (!f) return '<div class="vkTom">Tryck på en by på kartan</div>';
+  const r = f.ruta, rad = (id: string) => r.rader.find(d => d.id === id);
+  const tal = (id: string) => { const d = rad(id); return `<tr><th>${esc(d?.namn ?? id)}</th><td>${uppg(r, d?.tror, d?.sant)}</td></tr>`; };
+  const flikar = `<div class="vkFlikar" role="tablist">${BYFLIKAR.map(x => `<button type="button" role="tab" data-vkflik="${x.id}" aria-selected="${x.id === byFlik}" title="${x.namn}">${x.tecken}</button>`).join('')}</div>`;
+  let inne = '';
+  if (byFlik === 'oversikt') inne = `<table><tr><th>Namn</th><td>${esc(r.namn)}</td></tr><tr><th>Sort</th><td>${esc(r.sort)}</td></tr>${['kvar', 'folk', 'mat', 'rikedom', 'styrka'].map(tal).join('')}</table>`
+    + `${r.niva && !r.egen ? `<div>${esc(r.niva)}${r.vem.length ? `, vet: ${r.vem.map(esc).join(', ')}` : ''}</div>` : ''}${r.kartor.length ? `<div>Kartor: ${r.kartor.map(esc).join(', ')}</div>` : ''}${r.baraEn ? '<div class="vkVarna">⚠ Bara en vet</div>' : ''}`;
+  else if (byFlik === 'folket') inne = f.folket ? (f.folket.length ? `<ul>${f.folket.map(p => `<li>${p.id !== undefined ? `<button class="plink" data-id="${p.id}" type="button">${esc(p.namn)}</button>` : esc(p.namn)} <span class="vkOkand">${esc(p.roll)}</span>${viss(r)}</li>`).join('')}</ul>` : '<div>Byn känner ingen där</div>') : OKAND;
+  else if (byFlik === 'styre') inne = `<table>${tal('led')}<tr><th>Tro</th><td>${f.tro ? `${esc(f.tro.namn)}, ${f.tro.andel} %${viss(r)}` : r.visshet ? `Ingen${viss(r)}` : OKAND}</td></tr>${tal('lyder')}</table>`;
+  else if (byFlik === 'kunskap') inne = f.tek ? (f.tek.length ? `<ul>${f.tek.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${viss(r)}` : `<div>Inga tekniker${viss(r)}</div>`) : OKAND;
+  else if (byFlik === 'historia') inne = `${f.grundad !== undefined ? `<div>Grundad år ${f.grundad}${f.ursprung ? ` av folk från ${esc(f.ursprung)}` : ''}${viss(r)}</div>` : `<div>Ursprung ${OKAND}</div>`}${f.historia.length ? `<ul>${f.historia.slice(-30).reverse().map(h => `<li>År ${h.ar}: ${esc(h.text)}</li>`).join('')}</ul>` : '<div class="vkOkand">Byn har inte hört något om den i världens krönika</div>'}`;
+  else inne = r.egen ? '<div>Den egna byn</div>' : f.forb ? `<table><tr><th>Hållning</th><td>${f.forb.hallning ? `${esc(f.forb.hallning)} (${f.forb.inst})${viss(r)}` : OKAND}</td></tr><tr><th>Krig eller fred</th><td>${f.forb.lage ? esc(f.forb.lage) : 'Inget'}</td></tr><tr><th>Räder</th><td>${f.forb.rader}</td></tr><tr><th>Vägen dit</th><td>${f.forb.dygn !== undefined ? `${String(f.forb.dygn).replace('.', ',')} dygn till fots` : 'Ingen känd väg'}</td></tr></table>` : OKAND;
+  const namn = BYFLIKAR.find(x => x.id === byFlik)!.namn;
+  return `<div><b>${esc(r.sort)} ${esc(r.namn)}</b>${viss(r)}</div>${flikar}<div class="vkFlikNamn vkOkand">${namn}</div>${inne}`;
+}
+sida.addEventListener('click', e => {
+  const b = (e.target as HTMLElement).closest<HTMLElement>('[data-vkflik]');
+  if (b) { byFlik = b.dataset.vkflik as ByFlikId; sida.innerHTML = sidaHtml(); }
+});
 
 // världens krönika (steg 11.4.13): de senaste först, det byn hört i full färg och resten blekare
 function kronikaHtml(): string {

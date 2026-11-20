@@ -9,13 +9,14 @@ import { delade } from './berattelser';
 import { alive, byId, count, gjort, living } from './folk';
 import { kronika } from './historik';
 import { notis } from './notiser';
-import { varldHandelseText, VarldHandelse } from './varldkronika';
+import { varldHandelseText, VarldHandelse, VARLDSHANDELSER } from './varldkronika';
+import { sparadVag } from './vagval';
 import { clamp, hash3 } from './slump';
 import { lognFaktor } from './rykten';
 import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr } from './landmarken';
 import { VARLD } from './varldmark';
-import type { Varlden } from './varlden';
-import { klanById } from './klaner';
+import { varldMark, type Varlden } from './varlden';
+import { instText, KLAN_ROLLER, klanById } from './klaner';
 import { DAY, Lardom, Person, Rel, State } from './typer';
 import { Ting, tingOf } from './agande';
 import type { Skrift } from './skrift';
@@ -330,8 +331,10 @@ export function gastensPlatser(s: State, g: Person) {
 // ---------- byns ruta på världskartan (steg 11.4.12, Flera samhällen: Det byn vet) ----------
 // Rutan för en plats: spalten Byn tror (med året uppgifterna är från och varifrån de kom) bredvid Sant nu, vilka som känner
 // platsen och varningen Bara en vet. Kartorna och böckerna som också kan bära byns kunskap kommer med kartorna
-export interface RutaRad { namn: string; tror?: string; sant: string }
-export interface PlatsRuta { namn: string; sort: string; niva?: string; ar?: number; kalla?: string; rader: RutaRad[]; vem: string[]; kartor: string[]; baraEn: boolean; egen: boolean }
+export interface RutaRad { id: string; namn: string; tror?: string; sant: string }
+// visshet (steg 12.1.30): byn vet det den själv sett (en egen resa eller den egna byn) och tror det den hört eller läst
+export type Visshet = 'vet' | 'tror';
+export interface PlatsRuta { nr: number; namn: string; sort: string; niva?: string; ar?: number; kalla?: string; visshet?: Visshet; rader: RutaRad[]; vem: string[]; kartor: string[]; baraEn: boolean; egen: boolean }
 function bildRader(s: State, b: RadBild | undefined): Record<string, string> {
   if (!b) return {};
   if (b.borta) return { kvar: 'Nej' };
@@ -350,14 +353,57 @@ export function platsRuta(s: State, nr: number): PlatsRuta | undefined {
   const kt = (k?.kartor ?? []).map(id => tingOf(s).find(x => x.id === id)).filter((t): t is Ting => !!t), kl = kt.length ? kartLardom(s, nr) : undefined;
   let kalla = bast && describeOrt(s, bast).src;
   if (kl && (!bast || kl.t > bast.t)) { bast = kl; kalla = 'en karta'; }
-  const r = ortensRad(s, nr), sant = r && !egen ? bildRader(s, radBild(r)) : {};
-  const tror = r && !egen && k && k.v > O_RYKTE ? bildRader(s, radVid(r, bast?.t ?? s.now)) : {};
-  const rader = r && !egen ? RUTARADER.map(([id, namn]) => ({ namn, sant: sant[id] ?? '', ...(tror[id] !== undefined ? { tror: tror[id] } : {}) })) : [];
+  const r = ortensRad(s, nr), sant = r ? bildRader(s, radBild(r)) : {};
+  const tror = egen ? sant : r && k && k.v > O_RYKTE ? bildRader(s, radVid(r, bast?.t ?? s.now)) : {};
+  const rader = r ? RUTARADER.map(([id, namn]) => ({ id, namn, sant: sant[id] ?? '', ...(tror[id] !== undefined ? { tror: tror[id] } : {}) })) : [];
+  const visshet: Visshet | undefined = egen ? 'vet' : !bast || !k || k.v === O_RYKTE ? undefined : bast.src === undefined && !bast.led && bast.v === O_BESOKT && kalla !== 'en karta' ? 'vet' : 'tror';
   return {
-    namn: egen ? `Er by ${q.namn}` : q.namn, sort: LANDMARKEN[q.k].namn, egen, rader,
-    ...(k ? { niva: ORTNIVA[k.v]!.namn } : {}), ...(bast ? { ar: yearNo(s, bast.t), kalla: kalla! } : {}),
+    nr, namn: egen ? `Er by ${q.namn}` : q.namn, sort: LANDMARKEN[q.k].namn, egen, rader, ...(visshet ? { visshet } : {}),
+    ...(egen ? { ar: yearNo(s, s.now), kalla: 'den egna byn' } : {}),
+    ...(k ? { niva: ORTNIVA[k.v]!.namn } : {}), ...(bast && !egen ? { ar: yearNo(s, bast.t), kalla: kalla! } : {}),
     vem: vem.map(p => p.name), kartor: kt.map(t => t.skrift?.titel ?? 'En bok'), baraEn: !egen && !iNaromradet(s, nr) && vem.length + kt.length === 1,
   };
+}
+
+// ---------- byns ruta med flikar (steg 12.1.30, Tydligare gränssnitt: Omvärlden, Byns ruta) ----------
+// Det byn vet eller tror om en by, ordnat som flikarna i rutan: folket den känner till, trons namn och andel, teknikerna,
+// byns rader i världens krönika som byn hört och ursprunget, och förbindelsen med den egna byn: hållningen, räderna, krig
+// eller fred och den kända vägen dit. Utan uppgifter (bara ett rykte) står allt som okänt
+export interface ByFolk { namn: string; roll: string; id?: number }
+export interface ByFlikar {
+  ruta: PlatsRuta; folket?: ByFolk[]; tek?: string[]; tro?: { namn: string; andel: number }; ursprung?: string; grundad?: number;
+  historia: { ar: number; text: string }[];
+  forb?: { inst?: number; hallning?: string; rader: number; lage?: string; dygn?: number };
+}
+const FOLKROLL: Record<string, string> = { ledare: 'Ledare', handlare: 'Handlare', mott: 'Mött' };
+export function byFlikar(s: State, nr: number, tekNamn: (id: string) => string = id => id): ByFlikar | undefined {
+  const vl = s.varld, ruta = platsRuta(s, nr), r = ortensRad(s, nr), q = vl && varldPlatsNr(vl, nr);
+  if (!vl || !ruta || !q) return undefined;
+  const kand = !!ruta.visshet && !!r;
+  const historia = r ? (vl.kronika ?? []).filter(h => (h.by === r.nr || h.mot === r.nr) && hortHandelse(s, h)).map(h => ({ ar: yearNo(s, h.t), text: varldHandelseText(vl, h) })) : [];
+  const ut: ByFlikar = { ruta, historia };
+  if (!kand) return ut;
+  const folk: ByFolk[] = [], sedda = new Set<string>();
+  const med = (namn: string, roll: string, id?: number) => { if (sedda.has(namn)) return; sedda.add(namn); folk.push({ namn, roll, ...(id !== undefined && byId(s, id) ? { id } : {}) }); };
+  r.fasta.forEach((f, i) => { if (f.dor === undefined) med(f.namn, i === r.ledare ? 'Ledare' : FOLKROLL[f.roll] ?? f.roll, f.id); });
+  for (const p of ruta.egen ? [] : r.syn?.personer ?? []) if (p.borta === undefined) med(p.namn, KLAN_ROLLER[p.roll]?.namn ?? p.roll, p.id);
+  ut.folket = folk;
+  ut.tek = r.tek.map(tekNamn);
+  if (r.tro) ut.tro = { namn: r.tro.namn, andel: Math.round(r.tro.andel * 100) };
+  if (r.fran !== undefined) ut.ursprung = radNr(vl, r.fran)?.namn ?? 'en by som inte finns längre';
+  ut.grundad = yearNo(s, r.grundad);
+  if (!ruta.egen && vl.huvud !== undefined) {
+    const mellan = (vl.kronika ?? []).filter(h => ((h.by === r.nr && h.mot === vl.huvud) || (h.by === vl.huvud && h.mot === r.nr)) && hortHandelse(s, h));
+    const lage = [...mellan].reverse().find(h => h.k === 'krig' || h.k === 'fred' || h.k === 'forbund');
+    const hem = byPlats(vl, vl.huvud), v = varldMark(s);
+    const vag = hem && v ? sparadVag(vl, 'fots', hem.y * v.w + hem.x, q.y * v.w + q.x) ?? sparadVag(vl, 'fots', q.y * v.w + q.x, hem.y * v.w + hem.x) : undefined;
+    ut.forb = {
+      ...(r.syn ? { inst: r.syn.inst, hallning: instText(r.syn.inst) } : {}),
+      rader: mellan.filter(h => h.k === 'rad').length, ...(lage ? { lage: VARLDSHANDELSER[lage.k].namn } : {}),
+      ...(vag ? { dygn: Math.round(vag.kostnad / VARLD.gangPerDygn * 10) / 10 } : {}),
+    };
+  }
+  return ut;
 }
 
 // ---------- det byn hört i världens krönika (steg 11.4.13, Flera samhällen: Världens krönika) ----------
