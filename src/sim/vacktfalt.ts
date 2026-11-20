@@ -9,7 +9,7 @@
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, familjOf } from './folk';
 import { faltBehov, faltFardigt, faltOf, faltRiktning, faltSite, GRODOR, grodorNu, ODLING, sammanfatta, type Ruta } from './odling';
-import { HAGE, hageKant, hagarOf, hageSida } from './hage';
+import { HAGE, hagarOf, hageSida, nyHage } from './hage';
 import { HONS } from './hons';
 import { laggIn } from './lager';
 import { bynsMitt } from './omrade';
@@ -102,10 +102,7 @@ function byggDjuren(b: State, r: VarldRad) {
   let n = hageSida(b), at = faltSite(b, n, n * n);
   while (!at && n > HAGE.minSida) { n--; at = faltSite(b, n, n * n); }
   if (!at) return; // ingen plats: djuren går lösa, som när de nyss köpts
-  const y = faltRiktning(b, at.y) > 0 ? at.y : at.y - (n - 1), id = (b.hagar?.length ?? 0) + 1;
-  const hage = { id, x: at.x, y, w: n, h: n };
-  (b.hagar ??= []).push(hage);
-  for (const i of hageKant(b, hage)) if (!(b.staket ?? []).includes(i)) (b.staket ??= []).push(i);
+  const hage = nyHage(b, { x: at.x, y: faltRiktning(b, at.y) > 0 ? at.y : at.y - (n - 1), w: n, h: n }), id = hage.id;
   b.byggV = (b.byggV ?? 0) + 1;
   for (const d of nya) { d.hage = id; d.x = hage.x + 0.5 + Math.floor(rnd(b, 'vackt') * n); d.y = hage.y + 0.5 + Math.floor(rnd(b, 'vackt') * n); }
 }

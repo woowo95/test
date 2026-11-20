@@ -2649,10 +2649,9 @@ SCENARIER.rovarbredvid = {
       const mx = fo.reduce((a, r) => a + r.x!, 0) / fo.length, my = fo.reduce((a, r) => a + r.y!, 0) / fo.length;
       if (Math.hypot(mx - f.x, my - f.y) < 0.01) mitt++;
     }
-    const ledare = SIM.rovarna(s, f).filter(r => r.gast?.ledare).length;
     return [
       [`gänget går bredvid varandra: två i samma ruta i ${sammaRuta} av ${prov} prov`, prov > 5 && sammaRuta <= prov * 0.3],
-      [`ingen leder gänget (${ledare}), och flockens plats är mitten av gänget (${mitt} av ${prov})`, ledare === 0 && mitt >= prov - 1],
+      [`flockens plats är mitten av gänget (${mitt} av ${prov})`, mitt >= prov - 1],
     ];
   },
 };

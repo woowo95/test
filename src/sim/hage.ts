@@ -53,6 +53,13 @@ export const hageById = (s: State, id?: number) => id === undefined ? undefined 
 export const hageAt = (s: State, x: number, y: number) => hagarOf(s).find(h => x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h);
 export function hageRutor(h: Hage) { const r: number[] = []; for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) r.push(y * W + x); return r; }
 // rutorna runt hagen som ska ha staket (inte i vattnet)
+// en ny hage på rutorna q med staketet runt om (den väckta byn och minnesbilden, vacktfalt.ts och vacktsomna.ts)
+export function nyHage(s: State, q: { x: number; y: number; w: number; h: number }): Hage {
+  const h = { id: (s.hagar?.length ?? 0) + 1, ...q };
+  (s.hagar ??= []).push(h);
+  for (const i of hageKant(s, h)) if (!(s.staket ?? []).includes(i)) (s.staket ??= []).push(i);
+  return h;
+}
 export function hageKant(s: State, h: Hage) {
   const t = getMap(s.seed).tiles, r: number[] = [];
   for (let y = h.y - 1; y <= h.y + h.h; y++) for (let x = h.x - 1; x <= h.x + h.w; x++) {

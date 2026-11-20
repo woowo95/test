@@ -15,6 +15,7 @@
 // Axelremmen (steg 7.1.2) är ett plagg av skinn över axeln: när man bär hem hänger redskapet som hör till axeln i den (platsen
 // Axeln), så det tar inga händer, precis som bältets redskap. Var redskapet hänger säger hangerVid.
 // En ny plats blir en rad i PLATSER.
+import { rovarFlockar } from './rovare';
 import { HOUR, Person, State, Task } from './typer';
 import { KLAD_SLAG, SAKER, viktOf } from './saker';
 import { heldBy, iKroken, Ting, allaTing, redskapSlitet, tingOf } from './agande';
@@ -297,7 +298,7 @@ export function stepKlader(s: State) {
 
 // byta om inför strid (steg 8.7.8): när larmet går hämtar var och en sin rustning. Vid en överraskning hinner man inte
 export function rustaVal(s: State, p: Person) {
-  if (!p.larm || s.now - p.larm.t > HOUR || p.task?.act === 'strid' || [s.rovare, ...(s.rovareFler ?? [])].some(f => f && Math.hypot(f.x - p.x, f.y - p.y) < 6)) return undefined;
+  if (!p.larm || s.now - p.larm.t > HOUR || p.task?.act === 'strid' || rovarFlockar(s).some(f => f && Math.hypot(f.x - p.x, f.y - p.y) < 6)) return undefined;
   const t = (s.ting ?? []).find(q => { const pl = kladAv(q.k)?.plagg; return (pl === 'rustning' || pl === 'hjalm') && q.helig === undefined && q.bar === undefined && q.hos === undefined && q.lass === undefined && (q.agare === p.id || q.agare === undefined || q.agare < 0) && q.x !== undefined; });
   return t ? { spot: { x: t.x! + 0.5, y: t.y! + 0.5 }, ref: t.id, why: 'Hämtar sin rustning inför striden' } : undefined;
 }

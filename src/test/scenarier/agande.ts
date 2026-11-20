@@ -2032,13 +2032,9 @@ SCENARIER.grannklaner = {
 };
 
 SCENARIER.rovare = {
-  text: 'Rövarflocken (steg 4.4.5, 10.1.9, rovare.ts): en rik by lockar rövare, mindre ju bättre försvar den har. Flocken kommer från en grannklan som inte tycker om byn och går in från kartans kant. Den som ser dem ropar, och byn skyddar sig: den som vet varnar först och väljer sedan sin roll. Ett tyst anfall (alla sover) plundrar förrådet osett; står de vuxna emot blir det en strid; står många fler emot flyr eller faller rövarna utan att ha tagit något, och de som flyr lämnar kartan. Testknappen skickar ett gäng som går som vanligt men väntar kortare.',
+  text: 'Rövarflocken (steg 4.4.5, 10.1.9, rovare.ts, steg 11.6.20): världen skickar rövarna. Flocken kommer från en grannklan som inte tycker om byn och går in från kartans kant. Den som ser dem ropar, och byn skyddar sig: den som vet varnar först och väljer sedan sin roll. Ett tyst anfall (alla sover) plundrar förrådet osett; står de vuxna emot blir det en strid; står många fler emot flyr eller faller rövarna utan att ha tagit något, och de som flyr lämnar kartan. Testknappen skickar ett gäng som går som vanligt men väntar kortare.',
   kor: () => {
     const s = createState(6, START); klockan(s);
-    const fattig = SIM.lockar(s) < 0.2; // (chansen växer från noll med rikedomen, steg 10.2.45)
-    const r = cloneState(s); setAmount(r, 'skinn', 400);
-    const utan = Math.min(1, Math.max(0, rikedom(r) / SIM.ROVARE.rikFull));
-    const rik = SIM.lockar(r) > 0, forsvar = SIM.forsvaret(r) > 0 && SIM.lockar(r) < utan;
     // flocken kommer från den fientliga klanen
     const k0 = SIM.klanerOf(s)[0]; for (const c of SIM.klanerOf(s)) c.inst = 10; k0.inst = -60;
     const bas = cloneState(s);
@@ -2104,9 +2100,6 @@ SCENARIER.rovare = {
     const vila = SIM.efterAnfall(k) < 0.1; // skyddet efter ett anfall avtar med tiden (steg 8.7.14)
     return [
       [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) från kanten, och den når byn inom en timme (steg 4.5.7.10, 10.1.16), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
-      [`en ny och fattig by lockar få rövare (${SIM.lockar(s).toFixed(2)})`, fattig],
-      ['en rik by lockar rövare', rik],
-      ['försvaret räknas emot rikedomen', forsvar],
       ['flocken kommer från den fientliga klanen och går in från kartans kant', kommer],
       ['vakten ser flocken, gissar hur många och ropar', sedd],
       ['den som får larmet varnar först ...', varnar],

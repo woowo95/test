@@ -21,7 +21,6 @@ export const VACKTLIV = {
 };
 const tal = (b: State, id: number, n: number) => hash3(b.seed, id, n, 0x2c1b3c6d, 13);
 const ar = (p: Person, t: number) => Math.max(0, Math.floor((t - p.born) / DAY));
-const radNamn = (b: State, nr?: number) => b.varld?.rader?.find(r => r.nr === nr)?.namn ?? 'en by';
 
 // när paret gifte sig: före det första barnet, och tidigast när båda var vuxna
 export function giftNar(b: State, p: Person, q: Person): number {
@@ -35,13 +34,13 @@ function byHandelse(vl: NonNullable<State['varld']>, r: VarldRad, h: VarldHandel
   const by = r.namn;
   switch (h.k) {
     case 'grundad': return fodd ? undefined : `Var med och grundade ${by}`;
-    case 'delad': return h.mot === r.nr ? (fodd ? undefined : `Lämnade ${radNamnV(vl, h.by)} och var med och grundade ${by}`) : `Såg en grupp lämna ${by} och grunda ${radNamnV(vl, h.mot)}`;
+    case 'delad': return h.mot === r.nr ? (fodd ? undefined : `Lämnade ${radNamn(vl, h.by)} och var med och grundade ${by}`) : `Såg en grupp lämna ${by} och grunda ${radNamn(vl, h.mot)}`;
     case 'svalt': return `Klarade svälten i ${by}`;
     case 'krig': case 'fred': case 'nyLedare': case 'gattUnder': return varldHandelseText(vl, h);
     default: return VARLDSHANDELSER[h.k].stor ? varldHandelseText(vl, h) : undefined;
   }
 }
-const radNamnV = (vl: NonNullable<State['varld']>, nr?: number) => vl.rader?.find(r => r.nr === nr)?.namn ?? 'en by';
+const radNamn = (vl: State['varld'], nr?: number) => vl?.rader?.find(r => r.nr === nr)?.namn ?? 'en by'; // radens namn i världen
 
 // ett liv för personen p i den väckta byn b ur raden r
 export function bybosLiv(b: State, r: VarldRad, p: Person): ForrLiv {
@@ -50,7 +49,7 @@ export function bybosLiv(b: State, r: VarldRad, p: Person): ForrLiv {
   const liv: LivRad[] = gl.liv.filter(l => l.k !== 'fodd').map(l => ({ ...l }));
   const familj: Slakting[] = [];
   const fodd = p.born >= r.grundad;
-  liv.push({ ar: 0, k: 'fodd', text: fodd ? `Föddes i ${by}` : r.fran !== undefined ? `Föddes i ${radNamn(b, r.fran)}` : 'Föddes långt härifrån' });
+  liv.push({ ar: 0, k: 'fodd', text: fodd ? `Föddes i ${by}` : r.fran !== undefined ? `Föddes i ${radNamn(b.varld, r.fran)}` : 'Föddes långt härifrån' });
   if (!fodd && !vl?.kronika?.some(h => h.k === 'grundad' && h.by === r.nr || h.k === 'delad' && h.mot === r.nr)) liv.push({ ar: ar(p, r.grundad), k: 'kom', text: `Kom till ${by}` });
   // föräldrarna: den som finns i byn lever; de andra har dött, med namnen ur livet
   for (const [roll, id] of [['mor', p.mother], ['far', p.father]] as const) {

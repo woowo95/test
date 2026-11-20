@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { rovarFlockar } from './rovare';
 import { KLOCKA, SLAGHINDER } from './klocka';
 import { hp } from './gast';
 import { rasar } from './bygg';
@@ -303,7 +304,7 @@ function stormen(s: State, t: Tornado, b: number) {
 // rövarna och handlaren (steg 6.4.12) drabbas som byborna, en gång per tornado: i kärnan dör de, nära och i utkanten
 // flyger de och kan dö eller skadas. Handlaren tappar en del av packningen och går hem, rövarna flyr
 function gasterna(s: State, t: Tornado, zonVid: (x: number, y: number) => number, L: number, { rovarTornado, handlarTornado, handlarPlats }: TornadoGaster) {
-  for (const f of [s.rovare, ...(s.rovareFler ?? [])]) { // alla flockar på kartan (steg 8.7.18)
+  for (const f of rovarFlockar(s)) { // alla flockar på kartan (steg 8.7.18)
     const fk = -1e6 - (f?.id ?? 0);
     if (!f || t.traff?.includes(fk)) continue;
     const zon = zonVid(f.x, f.y);

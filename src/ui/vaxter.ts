@@ -1,4 +1,5 @@
 import { handlarDjur, hasselVaxer, karavanLagret, richness } from '../sim';
+import { rovarFlockar } from '../sim/rovare';
 import { BJORNJAKT, DAY, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden, vildboSyns, samhallen } from '../sim';
 import { farg, fargTal } from '../palett';
 import { s, ui, vidNyBy } from './lage';
@@ -246,7 +247,7 @@ function ritaTornadoSpar() {
 function hotMarken() {
   const mark = (x: number, y: number) => larmIkoner.add('kb_sym_hotmarke', Math.round(x * TS - 8), Math.round(y * TS - 16), 1);
   for (const f of s.vargar ?? []) if (f.sx !== undefined && f.sy !== undefined && f.gor !== 'flyr' && f.vargar.length && f.sedd !== undefined && ui.nu - f.sedd < VARG.seddTim * HOUR) mark(f.sx, f.sy);
-  for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f?.sx !== undefined && f.sy !== undefined && f.sedd !== undefined && f.gor !== 'flyr') mark(f.sx, f.sy);
+  for (const f of rovarFlockar(s)) if (f?.sx !== undefined && f.sy !== undefined && f.sedd !== undefined && f.gor !== 'flyr') mark(f.sx, f.sy);
   const b = s.bjornJakt;
   if (b?.x !== undefined && b.y !== undefined && ui.nu - b.sedd < BJORNJAKT.vet * HOUR) mark(b.x, b.y);
 }

@@ -87,7 +87,7 @@ import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { resaSteg, resaBehov, ridBredvid } from './resa';
-import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
+import { rovarPrat, rovarSteg, rovarTornado, rovarFlockar } from './rovare';
 import { skrivHuvudRad } from './radtal';
 import { varldSteg } from './varldslag';
 import { projektSaknarRakna } from './projekt';
@@ -1297,7 +1297,7 @@ function drag(s: State, p: Person, tk: Task) {
   ut -= RUNDA.mork * (isLight(now) ? clamp(1 - (19 - h) / RUNDA.morkTim, 0, 1) : 1);
   ut -= RUNDA.kyla * (Math.min(1, coldOf(temperature(s))) + (p.warm < KROPP.kallt ? 1 : 0));
   const mod = clamp(MINNE.radslaMax - stat(p, 'mod', now) / 20, MINNE.radslaMin, MINNE.radslaMax);
-  const hot = [...(s.vargar ?? []), ...(s.rovare ? [s.rovare] : []), ...(s.rovareFler ?? [])]; // alla rövarflockar (steg 8.7.18)
+  const hot = [...(s.vargar ?? []), ...rovarFlockar(s)]; // alla rövarflockar (steg 8.7.18)
   const fara = (x: number, y: number) => {
     let v = 0;
     for (const f of hot) { const d = Math.hypot(f.x - x - 0.5, f.y - y - 0.5); if (d < RUNDA.vargR) v += RUNDA.vargRadsla * (1 - d / RUNDA.vargR) * mod; }

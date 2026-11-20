@@ -273,6 +273,11 @@ function rapport(s: State, g: KartStrid, vinnare: 0 | 1 | -1) {
   l.push({ t: s.now, orsak: g.orsak, vinnare, n: g.st.kampar.length });
   if (l.length > SLAGSMAL.rapporter) l.splice(0, l.length - SLAGSMAL.rapporter);
 }
+// striden är slut: rapporten, räknarna, och striden tas bort från kartan
+function avslutad(s: State, g: KartStrid, vinnare: 0 | 1 | -1) {
+  rapport(s, g, vinnare); count(s, 'strider'); count(s, 'kartStridSlut');
+  s.kartStrider = s.kartStrider!.filter(x => x !== g);
+}
 // för mätningen av striderna (npm run strid): varje strid som är slut, innan följderna (läses aldrig av spelet)
 export const stridProv: { slut?: (s: State, g: KartStrid) => void } = {};
 function kartStridSlut(s: State, g: KartStrid) {
@@ -284,8 +289,7 @@ function kartStridSlut(s: State, g: KartStrid) {
   const skiljare = g.skild !== undefined ? byId(s, g.skild) : undefined;
   if (g.efter?.egen) { // den som började striden tar själv hand om följderna (rövarna)
     for (const k of st.kampar) { const p = personAv(s, k); if (p && p.died === undefined && p.task?.act === 'strid') p.task.until = s.now; }
-    rapport(s, g, vinnare); count(s, 'strider'); count(s, 'kartStridSlut');
-    s.kartStrider = s.kartStrider!.filter(x => x !== g);
+    avslutad(s, g, vinnare);
     EFTER[g.efter.typ]?.(s, g.efter, vinnare, g);
     return;
   }
@@ -306,9 +310,7 @@ function kartStridSlut(s: State, g: KartStrid) {
   // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
   if (!lek && vinnare !== -1) for (const p of sidor[vinnare]) if (p.health > 0 && alive(p) && sidor[1 - vinnare][0]) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
   // rapporten sparas (steg 8.8.10); själva striden går inte att räkna om, för den skedde i världen
-  rapport(s, g, vinnare);
-  count(s, 'strider'); count(s, 'kartStridSlut');
-  s.kartStrider = s.kartStrider!.filter(x => x !== g);
+  avslutad(s, g, vinnare);
 }
 
 // ---------- den som ser en strid ----------
