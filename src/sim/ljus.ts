@@ -9,7 +9,7 @@ import { balans } from './balans';
 import { antal } from './ord';
 import { gruppOf } from './saker';
 import { BRAND, brandLjus } from './brand';
-import { eldXY, eldarOf, fireHeat } from './eld';
+import { eldXY, eldarOf, emberOn, fireHeat } from './eld';
 import { roomAt } from './byggnad';
 import { ACTS } from './handlingar';
 import { lightLevel } from './tid';
@@ -23,14 +23,16 @@ import { byId, alive, count, forstaGang, living, log } from './folk';
 
 export const MORKER = balans('morker', {
   fart: 0.6, // den som är vaken i totalmörker går och arbetar så här fort
-  eldR: 9, // en eld som brinner för fullt lyser så här många rutor bort (steg 12.1.156: hälften längre än förut) ...
+  // ljusets räckvidd (steg 12.1.169): cirkeln där folk kan arbeta är samma cirkel som syns i bilden (ui/terrang.ts läser talen)
+  eldR: 14, // en eld som brinner för fullt lyser så här många rutor bort ...
   branningR: 2, // en kolmila eller blästerugn som brinner lyser lite, så här många rutor bort (steg 12.2.1 och 12.2.3)
   eldMin: 0.5, // ... och en liten eld så här stor del av det
+  glodR: 1.5, // glöden som är kvar när elden slocknat lyser så här många rutor
 });
 // facklan (steg 6.3.6)
 export const FACKLA = balans('fackla', {
   brinnTim: 5, // en fackla brinner så här många timmar innan den brunnit ut
-  r: 6, // ... och lyser så här många rutor bort (steg 12.1.156)
+  r: 9, // ... och lyser så här många rutor bort (steg 12.1.169)
 });
 
 // de uppsatta facklorna (steg 6.3.7)
@@ -49,10 +51,10 @@ export const LJUSKALLOR = {
   eld: { namn: 'Elden', kallor: s => {
     const ut: Ljuspunkt[] = [];
     for (const f of eldarOf(s)) {
-      const I = fireHeat(s, f);
-      if (!I) continue;
+      const r = eldRackvidd(s, f);
+      if (!r) continue;
       const e = eldXY(s, f);
-      ut.push({ x: e.x + 0.5, y: e.y + 0.5, r: MORKER.eldR * (MORKER.eldMin + (1 - MORKER.eldMin) * I), rum: roomAt(s, e.x, e.y) });
+      ut.push({ x: e.x + 0.5, y: e.y + 0.5, r, rum: roomAt(s, e.x, e.y) });
     }
     return ut;
   } },
@@ -69,6 +71,12 @@ export const LJUSKALLOR = {
   uppsatt: { namn: 'Uppsatta facklor', kallor: s => (s.uppsatta ?? []).filter(u => u.tand).map(u => ({ x: u.x + 0.5, y: u.y + 0.5, r: FACKLA.r, rum: roomAt(s, u.x, u.y) })) }, // inne lyser den upp rummet (steg 9.2.11)
 } satisfies Record<string, Ljuskalla>;
 const KALLOR = Object.values(LJUSKALLOR) as Ljuskalla[];
+// hur långt en eld lyser just nu (steg 12.1.169): en som brinner efter hur het den är, glöden lite, en släckt inte alls.
+// Samma tal ger arbetsljuset här och skenet i bilden (ui/terrang.ts)
+export function eldRackvidd(s: State, f: Parameters<typeof fireHeat>[1]) {
+  const I = fireHeat(s, f);
+  return I > 0 ? MORKER.eldR * (MORKER.eldMin + (1 - MORKER.eldMin) * I) : emberOn(s, f) ? MORKER.glodR : 0;
+}
 
 // hur ljust det är på platsen från ljuskällorna (0–1; dagsljuset räknas inte). utan = den vars egen fackla inte räknas
 export function ljusAt(s: State, x: number, y: number, utan?: number) {
@@ -224,7 +232,7 @@ export function finishUppsatt(s: State, p: Person, tk: { tx: number; ty: number 
 export const LJUS = balans('talgljus', {
   brinnTim: 8, // ett talgljus brinner så här många timmar
   vaxTim: 16, // ... och ett vaxljus (steg 10.10.24)
-  r: 3, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet; steg 12.1.156)
+  r: 5, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet; steg 12.1.169)
   min: 5, // minuter att ställa fram ett
 });
 // ljusens sorter (steg 10.10.23): en rad per sort, med hur många timmar den brinner. Sakerna hör till gruppen talgljus

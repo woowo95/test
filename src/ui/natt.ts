@@ -50,7 +50,7 @@ void main() {
   for (int i = 0; i < ${MAX_ELDAR}; i++) {
     vec4 e = uEld[i];
     float d = length(w - e.xy) / max(e.z, 1.0);
-    float li = e.w < 0.0 ? -e.w * (1.0 - smoothstep(0.5, 1.0, d)) : e.w * clamp(1.0 - d, 0.0, 1.0);
+    float li = e.w < 0.0 ? -e.w * (1.0 - smoothstep(0.75, 1.0, d)) : e.w * clamp(1.0 - d, 0.0, 1.0);
     // eldens skuggor (steg 12.3.2, ui/eldskugga.ts): bakom en vägg eller en stam är ljuset ett eller två steg svagare, med raster
     // bara i skuggans kant
     if (e.z > 0.0 && uHarSkugga[i] > 0.5) {
@@ -95,7 +95,7 @@ export const nattFilter = new PIXI.Filter(undefined, FRAG, {
 });
 
 // mörkret m (0 dag, 1 skymning, 2 natt, 3 djup natt, och tal emellan) och eldarna (x och y i världens punkter, hur långt ljuset
-// når, styrkan 0–1). En negativ styrka är elden (steg 6.8.15): fullt ljus ut till halva vägen och sedan mjukt avtagande; de andra
+// når, styrkan 0–1). En negativ styrka är elden (steg 6.8.15): fullt ljus ut till tre fjärdedelar av vägen och sedan mjukt avtagande till räckvidden (steg 12.1.169); de andra
 // avtar jämnt. Mörkret avrundas till hela steg; när steget byts sveper randen över kartan (steg 6.8.17)
 const svep = { fran: -1, till: -1, t0: 0 };
 let skuggSatt = false;
