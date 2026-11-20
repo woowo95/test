@@ -67,3 +67,4 @@
 - 12.1.144 (trasigt hjul och vilt på vägen): scenariot vaghandelser gick igenom.
 - 12.1.145 (Släppa utrustning undantar inget; maten, vattnet, fodret och tälten väger RESA.behovVarde så länge resan behöver dem): scenarierna utvagar och gomma gick igenom.
 - 12.1.146 (handelslägrets rad och plats tas bort vid sluttiden; platser som tas bort blir minnesplatser så länge byn minns dem, vl.minnesplatser): scenarierna lagerslut (nytt, src/test/scenarier/resor12.ts), utpost, bysorter, landmarken, handelsresa, bynvet, ort och radbesok gick igenom. Sparningen får fältet minnesplatser; kör sparning och sparstorlek i koll.
+- 12.1.148 (betalningen räknar vikten först i betalaAv, behov.ts: det köpta lämnar handlarens last, och för tunga varor avstås från i första vändan): scenarierna handlare (röd före steget), byte, bytessystem, forhandling, handelsko, handslag, kopta, silver och handelsvaror gick igenom.

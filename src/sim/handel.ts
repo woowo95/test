@@ -761,7 +761,7 @@ function budNu(s: State, h: Handlare, a: Affar, M: Part) {
   }
   while (a.kop.length) {
     const ger = vardFor(a.kop, H_), far = vardFor(a.kop, M, true);
-    const b = betalaAv(betalVaror(M, H_, a.kop.map(w => w.k)), H_, ger * a.f);
+    const b = betalaAv(betalVaror(M, H_, a.kop.map(w => w.k)), H_, ger * a.f, a.kop.reduce((x, w) => x + w.n * viktOf(w.k), 0)); // det köpta lämnar handlarens last (steg 12.1.148)
     if (b.betal.length && b.fick >= ger * a.f - 1e-9 && b.kost < far) { a.bud = b.betal; return true; }
     let i = 0;
     for (let j = 1; j < a.kop.length; j++) if (M.varde(a.kop[j].k) < M.varde(a.kop[i].k)) i = j;
