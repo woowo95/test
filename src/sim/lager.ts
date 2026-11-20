@@ -5,7 +5,8 @@ import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
 import { Ting, halvKlar, nTools, newTing, redskapSlitet, tingOf, ingenHar } from './agande';
 import { kvHaller } from './kvalitet';
-import { baraForvar, forvarAt, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr } from './stationer';
+import { baraForvar, delarAv, forvarAt, isKlar, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr } from './stationer';
+import { eldDef } from './stationseld';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
 import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
@@ -428,12 +429,42 @@ const lying = (s: State) => tingOf(s).filter(ligger);
 // står redskapet på en ruta, också ett som hör till en station (lyran vid scenen): då lägger ingen något annat där. Ett hus
 // som blir förrådshus gör rutan till förråd, med det som redan står där (steg 9.1)
 const paRutan = (t: Ting) => t.x !== undefined && ingenHar(t) && t.krok === undefined;
+// ---------- inget ligger i elden (steg 12.1.153, Förvaring: Lagerplatserna) ----------
+// rutorna där det brinner eller kan brinna: lägereldarna (den första och brasorna, s.eldar), och i en färdig station med eld
+// (ELDSTATIONER, stationseld.ts) delen med elden (örtkökets härd) eller hela stationen. Där läggs inga högar
+export function eldRutor(s: State): Set<number> {
+  const ut = new Set<number>(), f = eldPlats(s);
+  ut.add(key(f.x, f.y));
+  for (const e of s.eldar ?? []) if (e.at) ut.add(key(Math.floor(e.at.x), Math.floor(e.at.y)));
+  for (const t of stationerOf(s)) {
+    if (!isKlar(t) || !eldDef(t)) continue;
+    const r = delarAv(t), med = r.filter(q => q.del?.eld);
+    for (const q of med.length ? med : r) for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) if (inMap(x, y)) ut.add(key(x, y));
+  }
+  return ut;
+}
+// det som ligger på en eldruta (en eld som tänts eller en härd som byggts där en hög låg) flyttas till närmaste fria ruta: i
+// förrådet till en annan plats där, annars bredvid som när någon lägger ner sin börda. Redskapen får en ny plats av placeTools
+export function ingetIElden(s: State) {
+  const eld = eldRutor(s), st = stacksOf(s), flytt = st.filter(a => eld.has(key(a.x, a.y)));
+  for (const t of lying(s)) if (eld.has(key(t.x!, t.y!))) { t.x = undefined; t.y = undefined; }
+  if (!flytt.length) return;
+  s.stackar = st.filter(a => !flytt.includes(a));
+  for (const a of flytt) {
+    if (isStored(s, a.x, a.y)) { place(s, a.k, a.n, a.c, a.ag); if (a.dold) hide(s, a.k, a.dold); continue; }
+    laggBredvid(s, s.stackar, eld, a.k, a.n, a.c, a.ag, a.x, a.y);
+    if (a.dold) hide(s, a.k, a.dold);
+  }
+  changed(s);
+}
+
 // det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things), och hur
 // många redskap som ligger på varje ruta (i ett ställ står flera, steg 2.3.6)
-type Occ = Map<number, Stack> & { redskap: Map<number, number> };
+type Occ = Map<number, Stack> & { redskap: Map<number, number>; eld: Set<number> };
 function occupancy(s: State, ts = tingOf(s)) {
   const m = new Map<number, Stack>() as Occ;
   m.redskap = new Map();
+  m.eld = eldRutor(s); // i elden läggs inget (steg 12.1.153)
   for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a);
   for (const t of ts) if (paRutan(t) && isStored(s, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
   return m;
@@ -483,6 +514,7 @@ function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
   if (s.flodHot && isFood(k) && flodHotad(s, key(x, y)) && !forvarAt(s, x, y)) return false; // vattnet stiger hit: maten bärs undan (steg 3.8.7)
   if (groundOf(s).trees[key(x, y)] >= FOREST && zonesOf(s).some(z => z.rojs && inZone(z, x, y))) return false; // ett träd i lagret i skogen fälls först (steg 3.6.9)
   if (stubbeOn(s, x, y)) return false; // på en stubbe läggs inget: den grävs bort först (skog.ts, steg 6.5.7)
+  if (occ.eld.has(key(x, y))) return false; // i en eld, brasa eller härd läggs inget (steg 12.1.153)
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
   if (f?.redskap) return isTool(k) && (!f.bara || f.bara.includes(k)) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
   if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a && !!stationDef(st.k)!.forvar!.bara?.includes(k) === !!stationDef(st.k)!.forvar!.bara; // ett ställ som byggs: ett redskap, som på marken
@@ -1152,37 +1184,41 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
   storeTings(s, t, at);
   tomBorda(t);
 }
+// lägg n av slaget k ner kring rutan (tx, ty) utanför förrådet: en ruta rymmer så mycket av slaget som den rymmer (rymd), och
+// det som inte får plats läggs på rutorna närmast runt omkring, där inget annat ligger. Aldrig i en eld (eld, steg 12.1.153).
+// Ägarnas hela delar delas som i förrådet (delAv)
+function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number) {
+  for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
+    if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y))) continue;
+    if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
+    if (r > 0 && (!usable(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y) || st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6))) continue;
+    let g = st.find(q => q.x === x && q.y === y && q.k === k);
+    const v = Math.min(n, Math.max(0, helt(rymd(s, x, y, k)) - (g?.n ?? 0)));
+    if (v <= 0) continue;
+    const del = delAv(ag, v, n); ag = minus(ag, del);
+    if (!g) st.push(g = { x, y, k, n: 0, c });
+    addToStack(s, g, v, c, del); n -= v;
+  }
+  if (n <= 1e-9) return;
+  if (eld.has(key(tx, ty))) { place(s, k, n, c, ag); return; } // runt elden är fullt: i förrådet eller bredvid det
+  let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); // runt omkring är fullt
+}
 // den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare. Står hen
 // framför en station lägger hen den bredvid, inom räckhåll: rutan där man arbetar ska vara fri (framFri, stationer.ts)
 export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   const tx = Math.floor(x), ty = Math.floor(y);
   if (isStored(s, tx, ty)) { storeLoad(s, t, x, y, owner); return; }
   aterlagt(s, t);
-  const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner;
+  const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner, eld = eldRutor(s);
   laggsBlot = (all.ved ?? 0) > 1e-9 && (t.blotVed ?? 0) > 1e-9; // blöt ved i bördan gör högen blöt
   try { for (const k in all) {
     if (all[k] < 1e-6) continue;
     const h = hela(s, k, all[k], SAKER[k]?.i ? undefined : shareOf(t.ag?.[k], all[k], who, s, k)); // bara hela saker (steg 2.10.7)
     if (h.n <= 0) continue;
     if (SAKER[k]?.i) { hide(s, SAKER[k]!.i!, h.n, { x: tx, y: ty }); continue; }
-    const c = t.cond?.[k] ?? 1;
-    // en ruta rymmer så mycket av slaget som den rymmer (rymd): det som inte får plats läggs på rutorna närmast runt omkring,
-    // där inget annat ligger. Ägarnas hela delar delas som i förrådet (delAv)
-    let n = h.n, ag = h.ag;
-    for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
-      if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y)) continue;
-      if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
-      if (r > 0 && (!usable(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y) || st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6))) continue;
-      let g = st.find(q => q.x === x && q.y === y && q.k === k);
-      const v = Math.min(n, Math.max(0, helt(rymd(s, x, y, k)) - (g?.n ?? 0)));
-      if (v <= 0) continue;
-      const del = delAv(ag, v, n); ag = minus(ag, del);
-      if (!g) st.push(g = { x, y, k, n: 0, c });
-      addToStack(s, g, v, c, del); n -= v;
-    }
-    if (n > 1e-9) { let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); } // runt omkring är fullt
+    laggBredvid(s, st, eld, k, h.n, t.cond?.[k] ?? 1, h.ag, tx, ty);
   } } finally { laggsBlot = false; }
-  for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = tx; g.y = ty; } }
+  for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = eld.has(key(tx, ty)) ? undefined : tx; g.y = eld.has(key(tx, ty)) ? undefined : ty; } } // i elden läggs inget: placeTools ger redskapet en plats
   t.ting = undefined;
   tomBorda(t);
   changed(s);
