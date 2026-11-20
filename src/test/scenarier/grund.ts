@@ -123,7 +123,7 @@ SCENARIER.egnaeldar = {
     setAmount(s, 'ved', 40);
     Object.assign(s.fire, { lit: true, fuel: 0.2, lightings: 1 });
     stepFire(s, 1, ppl);
-    const langtBort = s.fire.want ?? 0, ingenHamtar = !ppl.some(p => p.task?.act === 'elda');
+    const langtBort = s.fire.want ?? 0, ingenHamtar = !ppl.some(p => SIM.eldaVal(s, p)); // raden elda i valet (steg 12.1.76)
     // en sätter sig vid elden: den trivsamma elden räknas från henom
     const a = vuxna[0];
     a.x = e.x + 0.5; a.y = e.y + 2;
@@ -136,7 +136,8 @@ SCENARIER.egnaeldar = {
     for (const p of ppl) p.task = undefined;
     b.x = at.x + 0.5; b.y = at.y + 2;
     stepFire(s, 1, ppl);
-    const eldare = ppl.filter(p => p.task?.act === 'elda'), tillForsta = eldare.filter(p => p.task!.ref === undefined).length, tillBrasan = eldare.filter(p => p.task!.ref === br.id).length;
+    // den som sitter vid en eld väljer att lägga ved på just den (raden elda, steg 12.1.76)
+    const va = SIM.eldaVal(s, a), vb = SIM.eldaVal(s, b), tillForsta = va && va.ref === undefined ? 1 : 0, tillBrasan = vb?.ref === br.id ? 1 : 0;
     // eldens ruta (steg 11.1.53): Sedan byn grundades med samma radnamn som under den här elden, veden som 4 av 6 ved, ingen
     // rad Mest trä, tändningen hopfälld under ▸ och pricken förklarad
     utanWebblasare(); setByn(s); ui.eld = undefined; const er = eldFlik.html!();
@@ -149,7 +150,7 @@ SCENARIER.egnaeldar = {
       [`ingen vid elden: ingen trivsam önskan (${langtBort.toFixed(2)} ved) och ingen hämtar ved`, langtBort < 1 && ingenHamtar],
       [`${a.name} vid elden vill ha en trivsam eld (${vid.toFixed(2)} ved: ${why.toLowerCase()})`, vid > langtBort && /trivsam/.test(why)],
       [`brasan får sin önskan från ${b.name} som sitter där (${(br.want ?? 0).toFixed(2)} ved)`, (br.want ?? 0) > 1],
-      [`båda eldarna fylls på samtidigt (till den första ${tillForsta}, till brasan ${tillBrasan})`, tillForsta === 1 && tillBrasan === 1],
+      [`båda eldarna fylls på samtidigt, var och en av den som sitter vid den (till den första ${tillForsta}, till brasan ${tillBrasan})`, tillForsta === 1 && tillBrasan === 1],
     ];
   },
 };

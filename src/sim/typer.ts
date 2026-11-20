@@ -543,6 +543,7 @@ export interface Fire {
   tries: number; tryTotal: number; tryProg: number; // försök sedan elden senast brann, totalt, sekunder in i pågående försök
   fills: Record<string, number>; log: FireLog[];
   want?: number; wantBy?: number; wantWhy?: string; // största önskan om ved på elden just nu, och vems
+  brukare?: number; // hur många som hör till elden just nu (stepFire): de mest använda sköts först när veden tryter
   ash?: number; ashUntil?: number; // kolhög efter en utbrunnen eld
   at?: { x: number; y: number }; // var elden står om den flyttats (steg 2.10.4); annars där kartan lade den (getMap(seed).fire)
   flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit'; gjort?: number; vem?: number; fran?: number }; // elden ska flyttas hit (eldflytt.ts); gjort = arbetet som redan gjorts, vem och fran = den som arbetar nu och sedan när| 'vuxit' }; // elden ska flyttas hit (eldflytt.ts)
