@@ -18,3 +18,7 @@ Samma by (by 3, år 14, sommar, kl. 22) på natten, inzoomad lika mycket.
 ## Steg 12.1.172: skenet tonar ut mjukare och lite längre
 
 - `natt-172.png` (samma by, tid och zoom som `natt-170.png`) och `natt-172-nara.png` (inzoomad, som `natt-170-nara.png`): övergången börjar vid ungefär en tredjedel av räckvidden, följer en mjuk kurva och fortsätter som ett svagt sken en fjärdedel utanför räckvidden (MORKER.skenUt, 0,25). Arbetsljuset når som förut till räckvidden.
+
+## Steg 12.1.176: facklan lyser nästan som elden, och allt ljus tonar ut på samma sätt
+
+- `natt-176.png` och `natt-176-nara.png` (inzoomad): by 3 efter steg 12.1.176, år 14 kl. 22, med elden, en uppsatt fackla på väggen i huset överst (den lyser upp rummet och 12 rutor runt det) och en person som bär en tänd fackla. Alla ljus tonar ut med samma kurva efter sin räckvidd. Byn är en annan än i de tidigare bilderna, för ljuset ändrar hur den utvecklas. För bilden lades facklorna in och hölls tända.
