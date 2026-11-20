@@ -106,3 +106,44 @@ SCENARIER.gomslut = {
     ];
   },
 };
+
+SCENARIER.vagglomska = {
+  text: 'Vägarna i världen snabbare (steg 12.1.11): en sparad väg som ingen gått på sedan VAGVAL.glomDygn glöms och räknas igen när någon går den, och resans poäng för varje plats räknas en gång per RESA.poangTim timmar och person',
+  kor: () => {
+    const s = SIM.cloneState(testBy(30)), vl = s.varld!, v = SIM.varldMark(s)!, hem = SIM.byPlats(vl, vl.huvud!)!, a0 = hem.y * v.w + hem.x;
+    vl.vagar = [];
+    const by = vl.platser!.find(q => q.k === 'by' && q !== hem && SIM.vagMellan(vl, v, a0, q.y * v.w + q.x, 'fots', s.now))!, b0 = by.y * v.w + by.x;
+    const vag = SIM.sparadVag(vl, 'fots', a0, b0)!, G = SIM.VAGVAL.glomDygn * SIM.DAY;
+    SIM.glomVagar(vl, s.now + G - SIM.DAY);
+    const kvarFore = SIM.sparadVag(vl, 'fots', a0, b0) === vag;
+    SIM.vagMellan(vl, v, a0, b0, 'fots', s.now + 5 * SIM.DAY); // någon går vägen
+    SIM.glomVagar(vl, s.now + G + 4 * SIM.DAY);
+    const kvarGangen = SIM.sparadVag(vl, 'fots', a0, b0) === vag && vag.b === s.now + 5 * SIM.DAY;
+    SIM.glomVagar(vl, s.now + G + 6 * SIM.DAY);
+    const glomd = !SIM.sparadVag(vl, 'fots', a0, b0) && !vl.vagar.length;
+    const igen = SIM.vagMellan(vl, v, a0, b0, 'fots', s.now + G + 7 * SIM.DAY);
+    const raknadIgen = !!igen && igen !== vag && igen.steg === vag.steg && SIM.sparadVag(vl, 'fots', a0, b0) === igen;
+    // poängen: en nyfiken och modig bybo som hört rykten om en plats; modet sjunker, men poängen är densamma tills timmen gått
+    vl.bud = undefined;
+    const a = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50 && SIM.kanGa(q) && !SIM.isSick(q, s.now))!;
+    for (const p of SIM.living(s)) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'ort' || l.v !== SIM.O_RYKTE);
+    const mal = vl.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by' && (SIM.RESMAL.se.mal as readonly string[]).includes(q.k) && SIM.kannerOrt(s, a, q.nr) === undefined)
+      .sort((x, y) => Math.hypot(x.x - hem.x, x.y - hem.y) - Math.hypot(y.x - hem.x, y.y - hem.y))[0]!;
+    SIM.larOrt(s, a, mal.nr, SIM.O_RYKTE, 1);
+    a.pot.nyfikenhet = 18; a.pot.mod = 18;
+    s.now = Math.floor(s.now / (SIM.RESA.poangTim * SIM.HOUR)) * SIM.RESA.poangTim * SIM.HOUR; // timmens början
+    const p1 = SIM.resaPlan(s, a, 99, 99);
+    a.pot.mod = 3;
+    const p2 = SIM.resaPlan(s, a, 99, 99), nod = SIM.resaPlan(s, a, (p1?.dygn ?? 1) * 0.1, 99);
+    s.now += SIM.RESA.poangTim * SIM.HOUR;
+    const p3 = SIM.resaPlan(s, a, 99, 99);
+    return [
+      ['en väg som någon gått på inom VAGVAL.glomDygn finns kvar', kvarFore && kvarGangen],
+      ['en väg som ingen gått på sedan VAGVAL.glomDygn glöms', glomd],
+      ['den glömda vägen räknas igen när någon går den, och blir densamma', raknadIgen],
+      [`poängen är densamma inom timmen fast modet sjunkit (${p1?.sc.toFixed(3)} och ${p2?.sc.toFixed(3)})`, !!p1 && p2?.sc === p1.sc],
+      [`byns förråd räknas varje gång (i nöd ${nod?.sc.toFixed(3) ?? 'ingen resa'})`, !!p1 && (nod?.sc ?? 0) < p1.sc],
+      [`efter timmen räknas poängen om med det lägre modet (${p3?.sc.toFixed(3) ?? 'ingen resa'})`, !!p1 && (p3?.sc ?? 0) < p1.sc],
+    ];
+  },
+};

@@ -1122,13 +1122,14 @@ function byHandel(): [string, boolean][] {
   setAmount(s, 'flinta', 0); setAmount(s, 'torrfisk', 120); setAmount(s, 'silver', 10); // (silver att betala flintan med)
   SIM.projektSaknarRakna(s);
   const behov = s.projektSaknar?.flinta?.n ?? 0;
+  const tar = Math.max(behov, SIM.bynKopAntal(s, 'flinta')); // och så många som byn tar emot innan det blir över (steg 12.1.48)
   h.varor = [{ k: 'flinta', n: behov + 1 }]; h.silver = 40; // (lite flinta, så att handlaren har plats för betalningen i ryggsäcken)
   const b0 = s.stat?.handelByten ?? 0;
   vuxen(s).skill.handel = 20; // (en skicklig som handlar för byn: affären går igenom)
   kannerPriser(s, h);
   helAffar(s, vuxen(s), true);
   const flinta = Math.round(amountOf(s, 'flinta')), silver = Math.round(amountOf(s, 'silver')), salt = h.varor.filter(w => w.k !== 'flinta');
-  const bada = behov >= 1 && flinta >= 1 && flinta <= behov && salt.length > 0 && (s.stat?.handelByten ?? 0) - b0 === 2 && !!h.bynKlar;
+  const bada = behov >= 1 && flinta >= behov && flinta <= tar && salt.length > 0 && (s.stat?.handelByten ?? 0) - b0 === 2 && !!h.bynKlar;
   // skinnen som plaggen väntar på säljs inte, och utan något att köpa säljer byn direkt för silver
   const skinnBy = testBy(10, b => { const c = cloneState(b); SIM.projektSaknarRakna(c); return (c.projektSaknar?.skinn?.beh ?? 0) >= 1; }); // en by där ett plagg väntar på skinn
   const t = cloneState(skinnBy), g = fram(t);
@@ -1136,7 +1137,7 @@ function byHandel(): [string, boolean][] {
   const skinn = t.projektSaknar?.skinn?.beh ?? 0;
   setAmount(t, 'skinn', skinn); setAmount(t, 'torrfisk', 120); setAmount(t, 'silver', 0);
   SIM.projektSaknarRakna(t);
-  const utan = cloneState(t); utan.projektSaknar = undefined; setAmount(utan, 'skinn', skinn + 1); // en till: det sista behålls ändå (steg 12.1.48)
+  const utan = cloneState(t); utan.projektSaknar = undefined; setAmount(utan, 'skinn', skinn + 1); // en till
   const annars = SIM.bynPart(utan, 30, 30).over([]).some(w => w.k === 'skinn'); // utan projekten hade byn sålt skinnen
   g.varor = []; g.silver = 40;
   kannerPriser(t, g);
@@ -1144,7 +1145,7 @@ function byHandel(): [string, boolean][] {
   const behollSkinn = skinn >= 1 && Math.round(amountOf(t, 'skinn')) === skinn && !g.varor.some(w => w.k === 'skinn');
   const direkt = Math.round(amountOf(t, 'silver')) >= 1 && g.varor.length > 0;
   return [
-    [`byn köper flintan projekten saknar (${flinta} av ${behov}) och säljer sedan sitt överflöd för silver i samma besök (${silver} silver, handlaren fick ${salt.map(w => `${w.n} ${w.k}`).join(', ')})`, bada],
+    [`byn köper flintan projekten saknar, högst så många som den tar emot (${flinta}, projekten ${behov}, högst ${tar}) och säljer sedan sitt överflöd för silver i samma besök (${silver} silver, handlaren fick ${salt.map(w => `${w.n} ${w.k}`).join(', ')})`, bada],
     [`byn säljer inte skinnen ett plagg väntar på (${Math.round(amountOf(t, 'skinn'))} av ${skinn} kvar; utan projekten hade byn sålt dem: ${annars ? 'ja' : 'nej'})`, behollSkinn && annars],
     [`utan något att köpa säljer byn direkt för silver (${Math.round(amountOf(t, 'silver'))} silver, handlaren fick ${g.varor.map(w => `${w.n} ${w.k}`).join(', ')})`, direkt],
   ];

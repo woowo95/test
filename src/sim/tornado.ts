@@ -9,7 +9,7 @@ import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
 import { bynsMitt } from './omrade';
 import { streckAv } from './ord';
-import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
+import { avbryt, eldRutor, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { groundOf } from './mark';
 import { motgangNu, motgangTal } from './motgang';
@@ -410,14 +410,14 @@ function lyft(s: State, t: Tornado, nara: Set<number>, utkant: Set<number>) {
   if (flytt) tidy(s);
 }
 // var något som flyger från (x, y) landar: åt sidan om banan, på samma sida, långt nära och kortare i utkanten, och en bit
-// framåt. En ruta som inte är blockerad, utan station och utan något annat på
+// framåt. En ruta som inte är blockerad, utan station och utan något annat på, och en sak landar inte i en eld (steg 12.1.153)
 function landar(s: State, t: Tornado, x: number, y: number, a: number, zon: number, L: number, folk = false) {
   const np = narmastPa(t, x, y), dx = np.ux, dy = np.uy, bp = tornadoPos(t, np.f / L), f = zon === 1 ? TORNADO.flygNara : TORNADO.flygUtkant;
   const sid = ((x - bp.x) * -dy + (y - bp.y) * dx) >= 0 ? 1 : -1;
   for (let k = 0; k < 6; k++) {
     const d = f[0] + ur(s, t, a, 3828 + k) * (f[1] - f[0]), fram = (ur(s, t, a, 3834 + k) - 0.3) * d;
     const nx = Math.floor(x - dy * d * sid + dx * fram), ny = Math.floor(y + dx * d * sid + dy * fram);
-    if (!inMap(nx, ny) || blocked(s, nx, ny) || stationAt(s, nx, ny) || !folk && nagotPa(s, nx, ny) || vattenNu(s)[ny * W + nx] === T.Vatten) continue;
+    if (!inMap(nx, ny) || blocked(s, nx, ny) || stationAt(s, nx, ny) || !folk && (nagotPa(s, nx, ny) || eldRutor(s).has(ny * W + nx)) || vattenNu(s)[ny * W + nx] === T.Vatten) continue;
     return { x: nx, y: ny };
   }
   return undefined;

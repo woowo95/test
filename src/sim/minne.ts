@@ -11,7 +11,7 @@ import { groundOf, tileOf } from './mark';
 import { KUNSKAPER, kn, learnK } from './kunskap';
 import { clamp, clampI, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
-import { DAY, H, HOUR, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
+import { DAY, H, HOUR, HOUR_S, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
 import { FOREST } from './vag';
 import { balans } from './balans';
 import type { SamtalDef } from './samtal';
@@ -329,13 +329,31 @@ function fjarran(s: State) {
   }
   return c;
 }
-// den plats personen väljer: det hen tror ger mest och inte är för långt bort. Väl framme ser hen sig omkring
-// och går till den bästa rutan i närheten.
-export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number }[]) {
+// samlarens tur (steg 12.1.187): vad turen till en plats ger per timme, med gången dit och hem inräknad. Det hen tror finns på
+// platsen (v) räknas i saker per ruta som när nästa mål väljs (nastaMal i steg.ts). Hen plockar det som finns inom synvidden
+// (RUNDA.syn), högst en full börda; varje sak tar RUNDA.plock sekunder och vägen till nästa, som är längre ju glesare sakerna
+// ligger. Gången dit från där hen står och hem till byn går med hens fart. Några buskar nära byn kan då löna sig mot ett rikare
+// ställe långt bort, utan någon egen regel för dem
+export function turPerTimme(v: number, dit: number, hem: number, t: Tur) {
+  const R = turKrok.runda!, tat = Math.max(0, v) * (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf('samla')); // saker per ruta
+  if (!(tat > 0)) return 0;
+  const n = Math.min(t.borda, tat * Math.PI * R.syn * R.syn), sak = R.plock + 1 / Math.sqrt(tat) / t.fart;
+  return n / ((dit + hem) / t.fart + n * sak) * HOUR_S;
+}
+// rundans tal (RUNDA i steg.ts, som sätter kroken: filen läses efter minne.ts)
+export const turKrok: { runda?: { plock: number; syn: number } } = {};
+// det som är detsamma för alla platser personen väger (turFor i val.ts): bördan i saker och farten
+export interface Tur { borda: number; fart: number }
+// den plats personen väljer: det hen tror ger mest och inte är för långt bort; för samlaren det turen ger per timme med gången
+// (turPerTimme). Väl framme ser hen sig omkring och går till den bästa rutan i närheten.
+export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number }[], tur?: Tur) {
   let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
   const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
   for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - (c.d + (k === 'samla' ? smutsAvdrag(s, c.x, c.y) : 0)) * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus;
+    const v = perceive(s, p, k, c.x, c.y, sight, u, syns);
+    // samlaren: hem är vägen från platsen till byn, och toa-smutsen räknas som en längre väg (steg 10.11.14); slumpen gånger värdet
+    const sc = tur ? turPerTimme(v, Math.hypot(c.x + 0.5 - p.x, c.y + 0.5 - p.y), c.d + smutsAvdrag(s, c.x, c.y), tur) * (1 + (rnd(s, 'val', p) - 0.5) * MINNE.valBrus)
+      : v - c.d * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus;
     if (sc > bs) { bs = sc; best = c; }
   }
   if (!best || sees(s, p, best.x, best.y, sight)) return best;

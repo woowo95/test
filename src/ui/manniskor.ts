@@ -292,6 +292,8 @@ function bar(k: string, cx: number, cy: number, storlek: number) {
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt
 // Pixelify Sans som brödtexten (steg 5.3.2.3), i panelens ljusa och mörka färg; när typsnittet laddats ritas namnen om med det
 const NAMNFONT = '"Pixelify Sans", system-ui, sans-serif';
+// typsnittet slår ihop fi och fl till fel tecken (steg 12.1.50): ett osynligt tecken emellan håller dem isär
+const ejLig = (t: string) => t.replace(/f(?=[il])/g, 'f\u200c');
 const nameStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 22, fill: 0xdad0bb, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
 // namnen vid alla (steg 12.1.157, ui/namnskyltar.ts): mindre text under fötterna, en text per person som återanvänds
 const smaStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: SKYLT.hojd * 2, fill: 0xdad0bb, stroke: 0x24201d, strokeThickness: 4, fontWeight: '700' });
@@ -556,7 +558,7 @@ export function drawPeople(t: number) {
   for (const p of [byId(s, ui.selected), ui.hovered !== ui.selected ? byId(s, ui.hovered) : undefined]) {
     if (!p || !paKartan(p)) continue; // den som är borta från byn (steg 11.2.3) har inget namn på kartan
     const tx = nameTags[n++];
-    if (tx.text !== p.name) tx.text = p.name;
+    { const n = ejLig(p.name); if (tx.text !== n) tx.text = n; }
     // namnet ovanför figuren, det hen bär på huvudet och symbolen över huvudet (steg 9.2.27), så att det inte täcker figuren
     // eller den som står bredvid
     const q = posOf(p), topp = huvud.get(p.id) ?? q.y * TS - 13; tx.position.set(q.x * TS, topp - SYMBOL_LUFT - 6); tx.visible = true;
@@ -573,7 +575,7 @@ export function drawPeople(t: number) {
     if (!f || !sedd.has(p.id) || stora.has(p.id) || !paKartan(p)) continue;
     let tx = smaNamn.get(p.id);
     if (!tx) { tx = new PIXI.Text('', smaStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); labels.addChild(tx); smaNamn.set(p.id, tx); }
-    if (tx.text !== p.name) tx.text = p.name;
+    { const n = ejLig(p.name); if (tx.text !== n) tx.text = n; }
     const roll = rollAv(s, p);
     skyltar.push({ id: p.id, x: f.x, y: f.y + 1 + SKYLT.hojd, w: tx.width, ikon: roll && hasIcon(roll.ikon) ? roll.ikon : undefined, forst: roll ? 1 : 0 });
   }

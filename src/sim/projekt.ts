@@ -110,6 +110,7 @@ export interface Uppgift { act: Act; text: string; min?: number; tool?: string; 
 export interface ProjektFara { kyla: boolean; gras: number }
 export interface ProjektDef {
   namn: string; vikt: number;
+  skal?: string; // skälet när namnet är en handling eller inte passar efter "Byn saknar" (steg 12.1.50): "Stubbar står där något ska byggas"
   motKyla?: true; // skyddar mot kylan (plaggen som värmer, steg 10.2.71): väger mer ju kallare det är, och kylan som fara stoppar det inte
   brist(s: State): number; kostnad(): number;
   egen?(s: State, fam: readonly Person[], p?: Person): number; // hur mycket p och familjen saknar det (0 till 1, steg 6.1.16)
@@ -269,7 +270,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // en station ute flyttas närmare dem som använder den (steg 9.4.8, stationer.ts)
   stationFlytt: {
-    namn: 'Flytta en station', vikt: PROJEKT_TAL.stationFlytt,
+    namn: 'Flytta en station', vikt: PROJEKT_TAL.stationFlytt, skal: 'En station står långt från dem som använder den',
     brist: s => { const v = stationFlyttVal(s); return v ? Math.min(1, v.vinst / STATION.flyttFull) : 0; },
     kostnad: () => STATION.flyttMin / 60 * ARBETE,
     kan: (s, p) => ageOf(p, s.now) >= ALDER.vuxen && !!stationFlyttVal(s) && enTill(s, 'flyttStation', p),
@@ -277,7 +278,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
   rojning: {
-    namn: 'Röjning', vikt: PROJEKT_TAL.rojning,
+    namn: 'Röjning', vikt: PROJEKT_TAL.rojning, skal: 'Träd står där byn vill ha en lagerplats eller ett fält',
     brist: s => rojBrist(s), // hur stor del som är kvar att röja (steg 12.1.174)
     kostnad: () => SKOG.fallTim * ARBETE,
     kan: (s, p) => freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p),
@@ -285,7 +286,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // stubbarna där något ska stå grävs bort först (steg 6.5.7, skog.ts)
   stubbe: {
-    namn: 'Gräva bort stubbar', vikt: PROJEKT_TAL.stubbe,
+    namn: 'Gräva bort stubbar', vikt: PROJEKT_TAL.stubbe, skal: 'Stubbar står där något ska byggas',
     brist: s => stubbBrist(s), // hur stor del som är kvar att gräva bort (steg 12.1.174)
     kostnad: () => SKOG.stubbeMin / 60 * ARBETE,
     kan: (s, p) => !!stubbeSpot(s, p),
@@ -293,7 +294,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // skogsvården (steg 6.5.2, skogsvard.ts): en planta flyttas dit byn vill ha skog närmare
   plantera: {
-    namn: 'Flytta plantor', vikt: PROJEKT_TAL.plantera,
+    namn: 'Flytta plantor', vikt: PROJEKT_TAL.plantera, skal: 'Byn vill ha skogen närmare',
     brist: s => skogsvardBrist(s),
     kostnad: () => SKOGSVARD.gravMin / 60 * ARBETE,
     kan: (s, p) => kanPlantera(s, p),
@@ -301,7 +302,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // en uppsatt fackla (steg 6.3.7, ljus.ts): där folk ofta är vakna i mörker, med en av byns facklor
   uppsatt: {
-    namn: 'Uppsatt fackla', vikt: PROJEKT_TAL.uppsatt,
+    namn: 'Uppsatt fackla', vikt: PROJEKT_TAL.uppsatt, skal: 'Det är mörkt där folk är vakna',
     brist: s => morkStalle(s) ? 1 : 0,
     kostnad: () => grundvarde('fackla') + UPPSATT.min / 60 * ARBETE,
     kan: (s, p) => !!friFackla(s) && !!morkStalle(s) && enTill(s, 'uppsatt', p),
@@ -309,7 +310,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // ett talgljus på ett bord eller en hylla inne (steg 6.3.8, ljus.ts)
   ljus: {
-    namn: 'Talgljus på bordet', vikt: PROJEKT_TAL.ljus,
+    namn: 'Talgljus på bordet', vikt: PROJEKT_TAL.ljus, skal: 'Det är mörkt vid bordet',
     brist: s => ljusPlatser(s).length ? 1 : 0,
     kostnad: () => Math.min(...Object.keys(LJUSSORTER).map(grundvarde)) + LJUS.min / 60 * ARBETE,
     kan: (s, p) => !!friLjus(s) && ljusPlatser(s).length > 0 && enTill(s, 'ljus', p),
@@ -325,7 +326,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // kol i fyrfatet när det är kallt och någon sover i rummet (steg 12.4.11, mobler.ts)
   fyrfat: {
-    namn: 'Kol i fyrfatet', vikt: PROJEKT_TAL.ljus,
+    namn: 'Kol i fyrfatet', vikt: PROJEKT_TAL.ljus, skal: 'Det är kallt där någon sover',
     brist: s => moblerKrok.fyrfatKol(s) ? 1 : 0,
     kostnad: () => grundvarde('kol') + LJUS.fyllMin / 60 * ARBETE,
     kan: (s, p) => !!moblerKrok.fyrfatKol(s) && getable(s, p, 'kol') >= 1 && enTill(s, 'fyrfat', p),
@@ -333,7 +334,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // en tom oljelampa på ett bord eller en hylla fylls med brännolja (steg 12.4.2, ljus.ts)
   lampa: {
-    namn: 'Olja i lampan', vikt: PROJEKT_TAL.ljus,
+    namn: 'Olja i lampan', vikt: PROJEKT_TAL.ljus, skal: 'Lampan har ingen olja',
     brist: s => tommaLampor(s).length ? 1 : 0,
     kostnad: () => grundvarde('talg') + LJUS.fyllMin / 60 * ARBETE,
     kan: (s, p) => vatskaAv(s, 'brannolja') >= 1 && tommaLampor(s).length > 0 && enTill(s, 'fyll_lampa', p),
@@ -412,8 +413,7 @@ export const bristAlla = (s: State) => {
 export const bristNu = (s: State, k: string) => {
   const a = s.arbBehov;
   if (!a?.brist) return PROJEKT[k].brist(s);
-  // bv sätts först: stationernas brist frågar bristNu igen (koKrok.vid, slöjdbänkens kö) och får då den förra räkningen
-  if (a.bv !== (s.byggV ?? 0)) { a.bv = s.byggV ?? 0; a.brist = bristAlla(s); }
+  if (a.bv !== (s.byggV ?? 0)) { a.bv = s.byggV ?? 0; a.brist = bristAlla(s); } // bv först: slöjdbänkens brist frågar efter bristNu under räkningen (koKrok.vid) och får då den förra
   return a.brist[k] ?? 0;
 };
 export function personVarde(s: State, k: string, fam: readonly Person[], om: number, p?: Person) {

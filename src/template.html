@@ -44,7 +44,8 @@ html, body { height: 100%; }
 [title] { cursor: help; }
 :is(button, a, [data-id], [data-hjalp], [data-pdel], [data-sak], [data-fram], [role="button"], .klick) { cursor: pointer; }
 .bubbla { position: fixed; z-index: 20; max-width: min(280px, calc(100vw - 12px)); box-sizing: border-box; padding: 6px 9px; border: 1px solid var(--ram); border-radius: 4px; background: var(--panel); color: var(--fg); font-size: 13px; line-height: 1.35; white-space: pre-line; pointer-events: none; box-shadow: 0 2px 6px rgba(36, 32, 29, 0.35); }
-body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4; box-sizing: border-box; --topp: 59px; --stenar: 64px; }
+body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4; font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0; box-sizing: border-box; --topp: 59px; --stenar: 64px; }
+button, input, select, textarea { font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0; } /* pixeltypsnittets fi och fl ger fel tecken (flinta blev Ainta, steg 12.1.50) */
 .app { height: 100%; }
 header { position: fixed; left: 0; right: 0; top: 0; height: var(--topp); box-sizing: border-box; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 18px; padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); background: var(--panel); border-bottom: 1px solid var(--line); overflow: hidden; }
 h1 { font-family: var(--display); font-weight: 700; font-size: 24px; margin: 0; letter-spacing: 0; } /* Silkscreen i hela punkter: 8, 16 och 24 */
@@ -96,9 +97,9 @@ header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; h
 /* Förrådet öppnas med rikedomen i sidhuvudet (steg 5.3.3.4) */
 /* förrådsspalten är smal (steg 6.9.2): en rad är bara symbolen och antalet */
 /* listan har kartrutornas mörka bakgrund (steg 12.1.161), så att den går att läsa mot snön och den ljusa marken */
-.owned { position: absolute; left: 10px; top: 12px; width: 120px; max-height: calc(100% - 110px); display: block; overflow-y: auto; background: rgba(36, 32, 29, 0.82); color: #dad0bb; text-shadow: 0 1px 1px #24201d; border-radius: 4px; padding: 4px 7px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
+.owned { position: absolute; left: 10px; top: 12px; width: 120px; max-height: calc(100% - 136px); display: block; overflow-y: auto; background: rgba(36, 32, 29, 0.82); color: #dad0bb; text-shadow: 0 1px 1px #24201d; border-radius: 4px; padding: 4px 7px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
 /* med fingret (mobilen, plattan): större siffror som går att läsa (steg 12.1.161) */
-@media (pointer: coarse) { .owned { width: 136px; font-size: 14px; } .owned .n, .forradlista .n { font-size: 15px; font-weight: 700; } }
+@media (pointer: coarse) { .owned { width: 136px; font-size: 14px; max-height: calc(100% - 150px); } .owned .n, .forradlista .n { font-size: 15px; font-weight: 700; } }
 .owned h4 { margin: 0 0 3px; font-size: 16px; opacity: 0.8; font-family: var(--display); font-weight: 400; }
 .owned .forradrub { border: 0; background: none; color: inherit; font: inherit; padding: 0; cursor: pointer; text-shadow: inherit; } /* rubriken öppnar förrådets flik (steg 11.1.6) */
 .forradlista { list-style: none; padding: 0; margin: 0 0 8px; } .forradlista li { display: flex; gap: 6px; align-items: center; padding: 2px 0; } .forradlista .n { margin-left: auto; font-variant-numeric: tabular-nums; }
@@ -129,6 +130,8 @@ img.ikon.sym { vertical-align: middle; } /* emojierna som pixelsymboler i hel sk
 .legend { position: absolute; right: calc(var(--stenar) + 50px); bottom: 52px; z-index: 1; background: rgba(36, 32, 29, 0.6); border-radius: 4px; padding: 5px 7px; display: flex; flex-direction: column; gap: 3px; }
 /* kartans knappar (steg 5.3.6 och 6.8.13): zoomen nere i högra hörnet bredvid porträttraden, filtren för värmekartan ovanför den, och båda till vänster om den högra panelen när den är öppen */
 body.hOppen .zoom { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(--stenar) - 24px) + 10px); }
+body.hOppen .ports { right: calc(var(--stenar) + 14px + min(360px, 100vw - var(--stenar) - 24px) + 140px); } /* porträttraden slutar före zoomen, så att knapparna inte täcker korten (steg 12.1.51) */
+@media (max-width: 760px) { body.hOppen .ports { right: calc(var(--stenar) + 8px + 132px); } }
 /* värmekartornas knappar och förklaring står kvar när panelen fälls ut, och panelen får täcka dem (steg 10.2.62) */
 @media (max-width: 760px) { body.hOppen .zoom { display: none; } } /* ingen plats bredvid panelen på en smal skärm (steg 5.3.7) */
 .legend button { display: flex; align-items: center; gap: 5px; background: none; border: 0; padding: 2px 3px; border-radius: 3px; cursor: pointer; }
@@ -347,7 +350,6 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .kforkl { margin: 2px 0 6px; }
 .when { display: block; font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
 .logg.kron > li { display: grid; grid-template-columns: 8.5em 1fr; column-gap: 8px; align-items: baseline; } .logg.kron .when { display: inline; } /* tiden i en kolumn med fast bredd (steg 11.1.35) */
-.logg.kron > li { display: grid; grid-template-columns: 8.5em 1fr; column-gap: 8px; align-items: baseline; } .logg.kron .when { display: inline; } /* tiden i en kolumn med fast bredd (steg 11.1.35) */
 .logg .k-death { color: var(--bad); }
 .logg .k-death .when { color: var(--muted); }
 .logg .k-world { font-style: italic; }
@@ -463,7 +465,7 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 /* Översikt (steg 11.1.45): familjen som små porträtt med namn, och sederna hen håller som en liten våg med ett ord */
 .famrad { display: flex; flex-wrap: wrap; gap: 6px; }
 .famp { display: grid; justify-items: center; gap: 1px; width: 64px; background: none; border: 1px solid transparent; border-radius: 4px; padding: 2px; font: inherit; font-size: 12px; color: var(--fg); cursor: pointer; }
-.famp:hover { border-color: var(--line); }
+.famp:hover { border-color: var(--line); } .famp.borta { opacity: 0.6; } /* död eller flyttad (steg 12.1.51) */
 .famp .pf.liten { width: 40px; height: 40px; }
 .famp span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .famp small { font-size: 11px; }

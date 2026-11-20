@@ -73,7 +73,7 @@ import { SAMTAL, TalkEvent, converse, horHar, kanPrata, skiljsAt } from './samta
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { skrivVanor } from './vanor';
 import { RELT, stepRelationer } from './relationer';
-import { MINNE, areaOf, fearPlace, forget, lookAround, observe, plockad, radslaVid, sees, sightOf, trorOm } from './minne';
+import { MINNE, turKrok, areaOf, fearPlace, forget, lookAround, observe, plockad, radslaVid, sees, sightOf, trorOm } from './minne';
 import { PLATS } from './plats';
 import { chance, clamp, hash3, r3, rnd } from './slump';
 import { VAR, ageIndex, hourOf, isLight } from './tid';
@@ -1233,6 +1233,7 @@ export const RUNDA = balans('runda', {
   hem: 0.04, // hem när draget drar hemåt mer än så här (bördan, hungern, törsten, tröttheten, mörkret, kylan)
   ater: 1, // en tömd ruta med grenar eller stenar får tillbaka så här många saker per dygn (år i spelet)
 });
+turKrok.runda = RUNDA; // samlarens tur (turPerTimme i minne.ts, steg 12.1.187)
 // ---------- saker på rutan (steg 9.2.53) ----------
 // Varje ruta har ett helt antal saker av det samlaren letar: bär och rötter efter rikedomen i sitt lager (FYND, saker på en full
 // ruta), grenarna i skogen och stenarna och flintan vid stenarna efter rutan, minus det som plockats där (s.plockat, som växer
