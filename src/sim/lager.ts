@@ -69,7 +69,7 @@ export const LAGER = balans('lager', {
   // vad som bärs in först (haulJob): poängen är avståndet från lägret, plus detta för det som inte ligger på marken; lägst poäng först
   barBredvid: 50, // saker bredvid lagret när det nu finns plats i det
   svaltOmvag: 30, // vid svält väger det som inte är mat som om det låg så här många rutor längre bort (steg 10.2.6)
-  barFullt: 8, // när förrådet är fullt bärs bara det som ligger längre bort från lägret än så här många rutor (det man bär in hamnar ändå utanför) ...
+  barFullt: 8, // när förrådet är fullt bärs bara det som kommer så här många rutor närmare lägret där det hamnar (utanför ringen, besideSpot; steg 12.1.190) ...
   barVarde: 1, barVardeMin: 1, barVardeMax: 4, // ... gånger sakens grundvärde delat med barVarde, mellan min och max (steg 10.2.44): det värdefulla bärs från närmare
   barSortera: 40, // saker i fel lagerplats (maten bland materialet): före det som ligger bredvid lagret, som redan räknas som lagrat
   barNarmare: 150, // saker som kan flyttas till en lagerplats närmare elden
@@ -116,12 +116,46 @@ export function zoneAt(s: State, x: number, y: number) {
   for (let i = 0; i < zs.length; i++) if (inZone(zs[i], x, y)) return i;
   return -1;
 }
+// Rutorna står i ett rutnät (lagerRutor, steg 12.1.186) som räknas om när en lagerplats eller ett fält ändrats
 export function isStored(s: State, x: number, y: number) {
+  return (x | 0) === x && (y | 0) === y && inMap(x, y) ? lagerRutor(s)[y * W + x] === 1 : isStoredNu(s, x, y);
+}
+// isStored med rutnätet g hämtat en gång (lagerRutor), för slingor över många stackar
+const lagradI = (s: State, g: Uint8Array, x: number, y: number) => (x | 0) === x && (y | 0) === y && inMap(x, y) ? g[y * W + x] === 1 : isStoredNu(s, x, y);
+function isStoredNu(s: State, x: number, y: number) {
   const zs = zonesOf(s);
   // en ruta på ett fält hör aldrig till förrådet, också när en lagerplats flyttats eller vuxit intill fältet: det som ligger där
   // ligger utanför lagret och bärs in som annat utanför
   for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, LAGER.bredvid)) return !faltAt(s, x, y);
   return false;
+}
+// ---------- förrådets rutor i ett rutnät (steg 12.1.186) ----------
+// 1 = rutan hör till förrådet. Rutnätet räknas om när något det beror på ändrats: kartans storlek, lagerplatserna (deras
+// rutor) och fälten (samma nyckel som faltAt i odling.ts: byggV, antalet fält och nästa fälts nummer)
+interface Rutor { zs: Zone[]; k: number[]; g: Uint8Array; satta: number[] }
+const rutor = new WeakMap<State, Rutor>();
+function rutorGiltiga(r: Rutor, s: State, zs: Zone[]) {
+  const k = r.k;
+  if (r.zs !== zs || k[0] !== W || k[1] !== H || k[2] !== (s.byggV ?? 0) || k[3] !== (s.falt?.length ?? 0) || k[4] !== (s.nextFalt ?? 0) || k[5] !== zs.length) return false;
+  for (let i = 0, j = 6; i < zs.length; i++, j += 4) { const z = zs[i]; if (k[j] !== z.x || k[j + 1] !== z.y || k[j + 2] !== z.w || k[j + 3] !== z.h) return false; }
+  return true;
+}
+export function lagerRutor(s: State) {
+  const zs = zonesOf(s);
+  let r = rutor.get(s);
+  if (r && rutorGiltiga(r, s, zs)) return r.g;
+  if (!r || r.g.length !== W * H) { r = { zs, k: [], g: new Uint8Array(W * H), satta: [] }; rutor.set(s, r); }
+  for (const i of r.satta) r.g[i] = 0;
+  r.satta = [];
+  const d = LAGER.bredvid;
+  for (const z of zs) for (let y = Math.max(0, z.y - d); y < Math.min(H, z.y + z.h + d); y++) for (let x = Math.max(0, z.x - d); x < Math.min(W, z.x + z.w + d); x++) {
+    const i = y * W + x;
+    if (r.g[i]) continue;
+    if (!faltAt(s, x, y)) { r.g[i] = 1; r.satta.push(i); }
+  }
+  r.zs = zs; r.k = [W, H, s.byggV ?? 0, s.falt?.length ?? 0, s.nextFalt ?? 0, zs.length];
+  for (const z of zs) r.k.push(z.x, z.y, z.w, z.h);
+  return r.g;
 }
 export function stacksOf(s: State): Stack[] {
   return s.stackar ??= [];
@@ -131,7 +165,8 @@ export const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e
 // ---------- summorna ----------
 // Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack),
 // som glömmer summorna
-export const changed = (s: State) => { summor.delete(s); };
+export const changed = (s: State) => { summor.delete(s); lagerV++; };
+let lagerV = 0; // ökar varje gång en stack ändrats (slagen inom räckhåll, slagFinns)
 // testläget (steg 4.5.7.8): lagerplatsen tas bort. Det som låg där blir liggande som högar på marken, och byn bär det till
 // de andra lagerplatserna. Den sista lagerplatsen tas inte bort (lagerHinder). false = den togs inte bort
 export const lagerHinder = (s: State) => zonesOf(s).length <= 1 ? 'Byn har bara den här lagerplatsen' : undefined;
@@ -143,19 +178,24 @@ export function taBortLager(s: State, z: Zone) {
   return true;
 }
 // ag: ägarnas delar per slag, räknade först när någon frågar efter slaget (undefined = ingen stack med ägare)
-interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Map<string, Del | undefined>; agKlar?: true; lagrade: Stack[] }
+// finns: slagen som har en stack någonstans, i förrådet eller utanför (och det gömda i sin värdstack), steg 12.1.184
+// per: alla stackar per slag, i och utanför förrådet, i stackarnas ordning (steg 12.1.186): frågorna om ett slag går bara igenom dess stackar
+interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Map<string, Del | undefined>; agKlar?: true; lagrade: Stack[]; finns: Set<string>; per: Map<string, Stack[]> }
 const summor = new WeakMap<State, Summa>();
 function summa(s: State) {
   const st = stacksOf(s), c = summor.get(s);
   if (c && c.st === st) return c;
-  const n: Record<string, number> = {}, w: Record<string, number> = {}, lagrade: Stack[] = [];
+  const n: Record<string, number> = {}, w: Record<string, number> = {}, lagrade: Stack[] = [], finns = new Set<string>(), per = new Map<string, Stack[]>();
+  const g = lagerRutor(s);
   for (const a of st) {
-    if (!isStored(s, a.x, a.y)) continue;
+    finns.add(a.k); if (a.dold) finns.add(DOLD_I[a.k]);
+    const l = per.get(a.k); if (l) l.push(a); else per.set(a.k, [a]);
+    if (!lagradI(s, g, a.x, a.y)) continue;
     lagrade.push(a);
     n[a.k] = (n[a.k] ?? 0) + a.n; w[a.k] = (w[a.k] ?? 0) + a.n * a.c;
     if (a.dold) { const d = DOLD_I[a.k]; n[d] = (n[d] ?? 0) + a.dold; }
   }
-  const ny: Summa = { st, n, w, ag: new Map(), lagrade };
+  const ny: Summa = { st, n, w, ag: new Map(), lagrade, finns, per };
   summor.set(s, ny);
   return ny;
 }
@@ -163,8 +203,32 @@ function summa(s: State) {
 // på en gång. Allt som ändrar en stack anropar changed innan någon frågar igen, så delarna hinner inte bli gamla
 // Varje slag räknas när någon frågar efter det, över de stackar som ligger i förrådet (summa sparar dem, så att platsen inte
 // prövas igen för varje slag; steg 10.2.102)
+const INGA: readonly Stack[] = [];
+// stackarna av slaget k, i och utanför förrådet, i stackarnas ordning (steg 12.1.186)
+export function stackarAv(s: State, k: string): readonly Stack[] {
+  const l = summa(s).per.get(k) ?? INGA;
+  if (LAGERKOLL.pa && ++LAGERKOLL.n % 64 === 0) { const ny = stacksOf(s).filter(a => a.k === k); if (ny.length !== l.length || ny.some((a, i) => a !== l[i])) LAGERKOLL.fel.push(`stackarna av ${k}: ${l.length} i minnet, ${ny.length} nyräknade`); }
+  return l;
+}
+// vakten i testerna (steg 12.1.186): pa = var 64:e fråga om ett slags stackar jämförs med en nyräknad lista; felen samlas i fel
+export const LAGERKOLL = { pa: false, n: 0, fel: [] as string[] };
+// rutnätet, stackarna per slag och summorna jämförda med nyräknade (kor.ts, en gång i timmen). Ger felen i ord
+export function lagerVakt(s: State) {
+  const fel: string[] = [], c = summa(s), st = stacksOf(s), zs = zonesOf(s), d = LAGER.bredvid;
+  for (const z of zs) for (let y = z.y - d; y < z.y + z.h + d; y++) for (let x = z.x - d; x < z.x + z.w + d; x++) if (isStored(s, x, y) !== isStoredNu(s, x, y)) fel.push(`rutan ${x},${y} i rutnätet`);
+  for (const a of st) if (isStored(s, a.x, a.y) !== isStoredNu(s, a.x, a.y)) fel.push(`rutan ${a.x},${a.y} med ${a.k} i rutnätet`);
+  const per = new Map<string, Stack[]>(), n: Record<string, number> = {};
+  for (const a of st) {
+    const l = per.get(a.k); if (l) l.push(a); else per.set(a.k, [a]);
+    if (isStoredNu(s, a.x, a.y)) { n[a.k] = (n[a.k] ?? 0) + a.n; if (a.dold) { const h = DOLD_I[a.k]; n[h] = (n[h] ?? 0) + a.dold; } }
+  }
+  for (const [k, l] of per) { const m = c.per.get(k) ?? INGA; if (m.length !== l.length || l.some((a, i) => a !== m[i])) fel.push(`stackarna av ${k}: ${m.length} i minnet, ${l.length} nyräknade`); }
+  for (const [k, m] of c.per) if (!per.has(k) && m.length) fel.push(`stackarna av ${k}: ${m.length} i minnet, inga nyräknade`);
+  for (const k of new Set([...Object.keys(n), ...Object.keys(c.n)])) if (Math.abs((n[k] ?? 0) - (c.n[k] ?? 0)) > 1e-9) fel.push(`summan av ${k}: ${c.n[k] ?? 0} i minnet, ${n[k] ?? 0} nyräknad`);
+  return fel.concat(LAGERKOLL.fel.splice(0));
+}
 function agOf(s: State, k: string) {
-  if (nara) { let d: Del | undefined; for (const a of stacksOf(s)) if (a.k === k && a.ag && nas(a)) addDel(d ??= {}, a.ag); return d; } // i räckhåll (delarna är hela saker per ägare: ordningen spelar ingen roll)
+  if (nara) { let d: Del | undefined; for (const a of stackarAv(s, k)) if (a.ag && nas(a)) addDel(d ??= {}, a.ag); return d; } // i räckhåll (delarna är hela saker per ägare: ordningen spelar ingen roll)
   const c = summa(s);
   // första frågan efter att summorna räknats om går igenom stackarna en gång för alla slag (förut en gång per slag som frågades);
   // varje slag läggs ihop i stackarnas ordning som förut
@@ -177,7 +241,7 @@ function agOf(s: State, k: string) {
 // hur mycket byn har av ett slag. Redskapen räknas på tingen (agande.ts)
 export function amountOf(s: State, k: string) {
   if (isTool(k)) { let n = 0; for (const t of tingOf(s)) if (iSlag(t.k, k)) n += t.c; return n; } // en grupp: alla i den (steg 12.2.5)
-  if (nara) { const h = SAKER[k]?.i, kk = h ?? k; let n = 0; for (const a of stacksOf(s)) if (a.k === kk && nas(a)) n += h ? a.dold ?? 0 : a.n; return n; } // i räckhåll (en summa: utan sorteringen)
+  if (nara) { const h = SAKER[k]?.i, kk = h ?? k; let n = 0; for (const a of stackarAv(s, kk)) if (nas(a)) n += h ? a.dold ?? 0 : a.n; return n; } // i räckhåll (en summa: utan sorteringen)
   return (summa(s).n[k] ?? 0) + (vidPlats ? vidArbetet(s, k) : 0);
 }
 // mängden gånger skicket (för värdet, varde.ts)
@@ -465,8 +529,9 @@ function occupancy(s: State, ts = tingOf(s)) {
   const m = new Map<number, Stack>() as Occ;
   m.redskap = new Map();
   m.eld = eldRutor(s); // i elden läggs inget (steg 12.1.153)
-  for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a);
-  for (const t of ts) if (paRutan(t) && isStored(s, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
+  const g = lagerRutor(s);
+  for (const a of stacksOf(s)) if (lagradI(s, g, a.x, a.y)) m.set(key(a.x, a.y), a);
+  for (const t of ts) if (paRutan(t) && lagradI(s, g, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
   return m;
 }
 const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor, klar: t.halv && halvKlar(t.halv), id: t.id, q: t.q });
@@ -593,19 +658,34 @@ export const fetchSpot = (s: State, k: string) => {
 // stackarna av ett slag i förrådet, sämst skick först
 function stored(s: State, k: string) {
   const ut: Stack[] = [];
-  for (const a of stacksOf(s)) if (a.k === k && (nara ? nas(a) : isStored(s, a.x, a.y))) ut.push(a); // inom räckhåll också det som ligger utanför lagret (vid arbetet)
+  const g = nara ? undefined : lagerRutor(s);
+  for (const a of stackarAv(s, k)) if (g ? lagradI(s, g, a.x, a.y) : nas(a)) ut.push(a); // inom räckhåll också det som ligger utanför lagret (vid arbetet)
   return ut.sort((a, b) => condOf(a) - condOf(b));
 }
 // ---------- räckhållet (steg 11.1.74, Hämtningen i designdokumentet) ----------
 // Inget svävar: den som tar något ur förrådet tar det ur en stack hen står vid. Under iRackhall är förrådet bara stackarna inom
 // LAGER.rackvidd rutor från platsen: det som räknas, tas och byter ägare där. Den som hämtar material går därför till stacken
-let nara: { x: number; y: number } | undefined;
+let nara: { x: number; y: number; slag?: Set<string>; v?: number; st?: Stack[] } | undefined;
 export function iRackhall<T>(x: number, y: number, f: () => T): T { const f0 = nara; nara = { x, y }; try { return f(); } finally { nara = f0; } }
+// kan det finnas något av slaget k (steg 12.1.184)? false bara när ingen stack av slaget ligger där frågan gäller: i räckhåll
+// slagen i stackarna inom räckhåll, annars i alla stackar. Redskapen räknas på tingen och ger alltid true. Det någon bär räknas
+// inte här (iBordan). Ett snabbt sätt att hoppa över slag som ger 0 i summorna över mat och ved
+export function slagFinns(s: State, k: string) {
+  if (isTool(k)) return true;
+  if (!nara) return summa(s).finns.has(k);
+  const st = stacksOf(s);
+  if (!nara.slag || nara.v !== lagerV || nara.st !== st) {
+    const m = new Set<string>();
+    for (const a of st) if (iRackvidd(nara, a)) { m.add(a.k); if (a.dold) m.add(DOLD_I[a.k]); }
+    nara.slag = m; nara.v = lagerV; nara.st = st;
+  }
+  return nara.slag.has(k);
+}
 // det som väljs och planeras (valet av arbete, vad som ska hämtas och var) ser hela förrådet, också mitt i ett arbete
 // (vid: platsen för arbetet, där det som burits dit i flera vändor ligger utanför lagret: det räknas med, hamtning.ts)
 let vidPlats: { x: number; y: number } | undefined;
 export function iHelaForradet<T>(f: () => T, vid?: { x: number; y: number }): T { const f0 = nara, v0 = vidPlats; nara = undefined; vidPlats = vid; try { return f(); } finally { nara = f0; vidPlats = v0; } }
-const vidArbetet = (s: State, k: string) => { let n = 0; for (const a of stacksOf(s)) if (a.k === k && !isStored(s, a.x, a.y) && iRackvidd(vidPlats!, a)) n += a.n; return n; };
+const vidArbetet = (s: State, k: string) => { let n = 0; const g = lagerRutor(s); for (const a of stackarAv(s, k)) if (!lagradI(s, g, a.x, a.y) && iRackvidd(vidPlats!, a)) n += a.n; return n; };
 const nas = (a: Stack) => !nara || iRackvidd(nara, a);
 export const iRackvidd = (p: { x: number; y: number }, a: { x: number; y: number }) => Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y) <= LAGER.rackvidd;
 // den närmaste stacken i förrådet utom räckhåll från p med något av slagen (det gömda i sin värdstack)
@@ -902,9 +982,9 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
 // tar det som ruttnar först först. En stack ruttnar bort när skicket är slut: den håller så många timmar som skicket räcker
 // med det som sliter på den just nu (temperaturen, taket, vädret och smutsen, som i wearStore)
 export function matSomHaller(s: State, perTim: number) {
-  const temp = temperature(s), st: { tim: number; n: number }[] = [];
+  const temp = temperature(s), st: { tim: number; n: number }[] = [], g = lagerRutor(s);
   for (const a of summa(s).st) {
-    if (a.n <= 0 || !isFood(a.k) || !isStored(s, a.x, a.y)) continue;
+    if (a.n <= 0 || !isFood(a.k) || !lagradI(s, g, a.x, a.y)) continue;
     const r = wearAt(a.k, wearMult(s, a.x, a.y), true, temp) * ruttSmuts(s, a.x, a.y);
     st.push({ tim: r > 0 ? a.c / r : Infinity, n: a.n });
   }
@@ -1291,17 +1371,22 @@ function barLista(s: State) {
     return plats.get(q);
   };
   // finns det plats för slaget i förrådet (i en lagerplats eller ringen runt)? Annars hamnar det man bär in ändå på marken
-  // utanför, och då bärs bara det som ligger långt bort (LAGER.barFullt), närmare ju mer det är värt (steg 10.2.44). Annars bärs
-  // samma saker fram och tillbaka
+  // utanför, på den plats besideSpot ger, och då bärs bara det som kommer tillräckligt mycket närmare lägret där (LAGER.barFullt),
+  // mindre ju mer det är värt (steg 10.2.44). Platsen räknas en gång per slag (steg 12.1.190): annars bars samma saker fram och
+  // tillbaka, och samma flyttar som inte blev av räknades om
   const ryms = new Map<string, boolean>(), rymsIn = (k: string) => {
     if (!ryms.has(k)) ryms.set(k, !!(spot(k, -Infinity) ?? ringSpot(s, k, occ)));
     return ryms.get(k)!;
+  };
+  const hamnar = new Map<string, number>(), hamnarVid = (k: string) => { // avståndet från lägret där det man bär in läggs när förrådet är fullt
+    if (!hamnar.has(k)) { const r = besideSpot(s, k, occ); hamnar.set(k, utanforByn(s, r.x, r.y)); }
+    return hamnar.get(k)!;
   };
   for (const a of things(s)) {
     const d = utanforByn(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d, min: number | undefined;
-    if (!isStored(s, a.x, a.y)) { if (d * clamp(grundvarde(a.k) / LAGER.barVarde, LAGER.barVardeMin, LAGER.barVardeMax) > LAGER.barFullt || rymsIn(a.k)) why = 'Det ligger saker på marken som ska in i lagret'; }
+    if (!isStored(s, a.x, a.y)) { if (rymsIn(a.k) || (d - hamnarVid(a.k)) * clamp(grundvarde(a.k) / LAGER.barVarde, LAGER.barVardeMin, LAGER.barVardeMax) > LAGER.barFullt) why = 'Det ligger saker på marken som ska in i lagret'; }
     else if (zi < 0) { if (spot(a.k, -Infinity)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; min = -Infinity; } }
     else if (!allows(zs[zi], a.k)) { if (spot(a.k, -Infinity)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; min = -Infinity; } }
     else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; min = zs[zi].prio ?? 0; }

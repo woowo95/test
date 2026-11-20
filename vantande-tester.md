@@ -209,3 +209,9 @@
 - Grenen är skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit. (Rättelsen av loopen i bristNu fanns också på varld och är samma.)
 - 12.1.51: vakten för knappar som täcker annat (src/test/tackvakt.ts) körs av `npm run utseende`; när felsok-12-1 förs in blir den en rad i FORMVAKTER. Skyldig `npm run utseende`.
 - Scenariot ord var rött redan på varld (tekniker utan "att göra": drejskiva, oljelampa, sang, stol, laggkar, ost, brunn, utedass, sjukstuga, fyrfat).
+## Grenen par-forrad (12.1.184, 12.1.186, 12.1.188, 12.1.190, och rättningen av bristNu)
+
+- Rättningen före stegen (27a1159, bristNu i projekt.ts): oändlig rekursion när slöjdbänken finns (bristAlla → slöjdbänkens brist → koKrok.vid → bristNu). Fem av de sparade testbyarna (1-45, 1511-15, 1511-25, 1511-45 m.fl.) kraschade i `npm run kostnad` på varld. Byar som inte kraschade utvecklas som förut.
+- 12.1.184 och 12.1.186: `npm run samma` gav samma utveckling som förut (jämfört med en ny grund sparad på grenens första commit; test/samma.json på varld var gammal och visade annan utveckling redan före stegen). Skyldig koll; facit ska inte ändras av de två stegen. 12.1.186 har en ny vakt i testbyarna (`förrådets minne`): larmar den i koll ändrar någon kod en stack utan att anropa changed (lager.ts), och då rättas den koden. Prövad utan larm i byarna 1, 1511 och 4634 i 3–4 dygn.
+- 12.1.188 (den sista av en sak, behov.ts, byte.ts, handel.ts) och 12.1.190 (bärlistan, lager.ts) ändrar byarna: skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit, och för 12.1.190 `npm run jamfor -- 35 16` (steget säger att inget nyckeltal ska bli sämre).
+- Scenariot byte tog 372 s processortid i molnet och bör märkas `lang: true` om det tar så lång tid på MacBooken också.

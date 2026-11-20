@@ -1114,19 +1114,52 @@ SCENARIER.handelretur = {
     const M = SIM.bynPart(s, SIM.eldPlats(s).x, SIM.eldPlats(s).y);
     const slag = ['rovfron', 'artfron', 'appelplanta', 'jordgubbsplanta', 'rep', 'salt', 'bar', 'rotter', 'ved'].filter(k => SIM.SAKER[k]);
     const fel: string[] = [], kop: string[] = [];
+    // det som bjuds ut efter köpet är värt minst lika mycket för byn som det den köpte för (steg 12.1.188: den sista saken
+    // säljs inte längre aldrig, men den är värd mest, så det köpta säljs inte tillbaka till samma pris)
     for (const k of slag) {
       SIM.setAmount(s, k, 0);
-      const n = Math.min(20, SIM.bynKopAntal(s, k)); // handlaren har 20
+      const pris = M.varde(k), n = Math.min(20, SIM.bynKopAntal(s, k)); // handlaren har 20
       SIM.setAmount(s, k, n);
-      const over = M.over(['silver']).find(w => w.k === k)?.n ?? 0;
+      const over = M.over(['silver']).find(w => w.k === k)?.n ?? 0, salj = over > 0 ? M.kvar!(k, over) : Infinity;
       kop.push(`${k} ${n}`);
-      if (n < 1 || over > 0) fel.push(`${k}: köper ${n}, sedan över ${over}`);
+      if (n < 1 || salj < pris - 1e-9) fel.push(`${k}: köper ${n} för ${pris}, sedan ${over} över för ${salj}`);
     }
     const ratt = Object.keys(SIM.SAKER).find(k => SIM.SAKER[k]?.namn.endsWith(' · Fin'))!;
     const ord = SIM.varorText([{ k: 'jordgubbsplanta', n: 1 }, { k: 'appelplanta', n: 1 }, { k: 'remsa', n: 4 }, { k: 'rokelse', n: 2 }, { k: ratt, n: 7 }]);
     return [
-      [`det köpta är inte över efteråt (${kop.join(', ')})${fel.length ? `: ${fel.join('; ')}` : ''}`, !fel.length],
+      [`det köpta säljs inte tillbaka billigare än det köptes (${kop.join(', ')})${fel.length ? `: ${fel.join('; ')}` : ''}`, !fel.length],
       [`orden: "${ord}"`, ord.includes('en jordgubbsplanta') && ord.includes('en äppelplanta') && ord.includes('fyra remsor') && ord.includes('två bitar rökelse') && /sju portioner fin \S+/.test(ord) && !ord.includes('·')],
+    ];
+  },
+};
+
+// steg 12.1.188: den sista av en sak är värd mest, och värdet avgör om den säljs
+SCENARIER.sistasak = {
+  text: 'Den sista av en sak är värd mer (steg 12.1.188): byns värde av det den ger bort stiger ju färre den har kvar, och den sista är värd mest. Byn säljer inte det den nyss köpt till samma pris, och den sista saken säljs först när handlaren betalar riktigt bra; av det byn har gott om säljs till vanligt pris',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const x = SIM.eldPlats(s).x, y = SIM.eldPlats(s).y, M = SIM.bynPart(s, x, y);
+    // ett material utan buffert (rep, salt …): med en enda i förrådet bjuder byn ut den
+    const k = ['flinta', 'salt', 'rep', 'korg'].find(q => { if (!SIM.SAKER[q]) return false; SIM.setAmount(s, q, 1); const ok = (M.over(['silver']).find(w => w.k === q)?.n ?? 0) === 1; SIM.setAmount(s, q, 0); return ok; });
+    if (!k) return [['ett material utan buffert finns att pröva', false]];
+    // en handlare som betalar pris gånger grundvärdet och har silver
+    const handlare = (pris: number): SIM.Part => ({ id: -99, namn: 'Handlaren', x, y, varde: q => q === 'silver' ? 1 : pris, over: () => [{ k: 'silver', n: 200 }], lamna: w => w, ta: () => {} });
+    const salj = (pris: number) => SIM.bytaMed(s, handlare(pris), M, [{ k, n: 1 }], { behov: pris, minst: 1, fara: 0, typ: 'byn', utom: [k] }); // handlaren köper: värt pris gånger grundvärdet för hen
+    // byn saknar saken: den är värd DELA.saknar, och byn köper en för 1,5 gånger grundvärdet
+    SIM.setAmount(s, k, 0);
+    const kopVarde = M.varde(k);
+    SIM.setAmount(s, k, 1); // köpt
+    const sista = M.kvar!(k, 1);
+    const samma = salj(1.5), hade1 = SIM.amountOf(s, k);
+    const hogt = salj(SIM.DELA.saknar * 1.5), hade2 = SIM.amountOf(s, k);
+    // av det byn har gott om säljs en till vanligt pris
+    SIM.setAmount(s, k, 30);
+    const over = M.kvar!(k, 1), vanligt = salj(1);
+    return [
+      [`den sista är värd mest (${sista} mot ${over} när byn har gott om)`, sista === SIM.DELA.saknar && over < sista],
+      [`det byn nyss köpt för att den saknade det (värt ${kopVarde}) säljs inte tillbaka till samma pris (${samma} sålda)`, samma === 0 && hade1 === 1],
+      [`den sista säljs när handlaren betalar riktigt bra (${hogt} såld, ${hade2} kvar)`, hogt === 1 && hade2 === 0],
+      [`av det byn har gott om säljs en till vanligt pris (${vanligt})`, vanligt === 1],
     ];
   },
 };
