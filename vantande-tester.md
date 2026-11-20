@@ -26,6 +26,7 @@
 - 12.1.131 del 1 (145728a, flytten till TANKAR) är prövad med `npm run samma` mot 2c52678: samma utveckling som förut. Del 2 och stegen efter ändrar spelet (nya tankar, drömmar, upplevelser, intryck och samtalsämnen ändrar humöret, relationerna och sederna), så facit och samma-kollen visar annan utveckling.
 - Nya rader i TAKTER (tankarTimme och drommar, en gång i timmen) och en ny slumpföljd (drom): skyldig `npm run likhet`, och `npm run kostnad` i fasens kodgenomgång.
 - Nya krönikerader (k_rovare, k_brand, k_tornado, k_flod, k_epidemi, k_tro, k_resa, k_handel, k_djur, k_ratt) och nya texter: `npm run texter` bör visa att varianterna väljs; brandens, tornadons och översvämningens slutrad i krönikan skrivs nu ur mallarna i stället för den gamla texten.
+- 12.1.173 (gudlös, en ny rad i TAKTER en gång om dygnet) och 12.1.175 (lusten till rus ändrar chansen att dricka på kvällen, och därmed ruset, grälen och bakfyllan): samma kedja; `npm run likhet` täcker båda.
 - Femton nya intryckssymboler (i_forsvarare … i_fangelsekund i ikoner.ts) är platshållare; skyldig `npm run utseende` och tre versioner var i bildstilens valdel (publiceras inte från grenen).
 
 ## Hopslagna nattgrenar
