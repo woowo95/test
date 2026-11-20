@@ -1029,6 +1029,20 @@ function ordFall(): [string, boolean][] {
   ];
 }
 
+SCENARIER.textfel = {
+  text: 'Steg 12.1.119: texter som säger emot spelet. Skador räknas inte som bedrifter och står för sig (två ärr på samma ställe en gång), och händerna är inget vapen man ogillar',
+  kor: () => {
+    const s = createState(6, START), p = s.people[0];
+    p.fame = ['Tände byns första eld', 'Fick ett ärr i vänstra benet', 'Fick ett ärr i vänstra benet', 'Förlorade två fingrar', 'Blev ökänd', 'Tände byns första eld'];
+    const bed = SIM.bedrifter(p), sk = SIM.skadorText(p);
+    return [
+      [`bedrifterna utan skador och dubbletter: ${bed.join(', ')}`, bed.length === 1 && bed[0] === 'Tände byns första eld'],
+      [`skadorna för sig: "${sk}"`, sk === 'har två ärr i vänstra benet och har förlorat två fingrar'],
+      [`texterna utan bara händerna som vapen: ${SIM.BERATTELSER.besk_handGilla.length} varianter för nävarna`, SIM.BERATTELSER.besk_handGilla.length >= 8 && !JSON.stringify(SIM.BERATTELSER).includes('bara händerna')],
+    ];
+  },
+};
+
 SCENARIER.omrostning = {
   text: 'Steg 8.3.1–8.3.3: allt byn avgör är en fråga i FRAGOR. Klockan 20 röstar alla vuxna efter åsikter och intresse, summan av vikterna avgör, och vid Envälde väger nästan bara ledaren. Omröstningarna sparas',
   kor: () => {

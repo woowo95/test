@@ -1,3 +1,4 @@
+import { husIMening } from './ord';
 import { DAY, HOUR, MIN, Person, State, W } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
@@ -131,7 +132,7 @@ export function brytKlar(s: State, p: Person, ref?: number) {
   b.dorr = undefined; count(s, 'dorr_sonder'); count(s, 'rymning');
   const h = husById(s, p.fange.hus);
   slapps(s, p);
-  log(s, `${p.name} slog sönder dörren och rymde ur ${h ? h.namn.toLowerCase() : 'fängelset'}.`, 'world', [p.id]);
+  log(s, `${p.name} slog sönder dörren och rymde ur ${h ? husIMening(h.namn) : 'fängelset'}.`, 'world', [p.id]);
   fangelseKrok.larma(s, p);
   if (!p.gast) fangelseKrok.brott(s, p);
 }

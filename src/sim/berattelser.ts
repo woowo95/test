@@ -387,24 +387,24 @@ const MDEF = {
   besk_vacker: [
     '{namn} har {del}.',
     '{namn} räknas som vacker och har {del}.',
-    'Det mest utmärkande i {hans} utseende är {del}.',
+    'Det man lägger märke till hos {honom} är {del}.',
     '{namn} hör till de vackraste i byn, med {del}.',
     { t: '{namn} är vacker och har {del}.', om: f => !!f.verkan },
     { t: '{Hen} har {del}.', om: f => !!f.verkan },
-    { t: 'Utseende: {del}.', om: f => !!f.verkan },
+    { t: 'Det man minns hos {honom} är {del}.', om: f => !!f.verkan },
     '{namn} är vacker; {hen} har {del}.',
     '{namn} är vacker, med {del}.',
     'Hos {namn} märks särskilt {del}.',
   ],
   besk_ful: [
     '{namn} har {del}.',
-    'Det mest utmärkande i {hans} utseende är {del}.',
+    'Det man först lägger märke till hos {honom} är {del}.',
     '{Hen} räknas inte som vacker och har {del}.',
     '{namn} är lätt att känna igen på {del}.',
-    '{Hans} utseende präglas av {del}.',
+    'Det som utmärker {honom} är {del}.',
     '{namn} anses inte vacker; {hen} har {del}.',
     'Ett kännetecken hos {namn} är {del}.',
-    'I {hans} utseende märks {del}.',
+    'Hos {honom} märks {del}.',
   ],
   // {ar} = åldern
   besk_aldst: [
@@ -450,6 +450,17 @@ const MDEF = {
     'Byn minns att {hen} {vad}.',
     'I byns historia nämns att {namn} {vad}.',
   ],
+  // ärren och det hen förlorat (steg 12.1.119): {vad} = 'har ett ärr i vänstra benet och har förlorat fingrarna på vänster hand'
+  besk_skador: [
+    '{Hen} {vad}.',
+    'Livet har satt sina spår: {hen} {vad}.',
+    'Det syns att {namn} varit med om en del. {Hen} {vad}.',
+    '{namn} {vad}, men klagar sällan.',
+    'Den som ser {namn} märker att {hen} {vad}.',
+    'Inte allt har gått väl för {namn}: {hen} {vad}.',
+    'Man ser på {honom} vad {hen} gått igenom. {Hen} {vad}.',
+    '{namn} {vad}, och det glömmer {hen} inte.',
+  ],
   // den döda som stod hen närmast: {dod} = namnet, {vem} = 'mor', 'son', 'hustru', 'vän' …
   besk_sorjer: [
     '{Hen} sörjer {dod}, sin {vem}.',
@@ -481,6 +492,17 @@ const MDEF = {
     'I strid väljer {hen} {vad}.',
     '{Hans} vapen är {vad}.',
     '{Hen} litar mest på {vad} i strid.',
+  ],
+  // den som helst slåss utan vapen (steg 12.1.119)
+  besk_handGilla: [
+    'I strid litar {hen} mest på nävarna.',
+    '{Hen} slåss helst med nävarna.',
+    'Ett vapen behöver {namn} inte; {hen} slåss hellre med händerna.',
+    '{Hen} går hellre på med nävarna än med ett vapen.',
+    'I ett slagsmål tar {hen} till nävarna först.',
+    '{namn} har starka nävar och använder dem gärna i strid.',
+    '{Hen} har aldrig brytt sig om vapen. Nävarna räcker.',
+    'När det blir strid knyter {namn} nävarna.',
   ],
   besk_vapenOgilla: [
     '{Hen} litar inte på {vad} i strid.',
@@ -2232,7 +2254,8 @@ function smakText(p: Person) {
   const [k, v] = bast, slag = k.slice(0, 2), vad = k.slice(2);
   if (slag === 'a:' && ACTS[vad as Act]) return { slag: 'arbete', vad: liten(ACTS[vad as Act].namn), v };
   if (slag === 'm:') return { slag: 'mat', vad: liten(sakNamn(vad)), v };
-  if (slag === 'v:') return { slag: 'vapen', vad: vad === 'hand' ? 'bara händerna' : liten(sakNamn(vad)), v }; // vapnet hen föredrar (steg 3.7.10)
+  if (slag === 'v:' && vad === 'hand') return v > 0 ? { slag: 'hand', vad: 'nävarna', v } : undefined; // händerna är inget vapen man ogillar (steg 12.1.119)
+  if (slag === 'v:') return { slag: 'vapen', vad: liten(sakNamn(vad)), v }; // vapnet hen föredrar (steg 3.7.10)
   return undefined;
 }
 // upplevelsen som gjorde mest med hen
@@ -2369,6 +2392,7 @@ export const BESK_DELAR: BeskDel[] = [
   { id: 'bast', vikt: b => !b.f.liten && bastPa(b.s, b.p) ? 0.7 : 0, text: b => { b.f.vad = SKILL_NAMES[bastPa(b.s, b.p)!].toLowerCase(); return mening(b, 'besk_bast', 22); } },
   { id: 'uppfann', vikt: b => uppfann(b.p).length ? 0.75 : 0, text: b => { b.f.vad = och(uppfann(b.p).slice(-3)); return mening(b, 'besk_uppfann', 14); } },
   { id: 'bedrift', vikt: b => bedrifter(b.p).length ? 0.7 : 0, text: b => { b.f.vad = ihop(bedrifter(b.p).slice(-2).map(liten)); return mening(b, 'besk_bedrift', 15); } },
+  { id: 'skador', vikt: b => alive(b.p) && skadorText(b.p) ? 0.45 : 0, text: b => { b.f.vad = skadorText(b.p); return mening(b, 'besk_skador', 16); } }, // ärren och det hen förlorat (steg 12.1.119)
   { id: 'tal', vikt: b => talDel(b.p)?.[1] ?? 0, text: b => { const [m, , vad] = talDel(b.p)!; b.f.vad = vad; return mening(b, m, 23); } },
   { id: 'larare', vikt: b => !b.f.liten && alive(b.p) && laraVem(b.s, b.p) ? 0.5 : 0, text: b => { const [m, q] = laraVem(b.s, b.p)!; b.f.vem = q.name; return mening(b, m, 24); } },
   { id: 'rel', vikt: b => b.f.partner || b.f.van ? 0.6 : 0, text: b => mening(b, b.f.partner && b.f.van ? 'besk_partnerVan' : b.f.partner ? 'besk_partner' : 'besk_van', 2) },
@@ -2496,7 +2520,19 @@ function skammen(p: Person) {
 }
 const titlar = (p: Person) => p.fame.filter(x => TITEL.test(x));
 const uppfann = (p: Person) => p.fame.filter(x => x.startsWith('Uppfann ')).map(x => goraNamn(x.slice(8))); // vad hen kom på: "odla" (ordlagret)
-const bedrifter = (p: Person) => p.fame.filter(x => !FAME_EGEN.test(x) && !TITEL.test(x));
+// det hen gjort (utan dubbletter); skadorna och att bli ökänd är inga bedrifter (steg 12.1.119)
+const SKADA_FAME = /^(Fick ett ärr|Förlorade |Blev ökänd)/;
+export const bedrifter = (p: Person) => [...new Set(p.fame.filter(x => !FAME_EGEN.test(x) && !TITEL.test(x) && !SKADA_FAME.test(x)))];
+// det kroppen bär efter livet, som en verbfras efter hen: "har två ärr i vänstra benet och förlorat fingrarna på vänster hand"
+export function skadorText(p: Person) {
+  const arr = new Map<string, number>(), borta: string[] = [];
+  for (const x of p.fame) {
+    const a = /^Fick ett ärr i (.+)$/.exec(x), f = /^Förlorade (.+)$/.exec(x);
+    if (a) arr.set(a[1], (arr.get(a[1]) ?? 0) + 1); else if (f && !borta.includes(f[1])) borta.push(f[1]);
+  }
+  const ar = [...arr].slice(-2).map(([d, n]) => `${n === 1 ? 'ett ärr' : `${talOrd(n)} ärr`} i ${d}`), fo = borta.slice(-2).map(d => `förlorat ${d}`);
+  return ar.length && fo.length ? `har ${och(ar)} och har ${och(fo)}` : ar.length ? `har ${och(ar)}` : fo.length ? `har ${och(fo)}` : '';
+}
 // två bedrifter med samma verb säger verbet en gång: 'byggde byns första bord och byns första slaktbänk'
 const ihop = (l: string[]) => l.length === 2 && l[0].split(' ')[0] === l[1].split(' ')[0] ? `${l[0]} och ${l[1].split(' ').slice(1).join(' ')}` : och(l);
 // eftermälet (steg 6.7.4, m_eftermale): en död beskrivs i dåtid, först döden (e_dog), sedan vem hen var, grundandet, namnet

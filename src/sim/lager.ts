@@ -148,7 +148,7 @@ export function taBortLager(s: State, z: Zone) {
   if (lagerHinder(s) || !zonesOf(s).includes(z)) return false;
   s.lagren = zonesOf(s).filter(q => q !== z);
   changed(s);
-  log(s, `${z.namn ?? 'En lagerplats'} togs bort i testläget.`, 'world');
+  log(s, `${z.namn ? stor(iMening(z.namn)) : 'En lagerplats'} togs bort i testläget.`, 'world');
   return true;
 }
 // ag: ägarnas delar per slag, räknade först när någon frågar efter slaget (undefined = ingen stack med ägare)
@@ -1073,7 +1073,7 @@ export function lagerFlytta(s: State, z: Zone, ny: Zone) {
   zs[i] = { ...ny, hamtat: z.hamtat, hamtatT: z.hamtatT };
   s.lagerFlytt = undefined;
   count(s, 'lagerFlyttatIn');
-  log(s, `${z.namn ?? 'Lagret'} flyttas närmare byns mitt, och sakerna bärs dit.`, 'world');
+  log(s, `${z.namn ? stor(iMening(z.namn)) : 'Lagret'} flyttas närmare byns mitt, och sakerna bärs dit.`, 'world');
   enPerRuta(s); changed(s);
   return true;
 }

@@ -1,3 +1,4 @@
+import { husIMening } from './ord';
 // Räderna från grannklanerna (system 8.8), som bygger på rövarflocken (rovare.ts). En räd är en flock från en klan byn känner, med ett skäl: plundra,
 // personlig hämnd eller heligt krig. Registret SKAL har en rad per skäl: när det gäller (`galler`), vikten i lottningen och vad flocken gör efter segern.
 // Talen står i balansregistret RADER. Dörrarna mot anfallare (system 8.9) står här också.
@@ -206,7 +207,7 @@ export function tandaHus(s: State, f: Rovarflock) {
   const h = housesOf(s).find(q => q.klar);
   if (!h) return;
   f.tant = true; count(s, 'hus_tant');
-  log(s, `Anfallarna tände eld på ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `Anfallarna tände eld på ${h.namn.toLowerCase()}.`, 'rovare');
+  log(s, `Anfallarna tände eld på ${husIMening(h.namn)}.`, 'world'); kronika(s, `Anfallarna tände eld på ${husIMening(h.namn)}.`, 'rovare');
   tand(s, h.y * W + h.x, 'rovare' as never, 1);
 }
 export const storRad = (f: Rovarflock | undefined) => !!f?.rad && f.folk.length >= RADER.storStrid;

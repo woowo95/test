@@ -15,7 +15,7 @@ import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
 import { type Station, delarAv, nyPlatsDel, rivDel, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
-import { enOrd, stor, tal } from './ord';
+import { enOrd, stor, tal, husIMening } from './ord';
 import { knows } from './teknik';
 import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
@@ -569,7 +569,7 @@ function planSkadat(s: State, okAt: (i: number) => boolean, byggare: Person[]) {
     if (!nytt) continue;
     nytt.flyttFran = h.id; h.flyttas = nytt.id;
     count(s, 'skadatFlyttas');
-    log(s, `${by.name} vill bygga upp ${h.namn.toLowerCase()} närmare byns mitt i stället för där det rasade.`, 'world', [by.id]);
+    log(s, `${by.name} vill bygga upp ${husIMening(h.namn)} närmare byns mitt i stället för där det rasade.`, 'world', [by.id]);
     return; // ett i taget
   }
 }
@@ -955,7 +955,7 @@ function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   housesOf(s).push(hus); touch(s);
   // (torkhuset byggs runt torkställningarna, steg 9.2.137: det som står innanför väggarna står kvar)
   const innanfor = (t: Station) => !!row.omkring && delarAv(t).every(q => q.x > f.x && q.y > f.y && q.x + q.w < f.x + f.w && q.y + q.h < f.y + f.h);
-  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) if (!innanfor(t)) rivUtanfor(s, t, f) || rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för ${hus.namn.toLowerCase()}.`); // det som stod ute där huset ska stå (steg 10.2.77)
+  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) if (!innanfor(t)) rivUtanfor(s, t, f) || rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för ${husIMening(hus.namn)}.`); // det som stod ute där huset ska stå (steg 10.2.77)
   if (row.omkring) for (const z of zonesOf(s)) if (z.hus === undefined && z.x > f.x && z.y > f.y && z.x + z.w < f.x + f.w && z.y + z.h < f.y + f.h) z.hus = hus.id; // vedboden byggs runt lagerplatsen (steg 9.2.137)
   lagerUrVagen(s, f, hus);
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };
@@ -969,7 +969,7 @@ export function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: h.id, ...(forb ? { forb: 1 as const } : {}) });
   h.ut = { x: f.x, y: f.y, w: f.w, h: f.h, oppnas: f.oppnas.map(a => [a.x, a.y, a.m]) };
   // det som står ute där den nya delen ska stå rivs, som för ett nytt hus (steg 10.2.77)
-  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) rivUtanfor(s, t, f) || rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för att ${h.namn.toLowerCase()} byggdes ut.`);
+  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) rivUtanfor(s, t, f) || rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för att ${husIMening(h.namn)} byggdes ut.`);
   touch(s); lagerUrVagen(s, f, h);
   // en öppning i den gamla väggen redan nu, så att ingen blir instängd i den nya delen (den blir golv som resten sist)
   if (!f.ritning.some(a => a.m === 'oppning') && f.oppnas.length) {
@@ -977,7 +977,8 @@ export function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
     if (b && b.k === 'vagg') { const M = MATERIAL.oppning; b.m = 'oppning'; b.k = M.k; b.b = 1; b.c = 1; b.mat = 0; }
   }
   touch(s); count(s, 'planerat_ut');
-  log(s, `${by.name} planerar att bygga ut ${h.namn.toLowerCase()} med ${f.ritning.filter(a => MATERIAL[a.m].k === 'golv').length} rutor.`, 'world', [by.id]);
+  const nr = f.ritning.filter(a => MATERIAL[a.m].k === 'golv').length;
+  log(s, `${by.name} planerar att bygga ut ${husIMening(h.namn)}${nr ? ` med ${nr === 1 ? 'en ruta' : `${tal(nr)} rutor`}` : ''}.`, 'world', [by.id]);
 }
 // ---------- byns planering (steg 7.2.11–7.2.12) ----------
 // Ledaren eller rådet sätter några tal i Byggplanen: husen i en ring kring mitten eller i rader längs gångstråken, tätt eller
@@ -999,7 +1000,7 @@ export function byplanNu(s: State): Byplan {
 }
 function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
   if (fn === 'sovsal') return `${by.name} planerar ${n >= HUS.langhus ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${tal(n)} att sova under tak.`;
-  if (fn === 'familjehus') return `${by.name} och familjen bestämmer sig för att bygga ett eget hus, ${h.namn.toLowerCase()}.`;
-  return `${by.name} planerar ${h.namn.toLowerCase()}.`;
+  if (fn === 'familjehus') return `${by.name} och familjen bestämmer sig för att bygga ett eget hus, ${husIMening(h.namn)}.`;
+  return `${by.name} planerar ${husIMening(h.namn)}.`;
 }
 

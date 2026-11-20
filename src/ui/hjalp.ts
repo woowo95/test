@@ -148,7 +148,7 @@ const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; forkl:
   { har: p => ledareOf(s)?.id === p.id, namn: () => 'Byns ledare', forkl: 'Lägger fram påbud och lagar och väger tyngst i sederna och omröstningarna. Tryck för Styre', ikon: () => 'ledarskap', visa: 'styre' },
   { har: p => !!p.skador?.length, namn: p => `Skadad: ${skadeLista(p, s.now).map(r => r.namn.toLowerCase()).join(', ')}`, forkl: 'Går och arbetar sämre tills skadorna läkt. Tryck för hälsan', ikon: p => skadeLista(p, s.now)[0].ikon, oppnar: 'halsa' },
   { har: p => isSick(p, s.now), namn: () => 'Sjuk', forkl: 'Vilar mer och orkar mindre tills hen blivit frisk. Tryck för hälsan', ikon: () => 's_inf', oppnar: 'halsa' },
-  { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds inom några år. Tryck för att se hur långt det gått', ikon: () => 's_barn', oppnar: 'halsa' },
+  { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds efter nio månader. Tryck för att se hur långt det gått', ikon: () => 's_barn', oppnar: 'halsa' },
 ];
 // märkena som symboler med namnet och förklaringen vid musen (steg 9.2.6); ord = ordet skrivs också ut (rutan i hörnet, som inte går
 // att hålla musen över)

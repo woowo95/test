@@ -1,4 +1,4 @@
-import { antal, iMening, stor } from './ord';
+import { antal, iMening, stor, husIMening } from './ord';
 import { fangelseAkut } from './fangelse';
 import { husNytt } from './byggnad';
 import { ALDER, KROPP, ageOf, alive, byId, count, familjOf, living, log } from './folk';
@@ -436,7 +436,7 @@ function verkstadensHyllor(s: State) {
     const r = gridOf(s).rooms.find(q => q.hus === h.id && q.tiles.length), upp = stationRutor(s);
     const i = r?.tiles.find(t => !upp.at.has(t) && !upp.sitt.has(t) && !zonesOf(s).some(z => z.x === t % W && z.y === Math.floor(t / W)));
     if (i === undefined) continue;
-    zonesOf(s).push({ x: i % W, y: Math.floor(i / W), w: 1, h: 1, namn: `Hyllan i ${h.namn.toLowerCase()}`, slag: 'material', prio: 2, hus: h.id });
+    zonesOf(s).push({ x: i % W, y: Math.floor(i / W), w: 1, h: 1, namn: `Hyllan i ${husIMening(h.namn)}`, slag: 'material', prio: 2, hus: h.id });
     changed(s); count(s, 'verkstadHylla');
   }
 }
@@ -458,7 +458,7 @@ function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   h.fn = fn; h.slag = slag; h.tom = undefined; h.rumFn = undefined;
   h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
   touch(s); count(s, 'bytt_' + fn);
-  log(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`, 'bygge');
+  log(s, `${fore} blev ${husIMening(h.namn)}.`, 'world'); kronika(s, `${fore} blev ${husIMening(h.namn)}.`, 'bygge');
   husKlar(s, h);
 }
 function riv(s: State, h: Hus) {

@@ -1,4 +1,4 @@
-import { bestamd } from './ord';
+import { bestamd, husIMening } from './ord';
 import { gen } from './ord';
 import { bynsMitt, omrade, tillHoljet, utanforByn } from './omrade';
 import { siteHo } from './vattenho';
@@ -313,7 +313,7 @@ export const STATIONER = {
     forsta: '{namn} lade byns första kvarnsten. Där mals kornet till mjöl som går att spara.',
   },
   bryggkar: { // steg 9.6.12 (brygg.ts): ett urholkat stockkar med lock, där vinet och ölet jäser
-    namn: 'Bryggkar', ikon: 'bryggkar', w: 1, h: 1, tek: ['bryggkar'], av: RECEPT.bryggkar.av, min: RECEPT.bryggkar.min, gor: ['brygga', 'tappa', 'branna'], bara: ['brygga', 'tappa', 'branna'],
+    namn: 'Bryggkar', ett: true, ikon: 'bryggkar', w: 1, h: 1, tek: ['bryggkar'], av: RECEPT.bryggkar.av, min: RECEPT.bryggkar.min, gor: ['brygga', 'tappa', 'branna'], bara: ['brygga', 'tappa', 'branna'],
     bygger: 'Hugger ur ett bryggkar av virke med yxan.',
     forsta: '{namn} högg ur byns första bryggkar. Där jäser bären till vin.',
   },
@@ -1743,8 +1743,8 @@ function inredningen(s: State) {
     const at = utan(s, t, () => d.sover ? siteInne(s, t.k, undefined, q => egen !== undefined ? q.id === egen : q.ag === undefined) : siteKista(s, t.k, o));
     count(s, 'möbel utflyttad');
     if (at) { flytta(s, t, at); log(s, `${o.name} bar ${sinOrd(d)} ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? `huset där ${han(o)} sover`}.`, 'world', [o.id]); continue; }
-    if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade ${sinOrd(d)} ${namn} i ${h?.namn.toLowerCase() ?? 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
-    taBort(s, t); log(s, `${gen(o.name)} ${namn} i ${h.namn.toLowerCase()} togs isär, eftersom ${d.ett ? 'det' : 'den'} inte fick plats där ${han(o)} sover.`, 'world', [o.id]);
+    if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade ${sinOrd(d)} ${namn} i ${h ? husIMening(h.namn) : 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
+    taBort(s, t); log(s, `${gen(o.name)} ${namn} i ${husIMening(h.namn)} togs isär, eftersom ${d.ett ? 'det' : 'den'} inte fick plats där ${han(o)} sover.`, 'world', [o.id]);
   }
   for (const t of stationerOf(s)) if (stationDef(t.k)?.sover && isKlar(t)) agaBadd(s, t);
 }

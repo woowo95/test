@@ -129,8 +129,8 @@ export const BUD = {
   lunden: { namn: 'Inte fälla träd i den heliga lunden', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Lunden får stå', sed: ['natur', -1] },
   kottHelg: { namn: 'Inget kött på heliga dagar', sort: 'forbud', storlek: 2, skala: 'fest', sida: 1, text: 'Inget kött på den heliga dagen', mat: () => ['kott'], dag: true }, // ätandet, inte slakten (steg 10.3.16)
   // de nya förbuden (steg 10.3.22). Bud med dag gäller bara den heliga dagen (heligDag)
-  ingetRus: { namn: 'Inget rus', sort: 'forbud', storlek: 3, skala: 'fest', sida: 1, text: 'De troende dricker inte öl eller vin',
-    om: () => 'De som följer budet tar inte öl eller vin till kvällen eller mot törsten, och den som super sig full bryter budet.' }, // rus.ts frågar
+  ingetRus: { namn: 'Inget rus', sort: 'forbud', storlek: 3, skala: 'fest', sida: 1, text: 'De troende dricker inget som ger rus',
+    om: () => 'De som följer budet tar inte öl, vin, mjöd eller sprit till kvällen eller mot törsten, och den som super sig full bryter budet.' }, // rus.ts frågar
   djurVilar: { namn: 'Djuren vilar på den heliga dagen', sort: 'forbud', storlek: 2, skala: 'natur', sida: 0, text: 'Ingen slaktar eller klipper djuren på den heliga dagen', acts: ['avliva', 'klippa'], dag: true },
   ingenHandel: { namn: 'Inte handla med främlingar', sort: 'forbud', storlek: 3, skala: 'oppen', sida: 1, text: 'Man handlar inte med främlingar', acts: ['handla', 'koa'] }, // gåvorna går som förut
   ingenStrid: { namn: 'Ingen strid på heliga dagar', sort: 'forbud', storlek: 3, skala: 'krig', sida: 0, text: 'Ingen börjar slåss på den heliga dagen', dag: true,

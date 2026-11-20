@@ -1,3 +1,4 @@
+import { tal } from './ord';
 import { Avst, bynsAvstand, bynsMitt } from './omrade';
 import { upplev } from './uppvaxt';
 import { PLATS, rektAvstand } from './plats';
@@ -759,7 +760,7 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   if (rnd(s, 'arbete', p) >= hold) return 0;
   st.k++; count(s, 'prod_fiske'); gjort(s, p, 'fisk'); sjoRakna(s, x, y, 'fisk', p); const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1); // prod_fiske: fångsten som det arbetet gett, som de andra arbetena räknar i workStep (takt.ts, steg 6.1.4)
-  if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
+  if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${tal(s.stat!.fiskeForsok, true)} försök.`, 'world', [p.id]);
   return 1;
 }
 import { myrMalm, paMyr } from './myr';

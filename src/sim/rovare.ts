@@ -618,11 +618,12 @@ export function taKlart(s: State, f: Rovarflock) {
   if (f.klar) return;
   f.klar = true;
   const drev: string[] = []; // boskapen (steg 9.8.12): varje rövare driver bort ett får eller en get som står ute, det närmaste först
-  for (const _r of rovarna(s, f)) { const d = tamUte(s).filter(q => avst(q, f) < ROVARE.boskapR).sort((a, b) => avst(a, f) - avst(b, f))[0]; if (!d) break; tamStulen(s, d); drev.push(tamArt(d.art).ord[1]); }
+  for (const _r of rovarna(s, f)) { const d = tamUte(s).filter(q => avst(q, f) < ROVARE.boskapR).sort((a, b) => avst(a, f) - avst(b, f))[0]; if (!d) break; tamStulen(s, d); drev.push(`${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]}`); }
   const tagna = f.tagit ?? {}, tog = Object.values(tagna).reduce((a, b) => a + b, 0) + drev.length, tyst = f.sedd === undefined;
-  const tog_ = [...SAK_LIST.filter(k => tagna[k]).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a))).map(k => antal(tagna[k], k)), ...(drev.length ? [`${drev.length === 1 ? 'ett djur' : `${drev.length} djur`} (${och(drev)})`] : [])];
+  const tog_ = [...SAK_LIST.filter(k => tagna[k]).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a))).map(k => antal(tagna[k], k))];
   count(s, 'rovarPlundring'); if (tyst) count(s, 'rovarTyst');
-  const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}tog ${och(tog_)} ur förrådet.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
+  const vad = [...tog_.length ? [`tog ${och(tog_)} ur förrådet`] : [], ...drev.length ? [`drev bort ${och(drev)} som stod ute`] : []].join(' och '); // djuren stod ute, inte i förrådet (steg 12.1.119)
+  const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}${vad}.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
   log(s, text, 'world'); if (tog) { notis(s, 'motgang', text); kronika(s, text, 'rovare'); }
   tandaHus(s, f); // (steg 8.9.3)
 }
@@ -814,7 +815,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   if (forst) blodas(s, forst.x, forst.y, 'jakt', 1);
   const namn = lista(bybor.map(b => b.k.namn)), n = rov.length;
   const dodaBybor = bybor.filter(b => b.k.lage === 'dod').map(b => b.k.namn);
-  const text = `${namn} slogs med ${tal(n)} rövare ${f ? fran(s, f) : ''} ${f?.anfall ? 'i byn' : 'vid byn'}. ${doda ? `${stor(tal(doda))} rövare dog. ` : ''}${dodaBybor.length ? `${lista(dodaBybor)} dog. ` : ''}${vinnare === 1 ? 'Rövarna vann.' : vinnare === 0 ? 'Rövarna flydde.' : 'Ingen vann.'}${svara.length ? ` ${lista(svara)} skadades svårt.` : ''}`.replace(/ +/g, ' ');
+  const text = `${namn} slogs med ${tal(n)} rövare ${f ? fran(s, f) : ''} ${f?.anfall ? 'i byn' : 'vid byn'}. ${doda ? `${stor(tal(doda))} rövare dog. ` : ''}${dodaBybor.length ? `${lista(dodaBybor)} dog. ` : ''}${vinnare === 1 ? `${n > 1 ? 'Rövarna' : 'Rövaren'} vann.` : vinnare === 0 ? `${n > 1 ? 'Rövarna' : 'Rövaren'} flydde.` : 'Ingen vann.'}${svara.length ? ` ${lista(svara)} skadades svårt.` : ''}`.replace(/ +/g, ' ');
   const ids = bybor.map(b => b.k.pid!).filter(x => x !== undefined), plats = forst ? { x: Math.floor(forst.x), y: Math.floor(forst.y) } : undefined;
   log(s, text, 'world', ids); notis(s, 'strid', text, ids, plats);
   kronika(s, text, 'rovare');
@@ -920,7 +921,7 @@ function djurMotRovare(s: State, f: Rovarflock) {
   const fo = rovarna(s, f).filter(r => !kartStrider(s).some(g => g.st.kampar.some(k => k.pid === r.id)));
   if (!fo.length) return;
   const nara = (d: { x: number; y: number }) => fo.some(r => avst(r, d) < KLOCKA.faraSyn);
-  for (const v of s.vargar ?? []) if (v.vargar.length && nara(v) && !vargIStrid(s, v)) { vargStrid(s, v, fo, 'skada', 'mot rövarna', true); count(s, 'djurMotRovare'); return; }
+  for (const v of s.vargar ?? []) if (v.vargar.length && nara(v) && !vargIStrid(s, v)) { vargStrid(s, v, fo, 'skada', 'nära byn', true); count(s, 'djurMotRovare'); return; }
   const b = bjornarOf(s, s.now).find(d => d.art === 'bjorn');
   if (b && nara(b) && !djurIKartStrid(s, 'bjorn')) { bjornStrid(s, b.id, fo, false, 'skada'); count(s, 'djurMotRovare'); }
 }

@@ -36,7 +36,7 @@ function fasAv(f: Jaktforsok, u: number): Fas {
     const k = u / o.tS, d = avst(o.S, o.Q), nx = d > 0.01 ? -(o.Q.y - o.S.y) / d : 0, ny = d > 0.01 ? (o.Q.x - o.S.x) / d : 0;
     const sv = Math.sin(k * Math.PI * 3) * Math.sin(k * Math.PI) * SLINGA * Math.min(1, d / 2);
     const at = mot(o.S, o.Q, k);
-    return { x: at.x + nx * sv, y: at.y + ny * sv, text: 'letar efter harar', gar: true };
+    return { x: at.x + nx * sv, y: at.y + ny * sv, text: flockArtAv(f.id) ? `letar efter ${flockArtAv(f.id)!.namn}` : arFagel(f.id) ? 'letar efter fåglar' : 'letar efter harar', gar: true };
   }
   if (u < o.tA) return { ...mot(o.Q, o.P, (u - o.tS) / (o.tA - o.tS)), gar: true, mark: 'a_smyga', text: flockArtAv(f.id) ? `smyger mot ett ${flockArtAv(f.id)!.namn}` : arFagel(f.id) ? 'smyger mot en fågel' : 'smyger mot en hare' };
   if (u < o.tK) return { ...o.P, mark: o.kast ? 'a_sikta' : 'a_jaga', text: o.kast ? 'siktar' : f.hand ? `griper ${dj}` : 'sticker' };
