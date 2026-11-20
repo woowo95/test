@@ -132,7 +132,7 @@ export const SPORT = balans('sport', {
 // matchen som pågår eller väntar på spelare: sporten, platsen, när den började (spelarnas task.ref) och slutar
 // p: den som samlade, lista: de som ville vara med vid ropet (raden sport i val.ts för dem dit), platser: var och ens plats,
 // titta: publiken i den ordning de kom (steg 10.7.16), igang: alla som var på väg har kommit fram (eller väntan är slut) och matchen har börjat
-export interface Match { k: string; x: number; y: number; start: number; slut: number; p?: number; lista?: number[]; platser?: Record<number, { x: number; y: number }>; igang?: true; borjar?: number; lag?: Record<number, 0 | 1>; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[]; titta?: number[]; pris?: { t: number; k: string; av: number } } // pris: tävlingens pris, tinget och ledaren som satte upp det (steg 10.7.20) // brott: när kampen i brottningen (steg 9.2.92) är slut // n: så många som gått med (platsen i laget)
+export interface Match { k: string; x: number; y: number; start: number; slut: number; p?: number; lista?: number[]; platser?: Record<number, { x: number; y: number }>; igang?: true; borjar?: number; lag?: Record<number, 0 | 1>; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[]; bud?: number[]; titta?: number[]; pris?: { t: number; k: string; av: number } } // pris: tävlingens pris, tinget och ledaren som satte upp det (steg 10.7.20) // brott: när kampen i brottningen (steg 9.2.92) är slut // bud: de som avstått från kampen för budet om ingen strid (fynd 322) // n: så många som gått med (platsen i laget)
 
 // matchens sammanställning (steg 5.4.8.1, Sporten i designdokumentet): sparas när matchen avgörs eller ställs in, inte ur
 // loggen. Raden i Händelser och notisen pekar dit med numret (LogEntry.match), och fliken Matchen (ui/flikar/match.ts) visar
@@ -300,11 +300,13 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
   // brottningen (steg 9.2.92): två och två med stridens system, utan vapen och med svaga slag. En kamp i taget i ringen
   if (d.kamp && s.now >= (m.brott ?? 0)) { // en kamp börjar så fort ringen är ledig
     const orkar = (q: Person) => q.health > 0 && (q.blod ?? 1) >= HALSA.slass; // den som förlorat mycket blod orkar inte slåss (steg 9.5.17) och brottas inte
-    const mot = orkar(p) ? har.filter(q => q !== p && orkar(q)) : [];
+    // den heliga dagen (steg 10.3.22): den som följer budet börjar ingen kamp men står kvar i ringen och övar; det räknas en gång per match (fynd 322)
+    const bud = budHindrar(s, p, 'ingenStrid');
+    if (bud && !m.bud?.includes(p.id)) { (m.bud ??= []).push(p.id); count(s, 'bud_ingenStrid'); }
+    const mot = orkar(p) && !bud ? har.filter(q => q !== p && orkar(q)) : [];
     if (mot.length) {
       // kampen sker på kartan och tar tid (steg 10.1.7): ringen är upptagen tills den är slut (EFTER.brottning)
       const q = mot[Math.floor(rnd(s, 'sport', p) * mot.length)];
-      if (budHindrar(s, p, 'ingenStrid')) { count(s, 'bud_ingenStrid'); return; } // den heliga dagen (steg 10.3.22)
       kartStridBorja(s, 'brottning', [[p], [q]], 'i brottningen', { typ: 'brottning' });
       m.brott = s.now + (STRID.maxTid + 60) * SEC; m.brottare = [p.id, q.id]; count(s, 'brottningar');
     }

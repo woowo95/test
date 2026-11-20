@@ -341,7 +341,14 @@ SCENARIER.framtradande = {
     const nara = pub.filter(q => Math.hypot(q.task!.tx - vid.x, q.task!.ty - vid.y) <= 6 && q.task!.ty > vid.y && !SIM.blocked(m.s, q.task!.tx, q.task!.ty)).length;
     // en ny by kan bara kväda: ingen behöver något mer
     const ny = createState(9, START), kan = SIM.FRAMTRADANDEN.filter(x => !x.instrument && !(x.min ?? 0)).map(x => x.id);
+    // dör den som uppträder, går publiken hem och framträdandet är slut (fynd 347)
+    const dd = kvall(), dp = dd.v[0]!; allaGillar(dd.s, dd.s.people);
+    upptrad(dd.s, dp); kor(dd.s, 0.3);
+    const lyssDod = dd.v.slice(1).filter(q => q.task?.act === 'lyssna').length;
+    SIM.die(dd.s, dp, 'alderdom'); kor(dd.s, 0.05);
+    const kvarDod = dd.v.slice(1).filter(q => q.task?.act === 'lyssna').length;
     return [
+      [`dör den som uppträder går de ${lyssDod} i publiken (${kvarDod} kvar) och framträdandet är slut (fynd 347)`, lyssDod >= 1 && kvarDod === 0 && !dd.s.fram],
       [`${p.name} kallar till ett framträdande (${d}), och ${lista.length} av ${v.length - 1} vill lyssna`, borjar && lista.length >= v.length - 2],
       [`efter väntan lyssnar ${lyss} av ${v.length - 1}`, lyss >= 1],
       [`den som arbetar långt bort avbryter (${avbrot ? 'ja' : 'nej'}) och kommer (${bortaKom ? 'ja' : 'nej'})`, avbrot && bortaKom],
@@ -2859,7 +2866,18 @@ function brottning(): [string, boolean][] {
     doda += med.filter(q => q.health <= 0 || q.died !== undefined).length;
     skadade += med.filter((q, i) => (q.skador?.length ?? 0) > skador0[i]!).length;
   }
+  // den heliga dagen (fynd 322): den som följer budet om ingen strid börjar ingen kamp men övar och spelar, och budet räknas en gång per match
+  const b = medTro(6, 4), bs = b.s; for (const q of b.v) q.troStyrka = 90;
+  b.tr.bud = [{ id: 'ingenStrid', t: bs.now }];
+  for (let i = 0; i < 14 && !SIM.heligDag(bs, b.tr); i++) bs.now += 86400000;
+  const bm: SIM.Match = { k: 'brottning', x: 50, y: 50, start: bs.now, slut: bs.now + SIM.HOUR, igang: true, borjar: bs.now };
+  bs.sport = bm;
+  for (const q of b.v.slice(0, 3)) q.task = { act: 'sport', phase: 'do', tx: 50, ty: 50, until: bm.slut, carry: 0, ref: bm.start, tool: 'brottning' };
+  const bf = b.v[0]!, slag = 10;
+  for (let i = 0; i < slag; i++) SIM.sportSteg(bs, bf, bf.task!, 6);
+  const budN = bs.stat?.bud_ingenStrid ?? 0, budKamp = bs.stat?.brottningar ?? 0, budSpel = bf.task?.prog ?? 0;
   return [
+    [`på den heliga dagen börjar den troende ingen kamp (${budKamp}), räknas en gång på ${slag} slag (${budN}) och spelar ändå (${(budSpel * 60).toFixed(1)} minuter)`, budKamp === 0 && budN === 1 && budSpel > 0],
     [`brottarna kämpar två och två med stridens system (${kampar} kamper, minst ${minst} i en match)`, kampar >= 4 && minst >= 1],
     [`utan vapen (${vapen} med vapen)`, vapen === 0],
     [`ingen dör i brottningen (${doda})`, doda === 0],

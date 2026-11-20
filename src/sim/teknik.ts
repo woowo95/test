@@ -87,9 +87,9 @@ export const TEKNIK: Tek[] = [
   { id: 'skrivpulpet', namn: 'Skrivpulpet', text: 'En lutande skiva av plankor att skriva vid, med en pall framför.', effekt: 'Vid pulpeten skrivs ett blad eller en del i en bok fortare och bättre än för hand vid elden.', omr: ['hantverk'], krav: ['pergament', 'snickarbank'], niva: 7, tid: 6, forsok: { vid: ['snickarbank'], skill: 'hantverk', vad: 'hur en skrivpulpet fogas' }, episk: '{namn} fogade en skrivpulpet att skriva vid.' }, // steg 10.6.11
   { id: 'pergament', namn: 'Pergament och bläck', text: 'Skinnet skrapas tunt och spänns; sot av kol gnids med vatten.', effekt: 'Vid garvningsställningen blir ett skinn till 4 blad pergament, och kol och vatten blir bläck i en liten lerkruka.', omr: ['hantverk'], krav: ['garvning', 'stenhuggarplats'], niva: 6, tid: 6, forsok: { vid: ['garvning'], skill: 'hantverk', vad: 'hur skinn blir till pergament' }, episk: '{namn} kom på hur skinnet blir till blad att skriva på.' }, // steg 10.6.4
   { id: 'bryggkar', namn: 'Vin', text: 'Krossade bär med vatten som får stå och jäsa i ett kar, tills det blivit vin.', effekt: 'Byn bygger ett bryggkar och gör vin, som står i stora lerkrukor och blir bättre med tiden.', omr: ['koka_mat', 'grilla'], krav: ['kruka'], niva: 4, tid: 8, forsok: { vid: ['grill'], skill: 'matlagning', vad: 'hur bär blir vin' }, episk: 'Bären i krukan hade börjat bubbla. {namn} smakade och förstod att det blivit något nytt.' }, // steg 9.6.12
-  { id: 'ol', namn: 'Öl', text: 'Korn som blöts, gror och torkas till malt, och jäser med vatten och rölleka i bryggkaret.', effekt: 'Byn gör öl, som står i stora lerkrukor.', omr: ['brygga'], krav: ['bryggkar', 'sadesodling'], niva: 5, tid: 1000, nar: 'När byn har korn och har gjort vin', forsok: { vid: ['bryggkar'], skill: 'matlagning', vad: 'hur kornet blir öl' }, episk: 'Kornet hade grott, torkat och jäst. {namn} smakade det första ölet.' }, // steg 9.6.13
+  { id: 'ol', namn: 'Öl', text: 'Korn som blöts, gror och torkas till malt, och jäser med vatten och rölleka i bryggkaret.', effekt: 'Byn gör öl, som står i stora lerkrukor.', omr: ['brygga'], krav: ['bryggkar', 'sadesodling'], niva: 5, tid: 1000, nar: 'När byn har korn och har gjort vin', episk: 'Kornet hade grott, torkat och jäst. {namn} smakade det första ölet.' }, // steg 9.6.13
   { id: 'sprit', namn: 'Sprit', text: 'Vin eller öl som kokas i en panna med lock, så att det starka stiger upp och samlas i röret.', effekt: 'Byn bygger en brännpanna på bryggkaret och bränner sprit av vin och öl, den starkaste drycken.', omr: ['brygga'], krav: ['ol'], niva: 6, tid: 12, tidigast: [{ stat: 'brygt_vin', n: 8 }, { stat: 'brygt_ol', n: 8 }], forsok: { vid: ['bryggkar'], skill: 'matlagning', vad: 'hur vinet blir starkare' }, episk: 'Det droppade ur röret, klart som vatten. {namn} smakade och kände det bränna.' }, // steg 10.7.26
-  { id: 'mjod', namn: 'Mjöd', text: 'Honungskakor som löses i vatten och får jäsa i bryggkaret, tills det blivit mjöd.', effekt: 'Byn gör mjöd av honung, som står i stora lerkrukor och håller länge.', omr: ['brygga'], krav: ['bryggkar'], niva: 5, tid: 1000, nar: 'När byn har honung och har gjort vin två gånger', forsok: { vid: ['bryggkar'], skill: 'matlagning', vad: 'hur honungen blir mjöd' }, episk: 'Honungen hade jäst i karet. {namn} smakade det första mjödet.' }, // steg 10.7.25
+  { id: 'mjod', namn: 'Mjöd', text: 'Honungskakor som löses i vatten och får jäsa i bryggkaret, tills det blivit mjöd.', effekt: 'Byn gör mjöd av honung, som står i stora lerkrukor och håller länge.', omr: ['brygga'], krav: ['bryggkar'], niva: 5, tid: 1000, nar: 'När byn har honung och har gjort vin två gånger', episk: 'Honungen hade jäst i karet. {namn} smakade det första mjödet.' }, // steg 10.7.25
   { id: 'sadesodling', rad: {barkraft:0.3}, namn: 'Sädesodling', text: 'Korn från handlarna som sås på fältet, och en del av skörden sparas till nästa sådd.', effekt: 'Byn kan odla korn.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 1000, nar: 'När byn får sitt första korn av handlarna' }, // steg 9.6.11
   { id: 'lin', namn: 'Lin', text: 'Linfrön som sås på fälten, och skörden rötas innan den kan spinnas.', effekt: 'Byn kan odla lin.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 6 },
   { id: 'slanda', namn: 'Slända', text: 'En pinne med en tyngd som snurrar linet till tråd.', effekt: 'Med sländan spinner man lintråd var som helst.', omr: ['hantverk'], krav: ['lin'], niva: 3, tid: 6 },
@@ -183,7 +183,7 @@ export const TEKNIK: Tek[] = [
     omr: ['hantverk', 'samla'], krav: ['slaktbank', 'rep'], niva: 3, tid: 5 },
   { id: 'staket', rad: {barkraft:0.1}, namn: 'Staket', text: 'Pinnar i marken med slanor emellan, runt fältet.', effekt: 'Djuren går inte över staketet, så hararna kommer inte åt grödan.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 6 }, // steg 9.7.10
   { id: 'fagelskramma', namn: 'Fågelskrämma', text: 'En figur av grenar och hö som står på fältet.', effekt: 'Fåglarna tar inte fröna på fältet, och de vänjer sig inte vid den.', omr: ['odla'], krav: ['odling'], niva: 2, tid: 6 }, // steg 9.7.11
-  { id: 'kompost', rad: {barkraft:0.1}, namn: 'Gödsel', text: 'Resterna från slakten och skörden, och latrinens innehåll, får ligga och mogna till jord som gödslar fälten.', effekt: 'Sophögen blir en kompost, latrinen töms där i stället för att en ny grävs, och den färdiga komposten gör fältets rutor bördigare.', omr: ['odla', 'sopor'], krav: ['odling', 'latrin'], niva: 5, tid: 1000, nar: 'När någon märker att det växer bättre där resterna på sophögen har legat', forsok: { vid: ['latrin'], skill: 'hantverk', vad: 'hur resterna blir jord' }, episk: '{namn} såg att det växte bäst där resterna legat, och förstod varför.' }, // steg 9.7.6
+  { id: 'kompost', rad: {barkraft:0.1}, namn: 'Gödsel', text: 'Resterna från slakten och skörden, och latrinens innehåll, får ligga och mogna till jord som gödslar fälten.', effekt: 'Sophögen blir en kompost, latrinen töms där i stället för att en ny grävs, och den färdiga komposten gör fältets rutor bördigare.', omr: ['odla', 'sopor'], krav: ['odling', 'latrin'], niva: 5, tid: 1000, nar: 'När någon märker att det växer bättre där resterna på sophögen har legat', episk: '{namn} såg att det växte bäst där resterna legat, och förstod varför.' }, // steg 9.7.6
   { id: 'latrin', namn: 'Latrin', text: 'En grop i byns utkant, grävd med benspaden.', effekt: 'Man går på toa på ett ställe, närmare än förut, och lämnar ingen smuts efter sig. Gropen fylls och måste ersättas.',
     omr: ['toa', 'hantverk', 'bygga'], krav: ['benspade'], niva: 4, tid: 9, forsok: { vid: ['flatarbank'], skill: 'hantverk', vad: 'hur man gräver en latrin' }, episk: '{Namn} grävde och fyllde igen, grop efter grop, innan {hen} visste var och hur djupt. Byn fick sin första latrin.' },
   // grillställningen (steg 2.8.1, matlagning.ts; grill i STATIONER, samma id)
@@ -341,7 +341,7 @@ function framat(s: State, p: Person, t: Tek, dtSec: number) {
 const stationForsok = (s: State, t: Tek) => stationerOf(s).find(q => t.forsok!.vid.includes(q.k) && isKlar(q) && framFri(s, q));
 // det i receptet som går åt i ett försök: sakerna, inte verktygen
 const forbrukas = (t: Tek) => Object.keys(recept(t.id)?.av ?? {}).filter(k => !isTool(k));
-const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && ageOf(p, s.now) >= ALDER.uppfinner && canThink(p, t) && hasMaterial(s, t) && oppen(s, t)
+const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && !t.nar && ageOf(p, s.now) >= ALDER.uppfinner && canThink(p, t) && hasMaterial(s, t) && oppen(s, t)
   && p.skill[t.forsok.skill] >= TEKTAL.forsokSkill && (t.tidigast ?? []).every(k => (s.stat?.[k.stat] ?? 0) >= k.n) && (r => !r.length || r.some(k => amountOf(s, k) >= 1))(forbrukas(t)) && (!t.forsok.vid.length || !!stationForsok(s, t));
 // hur ofta (steg 4.2.1.2): sedvanan mot nya sätt (seden nyfikenhet, Förnyelse – Tradition) och personens nyfikenhet. Bara när
 // byn har ett överskott av mat och ved (matDygn, vedDygn); farorna avgörs i valet (val.ts), där de går före
@@ -404,15 +404,18 @@ export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) 
 // ---------- att arbeta bredvid och lärlingen (steg 4.2.3.2–4.2.3.4) ----------
 // Nivå 3 lär man sig av den som kan och arbetar med samma sak nära en. Nivå 4–5 bara som lärling hos en mästare: den som kan
 // tekniken (den som kom på den är den första) har en lärling i taget. Lärlingen lär sig i sitt arbete med det tekniken hör till
-// så länge mästaren lever i byn, och går till mästaren och arbetar bredvid när hen arbetar med det (laraVal)
-const BREDVID = TEKNIK.filter(t => t.niva >= 3 && !t.nar);
+// så länge mästaren lever i byn, och går till mästaren och arbetar bredvid när hen arbetar med det (laraVal). En teknik med ett
+// eget tillfälle (nar) på nivå 4–5, som öl, mjöd och gödsel, lär sig den som fått kraven senare också som lärling (fynd 277)
+const BREDVID = TEKNIK.filter(t => t.niva >= 3 && (!t.nar || t.niva >= 4));
 const BREDVID_OMR: Record<string, Tek[]> = {};
 const arbetarMed = (q: Person, t: Tek) => q.task?.phase === 'do' && t.omr.includes(omrAv(q.task.act));
 const nara = (p: Person, q: Person) => Math.hypot(p.x - q.x, p.y - q.y) <= TEKTAL.bredvidAvst;
 export function arbetaBredvid(s: State, p: Person, tk: Task, dtSec: number) {
   if (tk.phase !== 'do' || ageOf(p, s.now) < ALDER.lar) return;
   const act = OMR.has(tk.act) ? tk.act : omrAv(tk.act);
-  for (const t of BREDVID_OMR[act] ??= BREDVID.filter(q => q.omr.includes(act))) { // teknikerna i området, uträknade en gång per område
+  // lärlingen som sitter bredvid mästaren (lara) lär sig sin egen teknik, vilket område den än hör till (fynd 298)
+  const lista = tk.act === 'lara' && p.lar && BREDVID.includes(TEK[p.lar.tek]) ? [TEK[p.lar.tek]] : BREDVID_OMR[act] ??= BREDVID.filter(q => q.omr.includes(act));
+  for (const t of lista) { // teknikerna i området, uträknade en gång per område
     if (!canThink(p, t)) continue;
     const mastare = t.niva >= 4;
     if (mastare && p.lar?.tek !== t.id) continue;
@@ -445,7 +448,7 @@ export function stepLarlingar(s: State) {
     if (ageOf(m, s.now) < ALDER.uppfinner || ppl.some(q => q.lar?.av === m.id)) continue;
     const tek = TEKNIK.filter(t => t.niva >= 4 && knows(m, t.id)).sort((a, b) => ppl.filter(q => knows(q, a.id)).length - ppl.filter(q => knows(q, b.id)).length);
     for (const t of tek) {
-      const sk = t.forsok?.skill ?? 'hantverk', poang = (q: Person) => q.skill[sk] + (q.tek?.[t.id] ?? 0) * 10;
+      const sk = t.forsok?.skill ?? t.omr.map(a => ACTS[a]?.ovar).find(Boolean) ?? 'hantverk', poang = (q: Person) => q.skill[sk] + (q.tek?.[t.id] ?? 0) * 10;
       const c = ppl.filter(q => q !== m && !q.lar && ageOf(q, s.now) >= ALDER.uppfinner && canThink(q, t)).sort((a, b) => poang(b) - poang(a) || a.id - b.id)[0];
       if (!c) continue;
       c.lar = { av: m.id, tek: t.id }; count(s, 'larling');

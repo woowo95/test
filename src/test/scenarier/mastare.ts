@@ -21,7 +21,7 @@ const forsokTask = (s: State, id: string, min: number): Task => ({ act: 'forsok'
 SCENARIER.forsok = {
   text: 'Försöksplatsen (steg 4.2.1.1): nivå 4–5 kommer man inte på i det vanliga arbetet, bara när en skicklig person som kan kraven prövar sig fram vid en station tidigare i kedjan. Försöket tar en hel sak av materialet och ger ingenting',
   kor: () => {
-    const alla = SIM.TEKNIK.filter(t => t.niva >= 4), medPlats = alla.every(t => t.forsok);
+    const alla = SIM.TEKNIK.filter(t => t.niva >= 4 && !t.nar), medPlats = alla.every(t => t.forsok);
     const lagre = SIM.TEKNIK.filter(t => t.niva < 4).every(t => !t.forsok);
     // vanligt hantverk i tio timmar för inte närmare skinnkläderna
     const { s, p } = experten();
@@ -44,7 +44,7 @@ SCENARIER.forsok = {
     const info = tekInfo(SIM.living(s), 'skinnklader'), vanlig = tekInfo(SIM.living(s), 'yxa');
     return [
       ['teknikträdet säger att man prövar sig fram vid slöjdbänken, och för yxan som förut', info.includes('pröva sig fram till det vid slöjdbänk') && !vanlig.includes('pröva sig fram')],
-      [`alla ${alla.length} tekniker på nivå 4–5 har en försöksplats, och inga lägre`, medPlats && lagre],
+      [`alla ${alla.length} tekniker på nivå 4–5 utan eget tillfälle har en försöksplats, och inga lägre och inga med eget tillfälle (fynd 277)`, medPlats && lagre && SIM.TEKNIK.every(t => !t.nar || !t.forsok)],
       [`kortet säger vad den som prövar sig fram försöker komma på (steg 9.2.106): "${SIM.taskName({ act: 'forsok', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0, tool: 'snara' })}"`, SIM.taskName({ act: 'forsok', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0, tool: 'snara' }) === 'Försöker komma på hur man binder en snara' && alla.every(t => t.forsok?.vad.startsWith('hur'))],
       ['vanligt hantverk för inte närmare skinnkläderna', vanligt],
       [`den skicklige prövar sig fram till ${v ? SIM.TEK[v.id].namn.toLowerCase() : 'ingenting'} vid slöjdbänken`, v?.id === 'skinnklader' && vidBank],
@@ -121,7 +121,15 @@ SCENARIER.mastartitel = {
     p.habit = { hantverk: 30, forsok: 6 };
     SIM.updateTags(s);
     const ingen = SIM.living(s).filter(q => q !== p).every(q => q.tag !== 'Mästare');
+    // byns första mästare utropas en gång per färdighet, också när den förra mästaren rensats bort ur byn (fynd 313)
+    const m = experten(); const [a, b, c] = vuxna(m.s);
+    const forsta = () => (m.s.notiser?.lista ?? []).flatMap(n => n.rader).filter(r => String(r).includes('första mästare')).length;
+    SIM.blevMastare(m.s, a, 'samla'); const ett = forsta();
+    SIM.blevMastare(m.s, b, 'samla');
+    m.s.people = m.s.people.filter(q => q !== a && q !== b); // de döda utöver de senaste rensas bort
+    SIM.blevMastare(m.s, c, 'samla');
     return [
+      [`byns första mästare i samlande utropas en gång, också när den förra rensats bort (${forsta()} notiser)`, ett === 1 && forsta() === 1],
       [`den som prövat sig fram mycket kallas ${p.tag?.toLowerCase() ?? 'ingenting'}`, p.tag === 'Mästare'],
       ['de andra kallas inte mästare', ingen],
     ];
@@ -183,7 +191,25 @@ SCENARIER.larling = {
     const klar = !!l && SIM.knows(l, 'skinnklader') && !l.lar;
     SIM.stepLarlingar(s);
     const nya = SIM.living(s).filter(q => q.lar?.tek === 'skinnklader');
+    // öl, mjöd och gödsel kommer genom en händelse (nar), men den som fått kraven senare lär sig dem som lärling (fynd 277), och ingen prövar sig fram till dem
+    const b = experten(); const bm = b.p; bm.tek = { kruka: 1, bryggkar: 1, odling: 1, sadesodling: 1, ol: 1 }; bm.skill.matlagning = 8;
+    const bl = vuxna(b.s).find(q => q !== bm)!; for (const q of vuxna(b.s).filter(q => q !== bm)) q.tek = { kruka: 1, bryggkar: 1, odling: 1, sadesodling: 1 };
+    SIM.stepLarlingar(b.s);
+    const olL = vuxna(b.s).find(q => q.lar?.av === bm.id);
+    let olTim = 0;
+    if (olL) { olL.x = 50; olL.y = 50; const tb: Task = { act: 'brygga', phase: 'do', tx: 50, ty: 50, until: b.s.now + 8 * SIM.HOUR, carry: 0 }; olL.task = tb; while (!SIM.knows(olL, 'ol') && olTim < 300) { SIM.arbetaBredvid(b.s, olL, tb, 3600); olTim++; } }
+    bl.skill.matlagning = 10; SIM.setAmount(b.s, 'korn', 20);
+    const ingetForsok = SIM.forsokVal(b.s, bl)?.id !== 'ol';
+    // "går i lära" ger framsteg också i en teknik utanför hantverket, som snaran i jakten (fynd 298)
+    const j = experten(); const jm = j.p; jm.tek = { fangstbank: 1, rep: 1, snara: 1 };
+    const jl = vuxna(j.s).find(q => q !== jm)!; jl.tek = { fangstbank: 1, rep: 1 }; jl.lar = { av: jm.id, tek: 'snara' };
+    const tj: Task = { act: 'lara', phase: 'do', tx: 50, ty: 50, until: j.s.now + 2 * SIM.HOUR, carry: 0 }; jl.task = tj;
+    SIM.arbetaBredvid(j.s, jl, tj, 3600);
+    const snaraFram = jl.tek.snara ?? 0;
     return [
+      [`den som går i lära hos jägaren kommer framåt mot snaran (${snaraFram.toFixed(3)}, fynd 298)`, snaraFram > 0],
+      [`lärlingen ${olL?.name ?? '(ingen)'} lär sig brygga öl hos mästaren på ${olTim} timmar (fynd 277)`, olL?.lar === undefined && !!olL && SIM.knows(olL, 'ol') && olTim < 300],
+      ['ingen prövar sig fram till ölet, som byn kommer på genom en händelse', ingetForsok],
       ['den som inte är lärling lär sig inte skinnkläderna bredvid mästaren', utan],
       [`mästaren ${m.name} tar en lärling, och bara en (${larl.map(q => q.name).join(', ')})`, larl.length === 1],
       [`efter ${tim} timmars arbete kan lärlingen det, och är inte lärling längre`, klar && tim >= SIM.TEKTAL.larlingTim * 0.5],

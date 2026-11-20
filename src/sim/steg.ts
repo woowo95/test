@@ -1575,6 +1575,13 @@ export function nastaMal(s: State, p: Person, tk: Task, x0: number, y0: number, 
   return undefined;
 }
 // plock: på rundan (steg 9.2.55) ger arbetet bara det som plockades, en hel sak när plocket är klart (1) eller inget (0)
+// den som når 16 i en färdighet blir mästare i den; den första i byn får notisen, och de andra minns det
+export function blevMastare(s: State, p: Person, sk: keyof typeof SKILL_NAMES) {
+  const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = forstaGang(s, 'mastare_' + sk) && !s.people.some(q => q.fame.includes(title)); // en gång per färdighet, också när de döda rensats bort (fynd 313); titeln i byn täcker sparade byar från före räkningen
+  p.fame.push(title); personHand(s, p, 'titel', `Blev ${title.toLowerCase()}.`); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
+  if (first) notis(s, 'mastare', `${p.name} är byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, [p.id]);
+  if (first) for (const q of living(s)) if (q !== p) upplev(s, q, 'forstaMastare', p.name); // de andra såg det (steg 4.5.4.9)
+}
 function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number, tom = false, runda = false, plock?: number) {
   const now = s.now, d = ACTS[tk.act], res = d.resurs;
   const { takt, del: del0, rich, rd, rk } = arbetsTakt(s, p, tk), y = plock ?? takt * dtSec, del = plock === undefined ? del0 : undefined; // ett plock har redan tagits ur rutan (plockaEn)
@@ -1607,12 +1614,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const m = p.mentor !== undefined ? byId(s, p.mentor) : undefined; // bredvid sin mentor lär man sig fortare (steg 3.1.1)
   const vidMentor = m?.task && ACTS[m.task.act].arbete === sk && Math.hypot(m.x - p.x, m.y - p.y) < RELT.mentorNara ? RELT.mentorOvning : 1;
   ovning(p, sk, dtSec / HOUR_S * STEG.ovningArbete * learn * vidMentor * (STEG.ovningBas + stat(p, 'intelligens', now) / 20));
-  if (before < 16 && p.skill[sk] >= 16) {
-    const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
-    p.fame.push(title); personHand(s, p, 'titel', `Blev ${title.toLowerCase()}.`); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
-    if (first) notis(s, 'mastare', `${p.name} är byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, [p.id]);
-    if (first) for (const q of living(s)) if (q !== p) upplev(s, q, 'forstaMastare', p.name); // de andra såg det (steg 4.5.4.9)
-  }
+  if (before < 16 && p.skill[sk] >= 16) blevMastare(s, p, sk);
   // arbetet sker i turer: när de fria händerna är fulla eller efter en fångst bärs det hem, sedan fortsätter man. Någon fast
   // tid för en tur finns inte (steg 6.1.10): arbetet slutar annars när det är slut (tk.until) eller när något går före (val.ts)
   const full = fullBorda(s, p, tk), has = isCarrying(tk);

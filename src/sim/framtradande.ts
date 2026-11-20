@@ -289,9 +289,19 @@ function kyrkBud(s: State, p: Person, d: FramDef, b: BudVal | undefined) {
   log(s, `${namn} gav ${p.name} ${vad} för ett framträdande ${bud.k === 'tro' ? 'om tron' : `om ${bud.amne}`}.`, 'rel', [p.id]);
   return { ...bud, betalt: vad, kyrka: namn };
 }
+// framträdandet som pågår: den som leder lever och har det som sin uppgift. Dör hen eller avbryts, är det slut, och
+// publiken och medspelarna går (fynd 347)
+function framLeds(s: State) {
+  const f = s.fram;
+  if (!f) return undefined;
+  const p = byId(s, f.p);
+  if (p && alive(p) && p.task?.act === 'upptrada' && p.task.ref === f.start) return f;
+  s.fram = undefined;
+  return undefined;
+}
 // framträdandet som går att lyssna på
 export function framOppen(s: State) {
-  const f = s.fram; // det som är slut ligger kvar tills den som uppträdde är klar (upptradaKlar), eller nästa kväll
+  const f = framLeds(s); // det som är slut ligger kvar tills den som uppträdde är klar (upptradaKlar)
   return f && s.now < f.slut - FRAM.sent * MIN ? f : undefined;
 }
 // scenen (steg 4.3.2.2): en färdig scen, när det inte är kallt eller regnar (då är man vid elden eller inne som förut)
@@ -403,7 +413,7 @@ export function lyssnaVal(s: State, p: Person, plats: (q: Person) => { x: number
 export const lyssnaBradska = (s: State) => { const f = framOppen(s); return f && !f.igang && f.borjar !== undefined ? { fran: f.start, till: f.borjar } : undefined; };
 // medan man uppträder (MEDAN i steg.ts): övning, och de som lyssnar räknas till publiken
 export function upptradaSteg(s: State, p: Person, t: Task, dtSec: number) {
-  const f = s.fram;
+  const f = framLeds(s);
   if (!f || f.start !== t.ref || f.p !== p.id && !f.grupp?.some(g => g.id === p.id)) { t.until = Math.min(t.until, s.now); return; }
   if (!f.igang) return; // väntar på publiken
   const h = dtSec / HOUR_S;
@@ -414,7 +424,7 @@ export function upptradaSteg(s: State, p: Person, t: Task, dtSec: number) {
 }
 // medan man lyssnar: slutar den som uppträder, går man därifrån
 export function lyssnaSteg(s: State, _p: Person, t: Task) {
-  const f = s.fram;
+  const f = framLeds(s);
   if (!f || f.start !== t.ref) t.until = Math.min(t.until, s.now);
 }
 // när väntan är slut (KLAR i steg.ts): sitter någon och lyssnar börjar framträdandet, annars ställs det in. När det är slut:
