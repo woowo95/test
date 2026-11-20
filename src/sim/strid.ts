@@ -64,6 +64,7 @@ export const STRID = balans('strid', {
   // är närmare vännen än raddaFri
   tryckSjalv: 0.5, raddaEmp: 10, raddaFri: 3,
   hjalpAvst: 4, draUndan: 1.5, // hjälparna (steg 9.5.20) håller sig så här långt från fienderna, och drar den fallne så här långt bort
+  barFart: 0.5, // den som bär en fallen går så här mycket långsammare, som med en tung börda (steg 12.1.87)
   // olyckshugget (steg 9.5.22): vid varje träff är risken skärpan × graden² × hugg, mindre med skydd på delen (skyddHugg); en arm,
   // ett ben, en hand eller en fot huggs av, och huvudet eller bålen dödar direkt
   hugg: 0.12, skyddHugg: 0.5, huggMin: 0.5, // bara en träff av minst huggMin kan hugga av
@@ -262,6 +263,7 @@ const BORJAR: Record<Avsikt, string> = { lek: 'man brottas på lek', brottning: 
 export const STRIDHANDELSER = {
   borjar: { tecken: '⚔️', namn: 'Striden börjar' },
   raddar: { tecken: '🩹', namn: 'Drar undan en vän' }, // steg 9.5.18
+  lyfter: { tecken: '🤲', namn: 'Lyfter upp en fallen' }, // hjälparen bär hen bort (steg 12.1.87)
   hugg: { tecken: '🪓', namn: 'Olyckshugget' }, // steg 9.5.22
   traff: { tecken: '💥', namn: 'Träff' },
   tog: { tecken: '🛡️', namn: 'Kläderna tog slaget' },
@@ -305,6 +307,7 @@ export type KampeLage = 'strid' | 'nere' | 'ger' | 'flykt' | 'borta' | 'dod';
 export interface Kampe {
   emp?: number; raddar?: number; // empatin, och den blödande vän hen är på väg till (steg 9.5.18)
   hjalp?: true; // en hjälpare: slåss inte, väntar på avstånd och drar undan den som fallit (steg 9.5.20)
+  bar?: number; // hjälparen bär den fallne med detta id till väntplatsen: går långsammare och kan inte värja sig (steg 12.1.87)
   jagar?: number; // hämnden riktar sig mot just den personen (steg 8.8.5)
   skold?: boolean; // håller en sköld (steg 8.7.3)
   skoldJarn?: true; // ... och den är av järn (steg 12.2.8)
@@ -505,6 +508,7 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
 // är kvar av striden och ingen fiende står nära vännen, drar undan hen och trycker på såret, och går sedan tillbaka in i striden
 const blodSek = (k: Kampe) => k.skador.reduce((a, w) => a + (w.ny ? SKADOR[w.k].blod * w.g * STRID.blodSek * (w.fast ? STRID.fastBlod : 1) : 0), 0);
 function raddaSteg(st: Strid, k: Kampe, dt: number) {
+  if (k.bar !== undefined) return barSteg(st, k, dt);
   if (!sortAv(k).raddar || !k.hjalp && (k.emp ?? 0) < STRID.raddaEmp) return false; // hjälparna går alltid till den som fallit (steg 9.5.20)
   let v = k.raddar !== undefined ? st.kampar.find(o => o.id === k.raddar) : undefined;
   if (v && (v.lage !== 'nere' || !blodSek(v))) { k.raddar = undefined; v = undefined; }
@@ -516,6 +520,8 @@ function raddaSteg(st: Strid, k: Kampe, dt: number) {
     k.raddar = v.id; k.mal = undefined;
   }
   if (dist(k, v) > 1) { ga(st, k, v.x, v.y, farten(k) * dt); return true; }
+  // hjälparen lyfter upp hen och bär hen till väntplatsen (steg 12.1.87, barSteg)
+  if (k.hjalp) { k.bar = v.id; k.raddar = undefined; k.mal = undefined; if (!iVagg(st, v.x, v.y)) { k.x = v.x; k.y = v.y; } st.logg.push({ t: st.t, h: 'lyfter', a: k.id, b: v.id }); return true; }
   // drar undan hen från fienderna och trycker på såren: de slutar blöda i striden
   const f = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)).sort((a, b) => dist(a, v) - dist(b, v))[0];
   if (f) { // drar undan hen, men aldrig in i en vägg eller ut i vattnet (på kartan, steg 10.1.4)
@@ -529,7 +535,26 @@ function raddaSteg(st: Strid, k: Kampe, dt: number) {
   k.raddar = undefined;
   return true;
 }
+// hjälparen bär den fallne bort från fienderna, långsamt, tills den närmaste fienden är STRID.hjalpAvst bort (väntplatsen), och
+// lägger hen ner där och trycker på såren (steg 12.1.87). Den som bärs följer med
+function barSteg(st: Strid, k: Kampe, dt: number) {
+  const v = st.kampar.find(o => o.id === k.bar);
+  if (!v || v.lage !== 'nere') { k.bar = undefined; return false; }
+  const f = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)).sort((a, b) => dist(a, k) - dist(b, k))[0];
+  if (f && dist(f, k) < STRID.hjalpAvst) {
+    const d = Math.max(0.01, dist(f, k));
+    ga(st, k, clamp(k.x + (k.x - f.x) / d * 2, 0.3, st.w - 0.3), clamp(k.y + (k.y - f.y) / d * 2, 0.3, st.h - 0.3), farten(k) * STRID.barFart * dt);
+    v.x = k.x; v.y = k.y;
+    if (dist(f, k) < STRID.hjalpAvst) return true;
+  }
+  for (const w of v.skador) w.ny = 0;
+  varld?.tryck?.(v);
+  st.logg.push({ t: st.t, h: 'raddar', a: k.id, b: v.id });
+  k.bar = undefined;
+  return true;
+}
 function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Handelse = h) {
+  k.bar = undefined; // den som bar någon släpper hen (steg 12.1.87)
   if (h === 'nere' || h === 'flykt') k.fallT ??= st.t; // när hen föll eller vände (hur länge en sort följer efter: KAMPAR.forfoljer)
   k.lage = h; k.mal = undefined; k.ligger = undefined; k.bocker = undefined;
   if (h === 'ger') for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.smitta; // varje bybo som gett upp sänker de andras mod (steg 8.8.8)
@@ -563,7 +588,7 @@ export function slagen(st: Strid): SlagHandelse[] {
   return ut;
 }
 export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
-const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.some(kladTung) ? 1 - STRID.duckTung : 1);
+const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && b.bar === undefined && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.some(kladTung) ? 1 - STRID.duckTung : 1);
 function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   const v = VAP[a.vapen];
   if (b.ledare) { // en vän som står nära ledaren kliver emellan och tar slaget (steg 3.7.12)
@@ -574,7 +599,7 @@ function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   // två mot en är farligt (steg 8.7.7): den inringade är lättare att träffa
   const omringad = st.kampar.filter(o => o.sida === a.sida && o !== a && iStrid(o) && o.mal === b.id).length;
   if (slump(st) >= Math.min(0.95, chansMot(a, b, a.st.skicklighet) * (1 + STRID.ringad * omringad))) { st.logg.push({ t: st.t, h: 'miss', a: a.id, b: b.id, v: a.vapen }); return; }
-  if (b.skold && !b.ligger && slump(st) < (b.skoldJarn ? STRID.jarnSkoldSlag : STRID.skoldSlag)) { st.logg.push({ t: st.t, h: 'parera', a: b.id, b: a.id, v: b.vapen }); return; } // skölden (steg 8.7.3)
+  if (b.skold && !b.ligger && b.bar === undefined && slump(st) < (b.skoldJarn ? STRID.jarnSkoldSlag : STRID.skoldSlag)) { st.logg.push({ t: st.t, h: 'parera', a: b.id, b: a.id, v: b.vapen }); return; } // skölden (steg 8.7.3)
   if (iStrid(b) && b.mal === a.id && !b.backar && !b.ligger && !b.bocker) { // försvaret: bara mot den man vänt sig mot (den inringade försvarar sig inte)
     const par = !sortAv(b).parerar ? 0 : (b.vapen === 'hand' ? STRID.pareraHand : STRID.parera) + (b.st.skicklighet - a.st.skicklighet) * STRID.pareraPer;
     if (par > 0 && slump(st) < par * b.ork) { // djuren parerar inte, de duckar (steg 3.7.1)
@@ -803,6 +828,7 @@ export function stridSteg(st: Strid) {
     if (k.hjalp) { // hjälparen slåss inte: hen väntar på avstånd från fienderna (steg 9.5.20)
       const f = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)).sort((a, b) => dist(a, k) - dist(b, k))[0];
       if (f && dist(f, k) < STRID.hjalpAvst) { const d = Math.max(0.01, dist(f, k)); ga(st, k, clamp(k.x + (k.x - f.x) / d * 2, 0.3, st.w - 0.3), clamp(k.y + (k.y - f.y) / d * 2, 0.3, st.h - 0.3), farten(k) * dt); }
+      else if (f && dist(f, k) > STRID.hjalpAvst + 2) ga(st, k, f.x, f.y, Math.min(dist(f, k) - STRID.hjalpAvst - 1, farten(k) * dt)); // går mot striden och väntar på avstånd (steg 12.1.87)
       continue;
     }
     const m = valjMal(st, k);
@@ -867,6 +893,7 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'miss': return r.kast ? `${a} kastar ${v?.namn.toLowerCase()} mot ${b} men missar.` : `${a} ${v?.ord ?? 'slår'} efter ${b}${med} men missar.`;
     case 'avstand': return `${a} backar undan från ${b} och håller avståndet.`;
     case 'raddar': return `${a} drar undan ${b} och trycker på såret.`;
+    case 'lyfter': return `${a} lyfter upp ${b} och bär hen undan.`;
     case 'hugg': return `${a} hugger av ${b}s ${KROPPSDELAR[r.d!].namn.toLowerCase()}${med}.`;
     case 'byter': return r.v === 'hand' ? `${a} har inget mer att kasta och slåss med händerna.` : `${a} tar ${v?.namn.toLowerCase()} ur bältet.`;
     case 'vantar': return `${a} väntar med kastet: ${b} slåss med en vän.`;

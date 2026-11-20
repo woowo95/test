@@ -16,7 +16,7 @@ import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
 import { GANG } from './gang';
 import { blocked, freeNear } from './byggnad';
 import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat, paKartan } from './folk';
-import { KROPPSDELAR, forlora, skada } from './halsa';
+import { KROPPSDELAR, forlora, kanGa, skada } from './halsa';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
 import { isFamily, ranEfter, setRanStrid } from './behov';
@@ -30,6 +30,7 @@ import { handelse, larma } from './rykten';
 import { clamp, rnd } from './slump';
 import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
 import { ledareOf } from './styre';
+import { larmRollNu } from './roller';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
 import { upplev } from './uppvaxt';
 import { husPlats, kanterna } from './varg';
@@ -47,6 +48,7 @@ export const KARTSTRID = balans('kartstrid', {
   skiljChans: 0.12, // chansen per sekund att de slutar när någon står emellan, gånger 1 + (karisma + styrka − 20) / 20 ...
   skiljLedare: 2, // ... gånger detta för byns ledare ...
   skiljTorst: 3, // ... delat med 1 + detta gånger den blodtörstigastes blodtörst
+  hjalpMed: 15, // en hjälpare vid ett larm går in i striden mot hotet när en bybo slåss så här nära (rutor, steg 12.1.87)
 });
 
 // en strid som pågår på kartan. val = vad de som sett striden valt (personens id: skilja, undan eller kvar), fri = de som lämnat den
@@ -137,14 +139,27 @@ export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Perso
 }
 
 // en till ger sig in i en strid som pågår, där hen står (steg 10.1.14): den som kommer till när sidorna möts
-export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1) {
+// hjalp = en hjälpare: slåss inte, väntar på avstånd och bär undan de fallna (steg 12.1.87)
+export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1, hjalp?: true) {
   if (g.st.slut || g.st.kampar.some(k => k.pid === p.id && !g.fri?.includes(p.id))) return;
   if (g.fri?.includes(p.id)) return; // den som lämnat striden går inte in i den igen
   const id = Math.max(0, ...g.st.kampar.map(k => k.id)) + 1;
-  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), fly: flyMal(s, p) });
-  if (g.efter) MED[g.efter.typ]?.(s, g.efter, g.st.kampar[g.st.kampar.length - 1], p); // det stridens slag ger den som kommer senare (steg 12.1.58)
-  avbryt(s, p); stridsUppgift(s, p, g.orsak);
-  count(s, 'kartStridMed');
+  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), fly: flyMal(s, p), ...(hjalp ? { hjalp } : {}) });
+  if (g.efter && !hjalp) MED[g.efter.typ]?.(s, g.efter, g.st.kampar[g.st.kampar.length - 1], p); // det stridens slag ger den som kommer senare (steg 12.1.58)
+  avbryt(s, p); stridsUppgift(s, p, hjalp ? `Hjälper de fallna (${g.orsak})` : g.orsak);
+  count(s, hjalp ? 'kartStridHjalp' : 'kartStridMed');
+}
+// byns hjälpare vid ett larm (rollen hjälpare mot samma hot, Tre roller vid larm) går in i striden mot hotet när en bybo slåss nära,
+// som hjälpare (steg 12.1.87)
+function hjalparnaMed(s: State, g: KartStrid) {
+  if (!g.efter?.egen || g.st.slut) return; // striderna mot hotet (rövarna, vargarna, björnen, vildsvinet)
+  const kamp = g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid' && !k.hjalp && personAv(s, k) && !personAv(s, k)!.gast);
+  if (!kamp.length) return;
+  for (const p of living(s)) {
+    const r = larmRollNu(s, p);
+    if (p.gast || r?.roll !== 'hjalpare' || r.hot !== g.efter.typ || p.svimmat || !kanGa(p) || g.fri?.includes(p.id) || ['strid', 'sova', 'medvetslos'].includes(p.task?.act ?? '')) continue;
+    if (kamp.some(k => Math.hypot(k.x - p.x, k.y - p.y) <= KARTSTRID.hjalpMed)) kartStridMed(s, g, p, 0, true);
+  }
 }
 
 // ---------- världen striden frågar ----------
@@ -197,6 +212,7 @@ export function kartStridSteg(s: State, dtSec: number) {
   if (!s.kartStrider?.length) return;
   for (const g of [...s.kartStrider]) {
     const st = g.st, v = varldAv(s, g), sport = sportAv(st.avsikt);
+    hjalparnaMed(s, g);
     g.rest += dtSec;
     while (g.rest >= STRID.tick - 1e-9 && !st.slut) {
       g.rest -= STRID.tick;

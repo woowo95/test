@@ -415,7 +415,7 @@ export function drawPeople(t: number) {
     const tk = uppgiftVid(p), sleeping = !!tk && soverNu(p, tk), barNagot = !!tk && load(tk, s) > 0; // bär något, en gång per person (kodgenomgången 434) // den som går till sängen går upprätt och lägger sig först i bädden (steg 9.2.89)
     // figuren ur porträttgeneratorn (steg 5.2.3.2, ui/folkbild.ts) med fötterna under punkten; den som sover eller inte kan
     // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen har en egen, lägre mall i hel skala (steg 5.5.5)
-    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p) || !!kartKampe(s, p)?.ligger, liten = a < ALDER.smabarn;
+    const sp = figurAv(p.id), kk = kartKampe(s, p), ligger = sleeping || !kanGa(p) || !!kk?.ligger, liten = a < ALDER.smabarn;
     const gor = tk?.phase === 'do' ? tk.act : undefined;
     // vid en bänk med stol (steg 6.8.6): den som arbetar på rutan framför sitter på stolen, vänd mot bänken, med arbetets
     // rörelse i armarna
@@ -430,7 +430,7 @@ export function drawPeople(t: number) {
     if (va) { x = va.x * TS; y = va.y * TS; rikt = va.rikt; }
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
-    const strid = gor === 'strid' && !ligger ? stridNu(p) : undefined;
+    const strid = gor === 'strid' && !ligger && !kk?.bar ? stridNu(p) : undefined; // den som bär en fallen slåss inte (steg 12.1.87)
     const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && (gor === 'bygga' || !barNagot) ? ARBETEN[gor] : undefined; // byggaren har materialet i händerna medan hen bygger (steg 9.2.90)
     const ab = arb ? arbetsBild(arb, strid?.ruta ?? slag() + p.id) : undefined; // i striden på kartan styr slaget rörelsen, inte klockan
     if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
@@ -440,6 +440,7 @@ export function drawPeople(t: number) {
     let arm: Arm = barNagot && gor !== 'bygga' ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
     if (steg && arm === 'hanga') arm = steg[1];
     if (ab) arm = ab.arm;
+    if (kk?.bar) arm = 'bara';
     // sängen (steg 6.8.5): den som sover i en färdig säng ligger mitt i den med huvudet i bäddens huvudände (vänster i den
     // liggande bädden, uppåt i den stående), och bara under ett byggt täcke (ett tillbehör i bädden, skinnfällen) har hen täcke
     const iS = iSangen(s, q.x, q.y, sleeping), sang = iS?.sang; // (ui/stalle.ts, steg 12.1.14)
@@ -452,11 +453,12 @@ export function drawPeople(t: number) {
       const { w: bw, h: bh } = storlekAv(sang);
       sp.anchor.set(0.5); sp.position.set((sang.x + bw / 2) * TS, (sang.y + bh / 2) * TS - 2);
       if (iS!.staende) sp.rotation = -Math.PI / 2; else sp.scale.x = -1;
-    } else if (ligger) sp.position.set(x - w / 2, y - h / 2);
+    } else if (kk?.buren) sp.position.set(x - w / 2, y - h / 2 - r * 1.4); // den som bärs ligger över bärarens axlar (steg 12.1.87)
+    else if (ligger) sp.position.set(x - w / 2, y - h / 2);
     else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + r * 0.9 - h + 1);
     const hand = ab && figurHand(sp.texture);
     if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0], sp.position.y + hand[1], rikt === 'vast' ? -1 : 1, 1);
-    sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
+    sp.zIndex = y + r * 0.9 + (kk?.buren ? 1 : 0); // fötterna (ordningen söderut, steg 5.1.4.5); den som bärs framför bäraren
     huvud.set(p.id, sang ? sp.position.y - h / 2 : sp.position.y);
     if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);

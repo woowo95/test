@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { medVatska, SCENARIER, kor, klockan, medBank, medHus, setMat, vardPa, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { rovarGang, medVatska, SCENARIER, kor, klockan, medBank, medHus, setMat, vardPa, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
@@ -471,7 +471,7 @@ SCENARIER.roller = {
 };
 
 SCENARIER.undsattning = {
-  text: 'Steg 9.5.20: undsättningen. De vuxna som inte slåss följer med som hjälpare, håller sig på avstånd från fienderna, drar undan den som fallit när ingen fiende står nära och trycker på såret; hjälparna slåss inte, och striden avgörs av kämparna',
+  text: 'Steg 9.5.20 och 12.1.87: undsättningen. De vuxna som inte slåss följer med som hjälpare, håller sig på avstånd från fienderna, lyfter upp den som fallit när ingen fiende står nära, bär hen till väntplatsen och trycker på såret; hjälparna slåss inte, och striden avgörs av kämparna. På kartan går byns hjälpare vid ett larm in i striden mot rövarna, och den som bärs följer bäraren',
   kor: () => {
     const m = (id: number, sida: 0 | 1, x: number, hjalp = false) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x, y: 7, ...(hjalp ? { hjalp: true as const } : {}) });
     const st = SIM.nyStrid({ avsikt: 'skada', w: 32, h: 14, kampar: [m(1, 0, 24), m(2, 0, 18), m(3, 0, 6, true), m(4, 1, 26)] }, 5);
@@ -479,11 +479,33 @@ SCENARIER.undsattning = {
     fallen.lage = 'nere'; fallen.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; fallen.blod = 0.7;
     let narmast = Infinity, raddad = false;
     for (let i = 0; i < 400 && !st.slut; i++) { SIM.stridSteg(st); if (fiende.lage === 'strid') narmast = Math.min(narmast, Math.hypot(h.x - fiende.x, h.y - fiende.y)); if (st.logg.some(r => r.h === 'raddar' && r.a === h.id)) raddad = true; }
-    const slogs = st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === h.id);
+    const slogs = st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === h.id), lyfte = st.logg.some(r => r.h === 'lyfter' && r.a === h.id);
+    // på kartan (steg 12.1.87): en rövare slåss med en bybo, en annan bybo ligger och blöder, och en tredje är hjälpare vid larmet
+    const s = createState(1, START), [a, b, hp] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(p));
+    const e = SIM.eldPlats(s), plats = (dx: number) => SIM.freeNear(s, e.x + 0.5 + dx, e.y + 3.5);
+    const f = rovarGang(s, 1, plats(-4)), rov = SIM.rovarna(s, f)[0];
+    Object.assign(a, plats(-2)); Object.assign(b, plats(3)); Object.assign(hp, plats(9));
+    const g = SIM.kartStridBorja(s, 'skada', [[a, b], [rov]], 'rövare vid byn', { typ: 'rovare', egen: true, flock: f.id });
+    const kb = g.st.kampar.find(k => k.pid === b.id)!;
+    kb.lage = 'nere'; kb.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }];
+    hp.task = { act: 'hjalpaRovare', phase: 'do', tx: hp.x, ty: hp.y, until: s.now + SIM.HOUR, carry: 0, why: 'Rövare är nära' };
+    let gickIn = false, bars = false, foljer = true, kartLyft = false, kartRaddad = false, hpSlogs = false;
+    for (let i = 0; i < 400 && !g.st.slut && !kartRaddad; i++) {
+      SIM.step(s, SIM.nastaSteg(s));
+      const kh = g.st.kampar.find(k => k.pid === hp.id);
+      if (kh?.hjalp) gickIn = true;
+      if (kh?.bar === kb.id) { bars = true; if (Math.hypot(b.x - hp.x, b.y - hp.y) > 0.01) foljer = false; }
+      if (kh && g.st.logg.some(r => r.h === 'lyfter' && r.a === kh.id)) kartLyft = true;
+      if (kh && g.st.logg.some(r => r.h === 'raddar' && r.a === kh.id)) kartRaddad = true;
+      if (kh && g.st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === kh.id)) hpSlogs = true;
+    }
     return [
-      [`hjälparen drar undan den fallne och trycker på såret (${raddad ? 'ja' : 'nej'})`, raddad],
+      [`hjälparen lyfter upp den fallne (${lyfte ? 'ja' : 'nej'}), bär hen undan och trycker på såret (${raddad ? 'ja' : 'nej'})`, lyfte && raddad],
       [`hjälparen slåss inte (${slogs ? 'slogs' : 'slogs inte'})`, !slogs],
       [`striden avgörs av kämparna, inte hjälparen (${st.slut ? 'avgjord' : 'pågår'})`, !!st.slut],
+      [`på kartan går hjälparen vid larmet in i striden som hjälpare (${gickIn ? 'ja' : 'nej'})`, gickIn],
+      [`hen lyfter upp den fallne (${kartLyft ? 'ja' : 'nej'}), som följer bäraren (${bars ? (foljer ? 'följer' : 'följer inte') : 'bars aldrig'}), och trycker på såret vid väntplatsen (${kartRaddad ? 'ja' : 'nej'})`, kartLyft && bars && foljer && kartRaddad],
+      [`hjälparen slåss inte på kartan (${hpSlogs ? 'slogs' : 'slogs inte'})`, !hpSlogs],
     ];
   },
 };
