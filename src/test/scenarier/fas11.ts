@@ -5322,13 +5322,22 @@ SCENARIER.vacktskog = {
     const g = SIM.groundOf(b), e = SIM.eldPlats(b), folk = b.people.filter(p => SIM.alive(p) && !p.gast).length, st = b.stubbar ?? [];
     const pastubbe = st.every(q => g.trees[q.y * SIM.W + q.x] < SIM.FOREST && Math.hypot(q.x - e.x, q.y - e.y) <= SIM.SKOG.sokR + 1);
     const unga = st.every(q => q.t <= b.now && b.now - q.t < SIM.SKOG.stubbeDygn * SIM.DAY);
-    const stig = (x: number, y: number) => (SIM.findPath(g, e.x, e.y, x, y) ?? []).filter(i => SIM.isSoil(g.tiles[i]) && !SIM.faltAt(b, i % SIM.W, Math.floor(i / SIM.W)));
-    const tillFalt = SIM.faltOf(b).map(f => { const i = SIM.faltRuta(f, 0); return stig(i % SIM.W, Math.floor(i / SIM.W)); });
-    const bar = (l: number[]) => l.filter(i => g.cover[i] <= SIM.VACKTSKOG.stig + 1e-6).length >= l.length * 0.9; // (vägen räknas om på den nötta marken och kan gå lite annorlunda)
-    const faltStig = tillFalt.length > 0 && tillFalt.every(bar);
-    let vatten: number[] | undefined;
-    for (let d = 1; d <= SIM.VACKTSKOG.vattenR && !vatten; d++) for (let y = e.y - d; y <= e.y + d && !vatten; y++) for (let x = e.x - d; x <= e.x + d; x++) if (SIM.inMap(x, y) && g.tiles[y * SIM.W + x] === SIM.T.Vatten) { vatten = stig(x, y); break; }
-    const vattenStig = !!vatten && bar(vatten);
+    // rutorna man når från elden utan att gå på jord som inte är nött (stigen, fälten, och sand och sten som inte är jord), aldrig i
+    // vattnet. Vägsökningen ser inte stigarna och kan välja en annan lika lång väg, så stigen prövas så här i stället
+    const nar = new Uint8Array(SIM.W * SIM.H), ko = [e.y * SIM.W + e.x];
+    const gar = (i: number) => g.tiles[i] !== SIM.T.Vatten && (!SIM.isSoil(g.tiles[i]) || g.cover[i] <= SIM.VACKTSKOG.stig + 1e-6 || SIM.faltAt(b, i % SIM.W, Math.floor(i / SIM.W)));
+    nar[ko[0]] = 1;
+    while (ko.length) {
+      const i = ko.pop()!, x = i % SIM.W, y = Math.floor(i / SIM.W);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const j = (y + dy) * SIM.W + x + dx; if (SIM.inMap(x + dx, y + dy) && !nar[j] && gar(j)) { nar[j] = 1; ko.push(j); } }
+    }
+    const tillFalt = SIM.faltOf(b).map(f => nar[SIM.faltRuta(f, 0)] === 1);
+    const faltStig = tillFalt.length > 0 && tillFalt.every(Boolean);
+    let vattenStig = false;
+    for (let d = 1; d <= SIM.VACKTSKOG.vattenR && !vattenStig; d++) for (let y = e.y - d; y <= e.y + d; y++) for (let x = e.x - d; x <= e.x + d; x++) {
+      if (!SIM.inMap(x, y) || g.tiles[y * SIM.W + x] !== SIM.T.Vatten) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (SIM.inMap(x + dx, y + dy) && nar[(y + dy) * SIM.W + x + dx]) vattenStig = true;
+    }
     const nyckel = (x: SIM.State) => JSON.stringify(x.stubbar ?? []) + Array.from(SIM.groundOf(x).trees).join(',') + Array.from(SIM.groundOf(x).cover).join(',');
     SIM.useMap(s);
     const lika = nyckel(vacka(24).b) === nyckel(b);
@@ -5338,7 +5347,7 @@ SCENARIER.vacktskog = {
       ['en mindre by har fällt färre (' + (liten.stubbar?.length ?? 0) + ' stubbar)', (liten.stubbar?.length ?? 0) < st.length],
       ['stubbarna står på fällda rutor inom fällradien', pastubbe],
       ['stubbarna är yngre än en stubbe ruttnar', unga],
-      ['stigar av bar jord går från elden till fälten (' + tillFalt.length + ' fält)', faltStig],
+      ['stigar av bar jord går från elden till fälten (' + tillFalt.filter(Boolean).length + ' av ' + tillFalt.length + ' fält)', faltStig],
       ['en stig går till vattnet', vattenStig],
       ['samma rad ger samma skog', lika],
       ['en nygrundad by har inga stubbar', !ny.stubbar?.length],
