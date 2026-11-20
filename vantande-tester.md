@@ -219,3 +219,6 @@
 
 - Stegen ändrar bara bilden (src/ui) och ska inte ändra byarna (rättelsen i `bristNu` som grenen också gjorde finns redan i varld från par-forrad). Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld (facit kan ändras där kraschen förut stoppade en by).
 - `npm run utseende` för 12.1.180–12.1.183 (växterna i bitar, trädens skuggor, skuggbilden i delar, nattfiltret). Bilden är prövad punkt för punkt med A/B i samma sida (granskning/prestanda/mat/ab180.cjs, ab181.cjs, ab325.cjs) men inte med hela utseende-testet. I molnet hann `FALL=dag,natt LAGE=ljust npm run utseende` bara dagen innan containern startades om: 114 av 1 028 300 punkter på datorn och 494 i mobilen utanför paletten (mest #645443). Jämför med varld på MacBooken; stegen bör inte ge nya färger, eftersom A/B-proven ger samma punkter.
+## 12.1.178 (ikappräkningen i en arbetare, 2f64faee)
+
+- Byn räknas likadant i arbetaren som i sidan (scenariot ikapparbetare, exakt lika i bitar med ögonblicksbilder och i ett svep), och simuleringen är inte ändrad: skyldig `npm run -s likhet` i kedjan med resten av 12.1. Prövad i webbläsaren med granskning/prestanda/mat/ikapp178.cjs (en och tre timmars frånvaro, med och utan snabbspolning och utan arbetare): inga fel.
