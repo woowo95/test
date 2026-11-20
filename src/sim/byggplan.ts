@@ -14,7 +14,7 @@ import { stenFrakt, stenFraktKostnad } from './byggsten';
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
-import { type Station, delarAv, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
+import { type Station, delarAv, nyPlatsDel, rivDel, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
 import { enOrd, stor } from './ord';
 import { knows } from './teknik';
 import { villHaMer } from './forradsmal';
@@ -928,6 +928,18 @@ function lagerUrVagen(s: State, f: Forslag, hus: Hus) {
   if (iVagen.length) { for (const z of iVagen) flyttaLager(s, z); hus.barUt = s.now + PLAN.barUtTim * HOUR; }
 }
 // stationerna, möblerna och eldarna ute som står där ett hus med yttermåtten w×h vid (x, y) ska stå (steg 10.2.77)
+// en station i delar där bara några delar står där huset ska stå (steg 12.1.17): de delarna rivs och byggs upp igen bredvid de
+// andra. true = stationen står kvar
+function rivUtanfor(s: State, t: Station, f: { x: number; y: number; w: number; h: number }) {
+  if (!t.delar?.length || !stationDef(t.k)?.delar) return false;
+  const i = delarAv(t).filter(q => q.x < f.x + f.w && q.x + q.w > f.x && q.y < f.y + f.h && q.y + q.h > f.y).map(q => q.i);
+  if (i.length >= t.delar.length) return false;
+  const forr = t.delar.map(q => ({ ...q }));
+  if (!i.every(n => nyPlatsDel(s, t, n, f.x, f.y, f.w, f.h))) { t.delar = forr; return false; }
+  for (const n of i) rivDel(s, t, n);
+  log(s, `${i.map(n => stationDef(t.k)!.delar![n].namn.toLowerCase()).join(' och ')} i ${stationDef(t.k)!.namn.toLowerCase()} revs och byggs upp igen bredvid.`.replace(/^./, c => c.toUpperCase()), 'world');
+  return true;
+}
 const stationerI = (s: State, x: number, y: number, w: number, h: number) => stationerOf(s).filter(t => !t.inne && t.k !== 'latrin' && delarAv(t).some(q => q.x < x + w && q.x + q.w > x && q.y < y + h && q.y + q.h > y));
 // ett nytt hus: ritningen blir bitar
 function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
@@ -939,7 +951,7 @@ function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   housesOf(s).push(hus); touch(s);
   // (torkhuset byggs runt torkställningarna, steg 9.2.137: det som står innanför väggarna står kvar)
   const innanfor = (t: Station) => !!row.omkring && delarAv(t).every(q => q.x > f.x && q.y > f.y && q.x + q.w < f.x + f.w && q.y + q.h < f.y + f.h);
-  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) if (!innanfor(t)) rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för ${hus.namn.toLowerCase()}.`); // det som stod ute där huset ska stå (steg 10.2.77)
+  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) if (!innanfor(t)) rivUtanfor(s, t, f) || rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för ${hus.namn.toLowerCase()}.`); // det som stod ute där huset ska stå (steg 10.2.77)
   if (row.omkring) for (const z of zonesOf(s)) if (z.hus === undefined && z.x > f.x && z.y > f.y && z.x + z.w < f.x + f.w && z.y + z.h < f.y + f.h) z.hus = hus.id; // vedboden byggs runt lagerplatsen (steg 9.2.137)
   lagerUrVagen(s, f, hus);
   if (f.ny) s.fire.flytt = { x: f.ny.x, y: f.ny.y, varfor: 'plats' };
@@ -953,7 +965,7 @@ export function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   for (const a of f.ritning) bitsOf(s).push({ id: s.nextBit++, x: a.x, y: a.y, k: MATERIAL[a.m].k, m: a.m, b: a.m === 'oppning' ? 1 : 0, mat: 0, c: 1, hus: h.id, ...(forb ? { forb: 1 as const } : {}) });
   h.ut = { x: f.x, y: f.y, w: f.w, h: f.h, oppnas: f.oppnas.map(a => [a.x, a.y, a.m]) };
   // det som står ute där den nya delen ska stå rivs, som för ett nytt hus (steg 10.2.77)
-  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för att ${h.namn.toLowerCase()} byggdes ut.`);
+  for (const t of stationerI(s, f.x, f.y, f.w, f.h)) rivUtanfor(s, t, f) || rivStation(s, t, `${stor(enOrd(stationDef(t.k)!))} ${stationDef(t.k)!.namn.toLowerCase()} revs för att ${h.namn.toLowerCase()} byggdes ut.`);
   touch(s); lagerUrVagen(s, f, h);
   // en öppning i den gamla väggen redan nu, så att ingen blir instängd i den nya delen (den blir golv som resten sist)
   if (!f.ritning.some(a => a.m === 'oppning') && f.oppnas.length) {

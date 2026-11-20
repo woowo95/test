@@ -19,7 +19,7 @@ import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think, SKALD_START, handelStart } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { Act, DAY, Person, SEC, State, simulera, useMap } from './typer';
+import { Act, DAY, MIN, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
 import { nyAndlighet } from './religion';
 import { hogtidForm, hogtidVarde, hogtider } from './kult';
@@ -454,6 +454,14 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const r of s.varld?.rader ?? []) for (const k of r.syn?.personer ?? []) if (k.kropp?.lardomar) k.kropp.lardomar = om(k.kropp.lardomar);
   }],
   [59, 'v533: världen får sina silvergruvor (steg 11.10.1)', s => { const v = varldMark(s); if (s.varld && v) laggGruvor(s.varld, v); }], // gruvan har alltid funnits där
+  [60, 'v534: örtkökets delar byggs var för sig (steg 12.1.17): ett halvbyggt örtkök har tagit allt material, och arbetet kvar ligger på de sista delarna', s => {
+    for (const t of s.stationer ?? []) {
+      const dl = stationDef(t.k)?.delar;
+      if (!dl || !t.delar?.length || t.kvar <= 0 || t.delar.some(q => q.kvar)) continue;
+      let kvar = t.kvar;
+      for (let i = t.delar.length - 1; i >= 0 && kvar > 0; i--) { const n = Math.min(kvar, (dl[i]?.min ?? 1) * MIN); t.delar[i].kvar = n; t.delar[i].mat = 1; kvar -= n; }
+    }
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

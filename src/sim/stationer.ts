@@ -128,7 +128,7 @@ export const STATION = balans('station', {
 // brasa = ringen till en lägereld till medan den läggs (steg 2.9.1, 4.5.6.8, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar). När den är klar blir den en lägereld (nyEld) och ingen station
 export interface Utkant { drag?: true; till: number; avst: number; vatten?: true; falt?: true; tradFri?: true; faltNara?: true } // faltNara: så nära ett fält som möjligt (komposten, steg 10.2.93) // tradFri: söker en plats utan träd (bara latrinen, steg 8.1.14)
 export interface Forvar { rymmer: number; redskap?: true; bara?: readonly string[]; tak?: true; stangd?: true; privat?: true }
-export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true } // en del i en station med delar (steg 9.4.1)
+export interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete?: true; av?: Record<string, number>; min?: number; eld?: true } // en del i en station med delar (steg 9.4.1); av och min = delens eget bygge, eld = stationens eld hör till delen (steg 12.1.17)
 export interface StationDef { kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; agd?: true; enda?: true; fahus?: true; kok?: true; tro?: true; golv?: true; hage?: true; rund?: true; pyntQ?: number; smak?: string; vrak?: true } // vrak = byggs aldrig, står där grundarna kom (vagnen, steg 11.6.13); hage = står i en hage (vattenhon, steg 10.10.30); golv = ligger på golvet som en matta: man går över den och annat står på den (steg 10.7.6); pyntQ = så många kvalitetssteg finare som pynt; smak = sorten i smaken (PYNT_SMAK) när den inte är stationens id // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus', 'naverask', 'ogonlapp', 'nal'];
@@ -190,7 +190,7 @@ export const STATIONER = {
   // örtköket i tre delar (steg 9.4.3, förebilden är örtkökets version 2 i bildstilen): härden med krukan över elden, torkstället
   // med örterna och bänken med morteln, där man arbetar. Det går att arbeta vid först när alla delar står i samma rum
   ortkok: {
-    delar: [{ namn: 'Härden', ikon: 'ortkok_hard', w: 1, h: 2 }, { namn: 'Torkstället', ikon: 'ortkok_tork', w: 1, h: 2 }, { namn: 'Bänken', ikon: 'ortkok_bank', w: 1, h: 2, arbete: true }],
+    delar: [{ namn: 'Härden', ikon: 'ortkok_hard', w: 1, h: 2, av: { sten: 4 } as Record<string, number>, min: 8, eld: true as const }, { namn: 'Torkstället', ikon: 'ortkok_tork', w: 1, h: 2, av: { virke: 1 } as Record<string, number>, min: 6 }, { namn: 'Bänken', ikon: 'ortkok_bank', w: 1, h: 2, arbete: true, av: { virke: 1 } as Record<string, number>, min: 6 }], // varje del är ett eget bygge (steg 12.1.17)
     kv: STATION.kvLite, namn: 'Örtkök', ikon: 'ortkok', w: 3, h: 2, tek: ['ortkok'], av: RECEPT.ortkok.av, min: RECEPT.ortkok.min, inne: true, kok: true, gor: ['koka_vatten', 'koka_te', 'koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval', 'koka_rokelse', 'koka_olja'], fart: { koka_te: STATION.redskapFart, koka_vatten: STATION.redskapFart }, bara: ['koka_salva', 'koka_tjara', 'koka_lim', 'koka_tval', 'koka_rokelse', 'koka_olja'],
     bygger: 'Bygger ett örtkök.', forsta: '{namn} byggde byns första örtkök. Där kokas och blandas örter, talg och annat.',
   },
@@ -391,7 +391,7 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { vatten?: number; regn?: number; /* vattnet i vattenhon och regnet mot nästa hela vatten (steg 10.10.30) */ bi?: number; /* bisamhället i kupan: honungen i kakor (steg 10.10.17) */ skattat?: number; /* skattade kakor mot nästa bivax (steg 10.10.20) */ skattare?: number; /* den som skattade sist (steg 10.10.21) */ grop?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; /* festmåltiden i kokgropen (steg 10.7.28) */ tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; anv?: number; /* anv = senaste besöket i latrinen (steg 11.1.71) */ q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
+export interface Station { vatten?: number; regn?: number; /* vattnet i vattenhon och regnet mot nästa hela vatten (steg 10.10.30) */ bi?: number; /* bisamhället i kupan: honungen i kakor (steg 10.10.17) */ skattat?: number; /* skattade kakor mot nästa bivax (steg 10.10.20) */ skattare?: number; /* den som skattade sist (steg 10.10.21) */ grop?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; /* festmåltiden i kokgropen (steg 10.7.28) */ tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1; kvar?: number; mat?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; anv?: number; /* anv = senaste besöket i latrinen (steg 11.1.71) */ q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 // finns det en möbel bara för slaget k (bokhyllan för blad och böcker, steg 10.6.16)?
@@ -399,6 +399,44 @@ let BARA_FV: Set<string> | undefined;
 export const baraForvar = (k: string) => (BARA_FV ??= new Set(Object.values(STATIONER as Record<string, StationDef>).flatMap(d => d.forvar?.bara ?? []))).has(k);
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
 export const isKlar = (t: Station) => t.kvar <= 0;
+// ---------- delarna byggs var för sig (steg 12.1.17, "Stationer i flera delar") ----------
+// En del som inte är klar har arbetet kvar (kvar, sekunder) och mat när dess material är taget. Stationens kvar är summan, så
+// stationen är klar när alla delar är det. Delarna byggs i tur och ordning; varje del tar sitt eget material när den börjar
+export const delSomByggs = (t: Station) => t.delar?.findIndex(q => (q.kvar ?? 0) > 0) ?? -1;
+const summaKvar = (t: Station) => { if (t.delar?.length && stationDef(t.k)?.delar) t.kvar = t.delar.reduce((n, q) => n + (q.kvar ?? 0), 0); };
+// materialet till det som byggs härnäst av stationen t (en ny station av sorten k när t saknas): delens, eller hela stationens
+export function nastaAv(k: string, t?: Station): Record<string, number> {
+  const d = stationDef(k), dl = d?.delar;
+  if (!t) return dl?.[0]?.av ?? d?.av ?? {};
+  if (!dl || !t.delar?.length) return {};
+  const i = delSomByggs(t);
+  return i < 0 || t.delar[i].mat ? {} : dl[i]?.av ?? {};
+}
+// delen i av stationen t rivs (steg 12.1.17): den blir obyggd på sin plats, och en del av materialet kommer tillbaka. Hör
+// stationens eld till delen släcks den
+export function rivDel(s: State, t: Station, i: number) {
+  const dl = stationDef(t.k)?.delar?.[i], q = t.delar?.[i];
+  if (!dl || !q || (q.kvar ?? 0) > 0) return false;
+  q.kvar = (dl.min ?? 1) * MIN; delete q.mat;
+  for (const [k, n] of Object.entries(dl.av ?? {})) { const m = Math.floor(n * HUS.rivTillbaka); if (m > 0) put(s, k, m); }
+  if (dl.eld) delete t.eld;
+  summaKvar(t);
+  s.byggV = (s.byggV ?? 0) + 1;
+  count(s, 'del riven');
+  return true;
+}
+// delen i av stationen t ställs på en ny plats nära de andra, utanför rutan (x, y, w, h) där ett hus ska stå: den första
+// lediga platsen där stationen blir hel igen. false = det fanns ingen
+export function nyPlatsDel(s: State, t: Station, i: number, x: number, y: number, w: number, h: number) {
+  const a = arbetsDel(t), forr = t.delar![i];
+  for (let r = 1; r <= 4; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const nx = a.x + dx, ny = a.y + dy, q = delarAv(t)[i];
+    if (nx < x + w && nx + q.w > x && ny < y + h && ny + q.h > y) continue;
+    if (flyttaDel(s, t, i, nx, ny, false, false)) { if (helStation(s, t)) return true; t.delar![i] = forr; horn(t); }
+  }
+  return false;
+}
 // hur stor del av bygget som är gjort (0 till 1), för framstegscirkeln på kartan
 export const stationKlar = (t: Station) => Math.min(1, Math.max(0, 1 - t.kvar / ((stationDef(t.k)?.min ?? 1) * MIN)));
 // rutorna stationen tar (bredd och djup i registret, bytta när den står vriden; en okänd sort tar en ruta)
@@ -1084,9 +1122,10 @@ export function kanBygga(s: State, p: Person, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (d.tro) return kanByggaTro(s, p, k);
   if (!enTill(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !d.tek.some(k => knows(p, k))) || !d.flera && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
-  if (halvbyggd(s, k, p)) return true;
+  const h = halvbyggd(s, k, p);
+  if (h) return Object.entries(nastaAv(k, h)).every(([m, n]) => getable(s, p, m) >= n); // nästa del tar sitt material (steg 12.1.17)
   if (nyPaVag(s, k, p)) return false; // en annan är redan på väg att bygga en ny av sorten: det byn saknar är under arbete
-  return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m)) && !!stationSite(s, k, p);
+  return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(nastaAv(k)).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m)) && !!stationSite(s, k, p);
 }
 // trons möbler (steg 10.3.19): en vuxen troende, när trons hus saknar möbeln och kyrkan äger materialet (det hämtas aldrig)
 function kanByggaTro(s: State, p: Person, k: StationSlag) {
@@ -1100,9 +1139,12 @@ function kanByggaTro(s: State, p: Person, k: StationSlag) {
 // Brasans stenar letas för sig (brasor.ts)
 export function receptStation(s: State, p: Person, k: StationSlag): Recept | undefined {
   const d: StationDef = STATIONER[k];
-  if (d.tro || d.brasa || !enTill(s, 'station', p) || !d.tek.some(k => knows(p, k)) || !d.flera && harStation(s, k) || halvbyggd(s, k, p) || nyPaVag(s, k, p)) return undefined;
+  if (d.tro || d.brasa || !enTill(s, 'station', p) || !d.tek.some(k => knows(p, k)) || !d.flera && harStation(s, k)) return undefined;
+  const h = halvbyggd(s, k, p);
+  if (h) { const av = nastaAv(k, h); return Object.keys(av).length ? { av } : undefined; } // nästa del av en station i delar (steg 12.1.17)
+  if (nyPaVag(s, k, p)) return undefined;
   if (d.forvar?.privat && !villKista(s, p) || d.pynt && !villPynt(s, p, k)) return undefined;
-  return { av: d.av, verktyg: d.verktyg }; // ett redskap som fattas blir ett projekt på samma nivå (steg 6.2.19)
+  return { av: nastaAv(k), verktyg: d.verktyg }; // ett redskap som fattas blir ett projekt på samma nivå (steg 6.2.19)
 }
 // bikupan (steg 10.10.16): byn vill ha en kupa till när ingen tom kupa står och draget på den bästa lediga platsen är minst
 // BIN.dragNog. På hösten och i istiden är draget noll, så då byggs ingen
@@ -1127,33 +1169,53 @@ export function startStation(s: State, p: Person, tk: Task) {
   if (d && !t && (d.flera || !stationerOf(s).some(q => q.k === k))) {
     const at = stationSite(s, k, p);
     const tro = d.tro ? troOf(s, p.tro) : undefined, kyrka = tro && kyrkaId(tro.id); // trons möbler av det kyrkan äger (steg 10.3.19)
-    if (at && (!d.tro || kyrka !== undefined) && Object.entries(d.av).every(([m, n]) => (kyrka !== undefined ? ownsId(s, kyrka, m) + bordanAv(p, kyrka, m) : getable(s, p, m)) >= n)) {
-      for (const [m, n] of Object.entries(d.av)) if (kyrka !== undefined) use(s, p, m, n, true, kyrka); else takeMaterial(s, p, m, n); // det hen bär hit (steg 11.1.74)
+    const av = nastaAv(k); // en station i delar börjar med den första delen (steg 12.1.17)
+    if (at && (!d.tro || kyrka !== undefined) && Object.entries(av).every(([m, n]) => (kyrka !== undefined ? ownsId(s, kyrka, m) + bordanAv(p, kyrka, m) : getable(s, p, m)) >= n)) {
+      for (const [m, n] of Object.entries(av)) if (kyrka !== undefined) use(s, p, m, n, true, kyrka); else takeMaterial(s, p, m, n); // det hen bär hit (steg 11.1.74)
       t = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: d.min * MIN };
       if (at.rot) t.rot = 1;
       if ('inne' in at) t.inne = 1;
       const delar = delarIRad(k, at.x, at.y, at.rot); if (delar) t.delar = delar; // delarna i en rad, som de byggs (steg 9.4.1)
+      if (delar && d.delar) { delar.forEach((q, i) => { q.kvar = (d.delar![i].min ?? 1) * MIN; }); delar[0].mat = 1; summaKvar(t); } // varje del sitt bygge (steg 12.1.17)
       if (tro) t.tro = tro.id;
       if (d.forvar?.privat || d.pynt || d.agd) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
       (s.stationer ??= []).push(t);
       if (!t.inne && !d.forvar) { const { w, h } = storlekAv(t); for (const z of zonesOf(s).filter(z => z.hus === undefined && rutorAv(t!.x, t!.y, w, h).some(q => inZone(z, q.x, q.y)))) flyttaLager(s, z); } // lagret i vägen (steg 8.1.15)
       s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: vägarna och platserna räknas om
     }
-  } else if (t) count(s, 'fortsatt');
+  } else if (t) {
+    const i = delSomByggs(t), q = i >= 0 ? t.delar![i] : undefined, av = nastaAv(k, t);
+    if (q && !q.mat) { if (Object.entries(av).every(([m, n]) => getable(s, p, m) >= n)) { for (const [m, n] of Object.entries(av)) takeMaterial(s, p, m, n); q.mat = 1; count(s, 'del påbörjad'); } else t = undefined; } // nästa del tar sitt material (steg 12.1.17)
+    if (t) count(s, 'fortsatt');
+  }
   if (!t) { tk.ref = undefined; tk.until = s.now; return; }
   if (!t.vem?.includes(p.id)) (t.vem ??= []).push(p.id);
-  tk.ref = t.id; tk.until = s.now + t.kvar;
+  const i = delSomByggs(t);
+  tk.ref = t.id; tk.until = s.now + (i >= 0 ? t.delar![i].kvar! : t.kvar);
 }
 // medan man bygger
 export function workStation(s: State, _p: Person, tk: Task, dtSec: number) {
   const t = stationById(s, tk.ref);
   if (!t) return;
+  const i = delSomByggs(t), q = i >= 0 ? t.delar![i] : undefined;
+  if (q) { // delen som byggs nu (steg 12.1.17); utan material blir det inget arbete
+    if (!q.mat) { tk.until = s.now; return; }
+    q.kvar = Math.max(0, q.kvar! - dtSec * SEC); summaKvar(t);
+    tk.until = Math.min(tk.until, s.now + q.kvar);
+    return;
+  }
   t.kvar = Math.max(0, t.kvar - dtSec * SEC);
   tk.until = Math.min(tk.until, s.now + t.kvar); // bygger flera på den blir den klar fortare (steg 10.2.5), och då är arbetet slut
 }
 // klar: första gången står det i loggen
 export function finishStation(s: State, p: Person, tk: Task) {
   const t = stationById(s, tk.ref);
+  if (t?.delar?.length && stationDef(t.k)?.delar) { // en del är klar (steg 12.1.17): stationen är klar när den sista är det
+    const i = delSomByggs(t), q = i >= 0 ? t.delar[i] : undefined;
+    if (q?.mat && q.kvar! <= MIN) { delete q.kvar; delete q.mat; summaKvar(t); s.byggV = (s.byggV ?? 0) + 1; count(s, 'del byggd'); }
+    if (t.kvar > 0) return;
+    if (t.klar !== undefined) { fyllPlatser(s); return; } // en riven del är byggd igen
+  }
   if (!t || t.kvar > MIN || t.klar !== undefined) return; // flera kan bygga på samma (steg 10.2.5): den som blir klar sist gör inget mer
   t.kvar = 0; t.klar = s.now; gjort(s, p, 'mobel');
   s.byggV = (s.byggV ?? 0) + 1; // den färdiga räknas: bristen och platserna räknas om (bristNu i projekt.ts)
@@ -1447,7 +1509,7 @@ function utan<R>(s: State, t: Station, f: () => R): R {
 function flytta(s: State, t: Station, at: { x: number; y: number; rot?: 1; inne?: 1 }) {
   // den som sitter vid bordet och äter reser sig när bordet flyttas, och väljer en ny plats (steg 9.4.8)
   if (stationDef(t.k)?.platser) { const forr = new Set(bordPlatser(t).map(q => q.y * W + q.x)); for (const q of living(s)) if (q.task?.act === 'maltid' && forr.has(Math.floor(q.task.ty) * W + Math.floor(q.task.tx))) q.task.until = s.now; }
-  if (t.delar?.length) { const dx = at.x - t.x, dy = at.y - t.y; t.delar = (at.rot ? 1 : 0) !== (t.rot ? 1 : 0) ? delarIRad(t.k, at.x, at.y, at.rot) : t.delar.map(q => ({ ...q, x: q.x + dx, y: q.y + dy })); } // delarna följer med (steg 9.4.1)
+  if (t.delar?.length) { const dx = at.x - t.x, dy = at.y - t.y; const forr = t.delar; t.delar = (at.rot ? 1 : 0) !== (t.rot ? 1 : 0) ? delarIRad(t.k, at.x, at.y, at.rot)!.map((q, i) => ({ ...q, ...byggAv(forr[i]) })) : t.delar.map(q => ({ ...q, x: q.x + dx, y: q.y + dy })); } // delarna följer med (steg 9.4.1)
   t.x = at.x; t.y = at.y;
   if (at.rot) t.rot = 1; else delete t.rot;
   if (at.inne) t.inne = 1; else delete t.inne;
@@ -1565,7 +1627,7 @@ export function flyttaStation(s: State, t: Station, x: number, y: number) {
 }
 // testläget (steg 9.4.2): en del flyttas så att dess hörn uppe till vänster hamnar på (x, y), eller vrids ett kvarts varv där den
 // står, med samma regler som när hela stationen flyttas. false = den fick inte plats
-export function flyttaDel(s: State, t: Station, i: number, x: number, y: number, vrid = false) {
+export function flyttaDel(s: State, t: Station, i: number, x: number, y: number, vrid = false, logga = true) {
   const r = delarAv(t)[i];
   if (!t.delar?.length || !r?.del) return false;
   const rot = vrid ? (r.rot ? undefined : 1 as const) : r.rot, w = rot ? r.del.h : r.del.w, h = rot ? r.del.w : r.del.h;
@@ -1575,12 +1637,14 @@ export function flyttaDel(s: State, t: Station, i: number, x: number, y: number,
     return b ? b.k === 'golv' && !!roomAt(s, q.x, q.y) : usable(s, q.x, q.y, true);
   }) && delarAv(t).every(o => o.i === i || o.x + o.w <= x || x + w <= o.x || o.y + o.h <= y || y + h <= o.y));
   if (!ok) return false;
-  t.delar[i] = { x, y, ...(rot ? { rot } : {}) };
+  t.delar[i] = { x, y, ...(rot ? { rot } : {}), ...byggAv(t.delar[i]) };
   horn(t);
   s.byggV = (s.byggV ?? 0) + 1;
-  log(s, `${r.del.namn} ${vrid ? 'vreds' : 'flyttades'} i testläget.`, 'world');
+  if (logga) log(s, `${r.del.namn} ${vrid ? 'vreds' : 'flyttades'} i testläget.`, 'world');
   return true;
 }
+// delens bygge (steg 12.1.17): arbetet kvar och om materialet är taget följer med när delen flyttas
+const byggAv = (q?: { kvar?: number; mat?: 1 }) => ({ ...(q?.kvar ? { kvar: q.kvar } : {}), ...(q?.mat ? { mat: q.mat } : {}) });
 // ---------- ägandet i husen (steg 3.10.2) ----------
 // En bädd och en kista har alltid en ägare och delas inte. En bädd utan ägare, eller vars ägare är borta, blir dens som
 // sover i den (boende i byggnader.ts), och en kista tas över som förut (kistorna). Ingen bygger möbler i någon annans hus

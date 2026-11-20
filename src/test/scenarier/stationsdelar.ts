@@ -79,9 +79,58 @@ SCENARIER.ortkokdelar = {
       [`med härden inne i huset och resten ute går det inte (${golv === undefined ? 'inget golv' : inne ? 'härden står inne' : 'fick inte plats inne'})`, delad],
       ['med härden tillbaka bredvid de andra går det igen', ater],
       [`ett sparat örtkök i ett stycke får delarna i en rad (${g.delar?.length ?? 0} delar)`, g.delar?.length === 3],
+      ...delbyggen(),
     ];
   },
 };
+
+// steg 12.1.17: örtkökets delar är tre byggen med eget material och egen arbetstid, som rivs var för sig
+function delbyggen(): [string, boolean][] {
+  const dl = SIM.STATIONER.ortkok.delar!, rad = dl.map(q => `${q.namn} ${Object.entries(q.av ?? {}).map(([k, n]) => `${n} ${k}`).join(', ')} ${q.min} min`).join(' | ');
+  const summa = dl.reduce((n, q) => n + (q.min ?? 0), 0) === SIM.RECEPT.ortkok.min && dl.reduce((n, q) => n + (q.av?.sten ?? 0), 0) === SIM.RECEPT.ortkok.av!.sten && dl.reduce((n, q) => n + (q.av?.virke ?? 0), 0) === SIM.RECEPT.ortkok.av!.virke;
+  const s = createState(1, START);
+  medHus(s);
+  const p = s.people[0], tk = (): SIM.Task => ({ act: 'station', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: 'ortkok' });
+  for (const k of ['sten', 'virke']) SIM.setAmount(s, k, 0);
+  SIM.setAmount(s, 'sten', 4);
+  // ett påbörjat örtkök där ingen del har tagit sitt material än (platsen väljs i byggplanen, här står det på en fri plats ute)
+  const fri = (x: number, y: number) => { for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) if (!inMap(x + i, y + j) || !SIM.usable(s, x + i, y + j, true) || SIM.stationAt(s, x + i, y + j) || SIM.roomAt(s, x + i, y + j)) return false; return true; };
+  const c = SIM.bynsMitt(s);
+  let at: { x: number; y: number } | undefined;
+  for (let r = 4; r < 30 && !at; r++) for (let k = 0; k < 24 && !at; k++) { const x = Math.round(c.x + Math.cos(k / 24 * 6.283) * r), y = Math.round(c.y + Math.sin(k / 24 * 6.283) * r); if (fri(x, y)) at = { x, y }; }
+  if (!at) return [['en fri plats för örtköket', false]];
+  const t: Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'ortkok', x: at.x, y: at.y, kvar: 20 * SIM.MIN, delar: SIM.delarIRad('ortkok', at.x, at.y)!.map((q, i) => ({ ...q, kvar: dl[i].min! * SIM.MIN })) };
+  (s.stationer ??= []).push(t); s.byggV = (s.byggV ?? 0) + 1;
+  const t1 = tk(); SIM.startStation(s, p, t1);
+  const forsta = t1.ref === t.id && t.delar![0].mat === 1 && !t.delar![1].mat && SIM.amountOf(s, 'sten') === 0 && Math.abs(t.kvar - 20 * SIM.MIN) < 1e-6 && Math.abs(t1.until - s.now - 8 * SIM.MIN) < 1e-6;
+  // härden byggs klar: stationen är inte klar, och nästa del vill ha virke
+  SIM.workStation(s, p, t1, 8 * 60); SIM.finishStation(s, p, t1);
+  const hard = !t.delar![0].kvar && !SIM.isKlar(t) && Math.abs(t.kvar - 12 * SIM.MIN) < 1e-6 && SIM.nastaAv('ortkok', t).virke === 1 && !SIM.nastaAv('ortkok', t).sten;
+  const t2 = tk(); SIM.startStation(s, p, t2);
+  const utanVirke = t2.ref === undefined && !t.delar![1].mat;
+  SIM.setAmount(s, 'virke', 2);
+  for (let i = 0; i < 2; i++) { const q = tk(); SIM.startStation(s, p, q); SIM.workStation(s, p, q, 6 * 60); SIM.finishStation(s, p, q); }
+  const klar = SIM.isKlar(t) && SIM.amountOf(s, 'virke') === 0 && SIM.helStation(s, t) && SIM.stationFor(s, 'koka_salva') === t;
+  // torkstället rivs: örtköket är inte klart, och torkstället byggs igen med ett nytt virke
+  t.eld = { ved: 1, lit: 1 };
+  const riv = SIM.rivDel(s, t, 1) && !SIM.isKlar(t) && SIM.stationFor(s, 'koka_salva') === undefined && SIM.nastaAv('ortkok', t).virke === 1 && !!t.eld;
+  const rivHard = SIM.rivDel(s, t, 0) && !t.eld; // elden hör till härden
+  // ett halvbyggt örtkök från förr har tagit allt material: arbetet kvar ligger på de sista delarna
+  const g: Station = { id: 99, k: 'ortkok', x: 0, y: 0, kvar: 10 * SIM.MIN, delar: SIM.delarIRad('ortkok', 0, 0) };
+  const sp = { ...createState(1, START), v: 59, stationer: [g] } as SIM.State;
+  SIM.migrate(sp);
+  const mig = !g.delar![0].kvar && Math.abs((g.delar![1].kvar ?? 0) - 4 * SIM.MIN) < 1e-6 && Math.abs((g.delar![2].kvar ?? 0) - 6 * SIM.MIN) < 1e-6 && g.delar!.slice(1).every(q => q.mat === 1);
+  return [
+    [`varje del är ett eget bygge (${rad}), tillsammans som örtkökets recept`, rad === 'Härden 4 sten 8 min | Torkstället 1 virke 6 min | Bänken 1 virke 6 min' && summa],
+    ['örtköket börjar med härden: stenarna tas, virket inte, och arbetet är härdens 8 minuter', forsta],
+    ['när härden är klar är örtköket inte klart, och nästa del vill ha ett virke', hard],
+    ['utan virke blir det inget arbete på torkstället', utanVirke],
+    ['med virke byggs torkstället och bänken, och sedan går det att koka där', klar],
+    ['en del rivs för sig: örtköket är inte klart, och delen byggs igen med sitt material', riv],
+    ['elden hör till härden och släcks när den rivs', rivHard],
+    ['ett halvbyggt örtkök från förr får arbetet kvar på de sista delarna', mig],
+  ];
+}
 
 SCENARIER.brannolja = {
   text: 'Steg 12.1.16: brännoljan och rökelsen kokas bara i örtköket, med elden tänd, som salvan och tjäran',

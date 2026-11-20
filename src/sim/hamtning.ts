@@ -11,7 +11,7 @@ import { count } from './folk';
 import { halvOf } from './agande';
 import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use } from './lager';
 import { vardHamtas } from './halsa';
-import { fartVid, halvbyggd, stationDef, tillbehorDef } from './stationer';
+import { fartVid, halvbyggd, nastaAv, stationDef, tillbehorDef } from './stationer';
 import { PROJEKT } from './projekt';
 import { DORRAR, type DorrSlag } from './byggnad';
 import { troOf } from './religion';
@@ -47,7 +47,7 @@ export const HAMTAS: Partial<Record<Act, Hamtas>> = {};
 for (const act of Object.keys(GORS) as Act[]) HAMTAS[act] = { av: (s, p, tk) => { if (halvOf(s, p, GORS[act]!)) return undefined; const k = borjaTool(s, p, act, tk.tool); return k ? SAKER[k]?.skaffa?.av : undefined; } };
 // en station eller ett tillbehör till en möbel: receptet när den inte redan är påbörjad (stationer.ts), av det tron äger när
 // det är trons möbel
-HAMTAS.station = { av: (s, p, tk) => { const d = stationDef(tk.tool ?? ''); return d && !halvbyggd(s, tk.tool!, p) ? d.av : undefined; }, fran: (s, p, tk) => { const tro = stationDef(tk.tool ?? '')?.tro ? troOf(s, p.tro) : undefined; return tro ? kyrkaId(tro.id) : undefined; } };
+HAMTAS.station = { av: (s, p, tk) => { const k = tk.tool ?? '', h = stationDef(k) ? halvbyggd(s, k, p) : undefined, av = stationDef(k) ? nastaAv(k, h) : {}; return Object.keys(av).length ? av : undefined; }, /* en station i delar: nästa del (steg 12.1.17) */ fran: (s, p, tk) => { const tro = stationDef(tk.tool ?? '')?.tro ? troOf(s, p.tro) : undefined; return tro ? kyrkaId(tro.id) : undefined; } };
 HAMTAS.tillbehor = { av: (_s, _p, tk) => tillbehorDef(tk.tool ?? '')?.av };
 // dörren som hängs i en öppning (bygg.ts, steg 2.2.16 och 3.7.21): dörrens material
 HAMTAS.dorr = { av: (_s, _p, tk) => DORRAR[tk.tool as DorrSlag]?.av };

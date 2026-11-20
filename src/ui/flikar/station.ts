@@ -39,7 +39,9 @@ function testRad(id: number) {
 function delRader(id: number) {
   const st = stationById(s, id);
   if (!st?.delar?.length) return '';
-  return `<p class="muted small">${helStation(s, st) ? 'Hel: alla delar står i samma rum.' : 'Inte hel: delarna står i olika rum, och ingen kan arbeta vid den.'}</p><ul class="rels">${delarAv(st).map(q => `<li>${esc(q.del?.namn ?? '')}<span></span><span><button type="button" class="ghost" data-del="${q.i}" data-delgor="flytta" aria-pressed="${ui.flytta === id && ui.flyttaDel === q.i}" ${tip('Flytta delen: tryck sedan på kartan')}>✥</button> <button type="button" class="ghost" data-del="${q.i}" data-delgor="vrid" ${tip('Vrid delen ett kvarts varv')}>⟳</button></span></li>`).join('')}</ul>`;
+  const saknas = delarAv(st).filter(q => st.delar![q.i]?.kvar).map(q => (q.del?.namn ?? '').toLowerCase()); // delarna som inte är byggda (steg 12.1.17)
+  const hel = saknas.length ? `Saknar ${saknas.join(' och ')}, och ingen kan arbeta vid den.` : helStation(s, st) ? 'Hel: alla delar står i samma rum.' : 'Inte hel: delarna står i olika rum, och ingen kan arbeta vid den.';
+  return `<p class="muted small">${hel}</p><ul class="rels">${delarAv(st).map(q => `<li>${esc(q.del?.namn ?? '')}${st.delar![q.i]?.kvar ? ` <span class="muted small">${st.delar![q.i].mat ? 'byggs' : 'saknas'}</span>` : ''}<span></span><span><button type="button" class="ghost" data-del="${q.i}" data-delgor="flytta" aria-pressed="${ui.flytta === id && ui.flyttaDel === q.i}" ${tip('Flytta delen: tryck sedan på kartan')}>✥</button> <button type="button" class="ghost" data-del="${q.i}" data-delgor="vrid" ${tip('Vrid delen ett kvarts varv')}>⟳</button></span></li>`).join('')}</ul>`;
 }
 // den markerade stationen flyttas hit (trycket på kartan i testläget). false = den fick inte plats
 export function flyttaHit(x: number, y: number) {
