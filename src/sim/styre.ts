@@ -21,7 +21,7 @@ import { grundvarde } from './varde';
 import { sakNamn } from './saker';
 import { ownMove, ownsAmount } from './lager';
 import { rnd } from './slump';
-import { UPPV, upplev } from './uppvaxt';
+import { UPPV, upplev, barnTill } from './uppvaxt';
 import { kronika } from './historik';
 import { Sed, drar, influence } from './seder';
 import { knows } from './teknik';
@@ -548,6 +548,7 @@ function doma(s: State, l: Person) {
     log(s, `${l.name} ${STRAFF[steg]} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     tanke(q, 'straffad', now, { namn: l.name, v: -STR.tanke * (steg + 1), tid: STR.tankeDygn * DAY });
+    barnTill(s, q, undefined, 'foralderDomd', q.name); // barnen (steg 12.1.133)
     const familj = living(s).filter(f => f !== l && (f === q || f.partner === id || isKin(f, q))); // innan den utvisade har lämnat byn och partnern
     if (steg >= 2 && steg !== 4) q.straffad = true; // straffad hårt: slag, utvisning, tjänst, döden eller förlorad rätt (lagen rostStraffade)
     if (steg === 4) botes(s, q, drabbad && alive(drabbad) ? drabbad : undefined); // utan någon drabbad går böterna till byn

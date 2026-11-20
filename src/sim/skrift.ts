@@ -31,6 +31,7 @@ import { kvVid, stationDef, stationFor, vidStation } from './stationer';
 import { O_BESOKT, O_KANT, O_RYKTE, kannerOrt, larOrt, ortensRad, radVid } from './ort';
 import { byPlats, varldPlatsNr } from './landmarken';
 import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 
 // ---------- skriften (system 10.6) ----------
 // Skriften i tre stadier: runstenen, pergamentet och boken. Registret SKRIFTER har en rad per slag av innehåll, med de stadier
@@ -524,6 +525,7 @@ export function skrivKlar(s: State, p: Person) {
 export function lasKlar(s: State, q: Person, t: Task) {
   const b = tingOf(s).find(x => x.id === t.ref), k = b && basta(s, q, b)?.k, at = b && tingXY(s, b);
   if (!k || !at || skrivLjus(s, at.x, at.y) < SKRIFT.ljusMin) return;
+  upplev(s, q, 'lasaBarn'); // barnet som läser (steg 12.1.133)
   const nar = narAv(k);
   if (k.tek) { // handboken: tekniken lärs utan lärare, långsammare än av en mästare, och ur en dålig bara en del av vägen
     const tk = TEK[k.tek]!, d = SKRIFT.bokLar * (TEKTAL.larBas + stat(q, 'intelligens', s.now) / 20);

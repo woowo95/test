@@ -25,6 +25,7 @@ import { notis } from './notiser';
 import { kn, learnK } from './kunskap';
 import { kronika } from './historik';
 import { tanke } from './tankar';
+import { allaBarn } from './uppvaxt';
 
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
 export interface SjukStadium { fran: number; text: string } // från hur långt sjukdomen kommit (0–1): det kortet säger
@@ -202,7 +203,7 @@ function larSmittan(s: State, p: Person, k: SjukId) {
 function epidemi(s: State, p: Person, k: SjukId) {
   const e = s.epidemi?.k === k && living(s).some(q => q !== p && q.sjuk?.k === k) ? s.epidemi : (s.epidemi = { k, ids: [] });
   if (!e.ids.includes(p.id)) e.ids.push(p.id);
-  if (!e.skriven && e.ids.length >= Math.max(3, living(s).length * SJUK.epidemi)) { e.skriven = 1; kronika(s, `${SJUKDOMAR[k].namn} gick genom byn. ${stor(tal(e.ids.length))} blev sjuka.`, 'sjukdom'); count(s, 'epidemi'); }
+  if (!e.skriven && e.ids.length >= Math.max(3, living(s).length * SJUK.epidemi)) { e.skriven = 1; allaBarn(s, 'epidemi'); kronika(s, `${SJUKDOMAR[k].namn} gick genom byn. ${stor(tal(e.ids.length))} blev sjuka.`, 'sjukdom'); count(s, 'epidemi'); }
 }
 
 // förloppet varje slag (steg.ts): sjukdomen och motståndet växer. Svarar med dödsorsaken om sjukdomen vann

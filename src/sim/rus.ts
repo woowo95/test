@@ -3,12 +3,13 @@
 // (rorlighet i halsa.ts), handlaget i arbetet (handighet), smidigheten och träffsäkerheten i striden (strid.ts). Den som dricker
 // mycket under lång tid (p.supit, ett minne som bleknar) får sämre hälsa. Man dricker på kvällen vid elden när byn har vin eller öl.
 import { balans } from './balans';
-import { ALDER, ageOf, count, forstaGang, log } from './folk';
+import { ALDER, ageOf, count, forstaGang, log, living, isParent } from './folk';
 import { chansPer, clamp } from './slump';
 import { HOUR, HOUR_S, Person, State } from './typer';
 import { hourOf, isLight } from './tid';
 import { budBrutet, budHindrar } from './kyrka';
 import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 type VatskaId = import('./vatskor').VatskaId;
 // vätskorna i krukorna (vatskor.ts sätter kroken, så att den här filen inte laddar vatskor.ts och halsa.ts i en ring)
 // alkohol = hur mycket rus en del ger, drycker = dryckerna med alkohol och kvall = den p helst tar på kvällen (raderna i VATSKOR, steg 10.7.23)
@@ -36,6 +37,7 @@ export const RUS = balans('rus', {
   fylla: 0.6, // den som var så här full får bakfylla när ruset gått över ...
   bakTim: 8, bak: -0.08, bakFaktor: 0.85, // ... i så många timmar: tanken, och förmågorna gånger bakFaktor
   supa: 3, // så många drycker dricker den som super (utbrottet supa)
+  serR: 8, // barnen inom så här många rutor ser föräldern supa (steg 12.1.133)
 });
 export const rusAv = (p: Person) => p.rus ?? 0;
 // förmågan gånger detta (gången och händigheten)
@@ -86,4 +88,5 @@ export const kanSupa = (s: State) => !!starkast(s);
 export function supa(s: State, p: Person) {
   if (budHindrar(s, p, 'ingetRus') && kanSupa(s)) budBrutet(s, p, 'ingetRus'); // utbrottet går före budet (steg 10.3.22)
   for (let i = 0; i < RUS.supa; i++) { const v = starkast(s); if (!v) break; drickAlkohol(s, p, v); }
+  for (const c of living(s)) if (isParent(p, c) && c.task?.act !== 'sova' && Math.hypot(c.x - p.x, c.y - p.y) <= RUS.serR) upplev(s, c, 'foralderSop', p.name); // barnen som ser det (steg 12.1.133)
 }

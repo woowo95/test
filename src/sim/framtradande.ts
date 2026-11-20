@@ -33,6 +33,7 @@ import { DAY, HOUR, HOUR_S, MIN, Person, SKILLS, SKILL_NAMES, Skill, State, Task
 import { TEKNIK, TEKTAL, knows, learn } from './teknik';
 import { goraUtan } from './ord';
 import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 
 export interface FramDef {
   id: string; namn: string;
@@ -463,6 +464,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   m.glad = Math.round(FRAM.gladje * d.kval * q * (dans ? FEST.dans : 1) * 100); // i hundradelar av humöret
   for (const b of pub) {
     const gv = { v: FRAM.gladje * d.kval * q * (dans ? FEST.dans : 1), tid: FRAM.gladjeTim * HOUR };
+    upplev(s, b, 'fester'); // (steg 12.1.133)
     if (dans) tanke(b, 'dansade', s.now, { till: med.length ? namn : `${gen(p.name)} ${d.namn.toLowerCase()}`, ...gv });
     else tanke(b, 'lyssnade', s.now, { pa: med.length ? `${d.namn.toLowerCase()} av ${namn}` : `${gen(p.name)} ${d.namn.toLowerCase()}`, ...gv });
     const r = getRel(s, b, p), r0 = r.op, l0 = ledd && b !== ledd ? getRel(s, b, ledd).op : undefined, tro0 = b.tro;

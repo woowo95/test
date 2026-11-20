@@ -2,7 +2,7 @@
 // (steg 12.1.131–12.1.136).
 import { readdirSync, readFileSync } from 'node:fs';
 import * as SIM from '../../sim';
-import { SCENARIER, testBy } from './hjalp';
+import { SCENARIER, medTal, testBy } from './hjalp';
 
 // radens text som ett mönster: varje argument blir "något"
 const PLATS = '\u0001';
@@ -102,6 +102,31 @@ SCENARIER.drommar = {
       [`den som inte bär på något drömmer inte (${inget.text || 'ingen dröm'} på 40 nätter)`, !inget.text],
       ['drömmen blir en tanke först när hen vaknat, och sedan är den borta', !sorg.kvar && !fara.kvar],
       ['varje dröm i DROMMAR blir en tanke i TANKAR', Object.values(SIM.DROMMAR).every(d => d.tanke in SIM.TANKAR)],
+    ];
+  },
+};
+
+SCENARIER.uppvaxt2 = {
+  text: 'Nya upplevelser i uppväxten (steg 12.1.133, UPPLEVELSER i uppvaxt.ts): tio rader för barn ur de nya systemen, var och en med flera utfall, som fastnar när barnet är med om saken',
+  kor: () => {
+    const NYA = ['djur', 'resaBarn', 'rovareBort', 'rovarePlundring', 'epidemi', 'foralderDomd', 'foralderSop', 'fester', 'lasaBarn', 'faltet'] as const;
+    const rader = NYA.filter(k => k in SIM.UPPLEVELSER && SIM.UPPLEVELSER[k].vem === 'barn' && SIM.UPPLEVELSER[k].e.length >= 2);
+    const s = SIM.cloneState(testBy(20, b => SIM.living(b).some(c => SIM.ageOf(c, b.now) >= SIM.UPPV.fran && SIM.ageOf(c, b.now) < SIM.UPPV.alder && SIM.living(b).some(q => SIM.isParent(q, c)))));
+    const barn = SIM.living(s).find(c => SIM.ageOf(c, s.now) >= SIM.UPPV.fran && SIM.ageOf(c, s.now) < SIM.UPPV.alder && SIM.living(s).some(q => SIM.isParent(q, c)))!;
+    const far = SIM.living(s).find(q => SIM.isParent(q, barn))!, vuxen = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && q !== far)!;
+    const har = (p: SIM.Person, k: string) => !!p.upp?.some(u => u.k === k);
+    let epi = false;
+    medTal(SIM.UPPLEVELSER, 'chans', 1, () => {
+      barn.upp = []; SIM.allaBarn(s, 'epidemi'); epi = har(barn, 'epidemi') && !har(vuxen, 'epidemi'); barn.upp = [];
+      barn.x = far.x; barn.y = far.y; barn.task = undefined; SIM.supa(s, far);
+      barn.task = { act: 'odla', phase: 'do', tx: barn.x, ty: barn.y, until: s.now + SIM.HOUR } as SIM.Task; SIM.stepUppvaxt(s);
+    });
+    return [
+      [`tio nya rader för barn med flera utfall (${rader.length})`, rader.length === NYA.length],
+      ['barnet var med om epidemin, den vuxne får den inte', epi],
+      [`barnet såg ${far.name} supa`, har(barn, 'foralderSop') && barn.upp!.find(u => u.k === 'foralderSop')!.om === far.name],
+      ['barnet hjälpte till på fältet', har(barn, 'faltet')],
+      [`upplevelserna formar barnet (${(barn.upp ?? []).map(u => u.k).join(', ')})`, (barn.upp ?? []).some(u => NYA.includes(u.k as typeof NYA[number]) && Object.keys(u.e).length > 0)],
     ];
   },
 };

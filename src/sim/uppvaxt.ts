@@ -114,6 +114,17 @@ export const UPPLEVELSER = {
   overflod: { text: 'Levde i överflöd', chans: 0.01, e: [{ flit: -1 }, { karisma: 1 }], vem: 'bada', vuxenTal: true, sed: { arbete: -1 } },
   fangelse: { text: 'Satt i fängelset {om}', kort: 'Satt i fängelset', chans: 1, e: [{ mod: -1 }, { aggression: 1, empati: -1 }, { flit: 1 }, { mod: -1, karisma: -1 }], vem: 'bada', sed: { forsiktighet: 1, rang: -1 }, vuxenTal: true, ande: true, tung: true }, // tiden inne när fången släpps (steg 11.12.4, fangelse.ts): en kan bli försiktigare, en annan bittrare
   sorjde: { text: 'Sörjde {om}', chans: 0.5, e: [{ empati: 1 }, { mod: -1 }], vem: 'bada', vuxenTal: true, ande: true, sed: { forsiktighet: 1 }, kort: 'Sörjde någon' },
+  // barndomen i de nya systemen (steg 12.1.133)
+  djur: { text: 'Växte upp med djur', chans: 0.004, e: [{ empati: 2 }, { empati: 1, mod: 1 }], vem: 'barn', sed: { gemenskap: 1 } }, // en timme i taget när familjen har tamdjur eller hund
+  resaBarn: { text: 'Var med på en resa som barn', chans: 0.6, e: [{ nyfikenhet: 2 }, { nyfikenhet: 1, mod: 1 }], vem: 'barn', sed: { nyfikenhet: 1 } },
+  rovareBort: { text: 'Såg byn driva bort rövarna', chans: 0.5, e: [{ mod: 2 }, { mod: 1, aggression: 1 }], vem: 'barn', sed: { forsiktighet: -1 }, kort: 'Såg rövarna komma' },
+  rovarePlundring: { text: 'Såg rövarna plundra byn', chans: 0.5, e: [{ mod: -1 }, { mod: -1, flit: 1 }], vem: 'barn', sed: { forsiktighet: 2 }, kort: 'Såg rövarna komma' },
+  epidemi: { text: 'Var med om en epidemi i byn', chans: 0.5, e: [{ mod: -1 }, { empati: 1 }, { uthallighet: 1 }], vem: 'barn', sed: { forsiktighet: 2 }, ande: true },
+  foralderDomd: { text: 'Såg {om} straffas på tinget', kort: 'En förälder dömdes', chans: 0.7, e: [{ karisma: -1 }, { aggression: 1 }, { empati: -1 }], vem: 'barn', sed: { rang: -2 } }, // mindre tillit till styret: drar bort från Envälde
+  foralderSop: { text: 'Såg {om} supa', kort: 'Såg en förälder supa', chans: 0.3, e: [{ aggression: 1, flit: -1 }, { flit: 1, mod: -1 }], vem: 'barn' },
+  fester: { text: 'Växte upp med fester, sport och framträdanden', chans: 0.02, e: [{ karisma: 2 }, { karisma: 1, empati: 1 }], vem: 'barn', sed: { prat: 1, gemenskap: 1 } }, // vid varje framträdande, match och gästabud
+  lasaBarn: { text: 'Lärde sig läsa som barn', chans: 0.5, e: [{ intelligens: 1, minne: 1 }, { nyfikenhet: 2 }], vem: 'barn', sed: { nyfikenhet: 1 } },
+  faltet: { text: 'Hjälpte till på fältet', chans: 0.004, e: [{ flit: 2 }, { flit: 1, uthallighet: 1 }], vem: 'barn', sed: { arbete: 1 } }, // en timme i taget på fältet
 } satisfies Record<string, UpplevelseDef>;
 export type UpplevelseTyp = keyof typeof UPPLEVELSER;
 const DEF: Record<UpplevelseTyp, UpplevelseDef> = UPPLEVELSER;
@@ -250,6 +261,8 @@ export function stepUppvaxt(s: State) {
     if (overflod) upplev(s, p, 'overflod');
     if (!formas(s, p)) continue;
     if (p.task?.act === 'leka' && p.task.phase === 'do') upplev(s, p, 'lek');
+    if (p.task?.act === 'odla' && p.task.phase === 'do') upplev(s, p, 'faltet'); // (steg 12.1.133)
+    if ((s.tamdjur ?? []).some(d => d.agare !== undefined && (d.agare === p.mother || d.agare === p.father))) upplev(s, p, 'djur');
     if (p.hunger > UPPV.tryggMatt && p.warm > UPPV.tryggVarm && roomAt(s, p.x, p.y) && !p.upp?.some(u => u.k === 'svalt' || u.k === 'frys')) upplev(s, p, 'trygg');
   }
 }

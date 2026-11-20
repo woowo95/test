@@ -31,6 +31,7 @@ import { forsorjAlder } from './skatt';
 import { RYKTE } from './rykten';
 import type { Tro } from './religion';
 import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 
 export const BUDG = balans('budget', {
   gava: 5, // så mycket silver var och en som stöder ledaren får i gåva per år, när delen har en full vikt mot de andra
@@ -207,7 +208,7 @@ function matDygn(s: State, fick: Record<string, Record<string, number>>) {
   const g = delar.findIndex(d => d.id === 'gastabud');
   if (g >= 0 && fore[g] > 0 && kvar[g] <= 0) {
     b.fest = true; count(s, 'gastabud');
-    for (const p of living(s)) if (!p.gast) { p.missnoje = clamp((p.missnoje ?? 0) - BUDG.festMiss, 0, 1); tanke(p, 'gastabud', s.now, { v: BUDG.festGlad }); }
+    for (const p of living(s)) if (!p.gast) { p.missnoje = clamp((p.missnoje ?? 0) - BUDG.festMiss, 0, 1); tanke(p, 'gastabud', s.now, { v: BUDG.festGlad }); upplev(s, p, 'fester'); }
     const t = 'Byn höll gästabud.'; log(s, t, 'world'); kronika(s, t, 'ledare');
   }
 }

@@ -42,6 +42,7 @@ import { ledareOf, legitimitet } from './styre';
 import { handelse } from './rykten';
 import { clamp } from './slump';
 import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 
 export interface SportDef {
   id: string; namn: string;
@@ -363,7 +364,7 @@ function avgor(s: State, m: Match, p: Person) {
   for (const q of vinnare) bastI(s, d, q);
   // glad eller ledsen (steg 10.7.15): vinnarna och förlorarna bland dem som var med i slutet
   const namn = d.namn.toLowerCase();
-  for (const q of publiken(s, m)) tanke(q, 'sagMatch', s.now, { namn, v: SPORT.tittaGladje, tid: SPORT.gladjeTim * HOUR }); // publiken (steg 10.7.16)
+  for (const q of publiken(s, m)) { tanke(q, 'sagMatch', s.now, { namn, v: SPORT.tittaGladje, tid: SPORT.gladjeTim * HOUR }); upplev(s, q, 'fester'); } // publiken (steg 10.7.16)
   for (const q of har) if (vinnare.includes(q)) tanke(q, 'vannMatch', s.now, { namn, v: SPORT.gladje, tid: SPORT.gladjeTim * HOUR }); else tanke(q, 'forloradeMatch', s.now, { namn, v: -SPORT.forlust, tid: SPORT.gladjeTim * HOUR });
 }
 // publiken (steg 10.7.16): den som har fritid när en match pågår eller väntar på spelare, och inte spelar, kan gå dit och

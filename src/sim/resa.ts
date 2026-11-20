@@ -67,6 +67,7 @@ import { BYREL, byHandelse, gavaRel } from './byrel';
 import { kronika } from './historik';
 import { antal, hans, honom, horText, och, spelTid, stor, tal } from './ord';
 import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 // "en sak", "tre saker"
 const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
 
@@ -833,7 +834,7 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
 export function hemkomst(s: State, sl: Sallskap, t: number) {
   const in_ = sl.ut?.kant ?? bynsMitt(s);
-  for (const p of resenarer(s, sl)) if (ute(p)) { kommHem(s, p, in_.x, in_.y); tanke(p, 'komHem', t); } // (steg 12.1.131)
+  for (const p of resenarer(s, sl)) if (ute(p)) { kommHem(s, p, in_.x, in_.y); tanke(p, 'komHem', t); upplev(s, p, 'resaBarn'); } // (steg 12.1.131)
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
   vagnHem(s, sl, in_.x, in_.y);
   delaHemma(s, sl);
