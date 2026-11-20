@@ -823,6 +823,7 @@ function sokUte(s: State, k: string) {
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (const rot of [0, 1] as const) {
     const { w, h } = storlek(k, rot), R = Math.ceil(STATION.avstand) + 2 + Math.max(w, h);
+    if (rot && w === h && !stationDef(k)?.platser) continue; // lika bred som djup: vriden ger samma rutor med sämre poäng (bordets platser vrids däremot)
     for (let y = o.y0 - R; y <= o.y1 + R; y++) for (let x = o.x0 - R; x <= o.x1 + R; x++) {
       let fri = true;
       for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = lediga(x + i, y + j);
@@ -897,6 +898,7 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
     const rum = new Set(r.tiles), kvar = sovKvar(s, r), bonus = (!d.sover && !fn.sover ? -STATION.samling : 0) - (d.kok && rumTaggar(s, r).has('kok') ? STATION.kokSamla : 0); // köket samlar sina stationer (steg 10.2.92)
     for (const rot of [0, 1] as const) {
       const { w, h } = storlek(k, rot), tar = d.sover || d.pynt ? 0 : w * h; // halmbädden är en del av sovplatsen, och pyntet tar ingen (steg 9.2.36)
+      if (rot && w === h) continue; // lika bred som djup: vriden ger samma rutor med sämre poäng
       if (tar > kvar) continue;
       for (const i0 of r.tiles) {
         const x = i0 % W, y = (i0 - x) / W;

@@ -583,14 +583,15 @@ export function visaFiltar(s: State, h: Handlare) {
 export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
   const h = s.handlare;
   if (!h || (h.fas !== 'vantar' && h.fas !== 'handlar')) return;
+  const H = hp(s, h); // handlaren slås upp en gång
   for (const p of s.people) {
-    if (!paKartan(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - hp(s, h).x, p.y - hp(s, h).y) >= SAMTAL.radie) continue;
+    if (!paKartan(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - H.x, p.y - H.y) >= SAMTAL.radie) continue;
     if (!isSocial(p) || h.affar) continue; // den som handlar och handlaren pratar bara om affären (steg 4.5.7.5)
     if (rnd(s, 'handel', p) >= dtSec / HANDEL.pratSek) continue;
-    const out = (stat(p, 'empati', s.now) + hp(s, h).skill.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
-    think(p, out > 0 ? `Småpratade med ${hp(s, h).name}` : `Småpratet med ${hp(s, h).name} gick trögt`, out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, s.now, HANDEL.pratTim * HOUR);
+    const out = (stat(p, 'empati', s.now) + H.skill.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
+    think(p, out > 0 ? `Småpratade med ${H.name}` : `Småpratet med ${H.name} gick trögt`, out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, s.now, HANDEL.pratTim * HOUR);
     events?.push({ a: p.id, b: h.id, kind: 'småprat', good: out > 0, t: s.now });
-    if (out > 0) { prisIPrat(s, p, hp(s, h), h.varor.map(w => w.k)); horOmGast(s, p, hp(s, h), ORT.prat); } // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15) och var hen bor (steg 11.4.2)
+    if (out > 0) { prisIPrat(s, p, H, h.varor.map(w => w.k)); horOmGast(s, p, H, ORT.prat); } // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15) och var hen bor (steg 11.4.2)
     count(s, 'handlarPrat');
   }
 }
@@ -612,7 +613,7 @@ export function handlarVarde(s: State, h: Handlare, k: string, tro?: Person) {
   const kl = klanAv(s, h), pris = tro && kl ? trorPris(tro, kl.rad, k) : klanPris(s, kl, k); // klanens pris (steg 10.5.14), både för det hen säljer och det hen köper
   if (h.varor.some(w => w.k === k)) return (1 + HANDEL.vinst) * pris;
   if (ledigt(h) < viktOf(k)) return 0; // ryggsäcken är full
-  const gott = bynPart(s, hp(s, h).x, hp(s, h).y).varde(k) <= DELA.over; // byn har gott om det
+  const H = hp(s, h), gott = bynPart(s, H.x, H.y).varde(k) <= DELA.over; // byn har gott om det
   return (gott ? 1 - HANDEL.vinst : 1) * pris;
 }
 function taBort(h: Handlare, w: Vara) {

@@ -87,6 +87,7 @@ export const PLAN = balans('byggplan', {
   langSed: 0.3, // ... och så här mycket större när seden Sammanhållning är som starkast
   rivStation: 3, // varje station, möbel eller eld ute där ett hus ska stå kostar så här mycket i platsens poäng; den rivs först (steg 10.2.77)
   rikExtra: 2, // den rika bygger så här många rutor större ...
+  rikKvartil: 0.75, // den rika familjen jämförs med förmögenheten på den här platsen i byns ordning (0,75 = den övre kvartilen)
   rikGang: 1.5, // ... och är rik när familjen äger så här många gånger den övre kvartilen i byn
 });
 
@@ -213,7 +214,7 @@ export function onskadPlats(s: State, b: ByggBehov) {
   const n = living(s).length, lang = b.fn === 'sovsal' && b.a.ag === undefined && n ? 1 + PLAN.langRik * Math.min(1, Math.max(0, rikedom(s) / n / PLAN.langRikPer - 1)) + PLAN.langSed * Math.max(0, s.seder?.v?.gemenskap ?? 0) : 1;
   return Math.min(sover(b) ? sovPersoner(BYGG.maxInne) : BYGG.maxInne, Math.max(1, Math.round(b.a.plats * f * lang) + rik));
 }
-const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const f = formogenheter(s).egen, v = f.get(ag) ?? 0, alla = [...f.values()].sort((x, y) => x - y); return alla.length > 1 && v >= alla[Math.floor(alla.length * 0.75)] * PLAN.rikGang; };
+const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const f = formogenheter(s).egen, v = f.get(ag) ?? 0, alla = [...f.values()].sort((x, y) => x - y); return alla.length > 1 && v >= alla[Math.floor(alla.length * PLAN.rikKvartil)] * PLAN.rikGang; };
 
 // väggens material (steg 10.10.7): timmer eller sten, efter värdet mot kostnaden per tid väggen håller. Hur långt fram byn ser
 // beror på seden Förutseende (Dagens behov ser bara kostnaden nu); stenen är mer värd ju fler av byns väggar som brunnit, och
@@ -379,7 +380,7 @@ const egetRum: AtgardDef = {
     return [];
   },
 };
-// hemmen blir finare (steg 10.2.69): hur mycket familjen har över (det den äger mot PLAN.hemRef, 0 till 2) och hur många rum huset har
+// hemmen blir finare (steg 10.2.69): hur mycket familjen har över (det den äger mot byns median per person och PLAN.hemRik, 0 till 2) och hur många rum huset har
 const hemOverskott = (s: State, ag: number) => {
   const f = formogenheter(s).egen, fam = familjOf(s, ag), alla = [...f.values()].sort((x, y) => x - y), med = alla.length ? alla[Math.floor(alla.length / 2)]! : 0;
   const hus = housesOf(s).reduce((n, h) => n + (h.ag !== undefined && fam.some(q => q.id === h.ag) ? husVarde(s, h) : 0), 0); // huset de har räknas inte som överskott
