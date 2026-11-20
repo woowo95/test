@@ -1206,6 +1206,20 @@ SCENARIER.tornadobana = {
   },
 };
 
+// tornadons bana: avståndet från rutans mitt till banan, och den första rutan sd rutor vid sidan om banan (åt ena eller andra
+// hållet) från andelen u0 och upp till n rutor framåt, med avståndet till banan från min upp till max och där ok stämmer
+type Tornado = NonNullable<State['tornado']>;
+const franBanan = (t: Tornado, x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / t.L) { const p = SIM.tornadoPos(t, u); m = Math.min(m, Math.hypot(p.x - x - 0.5, p.y - y - 0.5)); } return m; };
+const rutaVidBanan = (t: Tornado, u0: number, n: number, sd: number, min: number, max: number, ok: (x: number, y: number, u: number) => boolean) => {
+  for (let d = 0; d < n; d++) {
+    const u = u0 + d / t.L, p = SIM.tornadoPos(t, u), q = SIM.tornadoPos(t, u + 1 / t.L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+    for (const sida of [sd, -sd]) {
+      const x = Math.floor(p.x - (q.y - p.y) / l * sida), y = Math.floor(p.y + (q.x - p.x) / l * sida);
+      if (ok(x, y, u)) { const m = franBanan(t, x, y); if (m >= min && m < max) return { x, y, u }; }
+    }
+  }
+  return undefined;
+};
 SCENARIER.tornado = {
   lang: true,
   text: 'Steg 3.8.4 och 6.4.8: tornadon kommer ibland på sommaren och hösten och går på en bana som svänger, fäller träd till liggande stammar, river en risvägg men inte en ny timmervägg, lyfter saker som ligger ute (en del går sönder, resten hamnar några rutor från banan) och det blåser hårt. Folk ser den, ropar och går undan, ingen står i en vägg eller i vattnet, och efteråt bärs det som spridits in i lagret',
@@ -1227,17 +1241,7 @@ SCENARIER.tornado = {
     const ledig = (x: number, y: number) => !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !SIM.bitAt(s, x, y) && !SIM.isStored(s, x, y) && Math.hypot(x - e.x, y - e.y) > 3;
     // två hela rutor från banan: utanför kärnan, där tornadon skadar och lyfter (en ruta för varje sak)
     const anv: { x: number; y: number }[] = [];
-    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
-    const pa = (f: number) => {
-      for (let d = 0; d < 60; d++) {
-        const u = f + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-        for (const sd of [2.4, -2.4]) {
-          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
-          if (u > 0.05 && u < 0.95 && m >= 2 && m < 3 && ledig(x, y) && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 3)) { anv.push({ x, y }); return { x, y, u }; }
-        }
-      }
-      return undefined;
-    };
+    const pa = (f: number) => { const r = rutaVidBanan(t, f, 60, 2.4, 2, 3, (x, y, u) => u > 0.05 && u < 0.95 && ledig(x, y) && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 3)); if (r) anv.push(r); return r; };
     let fe = 0;
     for (let u = 0; u <= 1; u += 0.5 / L) if (Math.hypot(pos(u).x - e.x, pos(u).y - e.y) < Math.hypot(pos(fe).x - e.x, pos(fe).y - e.y)) fe = u;
     const ph = pa(fe), pr = ph && pa(ph.u + 4 / L), pt = pr && pa(pr.u + 4 / L);
@@ -1339,20 +1343,10 @@ SCENARIER.tornadonara = {
     const s = createState(5, START);
     tandEld(s);
     SIM.skickaTornado(s, 'medel');
-    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s), pos = (u: number) => SIM.tornadoPos(t, u);
-    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
+    const t = s.tornado!, e = SIM.eldPlats(s), g = groundOf(s);
     const anv: { x: number; y: number }[] = [];
     const ledig = (x: number, y: number) => SIM.vattenNu(s)[y * W + x] !== T.Vatten && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8 && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 3);
-    const pa = (u0: number) => {
-      for (let d = 0; d < 80; d++) {
-        const u = u0 + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-        for (const sd of [2.5, -2.5]) {
-          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
-          if (SIM.inMap(x, y) && m >= 2 && m < 3.5 && ledig(x, y)) { anv.push({ x, y }); return { x, y }; }
-        }
-      }
-      return undefined;
-    };
+    const pa = (u0: number) => { const r = rutaVidBanan(t, u0, 80, 2.5, 2, 3.5, (x, y) => SIM.inMap(x, y) && ledig(x, y)); if (r) anv.push(r); return r; };
     const pp = pa(0.3), pg = pp && pa(0.4), pu = pg && pa(0.5), pe = pu && pa(0.6), pk = pe && pa(0.7);
     if (!pp || !pg || !pu || !pe || !pk) return [['fem lediga rutor nära banan', false]];
     g.trees[pg.y * W + pg.x] = 0; g.cover[pg.y * W + pg.x] = 0.8;
@@ -1386,21 +1380,11 @@ SCENARIER.tornadoutkant = {
     const s = createState(5, START);
     tandEld(s);
     SIM.skickaTornado(s, 'medel');
-    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s), pos = (u: number) => SIM.tornadoPos(t, u);
-    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
+    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s);
     const anv: { x: number; y: number }[] = [];
     const ledig = (x: number, y: number) => SIM.vattenNu(s)[y * W + x] !== T.Vatten && isSoil(g.tiles[y * W + x]) && !g.built?.[y * W + x] && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8 && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 2);
     // en ruta fem rutor vid sidan om banan, från andelen u0 och framåt
-    const pa = (u0: number) => {
-      for (let d = 0; d < 80; d++) {
-        const u = u0 + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-        for (const sd of [5, -5]) {
-          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
-          if (SIM.inMap(x, y) && m >= 4.2 && m < 6.3 && ledig(x, y)) { anv.push({ x, y }); return { x, y }; }
-        }
-      }
-      return undefined;
-    };
+    const pa = (u0: number) => { const r = rutaVidBanan(t, u0, 80, 5, 4.2, 6.3, (x, y) => SIM.inMap(x, y) && ledig(x, y)); if (r) anv.push(r); return r; };
     const pb = pa(0.3), pf = pb && pa(0.4), pk = pf && pa(0.5);
     if (!pb || !pf || !pk) return [['tre lediga rutor i utkanten', false]];
     // skog på 40 rutor i utkanten
