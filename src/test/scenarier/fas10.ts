@@ -1146,6 +1146,11 @@ SCENARIER.vattenho = {
     // fullt: hon tar bara det som får plats, och resten blir kvar i krukan
     ho2.vatten = HO.rymmer - 2; kr.inne = { v: 'vatten', n: 5 };
     const n2 = hoFyll(s, ho2, kr), rest = kr.inne?.n ?? 0, full = ho2.vatten;
+    // första gången någon fyller hon står det i loggen (steg 12.1.63)
+    const f0 = SIM.cloneState(s), fh = { ...ho2, vatten: 0 }, fk = { ...kr, inne: { v: 'vatten' as const, n: 1 } }, fp = SIM.living(f0)[0];
+    if (f0.stat) delete f0.stat.hoFylld;
+    hoFyll(f0, fh, fk, fp);
+    const forstaRad = f0.log.some(e => e.text.includes('hällde vatten i vattenhon'));
     // regnet: samma tid med korta och långa slag, vid en tid då det regnar (vädret läses vid tiden nu)
     const b0 = SIM.cloneState(s);
     for (let i = 0; i < 24 * 60 && !(SIM.vaderNu(b0).nb > 0.3 && !SIM.vaderNu(b0).sno); i++) b0.now += 3600_000;
@@ -1165,6 +1170,7 @@ SCENARIER.vattenho = {
       [`hon byggdes i hagen (${byggd}) och bristen är borta (${efter})`, byggd && efter === 0],
       [`en full mellanstor kruka ger ${n1} vatten i hon och krukan blir kvar tom (${tom})`, n1 === 5 && tom],
       [`full ho: ${n2} hälls i, ${rest} blir kvar i krukan och hon har ${full}`, n2 === 2 && rest === 3 && full === HO.rymmer],
+      [`första påfyllningen står i loggen (${forstaRad ? 'ja' : 'nej'})`, forstaRad],
       [`regnet fyller lika mycket med korta som långa slag (${kort.toFixed(2)} och ${lang.toFixed(2)})`, Math.abs(kort - lang) < 1e-6 && kort > 0],
       [`i en månad av spelets väder fylls hon högst till ${max} (av ${HO.rymmer})`, !!tb && max > 0 && max <= HO.rymmer],
     ];

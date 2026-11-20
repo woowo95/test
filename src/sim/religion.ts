@@ -287,6 +287,7 @@ export const tolkning = (tr: Tro) => `${tr.bakom} vill ${tr.vill}. Om man sviker
 // mycket andlig och inte tror på något kan tolka det till en egen tro. Drar ur personens följd 'tro'
 export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
   if (!alive(p) || ageOf(p, s.now) < UPPV.fran) return;
+  count(s, 'tecken_' + k); // byns statistik: tecknen som någon var med om
   const text = teckenText(k, om);
   upplev(s, p, 'tecken', text);
   const egen = troOf(s, p.tro);

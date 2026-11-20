@@ -514,7 +514,12 @@ SCENARIER.svamp = {
     setMat(f, { svamp: 12 }); setAmount(f, 'giftsvamp', 10);
     for (let i = 0; i < 50 && !f.stat?.forgiftad; i++) eatPoison(f, r);
     const fGift = amountOf(f, 'giftsvamp'), fSvamp = amountOf(f, 'svamp');
+    // syner bara av förgiftningen (steg 12.1.63): många måltider utan giftsvamp ger inga
+    const h = createState(21, START), hp = living(h)[0]!; setMat(h, { svamp: 12 });
+    for (let i = 0; i < 50; i++) eatPoison(h, hp);
+    const synUtan = h.stat?.tecken_svampsyn ?? 0, synMed = f.stat?.tecken_svampsyn ?? 0;
     return [
+      [`svampsyner bara vid förgiftning (${synUtan} på 50 måltider utan gift, ${synMed} hos den förgiftade)`, synUtan === 0],
       [`en ensam giftsvamp (0,9997) kan förgifta (${e.stat?.forgiftad ?? 0} förgiftad)`, (e.stat?.forgiftad ?? 0) === 1],
       [`bortsorterad giftsvamp försvinner ur svampen (svamp 12 till ${fSvamp.toFixed(2)}, gift 9 till ${fGift.toFixed(2)})`, (f.stat?.forgiftad ?? 0) === 1 && fGift < 9 && Math.abs((12 - fSvamp) - (9 - fGift)) < 1e-6],
       [`den förgiftade lär sig om svampen (${kn0.toFixed(2)} till ${kn1.toFixed(2)}) och sorterar bort giften (${gift.toFixed(1)} av 9 kvar; ${sum('forgiftad')} förgiftade i byarna)`, (g.stat?.forgiftad ?? 0) === 1 && kn1 > kn0 && gift < 9],
@@ -1315,6 +1320,7 @@ SCENARIER.tornadokarna = {
     s.stackar!.push({ k: 'sten', n: 6, c: 1, x: pk.x, y: pk.y });
     (s.stockar ??= []).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: pk.x + 0.5, y: pk.y + 0.5, ...SIM.stamAv(g, pk.y * W + pk.x) });
     g.trees[pt.y * W + pt.x] = 1; g.trees[pk.y * W + pk.x] = 0;
+    const gi = pp.y * W + pp.x; g.tiles[gi] = T.Gras; g.cover[gi] = 1; const jord = SIM.isSoil(g.tiles[gi]); // högt gräs där människan står
     const offer = living(s)[0], stam0 = (s.stockar ?? []).length;
     let iVagen = true;
     for (let k = 0; k < 900 && s.tornado; k++) {
@@ -1332,6 +1338,7 @@ SCENARIER.tornadokarna = {
       [`stenarna och stammen gick sönder (${stenKvar} stenar kvar, stammen ${stamKvar ? 'kvar' : 'borta'})`, stenKvar === 0 && !stamKvar],
       [`trädet välttes till en liggande stam (${g.trees[pt.y * W + pt.x] >= FOREST ? 'står' : 'vält'}, ${stamTrad ? 'stam' : 'ingen stam'})`, g.trees[pt.y * W + pt.x] < FOREST && stamTrad],
       [`människan dog i tornadon (${living(s).includes(offer) ? 'lever' : 'död'}; ${st['tornado dod'] ?? 0} döda)`, !living(s).includes(offer) && !iVagen && (st['tornado dod'] ?? 0) >= 1],
+      [`gräset i kärnan slets upp till bar jord i tornadons spår (täcke ${g.cover[gi].toFixed(2)}${jord ? '' : ', ingen jord'})`, jord && g.cover[gi] < 0.05 && (s.tornadoStig ?? []).includes(gi)],
       [`händelserna säger vad den gjorde (${st['tornado forstort'] ?? 0} saker förstörda, ${stam0} stammar före)`, (st['tornado forstort'] ?? 0) >= 2],
     ];
   },

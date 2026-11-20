@@ -452,12 +452,13 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
     const x = i % W, y = Math.floor(i / W);
     if (g.trees[i] >= FOREST) {
       const stam = stamAv(g, i);
-      g.trees[i] = 0; g.cover[i] = 1;
+      g.trees[i] = 0;
       stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
       nyStubbe(s, x, y, stam.ved);
       t.trad++; count(s, 'tornado trad');
     } else if (g.trees[i] > 0) g.trees[i] = 0;
     if (s.halvfallt) delete s.halvfallt[i];
+    if (isSoil(g.tiles[i]) && !g.built?.[i]) { if (g.cover[i] > 0) count(s, 'tornado stig'); g.cover[i] = 0; (s.tornadoStig ??= []).push(i); } // gräset slits upp till bar jord, som nära (steg 12.1.63)
     const v = bitAt(s, x, y);
     if (v?.k === 'vagg' && v.b >= 1) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); rev = true; }
     else if (v?.k === 'golv' && v.m !== 'jord') { if (MATERIAL[v.m].vag) vagBort(s, v); else v.m = 'jord'; borta(); rev = true; }

@@ -3681,7 +3681,7 @@ SCENARIER.drycker = {
     const k = kruka('lerkruka_mellan');
     SIM.KLAR_FOR.koka_buljong!(s, p, { act: 'koka_buljong', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' }, 0);
     const sjuder = k.kok?.r === 'buljong' && SIM.amountOf(s, 'ben') === 0 && SIM.amountOf(s, 'svamp') === 2 && SIM.amountOf(s, 'kal') === 1;
-    for (let i = 0; i < 15 * SIM.MIN / SIM.HOUR + 1; i++) { s.now += SIM.HOUR; SIM.stepKok(s); }
+    for (let i = 0; i < 15 * SIM.MIN / SIM.HOUR + 1; i++) { s.now += SIM.HOUR; SIM.stepKok(s, 3600); }
     const buljong = SIM.vatskaAv(s, 'buljong');
     // den som fryser tar buljongen före det kokta vattnet, och blir varmare; den som inte fryser tar det kokta
     const kk = kruka('lerkruka_stor'); SIM.fyllVatska(s, 'kokt', 4, kk);
@@ -3812,7 +3812,7 @@ SCENARIER.festmaltid = {
     const id = t.grop?.r ?? '', namn = SIM.SAKER[id]?.namn ?? '', n1 = t.grop?.n ?? 0;
     let kvarFore = false;
     // alla går till bröllopet när det börjar och äter när det är slut (steg 10.11.10)
-    for (let h = 0; h < 5; h++) { s.now += SIM.HOUR; SIM.stepKok(s); if (h === 0) kvarFore = !!t.grop && t.grop.kvar <= 0; SIM.ritualTimme(s); if (s.ritual) for (const q of SIM.living(s)) q.task = { act: 'ritual', until: s.ritual.slut } as SIM.Task; }
+    for (let h = 0; h < 5; h++) { s.now += SIM.HOUR; SIM.stepKok(s, 3600); if (h === 0) kvarFore = !!t.grop && t.grop.kvar <= 0; SIM.ritualTimme(s); if (s.ritual) for (const q of SIM.living(s)) q.task = { act: 'ritual', until: s.ritual.slut } as SIM.Task; }
     const folk = SIM.living(s), atit = folk.filter(q => q.thoughts.some(x => x.text === 'Åt en festmåltid')).length;
     const tom = !t.grop;
     // ingen ritual: satsen läggs i förrådet när den är klar
@@ -3821,7 +3821,7 @@ SCENARIER.festmaltid = {
     SIM.gropKlar(s2, b.p, b.t.id);
     const id2 = b.t.grop?.r ?? '', n2 = b.t.grop?.n ?? 0, fore2 = SIM.amountOf(s2, id2);
     s2.ritualKo = [];
-    s2.now += SIM.HOUR; SIM.stepKok(s2);
+    s2.now += SIM.HOUR; SIM.stepKok(s2, 3600);
     const forrad = !b.t.grop && SIM.amountOf(s2, id2) === fore2 + n2;
     return [
       [`gropen laddas bara när en ritual med mat väntar (utan ${utan ? 'ja' : 'nej'}, med ${med ? 'ja' : 'nej'})`, !utan && med],

@@ -1,6 +1,6 @@
 import { nagonEld } from './eld';
 import { matAvstar } from './kultlatt';
-import { DAY, HOUR, MIN, Person, State, Task } from './typer';
+import { DAY, HOUR, MIN, SEC, Person, State, Task } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
@@ -320,11 +320,11 @@ export function kokaKlar(s: State, p: Person) {
   ovning(p, 'matlagning', KOK.prepMin / 60 * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'kokForsta')) log(s, `${p.name} lagade byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} i en lerkruka över elden.`, 'world', [p.id]);
 }
-// en gång i timmen (steg.ts): krukorna på elden kokar medan elden brinner, och den färdiga rätten läggs i förrådet
-export function stepKok(s: State) {
-  stepGrop(s); // kokgropen (steg 10.7.28)
+// krukorna på elden kokar medan elden brinner (TAKTER i steg.ts, med tiden sedan sist dt i sekunder), och den färdiga rätten läggs i förrådet
+export function stepKok(s: State, dt: number) {
+  stepGrop(s, dt); // kokgropen (steg 10.7.28)
   for (const t of kokarNu(s)) {
-    if (nagonEld(s)) t.kok!.kvar -= HOUR;
+    if (nagonEld(s)) t.kok!.kvar -= dt * SEC;
     if (t.kok!.kvar > 0) continue;
     if (t.kok!.vatska) { t.inne = { v: t.kok!.r as import('./vatskor').VatskaId, n: t.kok!.n, q: t.kok!.q, t: s.now }; count(s, 'kokt_' + t.kok!.r, t.kok!.n); t.kok = undefined; continue; } // buljongen står kvar i krukan (steg 10.7.24)
     const tot = Object.values(t.kok!.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {};
@@ -467,11 +467,11 @@ function gropUpp(s: State, t: Station, at = 0) {
   count(s, 'ratter', g.n);
   t.grop = undefined;
 }
-// en gång i timmen (stepKok): satsen bakas i gropen, och när den är klar och ingen ritual med mat väntar läggs den i förrådet
-function stepGrop(s: State) {
+// med krukorna (stepKok): satsen bakas i gropen, och när den är klar och ingen ritual med mat väntar läggs den i förrådet
+function stepGrop(s: State, dt: number) {
   for (const t of kokgropar(s)) {
     if (!t.grop) continue;
-    if (t.grop.kvar > 0) t.grop.kvar -= HOUR;
+    if (t.grop.kvar > 0) t.grop.kvar -= dt * SEC;
     if (t.grop.kvar <= 0 && !festKrok.vantar(s)) { gropUpp(s, t); count(s, 'gropUtanFest'); }
   }
 }

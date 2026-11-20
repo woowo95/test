@@ -12,7 +12,7 @@ import { tamdjurOf } from './tamdjur';
 import { vaderNu } from './vader';
 import { blocked } from './byggnad';
 import { bynsMitt } from './omrade';
-import { count, forstaGang, log } from './folk';
+import { count, log } from './folk';
 import { H, HOUR_S, Person, State, T, W } from './typer';
 
 export const HO = balans('vattenho', {
@@ -53,8 +53,9 @@ export function hoFyll(s: State, ho: Station, k: Ting, p?: Person) {
   if (n <= 0) return 0;
   ho.vatten = (ho.vatten ?? 0) + n; k.inne.n -= n;
   if (k.inne.n <= 0) k.inne = undefined;
+  const forst = !s.stat?.hoFylld;
   count(s, 'hoFylld', n);
-  if (p && forstaGang(s, 'hoFylld')) log(s, `${p.name} hällde vatten i vattenhon åt djuren.`, 'world', [p.id]);
+  if (p && forst) log(s, `${p.name} hällde vatten i vattenhon åt djuren.`, 'world', [p.id]);
   return n;
 }
 // regnet fyller hon per tid (TAKTER): HO.regnTim gånger hur mycket det regnar; snön fyller den inte

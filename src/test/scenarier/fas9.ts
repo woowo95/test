@@ -770,14 +770,16 @@ SCENARIER.kokning = {
     const pa = !!kr.kok && amountOf(s, 'fisk') === 2 && amountOf(s, 'rotter') === 2 && amountOf(s, 'rolleka') === ro - 1;
     p.task = undefined; p.hunger = 0.9; p.rest = 1; chooseTask(s, p);
     const akt = (p.task as SIM.Person["task"])?.act, annat = akt !== "koka_mat" && !!kr.kok;
-    s.fire.lit = false; stepKok(s); const vantar = !!kr.kok;
-    s.fire.lit = true; stepKok(s);
+    s.fire.lit = false; stepKok(s, 3600); const vantar = !!kr.kok;
+    s.fire.lit = true; stepKok(s, (SIM.KATEGORIER.gryta.passiv - 1) * 60); const inteAn = !!kr.kok; // grytan sjuder 10 minuter (steg 12.1.63)
+    stepKok(s, 60);
     const klar = !kr.kok && amountOf(s, rattId('fisk', 'gryta', 'fin')) === 4;
     return [
       [`grilla och koka är rader i TILLAGNING (${Object.keys(TILLAGNING).join(', ')})`, !!TILLAGNING.grilla && !!TILLAGNING.koka],
       [`av fisk, rötter och rölleka blir det ${namn || 'inget'}`, namn === 'Fiskgryta · Fin'],
       [`kocken kan laga maten (${kan ? 'ja' : 'nej'}), och grytan står på elden i krukan med råvarorna (${pa ? 'ja' : 'nej'})`, kan && pa],
       [`kocken gör annat medan grytan sjuder (${akt})`, annat],
+      [`grytan är inte klar efter ${SIM.KATEGORIER.gryta.passiv - 1} minuter på elden (${inteAn ? 'står kvar' : 'klar'}) men efter ${SIM.KATEGORIER.gryta.passiv}`, inteAn && !kr.kok],
       [`utan eld kokar den inte (${vantar ? 'står kvar' : 'klar'}), och med eld blir den fyra portioner i förrådet (${klar ? 'ja' : 'nej'})`, vantar && klar],
     ];
   },

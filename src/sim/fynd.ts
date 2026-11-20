@@ -718,12 +718,12 @@ export function svampPlock(s: State, p: Person, slag: 'kantarell' | 'spindling')
 }
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
-  if (rnd(s, 'halsa', p) < 0.2) tecken(s, p, 'svampsyn'); // svampen som gav syner (steg 8.5.18)
   const gift = amountOf(s, GIFT);
   // en ensam giftsvamp förfaller lite redan första slaget, så gränsen är nära noll och inte 1
   if (gift < 1e-3 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;
   addTo(s, GIFT, -Math.min(1, gift));
   count(s, 'forgiftad');
+  tecken(s, p, 'svampsyn'); // förgiftningen ger syner: svampen som gav syner (steg 8.5.18 och 12.1.63)
   insjukna(s, p, 'svampforgiftning'); // steg 9.5.1: förgiftningen är en sjukdom som kan döda (motgiftet kommer i 9.5.14)
   p.poisonUntil = s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
