@@ -1,11 +1,10 @@
 // Scenarier. Redskap: stenring, spjut, redskap, slitage och teknik.
 import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, bynsMitt, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
-import { START } from '../kor';
+import { BEAT, START } from '../kor';
 import { tekInfo } from '../../ui/flikar/teknik';
 import { setByn } from '../../ui/lage';
 import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus, testBy, utanWebblasare, vidStack } from './hjalp';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 SCENARIER.stenring = {
   text: 'Den första elden läggs i en ring av stenar som samlas in, och tänds med flinta. Ringen ligger kvar när elden slocknat',

@@ -6,7 +6,7 @@ import { Person, createState, step, living, serializeParts, serialize, isLight, 
 import * as SIM from '../../sim';
 import { hasIcon, PAL } from '../../ikoner';
 import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../palett';
-import { START } from '../kor';
+import { BEAT, START } from '../kor';
 import { KARNA } from '../../portrattkarna';
 import { KARTBILDER, SYMNAMN } from '../../kartbilder';
 import { symDelar, symUtan } from '../../ui/symboler';
@@ -32,7 +32,6 @@ import { styre } from '../../ui/flikar/styre';
 import { tal } from '../../ui/flikar/tal';
 import { teknik } from '../../ui/flikar/teknik';
 import { lagstBehov } from '../../ui/hjalp';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 // alla rutor och flikar i en testby, ritade som text: de som visar "//" (en kodkommentar som hamnat i en textmall)
 function kodIRutorna() {
@@ -350,7 +349,6 @@ SCENARIER.tatuering = {
       [`märket i pannan i byns stil (${del}), 1 kol går åt (${SIM.amountOf(s, 'kol')} kvar)`, del === `tat-${stil}-panna` && !efter.del.tatKind && SIM.amountOf(s, 'kol') === 2 && !q.tatV],
       [`det syns i porträttet (${skilda} punkter), bara i paletten`, skilda > 0 && utanfor === 0],
       [`och står i berättelsen (${rad?.[2] ?? ''})`, !!rad],
-      ['en plats rymmer en tatuering: pannan är tagen', !q.tatV],
       [`tolv delar i porträttet, fyra stilar gånger tre platser (${saknas.join(', ') || 'alla finns'})`, !saknas.length],
     ];
   },

@@ -4,9 +4,8 @@ import { Person, Act, ownedBy, tidyTools, heldBy, isTool, step, living, temperat
 import * as SIM from '../../sim';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { STEG_TIM, korBy } from '../kor';
+import { BEAT, START, STEG_TIM, korBy } from '../kor';
 import { lasBy } from '../delby';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
 
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 export const setItems = (s: State, m: Record<string, number>) => {
@@ -74,6 +73,13 @@ export const testBy = (minDygn: number, villkor?: (s: State) => boolean): State 
   for (const f of filer) { const b = lasBy(dir + f![0]); if (!villkor || villkor(b)) return b; }
   return korBy(1, minDygn).s;
 };
+// testbyn efter minDygn med världen dygn fram i tiden: räknas en gång per process och delas av scenarierna (en kopia var)
+const VARLDAR = new Map<string, State>();
+export const varldEfter = (minDygn: number, dygn: number): State => {
+  const k = `${minDygn}:${dygn}`;
+  if (!VARLDAR.has(k)) { const w = SIM.cloneState(testBy(minDygn)); w.now += dygn * DAY; SIM.varldSteg(w); VARLDAR.set(k, w); }
+  return SIM.cloneState(VARLDAR.get(k)!);
+};
 export const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * STEG_TIM; i++) { step(s, BEAT); varje?.(s); } };
 // klockan h samma dag, i testernas tidszon (UTC, se utc.ts; ett scenario med env: STOCKHOLM får svensk tid)
 export const klockan = (s: State, h = 10) => { s.now = new Date(s.now).setHours(h, 0, 0, 0); };
@@ -89,6 +95,46 @@ export const medBank = (s: State, k = 'slaktbank') => {
   if ('inne' in at!) t.inne = 1;
   (s.stationer ??= []).push(t); SIM.touch(s);
   return t;
+};
+// ett jaktförsök från början: djuren som förut (inga döda, skadade, skrämda eller flyende, och det i extra), inget annat
+// flintspjut än verktyget i jägarens hand, och uppgiften mot målet (som söks när djuren nollställts)
+export const jaktFran = (s: State, p: Person, verktyg: string | undefined, mal: { x: number; y: number } | (() => { x: number; y: number }), extra: Partial<State> = {}) => {
+  Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, ...extra }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+  if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
+  const m = typeof mal === 'function' ? mal() : mal;
+  return { act: 'jakt', phase: 'do', tx: m.x, ty: m.y, until: s.now + HOUR, carry: 0, tool: verktyg } as Task;
+};
+// den första platsen i ring runt mitten, varv för varv från radien rMin upp till rMax med n punkter per varv, där duger ger något
+export const iRing = <T>(mitt: { x: number; y: number }, rMin: number, rMax: number, n: number, duger: (x: number, y: number) => T | undefined | false): T | undefined => {
+  for (let r = rMin; r < rMax; r++) for (let k = 0; k < n; k++) { const v = duger(Math.round(mitt.x + Math.cos(k / n * 6.283) * r), Math.round(mitt.y + Math.sin(k / n * 6.283) * r)); if (v) return v; }
+  return undefined;
+};
+// den första byn (fröna 1 upp till hogst) som är tjugo dygn gammal, med tidsåldern ai som började sedan ms före nu, där duger stämmer
+export const hittaBy = (hogst: number, sedan: number, ai: number, duger: (b: State, seed: number) => boolean) => {
+  for (let seed = 1; seed < hogst; seed++) { const b = SIM.createState(seed, START); b.founded -= 20 * DAY; b.kal = SIM.nyKalender(b.now - sedan, ai); if (duger(b, seed)) return b; }
+  return undefined;
+};
+// en behållare k (som ingen håller i) som p äger, med n av vätskan v
+export const medVatska = (s: State, p: Person, k: string, v: string, n: number) => { const t = SIM.addTool(s, k, p); t.hos = undefined; SIM.fyllVatska(s, v as SIM.VatskaId, n, t); return t; };
+// g vårdar q och vården blir klar, med g bredvid q om flytta är satt
+export const vardPa = (s: State, g: Person, q: Person, flytta = true) => {
+  if (flytta) { g.x = q.x; g.y = q.y; }
+  SIM.vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id });
+};
+// ett tomt styre utan ledare, med lagarna
+export const medLagar = (s: State, lagar: { id: string; t: number; straff: number; av: number; om: string }[]) => {
+  s.styre = { historia: [], oppna: [], sedan: s.now, titel: '', satt: 0, pabud: {} as never, lagar } as unknown as State['styre'];
+};
+// familjen: invånarna efter id, det första barnet c, dess förälder a med lägst id och a:s partner b
+export const familjen = (s: State) => {
+  const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+  return { ppl, a, b: ppl.find(q => q.id === a.partner)!, c };
+};
+// slakten: en slaktbänk, kniven som teknik hos alla och den enda kniven i p:s hand
+export const slakteri = (s: State, p: Person) => {
+  medBank(s);
+  for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
+  s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, p.id);
 };
 // bygger färdigt det hus som är planerat: alla delar utom den sista klara, den sista byggs som vanligt (workOn)
 export function byggKlart(s: State, h0?: SIM.Hus) {
@@ -217,8 +263,23 @@ function uiLasNu(s: State, t: number) {
 // (testerna i övrigt körs i datorns tidszon, här UTC, där byn startar 06:00)
 export const LANG_S = 13;
 export const STOCKHOLM = { TIDSZON: 'Europe/Stockholm' };
-export const SCENARIER: Record<string, { text: string; lang?: boolean; env?: Record<string, string>; kor: () => Koll[] | Promise<Koll[]> }> = {};
+type Scenario = { text: string; lang?: boolean; env?: Record<string, string>; kor: () => Koll[] | Promise<Koll[]> };
+// ett namn som sätts två gånger skriver över det första scenariot, som då aldrig körs: det larmar direkt
+export const SCENARIER: Record<string, Scenario> = new Proxy({} as Record<string, Scenario>, {
+  set(m, n, v) {
+    if (n in m) throw new Error(`Scenariot ${String(n)} finns två gånger`);
+    m[n as string] = v;
+    return true;
+  },
+});
 
+// sätter fältet f i varje rad i registret (en tom rad hoppas över) till v, eller v(det gamla), kör provet och ställer alltid tillbaka
+// de gamla talen. Ett register med bara några rader: { hardVinter: SIM.MOTGANGAR.hardVinter }
+export function medTal<T>(reg: Record<string, object | undefined>, f: string, v: number | ((gammalt: number) => number), prov: () => T): T {
+  const rader = Object.values(reg).filter(r => r !== undefined) as Record<string, number>[], gamla = rader.map(r => r[f]!);
+  rader.forEach((r, i) => { r[f] = typeof v === 'number' ? v : v(gamla[i]!); });
+  try { return prov(); } finally { rader.forEach((r, i) => { r[f] = gamla[i]!; }); }
+}
 export const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;
 
 // ---------- system som saknade prov: faror, seder, samtal, liv, utflyttning, vakt och det i registren som aldrig händer ----------

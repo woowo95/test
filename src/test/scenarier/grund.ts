@@ -6,11 +6,10 @@ import * as SIM from '../../sim';
 import { readFileSync } from 'node:fs';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
-import { START, STEG_TIM } from '../kor';
+import { BEAT, START, STEG_TIM } from '../kor';
 import { eld as eldFlik } from '../../ui/flikar/eld';
 import { setByn, ui } from '../../ui/lage';
-import { setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, medBank, bearbetaVid } from './hjalp';
-const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
+import { hittaBy, medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
 
 SCENARIER.glanta = {
   lang: true,
@@ -264,9 +263,7 @@ SCENARIER.talg = {
   kor: () => {
     const s = createState(3, START);
     const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar)!;
-    medBank(s);
-    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
-    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, p.id);
+    slakteri(s, p);
     setMat(s, {}); setMat(s, { vilt: 3 * SIM.KANIN }); setAmount(s, 'talg', 0);
     bearbetaVid(s, p, SIM.DJUR.kanin, 1);
     const kanin = amountOf(s, 'talg');
@@ -487,8 +484,7 @@ SCENARIER.knapphet = {
 };
 
 // vår, sommar och höst i två byar: kantareller plockas, och giftsvamp kommer med i korgen eller känns igen och lämnas. I en by är
-// det mycket slump, och sedan steg 2.3.9 är svampen ovanligare. Byarna går i två scenarier (svamp och svampbyar), så att inget av
-// dem blir det längsta jobbet i det stora testet (steg 10.11.24)
+// det mycket slump, och sedan steg 2.3.9 är svampen ovanligare
 const svampByar = (fron: number[]) => {
   const byar = fron.map(f => { const b = createState(f, START); kor(b, 21 * 24); return b; });
   const sum = (k: string) => byar.reduce((a, b) => a + ((b.stat as Record<string, number> | undefined)?.[k] ?? 0), 0);
@@ -498,12 +494,6 @@ const svampKoll = (v: ReturnType<typeof svampByar>): Koll[] => [
   [`kantareller plockade i två byar (${v.svamp}, minst 5: hur många beror mycket på slumpen)`, v.svamp >= 5],
   [`giftsvamp med i korgen (${v.st.giftsvamp}) eller känd och lämnad (${v.st.giftsvampKand})`, v.st.giftsvamp + v.st.giftsvampKand > 0],
   ['byarna lever', v.byar.every(b => living(b).length > 0)]];
-
-SCENARIER.svampbyar = {
-  lang: true,
-  text: 'På hösten plockas kantareller i två byar till, och giftsvamp kommer med i korgen eller känns igen och lämnas',
-  kor: () => svampKoll(svampByar([21, 22])),
-};
 
 SCENARIER.svamp = {
   lang: true,
@@ -750,7 +740,7 @@ SCENARIER.hardvinter = {
     const start = v ? SIM.motgangNasta(v)!.start : 0;
     if (!v) return [['en by med en hård vinter strax framför sig', false]];
     // samma tid utan den hårda vintern: kallare, mer snö, mer ved
-    const mitt = start + 3 * DAY, utan = <T>(f: () => T) => { const c = SIM.MOTGANGAR.hardVinter.chans; SIM.MOTGANGAR.hardVinter.chans = 0; try { return f(); } finally { SIM.MOTGANGAR.hardVinter.chans = c; } };
+    const mitt = start + 3 * DAY, utan = <T>(f: () => T) => medTal({ hardVinter: SIM.MOTGANGAR.hardVinter }, 'chans', 0, f);
     const kallare = utan(() => temperature(v!, mitt)) - temperature(v, mitt);
     let sno = 0, snoUtan = 0;
     const vu = cloneState(v); // en egen by, så att vädret inte hämtas ur det sparade svaret för samma timme
@@ -792,13 +782,7 @@ SCENARIER.kloka = {
   text: 'Steg 3.8.6: den klokaste i byn anar en hård vinter eller en torka tidigare än den äldsta, ju klokare desto tidigare (upp till tre dygn före, mot ett till två för den äldsta) och säkrare. Varslet sprids i samtal som förut, och i en by där ingen är klok nog anar bara den äldsta',
   kor: () => {
     // en by vars nästa tidsålder har en hård vinter, som börjar om tre till sex dygn
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - 3 * DAY, 3); };
-    let v: State | undefined;
-    for (let seed = 1; seed < 600 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const m = SIM.motgangNasta(b);
-      if (m?.id === 'hardVinter' && m.start - b.now > 3.2 * DAY && m.start - b.now < 6 * DAY) v = b;
-    }
+    const v = hittaBy(600, 3 * DAY, 3, b => { const m = SIM.motgangNasta(b); return m?.id === 'hardVinter' && m.start - b.now > 3.2 * DAY && m.start - b.now < 6 * DAY; });
     if (!v) return [['en by med en hård vinter några dygn framför sig', false]];
     const start = SIM.motgangNasta(v)!.start;
     // en klok, en gammal och de andra mindre kloka än klokFran
@@ -848,13 +832,7 @@ SCENARIER.torka = {
   text: 'Steg 3.8.2: torkan kommer ibland på sommaren. Nästan inget regn, marken torkar, sjöarna drar sig tillbaka till torr sjöbotten som går att gå på och små tjärnar torkar ut. Folk kan ändå dricka, grödor som inte vattnas vissnar och ägaren vattnar sitt fält med vattensäcken. När torkan är över och det har regnat kommer vattnet tillbaka',
   kor: () => {
     // en by med en tjärn, mitt i en torka som just börjat (sommaren slutar om sju dygn)
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - DAY / 2, 2); };
-    let v: State | undefined;
-    for (let seed = 1; seed < 600 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const m = SIM.motgangNu(b);
-      if (m?.id === 'torka' && SIM.sjoarna(seed).rutor.some((r, n) => n > 0 && r.length <= SIM.TORKA.liten)) v = b;
-    }
+    const v = hittaBy(600, DAY / 2, 2, (b, seed) => SIM.motgangNu(b)?.id === 'torka' && SIM.sjoarna(seed).rutor.some((r, n) => n > 0 && r.length <= SIM.TORKA.liten));
     if (!v) return [['en by med en tjärn mitt i en torka', false]];
     const s = v, m = SIM.motgangNu(s)!;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
@@ -943,29 +921,28 @@ SCENARIER.avskuren = {
   },
 };
 
+// en by på våren med en översvämning där vattnet stiger minst två rutor (scenarierna oversvamning och flodrest)
+const flodBy = () => hittaBy(800, HOUR, 1, b => {
+  const m = SIM.motgangNu(b);
+  if (m?.id !== 'oversvamning') return false;
+  let topp = 0;
+  for (let t = m.start; t < m.slut; t += HOUR) topp = Math.max(topp, SIM.flodNiva(b, t));
+  return topp >= 2;
+});
 SCENARIER.oversvamning = {
   lang: true,
   text: 'Steg 3.8.3: översvämningen kommer ibland på våren och hösten. Efter ett långt regn stiger sjön en ruta i taget en till tre rutor upp på land, står kvar ett par dygn och sjunker. Maten under vatten förstörs, lätta saker (grenar) flyter bort ute, tunga saker (sten) ligger kvar och slits fortare, fält under vatten dör och ingen står i vattnet. Efteråt är stranden som förut',
   kor: () => {
     // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 1); };
-    let v: State | undefined;
-    for (let seed = 1; seed < 800 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const m = SIM.motgangNu(b);
-      if (m?.id !== 'oversvamning') continue;
-      let topp = 0;
-      for (let t = m.start; t < m.slut; t += HOUR) topp = Math.max(topp, SIM.flodNiva(b, t));
-      if (topp >= 2) v = b;
-    }
+    const v = flodBy();
     if (!v) return [['en by med en översvämning på våren', false]];
     const s = v, m = SIM.motgangNu(s)!;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
     const vatten0 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
     // regnet innan och medan vattnet stiger
     let regn = 0, regnUtan = 0;
-    const vu = cloneState(s), c0 = SIM.MOTGANGAR.oversvamning.chans;
-    for (let h = 0; h < 2 * 24; h++) { const t = m.start + h * HOUR; if (vaderNu(s, t).nb > 0) regn++; SIM.MOTGANGAR.oversvamning.chans = 0; try { if (vaderNu(vu, t).nb > 0) regnUtan++; } finally { SIM.MOTGANGAR.oversvamning.chans = c0; } }
+    const vu = cloneState(s);
+    for (let h = 0; h < 2 * 24; h++) { const t = m.start + h * HOUR; if (vaderNu(s, t).nb > 0) regn++; if (medTal({ oversvamning: SIM.MOTGANGAR.oversvamning }, 'chans', 0, () => vaderNu(vu, t).nb > 0)) regnUtan++; }
     // fram till timmen innan vattnet börjar stiga
     let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
     kor(s, (b0 - s.now) / HOUR);
@@ -1094,16 +1071,7 @@ SCENARIER.flodrest = {
   text: 'Steg 3.8.7: medan vattnet stiger bär de vuxna undan maten från lagerplatserna som vattnet kan nå; när vattnet sjunker minns byn hur högt det nådde (en lärdom) och bygger inte där; ett jordgolv under vatten blir lera och torkar till jordgolv igen; en vägg i vattnet slits fortare; ingen sover på en blöt ruta; en brasa i vattnet slocknar',
   kor: () => {
     // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 1); };
-    let v: State | undefined;
-    for (let seed = 1; seed < 800 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const m = SIM.motgangNu(b);
-      if (m?.id !== 'oversvamning') continue;
-      let topp = 0;
-      for (let t = m.start; t < m.slut; t += HOUR) topp = Math.max(topp, SIM.flodNiva(b, t));
-      if (topp >= 2) v = b;
-    }
+    const v = flodBy();
     if (!v) return [['en by med en översvämning på våren', false]];
     const s = v, m = SIM.motgangNu(s)!;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
@@ -1238,20 +1206,27 @@ SCENARIER.tornadobana = {
   },
 };
 
+// tornadons bana: avståndet från rutans mitt till banan, och den första rutan sd rutor vid sidan om banan (åt ena eller andra
+// hållet) från andelen u0 och upp till n rutor framåt, med avståndet till banan från min upp till max och där ok stämmer
+type Tornado = NonNullable<State['tornado']>;
+const franBanan = (t: Tornado, x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / t.L) { const p = SIM.tornadoPos(t, u); m = Math.min(m, Math.hypot(p.x - x - 0.5, p.y - y - 0.5)); } return m; };
+const rutaVidBanan = (t: Tornado, u0: number, n: number, sd: number, min: number, max: number, ok: (x: number, y: number, u: number) => boolean) => {
+  for (let d = 0; d < n; d++) {
+    const u = u0 + d / t.L, p = SIM.tornadoPos(t, u), q = SIM.tornadoPos(t, u + 1 / t.L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+    for (const sida of [sd, -sd]) {
+      const x = Math.floor(p.x - (q.y - p.y) / l * sida), y = Math.floor(p.y + (q.x - p.x) / l * sida);
+      if (ok(x, y, u)) { const m = franBanan(t, x, y); if (m >= min && m < max) return { x, y, u }; }
+    }
+  }
+  return undefined;
+};
 SCENARIER.tornado = {
   lang: true,
   text: 'Steg 3.8.4 och 6.4.8: tornadon kommer ibland på sommaren och hösten och går på en bana som svänger, fäller träd till liggande stammar, river en risvägg men inte en ny timmervägg, lyfter saker som ligger ute (en del går sönder, resten hamnar några rutor från banan) och det blåser hårt. Folk ser den, ropar och går undan, ingen står i en vägg eller i vattnet, och efteråt bärs det som spridits in i lagret',
   kor: () => {
     // en by vars sommar just börjat och som får en tornado tidigt i den, med en bana som går nära elden
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 2); };
     const naraElden = (x: State, b: number[]) => { const e = SIM.eldPlats(x); for (let q = 2; q < b.length; q += 2) for (let f = 0; f <= 1; f += 0.02) if (Math.hypot(b[q - 2] + (b[q] - b[q - 2]) * f - e.x, b[q - 1] + (b[q + 1] - b[q - 1]) * f - e.y) < 12) return true; return false; };
-    let v: State | undefined;
-    for (let seed = 1; seed < 4000 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      const k = kalender(b);
-      if (SIM.motgangVid(b, k.start, k.ai) !== 'tornado' || SIM.tornadoTid(b, k.start).fran - k.start > 30 * HOUR || !naraElden(b, SIM.tornadoBana(b, k.start))) continue;
-      v = b;
-    }
+    const v = hittaBy(4000, HOUR, 2, b => { const k = kalender(b); return SIM.motgangVid(b, k.start, k.ai) === 'tornado' && SIM.tornadoTid(b, k.start).fran - k.start <= 30 * HOUR && naraElden(b, SIM.tornadoBana(b, k.start)); });
     if (!v) return [['en by med en tornado tidigt på sommaren som går nära elden', false]];
     const s = v, k0 = kalender(s), tid = SIM.tornadoTid(s, k0.start);
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
@@ -1266,17 +1241,7 @@ SCENARIER.tornado = {
     const ledig = (x: number, y: number) => !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !SIM.bitAt(s, x, y) && !SIM.isStored(s, x, y) && Math.hypot(x - e.x, y - e.y) > 3;
     // två hela rutor från banan: utanför kärnan, där tornadon skadar och lyfter (en ruta för varje sak)
     const anv: { x: number; y: number }[] = [];
-    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
-    const pa = (f: number) => {
-      for (let d = 0; d < 60; d++) {
-        const u = f + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-        for (const sd of [2.4, -2.4]) {
-          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
-          if (u > 0.05 && u < 0.95 && m >= 2 && m < 3 && ledig(x, y) && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 3)) { anv.push({ x, y }); return { x, y, u }; }
-        }
-      }
-      return undefined;
-    };
+    const pa = (f: number) => { const r = rutaVidBanan(t, f, 60, 2.4, 2, 3, (x, y, u) => u > 0.05 && u < 0.95 && ledig(x, y) && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 3)); if (r) anv.push(r); return r; };
     let fe = 0;
     for (let u = 0; u <= 1; u += 0.5 / L) if (Math.hypot(pos(u).x - e.x, pos(u).y - e.y) < Math.hypot(pos(fe).x - e.x, pos(fe).y - e.y)) fe = u;
     const ph = pa(fe), pr = ph && pa(ph.u + 4 / L), pt = pr && pa(pr.u + 4 / L);
@@ -1378,20 +1343,10 @@ SCENARIER.tornadonara = {
     const s = createState(5, START);
     tandEld(s);
     SIM.skickaTornado(s, 'medel');
-    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s), pos = (u: number) => SIM.tornadoPos(t, u);
-    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
+    const t = s.tornado!, e = SIM.eldPlats(s), g = groundOf(s);
     const anv: { x: number; y: number }[] = [];
     const ledig = (x: number, y: number) => SIM.vattenNu(s)[y * W + x] !== T.Vatten && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8 && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 3);
-    const pa = (u0: number) => {
-      for (let d = 0; d < 80; d++) {
-        const u = u0 + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-        for (const sd of [2.5, -2.5]) {
-          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
-          if (SIM.inMap(x, y) && m >= 2 && m < 3.5 && ledig(x, y)) { anv.push({ x, y }); return { x, y }; }
-        }
-      }
-      return undefined;
-    };
+    const pa = (u0: number) => { const r = rutaVidBanan(t, u0, 80, 2.5, 2, 3.5, (x, y) => SIM.inMap(x, y) && ledig(x, y)); if (r) anv.push(r); return r; };
     const pp = pa(0.3), pg = pp && pa(0.4), pu = pg && pa(0.5), pe = pu && pa(0.6), pk = pe && pa(0.7);
     if (!pp || !pg || !pu || !pe || !pk) return [['fem lediga rutor nära banan', false]];
     g.trees[pg.y * W + pg.x] = 0; g.cover[pg.y * W + pg.x] = 0.8;
@@ -1425,21 +1380,11 @@ SCENARIER.tornadoutkant = {
     const s = createState(5, START);
     tandEld(s);
     SIM.skickaTornado(s, 'medel');
-    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s), pos = (u: number) => SIM.tornadoPos(t, u);
-    const fran = (x: number, y: number) => { let m = Infinity; for (let u = 0; u <= 1; u += 0.1 / L) m = Math.min(m, Math.hypot(pos(u).x - x - 0.5, pos(u).y - y - 0.5)); return m; };
+    const t = s.tornado!, L = t.L, e = SIM.eldPlats(s), g = groundOf(s);
     const anv: { x: number; y: number }[] = [];
     const ledig = (x: number, y: number) => SIM.vattenNu(s)[y * W + x] !== T.Vatten && isSoil(g.tiles[y * W + x]) && !g.built?.[y * W + x] && !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !SIM.bitAt(s, x, y) && Math.hypot(x - e.x, y - e.y) > 8 && !anv.some(r => Math.abs(r.x - x) + Math.abs(r.y - y) < 2);
     // en ruta fem rutor vid sidan om banan, från andelen u0 och framåt
-    const pa = (u0: number) => {
-      for (let d = 0; d < 80; d++) {
-        const u = u0 + d / L, p = pos(u), q = pos(u + 1 / L), l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-        for (const sd of [5, -5]) {
-          const x = Math.floor(p.x - (q.y - p.y) / l * sd), y = Math.floor(p.y + (q.x - p.x) / l * sd), m = fran(x, y);
-          if (SIM.inMap(x, y) && m >= 4.2 && m < 6.3 && ledig(x, y)) { anv.push({ x, y }); return { x, y }; }
-        }
-      }
-      return undefined;
-    };
+    const pa = (u0: number) => { const r = rutaVidBanan(t, u0, 80, 5, 4.2, 6.3, (x, y) => SIM.inMap(x, y) && ledig(x, y)); if (r) anv.push(r); return r; };
     const pb = pa(0.3), pf = pb && pa(0.4), pk = pf && pa(0.5);
     if (!pb || !pf || !pk) return [['tre lediga rutor i utkanten', false]];
     // skog på 40 rutor i utkanten
@@ -1551,6 +1496,8 @@ function torrAng(): { s: State; mitt: number } | string {
     if (mitt < 0) return 'en plats för ängen';
     return { s, mitt };
 }
+// marken helt torr efter en lång torka
+const torka = (x: State, torr = 240) => { if (x.vader) { x.vader.torr = torr; x.vader.fukt = 0; } };
 // sätter markslaget i cirkeln kring mitt (radien 12) i byn x
 function angSlag(x: State, mitt: number, slag: 'hog' | 'kort' | 'skog') {
   const g = groundOf(x), cx = mitt % W, cy = Math.floor(mitt / W);
@@ -1587,17 +1534,16 @@ SCENARIER.brandslag = {
       if (!SIM.inMap(cx + dx, cy + dy) || !fri(i)) continue;
       if (r <= 7) { g.trees[i] = 0; g.cover[i] = 1; } else if (r <= 10 && Math.hypot(cx + dx - e.x, cy + dy - e.y) > 6) { g.trees[i] = SIM.FOREST + 0.5; g.cover[i] = 0.6; skog++; }
     }
-    const torr = (y: State) => { if (y.vader) { y.vader.torr = 240; y.vader.fukt = 0; } };
-    torr(x);
+    torka(x);
     // utan någon som släcker (alla sover och ser den inte): hur fort den sprids
     const tom = cloneState(x);
     for (const p of living(tom)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: tom.now + HOUR, carry: 0, why: 'prov' };
     SIM.tand(tom, mitt, 'blixt', 0);
-    for (let i = 0; i < 20; i++) { step(tom, 30); torr(tom); } // tio minuter, torrt hela tiden
+    for (let i = 0; i < 20; i++) { step(tom, 30); torka(tom); } // tio minuter, torrt hela tiden
     const fem = tom.stat?.['brand ruta'] ?? 0;
     SIM.tand(x, mitt, 'blixt', 0);
     let tid = 0;
-    while (x.brand && tid < 180) { for (let i = 0; i < 10; i++) { step(x, 30); torr(x); } tid += 5; }
+    while (x.brand && tid < 180) { for (let i = 0; i < 10; i++) { step(x, 30); torka(x); } tid += 5; }
     const slackt = x.stat?.['brand slackt'] ?? 0, trad = x.stat?.['brand trad'] ?? 0, sack = x.stat?.['brand sack'] ?? 0;
     return [
       [`elden syns sprida sig: ${fem} rutor efter tio minuter när ingen släcker`, fem >= 3 && fem <= 80],
@@ -1621,7 +1567,7 @@ SCENARIER.testknappar = {
     for (let h = 0; h < 8 && x.tornado; h++) step(x, 3600);
     const y = cloneState(s);
     angSlag(y, mitt, 'hog');
-    if (y.vader) { y.vader.torr = 240; y.vader.fukt = 0; }
+    torka(y);
     const g = groundOf(y);
     let vatten = -1;
     for (let i = 0; i < g.tiles.length && vatten < 0; i++) if (g.tiles[i] === T.Vatten) vatten = i;
@@ -1657,7 +1603,7 @@ SCENARIER.brandkant = {
     if (typeof a === 'string') return [[a, false]];
     const { s, mitt } = a, x = cloneState(s);
     angSlag(x, mitt, 'hog');
-    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    torka(x);
     SIM.tand(x, mitt, 'blixt', 0);
     for (let k = 0; k < 6; k++) step(x, 300); // en halvtimme: sex steg om fem minuter
     const alla = SIM.brinnande(x).length, kant = SIM.brandKant(x);
@@ -1681,7 +1627,7 @@ SCENARIER.brandfart = {
       const x = cloneState(s), cx = mitt % W, cy = Math.floor(mitt / W);
       if (k) step(x, 60 * k);
       angSlag(x, mitt, slag);
-      if (x.vader) { x.vader.torr = torr; x.vader.fukt = 0; }
+      torka(x, torr);
       SIM.tand(x, mitt, 'blixt', 0);
       const fore = SIM.brinnande(x).length;
       step(x, 600); // tio minuter: 120 delsteg
@@ -1742,7 +1688,7 @@ SCENARIER.brinnerupp = {
     const yxa = SIM.newTing(x, 'yxa', 1, 0); yxa.x = cx; yxa.y = cy - 3;
     (x.stackar ??= []).push({ k: 'skinn', n: 5, c: 1, x: cx + 2, y: cy + 2 }, { k: 'flinta', n: 4, c: 1, x: cx - 2, y: cy + 2 });
     SIM.touch(x);
-    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    torka(x);
     for (const q of living(x)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: x.now + 5 * HOUR, carry: 0, why: 'prov' }; // ingen släcker (byn reagerar inom ett slag, steg 10.2.17)
     SIM.tand(x, mitt, 'blixt', 0);
     const flintor = () => (x.stackar ?? []).filter(q => q.k === 'flinta').reduce((n, q) => n + q.n, 0) + (living(x).reduce((n, p) => n + (p.task?.items?.flinta ?? 0), 0));
@@ -1775,7 +1721,7 @@ SCENARIER.vind = {
     let vrid = 0;
     for (let h = 0; h < 48; h++) { const d = Math.abs(vaderNu(s, s.now + (h + 1) * HOUR).rikt - vaderNu(s, s.now + h * HOUR).rikt); vrid = Math.max(vrid, Math.min(d, 2 * Math.PI - d)); }
     const x = cloneState(s); x.now = t; angSlag(x, mitt, 'hog');
-    if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; }
+    torka(x);
     const v = vaderNu(x), vx = Math.cos(v.rikt), vy = Math.sin(v.rikt), cx = mitt % W, cy = Math.floor(mitt / W);
     SIM.tand(x, mitt, 'blixt', 0);
     step(x, 900);
@@ -1795,27 +1741,21 @@ SCENARIER.brand = {
   text: 'Steg 3.8.5: eldsvådor och skogsbrand. När marken är torr på sommaren tar elden sig från ruta till ruta i skogen och träden dör; när marken är blöt tar den sig inte vidare. Gnistor från lägerelden tänder ibland marken. Elden nära byn: folk ser den och ropar, de vuxna släcker med vattensäcken och med händerna, en risvägg brinner, ingen står i en vägg eller i vattnet, och elden slocknar. Där skogen brann kommer plantor, som växer upp när gräset kommit tillbaka, och det svarta försvinner efter några dygn',
   kor: () => {
     // en by på sommaren, vid en sjö, med en torr dag utan regn framför sig
-    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 2); };
     const torrDag = (x: State, h0: number) => { for (let h = 0; h < 30; h++) if (vaderNu(x, x.now + (h0 + h) * HOUR).nb > 0) return false; return true; };
-    let v: State | undefined, h0 = 0;
-    for (let seed = 1; seed < 400 && !v; seed++) {
-      const b = createState(seed, START); fore(b);
-      for (h0 = 0; h0 < 48 && !torrDag(b, h0); h0++);
-      if (h0 < 48 && living(b).some(p => SIM.naVattnet(b, p))) v = b;
-    }
+    let h0 = 0;
+    const v = hittaBy(400, HOUR, 2, b => { for (h0 = 0; h0 < 48 && !torrDag(b, h0); h0++); return h0 < 48 && living(b).some(p => SIM.naVattnet(b, p)); });
     if (!v) return [['en by på sommaren med en torr dag', false]];
     const s = v;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
-    const torr = (x: State) => { if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; } };
     {
-      kor(s, h0, torr);
-      while (!SIM.isLight(s.now)) kor(s, 1, torr);
+      kor(s, h0, torka);
+      while (!SIM.isLight(s.now)) kor(s, 1, torka);
       // gnistorna: i en by med torr mark tänder lägerelden förr eller senare marken (en gnista i timmen är ovanlig: vänta upp till 720 timmar, 30 dygn)
       const gn = cloneState(s);
       let gnistTim = 0;
       // (runt elden är marken ofta stig, sand eller strand där inget brinner: hö på marken nära elden är det gnistorna tänder)
       { const e = SIM.eldPlats(gn), tl = getMap(gn.seed).tiles; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = e.x + dx, y = e.y + dy; if ((dx || dy) && tl[y * W + x] !== T.Vatten && tl[y * W + x] !== T.Sten && !SIM.bitAt(gn, x + 0.5, y + 0.5)) gn.stackar!.push({ k: 'torrgras', n: 3, c: 1, x, y }); } SIM.touch(gn); }
-      while (!(gn.stat?.['brand gnista']) && gnistTim < 720) { kor(gn, 1, torr); gnistTim++; }
+      while (!(gn.stat?.['brand gnista']) && gnistTim < 720) { kor(gn, 1, torka); gnistTim++; }
       // skogsbranden: en ruta mitt i tät skog 25 till 35 rutor från elden (gnistor från lägerelden blir en del av samma brand)
       const e = SIM.eldPlats(s), g = groundOf(s);
       const tat = (i: number) => { let n = 0; const x = i % W, y = Math.floor(i / W); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.inMap(x + dx, y + dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) n++; return n; };
@@ -1831,16 +1771,16 @@ SCENARIER.brand = {
       for (let i = 0; i < W * W && andra < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 20 && d <= 60 && Math.hypot(i % W - mitt % W, Math.floor(i / W) - Math.floor(mitt / W)) > SIM.BRAND.maxR + 5 && g.trees[i] >= FOREST && tat(i) >= 24) andra = i; }
       const t2 = andra >= 0 ? SIM.tandTest(tb, andra % W, Math.floor(andra / W)) : { ok: false, text: 'ingen andra skog' };
       const testRad = tb.log.filter(l => l.text.startsWith('Testläget: en brand tändes')).length; // (direkt, innan loggen fylls)
-      kor(tb, 6, torr);
+      kor(tb, 6, torka);
       const vidAndra = andra < 0 ? 0 : (tb.brand?.r ?? []).filter(r => Math.hypot(r[0] % W - andra % W, Math.floor(r[0] / W) - Math.floor(andra / W)) <= 6).length + (tb.aska ?? []).filter(a => Math.hypot(a[0] % W - andra % W, Math.floor(a[0] / W) - Math.floor(andra / W)) <= 6).length;
       const skog0 = new Set<number>(); for (let i = 0; i < W * W; i++) if (g.trees[i] >= FOREST) skog0.add(i);
       const s0 = cloneState(s);
       SIM.tand(s, mitt, 'blixt', 0);
-      kor(s, 18, torr);
+      kor(s, 18, torka);
       // brandens spår prövas i en kopia där ingen finns som släcker: en ruta som släckts innan den brunnit klart får behålla sitt träd (steg 9.9.4), och med den nya långsamma elden hinner byborna släcka drygt hundra rutor av 18 timmars brand
       const ko = cloneState(s0); ko.people = []; ko.handlare = undefined;
       SIM.tand(ko, mitt, 'blixt', 0);
-      kor(ko, 18, x => { torr(x); x.people = []; x.handlare = undefined; });
+      kor(ko, 18, x => { torka(x); x.people = []; x.handlare = undefined; });
       const rutor = s.stat?.['brand ruta'] ?? 0, trad = s.stat?.['brand trad'] ?? 0;
       const brunnen = [...new Set((ko.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
       // brandens spår (steg 9.2.26): där skogen brann står kolnade stammar som torrakor
@@ -1871,7 +1811,7 @@ SCENARIER.brand = {
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) SIM.tand(by, (pv.y + dy) * W + pv.x + dx, 'gnista', 0);
       // säcken prövas i en kopia där bara hen finns: i byn släcker de andra de nio rutorna med händerna på någon minut, innan säcken hunnit fyllas
       const ensam = cloneState(by); ensam.people = ensam.people.filter(p => p.id === vuxen.id); ensam.handlare = undefined;
-      kor(ensam, 2, torr);
+      kor(ensam, 2, torka);
       const ensamSack = ensam.stat?.['brand sack'] ?? 0;
       const t0 = by.now;
       let iVagg = 0, iVattnet = 0, sack = 0, hand = 0, risC = 1, tim = 0;
@@ -1879,7 +1819,7 @@ SCENARIER.brand = {
       // elden nära byn är släckt: inget brinner längre inom BRAND.hot rutor från byns eld (den som nått en dunge längre bort får brinna)
       const naraByn = () => { const e2 = SIM.eldPlats(by); return SIM.brinnande(by).some(q => Math.hypot(q[0] % W - e2.x, Math.floor(q[0] / W) - e2.y) <= SIM.BRAND.hot); };
       for (; tim < 12 * 12 && by.brand && naraByn(); tim++) {
-        kor(by, 1 / 12, torr);
+        kor(by, 1 / 12, torka);
         risC = Math.min(risC, ris.b < 1 ? 0 : ris.c);
         for (const p of living(by)) {
           if (SIM.isWall(by, p.x, p.y)) iVagg++;
@@ -2274,9 +2214,7 @@ SCENARIER.styckning = {
   kor: () => {
     const s = createState(3, START);
     const vuxna = living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.ansvar);
-    medBank(s);
-    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
-    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, vuxna[0].id);
+    slakteri(s, vuxna[0]);
     const svag = vuxna[0], stark = vuxna[1];
     svag.pot = { ...svag.pot, styrka: 1 }; stark.pot = { ...stark.pot, styrka: 20 };
     const x = 5, y = 5;
@@ -2320,10 +2258,8 @@ SCENARIER.radjur = {
       if (styrka !== undefined) p.pot = { ...p.pot, styrka };
       p.tek = { ...p.tek, kniv: 1 }; SIM.newTing(s, 'kniv', 1, p.id);
       for (let i = 0; i < n; i++) {
-        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, stackar: [] }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
-        if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
+        const tk = jaktFran(s, p, verktyg, r0, { stackar: [] });
         p.x = r0.x - 8; p.y = r0.y;
-        const tk = { act: 'jakt', phase: 'do', tx: r0.x, ty: r0.y, until: s.now + HOUR, carry: 0, tool: verktyg } as SIM.Task;
         SIM.jaktForsok(s, p, tk);
         if (!tk.jf) continue;
         if (SIM.arRadjur(tk.jf.id)) ut.radmal++;
@@ -2340,10 +2276,8 @@ SCENARIER.radjur = {
     const spjut = prova('flintspjut', 150), sten = prova(undefined, 60), stark = prova('flintspjut', 150, 20);
     // slakten
     const s = createState(3, START);
-    medBank(s);
     const q = living(s).find(x => SIM.ageOf(x, s.now) >= 16)!;
-    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
-    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
+    slakteri(s, q);
     setMat(s, {}); for (const k of ['kott', 'ben', 'radjursskinn', 'talg']) setAmount(s, k, 0); setAmount(s, 'radjur', 1);
     bearbetaVid(s, q, SIM.DJUR.radjur, 1);
     const fick = ['radjurkott', 'ben', 'radjursskinn', 'talg'].map(k => `${k} ${amountOf(s, k)}`).join(', ');
@@ -2383,10 +2317,8 @@ SCENARIER.faglar = {
     if (mal) {
       const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
       for (let i = 0; i < 200; i++) {
-        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, faglarBorta: undefined, stackar: [] }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
-        const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id;
+        const tk = jaktFran(s, p, 'flintspjut', mal, { faglarBorta: undefined, stackar: [] });
         p.x = mal.x - 6; p.y = mal.y;
-        const tk = { act: 'jakt', phase: 'do', tx: mal.x, ty: mal.y, until: s.now + HOUR, carry: 0, tool: 'flintspjut' } as SIM.Task;
         SIM.jaktForsok(s, p, tk);
         if (!tk.jf) continue;
         ut.forsok++;
@@ -2398,10 +2330,8 @@ SCENARIER.faglar = {
     }
     // slakten
     const s = createState(3, START);
-    medBank(s);
     const q = living(s).find(x => SIM.ageOf(x, s.now) >= 16)!;
-    for (const r of s.people) r.tek = { ...r.tek, kniv: 1 };
-    s.ting = (s.ting ?? []).filter(t => t.k !== 'kniv'); SIM.newTing(s, 'kniv', 1, q.id);
+    slakteri(s, q);
     setMat(s, {}); for (const k of ['kott', 'fjadrar']) setAmount(s, k, 0); setAmount(s, 'fagel', 1);
     bearbetaVid(s, q, SIM.DJUR.fagel, 1);
     // äggen: en by på våren några dygn
@@ -2585,7 +2515,9 @@ SCENARIER.bjornjakt = {
       strider += s.stat?.bjornstrid ? 1 : 0; gick += s.stat?.bjornjaktGick ? 1 : 0; nadd += s.stat?.bjornstrid || s.stat?.bjornjaktGick ? 1 : 0;
       if (s.bjornFalld !== undefined) {
         falld++;
-        if (!SIM.bjornarOf(s).length && !SIM.bjornarOf(s, s.now + 30 * HOUR * 0 + 2 * HOUR).length) borta++;
+        let sent = s.now; // den sista timmen samma år i spelet
+        while (SIM.yearNo(s, sent + HOUR) === SIM.yearNo(s, s.now)) sent += HOUR;
+        if (!SIM.bjornarOf(s).length && !SIM.bjornarOf(s, s.now + 2 * HOUR).length && !SIM.bjornarOf(s, sent).length) borta++;
         if (s.people.some(q => (q.liv?.bjornar ?? 0) > 0)) dodare++; // också den som dog i striden efteråt
         const ute = SIM.pilesOf(s).reduce((a, h) => a + (h.k === 'bjorndel' ? h.n : 0), 0) + living(s).reduce((a, q) => a + (q.task?.items?.bjorndel ?? 0), 0) + amountOf(s, 'bjorndel');
         if (ute > 0) delar++;

@@ -5,25 +5,7 @@
 // De röda scenarierna sparas (RODA i pool.ts), så att npm run riktad -- --roda kan köra om dem efter en rättning
 import './scenarier/storlek'; // först: scenariernas byar på 120 × 120
 import './utc';
-import './scenarier/grund';
-import './scenarier/sparning';
-import './scenarier/redskap';
-import './scenarier/projekt';
-import './scenarier/agande';
-import './scenarier/behov';
-import './scenarier/natur';
-import './scenarier/samlande';
-import './scenarier/stationsdelar';
-import './scenarier/sjukdom';
-import './scenarier/byggnader';
-import './scenarier/folk';
-import './scenarier/kontroll';
-import './scenarier/religion';
-import './scenarier/mastare';
-import './scenarier/kultur';
-import './scenarier/fas9';
-import './scenarier/fas10';
-import './scenarier/fas11';
+import './scenarier/alla';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { svavar, uttagVakt } from '../sim/lager';

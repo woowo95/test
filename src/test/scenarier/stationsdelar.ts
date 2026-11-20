@@ -2,7 +2,14 @@
 import { createState, W, inMap, gridOf, type StationDef, type Station } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, medHus } from './hjalp';
+import { SCENARIER, iRing, medHus } from './hjalp';
+
+// den första platsen i ring runt byns mitt där rutorna är fria (ingen station, inget rum, brukbar mark)
+type Fri = (x: number, y: number, w: number, h: number) => boolean;
+const friPlats = (s: SIM.State, duger: (fri: Fri, x: number, y: number) => boolean) => {
+  const fri: Fri = (x, y, w, h) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (!inMap(x + i, y + j) || !SIM.usable(s, x + i, y + j, true) || SIM.stationAt(s, x + i, y + j) || SIM.roomAt(s, x + i, y + j)) return false; return true; };
+  return iRing(SIM.bynsMitt(s), 4, 30, 24, (x, y) => duger(fri, x, y) && { x, y });
+};
 
 SCENARIER.stationsdelar = {
   text: 'Steg 9.4.1–9.4.2: en station kan bestå av delar som står och vrids var för sig. Den byggs i en rad, varje del tar sina rutor, man arbetar vid delen med arbete, hela stationen flyttas med alla delar, och den går att arbeta vid bara när alla delar står i samma rum',
@@ -12,10 +19,7 @@ SCENARIER.stationsdelar = {
     try {
       const s = createState(1, START);
       medHus(s);
-      const fri = (x: number, y: number, w: number, h: number) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (!inMap(x + i, y + j) || !SIM.usable(s, x + i, y + j, true) || SIM.stationAt(s, x + i, y + j) || SIM.roomAt(s, x + i, y + j)) return false; return true; };
-      const c = SIM.bynsMitt(s);
-      let at: { x: number; y: number } | undefined;
-      for (let r = 4; r < 30 && !at; r++) for (let k = 0; k < 24 && !at; k++) { const x = Math.round(c.x + Math.cos(k / 24 * 6.283) * r), y = Math.round(c.y + Math.sin(k / 24 * 6.283) * r); if (fri(x, y, 4, 1) && fri(x, y + 3, 8, 3)) at = { x, y }; }
+      const at = friPlats(s, (fri, x, y) => fri(x, y, 4, 1) && fri(x, y + 3, 8, 3));
       if (!at) return [['en fri plats för provstationen', false]];
       const t: Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'provdelar', x: at.x, y: at.y, kvar: 0, delar: SIM.delarIRad('provdelar', at.x, at.y) };
       (s.stationer ??= []).push(t); s.byggV = (s.byggV ?? 0) + 1;
@@ -54,10 +58,7 @@ SCENARIER.ortkokdelar = {
   kor: () => {
     const s = createState(1, START);
     medHus(s);
-    const fri = (x: number, y: number, w: number, h: number) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (!inMap(x + i, y + j) || !SIM.usable(s, x + i, y + j, true) || SIM.stationAt(s, x + i, y + j) || SIM.roomAt(s, x + i, y + j)) return false; return true; };
-    const c = SIM.bynsMitt(s);
-    let at: { x: number; y: number } | undefined;
-    for (let r = 4; r < 30 && !at; r++) for (let k = 0; k < 24 && !at; k++) { const x = Math.round(c.x + Math.cos(k / 24 * 6.283) * r), y = Math.round(c.y + Math.sin(k / 24 * 6.283) * r); if (fri(x, y, 3, 3)) at = { x, y }; }
+    const at = friPlats(s, (fri, x, y) => fri(x, y, 3, 3));
     if (!at) return [['en fri plats för örtköket', false]];
     const t: Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'ortkok', x: at.x, y: at.y, kvar: 0, delar: SIM.delarIRad('ortkok', at.x, at.y) };
     (s.stationer ??= []).push(t); s.byggV = (s.byggV ?? 0) + 1;

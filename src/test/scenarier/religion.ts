@@ -2,12 +2,14 @@
 import { createState, Person } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, medTroshus, nyInvanare, satKyrka, utanWebblasare } from './hjalp';
+import { SCENARIER, medTal, medTroshus, nyInvanare, satKyrka, utanWebblasare } from './hjalp';
 import { hasIcon } from '../../ikoner';
 import { setByn } from '../../ui/lage';
 import { religion } from '../../ui/flikar/religion';
 import { esc, hjalpKlick } from '../../ui/hjalp';
 
+// p ser tecknet k en gång per 25 timmar tills hen har en tro (högst 50 gånger)
+const faTro = (s: SIM.State, p: Person, k: Parameters<typeof SIM.tecken>[2]) => { for (let i = 0; i < 50 && p.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, p, k); } };
 SCENARIER.andlighet = {
   text: 'Andligheten (steg 4.1.1.1): alla har en mellan 0 och 100, grundarna spridda över hela skalan, barnen delvis som föräldrarna, och den syns först när den första tron finns',
   kor: () => {
@@ -38,9 +40,7 @@ SCENARIER.vuxenliv = {
   text: 'Upplevelser hela livet (steg 4.1.1.2): en förälder som mister sitt barn minns det, likaså den som mister sin partner, den som blir lämnad och den gamla som ser alla jämnåriga dö; upplevelserna från vuxenlivet står för sig i Livet',
   kor: () => {
     const s = createState(9, START);
-    const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
-    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 3; // allt fastnar, så att provet inte beror på slumpen
-    try {
+    return medTal(SIM.UPPLEVELSER, 'chans', 3, () => { // allt fastnar, så att provet inte beror på slumpen
       const har = (p: Person, k: string) => !!p.upp?.some(u => u.k === k && u.v === 1);
       const mor = nyInvanare(s, 'k', 30), far = nyInvanare(s, 'm', 32), barn = nyInvanare(s, 'm', 2);
       barn.mother = mor.id; barn.father = far.id; SIM.pair(s, mor, far, true);
@@ -59,9 +59,7 @@ SCENARIER.vuxenliv = {
         [`den gamla som såg alla jämnåriga dö (${(g1.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(g1, 'gammal')],
         ['de vuxnas upplevelser har en tid och räknas', mor.upp!.every(u => u.t !== undefined) && (s.stat?.upp_vuxen ?? 0) >= 4],
       ];
-    } finally {
-      for (const [k, d] of Object.entries(SIM.UPPLEVELSER)) d.chans = chans[k];
-    }
+    });
   },
 };
 
@@ -69,9 +67,7 @@ SCENARIER.andeupplevelse = {
   text: 'Upplevelser som flyttar andligheten (steg 4.1.1.3): åt ett håll som lottas, oftare uppåt ju andligare hen redan är, mer hos ett barn än hos en vuxen, och andligheten är den medfödda plus upplevelserna inom 0–100',
   kor: () => {
     const s = createState(9, START);
-    const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
-    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 3;
-    try {
+    return medTal(SIM.UPPLEVELSER, 'chans', 3, () => {
       const andel = (v: number) => {
         let upp = 0;
         for (let i = 0; i < 100; i++) { const p = nyInvanare(s, 'k', 30); p.andlig = v; SIM.upplev(s, p, 'hardVinter'); if ((p.upp?.[0]?.n ?? 0) > 0) upp++; }
@@ -89,9 +85,7 @@ SCENARIER.andeupplevelse = {
         [`andligheten är den medfödda plus upplevelserna, inom 0–100 (${SIM.andlighet(s, t)})`, SIM.andlighet(s, t) >= 0 && SIM.andlighet(s, t) <= 100 && SIM.andlighet(s, t) === Math.max(0, Math.min(100, 98 + t.upp!.reduce((a, u) => a + (u.n ?? 0), 0)))],
         ['en rad utan ande flyttar inte andligheten', !!ingen.upp?.length && ingen.upp.every(u => u.n === undefined)],
       ];
-    } finally {
-      for (const [k, d] of Object.entries(SIM.UPPLEVELSER)) d.chans = chans[k];
-    }
+    });
   },
 };
 
@@ -99,9 +93,7 @@ SCENARIER.blekna = {
   text: 'Vuxnas upplevelser bleknar (steg 4.1.1.4): ett steg per UPPV.blekna dygn och glöms till slut, de tunga hälften så fort, egenskaperna följer med, och barndomen står kvar',
   kor: () => {
     const s = createState(9, START);
-    const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
-    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 3;
-    try {
+    return medTal(SIM.UPPLEVELSER, 'chans', 3, () => {
       const v = nyInvanare(s, 'm', 30), b = nyInvanare(s, 'm', 8);
       SIM.upplev(s, v, 'flyttade'); SIM.upplev(s, v, 'barnDod', 'x'); SIM.upplev(s, b, 'foralder', 'x');
       const k = Object.keys(v.upp!.find(u => u.k === 'flyttade')!.e)[0] as SIM.Stat, fore = v.pot[k];
@@ -115,9 +107,7 @@ SCENARIER.blekna = {
         ['barndomen står kvar', b.upp!.some(u => u.k === 'foralder') && JSON.stringify(b.upp![0].e) !== '{}'],
         [`glömda räknas (${s.stat?.upp_glomd})`, (s.stat?.upp_glomd ?? 0) === 2],
       ];
-    } finally {
-      for (const [k, d] of Object.entries(SIM.UPPLEVELSER)) d.chans = chans[k];
-    }
+    });
   },
 };
 
@@ -125,9 +115,7 @@ SCENARIER.tecken = {
   text: 'Den första tron (steg 4.1.2.1): den som är mycket andlig kan tolka något oförklarligt (blixten, en hård vinter som tar slut, ett barn som blir friskt) till en egen tro med vem som står bakom, vad den vill och vad som händer om man sviker den; den världsliga gör det aldrig, ett nytt tecken stärker tron, och tron dör med sin sista troende',
   kor: () => {
     const s = createState(9, START);
-    const chans = SIM.UPPLEVELSER.tecken.chans;
-    SIM.UPPLEVELSER.tecken.chans = 3;
-    try {
+    return medTal({ tecken: SIM.UPPLEVELSER.tecken }, 'chans', 3, () => {
       // var och en med sin egen blixt, mer än ett dygn mellan dem
       const grupp = (v: number) => Array.from({ length: 60 }, () => { s.now += 25 * SIM.HOUR; const p = nyInvanare(s, 'k', 30); p.andlig = v; SIM.tecken(s, p, 'blixt'); return p; });
       const varldslig = grupp(0), andlig = grupp(100);
@@ -192,9 +180,7 @@ SCENARIER.tecken = {
         ['tron dör med sin sista troende', dog],
         ['andligheten syns när den första tron finns', SIM.andligSyns(s)],
       ];
-    } finally {
-      SIM.UPPLEVELSER.tecken.chans = chans;
-    }
+    });
   },
 };
 
@@ -240,7 +226,7 @@ SCENARIER.tronamn = {
     const s = createState(9, START);
     const ny = (k: SIM.TeckenTyp) => {
       const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      faTro(s, a, k);
       return a;
     };
     const a = ny('blixt'), tr = SIM.troOf(s, a.tro)!;
@@ -288,7 +274,7 @@ SCENARIER.fragetecken = {
     setByn(s);
     const ny = (k: SIM.TeckenTyp, n: number) => {
       const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      faTro(s, a, k);
       const tr = SIM.troOf(s, a.tro)!;
       for (let j = 1; j < n; j++) nyInvanare(s, 'm', 30).tro = tr.id;
       SIM.stepReligion(s);
@@ -318,7 +304,7 @@ SCENARIER.trotext = {
   kor: () => {
     const s = createState(9, START);
     const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-    for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, 'blixt'); }
+    faTro(s, a, 'blixt');
     const tr = SIM.troOf(s, a.tro)!;
     if (!tr) return [['en tro uppstod', false]];
     for (let j = 0; j < 6; j++) nyInvanare(s, 'm', 30).tro = tr.id;
@@ -344,7 +330,7 @@ SCENARIER.religionsflik = {
     const fore = religion.syns!();
     const ny = (k: SIM.TeckenTyp, n: number) => {
       const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      faTro(s, a, k);
       const tr = SIM.troOf(s, a.tro)!;
       for (let j = 1; j < n; j++) nyInvanare(s, 'm', 30).tro = tr.id;
       SIM.stepReligion(s);
@@ -387,7 +373,7 @@ SCENARIER.trostyngd = {
   kor: () => {
     const s = createState(9, START);
     const a = nyInvanare(s, 'k', 40); a.andlig = 100;
-    for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, 'blixt'); }
+    faTro(s, a, 'blixt');
     const tr = SIM.troOf(s, a.tro)!, folk = [a];
     while (folk.length < 10) { const p = nyInvanare(s, 'm', 30); p.andlig = 50; p.tro = tr.id; folk.push(p); }
     for (const p of folk) p.troStyrka = 100;
@@ -420,7 +406,7 @@ SCENARIER.trostyngd = {
     const prastFore = SIM.skalaSyns(s, 'prast'); tr.prast = folk[1].id; SIM.stepReligion(s); const prastEfter = SIM.skalaSyns(s, 'prast');
     const oppenFore = SIM.skalaSyns(s, 'oppen');
     const b = nyInvanare(s, 'm', 40); b.andlig = 100;
-    for (let i = 0; i < 50 && b.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, b, 'brand'); }
+    faTro(s, b, 'brand');
     SIM.stepReligion(s);
     const oppen = SIM.skalaSyns(s, 'oppen');
     const f = (x: number) => x.toFixed(2);
@@ -450,7 +436,7 @@ SCENARIER.gudar = {
     // en tro ur tecknet k med skalorna natur och manga, och tre som tror
     const nyTro = (k: SIM.TeckenTyp, natur: number, manga: number) => {
       const a = nyInvanare(s, 'k', 30); a.andlig = 100;
-      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      faTro(s, a, k);
       const tr = SIM.troOf(s, a.tro)!; tr.natur = natur; tr.manga = manga;
       for (let i = 0; i < 2; i++) { const p = nyInvanare(s, 'm', 30); p.andlig = 50; p.tro = tr.id; }
       SIM.stepReligion(s);
