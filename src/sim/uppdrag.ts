@@ -14,6 +14,7 @@ import { kyrkaId } from './egendom';
 import { troNamn } from './religion';
 import { LandmarkId, varldPlatsNr } from './landmarken';
 import { radNr } from './radtal';
+import './utpost'; // laddas här som förut, så att världens periodrader (PERIODRADER) står i samma ordning
 import { radLaggTill, sakGrupp } from './priser';
 import { grundvarde } from './varde';
 import { KOHANDELSER, antalUr, laggIKo, varldSlump } from './varldslag';

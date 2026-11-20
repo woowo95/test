@@ -269,7 +269,7 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
   const a = ton === 'besked' && r.tal.folk >= BYHANDLING.barare * 2 ? gavaGrupp(r) : undefined; // gåvan: det byn har mest över
   if (a) {
     if (mot.nr === vl.huvud) { let i = 0; const l = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x4247 + i++), g => g === a.g ? a.n : 0, radHandlarSort(s, r), radDjur(s, r), iIstiden(ageIndex(s, t0))); if (l.varor.length) f.last = { ...l, silver: 0 }; } // till huvudbyn: hela saker som budet bär
-    else { f.g = a.g; f.n = a.n; taUr(r, a.g, a.n); f.gava = true; }
+    else { f.g = a.g; f.n = a.n; radTaUr(r, a.g, a.n); f.gava = true; }
   }
   skicka(s, vl, f, 1);
   count(s, 'radbesked_ut');
@@ -287,7 +287,7 @@ function betalning(s: State, mot: VarldRad, g: VarugruppId): { silver: number; h
   let h: VarugruppId | undefined, hVarde = 0;
   for (const k of VARUGRUPP_IDS) {
     if (k === g) continue;
-    const v = overskott(mot, k) * enhet(k) / radGruppPaslag(s, mot, k);
+    const v = radOverskott(mot, k) * enhet(k) / radGruppPaslag(s, mot, k);
     if (v > hVarde) { h = k; hVarde = v; }
   }
   return { silver: mot.tal.silver, h, hVarde: Math.floor(hVarde) };
@@ -305,7 +305,7 @@ export function fardAffar(c: ByCtx): FardAffar | undefined {
   const kostnad = 2 * dygn * BYHANDLING.barare * BYHANDLING.dygnKostnad;
   let bast: FardAffar | undefined;
   for (const g of VARUGRUPP_IDS) {
-    const ov = overskott(r, g);
+    const ov = radOverskott(r, g);
     if (ov <= 0) continue;
     const hemma = radGruppPaslag(s, r, g), dar = radGruppPaslag(s, mot, g);
     if (dar <= hemma) continue;
@@ -343,18 +343,16 @@ const draDoda = (x: VarldRad, n: number) => { x.tal.folk = Math.max(0, x.tal.fol
 function gavaGrupp(r: VarldRad): { g: VarugruppId; n: number } | undefined {
   let bast: { g: VarugruppId; n: number } | undefined;
   for (const g of VARUGRUPP_IDS) {
-    const n = Math.floor(Math.min(overskott(r, g), BYHANDLING.gava / enhet(g)));
+    const n = Math.floor(Math.min(radOverskott(r, g), BYHANDLING.gava / enhet(g)));
     if (n > 0 && (!bast || n * enhet(g) > bast.n * enhet(bast.g))) bast = { g, n };
   }
   return bast;
 }
-// lasten tas ur byns förråd och färden ger sig av (radTaUr i priser.ts)
-const taUr = radTaUr, laggTill = radLaggTill, overskott = radOverskott;
 function skickaFard(c: ByCtx, a: FardAffar, gava = false) {
   const { s, vl, r, mot } = c, t0 = c.t, huvud = mot.nr === vl.huvud, n = huvud ? 0 : a.n; // till huvudbyn går handlaren (lasten: 11.6.9)
-  taUr(r, a.g, n);
+  radTaUr(r, a.g, n);
   const f: RadFard = { id: fardNr(vl), fran: r.nr, till: mot.nr, g: a.g, n, t0, t1: t0 + a.dygn * DAY, ...huvud ? { handlare: true as const } : {}, ...gava ? { gava: true as const } : {} };
-  if (huvud) { let i = 0; f.last = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x484c + i++), g => overskott(r, g), radHandlarSort(s, r), radDjur(s, r), iIstiden(ageIndex(s, t0))); } // handlarens varor ur raden (steg 11.6.9)
+  if (huvud) { let i = 0; f.last = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x484c + i++), g => radOverskott(r, g), radHandlarSort(s, r), radDjur(s, r), iIstiden(ageIndex(s, t0))); } // handlarens varor ur raden (steg 11.6.9)
   skicka(s, vl, f, BYHANDLING.barare);
   count(s, gava ? 'radgava_ut' : huvud ? 'handlare_skickad' : 'radhandel_ut');
 }
@@ -420,18 +418,18 @@ KOHANDELSER.fardFram = (s, vl, p) => {
   if (f.anfall && mot?.nr === vl.huvud) { if (r && lever(vl, r)) { huvudAnfall(s, f, r); return; } } // flocken går in på huvudbyns karta och kommer hem när den lämnat den
   else if (f.anfall) { if (r && mot && lever(vl, r)) anfallFram(s, vl, f, r, mot); }
   else if (f.gava && mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) { // gåvan läggs i förrådet och mottagaren ser bättre på givaren
-    laggTill(mot, f.g, f.n);
+    radLaggTill(mot, f.g, f.n);
     if (r) byHandelse(vl, 'gava', r.nr, mot.nr, gavaRel(f.n * enhet(f.g)) / BYREL.gava);
     f.n = 0;
     count(s, 'radgava_fram');
   } else if (!f.besked && mot && BYSORTER[mot.sort].folk && mot.tal.folk > 0) {
     const pris = f.n * enhet(f.g) * radGruppPaslag(s, mot, f.g), b = betalning(s, mot, f.g);
-    laggTill(mot, f.g, f.n);
+    radLaggTill(mot, f.g, f.n);
     const sv = Math.min(b.silver, Math.round(pris));
     mot.tal.silver -= sv; f.silver = sv;
     if (b.h && pris - sv >= 1) {
-      const hp = radGruppPaslag(s, mot, b.h), hn = Math.min(Math.max(0, overskott(mot, b.h)), Math.floor((pris - sv) * hp / enhet(b.h)));
-      if (hn > 0) { taUr(mot, b.h, hn); f.h = b.h; f.hn = hn; }
+      const hp = radGruppPaslag(s, mot, b.h), hn = Math.min(Math.max(0, radOverskott(mot, b.h)), Math.floor((pris - sv) * hp / enhet(b.h)));
+      if (hn > 0) { radTaUr(mot, b.h, hn); f.h = b.h; f.hn = hn; }
     }
     if (r) { byHandelse(vl, 'handel', r.nr, mot.nr); byHandelse(vl, 'handel', mot.nr, r.nr); }
     count(s, 'radhandel_fram');
@@ -455,10 +453,10 @@ KOHANDELSER.fardHem = (s, vl, p) => {
   vl.farder!.splice(i, 1);
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   r.tal.silver += f.silver ?? 0;
-  if (f.h && f.hn) laggTill(r, f.h, f.hn);
+  if (f.h && f.hn) radLaggTill(r, f.h, f.hn);
   for (const w of f.hem ?? []) radTar(r, w.k, w.n); // handlarens varor (steg 11.6.9)
   for (const w of f.besked ? f.last?.varor ?? [] : []) radTar(r, w.k, w.n); // gåvan som inte kom fram
-  for (const [g, n] of Object.entries(f.byte ?? {}) as [VarugruppId, number][]) laggTill(r, g, n); // bytet (steg 11.6.16)
+  for (const [g, n] of Object.entries(f.byte ?? {}) as [VarugruppId, number][]) radLaggTill(r, g, n); // bytet (steg 11.6.16)
   if (f.anfall && f.till === vl.huvud && f.hem?.length) VAKTKROK.plundrad(s, r, f.hem.map(w => [w.k, w.n] as [string, number])); // ledaren får veta vart det stulna tog vägen (steg 11.13.27)
 };
 // flocken kommer fram (steg 11.6.16): uträkningen i radanfall.ts, de döda dras ur båda byarna, bytet tas ur försvararnas förråd
@@ -469,7 +467,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
   count(s, 'radanfall_med', f.anfall! + forsvarare(mot)); // alla som var med, för andelen döda (steg 11.6.19)
   draDoda(r, u.dodaA); draDoda(mot, u.dodaF);
   f.anfall! -= u.dodaA;
-  for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) taUr(mot, g, n);
+  for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) radTaUr(mot, g, n);
   f.byte = u.byte;
   byHandelse(vl, 'plundring', r.nr, mot.nr);
   if (u.dodaF) byHandelse(vl, 'dodade', r.nr, mot.nr, u.dodaF);

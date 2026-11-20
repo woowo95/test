@@ -133,9 +133,8 @@ export function utpostTimme(s: State, vl: Varlden, u: VarldRad, n: number) {
 }
 
 // ---- handelslägret ----
-const overskott = radOverskott;
 // det byn r har över (utom maten), i grundvärde
-export const overskottVarde = (r: VarldRad) => VARUGRUPP_IDS.reduce((a, g) => a + (g === 'mat' ? 0 : Math.max(0, overskott(r, g))), 0);
+export const overskottVarde = (r: VarldRad) => VARUGRUPP_IDS.reduce((a, g) => a + (g === 'mat' ? 0 : Math.max(0, radOverskott(r, g))), 0);
 // byn r slår upp ett handelsläger nära sig; undefined om ingen plats finns
 export function nyttHandelslager(s: State, vl: Varlden, r: VarldRad, t: number): VarldRad | undefined {
   const v = varldMark(s), hem = byPlats(vl, r.nr);
@@ -147,7 +146,7 @@ export function nyttHandelslager(s: State, vl: Varlden, r: VarldRad, t: number):
   const varor = radVaror(h), rv = radVaror(r);
   for (const g of VARUGRUPP_IDS) {
     if (g === 'mat') continue;
-    const m = Math.floor(Math.max(0, overskott(r, g)) * HLAGER.andel);
+    const m = Math.floor(Math.max(0, radOverskott(r, g)) * HLAGER.andel);
     if (m > 0) { rv[g] = (rv[g] ?? 0) - m; varor[g] = (varor[g] ?? 0) + m; }
   }
   r.tal.rikedom = radRikedomUr(r); h.tal.rikedom = radRikedomUr(h);
