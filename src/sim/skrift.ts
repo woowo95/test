@@ -73,13 +73,13 @@ export function runor(text: string) {
 // halveras för varje sten p redan rest; eller, för prästen och lärjungen, trons heliga kväden
 interface Lust { w: number; slag: SkriftSlag; om: { id: number; namn: string }; bev?: Bevis[]; lag?: SkriftLag }
 const harSten = (s: State, slag: SkriftSlag, om: number, t?: number) => !!s.runstenar?.some(r => r.slag === slag && r.om.id === om && (t === undefined || r.bev?.[0]?.t === t));
-// sorgen och bedriften, som stenen och bladet båda skriver om (fynd 197). Sorgen: de döda p sörjer, med lusten utan hur känd den
-// döda är. Bedriften: p:s egen stora bedrift (p.bedrift, rykten.ts), som avtar till noll på stolthetDygn, om den inte redan finns
+// sorgen och bedriften, som stenen och bladet båda skriver om (fynd 197). Sorgen: de döda p sörjer, med lusten gånger hur känd
+// den döda är: den byn minns väljs oftare, på stenen och på bladet (kandVikt, steg 10.6.14 och 12.1.166). Bedriften: p:s egen stora bedrift (p.bedrift, rykten.ts), som avtar till noll på stolthetDygn, om den inte redan finns
 function sorgen(s: State, p: Person): { d: Person; w: number }[] {
   const ut: { d: Person; w: number }[] = [];
   for (const g of p.sorg ?? []) {
     const d = g.vem !== undefined ? byId(s, g.vem) : s.people.find(q => q.name === g.namn && q.died !== undefined);
-    if (d && !alive(d)) ut.push({ d, w: SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner) });
+    if (d && !alive(d)) ut.push({ d, w: SKRIFT.sorg * Math.abs(g.v) / Math.abs(LIV.sorjPartner) * kandVikt(s, d.id) });
   }
   return ut;
 }
@@ -92,9 +92,8 @@ function bedriften(s: State, p: Person, finns: (b: NonNullable<Person['bedrift']
 export function runstenLust(s: State, p: Person): Lust | undefined {
   if (p.gast || ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'stenhuggarplats')) return undefined;
   let best: Lust | undefined;
-  for (const { d, w: w0 } of sorgen(s, p)) {
+  for (const { d, w } of sorgen(s, p)) {
     if (harSten(s, 'minne', d.id) || s.gravar?.some(q => q.vem === d.id && q.text)) continue;
-    const w = w0 * kandVikt(s, d.id); // den byn minns väljs oftare (steg 10.6.14)
     if (!best || w > best.w) best = { w, slag: 'minne', om: { id: d.id, namn: d.name } };
   }
   const bd = bedriften(s, p, b => harSten(s, 'handelse', p.id, b.t));

@@ -870,3 +870,25 @@ SCENARIER.klantatuering = {
     ];
   },
 };
+
+SCENARIER.bladkand = {
+  text: 'Bladet väger in hur känd den döda är (steg 12.1.166): den som sörjer två döda lika mycket skriver bladet och ristar stenen om den som byn minns, med samma vägning för båda',
+  kor: () => {
+    const s = SIM.createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const p = v[0]!, a = nyInvanare(s, 'm', 50), b = nyInvanare(s, 'k', 50);
+    a.died = s.now; b.died = s.now;
+    p.sorg = [{ namn: a.name, vem: a.id, ord: 'vän', v: -1, dygn: 5, t0: s.now }, { namn: b.name, vem: b.id, ord: 'vän', v: -1, dygn: 5, t0: s.now }];
+    SIM.setAmount(s, 'pergament', 2); SIM.setAmount(s, 'black', 2); p.skill.berattande = 10; (p.tek ??= {}).stenhuggarplats = 1;
+    const om = (kand: SIM.Person) => {
+      for (const q of v) q.intryck = q === p ? [] : [{ om: kand.id, namn: kand.name, k: 'hjalpsam', v: 1, c: 1, t: s.now }];
+      SIM.kandaRakna(s);
+      const bl = SIM.skrivLust(s, p), st = SIM.runstenLust(s, p);
+      return { blad: bl?.slag === 'minne' ? bl.om?.id : undefined, sten: st?.slag === 'minne' ? st.om.id : undefined };
+    };
+    const kA = om(a), kB = om(b);
+    return [
+      [`bladet skrivs om den som byn minns (${kA.blad === a.id ? a.name : '–'}, sedan ${kB.blad === b.id ? b.name : '–'})`, kA.blad === a.id && kB.blad === b.id],
+      [`stenen ristas om samma (${kA.sten === a.id ? a.name : '–'}, sedan ${kB.sten === b.id ? b.name : '–'})`, kA.sten === a.id && kB.sten === b.id],
+    ];
+  },
+};
