@@ -156,6 +156,7 @@ const DEF = {
   bokhylla: { var: 'station', av: { plankor: 3 }, min: 15 }, // steg 10.6.16: där blad och böcker står
   latrin: { var: 'station', av: {}, min: RT.latrinMin },
   kolmila: { var: 'station', av: {}, min: 10 }, // grävs med spaden (steg 12.2.1)
+  blasterugn: { var: 'station', av: { lera: 6, sten: 4, skinn: 2, virke: 1 }, min: 20 }, // skinnen och virket är bälgen (steg 12.2.3)
   bikupa: { var: 'station', av: { torrgras: 4, grenar: 2 }, min: 10, tek: 'bikupa' }, // bikupan (steg 10.10.16): en halmkupa flätad av hö på grenar
   kompost: { var: 'station', av: { virke: 1 }, min: 10, tek: 'kompost' }, // komposten (steg 9.7.6): en enkel inhägnad av lite trä
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },

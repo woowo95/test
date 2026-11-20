@@ -310,6 +310,7 @@ const DEF = {
   torv: { namn: 'Torv', skaffa: { tid: 0.05 }, stack: 20, vikt: 2, mapp: 'Bränsle' },
   blottorv: { namn: 'Blöt torv', skaffa: { tid: 0.03 }, stack: 20, vikt: 2, mapp: 'Bränsle' },
   malm: { namn: 'Malm', skaffa: { tid: 0.1 }, stack: 10, vikt: 4, mapp: 'Sten', brinnerInte: true }, // steg 12.1.2: grävs i myren (malm.ts)
+  jarn: { namn: 'Järn', ett: true, skaffa: { tid: 0.5 }, stack: 20, vikt: 2, mapp: 'Sten', brinnerInte: true }, // steg 12.2.3: blåses i blästerugnen (brann.ts)
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

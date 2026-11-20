@@ -1,6 +1,6 @@
 // Scenarier för fas 12: myren och järnet.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, setMat, tandEld } from './hjalp';
 import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
@@ -202,6 +202,33 @@ SCENARIER.tillsyn = {
       [`en by med folk hemma på dagen missar ingen tillsyn (${med.sedda} gjorda, ${med.missade} missade) och får 10 kol (${med.kol})`, med.sedda === 3 && med.missade === 0 && med.kol === 10 && !med.kvar],
       [`en mila utan tillsyn ger 4 kol (${utan.missade} missade, ${utan.kol} kol)`, utan.missade === 3 && utan.kol === 4 && !utan.kvar],
       [`milan tänds hellre när tillsynen faller på dagen (väntat utfall kl 10 ${dag}, kl 18 ${kvall})`, dag === 1 && kvall < dag],
+    ];
+  },
+};
+
+// ett prov på något byn vill ha som kräver järn (tills smedjan finns, steg 12.2.4): ett projekt med full brist som inte kan
+// göras förrän järnet finns. Tas bort efter scenariot
+export function medJarnBehov<T>(f: () => T, n = 6): T {
+  SIM.laggTillProjekt({ provjarn: { namn: 'Prov på järn', vikt: 5, brist: () => 1, kostnad: () => 1, kan: () => false, recept: () => ({ av: { jarn: n } }), uppgift: () => undefined } });
+  try { return f(); } finally { delete SIM.PROJEKT.provjarn; SIM.PROJEKT_LIST.splice(SIM.PROJEKT_LIST.indexOf('provjarn'), 1); }
+}
+SCENARIER.blaster = {
+  text: 'Blästerugnen (steg 12.2.3, brann.ts): 8 malm och 10 kol blir 6 järn på 4 timmar efter klockan, färre om bälgen inte trampas; stationen av lera, sten, skinn och virke, tekniken Blästerugn, raden Blåser järn; en by med myr som vill ha järn gräver, kolar och blåser av sig själv',
+  kor: () => {
+    const d = SIM.BRANNINGAR.blasterugn, st = SIM.stationDef('blasterugn')!, tek = SIM.TEKNIK.find(t => t.id === 'blasterugn');
+    const s = myrBy(), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    klockan(s, 7); tandEld(s);
+    for (const q of vuxna) { Object.assign((q.tek ??= {}), { kolmila: 1, blasterugn: 1 }); SIM.addTool(s, 'benspade', q); }
+    medBank(s, 'kolmila'); medBank(s, 'blasterugn');
+    setMat(s, { bar: 400 }); SIM.setStock(s, { ved: 80, grenar: 30 });
+    let timmar = 0;
+    medJarnBehov(() => { for (; timmar < 60 && !(s.stat?.brant_jarn); timmar++) kor(s, 1); });
+    const malm = s.stat?.malmGravd ?? 0, kol = s.stat?.brant_kol ?? 0, jarn = s.stat?.brant_jarn ?? 0;
+    return [
+      [`en blåsning tar ${d.in.malm} malm och ${d.in.kol} kol och ger ${d.ut.jarn} järn på ${d.tim} timmar, ett mindre för varje missat pass`, d.in.malm === 8 && d.in.kol === 10 && d.ut.jarn === 6 && d.tim === 4 && d.miss.jarn === 1],
+      [`ugnen byggs av ${JSON.stringify(st.av)} på ${st.min} minuter, med tekniken ${tek?.namn} (krav ${tek?.krav})`, st.av.lera === 6 && st.av.sten === 4 && st.av.skinn === 2 && st.av.virke === 1 && st.min === 20 && !!tek && tek.krav.includes('kolmila') && tek.krav.includes('kruka')],
+      [`järnet har ett värde och kan handlas (${SIM.grundvarde('jarn').toFixed(2)}, malm ${SIM.grundvarde('malm').toFixed(2)}, kol ${SIM.grundvarde('kol').toFixed(2)})`, SIM.grundvarde('jarn') > SIM.grundvarde('kol') && SIM.grundvarde('malm') > 0 && SIM.grundvarde('kol') > 0],
+      [`byn som vill ha järn gräver malm (${malm}), kolar (${kol} kol) och blåser järn (${jarn}) av sig själv på ${timmar} timmar`, malm >= 8 && kol >= 10 && jarn >= 3],
     ];
   },
 };

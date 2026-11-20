@@ -179,4 +179,5 @@ function laggVid(s: State, p: Person, tk: Task) {
 }
 // kolmilan (steg 12.2.1, brann.ts): veden som reses till milan, när den är tom
 HAMTAS.kola = { av: (s, _p, tk) => branningHamtas(s, tk) };
+HAMTAS.blasa = HAMTAS.kola; // malmen och kolet till blästerugnen (steg 12.2.3)
 import { branningHamtas } from './brann';

@@ -33,9 +33,14 @@ export const BRANN = balans('brann', {
   tillsynSen: 0.5, // ... och kommer ingen inom så här många timmar efter tiden är den missad
   passVarde: 6, // värdet som står på spel (i grundvärde) där tillsynen väger fullt; mindre värde väger mindre
   passMin: 0.2, // ... men aldrig mindre än så här
+  ugnMalm: 8, ugnKol: 10, // en blåsning i blästerugnen tar så här mycket malm och kol (steg 12.2.3) ...
+  ugnUt: 6, // ... och ger så här mycket järn
+  ugnTim: 4, // ugnen går så här många timmar efter klockan
+  ugnLadda: 7, ugnTomma: 4, // minuter att ladda och tända, och att bryta ut luppen och slå ur slaggen
+  ugnMiss: 1, // varje missat pass vid bälgen ger så här mycket mindre järn
 });
 export interface BranningDef {
-  namn: string; station: string; tek: string;
+  namn: string; station: string; tek: string; act: 'kola' | 'blasa'; // handlingen vid stationen
   in: Record<string, number>; ut: Record<string, number>;
   tim: number; // så många timmar bränningen går efter klockan
   ladda: number; tomma: number; // minuter att ladda och tända, och att tömma
@@ -46,10 +51,18 @@ export interface BranningDef {
 }
 export const BRANNINGAR: Record<string, BranningDef> = {
   kolmila: {
-    namn: 'Kolmila', station: 'kolmila', tek: 'kolmila', in: { ved: BRANN.kolVed }, ut: { kol: BRANN.kolUt }, tim: BRANN.kolTim,
+    namn: 'Kolmila', station: 'kolmila', tek: 'kolmila', act: 'kola', in: { ved: BRANN.kolVed }, ut: { kol: BRANN.kolUt }, tim: BRANN.kolTim,
     ladda: BRANN.kolLadda, tomma: BRANN.kolTomma, torr: 'ved',
     ladda_text: 'Reser och täcker ved till en kolmila och tänder den.', tomma_text: 'River kolmilan och tar ut kolet.',
     tillsyn: [1, 2, 3], miss: { kol: BRANN.kolMiss }, tillsyn_text: 'Tätar sprickorna i kolmilan.',
+  },
+  // blästerugnen (steg 12.2.3): malm och kol blir järn. Malmen rostas på ugnens eld när den laddas, och luppen (järnklumpen) och
+  // slaggen finns bara i texten och bilden. Vid passen trampas bälgen
+  blasterugn: {
+    namn: 'Blåsning', station: 'blasterugn', tek: 'blasterugn', act: 'blasa', in: { malm: BRANN.ugnMalm, kol: BRANN.ugnKol }, ut: { jarn: BRANN.ugnUt }, tim: BRANN.ugnTim,
+    ladda: BRANN.ugnLadda, tomma: BRANN.ugnTomma,
+    ladda_text: 'Rostar malmen, laddar blästerugnen med malm och kol och tänder.', tomma_text: 'Bryter ut luppen ur blästerugnen och slår ur slaggen.',
+    tillsyn: [1, 2, 3], miss: { jarn: BRANN.ugnMiss }, tillsyn_text: 'Trampar bälgen vid blästerugnen.',
   },
 };
 // bränningen i en station: sorten, när den tändes, när den är klar, och vems det som lades in var
@@ -72,8 +85,8 @@ export const attTomma = (s: State) => branningsStationer(s).find(t => { const b 
 // uppgiften vid stationen t: ladda och tända, eller tömma
 export function branningUppgift(s: State, t: Station) {
   const b = branningI(s, t), d = defFor(t)![1];
-  return b ? { act: 'kola' as const, text: d.tomma_text, min: d.tomma, spot: vidStation(t), ref: t.id }
-    : { act: 'kola' as const, text: d.ladda_text, min: d.ladda, spot: vidStation(t), ref: t.id };
+  return b ? { act: d.act, text: d.tomma_text, min: d.tomma, spot: vidStation(t), ref: t.id }
+    : { act: d.act, text: d.ladda_text, min: d.ladda, spot: vidStation(t), ref: t.id };
 }
 // det som hämtas till stationen (HAMTAS i hamtning.ts): det som läggs in, när stationen är tom
 export const branningHamtas = (s: State, tk: Task) => { const t = stationerOf(s).find(x => x.id === tk.ref), d = t && defFor(t)?.[1]; return d && !branningI(s, t!) ? { ...d.in } : undefined; };
@@ -191,5 +204,16 @@ laggTillProjekt({
     kan: (s, p) => !!laddbar(s, p, 'kolmila') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.kolmila, s.now), // hellre när tillsynen faller på dagen (steg 12.2.2)
     recept: (s, p) => knows(p, 'kolmila') && branningsStationer(s, 'kolmila').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.kolmila.in } } : undefined,
     uppgift: (s, p) => { const t = laddbar(s, p, 'kolmila'); return t && branningUppgift(s, t); },
+  },
+});
+// järnet som projekt (steg 12.2.3): som kolet, ingen egen brist; den som vill ha järn blåser, och vill då ha malm och kol (receptet)
+laggTillProjekt({
+  jarn: {
+    namn: 'Järn', vikt: 1,
+    brist: () => 0,
+    kostnad: () => grundvarde('jarn') * BRANN.ugnUt,
+    kan: (s, p) => !!laddbar(s, p, 'blasterugn') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.blasterugn, s.now),
+    recept: (s, p) => knows(p, 'blasterugn') && branningsStationer(s, 'blasterugn').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.blasterugn.in } } : undefined,
+    uppgift: (s, p) => { const t = laddbar(s, p, 'blasterugn'); return t && branningUppgift(s, t); },
   },
 });

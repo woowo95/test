@@ -387,6 +387,12 @@ export const STATIONER = {
     bygger: 'Gräver en kolbotten med benspaden.',
     forsta: '{namn} grävde byns första kolbotten. Där reses veden till en mila som brinner till kol.',
   },
+  // blästerugnen (steg 12.2.3, brann.ts): ett schakt av lera och sten med en bälg av skinn, en bit från byn
+  blasterugn: {
+    namn: 'Blästerugn', ikon: 'blasterugn', w: 2, h: 2, tek: ['blasterugn'], av: RECEPT.blasterugn.av, min: RECEPT.blasterugn.min, gor: ['blasa'], bara: ['blasa'], utkant: { tradFri: true, till: STATION.kolTill, avst: STATION.kolAvst },
+    bygger: 'Bygger en blästerugn av lera och sten, med en bälg av skinn.',
+    forsta: '{namn} byggde byns första blästerugn. Där blir malm och kol till järn.',
+  },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
 export const STATION_LIST = Object.keys(STATIONER) as StationSlag[];
