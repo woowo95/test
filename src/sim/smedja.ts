@@ -5,10 +5,8 @@
 // smiden i rad. Smidet går bara när ässjan brinner. En ässja som redan brinner höjer poängen för att smida (smidaFaktor, i
 // bastaProjekt i projekt.ts), så smeden samlar gärna sina arbeten. Ett rum med smedjan i får rumstaggen Smedja (rum.ts).
 // Tekniken Smide (id smedja, som stationen) kräver Kolning och Stenhuggarplats och öppnas när byn har haft järn, också köpt;
-// byn har haft malm och järn räknas i haftSteg (raden bränningarna i TAKTER)
+// byn har haft järn räknas i haftSteg i teknik.ts (steg 12.1.4)
 import { balans } from './balans';
-import { count } from './folk';
-import { amountOf } from './lager';
 import { State } from './typer';
 import { ELDSTATIONER, stationBrinner } from './stationseld';
 import { STATIONER, isKlar, stationerOf } from './stationer';
@@ -24,8 +22,3 @@ ELDSTATIONER.smedja = { burn: SMIDE.kolTim, max: SMIDE.kolMax, varme: SMIDE.varm
 const smide = () => (STATIONER as Record<string, { gor: readonly string[] }>).smedja?.gor ?? [];
 // värdet av att göra act gånger detta: mer när det smids och ässjan redan brinner
 export const smidaFaktor = (s: State, act: string) => smide().includes(act) && stationerOf(s).some(t => t.k === 'smedja' && isKlar(t) && stationBrinner(t)) ? SMIDE.brinner : 1;
-// byn har haft malm och järn (teknikernas tidigast i teknik.ts): en gång per sak, när den först finns i byn, köpt eller gjord
-const HAFT = ['malm', 'jarn'] as const;
-export function haftSteg(s: State) {
-  for (const k of HAFT) if (!s.stat?.[k + 'Haft'] && amountOf(s, k) > 0) count(s, k + 'Haft');
-}

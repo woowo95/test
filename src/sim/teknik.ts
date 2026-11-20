@@ -44,6 +44,7 @@ export interface Tek {
   // tidigare i kedjan (stationernas sorter i STATIONER; tom lista = elden). Den som prövar kan kraven och är skicklig i
   // färdigheten skill. Varje försök tar en hel sak av materialet och ger ingenting
   forsok?: { vid: string[]; skill: Skill; vad: string };
+  haft?: readonly string[]; // stängd tills byn har haft de här sakerna, varifrån de än kom: gjorda, köpta eller fått (steg 12.1.4, haftSteg)
   tidigast?: { stat: string; n: number }[]; // försöken går först när byn gjort det här så många gånger (spriten, steg 10.7.26) // vad: det den som prövar sig fram försöker komma på, efter "Försöker komma på" (steg 9.2.106)
   // det episka ögonblicket (steg 4.2.1.3): raden i krönikan när den första i byn kommer på den, med {namn} och {hen}
   episk?: string;
@@ -217,8 +218,8 @@ export const TEKNIK: Tek[] = [
   // lönen (steg 10.5.9, lon.ts): kommer man på i samtal när byn tagit in nog i skatt
   { id: 'lon', namn: 'Lön', text: 'Att byn betalar den som arbetar för den, ur det skatten gett.', effekt: 'Den som kan lön kan lägga fram lönelagen.', omr: [], krav: ['lag'], niva: 3, tid: 14, nar: 'i samtal' },
   { id: 'kolmila', namn: 'Kolning', text: 'Ved som reses till en mila, täcks med torv och jord och får brinna långsamt utan luft.', effekt: 'Byn gräver en kolbotten, där 20 torr ved blir 10 kol på fyra timmar.', omr: ['hantverk'], krav: ['ortkok'], niva: 4, tid: 6, forsok: { vid: ['ortkok'], skill: 'hantverk', vad: 'hur ved blir kol utan att brinna upp' }, episk: '{namn} täckte en hög ved med jord och lät den pyra, och ur den kom kol.' }, // steg 12.2.1 (brann.ts)
-  { id: 'blasterugn', namn: 'Blästerugn', text: 'Ett schakt av lera och sten där malm och kol brinner med luft från en bälg av skinn.', effekt: 'Byn bygger en blästerugn, där 8 malm och 10 kol blir 6 järn på fyra timmar.', omr: ['hantverk'], krav: ['kolmila', 'kruka'], niva: 5, tid: 8, tidigast: [{ stat: 'malmHaft', n: 1 }], forsok: { vid: ['kolmila', 'bakugn'], skill: 'hantverk', vad: 'hur malmen blir järn' }, episk: '{namn} trampade bälgen tills ugnen glödde vit, och ur den bröt hen byns första järn.' }, // steg 12.2.3 (brann.ts): öppnas när byn har haft malm
-  { id: 'smedja', namn: 'Smide', text: 'Järn som glöds i ässjan och slås på städet till redskap och vapen.', effekt: 'Byn bygger en smedja, där allt järn smids.', omr: ['hantverk'], krav: ['kolmila', 'stenhuggarplats'], niva: 5, tid: 8, tidigast: [{ stat: 'jarnHaft', n: 1 }], forsok: { vid: ['blasterugn', 'harden'], skill: 'hantverk', vad: 'hur järnet formas med hammaren' }, episk: '{namn} glödde järnet i ässjan och slog det på städet, och det böjde sig som hen ville.' }, // steg 12.2.4 (smedja.ts): öppnas när byn har haft järn
+  { id: 'blasterugn', namn: 'Blästerugn', text: 'Ett schakt av lera och sten där malm och kol brinner med luft från en bälg av skinn.', effekt: 'Byn bygger en blästerugn, där 8 malm och 10 kol blir 6 järn på fyra timmar.', omr: ['hantverk'], krav: ['kolmila', 'kruka'], niva: 5, tid: 8, haft: ['malm'], forsok: { vid: ['kolmila', 'bakugn'], skill: 'hantverk', vad: 'hur malmen blir järn' }, episk: '{namn} trampade bälgen tills ugnen glödde vit, och ur den bröt hen byns första järn.' }, // steg 12.2.3 (brann.ts): öppnas när byn har haft malm
+  { id: 'smedja', namn: 'Smide', text: 'Järn som glöds i ässjan och slås på städet till redskap och vapen.', effekt: 'Byn bygger en smedja, där allt järn smids.', omr: ['hantverk'], krav: ['kolmila', 'stenhuggarplats'], niva: 5, tid: 8, haft: ['jarn'], forsok: { vid: ['blasterugn', 'harden'], skill: 'hantverk', vad: 'hur järnet formas med hammaren' }, episk: '{namn} glödde järnet i ässjan och slog det på städet, och det böjde sig som hen ville.' }, // steg 12.2.4 (smedja.ts): öppnas när byn har haft järn
   { id: 'vapensmide', namn: 'Vapensmide', text: 'Järn som smids till svärd, hjälmar och ringar som flätas till en brynja.', effekt: 'Smedjan gör svärdet, järnhjälmen och ringbrynjan.', omr: ['hantverk'], krav: ['smedja', 'rustning'], niva: 6, tid: 8, forsok: { vid: ['smedja'], skill: 'hantverk', vad: 'hur ett svärd smids' }, episk: '{namn} smidde ett blad som bara var ett vapen, och byn fick sitt första svärd.' }, // steg 12.2.9 (jarnsaker.ts)
 ];
 for (const t of TEKNIK) TEKNAMN[t.namn.toLowerCase()] = t.id; // ordlagret hittar verbet efter namnet (ord.ts)
@@ -277,6 +278,15 @@ const MAT: Record<string, string[][]> = {};
 export const materialOf = (t: Tek) => MAT[t.id] ??= (r => r ? [...Object.keys(r.av).map(k => [k]), ...(r.verktyg.length ? [r.verktyg] : [])] : [])(recept(t.id));
 export const hasMaterial = (s: State, t: Tek) => materialOf(t).every(g => g.some(k => harSak(s, k)));
 export const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
+// teknikträdet växer med de nya resurserna (steg 12.1.4, Teknologi och kunskap): en teknik med haft är stängd tills byn har
+// haft sakerna. Att byn haft en sak räknas en gång, när den först finns i förrådet (haftSteg, raden bränningarna i TAKTER),
+// i statistiken som <sak>Haft; sakerna att hålla ögonen på kommer ur teknikernas haft
+export const harHaft = (s: State, k: string) => (s.stat?.[k + 'Haft'] ?? 0) > 0;
+export const oppen = (s: State, t: Tek) => !t.haft || t.haft.every(k => harHaft(s, k));
+let HAFT: string[] | undefined;
+export function haftSteg(s: State) {
+  for (const k of HAFT ??= [...new Set(TEKNIK.flatMap(t => t.haft ?? []))]) if (!harHaft(s, k) && amountOf(s, k) > 0) count(s, k + 'Haft');
+}
 
 // den som kommer på eller lär sig något
 export function learn(s: State, p: Person, t: Tek, from?: Person) {
@@ -314,7 +324,7 @@ export function tankePa(s: State, p: Person, id: string, dtSec: number) {
   if (ageOf(p, s.now) >= ALDER.uppfinner) framat(s, p, TEK[id], dtSec);
 }
 function framat(s: State, p: Person, t: Tek, dtSec: number) {
-  if (!canThink(p, t) || !hasMaterial(s, t)) return;
+  if (!canThink(p, t) || !hasMaterial(s, t) || !oppen(s, t)) return;
   const nyf = stat(p, 'nyfikenhet', s.now) / 10, intel = stat(p, 'intelligens', s.now) / 10;
   p.tek ??= {};
   // arbetstimmarna medan tekniken är öppen och ingen i byn kommit på den än (npm run teknik, steg 2.12.9)
@@ -331,7 +341,7 @@ function framat(s: State, p: Person, t: Tek, dtSec: number) {
 const stationForsok = (s: State, t: Tek) => stationerOf(s).find(q => t.forsok!.vid.includes(q.k) && isKlar(q) && framFri(s, q));
 // det i receptet som går åt i ett försök: sakerna, inte verktygen
 const forbrukas = (t: Tek) => Object.keys(recept(t.id)?.av ?? {}).filter(k => !isTool(k));
-const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && ageOf(p, s.now) >= ALDER.uppfinner && canThink(p, t) && hasMaterial(s, t)
+const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && ageOf(p, s.now) >= ALDER.uppfinner && canThink(p, t) && hasMaterial(s, t) && oppen(s, t)
   && p.skill[t.forsok.skill] >= TEKTAL.forsokSkill && (t.tidigast ?? []).every(k => (s.stat?.[k.stat] ?? 0) >= k.n) && (r => !r.length || r.some(k => amountOf(s, k) >= 1))(forbrukas(t)) && (!t.forsok.vid.length || !!stationForsok(s, t));
 // hur ofta (steg 4.2.1.2): sedvanan mot nya sätt (seden nyfikenhet, Förnyelse – Tradition) och personens nyfikenhet. Bara när
 // byn har ett överskott av mat och ved (matDygn, vedDygn); farorna avgörs i valet (val.ts), där de går före
@@ -369,7 +379,7 @@ export function forsokKlar(s: State, p: Person, tk: Task) {
 export function tekArbete(s: State, p: Person, ok: (a: Act) => boolean): { act: Act; t: Tek } | undefined {
   let bast: { act: Act; t: Tek } | undefined;
   for (const t of TEKNIK) {
-    if (t.nar || t.forsok || !canThink(p, t) || !hasMaterial(s, t)) continue;
+    if (t.nar || t.forsok || !canThink(p, t) || !hasMaterial(s, t) || !oppen(s, t)) continue;
     const act = t.omr.find(ok);
     if (act && (!bast || (p.tek?.[t.id] ?? 0) > (p.tek?.[bast.t.id] ?? 0))) bast = { act, t };
   }
