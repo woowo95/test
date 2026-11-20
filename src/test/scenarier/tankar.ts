@@ -4,13 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import * as SIM from '../../sim';
 import { SCENARIER, medTal, testBy } from './hjalp';
 
-// radens text som ett mönster: varje argument blir "något"
-const PLATS = '\u0001';
-const fyll = new Proxy({}, { get: () => PLATS });
-export const tankeMonster = (k: SIM.TankeId) => {
-  const d = SIM.TANKAR[k] as SIM.TankeDef<any>, t = typeof d.text === 'string' ? d.text : d.text(fyll);
-  return new RegExp('^' + t.split(PLATS).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.+') + '$');
-};
+const tankeMonster = SIM.tankeMonster;
 const ALLA = () => (Object.keys(SIM.TANKAR) as SIM.TankeId[]).map(tankeMonster);
 
 SCENARIER.tankar = {
@@ -187,3 +181,33 @@ SCENARIER.mallar = {
   },
 };
 
+SCENARIER.amnen2 = {
+  text: 'Nya samtalsämnen (steg 12.1.136, AMNEN i berattelser.ts): åtta ämnen (djur, sjukdom, strid, tro, skörd, fest, lagar och resor) som kommer upp när någon av de två nyss varit med om saken, med sina texter i personrutan',
+  kor: async () => {
+    const { hasIcon } = await import('../../ikoner');
+    const NYA = ['djur', 'sjukdom', 'strid', 'tro', 'skord', 'fest', 'lagar', 'resor'] as const;
+    const fa = NYA.filter(k => !(k in SIM.AMNEN) || !(`p_${k}` in SIM.BERATTELSER) || SIM.BERATTELSER[`p_${k}` as SIM.MallId].length < 8 || !hasIcon(SIM.AMNEN[k].ikon ?? ''));
+    const s = SIM.cloneState(testBy(20)), [a, b] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && !p.gast);
+    const amnen = (forbered: () => void) => {
+      for (const p of [a, b]) { p.thoughts = []; delete p.sjuk; }
+      forbered();
+      const ut = new Map<string, string | undefined>(), t0 = s.now;
+      for (let m = 0; m < 300; m++) { s.now = t0 + m * SIM.MIN; SIM.samtalBorjar(); const x = SIM.samtalAmne(s, a, b, 'prat'); ut.set(x.k, x.o); }
+      s.now = t0;
+      return ut;
+    };
+    const strid = amnen(() => SIM.tanke(a, 'vannSlagsmal', s.now, { namn: 'Ulv', v: 0.1, tid: SIM.DAY }));
+    const sjuk = amnen(() => { b.sjuk = { k: 'forkylning', t0: s.now, tecken: 1, grad: 0.5, mot: 0, r: 0.5 }; });
+    const fest = amnen(() => SIM.tanke(b, 'gastabud', s.now, { v: 0.1 }));
+    const inget = amnen(() => undefined);
+    const text = (() => { a.prat = { m: b.id, k: 'sjukdom', o: 'förkylning', t: s.now }; return SIM.pratText(s, a); })();
+    return [
+      [`åtta nya ämnen med minst åtta texter och en symbol var${fa.length ? ` (saknas: ${fa.join(', ')})` : ''}`, fa.length === 0],
+      ['den som nyss slagits pratar om striden', strid.has('strid') && !inget.has('strid')],
+      [`den som är sjuk pratar om sjukdomen (${sjuk.get('sjukdom') ?? 'inget'})`, sjuk.get('sjukdom') === 'förkylning'],
+      ['den som varit på gästabudet pratar om festen', fest.has('fest') && !inget.has('fest')],
+      [`texten i personrutan (${text})`, !!text && !text.includes('{')],
+      ['det farliga går före vardagen', SIM.AMNEN.strid.prio > SIM.AMNEN.vardag.prio && SIM.AMNEN.sjukdom.prio > SIM.AMNEN.mat.prio],
+    ];
+  },
+};

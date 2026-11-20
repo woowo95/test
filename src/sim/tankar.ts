@@ -247,3 +247,15 @@ export function tanke<K extends TankeId>(p: Person, k: K, now: number, ...[x]: A
   if (v === undefined || tid === undefined) throw new Error(`tanken ${k} behöver styrka och tid vid anropet`);
   think(p, typeof d.text === 'string' ? d.text : d.text(x), o.f === undefined ? v : v * o.f, now, tid);
 }
+// radens text som ett mönster, där varje argument kan vara vad som helst (för att känna igen en tanke i p.thoughts)
+const PLATS = '\u0001', FYLL = new Proxy({}, { get: () => PLATS }), MONSTER = new Map<TankeId, RegExp>();
+export function tankeMonster(k: TankeId): RegExp {
+  let m = MONSTER.get(k);
+  if (!m) {
+    const d = TANKAR[k] as TankeDef<any>, t = typeof d.text === 'string' ? d.text : d.text(FYLL);
+    MONSTER.set(k, m = new RegExp('^' + t.split(PLATS).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.+') + '$'));
+  }
+  return m;
+}
+// har p någon av tankarna ks kvar (steg 12.1.136: samtalens ämnen)?
+export const harTanke = (p: Person, ks: readonly TankeId[], now: number) => p.thoughts.some(t => t.until > now && ks.some(k => tankeMonster(k).test(t.text)));

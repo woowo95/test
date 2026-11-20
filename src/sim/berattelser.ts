@@ -18,7 +18,9 @@ import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
 import { TEXTLYSS, type TextLyssnare, bestamd, ganger, gen, goraNamn, han, honom, och, slaktOrd, talOrd } from './ord';
 export { bestamd } from './ord';
-import { isSick } from './sjukdom';
+import { isSick, SJUKDOMAR } from './sjukdom';
+import { harTanke } from './tankar';
+import { tamArt } from './tamdjur';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
 // text är en mall i registret BERATTELSER med många varianter; varianten väljs ur byns frö, personen och tiden (hash),
@@ -1439,6 +1441,89 @@ const MDEF = {
     '{namn} och {med} pratade om barnen och vad de ska bli.',
     '{namn} och {med} skrattade åt något barnen gjort.',
     '{namn} oroade sig för barnen, och {med} lyssnade.',
+  ],
+  // samtalen om ämnena från de nya systemen (steg 12.1.136): {om} = vad det gällde, när det finns något
+  p_djur: [
+    '{namn} och {med} pratade om djuren.',
+    '{namn} berättade för {med} hur djuren mår.',
+    { t: '{namn} och {med} pratade om {om}.', om: f => !!f.om },
+    { t: '{namn} berättade för {med} om {om}.', om: f => !!f.om },
+    '{namn} och {med} undrade om djuren har bete nog.',
+    '{namn} klagade för {med} på ett djur som inte lyder.',
+    '{namn} och {med} pratade om djuren som dött och de som fötts.',
+    '{namn} och {med} pratade om vem som ska sköta djuren.',
+    { t: '{namn} och {med} undrade om djuren klarar istiden.', om: f => f.kallt === true },
+  ],
+  p_sjukdom: [
+    '{namn} och {med} pratade om sjukdomen.',
+    { t: '{namn} och {med} pratade om {om}.', om: f => !!f.om },
+    { t: '{namn} var orolig för {om}, och {med} lyssnade.', om: f => !!f.om },
+    '{namn} berättade för {med} hur det känns att vara sjuk.',
+    '{namn} och {med} undrade vem som blir sjuk härnäst.',
+    '{namn} och {med} pratade om vad som hjälper mot sjukdomen.',
+    '{namn} frågade {med} om örter som läker.',
+    '{namn} och {med} pratade om de som blivit friska igen.',
+    '{namn} och {med} höll sig lite ifrån varandra och pratade om smittan.',
+  ],
+  p_strid: [
+    '{namn} och {med} pratade om striden.',
+    '{namn} berättade för {med} hur striden gick till.',
+    '{namn} och {med} pratade om vem som slogs bäst.',
+    '{namn} visade {med} hur {hen} höll spjutet.',
+    '{namn} och {med} undrade om fienden kommer tillbaka.',
+    '{namn} och {med} pratade om de som skadades.',
+    '{namn} berättade för {med} om rädslan i striden.',
+    '{namn} och {med} pratade om hur byn ska försvara sig nästa gång.',
+  ],
+  p_tro: [
+    '{namn} och {med} pratade om tron.',
+    '{namn} berättade för {med} om gudarna.',
+    '{namn} och {med} pratade om ritualen.',
+    '{namn} och {med} undrade vad gudarna vill.',
+    '{namn} berättade för {med} vad {hen} bad om.',
+    '{namn} och {med} pratade om de heliga kvädena.',
+    '{namn} och {med} pratade om tecknen.',
+    '{namn} och {med} pratade om vad som händer efter döden.',
+  ],
+  p_skord: [
+    '{namn} och {med} pratade om skörden.',
+    '{namn} berättade för {med} hur fältet gav i år.',
+    '{namn} och {med} pratade om vädret och grödan.',
+    '{namn} och {med} undrade om förrådet räcker till istiden.',
+    '{namn} klagade för {med} på en dålig skörd.',
+    '{namn} och {med} pratade om vad de ska så nästa år.',
+    '{namn} och {med} pratade om jorden på fältet.',
+    '{namn} och {med} räknade på hur mycket fältet gett.',
+  ],
+  p_fest: [
+    '{namn} och {med} pratade om festen.',
+    '{namn} berättade för {med} om dansen.',
+    '{namn} och {med} pratade om sångerna vid elden.',
+    '{namn} och {med} skrattade åt något som hände på festen.',
+    '{namn} och {med} pratade om maten på gästabudet.',
+    '{namn} och {med} pratade om vem som dansade med vem.',
+    '{namn} och {med} pratade om matchen.',
+    '{namn} och {med} längtade redan till nästa fest.',
+  ],
+  p_lagar: [
+    '{namn} och {med} pratade om lagarna.',
+    '{namn} och {med} pratade om vad tinget bestämde.',
+    '{namn} klagade för {med} på en lag.',
+    '{namn} och {med} pratade om hur byn röstade.',
+    '{namn} och {med} pratade om domen på tinget.',
+    '{namn} och {med} undrade om lagen är rättvis.',
+    '{namn} berättade för {med} hur det var att stå inför tinget.',
+    '{namn} och {med} pratade om vem som borde leda byn.',
+  ],
+  p_resor: [
+    '{namn} och {med} pratade om resor.',
+    '{namn} berättade för {med} om vägen och platserna där borta.',
+    { t: '{namn} och {med} undrade när {om} kommer hem.', om: f => !!f.om },
+    { t: '{namn} väntar på {om} och pratade om det med {med}.', om: f => !!f.om },
+    '{namn} och {med} pratade om byarna där borta.',
+    '{namn} berättade för {med} om det {hen} sett på resan.',
+    '{namn} och {med} pratade om att ge sig av en dag.',
+    '{namn} och {med} pratade om vad som hänt medan någon var borta.',
   ],
   p_vardag: [
     '{namn} och {med} småpratade.',
@@ -2962,6 +3047,15 @@ const ADEF = {
   arbete: { prio: 10, namn: 'Arbetet' },
   barn: { prio: 10, namn: 'Barnen', ikon: 's_barn' },
   vardag: { prio: 0, namn: 'Lite av varje' },
+  // ämnena från de nya systemen (steg 12.1.136; symbolerna är platshållare): det farliga och det nya före vardagen
+  strid: { prio: 24, namn: 'En strid', ikon: 'rovare' },
+  sjukdom: { prio: 22, namn: 'Sjukdom', ikon: 'i_botare' },
+  resor: { prio: 18, namn: 'Resor', ikon: 'karta' },
+  lagar: { prio: 16, namn: 'Lagar och tinget', ikon: 'i_rattvis' },
+  tro: { prio: 15, namn: 'Tron', ikon: 'i_from' },
+  djur: { prio: 12, namn: 'Djuren', ikon: 'i_djurvan' },
+  skord: { prio: 12, namn: 'Skörden', ikon: 's_mat' },
+  fest: { prio: 12, namn: 'Festen', ikon: 'i_scenBra' },
 } satisfies Record<string, AmneDef>;
 export type AmneId = keyof typeof ADEF;
 export const AMNEN: Record<AmneId, AmneDef> = ADEF;
@@ -2973,6 +3067,18 @@ export function samtalBorjar() { delat = undefined; }
 export function delade(k: AmneId, i?: string, o?: string) { if (!delat || AMNEN[k].prio > AMNEN[delat.k].prio) delat = { k, i, o }; }
 const VADER_PRAT: Record<string, string> = { regn: 'regnet', sno: 'snön', blast: 'blåsten', aska: 'åskan', dimma: 'dimman' };
 // ämnet för samtalet mellan a och b av slaget kind, sparat hos båda
+// ämnena från de nya systemen (steg 12.1.136): har p nyss varit med om saken? Svarar med vad det gällde ('' = inget särskilt)
+const nara = (s: State, p: Person) => s.people.filter(q => alive(q) && q !== p && (q.id === p.partner || isParent(p, q) || isParent(q, p)));
+const NYSS: [AmneId, (s: State, p: Person) => string | undefined][] = [
+  ['djur', (s, p) => { const d = (s.tamdjur ?? []).find(x => x.agare === p.id); return harTanke(p, ['mittDjurDog', 'fickUnge'], s.now) ? '' : d ? tamArt(d.art).ord[2] : undefined; }],
+  ['sjukdom', (s, p) => { const q = [p, ...nara(s, p)].find(x => x.sjuk); return q?.sjuk ? SJUKDOMAR[q.sjuk.k].namn.toLowerCase() : harTanke(p, ['friskIgen'], s.now) ? '' : undefined; }],
+  ['strid', (s, p) => harTanke(p, ['vannSlagsmal', 'forloradeSlagsmal', 'drevBortRovare', 'slogsRovare', 'hotadRovare', 'klaradeVargar', 'anfollsVargar', 'anfollsBjorn', 'sagBjornSlass', 'falldeVildsvin', 'anfollsVildsvin'], s.now) ? '' : undefined],
+  ['tro', (s, p) => harTanke(p, ['badBon', 'hordeKvade', 'hordeSorgkvade', 'lasteHeliga', 'gavTron', 'tackade', 'halsadeElden', 'badForFodd'], s.now) ? '' : undefined],
+  ['skord', (s, p) => harTanke(p, ['godSkord', 'missvaxt'], s.now) ? '' : undefined],
+  ['fest', (s, p) => harTanke(p, ['gastabud', 'dansade', 'lyssnade', 'sagMatch', 'uppträdde'], s.now) ? '' : undefined],
+  ['lagar', (s, p) => harTanke(p, ['orattvisLag', 'straffad', 'frikandes'], s.now) ? '' : undefined],
+  ['resor', (s, p) => { const q = nara(s, p).find(x => x.ute !== undefined); return q ? q.name : harTanke(p, ['komHem', 'sagStort'], s.now) ? '' : undefined; }],
+];
 export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
   let x: { k: AmneId; i?: string; o?: string } | undefined = kind === 'gräl' ? { k: 'gral' } : delat ?? (kind === 'flirt' ? { k: 'karlek' } : kind === 'tröst' ? { k: 'trost' } : undefined);
   if (!x) {
@@ -2986,6 +3092,7 @@ export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
     if (a.hunger < KROPP.hungrig + BERATT.hungrigOver) val.push({ k: 'mat' });
     if (a.tag && a.tag !== 'Dagdrivare') { const tg = TAGS.find(g => g.tag === a.tag), sl = tg?.acts.map(k => ACTS[k].slag).find(k => k); val.push({ k: 'arbete', i: sl && slagIkon(sl), o: a.tag.toLowerCase() }); }
     if (s.people.some(c => alive(c) && (c.mother === a.id || c.father === a.id) && ageOf(c, s.now) < ALDER.vuxen)) val.push({ k: 'barn' });
+    for (const [k, nyss] of NYSS) { const o = nyss(s, a) ?? nyss(s, b); if (o !== undefined) val.push({ k, ...(o ? { o } : {}) }); } // det någon av dem nyss varit med om (steg 12.1.136)
     x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / MIN)) * val.length)];
   }
   const i = x.i ?? AMNEN[x.k].ikon;
