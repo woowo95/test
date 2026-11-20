@@ -186,7 +186,7 @@ SCENARIER.tillsyn = {
       klockan(s, 9);
       for (const q of vuxna) (q.tek ??= {}).kolmila = 1;
       const t = medBank(s, 'kolmila');
-      SIM.setStock(s, { ved: 40 });
+      setMat(s, { bar: 400 }); SIM.setStock(s, { ved: 40 }); // mat nog, så att milan prövas och inte hungern
       SIM.branningKlar(s, p, { act: 'kola', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', ref: t.id } as SIM.Task);
       if (!medTillsyn) for (const q of vuxna) q.tek!.kolmila = 0; // ingen kan se till milan
       const kol0 = SIM.amountOf(s, 'kol') + SIM.paMarken(s, 'kol');

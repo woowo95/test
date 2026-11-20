@@ -195,15 +195,18 @@ export function branningSteg(s: State) {
   // en bränning vars station är borta (riven, bränd) finns inte längre
   if (s.branningar?.some(b => !stationerOf(s).some(t => t.id === b.st))) { s.branningar = s.branningar.filter(b => stationerOf(s).some(t => t.id === b.st)); if (!s.branningar.length) delete s.branningar; }
 }
+// en bränning av sorten b som brunnit klart och ska tömmas, för den vuxna p: att ta ut det som kommit ut är arbete för samma
+// projekt som att ladda, och har kolets eller järnets värde
+const klarI = (s: State, p: Person, b: string) => ageOf(p, s.now) >= ALDER.vuxen ? branningsStationer(s, b).find(t => { const x = branningI(s, t); return !!x && x.slut <= s.now; }) : undefined;
 // kolet som projekt: ingen egen brist, men den som vill ha något som kräver kol kolar, och vill då ha ved till milan (receptet)
 laggTillProjekt({
   kol: {
     namn: 'Kol', vikt: 1,
     brist: () => 0,
     kostnad: () => grundvarde('kol') * BRANN.kolUt,
-    kan: (s, p) => !!laddbar(s, p, 'kolmila') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.kolmila, s.now), // hellre när tillsynen faller på dagen (steg 12.2.2)
-    recept: (s, p) => knows(p, 'kolmila') && branningsStationer(s, 'kolmila').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.kolmila.in } } : undefined,
-    uppgift: (s, p) => { const t = laddbar(s, p, 'kolmila'); return t && branningUppgift(s, t); },
+    kan: (s, p) => !!klarI(s, p, 'kolmila') || !!laddbar(s, p, 'kolmila') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.kolmila, s.now), // hellre när tillsynen faller på dagen (steg 12.2.2)
+    recept: (s, p) => klarI(s, p, 'kolmila') ? { av: {} } : knows(p, 'kolmila') && branningsStationer(s, 'kolmila').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.kolmila.in } } : undefined,
+    uppgift: (s, p) => { const t = klarI(s, p, 'kolmila') ?? laddbar(s, p, 'kolmila'); return t && branningUppgift(s, t); },
   },
 });
 // järnet som projekt (steg 12.2.3): som kolet, ingen egen brist; den som vill ha järn blåser, och vill då ha malm och kol (receptet)
@@ -212,9 +215,9 @@ laggTillProjekt({
     namn: 'Järn', vikt: 1,
     brist: () => 0,
     kostnad: () => grundvarde('jarn') * BRANN.ugnUt,
-    kan: (s, p) => kanSmidaOm(s, p) || !!laddbar(s, p, 'blasterugn') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.blasterugn, s.now), // järnskrotet smids om först (steg 12.2.7)
-    recept: (s, p) => knows(p, 'blasterugn') && branningsStationer(s, 'blasterugn').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.blasterugn.in } } : undefined,
-    uppgift: (s, p) => { if (kanSmidaOm(s, p)) return omsmidUppgift(s, p); const t = laddbar(s, p, 'blasterugn'); return t && branningUppgift(s, t); },
+    kan: (s, p) => !!klarI(s, p, 'blasterugn') || kanSmidaOm(s, p) || !!laddbar(s, p, 'blasterugn') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.blasterugn, s.now), // järnskrotet smids om först (steg 12.2.7)
+    recept: (s, p) => klarI(s, p, 'blasterugn') ? { av: {} } : knows(p, 'blasterugn') && branningsStationer(s, 'blasterugn').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.blasterugn.in } } : undefined,
+    uppgift: (s, p) => { const k = klarI(s, p, 'blasterugn'); if (k) return branningUppgift(s, k); if (kanSmidaOm(s, p)) return omsmidUppgift(s, p); const t = laddbar(s, p, 'blasterugn'); return t && branningUppgift(s, t); },
   },
 });
 import { kanSmidaOm, omsmidUppgift } from './jarnsaker';
