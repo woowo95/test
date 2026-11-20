@@ -27,7 +27,7 @@ import { jaktPlats } from './jakt';
 import { kartKampe, slagAv } from './stridbild';
 import { stridAnsikte } from './stridansikte';
 import { slag } from './animation';
-import { garIBilden, stalle, vidArbetet } from './stalle';
+import { garIBilden, iSangen, stalle, vidArbetet } from './stalle';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -427,14 +427,15 @@ export function drawPeople(t: number) {
     if (ab) arm = ab.arm;
     // sängen (steg 6.8.5): den som sover i en färdig säng ligger mitt i den med huvudet i bäddens huvudände (vänster i den
     // liggande bädden, uppåt i den stående), och bara under ett byggt täcke (ett tillbehör i bädden, skinnfällen) har hen täcke
-    const badd = sleeping ? stationAt(s, q.x, q.y) : undefined, sang = badd && isKlar(badd) && stationDef(badd.k)?.sover ? badd : undefined;
-    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: !!sang?.med?.length, smabarn: liten || undefined }, p.id === markerad || p.id === harSaken);
+    const iS = iSangen(s, q.x, q.y, sleeping), sang = iS?.sang; // (ui/stalle.ts, steg 12.1.14)
+    if (iS) rikt = iS.rikt;
+    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: !!iS?.tacke, smabarn: liten || undefined }, p.id === markerad || p.id === harSaken);
     const w = sp.texture.width, h = sp.texture.height;
     sp.anchor.set(0); sp.rotation = 0; sp.scale.x = 1;
     if (sang) {
       const { w: bw, h: bh } = storlekAv(sang);
       sp.anchor.set(0.5); sp.position.set((sang.x + bw / 2) * TS, (sang.y + bh / 2) * TS - 2);
-      if (bh > bw) sp.rotation = -Math.PI / 2; else sp.scale.x = -1;
+      if (iS!.staende) sp.rotation = -Math.PI / 2; else sp.scale.x = -1;
     } else if (ligger) sp.position.set(x - w / 2, y - h / 2);
     else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -1 : 1), y + r * 0.9 - h + 1);
     const hand = ab && figurHand(sp.texture);

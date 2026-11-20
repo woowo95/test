@@ -1,7 +1,7 @@
 // hur figuren står i bilden (steg 10.2.55): sitter, går eller står. Ingen ritning här, så att testet (scenariot stalle) kan
 // gå igenom en by med samma regler som bilden. Sittanimationen visas bara på en sittplats (en stubbe eller stol vid ett bord,
 // stationRutor i stationer.ts) eller på stolen vid en bänk, och gåanimationen bara när figuren flyttat sig sedan förra bilden
-import { ACTS, blocked, forflyttar, kroppFart, lekGang, sittAt, sparUppgift, stationAt, type Person, type State } from '../sim';
+import { ACTS, blocked, forflyttar, isKlar, kroppFart, lekGang, sittAt, sparUppgift, stationAt, stationDef, storlekAv, type Person, type State, type Station } from '../sim';
 
 // handlingarna man gör sittande när det finns en plats att sitta på; annars står man
 export const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
@@ -37,4 +37,14 @@ export function garIBilden(s: State, p: Person, t: number, jakt?: { gar?: boolea
   const tk = sparUppgift(p, t, s.now), d = tk?.phase === 'do' ? ACTS[tk.act] : undefined, w = d?.vandra;
   if (!tk || !d || !w || d.slag !== 'leka' || d.stilla || d.tur || tk.act === 'sport' && s.sport?.start === tk.ref) return false;
   return lekGang(p.id, w.r * 0.6, (w.h0 + w.h1) / 2, kroppFart(p, t), t).gar;
+}
+
+// sängen (steg 6.8.5 och 12.1.14): den som sover i en färdig säng ligger längs den mitt i bädden, med huvudet i huvudänden
+// (vänster i den liggande bädden, uppåt i den stående) och ansiktet uppåt, vilken väg hen än kom ifrån. Har bädden ett
+// tillbehör (fällen) ligger den över kroppen så att bara huvudet syns; utan den syns hela kroppen
+export function iSangen(s: State, x: number, y: number, sover: boolean): { sang: Station; rikt: 'fram'; tacke: boolean; staende: boolean } | undefined {
+  const b = sover ? stationAt(s, x, y) : undefined;
+  if (!b || !isKlar(b) || !stationDef(b.k)?.sover) return undefined;
+  const { w, h } = storlekAv(b);
+  return { sang: b, rikt: 'fram', tacke: !!b.med?.length, staende: h > w };
 }

@@ -844,7 +844,14 @@
       const n = new Array(W * H).fill(null), nh = new Array(W * H).fill(false);
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { n[x * H + (H - 1 - y)] = ut.kt[y * W + x]; nh[x * H + (H - 1 - y)] = ut.hz[y * W + x]; }
       ut = { w: H, h: W, kt: n, hz: nh };
-      if (opt.tacke) for (let y = 1; y <= 12; y++) for (let x = 0; x <= 13; x++) ut.kt[y * H + x] = 'ben' + (y === 1 || x === 13 ? 3 : y === 12 ? 1 : 2);
+      // fällen över kroppen (steg 12.1.14): allt till vänster om huvudet, så att bara huvudet syns, i alla mallar (också småbarnets)
+      if (opt.tacke) {
+        let hx = H;
+        for (let i = 0; i < nh.length; i++) if (nh[i] && n[i]) hx = Math.min(hx, i % H);
+        if (hx >= H) hx = Math.max(1, H - 6); // ingen huvudzon: de sex översta raderna i den stående figuren är huvudet
+        const y1 = W - 2;
+        for (let y = 1; y <= y1; y++) for (let x = 0; x < hx; x++) ut.kt[y * H + x] = 'ben' + (y === 1 || x === hx - 1 ? 3 : y === y1 ? 1 : 2);
+      }
     }
     const kont = ut.kt.slice();
     for (let y = 0; y < ut.h; y++) for (let x = 0; x < ut.w; x++) {

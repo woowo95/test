@@ -8,6 +8,9 @@ import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
 import { hus as husFlik } from '../../ui/flikar/hus';
+import { iSangen } from '../../ui/stalle';
+import { skapad } from '../../ui/utseende';
+import { KARNA } from '../../portrattkarna';
 import { setByn, ui } from '../../ui/lage';
 import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
 
@@ -1505,6 +1508,45 @@ SCENARIER.sanggang = {
       ['långt från sovplatsen ligger man inte', !intefram],
       ['framme lägger man sig', framme],
       [`under natten ligger ingen på väg (${fel}) och de som somnat ligger (${sover})`, fel === 0 && sover > 0],
+    ];
+  },
+};
+SCENARIER.sangbild = {
+  text: 'Steg 12.1.14: den som sover i en säng ligger längs den mitt i bädden med huvudet i huvudänden och ansiktet uppåt, vilken väg hen än kom ifrån (iSangen i ui/stalle.ts), och fällen täcker kroppen så att bara huvudet syns, också för småbarnet. Utan fäll syns hela kroppen',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s); planBuild(s); byggKlart(s);
+    medBank(s, 'halmbadd');
+    const b = SIM.stationerOf(s).find(x => x.k === 'halmbadd' && SIM.isKlar(x));
+    if (!b) return [['en färdig halmbädd står i huset', false]];
+    const { w, h } = SIM.storlekAv(b), cx = b.x + w / 2, cy = b.y + h / 2;
+    b.med = [];
+    const utan = iSangen(s, cx, cy, true), vaken = iSangen(s, cx, cy, false);
+    b.med = ['skinnfall'];
+    const med = iSangen(s, cx, cy, true);
+    // figuren som ligger: färgerna utanför huvudet (bara fällens ben och konturen när den täcker) och i huvudet (ansiktet syns)
+    type B = { w: number; h: number; px: Int16Array; huvud: Uint8Array };
+    // kroppen är allt till vänster om huvudet i den liggande figuren (huvudet åt höger, håret och konturen runt det hör till huvudet)
+    const farger = (f: B, huvud: boolean) => {
+      let hx = f.w; f.huvud.forEach((v, i) => { if (v && f.px[i] >= 0) hx = Math.min(hx, i % f.w); });
+      return new Set([...f.px].filter((v, i) => v >= 0 && (huvud ? !!f.huvud[i] : i % f.w < hx))).size;
+    };
+    let tackt = 0, hel = 0, ansikte = 0, n = 0;
+    for (const p of living(s)) for (const smabarn of [false, true]) {
+      const q = skapad(s, p), opt = { ligga: true, smabarn: smabarn || undefined };
+      const F: B = KARNA.kartFigur(q, 'fram', 'sta', 'hanga', { ...opt, tacke: true }), G: B = KARNA.kartFigur(q, 'fram', 'sta', 'hanga', { ...opt, tacke: false });
+      n++;
+      if (farger(F, false) <= 4) tackt++;
+      if (G.px.some((v, i) => v >= 0 && v !== F.px[i] && !G.huvud[i])) hel++; // utan fäll är kroppen en annan än fällen
+      if (farger(F, true) > 2) ansikte++;
+    }
+    return [
+      [`den som sover i den färdiga bädden ligger i den med ansiktet uppåt, och den som är vaken gör det inte (${utan?.rikt})`, !!utan && utan.rikt === 'fram' && !vaken],
+      [`huvudänden: den liggande bädden (${w} × ${h}) har huvudet åt vänster`, !!utan && !utan.staende === (w >= h)],
+      [`fällen i bädden ligger över kroppen, och utan den finns inget täcke`, !!med?.tacke && !utan?.tacke],
+      [`under fällen syns bara huvudet (${tackt} av ${n} figurer, vuxen och småbarn)`, n > 0 && tackt === n],
+      [`utan fäll syns hela kroppen (${hel} av ${n})`, hel === n],
+      [`huvudet syns med ansiktet (${ansikte} av ${n})`, ansikte === n],
     ];
   },
 };
