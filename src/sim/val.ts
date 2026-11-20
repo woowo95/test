@@ -546,7 +546,7 @@ interface Ctx { s: State; p: Person; v: Val; a: number; lazy: number; light: boo
 const faror = (c: Ctx) => c.f ??= dangers(c.s);
 // Förbättra dämpas mjukt (steg 10.11.20): när kylan eller hungern är en fara tas raderna på Förbättra och projekten med chansen
 // VAL.projFara (en dragning per val), som bygget dämpas (byggDampning): tiden går helst till faran, men ingenting stängs av
-const slatterRad = ({ s, p, v }: Ctx, i = slaVal(s, p)) => { if (i === undefined) return false; projektVal(v, { act: 'slatter', text: 'Slår det höga gräset på ängen med skäran.', min: VINTER.slaMin, tool: 'skara', spot: { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }, ref: i }, 'Gräset på slåtterängen står högt'); return true; };
+const slatterRad = ({ s, p, v }: Ctx, i = slaVal(s, p)) => { if (i === undefined) return false; const lie = freeTools(s, p, 'lie') > 0; projektVal(v, { act: 'slatter', text: lie ? 'Slår det höga gräset på ängen med lien.' : 'Slår det höga gräset på ängen med skäran.', min: VINTER.slaMin / (lie ? LIE_FART : 1) /* lien slår tre gånger så fort (steg 12.2.6) */, tool: 'skara', spot: { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }, ref: i }, 'Gräset på slåtterängen står högt'); return true; };
 const forbNu = (c: Ctx) => { const f = faror(c); return !(f.kyla || f.svalt) || (c.forb ??= rnd(c.s, 'val', c.p) < VAL.projFara); };
 // lat: hur mycket tidigare den lata tar grundbehoven
 const fryser = (c: Ctx) => c.p.warm < KROPP.kallt + KROPP.latVarme * c.lazy;
@@ -724,6 +724,8 @@ export const ARBETEN: readonly Arbete[] = [
     if (!l) return false;
     set(v, 'lyssna', l.why); v.spot = l.spot; v.dur = l.dur; v.ref = l.ref; v.tool = l.tool; return true;
   } },
+  // tillsynen vid en kolmila (steg 12.2.2, brann.ts): ett Tillfälle vars brådska är värdet som står på spel och hur nära tiden är
+  { id: 'passa', niva: 3, bradska: ({ s, p }) => passaBradska(s, p), prova: ({ s, p, v }) => { const b = passaVal(s, p); if (!b) return false; projektVal(v, passaUppgift(b), 'Det är dags att se till kolmilan'); return true; } },
   { id: 'rusta', niva: 3, prova: ({ s, p, v }) => { const r = rustaVal(s, p); if (!r) return false; v.spot = r.spot; v.ref = r.ref; v.dur = 2 * MIN; return set(v, 'rusta', r.why); } }, // byta om inför strid (steg 8.7.8), på sin nivå bland tillfällena (steg 10.2.2)
   // 4 Grundbehov (toa, värme, vatten, vila, mat). En lat person tillgodoser dem tidigare än en flitig
   { id: 'gammalSover', niva: 4, nar: 'natt', prova: ({ s, p, v, a }) => a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover && set(v, 'sova', 'Är gammal och sover på natten') },
@@ -889,6 +891,8 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'projekt', niva: 8, nar: 'dag', kort: true, prova: c => dag(c).works && c.a >= ALDER.vuxen && forbNu(c) && projektArbete(c) },
   // 8 Förbättra (steg 10.2.1): bryggningen, ullen, hamlingen, hagen, staketen och fågelskrämman gör byn bättre men räddar
   // inget, så de prövas när Försörjningen har det den behöver, som projekten
+  // kolmilan som brunnit klart (steg 12.2.1, brann.ts): den rivs och kolet tas ut
+  { id: 'kolmila', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, v, a } = c; if (!dag(c).works || !forbNu(c) || a < ALDER.vuxen) return false; const t = attTomma(s); if (!t) return false; projektVal(v, branningUppgift(s, t), 'Kolmilan har brunnit klart'); return true; } },
   { id: 'brygga', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v, a } = c; if (!dag(c).works || !forbNu(c)) return false; if (a < ALDER.vuxen) return false; const b = bryggVal(s, p); if (!b) return false; projektVal(v, { act: b.act, text: b.act === 'tappa' ? (b.v === 'sprit' ? 'Häller upp spriten ur brännpannan i en liten lerkruka.' : 'Silar satsen och häller upp den i lerkrukor.') : b.act === 'branna' ? 'Häller vin eller öl i brännpannan och eldar under den.' : b.act === 'malta' ? 'Blöter korn och hänger upp det på torkställningen till malt.' : BRYGD[b.v].gor, min: b.act === 'tappa' ? BRYGG.tappMin : b.act === 'branna' ? BRYGG.brannMin : b.act === 'malta' ? BRYGG.maltMin : BRYGG.prepMin, spot: vidStation(b.kar), ref: b.kar.id }, b.act === 'tappa' ? 'Satsen i bryggkaret har jäst klart' : 'Byn vill ha mer att dricka'); return true; } }, // steg 9.6.12–9.6.13
   { id: 'tatuera', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || !forbNu(c)) return false; const d = tatVal(s, p); if (!d) return false; projektVal(v, { act: 'tatuera', text: `Gör ett märke i huden på ${d.q.name} med bennålen och kol.`, min: TATU.min, tool: 'nal', spot: { x: d.q.x, y: d.q.y }, ref: d.q.id }, `${d.q.name} vill minnas att hen ${TATUERINGAR[d.m].text}`); return true; } }, // steg 10.7.5
   { id: 'klippa', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || !forbNu(c)) return false; const d = klippVal(s, p); if (!d) return false; projektVal(v, { act: 'klippa', text: 'Klipper ullen av fåret med kniven.', min: BOSKAP.klippMin / tamEg(d).tamhet, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, 'Fårets ull har vuxit ut'); return true; } }, // steg 9.8.5
@@ -994,7 +998,9 @@ function valjTask(s: State, p: Person) {
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
   const k = usesTool(p.task);
-  if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
+  const tg = k ? take(s, p, k) : undefined;
+  if (k && !tg) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
+  else if (tg && tg.k !== k && ACTS[v.act].redskap?.[tg.k]) p.task.tool = tg.k; // det bästa i gruppen (järnyxan före flintyxan, steg 12.2.6): arbetet följer dess rad
   // den som hämtar något tungt (virket som klyvs) tar händerna eller kälken efter vad turen ger per tid (steg 10.10.2, fordon.ts)
   const ger = ACTS[v.act].ger;
   if (v.fordon === undefined && ger && SAKER[ger]?.lyft) { const fo = valjFordon(s, p, ger, sp.x, sp.y, iHandenAv(s, p, ger)); v.fordon = fo?.g.id; v.dragdjur = fo?.d?.id; }
@@ -1275,7 +1281,11 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: F
     if (vf && rnd(s, 'val', p) < VAL.fronChans) { v.spot = vf; v.why = `${v.why} Plockar vilda frön.`; }
   }
   const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
-  if (ax) {
+  const tv = best === 'ved' ? torvHellre(s, p, !!ax) : undefined; // torven, när en tur ger mer bränsle per minut (steg 12.1.3, torv.ts)
+  if (tv) {
+    set(v, 'torv', `${what}. Gräver torv i myren.`);
+    v.spot = tv.spot; v.tool = tv.tool; v.dur = TORV.min * MIN;
+  } else if (ax) {
     set(v, ax.act, `${what}. ${ax.why}.`);
     if (ax.dur) v.dur = ax.dur;
     v.spot = { x: ax.x, y: ax.y }; v.tool = 'yxa'; v.ref = ax.ref;
@@ -1499,3 +1509,6 @@ import { VINTER, hamlaVal, hamlatPa, slaVal, slatterKvar } from './slatter';
 import { KRUKA, ORTKRUKA, krukaHemVal, ortPlockaVal, ortSattaVal } from './kruka';
 import { BIN, flyFranBin, retatNara, skattaVal } from './bin';
 import { BOSKAP, SLAKTDJUR, avlivaVal, klippVal, mjolkaVal, slaktOrsak } from './boskap';
+import { TORV, torvHellre } from './torv';
+import { attTomma, branningUppgift, passaBradska, passaUppgift, passaVal } from './brann';
+import { LIE_FART } from './jarnsaker';

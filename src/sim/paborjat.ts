@@ -13,7 +13,7 @@ import { fartVid, startStation, tillbehorDef } from './stationer';
 import { dorrDef } from './byggnad';
 import { DRICKA_ACTS, TORST, drickMin, startSmalta } from './torst';
 import { halMin } from './is';
-import { ACTS } from './handlingar';
+import { ACTS, redskapTal } from './handlingar';
 import { balans } from './balans';
 import { HALSA } from './halsa';
 import { startOdla } from './odling';
@@ -56,7 +56,7 @@ function startWork0(s: State, p: Person, tk: Task) {
   if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)
   if (tk.act === 'vatten') { tk.until = s.now + (TORST.fyllMin + halMin(s, p)) * MIN; return; } // vattensäcken fylls (torst.ts), med hålet i isen (is.ts)
   if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN; return; } // ett tillbehör till en möbel (stationer.ts)
-  if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) - (s.halvfallt?.[i] ?? 0)); return; }
+  if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) / redskapTal('falla', tk.tool).fart - (s.halvfallt?.[i] ?? 0)); return; } // järnyxan fäller fortare (steg 12.2.6)
   // framme: arbetet tar sin tid från framkomsten, inte det som blev över av tiden för vägen dit; den som redan stod där står inte
   // och väntar (steg 9.2.130)
   if (tk.arbTid !== undefined && ACTS[tk.act]?.framme) { tk.until = s.now + tk.arbTid; tk.arbTid = undefined; return; }

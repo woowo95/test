@@ -19,3 +19,4 @@ import './kultur';
 import './fas9';
 import './fas10';
 import './fas11';
+import './fas12';

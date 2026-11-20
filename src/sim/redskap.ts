@@ -2,8 +2,8 @@ import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
-import { ACTS, ACT_LIST, toolRow } from './handlingar';
-import { SAKER, SAK_LIST, gruppOf, isTool, sakNamn } from './saker';
+import { ACTS, ACT_LIST, redskapTal, toolRow } from './handlingar';
+import { SAKER, SAK_LIST, gruppOf, iSlag, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
 import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
@@ -154,10 +154,10 @@ export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.m
 // p kan slakta eller rensa arten: byn har stationen om det bara görs där (viltet och fisken vid slaktbänken), det finns
 // tillräckligt, en kniv som ingen annan slaktar med (om det behövs; hen kan kniven eller äger en köpt, steg 4.5.4.16), och ingen
 // annan gör det redan
-export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && t.k === 'kniv')) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && (ACTS[art.act]?.plats === 'station' ? !!stationFor(s, art.act, p) : enTill(s, art.act, p)); // en bänk rymmer sin arbetare (steg 10.2.5)
+export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && iSlag(t.k, 'kniv'))) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && (ACTS[art.act]?.plats === 'station' ? !!stationFor(s, art.act, p) : enTill(s, art.act, p)); // en bänk rymmer sin arbetare (steg 10.2.5)
 // slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
 export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
-  const n = Math.min(hours * art.timme, harTillHands(s, p, art.sak) / art.mat); // det hen har till hands (steg 11.1.74)
+  const n = Math.min(hours * art.timme * redskapTal(art.act, p.task?.tool).fart, harTillHands(s, p, art.sak) / art.mat); // det hen har till hands (steg 11.1.74); järnkniven tre gånger så fort (steg 12.2.6)
   if (n <= 0 || art.kniv && knives(s) < 1 || !kanGoras(s, art.act)) { if (p.task) p.task.until = s.now; return; }
   const vems = stycka(s, p, art, n);
   heligtBrutet(s, p, art.art); // det heliga djuret slaktas bara i nöd (steg 10.3.15)
@@ -197,9 +197,9 @@ const ORDNING = ACT_LIST.flatMap(a => Object.keys(ACTS[a].redskap ?? {}));
 const plats = (k: string) => { const i = ORDNING.indexOf(k); return i < 0 ? ORDNING.length : i; };
 export const GORS: Record<string, string[]> = {};
 for (const k of SAK_LIST) if (SAKER[k]!.gors) (GORS[gruppOf(k)] ??= []).push(k);
-for (const ks of Object.values(GORS)) ks.sort((a, b) => plats(a) - plats(b));
+for (const ks of Object.values(GORS)) ks.sort((a, b) => plats(a) - plats(b) || (SAKER[b]!.rang ?? 0) - (SAKER[a]!.rang ?? 0)); // järnskölden före träskölden (steg 12.2.8)
 // hur många byn har av gruppen g (hur många den vill ha: villAv i forradsmal.ts, steg 6.2.17)
-export const harAv = (s: State, g: string) => GORS[g].reduce((a, k) => a + nTools(s, k), 0);
+export const harAv = (s: State, g: string) => tingOf(s).reduce((a, t) => a + (gruppOf(t.k) === g ? 1 : 0), 0); // alla i gruppen, också järnsakerna som smids (steg 12.2.8)
 // taket för gruppen g (steg 10.2.74): över det byn behöver är ett till värt mindre ju närmare taket
 export const takAv = (s: State, g: string) => Math.ceil(villAv(s, g) * REDSKAP.tak - 1e-9);
 // ting i gruppen g som kan ersättas av ett bättre (steg 10.2.74): av ett slag som är mindre värt än det bästa någon i byn kan

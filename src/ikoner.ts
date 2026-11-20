@@ -3791,3 +3791,7 @@ export function iconImg(k: string, size = 16) {
 }
 // en symbol i gränssnittet: pixelbilden k om den finns, annars tecknet (emojin i registret)
 export const tecknet = (k: string, alt: string, size = 16) => hasIcon(k) ? iconImg(k, size) : alt;
+
+// myren och järnet (fas 12): platshållarna i ikonerjarn.ts
+import { laggTillJarn } from './ikonerjarn';
+laggTillJarn(PIX, PAL);

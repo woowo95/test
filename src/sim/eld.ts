@@ -122,25 +122,37 @@ export const igniterOf = (s: State, p?: Person) => {
   for (let i = IGNITERS.length - 1; i >= 0; i--) {
     const ig = IGNITERS[i];
     if (!SAKER[ig.id]?.redskap) { if (amountOf(s, ig.id) + iBordan(p, ig.id) >= 1) return ig; continue; } // med det hen bär dit (steg 11.1.75)
-    if (nTools(s, ig.id) >= 1 && (p ? kanTeknik(p, ig.id) : living(s).some(q => kanTeknik(q, ig.id)))) return ig;
+    if (ig.med && amountOf(s, ig.med) + iBordan(p, ig.med) < 1) continue; // eldstålet utan flinta att slå mot (steg 12.2.12)
+    if (nTools(s, ig.id) >= 1 && (p ? kanTeknik(p, ig.tek ?? ig.id) : living(s).some(q => kanTeknik(q, ig.tek ?? ig.id)))) return ig;
   }
   return undefined;
 };
-// bränsle i förrådet räknat i ved: ved och grenar
-export const fuelStock = (s: State) => amountOf(s, 'ved') + amountOf(s, 'grenar') * GREN;
+// bränsle i förrådet räknat i ved: ved och grenar, och torven (steg 12.1.3, torv.ts)
+export const fuelStock = (s: State) => amountOf(s, 'ved') + amountOf(s, 'grenar') * GREN + (amountOf(s, 'torv') + amountOf(s, 'blottorv')) * TORV.varde;
 // Elden ägs av hela byn, men veden följer ägandet: man eldar med byns och sin egen. fran = den man stjäl av (behov.ts)
 // bränslet p får elda med, räknat i ved
-export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved', p, fran) + takeLimit(s, 'grenar', p, fran) * GREN + (fran ? 0 : iBordan(p, 'ved') + iBordan(p, 'grenar') * GREN); // med det hen bär dit
+export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved', p, fran) + takeLimit(s, 'grenar', p, fran) * GREN + (fran ? 0 : iBordan(p, 'ved') + iBordan(p, 'grenar') * GREN) // med det hen bär dit
+  + (takeLimit(s, 'torv', p, fran) + takeLimit(s, 'blottorv', p, fran) + (fran ? 0 : iBordan(p, 'torv') + iBordan(p, 'blottorv'))) * TORV.varde; // och torven (steg 12.1.3)
 // ta bränsle ur förrådet, ved först och sedan grenar; ger hur mycket som togs
 // p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
 export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Person) {
   const v = Math.min(n, takeLimit(s, 'ved', p, fran) + (fran ? 0 : iBordan(p, 'ved')));
   if (p?.task && v > 0) p.task.blotVed = Math.min(1, Math.max(0, v - torrVed(s)) / v); // torr ved tas först (steg 7.3.4)
   const w = use(s, p, 'ved', v, true, fran?.id);
-  const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9), Math.ceil((n - v) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
+  // torven (steg 12.1.3, torv.ts): den torra efter veden och före grenarna, den blöta sist, i hela torv
+  const hel = (k: string, kvar: number) => kvar <= 1e-9 ? 0 : Math.min(Math.floor(takeLimit(s, k, p, fran) + (fran ? 0 : iBordan(p, k)) + 1e-9), Math.ceil(kvar / TORV.varde - 1e-9));
+  const tt = hel('torv', n - v);
+  if (tt > 0) { const d = use(s, p, 'torv', tt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); }
+  const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9), Math.ceil((n - v - tt * TORV.varde) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
   if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
+  const bt = hel('blottorv', n - v - tt * TORV.varde - g * GREN);
+  if (bt > 0) {
+    const d = use(s, p, 'blottorv', bt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde);
+    const tot = v + tt * TORV.varde + g * GREN + bt * TORV.varde; // den blöta torven brinner som blöt ved
+    if (p?.task) p.task.blotVed = Math.min(1, ((p.task.blotVed ?? 0) * v + bt * TORV.varde) / tot);
+  }
   if (ag) addDel(ag, w);
-  return v + g * GREN;
+  return v + tt * TORV.varde + g * GREN + bt * TORV.varde;
 }
 // bränsle som inte fick plats går tillbaka till förrådet som grenar
 export const giveBack = (s: State, n: number) => { if (n > 0) addTo(s, 'grenar', n / GREN); };
@@ -274,7 +286,7 @@ function lightFire(s: State, p: Person, f: Fire, brand?: string) {
 // chansen för ett försök med byns bästa tänddon, före lärandet av försöken. Eldandet är ingen egen färdighet (steg 3.10.8):
 // chansen räknas ur hantverket, och ingen övar av att tända eller fylla på
 function tandChans(s: State, p: Person, f: Fire, naver: boolean) {
-  return igniterOf(s, p)!.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (amountOf(s, 'ved') > 0 && torrVed(s) <= 0 ? BLOTVED.tand : 1) // en gammal kolhög tar lättare fyr
+  return igniterOf(s, p)!.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) * (amountOf(s, 'ved') > 0 && torrVed(s) <= 0 || amountOf(s, 'ved') <= 0 && amountOf(s, 'torv') <= 0 && amountOf(s, 'blottorv') > 0 ? BLOTVED.tand : 1) // en gammal kolhög tar lättare fyr
     * (naver ? ELD.naverChans : 1); // nävern tar lättare eld än höet
 }
 // ---------- eld från en eld som brinner (steg 10.6.12) ----------
@@ -332,6 +344,8 @@ export function tryLight(s: State, p: Person, f = s.fire) {
   if (ig.id === 'bagborr' && wearTool(s, p, 'bagborr', 1 / ELD.borrForsok)) { // borren slits av varje försök (steg 10.6.13)
     count(s, 'bagborrarTrasiga'); log(s, `${p.name}s bågborr gick sönder.`, 'world', [p.id]);
   }
+  if (ig.slits && wearTool(s, p, ig.id, 1 / ig.slits)) { count(s, ig.id + 'Trasiga'); log(s, `${p.name}s ${ig.name.split(' ')[0].toLowerCase()} var slitet.`, 'world', [p.id]); } // eldstålet slits av varje försök (steg 12.2.12)
+  if (ig.med === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) { use(s, p, 'flinta', 1, true); count(s, 'flintaSprackStal'); } // flintan som stålet slås mot kan spricka
   if (lyckas) { gjort(s, p, 'tande'); lightFire(s, p, f); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
     use(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id }, f);
@@ -591,3 +605,4 @@ export const VED: Behov = {
   // stölden: p hämtar den andras ved till elden (steg.ts räknar den när den tas). Annars hämtar den som väljs längre upp
   anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= ALDER.hjalper && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
 };
+import { TORV } from './myr';

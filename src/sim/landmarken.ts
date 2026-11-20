@@ -45,6 +45,7 @@ export const LANDMARKEN = {
   passage: { namn: 'Röjd passage', tecken: 'stubbe', mark: ['tat'], avst: 1, projekt: true, blir: { tat: 'skog' } },
   rastplats: { namn: 'Rastplats', tecken: 'eld', mark: ['slatt', 'skog'], avst: 2, tathet: 0.003, karta: true },
   silvergruva: { namn: 'Silvergruva', tecken: 'gruva', mark: ['berg'], avst: 3 }, // läggs ut av laggGruvor (gruva.ts, steg 11.10.1)
+  jarngruva: { namn: 'Järngruva', tecken: 'jarngruva', mark: ['berg'], avst: 3 }, // läggs ut av laggJarngruvor (gruva.ts, steg 12.2.13)
 } as const satisfies Record<string, LandmarkDef>;
 export type LandmarkId = keyof typeof LANDMARKEN;
 export const LANDMARK_IDS = Object.keys(LANDMARKEN) as LandmarkId[];

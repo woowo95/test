@@ -9,7 +9,7 @@ import { hash3 } from './slump';
 import { VarldMark, skapaVarldMark } from './varldmark';
 import { State } from './typer';
 import { laggByar, laggHuvudby, laggOvriga } from './placering';
-import { laggGruvor } from './gruva';
+import { laggGruvor, varldMarkKrok } from './gruva';
 import { laggGrannat } from './grannat';
 
 export interface Varlden {
@@ -21,6 +21,7 @@ export interface Varlden {
   borjan?: number; perioder?: Record<import('./varldslag').PeriodId, number>; // världens början och perioderna som räknats (steg 11.2.17, varldslag.ts)
   ko?: import('./varldslag').KoPost[]; nastaKo?: number; // det som händer vid en känd tid, sorterat på tiden
   vagar?: import('./vagval').VarldVag[]; // de vägar som räknats (steg 11.2.20, vagval.ts)
+  jarnLagd?: 1; // järngruvorna har lagts ut (steg 12.2.13, gruva.ts)
   frusen?: true; // istiden: sjö, myr och floder går att korsa (steg 11.11.8, leder.ts)
   leder?: Record<number, import('./leder').LedSlitage>; ledVer?: number; sallskap?: import('./resa').Sallskap[]; nastaSallskap?: number; gommor?: import('./resa').Gomma[]; gravar?: import('./resa').VagGrav[]; // det sällskap släppt vid vägen (steg 11.5.17) // sällskapen (steg 11.5.2, resa.ts); // slitaget per ruta och kostnadernas version (steg 11.5.1, leder.ts)
   kronika?: import('./varldkronika').VarldHandelse[]; nastaHandelse?: number; // världens krönika (steg 11.2.19, varldkronika.ts)
@@ -54,7 +55,7 @@ export function packaVarld(fro: number, v: VarldMark): Varlden {
 // fore: det som görs före huvudbyn (förhistorien, forhistoria.ts, steg 11.3.13)
 export function medVarld(s: State, fore?: (s: State, vl: Varlden, v: VarldMark) => void) {
   if (s.varld) return s.varld;
-  const fro = varldFro(s.seed), v = skapaVarldMark(fro);
+  const fro = s.varldFro ?? varldFro(s.seed), v = skapaVarldMark(fro); // en ny värld i testläget har ett eget frö (steg 12.3.1, nyvarld.ts)
   s.varld = packaVarld(fro, v);
   uppackad.set(s.varld, v);
   laggByar(s.varld, v); // byarna, de övriga platserna och sist huvudbyn med samma regler (placering.ts, steg 11.2.13–11.2.14)
@@ -78,3 +79,6 @@ export function varldMark(s: State): VarldMark | undefined {
   }
   return v;
 }
+
+// järngruvorna i en värld som sparats före dem (steg 12.2.13, gruva.ts)
+varldMarkKrok.f = varldMark;

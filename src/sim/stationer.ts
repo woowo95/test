@@ -73,6 +73,7 @@ export const STATION = balans('station', {
   bordUte: 20, // när det är kallt eller regnar är ett bord ute så här många rutor längre bort än ett inne (steg 7.2.8)
   avstand: 2.5, // en station ute står helst så här många rutor utanför det byn omsluter (tillHoljet i omrade.ts), från stationens mitt
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
+  kolTill: 14, kolAvst: 8, // kolmilan står högst och helst så här många rutor från byn, eftersom den kastar gnistor (steg 12.2.1)
   utkantMin: 1, // det som står i byns utkant står aldrig närmare byns område än så här (om ingen plats längre bort är ledig, t.ex. för skogen)
   knivplatser: 1, // så många knivar som ligger kvar vid slaktbänken
   repFart: 2, // rep tvinnas så här många gånger fortare vid slöjdbänken än för hand ...
@@ -137,6 +138,8 @@ const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fac
 const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra', bok: 'bok', krycka: 'krycka', traben: 'traben', krok: 'krok', bagborr: 'bagborr', kalke: 'kalke', slade: 'slade', vagn: 'vagn' };
 const traVid = (b: string, f: (r: ReceptRad) => boolean = () => true) => [...new Set((Object.keys(TRA_ACT) as (keyof typeof RECEPT)[]).filter(k => { const r: ReceptRad = RECEPT[k]; return r.bank === b && f(r); }).map(k => TRA_ACT[k]!))];
 const SNICKAR = traVid('snickarbank');
+// plaggen som görs vid stationen st (PlaggDef.station i klader.ts: hjälmen och brynjan i smedjan, steg 12.2.9)
+const plaggVid = (st: string) => (Object.keys(PLAGG) as Act[]).filter(k => (PLAGG as Record<string, { station?: string }>)[k].station === st);
 // ---------- den vävda mattan (steg 10.7.6, Pynt och smycken: Den vävda mattan) ----------
 // Mattan är ett pynt som ligger på golvet i rummet där ägaren sover, av lintyg eller ylle. Storlekarna är rader i MATTOR; varje
 // storlek finns i båda tygen som en station (matta_<storlek>_<tyg>), och smaken (PYNT_SMAK) är en för alla mattor
@@ -380,6 +383,25 @@ export const STATIONER = {
     forsta: '{namn} snickrade byns första krubba och ställde den i fähuset. Där läggs höet åt djuren, och där står de i istiden.',
   },
   ...MATTA_ST,
+  // kolmilan (steg 12.2.1, brann.ts): en kolbotten som grävs med spaden, utan material, en bit från byn
+  kolmila: {
+    namn: 'Kolmila', ikon: 'kolmila', w: 2, h: 2, tek: ['kolmila'], av: RECEPT.kolmila.av, min: RECEPT.kolmila.min, gor: ['kola'], bara: ['kola'], verktyg: 'benspade', utkant: { tradFri: true, till: STATION.kolTill, avst: STATION.kolAvst },
+    bygger: 'Gräver en kolbotten med benspaden.',
+    forsta: '{namn} grävde byns första kolbotten. Där reses veden till en mila som brinner till kol.',
+  },
+  // blästerugnen (steg 12.2.3, brann.ts): ett schakt av lera och sten med en bälg av skinn, en bit från byn
+  blasterugn: {
+    namn: 'Blästerugn', ikon: 'blasterugn', w: 2, h: 2, tek: ['blasterugn'], av: RECEPT.blasterugn.av, min: RECEPT.blasterugn.min, gor: ['blasa'], bara: ['blasa'], utkant: { tradFri: true, till: STATION.kolTill, avst: STATION.kolAvst },
+    bygger: 'Bygger en blästerugn av lera och sten, med en bälg av skinn.',
+    forsta: '{namn} byggde byns första blästerugn. Där blir malm och kol till järn.',
+  },
+  // smedjan (steg 12.2.4, smedja.ts): inne, med ässjan som brinner på kol och städet där man arbetar. Allt smide görs bara här
+  smedja: {
+    delar: [{ namn: 'Ässjan', ikon: 'smedja_assja', w: 2, h: 2 }, { namn: 'Städet', ikon: 'smedja_stad', w: 1, h: 2, arbete: true }],
+    kv: STATION.kvMer, namn: 'Smedja', ikon: 'smedja', w: 3, h: 2, tek: ['smedja'], av: RECEPT.smedja.av, min: RECEPT.smedja.min, inne: true, gor: ['smida', ...plaggVid('smedja')], bara: ['smida', ...plaggVid('smedja')], fart: Object.fromEntries(plaggVid('smedja').map(a => [a, STATION.redskapFart])),
+    bygger: 'Bygger en smedja med ässja och städ.',
+    forsta: '{namn} byggde byns första smedja. Järnet i den blev hammaren och tången, och vid städet smids järnet.',
+  },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
 export const STATION_LIST = Object.keys(STATIONER) as StationSlag[];
@@ -1419,7 +1441,7 @@ export function tillbehorVarme(s: State, p: Person, rum: unknown) {
 
 // ---------- redskapsplatserna (knivplatsen, bensylen) ----------
 // redskapen av slaget k som hör till stationen
-export const redskapVid = (s: State, t: Station, k: string) => tingOf(s).filter(q => q.vid === t.id && q.k === k);
+export const redskapVid = (s: State, t: Station, k: string) => tingOf(s).filter(q => q.vid === t.id && iSlag(q.k, k)); // knivplatsen tar vilken kniv som helst (steg 12.2.5)
 // ligger redskapet k i stationen där man gör act (sländan i vävstolen, steg 7.7.9)?
 export const verktygVid = (s: State, act: Act, k: string) => { const t = stationFor(s, act); return !!t && redskapVid(s, t, k).length > 0; };
 const platserFor = (t: Station, k: string) => stationDef(t.k)?.vid?.[k] ?? 0;
@@ -1429,7 +1451,7 @@ export function tommaPlatser(s: State, k: string) {
   for (const t of stationerOf(s)) {
     const pl = isKlar(t) ? platserFor(t, k) : 0;
     if (pl <= 0) continue;
-    if (!vid) { vid = new Map(); for (const q of tingOf(s)) if (q.k === k) vid.set(q.vid, (vid.get(q.vid) ?? 0) + 1); }
+    if (!vid) { vid = new Map(); for (const q of tingOf(s)) if (iSlag(q.k, k)) vid.set(q.vid, (vid.get(q.vid) ?? 0) + 1); }
     n += Math.max(0, pl - (vid.get(t.id) ?? 0));
   }
   return n;
@@ -1748,3 +1770,5 @@ export function stepStationer(s: State) {
 }
 // namnet efter 'byns första': adjektivet i bestämd form ('lilla bord'; steg 4.5.1.4)
 const forstaForm = (namn: string) => namn.toLowerCase().replace(/^litet /, 'lilla ').replace(/^(\p{L}+)at /u, '$1ade ');
+import { iSlag } from './saker';
+import { PLAGG } from './klader';

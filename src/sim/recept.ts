@@ -155,6 +155,20 @@ const DEF = {
   stall: { var: 'station', av: { plankor: RT.stallVirke, rep: RT.stallRep }, min: RT.stallMin },
   bokhylla: { var: 'station', av: { plankor: 3 }, min: 15 }, // steg 10.6.16: där blad och böcker står
   latrin: { var: 'station', av: {}, min: RT.latrinMin },
+  kolmila: { var: 'station', av: {}, min: 10 }, // grävs med spaden (steg 12.2.1)
+  blasterugn: { var: 'station', av: { lera: 6, sten: 4, skinn: 2, virke: 1 }, min: 20 }, // skinnen och virket är bälgen (steg 12.2.3)
+  smedja: { var: 'station', av: { huggen_sten: 6, lera: 2, skinn: 2, virke: 1, jarn: 1 }, min: 20 }, // järnet är hammaren och tången (steg 12.2.4)
+  // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
+  jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },
+  jarnkniv: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' },
+  lie: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },
+  jarnhjalm: { var: 'plagg', mangd: 2, av: { lader: 1 }, min: 5 }, ringbrynja: { var: 'plagg', mangd: 8, av: { lader: 1 }, min: 5 }, // smids i smedjan (steg 12.2.9)
+  spanne: { var: 'plagg', mangd: 1, min: 3 }, // ett spänne av järn, pynt (steg 12.2.10)
+  isborr: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // steg 12.2.11
+  eldstal: { var: 'sak', av: { jarn: 1 }, min: 3, slag: 'liten', tek: 'smedja' }, // steg 12.2.12
+  svard: { var: 'sak', av: { jarn: 3, lader: 1 }, min: 5, slag: 'stor', tek: 'vapensmide' }, // byns första rena vapen (steg 12.2.9)
+  jarnspjut: { var: 'sak', av: { jarn: 1, grenar: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // smids (steg 12.2.8)
+  jarnskold: { var: 'sak', av: { ved: 3, lader: 1, jarn: 1 }, min: 4, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, // mest trä: vid snickarbänken, med järnet bland materialen (steg 12.2.8)
   bikupa: { var: 'station', av: { torrgras: 4, grenar: 2 }, min: 10, tek: 'bikupa' }, // bikupan (steg 10.10.16): en halmkupa flätad av hö på grenar
   kompost: { var: 'station', av: { virke: 1 }, min: 10, tek: 'kompost' }, // komposten (steg 9.7.6): en enkel inhägnad av lite trä
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },

@@ -26,6 +26,7 @@ export interface SakDef {
   redskap?: true; // räknas styckvis; skicket är hur mycket som finns kvar av redskapet
   hanger?: 'balte' | 'axel'; // var redskapet hänger när det inte används (steg 7.1.1): i bältet eller på axeln (axelremmen, steg 7.1.2). Saknas = det hänger ingenstans
   grupp?: string; // redskap av samma slag som kan ersätta varandra (alla spjut), och görs på samma sätt (redskap.ts)
+  rang?: number; // i en av redskapens grupper (yxa, kniv, skara): den med högst rang tas först (järnet före stenen, steg 12.2.5); saknas = 0
   trasig?: { stat: string; text?: string }; // när redskapet går sönder i arbetet: det som räknas, och texten första gången ({namn} = den som arbetade)
   dold?: true; // syns inte för invånarna
   i?: string; // ligger gömd i stackarna av det slaget (stack.dold) och har ingen egen stack
@@ -63,7 +64,7 @@ const DEF = {
   ved: { namn: 'Ved', skaffa: { act: 'hugga', tek: 'yxa' }, stack: 20, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', skaffa: { act: 'ved' }, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
   torrgras: { namn: 'Hö', ett: true, skaffa: { tid: 0.4, act: 'samla' }, stack: 50, mapp: 'Bränsle', slits: 0.006 }, // hö ruttnar på ett par dygn när det ligger utanför lagret (steg 2.2.9)
-  kol: { namn: 'Kol', ett: true, skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
+  kol: { namn: 'Kol', ett: true, skaffa: { tid: 0.3 }, stack: 25, vikt: 1, mapp: 'Bränsle' }, // vikten 1 (steg 12.2.1): kolet ur kolmilan och ur en slocknad eld
   flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true, act: 'samla' }, stack: 20, mapp: 'Sten', brinnerInte: true },
   yxa: { namn: 'Flintyxa', hanger: 'balte', skaffa: RECEPT.yxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true, trasig: { stat: 'yxorTrasiga', text: '{namn}s yxa gick sönder.' },
     gors: { text: 'Gör en flintyxa.', stat: 'yxa1', forsta: '{namn} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.', fame: 'Gjorde byns första yxa', igen: '{namn} gjorde en flintyxa.' } },
@@ -306,6 +307,22 @@ const DEF = {
   ulltrad: { namn: 'Ulltråd', skaffa: RECEPT.ulltrad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 9.8.14: ullen spinns som linet
   ylle: { namn: 'Ylletyg', skaffa: RECEPT.ylle, stack: 10, vikt: 0.6, mapp: 'Material' }, // och vävs i vävstolen
   lovkarve: { namn: 'Lövkärve', skaffa: { tid: 0.25, act: 'hamla' }, stack: 25, vikt: 0.3, mapp: 'Bränsle', slits: 0.006 }, // steg 9.8.16: skotten med lövet från ett hamlat träd, som djuren äter som hö
+  // torven (steg 12.1.3, torv.ts): grävs blöt i myren och torkar till torv; en torv värmer som en halv ved
+  torv: { namn: 'Torv', skaffa: { tid: 0.05 }, stack: 20, vikt: 2, mapp: 'Bränsle' },
+  blottorv: { namn: 'Blöt torv', skaffa: { tid: 0.03 }, stack: 20, vikt: 2, mapp: 'Bränsle' },
+  malm: { namn: 'Malm', skaffa: { tid: 0.1 }, stack: 10, vikt: 4, mapp: 'Sten', brinnerInte: true }, // steg 12.1.2: grävs i myren (malm.ts)
+  jarn: { namn: 'Järn', ett: true, skaffa: { tid: 0.5 }, stack: 20, vikt: 2, mapp: 'Sten', brinnerInte: true }, // steg 12.2.3: blåses i blästerugnen (brann.ts)
+  jarnskrot: { namn: 'Järnskrot', ett: true, skaffa: { tid: 0.25 }, stack: 20, vikt: 1, mapp: 'Sten', brinnerInte: true }, // steg 12.2.7: blir kvar när en järnsak går sönder, och smids om till järn
+  // järnredskapen (steg 12.2.6, jarnsaker.ts): i redskapens grupper med högre rang än stensaken, smids i smedjan
+  // järnvapnen (steg 12.2.8, jarnsaker.ts): järnspjutet smids, järnskölden görs vid snickarbänken
+  jarnspjut: { namn: 'Järnspjut', hanger: 'axel', ett: true, grupp: 'spjut', rang: 1, skaffa: RECEPT.jarnspjut, vikt: 5, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'jarnspjutTrasiga', text: '{namn}s järnspjut gick sönder.' } },
+  jarnskold: { namn: 'Järnsköld', bildyta: true, hanger: 'balte', grupp: 'skold', rang: 1, skaffa: RECEPT.jarnskold, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, gors: { text: 'Gör en rundsköld med järnbuckla och läderkant.', stat: 'jarnskoldarGjorda', forsta: '{namn} gjorde byns första järnsköld, med en buckla av järn mitt på.' } },
+  isborr: { namn: 'Isborr', hanger: 'balte', skaffa: RECEPT.isborr, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.2.11: borrar genom den tjockaste isen, smids i smedjan
+  eldstal: { namn: 'Eldstål', ett: true, hanger: 'balte', skaffa: RECEPT.eldstal, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.00005, redskap: true }, // steg 12.2.12: tänddonet som slås mot flinta, smids i smedjan
+  svard: { namn: 'Svärd', ett: true, hanger: 'balte', skaffa: RECEPT.svard, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.2.9: byns första rena vapen, smids i smedjan
+  jarnyxa: { namn: 'Järnyxa', hanger: 'balte', grupp: 'yxa', rang: 1, skaffa: RECEPT.jarnyxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, trasig: { stat: 'jarnyxorTrasiga', text: '{namn}s järnyxa gick sönder.' } },
+  jarnkniv: { namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },
+  lie: { namn: 'Lie', hanger: 'axel', grupp: 'skara', rang: 1, skaffa: RECEPT.lie, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'liarTrasiga', text: '{namn}s lie gick sönder.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
@@ -332,6 +349,11 @@ export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
 export const isTool = (k: string) => !!SAKER[k]?.redskap;
 export const REDSKAP_SLAG = SAK_LIST.filter(isTool); // alla redskapsslag, i registrets ordning
 export const gruppOf = (k: string) => SAKER[k]?.grupp ?? k;
+// redskapens grupper (steg 12.2.5, Järnet: Järnsakerna): yxorna, knivarna och skärorna. Den som frågar efter gruppens namn
+// (yxa, kniv, skara) får vilken sak som helst i gruppen (sakerna med grupp eller id lika med namnet), den bästa först
+// (GORS i redskap.ts). Spjuten är en grupp sedan förut och frågas efter med sina slag (SPJUT i redskap.ts)
+export const REDSKAPSGRUPPER: readonly string[] = ['yxa', 'kniv', 'skara', 'skold']; // skölden: träskölden och järnskölden (steg 12.2.8)
+export const iSlag = (tk: string, k: string) => tk === k || REDSKAPSGRUPPER.includes(k) && gruppOf(tk) === k;
 export const KLAD_SLAG = SAK_LIST.filter(k => SAKER[k]!.klad); // klädesplaggen (steg 2.3.2)
 // mappar i listan över allt byn äger; maten med det som håller längst först. summa = antalen läggs ihop på mappens rad
 const MAPP_SUMMA = new Set(['Mat', 'Bränsle']);

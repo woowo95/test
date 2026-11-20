@@ -17,7 +17,7 @@ export const STATIONSELD = balans('stationseld', {
 // burn = ved i timmen, max = så många ved som ryms, varme/radie = hur mycket och hur långt den värmer (0 = inte alls),
 // tim = så många timmar elden behöver brinna för arbetet act (utöver arbetet självt), kravs = arbetet går inte utan elden
 // med = elden finns bara när stationen har det tillbehöret (brännpannan på bryggkaret), acts = bara de arbetena behöver elden
-export interface EldStation { burn: number; max: number; varme: number; radie: number; tim?: (s: State, t: Station) => number; kravs: boolean; med?: string; acts?: string[] }
+export interface EldStation { burn: number; max: number; varme: number; radie: number; tim?: (s: State, t: Station) => number; kravs: boolean; med?: string; acts?: string[]; bransle?: string } // bransle = det elden brinner på, annars ved (ässjan i smedjan brinner på kol, steg 12.2.4); burn och max räknas i det
 export const ELDSTATIONER: Record<string, EldStation> = {
   ortkok: { burn: 1, max: 3, varme: 0.35, radie: 2.5, kravs: true }, // en ved räcker en timme: flera kokningar i rad delar på den
   bakugn: { burn: 1.5, max: 3, varme: 0, radie: 0, tim: () => bakKrok.passivTim(), kravs: true }, // degen gräddas medan elden brinner
@@ -35,13 +35,15 @@ export function eldStationVid(s: State, p: { x: number; y: number }, act: string
   return stationerOf(s).find(t => eldDef(t) && (!eldDef(t)!.acts || eldDef(t)!.acts!.includes(act)) && isKlar(t) && stationDef(t.k)?.gor.includes(act as never) && (at => Math.hypot(p.x - at.x, p.y - at.y) < STATION.vidBank)(vidStation(t)));
 }
 // p kan arbeta med act vid en station med eld: den brinner, eller det finns ved att tända den med
-export const eldKan = (s: State, p: Person, t?: Station) => !t || !eldDef(t) || stationBrinner(t) || getable(s, p, 'ved') >= 1;
+export const eldKan = (s: State, p: Person, t?: Station) => !t || !eldDef(t) || stationBrinner(t) || getable(s, p, eldDef(t)!.bransle ?? 'ved') >= 1;
+// det stationens eld brinner på (ved, eller ässjans kol)
+export const eldBransle = (s: State, p: Person, tk: Task) => { const t = eldStationVid(s, p, tk.act); return (t && eldDef(t)?.bransle) ?? 'ved'; };
 // p lägger ved på stationens eld så att den räcker timmar timmar, hela ved och högst så många som ryms, och tänder den om den är
 // kall. Svarar med minuterna det tog att tända (0 när den brann eller glödde), eller undefined när den inte brinner
 export function elda(s: State, p: Person, t: Station, timmar: number) {
   const d = eldDef(t)!, e = (t.eld ??= { ved: 0 });
-  const behov = Math.max(Math.ceil(Math.max(0, timmar * d.burn - e.ved) - 1e-9), e.lit || e.ved > 0 ? 0 : 1), n = Math.min(behov, Math.floor(d.max - e.ved + 1e-9), Math.floor(getable(s, p, 'ved') + 1e-9));
-  if (n > 0) { takeMaterial(s, p, 'ved', n); e.ved += n; count(s, 'stationsVed', n); }
+  const br = d.bransle ?? 'ved', behov = Math.max(Math.ceil(Math.max(0, timmar * d.burn - e.ved) - 1e-9), e.lit || e.ved > 0 ? 0 : 1), n = Math.min(behov, Math.floor(d.max - e.ved + 1e-9), Math.floor(getable(s, p, br) + 1e-9));
+  if (n > 0) { takeMaterial(s, p, br, n); e.ved += n; count(s, br === 'ved' ? 'stationsVed' : 'stationsBransle_' + br, n); }
   if (e.lit || e.ved <= 0) return e.lit ? 0 : undefined;
   const kall = !glod(s, t);
   e.lit = 1; e.glod = undefined;

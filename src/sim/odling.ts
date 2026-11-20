@@ -312,7 +312,7 @@ const utanfor = (s: State, g: Grans, x: number, y: number) => !g.nara[y * W + x]
 function rutaFri(s: State, g: Grans, x: number, y: number) {
   if (!inMap(x, y) || x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   const i = y * W + x, t = getMap(s.seed).tiles[i];
-  return (t === T.Gras || t === T.Skog) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && utanfor(s, g, x, y) && ledig(s, x, y) && !faltAt(s, x, y) && !(s.hagar ?? []).some(h => x >= h.x - 1 && x <= h.x + h.w && y >= h.y - 1 && y <= h.y + h.h)
+  return (t === T.Gras || t === T.Skog) && !paMyr(s, i) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && utanfor(s, g, x, y) && ledig(s, x, y) && !faltAt(s, x, y) && !(s.hagar ?? []).some(h => x >= h.x - 1 && x <= h.x + h.w && y >= h.y - 1 && y <= h.y + h.h)
     && !(s.angar ?? []).some(a => x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h); // inte på slåtterängen (steg 9.8.9) // inte i en hage eller på dess staket (steg 9.8.4). I skogen fälls träden först, med en yxa (steg 3.6.9)
 }
 
@@ -861,3 +861,4 @@ function vaxtsjukdom(s: State, f: Falt) {
   if (dod.size) forlorad(s, f, 'Sjukdomen', dod);
 }
 utsadeKrok.av = utsade;
+import { paMyr } from './myr'; // inget fält på myren (steg 12.1.1)

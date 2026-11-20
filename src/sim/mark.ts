@@ -4,6 +4,7 @@ import { clampI, rnd } from './slump';
 import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
 import { BAR, BUSKE, FOREST, Ground, HIGH, VAG, decodeCover, isSoil } from './vag';
 import { balans } from './balans';
+import { myrOf, myrUnderVatten } from './myr';
 import { vattenNu } from './sjo';
 import { barKrok, nyaBuskar, tabortBuske, vaxBuske } from './buskar';
 import { aldras, gammaltTrad, lasAlder, lasArt, packaAlder, packaArt, startAlder, startArt, valjArt } from './trad';
@@ -54,6 +55,7 @@ export function groundOf(s: State): Ground {
     g.art = s.tradSort ? lasArt(s.tradSort) : startArt(s.seed, g.trees, g.tiles); // sorterna (steg 5.1.6)
     g.alder = s.tradAlder ? lasAlder(s.tradAlder) : startAlder(s.seed, g.trees, g.art); // en äldre sparfil får trädens åldrar som urskogen
     g.buske = s.buskar ? lasArt(s.buskar) : nyaBuskar(); // buskarna (steg 6.5.3), inga i en äldre sparfil
+    g.myr = myrOf(s.seed); if (myrUnderVatten(s)) g.myrVatten = true; // myren (steg 12.1.1, myr.ts)
     grounds.set(s, g);
     if (!s.barbuskar) { barKrok.saUt(s, g); s.barbuskar = 1; } // bärbuskarna där bären växer (steg 6.5.4)
   }
@@ -127,10 +129,10 @@ export const dungeOf = perKarta(seed => {
 });
 // skog i urskogens dungar utom på ängarna och i en liten glänta runt byplatsen (lite ojämn kant)
 function startForest(seed: number) {
-  const m = getMap(seed), ang = angOf(seed), dunge = dungeOf(seed), trees = new Float32Array(W * H);
+  const m = getMap(seed), ang = angOf(seed), dunge = dungeOf(seed), trees = new Float32Array(W * H), myr = myrOf(seed);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
-    if (!isSoil(m.tiles[i]) || ang[i] || !dunge[i]) continue;
+    if (!isSoil(m.tiles[i]) || ang[i] || !dunge[i] || myr?.[i]) continue; // ingen skog på myren (steg 12.1.1)
     const d = Math.hypot(x - m.fire.x, (y - m.fire.y) * MARK.gladaHojd);
     const edge = MARK.gladaRadie + hash(seed + 31, x - OX, y - OY) * MARK.gladaOjamn;
     trees[i] = d < edge ? 0 : d < edge + MARK.gladaKant ? MARK.gladaKantTrad : 1;
@@ -197,6 +199,7 @@ export function growGround(s: State, hours: number, season: number) {
       }
       vaxBuske(s, g, i, hours, ts, trangsel); // buskarna (steg 6.5.3, buskar.ts)
       if (trees[i] >= 1) aldras(g, i, hours); // ett vuxet träd åldras året runt, och torrakan faller till sist (trad.ts)
+      if (g.myr?.[i]) continue; // inga träd på myren (steg 12.1.1, myr.ts)
       if (!ts || old < HIGH) continue; // stigar och kort gräs stoppar ny skog
       if (trees[i] >= 1) continue;
       let h = 0;

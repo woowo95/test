@@ -24,7 +24,7 @@ import { villHaAv } from './forradsmal';
 import { handelsTill } from './handel';
 import { tandHamtas } from './eld';
 import { ritualMat } from './kult';
-import { eldaVed } from './stationseld';
+import { eldBransle, eldaVed } from './stationseld';
 import { BAK, festRecept, grillHamtas, kokRecept, STEK, stekRecept, torkHamtas } from './matlagning';
 import { RATT } from './ratter';
 import { GRODOR, odlaHamtas, STAKET, skrammaHar } from './odling';
@@ -55,7 +55,7 @@ HAMTAS.dorr = { av: (_s, _p, tk) => DORRAR[tk.tool as DorrSlag]?.av };
 const djurHamtas: Hamtas = { av: (s, p, tk) => {
   const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === tk.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt));
   // hela djur: det som hinns, avrundat uppåt till ett helt djur (en del av ett djur går inte att slakta)
-  const n = a ? Math.ceil(Math.min((tk.until - s.now) / HOUR * a.timme, djurKvar(s, a)) - 1e-9) * a.mat : 0;
+  const n = a ? Math.ceil(Math.min((tk.until - s.now) / HOUR * a.timme * redskapTal(a.act, tk.tool).fart, djurKvar(s, a)) - 1e-9) * a.mat : 0; // järnkniven (steg 12.2.6)
   return n > 0 ? { [a!.sak]: n } : undefined;
 } };
 for (const a of DJURARTER) HAMTAS[a.act] ??= djurHamtas;
@@ -122,7 +122,7 @@ export const hamtaForst = (s: State, p: Person, tk: Task) => iHelaForradet(() =>
 function hamtaForstNu(s: State, p: Person, tk: Task) {
   if (tk.site || tk.hamtad && !tk.vanda) return false;
   // och veden till stationens eld, när arbetet görs vid en station med eld (stationseld.ts, steg 11.1.75)
-  const av0 = hamtasFor(tk.act)?.av(s, p, tk), ved = eldaVed(s, p, tk), av = ved > 0 ? { ...av0, ved: (av0?.ved ?? 0) + ved } : av0;
+  const av0 = hamtasFor(tk.act)?.av(s, p, tk), ved = eldaVed(s, p, tk), br = ved > 0 ? eldBransle(s, p, tk) : 'ved', av = ved > 0 ? { ...av0, [br]: (av0?.[br] ?? 0) + ved } : av0; // ässjans kol (steg 12.2.4)
   if (!av) { if (tk.vanda) laggVid(s, p, tk); return false; }
   let sak = saknas(s, p, av);
   // fler vändor: det som bars hit läggs vid platsen, där det ligger inom räckhåll, och hen går efter resten. Hamnade det
@@ -177,3 +177,11 @@ function laggVid(s: State, p: Person, tk: Task) {
   if (tk.items) dropLoad(s, tk, p.x, p.y); // (med hamtad kvar: det som läggs ner är inte förbrukat, lager.ts)
   tk.vanda = undefined; tk.hamtad = undefined;
 }
+// kolmilan (steg 12.2.1, brann.ts): veden som reses till milan, när den är tom
+HAMTAS.kola = { av: (s, _p, tk) => branningHamtas(s, tk) };
+HAMTAS.blasa = HAMTAS.kola; // malmen och kolet till blästerugnen (steg 12.2.3)
+import { branningHamtas } from './brann';
+// järnredskapen som smids (steg 12.2.6, jarnsaker.ts): materialet i receptet
+HAMTAS.smida = { av: (_s, _p, tk) => smidaHamtas(tk) };
+import { smidaHamtas } from './jarnsaker';
+import { redskapTal } from './handlingar';

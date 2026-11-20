@@ -443,7 +443,7 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
     // kan och uppgift frågar ofta om samma plats (stationerna): den söks en gång (medPlatsMinne)
     const u = medPlatsMinne(() => d.kan(s, p, f) ? d.uppgift(s, p) ?? null : undefined);
     if (u !== undefined) {
-      const vf = u?.act === 'falla' ? v * fallVilja(s) : v; // färre fällningar när stammar ligger kvar (steg 9.2.87)
+      const vf = (u?.act === 'falla' ? v * fallVilja(s) : v) * (u ? smidaFaktor(s, u.act) : 1); // färre fällningar när stammar ligger kvar (steg 9.2.87), och mer smide när ässjan brinner (steg 12.2.4)
       if (u && !(best && vf <= best.varde)) best = { k, varde: vf, u };
       continue;
     }
@@ -453,3 +453,4 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
   return best;
 }
 import { utsadeKrok } from './ratter';
+import { smidaFaktor } from './smedja';

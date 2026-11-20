@@ -524,7 +524,7 @@ SCENARIER.is = {
       [`tunn is huggs upp med ${tunn}, 10 cm går inte utan något (${mellan}), men med en sten (${sten})`, tunn === 'hand' && mellan === 'inget' && sten === 'sten'],
       [`tjock is går inte med händerna (${tjock}), och då får den som är törstig inget vatten utan eld`, tjock === 'inget' && ingetVatten],
       [`yxan tar sig genom 25 cm (${yxa}, ${minYxa.toFixed(1)} minuter) och den törstige dricker genom hålet`, yxa === 'yxa' && minYxa > 0 && yxDryck],
-      [`spjutet tar sig genom 40 cm (${spjut})`, spjut === 'spjut'],
+      [`spjutet tar sig inte genom 40 cm, bara isborren gör det (${spjut}; steg 12.2.11)`, spjut === 'inget'],
       [`på två dygn i istiden i tre byar högg man upp hål i isen och pimplade (${pimplade} gånger)`, pimplade >= 2],
     ];
   },

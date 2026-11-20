@@ -4,6 +4,13 @@ import { budgetDygn, budgetRegister } from './budget';
 import { bynamnRegister } from './bynamn';
 import { heligtAvstar } from './kultlatt';
 import { leraGravd } from './lera';
+import { myrSteg } from './myr';
+import { malmGravd } from './malm';
+import { torvGravd, torvTorkar } from './torv';
+import { branningKlar, branningSteg, passaKlar } from './brann';
+import { haftSteg } from './smedja';
+import { jarngruvorSteg } from './gruva';
+import { smidaKlar } from './jarnsaker';
 import { stenBruten } from './byggsten';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
@@ -350,6 +357,11 @@ KLAR.flyttStation = s => { stationFlytta(s); }; // en station ute närmare dem s
 KLAR.flyttLager = s => { const v = lagerFlyttVal(s); if (v) lagerFlytta(s, v.z, v.ny); }; // en lagerplats närmare byns mitt (lager.ts, steg 9.4.7)
 KLAR.bryta = stenBruten; // byggstenen läggs i en hög vid berget (byggsten.ts, steg 10.10.5)
 KLAR.lera = leraGravd; // leran läggs i en hög där den grävdes (lera.ts, steg 9.4.10)
+KLAR.malm = malmGravd; // malmen läggs i en hög där den grävdes (malm.ts, steg 12.1.2)
+KLAR.torv = torvGravd; // den blöta torven läggs i en hög där den grävdes (torv.ts, steg 12.1.3)
+KLAR.kola = branningKlar; KLAR.blasa = branningKlar; // milan laddas och tänds, eller töms (brann.ts, steg 12.2.1)
+KLAR.passa = passaKlar; // tillsynen vid en bränning (brann.ts, steg 12.2.2)
+KLAR.smida = smidaKlar; // ett järnredskap är smitt (jarnsaker.ts, steg 12.2.6)
 KLAR.stubbe = stubbeGravd; // stubben är bortgrävd och blir lite trä (skog.ts, steg 6.5.7)
 KLAR.plantera = plantaUppgravd; // plantan är uppgrävd och bärs till platsen (skogsvard.ts, steg 6.5.2)
 KLAR.ljus = (s, p, t) => finishLjus(s, p, t); // ett talgljus på ett bord eller en hylla (ljus.ts, steg 6.3.8) // en uppsatt fackla (ljus.ts, steg 6.3.7)
@@ -432,7 +444,7 @@ export const TAKTER: Takt[] = [
   { namn: 'besökarna', sek: 0, fn: (s, dt) => besokSteg(s, dt) }, // huvudbyns resenärer i en väckt by (vacktgast.ts, steg 11.13.10)
   { namn: 'tornadon', sek: 0, fn: s => tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }) }, // drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
   { namn: 'branden', sek: 0, fn: (s, dt) => { brandSteg(s, dt); brinnerSteg(s, dt); } }, // gnistor, blixten, elden som sprider sig och den som brinner (brand.ts)
-  { namn: 'förrådets slitage', sek: 60, fn: (s, dt) => { wearStore(s, dt); stepBlotVed(s, dt); } }, // slitage, fortare utanför lagret, och veden som blir blöt och torkar (steg 7.3.4)
+  { namn: 'förrådets slitage', sek: 60, fn: (s, dt) => { wearStore(s, dt); stepBlotVed(s, dt); torvTorkar(s, dt); } }, // slitage, fortare utanför lagret, och veden som blir blöt och torkar (steg 7.3.4), och torven (steg 12.1.3)
   { namn: 'elden', sek: 10, fn: (s, dt, c) => stepFire(s, dt, c.ppl) },
   // det som räknas i timmar (steg 10.2.21 B): var sitt system med sin egen takt; de som räknas varje timme går vid timmens början. Det som ändras långsamt
   // (fynden som växer igen, glömskan, ryktena, husens slitage) räknas glesare och får tiden sedan sist
@@ -458,6 +470,8 @@ export const TAKTER: Takt[] = [
   { namn: 'arbetsTimme', sek: 3600, fn: s => { arbetsTimme(s); } },
   { namn: 'historikSteg', sek: 3600, fn: s => { historikSteg(s); } },
   { namn: 'stepVader', sek: 3600, fn: s => { stepVader(s); } },
+  { namn: 'myren', sek: 3600, fn: s => myrSteg(s, groundOf(s)) }, // står under vatten när marken är blöt (myr.ts, steg 12.1.1)
+  { namn: 'bränningarna', sek: 600, fn: s => { if (s.branningar) branningSteg(s); haftSteg(s); jarngruvorSteg(s); } }, // kolmilorna som blivit klara (brann.ts, steg 12.2.1), och om byn haft malm och järn (smedja.ts, steg 12.2.4)
   { namn: 'vindfallen', sek: 3600, fn: s => { vindfallen(s); } },
   { namn: 'regnetTvattar', sek: 3600, fn: s => { regnetTvattar(s); } },
   { namn: 'stepMotgang', sek: 3600, fn: s => { stepMotgang(s); } },
@@ -1002,7 +1016,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       // så mycket elden vill ha, som p orkar bära och kan få (steg 10.2.7), i hela vedträn
       // ur stackarna hen står vid (steg 11.1.75)
       const bransle = iRackhall(p.x, p.y, () => fuelFor(s, p, fran));
-      const dit = bransle < 1 && e && !fran && fuelFor(s, p) >= 1 ? narmasteMed(s, p, ['ved', 'grenar']) : undefined;
+      const dit = bransle < 1 && e && !fran && fuelFor(s, p) >= 1 ? narmasteMed(s, p, ['ved', 'grenar', 'torv', 'blottorv']) : undefined;
       if (dit) { tk.tx = dit.x; tk.ty = dit.y; return; } // stacken här är tom: till nästa stack med ved eller grenar
       const n = !e || e.fuel >= fireWant(s, e) ? 0 : Math.max(Math.min(1, bransle), Math.floor(Math.min(fireWant(s, e) - e.fuel, capacity(s, p) / viktOf('ved'), bransle)));
       if (n <= 0 || !e) p.task = undefined;

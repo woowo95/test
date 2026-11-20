@@ -34,7 +34,7 @@ export const KLADER = balans('klader', {
 
 // platserna på kroppen där den som saknar plagg känner sig naken (stepNaken i steg.ts): skjortan och rocken klär överkroppen
 export const NAKEN_PLATS: Record<string, string> = { fotter: 'fotter', ben: 'ben', inre: 'kropp', yttre: 'kropp' };
-export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'ull' | 'flatat' | 'smycke'; // ull: ylletyget (steg 9.8.14), som tyget men också till kappan, manteln och sjalen
+export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'ull' | 'flatat' | 'smycke' | 'metall'; // metall: järnet i hjälmen och brynjan (steg 12.2.9) // ull: ylletyget (steg 9.8.14), som tyget men också till kappan, manteln och sjalen
 type Skadeslag = 'hugg' | 'stick' | 'slag' | 'bett';
 // ett plagg. namn = hur plagget börjar ("Rock" i "Rock av vargskinn"), ord = i en mening ("en rock", "ett par skor"),
 // verb = vad den som gör det gör, plats = platsen på kroppen, mangd = bitar material, med = det mer plagget görs med (hela
@@ -44,11 +44,12 @@ type Skadeslag = 'hugg' | 'stick' | 'slag' | 'bett';
 // bördan som ryms i plagget på ryggen, lika för alla (ryggsäcken, steg 7.1.3), tung = svårt
 // att ducka i (STRID.duckTung), skydd = kroppsdelarna det täcker och hur stor del av skadan det tar per slag i ett kaninskinn
 interface PlaggDef {
-  namn: string; ord: string; verb: 'Syr' | 'Flätar'; plats: string; mangd: number; med?: Record<string, number>;
+  namn: string; ord: string; verb: 'Syr' | 'Flätar' | 'Smider'; plats: string; mangd: number; med?: Record<string, number>;
   varme: number; dygn: number; vikt: number; tek: string; min: number; slag: MaterialSlag[]; smid?: number; // smid = så mycket smidighet plagget tar (steg 8.7.1)
   krok?: number; axel?: number; rygg?: number; tung?: true; snoTar?: number; // snoTar = så stor del av det snön bromsar som plagget tar bort (snöskorna, steg 7.7.3; snoFart i gang.ts)
   skydd?: { delar: Kroppsdel[]; tar: Partial<Record<Skadeslag, number>> };
   latt?: true; // ett lätt plagg tas aldrig av för värmens skull (steg 12.1.19)
+  station?: string; // stationen där plagget görs, när det inte görs vid slöjdbänken (hjälmen och brynjan smids i smedjan, steg 12.2.9)
   forsta: string; fame?: string; // loggen första gången ({namn} = den som gjorde det, {plagg} = plaggets namn i en mening) och det hen minns för
 }
 const PLAGG_DEF = {
@@ -91,6 +92,14 @@ const PLAGG_DEF = {
     skydd: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.08, stick: 0.05, slag: 0.1, bett: 0.1 } }, forsta: '{namn} sydde byns första {plagg} av ylle. Den är varm som en päls men lättare.' },
   sjal: { namn: 'Sjal', ord: 'en sjal', verb: 'Syr', plats: 'axlar', mangd: RECEPT.sjal.mangd, varme: 0.1, dygn: 6, vikt: 0.5, tek: 'vavstol', min: RECEPT.sjal.min, slag: ['ull'],
     forsta: '{namn} sydde byns första {plagg}. Den värmer axlarna.' },
+  // vapensmidet (steg 12.2.9, Järnet: Järnsakerna): järnhjälmen och ringbrynjan smids i smedjan av järn med läder under
+  jarnhjalm: { namn: 'Järnhjälm', ord: 'en järnhjälm', verb: 'Smider', plats: 'huvud', mangd: RECEPT.jarnhjalm.mangd, med: RECEPT.jarnhjalm.av, varme: 0.05, dygn: 40, vikt: 2.5, tek: 'vapensmide', min: RECEPT.jarnhjalm.min, slag: ['metall'], station: 'smedja',
+    skydd: { delar: ['huvud'], tar: { hugg: 0.7, stick: 0.6, slag: 0.6 } }, forsta: '{namn} smidde byns första {plagg}.' },
+  ringbrynja: { namn: 'Ringbrynja', ord: 'en ringbrynja', verb: 'Smider', plats: 'yttre', mangd: RECEPT.ringbrynja.mangd, med: RECEPT.ringbrynja.av, varme: 0, dygn: 40, vikt: 12, smid: 3, tek: 'vapensmide', min: RECEPT.ringbrynja.min, slag: ['metall'], station: 'smedja', tung: true,
+    skydd: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.85, stick: 0.6, slag: 0.35, bett: 0.8 } }, forsta: '{namn} smidde byns första {plagg}. Den är det dyraste byn kan göra.' },
+  // smycket av järn (steg 12.2.10, Pynt och smycken): ett spänne som smids i smedjan och bärs som halsbandet
+  spanne: { namn: 'Spänne', ord: 'ett spänne', verb: 'Smider', plats: 'smycke', mangd: RECEPT.spanne.mangd, varme: 0, dygn: 40, vikt: 0.2, tek: 'smedja', min: RECEPT.spanne.min, slag: ['metall'], station: 'smedja',
+    forsta: '{namn} smidde byns första {plagg}. Den som bär det får anseende.' },
   ryggsack: { namn: 'Ryggsäck', ord: 'en ryggsäck', verb: 'Syr', plats: 'rygg', mangd: RECEPT.ryggsack.mangd, med: RECEPT.ryggsack.av, varme: 0, dygn: 10, vikt: 2, tek: 'ryggsack', min: RECEPT.ryggsack.min, slag: ['skinn'], rygg: 20,
     forsta: '{namn} sydde byns första {plagg}. Den som samlar plockar rakt ner i den och bär dubbelt så mycket.' }, // steg 7.1.3
 } satisfies Record<string, PlaggDef>;
@@ -119,6 +128,7 @@ const KLADMATERIAL_DEF = {
   tandband: { sak: 'vargtand', namn: 'vargtänder', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 2 },
   fjaderband: { sak: 'fjadrar', namn: 'fjädrar', slag: 'smycke', bit: 3, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 1 }, // steg 10.7.7: en fågels fjädrar räcker till ett halsband
   rep: { sak: 'rep', namn: 'rep', slag: 'flatat', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
+  jarn: { sak: 'jarn', namn: 'järn', slag: 'metall', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 1 }, // hjälmen och brynjan (steg 12.2.9): plaggens tal gäller som de står
 } satisfies Record<string, MaterialDef>;
 export type KladMaterial = keyof typeof KLADMATERIAL_DEF;
 export const KLADMATERIAL: Record<KladMaterial, MaterialDef> = KLADMATERIAL_DEF;

@@ -31,7 +31,7 @@ export const RUM = balans('rum', {
 // det som står i rummet, räknat en gång per rum
 export interface RumInfo {
   rutor: number; sida: number; sov: number; folk: number; bord: number; eld: number; arbete: number; forvar: number; scen: number;
-  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; kok: number; bara: Set<string>;
+  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; kok: number; bara: Set<string>; smedja?: number;
 }
 export type RumSlag = 'grund' | 'egenskap' | 'kombination';
 export interface RumsTyp {
@@ -51,6 +51,7 @@ export const RUMSTYPER = {
   slakteri: { namn: 'Slakteri', ikon: 'slaktbank', slag: 'grund', om: 'Här står en slaktbänk', krav: i => i.slakt >= 1 },
   fahus: { namn: 'Fähus', ikon: 'krubba', slag: 'grund', om: 'Här står en krubba med hö, och här står djuren i istiden', krav: i => i.krubba >= 1 }, // steg 10.2.88
   torkhus: { namn: 'Torkhus', ikon: 'tork', slag: 'grund', om: 'En torkställning under tak', krav: i => i.tork >= 1 },
+  smedja: { namn: 'Smedja', ikon: 'smedja', slag: 'grund', om: 'Här står en ässja och ett städ', krav: i => (i.smedja ?? 0) >= 1 }, // steg 12.2.4 (smedja.ts)
   varmt: { namn: 'Varmt', ikon: 'lagereld', slag: 'egenskap', om: 'Härden värmer rummet', krav: i => i.eld >= 1 },
   prytt: { namn: 'Prytt', ikon: 'kruka', slag: 'egenskap', om: 'Minst tre saker pryder rummet', krav: i => i.pynt >= RUM.pryttMin },
   trangt: { namn: 'Trångt', ikon: '👥', slag: 'egenskap', om: 'Fler sover här än ytan räcker till', krav: i => i.folk > i.sov },
@@ -97,6 +98,7 @@ export function rumInfo(s: State, r: Rum): RumInfo {
     if (t.k === 'scen') i.scen++;
     if (t.k === 'tork') i.tork++;
     if (t.k === 'slaktbank') i.slakt++;
+    if (t.k === 'smedja') i.smedja = (i.smedja ?? 0) + 1; // steg 12.2.4
     if (d.fahus) i.krubba++;
     if (d.kok) i.kok++;
     if (d.gor.length && t.k !== 'scen' && t.k !== 'tork' && !d.kok) i.arbete++; // kökets stationer gör rummet till ett kök, inte en verkstad
