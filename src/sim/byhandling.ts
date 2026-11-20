@@ -93,7 +93,7 @@ export const BYHANDLINGAR = {
   // och beskedet verkar efter samtalet med ledaren (liv.ts). Ett vänligt bud bär byns gåva när den har något över
   besked: {
     namn: 'Skicka besked',
-    poang: c => c.r.nr === c.vl.huvud || beskedUte(c.vl, c.r.nr, c.mot.nr) || restid(c.vl, c.r, c.mot) === undefined ? -1 : beskedTon(c).p,
+    poang: c => c.r.nr === c.vl.huvud || beskedUte(c.vl, c.r.nr, c.mot.nr) || beskedGivet(c) || restid(c.vl, c.r, c.mot) === undefined ? -1 : beskedTon(c).p,
     gor: c => skickaBud(c, beskedTon(c).ton),
   },
   // plundringen (steg 11.6.16): en flock ur byns styrka anfaller en granne den ser ner på (en fejd), eller som den inte är vän med
@@ -118,15 +118,17 @@ export const BYHANDLINGAR = {
     },
   },
   // kriget (steg 11.6.22): en by går i krig mot en granne den ser långt ner på, mer av en aggressiv ledare och en krigisk tro och
-  // när den själv är starkare. Kriget är ett läge mellan byarna (BYLAGEN i byrel.ts): de handlar inte och vill plundra varandra
+  // när den själv är starkare. Kriget är ett läge mellan byarna (BYLAGEN i byrel.ts): de handlar inte och vill plundra varandra.
+  // Det ovänliga beskedet är ett steg på vägen (steg 12.1.114): kriget går att välja mot en granne som fått beskedet, när
+  // relationen sjunkit vidare sedan dess
   krig: {
     namn: 'Krig',
     poang: c => {
-      if (krigUte(c) || byLage(c.vl, c.r.nr, c.mot.nr) !== 'fred') return -1;
+      if (krigUte(c) || byLage(c.vl, c.r.nr, c.mot.nr) !== 'fred' || !beskedGivet(c) || c.rel >= c.vl.ovanligt![`${c.r.nr}>${c.mot.nr}`]!) return -1;
       const fejd = clamp((-c.rel - BYHANDLING.krigRel) / BYHANDLING.krigFull, 0, 1);
       return fejd * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig) / radsla(c) - BYHANDLING.krigKostnad;
     },
-    gor: c => { sattLage(c.vl, c.r.nr, c.mot.nr, 'krig', c.t); varldHandelse(c.vl, 'krig', c.t, { by: c.r.nr, mot: c.mot.nr }); count(c.s, 'bykrig'); },
+    gor: c => { sattLage(c.vl, c.r.nr, c.mot.nr, 'krig', c.t); if (c.vl.ovanligt) delete c.vl.ovanligt[`${c.r.nr}>${c.mot.nr}`]; varldHandelse(c.vl, 'krig', c.t, { by: c.r.nr, mot: c.mot.nr }); count(c.s, 'bykrig'); },
   },
   // freden: tröttheten växer med tiden i krig och med en ledare med empati, och fejden och aggressionen håller kriget igång
   fred: {
@@ -252,6 +254,10 @@ export function beskedTon(c: ByCtx): { ton: BeskedTon; p: number } {
   return ovan > van ? { ton: 'ovanligt', p: ovan } : { ton: 'besked', p: van };
 }
 export type BeskedTon = 'besked' | 'ovanligt';
+// byn har skickat ett ovänligt besked till grannen och ser fortfarande lika illa på den (steg 12.1.114): beskedet är inte längre ett
+// val mot den grannen, och kriget är det. vl.ovanligt har relationen när beskedet skickades; har relationen stigit över gränsen
+// för beskedet (det hjälpte) gäller det inte längre
+const beskedGivet = (c: ByCtx) => { const v = c.vl.ovanligt?.[`${c.r.nr}>${c.mot.nr}`]; return v !== undefined && c.rel < -BYHANDLING.beskedRel; };
 // ett bud från byn a till b är redan på väg
 const beskedUte = (vl: Varlden, a: number, b: number) => !!vl.farder?.some(f => f.besked && f.fran === a && f.till === b);
 // budet ger sig av: en färd utan last, med byns gåva när beskedet är vänligt och byn har något över
@@ -259,6 +265,7 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
   const { s, vl, r, mot } = c, dygn = restid(vl, r, mot);
   if (dygn === undefined) return;
   const t0 = c.t, f: RadFard = { id: fardNr(vl), fran: r.nr, till: mot.nr, g: 'mat', n: 0, t0, t1: t0 + dygn * DAY, besked: ton };
+  if (ton === 'ovanligt') (vl.ovanligt ??= {})[`${r.nr}>${mot.nr}`] = Math.round(c.rel); // relationen när beskedet gick
   const a = ton === 'besked' && r.tal.folk >= BYHANDLING.barare * 2 ? gavaGrupp(r) : undefined; // gåvan: det byn har mest över
   if (a) {
     if (mot.nr === vl.huvud) { let i = 0; const l = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x4247 + i++), g => g === a.g ? a.n : 0, radHandlarSort(s, r), radDjur(s, r), iIstiden(ageIndex(s, t0))); if (l.varor.length) f.last = { ...l, silver: 0 }; } // till huvudbyn: hela saker som budet bär

@@ -3217,7 +3217,7 @@ SCENARIER.vagran = {
 };
 
 SCENARIER.bykrig = {
-  text: 'Kriget mellan två byar (steg 11.6.22): en by går i krig mot en granne den ser långt ner på, mer med en aggressiv ledare; i krig handlar byarna inte med varandra och vill plundra varandra fullt ut, och freden kommer när tröttheten väger mer än fejden. Läget står i registret BYLAGEN',
+  text: 'Kriget mellan två byar (steg 11.6.22 och 12.1.114): en by går i krig mot en granne den ser långt ner på och redan gett ett ovänligt besked, när relationen sjunkit vidare, mer med en aggressiv ledare; i krig handlar byarna inte med varandra och vill plundra varandra fullt ut, och freden kommer när tröttheten väger mer än fejden. Läget står i registret BYLAGEN',
   kor: () => {
     const s = SIM.cloneState(testBy(10)), vl = s.varld!;
     // två grannbyar som skulle handla med varandra i fred
@@ -3225,8 +3225,13 @@ SCENARIER.bykrig = {
     for (const x of vl.rader!) if (SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare) for (const g of SIM.radGrannar(vl, x)) if (g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare) par.push([x, g]);
     for (const [x, g] of par) SIM.mots(vl, x.nr, g.nr);
     const [r, mot] = par.find(([x, g]) => SIM.fardAffar({ ...SIM.byCtx(s, vl, x, g), rel: 50 })) ?? par[0]!;
-    const c = SIM.byCtx(s, vl, r, mot);
+    const c = SIM.byCtx(s, vl, r, mot), nyckel = `${r.nr}>${mot.nr}`;
     const med = (rel: number, agg?: number) => SIM.BYHANDLINGAR.krig.poang({ ...c, rel, ...(agg !== undefined ? { led: { ...(c.led ?? {} as Record<SIM.Stat, number>), aggression: agg } } : {}) });
+    // det ovänliga beskedet först (steg 12.1.114): utan det går kriget inte att välja, och efter det inte beskedet igen
+    delete vl.ovanligt?.[nyckel]; delete vl.ovanligt?.[`${mot.nr}>${r.nr}`];
+    const utanBesked = med(-95), beskedFore = SIM.BYHANDLINGAR.besked.poang({ ...c, rel: -95 });
+    vl.ovanligt = { ...vl.ovanligt, [nyckel]: -95 }; const sammaRel = med(-95), beskedEfter = SIM.BYHANDLINGAR.besked.poang({ ...c, rel: -95 });
+    vl.ovanligt[nyckel] = -50;
     const vanner = med(20), fiender = med(-95), lugn = med(-95, 2), arg = med(-95, 19);
     // i fred: plundringen och handeln som vanligt
     const pl0 = SIM.BYHANDLINGAR.plundra.poang({ ...c, rel: 0 });
@@ -3249,6 +3254,8 @@ SCENARIER.bykrig = {
     const w = varldEfter(10, 40);
     const lagst = Math.min(...Object.values(w.varld?.rel ?? {}));
     return [
+      [`utan ett ovänligt besked först går kriget inte att välja (${f2(utanBesked)}); beskedet går (${f2(beskedFore)})`, utanBesked < 0 && beskedFore > 0],
+      [`efter beskedet är beskedet inget val mot den grannen (${f2(beskedEfter)}), och kriget först när relationen sjunkit vidare (${f2(sammaRel)} vid samma relation)`, beskedEfter < 0 && sammaRel < 0],
       [`kriget lönar sig mot en granne byn ser långt ner på (${f2(fiender)}) men inte mot en vän (${f2(vanner)})`, fiender > 0 && vanner < 0],
       [`en aggressiv ledare vill mer (${f2(lugn)} → ${f2(arg)})`, arg > lugn],
       ['kriget gäller åt båda hållen, och ingen förklarar krig igen mitt i ett', iKrig && igen < 0],
