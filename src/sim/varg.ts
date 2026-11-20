@@ -578,8 +578,9 @@ export function vargjaktSteg(s: State, p: Person, tk: Task) {
     if (!sp) return;
     if (Math.hypot(sp.x - p.x, sp.y - p.y) > 1) { tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; return; }
   }
-  const alla = f.jagare!.map(id => byId(s, id)).filter((q): q is Person => !!q && q.health > 0 && q.task?.act === 'vargjakt');
-  const med = alla.filter(q => avst(q, p) <= VARG.samlas);
+  // de som kallats räknas tills kallelsen löpt ut, också de som inte hunnit ge sig av än, som i björnjakten (steg 12.1.59)
+  const alla = f.jagare!.map(id => byId(s, id)).filter((q): q is Person => !!q && q.health > 0 && (q.task?.act === 'vargjakt' || s.now < (f.kallTill ?? 0)));
+  const med = alla.filter(q => q.task?.act === 'vargjakt' && avst(q, p) <= VARG.samlas); // de som är framme
   if (med.length < alla.length && s.now - (f.samlas ??= s.now) < VARG.samlasTim * HOUR) return; // väntar in de andra
   f.jagare = undefined; f.samlas = undefined;
   if (rnd(s, 'varg') < VARG.flyrJakt * Math.min(1, med.length / f.vargar.length)) {

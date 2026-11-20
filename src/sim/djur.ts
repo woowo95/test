@@ -652,10 +652,12 @@ export function halsaOf(s: State, id: number): { blod: number; sar: number; dod:
   return { blod: Math.min(1, h.blod + INDIVID.blodTim * tim), sar: Math.max(0, h.sar - INDIVID.sarTim * tim), dod: false };
 }
 // efter en strid: djurets blod och sår just nu, eller att det dog. Läkta och glömda djur tas bort samtidigt
+// ett djur som förlorat blod eller har sår minns byn; det som läkt helt glöms (steg 12.1.59: samma villkor på båda ställena)
+const skadat = (h: { blod: number; sar: number }) => h.blod < 1 || h.sar > 0;
 export function satDjurHalsa(s: State, id: number, blod: number, sar: number) {
   if (blod <= 0) { dodaDjur(s, id); return; }
-  const h = (s.djurHalsa ?? []).filter(x => x.id !== id && halsaOf(s, x.id).blod < 1);
-  if (blod < 1 || sar > 0) h.push({ id, blod, sar, t: s.now });
+  const h = (s.djurHalsa ?? []).filter(x => x.id !== id && skadat(halsaOf(s, x.id)));
+  if (skadat({ blod, sar })) h.push({ id, blod, sar, t: s.now });
   s.djurHalsa = h.length ? h : undefined;
 }
 export function dodaDjur(s: State, id: number) {

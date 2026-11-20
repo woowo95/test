@@ -81,7 +81,7 @@ export function bjornSteg(s: State) {
     if (mott.ids.includes(p.id)) continue;
     mott.ids.push(p.id);
     count(s, 'bjornmote');
-    if (!s.bjornJakt?.jagare) s.bjornJakt = { ar, sedd: s.now, sag: p.id, x: b.x, y: b.y }; // byn vet var björnen går (björnjakten, steg 6.6.6), och märket står där (steg 9.2.122)
+    if (!s.bjornJakt?.jagare) s.bjornJakt = { ar, sedd: s.now, sag: p.id, x: b.x, y: b.y, timme: s.bjornJakt?.timme }; // timmen behålls: chansen till jakt slås en gång i timmen, inte vid varje nytt möte (steg 12.1.59) // byn vet var björnen går (björnjakten, steg 6.6.6), och märket står där (steg 9.2.122)
     if (rnd(s, 'bjorn') < (ungar.length ? BJORNMOTE.anfallUngar : BJORNMOTE.anfall)) {
       const folk = living(s).filter(q => q === p || vaken(q) && q.task?.act !== 'strid' && !roomAt(s, q.x, q.y) && Math.hypot(q.x - p.x, q.y - p.y) <= BJORNMOTE.med);
       for (const q of folk) if (!mott.ids.includes(q.id)) mott.ids.push(q.id);
