@@ -17,8 +17,8 @@ export function saveLocal() {
   const s = huvud(); // huvudbyn också när en väckt by visas (steg 11.13.11)
   if (ui.testMode || !s) return;
   if (ui.annanBy) { void sparaAnnan().then(ok => { ui.lokalFel = !ok; }); return; } // en annan by sparas för sig (steg 9.2.16, byar.ts)
-  sparaBy(webbBas, EGEN, s).then(() => { ui.lokalFel = lokalLarm = false; }, e => {
-    ui.lokalFel = true; if (!lokalLarm) console.error('Byn kunde inte sparas i webbläsaren', e); lokalLarm = true;
+  sparaBy(webbBas, EGEN, s).then(() => { ui.lokalFel = lokalLarm = false; ui.lokalFelNamn = undefined; }, e => {
+    ui.lokalFel = true; ui.lokalFelNamn = (e as { name?: string } | undefined)?.name ?? String(e); /* varningen säger felets namn (steg 12.1.23) */ if (!lokalLarm) console.error('Byn kunde inte sparas i webbläsaren', e); lokalLarm = true;
   });
 }
 // I databasen: varje del av byn (serializeParts) i ett eller flera dokument om högst BIT tecken (ett dokument rymmer 256 KB),

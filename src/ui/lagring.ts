@@ -64,19 +64,32 @@ interface ByPost { delar: string[]; extra?: unknown }
 const klar = (tx: IDBTransaction) => new Promise<void>((ok, nej) => { tx.oncomplete = () => ok(); tx.onerror = tx.onabort = () => nej(tx.error ?? new Error('sparningen avbröts')); });
 let oppen: Promise<IDBDatabase> | undefined;
 function oppna(): Promise<IDBDatabase> {
-  return oppen ??= new Promise((ok, nej) => {
+  if (oppen) return oppen;
+  const p: Promise<IDBDatabase> = new Promise((ok, nej) => {
     const r = indexedDB.open(DB_NAMN, 1);
     r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains(TABELL)) r.result.createObjectStore(TABELL); };
-    r.onsuccess = () => ok(r.result);
-    r.onerror = () => { oppen = undefined; nej(r.error); };
+    r.onsuccess = () => {
+      // webbläsaren kan stänga förbindelsen (när fliken legat i bakgrunden, eller en annan flik vill uppgradera databasen):
+      // då öppnas den på nytt nästa gång (steg 12.1.23)
+      const db = r.result;
+      db.onclose = () => { if (oppen === p) oppen = undefined; };
+      db.onversionchange = () => { db.close(); if (oppen === p) oppen = undefined; };
+      ok(db);
+    };
+    r.onerror = () => { if (oppen === p) oppen = undefined; nej(r.error); };
   });
+  return oppen = p;
+}
+// försöker en gång till med en ny förbindelse när den första inte gick (steg 12.1.23): förbindelsen kan ha stängts mellan gångerna
+async function forsok<T>(f: (db: IDBDatabase) => Promise<T>): Promise<T> {
+  try { return await f(await oppna()); } catch { oppen = undefined; return f(await oppna()); }
 }
 // det som skrivits senast för varje del, så att en oförändrad del inte skrivs om
 const skrivet = new Map<string, string>();
 export const webbBas: Bas = {
-  async las(by) {
+  las: by => forsok(async db => {
     // delarna frågas i samma händelse som byns post kom, så att transaktionen inte hinner stängas emellan
-    const db = await oppna(), tx = db.transaction(TABELL), t = tx.objectStore(TABELL), slut = klar(tx);
+    const tx = db.transaction(TABELL), t = tx.objectStore(TABELL), slut = klar(tx);
     let post: ByPost | undefined;
     const delar: Record<string, string> = {};
     const r = t.get(by);
@@ -89,11 +102,11 @@ export const webbBas: Bas = {
     };
     await slut;
     return post ? { delar, extra: post.extra } : undefined;
-  },
-  async skriv(by, delar, extra) {
+  }),
+  skriv: (by, delar, extra) => forsok(async db => {
     // det som skrivs räknas som skrivet redan när det läggs i transaktionen, så att en sparning som börjar innan den förra
     // är klar (transaktionerna går i den ordning de börjar) jämför med det som då står i databasen
-    const db = await oppna(), tx = db.transaction(TABELL, 'readwrite'), t = tx.objectStore(TABELL), slut = klar(tx);
+    const tx = db.transaction(TABELL, 'readwrite'), t = tx.objectStore(TABELL), slut = klar(tx);
     // byns förra post läses först i transaktionen: de delar den hade men inte har längre (en ny by har färre veckor) tas bort
     const forut = t.get(by);
     forut.onsuccess = () => {
@@ -105,16 +118,16 @@ export const webbBas: Bas = {
     }
     t.put({ delar: Object.keys(delar), extra } satisfies ByPost, by);
     try { await slut; } catch (e) { for (const d in delar) skrivet.delete(delNyckel(by, d)); throw e; }
-  },
-  async taBort(by) {
-    const db = await oppna(), tx = db.transaction(TABELL, 'readwrite'), t = tx.objectStore(TABELL), slut = klar(tx);
+  }),
+  taBort: by => forsok(async db => {
+    const tx = db.transaction(TABELL, 'readwrite'), t = tx.objectStore(TABELL), slut = klar(tx);
     const forut = t.get(by);
     forut.onsuccess = () => {
       for (const d of (forut.result as ByPost | undefined)?.delar ?? []) { t.delete(delNyckel(by, d)); skrivet.delete(delNyckel(by, d)); }
       t.delete(by);
     };
     await slut;
-  },
+  }),
 };
 
 // en databas i minnet med samma regler, för scenariot (sparbas)

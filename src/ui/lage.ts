@@ -50,6 +50,7 @@ export const ui = {
   sparFel: false, // senaste sparningen i artefaktens databas misslyckades
   molnFel: false, // byn i artefaktens databas gick inte att läsa, och sparas därför inte där (spara.ts)
   lokalFel: false, // senaste sparningen i webbläsaren misslyckades
+  lokalFelNamn: undefined as string | undefined, // felets namn, för varningen (steg 12.1.23)
   testMode: false, // testläget: en kopia av byn som kan spolas fram
   annanBy: undefined as string | undefined, // en annan by än den egna är vald (steg 9.2.16, ui/byar.ts)
   forskjut: 0, // ... och så långt efter klockan går den (ms); den egna byn går i klockans tid

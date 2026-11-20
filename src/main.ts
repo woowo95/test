@@ -54,6 +54,7 @@ function renderClock() {
   $('sparFel').hidden = !ui.sparFel;
   $('molnFel').hidden = !ui.molnFel;
   $('lokalFel').hidden = !ui.lokalFel;
+  if (ui.lokalFel) $('lokalFel').title = `Byn kunde inte sparas i webbläsaren (${ui.lokalFelNamn ?? 'okänt fel'}). Den sparas i molnet om det går.`;
   $('calTime').textContent = `${isLight(t) ? 'Dag' : 'Natt'} · ${hh}:${mm}${ui.testMode ? ' (test)' : ''}`;
 }
 
