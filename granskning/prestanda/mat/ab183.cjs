@@ -1,7 +1,7 @@
 // Steg 12.1.183: samma bildruta med nattfiltrets gamla shader (git REF, varld om inget anges) och den nya, i samma sida: antalet
 // punkter som skiljer. Fallen: scenen som den är, med påhittade eldar (en eld, en glöd och en fackla) och folk, mitt i ett svep,
 // och med halvgenomskinliga trädkronor (kanter med halv genomskinlighet).
-//   node ab183.cjs [scen] [ref]
+//   node ab183.cjs [scen] [ref]     MOBIL=1: i en mobilskärm (390 × 844, tre punkter per punkt)
 const { chromium } = require('playwright');
 const START = require('fs').existsSync(chromium.executablePath()) ? {} : { executablePath: '/opt/pw-browsers/chromium' };
 const { oppnaBy } = require('./ladda.cjs');
@@ -17,7 +17,7 @@ const FRAG = gammal.slice(gammal.indexOf('const FRAG = `') + 14, gammal.indexOf(
 if (FRAG.includes('${')) throw new Error('mall kvar i den gamla shadern');
 (async () => {
   const b = await chromium.launch(START);
-  const ctx = await b.newContext({ viewport: { width: 1300, height: 850 }, timezoneId: 'Europe/Stockholm', colorScheme: 'light' });
+  const ctx = await b.newContext({ ...(process.env.MOBIL ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true } : { viewport: { width: 1300, height: 850 } }), timezoneId: 'Europe/Stockholm', colorScheme: 'light' });
   await oppnaBy(ctx, scen);
   const pg = await ctx.newPage();
   pg.on('pageerror', e => console.log('FEL', e.message));
@@ -39,7 +39,7 @@ if (FRAG.includes('${')) throw new Error('mall kvar i den gamla shadern');
     let krona = []; const tr = c => { for (const ch of c.children ?? []) { if (ch.texture && ch.zIndex !== undefined && ch.alpha === 1 && ch.texture.height > 20) krona.push(ch); tr(ch); } }; tr(lager);
     const fall = [
       ['som scenen', () => {}],
-      ['tre eldar och folk', () => { u.uEld.set([fo[0] + 30, fo[1], 220, -1, fo[3] - 40, fo[4] + 20, 24, 0.6, fo[0] - 60, fo[1] - 30, 150, -0.8]); u.uAntalEldar = 3; }],
+      ['tre eldar och folk', () => { u.uEld.fill(0); u.uHarSkugga.fill(0); u.uEld.set([fo[0] + 30, fo[1], 220, -1, fo[3] - 40, fo[4] + 20, 24, 0.6, fo[0] - 60, fo[1] - 30, 150, -0.8]); u.uAntalEldar = 3; }],
       ['svep 1→2 med eldarna', () => { u.uFran = 1; u.uTill = 2; u.uSvep = 0.5; }],
       ['svep 0→1 (punkter utan mörker)', () => { u.uFran = 0; u.uTill = 1; u.uSvep = 0.4; }],
       ['halvgenomskinliga kronor', () => { for (const k of krona) k.alpha = 0.45; }],
