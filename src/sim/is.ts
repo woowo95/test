@@ -74,6 +74,9 @@ export function halGjort(s: State, p: Person) {
 }
 // kan p nå vattnet: isen ligger inte, eller hen kan hugga upp ett hål
 export const naVattnet = (s: State, p: Person) => !islagt(s) || !!halVal(s, p);
+// vakten för arbetstiderna (kor.ts) får veta hur lång tid hålet tog när vattnet började hämtas (steg 12.1.159): halMin
+// senare i slaget kan svara annat, när någon annan tagit yxan eller isborren gått sönder. Ändrar inget i spelet
+export const halVakt: { lyss?: (t: object, min: number) => void } = {};
 // så många minuter det tar för p att hugga upp hålet (0 när isen inte ligger eller det inte går)
 export function halMin(s: State, p: Person) {
   const h = halVal(s, p);

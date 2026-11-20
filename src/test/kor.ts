@@ -3,7 +3,7 @@
 import '../sim'; // först: hela simuleringen i samma ordning som spelet, så att registren finns när systemen sätter sina rader
 import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
 import { forLangtArbete } from '../sim/tider';
-import { halMin } from '../sim/is';
+import { halMin, halVakt } from '../sim/is';
 import { kyrkaId } from '../sim/egendom';
 import { budgetAgare } from '../sim/budget';
 import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, sparStorlek, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL, uttagVakt, svavar } from '../sim';
@@ -27,6 +27,11 @@ export interface Ack { hunger: number; humor: number; humorN: number; lit: numbe
 export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State; ack: Ack }
 
 // fran: kör vidare en by som redan finns (t.ex. en inläst sparfil, scenariot sparning) i stället för en ny by med seed
+// hålet i isen hör inte till arbetet att hämta vatten (steg 12.1.37): vakten drar av den tid hålet tog när arbetet började,
+// inte vad halMin svarar senare i slaget (steg 12.1.159)
+const halVid = new WeakMap<object, number>();
+halVakt.lyss = (t, min) => { halVid.set(t, min); };
+export const halTidVid = (s: State, p: Person, t: object) => halVid.get(t) ?? halMin(s, p);
 export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void, fran?: State): Resultat {
   const okanda = okandaBalans();
   if (okanda.length) throw new Error(`BALANS: inget balanstal heter ${okanda.join(', ')} (se npm run talen)`);
@@ -54,7 +59,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     if (steg % 288 === 0) { const hf = husFel(s); if (hf) larm('hus', () => hf); } // en gång om dagen (steg 7.2.4)
     if (steg % 12 === 0) { const tv = SIM_TRANGT(s); if (tv) larm('två vid en station', () => tv); } // en gång i timmen (steg 9.2.52)
     // arbetstiderna (steg 9.2.63): ett arbete som börjar tar inte längre tid än sitt slag
-    for (const p of s.people) { const t = p.task; if (!t || t.phase !== 'do' || sedda.has(t)) continue; sedda.add(t); const f = forLangtArbete(t, s.now, t.act === 'vatten' ? halMin(s, p) : 0); if (f) larm('arbetstid', () => `${p.name}: ${f}`); }
+    for (const p of s.people) { const t = p.task; if (!t || t.phase !== 'do' || sedda.has(t)) continue; sedda.add(t); const f = forLangtArbete(t, s.now, t.act === 'vatten' ? halTidVid(s, p, t) : 0); if (f) larm('arbetstid', () => `${p.name}: ${f}`); }
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
     for (const t of s.ting ?? []) if (!(t.c > 0 && t.c <= 1 + 1e-9) || [t.hos, t.lass, t.x].filter(v => v !== undefined).length > 1) larm('redskap', () => JSON.stringify(t));
     // saker i hela tal (steg 2.10.7): stackarna, det gömda och ägarnas delar, och det påbörjade under 1
