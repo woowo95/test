@@ -20,6 +20,14 @@
 - Textkontrollerna går nu också på loggen, krönikan, notiserna, tankarna och resans dagbok (12.1.118), och titta() skriver också handeln vid filten, framträdandet, matchen och sammanfattningen (12.1.122). En fel text där ger vaktlarmet `text <kontroll>` i koll. `npm run texter` med 4 byar i 20 dygn (20 år i spelet) hade 0 fel efter steget; fler byar och dygn kan hitta fler, och de rättas i texten, inte i kontrollen.
 - Stegen ändrar bara texter, men tankarna slås ihop efter sin text (think i folk.ts), så en tanke som nu skrivs med ord ("Uppträdde för många vid elden" över tolv) kan slå ihop två som förut var olika och ändra humöret lite. Samma-kollen och facit kan därför visa annan utveckling; nytt facit sparas när koll är grön.
 
+## Grenen par-tankar (12.1.131–12.1.136, humöret, drömmarna, upplevelserna, rykten, mallarna och samtalsämnena)
+
+- Committerna på par-tankar (145728a–f4630ae) har bara typkontrollen och stegens egna scenarier (tankar, drommar, uppvaxt2, rykten2, mallar, amnen2) bakom sig, och de närliggande scenarierna kronika, kronikakat, kronikalista, beskrivning, berattelser, epidemi, brand, oversvamning, tornado, textfel, ord, uppvaxt, vuxenliv, humor, rykten, ikoner, samtal och amnen. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld, och nytt facit.
+- 12.1.131 del 1 (145728a, flytten till TANKAR) är prövad med `npm run samma` mot 2c52678: samma utveckling som förut. Del 2 och stegen efter ändrar spelet (nya tankar, drömmar, upplevelser, intryck och samtalsämnen ändrar humöret, relationerna och sederna), så facit och samma-kollen visar annan utveckling.
+- Nya rader i TAKTER (tankarTimme och drommar, en gång i timmen) och en ny slumpföljd (drom): skyldig `npm run likhet`, och `npm run kostnad` i fasens kodgenomgång.
+- Nya krönikerader (k_rovare, k_brand, k_tornado, k_flod, k_epidemi, k_tro, k_resa, k_handel, k_djur, k_ratt) och nya texter: `npm run texter` bör visa att varianterna väljs; brandens, tornadons och översvämningens slutrad i krönikan skrivs nu ur mallarna i stället för den gamla texten.
+- Femton nya intryckssymboler (i_forsvarare … i_fangelsekund i ikoner.ts) är platshållare; skyldig `npm run utseende` och tre versioner var i bildstilens valdel (publiceras inte från grenen).
+
 ## Hopslagna nattgrenar
 
 - natt-bildstil (12.1.69, 12.1.70, 12.1.102): src/portrattkarna.ts är omskriven (samma porträtt punkt för punkt); skyldig samma-kollen och `npm run utseende`.
