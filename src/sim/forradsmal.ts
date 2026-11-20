@@ -305,6 +305,7 @@ export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
   if (d.tro) return Math.max(0, ...(s.tron ?? []).map(tr => trosMobelBrist(s, tr, k))); // trons möbler i trons hus (steg 10.3.19)
+  if (d.varmer) return finareKrok.fyrfat(s); // fyrfatet i ett rum utan eld (steg 12.4.11, mobler.ts)
   if (d.sjuk) return finareKrok.sjuk(s); // sjukbäddarna (steg 12.4.10, mobler.ts)
   if (d.finare) return finareKrok.finare(s, k); // utedasset i stället för latrinen (steg 12.4.9, mobler.ts)
   if (d.vagga) return finareKrok.vagga(s); // en vagga i varje rum där ett spädbarn sover (steg 12.4.5, mobler.ts)
@@ -319,6 +320,6 @@ export function stationBrist(s: State, k: StationSlag) {
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }
 // sängen i stället för halmbädden (steg 12.4.3): bristen sätts i mobler.ts, som läses efter den här filen
-export const finareKrok = { brist: (_s: State, _k: string) => 0, sate: (_s: State) => 0, vagga: (_s: State) => 0, finare: (_s: State, _k: string) => 0, sjuk: (_s: State) => 0, toa: (s: State) => latrinBrist(s) };
+export const finareKrok = { brist: (_s: State, _k: string) => 0, sate: (_s: State) => 0, vagga: (_s: State) => 0, finare: (_s: State, _k: string) => 0, sjuk: (_s: State) => 0, fyrfat: (_s: State) => 0, toa: (s: State) => latrinBrist(s) };
 // mjölken som annars skulle surna (surnarSnart i vatskor.ts, steg 12.4.7), satt i steg.ts eftersom vatskor.ts läses före den här filen
 export const ostKrok = { surnar: (_s: State) => 0 };

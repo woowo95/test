@@ -316,6 +316,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kan: (s, p) => !!moblerKrok.sattaPlats(s) && enTill(s, 'satta', p),
     uppgift: s => { const v = moblerKrok.sattaPlats(s); return v && { act: 'satta', text: 'Ställer en sittplats vid bordet.', min: LJUS.fyllMin, spot: { x: v.x + 0.5, y: v.y + 0.5 }, ref: v.t.id }; },
   },
+  // kol i fyrfatet när det är kallt och någon sover i rummet (steg 12.4.11, mobler.ts)
+  fyrfat: {
+    namn: 'Kol i fyrfatet', vikt: PROJEKT_TAL.ljus,
+    brist: s => moblerKrok.fyrfatKol(s) ? 1 : 0,
+    kostnad: () => grundvarde('kol') + LJUS.fyllMin / 60 * ARBETE,
+    kan: (s, p) => !!moblerKrok.fyrfatKol(s) && getable(s, p, 'kol') >= 1 && enTill(s, 'fyrfat', p),
+    uppgift: s => { const t = moblerKrok.fyrfatKol(s); return t && { act: 'fyrfat', text: 'Lägger glödande kol i fyrfatet.', min: LJUS.fyllMin, spot: vidStation(t), ref: t.id }; },
+  },
   // en tom oljelampa på ett bord eller en hylla fylls med brännolja (steg 12.4.2, ljus.ts)
   lampa: {
     namn: 'Olja i lampan', vikt: PROJEKT_TAL.ljus,

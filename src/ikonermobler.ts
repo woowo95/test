@@ -96,9 +96,15 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '..kyyyykJJJJJJJJJJJJJJJJJJJjjk..', '..kyyyykjjjjjjjjjjjjjjjjjjjjjk..', '..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..', '..kd........................dk..',
     '................................', '................................', '................................', '................................'],
     pal: { ...TRA, w: '#dad0bb', y: '#bdb39b' } },
+  // fyrfatet (steg 12.4.11): ett grunt fat av bränd lera på tre fötter, med glödande kol i
+  fyrfat: { pix: [
+    '................', '................', '................', '................',
+    '................', '...kkkkkkkkkk...', '..kRkvovrvokRk..', '..kRvrovvrovRk..', '..kTRRRRRRRRTk..',
+    '...kTTTTTTTTk...', '....kkkkkkkk....', '....kd..kd..kd..', '................', '................', '................', '................'],
+    pal: { k: '#24201d', R: '#742a01', T: '#bd753e', v: '#3f2415', o: '#d8b25f', r: '#a14808', d: '#3f2415' } },
 };
 // stationerna som är en ruta stora har samma bild på kartan
-const KARTA = ['drejskiva', 'vagga', 'brunn', 'utedass'];
+const KARTA = ['drejskiva', 'vagga', 'brunn', 'utedass', 'fyrfat'];
 // de längre stationerna står vridna ett kvarts varv när de står på högkant (platshållare tills den stående bilden ritats)
 const VRIDS = ['sang', 'sjukbadd'];
 const vrid = (r: string[]) => Array.from({ length: r[0].length }, (_, x) => r.map(rad => rad[x]).reverse().join(''));

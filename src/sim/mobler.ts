@@ -15,6 +15,9 @@ import { ALDER, ageOf, byId, count, familjOf, forstaGang, living, log, think } f
 import { addTool, ingenHar, tingOf } from './agande';
 import { type Rum, roomAt, husById } from './byggnad';
 import { sjukKrok, sovPlats } from './byggnader';
+import { ELDSTATIONER } from './stationseld';
+import { rumTaggar } from './rum';
+import { coldOf, temperature } from './vader';
 import { lakKrok, SKADOR } from './halsa';
 import { isSick } from './sjukdom';
 import { gruppOf } from './saker';
@@ -165,3 +168,28 @@ export const iSjukbadd = (s: State, p: Person) => { const t = stationRutor(s).at
 sjukKrok.vill = villSjukbadd;
 lakKrok.badd = (s, p) => iSjukbadd(s, p) ? STATION.sjukLak : 1;
 finareKrok.sjuk = s => { const n = sjukbaddar(s).length; return !n ? 1 : living(s).filter(q => villSjukbadd(s, q)).length > n ? 1 : 0; };
+
+// ---------- fyrfatet (steg 12.4.11) ----------
+// Fyrfatet är ett fat av lera med glödande kol (raden fyrfat i STATIONER), som värmer ett litet rum utan härd. Elden är en rad i
+// ELDSTATIONER med bränslet kol (lagd här): det rymmer STATION.fyrfatKol kol, och ett kol räcker STATION.fyrfatTim timmar, så en
+// fyllning räcker ett dygn. Det gnistrar en tiondel så mycket som lägerelden (brand.ts). Byn ställer ett fyrfat i ett rum med
+// sovplatser där ingen härd värmer (fyrfatRum), och när det är kallt och fyrfatet är slocknat lägger någon kol i det (fyrfatKol;
+// eldaForst i stationseld.ts fyller det när hen kommit fram)
+ELDSTATIONER.fyrfat = { burn: 1 / STATION.fyrfatTim, max: STATION.fyrfatKol, varme: STATION.fyrfatVarme, radie: STATION.fyrfatRadie, tim: () => STATION.fyrfatKol * STATION.fyrfatTim, kravs: false, bransle: 'kol', gnistor: STATION.fyrfatGnistor };
+const fyrfaten = (s: State) => stationerOf(s).filter(t => stationDef(t.k)?.varmer);
+// rummen med sovplatser och någon som sover där, utan en härd (taggen Varmt) och utan ett fyrfat
+export function fyrfatRum(s: State) {
+  const har = new Set(fyrfaten(s).map(t => roomAt(s, t.x, t.y)));
+  const sover = new Set<Rum>();
+  for (const q of living(s)) { const i = sovPlats(s, q); const r = i !== undefined ? roomAt(s, i % W, Math.floor(i / W)) : undefined; if (r) sover.add(r); }
+  return [...sover].find(r => !har.has(r) && !rumTaggar(s, r).has('varmt' as never));
+}
+// fyrfatet som behöver kol: färdigt, slocknat eller nästan utbrunnet, när det är kallt och någon sover i rummet
+export function fyrfatKol(s: State) {
+  if (!fyrfaten(s).length || coldOf(temperature(s)) <= 0) return undefined;
+  const sover = new Set<Rum>();
+  for (const q of living(s)) { const i = sovPlats(s, q); const r = i !== undefined ? roomAt(s, i % W, Math.floor(i / W)) : undefined; if (r) sover.add(r); }
+  return fyrfaten(s).find(t => isKlar(t) && (t.eld?.ved ?? 0) < 1 && sover.has(roomAt(s, t.x, t.y)!));
+}
+moblerKrok.fyrfatRum = s => fyrfatRum(s); moblerKrok.fyrfatKol = fyrfatKol;
+finareKrok.fyrfat = s => fyrfatRum(s) ? 1 : 0;

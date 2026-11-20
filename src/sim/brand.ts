@@ -390,6 +390,7 @@ function gnistor(s: State, dtSec: number, dry: number) {
   };
   if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, (HEARTHS.find(h => h.id === s.fire.hearth) ?? HEARTHS[0]).spread, 0); }
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
+  for (const t of s.stationer ?? []) { const d = t.eld?.lit ? eldDef(t) : undefined; if (d?.gnistor) { const at = eldPlatsAv(t); fran(Math.floor(at.x), Math.floor(at.y), HEARTHS[0].spread * d.gnistor, 60000 + t.id); } } // fyrfatet gnistrar lite (steg 12.4.11)
   for (const b of s.branningar ?? []) { const t = b.slut > s.now ? stationerOf(s).find(q => q.id === b.st) : undefined; if (t) fran(t.x + 1, t.y + 1, HEARTHS[0].spread, 50000 + t.id); } // kolmilan och blästerugnen gnistrar som en lägereld medan de brinner (steg 12.2.1 och 12.2.3)
   if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
     const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
@@ -795,3 +796,4 @@ SLAGHINDER.push(s => s.brand ? KLOCKA.slag : undefined);
 // branden och en bybo som kan nå varandra under ett slag, plus synhållet: byn går i korta steg (steg 10.2.18)
 FAROR.push(s => { const b = s.brand; return !!b?.r.length && living(s).some(q => kanNa(narmast(b, q.x, q.y).d, 0, GANG.fart)); });
 import { grundvarde } from './varde';
+import { eldDef, eldPlatsAv } from './stationseld';

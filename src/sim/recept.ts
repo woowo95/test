@@ -169,6 +169,7 @@ const DEF = {
   brunn: { var: 'station', av: { huggen_sten: 6, virke: 1, rep: 1 }, min: 20, verktyg: { benspade: 'benspaden' } }, // brunnen (steg 12.4.8, torst.ts): grävs med spaden och sätts med huggen sten, med ett vindspel av virke och rep
   utedass: { var: 'station', av: { plankor: 4 }, min: 15, verktyg: { benspade: 'benspaden' } }, // utedasset (steg 12.4.9): en grop med väggar och tak av plankor
   sjukbadd: { var: 'station', av: { torrgras: 4, grenar: 2, skinn: 1 }, min: 12 }, // sjukbädden (steg 12.4.10): en halmbädd med ett skinn över
+  fyrfat: { var: 'station', av: { lera: 3 }, min: 10 }, // fyrfatet (steg 12.4.11): ett fat av lera med glödande kol
   oljelampa: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'oljelampa', bank: 'drejskiva' }, // oljelampan (steg 12.4.2): formas av lera som krukan, torkar och bränns
   // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
   jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },

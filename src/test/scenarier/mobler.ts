@@ -347,3 +347,34 @@ SCENARIER.sjukstuga = {
     ];
   },
 };
+
+SCENARIER.fyrfat = {
+  text: 'Fyrfatet (steg 12.4.11, mobler.ts): ett fat av 3 lera (10 minuter, tekniken Fyrfat) med glödande kol, som värmer ett litet rum utan härd; elden är en rad i ELDSTATIONER med bränslet kol, rymmer 3 kol och 1 kol räcker 8 timmar, och den gnistrar en tiondel så mycket som lägerelden',
+  kor: () => {
+    const d = SIM.stationDef('fyrfat')!, e = SIM.ELDSTATIONER.fyrfat, tek = SIM.TEKNIK.find(t => t.id === 'fyrfat');
+    const s = SIM.createState(1, START), p = vuxen(s);
+    klockan(s, 22);
+    const hus = medHus(s); if (!hus) return [['ett hus', false]];
+    SIM.touch(s);
+    const rum = SIM.fyrfatRum(s), brist = SIM.stationBrist(s, 'fyrfat');
+    const t = medBank(s, "fyrfat"), iRummet = !!rum && SIM.roomAt(s, t.x, t.y)?.id === rum.id;
+    const efter = SIM.fyrfatRum(s);
+    // kallt: fyrfatet behöver kol, och den som kommer fram fyller det
+    const kallt = SIM.coldOf(SIM.temperature(s)) > 0;
+    const behov = SIM.fyrfatKol(s) === t;
+    SIM.setStock(s, { kol: 5 });
+    const at = SIM.vidStation(t); p.x = at.x; p.y = at.y;
+    const tk = { act: 'fyrfat', phase: 'do', tx: at.x, ty: at.y, until: s.now + SIM.MIN, carry: 0, why: '' } as SIM.Task;
+    SIM.eldaForst(s, p, tk);
+    const iFatet = t.eld?.ved ?? 0, brinner = SIM.stationBrinner(t), kvar = SIM.amountOf(s, 'kol');
+    const varmt = SIM.stationsVarme(s, t.x + 0.5, t.y + 1), varmtLangt = SIM.stationsVarme(s, t.x + 4.5, t.y + 0.5);
+    SIM.stepStationsEld(s, 8 * 3600); const efter8 = t.eld?.ved ?? 0;
+    return [
+      [`fyrfatet står inne, av ${JSON.stringify(d.av)} på ${d.min} minuter, tekniken ${tek?.namn} (kräver ${tek?.krav}), och går inte att laga mat på`, !!d.inne && d.av.lera === 3 && d.min === 10 && !!tek && tek.krav.join() === 'kruka' && d.gor.join() === 'fyrfat'],
+      [`elden brinner på kol, rymmer ${e.max} och ett räcker ${1 / e.burn} timmar, och gnistrar ${e.gnistor} så mycket som lägerelden`, e.bransle === 'kol' && e.max === 3 && Math.abs(1 / e.burn - 8) < 1e-9 && e.gnistor === 0.1 && e.radie === 2.5],
+      [`byn vill ha ett fyrfat i rummet där folk sover utan härd (${brist}), och det ställs där (${iRummet}, ${!efter})`, brist === 1 && iRummet && !efter],
+      [`när det är kallt (${kallt}) behöver fyrfatet kol (${behov}), och den som kommer fram lägger i ${iFatet} (${kvar} kvar)`, (!kallt || behov) && iFatet === 3 && brinner && kvar === 2],
+      [`det värmer nära (${varmt.toFixed(2)}) men inte längre bort (${varmtLangt.toFixed(2)}), och ett kol räcker 8 timmar (${iFatet} → ${efter8})`, varmt > 0 && varmtLangt === 0 && Math.abs(efter8 - 2) < 1e-9],
+    ];
+  },
+};
