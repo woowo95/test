@@ -212,6 +212,49 @@ export function medJarnBehov<T>(f: () => T, n = 6): T {
   SIM.laggTillProjekt({ provjarn: { namn: 'Prov på järn', vikt: 5, brist: () => 1, kostnad: () => 1, kan: () => false, recept: () => ({ av: { jarn: n } }), uppgift: () => undefined } });
   try { return f(); } finally { delete SIM.PROJEKT.provjarn; SIM.PROJEKT_LIST.splice(SIM.PROJEKT_LIST.indexOf('provjarn'), 1); }
 }
+SCENARIER.myroffer = {
+  text: 'Offret i myren (steg 12.1.5, kult.ts): ett bud som en tro i en by med myr kan rösta in, och en ritual en gång om dygnet vid myrens kant närmast byn, där det mest värda vapnet, smycket eller maten som kyrkan äger sänks och är borta för gott; ju mer saken är värd, desto mer tro',
+  kor: () => {
+    const s = myrBy(), utan = SIM.createState(myrFro(1, false), Date.UTC(2026, 3, 1));
+    const v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), kid = SIM.kyrkaId(1);
+    const tr: SIM.Tro = { id: 1, grundare: v[0].id, gnamn: v[0].name, t: s.now - SIM.TYNGD.alderDygn * SIM.DAY, ar: 1, k: 'drom', bakom: 'Rösten', vill: 'att man lyssnar', svek: 'det blir tyst', natur: 60, manga: 40, bekr: s.now, x: Math.floor(v[0].x), y: Math.floor(v[0].y), namn: 'Rösternas väg' };
+    s.tron = [tr]; tr.bud = [{ id: 'myrOffer', t: s.now }];
+    for (const p of v) { p.tro = 1; p.troStyrka = 20; }
+    const finns = [SIM.BUD.myrOffer.finns(s), SIM.BUD.myrOffer.finns(utan)];
+    // kyrkan äger ett järnspjut, ett halsband och tre kött
+    const spjut = SIM.newTing(s, 'jarnspjut', 1, kid), hals = SIM.newTing(s, 'halsband', 1, kid);
+    setMat(s, { kott: 3 }); for (const a of s.stackar ?? []) if (a.k === 'kott') a.ag = { [kid]: a.n };
+    const vardet = (t: SIM.Ting) => SIM.tingVarde(t), mest = [spjut, hals].sort((a, b) => vardet(b) - vardet(a))[0];
+    const val = SIM.myrOffret(s, tr), kant = SIM.myrKant(s)!, ki = Math.floor(kant.y) * SIM.W + Math.floor(kant.x);
+    const vidMyr = [[0, 1], [1, 0], [0, -1], [-1, 0]].some(([dx, dy]) => SIM.paMyr(s, ki + dy * SIM.W + dx)) && !SIM.paMyr(s, ki);
+    // ritualen läggs i kön och hålls
+    klockan(s, 10); SIM.kultTimme(s);
+    const r = s.ritual;
+    const med = r ? SIM.RITUALER.myrOffer.vem(s, r) : [];
+    for (const p of med) p.task = { act: 'ritual', phase: 'do', tx: r!.x, ty: r!.y, until: r!.slut, carry: 0, why: '' } as SIM.Task;
+    const tro0 = med[0]?.troStyrka ?? 0;
+    s.now = r?.slut ?? s.now; SIM.ritualTimme(s);
+    const tro1 = med[0]?.troStyrka ?? 0, faktor = Math.min(SIM.KULT.myrTak, 1 + (val?.v ?? 0) / SIM.KULT.myrVarde);
+    const borta = !SIM.tingOf(s).includes(mest), kvar = SIM.tingOf(s).filter(t => t.agare === kid).length;
+    // samma dygn hålls inget nytt offer; nästa dygn sänks nästa sak
+    s.now += 2 * SIM.HOUR; SIM.kultTimme(s); const igen = !!s.ritual || !!s.ritualKo?.some(q => q.k === 'myrOffer');
+    // en kyrka som inte äger något: ritualen hålls inte
+    s.ting = SIM.tingOf(s).filter(t => t.agare !== kid); SIM.ownMove(s, 'kott', 3, kid, SIM.BYN);
+    s.ritual = undefined; s.now += SIM.DAY; const inte0 = s.stat?.ritual_inte_myrOffer ?? 0; SIM.kultTimme(s); SIM.ritualTimme(s);
+    const inte = (s.stat?.ritual_inte_myrOffer ?? 0) > inte0 && !s.ritual;
+    return [
+      [`budet kan föreslås i en by med myr men inte utan (${finns})`, finns[0] && !finns[1]],
+      [`kyrkan sänker det mest värda: ${val?.k} (${val?.v.toFixed(2)}), av spjutet ${vardet(spjut).toFixed(2)}, halsbandet ${vardet(hals).toFixed(2)} och köttet ${SIM.grundvarde('kott').toFixed(2)}`, !!val && val.ting === mest && val.v >= SIM.grundvarde('kott')],
+      [`platsen är fast mark intill myren (${kant.x}, ${kant.y})`, vidMyr],
+      [`ritualen samlar de troende vid myrens kant (${med.length} av ${v.length}, vid ${r?.x}, ${r?.y})`, !!r && r.k === 'myrOffer' && med.length === v.length && r.x === kant.x && r.y === kant.y],
+      [`saken är borta för gott (${borta}, kyrkan har ${kvar} ting kvar) och offret räknas (${s.stat?.myroffer})`, borta && kvar === 1 && s.stat?.myroffer === 1],
+      [`tron växer med sakens värde: ${tro0} → ${tro1}, gånger ${faktor.toFixed(2)}`, Math.abs(tro1 - tro0 - SIM.RITUALER.myrOffer.tro * faktor) < 1e-6 && faktor > 1],
+      [`samma dygn hålls inget nytt offer (${igen})`, !igen],
+      [`äger kyrkan inget hålls inget offer (${inte})`, inte],
+    ];
+  },
+};
+
 SCENARIER.resursteknik = {
   text: 'Teknikträdet växer med de nya resurserna (steg 12.1.4, teknik.ts): en teknik med haft är stängd tills byn har haft sakerna, varifrån de än kom. Malmen öppnar Blästerugn och järnet Smide; byn har haft en sak från första gången den finns i förrådet, också när den är slut igen',
   kor: () => {

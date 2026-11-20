@@ -14,6 +14,8 @@ import { TRO, Tro, andlighet, grunda, tecken, skalaV, troNamn, troOf, troende } 
 import { ageIndex, ageStart } from './tid';
 import { getMap } from './karta';
 import { groundOf } from './mark';
+import { myrOf } from './myr';
+import { VAPEN } from './strid';
 import { FOREST } from './vag';
 import { freeNear, roomAt } from './byggnad';
 import { eldPlats } from './karta';
@@ -24,11 +26,12 @@ import { budIn, foljer, gravolKan, gravolSlut, hogtidKrav, hogtidMat, hogtidOlKv
 import { kvarById, nara } from './kvarlevor';
 import { FOOD } from './saker';
 import { takeMaterial } from './behov';
-import { kladAv } from './klader';
+import { PLAGG, kladAv } from './klader';
 import { FEST, farorNu, heligtDjurAv, matAvstar, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
 import { tamdjurOf } from './tamdjur';
 import { grundvarde, tingVarde, varuVarde } from './varde';
-import { och, tal } from './ord';
+import { och, sakOrd, tal } from './ord';
+import { type Ting, tingOf } from './agande';
 import { notis } from './notiser';
 satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
 satEgendomVarde(o => varuVarde(o) / grundvarde('ved')); // kyrkans egendom i trons tyngd (steg 10.3.8)
@@ -37,6 +40,7 @@ import { prastMinns } from './rykten';
 
 export { farorNu, satFaror } from './kultlatt'; // farorna över byn (steg 10.11.18: i kultlatt.ts, så att förrådet också kan läsa dem)
 export const KULT = balans('kult', {
+  myrVarde: 10, myrTak: 2, // offret i myren (steg 12.1.5): tron växer gånger 1 + sakens värde / myrVarde, högst myrTak
   heligR: 15, // man ber vid den närmaste heliga platsen inom så här många rutor, och röstar för en plats så nära hemmet (steg 10.3.10)
   heligTak: 3, // en tro har högst så här många heliga platser
   heligKand: 5, // så många rutor där en bön i nöd fick svar minns tron
@@ -242,6 +246,8 @@ export const RITUALER = {
     plats: (s, r) => { const q = r.kropp !== undefined ? kvarById(s, r.kropp) : undefined, g = q ? undefined : (s.gravar ?? []).find(h => r.om?.includes(h.vem)); return q ?? g ?? { x: r.x, y: r.y }; } },
   gravol: { namn: 'Gravöl', tim: 2, humor: 0.08, tro: 1, vem: s => living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), plats: s => vidElden(s), kan: (s, r) => gravolKan(s, troOf(s, r.tro)) },
   leddBon: { namn: 'Ledd bön', tim: 1, humor: 0.06, tro: 1.5, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: (s, r) => { const tr = troOf(s, r.tro); return (tr && (troshusPlats(s, tr) ?? helig(s, tr))) ?? vidElden(s); } },
+  // offret i myren (steg 12.1.5): de troende vid myrens kant närmast byn, när kyrkan äger något att sänka
+  myrOffer: { namn: 'Offer i myren', tim: 1, humor: 0.06, tro: 2, vem: (s, r) => living(s).filter(p => p.tro === r.tro), plats: s => myrKant(s) ?? vidElden(s), kan: (s, r) => { const tr = troOf(s, r.tro); return !!tr && !!myrOffret(s, tr); } },
 } satisfies Record<string, RitualDef>;
 export type RitualId = keyof typeof RITUALER;
 const RDEF: Record<RitualId, RitualDef> = RITUALER;
@@ -261,7 +267,8 @@ export function ritualTimme(s: State) {
     const tr = r.tro !== undefined ? troOf(s, r.tro) : undefined, pr = tr && prastOf(s, tr);
     // prästen leder (steg 10.3.11): med budet om dräkten ger ritualen mer när prästen bär den och hälften så mycket tro och inget extra humör när den saknas
     const drakt = !!tr && budInK(tr, 'drakt'), bar = !!pr && barDrakt(s, pr);
-    const ledd = pr && (!drakt || bar) ? KULT.starkare : 1, troF = !pr || !drakt ? 1 : bar ? KULT.starkare : 0.5;
+    const offerF = r.k === 'myrOffer' && tr ? myrOffra(s, tr) : 1; // det mer värda offret ger mer tro (steg 12.1.5)
+    const ledd = pr && (!drakt || bar) ? KULT.starkare : 1, troF = (!pr || !drakt ? 1 : bar ? KULT.starkare : 0.5) * offerF;
     for (const p of med) {
       think(p, r.namn ?? d.namn, (r.om?.includes(p.id) ? d.huvud ?? d.humor : d.humor) * ledd, s.now, 12 * HOUR);
       // en ritual ger tro bara till dem som har ritualens tro (steg 10.3.3); fastan ger mer
@@ -434,6 +441,48 @@ function festSlut(s: State) {
   log(s, text, 'rel', []); notis(s, 'fest', text, [], { x: f.x, y: f.y }); kronika(s, text, 'tro');
   count(s, 'fest');
 }
+// ---------- offret i myren (steg 12.1.5, Landskapet och järnet: Myrar: Offret) ----------
+// platsen: rutan intill myren, på fast mark, som ligger närmast elden. Räknas när ritualen börjar, en gång om dygnet
+export function myrKant(s: State): { x: number; y: number } | undefined {
+  const a = myrOf(s.seed);
+  if (!a) return undefined;
+  const m = getMap(s.seed), f = eldPlats(s);
+  let bast: { x: number; y: number } | undefined, bd = Infinity;
+  for (let i = 0; i < a.length; i++) {
+    if (!a[i]) continue;
+    const x = i % W, y = (i - x) / W;
+    for (const [dx, dy] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) {
+      const nx = x + dx, ny = y + dy, j = ny * W + nx;
+      if (!inMap(nx, ny) || a[j] || m.tiles[j] === T.Vatten) continue;
+      const d = Math.hypot(nx - f.x, ny - f.y);
+      if (d < bd) { bd = d; bast = { x: nx + 0.5, y: ny + 0.5 }; }
+    }
+  }
+  return bast;
+}
+// det kyrkan sänker: det mest värda vapnet, smycket eller maten den äger
+export function myrOffret(s: State, tr: Tro): { ting?: Ting; k: string; v: number } | undefined {
+  const id = kyrkaId(tr.id);
+  let bast: { ting?: Ting; k: string; v: number } | undefined;
+  for (const t of tingOf(s)) {
+    if (t.agare !== id || !(t.k in VAPEN || (t => !!t && PLAGG[t.plagg].plats === 'smycke')(kladAv(t.k)))) continue;
+    const v = tingVarde(t);
+    if (!bast || v > bast.v) bast = { ting: t, k: t.k, v };
+  }
+  for (const k of FOOD) { if (kyrkansAv(s, tr, k) < 1) continue; const v = grundvarde(k); if (!bast || v > bast.v) bast = { k, v }; }
+  return bast;
+}
+// saken sänks och är borta för gott; ger hur mycket mer tro de troende får
+function myrOffra(s: State, tr: Tro): number {
+  const o = myrOffret(s, tr);
+  if (!o) return 1;
+  if (o.ting) s.ting = tingOf(s).filter(t => t !== o.ting); else use(s, undefined, o.k, 1, true, kyrkaId(tr.id));
+  count(s, 'myroffer');
+  const namn = o.ting?.ber?.namn, ord = sakOrd(o.k);
+  const text = `${troNamn(tr)} sänkte ${namn ? `mästerverket ${namn}` : `${ord[0]} ${ord[1]}`} i myren.`;
+  log(s, text, 'rel', []); kronika(s, text, 'tro');
+  return Math.min(KULT.myrTak, 1 + o.v / KULT.myrVarde);
+}
 // ---------- varje timme ----------
 export function kultTimme(s: State) {
   for (const p of living(s)) { bonSvar(s, p); profetSteg(s, p); }
@@ -444,6 +493,7 @@ export function kultTimme(s: State) {
     prastSteg(s, tr, folk);
     hogtidSteg(s, tr);
     const pr = prastOf(s, tr);
+    if (budIn(tr, 'myrOffer') && !s.ritualKo?.some(r => r.k === 'myrOffer' && r.tro === tr.id) && (tr.myrOffer ?? -Infinity) + DAY <= s.now) { tr.myrOffer = s.now; nyRitual(s, 'myrOffer', { tro: tr.id }); } // en gång om dygnet (steg 12.1.5)
     if (pr && !s.ritual && !s.ritualKo?.some(r => r.k === 'leddBon' && r.tro === tr.id) && (tr.leddBon ?? 0) + 2 * DAY <= s.now) { tr.leddBon = s.now; nyRitual(s, 'leddBon', { tro: tr.id }); } // vid den heliga platsen, eller vid elden innan tron har en (steg 10.3.10)
   }
   if (Math.floor(s.now / HOUR) % 24 === 0) vanhelga(s);

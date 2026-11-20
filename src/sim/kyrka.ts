@@ -18,6 +18,7 @@ import { MASTERVERK, kvNamn } from './kvalitet';
 import { kronika } from './historik';
 import { SKRIFT } from './skriftTal';
 import { GUDAR, Tro, andlighet, gudarOf, skalaV, troNamn, rymsBud, troOf, troende } from './religion';
+import { harMyr } from './myr';
 import { farorNu, KULT, RITUALER, type RitualId, farBliPrast, heligaFor, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
 import { FRAGOR, Fraga, FragaData, rostaOm } from './rost';
 import { LAGAR, LagForslag, lagGaller } from './lagar';
@@ -91,6 +92,7 @@ export interface BudDef { namn: string; sort: 'forbud' | 'krav' | 'offer'; storl
   // och vad värdet heter i budets namn. Samma rad kan antas en gång per värde; utan varden antas raden en gång
   varden?(s: State, tr: Tro): BudVarde[]; vardeNamn?(s: State, v: BudVarde): string
   kraver?: string; // budet kan bara föreslås när tron har det här (offret vid högtiden kräver en högtid)
+  finns?(s: State): boolean; // budet kan bara föreslås när världen har det (offret i myren kräver en myr, steg 12.1.5)
   nu?(s: State, tr: Tro): boolean; // budets tillfälle är nu: det lyfts fram bland trons förslag (steg 10.3.3)
   om?(s: State, tr: Tro, b: AntagetBud): string // ritualbuden: när, vilka, var, vad som går åt (fliken Religion)
   och?: [NonNullable<BudDef['skala']>, 0 | 1]; // en andra skala som också ska stå på budets sida (skändningen: Krigisk och Sluten, steg 10.4.13)
@@ -250,6 +252,8 @@ export const BUD = {
     om: (s, tr) => `När ett barn föds och moderns tro, annars faderns, har budet. Byn samlas i en timme ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. Inget går åt.` },
   vuxen: { namn: 'Vuxenblivandet', sort: 'krav', storlek: 1, ritual: 'vuxen', text: 'Den unga välsignas när hen blir vuxen', nu: (s, tr) => (tr.vuxen ?? -Infinity) + KYRKA.tillfalle * DAY > s.now,
     om: (s, tr) => `När någon fyller ${ALDER.vuxen} år och hens tro, annars moderns, annars faderns, har budet. Byn samlas i en timme ${helig(s, tr) ? 'vid den heliga platsen' : 'vid elden'}. Inget går åt.` },
+  myrOffer: { namn: 'Offer i myren', sort: 'offer', storlek: 2, skala: 'natur', sida: 0, ritual: 'myrOffer', text: 'Det mest värda kyrkan äger sänks i myren', finns: s => harMyr(s),
+    om: () => `En gång om dygnet samlas de troende i ${RITUALER.myrOffer.tim} timme vid myrens kant närmast byn och sänker det mest värda vapnet, smycket eller maten som kyrkan äger. Saken är borta för gott, och ju mer den var värd, desto mer stärks tron. Äger kyrkan inget sådant hålls inget offer.` },
   manniskooffer: { namn: 'Människooffer', sort: 'offer', storlek: 4, skala: 'krig', sida: 1, text: 'Tron kräver det yttersta' },
 } satisfies Record<string, BudDef>;
 export type BudId = keyof typeof BUD;
@@ -417,7 +421,7 @@ export function trosTalare(s: State, tr: Tro): Person | undefined {
 const forslag = (s: State, p: Person, f: string, d: FragaData): LagForslag => { const r = FRAGOR[f].rost(s, p, d); return { fr: { f, d, fram: p.id }, prio: r.v, varfor: `${p.name} vill det: ${r.why.toLowerCase()}` }; };
 export const TROS_UPP: { id: string; lista(s: State, tr: Tro, p: Person): LagForslag[] }[] = [
   { id: 'kyrkutgift', lista: (s, tr, p) => { const vad = utgiftNu(s, tr); return vad ? [forslag(s, p, 'kyrkutgift', { tro: tr.id, vad })] : []; } },
-  { id: 'nyttBud', lista: (s, tr, p) => (Object.keys(BUD) as BudId[]).filter(id => (BDEF[id].storlekAv || rymsBud(s, tr, BDEF[id].storlek)) && passar(tr, BDEF[id]) && (!BDEF[id].kraver || budIn(tr, BDEF[id].kraver as BudId)))
+  { id: 'nyttBud', lista: (s, tr, p) => (Object.keys(BUD) as BudId[]).filter(id => (BDEF[id].storlekAv || rymsBud(s, tr, BDEF[id].storlek)) && passar(tr, BDEF[id]) && (!BDEF[id].finns || BDEF[id].finns!(s)) && (!BDEF[id].kraver || budIn(tr, BDEF[id].kraver as BudId)))
     .flatMap(id => budForslag(s, tr, id)).filter(b => rymsBud(s, tr, budStorlek(BDEF[b.id], b.v))).map(b => {
       const g = ersatter(s, tr, b); // ett byte: det nya mot det gamla (steg 10.3.13)
       const f = g ? forslag(s, p, 'bytBud', { tro: tr.id, id: b.id, v: b.v, gid: g.id, gv: g.v }) : forslag(s, p, 'nyttBud', { tro: tr.id, id: b.id, v: b.v });
