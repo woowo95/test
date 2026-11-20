@@ -1,6 +1,7 @@
 // Scenarier för fas 12: myren och järnet.
 import * as SIM from '../../sim';
-import { SCENARIER, kor } from './hjalp';
+import { SCENARIER, kor, medBank } from './hjalp';
+import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
 export function myrFro(start = 1, med = true) {
@@ -136,3 +137,43 @@ SCENARIER.torv = {
   },
 };
 
+SCENARIER.kolmila = {
+  text: 'Kolmilan (steg 12.2.1, brann.ts): en kolbotten som grävs med spaden på 10 minuter utan material, där 20 torr ved blir 10 kol på 4 timmar efter klockan; tekniken Kolning, raden kolmila i ARBETEN tömmer den klara milan, och projektet kol ärver sin brist och vill då ha ved till milan (BRANNINGAR)',
+  kor: () => {
+    const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = vuxna[0];
+    const d = SIM.stationDef('kolmila')!, tek = SIM.TEKNIK.find(t => t.id === 'kolmila');
+    for (const q of vuxna) (q.tek ??= {}).kolmila = 1;
+    SIM.addTool(s, 'benspade', p);
+    const bygga = SIM.PROJEKT.kolmila?.kan(s, p, { kyla: false, gras: 0 }) ?? false;
+    const t = medBank(s, 'kolmila');
+    SIM.setStock(s, { ved: 30 });
+    const egen = SIM.projektVarde(s, 'kol'), u = SIM.PROJEKT.kol!.uppgift(s, p);
+    // ladda och tända
+    const tk = { act: 'kola', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', ref: t.id } as SIM.Task;
+    SIM.branningKlar(s, p, tk);
+    const b = SIM.branningI(s, t), vedKvar = SIM.amountOf(s, 'ved');
+    const tidigt = SIM.attTomma(s), upptagen = SIM.laddbar(s, p, 'kolmila');
+    // efter fyra timmar är den klar; den som har tid river den och tar ut kolet (raden kolmila i ARBETEN)
+    s.now = b!.slut - SIM.HOUR / 2;
+    const kol0 = SIM.amountOf(s, 'kol') + SIM.paMarken(s, 'kol');
+    kor(s, 6);
+    const kol = SIM.amountOf(s, 'kol') + SIM.paMarken(s, 'kol') - kol0, tom = !SIM.branningI(s, t);
+    // receptet: projektet kol vill ha ved till milan, och blöt ved går inte att kola
+    const q = SIM.cloneState(s), qp = SIM.living(q).find(r => r.id === p.id)!;
+    SIM.setStock(q, { ved: 5 });
+    const recept = SIM.PROJEKT.kol!.recept?.(q, qp, { kyla: false, gras: 0 });
+    SIM.setStock(q, { ved: 30 });
+    for (const a of SIM.stacksOf(q)) if (a.k === 'ved') (a as { blot?: 1 }).blot = 1;
+    const blot = SIM.laddbar(q, qp, 'kolmila');
+    return [
+      [`kolbottnen grävs med spaden på ${d.min} minuter utan material, med tekniken ${tek?.namn} (krav ${tek?.krav})`, d.min === 10 && Object.keys(d.av).length === 0 && d.verktyg === 'benspade' && d.w === 2 && d.h === 2 && !!tek && tek.krav.includes('ortkok') && bygga],
+      [`ingen kolar för kolets egen skull (värdet ${egen}), men den som behöver kol laddar milan (${u?.text}, ${u?.min} minuter)`, egen === 0 && u?.act === 'kola' && u.min === 7],
+      [`milan tar 20 ved (kvar ${vedKvar}) och brinner 4 timmar efter klockan`, !!b && vedKvar === 10 && b.slut - b.t0 === 4 * SIM.HOUR],
+      ['en mila som brinner går inte att tömma eller ladda', !tidigt && !upptagen],
+      [`den klara milan töms av sig själv och ger 10 kol (${kol})`, kol === 10 && tom && (s.stat?.brant_kol ?? 0) === 10],
+      [`projektet kol vill ha ved till milan (${JSON.stringify(recept?.av)})`, recept?.av.ved === 20],
+      ['blöt ved går inte att kola', !blot],
+      [`kolet väger 1 (${SIM.SAKER.kol!.vikt})`, SIM.SAKER.kol!.vikt === 1],
+    ];
+  },
+};

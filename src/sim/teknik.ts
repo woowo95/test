@@ -216,6 +216,7 @@ export const TEKNIK: Tek[] = [
   { id: 'lag', namn: 'Lag', text: 'Att bestämma i förväg vad som är fel och vad det kostar, så att det blir likadant varje gång.', effekt: 'Den som kan lag kan lägga fram en lag.', omr: [], krav: ['ledarskap'], niva: 2, tid: 14, nar: 'i samtal' },
   // lönen (steg 10.5.9, lon.ts): kommer man på i samtal när byn tagit in nog i skatt
   { id: 'lon', namn: 'Lön', text: 'Att byn betalar den som arbetar för den, ur det skatten gett.', effekt: 'Den som kan lön kan lägga fram lönelagen.', omr: [], krav: ['lag'], niva: 3, tid: 14, nar: 'i samtal' },
+  { id: 'kolmila', namn: 'Kolning', text: 'Ved som reses till en mila, täcks med torv och jord och får brinna långsamt utan luft.', effekt: 'Byn gräver en kolbotten, där 20 torr ved blir 10 kol på fyra timmar.', omr: ['hantverk'], krav: ['ortkok'], niva: 4, tid: 6, forsok: { vid: ['ortkok'], skill: 'hantverk', vad: 'hur ved blir kol utan att brinna upp' }, episk: '{namn} täckte en hög ved med jord och lät den pyra, och ur den kom kol.' }, // steg 12.2.1 (brann.ts)
 ];
 for (const t of TEKNIK) TEKNAMN[t.namn.toLowerCase()] = t.id; // ordlagret hittar verbet efter namnet (ord.ts)
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;

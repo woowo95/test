@@ -289,6 +289,7 @@ const DEF = {
   lera: { namn: 'Gräver lera', slag: 'samla', arbete: 'samla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // vid stranden (lera.ts, steg 9.4.10)
   malm: { namn: 'Gräver malm', slag: 'samla', arbete: 'samla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40, kravs: true } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // i myren (malm.ts, steg 12.1.2)
   torv: { namn: 'Gräver torv', slag: 'tra', arbete: 'ved', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40, kravs: true } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // i myren, när byn behöver ved (torv.ts, steg 12.1.3)
+  kola: { namn: 'Kolar', slag: 'hantverk', tungt: true, plats: 'station', verb: 'kolar' }, // vid kolmilan (brann.ts, steg 12.2.1)
   bryta: { namn: 'Bryter sten vid berget', slag: 'bygga', tungt: true, framme: true }, // en byggsten, som blir liggande där (byggsten.ts, steg 10.10.5)
   stubbe: { namn: 'Gräver bort en stubbe', slag: 'odla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'stubbar', per: 'gang' }, tungt: true, framme: true }, // där något ska byggas (skog.ts, steg 6.5.7)
   flyttStation: { namn: 'Flyttar en station', slag: 'bygga', hantverk: true, stilla: true, framme: true, tungt: true }, // närmare dem som använder den (stationer.ts, steg 9.4.8)

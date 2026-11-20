@@ -428,6 +428,7 @@ export interface State {
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
   sjoar?: Record<number, import('./sjo').SjoStat>; // fiske och bad per sjö (sjo.ts)
   stationer?: import('./stationer').Station[]; nextStation?: number; // arbetsstationerna, som slaktbänken (stationer.ts)
+  branningar?: import('./brann').Branning[]; // kolmilorna och blästerugnarna som brinner (brann.ts, steg 12.2.1)
   falt?: import('./odling').Falt[]; nextFalt?: number; // fälten (steg 2.10.3, odling.ts)
   vader?: import('./vader').VaderMinne; // fukten och snön på marken (steg 2.11.1, vader.ts)
   is?: import('./is').IsMinne; // vattnets temperatur och isens tjocklek (steg 2.11.3, is.ts)

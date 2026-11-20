@@ -23,7 +23,13 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '..kkkkkkkkkJjvk.', '..kjVjjjjkjjjjk.', '..kjjjvjjkjVjjk.', '..kkkkkkkkkkkkk.',
     '...v.......v....', '................', '................', '................'],
     pal: { k: '#2f261d', j: '#3f2415', J: '#5e3c24', v: '#3e5156', V: '#61767a' } },
+  // kolmilan (steg 12.2.1): en kupa av jord och torv över veden, med rökhålet i toppen; på kartan 16 punkter per ruta (2 × 2)
+  kolmila: { pix: ['................', '................', '................', '................', '................', '.....kkkkkk.....', '...kkjJKKjJkk...', '..kjjJjKKJjjjk..', '..kjJjjjJjjjJk..', '..jJjjjJjjjJjj..', '..JjjjJjjjJjjj..', '..kjjJjjjJjjjk..', '..kjJjjjJjjjJk..', '...kkjjJjjjkk...', '................', '................'],
+    pal: { k: '#24201d', K: '#474138', j: '#3f2415', J: '#5e3c24', g: '#4b4f00' } },
+  kolmila_karta: { pix: ['................................', '................................', '................................', '................................', '................................', '................................', '................................', '................................', '................................', '............kkkkkkkk............', '.........kkkkjKKgKjkkkk.........', '.......kkkjgjjKKKKjJjjkkk.......', '......kkJjjjjJKKKgJjjjjJkk......', '.....kkJjjjjgjKKKKjjjjJgjkk.....', '....kkJgjjjJjjjjJjgjjJjjjjkk....', '....kJjjjjJjjgjJjjjjJjjjgJjk....', '...kkjjjgJjjjjJjjjjgjjjjJjjkk...', '...kjjjjJjjjjJgjjjJjjjjJjgjjk...', '...kjjjJjgjjJjjjjJjjgjJjjjjJk...', '..kkgjJjjjjJjjjgJjjjjJjjjjgjkk..', '...kjJjjjjgjjjjJjjjjJgjjjJjjk...', '...kJgjjjJjjjjJjgjjJjjjjJjjgk...', '...kkjjjJjjgjJjjjjJjjjgJjjjkk...', '....kjgJjjjjJjjjjgjjjjJjjjjk....', '....kkJjjjjJgjjjJjjjjJjgjjkk....', '.....kkgjjJjjjjJjjgjJjjjjkk.....', '......kkjJjjjgJjjjjJjjjjkk......', '.......kkkjjjJjjjjJgjjkkk.......', '.........kkkkjgjjJjkkkk.........', '................................', '................................', '................................'],
+    pal: { k: '#24201d', K: '#474138', j: '#3f2415', J: '#5e3c24', g: '#4b4f00' } },
 };
 export function laggTillJarn(PIX: Pix, PAL: Pal) {
   for (const [k, b] of Object.entries(BILDER)) { PIX[k] = b.pix; PAL[k] = b.pal; }
+  PIX.kolmila_karta_v = PIX.kolmila_karta; PAL.kolmila_karta_v = PAL.kolmila_karta;
 }

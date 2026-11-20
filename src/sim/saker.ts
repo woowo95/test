@@ -63,7 +63,7 @@ const DEF = {
   ved: { namn: 'Ved', skaffa: { act: 'hugga', tek: 'yxa' }, stack: 20, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', skaffa: { act: 'ved' }, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
   torrgras: { namn: 'Hö', ett: true, skaffa: { tid: 0.4, act: 'samla' }, stack: 50, mapp: 'Bränsle', slits: 0.006 }, // hö ruttnar på ett par dygn när det ligger utanför lagret (steg 2.2.9)
-  kol: { namn: 'Kol', ett: true, skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
+  kol: { namn: 'Kol', ett: true, skaffa: { tid: 0.3 }, stack: 25, vikt: 1, mapp: 'Bränsle' }, // vikten 1 (steg 12.2.1): kolet ur kolmilan och ur en slocknad eld
   flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true, act: 'samla' }, stack: 20, mapp: 'Sten', brinnerInte: true },
   yxa: { namn: 'Flintyxa', hanger: 'balte', skaffa: RECEPT.yxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true, trasig: { stat: 'yxorTrasiga', text: '{namn}s yxa gick sönder.' },
     gors: { text: 'Gör en flintyxa.', stat: 'yxa1', forsta: '{namn} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.', fame: 'Gjorde byns första yxa', igen: '{namn} gjorde en flintyxa.' } },

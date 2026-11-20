@@ -73,6 +73,7 @@ export const STATION = balans('station', {
   bordUte: 20, // när det är kallt eller regnar är ett bord ute så här många rutor längre bort än ett inne (steg 7.2.8)
   avstand: 2.5, // en station ute står helst så här många rutor utanför det byn omsluter (tillHoljet i omrade.ts), från stationens mitt
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
+  kolTill: 14, kolAvst: 8, // kolmilan står högst och helst så här många rutor från byn, eftersom den kastar gnistor (steg 12.2.1)
   utkantMin: 1, // det som står i byns utkant står aldrig närmare byns område än så här (om ingen plats längre bort är ledig, t.ex. för skogen)
   knivplatser: 1, // så många knivar som ligger kvar vid slaktbänken
   repFart: 2, // rep tvinnas så här många gånger fortare vid slöjdbänken än för hand ...
@@ -380,6 +381,12 @@ export const STATIONER = {
     forsta: '{namn} snickrade byns första krubba och ställde den i fähuset. Där läggs höet åt djuren, och där står de i istiden.',
   },
   ...MATTA_ST,
+  // kolmilan (steg 12.2.1, brann.ts): en kolbotten som grävs med spaden, utan material, en bit från byn
+  kolmila: {
+    namn: 'Kolmila', ikon: 'kolmila', w: 2, h: 2, tek: ['kolmila'], av: RECEPT.kolmila.av, min: RECEPT.kolmila.min, gor: ['kola'], bara: ['kola'], verktyg: 'benspade', utkant: { tradFri: true, till: STATION.kolTill, avst: STATION.kolAvst },
+    bygger: 'Gräver en kolbotten med benspaden.',
+    forsta: '{namn} grävde byns första kolbotten. Där reses veden till en mila som brinner till kol.',
+  },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
 export const STATION_LIST = Object.keys(STATIONER) as StationSlag[];

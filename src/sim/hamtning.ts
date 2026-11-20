@@ -177,3 +177,6 @@ function laggVid(s: State, p: Person, tk: Task) {
   if (tk.items) dropLoad(s, tk, p.x, p.y); // (med hamtad kvar: det som läggs ner är inte förbrukat, lager.ts)
   tk.vanda = undefined; tk.hamtad = undefined;
 }
+// kolmilan (steg 12.2.1, brann.ts): veden som reses till milan, när den är tom
+HAMTAS.kola = { av: (s, _p, tk) => branningHamtas(s, tk) };
+import { branningHamtas } from './brann';
