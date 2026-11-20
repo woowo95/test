@@ -37,14 +37,45 @@ const ikonSkugga = (k: string) => { if (!form.has(k)) dela(k); return form.get(k
 // ---------- formerna ----------
 // bildstilens skugga vid foten (cx, by): en hel oval snett åt höger, w = halva bredden (ungefär kronans), ry2 = höjden i
 // kvadrat (5 för träden, två punkter upp och ned), lang = hur lång den är (1 på dagen, längre i skymningen, steg 5.1.8.2)
-export function fotSkugga(g: PIXI.Graphics, cx: number, by: number, w: number, ry2: number, lang = 1) {
-  const W = w * lang, mitt = W * 0.7, r2 = W * W + 1;
+// Formen som rader [dy, a, b]: punkterna a till b (relativt cx) på raden by + dy
+function fotForm(w: number, ry2: number, lang: number) {
+  const W = w * lang, mitt = W * 0.7, r2 = W * W + 1, ut: [number, number, number][] = [];
   for (let dy = -Math.floor(Math.sqrt(ry2)); dy * dy < ry2; dy++) {
     const rest = 1 - dy * dy / ry2;
     if (rest <= 0) continue;
     const half = Math.sqrt(r2 * rest), a = Math.max(-1, Math.floor(mitt - half) + 1), b = Math.min(Math.ceil(2 * W), Math.ceil(mitt + half) - 1);
-    if (b >= a) g.drawRect(Math.round(cx) + a, Math.round(by) + dy, b - a + 1, 1);
+    if (b >= a) ut.push([dy, a, b]);
   }
+  return ut;
+}
+export function fotSkugga(g: PIXI.Graphics, cx: number, by: number, w: number, ry2: number, lang = 1) {
+  for (const [dy, a, b] of fotForm(w, ry2, lang)) g.drawRect(Math.round(cx) + a, Math.round(by) + dy, b - a + 1, 1);
+}
+// Trädens skuggor som färdiga bilder (steg 12.1.181): varje form (w, ry2, lang) ritas en gång i en gemensam bild (ATLAS, rad för
+// rad), och varje träd får en bild ur den, med samma punkter som fotSkugga ritar. Bilden växer med en ny gemensam bild när den är full
+const ATLAS = 512;
+interface Atlas { cv: HTMLCanvasElement; bas: PIXI.BaseTexture; x: number; y: number; rad: number }
+let atlas: Atlas | undefined;
+const formBilder = new Map<string, { t: PIXI.Texture; dx: number; dy: number }>();
+function formBild(w: number, ry2: number, lang: number) {
+  const k = `${w},${ry2},${lang}`;
+  let f = formBilder.get(k);
+  if (f) return f;
+  const rader = fotForm(w, ry2, lang);
+  const dx = Math.min(...rader.map(r => r[1])), dy = rader[0]![0], bw = Math.max(...rader.map(r => r[2])) - dx + 1, bh = rader[rader.length - 1]![0] - dy + 1;
+  if (!atlas || atlas.x + bw > ATLAS && atlas.y + atlas.rad + 1 + bh > ATLAS) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = ATLAS;
+    atlas = { cv, bas: PIXI.BaseTexture.from(cv, { scaleMode: PIXI.SCALE_MODES.NEAREST }), x: 0, y: 0, rad: 0 };
+  }
+  if (atlas.x + bw > ATLAS) { atlas.x = 0; atlas.y += atlas.rad + 1; atlas.rad = 0; }
+  const g = atlas.cv.getContext('2d')!, ox = atlas.x, oy = atlas.y;
+  g.fillStyle = '#ffffff';
+  for (const [y, a, b] of rader) g.fillRect(ox + a - dx, oy + y - dy, b - a + 1, 1);
+  atlas.bas.update();
+  f = { t: new PIXI.Texture(atlas.bas, new PIXI.Rectangle(ox, oy, bw, bh)), dx, dy };
+  atlas.x += bw + 1; atlas.rad = Math.max(atlas.rad, bh);
+  formBilder.set(k, f);
+  return f;
 }
 
 // hur lång skuggan är nu (steg 5.1.8.2): 1 på dagen och längre i skymningen, när solen står lågt, upp till SKYMNING_LANG
@@ -64,6 +95,7 @@ varying vec2 vTextureCoord;
 uniform sampler2D uSampler;
 uniform sampler2D uSkugga;
 uniform sampler2D uTak;
+uniform sampler2D uTrad;
 uniform vec4 inputSize;
 uniform vec4 outputFrame;
 uniform vec3 uPal[32];
@@ -89,7 +121,7 @@ void main() {
   vec2 w = (vTextureCoord * inputSize.xy + outputFrame.xy - uPos) / uSkala;
   vec2 uv = (floor(w) + 0.5) / uStorlek;
   if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) { gl_FragColor = c; return; }
-  float n = step(0.5, texture2D(uSkugga, uv).a) + step(0.5, texture2D(uTak, uv).a);
+  float n = step(0.5, max(texture2D(uSkugga, uv).a, texture2D(uTrad, uv).a)) + step(0.5, texture2D(uTak, uv).a);
   float ml = 0.0;
   if (uMoln < 1.0) {
     vec2 f = floor(w), q = (f + uMolnPos) / uMolnStorlek;
@@ -109,10 +141,10 @@ void main() {
   }
   gl_FragColor = vec4(o * c.a, c.a);
 }`;
-let rt: PIXI.RenderTexture | undefined, rtTak: PIXI.RenderTexture | undefined;
+let rt: PIXI.RenderTexture | undefined, rtTak: PIXI.RenderTexture | undefined, rtTrad: PIXI.RenderTexture | undefined; // rtTrad: trädens skuggor (steg 12.1.181)
 let filter: PIXI.Filter | undefined; // görs först i webbläsaren (testerna läser träden utan att rita)
 const skuggFilter = () => filter ??= new PIXI.Filter(undefined, FRAG, {
-  uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uML: platt(LITE_MORKARE), uMolnKant: 0.08, uPos: new Float32Array(2), uSkala: 1, uStorlek: new Float32Array([1, 1]), uSkugga: PIXI.Texture.EMPTY, uTak: PIXI.Texture.EMPTY, uMoln: 2, uMolnPos: new Float32Array(2), uMolnStorlek: 1,
+  uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uML: platt(LITE_MORKARE), uMolnKant: 0.08, uPos: new Float32Array(2), uSkala: 1, uStorlek: new Float32Array([1, 1]), uSkugga: PIXI.Texture.EMPTY, uTak: PIXI.Texture.EMPTY, uTrad: PIXI.Texture.EMPTY, uMoln: 2, uMolnPos: new Float32Array(2), uMolnStorlek: 1,
 });
 
 // molnskuggorna (steg 5.1.10 och 6.8.19, Vädret under Tidsmodell): stora fläckar lite mörkare (LITE_MORKARE) med rastrad kant, som glider över marken med vinden. Några små
@@ -138,18 +170,31 @@ export function sattMoln(moln: number, vind: number, ljus: number, ms: number) {
   molnGrans = tack <= 0.005 ? 2 : 0.5 + (0.5 - tack) * 0.55; // brusets gräns: över den är det moln
 }
 
-// det som ritas i skuggbilden varje bildruta: de fasta (träden och väggarna, ritas om bara när de ändras) och de som rör sig
+// det som ritas i skuggbilderna: träden i en egen bild (steg 12.1.181), som ritas om bara när en skuggas form eller väggarna
+// ändrats, och resten (väggarna, folket och bilderna) i en annan. Väggarna själva (vaggHal) tas bort ur båda. Taket har sin egen
 // (görs först när något ritas: testerna läser träden utan webbläsare)
-let lager: { fasta: PIXI.Graphics; folk: PIXI.Graphics; vaggar: PIXI.Container; vaggHal: PIXI.Container; ikoner: PIXI.Container; scen: PIXI.Container; tak: PIXI.Container; takHal: PIXI.Container; takScen: PIXI.Container } | undefined;
+let lager: { trad: PIXI.Container; folk: PIXI.Graphics; vaggar: PIXI.Container; vaggHal: PIXI.Container; ikoner: PIXI.Container; scen: PIXI.Container; tak: PIXI.Container; takHal: PIXI.Container; takScen: PIXI.Container } | undefined;
 function delar() {
   if (lager) return lager;
-  const l = lager = { fasta: new PIXI.Graphics(), folk: new PIXI.Graphics(), vaggar: new PIXI.Container(), vaggHal: new PIXI.Container(), ikoner: new PIXI.Container(), scen: new PIXI.Container(), tak: new PIXI.Container(), takHal: new PIXI.Container(), takScen: new PIXI.Container() };
-  l.scen.addChild(l.fasta, l.vaggar, l.vaggHal, l.folk, l.ikoner); // vaggHal: väggarna själva, som tas bort ur skuggan
+  const l = lager = { trad: new PIXI.Container(), folk: new PIXI.Graphics(), vaggar: new PIXI.Container(), vaggHal: new PIXI.Container(), ikoner: new PIXI.Container(), scen: new PIXI.Container(), tak: new PIXI.Container(), takHal: new PIXI.Container(), takScen: new PIXI.Container() };
+  l.scen.addChild(l.vaggar, l.vaggHal, l.folk, l.ikoner); // vaggHal: väggarna själva, som tas bort ur skuggan
   l.takScen.addChild(l.tak, l.takHal);
   return l;
 }
+// trädens skuggor (trad.ts, anropas bara när en skuggas form eller längden ändrats): fötterna x, y, w och ry2 som i fotSkugga
 let tradVer = 0;
-export const skuggTrad = () => { tradVer++; return delar().fasta; }; // träden (anropas bara när deras skuggor ritas om)
+const tradSp: PIXI.Sprite[] = [];
+export function tradSkuggLista(lista: readonly { x: number; y: number; w: number; ry2: number }[], lang: number) {
+  tradVer++;
+  const c = delar().trad;
+  lista.forEach((v, i) => {
+    let sp = tradSp[i];
+    if (!sp) { sp = tradSp[i] = new PIXI.Sprite(); c.addChild(sp); }
+    const f = formBild(v.w, v.ry2, lang);
+    sp.texture = f.t; sp.position.set(Math.round(v.x) + f.dx, Math.round(v.y) + f.dy); sp.visible = true;
+  });
+  for (let i = lista.length; i < tradSp.length; i++) tradSp[i]!.visible = false;
+}
 export const skuggFolk = () => delar().folk; // folket
 // väggarnas form flyttad snett åt höger (VAGG_D punkter); där väggen själv står blir det ingen skugga
 export const VAGG_D = 2;
@@ -191,7 +236,7 @@ export function takYtor(lista: { x: number; y: number; t: PIXI.Texture; form?: P
 }
 
 // en signatur för allt som ritas i skuggbilderna: n = antalet bilder med egen skugga som används nu
-let ritadSig = '';
+let ritadSig = '', ritadTrad = '';
 const blanda = (h: number, v: number) => (Math.imul(h, 31) + (v | 0)) | 0;
 function spriteSig(h: number, c: PIXI.Container) {
   for (const x of c.children) {
@@ -207,19 +252,19 @@ function skuggSig(n: number, bredd: number, hojd: number) {
   let h = 17;
   for (const d of l.folk.geometry.graphicsData) { const r = d.shape as PIXI.Rectangle; h = blanda(blanda(blanda(blanda(h, r.x * 8), r.y * 8), r.width * 8), r.height * 8); }
   for (const c of [l.vaggar, l.vaggHal, l.ikoner, l.tak, l.takHal]) h = spriteSig(h, c);
-  return `${tradVer}|${l.folk.geometry.graphicsData.length}|${n}|${bredd}|${hojd}|${h}`;
+  return `${l.folk.geometry.graphicsData.length}|${n}|${bredd}|${hojd}|${h}`;
 }
 
 // skuggorna nu: kastare = lagren med det som står (bilderna i dem som ritats med Ikoner och skugga, ikonSkugga i sp.skuggIkon),
 // mottagare = marken och golven, som får filtret. Bredd och höjd = kartan i världens pixlar
 export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kastare: PIXI.Container[], mottagare: PIXI.Container[], bredd: number, hojd: number) {
-  if (!rt || !rtTak || rt.width !== bredd || rt.height !== hojd) {
-    rt?.destroy(true); rtTak?.destroy(true);
-    rt = PIXI.RenderTexture.create({ width: bredd, height: hojd, scaleMode: PIXI.SCALE_MODES.NEAREST, resolution: 1 });
-    rtTak = PIXI.RenderTexture.create({ width: bredd, height: hojd, scaleMode: PIXI.SCALE_MODES.NEAREST, resolution: 1 });
-    ritadSig = '';
+  if (!rt || !rtTak || !rtTrad || rt.width !== bredd || rt.height !== hojd) {
+    rt?.destroy(true); rtTak?.destroy(true); rtTrad?.destroy(true);
+    const ny = () => PIXI.RenderTexture.create({ width: bredd, height: hojd, scaleMode: PIXI.SCALE_MODES.NEAREST, resolution: 1 });
+    rt = ny(); rtTak = ny(); rtTrad = ny();
+    ritadSig = ''; ritadTrad = '';
   }
-  const { ikoner, scen, takScen } = delar(), e = extra();
+  const { ikoner, scen, takScen, trad, vaggHal } = delar(), e = extra();
   let n = 0;
   for (const k of kastare) for (const c of k.children) {
     const sp = c as PIXI.Sprite & { skuggIkon?: string };
@@ -233,6 +278,14 @@ export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kast
   for (let i = n; i < ikoner.children.length; i++) ikoner.children[i]!.visible = false;
   // skuggbilderna ritas om bara när något i dem ändrats (steg 5.5.7): träden när deras skuggor ritats om, och folket,
   // väggarna, taken och bilderna efter var de står
+  // trädens skuggbild (steg 12.1.181): bara när en skuggas form, längden eller väggarna ändrats; snö, löv, kol och hamling ändrar
+  // inte formen
+  const trsig = `${tradVer}|${bredd}|${hojd}|${spriteSig(17, vaggHal)}`;
+  if (trsig !== ritadTrad) {
+    ritadTrad = trsig;
+    renderer.render(trad, { renderTexture: rtTrad, clear: true });
+    renderer.render(vaggHal, { renderTexture: rtTrad, clear: false });
+  }
   const sig = skuggSig(n, bredd, hojd);
   if (sig !== ritadSig) {
     ritadSig = sig;
@@ -240,7 +293,7 @@ export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kast
     renderer.render(takScen, { renderTexture: rtTak, clear: true });
   }
   const f = skuggFilter(), u = f.uniforms;
-  u.uSkugga = rt; u.uTak = rtTak; u.uPos[0] = varld.position.x; u.uPos[1] = varld.position.y; u.uSkala = varld.scale.x;
+  u.uSkugga = rt; u.uTak = rtTak; u.uTrad = rtTrad; u.uPos[0] = varld.position.x; u.uPos[1] = varld.position.y; u.uSkala = varld.scale.x;
   u.uStorlek[0] = bredd; u.uStorlek[1] = hojd;
   u.uMoln = molnGrans; u.uMolnPos[0] = molnPos[0]; u.uMolnPos[1] = molnPos[1]; u.uMolnStorlek = MOLN.storlek; u.uMolnKant = MOLN.kant;
   for (const m of mottagare) if (!m.filters) m.filters = [f];
