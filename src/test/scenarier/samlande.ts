@@ -1,4 +1,6 @@
 // Samlandet, en gång för alla (steg 9.2.53–9.2.57): sakerna på rutan och samlarens mål
+import { readFileSync } from 'node:fs';
+import { vidArbetet } from '../../ui/stalle';
 import { createState, step, living, W, H, inMap, takenOf, bynsMitt, getMap, T, areaOf, type State, type Person } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
@@ -80,5 +82,61 @@ SCENARIER.samlarmal = {
       if (m && areaOf(m.x, m.y) === areaOf(hx, hy)) hort++;
     }
     return [[`målet blir platsen hen hört om (${hort} av ${forsok} gånger)`, forsok >= 4 && hort >= forsok * 0.75]];
+  },
+};
+
+// samlare i klunga (steg 12.1.33): fem samlare som börjar på samma ruta vid en strand med bärbuskar, följda sekund för sekund.
+// Orsaken till klungan: inom synvidden valde var och en sin sträcka (strackaFran) bara efter avståndet, utan att se vart de andra
+// gick, så alla fem gick samma väg och stod på samma ruta, buske för buske; bara nästa mål längre bort (nastaMal) räknade de andra
+SCENARIER.samlarklunga = {
+  text: 'Samlare i klunga (steg 12.1.33, strackaFran i steg.ts och bilden i ui/manniskor.ts): fem samlare som börjar på samma ruta vid en strand med bärbuskar sprider sig, i stället för att stå på samma ruta, och ingen står kvar på en tom ruta; den som står på samma ruta som en annan ritas bredvid',
+  kor: () => {
+    let samSek = 0, delad = 0, tomStill = 0, langstTom = 0, fall = 0;
+    for (const seed of [42, 7, 3]) {
+      const s = createState(seed, START), tiles = getMap(s.seed).tiles, m = bynsMitt(s);
+      for (let k = 0; k < 24 * 60 && Math.floor(SIM.hourOf(s.now)) !== 9; k++) step(s, 60); // på förmiddagen
+      // stranden närmast byn med flest bär och rötter inom tre rutor (det samlaren ser och plockar)
+      const prov: SIM.Task = { act: 'samla', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0 };
+      let bast = -1, bv = 0;
+      for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) {
+        const i = y * W + x;
+        if (tiles[i] === T.Vatten || Math.hypot(x - m.x, y - m.y) > 40 || ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => tiles[(y + dy) * W + x + dx] === T.Vatten)) continue;
+        let n = 0;
+        for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) n += SIM.sakerPaRutan(s, prov, x + dx, y + dy).reduce((a, q) => a + q.n, 0);
+        if (n > bv) { bv = n; bast = i; }
+      }
+      if (bast < 0) continue;
+      fall++;
+      if (process.env.KLUNGA) console.log('strand', seed, bast % W, Math.floor(bast / W), bv, SIM.hourOf(s.now));
+      const x0 = bast % W, y0 = Math.floor(bast / W), fem = living(s).filter(q => SIM.ageOf(q, s.now) >= 14).slice(0, 5);
+      const forsta = new Map<number, SIM.Task>(); // varje samlare följs så länge hen har kvar sin första uppgift
+      for (const p of fem) { Object.assign(p, { x: x0 + 0.5, y: y0 + 0.5 }); p.task = { act: 'samla', phase: 'do', tx: x0 + 0.5, ty: y0 + 0.5, until: s.now + SIM.HOUR, carry: 0, dark: false, why: 'prov' }; forsta.set(p.id, p.task); }
+      const still = new Map<number, number>(), lamnat = new Set<number>();
+      for (let k = 0; k < 1800; k++) {
+        step(s, 1);
+        for (const p of fem) if (Math.floor(p.x) !== x0 || Math.floor(p.y) !== y0) lamnat.add(p.id);
+        // startrutan delas av alla fem från början; det som räknas är var de står sedan
+        const pa = new Map<number, number>(), st = fem.filter(p => p.task && p.task === forsta.get(p.id) && p.task.phase === 'do' && !p.task.hopp && lamnat.has(p.id));
+        for (const p of st) { const i = Math.floor(p.y) * W + Math.floor(p.x); pa.set(i, (pa.get(i) ?? 0) + 1); }
+        if (process.env.KLUNGA && k % 30 === 0 && k < 600) console.log(seed, k, fem.map(p => `${p.task === forsta.get(p.id) ? '*' : ''}${p.task?.act}/${p.task?.phase}${p.task?.hopp ? 'h' : ''}@${Math.floor(p.x)},${Math.floor(p.y)}`).join(' '));
+        for (const p of st) {
+          const i = Math.floor(p.y) * W + Math.floor(p.x), tom = SIM.sakerPaRutan(s, p.task!, Math.floor(p.x), Math.floor(p.y)).reduce((a, q) => a + q.n, 0) <= 0 && !p.task!.plock;
+          samSek++; if (pa.get(i)! > 1) delad++;
+          const n = tom ? (still.get(p.id) ?? 0) + 1 : 0; still.set(p.id, n);
+          if (n > 3) tomStill++; langstTom = Math.max(langstTom, n);
+        }
+      }
+    }
+    // två som fäller samma träd ritas på var sin sida om det (vidArbetet med samRuta, ui/stalle.ts), och bilden skickar med samRuta
+    const kod = readFileSync(new URL('../../ui/manniskor.ts', import.meta.url), 'utf8');
+    const s2 = createState(42, START), m2 = bynsMitt(s2), samRuta = new Set<number>(), fri = (x: number, y: number) => !SIM.blocked(s2, x + 0.5, y + 0.5);
+    let tx = Math.floor(m2.x) + 6, ty = Math.floor(m2.y);
+    for (let k = 0; k < 40 && ![[0, 1], [-1, 0], [1, 0]].every(([dx, dy]) => fri(tx + dx, ty + dy)); k++) tx++;
+    const a = vidArbetet(s2, 'falla', tx + 0.5, ty + 0.5, samRuta), b = vidArbetet(s2, 'falla', tx + 0.5, ty + 0.5, samRuta);
+    return [
+      [`samlarna står var för sig (${(delad / Math.max(1, samSek) * 100).toFixed(0)} % av ${samSek} sekunder med en annan samlare på samma ruta, ${fall} stränder)`, fall >= 2 && samSek > 60 && delad < samSek * 0.25],
+      [`ingen står kvar på en tom ruta (${tomStill} sekunder längre än 3 s, som längst ${langstTom} s)`, tomStill < samSek * 0.01],
+      ['den som står på samma ruta som en annan ritas bredvid', !!a && !!b && (a.x !== b.x || a.y !== b.y) && /vidArbetet\([^)]*samRuta\)/.test(kod)],
+    ];
   },
 };

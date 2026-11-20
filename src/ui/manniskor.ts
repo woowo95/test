@@ -390,6 +390,8 @@ export function drawPeople(t: number) {
   markIcons.start();
   ritaSport(t);
   const markerad = markeradNu();
+  // den som står på samma ruta som en annan ritas bredvid (sprid ovan, och vid ett arbete på rutan intill: samRuta, steg 12.1.33)
+  const samRuta = new Set<number>();
   const sv = ui.tab === 'sak' ? sakVar() : undefined, harSaken = sv && 'person' in sv ? sv.person : undefined; // den som har den markerade saken (steg 3.10.4)
   for (const p of ppl) {
     const a = ageOf(p, s.now);
@@ -411,7 +413,7 @@ export function drawPeople(t: number) {
     const st = stalle(s, { ligger, gor, x: q.x, y: q.y, vidBank, rorde: gar(p.id) }), sitter = st === 'sitta'; // (platsen i bilden: q är posOf)
     if (sitter && rikt === 'bak') rikt = 'fram';
     // stå vid arbetet (steg 10.2.78): på en ruta intill arbetsrutan och vänd mot den
-    const va = !ligger ? vidArbetet(s, gor, q.x, q.y) : undefined;
+    const va = !ligger ? vidArbetet(s, gor, q.x, q.y, samRuta) : undefined;
     if (va) { x = va.x * TS; y = va.y * TS; rikt = va.rikt; }
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person

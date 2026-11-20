@@ -1416,7 +1416,7 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   tk.sett = [...(tk.sett ?? []), i].slice(-RUNDA.sett);
   const dr = drag(s, p, tk, rutVarde(s, tk));
   if (dr.ut < -RUNDA.hem || tk.until <= s.now + 2 * MIN) { tk.until = s.now; return 1e-3; }
-  let n = nastaPaStrackan(s, tk, x, y);
+  let n = nastaPaStrackan(s, p, tk, x, y);
   // utan något hen vet eller ser går hen vidare ut i det okända bara så länge draget drar utåt (nyfikenheten och modet, minus
   // bördan, behoven, mörkret och kylan); annars hem. Drar det hemåt kostar varje ruta längre bort från byn lika mycket
   if (!n) { platsTom(s, p, tk, x, y); n = nastaMal(s, p, tk, x, y, dr.bort.radsla, dr.ut > 0, Math.max(0, -dr.ut)); }
@@ -1428,17 +1428,28 @@ let plockSlag: string | undefined; // på rundan: slaget som plockades nu (bär 
 // sträckan (steg 10.2.21): samlaren väljer de rutor med saker hen ser på en gång, närmast först och sedan närmast den förra,
 // högst RUNDA.stracka, och går dem i tur och ordning. En ruta som blivit tom på vägen hoppas över; när sträckan är slut väljs en
 // ny. Förut letades hela synvidden igenom efter varje ruta
-function nastaPaStrackan(s: State, tk: Task, x: number, y: number) {
+function nastaPaStrackan(s: State, p: Person, tk: Task, x: number, y: number) {
   for (let v = 0; v < 2; v++) {
     while (tk.stracka?.length) { const j = tk.stracka.shift()!, jx = j % W, jy = Math.floor(j / W); if (sakerPa(s, tk, jx, jy) > 0) return { x: jx, y: jy }; }
     if (v) break;
-    tk.stracka = strackaFran(s, tk, x, y, RUNDA.syn);
+    tk.stracka = strackaFran(s, p, tk, x, y, RUNDA.syn);
   }
   tk.stracka = undefined;
   return undefined;
 }
-function strackaFran(s: State, tk: Task, x0: number, y0: number, r: number) {
-  const vt = vattenNu(s), kand: number[] = [], saker = sakerLasare(s, tk);
+// en ruta där en annan som gör samma sak står, är på väg eller har på sin sträcka är mindre värd (steg 12.1.33): den kostar som
+// RUNDA.syn rutor längre bort för varje sådan, som trängseln när nästa mål väljs längre bort. Förut valde alla som stod på samma
+// ruta samma sträcka och gick den i klunga
+function strackaFran(s: State, p: Person, tk: Task, x0: number, y0: number, r: number) {
+  const vt = vattenNu(s), kand: number[] = [], saker = sakerLasare(s, tk), upptagen = new Map<number, number>();
+  const upp = (i: number) => upptagen.set(i, (upptagen.get(i) ?? 0) + 1);
+  for (const q of living(s)) {
+    const qt = q.task;
+    if (q === p || !qt || qt.act !== tk.act) continue;
+    if (Math.abs(q.x - x0) > 2 * r + 2 || Math.abs(q.y - y0) > 2 * r + 2) continue;
+    upp(Math.floor(q.y) * W + Math.floor(q.x)); upp(Math.floor(qt.ty) * W + Math.floor(qt.tx));
+    for (const j of qt.stracka ?? []) upp(j);
+  }
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const x = x0 + dx, y = y0 + dy;
     if (Math.hypot(dx, dy) > r + 0.01 || !inMap(x, y) || vt[y * W + x] === T.Vatten || saker(x, y) <= 0 || blocked(s, x + 0.5, y + 0.5)) continue; // (inte i en vägg)
@@ -1448,7 +1459,7 @@ function strackaFran(s: State, tk: Task, x0: number, y0: number, r: number) {
   let cx = x0, cy = y0;
   while (kand.length && ut.length < RUNDA.stracka) {
     let bi = 0, bd = Infinity;
-    kand.forEach((j, k) => { const d = Math.hypot(j % W - cx, Math.floor(j / W) - cy); if (d < bd) { bd = d; bi = k; } });
+    kand.forEach((j, k) => { const d = Math.hypot(j % W - cx, Math.floor(j / W) - cy) + (upptagen.get(j) ?? 0) * RUNDA.syn; if (d < bd) { bd = d; bi = k; } });
     const j = kand.splice(bi, 1)[0]; ut.push(j); cx = j % W; cy = Math.floor(j / W);
   }
   return ut;

@@ -20,11 +20,20 @@ export function stalle(s: State, l: { ligger: boolean; gor?: string; x: number; 
 export const RUTA_ARBETEN = new Set(['falla', 'hugga', 'klyva', 'stubbe']);
 export type Riktning = 'fram' | 'bak' | 'sida' | 'vast';
 const SIDOR: [number, number, Riktning][] = [[0, 1, 'bak'], [-1, 0, 'sida'], [1, 0, 'vast'], [0, -1, 'fram']]; // rutan intill och hållet mot arbetet
-export function vidArbetet(s: State, gor: string | undefined, x: number, y: number): { x: number; y: number; rikt: Riktning } | undefined {
+// samRuta (steg 12.1.33): rutorna intill som andra som arbetar redan står på i bilden; den som arbetar på samma ruta som en
+// annan står då bredvid, på nästa fria sida, i stället för ovanpå. Är alla sidor tagna står hen på den första
+export function vidArbetet(s: State, gor: string | undefined, x: number, y: number, samRuta?: Set<number>): { x: number; y: number; rikt: Riktning } | undefined {
   if (!gor || !RUTA_ARBETEN.has(gor)) return undefined;
   const rx = Math.floor(x), ry = Math.floor(y);
-  for (const [dx, dy, rikt] of SIDOR) { const nx = rx + dx, ny = ry + dy; if (!blocked(s, nx + 0.5, ny + 0.5) && !stationAt(s, nx + 0.5, ny + 0.5)) return { x: nx + 0.5, y: ny + 0.5, rikt }; }
-  return { x: rx + 0.5, y: ry + 1.5, rikt: 'bak' };
+  let forsta: { x: number; y: number; rikt: Riktning } | undefined;
+  for (const [dx, dy, rikt] of SIDOR) {
+    const nx = rx + dx, ny = ry + dy;
+    if (blocked(s, nx + 0.5, ny + 0.5) || stationAt(s, nx + 0.5, ny + 0.5)) continue;
+    const v = { x: nx + 0.5, y: ny + 0.5, rikt };
+    forsta ??= v;
+    if (!samRuta?.has(ny * 4096 + nx)) { samRuta?.add(ny * 4096 + nx); return v; }
+  }
+  return forsta ?? { x: rx + 0.5, y: ry + 1.5, rikt: 'bak' };
 }
 
 // om figuren går i bilden vid tiden t (steg 12.1.13, Det visuella: En källa för rörelsen): simuleringens spår (forflyttar i
