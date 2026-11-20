@@ -23,6 +23,15 @@ export const MYR = balans('myr', {
   malmAndel: 0.2, // så stor del av myrens rutor har malm (steg 12.1.2, malm.ts) ...
   malmFull: 4, // ... och så mycket malm har en full ruta
 });
+// torvens tal (steg 12.1.3, torv.ts). De står här, i myrens fil, så att eldens bränsle (eld.ts) kan läsa dem utan att ladda resten
+export const TORV = balans('torv', {
+  perTur: 8, // så mycket torv en tur ger (två fulla händer) ...
+  min: 8, // ... på så här många minuter (en tur att samla, efter arbetstiderna)
+  varde: 0.5, // en torv värmer som så här mycket ved
+  torkGanger: 3, // blöt torv torkar så här många gånger långsammare än blöt ved (BLOTVED.torkTim: 72 timmar ute, 36 under tak)
+  vedFall: 0.7, // bränsle (i ved) per minut när man fäller och hugger ett träd nära byn, med vägen (en stam ger 6 ved och 5 grenar)
+  vedGrenar: 0.3, // ... och när man samlar grenar, för den som inte har ett träd att fälla
+});
 // en by på en världsruta med myr (VARLDMARK) har alltid myr, och fler
 const MYRAR_MARK: Partial<Record<MarkId, number>> = { myr: 2 };
 

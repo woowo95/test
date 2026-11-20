@@ -306,6 +306,9 @@ const DEF = {
   ulltrad: { namn: 'Ulltråd', skaffa: RECEPT.ulltrad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 9.8.14: ullen spinns som linet
   ylle: { namn: 'Ylletyg', skaffa: RECEPT.ylle, stack: 10, vikt: 0.6, mapp: 'Material' }, // och vävs i vävstolen
   lovkarve: { namn: 'Lövkärve', skaffa: { tid: 0.25, act: 'hamla' }, stack: 25, vikt: 0.3, mapp: 'Bränsle', slits: 0.006 }, // steg 9.8.16: skotten med lövet från ett hamlat träd, som djuren äter som hö
+  // torven (steg 12.1.3, torv.ts): grävs blöt i myren och torkar till torv; en torv värmer som en halv ved
+  torv: { namn: 'Torv', skaffa: { tid: 0.05 }, stack: 20, vikt: 2, mapp: 'Bränsle' },
+  blottorv: { namn: 'Blöt torv', skaffa: { tid: 0.03 }, stack: 20, vikt: 2, mapp: 'Bränsle' },
   malm: { namn: 'Malm', skaffa: { tid: 0.1 }, stack: 10, vikt: 4, mapp: 'Sten', brinnerInte: true }, // steg 12.1.2: grävs i myren (malm.ts)
 } satisfies Record<string, SakDef>;
 

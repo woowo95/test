@@ -253,6 +253,11 @@ const DEF = {
     bas: (s, i, m) => { const v = land(s, i) && groundOf(s).trees[i] >= FOREST ? m * orortOf(s)[i] : 0; return v >= vildboKrok.syns() ? v : 0; },
     uttag: { full: 1, reach: 1, regrow: [0, 0, 1 / 400, 1 / 400] },
   },
+  // torven (steg 12.1.3, torv.ts): på hela myren, och den tar aldrig slut
+  torv: {
+    namn: 'Torv', grupp: 'sten', ikon: 'torv', farg: 0x5e3c24, topp: 1,
+    bas: (s, i) => paMyr(s, i) ? 1 : 0,
+  },
   // myrmalmen (steg 12.1.2, malm.ts): i fläckar på myren, 4 i en full ruta, och en tömd ruta är full igen efter ungefär 30 dygn
   // (30 år i spelet); i istiden växer inget till. Står still och flyttar sig aldrig
   malm: {
@@ -770,4 +775,4 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
   return 1;
 }
-import { myrMalm } from './myr';
+import { myrMalm, paMyr } from './myr';

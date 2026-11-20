@@ -1275,7 +1275,11 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: F
     if (vf && rnd(s, 'val', p) < VAL.fronChans) { v.spot = vf; v.why = `${v.why} Plockar vilda frön.`; }
   }
   const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
-  if (ax) {
+  const tv = best === 'ved' ? torvHellre(s, p, !!ax) : undefined; // torven, när en tur ger mer bränsle per minut (steg 12.1.3, torv.ts)
+  if (tv) {
+    set(v, 'torv', `${what}. Gräver torv i myren.`);
+    v.spot = tv.spot; v.tool = tv.tool; v.dur = TORV.min * MIN;
+  } else if (ax) {
     set(v, ax.act, `${what}. ${ax.why}.`);
     if (ax.dur) v.dur = ax.dur;
     v.spot = { x: ax.x, y: ax.y }; v.tool = 'yxa'; v.ref = ax.ref;
@@ -1499,3 +1503,4 @@ import { VINTER, hamlaVal, hamlatPa, slaVal, slatterKvar } from './slatter';
 import { KRUKA, ORTKRUKA, krukaHemVal, ortPlockaVal, ortSattaVal } from './kruka';
 import { BIN, flyFranBin, retatNara, skattaVal } from './bin';
 import { BOSKAP, SLAKTDJUR, avlivaVal, klippVal, mjolkaVal, slaktOrsak } from './boskap';
+import { TORV, torvHellre } from './torv';

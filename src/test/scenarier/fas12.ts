@@ -1,6 +1,6 @@
 // Scenarier för fas 12: myren och järnet.
 import * as SIM from '../../sim';
-import { SCENARIER } from './hjalp';
+import { SCENARIER, kor } from './hjalp';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
 export function myrFro(start = 1, med = true) {
@@ -86,3 +86,53 @@ SCENARIER.myrmalm = {
     ];
   },
 };
+
+SCENARIER.torv = {
+  text: 'Torven (steg 12.1.3, torv.ts): grävs blöt i myren med spaden och tar aldrig slut, 8 torv på en tur av 8 minuter; en torv värmer som en halv ved och räknas i byns bränsle; den blöta torkar tre gånger långsammare än blöt ved; en by med skog nära hugger ved, och en by som huggit ner sin skog gräver torv',
+  kor: () => {
+    const s = myrBy(), r = myrRutorI(s), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const p = vuxna[0];
+    const overallt = r.every(i => SIM.fyndAt(s, 'torv', i) === 1), utanfor = SIM.fyndAt(s, 'torv', SIM.tileOf(SIM.eldPlats(s).x, SIM.eldPlats(s).y));
+    // bränslet: torven räknas, en torv som en halv ved, och den blöta tas sist
+    const q = SIM.cloneState(s);
+    SIM.setStock(q, { ved: 0, grenar: 0, torv: 6, blottorv: 4 });
+    const bransle = SIM.fuelStock(q), qp = SIM.living(q)[0];
+    qp.task = { act: 'elda', phase: 'go', tx: qp.x, ty: qp.y, until: q.now, carry: 0, why: '' } as SIM.Task;
+    const tog = SIM.takeFuel(q, 4, qp), torrKvar = SIM.amountOf(q, 'torv'), blotKvar = SIM.amountOf(q, 'blottorv'), blot1 = qp.task.blotVed ?? 0;
+    SIM.takeFuel(q, 2, qp); const blot2 = qp.task.blotVed ?? 0;
+    // torkningen: en blöt vedhög och en blöt torvhög bredvid varandra i en timme utan regn, timme för timme
+    const t = SIM.cloneState(s);
+    while (SIM.nederbord(t) || SIM.temperature(t) < 8) t.now += SIM.HOUR;
+    const z = SIM.zonesOf(t)[0];
+    t.stackar = (t.stackar ?? []).filter(a => !(a.x === z.x && a.y === z.y) && !(a.x === z.x + 1 && a.y === z.y));
+    t.stackar.push({ k: 'ved', n: 5, c: 1, x: z.x, y: z.y, blot: 1 } as typeof t.stackar[number], { k: 'blottorv', n: 8, c: 1, x: z.x + 1, y: z.y });
+    SIM.changed(t);
+    const ved = () => t.stackar!.find(a => a.k === 'ved' && a.x === z.x && a.y === z.y)!;
+    let vedTim = 0, torvTim = 0;
+    for (let h = 1; h <= 400 && !torvTim; h++) {
+      SIM.stepBlotVed(t, 3600); SIM.torvTorkar(t, 3600);
+      if (!vedTim && !(ved() as { blot?: 1 }).blot) vedTim = h;
+      if (t.stackar!.some(a => a.k === 'torv' && a.x === z.x + 1 && a.y === z.y && a.n === 8)) torvTim = h;
+    }
+    // valet: med skog nära hugger man ved, utan skog gräver den med spade torv
+    s.ting = SIM.tingOf(s).filter(k => k.k !== 'benspade');
+    for (const v of vuxna) SIM.addTool(s, 'benspade', v);
+    const medSkog = SIM.torvHellre(s, p, true), utanSkog = SIM.torvHellre(s, p, false), takt = SIM.torvTakt(s);
+    const g = SIM.groundOf(s), e = SIM.eldPlats(s);
+    for (let i = 0; i < g.trees.length; i++) if (Math.hypot(i % SIM.W - e.x, Math.floor(i / SIM.W) - e.y) <= SIM.SKOG.sokR + 3) g.trees[i] = 0;
+    s.stockar = [];
+    SIM.setStock(s, { ved: 0, grenar: 0 });
+    let gravt = 0;
+    kor(s, 18, () => { for (const q2 of SIM.living(s)) if (q2.task?.act === 'torv') gravt = Math.max(gravt, 1); });
+    const torvIn = SIM.amountOf(s, 'torv') + SIM.amountOf(s, 'blottorv') + SIM.paMarken(s, 'blottorv') + SIM.paMarken(s, 'torv'), stat = s.stat?.torvGravd ?? 0;
+    return [
+      [`torven finns på hela myren (${r.length} rutor) och inte utanför`, overallt && utanfor === 0 && !SIM.FYND.torv.uttag],
+      [`en torv värmer som en halv ved (6 torv och 4 blöta ger ${bransle})`, bransle === 5],
+      [`elden tar den torra torven först och den blöta sist (4 i ved tog ${tog}: torr kvar ${torrKvar}, blöt kvar ${blotKvar}, blött ${blot1}), och sedan bara blöt (blött ${blot2.toFixed(2)})`, tog === 4 && torrKvar === 0 && blotKvar === 2 && Math.abs(blot1 - 0.25) < 1e-9 && blot2 > 0.99],
+      [`den blöta torven torkar tre gånger långsammare än veden (ved ${vedTim} timmar, torv ${torvTim})`, vedTim > 0 && Math.abs(torvTim / vedTim - 3) < 0.2],
+      [`med skog nära hugger man ved, utan skog gräver den med spade torv (${takt.toFixed(2)} ved per minut)`, !medSkog && !!utanSkog && utanSkog.tool === 'benspade'],
+      [`en by utan skog nära gräver torv (${stat} grävda, ${torvIn} i byn)`, gravt > 0 && stat >= 8 && torvIn > 0],
+    ];
+  },
+};
+
