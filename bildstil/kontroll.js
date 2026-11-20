@@ -349,7 +349,7 @@
   // en bild med versioner i bilder/<id>.json (versioner: [{ ide, rader }]) och utan Björns val blir ett kort i valdelen
   if (typeof BILDFILER !== 'undefined' && typeof VAL !== 'undefined') for (const [id, d] of Object.entries(BILDFILER)) {
     if (!Array.isArray(d.versioner) || d.vald) continue;
-    const rad = BILDER.bilder.find(b => b.id === id); if (!rad) continue;
+    const rad = BILDER.bilder.find(b => b.id === id); if (!rad || VAL.some(s => s.id === 'bild_' + id)) continue; // ett kort ur forslag/ (sakerna på kolonisten) går före
     VAL.push({ id: 'bild_' + id, namn: rad.namn, typ: 'tre', slag: rad.slag, vad: `Ritad av API:t: ${rad.vad}. Tre idéer, var och en ritad för sig.${d.kommentar ? ' Din kommentar förra gången: ' + d.kommentar : ''}`,
       versioner: d.versioner.map(v => ({ text: v.ide || '', w: Math.max(...v.rader.map(r => r.length)) + 4, h: v.rader.length + 4, rita: B => klistra(B, bildAvRader(v.rader), 2, 2) })) });
   }

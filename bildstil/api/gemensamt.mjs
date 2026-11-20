@@ -61,7 +61,7 @@ export function sidan(vanta, { text = false } = {}) {
     if (sida) return sida;
     let pw; try { pw = createRequire(import.meta.url)('playwright'); } catch (e) { throw new Error('Playwright behövs för bilderna (finns i molnmiljön).'); }
     if (!fs.existsSync(html)) throw new Error('Bygg sidan först: node bildstil/bygg.cjs');
-    webblasare = await pw.chromium.launch(); sida = await webblasare.newPage();
+    webblasare = await pw.chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}); sida = await webblasare.newPage(); // PW_CHROMIUM: en annan webbläsare än Playwrights egen (molnet)
     await sida.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
     // utan charset gissar Chromium ibland fel på filen när den läses in som text
     if (text) await sida.setContent('<meta charset="utf-8">' + fs.readFileSync(html, 'utf8'), { waitUntil: 'load' });

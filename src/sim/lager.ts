@@ -16,7 +16,7 @@ import { MATERIAL, bitAt, blocked, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, kyrkaId, sumOf, takeOrder } from './egendom';
-import { FOOD, SAKER, SAK_LIST, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, viktOf, iSlag } from './saker';
+import { FOOD, SAKER, SAK_LIST, isFood, isTool, rutaOf, sakNamn, viktOf, iSlag } from './saker';
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
@@ -123,12 +123,7 @@ export function isStored(s: State, x: number, y: number) {
   return false;
 }
 export function stacksOf(s: State): Stack[] {
-  if (!s.stackar) {
-    s.stackar = [];
-    for (const g of s.marken ?? []) s.stackar.push({ ...g, c: 1 }); // gamla sparfiler
-    delete s.marken;
-  }
-  return s.stackar;
+  return s.stackar ??= [];
 }
 export const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e-6 || (a.dold ?? 0) > 1e-6); changed(s); };
 
@@ -800,25 +795,6 @@ export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
     }
   }
   return { n: got, c: got > 0 ? cw / got : 1, per };
-}
-// äldre sparfiler (före v40): summorna och ägarnas delar sparades bredvid stackarna. Stackarna jämkas efter summorna, och
-// delarna läggs i stackarna i förhållande till hur mycket varje stack rymmer
-export function storeFromSums(s: State) {
-  const m = { ...(s.mat ?? {}) };
-  let sum = 0; for (const k of FOOD) sum += m[k] ?? 0;
-  const food = s.food ?? sum;
-  if (food > sum + 1e-9) m.bar = (m.bar ?? 0) + food - sum;
-  else if (food < sum - 1e-9) { const f = sum > 0 ? Math.max(0, food) / sum : 0; for (const k of FOOD) if (m[k]) m[k] *= f; }
-  const want: Record<string, number> = { ...m, ved: s.wood ?? 0 };
-  for (const k in s.items ?? {}) if (!isTool(k) && !isFood(k) && k !== 'ved') want[k] = s.items![k];
-  for (const k of [...STACK_ORDER, ...DOLD]) if (!isTool(k)) setAmount(s, k, Math.max(0, want[k] ?? 0));
-  for (const k in s.egna ?? {}) {
-    const list = stored(s, k), tot = list.reduce((n, a) => n + a.n, 0);
-    if (tot > 0) for (const a of list) { a.ag = addDel(a.ag ?? {}, s.egna![k], a.n / tot); cleanDel(s, a); }
-  }
-  for (const k in s.items ?? {}) if (!isTool(k)) delete s.items![k];
-  delete s.food; delete s.wood; delete s.mat; delete s.egna; delete s.egnaT;
-  changed(s);
 }
 
 // alla stackar med plats och skick. Gränssnittet frågar, så byn ändras inte. Redskapen har alltid en ruta efter ett steg

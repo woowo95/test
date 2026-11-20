@@ -1,5 +1,5 @@
 import { MIN, State, Person } from './typer';
-import { REDSKAP_SLAG, REDSKAPSGRUPPER, SAKER, gruppOf, iSlag, isTool } from './saker';
+import { REDSKAPSGRUPPER, SAKER, gruppOf, iSlag } from './saker';
 import { ACTS, usesTool } from './handlingar';
 import { alive, byId } from './folk';
 import { kvHaller } from './kvalitet';
@@ -117,37 +117,6 @@ export function tidyTools(s: State) {
     if (!q || !alive(q)) t.hos = undefined;
     else if (usesTool(q.task) !== t.k && t.agare !== q.id && !(q.task && ACTS[q.task.act].vapen)) t.hos = undefined; // vakten har byns vapen i handen hela natten (vakt.ts), och den som väntar på vargarna (varg.ts)
   }
-}
-// äldre sparfiler: redskapen räknades bara som summor (s.items, och i v30 ägarlistor). Varje helt redskap blir ett ting.
-// Före v40 fanns redskapen också som summor och stackar bredvid tingen, och de som bars låg i s.tingVag
-export function migrateTools(s: State) {
-  if (!s.ting) toolsFromItems(s);
-  const vag = s.tingVag ?? [];
-  for (const p of s.people) {
-    const tk = p.task;
-    for (const k in tk?.items ?? {}) {
-      if (!isTool(k)) continue;
-      for (let n = tk!.items![k]; n > 1e-6;) {
-        const i = vag.findIndex(t => t.k === k), t: Ting = i >= 0 ? vag.splice(i, 1)[0] : newTing(s, k, Math.min(1, n), BYN);
-        if (i >= 0) tingOf(s).push(t);
-        t.c = Math.min(t.c, n); n -= t.c; t.hos = undefined; t.lass = p.id; (tk!.ting ??= []).push(t.id);
-      }
-      delete tk!.items![k]; if (tk!.cond) delete tk!.cond[k];
-    }
-    if (tk?.items && !Object.keys(tk.items).length) tk.items = undefined;
-  }
-  delete s.tingVag; delete s.items;
-}
-// varje helt redskap i s.items (och ägarlistorna i v30) blir ett ting. s.items lämnas, eftersom storeFromSums läser det
-export function toolsFromItems(s: State) {
-  s.ting = [];
-  for (const k of REDSKAP_SLAG) {
-    let n = s.items?.[k] ?? 0;
-    const ag = s.agare?.[k] ?? [];
-    for (let i = 0; n > 1e-6; i++) { const c = Math.min(1, n); newTing(s, k, c, ag[i] ?? BYN); n -= c; }
-  }
-  delete s.agare;
-  for (const p of s.people) { const k = usesTool(p.task); if (k && alive(p)) take(s, p, k); }
 }
 // vad p äger
 export const ownedBy = (s: State, p: Person) => allaTing(s).filter(t => t.agare === p.id);

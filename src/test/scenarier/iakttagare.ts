@@ -49,7 +49,6 @@ export const SALLSYNT: Record<string, string> = {
   metspo: 'sen teknik efter fiskespjutet och repet, hinner inte alltid komma på 35 dygn',
   korg: 'sen teknik efter slöjdbänken, hinner inte alltid komma på 35 dygn',
   buren: 'bara den som inte kan gå (ett svårt skadat ben eller en fot) långt från lägret bärs hem; scenariot vard prövar det',
-  fatt: 'bara den som inte kan gå får vatten av de andra; scenariot vard prövar det',
   vatten: 'bara den som inte kan gå får vatten i säcken; scenariot vattensack prövar det',
   vattensack: 'sen teknik efter skinnkläderna (steg 2.10.1), hinner inte alltid komma på 35 dygn; scenariot vattensack prövar säcken',
   odling: 'sen teknik (steg 2.10.2): byn kommer på den när den samlat mycket av de vilda grödorna, sällan på 35 dygn; scenarierna odling och falt prövar den',

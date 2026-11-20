@@ -38,11 +38,11 @@ export function heirsOf(s: State, p: Person): Person[] {
 const lista = (d: string[]) => d.length > 1 ? `${d.slice(0, -1).join(', ')} och ${d[d.length - 1]}` : d[0];
 
 // krönikan och sammanfattningen (steg 9.2.127): det värdefullaste arvingen fick och resten som ett värde, t.ex. "Randhild ärvde
-// byxor av harskinn och saker värda 40 silver efter Kamar"; händelseloggen behåller hela listan
+// byxor av harskinn och saker värda fyrtio silver efter Kamar"; händelseloggen behåller hela listan
 export function arvKort(arvinge: string, dod: string, fick: string[], varde: number[]) {
   if (fick.length <= 1) return `${arvinge} ärvde ${lista(fick)} efter ${dod}.`;
   const b = varde.indexOf(Math.max(...varde)), rest = Math.round(varde.reduce((a, v, i) => a + (i === b ? 0 : v), 0));
-  return rest >= 1 ? `${arvinge} ärvde ${fick[b]} och saker värda ${rest} silver efter ${dod}.` : `${arvinge} ärvde ${fick[b]} och några småsaker efter ${dod}.`;
+  return rest >= 1 ? `${arvinge} ärvde ${fick[b]} och saker värda ${antal(rest, 'silver')} efter ${dod}.` : `${arvinge} ärvde ${fick[b]} och några småsaker efter ${dod}.`;
 }
 // p har dött: arvingarna får det hen ägde. Anropas innan delarna blir byns (releaseOwner)
 export function inherit(s: State, p: Person) {

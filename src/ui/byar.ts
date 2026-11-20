@@ -1,5 +1,5 @@
 import { DAY, State, createState } from '../sim';
-import { gammalNyckel, lasEllerFlytta, sparaBy, webbBas } from './lagring';
+import { lasBy, lasFel, sparaBy, webbBas } from './lagring';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
 
@@ -13,9 +13,8 @@ const LISTA_KEY = 'samhalle-byar-v1', AKTIV_KEY = 'samhalle-aktiv-v1', byKey = (
 export const TEST_START = Date.parse('2026-10-20T08:00:00+02:00'); // testbyarnas start (START i src/test/kor.ts)
 export interface ByRad { id: string; namn: string; seed: number; dag: number }
 // i webbläsarens databas (lagring.ts, steg 11.2.1): byn i delar, och antingen när den sparades (vagg, datorns tid) eller tiden i
-// byn den ska räknas fram till (mal). Förut låg byn som en text (t) i det enkla minnet; den flyttas över första gången
+// byn den ska räknas fram till (mal)
 interface Tid { vagg?: number; mal?: number }
-interface Sparad extends Tid { t: string }
 const las = <T>(k: string): T | undefined => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) as T : undefined; } catch { return undefined; } };
 export const byarna = (): ByRad[] => las<ByRad[]>(LISTA_KEY) ?? [];
 const sattLista = (l: ByRad[]) => { try { localStorage.setItem(LISTA_KEY, JSON.stringify(l)); } catch { /* ignoreras */ } };
@@ -32,7 +31,7 @@ export async function sparaAnnan(): Promise<boolean> {
 // en annan by ur webbläsaren, och hur långt efter klockan den ligger (ui.forskjut)
 async function lasAnnan(id: string): Promise<{ by: State; forskjut: number } | undefined> {
   try {
-    const r = await lasEllerFlytta<Tid>(webbBas, byKey(id), gammalNyckel(byKey(id)), txt => { const g = JSON.parse(txt) as Sparad; return { t: g.t, extra: { vagg: g.vagg, mal: g.mal } }; });
+    const r = await lasBy<Tid>(webbBas, byKey(id));
     if (!r) return undefined;
     const e = r.extra ?? {};
     return { by: r.by, forskjut: e.vagg !== undefined ? e.vagg - r.by.now : Date.now() - (e.mal ?? r.by.now) };
@@ -46,7 +45,7 @@ export async function bytTill(id: string | undefined) {
   byte.fore?.();
   if (!id) { ui.annanBy = undefined; ui.forskjut = 0; sattAktiv(undefined); await byte.egen?.(); return; }
   const r = await lasAnnan(id);
-  if (!r) { ui.byFel = 'Byn gick inte att läsa.'; return; }
+  if (!r) { ui.byFel = lasFel.forGammal || 'Byn gick inte att läsa.'; lasFel.forGammal = ''; return; }
   ui.annanBy = id; ui.forskjut = r.forskjut; sattAktiv(id);
   await byte.ladda?.(r.by);
 }
@@ -63,7 +62,7 @@ export async function laggTillTestby(seed: number, dag: number) {
 }
 export function taBort(id: string) {
   if (id === ui.annanBy) return; // den valda byn tas inte bort; byt först
-  gammalNyckel(byKey(id)).glom(); void webbBas.taBort(byKey(id)).catch(() => { /* ignoreras */ });
+  void webbBas.taBort(byKey(id)).catch(() => { /* ignoreras */ });
   sattLista(byarna().filter(b => b.id !== id));
 }
 // adressen #testby=frö:dygn (när Björn ber om en testby i chatten): byn läggs till och väljs, och adressen töms

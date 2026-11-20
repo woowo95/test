@@ -202,13 +202,6 @@ export function sammanfatta(f: Falt) {
   f.klara = r.filter(x => x.st !== f.steg).length;
   f.kvar = minPer(f.steg);
 }
-// fält från före steg 2.10.13 (varld.ts) var 2 × 2 rutor, och arbetet räknades för hela fältet
-export function migrateFalt(s: State) {
-  for (const f of s.falt ?? []) if (f.w === undefined) {
-    Object.assign(f, { w: 2, dir: 1, n: 4, klara: 0, kvar: minPer(f.steg) });
-    if (f.steg === 'vaxer' || f.steg === 'mogen') f.sadda = 4;
-  }
-}
 
 // dygn tills istiden börjar (0 i istiden)
 function dygnTillIstid(s: State) {

@@ -1688,10 +1688,6 @@ SCENARIER.smidighet = {
       return alla ? n / alla : 0;
     };
     const arg = vald(20), lugn = vald(1);
-    // en sparad by utan de nya egenskaperna får dem
-    const g = createState(3, START); for (const x of g.people) { delete (x.pot as Partial<Record<SIM.Stat, number>>).smidighet; delete (x.pot as Partial<Record<SIM.Stat, number>>).aggression; }
-    g.v = 11; SIM.migrate(g);
-    const upp = g.people.every(x => x.pot.smidighet >= 1 && x.pot.aggression >= 1);
     return [
       ['alla har smidighet och aggression mellan 1 och 20', alla],
       ['vid 40 har smidigheten börjat sjunka men inte styrkan', aldras],
@@ -1699,7 +1695,6 @@ SCENARIER.smidighet = {
       [`den smidiga vinner oftare i striden (${smid.vann[0]} mot ${smid.vann[1]} av 200)`, smid.vann[0] > smid.vann[1]],
       [`blodtörsten är hög hos den aggressiva, kalla och arga (${hog.toFixed(2)}) och noll hos den milda (${lag.toFixed(2)})`, hog >= 0.6 && lag === 0],
       [`den aggressiva slår hellre i utbrotten (${Math.round(arg * 100)} % våldsamma mot ${Math.round(lugn * 100)} %)`, arg > lugn],
-      ['en sparad by utan egenskaperna får dem när den läses in', upp],
     ];
   },
 };
@@ -1864,10 +1859,6 @@ SCENARIER.slagsmal = {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 14, skicklighet: 12 }, vapen, klader: [], fart: 1, x: sida ? 12 : 8, y: 7 });
     const sl = new Set<string>(), sk = new Set<string>();
     for (let f = 1; f <= 60; f++) { const x = SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'flintspjut'), m(2, 1, 'sten')] }, f)); for (const r of x.logg) sl.add(r.h); for (const k of x.kampar) for (const w of k.skador) sk.add(w.k); }
-    // en sparad by får de nya färdigheterna
-    const u = createState(3, START); for (const x of u.people) { delete (x.skill as Partial<Record<SIM.Skill, number>>).narstrid; delete (x.skill as Partial<Record<SIM.Skill, number>>).traff; }
-    u.v = 12; SIM.migrate(u);
-    const upp = u.people.every(x => x.skill.narstrid >= 0 && x.skill.traff >= 0);
     return [
       ['skadorna från striden blir skador på personerna', skadad],
       ['de som slåss står kvar i striden', star],
@@ -1879,7 +1870,6 @@ SCENARIER.slagsmal = {
       ['kastleken ger träffsäkerhet', kast],
       [`man duckar och parerar (${[...sl].filter(h => h === 'duck' || h === 'parera').join(', ')})`, sl.has('duck') && sl.has('parera')],
       [`spjutet ger sticksår och stenen hjärnskakning (${[...sk].join(', ')})`, sk.has('sticksar') && sk.has('hjarnskakning')],
-      ['en sparad by får Närstrid och Träffsäkerhet', upp],
     ];
   },
 };

@@ -53,7 +53,7 @@ interface Gors { text: string; stat: string; forsta: string; fame?: string; igen
 interface Skaffa { ger?: number; act?: string; tid?: number; av?: Record<string, number>; min?: number; slag?: TidSlag; tek?: string; sallsynt?: true; verktyg?: Record<string, string> }
 
 // Nya saker läggs sist, och ordningen ska inte ändras. Den styr i vilken ordning saker betalas i ett byte (payable i behov.ts),
-// hur gamla sparfiler läggs ut (storeFromSums i lager.ts, STACK_ORDER), i vilken ordning mapparna visas (FOLDERS) och vilket av två
+// i vilken ordning mapparna visas (FOLDERS) och vilket av två
 // matslag med samma `mat` som äts först (FOOD). Var en ny stack hamnar i förrådet avgörs inte av ordningen (zoneSpot i lager.ts)
 const DEF = {
   bar: { namn: 'Bär', ett: true, skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 4, naring: { energi: 0.8, vitamin: 2, mineral: 0.3, protein: 0.1, fett: 0.1 }, haller: 3 },
