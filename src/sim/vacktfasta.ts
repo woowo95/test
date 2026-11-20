@@ -8,7 +8,7 @@ import type { GastRel } from './gastrel';
 import type { KlanPerson } from './klaner';
 import { fastEgenskaper } from './radperson';
 import type { FastPerson, VarldRad } from './radtal';
-import { newPerson, relKey } from './folk';
+import { newPerson, nyPerson, relKey } from './folk';
 import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
 import { DAY, Person, State } from './typer';
@@ -33,8 +33,8 @@ export function byggFasta(b: State, r: VarldRad) {
   for (const q of fastaI(r, b.now).slice(0, Math.max(0, Math.round(r.tal.folk)))) {
     let p: Person;
     if (q.kp?.kropp) {
-      p = { ...JSON.parse(JSON.stringify(q.kp.kropp)), id: b.nextId++, x: f0.x, y: f0.y } as Person;
-      delete p.mother; delete p.father; delete p.partner; // släkten finns i den andra byn
+      p = nyPerson({ ...JSON.parse(JSON.stringify(q.kp.kropp)), id: b.nextId++, x: f0.x, y: f0.y } as Person);
+      p.mother = undefined; p.father = undefined; p.partner = undefined; // släkten finns i den andra byn
       const at = freeNear(b, f0.x + 1, f0.y + 1); p.x = at.x; p.y = at.y;
     } else {
       p = newPerson(b, q.kon, q.fodd ?? b.now - STANDARD_ALDER * DAY);

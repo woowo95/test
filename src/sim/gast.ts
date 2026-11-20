@@ -11,7 +11,7 @@ import type { Person, State, Stat, Skill } from './typer';
 import { STATS, SKILLS } from './typer';
 import { hash3 } from './slump';
 import { klanTatKrok } from './tatkrok';
-import { EGENSKAP, count } from './folk';
+import { EGENSKAP, count, nyPerson } from './folk';
 import { SAKER } from './saker';
 import type { KlanPerson } from './klaner';
 const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : s.varld?.rader?.find(r => r.syn?.id === id)?.syn; // som i klaner.ts, utan att importera den (cirkeln gastliv–klaner)
@@ -137,11 +137,11 @@ export function nyGast(s: State, o: { id: number; namn: string; sex: 'm' | 'k'; 
   Object.assign(pot, o.pot); // egenskaper som sorten bestämmer (rövarnas styrka och mod, rovare.ts)
   const skill = {} as Record<Skill, number>;
   for (const k of SKILLS) skill[k] = o.skill?.[k] ?? 0;
-  const p: Person = {
+  const p = nyPerson({
     id: o.id, name: o.namn, sex: o.sex, born: o.fodd, gast: o.rad,
     pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.8, torst: 1, blod: 1, habit: {}, thoughts: [],
     x: o.x, y: o.y, fame: [], hue: Math.floor(r() * 360),
-  };
+  });
   if (o.rad.klan !== undefined) p.fran = o.rad.klan;
   utrusta(s, p, r); // vapnen, kläderna och ärren (GASTUTRUSTNING, steg 10.1.8)
   return p;
@@ -179,7 +179,7 @@ export function gastTillbaka(s: State, p: Person) {
   if (fran !== undefined) p.fran = fran;
   // livet hemma, förenklat
   Object.assign(p, { health: 1, blod: 1, hunger: Math.max(p.hunger, 0.8), rest: 0.9, warm: 1, torst: 1, toa: 0.8 });
-  for (const f of ['blot', 'sjuk', 'skador', 'svimmat', 'brinner', 'sickWhy', 'poisonUntil', 'sorg'] as const) delete p[f];
+  for (const f of ['blot', 'sjuk', 'skador', 'svimmat', 'brinner', 'sickWhy', 'poisonUntil', 'sorg'] as const) p[f] = undefined;
   p.thoughts = p.thoughts.filter(t => t.until > s.now);
   delete kp.kropp; delete kp.borta;
   count(s, 'gast igen');

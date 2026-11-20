@@ -471,7 +471,7 @@ export function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
 export function forget(s: State, hours: number) {
   const now = s.now;
   for (const p of s.people) {
-    if (p.died !== undefined || p.left !== undefined) { delete p.lardomar; continue; }
+    if (p.died !== undefined || p.left !== undefined) { p.lardomar = undefined; continue; }
     const m = stat(p, 'minne', now);
     if (p.lardomar) {
       const tau = 24 * (MINNE.glomBas + m / MINNE.glomMinne); // 3–13 dygn
@@ -481,7 +481,7 @@ export function forget(s: State, hours: number) {
         if (l.c >= MINNE.glomGrans) return true;
         count(s, 'glomt'); return false;
       });
-      if (!p.lardomar.length) delete p.lardomar;
+      if (!p.lardomar.length) p.lardomar = undefined;
     }
     if (p.kunskap) for (const k in p.kunskap) {
       const e = p.kunskap[k];

@@ -139,9 +139,9 @@ export function skuldVidDoden(s: State, p: Person) {
   const v = betala(s, p, p.skatteskuld);
   p.died = dog;
   if (v > 0) { count(s, 'skattVarde', v); count(s, 'skuldDod', v); log(s, `Byn tog saker värda ${antal(v / grundvarde('silver'), 'silver')} för ${gen(p.name)} skatteskuld.`, 'death', [p.id]); }
-  delete p.skatteskuld;
+  p.skatteskuld = undefined;
 }
-export const struken = (s: State) => { for (const p of s.people) delete p.skatteskuld; };
+export const struken = (s: State) => { for (const p of s.people) p.skatteskuld = undefined; };
 
 // en gång per dygn (TAKTER, klockan SKATT.timme), också i en by utan ledare; dt = tiden sedan sist i spelets tid
 export function skattDygn(s: State, dt: number) {
@@ -155,7 +155,7 @@ export function skattDygn(s: State, dt: number) {
     const ska = skattAv(s, p, tid) + (p.skatteskuld ?? 0), gav = betala(s, p, ska), w = formogenhetDelar(s, p.id).sum;
     sum += gav;
     if (gav > 0 && gav / Math.max(1, w + gav) * DAY / tid >= TANKELAGE.skattAndel) tanke(p, 'hogSkatt', s.now); // en stor del av det hen har, per dygn (steg 12.1.131)
-    if (ska - gav > 1e-9) p.skatteskuld = ska - gav; else delete p.skatteskuld; // det som fattas blir skuld (steg 10.5.5)
+    if (ska - gav > 1e-9) p.skatteskuld = ska - gav; else p.skatteskuld = undefined; // det som fattas blir skuld (steg 10.5.5)
     if (p.skatteskuld) p.missnoje = clamp((p.missnoje ?? 0) + SKATT.skuldMiss * Math.min(1, p.skatteskuld / Math.max(1, w)) * tid / DAY, 0, 1);
     const vill = PROCENT.vill(s, p); // den som betalar mer än hen tycker är rätt blir missnöjd (steg 10.5.4)
     if (pr > vill) p.missnoje = clamp((p.missnoje ?? 0) + SKATT.miss * (pr - vill) / pr * tid / DAY, 0, 1);

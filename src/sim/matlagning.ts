@@ -80,7 +80,7 @@ export function grilla(s: State, p: Person, hours: number) {
   const d = (p.delar ??= {}), t = (d[GRILL] ?? 0) + hours * MATLAG.timme, hela = Math.min(Math.floor(t + 1e-9), Math.floor(harTillHands(s, p, r.ra) + 1e-9));
   d[GRILL] = Math.min(t - Math.floor(t + 1e-9), 0.999);
   if (d[GRILL] <= 1e-9) delete d[GRILL];
-  if (!Object.keys(d).length) delete p.delar;
+  if (!Object.keys(d).length) p.delar = undefined;
   if (hela <= 0) return;
   let brant = 0;
   for (let i = 0; i < hela; i++) {

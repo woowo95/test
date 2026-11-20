@@ -564,7 +564,7 @@ export function antand(s: State, p: Person, var_: string) {
 const hjalpare = (s: State, q: Person, p: Person) => q.brinner === undefined && kanGa(q) && ageOf(q, s.now) >= ALDER.vuxen && Math.hypot(q.x - p.x, q.y - p.y) <= BRAND.hjalpR;
 export const slacktP = (s: State, p: Person, hur: string) => {
   if (p.brinner === undefined) return;
-  delete p.brinner;
+  p.brinner = undefined;
   count(s, 'brinner slackt'); count(s, `brinner slackt ${hur}`);
 }
 // varje slag (steg.ts, efter brandSteg): den som brinner bränns, plaggen kan brinna upp, och regnet släcker
@@ -572,14 +572,14 @@ export function brinnerSteg(s: State, dtSec: number) {
   const v = vaderNu(s), DELAR: Kroppsdel[] = ['armV', 'armH', 'benV', 'benH', 'bal', 'handV', 'handH', 'huvud'];
   for (const p of living(s)) {
     if (p.brinner === undefined) continue;
-    if (!alive(p)) { delete p.brinner; continue; }
+    if (!alive(p)) { p.brinner = undefined; continue; }
     if (v.nb > 0 && ur(s, p.id, 3869) < chans(BRAND.regnSlacker * v.nb, dtSec)) { slacktP(s, p, 'regnet'); continue; }
     if (ur(s, p.id, 3871) < chans(BRAND.brinnSkada, dtSec)) {
       const d = DELAR[Math.floor(ur(s, p.id, 3872) * DELAR.length)], g = BRAND.brinnGrad[0] + ur(s, p.id, 3873) * (BRAND.brinnGrad[1] - BRAND.brinnGrad[0]);
       count(s, 'brinner skadad');
       if (s.brand?.brann_p?.includes(p.id)) { s.brand.skadade++; count(s, 'brand skadad'); } // i branden (steg 12.1.80)
       const dod = skada(s, p, d, 'brannskada', g, 'brand', 'när hen brann');
-      if (dod) { die(s, p, dod); delete p.brinner; continue; }
+      if (dod) { die(s, p, dod); p.brinner = undefined; continue; }
       if (s.brand?.brann_p?.includes(p.id)) upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
     }
     const pl = paSig(s, p).filter(t => !SAKER[t.k]?.brinnerInte);

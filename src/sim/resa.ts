@@ -1672,7 +1672,7 @@ export function vardaPaVagen(s: State, sl: Sallskap, q: Person, folk = resenarer
 // en resenär dör på vägen: hen dör som hemma (die), men kroppen ligger inte på byns karta; sällskapet går vidare utan hen
 export function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Dodsorsak, t: number) {
   if (!alive(p) || p.dodVag) return;
-  p.dodVag = { orsak, t }; delete p.sjuk;
+  p.dodVag = { orsak, t }; p.sjuk = undefined;
   if (sl.ledare === p.id) { const ny = resenarer(s, sl)[0]; if (ny) sl.ledare = ny.id; } // den som är kvar leder
   if (sl.buren) { sl.buren = sl.buren.filter(b => b[0] !== p.id); if (!sl.buren.length) delete sl.buren; }
   count(s, 'resa död');
@@ -1696,7 +1696,7 @@ function beskedet(s: State, sl: Sallskap, orsak?: Dodsorsak) {
     const p = s.people.find(q => q.id === id);
     if (!p || !alive(p) || (!p.dodVag && !orsak)) continue;
     const t = p.dodVag?.t ?? s.now, o = (p.dodVag?.orsak ?? orsak) as Dodsorsak;
-    delete p.dodVag;
+    p.dodVag = undefined;
     die(s, p, o); p.died = Math.min(t, s.now); // hen dog när hen dog, även om byn får veta det nu
     count(s, 'resa besked');
   }

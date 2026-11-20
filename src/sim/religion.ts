@@ -482,7 +482,7 @@ export function stepReligion(s: State) {
       if (d) tecken(s, p, 'dodDrom', d.name); else tecken(s, p, 'drom');
     }
     if (p.svartSjuk && !isSick(p, s.now)) {
-      delete p.svartSjuk;
+      p.svartSjuk = undefined;
       if (formas(s, p)) for (const q of living(s)) if (isParent(q, p)) tecken(s, q, 'barnFrisk', p.name);
     }
   }

@@ -211,7 +211,7 @@ FRAGOR.nylag = {
 FRAGOR.bortlag = {
   namn: (_s, d) => `Ta bort lagen: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
   rost: (s, p, d) => { const r = LAGAR[d.id as string].rost(s, p); return { v: -r.v, why: r.v < 0 ? r.why : 'Vill behålla lagen' }; },
-  gor: (s, d) => { const st = styreAv(s); st.lagar = st.lagar?.filter(l => l.id !== d.id); count(s, 'lag_bort'); if (d.id === 'skatt') { for (const p of s.people) delete p.skatteskuld; budgetBortKrok.f?.(s); } /* skulden stryks (steg 10.5.5), och budgeten försvinner (steg 10.5.7) */ log(s, `Byn tog bort lagen: ${LAGAR[d.id as string].namn.toLowerCase()}.`, 'world'); },
+  gor: (s, d) => { const st = styreAv(s); st.lagar = st.lagar?.filter(l => l.id !== d.id); count(s, 'lag_bort'); if (d.id === 'skatt') { for (const p of s.people) p.skatteskuld = undefined; budgetBortKrok.f?.(s); } /* skulden stryks (steg 10.5.5), och budgeten försvinner (steg 10.5.7) */ log(s, `Byn tog bort lagen: ${LAGAR[d.id as string].namn.toLowerCase()}.`, 'world'); },
 };
 // ett tal i en lag (steg 10.5.4): var och en röstar efter om det nya ligger närmare det hen vill än det gamla
 FRAGOR.lagtal = {

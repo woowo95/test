@@ -238,17 +238,17 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
     // sjukdomen vann. Förkylningen dödar inte: den blir lunginflammation, som börjar från början med tecken direkt (steg 10.10.12)
     const b = d.blir;
     if (b) {
-      delete p.sjuk; count(s, 'sjukBlir_' + b.k);
+      p.sjuk = undefined; count(s, 'sjukBlir_' + b.k);
       insjukna(s, p, b.k as SjukId, b.why);
       const ny = p.sjuk as Sjuk | undefined;
       if (ny) { ny.tecken = s.now; ny.st = 0; notis(s, 'sjuk', `${p.name} har fått ${SJUKDOMAR[b.k as SjukId].namn.toLowerCase()} ${b.why}.`, [p.id]); }
       return undefined;
     }
-    count(s, 'sjukDod_' + j.k); delete p.sjuk; return j.k;
+    count(s, 'sjukDod_' + j.k); p.sjuk = undefined; return j.k;
   }
   if (j.mot >= 1) {
     if (d.immun) (p.immun ??= {})[j.k] = 1;
-    count(s, 'frisk_' + j.k); delete p.sjuk; tanke(p, 'friskIgen', s.now); botad(s, p); // (steg 12.1.131, 12.1.134)
+    count(s, 'frisk_' + j.k); p.sjuk = undefined; tanke(p, 'friskIgen', s.now); botad(s, p); // (steg 12.1.131, 12.1.134)
     // kopporna lämnar ärr i ansiktet, och var tionde förlorar ett öga (steg 9.5.4)
     if (j.k === 'koppor') {
       (p.arr ??= []).push({ d: 'huvud', n: 3 });

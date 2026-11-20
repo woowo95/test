@@ -21,7 +21,7 @@ export function gaBort(s: State, p: Person) {
 // bybon kommer hem till rutan x, y (kanten hen kommer in från) med det hen har på sig, och väljer ett nytt arbete
 export function kommHem(s: State, p: Person, x: number, y: number) {
   if (!ute(p)) return;
-  delete p.ute;
+  p.ute = undefined;
   p.x = x; p.y = y;
   p.task = undefined;
   raknaBynVet(s); // det byn vet med det hen vet (steg 11.4.6)

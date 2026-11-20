@@ -3,6 +3,7 @@
 import '../sim'; // först: hela simuleringen i samma ordning som spelet, så att registren finns när systemen sätter sina rader
 import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
 import { forLangtArbete } from '../sim/tider';
+import { MALL, utanForm } from '../sim/folk';
 import { halMin, halVakt } from '../sim/is';
 import { kyrkaId } from '../sim/egendom';
 import { budgetAgare } from '../sim/budget';
@@ -65,6 +66,9 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
     if (steg % 288 === 0) { const hf = husFel(s); if (hf) larm('hus', () => hf); } // en gång om dagen (steg 7.2.4)
+    // personerna i en fast form (prestanda, nr 781): alla har MALL:s nycklar i dess ordning, så att ett nytt valfritt fält utanför
+    // MALL eller ett kvarglömt delete på en person syns (folk.ts)
+    if (steg % 288 === 0) { const uf = utanForm(living(s)); if (uf.length) larm('personens form', () => `${uf[0].name}: ${Object.keys(uf[0]).filter(k => !(k in MALL)).join(', ') || 'nycklarna i en annan ordning'}`); }
     if (steg % 12 === 0) { const tv = SIM_TRANGT(s); if (tv) larm('två vid en station', () => tv); } // en gång i timmen (steg 9.2.52)
     // arbetstiderna (steg 9.2.63): ett arbete som börjar tar inte längre tid än sitt slag
     for (const p of s.people) { const t = p.task; if (!t || t.phase !== 'do' || sedda.has(t)) continue; sedda.add(t); const f = forLangtArbete(t, s.now, t.act === 'vatten' ? halTidVid(s, p, t) : 0); if (f) larm('arbetstid', () => `${p.name}: ${f}`); }

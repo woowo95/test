@@ -222,3 +222,7 @@
 ## 12.1.178 (ikappräkningen i en arbetare, 2f64faee)
 
 - Byn räknas likadant i arbetaren som i sidan (scenariot ikapparbetare, exakt lika i bitar med ögonblicksbilder och i ett svep), och simuleringen är inte ändrad: skyldig `npm run -s likhet` i kedjan med resten av 12.1. Prövad i webbläsaren med granskning/prestanda/mat/ikapp178.cjs (en och tre timmars frånvaro, med och utan snabbspolning och utan arbetare): inga fel.
+
+## 12.1.185 (personen i fast form)
+
+- `npm run samma` gav samma utveckling som förut (fem byar, på koden före och efter). Skyldig `npm run -s koll` och `npm run -s likhet` i kedjan med resten av 12.1.

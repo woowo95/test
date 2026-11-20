@@ -1237,7 +1237,7 @@ export function helaIBordan(p: Person, t: Task) {
 function arbete(p: Person, k: string, v: number) {
   const d = (p.delar ??= {}), t = (d[k] ?? 0) + v, w = helt(t);
   if (t - w > HEL) d[k] = t - w; else delete d[k];
-  if (!Object.keys(d).length) delete p.delar;
+  if (!Object.keys(d).length) p.delar = undefined;
   return w;
 }
 // bördan är tom (det som låg i den har lagts någonstans)

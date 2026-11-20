@@ -307,7 +307,7 @@ export function kvall(seed = 3, timme = 20) {
 // p försöker uppträda tills hen gör det (eller det inte går): som om hen prövat många kvällar klockan 18 till nu
 export function upptrad(s: State, p: Person, ganger = 300) {
   for (let i = 0; i < ganger; i++) {
-    delete p.framProv;
+    p.framProv = undefined;
     const fr = SIM.framVal(s, p);
     if (fr?.act === 'upptrada') { p.task = { act: 'upptrada', phase: 'go', tx: fr.spot?.x ?? p.x, ty: fr.spot?.y ?? p.y, until: s.now + fr.dur, carry: 0, ref: fr.ref, tool: fr.tool, dark: true, why: fr.why }; return true; }
   }
@@ -2478,7 +2478,7 @@ SCENARIER.helgonminne = {
     const s = rikDag(3), v = vuxna(s);
     const [u, d1, d2] = v;
     blixtTro(s, u);
-    for (const d of [d1, d2]) { d.tro = 1; d.died = s.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; delete d.intryck; }
+    for (const d of [d1, d2]) { d.tro = 1; d.died = s.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; d.intryck = undefined; }
     for (const k of Object.keys(s.rels)) { const [a, b] = k.split('-').map(Number); if ([d1.id, d2.id].includes(a) || [d1.id, d2.id].includes(b)) delete s.rels[k]; }
     const levande = SIM.living(s);
     for (const p of levande) p.intryck = [d1, d2].map(d => ({ om: d.id, namn: d.name, k: 'generos' as SIM.IntryckTyp, v: 1, c: 1, t: s.now }));
@@ -2495,7 +2495,7 @@ SCENARIER.helgonminne = {
     // av två som båda är ryktbara blir den ryktbaraste helgon
     const s2 = rikDag(3), w = vuxna(s2), [u2, e1, e2] = w;
     s2.tron = [{ ...s.tron![0], grundare: u2.id, gnamn: u2.name, helgon: undefined }];
-    for (const d of [e1, e2]) { d.tro = 1; d.died = s2.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; delete d.intryck; }
+    for (const d of [e1, e2]) { d.tro = 1; d.died = s2.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; d.intryck = undefined; }
     for (const k of Object.keys(s2.rels)) { const [a, b] = k.split('-').map(Number); if ([e1.id, e2.id].includes(a) || [e1.id, e2.id].includes(b)) delete s2.rels[k]; }
     for (const p of SIM.living(s2)) p.intryck = [{ om: e1.id, namn: e1.name, k: 'generos' as SIM.IntryckTyp, v: 0.5, c: 1, t: s2.now }, { om: e2.id, namn: e2.name, k: 'generos' as SIM.IntryckTyp, v: 1, c: 1, t: s2.now }];
     SIM.helgonDygn(s2);

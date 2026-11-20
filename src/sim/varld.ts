@@ -14,7 +14,7 @@ import { enOrd, stor } from './ord';
 import { kladNyckel } from './klader';
 import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, nyKalender } from './tid';
-import { ageOf, getRel, log, newPerson, startSkills } from './folk';
+import { ageOf, getRel, log, newPerson, nyPerson, startSkills } from './folk';
 import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
 import { DAY, MIN, Person, State, simulera, useMap } from './typer';
@@ -151,7 +151,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     const o = s as unknown as Record<string, unknown>;
     delete o.strider; delete o.djurStrider;
     for (const f of rovarFlockar(s)) if (f) delete (f as unknown as Record<string, unknown>).strid;
-    for (const p of s.people) { delete p.framme; if (p.task?.act === 'strid' && !s.kartStrider?.length) p.task.until = Math.min(p.task.until, s.now); }
+    for (const p of s.people) { p.framme = undefined; if (p.task?.act === 'strid' && !s.kartStrider?.length) p.task.until = Math.min(p.task.until, s.now); }
   }],
   [37, 'v527: timret är virke (steg 10.2.70): väggarna står kvar, och det som burits till en timmervägg räknas om från ved till virke (5 ved är 1 virke)', s => {
     for (const b of s.byggen ?? []) if (b.m === 'timmer') { b.mat = Math.min(MATERIAL.timmer!.n, Math.round(b.mat / 5)); if (b.lm !== undefined) b.lm = Math.round(b.lm / 5); }
@@ -298,6 +298,7 @@ function uppgradera(s: State) {
   useMap(s);
   if (behoverStorreKarta(s)) storreKarta(s); // först av allt, innan något räknats på den gamla kartan (steg 2.10.9, kartflytt.ts)
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }
+  s.people = s.people.map(nyPerson); // alla i mallens form (prestanda, nr 781, folk.ts MALL)
   return s;
 }
 export function pair(s: State, a: Person, b: Person, silent = false) {

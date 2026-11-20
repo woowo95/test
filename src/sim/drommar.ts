@@ -36,7 +36,7 @@ export function drommar(s: State, dt: number) {
   for (const p of s.people) {
     if (!alive(p)) continue;
     if (p.task?.act !== 'sova') {
-      if (p.drom) { const d = p.drom; delete p.drom; if (d.k === 'sorg') tanke(p, 'dromdeOm', s.now, { namn: d.namn ?? '' }); else tanke(p, DROMMAR[d.k].tanke as 'godDrom', s.now); }
+      if (p.drom) { const d = p.drom; p.drom = undefined; if (d.k === 'sorg') tanke(p, 'dromdeOm', s.now, { namn: d.namn ?? '' }); else tanke(p, DROMMAR[d.k].tanke as 'godDrom', s.now); }
       continue;
     }
     const v = (Object.keys(DROMMAR) as DromId[]).map(k => [k, (DROMMAR[k] as DromDef).vikt(s, p)] as const).filter(([, w]) => w > 0);

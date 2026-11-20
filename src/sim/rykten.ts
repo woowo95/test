@@ -566,7 +566,7 @@ export function glomRykten(s: State, hours: number) {
   for (const t of [...(s.ting ?? []), ...(s.stationer ?? [])]) { const k = klenod(s, t); if (k) avbildad.add(k.id); if (t.ber?.l === 'sorg' && t.ber.lo !== undefined) avbildad.add(t.ber.lo); }
   for (const p of s.people) {
     if (!p.intryck) continue;
-    if (!alive(p)) { delete p.intryck; continue; }
+    if (!alive(p)) { p.intryck = undefined; continue; }
     const tau = 24 * (RYKTE.glomDygn + stat(p, 'minne', s.now) / RYKTE.glomMinne);
     p.intryck = p.intryck.filter(e => {
       const q = byId(s, e.om), dod = !q || !alive(q);
@@ -580,8 +580,8 @@ export function glomRykten(s: State, hours: number) {
       if (dod) trimDetaljer(e);
       return styrka(e) >= RYKTE.glomGrans;
     });
-    if (!p.intryck.length) delete p.intryck;
-    if (p.paminnd) { for (const k in p.paminnd) if (p.paminnd[k] <= s.now - RYKTE.paminnDygn * DAY) delete p.paminnd[k]; if (!Object.keys(p.paminnd).length) delete p.paminnd; }
+    if (!p.intryck.length) p.intryck = undefined;
+    if (p.paminnd) { for (const k in p.paminnd) if (p.paminnd[k] <= s.now - RYKTE.paminnDygn * DAY) delete p.paminnd[k]; if (!Object.keys(p.paminnd).length) p.paminnd = undefined; }
   }
   kandaRakna(s);
 }
