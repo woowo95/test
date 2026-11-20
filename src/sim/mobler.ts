@@ -14,7 +14,9 @@ import { hemOverskott } from './byggplan';
 import { ALDER, ageOf, byId, count, familjOf, forstaGang, living, log, think } from './folk';
 import { addTool, ingenHar, tingOf } from './agande';
 import { type Rum, roomAt, husById } from './byggnad';
-import { sovPlats } from './byggnader';
+import { sjukKrok, sovPlats } from './byggnader';
+import { lakKrok, SKADOR } from './halsa';
+import { isSick } from './sjukdom';
 import { gruppOf } from './saker';
 import { knows } from './teknik';
 import { Task, W } from './typer';
@@ -137,3 +139,29 @@ function vaggaRummen(s: State) {
 export const vaggaRum = (s: State) => vaggaRummen(s)[0];
 finareKrok.vagga = s => vaggaRummen(s).length ? 1 : 0;
 moblerKrok.vaggaRum = vaggaRum;
+
+// ---------- utedasset (steg 12.4.9) ----------
+// Utedasset är en latrin med väggar och tak (raden utedass i STATIONER): det töms till komposten och står kvar (rester.ts), smutsar
+// vattnet mindre (dass.smuts, smuts.ts) och står därför närmare husen, och den som går på toa där håller sig torr (iDass).
+// Det byggs i stället för latrinen när byn har något över (finare): det största överskottet bland familjerna med eget hus,
+// när byn behöver en toalett eller har en grävd latrin kvar
+export const byOverskott = (s: State) => { let m = 0; for (const h of (s.hus ?? [])) if (h.ag !== undefined && byId(s, h.ag)) m = Math.max(m, hemOverskott(s, h.ag)); return Math.min(1, m); };
+finareKrok.finare = (s, k) => {
+  const d = stationDef(k)!, gammal = d.finare!;
+  const behov = Math.max(stationerOf(s).some(t => t.k === gammal && isKlar(t)) ? 1 : 0, finareKrok.toa(s));
+  return behov > 0 ? behov * byOverskott(s) : 0;
+};
+// p sitter på toa i ett utedass
+export const iDass = (s: State, p: Person) => p.task?.act === 'toa' && p.task.phase === 'do' && !!stationDef(stationRutor(s).at.get(tileOf(p.x, p.y))?.k ?? '')?.dass;
+
+// ---------- sjukbädden och sjukstugan (steg 12.4.10) ----------
+// Den som är sjuk med tecken eller har ett öppet sår eller ett benbrott lägger sig hellre i en ledig sjukbädd (boende i
+// byggnader.ts) och läker STATION.sjukLak gånger fortare där (lakKrok i halsa.ts). Ett rum med en sjukbädd är en Sjukstuga
+// (RUMSTYPER i rum.ts), och där andra sover blir det en krock, så sjukbädden står helst i ett rum där ingen annan sover (siteInne).
+// Smittan räknas per rum (sjukdom.ts), så då smittas färre. Byn vill ha en sjukbädd, och fler när fler ligger sjuka än det finns bäddar
+export const villSjukbadd = (s: State, p: Person) => isSick(p, s.now) || (p.skador ?? []).some(w => w.k === 'benbrott' || ((SKADOR as Record<string, { blod: number }>)[w.k]?.blod ?? 0) > 0);
+const sjukbaddar = (s: State) => stationerOf(s).filter(t => stationDef(t.k)?.sjuk);
+export const iSjukbadd = (s: State, p: Person) => { const t = stationRutor(s).at.get(tileOf(p.x, p.y)); return !!t && isKlar(t) && !!stationDef(t.k)?.sjuk; };
+sjukKrok.vill = villSjukbadd;
+lakKrok.badd = (s, p) => iSjukbadd(s, p) ? STATION.sjukLak : 1;
+finareKrok.sjuk = s => { const n = sjukbaddar(s).length; return !n ? 1 : living(s).filter(q => villSjukbadd(s, q)).length > n ? 1 : 0; };

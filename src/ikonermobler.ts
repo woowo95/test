@@ -76,15 +76,36 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '.kSvvvvvvvvvvSk.', '.ksvVvvvvvVvvsk.', '.kSvvvvvvvvvvSk.', '..kSsSsSsSsSsk..',
     '..ksSsSsSsSsSk..', '...kkkkkkkkkk...', '................', '................'],
     pal: { ...TRA, S: '#8a9c9e', s: '#61767a', v: '#233035', V: '#3b6ea5', y: '#a0947d' } },
+  // utedasset (steg 12.4.9): ett smalt litet hus av plankor med ett sluttande tak och en dörr med ett hål
+  utedass: { pix: [
+    '................', '.....kkkkkk.....', '....kdddddddk...', '...kddddddddk...',
+    '...kkkkkkkkkk...', '....kJJJJJJk....', '....kJkkkkJk....', '....kJkJJkJk....',
+    '....kJkJdkJk....', '....kJkJJkJk....', '....kJkJJkJk....', '....kJkJJkJk....',
+    '....kJkkkkJk....', '....kjjjjjjk....', '....kkkkkkkk....', '................'],
+    pal: { ...TRA } },
+  // sjukbädden (steg 12.4.10): en låg bädd av hö på en ram av grenar, med ett brunt skinn över och en ljus kudde
+  sjukbadd: { pix: [
+    '................', '................', '................', '................',
+    '.kkkkkkkkkkkkkk.', '.kwwkJJJJJJJJjk.', '.kwwkJjJJjJJJjk.', '.kwwkJJJJJjJJjk.',
+    '.kyykJJjJJJJJjk.', '.kyykjjjjjjjjjk.', '.kkkkkkkkkkkkkk.', '.kd..........dk.',
+    '................', '................', '................', '................'],
+    pal: { ...TRA, w: '#dad0bb', y: '#bdb39b' } },
+  sjukbadd_karta: { pix: [
+    '................................', '................................', '..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..', '..kwwwwkJJJJJJJJJJJJJJJJJJJjjk..',
+    '..kwwwwkJJJJjJJJJJJjJJJJJJJjjk..', '..kwwwwkJJJJJJJJjJJJJJJJjJJjjk..', '..kwwwwkJjJJJJJJJJJJJJJJJJJjjk..', '..kyyyykJJJJJJjJJJJJJjJJJJJjjk..',
+    '..kyyyykJJJJJJJJJJJJJJJJJJJjjk..', '..kyyyykjjjjjjjjjjjjjjjjjjjjjk..', '..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..', '..kd........................dk..',
+    '................................', '................................', '................................', '................................'],
+    pal: { ...TRA, w: '#dad0bb', y: '#bdb39b' } },
 };
 // stationerna som är en ruta stora har samma bild på kartan
-const KARTA = ['drejskiva', 'vagga', 'brunn'];
+const KARTA = ['drejskiva', 'vagga', 'brunn', 'utedass'];
 // de längre stationerna står vridna ett kvarts varv när de står på högkant (platshållare tills den stående bilden ritats)
-const VRIDS = ['sang'];
+const VRIDS = ['sang', 'sjukbadd'];
 const vrid = (r: string[]) => Array.from({ length: r[0].length }, (_, x) => r.map(rad => rad[x]).reverse().join(''));
 export function laggTillMobler(PIX: Pix, PAL: Pal) {
   for (const [k, b] of Object.entries(BILDER)) { PIX[k] = b.pix; PAL[k] = b.pal; }
   PIX.laggkar = PIX.tunna; PAL.laggkar = PAL.tunna; // tekniken Laggkärl har tunnans bild
+  PIX.sjukstuga = PIX.sjukbadd; PAL.sjukstuga = PAL.sjukbadd; // och tekniken Sjukstuga sjukbäddens
   for (const k of ['pall', 'stol']) { PIX['kb_' + k] = PIX[k]; PAL['kb_' + k] = PAL[k]; } // på platsen vid bordet
   for (const v of ['', '_tand']) { PIX['kb_oljelampa2' + v] = PIX['kb_oljelampa1' + v]; PAL['kb_oljelampa2' + v] = PAL['kb_oljelampa1' + v]; } // lampan ser likadan ut på bordet och hyllan
   for (const k of KARTA) for (const e of ['_karta', '_karta_v']) { PIX[k + e] = PIX[k]; PAL[k + e] = PAL[k]; }

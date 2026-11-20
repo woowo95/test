@@ -673,7 +673,7 @@ const VILOTANKE = { restBadd: ['Sov gott i halmbädden', 0.09], restGolv: ['Sov 
 export function viloTak(s: State, p: Person, rum: unknown): 'restBadd' | 'restGolv' | 'restTak' | undefined {
   const pd = p.task && ACTS[p.task.act];
   if (!(rum && pd && pd.vila && p.task!.phase === 'do' && pd.plats === 'sang')) return undefined;
-  if (s.stationer?.length && stationRutor(s).sov.has(tileOf(p.x, p.y))) return 'restBadd';
+  if (s.stationer?.length && (r => r.sov.has(tileOf(p.x, p.y)) || r.bara.has(tileOf(p.x, p.y)))(stationRutor(s))) return 'restBadd'; // och vaggan och sjukbädden (steg 12.4.5, 12.4.10)
   const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m;
   return m0 === 'ho' || m0 === 'tra' ? 'restGolv' : 'restTak';
 }
@@ -717,7 +717,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   bristSteg(p, now);
   p.rest = clamp(p.rest + dtSec / HOUR_S * vilaTim(p, vs), 0, 1);
   { // regnet blöter den som är ute; man torkar inne och vid elden (steg 2.11.1)
-    const ute = !roofed(s, p.x, p.y); // inne i ett hus håller man sig torr
+    const ute = !roofed(s, p.x, p.y) && !iDass(s, p); // inne i ett hus håller man sig torr, och i utedasset (steg 12.4.9)
     blotSteg(s, p, ute, ute && groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga, heatAt(s, p.x, p.y) > KROPP.eldNara, dtSec / HOUR_S);
     if ((p.blot ?? 0) > VADER.blotTanke) think(p, 'Blöt av regnet', -0.05, now, HOUR);
   }
@@ -1775,7 +1775,7 @@ import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
 import { tatKlar } from './tatuering';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
-import { baddVila, bredvidKaresta, sittVila, sattaKlar } from './mobler';
+import { baddVila, bredvidKaresta, iDass, sittVila, sattaKlar } from './mobler';
 import { mognadSteg, mognadVarde, tunnaRegn } from './tunna';
 import { vardeKrok } from './varde';
 vardeKrok.inne = mognadVarde; // en mognad dryck är värd mer (steg 12.4.6): tunna.ts läses före varde.ts

@@ -284,3 +284,66 @@ SCENARIER.brunn = {
     ];
   },
 };
+
+SCENARIER.utedass = {
+  text: 'Utedasset (steg 12.4.9, mobler.ts): en bättre latrin med väggar (4 plankor, spaden krävs, 15 minuter, tekniken Utedass); en latrin som grävts upp till kompost går inte att använda igen, men utedasset töms och står kvar, det smutsar mindre och står närmare husen, den som går dit håller sig torr, och byn bygger det i stället för latrinen när den har något över',
+  kor: () => {
+    const d = SIM.stationDef('utedass')!, l0 = SIM.stationDef('latrin')!, tek = SIM.TEKNIK.find(t => t.id === 'utedass');
+    const s = SIM.createState(1, START), p = vuxen(s);
+    klockan(s, 12);
+    const ko = medBank(s, 'kompost'), lat = medBank(s, 'latrin'), dass = medBank(s, 'utedass');
+    // vattnet bredvid: latrinen smutsar det mer än utedasset
+    const runt = (t: SIM.Station) => SIM.toaVatten(s, (t.y + 1) * SIM.W + t.x);
+    const smLat = runt(lat), smDass = runt(dass);
+    // båda töms i komposten: latrinen försvinner, utedasset står kvar
+    lat.fyllt = 1; dass.fyllt = 0.9;
+    p.task = { act: 'tomma_latrin', phase: 'do', tx: 0, ty: 0, until: s.now, carry: 0, why: '', ref: lat.id } as SIM.Task; SIM.latrinTomKlar(s, p);
+    p.task = { ...p.task, ref: dass.id }; SIM.latrinTomKlar(s, p);
+    const latBorta = !SIM.stationerOf(s).includes(lat), dassKvar = SIM.stationerOf(s).includes(dass) && dass.fyllt === 0 && !!ko.kompost;
+    // den som sitter i dasset
+    p.x = dass.x + 0.5; p.y = dass.y + 0.5; p.task = { act: 'toa', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task;
+    const torr = SIM.iDass(s, p);
+    // byn bygger utedasset när den har något över och har en latrin kvar
+    const lat2 = medBank(s, 'latrin'); void lat2;
+    const fattig = SIM.stationBrist(s, 'utedass');
+    const hus = medHus(s); if (hus) hus.ag = p.id;
+    for (const x of SIM.living(s)) SIM.put(s, 'silver', 10, { [x.id]: 10 });
+    SIM.put(s, 'silver', 200, { [p.id]: 200 });
+    const rik = SIM.stationBrist(s, 'utedass');
+    return [
+      [`utedasset tar 1 ruta, av ${JSON.stringify(d.av)} på ${d.min} minuter med ${d.verktyg}, tekniken ${tek?.namn} (kräver ${tek?.krav})`, d.av.plankor === 4 && d.min === 15 && d.verktyg === 'benspade' && !!tek && tek.krav.includes('latrin') && tek.krav.includes('klyvplats')],
+      [`det står närmare byn än latrinen (högst ${d.utkant?.till} mot ${l0.utkant?.till} rutor)`, (d.utkant?.till ?? 99) < (l0.utkant?.till ?? 0) && (d.utkant?.avst ?? 99) < (l0.utkant?.avst ?? 0)],
+      [`utedasset smutsar vattnet bredvid mindre (${smDass.toFixed(3)} mot ${smLat.toFixed(3)})`, smDass < smLat],
+      [`en latrin som tömts i komposten är borta, utedasset töms och står kvar`, latBorta && dassKvar],
+      [`den som går på toa i utedasset håller sig torr`, torr],
+      [`byn bygger utedasset när den har något över (fattig ${fattig}, rik ${rik.toFixed(2)})`, fattig === 0 && rik > 0],
+    ];
+  },
+};
+
+SCENARIER.sjukstuga = {
+  text: 'Sjukbädden och sjukstugan (steg 12.4.10, mobler.ts): en bädd inne (4 hö, 2 grenar och 1 skinn, 12 minuter, tekniken Sjukstuga) där den som är sjuk eller skadad hellre lägger sig och läker lite fortare; ett rum med en sjukbädd är en Sjukstuga, och en sjukbädd där andra sover är en krock i rummens taggar',
+  kor: () => {
+    const d = SIM.stationDef('sjukbadd')!, tek = SIM.TEKNIK.find(t => t.id === 'sjukstuga');
+    const s = SIM.createState(1, START), [p, q] = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    klockan(s, 22);
+    const utan = SIM.stationBrist(s, 'sjukbadd');
+    const hus = medHus(s); if (!hus) return [['ett hus', false]];
+    const t = medBank(s, 'sjukbadd'), i = t.y * SIM.W + t.x;
+    const frisk = SIM.sovPlats(s, p) !== i;
+    // p bryter benet
+    (p.skador ??= []).push({ d: 'vanster_ben', k: 'benbrott', g: 0.5, b: 0 } as unknown as SIM.Skada); SIM.touch(s);
+    const sjukLigger = SIM.sovPlats(s, p) === i, andra = SIM.sovPlats(s, q) !== i;
+    p.x = t.x + 0.5; p.y = t.y + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+    const lak = SIM.lakKrok.badd(s, p);
+    const r = SIM.roomAt(s, t.x, t.y), taggar = r ? [...SIM.rumTaggar(s, r)] : [];
+    const krock = r ? SIM.rumMinus(s, r).some(m => m.namn === 'Sjuka där man sover') === (taggar.includes('sovrum') || taggar.includes('sovsal')) : false;
+    return [
+      [`sjukbädden står inne, ${d.w} × ${d.h}, av ${JSON.stringify(d.av)} på ${d.min} minuter, tekniken ${tek?.namn} (kräver ${tek?.krav})`, !!d.inne && d.w === 2 && d.av.torrgras === 4 && d.av.grenar === 2 && d.av.skinn === 1 && d.min === 12 && !!tek && tek.krav.includes('halmbadd') && tek.krav.includes('orte') && !d.sover],
+      [`byn vill ha en sjukbädd (${utan})`, utan === 1],
+      [`den friska sover inte där (${frisk}), den med ett benbrott lägger sig där (${sjukLigger}), och ingen annan (${andra})`, frisk && sjukLigger && andra],
+      [`i sjukbädden läker man ${lak} gånger fortare`, lak === 1.2],
+      [`rummet är en Sjukstuga (${taggar.join(', ')}), och där andra sover är det en krock`, taggar.includes('sjukstuga') && krock],
+    ];
+  },
+};

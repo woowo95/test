@@ -237,7 +237,7 @@ const DEF = {
   bagborr: { namn: 'Gör en bågborr', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.6.13
   krycka: { namn: 'Täljer en krycka', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, traben: { namn: 'Täljer ett träben', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, krok: { namn: 'Gör en krok', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, ogonlapp: { namn: 'Skär en ögonlapp', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'station' }, // proteserna (steg 9.5.11)
   naverask: { namn: 'Viker en näverask', slag: 'hantverk', hantverk: true, verb: 'viker', plats: 'station' }, // vid slöjdbänken om byn har en, annars för hand (steg 9.4.13)
-  lerkruka: { namn: 'Bygger upp en lerkruka', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'station' }, // steg 9.4.11, kruka.ts: på drejskivan om byn har en (steg 12.4.1), annars för hand
+  lerkruka: { namn: 'Bygger upp en lerkruka', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'elden' }, // steg 9.4.11, kruka.ts: på drejskivan om byn har en (steg 12.4.1, platsFor i val.ts), annars för hand vid elden
   slanda: { namn: 'Gör en slända', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 7.7.8
   fackla: { namn: 'Gör en fackla', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' }, // steg 6.3.6 (ljus.ts)
   trumma: { namn: 'Gör en trumma', slag: 'hantverk', hantverk: true, verb: 'spänner', plats: 'station' },
@@ -293,7 +293,7 @@ const DEF = {
   satta: { namn: 'Ställer en sittplats vid bordet', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // pallen eller stolen i stället för stubben (steg 12.4.4, mobler.ts)
   ysta: { namn: 'Ystar ost', slag: 'hantverk', hantverk: true, verb: 'ystar', plats: 'elden' }, // mjölk i en kruka vid elden (steg 12.4.7, TILLVERKA)
   tunna: { namn: 'Laggar en tunna', slag: 'hantverk', hantverk: true, verb: 'laggar', plats: 'station' }, // vid snickarbänken (steg 12.4.6, tunna.ts)
-  oljelampa: { namn: 'Formar en oljelampa', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'station' }, // på drejskivan om byn har en, annars för hand (steg 12.4.2, ljus.ts)
+  oljelampa: { namn: 'Formar en oljelampa', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'elden' }, // på drejskivan om byn har en, annars för hand (steg 12.4.2, ljus.ts)
   fyll_lampa: { namn: 'Fyller oljelampan', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // med brännolja, på bordet eller hyllan (steg 12.4.2, ljus.ts)
   // skogsvården (steg 6.5.2, skogsvard.ts): en planta grävs upp och bärs dit byn vill ha skog
   plantera: { namn: 'Flyttar en planta', slag: 'odla', under: { go: 'går till plantan', do: 'gräver upp plantan', back: 'bär plantan' }, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'plantor', per: 'gang' }, tungt: true, framme: true },

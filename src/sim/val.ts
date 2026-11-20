@@ -73,7 +73,7 @@ import { balans } from './balans';
 import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { latrinFor } from './smuts';
-import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
+import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationDef, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportListaVal, sportVal, sportVikt, tittaVal, tittaVikt } from './sport';
@@ -285,6 +285,8 @@ function ledigSittplats(s: State, p: Person) {
 }
 function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
+  // det som görs vid elden men fortare vid en station (lerkrukan på drejskivan, steg 12.4.1; sländan i vävstolen): vid stationen när byn har en
+  if (plats === 'elden' && d.hantverk) { const st = stationFor(s, act, p); if (st && stationDef(st.k)?.fart?.[act]) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } }
   const eb = plats === 'elden' ? eldFor(s, p) : undefined, f = eb ? eldXY(s, eb) : eldPlats(s); // vid elden: vid den brinnande lägereld man hör till, annars den närmaste som brinner (steg 6.3.1)
   // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6); när det är kallt sätter man sig vid elden som förut, för värmens skull
   const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act, p)) && coldOf(temperature(s)) === 0;

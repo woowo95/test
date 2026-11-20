@@ -556,8 +556,10 @@ function svimmaSteg(s: State, p: Person) {
 function vilaLak(s: State, p: Person) {
   const t = p.task;
   if (!t || t.phase !== 'do' || ACTS[t.act].plats !== 'sang' || !ACTS[t.act].vila) return 1;
-  return HALSA.vila * (roomAt(s, p.x, p.y) ? HALSA.inne : 1);
+  return HALSA.vila * (roomAt(s, p.x, p.y) ? HALSA.inne : 1) * lakKrok.badd(s, p); // och fortare i sjukbädden (steg 12.4.10)
 }
+// läkningen i sjukbädden (steg 12.4.10), satt i mobler.ts (som läses efter den här filen)
+export const lakKrok = { badd: (_s: State, _p: Person) => 1 };
 // ett öppet sår kan bli infekterat; infektionen växer tills den rengörs, och från kallbranden hjälper inte det
 function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
   if (w.inf === undefined) {
