@@ -16,6 +16,22 @@ const landVid = (s: SIM.State, d: number) => {
 
 // byns fordon k (kälken eller släden) på rutan där at står
 const fordon = (s: SIM.State, k: string, at: { x: number; y: number }) => { const g = SIM.newTing(s, k, 1, SIM.BYN); g.x = Math.floor(at.x); g.y = Math.floor(at.y); return g; };
+// en by (fröna 3–29) där en vuxen med staketet byggt en hage som inte når vattnet och vallat in faren djur
+const hageUtanVatten = (faren: number): { s?: SIM.State; h?: SIM.Hage } => {
+  for (let seed = 3; seed < 30; seed++) {
+    const b = createState(seed, START); klockan(b, 8);
+    const p = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen)[0];
+    SIM.setAmount(b, 'levfar', faren); SIM.stepBoskap(b);
+    for (const q of SIM.living(b)) (q.tek ??= {}).staket = 1;
+    SIM.setAmount(b, 'grenar', 400); SIM.setAmount(b, 'rep', 4);
+    const mat = SIM.hageUppgift(b, p); if (mat?.ref === -1) SIM.hageKlar(b, p, -1);
+    for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
+    for (let d = SIM.vallaVal(b, p), n = 0; d && n < 5; d = SIM.vallaVal(b, p), n++) SIM.vallaKlar(b, p, d.id);
+    const hg = SIM.hagarOf(b)[0];
+    if (hg && !SIM.hageVidVatten(b, hg) && SIM.tamdjurOf(b).some(d => d.hage === hg.id)) return { s: b, h: hg };
+  }
+  return {};
+};
 SCENARIER.kalke = {
   text: 'Steg 10.10.2: kälken. Den tar tre virken och går i full fart på snö men långsamt på barmark. Den som hämtar virke tar händerna eller kälken efter vad turen ger per tid, och det ingen kan bära ligger kvar tills en kälke hämtar det. Bär och grenar körs inte',
   kor: () => {
@@ -1114,21 +1130,9 @@ SCENARIER.djuregenskaper = {
 SCENARIER.vattenho = {
   text: 'Steg 10.10.30: vattenhon. En hage med djur som inte når vattnet får en ho som huggs ur en stock (1 virke, 10 minuter) och står i hagen. Vattnet ur en kruka hälls i i hela vatten och krukan blir kvar tom, regnet fyller hon lika mycket med korta som med långa slag, och den rymmer aldrig mer än 20',
   kor: () => {
-    const { HO, RECEPT, setAmount, stepBoskap, hoarOf, hoI, hageVidVatten, hagarOf, stationBrist, hoFyll, hoRegn, newTing, BYN, isKlar } = SIM;
+    const { HO, RECEPT, setAmount, hoarOf, hoI, stationBrist, hoFyll, hoRegn, newTing, BYN, isKlar } = SIM;
     // en by med får i en hage som inte når vattnet
-    let s: SIM.State | undefined, h: SIM.Hage | undefined;
-    for (let seed = 3; seed < 30 && !h; seed++) {
-      const b = createState(seed, START); klockan(b, 8);
-      const p = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen)[0];
-      setAmount(b, 'levfar', 2); stepBoskap(b);
-      for (const q of SIM.living(b)) (q.tek ??= {}).staket = 1;
-      setAmount(b, 'grenar', 400); setAmount(b, 'rep', 4);
-      const mat = SIM.hageUppgift(b, p); if (mat?.ref === -1) SIM.hageKlar(b, p, -1);
-      for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
-      for (let d = SIM.vallaVal(b, p), n = 0; d && n < 5; d = SIM.vallaVal(b, p), n++) SIM.vallaKlar(b, p, d.id);
-      const hg = hagarOf(b)[0];
-      if (hg && !hageVidVatten(b, hg) && SIM.tamdjurOf(b).some(d => d.hage === hg.id)) { s = b; h = hg; }
-    }
+    const { s, h } = hageUtanVatten(2);
     if (!s || !h) return [['en by med får i en hage utan vatten', false]];
     const brist = stationBrist(s, 'vattenho');
     setAmount(s, 'virke', 6);
@@ -1171,7 +1175,7 @@ SCENARIER.djurtorst = {
   text: 'Steg 10.10.31: djurens törst. Djuren i en hage vid stranden dricker själva; i en hage utan vatten dricker de ur hon och skötaren fyller den; ett djur utan vatten slutar ge mjölk och dör efter ett dygn, senare om det är tåligt; snön räcker när den ligger, och törsten växer lika mycket med korta som med långa slag',
   lang: true,
   kor: () => {
-    const { TAM, HO, setAmount, stepBoskap, hoarOf, hoI, hageVidVatten, hagarOf, djurTorstSteg, nyttTamdjur, tamdjurOf, tamEg, isKlar, DAY } = SIM;
+    const { TAM, HO, setAmount, stepBoskap, hoarOf, hoI, hageVidVatten, djurTorstSteg, nyttTamdjur, tamdjurOf, tamEg, isKlar, DAY } = SIM;
     const torr = (b: SIM.State) => { b.vader = { ...(b.vader ?? { fukt: 0.5 }), sno: 0 } as typeof b.vader; };
     // en hage vid stranden: en ruta intill vattnet
     const a = createState(4, START); klockan(a, 10); torr(a);
@@ -1205,19 +1209,7 @@ SCENARIER.djurtorst = {
     }
     const notis = (e.notiser?.lista ?? []).some(n => n.id === 'djurtorst');
     // en hage utan vatten i en by: hon byggs, djuren dricker ur den och skötaren fyller den
-    let s: SIM.State | undefined, h: SIM.Hage | undefined;
-    for (let seed = 3; seed < 30 && !h; seed++) {
-      const b = createState(seed, START); klockan(b, 8);
-      const p = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen)[0];
-      setAmount(b, 'levfar', 3); stepBoskap(b);
-      for (const q of SIM.living(b)) (q.tek ??= {}).staket = 1;
-      setAmount(b, 'grenar', 400); setAmount(b, 'rep', 4);
-      const mat = SIM.hageUppgift(b, p); if (mat?.ref === -1) SIM.hageKlar(b, p, -1);
-      for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
-      for (let d = SIM.vallaVal(b, p), n = 0; d && n < 5; d = SIM.vallaVal(b, p), n++) SIM.vallaKlar(b, p, d.id);
-      const hg = hagarOf(b)[0];
-      if (hg && !hageVidVatten(b, hg) && tamdjurOf(b).some(d => d.hage === hg.id)) { s = b; h = hg; }
-    }
+    const { s, h } = hageUtanVatten(3);
     let fylld = 0, drack = 0, levde = false;
     if (s && h) {
       setAmount(s, 'virke', 6);
