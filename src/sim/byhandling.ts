@@ -19,13 +19,13 @@ import { SAKER, isFood, viktOf } from './saker';
 import { grundvarde } from './varde';
 import { Varlden } from './varlden';
 import { DAY, Stat, State } from './typer';
-import { gruppAv, radMarkId, radGruppPaslag, radHar, radRikedomUr, radTar, radVaror, radVill, VARUGRUPP_IDS, VarugruppId, RADPRIS } from './priser';
+import { gruppAv, radMarkId, radGruppPaslag, radHar, radRikedomUr, radTar, radVaror, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
 import { RAD, rikMal } from './rad';
 import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
 import { trampaFard, sallskapTyngd } from './leder';
 import { sparadVag, vagRutor } from './vagval';
-import { anfallUtfall, BYANFALL, flockStorlek, forsvarare, vinstChans } from './radanfall';
+import { anfallUtfall, BYANFALL, enhet, flockStorlek, forsvarare, lockVarde, vinstChans } from './radanfall';
 import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
 import { radKommer } from './rader';
@@ -127,17 +127,17 @@ export const BYHANDLINGAR = {
   plundra: {
     namn: 'Plundring',
     poang: c => {
-      const n = c.r.nr === c.vl.huvud ? 0 : flockStorlek(c.r, anfallUte(c.vl, c.r.nr)); // också mot huvudbyn: då kommer flocken som rövare (steg 11.6.20)
+      const n = c.r.nr === c.vl.huvud ? 0 : flockStorlek(c.r, anfallUte(c.vl, c.r.nr), c.mot); // också mot huvudbyn: då kommer flocken som rövare (steg 11.6.20); så stor som bytet och försvaret drar (steg 12.1.21)
       if (!n || restid(c.vl, c.r, c.mot) === undefined) return -1;
       const fejd = Math.max(BYLAGEN[byLage(c.vl, c.r.nr, c.mot.nr)].fejd, clamp((-c.rel - BYHANDLING.plundraRel) / BYHANDLING.plundraFull, 0, 1)); // i krig vill byn plundra fullt ut
       const svalt = c.rel < BYHANDLING.plundraVan ? clamp(1 - c.r.tal.mat / Math.max(1, radVill(c.r, 'mat', rikMal(c.r))), 0, 1) : 0;
       const vilja = Math.max(fejd, svalt) * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig);
-      const p = vinstChans(c.r, c.mot, n), byte = Math.min(n * BYANFALL.bar, VARUGRUPP_IDS.reduce((x, g) => x + radHar(c.mot, g) * enhet(g) * BYANFALL.byte, 0));
+      const p = vinstChans(c.r, c.mot, n), byte = lockVarde(c.mot, n); // det som finns över bärbördan lockar ändå (steg 12.1.21)
       const doda = n * (p * BYANFALL.dodVinnare + (1 - p) * BYANFALL.dod);
       return vilja * (p * byte - doda * BYHANDLING.dodVarde) / BYHANDLING.skala - BYHANDLING.plundraKostnad;
     },
     gor: c => {
-      const n = flockStorlek(c.r, anfallUte(c.vl, c.r.nr)), dygn = restid(c.vl, c.r, c.mot);
+      const n = flockStorlek(c.r, anfallUte(c.vl, c.r.nr), c.mot), dygn = restid(c.vl, c.r, c.mot);
       if (!n || dygn === undefined) return;
       const f: RadFard = { id: c.vl.nastaFard = (c.vl.nastaFard ?? 0) + 1, fran: c.r.nr, till: c.mot.nr, g: 'mat', n: 0, anfall: n, t0: c.t, t1: c.t + dygn * DAY };
       (c.vl.farder ??= []).push(f);
@@ -305,7 +305,6 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
 const krigUte = (c: ByCtx) => c.r.nr === c.vl.huvud || c.mot.nr === c.vl.huvud;
 // så många ur byn nr är ute i ett anfall (de kan inte gå med i ett till)
 export const anfallUte = (vl: Varlden, nr: number) => (vl.farder ?? []).reduce((a, f) => a + (f.anfall && f.fran === nr ? f.anfall : 0), 0);
-const enhet = (g: VarugruppId) => g === 'mat' ? RADPRIS.portion : 1; // en enhet i gruppens tillgång, i grundvärde
 const overskott = (r: VarldRad, g: VarugruppId) => Math.floor(radHar(r, g) - radVill(r, g, rikMal(r)));
 const restid = (vl: Varlden, r: VarldRad, mot: VarldRad) => {
   const p = byPlats(vl, r.nr), q = byPlats(vl, mot.nr);

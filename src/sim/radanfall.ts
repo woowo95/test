@@ -9,7 +9,7 @@
 // (plundringen i byhandling.ts); det här är bara uträkningen.
 import { balans } from './balans';
 import { RAD, tekTillskott } from './rad';
-import { radHar, VARUGRUPP_IDS, VarugruppId } from './priser';
+import { radHar, RADPRIS, VARUGRUPP_IDS, VarugruppId } from './priser';
 import { VarldRad } from './radtal';
 import { antalUr } from './varldslag';
 
@@ -23,6 +23,10 @@ export const BYANFALL = balans('byanfall', {
   dodVinnare: 0.005, // så stor del av vinnarna dör
   bar: 10, // så mycket (i grundvärde) bär varje överlevande anfallare hem
   byte: 0.3, // högst så stor del av försvararnas förråd i varje grupp tas
+  // rikedomen lockar (steg 12.1.21): flocken blir så stor som bytet och försvaret drar, högst det byn kan skicka ...
+  vinstMal: 1.2, // ... så många att anfallarnas kraft är så här många gånger försvararnas ...
+  // ... och det som finns att ta över det flocken bär lockar ändå, långsammare ju mer det är: lockMer × bärbördan × ln(1 + överskottet / bärbördan)
+  lockMer: 0.25,
 });
 
 // utrustningen per person: teknikernas styrka (vapen, sköld) och rikedomen
@@ -30,7 +34,23 @@ export const anfallUtr = (r: VarldRad) => 1 + tekTillskott(r, 'styrka') + Math.m
 // försvararna: de som kan slåss
 export const forsvarare = (r: VarldRad) => Math.max(0, Math.min(r.tal.folk, Math.round(r.tal.styrka)));
 // så många skickar byn r i ett anfall, 0 om den är för svag; ute = de som redan är ute i ett anfall (steg 11.6.20)
-export const flockStorlek = (r: VarldRad, ute = 0) => { const n = Math.floor(Math.min(r.tal.folk, r.tal.styrka) * BYANFALL.skicka) - ute; return n >= BYANFALL.minst ? n : 0; };
+// mot = byn som anfalls (steg 12.1.21): då går så många som bytet och försvaret drar, och aldrig fler än byn kan skicka
+export const flockStorlek = (r: VarldRad, ute = 0, mot?: VarldRad) => {
+  const n = Math.floor(Math.min(r.tal.folk, r.tal.styrka) * BYANFALL.skicka) - ute;
+  if (n < BYANFALL.minst) return 0;
+  if (!mot) return n;
+  const kraft = Math.ceil(forsvarare(mot) * anfallUtr(mot) * BYANFALL.hemma * BYANFALL.vinstMal / anfallUtr(r)); // så många som behövs för att vinna
+  const bara = Math.ceil(bytesVarde(mot) / BYANFALL.bar); // så många som behövs för att bära bytet
+  return Math.min(n, Math.max(BYANFALL.minst, kraft, bara));
+};
+// det som finns att ta i byn f (grundvärde, högst BYANFALL.byte av varje grupp)
+export const enhet = (g: VarugruppId) => g === 'mat' ? RADPRIS.portion : 1; // en enhet i gruppens tillgång, i grundvärde
+export const bytesVarde = (f: VarldRad) => VARUGRUPP_IDS.reduce((x, g) => x + radHar(f, g) * enhet(g) * BYANFALL.byte, 0);
+// det bytet är värt för n anfallare (steg 12.1.21): det de bär, och det som finns över det lockar ändå, långsammare ju mer det är
+export function lockVarde(f: VarldRad, n: number) {
+  const tak = n * BYANFALL.bar, b = bytesVarde(f);
+  return b <= tak ? b : tak + BYANFALL.lockMer * tak * Math.log(1 + (b - tak) / tak);
+}
 // chansen att n anfallare från a vinner mot f
 export function vinstChans(a: VarldRad, f: VarldRad, n: number): number {
   const ka = n * anfallUtr(a), kf = forsvarare(f) * anfallUtr(f) * BYANFALL.hemma;

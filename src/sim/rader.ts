@@ -45,13 +45,14 @@ export const RADER = balans('rader', {
 });
 export type RadSkal = 'plundra' | 'hamnd' | 'heligt';
 const perPerson = (s: State) => rikedom(s) / Math.max(1, living(s).length);
-const klanPerPerson = (k: Klan) => k.resurser * 50 / Math.max(1, k.folk);
+const klanPerPerson = (k: Klan) => k.resurser / Math.max(1, k.folk); // samma mått som byns: rikedom per person (steg 12.1.21)
 // skälen (registret). galler = skälet gäller för klanen (steg 8.8.2, 8.8.4, 8.8.6)
 const SKAL: Record<RadSkal, { vikt(): number; galler(s: State, k: Klan): boolean }> = {
   plundra: { vikt: () => RADER.viktPlundra, galler: (s, k) => klanPerPerson(k) < perPerson(s) / 2 },
   hamnd: { vikt: () => RADER.viktHamnd, galler: (s, k) => !!k.doda?.some(d => { const m = byId(s, d.av); return m && alive(m); }) },
   heligt: { vikt: () => RADER.viktHeligt, galler: (_s, k) => (k.krigisk ?? 0) > RADER.krigiskFran },
 };
+export const skalGaller = (s: State, k: Klan, skal: RadSkal) => SKAL[skal].galler(s, k); // scenarierna
 // en flock från klanen k kommer till byn (steg 11.6.20: världens plundring skickar den, byhandling.ts; scenarierna med tvingaSkal):
 // n anfallare, och skälet lottas bland dem som gäller för klanen (plundring när inget annat gäller)
 export function radKommer(s: State, k: Klan | undefined, n: number, tvingaSkal?: RadSkal): Rovarflock {

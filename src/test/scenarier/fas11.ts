@@ -5817,3 +5817,37 @@ SCENARIER.budbarare = {
     ];
   },
 };
+
+SCENARIER.rikedomlockar = {
+  text: 'Rikedomen lockar (steg 12.1.21): flocken blir så stor som bytet och försvaret drar, aldrig större än byn kan skicka; det som finns över bärbördan lockar ändå, långsammare ju mer det är; grannklanernas skäl att plundra jämför rikedom per person med samma mått på båda sidor',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud))!;
+    const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud)!;
+    r.tal.folk = 60; r.tal.styrka = 40; mot.tal.folk = 20; mot.tal.styrka = 2; mot.tal.mat = 50;
+    const varor = SIM.radVaror(mot), v0 = { ...varor };
+    const rikare = (k: number) => { for (const g of Object.keys(v0)) (varor as Record<string, number>)[g] = Math.round((v0 as Record<string, number>)[g]! * k); mot.tal.mat = 50 * k; };
+    const kan = SIM.flockStorlek(r);
+    rikare(0.003); const nFattig = SIM.flockStorlek(r, 0, mot);
+    rikare(1); const lock1 = SIM.lockVarde(mot, 5);
+    rikare(0.1); const nRik = SIM.flockStorlek(r, 0, mot), tak = 5 * SIM.BYANFALL.bar;
+    rikare(40); const lock40 = SIM.lockVarde(mot, 5), b40 = SIM.bytesVarde(mot);
+    rikare(80); const lock80 = SIM.lockVarde(mot, 5);
+    rikare(0.003); mot.tal.styrka = 15; const nVaktad = SIM.flockStorlek(r, 0, mot);
+    mot.tal.styrka = 200; const nMax = SIM.flockStorlek(r, 0, mot);
+    // skälet: samma mått på båda sidor
+    const k = SIM.klanerOf(s)[0], per = SIM.rikedom(s) / Math.max(1, SIM.living(s).length);
+    const k0 = { ...k }; k.folk = 10;
+    k.resurser = Math.round(per * 10); const lika = SIM.skalGaller(s, k, 'plundra');
+    k.resurser = Math.round(per * 10 / 4); const fattigare = SIM.skalGaller(s, k, 'plundra');
+    Object.assign(k, k0);
+    return [
+      [`en rikare by lockar en större flock (${nFattig} → ${nRik}, byn kan skicka ${kan})`, nRik > nFattig && nRik <= kan],
+      [`en bättre vaktad by lockar en större flock (${nFattig} → ${nVaktad})`, nVaktad > nFattig],
+      [`flocken blir aldrig större än byn kan skicka (${nMax} av ${kan})`, nMax === kan],
+      [`det som finns över bärbördan lockar ändå (bärbördan ${tak}, bytet ${Math.round(b40)}: ${Math.round(lock1)} → ${Math.round(lock40)} → ${Math.round(lock80)})`, lock40 > tak * 1.5 && lock80 > lock40],
+      ['men långsammare ju mer det är', lock80 - lock40 < lock40 - tak && lock40 < b40],
+      ['en klan lika rik per person som byn har inget skäl att plundra, en mycket fattigare har det', !lika && fattigare],
+    ];
+  },
+};
