@@ -280,7 +280,6 @@ SCENARIER.promenad = {
 SCENARIER.varm = {
   text: 'Steg 2.3.4: kroppen kan bli varmare än idealet: av solen på sommaren (inte i skugga under ett träd eller i ett hus), av kläderna när det är milt och av att sitta tätt vid elden. Under idealet är det som förut. Den som är för varm svalnar, tar av sig de varma kläderna (bältet sitter kvar), tar inte på sig nya, lockas till bad, och badet kyler. Tröttare blir hen först när hen är extremt varm (steg 2.10.20)',
   lang: true,
-  env: { BALANS: 'kropp.varmGrader=-50,kropp.svalnatGrader=-50' }, // gränsen för riktigt varmt (steg 12.1.19) tas bort: här prövas kroppen
   kor: () => {
     const s = createState(5, START);
     s.kal = nyKalender(s.now, 2); klockan(s, 14); // sommar, mitt på dagen
@@ -372,6 +371,30 @@ SCENARIER.kladval = {
       ['den som bara har en rock behåller den i hettan', rockNaken],
       [`när det svalnat (${Math.round(temperature(s, sval))} grader) tas mössan på igen, och rocken bärs (av ${rock.bar === p.id ? p.name : SIM.byId(s, rock.bar ?? -1)?.name ?? 'ingen'})`, paIgen],
       [`i testbyn i 14 grader blir ingen som har kläder naken (${living(b).length} invånare${blevNaken.length ? `; naken: ${blevNaken.map(o => o.name).join(', ')}` : ''})`, b14 > 0 && !blevNaken.length],
+    ];
+  },
+};
+
+SCENARIER.kladvarme = {
+  text: 'Kläderna stannar på (steg 12.1.19): tanken "För varm" och lusten att bada följer kroppens värme, utan någon gräns i grader. I vanlig sommarvärme sitter de lätta plaggen kvar, och vad som tas av väljs efter värmen (scenariot kladval, steg 12.1.149)',
+  kor: () => {
+    const s = createState(5, START);
+    const tid = (ok: (g: number) => boolean) => { for (let h = 0; h < 24 * 400; h++) { const t = s.now + h * HOUR; if (ok(temperature(s, t))) return t; } return -1; };
+    const ljum = tid(g => g >= 18 && g <= 20), sommar = tid(g => g >= 22 && g <= 26);
+    const p = living(s)[0]!;
+    s.now = ljum;
+    p.warm = KROPP.forVarm + 0.2; const varmKropp = SIM.forVarm(s, p);
+    p.warm = KROPP.forVarm - 0.1; const svalKropp = SIM.forVarm(s, p);
+    // de lätta plaggen sitter kvar i vanlig sommarvärme
+    for (const t of SIM.tingOf(s)) if (t.bar === p.id) t.bar = undefined;
+    const pa = (k: string) => { const t = addTool(s, k, p); t.bar = p.id; t.x = t.y = undefined; return t; };
+    const latta = [pa('skjorta_lintyg'), pa('byxor_kaninskinn'), pa('skor_kaninskinn')];
+    s.now = sommar; for (let i = 0; i < 6; i++) SIM.stepKlader(s);
+    const kvar = latta.every(t => t.bar === p.id);
+    return [
+      ['tiderna finns under ett år (18–20 grader och 22–26 grader)', ljum > 0 && sommar > 0],
+      [`i ${Math.round(temperature(s, ljum))} grader är den vars kropp är varm för varm (${varmKropp}), den vars kropp är sval inte (${svalKropp})`, varmKropp && !svalKropp],
+      [`i ${Math.round(temperature(s, sommar))} grader sitter skjortan, byxorna och skorna kvar`, kvar],
     ];
   },
 };

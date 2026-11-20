@@ -624,7 +624,6 @@ SCENARIER.myrvag = {
 
 SCENARIER.svalaplagg = {
   text: 'Svala plagg (steg 12.1.34, klader.ts och utrustning.ts): som varma plagg värmer kyler svala plagg, med samma tal under noll. Skjortan av lin kyler lite, och hatten av halm (flätas av hö vid slöjdbänken) kyler mest. Ett svalt plagg tas på när det är varmt och av när kylan är en fara',
-  env: { BALANS: 'kropp.varmGrader=15,kropp.svalnatGrader=12' },
   kor: () => {
     const { SAKER, KROPP, temperature } = SIM;
     const v = (k: string) => SAKER[k]!.klad!.varme;
