@@ -40,7 +40,7 @@
 - 12.1.22 (barnet föds in i föräldrarnas tro): ändrar byarna (fler troende, tron dör senare ut). Trons tre balanstal ses över i fasens Balans (12.6.6), som mäter att en tro grundas i de flesta byar med minst 20 vuxna inom 35 dygn och att minst nio av tio vuxna har en tro när byn haft en tro i 20 dygn.
 - 12.1.110 (ledarens egenskaper drar från skalans mitt, EGENSKAP.mitt i stället för 50): ändrar byarnas form (tätt eller glest, ring eller rader).
 - 12.1.153 (inget ligger i elden): ändrar var högar hamnar; ny vakt `sak i elden` i koll. Scenariot fullaforrad var rött redan före steget (Korg 0 uppgifter, 0 fritid).
-- 12.1.163 (rensningarna vid inläsning som uppgradering 62): ändrar inte spelet, men sparversionen blir 62, så samma-kollen och facit visar annan utveckling enbart av versionsnumret.
+- 12.1.163 (rensningarna vid inläsning som uppgradering 62): ändrar inte spelet, men sparversionen blir 62, så samma-kollen och facit visar annan utveckling enbart av versionsnumret. Prövat i molnet: de fem byarna i `npm run samma` gav samma tillstånd före och efter steget, med versionsnumret borträknat.
 - 12.1.165 (gäster och främlingar bär klanens tatueringar): märkena räknas ur gästens egen slump, men en inflyttad med ett märke på en plats får inget nytt där, så byarna ändras lite; samma-kollen och facit visar annan utveckling.
 - 12.1.166 (bladet väger in hur känd den döda är): ändrar vilka blad som skrivs.
 
