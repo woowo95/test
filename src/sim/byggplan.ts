@@ -132,7 +132,7 @@ function siteFor(s: State, w: number, h: number, okAt: (i: number) => boolean, n
   }
   // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
   // gångstråken viker bara om de kan dras om (steg 6.2.5). Byns statistik räknar när den bästa platsen inte fick användas för
-  // ett stråk (strakSamre) och när ett stråk drogs om runt platsen (strakOm), för provet i steg 6.2.6
+  // ett stråk (strakSamre) och när ett stråk drogs om runt platsen (strakOm)
   platser.sort((a, b) => a.sc - b.sc);
   let samre = false;
   for (const q of platser) {

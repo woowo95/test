@@ -17,7 +17,6 @@ import { H, State, T, W, inMap } from './typer';
 import { count } from './folk';
 
 export const STRAK = balans('strak', {
-  pa: 1, // 1 = stråken hålls fria; 0 = de räknas och ritas men hindrar inget (provet i steg 6.2.6: byarna med och utan)
   omvag: 3, // ett stråk dras om runt ett nytt hus om omvägen blir högst så här många rutor; annars får huset inte stå där
   sok: 30, // så många rutor runt byns område som vägarna söks i (vattnet längre bort får inget stråk)
 });
@@ -119,10 +118,9 @@ export function straken(s: State): Straken {
 }
 
 // ligger rutan på ett stråk? Då ställs inget där
-export const paStrak = (s: State, x: number, y: number) => STRAK.pa > 0 && inMap(x, y) && straken(s).ruta[y * W + x] > 0;
+export const paStrak = (s: State, x: number, y: number) => inMap(x, y) && straken(s).ruta[y * W + x] > 0;
 // ligger någon ruta i rektangeln på ett stråk?
 export function strakI(s: State, x: number, y: number, w: number, h: number) {
-  if (!STRAK.pa) return false;
   const r = straken(s).ruta;
   for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (inMap(i, j) && r[j * W + i]) return true;
   return false;
@@ -151,7 +149,6 @@ export function omvag(s: State, x: number, y: number, w: number, h: number) {
 // en lagerplats (utanför husen) som ett stråk till något annat än lagret går igenom flyttas, som när ett hus byggs på den
 // (steg 9.2.15, flyttaLager i lager.ts): en i timmen, och sakerna bärs till den nya platsen
 export function lagerIStraket(s: State) {
-  if (!STRAK.pa) return;
   const st = straken(s), MAL_LAGER = MAL.indexOf('lager');
   for (const z of zonesOf(s)) {
     if (z.hus !== undefined) continue;
