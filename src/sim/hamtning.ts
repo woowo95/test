@@ -66,7 +66,7 @@ HAMTAS.tvinna = { av: (s, p, tk) => { const n = Math.min((tk.until - s.now) / HO
 
 // matlagningen (matlagning.ts): råvarorna till rätten, stekhällen, degen, kokgropen, grillen och torkställningen
 const satt = (av: [string, number][]) => { const ut: Record<string, number> = {}; for (const [k, n] of av) ut[k] = (ut[k] ?? 0) + n; return ut; };
-HAMTAS.koka_mat = { av: (s, p) => { const r = kokRecept(s, p); return r && satt([[r.huvud, RATT.huvud], [r.andra, RATT.andra], ...(r.smak ? [[r.smak, RATT.smak] as [string, number]] : [])]); } };
+HAMTAS.koka_mat = { av: (s, p) => { const r = kokRecept(s, p); return r && satt([[r.huvud, RATT.huvud * r.satser], [r.andra, RATT.andra * r.satser], ...(r.smak ? [[r.smak, RATT.smak * r.satser] as [string, number]] : [])]); } }; // järngrytan tar dubbel sats (steg 12.5.5)
 HAMTAS.steka = { av: (s, p) => { const r = stekRecept(s, p); return r && satt([[r.huvud, STEK.huvud], ['talg', STEK.talg], ...(r.smak ? [[r.smak, RATT.smak] as [string, number]] : [])]); } };
 HAMTAS.baka = { av: () => ({ mjol: BAK.mjol }) };
 HAMTAS.gropa = { av: (s, p) => { const r = festRecept(s, p); return r && satt(r.av); } };

@@ -933,3 +933,37 @@ SCENARIER.hacka = {
     ];
   },
 };
+
+SCENARIER.gryta = {
+  text: 'Järngrytan (steg 12.5.5): ett kokkärl från smedjan (3 järn, 5 minuter) som tar dubbel sats, så att en kokning ger 8 portioner i stället för 4, och som inte spricker i elden',
+  kor: () => {
+    const R = SIM.RECEPT.jarngryta;
+    // en kokning i kärlet k med råvaror till n satser
+    const koka = (k: string, n: number) => {
+      const s = SIM.createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+      setMat(s, {});
+      const ro = n + SIM.utsade(s, 'rolleka');
+      SIM.setAmount(s, 'fisk', 2 * n); SIM.setAmount(s, 'rotter', 2 * n); SIM.setAmount(s, 'rolleka', ro);
+      p.tek = { ...(p.tek ?? {}), kruka: 1 }; s.fire.lit = true; p.skill.matlagning = SIM.MATLAG.brannFull;
+      const kr = SIM.addTool(s, k, p); kr.hos = undefined;
+      const r = SIM.kokRecept(s, p);
+      SIM.kokaKlar(s, p);
+      const fisk = SIM.amountOf(s, 'fisk');
+      SIM.stepKok(s, SIM.KATEGORIER.gryta.passiv * 60);
+      return { satser: r?.satser, fisk, portioner: SIM.amountOf(s, SIM.rattId('fisk', 'gryta', 'fin')) };
+    };
+    const kruka = koka('lerkruka_mellan', 2), gryta = koka('jarngryta', 2), lite = koka('jarngryta', 1);
+    // grytan tas före krukan
+    const s = SIM.createState(1, START), p = SIM.living(s)[0];
+    const a = SIM.addTool(s, 'lerkruka_mellan', p), b = SIM.addTool(s, 'jarngryta', p); a.hos = undefined; b.hos = undefined;
+    const forst = SIM.ledigKruka(s)?.k, S = SIM.SAKER;
+    return [
+      [`järngrytan: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan, och den kräver Lerkruka`, R.av.jarn === 3 && Object.keys(R.av).length === 1 && R.min === 5 && R.tek === 'smedja' && SIM.JARNSAKER.jarngryta?.tek === 'kruka'],
+      [`i lerkrukan blir en kokning ${kruka.portioner} portioner av en sats (fisken kvar ${kruka.fisk})`, kruka.satser === 1 && kruka.portioner === 4 && kruka.fisk === 2],
+      [`i järngrytan blir den ${gryta.portioner} portioner av dubbla råvaror (fisken kvar ${gryta.fisk})`, gryta.satser === 2 && gryta.portioner === 8 && gryta.fisk === 0],
+      [`räcker råvarorna bara till en sats blir det en (${lite.portioner} portioner)`, lite.satser === 1 && lite.portioner === 4],
+      [`grytan tas före lerkrukan (${forst})`, forst === 'jarngryta'],
+      [`den spricker inte: den slits mycket långsammare än lerkrukan (${S.jarngryta!.slits} mot ${S.lerkruka_mellan!.slits}) och väger ${S.jarngryta!.vikt}`, S.jarngryta!.slits! * 4 <= S.lerkruka_mellan!.slits! && S.jarngryta!.vikt === 4],
+    ];
+  },
+};

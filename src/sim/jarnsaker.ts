@@ -40,6 +40,7 @@ export const JARNSAKER: Record<string, JarnsakDef> = {
   ullsax: { grupp: 'ullsax', tek: 'kniv', text: 'Smider en ullsax.', forsta: '{namn} smidde byns första ullsax. Med den klipps ett får på en tredjedel av tiden.' }, // steg 12.5.2
   jarnnal: { grupp: 'nal', tek: 'bensyl', text: 'Smider två järnnålar.', forsta: '{namn} smidde byns första järnnålar. Med dem sys kläderna tre gånger så fort.' }, // steg 12.5.3
   jarnhacka: { grupp: 'jarnhacka', tek: 'byggsten', text: 'Smider en järnhacka.', forsta: '{namn} smidde byns första järnhacka. Med den bryts en byggsten på en tredjedel av tiden.' }, // steg 12.5.4
+  jarngryta: { grupp: 'jarngryta', tek: 'kruka', text: 'Smider en järngryta.', forsta: '{namn} smidde byns första järngryta. I den kokas dubbelt så mycket mat som i en lerkruka.' }, // steg 12.5.5
   jarnspjut: { grupp: 'spjut', tek: 'flintspjut', text: 'Smider en spets av järn och surrar den på ett skaft.', forsta: '{namn} smidde byns första järnspjut.' }, // steg 12.2.8
 };
 // smedjan som p kan smida vid nu: färdig, och ässjan brinner eller det finns kol att tända den med
