@@ -147,7 +147,7 @@ export function drawPlants(force = false) {
   }
 }
 
-const djurIkoner = new Ikoner(figurLayer, true), larmIkoner = new Ikoner(djurMarkLayer), brandRokIkoner = new Ikoner(rokBakLayer);
+const djurIkoner = new Ikoner(figurLayer, true, true), larmIkoner = new Ikoner(djurMarkLayer), brandRokIkoner = new Ikoner(rokBakLayer);
 // Kaninerna flyr synligt (Björn efter v159): i simuleringen hoppar en kanin undan på en gång när någon kommer nära. Här
 // springer den dit, och den som flyr har ett utropstecken och damm efter sig. Den hoppar undan från där folket syns
 // (posOf). Varje kanin som syns minns var den ritades senast
