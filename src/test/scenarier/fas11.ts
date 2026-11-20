@@ -1218,7 +1218,9 @@ SCENARIER.splittring = {
 
 SCENARIER.forhistoria = {
   text: 'Förhistorien (steg 11.3.13, forhistoria.ts): världen har levt FORHIST.ar år när huvudbyn grundas, med byar som vuxit, delats och gått under efter radens regler, en krönika och grannbyar som lever',
-  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=100' },
+  // förhistoriens längd som i spelet: på 100 år hinner byarna sällan bli stora nog att delas (NYBY.moder), och där berodde den
+  // enda delningen på slumpen (12.1.21 tog bort den, steg 12.1.112)
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=400' }, lang: true,
   kor: () => {
     const s = SIM.createState(7, Date.UTC(2026, 0, 1)), vl = s.varld!;
     const fore = (vl.kronika ?? []).filter(h => h.t < s.founded), antal = (k: string) => fore.filter(h => h.k === k).length;
