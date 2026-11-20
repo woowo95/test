@@ -41,6 +41,8 @@
 - 12.1.110 (ledarens egenskaper drar från skalans mitt, EGENSKAP.mitt i stället för 50): ändrar byarnas form (tätt eller glest, ring eller rader).
 - 12.1.153 (inget ligger i elden): ändrar var högar hamnar; ny vakt `sak i elden` i koll. Scenariot fullaforrad var rött redan före steget (Korg 0 uppgifter, 0 fritid).
 
+## Frågor till Björn (från natten till 20 november)
+
 - Benspaden görs inte längre i någon av testbyarna på 50 dygn (50 år i spelet, sju veckor i verkligheten): benen går först till sylen, nålarna och snarorna. Den står nu bland det sällsynta i testet. Ska benen räcka till spaden tidigare (en sak för fasens Balans), eller är det rätt att den kommer sent?
 - Världens rader för handelsläger som brutits upp blir kvar för alltid (ungefär 1,6 nya per dygn, alltså per år i spelet). Med tiden växer världens del av sparningen förbi gränsen 512 KB. Ska ett upplöst läger glömmas efter en tid, som ett minne som bleknar?
 - Att grunda en värld med 400 års förhistoria tar ungefär 45 s datortid. Det märks när en ny by grundas. Går det bra, eller ska förhistorien räknas medan spelet redan visas?
