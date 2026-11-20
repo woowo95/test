@@ -261,7 +261,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
   const samling = ovardig || !tr ? undefined : bud.includes('vanligBegr') ? 'vanlig' : bud.includes('tystBegr') ? 'tyst' : undefined;
   if (samling) nyRitual(s, 'begravning', { tro: tr!.id, x, y, om: [q.vem], namn: `Begravningen av ${q.namn}`, ...(samling === 'tyst' ? { tyst: true as const } : {}) });
   if (tr && !ovardig && bud.includes('gravol')) nyRitual(s, 'gravol', { tro: tr.id, om: [q.vem], namn: `Gravölet efter ${q.namn}` }); // efter samlingen i kön (steg 10.4.12)
-  else if (!ovardig) {
+  if (!samling && !ovardig) { // den enkla begravningen är den utan samling (steg 12.1.61)
     for (const o of living(s)) {
       if (!d) continue;
       const familj = isParent(o, d) || isParent(d, o) || o.partner === d.id || d.partner === o.id;
@@ -524,21 +524,28 @@ export function gravbesokVal(s: State, p: Person) {
     if (b > 0 && (!best || b > best.b)) best = { vem, namn, x: (g ?? q)!.x, y: (g ?? q)!.y, b, ...(g ? { g } : {}) };
   };
   for (const e of p.intryck ?? []) if (!byId(s, e.om) || byId(s, e.om)!.died !== undefined) prova(e.om);
-  for (const g of p.sorg ?? []) { const d = s.people.find(q => q.name === g.namn && q.died !== undefined); if (d) prova(d.id); }
+  for (const g of p.sorg ?? []) { if (g.vem !== undefined) { prova(g.vem); continue; } const d = s.people.find(q => q.name === g.namn && q.died !== undefined); if (d) prova(d.id); } // id, namnet för äldre sparfiler
   if (!best) return undefined;
   const b = best as { vem: number; namn: string; x: number; y: number; b: number; g?: Grav };
   const laga = !!b.g && gravSkick(s, b.g) < BESOK.laga && Object.entries(lagaMat(b.g)).every(([k, n]) => getable(s, p, k) >= n);
-  return { w: b.b * ater * BESOK.vikt, vem: b.vem, spot: { x: b.x + 0.5, y: b.y + 0.5 }, min: BESOK.min + (laga ? BESOK.lagaMin : 0), laga, why: b.g ? `Går till ${gen(b.namn)} grav` : `Går till stranden där ${b.namn} sänktes` };
+  return { w: b.b * ater * BESOK.vikt, b: b.b, vem: b.vem, spot: { x: b.x + 0.5, y: b.y + 0.5 }, min: BESOK.min + (laga ? BESOK.lagaMin : 0), laga, why: b.g ? `Går till ${gen(b.namn)} grav` : `Går till stranden där ${b.namn} sänktes` };
 }
 // det som får läggas på en grav: kolumnen gravgava i SAKER, och maten
 let GAVOR: string[] | undefined;
 // det som bärs till graven (HAMTAS, hamtning.ts): materialet till vården, och vid besöket gåvan (den minst värda saken hen får
 // ta) och det som lagar en sliten grav
 export const gravvardHamtas = (_s: State, tk: Task) => { const k = tk.tool as GravVard; return GRAVAR[k] ? { ...GRAVAR[k].mat } : undefined; };
-export function gravbesokHamtas(s: State, p: Person, tk: Task) {
-  const g = gravAv(s, tk.ref ?? -1), av: Record<string, number> = {};
+// gåvan: den minst värda saken hen äger eller får ta (steg 12.1.61: samma val när den hämtas och när den läggs)
+function minstaGava(s: State, p: Person) {
   let k: string | undefined, kv = Infinity;
   for (const o of gavor()) { if (getable(s, p, o) < 1) continue; const v = grundvarde(o); if (v < kv) { kv = v; k = o; } }
+  return k;
+}
+// om en gåva ska med avgörs när besöket väljs (val.ts), efter bandet, och sparas på uppgiften
+export const gravGava = (s: State, p: Person, b: number) => rnd(s, 'val', p) < BESOK.gava * b;
+export function gravbesokHamtas(s: State, p: Person, tk: Task) {
+  const g = gravAv(s, tk.ref ?? -1), av: Record<string, number> = {};
+  const k = tk.gava ? minstaGava(s, p) : undefined;
   if (k) av[k] = 1;
   if (g && tk.tool === 'laga' && gravSkick(s, g) < BESOK.laga) for (const [m, n] of Object.entries(lagaMat(g))) av[m] = (av[m] ?? 0) + n;
   return Object.keys(av).length ? av : undefined;
@@ -547,13 +554,10 @@ const gavor = () => (GAVOR ??= Object.keys(SAKER).filter(k => SAKER[k]!.gravgava
 export function gravbesokKlar(s: State, p: Person, t: Task) {
   const vem = t.ref ?? -1, g = gravAv(s, vem), q = g ? undefined : sanktAv(s, vem);
   if (!g && !q) return;
-  const namn = (g ?? q)!.namn, b = band(s, p, vem, namn);
   p.gravBesok = s.now; paminn(s, p, vem, g?.textBev); count(s, 'gravbesok'); // gravtexten bär sina händelser (steg 10.6.15)
   think(p, 'Stod vid graven', BESOK.trost, s.now, 6 * HOUR);
-  // gåvan: den minst värda saken hen äger eller får ta
-  if (rnd(s, 'val', p) < BESOK.gava * b) {
-    let k: string | undefined, kv = Infinity;
-    for (const o of gavor()) { if (getable(s, p, o) < 1) continue; const v = grundvarde(o); if (v < kv) { kv = v; k = o; } }
+  if (t.gava) {
+    const k = minstaGava(s, p);
     if (k) { takeMaterial(s, p, k, 1, true); if (g) g.gavor = (g.gavor ?? 0) + 1; else q!.gavor = (q!.gavor ?? 0) + 1; count(s, 'gravgava'); }
   }
   if (!g) return;

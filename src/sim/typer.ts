@@ -183,6 +183,7 @@ export interface Task {
   hot?: 'rovare' | 'varg'; // gömmer sig för rövarna eller vargarna (taskName, steg 12.1.56)
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
   bar?: number; // vården: den skadade som bärs hem (halsa.ts, steg 2.5.2)
+  gava?: true; // gravbesöket: en gåva läggs på graven (steg 12.1.61, gravGava i grav.ts)
   ho?: true; // vattnet bärs till vattenhon ref (steg 10.10.31, djurtorst.ts)
   falt?: true; // vattensäcken bärs till fältet ref i stället för till en människa (torka.ts, steg 3.8.2)
   vatten?: number; // vattensäcken: rutan där den fylldes, vars smuts följer med vattnet (torst.ts, steg 2.10.1)

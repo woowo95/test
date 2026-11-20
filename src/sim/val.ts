@@ -83,7 +83,7 @@ import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
 import { efterAnfall } from './rovare';
 import { BONER, bonFritid, bonNod, bonVikt, ritualVal, satFaror } from './kult';
-import { GRAV, avrustaVal, begravaVal, gravbesokVal, gravvardVal, rustaVal } from './grav';
+import { GRAV, avrustaVal, begravaVal, gravGava, gravbesokVal, gravvardVal, rustaVal } from './grav';
 import { budBrutet, budForbjuder, viltBikta, vilodagNu } from './kyrka';
 import { LAG, lagGaller, raddFor } from './lagar';
 import { ligger } from './sjukdom';
@@ -483,7 +483,7 @@ const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && (needTinder(
 const BALTE_FORBAND = new Set<Act>(['jakt', 'vargjakt', 'bjornjakt', 'forsvar', 'forsvarRovare', 'strid']);
 // den som ska i strid eller på jakt tar en remsa i bältet (steg 9.5.16), när det ligger en där hen står (steg 11.1.77)
 export function balteForband(s: State, p: Person, act: Act) { if (BALTE_FORBAND.has(act) && !p.forbandMed) iRackhall(p.x, p.y, () => { if (getable(s, p, 'remsa') >= 1) { takeMaterial(s, p, 'remsa', 1); p.forbandMed = 1; } }); }
-export interface Val { paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; ho?: true; hamtar?: string; lon?: string }
+export interface Val { paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; ho?: true; gava?: true; hamtar?: string; lon?: string }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; v.paus = undefined; return true; };
 const paus = (v: Val, why: string) => { set(v, 'vila', why); v.paus = true; return true; }; // vilan när inget annat lockar (steg 11.1.72)
 
@@ -1000,7 +1000,7 @@ function valjTask(s: State, p: Person) {
   }
   if (v.tandmat && !v.spot) v.spot = tandStalle(s, p); // tändmaterialet hämtas där hö och kvistar finns, närmast (steg 12.1.39)
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, hot: v.hot, falt: v.falt, ho: v.ho, hamtar: v.hamtar, lon: v.lon, stanna: v.stanna, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, hot: v.hot, falt: v.falt, ho: v.ho, gava: v.gava, hamtar: v.hamtar, lon: v.lon, stanna: v.stanna, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, v.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
@@ -1423,7 +1423,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   // besöket vid fängelsets dörr (steg 11.12.4): familj och vänner går dit och pratar, bredvid vilan och umgänget
   const fb = besokVal(s, p);
   if (fb && rnd(s, 'val', p) < fb.w / (fb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'besokFange', fb.why); v.spot = fb.spot; v.ref = fb.ref; v.dur = FANG.besokMin * MIN; return; }
-  if (gb && rnd(s, 'val', p) < gb.w / (gb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'gravbesok', gb.why); v.spot = gb.spot; v.ref = gb.vem; v.tool = gb.laga ? 'laga' : undefined; v.dur = gb.min * MIN; return; }
+  if (gb && rnd(s, 'val', p) < gb.w / (gb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'gravbesok', gb.why); v.spot = gb.spot; v.ref = gb.vem; v.tool = gb.laga ? 'laga' : undefined; v.gava = gravGava(s, p, gb.b) || undefined; v.dur = gb.min * MIN; return; }
   // bönen (steg 8.5.2): lusten följer andligheten, bredvid vilan och umgänget
   if (rnd(s, 'val', p) < bonVikt(s, p) / (bonVikt(s, p) + wv + wh + wsoc + wp + 1e-9)) {
     if (viltBikta(s, p)) { set(v, 'be', BONER.bikt.text()); v.tool = 'bikt'; v.dur = BONER.bikt.min * MIN; return; } // bikten (steg 8.6.9)

@@ -1654,7 +1654,7 @@ SCENARIER.gravvard = {
   kor: () => {
     // utan tro: en gravstolpe, gjord av någon som minns den döda
     const a = medLedare(), s = a.s, d = a.v[1];
-    klockan(s, 9); tandEld(s); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'plankor', 0);
+    klockan(s, 9); tandEld(s); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'virke', 40); SIM.setAmount(s, 'plankor', 0); // virke nog för förrådet, så att ingen klyver i stället
     for (const p of s.people) if (p.tek) delete p.tek.klyvplats;
     for (const q of SIM.living(s)) if (q !== d) SIM.handelse(s, d, 'bjorndodare', undefined, undefined, q, 2);
     const g = begrav(s, a.v[0], d), hog = !g.vard, forst = SIM.vardFor(s, g);
@@ -1679,7 +1679,7 @@ SCENARIER.gravvard = {
     return [
       ['graven är först en jordhög', hog && !!g],
       [`utan tro och plankor blir det en gravstolpe (${forst})`, forst === 'gravstolpe'],
-      [`den som minns den döda gör vården (${g.vard}, ${h * 5} minuter, virke ${virke} av 6)`, g.vard === 'gravstolpe' && virke === 5],
+      [`den som minns den döda gör vården (${g.vard}, ${h * 5} minuter, ${s.stat?.gravvard_gravstolpe ?? 0} gravstolpe, virke ${virke} av 40)`, g.vard === 'gravstolpe' && s.stat?.gravvard_gravstolpe === 1 && virke < 40],
       [`när byn har plankor blir det en gravbräda (${brada})`, brada === 'gravbrada'],
       ['utan material står jordhögen kvar', utan],
       [`den ovärdiga får ingen vård (${g3 && SIM.vardFor(s, g3)})`, !!g3 && SIM.vardFor(s, g3) === undefined],
@@ -3227,7 +3227,7 @@ SCENARIER.gravbesok = {
     SIM.glomRykten(s, 72); const cp = p.intryck?.[0]?.c ?? 0, cq = q.intryck?.[0]?.c ?? 0;
     // gåvan: den minst värda av det hen får ta
     setFood(s, 0); SIM.setAmount(s, 'kott', 3); // röllekan är värd mindre än köttet
-    let gavor = 0; for (let i = 0; i < 40 && !gavor; i++) { SIM.gravbesokKlar(s, p, t); gavor = g.gavor ?? 0; }
+    let gavor = 0, utanGava = 0; for (let i = 0; i < 40 && !gavor; i++) { const ge = SIM.gravGava(s, p, 1); SIM.gravbesokKlar(s, p, { ...t, gava: ge || undefined }); if (!ge) utanGava += g.gavor ?? 0; gavor = g.gavor ?? 0; } // om en gåva ska med avgörs när besöket väljs (steg 12.1.61)
     const rolleka = SIM.amountOf(s, 'rolleka');
     // en sliten gravstolpe lagas med ett virke
     g.t = s.now - 20 * SIM.DAY; g.lagad = undefined; p.gravBesok = undefined; const skick0 = SIM.gravSkick(s, g);
@@ -3244,7 +3244,7 @@ SCENARIER.gravbesok = {
       [`den som inte minns hen går inte dit (${annan ? (utan ? 'går' : 'går inte') : 'ingen sådan'})`, !utan],
       ['besöket ger tröst, och lusten växer tillbaka på ett dygn', stod && !efter && !!igen],
       [`minnet bleknar långsammare efter besöket (${cp.toFixed(3)} mot ${cq.toFixed(3)})`, cp > cq],
-      [`en gåva läggs ibland: den minst värda saken (${gavor} gåva, röllekan ${rolleka} av 5, köttet ${SIM.amountOf(s, 'kott')} av 3)`, gavor === 1 && rolleka === 4 && SIM.amountOf(s, 'kott') === 3],
+      [`en gåva läggs ibland: den minst värda saken (${gavor} gåva, röllekan ${rolleka} av 5, köttet ${SIM.amountOf(s, 'kott')} av 3)`, gavor === 1 && !utanGava && rolleka === 4 && SIM.amountOf(s, 'kott') === 3],
       [`en sliten grav lagas med material (skick ${skick0.toFixed(2)} → ${lagad ? '1' : 'olagad'}, ${lv?.min} min)`, skick0 < 0.5 && !!lv?.laga && lv.min === 5 && lagad],
       ['en grav som vuxit igen helt tas bort', borta],
       [`den sänkta får besöken vid stranden (${sv?.why})`, !!sv && sv.spot.x === 5.5],

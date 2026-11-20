@@ -215,7 +215,7 @@ export function runstenKlar(s: State, p: Person, t: Task) {
 // en sten efter en död påminner om hen, så att minnet bleknar långsammare (paminn)
 export function runstenTimme(s: State) {
   skriftBorta(s);
-  for (const tr of s.tron ?? []) { const har = heligaStenar(s, tr).length > 0; if (har) tr.skrift = true; else delete tr.skrift; } // om tron har en helig skrift (steg 10.6.3)
+  for (const tr of s.tron ?? []) { const har = heligaStenar(s, tr).length > 0 || bockerna(s).some(b => b.delar?.some(k => k.slag === 'helig' && k.tro === tr.id)); if (har) tr.skrift = true; else delete tr.skrift; } // om tron har en helig skrift (steg 10.6.3): en helig sten eller de heliga kvädena i en bok (steg 12.1.61)
   // handböckerna (steg 10.6.6): när den sista som kunde en teknik är borta säger krönikan att konsten står kvar i boken
   for (const b of bockerna(s)) for (const k of b.delar ?? []) {
     if (!k.tek || k.ensam || living(s).some(q => !q.gast && knows(q, k.tek!))) continue;

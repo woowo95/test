@@ -350,6 +350,8 @@ export const viltBikta = (s: State, p: Person) => { const tr = troOf(s, p.tro); 
 const gavaIn = (s: State, tr: Tro, k: string, n: number, fran?: Person) => { if (fran) ownMove(s, k, n, fran.id, kyrkaId(tr.id)); else { const m = Math.min(n, takeLimit(s, k)); if (m >= 1) { use(s, undefined, k, Math.floor(m), true); put(s, k, Math.floor(m), { [kyrkaId(tr.id)]: Math.floor(m) }); } } };
 export const kyrkansForrad = (s: State, tr: Tro) => ownedStock(s, kyrkaId(tr.id));
 export const kyrkansAv = (s: State, tr: Tro, k: string) => Math.floor(ownsId(s, kyrkaId(tr.id), k) + 1e-9);
+// den mat kyrkan har mest av, om den har minst n (steg 12.1.61, som gravölet)
+const kyrkansMat = (s: State, tr: Tro, n: number) => { let b: string | undefined, bn = 0; for (const k of FOOD) { const a = kyrkansAv(s, tr, k); if (a > bn) { bn = a; b = k; } } return bn >= n ? b : undefined; };
 export const forradSum = (s: State, tr: Tro) => Object.values(kyrkansForrad(s, tr)).reduce((a, b) => a + Math.floor(b + 1e-9), 0);
 // kyrkans egna utgifter: n av slaget k ur kyrkans del, och bara ur den
 export const kyrkanTar = (s: State, tr: Tro, k: string, n: number) => kyrkansAv(s, tr, k) >= n ? (use(s, undefined, k, n, true, kyrkaId(tr.id)), true) : false;
@@ -377,11 +379,11 @@ function skattDygn(s: State) {
 export interface KyrkUtgift { namn: string; vikt: (s: State, tr: Tro) => number; gor: (s: State, tr: Tro) => void }
 export const KYRKUTGIFTER: Record<string, KyrkUtgift> = {
   // försörja prästen (Präster)
-  prast: { namn: 'försörja prästen', vikt: (s, tr) => { const v = skalaV(tr, 'prast') ?? 50; return v > 60 && prastOf(s, tr) && kyrkansAv(s, tr, 'bar') >= 1 ? (v - 50) / 50 : 0; },
-    gor: (s, tr) => { const pr = prastOf(s, tr); if (pr && kyrkanTar(s, tr, 'bar', 1)) think(pr, 'Fick mat av tron', 0.03, s.now, 6 * HOUR); } },
+  prast: { namn: 'försörja prästen', vikt: (s, tr) => { const v = skalaV(tr, 'prast') ?? 50; return v > 60 && prastOf(s, tr) && kyrkansMat(s, tr, 1) ? (v - 50) / 50 : 0; },
+    gor: (s, tr) => { const pr = prastOf(s, tr), m = kyrkansMat(s, tr, 1); if (pr && m && kyrkanTar(s, tr, m, 1)) { ata(pr, { [m]: KROPP.mattar }); count(s, 'atit', 1); think(pr, 'Fick mat av tron', 0.03, s.now, 6 * HOUR); } } }, // prästen äter den (steg 12.1.61)
   // gåvor till de fattiga (Öppen)
-  fattig: { namn: 'ge åt de fattiga', vikt: (s, tr) => { const v = skalaV(tr, 'oppen') ?? 50; return v < 40 && kyrkansAv(s, tr, 'bar') >= 2 ? (50 - v) / 50 : 0; },
-    gor: (s, tr) => { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0]; if (q && kyrkanTar(s, tr, 'bar', 1)) { ata(q, { bar: KROPP.mattar }); count(s, 'atit', 1); think(q, 'Fick mat av tron', 0.05, s.now, 6 * HOUR); } } }, // en portion som äts (steg 10.11.10)
+  fattig: { namn: 'ge åt de fattiga', vikt: (s, tr) => { const v = skalaV(tr, 'oppen') ?? 50; return v < 40 && kyrkansMat(s, tr, 2) ? (50 - v) / 50 : 0; },
+    gor: (s, tr) => { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0], m = kyrkansMat(s, tr, 1); if (q && m && kyrkanTar(s, tr, m, 1)) { ata(q, { [m]: KROPP.mattar }); count(s, 'atit', 1); think(q, 'Fick mat av tron', 0.05, s.now, 6 * HOUR); } } }, // en portion som äts (steg 10.11.10)
   // ett framträdande som sprider tron eller minnet av en död troende (Sprider sig, steg 10.7.18): kyrkan lägger undan
   // KYRKA.framPris hela saker av det den har mest av, och den troende som nästa gång uppträder med ett budskap får dem (kyrkFram)
   fram: { namn: 'betala ett framträdande', vikt: (s, tr) => { const v = skalaV(tr, 'sprid'); return v !== undefined && v < 40 && !tr.framPris && framSak(s, tr) ? (50 - v) / 50 : 0; },
