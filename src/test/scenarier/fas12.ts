@@ -450,3 +450,25 @@ SCENARIER.jarngruva = {
     ];
   },
 };
+
+SCENARIER.nyvarld = {
+  text: 'En ny värld i testläget (steg 12.3.1, nyvarld.ts): knappen laddar en ny värld men behåller hela byn, så att samma by kan testas i olika miljöer',
+  kor: () => {
+    const s = SIM.createState(1, START);
+    kor(s, 2);
+    const fro0 = s.varld!.fro, folk0 = SIM.living(s).map(p => p.id).join(), ved0 = SIM.amountOf(s, 'ved'), karta0 = s.seed, grannar0 = SIM.klanerOf(s).map(k => k.namn).join();
+    const r = SIM.nyVarld(s);
+    const fro1 = s.varld!.fro, grannar1 = SIM.klanerOf(s).map(k => k.namn).join(), huvud = s.varld!.huvud !== undefined;
+    kor(s, 2);
+    const levande = SIM.living(s).length > 0;
+    const r2 = SIM.nyVarld(s), fro2 = s.varld!.fro;
+    const p = SIM.living(s)[0]; p.ute = 1 as never;
+    const hinder = SIM.nyVarldHinder(s);
+    return [
+      [`världen är ny (${fro0} → ${fro1}), med en huvudby och nya grannbyar (${grannar1.slice(0, 60)})`, r.ok && fro1 !== fro0 && huvud && grannar1.length > 0 && grannar1 !== grannar0],
+      ['byn är densamma: kartan, folket och förrådet', s.seed === karta0 && folk0.split(',').every(id => s.people.some(q => String(q.id) === id)) && SIM.amountOf(s, 'ved') <= ved0 + 50],
+      [`byn lever vidare i den nya världen, och nästa tryck ger en ny igen (${fro2})`, levande && r2.ok && fro2 !== fro1],
+      [`det går inte medan någon är ute i världen (${hinder})`, !!hinder],
+    ];
+  },
+};

@@ -125,7 +125,7 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     + `<button type="button" data-tornado="1" title="En tornado kommer nu från kartans kant">${iconImg('tornado', 14)}</button>`
     + `<button type="button" data-slagsmal="1" title="Ett slagsmål: de två vakna vuxna som står närmast varandra börjar slåss">${iconImg('kk_strid', 14)}</button>`
     + `<button type="button" data-torka="1" title="Torka marken helt, så att en brand kan provas när som helst">${iconImg('torrgras', 14)}</button>`
-    + `<button type="button" data-vack="1" title="Väck den närmaste grannbyn: den byggs ur sin rad och går med byn; tryck igen så somnar den">${tecknet('familjehus', '🏘️', 14)}</button><span id="testSvar"></span>`;
+    + `<button type="button" data-vack="1" title="Väck den närmaste grannbyn: den byggs ur sin rad och går med byn; tryck igen så somnar den">${tecknet('familjehus', '🏘️', 14)}</button><button type="button" data-nyvarld="1" title="En ny värld runt byn: byn är densamma, men världen, grannbyarna och vägarna är nya">🌍</button><span id="testSvar"></span>`; // steg 12.3.1
   // knappen svarar direkt (steg 4.5.6.4): den lyser upp, och raden under knapparna säger vad som skickats och varifrån, eller
   // varför det inte går just nu. En knapp som inte kan användas är grå (testKnappar)
   $('testSkicka').addEventListener('click', e => {
@@ -137,6 +137,7 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     if (b.dataset.blixt) { ui.blixtTest = !ui.blixtTest; ui.brandTest = false; brandKnapp(); testSvara(ui.blixtTest ? 'Tryck på kartan där blixten ska slå ner' : ''); return; }
     if (b.dataset.torka) { testSvara(torkaTest(s).text); nyttSlag(s); return; } // (steg 9.2.24)
     if (b.dataset.vack) { testSvara(vackTestNarmast(s).text); return; } // den väckta byn (steg 11.13.8)
+    if (b.dataset.nyvarld) { testSvara(nyVarld(s).text); renderPanel(true); return; } // en ny värld runt samma by (steg 12.3.1, nyvarld.ts)
     // striden på kartan (steg 10.1.5). Spelet räknar ett slag före bilden, så striden syns när bilden kommit dit
     if (b.dataset.slagsmal) { const r = testSlagsmal(s); nyttSlag(s); const sek = Math.round((s.now - ui.nu) / SEC); testSvara(r.ok && sek > 2 ? `${r.text} om ${sek} sekunder` : r.text); renderPanel(true); return; }
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
@@ -150,7 +151,7 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
 // knapparna som inte kan användas just nu är grå
 function testKnappar() {
   if (!ui.testMode || !s) return;
-  for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : b.dataset.handlare ? handlarHinder(s) : b.dataset.tornado ? tornadoHinder(s) : undefined));
+  for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : b.dataset.handlare ? handlarHinder(s) : b.dataset.tornado ? tornadoHinder(s) : b.dataset.nyvarld ? nyVarldHinder(s) : undefined));
 }
 // inställningarna (testläget och ny by) öppnas med kugghjulet längst ner bland flikknapparna (steg 5.3.1.1)
 $('installKnapp').addEventListener('click', () => { const r = $('installningar'); r.hidden = !r.hidden; $('installKnapp').setAttribute('aria-expanded', String(!r.hidden)); });
@@ -283,3 +284,4 @@ async function boot() {
 boot();
 // byn och kartan tillgängliga för felsökning i konsolen
 (window as any).__byn = { get s() { return s; }, ui, selectPerson, visa, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; }, cam, layout }; // cam och layout: utseende-testets inzoomning (steg 10.2.56)
+import { nyVarld, nyVarldHinder } from './sim';

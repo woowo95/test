@@ -212,3 +212,4 @@ export * from './sim/torv';
 export * from './sim/brann';
 export * from './sim/smedja';
 export * from './sim/jarnsaker';
+export * from './sim/nyvarld';

@@ -55,7 +55,7 @@ export function packaVarld(fro: number, v: VarldMark): Varlden {
 // fore: det som görs före huvudbyn (förhistorien, forhistoria.ts, steg 11.3.13)
 export function medVarld(s: State, fore?: (s: State, vl: Varlden, v: VarldMark) => void) {
   if (s.varld) return s.varld;
-  const fro = varldFro(s.seed), v = skapaVarldMark(fro);
+  const fro = s.varldFro ?? varldFro(s.seed), v = skapaVarldMark(fro); // en ny värld i testläget har ett eget frö (steg 12.3.1, nyvarld.ts)
   s.varld = packaVarld(fro, v);
   uppackad.set(s.varld, v);
   laggByar(s.varld, v); // byarna, de övriga platserna och sist huvudbyn med samma regler (placering.ts, steg 11.2.13–11.2.14)
