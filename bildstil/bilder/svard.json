@@ -1,0 +1,105 @@
+{
+ "id": "svard",
+ "w": 15,
+ "h": 15,
+ "rader": [
+  ".............QQ",
+  "............QTQ",
+  "...........QTSQ",
+  "..........QTSRQ",
+  ".........QTSRQ.",
+  ".....Q..QTSRQ..",
+  "....QTQQTSRQ...",
+  ".....QSTSRQ....",
+  "......QSRQ.....",
+  "....EGFQRQ.....",
+  "...EFGE.QRQ....",
+  "..EGFE...Q.....",
+  ".oqpo..........",
+  "oqpo...........",
+  ".oo............"
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ },
+ "versioner": [
+  {
+   "ide": "Ett smalt vikingasvärd diagonalt från nedre vänstra hörnet (knappen) till övre högra hörnet (spetsen): klingan är ett 2 punkter brett band i skiffer2 och skiffer3 med skiffer1 längs nederkanten, en svagt mörkare blodränna i mitten och skiffer0 som kontur, och den smalnar till en spets på 1 punkt med en glanspunkt i skiffer3 nära parerstången. Parerstången är kort och rak, 5 punkter tvärs mot klingan i skiffer1 och skiffer2, fästet är 3 punkter lindat med läder i jord1 och jord2 med lindningen som korn i varannan ton, och knappen är en liten halvrund kupol i ben1 och ben2 längst ner till vänster. Allt ses snett uppifrån som det ligger i handen, utan skugga.",
+   "rader": [
+    ".............QQ",
+    "............QTQ",
+    "...........QTSQ",
+    "..........QTSRQ",
+    ".........QTSRQ.",
+    ".....Q..QTSRQ..",
+    "....QTQQTSRQ...",
+    ".....QSTSRQ....",
+    "......QSRQ.....",
+    "....EGFQRQ.....",
+    "...EFGE.QRQ....",
+    "..EGFE...Q.....",
+    ".oqpo..........",
+    "oqpo...........",
+    ".oo............"
+   ],
+   "om": "Svärdet ligger snett från knappen nere till vänster till spetsen uppe till höger. Klingan är tre punkter innanför skifferkonturen: skiffer3 längs den belysta övre kanten, skiffer2 i mitten som blodränna och skiffer1 längs nederkanten. Den smalnar till en spets på en punkt, och glanspunkten i skiffer3 sitter mot parerstången. Parerstången går tvärs mot klingan i skiffer3, skiffer2 och skiffer1 med skifferkontur. Fästet är tre rader läder i jord1 och jord2 som växlar som lindning, med kontur i jord0. Knappen är en liten rundad kupol i ben1 och ben2 med kontur i ben0."
+  },
+  {
+   "ide": "Ett kortare och bredare svärd med bladformad klinga som är 3 punkter bred på mitten och smalnar både mot parerstången och mot spetsen, så att silhuetten blir som ett långsmalt löv längs diagonalen. Klingan är järn i skiffer1–skiffer3 med ljusare egg uppe till vänster och mörkare egg nere till höger och skiffer0 som kontur, parerstången är en kort fyrkantig klump i jord0 och skiffer1, fästet är lindat med mörkt läder i jord0 och jord1 i snedränder, och knappen är en trekantig treklövsknapp av mässing i senap1 och senap2. Spegelsymmetrisk kring klingans mittlinje; bara ljuset skiljer eggarna åt.",
+   "rader": [
+    ".............QQ",
+    "...........QQTQ",
+    ".........QQTSQ.",
+    "........QTTSRQ.",
+    ".......QTTSRQ..",
+    ".......QTSRRQ..",
+    "......QTSRRQ...",
+    "......QSRQQ....",
+    "....ERSQQ......",
+    "....FRE........",
+    "...FEEE........",
+    "..FEE..........",
+    "KJEE...........",
+    "KJI............",
+    ".II............"
+   ],
+   "om": "Ett kort, brett svärd snett från nedre vänstra till övre högra hörnet. Klingan är bladformad: 1 punkt vid spetsen, 3 punkter på mitten och smalare mot parerstången. Den är ritad i skiffer med skiffer0 som kontur, ljusare egg (skiffer3) uppe till vänster och mörkare egg (skiffer1) nere till höger. Parerstången är en kort klump i jord0 och skiffer, tvärs mot klingan. Fästet är lindat med läder i jord0 och jord1 i snedränder. Knappen är en liten treklöverformad knapp av mässing i senap1 och senap2 med senap0 som kontur. Granskningen: Klingan var lika bred hela vägen och följde inte idén om ett löv. Jag ritade om den som ett långsmalt löv längs diagonalen. Den är smal vid spetsen, ungefär 3 punkter bred inuti på mitten och smalnar igen ner mot parerstången. Silhuetten är spegelsymmetrisk kring klingans mittlinje. Ljuset ligger på eggen uppe till vänster (skiffer3), mitten är skiffer2 och eggen nere till höger skiffer1, med skiffer0 som kontur. Parerstången är nu en kort klump vinkelrätt mot klingan, i skiffer1 med jord0 i ändarna, i stället för skiffer2. Fästet är lindat i snedränder av jord1 och jord0, med den mörkare sidan nere till höger. Knappen är en symmetrisk treklöverknapp av mässing: senap2 och senap1 med senap0 som kant nere till höger. Bilden är 15 × 15 punkter och fyller rutan. Ingen glans, inga ensamma prickar och bara tecken från paletten."
+  },
+  {
+   "ide": "Ett långt rakt svärd med parallella eggar som löper ända till en kort trubbig spets i övre högra hörnet, och en tydlig korsform där parerstången är ett lätt bågböjt band på 6 punkter som böjer sig mot klingan, i skiffer2 med skiffer0-kontur. Fästet är längre, 4 punkter, så att det tydligt syns var handen håller, lindat med läder i jord1 och jord2 med en tunn rem i ben1 i spiral, och knappen är en platt skiva tvärs om fästet i skiffer1 och skiffer2 som speglar parerstången i liten skala. Klingan har en ljus mittlinje i skiffer3 och mörk underkant i skiffer1, och en enda glanspunkt nära spetsen.",
+   "rader": [
+    "............QQQ",
+    "...........QwTQ",
+    "..........QSTRQ",
+    ".........QSTRQ.",
+    "....Q...QSTRQ..",
+    "...QTQ.QSTRQ...",
+    "...QSQQSTRQ....",
+    "....QSQTRQ.....",
+    ".....QSQQ......",
+    "....EGQSQQ.....",
+    "...EpE.QSRQ....",
+    "..EFE...QQ.....",
+    "QEpE...........",
+    "QSRQ...........",
+    ".QQ............"
+   ],
+   "om": "Svärdet ligger snett från nedre vänstra till övre högra hörnet. Klingan har parallella eggar med skiffer0-kontur, en mittlinje i skiffer3, en övre kant i skiffer2 och en mörk underkant i skiffer1. Den slutar i en kort trubbig spets med en enda glanspunkt i ben3 nära spetsen. Parerstången är 6 punkter i skiffer3, skiffer2 och skiffer1 (ljusast uppe till vänster) med skiffer0-kontur; ändarna böjer sig mot klingan och formen är spegelsymmetrisk kring klingans mittlinje. Fästet är 4 punkter läder i jord1 och jord2 med jord0-kontur, och en rem i ben1 går i spiral. Knappen är en liten platt skiva tvärs om fästet i skiffer2 och skiffer1 med skiffer0-kontur. Bilden är 15×15. Granskningen: x"
+  }
+ ]
+}

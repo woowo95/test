@@ -1,0 +1,86 @@
+{
+ "id": "jarnskold",
+ "w": 14,
+ "h": 12,
+ "rader": [
+  "....ssssss....",
+  "..ssFHGHGFss..",
+  ".sHGFQQQQFGGr.",
+  "sHGHQTSSRQHGGr",
+  "sGHGQSSRRQGHGr",
+  "sHGGQSRRRQGHGr",
+  "sGHGFQQQQFGGGr",
+  "rsHGFGHGGFGGsr",
+  "rrssFGHGGFssrr",
+  ".rrrssssssrrr.",
+  "..rrrrrrrrrr..",
+  "....rrrrrr...."
+ ],
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808"
+ },
+ "versioner": [
+  {
+   "ide": "Liggande platt, sedd snett uppifrån: en spegelsymmetrisk bred oval, 14 punkter bred och omkring 10 hög, där framkanten nedtill är ett smalt band på 2 punkter i läderns mörkare ton (F och E) som visar sköldens tjocklek. Läderkanten är en ring 1–2 punkter bred i F och G med kontur i jord0 (E), träytan innanför har korn i G och H med några plankfogar i F som går lodrätt, och mitt i sitter järnbucklan som en liten oval kupol, cirka 4×3 punkter, i skiffer S och T med kontur i skiffer0 (Q) och en enda glanspunkt i T uppe till vänster. Ljuset faller uppifrån vänster, så vänster övre del av ovalen är ljusast och höger nedre mörkast; inget ligger under skölden och ingen skugga ritas.",
+   "rader": [
+    "....EEEEEE....",
+    "..EEGGGGGFEE..",
+    ".EGHFHHGHFGFE.",
+    "EGHHFHGHHFGGFE",
+    "EGHGHQQQQHGGFE",
+    "EGHHQTSSSQGHFE",
+    "EGHGQSSSRQHGFE",
+    "EGGHGQQQQGHGFE",
+    ".EGGFGHGGFGFE.",
+    "..EGFFFFFFFE..",
+    "...EEFFFFEE...",
+    ".....EEEE....."
+   ],
+   "om": "Järnskölden liggande platt, sedd snett uppifrån som en spegelsymmetrisk bred oval på 14×12 punkter. Läderkanten (G till vänster, F till höger) har kontur i jord0, och träytan har korn i H och G med två lodräta plankfogar i F. Järnbucklan i mitten är en kupol i skiffer med kontur i Q, en glanspunkt i T uppe till vänster och R nere till höger. Framkanten är ett band på 2 punkter i F och E som visar sköldens tjocklek. Ingen skugga är ritad. Granskningen: Storleken (14 × 12), vinkeln snett uppifrån, ytterformen och järnbucklan (6 × 4 i Q/S/T med glanspunkt i T uppe till vänster, R nere till höger) var redan rätt och har behållits. Ytterformen är spegelsymmetrisk och ljuset faller från övre vänster. Jag rättade plankfogarna. De låg ojämnt och bildade fläckar, särskilt i rad 8. Nu går två lodräta fogar i F i kolumn 4 och 9, symmetriskt på var sin sida om bucklan. Läderkanten är en tydligare ring: G uppe till vänster och F nere till höger, innanför konturen i E. Nedtill fick skölden en egen kantrad i rad 9. Framkanten är ett band i F och E i rad 10–11, så att tjockleken syns. Skölden är ljusare än gräset och har kontur i jord0, så den syns på marken."
+  },
+  {
+   "ide": "Stående lutad på kanten, smalare och högre: skölden står på sin nederkant och lutar lite bakåt, så den syns som en lodrät oval, omkring 10 punkter bred och 13 hög, spegelsymmetrisk kring mittlinjen. Framsidan vetter mot betraktaren och är förkortad uppifrån: läderkanten är en ring i F och G med kontur i E, men nederst syns en bit av kantens tjocklek som ett smalt mörkt band på 2 punkter (E och F) där skölden möter marken, och upptill ser man inget av baksidan. Träet har lodrätt plankkorn i G och H, järnbucklan sitter något över mitten som en rund kupol, cirka 4×4 punkter, i S och T med kontur i Q och en glanspunkt uppe till vänster, så att bucklan sticker fram och bryter silhuetten lite.",
+   "rader": [
+    "...EEEE...",
+    "..EGGGFE..",
+    ".EGHGHGFE.",
+    "EGHGQQHGFE",
+    "EGHQTSQGFE",
+    "EGHQSRQGFE",
+    "EGHGQQHGFE",
+    "EGHGHGHGFE",
+    "EGHGHGGGFE",
+    ".EFHGHGFE.",
+    ".EFFGFFFE.",
+    "..EFFFFE..",
+    "...EEEE..."
+   ],
+   "om": "Skölden står lutad på kanten och syns som en lodrät oval, 10 punkter bred och 13 hög. Formen är spegelsymmetrisk kring mittlinjen. Läderkanten är en ring i G (ljus, vänster och upptill) och F (höger och nertill) med kontur i E. Träet har lodrätt plankkorn i H och G. Järnbucklan sitter något över mitten som en rund kupol på 4×4 punkter med kontur i Q och fyllning i S. Den har en glanspunkt i T uppe till vänster och R nere till höger. Nederst syns kantens tjocklek som ett band på två punkter i F och E där skölden möter marken. Granskningen: Inget rättat. Skölden följer idén: en stående oval, 10 × 13 punkter. Den ryms i ramen på 14 × 13 och står rimligt mot kolonistens 14 × 20, som en stor rundsköld. Silhuetten är spegelsymmetrisk rad för rad. Konturen är jord0 (E) och aldrig kol0. Kanten är ljusare (G) till vänster och mörkare (F) till höger, och nederst ger två rader i F kantens tjocklek mot marken, så ljuset kommer uppifrån vänster. Träet har lodrätt plankkorn i G/H. Bucklan (Q/T/S/R) sitter något över mitten med glansen uppe till vänster, och de grå tonerna sparas till den. Mot oliv- och barrgräset syns den bruna skölden tydligt tack vare den mörka konturen."
+  },
+  {
+   "ide": "Liggande med baksidan upp och lutad så att den ses nästan från kanten: en låg, bred oval där handtaget av trä går tvärs över mitten och bucklans järnplatta syns runt det.",
+   "rader": [
+    "...EEEEEEEE...",
+    ".EEGGGFFGGGEE.",
+    "EGGGRQQQQRGGGE",
+    "EFFFFFFFFFFFFE",
+    "EGGGRQQQQRGGGE",
+    ".EEGGGFFGGGEE.",
+    "...EEEEEEEE..."
+   ],
+   "om": "Ritad av programmeringschatten: API:ts version 3 hade samma silhuett som version 1."
+  }
+ ]
+}

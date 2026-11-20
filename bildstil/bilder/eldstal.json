@@ -1,0 +1,67 @@
+{
+ "id": "eldstal",
+ "w": 9,
+ "h": 7,
+ "rader": [
+  "......QQ.",
+  ".....QS.Q",
+  "....QSRRQ",
+  "..QTSRQ..",
+  "QSSRQ....",
+  "Q.RQ.....",
+  ".QQ......"
+ ],
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ },
+ "versioner": [
+  {
+   "ide": "C-format stål: ett platt smitt band som bildar ett brett C med öppningen uppåt. Slagkanten är en rak, 2 punkter tjock bas över nästan hela bredden (9 punkter), och de två armarna böjer sig upp på sidorna och rullar in mot mitten till var sin liten snäcka på 2–3 punkter, så att formen är spegelsymmetrisk med ett genomskinligt hål i mitten. Stålet ritas i skiffertoner med skiffer0 som kontur, skiffer3 överst till vänster på bågarna, och en smal, mörkare framkant (skiffer1) längs basens underkant så att den ses lite uppifrån. Ingen glans utom en enda skiffer3-punkt på vänstra snäckan.",
+   "rader": [
+    ".QQ...QQ.",
+    "QTSQ.QSRQ",
+    "QSQ...QRQ",
+    "QSQQQQQRQ",
+    "QSSSSSRRQ",
+    "QRRRRRRRQ",
+    ".QQQQQQQ."
+   ],
+   "om": "Eldstålet är ritat som ett spegelsymmetriskt C med öppningen uppåt, 9 × 7 punkter. De två armarna går upp på sidorna och rullar in mot mitten till var sin liten snäcka. Mellan snäckorna finns ett genomskinligt hål. Basen är slagkanten och går över hela bredden: en rad yta i skiffer2 med lite skiffer1 som korn, och under den en smal framkant i skiffer1. Konturen runt allt är skiffer0. Ljuset kommer från vänster, med den enda skiffer3-glansen på vänstra snäckan, medan högra armen och högra kanten är mörkare i skiffer1. Granskningen: Storleken (9 × 7) är rimlig mot kolonisten. Vinkeln stämmer: basen ses lite uppifrån med ett smalt skiffer1-band som framkant. Formen är spegelsymmetrisk, och skifferkonturen syns mot det oliva gräset. Jag rättade två saker. Hålet i mitten var bara två punkter och fyllt med kontur, så C-formen lästes som en mörk klump. Jag öppnade rad 2 till '...' så att snäckorna rullar in ovanför ett tydligare genomskinligt hål; formen är fortfarande symmetrisk. Den ensamma mörka skiffer1-pricken mitt på basens ovansida (rad 4) blev skiffer2, och mörkret lades i stället mot höger kant (SSSSSRR) så att ljuset går från vänster till höger. Den enda skiffer3-glansen på vänstra snäckan är kvar."
+  },
+  {
+   "ide": "Avlångt stål med ögla: en smal smidd stav som ligger snett från nedre vänstra till övre högra hörnet och fyller rutan på 9×7. I nedre vänstra änden sitter en rund ögla, ungefär 4 punkter i diameter med 1–2 genomskinliga punkter i mitten, där stålet kan hängas i en rem. Staven är 2 punkter tjock och slutar uppe till höger i en lite bredare, trubbig slagände. Allt är i skiffertoner med skiffer0-kontur: den övre kanten på staven är skiffer2–3 och den nedre är skiffer1, med korn som skiftar punkt för punkt, och en glanspunkt sitter på öglans övre vänstra båge.",
+   "rader": [
+    ".....QQQ.",
+    "....QTTSQ",
+    ".QQQTSSRQ",
+    "QTTSSRRQ.",
+    "QT.RRQ...",
+    "QSRRQ....",
+    ".QQQ....."
+   ],
+   "om": "Eldstålet är en avlång smidd stav som ligger snett från nedre vänstra till övre högra hörnet och fyller rutan på 9×7. Nere till vänster sitter en rund ögla med en genomskinlig punkt i mitten, så att stålet kan hängas i en rem. Staven är två punkter tjock och slutar uppe till höger i en bredare, trubbig slagände. Allt är skiffer med skiffer0 som kontur. Den övre kanten är ljus (skiffer3 och skiffer2) och den nedre är skiffer1, med korn som skiftar punkt för punkt. Glanspunkten i skiffer3 sitter på öglans övre vänstra båge. Granskningen: Ritningen är oförändrad; jag hittade inget som bryter mot reglerna. Storleken stämmer: 9 × 7 punkter fyller rutan och är liten bredvid kolonisten (14 × 20), lagom för något man håller i handen. Vinkeln fungerar: en liten sak på marken ses snett uppifrån som en platt bit, och den ljusa övre kanten (skiffer3–2) mot den mörka nedre (skiffer1) ger ljus från övre vänstra hörnet. Bara palettens tecken används. Konturen är skiffer0, inte kol0. Kornet byter ton punkt för punkt utan ensamma mörka prickar. Den grå-blå skiffern skiljer sig tydligt från det olivgröna gräset, så saken syns på marken. Bilden följer idén: öglan nere till vänster har en genomskinlig punkt i mitten, staven går diagonalt uppåt höger och slutar i en bredare, trubbig slagände, och de ljusaste punkterna sitter på öglans övre vänstra båge. En svaghet är att halsen mellan öglan och slagänden blir kort i 9 × 7, så formen kan påminna om ett ben eller en hantel. Det går inte att förlänga utan att bryta storleksgränsen, och silhuetten med hål och bred ände läses ändå som ett eldstål."
+  },
+  {
+   "ide": "Stål med träskaft som en liten kniv: ett kort, rakt skaft av trä nere till vänster och ett brett, kort stålblad uppe till höger, båda på samma diagonal från nedre vänstra till övre högra hörnet. Skaftet är ungefär 4 punkter långt och 2 brett, i jord1–jord3 med jord0 som kontur och den ljusaste tonen på ovansidan. Bladet är trubbigt utan spets, lite bredare än skaftet och slutar i en avrundad ände; det är tecknat i skiffer2–3 med skiffer0-kontur, och slagkanten längs bladets nedre sida är ett band i skiffer1. Mellan skaft och blad sitter en enda punkt i skiffer0 som visar var stålets tånge går in i träet.",
+   "rader": [
+    ".....QQQ.",
+    "....QTTSQ",
+    "...QTSSRQ",
+    "..EQRRRQ.",
+    ".EHEQQQ..",
+    "EHGE.....",
+    ".EE......"
+   ],
+   "om": "Eldstål som en liten kniv på diagonalen från nedre vänstra till övre högra hörnet. Det korta träskaftet nere till vänster är ritat i jord1–jord3 med jord0 som kontur, och den ljusaste tonen ligger på ovansidan. Det breda, trubbiga stålbladet uppe till höger är ritat i skiffer2–3 med skiffer0-kontur och en avrundad ände, och slagkanten längs bladets nedre sida är ett band i skiffer1. En enda punkt i skiffer0 mellan skaft och blad visar var tången går in i träet. Bilden är 9 punkter bred och 7 hög. Granskningen: Ritningen följer i stort reglerna och idén. Den är 9 × 7 punkter och passar i storlek mot kolonisten. Den är en liten sak i handen, så ingen stationsvinkel behövs. Skaftet nere till vänster och bladet uppe till höger ligger på samma diagonal. Bladet är trubbigt och avrundat i skiffer2–3, har skiffer0-kontur och ett skiffer1-band längs den nedre slagkanten. En skiffer0-punkt markerar tången, och ljuset kommer uppifrån vänster. Ett fel är rättat: skaftets ände var öppen. Raden 'EFE' slutade med jord1 rakt mot bildkanten och saknade kontur under, vilket bryter mot regeln om kontur i materialets mörkaste ton. Den sista raden är nu '.EE......', så änden är sluten och avrundad i jord0 och syns tydligt mot gräset. Skaftet har därmed jord3 på ovansidan och jord2 under, inom de två till tre toner som ett material får ha. Det blir något kortare än de 4 punkter idén anger, eftersom höjden är högst 7 rader. Allt annat är oförändrat."
+  }
+ ]
+}

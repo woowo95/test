@@ -1,0 +1,66 @@
+{
+ "id": "jarn",
+ "w": 10,
+ "h": 7,
+ "rader": [
+  ".QQQQQQQQ.",
+  "QTTTSTTSSQ",
+  "QTSRTSSRSQ",
+  "QTSRSTSRSQ",
+  "QSSTSSSStQ",
+  "QRRRRRRRsQ",
+  ".QQQQQQQQ."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "n": "#474138",
+  "s": "#742a01",
+  "t": "#a14808"
+ },
+ "versioner": [
+  {
+   "ide": "En smidd tacka som ett avlångt, lite tillplattat block, nästan hela rutan bred (10 punkter) och 6–7 hög, sedd snett ovanifrån: översidan tar de övre två tredjedelarna och framkanten är ett smalt band på 2 punkter i skiffer1 och skiffer0. Översidan är kornig i skiffer2 och skiffer3 med ljusast uppe till vänster och ett par hamrade märken som tvärgående band i skiffer1. Konturen är skiffer0, och två eller tre punkter rost2 och rost1 sitter vid nedre högra hörnet och kanterna, aldrig som en fläck mitt på. Formen är symmetrisk; bara ljuset och rosten skiljer sidorna åt.",
+   "rader": [
+    ".QQQQQQQQ.",
+    "QTTTSTTSSQ",
+    "QTSRTSSRSQ",
+    "QTSRSTSRSQ",
+    "QSSTSSSStQ",
+    "QRRRRRRRsQ",
+    ".QQQQQQQQ."
+   ],
+   "om": "Smidd järntacka, 10 punkter bred och 7 hög, sedd snett ovanifrån. Formen är spegelsymmetrisk med avfasade hörn och konturen i skiffer0. Översidan tar raderna 1–4 och är kornig i skiffer3 och skiffer2, ljusast uppe till vänster. Två hamrade märken går som tvärgående band i skiffer1. Framkanten är ett band på 2 punkter: skiffer1 och sedan konturen i skiffer0. Rosten sitter bara vid nedre högra hörnet: rost2 i översidans hörn och rost1 i framkanten. Granskningen: Storleken (10 × 7), vinkeln, konturen i skiffer0, framkanten på 2 punkter (skiffer1 och skiffer0) och den symmetriska formen följer reglerna och idén, och tackan syns tydligt mot gräset. Jag har bara rättat de hamrade märkena. De gick som långa lodräta streck genom hela översidan och läste som bokstäver ('m'). Nu är de korta band på 2 punkter i skiffer1, och översidan har fått mer korn i skiffer2 och skiffer3, ljusast uppe till vänster. Rosten sitter kvar vid nedre högra hörnet: rost2 på översidans kant och rost1 i framkanten."
+  },
+  {
+   "ide": "En oformlig, knölig järnklump (lupp) direkt ur ugnen, rundad och lite bredare än hög, omkring 9 punkter bred och 7 hög, med en ojämn silhuett av tre fyra buckliga knölar som sticker ut vid kanterna. Knölarna har var sin ljusa topp i skiffer3 uppe till vänster och mörknar mot skiffer1 nedåt höger, med kontur i skiffer0 och små gropar av slagg i skiffer0 och kol3 mellan knölarna. Lite rost i rost1 och rost2 ligger i groparna och på nedre högra sidan, så att klumpen läses som rå och osmidd.",
+   "rader": [
+    "..QQQ.QQ..",
+    ".QTTSQTSQ.",
+    "QTSSRnSSRQ",
+    "QSSRntTSRQ",
+    ".QRnSSRRtQ",
+    ".QRnRRRstQ",
+    "..QQQQQQQ."
+   ],
+   "om": "Järnet ritat som en knölig lupp direkt ur blästerugnen, 10 punkter bred och 7 hög. Silhuetten har två knölar upptill och en utbuktning åt vänster, med kontur i skiffer0. Knölarna är ljusa i skiffer3 uppe till vänster och mörknar via skiffer2 mot skiffer1 nere till höger. Slaggropar i kol3 sitter i fårorna mellan knölarna. Lite rost i rost1 och rost2 ligger i groparna och på nedre högra sidan, så att klumpen läses som rå och osmidd. Granskningen: Ritningen håller sig i stort till reglerna och idén. Storleken är 10 × 7 punkter, rundad och lite bredare än hög, och klumpen står sig mot kolonisten. Den knöliga silhuetten har kontur i skiffer0. Knölarnas ljusa toppar i skiffer3 ligger uppe till vänster och tonen mörknar mot skiffer1 nedåt höger, och den grå klumpen syns tydligt mot det olivgröna gräset. En sak rättade jag: rostpunkten nere till vänster (rad 6, rost2) bröt mot idén och ljuset, som lägger rosten i groparna och på nedre högra sidan. Jag bytte den mot kol3 som en slagggrop. Rosten finns nu bara i mittgropen och nere till höger, så klumpen läses fortfarande som rå och osmidd."
+  },
+  {
+   "ide": "En dubbelspetsig smidesstång (spetstacka) som ligger snett från nedre vänstra till övre högra hörnet, tjock på mitten och avsmalnande till en trubbig spets i båda ändar, omkring 10 punkter lång och 5–6 hög i diagonalen. Mitten är 3 punkter tjock med ljus översida i skiffer3 och skiffer2 och en smal mörkare undersida i skiffer1, konturen är skiffer0 hela vägen och ändarna slutar i en enda punkt. Formen är spegelsymmetrisk kring mitten, och bara ett litet rostband i rost1 och rost2 nära ena spetsen samt ljuset skiljer ändarna åt.",
+   "rader": [
+    ".......QQ.",
+    ".....QQTSQ",
+    "...QQTTSRQ",
+    ".QQTSSRQQ.",
+    "QtSSRQQ...",
+    "QssQQ.....",
+    ".QQ......."
+   ],
+   "om": "Järn: en dubbelspetsig spetstacka, 10×7 punkter, som ligger snett från nedre vänstra till övre högra hörnet. Formen är punktsymmetrisk kring mitten: 3 punkter tjock på mitten och smalare mot de trubbiga ändarna. Hela konturen är skiffer0 (Q). Ovansidan är skiffer3 och skiffer2 (T, S), med korn som skiftar punkt för punkt, och undersidan är ett smalt band i skiffer1 (R). Ljuset kommer uppifrån vänster. Ett litet rostband i rost1 och rost2 (s, t) nära den nedre vänstra spetsen skiljer ändarna åt. Granskningen: Storleken (10 × 7 punkter), vinkeln och färgerna var rätt. Formen följde däremot inte idén. Ändarna var trubbiga block av fyra skiffer0-punkter i rad, så stången såg avhuggen ut i stället för dubbelspetsig. Formen var inte heller symmetrisk: den övre änden var ett platt lock och den nedre en tjock fot. Jag har ritat om silhuetten så att den är punktsymmetrisk kring mitten, vilket blir spegelsymmetriskt för en diagonal stång. Den är 4 punkter tjock på mitten och smalnar av trappvis till en trubbig spets på 1–2 punkter i varje hörn. Konturen i skiffer0 är nu sluten hela vägen, så ingen fyllpunkt gränsar direkt mot det genomskinliga. Ljuset kommer uppifrån vänster: skiffer3 längs övre vänstra kanten, skiffer2 i mitten och skiffer1 längs nedre högra kanten. Rostbandet i rost2 och rost1 ligger kvar vid den nedre vänstra spetsen. Stången är ljusare än gräset och har mörk kontur, så den syns tydligt bredvid kolonisten."
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "kommando": "tre",
+ "args": [
+  "smedja=nya versioner: varje version är ett hörn inne i ett hus, snett ovanifrån som stationerna, med ässjans yta ovanifrån (kolen syns ovanifrån) och en mörkare framkant, aldrig rakt framifrån. Smedjan får inte likna blästerugnen (ett högt schakt): ässjan är en låg, bred härd. Tre idéer som skiljer sig i byggsätt, t.ex. en låg stenhärd med bälgen bakom och städet på en stubbe, en härd av lera i en ram av stock, och en lång stenbänk med glöden i ena änden och städet bredvid",
+  "jarnskold=nya versioner: skölden är bestämd (rund trä, grå järnbuckla i mitten, brun läderkant). Visa den på tre sätt som skiljer sig i silhuett: liggande platt sedd snett uppifrån (en bred oval), stående lutad på kanten (smalare och högre), och liggande med baksidan upp där handtaget av trä går tvärs över",
+  "malm=nya versioner: tre idéer med olika silhuett: en enda stor knölig klump, en låg hög av många små korn, och två eller tre platta skivor av malm som lagts mot varandra",
+  "blottorv=nya versioner: tre idéer med olika silhuett, t.ex. ett enda långt block, en trave av tre block, och block som ligger utspridda i en pöl",
+  "torv=nya versioner: tre idéer med olika silhuett, t.ex. ett enda block, en trave i kors, och ett par block lutade mot varandra för att torka",
+  "eldstal=nya versioner: tre idéer med olika silhuett, t.ex. ett C-format stål, ett avlångt stål med en ögla i ena änden, och ett stål med träskaft som en liten kniv",
+  "jarnspjut=nya versioner: tre idéer med olika silhuett: ett långt bladformat spjut, ett spjut med hullingar eller en tvärslå under bladet, och ett kortare kastspjut med en smal fyrkantig spets",
+  "kolmila=nya versioner: tre idéer som skiljer sig i form: en rund kupa av torv och jord med rök ur toppen, en grävd grop där veden glöder under ett täcke av jord, och en avlång mila med stockar staplade och delvis täckta"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 2.8,
+  "hog": 5.99
+ },
+ "dollar": 2.864,
+ "rapport": [
+  "smedja: 3 versioner till valdelen (kortet bild_smedja)",
+  "jarnskold: 3 versioner till valdelen (kortet bild_jarnskold); kvar: olika: version 3 har nästan samma form som version 1 (94 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "malm: 3 versioner till valdelen (kortet bild_malm)",
+  "blottorv: 3 versioner till valdelen (kortet bild_blottorv); kvar: olika: version 3 har nästan samma form som version 1 (91 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "torv: 3 versioner till valdelen (kortet bild_torv); kvar: olika: version 2 har nästan samma form som version 1 (91 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "eldstal: 3 versioner till valdelen (kortet bild_eldstal)",
+  "jarnspjut: 3 versioner till valdelen (kortet bild_jarnspjut)",
+  "kolmila: 2 versioner till valdelen (kortet bild_kolmila)"
+ ]
+}

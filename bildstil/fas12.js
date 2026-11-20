@@ -17,3 +17,62 @@
     } },
   ] });
 })();
+
+// fas 12: järngruvan på världskartan (steg 12.2.13). En plats i bergen dit ett sällskap reser och bryter malm, som
+// silvergruvan. 16 × 16 punkter per ruta som spelets världskarta, i dess färger (TECKENPAL i src/ui/varldbild.ts), på marken
+// mellan ett träd och ett berg ur spelet. Ritad av programmeringschatten (världskartans tecken har ingen sort i API:ts register).
+(() => {
+  const L = { k: 'kol0', K: 'kol3', j: 'jord1', J: 'jord2', l: 'jord3', y: 'senap3', Y: 'senap1', r: 'rost2', R: 'rost1', g: 'oliv1', G: 'oliv3', b: 'barr1', B: 'barr3', d: 'skiffer1', s: 'skiffer2', S: 'skiffer3', w: 'ben3', W: 'ben1' };
+  const TRAD = ['', '', '', '......GGG', '....GGGGGgg', '...GGGGGgggg', '...GGGGgggggg', '....GGgggggg', '.....gggggg', '.......jj', '.......jj', '......kjjk'];
+  const BERG = ['', '', '.......kk', '......kwwk', '.....kwwSdk', '....kSSSSddk', '...kSSSSdddk', '...kSSSdddddk', '..kSSSSddddddk', '..kSSSddddddddk', '.kkkkkkkkkkkkkk'];
+  const PA_KARTAN = (text, rader) => ({ text, w: 56, h: 24, rita: (B) => {
+    const g = B.P.i('oliv', 2); for (let y = 0; y < 24; y++) for (let x = 0; x < 56; x++) B.satt(x, y, g);
+    ritaSprite(B, TRAD, L, 4, 4); ritaSprite(B, rader, L, 20, 4); ritaSprite(B, BERG, L, 36, 4);
+  } });
+  VAL.push({ id: 'f12_jarngruva', namn: 'Järngruvan på världskartan', typ: 'tre', slag: [], vad: 'Steg 12.2.13: järngruvan är en plats i bergen på världskartan, dit ett sällskap reser, bryter malm och bär hem den. I spelet är den nu silvergruvans hål med rostbrun malm. Bilden visar den mellan ett träd och ett berg ur spelet, i världskartans storlek.', versioner: [
+    PA_KARTAN('En bergsknalle med en timrad gruvöppning, två stolpar och en överliggare av trä, och en hög rostbrun malm framför.', [
+      '', '',
+      '......kkkk......',
+      '.....kSSSSk.....',
+      '....kSSSdSSk....',
+      '...kSSddSSdSk...',
+      '..kSSdJJJJJdSk..',
+      '..kSdJkkkkJddk..',
+      '.kSSdJkkkkJdSdk.',
+      '.kSddJkkkkJddkk.',
+      'kSSddJkkkkJdkrrk',
+      'kSdddJkkkkJkrRrk',
+      'kkkkkkkkkkkrRrRk',
+      '...........kkkk.',
+    ]),
+    PA_KARTAN('Ett dagbrott sett uppifrån: en rund grop i berget med avsatser som trappsteg, och rostbrun malm i botten.', [
+      '', '',
+      '....kkkkkkkk....',
+      '..kkSSSSSSSSkk..',
+      '.kSSddddddddSSk.',
+      'kSSdkkkkkkkkdSSk',
+      'kSdkJJJJJJJJkdSk',
+      'kSdkJrrRrrRJkdSk',
+      'kSdkJrRrrRrJkdSk',
+      'kSSdkJJJJJJkdSSk',
+      '.kSSdkkkkkkdSSk.',
+      '..kkSSddddSSkk..',
+      '....kkkkkkkk....',
+    ]),
+    PA_KARTAN('En låg klippa med ett svart schakt och en trebock av stänger över det, där ett rep hänger ner; rostfläckar på stenen.', [
+      '', '',
+      '.......k........',
+      '......kJk.......',
+      '.....kJ.Jk......',
+      '.....J..l.J.....',
+      '....J...l..J....',
+      '...J....l...J...',
+      '..kkkkkkkkkkkkk.',
+      '.kSSdrrkkkrdSSk.',
+      'kSSddRrkkkrddSSk',
+      'kSdddddkkkddrdSk',
+      'kSddrRddddddRrdk',
+      'kkkkkkkkkkkkkkkk',
+    ]),
+  ] });
+})();
