@@ -303,6 +303,7 @@ export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
   if (d.tro) return Math.max(0, ...(s.tron ?? []).map(tr => trosMobelBrist(s, tr, k))); // trons möbler i trons hus (steg 10.3.19)
+  if (d.vagga) return finareKrok.vagga(s); // en vagga i varje rum där ett spädbarn sover (steg 12.4.5, mobler.ts)
   if (d.ersatter) return finareKrok.brist(s, k); // sängen i stället för halmbädden (steg 12.4.3, mobler.ts)
   if (d.hard) return harBrist(s); // härden: ett hus där folk sover utan en härd (steg 7.5.3)
   if (d.langhus) return langhusBrist(s, k); // högsätet och bänkarna i långhuset (steg 10.2.68)
@@ -314,4 +315,4 @@ export function stationBrist(s: State, k: StationSlag) {
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }
 // sängen i stället för halmbädden (steg 12.4.3): bristen sätts i mobler.ts, som läses efter den här filen
-export const finareKrok = { brist: (_s: State, _k: string) => 0, sate: (_s: State) => 0 };
+export const finareKrok = { brist: (_s: State, _k: string) => 0, sate: (_s: State) => 0, vagga: (_s: State) => 0 };

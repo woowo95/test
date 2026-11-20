@@ -36,3 +36,4 @@
 - 12.4.2 (oljelampan): brännoljan är nu en vätska (VATSKOR) som kokas i en ledig oljelampa eller liten lerkruka; brännolja som ligger i stackar i gamla sparfiler blir liggande utan funktion (ingen uppgradering). Byn vill ha en oljelampa till varje plats för ljus, och tomma lampor fylls på (projektet lampa).
 - 12.4.3 (sängen): en familj med något över byter halmbädden mot en säng (projektet sang, Hemmen blir finare); sängen vilar mer. Läs i Balansen om sängarna byggs och vad de kostar byarna.
 - 12.4.4 (pallen och stolen): byar med en snickarbänk och familjer med något över gör pallar och stolar till borden hemma (gruppen sate i REDSKAPMAL, projektet satta); den som sitter bättre vilar mer och är gladare av måltiden.
+- 12.4.5 (vaggan): spädbarnen sover i en vagga i rummet där föräldern sover, när familjen byggt en (boende i byggnader.ts). Att föräldern arbetar med fria händer finns inget system för ännu (ingen bär spädbarnet i spelet), så det ändrar inget.

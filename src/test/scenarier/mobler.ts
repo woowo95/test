@@ -1,7 +1,7 @@
 // Scenarier för system 12.4: möblerna och sakerna i hemmet (drejskivan, oljelampan, sängen, stolen, vaggan, tunnan, osten,
 // brunnen, utedasset, sjukstugan, fyrfatet, tvålen, yllet och fjäderpennan).
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, medBank, medHus } from './hjalp';
+import { SCENARIER, klockan, medBank, medHus, nyInvanare } from './hjalp';
 import { START } from '../kor';
 
 const vuxen = (s: SIM.State) => SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
@@ -148,6 +148,34 @@ SCENARIER.stol = {
       [`stolen ställs på en plats vid bordet`, stalld],
       [`på stolen är måltiden bättre (${glad.toFixed(2)} mot ${pa.toFixed(2)} på stubben) och vilan större (${vila.toFixed(3)} per timme)`, glad > pa && pa === 1 && vila > 0],
       [`den som ska sätta sig väljer stolen fast stubben är närmare`, valdeStol],
+    ];
+  },
+};
+
+SCENARIER.vagga = {
+  text: 'Vaggan (steg 12.4.5, mobler.ts): en vagga av 2 plankor och 1 ull (10 minuter, med tekniken Säng) där spädbarnet sover i stället för hos föräldern och sover bättre; ett hem med ett spädbarn vill ha en vagga i rummet där det sover',
+  kor: () => {
+    const d = SIM.stationDef('vagga')!;
+    const s = SIM.createState(1, START), mor = SIM.living(s).find(x => x.sex === 'k' && SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)!;
+    klockan(s, 22);
+    const hus = medHus(s);
+    if (!hus) return [['ett hus', false]];
+    const barn = nyInvanare(s, 'm', 1); barn.mother = mor.id;
+    SIM.touch(s);
+    const morPlats = SIM.sovPlats(s, mor), hosMor = SIM.sovPlats(s, barn) === morPlats && morPlats !== undefined;
+    const brist = SIM.stationBrist(s, 'vagga'), rum = SIM.vaggaRum(s), site = SIM.stationSite(s, 'vagga', mor);
+    const iRummet = !!site && !!rum && SIM.roomAt(s, site.x, site.y) === rum && rum === SIM.roomAt(s, morPlats! % SIM.W, Math.floor(morPlats! / SIM.W));
+    if (!site) return [['en plats för vaggan', false]];
+    const v: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'vagga', x: site.x, y: site.y, kvar: 0, inne: 1 };
+    (s.stationer ??= []).push(v); SIM.touch(s);
+    const iVaggan = SIM.sovPlats(s, barn) === v.y * SIM.W + v.x, bristEfter = SIM.stationBrist(s, 'vagga');
+    barn.x = v.x + 0.5; barn.y = v.y + 0.5;
+    const vila = SIM.baddVila(s, barn), vuxenPlats = SIM.sovPlats(s, mor) !== v.y * SIM.W + v.x;
+    return [
+      [`vaggan står inne, av ${JSON.stringify(d.av)} på ${d.min} minuter, med tekniken ${d.tek}`, !!d.inne && d.av.plankor === 2 && d.av.ull === 1 && d.min === 10 && d.tek.join() === 'sang' && !d.sover],
+      [`utan vagga sover spädbarnet hos modern, och hemmet vill ha en vagga (${brist}) i rummet där de sover`, hosMor && brist === 1 && iRummet],
+      [`med en vagga sover spädbarnet i den, och ingen vuxen sover där`, iVaggan && vuxenPlats && bristEfter === 0],
+      [`i vaggan sover barnet bättre (${vila?.tim} per timme, tanken ${vila?.tanke})`, vila?.tim === SIM.STATION.vaggaVila && vila.tim > SIM.KROPP.restBadd],
     ];
   },
 };

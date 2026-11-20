@@ -2,7 +2,7 @@ import { fangelseAkut } from './fangelse';
 import { husNytt } from './byggnad';
 import { ALDER, KROPP, ageOf, alive, byId, count, familjOf, living, log } from './folk';
 import { planKlar, planRutor, troshusBestamd, troshusGolv, vuxnaTroende } from './troshus';
-import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
+import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, roofed, roomAt, shelterOf, touch } from './byggnad';
 import { heatAt, vedPerDygn } from './eld';
 import { BLOTVED } from './blotved';
 import { eldPlats } from './karta';
@@ -321,12 +321,20 @@ function boende(s: State): Boende {
   // första huset (bedTile är undefined). Bara de minsta barnen sover hos sin mor eller far
   const lever = new Set(ppl.map(q => q.id)), agd = new Map<number, number>(), plats = new Map<number, number>();
   for (const t of stationerOf(s)) if (t.ag !== undefined && lever.has(t.ag) && isKlar(t) && stationDef(t.k)?.sover) agd.set(t.y * W + t.x, t.ag);
+  const vaggor = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.vagga).map(t => ({ i: t.y * W + t.x, r: roomAt(s, t.x, t.y) })), iVagga = new Set<number>(); // vaggorna (steg 12.4.5)
   const fordela = (tiles: number[], folk: Person[]) => {
     const ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i)), rest: Person[] = [], utan: Person[] = [];
     for (const i of tiles) { const o = agd.get(i); if (o !== undefined && ids.has(o) && !plats.has(o)) plats.set(o, i); }
     for (const q of folk) if (!plats.has(q.id)) (ageOf(q, s.now) < ALDER.smabarn ? utan : rest).push(q);
     rest.forEach((q, n) => { if (n < fria.length) plats.set(q.id, fria[n]); });
-    for (const q of utan) { const f = [q.mother, q.father].map(id => id === undefined ? undefined : plats.get(id)).find(i => i !== undefined); if (f !== undefined) plats.set(q.id, f); }
+    for (const q of utan) {
+      const f = [q.mother, q.father].map(id => id === undefined ? undefined : plats.get(id)).find(i => i !== undefined);
+      if (f === undefined) continue;
+      // i en ledig vagga i rummet där föräldern sover, annars hos föräldern (steg 12.4.5)
+      const r = roomAt(s, f % W, Math.floor(f / W)), v = r && vaggor.find(x => x.r === r && !iVagga.has(x.i));
+      if (v) iVagga.add(v.i);
+      plats.set(q.id, v ? v.i : f);
+    }
     return folk.filter(q => !plats.has(q.id) && ageOf(q, s.now) >= ALDER.smabarn);
   };
   const overblivna: Person[] = [];

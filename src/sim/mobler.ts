@@ -11,9 +11,10 @@
 // varandra får tanken Sov bredvid sin käresta (bredvidKaresta)
 import { HUS } from './byggnader';
 import { hemOverskott } from './byggplan';
-import { byId, count, familjOf, forstaGang, living, log, think } from './folk';
+import { ALDER, ageOf, byId, count, familjOf, forstaGang, living, log, think } from './folk';
 import { addTool, ingenHar, tingOf } from './agande';
-import { roomAt, husById } from './byggnad';
+import { type Rum, roomAt, husById } from './byggnad';
+import { sovPlats } from './byggnader';
 import { gruppOf } from './saker';
 import { knows } from './teknik';
 import { Task, W } from './typer';
@@ -116,3 +117,23 @@ export function sattaKlar(s: State, p: Person, tk: Task) {
 }
 finareKrok.sate = sateMal;
 moblerKrok.sittGlad = sittGlad; moblerKrok.sattaPlats = sattaPlats;
+
+// ---------- vaggan (steg 12.4.5) ----------
+// Spädbarnet (under ALDER.smabarn) sover i en ledig vagga i rummet där föräldern sover, i stället för hos föräldern (boende i
+// byggnader.ts), och sover bättre där (vila i raden). Ett hem med ett spädbarn vill ha en vagga: rummen där ett spädbarn sover
+// hos föräldern utan en vagga
+function vaggaRummen(s: State) {
+  const ut: Rum[] = [];
+  for (const q of living(s)) {
+    if (ageOf(q, s.now) >= ALDER.smabarn) continue;
+    const i = sovPlats(s, q); if (i === undefined) continue;
+    const t = stationRutor(s).at.get(i);
+    if (t && stationDef(t.k)?.vagga) continue; // sover redan i en vagga
+    const r = roomAt(s, i % W, Math.floor(i / W));
+    if (r && !ut.includes(r) && !stationerOf(s).some(v => stationDef(v.k)?.vagga && !isKlar(v) && roomAt(s, v.x, v.y) === r)) ut.push(r); // en vagga som byggs där räknas
+  }
+  return ut;
+}
+export const vaggaRum = (s: State) => vaggaRummen(s)[0];
+finareKrok.vagga = s => vaggaRummen(s).length ? 1 : 0;
+moblerKrok.vaggaRum = vaggaRum;

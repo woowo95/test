@@ -48,9 +48,16 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '....kWWWWWWk....', '....kkkkkkkk....', '....kd....dk....', '....kd....dk....',
     '....kk....kk....', '................', '................', '................'],
     pal: { ...TRA, w: '#dad0bb', W: '#bdb39b' } },
+  // vaggan (steg 12.4.5): en låg låda av plankor på två böjda medar, med en bädd av ull i
+  vagga: { pix: [
+    '................', '................', '................', '................',
+    '...kkkkkkkkkk...', '...kJJJJJJJJk...', '...kJwWWWWwJk...', '...kJWWWWWWJk...',
+    '...kJWWWWWWJk...', '...kJJJJJJJJk...', '...kjjjjjjjjk...', '...kkkkkkkkkk...',
+    '..kd........dk..', '...kkkkkkkkkk...', '................', '................'],
+    pal: { ...TRA, w: '#dad0bb', W: '#bdb39b' } },
 };
 // stationerna som är en ruta stora har samma bild på kartan
-const KARTA = ['drejskiva'];
+const KARTA = ['drejskiva', 'vagga'];
 // de längre stationerna står vridna ett kvarts varv när de står på högkant (platshållare tills den stående bilden ritats)
 const VRIDS = ['sang'];
 const vrid = (r: string[]) => Array.from({ length: r[0].length }, (_, x) => r.map(rad => rad[x]).reverse().join(''));
