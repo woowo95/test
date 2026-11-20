@@ -77,13 +77,15 @@ SCENARIER.stenring = {
     const th = living(r).find(q => ageOf(q, r.now) >= ALDER.vuxen)!;
     Object.assign(th, { toa: 1, torst: 1, warm: KROPP.kallt - 0.05, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(r, th);
+    const utanforBynXY = (x: number, y: number) => { const c = bynsMitt(r); return Math.hypot(x - c.x, y - c.y); };
     const tom = (() => { const c = bynsMitt(r); for (let d = 4; d < 30; d++) for (let k = 0; k < 16; k++) { const x = Math.floor(c.x + Math.cos(k / 16 * 6.283) * d), y = Math.floor(c.y + Math.sin(k / 16 * 6.283) * d); if (inMap(x, y) && rm.tiles[y * W + x] !== T.Vatten && !isWall(r, x + 0.5, y + 0.5) && richness(r, 'samla', x + 0.5, y + 0.5) < 0.01 && SIM.hoPaRutan(r, x, y) > 0) return { x: x + 0.5, y: y + 0.5 }; } })()!;
     for (const k of SIM.lagren('samla')) for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) if (inMap(tom.x + dx, tom.y + dy)) takenOf(r)[k]![SIM.tileOf(tom.x + dx, tom.y + dy)] = 1;
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
     kor(r, 1 / 360); // tio sekunder: tändmaterialet hittas lika fort som bären (steg 2.12.4), och det räcker snart (en tändning, steg 10.2.7)
-    const nara = () => th.task?.act === 'samla' && th.task.phase === 'do' && Math.hypot(th.task.tx - tom.x, th.task.ty - tom.y) <= 8; // rundan (steg 4.5.6.1): hen går omkring på platsen, en sträcka i taget (runda.stracka 8)
-    const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) + (th.task!.items?.grenar ?? 0) > 0 // hö eller kvistar: tändmaterialet ligger på rutorna (steg 9.3.4)
+    // rundan (steg 4.5.6.1): hen går omkring från ruta till ruta med hö och kvistar och drar hemåt (steg 12.1.38), inte längre bort än hen var
+    const nara = () => th.task?.act === 'samla' && !!th.task.tandmat && th.task.phase === 'do' && utanforBynXY(th.task.tx, th.task.ty) <= utanforBynXY(tom.x, tom.y) + 2;
+    const fortsatt = (nara() || th.task?.act === 'samla' && !!th.task.tandmat && th.task.phase === 'back') && (th.task!.items?.torrgras ?? 0) + (th.task!.items?.grenar ?? 0) > 0 // hö eller kvistar: tändmaterialet ligger på rutorna (steg 9.3.4)
       || ((th.task?.act === 'tanda' || th.task?.act === 'ved') && SIM.amountOf(r, 'torrgras') + SIM.amountOf(r, 'grenar') + SIM.getable(r, th, 'torrgras') + SIM.getable(r, th, 'grenar') > 0); // ... eller redan hämtat (höet ligger några få per ruta, steg 10.10.9) och tänder, eller hämtar ved först när elden saknar bränsle, så mycket en tändning tar (steg 10.2.7) och tänder
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
     const slutat = !nara();

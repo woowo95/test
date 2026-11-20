@@ -1222,6 +1222,7 @@ export const RUNDA = balans('runda', {
   vargR: 12, // vargar och rövare så här nära en ruta skrämmer: vargRadsla vid dem, mindre längre bort och för den modige
   vargRadsla: 0.6,
   // samlandet, en gång för alla (steg 9.2.53–9.2.57): saker på rutan, ett plock i taget, och nästa mål när platsen är tom
+  tandHem: 0.5, // den som hämtar tändmaterial: så många rutor längre bort kostar varje ruta längre från byns mitt (narmastTand, steg 12.1.38)
   plock: 2, // sekunder (spelets tid) att plocka upp en sak: fast och kort, inte ett balanstal; balansen sitter i mängden
   stracka: 8, // så många rutor väljer samlaren på en gång (steg 10.2.21)
   syn: 4, // så många rutor bort ser samlaren rutor med saker och går dit (synvidden)
@@ -1368,9 +1369,25 @@ function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn
   s.now = t0 + used * SEC;
   return used;
 }
+// samlarens tid (steg 12.1.38): byns statistik räknar sekunderna på rundan som gång, plock och stå still utan att plocka, per
+// arbete (tändmaterialet för sig): runda_gang_samla, runda_plock_ved, runda_still_tand …
+const rundaArbete = (tk: Task) => tk.tandmat ? 'tand' : tk.sok ? 'leta' : tk.act;
 function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn: number) {
+  const used = rundaRutaIn(s, p, tk, left, a, learn), slag = rundaTid;
+  rundaTid = 'still';
+  if (used > 1e-3 + 1e-9 || slag !== 'still') {
+    count(s, `runda_${slag}_${rundaArbete(tk)}`, used);
+    // det längsta hen stått still utan att plocka i ett svep: tiden sedan hen senast gick eller plockade
+    tk.still = slag === 'still' ? (tk.still ?? 0) + used : undefined;
+    if (tk.still) { const k = `runda_stillMest_${rundaArbete(tk)}`; (s.stat ??= {})[k] = Math.max(s.stat[k] ?? 0, tk.still); }
+  }
+  return used;
+}
+let rundaTid: 'gang' | 'plock' | 'still' = 'still';
+function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, learn: number) {
   const now = s.now, slut = Math.max(0, (tk.until - now) / SEC);
   if (tk.hopp) { // på väg: bara gången, inget arbete (steg 9.2.55)
+    rundaTid = 'gang';
     const w = walk(s, p, tk, Math.min(left, Math.max(slut, 1e-3))), used = Math.max(w.used, 1e-3);
     if (p.task !== tk) return used;
     tk.letat = (tk.letat ?? 0) + used;
@@ -1388,7 +1405,7 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   if (tk.sok && !tk.tandmat && !needStones(s) && !flintaBehovs(s, tk)) { tk.until = s.now; return 1e-3; } // byn har nog
   // vildboet (steg 10.10.15): intill ett bo tas honungen i takt, BIN.vildTim kakor i timmen, tills det inte finns någon kaka kvar där
   if (!full && (sakerPaRutan(s, tk, x, y).find(q => q.k === 'honung')?.n ?? 0) > 0) {
-    tk.plock = undefined;
+    tk.plock = undefined; rundaTid = 'plock';
     const used = Math.max(1e-3, Math.min(left, slut, BIT));
     s.now = now + used * SEC;
     plockSlag = 'honung'; workStep(s, p, tk, used, a, learn, false, true, 0); plockSlag = undefined;
@@ -1396,7 +1413,7 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
   }
   // plocka (steg 9.2.55): stå still och plocka rutan tom, en hel sak per RUNDA.plock sekunder
   if (!full && sakerPa(s, tk, x, y) > 0) {
-    tk.plock ??= RUNDA.plock;
+    tk.plock ??= RUNDA.plock; rundaTid = 'plock';
     const used = Math.max(1e-3, Math.min(left, tk.plock, slut, BIT));
     s.now = now + used * SEC;
     tk.plock -= used;
@@ -1405,17 +1422,13 @@ function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn
     plockSlag = slag ?? ''; workStep(s, p, tk, used, a, learn, false, true, slag ? 1 : 0); plockSlag = undefined;
     return used;
   }
-  // den som hämtar tändmaterial plockar det som finns på rutan och i närheten och hittar hö och kvistar på vägen; ser hen inget
-  // att plocka letar hen på marken där hen står tills det räcker (hö och kvistar ligger överallt, forageItems i eld.ts)
+  // den som hämtar tändmaterial plockar det som finns på rutan och i närheten och hittar hö och kvistar på vägen (forageItems i
+  // eld.ts, efter tiden ute). Ser hen inget annat att plocka går hen vidare från ruta till ruta med det som fattas, som andra
+  // samlare, och inte tillbaka till rutorna hen nyss gått (steg 12.1.38; förut letade hen på marken där hen stod)
   if (tk.tandmat && tinderShort(s, tk) && !full && !narmastMedSaker(s, tk, x, y, RUNDA.syn)) {
-    // tändmaterialet är hela saker på rutan (steg 9.3.4): är rutan tom på det som fattas går hen till den närmaste som har det
-    if (!tandHar(s, tk, x, y)) {
-      const n = narmastTand(s, tk, x, y, RUNDA.syn);
-      if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; return 1e-3; }
-    }
-    const used = Math.max(1e-3, Math.min(left, slut, BIT));
-    s.now = now + used * SEC; plockSlag = ''; workStep(s, p, tk, used, a, learn, false, true, 0); plockSlag = undefined;
-    return used;
+    tk.sett = [...(tk.sett ?? []), y * W + x].slice(-RUNDA.sett);
+    const n = narmastTand(s, tk, x, y, RUNDA.syn);
+    if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; return 1e-3; }
   }
   tk.plock = undefined;
   if (p.task !== tk || tk.phase !== 'do') return 1e-3;
@@ -1491,15 +1504,16 @@ function narmastMedSaker(s: State, tk: Task, x0: number, y0: number, r: number) 
 }
 // tändmaterialet som fattas (hö eller kvistar) finns på rutan (steg 9.3.4, tandPaRutan i eld.ts)
 const tandFattas = (s: State, tk: Task) => (['torrgras', 'grenar'] as Tand[]).filter(k => underBuffert(s, k, tk.items?.[k] ?? 0));
-const tandHar = (s: State, tk: Task, x: number, y: number) => tandFattas(s, tk).every(k => tandPaRutan(s, k, x, y) > 0);
-// den närmaste rutan inom r med allt tändmaterial som fattas (hö och kvistar), och annars med något av det
+// den närmaste rutan inom r med allt tändmaterial som fattas (hö och kvistar), och annars med något av det. Inte de rutor hen nyss
+// gått (tk.sett), och varje ruta längre från byns mitt kostar RUNDA.tandHem rutor till: tändmaterialet behövs vid elden, och
+// hö och kvistar finns överallt, så rundan går runt på platsen och drar hemåt i stället för rakt bort (steg 12.1.38)
 function narmastTand(s: State, tk: Task, x0: number, y0: number, r: number) {
-  const slag = tandFattas(s, tk);
+  const slag = tandFattas(s, tk), m = bynsMitt(s), hem = (x: number, y: number) => RUNDA.tandHem * Math.hypot(x + 0.5 - m.x, y + 0.5 - m.y);
   let bast: { x: number; y: number } | undefined, bd = Infinity;
   for (const alla of [true, false]) {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-      if ((!dx && !dy) || d > r + 0.01 || d >= bd || !inMap(x, y)) continue;
+      const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy) + (Math.hypot(dx, dy) <= r + 0.01 ? hem(x, y) - hem(x0, y0) : 0);
+      if ((!dx && !dy) || Math.hypot(dx, dy) > r + 0.01 || d >= bd || !inMap(x, y) || tk.sett?.includes(y * W + x) || blocked(s, x + 0.5, y + 0.5)) continue;
       const har = slag.filter(k => tandPaRutan(s, k, x, y) > 0).length;
       if (alla ? har < slag.length : har === 0) continue;
       bast = { x, y }; bd = d;

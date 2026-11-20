@@ -179,6 +179,7 @@ export interface Task {
   pass?: number; // när ett pass med redskap som görs är slut (ms): blir ett klart före det görs ett till om byn vill ha fler (steg 2.3.8)
   hamtar?: string; // materialet uppgiften hämtar till ett projekt eller bygge (steg 6.1.17): samlandet ger det, också när förrådet har tändmaterial nog
   lon?: string; // arbetet för byn betalas ur den här budgetdelen, och det som bärs hem blir byns (steg 10.5.9, lon.ts)
+  still?: number; // på rundan: sekunder hen stått still utan att gå eller plocka i ett svep (byns statistik, steg 12.1.38)
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
   bar?: number; // vården: den skadade som bärs hem (halsa.ts, steg 2.5.2)
   ho?: true; // vattnet bärs till vattenhon ref (steg 10.10.31, djurtorst.ts)

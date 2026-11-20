@@ -259,14 +259,16 @@ SCENARIER.rotter = {
 // rundan (steg 4.5.6.1): samlaren går i full fart från ruta till ruta och stannar 2–5 sekunder där det finns något
 SCENARIER.samlarrunda = {
   lang: true,
-  text: 'Steg 4.5.6.1–4.5.6.2: samlaren går hela tiden i full gångfart från ruta till ruta och stannar 2–5 sekunder för varje sak hen plockar. Hen står aldrig still längre än så utan att plocka något medan hen samlar (mindre än en tiondel av arbetstiden), och Gör just nu säger Letar efter bär och Plockar bär. Rundan når längre bort än lägerzonen, och den nyfikne och modige går längre än den försiktige när maten nära byn är slut',
+  text: 'Steg 4.5.6.1–4.5.6.2 och 12.1.38: samlaren går hela tiden i full gångfart från ruta till ruta och stannar 2–5 sekunder för varje sak hen plockar. Hen står aldrig still längre än så utan att plocka något medan hen samlar (mindre än en tiondel av arbetstiden), och Gör just nu säger Letar efter bär och Plockar bär. Byns statistik delar rundan i gång, plock och stå still, och samlaren och den som hämtar tändmaterial är i rörelse minst nio tiondelar av passet. Rundan når längre bort än lägerzonen, och den nyfikne och modige går längre än den försiktige när maten nära byn är slut',
   kor: () => {
     // två byar utan mat följs sekund för sekund i sex timmar: var samlarna står och hur fort de går
-    let arbete = 0, langeStill = 0, gang = 0, sekGang = 0, stopp = 0, langstStopp = 0;
+    let arbete = 0, langeStill = 0, gang = 0, sekGang = 0, stopp = 0, langstStopp = 0, langstStill = 0;
+    const tid: Record<string, { gang: number; plock: number; still: number }> = {};
     const texter = new Set<string>();
     for (const seed of [42, 7]) {
       const s = createState(seed, START), forra = new Map<number, { x: number; y: number; still: number; hopp: boolean; bar: number }>();
       setMat(s, {}); setAmount(s, 'ved', 300);
+      if (seed === 7) { setAmount(s, 'torrgras', 0); setAmount(s, 'grenar', 0); } // den ena byn saknar tändmaterial (steg 12.1.38)
       for (let i = 0; i < 6 * 3600; i++) {
         step(s, 1);
         for (const p of living(s)) {
@@ -275,14 +277,18 @@ SCENARIER.samlarrunda = {
           texter.add(SIM.taskText(t));
           arbete++;
           // den som plockar en sak till står inte still: en rik bärbuske plockas sak för sak (steg 10.10.8)
-          const bar = Object.values(t.items ?? {}).reduce((a, n) => a + n, 0), d = f ? Math.hypot(p.x - f.x, p.y - f.y) : 0, still = f && d < 1e-6 && bar <= f.bar ? f.still + 1 : 0;
+          const bar = Object.values(t.items ?? {}).reduce((a, n) => a + n, t.carry), d = f ? Math.hypot(p.x - f.x, p.y - f.y) : 0, still = f && d < 1e-6 && bar <= f.bar ? f.still + 1 : 0;
           if (f && d >= 1e-6 && f.hopp && t.hopp) { gang += d; sekGang++; } // farten bara under hela sekunder på väg mellan två rutor
           if (f && d >= 1e-6) { if (f.still > 0) { stopp++; langstStopp = Math.max(langstStopp, f.still); } }
           if (still > 5) langeStill++;
           forra.set(p.id, { x: p.x, y: p.y, still, hopp: !!t.hopp, bar });
         }
       }
+      for (const [k, n] of Object.entries(s.stat ?? {})) { if (k.startsWith('runda_stillMest_')) langstStill = Math.max(langstStill, n); const m = /^runda_(gang|plock|still)_(.+)$/.exec(k); if (m) { const r = (tid[m[2]] ??= { gang: 0, plock: 0, still: 0 }); r[m[1] as 'gang'] += n; } }
     }
+    // byns statistik (steg 12.1.38): samlarens tid på rundan delad i gång, plock och stå still, per arbete
+    const iRorelse = (r?: { gang: number; plock: number; still: number }) => r ? (r.gang + r.plock) / Math.max(1e-9, r.gang + r.plock + r.still) : 0;
+    const tidText = Object.entries(tid).map(([k, r]) => `${k}: gång ${(r.gang / 60).toFixed(0)}, plock ${(r.plock / 60).toFixed(0)}, still ${(r.still / 60).toFixed(0)} min`).join('; ');
     const fart = sekGang ? gang / sekGang : 0, GANG = balansTal().gang as Record<string, number>;
     // längre ut (steg 4.5.6.2): maten nära byn är slut (allt inom 14 rutor från lägret plockat). Samma byar två gånger i sex
     // timmar, med alla nyfikna och modiga och med alla försiktiga: hur långt från lägret varje runda når som längst
@@ -310,6 +316,8 @@ SCENARIER.samlarrunda = {
       [`samlarna når längre bort än lägerzonen (${(bortom * 100).toFixed(0)} % av ${modig.length + forsiktig.length} rundor kom mer än ${zon + 2} rutor från lägret)`, bortom > 0.5],
       [`en nyfiken och modig samlare går längre än en försiktig när maten nära byn är slut (som längst i snitt ${snitt(modig).toFixed(1)} mot ${snitt(forsiktig).toFixed(1)} rutor från lägret, ${modig.length} och ${forsiktig.length} rundor)`, modig.length >= 5 && forsiktig.length >= 5 && snitt(modig) > snitt(forsiktig) + 1],
       [`samlarna samlade (${arbete} sekunder arbete)`, arbete > 3600],
+      [`byns statistik delar rundan i gång, plock och stå still per arbete, och samlarna och de som hämtar tändmaterial är i rörelse minst nio tiondelar av passet (${tidText})`, !!tid.samla && !!tid.tand && iRorelse(tid.samla) >= 0.9 && iRorelse(tid.tand) >= 0.9],
+      [`de står aldrig still längre än ett plock utan att plocka (det längsta ${langstStill.toFixed(1)} sekunder, ett plock ${SIM.RUNDA.plock})`, langstStill <= SIM.RUNDA.plock],
       [`de står still längre än 5 sekunder mindre än en tiondel av arbetstiden (${(langeStill / Math.max(1, arbete) * 100).toFixed(1)} %)`, arbete > 0 && langeStill < arbete / 10],
       [`de stannar ofta (${stopp} stopp, det längsta ${langstStopp} sekunder)`, stopp > 100],
       [`de går nästan i full fart mellan stoppen (${fart.toFixed(2)} rutor i sekunden, full fart ${GANG.fart})`, fart >= GANG.fart * 0.6],
