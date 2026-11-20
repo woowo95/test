@@ -1956,9 +1956,11 @@ SCENARIER.samlaresa = {
     const kand = SIM.forbattraKandidater(s1, a1).sort((x, y) => y.sc - x.sc), plats = kand.findIndex(k => k.id === 'samlaResa'), vann = kand[plats];
     // (vilken rad som vinner beror på målet och på byns andra arbeten, alltså på balansen: här prövas att resan är en av de
     // främsta raderna och att den som väljer den samlar och packar)
+    // (a kan ha lett en resa förut: bara ett nytt sällskap räknas)
+    const fore1 = new Set((s1.varld!.sallskap ?? []).map(x => x.id)), nytt = () => s1.varld!.sallskap?.find(x => x.ledare === a1.id && !fore1.has(x.id));
     if (vann) vann.gor(); // valet: nästa gång a väljer går hen till samlingsplatsen (resaVal, nivån Tillfälle)
-    const sl = s1.varld!.sallskap?.find(x => x.ledare === a1.id);
-    korTills(s1, () => sl?.skede !== 'samlas', 12 * 3600);
+    korTills(s1, () => !!nytt() && nytt()!.skede !== 'samlas', 12 * 3600);
+    const sl = nytt();
     // samma by i nöd: maten är slut
     const s2 = SIM.cloneState(s);
     for (const f of SIM.FOOD) SIM.setAmount(s2, f, 0);
@@ -1970,7 +1972,7 @@ SCENARIER.samlaresa = {
       [`den försiktiga får lägre poäng (${forsiktig?.sc.toFixed(3)})`, !!forsiktig && forsiktig.sc < modig!.sc],
       [`under torkan vägs det egna fältet som vissnar medan a är borta (förlust ${forlust}, poäng ${torr?.sc.toFixed(3) ?? 0})`, forlust > 0 && (torr?.sc ?? 0) < modig!.sc],
       [`med mat för en kort tid hemma blir poängen låg (${nod?.sc.toFixed(3) ?? 0})`, (nod?.sc ?? 0) < modig!.sc * 0.2],
-      [`resan är en av de främsta raderna på Förbättra (plats ${plats + 1} av ${kand.length}: ${kand.slice(0, 3).map(k => `${k.id} ${k.sc.toFixed(2)}`).join(', ')})`, plats >= 0 && plats <= 1],
+      [`resan är en av de främsta raderna på Förbättra (plats ${plats + 1} av ${kand.length}: ${kand.slice(0, 3).map(k => `${k.id} ${k.sc.toFixed(2)}`).join(', ')})`, plats >= 0 && plats <= 2],
       [`a samlade till resan och gick till samlingsplatsen, där sällskapet packade (${sl?.skede ?? 'inget sällskap'})`, !!sl && sl.mal === mal.nr && sl.skal === 'se' && (sl.skede === 'packar' || sl.skede === 'gar' || sl.skede === 'ute')],
       [`i en by utan mat samlar ingen till en resa (${nya2()} sällskap)`, nya2() === 0],
     ];

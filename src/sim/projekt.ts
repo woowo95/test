@@ -413,10 +413,11 @@ export function fattas(s: State, p: Person, k: string, f: ProjektFara) {
 // arbetet som hämtar materialet m (skaffa.act i SAKER: hö och flinta samlas, grenar och ved med arbetet ved) och om det letas
 // vid stenarna (det sällsynta, flintan). Annat material (skinn, ben) kommer av andra arbeten, och då väntar projektet
 // Materialet till kläderna (steg 12.1.20): skinnen som jakten ger (viltet slaktas sedan till skinn) står i KALLA, så att ett plagg
-// som väntar på skinn ger jakten värde, som virket till ett hus ger fällningen värde
-export const KALLA: Record<string, Act> = { skinn: 'jakt', vitskinn: 'jakt', radjursskinn: 'jakt' };
+// som väntar på skinn ger jakten värde, som virket till ett hus ger fällningen värde. Skinnet kommer ur det fällda
+// djuret (ur) när det slaktas: ligger ett sådant oslaktat och saknar byn stationen där det slaktas, är det stationen som fattas
+export const KALLA: Record<string, { act: Act; ur: string }> = { skinn: { act: 'jakt', ur: 'vilt' }, vitskinn: { act: 'jakt', ur: 'vilt' }, radjursskinn: { act: 'jakt', ur: 'radjur' } };
 export function hamtas(m: string): { act: Act; leta?: true } | undefined {
-  if (KALLA[m]) return { act: KALLA[m] };
+  if (KALLA[m]) return { act: KALLA[m].act };
   const sk = SAKER[m]?.skaffa, a = sk?.act ? ACTS[sk.act as Act]?.arbete : undefined;
   return a ? { act: a as Act, leta: sk!.sallsynt ? true : undefined } : undefined;
 }
@@ -431,6 +432,8 @@ export function arv(s: State, p: Person, m: string, f: ProjektFara, djup = 0): {
     const n = djup < 2 ? fattas(s, p, m, f) : undefined;
     return n ? arv(s, p, n, f, djup + 1) : undefined;
   }
+  const ka = KALLA[m], st = ka && amountOf(s, ka.ur) > 0 ? stationSomFattas(s, 'slakta') : undefined;
+  if (st && PROJEKT[st]) return djup < 2 ? arv(s, p, st, f, djup + 1) : undefined;
   return hamtas(m) ? { sak: m } : undefined;
 }
 // det mest värda projekt p kan göra nu, med uppgiften och värdet (lika värde: registrets ordning). Är det mest värda ett som p
